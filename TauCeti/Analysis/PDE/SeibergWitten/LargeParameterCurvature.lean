@@ -142,6 +142,42 @@ theorem mul_abs_one_sub_sub_le {s t r C : ℝ} (hr : 0 < r) (hC : 0 ≤ C) (ht :
       _ = r + C := by field_simp
   rcases abs_cases (1 - s - t) with ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> rw [h₁] <;> nlinarith
 
+/-- The real inequality behind the radial Hermitian bound. With `a = |α|²`, `b = |β|²`,
+`w₊ = max (1 - a) 0` and `0 ≤ δ ≤ C`, the bound `b ≤ (K / r) w₊ + K / r²` gives
+`(r / 8) (1 - a + b) + (r / 8) (1 + δ) w₊ ≤ (1 + δ) (r / 4) |1 - a - b| + (1 + C) K / 2 + K / 4`:
+`r b ≤ 2 K`, and `w₊` is at most the defect `|1 - a - b|` plus `b`. -/
+private theorem mul_one_sub_add_add_le_mul_abs_add {a b r K C δ : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hr : 1 ≤ r)
+    (hbK : b ≤ K / r * max (1 - a) 0 + K / r ^ 2) (hδ : 0 ≤ δ) (hδC : δ ≤ C) :
+    r / 8 * (1 - a + b) + r / 8 * (1 + δ) * max (1 - a) 0 ≤
+      (1 + δ) * (r / 4 * |1 - a - b|) + ((1 + C) * K / 2 + K / 4) := by
+  have hr0 : 0 < r := by linarith
+  set w := max (1 - a) 0
+  have hw0 : 0 ≤ w := le_max_right _ _
+  have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div hb hr0 hw0 hbK
+  -- The coarse bound on `b`: `r b ≤ K w₊ + K / r ≤ 2 K`, as `w₊ ≤ 1`.
+  have hrb : r * b ≤ 2 * K := by
+    have h := mul_le_mul_of_nonneg_left hbK hr0.le
+    have e : r * (K / r * w + K / r ^ 2) = K * w + K / r := by field_simp
+    have hKr : K / r ≤ K := div_le_self hK hr
+    have hw1 : w ≤ 1 := max_le (by linarith) zero_le_one
+    nlinarith
+  -- `w₊ ≤ |1 - a - b| + b`.
+  have hwd : w ≤ |1 - a - b| + b :=
+    max_le (by linarith [le_abs_self (1 - a - b)]) (by positivity)
+  have hd := mul_le_mul_of_nonneg_left hwd (by positivity : 0 ≤ (1 + δ) * (r / 4))
+  have hA := mul_le_mul_of_nonneg_left (le_max_left (1 - a) 0) (by positivity : 0 ≤ r / 8)
+  have hδw : 0 ≤ r / 8 * δ * w := by positivity
+  have hδK := mul_le_mul_of_nonneg_right hδC (by positivity : 0 ≤ K / 2)
+  nlinarith
+
+/-- A vector `ω` with `‖ω‖² = 2`, such as the Kähler two-vector in dimension four, satisfies
+`|⟪ω, η⟫| ≤ √2 ‖η‖`. -/
+private theorem abs_real_inner_le_sqrt_two_mul_norm {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ω : E} (hω₂ : ‖ω‖ ^ 2 = 2) (η : E) : |⟪ω, η⟫| ≤ √2 * ‖η‖ := by
+  have hω' : ‖ω‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg ω)]
+  simpa [hω'] using abs_real_inner_le_norm ω η
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
   {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
@@ -187,9 +223,7 @@ theorem mul_abs_one_sub_sub_le_inner_add (hr : 0 < r) {C : ℝ} (hC : 0 ≤ C)
     (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + C / r) :
     r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ ⟪ω, F⟫ + (√2 * ‖η‖ + C) / 2 := by
   have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr.le hF
-  have hωη : ⟪ω, η⟫ ≤ √2 * ‖η‖ := by
-    have hω' : ‖ω‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
-    simpa [hω'] using real_inner_le_norm ω η
+  have hωη := (le_abs_self _).trans (abs_real_inner_le_sqrt_two_mul_norm hω₂ η)
   have hdef := mul_abs_one_sub_sub_le hr hC (sq_nonneg ‖β‖) hφβ
   linarith
 
@@ -269,9 +303,7 @@ theorem abs_inner_div_two_sub_le (hr : 1 ≤ r) {K : ℝ}
   have hr0 : 0 < r := by linarith
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
   rw [inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF]
-  have hωη : |⟪ω, η⟫| ≤ √2 * ‖η‖ := by
-    have hω' : ‖ω‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg ω)]
-    simpa [hω'] using abs_real_inner_le_norm ω η
+  have hωη := abs_real_inner_le_sqrt_two_mul_norm hω₂ η
   -- The defect part `r (1 - ‖φ‖² + ‖β‖² - w₊) / 8` lies in `[-K / 4, K / 4]`.
   have hdef : |r / 8 * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - r / 8 * max (1 - ‖φ‖ ^ 2) 0| ≤ K / 4 := by
     have hKr : K / r ≤ K := div_le_self hK hr
@@ -362,14 +394,9 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
     have h3 : K / r ≤ K := div_le_self hK hr
     nlinarith
   -- `-⟪ω, η⟫ ≤ ‖ω‖ ‖η‖ = √2 ‖η‖`.
-  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
-    have hω' : ‖J.kahlerForm‖ = √2 := by
-      rw [← Real.sqrt_sq (norm_nonneg _), AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)]
-    have := neg_le_abs ⟪J.kahlerForm, η⟫
-    have := abs_real_inner_le_norm J.kahlerForm η
-    rw [hω'] at this
-    linarith
+  have hωη := (neg_le_abs _).trans (abs_real_inner_le_sqrt_two_mul_norm
+    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)) η)
   have hA : r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) ≤ r / (4 * √2) * m + K / (2 * √2) := by
     have : r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) =
         r / (4 * √2) * (1 - ‖φ‖ ^ 2) + r * ‖β‖ ^ 2 / (4 * √2) := by ring
@@ -547,8 +574,7 @@ theorem infDist_positiveCone_le_of_add_hodgeStar_eq
   have hr0 : 0 < r := by linarith
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
-  have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
+  have hω' : ‖J.kahlerForm‖ = √2 := AlmostComplexStructure.norm_kahlerForm_eq_sqrt_two hJ
   have hs2 : √2 ≠ 0 := by positivity
   have hs2sq : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   have hs : 0 ≤ C * √r * max (1 - ‖φ‖ ^ 2) 0 / 8 + C / √2 + K / 4 + √2 * ‖η‖ / 4 := by
@@ -600,71 +626,32 @@ theorem mul_inner_kahlerForm_sub_hermitianForm_le (hr : 1 ≤ r) {K C : ℝ} (hC
       ‖v‖ ^ 2 * ((1 + C / √r) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) +
         ((1 + C) * K / 2 + K / 4 + √2 * ‖η‖ / 4 + C / √2)) := by
   have hr0 : 0 < r := by linarith
-  have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
   have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
   have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF
-  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
-    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
-    calc -⟪J.kahlerForm, η⟫ ≤ ‖J.kahlerForm‖ * ‖η‖ := by
-          rw [← inner_neg_right]
-          exact (real_inner_le_norm _ _).trans_eq (by rw [norm_neg])
-      _ = √2 * ‖η‖ := by rw [hω']
+  have hωη := (neg_le_abs _).trans (abs_real_inner_le_sqrt_two_mul_norm hω₂ η)
   have hB := AlmostComplexStructure.abs_hermitianForm_apply_self_sub_le h₀ h₂₃ hkl he F v
   set m := ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖
-  set a := ‖φ‖ ^ 2
-  set bb := ‖β‖ ^ 2
-  set w := max (1 - a) 0
   set δ := C / √r
-  have ha : 0 ≤ a := sq_nonneg _
-  have hw0 : 0 ≤ w := le_max_right _ _
-  have hw1 : w ≤ 1 := max_le (by linarith) zero_le_one
-  have h1a : 1 - a ≤ w := le_max_left _ _
-  have hs1 : 1 ≤ √r := Real.one_le_sqrt.2 hr
   have hδ0 : 0 ≤ δ := by positivity
-  have hδC : δ ≤ C := div_le_self hC hs1
+  have hδC : δ ≤ C := div_le_self hC (Real.one_le_sqrt.2 hr)
   have hs2p : 0 < √2 := by positivity
-  -- The coarse bound on `β`: `r |β|² ≤ K w + K / r ≤ 2 K`.
-  have hrb : r * bb ≤ 2 * K := by
-    have h := mul_le_mul_of_nonneg_left hβK hr0.le
-    have e1 : r * (K / r * w + K / r ^ 2) = K * w + K / r := by field_simp
-    have hKr : K / r ≤ K := div_le_self hK hr
-    nlinarith
-  -- The vacuum defect `w` is controlled by the defect density and `|β|²`.
-  have hwd : w ≤ |1 - a - bb| + bb := by
-    rcases le_total (1 - a) 0 with h | h
-    · have hw : w = 0 := max_eq_right h
-      rw [hw]; positivity
-    · have hw : w = 1 - a := max_eq_left h
-      rw [hw]; linarith [le_abs_self (1 - a - bb)]
   -- The anti-self-dual bound divided by `√2`.
-  have hm : m / √2 ≤ r / 8 * (1 + δ) * w + C / √2 := by
+  have hm : m / √2 ≤ r / 8 * (1 + δ) * max (1 - ‖φ‖ ^ 2) 0 + C / √2 := by
     rw [div_le_iff₀ hs2p]
-    have : r / 8 * (1 + δ) * w * √2 = r / (4 * √2) * (1 + δ) * w := by
+    have : r / 8 * (1 + δ) * max (1 - ‖φ‖ ^ 2) 0 * √2 =
+        r / (4 * √2) * (1 + δ) * max (1 - ‖φ‖ ^ 2) 0 := by
       field_simp
       rw [Real.sq_sqrt zero_le_two]
       ring
     rw [add_mul, this, div_mul_cancel₀ _ hs2p.ne']
     exact hFm
   have hmain : ⟪J.kahlerForm, F⟫ / 2 + m / √2 ≤
-      (1 + δ) * (r / 4 * |1 - a - bb|) + ((1 + C) * K / 2 + K / 4 + √2 * ‖η‖ / 4 + C / √2) := by
-    have hd : r / 4 * w ≤ r / 4 * |1 - a - bb| + K / 2 := by
-      have := mul_le_mul_of_nonneg_left hwd (by positivity : (0 : ℝ) ≤ r / 4)
-      linarith
-    have hA : r / 8 * (1 - a + bb) ≤ r / 8 * w + K / 4 := by
-      have := mul_le_mul_of_nonneg_left h1a (by positivity : (0 : ℝ) ≤ r / 8)
-      linarith
-    have hδw : 0 ≤ r / 8 * δ * w := by positivity
-    have hδd : δ * (K / 2) ≤ C * (K / 2) := mul_le_mul_of_nonneg_right hδC (by positivity)
-    have hdd : (1 + δ) * (r / 4 * w) ≤ (1 + δ) * (r / 4 * |1 - a - bb| + K / 2) :=
-      mul_le_mul_of_nonneg_left hd (by linarith)
-    have e1 : r / 8 * (1 + δ) * w = r / 8 * w + r / 8 * δ * w := by ring
-    have e2 : (1 + δ) * (r / 4 * w) = 2 * (r / 8 * w) + 2 * (r / 8 * δ * w) := by ring
-    have e3 : (1 + δ) * (r / 4 * |1 - a - bb| + K / 2) =
-        (1 + δ) * (r / 4 * |1 - a - bb|) + K / 2 + δ * (K / 2) := by ring
-    have e4 : (1 + C) * K / 2 = K / 2 + C * (K / 2) := by ring
-    linarith [e1, e2, e3, e4]
+      (1 + δ) * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) +
+        ((1 + C) * K / 2 + K / 4 + √2 * ‖η‖ / 4 + C / √2) := by
+    have := mul_one_sub_add_add_le_mul_abs_add (sq_nonneg ‖φ‖) (sq_nonneg ‖β‖) hr hβK hδ0 hδC
+    linarith
   have hv := sq_nonneg ‖v‖
   have hBle : ‖v‖ ^ 2 * ⟪J.kahlerForm, F⟫ - J.hermitianForm F v v ≤
       ‖v‖ ^ 2 * (⟪J.kahlerForm, F⟫ / 2 + m / √2) := by

@@ -38,7 +38,7 @@ coefficients. For a closed two-form `F`, Stokes's theorem on the ball `ball x σ
 and on the sphere `λ ∧ F` is `(σ / 2) B(w, w)` times the area element, where
 `B(v, v) = F(v, J v)` is the Hermitian part of `F` and `w` is a unit vector orthogonal to `y - x`
 and `J (y - x)`. Equivalently, since `⋆((y - x) ∧ J (y - x)) = ‖y - x‖² ω - (y - x) ∧ J (y - x)`
-(`TauCeti.AlmostComplexStructure.hodgeStar_ιMulti_apply`),
+(`TauCeti.AlmostComplexStructure.hodgeStar_ιMulti_self_apply_self`),
 
 `∫_{ball x σ} ⟪ω, F⟫ = (2 σ)⁻¹ ∫_{sphere x σ} (‖y - x‖² ⟪ω, F⟫ - B(y - x, y - x))`
 
@@ -161,6 +161,23 @@ private theorem extDeriv_radialForm {J : AlmostComplexStructure V} (hJ : ∀ v w
   rw [real_inner_comm b (J a), hab, real_inner_comm (J a) b]
   ring
 
+/-! ### Cutting off at a closed ball inside `ball x R` -/
+
+/-- A function continuous on `ball x R` is integrable once cut off outside a closed ball
+`closedBall x M` with `M < R`. -/
+private theorem integrable_indicator_closedBall [MeasurableSpace V] [BorelSpace V] {f : V → ℝ}
+    {x : V} {R M : ℝ} (hf : ContinuousOn f (ball x R)) (hM : M < R) :
+    Integrable ((closedBall x M).indicator f) :=
+  (integrable_indicator_iff measurableSet_closedBall).2
+    ((hf.mono (closedBall_subset_ball hM)).integrableOn_compact (isCompact_closedBall x M))
+
+/-- Below the cutoff radius `M`, the ball integrals of the cutoff of `f` are those of `f`. -/
+private theorem setIntegral_ball_indicator_closedBall [MeasurableSpace V] [BorelSpace V]
+    (f : V → ℝ) (x : V) {σ M : ℝ} (hσ : σ ≤ M) :
+    ∫ y in ball x σ, (closedBall x M).indicator f y = ∫ y in ball x σ, f y :=
+  setIntegral_congr_fun measurableSet_ball fun _ hy ↦
+    indicator_of_mem (ball_subset_closedBall.trans (closedBall_subset_closedBall hσ) hy) f
+
 /-! ### Integration by parts and the flux identity -/
 
 variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
@@ -191,6 +208,11 @@ private theorem integral_inner_kahlerForm_add_eq_zero [MeasurableSpace V] [Borel
     (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm).mem_nhds hy
   have hzero (z : V) (hz : R' < ‖z - x‖) : J.radialForm H x z = 0 := by
     simp [radialForm, hHR _ hz.le]
+  have hout (y : V) (hy : y ∉ ball x R) : R' < ‖y - x‖ := by
+    rw [mem_ball, dist_eq_norm, not_lt] at hy; exact hR'.trans_le hy
+  have hwedge0 (y : V) (hy : R' < ‖y - x‖) :
+      (fun z ↦ wedge (φ z) (J.radialForm H x z)) =ᶠ[𝓝 y] 0 :=
+    (hfar y hy).mono fun z hz ↦ by simp [hzero z hz, wedge_def]
   have hc : HasCompactSupport (J.radialForm H x) :=
     HasCompactSupport.intro (isCompact_closedBall x R') fun y hy ↦
       hzero y (by rwa [mem_closedBall, dist_eq_norm, not_le] at hy)
@@ -199,10 +221,8 @@ private theorem integral_inner_kahlerForm_add_eq_zero [MeasurableSpace V] [Borel
     by_cases hy : y ∈ ball x R
     · simpa only [wedge_def] using contDiffAt_const.pairedWedge
         (hφ.contDiffAt (isOpen_ball.mem_nhds hy)) hrf.contDiffAt
-    · have hyR : R' < ‖y - x‖ := by
-        rw [mem_ball, dist_eq_norm, not_lt] at hy; exact hR'.trans_le hy
-      exact (contDiffAt_const (c := (0 : V [⋀^Fin 3]→L[ℝ] ℝ))).congr_of_eventuallyEq
-        ((hfar y hyR).mono fun z hz ↦ by simp [hzero z hz, wedge_def])
+    · exact (contDiffAt_const (c := (0 : V [⋀^Fin 3]→L[ℝ] ℝ))).congr_of_eventuallyEq
+        (hwedge0 y (hout y hy))
   obtain ⟨-, h⟩ := e.toBasis.integral_extDeriv_eq_zero hψ (hc.wedge_left (φ := φ))
   rw [e.addHaar_eq_volume] at h
   rw [← h]
@@ -225,20 +245,18 @@ private theorem integral_inner_kahlerForm_add_eq_zero [MeasurableSpace V] [Borel
       rw [o.volumeForm_robust e he]
       exact e.toBasis.det_self
     rw [hvol, map_add, map_smul, map_smul, hodgeStar_kahlerForm h₀ h₂ hkl he,
-      hodgeStar_ιMulti_apply h₀ h₂ hkl he]
+      hodgeStar_ιMulti_self_apply_self h₀ h₂ hkl he]
     simp only [inner_add_right, inner_smul_right, inner_sub_right, real_inner_comm (F y),
       hermitianForm_apply_self, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, mul_one,
       zero_add]
     rw [real_inner_comm]
     ring
   · -- Outside `ball x R` both the cutoff and its derivative vanish, and so does the form.
-    have hyR : R' < ‖y - x‖ := by
-      rw [mem_ball, dist_eq_norm, not_lt] at hy; exact hR'.trans_le hy
+    have hyR := hout y hy
     have hH0 : H =ᶠ[𝓝 ‖y - x‖] fun _ ↦ 0 :=
       (eventually_gt_nhds hyR).mono fun t ht ↦ hHR t ht.le
     have hd : extDeriv (fun y ↦ wedge (φ y) (J.radialForm H x y)) y = 0 := by
-      rw [Filter.EventuallyEq.extDeriv_eq (ω₂ := fun _ ↦ 0)
-        ((hfar y hyR).mono fun z hz ↦ by simp [hzero z hz, wedge_def]),
+      rw [Filter.EventuallyEq.extDeriv_eq (ω₂ := fun _ ↦ 0) (hwedge0 y hyR),
         ContinuousAlternatingMap.extDeriv_const]
       rfl
     rw [hd, hHR _ hyR.le, hH0.deriv_eq, deriv_const]
@@ -282,13 +300,9 @@ private theorem integral_smul_setIntegral_ball_sub_eq_zero [MeasurableSpace V] [
   have hsub : closedBall x R' ⊆ ball x R := closedBall_subset_ball hR'R
   have hsx : Continuous fun y : V ↦ y - x := continuous_id.sub continuous_const
   have hFc : ContinuousOn F (ball x R) := hF.continuousOn
-  have hg : ContinuousOn g (ball x R) := continuousOn_const.inner hFc
-  have hQ : ContinuousOn Q (ball x R) :=
-    ((hsx.norm.pow 2).continuousOn.mul hg).sub
-      (hFc.hermitianForm_apply hsx.continuousOn hsx.continuousOn)
-  have hgR : Integrable ((closedBall x R').indicator g) :=
-    (integrable_indicator_iff measurableSet_closedBall).2
-      ((hg.mono hsub).integrableOn_compact (isCompact_closedBall x R'))
+  have hg : ContinuousOn g (ball x R) := by fun_prop
+  have hQ : ContinuousOn Q (ball x R) := by fun_prop
+  have hgR := integrable_indicator_closedBall hg hR'R
   -- The weight `t ↦ ϕ t / (2 t)` is continuous and vanishes beyond `R'`.
   have hk : Continuous fun t ↦ ϕ t / (2 * t) := by
     simp_rw [div_mul_eq_div_div_swap]
@@ -344,8 +358,7 @@ private theorem integral_smul_setIntegral_ball_sub_eq_zero [MeasurableSpace V] [
       (hc.mul_right (f' := fun σ ↦ ∫ y in ball x σ, (closedBall x R').indicator g y))).congr
       (Eventually.of_forall fun σ ↦ ?_)
     rcases le_or_gt σ R' with hσ | hσ
-    · refine congrArg (ϕ σ * ·) (setIntegral_congr_fun measurableSet_ball fun y hy ↦ ?_)
-      exact indicator_of_mem (ball_subset_closedBall.trans (closedBall_subset_closedBall hσ) hy) g
+    · exact congrArg (ϕ σ * ·) (setIntegral_ball_indicator_closedBall g x hσ)
     · simp [hhigh σ hσ.le]
   simp only [smul_eq_mul, mul_sub]
   rw [integral_sub hGint hTint, ← hL, ← hR, hIBP, sub_self]
@@ -376,12 +389,9 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
   set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫
   set Q : V → ℝ := fun y ↦ ‖y - x‖ ^ 2 * g y - J.hermitianForm (F y) (y - x) (y - x)
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  have hsx : Continuous fun y : V ↦ y - x := continuous_id.sub continuous_const
   have hFc : ContinuousOn F (ball x R) := hF.continuousOn
-  have hg : ContinuousOn g (ball x R) := continuousOn_const.inner hFc
-  have hQ : ContinuousOn Q (ball x R) :=
-    ((hsx.norm.pow 2).continuousOn.mul hg).sub
-      (hFc.hermitianForm_apply hsx.continuousOn hsx.continuousOn)
+  have hg : ContinuousOn g (ball x R) := by fun_prop
+  have hQ : ContinuousOn Q (ball x R) := by fun_prop
   have hloc : LocallyIntegrableOn (fun σ ↦ (∫ y in ball x σ, g y) -
       (2 * σ)⁻¹ * ∫ y in sphere x σ, Q y ∂μHE[finrank ℝ V - 1]) (Ioo 0 R) := by
     refine (locallyIntegrableOn_iff isOpen_Ioo.isLocallyClosed).2 fun K hK hKc ↦ ?_
@@ -391,19 +401,12 @@ theorem ae_setIntegral_ball_inner_kahlerForm_eq [MeasurableSpace V] [BorelSpace 
     obtain ⟨m, hmK, hmax⟩ := hKc.exists_isGreatest hne
     obtain ⟨M, hmM, hMR⟩ := exists_between (hK hmK).2
     have hKM (r : ℝ) (hr : r ∈ K) : r < M := (hmax hr).trans_lt hmM
-    have hsub : closedBall x M ⊆ ball x R := closedBall_subset_ball hMR
-    have hgM : Integrable ((closedBall x M).indicator g) :=
-      (integrable_indicator_iff measurableSet_closedBall).2
-        ((hg.mono hsub).integrableOn_compact (isCompact_closedBall x M))
-    have hQM : Integrable ((closedBall x M).indicator Q) :=
-      (integrable_indicator_iff measurableSet_closedBall).2
-        ((hQ.mono hsub).integrableOn_compact (isCompact_closedBall x M))
     refine IntegrableOn.sub ?_ ?_
-    · refine ((hgM.continuous_setIntegral_ball x).continuousOn.integrableOn_compact hKc).congr_fun
-        (fun r hr ↦ setIntegral_congr_fun measurableSet_ball fun y hy ↦ indicator_of_mem
-          (ball_subset_closedBall.trans (closedBall_subset_closedBall (hKM r hr).le) hy) g)
-        hKc.measurableSet
-    · refine (((integrableOn_Ioi_setIntegral_sphere x hQM).mono_set
+    · refine (((integrable_indicator_closedBall hg hMR).continuous_setIntegral_ball
+        x).continuousOn.integrableOn_compact hKc).congr_fun
+        (fun r hr ↦ setIntegral_ball_indicator_closedBall g x (hKM r hr).le) hKc.measurableSet
+    · refine (((integrableOn_Ioi_setIntegral_sphere x
+        (integrable_indicator_closedBall hQ hMR)).mono_set
         fun r hr ↦ (hK hr).1).congr_fun (fun r hr ↦ setIntegral_congr_fun
           isClosed_sphere.measurableSet fun y hy ↦ indicator_of_mem ?_ Q)
           hKc.measurableSet).continuousOn_mul

@@ -153,17 +153,18 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
   have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
   set δ := C / √r
   set d : V → ℝ := fun y ↦ r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|
-  have hsx : Continuous fun y : V ↦ y - x := continuous_id.sub continuous_const
   have hdc : ContinuousOn d (ball x R) :=
     continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
   have hd0 (y : V) : 0 ≤ d y := by positivity
-  have hg : ContinuousOn (fun y ↦ ⟪J.kahlerForm, F y⟫) (ball x R) :=
-    continuousOn_const.inner hF.continuousOn
+  have hFc : ContinuousOn F (ball x R) := hF.continuousOn
   set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫
   set Qf : V → ℝ := fun y ↦ ‖y - x‖ ^ 2 * g y - J.hermitianForm (F y) (y - x) (y - x)
-  have hQc : ContinuousOn Qf (ball x R) :=
-    ((hsx.norm.pow 2).continuousOn.mul hg).sub
-      (hF.continuousOn.hermitianForm_apply hsx.continuousOn hsx.continuousOn)
+  have hg : ContinuousOn g (ball x R) := by fun_prop
+  have hQc : ContinuousOn Qf (ball x R) := by fun_prop
+  have hballI {f : V → ℝ} (hf : ContinuousOn f (ball x R)) {s : ℝ} (hs : s < R) :
+      IntegrableOn f (ball x s) :=
+    ((hf.mono (closedBall_subset_ball hs)).integrableOn_compact
+      (isCompact_closedBall x s)).mono_set ball_subset_closedBall
   -- On `ball x R` the density is bounded, so its cutoff `dR` outside the ball is integrable.
   set dR := (ball x R).indicator d
   have hdR : Integrable dR := by
@@ -179,16 +180,11 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
     have h3 := sq_nonneg ‖β y‖
     rw [Real.norm_of_nonneg (hd0 y)]
     exact mul_le_mul_of_nonneg_left (abs_le.2 ⟨by linarith, by linarith⟩) (by positivity)
-  -- The defect energy of a ball inside `ball x R` is the integral of `dR` over the open ball.
-  have hE (s : ℝ) (hs : s ≤ R) : ((volume : Measure V).withDensity
-      (fun y ↦ ENNReal.ofReal (d y)) (closedBall x s)).toReal = ∫ y in ball x s, dR y := by
-    have hdR0 (y : V) : 0 ≤ dR y := indicator_nonneg (fun y _ ↦ hd0 y) y
-    rw [withDensity_apply _ measurableSet_closedBall,
-      setLIntegral_congr ((volume : Measure V).addHaar_closedBall_ae_eq_ball x s),
-      setLIntegral_congr_fun (g := fun y ↦ ENNReal.ofReal (dR y)) measurableSet_ball fun y hy ↦
-        congrArg ENNReal.ofReal (indicator_of_mem (ball_subset_ball hs hy) d).symm,
-      ← ofReal_integral_eq_lintegral_ofReal hdR.integrableOn (Eventually.of_forall hdR0),
-      ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_ball fun y _ ↦ hdR0 y)]
+  -- The defect energy of a ball inside `ball x R` is the integral of `d` over the open ball.
+  have hE (s : ℝ) (hs : s < R) : ((volume : Measure V).withDensity
+      (fun y ↦ ENNReal.ofReal (d y)) (closedBall x s)).toReal = ∫ y in ball x s, d y :=
+    (volume : Measure V).withDensity_ofReal_real_closedBall_eq_setIntegral_ball (hballI hdc hs)
+      fun y _ ↦ hd0 y
   -- The two pointwise bounds on the ball.
   have hint (y : V) (hy : y ∈ ball x R) : d y ≤ g y + N₁ := by
     have h := mul_abs_one_sub_sub_le_inner_add hQ hkl hω hω₂ (hφ y hy) (hβ y hy) hr0 hC
@@ -215,27 +211,20 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
       IntegrableOn f (sphere x σ) μHE[finrank ℝ V - 1] :=
     (hf.mono hsph).integrableOn_of_subset_isCompact (isCompact_sphere x σ)
       isClosed_sphere.measurableSet subset_rfl hμS
-  have hballI {f : V → ℝ} (hf : ContinuousOn f (ball x R)) : IntegrableOn f (ball x σ) :=
-    ((hf.mono (closedBall_subset_ball hσR)).integrableOn_compact
-      (isCompact_closedBall x σ)).mono_set ball_subset_closedBall
   have h1' : ∫ y in ball x σ, g y =
       (2 * σ)⁻¹ * ∫ y in sphere x σ, Qf y ∂μHE[finrank ℝ V - 1] := h1 ⟨hσ0, hσR⟩
-  have hEσ : ((volume : Measure V).withDensity (fun y ↦ ENNReal.ofReal (d y))
-      (closedBall x σ)).toReal = ∫ y in ball x σ, d y :=
-    (hE σ hσR.le).trans
-      (setIntegral_congr_fun measurableSet_ball fun y hy ↦ indicator_of_mem (hsub hy) d)
   have hderiv : deriv (fun s ↦ ((volume : Measure V).withDensity
       (fun y ↦ ENNReal.ofReal (d y)) (closedBall x s)).toReal) σ =
       ∫ y in sphere x σ, d y ∂μHE[finrank ℝ V - 1] := by
-    rw [(h2.congr_of_eventuallyEq ((eventually_lt_nhds hσR).mono fun s hs ↦ hE s hs.le)).deriv]
+    rw [(h2.congr_of_eventuallyEq ((eventually_lt_nhds hσR).mono fun s hs ↦
+      (hE s hs).trans (setIntegral_congr_fun measurableSet_ball fun y hy ↦
+        (indicator_of_mem (ball_subset_ball hs.le hy) d).symm))).deriv]
     exact setIntegral_congr_fun isClosed_sphere.measurableSet fun y hy ↦
       indicator_of_mem (hsph hy) d
-  rw [hEσ, hderiv]
+  rw [hE σ hσR, hderiv]
   have hS1 : ∫ _ in sphere x σ, (1 : ℝ) ∂μHE[finrank ℝ V - 1] = V₁ * (4 * σ ^ 3) := by
-    rw [setIntegral_const, smul_eq_mul, mul_one, measureReal_def,
-      euclideanHausdorffMeasure_sphere x hσ0, (Fact.out : finrank ℝ V = 4)]
-    simp only [V₁, measureReal_def, ENNReal.toReal_mul, ENNReal.toReal_pow,
-      ENNReal.toReal_ofReal hσ0.le, ENNReal.toReal_natCast]
+    rw [setIntegral_const, smul_eq_mul, mul_one, euclideanHausdorffMeasure_real_sphere x hσ0,
+      (Fact.out : finrank ℝ V = 4)]
     norm_num
     ring
   have hvol : ∫ _ in ball x σ, (1 : ℝ) = V₁ * σ ^ 4 := by
@@ -244,10 +233,10 @@ theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C)
     ring
   -- The defect energy of the ball is at most the `ω`-component of the curvature, plus an error.
   have hball : ∫ y in ball x σ, d y ≤ (∫ y in ball x σ, g y) + N₁ * (V₁ * σ ^ 4) := by
-    have hgi : IntegrableOn g (ball x σ) := hballI hg
-    have h1i : IntegrableOn (fun _ ↦ (1 : ℝ)) (ball x σ) := hballI continuousOn_const
+    have hgi : IntegrableOn g (ball x σ) := hballI hg hσR
+    have h1i : IntegrableOn (fun _ ↦ (1 : ℝ)) (ball x σ) := hballI continuousOn_const hσR
     calc ∫ y in ball x σ, d y ≤ ∫ y in ball x σ, (g y + N₁ * 1) :=
-          setIntegral_mono_on (hballI hdc) (hgi.add (h1i.const_mul N₁)) measurableSet_ball
+          setIntegral_mono_on (hballI hdc hσR) (hgi.add (h1i.const_mul N₁)) measurableSet_ball
             fun y hy ↦ by simpa using hint y (hsub hy)
       _ = (∫ y in ball x σ, g y) + N₁ * (V₁ * σ ^ 4) := by
           rw [integral_add hgi (h1i.const_mul N₁), integral_const_mul, hvol]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
@@ -64,6 +65,8 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Measure.withDensity_ofReal_real_closedBall_eq_setIntegral_ball`: a closed ball
+  has measure `∫_{ball x r} f` under the density `ENNReal.ofReal ∘ f`.
 * `MeasureTheory.Integrable.continuous_setIntegral_ball`: the integral of an integrable function
   over `ball c r` is continuous in `r`.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
@@ -268,6 +271,22 @@ theorem _root_.MeasureTheory.Integrable.continuous_setIntegral_ball
       (Set.indicator_of_mem (mem_ball.2 hr) f).symm)
   · exact continuousAt_const.congr ((eventually_lt_nhds h).mono fun r hr ↦
       (Set.indicator_of_notMem (fun hy ↦ (mem_ball.1 hy).not_ge hr.le) f).symm)
+
+/-- For `f` integrable and nonnegative on `ball x r`, the closed ball `closedBall x r` has real
+measure `∫_{ball x r} f` under the density `ENNReal.ofReal ∘ f`, since its boundary sphere is
+null. -/
+theorem withDensity_ofReal_real_closedBall_eq_setIntegral_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] {f : E → ℝ} {x : E} {r : ℝ}
+    (hf : IntegrableOn f (ball x r) mu) (hf0 : ∀ y ∈ ball x r, 0 ≤ f y) :
+    (mu.withDensity fun y ↦ ENNReal.ofReal (f y)).real (closedBall x r) =
+      ∫ y in ball x r, f y ∂mu := by
+  rw [measureReal_def, withDensity_apply _ measurableSet_closedBall,
+    setLIntegral_congr (mu.addHaar_closedBall_ae_eq_ball x r),
+    ← ofReal_integral_eq_lintegral_ofReal hf
+      ((ae_restrict_iff' measurableSet_ball).2 (Filter.Eventually.of_forall hf0)),
+    ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_ball hf0)]
 
 /-- At nonzero radius, closed and open balls agree up to a null set even in a trivial space. -/
 theorem addHaar_closedBall_ae_eq_ball_of_ne_zero

@@ -59,7 +59,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
-  (`norm_kahlerForm_sq_eq_two`).
+  (`norm_kahlerForm_sq_eq_two`, `norm_kahlerForm_eq_sqrt_two`).
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
 * `map_kahlerForm_of_isComplexLinearMap`: complex-linear isometries preserve `ω`.
@@ -82,7 +82,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
-* `hodgeStar_ιMulti_apply`: `⋆(u ∧ J u) = ‖u‖² ω - u ∧ J u`.
+* `hodgeStar_ιMulti_self_apply_self`: `⋆(u ∧ J u) = ‖u‖² ω - u ∧ J u`.
 * `eq_smul_kahlerForm_add_of_lieMap_eq_zero`: a `J`-invariant `η` is
   `(⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`.
 
@@ -196,6 +196,10 @@ theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
 theorem norm_kahlerForm_sq_eq_two [Fact (finrank ℝ V = 4)] : ‖J.kahlerForm‖ ^ 2 = 2 := by
   rw [norm_kahlerForm_sq hJ, Fact.out (p := finrank ℝ V = 4)]
   norm_num
+
+/-- `‖ω‖ = √2` in dimension four. -/
+theorem norm_kahlerForm_eq_sqrt_two [Fact (finrank ℝ V = 4)] : ‖J.kahlerForm‖ = √2 := by
+  rw [← norm_kahlerForm_sq_eq_two hJ, Real.sqrt_sq (norm_nonneg _)]
 
 /-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
 norm. -/
@@ -483,7 +487,7 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
 include he h₀ h₂ in
 /-- **The Hodge star of `u ∧ J u`** is `‖u‖² ω - u ∧ J u`: for a unit vector `u` it is the wedge
 `w ∧ J w` of the complementary complex line of a unitary frame `(u, J u, w, J w)`. -/
-theorem hodgeStar_ιMulti_apply (u : V) :
+theorem hodgeStar_ιMulti_self_apply_self (u : V) :
     o.hodgeStar hkl (ιMulti ℝ 2 ![u, J u]) = ‖u‖ ^ 2 • J.kahlerForm - ιMulti ℝ 2 ![u, J u] := by
   -- The case `ξ = a = u` of `ιMulti_sub_ιMulti_add_hodgeStar`, where `u ∧ J u - J u ∧ u` is
   -- `2 (u ∧ J u)`.

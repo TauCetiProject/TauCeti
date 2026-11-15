@@ -61,6 +61,7 @@ lower bound on the dimension is needed: in dimension one, both measures count po
 * `TauCeti.toSphere_volume_apply_univ`: the same value `2 π ^ (n / 2) / Γ(n / 2)` for the total
   mass of Mathlib's surface measure `Measure.toSphere volume`.
 * `TauCeti.euclideanHausdorffMeasure_sphere`: `μHE[n - 1] (sphere c r) = n ω_n r ^ (n - 1)`.
+* `TauCeti.euclideanHausdorffMeasure_real_sphere`: the same value for the real measure.
 * `TauCeti.roundSphereVolume`: the area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`, its normalized
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
 * `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
@@ -400,6 +401,15 @@ theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
   rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
     _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
+
+/-- The real form of `euclideanHausdorffMeasure_sphere`: a sphere of radius `r > 0` in an
+`n`-dimensional real inner product space has real `(n - 1)`-dimensional Hausdorff measure
+`n ω_n r ^ (n - 1)`, where `ω_n` is the real volume of the unit ball. -/
+theorem euclideanHausdorffMeasure_real_sphere (c : E) {r : ℝ} (hr : 0 < r) :
+    μHE[finrank ℝ E - 1].real (sphere c r) =
+      finrank ℝ E * volume.real (ball (0 : E) 1) * r ^ (finrank ℝ E - 1) := by
+  rw [measureReal_def, euclideanHausdorffMeasure_sphere c hr]
+  simp [measureReal_def, ENNReal.toReal_ofReal hr.le]
 
 /-- The area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`: the normalized `n`-dimensional Hausdorff
 measure of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`. -/
