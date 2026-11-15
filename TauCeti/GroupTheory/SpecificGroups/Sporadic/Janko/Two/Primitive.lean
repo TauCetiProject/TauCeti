@@ -92,14 +92,18 @@ private theorem witness_spec : ∀ i,
       (witness i : Equiv.Perm (Fin 100)) 4 = fourPoint i := by
   decide +kernel
 
+private theorem mem_stabilizerChain_one_iff {g : Equiv.Perm (Fin 100)} :
+    g ∈ J2.stabilizerChain basePoint 1 ↔ g ∈ J2 ∧ g 0 = 0 := by
+  simp [Subgroup.stabilizerChain_succ, mem_stabilizer_iff, basePoint_def,
+    Equiv.Perm.smul_def]
+
 private theorem fourPoints_subset_orbit :
     (fourPoints : Set (Fin 100)) ⊆ orbit (J2.stabilizerChain basePoint 1) 4 := by
   intro x hx
   obtain ⟨i, _, rfl⟩ := Finset.mem_image.mp hx
   have hw := witness_spec i
   refine mem_orbit_iff.mpr ⟨⟨(witness i : Equiv.Perm (Fin 100)), ?_⟩, ?_⟩
-  · rw [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero]
-    exact ⟨(witness i).2, by simpa [mem_stabilizer_iff, basePoint_def] using hw.1⟩
+  · exact mem_stabilizerChain_one_iff.mpr ⟨(witness i).2, hw.1⟩
   · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using hw.2
 
 private theorem mem_fourPoints (x : Fin 100) :
@@ -118,10 +122,9 @@ private theorem orbit_four_eq :
   refine ⟨?_, fun h ↦ (mem_fourPoints 4).mp h4 |>.2 ?_⟩
   · rintro rfl
     obtain ⟨g, hg⟩ := mem_orbit_iff.mp hx
-    have hfix := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp g.2
     have hz : g • (0 : Fin 100) = 0 := by
-      simpa [basePoint_def, Subgroup.smul_def, Equiv.Perm.smul_def] using
-        hfix.2 0 (by decide)
+      simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using
+        (mem_stabilizerChain_one_iff.mp g.2).2
     exact (by decide : (4 : Fin 100) ≠ 0) ((MulAction.injective g) (hg.trans hz.symm))
   · exact mem_orbit_trans (mem_orbit_symm.mp hx) h
 
@@ -130,8 +133,8 @@ theorem orbit_stabilizer_zero_four :
     orbit (J2.stabilizerChain basePoint 1) (4 : Fin 100) =
       ({4, 5, 7, 10, 11, 16, 18, 20, 21, 26, 33, 36, 38, 44, 46, 48, 50, 51, 52, 53, 54, 55,
         59, 60, 61, 65, 68, 71, 78, 79, 80, 83, 84, 87, 91, 92} : Finset (Fin 100)) := by
-  rw [orbit_four_eq]
-  congr 1
+  rw [orbit_four_eq, Finset.coe_inj]
+  decide +kernel
 
 /-- The complementary stabilizer orbit has 36 points. -/
 @[simp]
@@ -144,14 +147,15 @@ private theorem orbit_subset_block {B : Set (Fin 100)} (hB : IsBlock J2 B)
     (h0 : 0 ∈ B) {x : Fin 100} (hx : x ∈ B) :
     orbit (J2.stabilizerChain basePoint 1) x ⊆ B := by
   rintro y ⟨g, rfl⟩
-  have hg := (Subgroup.mem_stabilizerChain_iff J2 basePoint).mp g.2
+  have hg := mem_stabilizerChain_one_iff.mp g.2
   let g' : J2 := ⟨g, hg.1⟩
   have hfix : g' ∈ stabilizer J2 (0 : Fin 100) := by
-    simpa [mem_stabilizer_iff, basePoint_def, g', Subgroup.smul_def] using
-      hg.2 0 (by decide)
+    simpa only [mem_stabilizer_iff, Subgroup.smul_def, Equiv.Perm.smul_def] using hg.2
   have hset := hB.stabilizer_le h0 hfix
   rw [mem_stabilizer_iff] at hset
-  exact hset ▸ Set.smul_mem_smul_set hx
+  simp only [Subgroup.smul_def]
+  rw [← Subgroup.mk_smul (g : Equiv.Perm (Fin 100)) hg.1 x, ← hset]
+  exact Set.smul_mem_smul_set hx
 
 private theorem block_ncard {B : Set (Fin 100)} (hB : IsBlock J2 B) (h0 : 0 ∈ B) :
     B.ncard = 1 ∨ B.ncard = 37 ∨ B.ncard = 64 ∨ B.ncard = 100 := by
