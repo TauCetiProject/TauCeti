@@ -554,23 +554,26 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
 
-/-- A map of pairs `f : (X, A) ⟶ (X', A')` such that `Hₙ₊₁` and `Hₙ` of both pairs vanish induces
-an isomorphism `Hₙ(X) ≅ Hₙ(X')` if it induces one on `Hₙ(A) ≅ Hₙ(A')`. -/
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` such that `Hₙ` of both pairs and `Hₙ₊₁(X', A')` vanish
+induces an isomorphism `Hₙ(X) ≅ Hₙ(X')` if it induces one on `Hₙ(A) ≅ Hₙ(A')`. -/
 lemma isIso_homologyMap_fst_of_isZero {P P' : TopPair.{w}} (f : P ⟶ P') {n : ℕ}
-    (h₁ : IsZero (P.singularHomology R (n + 1))) (h₀ : IsZero (P.singularHomology R n))
-    (h₁' : IsZero (P'.singularHomology R (n + 1))) (h₀' : IsZero (P'.singularHomology R n))
+    (h₀ : IsZero (P.singularHomology R n)) (h₁' : IsZero (P'.singularHomology R (n + 1)))
+    (h₀' : IsZero (P'.singularHomology R n))
     (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n)) :
     IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
-  have := P.isIso_homologyMap_map_of_isZero R h₁ h₀
   have := P'.isIso_homologyMap_map_of_isZero R h₁' h₀'
-  -- The map on `Hₙ(X)` is the map on `Hₙ(A)` conjugated by the isomorphisms `Hₙ(A) ≅ Hₙ(X)`.
-  have h : SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n =
-      inv (SSet.homologyMap (TopCat.toSSet.map P.map) R n) ≫
+  have hw : SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫
+      SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n =
         SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n ≫
           SSet.homologyMap (TopCat.toSSet.map P'.map) R n := by
-    rw [IsIso.eq_inv_comp, ← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp,
-      ← Functor.map_comp, Hom.w]
-  rw [h]
+    rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
+      Hom.w]
+  -- `Hₙ(A) ⟶ Hₙ(X)` is a monomorphism, since following it by the map on `Hₙ(X)` is an
+  -- isomorphism, and an epimorphism since `Hₙ(X, A)` vanishes.
+  have := mono_of_mono_fac hw
+  have := P.epi_homologyMap_map_of_isZero R h₀
+  have := isIso_of_mono_of_epi (SSet.homologyMap (TopCat.toSSet.map P.map) R n)
+  rw [← isIso_comp_left_iff (SSet.homologyMap (TopCat.toSSet.map P.map) R n), hw]
   infer_instance
 
 /-- The connecting morphism of the long exact sequence of a topological pair is natural: for a

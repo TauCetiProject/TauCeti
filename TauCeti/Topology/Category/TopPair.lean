@@ -720,4 +720,18 @@ lemma preimagePairMap_snd (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST 
     TopPair.Hom.snd (preimagePairMap f hf hST) = f.preimageMap hf S :=
   (rfl)
 
+@[simp]
+lemma preimagePairMap_id (hf : 𝟙 E ≫ p = p) {S T : Set B} (hST : S ⊆ T) :
+    preimagePairMap (𝟙 E) hf hST = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (preimageMap_id hf T)
+
+/-- The maps of pairs induced by maps over `B` compose. It is stated in this direction so that
+`simp` can use it: the middle map `p'` cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma preimagePairMap_comp_preimagePairMap {E'' : TopCat.{u}} {p'' : E'' ⟶ B} (f : E ⟶ E')
+    (f' : E' ⟶ E'') (hf : f ≫ p' = p) (hf' : f' ≫ p'' = p') {S T : Set B} (hST : S ⊆ T) :
+    preimagePairMap f hf hST ≫ preimagePairMap f' hf' hST =
+      preimagePairMap (f ≫ f') (by rw [Category.assoc, hf', hf]) hST :=
+  TopPair.hom_ext_of_fst _ (preimageMap_comp_preimageMap f f' hf hf' T)
+
 end TopCat.Hom

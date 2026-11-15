@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Sigma
 public import TauCeti.AlgebraicTopology.Singular.Fibration.CellFiber
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
-public import TauCeti.Topology.CWComplex.Comparison
 public import TauCeti.Topology.Homotopy.SerreFibration.WeakHomotopyEquivalence
 
 /-!
@@ -42,7 +41,8 @@ union of the cells of dimension at most `n`.
   (`TauCeti.TopCat.isColimitCofanSingularHomologyPreimageSkeletonPair`), so `f` induces
   isomorphisms `Hₘ(Eₙ, Eₙ₋₁) ≅ Hₘ(E'ₙ, E'ₙ₋₁)` for `m ≤ k + n`.
 * By induction on `n`, `f` induces isomorphisms `Hₘ(Eₙ) ≅ Hₘ(E'ₙ)` for `m ≤ k`. Over the
-  `0`-skeleton, `E₋₁` is empty and `Hₘ(E₀) ≅ Hₘ(E₀, E₋₁)`; afterwards the five lemma for the
+  `0`-skeleton, `E₋₁` is empty and `Hₘ(E₀) ≅ Hₘ(E₀, E₋₁)`
+  (`TopPair.isIso_homologyMap_fst_of_isEmpty`); afterwards the five lemma for the
   ambient space of a pair (`TopPair.isIso_homologyMap_fst_of_isIso`) applies.
 * `Hₖ(Eₙ) ⟶ Hₖ(E)` is an isomorphism once `n ≥ k + 1`, because `Hₘ(E, Eₙ) = 0` for `m ≤ n`
   (`TauCeti.TopCat.isZero_singularHomology_preimage_skeletonLT`), so the isomorphism
@@ -118,42 +118,11 @@ private lemma isIso_singularHomologyMap_cellDiskPullbackPairHom (sq : CommSq f p
       (isZero_singularHomology_preimage_sphere R hP (by simpa using hm)).isoZero
       (isZero_singularHomology_preimage_sphere R hP' (by simpa using hm)).isoZero
   obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_le' hm
-  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
-  have hfP := _root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf
-  -- The map of fibres over the centre of the disk.
-  let g := TopCat.Hom.preimageMap _ hfP {x | (x : ULift.{u} (Fin n → ℝ)) = 0}
-  -- Through the identifications of the fibres over the centres, `g` is the fibre map of `f`.
-  let e := _root_.TopCat.isoOfHomeo (X := _root_.TopCat.of
-      (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹' {x | (x : ULift.{u} (Fin n → ℝ)) = 0}))
-    (Y := p.fiber (map n j 0)) (cellDiskPullbackFiberHomeomorph p C n j)
-  let e' := _root_.TopCat.isoOfHomeo (X := _root_.TopCat.of
-      (_root_.TopCat.pullbackFst (cellULiftMap C n j) p' ⁻¹' {x | (x : ULift.{u} (Fin n → ℝ)) = 0}))
-    (Y := p'.fiber ((𝟙 B : B ⟶ B) (map n j 0))) (cellDiskPullbackFiberHomeomorph p' C n j)
-  have hge : g ≫ e'.hom = e.hom ≫ sq.fiberMap (map n j 0) := by
-    ext x
-    -- Both sides send `x` to `f x.1.1.2`.
-    calc (cellDiskPullbackFiberHomeomorph p' C n j (g x) : E') = (g x).1.1.2 :=
-          coe_cellDiskPullbackFiberHomeomorph_apply n j (g x)
-      _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x.1).1.2 := by
-          rw [TopCat.Hom.coe_preimageMap_apply]
-      _ = f x.1.1.2 := by rw [_root_.TopCat.coe_pullbackMapOfCompEq_apply]
-      _ = f (cellDiskPullbackFiberHomeomorph p C n j x) :=
-          congrArg f (coe_cellDiskPullbackFiberHomeomorph_apply n j x).symm
-      _ = sq.fiberMap (map n j 0) (cellDiskPullbackFiberHomeomorph p C n j x) :=
-          (sq.fiberMap_apply_coe _ _).symm
-  have hHg : IsIso (H.map g) := by
-    have := hfib q rfl
-    rw [← isIso_comp_right_iff _ (H.map e'.hom), ← H.map_comp, hge, H.map_comp]
-    infer_instance
-  have nat := singularHomologyPreimageSphereIso_hom_naturality R hP hP' hfP g
-    (TopCat.Hom.coe_preimageMap_apply _ hfP _) q (q + n) (by simp)
-  have : TopPair.singularHomologyMap (cellDiskPullbackPairHom hf n j) (ModuleCat.of R R) (q + n) =
-      (singularHomologyPreimageSphereIso R hP q (q + n) (by simp)).hom ≫ H.map g ≫
-        (singularHomologyPreimageSphereIso R hP' q (q + n) (by simp)).inv := by
-    -- The pair map of the cells is `TopPair.ofSubsetMap` of the same map, by definition.
-    rw [← reassoc_of% nat, Iso.hom_inv_id, Category.comp_id]
-  rw [this]
-  infer_instance
+  -- Through the identifications `Hq+n(Pⱼ, ∂Pⱼ) ≅ Hq(Fⱼ)`, the map is the fibre map of `f` on `Hq`.
+  rw [← isIso_comp_right_iff _ (cellDiskPullbackPairSingularHomologyIso hp' R n q j).hom,
+    cellDiskPullbackPairSingularHomologyIso_hom_naturality hp R hp' hf n q j
+      (sq.fiberMap (map n j 0)) (sq.fiberMap_apply_coe _)]
+  exact IsIso.comp_isIso' inferInstance (hfib q rfl)
 
 /-- **A map of Serre fibrations which is a homology isomorphism on the fibres is one on
 consecutive stages of the skeletal filtration.** Let `p` and `p'` be Serre fibrations over `B`,
@@ -192,80 +161,53 @@ variable [T2Space B] {C : Set B} [CWComplex C] (hp : serreFibrations p)
   (hp' : serreFibrations p') (R : Type u) [Ring R] (sq : CommSq f p p' (𝟙 B))
 include hp hp'
 
+omit hp hp' in
+/-- Over the empty `(-1)`-skeleton `skeletonLT C 0`, the part of a space over `B` is empty. -/
+private lemma isEmpty_preimage_skeletonLT_zero {X : _root_.TopCat.{u}} (q : X ⟶ B) :
+    IsEmpty (q ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
+  have hD : (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B) = ∅ := CWComplex.skeletonLT_zero_eq_empty
+  rw [hD, preimage_empty]
+  infer_instance
+
 /-- A map of Serre fibrations which is a homology isomorphism on the fibres in degrees at most `k`
-is one over every skeleton, in degrees at most `k`. -/
+is one over every skeleton `Xⁿ = skeletonLT C (n + 1)`, in degrees at most `k`. -/
 private lemma isIso_singularHomologyMap_preimageMap_skeletonLT {k : ℕ}
     (hfib : ∀ b ∈ C, ∀ q ≤ k, IsIso (((AlgebraicTopology.singularHomologyFunctor
-      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (sq.fiberMap b))) :
-    ∀ (n m : ℕ), m ≤ k → IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (f.preimageMap
-      (sq.w.trans (Category.comp_id p)) (skeletonLT C n : Set B))) (ModuleCat.of R R) m)
-  | 0, m, _ => by
-    -- Over the empty `(-1)`-skeleton both spaces are empty.
-    have hD : (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B) = ∅ := CWComplex.skeletonLT_zero_eq_empty
-    have h₀ : IsEmpty (p ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
-      rw [hD, preimage_empty]
-      infer_instance
-    have h₀' : IsEmpty (p' ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
-      rw [hD, preimage_empty]
-      infer_instance
-    have : IsIso (f.preimageMap (sq.w.trans (Category.comp_id p))
-        (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) :=
-      (_root_.TopCat.isIso_iff_isHomeomorph _).2
-        ⟨by fun_prop, fun _ _ ↦ by simp [Set.eq_empty_of_isEmpty],
-          ⟨fun x ↦ h₀.elim x, fun y ↦ h₀'.elim y⟩⟩
-    exact Functor.map_isIso ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
-      (ModuleCat.of R R)) _
-  | n + 1, m, hm => by
-    have hf : f ≫ p' = p := sq.w.trans (Category.comp_id p)
-    have hST := skeletonLT_subset_skeletonLT_succ C n
-    -- The map of pairs of consecutive stages is an isomorphism in degrees at most `k + n`.
-    have hrel (m' : ℕ) (hm' : m' ≤ k + n) : IsIso (TopPair.singularHomologyMap
-        (TopCat.Hom.preimagePairMap f hf hST) (ModuleCat.of R R) m') :=
-      isIso_singularHomologyMap_preimagePairMap hp hp' R sq n m' fun j q hq ↦
-        hfib _ (closedCell_subset_complex n j ⟨0, mem_closedBall_self zero_le_one, rfl⟩) q
-          (by lia)
-    have ih := isIso_singularHomologyMap_preimageMap_skeletonLT hfib n
-    have key : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
-        (TopPair.Hom.fst (TopCat.Hom.preimagePairMap f hf hST))) (ModuleCat.of R R) m) := by
-      rcases n with _ | n
-      · -- Over the `0`-skeleton, homology is relative homology modulo the empty preimage of the
-        -- `(-1)`-skeleton.
-        have hD : (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B) = ∅ := CWComplex.skeletonLT_zero_eq_empty
-        have h₀ : IsEmpty (p ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
-          rw [hD, preimage_empty]
+      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (sq.fiberMap b))) (n m : ℕ) (hm : m ≤ k) :
+    IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (f.preimageMap
+      (sq.w.trans (Category.comp_id p)) (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)))
+      (ModuleCat.of R R) m) := by
+  have hf : f ≫ p' = p := sq.w.trans (Category.comp_id p)
+  have hST := skeletonLT_subset_skeletonLT_succ C n
+  -- The map of pairs `(Eₙ, Eₙ₋₁) ⟶ (E'ₙ, E'ₙ₋₁)` is an isomorphism in degrees at most `k + n`.
+  have hrel (m' : ℕ) (hm' : m' ≤ k + n) : IsIso (TopPair.singularHomologyMap
+      (TopCat.Hom.preimagePairMap f hf hST) (ModuleCat.of R R) m') :=
+    isIso_singularHomologyMap_preimagePairMap hp hp' R sq n m' fun j q hq ↦
+      hfib _ (closedCell_subset_complex n j ⟨0, mem_closedBall_self zero_le_one, rfl⟩) q
+        (by lia)
+  have key : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
+      (TopPair.Hom.fst (TopCat.Hom.preimagePairMap f hf hST))) (ModuleCat.of R R) m) := by
+    match n with
+    | 0 =>
+      -- Over the `0`-skeleton, homology is relative homology modulo the empty `E₋₁`.
+      have : IsEmpty (TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).snd :=
+        isEmpty_preimage_skeletonLT_zero p'
+      exact TopPair.isIso_homologyMap_fst_of_isEmpty (ModuleCat.{u} R) (ModuleCat.of R R) _ m
+        (hrel m (by lia))
+    | n + 1 =>
+      -- Afterwards the five lemma for the pair `(Eₙ, Eₙ₋₁)` applies, by induction on `n`.
+      have hsnd (m' : ℕ) (hm' : m' ≤ k) : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
+          (TopPair.Hom.snd (TopCat.Hom.preimagePairMap f hf hST))) (ModuleCat.of R R) m') := by
+        rw [TopCat.Hom.preimagePairMap_snd]
+        exact isIso_singularHomologyMap_preimageMap_skeletonLT hfib n m' hm'
+      have := hrel (m + 1) (by lia)
+      exact TopPair.isIso_homologyMap_fst_of_isIso (ModuleCat.of R R)
+        (TopCat.Hom.preimagePairMap f hf hST) m inferInstance (hsnd m hm) (hrel m (by lia))
+        fun m' _ ↦ by
+          have := hsnd m' (by lia)
           infer_instance
-        have h₀' : IsEmpty (p' ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
-          rw [hD, preimage_empty]
-          infer_instance
-        have hπ : IsIso (TopPair.singularHomologyπ
-            (TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)) (ModuleCat.of R R) m) := by
-          have : IsEmpty (TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST)).snd := h₀
-          infer_instance
-        have hπ' : IsIso (TopPair.singularHomologyπ
-            (TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST))
-            (ModuleCat.of R R) m) := by
-          have : IsEmpty (TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).snd := h₀'
-          infer_instance
-        have := hrel m (by lia)
-        have : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
-            (TopPair.Hom.fst (TopCat.Hom.preimagePairMap f hf hST))) (ModuleCat.of R R) m ≫
-              (TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST)).singularHomologyπ
-                (ModuleCat.of R R) m) := by
-          rw [TopPair.singularHomologyπ_naturality]
-          exact IsIso.comp_isIso' hπ inferInstance
-        exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hπ' this
-      · have hsnd (m' : ℕ) (hm' : m' ≤ k) : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
-            (TopPair.Hom.snd (TopCat.Hom.preimagePairMap f hf hST))) (ModuleCat.of R R) m') := by
-          rw [TopCat.Hom.preimagePairMap_snd]
-          exact ih m' hm'
-        have := hrel (m + 1) (by lia)
-        exact TopPair.isIso_homologyMap_fst_of_isIso (ModuleCat.of R R)
-          (TopCat.Hom.preimagePairMap f hf hST) m inferInstance (hsnd m hm) (hrel m (by lia))
-          fun m' _ ↦ by
-            have := hsnd m' (by lia)
-            infer_instance
-    rw [TopCat.Hom.preimagePairMap_fst] at key
-    exact key
+  rw [TopCat.Hom.preimagePairMap_fst] at key
+  exact key
 
 /-- **A map of Serre fibrations which is a homology isomorphism on the fibres is one over a CW
 complex in the base.** Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations, `f : E ⟶ E'` a map
@@ -280,14 +222,13 @@ private theorem isIso_singularHomologyMap_preimage_of_commSq (k : ℕ)
   have hf : f ≫ p' = p := sq.w.trans (Category.comp_id p)
   -- `Hₖ(p⁻¹(Xᵏ⁺¹)) ⟶ Hₖ(p⁻¹(C))` is an isomorphism, since `Hₘ(p⁻¹(C), p⁻¹(Xᵏ⁺¹)) = 0` for
   -- `m ≤ k + 1`, and likewise for `p'`.
-  have hS := isIso_singularHomologyMap_preimageMap_skeletonLT hp hp' R sq hfib (k + 1 + 1) k le_rfl
+  have hS := isIso_singularHomologyMap_preimageMap_skeletonLT hp hp' R sq hfib (k + 1) k le_rfl
   rw [Nat.cast_succ (k + 1)] at hS
   have hST := skeletonLT_mono (C := C) (le_top : ((k + 1 : ℕ) : ℕ∞) + 1 ≤ ⊤)
   have : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
       (TopPair.Hom.fst (TopCat.Hom.preimagePairMap f hf hST))) (ModuleCat.of R R) k) :=
     TopPair.isIso_homologyMap_fst_of_isZero (ModuleCat.of R R)
       (TopCat.Hom.preimagePairMap f hf hST)
-      (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
       (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
       (isZero_singularHomology_preimage_skeletonLT hp' R le_top (by lia))
       (isZero_singularHomology_preimage_skeletonLT hp' R le_top (by lia))
@@ -345,14 +286,9 @@ private theorem isIso_singularHomologyMap_of_commSq_id (sq : CommSq f p p' (𝟙
     IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
       (ModuleCat.of R R)).map f) := by
   have hf : f ≫ p' = p := sq.w.trans (Category.comp_id p)
-  -- A CW complex `C` with a weak homotopy equivalence `g : C ⟶ B`.
-  obtain ⟨Y, _, _, C, _, ⟨h⟩⟩ := (cwType_sigmaCWApproximation B).exists_homotopyEquiv
-  let _ : CWComplex (univ : Set C) := cwComplexUniv C
-  let g : _root_.TopCat.of C ⟶ B :=
-    _root_.TopCat.ofHom h.symm.toFun ≫ sigmaCWApproximationMap B
-  have hg : g.hom.IsWeakHomotopyEquivalence :=
-    (isWeakHomotopyEquivalence_sigmaCWApproximationMap B).comp
-      h.symm.isWeakHomotopyEquivalence
+  -- The CW approximation `g : ΓB ⟶ B` of `B`.
+  let g := sigmaCWApproximationMap B
+  have hg : g.hom.IsWeakHomotopyEquivalence := isWeakHomotopyEquivalence_sigmaCWApproximationMap B
   -- The map of the pulled-back fibrations induced by `f`.
   let sqP : CommSq (_root_.TopCat.pullbackMapOfCompEq g hf) (_root_.TopCat.pullbackFst g p)
       (_root_.TopCat.pullbackFst g p') (𝟙 _) :=
@@ -381,10 +317,10 @@ private theorem isIso_singularHomologyMap_of_commSq_id (sq : CommSq f p p' (𝟙
 
 end Arbitrary
 
-/-- **A map of Serre fibrations which is a homology isomorphism on the fibres is a homology
-isomorphism.** Let `p : E ⟶ B` and `p' : E' ⟶ B'` be Serre fibrations and `f : E ⟶ E'` a map over
-a weak homotopy equivalence `g : B ⟶ B'`. If for every `b : B` the map of fibres
-`p⁻¹(b) ⟶ p'⁻¹(g b)` induces isomorphisms on `Hq(-; R)` for `q ≤ k`, then `f` induces an
+/-- **A map of Serre fibrations over a weak homotopy equivalence which is a homology isomorphism on
+the fibres is a homology isomorphism.** Let `p : E ⟶ B` and `p' : E' ⟶ B'` be Serre fibrations and
+`f : E ⟶ E'` a map over a weak homotopy equivalence `g : B ⟶ B'`. If for every `b : B` the map of
+fibres `p⁻¹(b) ⟶ p'⁻¹(g b)` induces isomorphisms on `Hq(-; R)` for `q ≤ k`, then `f` induces an
 isomorphism `Hₖ(E; R) ≅ Hₖ(E'; R)`. This is the homological counterpart of
 `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`. -/
 theorem isIso_singularHomologyMap_of_commSq {B' : _root_.TopCat.{u}} {p' : E' ⟶ B'} {g : B ⟶ B'}

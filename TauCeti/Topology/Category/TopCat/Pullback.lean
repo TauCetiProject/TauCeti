@@ -96,6 +96,20 @@ lemma pullbackMapOfCompEq_comp_pullbackSnd (g : B' ⟶ B) (hf : f ≫ p' = p) :
     pullbackMapOfCompEq g hf ≫ pullbackSnd g p' = pullbackSnd g p ≫ f :=
   (rfl)
 
+@[simp]
+lemma pullbackMapOfCompEq_id (g : B' ⟶ B) (hf : 𝟙 E ≫ p = p) :
+    pullbackMapOfCompEq (f := 𝟙 E) g hf = 𝟙 _ :=
+  (rfl)
+
+/-- The maps of base changes induced by maps over `B` compose. It is stated in this direction so
+that `simp` can use it: the middle map `p'` cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma pullbackMapOfCompEq_comp_pullbackMapOfCompEq {E'' : TopCat.{u}} {p'' : E'' ⟶ B}
+    {f' : E' ⟶ E''} (g : B' ⟶ B) (hf : f ≫ p' = p) (hf' : f' ≫ p'' = p') :
+    pullbackMapOfCompEq g hf ≫ pullbackMapOfCompEq g hf' =
+      pullbackMapOfCompEq (f := f ≫ f') g (by rw [Category.assoc, hf', hf]) :=
+  (rfl)
+
 end TopCat
 
 namespace TopCat.Hom
