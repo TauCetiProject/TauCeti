@@ -168,6 +168,23 @@ instance instRing : Ring (ContinuousLinearMapStrongStar 𝕜 E E) :=
 @[simp] theorem toCLM_mul (A B : ContinuousLinearMapStrongStar 𝕜 E E) :
     (A * B).toCLM = A.toCLM * B.toCLM := rfl
 
+@[simp] theorem ofCLM_toCLM (A : ContinuousLinearMapStrongStar 𝕜 E F) : ofCLM A.toCLM = A := rfl
+
+@[simp] theorem ofCLM_zero : ofCLM (0 : E →L[𝕜] F) = 0 := rfl
+
+@[simp] theorem ofCLM_add (x y : E →L[𝕜] F) : ofCLM (x + y) = ofCLM x + ofCLM y := rfl
+
+@[simp] theorem ofCLM_neg (x : E →L[𝕜] F) : ofCLM (-x) = -ofCLM x := rfl
+
+@[simp] theorem ofCLM_sub (x y : E →L[𝕜] F) : ofCLM (x - y) = ofCLM x - ofCLM y := rfl
+
+@[simp] theorem ofCLM_smul {S : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S F]
+    [ContinuousConstSMul S F] (c : S) (x : E →L[𝕜] F) : ofCLM (c • x) = c • ofCLM x := rfl
+
+@[simp] theorem ofCLM_one : ofCLM (1 : E →L[𝕜] E) = 1 := rfl
+
+@[simp] theorem ofCLM_mul (x y : E →L[𝕜] E) : ofCLM (x * y) = ofCLM x * ofCLM y := rfl
+
 /-- The linear equivalence between the strong-star copy and `E →L[𝕜] F`. -/
 @[simps!]
 def linearEquiv (S : Type*) [Semiring S] [Module S F] [SMulCommClass 𝕜 S F]
@@ -188,6 +205,12 @@ instance instStarModule : StarModule 𝕜 (ContinuousLinearMapStrongStar 𝕜 E 
 
 @[simp] theorem toCLM_star (A : ContinuousLinearMapStrongStar 𝕜 E E) :
     (star A).toCLM = star A.toCLM := rfl
+
+@[simp] theorem ofCLM_star (x : E →L[𝕜] E) : ofCLM (star x) = star (ofCLM x) := rfl
+
+@[simp] theorem isSelfAdjoint_ofCLM_iff {x : E →L[𝕜] E} :
+    IsSelfAdjoint (ofCLM x) ↔ IsSelfAdjoint x :=
+  ofCLM_injective.eq_iff
 
 end Algebra
 

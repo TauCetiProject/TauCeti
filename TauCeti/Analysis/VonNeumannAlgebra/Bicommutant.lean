@@ -208,16 +208,13 @@ theorem closure_image_strongStar_ofCLM_inter_selfAdjoint [NormedSpace ℝ H] [Is
       ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H))) =
       ContinuousLinearMapStrongStar.ofCLM ''
         ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) := by
-  -- Adjoints on the strong-star copy are computed on the underlying operators.
-  have hsa {x : H →L[𝕜] H} : IsSelfAdjoint (ContinuousLinearMapStrongStar.ofCLM x) ↔
-      IsSelfAdjoint x :=
-    ContinuousLinearMapStrongStar.ofCLM_injective.eq_iff
   have hs : ∀ B ∈ ContinuousLinearMapStrongStar.ofCLM ''
       ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)), IsStarNormal B.toCLM := by
     rintro _ ⟨b, hb, rfl⟩
     exact hb.2.isStarNormal
   ext A
-  obtain ⟨x, rfl⟩ : ∃ x, ContinuousLinearMapStrongStar.ofCLM x = A := ⟨A.toCLM, rfl⟩
+  obtain ⟨x, rfl⟩ : ∃ x, ContinuousLinearMapStrongStar.ofCLM x = A :=
+    ⟨A.toCLM, ContinuousLinearMapStrongStar.ofCLM_toCLM A⟩
   rw [ContinuousLinearMapStrongStar.ofCLM_injective.mem_set_image]
   -- On self-adjoint operators the strong-star and strong closures agree.
   have key (hx : IsSelfAdjoint x) : ContinuousLinearMapStrongStar.ofCLM x ∈ closure
@@ -229,8 +226,12 @@ theorem closure_image_strongStar_ofCLM_inter_selfAdjoint [NormedSpace ℝ H] [Is
       ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image]
     exact ⟨And.left, fun h ↦ ⟨h, hx⟩⟩
   refine ⟨fun h ↦ ?_, fun h ↦ (key h.2).2 h.1⟩
-  have hx : IsSelfAdjoint x := hsa.mp <| closure_minimal (t := {B | IsSelfAdjoint B})
-    (by rintro _ ⟨b, hb, rfl⟩; exact hsa.mpr hb.2) (isClosed_eq continuous_star continuous_id) h
+  have hx : IsSelfAdjoint x := ContinuousLinearMapStrongStar.isSelfAdjoint_ofCLM_iff.mp <|
+    closure_minimal (t := {B | IsSelfAdjoint B})
+      (by
+        rintro _ ⟨b, hb, rfl⟩
+        exact ContinuousLinearMapStrongStar.isSelfAdjoint_ofCLM_iff.mpr hb.2)
+      (isClosed_eq continuous_star continuous_id) h
   exact ⟨(key hx).1 h, hx⟩
 
 end StrongStar
