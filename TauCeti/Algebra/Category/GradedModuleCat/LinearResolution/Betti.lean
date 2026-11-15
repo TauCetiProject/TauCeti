@@ -41,24 +41,30 @@ single term, so no finite projective dimension is needed.
 
 ## Main definitions
 
-* `TauCeti.GradedProjectiveResolution.bettiPoincareSeries`: the Betti Poincaré series of a
+* `TauCeti.GradedProjectiveResolution.bettiPoincarePowerSeries`: the Betti Poincaré series of a
   resolution at a projective basis vector.
-* `TauCeti.bettiPoincareMatrix`: the Betti Poincaré series of a family of resolutions, as a matrix.
+* `TauCeti.bettiPoincarePowerSeriesMatrix`: the Betti Poincaré series of a family of resolutions,
+  as a matrix.
 
 ## Main results
 
-* `GradedProjectiveResolution.IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries`:
-  the coefficient of `qʲ tⁿ` in `dᵢ` times the Betti series is `dim_k Extⁿ(M, Sᵢ{j})`.
-* `TauCeti.GradedProjectiveResolution.IsMinimal.C_smulGradedDimension_mul_bettiPoincareSeries`:
-  `dᵢ` times the Betti series is the bigraded Ext Poincaré series against `Sᵢ`.
-* `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq`: the Betti series does not
-  depend on the minimal resolution.
-* `TauCeti.GradedProjectiveResolution.IsMinimal.isLinear_iff_diagonal_bettiPoincareSeries`: a
-  minimal resolution is linear exactly when its Betti series have diagonal support.
-* `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_shiftObj_one`: the Betti series
-  of `M{1}` is `q` times that of `M`.
-* `TauCeti.forall_isLinear_iff_diagonal_bettiPoincareMatrix`: minimal resolutions of the members
-  of a family are all linear exactly when the Betti Poincaré matrix has diagonal support.
+In the namespace `TauCeti.GradedProjectiveResolution`:
+
+* `IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries`: the coefficient of
+  `qʲ tⁿ` in `dᵢ` times the Betti series is `dim_k Extⁿ(M, Sᵢ{j})`.
+* `IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries`: `dᵢ` times the Betti series is
+  the bigraded Ext Poincaré series against `Sᵢ`.
+* `IsMinimal.bettiPoincarePowerSeries_eq`: the Betti series does not depend on the minimal
+  resolution.
+* `IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries`: a minimal resolution is linear
+  exactly when its Betti series have diagonal support.
+* `IsMinimal.bettiPoincarePowerSeries_shiftObj_one`: the Betti series of `M{1}` is `q` times that
+  of `M`.
+
+In the namespace `TauCeti`:
+
+* `forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix`: minimal resolutions of the
+  members of a family are all linear exactly when the Betti Poincaré matrix has diagonal support.
 
 ## References
 
@@ -91,9 +97,10 @@ variable {M : GradedModuleCat.{uA} 𝒜}
 terms at the `i`th vector of a Laurent basis `bP` of graded projective `K₀`: the power series whose
 coefficient of `tⁿ` is the `i`th coordinate of `[Pₙ]`. For the basis of indecomposable graded
 projectives `Pᵢ` and `Pₙ ≅ ⨁_{i,d} Pᵢ{d}^{βⁿ_{i,d}}`, this is `∑_{n,d} βⁿ_{i,d} qᵈ tⁿ`. The
-series is defined for any such resolution; for minimal resolutions it depends only on the
-resolved module (`TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq`). -/
-def bettiPoincareSeries (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+series is defined for any such resolution. For minimal resolutions and the basis of idempotent
+projectives `A eᵢ`, at each `i` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0`, it depends only on the resolved
+module (`TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincarePowerSeries_eq`). -/
+def bettiPoincarePowerSeries (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
     [∀ n, Module.Finite A (r.X n)]
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) :
@@ -102,35 +109,35 @@ def bettiPoincareSeries (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.
 
 /-- The coefficient of `tⁿ` in the Betti Poincaré series is the `i`th coordinate of `[Pₙ]`. -/
 @[simp]
-theorem coeff_bettiPoincareSeries (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+theorem coeff_bettiPoincarePowerSeries (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
     [∀ n, Module.Finite A (r.X n)]
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) (n : ℕ) :
-    PowerSeries.coeff n (r.bettiPoincareSeries bP i) =
+    PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i) =
       bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i := by
-  simp [bettiPoincareSeries]
+  simp [bettiPoincarePowerSeries]
 
 end GradedProjectiveResolution
 
 /-- The **Betti Poincaré matrix** of a family of graded projective resolutions by finitely
 generated terms: the `(i, j)` entry is the Betti Poincaré series of the `j`th resolution at the
 `i`th projective basis vector. Rows are indexed by the projective basis, columns by the family. -/
-def bettiPoincareMatrix {J : Type uJ} {M : J → GradedModuleCat.{uA} 𝒜}
+def bettiPoincarePowerSeriesMatrix {J : Type uJ} {M : J → GradedModuleCat.{uA} 𝒜}
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
     [∀ j n, Module.Finite A ((r j).X n)]
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) :
     Matrix I J (PowerSeries (LaurentPolynomial ℤ)) :=
-  fun i j ↦ (r j).bettiPoincareSeries bP i
+  fun i j ↦ (r j).bettiPoincarePowerSeries bP i
 
 /-- An entry of the Betti Poincaré matrix is a Betti Poincaré series. -/
 @[simp]
-theorem bettiPoincareMatrix_apply {J : Type uJ} {M : J → GradedModuleCat.{uA} 𝒜}
+theorem bettiPoincarePowerSeriesMatrix_apply {J : Type uJ} {M : J → GradedModuleCat.{uA} 𝒜}
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
     [∀ j n, Module.Finite A ((r j).X n)]
     (bP : Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))) (i : I) (j : J) :
-    bettiPoincareMatrix r bP i j = (r j).bettiPoincareSeries bP i :=
+    bettiPoincarePowerSeriesMatrix r bP i j = (r j).bettiPoincarePowerSeries bP i :=
   (rfl)
 
 end Definition
@@ -160,42 +167,42 @@ include he he₀ hne hbP hconc in
 /-- **Betti numbers are Ext dimensions.** For a minimal resolution of `M`, the coefficient of
 `qʲ tⁿ` in `dᵢ` times the Betti Poincaré series at `Pᵢ` is `dim_k Extⁿ(M, Sᵢ{j})`, where
 `dᵢ = gdim(eᵢ • Sᵢ)`. -/
-theorem IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries (hr : r.IsMinimal)
+theorem IsMinimal.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries (hr : r.IsMinimal)
     (i : I) (n : ℕ) (j : ℤ) :
     ((S i).obj.smulGradedDimension (e i) *
-        PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff j =
+        PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j =
       Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj j) n) := by
-  have hN : ∀ p, p ≠ j → ((S i).obj.shiftObj j).grading.piece p = ⊥ := fun p hp ↦ by
-    simpa [sub_eq_add_neg] using hconc i (p - j) (sub_ne_zero.mpr hp)
+  have hN := GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated (hconc i) j
   have hinv : invert ((S i).obj.smulGradedDimension (e i)) =
       (S i).obj.smulGradedDimension (e i) := by
     rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), invert_C]
-  rw [coeff_bettiPoincareSeries, ← hinv,
+  rw [coeff_bettiPoincarePowerSeries, ← hinv,
     coeff_invert_smulGradedDimension_mul_repr S he he₀ hI hne bP hbP, finiteProjectiveTerm_obj]
   exact congrArg _ (hr.extLinearEquiv
-    (((S i).obj.shiftObj j).positive_smul_top_eq_bot_of_concentrated j hN) n).finrank_eq
+    (((S i).obj.shiftObj j).positive_smul_top_eq_bot_of_concentrated _ hN) n).finrank_eq
 
 include he he₀ hne hbP hconc in
 /-- With normalized diagonal dimensions `dᵢ = 1`, the coefficient of `qʲ tⁿ` in the Betti Poincaré
 series of a minimal resolution at `Pᵢ` is `dim_k Extⁿ(M, Sᵢ{j})`. -/
-theorem IsMinimal.coeff_coeff_bettiPoincareSeries (hr : r.IsMinimal)
-    (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1) (i : I) (n : ℕ) (j : ℤ) :
-    (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff j =
+theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries (hr : r.IsMinimal) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) = 1) (n : ℕ) (j : ℤ) :
+    (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j =
       Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj j) n) := by
   simpa only [hself, one_mul] using
-    hr.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc i n j
+    hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc
+      i n j
 
 include he he₀ hne hbP hconc in
 /-- **The Betti series computes the Ext Poincaré series against `Sᵢ`.** For a minimal resolution
 of `M`, the constant `dᵢ = gdim(eᵢ • Sᵢ)` times the Betti Poincaré series at `Pᵢ` is the bigraded
 Ext Poincaré series of `M` against `Sᵢ`. -/
-theorem IsMinimal.C_smulGradedDimension_mul_bettiPoincareSeries (hr : r.IsMinimal) (i : I)
+theorem IsMinimal.C_smulGradedDimension_mul_bettiPoincarePowerSeries (hr : r.IsMinimal) (i : I)
     (h : IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) M (S i).obj) :
-    PowerSeries.C ((S i).obj.smulGradedDimension (e i)) * r.bettiPoincareSeries bP i =
+    PowerSeries.C ((S i).obj.smulGradedDimension (e i)) * r.bettiPoincarePowerSeries bP i =
       bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h := by
   ext n j
   rw [PowerSeries.coeff_C_mul,
-    hr.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc,
+    hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc,
     coeff_coeff_bigradedExtPoincarePowerSeries]
   exact congrArg _ (extLinearEquivOfIso k (Iso.refl M)
     ((GradedModuleCat.shiftPowIso 𝒜 j).app (S i).obj) n).finrank_eq.symm
@@ -203,46 +210,46 @@ theorem IsMinimal.C_smulGradedDimension_mul_bettiPoincareSeries (hr : r.IsMinima
 include he he₀ hne hbP hconc in
 /-- With normalized diagonal dimensions `dᵢ = 1`, the Betti Poincaré series of a minimal resolution
 at `Pᵢ` is the bigraded Ext Poincaré series of `M` against `Sᵢ`. -/
-theorem IsMinimal.bettiPoincareSeries_eq_bigradedExtPoincarePowerSeries (hr : r.IsMinimal)
-    (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1) (i : I)
+theorem IsMinimal.bettiPoincarePowerSeries_eq_bigradedExtPoincarePowerSeries (hr : r.IsMinimal)
+    (i : I) (hself : (S i).obj.smulGradedDimension (e i) = 1)
     (h : IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) M (S i).obj) :
-    r.bettiPoincareSeries bP i = bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h := by
+    r.bettiPoincarePowerSeries bP i =
+      bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h := by
   simpa only [hself, map_one, one_mul] using
-    hr.C_smulGradedDimension_mul_bettiPoincareSeries S he he₀ hI hne bP hbP hconc i h
+    hr.C_smulGradedDimension_mul_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc i h
 
 include he he₀ hne hbP hconc in
 /-- **The Betti Poincaré series does not depend on the minimal resolution**: two minimal
 resolutions of the same module have the same Betti Poincaré series at every `Pᵢ` with
 `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0`. -/
-theorem IsMinimal.bettiPoincareSeries_eq (hr : r.IsMinimal) (hr' : r'.IsMinimal) (i : I)
+theorem IsMinimal.bettiPoincarePowerSeries_eq (hr : r.IsMinimal) (hr' : r'.IsMinimal) (i : I)
     (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) :
-    r.bettiPoincareSeries bP i = r'.bettiPoincareSeries bP i := by
+    r.bettiPoincarePowerSeries bP i = r'.bettiPoincarePowerSeries bP i := by
   ext n : 1
   refine mul_left_cancel₀ hself (LaurentPolynomial.ext fun j ↦ ?_)
-  rw [hr.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc,
-    hr'.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc]
+  rw [hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc,
+    hr'.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc]
 
 include he he₀ hne hbP hconc in
 /-- A coefficient of the Betti Poincaré series of a minimal resolution at `Pᵢ` with `dᵢ ≠ 0`
 vanishes exactly when the corresponding Ext group into the shifted target vanishes. -/
-theorem IsMinimal.coeff_coeff_bettiPoincareSeries_eq_zero_iff (hr : r.IsMinimal) (i : I)
+theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff (hr : r.IsMinimal) (i : I)
     (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) (n : ℕ) (j : ℤ) :
-    (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff j = 0 ↔
+    (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j = 0 ↔
       Subsingleton (Ext.{uA} M ((S i).obj.shiftObj j) n) := by
-  have hN : ∀ p, p ≠ j → ((S i).obj.shiftObj j).grading.piece p = ⊥ := fun p hp ↦ by
-    simpa [sub_eq_add_neg] using hconc i (p - j) (sub_ne_zero.mpr hp)
+  have hN := GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated (hconc i) j
   let _ : Module.Finite A (S i).obj := gradedFiniteModules_iff.mp (S i).property
   let _ : Module.Finite k (S i).obj := Module.Finite.trans A _
   let _ : Module.Finite k (r.termObj n) := Module.Finite.trans A (r.X n)
   obtain ⟨c, hd⟩ : ∃ c : ℤ, (S i).obj.smulGradedDimension (e i) = C c :=
     ⟨_, GradedModuleCat.smulGradedDimension_eq_C_of_concentrated (e := e i) _ (hconc i)⟩
-  have hcoeff := hr.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP
-    hconc i n j
+  have hcoeff := hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne
+    bP hbP hconc i n j
   rw [hd, coeff_C_mul] at hcoeff
   have hc : c ≠ 0 := fun h0 ↦ hself (by rw [hd, h0, map_zero])
   have : FiniteDimensional k (Ext.{uA} M ((S i).obj.shiftObj j) n) :=
     Module.Finite.equiv
-      (hr.extLinearEquiv (((S i).obj.shiftObj j).positive_smul_top_eq_bot_of_concentrated j hN) n)
+      (hr.extLinearEquiv (((S i).obj.shiftObj j).positive_smul_top_eq_bot_of_concentrated _ hN) n)
   rw [← Module.finrank_zero_iff (R := k), ← Int.natCast_eq_zero, ← hcoeff, mul_eq_zero,
     or_iff_right hc]
 
@@ -252,51 +259,37 @@ diagonal.** Over a nonnegatively graded algebra, let the `Sᵢ` represent every 
 module concentrated in degree zero, with every `dᵢ = gdim(eᵢ • Sᵢ)` nonzero. Then a minimal
 resolution is linear exactly when the coefficient of `qʲ tⁿ` in each Betti Poincaré series vanishes
 for `j ≠ n`. The resolution may be infinite. -/
-theorem IsMinimal.isLinear_iff_diagonal_bettiPoincareSeries (hr : r.IsMinimal)
+theorem IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries (hr : r.IsMinimal)
     (hneg : ∀ p < 0, 𝒜 p = ⊥) (hS : IsExhaustiveGradedSimpleFamily S)
     (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0) :
     r.IsLinear ↔ ∀ i (n : ℕ) (j : ℤ), (n : ℤ) ≠ j →
-      (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff j = 0 := by
+      (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j = 0 := by
   have (n : ℕ) : Module.Finite k (r.X n) := Module.Finite.trans A (r.X n)
-  simp_rw [hr.coeff_coeff_bettiPoincareSeries_eq_zero_iff S he he₀ hI hne bP hbP hconc _ (hself _)]
-  constructor
-  · intro hlinear i n j hnj
-    exact hlinear.subsingleton_ext_shiftObj_of_ne (hconc i) n j hnj
-  · intro hdiag
-    apply (hr.isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
-    intro N hNfinite hNsimple hNzero n p hnp
-    let _ : Module.Finite k N := hNfinite
-    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
-    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
-      ⟨N, gradedFiniteModules_iff.2 inferInstance⟩
-    obtain ⟨i, ⟨eN : N'.obj ≅ (S i).obj⟩⟩ :=
-      hS.exists_iso_of_concentrated S hconc N' hNsimple hNzero
-    have : Subsingleton (Ext.{uA} M ((GradedModuleCat.shiftFunctor p).obj (S i).obj) n) :=
-      hdiag i n p hnp
-    exact (extLinearEquivOfIso k (Iso.refl M)
-      ((GradedModuleCat.shiftFunctor p).mapIso eN) n).injective.subsingleton
+  simp_rw [hr.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff S he he₀ hI hne bP hbP hconc _
+    (hself _)]
+  exact hr.isLinear_iff_subsingleton_ext_shiftObj_family hneg hS hconc
 
 include he he₀ hne hbP hconc in
 /-- **The Betti Poincaré series of `M{1}` is `q` times that of `M`**, for minimal resolutions of
 `M` and of `M{1}`, at every `Pᵢ` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0`. -/
-theorem IsMinimal.bettiPoincareSeries_shiftObj_one
+theorem IsMinimal.bettiPoincarePowerSeries_shiftObj_one
     {r₁ : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M.shiftObj 1).grading}
     [∀ n, Module.Finite A (r₁.X n)] (hr : r.IsMinimal) (hr₁ : r₁.IsMinimal) (i : I)
     (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) :
-    r₁.bettiPoincareSeries bP i = PowerSeries.C (T 1) * r.bettiPoincareSeries bP i := by
+    r₁.bettiPoincarePowerSeries bP i = PowerSeries.C (T 1) * r.bettiPoincarePowerSeries bP i := by
   ext n : 1
   rw [PowerSeries.coeff_C_mul]
   refine mul_left_cancel₀ hself (LaurentPolynomial.ext fun j ↦ ?_)
-  rw [hr₁.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc,
+  rw [hr₁.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc,
     mul_left_comm, coeff_T_mul,
-    hr.coeff_smulGradedDimension_mul_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc]
-  -- `Ext(M{1}, Sᵢ{j}) ≅ Ext((M){1}, (Sᵢ{j-1}){1}) ≅ Ext(M, Sᵢ{j-1})`.
-  have e₁ : ((S i).obj.shiftObj (j - 1)).shiftObj 1 ≅ (S i).obj.shiftObj j :=
-    (GradedModuleCat.shiftFunctorAddIso 𝒜 (j - 1) 1).app (S i).obj ≪≫
-      eqToIso (by rw [sub_add_cancel, GradedModuleCat.shiftFunctor_obj])
-  exact congrArg _ ((extLinearEquivOfEquivalence k (GradedModuleCat.shift 𝒜) M
-    ((S i).obj.shiftObj (j - 1)) n).trans
-      (extLinearEquivOfIso k (Iso.refl _) e₁ n)).finrank_eq.symm
+    hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc]
+  -- `Ext(M{1}, Sᵢ{j})` is the bigraded `Ext^{n,j}(M{1}, Sᵢ)`, which is `Ext^{n,j-1}(M, Sᵢ)`.
+  rw [← GradedModuleCat.shift_functor_obj]
+  exact congrArg _ (((extLinearEquivOfIso k (Iso.refl _)
+    ((GradedModuleCat.shiftPowIso 𝒜 j).app (S i).obj).symm n).trans
+      (gradedExtShiftSourceEquiv k (GradedModuleCat.shift 𝒜) M (S i).obj n j)).trans
+        (extLinearEquivOfIso k (Iso.refl M)
+          ((GradedModuleCat.shiftPowIso 𝒜 (j - 1)).app (S i).obj) n)).finrank_eq
 
 end GradedProjectiveResolution
 
@@ -306,17 +299,17 @@ matrix.** Over a nonnegatively graded algebra, let the `Sᵢ` represent every fi
 module concentrated in degree zero, with every `dᵢ = gdim(eᵢ • Sᵢ)` nonzero. Minimal resolutions
 of a family of graded modules are all linear exactly when every entry of their Betti Poincaré
 matrix has its coefficient of `qᵖ tⁿ` vanish for `p ≠ n`. -/
-theorem forall_isLinear_iff_diagonal_bettiPoincareMatrix {J : Type uJ}
+theorem forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix {J : Type uJ}
     {M : J → GradedModuleCat.{uA} 𝒜}
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
     [∀ j n, Module.Finite A ((r j).X n)] (hr : ∀ j, (r j).IsMinimal)
     (hneg : ∀ p < 0, 𝒜 p = ⊥) (hS : IsExhaustiveGradedSimpleFamily S)
     (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0) :
     (∀ j, (r j).IsLinear) ↔ ∀ i j (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
-      (PowerSeries.coeff n (bettiPoincareMatrix r bP i j)).coeff p = 0 := by
-  simp only [bettiPoincareMatrix_apply]
+      (PowerSeries.coeff n (bettiPoincarePowerSeriesMatrix r bP i j)).coeff p = 0 := by
+  simp only [bettiPoincarePowerSeriesMatrix_apply]
   rw [forall_comm]
   exact forall_congr' fun j ↦
-    (hr j).isLinear_iff_diagonal_bettiPoincareSeries S he he₀ hI hne bP hbP hconc hneg hS hself
+    (hr j).isLinear_iff_diagonal_bettiPoincarePowerSeries S he he₀ hI hne bP hbP hconc hneg hS hself
 
 end TauCeti

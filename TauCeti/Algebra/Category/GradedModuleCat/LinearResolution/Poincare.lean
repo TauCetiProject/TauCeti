@@ -172,14 +172,8 @@ theorem forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
     exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
       ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj) n).injective.subsingleton
   · intro hdiag i
-    apply ((hr i).isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
-    intro N hNfinite hNsimple hNzero n p hnp
-    let _ : Module.Finite k N := hNfinite
-    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
-    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
-      ⟨N, gradedFiniteModules_iff.2 inferInstance⟩
-    obtain ⟨j, ⟨eN : N'.obj ≅ (S j).obj⟩⟩ :=
-      hS.exists_iso_of_concentrated S hSzero N' hNsimple hNzero
+    refine ((hr i).isLinear_iff_subsingleton_ext_shiftObj_family hneg hS hSzero).2
+      fun j n p hnp ↦ ?_
     have hij := hdiag i j
     rw [bigradedExtPoincareMatrix_apply] at hij
     have hExt : Subsingleton
@@ -189,8 +183,7 @@ theorem forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
         (hb i j)).1 hij) n p hnp
     rw [← GradedModuleCat.shiftFunctor_obj]
     exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
-      ((GradedModuleCat.shiftFunctor (𝒜 := 𝒜) p).mapIso eN ≪≫
-        ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm) n).injective.subsingleton
+      ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm n).injective.subsingleton
 
 /-- **Bigraded Ext detects linear resolutions over a semisimple degree-zero part.** Suppose that
 `A` is finite-dimensional and nonnegatively graded, with semisimple degree-zero part. For an
