@@ -315,11 +315,11 @@ theorem Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule
     (Wkp.enorm_iteratedGradient_ofTestFunctionₗ 0 φ).trans hE1
   have hD2 := (Wkp.enorm_iteratedGradient_ofTestFunctionₗ (mu := mu) (p := p) 1 φ).trans hE2
   have hV := Wkp.enorm_value_ofTestFunctionₗ (mu := mu) (p := p) 2 φ
-  have hA : eLpNorm (fderiv ℝ (fderiv ℝ (φ : E → ℝ))) p mu ≠ ∞ := hD2 ▸ enorm_ne_top
-  have hU : eLpNorm (φ : E → ℝ) p mu ≠ ∞ := hV ▸ enorm_ne_top
+  have hA : eLpNorm (fderiv ℝ (fderiv ℝ (φ : E → ℝ))) p mu ≠ ∞ := hD2 ▸ eNorm_ne_top
+  have hU : eLpNorm (φ : E → ℝ) p mu ≠ ∞ := hV ▸ eNorm_ne_top
   -- The smooth inequality, read in `ℝ`: all three seminorms are finite.
-  rw [Set.mem_ofPred_eq, Wkp.lowerOrder_ofTestFunctionₗ, ← toReal_enorm, ← toReal_enorm,
-    ← toReal_enorm, hD, hD2, hV]
+  rw [Set.mem_ofPred_eq, Wkp.lowerOrder_ofTestFunctionₗ, ← toReal_eNorm, ← toReal_eNorm,
+    ← toReal_eNorm, hD, hD2, hV]
   calc (eLpNorm (fderiv ℝ (φ : E → ℝ)) p mu).toReal
       ≤ (ENNReal.ofReal ε * eLpNorm (fderiv ℝ (fderiv ℝ (φ : E → ℝ))) p mu +
           ENNReal.ofReal ((finrank ℝ E) ^ 2 / ε) * eLpNorm (φ : E → ℝ) p mu).toReal :=

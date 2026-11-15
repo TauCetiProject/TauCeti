@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
@@ -129,7 +129,7 @@ theorem _root_.Matrix.exists_det_submatrix_eq_sign_mul_plucker (A : Matrix (Fin 
 
 /-- The empty family has Plücker coordinate `1`. -/
 @[simp]
-theorem plucker_of_isEmpty (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
+theorem plucker_fin_zero (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
   Matrix.det_isEmpty
 
 /-- The Plücker coordinate of a single vector at the singleton `{i}` is its `i`-th coordinate. -/
@@ -151,12 +151,8 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
 /-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
 images of the maximal minors of the matrix. -/
 theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
-    plucker (A.map f).row = f ∘ plucker A.row := by
-  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
-    ext i k
-    simp
-  ext s
-  rw [h, plucker_map, Function.comp_apply]
+    plucker (A.map f).row = f ∘ plucker A.row :=
+  funext fun s ↦ plucker_map f A.row s
 
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
@@ -258,7 +254,8 @@ theorem det_mul_transpose_eq_sum_plucker_mul [Fintype ι] (x y : Fin p → ι �
 the squares of the maximal minors of `A`, the Plücker coordinates of its rows. -/
 theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
-  simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+  have hA : Matrix.of A.row = A := by ext; simp only [Matrix.of_apply, Matrix.row_apply]
+  simpa [sq, hA] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
 
 /-- Over a commutative ring with a compatible linear order, the Gram determinant `det (A * Aᵀ)` of
 the rows of a matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/
@@ -329,7 +326,7 @@ private theorem plucker_eq_det_mul_transpose_single (y : Fin q → ι → K) (t 
   rw [plucker_apply]
   congr 1
   ext i j
-  simp [Matrix.mul_apply, Pi.single_apply]
+  simp [Matrix.mul_apply, Pi.single_apply, Function.swap]
 
 /-- Against any identification `e` of the index types, the determinant of `x` followed by the
 standard basis vectors at the elements of `t` is, up to sign, the Plücker coordinate of `x` at the

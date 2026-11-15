@@ -22,6 +22,9 @@ These are algebraic chart extension maps for constructing locally convex test-se
 No topology on compactly supported sections is installed here. The chart only needs to be
 smooth in the forward direction; the support and smoothness arguments do not require
 smoothness of its inverse, finite-dimensional fibres, or a countable atlas.
+
+The exact nonzero-locus formula is adapted from Tau Ceti PR #22144
+(commit `8cab1a135d7b2826fcb4508770e82aebf9713614`).
 -/
 
 public noncomputable section
@@ -142,23 +145,35 @@ theorem chartTestSection_injective : Function.Injective (e.chartTestSection c hc
       c.right_inv hy] using hval
   · exact (φ.zero_on_compl hy).trans (ψ.zero_on_compl hy).symm
 
+/-- Extension preserves the exact nonzero locus, transported by the inverse chart. -/
+theorem support_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    {x | (e.chartTestSection c hc hce φ).1 x ≠ 0} = c.symm '' Function.support φ := by
+  ext x
+  by_cases hx : x ∈ c.source
+  · rw [mem_ofPred_eq, chartTestSection_apply_of_mem e c hc hce φ hx]
+    constructor
+    · intro h
+      refine ⟨c x, ?_, c.left_inv hx⟩
+      intro hz
+      exact h (by simp [hz])
+    · rintro ⟨y, hy, hxy⟩ hz
+      have hyt := φ.tsupport_subset (subset_tsupport φ hy)
+      have heq : c x = y := by rw [← hxy, c.right_inv hyt]
+      have := congrArg (e.continuousLinearMapAt ℝ x) hz
+      exact hy (by simpa [e.continuousLinearMapAt_symmL (hce hx), heq] using this)
+  · simp only [chartTestSection_apply_of_notMem e c hc hce φ hx,
+      ne_self_iff_false, mem_ofPred_eq, false_iff, mem_image, not_exists, not_and]
+    intro y hy hxy
+    exact hx (hxy ▸ c.map_target (φ.tsupport_subset (subset_tsupport φ hy)))
+
 /-- Extension preserves the exact closed support, transported by the inverse chart. -/
 @[simp]
 theorem tsupport_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
     (e.chartTestSection c hc hce φ).1.tsupport = c.symm '' tsupport φ := by
   apply le_antisymm
   · exact tsupport_testSection_subset e c hc hce φ
-  · rw [ContMDiffSection.tsupport_def]
-    rintro _ ⟨y, hy, rfl⟩
-    have hcont : ContinuousWithinAt c.symm (Function.support φ) y :=
-      (c.continuousOn_symm y (φ.tsupport_subset hy)).mono
-        ((subset_tsupport φ).trans φ.tsupport_subset)
-    refine hcont.mem_closure hy fun z hz ↦ ?_
-    have ht := φ.tsupport_subset (subset_tsupport φ hz)
-    intro hzero
-    have hcoeff := e.continuousLinearMapAt_chartTestSection c hc hce φ (c.map_target ht)
-    rw [hzero, map_zero, c.right_inv ht] at hcoeff
-    exact hz hcoeff.symm
+  · rw [ContMDiffSection.tsupport_def, support_chartTestSection]
+    exact (c.continuousOn_symm.mono φ.tsupport_subset).image_closure
 
 /-- The closed support of an extended test lies entirely in the chart source. -/
 theorem tsupport_chartTestSection_subset_source (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :

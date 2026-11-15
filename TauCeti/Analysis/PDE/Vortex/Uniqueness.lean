@@ -17,10 +17,11 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has connection
 `a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`. Let `x` and `y` be solutions of the plane
-vortex equation on the whole plane with differentiable connections, `C²` sections and `|α| → 1` at
-infinity, and suppose that their sections differ by a nowhere-vanishing `C²` factor, `α_x = h α_y`,
-while the zero set of `α_y` has empty interior. Then `x` is the phase gauge transform of `y` by a
-`C²` phase `f` with `h = exp (i f)`
+vortex equation on the whole plane with `|α| → 1` at infinity, where the connections of `x` and
+`y` are continuous and the sections of `y` are `C²`, and suppose that their sections differ by a
+nowhere-vanishing `C²` factor, `α_x = h α_y` (so the sections of `x` are `C²` too), while the zero
+set of `α_y` has empty interior. Then `x` is the phase gauge transform of `y` by a `C²` phase `f`
+with `h = exp (i f)`
 (`TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`).
 
 The argument is Taubes's. Away from the zeros of `α_y`, the scalar equations
@@ -45,8 +46,10 @@ nonzero at `z`; the similarity principle upgrades the factor to a `Cᵏ` one wit
 (`TauCeti.eq_of_eventually_sub_pow_mul_eq`). The factor of the quotient at a zero is the quotient
 of the two factors there.
 
-For smooth vortices with the same end framing `α (z) · phase (z) → 1`, where `|phase| → 1` (for
-example the winding phase `(z / |z|) ^ (-m)`), the factor tends to one at infinity, so it is an
+For `Cᵏ` vortices, `k ≥ 2`, with the same end framing `α (z) · phase (z) → 1`, where
+`|phase| → 1` (for example the winding phase `(z / |z|) ^ (-m)`), the factor is a `Cᵏ` gauge
+tending to one at infinity which carries one vortex to the other
+(`TauCeti.Vortex.exists_contDiff_gaugeTransform_eq`). For smooth vortices it is therefore an
 element of the smooth framed gauge group. Since a framed gauge is determined by its action on a
 field whose section vanishes only on a nowhere dense set
 (`TauCeti.Vortex.framedGaugeGroup_smul_left_injective`), two smooth framed vortices with the same
@@ -80,19 +83,26 @@ private theorem sq_add_sq_eq_norm_sq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 
   rw [this, Complex.sq_norm]
 
 /-- **The scalar equation for the ratio of two vortex sections.** Let `x` and `y` solve the vortex
-equation near `z`, with connections differentiable and sections `C²` at `z`, and with sections
+equation near `z`, with sections `C²` at `z`, and with sections
 related by `α_x = h α_y` near `z` for a `C²` factor `h` with `h z ≠ 0`. If `α_y (z) ≠ 0`, then
 `Δ log |h|² = (p_y² + q_y²) (|h|² - 1)` at `z`. -/
 theorem laplacian_log_norm_sq_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h : ℂ → ℂ} {z : ℂ}
-    (hxb₁ : DifferentiableAt ℝ (fun w ↦ x w 0) z) (hxb₂ : DifferentiableAt ℝ (fun w ↦ x w 1) z)
-    (hxp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hxq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
-    (hyb₁ : DifferentiableAt ℝ (fun w ↦ y w 0) z) (hyb₂ : DifferentiableAt ℝ (fun w ↦ y w 1) z)
     (hyp : ContDiffAt ℝ 2 (fun w ↦ y w 2) z) (hyq : ContDiffAt ℝ 2 (fun w ↦ y w 3) z)
     (hxsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (hysol : ∀ᶠ w in 𝓝 z, equation y w = 0)
     (hh : ContDiffAt ℝ 2 h z) (hhz : h z ≠ 0)
     (hα : ∀ᶠ w in 𝓝 z, (x w 2 + x w 3 * I : ℂ) = h w * (y w 2 + y w 3 * I))
     (hyz : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0) :
     Δ (fun w ↦ Real.log (‖h w‖ ^ 2)) z = (y z 2 ^ 2 + y z 3 ^ 2) * (‖h z‖ ^ 2 - 1) := by
+  -- The sections of `x` are `C²` at `z`, being the real and imaginary parts of `h α_y` near `z`.
+  have hprod : ContDiffAt ℝ 2 (fun w ↦ h w * ((y w 2 : ℂ) + y w 3 * I)) z :=
+    hh.mul ((Complex.ofRealCLM.contDiff.comp_contDiffAt z hyp).add
+      ((Complex.ofRealCLM.contDiff.comp_contDiffAt z hyq).mul contDiffAt_const))
+  have hxp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z :=
+    (Complex.reCLM.contDiff.comp_contDiffAt z hprod).congr_of_eventuallyEq
+      (by filter_upwards [hα] with w hw; simpa using congrArg re hw)
+  have hxq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z :=
+    (Complex.imCLM.contDiff.comp_contDiffAt z hprod).congr_of_eventuallyEq
+      (by filter_upwards [hα] with w hw; simpa using congrArg im hw)
   have hhz' : ‖h z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hhz)
   have hxz : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := by
     rw [sq_add_sq_eq_norm_sq_mul hα.self_of_nhds]
@@ -111,20 +121,17 @@ theorem laplacian_log_norm_sq_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h :
       Real.log_mul (pow_ne_zero 2 (norm_ne_zero_iff.2 hhw)) (mul_ne_zero four_ne_zero hyw)]
   have hΔ := (laplacian_congr_nhds hev).eq_of_nhds
   rw [hw.laplacian_add hℓy,
-    laplacian_log_normSq_of_equation_eq_zero hxb₁ hxb₂ hxp hxq hxz hxsol,
-    laplacian_log_normSq_of_equation_eq_zero hyb₁ hyb₂ hyp hyq hyz hysol,
+    laplacian_log_normSq_of_equation_eq_zero hxp hxq hxz hxsol,
+    laplacian_log_normSq_of_equation_eq_zero hyp hyq hyz hysol,
     sq_add_sq_eq_norm_sq_mul hα.self_of_nhds] at hΔ
   linarith
 
 /-- **Two vortices whose sections differ by a nonvanishing factor have sections of equal
-modulus.** Let `x` and `y` be solutions of the vortex equation on the plane with differentiable
-connections, `C²` sections and `|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a
-nowhere-vanishing `C²` function `h`. If the zero set of `α_y` has empty interior, then `|h| = 1`
+modulus.** Let `x` and `y` be solutions of the vortex equation on the plane with `C²` sections
+and `|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²`
+function `h`. If the zero set of `α_y` has empty interior, then `|h| = 1`
 everywhere. -/
 theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h : ℂ → ℂ}
-    (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
-    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
     (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
     (hxlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -141,9 +148,8 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
     hw.continuous_laplacian.ext_on hdense
       (((hyp.continuous.pow 2).add (hyq.continuous.pow 2)).mul
         ((hh.continuous.norm.pow 2).sub continuous_const))
-      fun z hz ↦ laplacian_log_norm_sq_eq (hxb₁ z) (hxb₂ z) hxp.contDiffAt hxq.contDiffAt
-        (hyb₁ z) (hyb₂ z) hyp.contDiffAt hyq.contDiffAt (.of_forall hxsol) (.of_forall hysol)
-        hh.contDiffAt (hh₀ z) (.of_forall hα) hz
+      fun z hz ↦ laplacian_log_norm_sq_eq hyp.contDiffAt hyq.contDiffAt (.of_forall hxsol)
+        (.of_forall hysol) hh.contDiffAt (hh₀ z) (.of_forall hα) hz
   -- Since `log t` and `t - 1` have the same sign, `w Δ w ≥ 0`.
   have hsign (z : ℂ) : 0 ≤ Real.log (‖h z‖ ^ 2) * Δ (fun z ↦ Real.log (‖h z‖ ^ 2)) z := by
     have ht : 0 < ‖h z‖ ^ 2 := lt_of_le_of_ne (by positivity) (hh₀' z).symm
@@ -168,15 +174,17 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
     (Real.eq_one_of_pos_of_log_eq_zero (lt_of_le_of_ne (by positivity) (hh₀' z).symm) hw₀)
 
 /-- **Uniqueness of plane vortices with the same zeros, modulo gauge.** Let `x` and `y` be
-solutions of the vortex equation on the plane with differentiable connections, `C²` sections and
-`|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²` function
-`h`, and suppose the zero set of `α_y` has empty interior. Then `h = exp (i f)` for a `C²` real
-phase `f`, and `x` is the phase gauge transform of `y` by `f`. -/
+solutions of the vortex equation on the plane with `|α| → 1` at infinity, where the connections of
+`x` and `y` are continuous and the sections of `y` are `C²`, whose sections satisfy `α_x = h α_y`
+for a nowhere-vanishing `C²` function `h` (so the sections of `x` are `C²` too, being the real and
+imaginary parts of `h α_y`), and suppose the zero set of `α_y` has empty interior. Then
+`h = exp (i f)` for a `C²` real phase `f`, and `x` is the phase gauge transform of `y` by `f`. The
+holomorphicity rows of the gauge transform involve the connection only through its values, so no
+differentiability of either connection is needed. -/
 theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
     {h : ℂ → ℂ}
-    (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
-    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
+    (hxb₁ : Continuous (fun w ↦ x w 0)) (hxb₂ : Continuous (fun w ↦ x w 1))
+    (hyb₁ : Continuous (fun w ↦ y w 0)) (hyb₂ : Continuous (fun w ↦ y w 1))
     (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
     (hxlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -185,14 +193,11 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     (hα : ∀ z, (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I))
     (hdense : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0}) :
     ∃ f : ℂ → ℝ, ContDiff ℝ 2 f ∧ (∀ z, h z = exp (f z * I)) ∧ x = phaseGauge y f := by
-  have hnorm := norm_eq_one_of_forall_section_eq_mul hxb₁ hxb₂ hxp hxq hyb₁ hyb₂ hyp hyq hxsol
-    hysol hxlim hylim hh hh₀ hα hdense
+  have hnorm := norm_eq_one_of_forall_section_eq_mul hyp hyq hxsol hysol
+    hxlim hylim hh hh₀ hα hdense
   obtain ⟨f, hf, hhf⟩ := exists_contDiff_eq_exp_ofReal_mul_I hh hnorm
   refine ⟨f, hf, hhf, ?_⟩
-  -- The gauge transform of `y` has the section of `x` and solves the vortex equation.
-  have hyd (z : ℂ) (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z := by
-    fin_cases i
-    exacts [hyb₁ z, hyb₂ z, hyp.differentiable two_ne_zero z, hyq.differentiable two_ne_zero z]
+  -- The gauge transform of `y` has the section of `x` and satisfies the holomorphicity rows.
   have hsec (z : ℂ) : x z 2 = phaseGauge y f z 2 ∧ x z 3 = phaseGauge y f z 3 := by
     have h₂ := congrArg re (hα z)
     have h₃ := congrArg im (hα z)
@@ -201,15 +206,25 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     rw [phaseGauge_apply_two, phaseGauge_apply_three]
     constructor <;> linarith
   have hfd : Continuous fun z ↦ fderiv ℝ f z := hf.continuous_fderiv two_ne_zero
-  refine eq_of_forall_section_eq hxb₁.continuous hxb₂.continuous ?_ ?_
+  refine eq_of_forall_section_eq hxb₁ hxb₂ ?_ ?_
     (fun z ↦ ⟨by simp [hxsol z], by simp [hxsol z]⟩) (fun z ↦ ?_)
     (fun z ↦ (hsec z).1) (fun z ↦ (hsec z).2) ?_
   · simp only [phaseGauge_apply_zero]
-    exact hyb₁.continuous.sub (hfd.clm_apply continuous_const)
+    exact hyb₁.sub (hfd.clm_apply continuous_const)
   · simp only [phaseGauge_apply_one]
-    exact hyb₂.continuous.sub (hfd.clm_apply continuous_const)
-  · have hsol := (equation_phaseGauge_eq_zero_iff (hyd z) hf.contDiffAt).2 (hysol z)
-    exact ⟨by simp [hsol], by simp [hsol]⟩
+    exact hyb₂.sub (hfd.clm_apply continuous_const)
+  · -- These rows differentiate only the sections, which are `C²`, and not the connection.
+    have hf' := hf.differentiable two_ne_zero z
+    have hp := hyp.differentiable two_ne_zero z
+    have hq := hyq.differentiable two_ne_zero z
+    have h₁ : equation y z 1 = 0 := by simp [hysol z]
+    have h₂ : equation y z 2 = 0 := by simp [hysol z]
+    simp only [equation_apply_one, equation_apply_two] at h₁ h₂
+    simp [fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul, hp, hq, hf'.cos, hf'.sin,
+      fderiv_cos hf', fderiv_sin hf']
+    constructor
+    · linear_combination Real.cos (f z) * h₁ - Real.sin (f z) * h₂
+    · linear_combination Real.sin (f z) * h₁ + Real.cos (f z) * h₂
   · -- `α_x` and `α_y` have the same modulus, so they have the same zeros.
     refine hdense.mono fun z hz ↦ ?_
     have hsq : phaseGauge y f z 2 ^ 2 + phaseGauge y f z 3 ^ 2 = y z 2 ^ 2 + y z 3 ^ 2 := by
@@ -225,6 +240,59 @@ section Divisor
 open scoped ContDiff
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+
+/-- **Vortices with the same zeros differ by a gauge as regular as the fields.** Let `x` and `y`
+be `Cᵏ` solutions of the vortex equation on the plane, `k ≥ 2`, with the same end framing
+`α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the winding phase
+`(z / |z|) ^ (-m)`. If `n` is a multiplicity function for both sections, meaning that each of them
+factors near every `z` as `(w - z) ^ n z * v w` with `v` continuous and nonzero at `z`, then
+`x = u • y` for a `Cᵏ` circle-valued gauge `u` tending to one at infinity. -/
+theorem exists_contDiff_gaugeTransform_eq {k : ℕ∞} (hk : 2 ≤ k) (hx : ContDiff ℝ k x)
+    (hy : ContDiff ℝ k y) (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
+    {phase : ℂ → ℂ} (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
+    (hxfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1))
+    (hyfr : Tendsto (fun z ↦ sectionValue y z * phase z) (cocompact ℂ) (𝓝 1)) {n : ℂ → ℕ}
+    (hnx : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
+    (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
+    ∃ u : ℂ → Circle, ContDiff ℝ k (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) ∧
+      gaugeTransform u y = x := by
+  have hk₁ : (1 : ℕ∞) ≤ k := le_trans (by norm_num) hk
+  have hk₂ : ((2 : ℕ∞) : WithTop ℕ∞) ≤ k := by exact_mod_cast hk
+  have hxi (i : Fin 4) : ContDiff ℝ k fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hyi (i : Fin 4) : ContDiff ℝ k fun w ↦ y w i := (contDiff_piLp 2).1 hy i
+  have hxhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hxsol w]
+  have hyhol (w : ℂ) : equation y w 1 = 0 ∧ equation y w 2 = 0 := by simp [hysol w]
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ k f) : Differentiable ℝ f :=
+    hf.differentiable (lt_of_lt_of_le (by norm_num) hk₂).ne'
+  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul hk₁ (hxi 0) (hxi 1)
+    (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
+  have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
+  have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
+  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
+    (dense_setOf_sectionValue_ne_zero hk₁ (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol
+      hylim).mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
+  have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
+    have := hα z
+    rw [sectionValue_apply, sectionValue_apply] at this
+    linear_combination this / 2
+  obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hxi 0).continuous
+    (hxi 1).continuous (hyi 0).continuous (hyi 1).continuous ((hyi 2).of_le hk₂)
+    ((hyi 3).of_le hk₂) hxsol hysol hxlim hylim (hh.of_le hk₂) hh₀ hα' hdense'
+  -- The gauge `exp (i f)` is `h`, which tends to one at infinity.
+  have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
+    rw [Circle.coe_exp, hhf]
+  have hh1 : Tendsto h (cocompact ℂ) (𝓝 1) := by
+    have hdiv := hxfr.div hyfr one_ne_zero
+    rw [div_one] at hdiv
+    refine hdiv.congr' ?_
+    filter_upwards [hyfr.eventually_ne one_ne_zero] with z hz
+    rw [Pi.div_apply, hα z, mul_assoc, mul_div_cancel_right₀ _ hz]
+  refine ⟨fun w ↦ Circle.exp (f w), by simpa only [hcoe] using hh,
+    tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm), ?_⟩
+  rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
+  exact hxy.symm
 
 /-- **Uniqueness of framed plane vortices with prescribed zeros, modulo framed gauge.** Let `x`
 and `y` be smooth solutions of the vortex equation on the plane with the same end framing
@@ -242,49 +310,18 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
     (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
     ∃! u : framedGaugeGroup, u • y = x := by
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  obtain ⟨u, hu, hu1, hxy⟩ := exists_contDiff_gaugeTransform_eq (k := ⊤) le_top hx hy hxsol hysol
+    hphase hxfr hyfr hnx hny
   have hyi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ y w i := (contDiff_piLp 2).1 hy i
-  have hxhol (w : ℂ) : equation x w 1 = 0 ∧ equation x w 2 = 0 := by simp [hxsol w]
-  have hyhol (w : ℂ) : equation y w 1 = 0 ∧ equation y w 2 = 0 := by simp [hysol w]
-  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) : Differentiable ℝ f := hf.differentiable (by simp)
-  obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
-    (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
-  have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
-  have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
-  -- The zeros of `α_y` are finite, so their complement is dense.
-  have hdense : Dense {z | sectionValue y z ≠ 0} := by
-    refine (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := ⊤) le_top (hyi 0)
-      (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hylim)).mono fun z hz ↦ ?_
-    simp only [Set.mem_sdiff, Set.mem_univ, true_and, Set.mem_ofPred_eq] at hz ⊢
-    exact hz
-  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
-    hdense.mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
-  have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
-    have := hα z
-    rw [sectionValue_apply, sectionValue_apply] at this
-    linear_combination this / 2
-  obtain ⟨f, hf, hhf, hxy⟩ := exists_eq_phaseGauge_of_forall_section_eq_mul (hd _ (hxi 0))
-    (hd _ (hxi 1)) (contDiff_infty.1 (hxi 2) 2) (contDiff_infty.1 (hxi 3) 2) (hd _ (hyi 0))
-    (hd _ (hyi 1)) (contDiff_infty.1 (hyi 2) 2) (contDiff_infty.1 (hyi 3) 2) hxsol hysol
-    hxlim hylim (contDiff_infty.1 hh 2) hh₀ hα' hdense'
-  -- The gauge `exp (i f)` is `h`, which is smooth and tends to one at infinity.
-  have hcoe (w : ℂ) : ((Circle.exp (f w) : Circle) : ℂ) = h w := by
-    rw [Circle.coe_exp, hhf]
-  have hh1 : Tendsto h (cocompact ℂ) (𝓝 1) := by
-    have hdiv := hxfr.div hyfr one_ne_zero
-    rw [div_one] at hdiv
-    refine hdiv.congr' ?_
-    filter_upwards [hyfr.eventually_ne one_ne_zero] with z hz
-    rw [Pi.div_apply, hα z, mul_assoc, mul_div_cancel_right₀ _ hz]
-  have hu : (fun w ↦ Circle.exp (f w)) ∈ framedGaugeGroup := by
-    refine (mem_framedGaugeGroup _).2 ⟨?_, ?_⟩
-    · simpa only [hcoe] using hh
-    · exact tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm)
-  have hsmul : (⟨_, hu⟩ : framedGaugeGroup) • y = x := by
-    simp only [framedGaugeGroup_smul]
-    rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
-    exact hxy.symm
-  exact ⟨⟨_, hu⟩, hsmul, fun v hv ↦
+  have hd (i : Fin 4) : Differentiable ℝ fun w ↦ y w i := (hyi i).differentiable (by simp)
+  have hdense : Dense {z | sectionValue y z ≠ 0} :=
+    dense_setOf_sectionValue_ne_zero (k := ⊤) le_top (hyi 0) (hyi 1) (hd 2) (hd 3)
+      (fun w ↦ by simp [hysol w]) (tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr)
+  have hmem : u ∈ framedGaugeGroup := (mem_framedGaugeGroup _).2 ⟨hu, hu1⟩
+  have hsmul : (⟨u, hmem⟩ : framedGaugeGroup) • y = x := by
+    rw [framedGaugeGroup_smul]
+    exact hxy
+  exact ⟨⟨u, hmem⟩, hsmul, fun v hv ↦
     framedGaugeGroup_smul_left_injective hdense (hv.trans hsmul.symm)⟩
 
 end Divisor
