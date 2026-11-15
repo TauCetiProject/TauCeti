@@ -5,119 +5,266 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
-import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
-import TauCeti.NumberTheory.LcmUpto
+import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
 
 /-!
-# Examples of Montgomery stage-1 detection
+# Examples of Montgomery reduction and stage-1 detection
 
-The raw pair `(21, 25)` modulo `35` represents infinity modulo `5`, while modulo `7` it reduces
-to `(0, 4)`, representing the distinguished two-torsion point `(0, 0)` with nonzero denominator.
-Because the distinguished two-torsion point over `ZMod 5` has additive order `2`, the stage-1
-multiplier `Nat.lcmUpto 2 = 2` annihilates it, and nonvanishing modulo `7` certifies a proper
-factor of `35` at `B₁ = 2`. Doubling `(21, 25)` modulo `35` gives `(9, 0)`: infinity remains at
-infinity modulo `5` and doubling annihilates the two-torsion point modulo `7`, so the doubled
-pair's denominator vanishes modulo both `5` and `7` and `gcd(0, 35) = 35` is inconclusive.
+Modulo `35` with `(A, B, N, D) = (0, 1, 2, 4)`, the starting pair `(22, 1)` reduces to `(2, 1)`
+modulo `5` (representing the two-torsion point `(2, 0)` of order `2`) and to `(1, 1)` modulo `7`
+(representing `(1, 3)` of order `4`). Running the binary ladder from `(22, 1)` exhibits all three
+gcd outcomes on a single curve:
 
-Separately, the affine point `(1, 3)` on `y² = x³ + x` over `ZMod 7` has additive order `4`:
-its only prime divisor `2` is at most `3`, yet `4` divides neither `Nat.lcmUpto 2 = 2` nor
-`Nat.lcmUpto 3 = 6`, whereas `4 ∣ Nat.lcmUpto 4 = 12`, illustrating that prime-divisor
-smoothness is strictly weaker than powersmoothness (`B₁ = 3` versus `B₁ = 4`). The remaining
-examples separate the three gcd outcomes and record a proper gcd for a prime-power modulus.
+* `m = 2 = (2 : ℕ).lcmUpto` gives `(21, 30)` with `gcd(30, 35) = 5`, a proper factor certified by
+  `LadderRel.one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd`;
+* `m = 3` gives `(9, 2)` with `gcd(2, 35) = 1`, where `LadderRel.prime_dvd_gcd_iff_addOrderOf_dvd`
+  shows neither `5` nor `7` divides the gcd;
+* `m = 4` gives `(29, 0)` with `gcd(0, 35) = 35`, where both orders divide `4`.
+
+Additional checks verify compatibility of `double` and ring subtraction with `ZMod.castHom`,
+non-existence of `ZMod 35 →+* ZMod 3`, powersmoothness versus prime-divisor smoothness (`4` does
+not divide `Nat.lcmUpto 3 = 6`), and prime-power gcds modulo `9`.
 -/
-
-public section
 
 namespace TauCeti.Montgomery
 
 open WeierstrassCurve
 
-local instance detectionPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
-local instance detectionPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
+/-! ### Reduction checks along `ZMod.castHom` -/
 
-private theorem nonsingular_one_three :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
+-- (22, 1) modulo 35 reduces to (2, 1) modulo 5 and (1, 1) modulo 7, and doubling commutes.
+example :
+    let φ₅ := ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)
+    let φ₇ := ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)
+    let S : Pair (ZMod 35) := ⟨22, 1⟩
+    S.map φ₅ = ⟨2, 1⟩ ∧ S.map φ₇ = ⟨1, 1⟩ ∧
+      (double 2 4 S).map φ₅ = double 2 4 ⟨2, 1⟩ ∧ (double 2 4 S).map φ₅ = ⟨1, 0⟩ ∧
+      (double 2 4 S).map φ₇ = double 2 4 ⟨1, 1⟩ ∧ (double 2 4 S).map φ₇ = ⟨0, 4⟩ := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> (ext <;> simp only [map_double, Pair.map_x, Pair.map_z,
+    double_x, double_z] <;> decide)
+
+-- Ring subtraction in ZMod 35 commutes with reduction, unlike truncated natural subtraction.
+example :
+    let φ₅ := ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)
+    let φ₇ := ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)
+    (3 : ZMod 35) - 5 = 33 ∧ φ₅ ((3 : ZMod 35) - 5) = -2 ∧ φ₇ ((3 : ZMod 35) - 5) = -2 ∧
+      φ₅ (((3 - 5 : ℕ) : ZMod 35)) = 0 ∧ φ₅ (((3 - 5 : ℕ) : ZMod 35)) ≠ -2 := by
   decide
 
-private noncomputable def pointSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 1 3 nonsingular_one_three
+-- ZMod.castHom requires divisibility rather than primality, and no ring hom ZMod 35 →+* ZMod 3
+-- exists because 3 does not divide 35.
+example :
+    Nonempty (ZMod 35 →+* ZMod 5) ∧ Nonempty (ZMod 9 →+* ZMod 3) ∧
+      IsEmpty (ZMod 35 →+* ZMod 3) := by
+  refine ⟨⟨ZMod.castHom (by decide) (ZMod 5)⟩, ⟨ZMod.castHom (by decide) (ZMod 3)⟩, ⟨fun f ↦ ?_⟩⟩
+  have h35 : f (35 : ℕ) = 0 := by
+    have h0 : ((35 : ℕ) : ZMod 35) = 0 := by decide
+    rw [h0, map_zero]
+  rw [map_natCast] at h35
+  exact absurd h35 (by decide)
 
-private theorem pointSeven_double : pointSeven + pointSeven = twoTorsionPoint 0 (by decide) :=
-  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three).mpr (by decide)
+/-! ### Binary-ladder gcd outcomes from `(22, 1)` modulo `35` -/
 
-private theorem four_pointSeven : (4 : ℕ) • pointSeven = 0 := by
-  have h4 : (4 : ℕ) = 2 * 2 := rfl
-  simp only [h4, mul_nsmul, two_nsmul, pointSeven_double, twoTorsionPoint_add_self]
+-- At m = 2 = (2 : ℕ).lcmUpto, (2, 0) mod 5 (order 2 ≤ 2) is annihilated while (1, 3) mod 7
+-- (order 4) is not, certifying a proper factor gcd(30, 35) = 5.
+example : (1 < Nat.gcd (30 : ZMod 35).val 35 ∧ Nat.gcd (30 : ZMod 35).val 35 < 35) ∧
+    Nat.gcd (30 : ZMod 35).val 35 = 5 := by
+  refine ⟨?_, by decide⟩
+  have hND5 : 4 * ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) (2 : ZMod 35) =
+      (0 + 2) * ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) 4 := by decide
+  have hD7 : ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (4 : ZMod 35) ≠ 0 := by decide
+  have hND7 : 4 * ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (2 : ZMod 35) =
+      (0 + 2) * ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) 4 := by decide
+  have hS5 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) =
+      ⟨2, 1⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have hS7 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) =
+      ⟨1, 1⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have hSnz7 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) ≠
+      0 := by rw [hS7, Pair.ne_zero_iff]; decide
+  have hndvd7 : ¬ (4 : ℕ) ∣ (2 : ℕ).lcmUpto := by rw [Nat.lcmUpto_two]; decide
+  have h₁ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 1 ⟨11, 18⟩ ⟨21, 25⟩ := by
+    convert (LadderRel.zero (N := (2 : ZMod 35)) (D := 4) (S := ⟨22, 1⟩)).bit true using 1
+    · rfl
+    · simp only [↓reduceIte]; ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+    · simp only [↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+  have h₂ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ (2 : ℕ).lcmUpto ⟨21, 30⟩ ⟨9, 2⟩ := by
+    rw [Nat.lcmUpto_two]
+    convert h₁.bit false using 1
+    · rfl
+    · simp only [Bool.false_eq_true, ↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+    · simp only [Bool.false_eq_true, ↓reduceIte]
+      ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+  have : Fact (Nat.Prime 5) := ⟨by decide⟩
+  have : Fact (Nat.Prime 7) := ⟨by decide⟩
+  have hns5 : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  have hns7 : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  let P5 : (model (0 : ZMod 5) 1).toAffine.Point := .some 2 0 hns5
+  have hord5 : addOrderOf P5 = 2 := addOrderOf_eq_prime
+    (by rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq (by
+      simp only [Affine.negY, model_a₁, model_a₃]; ring)) (Affine.Point.some_ne_zero _)
+  let P7 : (model (0 : ZMod 7) 1).toAffine.Point := .some 1 3 hns7
+  have h2P7 : P7 + P7 = twoTorsionPoint 0 one_ne_zero :=
+    (add_self_eq_twoTorsionPoint_iff one_ne_zero hns7).mpr rfl
+  have hord7 : addOrderOf P7 = 4 := addOrderOf_eq_prime_pow (p := 2) (n := 1)
+    (by rw [pow_one, two_nsmul, h2P7]; exact twoTorsionPoint_ne_zero 0 one_ne_zero)
+    (by change (2 * 2 : ℕ) • P7 = 0; simp only [mul_nsmul, two_nsmul, h2P7,
+      twoTorsionPoint_add_self])
+  exact h₂.one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd (by decide) hND5
+    (P := P5) (by rw [hS5]; simp only [P5, coordinates_some, Pair.cross_def]; ring)
+    (by rw [hord5, Nat.lcmUpto_two]) (by decide) one_ne_zero hD7 hND7 hSnz7
+    (Q := P7) (by rw [hS7]; simp only [P7, coordinates_some, Pair.cross_def]; ring)
+    ((some_eq_twoTorsionPoint_iff one_ne_zero hns7).not.mpr one_ne_zero) (by rwa [hord7])
 
-private theorem addOrderOf_pointSeven : addOrderOf pointSeven = 4 := by
-  refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointSeven
-  rw [pow_one, two_nsmul, pointSeven_double]
-  exact twoTorsionPoint_ne_zero 0 (by decide)
+-- At m = 3, neither 2 nor 4 divides 3, so neither 5 nor 7 divides gcd(2, 35) = 1.
+example : (¬ 5 ∣ Nat.gcd (2 : ZMod 35).val 35 ∧ ¬ 7 ∣ Nat.gcd (2 : ZMod 35).val 35) ∧
+    Nat.gcd (2 : ZMod 35).val 35 = 1 := by
+  refine ⟨?_, by decide⟩
+  have hD5 : ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) (4 : ZMod 35) ≠ 0 := by decide
+  have hND5 : 4 * ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) (2 : ZMod 35) =
+      (0 + 2) * ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) 4 := by decide
+  have hD7 : ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (4 : ZMod 35) ≠ 0 := by decide
+  have hND7 : 4 * ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (2 : ZMod 35) =
+      (0 + 2) * ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) 4 := by decide
+  have hS5 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) =
+      ⟨2, 1⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have hS7 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) =
+      ⟨1, 1⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have hSnz5 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) ≠
+      0 := by rw [hS5, Pair.ne_zero_iff]; decide
+  have hSnz7 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) ≠
+      0 := by rw [hS7, Pair.ne_zero_iff]; decide
+  have h2ne0 : (2 : ZMod 5) ≠ 0 := by decide
+  have h2ndvd3 : ¬ (2 : ℕ) ∣ 3 := by decide
+  have h4ndvd3 : ¬ (4 : ℕ) ∣ 3 := by decide
+  have h₁ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 1 ⟨11, 18⟩ ⟨21, 25⟩ := by
+    convert (LadderRel.zero (N := (2 : ZMod 35)) (D := 4) (S := ⟨22, 1⟩)).bit true using 1
+    · rfl
+    · simp only [↓reduceIte]; ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+    · simp only [↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+  have h₃ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 3 ⟨9, 2⟩ ⟨9, 0⟩ := by
+    convert h₁.bit true using 1
+    · rfl
+    · simp only [↓reduceIte]; ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+    · simp only [↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+  have : Fact (Nat.Prime 5) := ⟨by decide⟩
+  have : Fact (Nat.Prime 7) := ⟨by decide⟩
+  have hns5 : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  have hns7 : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  let P5 : (model (0 : ZMod 5) 1).toAffine.Point := .some 2 0 hns5
+  have hord5 : addOrderOf P5 = 2 := addOrderOf_eq_prime
+    (by rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq (by
+      simp only [Affine.negY, model_a₁, model_a₃]; ring)) (Affine.Point.some_ne_zero _)
+  let P7 : (model (0 : ZMod 7) 1).toAffine.Point := .some 1 3 hns7
+  have h2P7 : P7 + P7 = twoTorsionPoint 0 one_ne_zero :=
+    (add_self_eq_twoTorsionPoint_iff one_ne_zero hns7).mpr rfl
+  have hord7 : addOrderOf P7 = 4 := addOrderOf_eq_prime_pow (p := 2) (n := 1)
+    (by rw [pow_one, two_nsmul, h2P7]; exact twoTorsionPoint_ne_zero 0 one_ne_zero)
+    (by change (2 * 2 : ℕ) • P7 = 0; simp only [mul_nsmul, two_nsmul, h2P7,
+      twoTorsionPoint_add_self])
+  exact ⟨(h₃.prime_dvd_gcd_iff_addOrderOf_dvd (by decide) one_ne_zero hD5 hND5 hSnz5
+      (P := P5) (by rw [hS5]; simp only [P5, coordinates_some, Pair.cross_def]; ring)
+      ((some_eq_twoTorsionPoint_iff one_ne_zero hns5).not.mpr h2ne0)).not.mpr (by rwa [hord5]),
+    (h₃.prime_dvd_gcd_iff_addOrderOf_dvd (by decide) one_ne_zero hD7 hND7 hSnz7
+      (P := P7) (by rw [hS7]; simp only [P7, coordinates_some, Pair.cross_def]; ring)
+      ((some_eq_twoTorsionPoint_iff one_ne_zero hns7).not.mpr one_ne_zero)).not.mpr
+      (by rwa [hord7])⟩
 
--- Modulo 5, (21, 25) represents infinity (1, 0); modulo 7 it reduces to (0, 4).
-example : (Pair.mk 21 25 : Pair (ZMod 35)).map
-      (ZMod.castHom (by norm_num : 5 ∣ 35) (ZMod 5)) = ⟨1, 0⟩ ∧
-    (Pair.mk 21 25 : Pair (ZMod 35)).map
-      (ZMod.castHom (by norm_num : 7 ∣ 35) (ZMod 7)) = ⟨0, 4⟩ := by
-  constructor <;> (ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide)
+-- At m = 4, both orders 2 and 4 divide 4, so both 5 and 7 divide gcd(0, 35) = 35.
+example : (5 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧ 7 ∣ Nat.gcd (0 : ZMod 35).val 35) ∧
+    Nat.gcd (0 : ZMod 35).val 35 = 35 := by
+  refine ⟨?_, by decide⟩
+  have hND5 : 4 * ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) (2 : ZMod 35) =
+      (0 + 2) * ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5) 4 := by decide
+  have hND7 : 4 * ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) (2 : ZMod 35) =
+      (0 + 2) * ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7) 4 := by decide
+  have hS5 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) =
+      ⟨2, 1⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have hS7 : (Pair.mk (22 : ZMod 35) 1).map (ZMod.castHom (by decide : 7 ∣ 35) (ZMod 7)) =
+      ⟨1, 1⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have h2dvd4 : (2 : ℕ) ∣ 4 := by decide
+  have h₁ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 1 ⟨11, 18⟩ ⟨21, 25⟩ := by
+    convert (LadderRel.zero (N := (2 : ZMod 35)) (D := 4) (S := ⟨22, 1⟩)).bit true using 1
+    · rfl
+    · simp only [↓reduceIte]; ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+    · simp only [↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+  have h₂ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 2 ⟨21, 30⟩ ⟨9, 2⟩ := by
+    convert h₁.bit false using 1
+    · rfl
+    · simp only [Bool.false_eq_true, ↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+    · simp only [Bool.false_eq_true, ↓reduceIte]
+      ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+  have h₄ : LadderRel (2 : ZMod 35) 4 ⟨22, 1⟩ 4 ⟨29, 0⟩ ⟨29, 22⟩ := by
+    convert h₂.bit false using 1
+    · rfl
+    · simp only [Bool.false_eq_true, ↓reduceIte]; ext <;> simp only [double_x, double_z] <;> decide
+    · simp only [Bool.false_eq_true, ↓reduceIte]
+      ext <;> simp only [diffAdd_x, diffAdd_z, Pair.cross_def] <;> decide
+  have : Fact (Nat.Prime 5) := ⟨by decide⟩
+  have : Fact (Nat.Prime 7) := ⟨by decide⟩
+  have hns5 : (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  have hns7 : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  let P5 : (model (0 : ZMod 5) 1).toAffine.Point := .some 2 0 hns5
+  have hord5 : addOrderOf P5 = 2 := addOrderOf_eq_prime
+    (by rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq (by
+      simp only [Affine.negY, model_a₁, model_a₃]; ring)) (Affine.Point.some_ne_zero _)
+  let P7 : (model (0 : ZMod 7) 1).toAffine.Point := .some 1 3 hns7
+  have h2P7 : P7 + P7 = twoTorsionPoint 0 one_ne_zero :=
+    (add_self_eq_twoTorsionPoint_iff one_ne_zero hns7).mpr rfl
+  have hord7 : addOrderOf P7 = 4 := addOrderOf_eq_prime_pow (p := 2) (n := 1)
+    (by rw [pow_one, two_nsmul, h2P7]; exact twoTorsionPoint_ne_zero 0 one_ne_zero)
+    (by change (2 * 2 : ℕ) • P7 = 0; simp only [mul_nsmul, two_nsmul, h2P7,
+      twoTorsionPoint_add_self])
+  exact ⟨h₄.prime_dvd_gcd_of_addOrderOf_dvd (by decide) hND5
+      (P := P5) (by rw [hS5]; simp only [P5, coordinates_some, Pair.cross_def]; ring)
+      (by rwa [hord5]),
+    h₄.prime_dvd_gcd_of_addOrderOf_dvd (by decide) hND7
+      (P := P7) (by rw [hS7]; simp only [P7, coordinates_some, Pair.cross_def]; ring)
+      (by rw [hord7])⟩
 
--- Stage-1 detection at B₁ = 2 (M(2) = 2): the two-torsion point over ZMod 5 has order 2 ≤ 2.
+/-! ### Powersmoothness and representative-level checks -/
+
+-- Stage-1 powersmooth detection at B₁ = 2 via prime_dvd_gcd_lcmUpto_of_addOrderOf_le.
 example : 5 ∣ Nat.gcd (25 : ZMod 35).val 35 := by
-  apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 5) (A := 0) (B := 1)
-    (m := (2 : ℕ).lcmUpto) (by decide) (twoTorsionPoint 0 (by decide)) ⟨21, 25⟩
-    (Nat.dvd_lcmUpto (by simp) (by simp))
-  rw [Nat.lcmUpto_two, two_nsmul, twoTorsionPoint_add_self, coordinates_zero, Pair.cross_def]
-  simp only [Pair.map_x, Pair.map_z]
-  decide
-
--- Nonvanishing at 7 upgrades stage-1 detection at B₁ = 2 to a proper factor certificate.
-example : 1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 35 := by
-  refine one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd
-    (n := 35) (p := 5) (A := 0) (B := 1) (m := (2 : ℕ).lcmUpto)
-    (by decide) (twoTorsionPoint 0 (by decide)) ⟨21, 25⟩
-    (Nat.dvd_lcmUpto_iff.mpr ?_) ?_ (q := 7) (by decide) (by decide)
-  · intro q _ hq
-    rw [addOrderOf_twoTorsionPoint 0 (by decide)] at hq
-    exact Nat.le_of_dvd (by decide) hq
-  · rw [Nat.lcmUpto_two, two_nsmul, twoTorsionPoint_add_self, coordinates_zero, Pair.cross_def]
-    simp only [Pair.map_x, Pair.map_z]
-    decide
+  have hU : (Pair.mk (21 : ZMod 35) 25).map (ZMod.castHom (by decide : 5 ∣ 35) (ZMod 5)) =
+      ⟨1, 0⟩ := by ext <;> simp only [Pair.map_x, Pair.map_z] <;> decide
+  have : Fact (Nat.Prime 5) := ⟨by decide⟩
+  apply prime_dvd_gcd_lcmUpto_of_addOrderOf_le (n := 35) (p := 5) (B₁ := 2) (A := 0) (B := 1)
+    (by decide +revert) (twoTorsionPoint 0 one_ne_zero) ⟨21, 25⟩
+  · rw [addOrderOf_twoTorsionPoint]
+  · rw [Nat.lcmUpto_two, two_nsmul, twoTorsionPoint_add_self, coordinates_zero, hU, Pair.cross_def]
+    ring
 
 -- Over ZMod 7, (1, 3) has order 4: its only prime divisor is 2 ≤ 3, yet neither M(2) = 2 nor
 -- M(3) = 6 annihilates it, whereas M(4) = 12 does.
-example : ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 2 ∧
-    ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 3 ∧
-    addOrderOf pointSeven ∣ Nat.lcmUpto 4 := by
-  rw [addOrderOf_pointSeven]
-  decide
-
--- Modulo 5, (21, 25) is already infinity (1, 0); modulo 7 it reduces to (0, 4), representing the
--- two-torsion point (0, 0) of order 2. Doubling (21, 25) modulo 35 gives (9, 0), whose denominator
--- vanishes modulo both 5 and 7 and produces the inconclusive outcome gcd(0, 35) = 35.
-example : double (2 : ZMod 35) 4 ⟨21, 25⟩ = ⟨9, 0⟩ ∧
-    5 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
-    7 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
-    Nat.gcd (0 : ZMod 35).val 35 = 35 := by
-  refine ⟨by ext <;> norm_num [double_x, double_z] <;> decide, ?_, ?_, by decide⟩
-  · apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 5) (A := 0) (B := 1)
-      (m := (2 : ℕ).lcmUpto) (by decide) 0 ⟨9, 0⟩ (Nat.dvd_lcmUpto (by simp) (by simp))
-    rw [nsmul_zero, coordinates_zero, Pair.cross_def]
-    simp only [Pair.map_x, Pair.map_z]
-    decide
-  · apply prime_dvd_gcd_of_addOrderOf_dvd (n := 35) (p := 7) (A := 0) (B := 1)
-      (m := (2 : ℕ).lcmUpto) (by decide) (twoTorsionPoint 0 (by decide)) ⟨9, 0⟩
-      (Nat.dvd_lcmUpto (by simp) (by simp))
-    rw [Nat.lcmUpto_two, two_nsmul, twoTorsionPoint_add_self, coordinates_zero, Pair.cross_def]
-    simp only [Pair.map_x, Pair.map_z]
-    decide
-
--- The three gcd outcomes: no factor, a proper factor, and total annihilation.
-example : Nat.gcd (1 : ZMod 35).val 35 = 1 ∧
-    Nat.gcd (25 : ZMod 35).val 35 = 5 ∧ Nat.gcd (0 : ZMod 35).val 35 = 35 := by
-  decide
+example [Fact (Nat.Prime 7)] :
+    ∃ P7 : (model (0 : ZMod 7) 1).toAffine.Point,
+      ¬ addOrderOf P7 ∣ Nat.lcmUpto 2 ∧ ¬ addOrderOf P7 ∣ Nat.lcmUpto 3 ∧
+        addOrderOf P7 ∣ Nat.lcmUpto 4 := by
+  have hdiv : ¬ (4 : ℕ) ∣ Nat.lcmUpto 2 ∧ ¬ (4 : ℕ) ∣ Nat.lcmUpto 3 ∧
+      (4 : ℕ) ∣ Nat.lcmUpto 4 := by decide +revert
+  have hns7 : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
+    simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+      model_a₄, model_a₆]; decide +revert
+  let P7 : (model (0 : ZMod 7) 1).toAffine.Point := .some 1 3 hns7
+  have h2P7 : P7 + P7 = twoTorsionPoint 0 one_ne_zero :=
+    (add_self_eq_twoTorsionPoint_iff one_ne_zero hns7).mpr rfl
+  have hord7 : addOrderOf P7 = 4 := addOrderOf_eq_prime_pow (p := 2) (n := 1)
+    (by rw [pow_one, two_nsmul, h2P7]; exact twoTorsionPoint_ne_zero 0 one_ne_zero)
+    (by change (2 * 2 : ℕ) • P7 = 0; simp only [mul_nsmul, two_nsmul, h2P7,
+      twoTorsionPoint_add_self])
+  exact ⟨P7, by rwa [hord7]⟩
 
 -- Proper prime-power gcds do not require two distinct prime divisors.
 example : Nat.gcd (3 : ZMod 9).val 9 = 3 ∧
@@ -127,7 +274,8 @@ example : Nat.gcd (3 : ZMod 9).val 9 = 3 ∧
 
 -- The gcd/reduction bridge also includes modulus zero and negative integers.
 example : 5 ∣ Nat.gcd (-15 : ZMod 0).val 0 := by
+  have : Fact (Nat.Prime 5) := ⟨by decide⟩
   rw [ZMod.dvd_gcd_val_iff_castHom_eq_zero _ (dvd_zero 5)]
-  decide
+  decide +revert
 
 end TauCeti.Montgomery
