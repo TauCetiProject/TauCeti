@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # Vector fields read in a chart
@@ -29,9 +30,11 @@ Milnor's proof of the homogeneity lemma.
 * `TauCeti.chartField`: a vector field on the model space, read in the extended chart at a point
   and extended by zero; `TauCeti.contMDiff_chartField` shows it is smooth when the field is
   supported in a compact subset of the chart target, and
-  `TauCeti.isMIntegralCurveOn_chartField` that straight segments along which the field is constant
-  are its integral curves (by `TauCeti.hasMFDerivAt_extChartAt_symm_add_smul`, the derivative of
-  such a segment in the manifold).
+  `TauCeti.isMIntegralCurveOn_chartField` that integral curves of the field in the chart target
+  are carried by the inverse chart to integral curves of the chart field (by
+  `TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp`), with
+  `TauCeti.isMIntegralCurveOn_chartField_add_smul` its form for straight segments along which the
+  field is constant.
 * `TauCeti.bumpChartField`: a constant field cut off by a bump function, read in the chart;
   `TauCeti.bumpChartField_extChartAt_symm` and
   `TauCeti.bumpChartField_extChartAt_symm_of_mem_ball` give its values in the chart;
@@ -108,47 +111,30 @@ theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E) p}
     DFunLike.congr_fun (mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm hp) d
   exact ((congrArg (fun a ↦ (w a : E)) ((extChartAt I x).right_inv hp)).trans hwp).trans key.symm
 
-/-- A straight segment `s ↦ c + s • d` in the chart, at a time `t` at which it is in the interior
-of the chart target, is differentiable in the manifold with derivative the image of `d` under the
-derivative of the inverse chart. -/
-theorem hasMFDerivAt_extChartAt_symm_add_smul {c d : E} {t : ℝ}
-    (ht : (extChartAt I x).target ∈ 𝓝 (c + t • d)) :
-    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight
-        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) (c + t • d) d)) := by
-  have hrange : range I ∈ 𝓝 (c + t • d) :=
-    mem_of_superset ht (extChartAt_target_subset_range x)
-  have hsymm :=
-    (mdifferentiableWithinAt_extChartAt_symm (mem_of_mem_nhds ht)).hasMFDerivWithinAt.hasMFDerivAt
-      hrange
-  have hseg : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, E) (fun s : ℝ ↦ c + s • d) t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight d) := by
-    have h := ((hasDerivAt_id t).smul_const d).const_add c
-    rw [one_smul] at h
-    exact hasMFDerivAt_iff_hasFDerivAt.2 h
-  have hder : (1 : ℝ →L[ℝ] ℝ).smulRight
-      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) (c + t • d) d) =
-      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) (c + t • d)).comp
-        ((1 : ℝ →L[ℝ] ℝ).smulRight d) := by
-    ext1
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply, one_apply_eq_self,
-      one_smul]
-    congr 1
-    -- `smulRight` is evaluated in `E` rather than in the tangent space at `c + t • d`.
-    exact (by simp : ((1 : ℝ →L[ℝ] ℝ).smulRight d) 1 = d).symm
-  rw [hder]
-  exact hsymm.comp t hseg
+/-- The inverse chart carries an integral curve `γ` of `w` on `J` that stays in the chart target to
+an integral curve of the chart field of `w` on `J`. -/
+theorem isMIntegralCurveOn_chartField {γ : ℝ → E} {J : Set ℝ}
+    (hJt : ∀ s ∈ J, γ s ∈ (extChartAt I x).target) (hγ : IsMIntegralCurveOn γ w J) :
+    IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (γ s)) (chartField (I := I) x w) J :=
+  fun s hs ↦ by
+  have hd : HasDerivWithinAt γ (w (γ s) : E) J s :=
+    hasMFDerivWithinAt_iff_hasFDerivWithinAt.1 (hγ s hs)
+  rw [chartField_extChartAt_symm (hJt s hs) rfl]
+  exact TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp (hJt s hs)
+    (eventually_nhdsWithin_of_forall fun r hr ↦ extChartAt_target_subset_range x (hJt r hr)) hd
 
 /-- A straight segment `s ↦ c + s • d` in the chart is an integral curve of the chart field of `w`
-at the times `s ∈ J` at which it is in the interior of the chart target and `w` takes the value
-`d`. -/
-theorem isMIntegralCurveOn_chartField {c d : E} {J : Set ℝ}
-    (hJt : ∀ s ∈ J, (extChartAt I x).target ∈ 𝓝 (c + s • d))
+at the times `s ∈ J` at which it is in the chart target and `w` takes the value `d`. -/
+theorem isMIntegralCurveOn_chartField_add_smul {c d : E} {J : Set ℝ}
+    (hJt : ∀ s ∈ J, c + s • d ∈ (extChartAt I x).target)
     (hJw : ∀ s ∈ J, w (c + s • d) = d) :
     IsMIntegralCurveOn (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) (chartField (I := I) x w)
-      J := fun s hs ↦ by
-  rw [chartField_extChartAt_symm (mem_of_mem_nhds (hJt s hs)) (hJw s hs)]
-  exact (hasMFDerivAt_extChartAt_symm_add_smul (hJt s hs)).hasMFDerivWithinAt
+      J := by
+  refine isMIntegralCurveOn_chartField hJt fun s hs ↦ ?_
+  have hseg : HasDerivAt (fun r : ℝ ↦ c + r • d) d s := by
+    simpa using ((hasDerivAt_id s).smul_const d).const_add c
+  rw [hJw s hs]
+  exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.2 hseg.hasDerivWithinAt.hasFDerivWithinAt
 
 /-- The chart field of a `C^m` vector field supported in a compact subset of the chart target is
 a `C^m` vector field on `M`, provided `M` is `C^(m + 1)`. -/
@@ -250,9 +236,9 @@ theorem isMIntegralCurveOn_bumpChartField
     (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) {c : E} {J : Set ℝ}
     (hJ : ∀ s ∈ J, c + s • v ∈ ball (extChartAt I x x) ρ.rIn) :
     IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (c + s • v)) (bumpChartField x ρ v) J :=
-  isMIntegralCurveOn_chartField
-    (fun s hs ↦ mem_of_superset (isOpen_ball.mem_nhds (hJ s hs))
-      ((ball_subset_closedBall.trans (closedBall_subset_closedBall ρ.rIn_lt_rOut.le)).trans hρ))
+  isMIntegralCurveOn_chartField_add_smul
+    (fun s hs ↦ hρ <| closedBall_subset_closedBall ρ.rIn_lt_rOut.le <|
+      ball_subset_closedBall (hJ s hs))
     fun s hs ↦ by
       -- `TangentSpace 𝓘(ℝ, E) p` is `E` by definition.
       simp only [ρ.one_of_mem_closedBall (ball_subset_closedBall (hJ s hs)), one_smul]
