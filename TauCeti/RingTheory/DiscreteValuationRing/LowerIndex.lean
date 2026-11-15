@@ -11,21 +11,23 @@ public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
+import TauCeti.RingTheory.Invariant.Minpoly
 import TauCeti.RingTheory.IsGaloisGroup.Dedekind
+import TauCeti.RingTheory.LocalRing.ResidueField.Instances
 import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
 # Inertia cardinality and Serre's lower-index quotient formula on discrete valuation rings
 
-For a faithful finite Galois group action `G` on a discrete valuation ring `B` with invariant DVR
-`A` and separable residue extension, `#G_0 = e(B / A)` (`natCard_ramificationGroup_zero`). More
-generally, when `G` acts faithfully on a discrete valuation ring `B` over a local ring `A` with
-separable residue extension `ResidueField B / ResidueField A` (e.g. when `ResidueField A` is perfect
-and `B` is integral over `A`), `#H_0 = e(B / B^H)` (`natCard_ramificationGroup_zero_fixedPoints`)
-for finite `H ≤ G`, and Serre's quotient formula `e(B / B^H) · i_{G ⧸ H}(g H) = ∑ᶠ h : H, i_G(g h)`
-holds for finite `G` and normal `H ≤ G` (`ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum`),
-feeding `TauCeti.RingTheory.DiscreteValuationRing.Herbrand`. The characteristic-polynomial argument
-and coset-sum consequences adapt `TauCeti/NumberTheory/LocalField/LowerIndex.lean` and
+For a faithful finite Galois action `G` on a DVR `B` with invariant DVR `A` and separable residue
+extension, `#G_0 = e(B / A)` (`natCard_ramificationGroup_zero`). More generally, when `G` acts
+faithfully on a DVR `B` over a local ring `A` with separable residue extension (e.g. perfect
+`ResidueField A` and `B` integral over `A`), `#H_0 = e(B / B^H)`
+(`natCard_ramificationGroup_zero_fixedPoints`) for finite `H ≤ G`, and Serre's quotient formula
+`e(B / B^H) · i_{G ⧸ H}(g H) = ∑ᶠ h : H, i_G(g h)` holds for finite `G` and normal `H ≤ G`
+(`ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum`), feeding
+`TauCeti.RingTheory.DiscreteValuationRing.Herbrand`. Adapts
+`TauCeti/NumberTheory/LocalField/LowerIndex.lean` and
 `TauCeti/NumberTheory/LocalField/Herbrand/Quotient.lean`.
 
 ## References
@@ -36,12 +38,12 @@ and coset-sum consequences adapt `TauCeti/NumberTheory/LocalField/LowerIndex.lea
 public section
 noncomputable section
 
-open IsLocalRing Polynomial
+open IsLocalRing
 
 namespace TauCeti.IsLocalRing
 
-/-- For a faithful finite Galois group action `G` on a discrete valuation ring `B` with invariant
-ring a discrete valuation ring `A` and separable residue extension, `#G_0 = e(B / A)`. -/
+/-- For a faithful finite Galois action `G` on a DVR `B` with invariant DVR `A` and separable
+residue extension, `#G_0 = e(B / A)`. -/
 theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
     [IsDiscreteValuationRing A] [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
     [IsLocalHom (algebraMap A B)] [Group G] [Finite G] [MulSemiringAction G B]
@@ -57,15 +59,14 @@ theorem natCard_ramificationGroup_zero {A B G : Type*} [CommRing A] [IsDomain A]
       exact IsDiscreteValuationRing.not_a_field B
         (eq_maximalIdeal (Ideal.isMaximal_of_isIntegral_of_isMaximal_under (R := A) ⊥ hmax)).symm)
   have _ : Module.Finite A B := TauCeti.IsGaloisGroup.moduleFinite G A B
-  have _ : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
-    inferInstanceAs (Algebra.IsSeparable (ResidueField A) (ResidueField B))
+  have _ := (isSeparable_residueField_iff (A := A) (B := B)).mp ‹_›
   rw [ramificationGroup_zero_eq_inertia,
     ← Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
   exact Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G)
     (maximalIdeal A) (maximalIdeal B)
 
-/-- For a finite subgroup `H ≤ G` acting faithfully on a discrete valuation ring `B` over a local
-ring `A` with separable residue extension, `#H_0 = e(B / B^H)`. -/
+/-- For finite `H ≤ G` acting faithfully on a DVR `B` over a local ring `A` with separable residue
+extension, `#H_0 = e(B / B^H)`. -/
 theorem natCard_ramificationGroup_zero_fixedPoints (A B G : Type*) [CommRing A] [IsLocalRing A]
     [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
     [IsLocalHom (algebraMap A B)] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
@@ -78,53 +79,13 @@ theorem natCard_ramificationGroup_zero_fixedPoints (A B G : Type*) [CommRing A] 
     Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) _ (ResidueField B)
   exact natCard_ramificationGroup_zero
 
-section Quotient
-
-private theorem smul_sub_dvd_eval_smul_charpoly {A B G R₀ : Type*} [CommRing A] [CommRing B]
-    [IsDomain B] [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
-    [CommRing R₀] (H : Subgroup G) [H.Normal] [Fintype H]
-    [Algebra R₀ (FixedPoints.subalgebra A B H)]
-    [SMulCommClass (G ⧸ H) R₀ (FixedPoints.subalgebra A B H)]
-    {y : FixedPoints.subalgebra A B H} (hy : Algebra.adjoin R₀ {y} = ⊤) (g : G) (x : B) :
-    g • (y : B) - (y : B) ∣ (g • MulSemiringAction.charpoly H x).eval x := by
-  set P := MulSemiringAction.charpoly H x
-  rw [← sub_zero ((g • P).eval x), ← MulSemiringAction.eval_charpoly H x, ← eval_sub,
-    eval_eq_sum_range]
-  refine Finset.dvd_sum fun n _ ↦ Dvd.dvd.mul_right ?_ _
-  have hdvd := TauCeti.smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top hy (QuotientGroup.mk' H g)
-    ⟨P.coeff n, MulSemiringAction.smul_coeff_charpoly x n⟩
-  rw [← TauCeti.coe_dvd_coe_fixedPoints_subalgebra_iff] at hdvd
-  simpa only [AddSubgroupClass.coe_sub, QuotientGroup.mk'_apply,
-    TauCeti.coe_quotient_smul_fixedPoints_subalgebra, coeff_sub,
-    AddMonoidAlgebra.coeff_smul_apply] using hdvd
-
-private theorem eval_smul_charpoly_dvd_sub_smul {A B G R₀ : Type*} [CommRing A] [CommRing B]
-    [IsDomain B] [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
-    [FaithfulSMul G B] [CommRing R₀] [Algebra R₀ B] [SMulCommClass G R₀ B]
-    (H : Subgroup G) [Fintype H] {x : B} (hx : Algebra.adjoin R₀ {x} = ⊤)
-    (y : FixedPoints.subalgebra A B H) (g : G) :
-    (g • MulSemiringAction.charpoly H x).eval x ∣ (y : B) - g • (y : B) := by
-  obtain ⟨q, hq⟩ : ∃ q : R₀[X], aeval x q = (y : B) := by
-    rw [← AlgHom.mem_range, ← Algebra.adjoin_singleton_eq_range_aeval, hx]; exact Algebra.mem_top
-  set Q : B[X] := q.map (algebraMap R₀ B) - C (y : B)
-  have hQ (h : H) : Q.eval (h • x) = 0 := by
-    rw [eval_sub, eval_C, eval_map_algebraMap, Polynomial.aeval_smul, hq, y.2 h, sub_self]
-  obtain ⟨r, hr⟩ := TauCeti.MulSemiringAction.charpoly_dvd
-    (TauCeti.smul_left_injective_of_adjoin_singleton_eq_top (G := H) hx) hQ
-  have hgQ : g • Q = q.map (algebraMap R₀ B) - C (g • (y : B)) := by
-    rw [smul_sub, smul_C, smul_eq_map, Polynomial.map_map,
-      (RingHom.ext fun r₀ ↦ smul_algebraMap g r₀ :
-        (MulSemiringAction.toRingHom G B g).comp (algebraMap R₀ B) = algebraMap R₀ B)]
-  exact ⟨(g • r).eval x, by
-    rw [← eval_mul, ← smul_mul', ← hr, hgQ, eval_sub, eval_C, eval_map_algebraMap, hq]⟩
-
 variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
   [IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G] [Finite G]
   [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
   [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
 
-/-- **Serre's quotient formula for the lower index** on discrete valuation rings: for a normal
-subgroup `H ≤ G`, `e(B / B^H) · i_{G ⧸ H}(g H) = ∑ᶠ h : H, i_G(g h)`. -/
+/-- **Serre's quotient formula for the lower index**: for normal `H ≤ G`,
+`e(B / B^H) · i_{G ⧸ H}(g H) = ∑ᶠ h : H, i_G(g h)`. -/
 theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [H.Normal] (g : G) :
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) =
@@ -149,11 +110,17 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
     Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField R₀) (ResidueField C) (ResidueField B)
   obtain ⟨x, hx⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := R₀) (S := B)
   obtain ⟨y, hy⟩ := TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top (R := R₀) (S := C)
+  let e : C →ₐ[R₀] FixedPoints.subalgebra R₀ B H :=
+    { toFun z := ⟨z.1, z.2⟩, map_one' := rfl, map_mul' _ _ := rfl,
+      map_zero' := rfl, map_add' _ _ := rfl, commutes' _ := rfl }
+  have hy' : Algebra.adjoin R₀ {e y} = ⊤ := by
+    rw [← Set.image_singleton, ← AlgHom.map_adjoin, hy, Algebra.map_top]
+    exact e.range_eq_top.2 fun z ↦ ⟨⟨z.1, z.2⟩, rfl⟩
   have key : IsDiscreteValuationRing.addVal B (g • (y : B) - (y : B)) =
       IsDiscreteValuationRing.addVal B ((g • MulSemiringAction.charpoly H x).eval x) :=
     (IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <| associated_of_dvd_dvd
-      (smul_sub_dvd_eval_smul_charpoly H hy g x)
-      (dvd_sub_comm.1 (eval_smul_charpoly_dvd_sub_smul H hx y g))
+      (TauCeti.MulSemiringAction.smul_sub_dvd_eval_smul_charpoly H hy' g x)
+      (dvd_sub_comm.1 (TauCeti.MulSemiringAction.eval_smul_charpoly_dvd_sub_smul H hx y.2 g))
   rw [finsum_eq_sum_of_fintype, lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hy, ← nsmul_eq_mul,
     ← TauCeti.IsDiscreteValuationRing.addVal_algebraMap (S := C) (T := B), map_sub,
     Subalgebra.algebraMap_apply, Subalgebra.algebraMap_apply, QuotientGroup.mk'_apply,
@@ -163,7 +130,7 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_finsum (H : Subgroup G) [
   rw [lowerIndex_eq_addVal_of_adjoin_singleton_eq_top hx, mul_smul, Subgroup.smul_def,
     AddValuation.map_sub_swap]
 
-/-- If `g` has maximal lower index `j` in its coset `g H`, then
+/-- If `g` maximizes `lowerIndex` in `g H` with `i_G(g) = j`, then
 `e(B / B^H) · i_{G ⧸ H}(g H) = ∑ k ∈ range j, #H_k`. -/
 theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card (H : Subgroup G) [H.Normal]
     (g : G) {j : ℕ} (hj : lowerIndex B g = j)
@@ -176,6 +143,8 @@ theorem ramificationIdx_mul_lowerIndex_quotient_mk'_eq_sum_card (H : Subgroup G)
   simp_rw [lowerIndex_mul_of_forall_le g hg, hj]
   exact sum_min_lowerIndex_natCast (G := H) (S := B) j
 
+/-- If `g` maximizes `lowerIndex` in `g H` and `lowerIndex B g ≠ ⊤`, then
+`lowerIndex B^H (QuotientGroup.mk' H g) ≠ ⊤`. -/
 theorem lowerIndex_quotient_mk'_ne_top (H : Subgroup G) [H.Normal] (g : G)
     (hj : lowerIndex B g ≠ ⊤) (hg : ∀ h : H, lowerIndex B (g * h) ≤ lowerIndex B g) :
     lowerIndex (FixedPoints.subalgebra A B H) (QuotientGroup.mk' H g) ≠ ⊤ := by
@@ -185,7 +154,5 @@ theorem lowerIndex_quotient_mk'_ne_top (H : Subgroup G) [H.Normal] (g : G)
     rw [← natCard_ramificationGroup_zero_fixedPoints A B G H]
     exact Nat.cast_ne_zero.2 Nat.card_pos.ne'
   rw [htop, ENat.mul_top he, ← Nat.cast_sum] at hsum; exact ENat.natCast_ne_top _ hsum.symm
-
-end Quotient
 
 end TauCeti.IsLocalRing

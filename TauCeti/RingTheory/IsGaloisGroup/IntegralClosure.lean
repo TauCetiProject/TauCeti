@@ -39,11 +39,21 @@ in `M ^ H`, the subgroup `H` is a Galois group of `B / C`.
 * `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`: the same, bundled with
   the injectivity of `C → B`, as used to set up instances for the fixed-field integral closure.
 * `TauCeti.fixedPointsSubalgebraIntegralClosureEquiv`: `(integralClosure A L)^H ≃ₐ[A]
-  integralClosure A (fixedField H)`, together with its Galois-action equivariance and transfer of
-  `IsLocalRing`.
+  integralClosure A (fixedField H)`, together with its Galois-action equivariance, transfer of
+  `IsLocalRing`, `AlgEquiv.restrictScalars_smul_integralClosure`, and `FaithfulSMul` instances on
+  `integralClosure A L`.
 -/
 
 public section
+
+/-- Restricting the scalars of an automorphism along `L / E / K` does not change its action on
+`integralClosure A L`. -/
+@[simp] theorem AlgEquiv.restrictScalars_smul_integralClosure {A K E L : Type*} [CommRing A]
+    [CommRing K] [CommRing E] [CommRing L] [Algebra A L] [Algebra K E] [Algebra E L] [Algebra K L]
+    [IsScalarTower K E L] [SMulCommClass (L ≃ₐ[K] L) A L] [SMulCommClass (L ≃ₐ[E] L) A L]
+    (σ : L ≃ₐ[E] L) (x : integralClosure A L) :
+    σ.restrictScalars K • x = σ • x :=
+  Subtype.ext (by simp [AlgEquiv.smul_def])
 
 /-- The action of `Gal(L/K)` on an integral closure `B` of `A` in `L` commutes with the action of
 `A`, since it is the restriction of the action by `K`-algebra automorphisms of `L`. -/
@@ -154,7 +164,33 @@ end IsGaloisGroup
 
 namespace TauCeti
 
-section FixedFieldIntegralClosure
+/-- A faithful group action on a field `L` restricts faithfully to `integralClosure A L` whenever
+`L` is a fraction field of `integralClosure A L`. -/
+instance instFaithfulSMulIntegralClosureOfIsFractionRing {G A L : Type*} [CommRing A] [Field L]
+    [Algebra A L] [Group G] [MulSemiringAction G L] [SMulCommClass G A L] [FaithfulSMul G L]
+    [IsFractionRing (integralClosure A L) L] : FaithfulSMul G (integralClosure A L) :=
+  ⟨fun h ↦ eq_of_smul_eq_smul fun y : L ↦ by
+    obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (integralClosure A L) y
+    simp only [smul_div₀', ← algebraMap.coe_smul', h]⟩
+
+/-- A faithful group action on an algebraic field extension `L` over an embedded base ring `A`
+restricts faithfully to `integralClosure A L`. -/
+instance instFaithfulSMulIntegralClosureOfIsAlgebraic {G A L : Type*} [CommRing A] [Field L]
+    [Algebra A L] [FaithfulSMul A L] [Algebra.IsAlgebraic A L] [Group G] [MulSemiringAction G L]
+    [SMulCommClass G A L] [FaithfulSMul G L] : FaithfulSMul G (integralClosure A L) :=
+  letI := IsIntegralClosure.isFractionRing_of_algebraic A (integralClosure A L)
+    fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff A L).mp
+  inferInstance
+
+/-- For an algebraic extension `L / K` over a fraction field `K` of `A`, `L ≃ₐ[K] L` acts
+faithfully on `integralClosure A L`. -/
+instance instFaithfulSMulAlgEquivIntegralClosure {A K L : Type*} [CommRing A] [Field K] [Field L]
+    [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L] [IsFractionRing A K]
+    [Algebra.IsAlgebraic K L] : FaithfulSMul (L ≃ₐ[K] L) (integralClosure A L) :=
+  have : IsDomain A := (IsFractionRing.injective A K).isDomain _
+  have : FaithfulSMul A L := .trans A K L
+  have : Algebra.IsAlgebraic A L := IsFractionRing.comap_isAlgebraic_iff.mpr ‹_›
+  inferInstance
 
 open IntermediateField
 
@@ -172,10 +208,7 @@ def fixedPointsSubalgebraIntegralClosureEquiv (H : Subgroup (L ≃ₐ[K] L)) :
   invFun y := ⟨⟨(y.1 : L), by
     have : IsScalarTower A (fixedField H) L := IsScalarTower.of_algebraMap_eq' rfl
     exact y.2.map (IsScalarTower.toAlgHom A (fixedField H) L)⟩, fun h ↦ Subtype.ext (y.1.2 h)⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
+  left_inv _ := rfl; right_inv _ := rfl; map_mul' _ _ := rfl; map_add' _ _ := rfl
   commutes' r := Subtype.ext <| Subtype.ext <| by
     simp [IsScalarTower.algebraMap_apply A K L r,
       IsScalarTower.algebraMap_apply A K (fixedField H) r]
@@ -203,6 +236,8 @@ theorem fixedPointsSubalgebraIntegralClosureEquiv_smul [FiniteDimensional K L] [
       simp [IsGalois.normalAutEquivQuotient_apply, AlgEquiv.restrictNormalHom_apply,
         AlgEquiv.smul_def, coe_quotient_smul_fixedPoints_subalgebra]
 
+/-- `(fixedPointsSubalgebraIntegralClosureEquiv A H).symm` intertwines the Galois action of
+`Gal(fixedField H / K)` with `(IsGalois.normalAutEquivQuotient H).symm`. -/
 theorem fixedPointsSubalgebraIntegralClosureEquiv_symm_smul [FiniteDimensional K L] [IsGalois K L]
     (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (τ : fixedField H ≃ₐ[K] fixedField H)
     (y : integralClosure A (fixedField H)) :
@@ -210,14 +245,12 @@ theorem fixedPointsSubalgebraIntegralClosureEquiv_symm_smul [FiniteDimensional K
       (IsGalois.normalAutEquivQuotient H).symm τ •
         (fixedPointsSubalgebraIntegralClosureEquiv A H).symm y :=
   (fixedPointsSubalgebraIntegralClosureEquiv A H).injective <| by
-    rw [AlgEquiv.apply_symm_apply, fixedPointsSubalgebraIntegralClosureEquiv_smul,
-      MulEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
+    simp [fixedPointsSubalgebraIntegralClosureEquiv_smul]
 
 variable {A} in
+/-- If `integralClosure A L` is local, so is `integralClosure A (fixedField H)`. -/
 instance instIsLocalRingIntegralClosureFixedField [IsLocalRing (integralClosure A L)]
     {H : Subgroup (L ≃ₐ[K] L)} : IsLocalRing (integralClosure A (fixedField H)) :=
   (fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv.isLocalRing
-
-end FixedFieldIntegralClosure
 
 end TauCeti

@@ -485,18 +485,12 @@ end TauCeti.MulSemiringAction
 
 namespace TauCeti
 
-section FixedPointsRing
-
 /-- The canonical ring isomorphism `FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G`. -/
 def fixedPointsSubringEquivSubalgebra (A B G : Type*) [CommSemiring A] [Ring B] [Algebra A B]
     [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B] :
-    FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G where
-  toFun x := ⟨x.1, x.2⟩
-  invFun x := ⟨x.1, x.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
+    FixedPoints.subring B G ≃+* FixedPoints.subalgebra A B G :=
+  { toFun x := ⟨x.1, x.2⟩, invFun x := ⟨x.1, x.2⟩, left_inv _ := rfl, right_inv _ := rfl,
+    map_mul' _ _ := rfl, map_add' _ _ := rfl }
 
 @[simp] theorem coe_fixedPointsSubringEquivSubalgebra_apply (A B G : Type*) [CommSemiring A]
     [Ring B] [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
@@ -533,13 +527,10 @@ instance (priority := 100) instSMulCommClassQuotientFixedPointsSubalgebra {A B G
     [SMul R (FixedPoints.subalgebra A B H)] [IsScalarTower R (FixedPoints.subalgebra A B H) B] :
     SMulCommClass (G ⧸ H) R (FixedPoints.subalgebra A B H) where
   smul_comm q r x := Quotient.inductionOn' q fun g ↦ Subtype.ext <| by
-    have hcoe (y : FixedPoints.subalgebra A B H) :
+    have hc (y : FixedPoints.subalgebra A B H) :
         ((r • y : FixedPoints.subalgebra A B H) : B) = r • (y : B) := by
-      have h := smul_assoc r y (1 : B)
-      rwa [Subalgebra.smul_def, Subalgebra.smul_def, smul_eq_mul, mul_one, smul_eq_mul,
-        mul_one] at h
-    rw [coe_quotient_smul_fixedPoints_subalgebra, hcoe, hcoe,
-      coe_quotient_smul_fixedPoints_subalgebra, smul_comm]
+      simpa only [Subalgebra.smul_def, smul_eq_mul, mul_one] using smul_assoc r y (1 : B)
+    simp [hc, smul_comm]
 
 /-- Inclusion `FixedPoints.subsemiring B G →+* B` under left-cancellative multiplication reflects
 and preserves divisibility. -/
@@ -549,25 +540,24 @@ and preserves divisibility. -/
   refine ⟨fun ⟨q, hq⟩ ↦ ?_, (FixedPoints.subsemiring B G).subtype.map_dvd⟩
   by_cases hx : x = 0; · subst hx; exact ⟨0, Subtype.ext (by simpa using hq)⟩
   refine ⟨⟨q, fun g ↦ mul_left_cancel₀ (Subtype.coe_ne_coe.2 hx) ?_⟩, Subtype.ext hq⟩
-  calc (x : B) * (g • q) = g • (x : B) * (g • q) := by rw [x.2 g]
-    _ = g • ((x : B) * q) := (smul_mul' g (x : B) q).symm
+  calc (x : B) * (g • q) = g • ((x : B) * q) := by rw [smul_mul', x.2 g]
     _ = (x : B) * q := by rw [← hq, y.2 g]
 
 @[simp] theorem coe_dvd_coe_fixedPoints_subring_iff {B G : Type*} [Ring B] [IsLeftCancelMulZero B]
     [Monoid G] [MulSemiringAction G B] {x y : FixedPoints.subring B G} :
-    (x : B) ∣ (y : B) ↔ x ∣ y := by
-  refine ⟨fun h ↦ ?_, (FixedPoints.subring B G).subtype.map_dvd⟩
-  obtain ⟨q, hq⟩ :=
-    (coe_dvd_coe_fixedPoints_subsemiring_iff (x := ⟨x.1, x.2⟩) (y := ⟨y.1, y.2⟩)).mp h
-  exact ⟨⟨q.1, q.2⟩, Subtype.ext (congrArg Subtype.val hq)⟩
+    (x : B) ∣ (y : B) ↔ x ∣ y :=
+  ⟨fun h ↦ let ⟨q, hq⟩ :=
+      (coe_dvd_coe_fixedPoints_subsemiring_iff (x := ⟨x.1, x.2⟩) (y := ⟨y.1, y.2⟩)).mp h
+    ⟨⟨q.1, q.2⟩, Subtype.ext (congrArg Subtype.val hq)⟩,
+   (FixedPoints.subring B G).subtype.map_dvd⟩
 
 @[simp] theorem coe_dvd_coe_fixedPoints_subalgebra_iff {A B G : Type*} [CommSemiring A] [Semiring B]
     [IsLeftCancelMulZero B] [Algebra A B] [Monoid G] [MulSemiringAction G B] [SMulCommClass G A B]
-    {x y : FixedPoints.subalgebra A B G} : (x : B) ∣ (y : B) ↔ x ∣ y := by
-  refine ⟨fun h ↦ ?_, (FixedPoints.subalgebra A B G).val.toRingHom.map_dvd⟩
-  obtain ⟨q, hq⟩ :=
-    (coe_dvd_coe_fixedPoints_subsemiring_iff (x := ⟨x.1, x.2⟩) (y := ⟨y.1, y.2⟩)).mp h
-  exact ⟨⟨q.1, q.2⟩, Subtype.ext (congrArg Subtype.val hq)⟩
+    {x y : FixedPoints.subalgebra A B G} : (x : B) ∣ (y : B) ↔ x ∣ y :=
+  ⟨fun h ↦ let ⟨q, hq⟩ :=
+      (coe_dvd_coe_fixedPoints_subsemiring_iff (x := ⟨x.1, x.2⟩) (y := ⟨y.1, y.2⟩)).mp h
+    ⟨⟨q.1, q.2⟩, Subtype.ext (congrArg Subtype.val hq)⟩,
+   (FixedPoints.subalgebra A B G).val.toRingHom.map_dvd⟩
 
 /-- If `G` acts faithfully on a domain `B` and `H ≤ G` is a finite normal subgroup, then `G ⧸ H`
 acts faithfully on `FixedPoints.subalgebra A B H`. -/
@@ -589,7 +579,5 @@ instance instFaithfulSMulQuotientFixedPointsSubring {B G : Type*} [CommRing B] [
   eq_of_smul_eq_smul hq := eq_of_smul_eq_smul (α := FixedPoints.subalgebra ℤ B H) fun y ↦ by
     obtain ⟨x, rfl⟩ := (fixedPointsSubringEquivSubalgebra ℤ B H).surjective y
     rw [← fixedPointsSubringEquivSubalgebra_smul, ← fixedPointsSubringEquivSubalgebra_smul, hq x]
-
-end FixedPointsRing
 
 end TauCeti

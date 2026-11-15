@@ -754,24 +754,22 @@ theorem ramificationGroup_eq_comap_of_ringEquiv {φ : G →* H} {e : S ≃+* T}
     fun h x ↦ by simpa only [← hpow, Ideal.mem_comap, RingHom.coe_coe, map_sub, he] using h (e x)⟩
 
 /-- If `e : G →* H` is compatible with the actions on `S`, then `G_i = (H_i).comap e`. -/
-theorem ramificationGroup_eq_comap_of_smul_eq {e : G →* H}
-    {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S] [MulSemiringAction H S]
-    (he : ∀ (g : G) (x : S), g • x = e g • x) (i : ℤ) :
-    ramificationGroup G S i = (ramificationGroup H S i).comap e := by
+theorem ramificationGroup_eq_comap_of_smul_eq {e : G →* H} {S : Type*} [CommRing S] [IsLocalRing S]
+    [MulSemiringAction G S] [MulSemiringAction H S] (he : ∀ (g : G) (x : S), g • x = e g • x)
+    (i : ℤ) : ramificationGroup G S i = (ramificationGroup H S i).comap e := by
   ext g; simp [mem_ramificationGroup_iff, he g]
 
-/-- A `K`-algebra equivalence `e : E ≃ₐ[K] E'` over a base ring `A` pulls back every lower
-ramification group on `integralClosure A E'` along `e.autCongr` to that on `integralClosure A E`. -/
+/-- `e : E ≃ₐ[K] E'` over `A` pulls back lower ramification groups on `integralClosure`. -/
 theorem ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*} [CommRing A]
     [CommRing K] [CommRing E] [CommRing E'] [Algebra A K] [Algebra K E] [Algebra A E]
     [IsScalarTower A K E] [Algebra K E'] [Algebra A E'] [IsScalarTower A K E']
     [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')] (e : E ≃ₐ[K] E')
     (i : ℤ) : ramificationGroup (E ≃ₐ[K] E) (integralClosure A E) i =
       (ramificationGroup (E' ≃ₐ[K] E') (integralClosure A E') i).comap
-        (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) := by
-  refine ramificationGroup_eq_comap_of_ringEquiv
-    (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv) (fun _ _ ↦ Subtype.ext ?_) i
-  simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]
+        (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) :=
+  ramificationGroup_eq_comap_of_ringEquiv
+    (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv)
+    (fun _ _ ↦ Subtype.ext <| by simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]) i
 
 end Comap
 
@@ -831,7 +829,8 @@ theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft 
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
 
 variable {G S} in
-theorem ramificationGroupReal_eq_of_mem_Ioc {m : ℕ} {u t : ℝ} (h₂ : u ≤ m + 1)
+/-- Any two points in `(m, m + 1]` have the same real-indexed ramification group. -/
+theorem ramificationGroupReal_eq_of_mem_Ioc {m : ℤ} {u t : ℝ} (h₂ : u ≤ m + 1)
     (ht₁ : (m : ℝ) < t) (ht₂ : t ≤ u) :
     ramificationGroupReal G S t = ramificationGroupReal G S u := by
   have heq {x : ℝ} (h₁ : (m : ℝ) < x) (hx : x ≤ m + 1) :=
@@ -848,45 +847,34 @@ theorem lowerJump_iff (u : ℝ) : LowerJump G S u ↔
 
 variable {G S} in
 theorem LowerJump.neg_one_le {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
-  by_contra! hlt; have hdrop := hu (-1) hlt
-  rw [ramificationGroupReal_eq_top_of_le_neg_one G S le_rfl,
-    ramificationGroupReal_eq_top_of_le_neg_one G S hlt.le] at hdrop; exact hdrop.false
+  by_contra! hlt; have h := hu (-1) hlt
+  simp [ramificationGroupReal_eq_top_of_le_neg_one G S, hlt.le] at h
 
 variable {G S} in
 /-- Every lower break is an integer `i ≥ -1`. -/
-theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 ≤ i ∧ u = i := by
-  refine ⟨⌈u⌉, Int.le_ceil_iff.2 (by push_cast; linarith [hu.neg_one_le]),
-    (eq_or_lt_of_le (Int.le_ceil u)).resolve_right fun hlt ↦ ?_⟩
-  have hstrict := hu ⌈u⌉ hlt
-  rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at hstrict; exact hstrict.false
+theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 ≤ i ∧ u = i :=
+  ⟨⌈u⌉, Int.le_ceil_iff.2 (by push_cast; linarith [hu.neg_one_le]),
+    (eq_or_lt_of_le (Int.le_ceil u)).resolve_right fun hlt ↦ by
+      have h := hu ⌈u⌉ hlt; rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at h
+      exact h.false⟩
 
 /-- An integer `i` is a lower break if and only if `G_{i+1} < G_i`. -/
 @[simp] theorem lowerJump_intCast_iff (i : ℤ) :
     LowerJump G S i ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i :=
-  ⟨fun h ↦ by
-      simpa only [ramificationGroupReal_intCast] using h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith),
+  ⟨fun h ↦ by simpa only [ramificationGroupReal_intCast] using h ↑(i + 1) (by push_cast; linarith),
    fun h _ hv ↦ by
      rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
      exact (ramificationGroup_antitone G S (Int.add_one_le_iff.2 (Int.lt_ceil.2 hv))).trans_lt h⟩
 
 end Real
 
-section RealDiscreteValuationRing
-
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
-variable [MulSemiringAction G S]
-
 /-- When the lower index of `σ` is the natural number `n`, `σ ∈ G_u` for a real `u` exactly when
 `u ≤ n - 1`. -/
-theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : G} {n : ℕ}
-    (hn : lowerIndex S σ = n) :
-    σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
+theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {G S : Type*} [Group G] [CommRing S]
+    [IsDomain S] [IsDiscreteValuationRing S] [MulSemiringAction G S] {u : ℝ} {σ : G} {n : ℕ}
+    (hn : lowerIndex S σ = n) : σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
   rw [ramificationGroupReal_def, mem_ramificationGroup_iff_of_lowerIndex_eq hn, Int.add_one_le_iff,
-    ← Int.le_sub_one_iff, Int.ceil_le]
-  push_cast
-  exact Iff.rfl
-
-end RealDiscreteValuationRing
+    ← Int.le_sub_one_iff, Int.ceil_le]; push_cast; exact Iff.rfl
 
 end IsLocalRing
 

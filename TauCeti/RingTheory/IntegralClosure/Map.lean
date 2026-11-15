@@ -123,17 +123,24 @@ theorem IsIntegralClosure.map_injective (S T : Type*) [CommRing S] [Algebra R S]
   IsIntegralClosure.algebraMap_injective S R A <| hf <| by
     simpa only [IsIntegralClosure.algebraMap_map] using congrArg (algebraMap T B) h
 
-/-- Along an injective `R`-algebra map `f : A →ₐ[R] B`, if `integralClosure R B` is a local ring,
-then `integralClosure R A` is also a local ring. -/
+/-- Along an injective `f : A →ₐ[R] B`, if `integralClosure R B` is local, so is
+`integralClosure R A`. -/
 theorem isLocalRing_integralClosure_of_injective [IsLocalRing (integralClosure R B)]
-    {f : A →ₐ[R] B} (hf : Function.Injective f) : IsLocalRing (integralClosure R A) := by
-  have hf_int : f.mapIntegralClosure.toRingHom.IsIntegral :=
-    RingHom.IsIntegral.tower_top (algebraMap R (integralClosure R A))
-      f.mapIntegralClosure.toRingHom
-      (f.mapIntegralClosure.comp_algebraMap.symm ▸ algebraMap_isIntegral_iff.mpr inferInstance)
+    {f : A →ₐ[R] B} (hf : Function.Injective f) : IsLocalRing (integralClosure R A) :=
   have : IsLocalHom f.mapIntegralClosure.toRingHom :=
-    hf_int.isLocalHom (AlgHom.mapIntegralClosure_injective hf)
-  exact f.mapIntegralClosure.toRingHom.domain_isLocalRing
+    (RingHom.IsIntegral.tower_top (algebraMap R (integralClosure R A)) _
+      (f.mapIntegralClosure.comp_algebraMap.symm ▸
+        algebraMap_isIntegral_iff.mpr inferInstance)).isLocalHom
+      (AlgHom.mapIntegralClosure_injective hf)
+  f.mapIntegralClosure.toRingHom.domain_isLocalRing
+
+/-- In a tower `R → A → B` with `A → B` faithful, if `integralClosure R B` is local, so is
+`integralClosure R A`. -/
+theorem isLocalRing_integralClosure_of_tower (R A B : Type*) [CommRing R] [CommRing A] [CommRing B]
+    [Algebra R A] [Algebra A B] [Algebra R B] [IsScalarTower R A B] [FaithfulSMul A B]
+    [IsLocalRing (integralClosure R B)] : IsLocalRing (integralClosure R A) :=
+  isLocalRing_integralClosure_of_injective (f := IsScalarTower.toAlgHom R A B)
+    (FaithfulSMul.algebraMap_injective A B)
 
 end TauCeti
 

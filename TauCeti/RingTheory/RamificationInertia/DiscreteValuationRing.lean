@@ -88,14 +88,9 @@ theorem ramificationIdx_eq_of_map_maximalIdeal_eq_pow {exponent : ℕ}
 
 end
 
-section AddVal
-
 /-- Under an injective local homomorphism of discrete valuation rings `S → T`, the additive
-valuation scales by the ramification index `(maximalIdeal T).ramificationIdx S`.
-
-Not marked `@[simp]` so it does not compete with `TauCeti.addVal_algebraMap` (whose right-hand side
-uses `ramificationIndex K L`) on integer rings of local fields; this generalizes that scaling
-formula to arbitrary discrete valuation rings. -/
+valuation scales by `(maximalIdeal T).ramificationIdx S` (not `@[simp]`, so it does not compete
+with `TauCeti.addVal_algebraMap` on integer rings of local fields). -/
 theorem addVal_algebraMap {S T : Type*} [CommRing S] [CommRing T] [IsDomain S] [IsDomain T]
     [IsDiscreteValuationRing S] [IsDiscreteValuationRing T] [Algebra S T]
     [IsLocalHom (algebraMap S T)] [FaithfulSMul S T] (x : S) :
@@ -116,7 +111,5 @@ theorem addVal_algebraMap {S T : Type*} [CommRing S] [CommRing T] [IsDomain S] [
   rw [addVal_def' u hπ n, he, map_mul, map_pow, addVal_mul,
     addVal_eq_zero_iff.2 (u.isUnit.map (algebraMap S T)), zero_add, addVal_pow, hπe,
     addVal_def' v hϖ e, nsmul_eq_mul, nsmul_eq_mul, mul_comm]
-
-end AddVal
 
 end TauCeti.IsDiscreteValuationRing
