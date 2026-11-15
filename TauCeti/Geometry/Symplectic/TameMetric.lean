@@ -218,6 +218,7 @@ noncomputable def symmetrizedGradient (h : ω.Tames J) : V →ₗ[ℝ] V :=
 
 /-- The defining property of the gradient for the symmetric metric, with the gradient in the
 first argument: `gₛ(G η, ξ) = 2 ω(ξ, η)`. -/
+@[simp high]
 theorem symmetrizedBilinForm_symmetrizedGradient_left (h : ω.Tames J) (η ξ : V) :
     ω.symmetrizedBilinForm J (h.symmetrizedGradient η) ξ = 2 * ω ξ η := by
   rw [symmetrizedGradient, LinearMap.BilinForm.symmCompOfNondegenerate_left_apply]
@@ -225,6 +226,7 @@ theorem symmetrizedBilinForm_symmetrizedGradient_left (h : ω.Tames J) (η ξ : 
 
 /-- The defining property of the gradient for the symmetric metric:
 `gₛ(ξ, G η) = 2 ω(ξ, η)`. -/
+@[simp high]
 theorem symmetrizedBilinForm_symmetrizedGradient_right (h : ω.Tames J) (ξ η : V) :
     ω.symmetrizedBilinForm J ξ (h.symmetrizedGradient η) = 2 * ω ξ η := by
   have := h.symmetrizedBilinForm_symmetrizedGradient_left η ξ
