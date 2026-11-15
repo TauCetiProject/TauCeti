@@ -49,7 +49,7 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
 ## References
 
 * [The Stacks Project, Lemma 27.11.3 (01N0)](https://stacks.math.columbia.edu/tag/01N0)
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 -/
 
 public section
