@@ -128,6 +128,20 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_range_kummerMap
   simp only [localTateKerWeilPairing_apply,
     φ.kerH1WeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb, map_zero]
 
+omit [DecidableEq K] in
+/-- The two kernels defining the Selmer local conditions are orthogonal under local Tate
+duality. In particular, no choice of representatives under a Kummer map is needed. -/
+theorem localTateKerWeilPairing_eq_zero_of_mem_ker
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
+      continuous_of_discreteTopology).ker)
+    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+      continuous_of_discreteTopology).ker) :
+    φ.localTateKerWeilPairing hn a b = 0 := by
+  simp only [localTateKerWeilPairing_apply,
+    φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb, map_zero]
+
 end Local
 
 end TauCeti.Isogeny
