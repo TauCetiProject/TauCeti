@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +23,9 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`.
+of `TauCeti.ConvolutionDual`, identifying `rightCointegrals` and `leftCointegrals` with
+`rightIntegral` and `leftIntegral` on `ConvolutionDual`. Over a Hopf algebra, precomposition
+with the antipode exchanges right and left cointegrals.
 
 ## References
 
@@ -109,6 +113,14 @@ def leftCointegrals (k H : Type*) [CommSemiring k] [AddCommMonoid H] [One H] [Mo
     intro c φ hφ h
     simpa [LinearMap.lTensor_smul, smul_smul] using congrArg (c • ·) (hφ h)
 
+instance {R A : Type*} [CommRing R] [AddCommMonoid A] [One A] [Module R A] [Coalgebra R A] :
+    AddCommGroup (rightCointegrals R A) :=
+  Submodule.addCommGroup _
+
+instance {R A : Type*} [CommRing R] [AddCommMonoid A] [One A] [Module R A] [Coalgebra R A] :
+    AddCommGroup (leftCointegrals R A) :=
+  Submodule.addCommGroup _
+
 /-- Membership in the right-cointegral submodule is the right-cointegral predicate. -/
 @[simp]
 theorem mem_rightCointegrals (φ : Module.Dual k H) :
@@ -178,5 +190,156 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
   rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
   simpa [mul_comm] using heq
+
+section HopfAlgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [HopfAlgebra R A]
+
+/-- Precomposing a right cointegral with the antipode produces a left cointegral. -/
+theorem IsRightCointegral.comp_antipode {φ : Module.Dual R A} (hφ : IsRightCointegral φ) :
+    IsLeftCointegral (φ ∘ₗ HopfAlgebra.antipode R) := by
+  intro h
+  let g : A →ₗ[R] A := Algebra.linearMap R A ∘ₗ φ ∘ₗ HopfAlgebra.antipode R
+  have hSg : WithConv.toConv (HopfAlgebra.antipode R) * WithConv.toConv g = WithConv.toConv g := by
+    apply WithConv.ofConv_injective
+    ext x
+    have hmul :
+        (WithConv.toConv (HopfAlgebra.antipode R) * WithConv.toConv g).ofConv x =
+          TensorProduct.lid R A (φ.rTensor A (Coalgebra.comul (HopfAlgebra.antipode R x))) := by
+      rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, LinearMap.convMul_apply]
+      induction Coalgebra.comul (R := R) x using TensorProduct.inductionOn with
+      | add y z hy hz => simp only [map_add, hy, hz]
+      | tmul a b => simp [g, Algebra.algebraMap_eq_smul_one]
+    rw [hmul, hφ (HopfAlgebra.antipode R x)]
+    simp [g, Algebra.algebraMap_eq_smul_one]
+  have hidg : WithConv.toConv LinearMap.id * WithConv.toConv g = WithConv.toConv g :=
+    calc
+      WithConv.toConv LinearMap.id * WithConv.toConv g =
+          WithConv.toConv LinearMap.id *
+            (WithConv.toConv (HopfAlgebra.antipode R) * WithConv.toConv g) := by rw [hSg]
+      _ = WithConv.toConv g := by rw [← mul_assoc, LinearMap.id_mul_antipode, one_mul]
+  have heval :
+      (WithConv.toConv LinearMap.id * WithConv.toConv g).ofConv h =
+        TensorProduct.rid R A ((φ ∘ₗ HopfAlgebra.antipode R).lTensor A (Coalgebra.comul h)) := by
+    rw [LinearMap.convMul_apply]
+    induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
+    | add y z hy hz => simp only [map_add, hy, hz]
+    | tmul a b => simp [g, Algebra.algebraMap_eq_smul_one]
+  have hgh := congrArg (fun u : WithConv (A →ₗ[R] A) ↦ u.ofConv h) hidg
+  rw [heval] at hgh
+  simpa [g, Algebra.algebraMap_eq_smul_one] using hgh
+
+/-- Precomposing a left cointegral with the antipode produces a right cointegral. -/
+theorem IsLeftCointegral.comp_antipode {φ : Module.Dual R A} (hφ : IsLeftCointegral φ) :
+    IsRightCointegral (φ ∘ₗ HopfAlgebra.antipode R) := by
+  intro h
+  let g : A →ₗ[R] A := Algebra.linearMap R A ∘ₗ φ ∘ₗ HopfAlgebra.antipode R
+  have hgS : WithConv.toConv g * WithConv.toConv (HopfAlgebra.antipode R) = WithConv.toConv g := by
+    apply WithConv.ofConv_injective
+    ext x
+    have hmul :
+        (WithConv.toConv g * WithConv.toConv (HopfAlgebra.antipode R)).ofConv x =
+          TensorProduct.rid R A (φ.lTensor A (Coalgebra.comul (HopfAlgebra.antipode R x))) := by
+      rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, LinearMap.convMul_apply]
+      induction Coalgebra.comul (R := R) x using TensorProduct.inductionOn with
+      | add y z hy hz => simp only [map_add, hy, hz]
+      | tmul a b => simp [g, Algebra.algebraMap_eq_smul_one]
+    rw [hmul, hφ (HopfAlgebra.antipode R x)]
+    simp [g, Algebra.algebraMap_eq_smul_one]
+  have hgid : WithConv.toConv g * WithConv.toConv LinearMap.id = WithConv.toConv g :=
+    calc
+      WithConv.toConv g * WithConv.toConv LinearMap.id =
+          (WithConv.toConv g * WithConv.toConv (HopfAlgebra.antipode R)) *
+            WithConv.toConv LinearMap.id := by rw [hgS]
+      _ = WithConv.toConv g := by rw [mul_assoc, LinearMap.antipode_mul_id, mul_one]
+  have heval :
+      (WithConv.toConv g * WithConv.toConv LinearMap.id).ofConv h =
+        TensorProduct.lid R A ((φ ∘ₗ HopfAlgebra.antipode R).rTensor A (Coalgebra.comul h)) := by
+    rw [LinearMap.convMul_apply]
+    induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
+    | add y z hy hz => simp only [map_add, hy, hz]
+    | tmul a b => simp [g, Algebra.algebraMap_eq_smul_one]
+  have hgh := congrArg (fun u : WithConv (A →ₗ[R] A) ↦ u.ofConv h) hgid
+  rw [heval] at hgh
+  simpa [g, Algebra.algebraMap_eq_smul_one] using hgh
+
+end HopfAlgebra
+
+section FiniteProjectiveBialgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A]
+  [Module.Finite R A] [Module.Projective R A]
+
+/-- On a finite projective bialgebra, right integrals of `ConvolutionDual` are precisely right
+cointegrals. -/
+@[simp]
+theorem toConv_mem_rightIntegral_iff (φ : Module.Dual R A) :
+    WithConv.toConv φ ∈ rightIntegral R (ConvolutionDual R A) ↔ IsRightCointegral φ := by
+  rw [mem_rightIntegral_iff, isRightCointegral_iff_convMul]
+  simp [ConvolutionDual.counit_apply]
+
+/-- On a finite projective bialgebra, left integrals of `ConvolutionDual` are precisely left
+cointegrals. -/
+@[simp]
+theorem toConv_mem_leftIntegral_iff (φ : Module.Dual R A) :
+    WithConv.toConv φ ∈ leftIntegral R (ConvolutionDual R A) ↔ IsLeftCointegral φ := by
+  rw [mem_leftIntegral_iff, isLeftCointegral_iff_convMul]
+  simp [ConvolutionDual.counit_apply]
+
+variable (R A) in
+/-- Linear equivalence identifying right cointegrals of a finite projective bialgebra with right
+integrals of its convolution dual. -/
+noncomputable def rightCointegralsEquivRightIntegral :
+    rightCointegrals R A ≃ₗ[R] rightIntegral R (ConvolutionDual R A) where
+  toFun φ :=
+    ⟨WithConv.toConv φ.1, (toConv_mem_rightIntegral_iff φ.1).mpr ((mem_rightCointegrals _).mp φ.2)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun ψ :=
+    ⟨ψ.1.ofConv,
+      (mem_rightCointegrals _).mpr ((toConv_mem_rightIntegral_iff ψ.1.ofConv).mp (by simp))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem rightCointegralsEquivRightIntegral_coe (φ : rightCointegrals R A) :
+    (rightCointegralsEquivRightIntegral R A φ : ConvolutionDual R A) =
+      WithConv.toConv (φ : Module.Dual R A) :=
+  (rfl)
+
+@[simp]
+theorem rightCointegralsEquivRightIntegral_symm_coe (ψ : rightIntegral R (ConvolutionDual R A)) :
+    ((rightCointegralsEquivRightIntegral R A).symm ψ : Module.Dual R A) =
+      (ψ : ConvolutionDual R A).ofConv :=
+  (rfl)
+
+variable (R A) in
+/-- Linear equivalence identifying left cointegrals of a finite projective bialgebra with left
+integrals of its convolution dual. -/
+noncomputable def leftCointegralsEquivLeftIntegral :
+    leftCointegrals R A ≃ₗ[R] leftIntegral R (ConvolutionDual R A) where
+  toFun φ :=
+    ⟨WithConv.toConv φ.1, (toConv_mem_leftIntegral_iff φ.1).mpr ((mem_leftCointegrals _).mp φ.2)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun ψ :=
+    ⟨ψ.1.ofConv,
+      (mem_leftCointegrals _).mpr ((toConv_mem_leftIntegral_iff ψ.1.ofConv).mp (by simp))⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem leftCointegralsEquivLeftIntegral_coe (φ : leftCointegrals R A) :
+    (leftCointegralsEquivLeftIntegral R A φ : ConvolutionDual R A) =
+      WithConv.toConv (φ : Module.Dual R A) :=
+  (rfl)
+
+@[simp]
+theorem leftCointegralsEquivLeftIntegral_symm_coe (ψ : leftIntegral R (ConvolutionDual R A)) :
+    ((leftCointegralsEquivLeftIntegral R A).symm ψ : Module.Dual R A) =
+      (ψ : ConvolutionDual R A).ofConv :=
+  (rfl)
+
+end FiniteProjectiveBialgebra
 
 end TauCeti
