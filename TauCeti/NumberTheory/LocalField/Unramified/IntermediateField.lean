@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
+import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # The unramified part of a finite subextension
@@ -16,7 +17,10 @@ For a finite subextension `L` of the separable closure of a nonarchimedean local
 the intersection of `L` with the maximal unramified extension is the canonical unramified
 extension of degree `f(L/K)`. In particular, that canonical field is contained in `L`.
 This identifies the unramified base over which extensions with a prescribed residue degree
-are totally ramified, as needed in counting extensions by residue degree.
+are totally ramified, as needed in counting extensions by residue degree. Restricting
+`K`-automorphisms of `L` to that field gives the automorphism count
+`#Aut_K(L) = #Aut_{K_f}(L) · #Stab(L)`, where `Stab(L)` consists of the elements of
+`Gal(K_f/K)` that extend to automorphisms of `L`.
 
 `IntermediateField.inertiaDegree` extends the residue degree to all subextensions, taking
 value zero on infinite extensions. It uses the same local-field adapters and totalization as
@@ -30,11 +34,15 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
   ramified exactly when its residue degree is one.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
+* `IntermediateField.natCard_algEquiv_eq_mul_unramifiedExtension`:
+  `#Aut_K(L) = #Aut_{K_f}(L) · #Stab(L)` for finite `L`, with `f = f(L/K)`.
 
 ## References
 
 * J.-P. Serre, *Local Fields*, Chapter III, §5.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §7.
+* M. Bhargava, *Mass formulae for extensions of local fields, and conjectures on the density of
+  number field discriminants*, IMRN **2007**, rnm052, §2.
 -/
 
 public section
@@ -189,5 +197,22 @@ theorem inf_maximalUnramifiedExtension (L : IntermediateField K (SeparableClosur
           (Dvd.intro _ (TauCeti.inertiaDegree_tower (K := K) (L := E) L).symm)
   · exact le_inf (unramifiedExtension_inertiaDegree_le L)
       (unramifiedExtension_le_maximalUnramifiedExtension K (SeparableClosure K) _)
+
+/-- **The automorphism count over the unramified part**: for a finite subextension `L` with
+residue degree `f`, write `K_f ≤ L` for the unramified extension of degree `f`. Then
+`#Aut_K(L) = #Aut_{K_f}(L) · #Stab(L)`, where `L` is viewed over `K_f` through `extendScalars` and
+`Stab(L)` is the set of elements of `Gal(K_f/K)` that extend to `K`-automorphisms of `L`. This is
+`IntermediateField.natCard_algEquiv_eq_mul` for the normal subfield `K_f`. -/
+theorem natCard_algEquiv_eq_mul_unramifiedExtension
+    (L : IntermediateField K (SeparableClosure K)) [Module.Finite K L] :
+    Nat.card (L ≃ₐ[K] L) =
+      Nat.card (extendScalars L.unramifiedExtension_inertiaDegree_le ≃ₐ[
+          unramifiedExtension K (SeparableClosure K) L.inertiaDegree]
+          extendScalars L.unramifiedExtension_inertiaDegree_le) *
+        Nat.card {τ : unramifiedExtension K (SeparableClosure K) L.inertiaDegree ≃ₐ[K]
+            unramifiedExtension K (SeparableClosure K) L.inertiaDegree //
+          ∃ σ : L ≃ₐ[K] L, ∀ x,
+            (σ (inclusion L.unramifiedExtension_inertiaDegree_le x) : SeparableClosure K) = τ x} :=
+  natCard_algEquiv_eq_mul L.unramifiedExtension_inertiaDegree_le
 
 end IntermediateField

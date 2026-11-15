@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
 
 /-!
 # Restricting automorphisms along an embedding of a normal extension
@@ -17,7 +18,9 @@ through a map other than the algebra map (for example an `IntermediateField.incl
 
 In an abstract scalar tower with a normal intermediate field, restriction to the intermediate
 field is the identity precisely when the automorphism fixes it pointwise; its kernel is the image
-of restriction of scalars.
+of restriction of scalars. Hence, for a tower `K ⊆ L ⊆ M`, `#Aut(M/K)` is `#Aut(M/L)` times the
+number of automorphisms of `L/K` that extend to `M`. This count is also stated for intermediate
+fields `E ≤ L` of `Ω/K`, with `L` viewed over `E` through `IntermediateField.extendScalars`.
 
 ## Main definitions and results
 
@@ -51,6 +54,10 @@ of restriction of scalars.
   the image of restriction of scalars.
 * `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
   over the intermediate one does not change the restriction.
+* `AlgEquiv.natCard_eq_mul_natCard_range_restrictNormalHom`: `#Aut(M/K) = #Aut(M/L) · #R` for
+  `L/K` normal, where `R` is the image of restriction to `L`.
+* `IntermediateField.natCard_algEquiv_eq_mul`: for intermediate fields `E ≤ L` of `Ω/K` with `E/K`
+  normal, `#Aut(L/K) = #Aut(L/E) · #{τ ∈ Aut(E/K) | τ extends to an automorphism of L}`.
 * `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
   subextension `F⟮α⟯` is trivial precisely when the automorphism fixes `α`.
 -/
@@ -275,7 +282,57 @@ theorem AlgEquiv.restrictNormal_mul_restrictScalars (σ : M ≃ₐ[K] M) (τ : M
     (AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one K L M
       (τ.restrictScalars K)).1 ⟨τ, rfl⟩, mul_one]
 
+/-- **Counting automorphisms through a normal intermediate field**: for a tower `K ⊆ L ⊆ M` with
+`L/K` normal, restriction `Aut(M/K) → Aut(L/K)` has kernel `Aut(M/L)`, so `#Aut(M/K)` is
+`#Aut(M/L)` times the number of automorphisms of `L/K` that extend to `M`. No finiteness is
+assumed: `Nat.card` is `0` on infinite types, and the identity holds then too. -/
+theorem AlgEquiv.natCard_eq_mul_natCard_range_restrictNormalHom :
+    Nat.card (M ≃ₐ[K] M) =
+      Nat.card (M ≃ₐ[L] M) * Nat.card (AlgEquiv.restrictNormalHom (F := K) (K₁ := M) L).range := by
+  rw [← Subgroup.index_ker, ← AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom,
+    Nat.card_congr
+      (MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective (S := L) K)).toEquiv,
+    Subgroup.card_mul_index]
+
 end Tower
+
+/-! ### Automorphisms of an intermediate field over a normal subfield -/
+
+namespace IntermediateField
+
+variable {K Ω : Type*} [Field K] [Field Ω] [Algebra K Ω] {E L : IntermediateField K Ω}
+  [Normal K E]
+
+/-- **The automorphism count through a normal subfield**: for intermediate fields `E ≤ L` of
+`Ω/K` with `E/K` normal, `#Aut_K(L) = #Aut_E(L) · #S`, where `L` is viewed over `E` as
+`extendScalars h` and `S` is the set of `K`-automorphisms of `E` that extend to `K`-automorphisms
+of `L`. Restriction to `E` maps `Aut_K(L)` onto `S` with kernel `Aut_E(L)`. -/
+theorem natCard_algEquiv_eq_mul (h : E ≤ L) :
+    Nat.card (L ≃ₐ[K] L) = Nat.card (extendScalars h ≃ₐ[E] extendScalars h) *
+      Nat.card {τ : E ≃ₐ[K] E // ∃ σ : L ≃ₐ[K] L, ∀ x : E, (σ (inclusion h x) : Ω) = τ x} := by
+  -- `L` and `extendScalars h` are the same field over `K`; Mathlib's
+  -- `extendScalars_restrictScalars` identifies `(extendScalars h).restrictScalars K` with `L`.
+  let e : L ≃ₐ[K] extendScalars h := restrictScalarsAlgEquiv K (extendScalars h)
+  have he (y : L) : (e y : Ω) = y := coe_restrictScalarsAlgEquiv_apply K (extendScalars h) y
+  have he' (x : E) : e.symm (algebraMap E (extendScalars h) x) = inclusion h x :=
+    e.symm_apply_eq.2 (Subtype.ext (by simp [he]))
+  -- Restricting the transport of `σ` to `E` acts as `σ` on `E`.
+  have hres (σ : L ≃ₐ[K] L) (x : E) :
+      (AlgEquiv.restrictNormalHom E (e.autCongr σ) x : Ω) = σ (inclusion h x) := by
+    rw [AlgEquiv.restrictNormalHom_apply_eq_restrictNormal]
+    have := congrArg Subtype.val (AlgEquiv.restrictNormal_commutes (e.autCongr σ) E x)
+    rwa [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, he', he,
+      SubalgebraClass.coe_algebraMap, algebraMap_apply] at this
+  rw [Nat.card_congr (AlgEquiv.autCongr e).toEquiv,
+    AlgEquiv.natCard_eq_mul_natCard_range_restrictNormalHom K E]
+  congr 1
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun τ ↦ ⟨?_, ?_⟩)
+  · rintro ⟨σ', rfl⟩
+    exact ⟨e.autCongr.symm σ', fun x ↦ by rw [← hres, MulEquiv.apply_symm_apply]⟩
+  · rintro ⟨σ, hσ⟩
+    exact ⟨e.autCongr σ, AlgEquiv.ext fun x ↦ Subtype.ext ((hres σ x).trans (hσ x))⟩
+
+end IntermediateField
 
 /-! ### Restriction to a simple normal subextension -/
 
