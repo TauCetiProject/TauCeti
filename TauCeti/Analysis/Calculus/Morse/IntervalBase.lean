@@ -614,10 +614,6 @@ noncomputable def intervalBaseTargetGluing (a ρ : ℝ) : ℝ := (√(1 + exp (-
 theorem intervalBaseTargetGluing_apply (a ρ : ℝ) :
     intervalBaseTargetGluing a ρ = (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹ := (rfl)
 
-private theorem exp_two_mul_log {ρ : ℝ} (hρ : 0 < ρ) : exp (2 * log ρ) = ρ ^ 2 := by
-  rw [← exp_log (pow_pos hρ 2), log_pow]
-  norm_num
-
 /-- **The source end in the gluing parameter**: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})`. -/
 theorem intervalBaseOrbit_one_add_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     intervalBaseOrbit 1 (a + log ρ) = intervalBaseSourceGluing a ρ := by
@@ -626,7 +622,7 @@ theorem intervalBaseOrbit_one_add_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
   -- it becomes the factor `ρ⁻²`.
   have hexp : -(2 * 1 * (a + log ρ)) = -(2 * a) - 2 * log ρ := by ring
   have he : exp (-(2 * 1 * (a + log ρ))) = exp (-(2 * a)) / ρ ^ 2 := by
-    rw [hexp, exp_sub, exp_two_mul_log hρ]
+    rw [hexp, exp_sub, two_mul (log ρ), exp_add, exp_log hρ, ← sq]
   -- Put the radicand over the common denominator `ρ²`, whose square root is `ρ`.
   have hsum : 1 + exp (-(2 * a)) / ρ ^ 2 = (ρ ^ 2 + exp (-(2 * a))) / ρ ^ 2 := by field_simp
   rw [intervalBaseOrbit_apply, he, intervalBaseSourceGluing_apply, hsum,
@@ -638,7 +634,8 @@ theorem intervalBaseOrbit_one_sub_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
   -- Split the `log ρ` part off the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1`, so that
   -- it becomes the factor `ρ²`.
   have hexp : -(2 * 1 * (a - log ρ)) = -(2 * a) + 2 * log ρ := by ring
-  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply, hexp, exp_add, exp_two_mul_log hρ]
+  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply, hexp, exp_add, two_mul (log ρ),
+    exp_add, exp_log hρ, ← sq]
 
 @[simp]
 theorem intervalBaseSourceGluing_zero (a : ℝ) : intervalBaseSourceGluing a 0 = 0 := by
@@ -654,12 +651,16 @@ theorem intervalBaseTargetGluing_neg (a ρ : ℝ) :
     intervalBaseTargetGluing a (-ρ) = intervalBaseTargetGluing a ρ := by
   simp [intervalBaseTargetGluing_apply]
 
+/-- For fixed `a`, the source end is smooth in the gluing parameter on all of `ℝ`, including the
+broken-trajectory value `ρ = 0`. -/
 theorem contDiff_intervalBaseSourceGluing (a : ℝ) {n : WithTop ℕ∞} :
     ContDiff ℝ n (intervalBaseSourceGluing a) := by
   rw [funext (intervalBaseSourceGluing_apply a)]
   exact contDiff_id.div (((contDiff_id.pow 2).add contDiff_const).sqrt fun _ ↦ by positivity)
     fun _ ↦ by positivity
 
+/-- For fixed `a`, the target end is smooth in the gluing parameter on all of `ℝ`, including the
+broken-trajectory value `ρ = 0`. -/
 theorem contDiff_intervalBaseTargetGluing (a : ℝ) {n : WithTop ℕ∞} :
     ContDiff ℝ n (intervalBaseTargetGluing a) := by
   rw [funext (intervalBaseTargetGluing_apply a)]
