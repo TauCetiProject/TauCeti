@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Coalgebra.Equiv
 public import Mathlib.RingTheory.Coalgebra.IsFrobenius
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
+public import TauCeti.Algebra.DualNumber.Frobenius
 public import TauCeti.Algebra.DualNumber.TensorProduct
 public import TauCeti.Algebra.DualNumber.Trace
 
@@ -48,6 +49,10 @@ numbers, so it is installed only as scoped instances in `TauCeti.Khovanov`; `ope
 * `TauCeti.Khovanov.baseChangeCoalgEquiv`: for a commutative `R`-algebra `S`, the algebra
   isomorphism `S ⊗[R] R[ε] ≃ S[ε]` is an isomorphism of `S`-coalgebras, so the Khovanov
   Frobenius algebra over `S` is the base change of the one over `R`.
+* `TauCeti.Khovanov.frobeniusCoalgebra_sndHom_eq_coalgebra`,
+  `TauCeti.Khovanov.frobeniusCoalgebra_baseChange_sndHom_eq`,
+  `TauCeti.Khovanov.handle_eq_two_smul_eps`: comparison of `coalgebra` and its base change with
+  `LinearMap.frobeniusCoalgebra`, together with the handle element `2 • ε`.
 
 ## References
 
@@ -158,6 +163,68 @@ noncomputable def baseChangeCoalgEquiv : S ⊗[R] R[ε] ≃ₗc[S] S[ε] :=
 theorem coe_baseChangeCoalgEquiv :
     ⇑(baseChangeCoalgEquiv R S) = dualNumberAlgebraTensorAlgEquiv R S := (rfl)
 
+/-- The base-change algebra equivalence `S ⊗[R] R[ε] ≃ₐ[S] S[ε]` intertwines the scalar-extended
+trace `Module.Dual.baseChange S (sndHom R R)` with `sndHom S S`. -/
+theorem sndHom_dualNumberAlgebraTensorAlgEquiv (z : S ⊗[R] R[ε]) :
+    sndHom S S (dualNumberAlgebraTensorAlgEquiv R S z) =
+      Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R) z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul s x => simp [Algebra.smul_def, mul_comm]
+  | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
+
+/-- On `S ⊗[R] R[ε]`, the base-changed Khovanov counit equals
+`Module.Dual.baseChange S (sndHom R R)`. -/
+theorem counit_baseChange_eq :
+    Coalgebra.counit (R := S) (A := S ⊗[R] R[ε]) =
+      Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R) := by
+  ext a
+  simp
+
+/-- Reconstructing the `S`-coalgebra on `S ⊗[R] R[ε]` from `Module.Dual.baseChange S (sndHom R R)`
+recovers the base change of the Khovanov coalgebra over `R`. -/
+theorem frobeniusCoalgebra_baseChange_sndHom_eq :
+    LinearMap.frobeniusCoalgebra (R := S) (A := S ⊗[R] R[ε])
+        (Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R)) =
+      (inferInstance : Coalgebra S (S ⊗[R] R[ε])) :=
+  LinearMap.frobeniusCoalgebra_eq (R := S) (A := S ⊗[R] R[ε])
+    (Module.Dual.baseChange S (sndHom R R : R[ε] →ₗ[R] R))
+    (inferInstance : Coalgebra S (S ⊗[R] R[ε])) (counit_baseChange_eq R S) inferInstance
+
 end BaseChange
+
+section Reconstruction
+
+variable (R)
+
+/-- The Frobenius coalgebra reconstructed from the trace `sndHom R R` equals the Khovanov
+coalgebra on `R[ε]`. -/
+theorem frobeniusCoalgebra_sndHom_eq_coalgebra :
+    (sndHom R R : R[ε] →ₗ[R] R).frobeniusCoalgebra = coalgebra R :=
+  Coalgebra.IsFrobenius.frobeniusCoalgebra_counit_eq
+
+/-- The coproduct reconstructed from `sndHom R R` equals the Khovanov coproduct on `R[ε]`. -/
+theorem frobeniusCoalgebra_sndHom_comul_eq :
+    ((sndHom R R : R[ε] →ₗ[R] R).frobeniusCoalgebra).comul =
+      Coalgebra.comul (R := R) (A := R[ε]) :=
+  congrArg (fun c => c.toCoalgebraStruct.comul) (frobeniusCoalgebra_sndHom_eq_coalgebra R)
+
+/-- The handle element `m (Δ 1)` of the Khovanov coalgebra is `2 • ε`. -/
+@[simp]
+theorem handle_eq_two_smul_eps :
+    Coalgebra.handle R R[ε] = (2 : R) • (ε : R[ε]) := by
+  rw [Coalgebra.handle_def, comul_one, map_add, LinearMap.mul'_apply, LinearMap.mul'_apply,
+    one_mul, mul_one, two_smul]
+
+/-- The Khovanov counit evaluates to `2` on the handle element. -/
+theorem counit_handle :
+    Coalgebra.counit (R := R) (Coalgebra.handle R R[ε]) = 2 := by
+  simp [handle_eq_two_smul_eps]
+
+/-- The handle element of the Khovanov coalgebra squares to zero. -/
+theorem handle_sq :
+    Coalgebra.handle R R[ε] ^ 2 = 0 := by
+  rw [handle_eq_two_smul_eps, sq, smul_mul_smul_comm, eps_mul_eps, smul_zero]
+
+end Reconstruction
 
 end TauCeti.Khovanov
