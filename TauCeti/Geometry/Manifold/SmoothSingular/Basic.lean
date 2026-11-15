@@ -42,8 +42,9 @@ singular cohomology. Only a charted space is required for the definitions.
 
 * `TauCeti.smoothSingularSubcomplex`: the subcomplex of smooth singular simplices.
 * `TauCeti.smoothSingularSubcomplex_le_preimage`: smooth maps preserve smooth simplices.
-* `TauCeti.smoothSingularSubcomplex_preimage_inclusion`: a simplex of an open subset is smooth
-  exactly when it is smooth in a larger open subset.
+* `TauCeti.smoothSingularSubcomplex_preimage_inclusion`,
+  `TauCeti.smoothSingularSubcomplex_preimage_subtypeVal`: a simplex of an open subset is smooth
+  exactly when it is smooth in a larger open subset, or in `M`.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
 * `TauCeti.coe_smoothSingularSubcomplexMap_app`: it acts on underlying singular simplices as the
   map of singular simplicial sets.
@@ -410,6 +411,22 @@ theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Open
   convert contMDiff_subtype_val.comp_contMDiffOnSubset hσ using 1
   ext x
   simp
+
+/-- A singular simplex of an open subset `W` of `M` is smooth exactly when its image in `M` is. -/
+@[simp]
+theorem smoothSingularSubcomplex_preimage_subtypeVal (W : TopologicalSpace.Opens M) :
+    (smoothSingularSubcomplex I M).preimage
+        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set M)))) =
+      smoothSingularSubcomplex I W := by
+  -- `ContinuousMap.subtypeVal` is the bundled map `⟨Subtype.val, _⟩` of
+  -- `smoothSingularSubcomplex_le_preimage`.
+  refine le_antisymm (fun k σ hσ ↦ ?_)
+    (smoothSingularSubcomplex_le_preimage contMDiff_subtype_val)
+  rw [SSet.Subcomplex.preimage_obj, Set.mem_preimage, mem_smoothSingularSubcomplex_iff,
+    TopCat.toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom, ContinuousMap.coe_comp]
+    at hσ
+  rw [mem_smoothSingularSubcomplex_iff, ← ContMDiffOnSubset.subtypeVal_comp_iff]
+  exact hσ
 
 /-- The identity of `M` induces the identity of its smooth singular subcomplex. -/
 @[simp]
