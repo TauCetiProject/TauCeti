@@ -139,6 +139,7 @@ theorem mapDomain_morseBoundaryAt {n : ℕ}
     rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by grind), mul_zero]
 
 /-- **The graded mod-two Morse boundary squares to zero.** -/
+@[simp]
 theorem morseBoundaryAt_comp_morseBoundaryAt (n : ℕ) :
     h.morseBoundaryAt hf n ∘ₗ h.morseBoundaryAt hf (n + 1) = 0 := by
   ext p : 2
@@ -178,16 +179,13 @@ theorem morseComplex_X (n : ℕ) :
 
 /-- The differential of the Morse chain complex from degree `n + 1` to degree `n` is the graded
 Morse boundary. -/
-@[simp]
 theorem morseComplex_d (n : ℕ) :
     (h.morseComplex hf).d (n + 1) n = ModuleCat.ofHom (h.morseBoundaryAt hf n) := by
   simp [morseComplex]
 
 /-- The differential of the Morse chain complex from degree `n + 1` to degree `n` applied to a
 chain is the graded Morse boundary of that chain. -/
--- Pre-simp lemma, so that it fires before `morseComplex_d` rewrites the differential to a
--- `ModuleCat.ofHom` whose application `simp` can no longer unfold.
-@[simp↓]
+@[simp]
 theorem morseComplex_d_apply (n : ℕ)
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ ZMod 2) :
     (h.morseComplex hf).d (n + 1) n c = h.morseBoundaryAt hf n c := by
