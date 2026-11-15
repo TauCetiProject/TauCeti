@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic
-import TauCeti.Analysis.Complex.EvenReflection
-import TauCeti.Analysis.Complex.ReImTopology
 
 /-!
 # Morrey's embedding for Sobolev sections over surfaces with boundary
@@ -43,11 +41,6 @@ images are equal (`TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.exists_continuous_halfCoord_eqOn`: functions continuous on the chart
-  images and related by the coordinate changes on the interiors of the overlaps are the chart
-  expressions of a continuous section.
-* `TauCeti.FiniteBundleAtlas.eq_of_continuous_of_halfCoord_ae_eq`: continuous sections are
-  determined by their chart expressions almost everywhere.
 * `TauCeti.BorderedSobolevSection.existsUnique_continuous_ae_eq_halfCoord`: an element of
   `W^{1,p}(V)`, for `p > 2`, has a unique continuous representative.
 * `TauCeti.BorderedSobolevSection.toSection`: that continuous section; it is linear in the element
@@ -77,59 +70,12 @@ namespace TauCeti
 section Atlas
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
-  {F : Type*} [NormedAddCommGroup F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
 namespace FiniteBundleAtlas
 
 variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
-
-/-- Every point of the overlap of two charts read in `ℂ`, including its points on the real axis,
-is a limit of points of the interior of the overlap. -/
-private theorem subset_closure_halfOverlap (i i' : Fin A.n) :
-    closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im} ⊆
-      closure (A.halfOverlap i i') := by
-  have hO := (A.isOpen_overlap i i').preimage closedUpperHalfPlaneModel.continuous_symm
-  have h := subset_closure_interior_setOfPred_le_im_inter hO
-  rw [inter_comm, interior_inter_setOf_im_nonneg hO] at h
-  exact h.trans (closure_mono fun _ hz ↦ A.mem_halfOverlap.2 hz)
-
-/-- **Continuous sections are determined by their chart expressions almost everywhere.** Two
-continuous sections whose chart expressions in every chart `i` agree almost everywhere on the
-interior `A.halfImage i` of the chart image are equal. -/
-theorem eq_of_continuous_of_halfCoord_ae_eq {s t : ∀ x, V x}
-    (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
-    (ht : Continuous fun x ↦ TotalSpace.mk' F x (t x))
-    (h : ∀ i, A.halfCoord i s =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i t) :
-    s = t := by
-  funext x
-  obtain ⟨i, hx⟩ := A.exists_mem_dom x
-  have hcs := A.continuousOn_halfCoord hs i
-  have hct := A.continuousOn_halfCoord ht i
-  have hsub := A.halfImage_subset_halfClosedImage i
-  have heq : EqOn (A.halfCoord i s) (A.halfCoord i t) (A.halfClosedImage i) :=
-    (Measure.eqOn_open_of_ae_eq (h i) (A.halfImage i).isOpen (hcs.mono hsub)
-      (hct.mono hsub)).of_subset_closure hcs hct hsub (A.halfClosedImage_subset_closure_halfImage i)
-  have hxz := heq (A.mem_halfClosedImage.2 ⟨by
-    rw [closedUpperHalfPlaneModel_symm_coe]; exact A.mem_image.2 ⟨x, hx, rfl⟩, (A.chart i x).2⟩)
-  rw [A.halfCoord_coe_chart s hx, A.halfCoord_coe_chart t hx] at hxz
-  have hb : x ∈ (A.triv i).baseSet := A.dom_subset_baseSet i hx
-  have himage : A.triv i ⟨x, s x⟩ = A.triv i ⟨x, t x⟩ := by
-    rw [← (A.triv i).mk_proj_snd' (x := ⟨x, s x⟩) hb,
-      ← (A.triv i).mk_proj_snd' (x := ⟨x, t x⟩) hb, hxz]
-  exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
-    ((A.triv i).mem_source.2 hb) himage)
-
-/-- The open subset of `ℂ` whose trace on the closed upper half-plane is the image of chart `i`. -/
-private def halfOpen (i : Fin A.n) : Opens ℂ :=
-  ⟨closedUpperHalfPlaneModel.symm ⁻¹' (A.image i : Set ClosedUpperHalfPlane),
-    (A.image i).isOpen.preimage closedUpperHalfPlaneModel.continuous_symm⟩
-
-private theorem halfClosedImage_eq_inter (i : Fin A.n) :
-    A.halfClosedImage i = (A.halfOpen i : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} :=
-  Set.ext fun _ ↦ A.mem_halfClosedImage
-
-variable [NormedSpace ℝ F]
 
 /-- Morrey's embedding up to the real axis, on the image of chart `i`. -/
 private theorem continuousOn_halfPlanePreciseRepresentative [FiniteDimensional ℝ F] {p : ℝ≥0∞}
@@ -148,72 +94,6 @@ private theorem ae_eq_halfPlanePreciseRepresentative [FiniteDimensional ℝ F] {
   have h := hu.ae_eq_halfPlanePreciseRepresentative Fact.out
   rw [← A.halfClosedImage_eq_inter] at h
   exact ae_restrict_of_ae_restrict_of_subset (A.halfImage_subset_halfClosedImage i) h
-
-variable [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-
-/-- A function continuous on the image of chart `i`, transported to chart `i'` by the chart
-transition and the coordinate change of the bundle, is continuous on the overlap read in `ℂ`,
-including its points on the real axis. -/
-private theorem continuousOn_coordChange_halfTransition {i i' : Fin A.n} {g : ℂ → F}
-    (hg : ContinuousOn g (A.halfClosedImage i)) :
-    ContinuousOn (fun z ↦ (A.triv i).coordChangeL ℝ (A.triv i')
-        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)) (g (A.halfTransition i i' z)))
-      (closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im}) := by
-  have hdom {z : ℂ} (hz : closedUpperHalfPlaneModel.symm z ∈ A.overlap i i') :
-      (A.chart i').symm (closedUpperHalfPlaneModel.symm z) ∈ A.dom i ∩ A.dom i' := by
-    obtain ⟨x, hx, hxz⟩ := A.mem_overlap.1 hz
-    rwa [← hxz, (A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
-  set S : Set ℂ := closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im}
-  have hchart : MapsTo closedUpperHalfPlaneModel.symm S (A.image i') :=
-    fun z hz ↦ A.overlap_subset_image i i' hz.1
-  have hbase : MapsTo (fun z ↦ (A.chart i').symm (closedUpperHalfPlaneModel.symm z)) S
-      ((A.triv i).baseSet ∩ (A.triv i').baseSet) :=
-    fun z hz ↦ ⟨A.dom_subset_baseSet i (hdom hz.1).1, A.dom_subset_baseSet i' (hdom hz.1).2⟩
-  have htrans : MapsTo (A.halfTransition i i') S (A.halfClosedImage i) := by
-    intro z hz
-    rw [halfTransition_def]
-    exact A.mem_halfClosedImage.2 ⟨by
-      rw [closedUpperHalfPlaneModel_symm_coe]
-      exact A.overlap_subset_image i' i (A.transition_mem_overlap hz.1), (A.transition i i' _).2⟩
-  exact ((continuousOn_coordChange ℝ (A.triv i) (A.triv i')).comp
-    ((A.continuousOn_chart_symm i').comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
-      hchart) hbase).clm_apply
-    (hg.comp ((A.continuousOn_halfTransition i i').mono inter_subset_left) htrans)
-
-/-- **Gluing chart expressions up to the boundary.** Functions `g i`, continuous on the chart
-images `A.halfClosedImage i` and related by the coordinate changes of the bundle on the interiors
-`A.halfOverlap i i'` of the overlaps, are the chart expressions of a continuous section. The
-relations extend by continuity to the points of the overlaps on the real axis. -/
-theorem exists_continuous_halfCoord_eqOn {g : Fin A.n → ℂ → F}
-    (hg : ∀ i, ContinuousOn (g i) (A.halfClosedImage i))
-    (hcompat : ∀ i i', EqOn (g i')
-      (fun z ↦ (A.triv i).coordChangeL ℝ (A.triv i')
-        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)) (g i (A.halfTransition i i' z)))
-      (A.halfOverlap i i')) :
-    ∃ t : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (t x)) ∧
-      ∀ i, EqOn (A.halfCoord i t) (g i) (A.halfClosedImage i) := by
-  have hval (i : Fin A.n) {y : ClosedUpperHalfPlane} (hy : y ∈ A.image i) :
-      (y : ℂ) ∈ A.halfClosedImage i :=
-    A.mem_halfClosedImage.2 ⟨by rwa [closedUpperHalfPlaneModel_symm_coe], y.2⟩
-  -- The relations extend by continuity to the points of the overlaps on the real axis.
-  have hcompat' (i i' : Fin A.n) : EqOn (g i')
-      (fun z ↦ (A.triv i).coordChangeL ℝ (A.triv i')
-        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)) (g i (A.halfTransition i i' z)))
-      (closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im}) :=
-    (hcompat i i').of_subset_closure ((hg i').mono fun z hz ↦
-        A.mem_halfClosedImage.2 ⟨A.overlap_subset_image i i' hz.1, hz.2⟩)
-      (A.continuousOn_coordChange_halfTransition (hg i))
-      (fun z hz ↦ ⟨(A.mem_halfOverlap.1 hz).1, (A.mem_halfOverlap.1 hz).2.le⟩)
-      (A.subset_closure_halfOverlap i i')
-  obtain ⟨t, ht, hteq⟩ := A.exists_continuous_coord_eqOn (g := fun i y ↦ g i y)
-    (fun i ↦ (hg i).comp continuous_subtype_val.continuousOn fun _ ↦ hval i) fun i i' y hy ↦ by
-      have h := hcompat' i i' (show (y : ℂ) ∈ _ ∩ {z : ℂ | 0 ≤ z.im} from
-        ⟨by rw [mem_preimage, closedUpperHalfPlaneModel_symm_coe]; exact hy, y.2⟩)
-      simpa only [closedUpperHalfPlaneModel_symm_coe, halfTransition_def] using h
-  refine ⟨t, ht, fun i z hz ↦ ?_⟩
-  obtain ⟨hzi, hz0⟩ := A.mem_halfClosedImage.1 hz
-  rw [halfCoord_def, hteq i hzi]
-  exact congrArg (g i) (coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0)
 
 end FiniteBundleAtlas
 
@@ -254,8 +134,8 @@ private theorem exists_continuous_eqOn_halfPlanePreciseRepresentative (hp : 2 < 
     refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (A.isOpen_halfOverlap i i')
       ((hg_cont i').mono ((A.halfOverlap_subset_halfImage i i').trans
         (A.halfImage_subset_halfClosedImage i')))
-      ((A.continuousOn_coordChange_halfTransition (hg_cont i)).mono fun z hz ↦
-        ⟨(A.mem_halfOverlap.1 hz).1, (A.mem_halfOverlap.1 hz).2.le⟩)
+      ((A.continuousOn_coordChange_halfTransition (hg_cont i)).mono fun _ hz ↦
+        (A.mem_halfOverlap.1 hz).1)
     filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.halfOverlap_subset_halfImage i i')
         (hg_ae i'), A.halfSectionChartData.aeTransition_iff.1
           A.aeTransition_halfSectionChartData (i' := i') (hg_ae i),
@@ -282,7 +162,7 @@ theorem existsUnique_continuous_ae_eq_halfCoord (hp : 2 < p)
     filter_upwards [hs i, A.ae_eq_halfPlanePreciseRepresentative (hmem i),
       ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz hz' hzU
     rw [hz, hz', hts i (A.halfImage_subset_halfClosedImage i hzU)]
-  exact ⟨t, ⟨ht, hae⟩, fun t' ht' ↦ A.eq_of_continuous_of_halfCoord_ae_eq ht'.1 ht
+  exact ⟨t, ⟨ht, hae⟩, fun t' ht' ↦ A.eq_of_continuous_of_halfCoord_ae_eq (μ := volume) ht'.1 ht
     fun i ↦ (ht'.2 i).symm.trans (hae i)⟩
 
 /-- The continuous representative of an element of `W^{1,p}(V)`, for `2 < p ≤ ∞`: the unique
