@@ -113,7 +113,7 @@ private theorem realize_leftTwoElem {M : Type w} [TwoGraph.Structure M] :
     BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_not,
     BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel]
   refine exists_congr fun x => exists_congr fun y => and_congr Iff.rfl (of_eq (congrArg _ ?_))
-  ext i; fin_cases i <;> rfl
+  ext i; fin_cases i <;> simp [Fin.snoc]
 
 private theorem realize_rightTwoElem {M : Type w} [TwoGraph.Structure M] :
     SentenceInf.Realize rightTwoElem M ↔
@@ -122,7 +122,7 @@ private theorem realize_rightTwoElem {M : Type w} [TwoGraph.Structure M] :
     BoundedFormulaInf.realize_sup, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_not,
     BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel]
   refine or_congr Iff.rfl (exists_congr fun x => of_eq (congrArg _ ?_))
-  ext i; fin_cases i <;> rfl
+  ext i; fin_cases i <;> simp [Fin.snoc]
 
 -- Relational Craig interpolation produces a sentence with empty relation support that holds on a
 -- two-element structure and fails on a one-element structure.
