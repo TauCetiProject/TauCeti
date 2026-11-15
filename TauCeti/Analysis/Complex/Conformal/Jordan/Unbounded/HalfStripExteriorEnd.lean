@@ -322,7 +322,6 @@ private theorem exists_lt_norm_mem_image_ball_of_halfStripExterior
     · exact Or.inr ⟨z, ⟨hz, not_le.mpr h⟩, hzw⟩
   -- points of the half-disc near `x` are mapped far into the end, hence into `C`
   have hmeet : (C ∩ F '' A).Nonempty := by
-    have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
     obtain ⟨z, hzr, hzC, hzH⟩ := ((eventually_mem_set.mpr
       (mem_nhdsWithin_of_mem_nhds (ball_mem_nhds (x : ℂ) hr))).and
         (((tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne
