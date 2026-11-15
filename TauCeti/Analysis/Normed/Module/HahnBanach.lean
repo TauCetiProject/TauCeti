@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Hahn–Banach extension along linear isometries
@@ -15,9 +16,43 @@ This form of Hahn–Banach allows the embedded space to be given by a map rather
 for example when comparing injective tensor norms in different ambient spaces.
 
 The construction applies Mathlib's `exists_extension_norm_eq` to the range of the embedding.
+Applying the scalar extension theorem coordinatewise also extends operators into scalar-valued
+`ℓ∞` without increasing their norm.
 -/
 
 public section
+
+open scoped ENNReal NNReal
+
+namespace Submodule
+
+variable {𝕜 X ι : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+
+/-- An operator into scalar-valued `ℓ∞` extends from any subspace with the same norm. -/
+theorem exists_extension_lpInfty (M : Submodule 𝕜 X)
+    (f : M →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞) :
+    ∃ g : X →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞,
+      g ∘L M.subtypeL = f ∧ ‖g‖₊ = ‖f‖₊ := by
+  have h (i : ι) : ∃ g : StrongDual 𝕜 X,
+      (∀ x : M, g x = f x i) ∧ ‖g‖₊ ≤ ‖f‖₊ := by
+    obtain ⟨g, hg, hnorm⟩ := _root_.exists_extension_norm_eq M
+      ((lp.evalCLM 𝕜 (fun _ : ι ↦ 𝕜) ∞ i) ∘L f)
+    refine ⟨g, hg, ?_⟩
+    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, hnorm]
+    exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun x ↦
+      (lp.norm_apply_le_norm (by simp) (f x) i).trans (f.le_opNorm x)
+  choose g hg hnorm using h
+  let G := ContinuousLinearMap.piLpInfty g ‖f‖₊ hnorm
+  have hG : G ∘L M.subtypeL = f := by
+    ext x i
+    simpa [G] using hg i x
+  refine ⟨G, hG, (ContinuousLinearMap.nnnorm_piLpInfty_le g ‖f‖₊ hnorm).antisymm ?_⟩
+  calc
+    ‖f‖₊ = ‖G ∘L M.subtypeL‖₊ := congrArg (‖·‖₊) hG.symm
+    _ ≤ ‖G‖₊ := ContinuousLinearMap.opNNNorm_le_bound _ _ fun x ↦ G.le_opNNNorm x
+
+end Submodule
 
 namespace LinearIsometry
 

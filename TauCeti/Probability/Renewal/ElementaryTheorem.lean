@@ -129,7 +129,7 @@ theorem tendsto_eLpNorm_renewalCountNat_div_sub (hT : ∀ n, Measurable (T n))
       (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal) 1 P) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
   have hui := uniformIntegrable_renewalCountNat_div hT hindep hid hzero
-  have hlim := ae_tendsto_renewalCountNat_div (fun _ _ hij ↦ hindep.indepFun hij) hid hzero
+  have hlim := ae_tendsto_renewalCountNat_div (fun _ _ hij ↦ hindep.indepFun hij) hid
   refine tendsto_of_seq_tendsto fun x hx ↦ ?_
   -- Vitali's theorem applies along the times `max (x n) 1 ≥ 1`, which eventually equal `x n`.
   let y (n : ℕ) : Ici (1 : ℝ≥0) := ⟨max (x n) 1, le_max_right _ _⟩

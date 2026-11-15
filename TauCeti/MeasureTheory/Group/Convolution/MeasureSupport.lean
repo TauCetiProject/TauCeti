@@ -29,23 +29,27 @@ namespace MeasureTheory.Measure
 variable {M : Type*} [Monoid M] [MeasurableSpace M] [MeasurableMul₂ M]
   {μ ν : Measure M} [SFinite ν]
 
+omit [SFinite ν] in
 /-- Multiplicative convolution concentrates on any measurable set containing the pointwise
 product of sets on which its factors concentrate. -/
 @[to_additive /-- Additive convolution concentrates on any measurable set containing the
 pointwise sum of sets on which its factors concentrate. -/]
 theorem ae_mem_mconv_of_ae_mem {S T C : Set M} (hC : MeasurableSet C) (hST : S * T ⊆ C)
     (hS : ∀ᵐ x ∂μ, x ∈ S) (hT : ∀ᵐ y ∂ν, y ∈ T) : ∀ᵐ z ∂μ ∗ₘ ν, z ∈ C := by
-  rw [mconv]
-  apply (ae_map_iff measurable_mul.aemeasurable hC).2
-  apply (ae_prod_iff_ae_ae (hC.preimage measurable_mul)).2
-  filter_upwards [hS] with x hx
-  exact hT.mono fun y hy ↦ hST (Set.mul_mem_mul hx hy)
+  by_cases hν : SFinite ν
+  · rw [mconv]
+    apply (ae_map_iff measurable_mul.aemeasurable hC).2
+    apply (ae_prod_iff_ae_ae (hC.preimage measurable_mul)).2
+    filter_upwards [hS] with x hx
+    exact hT.mono fun y hy ↦ hST (Set.mul_mem_mul hx hy)
+  · rw [mconv, Measure.prod_eq_zero_of_not_sfinite hν, Measure.map_zero]
+    simp
 
 variable {A : Type*} [AddMonoid A] [MeasurableSpace A] [MeasurableAdd₂ A]
 
 /-- Every convolution power concentrates on a measurable set containing zero and closed
 under addition, provided the original measure concentrates there. -/
-theorem ae_mem_convolutionPower_of_ae_mem {μ : Measure A} [SFinite μ] {C : Set A}
+theorem ae_mem_convolutionPower_of_ae_mem {μ : Measure A} {C : Set A}
     (hC : MeasurableSet C) (h0 : 0 ∈ C) (hadd : C + C ⊆ C)
     (hμ : ∀ᵐ x ∂μ, x ∈ C) (n : ℕ) : ∀ᵐ x ∂μ.convolutionPower n, x ∈ C := by
   induction n with

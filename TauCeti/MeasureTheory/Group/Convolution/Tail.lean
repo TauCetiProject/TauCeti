@@ -21,6 +21,10 @@ both summands are moderately large.
 
 `tendsto_rpow_mul_bind_convolutionPower_real_Ioi` gives the corresponding random-sum formula: a
 finite count moment of order `α + 1` suffices to multiply the tail constant by the mean count.
+For `α < 0` the tail constant is `0` and the statement is degenerate: the count need not have a
+finite mean, and the integral and the real tail mass may vanish by the Bochner and `toReal`
+conventions. Genuine mean-count integrability and finite positive right tails for an infinite
+count measure require `0 ≤ α`.
 
 ## References
 
@@ -113,11 +117,16 @@ theorem le_conv_real_Ioi (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMea
 /-- Finite measures with power-law right tails retain that exponent under convolution;
 the constants add with the total masses of the other factors. This includes zero constants
 and requires no left-tail or moment hypotheses. -/
-theorem tendsto_rpow_mul_conv_real_Ioi_of_tendsto {α C D : ℝ} (hα : 0 < α)
+theorem tendsto_rpow_mul_conv_real_Ioi_of_tendsto {α C D : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hν : Tendsto (fun x : ℝ ↦ x ^ α * ν.real (Ioi x)) atTop (𝓝 D)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ ∗ ν).real (Ioi x)) atTop
       (𝓝 (C * ν.real univ + μ.real univ * D)) := by
+  rcases le_or_gt α 0 with hα' | hα
+  · -- For a nonpositive exponent every weighted tail of a finite measure tends to zero.
+    obtain rfl := tendsto_nhds_unique hμ (μ.tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα')
+    obtain rfl := tendsto_nhds_unique hν (ν.tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα')
+    simpa using (μ ∗ ν).tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα'
   -- Fixed relative windows exhaust the real line and recover both single-large-jump terms.
   have lower {δ : ℝ} (hδ : 0 < δ) :
       Tendsto (fun x : ℝ ↦
@@ -200,7 +209,7 @@ theorem convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ
 /-- The power-law right-tail constant of an `n`-fold convolution of a probability law is
 `n` times the original constant, including the empty convolution. -/
 theorem tendsto_rpow_mul_convolutionPower_real_Ioi {μ : Measure ℝ} [IsProbabilityMeasure μ]
-    {α C : ℝ} (hα : 0 < α)
+    {α C : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C)) (n : ℕ) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ.convolutionPower n).real (Ioi x)) atTop
       (𝓝 ((n : ℝ) * C)) := by
@@ -211,7 +220,7 @@ theorem tendsto_rpow_mul_convolutionPower_real_Ioi {μ : Measure ℝ} [IsProbabi
     simp [measureReal_def, hx.le]
   | succ n ih =>
     simpa only [convolutionPower_succ, probReal_univ, mul_one, one_mul,
-      Nat.cast_add_one, add_mul] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto hα ih hμ
+      Nat.cast_add_one, add_mul] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto ih hμ
 
 /-- A finite power-law right-tail limit of nonnegative exponent gives a uniform bound over all
 positive thresholds for a finite real measure. -/
@@ -234,11 +243,18 @@ theorem exists_rpow_mul_real_Ioi_le (μ : Measure ℝ) [IsFiniteMeasure μ]
 /-- A uniform normalized tail bound for a probability law gives a polynomial bound of order
 `α + 1` for its convolution powers, including the empty convolution. -/
 theorem rpow_mul_convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    {α K : ℝ} (hα : 0 ≤ α)
+    {α K : ℝ}
     (hμ : ∀ x : ℝ, 0 < x → x ^ α * μ.real (Ioi x) ≤ K) {x : ℝ} (hx : 0 < x) (n : ℕ) :
     x ^ α * (μ.convolutionPower n).real (Ioi x) ≤ K * (n : ℝ) ^ (α + 1) := by
   rcases n.eq_zero_or_pos with rfl | hn
-  · simp [measureReal_def, hx.le, zero_rpow (by positivity : α + 1 ≠ 0)]
+  · by_cases h : α + 1 = 0
+    · -- `0 ^ 0 = 1`, and the bound `hμ` at `x = 1` gives `0 ≤ K`.
+      have hK : 0 ≤ K := by
+        have := hμ 1 one_pos
+        rw [one_rpow, one_mul] at this
+        exact measureReal_nonneg.trans this
+      simp [measureReal_def, hx.le, h, hK]
+    · simp [measureReal_def, hx.le, zero_rpow h]
   · have hn' : 0 < (n : ℝ) := by exact_mod_cast hn
     calc
       _ ≤ x ^ α * ((n : ℝ) * μ.real (Ioi (x / n))) :=
@@ -253,13 +269,21 @@ theorem rpow_mul_convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityM
 
 /-- Mixing convolution powers against a count law with a finite moment of order `α + 1`
 multiplies a power-law tail constant by the mean count. Jumps may have either sign, and
-their left tail is unrestricted. The count measure need not be finite. -/
+their left tail is unrestricted. The count measure need not be finite. For `α < 0` the constant
+`C` is `0` and the result is degenerate: `n ↦ (n : ℝ)` need not be `ρ`-integrable, and the
+integral or the real tail mass may vanish by the Bochner and `toReal` conventions (for
+`α < -1` an infinite `ρ` can give infinite tail mass). Genuine mean-count integrability and
+finite positive right tails for infinite `ρ` require `0 ≤ α`. -/
 theorem tendsto_rpow_mul_bind_convolutionPower_real_Ioi {μ : Measure ℝ}
-    [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ} (hα : 0 < α)
+    [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ}
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hρ : Integrable (fun n : ℕ ↦ (n : ℝ) ^ (α + 1)) ρ) :
     Tendsto (fun x : ℝ ↦ x ^ α * (ρ.bind μ.convolutionPower).real (Ioi x)) atTop
       (𝓝 ((∫ n : ℕ, (n : ℝ) ∂ρ) * C)) := by
+  rcases le_or_gt α 0 with hα' | hα
+  · -- For a nonpositive exponent every weighted tail tends to zero, so `C = 0`.
+    obtain rfl := tendsto_nhds_unique hμ (μ.tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα')
+    simpa using (ρ.bind μ.convolutionPower).tendsto_rpow_mul_measureReal_Ioi_of_nonpos hα'
   obtain ⟨K, hbound⟩ := μ.exists_rpow_mul_real_Ioi_le hα.le hμ
   -- The count moment dominates the normalized finite-sum tails, so their limits can be mixed.
   have h := tendsto_integral_filter_of_dominated_convergence (μ := ρ)
@@ -270,9 +294,9 @@ theorem tendsto_rpow_mul_bind_convolutionPower_real_Ioi {μ : Measure ℝ}
       filter_upwards [eventually_gt_atTop 0] with x hx
       exact ae_of_all _ fun n ↦ by
         rw [Real.norm_of_nonneg (mul_nonneg (rpow_nonneg hx.le _) measureReal_nonneg)]
-        exact μ.rpow_mul_convolutionPower_real_Ioi_le hα.le hbound hx n)
+        exact μ.rpow_mul_convolutionPower_real_Ioi_le hbound hx n)
     (hρ.const_mul K)
-    (ae_of_all _ fun n ↦ tendsto_rpow_mul_convolutionPower_real_Ioi hα hμ n)
+    (ae_of_all _ fun n ↦ tendsto_rpow_mul_convolutionPower_real_Ioi hμ n)
   simpa only [integral_const_mul, integral_mul_const,
     bind_apply_real Measurable.of_discrete.aemeasurable measurableSet_Ioi
       (ae_of_all _ fun _ ↦ measure_ne_top _ _)] using h
