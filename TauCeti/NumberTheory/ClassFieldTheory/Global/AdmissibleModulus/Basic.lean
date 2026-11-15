@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Basic
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.ArtinNorm
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
