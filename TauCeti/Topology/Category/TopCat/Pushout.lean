@@ -45,6 +45,8 @@ closed embedding.
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
+* `CategoryTheory.IsPushout.of_isClosedEmbedding_of_range_union_range`: a cover by two closed
+  subspaces meeting along a prescribed subspace is a pushout square.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -279,6 +281,31 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
       rw [Sigma.ι_comp_desc_assoc] at hk
       rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hk,
         (desc s).choose_spec.2 k]
+
+/-- **A cover by two closed subspaces is a pushout.** Let `X` be covered by the ranges of two
+closed embeddings `i : A ⟶ X` and `j : B ⟶ X` which meet exactly along `S`: the square
+`g ≫ i = m ≫ j` commutes, and every point `i a = j b` comes from a point `s` of `S` with `g s = a`
+and `m s = b`. Then `X` is the pushout of `A` and `B` along `S`. This is the one-piece case of
+`CategoryTheory.IsPushout.of_isClosedEmbedding`, without the coproducts. -/
+theorem of_isClosedEmbedding_of_range_union_range {S A B X : TopCat.{u}} {g : S ⟶ A}
+    {m : S ⟶ B} {i : A ⟶ X} {j : B ⟶ X} (w : g ≫ i = m ≫ j) (hi : IsClosedEmbedding i)
+    (hj : IsClosedEmbedding j) (hcover : range i ∪ range j = univ)
+    (hij : ∀ a b, i a = j b → ∃ s, g s = a ∧ m s = b) :
+    IsPushout g m i j := by
+  let desc (s : PushoutCocone g m) :=
+    TopCat.exists_glue_of_isClosedEmbedding (ι := Unit) (B := fun _ ↦ B) (j := fun _ ↦ j) hi
+      (fun _ ↦ hj) (by rwa [iUnion_const]) Subsingleton.pairwise s.inl (fun _ ↦ s.inr)
+      fun _ x y h ↦ by
+        obtain ⟨t, rfl, rfl⟩ := hij x y h
+        exact ConcreteCategory.congr_hom s.condition t
+  refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w (fun s ↦ (desc s).choose)
+    (fun s ↦ (desc s).choose_spec.1) (fun s ↦ (desc s).choose_spec.2 ()) fun s d h₁ h₂ ↦ ?_)
+  ext x
+  obtain ⟨a, rfl⟩ | ⟨b, rfl⟩ := hcover.symm ▸ mem_univ x
+  · rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, h₁,
+      (desc s).choose_spec.1]
+  · rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, h₂,
+      (desc s).choose_spec.2 ()]
 
 end ClosedCover
 
