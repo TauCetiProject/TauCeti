@@ -14,15 +14,16 @@ import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
 /-!
-# Kolmogorov bounds from Gaussian increment laws
+# Kolmogorov bounds from increment moments and Gaussian laws
 
 A real process whose increments have centered Gaussian laws with variance equal to the
 parameter distance satisfies the even-moment Kolmogorov bounds with exponents `2 * n` and `n`
 and constant `(2 * n - 1)‼` for every positive integer `n`. In particular, `n = 2` gives
-exponents 4 and 2 and constant 3. These bounds are moment inputs for continuous-modification
-arguments; they do not themselves construct a continuous modification.
+exponents 4 and 2 and constant 3. More generally, Bochner-integral bounds on
+`dist (X s ω) (X t ω) ^ p` yield `IsKolmogorovProcess`, and isometric reparametrizations preserve
+both `IsKolmogorovProcess` and `IsAEKolmogorovProcess`.
 
-The calculation uses the Gaussian even-moment formula. See Karatzas–Shreve, *Brownian
+The Gaussian calculation uses the Gaussian even-moment formula; see Karatzas–Shreve, *Brownian
 Motion and Stochastic Calculus*, second edition, Chapter 2, §2.
 -/
 
@@ -32,6 +33,69 @@ open MeasureTheory
 open scoped ENNReal NNReal Nat
 
 namespace ProbabilityTheory
+
+/-- A Bochner-integral increment bound `∫ ω, dist (X s ω) (X t ω) ^ p ∂P ≤ M * dist s t ^ q`,
+together with integrability and Borel pair measurability, gives `IsKolmogorovProcess`. -/
+theorem IsKolmogorovProcess.of_integral_dist_rpow_le {T Ω E : Type*}
+    [PseudoMetricSpace T] [MeasurableSpace Ω] [PseudoMetricSpace E]
+    {P : Measure Ω} {X : T → Ω → E} {p q : ℝ} {M : ℝ≥0}
+    (hpair : ∀ s t : T, Measurable[_, borel (E × E)] fun ω ↦ (X s ω, X t ω))
+    (hint : ∀ s t : T, Integrable (fun ω ↦ dist (X s ω) (X t ω) ^ p) P)
+    (hbound : ∀ s t : T, ∫ ω, dist (X s ω) (X t ω) ^ p ∂P ≤ M * dist s t ^ q)
+    (hp : 0 < p) (hq : 0 < q) :
+    IsKolmogorovProcess X P p q M where
+  measurablePair := hpair
+  p_pos := hp
+  q_pos := hq
+  kolmogorovCondition s t := by
+    have hed (ω : Ω) :
+        edist (X s ω) (X t ω) ^ p = ENNReal.ofReal (dist (X s ω) (X t ω) ^ p) := by
+      rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg hp.le]
+    simp_rw [hed]
+    rw [← ofReal_integral_eq_lintegral_ofReal (hint s t)
+      (Filter.Eventually.of_forall fun _ ↦ Real.rpow_nonneg dist_nonneg p)]
+    calc ENNReal.ofReal (∫ ω, dist (X s ω) (X t ω) ^ p ∂P)
+        ≤ ENNReal.ofReal (M * dist s t ^ q) := ENNReal.ofReal_le_ofReal (hbound s t)
+      _ = M * edist s t ^ q := by
+          rw [ENNReal.ofReal_mul M.coe_nonneg, ENNReal.ofReal_coe_nnreal, edist_dist,
+            ENNReal.ofReal_rpow_of_nonneg dist_nonneg hq.le]
+
+/-- In a second-countable Borel metric space, coordinate measurability and a Bochner-integral
+increment bound give `IsKolmogorovProcess`. -/
+theorem IsKolmogorovProcess.of_secondCountableTopology_integral_dist_rpow_le {T Ω E : Type*}
+    [PseudoMetricSpace T] [MeasurableSpace Ω] [PseudoMetricSpace E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    {P : Measure Ω} {X : T → Ω → E} {p q : ℝ} {M : ℝ≥0}
+    (hX : ∀ t : T, Measurable (X t))
+    (hint : ∀ s t : T, Integrable (fun ω ↦ dist (X s ω) (X t ω) ^ p) P)
+    (hbound : ∀ s t : T, ∫ ω, dist (X s ω) (X t ω) ^ p ∂P ≤ M * dist s t ^ q)
+    (hp : 0 < p) (hq : 0 < q) :
+    IsKolmogorovProcess X P p q M :=
+  IsKolmogorovProcess.of_integral_dist_rpow_le
+    (fun s t ↦ by
+      suffices Measurable fun ω ↦ (X s ω, X t ω) by rwa [Prod.borelSpace.measurable_eq] at this
+      fun_prop)
+    hint hbound hp hq
+
+/-- Precomposing the parameter space with an isometry preserves `IsKolmogorovProcess`. -/
+theorem IsKolmogorovProcess.comp_isometry {S T Ω E : Type*}
+    [PseudoEMetricSpace S] [PseudoEMetricSpace T] [MeasurableSpace Ω] [PseudoEMetricSpace E]
+    {P : Measure Ω} {X : T → Ω → E} {p q : ℝ} {M : ℝ≥0}
+    (hX : IsKolmogorovProcess X P p q M) {f : S → T} (hf : Isometry f) :
+    IsKolmogorovProcess (X ∘ f) P p q M where
+  measurablePair s t := hX.measurablePair (f s) (f t)
+  kolmogorovCondition s t := by
+    simpa only [Function.comp_apply, hf.edist_eq] using hX.kolmogorovCondition (f s) (f t)
+  p_pos := hX.p_pos
+  q_pos := hX.q_pos
+
+/-- Precomposing the parameter space with an isometry preserves `IsAEKolmogorovProcess`. -/
+theorem IsAEKolmogorovProcess.comp_isometry {S T Ω E : Type*}
+    [PseudoEMetricSpace S] [PseudoEMetricSpace T] [MeasurableSpace Ω] [PseudoEMetricSpace E]
+    {P : Measure Ω} {X : T → Ω → E} {p q : ℝ} {M : ℝ≥0}
+    (hX : IsAEKolmogorovProcess X P p q M) {f : S → T} (hf : Isometry f) :
+    IsAEKolmogorovProcess (X ∘ f) P p q M :=
+  ⟨hX.mk X ∘ f, hX.IsKolmogorovProcess_mk.comp_isometry hf, fun s ↦ hX.ae_eq_mk (f s)⟩
 
 /-- Centered Gaussian increments with variance `nndist s t` satisfy the Kolmogorov bound
 with exponents `2 * n` and `n` and constant `(2 * n - 1)‼` for every positive `n`.

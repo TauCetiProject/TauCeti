@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.Topology.MetricSpace.CoveringExponent
 public import TauCeti.MeasureTheory.Covering.PackingNumber
 
 /-!
@@ -17,12 +18,13 @@ the closed balls of radius `ε / 2` around these points are pairwise disjoint an
 ball of radius `r + ε / 2` around the centre
 (`Metric.IsSeparated.card_mul_le_measure_cthickening`), and a Haar measure scales the volume of a
 ball of radius `ρ` by `ρ ^ n`. Hence the packing number, and with it the covering number, of a
-subset of a ball is at most `(1 + 2 r / ε) ^ n`.
+subset of a closed ball is at most `(1 + 2 r / ε) ^ n`.
 
-In particular the unit sphere of `E` has an `η`-net of at most `(1 + 2 / η) ^ n` points, for every
-`η > 0`. Nets of this size on the Euclidean sphere `Sⁿ⁻¹` drive the passage from concentration of
-measure at single points to uniform estimates on whole subspaces, as in the proof of Dvoretzky's
-theorem on almost Euclidean sections of finite-dimensional normed spaces.
+In particular every bounded set in `E` satisfies `Metric.HasCoveringExponent` with exponent
+`finrank ℝ E`, and the unit sphere of `E` has an `η`-net of at most `(1 + 2 / η) ^ n` points, for
+every `η > 0`. Nets of this size on the Euclidean sphere `Sⁿ⁻¹` drive the passage from
+concentration of measure at single points to uniform estimates on whole subspaces, as in the proof
+of Dvoretzky's theorem on almost Euclidean sections of finite-dimensional normed spaces.
 
 ## Main results
 
@@ -35,6 +37,9 @@ theorem on almost Euclidean sections of finite-dimensional normed spaces.
   has an `ε`-net consisting of at most `(1 + 2 r / ε) ^ n` of its points.
 * `TauCeti.exists_finset_isCover_sphere`: the unit sphere has an `η`-net consisting of at most
   `(1 + 2 / η) ^ n` of its points.
+* `TauCeti.hasCoveringExponent_of_subset_closedBall`,
+  `Bornology.IsBounded.exists_hasCoveringExponent`: bounded sets in finite-dimensional real normed
+  spaces have covering exponent equal to the dimension.
 
 ## References
 
@@ -141,4 +146,59 @@ theorem exists_finset_isCover_sphere {η : ℝ≥0} (hη : η ≠ 0) :
   simpa using exists_finset_isCover_of_subset_closedBall (r := 1) hη
     (sphere_subset_closedBall (x := (0 : E)))
 
+/-- Every subset of a closed ball of radius `r` in a finite-dimensional real normed space `E`
+has covering exponent `finrank ℝ E`, including the degenerate radius `r = 0`. -/
+theorem hasCoveringExponent_of_subset_closedBall (hA : A ⊆ closedBall x r) :
+    HasCoveringExponent A (((max 1 (4 * r)) ^ finrank ℝ E : ℝ≥0) : ℝ≥0∞) (finrank ℝ E) := by
+  have hed_ball : ediam (closedBall x r) ≤ ENNReal.ofReal (2 * (r : ℝ)) :=
+    ediam_le_of_forall_dist_le fun y hy z hz ↦ by
+      linarith [dist_triangle_right y z x, mem_closedBall.1 hy, mem_closedBall.1 hz]
+  refine ⟨((ediam_mono hA).trans hed_ball).trans_lt ENNReal.ofReal_lt_top, fun ε hε ↦ ?_⟩
+  rcases eq_or_ne ε 0 with rfl | hε₀
+  · rcases eq_or_ne (finrank ℝ E) 0 with hd | hd
+    · have : Subsingleton E := finrank_zero_iff.mp hd
+      have hed : ediam A ≤ ENNReal.ofReal 0 :=
+        ediam_le_of_forall_dist_le fun a _ b _ ↦ by simp [Subsingleton.elim a b]
+      have hcov : (coveringNumber 0 A : ℝ≥0∞) ≤ 1 :=
+        mod_cast coveringNumber_le_one_of_ediam_le (by simpa using hed)
+      simpa [hd] using hcov
+    · have hd' : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hd)
+      simp [ENNReal.top_rpow_of_pos hd']
+  · have hed : (ε : ℝ≥0∞) ≤ 2 * (r : ℝ≥0∞) := by
+      refine hε.trans ((ediam_mono hA).trans (hed_ball.trans_eq ?_))
+      simp [ENNReal.ofReal_mul]
+    have hone : (1 : ℝ≥0∞) ≤ 2 * (r : ℝ≥0∞) / ε :=
+      (ENNReal.le_div_iff_mul_le (.inl (by exact_mod_cast hε₀)) (.inl ENNReal.coe_ne_top)).2
+        (by simpa using hed)
+    calc (coveringNumber ε A : ℝ≥0∞)
+        ≤ (1 + 2 * (r : ℝ≥0∞) / ε) ^ finrank ℝ E :=
+          coveringNumber_le_of_subset_closedBall hε₀ hA
+      _ ≤ (4 * (r : ℝ≥0∞) * (ε : ℝ≥0∞)⁻¹) ^ finrank ℝ E := by
+          gcongr
+          calc 1 + 2 * (r : ℝ≥0∞) / ε
+              ≤ 2 * (r : ℝ≥0∞) / ε + 2 * (r : ℝ≥0∞) / ε := add_le_add_left hone _
+            _ = 4 * (r : ℝ≥0∞) * (ε : ℝ≥0∞)⁻¹ := by
+                simp only [div_eq_mul_inv]
+                ring
+      _ ≤ (((max 1 (4 * r)) ^ finrank ℝ E : ℝ≥0) : ℝ≥0∞) *
+            (ε : ℝ≥0∞)⁻¹ ^ (finrank ℝ E : ℝ) := by
+          rw [mul_pow, ENNReal.rpow_natCast, ENNReal.coe_pow]
+          gcongr
+          rw [← ENNReal.coe_ofNat, ← ENNReal.coe_mul]
+          exact ENNReal.coe_le_coe.2 (le_max_right 1 (4 * r))
+
 end TauCeti
+
+namespace Bornology.IsBounded
+
+/-- Every bounded subset of a finite-dimensional real normed space has covering exponent equal to
+the dimension, with a finite nonnegative constant. -/
+theorem exists_hasCoveringExponent {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {A : Set E} (hA : Bornology.IsBounded A) :
+    ∃ c : ℝ≥0, HasCoveringExponent A c (finrank ℝ E) := by
+  obtain ⟨r, _, hr⟩ := hA.subset_closedBall_lt 0 (0 : E)
+  exact ⟨(max 1 (4 * r.toNNReal)) ^ finrank ℝ E,
+    TauCeti.hasCoveringExponent_of_subset_closedBall
+      (hr.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal r)))⟩
+
+end Bornology.IsBounded
