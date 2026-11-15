@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
+import TauCeti.Analysis.Calculus.ContDiff.IsOpen
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -94,10 +95,8 @@ globally `C^n` function. -/
 theorem IsCompact.exists_contDiff_eventuallyEq [FiniteDimensional ℝ E] (n : ℕ) {f : E → F}
     {K : Set E} (hK : IsCompact K) (hf : ∀ x ∈ K, ContDiffAt ℝ n f x) :
     ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ ∀ x ∈ K, g =ᶠ[nhds x] f := by
-  have hU : IsOpen {x | ContDiffAt ℝ n f x} :=
-    isOpen_iff_mem_nhds.2 fun x hx ↦ hx.eventually (by simp)
-  have hfU : ContDiffOn ℝ n f {x | ContDiffAt ℝ n f x} := fun x hx ↦ hx.contDiffWithinAt
-  obtain ⟨g, hg, hgc, -, -, hgf⟩ := hfU.exists_contDiff_eventuallyEq_on_isCompact hK hU hf
+  obtain ⟨U, hU, hKU, hfU⟩ := TauCeti.exists_isOpen_superset_contDiffOn (by simp) hf
+  obtain ⟨g, hg, hgc, -, -, hgf⟩ := hfU.exists_contDiff_eventuallyEq_on_isCompact hK hU hKU
   exact ⟨g, hg, hgc, hgf⟩
 
 /-- A function which is smooth of order at least one on a neighbourhood of a point of a
