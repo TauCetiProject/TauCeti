@@ -421,9 +421,11 @@ theorem sumExtend_id : sumExtend Y (GHom.id (inl : G →* GX G X)) =
     GHom.id (inl : G →* GX G (X ⊕ Y)) :=
   GX.gHom_ext _ fun u => by cases u <;> simp
 
-/-- The extension of a composite is the composite of the extensions. -/
-theorem sumExtend_comp {X'' : Type*} (τ : GHom (inl : G →* GX G X'') (inl : G →* GX G X')) :
-    sumExtend Y (σ.comp τ) = (sumExtend Y σ).comp (sumExtend Y τ) :=
+/-- The composite of the extensions of `σ` and of `τ` is the extension of `σ ∘ τ`. -/
+@[simp]
+theorem sumExtend_comp_sumExtend {X'' : Type*}
+    (τ : GHom (inl : G →* GX G X'') (inl : G →* GX G X')) :
+    (sumExtend Y σ).comp (sumExtend Y τ) = sumExtend Y (σ.comp τ) :=
   GX.gHom_ext _ fun u => by cases u <;> simp
 
 /-- Applying the extensions of `τ` and of `σ` in turn is applying the extension of `σ ∘ τ`. -/
@@ -431,7 +433,7 @@ theorem sumExtend_comp {X'' : Type*} (τ : GHom (inl : G →* GX G X'') (inl : G
 theorem sumExtend_apply_sumExtend {X'' : Type*}
     (τ : GHom (inl : G →* GX G X'') (inl : G →* GX G X')) (u : GX G (X'' ⊕ Y)) :
     sumExtend Y σ (sumExtend Y τ u) = sumExtend Y (σ.comp τ) u := by
-  simp [sumExtend_comp]
+  rw [← sumExtend_comp_sumExtend, GHom.coe_comp, Function.comp_apply]
 
 variable {σ}
 
