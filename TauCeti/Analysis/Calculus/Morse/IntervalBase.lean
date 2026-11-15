@@ -61,6 +61,10 @@ bijective.
   `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
+* `TauCeti.integral_inv_mul_one_sub_sq`: the increments of `U` as crossing times.
+* `TauCeti.mem_Ioo_of_hasDerivAt_of_tendsto` and
+  `TauCeti.intervalBaseTimeCoordinate_eq_add_of_hasDerivAt`: a solution from `0` to `1` stays in
+  `(0, 1)`, where its time coordinate advances at rate `C`.
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -579,6 +583,103 @@ theorem tendsto_nhds_one_of_tendsto_intervalBaseTimeCoordinate_atTop {α : Type*
     (h : Tendsto (fun i ↦ intervalBaseTimeCoordinate (x i)) l atTop) : Tendsto x l (𝓝 1) :=
   ((tendsto_intervalBaseOrbit_atTop one_pos).comp h).congr' <| hx.mono fun _ hi ↦
     intervalBaseOrbit_one_intervalBaseTimeCoordinate hi
+
+/-- **The crossing time of the base flow.** Between two points `a` and `b` of `(0, 1)` the time
+coordinate increases by `∫_a^b (t (1 - t²))⁻¹ dt`, the time the rate-one flow `t' = t (1 - t²)`
+takes from `a` to `b`. -/
+theorem integral_inv_mul_one_sub_sq {a b : ℝ} (ha : a ∈ Ioo 0 1) (hb : b ∈ Ioo 0 1) :
+    ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ =
+      intervalBaseTimeCoordinate b - intervalBaseTimeCoordinate a := by
+  have hsub : uIcc a b ⊆ Ioo 0 1 := ordConnected_Ioo.uIcc_subset ha hb
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t ht ↦ hasDerivAt_intervalBaseTimeCoordinate (hsub ht))
+    (ContinuousOn.intervalIntegrable ?_)
+  refine fun t ht ↦ (ContinuousAt.inv₀ (by fun_prop) ?_).continuousWithinAt
+  have h1 : 0 < 1 - t ^ 2 := by nlinarith [(hsub ht).1, (hsub ht).2]
+  exact (mul_pos (hsub ht).1 h1).ne'
+
+/-- A solution of `x' = C x (1 - x²)` for `C ≥ 0` which tends to `0` at `-∞` stays in `[-2, 2]`:
+the potential `(x² - 1)²` decreases along it from its value `1` at `-∞`. -/
+private theorem mem_Icc_of_hasDerivAt_of_tendsto_atBot (hC : 0 ≤ C) {x : ℝ → ℝ}
+    (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (h₀ : Tendsto x atBot (𝓝 0)) (s : ℝ) :
+    x s ∈ Icc (-2) 2 := by
+  have hE : Antitone fun s ↦ (x s ^ 2 - 1) ^ 2 := by
+    refine antitone_of_hasDerivAt_nonpos (f' := fun s ↦ -(4 * C * x s ^ 2 * (1 - x s ^ 2) ^ 2))
+      (fun s ↦ ?_) fun s ↦ ?_
+    · convert (((hx s).pow 2).sub_const 1).pow 2 using 1
+      simp only [Nat.cast_ofNat, Pi.pow_apply]
+      ring
+    · have := mul_nonneg (mul_nonneg hC (sq_nonneg (x s))) (sq_nonneg (1 - x s ^ 2))
+      simp only [Pi.zero_apply]
+      linarith
+  have hlimE : Tendsto (fun s ↦ (x s ^ 2 - 1) ^ 2) atBot (𝓝 1) := by
+    simpa using ((h₀.pow 2).sub_const 1).pow 2
+  have hs : (x s ^ 2 - 1) ^ 2 ≤ 1 :=
+    ge_of_tendsto hlimE ((eventually_le_atBot s).mono fun u hu ↦ hE hu)
+  constructor <;> nlinarith [sq_nonneg (x s + 2), sq_nonneg (x s - 2)]
+
+/-- On `[-2, 2]` the field `C x (1 - x²)` is `11 |C|`-Lipschitz: its difference quotient is
+`C (1 - (a² + a b + b²))`. -/
+private theorem lipschitzOnWith_mul_one_sub_sq_Icc (C : ℝ) :
+    LipschitzOnWith (11 * ‖C‖₊) (fun y ↦ C * y * (1 - y ^ 2)) (Icc (-2) 2) := by
+  refine LipschitzOnWith.of_dist_le_mul fun u hu v hv ↦ ?_
+  rw [mem_Icc] at hu hv
+  have h : |1 - (u ^ 2 + u * v + v ^ 2)| ≤ 11 := by
+    rw [abs_le]
+    constructor <;> nlinarith
+  simp only [dist_eq_norm, Real.norm_eq_abs, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm]
+  rw [show C * u * (1 - u ^ 2) - C * v * (1 - v ^ 2) = C * (u - v) * (1 - (u ^ 2 + u * v + v ^ 2))
+    by ring, abs_mul, abs_mul]
+  nlinarith [mul_nonneg (abs_nonneg C) (abs_nonneg (u - v))]
+
+/-- **Trajectories of the base from `0` to `1` stay in `(0, 1)`.** For `C ≥ 0`, a solution of
+`x' = C x (1 - x²)` on the whole line which tends to `0` at `-∞` and to `1` at `+∞` takes all its
+values in `(0, 1)`. -/
+theorem mem_Ioo_of_hasDerivAt_of_tendsto (hC : 0 ≤ C) {x : ℝ → ℝ}
+    (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (h₀ : Tendsto x atBot (𝓝 0))
+    (h₁ : Tendsto x atTop (𝓝 1)) (s : ℝ) : x s ∈ Ioo 0 1 := by
+  have hcont : Continuous x := continuous_iff_continuousAt.2 fun s ↦ (hx s).continuousAt
+  have hb := mem_Icc_of_hasDerivAt_of_tendsto_atBot hC hx h₀
+  -- By uniqueness on `[-2, 2]`, the solution meets neither equilibrium `0` nor `1`.
+  have hne : ∀ c : ℝ, c = 0 ∨ c = 1 → ∀ s, x s ≠ c := by
+    rintro c hc s hs
+    have hconst : x = fun _ ↦ c :=
+      ODE_solution_unique_univ (v := fun _ y ↦ C * y * (1 - y ^ 2)) (s := fun _ ↦ Icc (-2) 2)
+        (fun _ ↦ lipschitzOnWith_mul_one_sub_sq_Icc C) (fun s ↦ ⟨hx s, hb s⟩)
+        (fun _ ↦ ⟨by rcases hc with rfl | rfl <;> simpa using hasDerivAt_const _ _,
+          by rcases hc with rfl | rfl <;> norm_num⟩) hs
+    rw [hconst] at h₀ h₁
+    rcases hc with rfl | rfl
+    · exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h₁).symm
+    · exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h₀)
+  -- By the intermediate value theorem, a value outside `(0, 1)` would force one of them.
+  by_contra hs
+  rcases not_and_or.1 hs with h | h <;> rw [not_lt] at h
+  · obtain ⟨u, hu, hxu⟩ := ((h₁.eventually (lt_mem_nhds one_half_lt_one)).and
+      (eventually_ge_atTop s)).exists
+    obtain ⟨v, -, hv⟩ :=
+      intermediate_value_Icc hxu hcont.continuousOn ⟨h, hu.le.trans' (by norm_num)⟩
+    exact hne 0 (.inl rfl) v hv
+  · obtain ⟨u, hu, hux⟩ := ((h₀.eventually (gt_mem_nhds one_half_pos)).and
+      (eventually_le_atBot s)).exists
+    obtain ⟨v, -, hv⟩ :=
+      intermediate_value_Icc hux hcont.continuousOn ⟨hu.le.trans (by norm_num), h⟩
+    exact hne 1 (.inr rfl) v hv
+
+/-- **The time coordinate along a solution in `(0, 1)`.** Along a solution of `x' = C x (1 - x²)`
+on the whole line with values in `(0, 1)`, the time coordinate advances by `C s` in time `s`, as
+along the flow (`TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`). -/
+theorem intervalBaseTimeCoordinate_eq_add_of_hasDerivAt {x : ℝ → ℝ}
+    (hx : ∀ s, HasDerivAt x (C * x s * (1 - x s ^ 2)) s) (hmem : ∀ s, x s ∈ Ioo 0 1) (s : ℝ) :
+    intervalBaseTimeCoordinate (x s) = intervalBaseTimeCoordinate (x 0) + C * s := by
+  have hd : ∀ s, HasDerivAt (fun s ↦ intervalBaseTimeCoordinate (x s) - C * s) 0 s := fun s ↦ by
+    convert ((hx s).intervalBaseTimeCoordinate_comp (hmem s)).sub
+      ((hasDerivAt_id s).const_mul C) using 1
+    · ext; simp
+    · simp
+  have h := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt) (fun s ↦ (hd s).deriv) s 0
+  simp only [mul_zero, sub_zero] at h
+  linarith
 
 /-! ### The flow and the time coordinate -/
 
