@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Translation
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 public import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Rellich--Kondrachov for zero-boundary first-order Sobolev spaces
@@ -56,21 +57,14 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- Restricting to `⊤` leaves a measure unchanged; this identifies the whole-space `Lᵖ` space in
-which the zero extension takes its values with `Lᵖ(mu)`. -/
-private theorem restrict_coe_top (nu : Measure E) :
-    nu.restrict ((⊤ : Opens E) : Set E) = nu := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-
 /-- The value of a zero-boundary Sobolev function, extended by zero to the whole space. -/
 private def W1p0.valueExtendByZeroL : W1p0 mu Omega p →L[ℝ] Lp ℝ p mu :=
-  (castLpₗᵢ (𝕜 := ℝ) (restrict_coe_top mu)).toLinearIsometry.toContinuousLinearMap.comp <|
-    (W1p0.valueL (Omega := ⊤)).comp (W1p0.extendByZeroL le_top)
+  (castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top mu)).toLinearIsometry.toContinuousLinearMap
+    |>.comp <| (W1p0.valueL (Omega := ⊤)).comp (W1p0.extendByZeroL le_top)
 
 private theorem W1p0.valueExtendByZeroL_apply (u : W1p0 mu Omega p) :
     W1p0.valueExtendByZeroL u =
-      castLpₗᵢ (𝕜 := ℝ) (restrict_coe_top mu)
+      castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top mu)
         (W1p0.valueL (W1p0.extendByZeroL le_top u)) :=
   rfl
 

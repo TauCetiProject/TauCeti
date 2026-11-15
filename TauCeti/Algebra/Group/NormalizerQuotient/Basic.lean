@@ -119,6 +119,7 @@ lemma normalizerQuotientLift_comp_mk (H : Subgroup G)
 
 /-- A lift from `N(H) / H` is surjective exactly when the original homomorphism from the
 normalizer is surjective. -/
+@[simp]
 lemma normalizerQuotientLift_surjective_iff (H : Subgroup G)
     (φ : normalizer (H : Set G) →* M)
     (hφ : ∀ g : normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
