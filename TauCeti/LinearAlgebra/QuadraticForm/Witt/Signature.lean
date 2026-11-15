@@ -36,6 +36,11 @@ available in `Mathlib.FieldTheory.IsRealClosed.Real`.
   the signature.
 * `RegularFormClass.eq_iff_rank_eq_and_signature_eq`: Sylvester's law of inertia for isometry
   classes over ordered real closed fields.
+* `WittRing.dimMod2_eq_intCast_signature` and `mem_fundamentalIdeal_iff_even_signature`: over any
+  ordered field, dimension modulo two agrees with signature modulo two.
+* `mem_fundamentalIdeal_pow_iff_dvd_signature` and `fundamentalIdeal_pow_map_equivInt`: over an
+  ordered real closed field, `I(K)^n` consists of the Witt classes whose signature is divisible by
+  `2^n`.
 
 ## References
 
@@ -85,6 +90,42 @@ theorem WittRing.signature_mk (x : WittGrothendieckRing K) :
 theorem WittRing.signature_wittClass (x : RegularFormClass K) :
     signature (wittClass x) = RegularFormClass.signature x := by
   rw [wittClass_apply, signature_mk, WittGrothendieckRing.signature_toWittGrothendieck]
+
+/-- Over any ordered field, the dimension modulo two of a Witt class equals its integer signature
+modulo two, since `p + q` and `p - q` have the same parity. -/
+theorem WittRing.dimMod2_eq_intCast_signature (x : WittRing K) :
+    dimMod2 x = (signature x : ZMod 2) := by
+  obtain ⟨q, rfl⟩ := wittClass_surjective x
+  rw [dimMod2_wittClass, signature_wittClass, ← RegularFormClass.sigPos_add_sigNeg_eq_rank,
+    RegularFormClass.signature_eq_sigPos_sub_sigNeg]
+  have htwo : (2 : ZMod 2) * (q.sigNeg : ZMod 2) = 0 := zero_mul _
+  push_cast
+  linear_combination htwo
+
+/-- Over any ordered field, a Witt class lies in the fundamental ideal if and only if its integer
+signature is even. -/
+theorem mem_fundamentalIdeal_iff_even_signature {x : WittRing K} :
+    x ∈ fundamentalIdeal K ↔ Even (WittRing.signature x) := by
+  rw [mem_fundamentalIdeal_iff, WittRing.dimMod2_eq_intCast_signature,
+    ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_ofNat, even_iff_two_dvd]
+
+/-- Over any ordered field, membership in `I(K)^n` forces `2^n` to divide the integer signature. -/
+theorem dvd_signature_of_mem_fundamentalIdeal_pow {x : WittRing K} {n : ℕ}
+    (hx : x ∈ fundamentalIdeal K ^ n) : (2 ^ n : ℤ) ∣ WittRing.signature x := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ'] at hx
+    refine Submodule.mul_induction_on hx ?_ ?_
+    · intro a ha b hb
+      obtain ⟨u, hu⟩ := even_iff_two_dvd.mp (mem_fundamentalIdeal_iff_even_signature.mp ha)
+      obtain ⟨v, hv⟩ := ih hb
+      refine ⟨u * v, ?_⟩
+      rw [map_mul, hu, hv, pow_succ']
+      ring
+    · intro a b ha hb
+      rw [map_add]
+      exact dvd_add ha hb
 
 variable [IsRealClosed K]
 
@@ -142,5 +183,41 @@ theorem RegularFormClass.eq_iff_rank_eq_and_signature_eq {x y : RegularFormClass
     omega
   subst hab
   exact add_left_cancel h
+
+omit [IsRealClosed K] in
+/-- Over any ordered field, the signature of a one-fold Pfister class `⟨⟨a⟩⟩ = ⟨1, -a⟩` is `0` when
+`a > 0` and `2` when `a < 0`. -/
+@[simp]
+theorem WittRing.signature_oneFoldPfisterClass (a : Kˣ) :
+    signature (oneFoldPfisterClass a) = if 0 < (a : K) then 0 else 2 := by
+  rw [oneFoldPfisterClass_eq, map_add, map_one, signature_wittClass,
+    RegularFormClass.signature_mk_rankOne]
+  rcases lt_or_gt_of_ne a.ne_zero with ha | ha
+  · simp [ha, ha.not_gt]
+  · simp [ha, not_lt_of_gt ha]
+
+/-- **Powers of the fundamental ideal over an ordered real closed field.** A Witt class lies in
+`I(K)^n` if and only if its integer signature is divisible by `2^n`. -/
+theorem mem_fundamentalIdeal_pow_iff_dvd_signature {x : WittRing K} (n : ℕ) :
+    x ∈ fundamentalIdeal K ^ n ↔ (2 ^ n : ℤ) ∣ WittRing.signature x := by
+  refine ⟨dvd_signature_of_mem_fundamentalIdeal_pow, fun ⟨k, hk⟩ => ?_⟩
+  have htwo : (2 : WittRing K) ∈ fundamentalIdeal K := by
+    rw [mem_fundamentalIdeal_iff, map_ofNat]
+    rfl
+  rw [← WittRing.intCast_signature x, hk]
+  push_cast
+  exact Ideal.mul_mem_right (k : WittRing K) (fundamentalIdeal K ^ n) (Ideal.pow_mem_pow htwo n)
+
+/-- Under the signature isomorphism `W(K) ≃+* ℤ`, the `n`-th power of the fundamental ideal maps to
+the principal ideal `(2^n)` of `ℤ`. -/
+theorem fundamentalIdeal_pow_map_equivInt (n : ℕ) :
+    (fundamentalIdeal K ^ n).map (WittRing.equivInt (K := K)) = Ideal.span {(2 ^ n : ℤ)} := by
+  ext m
+  rw [Ideal.mem_map_iff_of_surjective _ WittRing.equivInt.surjective, Ideal.mem_span_singleton]
+  refine ⟨?_, fun hm => ⟨(m : WittRing K), ?_, by simp⟩⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact (mem_fundamentalIdeal_pow_iff_dvd_signature n).mp hx
+  · rw [mem_fundamentalIdeal_pow_iff_dvd_signature, map_intCast]
+    exact hm
 
 end TauCeti

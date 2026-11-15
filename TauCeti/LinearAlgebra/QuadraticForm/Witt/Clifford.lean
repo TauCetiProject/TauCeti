@@ -38,6 +38,10 @@ the subgroup `TauCeti.fundamentalI3InI2`.
   when `x ∈ I(K)²`.
 * `TauCeti.WittRing.cliffordInvariant_eq_one_of_mem_fundamentalIdeal_cube`: `c` is trivial on
   `I(K)³`.
+* `TauCeti.RegularFormClass.cliffordInvariant_nsmul_one`,
+  `TauCeti.WittRing.cliffordInvariant_natCast`, and `TauCeti.WittRing.cliffordInvariant_intCast`:
+  the value of `c` on multiples of `⟨1⟩` and its eightfold periodicity on integer casts
+  (`8 ∈ I(K)³`).
 * `TauCeti.cliffordHomI2_pfisterClass`: `c⟨⟨a, b⟩⟩ = [(a, b)]`.
 * `TauCeti.cliffordHomI2_two_torsion`: the values of `c` on `I(K)²` are `2`-torsion.
 * `TauCeti.cliffordHomI2Bar_mk`: the induced map on `I(K)²/I(K)³` computes `c` on
@@ -58,6 +62,37 @@ universe u
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-! ### The Clifford invariant of a Witt class -/
+
+/-- The Clifford invariant of `n` copies of the unit line `⟨1, …, 1⟩` is `[(-1, -1)]^C(n + 1, 4)`:
+both its Hasse invariant and its discriminant are trivial, leaving only the constant sign term of
+Lam's comparison. -/
+theorem RegularFormClass.cliffordInvariant_nsmul_one (n : ℕ) :
+    RegularFormClass.cliffordInvariant (n • (1 : RegularFormClass K)) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ (n + 1).choose 4 := by
+  rw [RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul,
+    RegularFormClass.hasseInvariant_nsmul_one, RegularFormClass.discr_nsmul,
+    RegularFormClass.discr_one, smul_zero, BrauerGroup.quaternionClassOnSquareClasses_zero_right,
+    one_pow, mul_one, one_mul, RegularFormClass.rank_nsmul, RegularFormClass.rank_one, mul_one]
+
+/-- The Witt class `2 = ⟨1, 1⟩ = ⟨⟨-1⟩⟩` belongs to the fundamental ideal `I(K)`. -/
+theorem two_mem_fundamentalIdeal : (2 : WittRing K) ∈ fundamentalIdeal K := by
+  rw [mem_fundamentalIdeal_iff, map_ofNat]
+  rfl
+
+/-- Every power `(2 : WittRing K) ^ n` belongs to `I(K)^n`. -/
+theorem two_pow_mem_fundamentalIdeal_pow (n : ℕ) :
+    (2 : WittRing K) ^ n ∈ fundamentalIdeal K ^ n :=
+  Ideal.pow_mem_pow two_mem_fundamentalIdeal n
+
+/-- The Witt class `4 = ⟨1, 1, 1, 1⟩` belongs to `I(K)²`. -/
+theorem four_mem_fundamentalIdeal_sq : (4 : WittRing K) ∈ fundamentalIdeal K ^ 2 := by
+  simpa only [(by norm_num : (2 : WittRing K) ^ 2 = 4)] using
+    two_pow_mem_fundamentalIdeal_pow (K := K) 2
+
+/-- The Witt class `8` belongs to `I(K)³`. -/
+theorem eight_mem_fundamentalIdeal_cube : (8 : WittRing K) ∈ fundamentalIdeal K ^ 3 := by
+  simpa only [(by norm_num : (2 : WittRing K) ^ 3 = 8)] using
+    two_pow_mem_fundamentalIdeal_pow (K := K) 3
 
 namespace WittRing
 
@@ -129,6 +164,39 @@ theorem cliffordInvariant_eq_one_of_mem_fundamentalIdeal_cube {x : WittRing K}
   | neg y hy hy1 =>
     have h := cliffordInvariant_add_of_mem_fundamentalIdeal_sq (hsq hy) (-y)
     rwa [add_neg_cancel, cliffordInvariant_zero, hy1, one_mul, eq_comm] at h
+
+/-- The Clifford invariant of the natural-number multiple `(n : WittRing K)` of `⟨1⟩` is
+`[(-1, -1)]^C(n + 1, 4)`. -/
+theorem cliffordInvariant_natCast (n : ℕ) :
+    cliffordInvariant (n : WittRing K) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ (n + 1).choose 4 := by
+  have hn : (n : WittRing K) = wittClass (n • (1 : RegularFormClass K)) := by
+    rw [map_nsmul, map_one, nsmul_one]
+  rw [hn, cliffordInvariant_wittClass, RegularFormClass.cliffordInvariant_nsmul_one]
+
+/-- **Eightfold periodicity along integer multiples of `⟨1⟩`**: adding `8k` copies of `⟨1⟩` in the
+Witt ring does not change the Clifford invariant, because `8 ∈ I(K)³`. -/
+theorem cliffordInvariant_add_eight_mul_intCast (x : WittRing K) (k : ℤ) :
+    cliffordInvariant (x + ((8 * k : ℤ) : WittRing K)) = cliffordInvariant x := by
+  have hcube : ((8 * k : ℤ) : WittRing K) ∈ fundamentalIdeal K ^ 3 := by
+    push_cast
+    exact Ideal.mul_mem_right (k : WittRing K) _ eight_mem_fundamentalIdeal_cube
+  have hsq : ((8 * k : ℤ) : WittRing K) ∈ fundamentalIdeal K ^ 2 :=
+    Ideal.pow_le_pow_right (by norm_num) hcube
+  rw [add_comm, cliffordInvariant_add_of_mem_fundamentalIdeal_sq hsq,
+    cliffordInvariant_eq_one_of_mem_fundamentalIdeal_cube hcube, one_mul]
+
+/-- The Clifford invariant of any integer cast `(m : WittRing K)` depends only on `m mod 8` and is
+given by `[(-1, -1)]^C((m % 8) + 1, 4)`. -/
+theorem cliffordInvariant_intCast (m : ℤ) :
+    cliffordInvariant (m : WittRing K) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ ((m % 8).toNat + 1).choose 4 := by
+  have hm : m = ((m % 8).toNat : ℤ) + 8 * (m / 8) := by
+    have h0 : 0 ≤ m % 8 := Int.emod_nonneg m (by norm_num)
+    have _ := Int.emod_add_mul_ediv m 8
+    omega
+  conv_lhs => rw [hm, Int.cast_add, Int.cast_natCast]
+  rw [cliffordInvariant_add_eight_mul_intCast, cliffordInvariant_natCast]
 
 end WittRing
 
