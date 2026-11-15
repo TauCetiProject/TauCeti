@@ -261,16 +261,17 @@ theorem factorStarAlgHom_surjective {I J : TwoSidedIdeal A} [IsClosed (I : Set A
 @[simp]
 theorem factorStarAlgHom_refl {I : TwoSidedIdeal A} [IsClosed (I : Set A)] :
     factorStarAlgHom (le_refl I) = NonUnitalStarAlgHom.id ℂ (A ⧸ I) :=
-  nonUnitalStarAlgHom_ext <| (factorStarAlgHom_comp_mkStarAlgHom _).trans
-    (NonUnitalStarAlgHom.id_comp _).symm
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
 
 @[simp]
 theorem factorStarAlgHom_comp {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] [IsClosed (K : Set A)] (h₁ : I ≤ J) (h₂ : J ≤ K) :
     (factorStarAlgHom h₂).comp (factorStarAlgHom h₁) = factorStarAlgHom (h₁.trans h₂) :=
-  nonUnitalStarAlgHom_ext <| (NonUnitalStarAlgHom.comp_assoc _ _ _).trans <|
-    (congrArg _ (factorStarAlgHom_comp_mkStarAlgHom h₁)).trans <|
-      (factorStarAlgHom_comp_mkStarAlgHom h₂).trans (factorStarAlgHom_comp_mkStarAlgHom _).symm
+  NonUnitalStarAlgHom.ext fun x => by
+    obtain ⟨a, rfl⟩ := mk_surjective I x
+    simp
 
 @[simp]
 theorem factorStarAlgHom_comp_apply {I J K : TwoSidedIdeal A} [IsClosed (I : Set A)]
