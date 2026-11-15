@@ -233,46 +233,29 @@ theorem max_norm_le_norm_evenProjection_sub_algebraMap_add_compact (c : ℂ)
       ‖evenProjection - (algebraMap ℂ (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) c + K)‖ := by
   let b : HilbertBasis ℕ ℂ ℓ^2(ℕ, ℂ) := default
   let e : ℕ → ℓ^2(ℕ, ℂ) := fun n ↦ lp.single 2 n 1
-  have hbe : ⇑b = e := funext fun n ↦ by
-    simpa [b, default, e] using b.repr_self n
-  have he : Orthonormal ℂ e := hbe ▸ b.orthonormal
+  have he_eq : (b : ℕ → ℓ^2(ℕ, ℂ)) = e := funext fun n ↦ b.repr_self n
+  have he : Orthonormal ℂ e := he_eq ▸ b.orthonormal
   have hKe : Tendsto (fun n : ℕ ↦ ‖K (e n)‖) atTop (𝓝 0) := by
     simpa [Nat.cofinite_eq_atTop] using he.tendsto_norm_apply_cofinite hK
   set D := evenProjection - (algebraMap ℂ (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) c + K)
-  refine max_le ?_ ?_
-  · have h2k : Tendsto (fun k : ℕ ↦ ‖1 - c‖ - ‖K (e (2 * k))‖) atTop (𝓝 (‖1 - c‖ - 0)) :=
-      tendsto_const_nhds.sub (hKe.comp
-        (StrictMono.tendsto_atTop fun a b hab ↦ Nat.mul_lt_mul_of_pos_left hab two_pos))
-    rw [sub_zero] at h2k
-    refine le_of_tendsto h2k (Eventually.of_forall fun k ↦ ?_)
-    have hev : evenProjection (e (2 * k)) = e (2 * k) := by
+  have hsub (f : ℕ → ℕ) (hf : StrictMono f) (α : ℂ)
+      (hα : ∀ k, evenProjection (e (f k)) = α • e (f k)) : ‖α - c‖ ≤ ‖D‖ := by
+    have hlim : Tendsto (fun k ↦ ‖α - c‖ - ‖K (e (f k))‖) atTop (𝓝 ‖α - c‖) := by
+      simpa using tendsto_const_nhds.sub (hKe.comp hf.tendsto_atTop)
+    refine le_of_tendsto hlim (Eventually.of_forall fun k ↦ ?_)
+    have hDe : D (e (f k)) = (α - c) • e (f k) - K (e (f k)) := by
+      simp [D, Algebra.algebraMap_eq_smul_one, sub_add_eq_sub_sub, hα, sub_smul]
+    calc ‖α - c‖ - ‖K (e (f k))‖
+        = ‖(α - c) • e (f k)‖ - ‖K (e (f k))‖ := by rw [norm_smul, he.1 (f k), mul_one]
+      _ ≤ ‖(α - c) • e (f k) - K (e (f k))‖ := norm_sub_norm_le _ _
+      _ = ‖D (e (f k))‖ := by rw [hDe]
+      _ ≤ ‖D‖ := by simpa [he.1 (f k)] using D.le_opNorm (e (f k))
+  refine max_le
+    (hsub (2 * ·) (fun _ _ h ↦ Nat.mul_lt_mul_of_pos_left h two_pos) 1 fun k ↦ by
+      simp [evenProjection, e, lp.diagonalCLM_single]) ?_
+  simpa using hsub (fun k ↦ 2 * k + 1)
+    (fun _ _ h ↦ Nat.add_lt_add_right (Nat.mul_lt_mul_of_pos_left h two_pos) 1) 0 fun k ↦ by
       simp [evenProjection, e, lp.diagonalCLM_single]
-    have hDe : D (e (2 * k)) = (1 - c) • e (2 * k) - K (e (2 * k)) := by
-      simp only [D, Algebra.algebraMap_eq_smul_one, sub_add_eq_sub_sub, sub_apply, smul_apply,
-        one_apply_eq_self, hev, sub_smul, one_smul]
-    calc ‖1 - c‖ - ‖K (e (2 * k))‖
-        = ‖(1 - c) • e (2 * k)‖ - ‖K (e (2 * k))‖ := by rw [norm_smul, he.1 (2 * k), mul_one]
-      _ ≤ ‖(1 - c) • e (2 * k) - K (e (2 * k))‖ := norm_sub_norm_le _ _
-      _ = ‖D (e (2 * k))‖ := by rw [hDe]
-      _ ≤ ‖D‖ := by simpa [he.1 (2 * k)] using D.le_opNorm (e (2 * k))
-  · have h2k1 : Tendsto (fun k : ℕ ↦ ‖c‖ - ‖K (e (2 * k + 1))‖) atTop (𝓝 (‖c‖ - 0)) :=
-      tendsto_const_nhds.sub (hKe.comp
-        (StrictMono.tendsto_atTop fun a b hab ↦
-          Nat.add_lt_add_right (Nat.mul_lt_mul_of_pos_left hab two_pos) 1))
-    rw [sub_zero] at h2k1
-    refine le_of_tendsto h2k1 (Eventually.of_forall fun k ↦ ?_)
-    have hodd : ¬Even (2 * k + 1) := by simp
-    have hev : evenProjection (e (2 * k + 1)) = 0 := by
-      simp [evenProjection, e, lp.diagonalCLM_single, hodd]
-    have hDe : D (e (2 * k + 1)) = (-c) • e (2 * k + 1) - K (e (2 * k + 1)) := by
-      simp only [D, Algebra.algebraMap_eq_smul_one, sub_add_eq_sub_sub, sub_apply, smul_apply,
-        one_apply_eq_self, hev, zero_sub, neg_smul]
-    calc ‖c‖ - ‖K (e (2 * k + 1))‖
-        = ‖(-c) • e (2 * k + 1)‖ - ‖K (e (2 * k + 1))‖ := by
-          rw [norm_smul, norm_neg, he.1 (2 * k + 1), mul_one]
-      _ ≤ ‖(-c) • e (2 * k + 1) - K (e (2 * k + 1))‖ := norm_sub_norm_le _ _
-      _ = ‖D (e (2 * k + 1))‖ := by rw [hDe]
-      _ ≤ ‖D‖ := by simpa [he.1 (2 * k + 1)] using D.le_opNorm (e (2 * k + 1))
 
 /-- Every element of `finiteRankPlusScalars ℓ^2(ℕ, ℂ)` lies at operator-norm distance at least
 `1 / 2` from `evenProjection`. -/
@@ -281,20 +264,15 @@ theorem half_le_norm_evenProjection_sub {a : ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ
     (1 / 2 : ℝ) ≤ ‖evenProjection - a‖ := by
   obtain ⟨c, F, hF, rfl⟩ := ha
   have hmax := max_norm_le_norm_evenProjection_sub_algebraMap_add_compact c hF.isCompactOperator
-  have h1 : (1 : ℝ) ≤ ‖1 - c‖ + ‖c‖ := by
-    calc (1 : ℝ) = ‖(1 - c) + c‖ := by simp
-      _ ≤ ‖1 - c‖ + ‖c‖ := norm_add_le _ _
-  have hle1 : ‖1 - c‖ ≤ max ‖1 - c‖ ‖c‖ := le_max_left _ _
-  have hle2 : ‖c‖ ≤ max ‖1 - c‖ ‖c‖ := le_max_right _ _
-  linarith
+  have h1 : (1 : ℝ) ≤ ‖1 - c‖ + ‖c‖ := by simpa using norm_add_le (1 - c) c
+  linarith [le_max_left ‖1 - c‖ ‖c‖, le_max_right ‖1 - c‖ ‖c‖]
 
 /-- `evenProjection` does not lie in the operator-norm closure of
 `finiteRankPlusScalars ℓ^2(ℕ, ℂ)`, so the strong-operator closure in Kaplansky's density theorem
 cannot be strengthened to operator-norm closure. -/
 theorem evenProjection_notMem_closure_finiteRankPlusScalars :
     evenProjection ∉
-      closure (finiteRankPlusScalars ℓ^2(ℕ, ℂ) : Set (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ))) := by
-  intro hcl
+      closure (finiteRankPlusScalars ℓ^2(ℕ, ℂ) : Set (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ))) := fun hcl ↦ by
   obtain ⟨a, ha, hdist⟩ := Metric.mem_closure_iff.1 hcl (1 / 2) (by positivity)
   rw [dist_eq_norm] at hdist
   exact hdist.not_ge (half_le_norm_evenProjection_sub ha)

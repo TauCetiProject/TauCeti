@@ -51,14 +51,10 @@ noncomputable def piLpMatrix (M : VonNeumannAlgebra H) (ι : Type*) [Fintype ι]
     VonNeumannAlgebra (PiLp 2 (fun _ : ι => H)) where
   toStarSubalgebra := M.toStarSubalgebra.piLpMatrix ι
   centralizer_centralizer' := by
-    have h := M.toStarSubalgebra.coe_piLpMatrix_centralizer_centralizer ι
-    have hc := M.toStarSubalgebra.coe_piLpMatrix ι
-    have hmid : {T : PiLp 2 (fun _ : ι => H) →L[ℂ] PiLp 2 (fun _ : ι => H) |
-        ∀ i j, T.piLpEntry i j ∈ (M.toStarSubalgebra : Set (H →L[ℂ] H)).centralizer.centralizer} =
-        {T | ∀ i j, T.piLpEntry i j ∈ M.toStarSubalgebra} := by
-      ext T
-      simp [M.centralizer_centralizer]
-    exact h.trans (hmid.trans hc.symm)
+    refine (M.toStarSubalgebra.coe_piLpMatrix_centralizer_centralizer ι).trans
+      (Eq.trans ?_ (M.toStarSubalgebra.coe_piLpMatrix ι).symm)
+    ext T
+    simp [M.centralizer_centralizer]
 
 @[simp]
 theorem mem_piLpMatrix_iff {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι] [DecidableEq ι]
