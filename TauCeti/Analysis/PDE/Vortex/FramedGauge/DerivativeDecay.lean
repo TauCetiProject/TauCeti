@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Derivative decay of plane vortices in an end trivialization
@@ -42,6 +43,9 @@ derivatives in the divisor parameters are not treated here.
 * `TauCeti.Vortex.gaugeTransform_inv_apply_eq`: where the section is `|α|` times a gauge `u`
   and solves the holomorphicity rows, its gauge transformation by `u⁻¹` is
   `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, exp (ℓ / 2) / 2, 0)` for `ℓ = log |α|²`.
+* `TauCeti.Vortex.exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField`: a globally
+  smooth surrogate field agreeing near infinity with `gaugeTransform u⁻¹ x - vacuumField` whose
+  iterated derivatives are `O(exp (-c |z|))` for every rate `c < 1 / 2`.
 * `TauCeti.Vortex.eventually_contDiffAt_gaugeTransform_inv`: for a vortex with `C²` section,
   `|α| → 1`, and section equal to `|α|` times `u` near infinity, `gaugeTransform u⁻¹ x` is smooth
   outside a compact set without global regularity hypotheses on `u` or the connection of `x`.
@@ -63,7 +67,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Metric Topology Asymptotics
+open Complex Filter Topology Asymptotics
 open scoped ContDiff
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -163,9 +167,12 @@ private theorem contDiff_and_isBigO_iteratedFDeriv_endField {ℓ : ℂ → ℝ} 
       (fun_iteratedFDeriv_add_apply ((L₁.contDiff.comp hD).contDiffAt.of_le (by simp))
         ((L₂.contDiff.comp hE).contDiffAt.of_le (by simp))).symm
 
-/-- Construct a globally smooth surrogate field `Y` that agrees on a neighborhood of infinity with
-`gaugeTransform u⁻¹ x - vacuumField` and has `O(exp (-c |z|))` derivatives for all `c < 1 / 2`. -/
-private theorem exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField {u : ℂ → Circle}
+/-- **Smooth exterior surrogate for an end-trivialized vortex.** Let `x` be a plane vortex with
+`C²` section and `|α| → 1` at infinity whose section is `|α|` times a gauge `u` outside a compact
+set. Then `gaugeTransform u⁻¹ x - vacuumField` agrees on a neighborhood of every point outside a
+compact set with a globally smooth field `Y` whose iterated derivatives are `O(exp (-c |z|))` at
+infinity for every rate `c < 1 / 2`. -/
+theorem exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField {u : ℂ → Circle}
     (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -182,21 +189,14 @@ private theorem exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField 
     (hpos.mono fun z hz ↦ contDiffAt_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
       (fun h ↦ by linarith) (.of_forall hsol))
   obtain ⟨hY_cd, hY_bigO⟩ := contDiff_and_isBigO_iteratedFDeriv_endField hℓ
-  -- Outside a disc of radius `R` the end trivialization minus the vacuum is
+  -- Outside a compact set the end trivialization minus the vacuum is
   -- `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`.
-  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-    (cobounded_eq_cocompact (α := ℂ) ▸ hagree.and (hphase.and hpos))
-  have hopen : IsOpen {w : ℂ | R < ‖w‖} := isOpen_lt continuous_const continuous_norm
-  refine ⟨_, hY_cd,
-    (tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono fun z hz ↦ ?_,
-    fun {c} hc n ↦ ?_⟩
-  · filter_upwards [hopen.mem_nhds hz] with w (hw : R < ‖w‖)
-    have hRw := hR hw.le
+  refine ⟨_, hY_cd, TauCeti.eventually_cocompact_nhds.2 ?_, fun {c} hc n ↦ ?_⟩
+  · filter_upwards [hagree, TauCeti.eventually_cocompact_nhds.2 hphase, hpos]
+      with w hℓw hphw hposw
     rw [gaugeTransform_inv_apply_eq (hp.differentiable two_ne_zero w)
-      (hq.differentiable two_ne_zero w) (fun h ↦ by linarith [hRw.2.2]) (by simp [hsol w])
-      (by simp [hsol w])
-      (eventually_of_mem (hopen.mem_nhds hw) fun v (hv : R < ‖v‖) ↦ (hR hv.le).2.1) hRw.1,
-      vacuumField_apply]
+      (hq.differentiable two_ne_zero w) (fun h ↦ by linarith) (by simp [hsol w])
+      (by simp [hsol w]) hphw hℓw, vacuumField_apply]
     ext i
     fin_cases i <;> simp
     ring

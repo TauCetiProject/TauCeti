@@ -169,6 +169,7 @@ end TubeLemma
 
 /-- A predicate holds eventually on neighborhoods along `coclosedCompact X` if and only if it holds
 eventually along `coclosedCompact X`, since every closed compact set is already closed. -/
+@[simp]
 theorem eventually_coclosedCompact_nhds {P : X → Prop} :
     (∀ᶠ x in coclosedCompact X, ∀ᶠ y in 𝓝 x, P y) ↔ ∀ᶠ x in coclosedCompact X, P x := by
   simp only [eventually_iff, ← mem_interior_iff_mem_nhds, ofPred_mem_eq, mem_coclosedCompact_iff,
@@ -176,6 +177,7 @@ theorem eventually_coclosedCompact_nhds {P : X → Prop} :
 
 /-- In an `R₁` space, a predicate holds eventually on neighborhoods along `cocompact X` if and only
 if it holds eventually along `cocompact X`. -/
+@[simp]
 theorem eventually_cocompact_nhds [R1Space X] {P : X → Prop} :
     (∀ᶠ x in cocompact X, ∀ᶠ y in 𝓝 x, P y) ↔ ∀ᶠ x in cocompact X, P x := by
   simp only [← coclosedCompact_eq_cocompact, eventually_coclosedCompact_nhds]
