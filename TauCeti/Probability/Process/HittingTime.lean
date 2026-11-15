@@ -20,8 +20,10 @@ times, giving a stopping time on the original filtration, without right continui
 completion assumptions.
 
 These results apply in particular to exits from open domains and to closed-level
-localization of continuous adapted processes. Path continuity here is everywhere,
-not merely almost sure; arbitrary null-set changes need not preserve raw adaptation.
+localization of continuous adapted processes. A continuous ordered-valued path remains
+in a closed interval up to and including its first exit from the open interval. Path continuity
+here is everywhere, not merely almost sure; arbitrary null-set changes need not preserve raw
+adaptation.
 
 ## References
 
@@ -83,6 +85,27 @@ theorem Continuous.le_of_le_hittingAfter_Ici [DenselyOrdered ι]
   have hut : u < t := lt_of_le_of_ne hu.2 (fun hut ↦ hCt.ne (hut ▸ hue).symm)
   have hhit := MeasureTheory.hittingAfter_le_of_mem (u := X) (s := Set.Ici C) hu.1 hue.ge
   exact (WithTop.coe_lt_coe.mpr hut).not_ge (ht.trans hhit)
+
+/-- A continuous ordered-valued path starting in a closed interval stays in that interval
+up to and including its first exit from the corresponding open interval. The initial value
+may be an endpoint, in which case exit is immediate. -/
+theorem Continuous.mem_Icc_of_le_hittingAfter_compl_Ioo [DenselyOrdered ι]
+    {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
+    {X : ι → Ω → β} {a t : ι} {ω : Ω} {l u : β} (hX : Continuous (X · ω))
+    (hat : a ≤ t) (hstart : X a ω ∈ Icc l u)
+    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Ioo l u)ᶜ a ω) :
+    X t ω ∈ Icc l u := by
+  constructor
+  · by_contra h
+    have hlt : X t ω < l := lt_of_not_ge h
+    obtain ⟨v, hv, hveq⟩ := intermediate_value_Icc' hat hX.continuousOn ⟨hlt.le, hstart.1⟩
+    have hvt : v < t := lt_of_le_of_ne hv.2 (fun hvt ↦ hlt.ne (hvt ▸ hveq))
+    have hhit := MeasureTheory.hittingAfter_le_of_mem (u := X) (ω := ω) hv.1
+      (s := (Ioo l u)ᶜ) (by simp [hveq])
+    exact (WithTop.coe_lt_coe.mpr hvt).not_ge (ht.trans hhit)
+  · apply hX.le_of_le_hittingAfter_Ici hat hstart.2
+    exact ht.trans (MeasureTheory.hittingAfter_apply_anti X a ω
+      (fun _ hx hmem ↦ hx.not_gt hmem.2))
 
 namespace MeasureTheory
 
