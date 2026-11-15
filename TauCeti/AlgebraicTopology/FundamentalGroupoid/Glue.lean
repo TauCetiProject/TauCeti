@@ -58,8 +58,8 @@ variable {X : Type*} [TopologicalSpace X] {ι : Type*} {U : ι → Set X}
 
 section Partition
 
-/-- The `k`-th point of the uniform partition of the unit interval into `N` pieces; it is constant
-at `1` from `k = N` on. -/
+/-- The `k`-th point of the uniform partition of the unit interval into `N` pieces; for
+`N ≠ 0` it is constant at `1` from `k = N` on. -/
 private def pt (N k : ℕ) : I := Set.Icc.addNSMul zero_le_one (1 / N : ℝ) k
 
 private lemma coe_pt {N k : ℕ} (hk : k ≤ N) : (pt N k : ℝ) = k / N := by
@@ -374,7 +374,9 @@ private lemma pathVal_eq_eqToHom {x y : X} (P : Path x y) (hP : ∃ i, ∀ t, P 
   rw [pathVal_eq hU F hF i P _ hi]
   exact locVal_eq_eqToHom hU F hF i P hi hconst
 
-/-- Local values are additive along consecutive subpaths inside one member of the cover. -/
+/-- Local values compose along subpaths inside one member of the cover: for any `a`, `b`, `c` in
+`[lo, hi]`, the value on `γ|[a, b]` followed by the value on `γ|[b, c]` is the value on
+`γ|[a, c]`. -/
 private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : I}
     (hγ : ∀ t ∈ Icc lo hi, γ t ∈ U i) {a b c : I} (ha : a ∈ Icc lo hi) (hb : b ∈ Icc lo hi)
     (hc : c ∈ Icc lo hi) (hab : ∃ i, ∀ t, γ.subpath a b t ∈ U i)
@@ -401,29 +403,9 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
   have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := Subtype.ext (hp a').symm
   have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := Subtype.ext (hp b').symm
   have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := Subtype.ext (hp c').symm
-  let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
-      (Path.subpath_apply_mem hγ ha hb)
-  let qbc : Path (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi b') (Icc.convexComb lo hi c')).codRestrict
-      (Path.subpath_apply_mem hγ hb hc)
-  let qac : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
-      (Path.subpath_apply_mem hγ ha hc)
-  have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    Path.cast_subpath_eq_codRestrict γ p hp a' b'
-  have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    Path.cast_subpath_eq_codRestrict γ p hp b' c'
-  have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    Path.cast_subpath_eq_codRestrict γ p hp a' c'
-  have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
-      (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
-    rw [← hab', ← hbc', ← hac']
-    exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
-  exact locVal_comp_eq_of_trans hU F hF i _ _ _ _ _ _ hquot
+  apply locVal_comp_eq_of_trans hU F hF i
+  simpa only [Path.cast_subpath_eq_codRestrict γ p hp] using
+    Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
 
 private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx : x = x')
     (hy : y = y') (h : ∀ t, P t = Q t) (hP : ∃ i, ∀ t, P t ∈ U i) (hQ : ∃ i, ∀ t, Q t ∈ U i) :
