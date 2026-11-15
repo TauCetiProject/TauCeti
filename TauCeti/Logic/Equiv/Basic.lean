@@ -113,13 +113,13 @@ def fiberEquiv {α β γ : Type*} (f : α → γ) (g : β → γ) :
 
 /-- Applying `Equiv.fiberEquiv` on a fiber `c` applies the underlying equivalence. -/
 @[simp]
-theorem coe_fiberEquiv_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
+theorem coe_fiberEquiv_apply_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
     (e : {e : α ≃ β // ∀ a, g (e a) = f a}) (c : γ) (a : {a // f a = c}) :
     ((fiberEquiv f g e c a : {b // g b = c}) : β) = e.1 a.1 :=
   (rfl)
 
-/-- Applying the inverse of `Equiv.fiberEquiv` on a fiber `c` applies the inverse of the
-underlying equivalence. -/
+/-- The inverse of the fiber equivalence `Equiv.fiberEquiv f g e c` applies the inverse of the
+underlying equivalence `e`. -/
 @[simp]
 theorem coe_fiberEquiv_apply_symm_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
     (e : {e : α ≃ β // ∀ a, g (e a) = f a}) (c : γ) (b : {b // g b = c}) :
@@ -128,7 +128,7 @@ theorem coe_fiberEquiv_apply_symm_apply {α β γ : Type*} (f : α → γ) (g : 
 
 /-- The inverse of `Equiv.fiberEquiv` is `Equiv.ofFiberEquiv`. -/
 @[simp]
-theorem coe_fiberEquiv_symm {α β γ : Type*} (f : α → γ) (g : β → γ)
+theorem coe_fiberEquiv_symm_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
     (e : ∀ c : γ, {a // f a = c} ≃ {b // g b = c}) :
     ((fiberEquiv f g).symm e : α ≃ β) = ofFiberEquiv e :=
   (rfl)

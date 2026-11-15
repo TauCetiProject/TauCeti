@@ -118,7 +118,7 @@ theorem discriminantExponent_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
   let : ∀ i, MulAction Gal(SeparableClosure K/K) (Fin (d i)) := fun i ↦ (ρ i).mulAction
   let := (sigma b ρ).mulAction
   rw [discriminantExponent_def,
-    orbitDiscriminantExponent_eq_of_equiv K b (sigma_smul_apply b ρ),
+    orbitDiscriminantExponent_eq_of_equiv K b (apply_smul_sigma b ρ),
     orbitDiscriminantExponent_sigma K]
   exact Finset.sum_congr rfl fun i _ ↦ (ρ i).discriminantExponent_def.symm
 

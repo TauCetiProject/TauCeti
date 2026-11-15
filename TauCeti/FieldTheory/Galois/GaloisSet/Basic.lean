@@ -32,7 +32,8 @@ A family of Galois sets combines along a block labelling `Fin n ≃ Σ i, Fin (d
 disjoint-union Galois set (`TauCeti.GaloisSet.sigma`) preserving point stabilizers on each block
 (`TauCeti.GaloisSet.stabilizer_sigma_symm_apply`); conversely, an action preserving the blocks
 restricts to each block (`TauCeti.GaloisSet.restrictBlock`,
-`TauCeti.GaloisSet.sigma_restrictBlock_eq`).
+`TauCeti.GaloisSet.sigma_restrictBlock`, `TauCeti.GaloisSet.restrictBlock_sigma`,
+`TauCeti.GaloisSet.stabilizer_restrictBlock`).
 
 Conversely, an open subgroup `H` of index `n` and a labelling `Fin n ≃ G ⧸ H` of its cosets
 give a transitive Galois set (`TauCeti.GaloisSet.ofQuotient`). For a subextension `L` of degree
@@ -279,7 +280,7 @@ theorem sigma_val_apply {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (
 
 /-- Labelling a disjoint union of Galois sets along `b` is equivariant with respect to the sigma
 action on the blocks. -/
-theorem sigma_smul_apply {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+theorem apply_smul_sigma {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
     (ρ : ∀ i, GaloisSet K (d i))
     (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n) :
     letI : ∀ i, MulAction (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin (d i)) :=
@@ -306,7 +307,7 @@ theorem stabilizer_sigma_symm_apply {ι : Type*} {d : ι → ℕ}
   let := (sigma b ρ).mulAction
   ext σ
   simp only [MulAction.mem_stabilizer_iff]
-  rw [← b.apply_eq_iff_eq, sigma_smul_apply, b.apply_symm_apply, Sigma.smul_mk,
+  rw [← b.apply_eq_iff_eq, apply_smul_sigma, b.apply_symm_apply, Sigma.smul_mk,
     Sigma.mk.inj_iff, heq_eq_eq, and_iff_right rfl]
 
 /-- Restricting a labelled Galois set to the `i`-th block of an invariant decomposition
@@ -353,11 +354,12 @@ theorem restrictBlock_val_apply {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K 
   rfl
 
 /-- Reassembling the block restrictions of `ρ` along `b` recovers `ρ`. -/
-theorem sigma_restrictBlock_eq {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+@[simp]
+theorem sigma_restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
     (b : Fin n ≃ Σ i, Fin (d i))
     (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
       (b (ρ.val σ j)).1 = (b j).1) :
-    sigma b (fun i ↦ ρ.restrictBlock b hb i) = ρ := by
+    sigma b (ρ.restrictBlock b hb) = ρ := by
   have hmk : ∀ {a : ι} (s : {p : Σ i, Fin (d i) // p.1 = a}),
       (⟨a, Equiv.sigmaSubtype a s⟩ : Σ i, Fin (d i)) = s.1 := by
     rintro a ⟨⟨_, _⟩, rfl⟩
@@ -365,6 +367,54 @@ theorem sigma_restrictBlock_eq {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n
   refine ext fun σ j ↦ ?_
   rw [sigma_val_apply, restrictBlock_val_apply, hmk]
   simp [Sigma.eta]
+
+/-- Restricting a disjoint union of Galois sets to its `i`-th block recovers the `i`-th
+Galois set. -/
+@[simp]
+theorem restrictBlock_sigma {ι : Type*} {d : ι → ℕ}
+    (b : Fin n ≃ Σ i, Fin (d i)) (ρ : ∀ i, GaloisSet K (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b ((sigma b ρ).val σ j)).1 = (b j).1)
+    (i : ι) :
+    (sigma b ρ).restrictBlock b hb i = ρ i := by
+  refine ext fun σ x ↦ ?_
+  rw [restrictBlock_val_apply, ← (Equiv.sigmaSubtype i).eq_symm_apply]
+  apply Subtype.ext
+  dsimp only
+  rw [sigma_val_apply, b.apply_symm_apply, b.apply_symm_apply]
+  simp [Equiv.sigmaSubtype]
+
+/-- Embedding the `i`-th block along `b.symm` is equivariant for `restrictBlock`. -/
+theorem symm_apply_smul_restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1)
+    (i : ι) (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (x : Fin (d i)) :
+    letI := ρ.mulAction
+    letI := (ρ.restrictBlock b hb i).mulAction
+    b.symm ⟨i, σ • x⟩ = σ • b.symm ⟨i, x⟩ := by
+  let := ρ.mulAction
+  let := (ρ.restrictBlock b hb i).mulAction
+  calc b.symm ⟨i, σ • x⟩
+      = (sigma b (ρ.restrictBlock b hb)).val σ (b.symm ⟨i, x⟩) := by
+        rw [sigma_val_apply, b.apply_symm_apply, smul_def]
+    _ = σ • b.symm ⟨i, x⟩ := by rw [sigma_restrictBlock, smul_def]
+
+/-- The stabilizer of `x` in the `i`-th block restriction of `ρ` is the stabilizer of
+`b.symm ⟨i, x⟩` in `ρ`. -/
+@[simp]
+theorem stabilizer_restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1)
+    (i : ι) (x : Fin (d i)) :
+    (letI := (ρ.restrictBlock b hb i).mulAction
+    MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) x) =
+      (letI := ρ.mulAction
+      MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) (b.symm ⟨i, x⟩)) := by
+  have hstab := stabilizer_sigma_symm_apply b (ρ.restrictBlock b hb) i x
+  rw [sigma_restrictBlock] at hstab
+  exact hstab.symm
 
 /-! ### Transitive Galois sets from open subgroups -/
 
