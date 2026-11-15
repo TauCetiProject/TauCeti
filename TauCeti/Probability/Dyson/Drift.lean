@@ -11,11 +11,6 @@ public import Mathlib.Data.Fin.Basic
 public import Mathlib.Order.Interval.Finset.Fin
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Uniform
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
-import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
@@ -99,6 +94,18 @@ theorem dysonDrift_two_one (x : Fin 2 → ℝ) :
   rw [dysonDrift, herase, sum_singleton, ← neg_sub (x 0) (x 1), inv_neg, mul_neg, mul_inv]
   norm_num
 
+/-- At the zero configuration, `dysonDrift` vanishes identically. -/
+@[simp]
+theorem dysonDrift_zero (n : ℕ) : dysonDrift n 0 = 0 := by
+  ext i
+  simp [dysonDrift]
+
+/-- At any constant configuration `fun _ ↦ c`, `dysonDrift` vanishes identically. -/
+@[simp]
+theorem dysonDrift_fun_const (n : ℕ) (c : ℝ) : dysonDrift n (fun _ ↦ c) = 0 := by
+  ext i
+  simp [dysonDrift]
+
 /-- Shifting every particle by a common constant leaves `dysonDrift` unchanged. -/
 @[simp]
 theorem dysonDrift_add_const (n : ℕ) (x : Fin n → ℝ) (c : ℝ) :
@@ -138,11 +145,11 @@ theorem sum_mul_dysonDrift (n : ℕ) (u x : Fin n → ℝ) :
     ∑ i, u i * dysonDrift n x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * (x i - x j)⁻¹ := by
   have hpull : ∑ i, u i * dysonDrift n x i =
-      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ univ.erase i, u i * (x i - x j)⁻¹ := by
+      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ {i}ᶜ, u i * (x i - x j)⁻¹ := by
     rw [mul_sum]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [dysonDrift, ← mul_assoc, mul_comm (u i), mul_assoc, mul_sum]
-  rw [hpull, TauCeti.sum_sum_erase_eq_sum_Ioi_add_swap]
+    rw [dysonDrift, compl_singleton, ← mul_assoc, mul_comm (u i), mul_assoc, mul_sum]
+  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * (x i - x j)⁻¹)]
   congr 1
   refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
   rw [← neg_sub (x i) (x j), inv_neg]
@@ -232,6 +239,23 @@ theorem dysonDriftTrunc_apply (n : ℕ) (δ : ℝ) (x : Fin n → ℝ) (i : Fin 
       if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹ :=
   (rfl)
 
+/-- For at most one particle (`n ≤ 1`), `dysonDriftTrunc` vanishes identically. -/
+@[simp]
+theorem dysonDriftTrunc_of_subsingleton {n : ℕ} [Subsingleton (Fin n)] (δ : ℝ) (x : Fin n → ℝ) :
+    dysonDriftTrunc n δ x = 0 := by
+  ext i
+  have hempty : (univ : Finset (Fin n)).erase i = ∅ := by
+    ext j
+    simp [Subsingleton.elim j i]
+  simp [dysonDriftTrunc, hempty]
+
+/-- Shifting every particle by a common constant leaves `dysonDriftTrunc` unchanged. -/
+@[simp]
+theorem dysonDriftTrunc_add_const (n : ℕ) (δ : ℝ) (x : Fin n → ℝ) (c : ℝ) :
+    dysonDriftTrunc n δ (fun k ↦ x k + c) = dysonDriftTrunc n δ x := by
+  ext i
+  simp [dysonDriftTrunc]
+
 /-- `dysonDriftTrunc n δ x` agrees with `dysonDrift n x` whenever every pair `i < j` satisfies
 `δ ≤ x i - x j`. -/
 theorem dysonDriftTrunc_eq_dysonDrift {n : ℕ} {δ : ℝ} {x : Fin n → ℝ}
@@ -251,12 +275,13 @@ theorem sum_mul_dysonDriftTrunc (n : ℕ) (δ : ℝ) (u x : Fin n → ℝ) :
     ∑ i, u i * dysonDriftTrunc n δ x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * (max (x i - x j) δ)⁻¹ := by
   have hpull : ∑ i, u i * dysonDriftTrunc n δ x i =
-      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ univ.erase i, u i *
+      (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ {i}ᶜ, u i *
         (if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹) := by
     rw [mul_sum]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [dysonDriftTrunc, ← mul_assoc, mul_comm (u i), mul_assoc, mul_sum]
-  rw [hpull, TauCeti.sum_sum_erase_eq_sum_Ioi_add_swap]
+    rw [dysonDriftTrunc, compl_singleton, ← mul_assoc, mul_comm (u i), mul_assoc, mul_sum]
+  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag
+    (fun j i ↦ u i * if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹)]
   congr 1
   refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
   have hij : i < j := mem_Ioi.1 hj
@@ -269,6 +294,20 @@ theorem sum_dysonDriftTrunc (n : ℕ) (δ : ℝ) (x : Fin n → ℝ) :
     ∑ i, dysonDriftTrunc n δ x i = 0 := by
   simpa using sum_mul_dysonDriftTrunc n δ (fun _ ↦ 1) x
 
+private theorem inv_natCast_mul_abs_sum_erase_le {n : ℕ} (i : Fin n) {g : Fin n → ℝ} {C : ℝ}
+    (hC : 0 ≤ C) (hg : ∀ j ∈ univ.erase i, |g j| ≤ C) :
+    (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i, g j| ≤ C := by
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 i.pos.ne'
+  calc (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i, g j|
+      ≤ (n : ℝ)⁻¹ * ∑ j ∈ univ.erase i, |g j| := by gcongr; exact abs_sum_le_sum_abs _ _
+    _ ≤ (n : ℝ)⁻¹ * (((univ.erase i).card : ℝ) * C) := by
+        gcongr
+        simpa using sum_le_card_nsmul (univ.erase i) (fun j ↦ |g j|) C hg
+    _ ≤ (n : ℝ)⁻¹ * ((n : ℝ) * C) := by
+        gcongr
+        exact_mod_cast (card_le_univ _).trans_eq (Fintype.card_fin n)
+    _ = C := inv_mul_cancel_left₀ hn C
+
 /-- For `0 < δ`, the sup norm of `dysonDriftTrunc n δ x` is at most `δ⁻¹` uniformly in `n` and
 `x`. -/
 theorem norm_dysonDriftTrunc_le (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → ℝ) :
@@ -276,29 +315,12 @@ theorem norm_dysonDriftTrunc_le (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n �
   refine (pi_norm_le_iff_of_nonneg (inv_nonneg.2 hδ.le)).2 fun i ↦ ?_
   rw [dysonDriftTrunc, Real.norm_eq_abs, abs_mul,
     abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
-  have hterm : ∀ j ∈ (univ : Finset (Fin n)).erase i,
-      |if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹| ≤ δ⁻¹ := by
-    intro j _
-    split_ifs
-    · rw [abs_of_pos (inv_pos.2 (hδ.trans_le (le_max_right _ _)))]
-      exact inv_anti₀ hδ (le_max_right _ _)
-    · rw [abs_neg, abs_of_pos (inv_pos.2 (hδ.trans_le (le_max_right _ _)))]
-      exact inv_anti₀ hδ (le_max_right _ _)
-  have hsum : |∑ j ∈ univ.erase i,
-      if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹| ≤ n * δ⁻¹ := by
-    calc _ ≤ ∑ j ∈ univ.erase i,
-            |if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹| :=
-          abs_sum_le_sum_abs _ _
-      _ ≤ ∑ _j ∈ univ.erase i, δ⁻¹ := sum_le_sum hterm
-      _ = ((univ.erase i).card : ℝ) * δ⁻¹ := by simp
-      _ ≤ (n : ℝ) * δ⁻¹ := by
-          gcongr
-          exact_mod_cast (card_le_univ _).trans_eq (Fintype.card_fin n)
-  calc (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i, _| ≤ (n : ℝ)⁻¹ * ((n : ℝ) * δ⁻¹) := by gcongr
-    _ ≤ δ⁻¹ := by
-        rcases eq_or_ne n 0 with rfl | hn
-        · simp [hδ.le]
-        · rw [← mul_assoc, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), one_mul]
+  refine inv_natCast_mul_abs_sum_erase_le i (inv_nonneg.2 hδ.le) fun j _ ↦ ?_
+  split_ifs
+  · rw [abs_of_pos (inv_pos.2 (hδ.trans_le (le_max_right _ _)))]
+    exact inv_anti₀ hδ (le_max_right _ _)
+  · rw [abs_neg, abs_of_pos (inv_pos.2 (hδ.trans_le (le_max_right _ _)))]
+    exact inv_anti₀ hδ (le_max_right _ _)
 
 /-- **Global Lipschitz continuity of `dysonDriftTrunc`** for `0 < δ`, with constant `2 / δ²`
 independent of the system size `n`. -/
@@ -321,31 +343,10 @@ theorem lipschitzWith_dysonDriftTrunc (n : ℕ) {δ : ℝ} (hδ : 0 < δ) :
   refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ ?_
   rw [Pi.sub_apply, dysonDriftTrunc, dysonDriftTrunc, ← mul_sub, ← sum_sub_distrib,
     Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
-  have hterm : ∀ j ∈ (univ : Finset (Fin n)).erase i,
-      |(if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹) -
-        (if i < j then (max (y i - y j) δ)⁻¹ else -(max (y j - y i) δ)⁻¹)| ≤
-        (K : ℝ) * dist x y := by
-    intro j _
-    split_ifs
-    · simpa only [Real.dist_eq] using (hpair i j).dist_le_mul x y
-    · simpa only [Real.dist_eq, Pi.neg_apply] using (hpair j i).neg.dist_le_mul x y
-  have hsum : |∑ j ∈ univ.erase i,
-      ((if i < j then (max (x i - x j) δ)⁻¹ else -(max (x j - x i) δ)⁻¹) -
-        (if i < j then (max (y i - y j) δ)⁻¹ else -(max (y j - y i) δ)⁻¹))| ≤
-      (n : ℝ) * ((K : ℝ) * dist x y) := by
-    calc _ ≤ ∑ j ∈ univ.erase i, _ := abs_sum_le_sum_abs _ _
-      _ ≤ ∑ _j ∈ univ.erase i, (K : ℝ) * dist x y := sum_le_sum hterm
-      _ = ((univ.erase i).card : ℝ) * ((K : ℝ) * dist x y) := by simp
-      _ ≤ (n : ℝ) * ((K : ℝ) * dist x y) := by
-          gcongr
-          exact_mod_cast (card_le_univ _).trans_eq (Fintype.card_fin n)
-  calc (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i, _|
-      ≤ (n : ℝ)⁻¹ * ((n : ℝ) * ((K : ℝ) * dist x y)) := by gcongr
-    _ ≤ (K : ℝ) * dist x y := by
-        rcases eq_or_ne n 0 with rfl | hn
-        · simp only [Nat.cast_zero, inv_zero, zero_mul]
-          positivity
-        · rw [← mul_assoc, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), one_mul]
+  refine inv_natCast_mul_abs_sum_erase_le i (by positivity) fun j _ ↦ ?_
+  split_ifs
+  · simpa only [Real.dist_eq] using (hpair i j).dist_le_mul x y
+  · simpa only [Real.dist_eq, Pi.neg_apply] using (hpair j i).neg.dist_le_mul x y
 
 /-- Continuity of `dysonDriftTrunc n δ` for `0 < δ`. -/
 theorem continuous_dysonDriftTrunc (n : ℕ) {δ : ℝ} (hδ : 0 < δ) :

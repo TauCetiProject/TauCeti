@@ -10,8 +10,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Probability.Dyson.Drift
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.Order.Filter.AtTopBot.Archimedean
 import TauCeti.Analysis.Calculus.Deriv.PositivePart
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -36,9 +34,8 @@ is antitone on `ℝ≥0`. This yields in turn:
 * coordinatewise order comparison `x ≤ y → γ₁ t ≤ γ₂ t` (AGZ Lemma 4.3.6);
 * `ℓ²`-contraction `∑ᵢ (γ₁ t i - γ₂ t i)² ≤ ∑ᵢ (xᵢ - yᵢ)²` and continuous dependence on the initial
   configuration (AGZ Proposition 4.3.5);
-* unconditional pathwise uniqueness `IsDysonPath.eq` and `IsDysonSolution.ae_eq` (closing the
-  uniqueness half of the Dyson system theorem for all `β`, `n`, `x`, `P`, and `B`, including
-  coincident initial coordinates).
+* unconditional pathwise uniqueness `IsDysonPath.eq` and `IsDysonSolution.ae_eq` for all `β`, `n`,
+  `x`, `P`, and `B`, including coincident initial coordinates.
 
 We also construct explicit solutions for `n ≤ 1` (pure additive forcing) and for the deterministic
 two-particle system from any `Antitone` initial configuration `x : Fin 2 → ℝ`, including the
@@ -222,7 +219,7 @@ theorem antitone_sum_max_sub_zero_sq (h₁ : IsDysonPath n x w γ₁) (h₂ : Is
         max (γ₁ u.toNNReal i - γ₂ u.toNNReal i) 0) u := by
     intro u hu
     have hsum := HasDerivAt.sum fun i (_ : i ∈ (univ : Finset (Fin n))) ↦
-      (h₁.hasDerivAt_sub h₂ i hu).max_zero_pow one_pos
+      (h₁.hasDerivAt_sub h₂ i hu).max_zero_pow (by decide : 2 ≠ 1)
     convert hsum using 1
     · ext y
       simp [φ]
@@ -344,8 +341,8 @@ theorem isDysonSolution_iff [MeasurableSpace Ω] {β : ℝ} {n : ℕ} {x : Fin n
 
 /-- `IsDysonSolution` is equivalent to `P`-almost-sure `IsDysonPath` driven by
 `t i ↦ √(2 / (β * n)) * B i t ω`. -/
-theorem isDysonSolution_iff_ae_isDysonPath [MeasurableSpace Ω] (β : ℝ) (n : ℕ) (x : Fin n → ℝ)
-    (P : Measure Ω) (B : Fin n → ℝ≥0 → Ω → ℝ) (X : ℝ≥0 → Ω → Fin n → ℝ) :
+theorem isDysonSolution_iff_ae_isDysonPath [MeasurableSpace Ω] {β : ℝ} {n : ℕ} {x : Fin n → ℝ}
+    {P : Measure Ω} {B : Fin n → ℝ≥0 → Ω → ℝ} {X : ℝ≥0 → Ω → Fin n → ℝ} :
     IsDysonSolution β n x P B X ↔
       ∀ᵐ ω ∂P, IsDysonPath n x (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) (fun t ↦ X t ω) := by
   simp only [isDysonSolution_iff, isDysonPath_iff, dysonDrift_apply]
@@ -355,37 +352,65 @@ namespace IsDysonSolution
 variable [MeasurableSpace Ω] {β : ℝ} {n : ℕ} {x y : Fin n → ℝ} {P : Measure Ω}
   {B : Fin n → ℝ≥0 → Ω → ℝ} {X Y : ℝ≥0 → Ω → Fin n → ℝ}
 
+/-- `IsDysonSolution` yields `P`-almost-sure `IsDysonPath` trajectories. -/
+theorem ae_isDysonPath (hX : IsDysonSolution β n x P B X) :
+    ∀ᵐ ω ∂P, IsDysonPath n x (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) (fun t ↦ X t ω) :=
+  isDysonSolution_iff_ae_isDysonPath.1 hX
+
+/-- Almost surely, the sample path `t ↦ X t ω` is continuous on `ℝ≥0`. -/
+theorem ae_continuous (hX : IsDysonSolution β n x P B X) :
+    ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω) :=
+  hX.ae_isDysonPath.mono fun _ hω ↦ hω.continuous
+
+/-- Almost surely, every positive-time slice `X t ω` (`0 < t`) lies in the open decreasing
+chamber. -/
+theorem ae_strictAnti (hX : IsDysonSolution β n x P B X) :
+    ∀ᵐ ω ∂P, ∀ t, 0 < t → StrictAnti (X t ω) :=
+  hX.ae_isDysonPath.mono fun _ hω _ ht ↦ hω.strictAnti ht
+
 /-- Almost surely, every time slice `X t ω` lies in the closed decreasing chamber. -/
 theorem ae_antitone (hX : IsDysonSolution β n x P B X) :
     ∀ᵐ ω ∂P, ∀ t, Antitone (X t ω) :=
-  ((isDysonSolution_iff_ae_isDysonPath β n x P B X).1 hX).mono fun _ hω ↦ hω.antitone
+  hX.ae_isDysonPath.mono fun _ hω ↦ hω.antitone
+
+/-- Congruence for `IsDysonSolution` under almost-sure pathwise equality of the driving family `B`
+and the solution process `X`. -/
+theorem congr_ae {B' : Fin n → ℝ≥0 → Ω → ℝ} (hX : IsDysonSolution β n x P B X)
+    (hB : ∀ i, ∀ᵐ ω ∂P, ∀ t, B i t ω = B' i t ω) (hXY : ∀ᵐ ω ∂P, ∀ t, X t ω = Y t ω) :
+    IsDysonSolution β n x P B' Y := by
+  rw [isDysonSolution_iff_ae_isDysonPath]
+  rw [← ae_all_iff] at hB
+  filter_upwards [hX.ae_isDysonPath, hB, hXY] with ω hω hωB hωX
+  have heqB : (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) =
+      fun t i ↦ Real.sqrt (2 / (β * n)) * B' i t ω := by
+    ext t i
+    rw [hωB i t]
+  have heqX : (fun t ↦ X t ω) = fun t ↦ Y t ω := funext hωX
+  rwa [heqB, heqX] at hω
 
 /-- Almost-sure center-of-mass formula for `IsDysonSolution`. -/
 theorem ae_sum_apply (hX : IsDysonSolution β n x P B X) :
     ∀ᵐ ω ∂P, ∀ t, ∑ i, X t ω i = (∑ i, x i) + Real.sqrt (2 / (β * n)) * ∑ i, B i t ω := by
-  refine ((isDysonSolution_iff_ae_isDysonPath β n x P B X).1 hX).mono fun ω hω t ↦ ?_
+  refine hX.ae_isDysonPath.mono fun ω hω t ↦ ?_
   rw [hω.sum_apply t, mul_sum]
 
 /-- Almost-sure coordinatewise comparison for `IsDysonSolution` (AGZ Lemma 4.3.6). -/
 theorem ae_le_of_le (hX : IsDysonSolution β n x P B X) (hY : IsDysonSolution β n y P B Y)
     (hxy : x ≤ y) : ∀ᵐ ω ∂P, ∀ t, X t ω ≤ Y t ω := by
-  filter_upwards [(isDysonSolution_iff_ae_isDysonPath β n x P B X).1 hX,
-    (isDysonSolution_iff_ae_isDysonPath β n y P B Y).1 hY] with ω hωX hωY t
+  filter_upwards [hX.ae_isDysonPath, hY.ae_isDysonPath] with ω hωX hωY t
   exact hωX.le_of_le hωY hxy t
 
 /-- Almost-sure `ℓ²`-contraction for `IsDysonSolution` (AGZ Proposition 4.3.5). -/
 theorem ae_antitone_sum_sq_sub (hX : IsDysonSolution β n x P B X)
     (hY : IsDysonSolution β n y P B Y) :
     ∀ᵐ ω ∂P, Antitone (fun t ↦ ∑ i, (X t ω i - Y t ω i) ^ 2) := by
-  filter_upwards [(isDysonSolution_iff_ae_isDysonPath β n x P B X).1 hX,
-    (isDysonSolution_iff_ae_isDysonPath β n y P B Y).1 hY] with ω hωX hωY
+  filter_upwards [hX.ae_isDysonPath, hY.ae_isDysonPath] with ω hωX hωY
   exact hωX.antitone_sum_sq_sub hωY
 
 /-- Almost-sure `ℓ²` continuous-dependence bound for `IsDysonSolution`. -/
 theorem ae_sum_sq_sub_le (hX : IsDysonSolution β n x P B X) (hY : IsDysonSolution β n y P B Y) :
     ∀ᵐ ω ∂P, ∀ t, ∑ i, (X t ω i - Y t ω i) ^ 2 ≤ ∑ i, (x i - y i) ^ 2 := by
-  filter_upwards [(isDysonSolution_iff_ae_isDysonPath β n x P B X).1 hX,
-    (isDysonSolution_iff_ae_isDysonPath β n y P B Y).1 hY] with ω hωX hωY t
+  filter_upwards [hX.ae_isDysonPath, hY.ae_isDysonPath] with ω hωX hωY t
   exact hωX.sum_sq_sub_le hωY t
 
 /-- **Almost-sure pathwise uniqueness for `IsDysonSolution`.** Any two solutions started at `x`
@@ -393,8 +418,7 @@ and driven by the same process `B` agree at all times `P`-almost surely, with no
 assumptions on `β` or `x` and no distributional assumptions on `B`. -/
 theorem ae_eq (hX : IsDysonSolution β n x P B X) (hY : IsDysonSolution β n x P B Y) :
     ∀ᵐ ω ∂P, ∀ t, X t ω = Y t ω := by
-  filter_upwards [(isDysonSolution_iff_ae_isDysonPath β n x P B X).1 hX,
-    (isDysonSolution_iff_ae_isDysonPath β n x P B Y).1 hY] with ω hωX hωY t
+  filter_upwards [hX.ae_isDysonPath, hY.ae_isDysonPath] with ω hωX hωY t
   exact congr_fun (hωX.eq hωY) t
 
 end IsDysonSolution
@@ -482,9 +506,10 @@ theorem continuous_dysonZeroNoiseTwo (x : Fin 2 → ℝ) : Continuous (dysonZero
     fun_prop
 
 /-- Integrability of the inverse gap `(dysonZeroNoiseTwo x s 0 - dysonZeroNoiseTwo x s 1)⁻¹` on
-`[0, t]` for every `x : Fin 2 → ℝ` (including the coincident start `x 0 = x 1` where the integrand
-is `(2 √(2 s))⁻¹`), together with the antiderivative evaluation of `(4 √(r₀² + s / 2))⁻¹`. -/
-theorem intervalIntegrable_inv_sub_dysonZeroNoiseTwo (x : Fin 2 → ℝ) (t : ℝ≥0) :
+`[0, t]` for every `x : Fin 2 → ℝ` (including the coincident start `x 0 = x 1` where on `(0, t]`
+the inverse gap is `(√(2 s))⁻¹`), together with the integral of
+`dysonDrift 2 (dysonZeroNoiseTwo x s.toNNReal) 0` on `[0, t]`. -/
+private theorem intervalIntegrable_and_integral_dysonZeroNoiseTwo (x : Fin 2 → ℝ) (t : ℝ≥0) :
     IntervalIntegrable (fun s : ℝ ↦
       (dysonZeroNoiseTwo x s.toNNReal 0 - dysonZeroNoiseTwo x s.toNNReal 1)⁻¹) volume 0 t ∧
     ∫ s in (0 : ℝ)..t, dysonDrift 2 (dysonZeroNoiseTwo x s.toNNReal) 0 =
@@ -538,7 +563,7 @@ theorem isDysonPath_dysonZeroNoiseTwo {x : Fin 2 → ℝ} (hx : Antitone x) :
     simp only [dysonZeroNoiseTwo_apply_zero, dysonZeroNoiseTwo_apply_one]
     linarith
   refine ⟨continuous_dysonZeroNoiseTwo x, hstrict, fun t i ↦ ?_⟩
-  obtain ⟨hint, hval⟩ := intervalIntegrable_inv_sub_dysonZeroNoiseTwo x t
+  obtain ⟨hint, hval⟩ := intervalIntegrable_and_integral_dysonZeroNoiseTwo x t
   rw [abs_of_nonneg hr₀] at hval
   fin_cases i
   · dsimp only

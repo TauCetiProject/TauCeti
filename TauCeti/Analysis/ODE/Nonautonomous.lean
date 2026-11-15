@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Analysis.ODE.ExistUnique
-import Mathlib.Analysis.ODE.Gronwall
-import Mathlib.Topology.Algebra.Order.Floor
+import TauCeti.Analysis.ODE.Gronwall.Interior
 
 /-!
 # Global solutions of state-Lipschitz nonautonomous ODEs
@@ -26,15 +25,17 @@ along overlapping intervals of fixed half-width `δ = (4 (K + 1))⁻¹`. On `[c 
 continuous curve `t ↦ ‖v t y‖` is bounded by some `a ≥ 0`, so on `closedBall y a` the field is
 bounded by `L = (K + 1) a`, which satisfies `L · (2 δ) = a / 2 ≤ a` independently of `(c, y)`. The
 local solution therefore has an unrestricted derivative on `[c - δ, c + δ]`, and overlapping steps
-glue uniquely by `ODE_solution_unique_of_mem_Icc_left` and `ODE_solution_unique_of_mem_Icc_right`.
+glue uniquely by `ODE.eqOn_Icc_of_hasDerivAt`.
 
 ## Main declarations
 
-* `ODE.eqOn_Icc_of_hasDerivAt`: two solutions on `[a, b]` agreeing at any point `c ∈ [a, b]`
-  agree throughout `[a, b]`.
+* `ODE.eqOn_Icc_of_lipschitzOnWith` and `ODE.eqOn_Icc_of_hasDerivAt`: two continuous curves on
+  `[a, b]` solving `γ' t = v t (γ t)` on `(a, b)` and agreeing at any `c ∈ [a, b]` agree throughout
+  `[a, b]`.
 * `ODE.nonautonomousGlobalSolution`: the global solution of `γ' t = v t (γ t)` with `γ s = x`.
 * `ODE.nonautonomousGlobalSolution_self` and `ODE.hasDerivAt_nonautonomousGlobalSolution`: it
   solves the initial value problem on all of `ℝ`.
+* `ODE.continuous_nonautonomousGlobalSolution`: joint continuity in `(s, x, t)`.
 * `ODE.nonautonomousGlobalSolution_eq_integral`: the integral equation from `s` to `t`.
 * `ODE.eq_nonautonomousGlobalSolution`: global uniqueness.
 * `ODE.nonautonomousGlobalSolution_congr`: independence of the continuity and Lipschitz witnesses.
@@ -67,27 +68,36 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Two curves solving `γ' t = v t (γ t)` at every point of `[a, b]` and agreeing at an interior or
-boundary point `c ∈ [a, b]` agree throughout `[a, b]`. -/
-theorem eqOn_Icc_of_hasDerivAt {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0}
-    (hv : ∀ t ∈ Icc a b, LipschitzWith K (v t)) (hac : a ≤ c) (hcb : c ≤ b) {f g : ℝ → E}
-    (hf : ∀ t ∈ Icc a b, HasDerivAt f (v t (f t)) t)
-    (hg : ∀ t ∈ Icc a b, HasDerivAt g (v t (g t)) t) (hfc : f c = g c) :
-    EqOn f g (Icc a b) := by
-  rw [← Icc_union_Icc_eq_Icc hac hcb]
-  refine EqOn.union ?_ ?_
-  · exact ODE_solution_unique_of_mem_Icc_left (s := fun _ ↦ univ)
-      (fun t ht ↦ (hv t ⟨ht.1.le, ht.2.trans hcb⟩).lipschitzOnWith)
-      (fun t ht ↦ (hf t ⟨ht.1, ht.2.trans hcb⟩).continuousAt.continuousWithinAt)
-      (fun t ht ↦ (hf t ⟨ht.1.le, ht.2.trans hcb⟩).hasDerivWithinAt) (fun _ _ ↦ trivial)
-      (fun t ht ↦ (hg t ⟨ht.1, ht.2.trans hcb⟩).continuousAt.continuousWithinAt)
-      (fun t ht ↦ (hg t ⟨ht.1.le, ht.2.trans hcb⟩).hasDerivWithinAt) (fun _ _ ↦ trivial) hfc
-  · exact ODE_solution_unique_of_mem_Icc_right (s := fun _ ↦ univ)
-      (fun t ht ↦ (hv t ⟨hac.trans ht.1, ht.2.le⟩).lipschitzOnWith)
-      (fun t ht ↦ (hf t ⟨hac.trans ht.1, ht.2⟩).continuousAt.continuousWithinAt)
-      (fun t ht ↦ (hf t ⟨hac.trans ht.1, ht.2.le⟩).hasDerivWithinAt) (fun _ _ ↦ trivial)
-      (fun t ht ↦ (hg t ⟨hac.trans ht.1, ht.2⟩).continuousAt.continuousWithinAt)
-      (fun t ht ↦ (hg t ⟨hac.trans ht.1, ht.2.le⟩).hasDerivWithinAt) (fun _ _ ↦ trivial) hfc
+/-- Two curves continuous on `[a, b]`, remaining inside `s t` and solving `γ' t = v t (γ t)` at
+interior points `t ∈ (a, b)` where `v t` is `K`-Lipschitz on `s t`, agree throughout `[a, b]`
+whenever they agree at an interior or boundary point `c ∈ [a, b]`. -/
+theorem eqOn_Icc_of_lipschitzOnWith {a b c : ℝ} {v : ℝ → E → E} {s : ℝ → Set E} {K : ℝ≥0}
+    {f g : ℝ → E} (hv : ∀ t ∈ Ioo a b, LipschitzOnWith K (v t) (s t)) (hc : c ∈ Icc a b)
+    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
+    (hfs : ∀ t ∈ Ioo a b, f t ∈ s t)
+    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
+    (hgs : ∀ t ∈ Ioo a b, g t ∈ s t) (hfc : f c = g c) :
+    EqOn f g (Icc a b) := fun t ht ↦ by
+  have hle := TauCeti.norm_le_gronwallBound_of_norm_deriv_le (f := fun u ↦ f u - g u)
+    (f' := fun u ↦ v u (f u) - v u (g u)) (δ := 0) (K := K) (ε := 0) hc (hf.sub hg)
+    (fun u hu ↦ (hf' u hu).sub (hg' u hu)) (by simp [hfc])
+    (fun u hu ↦ by
+      simpa only [add_zero, dist_eq_norm] using
+        (hv u hu).dist_le_mul (f u) (hfs u hu) (g u) (hgs u hu))
+    t ht
+  rw [gronwallBound_ε0_δ0] at hle
+  exact sub_eq_zero.1 (norm_le_zero_iff.1 hle)
+
+/-- Two curves continuous on `[a, b]` that solve `γ' t = v t (γ t)` on `(a, b)` and agree at an
+interior or boundary point `c ∈ [a, b]` agree throughout `[a, b]`. -/
+theorem eqOn_Icc_of_hasDerivAt {a b c : ℝ} {v : ℝ → E → E} {K : ℝ≥0} {f g : ℝ → E}
+    (hv : ∀ t ∈ Ioo a b, LipschitzWith K (v t)) (hc : c ∈ Icc a b)
+    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ioo a b, HasDerivAt f (v t (f t)) t)
+    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ioo a b, HasDerivAt g (v t (g t)) t)
+    (hfc : f c = g c) :
+    EqOn f g (Icc a b) :=
+  eqOn_Icc_of_lipschitzOnWith (s := fun _ ↦ univ) (fun t ht ↦ (hv t ht).lipschitzOnWith) hc
+    hf hf' (fun _ _ ↦ trivial) hg hg' (fun _ _ ↦ trivial) hfc
 
 end Normed
 
@@ -147,14 +157,19 @@ private theorem exists_hasDerivAt_Icc_widen {v : ℝ → E → E} (hvc : ∀ x, 
   obtain ⟨αL, hαL₀, hαL⟩ := exists_hasDerivAt_Icc_step hvc hv tL (γ tL)
   obtain ⟨αR, hαR₀, hαR⟩ := exists_hasDerivAt_Icc_step hvc hv tR (γ tR)
   have hLeq : EqOn αL γ (Icc tL (tL + δ)) :=
-    eqOn_Icc_of_hasDerivAt (a := tL) (b := tL + δ) (c := tL) (fun t _ ↦ hv t) le_rfl
-      (le_add_of_nonneg_right hδ.le)
-      (fun t ht ↦ hαL t ⟨by linarith [ht.1], ht.2⟩)
-      (fun t ht ↦ hγ t ⟨ht.1, by linarith [ht.2]⟩) hαL₀
+    eqOn_Icc_of_hasDerivAt (a := tL) (b := tL + δ) (c := tL) (fun t _ ↦ hv t)
+      ⟨le_rfl, le_add_of_nonneg_right hδ.le⟩
+      (HasDerivAt.continuousOn fun t ht ↦ hαL t ⟨by linarith [ht.1], ht.2⟩)
+      (fun t ht ↦ hαL t ⟨by linarith [ht.1], ht.2.le⟩)
+      (HasDerivAt.continuousOn fun t ht ↦ hγ t ⟨ht.1, by linarith [ht.2]⟩)
+      (fun t ht ↦ hγ t ⟨ht.1.le, by linarith [ht.2]⟩) hαL₀
   have hReq : EqOn γ αR (Icc (tR - δ) tR) :=
-    eqOn_Icc_of_hasDerivAt (a := tR - δ) (b := tR) (c := tR) (fun t _ ↦ hv t) (by linarith) le_rfl
-      (fun t ht ↦ hγ t ⟨by linarith [ht.1], ht.2⟩)
-      (fun t ht ↦ hαR t ⟨ht.1, by linarith [ht.2]⟩) hαR₀.symm
+    eqOn_Icc_of_hasDerivAt (a := tR - δ) (b := tR) (c := tR) (fun t _ ↦ hv t)
+      ⟨by linarith, le_rfl⟩
+      (HasDerivAt.continuousOn fun t ht ↦ hγ t ⟨by linarith [ht.1], ht.2⟩)
+      (fun t ht ↦ hγ t ⟨by linarith [ht.1], ht.2.le⟩)
+      (HasDerivAt.continuousOn fun t ht ↦ hαR t ⟨ht.1, by linarith [ht.2]⟩)
+      (fun t ht ↦ hαR t ⟨ht.1.le, by linarith [ht.2]⟩) hαR₀.symm
   let γ' : ℝ → E := fun u ↦ if u < tL then αL u else if u ≤ tR then γ u else αR u
   refine ⟨γ', ?_, fun t ht ↦ ?_⟩
   · simp only [γ', not_lt.2 (by linarith : tL ≤ s), ↓reduceIte,
@@ -244,13 +259,19 @@ private theorem nonautonomousGlobalSolution_eq_localSol (v : ℝ → E → E)
     · rwa [min_eq_right hle]
   have hmL : ((min m n : ℕ) : ℝ) ≤ m := Nat.cast_le.2 (min_le_left m n)
   have hnL : ((min m n : ℕ) : ℝ) ≤ n := Nat.cast_le.2 (min_le_right m n)
+  have hm_sub : ∀ {u : ℝ}, u ∈ Icc (s - (min m n + 1 : ℝ) * δ) (s + (min m n + 1 : ℝ) * δ) →
+      u ∈ Icc (s - (m + 1 : ℝ) * δ) (s + (m + 1 : ℝ) * δ) := fun hu ↦
+    ⟨by dsimp only [δ] at hu; nlinarith [hu.1], by dsimp only [δ] at hu; nlinarith [hu.2]⟩
+  have hn_sub : ∀ {u : ℝ}, u ∈ Icc (s - (min m n + 1 : ℝ) * δ) (s + (min m n + 1 : ℝ) * δ) →
+      u ∈ Icc (s - (n + 1 : ℝ) * δ) (s + (n + 1 : ℝ) * δ) := fun hu ↦
+    ⟨by dsimp only [δ] at hu; nlinarith [hu.1], by dsimp only [δ] at hu; nlinarith [hu.2]⟩
   exact eqOn_Icc_of_hasDerivAt
     (a := s - (min m n + 1 : ℝ) * δ) (b := s + (min m n + 1 : ℝ) * δ) (c := s)
-    (fun u _ ↦ hv u) (sub_le_self _ (by positivity)) (le_add_of_nonneg_right (by positivity))
-    (fun u hu ↦ hasDerivAt_localSol hvc hv s x m
-      ⟨by dsimp only [δ] at hu; nlinarith [hu.1], by dsimp only [δ] at hu; nlinarith [hu.2]⟩)
-    (fun u hu ↦ hasDerivAt_localSol hvc hv s x n
-      ⟨by dsimp only [δ] at hu; nlinarith [hu.1], by dsimp only [δ] at hu; nlinarith [hu.2]⟩)
+    (fun u _ ↦ hv u) ⟨sub_le_self _ (by positivity), le_add_of_nonneg_right (by positivity)⟩
+    (HasDerivAt.continuousOn fun u hu ↦ hasDerivAt_localSol hvc hv s x m (hm_sub hu))
+    (fun u hu ↦ hasDerivAt_localSol hvc hv s x m (hm_sub (Ioo_subset_Icc_self hu)))
+    (HasDerivAt.continuousOn fun u hu ↦ hasDerivAt_localSol hvc hv s x n (hn_sub hu))
+    (fun u hu ↦ hasDerivAt_localSol hvc hv s x n (hn_sub (Ioo_subset_Icc_self hu)))
     (by rw [localSol_self, localSol_self]) hmin
 
 /-- The global solution starts at the prescribed initial point at time `s`. -/
@@ -388,6 +409,44 @@ theorem dist_nonautonomousGlobalSolution_le (v : ℝ → E → E) (hvc : ∀ x, 
       rw [abs_of_nonpos (sub_nonpos.2 hts)]
       ring
     rwa [habs] at h
+
+/-- **Joint continuity** of `ODE.nonautonomousGlobalSolution` in the initial time, initial value,
+and evaluation time. -/
+theorem continuous_nonautonomousGlobalSolution (v : ℝ → E → E) (hvc : ∀ x, Continuous (v · x))
+    {K : ℝ≥0} (hv : ∀ t, LipschitzWith K (v t)) :
+    Continuous fun p : ℝ × E × ℝ ↦ nonautonomousGlobalSolution v hvc hv p.1 p.2.1 p.2.2 := by
+  let φ := nonautonomousGlobalSolution v hvc hv
+  rw [continuous_iff_continuousAt]
+  rintro ⟨s₀, x₀, t₀⟩
+  rw [ContinuousAt, tendsto_iff_dist_tendsto_zero]
+  have hbound : ∀ p : ℝ × E × ℝ, dist (φ p.1 p.2.1 p.2.2) (φ s₀ x₀ t₀) ≤
+      dist p.2.1 (φ s₀ x₀ p.1) * Real.exp (K * |s₀ - p.1|) * Real.exp (K * |p.2.2 - s₀|) +
+        dist (φ s₀ x₀ p.2.2) (φ s₀ x₀ t₀) := by
+    rintro ⟨s, x, t⟩
+    have hx₀ : φ s (φ s₀ x₀ s) s₀ = x₀ := by
+      simp [φ]
+    have hs₀ : dist (φ s x s₀) x₀ ≤ dist x (φ s₀ x₀ s) * Real.exp (K * |s₀ - s|) := by
+      simpa only [φ, hx₀] using dist_nonautonomousGlobalSolution_le v hvc hv s x (φ s₀ x₀ s) s₀
+    have hst : dist (φ s x t) (φ s₀ x₀ t) ≤
+        dist x (φ s₀ x₀ s) * Real.exp (K * |s₀ - s|) * Real.exp (K * |t - s₀|) := by
+      calc dist (φ s x t) (φ s₀ x₀ t)
+          = dist (φ s₀ (φ s x s₀) t) (φ s₀ x₀ t) := by simp [φ]
+        _ ≤ dist (φ s x s₀) x₀ * Real.exp (K * |t - s₀|) :=
+            dist_nonautonomousGlobalSolution_le v hvc hv s₀ (φ s x s₀) x₀ t
+        _ ≤ dist x (φ s₀ x₀ s) * Real.exp (K * |s₀ - s|) * Real.exp (K * |t - s₀|) :=
+            mul_le_mul_of_nonneg_right hs₀ (Real.exp_nonneg _)
+    exact (dist_triangle (φ s x t) (φ s₀ x₀ t) (φ s₀ x₀ t₀)).trans (add_le_add hst le_rfl)
+  have hcont : Continuous fun p : ℝ × E × ℝ ↦
+      dist p.2.1 (φ s₀ x₀ p.1) * Real.exp (K * |s₀ - p.1|) * Real.exp (K * |p.2.2 - s₀|) +
+        dist (φ s₀ x₀ p.2.2) (φ s₀ x₀ t₀) := by
+    have hφ : Continuous (φ s₀ x₀) := continuous_nonautonomousGlobalSolution_apply v hvc hv s₀ x₀
+    fun_prop
+  have hzero : Tendsto (fun p : ℝ × E × ℝ ↦
+      dist p.2.1 (φ s₀ x₀ p.1) * Real.exp (K * |s₀ - p.1|) * Real.exp (K * |p.2.2 - s₀|) +
+        dist (φ s₀ x₀ p.2.2) (φ s₀ x₀ t₀)) (𝓝 (s₀, x₀, t₀)) (𝓝 0) := by
+    simpa [φ, nonautonomousGlobalSolution_self] using
+      (hcont.continuousAt (x := (s₀, x₀, t₀))).tendsto
+  exact squeeze_zero (fun _ ↦ dist_nonneg) hbound hzero
 
 end Complete
 
