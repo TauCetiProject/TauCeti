@@ -38,7 +38,9 @@ under translations of space and time.
 
 Finally, a bounded `α`-Hölder field on space is a time-independent bounded parabolically
 `α`-Hölder field on any slab, since the spatial position is `1`-Lipschitz for the parabolic
-distance.
+distance; symmetrically, a bounded `α / 2`-Hölder function on `[a, b]` lifts to a spatially
+constant bounded parabolically `α`-Hölder field, and separate uniform spatial `α`-Hölder (or
+Lipschitz) and temporal `α / 2`-Hölder bounds assemble into an element of `HolderSpace α`.
 
 ## Main declarations
 
@@ -65,8 +67,10 @@ distance.
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
   temporal seminorm of the spatial gradient.
-* `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
-  Hölder field on a slab.
+* `TauCeti.HolderSpace.compSlabSpaceL`, `TauCeti.HolderSpace.compSlabTimeL`: spatial `α`-Hölder
+  fields and temporal `α / 2`-Hölder fields viewed as parabolic `α`-Hölder fields on a slab.
+* `TauCeti.HolderSpace.ofHolderSpaceTime`, `TauCeti.HolderSpace.ofLipschitzSpaceHolderTime`:
+  parabolic `α`-Hölder fields assembled from separate spatial and temporal bounds.
 
 ## References
 
@@ -320,12 +324,27 @@ end TauCeti.ParabolicSpaceTime
 
 namespace TauCeti.HolderSpace
 
-/-! ### Time-independent Hölder fields on a slab -/
+/-! ### Spatial, temporal, and separate space-time Hölder fields on a slab -/
+
+open ParabolicSpaceTime
+open scoped BoundedContinuousFunction
+
+private theorem holderWith_of_space_time {α : ℝ≥0} {E Y : Type*} [MetricSpace E]
+    [PseudoEMetricSpace Y] {a b : ℝ} {K H : ℝ≥0} {f : E → ℝ → Y}
+    (hK : ∀ t ∈ Icc a b, HolderWith K α (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
+    HolderWith (K + H) α fun p : slab (E := E) a b ↦
+      f (p : ParabolicSpaceTime E).space (slabTime p) :=
+  eHolderNorm_le_iff.1 <|
+    (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α
+      (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p))).trans <| by
+      rw [ENNReal.coe_add]
+      exact add_le_add
+        (spaceEHolderNorm_le_iff.2 fun t x y ↦ by simpa using hK t t.2 x y)
+        (timeEHolderNorm_le_iff.2 fun x t s ↦ by simpa [Subtype.edist_eq] using hH x t t.2 s s.2)
 
 variable {α : ℝ≥0} {E Y : Type*} [MetricSpace E] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
   {a b : ℝ}
-
-open ParabolicSpaceTime
 
 /-- A bounded `α`-Hölder field on space, viewed as a time-independent bounded parabolically
 `α`-Hölder field on the slab `E × [a, b]`: precomposition with the spatial position, which is
@@ -337,5 +356,147 @@ def compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) 
 theorem compSlabSpaceL_apply (f : HolderSpace α E Y) (p : slab (E := E) a b) :
     compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
   compLipschitzL_apply _ _ _
+
+/-- Viewing a spatial Hölder field on a slab does not increase its norm. -/
+theorem norm_compSlabSpaceL_le_one :
+    ‖compSlabSpaceL (α := α) (E := E) (Y := Y) (a := a) (b := b)‖ ≤ 1 :=
+  norm_compLipschitzL_le_one lipschitzWith_slabSpace
+
+private theorem holderWith_comp_slabTime (f : HolderSpace (α / 2) (Icc a b) Y) :
+    HolderWith (nnHolderNorm (α / 2) (f : Icc a b → Y)) α
+      (fun p : slab (E := E) a b ↦ f (slabTime p)) := by
+  refine eHolderNorm_le_iff.1 <|
+    (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α
+      (fun p : slab (E := E) a b ↦ f (slabTime p))).trans ?_
+  rw [← zero_add ((nnHolderNorm (α / 2) (f : Icc a b → Y) : ℝ≥0) : ℝ≥0∞)]
+  refine add_le_add (spaceEHolderNorm_le_iff.2 fun t x y ↦ by simp)
+    (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
+  simpa only [slabTime_slabMk, NNReal.coe_div, NNReal.coe_ofNat] using f.holderWith t s
+
+/-- A bounded `α / 2`-Hölder function of time on `[a, b]`, viewed as a spatially constant bounded
+parabolically `α`-Hölder field on the slab `E × [a, b]`. -/
+def compSlabTimeL : HolderSpace (α / 2) (Icc a b) Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y :=
+  LinearMap.mkContinuous
+    { toFun f := ofBoundedContinuousFunction
+        (f.toBoundedContinuousFunction.compContinuous ⟨slabTime, continuous_slabTime⟩)
+        (by
+          simpa [BoundedContinuousFunction.coe_compContinuous, Function.comp_def] using
+            (holderWith_comp_slabTime (E := E) f).memHolder)
+      map_add' _ _ := by ext; simp [ofBoundedContinuousFunction_apply]
+      map_smul' _ _ := by ext; simp [ofBoundedContinuousFunction_apply] }
+    1 fun f ↦ by
+      rw [LinearMap.coe_mk, AddHom.coe_mk, one_mul]
+      refine (norm_le_of_norm_le_of_holderWith (M := ‖f.toBoundedContinuousFunction‖)
+        (K := nnHolderNorm (α / 2) (f : Icc a b → Y)) (norm_nonneg _) (fun p ↦ ?_) ?_).trans ?_
+      · simpa [ofBoundedContinuousFunction_apply] using
+          f.toBoundedContinuousFunction.norm_coe_le_norm (slabTime p)
+      · convert holderWith_comp_slabTime (E := E) f using 1
+        ext p
+        simp [ofBoundedContinuousFunction_apply]
+      · rw [norm_def f, coe_toBoundedContinuousFunction]
+
+@[simp]
+theorem compSlabTimeL_apply (f : HolderSpace (α / 2) (Icc a b) Y) (p : slab (E := E) a b) :
+    compSlabTimeL f p = f (slabTime p) := by
+  simp [compSlabTimeL, ofBoundedContinuousFunction_apply]
+
+/-- Viewing a temporal `α / 2`-Hölder function on a slab does not increase its norm, even when the
+spatial fibre is empty. -/
+theorem norm_compSlabTimeL_le_one :
+    ‖compSlabTimeL (α := α) (E := E) (Y := Y) (a := a) (b := b)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- On a nonempty spatial domain, lifting a temporal `α / 2`-Hölder function to a slab preserves
+its norm. -/
+@[simp]
+theorem norm_compSlabTimeL [Nonempty E] (f : HolderSpace (α / 2) (Icc a b) Y) :
+    ‖compSlabTimeL (E := E) f‖ = ‖f‖ := by
+  have hle : ‖compSlabTimeL (E := E) f‖ ≤ ‖f‖ := by
+    simpa using (compSlabTimeL (α := α) (E := E) (Y := Y) (a := a) (b := b)).le_of_opNorm_le
+      norm_compSlabTimeL_le_one f
+  refine le_antisymm hle ?_
+  obtain ⟨x⟩ := ‹Nonempty E›
+  have hsup : ‖f.toBoundedContinuousFunction‖ ≤
+      ‖(compSlabTimeL (E := E) f).toBoundedContinuousFunction‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun t ↦ by
+      simpa using (compSlabTimeL (E := E) f).toBoundedContinuousFunction.norm_coe_le_norm
+        (slabMk x t)
+  have hhold : HolderWith (nnHolderNorm α (compSlabTimeL (E := E) f : slab (E := E) a b → Y))
+      (α / 2) (f : Icc a b → Y) := fun t s ↦ by
+    rw [← edist_slabMk_same_space_rpow x t s α]
+    simpa using (compSlabTimeL (E := E) f).holderWith (slabMk x t) (slabMk x s)
+  rw [norm_def, norm_def, coe_toBoundedContinuousFunction, coe_toBoundedContinuousFunction]
+  exact add_le_add hsup (by exact_mod_cast hhold.nnholderNorm_le)
+
+/-- Assemble a bounded parabolically `α`-Hölder field on `E × [a, b]` (with `0 < α`) from a map
+`f : E → ℝ → Y` bounded by `M` on `E × [a, b]`, uniformly `α`-Hölder in space on each time slice,
+and uniformly `α / 2`-Hölder in time on `[a, b]` at each spatial position. -/
+def ofHolderSpaceTime (hα : 0 < α) {M K H : ℝ≥0} {f : E → ℝ → Y}
+    (hM : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hK : ∀ t ∈ Icc a b, HolderWith K α (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
+    HolderSpace α (slab (E := E) a b) Y :=
+  ofBoundedContinuousFunction
+    (BoundedContinuousFunction.ofNormedAddCommGroup
+      (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p))
+      ((holderWith_of_space_time hK hH).continuous hα) M
+      fun p ↦ hM _ _ (slabTime p).2)
+    (by
+      simpa using (holderWith_of_space_time hK hH).memHolder)
+
+@[simp]
+theorem ofHolderSpaceTime_apply (hα : 0 < α) {M K H : ℝ≥0} {f : E → ℝ → Y}
+    (hM : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hK : ∀ t ∈ Icc a b, HolderWith K α (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) (p : slab (E := E) a b) :
+    ofHolderSpaceTime hα hM hK hH p = f (p : ParabolicSpaceTime E).space (slabTime p) := by
+  simp [ofHolderSpaceTime, ofBoundedContinuousFunction_apply]
+
+/-- The parabolic `α`-Hölder norm of `ofHolderSpaceTime` is at most `M + K + H`. -/
+theorem norm_ofHolderSpaceTime_le (hα : 0 < α) {M K H : ℝ≥0} {f : E → ℝ → Y}
+    (hM : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hK : ∀ t ∈ Icc a b, HolderWith K α (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
+    ‖ofHolderSpaceTime hα hM hK hH‖ ≤ (M : ℝ) + K + H := by
+  refine (norm_le_of_norm_le_of_holderWith (M := M) (K := K + H) M.coe_nonneg
+    (fun p ↦ ?_) ?_).trans ?_
+  · simpa using hM (p : ParabolicSpaceTime E).space (slabTime p) (slabTime p).2
+  · convert holderWith_of_space_time hK hH using 1
+    ext p
+    simp
+  · push_cast
+    linarith
+
+/-- Assemble a bounded parabolically `α`-Hölder field on `E × [a, b]` (with `0 < α ≤ 1`) from a map
+`f : E → ℝ → Y` bounded by `M` on `E × [a, b]`, uniformly `L`-Lipschitz in space on each time
+slice, and uniformly `α / 2`-Hölder in time on `[a, b]` at each spatial position. -/
+def ofLipschitzSpaceHolderTime (hα₀ : 0 < α) (hα₁ : α ≤ 1) {M L H : ℝ≥0} {f : E → ℝ → Y}
+    (hM : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hL : ∀ t ∈ Icc a b, LipschitzWith L (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
+    HolderSpace α (slab (E := E) a b) Y :=
+  ofHolderSpaceTime hα₀ hM
+    (fun t ht ↦ holderOnWith_univ.1
+      ((hL t ht).lipschitzOnWith.holderOnWith_of_norm_le (fun x _ ↦ hM x t ht) hα₁))
+    hH
+
+@[simp]
+theorem ofLipschitzSpaceHolderTime_apply (hα₀ : 0 < α) (hα₁ : α ≤ 1) {M L H : ℝ≥0}
+    {f : E → ℝ → Y} (hM : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hL : ∀ t ∈ Icc a b, LipschitzWith L (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) (p : slab (E := E) a b) :
+    ofLipschitzSpaceHolderTime hα₀ hα₁ hM hL hH p =
+      f (p : ParabolicSpaceTime E).space (slabTime p) := by
+  simp [ofLipschitzSpaceHolderTime]
+
+/-- The parabolic `α`-Hölder norm of `ofLipschitzSpaceHolderTime` is at most `3 M + L + H`. -/
+theorem norm_ofLipschitzSpaceHolderTime_le (hα₀ : 0 < α) (hα₁ : α ≤ 1) {M L H : ℝ≥0}
+    {f : E → ℝ → Y} (hM : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
+    (hL : ∀ t ∈ Icc a b, LipschitzWith L (f · t))
+    (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
+    ‖ofLipschitzSpaceHolderTime hα₀ hα₁ hM hL hH‖ ≤ 3 * (M : ℝ) + L + H := by
+  refine (norm_ofHolderSpaceTime_le hα₀ hM _ hH).trans ?_
+  push_cast
+  linarith
 
 end TauCeti.HolderSpace

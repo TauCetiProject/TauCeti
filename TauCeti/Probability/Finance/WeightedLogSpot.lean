@@ -15,14 +15,18 @@ import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 A bounded parabolic Hölder map `u(y,t)` represents a price of linear growth by
 `C(s,t) = (1+s) u(log s,t)` for positive spot. `weightedLogSpotPrice` performs this
 reconstruction, using the canonical clamped extension in time. It preserves continuity
-on the closed time slab and twice continuous spatial differentiability, and has explicit
-linear-growth bounds for both the price and its dollar delta `s C_s`.
+on the closed time slab, twice continuous spatial differentiability, and joint continuity
+of the first and second spot derivatives and of the within-slab time derivative on
+`(0, ∞) × [a, b]`, with explicit linear-growth bounds for both the price and its dollar
+delta `s C_s` as well as their combined exposure `|C| + |s C_s|`.
 
-The pricing-operator identity transports the backward equation for the bounded map to
-the financial pricing equation. This is a change-of-variables result, not an existence
-or stochastic replication theorem. In particular, no ellipticity or moment hypotheses
-are needed here. Terminal data are transported pointwise, without a smoothness claim
-at zero spot.
+Before maturity (`t ∈ [a, b)`), the within-slab time derivative agrees with the right-sided
+derivative within `[a, ∞)`, and on the open horizon (`t ∈ (a, b)`) with the ordinary time
+derivative. The pricing-operator identity transports the backward equation for the bounded
+map to the financial pricing equation in each of these derivative conventions. This is a
+change-of-variables result, not an existence or stochastic replication theorem. In
+particular, no ellipticity or moment hypotheses are needed here. Terminal data are
+transported pointwise, without a smoothness claim at zero spot.
 
 ## References
 
@@ -236,5 +240,193 @@ theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
   have hw : (1 + s) ≠ 0 := by positivity
   rw [eq_div_iff hw] at h
   linear_combination -h
+
+/-! ### Joint continuity, pre-maturity time derivatives, and combined linear growth -/
+
+private theorem continuousOn_log_slabMk_univ (hab : a < b) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ slabMk (log p.1) (projIcc a b hab.le p.2))
+      (Ioi 0 ×ˢ (univ : Set ℝ)) :=
+  continuous_slabMk.comp_continuousOn <|
+    ((continuousOn_log.mono fun _ hx ↦ ne_of_gt hx).comp continuousOn_fst
+      fun _ hp ↦ (mem_prod.1 hp).1).prodMk
+      ((continuous_projIcc (h := hab.le)).continuousOn.comp continuousOn_snd (mapsTo_univ _ _))
+
+private theorem weightedLogSpotPrice_eq_projIcc (u : ParabolicC2HolderSpace α ℝ ℝ hab) (t : ℝ) :
+    (fun x ↦ weightedLogSpotPrice u x t) =
+      fun x ↦ weightedLogSpotPrice u x (projIcc a b hab.le t) := by
+  ext x
+  rw [weightedLogSpotPrice_def, timeExtension_def, weightedLogSpotPrice_of_mem]
+
+/-- The spot derivative of the reconstructed price is jointly continuous at positive spot,
+uniformly across all times (including the slab endpoints). -/
+theorem continuousOn_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun x ↦ weightedLogSpotPrice u x p.2) p.1)
+      (Ioi 0 ×ˢ (univ : Set ℝ)) := by
+  have hu : Continuous fun q ↦ u q := (valueL u).continuous
+  have hux : Continuous fun q ↦ spatialFDerivL u q 1 :=
+    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp (spatialFDerivL u).continuous
+  have hc : ContinuousOn (fun p : ℝ × ℝ ↦
+      u (slabMk (log p.1) (projIcc a b hab.le p.2)) +
+        (1 + p.1) / p.1 * spatialFDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)) 1)
+      (Ioi 0 ×ˢ (univ : Set ℝ)) :=
+    (hu.comp_continuousOn (continuousOn_log_slabMk_univ hab)).add
+      (((continuousOn_const.add continuousOn_fst).div continuousOn_fst
+        fun _ hp ↦ ne_of_gt (mem_prod.1 hp).1).mul
+        (hux.comp_continuousOn (continuousOn_log_slabMk_univ hab)))
+  refine hc.congr ?_
+  rintro ⟨s, t⟩ ⟨hs, -⟩
+  dsimp only
+  rw [weightedLogSpotPrice_eq_projIcc u t, deriv_weightedLogSpotPrice_spot u hs]
+
+/-- The second spot derivative of the reconstructed price is jointly continuous at positive spot,
+uniformly across all times (including the slab endpoints). -/
+theorem continuousOn_deriv_deriv_weightedLogSpotPrice_spot
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun x ↦ weightedLogSpotPrice u x p.2) p.1)
+      (Ioi 0 ×ˢ (univ : Set ℝ)) := by
+  have hux : Continuous fun q ↦ spatialFDerivL u q 1 :=
+    (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).continuous.comp (spatialFDerivL u).continuous
+  have huxx : Continuous fun q ↦ spatialSecondFDerivL u q 1 1 :=
+    (((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp
+      (ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ))).continuous).comp
+      (spatialSecondFDerivL u).continuous
+  have hc : ContinuousOn (fun p : ℝ × ℝ ↦
+      ((p.1 - 1) * spatialFDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)) 1 +
+        (1 + p.1) * spatialSecondFDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)) 1 1) /
+      p.1 ^ 2) (Ioi 0 ×ˢ (univ : Set ℝ)) :=
+    (((continuousOn_fst.sub continuousOn_const).mul
+        (hux.comp_continuousOn (continuousOn_log_slabMk_univ hab))).add
+      ((continuousOn_const.add continuousOn_fst).mul
+        (huxx.comp_continuousOn (continuousOn_log_slabMk_univ hab)))).div
+      (continuousOn_fst.pow 2) fun _ hp ↦ pow_ne_zero 2 (ne_of_gt (mem_prod.1 hp).1)
+  refine hc.congr ?_
+  rintro ⟨s, t⟩ ⟨hs, -⟩
+  dsimp only
+  rw [weightedLogSpotPrice_eq_projIcc u t, deriv_deriv_weightedLogSpotPrice_spot u hs]
+
+/-- The within-slab time derivative of the reconstructed price is jointly continuous on
+`(0, ∞) × [a, b]`. -/
+theorem continuousOn_derivWithin_weightedLogSpotPrice_time
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc a b) p.2)
+      (Ioi 0 ×ˢ Icc a b) := by
+  have hc : ContinuousOn (fun p : ℝ × ℝ ↦
+      (1 + p.1) * timeDerivL u (slabMk (log p.1) (projIcc a b hab.le p.2)))
+      (Ioi 0 ×ˢ Icc a b) :=
+    (continuousOn_const.add continuousOn_fst).mul
+      ((timeDerivL u).continuous.comp_continuousOn
+        ((continuousOn_log_slabMk_univ hab).mono (prod_mono_right (subset_univ _))))
+  refine hc.congr ?_
+  rintro ⟨s, t⟩ ⟨_, ht⟩
+  dsimp only
+  rw [derivWithin_weightedLogSpotPrice_time u s ⟨t, ht⟩, projIcc_of_mem hab.le ht]
+
+private theorem Icc_eventuallyEq_Ici {t : ℝ} (ht : t < b) :
+    (Icc a b : Set ℝ) =ᶠ[𝓝 t] Ici a := by
+  rw [eventuallyEqSet_iff]
+  filter_upwards [Iio_mem_nhds ht] with x (hx : x < b)
+  exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, hx.le⟩⟩
+
+/-- Strictly before maturity (`t ∈ [a, b)`), the reconstructed price has a time derivative within
+`[a, ∞)` given by the recorded time-derivative field, including the right derivative at `t = a`. -/
+theorem hasDerivWithinAt_Ici_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (s : ℝ) {t : ℝ} (ht : t ∈ Ico a b) :
+    HasDerivWithinAt (weightedLogSpotPrice u s)
+      ((1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩)) (Ici a) t :=
+  (hasDerivWithinAt_weightedLogSpotPrice_time u s ⟨t, Ico_subset_Icc_self ht⟩).congr_set
+    (Icc_eventuallyEq_Ici ht.2)
+
+/-- Strictly before maturity (`t ∈ [a, b)`), the time derivative within `[a, ∞)` agrees with the
+within-slab time derivative. -/
+theorem derivWithin_Ici_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (s : ℝ) {t : ℝ} (ht : t ∈ Ico a b) :
+    derivWithin (weightedLogSpotPrice u s) (Ici a) t =
+      (1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) :=
+  ((derivWithin_congr_set (Icc_eventuallyEq_Ici ht.2)).symm.trans
+    (derivWithin_weightedLogSpotPrice_time u s ⟨t, Ico_subset_Icc_self ht⟩))
+
+/-- The time derivative within `[a, ∞)` is jointly continuous on `(0, ∞) × [a, b)`. -/
+theorem continuousOn_derivWithin_Ici_weightedLogSpotPrice_time
+    (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
+    ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Ici a) p.2)
+      (Ioi 0 ×ˢ Ico a b) :=
+  ((continuousOn_derivWithin_weightedLogSpotPrice_time u).mono
+    (prod_mono_right Ico_subset_Icc_self)).congr fun _ hp ↦
+      (derivWithin_congr_set (Icc_eventuallyEq_Ici hp.2.2)).symm
+
+/-- On the open horizon `t ∈ (a, b)`, the reconstructed price has an ordinary time derivative
+given by the recorded time-derivative field. -/
+theorem hasDerivAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (s : ℝ) {t : ℝ} (ht : t ∈ Ioo a b) :
+    HasDerivAt (weightedLogSpotPrice u s)
+      ((1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩)) t :=
+  (hasDerivWithinAt_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht⟩).hasDerivAt
+    (Icc_mem_nhds ht.1 ht.2)
+
+/-- On the open horizon `t ∈ (a, b)`, the reconstructed price is differentiable in time. -/
+theorem differentiableAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (s : ℝ) {t : ℝ} (ht : t ∈ Ioo a b) :
+    DifferentiableAt ℝ (weightedLogSpotPrice u s) t :=
+  (hasDerivAt_weightedLogSpotPrice_time u s ht).differentiableAt
+
+/-- On the open horizon `t ∈ (a, b)`, the ordinary time derivative equals
+`(1 + s) ∂ₜu(log s, t)`. -/
+theorem deriv_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (s : ℝ) {t : ℝ} (ht : t ∈ Ioo a b) :
+    deriv (weightedLogSpotPrice u s) t =
+      (1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) :=
+  (hasDerivAt_weightedLogSpotPrice_time u s ht).deriv
+
+/-- **Combined linear-growth bound for price and dollar delta.** For `s ≥ 0` and all `t : ℝ`,
+`|C(s, t)| + |s C_s(s, t)| ≤ 2 ‖u‖ (1 + s)`. The factor `2` is sharp (attained as `s → ∞` by
+`u ≡ 1`, for which `C(s, t) = 1 + s` and `s C_s(s, t) = s`). -/
+theorem abs_weightedLogSpotPrice_add_abs_mul_deriv_le (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :
+    |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
+      2 * ‖u‖ * (1 + s) := by
+  rcases eq_or_lt_of_le hs with rfl | hs
+  · have h₀ := abs_weightedLogSpotPrice_le u le_rfl t
+    simp only [zero_mul, abs_zero, add_zero] at h₀ ⊢
+    linarith [norm_nonneg u]
+  · rw [congrFun (weightedLogSpotPrice_eq_projIcc u t) s, weightedLogSpotPrice_eq_projIcc u t]
+    set τ := projIcc a b hab.le t
+    have h₁ : |weightedLogSpotPrice u s τ| ≤ ‖valueL u‖ * (1 + s) := by
+      rw [weightedLogSpotPrice_of_mem, abs_mul, abs_of_pos (by positivity : 0 < 1 + s), mul_comm]
+      exact mul_le_mul_of_nonneg_right ((valueL u).norm_coe_le_norm _) (by positivity)
+    have h₂ := abs_mul_deriv_weightedLogSpotPrice_le u hs τ
+    have hnorm := u.norm_eq
+    nlinarith [norm_nonneg (spatialFDerivL u), norm_nonneg (spatialSecondFDerivL u),
+      norm_nonneg (timeDerivL u)]
+
+/-- The pricing-operator identity before maturity (`t ∈ [a, b)`), written with the time derivative
+within `[a, ∞)`. -/
+theorem pde_weightedLogSpotPrice_Ici (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {s t : ℝ} (hs : 0 < s) (ht : t ∈ Ico a b) (σ r : ℝ) :
+    derivWithin (weightedLogSpotPrice u s) (Ici a) t +
+        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * (timeDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) +
+        σ ^ 2 / 2 * spatialSecondFDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) 1 1 +
+        (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
+          spatialFDerivL u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩) 1 -
+        r / (1 + s) * u (slabMk (log s) ⟨t, Ico_subset_Icc_self ht⟩)) := by
+  rw [← derivWithin_congr_set (Icc_eventuallyEq_Ici ht.2)]
+  exact pde_weightedLogSpotPrice u hs ⟨t, Ico_subset_Icc_self ht⟩ σ r
+
+/-- The pricing-operator identity on the open horizon (`t ∈ (a, b)`), written with the ordinary
+time derivative. -/
+theorem pde_weightedLogSpotPrice_Ioo (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    {s t : ℝ} (hs : 0 < s) (ht : t ∈ Ioo a b) (σ r : ℝ) :
+    deriv (weightedLogSpotPrice u s) t +
+        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * (timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) +
+        σ ^ 2 / 2 * spatialSecondFDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) 1 1 +
+        (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
+          spatialFDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩) 1 -
+        r / (1 + s) * u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht⟩)) := by
+  rw [deriv_weightedLogSpotPrice_time u s ht,
+    ← derivWithin_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht⟩]
+  exact pde_weightedLogSpotPrice u hs ⟨t, Ioo_subset_Icc_self ht⟩ σ r
 
 end TauCeti.Finance
