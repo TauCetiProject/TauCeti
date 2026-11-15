@@ -61,6 +61,8 @@ It also gives the localization axiom of Robbin and Salamon for diagonal symmetri
 `A t = diag (a_j t)` (`Matrix.UnitaryGroup.maslovIndex_eq_sum_sign_of_diagonal_arctan`): the
 graph `{x + i A x}` of `A t` has the frame `diag (e^{i arctan (a_j t)})`, and the index of the path
 of graphs is `∑ j, (sign (a_j 1) - sign (a_j 0)) / 2`, half the change of the signature of `A`.
+This uses that `⌊x / c⌋ + ⌈x / c⌉ = sign x` for `|x| < c`
+(`TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt`).
 
 The index is natural under the real orthogonal group, which preserves `ℝⁿ`: moving a path of
 frames by a fixed real orthogonal matrix does not change it
@@ -93,6 +95,28 @@ public section
 
 open Complex Polynomial
 open scoped unitInterval
+
+namespace TauCeti
+
+/-- For `|x| < c`, the count `⌊x / c⌋ + ⌈x / c⌉` is the sign of `x`. -/
+theorem floor_add_ceil_div_eq_sign_of_abs_lt {x c : ℝ} (hc : 0 < c) (h : |x| < c) :
+    ((⌊x / c⌋ + ⌈x / c⌉ : ℤ) : ℝ) = Real.sign x := by
+  have hlo : -1 < x / c := by rw [lt_div_iff₀ hc]; linarith [neg_abs_le x]
+  have hhi : x / c < 1 := by rw [div_lt_iff₀ hc]; linarith [le_abs_self x]
+  rcases lt_trichotomy x 0 with hneg | rfl | hpos
+  · have hneg' : x / c < 0 := div_neg_of_neg_of_pos hneg hc
+    rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      Real.sign_of_neg hneg]
+    norm_num
+  · simp
+  · have hpos' : 0 < x / c := div_pos hpos hc
+    rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
+      Real.sign_of_pos hpos]
+    norm_num
+
+end TauCeti
 
 namespace Matrix
 
@@ -175,12 +199,8 @@ theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
   obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
     (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
   have hOu := map_ofReal_mem_unitaryGroup hO
-  have hOT : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
-    rw [← transpose_map]
-    exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans
-      ((congrArg _ ((mem_orthogonalGroup_iff _ _).1 hO)).trans (map_one _))
   rw [show V = U * ⟨_, hOu⟩ from Subtype.ext hVO,
-    souriau_mul_of_mul_transpose_eq_one U _ hOT]
+    souriau_mul_of_mul_transpose_eq_one U _ (map_ofReal_mul_transpose_map_ofReal_eq_one hO)]
 
 /-- Moving a frame by `O` conjugates its Souriau map: `(O U) (O U)ᵀ = O (U Uᵀ) Oᵀ`. -/
 theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
@@ -437,24 +457,13 @@ theorem maslovIndex_eq_sum_sign_of_diagonal_arctan {U V : unitaryGroup n ℂ} (�
   -- Since `|arctan a| < π / 2`, the half-integer count of `arctan a` is `sign a / 2`.
   have key (b : ℝ) : ((⌊Real.arctan b / Real.pi⌋ + ⌈Real.arctan b / Real.pi⌉ : ℤ) : ℝ) / 2 =
       Real.sign b / 2 := by
-    have hlo : -1 / 2 < Real.arctan b / Real.pi := by
-      rw [lt_div_iff₀ Real.pi_pos]; linarith [Real.neg_pi_div_two_lt_arctan b]
-    have hhi : Real.arctan b / Real.pi < 1 / 2 := by
-      rw [div_lt_iff₀ Real.pi_pos]; linarith [Real.arctan_lt_pi_div_two b]
+    rw [TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt Real.pi_pos (abs_lt.2
+      ⟨by linarith [Real.neg_pi_div_two_lt_arctan b, Real.pi_pos],
+        by linarith [Real.arctan_lt_pi_div_two b, Real.pi_pos]⟩)]
     rcases lt_trichotomy b 0 with hb | rfl | hb
-    · have hneg : Real.arctan b / Real.pi < 0 :=
-        div_neg_of_neg_of_pos (Real.arctan_lt_zero.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_neg hb]
-      norm_num
+    · rw [Real.sign_of_neg hb, Real.sign_of_neg (Real.arctan_lt_zero.2 hb)]
     · simp
-    · have hpos : 0 < Real.arctan b / Real.pi :=
-        div_pos (Real.arctan_pos.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_pos hb]
-      norm_num
+    · rw [Real.sign_of_pos hb, Real.sign_of_pos (Real.arctan_pos.2 hb)]
   simp only [Function.comp_apply]
   rw [key, key]
   ring

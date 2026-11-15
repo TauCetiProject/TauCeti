@@ -297,8 +297,7 @@ private theorem diagonalStraightening_mul_graphFrame_realify (W : Matrix n n ℂ
   congr 1
   simp only [Matrix.one_mul, Matrix.smul_mul, Matrix.neg_mul, Matrix.mul_neg, Matrix.mul_smul,
     Matrix.mul_one, smul_smul, I_mul_I, neg_smul, one_smul, neg_neg, smul_sub]
-  congr 1 <;> match_scalars <;> ring_nf
-  simp [I_sq]
+  congr 1 <;> match_scalars <;> simp
 
 /-- The Gram matrix of the graph frame of a realified unitary matrix is `2`: its graph is
 Lagrangian, and its columns have norm `√2` since `|x|² + |W x|² = 2 |x|²`. -/
@@ -407,24 +406,6 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal {U V : unitaryGr
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   ring
 
-/-- For `|x| < c`, the count `⌊x / c⌋ + ⌈x / c⌉` is the sign of `x`. -/
-private theorem floor_add_ceil_div_eq_sign_of_abs_lt {x c : ℝ} (hc : 0 < c) (h : |x| < c) :
-    ((⌊x / c⌋ + ⌈x / c⌉ : ℤ) : ℝ) = Real.sign x := by
-  have hlo : -1 < x / c := by rw [lt_div_iff₀ hc]; linarith [neg_abs_le x]
-  have hhi : x / c < 1 := by rw [div_lt_iff₀ hc]; linarith [le_abs_self x]
-  rcases lt_trichotomy x 0 with hneg | rfl | hpos
-  · have hneg' : x / c < 0 := div_neg_of_neg_of_pos hneg hc
-    rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_neg hneg]
-    norm_num
-  · simp
-  · have hpos' : 0 < x / c := div_pos hpos hc
-    rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-      Real.sign_of_pos hpos]
-    norm_num
-
 /-- **Normalization on rotations.** The path `t ↦ diag (e^{i α_j t})` of realified unitary
 matrices, which is `exp (t J S)` with `S = diag (α, α)`, has Conley–Zehnder
 index `-∑ j, sign α_j = -signature(S) / 2` when every `|α_j| < 2π`. In particular a small
@@ -434,7 +415,7 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
     (hγ : ∀ t : I, (γ t : Matrix n n ℂ) = diagonal fun j ↦ Complex.exp (α j * t * Complex.I)) :
     conleyZehnderIndex (γ.map continuous_ofUnitary) = -∑ j, Real.sign (α j) := by
   rw [conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal γ (θ := fun j t ↦ α j * t)
-    (fun j ↦ continuous_const.mul continuous_subtype_val) fun t ↦ by rw [hγ t]; push_cast; rfl]
+    (fun j ↦ continuous_const.mul continuous_subtype_val) fun t ↦ by rw [hγ t]; push_cast; simp]
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   -- Since `|α_j / 2π| < 1`, the count `⌊α_j / 2π⌋ + ⌈α_j / 2π⌉` is `sign α_j`.
