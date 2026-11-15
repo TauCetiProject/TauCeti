@@ -66,8 +66,8 @@ exhaustion of `Ω` by such sets
 
 * `TauCeti.setLIntegral_setLIntegral_enorm_sub_le_mul_totalVariationOn`: the double-integral
   estimate `∫_Ω ∫_Ω |u x - u y| ≤ (∫_{Ω - Ω} ‖h‖) |Du|(Ω)` on a convex open set.
-* `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn`: the Poincaré inequality on
-  a convex open set, with constant `(∫_{Ω - Ω} ‖h‖) / μ(S)`.
+* `TauCeti.setLIntegral_enorm_sub_setAverage_le_div_mul_totalVariationOn`: the Poincaré
+  inequality on a convex open set, with constant `(∫_{Ω - Ω} ‖h‖) / μ(S)`.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex`: the Poincaré
   inequality on a bounded convex open set, with constant `μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(S)`.
 * `TauCeti.integrableOn_of_totalVariationOn_ne_top_of_convex`: a locally integrable function of
@@ -183,7 +183,7 @@ theorem setLIntegral_setLIntegral_enorm_sub_le_mul_totalVariationOn
 /-- **The Poincaré inequality for functions of bounded variation on a convex set.** Let `u` be
 locally integrable on a convex open set `Ω` and let `S ⊆ Ω` have finite positive measure. Then
 `∫_Ω |u - ⨍_S u| ≤ (∫_{Ω - Ω} ‖h‖) / μ(S) · |Du|(Ω)`. Both sides may be infinite. -/
-theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn
+theorem setLIntegral_enorm_sub_setAverage_le_div_mul_totalVariationOn
     (hconv : Convex ℝ (Ω : Set E)) (hu : LocallyIntegrableOn u Ω μ) (hS : S ⊆ Ω)
     (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ⊤) :
     ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
@@ -220,7 +220,8 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex
   have hd : 0 ≤ d := diam_nonneg
   have hS_top : μ S ≠ ⊤ :=
     ((measure_mono (hS.trans subset_closure)).trans_lt hb.isCompact_closure.measure_lt_top).ne
-  refine (setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn hconv hu hS hS₀ hS_top).trans
+  refine
+    (setLIntegral_enorm_sub_setAverage_le_div_mul_totalVariationOn hconv hu hS hS₀ hS_top).trans
     (mul_le_mul_left ?_ _)
   -- Every `h ∈ Ω - Ω` has `‖h‖ ≤ diam Ω`.
   have hnorm : ∀ h ∈ (Ω : Set E) - Ω, ‖h‖ ≤ d := by
@@ -271,7 +272,7 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_eq_ball {c 
 /-! ### The localized inequality -/
 
 /-- The inequality on a convex open set `U` whose closure is a compact subset of `Ω`, with the
-mean over a measurable `T ⊆ U`, a set `A ⊆ U` and the variation of `u` on `Ω`. -/
+mean over a set `T ⊆ U` of nonzero measure, a set `A ⊆ U` and the variation of `u` on `Ω`. -/
 private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Set E}
     (hU : IsOpen U) (hUc : Convex ℝ U) (hUK : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω)
     (hu : LocallyIntegrableOn u Ω μ) (hT : T ⊆ U) (hT₀ : μ T ≠ 0) (hA : A ⊆ U) :

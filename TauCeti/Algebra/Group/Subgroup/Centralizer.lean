@@ -31,6 +31,8 @@ which is the form every concrete centralizer computation in a matrix group start
   exactly when the two commute as elements of the monoid.
 * `Subgroup.zpowers_le_centralizer_singleton`: an element's cyclic subgroup lies in its
   centralizer.
+* `Subgroup.centralizer_singleton_eq_zpowers_of_centralizer_le`: an element whose cyclic subgroup
+  contains the centralizer of some element generates its own centralizer.
 * `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
   maximal among commutative subgroups.
 * `Subgroup.exists_maximal_isMulCommutative`: every commutative subgroup lies in a maximal one.
@@ -72,6 +74,15 @@ theorem exists_maximal_isMulCommutative {G : Type*} [Group G] (H : Subgroup G)
 theorem zpowers_le_centralizer_singleton {G : Type*} [Group G] (x : G) :
     zpowers x ≤ centralizer {x} :=
   zpowers_le.2 (mem_centralizer_singleton_iff.2 rfl)
+
+/-- An element whose cyclic subgroup contains the centralizer of some element generates its own
+centralizer. -/
+theorem centralizer_singleton_eq_zpowers_of_centralizer_le {G : Type*} [Group G] {x c : G}
+    (h : centralizer {x} ≤ zpowers c) : centralizer {c} = zpowers c := by
+  refine le_antisymm (fun y hy ↦ ?_) (zpowers_le_centralizer_singleton c)
+  obtain ⟨k, rfl⟩ := mem_zpowers_iff.1 (h (mem_centralizer_singleton_iff.2 rfl))
+  exact h (mem_centralizer_singleton_iff.2
+    (Commute.zpow_right (mem_centralizer_singleton_iff.1 hy) k))
 
 /-- A self-centralizing subgroup is maximal among commutative subgroups. -/
 theorem eq_of_centralizer_eq_self_of_le_of_isMulCommutative {G : Type*} [Group G]
