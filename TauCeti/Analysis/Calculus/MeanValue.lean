@@ -17,10 +17,17 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Mean value estimates
+
+## Exact increments along continuous real paths
+
+`ContinuousOn.exists_deriv_comp_mul_sub_eq` realizes the mean value derivative at a time
+on a continuous real path. This supplies the exact per-cell increments used in the
+finite-variation chain rule, without requiring the path itself to be differentiable.
 
 ## A directional mean value inequality
 
@@ -68,6 +75,11 @@ point `y`, then by the mean value inequality applied to their difference they st
 This compares a map to a model agreeing with it to first order before splicing them together
 (`TauCeti.Analysis.Calculus.Splice`).
 
+For a family of operators `Φ : E → Λ →L[𝕜] F` whose pointwise derivatives stay within `C` of a
+fixed `L` in operator norm, the mean value inequality applied to each `w ↦ Φ w f` bounds the
+operator norm of `Φ z - Φ y - L.flip (z - y)` by `C ‖z - y‖`
+(`Convex.norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le`).
+
 For an antilipschitz parametrization with bounded derivative, an image chord controls the
 parametric chord and its intervening points. A scalar mean value estimate permits bounds on
 individual coordinate derivatives. These estimates are adapted from
@@ -83,7 +95,9 @@ segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at 
 `Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
 vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
 projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
-only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
+only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
+compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
+(`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
 -/
 
 public section
@@ -103,7 +117,62 @@ theorem Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le {X Y : Type*} [NormedA
       (by rw [norm_sub_rev A]; linarith [hl' v hv, hk' v hv])) hy hx
   rwa [hxy, sub_self, sub_zero] at h
 
+/-- **The mean value inequality for the operator norm.** Let `Φ : E → Λ →L[𝕜] F` be a family of
+operators on a convex set `s` such that each `w ↦ Φ w f` has derivative `D w f` within `s`, where
+`D w` stays within `C` of `L` in operator norm. Then on `s`, `Φ` stays within `C ‖z - y‖` of its
+first-order approximation `Φ y + L.flip (z - y)`, for the operator norm. -/
+theorem Convex.norm_sub_sub_flip_le_of_norm_hasFDerivWithin_sub_le {𝕜 Λ E F : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup Λ]
+    [NormedSpace 𝕜 Λ] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {s : Set E} (hs : Convex ℝ s)
+    {Φ : E → Λ →L[𝕜] F} {D : E → Λ →L[𝕜] E →L[𝕜] F} {L : Λ →L[𝕜] E →L[𝕜] F} {C : ℝ}
+    (hD : ∀ w ∈ s, ∀ f, HasFDerivWithinAt (fun w ↦ Φ w f) (D w f) s w)
+    (hC : ∀ w ∈ s, ‖D w - L‖ ≤ C) {y z : E} (hy : y ∈ s) (hz : z ∈ s) :
+    ‖Φ z - Φ y - L.flip (z - y)‖ ≤ C * ‖z - y‖ := by
+  have hC0 : 0 ≤ C := (norm_nonneg (D y - L)).trans (hC y hy)
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun f ↦ ?_
+  have key := hs.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun w ↦ Φ w f)
+    (f' := fun w ↦ D w f) (φ := L f) (C := C * ‖f‖) (fun w hw ↦ hD w hw f)
+    (fun w hw ↦ ((D w - L).le_opNorm f).trans (mul_le_mul_of_nonneg_right (hC w hw)
+      (norm_nonneg f))) hy hz
+  calc ‖(Φ z - Φ y - L.flip (z - y)) f‖ = ‖Φ z f - Φ y f - L f (z - y)‖ := by simp
+    _ ≤ C * ‖f‖ * ‖z - y‖ := key
+    _ = C * ‖z - y‖ * ‖f‖ := by ring
+
 open Set
+
+/-- Along a continuous real path, some time realizes an exact mean value increment of `f`.
+Continuity is required on the image and the specified derivative only in its interior;
+no derivative of the path is needed. -/
+theorem ContinuousOn.exists_deriv_comp_mul_sub_eq {g f f' : ℝ → ℝ} {l u : ℝ}
+    (hgc : ContinuousOn g (Icc l u)) (hlu : l ≤ u)
+    (hfc : ContinuousOn f (g '' Icc l u))
+    (hf : ∀ x ∈ interior (g '' Icc l u), HasDerivAt f (f' x) x) :
+    ∃ t ∈ Icc l u, f' (g t) * (g u - g l) = f (g u) - f (g l) := by
+  have hmean {p q : ℝ} (hfc : ContinuousOn f (uIcc p q))
+      (hf : ∀ x ∈ interior (uIcc p q), HasDerivAt f (f' x) x) :
+      ∃ x ∈ uIcc p q, f' x * (q - p) = f q - f p := by
+    wlog hpq : p ≤ q generalizing p q
+    · obtain ⟨x, hx, he⟩ := this (by simpa only [uIcc_comm] using hfc)
+        (by simpa only [uIcc_comm] using hf) (le_of_not_ge hpq)
+      refine ⟨x, by simpa only [uIcc_comm] using hx, ?_⟩
+      rw [← neg_sub p q, mul_neg, he, neg_sub]
+    rcases hpq.eq_or_lt with rfl | hpq
+    · exact ⟨p, by simp, by simp⟩
+    obtain ⟨x, hx, he⟩ := exists_hasDerivAt_eq_slope f f' hpq
+      (by simpa only [uIcc_of_le hpq.le] using hfc)
+      (by simpa only [uIcc_of_le hpq.le, interior_Icc] using hf)
+    refine ⟨x, by simpa only [uIcc_of_le hpq.le] using Ioo_subset_Icc_self hx, ?_⟩
+    rw [he, div_mul_cancel₀ _ (sub_ne_zero.mpr hpq.ne')]
+  -- The intermediate value theorem turns the state-space mean value into a time tag.
+  have himage : uIcc (g l) (g u) ⊆ g '' Icc l u := by
+    simpa only [uIcc_of_le hlu] using
+      (intermediate_value_uIcc (a := l) (b := u) (f := g)
+        (by simpa only [uIcc_of_le hlu] using hgc))
+  obtain ⟨x, hx, he⟩ := hmean (hfc.mono himage)
+    (fun x hx ↦ hf x (interior_mono himage hx))
+  obtain ⟨t, ht, rfl⟩ := himage hx
+  exact ⟨t, ht, he⟩
 
 namespace Convex
 
@@ -286,6 +355,26 @@ theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F
     (fun t ht ↦ hker _ (hball t ht) _ hπz)
   rw [add_sub_cancel] at h
   exact h.symm
+
+/-- A compactly supported differentiable map whose derivative in a fixed nonzero direction `v`
+vanishes identically is zero: moving along `v` does not change its value, and far enough along `v`
+the point leaves the support. -/
+theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
+    (hc : HasCompactSupport g) (hg : Differentiable 𝕂 g) {v : F} (hv : v ≠ 0)
+    (h0 : ∀ w, fderiv 𝕂 g w v = 0) (z : F) : g z = 0 := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  set c : ℝ := (|R| + ‖z‖ + 1) / ‖v‖
+  have hconst := apply_add_eq_of_fderiv_apply_eq_zero (z := z) (v := (c : 𝕂) • v)
+    (fun _ _ ↦ hg _) fun _ _ ↦ by rw [map_smul, h0, smul_zero]
+  rw [← hconst]
+  refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
+  have hle := mem_closedBall_zero_iff.1 (hR hmem)
+  have hcv : ‖(c : 𝕂) • v‖ = |R| + ‖z‖ + 1 := by
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)]
+  have hlow := norm_sub_norm_le ((c : 𝕂) • v) (-z)
+  rw [sub_neg_eq_add, norm_neg, hcv, add_comm ((c : 𝕂) • v)] at hlow
+  linarith [le_abs_self R]
 
 end Direction
 

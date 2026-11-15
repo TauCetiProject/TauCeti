@@ -105,6 +105,7 @@ theorem not_isSolvable_referenceSubgroup_five_three :
   rw [referenceSubgroup_five_three]
   intro h
   let _ : Group.IsSolvable (alternatingGroup (Fin 5)) := h
+  have := alternatingGroup.isSimpleGroup (α := Fin 5) (by simp)
   have hcomm : ∀ a b : alternatingGroup (Fin 5), a * b = b * a :=
     IsSimpleGroup.comm_iff_isSolvable.mpr inferInstance
   let a : alternatingGroup (Fin 5) :=

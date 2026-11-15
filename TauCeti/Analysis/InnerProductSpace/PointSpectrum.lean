@@ -140,6 +140,7 @@ public section
 
 open Module.End
 open scoped InnerProductSpace
+open scoped Pointwise
 
 namespace Module.End
 
@@ -433,7 +434,7 @@ theorem isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero (hA : A.IsSymmetric)
     IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) := by
   refine ⟨Module.End.disjoint_pointSpectralSubspace Set.Iio_disjoint_Ioi_same, ?_⟩
   rw [codisjoint_iff, ← Module.End.pointSpectralSubspace_insert_zero (Ω := Set.Ioi 0) hker,
-    Set.Ioi_insert, ← Set.compl_Iio]
+    Set.insert_Ioi, ← Set.compl_Iio]
   exact hA.pointSpectralSubspace_sup_compl_eq_top _
 
 /-- For a symmetric operator on a finite-dimensional space, the orthogonal complement of the
@@ -453,7 +454,7 @@ the negative spectral subspace is the positive spectral subspace. -/
 theorem orthogonal_pointSpectralSubspace_Iio_zero (hA : A.IsSymmetric)
     (hA' : LinearMap.ker A = ⊥) :
     (A.pointSpectralSubspace (Set.Iio 0))ᗮ = A.pointSpectralSubspace (Set.Ioi 0) := by
-  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Iio, ← Set.Ioi_insert,
+  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Iio, ← Set.insert_Ioi,
     Module.End.pointSpectralSubspace_insert_zero hA']
 
 /-- For an injective symmetric operator on a finite-dimensional space, the orthogonal complement of
@@ -461,7 +462,7 @@ the positive spectral subspace is the negative spectral subspace. -/
 theorem orthogonal_pointSpectralSubspace_Ioi_zero (hA : A.IsSymmetric)
     (hA' : LinearMap.ker A = ⊥) :
     (A.pointSpectralSubspace (Set.Ioi 0))ᗮ = A.pointSpectralSubspace (Set.Iio 0) := by
-  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Ioi, ← Set.Iio_insert,
+  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Ioi, ← Set.insert_Iio,
     Module.End.pointSpectralSubspace_insert_zero hA']
 
 /-- For a symmetric operator on a finite-dimensional space, the point-spectral subspace selected by

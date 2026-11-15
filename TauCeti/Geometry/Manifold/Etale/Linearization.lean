@@ -81,7 +81,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
   classical
   have := finite_aut_of_proper_source_target hp hs.isLocalHomeomorph x
   let ι : Fintype (Aut x) := Fintype.ofFinite (Aut x)
-  obtain ⟨U, hxU, act, F₀, hsmul, hfix, hobj, hfull, hfaithful, hopen, harrow, hcentre⟩ :=
+  obtain ⟨U, hxU, act, F₀, hsmul, hfix, hobj, hfull, hfaithful, hopen, harrow, -, -, hcentre⟩ :=
     exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht hu hc x
   -- Register the action and functor instances returned by the existential chart theorem.
   let : MulAction (Aut x) U := act

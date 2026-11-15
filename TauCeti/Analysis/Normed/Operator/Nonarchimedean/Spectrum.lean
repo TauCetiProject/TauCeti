@@ -155,8 +155,7 @@ theorem IsRowCompact.encard_setOf_mem_spectrum_mapCoeffs_le (hu : u.IsRowCompact
     (hs : TauCeti.PowerSeries.IsDistinguished ε⁻¹ s u.matrixCoeff.charPowerSeries) :
     {μ ∈ spectrum L (u.mapCoeffs (algebraMap K L) ⟨1, by simp⟩) | ε ≤ ‖μ‖}.encard ≤ s := by
   refine (Set.encard_le_encard_of_injOn (f := (·⁻¹)) ?_ inv_injective.injOn).trans
-    (hs.encard_setOf_evalAt_eq_zero_le (L := L) (inv_pos.2 hε)
-      (hu.isEntire_charPowerSeries.isRestricted _))
+    (hs.encard_setOf_evalAt_eq_zero_le (L := L) (hu.isEntire_charPowerSeries.isRestricted _))
   rintro μ ⟨hμ, hεμ⟩
   have hμ0 : μ ≠ 0 := norm_pos_iff.1 (hε.trans_le hεμ)
   refine ⟨by simpa only [norm_inv] using inv_anti₀ hε hεμ, ?_⟩

@@ -9,8 +9,8 @@ The adapter reads all comments and current commit statuses through GraphQL, fetc
 the diff for otherwise approved PRs, and checks
 that the PR's head, base, lifecycle and hold state have not changed before
 reporting readiness. The gate selects the newest completed current-head review,
-requires every configured rubric, handles legacy scoreboard tables and live
-review markers, and enforces build, scope, allowed paths and pin-validation rules.
+requires every configured rubric, handles legacy scoreboard tables,
+and enforces build, scope, allowed paths and pin-validation rules.
 Drafts, held PRs and stacked bases are reported separately.
 
 | Label | Meaning |
@@ -19,7 +19,6 @@ Drafts, held PRs and stacked bases are reported separately.
 | `ci-failed` | The build failed |
 | `merge-check-failed` | A scope or pin-validation check failed |
 | `awaiting-review` | Current-head reviews are absent or incomplete |
-| `review-in-progress` | A live review delays enqueueing |
 | `awaiting-author` | A current review requests changes or the PR conflicts |
 | `needs-human-review` | Approved changes include human-owned files |
 | `awaiting-dependency` | The PR targets a stacked branch rather than main |
@@ -53,7 +52,7 @@ from failed runs, and uploads progress with `always()`. A retained quota deadlin
 defers the next batch before any App reads. Finishing a resumed scan advances its
 watermark only to a completely read discovery boundary. Resuming also discovers
 new activity, skipping only updates older than the start of a finished PR check;
-changes during that check remain eligible. Active CI is refreshed. An hourly
+changes during that check remain eligible. Build and review completions are discovered even without a PR edit. An hourly
 recovery trigger and manual dispatch can resume work without a new PR event.
 
 Restoration verifies the producing workflow and event through GitHub. A
@@ -83,58 +82,9 @@ readiness audit stored in the snapshot, if present. A live health report always
 performs the audit. Use `--dump-data` to save the evidence for offline replay.
 
 [`core.py`](core.py) supplies GitHub-reading helpers and the separate build/review
-signals used for Zulip reactions. A green build/review reaction is not a claim
-that a PR passes all merge prerequisites. Destructive housekeeping continues to
+signals used by lifecycle labels and automation-health checks. These signals
+do not by themselves establish all merge prerequisites. Destructive housekeeping continues to
 use its stricter OWNER/MEMBER/COLLABORATOR comment policy.
-
-## Zulip reactions
-
-[`zulip.py`](zulip.py) finds-or-creates the PR's message in the **PRs** topic and
-reconciles two independent, mutually-exclusive reaction groups from `core.derive`:
-
-| Group | State | Emoji |
-| --- | --- | --- |
-| **CI (build)** | waiting / running | 🟡 `yellow` |
-| | passed | 🟢 `green_circle` |
-| | failed | 🔴 `red_circle` |
-| **Review / lifecycle** | review in progress | 👀 `eyes` |
-| | waiting for review | *(none)* |
-| | changes requested / blocked | ✍️ `writing` |
-| | all review done, all green | ✔️ `check` |
-| | merged | `:merge:` |
-| | closed, not merged | `:closed-pr:` |
-
-Bors squash batches fast-forward `main` and then close their PRs, so GitHub can
-report `merged=false` even for landed work. For Zulip presentation, a closed PR
-whose title starts with `[Merged by Bors] - ` receives `:merge:`. That prefix is
-removed from the displayed title. This does not change merge readiness or
-GitHub's PR metadata. Run `zulip-pr-backfill.yml` with `bors_only=true` and
-`dry_run=false` to repair existing affected posts and reactions in place.
-
-Each message includes the PR's author and the area from every `roadmap/...`
-label (with `unlabelled` distinct from the deliberate `roadmap/none`). A later
-label change edits the existing message in place, so a roadmap label added after
-the PR opens is still shown. The message is found-or-created from the PR's
-metadata *before* the fallible CI and review reads, so a transient GitHub hiccup
-can never leave a PR without its durable Zulip message. Only the bot's *own*
-reactions are authoritative (presence is judged by the bot's user id), so a
-human reacting on a status message never confuses reconciliation.
-
-Two workflows drive it:
-
-- [`pr-status.yml`](../../.github/workflows/pr-status.yml): on PR events,
-  review-state comments, and `workflow_run` of `pr-build` and `Review`, plus
-  hourly/manual recovery. It reconciles in batches ([`batch.py`](batch.py)):
-  one run at a time, retaining pending work across interruptions and discovering
-  new activity before advancing the saved window. Bursts coalesce into one or
-  two GitHub-hosted jobs rather than one per event. Per PR it
-  runs the status-label reconcile, then the Zulip reconcile: creating the message
-  only while the PR is open (so churn on a closed PR can never create a late post),
-  keeping its roadmap metadata current, owning the merged/closed ending, and
-  painting CI as running while a `pr-build` run for the head is queued or running.
-- [`zulip-healthcheck.yml`](../../.github/workflows/zulip-healthcheck.yml): a
-  schedule (every 6h) that runs `check` to probe the credentials, so a broken
-  key is caught even during quiet periods with no PR activity.
 
 ## Merge conflicts
 
@@ -160,7 +110,7 @@ Two properties are why this is a couple of hundred lines rather than a package.
 the mutually-exclusive set [`labels.py`](labels.py) maintains, and nothing else
 reads or writes it. A PR can be awaiting review *and* conflicting, and saying both
 is more useful than having one hide the other; keeping them separate also means
-conflict state never enters `core.derive`, never has to win a precedence argument
+conflict state remains separate from the lifecycle label, never has to win a precedence argument
 against CI or review state, and cannot interfere with what a review harness reads.
 
 **The label is also the state.** Whether an episode is open is just "is the label
@@ -207,8 +157,8 @@ episode has no closing event in the timeline.
 
 Note that labelling and commenting both bump the PR's `updatedAt`, which
 `housekeeping.py` treats as freshness — so a conflict episode resets that PR's
-nine-day stale-close clock. That is the intended trade: a PR that just learned it
-conflicts should get nine days to act on it.
+seven-day stale-close clock. That is the intended trade: a PR that just learned it
+conflicts should get its week to act on it.
 
 ## Stuck-automation alerts (Tau Ceti > "Stuck PRs")
 
@@ -224,7 +174,8 @@ while it persists.
 This is an **emergency channel, not a help queue.** Every alert means a piece of
 infrastructure needs fixing so the wedge cannot recur, not that a human should
 hand-hold one PR. It fires on: a pinned Mathlib commit that is more than three days
-old, regardless of when the manifest changed, linking the active `bump-mathlib/` repair PR;
+old, regardless of when the manifest changed, linking the active `bump-mathlib/` repair PR
+(`bump_latest.py` retargets that PR, keeping its repairs, once its own target is two days old);
 an in-scope, fully-green PR the merge path never
 merged; an open `Review stuck: PR #…` issue; a scheduled workflow that is disabled
 or overdue; and `main` gone red. It
@@ -234,16 +185,16 @@ docstring lists the full catalogue and the reasoning.
 
 Run `python3 scripts/pr_status/stuck_alerts.py --dry-run` (with `gh` authenticated)
 to print the alerts it would post without touching Zulip. Its run goes red only on
-a persistent Zulip config break, exactly like the healthcheck.
+a persistent Zulip config break.
 
 ## One-time setup
 
 1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
    type *Generic*). Subscribe it to the **Tau Ceti** channel: a bot can only
-   post and react in channels it belongs to.
+   post in channels it belongs to.
 2. **Add repository secrets** on `TauCetiProject/TauCeti`:
    - `ZULIP_API_KEY`: the bot's API key
-   - `ZULIP_EMAIL`: the bot's email (e.g. `tauceti-pr-bot@leanprover.zulipchat.com`)
+   - `ZULIP_EMAIL`: the bot's email (e.g. `tauceti-alert-bot@leanprover.zulipchat.com`)
 
    The site is hard-coded to `https://leanprover.zulipchat.com` in the workflows.
 
@@ -258,65 +209,24 @@ a persistent Zulip config break, exactly like the healthcheck.
    > Avoid `echo "$KEY" | gh secret set ...` (echo adds a newline). The script
    > also `.strip()`s both creds defensively, but set them cleanly anyway.
 
-The labels need no secret: `pr-status.yml` and `pr-labels.yml` use the same GitHub App
+Label reconciliation needs no Zulip credentials: `pr-status.yml` and `pr-labels.yml` use the same GitHub App
 (`APP_ID` / `APP_PRIVATE_KEY`) already configured for the roadmap and merge
 workflows, scoped to this repo, and provisions lifecycle labels on first use.
 
-## Failure modes (Zulip)
+## Alert delivery and label backfill
 
-The Zulip integration is quiet about cosmetic problems and loud about real ones,
-because the two are easy to confuse from the outside:
+The alert client authenticates and checks channel membership before delivering
+alerts. Missing credentials or a persistent authorization failure make the run
+fail visibly; transient network failures are logged for the next scheduled retry.
+PR feed posting, reactions, and historical post backfill have been removed.
 
-- A **transient** hiccup (one Zulip 5xx, a network blip, a PR with no message
-  yet) is cosmetic and self-heals on the next reconcile. The script logs it and
-  exits 0, so the workflow run stays green.
-- A **configuration** break (missing/empty creds, a bad API key (401), a
-  forbidden bot (403), or the bot not subscribed to the channel) breaks *every*
-  PR and will not fix itself. The script logs it, emits a GitHub Actions
-  `::error::` annotation, and exits non-zero, so the workflow run goes **red**.
-
-When a run is red, re-set `ZULIP_API_KEY` per the gotcha above, then confirm:
+To reconcile GitHub labels locally with an authenticated `gh`:
 
 ```bash
-export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
-python3 scripts/pr_status/zulip.py check   # exits 0 and prints OK when healthy
-```
-
-## Backfill (run locally)
-
-To seed labels and/or Zulip messages for PRs that predate this integration, run
-the reconcilers over the open PRs with `gh` authenticated:
-
-```bash
-# Labels: needs only an authenticated gh with issues:write.
 python3 scripts/pr_status/labels.py reconcile-all
-
-# Zulip: needs the status bot credentials exported. This paginates the complete
-# PR history in one low-request stream and edits existing posts in place,
-# including posts whose URL predates the FormalFrontier -> TauCetiProject transfer.
-export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
-gh api --paginate \
-  'repos/TauCetiProject/TauCeti/pulls?state=all&sort=created&direction=asc&per_page=100' \
-  --jq '.[] | {
-    number,
-    state,
-    merged: (.merged_at != null),
-    head: .head.sha,
-    title,
-    author: .user.login,
-    roadmaps: [.labels[].name | select(startswith("roadmap/"))]
-  }' | python3 scripts/pr_status/zulip.py backfill --dry-run --strict
-
-# After reviewing the dry-run summary, omit --dry-run to apply it.
 ```
 
-Re-running either is safe: it converges to current GitHub state and changes
-nothing else. The `Zulip PR backfill` workflow runs the same full-history post
-update with the repository's status-bot secrets, so old posts can be migrated
-without copying credentials locally. It defaults to a dry run, continues past
-individual failures and reports them together, retries transient Zulip failures,
-and intentionally does not create missing messages. `pr-labels.yml` also has a
-`workflow_dispatch` that reconciles one PR or all open PRs from the Actions tab.
+`pr-labels.yml` also supports a manual dispatch for one PR or `pr=all`.
 
 ## Unit tests
 
@@ -325,14 +235,11 @@ cd scripts/pr_status
 python3 -m unittest test_pr_labels test_readiness test_zulip test_stuck_alerts
 ```
 
-`test_pr_labels` covers the derivation (`core.review_state`, `core.inprogress_from`,
-`core.derive`), metadata plumbing, and label reconciliation. `test_readiness`
-runs the pinned merge gate on current/stale/incomplete reviews, live markers,
+`test_pr_labels` covers the derivation (`core.review_state`) and label reconciliation. `test_readiness`
+runs the pinned merge gate on current/stale/incomplete reviews, ignored old markers,
 human paths, CI and pin guards, and head-move races. It needs the pinned engine
-checkout described above. `test_zulip` covers review reactions, PR post
-rendering, legacy-message rewriting, batch continuation, dry runs, and rate-limit
-retry. All GitHub and Zulip reads and writes are stubbed, so these need no
-network.
+checkout described above. `test_zulip` covers alert transport retry and duplicate-send prevention.
+GitHub and Zulip reads and writes are stubbed in these tests.
 
 GitHub reads require `gh` and `jq`. The read helper captures response headers,
 honors `Retry-After` and exhausted-quota reset times, and applies jq filters

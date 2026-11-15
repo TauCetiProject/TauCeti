@@ -37,6 +37,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
+* `PowerSeries.IsRestricted.subring_zero` and `PowerSeries.IsRestricted.subring_abs`: the
+  restricted subring is everything at the radius `0`, and depends only on `|c|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
   is not restricted at the radius `‖a‖⁻¹`, and `TauCeti.PowerSeries.not_isRestricted_mk_one`:
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
@@ -255,6 +257,33 @@ open Filter
 open scoped Topology
 
 variable {R : Type*} [NormedRing R] {c c' : ℝ} {f g : PowerSeries R}
+
+section Subring
+
+variable [IsUltrametricDist R]
+
+/-- Membership in the subring of series restricted at `c` is restrictedness at `c`. -/
+@[simp]
+theorem IsRestricted.mem_subring : f ∈ IsRestricted.subring c ↔ f.IsRestricted c :=
+  Iff.rfl
+
+/-- At the radius `0` every series is restricted, its weighted coefficient norms vanishing past
+degree `0`, so the restricted subring is the whole ring of power series. -/
+@[simp]
+theorem IsRestricted.subring_zero : IsRestricted.subring (R := R) 0 = ⊤ := by
+  refine (Subring.eq_top_iff' _).mpr fun f ↦ ?_
+  rw [IsRestricted.mem_subring, isRestricted_iff']
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  simp [zero_pow (by omega : n ≠ 0)]
+
+/-- The restricted subring depends only on the absolute value of the radius. -/
+@[simp]
+theorem IsRestricted.subring_abs (c : ℝ) :
+    IsRestricted.subring (R := R) |c| = IsRestricted.subring c :=
+  Subring.ext fun f ↦ by simp only [IsRestricted.mem_subring, isRestricted_abs_iff]
+
+end Subring
 
 /-- The weighted coefficient norms of a restricted series are summable at every strictly
 smaller radius. No completeness or ultrametric hypothesis is needed. -/

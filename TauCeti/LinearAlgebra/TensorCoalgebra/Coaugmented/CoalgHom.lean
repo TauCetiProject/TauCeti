@@ -234,7 +234,7 @@ variable {R : Type vR} {M : Type vM} {N : Type vN}
 /-- A degree-zero reduced coalgebra map extends to a degree-zero map on coaugmented
 tensor words. The empty word has degree zero. -/
 theorem isHomogeneous_coaugmentedMap
-    {G : InternalGrading R M} {H : InternalGrading R N}
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
     {F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF : LinearMap.IsHomogeneous F
       (ReducedTensorWords.gradedPiece G) (ReducedTensorWords.gradedPiece H) 0) :

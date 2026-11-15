@@ -99,6 +99,24 @@ theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullS
   exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
     (e.trans (FiniteProjectiveModules.biprodLinearEquiv P Q).symm).toModuleIso)
 
+/-- **Additivity on finite products.** The class of a finitely generated projective module
+isomorphic to a finite product is the sum of the classes of the factors. -/
+theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
+    {X : (finiteProjectiveModules R).FullSubcategory}
+    (P : ι → (finiteProjectiveModules R).FullSubcategory)
+    (e : X.obj ≃ₗ[R] (i : ι) → (P i).obj) : of.{u} X = ∑ i, of.{u} (P i) := by
+  have := hasFiniteProducts_of_has_binary_and_terminal
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  have := HasFiniteBiproducts.of_hasFiniteProducts
+    (C := (finiteProjectiveModules R).FullSubcategory)
+  have := PreservesFiniteProducts.of_preserves_binary_and_terminal (finiteProjectiveModules R).ι
+  have : PreservesBiproduct P (finiteProjectiveModules R).ι :=
+    preservesBiproduct_of_preservesProduct _
+  rw [← of_biproduct.{u} P]
+  exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
+    (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
+      ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
+
 /-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
 of `R`. -/
 theorem of_eq_nsmul_of_linearEquiv_fin {X R' : (finiteProjectiveModules R).FullSubcategory}

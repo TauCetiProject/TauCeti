@@ -37,7 +37,7 @@ attribute [local instance] LieRing.ofAssociativeRing
 
 namespace TauCeti
 
-variable {N : Type} {R L M : Type*} [AddCommMonoid N] [CommRing R]
+variable {N R L M : Type*} [AddCommMonoid N] [CommRing R]
   [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
   [LieRingModule L M]
 

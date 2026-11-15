@@ -52,9 +52,7 @@ to be the set of roots of a subgroup of `U⁺` normalized by the torus.
 
 ## References
 
-This file implements the inversion-set part of Layer 1 in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The mathematical convention follows
-Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
+The mathematical convention follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 -/
 
 public section

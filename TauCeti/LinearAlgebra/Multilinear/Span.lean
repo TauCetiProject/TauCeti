@@ -39,7 +39,8 @@ variable {R ι N : Type*} {M : ι → Type*} [Semiring R] [Finite ι]
 
 /-- The value of a multilinear map at arguments drawn from the spans of sets `s i` lies in the
 span of its values at arguments drawn from the sets `s i`. -/
-theorem map_mem_span_image_pi (f : MultilinearMap R M N) (s : ∀ i, Set (M i)) {m : ∀ i, M i}
+theorem map_mem_span_image_pi (f : MultilinearMap (RingHom.id R) M N) (s : ∀ i, Set (M i)) {m : ∀
+    i, M i}
     (hm : ∀ i, m i ∈ Submodule.span R (s i)) :
     f m ∈ Submodule.span R (f '' Set.univ.pi s) := by
   classical

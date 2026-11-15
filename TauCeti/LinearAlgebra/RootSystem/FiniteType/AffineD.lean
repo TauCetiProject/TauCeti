@@ -48,10 +48,10 @@ The spine of the diagram is a chain, so its entries and the row sum along it com
 
 ## References
 
-This is the affine-`D` obstruction needed by the “chain/fork length constraints” step in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.  See J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, §11.4, and Bourbaki, *Lie Groups and
-Lie Algebras, Chapters 4--6*, Ch. VI, §4.
+This is the affine-`D` obstruction needed by the chain and fork length constraints of the
+classification of finite-type Cartan matrices. See J. E. Humphreys, *Introduction to Lie Algebras
+and Representation Theory*, §11.4, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
+Ch. VI, §4.
 -/
 
 public section

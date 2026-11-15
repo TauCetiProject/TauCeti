@@ -39,8 +39,8 @@ theorem.
 
 ## References
 
-This is the affine-`D` elimination in the “classification of finite-type Cartan matrices” target,
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See J. E. Humphreys,
+This is the affine-`D` elimination in the classification of finite-type Cartan matrices. See
+J. E. Humphreys,
 *Introduction to Lie Algebras and Representation Theory*, §11.4, and Bourbaki, *Lie Groups and Lie
 Algebras, Chapters 4--6*, Ch. VI, §4.
 -/

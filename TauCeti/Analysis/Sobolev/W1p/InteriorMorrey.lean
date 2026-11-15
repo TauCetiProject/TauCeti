@@ -108,7 +108,7 @@ theorem W1p.setIntegral_ball_norm_gradient_le {Omega : Opens E} (u : W1p mu Omeg
   rw [Measure.restrict_apply_univ, ENNReal.toReal_one, div_one] at hholder
   calc ∫ w in ball z r, ‖W1p.gradient u w‖ ∂mu
       = (eLpNorm (W1p.gradient u) 1 (mu.restrict (ball z r))).toReal := by
-        rw [integral_norm_eq_lintegral_enorm hf, eLpNorm_one_eq_lintegral_enorm hf]
+        rw [integral_norm_eq_lintegral_eNorm hf, eLpNorm_one_eq_lintegral_eNorm hf]
     _ ≤ (eLpNorm (W1p.gradient u) p (mu.restrict (ball z r)) * mu (ball z r) ^ q).toReal :=
         ENNReal.toReal_mono (ENNReal.mul_ne_top hfin
           (ENNReal.rpow_ne_top_of_nonneg hq measure_ball_lt_top.ne)) hholder

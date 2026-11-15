@@ -45,22 +45,15 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
   have hi := (isSmoothForm_zeroDim (n := 0) (RoughForm.ofFunction 𝓘(ℝ, E) g)).integrableTopForm hc b
   rw [integralTopForm_eq_chartIntegral l _ hi x
     (by simpa only [extChartAt_source_zeroDim] using hs), l.chartIntegral_eq_integral _ b x]
-  have ht (y : E) : y ∈ (extChartAt 𝓘(ℝ, E) x).target := by
-    have h := mem_extChartAt_target (I := 𝓘(ℝ, E)) x
-    rwa [Subsingleton.elim (extChartAt 𝓘(ℝ, E) x x) y] at h
-  have hx (y : E) : (extChartAt 𝓘(ℝ, E) x).symm y = x := by
-    have h := (extChartAt 𝓘(ℝ, E) x).map_target (ht y)
-    rwa [extChartAt_source_zeroDim, mem_singleton_iff] at h
-  have hcoef (y : E) :
-      (RoughForm.ofFunction 𝓘(ℝ, E) g).signedInChartAt b x (fun z ↦ l.signAt x z) y =
-        (l.signAt x x : ℝ) * g x := by
-    rw [RoughForm.signedInChartAt_apply, dite_eq_left (ht y), RoughForm.inChartAt_ofFunction]
-    simp only [hx, ContinuousAlternatingMap.constOfIsEmpty_apply]
-  simp_rw [hcoef]
-  rw [integral_const, measureReal_def, Module.Basis.addHaar_univ_of_isEmpty,
-    ENNReal.toReal_one, one_smul, Manifold.Orientation.orientationAt_mk,
-    Manifold.OrientationLift.signBasis_orientationAt]
-  simp only [Units.val_mul, Int.cast_mul]
+  -- the chart integral is the evaluation at `0`, which is the chart image of `x`
+  rw [Module.Basis.addHaar_eq_dirac, integral_dirac,
+    Subsingleton.elim (0 : E) (extChartAt 𝓘(ℝ, E) x x),
+    RoughForm.signedInChartAt_apply_of_mem_source _ b x _ (mem_extChartAt_source x),
+    RoughForm.inChartAt_ofFunction]
+  -- split the tangent orientation sign at `x` into the model sign and the lift sign
+  rw [Manifold.Orientation.orientationAt_mk, Manifold.OrientationLift.signBasis_orientationAt]
+  simp only [extChartAt_to_inv, ContinuousAlternatingMap.constOfIsEmpty_apply, Units.val_mul,
+    Int.cast_mul]
   ring
 
 /-- On a finite zero-dimensional manifold the actual integral is the signed sum of values.
