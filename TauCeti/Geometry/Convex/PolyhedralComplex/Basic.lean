@@ -29,14 +29,14 @@ refinement of `D` when each cell of `C` lies in a cell of `D`, and a subdivision
 supports agree. Both relations are reflexive, transitive and antisymmetric. A subcomplex is a
 complex whose cells are among the cells of another. A conical complex
 (`TauCeti.FinitePolyhedralComplex.IsConical`) has cone carriers as cells, and each subcomplex
-of a conical complex is conical. The simplest example is
+of a conical complex is conical. The predicate is adapted from
+`Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` at commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f` of the repository cited below. The simplest example is
 `TauCeti.FinitePolyhedralComplex.univ`, whose only cell is the whole space.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` and `Subcomplex.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
-commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). The conicality predicate
-is adapted from `Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` at commit
-`7f1e4c7714fb020473694755ad8748c8f15d0e7f` in the same repository.
+commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 -/
 
 public section
