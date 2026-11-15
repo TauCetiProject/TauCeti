@@ -210,8 +210,7 @@ theorem singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_
             (thomPairOverUnivIso F E).hom) R n := by
   simp [TopPair.singularHomologyMap_comp]
 
-/-- The homology of the Thom pair over a finite union of the chosen trivializing sets equals the
-object of the mapped diagram `thomPairFiniteTrivializingUnionDiagram`. -/
+/-- Homology of `thomPairOver` over a finite trivializing union equals the mapped diagram object. -/
 theorem singularHomology_thomPairOver_finiteTrivializingUnion_eq
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
     (R : C) (n : ℕ) (s : Finset B) :
@@ -220,31 +219,26 @@ theorem singularHomology_thomPairOver_finiteTrivializingUnion_eq
         ((thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)).obj s) := by
   rw [thomPairFiniteTrivializingUnionDiagram_obj, TopPair.singularHomologyFunctor_obj]
 
-/-- The homology of the Thom pair equals the cocone point of the mapped cocone
-`thomPairFiniteTrivializingUnionCocone`. -/
+/-- Homology of `thomPair` is the mapped cocone point of `thomPairFiniteTrivializingUnionCocone`. -/
 theorem singularHomology_thomPair_eq
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
     (R : C) (n : ℕ) :
-    (thomPair F E).singularHomology R n =
-      (TopPair.singularHomologyFunctor R n).obj
-        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt := by
+    (thomPair F E).singularHomology R n = (TopPair.singularHomologyFunctor R n).obj
+      (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt := by
   rw [thomPairFiniteTrivializingUnionCocone_pt, TopPair.singularHomologyFunctor_obj]
 
 section BaseDirectedUnion
 
 omit [∀ b, Zero (E b)]
-
 variable (F E)
 
-/-- The filtered diagram of finite unions of the chosen trivializing open sets, as subspaces of the
-base: the bases of the Thom pairs in `TauCeti.thomPairFiniteTrivializingUnionDiagram`. -/
+/-- Filtered diagram of finite unions of the chosen trivializing open sets in `B`. -/
 def baseFiniteTrivializingUnionDiagram : Finset B ⥤ TopCat.{w} where
   obj s := TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet)
   map f := TopCat.ofHom
     (ContinuousMap.inclusion (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le)))
 
-/-- The object of `TauCeti.baseFiniteTrivializingUnionDiagram` at `s` is the union of the chosen
-trivializing open sets over `s`. -/
+/-- The object of `TauCeti.baseFiniteTrivializingUnionDiagram` at `s`. -/
 @[simp]
 theorem baseFiniteTrivializingUnionDiagram_obj (s : Finset B) :
     (baseFiniteTrivializingUnionDiagram (B := B) F E).obj s =
@@ -261,8 +255,7 @@ theorem baseFiniteTrivializingUnionDiagram_map {s t : Finset B} (f : s ⟶ t) :
   (conj_eqToHom_iff_heq _ _ (baseFiniteTrivializingUnionDiagram_obj F E s)
     (baseFiniteTrivializingUnionDiagram_obj F E t)).2 HEq.rfl
 
-/-- The cocone of inclusions from finite unions of the chosen trivializing open sets into the
-base `B`. -/
+/-- Cocone of inclusions from finite unions of the chosen trivializing open sets into `B`. -/
 def baseFiniteTrivializingUnionCocone :
     Cocone (baseFiniteTrivializingUnionDiagram (B := B) F E) where
   pt := TopCat.of B
@@ -284,31 +277,19 @@ theorem baseFiniteTrivializingUnionCocone_ι_app (s : Finset B) :
     (baseFiniteTrivializingUnionDiagram_obj F E s)
     (baseFiniteTrivializingUnionCocone_pt (B := B) F E)).2 HEq.rfl
 
-private theorem baseFiniteTrivializingUnionCocone_ι_app_hom (s : Finset B) :
-    HEq (⇑((baseFiniteTrivializingUnionCocone (B := B) F E).ι.app s))
-      (Subtype.val : (⋃ b ∈ s, (trivializationAt F E b).baseSet) → B) := by
-  unfold baseFiniteTrivializingUnionCocone baseFiniteTrivializingUnionDiagram
-  rfl
-
-/-- In every degree, the singular homology of the base of a fibre bundle is the filtered colimit of
-the singular homologies of finite unions of the chosen trivializing open sets, for coefficients
-with exact filtered colimits. -/
+/-- Singular homology of `B` is the filtered colimit over finite unions of the chosen trivializing
+open sets, for coefficients with exact filtered colimits. -/
 def isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
     [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] (R : C) (p : ℕ) :
     IsColimit (((AlgebraicTopology.singularHomologyFunctor C p).obj R).mapCocone
       (baseFiniteTrivializingUnionCocone (B := B) F E)) := by
-  have hhom (s : Finset B) :
-      (⇑((baseFiniteTrivializingUnionCocone (B := B) F E).ι.app s) :
-        (⋃ b ∈ s, (trivializationAt F E b).baseSet) → B) = Subtype.val :=
-    eq_of_heq (baseFiniteTrivializingUnionCocone_ι_app_hom F E s)
+  have hhom (s : Finset B) : (⇑((baseFiniteTrivializingUnionCocone (B := B) F E).ι.app s) :
+      (⋃ b ∈ s, (trivializationAt F E b).baseSet) → B) = Subtype.val :=
+    eq_of_heq (by unfold baseFiniteTrivializingUnionCocone baseFiniteTrivializingUnionDiagram; rfl)
   refine isColimitMapCoconeSingularHomology R p (baseFiniteTrivializingUnionCocone F E)
-    (fun s ↦ by
-      rw [hhom s]
-      exact Topology.IsEmbedding.subtypeVal)
-    fun L hL ↦ ?_
-  have hL' : IsCompact (L : Set B) := hL
-  obtain ⟨s, hs⟩ := hL'.elim_finite_subcover _
+    (fun s ↦ hhom s ▸ Topology.IsEmbedding.subtypeVal) fun L hL ↦ ?_
+  obtain ⟨s, hs⟩ := (hL : IsCompact (L : Set B)).elim_finite_subcover _
     (fun b ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦
       mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
   exact ⟨s, fun b hb ↦ ⟨⟨b, hs hb⟩, congrFun (hhom s) _⟩⟩

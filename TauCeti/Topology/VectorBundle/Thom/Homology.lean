@@ -33,37 +33,26 @@ attached along its sphere bundle, the relative homology of the attachment is tha
 the rank, with the homology of the base, as in the relative homology of a sublevel pair across a
 Morse–Bott critical level.
 
-This file sets up the homology Thom map, relates it to `TauCeti.thomMap` via the Kronecker pairing,
-and deduces the Thom isomorphism in both homology and cohomology over an arbitrary base when `K` is
-a field:
+This file sets up `TauCeti.homologyThomMap`, relates it to `TauCeti.thomMap` via Kronecker duality,
+and proves the Thom isomorphism in homology and cohomology over an arbitrary base over a field `K`:
 
-1. **Functorial properties**: `TauCeti.homologyThomMap` is `K`-linear in `u`, natural in maps of
-   Thom pairs covering maps of bases (`TauCeti.homologyThomMap_naturality`) and in pull-backs of
-   bundles (`TauCeti.homologyThomMap_pullback`), and restricts on each fibre `(E_b, E_b ∖ {0})` to
-   capping with the fibre restriction of `u` followed by pushing forward along the constant map
+1. **Functoriality**: `TauCeti.homologyThomMap` is `K`-linear in `u`, natural
+   (`TauCeti.homologyThomMap_naturality`, `TauCeti.homologyThomMap_pullback`), and restricts on
+   fibres to capping with the fibre restriction of `u` pushed forward along the constant map
    (`TauCeti.singularHomologyMap_fiberThomPairMap_comp_homologyThomMap`).
-2. **Kronecker duality**: with chain coefficients `K` and cohomology values in any `K`-module `M`,
-   `⟨a, Φ_u(x)⟩ = (-1)^(n p) ⟨π^*a ⌣ u, x⟩` (`TauCeti.homologyThomMap_comp_singularKronecker`, via
-   `TopPair.pushforwardCap_comp_singularKronecker`). Over a field `K`, the universal coefficient
-   isomorphism identifies cohomology with the dual of homology, so `Φ_u` with coefficients `A = K`
-   is bijective in degree `m = n + p` if and only if `TauCeti.thomMap` with coefficients in `K` is
-   bijective in degree `p` (`TauCeti.bijective_homologyThomMap_iff`).
-3. **Global Thom isomorphism over a field and an arbitrary base**: over each finite union `U_s` of
-   trivializing open sets, `TopCat.pullbackCupRestrict` is bijective by
-   `TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`, so the restricted homology Thom map is
-   an isomorphism. Passing to the filtered colimit of singular homology with coefficients in `K`
-   over all finite unions of the chosen trivializing sets
-   (`TauCeti.isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion` and
-   `TauCeti.isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion`, built from
-   `TauCeti.isColimitMapCoconeSingularHomology`) proves that for any Thom class `u`, `Φ_u` with
-   coefficients `A = K` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` in `ModuleCat K` over any base
-   `B` with no compactness assumption (`TauCeti.isIso_homologyThomMap_of_field`,
-   `TauCeti.homologyThomIsoOfField`). Applying the universal coefficient equivalence
-   `Hᵖ(-; K, M) ≃ₗ[K] (Hₚ(-; K) ⟶ M)` (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`)
-   then yields the cohomology Thom isomorphism `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` for every
-   `K`-vector space `M` over any base `B` (`TauCeti.bijective_thomMap_of_field`,
-   `TauCeti.thomEquivOfField`), covering in particular `ZMod 2` coefficients for arbitrary
-   unoriented bundles and `ℚ` or `ℝ` coefficients for oriented bundles.
+2. **Kronecker duality**: `⟨a, Φ_u(x)⟩ = (-1)^(n p) ⟨π^*a ⌣ u, x⟩`
+   (`TauCeti.homologyThomMap_comp_singularKronecker`); over a field `K`, `Φ_u` with coefficients
+   `A = K` is bijective iff `TauCeti.thomMap` over `K` is (`TauCeti.bijective_homologyThomMap_iff`).
+3. **Global Thom isomorphism over a field**: finite-union bijectivity
+   (`TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`) and the filtered colimit of singular
+   homology over finite trivializing unions (`TauCeti.isColimitMapCoconeSingularHomology` via
+   `TauCeti.isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion` and
+   `TauCeti.isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion`) show that for any Thom
+   class `u`, `Φ_u` with coefficients `A = K` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any
+   base `B` (`TauCeti.isIso_homologyThomMap_of_field`, `TauCeti.homologyThomIsoOfField`); UCT
+   (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`) then gives
+   `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` (`TauCeti.bijective_thomMap_of_field`,
+   `TauCeti.thomEquivOfField`).
 
 ## Main definitions and results
 
@@ -72,13 +61,11 @@ a field:
 * `TauCeti.singularHomologyMap_fiberThomPairMap_comp_homologyThomMap`: the restriction to a fibre.
 * `TauCeti.homologyThomMap_comp_singularKronecker`: the homology Thom map is the transpose of the
   Thom map, up to the sign `(-1)^(n p)`.
-* `TauCeti.bijective_homologyThomMap_iff`: over a field, the homology Thom map with coefficients in
-  `K` is bijective exactly when the Thom map with coefficients in `K` is.
-* `TauCeti.isIso_homologyThomMap_of_field`, `TauCeti.bijective_homologyThomMap_of_field`,
-  `TauCeti.homologyThomIsoOfField`: for a Thom class `u`, the homology Thom isomorphism
-  `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (with coefficients `A = K`) over a field `K` and an arbitrary base.
+* `TauCeti.bijective_homologyThomMap_iff`, `TauCeti.isIso_homologyThomMap_of_field`,
+  `TauCeti.bijective_homologyThomMap_of_field`, `TauCeti.homologyThomIsoOfField`: for a Thom class
+  `u`, the homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over a field `K`.
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
-  with arbitrary vector-space coefficients over a field and an arbitrary base.
+  over a field and an arbitrary base with vector-space coefficients `M`.
 
 ## References
 
@@ -214,83 +201,65 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
   {K : Type w} [Field K]
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-/-- The homology Thom map restricted to a subset `W` of the base: capping on `(E|_W, E₀|_W)` with
-the restriction of `u` followed by pushing forward along `E|_W ⟶ W`. -/
 private def homologyThomMapOver {K : Type w} [CommRing K] (A : ModuleCat.{w} K) (W : Set B)
     (n p m : ℕ) (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     (thomPairOver F E W).singularHomology A m ⟶
       ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).obj (TopCat.of W) :=
   (thomPairOver F E W).pushforwardCap (thomPairOverProj F E W) A n p m h
-    (TopPair.singularCohomologyMap
-      (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
-        (zeroSectionCompl F E) W) n u)
+    (TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
+      (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u)
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
 private theorem homologyThomMapOver_naturality {K : Type w} [CommRing K] (A : ModuleCat.{w} K)
     {W W' : Set B} (hWW' : W ⊆ W') {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    homologyThomMapOver A W n p m h u ≫
-        ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
-          (TopCat.ofHom (ContinuousMap.inclusion hWW')) =
+    homologyThomMapOver A W n p m h u ≫ ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
+        (TopCat.ofHom (ContinuousMap.inclusion hWW')) =
       TopPair.singularHomologyMap (thomPairOverMap F E hWW') A m ≫
         homologyThomMapOver A W' n p m h u := by
-  have hu : TopPair.singularCohomologyMap (thomPairOverMap F E hWW') n
-      (TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
-        (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W') n u) =
-      TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap
-        (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u := by
-    rw [← TopPair.singularCohomologyMap_comp_apply, thomPairOverMap_comp_restrictPreimagePairMap]
   dsimp only [homologyThomMapOver]
-  rw [← hu]
-  exact TopPair.pushforwardCap_naturality (thomPairOverMap F E hWW') (thomPairOverProj F E W')
-    (thomPairOverProj F E W) (TopCat.ofHom (ContinuousMap.inclusion hWW'))
-    (TopCat.ext fun v ↦ by
-      rw [TopCat.comp_app, TopCat.comp_app]
-      exact ((congrArg (thomPairOverProj F E W')
-          (thomPairOverMap_fst_apply F E hWW' v)).trans
-          (thomPairOverProj_apply F E _)).trans
-        (congrArg (TopCat.ofHom (ContinuousMap.inclusion hWW'))
-          (thomPairOverProj_apply F E v)).symm) A h _
+  rw [← thomPairOverMap_comp_restrictPreimagePairMap F E hWW',
+    TopPair.singularCohomologyMap_comp_apply]
+  refine TopPair.pushforwardCap_naturality (thomPairOverMap F E hWW') (thomPairOverProj F E W')
+    (thomPairOverProj F E W) (TopCat.ofHom (ContinuousMap.inclusion hWW')) (TopCat.ext fun v ↦ ?_)
+    A h _
+  rw [TopCat.comp_app, TopCat.comp_app]
+  exact ((congrArg (thomPairOverProj F E W') (thomPairOverMap_fst_apply F E hWW' v)).trans
+    (thomPairOverProj_apply F E _)).trans
+    (congrArg (TopCat.ofHom (ContinuousMap.inclusion hWW')) (thomPairOverProj_apply F E v)).symm
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
 private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K]
     (A : ModuleCat.{w} K) (W : Set B) {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    homologyThomMapOver A W n p m h u ≫
-        ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
-          (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) =
+    homologyThomMapOver A W n p m h u ≫ ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) =
       TopPair.singularHomologyMap
-          (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) A m ≫
+        (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) A m ≫
         homologyThomMap F E A n p m h u := by
   have hι : thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom =
       TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
         (zeroSectionCompl F E) W := by
     rw [thomPairOverUnivIso_hom, thomPairOverMap_comp_restrictPreimagePairMap]
-  have hproj : TopPair.Hom.fst (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom)
-      ≫ thomPairProj F E =
-      thomPairOverProj F E W ≫ TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :=
-    TopCat.ext fun v ↦ by
-      rw [TopPair.Hom.fst_comp, TopCat.comp_app, TopCat.comp_app, TopCat.comp_app]
-      exact ((congrArg (thomPairProj F E)
-          ((congrArg (TopPair.Hom.fst (thomPairOverUnivIso F E).hom)
-            (thomPairOverMap_fst_apply F E (subset_univ W) v)).trans
-            (thomPairOverUnivIso_hom_fst_apply F E _))).trans
-          (thomPairProj_apply F E v.1)).trans
-        (congrArg (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-          (thomPairOverProj_apply F E v)).symm
   dsimp only [homologyThomMapOver]
   rw [← hι, homologyThomMap_def]
-  exact TopPair.pushforwardCap_naturality _ (thomPairProj F E) (thomPairOverProj F E W)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) hproj A h u
+  refine TopPair.pushforwardCap_naturality _ (thomPairProj F E) (thomPairOverProj F E W)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) (TopCat.ext fun v ↦ ?_) A h u
+  rw [TopPair.Hom.fst_comp, TopCat.comp_app, TopCat.comp_app, TopCat.comp_app]
+  exact ((congrArg (thomPairProj F E) ((congrArg (TopPair.Hom.fst (thomPairOverUnivIso F E).hom)
+      (thomPairOverMap_fst_apply F E (subset_univ W) v)).trans
+      (thomPairOverUnivIso_hom_fst_apply F E _))).trans (thomPairProj_apply F E v.1)).trans
+    (congrArg (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+      (thomPairOverProj_apply F E v)).symm
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
 private theorem bijective_homologyThomMapOver_iff (W : Set B) {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     Function.Bijective (homologyThomMapOver (ModuleCat.of K K) W n p m h u).hom ↔
-      Function.Bijective
-        (TopCat.pullbackCupRestrict (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
-          (zeroSectionCompl F E) (ModuleCat.of K K) W n p m (by omega) u) := by
+      Function.Bijective (TopCat.pullbackCupRestrict
+        (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
+        (zeroSectionCompl F E) (ModuleCat.of K K) W n p m (by omega) u) := by
   rw [pullbackCupRestrict_thomPair]
   exact (thomPairOver F E W).bijective_pushforwardCap_iff (thomPairOverProj F E W) h _
 
@@ -304,11 +273,8 @@ private theorem isIso_homologyThomMapOver_finiteTrivializingUnion {p m : ℕ}
   rw [ConcreteCategory.isIso_iff_bijective, bijective_homologyThomMapOver_iff]
   exact bijective_pullbackCupRestrict_thomPair_biUnion (ModuleCat.of K K) s
     (fun b _ ↦ (trivializationAt F E b).open_baseSet)
-    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) p m (by omega)
-    fun b _ ↦ hu b
+    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) p m (by omega) fun b _ ↦ hu b
 
-/-- The restricted homology Thom maps assemble into a natural isomorphism over the diagram of finite
-unions of the chosen trivializing open sets. -/
 private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
@@ -321,8 +287,7 @@ private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
         (ModuleCat.of K K) m s).symm ≪≫
       @asIso _ _ _ _ (homologyThomMapOver (ModuleCat.of K K)
         (⋃ b ∈ s, (trivializationAt F E b).baseSet) (finrank ℝ F) p m h u)
-        (isIso_homologyThomMapOver_finiteTrivializingUnion h hu s) ≪≫
-      eqToIso (by simp))
+        (isIso_homologyThomMapOver_finiteTrivializingUnion h hu s) ≪≫ eqToIso (by simp))
     fun {s t} f ↦ by
       have := isIso_homologyThomMapOver_finiteTrivializingUnion h hu s
       have := isIso_homologyThomMapOver_finiteTrivializingUnion h hu t
@@ -336,25 +301,22 @@ private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
         (W' := ⋃ b ∈ t, (trivializationAt F E b).baseSet)
         (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le)) h u)]
 
-/-- **The homology Thom isomorphism over a field** (Spanier, Chapter 5, Section 7). For a real
-vector bundle `E → B` over an arbitrary base `B`, a field `K`, and any Thom class
-`u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`), the homology Thom map `x ↦ π_*(x ⌢ u)` is an isomorphism
-`Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`r + p = m`) in `ModuleCat K`. -/
+/-- **The homology Thom isomorphism over a field** (Spanier, Chapter 5, Section 7): for `E → B`
+over any base `B`, a field `K`, and a Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`),
+`homologyThomMap` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`r + p = m`) in `ModuleCat K`. -/
 theorem isIso_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
     IsIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u) := by
   let P₁ := isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion (F := F) (E := E)
     (ModuleCat.of K K) m
-  let P₂ := isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E
-    (ModuleCat.of K K) p
+  let P₂ := isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E (ModuleCat.of K K) p
   let α := homologyThomMapOverNatIso h hu
   let hthom := (singularHomology_thomPair_eq (F := F) (E := E) (ModuleCat.of K K) m).symm
   let hbase := congrArg (((singularHomologyFunctor (ModuleCat.{w} K) p).obj (ModuleCat.of K K)).obj)
     (baseFiniteTrivializingUnionCocone_pt F E).symm
   have hcocone : eqToHom hthom ≫
-      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫
-      eqToHom hbase =
+      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫ eqToHom hbase =
       (P₁.coconePointsIsoOfNatIso P₂ α).hom := by
     refine P₁.hom_ext fun s ↦ (?_ : _ = _).trans (P₁.comp_coconePointsIsoOfNatIso_hom P₂ α s).symm
     dsimp only [Functor.mapCocone_ι_app, α, homologyThomMapOverNatIso,
@@ -368,18 +330,15 @@ theorem isIso_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
       reassoc_of% (homologyThomMapOver_comp_map_subtypeVal (ModuleCat.of K K)
         (⋃ b ∈ s, (trivializationAt F E b).baseSet) h u).symm]
   have : IsIso (eqToHom hthom ≫
-      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫
-      eqToHom hbase) := by
-    rw [hcocone]
-    exact (P₁.coconePointsIsoOfNatIso P₂ α).isIso_hom
-  have : IsIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫
-      eqToHom hbase) :=
-    IsIso.of_isIso_comp_left (eqToHom hthom) _
+      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫ eqToHom hbase) :=
+    hcocone.symm ▸ (P₁.coconePointsIsoOfNatIso P₂ α).isIso_hom
+  have := IsIso.of_isIso_comp_left (eqToHom hthom)
+    (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫ eqToHom hbase)
   exact IsIso.of_isIso_comp_right _ (eqToHom hbase)
 
-/-- **The homology Thom map is bijective over a field** on an arbitrary base `B`: for a field `K`
-and any Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`), the homology Thom map with coefficients
-in `K`, `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` (`r + p = m`), is bijective. -/
+/-- **The homology Thom map is bijective over a field** on any base `B`: for a Thom class
+`u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`), the homology Thom map with coefficients in `K`,
+`Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` (`r + p = m`), is bijective. -/
 theorem bijective_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
@@ -387,15 +346,14 @@ theorem bijective_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = 
   (ConcreteCategory.isIso_iff_bijective _).1 (isIso_homologyThomMap_of_field p m h hu)
 
 variable (F E) in
-/-- **The homology Thom isomorphism over a field**, bundled as an isomorphism
-`Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`finrank ℝ F + p = m`) in `ModuleCat K`, over an arbitrary base `B`. -/
+/-- **The homology Thom isomorphism over a field**, bundled as `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any
+base `B`. -/
 def homologyThomIsoOfField (p m : ℕ) (h : finrank ℝ F + p = m := by lia)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) :
     (thomPair F E).singularHomology (ModuleCat.of K K) m ≅
       ((singularHomologyFunctor (ModuleCat.{w} K) p).obj (ModuleCat.of K K)).obj (TopCat.of B) :=
-  @asIso _ _ _ _ (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u)
-    (isIso_homologyThomMap_of_field p m h hu)
+  @asIso _ _ _ _ _ (isIso_homologyThomMap_of_field p m h hu)
 
 /-- The forward morphism of `TauCeti.homologyThomIsoOfField` is `TauCeti.homologyThomMap`. -/
 @[simp]
@@ -403,43 +361,37 @@ theorem homologyThomIsoOfField_hom (p m : ℕ) (h : finrank ℝ F + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) :
     (homologyThomIsoOfField F E p m h u hu).hom =
-      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u :=
-  (rfl)
+      homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u := (rfl)
 
 /-- **The cohomology Thom isomorphism over a field and an arbitrary base** (Milnor–Stasheff,
-Theorem 10.4; Hatcher, Theorem 4D.10). For a real vector bundle `E → B` over an arbitrary base `B`,
-a field `K`, any `K`-vector space `M`, and any Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`),
-the Thom map `a ↦ π^*a ⌣ u` is bijective from `Hᵖ(B; K, M)` to `Hᵐ(E, E₀; K, M)` (`p + r = m`). -/
+Theorem 10.4; Hatcher, Theorem 4D.10): for `E → B` over any `B`, a field `K`, any `K`-vector space
+`M`, and any Thom class `u`, `thomMap` is bijective from `Hᵖ(B; K, M)` to `Hᵐ(E, E₀; K, M)`. -/
 theorem bijective_thomMap_of_field (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finrank ℝ F = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
     Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
   have h' : finrank ℝ F + p = m := by omega
   have : IsIso ((thomPair F E).pushforwardCap (thomPairProj F E) (ModuleCat.of K K)
-      (finrank ℝ F) p m h' u) :=
-    isIso_homologyThomMap_of_field p m h' hu
+      (finrank ℝ F) p m h' u) := isIso_homologyThomMap_of_field p m h' hu
   rw [thomMap_def]
   exact (thomPair F E).bijective_pullbackCup_of_isIso_pushforwardCap (thomPairProj F E) M h h' u
 
 variable (F E) in
-/-- **The cohomology Thom isomorphism over a field and an arbitrary base**, bundled as a `K`-linear
-equivalence `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` (`p + finrank ℝ F = m`). -/
+/-- **The cohomology Thom isomorphism over a field and an arbitrary base**, bundled as
+`Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)`. -/
 def thomEquivOfField (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finrank ℝ F = m := by lia)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) :
     (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p ≃ₗ[K]
       (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
-  LinearEquiv.ofBijective (thomMap F E M (finrank ℝ F) p m h u)
-    (bijective_thomMap_of_field M p m h hu)
+  LinearEquiv.ofBijective _ (bijective_thomMap_of_field M p m h hu)
 
 /-- `TauCeti.thomEquivOfField` applies `TauCeti.thomMap`. -/
 @[simp]
 theorem thomEquivOfField_apply (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finrank ℝ F = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
-    (hu : IsThomClass F E u)
-    (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
-    thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a :=
-  (rfl)
+    (hu : IsThomClass F E u) (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
+    thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a := (rfl)
 
 end IsomorphismOfField
 

@@ -355,8 +355,7 @@ lemma coe_sphereBasePoint_down (d : ℕ) :
     ((sphereBasePoint.{u} d).down : EuclideanSpace ℝ (Fin (d + 2))) = EuclideanSpace.single 0 1 :=
   (rfl)
 
-/-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`, which determines the
-poles of `TopCat.sphere 0` (`= TopCat.diskBoundary 1`) and the generator of reduced `H₀(S⁰)`. -/
+/-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`. -/
 abbrev sphereZeroBasis : OrthonormalBasis (Fin 1) ℝ (EuclideanSpace ℝ (ULift.{u} (Fin 1))) :=
   (EuclideanSpace.basisFun (ULift.{u} (Fin 1)) ℝ).reindex Equiv.ulift
 
@@ -371,14 +370,12 @@ def sphereMinus : TopCat.diskBoundary.{u} 1 :=
 /-- `TauCeti.spherePlus` is the image of `sphereZeroBasis 0` under `(diskBoundaryHomeomorph 1)⁻¹`.
 -/
 lemma spherePlus_def :
-    spherePlus.{u} = (diskBoundaryHomeomorph 1).symm ⟨sphereZeroBasis 0, by simp⟩ :=
-  (rfl)
+    spherePlus.{u} = (diskBoundaryHomeomorph 1).symm ⟨sphereZeroBasis 0, by simp⟩ := (rfl)
 
-/-- `TauCeti.sphereMinus` is the image of `-sphereZeroBasis 0` under
-`(diskBoundaryHomeomorph 1)⁻¹`. -/
+/-- `TauCeti.sphereMinus` is the image of `-sphereZeroBasis 0` under `(diskBoundaryHomeomorph 1)⁻¹`.
+-/
 lemma sphereMinus_def :
-    sphereMinus.{u} = (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩) :=
-  (rfl)
+    sphereMinus.{u} = (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩) := (rfl)
 
 /-- The coordinate of `TauCeti.spherePlus` in `EuclideanSpace ℝ (Fin 1)` is `1`. -/
 @[simp]
@@ -386,8 +383,7 @@ lemma spherePlus_down_apply_zero :
     (((spherePlus.{u} : TopCat.diskBoundary.{u} 1) :
       ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
         EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
-  rw [spherePlus, diskBoundaryHomeomorph_symm_apply_down_apply]
-  simp
+  simp [spherePlus, diskBoundaryHomeomorph_symm_apply_down_apply]
 
 /-- The coordinate of `TauCeti.sphereMinus` in `EuclideanSpace ℝ (Fin 1)` is `-1`. -/
 @[simp]
@@ -395,10 +391,9 @@ lemma sphereMinus_down_apply_zero :
     (((sphereMinus.{u} : TopCat.diskBoundary.{u} 1) :
       ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
         EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
-  rw [sphereMinus, diskBoundaryHomeomorph_symm_apply_down_apply]
-  simp
+  simp [sphereMinus, diskBoundaryHomeomorph_symm_apply_down_apply]
 
-/-- Under the boundary inclusion into `TopCat.disk 1`, `TauCeti.spherePlus` has coordinate `1`. -/
+/-- Under `TopCat.diskBoundaryInclusion 1`, `TauCeti.spherePlus` has coordinate `1`. -/
 @[simp]
 lemma spherePlus_coord :
     (((TopCat.diskBoundaryInclusion.{u} 1 spherePlus) :
@@ -406,7 +401,7 @@ lemma spherePlus_coord :
         EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
   rw [TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down, spherePlus_down_apply_zero]
 
-/-- Under the boundary inclusion into `TopCat.disk 1`, `TauCeti.sphereMinus` has coordinate `-1`. -/
+/-- Under `TopCat.diskBoundaryInclusion 1`, `TauCeti.sphereMinus` has coordinate `-1`. -/
 @[simp]
 lemma sphereMinus_coord :
     (((TopCat.diskBoundaryInclusion.{u} 1 sphereMinus) :
@@ -425,10 +420,8 @@ lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
 lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{u} 1) ≠ spherePlus := by
   intro h
   have h' := congrArg (fun p : TopCat.diskBoundary.{u} 1 ↦
-    (((p : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1)) 0)) h
-  simp only [sphereMinus_down_apply_zero, spherePlus_down_apply_zero] at h'
-  norm_num at h'
+    ((p : ULift.{u} _).down : EuclideanSpace ℝ (Fin 1)) 0) h
+  norm_num [sphereMinus_down_apply_zero, spherePlus_down_apply_zero] at h'
 
 /-- The boundary `S⁰` of the `1`-disk has the discrete topology. -/
 instance TopCat.discreteTopology_diskBoundary_one :
@@ -442,40 +435,30 @@ instance TopCat.discreteTopology_diskBoundary_one :
 instance TopCat.discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
   TopCat.discreteTopology_diskBoundary_one
 
-/-- The homeomorphism `ULift Bool ≃ₜ TopCat.diskBoundary 1` sending `true` to `TauCeti.spherePlus`
-and `false` to `TauCeti.sphereMinus`. -/
-def uliftBoolHomeomorphDiskBoundaryOne : ULift.{u} Bool ≃ₜ TopCat.diskBoundary.{u} 1 where
-  toFun b := if b.down then spherePlus else sphereMinus
-  invFun x := by classical exact ULift.up (decide (x = spherePlus))
-  left_inv := fun ⟨b⟩ ↦ by
-    classical
-    cases b
-    · exact ULift.ext (decide_eq_false sphereMinus_ne_spherePlus)
-    · exact ULift.ext (decide_eq_true rfl)
-  right_inv x := by
-    classical
-    rcases eq_sphereMinus_or_eq_spherePlus x with rfl | rfl
-    · dsimp only
-      rw [decide_eq_false sphereMinus_ne_spherePlus]
-      rfl
-    · dsimp only
-      rw [decide_eq_true rfl]
-      rfl
-  continuous_toFun := continuous_of_discreteTopology
-  continuous_invFun := continuous_of_discreteTopology
-
-/-- The homeomorphism `ULift Bool ≃ₜ TopCat.sphere 0` sending `true` to `TauCeti.spherePlus` and
-`false` to `TauCeti.sphereMinus`. -/
+open Classical in
+/-- The homeomorphism `ULift Bool ≃ₜ TopCat.sphere 0` (`true ↦ spherePlus`, `false ↦ sphereMinus`).
+-/
 def uliftBoolHomeomorphSphereZero : ULift.{u} Bool ≃ₜ TopCat.sphere.{u} 0 :=
-  uliftBoolHomeomorphDiskBoundaryOne
+  ({ toFun b := if b.down then spherePlus else sphereMinus
+     invFun x := ULift.up (decide (x = spherePlus))
+     left_inv := fun ⟨b⟩ ↦ by
+       cases b
+       exacts [ULift.ext (decide_eq_false sphereMinus_ne_spherePlus),
+         ULift.ext (decide_eq_true rfl)]
+     right_inv x := by
+       rcases eq_sphereMinus_or_eq_spherePlus x with rfl | rfl <;> dsimp only
+       · rw [decide_eq_false sphereMinus_ne_spherePlus]; rfl
+       · rw [decide_eq_true rfl]; rfl
+     continuous_toFun := continuous_of_discreteTopology
+     continuous_invFun := continuous_of_discreteTopology } :
+    ULift.{u} Bool ≃ₜ TopCat.diskBoundary.{u} 1)
 
 /-- `TauCeti.uliftBoolHomeomorphSphereZero` maps `true` to `spherePlus` and `false` to
 `sphereMinus`. -/
 @[simp]
 lemma uliftBoolHomeomorphSphereZero_apply (b : ULift.{u} Bool) :
     uliftBoolHomeomorphSphereZero b =
-      (if b.down then spherePlus else sphereMinus : TopCat.diskBoundary.{u} 1) :=
-  (rfl)
+      (if b.down then spherePlus else sphereMinus : TopCat.diskBoundary.{u} 1) := (rfl)
 
 /-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/
@@ -777,64 +760,52 @@ def sphereZeroProdMinusι (Y : TopCat.{u}) : Y ⟶ sphere.{u} 0 ⊗ Y :=
 /-- Evaluating `TopCat.sphereZeroProdPlusι` at `y` pairs the positive pole with `y`. -/
 @[simp]
 theorem sphereZeroProdPlusι_apply (Y : TopCat.{u}) (y : Y) :
-    sphereZeroProdPlusι Y y = (TauCeti.spherePlus, y) :=
-  (rfl)
+    sphereZeroProdPlusι Y y = (TauCeti.spherePlus, y) := (rfl)
 
 /-- Evaluating `TopCat.sphereZeroProdMinusι` at `y` pairs the negative pole with `y`. -/
 @[simp]
 theorem sphereZeroProdMinusι_apply (Y : TopCat.{u}) (y : Y) :
-    sphereZeroProdMinusι Y y = (TauCeti.sphereMinus, y) :=
-  (rfl)
+    sphereZeroProdMinusι Y y = (TauCeti.sphereMinus, y) := (rfl)
 
-/-- Composing `TopCat.sphereZeroProdPlusι` with the first projection gives the constant map at
-`TauCeti.spherePlus`. -/
+/-- Composing `TopCat.sphereZeroProdPlusι` with `fst` gives `TopCat.const TauCeti.spherePlus`. -/
 @[reassoc (attr := simp)]
 theorem sphereZeroProdPlusι_fst (Y : TopCat.{u}) :
-    sphereZeroProdPlusι Y ≫ fst _ Y = TopCat.const TauCeti.spherePlus :=
-  lift_fst _ _
+    sphereZeroProdPlusι Y ≫ fst _ Y = TopCat.const TauCeti.spherePlus := lift_fst _ _
 
-/-- Composing `TopCat.sphereZeroProdPlusι` with the second projection is the identity. -/
+/-- Composing `TopCat.sphereZeroProdPlusι` with `snd` is the identity. -/
 @[reassoc (attr := simp)]
-theorem sphereZeroProdPlusι_snd (Y : TopCat.{u}) :
-    sphereZeroProdPlusι Y ≫ snd _ Y = 𝟙 Y :=
+theorem sphereZeroProdPlusι_snd (Y : TopCat.{u}) : sphereZeroProdPlusι Y ≫ snd _ Y = 𝟙 Y :=
   lift_snd _ _
 
-/-- Composing `TopCat.sphereZeroProdMinusι` with the first projection gives the constant map at
-`TauCeti.sphereMinus`. -/
+/-- Composing `TopCat.sphereZeroProdMinusι` with `fst` gives `TopCat.const TauCeti.sphereMinus`. -/
 @[reassoc (attr := simp)]
 theorem sphereZeroProdMinusι_fst (Y : TopCat.{u}) :
-    sphereZeroProdMinusι Y ≫ fst _ Y = TopCat.const TauCeti.sphereMinus :=
-  lift_fst _ _
+    sphereZeroProdMinusι Y ≫ fst _ Y = TopCat.const TauCeti.sphereMinus := lift_fst _ _
 
-/-- Composing `TopCat.sphereZeroProdMinusι` with the second projection is the identity. -/
+/-- Composing `TopCat.sphereZeroProdMinusι` with `snd` is the identity. -/
 @[reassoc (attr := simp)]
-theorem sphereZeroProdMinusι_snd (Y : TopCat.{u}) :
-    sphereZeroProdMinusι Y ≫ snd _ Y = 𝟙 Y :=
+theorem sphereZeroProdMinusι_snd (Y : TopCat.{u}) : sphereZeroProdMinusι Y ≫ snd _ Y = 𝟙 Y :=
   lift_snd _ _
 
 /-- The isomorphism `(Σ _ : ULift Bool, Y) ≅ S⁰ × Y` in `TopCat` identifying `S⁰ × Y` with the
 disjoint union of two copies of `Y`. -/
 def sigmaSphereZeroProdIso (Y : TopCat.{u}) :
     TopCat.of (Σ _ : ULift.{u} Bool, Y) ≅ sphere.{u} 0 ⊗ Y where
-  hom := ConcreteCategory.ofHom <| ContinuousMap.mk
-    (fun p ↦ (TauCeti.uliftBoolHomeomorphSphereZero p.1, p.2))
-    (continuous_sigma_iff.2 fun _ ↦ by fun_prop)
-  inv := ConcreteCategory.ofHom <| ContinuousMap.mk
-    (fun q ↦ ⟨TauCeti.uliftBoolHomeomorphSphereZero.symm q.1, q.2⟩)
-    (continuous_prod_of_discrete_left.2 fun a ↦
-      (ContinuousMap.sigmaMk (X := fun _ : ULift.{u} Bool ↦ (Y : Type u))
-        (TauCeti.uliftBoolHomeomorphSphereZero.symm a)).continuous)
+  hom := ConcreteCategory.ofHom ⟨fun p ↦ (TauCeti.uliftBoolHomeomorphSphereZero p.1, p.2),
+    continuous_sigma_iff.2 fun _ ↦ by fun_prop⟩
+  inv := ConcreteCategory.ofHom ⟨fun q ↦ ⟨TauCeti.uliftBoolHomeomorphSphereZero.symm q.1, q.2⟩,
+    continuous_prod_of_discrete_left.2 fun a ↦ (ContinuousMap.sigmaMk
+      (X := fun _ : ULift.{u} Bool ↦ (Y : Type u))
+      (TauCeti.uliftBoolHomeomorphSphereZero.symm a)).continuous⟩
   hom_inv_id := TopCat.ext fun ⟨b, _⟩ ↦ by
-    dsimp
-    exact Sigma.ext (TauCeti.uliftBoolHomeomorphSphereZero.symm_apply_apply b) .rfl
+    dsimp; exact Sigma.ext (TauCeti.uliftBoolHomeomorphSphereZero.symm_apply_apply b) .rfl
   inv_hom_id := TopCat.ext fun ⟨a, _⟩ ↦
     Prod.ext (TauCeti.uliftBoolHomeomorphSphereZero.apply_symm_apply a) rfl
 
 /-- The forward map of `TopCat.sigmaSphereZeroProdIso` pairs the pole of `p.1` with `p.2`. -/
 @[simp]
 theorem sigmaSphereZeroProdIso_hom_apply (Y : TopCat.{u}) (p : Σ _ : ULift.{u} Bool, Y) :
-    (sigmaSphereZeroProdIso Y).hom p = (TauCeti.uliftBoolHomeomorphSphereZero p.1, p.2) :=
-  (rfl)
+    (sigmaSphereZeroProdIso Y).hom p = (TauCeti.uliftBoolHomeomorphSphereZero p.1, p.2) := (rfl)
 
 /-- The inverse map of `TopCat.sigmaSphereZeroProdIso` indexes `q.2` by the pole `q.1`. -/
 @[simp]
@@ -842,21 +813,18 @@ theorem sigmaSphereZeroProdIso_inv_apply (Y : TopCat.{u}) (q : (sphere.{u} 0 ⊗
     (sigmaSphereZeroProdIso Y).inv q = ⟨TauCeti.uliftBoolHomeomorphSphereZero.symm q.1, q.2⟩ :=
   (rfl)
 
-/-- The `true` summand inclusion of `Σ _ : ULift Bool, Y` composes with
-`TopCat.sigmaSphereZeroProdIso` to `TopCat.sphereZeroProdPlusι`. -/
+/-- The `true` summand inclusion composes with `sigmaSphereZeroProdIso` to `sphereZeroProdPlusι`. -/
 @[reassoc (attr := simp)]
 theorem sigmaι_true_comp_sigmaSphereZeroProdIso_hom (Y : TopCat.{u}) :
     sigmaι (fun _ : ULift.{u} Bool ↦ Y) ⟨true⟩ ≫ (sigmaSphereZeroProdIso Y).hom =
-      sphereZeroProdPlusι Y :=
-  TopCat.ext fun _ ↦ rfl
+      sphereZeroProdPlusι Y := TopCat.ext fun _ ↦ rfl
 
-/-- The `false` summand inclusion of `Σ _ : ULift Bool, Y` composes with
-`TopCat.sigmaSphereZeroProdIso` to `TopCat.sphereZeroProdMinusι`. -/
+/-- The `false` summand inclusion composes with `sigmaSphereZeroProdIso` to `sphereZeroProdMinusι`.
+-/
 @[reassoc (attr := simp)]
 theorem sigmaι_false_comp_sigmaSphereZeroProdIso_hom (Y : TopCat.{u}) :
     sigmaι (fun _ : ULift.{u} Bool ↦ Y) ⟨false⟩ ≫ (sigmaSphereZeroProdIso Y).hom =
-      sphereZeroProdMinusι Y :=
-  TopCat.ext fun _ ↦ rfl
+      sphereZeroProdMinusι Y := TopCat.ext fun _ ↦ rfl
 
 end TopCat
 
