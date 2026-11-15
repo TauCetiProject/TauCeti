@@ -46,8 +46,10 @@ for a variable `J` reduce to the case `J = i`.
 * `TauCeti.exists_ball_isUnit_standardFrame`, `TauCeti.memWkpLoc_standardFrame`,
   `TauCeti.memWkpLoc_ring_inverse_standardFrame`: invertibility near `z₀` and Sobolev regularity
   of the frame and its inverse.
+* `TauCeti.contDiffOn_standardFrame`: the frame is as smooth as `J`.
 * `TauCeti.frameCoeff`: the coefficient `C' = Φ⁻¹((∂ₛΦ + J ∂ₜΦ) + C Φ)`, with
-  `TauCeti.frameCoeff_apply`.
+  `TauCeti.frameCoeff_apply`, and `TauCeti.add_frame_eq`: the pointwise identity
+  `∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)` for `ξ = Φ η`.
 * `TauCeti.isWeakLinearCauchyRiemannOn_iff_frame`: the reduction for any frame, and
   `TauCeti.isWeakLinearCauchyRiemannOn_iff_standardFrame` for the standard frame.
 * `TauCeti.memLpLoc_frameCoeff_iff`: `C'` is locally `Lᵖ` exactly when `C` is.
@@ -124,6 +126,13 @@ theorem continuousOn_standardFrame {U : Set ℂ} (hJ : ContinuousOn J U) :
   ((continuousOn_const.sub (hJ.clm_comp continuousOn_const)).const_smul ((2 : ℝ)⁻¹)).clm_comp
     (continuousOn_const (c := (Φ₁ : V →L[ℝ] V)))
 
+omit [CompleteSpace V] in
+/-- The standard frame is `Cⁿ` where `J` is. -/
+theorem contDiffOn_standardFrame {U : Set ℂ} {n : WithTop ℕ∞} (hJ : ContDiffOn ℝ n J U) :
+    ContDiffOn ℝ n (standardFrame J z₀ Φ₁) U :=
+  ((contDiffOn_const.sub (hJ.clm_comp contDiffOn_const)).const_smul ((2 : ℝ)⁻¹)).clm_comp
+    (contDiffOn_const (c := (Φ₁ : V →L[ℝ] V)))
+
 /-- **Invertibility near the base point.** For `J` continuous on an open set `Ω ∋ z₀` with
 `J(z₀)² = -1`, the standard frame is invertible on a disc about `z₀` inside `Ω`. -/
 theorem exists_ball_isUnit_standardFrame {Ω : Set ℂ} (hΩ : IsOpen Ω) (hz₀ : z₀ ∈ Ω)
@@ -179,7 +188,7 @@ omit [CompleteSpace V] in
 /-- The pointwise identity behind the reduction: for `ξ = Φ η` with `J Φ = Φ i`,
 `∂ₛξ + J ∂ₜξ + C ξ = Φ(∂ₛη + i ∂ₜη + C' η)`, written for the values `a = ∂ₛη`, `b = ∂ₜη` and
 `w = η`. -/
-private theorem add_frame_eq (hu : IsUnit (Φ z))
+theorem add_frame_eq (hu : IsUnit (Φ z))
     (hJ : J z ∘L Φ z = Φ z ∘L (I • ContinuousLinearMap.id ℝ V)) (a b w : V) :
     (DΦ z 1 w + Φ z a) + J z (DΦ z I w + Φ z b) + C z (Φ z w) =
       Φ z (a + I • b + frameCoeff J C Φ DΦ z w) := by

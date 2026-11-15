@@ -141,6 +141,24 @@ theorem ContDiff.contDiff_hadamardFactor (f : E → F)
     (x : E) : ContDiff ℝ ∞ (hadamardFactor f x) := by
   simpa using ContDiff.contDiff_hadamardFactor_of_succ (⊤ : ℕ∞) f (by simpa using hf) x
 
+/-- The averaged derivatives of a jointly `C¹` family of maps `f p` along segments whose endpoints
+depend continuously on `p ∈ S` depend continuously on `p ∈ S`. -/
+theorem ContDiff.continuousOn_hadamardFactor {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {f : P → E → F} (hf : ContDiff ℝ 1 fun q : P × E ↦ f q.1 q.2)
+    {a b : P → E} {S : Set P} (ha : ContinuousOn a S) (hb : ContinuousOn b S) :
+    ContinuousOn (fun p ↦ hadamardFactor (f p) (a p) (b p)) S := by
+  -- the derivative of `y ↦ f p (x + y)` at `y`, jointly in `(p, x)` and `y`
+  have hg : ContDiff ℝ 0 (fun q : (P × E) × E ↦ fderiv ℝ (f q.1.1) (q.1.2 + q.2)) :=
+    ContDiff.fderiv (f := fun q : (P × E) × E ↦ f q.1.1)
+      (hf.comp (contDiff_fst.fst.fst.prodMk contDiff_snd)) (contDiff_fst.snd.add contDiff_snd)
+      (by norm_num)
+  have hav := hg.contDiff_segmentAverage_param (w := fun _ ↦ 1) intervalIntegrable_const 0
+  have heq (p : P) : hadamardFactor (f p) (a p) (b p) =
+      segmentAverage (fun _ ↦ 1) (fun y ↦ fderiv ℝ (f p) (a p + y)) 0 (b p - a p) := by
+    simp [hadamardFactor, segmentAverage]
+  simp only [heq]
+  exact hav.continuous.comp_continuousOn ((continuousOn_id.prodMk ha).prodMk (hb.sub ha))
+
 namespace TauCeti
 
 open scoped Nat in
