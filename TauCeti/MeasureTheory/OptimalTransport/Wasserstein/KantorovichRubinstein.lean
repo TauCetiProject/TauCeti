@@ -106,7 +106,7 @@ theorem ofReal_integral_sub_integral_le_wassersteinEDist_one {f : X → ℝ}
   -- `∫⁻ edist ≤ eLpNorm edist 1`, with the right-hand side `∞` when `edist` is not measurable.
   refine le_wassersteinEDist fun π hπ ↦ hdual.trans
     ((transportCost_le_lintegral hπ _).trans ?_)
-  simpa using lintegral_enorm_le_eLpNorm_one (μ := π) (f := fun z : X × X ↦ edist z.1 z.2)
+  simpa using lintegral_eNorm_le_eLpNorm_one (μ := π) (f := fun z : X × X ↦ edist z.1 z.2)
 
 end WeakDuality
 

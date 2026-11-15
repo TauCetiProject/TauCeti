@@ -153,13 +153,13 @@ theorem IsUpperUnitriangular.ext [LinearOrder m] [Zero R] [One R] {M N : Matrix 
     · exact (hM.apply_diag _).trans (hN.apply_diag _).symm
 
 /-- The determinant of an upper-unitriangular matrix is one. -/
-theorem IsUpperUnitriangular.det_eq_one [Fintype m] [LinearOrder m] [CommRing R]
+theorem IsUpperUnitriangular.det_eq_one [Fintype m] [DecidableEq m] [LinearOrder m] [CommRing R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : M.det = 1 := by
   rw [det_of_isUpperTriangular hM.isUpperTriangular]
   exact Finset.prod_eq_one fun i _ ↦ hM.apply_diag i
 
 /-- The determinant of an upper-unitriangular matrix is a unit. -/
-theorem IsUpperUnitriangular.isUnit_det [Fintype m] [LinearOrder m] [CommRing R]
+theorem IsUpperUnitriangular.isUnit_det [Fintype m] [DecidableEq m] [LinearOrder m] [CommRing R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : IsUnit M.det := by
   rw [hM.det_eq_one]
   exact isUnit_one

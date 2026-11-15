@@ -216,7 +216,7 @@ private theorem finprod_iSup_plucker_of_pseudoBasis {W : Submodule K (ι → K)}
       ∏ k : Fin p, (Ideal.absNorm (J k) : ℝ) := by
   have hsupp (k : Fin p) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k) :=
-    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ k) fun I ↦ (Ideal.absNorm I : ℝ)
+    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (J k) fun I ↦ (Ideal.absNorm I : ℝ)
   simp_rw [iSup_apply_plucker_of_pseudoBasis b hJ hW]
   rw [finprod_prod_comm _ _ fun k _ ↦ hsupp k]
   exact Finset.prod_congr rfl fun k _ ↦ FinitePlace.finprod_absNorm_pow_multiplicity (R := ℝ) (hJ k)

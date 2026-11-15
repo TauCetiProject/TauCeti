@@ -74,6 +74,10 @@ result to each continuous coordinate functional and reconstruct by a finite sum.
   `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
   the function on `Ω`, and is closed under the linear operations.
 * `TauCeti.WeaklyHarmonicOn.clm_comp`: continuous linear maps preserve weak harmonicity.
+* `TauCeti.integrable_laplacian_smul_of_locallyIntegrableOn`: `Δφ • w` is integrable for a test
+  function `φ` and `w` locally integrable on `Ω`.
+* `TauCeti.weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`: two functions with the same
+  distributional Laplacian differ by a weakly harmonic function.
 * `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`,
   `TauCeti.HasWeakFDerivOn.weaklyHarmonicOn`: weak derivatives of weakly harmonic functions
   are weakly harmonic.
@@ -170,7 +174,8 @@ variable [OpensMeasurableSpace E]
 
 /-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
 globally integrable one. -/
-private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
+theorem integrable_laplacian_smul_of_locallyIntegrableOn (hw : LocallyIntegrableOn w Ω μ)
+    (φ : 𝓓(Ω, ℝ)) :
     Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
   simpa only [TestFunction.laplacianCLM_apply] using
     TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw
@@ -183,7 +188,7 @@ theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
   have := h.completeSpace
   refine ⟨h.locallyIntegrableOn_deriv, fun φ => ?_⟩
   ext v
-  rw [ContinuousLinearMap.integral_apply (integrable_laplacian_smul
+  rw [ContinuousLinearMap.integral_apply (integrable_laplacian_smul_of_locallyIntegrableOn
     h.locallyIntegrableOn_deriv φ) v]
   exact (h.hasWeakLineDerivOn v).weaklyHarmonicOn hw |>.integral_laplacian_smul_eq_zero φ
 
@@ -207,14 +212,25 @@ theorem WeaklyHarmonicOn.add {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ �
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ + w₂) := by
   refine ⟨h₁.locallyIntegrableOn.add h₂.locallyIntegrableOn, fun φ ↦ ?_⟩
   simp only [Pi.add_apply, smul_add]
-  rw [integral_add (integrable_laplacian_smul h₁.locallyIntegrableOn φ)
-    (integrable_laplacian_smul h₂.locallyIntegrableOn φ), h₁.integral_laplacian_smul_eq_zero φ,
-    h₂.integral_laplacian_smul_eq_zero φ, add_zero]
+  rw [integral_add (integrable_laplacian_smul_of_locallyIntegrableOn h₁.locallyIntegrableOn φ)
+    (integrable_laplacian_smul_of_locallyIntegrableOn h₂.locallyIntegrableOn φ),
+    h₁.integral_laplacian_smul_eq_zero φ, h₂.integral_laplacian_smul_eq_zero φ, add_zero]
 
 /-- Weak harmonicity is preserved by subtraction. -/
 theorem WeaklyHarmonicOn.sub {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ Ω w₁)
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
   simpa [sub_eq_add_neg] using h₁.add h₂.neg
+
+/-- Two functions locally integrable on `Ω` with the same distributional Laplacian on `Ω` differ
+by a weakly harmonic function. -/
+theorem weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {w₁ w₂ : E → F}
+    (h₁ : LocallyIntegrableOn w₁ Ω μ) (h₂ : LocallyIntegrableOn w₂ Ω μ)
+    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • w₁ x ∂μ = ∫ x, Δ (φ : E → ℝ) x • w₂ x ∂μ) :
+    WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
+  refine ⟨h₁.sub h₂, fun φ ↦ ?_⟩
+  simp only [Pi.sub_apply, smul_sub]
+  rw [integral_sub (integrable_laplacian_smul_of_locallyIntegrableOn h₁ φ)
+    (integrable_laplacian_smul_of_locallyIntegrableOn h₂ φ), h φ, sub_self]
 
 /-- A continuous linear map of complete real normed spaces preserves weak harmonicity. -/
 theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGroup G]
@@ -222,7 +238,8 @@ theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGr
     WeaklyHarmonicOn μ Ω (fun x ↦ L (w x)) := by
   refine ⟨L.locallyIntegrableOn_comp h.locallyIntegrableOn, fun φ ↦ ?_⟩
   simpa only [map_smul, h.integral_laplacian_smul_eq_zero φ, map_zero] using
-    L.integral_comp_comm (integrable_laplacian_smul h.locallyIntegrableOn φ)
+    L.integral_comp_comm
+      (integrable_laplacian_smul_of_locallyIntegrableOn h.locallyIntegrableOn φ)
 
 end OpensMeasurable
 
@@ -313,8 +330,8 @@ private theorem dist_setAverage_ball_le_of_harmonicOnNhd {U f : E → ℝ} {y : 
           (integral_congr_ae (ae_of_all _ fun z ↦ by simp [norm_sub_rev]))
     _ ≤ ∫ z, ‖(U - f) z‖ ∂μ := setIntegral_le_integral hUf.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
     _ = (eLpNorm (U - f) 1 μ).toReal := by
-        rw [eLpNorm_one_eq_lintegral_enorm hUf.aestronglyMeasurable]
-        exact integral_norm_eq_lintegral_enorm hUf.aestronglyMeasurable
+        rw [eLpNorm_one_eq_lintegral_eNorm hUf.aestronglyMeasurable]
+        exact integral_norm_eq_lintegral_eNorm hUf.aestronglyMeasurable
 
 /-- **Weyl's lemma near a point.** If `u` is weakly harmonic on `Ω` and
 `closedBall x (3 * R) ⊆ Ω`, then `u` agrees almost everywhere on `ball x R` with a function

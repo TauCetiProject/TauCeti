@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
+public import Mathlib.Analysis.Fourier.AddCircle
+import TauCeti.Analysis.Fourier.AddCircle
 
 /-!
 # Cauchy coefficients as Fourier coefficients of boundary values
@@ -21,7 +23,9 @@ For a function `f : ℂ → E` and a circle `C(c, R)` with `R ≠ 0`, write
   `(2π)⁻¹ • b₋ₙ` (`TauCeti.coeff_cauchyPowerSeries`);
 * for `f` holomorphic on the open disc and continuous on its closure, the integrals `bₘ`
   with `m > 0`, that is the negative-degree Fourier coefficients, vanish by Cauchy's theorem
-  (`DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero`).
+  (`DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero`); on the unit circle, read as a
+  function on `AddCircle (2 * π)`, its negative Fourier coefficients vanish
+  (`DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero`).
 -/
 
 public section
@@ -75,3 +79,15 @@ theorem DiffContOnCl.intervalIntegral_circleMap_zpow_smul_eq_zero {f : ℂ → E
   simp only [add_sub_cancel_right, zpow_natCast] at h'
   rw [h] at h'
   exact (smul_eq_zero.mp h'.symm).resolve_left I_ne_zero
+
+local instance diffContOnClFourierCoeffTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+
+/-- A function holomorphic on the open unit disc and continuous on its closure has vanishing
+negative Fourier coefficients on the unit circle, read as a function on `AddCircle (2 * π)`. -/
+theorem DiffContOnCl.fourierCoeff_comp_toCircle_eq_zero {f : ℂ → E}
+    (hf : DiffContOnCl ℂ f (ball 0 1)) {n : ℤ} (hn : n < 0) :
+    fourierCoeff (fun x : AddCircle (2 * π) ↦ f (AddCircle.toCircle x)) n = 0 := by
+  rw [fourierCoeff_eq_intervalIntegral (T := 2 * π) _ n 0, zero_add]
+  have := hf.intervalIntegral_circleMap_zpow_smul_eq_zero one_pos (m := -n) (by omega)
+  simp only [TauCeti.fourier_apply_eq_coe_toCircle_zpow, TauCeti.coe_toCircle_coe_eq_circleMap]
+  simpa [zpow_neg] using this

@@ -160,11 +160,11 @@ theorem eLpNorm_normed_convolution_le [CompleteSpace F] (hp : p ≠ ∞)
   have hn : ‖normedBumpLp hp phi mu (hf.toLp f)‖ ≤ ‖hf.toLp f‖ := by simpa using h
   calc eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu =
       ‖normedBumpLp hp phi mu (hf.toLp f)‖ₑ := by
-        rw [Lp.enorm_def]
+        rw [Lp.eNorm_def]
         exact eLpNorm_congr_ae (normedBumpLp_ae_eq_convolution hp phi hf).symm
     _ ≤ ‖hf.toLp f‖ₑ := by simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hn
     _ = eLpNorm f p mu := by
-        rw [Lp.enorm_def]
+        rw [Lp.eNorm_def]
         exact eLpNorm_congr_ae hf.coeFn_toLp
 
 /-- **Smooth approximate identity in `Lᵖ`.** Let `phi i` be normalized smooth bumps centred at
@@ -233,7 +233,7 @@ theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Ty
     (memLp_one_iff_integrable.mpr hf)
   have hi (i : I) : Integrable ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) mu :=
     ((phi i).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hf).sub hf
-  simp_rw [eLpNorm_one_eq_lintegral_enorm (hi _).aestronglyMeasurable] at h
+  simp_rw [eLpNorm_one_eq_lintegral_eNorm (hi _).aestronglyMeasurable] at h
   exact h
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
@@ -265,7 +265,7 @@ theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I :
     rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
     exact ht.le.trans hi.le
   rw [setLIntegral_congr_fun hK.measurableSet fun x hx ↦ by rw [hKs x hx]]
-  exact (setLIntegral_le_lintegral _ _).trans lintegral_enorm_le_eLpNorm_one
+  exact (setLIntegral_le_lintegral _ _).trans lintegral_eNorm_le_eLpNorm_one
 
 section Bilinear
 

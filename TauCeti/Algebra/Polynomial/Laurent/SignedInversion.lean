@@ -91,7 +91,7 @@ theorem toLaurent_trunc_add_signedInvert {p : R[T;T⁻¹]} (hp : signedInvert p 
     · rw [ite_eq_left hn, ← Int.toNat_of_nonneg hn, coeff_toLaurent,
         ← Nat.castEmbedding_apply,
         Finsupp.mapDomain_apply_of_injective Nat.castEmbedding.injective,
-        Polynomial.toFinsupp_apply, coeff_trunc, Nat.castEmbedding_apply]
+        coeff_trunc, Nat.castEmbedding_apply]
     · rw [ite_eq_right hn, coeff_toLaurent]
       apply Finsupp.mapDomain_of_notMem_range
       rintro ⟨k, hk⟩
@@ -136,7 +136,7 @@ theorem signedInvert_eq_self_iff_exists_eval₂ (p : R[T;T⁻¹]) :
         refine ⟨Polynomial.C r * Polynomial.dickson 1 (-1 : R) (n + 1), ?_⟩
         rw [Polynomial.eval₂_mul, Polynomial.eval₂_C, hpair]
         simp only [Polynomial.toLaurent_C_mul_T, map_mul, signedInvert_C, signedInvert_T,
-          Nat.cast_add, Nat.cast_one, Polynomial.coeff_monomial,
+          Nat.cast_add, Nat.cast_one, Polynomial.coeff_monomial_apply,
           Nat.succ_ne_zero, ↓reduceIte, map_zero, sub_zero, mul_add]
         simp only [← Nat.cast_add_one, Int.natAbs_natCast]
   constructor

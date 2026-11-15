@@ -193,7 +193,7 @@ theorem normalizedAbsoluteValue_eq_nnnorm (x : ℚ_[p]) :
   apply NNReal.eq
   rw [TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx,
     natCard_residueField p, toAdd_normalizedValuation_eq_valuation]
-  simp only [coe_nnnorm]
+  simp only [coe_nnNorm]
   simpa using (Padic.norm_eq_zpow_neg_valuation hx).symm
 
 /-- The normalized valuation of a natural number in `ℚ_[p]` is its `p`-adic valuation. -/

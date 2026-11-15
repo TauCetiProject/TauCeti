@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
-public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 
 /-!
 # Restriction between the tori of Chevalley data
@@ -105,6 +104,16 @@ theorem torusCharacter_torusRestriction (h : E.weightLattice ≤ D.weightLattice
       torusCharacter s (D.weightLatticeBasis.repr (Submodule.inclusion h χ)) := by
   rw [torusRestriction_def, torusCharacter_torusPointMap, weightLatticeInclusion_repr]
 
+/-- Restricting a torus point preserves the value of every root character. -/
+@[simp]
+theorem torusCharacter_torusRestriction_coordinateRoot (h : E.weightLattice ≤ D.weightLattice)
+    (s : Fin t.rank → Aˣ) (γ : Fin t.numRoots) :
+    torusCharacter (D.torusRestriction E h s) (E.coordinateRoot γ) =
+      torusCharacter s (D.coordinateRoot γ) := by
+  simpa only [coordinateRoot_def, Submodule.inclusion_apply] using
+    D.torusCharacter_torusRestriction E h s
+      ⟨(t.simplyConnectedRootDatum ht).root γ, E.root_mem_weightLattice γ⟩
+
 /-- Restriction to the same weight lattice with the same basis is the identity. -/
 @[simp]
 theorem torusRestriction_refl :
@@ -151,6 +160,15 @@ theorem torusRestriction_cocharacter (h : E.weightLattice ≤ D.weightLattice)
     smul_eq_mul, Submodule.coe_inclusion, mul_comm] using
     congrArg (fun x : D.weightLattice => ψ x)
       (D.weightLatticeBasis.sum_repr (Submodule.inclusion h (E.weightLatticeBasis i)))
+
+/-- Restriction between actual tori commutes with restriction from the full weight lattice. -/
+@[simp]
+theorem torusRestriction_fullWeightTorusRestriction
+    (h : E.weightLattice ≤ D.weightLattice) (s : Fin t.rank → Aˣ) :
+    D.torusRestriction E h (D.fullWeightTorusRestriction A s) =
+      E.fullWeightTorusRestriction A s := by
+  funext i
+  simp [torusRestriction_def, torusPointMap_apply, weightLatticeInclusion_single]
 
 /-- If the value ring has divisible units, every torus point of the smaller lattice extends
 to the larger lattice. No such assertion holds for general fields. -/

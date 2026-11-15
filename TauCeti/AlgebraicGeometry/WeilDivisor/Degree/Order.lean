@@ -119,14 +119,8 @@ lemma exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} {D : WeilDiviso
     simp at hdeg
   obtain ⟨x, hx⟩ := exists_pos_coeff_of_ne_zero hD hD0
   have hxmem : x ∈ D.support := mem_support_iff.mpr (by omega)
-  have hle : ofPoint x ≤ D := by
-    rw [le_iff]
-    intro y
-    rcases eq_or_ne y x with rfl | hy
-    · rw [coeff_ofPoint_self]
-      omega
-    · rw [coeff_ofPoint_of_ne hy]
-      exact coeff_nonneg hD y
+  have hle : ofPoint x ≤ D :=
+    zero_add (ofPoint x) ▸ add_ofPoint_le_of_coeff_lt hD (by rwa [coeff_zero])
   -- the support of the difference `D - [x]` is contained in the support of `D`
   have hwsub : ∀ y ∈ (D - ofPoint x).support, 0 < w y := by
     intro y hy

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.Curve.Circle.Basic
-public import TauCeti.Analysis.Contour.Winding.Number.Circle
+public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 
 /-!
 # Circles as contour cycles

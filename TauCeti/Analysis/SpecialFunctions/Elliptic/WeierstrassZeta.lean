@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 
 /-!

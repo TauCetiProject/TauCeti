@@ -46,8 +46,8 @@ half-open fundamental annulus. -/
 theorem existsUnique_norm_zpow_mul_mem_Ioc (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     ∃! n : ℤ, ‖(q : K)‖ < ‖((q ^ n * u : Kˣ) : K)‖ ∧
       ‖((q ^ n * u : Kˣ) : K)‖ ≤ 1 := by
-  let Q : NNRealˣ := Units.map nnnormHom.toMonoidHom q
-  let U : NNRealˣ := Units.map nnnormHom.toMonoidHom u
+  let Q : NNRealˣ := Units.map nnNormHom.toMonoidHom q
+  let U : NNRealˣ := Units.map nnNormHom.toMonoidHom u
   have hQ : Q < 1 := by
     rw [← Units.val_lt_val, ← NNReal.coe_lt_coe]
     simpa [Q] using hq

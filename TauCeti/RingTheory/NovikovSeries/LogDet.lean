@@ -135,7 +135,7 @@ theorem exp_tsum_trace_mul_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈
         = NormedSpace.exp (-NormedSpace.log u) * NormedSpace.exp (NormedSpace.log u) := by
           rw [hu.exp_log]
       _ = 1 := by rw [← hlog'.exp_add hu.log, neg_add_cancel, NormedSpace.exp_zero]
-  rw [hsum.tsum_eq, ← coe_exp_of_mem_posIdeal hlog, ← coe_aeval_nonnegSubring, ← Subring.coe_mul,
+  rw [hsum.tsum_eq, ← coe_exp_nonnegSubring _, ← coe_aeval_nonnegSubring, ← Subring.coe_mul,
     hinv, Subring.coe_one]
 
 end TauCeti.NovikovSeries

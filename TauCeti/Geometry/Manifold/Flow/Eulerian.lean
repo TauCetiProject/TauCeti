@@ -25,7 +25,10 @@ jointly `C^m` when the family is `C^(m+1)` and its inverses are `C^m`
 (`TauCeti.isCompleteVectorField_timeDependentSuspensionField_eulerianField`), and on a Hausdorff
 boundaryless manifold, where integral curves of a `C¹` field are unique, the time-dependent flow of
 `X` from time `s` to time `t` is `φ_t ∘ φ_s⁻¹` (`TauCeti.timeDependentFlowOf_eulerianField`). This
-lets every statement about time-dependent flows be applied to smooth isotopies.
+lets every statement about time-dependent flows be applied to smooth isotopies. Conversely, when
+the suspension of a `C¹` time-dependent field `X` is complete, the time maps of its flow from a
+fixed time form a family whose Eulerian field is `X`
+(`TauCeti.eulerianField_eq_of_coe_eq_timeDependentFlowOf`).
 
 The field transforms under the pointwise operations on families as follows. For the pointwise
 composition `(φ ψ)_t = φ_t ∘ ψ_t` one has the **product velocity identity**
@@ -33,7 +36,8 @@ composition `(φ ψ)_t = φ_t ∘ ψ_t` one has the **product velocity identity*
 `X_(φ ψ) = X_φ + (φ_t)_* X_ψ`
 
 (`TauCeti.eulerianField_trans`), and for the pointwise inverse `X_(φ⁻¹) = -(φ_t⁻¹)_* X_φ`
-(`TauCeti.eulerianField_symm`). A constant family has zero velocity
+(`TauCeti.eulerianField_symm`). For a fixed bijection `g`, the conjugate family `g⁻¹ ∘ φ_t ∘ g`
+has Eulerian field `g^* X_φ` (`Equiv.eulerianField_conj`). A constant family has zero velocity
 (`TauCeti.eulerianField_const`).
 
 These are the identities used to define the flux of a symplectic isotopy, whose velocity one-forms
@@ -131,6 +135,25 @@ theorem eulerianField_symm {z : M}
   simp only [Equiv.self_trans_symm, eulerianField_const, Pi.zero_apply] at h
   rw [eq_neg_iff_add_eq_zero, ← h]
 
+/-- **The conjugation identity.** For a fixed bijection `g`, the Eulerian field of the conjugate
+family `t ↦ g⁻¹ ∘ φ_t ∘ g` is `X_(g⁻¹ φ g) = g^* X_φ`: at the point `g⁻¹ z`, it is the image under
+`d(g⁻¹)` of `X_φ(z)`. -/
+theorem _root_.Equiv.eulerianField_conj (g : M ≃ M) {z : M} (hg : MDifferentiableAt I I g.symm z)
+    (hφ : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u ((φ t).symm z)) t) :
+    eulerianField I (fun u ↦ (g.trans (φ u)).trans g.symm) t (g.symm z) =
+      mfderiv I I g.symm z (eulerianField I φ t z) := by
+  -- Precomposing every map of the family with `g` does not change its Eulerian field.
+  have hright : eulerianField I (fun u ↦ g.trans (φ u)) t = eulerianField I φ t := by
+    funext w
+    simp only [eulerianField_def, Equiv.trans_apply, Equiv.symm_trans_apply]
+    rw [g.apply_symm_apply]
+  -- Postcomposing with the constant family `g⁻¹` pushes the field forward by `g⁻¹`.
+  have h := eulerianField_trans (φ := fun _ ↦ g.symm) (ψ := fun u ↦ g.trans (φ u)) (t := t)
+    (w := z) (hg.comp _ mdifferentiableAt_snd)
+    (by simpa only [Equiv.trans_apply, Equiv.symm_trans_apply, Equiv.apply_symm_apply] using hφ)
+  simp only [eulerianField_const, Pi.zero_apply, zero_add] at h
+  rw [h, hright]
+
 /-! ### Smoothness -/
 
 /-- **The Eulerian field is jointly smooth.** If the family `(t, x) ↦ φ_t x` is `C^n` and its
@@ -195,5 +218,27 @@ theorem timeDependentFlowOf_eulerianField [T2Space M] [IsManifold I 1 M]
   simpa using h
 
 end Flow
+
+/-- **A time-dependent flow has Eulerian field `X`.** If the suspension of a jointly `C¹`
+time-dependent vector field `X` on a Hausdorff boundaryless manifold is complete, then any family
+of bijections `φ` whose maps are the time maps `φ_u = φ_{s,u}` of the time-dependent flow from a
+fixed time `s` has Eulerian velocity field `X`. This is the converse of
+`TauCeti.timeDependentFlowOf_eulerianField`. -/
+theorem eulerianField_eq_of_coe_eq_timeDependentFlowOf [T2Space M] [IsManifold I 1 M]
+    [BoundarylessManifold I M] {X : ℝ → (x : M) → TangentSpace I x}
+    (hcomplete : IsCompleteVectorField (timeDependentSuspensionField X))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {s : ℝ} (hφ : ∀ u, ⇑(φ u) = timeDependentFlowOf X s u) :
+    eulerianField I φ = X := by
+  funext t y
+  obtain ⟨x, rfl⟩ : ∃ x, φ t x = y := ⟨(φ t).symm y, (φ t).apply_symm_apply y⟩
+  -- The trajectory of `x` is a curve of the flow from time `s`, with velocity `X_t` at time `t`.
+  have hd := hasMFDerivAt_timeDependentFlowOf hX (s := s) (t := t) (x := x)
+    (mem_timeDependentFlowDomain.2 (hcomplete.mem_flowDomain _ _))
+  have htraj : (fun u ↦ φ u x) = fun u ↦ timeDependentFlowOf X s u x := funext fun u ↦ by rw [hφ]
+  rw [eulerianField_apply_apply, htraj, curveVelocity_apply, hd.mfderiv]
+  -- The derivative `1 ↦ 1 • X t (φ t x)` of the flow curve, evaluated at `1`.
+  exact (one_smul ℝ _).trans (by rw [hφ])
 
 end TauCeti
