@@ -21,9 +21,10 @@ measurable additive group with a measure invariant under left translations and n
 (`MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable` and
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
 sigma-finiteness of the measure is required. For Hölder conjugate exponents `p` and `q`, the
-convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded. For two integrable scalar kernels and an
-essentially bounded function, convolution is associative at every point; this associativity
-statement additionally assumes s-finiteness.
+convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded. For two integrable fields and an
+essentially bounded function, convolution along compatible bilinear maps is associative at every
+point; this associativity statement requires only right-translation invariance and
+s-finiteness.
 
 A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
@@ -79,8 +80,8 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   convolution of an `L^∞` function with an integrable kernel.
 * `MeasureTheory.convolution_eq_zero_of_not_completeSpace`: without completeness of the target
   every convolution is the zero function.
-* `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
-  for two integrable kernels and an essentially bounded function.
+* `MeasureTheory.convolution_assoc_of_integrable_of_ae_norm_le`: pointwise associativity along
+  compatible bilinear maps for two integrable fields and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
 * `MeasureTheory.le_convolution_lsmul_of_forall_le` and
   `MeasureTheory.convolution_lsmul_le_of_forall_le`: one-sided bounds on a ball pass to the
@@ -172,36 +173,47 @@ theorem isBounded_range_convolution_of_memLp [NormedSpace ℝ F] [MeasurableAdd�
 
 section Assoc
 
-variable {𝕜 G F : Type*} [RCLike 𝕜] [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
-  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+variable {𝕜 G E E' E'' F F' F'' : Type*} [RCLike 𝕜]
+  [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [CompleteSpace F]
-  {f g : G → 𝕜} {h : G → F} {M : ℝ}
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [CompleteSpace F']
+  [NormedAddCommGroup F''] [NormedSpace ℝ F''] [NormedSpace 𝕜 F''] [CompleteSpace F'']
+  {f : G → E} {g : G → E'} {h : G → E''} {M : ℝ}
 
-/-- Convolution of two integrable scalar kernels with an essentially bounded function is
-associative at every point, not just almost everywhere. -/
-theorem convolution_lsmul_assoc_of_integrable_of_ae_norm_le
+/-- Convolution along compatible bilinear maps of two integrable fields with an essentially
+bounded function is associative at every point, not just almost everywhere. -/
+theorem convolution_assoc_of_integrable_of_ae_norm_le
+    (L : E →L[𝕜] E' →L[𝕜] F) (L₂ : F →L[𝕜] E'' →L[𝕜] F')
+    (L₃ : E →L[𝕜] F'' →L[𝕜] F') (L₄ : E' →L[𝕜] E'' →L[𝕜] F'')
+    (hL : ∀ x y z, L₂ (L x y) z = L₃ x (L₄ y z))
     (hf : Integrable f μ) (hg : Integrable g μ) (hh : AEStronglyMeasurable h μ)
     (hM : ∀ᵐ x ∂μ, ‖h x‖ ≤ M) :
-    (f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] g) ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h =
-      f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h) := by
+    (f ⋆[L, μ] g) ⋆[L₂, μ] h = f ⋆[L₃, μ] (g ⋆[L₄, μ] h) := by
+  have hex {a b : G → ℝ} {C : ℝ} (ha : Integrable a μ)
+      (hb : AEStronglyMeasurable b μ) (hC : ∀ᵐ y ∂μ, ‖b y‖ ≤ C) :
+      ConvolutionExists a b (ContinuousLinearMap.mul ℝ ℝ) μ := fun x ↦ by
+    have hsub := quasiMeasurePreserving_sub_left_of_right_invariant μ x
+    exact (ContinuousLinearMap.mul ℝ ℝ).integrable_of_bilin_of_bdd_right C ha
+      (hb.comp_quasiMeasurePreserving hsub) (hsub.ae hC)
   have hbdd : ∀ x, ‖((fun y ↦ ‖g y‖) ⋆[ContinuousLinearMap.mul ℝ ℝ, μ]
       (fun y ↦ ‖h y‖)) x‖ ≤ (∫ y, ‖g y‖ ∂μ) * M := by
     intro x
     rw [convolution_def, ← integral_mul_const]
     refine norm_integral_le_of_norm_le (hg.norm.mul_const M) ?_
-    filter_upwards [(μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM] with y hy
+    filter_upwards [(quasiMeasurePreserving_sub_left_of_right_invariant μ x).ae hM] with y hy
     simpa only [ContinuousLinearMap.mul_apply', norm_mul, norm_norm] using
       mul_le_mul_of_nonneg_left hy (norm_nonneg (g y))
   ext x
-  exact convolution_assoc (ContinuousLinearMap.lsmul 𝕜 𝕜)
-    (ContinuousLinearMap.lsmul 𝕜 𝕜) (ContinuousLinearMap.lsmul 𝕜 𝕜)
-    (ContinuousLinearMap.lsmul 𝕜 𝕜) (fun a b c ↦ mul_smul a b c)
+  exact convolution_assoc L L₂ L₃ L₄ hL
     hf.aestronglyMeasurable hg.aestronglyMeasurable hh
     (hf.ae_convolution_exists _ hg)
-    (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _ hg.norm hh.norm
+    (ae_of_all _ (hex hg.norm hh.norm
       (hM.mono fun _ hx ↦ by simpa only [norm_norm] using hx)))
-    (convolutionExists_of_integrable_of_ae_norm_le _ hf.norm
-      (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
+    (hex hf.norm (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
 
 end Assoc
 
