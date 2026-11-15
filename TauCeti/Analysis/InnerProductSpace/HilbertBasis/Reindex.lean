@@ -21,39 +21,12 @@ For two Hilbert bases `b : HilbertBasis ι 𝕜 E` and `c : HilbertBasis ι' �
 equivalence `e : ι ≃ ι'`, composing `b.repr`, `LinearIsometryEquiv.lpCongrLeft`, and `c.repr.symm`
 yields the unique linear isometric equivalence `b.equiv c e : E ≃ₗᵢ[𝕜] F` sending `b i` to
 `c (e i)` (`HilbertBasis.existsUnique_linearIsometryEquiv`), with convergent series expansion
-`x ↦ ∑ᵢ ⟪b i, x⟫ • c (e i)` (`HilbertBasis.hasSum_equiv`). We also name the canonical coordinate
-Hilbert basis `lp.hilbertBasisFun` of `ℓ²(ι, 𝕜)`.
+`x ↦ ∑ᵢ ⟪b i, x⟫ • c (e i)` (`HilbertBasis.hasSum_equiv`).
 -/
 
 public section
 
 open scoped InnerProductSpace lp
-
-namespace lp
-
-/-- The coordinate unit vectors bundled as the canonical Hilbert basis of `ℓ²(ι, 𝕜)`, analogous to
-`EuclideanSpace.basisFun`. -/
-noncomputable def hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜) :=
-  HilbertBasis.ofRepr (LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜))
-
-/-- The coordinate representation of `lp.hilbertBasisFun` is the identity linear isometry. -/
-@[simp]
-theorem repr_hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] :
-    (hilbertBasisFun ι 𝕜).repr = LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜) :=
-  (rfl)
-
-/-- Evaluating `lp.hilbertBasisFun` at `i` returns the coordinate unit vector `lp.single 2 i 1`. -/
-@[simp]
-theorem hilbertBasisFun_apply (ι 𝕜 : Type*) [RCLike 𝕜] [DecidableEq ι] (i : ι) :
-    hilbertBasisFun ι 𝕜 i = lp.single 2 i (1 : 𝕜) := by
-  rw [← HilbertBasis.repr_symm_single, repr_hilbertBasisFun]
-  rfl
-
-noncomputable instance instInhabitedHilbertBasis (ι 𝕜 : Type*) [RCLike 𝕜] :
-    Inhabited (HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)) :=
-  ⟨hilbertBasisFun ι 𝕜⟩
-
-end lp
 
 namespace HilbertBasis
 
@@ -61,23 +34,6 @@ variable {ι ι' ι'' 𝕜 E F G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-
-/-- Two continuous linear maps out of `E` into a `T₂` topological module are equal when they agree
-on every member of a Hilbert basis of `E`. -/
-theorem ext_continuousLinearMap {M : Type*} [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
-    [T2Space M] (b : HilbertBasis ι 𝕜 E) {A B : E →L[𝕜] M}
-    (h : ∀ i, A (b i) = B (b i)) : A = B := by
-  refine ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
-    ?_
-  rintro _ ⟨i, rfl⟩
-  exact h i
-
-/-- Two linear isometric equivalences out of `E` are equal when they agree on every member of a
-Hilbert basis of `E`. -/
-theorem ext_linearIsometryEquiv (b : HilbertBasis ι 𝕜 E) {U V : E ≃ₗᵢ[𝕜] F}
-    (h : ∀ i, U (b i) = V (b i)) : U = V :=
-  LinearIsometryEquiv.toContinuousLinearEquiv_injective <|
-    ContinuousLinearEquiv.coe_injective <| b.ext_continuousLinearMap h
 
 /-- Reindex a Hilbert basis along an equivalence `e : ι ≃ ι'`, extending `OrthonormalBasis.reindex`
 to arbitrary index types. -/
@@ -118,16 +74,6 @@ theorem reindex_refl (b : HilbertBasis ι 𝕜 E) :
 theorem reindex_trans (b : HilbertBasis ι 𝕜 E) (e₁ : ι ≃ ι') (e₂ : ι' ≃ ι'') :
     (b.reindex e₁).reindex e₂ = b.reindex (e₁.trans e₂) :=
   DFunLike.ext _ _ fun _ ↦ by simp
-
-/-- Reindexing along `e` and then along `e.symm` recovers the original Hilbert basis. -/
-theorem reindex_symm (b : HilbertBasis ι 𝕜 E) (e : ι ≃ ι') :
-    (b.reindex e).reindex e.symm = b := by
-  simp
-
-/-- Reindexing along `e.symm` and then along `e` recovers the original Hilbert basis. -/
-theorem reindex_symm_self (b : HilbertBasis ι' 𝕜 E) (e : ι ≃ ι') :
-    (b.reindex e.symm).reindex e = b := by
-  simp
 
 /-- Transporting across a linear isometric equivalence commutes with reindexing. -/
 theorem mapₗᵢ_reindex (b : HilbertBasis ι 𝕜 E) (e : ι ≃ ι') (U : E ≃ₗᵢ[𝕜] F) :
@@ -189,6 +135,14 @@ theorem equiv_trans (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis ι' 𝕜 F) (
     (e₁ : ι ≃ ι') (e₂ : ι' ≃ ι'') :
     (b.equiv c e₁).trans (c.equiv d e₂) = b.equiv d (e₁.trans e₂) :=
   b.ext_linearIsometryEquiv fun i ↦ by simp
+
+/-- Applying two basis-preserving unitaries in succession equals applying the unitary associated
+to the composite index equivalence. -/
+@[simp]
+theorem equiv_equiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis ι' 𝕜 F) (d : HilbertBasis ι'' 𝕜 G)
+    (e₁ : ι ≃ ι') (e₂ : ι' ≃ ι'') (x : E) :
+    c.equiv d e₂ (b.equiv c e₁ x) = b.equiv d (e₁.trans e₂) x := by
+  rw [← LinearIsometryEquiv.trans_apply, equiv_trans]
 
 /-- Transporting `b` along `b.equiv c e` produces `c.reindex e.symm`. -/
 @[simp]

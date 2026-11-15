@@ -32,7 +32,8 @@ agrees with `Module.finrank` in finite dimension (`TauCeti.hilbertDim_eq_finrank
 cardinalities of orthonormal subsets of `E` (`TauCeti.hilbertDim_eq_ciSup_orthonormal`).
 
 Hilbert dimension increases along linear isometries (`LinearIsometry.lift_hilbertDim_le`), decreases
-along continuous linear maps with dense range (`TauCeti.lift_hilbertDim_le_of_denseRange`), and is
+along continuous linear maps with dense range
+(`ContinuousLinearMap.lift_hilbertDim_le_of_denseRange`), and is
 therefore invariant under both linear isometric equivalences and continuous linear equivalences
 (`LinearIsometryEquiv.lift_hilbertDim_eq`, `ContinuousLinearEquiv.lift_hilbertDim_eq`). Two Hilbert
 spaces over `𝕜` admit a linear isometric equivalence (equivalently, a continuous linear equivalence)
@@ -75,34 +76,21 @@ theorem Orthonormal.cardinal_lift_le_hilbertBasis_of_denseRange {ι : Type v} {�
     have hclosed : IsClosed (Set.range f) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         (LinearMap.range (f : E →ₗ[𝕜] F)).isClosed_of_finiteDimensional
-    have hsurj : Function.Surjective f := Set.range_eq_univ.1 (hclosed.closure_eq ▸ hf.closure_eq)
-    rw [← Cardinal.lift_le.{max u u'}, Cardinal.lift_lift, Cardinal.lift_lift]
-    calc
-      Cardinal.lift.{max w (max u u')} #ι
-        = Cardinal.lift.{max w u} (Cardinal.lift.{u'} #ι) := (Cardinal.lift_lift #ι).symm
-      _ ≤ Cardinal.lift.{max w u} (Cardinal.lift.{v} (Module.rank 𝕜 F)) :=
-          Cardinal.lift_le.2 hv.linearIndependent.cardinal_lift_le_rank
-      _ = Cardinal.lift.{max v w} (Cardinal.lift.{u} (Module.rank 𝕜 F)) := by
-          simp only [Cardinal.lift_lift]
-      _ ≤ Cardinal.lift.{max v w} (Cardinal.lift.{u'} (Module.rank 𝕜 E)) :=
-          Cardinal.lift_le.2 (LinearMap.lift_rank_le_of_surjective (f : E →ₗ[𝕜] F) hsurj)
-      _ = Cardinal.lift.{max v u'} (Cardinal.lift.{w} (Module.rank 𝕜 E)) := by
-          simp only [Cardinal.lift_lift]
-      _ = Cardinal.lift.{max v u'} (Cardinal.lift.{u} #κ) := by
-          rw [← c.toOrthonormalBasis.toBasis.mk_eq_rank]
-      _ = Cardinal.lift.{max v (max u u')} #κ := Cardinal.lift_lift #κ
+    have hsurj : Function.Surjective (f : E →ₗ[𝕜] F) := by
+      rw [ContinuousLinearMap.coe_coe]
+      exact Set.range_eq_univ.1 (hclosed.closure_eq ▸ hf.closure_eq)
+    have : FiniteDimensional 𝕜 F := Module.Finite.of_surjective (f : E →ₗ[𝕜] F) hsurj
+    simp only [Cardinal.mk_fintype, Cardinal.lift_natCast, Cardinal.lift_le_nat_iff]
+    exact hv.linearIndependent.cardinalMk_le_finrank.trans <|
+      Nat.cast_le.2 <| (LinearMap.finrank_le_finrank_of_surjective (f := (f : E →ₗ[𝕜] F))
+        hsurj).trans_eq (Module.finrank_eq_card_basis c.toOrthonormalBasis.toBasis)
   · have : Infinite κ := not_finite_iff_infinite.1 hκ
     let S : κ → Set ι := fun j ↦ {i : ι | ⟪v i, f (c j)⟫_𝕜 ≠ 0}
     have hS_univ : ⋃ j : κ, S j = Set.univ := by
       refine Set.eq_univ_of_forall fun i ↦ ?_
       by_contra hi
-      let φ : F →L[𝕜] 𝕜 := innerSL 𝕜 (v i)
-      have hφf : φ.comp f = 0 := c.ext_continuousLinearMap fun j ↦
+      exact hv.ne_zero i <| c.eq_zero_of_denseRange_of_forall_inner_eq_zero hf fun j ↦
         not_ne_iff.1 fun hne ↦ hi (Set.mem_iUnion.2 ⟨j, hne⟩)
-      have hφ : ⇑φ = 0 :=
-        hf.equalizer φ.continuous continuous_zero (congrArg DFunLike.coe hφf)
-      have hvi : ⟪v i, v i⟫_𝕜 = 0 := congrFun hφ (v i)
-      exact hv.ne_zero i (inner_self_eq_zero.1 hvi)
     calc
       Cardinal.lift.{w} #ι
         = Cardinal.lift.{w} #(Set.univ : Set ι) := by rw [Cardinal.mk_univ]
@@ -112,7 +100,7 @@ theorem Orthonormal.cardinal_lift_le_hilbertBasis_of_denseRange {ι : Type v} {�
       _ ≤ Cardinal.lift.{v} #κ * ℵ₀ := by
           gcongr
           refine ciSup_le fun j ↦ ?_
-          exact Cardinal.lift_le_aleph0.2 (hv.countable_support_inner (f (c j))).le_aleph0
+          exact Cardinal.lift_le_aleph0.2 (hv.countable_support_inner_right (f (c j))).le_aleph0
       _ = Cardinal.lift.{v} #κ :=
           Cardinal.mul_eq_left (Cardinal.aleph0_le_lift.2 (Cardinal.aleph0_le_mk κ))
             (Cardinal.aleph0_le_lift.2 (Cardinal.aleph0_le_mk κ)) Cardinal.aleph0_ne_zero
@@ -181,13 +169,16 @@ theorem card_eq_finrank {ι : Type v} [Fintype ι] (b : HilbertBasis ι 𝕜 E) 
     Fintype.card ι = Module.finrank 𝕜 E :=
   (Module.finrank_eq_card_basis b.toOrthonormalBasis.toBasis).symm
 
-/-- On a finite-dimensional space, `Nat.card` of any Hilbert-basis index type equals
-`Module.finrank 𝕜 E`. -/
-theorem natCard_eq_finrank {ι : Type v} [FiniteDimensional 𝕜 E] (b : HilbertBasis ι 𝕜 E) :
+/-- `Nat.card` of any Hilbert-basis index type equals `Module.finrank 𝕜 E` (both vanish when `E`
+is infinite-dimensional). -/
+theorem natCard_eq_finrank {ι : Type v} (b : HilbertBasis ι 𝕜 E) :
     Nat.card ι = Module.finrank 𝕜 E := by
-  have : Finite ι := b.finite_iff_finiteDimensional.2 ‹_›
-  cases nonempty_fintype ι
-  rw [Nat.card_eq_fintype_card, b.card_eq_finrank]
+  by_cases h : FiniteDimensional 𝕜 E
+  · have : Finite ι := b.finite_iff_finiteDimensional.2 h
+    cases nonempty_fintype ι
+    rw [Nat.card_eq_fintype_card, b.card_eq_finrank]
+  · have : Infinite ι := b.infinite_iff.2 h
+    rw [Nat.card_eq_zero_of_infinite, Module.finrank_of_not_finite h]
 
 /-- A space with a Hilbert basis `b` is separable if and only if the index type of `b` is
 countable. -/
@@ -311,16 +302,16 @@ theorem ContinuousLinearEquiv.hilbertDim_eq {F : Type u} [NormedAddCommGroup F]
     TauCeti.hilbertDim 𝕜 E = TauCeti.hilbertDim 𝕜 F :=
   Cardinal.lift_inj.1 e.lift_hilbertDim_eq
 
-namespace TauCeti
-
 /-- A continuous linear map `f : E →L[𝕜] F` with dense range satisfies
-`Cardinal.lift (hilbertDim 𝕜 F) ≤ Cardinal.lift (hilbertDim 𝕜 E)`. -/
-theorem lift_hilbertDim_le_of_denseRange (f : E →L[𝕜] F) (hf : DenseRange f) :
-    Cardinal.lift.{u} (hilbertDim 𝕜 F) ≤ Cardinal.lift.{u'} (hilbertDim 𝕜 E) := by
+`Cardinal.lift (TauCeti.hilbertDim 𝕜 F) ≤ Cardinal.lift (TauCeti.hilbertDim 𝕜 E)`. -/
+theorem ContinuousLinearMap.lift_hilbertDim_le_of_denseRange (f : E →L[𝕜] F) (hf : DenseRange f) :
+    Cardinal.lift.{u} (TauCeti.hilbertDim 𝕜 F) ≤ Cardinal.lift.{u'} (TauCeti.hilbertDim 𝕜 E) := by
   let b := (exists_hilbertBasis 𝕜 E).choose_spec.choose
   let c := (exists_hilbertBasis 𝕜 F).choose_spec.choose
   simpa only [b.mk_eq_hilbertDim', c.mk_eq_hilbertDim'] using
     c.orthonormal.cardinal_lift_le_hilbertBasis_of_denseRange b f hf
+
+namespace TauCeti
 
 /-- A type `ι` indexes a Hilbert basis of `E` if and only if its lifted cardinality equals the
 lifted Hilbert dimension of `E`. -/
@@ -397,11 +388,6 @@ theorem hilbertDim_lp (ι : Type v) (𝕜 : Type w) [RCLike 𝕜] :
   rw [Cardinal.lift_id'.{v, max v w}, Cardinal.lift_umax.{v, w}] at h
   exact h.symm
 
-/-- The Hilbert dimension of `ℓ²(ℕ, 𝕜)` is `ℵ₀`. -/
-theorem hilbertDim_lp_nat (𝕜 : Type w) [RCLike 𝕜] :
-    hilbertDim 𝕜 ℓ²(ℕ, 𝕜) = ℵ₀ := by
-  simp
-
 /-- The Hilbert dimension of `EuclideanSpace 𝕜 ι` is `Fintype.card ι`. -/
 @[simp]
 theorem hilbertDim_euclideanSpace (ι : Type v) (𝕜 : Type w) [RCLike 𝕜] [Fintype ι] :
@@ -460,8 +446,8 @@ theorem separableSpace_iff_exists_nat_or_eq_aleph0 :
   rw [separableSpace_iff_hilbertDim_le_aleph0 (𝕜 := 𝕜), le_iff_lt_or_eq, Cardinal.lt_aleph0]
 
 /-- Every separable infinite-dimensional Hilbert space has Hilbert dimension `ℵ₀`. -/
-theorem hilbertDim_eq_aleph0_of_separableSpace [TopologicalSpace.SeparableSpace E]
-    (hE : ¬ FiniteDimensional 𝕜 E) :
+theorem hilbertDim_eq_aleph0_of_separableSpace_of_not_finiteDimensional
+    [TopologicalSpace.SeparableSpace E] (hE : ¬ FiniteDimensional 𝕜 E) :
     hilbertDim 𝕜 E = ℵ₀ :=
   le_antisymm (separableSpace_iff_hilbertDim_le_aleph0.1 ‹_›) (aleph0_le_hilbertDim_iff.2 hE)
 
@@ -470,7 +456,7 @@ theorem nonempty_hilbertBasis_nat [TopologicalSpace.SeparableSpace E]
     (hE : ¬ FiniteDimensional 𝕜 E) :
     Nonempty (HilbertBasis ℕ 𝕜 E) := by
   rw [nonempty_hilbertBasis_iff_lift_mk_eq_hilbertDim,
-    hilbertDim_eq_aleph0_of_separableSpace (𝕜 := 𝕜) hE]
+    hilbertDim_eq_aleph0_of_separableSpace_of_not_finiteDimensional (𝕜 := 𝕜) hE]
   simp
 
 /-- **Riesz–Fischer model theorem.** Every separable infinite-dimensional Hilbert space over `𝕜`
@@ -483,13 +469,13 @@ theorem nonempty_linearIsometryEquiv_lp_nat [TopologicalSpace.SeparableSpace E]
 
 /-- Any two separable infinite-dimensional Hilbert spaces over `𝕜` are linearly isometrically
 equivalent. -/
-theorem nonempty_linearIsometryEquiv_of_separableSpace [TopologicalSpace.SeparableSpace E]
-    [TopologicalSpace.SeparableSpace F] (hE : ¬ FiniteDimensional 𝕜 E)
-    (hF : ¬ FiniteDimensional 𝕜 F) :
+theorem nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
+    [TopologicalSpace.SeparableSpace E] [TopologicalSpace.SeparableSpace F]
+    (hE : ¬ FiniteDimensional 𝕜 E) (hF : ¬ FiniteDimensional 𝕜 F) :
     Nonempty (E ≃ₗᵢ[𝕜] F) := by
   rw [nonempty_linearIsometryEquiv_iff_lift_hilbertDim_eq,
-    hilbertDim_eq_aleph0_of_separableSpace (𝕜 := 𝕜) hE,
-    hilbertDim_eq_aleph0_of_separableSpace (𝕜 := 𝕜) hF]
+    hilbertDim_eq_aleph0_of_separableSpace_of_not_finiteDimensional (𝕜 := 𝕜) hE,
+    hilbertDim_eq_aleph0_of_separableSpace_of_not_finiteDimensional (𝕜 := 𝕜) hF]
   simp
 
 end TauCeti

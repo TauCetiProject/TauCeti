@@ -16,8 +16,9 @@ any orthonormal family in a separable inner product space is countable (`Orthono
 and any orthonormal family in a subsingleton space has an empty index type
 (`Orthonormal.isEmpty_of_subsingleton`).
 
-For every vector `x`, Bessel's inequality forces the set of indices where `⟪v i, x⟫ ≠ 0` to be
-countable (`Orthonormal.countable_support_inner`). Together with completeness of Hilbert bases,
+For every vector `x`, Bessel's inequality forces the set of indices where `⟪v i, x⟫ ≠ 0` or
+`⟪x, v i⟫ ≠ 0` to be countable (`Orthonormal.countable_support_inner_right`,
+`Orthonormal.countable_support_inner_left`). Together with completeness of Hilbert bases,
 these properties underlie the invariance of Hilbert-basis cardinality and the classification of
 Hilbert spaces by Hilbert dimension.
 -/
@@ -60,16 +61,16 @@ theorem norm_add_eq_sqrt_two (hv : Orthonormal 𝕜 v) {i j : ι} (hij : i ≠ j
 
 /-- Against any vector `x`, at most countably many members of an orthonormal family have nonzero
 inner product `⟪v i, x⟫`. -/
-theorem countable_support_inner (hv : Orthonormal 𝕜 v) (x : E) :
+theorem countable_support_inner_right (hv : Orthonormal 𝕜 v) (x : E) :
     {i : ι | ⟪v i, x⟫_𝕜 ≠ 0}.Countable := by
   refine (hv.inner_products_summable x).countable_support.mono fun i (hi : ⟪v i, x⟫_𝕜 ≠ 0) ↦ ?_
   exact pow_ne_zero 2 (norm_ne_zero_iff.2 hi)
 
 /-- Against any vector `x`, at most countably many members of an orthonormal family have nonzero
 inner product `⟪x, v i⟫`. -/
-theorem countable_support_inner_right (hv : Orthonormal 𝕜 v) (x : E) :
+theorem countable_support_inner_left (hv : Orthonormal 𝕜 v) (x : E) :
     {i : ι | ⟪x, v i⟫_𝕜 ≠ 0}.Countable := by
-  refine (hv.countable_support_inner x).mono fun i (hi : ⟪x, v i⟫_𝕜 ≠ 0) ↦ ?_
+  refine (hv.countable_support_inner_right x).mono fun i (hi : ⟪x, v i⟫_𝕜 ≠ 0) ↦ ?_
   rwa [← inner_conj_symm, starRingEnd_apply, star_ne_zero] at hi
 
 /-- Every orthonormal family in a separable inner product space has a countable index type. -/

@@ -15,7 +15,15 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and `lp.hilbertBasisFun`
+provides the canonical coordinate Hilbert basis of `ℓ²(ι, 𝕜)` (analogous to
+`EuclideanSpace.basisFun`).
+
+Continuous semilinear maps and semilinear isometric equivalences out of a Hilbert space are
+determined by their values on any Hilbert basis (`HilbertBasis.ext_continuousLinearMap`,
+`HilbertBasis.ext_linearIsometryEquiv`), and a vector orthogonal to the image of a Hilbert basis
+under a continuous semilinear map with dense range vanishes
+(`HilbertBasis.eq_zero_of_denseRange_of_forall_inner_eq_zero`).
 
 It also expands the value of a continuous linear map in a Hilbert basis,
 `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
@@ -26,9 +34,31 @@ its matrix entries in Hilbert bases of its source and target (`HilbertBasis.ext_
 
 public section
 
-namespace HilbertBasis
+open scoped InnerProductSpace lp
 
-open scoped InnerProductSpace
+namespace lp
+
+/-- The coordinate unit vectors bundled as the canonical Hilbert basis of `ℓ²(ι, 𝕜)`, analogous to
+`EuclideanSpace.basisFun`. -/
+noncomputable def hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜) :=
+  HilbertBasis.ofRepr (LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜))
+
+/-- The coordinate representation of `lp.hilbertBasisFun` is the identity linear isometry. -/
+@[simp]
+theorem repr_hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] :
+    (hilbertBasisFun ι 𝕜).repr = LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜) :=
+  (rfl)
+
+/-- Evaluating `lp.hilbertBasisFun` at `i` returns the coordinate unit vector `lp.single 2 i 1`. -/
+@[simp]
+theorem hilbertBasisFun_apply (ι 𝕜 : Type*) [RCLike 𝕜] [DecidableEq ι] (i : ι) :
+    hilbertBasisFun ι 𝕜 i = lp.single 2 i (1 : 𝕜) := by
+  rw [← HilbertBasis.repr_symm_single, repr_hilbertBasisFun]
+  rfl
+
+end lp
+
+namespace HilbertBasis
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -46,6 +76,46 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E}
     simpa only [ContinuousLinearMap.comp_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
       innerSL_apply_apply, map_smul, hx, smul_zero] using hsum
   exact hzero.unique hasSum_zero
+
+/-- Two continuous semilinear maps out of `E` into a `T₂` topological module are equal when they
+agree on every member of a Hilbert basis of `E`. -/
+theorem ext_continuousLinearMap {ι S M : Type*} [Semiring S] {σ : 𝕜 →+* S} [TopologicalSpace M]
+    [AddCommMonoid M] [Module S M] [T2Space M] (b : _root_.HilbertBasis ι 𝕜 E) {A B : E →SL[σ] M}
+    (h : ∀ i, A (b i) = B (b i)) : A = B := by
+  refine ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
+    ?_
+  rintro _ ⟨i, rfl⟩
+  exact h i
+
+/-- Two semilinear isometric equivalences out of `E` are equal when they agree on every member of
+a Hilbert basis of `E`. -/
+theorem ext_linearIsometryEquiv {ι S M : Type*} [Semiring S] {σ : 𝕜 →+* S} {σ' : S →+* 𝕜}
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] [SeminormedAddCommGroup M] [Module S M]
+    (b : _root_.HilbertBasis ι 𝕜 E) {U V : E ≃ₛₗᵢ[σ] M}
+    (h : ∀ i, U (b i) = V (b i)) : U = V := by
+  have : T2Space M := U.toHomeomorph.t2Space
+  exact LinearIsometryEquiv.toContinuousLinearEquiv_injective <|
+    ContinuousLinearEquiv.coe_injective <|
+      b.ext_continuousLinearMap fun i ↦ by
+        simpa only [ContinuousLinearEquiv.coe_coe,
+          LinearIsometryEquiv.coe_toContinuousLinearEquiv] using h i
+
+/-- If a continuous semilinear map `f : E →SL[σ] F` has dense range and `y : F` is orthogonal to
+`f (b i)` for every vector of a Hilbert basis `b` of `E`, then `y = 0`. -/
+theorem eq_zero_of_denseRange_of_forall_inner_eq_zero {ι 𝕜' F : Type*} [RCLike 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜' F] (b : _root_.HilbertBasis ι 𝕜 E)
+    {f : E →SL[σ] F} (hf : DenseRange f) {y : F} (hy : ∀ i, ⟪y, f (b i)⟫_𝕜' = 0) : y = 0 := by
+  let φ : F →L[𝕜'] 𝕜' := innerSL 𝕜' y
+  have hφf : φ.comp f = 0 := b.ext_continuousLinearMap fun i ↦ by
+    simpa only [ContinuousLinearMap.comp_apply, φ, innerSL_apply_apply,
+      zero_apply] using hy i
+  have hφ : ⇑φ = 0 := by
+    refine hf.equalizer φ.continuous continuous_zero ?_
+    simpa only [ContinuousLinearMap.coe_comp, FunLike.coe_zero, Pi.zero_comp] using
+      congrArg DFunLike.coe hφf
+  have hyy : ⟪y, y⟫_𝕜' = 0 := by
+    simpa only [φ, innerSL_apply_apply, Pi.zero_apply] using congrFun hφ y
+  exact inner_self_eq_zero.1 hyy
 
 /-- Two continuous linear maps between Hilbert spaces are equal when their matrix entries
 `⟪c i, A (b j)⟫` in Hilbert bases `b` of the source and `c` of the target agree. -/

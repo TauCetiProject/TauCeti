@@ -38,12 +38,13 @@ operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
 
 For a finite exponent `p`, the level sets `{i | ε ≤ ‖f i‖}` (`0 < ε`) of any `f ∈ ℓᵖ` are finite
 (`Memℓp.finite_le_norm`, `lp.finite_le_norm`), so every `ℓᵖ` vector has countable support
-(`Memℓp.countable_support`, `lp.countable_support`). Conversely, single-coordinate vectors for a
-nontrivial fiber are uniformly separated, and in `ℓ²` distinct unit coordinate vectors lie at
-distance `√2` (`lp.dist_single_eq_sqrt_two`, `lp.dist_single_one_eq_sqrt_two`). Thus for `1 ≤ p < ∞`
-and a countable index type, `lp E p` is separable when every `E i` is (`lp.separableSpace`), while
-for a nontrivial separable fiber `G`, `lp (fun _ : ι ↦ G) p` is separable if and only if `ι` is
-countable (`lp.separableSpace_iff`).
+(`Memℓp.countable_dsupport`, `lp.countable_dsupport`). Conversely, choosing a nonzero vector
+`v i : E i` in each nontrivial fiber produces single-coordinate vectors `lp.single p i (v i)` whose
+open balls of radius `‖v i‖ / 2` are pairwise disjoint, and in `ℓ²` unit single-coordinate vectors
+at distinct indices lie at distance `√2` (`lp.dist_single_eq_sqrt_two`,
+`lp.dist_single_one_eq_sqrt_two`). Thus for `1 ≤ p < ∞` and a countable index type, `lp E p` is
+separable when every `E i` is (`lp.separableSpace`), while when every `E i` is nontrivial and
+separable, `lp E p` is separable if and only if `ι` is countable (`lp.separableSpace_iff`).
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
@@ -166,13 +167,13 @@ theorem _root_.Memℓp.finite_le_norm {f : ∀ i, E i} (hf : Memℓp f p) (hp : 
   rcases eq_or_ne p 0 with rfl | hp₀
   · exact hf.finite_dsupport.subset fun i (hi : ε ≤ ‖f i‖) hfi ↦ by simp [hfi, hε.not_ge] at hi
   · have hp' : 0 < p.toReal := ENNReal.toReal_pos hp₀ hp
-    have h0 : Set.Iio (ε ^ p.toReal) ∈ 𝓝 (0 : ℝ) :=
-      isOpen_Iio.mem_nhds (Real.rpow_pos_of_pos hε _)
-    refine ((hf.summable hp').tendsto_cofinite_zero h0).subset fun i (hi : ε ≤ ‖f i‖) ↦ ?_
+    refine (Filter.eventually_cofinite.1 <|
+      (hf.summable hp').tendsto_cofinite_zero.eventually_lt_const
+        (Real.rpow_pos_of_pos hε p.toReal)).subset fun i (hi : ε ≤ ‖f i‖) ↦ ?_
     exact not_lt.2 (Real.rpow_le_rpow hε.le hi hp'.le)
 
 /-- Every `f ∈ ℓᵖ` at finite exponent has countable support. -/
-theorem _root_.Memℓp.countable_support {f : ∀ i, E i} (hf : Memℓp f p) (hp : p ≠ ∞) :
+theorem _root_.Memℓp.countable_dsupport {f : ∀ i, E i} (hf : Memℓp f p) (hp : p ≠ ∞) :
     {i | f i ≠ 0}.Countable := by
   -- Cover the support by the finite level sets `{i | 1 / (n + 1) ≤ ‖f i‖}`.
   refine (Set.countable_iUnion fun n : ℕ ↦
@@ -187,8 +188,8 @@ theorem finite_le_norm (f : lp E p) (hp : p ≠ ∞) {ε : ℝ} (hε : 0 < ε) :
   (lp.memℓp f).finite_le_norm hp hε
 
 /-- Every vector in `lp E p` at finite exponent has countable support. -/
-theorem countable_support (f : lp E p) (hp : p ≠ ∞) : {i | f i ≠ 0}.Countable :=
-  (lp.memℓp f).countable_support hp
+theorem countable_dsupport (f : lp E p) (hp : p ≠ ∞) : {i | f i ≠ 0}.Countable :=
+  (lp.memℓp f).countable_dsupport hp
 
 /-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
 -/
@@ -205,33 +206,37 @@ theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E
     mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
   exact Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span (Set.mem_iUnion.2 ⟨i, f i, rfl⟩)
 
-/-- If `lp (fun _ : ι ↦ G) p` (`1 ≤ p`) over a nontrivial normed group is separable, its index
-type is countable. -/
-theorem countable_of_separableSpace {G : Type*} [NormedAddCommGroup G] [Nontrivial G]
-    [Fact (1 ≤ p)] [TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ G) p)] :
+/-- If `lp E p` (`1 ≤ p`) over nontrivial normed groups `E i` is separable, its index type is
+countable. -/
+theorem countable_of_separableSpace [∀ i, Nontrivial (E i)] [Fact (1 ≤ p)]
+    [TopologicalSpace.SeparableSpace (lp E p)] :
     Countable ι := by
   classical
-  -- For `v ≠ 0`, the single-coordinate vectors `lp.single p i v` are separated by at least `‖v‖`.
+  -- Pick `v i ≠ 0` in each fiber; open balls of radius `‖v i‖ / 2` around `lp.single p i (v i)`
+  -- are pairwise disjoint.
   have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  obtain ⟨v, hv⟩ := exists_ne (0 : G)
-  have hv_pos : 0 < ‖v‖ := norm_pos_iff.2 hv
+  choose v hv using fun i ↦ exists_ne (0 : E i)
   refine Pairwise.countable_of_isOpen_disjoint
-    (s := fun i : ι ↦ Metric.ball (lp.single (E := fun _ : ι ↦ G) p i v) (‖v‖ / 2))
+    (s := fun i : ι ↦ Metric.ball (lp.single p i (v i)) (‖v i‖ / 2))
     (fun i j hij ↦ Metric.ball_disjoint_ball ?_)
     (fun _ ↦ Metric.isOpen_ball)
-    (fun _ ↦ Metric.nonempty_ball.2 (half_pos hv_pos))
-  rw [add_halves, dist_eq_norm]
-  simpa [lp.single_apply, Pi.single_apply, hij] using
-    lp.norm_apply_le_norm hp
-      (lp.single (E := fun _ : ι ↦ G) p i v - lp.single (E := fun _ : ι ↦ G) p j v) i
+    (fun i ↦ Metric.nonempty_ball.2 (half_pos (norm_pos_iff.2 (hv i))))
+  have hi : ‖v i‖ ≤ dist (lp.single p i (v i)) (lp.single p j (v j)) := by
+    rw [dist_eq_norm]
+    simpa [lp.single_apply, Pi.single_apply, hij] using
+      lp.norm_apply_le_norm hp (lp.single p i (v i) - lp.single p j (v j)) i
+  have hj : ‖v j‖ ≤ dist (lp.single p i (v i)) (lp.single p j (v j)) := by
+    rw [dist_eq_norm]
+    simpa [lp.single_apply, Pi.single_apply, hij.symm] using
+      lp.norm_apply_le_norm hp (lp.single p i (v i) - lp.single p j (v j)) j
+  linarith
 
-/-- For `1 ≤ p < ∞` and a nontrivial separable fiber `G`, `lp (fun _ : ι ↦ G) p` is separable if
-and only if the index type `ι` is countable. -/
-theorem separableSpace_iff {G : Type*} [NormedAddCommGroup G] [Nontrivial G]
-    [TopologicalSpace.SeparableSpace G] [Fact (1 ≤ p)] (hp : p ≠ ∞) :
-    TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ G) p) ↔ Countable ι :=
-  ⟨fun _ ↦ countable_of_separableSpace (ι := ι) (G := G) (p := p),
-    fun _ ↦ separableSpace (E := fun _ : ι ↦ G) hp⟩
+/-- For `1 ≤ p < ∞` and nontrivial separable fibers `E i`, `lp E p` is separable if and only if
+the index type `ι` is countable. -/
+theorem separableSpace_iff [∀ i, Nontrivial (E i)] [∀ i, TopologicalSpace.SeparableSpace (E i)]
+    [Fact (1 ≤ p)] (hp : p ≠ ∞) :
+    TopologicalSpace.SeparableSpace (lp E p) ↔ Countable ι :=
+  ⟨fun _ ↦ countable_of_separableSpace (E := E) (p := p), fun _ ↦ separableSpace hp⟩
 
 section Single
 
@@ -284,17 +289,17 @@ theorem norm_single_sub_single_sq [DecidableEq ι] {i j : ι} (hij : i ≠ j) (x
   rw [hsum, norm_sum_single_sq, Finset.sum_pair hij]
   simp [f, hij.symm]
 
-/-- Distinct unit single-coordinate vectors in `ℓ²` lie at distance `√2`. -/
+/-- Unit single-coordinate vectors at distinct indices in `ℓ²` lie at distance `√2`. -/
 theorem dist_single_eq_sqrt_two [DecidableEq ι] {i j : ι} (hij : i ≠ j) {x : E i} {y : E j}
     (hx : ‖x‖ = 1) (hy : ‖y‖ = 1) :
     dist (lp.single 2 i x) (lp.single 2 j y) = √2 := by
   rw [dist_eq_norm, ← Real.sqrt_sq (norm_nonneg _), norm_single_sub_single_sq hij, hx, hy]
   norm_num
 
-/-- Distinct coordinate unit vectors `lp.single 2 i 1` in `ℓ²` lie at distance `√2`. -/
-theorem dist_single_one_eq_sqrt_two {G : Type*} [NormedAddCommGroup G] [One G] [NormOneClass G]
+/-- Coordinate unit vectors `lp.single 2 i 1` at distinct indices in `ℓ²` lie at distance `√2`. -/
+theorem dist_single_one_eq_sqrt_two [∀ i, One (E i)] [∀ i, NormOneClass (E i)]
     [DecidableEq ι] {i j : ι} (hij : i ≠ j) :
-    dist (lp.single (E := fun _ : ι ↦ G) 2 i 1) (lp.single (E := fun _ : ι ↦ G) 2 j 1) = √2 :=
+    dist (lp.single (E := E) 2 i 1) (lp.single (E := E) 2 j 1) = √2 :=
   dist_single_eq_sqrt_two hij norm_one norm_one
 
 /-- The extended `ℓ²` norm of a finite sum of single-coordinate vectors is the square root of the

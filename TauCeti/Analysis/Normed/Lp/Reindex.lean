@@ -95,14 +95,16 @@ theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : �
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp'.ne']) hg t).trans_le (lp.sum_rpow_le_norm_rpow hp' f _)
 
-/-- Precomposing a sequence in `ℓᵖ` with an equivalence preserves membership in `ℓᵖ`. -/
-theorem Memℓp.comp_equiv {f : ι → G} (hf : Memℓp f p) (e : ι' ≃ ι) : Memℓp (f ∘ e) p := by
-  simpa using hf.indicator_comp (s := Set.univ) e.injective.injOn
+/-- Precomposing a sequence in `ℓᵖ` with an injective map preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_injective {f : ι → G} (hf : Memℓp f p) {g : ι' → ι}
+    (hg : Function.Injective g) : Memℓp (f ∘ g) p := by
+  simpa using hf.indicator_comp (s := Set.univ) hg.injOn
 
 /-- Precomposing with an equivalence preserves membership in `ℓᵖ` in both directions. -/
 @[simp]
 theorem Equiv.memℓp_comp_iff (e : ι' ≃ ι) {f : ι → G} : Memℓp (f ∘ e) p ↔ Memℓp f p :=
-  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.comp_equiv e.symm, fun hf ↦ hf.comp_equiv e⟩
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.comp_injective e.symm.injective,
+    fun hf ↦ hf.comp_injective e.injective⟩
 
 end IndicatorComp
 
@@ -115,15 +117,15 @@ variable {ι ι' ι'' : Type*} (p : ℝ≥0∞) (𝕜 G : Type*)
 arbitrary-domain analogue of `LinearIsometryEquiv.piLpCongrLeft`. -/
 def LinearIsometryEquiv.lpCongrLeft (e : ι ≃ ι') :
     lp (fun _ : ι ↦ G) p ≃ₗᵢ[𝕜] lp (fun _ : ι' ↦ G) p where
-  toFun f := ⟨f ∘ e.symm, (lp.memℓp f).comp_equiv e.symm⟩
-  invFun f := ⟨f ∘ e, (lp.memℓp f).comp_equiv e⟩
+  toFun f := ⟨f ∘ e.symm, (lp.memℓp f).comp_injective e.symm.injective⟩
+  invFun f := ⟨f ∘ e, (lp.memℓp f).comp_injective e.injective⟩
   map_add' _ _ := lp.ext rfl
   map_smul' _ _ := lp.ext rfl
   left_inv f := lp.ext <| funext fun i ↦ congrArg f (e.symm_apply_apply i)
   right_inv f := lp.ext <| funext fun j ↦ congrArg f (e.apply_symm_apply j)
   norm_map' f := by
     have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-    let f' : lp (fun _ : ι' ↦ G) p := ⟨f ∘ e.symm, (lp.memℓp f).comp_equiv e.symm⟩
+    let f' : lp (fun _ : ι' ↦ G) p := ⟨f ∘ e.symm, (lp.memℓp f).comp_injective e.symm.injective⟩
     exact le_antisymm
       (lp.norm_le_of_forall_eq_indicator_comp (f := f) (f' := f') (s := Set.univ) hp
         e.symm.injective.injOn fun j ↦ by simp [f'])
@@ -168,6 +170,15 @@ theorem LinearIsometryEquiv.lpCongrLeft_trans (e₁ : ι ≃ ι') (e₂ : ι' �
         LinearIsometryEquiv.lpCongrLeft p 𝕜 G (e₁.trans e₂) := by
   ext f k
   exact (rfl)
+
+/-- Applying two `lp` coordinate reindexings in succession equals reindexing along their
+composition. -/
+@[simp]
+theorem LinearIsometryEquiv.lpCongrLeft_lpCongrLeft (e₁ : ι ≃ ι') (e₂ : ι' ≃ ι'')
+    (f : lp (fun _ : ι ↦ G) p) :
+    LinearIsometryEquiv.lpCongrLeft p 𝕜 G e₂ (LinearIsometryEquiv.lpCongrLeft p 𝕜 G e₁ f) =
+      LinearIsometryEquiv.lpCongrLeft p 𝕜 G (e₁.trans e₂) f := by
+  rw [← LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.lpCongrLeft_trans]
 
 /-- `LinearIsometryEquiv.lpCongrLeft` moves a single-coordinate vector from `i` to `e i`. -/
 @[simp high]
