@@ -14,7 +14,6 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
@@ -134,12 +133,6 @@ theorem norm_fderiv_logLogInterior {z : ℂ} (hz : z ∈ ball (0 : ℂ) 4) (hz0 
 
 namespace LogLogInterior
 
-private theorem ae_mem_ne (R : ℝ) : ∀ᵐ z ∂volume.restrict (ball (0 : ℂ) R),
-    z ∈ ball (0 : ℂ) R ∧ z ≠ 0 := by
-  filter_upwards [ae_restrict_mem measurableSet_ball,
-    ae_restrict_of_ae (compl_mem_ae_iff.2 (measure_singleton (0 : ℂ)))] with z hz hz0
-  exact ⟨hz, hz0⟩
-
 private theorem integrableOn_inv_mul_log_sq {R : ℝ} (hR : R < 4) :
     IntegrableOn (fun z : ℂ => ((‖z‖ * Real.log (4 / ‖z‖))⁻¹) ^ 2) (ball (0 : ℂ) R) := by
   refine (integrableOn_fun_norm_addHaar volume
@@ -196,11 +189,12 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
   obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_log (by simp)
     (Real.log_pos (by norm_num : (1 : ℝ) < 4)) hlow
   refine ((W1p.hasWeakFDerivOn w).congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [hwv, hav, ae_mem_ne (1 / 2)] with z h1 h2 hz
-    rw [h1, h2, logLogInterior_def, Real.log_div four_ne_zero (norm_ne_zero_iff.2 hz.2)]
-  · filter_upwards [hwg, hav, hag, ae_mem_ne (1 / 2)] with z h1 h2 h3 hz
+  · filter_upwards [hwv, hav, Measure.ae_ne _ 0] with z h1 h2 hz0
+    rw [h1, h2, logLogInterior_def, Real.log_div four_ne_zero (norm_ne_zero_iff.2 hz0)]
+  · filter_upwards [hwg, hav, hag, ae_restrict_mem measurableSet_ball, Measure.ae_ne _ 0]
+      with z h1 h2 h3 hzB hz0
     have hz4 : ‖z‖ < 4 := by
-      have : ‖z‖ < 1 / 2 := mem_ball_zero_iff.1 hz.1
+      have : ‖z‖ < 1 / 2 := mem_ball_zero_iff.1 hzB
       linarith
     have hd : (InnerProductSpace.toDual ℝ ℂ).symm ((‖z‖ ^ 2)⁻¹ • innerSL ℝ z) =
         (‖z‖ ^ 2)⁻¹ • z := by
@@ -208,7 +202,7 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
         ContinuousLinearMap.ext fun _ => by
           rw [innerSL_apply_apply, InnerProductSpace.toDual_apply_apply]
       rw [hz, map_smul, LinearIsometryEquiv.symm_apply_apply]
-    rw [(hasFDerivAt_logLogInterior_log_norm hz4 hz.2).fderiv, h1, h2, h3, hd]
+    rw [(hasFDerivAt_logLogInterior_log_norm hz4 hz0).fderiv, h1, h2, h3, hd]
     simp only [map_smul, map_neg]
 
 /-- Off the origin `u` is smooth, so its classical derivative is its weak derivative there. -/
@@ -242,9 +236,9 @@ theorem memLp_fderiv_logLogInterior {R : ℝ} (hR : R < 4) :
     (μ := volume.restrict (ball (0 : ℂ) R))
   refine (memLp_two_iff_integrable_sq_norm hm).2 ?_
   refine (integrableOn_inv_mul_log_sq hR).mono' (hm.norm.pow 2) ?_
-  filter_upwards [ae_mem_ne _] with z hz
-  have hz4 : z ∈ ball (0 : ℂ) 4 := ball_subset_ball hR.le hz.1
-  rw [Real.norm_of_nonneg (sq_nonneg _), norm_fderiv_logLogInterior hz4 hz.2]
+  filter_upwards [ae_restrict_mem measurableSet_ball, Measure.ae_ne _ 0] with z hz hz0
+  have hz4 : z ∈ ball (0 : ℂ) 4 := ball_subset_ball hR.le hz
+  rw [Real.norm_of_nonneg (sq_nonneg _), norm_fderiv_logLogInterior hz4 hz0]
 
 /-- **The classical derivative of `log log (4 / ‖z‖)` is its weak derivative across the
 origin.** On the disc `ball 0 4` the function `u(z) = log log (4 / ‖z‖)`, which is unbounded at
@@ -261,15 +255,6 @@ theorem hasWeakFDerivOn_logLogInterior :
     exact mem_ball_self (by norm_num)
   · exact Or.inr ⟨hz, hz0⟩
 
-/-- Square integrability on every smaller disc `ball 0 R`, `R < 4`, is local square integrability
-on `ball 0 4`. -/
-private theorem memLpLoc_two_ball_four {F : Type*} [NormedAddCommGroup F] {f : ℂ → F}
-    (hf : ∀ R < 4, MemLp f 2 (volume.restrict (ball (0 : ℂ) R))) :
-    MemLpLoc 2 (ball (0 : ℂ) 4) f := by
-  refine memLpLoc_iff.2 fun K hK hKc => ?_
-  obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK
-  exact (hf R hR).mono_measure (Measure.restrict_mono hKR le_rfl)
-
 /-- **`log log (4 / ‖z‖)` is in the local class `W^{1,p}` for `p ≤ 2`.** On every subset of the
 disc `ball 0 4` the function `u(z) = log log (4 / ‖z‖)`, unbounded at the origin, lies in the
 local Sobolev class `W^{1,p}` for every exponent `p ≤ 2`. -/
@@ -277,9 +262,9 @@ theorem memWkpLoc_logLogInterior {p : ℝ≥0∞} {U : Set ℂ} (hp : p ≤ 2)
     (hU : U ⊆ ball (0 : ℂ) 4) : MemWkpLoc p U 1 logLogInterior := by
   have h2 : MemWkpLoc 2 (ball (0 : ℂ) 4) 1 logLogInterior :=
     (memWkpLoc_succ_iff_of_isOpen (Ω := ⟨ball (0 : ℂ) 4, isOpen_ball⟩)).2
-      ⟨memLpLoc_two_ball_four fun _ hR => memLp_logLogInterior hR, _,
+      ⟨memLpLoc_ball_iff.2 fun _ hR => memLp_logLogInterior hR, _,
         hasWeakFDerivOn_logLogInterior,
-        memWkpLoc_zero_iff.2 (memLpLoc_two_ball_four fun _ hR => memLp_fderiv_logLogInterior hR)⟩
+        memWkpLoc_zero_iff.2 (memLpLoc_ball_iff.2 fun _ hR => memLp_fderiv_logLogInterior hR)⟩
   exact (h2.mono_exponent hp).mono hU
 
 /-- The function `u(z) = log log (4 / ‖z‖)` tends to `∞` at the origin. -/

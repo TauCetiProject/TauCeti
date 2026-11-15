@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -33,7 +34,8 @@ pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
 pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
-set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
+set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it, and on
+a disc on the smaller concentric discs (`TauCeti.memLpLoc_ball_iff`).
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
 Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
 `u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
@@ -89,6 +91,18 @@ contained in `U`. -/
 theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
     (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
   (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
+
+/-- Local `Lᵖ` membership on a disc `ball c r` is `Lᵖ` membership on every smaller concentric disc
+`ball c R`, `R < r`. -/
+theorem memLpLoc_ball_iff {c : ℂ} {r : ℝ} :
+    MemLpLoc p (Metric.ball c r) f ↔ ∀ R < r, MemLp f p (volume.restrict (Metric.ball c R)) := by
+  refine ⟨fun hf R hR => hf.memLp_of_closure_subset
+    ((isCompact_closedBall c R).of_isClosed_subset isClosed_closure
+      Metric.closure_ball_subset_closedBall)
+    (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hR)),
+    fun hf K hK hKc => ?_⟩
+  obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK
+  exact (hf R hR).mono_measure (Measure.restrict_mono hKR le_rfl)
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
