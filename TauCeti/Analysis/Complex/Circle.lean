@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
@@ -12,6 +13,7 @@ public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
@@ -52,8 +54,8 @@ glued at their endpoints `±1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
-* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
-  is differentiable.
+* `Circle.differentiableAt_coe_inv` and `Circle.contDiff_coe_inv`: the pointwise inverse of a
+  differentiable, or `C^n`, circle-valued map is differentiable, or `C^n`.
 -/
 
 public section
@@ -175,6 +177,13 @@ theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace
     DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.differentiableAt.comp z hu
+
+/-- The pointwise inverse of a `C^n` circle-valued map, as a map into `ℂ`, is `C^n`. -/
+theorem contDiff_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : WithTop ℕ∞}
+    {u : E → Circle} (hu : ContDiff ℝ n (fun w ↦ (u w : ℂ))) :
+    ContDiff ℝ n (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, ContinuousLinearEquiv.coe_coe,
+    Complex.conjCLE_apply] using hu.continuousLinearMap_comp (Complex.conjCLE : ℂ →L[ℝ] ℂ)
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/

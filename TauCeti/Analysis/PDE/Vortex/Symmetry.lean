@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.AtInfinity
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Translations and rotations of plane vortex fields
@@ -40,8 +42,11 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
-These are identities of smooth differential expressions; their Sobolev completions, and the
-induced action on the divisor of a vortex, are not treated here.
+Both actions on fields, and `rotateTarget`, are pointwise isometries over the corresponding
+motion of the plane, and they preserve `C^n` regularity, compact support and `L^p` integrability
+against translation-invariant, respectively additive Haar, measures. These are identities of
+smooth differential expressions; their Sobolev completions, and the induced action on the
+divisor of a vortex, are not treated here.
 
 ## Main results
 
@@ -70,6 +75,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter Topology
+open scoped ENNReal
 
 /-! ### Translations -/
 
@@ -93,6 +99,29 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
     translateField a (translateField b x) = translateField (a + b) x := by
   funext z
   simp [add_assoc]
+
+/-- A translated field is the field composed with the translation `z ↦ z + a`. -/
+theorem translateField_eq_comp (a : ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    translateField a x = x ∘ (· + a) :=
+  funext fun z ↦ translateField_apply a x z
+
+/-- Translation preserves `C^n` regularity. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) := by
+  rw [translateField_eq_comp]
+  exact hx.comp (contDiff_id.add contDiff_const)
+
+/-- Translation preserves compact support. -/
+theorem hasCompactSupport_translateField (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : HasCompactSupport x) : HasCompactSupport (translateField a x) := by
+  simpa [translateField_eq_comp] using hx.comp_homeomorph (Homeomorph.addRight a)
+
+open MeasureTheory in
+/-- Translation preserves `L^p` for every translation-invariant measure on the plane. -/
+theorem memLp_translateField {μ : Measure ℂ} [μ.IsAddRightInvariant] {p : ℝ≥0∞} (a : ℂ)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : MemLp x p μ) : MemLp (translateField a x) p μ := by
+  rw [translateField_eq_comp]
+  exact hx.comp_measurePreserving (measurePreserving_add_right μ a)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
@@ -316,6 +345,7 @@ theorem rotateTarget_rotateTarget (u v : Circle) (η : ℂ → EuclideanSpace �
 
 /-- Rotations of fields are pointwise isometries for the coefficient metric: the inner product
 of two rotated fields at `z` is the inner product of the fields at `u z`. -/
+@[simp]
 theorem inner_rotateField (u : Circle) (y v : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     inner ℝ (rotateField u y z) (rotateField u v z) = inner ℝ (y (u * z)) (v (u * z)) := by
   have hn := Circle.re_sq_add_im_sq u
@@ -324,12 +354,14 @@ theorem inner_rotateField (u : Circle) (y v : ℂ → EuclideanSpace ℝ (Fin 4)
   linear_combination (v (u * z) 0 * y (u * z) 0 + v (u * z) 1 * y (u * z) 1) * hn
 
 /-- Rotations of fields preserve the pointwise norm of the coefficient metric. -/
+@[simp]
 theorem norm_rotateField (u : Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖rotateField u y z‖ = ‖y (u * z)‖ := by
   rw [norm_eq_sqrt_real_inner, inner_rotateField, ← norm_eq_sqrt_real_inner]
 
 /-- Rotations of the target are pointwise isometries: the inner product of two rotated target
 fields at `z` is the inner product of the fields at `u z`. -/
+@[simp]
 theorem inner_rotateTarget (u : Circle) (f η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     inner ℝ (rotateTarget u f z) (rotateTarget u η z) = inner ℝ (f (u * z)) (η (u * z)) := by
   have hn := Circle.re_sq_add_im_sq u
@@ -338,9 +370,64 @@ theorem inner_rotateTarget (u : Circle) (f η : ℂ → EuclideanSpace ℝ (Fin 
   linear_combination (η (u * z) 2 * f (u * z) 2 + η (u * z) 3 * f (u * z) 3) * hn
 
 /-- Rotations of the target preserve the pointwise norm. -/
+@[simp]
 theorem norm_rotateTarget (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖rotateTarget u η z‖ = ‖η (u * z)‖ := by
   rw [norm_eq_sqrt_real_inner, inner_rotateTarget, ← norm_eq_sqrt_real_inner]
+
+/-- A rotated target field vanishes at `z` exactly when the field vanishes at `u z`. -/
+@[simp]
+theorem rotateTarget_eq_zero_iff (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    rotateTarget u η z = 0 ↔ η (u * z) = 0 := by
+  rw [← norm_eq_zero, norm_rotateTarget, norm_eq_zero]
+
+/-- Rotation of fields preserves `C^n` regularity. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x ((u : ℂ) * z) i) :=
+    ((contDiff_piLp _).mp hx i).comp (contDiff_const.mul contDiff_id)
+  refine (contDiff_piLp _).mpr fun i ↦ ?_
+  fin_cases i
+  · simpa using (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · simpa using (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · simpa using hc 2
+  · simpa using hc 3
+
+/-- Rotation of the target preserves `C^n` regularity. -/
+theorem contDiff_rotateTarget {n : WithTop ℕ∞} (u : Circle) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hη : ContDiff ℝ n η) : ContDiff ℝ n (rotateTarget u η) := by
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ η ((u : ℂ) * z) i) :=
+    ((contDiff_piLp _).mp hη i).comp (contDiff_const.mul contDiff_id)
+  refine (contDiff_piLp _).mpr fun i ↦ ?_
+  fin_cases i
+  · simpa using hc 0
+  · simpa using hc 1
+  · simpa using (contDiff_const.mul (hc 2)).add (contDiff_const.mul (hc 3))
+  · simpa using (contDiff_const.mul (hc 3)).sub (contDiff_const.mul (hc 2))
+
+/-- Rotation of the target preserves compact support. -/
+theorem hasCompactSupport_rotateTarget (u : Circle) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hη : HasCompactSupport η) : HasCompactSupport (rotateTarget u η) :=
+  (hη.comp_homeomorph (Homeomorph.mulLeft₀ (u : ℂ) (Circle.coe_ne_zero u))).mono fun _ hz h ↦
+    hz ((rotateTarget_eq_zero_iff u η _).2 h)
+
+open MeasureTheory in
+/-- Rotation of fields preserves `L^p` for every additive Haar measure on the plane. -/
+theorem memLp_rotateField {μ : Measure ℂ} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} (u : Circle)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y p μ) : MemLp (rotateField u y) p μ := by
+  have hψ := Circle.measurePreserving_coe_mul μ u
+  have hc (i : Fin 4) : AEMeasurable (fun z ↦ y ((u : ℂ) * z) i) μ :=
+    (EuclideanSpace.proj i).continuous.measurable.comp_aemeasurable
+      (hy.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving hψ.quasiMeasurePreserving)
+  refine (hy.comp_measurePreserving hψ).congr_norm
+    ((PiLp.continuous_toLp 2 _).comp_aestronglyMeasurable
+      (aemeasurable_pi_iff.2 fun i ↦ ?_).aestronglyMeasurable)
+    (ae_of_all _ fun z ↦ (norm_rotateField u y z).symm)
+  fin_cases i
+  · simpa using ((hc 0).const_mul (u : ℂ).re).fun_add ((hc 1).const_mul (u : ℂ).im)
+  · simpa using ((hc 1).const_mul (u : ℂ).re).fun_sub ((hc 0).const_mul (u : ℂ).im)
+  · simpa using hc 2
+  · simpa using hc 3
 
 /-- Evaluation of a real-linear functional at `u`, in the basis `(1, I)`. -/
 private theorem clm_apply_coe (L : ℂ →L[ℝ] ℝ) (u : Circle) :

@@ -30,11 +30,11 @@ for `v = 1 + χ (conj g - 1)`, with `χ` a cutoff equal to one outside a large d
 of the phase is chosen.
 
 The linear part `gaugeLinearAction` fixes the connection variation and rotates its section
-variation. This file provides its composition, inverse, pointwise norm, vanishing and regularity
-laws, the affine increment and difference identities, and the derivative of the gauge action in
-field directions. The gauge's real and imaginary derivatives and the section-coordinate Leibniz
-rules are expressed through `gaugeForm`, for use by the deformation operators in
-`FramedGauge.Linearization`.
+variation. This file provides its composition, inverse, pointwise norm, vanishing, regularity,
+compact support and `L^p` laws, the affine increment and difference identities, and the
+derivative of the gauge action in field directions. The gauge's real and imaginary derivatives
+and the section-coordinate Leibniz rules are expressed through `gaugeForm`, for use by the
+deformation operators in `FramedGauge.Linearization`.
 
 A gauge carries `x` to `y` exactly when its logarithmic derivative is the difference of their
 connection forms and it carries the section of `x` to that of `y`
@@ -175,6 +175,32 @@ theorem gaugeLinearAction_eq_zero_iff (u : ℂ → Circle)
     (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     gaugeLinearAction u y z = 0 ↔ y z = 0 := by
   rw [← norm_eq_zero, norm_gaugeLinearAction, norm_eq_zero]
+
+/-- Gauges preserve compact support. -/
+theorem hasCompactSupport_gaugeLinearAction (u : ℂ → Circle) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : HasCompactSupport y) : HasCompactSupport (gaugeLinearAction u y) :=
+  hy.mono fun z hz h ↦ hz ((gaugeLinearAction_eq_zero_iff u y z).2 h)
+
+open MeasureTheory in
+/-- Continuous gauges preserve `L^p`, for every measure on the plane. -/
+theorem memLp_gaugeLinearAction {μ : Measure ℂ} {p : ENNReal} {u : ℂ → Circle}
+    (hu : Continuous fun z ↦ (u z : ℂ)) {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y p μ) :
+    MemLp (gaugeLinearAction u y) p μ := by
+  have hc (i : Fin 4) : AEMeasurable (fun z ↦ y z i) μ :=
+    (EuclideanSpace.proj i).continuous.measurable.comp_aemeasurable
+      hy.aestronglyMeasurable.aemeasurable
+  have hr : AEMeasurable (fun z ↦ (u z : ℂ).re) μ :=
+    (continuous_re.comp hu).measurable.aemeasurable
+  have hi : AEMeasurable (fun z ↦ (u z : ℂ).im) μ :=
+    (continuous_im.comp hu).measurable.aemeasurable
+  refine hy.congr_norm ((PiLp.continuous_toLp 2 _).comp_aestronglyMeasurable
+    (aemeasurable_pi_iff.2 fun i ↦ ?_).aestronglyMeasurable)
+    (ae_of_all _ fun z ↦ (norm_gaugeLinearAction u y z).symm)
+  fin_cases i
+  · simpa [gaugeLinearAction_apply] using hc 0
+  · simpa [gaugeLinearAction_apply] using hc 1
+  · simpa [gaugeLinearAction_apply] using (hr.fun_mul (hc 2)).fun_sub (hi.fun_mul (hc 3))
+  · simpa [gaugeLinearAction_apply] using (hi.fun_mul (hc 2)).fun_add (hr.fun_mul (hc 3))
 
 /-- Smooth gauges preserve the regularity of variations, without differentiating a
 connection increment. -/

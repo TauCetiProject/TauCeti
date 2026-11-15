@@ -9,8 +9,8 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Linearization
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.Complex.Isometry
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Complex.Circle
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Symmetries of the weak right inverse of the gauge-fixed vortex operator
@@ -24,7 +24,11 @@ supported `C²` test field `η`; the weak kernel of `L_x` consists of the weak s
 of `L_x y = f` orthogonal to the weak kernel. This file names that property
 (`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution`) and proves:
 
-* such a solution is unique up to null sets
+* weak solutions are invariant under changes on null sets
+  (`TauCeti.Vortex.IsGaugeFixedWeakSolution.congr_ae`), closed under scalar multiples and, when
+  square integrable, under sums, and two square-integrable weak solutions of the same equation
+  differ by an element of the weak kernel (`TauCeti.Vortex.IsGaugeFixedWeakSolution.sub_of_memLp`);
+* a least weak solution is unique up to null sets
   (`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.ae_eq`), and it has the least `L²` norm among
   all square-integrable weak solutions
   (`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.integral_norm_sq_le`), so `Q` is determined by
@@ -35,17 +39,20 @@ of `L_x y = f` orthogonal to the weak kernel. This file names that property
     (`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.translateField`);
   - the rotations `rotateField u` of fields and `rotateTarget u` of targets
     (`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.rotateField`), for any additive Haar
-    measure, since rotations of the plane preserve it
-    (`LinearIsometryEquiv.measurePreserving_addHaar`);
+    measure, since rotations of the plane preserve it (`Circle.measurePreserving_coe_mul`);
   - the `C²` gauge transformations `gaugeTransform g` of the background, acting by the linear
     gauge action `gaugeLinearAction g` on fields and targets
     (`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.gaugeTransform`). Constant gauges are the
     changes of frame of the line at infinity, and the framed gauge group is included.
 
-Together with uniqueness, these are the translation, rotation and line-frame laws of the right
-inverse: if `Q` and `Q'` are the weak right inverses at `x` and at a transformed field, then
-`Q'` applied to the transformed input is the transformed `Q f`, almost everywhere. Since the weak
-kernel is transported as well, so is the `L²`-orthogonal projection onto it.
+Together with uniqueness, these give the translation, rotation and line-frame laws of the right
+inverse: if `y` and `y'` are the least weak solutions at `x` and at a transformed field, with
+transformed data, then `y'` is the transformed `y` almost everywhere
+(`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.translateField_ae_eq`,
+`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.rotateField_ae_eq`,
+`TauCeti.Vortex.IsLeastGaugeFixedWeakSolution.gaugeTransform_ae_eq`). So if `Q` and `Q'` are the
+weak right inverses at `x` and at the transformed field, then `Q'` applied to the transformed
+input is the transformed `Q f`, almost everywhere.
 
 All three symmetries act pointwise isometrically after a measure-preserving change of variables
 of the plane, and intertwine `L_x*` on test fields (`gaugeFixedAdjoint_translateField`,
@@ -65,7 +72,7 @@ open scoped RealInnerProductSpace Topology
 
 namespace TauCeti.Vortex
 
-variable {μ : Measure ℂ} {x y y' f : ℂ → EuclideanSpace ℝ (Fin 4)}
+variable {μ : Measure ℂ} {x y y' f f' : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- `y` is a weak solution of `L_x y = f`, for the gauge-fixed vortex operator `L_x`
 (`gaugeFixedOperator`): `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly supported `C²` test
@@ -82,7 +89,6 @@ theorem isGaugeFixedWeakSolution_iff :
 
 /-- `y` lies in the weak kernel of `L_x` exactly when `∫ ⟪y, L_x* η⟫ = 0` for every test
 field `η`. -/
-@[simp]
 theorem isGaugeFixedWeakSolution_zero_iff :
     IsGaugeFixedWeakSolution μ x y 0 ↔ ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η →
       HasCompactSupport η → ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
@@ -99,25 +105,63 @@ structure IsLeastGaugeFixedWeakSolution (μ : Measure ℂ) (x y f : ℂ → Eucl
   integral_inner_eq_zero ⦃u : ℂ → EuclideanSpace ℝ (Fin 4)⦄ : MemLp u 2 μ →
     IsGaugeFixedWeakSolution μ x u 0 → ∫ z, ⟪y z, u z⟫ ∂μ = 0
 
-/-! ### Uniqueness and minimality -/
+/-! ### Linear structure and uniqueness -/
+
+/-- Weak solutions only depend on the classes of `y` and `f` up to null sets. -/
+theorem IsGaugeFixedWeakSolution.congr_ae (h : IsGaugeFixedWeakSolution μ x y f)
+    (hy : y =ᵐ[μ] y') (hf : f =ᵐ[μ] f') : IsGaugeFixedWeakSolution μ x y' f' := by
+  intro η hη hηc
+  have hy' : ∫ z, ⟪y' z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ :=
+    integral_congr_ae (hy.mono fun z hz ↦ by simp only [hz])
+  have hf' : ∫ z, ⟪f' z, η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
+    integral_congr_ae (hf.mono fun z hz ↦ by simp only [hz])
+  rw [hy', hf']
+  exact h η hη hηc
+
+/-- Least weak solutions only depend on the classes of `y` and `f` up to null sets. -/
+theorem IsLeastGaugeFixedWeakSolution.congr_ae (h : IsLeastGaugeFixedWeakSolution μ x y f)
+    (hy : y =ᵐ[μ] y') (hf : f =ᵐ[μ] f') : IsLeastGaugeFixedWeakSolution μ x y' f' where
+  memLp := h.memLp.ae_eq hy
+  isGaugeFixedWeakSolution := h.isGaugeFixedWeakSolution.congr_ae hy hf
+  integral_inner_eq_zero u hu hk := by
+    rw [← h.integral_inner_eq_zero hu hk]
+    exact integral_congr_ae (hy.mono fun z hz ↦ by simp only [hz])
+
+/-- A scalar multiple of a weak solution of `L_x y = f` is a weak solution of
+`L_x (c y) = c f`. -/
+theorem IsGaugeFixedWeakSolution.smul (h : IsGaugeFixedWeakSolution μ x y f) (c : ℝ) :
+    IsGaugeFixedWeakSolution μ x (c • y) (c • f) := by
+  intro η hη hηc
+  simp only [Pi.smul_apply, real_inner_smul_left]
+  rw [integral_const_mul, integral_const_mul, h η hη hηc]
 
 section Uniqueness
 
 variable [IsFiniteMeasureOnCompacts μ]
 
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) : MemLp (gaugeFixedAdjoint x η) 2 μ :=
-  (continuous_gaugeFixedAdjoint hx (hη.of_le (by norm_num))).memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint hηc)
+/-- The sum of square-integrable weak solutions of `L_x y = f` and `L_x y' = f'`, with
+square-integrable data, is a weak solution of `L_x (y + y') = f + f'`. -/
+theorem IsGaugeFixedWeakSolution.add (hx : Continuous x) (hy : MemLp y 2 μ) (hy' : MemLp y' 2 μ)
+    (hf : MemLp f 2 μ) (hf' : MemLp f' 2 μ) (h : IsGaugeFixedWeakSolution μ x y f)
+    (h' : IsGaugeFixedWeakSolution μ x y' f') :
+    IsGaugeFixedWeakSolution μ x (y + y') (f + f') := by
+  intro η hη hηc
+  have hL : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+    memLp_gaugeFixedAdjoint hx (hη.of_le (by norm_num)) hηc
+  have hη2 : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
+  simp only [Pi.add_apply, inner_add_left]
+  rw [integral_add (hy.integrable_inner hL) (hy'.integrable_inner hL),
+    integral_add (hf.integrable_inner hη2) (hf'.integrable_inner hη2), h η hη hηc, h' η hη hηc]
 
 /-- The difference of two square-integrable weak solutions of `L_x y = f` lies in the weak
 kernel. -/
-private theorem IsGaugeFixedWeakSolution.sub_of_memLp (hx : Continuous x) (hy : MemLp y 2 μ)
+theorem IsGaugeFixedWeakSolution.sub_of_memLp (hx : Continuous x) (hy : MemLp y 2 μ)
     (hy' : MemLp y' 2 μ) (h : IsGaugeFixedWeakSolution μ x y f)
     (h' : IsGaugeFixedWeakSolution μ x y' f) : IsGaugeFixedWeakSolution μ x (y - y') 0 := by
   rw [isGaugeFixedWeakSolution_zero_iff]
   intro η hη hηc
-  have hL := memLp_gaugeFixedAdjoint (μ := μ) hx hη hηc
+  have hL : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+    memLp_gaugeFixedAdjoint hx (hη.of_le (by norm_num)) hηc
   simp only [Pi.sub_apply, inner_sub_left]
   rw [integral_sub (hy.integrable_inner hL) (hy'.integrable_inner hL), h η hη hηc, h' η hη hηc,
     sub_self]
@@ -175,14 +219,10 @@ theorem exists_continuousLinearMap_isLeastGaugeFixedWeakSolution [μ.IsAddHaarMe
   obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (μ := μ)
     hx hsol hlim
   refine ⟨Q, fun f ↦ ⟨Lp.memLp _, fun η hη hηc ↦ hQ f η hη hηc, fun u hu hk ↦ ?_⟩⟩
-  rw [isGaugeFixedWeakSolution_zero_iff] at hk
-  have hcongr (g : ℂ → EuclideanSpace ℝ (Fin 4)) :
-      ∫ z, ⟪g z, hu.toLp u z⟫ ∂μ = ∫ z, ⟪g z, u z⟫ ∂μ :=
-    integral_congr_ae (hu.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
-  rw [← hcongr]
-  refine hQK f _ fun η hη hηc ↦ ?_
-  rw [← hk η hη hηc]
-  exact integral_congr_ae (hu.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
+  have hk' := hk.congr_ae hu.coeFn_toLp.symm EventuallyEq.rfl
+  rw [isGaugeFixedWeakSolution_zero_iff] at hk'
+  refine (integral_congr_ae (hu.coeFn_toLp.mono fun z hz ↦ ?_)).trans (hQK f _ hk')
+  simp only [hz]
 
 /-! ### Transport by symmetries -/
 
@@ -244,42 +284,7 @@ private theorem isLeastGaugeFixedWeakSolution (σ : WeakSymmetry μ x x')
 
 end WeakSymmetry
 
-/-- The coordinates of a square-integrable field composed with a measure-preserving map are
-almost everywhere measurable. -/
-private theorem aemeasurable_apply_comp {ψ : ℂ → ℂ} (hψ : MeasurePreserving ψ μ μ)
-    (hy : MemLp y 2 μ) (i : Fin 4) : AEMeasurable (fun z ↦ y (ψ z) i) μ :=
-  (EuclideanSpace.proj i).continuous.measurable.comp_aemeasurable
-    (hy.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving hψ.quasiMeasurePreserving)
-
-/-- A field whose coordinates are almost everywhere measurable, and whose pointwise norm is that
-of a square-integrable field composed with a measure-preserving map, is square integrable. -/
-private theorem memLp_of_norm_eq {g : ℂ → EuclideanSpace ℝ (Fin 4)} {ψ : ℂ → ℂ}
-    (hψ : MeasurePreserving ψ μ μ) (hy : MemLp y 2 μ)
-    (hg : ∀ i, AEMeasurable (fun z ↦ g z i) μ) (h : ∀ z, ‖g z‖ = ‖y (ψ z)‖) : MemLp g 2 μ :=
-  (hy.comp_measurePreserving hψ).congr_norm
-    ((PiLp.continuous_toLp 2 _).comp_aestronglyMeasurable
-      (aemeasurable_pi_iff.2 hg).aestronglyMeasurable)
-    (ae_of_all _ fun z ↦ (h z).symm)
-
 /-! #### Translations -/
-
-private theorem translateField_eq_comp (a : ℂ) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    translateField a y = y ∘ (· + a) :=
-  funext fun z ↦ translateField_apply a y z
-
-private theorem contDiff_translateField {η : ℂ → EuclideanSpace ℝ (Fin 4)} (a : ℂ)
-    (hη : ContDiff ℝ 2 η) : ContDiff ℝ 2 (translateField a η) := by
-  rw [translateField_eq_comp]
-  exact hη.comp (contDiff_id.add contDiff_const)
-
-private theorem hasCompactSupport_translateField {η : ℂ → EuclideanSpace ℝ (Fin 4)} (a : ℂ)
-    (hηc : HasCompactSupport η) : HasCompactSupport (translateField a η) := by
-  simpa [translateField_eq_comp] using hηc.comp_homeomorph (Homeomorph.addRight a)
-
-private theorem memLp_translateField [μ.IsAddRightInvariant] (a : ℂ) (hy : MemLp y 2 μ) :
-    MemLp (translateField a y) 2 μ := by
-  rw [translateField_eq_comp]
-  exact hy.comp_measurePreserving (measurePreserving_add_right μ a)
 
 /-- Translation by `a` as a symmetry of the weak equations. -/
 private noncomputable def translateWeakSymmetry [μ.IsAddRightInvariant] (a : ℂ) :
@@ -317,56 +322,13 @@ theorem IsLeastGaugeFixedWeakSolution.translateField [μ.IsAddRightInvariant]
 
 /-! #### Rotations -/
 
-private theorem rotateField_eq_zero_of_eq_zero {u : Circle} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {z : ℂ} (h : y (u * z) = 0) : rotateField u y z = 0 := by
-  ext i
-  fin_cases i <;> simp [h]
-
-private theorem rotateTarget_eq_zero_of_eq_zero {u : Circle} {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {z : ℂ} (h : η (u * z) = 0) : rotateTarget u η z = 0 := by
-  ext i
-  fin_cases i <;> simp [h]
-
-private theorem contDiff_rotateTarget {η : ℂ → EuclideanSpace ℝ (Fin 4)} (u : Circle)
-    (hη : ContDiff ℝ 2 η) : ContDiff ℝ 2 (rotateTarget u η) := by
-  have hc (i : Fin 4) : ContDiff ℝ 2 (fun z ↦ η ((u : ℂ) * z) i) :=
-    ((contDiff_piLp _).mp hη i).comp (contDiff_const.mul contDiff_id)
-  refine (contDiff_piLp _).mpr fun i ↦ ?_
-  fin_cases i
-  · simpa using hc 0
-  · simpa using hc 1
-  · simpa using (contDiff_const.mul (hc 2)).add (contDiff_const.mul (hc 3))
-  · simpa using (contDiff_const.mul (hc 3)).sub (contDiff_const.mul (hc 2))
-
-private theorem hasCompactSupport_rotateTarget {η : ℂ → EuclideanSpace ℝ (Fin 4)} (u : Circle)
-    (hηc : HasCompactSupport η) : HasCompactSupport (rotateTarget u η) :=
-  (hηc.comp_homeomorph (Homeomorph.mulLeft₀ (u : ℂ) (Circle.coe_ne_zero u))).mono fun _ hz h ↦
-    hz (rotateTarget_eq_zero_of_eq_zero h)
-
-/-- Rotation by `u` preserves every additive Haar measure on the plane. -/
-private theorem measurePreserving_coe_mul [μ.IsAddHaarMeasure] (u : Circle) :
-    MeasurePreserving (fun z : ℂ ↦ (u : ℂ) * z) μ μ := by
-  have h := (rotation u).measurePreserving_addHaar μ
-  rwa [show ⇑(rotation u) = fun z : ℂ ↦ (u : ℂ) * z from funext (rotation_apply u)] at h
-
-private theorem memLp_rotateField [μ.IsAddHaarMeasure] (u : Circle) (hy : MemLp y 2 μ) :
-    MemLp (rotateField u y) 2 μ := by
-  have hψ := measurePreserving_coe_mul (μ := μ) u
-  refine memLp_of_norm_eq hψ hy (fun i ↦ ?_) (norm_rotateField u y)
-  have hc := aemeasurable_apply_comp hψ hy
-  fin_cases i
-  · simpa using ((hc 0).const_mul (u : ℂ).re).fun_add ((hc 1).const_mul (u : ℂ).im)
-  · simpa using ((hc 1).const_mul (u : ℂ).re).fun_sub ((hc 0).const_mul (u : ℂ).im)
-  · simpa using hc 2
-  · simpa using hc 3
-
 /-- Rotation by `u` as a symmetry of the weak equations. -/
 private noncomputable def rotateWeakSymmetry [μ.IsAddHaarMeasure] (u : Circle) :
     WeakSymmetry μ x (rotateField u x) where
   ψ := MeasurableEquiv.mulLeft₀ (u : ℂ) (Circle.coe_ne_zero u)
   S := rotateField u
   T := rotateTarget u
-  measurePreserving := measurePreserving_coe_mul u
+  measurePreserving := Circle.measurePreserving_coe_mul μ u
   inner_S := inner_rotateField u
   inner_T := inner_rotateTarget u
   memLp_S _ := memLp_rotateField u
@@ -397,34 +359,6 @@ theorem IsLeastGaugeFixedWeakSolution.rotateField [μ.IsAddHaarMeasure]
 
 /-! #### Gauge transformations -/
 
-private theorem contDiff_coe_inv {g : ℂ → Circle} (hg : ContDiff ℝ 2 (fun z ↦ (g z : ℂ))) :
-    ContDiff ℝ 2 (fun z ↦ ((g⁻¹) z : ℂ)) := by
-  have h : (fun z ↦ ((g⁻¹) z : ℂ)) = fun z ↦ Complex.conjCLE (g z : ℂ) := by
-    funext z
-    simp only [Pi.inv_apply, Circle.coe_inv_eq_conj, Complex.conjCLE_apply]
-  rw [h]
-  exact Complex.conjCLE.contDiff.comp hg
-
-private theorem hasCompactSupport_gaugeLinearAction (g : ℂ → Circle)
-    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hηc : HasCompactSupport η) :
-    HasCompactSupport (gaugeLinearAction g η) :=
-  hηc.mono fun z hz h ↦ hz ((gaugeLinearAction_eq_zero_iff g η z).2 h)
-
-private theorem memLp_gaugeLinearAction {g : ℂ → Circle} (hg : Continuous fun z ↦ (g z : ℂ))
-    (hy : MemLp y 2 μ) : MemLp (gaugeLinearAction g y) 2 μ := by
-  refine memLp_of_norm_eq (MeasurePreserving.id μ) hy (fun i ↦ ?_)
-    fun z ↦ norm_gaugeLinearAction g y z
-  have hc := aemeasurable_apply_comp (MeasurePreserving.id μ) hy
-  have hr : AEMeasurable (fun z ↦ (g z : ℂ).re) μ :=
-    (Complex.continuous_re.comp hg).measurable.aemeasurable
-  have hi : AEMeasurable (fun z ↦ (g z : ℂ).im) μ :=
-    (Complex.continuous_im.comp hg).measurable.aemeasurable
-  fin_cases i
-  · simpa [gaugeLinearAction_apply] using hc 0
-  · simpa [gaugeLinearAction_apply] using hc 1
-  · simpa [gaugeLinearAction_apply] using (hr.fun_mul (hc 2)).fun_sub (hi.fun_mul (hc 3))
-  · simpa [gaugeLinearAction_apply] using (hi.fun_mul (hc 2)).fun_add (hr.fun_mul (hc 3))
-
 /-- A `C²` gauge transformation `g` as a symmetry of the weak equations. -/
 private noncomputable def gaugeWeakSymmetry {g : ℂ → Circle}
     (hg : ContDiff ℝ 2 (fun z ↦ (g z : ℂ))) :
@@ -437,10 +371,10 @@ private noncomputable def gaugeWeakSymmetry {g : ℂ → Circle}
   inner_T := inner_gaugeLinearAction g
   memLp_S _ := memLp_gaugeLinearAction hg.continuous
   exists_S_eq v hv := ⟨gaugeLinearAction g⁻¹ v, memLp_gaugeLinearAction
-    (contDiff_coe_inv hg).continuous hv, gaugeLinearAction_gaugeLinearAction_inv g v⟩
+    (Circle.contDiff_coe_inv hg).continuous hv, gaugeLinearAction_gaugeLinearAction_inv g v⟩
   test_T η hη hηc := ⟨contDiff_gaugeLinearAction hg hη, hasCompactSupport_gaugeLinearAction g hηc⟩
   exists_T_eq η hη hηc := ⟨gaugeLinearAction g⁻¹ η,
-    contDiff_gaugeLinearAction (contDiff_coe_inv hg) hη,
+    contDiff_gaugeLinearAction (Circle.contDiff_coe_inv hg) hη,
     hasCompactSupport_gaugeLinearAction g⁻¹ hηc, gaugeLinearAction_gaugeLinearAction_inv g η⟩
   gaugeFixedAdjoint_T η hη _ := funext fun z ↦ gaugeFixedAdjoint_gaugeTransform
     (hg.differentiable (by norm_num) z) x
@@ -465,5 +399,42 @@ theorem IsLeastGaugeFixedWeakSolution.gaugeTransform (h : IsLeastGaugeFixedWeakS
     IsLeastGaugeFixedWeakSolution μ (gaugeTransform g x) (gaugeLinearAction g y)
       (gaugeLinearAction g f) :=
   (gaugeWeakSymmetry hg).isLeastGaugeFixedWeakSolution h
+
+/-! ### Laws of the weak right inverse -/
+
+/-- **Translation law of the weak right inverse.** If `y` and `y'` are the least weak solutions
+of `L_x y = f` and of the translated equation at `translateField a x` with data
+`translateField a f`, then `y'` is the translate of `y` almost everywhere. -/
+theorem IsLeastGaugeFixedWeakSolution.translateField_ae_eq [IsFiniteMeasureOnCompacts μ]
+    [μ.IsAddRightInvariant]
+    (hx : Continuous x) (h : IsLeastGaugeFixedWeakSolution μ x y f) {a : ℂ}
+    (h' : IsLeastGaugeFixedWeakSolution μ (Vortex.translateField a x) y'
+      (Vortex.translateField a f)) :
+    y' =ᵐ[μ] Vortex.translateField a y :=
+  h'.ae_eq (contDiff_translateField a (contDiff_zero.2 hx)).continuous (h.translateField a)
+
+/-- **Rotation law of the weak right inverse.** If `y` and `y'` are the least weak solutions of
+`L_x y = f` and of the rotated equation at `rotateField u x` with data `rotateTarget u f`, then
+`y'` is the rotation of `y` almost everywhere. -/
+theorem IsLeastGaugeFixedWeakSolution.rotateField_ae_eq [μ.IsAddHaarMeasure]
+    (hx : Continuous x) (h : IsLeastGaugeFixedWeakSolution μ x y f) {u : Circle}
+    (h' : IsLeastGaugeFixedWeakSolution μ (Vortex.rotateField u x) y' (rotateTarget u f)) :
+    y' =ᵐ[μ] Vortex.rotateField u y :=
+  h'.ae_eq (contDiff_rotateField u (contDiff_zero.2 hx)).continuous (h.rotateField u)
+
+/-- **Gauge law of the weak right inverse.** If `g` is a `C²` gauge and `y` and `y'` are the
+least weak solutions of `L_x y = f` and of the gauge-transformed equation at
+`gaugeTransform g x` with data `gaugeLinearAction g f`, then `y'` is `gaugeLinearAction g y`
+almost everywhere. Constant gauges give the line-frame law. -/
+theorem IsLeastGaugeFixedWeakSolution.gaugeTransform_ae_eq [IsFiniteMeasureOnCompacts μ]
+    (hx : Continuous x)
+    (h : IsLeastGaugeFixedWeakSolution μ x y f) {g : ℂ → Circle}
+    (hg : ContDiff ℝ 2 (fun z ↦ (g z : ℂ)))
+    (h' : IsLeastGaugeFixedWeakSolution μ (Vortex.gaugeTransform g x) y'
+      (gaugeLinearAction g f)) :
+    y' =ᵐ[μ] gaugeLinearAction g y :=
+  h'.ae_eq
+    (contDiff_gaugeTransform (n := 0) (hg.of_le (by norm_num)) (contDiff_zero.2 hx)).continuous
+    (h.gaugeTransform hg)
 
 end TauCeti.Vortex
