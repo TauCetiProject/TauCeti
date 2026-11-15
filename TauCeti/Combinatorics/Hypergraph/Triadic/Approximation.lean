@@ -37,18 +37,6 @@ private theorem pow_three_le_four_mul_descFactorial {n : ℕ} (hn : 4 ≤ n) : n
 private theorem sum_union_le_of_nonneg {ι : Type*} [DecidableEq ι] (s t : Finset ι) {f : ι → ℝ} (hf
     : ∀ x, 0 ≤ f x) : ∑ x ∈ s ∪ t, f x ≤ ∑ x ∈ s, f x + ∑ x ∈ t, f x := by
   linarith [sum_union_inter (s₁ := s) (s₂ := t) (f := f), sum_nonneg (s := s ∩ t) fun x _ ↦ hf x]
-private theorem pairColorDensity_relabel {κ κ' V : Type*} (S : PairColorSystem κ V) (e : κ ≃ κ') (c
-    : κ') (s t : Finset V) : pairColorDensity (S.relabel e) c s t = pairColorDensity S (e.symm c) s
-    t := by
-  classical
-  rw [pairColorDensity_def, pairColorDensity_def]; congr 3; ext p
-  by_cases h : p.1 = p.2 <;> simp [h, Equiv.eq_symm_apply]
-private theorem isPairColorRegular_relabel {κ κ' V : Type*} [Fintype V] [DecidableEq V] (S :
-    PairSkeleton3 κ V) (e : κ ≃ κ') {ε : ℝ} : (S.relabel e).IsPairColorRegular ε ↔
-    S.IsPairColorRegular ε := by
-  simp only [PairSkeleton3.isPairColorRegular_iff, PairSkeleton3.relabel_vertexPart,
-    PairSkeleton3.relabel_pairColors, pairColorDensity_relabel]
-  exact ⟨fun h c ↦ by simpa using h (e c), fun h c ↦ h (e.symm c)⟩
 private noncomputable def triadicEps1 (ε : ℝ) : ℝ := min ε 1
 private noncomputable def triadicSched1 (F : ℕ → ℝ) (k : ℕ) : ℝ := min 1 ((range (k + 1)).inf'
   nonempty_range_add_one F)
@@ -73,12 +61,12 @@ private noncomputable def triadicFineColorBound (q₃ : ℕ) (ε : ℝ) (F : ℕ
 private noncomputable def triadicOuterStep (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
     (TM : ℕ × ℕ) : ℕ × ℕ :=
   let dMax := triadicFineColorBound q₃ ε F R TM.1 TM.2
-  ((range (dMax + 1)).sup fun d ↦ strongPairColorPartBound d (triadicPairEdit q₃ ε)
-      (fun k ↦ triadicSched1 F (k + (d + 1))) TM.1, max TM.2 (dMax + 1))
+  ((range (dMax + 1)).sup fun d ↦ pairApproximationPartsBound d (triadicPairEdit q₃ ε)
+      (triadicSched1 F) TM.1, max TM.2 (dMax + 1))
 private noncomputable def triadicMaxSizes (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ)
     (t₀ : ℕ) : ℕ × ℕ :=
   let l₀ := triadicInitParts q₃ ε t₀
-  let T₀ := strongPairColorPartBound 1 (triadicPairEdit q₃ ε) (fun k ↦ triadicSched1 F (k + 2)) l₀
+  let T₀ := pairApproximationPartsBound 1 (triadicPairEdit q₃ ε) (triadicSched1 F) l₀
   (triadicOuterStep q₃ ε F R)^[⌊2 / triadicEnergyGap q₃ ε⌋₊] (T₀, 2)
 private noncomputable def triadicFineAlpha (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (k t d : ℕ) : ℝ :=
   triadicRank1Tol F R k ^ 2 * triadicEps1 ε / (96 * ((t ^ 3 * d ^ 3 : ℕ) + 1 : ℝ))
@@ -90,9 +78,9 @@ noncomputable def regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R 
   let Bcoarse := triadicCompCap TM.1 TM.2
   let Dmax := triadicFineColorBound q₃ ε F R TM.1 TM.2
   let hBasic := max Bcoarse (max 4 (l₀ + ⌈96 / triadicEps1 ε⌉₊))
-  let hPairInit := strongPairColorHostBound 1 δp (fun k ↦ triadicSched1 F (k + 2)) l₀
+  let hPairInit := pairApproximationBound 1 δp (triadicSched1 F) l₀
   let hPairStep := (range (Dmax + 1)).sup fun d ↦
-    strongPairColorHostBound d δp (fun k ↦ triadicSched1 F (k + (d + 1))) TM.1
+    pairApproximationBound d δp (triadicSched1 F) TM.1
   let hHoeff := (range (Bcoarse + 1)).sup fun k ↦ ⌈(q₃ + 6 : ℝ) / (2 * triadicFineTol q₃ ε F R k ^ 2
     * (triadicRank1Tol F R k ^ 2 * triadicEps1 ε / (96 * ((TM.1 ^ 3 * Dmax ^ 3 : ℕ) + 1 : ℝ))))⌉₊ +
     1
@@ -137,10 +125,9 @@ private theorem topRegularRefinementBound_le_triadicFineColorBound (q₃ : ℕ) 
     (triadicFineTol q₃ ε F R j) (triadicFineMass ε F R j) M) (mem_range.2 (Nat.lt_succ_of_le ht))
 private theorem le_triadicOuterStep_fst (q₃ : ℕ) {ε : ℝ} (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F
     n) (R : ℕ → ℕ) (TM : ℕ × ℕ) : TM.1 ≤ (triadicOuterStep q₃ ε F R TM).1 :=
-    (le_strongPairColorPartBound 0 (triadicPairEdit_pos q₃ hε) (fun k ↦ triadicSched1_pos hF (k +
-    (0 + 1))) TM.1).trans <| Finset.le_sup (f := fun d ↦ strongPairColorPartBound d
-    (triadicPairEdit q₃ ε) (fun k ↦ triadicSched1 F (k + (d + 1))) TM.1) (mem_range.2 (Nat.succ_pos
-    _))
+    (le_pairApproximationPartsBound 0 (triadicPairEdit_pos q₃ hε) (triadicSched1_pos hF)
+    TM.1).trans <| Finset.le_sup (f := fun d ↦ pairApproximationPartsBound d
+    (triadicPairEdit q₃ ε) (triadicSched1 F) TM.1) (mem_range.2 (Nat.succ_pos _))
 private theorem le_triadicOuterStep_snd (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (TM : ℕ × ℕ) :
     TM.2 ≤ (triadicOuterStep q₃ ε F R TM).2 := le_max_left _ _
 private theorem basicFloor_le_regularityBound3 (q₃ : ℕ) (ε : ℝ) (F : ℕ → ℝ) (R : ℕ → ℕ) (t₀ : ℕ) :
@@ -183,22 +170,17 @@ private structure StoppedFine {κ V : Type*} [DecidableEq κ] [Fintype κ] [Fint
 private theorem exists_regularized_coarse_step {α V : Type*} [Fintype α] [Fintype V] [DecidableEq
     V] (q₃ t₀ : ℕ) {ε : ℝ} (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (S : PairColorSystem α V)
     (P : Finpartition (univ : Finset V)) (hP : P.IsEquipartition) (hparts : triadicInitParts q₃ ε
-    t₀ ≤ #P.parts) (hhost : strongPairColorHostBound (Fintype.card α) (triadicPairEdit q₃ ε) (fun k
-    ↦ triadicSched1 F (k + (Fintype.card α + 1))) #P.parts ≤ Fintype.card V) : ∃ (C' :
-    TriadicComplex3 V) (g : α → Fin C'.pairColorCount), Injective g ∧ C'.skeleton.vertexPart ≤ P ∧
-    #C'.skeleton.vertexPart.parts ≤ strongPairColorPartBound (Fintype.card α) (triadicPairEdit q₃
-    ε) (fun k ↦ triadicSched1 F (k + (Fintype.card α + 1))) #P.parts ∧ C'.pairColorCount =
-    Fintype.card α + 1 ∧ AdmissibleCoarse ε F t₀ q₃ C' ∧ (#{p | C'.skeleton.pairColors.color p ≠ g
-    (S.color p)} : ℝ) ≤ triadicPairEdit q₃ ε * (Fintype.card V : ℝ) ^ 2 := by
+    t₀ ≤ #P.parts) (hhost : pairApproximationBound (Fintype.card α) (triadicPairEdit q₃ ε)
+    (triadicSched1 F) #P.parts ≤ Fintype.card V) : ∃ (C' : TriadicComplex3 V) (g : α → Fin
+    C'.pairColorCount), Injective g ∧ C'.skeleton.vertexPart ≤ P ∧ #C'.skeleton.vertexPart.parts ≤
+    pairApproximationPartsBound (Fintype.card α) (triadicPairEdit q₃ ε) (triadicSched1 F) #P.parts ∧
+    C'.pairColorCount = Fintype.card α + 1 ∧ AdmissibleCoarse ε F t₀ q₃ C' ∧ (#{p |
+    C'.skeleton.pairColors.color p ≠ g (S.color p)} : ℝ) ≤ triadicPairEdit q₃ ε * (Fintype.card V :
+    ℝ) ^ 2 := by
   classical
-  set δp := triadicPairEdit q₃ ε; have hδp := triadicPairEdit_pos q₃ hε
-  have hl₀_δ : 8 ≤ δp * #P.parts := by
-    have hc : 8 / δp ≤ #P.parts := (Nat.le_ceil _).trans <| Nat.cast_le.2 (((Nat.le_add_right _
-      _).trans (le_max_right _ _)).trans hparts)
-    linarith [(div_le_iff₀ hδp).1 hc]
   obtain ⟨P', T', hP'_le, hP'_equi, hP'_card, -, hT'_reg, hT'_edits⟩ :=
-    S.exists_strong_recoloring_isPairColorRegular P hP hδp hl₀_δ (fun k ↦ triadicSched1_pos hF (k +
-    (Fintype.card α + 1))) hhost
+    S.exists_refining_equipartition_lowerSkeletonRegular P hP (triadicPairEdit_pos q₃ hε)
+    (triadicSched1_pos hF) hhost
   let e' : Option α ≃ Fin (Fintype.card (Option α)) := Fintype.equivFin (Option α)
   let C' : TriadicComplex3 V := ⟨Fintype.card (Option α), (⟨P', T'⟩ : PairSkeleton3 (Option α)
     V).relabel e', univ⟩
@@ -206,13 +188,10 @@ private theorem exists_regularized_coarse_step {α V : Type*} [Fintype α] [Fint
   have hpcc : C'.pairColorCount = Fintype.card α + 1 := Fintype.card_option
   refine ⟨C', fun c ↦ e' (some c), e'.injective.comp (Option.some_injective _), hvp.symm ▸ hP'_le,
     hvp.symm ▸ hP'_card, hpcc, ⟨hvp.symm ▸ hP'_equi, hvp.symm ▸ hparts.trans (card_mono hP'_le),
-    rfl, ?_⟩, ?_⟩
-  · rw [PairSkeleton3.lowerSkeletonRegular_iff, Fintype.card_fin]
-    exact (isPairColorRegular_relabel (⟨P', T'⟩ : PairSkeleton3 (Option α) V) e').2
-      (by simpa only [hvp, hpcc] using hT'_reg)
-  · refine le_trans ?_ hT'_edits; norm_cast; refine card_le_card fun p hp ↦ ?_
-    simpa only [mem_filter, mem_univ, true_and, C', PairSkeleton3.relabel_pairColors,
-      PairColorSystem.relabel_color, ne_eq, e'.injective.eq_iff] using hp
+    rfl, hT'_reg.relabel e'⟩, ?_⟩
+  refine le_trans ?_ hT'_edits; norm_cast; refine card_le_card fun p hp ↦ ?_
+  simpa only [mem_filter, mem_univ, true_and, C', PairSkeleton3.relabel_pairColors,
+    PairColorSystem.relabel_color, ne_eq, e'.injective.eq_iff] using hp
 private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fintype κ] [Fintype V]
     [DecidableEq V] (H : Colored3Graph κ V) {ε : ℝ} (hε : 0 < ε) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (R
     : ℕ → ℕ) (t₀ : ℕ) (hV : regularityBound3 (Fintype.card κ) ε F R t₀ ≤ Fintype.card V) : ∃ (C D :
@@ -255,14 +234,14 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
     obtain ⟨C', g, hginj, hC'V, hC'card, hC'pcc, hC'adm, hC'edits⟩ :=
       exists_regularized_coarse_step q₃ t₀ hε hF D.skeleton.pairColors C.skeleton.vertexPart
       hC.equi hC.parts_ge (by
-          rw [Fintype.card_fin]; exact ((strongPairColorHostBound_mono _ _ _ h1M).trans <|
-            (Finset.le_sup (f := fun d' ↦ strongPairColorHostBound d' δp (fun k ↦ triadicSched1 F
-            (k + (d' + 1))) TM_max.1) (mem_range.2 (Nat.lt_succ_of_le hd_max))).trans ((le_max_left
-            _ _).trans (le_max_right _ _))).trans hV)
+          rw [Fintype.card_fin]; exact ((pairApproximationBound_mono _ _ _ h1M).trans <|
+            (Finset.le_sup (f := fun d' ↦ pairApproximationBound d' δp (triadicSched1 F) TM_max.1)
+            (mem_range.2 (Nat.lt_succ_of_le hd_max))).trans ((le_max_left _ _).trans (le_max_right
+            _ _))).trans hV)
     rw [Fintype.card_fin] at hC'card hC'pcc
     have hC'1 : #C'.skeleton.vertexPart.parts ≤ (step TM).1 := (hC'card.trans
-      (strongPairColorPartBound_mono _ _ _ hC1)).trans <| Finset.le_sup (f := fun d' ↦
-      strongPairColorPartBound d' δp (fun k ↦ triadicSched1 F (k + (d' + 1))) TM.1) (mem_range.2
+      (pairApproximationPartsBound_mono _ _ _ hC1)).trans <| Finset.le_sup (f := fun d' ↦
+      pairApproximationPartsBound d' δp (triadicSched1 F) TM.1) (mem_range.2
       (Nat.lt_succ_of_le hd_step))
     have hC'2 : C'.pairColorCount ≤ (step TM).2 := hC'pcc.symm ▸ (Nat.add_le_add_right hd_step
       1).trans (le_max_right _ _)
@@ -291,7 +270,7 @@ private theorem exists_stopped_triadic_pair {κ V : Type*} [DecidableEq κ] [Fin
     (by rw [Fintype.card_unique, hcard_init]; exact ((le_max_right _ _).trans (le_max_left _
         _)).trans hV)
   rw [Fintype.card_unique, hcard_init] at hC₀1; rw [Fintype.card_unique] at hC₀2
-  let TM₀ : ℕ × ℕ := (strongPairColorPartBound 1 δp (fun k ↦ triadicSched1 F (k + 2)) l₀, 2)
+  let TM₀ : ℕ × ℕ := (pairApproximationPartsBound 1 δp (triadicSched1 F) l₀, 2)
   let K_rounds := ⌊2 / g_top⌋₊
   have hstep_mono {j k : ℕ} (hj : j ≤ k) : (step^[j] TM₀).1 ≤ (step^[k] TM₀).1 ∧ (step^[j] TM₀).2 ≤
       (step^[k] TM₀).2 := by
@@ -408,12 +387,24 @@ theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ}
       let hQ2 := (mem_filter.1 Q.2).2; let hcard_U :=
         Polyad3.card_image_tripleSet_of_subset hQ2.1.isTransversal Subset.rfl
       let hQ_pos := Nat.cast_pos.1 ((mul_pos hα_pos (pow_pos hn_pos 3)).trans_le hQ2.2.1)
-      exists_coupled_recoloring_abs_card_filter_sub_le (U_of Q.1) H.color (p := fun c ↦
+      have ha_pos : 0 < η * #(U_of Q.1) := by
+        rw [hcard_U]; exact mul_pos hη_pos (Nat.cast_pos.2 hQ_pos)
+      exists_recoloring_abs_card_filter_sub_mul_card_le (U_of Q.1) H.color (p := fun c ↦
       (H.relativeDensity c (Q.1.coarsen hstop.vertex_eq.le f) : ℝ)) (fun c ↦ mod_cast
       H.relativeDensity_nonneg c _) (mod_cast H.sum_relativeDensity ((Finset.card_pos.1
       hQ_pos).mono (Polyad3.support_subset_coarsen hstop.vertex_eq.le f hf_symm Q.1))) (fun W :
-      Subpolyad3 Q.1 ↦ W.support.image tripleSet) (fun W ↦ image_subset_image W.support_subset) (a
-      := η * #(U_of Q.1)) (by rw [hcard_U]; exact mul_pos hη_pos (Nat.cast_pos.2 hQ_pos)) (by
+      Subpolyad3 Q.1 ↦ W.support.image tripleSet) (fun W ↦ image_subset_image W.support_subset)
+      ha_pos ha_pos.le (fun W c₀ ↦ by
+        rw [hcard_U, Polyad3.card_image_tripleSet_of_subset hQ2.1.isTransversal W.support_subset,
+          Polyad3.card_filter_image_tripleSet_eq_mul_relDensityOn H c₀ hQ2.1.isTransversal
+            W.support_subset,
+          Polyad3.card_filter_image_tripleSet_eq_mul_relDensityOn H c₀ hQ2.1.isTransversal
+            Subset.rfl,
+          mul_div_cancel_right₀ _ (Nat.cast_pos.2 hQ_pos).ne', ← relativeDensity_def, ← sub_mul,
+          abs_mul, abs_of_nonneg (a := (#W.support : ℝ)) (Nat.cast_nonneg _)]
+        simpa only [Subpolyad3.unionSupport_unique] using
+          hQ2.2.2.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le c₀
+            (Fintype.card_fin 1).le (fun _ ↦ W)) (by
         rw [hcard_U]; refine two_mul_add_one_mul_exp_lt_one (card_subpolyad3_le Q.1) ?_
         have hst : (q₃ + 6 : ℝ) * (n : ℝ) ^ 2 < 2 * η ^ 2 * (α_fine * (n : ℝ) ^ 3) :=
           (mul_lt_mul_of_pos_right hhost_strict (pow_pos hn_pos 2)).trans_eq (by ring)
@@ -508,17 +499,6 @@ theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ}
       rw [hcnt, Polyad3.card_image_tripleSet_of_subset hQt W.support_subset,
         Polyad3.card_image_tripleSet_of_subset hQt Subset.rfl, ← sub_mul, abs_mul, abs_of_nonneg (a
         := (#W.support : ℝ)) (Nat.cast_nonneg _)] at hsub
-      have hsum_H : ∑ c₀ : κ, |(#{s ∈ W.support.image tripleSet | H.color s = c₀} : ℝ) - (#{s ∈
-            U_of Q | H.color s = c₀} : ℝ) / #Q.support * #W.support| ≤ q₃ * (η * #Q.support) :=
-            (sum_le_sum (g := fun _ : κ ↦ η * (#Q.support : ℝ)) fun c₀ _ ↦ by
-          rw [Polyad3.card_filter_image_tripleSet_eq_mul_relDensityOn H c₀ hQt W.support_subset,
-            Polyad3.card_filter_image_tripleSet_eq_mul_relDensityOn H c₀ hQt Subset.rfl,
-            mul_div_cancel_right₀ _ hQ_pos.ne', ← relativeDensity_def, ← sub_mul, abs_mul,
-            abs_of_nonneg (a := (#W.support : ℝ)) (Nat.cast_nonneg _)]
-          simpa only [Subpolyad3.unionSupport_unique] using
-            hQ_Hreg.abs_relDensityOn_unionSupport_sub_mul_card_le_of_card_le c₀ (Fintype.card_fin
-            1).le (fun _ ↦ W)).trans_eq
-          (by rw [sum_const, card_univ, nsmul_eq_mul])
       linarith
     have hrel_dev (c : κ) : |(H'.relativeDensity c Q : ℝ) - H.relativeDensity c (Q.coarsen
         hstop.vertex_eq.le f)| ≤ 2 * q₃ * η := by
