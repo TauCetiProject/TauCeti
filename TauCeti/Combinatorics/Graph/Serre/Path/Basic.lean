@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.FreeMonoid.Basic
 public import Mathlib.Combinatorics.Quiver.Cast
 public import Mathlib.Combinatorics.Quiver.Path.Decomposition
+public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 
 /-!
@@ -246,6 +247,28 @@ theorem Path.tgt_eq_of_mem_getLast?_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ
     simp only [Path.darts_cons, List.getLast?_append, List.getLast?_singleton, Option.some_or,
       Option.mem_def, Option.some.injEq] at he
     exact he ▸ f.2.2
+
+/-- A vertex of a path is its start or the end of one of its darts. -/
+theorem Path.eq_or_exists_tgt_eq_of_mem_vertices {a b : Γ.V} (p : Γ.Path a b) {v : Γ.V}
+    (hv : v ∈ p.vertices) : v = a ∨ ∃ e ∈ Path.darts Γ p, Γ.tgt e = v := by
+  induction p with
+  | nil => exact Or.inl (by simpa using hv)
+  | cons p e ih =>
+    rcases (Quiver.Path.mem_vertices_cons p e).mp hv with hv | rfl
+    · exact (ih hv).imp_right fun ⟨f, hf, hfv⟩ => ⟨f, by simp [hf], hfv⟩
+    · exact Or.inr ⟨e.1, by simp, e.2.2⟩
+
+/-- A dart of a path starts at a vertex of the path. -/
+theorem Path.src_mem_vertices_of_mem_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.src e ∈ p.vertices := by
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  simp [Quiver.Path.vertices_comp]
+
+/-- A dart of a path ends at a vertex of the path. -/
+theorem Path.tgt_mem_vertices_of_mem_darts {a b : Γ.V} (p : Γ.Path a b) {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.tgt e ∈ p.vertices := by
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  simp [Quiver.Path.vertices_comp, r.start_mem_vertices]
 
 /-- A path without darts joins a vertex to itself. -/
 theorem Path.eq_of_darts_eq_nil {a b : Γ.V} (p : Γ.Path a b) (hp : Path.darts Γ p = []) :
