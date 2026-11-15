@@ -64,6 +64,8 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
 * `ModelWithCorners.depthAt_eq_natCard_of_range_eq`: for a model whose range is cut out by the
   nonnegativity of some coordinates, the depth counts the vanishing ones among them.
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
+* `ModelWithCorners.depth_modelWithCornersEuclideanQuadrant`: on a manifold modelled on the
+  quadrant, the depth of a point counts the vanishing coordinates of its image in any chart.
 * `MDifferentiableAt.finrank_sub_depth_le`: a map with injective differential does not decrease
   the dimension of the largest linear subspace in the cone.
 * `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: (local) diffeomorphisms preserve the
@@ -456,6 +458,23 @@ theorem depthAt_extend_eq_depth (hn : n ≠ 0) {e : OpenPartialHomeomorph M H}
   omega
 
 end Manifold
+
+section Quadrant
+
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
+  {r : WithTop ℕ∞} [IsManifold (𝓡c n) r M]
+
+/-- On a `C^r` manifold modelled on the quadrant `𝓡c n`, `r ≠ 0`, the depth of a point is the
+number of vanishing coordinates of its image in any chart of the maximal atlas. -/
+theorem depth_modelWithCornersEuclideanQuadrant (hr : r ≠ 0)
+    {e : OpenPartialHomeomorph M (EuclideanQuadrant n)}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡c n) r M) {x : M} (hx : x ∈ e.source) :
+    (𝓡c n).depth x = Nat.card {i // (e x).1 i = 0} := by
+  rw [← depthAt_extend_eq_depth hr he hx, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+    depthAt_modelWithCornersEuclideanQuadrant (mem_range_self _),
+    modelWithCornersEuclideanQuadrant_apply]
+
+end Quadrant
 
 section HalfSpace
 
