@@ -43,6 +43,8 @@ pairing with cyclic cohomology, descend to `K₁`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
 * `Equiv.map_reindexGL_elementarySubgroup`: relabelling the indices preserves the elementary
   subgroup.
+* `Equiv.sumComm_reindexGL_fromBlocksGL`, `Equiv.sumCongr_reindexGL_fromBlocksGL`: relabelling
+  the summands of a block diagonal matrix relabels its blocks.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
@@ -334,6 +336,21 @@ theorem map_reindexGL_elementarySubgroup (e : n ≃ m) :
     refine ⟨_, ⟨e.symm i, e.symm j, e.symm.injective.ne hij, a, rfl⟩, ?_⟩
     rw [reindexGL_transvectionUnit]
     simp_rw [Equiv.apply_symm_apply]
+
+/-- Swapping the two summands of the index type swaps the blocks of a block diagonal invertible
+matrix. -/
+theorem sumComm_reindexGL_fromBlocksGL (u : GL n A) (v : GL m A) :
+    (Equiv.sumComm n m).reindexGL A (fromBlocksGL (u, v)) = fromBlocksGL (v, u) := by
+  ext : 1
+  simp [Equiv.sumComm]
+
+/-- Reindexing a block diagonal invertible matrix along a sum of equivalences reindexes each
+block. -/
+theorem sumCongr_reindexGL_fromBlocksGL {n' m' : Type*} [DecidableEq n'] [Fintype n']
+    [DecidableEq m'] [Fintype m'] (e : n ≃ n') (f : m ≃ m') (u : GL n A) (v : GL m A) :
+    (e.sumCongr f).reindexGL A (fromBlocksGL (u, v)) =
+      fromBlocksGL (e.reindexGL A u, f.reindexGL A v) := by
+  ext (i | i) (j | j) <;> simp
 
 end Equiv
 
