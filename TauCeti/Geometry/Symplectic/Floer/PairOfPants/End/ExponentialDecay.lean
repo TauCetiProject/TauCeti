@@ -47,13 +47,13 @@ point of the time-one map of `H_q` therefore gives the hypothesis
 
 ## Main results
 
-* `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp_endChart_of_floer`: an end that
-  converges uniformly to a nondegenerate orbit converges exponentially fast, under a bound on the
+* `SymplecticForm.exists_pos_eventually_norm_sub_le_exp_endChart_of_floer`: an end that converges
+  uniformly to a nondegenerate orbit converges exponentially fast, under a bound on the
   `s`-derivative of `u ∘ φ'_q` and uniform taming constants on a half-cylinder of the end.
-* `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical`: when the
-  almost complex structure is cylindrical on the end and all orbits in `B` are nondegenerate, the
-  end converges exponentially fast to an orbit, with no bounds assumed.
-* `TauCeti.SymplecticForm.exists_pos_forall_eventually_norm_sub_le_exp_endChart_of_cylindrical`:
+* `SymplecticForm.exists_pos_eventually_norm_sub_le_exp_endChart_of_floer_of_cylindrical`: when
+  the almost complex structure is cylindrical on the end and all orbits in `B` are nondegenerate,
+  the end converges exponentially fast to an orbit, with no bounds assumed.
+* `SymplecticForm.exists_pos_forall_eventually_norm_sub_le_exp_endChart_of_floer_of_cylindrical`:
   when the structure is cylindrical on all three ends, one rate `κ` and one constant `C` serve for
   all of them.
 
@@ -218,7 +218,7 @@ the almost complex structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±
 Lipschitz and that every `1`-periodic orbit `y` of `H_q` in `B` is nondegenerate. Then the loops
 `t ↦ u(φ_q(±s, t))` converge exponentially fast to a `1`-periodic orbit `y` of `H_q`: for some
 `κ > 0` and `C`, eventually `‖u(φ_q(±s, t)) - y(t)‖ ≤ C exp (-κ s)` for every `t`. -/
-theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical
+theorem exists_pos_eventually_norm_sub_le_exp_endChart_of_floer_of_cylindrical
     {Jq : ℝ → V → AlmostComplexStructure V}
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -271,7 +271,7 @@ almost complex structure is cylindrical beyond `T₀`, `J(φ_q(±s, t)) = J_q(t,
 `ℝ × B`, and that every `1`-periodic orbit of every `H_q` in `B` is nondegenerate. Then there are
 `1`-periodic orbits `y_q` of the `H_q`, a rate `κ > 0` and a constant `C` such that for all large
 `s`, every end `q` and every `t`, `‖u(φ_q(±s, t)) - y_q(t)‖ ≤ C exp (-κ s)`. -/
-theorem exists_pos_forall_eventually_norm_sub_le_exp_endChart_of_cylindrical
+theorem exists_pos_forall_eventually_norm_sub_le_exp_endChart_of_floer_of_cylindrical
     {Jq : Puncture → ℝ → V → AlmostComplexStructure V}
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -302,7 +302,7 @@ theorem exists_pos_forall_eventually_norm_sub_le_exp_endChart_of_cylindrical
       ∃ κ > 0, ∃ A, ∀ᶠ s in atTop, ∀ q t,
         ‖u (endChart q (q.endSign * s, t)) - y q t‖ ≤ A * Real.exp (-(κ * s)) := by
   choose y hyper hy κ hκ A hA using fun q ↦
-    exists_pos_eventually_norm_sub_le_exp_endChart_of_cylindrical hKH hH hHs hu hB huB
+    exists_pos_eventually_norm_sub_le_exp_endChart_of_floer_of_cylindrical hKH hH hHs hu hB huB
       hfloer hE q hW (hJq q) (hJqper q) hBW (hJqt q) (hJ q) (hL q) (hnd q)
   -- The slowest rate and the largest constant serve for every end.
   set κ₀ := Finset.univ.inf' ⟨.zero, Finset.mem_univ _⟩ κ
