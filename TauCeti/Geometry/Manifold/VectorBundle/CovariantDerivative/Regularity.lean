@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Regularity of covariant derivatives along vector fields
@@ -92,7 +93,7 @@ theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq {n 
     (hu : IsOpen u) (hus : u ⊆ s) :
     ContMDiffCovariantDerivativeOn F n cov u where
   contMDiff {σ} hσ y hy := by
-    lift n to ℕ∞ using ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
+    lift n to ℕ∞ using ENat.LEInfty.ne_top n
     -- Cut `σ` off by a bump function equal to one near `y` and supported in `u`.
     obtain ⟨ρ, -, hρ⟩ :=
       (SmoothBumpFunction.nhds_basis_tsupport (I := I) y).mem_iff.mp (hu.mem_nhds hy)
@@ -113,7 +114,7 @@ theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq {n 
 on a set `s` and is a covariant derivative on an open subset `u ⊆ s`, then `cov` is also `C^n`
 on `u`: it sends sections which are `C^(n + 1)` on `u` to covariant derivatives which are `C^n`
 on `u`. -/
-theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen {n : ℕ∞}
+theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen {n : ℕ∞ω} [ENat.LEInfty n]
     {cov : (Π x : M, V x) → (Π x : M, TangentSpace I x →L[ℝ] V x)} {s u : Set M}
     (h : ContMDiffCovariantDerivativeOn F n cov s) (hcov : IsCovariantDerivativeOn F cov u)
     (hu : IsOpen u) (hus : u ⊆ s) :
@@ -124,7 +125,7 @@ theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen {n : ℕ∞}
 /-- **Locality of the regularity of a connection.**  A `C^n` covariant derivative on a smooth
 real manifold is `C^n` on every open set `u`: it sends sections which are `C^(n + 1)` on `u` to
 covariant derivatives which are `C^n` on `u`. -/
-theorem contMDiffCovariantDerivativeOn_of_isOpen {n : ℕ∞}
+theorem contMDiffCovariantDerivativeOn_of_isOpen {n : ℕ∞ω} [ENat.LEInfty n]
     (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n] {u : Set M}
     (hu : IsOpen u) : ContMDiffCovariantDerivativeOn F n cov.toFun u :=
   ContMDiffCovariantDerivative.contMDiff.mono_of_isOpen cov.isCovariantDerivativeOn hu

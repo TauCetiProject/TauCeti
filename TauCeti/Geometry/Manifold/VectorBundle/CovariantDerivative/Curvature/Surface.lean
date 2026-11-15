@@ -82,7 +82,7 @@ private theorem sectionCoord_alongCurve_eventuallyEq
   have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
   set Γ := christoffelMap (finBasis ℝ E) hcov
   have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun e.baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov e.open_baseSet
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) cov e.open_baseSet
   have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
@@ -136,7 +136,7 @@ private theorem alongCurve_alongCurve_eq_symmL
   have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
   set Γ := christoffelMap (finBasis ℝ E) hcov
   have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun e.baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov e.open_baseSet
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) cov e.open_baseSet
   have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
