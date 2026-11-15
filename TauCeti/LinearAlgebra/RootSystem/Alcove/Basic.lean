@@ -75,8 +75,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
   the part of the closed fundamental alcove lying on no affine root hyperplane.
 * `RootPairing.convex_fundamentalAlcove`, `RootPairing.convex_closedFundamentalAlcove`, and
-  `RootPairing.lineMap_mem_fundamentalAlcove`: convexity of both alcoves, and that the open segment
-  from a point of `Ā` to a point of `A` lies in `A`.
+  `RootPairing.lineMap_mem_fundamentalAlcove`: convexity of both alcoves, and that the half-open
+  segment `(x, x₀]` from a point of `Ā` to a point of `A` lies in `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
   the set of points at which every affine simple root is positive.
 * `RootPairing.mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg`: the closed
@@ -94,10 +94,11 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   nonempty, containing the point where every root `α` takes the value `ht(α) / (ht(θ) + 1)`.
 * `RootPairing.Base.iUnion_openAlcoveFace`, `RootPairing.Base.openAlcoveFace_nonempty_iff`,
   `RootPairing.Base.closedAlcoveFace_nonempty_iff`,
-  `RootPairing.Base.closedAlcoveFace_compl_singleton_none`, and
-  `RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`: the open-facet
-  partition of `Ā`, nonemptiness of proper faces, and the vertex faces opposite `{0}` and special
-  nodes.
+  `RootPairing.Base.closedAlcoveFace_compl_singleton_none`,
+  `RootPairing.Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes`, and
+  `RootPairing.Base.closedAlcoveFace_compl_singleton_some`: the open-facet partition of `Ā`,
+  nonemptiness of proper faces, and the vertex faces opposite the affine wall `θ = 1` and every
+  simple wall `αⱼ = 0`.
 
 ## References
 
@@ -160,14 +161,14 @@ lemma mem_closedFundamentalAlcove {x : N} :
   Iff.rfl
 
 /-- The open fundamental alcove as an intersection of open half-spaces. -/
-lemma fundamentalAlcove_eq_iInter :
+lemma fundamentalAlcove_eq_biInter_inter :
     fundamentalAlcove P b =
       (⋂ i ∈ b.support, P.root' i ⁻¹' Ioi 0) ∩ P.root' b.highestRoot ⁻¹' Iio 1 := by
   ext x
   simp [mem_fundamentalAlcove]
 
 /-- The closed fundamental alcove as an intersection of closed half-spaces. -/
-lemma closedFundamentalAlcove_eq_iInter :
+lemma closedFundamentalAlcove_eq_biInter_inter :
     closedFundamentalAlcove P b =
       (⋂ i ∈ b.support, P.root' i ⁻¹' Ici 0) ∩ P.root' b.highestRoot ⁻¹' Iic 1 := by
   ext x
@@ -188,32 +189,32 @@ variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [Nonempty ι] {P b}
 
 /-- The fundamental alcove is convex: it is an intersection of open half-spaces. -/
 theorem convex_fundamentalAlcove : Convex R (fundamentalAlcove P b) := by
-  rw [fundamentalAlcove_eq_iInter]
+  rw [fundamentalAlcove_eq_biInter_inter]
   exact (convex_iInter₂ fun i _ ↦ convex_halfSpace_gt (P.root' i).isLinear 0).inter
     (convex_halfSpace_lt (P.root' _).isLinear 1)
 
 /-- The closed fundamental alcove is convex: it is an intersection of closed half-spaces. -/
 theorem convex_closedFundamentalAlcove : Convex R (closedFundamentalAlcove P b) := by
-  rw [closedFundamentalAlcove_eq_iInter]
+  rw [closedFundamentalAlcove_eq_biInter_inter]
   exact (convex_iInter₂ fun i _ ↦ convex_halfSpace_ge (P.root' i).isLinear 0).inter
     (convex_halfSpace_le (P.root' _).isLinear 1)
 
-/-- The open segment from a point of the closed fundamental alcove to a point of the open
-fundamental alcove lies inside the open fundamental alcove. -/
+/-- The half-open segment `(x, x₀]` from a point `x` of the closed fundamental alcove to a point
+`x₀` of the open fundamental alcove lies inside the open fundamental alcove. -/
 theorem lineMap_mem_fundamentalAlcove {x x₀ : N} (hx : x ∈ closedFundamentalAlcove P b)
-    (hx₀ : x₀ ∈ fundamentalAlcove P b) {t : R} (ht₀ : 0 < t) (ht₁ : t < 1) :
+    (hx₀ : x₀ ∈ fundamentalAlcove P b) {t : R} (ht₀ : 0 < t) (ht₁ : t ≤ 1) :
     AffineMap.lineMap x x₀ t ∈ fundamentalAlcove P b := by
   obtain ⟨hx₁, hx₂⟩ := (mem_closedFundamentalAlcove P b).mp hx
   obtain ⟨hx₀₁, hx₀₂⟩ := (mem_fundamentalAlcove P b).mp hx₀
-  have h1t : 0 < 1 - t := sub_pos.mpr ht₁
+  have h1t : 0 ≤ 1 - t := sub_nonneg.mpr ht₁
   rw [AffineMap.lineMap_apply_module, mem_fundamentalAlcove]
   refine ⟨fun i hi ↦ ?_, ?_⟩
   · rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-    exact add_pos_of_nonneg_of_pos (mul_nonneg h1t.le (hx₁ i hi)) (mul_pos ht₀ (hx₀₁ i hi))
+    exact add_pos_of_nonneg_of_pos (mul_nonneg h1t (hx₁ i hi)) (mul_pos ht₀ (hx₀₁ i hi))
   · rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
     calc (1 - t) * P.root' b.highestRoot x + t * P.root' b.highestRoot x₀
         < (1 - t) * 1 + t * 1 :=
-          add_lt_add_of_le_of_lt (mul_le_mul_of_nonneg_left hx₂ h1t.le)
+          add_lt_add_of_le_of_lt (mul_le_mul_of_nonneg_left hx₂ h1t)
             (mul_lt_mul_of_pos_left hx₀₂ ht₀)
       _ = 1 := by ring
 
@@ -424,6 +425,14 @@ theorem mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg [PartialO
 
 variable [P.IsRootSystem]
 
+/-- The highest root evaluated on a fundamental coweight `ϖⱼ` is the mark `mⱼ`. -/
+@[simp]
+theorem Base.root'_highestRoot_fundamentalCoweightBasis (j : b.support) :
+    P.root' b.highestRoot (b.fundamentalCoweightBasis j) = b.affineMarks (some j) := by
+  classical
+  rw [root', b.root_highestRoot_eq_sum_affineMarks]
+  simp [zsmul_eq_mul]
+
 /-- **At a special node `j`, the fundamental coweight `ϖⱼ` is the vertex of the closed fundamental
 alcove opposite the wall `αⱼ = 0`**: the affine simple root `aₖ` takes the value `1` at `ϖⱼ` for
 `k = j` and vanishes for every other `k`, since `θ(ϖⱼ) = mⱼ = 1`. -/
@@ -431,14 +440,7 @@ theorem Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes
     [DecidableEq ι] {j : b.support} (hj : some j ∈ b.specialNodes) (k : Option b.support) :
     b.affineSimpleRoot k (b.fundamentalCoweightBasis j) = if k = some j then 1 else 0 := by
   rcases k with _ | i
-  · -- The null-root relation at `ϖⱼ` reads `(1 - θ(ϖⱼ)) + mⱼ = 1`, and `mⱼ = 1`.
-    have h := b.sum_affineMarks_mul_affineSimpleRoot (b.fundamentalCoweightBasis j)
-    rw [Fintype.sum_option] at h
-    simp only [Base.affineSimpleRoot_some, root'_fundamentalCoweightBasis, mul_ite, mul_one,
-      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, Base.affineMarks_none,
-      Int.cast_one, one_mul, b.mem_specialNodes.mp hj] at h
-    simp only [reduceCtorEq, ite_false]
-    exact add_eq_right.mp h
+  · simp [b.mem_specialNodes.mp hj]
   · simp
 
 /-- **At a special node `k` the closed fundamental alcove has a vertex in the coweight lattice**:
@@ -493,6 +495,10 @@ lemma mem_openAlcoveFace {J : Set (Option b.support)} {x : N} :
       (∀ k ∈ J, b.affineSimpleRoot k x = 0) ∧ ∀ k ∉ J, 0 < b.affineSimpleRoot k x :=
   Iff.rfl
 
+lemma closedAlcoveFace_subset_closedFundamentalAlcove (J : Set (Option b.support)) :
+    b.closedAlcoveFace J ⊆ closedFundamentalAlcove P b :=
+  fun _ hx ↦ hx.1
+
 @[simp]
 lemma closedAlcoveFace_empty : b.closedAlcoveFace ∅ = closedFundamentalAlcove P b := by
   ext x
@@ -534,6 +540,57 @@ theorem zero_mem_openAlcoveFace_compl_singleton_none [ZeroLEOneClass R] :
   · obtain rfl : k = none := notMem_compl_iff.mp hk
     simp
 
+/-- For a root system, the vertex face `b.closedAlcoveFace {k}ᶜ` opposite the wall `k` contains at
+most one point. -/
+theorem subsingleton_closedAlcoveFace_compl_singleton [P.IsRootSystem]
+    (k : Option b.support) : (b.closedAlcoveFace {k}ᶜ).Subsingleton := by
+  classical
+  intro x hx y hy
+  have hmul {z : N} (hz : z ∈ b.closedAlcoveFace {k}ᶜ) :
+      (b.affineMarks k : R) * b.affineSimpleRoot k z = 1 := by
+    have hnull := b.sum_affineMarks_mul_affineSimpleRoot z
+    rwa [Finset.sum_eq_single k (fun l _ hlk ↦ by rw [hz.2 l hlk, mul_zero]) (by simp)] at hnull
+  have heq (l : Option b.support) : b.affineSimpleRoot l x = b.affineSimpleRoot l y := by
+    rcases eq_or_ne l k with rfl | hlk
+    · calc b.affineSimpleRoot l x
+          = ((b.affineMarks l : R) * b.affineSimpleRoot l y) * b.affineSimpleRoot l x := by
+            rw [hmul hy, one_mul]
+        _ = b.affineSimpleRoot l y * ((b.affineMarks l : R) * b.affineSimpleRoot l x) := by ring
+        _ = b.affineSimpleRoot l y := by rw [hmul hx, mul_one]
+    · rw [hx.2 l hlk, hy.2 l hlk]
+  exact b.fundamentalCoweightBasis.ext_elem fun i ↦ by simpa using heq (some i)
+
+/-- For a root system, the vertex of the closed fundamental alcove opposite the affine wall `θ = 1`
+is `{0}`. -/
+@[simp]
+theorem closedAlcoveFace_compl_singleton_none [ZeroLEOneClass R] [P.IsRootSystem] :
+    b.closedAlcoveFace {none}ᶜ = {0} := by
+  have h0 : (0 : N) ∈ b.closedAlcoveFace {none}ᶜ := by
+    refine ⟨⟨fun _ _ ↦ by simp, by simp⟩, ?_⟩
+    rintro (_ | i) hi
+    · exact absurd rfl hi
+    · simp
+  exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
+    (b.subsingleton_closedAlcoveFace_compl_singleton none hx h0)) (singleton_subset_iff.mpr h0)
+
+/-- For a root system, at a special simple node `j`, the vertex of the closed fundamental alcove
+opposite the wall `αⱼ = 0` is `{b.fundamentalCoweightBasis j}`. -/
+theorem closedAlcoveFace_compl_singleton_some_of_mem_specialNodes [ZeroLEOneClass R]
+    [P.IsRootSystem] {j : b.support} (hj : some j ∈ b.specialNodes) :
+    b.closedAlcoveFace {some j}ᶜ = {b.fundamentalCoweightBasis j} := by
+  classical
+  have hmem : b.fundamentalCoweightBasis j ∈ b.closedAlcoveFace {some j}ᶜ := by
+    refine ⟨⟨fun i hi ↦ ?_, ?_⟩, fun k hk ↦ ?_⟩
+    · change 0 ≤ P.root' (⟨i, hi⟩ : b.support) (b.fundamentalCoweightBasis j)
+      rw [root'_fundamentalCoweightBasis]
+      split_ifs <;> simp
+    · rw [b.root'_highestRoot_fundamentalCoweightBasis, b.mem_specialNodes.mp hj, Int.cast_one]
+    · rw [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hj k]
+      exact ite_eq_right_iff.mpr fun h ↦ absurd h (mem_compl_singleton_iff.mp hk)
+  exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
+    (b.subsingleton_closedAlcoveFace_compl_singleton (some j) hx hmem))
+    (singleton_subset_iff.mpr hmem)
+
 section OrderedAdd
 
 variable [IsOrderedAddMonoid R]
@@ -553,38 +610,55 @@ lemma openAlcoveFace_subset_closedAlcoveFace (J : Set (Option b.support)) :
   · exact (h0 k hk).ge
   · exact (hpos k hk).le
 
+lemma openAlcoveFace_subset_closedFundamentalAlcove (J : Set (Option b.support)) :
+    b.openAlcoveFace J ⊆ closedFundamentalAlcove P b :=
+  (b.openAlcoveFace_subset_closedAlcoveFace J).trans
+    (b.closedAlcoveFace_subset_closedFundamentalAlcove J)
+
 @[simp]
 theorem openAlcoveFace_univ : b.openAlcoveFace univ = ∅ :=
   eq_empty_of_subset (b.openAlcoveFace_subset_closedAlcoveFace univ) b.closedAlcoveFace_univ
+
+/-- The closed and open vertex faces opposite a single wall `k` coincide. -/
+theorem openAlcoveFace_compl_singleton_eq_closedAlcoveFace (k : Option b.support) :
+    b.openAlcoveFace {k}ᶜ = b.closedAlcoveFace {k}ᶜ := by
+  refine Subset.antisymm (b.openAlcoveFace_subset_closedAlcoveFace _) fun x hx ↦ ⟨hx.2, ?_⟩
+  intro l hl
+  obtain rfl : l = k := notMem_compl_iff.mp hl
+  refine ((mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mp hx.1 l).lt_of_ne'
+    fun h0 ↦ ?_
+  have hxuniv : x ∈ b.closedAlcoveFace univ :=
+    ⟨hx.1, fun m _ ↦ (eq_or_ne m l).elim (fun h ↦ h ▸ h0) (hx.2 m)⟩
+  simp at hxuniv
 
 /-- A point of the closed fundamental alcove lies in the open facet `b.openAlcoveFace J` precisely
 when `J` is the set of walls passing through it. -/
 theorem mem_openAlcoveFace_iff_eq_setOf_eq_zero {J : Set (Option b.support)} {x : N}
     (hx : x ∈ closedFundamentalAlcove P b) :
-    x ∈ b.openAlcoveFace J ↔ {k | b.affineSimpleRoot k x = 0} = J := by
+    x ∈ b.openAlcoveFace J ↔ J = {k | b.affineSimpleRoot k x = 0} := by
   have hnn := (mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mp hx
   refine ⟨fun ⟨h0, hpos⟩ ↦ Set.ext fun k ↦
-      ⟨fun hk ↦ by_contra fun hnot ↦ (hpos k hnot).ne' hk, fun hk ↦ h0 k hk⟩,
+      ⟨fun hk ↦ h0 k hk, fun hk ↦ by_contra fun hnot ↦ (hpos k hnot).ne' hk⟩,
     fun hJ ↦ ⟨fun k hk ↦ ?_, fun k hk ↦ ?_⟩⟩
-  · rw [← hJ] at hk
+  · rw [hJ] at hk
     exact hk
-  · rw [← hJ] at hk
+  · rw [hJ] at hk
     exact (hnn k).lt_of_ne' (by simpa using hk)
 
 /-- **The open facets partition the closed fundamental alcove.** -/
 theorem iUnion_openAlcoveFace :
     ⋃ J : Set (Option b.support), b.openAlcoveFace J = closedFundamentalAlcove P b := by
   refine Subset.antisymm
-    (iUnion_subset fun J _ hx ↦ (b.openAlcoveFace_subset_closedAlcoveFace J hx).1) fun x hx ↦ ?_
+    (iUnion_subset fun J ↦ b.openAlcoveFace_subset_closedFundamentalAlcove J) fun x hx ↦ ?_
   exact mem_iUnion.mpr ⟨{k | b.affineSimpleRoot k x = 0},
     (b.mem_openAlcoveFace_iff_eq_setOf_eq_zero hx).mpr rfl⟩
 
 theorem pairwise_disjoint_openAlcoveFace : Pairwise (Disjoint on b.openAlcoveFace) := by
   intro J₁ J₂ hne
   refine disjoint_left.mpr fun x hx₁ hx₂ ↦ hne ?_
-  have hx := (b.openAlcoveFace_subset_closedAlcoveFace J₁ hx₁).1
-  rw [← (b.mem_openAlcoveFace_iff_eq_setOf_eq_zero hx).mp hx₁,
-    ← (b.mem_openAlcoveFace_iff_eq_setOf_eq_zero hx).mp hx₂]
+  have hx := b.openAlcoveFace_subset_closedFundamentalAlcove J₁ hx₁
+  rw [(b.mem_openAlcoveFace_iff_eq_setOf_eq_zero hx).mp hx₁,
+    (b.mem_openAlcoveFace_iff_eq_setOf_eq_zero hx).mp hx₂]
 
 end OrderedAdd
 
@@ -598,6 +672,17 @@ section Field
 
 variable {ι R M N : Type*} [Field R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} (b : P.Base)
+
+/-- At a vertex face `b.closedAlcoveFace {k}ᶜ`, the remaining affine simple root `aₖ` takes the
+value `1 / mₖ`. -/
+theorem Base.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_singleton
+    [PartialOrder R] [CharZero R] [Finite ι] [Nonempty ι]
+    {k : Option b.support} {x : N} (hx : x ∈ b.closedAlcoveFace {k}ᶜ) :
+    b.affineSimpleRoot k x = (b.affineMarks k : R)⁻¹ := by
+  classical
+  have hnull := b.sum_affineMarks_mul_affineSimpleRoot x
+  rw [Finset.sum_eq_single k (fun l _ hlk ↦ by rw [hx.2 l hlk, mul_zero]) (by simp)] at hnull
+  exact eq_inv_of_mul_eq_one_right hnull
 
 variable [LinearOrder R] [IsStrictOrderedRing R]
 
@@ -627,23 +712,9 @@ theorem fundamentalAlcove_nonempty [Finite ι] [Nonempty ι] :
   let ⟨x₀, hx₀, _⟩ := exists_mem_fundamentalAlcove_root'_eq_height_div b
   ⟨x₀, hx₀⟩
 
-section Faces
-
-variable [Finite ι] [Nonempty ι]
-
-/-- At a vertex face `b.closedAlcoveFace {k}ᶜ`, the remaining affine simple root `aₖ` takes the
-value `1 / mₖ`. -/
-theorem Base.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_singleton
-    {k : Option b.support} {x : N} (hx : x ∈ b.closedAlcoveFace {k}ᶜ) :
-    b.affineSimpleRoot k x = (b.affineMarks k : R)⁻¹ := by
-  classical
-  have hnull := b.sum_affineMarks_mul_affineSimpleRoot x
-  rw [Finset.sum_eq_single k (fun l _ hlk ↦ by rw [hx.2 l hlk, mul_zero]) (by simp)] at hnull
-  exact eq_inv_of_mul_eq_one_right hnull
-
 section IrreducibleFaces
 
-variable [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
+variable [Finite ι] [Nonempty ι] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
 
 /-- **An open facet `b.openAlcoveFace J` is nonempty if and only if `J ≠ univ`.** -/
 theorem Base.openAlcoveFace_nonempty_iff {J : Set (Option b.support)} :
@@ -700,58 +771,37 @@ theorem Base.closedAlcoveFace_nonempty_iff {J : Set (Option b.support)} :
   ⟨fun ⟨x, hx⟩ hJ ↦ by simp [hJ] at hx, fun hJ ↦
     (b.openAlcoveFace_nonempty_iff.mpr hJ).mono (b.openAlcoveFace_subset_closedAlcoveFace J)⟩
 
-/-- The closed and open vertex faces opposite a single wall `k` coincide. -/
-theorem Base.openAlcoveFace_compl_singleton_eq_closedAlcoveFace (k : Option b.support) :
-    b.openAlcoveFace {k}ᶜ = b.closedAlcoveFace {k}ᶜ := by
-  refine Subset.antisymm (b.openAlcoveFace_subset_closedAlcoveFace _) fun x hx ↦ ⟨hx.2, ?_⟩
-  intro l hl
-  obtain rfl : l = k := notMem_compl_iff.mp hl
-  rw [b.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_singleton hx]
-  exact inv_pos.mpr (Int.cast_pos.mpr (b.affineMarks_pos l))
-
-end IrreducibleFaces
-
-/-- For a root system, the vertex face `b.closedAlcoveFace {k}ᶜ` opposite the wall `k` contains at
-most one point. -/
-theorem Base.subsingleton_closedAlcoveFace_compl_singleton [P.IsRootSystem]
-    (k : Option b.support) : (b.closedAlcoveFace {k}ᶜ).Subsingleton := by
-  intro x hx y hy
-  have heq (l : Option b.support) : b.affineSimpleRoot l x = b.affineSimpleRoot l y := by
-    by_cases hlk : l = k
-    · subst hlk
-      rw [b.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_singleton hx,
-        b.affineSimpleRoot_eq_inv_affineMarks_of_mem_closedAlcoveFace_compl_singleton hy]
-    · rw [hx.2 l hlk, hy.2 l hlk]
-  exact b.fundamentalCoweightBasis.ext_elem fun i ↦ by simpa using heq (some i)
-
-/-- For a root system, the vertex of the closed fundamental alcove opposite the affine wall `θ = 1`
-is `{0}`. -/
+/-- For a reduced irreducible crystallographic root system over a linearly ordered field, the vertex
+of the closed fundamental alcove opposite the simple wall `αⱼ = 0` is `mⱼ⁻¹ • ϖⱼ`, where
+`mⱼ = b.affineMarks (some j)` and `ϖⱼ = b.fundamentalCoweightBasis j`. -/
 @[simp]
-theorem Base.closedAlcoveFace_compl_singleton_none [P.IsRootSystem] :
-    b.closedAlcoveFace {none}ᶜ = {0} := by
-  have h0 :=
-    b.openAlcoveFace_subset_closedAlcoveFace _ b.zero_mem_openAlcoveFace_compl_singleton_none
-  exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
-    (b.subsingleton_closedAlcoveFace_compl_singleton none hx h0)) (singleton_subset_iff.mpr h0)
-
-/-- For a root system, at a special simple node `j`, the vertex of the closed fundamental alcove
-opposite the wall `αⱼ = 0` is `{b.fundamentalCoweightBasis j}`. -/
-theorem Base.closedAlcoveFace_compl_singleton_some_of_mem_specialNodes [P.IsRootSystem]
-    {j : b.support} (hj : some j ∈ b.specialNodes) :
-    b.closedAlcoveFace {some j}ᶜ = {b.fundamentalCoweightBasis j} := by
+theorem Base.closedAlcoveFace_compl_singleton_some [P.IsRootSystem] (j : b.support) :
+    b.closedAlcoveFace {some j}ᶜ =
+      {(b.affineMarks (some j) : R)⁻¹ • b.fundamentalCoweightBasis j} := by
   classical
-  have hmem : b.fundamentalCoweightBasis j ∈ b.closedAlcoveFace {some j}ᶜ := by
-    refine ⟨(mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mpr fun k ↦ ?_,
-      fun k hk ↦ ?_⟩
-    · rw [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hj k]
-      split_ifs <;> norm_num
-    · rw [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hj k]
-      exact ite_eq_right_iff.mpr fun h ↦ absurd h (mem_compl_singleton_iff.mp hk)
+  have hm : (0 : R) < b.affineMarks (some j) := Int.cast_pos.mpr (b.affineMarks_pos (some j))
+  have hmem :
+      (b.affineMarks (some j) : R)⁻¹ • b.fundamentalCoweightBasis j ∈
+        b.closedAlcoveFace {some j}ᶜ := by
+    refine ⟨⟨fun i hi ↦ ?_, ?_⟩, ?_⟩
+    · change 0 ≤ P.root' (⟨i, hi⟩ : b.support) _
+      rw [map_smul, root'_fundamentalCoweightBasis, smul_eq_mul]
+      split_ifs
+      · exact mul_nonneg (inv_nonneg.mpr hm.le) zero_le_one
+      · simp
+    · rw [map_smul, b.root'_highestRoot_fundamentalCoweightBasis, smul_eq_mul,
+        inv_mul_cancel₀ hm.ne']
+    · rintro (_ | i) hk
+      · rw [Base.affineSimpleRoot_none, map_smul, b.root'_highestRoot_fundamentalCoweightBasis,
+          smul_eq_mul, inv_mul_cancel₀ hm.ne', sub_self]
+      · have hij : i ≠ j := fun h ↦ hk (congrArg some h)
+        rw [Base.affineSimpleRoot_some, map_smul, root'_fundamentalCoweightBasis,
+          ite_eq_right hij, smul_zero]
   exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
     (b.subsingleton_closedAlcoveFace_compl_singleton (some j) hx hmem))
     (singleton_subset_iff.mpr hmem)
 
-end Faces
+end IrreducibleFaces
 
 end Field
 

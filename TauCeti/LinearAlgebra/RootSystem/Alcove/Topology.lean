@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.LocallyFinite
 public import TauCeti.LinearAlgebra.RootSystem.Alcove.Basic
+import Mathlib.Analysis.Convex.Topology
 import Mathlib.Data.Int.Interval
 import Mathlib.Topology.Order.DenselyOrdered
 
@@ -24,8 +25,8 @@ In the first half of the file, continuity of the root functionals (`∀ i, Conti
 taken as an explicit hypothesis so that the theorems apply over any ordered topological ring or
 field (including `ℚ` or number fields embedded in `ℝ`, as well as arbitrary modules carrying the
 module topology):
-* under `[OrderClosedTopology R]`, `A` is open, and `Ā` and every closed face
-  `b.closedAlcoveFace J` are closed;
+* under `[OrderClosedTopology R]`, `A` is open (for a linear order), `Ā` is closed (for any
+  preorder), and every closed face `b.closedAlcoveFace J` is closed (for any partial order);
 * over any linearly ordered ring with `[OrderClosedTopology R]`, the family of affine root
   hyperplanes `H_{αⱼ,k}` is locally finite, so their union is closed and its complement — the set
   of points lying on no affine root hyperplane — is open;
@@ -39,6 +40,8 @@ discharges continuity of every root functional automatically.
 
 ## Main results
 
+* `RootPairing.Base.continuous_affineSimpleRoot_of_continuous` and
+  `RootPairing.Base.continuous_affineSimpleRoot`: every affine simple root is continuous.
 * `RootPairing.isOpen_fundamentalAlcove_of_continuous` and `RootPairing.isOpen_fundamentalAlcove`:
   the open fundamental alcove is open.
 * `RootPairing.isClosed_closedFundamentalAlcove_of_continuous`,
@@ -60,7 +63,7 @@ discharges continuity of every root functional automatically.
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Ch. V, §1.1–§1.2 and Ch. VI, §2.1.
-* L. Garnier, *Affine Weyl groups and compact Lie groups*, §1.3.
+* A. Garnier, *Fundamental domains for extended affine Weyl groups* (2020), §1.3.
 -/
 
 public section
@@ -91,27 +94,23 @@ theorem Base.continuous_affineSimpleRoot_of_continuous [ContinuousAdd R]
   rw [h]
   exact (hcont _).add continuous_const
 
-section Order
-
-variable [LinearOrder R] [OrderClosedTopology R]
-
 /-- The open fundamental alcove is open when every root functional is continuous. -/
-theorem isOpen_fundamentalAlcove_of_continuous
+theorem isOpen_fundamentalAlcove_of_continuous [LinearOrder R] [OrderClosedTopology R]
     (hcont : ∀ i, Continuous (P.root' i)) : IsOpen (fundamentalAlcove P b) := by
-  rw [fundamentalAlcove_eq_iInter]
+  rw [fundamentalAlcove_eq_biInter_inter]
   exact (isOpen_biInter_finset fun i _ ↦ isOpen_Ioi.preimage (hcont i)).inter
     (isOpen_Iio.preimage (hcont _))
 
 /-- The closed fundamental alcove is closed when every root functional is continuous. -/
-theorem isClosed_closedFundamentalAlcove_of_continuous
+theorem isClosed_closedFundamentalAlcove_of_continuous [Preorder R] [OrderClosedTopology R]
     (hcont : ∀ i, Continuous (P.root' i)) : IsClosed (closedFundamentalAlcove P b) := by
-  rw [closedFundamentalAlcove_eq_iInter]
+  rw [closedFundamentalAlcove_eq_biInter_inter]
   exact (isClosed_iInter fun i ↦ isClosed_iInter fun _ ↦ isClosed_Ici.preimage (hcont i)).inter
     (isClosed_Iic.preimage (hcont _))
 
-/-- Every closed face `b.closedAlcoveFace J` of the fundamental alcove is closed when the root
-functionals and addition on `R` are continuous. -/
-theorem Base.isClosed_closedAlcoveFace_of_continuous [ContinuousAdd R]
+/-- Every closed face `b.closedAlcoveFace J` of the fundamental alcove is closed when every root
+functional is continuous. -/
+theorem Base.isClosed_closedAlcoveFace_of_continuous [PartialOrder R] [OrderClosedTopology R]
     (hcont : ∀ i, Continuous (P.root' i)) (J : Set (Option b.support)) :
     IsClosed (b.closedAlcoveFace J) := by
   have h : b.closedAlcoveFace J =
@@ -119,11 +118,20 @@ theorem Base.isClosed_closedAlcoveFace_of_continuous [ContinuousAdd R]
     ext x
     simp [Base.mem_closedAlcoveFace]
   rw [h]
-  exact (isClosed_closedFundamentalAlcove_of_continuous b hcont).inter
-    (isClosed_biInter fun k _ ↦ isClosed_singleton.preimage
-      (b.continuous_affineSimpleRoot_of_continuous hcont k))
-
-end Order
+  refine (isClosed_closedFundamentalAlcove_of_continuous b hcont).inter
+    (isClosed_biInter fun k _ ↦ ?_)
+  rcases k with _ | i
+  · have hpre : b.affineSimpleRoot none ⁻¹' {0} = P.root' b.highestRoot ⁻¹' {1} := by
+      ext x
+      simp only [mem_preimage, mem_singleton_iff, Base.affineSimpleRoot_none, sub_eq_zero]
+      exact eq_comm
+    rw [hpre]
+    exact isClosed_singleton.preimage (hcont _)
+  · have hpre : b.affineSimpleRoot (some i) ⁻¹' {0} = P.root' i ⁻¹' {0} := by
+      ext x
+      simp
+    rw [hpre]
+    exact isClosed_singleton.preimage (hcont i)
 
 end Base
 
@@ -199,18 +207,10 @@ theorem closedFundamentalAlcove_subset_closure_fundamentalAlcove :
     closedFundamentalAlcove P b ⊆ closure (fundamentalAlcove P b) := by
   intro x hx
   obtain ⟨x₀, hx₀⟩ := fundamentalAlcove_nonempty b
-  let φ : R → N := fun t ↦ AffineMap.lineMap x x₀ t
-  have hφ : Continuous φ := by
-    have h : φ = fun t ↦ t • (x₀ - x) + x := funext (AffineMap.lineMap_apply_module' x x₀)
-    rw [h]
-    exact (continuous_id.smul continuous_const).add continuous_const
-  have h0 : (0 : R) ∈ closure (Ioo (0 : R) 1) := by
-    rw [closure_Ioo zero_ne_one]
-    exact ⟨le_rfl, zero_le_one⟩
-  have hxφ : x ∈ φ '' closure (Ioo (0 : R) 1) := ⟨0, h0, by simp [φ]⟩
-  exact closure_mono
-    (by rintro _ ⟨t, ht, rfl⟩; exact lineMap_mem_fundamentalAlcove hx hx₀ ht.1 ht.2)
-    (image_closure_subset_closure_image hφ hxφ)
+  refine closure_mono ?_ (segment_subset_closure_openSegment (left_mem_segment R x x₀))
+  rw [openSegment_eq_image_lineMap]
+  rintro _ ⟨t, ht, rfl⟩
+  exact lineMap_mem_fundamentalAlcove hx hx₀ ht.1 ht.2.le
 
 /-- **The closed fundamental alcove is the topological closure of the open fundamental alcove.** -/
 theorem closure_fundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
@@ -261,6 +261,14 @@ variable {ι M N : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Modu
 section Base
 
 variable {P : RootPairing ι ℝ M N} [Finite ι] [Nonempty ι] (b : P.Base)
+
+/-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, every affine simple root
+is continuous. -/
+@[fun_prop]
+theorem Base.continuous_affineSimpleRoot (k : Option b.support) :
+    Continuous (b.affineSimpleRoot k) :=
+  b.continuous_affineSimpleRoot_of_continuous
+    (fun i ↦ (P.root' i).continuous_of_finiteDimensional) k
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, the open fundamental
 alcove is open. -/
