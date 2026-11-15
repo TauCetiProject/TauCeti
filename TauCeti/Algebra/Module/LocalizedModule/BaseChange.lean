@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
 # Base change and scalar restriction for localized modules
@@ -19,24 +20,29 @@ at `T`, then `f.baseChange A : A ⊗[R] M →ₗ[A] A ⊗[R] M'` localizes `A �
 `T` (`IsLocalizedModule.baseChange`). Applying this to `LocalizedModule.mkLinearMap T M` identifies
 `A ⊗[R] LocalizedModule T M` with `LocalizedModule (Algebra.algebraMapSubmonoid A T) (A ⊗[R] M)`
 naturally in `M` (`LocalizedModule.baseChangeEquiv`). Consequently, surjectivity and bijectivity
-of `LocalizedModule.map T f` pass to `f.baseChange A` without flatness assumptions on `A`, while
-injectivity passes when `A` is flat over `R`.
+of `LocalizedModule.map T f` pass to
+`LocalizedModule.map (Algebra.algebraMapSubmonoid A T) (f.baseChange A)` without flatness
+assumptions on `A`, while injectivity passes when `A` is flat over `R`. When `A` is itself a
+localization of `R` at `T`, these properties hold for `f.baseChange A` itself if and only if they
+hold for `LocalizedModule.map T f`.
 
 Second, for an `A`-linear map `g : P₁ →ₗ[A] P₂`, localizing at `Algebra.algebraMapSubmonoid A T`
 agrees with localizing `g.restrictScalars R` at `T`, so injectivity, surjectivity, and bijectivity
 of the two localized maps are equivalent, and the underlying localized modules are canonically
-`R`-linearly isomorphic (`LocalizedModule.restrictScalarsEquiv`).
+`R`-linearly isomorphic (`LocalizedModule.restrictScalarsEquiv`, naturally via
+`LocalizedModule.restrictScalarsEquiv_map_apply`).
 
 ## Main declarations
 
-* `IsLocalizedModule.baseChange`, `IsLocalizedModule.baseChange_powers`: scalar extension of a
-  localization map is a localization map at the image submonoid.
+* `IsLocalizedModule.baseChange`: scalar extension of a localization map is a localization map at
+  the image submonoid.
 * `LocalizedModule.baseChangeEquiv`: the natural `A`-linear equivalence
   `A ⊗[R] LocalizedModule T M ≃ₗ[A] LocalizedModule (Algebra.algebraMapSubmonoid A T) (A ⊗[R] M)`.
 * `LocalizedModule.map_baseChange_surjective`, `LocalizedModule.map_baseChange_bijective`,
   `LocalizedModule.map_baseChange_injective`: preservation of surjectivity, bijectivity, and
   (under flatness) injectivity of localized maps under base change.
-* `LocalizedModule.restrictScalarsEquiv`: the natural `R`-linear equivalence
+* `LocalizedModule.restrictScalarsEquiv`, `LocalizedModule.restrictScalarsEquiv_map_apply`: the
+  natural `R`-linear equivalence
   `LocalizedModule T P ≃ₗ[R] LocalizedModule (Algebra.algebraMapSubmonoid A T) P` for an
   `A`-module `P`, together with equivalences for injectivity, surjectivity, and bijectivity of
   localized maps.
@@ -58,7 +64,7 @@ variable {R : Type*} [CommSemiring R] (T : Submonoid R)
 
 /-- Base change along `R → A` sends a localization map at `T` to a localization map at the image
 submonoid `Algebra.algebraMapSubmonoid A T`. -/
-theorem IsLocalizedModule.baseChange (f : M →ₗ[R] M') [IsLocalizedModule T f] :
+instance IsLocalizedModule.baseChange (f : M →ₗ[R] M') [IsLocalizedModule T f] :
     IsLocalizedModule (Algebra.algebraMapSubmonoid A T) (f.baseChange A) := by
   rw [IsLocalizedModule.restrictScalars_iff]
   have hcomm : (f.baseChange A).restrictScalars R =
@@ -69,14 +75,6 @@ theorem IsLocalizedModule.baseChange (f : M →ₗ[R] M') [IsLocalizedModule T f
   rw [hcomm, IsLocalizedModule.comp_iff_of_bijective_left T _ (TensorProduct.comm R M' A).bijective,
     IsLocalizedModule.comp_iff_of_bijective_right T _ (TensorProduct.comm R A M).bijective]
   infer_instance
-
-/-- Base change along `R → A` sends a localization map away from `r` to a localization map away
-from `algebraMap R A r`. -/
-theorem IsLocalizedModule.baseChange_powers (r : R) (f : M →ₗ[R] M')
-    [IsLocalizedModule (.powers r) f] :
-    IsLocalizedModule (.powers (algebraMap R A r)) (f.baseChange A) := by
-  rw [← Algebra.algebraMapSubmonoid_powers]
-  exact IsLocalizedModule.baseChange (.powers r) A f
 
 end IsLocalizedModule
 
@@ -93,35 +91,19 @@ variable {R : Type*} [CommSemiring R] (T : Submonoid R)
 noncomputable def baseChangeEquiv :
     A ⊗[R] LocalizedModule T M ≃ₗ[A]
       LocalizedModule (Algebra.algebraMapSubmonoid A T) (A ⊗[R] M) :=
-  have := IsLocalizedModule.baseChange T A (mkLinearMap T M)
   (IsLocalizedModule.iso (Algebra.algebraMapSubmonoid A T) ((mkLinearMap T M).baseChange A)).symm
-
-theorem baseChangeEquiv_tmul_mk_one (a : A) (m : M) :
-    baseChangeEquiv T A M (a ⊗ₜ[R] mk m 1) = mk (a ⊗ₜ[R] m) 1 := by
-  have := IsLocalizedModule.baseChange T A (mkLinearMap T M)
-  rw [← mkLinearMap_apply, ← LinearMap.baseChange_tmul, ← mkLinearMap_apply]
-  exact LinearMap.congr_fun
-    (IsLocalizedModule.iso_symm_comp (Algebra.algebraMapSubmonoid A T)
-      ((mkLinearMap T M).baseChange A)) (a ⊗ₜ[R] m)
 
 @[simp]
 theorem baseChangeEquiv_tmul_mk (a : A) (m : M) (t : T) :
     baseChangeEquiv T A M (a ⊗ₜ[R] mk m t) =
       mk (a ⊗ₜ[R] m) ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩ := by
-  let U := Algebra.algebraMapSubmonoid A T
-  apply ((Module.End.isUnit_iff _).mp
-    (IsLocalizedModule.map_units (mkLinearMap U (A ⊗[R] M))
-      ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩)).1
-  simp only [Module.algebraMap_end_apply]
-  have hcancel := mk_cancel (⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩ : U)
-    (a ⊗ₜ[R] m)
-  rw [Submonoid.mk_smul] at hcancel
-  rw [← LinearEquiv.map_smul, IsScalarTower.algebraMap_smul A (t : R), ← tmul_smul,
-    smul'_mk, ← Submonoid.smul_def, mk_cancel, baseChangeEquiv_tmul_mk_one,
-    smul'_mk, hcancel]
+  refine IsLocalizedModule.iso_symm_apply' (Algebra.algebraMapSubmonoid A T)
+    ((mkLinearMap T M).baseChange A) _ _ _ ?_
+  rw [Submonoid.mk_smul, IsScalarTower.algebraMap_smul A (t : R), ← tmul_smul, smul'_mk,
+    ← Submonoid.smul_def, mk_cancel, LinearMap.baseChange_tmul, mkLinearMap_apply]
 
 @[simp]
-theorem baseChangeEquiv_symm_tmul_mk (a : A) (m : M) (t : T) :
+theorem baseChangeEquiv_symm_mk_tmul (a : A) (m : M) (t : T) :
     (baseChangeEquiv T A M).symm
       (mk (a ⊗ₜ[R] m) ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩) =
       a ⊗ₜ[R] mk m t := by
@@ -146,8 +128,10 @@ theorem baseChangeEquiv_map_apply (f : M →ₗ[R] N) (x : A ⊗[R] LocalizedMod
 theorem map_baseChange_surjective (f : M →ₗ[R] N)
     (hf : Surjective (LocalizedModule.map T f)) :
     Surjective (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) (f.baseChange A)) := by
+  have hfR : Surjective ((LocalizedModule.map T f).restrictScalars R) := by
+    rwa [LinearMap.coe_restrictScalars R]
   have hsurj : Surjective (((LocalizedModule.map T f).restrictScalars R).baseChange A) :=
-    LinearMap.lTensor_surjective A hf
+    LinearMap.baseChange_surjective A hfR
   intro y
   obtain ⟨x, hx⟩ := hsurj ((baseChangeEquiv T A N).symm y)
   refine ⟨baseChangeEquiv T A M x, ?_⟩
@@ -157,8 +141,10 @@ theorem map_baseChange_surjective (f : M →ₗ[R] N)
 theorem map_baseChange_bijective (f : M →ₗ[R] N)
     (hf : Bijective (LocalizedModule.map T f)) :
     Bijective (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) (f.baseChange A)) := by
+  have hfR : Bijective ((LocalizedModule.map T f).restrictScalars R) := by
+    rwa [LinearMap.coe_restrictScalars R]
   let e : LocalizedModule T M ≃ₗ[R] LocalizedModule T N :=
-    LinearEquiv.ofBijective ((LocalizedModule.map T f).restrictScalars R) hf
+    LinearEquiv.ofBijective ((LocalizedModule.map T f).restrictScalars R) hfR
   have hbij : Bijective (((LocalizedModule.map T f).restrictScalars R).baseChange A) :=
     (e.baseChange R A _ _).bijective
   have hcomm : ⇑(LocalizedModule.map (Algebra.algebraMapSubmonoid A T) (f.baseChange A)) ∘
@@ -173,34 +159,16 @@ theorem map_baseChange_bijective (f : M →ₗ[R] N)
 theorem map_baseChange_injective [Module.Flat R A] (f : M →ₗ[R] N)
     (hf : Injective (LocalizedModule.map T f)) :
     Injective (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) (f.baseChange A)) := by
-  have hinj : Injective (((LocalizedModule.map T f).restrictScalars R).baseChange A) :=
-    Module.Flat.lTensor_preserves_injective_linearMap _ hf
+  have hfR : Injective ((LocalizedModule.map T f).restrictScalars R) := by
+    rwa [LinearMap.coe_restrictScalars R]
+  have hinj : Injective (((LocalizedModule.map T f).restrictScalars R).baseChange A) := by
+    rw [LinearMap.baseChange_eq_lTensor]
+    exact Module.Flat.lTensor_preserves_injective_linearMap _ hfR
   intro x y hxy
   apply (baseChangeEquiv T A M).symm.injective
   apply hinj
   apply (baseChangeEquiv T A N).injective
   simpa [baseChangeEquiv_map_apply] using hxy
-
-/-- Surjectivity of a principal localization of `f` passes to `f.baseChange A`. -/
-theorem map_powers_baseChange_surjective (r : R) (f : M →ₗ[R] N)
-    (hf : Surjective (LocalizedModule.map (.powers r) f)) :
-    Surjective (LocalizedModule.map (.powers (algebraMap R A r)) (f.baseChange A)) := by
-  rw [← Algebra.algebraMapSubmonoid_powers]
-  exact map_baseChange_surjective f hf
-
-/-- Bijectivity of a principal localization of `f` passes to `f.baseChange A`. -/
-theorem map_powers_baseChange_bijective (r : R) (f : M →ₗ[R] N)
-    (hf : Bijective (LocalizedModule.map (.powers r) f)) :
-    Bijective (LocalizedModule.map (.powers (algebraMap R A r)) (f.baseChange A)) := by
-  rw [← Algebra.algebraMapSubmonoid_powers]
-  exact map_baseChange_bijective f hf
-
-/-- Injectivity of a principal localization of `f` passes to `f.baseChange A` when `A` is flat. -/
-theorem map_powers_baseChange_injective [Module.Flat R A] (r : R) (f : M →ₗ[R] N)
-    (hf : Injective (LocalizedModule.map (.powers r) f)) :
-    Injective (LocalizedModule.map (.powers (algebraMap R A r)) (f.baseChange A)) := by
-  rw [← Algebra.algebraMapSubmonoid_powers]
-  exact map_baseChange_injective f hf
 
 end BaseChange
 
@@ -220,102 +188,65 @@ noncomputable def restrictScalarsEquiv :
     ((mkLinearMap (Algebra.algebraMapSubmonoid A T) P).restrictScalars R)
 
 @[simp]
-theorem restrictScalarsEquiv_mk (x : P) (t : T) :
-    restrictScalarsEquiv T A P (mk x t) =
-      mk x ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩ := by
-  let U := Algebra.algebraMapSubmonoid A T
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap U P)
-  apply ((Module.End.isUnit_iff _).mp
-    (IsLocalizedModule.map_units (mkLinearMap U P)
-      ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩)).1
-  simp only [Module.algebraMap_end_apply]
-  have hcancel := mk_cancel (⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩ : U) x
-  rw [Submonoid.mk_smul] at hcancel
-  rw [IsScalarTower.algebraMap_smul A (t : R), ← LinearEquiv.map_smul,
-    smul'_mk, ← Submonoid.smul_def, mk_cancel, smul'_mk, hcancel]
-  apply (IsLocalizedModule.iso T ((mkLinearMap U P).restrictScalars R)).symm.injective
-  simp [restrictScalarsEquiv]
-
-@[simp]
 theorem restrictScalarsEquiv_symm_mk (x : P) (t : T) :
     (restrictScalarsEquiv T A P).symm
       (mk x ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩) = mk x t := by
-  apply (restrictScalarsEquiv T A P).injective
+  let U := Algebra.algebraMapSubmonoid A T
+  have := IsLocalizedModule.restrictScalars T (mkLinearMap U P)
+  refine IsLocalizedModule.iso_symm_apply' T ((mkLinearMap U P).restrictScalars R) _ _ _ ?_
+  rw [Submonoid.smul_def, ← IsScalarTower.algebraMap_smul A (t : R), smul'_mk]
+  simpa [U] using mk_cancel (⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩ : U) x
+
+@[simp]
+theorem restrictScalarsEquiv_mk (x : P) (t : T) :
+    restrictScalarsEquiv T A P (mk x t) =
+      mk x ⟨algebraMap R A t, Algebra.mem_algebraMapSubmonoid_of_mem t⟩ := by
+  apply (restrictScalarsEquiv T A P).symm.injective
   simp
 
 variable {T A P}
 variable {P₁ P₂ : Type*} [AddCommMonoid P₁] [Module R P₁] [Module A P₁] [IsScalarTower R A P₁]
   [AddCommMonoid P₂] [Module R P₂] [Module A P₂] [IsScalarTower R A P₂]
 
-private theorem restrictScalars_map_algebraMapSubmonoid_eq (g : P₁ →ₗ[A] P₂) :
-    have := IsLocalizedModule.restrictScalars T
-      (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₁)
-    have := IsLocalizedModule.restrictScalars T
-      (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₂)
-    (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g).restrictScalars R =
-      IsLocalizedModule.map T
-        ((mkLinearMap (Algebra.algebraMapSubmonoid A T) P₁).restrictScalars R)
-        ((mkLinearMap (Algebra.algebraMapSubmonoid A T) P₂).restrictScalars R)
-        (g.restrictScalars R) := by
-  let U := Algebra.algebraMapSubmonoid A T
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap U P₁)
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap U P₂)
-  apply IsLocalizedModule.linearMap_ext T
-    ((mkLinearMap U P₁).restrictScalars R) ((mkLinearMap U P₂).restrictScalars R)
-  rw [IsLocalizedModule.map_comp]
-  ext p
-  simp
+/-- Naturality of `LocalizedModule.restrictScalarsEquiv` with respect to `A`-linear maps. -/
+theorem restrictScalarsEquiv_map_apply (g : P₁ →ₗ[A] P₂) (x : LocalizedModule T P₁) :
+    restrictScalarsEquiv T A P₂ (LocalizedModule.map T (g.restrictScalars R) x) =
+      LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g
+        (restrictScalarsEquiv T A P₁ x) := by
+  induction x using LocalizedModule.induction_on with
+  | h p t => simp
 
 /-- Injectivity of `LocalizedModule.map` at `Algebra.algebraMapSubmonoid A T` is equivalent to
 injectivity of `LocalizedModule.map` at `T` after restricting scalars to `R`. -/
 theorem map_algebraMapSubmonoid_injective_iff (g : P₁ →ₗ[A] P₂) :
     Injective (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g) ↔
       Injective (LocalizedModule.map T (g.restrictScalars R)) := by
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₁)
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₂)
-  rw [← LinearMap.coe_restrictScalars R, restrictScalars_map_algebraMapSubmonoid_eq g,
-    IsLocalizedModule.map_injective_iff_localizedModuleMap_injective]
+  have hcomm : ⇑(LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g) ∘
+      ⇑(restrictScalarsEquiv T A P₁) =
+      ⇑(restrictScalarsEquiv T A P₂) ∘ ⇑(LocalizedModule.map T (g.restrictScalars R)) :=
+    funext fun x ↦ (restrictScalarsEquiv_map_apply g x).symm
+  rw [← (restrictScalarsEquiv T A P₁).toEquiv.injective_comp, LinearEquiv.coe_toEquiv, hcomm,
+    ← LinearEquiv.coe_toEquiv, (restrictScalarsEquiv T A P₂).toEquiv.comp_injective]
 
 /-- Surjectivity of `LocalizedModule.map` at `Algebra.algebraMapSubmonoid A T` is equivalent to
 surjectivity of `LocalizedModule.map` at `T` after restricting scalars to `R`. -/
 theorem map_algebraMapSubmonoid_surjective_iff (g : P₁ →ₗ[A] P₂) :
     Surjective (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g) ↔
       Surjective (LocalizedModule.map T (g.restrictScalars R)) := by
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₁)
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₂)
-  rw [← LinearMap.coe_restrictScalars R, restrictScalars_map_algebraMapSubmonoid_eq g,
-    IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective]
+  have hcomm : ⇑(LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g) ∘
+      ⇑(restrictScalarsEquiv T A P₁) =
+      ⇑(restrictScalarsEquiv T A P₂) ∘ ⇑(LocalizedModule.map T (g.restrictScalars R)) :=
+    funext fun x ↦ (restrictScalarsEquiv_map_apply g x).symm
+  rw [← (restrictScalarsEquiv T A P₁).toEquiv.surjective_comp, LinearEquiv.coe_toEquiv, hcomm,
+    ← LinearEquiv.coe_toEquiv, (restrictScalarsEquiv T A P₂).toEquiv.comp_surjective]
 
 /-- Bijectivity of `LocalizedModule.map` at `Algebra.algebraMapSubmonoid A T` is equivalent to
 bijectivity of `LocalizedModule.map` at `T` after restricting scalars to `R`. -/
 theorem map_algebraMapSubmonoid_bijective_iff (g : P₁ →ₗ[A] P₂) :
     Bijective (LocalizedModule.map (Algebra.algebraMapSubmonoid A T) g) ↔
       Bijective (LocalizedModule.map T (g.restrictScalars R)) := by
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₁)
-  have := IsLocalizedModule.restrictScalars T (mkLinearMap (Algebra.algebraMapSubmonoid A T) P₂)
-  rw [← LinearMap.coe_restrictScalars R, restrictScalars_map_algebraMapSubmonoid_eq g,
-    IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective]
-
-/-- Injectivity of `LocalizedModule.map` away from `algebraMap R A r` is equivalent to injectivity
-away from `r` after restricting scalars to `R`. -/
-theorem map_powers_algebraMap_injective_iff (r : R) (g : P₁ →ₗ[A] P₂) :
-    Injective (LocalizedModule.map (.powers (algebraMap R A r)) g) ↔
-      Injective (LocalizedModule.map (.powers r) (g.restrictScalars R)) := by
-  rw [← Algebra.algebraMapSubmonoid_powers, map_algebraMapSubmonoid_injective_iff]
-
-/-- Surjectivity of `LocalizedModule.map` away from `algebraMap R A r` is equivalent to surjectivity
-away from `r` after restricting scalars to `R`. -/
-theorem map_powers_algebraMap_surjective_iff (r : R) (g : P₁ →ₗ[A] P₂) :
-    Surjective (LocalizedModule.map (.powers (algebraMap R A r)) g) ↔
-      Surjective (LocalizedModule.map (.powers r) (g.restrictScalars R)) := by
-  rw [← Algebra.algebraMapSubmonoid_powers, map_algebraMapSubmonoid_surjective_iff]
-
-/-- Bijectivity of `LocalizedModule.map` away from `algebraMap R A r` is equivalent to bijectivity
-away from `r` after restricting scalars to `R`. -/
-theorem map_powers_algebraMap_bijective_iff (r : R) (g : P₁ →ₗ[A] P₂) :
-    Bijective (LocalizedModule.map (.powers (algebraMap R A r)) g) ↔
-      Bijective (LocalizedModule.map (.powers r) (g.restrictScalars R)) := by
-  rw [← Algebra.algebraMapSubmonoid_powers, map_algebraMapSubmonoid_bijective_iff]
+  simp only [Bijective, map_algebraMapSubmonoid_injective_iff,
+    map_algebraMapSubmonoid_surjective_iff]
 
 end RestrictScalars
 

@@ -8,10 +8,12 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.RingTheory.FormalGlueing.Etale
 public import TauCeti.RingTheory.TensorProduct.AlgEquiv
+import TauCeti.Algebra.Module.LocalizedModule.Pullback
 import TauCeti.Algebra.Module.Torsion.Localization
 import TauCeti.RingTheory.FormalGlueing.Modules
 import TauCeti.RingTheory.FormalGlueing.Subalgebra
 import TauCeti.RingTheory.Localization.Module
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Reconstructing algebras by formal gluing
@@ -27,21 +29,22 @@ Using formal module gluing (`LinearMap.exists_extension_ker_coprod_of_formalGlue
 reconstructs an `R`-subalgebra `A₀ : Subalgebra R N` whose scalar extension to `S` is `N`
 (`IsBaseChange S A₀.val.toLinearMap`, hence `S ⊗[R] A₀ ≃ₐ[S] N` via `IsBaseChange.algEquiv`) and
 whose principal localizations `Localization.Away r ⊗[R] A₀` (`r ∈ G`) are isomorphic as
-`Localization.Away r`-algebras to `Localization.Away r ⊗[R] M` compatibly with `f` and `g`.
+`Localization.Away r`-algebras to `Localization.Away r ⊗[R] M`, compatibly both with `f` and `g`
+and pairwise after further localization to `Localization.Away (r₁ * r₂)`.
 
-Combined with formal-gluing property detection (`TauCeti.RingTheory.FormalGlueing.Finiteness` and
-`TauCeti.RingTheory.FormalGlueing.Etale`), the reconstructed `R`-algebra inherits finite
-generation, finite presentation, formal étaleness, and finite étaleness from `N` and the localized
-algebras `Localization.Away r ⊗[R] M`.
+Combined with formal-gluing property detection (`IsBaseChange.finite_of_formalGlueing` and
+`IsBaseChange.finitePresentation_of_formalGlueing` in `TauCeti.RingTheory.FormalGlueing.Finiteness`,
+and `IsBaseChange.formallyEtale_of_formalGlueing` and `IsBaseChange.finite_etale_of_formalGlueing`
+in `TauCeti.RingTheory.FormalGlueing.Etale`), the reconstructed `R`-algebra inherits
+module-finiteness and module-finite presentation (and, for commutative `R`-algebras, formal
+étaleness and finite étaleness) from `N` and the localized algebras `Localization.Away r ⊗[R] M`.
 
 ## Main results
 
-* `AlgHom.finite_of_formalGlueing`, `AlgHom.finitePresentation_of_formalGlueing`,
-  `AlgHom.formallyEtale_of_formalGlueing`, `AlgHom.finite_etale_of_formalGlueing`: finiteness and
-  étaleness of any `R`-algebra glued from `N` over `S` and `M` over `D(r)` (`r ∈ G`).
 * `AlgHom.exists_subalgebra_formalGlueing`, `IsBaseChange.exists_subalgebra_formalGlueing`:
-  reconstructs `A₀ : Subalgebra R N` with `IsBaseChange S A₀.val.toLinearMap` and compatible
-  `Localization.Away r`-algebra equivalences for `r ∈ G`.
+  reconstructs `A₀ : Subalgebra R N` with `IsBaseChange S A₀.val.toLinearMap` and
+  `Localization.Away r`-algebra equivalences for `r ∈ G` compatible with `f`, `g`, and pairwise
+  overlaps on `Localization.Away (r₁ * r₂)`.
 * `IsBaseChange.exists_finite_subalgebra_formalGlueing`,
   `IsBaseChange.exists_finite_etale_subalgebra_formalGlueing`: specializes subalgebra
   reconstruction to module-finite algebras and finite étale commutative algebras.
@@ -55,98 +58,6 @@ algebras `Localization.Away r ⊗[R] M`.
 public section
 
 open Function TensorProduct
-
-section Descent
-
-namespace AlgHom
-
-section Associative
-
-variable {R S E M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
-  [Ring E] [Algebra R E] [Ring M] [Algebra R M]
-  [Ring N] [Algebra R N] [Algebra S N] [IsScalarTower R S N]
-
-/-- Any `R`-algebra `E` glued from a module-finite `S`-algebra `N` and locally module-finite
-`R`-algebra `M` across `G` is module-finite over `R`. -/
-@[stacks 05EU "finiteness of a glued algebra"]
-theorem finite_of_formalGlueing {φ : E →ₐ[R] N} (hφ : IsBaseChange S φ.toLinearMap) (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₐ[Localization.Away r]
-      Localization.Away r ⊗[R] M)
-    [Module.Finite S N]
-    (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M)) :
-    Module.Finite R E :=
-  (TauCeti.finite_iff_baseChange_and_localized hG).mpr
-    ⟨Module.Finite.equiv hφ.equiv.symm, fun r hr ↦ by
-      have := hM r hr
-      exact Module.Finite.equiv (e_loc r hr).toLinearEquiv.symm⟩
-
-/-- Any `R`-algebra `E` glued from a finitely presented `S`-module `N` and locally finitely
-presented `R`-module `M` across `G` is finitely presented as an `R`-module. -/
-@[stacks 05EU "finite presentation of a glued algebra"]
-theorem finitePresentation_of_formalGlueing {φ : E →ₐ[R] N} (hφ : IsBaseChange S φ.toLinearMap)
-    (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₐ[Localization.Away r]
-      Localization.Away r ⊗[R] M)
-    [Module.FinitePresentation S N]
-    (hM : ∀ r ∈ G, Module.FinitePresentation (Localization.Away r) (Localization.Away r ⊗[R] M)) :
-    Module.FinitePresentation R E :=
-  (TauCeti.finitePresentation_iff_baseChange_and_localized hG).mpr
-    ⟨.of_equiv hφ.equiv.symm, fun r hr ↦ by
-      have := hM r hr
-      exact .of_equiv (e_loc r hr).toLinearEquiv.symm⟩
-
-end Associative
-
-section Commutative
-
-variable {R S E M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
-  [CommRing E] [Algebra R E] [CommRing M] [Algebra R M]
-  [CommRing N] [Algebra R N] [Algebra S N] [IsScalarTower R S N]
-
-/-- Any commutative `R`-algebra `E` glued from a formally étale `S`-algebra `N` and locally
-formally étale `R`-algebra `M` across `G` is formally étale over `R`. -/
-@[stacks 05EU "formal étaleness of a glued algebra"]
-theorem formallyEtale_of_formalGlueing {φ : E →ₐ[R] N} (hφ : IsBaseChange S φ.toLinearMap)
-    (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₐ[Localization.Away r]
-      Localization.Away r ⊗[R] M)
-    [Algebra.FormallyEtale S N]
-    (hM : ∀ r ∈ G, Algebra.FormallyEtale (Localization.Away r) (Localization.Away r ⊗[R] M)) :
-    Algebra.FormallyEtale R E :=
-  (TauCeti.formallyEtale_iff_baseChange_and_localized hG).mpr
-    ⟨.of_equiv hφ.algEquiv.symm, fun r hr ↦ by
-      have := hM r hr
-      exact .of_equiv (e_loc r hr).symm⟩
-
-/-- Any commutative `R`-algebra `E` glued from a finite étale `S`-algebra `N` and locally finite
-étale `R`-algebra `M` across `G` is finite étale over `R`. -/
-@[stacks 05EU "finite étaleness of a glued algebra"]
-theorem finite_etale_of_formalGlueing {φ : E →ₐ[R] N} (hφ : IsBaseChange S φ.toLinearMap)
-    (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₐ[Localization.Away r]
-      Localization.Away r ⊗[R] M)
-    [Module.Finite S N] [Algebra.Etale S N]
-    (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M) ∧
-      Algebra.Etale (Localization.Away r) (Localization.Away r ⊗[R] M)) :
-    Module.Finite R E ∧ Algebra.Etale R E :=
-  (TauCeti.finite_etale_iff_baseChange_and_localized hG).mpr
-    ⟨⟨Module.Finite.equiv hφ.equiv.symm, .of_equiv hφ.algEquiv.symm⟩, fun r hr ↦ by
-      obtain ⟨_, _⟩ := hM r hr
-      exact ⟨Module.Finite.equiv (e_loc r hr).toLinearEquiv.symm, .of_equiv (e_loc r hr).symm⟩⟩
-
-end Commutative
-
-end AlgHom
-
-end Descent
 
 section Reconstruction
 
@@ -173,22 +84,19 @@ private theorem mul_mem_range_localizedModule_of_torsion
       LinearMap.range (IsLocalizedModule.map (.powers r)
         (LocalizedModule.mkLinearMap (.powers r) φ.range)
         (LocalizedModule.mkLinearMap (.powers r) N) φ.range.subtype) := by
-  obtain ⟨ex, hex⟩ := x.2
-  obtain ⟨ey, hey⟩ := y.2
-  obtain ⟨m₁, hm₁⟩ := (Ideal.mem_primaryComponent_span_iff G).mp
-    (hE_tors ▸ Submodule.mem_top (x := (Submodule.Quotient.mk ex : E ⧸ i.range))) r hr
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hm₁
-  obtain ⟨k₁, hk₁⟩ := hm₁
-  obtain ⟨m₂, hm₂⟩ := (Ideal.mem_primaryComponent_span_iff G).mp
-    (hE_tors ▸ Submodule.mem_top (x := (Submodule.Quotient.mk ey : E ⧸ i.range))) r hr
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hm₂
-  obtain ⟨k₂, hk₂⟩ := hm₂
-  have hx' : r ^ m₁ • (x : N) = k₁.1.2 := by
-    rw [← hex, ← map_smul, ← hk₁]
-    exact LinearMap.congr_fun hφi k₁
-  have hy' : r ^ m₂ • (y : N) = k₂.1.2 := by
-    rw [← hey, ← map_smul, ← hk₂]
-    exact LinearMap.congr_fun hφi k₂
+  have hclear (z : φ.range) :
+      ∃ (m : ℕ) (k : (f.toLinearMap.coprod (-g.toLinearMap.restrictScalars R)).ker),
+        r ^ m • (z : N) = k.1.2 := by
+    obtain ⟨ez, hez⟩ := z.2
+    obtain ⟨m, hm⟩ := (Ideal.mem_primaryComponent_span_iff G).mp
+      (hE_tors ▸ Submodule.mem_top (x := (Submodule.Quotient.mk ez : E ⧸ i.range))) r hr
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hm
+    obtain ⟨k, hk⟩ := hm
+    refine ⟨m, k, ?_⟩
+    rw [← hez, ← map_smul, ← hk]
+    exact LinearMap.congr_fun hφi k
+  obtain ⟨m₁, k₁, hx'⟩ := hclear x
+  obtain ⟨m₂, k₂, hy'⟩ := hclear y
   have hprod : r ^ (m₁ + m₂) • ((x : N) * y) = k₁.1.2 * k₂.1.2 := by
     rw [pow_add, mul_smul, ← mul_smul_comm, ← smul_mul_assoc, hx', hy']
   have hk₁₂ : (k₁.1.1 * k₂.1.1, k₁.1.2 * k₂.1.2) ∈
@@ -219,13 +127,24 @@ private theorem exists_local_algEquiv_of_extension
     (A₀ : Subalgebra R N) (hA₀_sub : A₀.toSubmodule = φ.range) :
     ∃ e_loc : ∀ r ∈ G,
         Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M,
-      ∀ (r : R) (hr : r ∈ G),
+      (∀ (r : R) (hr : r ∈ G),
         (Algebra.TensorProduct.map
             (AlgHom.id (Localization.Away r) (Localization.Away r)) f).comp
           (e_loc r hr).toAlgHom =
         Algebra.TensorProduct.map
           (AlgHom.id (Localization.Away r) (Localization.Away r))
-          ((g.restrictScalars R).comp A₀.val) := by
+          ((g.restrictScalars R).comp A₀.val)) ∧
+      ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (a : A₀),
+        Algebra.TensorProduct.map
+          (IsLocalization.Away.liftAlgHom (S := Localization.Away r₁) r₁
+            (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+            (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_right r₁ r₂)))
+          (AlgHom.id R M) (e_loc r₁ hr₁ (1 ⊗ₜ[R] a)) =
+        Algebra.TensorProduct.map
+          (IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
+            (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+            (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁)))
+          (AlgHom.id R M) (e_loc r₂ hr₂ (1 ⊗ₜ[R] a)) := by
   let K := (f.toLinearMap.coprod (-g.toLinearMap.restrictScalars R)).ker
   let K_alg : Subalgebra R (M × N) :=
     AlgHom.equalizer (f.comp (AlgHom.fst R M N)) ((g.restrictScalars R).comp (AlgHom.snd R M N))
@@ -239,7 +158,8 @@ private theorem exists_local_algEquiv_of_extension
   let π₂ : K_alg →ₐ[R] A₀ := ((AlgHom.snd R M N).comp K_alg.val).codRestrict A₀ fun k ↦ by
     rw [← SetLike.mem_coe, ← Subalgebra.coe_toSubmodule, hA₀_sub]
     exact ⟨i (eK k), LinearMap.congr_fun hφi (eK k)⟩
-  have hπ₁_lin : π₁.toLinearMap = ((LinearMap.fst R M N).domRestrict K) ∘ₗ eK.toLinearMap := rfl
+  have hπ₁_lin : π₁.toLinearMap = ((LinearMap.fst R M N).domRestrict K) ∘ₗ eK.toLinearMap := by
+    ext; rfl
   have hπ₂_lin : π₂.toLinearMap = eE.toLinearMap ∘ₗ i ∘ₗ eK.toLinearMap := by
     apply LinearMap.ext fun k ↦ Subtype.ext ?_
     exact (LinearMap.congr_fun hφi (eK k)).symm
@@ -264,15 +184,50 @@ private theorem exists_local_algEquiv_of_extension
       Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M :=
     (π₂.algEquivOfLocalizedBijective (.powers r) (Localization.Away r) (hπ₂ r hr)).symm.trans
       (π₁.algEquivOfLocalizedBijective (.powers r) (Localization.Away r) (hπ₁ r hr))
-  refine ⟨e_loc, fun r hr ↦ ?_⟩
-  let e₂ := π₂.algEquivOfLocalizedBijective (.powers r) (Localization.Away r) (hπ₂ r hr)
-  apply AlgHom.ext fun x ↦ ?_
-  obtain ⟨z, rfl⟩ := e₂.surjective x
-  induction z using TensorProduct.inductionOn with
-  | tmul s k =>
-    have hk : f k.1.1 = g k.1.2 := k.2
-    simp [e_loc, e₂, π₁, π₂, hk]
-  | add x y hx hy => simp [map_add, hx, hy]
+  refine ⟨e_loc, fun r hr ↦ ?_, fun r₁ hr₁ r₂ hr₂ a ↦ ?_⟩
+  · let e₂ := π₂.algEquivOfLocalizedBijective (.powers r) (Localization.Away r) (hπ₂ r hr)
+    apply AlgHom.ext fun x ↦ ?_
+    obtain ⟨z, rfl⟩ := e₂.surjective x
+    induction z using TensorProduct.inductionOn with
+    | tmul s k =>
+      have hk : f k.1.1 = g k.1.2 := k.2
+      simp [e_loc, e₂, π₁, π₂, hk]
+    | add x y hx hy => simp [map_add, hx, hy]
+  · let R₁₂ := Localization.Away (r₁ * r₂)
+    let φ₁ : Localization.Away r₁ →ₐ[R] R₁₂ :=
+      IsLocalization.Away.liftAlgHom (S := Localization.Away r₁) r₁
+        (f := Algebra.ofId R R₁₂)
+        (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_right r₁ r₂))
+    let φ₂ : Localization.Away r₂ →ₐ[R] R₁₂ :=
+      IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
+        (f := Algebra.ofId R R₁₂)
+        (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁))
+    have hcomm {B : Type u} [Ring B] [Algebra R B] {r : R} (φ_r : Localization.Away r →ₐ[R] R₁₂)
+        (π : K_alg →ₐ[R] B) (hπ : Bijective (LocalizedModule.map (.powers r) π.toLinearMap))
+        (z : Localization.Away r ⊗[R] K_alg) :
+        Algebra.TensorProduct.map φ_r (AlgHom.id R B)
+          (π.algEquivOfLocalizedBijective (.powers r) (Localization.Away r) hπ z) =
+        Algebra.TensorProduct.map (AlgHom.id R R₁₂) π
+          (Algebra.TensorProduct.map φ_r (AlgHom.id R K_alg) z) := by
+      induction z using TensorProduct.inductionOn with
+      | tmul s k => simp
+      | add x y hx hy => simp [map_add, hx, hy]
+    obtain ⟨z₁, hz₁⟩ := (π₂.algEquivOfLocalizedBijective (.powers r₁) (Localization.Away r₁)
+      (hπ₂ r₁ hr₁)).surjective (1 ⊗ₜ[R] a)
+    obtain ⟨z₂, hz₂⟩ := (π₂.algEquivOfLocalizedBijective (.powers r₂) (Localization.Away r₂)
+      (hπ₂ r₂ hr₂)).surjective (1 ⊗ₜ[R] a)
+    have hπ₂_inj : Injective π₂.toLinearMap := by
+      rw [hπ₂_lin]
+      exact eE.injective.comp (hi_inj.comp eK.injective)
+    have hw_eq : Algebra.TensorProduct.map φ₁ (AlgHom.id R K_alg) z₁ =
+        Algebra.TensorProduct.map φ₂ (AlgHom.id R K_alg) z₂ := by
+      apply (π₂.injective_tensorProduct_map_id_iff (S := R) (.powers (r₁ * r₂)) R₁₂).mpr
+        (LocalizedModule.map_injective (.powers (r₁ * r₂)) π₂.toLinearMap hπ₂_inj)
+      rw [← hcomm φ₁ π₂ (hπ₂ r₁ hr₁) z₁, ← hcomm φ₂ π₂ (hπ₂ r₂ hr₂) z₂, hz₁, hz₂]
+      simp
+    rw [← hz₁, ← hz₂]
+    simp only [e_loc, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply]
+    rw [hcomm φ₁ π₁ (hπ₁ r₁ hr₁) z₁, hcomm φ₂ π₁ (hπ₁ r₂ hr₂) z₂, hw_eq]
 
 variable [Module.FaithfullyFlat R S]
 
@@ -283,7 +238,8 @@ bijective on every `D(algebraMap R S r)` (`r ∈ G`), there exists an `R`-subalg
 `A₀ : Subalgebra R N` satisfying `IsBaseChange S A₀.val.toLinearMap` (hence `S ⊗[R] A₀ ≃ₐ[S] N`)
 together with `Localization.Away r`-algebra equivalences
 `Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M` compatible with
-`f` and `g`. Neither `M`, `N`, nor `P` need be commutative. -/
+`f` and `g` and agreeing pairwise after base change to `Localization.Away (r₁ * r₂)`. Neither `M`,
+`N`, nor `P` need be commutative. -/
 @[stacks 05EU "reconstructing an algebra model by formal gluing"]
 theorem AlgHom.exists_subalgebra_formalGlueing
     (f : M →ₐ[R] P) (g : N →ₐ[S] P) (G : Finset R)
@@ -297,20 +253,31 @@ theorem AlgHom.exists_subalgebra_formalGlueing
       IsBaseChange S A₀.val.toLinearMap ∧
         ∃ e_loc : ∀ r ∈ G,
             Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M,
-          ∀ (r : R) (hr : r ∈ G),
+          (∀ (r : R) (hr : r ∈ G),
             (Algebra.TensorProduct.map
                 (AlgHom.id (Localization.Away r) (Localization.Away r)) f).comp
               (e_loc r hr).toAlgHom =
             Algebra.TensorProduct.map
               (AlgHom.id (Localization.Away r) (Localization.Away r))
-              ((g.restrictScalars R).comp A₀.val) := by
+              ((g.restrictScalars R).comp A₀.val)) ∧
+          ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (a : A₀),
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₁) r₁
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_right r₁ r₂)))
+              (AlgHom.id R M) (e_loc r₁ hr₁ (1 ⊗ₜ[R] a)) =
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁)))
+              (AlgHom.id R M) (e_loc r₂ hr₂ (1 ⊗ₜ[R] a)) := by
   obtain ⟨E, _, _, i, φ, hi_inj, hE_tors, hφ_bc, hφi⟩ :=
     LinearMap.exists_extension_ker_coprod_of_formalGlueing f.toLinearMap g.toLinearMap G hG
       hf_inj hf_surj hg
   have hφ_inj : Injective φ :=
     hφ_bc.injective_of_tensorProduct_mk_injective
       (Module.FaithfullyFlat.tensorProduct_mk_injective E)
-  have hP_bc : IsBaseChange S φ.range.subtype := hφ_bc.range_of_injective hφ_inj
+  have hP_bc : IsBaseChange S φ.range.subtype := hφ_bc.range
   have hone : (1 : N) ∈ φ.range := by
     have hk₁ : ((1 : M), (1 : N)) ∈
         (f.toLinearMap.coprod (-g.toLinearMap.restrictScalars R)).ker := by simp
@@ -319,10 +286,18 @@ theorem AlgHom.exists_subalgebra_formalGlueing
     φ.range.mul_mem_of_formalGlueing hP_bc hG
       (mul_mem_range_localizedModule_of_torsion f g G i φ hE_tors hφi)
   let A₀ : Subalgebra R N := φ.range.toSubalgebra hone hmul
+  -- `Submodule.toSubalgebra` preserves `φ.range`'s definitional carrier, `Module` instance, and
+  -- subtype map (`Subalgebra.toSubmodule_subtype`), so `hP_bc` proves `IsBaseChange S A₀.val...`.
   exact ⟨A₀, hP_bc, exists_local_algEquiv_of_extension f g G hg i φ hi_inj hφ_inj hE_tors hφi A₀
     (φ.range.toSubalgebra_toSubmodule hone hmul)⟩
 
-/-- **Formal gluing of algebras for base-changed overlap (`IsBaseChange S f.toLinearMap`).** -/
+/-- **Formal gluing of algebras for base-changed overlap (Stacks 05EU).** Let `R → S` be faithfully
+flat and induce `R/(G) ≅ S/(G)S`. When `f : M →ₐ[R] P` exhibits `P` as `S ⊗[R] M`
+(`IsBaseChange S f.toLinearMap`) and `g : N →ₐ[S] P` becomes bijective on each
+`D(algebraMap R S r)` (`r ∈ G`), there exists an `R`-subalgebra `A₀ : Subalgebra R N` base-changing
+to `N` (`IsBaseChange S A₀.val.toLinearMap`) with `Localization.Away r`-algebra equivalences to
+`Localization.Away r ⊗[R] M` compatible with `f`, `g`, and pairwise overlaps on
+`Localization.Away (r₁ * r₂)`. Neither `M`, `N`, nor `P` need be commutative. -/
 @[stacks 05EU "reconstructing an algebra model for base-changed overlap"]
 theorem IsBaseChange.exists_subalgebra_formalGlueing
     {f : M →ₐ[R] P} (hf : IsBaseChange S f.toLinearMap) (g : N →ₐ[S] P) (G : Finset R)
@@ -333,19 +308,31 @@ theorem IsBaseChange.exists_subalgebra_formalGlueing
       IsBaseChange S A₀.val.toLinearMap ∧
         ∃ e_loc : ∀ r ∈ G,
             Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M,
-          ∀ (r : R) (hr : r ∈ G),
+          (∀ (r : R) (hr : r ∈ G),
             (Algebra.TensorProduct.map
                 (AlgHom.id (Localization.Away r) (Localization.Away r)) f).comp
               (e_loc r hr).toAlgHom =
             Algebra.TensorProduct.map
               (AlgHom.id (Localization.Away r) (Localization.Away r))
-              ((g.restrictScalars R).comp A₀.val) :=
+              ((g.restrictScalars R).comp A₀.val)) ∧
+          ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (a : A₀),
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₁) r₁
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_right r₁ r₂)))
+              (AlgHom.id R M) (e_loc r₁ hr₁ (1 ⊗ₜ[R] a)) =
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁)))
+              (AlgHom.id R M) (e_loc r₂ hr₂ (1 ⊗ₜ[R] a)) :=
   AlgHom.exists_subalgebra_formalGlueing f g G hG hf.liftBaseChange_injective
     (fun _ _ ↦ LocalizedModule.map_surjective _ _ hf.liftBaseChange_bijective.2) hg
 
 /-- **Formal gluing of module-finite algebras (Stacks 05EU).** Under faithful flatness of `R → S`,
-an `S`-finite algebra `N` and locally finite `R`-algebra `M` with base-changed overlap glue to a
-module-finite `R`-subalgebra `A₀ : Subalgebra R N`. -/
+a module-finite `S`-algebra `N` and locally module-finite `R`-algebra `M` with base-changed overlap
+glue to a module-finite `R`-subalgebra `A₀ : Subalgebra R N` with compatible local equivalences
+agreeing pairwise on `Localization.Away (r₁ * r₂)`. -/
 @[stacks 05EU "reconstructing a finite algebra by formal gluing"]
 theorem IsBaseChange.exists_finite_subalgebra_formalGlueing
     {f : M →ₐ[R] P} (hf : IsBaseChange S f.toLinearMap) (g : N →ₐ[S] P) (G : Finset R)
@@ -359,15 +346,27 @@ theorem IsBaseChange.exists_finite_subalgebra_formalGlueing
         IsBaseChange S A₀.val.toLinearMap ∧
         ∃ e_loc : ∀ r ∈ G,
             Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M,
-          ∀ (r : R) (hr : r ∈ G),
+          (∀ (r : R) (hr : r ∈ G),
             (Algebra.TensorProduct.map
                 (AlgHom.id (Localization.Away r) (Localization.Away r)) f).comp
               (e_loc r hr).toAlgHom =
             Algebra.TensorProduct.map
               (AlgHom.id (Localization.Away r) (Localization.Away r))
-              ((g.restrictScalars R).comp A₀.val) := by
-  obtain ⟨A₀, hA₀, e_loc, hcompat⟩ := hf.exists_subalgebra_formalGlueing g G hG hg
-  exact ⟨A₀, AlgHom.finite_of_formalGlueing hA₀ G hG e_loc hM, hA₀, e_loc, hcompat⟩
+              ((g.restrictScalars R).comp A₀.val)) ∧
+          ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (a : A₀),
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₁) r₁
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_right r₁ r₂)))
+              (AlgHom.id R M) (e_loc r₁ hr₁ (1 ⊗ₜ[R] a)) =
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁)))
+              (AlgHom.id R M) (e_loc r₂ hr₂ (1 ⊗ₜ[R] a)) := by
+  obtain ⟨A₀, hA₀, e_loc, hcompat, hoverlap⟩ := hf.exists_subalgebra_formalGlueing g G hG hg
+  exact ⟨A₀, hA₀.finite_of_formalGlueing G hG (fun r hr ↦ (e_loc r hr).toLinearEquiv) hM,
+    hA₀, e_loc, hcompat, hoverlap⟩
 
 end Associative
 
@@ -377,10 +376,13 @@ variable [Module.FaithfullyFlat R S] [CommRing M] [Algebra R M]
   [CommRing N] [Algebra R N] [Algebra S N] [IsScalarTower R S N]
   [CommRing P] [Algebra R P] [Algebra S P] [IsScalarTower R S P]
 
-/-- **Formal gluing of finite étale algebras (Stacks 05EU).** Under faithful flatness of `R → S`,
+/-- **Formal gluing of finite étale commutative algebras.** Under faithful flatness of `R → S`,
 a finite étale `S`-algebra `N` and locally finite étale `R`-algebra `M` with base-changed overlap
-glue to a finite étale `R`-subalgebra `A₀ : Subalgebra R N`. -/
-@[stacks 05EU "reconstructing a finite étale algebra by formal gluing"]
+glue to a finite étale `R`-subalgebra `A₀ : Subalgebra R N` with compatible local equivalences
+agreeing pairwise on `Localization.Away (r₁ * r₂)`. The underlying algebra reconstruction comes
+from `IsBaseChange.exists_subalgebra_formalGlueing` (Stacks `05EU`), while finite étaleness is
+detected via `IsBaseChange.finite_etale_of_formalGlueing`
+(`TauCeti.finite_etale_iff_baseChange_and_localized`). -/
 theorem IsBaseChange.exists_finite_etale_subalgebra_formalGlueing
     {f : M →ₐ[R] P} (hf : IsBaseChange S f.toLinearMap) (g : N →ₐ[S] P) (G : Finset R)
     (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
@@ -395,16 +397,27 @@ theorem IsBaseChange.exists_finite_etale_subalgebra_formalGlueing
         IsBaseChange S A₀.val.toLinearMap ∧
         ∃ e_loc : ∀ r ∈ G,
             Localization.Away r ⊗[R] A₀ ≃ₐ[Localization.Away r] Localization.Away r ⊗[R] M,
-          ∀ (r : R) (hr : r ∈ G),
+          (∀ (r : R) (hr : r ∈ G),
             (Algebra.TensorProduct.map
                 (AlgHom.id (Localization.Away r) (Localization.Away r)) f).comp
               (e_loc r hr).toAlgHom =
             Algebra.TensorProduct.map
               (AlgHom.id (Localization.Away r) (Localization.Away r))
-              ((g.restrictScalars R).comp A₀.val) := by
-  obtain ⟨A₀, hA₀, e_loc, hcompat⟩ := hf.exists_subalgebra_formalGlueing g G hG hg
-  obtain ⟨hfin, het⟩ := AlgHom.finite_etale_of_formalGlueing hA₀ G hG e_loc hM
-  exact ⟨A₀, hfin, het, hA₀, e_loc, hcompat⟩
+              ((g.restrictScalars R).comp A₀.val)) ∧
+          ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (a : A₀),
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₁) r₁
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_right r₁ r₂)))
+              (AlgHom.id R M) (e_loc r₁ hr₁ (1 ⊗ₜ[R] a)) =
+            Algebra.TensorProduct.map
+              (IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
+                (f := Algebra.ofId R (Localization.Away (r₁ * r₂)))
+                (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁)))
+              (AlgHom.id R M) (e_loc r₂ hr₂ (1 ⊗ₜ[R] a)) := by
+  obtain ⟨A₀, hA₀, e_loc, hcompat, hoverlap⟩ := hf.exists_subalgebra_formalGlueing g G hG hg
+  obtain ⟨hfin, het⟩ := hA₀.finite_etale_of_formalGlueing G hG e_loc hM
+  exact ⟨A₀, hfin, het, hA₀, e_loc, hcompat, hoverlap⟩
 
 end Commutative
 

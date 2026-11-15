@@ -5,17 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.LocalizedModule.BaseChange
-public import TauCeti.RingTheory.FormalGlueing.Finiteness
-public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Localization.BaseChange
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Homology.Ext.Map.Surjective
+import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 import TauCeti.Algebra.Module.LocalizedModule.Pullback
-import TauCeti.RingTheory.FormalGlueing.Cokernel
+import TauCeti.Algebra.Module.Torsion.Localization
 import TauCeti.RingTheory.FormalGlueing.ExtensionComparison
 import TauCeti.RingTheory.FormalGlueing.Injectivity
-import TauCeti.RingTheory.Localization.Module
+import TauCeti.RingTheory.FormalGlueing.Torsion
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Reconstructing modules by formal gluing
@@ -26,41 +28,35 @@ set `G ⊆ R`. Given an `R`-module `M`, an `S`-module `N`, and an `S`-module `P`
 is injective and becomes surjective after inverting each `algebraMap R S r` (`r ∈ G`), while `g`
 becomes bijective after inverting each `algebraMap R S r` (`r ∈ G`), this file constructs an
 `R`-module `E` whose scalar extension to `S` is `N` and whose principal localizations at `r ∈ G`
-are isomorphic to those of `M` compatibly with `f` and `g`. Neither Noetherianity, faithful
-flatness, nor finite generation of `M` or `N` is assumed.
+are isomorphic to those of `M`, compatibly both with `f` and `g` and pairwise on overlaps
+`D(r₁) ∩ D(r₂)`. Neither Noetherianity, faithful flatness, nor finite generation of `M` or `N` is
+assumed.
 
 In particular, when `IsBaseChange S f` holds (`P ≅ S ⊗[R] M`), this gives essential surjectivity
 of formal module gluing (Proposition 15.91.16 of the Stacks Project).
 
 The module `E` is obtained as an extension over the compatible-pairs module
 `K = ker (f.coprod (-g))` (`LinearMap.exists_extension_ker_coprod_of_formalGlueing`): `K` already
-recovers `M` on each principal open `D(r)` (`LinearMap.bijective_localizedMap_fst_ker_coprod`),
-while the cokernel of `S ⊗[R] K →ₗ[S] N` is `(G)`-power torsion and descends along `R → S` via
-degree-one `Ext` comparison (`RingHom.mapExt_one_bijective_of_primaryComponent_eq_top`). Because
-`ModuleCat.extendScalars` and `Ext` require a single module universe, the extension-descent
-theorems take `R`, `S`, `M`, `N`, `P` in `Type u`, whereas the compatible-pairs localization
-comparisons and finiteness criteria are universe-polymorphic.
+recovers `M` on each principal open `D(r)` (`LinearMap.bijective_localizedMap_fst_ker_coprod` in
+`TauCeti.Algebra.Module.LocalizedModule.Pullback`), while the cokernel of `S ⊗[R] K →ₗ[S] N` is
+`(G)`-power torsion and descends along `R → S` via degree-one `Ext` comparison
+(`RingHom.mapExt_one_bijective_of_primaryComponent_eq_top`). Because `ModuleCat.extendScalars` and
+`Ext` require a single module universe, the extension-descent and reconstruction theorems take
+`R`, `S`, `M`, `N`, `P` in `Type u`.
 
 ## Main results
 
-* `LinearMap.bijective_localizedMap_fst_ker_coprod`: the first projection from compatible pairs is
-  bijective at `T` whenever `g` is bijective at `Algebra.algebraMapSubmonoid S T`.
-* `LinearMap.surjective_localizedMap_liftBaseChange_snd_ker_coprod`: the `S`-linear comparison
-  `S ⊗[R] K →ₗ[S] N` is surjective at `Algebra.algebraMapSubmonoid S T`.
 * `LinearMap.exists_extension_of_injective_liftBaseChange`,
   `LinearMap.exists_extension_ker_coprod_of_formalGlueing`: constructs `(E, i, φ)` extending
   `K → N` with `IsBaseChange S φ` and ideal-power torsion cokernel `E ⧸ i.range`.
 * `LinearMap.exists_formalGlueing_module`, `IsBaseChange.exists_formalGlueing_module`: essential
-  surjectivity of formal module gluing (`05ER`), together with preservation of finite generation
-  and finite presentation (`LinearMap.finite_of_formalGlueing_module`,
-  `LinearMap.finitePresentation_of_formalGlueing_module`).
+  surjectivity of formal module gluing (`05ER`), including pairwise overlap compatibility of the
+  local equivalences on `Submonoid.powers r₁ ⊔ Submonoid.powers r₂`.
 
 ## References
 
 * [The Stacks Project, Proposition 15.91.16](https://stacks.math.columbia.edu/tag/05ER),
   formal gluing of modules (essential surjectivity).
-* [The Stacks Project, Remark 15.91.20](https://stacks.math.columbia.edu/tag/05EU),
-  preservation of finiteness in formal gluing.
 -/
 
 public section
@@ -70,83 +66,6 @@ open CategoryTheory Function TensorProduct
 universe u
 
 namespace LinearMap
-
-section CompatiblePairs
-
-variable {R S M N P : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
-  [AddCommGroup P] [Module R P] [Module S P] [IsScalarTower R S P]
-
-/-- Elements `(m, n)` in `ker (f.coprod (-g.restrictScalars R))` satisfy `f m = g n`. -/
-theorem apply_fst_ker_coprod_eq (f : M →ₗ[R] P) (g : N →ₗ[S] P)
-    (k : (f.coprod (-g.restrictScalars R)).ker) :
-    f (((LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker) k) =
-      g (((LinearMap.snd R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker) k) := by
-  simpa only [mem_ker, coprod_apply, LinearMap.neg_apply, coe_restrictScalars, add_neg_eq_zero,
-    domRestrict_apply, fst_apply, snd_apply] using k.property
-
-/-- On scalar extensions from compatible pairs, `g ∘ ψ` equals `(f.liftBaseChange S) ∘ (1 ⊗ b)`. -/
-theorem comp_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P) :
-    g ∘ₗ ((LinearMap.snd R M N).domRestrict
-        (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S =
-      (f.liftBaseChange S) ∘ₗ
-        ((LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker).baseChange S := by
-  ext k
-  simpa using (apply_fst_ker_coprod_eq f g k).symm
-
-/-- If `g : N →ₗ[S] P` becomes bijective after localizing at `Algebra.algebraMapSubmonoid S T`,
-then the first projection from compatible pairs `ker (f.coprod (-g)) → M` becomes bijective after
-localizing at `T`. -/
-theorem bijective_localizedMap_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P) (T : Submonoid R)
-    (hg : Bijective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T) g)) :
-    Bijective (LocalizedModule.map T
-      ((LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker)) := by
-  let b := (LinearMap.fst R M N).domRestrict (f.coprod (-g.restrictScalars R)).ker
-  have hgR : Bijective (LocalizedModule.map T (g.restrictScalars R)) :=
-    (LocalizedModule.map_algebraMapSubmonoid_bijective_iff g).mp hg
-  have hb_loc : IsLocalizedModule T (LocalizedModule.mkLinearMap T M ∘ₗ b) :=
-    isLocalizedModule_fst_ker_coprod f (g.restrictScalars R) T
-      (LocalizedModule.mkLinearMap T M)
-      (LocalizedModule.mkLinearMap T N)
-      (LocalizedModule.mkLinearMap T P) hgR
-  have hid : IsLocalizedModule.map T (LocalizedModule.mkLinearMap T M ∘ₗ b)
-      (LocalizedModule.mkLinearMap T M) b = LinearMap.id := by
-    apply IsLocalizedModule.linearMap_ext T
-      (LocalizedModule.mkLinearMap T M ∘ₗ b) (LocalizedModule.mkLinearMap T M)
-    rw [IsLocalizedModule.map_comp]
-    rfl
-  refine (IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective
-    (LocalizedModule.mkLinearMap T M ∘ₗ b) (LocalizedModule.mkLinearMap T M)).mp ?_
-  rw [hid]
-  exact bijective_id
-
-/-- If `f.liftBaseChange S` becomes surjective and `g` becomes bijective at
-`Algebra.algebraMapSubmonoid S T`, then the scalar-extension comparison `S ⊗[R] K →ₗ[S] N` from
-compatible pairs becomes surjective at `Algebra.algebraMapSubmonoid S T`. -/
-theorem surjective_localizedMap_liftBaseChange_snd_ker_coprod
-    (f : M →ₗ[R] P) (g : N →ₗ[S] P) (T : Submonoid R)
-    (hf : Surjective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T) (f.liftBaseChange S)))
-    (hg : Bijective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T) g)) :
-    Surjective (LocalizedModule.map (Algebra.algebraMapSubmonoid S T)
-      (((LinearMap.snd R M N).domRestrict
-        (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S)) := by
-  let U := Algebra.algebraMapSubmonoid S T
-  let K := (f.coprod (-g.restrictScalars R)).ker
-  let b := (LinearMap.fst R M N).domRestrict K
-  let c := (LinearMap.snd R M N).domRestrict K
-  have hb_bij : Bijective (LocalizedModule.map U (b.baseChange S)) :=
-    LocalizedModule.map_baseChange_bijective b (bijective_localizedMap_fst_ker_coprod f g T hg)
-  have hsq : LocalizedModule.map U g ∘ₗ LocalizedModule.map U (c.liftBaseChange S) =
-      LocalizedModule.map U (f.liftBaseChange S) ∘ₗ LocalizedModule.map U (b.baseChange S) := by
-    rw [← LocalizedModule.map_comp, ← LocalizedModule.map_comp,
-      comp_liftBaseChange_snd_ker_coprod]
-  have hsurj : Surjective (⇑(LocalizedModule.map U g) ∘
-      ⇑(LocalizedModule.map U (c.liftBaseChange S))) := by
-    rw [← LinearMap.coe_comp, hsq]
-    exact hf.comp hb_bij.2
-  exact (Surjective.of_comp_iff' hg _).mp hsurj
-
-end CompatiblePairs
 
 section Reconstruction
 
@@ -165,20 +84,16 @@ private theorem shortExact_extendScalars_mkQ {K : Type u} [AddCommGroup K] [Modu
       (ShortComplex.mk (eK.hom ≫ ModuleCat.ofHom ψ)
         (ModuleCat.ofHom ψ.range.mkQ ≫ eQ.inv) hip).ShortExact := by
   intro eK eQ
-  let iS := eK.hom ≫ ModuleCat.ofHom ψ
-  let pS := ModuleCat.ofHom ψ.range.mkQ ≫ eQ.inv
-  have hip : iS ≫ pS = 0 := by
+  have hbase : (ShortComplex.mk (ModuleCat.ofHom ψ) (ModuleCat.ofHom ψ.range.mkQ)
+      (ModuleCat.hom_ext ψ.exact_map_mkQ_range.linearMap_comp_eq_zero)).ShortExact :=
+    ModuleCat.shortComplex_shortExact (ShortComplex.moduleCatMk ψ ψ.range.mkQ
+      ψ.exact_map_mkQ_range.linearMap_comp_eq_zero)
+      ψ.exact_map_mkQ_range hψ_inj ψ.range.mkQ_surjective
+  have hip : (eK.hom ≫ ModuleCat.ofHom ψ) ≫ (ModuleCat.ofHom ψ.range.mkQ ≫ eQ.inv) = 0 := by
     have hzero : ModuleCat.ofHom ψ ≫ ModuleCat.ofHom ψ.range.mkQ = 0 := by ext; simp
-    simp [iS, pS, reassoc_of% hzero]
-  have hex : Function.Exact iS pS := fun y ↦ by
-    have hker : pS y = 0 ↔ y ∈ ψ.range :=
-      eQ.toLinearEquiv.symm.map_eq_zero_iff.trans (Submodule.Quotient.mk_eq_zero _)
-    have hran : y ∈ Set.range iS ↔ y ∈ ψ.range :=
-      ⟨fun ⟨x, hx⟩ ↦ ⟨eK.hom x, hx⟩, fun ⟨z, hz⟩ ↦ ⟨eK.inv z, by simp [iS, ← hz]⟩⟩
-    exact hker.trans hran.symm
-  exact ⟨hip, ModuleCat.shortComplex_shortExact (ShortComplex.mk iS pS hip) hex
-    (hψ_inj.comp eK.toLinearEquiv.injective)
-    (eQ.toLinearEquiv.symm.surjective.comp ψ.range.mkQ_surjective)⟩
+    simp [reassoc_of% hzero]
+  refine ⟨hip, (ShortComplex.shortExact_iff_of_iso ?_).mpr hbase⟩
+  exact ShortComplex.isoMk eK (.refl _) eQ (by simp) (by simp)
 
 variable [Module.Flat R S]
 
@@ -186,9 +101,8 @@ open scoped ChangeOfRings in
 /-- **Linear-algebraic descent of an extension with ideal-power torsion quotient.** Let `R → S` be
 flat and induce `R/I ≅ S/IS` for a finitely generated ideal `I`. Suppose `c : K →ₗ[R] N` induces an
 injective comparison `ψ = c.liftBaseChange S : S ⊗[R] K →ₗ[S] N` whose cokernel `N ⧸ ψ.range` is
-`I`-power torsion and satisfies `IsBaseChange S` via scalar multiplication. Then `c` factors
-through an injective `R`-linear map `i : K →ₗ[R] E` with `I`-power torsion cokernel and a base
-change `φ : E →ₗ[R] N` (`IsBaseChange S φ`). -/
+`I`-power torsion. Then `c` factors through an injective `R`-linear map `i : K →ₗ[R] E` with
+`I`-power torsion cokernel and a base change `φ : E →ₗ[R] N` (`IsBaseChange S φ`). -/
 @[stacks 05ER "descending the extension with ideal-power torsion cokernel"]
 theorem exists_extension_of_injective_liftBaseChange
     {K : Type u} [AddCommGroup K] [Module R K]
@@ -196,9 +110,6 @@ theorem exists_extension_of_injective_liftBaseChange
     (hI : Bijective (Ideal.quotientMap (I.map (algebraMap R S))
       (algebraMap R S) Ideal.le_comap_map))
     (hψ_inj : Injective (c.liftBaseChange S))
-    (hQ_bc : IsBaseChange S
-      ((LinearMap.id : (N ⧸ (c.liftBaseChange S).range) →ₗ[S]
-        (N ⧸ (c.liftBaseChange S).range)).restrictScalars R))
     (hQ_tors : I.primaryComponent (N ⧸ (c.liftBaseChange S).range) = ⊤) :
     ∃ (E : Type u) (_ : AddCommGroup E) (_ : Module R E)
       (i : K →ₗ[R] E) (φ : E →ₗ[R] N),
@@ -207,6 +118,19 @@ theorem exists_extension_of_injective_liftBaseChange
         IsBaseChange S φ ∧
         φ ∘ₗ i = c := by
   let ψ := c.liftBaseChange S
+  have hQ_bc : IsBaseChange S
+      ((LinearMap.id : (N ⧸ ψ.range) →ₗ[S] (N ⧸ ψ.range)).restrictScalars R) := by
+    refine TauCeti.isBaseChange_of_primaryComponent_eq_top hI (Submodule.eq_top_iff'.mpr fun q ↦ ?_)
+    obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem _ _ _).mp (hQ_tors ▸ Submodule.mem_top (x := q))
+    refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨n, (Submodule.mem_torsionBySet_iff _ _).mpr ?_⟩
+    rintro ⟨s, hs⟩
+    rw [← Ideal.map_pow] at hs
+    refine Submodule.span_induction (p := fun s _ ↦ s • q = 0) ?_ (zero_smul S q)
+      (fun _ _ _ _ h₁ h₂ ↦ by rw [add_smul, h₁, h₂, add_zero])
+      (fun a _ _ h ↦ by rw [smul_eq_mul, mul_smul, h, smul_zero]) hs
+    rintro _ ⟨r, hr, rfl⟩
+    rw [algebraMap_smul]
+    exact (Submodule.mem_torsionBySet_iff _ _).mp hn ⟨r, hr⟩
   have hf_flat : (algebraMap R S).Flat := RingHom.flat_algebraMap_iff.mpr inferInstance
   let := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hf_flat
   let F := ModuleCat.extendScalars (algebraMap R S)
@@ -239,18 +163,16 @@ theorem exists_extension_of_injective_liftBaseChange
           (ModuleCat.extendScalarsAlgebraMapIso_inv_tmul E₀ 1 (i₀ k)).symm)
     rw [hmid] at hk
     exact hk.trans (by simp [ψ])
-  have hp₀_surj : Surjective p₀.hom := (ModuleCat.epi_iff_surjective p₀).mp hS₀.epi_g
   have hex₀ : Function.Exact i₀.hom p₀.hom :=
     (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hS₀.exact
   let e_quot : (E₀ ⧸ i₀.hom.range) ≃ₗ[R] (N ⧸ ψ.range) :=
-    (Submodule.quotEquivOfEq _ _ (SetLike.ext fun x ↦ (hex₀ x).symm)).trans
-      (p₀.hom.quotKerEquivOfSurjective hp₀_surj)
+    hex₀.linearEquivOfSurjective hS₀.moduleCat_surjective_g
   have hE_tors : I.primaryComponent (E₀ ⧸ i₀.hom.range) = ⊤ :=
     Submodule.eq_top_iff'.mpr fun q ↦ by
       simpa using I.primaryComponent_map_mem e_quot.symm.toLinearMap
         ⟨e_quot q, hQ_tors ▸ Submodule.mem_top⟩
   exact ⟨E₀, inferInstance, inferInstance, i₀.hom, φ,
-    (ModuleCat.mono_iff_injective i₀).mp hS₀.mono_f, hE_tors,
+    hS₀.moduleCat_injective_f, hE_tors,
     IsBaseChange.of_equiv e_lin fun _ ↦ rfl, hφi⟩
 
 variable {M P : Type u} [AddCommGroup M] [Module R M]
@@ -289,7 +211,6 @@ theorem exists_extension_ker_coprod_of_formalGlueing
     exact surjective_localizedMap_liftBaseChange_snd_ker_coprod f g (.powers r)
       (by rw [Algebra.algebraMapSubmonoid_powers]; exact hf_surj r hr)
       (by rw [Algebra.algebraMapSubmonoid_powers]; exact hg r hr)
-  have hQ_bc := isBaseChange_coker_of_localized_surjective ψ G hG hψ_loc
   have hQ_tors : I.primaryComponent (N ⧸ ψ.range) = ⊤ := by
     rw [Ideal.primaryComponent_span_eq_top_iff_subsingleton_localized]
     intro r hr
@@ -297,14 +218,15 @@ theorem exists_extension_ker_coprod_of_formalGlueing
       (ψ.localizedMap_surjective_iff_subsingleton_localized_coker _).mp (hψ_loc r hr)
     rw [← Algebra.algebraMapSubmonoid_powers] at hS
     exact (LocalizedModule.restrictScalarsEquiv (.powers r) S (N ⧸ ψ.range)).subsingleton
-  exact exists_extension_of_injective_liftBaseChange c I ⟨G, rfl⟩ hG hψ_inj hQ_bc hQ_tors
+  exact exists_extension_of_injective_liftBaseChange c I ⟨G, rfl⟩ hG hψ_inj hQ_tors
 
 /-- **Formal gluing of modules (Stacks 05ER, essential surjectivity).** Given `f : M →ₗ[R] P` and
 `g : N →ₗ[S] P` such that `f.liftBaseChange S` is injective and becomes surjective on every
 `D(algebraMap R S r)` (`r ∈ G`), while `g` becomes bijective on every `D(algebraMap R S r)`
 (`r ∈ G`), there exist an `R`-module `E`, a base-change map `φ : E →ₗ[R] N` (`IsBaseChange S φ`),
 and `Localization.Away r`-linear equivalences `e_loc r : E_r ≃ M_r` for `r ∈ G` making all
-overlap comparison squares with `f` and `g` commute. -/
+overlap comparison squares with `f` and `g` commute and agreeing pairwise after further
+localization to `Submonoid.powers r₁ ⊔ Submonoid.powers r₂` (equivalently on `D(r₁ * r₂)`). -/
 @[stacks 05ER "essential surjectivity"]
 theorem exists_formalGlueing_module
     (f : M →ₗ[R] P) (g : N →ₗ[S] P) (G : Finset R)
@@ -318,10 +240,15 @@ theorem exists_formalGlueing_module
       (e_loc : ∀ r ∈ G, LocalizedModule (.powers r) E ≃ₗ[Localization.Away r]
         LocalizedModule (.powers r) M),
       IsBaseChange S φ ∧
-        ∀ (r : R) (hr : r ∈ G) (z : LocalizedModule (.powers r) E),
+        (∀ (r : R) (hr : r ∈ G) (z : LocalizedModule (.powers r) E),
           LocalizedModule.map (.powers r) f (e_loc r hr z) =
             LocalizedModule.map (.powers r) (g.restrictScalars R)
-              (LocalizedModule.map (.powers r) φ z) := by
+              (LocalizedModule.map (.powers r) φ z)) ∧
+        ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (x : E),
+          LocalizedModule.liftOfLE (.powers r₁) (.powers r₁ ⊔ .powers r₂) le_sup_left
+            (e_loc r₁ hr₁ (LocalizedModule.mk x 1)) =
+          LocalizedModule.liftOfLE (.powers r₂) (.powers r₁ ⊔ .powers r₂) le_sup_right
+            (e_loc r₂ hr₂ (LocalizedModule.mk x 1)) := by
   classical
   obtain ⟨E, _, _, i, φ, hi_inj, hE_tors, hφ_bc, hφi⟩ :=
     exists_extension_ker_coprod_of_formalGlueing f g G hG hf_inj hf_surj hg
@@ -340,23 +267,45 @@ theorem exists_formalGlueing_module
       LocalizedModule (.powers r) E ≃ₗ[Localization.Away r] LocalizedModule (.powers r) M :=
     (LinearEquiv.ofBijective (LocalizedModule.map (.powers r) i) (hi_bij r hr)).symm.trans
       (LinearEquiv.ofBijective (LocalizedModule.map (.powers r) b) (hb_bij r hr))
-  refine ⟨E, inferInstance, inferInstance, φ, e_loc, hφ_bc, fun r hr z ↦ ?_⟩
-  obtain ⟨w, rfl⟩ := (hi_bij r hr).2 z
-  have he : e_loc r hr (LocalizedModule.map (.powers r) i w) =
-      LocalizedModule.map (.powers r) b w := by
+  have he_map (r : R) (hr : r ∈ G) (w : LocalizedModule (.powers r) K) :
+      e_loc r hr (LocalizedModule.map (.powers r) i w) = LocalizedModule.map (.powers r) b w := by
     simp [e_loc]
-  rw [he]
-  induction w using LocalizedModule.induction_on with
-  | h k t =>
-    have hfk : f (b k) = g (φ (i k)) := by
-      have hc : φ (i k) = c k := LinearMap.congr_fun hφi k
-      rw [hc]
-      exact apply_fst_ker_coprod_eq f g k
-    simp [hfk]
+  refine ⟨E, inferInstance, inferInstance, φ, e_loc, hφ_bc, ?_, ?_⟩
+  · intro r hr z
+    obtain ⟨w, rfl⟩ := (hi_bij r hr).2 z
+    rw [he_map r hr w]
+    induction w using LocalizedModule.induction_on with
+    | h k t =>
+      have hfk : f (b k) = g (φ (i k)) := by
+        have hc : φ (i k) = c k := LinearMap.congr_fun hφi k
+        rw [hc]
+        exact apply_fst_ker_coprod_eq f g k
+      simp [hfk]
+  · intro r₁ hr₁ r₂ hr₂ x
+    let T₁₂ : Submonoid R := .powers r₁ ⊔ .powers r₂
+    have hnat {A B : Type u} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
+        {T : Submonoid R} (hT : T ≤ T₁₂) (u : A →ₗ[R] B) (w : LocalizedModule T A) :
+        LocalizedModule.liftOfLE T T₁₂ hT (LocalizedModule.map T u w) =
+          LocalizedModule.map T₁₂ u (LocalizedModule.liftOfLE T T₁₂ hT w) := by
+      induction w using LocalizedModule.induction_on with
+      | h a s =>
+        rw [LocalizedModule.map_mk]
+        simp only [IsLocalizedModule.mk_eq_mk', IsLocalizedModule.liftOfLE_mk']
+        simp only [← IsLocalizedModule.mk_eq_mk', LocalizedModule.map_mk]
+    obtain ⟨w₁, hw₁⟩ := (hi_bij r₁ hr₁).2 (LocalizedModule.mk x 1)
+    obtain ⟨w₂, hw₂⟩ := (hi_bij r₂ hr₂).2 (LocalizedModule.mk x 1)
+    have hw_eq : LocalizedModule.liftOfLE (.powers r₁) T₁₂ le_sup_left w₁ =
+        LocalizedModule.liftOfLE (.powers r₂) T₁₂ le_sup_right w₂ := by
+      apply LocalizedModule.map_injective T₁₂ i hi_inj
+      rw [← hnat le_sup_left i w₁, ← hnat le_sup_right i w₂, hw₁, hw₂]
+      simp only [← LocalizedModule.mkLinearMap_apply, IsLocalizedModule.liftOfLE_apply]
+    rw [← hw₁, he_map r₁ hr₁ w₁, ← hw₂, he_map r₂ hr₂ w₂, hnat le_sup_left b w₁,
+      hnat le_sup_right b w₂, hw_eq]
 
 /-- **Formal gluing of modules for base-changed overlap (`IsBaseChange S f`).** When `f : M →ₗ[R] P`
 exhibits `P` as `S ⊗[R] M` and `g : N →ₗ[S] P` becomes bijective on each `D(algebraMap R S r)`
-(`r ∈ G`), there exists an `R`-module `E` glued from `N` on `Spec S` and `M` on `⋃_{r ∈ G} D(r)`. -/
+(`r ∈ G`), there exists an `R`-module `E` glued from `N` on `Spec S` and `M` on `⋃_{r ∈ G} D(r)`,
+with principal-localization equivalences compatible with `f`, `g`, and pairwise overlaps. -/
 @[stacks 05ER "essential surjectivity for base-changed overlap"]
 theorem _root_.IsBaseChange.exists_formalGlueing_module
     {f : M →ₗ[R] P} (hf : IsBaseChange S f) (g : N →ₗ[S] P) (G : Finset R)
@@ -367,63 +316,18 @@ theorem _root_.IsBaseChange.exists_formalGlueing_module
       (e_loc : ∀ r ∈ G, LocalizedModule (.powers r) E ≃ₗ[Localization.Away r]
         LocalizedModule (.powers r) M),
       IsBaseChange S φ ∧
-        ∀ (r : R) (hr : r ∈ G) (z : LocalizedModule (.powers r) E),
+        (∀ (r : R) (hr : r ∈ G) (z : LocalizedModule (.powers r) E),
           LocalizedModule.map (.powers r) f (e_loc r hr z) =
             LocalizedModule.map (.powers r) (g.restrictScalars R)
-              (LocalizedModule.map (.powers r) φ z) :=
+              (LocalizedModule.map (.powers r) φ z)) ∧
+        ∀ (r₁ : R) (hr₁ : r₁ ∈ G) (r₂ : R) (hr₂ : r₂ ∈ G) (x : E),
+          LocalizedModule.liftOfLE (.powers r₁) (.powers r₁ ⊔ .powers r₂) le_sup_left
+            (e_loc r₁ hr₁ (LocalizedModule.mk x 1)) =
+          LocalizedModule.liftOfLE (.powers r₂) (.powers r₁ ⊔ .powers r₂) le_sup_right
+            (e_loc r₂ hr₂ (LocalizedModule.mk x 1)) :=
   LinearMap.exists_formalGlueing_module f g G hG hf.liftBaseChange_injective
     (fun _ _ ↦ LocalizedModule.map_surjective _ _ hf.liftBaseChange_bijective.2) hg
 
 end Reconstruction
-
-section Finiteness
-
-variable {R S E M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
-  [AddCommGroup E] [Module R E] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
-
-/-- Any module `E` glued from a finite `S`-module `N` and locally finite `R`-module `M` across `G`
-is finitely generated over `R`. -/
-@[stacks 05EU "finiteness of a glued module"]
-theorem finite_of_formalGlueing_module
-    {φ : E →ₗ[R] N} (hφ : IsBaseChange S φ) (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (e_loc : ∀ r ∈ G, LocalizedModule (.powers r) E ≃ₗ[Localization.Away r]
-      LocalizedModule (.powers r) M)
-    [Module.Finite S N]
-    (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M)) :
-    Module.Finite R E := by
-  refine (TauCeti.finite_iff_baseChange_and_localized hG).mpr
-    ⟨Module.Finite.equiv hφ.equiv.symm, fun r hr ↦ ?_⟩
-  have := hM r hr
-  let e_tensor : Localization.Away r ⊗[R] E ≃ₗ[Localization.Away r]
-      Localization.Away r ⊗[R] M :=
-    (LocalizedModule.equivTensorProduct (.powers r) E).symm.trans
-      ((e_loc r hr).trans (LocalizedModule.equivTensorProduct (.powers r) M))
-  exact Module.Finite.equiv e_tensor.symm
-
-/-- Any module `E` glued from a finitely presented `S`-module `N` and locally finitely presented
-`R`-module `M` across `G` is finitely presented over `R`. -/
-@[stacks 05EU "finite presentation of a glued module"]
-theorem finitePresentation_of_formalGlueing_module
-    {φ : E →ₗ[R] N} (hφ : IsBaseChange S φ) (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (e_loc : ∀ r ∈ G, LocalizedModule (.powers r) E ≃ₗ[Localization.Away r]
-      LocalizedModule (.powers r) M)
-    [Module.FinitePresentation S N]
-    (hM : ∀ r ∈ G, Module.FinitePresentation (Localization.Away r) (Localization.Away r ⊗[R] M)) :
-    Module.FinitePresentation R E := by
-  refine (TauCeti.finitePresentation_iff_baseChange_and_localized hG).mpr
-    ⟨.of_equiv hφ.equiv.symm, fun r hr ↦ ?_⟩
-  have := hM r hr
-  let e_tensor : Localization.Away r ⊗[R] E ≃ₗ[Localization.Away r]
-      Localization.Away r ⊗[R] M :=
-    (LocalizedModule.equivTensorProduct (.powers r) E).symm.trans
-      ((e_loc r hr).trans (LocalizedModule.equivTensorProduct (.powers r) M))
-  exact .of_equiv e_tensor.symm
-
-end Finiteness
 
 end LinearMap
