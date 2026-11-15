@@ -45,6 +45,9 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
 * `Matrix.charpoly_eq_of_trace_pow_eq`, `LinearMap.charpoly_eq_of_trace_pow_eq`: without additive
   torsion, the traces of `A ^ j` for `0 < j ≤ d` already determine the characteristic polynomial
   of a `d × d` matrix, or of an endomorphism of a free module of rank `d`.
+* `Matrix.pow_card_eq_zero_of_trace_pow_eq_zero` and
+  `LinearMap.pow_finrank_eq_zero_of_trace_pow_eq_zero`: without additive torsion, if these traces
+  all vanish then `A ^ d = 0`.
 
 ## References
 
@@ -183,6 +186,17 @@ theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B :
     · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]
   exact (charpolyRev_eq_charpolyRev_iff hnm).1 hrev
 
+/-- Without additive torsion in the scalars, a `d × d` matrix `A` whose powers `A ^ j` for
+`0 < j ≤ d` all have trace zero satisfies `A ^ d = 0`. Its characteristic polynomial is then
+`X ^ d`, so this is the Cayley–Hamilton theorem. -/
+theorem pow_card_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {A : Matrix n n R}
+    (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = 0) : A ^ Fintype.card n = 0 := by
+  have hA : A.charpoly = X ^ Fintype.card n := by
+    rw [← charpoly_zero]
+    exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjn ↦ by
+      rw [h j hj hjn, zero_pow hj.ne', trace_zero]
+  simpa [hA] using A.aeval_self_charpoly
+
 end Matrix
 
 namespace LinearMap
@@ -213,5 +227,19 @@ theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [M
     Module.finrank_eq_card_chooseBasisIndex] at h hMN
   rw [charpoly_def, charpoly_def]
   exact Matrix.charpoly_eq_of_trace_pow_eq hMN h
+
+/-- Without additive torsion in the scalars, an endomorphism `f` of a free module of rank `d`
+whose powers `f ^ j` for `0 < j ≤ d` all have trace zero satisfies `f ^ d = 0`. -/
+theorem pow_finrank_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {f : Module.End R M}
+    (h : ∀ j, 0 < j → j ≤ Module.finrank R M → trace R M (f ^ j) = 0) :
+    f ^ Module.finrank R M = 0 := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have := Module.subsingleton R M
+    exact Subsingleton.elim _ _
+  have hf : f.charpoly = X ^ Module.finrank R M := by
+    rw [← charpoly_zero]
+    exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjM ↦ by
+      rw [h j hj hjM, zero_pow hj.ne', map_zero]
+  simpa [hf] using f.aeval_self_charpoly
 
 end LinearMap

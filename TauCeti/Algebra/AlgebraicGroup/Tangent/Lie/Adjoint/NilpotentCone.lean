@@ -41,6 +41,15 @@ the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of posi
 characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
 algebraically closed field of characteristic zero.
 
+The cone is not reduced in general, so the statement about `k`-points does not by itself say
+anything about points with values in a nonreduced ring. For a connected group over an
+algebraically closed field of characteristic zero, the trace-power polynomials
+`x ↦ tr (ρ_M(x) ^ m)` of positive degree of a `d`-dimensional module `M` over `𝔤` lie in the ideal
+of the cone. Over the coordinate ring of the cone, which is a `ℚ`-algebra, Newton's identities
+then make the characteristic polynomial of the universal element acting on `M` equal to `X ^ d`,
+and the Cayley–Hamilton theorem gives `X ^ d = 0` there. So every point of the cone, with values in
+any commutative ring, acts on `M` with `d`-th power zero.
+
 ## Main declarations
 
 * `TauCeti.adjointPolynomialComoduleAlgebra`: the action of `G` on the polynomial functions on `𝔤`,
@@ -57,6 +66,13 @@ algebraically closed field of characteristic zero.
   and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`. More generally, points of
   the cone act nilpotently on every finite-dimensional module
   (`TauCeti.isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval`).
+* `TauCeti.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal`: the universal element of
+  the cone acts nilpotently with a uniform bound. In a basis of size `d` of a module `M` over the
+  Lie algebra, the `d`-th power of the generic action matrix vanishes in the coordinate ring of the
+  cone, because the trace-power polynomials of positive degree lie in its ideal
+  (`TauCeti.tracePowerPolynomial_mem_nilpotentConeIdeal`). Consequently every point of the cone,
+  with values in any commutative ring, acts on `M` by a matrix whose `d`-th power vanishes
+  (`TauCeti.map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker`).
 
 ## References
 
@@ -286,6 +302,58 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_iff [LieAlgebra.IsKilling k 𝔤] {x
       IsNilpotent (LieAlgebra.ad k 𝔤 x) :=
   ⟨isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval,
     nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent⟩
+
+section GenericActionMatrix
+
+/-- For a connected affine group over an algebraically closed field of characteristic zero, the
+trace-power polynomials `x ↦ tr (ρ_M(x) ^ m)` of positive degree of every finite-dimensional
+module `M` over its Lie algebra lie in the ideal of the nilpotent cone. -/
+theorem tracePowerPolynomial_mem_nilpotentConeIdeal {M : Type*} [AddCommGroup M] [Module k M]
+    [FiniteDimensional k M] [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {m : ℕ} (hm : 0 < m) :
+    tracePowerPolynomial k 𝔤 M m ∈ nilpotentConeIdeal k H := by
+  refine mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials
+    (by rw [adjointInvariantPolynomials_eq_lieInvariants]
+        exact tracePowerPolynomial_mem_lieInvariants m) ?_
+  -- a homogeneous element of positive degree lies in the irrelevant ideal
+  exact SymmetricAlgebra.mem_irrelevant_iff_algebraMapInv_eq_zero.mp <|
+    HomogeneousIdeal.mem_irrelevant_of_mem _ hm
+      (tracePowerPolynomial_mem_homogeneousSubmodule (R := k) (L := 𝔤) (M := M) m)
+
+variable {M : Type*} [AddCommGroup M] [Module k M]
+  [LieRingModule (Module.Dual k (Bialgebra.CotangentSpace k H)) M]
+  [LieModule k (Module.Dual k (Bialgebra.CotangentSpace k H)) M]
+  {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- **The universal element of the nilpotent cone is nilpotent.** For a connected affine group
+over an algebraically closed field of characteristic zero and a basis `c` of size `d` of a module
+`M` over its Lie algebra, every entry of the `d`-th power of the generic action matrix lies in the
+ideal of the nilpotent cone. That is, `X ^ d = 0` in the coordinate ring of the cone, where `X` is
+the matrix of the universal element of the cone acting on `M`. -/
+theorem genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal (c : Module.Basis κ k M)
+    (p q : κ) : (genericActionMatrix k 𝔤 c ^ Fintype.card κ) p q ∈ nilpotentConeIdeal k H := by
+  have := Module.Finite.of_basis c
+  let I := nilpotentConeIdeal k H
+  -- the coordinate ring of the cone is a vector space over a field of characteristic zero
+  have := HasUniqueDiv.of_isTorsionFree k (SymmetricAlgebra k (Module.Dual k 𝔤) ⧸ I)
+  have h := map_genericActionMatrix_pow_card_eq_zero (Ideal.Quotient.mk I) c
+    fun j hj _ ↦ Ideal.Quotient.eq_zero_iff_mem.mpr (tracePowerPolynomial_mem_nilpotentConeIdeal hj)
+  rw [← Matrix.map_pow] at h
+  exact Ideal.Quotient.eq_zero_iff_mem.mp (congrFun₂ h p q)
+
+/-- **Points of the nilpotent cone act nilpotently, with a uniform bound.** For a connected affine
+group over an algebraically closed field of characteristic zero, let `φ : O(𝔤) → B` be a point of
+the nilpotent cone with values in any commutative ring, possibly nonreduced: a ring homomorphism
+killing the ideal of the cone. Then the matrix `φ A` of the point acting on a module `M` over the
+Lie algebra, in a basis of size `d`, satisfies `(φ A) ^ d = 0`. -/
+theorem map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker {B : Type*}
+    [CommRing B] (φ : SymmetricAlgebra k (Module.Dual k 𝔤) →+* B)
+    (hφ : nilpotentConeIdeal k H ≤ RingHom.ker φ) (c : Module.Basis κ k M) :
+    (genericActionMatrix k 𝔤 c).map φ ^ Fintype.card κ = 0 := by
+  ext p q
+  rw [← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply]
+  exact hφ (genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal c p q)
+
+end GenericActionMatrix
 
 end Connected
 
