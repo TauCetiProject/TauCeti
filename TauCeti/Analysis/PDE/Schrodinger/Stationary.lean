@@ -380,7 +380,7 @@ private theorem exists_toTemperedDistribution_ofRealCLM_compLp_eq_neg_laplacian_
       ← Complex.reCLM.integral_comp_comm (by simpa using hint)] at hre
     rw [← hre]
     refine integral_congr_ae ((Complex.reCLM.coeFn_compLp R).mono fun z hz ↦ ?_)
-    have hz' : Rr z = (R z).re := hz
+    have hz' : Rr z = (R z).re := hz.trans (Complex.reCLM_apply _)
     simp [hz']
   refine ⟨Rr, by rw [hRr, hR], mem_realSobolevFunctions_of_ae_eq_ofReal (by rw [← hR]; exact hT) ?_⟩
   rw [← hRr]
@@ -402,8 +402,7 @@ theorem exists_mem_realSobolevFunctions_integral_mul_neg_laplacian_add_eq {s : �
   set Φ : 𝓢(E, ℝ) := hc.toSchwartzMap hφ
   have hΦ (z : E) : Φ z = φ z := HasCompactSupport.toSchwartzMap_toFun _ _ z
   have hΔΦ (z : E) : (Δ Φ) z = Δ φ z := by
-    rw [SchwartzMap.laplacian_apply]
-    congr 1
+    rw [SchwartzMap.laplacian_apply, funext hΦ]
   have h := Complex.ofReal_injective (((Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM
     Rr Φ).symm.trans (congrArg (· (Φ.postcompCLM Complex.ofRealCLM)) hRr)).trans
     (neg_laplacian_add_apply_postcompCLM uw Φ))

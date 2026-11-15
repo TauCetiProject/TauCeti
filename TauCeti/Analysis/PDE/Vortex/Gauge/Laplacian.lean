@@ -52,6 +52,9 @@ in `H^(j+2)(ℂ)`.
   weak solution of the Schrödinger equation
   (`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`) and the
   regularity above.
+* Mapping property
+  (`exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem_add_two`):
+  conversely, for every real `w ∈ H^(j+2)(ℂ)`, `d₀* d₀ w` lies in `H^j(ℂ)` weakly.
 
 For `j = k - 1` this gives unique weak solvability of `d₀* d₀ u = g` with an `H^(k+1)(ℂ)`
 solution for every `g ∈ H^(k-1)(ℂ)`, at a continuous field `x₀` of `A_m^k`. This is the analytic
@@ -212,5 +215,53 @@ theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection
   exact ⟨u, mem_realSobolevFunctions_of_integral_mul_gaugeAdjoint_gaugeDirection_eq hk hjk hx
     hcont (memLp_of_mem_realSobolevFunctions hu) hg fun φ hφ hc ↦ hweak φ (hφ.of_le (by simp)) hc,
     hweak⟩
+
+/-- **The gauge Laplacian maps `H^(j+2)` to `H^j`.** Let `x` be a field of `A_m^k`, `k ≥ 2`, and
+`j ≤ k`. Every real `w ∈ H^(j+2)(ℂ)` solves `d₀* d₀ w = g` weakly for some real `g ∈ H^j(ℂ)`:
+`∫ w · d₀* d₀ φ = ∫ g φ` for every smooth compactly supported `φ`. -/
+theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem_add_two
+    {k j : ℕ} (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) {w : ℂ → ℝ}
+    (hw : w ∈ realSobolevFunctions ℂ ((j : ℝ) + 2) 2) :
+    ∃ g ∈ realSobolevFunctions ℂ (j : ℝ) 2, ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ z, w z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
+  -- `-Δw + w = g₀` weakly with `g₀ ∈ H^j`; then `d₀* d₀ w = g₀ - w + (p² + q²) w`.
+  obtain ⟨g₀, hg₀, hweak⟩ :=
+    exists_mem_realSobolevFunctions_integral_mul_neg_laplacian_add_eq (Nat.cast_nonneg j) hw
+  -- The potential term is in `H^j`, measured through the order `N = min (j + 2) k`.
+  obtain ⟨N, hN⟩ : ∃ N, N = min (j + 2) k := ⟨_, rfl⟩
+  have hxN : x ∈ framedFieldSpace f m (N : ℝ) :=
+    framedFieldSpace_mono f m (by exact_mod_cast (by omega : N ≤ k)) hx
+  have hwN : w ∈ realSobolevFunctions ℂ (N : ℝ) 2 :=
+    realSobolevFunctions_mono (by norm_num) (by norm_num)
+      (by rw [hN]; push_cast; exact min_le_left _ _ |>.trans (by norm_num)) hw
+  have hVw : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * w z) ∈ realSobolevFunctions ℂ (j : ℝ) 2 :=
+    realSobolevFunctions_mono (by norm_num) (by norm_num) (by exact_mod_cast (by omega : j ≤ N))
+      (sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (by omega) hxN hwN)
+  have hwj : w ∈ realSobolevFunctions ℂ (j : ℝ) 2 :=
+    realSobolevFunctions_mono (by norm_num) (by norm_num) (by linarith) hw
+  refine ⟨fun z ↦ g₀ z - w z + (x z 2 ^ 2 + x z 3 ^ 2) * w z,
+    add_mem (sub_mem hg₀ hwj) hVw, fun φ hφ hc ↦ ?_⟩
+  have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
+  have hφL : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hc
+  have hwL := memLp_of_mem_realSobolevFunctions hw
+  have hψ : MemLp (fun z ↦ -Δ φ z + φ z) 2 volume :=
+    (hφ2.continuous_laplacian.memLp_of_hasCompactSupport hc.laplacian).neg.add hφL
+  have i₁ : Integrable (fun z ↦ w z * (-Δ φ z + φ z)) volume := hwL.integrable_mul hψ
+  have i₂ : Integrable (fun z ↦ w z * φ z) volume := hwL.integrable_mul hφL
+  have i₃ : Integrable (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * w z * φ z) volume :=
+    (memLp_of_mem_realSobolevFunctions hVw).integrable_mul hφL
+  have i₄ : Integrable (fun z ↦ g₀ z * φ z) volume :=
+    (memLp_of_mem_realSobolevFunctions hg₀).integrable_mul hφL
+  rw [integral_mul_gaugeAdjoint_gaugeDirection hφ2]
+  calc ∫ z, w z * (-Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z)
+      = ∫ z, w z * (-Δ φ z + φ z) - w z * φ z + (x z 2 ^ 2 + x z 3 ^ 2) * w z * φ z :=
+        integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
+    _ = (∫ z, g₀ z * φ z) - (∫ z, w z * φ z) + ∫ z, (x z 2 ^ 2 + x z 3 ^ 2) * w z * φ z := by
+        rw [integral_add (f := fun z ↦ w z * (-Δ φ z + φ z) - w z * φ z) (i₁.sub i₂) i₃,
+          integral_sub i₁ i₂, hweak φ hφ hc]
+    _ = ∫ z, (g₀ z - w z + (x z 2 ^ 2 + x z 3 ^ 2) * w z) * φ z := by
+        rw [← integral_sub i₄ i₂, ← integral_add (f := fun z ↦ g₀ z * φ z - w z * φ z)
+          (i₄.sub i₂) i₃]
+        exact integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
 
 end TauCeti.Vortex

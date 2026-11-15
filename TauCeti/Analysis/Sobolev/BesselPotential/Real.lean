@@ -31,7 +31,8 @@ everywhere. Then:
   (`BesselPotentialSpace.eq_of_reValue_ae_eq`);
 * conversely every `f ∈ realSobolevFunctions E s 2` is `reValue u` almost everywhere for the
   element `u = BesselPotentialSpace.ofRealSobolev hf` of the real subspace
-  (`BesselPotentialSpace.reValue_ofRealSobolev`).
+  (`BesselPotentialSpace.reValue_ofRealSobolev`), and every `u` in it arises this way
+  (`BesselPotentialSpace.ofRealSobolev_reValue`).
 
 So `u ↦ reValue u` identifies the real subspace with `realSobolevFunctions E s 2` up to null
 sets. Testing `reValue u` against a fixed real `L²` function is continuous on `H^s(E)`
@@ -69,13 +70,13 @@ theorem reValue_apply (hs : 0 ≤ s) (u : H^{s}(E)) (x : E) :
   rw [reValue_eq hs]
 
 /-- For `s < 0`, `reValue u` is `0` by convention. -/
-theorem reValue_of_lt (hs : s < 0) (u : H^{s}(E)) : reValue u = 0 := by
+theorem reValue_of_neg (hs : s < 0) (u : H^{s}(E)) : reValue u = 0 := by
   rw [reValue, dite_eq_right (fun h ↦ absurd h (not_le.2 hs))]
 
 /-- The real part of the `L²` function of an element of `H^s(E)` is square integrable. -/
 theorem memLp_reValue (u : H^{s}(E)) : MemLp (reValue u) 2 volume := by
   rcases lt_or_ge s 0 with hs | hs
-  · rw [reValue_of_lt hs]
+  · rw [reValue_of_neg hs]
     exact MemLp.zero
   rw [reValue_eq hs]
   exact Complex.reCLM.comp_memLp' (Lp.memLp _)
@@ -84,7 +85,7 @@ theorem memLp_reValue (u : H^{s}(E)) : MemLp (reValue u) 2 volume := by
 theorem reValue_add (u v : H^{s}(E)) :
     reValue (u + v) =ᵐ[volume] reValue u + reValue v := by
   rcases lt_or_ge s 0 with hs | hs
-  · simp [reValue_of_lt hs]
+  · simp [reValue_of_neg hs]
   filter_upwards [coeFn_toLp_inclusion_add hs u v] with x hx
   rw [Pi.add_apply, reValue_apply hs, reValue_apply hs, reValue_apply hs, hx, Pi.add_apply,
     Complex.add_re]
@@ -93,7 +94,7 @@ theorem reValue_add (u v : H^{s}(E)) :
 theorem reValue_smul (c : ℝ) (u : H^{s}(E)) :
     reValue (c • u) =ᵐ[volume] c • reValue u := by
   rcases lt_or_ge s 0 with hs | hs
-  · simp [reValue_of_lt hs]
+  · simp [reValue_of_neg hs]
   have h : c • u = (c : ℂ) • u := (Complex.coe_smul c u).symm
   filter_upwards [coeFn_toLp_inclusion_smul hs (c : ℂ) u] with x hx
   rw [Pi.smul_apply, reValue_apply hs, reValue_apply hs, h, hx, Pi.smul_apply, smul_eq_mul,
@@ -115,8 +116,7 @@ def realSubmodule (s : ℝ) (hs : 0 ≤ s := by positivity) : Submodule ℝ H^{s
     rw [hx, Pi.zero_apply, Complex.zero_im]
   smul_mem' c u hu := by
     simp only [Set.mem_ofPred_eq] at hu ⊢
-    -- The real scalar action on `H^s(E)` is the action of the complex number `c`.
-    change ∀ᵐ x ∂volume, ((inclusion hs ((c : ℂ) • u)).toLp x).im = 0
+    rw [← Complex.coe_smul]
     filter_upwards [coeFn_toLp_inclusion_smul hs (c : ℂ) u, hu] with x hx hu
     rw [hx, Pi.smul_apply, smul_eq_mul, Complex.im_ofReal_mul, hu, mul_zero]
 
@@ -145,49 +145,49 @@ theorem eq_of_reValue_ae_eq (hs : 0 ≤ s) {u v : H^{s}(E)} (hu : u ∈ realSubm
     coeFn_toLp_inclusion_ae_eq_reValue hs hv, h] with x h₁ h₂ h₃
   simp [h₁, h₂, h₃]
 
-/-- The element of the real subspace of `H^s(E)` defined by a real `H^s` function `f`. Its real
-part is `f` almost everywhere (`BesselPotentialSpace.reValue_ofRealSobolev`). -/
-def ofRealSobolev {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) : H^{s}(E) :=
-  (mem_realSobolevFunctions.1 hf).choose_spec.2.toBesselPotentialSpace
-
-/-- The `L²` function of `ofRealSobolev hf` is `f`, almost everywhere. -/
-theorem coeFn_toLp_inclusion_ofRealSobolev (hs : 0 ≤ s) {f : E → ℝ}
+/-- The `L²` function of the element of `H^s(E)` defined by a real `H^s` function `f` is `f`,
+almost everywhere. -/
+private theorem coeFn_toLp_inclusion_toBesselPotentialSpace (hs : 0 ≤ s) {f : E → ℝ}
     (hf : f ∈ realSobolevFunctions E s 2) :
-    (inclusion hs (ofRealSobolev hf)).toLp =ᵐ[volume] fun x ↦ (f x : ℂ) := by
+    (inclusion hs (mem_realSobolevFunctions.1 hf).choose_spec.2.toBesselPotentialSpace).toLp
+      =ᵐ[volume] fun x ↦ (f x : ℂ) := by
   have hspec := (mem_realSobolevFunctions.1 hf).choose_spec
-  rw [ofRealSobolev, toLp_inclusion_toBesselPotentialSpace hs hspec.2 rfl]
+  rw [toLp_inclusion_toBesselPotentialSpace hs hspec.2 rfl]
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume)
     (mem_realSobolevFunctions.1 hf).choose, hspec.1] with x h₁ h₂
   rw [h₁, Complex.ofRealCLM_apply, h₂]
 
-theorem ofRealSobolev_mem_realSubmodule (hs : 0 ≤ s) {f : E → ℝ}
-    (hf : f ∈ realSobolevFunctions E s 2) : ofRealSobolev hf ∈ realSubmodule E s hs := by
-  rw [mem_realSubmodule_iff]
-  filter_upwards [coeFn_toLp_inclusion_ofRealSobolev hs hf] with x hx
-  simp [hx]
+/-- The element of the real subspace of `H^s(E)`, `s ≥ 0`, defined by a real `H^s` function `f`.
+Its real part is `f` almost everywhere (`BesselPotentialSpace.reValue_ofRealSobolev`). -/
+def ofRealSobolev {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2)
+    (hs : 0 ≤ s := by positivity) : realSubmodule E s hs :=
+  ⟨(mem_realSobolevFunctions.1 hf).choose_spec.2.toBesselPotentialSpace, by
+    rw [mem_realSubmodule_iff]
+    filter_upwards [coeFn_toLp_inclusion_toBesselPotentialSpace hs hf] with x hx
+    rw [hx, Complex.ofReal_im]⟩
+
+/-- The `L²` function of `ofRealSobolev hf` is `f`, almost everywhere. -/
+theorem coeFn_toLp_inclusion_ofRealSobolev (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s 2) :
+    (inclusion hs (ofRealSobolev hf hs : H^{s}(E))).toLp =ᵐ[volume] fun x ↦ (f x : ℂ) :=
+  coeFn_toLp_inclusion_toBesselPotentialSpace hs hf
 
 /-- The real part of `ofRealSobolev hf` is `f`, almost everywhere. -/
 theorem reValue_ofRealSobolev (hs : 0 ≤ s) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) :
-    reValue (ofRealSobolev hf) =ᵐ[volume] f := by
+    reValue (ofRealSobolev hf hs : H^{s}(E)) =ᵐ[volume] f := by
   filter_upwards [coeFn_toLp_inclusion_ofRealSobolev hs hf] with x hx
   simp [reValue_apply hs, hx]
 
 /-- An element of the real subspace is recovered from its real part by `ofRealSobolev`. -/
-theorem ofRealSobolev_reValue (hs : 0 ≤ s) {u : H^{s}(E)} (hu : u ∈ realSubmodule E s hs) :
-    ofRealSobolev (reValue_mem_realSobolevFunctions hs hu) = u :=
-  eq_of_reValue_ae_eq hs (ofRealSobolev_mem_realSubmodule hs _) hu (reValue_ofRealSobolev hs _)
-
-/-- The `L²` function of an element of `H^s(E)`, `s ≥ 0`, depends continuously on it. -/
-theorem continuous_toLp_inclusion (hs : 0 ≤ s) :
-    Continuous fun u : H^{s}(E) ↦ (inclusion hs u).toLp := by
-  simpa only [Function.comp_def, toLpₗᵢ_apply] using
-    (toLpₗᵢ (E := E) (F := ℂ) (s := 0) (p := 2)).continuous.comp (inclusion hs).continuous
+theorem ofRealSobolev_reValue (hs : 0 ≤ s) (u : realSubmodule E s hs) :
+    ofRealSobolev (reValue_mem_realSobolevFunctions hs u.2) hs = u :=
+  Subtype.ext <| eq_of_reValue_ae_eq hs (ofRealSobolev _ hs).2 u.2 (reValue_ofRealSobolev hs _)
 
 /-- Testing the real part against a fixed real `L²` function is continuous on `H^s(E)`. -/
 theorem continuous_integral_reValue_mul {ψ : E → ℝ} (hψ : MemLp ψ 2 volume) :
     Continuous fun u : H^{s}(E) ↦ ∫ x, reValue u x * ψ x := by
   rcases lt_or_ge s 0 with hs | hs
-  · simpa [reValue_of_lt hs] using continuous_const
+  · simpa [reValue_of_neg hs] using continuous_const
   set Ψ : Lp ℂ 2 (volume : Measure E) := Complex.ofRealCLM.compLp (hψ.toLp ψ)
   have hΨ : Ψ =ᵐ[volume] fun x ↦ (ψ x : ℂ) := by
     filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (hψ.toLp ψ),

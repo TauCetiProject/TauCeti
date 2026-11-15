@@ -39,7 +39,8 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.inclusion_injective`, `BesselPotentialSpace.toLp_inclusion_injective`: it
   is injective, and an element is determined by the `L²` function of its inclusion.
 * `BesselPotentialSpace.coeFn_toLp_inclusion_add`, `BesselPotentialSpace.coeFn_toLp_inclusion_smul`:
-  the `L²` function of the inclusion is additive and homogeneous almost everywhere.
+  the `L²` function of the inclusion is additive and homogeneous almost everywhere, and it is
+  continuous (`BesselPotentialSpace.continuous_toLp_inclusion`).
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
   `H^0(E, F) = L²` exhibits every element of `H^s(E, F)` as an `L²` function, which lies in `H^s`
   (`BesselPotentialSpace.memSobolev_toLp_inclusion`) and defines `u` again
@@ -180,6 +181,13 @@ theorem coeFn_toLp_inclusion_smul (h : r ≤ s) (c : ℂ) (u : H^{s}(E, F)) :
     ⇑(inclusion h (c • u)).toLp =ᵐ[volume] c • ⇑(inclusion h u).toLp := by
   rw [map_smul, toLp_smul]
   exact Lp.coeFn_smul _ _
+
+/-- The `L²` function of the inclusion of `u ∈ H^s(E, F)` into `H^r(E, F)` depends continuously
+on `u`. -/
+theorem continuous_toLp_inclusion (h : r ≤ s) :
+    Continuous fun u : H^{s}(E, F) ↦ (inclusion h u).toLp := by
+  simpa only [Function.comp_def, toLpₗᵢ_apply] using
+    (toLpₗᵢ (E := E) (F := F) (s := r) (p := 2)).continuous.comp (inclusion h).continuous
 
 /-- **Elements of `H^s`, `s ≥ 0`, are `L²` functions.** The `L²` function underlying the
 inclusion of `u ∈ H^s(E, F)` into `H^0(E, F)` has the tempered distribution `u`. -/

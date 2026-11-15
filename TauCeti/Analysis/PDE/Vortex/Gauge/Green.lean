@@ -29,12 +29,14 @@ these are the domain and target of the linearized Coulomb gauge condition.
   of `gaugeGreen g` is a weak solution of `d₀* d₀ u = g` (`TauCeti.Vortex.gaugeGreen_spec`), and
   `gaugeGreen g` is the only element of `H^(j+2)_ℝ(ℂ)` with this property
   (`TauCeti.Vortex.eq_gaugeGreen_iff`).
-* `exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem`:
-  conversely, every real `w ∈ H^(j+2)(ℂ)` has `d₀* d₀ w ∈ H^j(ℂ)` weakly, so the Green operator is
-  bijective (`TauCeti.Vortex.gaugeGreen_injective`, `TauCeti.Vortex.gaugeGreen_surjective`).
+* Conversely, every real `w ∈ H^(j+2)(ℂ)` has `d₀* d₀ w ∈ H^j(ℂ)` weakly
+  (`exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem_add_two`),
+  so the Green operator is bijective (`TauCeti.Vortex.gaugeGreen_injective`,
+  `TauCeti.Vortex.gaugeGreen_surjective`).
 * `TauCeti.Vortex.gaugeLaplacianEquiv : H^(j+2)_ℝ(ℂ) ≃L[ℝ] H^j_ℝ(ℂ)`: the gauge Laplacian, the
-  inverse of the Green operator (`TauCeti.Vortex.coe_gaugeLaplacianEquiv_symm`), characterized by
-  its weak equation (`TauCeti.Vortex.gaugeLaplacianEquiv_spec`).
+  inverse of the Green operator (`TauCeti.Vortex.coe_gaugeLaplacianEquiv_symm`,
+  `TauCeti.Vortex.gaugeLaplacianEquiv_gaugeGreen`, `TauCeti.Vortex.gaugeGreen_gaugeLaplacianEquiv`),
+  characterized by its weak equation (`TauCeti.Vortex.gaugeLaplacianEquiv_apply_eq_iff`).
 
 Linearity of the Green operator follows from uniqueness of weak solutions. Boundedness follows from
 the closed graph theorem: if `gₙ → g` in `H^j` and `gaugeGreen gₙ → v` in `H^(j+2)`, then both
@@ -123,9 +125,8 @@ variable (f m) in
 private def greenFun (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ)) :
     realSubmodule ℂ ((j : ℝ) + 2) :=
-  ⟨ofRealSobolev (exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk
-      hjk hx hcont (reValue_mem_realSobolevFunctions (by positivity) g.2)).choose_spec.1,
-    ofRealSobolev_mem_realSubmodule (by positivity) _⟩
+  ofRealSobolev (exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk
+    hjk hx hcont (reValue_mem_realSobolevFunctions (by positivity) g.2)).choose_spec.1
 
 /-- The real part of `greenFun g` is a weak solution of `d₀* d₀ u = g`, for `C²` test functions. -/
 private theorem greenFun_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
@@ -237,64 +238,15 @@ theorem gaugeGreen_injective (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFiel
 
 /-! ### Surjectivity: the gauge Laplacian on `H^(j+2)` -/
 
-/-- **The gauge Laplacian maps `H^(j+2)` to `H^j`.** Let `x` be a field of `A_m^k`, `k ≥ 2`, and
-`j ≤ k`. Every real `w ∈ H^(j+2)(ℂ)` solves `d₀* d₀ w = g` weakly for some real `g ∈ H^j(ℂ)`:
-`∫ w · d₀* d₀ φ = ∫ g φ` for every smooth compactly supported `φ`. -/
-theorem exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem
-    (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k) {w : ℂ → ℝ}
-    (hw : w ∈ realSobolevFunctions ℂ ((j : ℝ) + 2) 2) :
-    ∃ g ∈ realSobolevFunctions ℂ (j : ℝ) 2, ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      ∫ z, w z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, g z * φ z := by
-  -- `-Δw + w = g₀` weakly with `g₀ ∈ H^j`; then `d₀* d₀ w = g₀ - w + (p² + q²) w`.
-  obtain ⟨g₀, hg₀, hweak⟩ :=
-    exists_mem_realSobolevFunctions_integral_mul_neg_laplacian_add_eq (Nat.cast_nonneg j) hw
-  -- The potential term is in `H^j`, measured through the order `N = min (j + 2) k`.
-  obtain ⟨N, hN⟩ : ∃ N, N = min (j + 2) k := ⟨_, rfl⟩
-  have hxN : x ∈ framedFieldSpace f m (N : ℝ) :=
-    framedFieldSpace_mono f m (by exact_mod_cast (by omega : N ≤ k)) hx
-  have hwN : w ∈ realSobolevFunctions ℂ (N : ℝ) 2 :=
-    realSobolevFunctions_mono (by norm_num) (by norm_num)
-      (by rw [hN]; push_cast; exact min_le_left _ _ |>.trans (by norm_num)) hw
-  have hVw : (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * w z) ∈ realSobolevFunctions ℂ (j : ℝ) 2 :=
-    realSobolevFunctions_mono (by norm_num) (by norm_num) (by exact_mod_cast (by omega : j ≤ N))
-      (sq_add_sq_mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (by omega) hxN hwN)
-  have hwj : w ∈ realSobolevFunctions ℂ (j : ℝ) 2 :=
-    realSobolevFunctions_mono (by norm_num) (by norm_num) (by linarith) hw
-  refine ⟨fun z ↦ g₀ z - w z + (x z 2 ^ 2 + x z 3 ^ 2) * w z,
-    add_mem (sub_mem hg₀ hwj) hVw, fun φ hφ hc ↦ ?_⟩
-  have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
-  have hφL : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hc
-  have hwL := memLp_of_mem_realSobolevFunctions hw
-  have hψ : MemLp (fun z ↦ -Δ φ z + φ z) 2 volume :=
-    (hφ2.continuous_laplacian.memLp_of_hasCompactSupport hc.laplacian).neg.add hφL
-  have i₁ : Integrable (fun z ↦ w z * (-Δ φ z + φ z)) volume := hwL.integrable_mul hψ
-  have i₂ : Integrable (fun z ↦ w z * φ z) volume := hwL.integrable_mul hφL
-  have i₃ : Integrable (fun z ↦ (x z 2 ^ 2 + x z 3 ^ 2) * w z * φ z) volume :=
-    (memLp_of_mem_realSobolevFunctions hVw).integrable_mul hφL
-  have i₄ : Integrable (fun z ↦ g₀ z * φ z) volume :=
-    (memLp_of_mem_realSobolevFunctions hg₀).integrable_mul hφL
-  rw [integral_mul_gaugeAdjoint_gaugeDirection hφ2]
-  calc ∫ z, w z * (-Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z)
-      = ∫ z, w z * (-Δ φ z + φ z) - w z * φ z + (x z 2 ^ 2 + x z 3 ^ 2) * w z * φ z :=
-        integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
-    _ = (∫ z, g₀ z * φ z) - (∫ z, w z * φ z) + ∫ z, (x z 2 ^ 2 + x z 3 ^ 2) * w z * φ z := by
-        rw [integral_add (f := fun z ↦ w z * (-Δ φ z + φ z) - w z * φ z) (i₁.sub i₂) i₃,
-          integral_sub i₁ i₂, hweak φ hφ hc]
-    _ = ∫ z, (g₀ z - w z + (x z 2 ^ 2 + x z 3 ^ 2) * w z) * φ z := by
-        rw [← integral_sub i₄ i₂, ← integral_add (f := fun z ↦ g₀ z * φ z - w z * φ z)
-          (i₄.sub i₂) i₃]
-        exact integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
-
 /-- The Green operator of the gauge Laplacian is surjective: every `v ∈ H^(j+2)_ℝ(ℂ)` is
 `gaugeGreen g` for `g = d₀* d₀ v`. -/
 theorem gaugeGreen_surjective (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) : Function.Surjective (gaugeGreen f m hk hjk hx hcont) := by
   intro v
   obtain ⟨g, hg, hweak⟩ :=
-    exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem hk hjk hx
-      (reValue_mem_realSobolevFunctions (by positivity) v.2)
-  refine ⟨⟨ofRealSobolev hg, ofRealSobolev_mem_realSubmodule (by positivity) hg⟩,
-    ((eq_gaugeGreen_iff hk hjk hx hcont).2 fun φ hφ hc ↦ ?_).symm⟩
+    exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem_add_two hk
+      hjk hx (reValue_mem_realSobolevFunctions (by positivity) v.2)
+  refine ⟨ofRealSobolev hg, ((eq_gaugeGreen_iff hk hjk hx hcont).2 fun φ hφ hc ↦ ?_).symm⟩
   rw [hweak φ hφ hc]
   exact integral_congr_ae ((reValue_ofRealSobolev (by positivity) hg).mono fun z hz ↦ by
     simp only [hz])
@@ -329,5 +281,31 @@ theorem gaugeLaplacianEquiv_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framed
   conv_lhs => rw [← (gaugeLaplacianEquiv f m hk hjk hx hcont).symm_apply_apply v,
     coe_gaugeLaplacianEquiv_symm]
   exact gaugeGreen_spec hk hjk hx hcont _ φ hφ hc
+
+/-- The gauge Laplacian of `gaugeGreen g` is `g`. -/
+@[simp]
+theorem gaugeLaplacianEquiv_gaugeGreen (hk : 1 < k) (hjk : j ≤ k)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ)) :
+    gaugeLaplacianEquiv f m hk hjk hx hcont (gaugeGreen f m hk hjk hx hcont g) = g := by
+  rw [← coe_gaugeLaplacianEquiv_symm, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The Green operator inverts the gauge Laplacian. -/
+@[simp]
+theorem gaugeGreen_gaugeLaplacianEquiv (hk : 1 < k) (hjk : j ≤ k)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) (v : realSubmodule ℂ ((j : ℝ) + 2)) :
+    gaugeGreen f m hk hjk hx hcont (gaugeLaplacianEquiv f m hk hjk hx hcont v) = v := by
+  rw [← coe_gaugeLaplacianEquiv_symm, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- `gaugeLaplacianEquiv v = g` exactly when the real part of `v` is a weak solution of
+`d₀* d₀ u = g`, tested against smooth compactly supported functions. -/
+theorem gaugeLaplacianEquiv_apply_eq_iff (hk : 1 < k) (hjk : j ≤ k)
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {v : realSubmodule ℂ ((j : ℝ) + 2)}
+    {g : realSubmodule ℂ (j : ℝ)} :
+    gaugeLaplacianEquiv f m hk hjk hx hcont v = g ↔
+      ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+        ∫ z, reValue (v : H^{(j : ℝ) + 2}(ℂ)) z * gaugeAdjoint x (gaugeDirection x φ) z =
+          ∫ z, reValue (g : H^{(j : ℝ)}(ℂ)) z * φ z := by
+  rw [← eq_gaugeGreen_iff hk hjk hx hcont, ← coe_gaugeLaplacianEquiv_symm,
+    ContinuousLinearEquiv.eq_symm_apply]
 
 end TauCeti.Vortex
