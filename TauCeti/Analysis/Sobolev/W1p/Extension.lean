@@ -20,12 +20,11 @@ that obstruction disappears, and this file proves it: the zero-extension of a `W
 function to any larger open set `Ω'` lies in `W^{1,p}_0(Ω')`, and its weak gradient is the
 zero-extension of the original weak gradient.
 
-This is the boundary-regularity-free half of Lane A.6 of `TauCetiRoadmap/PDE/README.md`.  Taking
-`Ω' = ⊤` gives the extension operator `W^{1,p}_0(Ω) → W^{1,p}(ℝⁿ)` that lane asks for, which is
-what lets whole-space statements (Gagliardo--Nirenberg--Sobolev, translation estimates, and
-through them Rellich--Kondrachov) be applied to functions given on a domain.  The extension
-operator for `W^{1,p}(Ω)` itself is a genuinely harder theorem needing Lipschitz `∂Ω`, and is not
-proved here.
+This is the half of the Sobolev extension theorem that needs no boundary regularity.  Taking
+`Ω' = ⊤` gives an extension operator `W^{1,p}_0(Ω) → W^{1,p}(ℝⁿ)`, which is what lets whole-space
+statements (Gagliardo--Nirenberg--Sobolev, translation estimates, and through them
+Rellich--Kondrachov) be applied to functions given on a domain.  The extension operator for
+`W^{1,p}(Ω)` itself is a genuinely harder theorem needing Lipschitz `∂Ω`, and is not proved here.
 
 ## The argument
 
@@ -64,9 +63,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 
 ## References
 
-Lane A.6 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial Differential Equations*,
-Section 5.5, and H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential
-Equations*, Lemma 9.5.
+L. C. Evans, *Partial Differential Equations*, Section 5.5, and H. Brezis, *Functional Analysis,
+Sobolev Spaces and Partial Differential Equations*, Lemma 9.5.
 -/
 
 public section

@@ -145,7 +145,7 @@ private theorem two_mul_div_mul_sqrt_eq {u v j d : ℝ} (hd : d ≠ 0) :
   · simp [Real.sqrt_eq_zero'.2 (neg_nonpos.2 (sq_nonneg j))]
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  rcases eq_or_ne √(2 * u * v - j ^ 2) 0 with hs | hs
+  rcases eq_or_ne √(2 * u * v - j ^ 2) 0 with hs | _
   · simp [hs]
   field_simp
   ring
@@ -219,7 +219,7 @@ private theorem tendsto_integral_of_pos {h p q : ℝ} (hpq : p ≤ q)
     · linarith
   have hden_pos : 0 < n * √(m / 2) := by positivity
   refine ⟨?_, ?_⟩
-  · filter_upwards [hsmall] with j ⟨hj, hj2⟩
+  · filter_upwards [hsmall] with j ⟨_, hj2⟩
     refine ContinuousOn.intervalIntegrable ?_
     rw [uIcc_of_le hpq]
     exact continuousOn_const.mul (continuousOn_const.div (by fun_prop) fun z hz ↦

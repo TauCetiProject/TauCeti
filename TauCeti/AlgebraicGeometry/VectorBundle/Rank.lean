@@ -278,7 +278,7 @@ theorem FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one
     exact InvertibleSheaf.rank_toFiniteLocallyFree_apply _ x
   -- Around each point `x`, a finite basis of `E` has `E.rank x = 1` elements, so it trivializes
   -- `E` by the structure sheaf.
-  choose U hU σ hσ hI using E.exists_generatingSections
+  choose U hU σ hσ _ using E.exists_generatingSections
   have hu (x : X) : Nonempty (Unique (σ x).I) :=
     (unique_iff_subsingleton_and_nonempty _).2 <| Nat.card_eq_one_iff_unique.1 <|
       (E.rank_apply_eq_natCard_of_obj_eq rfl (hU x) (σ x) (hσ x)).symm.trans (h x)

@@ -53,9 +53,6 @@ The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, a
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV; see also
 R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012),
 Theorem 1.4. This file provides the Laplace-transform API used by the representation theorem.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
-  milestone).
 -/
 
 public section
@@ -482,8 +479,8 @@ theorem isCompletelyMonotoneOnIoi_laplaceTransform
   rw [iteratedDeriv_laplaceTransform_eq_laplaceMomentTransform μ hint n ht]
   exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t
 
-/-- The Laplace transform of a finite measure is completely monotone in the closed-half-line
-roadmap sense. -/
+/-- The Laplace transform of a finite measure is completely monotone on the closed half-line, in the
+sense of `IsContinuousCompletelyMonotoneOnIoi`. -/
 theorem isContinuousCompletelyMonotoneOnIoi_laplaceTransform
     (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     IsContinuousCompletelyMonotoneOnIoi (laplaceTransform μ) :=

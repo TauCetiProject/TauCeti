@@ -23,8 +23,11 @@ compatible with the transitions. For `I = ⊥` the formal completion is the cons
 (`formalCompletion.botIso`), and for `I = ⊤` every level is empty. A morphism `f : X ⟶ Y` with
 `J.comap f ≤ I`, i.e. carrying `V(I)` into `V(J)` scheme-theoretically, induces a morphism of formal
 completions `formalCompletion.map f : X.formalCompletion I ⟶ Y.formalCompletion J`, functorially in
-`f`; it is adic when `J.comap f = I`. The formal completion of a locally Noetherian scheme is
-locally Noetherian.
+`f`; it is adic when `J.comap f = I`, and then every level `V(I ^ (n + 1))` is the inverse image
+of `V(J ^ (n + 1))` under `f`. In particular, for an open immersion `f` and `I = J.comap f` the
+levels of `formalCompletion.map f` are open immersions onto the inverse images of the image of `f`,
+so the formal completions of the members of an open cover of `X` cover the levels of `X/V(I)`. The
+formal completion of a locally Noetherian scheme is locally Noetherian.
 
 For an ideal `J` of a ring `R`, the formal completion of `Spec R` along `V(J)` is the system
 `spf J` of the affine schemes `Spec (R ⧸ J ^ (n + 1))` (`formalCompletion.specIso`, Stacks,
@@ -57,6 +60,12 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   locally Noetherian scheme is locally Noetherian.
 * `AlgebraicGeometry.Scheme.formalCompletion.isAdicHom_map`: `formalCompletion.map f` is adic when
   `J.comap f = I`.
+* `AlgebraicGeometry.Scheme.formalCompletion.isPullback_map_app`: when `J.comap f = I`, the level
+  `V(I ^ (n + 1))` is the inverse image of `V(J ^ (n + 1))` under `f`.
+* `AlgebraicGeometry.Scheme.formalCompletion.isOpenImmersion_map_app`,
+  `AlgebraicGeometry.Scheme.formalCompletion.opensRange_map_app`: for an open immersion `f`, the
+  levels of `formalCompletion.map f` are open immersions onto the inverse images of the image
+  of `f`.
 
 ## References
 
@@ -244,6 +253,32 @@ theorem isAdicHom_map (f : X ⟶ Y) (hf : J.comap f = I) :
   rw [AdicThickeningSystem.isAdicHom_iff_ker_comap]
   intro n
   rw [ker_ι, ker_ι, ← comap_comp, map_app_toScheme, comap_comp, comap_pow, hf]
+
+/-- If `V(I)` is the scheme-theoretic inverse image of `V(J)` under `f`, then every level
+`V(I ^ (n + 1))` of the formal completion of `X` is the inverse image of the level `V(J ^ (n + 1))`
+of the formal completion of `Y`: the square formed by `(map f _).app n`, `f` and the closed
+immersions into `X` and `Y` is cartesian. -/
+theorem isPullback_map_app (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    IsPullback (toScheme X I n) ((map f hf.le).app n) f (toScheme Y J n) :=
+  isPullback_of_isClosedImmersion _ _ _ _ (map_app_toScheme f hf.le n).symm <| by
+    rw [ker_toScheme, ker_toScheme, comap_pow, hf]
+
+/-- The morphism of formal completions induced by an open immersion `f : X ⟶ Y`, for the inverse
+image of an ideal sheaf on `Y`, is an open immersion at every level. -/
+instance isOpenImmersion_map_app (f : X ⟶ Y) [IsOpenImmersion f] (n : ℕ) :
+    IsOpenImmersion ((map (I := J.comap f) f le_rfl).app n) :=
+  MorphismProperty.of_isPullback (P := @IsOpenImmersion) (isPullback_map_app f rfl n) ‹_›
+
+/-- The image of the `n`-th level of the morphism of formal completions induced by an open
+immersion `f : X ⟶ Y` is the inverse image of the image of `f` in `V(J ^ (n + 1))`. -/
+theorem opensRange_map_app (f : X ⟶ Y) [IsOpenImmersion f] (n : ℕ) :
+    ((map (I := J.comap f) f le_rfl).app n).opensRange = toScheme Y J n ⁻¹ᵁ f.opensRange := by
+  have H := isPullback_map_app (J := J) f rfl n
+  calc ((map (I := J.comap f) f le_rfl).app n).opensRange =
+        (H.isoPullback.hom ≫ pullback.snd f (toScheme Y J n)).opensRange := by
+          congr 1
+          exact H.isoPullback_hom_snd.symm
+    _ = _ := (Scheme.Hom.opensRange_comp_of_isIso _ _).trans (Scheme.Hom.opensRange_pullbackSnd _ _)
 
 end formalCompletion
 

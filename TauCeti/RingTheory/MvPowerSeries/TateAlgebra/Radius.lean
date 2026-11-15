@@ -104,7 +104,7 @@ variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
 /-- Radius restriction is contractive for the Gauss norms. -/
 theorem norm_restrictedRadiusHom_le (f : IsRestricted.subring (R := R) s) :
     ‖restrictedRadiusHom hr hrs f‖ ≤ ‖f‖ := by
-  rw [norm_le_iff (norm_nonneg f)]
+  rw [norm_le_iff]
   intro n
   rw [coe_restrictedRadiusHom]
   refine le_trans ?_ (norm_coeff_mul_prod_le f n)

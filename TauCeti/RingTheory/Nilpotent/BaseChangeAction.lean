@@ -249,6 +249,13 @@ noncomputable def baseChangeExp (x : A) (M : S)
   ∑ n ∈ range (nilpotencyClass x),
     t ^ n • (integralDividedPower x M n (hM n)).baseChange R
 
+/-- The finite exponential of an element that is not nilpotent is the junk value `0`. -/
+@[simp]
+theorem baseChangeExp_eq_zero_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (t : R) :
+    baseChangeExp x M hM t = 0 := by
+  simp [baseChangeExp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx)]
+
 /-- The finite base-changed divided-power exponentials of commuting elements commute.
 This commutation identity does not require either element to be nilpotent. -/
 theorem commute_baseChangeExp {x y : A} (M : S) (hxy : Commute x y)
@@ -505,8 +512,14 @@ theorem baseChangeExp_congr {x y : A} (hxy : x = y) (M : S)
 /-- Negating the element inverts the parameter: `E_{-x}(t) = E_x(-t)`. -/
 theorem baseChangeExp_neg (x : A) (M : S)
     (hM' : ∀ n, ∀ v ∈ M, Associative.dividedPower n (-x) • v ∈ M)
-    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (hx : IsNilpotent x) (t : R) :
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (t : R) :
     baseChangeExp (-x) M hM' t = baseChangeExp x M hM (-t) := by
+  by_cases hx : IsNilpotent x
+  swap
+  · -- both sides take the junk value `0`: neither `x` nor `-x` is nilpotent
+    have hx' : ¬ IsNilpotent (-x) := fun h ↦ hx (by simpa using h.neg)
+    rw [baseChangeExp_eq_zero_of_not_isNilpotent hx' M hM',
+      baseChangeExp_eq_zero_of_not_isNilpotent hx M hM]
   obtain ⟨k, hk⟩ := id hx
   have hk' : (-x) ^ k = 0 := by rw [neg_pow, hk, mul_zero]
   refine LinearMap.ext fun z => ?_
@@ -540,21 +553,29 @@ theorem baseChangeExp_intCast (x : A) (M : S)
   exact h.symm
 
 /-- **Conjugating a base-changed exponential by an integral unit.** If a unit `u` of `A` preserves
-`M` together with its inverse, then conjugating the one-parameter subgroup of `x` by the induced
-automorphism of `R ⊗[ℤ] M` gives the one-parameter subgroup of the conjugate `u x u⁻¹`.
+`M` together with its inverse, then conjugating the truncated exponential `baseChangeExp x M hM t`
+by the induced automorphism of `R ⊗[ℤ] M` gives the truncated exponential of the conjugate
+`u x u⁻¹`. When `x` is not nilpotent, neither is `u x u⁻¹`, and both sides are `0`. For nilpotent
+`x` the exponentials are the one-parameter subgroup of `x` and that of `u x u⁻¹`.
 
 For the Weyl element `n_α` and a root vector `eα` this is Chevalley's relation
 `n_α x_α(t) n_α⁻¹ = x_{-α}(-t)`, obtained from the Lie-algebra identity `n_α eα n_α⁻¹ = -e_{-α}`
 alone: conjugation is an algebra automorphism, so it passes through the divided powers. -/
 theorem baseChange_integralUnitRestrict_conj_baseChangeExp (x : A) (M : S) (u : Aˣ)
     (hu : ∀ v ∈ M, (u : A) • v ∈ M) (hu' : ∀ v ∈ M, ((u⁻¹ : Aˣ) : A) • v ∈ M)
-    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hx : IsNilpotent x) (t : R) :
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (t : R) :
     ((integralUnitRestrict u M hu hu' : M →ₗ[ℤ] M).baseChange R) * baseChangeExp x M hM t *
         (((integralUnitRestrict u M hu hu').symm : M →ₗ[ℤ] M).baseChange R) =
       baseChangeExp ((u : A) * x * ↑u⁻¹) M
         (fun n => Associative.dividedPower_conj_smul_mem x (M : Set V) u hu hu' n (hM n)) t := by
   have hM' := fun n => Associative.dividedPower_conj_smul_mem x (M : Set V) u hu hu' n (hM n)
+  by_cases hx : IsNilpotent x
+  swap
+  · -- both sides take the junk value `0`: neither `x` nor its conjugate is nilpotent
+    have hx' : ¬ IsNilpotent ((u : A) * x * ↑u⁻¹) := fun ⟨k, hk⟩ ↦
+      hx ⟨k, by simpa [Units.conj_pow] using hk⟩
+    rw [baseChangeExp_eq_zero_of_not_isNilpotent hx' M hM',
+      baseChangeExp_eq_zero_of_not_isNilpotent hx M hM, mul_zero, zero_mul]
   obtain ⟨k, hk⟩ := id hx
   have hk' : ((u : A) * x * ↑u⁻¹) ^ k = 0 := by rw [Units.conj_pow, hk, mul_zero, zero_mul]
   refine LinearMap.ext fun z => ?_

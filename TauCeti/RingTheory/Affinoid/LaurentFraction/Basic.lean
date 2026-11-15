@@ -96,6 +96,13 @@ namespace LaurentFraction
 
 variable {f : Fin r → A} {g : Fin s → A}
 
+/-- The coefficient algebra acts continuously on its Laurent fraction algebra. -/
+instance continuousSMul : ContinuousSMul A (LaurentFraction f g) :=
+  continuousSMul_of_algebraMap A (LaurentFraction f g)
+    (continuous_quotient_mk'.comp
+      (MvPowerSeries.isometry_algebraMap_isRestrictedSubring
+        (R := A) (c := fun _ : Fin (r + s) ↦ 1)).continuous)
+
 /-- The class of the variable `Xᵢ` in `A⟨f, g⁻¹⟩` is `fᵢ`. -/
 @[simp]
 theorem mk_X_castAdd (i : Fin r) :

@@ -58,8 +58,7 @@ computed from its maximal minors (`Submodule.relativeSubspaceHeight`).
 The matrix-entry construction and product bound follow Ralf Stephan's CC0 development in
 [rwst/lean-code](https://github.com/rwst/lean-code), file
 `ForMathlib/NumberTheory/HeightTuple.lean` at commit
-`2eadabb0e181b894a4c49fb38b7e45daf6214b25`, recorded as implementation source by the
-Diophantine Approximation and Transcendence roadmap.
+`2eadabb0e181b894a4c49fb38b7e45daf6214b25`.
 The proofs here reduce to Mathlib's tuple-height bounds by Michael Stoll,
 `Height.mulHeight_linearMap_apply_le` and `Height.mulHeight_mul_le`.
 -/

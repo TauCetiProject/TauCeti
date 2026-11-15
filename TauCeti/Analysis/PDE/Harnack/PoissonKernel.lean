@@ -232,7 +232,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg
     have : Subsingleton E := Module.finrank_zero_iff.mp hn
     simp [hn, Subsingleton.elim x y]
   obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hn
-  have hRr : 0 < R - r := sub_pos.mpr hrR
   have huc : 0 ≤ u c := hnonneg c (mem_ball_self hR)
   -- The comparison with the centre, made uniform over the closed ball `closedBall c r`.
   have hux : u x ≤ (R + r) / R * (R / (R - r)) ^ k * u c := by

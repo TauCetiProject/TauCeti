@@ -227,7 +227,7 @@ theorem ae_mem_affineRange_multivariateTMeasure (m : EuclideanSpace ℝ ι) (S :
   · simp [multivariateTMeasure, h]
   have hA : MeasurableSet (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
       Set (EuclideanSpace ℝ ι)) :=
-    (AffineSubspace.closed_of_finiteDimensional _).measurableSet
+    (AffineSubspace.isClosed_of_finiteDimensional _).measurableSet
   rw [multivariateTMeasure_of_posSemidef m h.1 h.2]
   refine (ae_map_iff (measurable_scaleMixture m ν).aemeasurable hA).mpr ?_
   have hZ := ae_mem_affineRange_multivariateGaussian h.2 (0 : EuclideanSpace ℝ ι)

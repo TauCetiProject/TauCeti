@@ -50,7 +50,7 @@ variable (n : Type*)
 def realSubspace : Submodule ℝ (EuclideanSpace ℂ n) where
   carrier := {v | ∀ i, (v i).im = 0}
   add_mem' {v w} hv hw i := by simp [hv i, hw i]
-  zero_mem' i := by simp
+  zero_mem' _ := by simp
   smul_mem' c v hv i := by simp [hv i]
 
 variable {n}
@@ -80,7 +80,7 @@ theorem isMaximalTotallyReal_realSubspace :
     intro v _
     let re : EuclideanSpace ℂ n := WithLp.toLp 2 fun i ↦ ((v i).re : ℂ)
     let im : EuclideanSpace ℂ n := WithLp.toLp 2 fun i ↦ ((v i).im : ℂ)
-    refine Submodule.mem_sup.2 ⟨re, fun i ↦ by simp [re], _, ⟨im, fun i ↦ by simp [im], rfl⟩, ?_⟩
+    refine Submodule.mem_sup.2 ⟨re, fun _ ↦ by simp [re], _, ⟨im, fun _ ↦ by simp [im], rfl⟩, ?_⟩
     ext i
     apply Complex.ext <;> simp [re, im]
 

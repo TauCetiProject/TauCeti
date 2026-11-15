@@ -180,7 +180,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- Prepending a letter of degree `p` to a word of total degree `D` gives a word of total degree
 `p + D`. -/
-theorem prepend_mem_gradedPiece {G : InternalGrading R M} {p D : ℤ} {a : M}
+theorem prepend_mem_gradedPiece {G : InternalGrading R M ℤ} {p D : ℤ} {a : M}
     (ha : a ∈ G.piece p) {w : TensorWords R M} (hw : w ∈ gradedPiece G D) :
     prepend R M a w ∈ ReducedTensorWords.gradedPiece G (p + D) := by
   refine gradedPiece_induction
@@ -201,7 +201,7 @@ theorem prepend_mem_gradedPiece {G : InternalGrading R M} {p D : ℤ} {a : M}
 
 /-- Uncurried prepending preserves total degrees: it is homogeneous of degree zero from the
 tensor-product grading of `M ⊗ Tᶜ(M)` to the total-letter-degree grading of the reduced words. -/
-theorem isHomogeneous_lift_prepend (G : InternalGrading R M) :
+theorem isHomogeneous_lift_prepend (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (TensorProduct.lift (prepend R M))
       (G.tensorProduct (grading G)).piece (ReducedTensorWords.gradedPiece G) 0 := by
   rw [LinearMap.isHomogeneous_def]

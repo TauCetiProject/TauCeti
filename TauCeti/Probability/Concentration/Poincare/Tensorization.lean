@@ -167,7 +167,7 @@ theorem PoincareInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilit
     apply lintegral_congr_ae
     filter_upwards [] with x
     rw [← ENNReal.ofReal_pow (norm_nonneg _), PiLp.norm_sq_eq_of_L2 E]
-    simp only [ENNReal.ofReal_sum_of_nonneg (fun i _ ↦ sq_nonneg _),
+    simp only [ENNReal.ofReal_sum_of_nonneg (fun _ _ ↦ sq_nonneg _),
       ENNReal.ofReal_pow (norm_nonneg _)]
   have henergy : ENNReal.ofReal (∫ z, ‖fderiv ℝ f z‖ ^ 2 ∂ρ) =
       ∫⁻ x, (ENNReal.ofReal ‖G x‖) ^ 2 ∂Measure.pi μ := by

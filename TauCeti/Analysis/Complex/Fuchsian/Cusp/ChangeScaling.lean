@@ -54,7 +54,7 @@ theorem cuspDatum_generator_eq (hc : D.cusp = D'.cusp) : D.generator = D'.genera
         rw [← hconj, ← D.scaling_mul_generator_mul_inv]
         dsimp only [g]
         group }
-  have hE : E = D' := Subgroup.CuspDatum.ext hc rfl
+  have hE : E = D' := Subgroup.CuspDatum.ext rfl
   simpa only [E] using congrArg (fun F : Γ.CuspDatum ↦ F.generator) hE
 
 /-- If `k ∈ Γ` carries the cusp of `D` to the cusp of `D'`, then `σ' k σ⁻¹` fixes `∞`, so it acts

@@ -220,8 +220,7 @@ private theorem hessian_sub_conformalFlatteningForm_model_space {φ : E → ℝ}
       (lc).conformalFlatteningForm y (mgradient 𝓘(ℝ, E) φ y)
         ((tangentSpaceCastModel 𝓘(ℝ, E) y).symm u) ((tangentSpaceCastModel 𝓘(ℝ, E) y).symm v) =
       fderiv ℝ (fderiv ℝ φ) y u v - (flatteningField E (y, φ y, fderiv ℝ φ y) u).2 v := by
-  rw [hessian_model_space_eq_fderiv_sub_christoffelSecondKind inner_eq_metricCoeff
-      (contDiff_metricCoeff.differentiable (by simp) y) hφ,
+  rw [hessian_model_space_eq_fderiv_sub_christoffelSecondKind inner_eq_metricCoeff hφ,
     CovariantDerivative.conformalFlatteningForm_apply, flatteningField_apply_snd,
     inner_mgradient_model_space, inner_mgradient_model_space,
     norm_mgradient_sq_model_space (inner_eq_metricCoeff y),

@@ -36,8 +36,8 @@ elliptic curve, whose defining property is that the classes of three collinear p
 ## Provenance
 
 `MonoidHom.ofMapMulMulEqOne` is adapted, with the author's proof, from Michael Stoll's
-`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`), `EllipticCurves/Mathlib/Basic.lean`.
+`EllipticCurves` project (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at commit
+`66889eada51a`), `EllipticCurves/Mathlib/Basic.lean`.
 -/
 
 public section

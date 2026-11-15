@@ -23,8 +23,12 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
 ## Main results
 
 * `TauCeti.OrderLE.mono`, `TauCeti.OrderLE.add`, `TauCeti.OrderLE.mul`, `TauCeti.OrderLE.sum`,
-  `TauCeti.OrderLE.prod`: the predicate is monotone in the exponent and closed under the ring
-  operations at a common exponent.
+  `TauCeti.OrderLE.multisetProd`, `TauCeti.OrderLE.prod`: the predicate is monotone in the
+  exponent and closed under the ring operations at a common exponent.
+* `TauCeti.OrderLE.one_le_of_not_isBigO_exp`: a function of order less than one is of
+  exponential type.
+* `TauCeti.not_isBigO_exp_mul_norm_of_factorial_le`: a function that is at least `n!` up to a
+  geometric factor along points of linearly growing norm is not of exponential type.
 * `TauCeti.OrderLE.comp_mul_add`: the order does not increase under an affine substitution
   `s ↦ a * s + b`.
 * `Polynomial.orderLE_eval`: polynomials have order at most `0`; constants have every order.
@@ -60,6 +64,13 @@ namespace OrderLE
 theorem isBigO (h : OrderLE f A) {A' : ℝ} (hA' : A < A') :
     f =O[cobounded ℂ] fun s ↦ Real.exp (‖s‖ ^ A') :=
   h A' hA'
+
+/-- A function of order less than one is of exponential type. Hence a function of order at most
+`A` that is not `O(exp ‖s‖)` has `1 ≤ A`. -/
+theorem one_le_of_not_isBigO_exp (h : OrderLE f A)
+    (hf : ¬ f =O[cobounded ℂ] fun s ↦ Real.exp ‖s‖) : 1 ≤ A := by
+  by_contra! hA
+  exact hf (by simpa using h.isBigO hA)
 
 /-- Order at most `A` implies order at most every `B ≥ A`. -/
 theorem mono (h : OrderLE f A) (hAB : A ≤ B) : OrderLE f B :=
@@ -116,16 +127,20 @@ theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ} (h : ∀ i ∈
     OrderLE (fun s ↦ ∑ i ∈ t, F i s) A :=
   fun A' hA' ↦ (IsBigO.sum fun i hi ↦ h i hi A' hA').congr_left fun s ↦ Finset.sum_apply s t F
 
+/-- A product over a multiset of functions of order at most `A` has order at most `A`. -/
+theorem multisetProd {ι : Type*} {m : Multiset ι} {F : ι → ℂ → ℂ}
+    (h : ∀ i ∈ m, OrderLE (F i) A) : OrderLE (fun s ↦ (m.map fun i ↦ F i s).prod) A := by
+  induction m using Multiset.induction_on with
+  | empty => simp
+  | cons i m ih =>
+    simp only [Multiset.map_cons, Multiset.prod_cons]
+    exact (h i (Multiset.mem_cons_self i m)).mul
+      (ih fun j hj ↦ h j (Multiset.mem_cons_of_mem hj))
+
 /-- A finite product of functions of order at most `A` has order at most `A`. -/
 theorem prod {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ} (h : ∀ i ∈ t, OrderLE (F i) A) :
-    OrderLE (fun s ↦ ∏ i ∈ t, F i s) A := by
-  classical
-  induction t using Finset.induction_on with
-  | empty => simp
-  | insert i t hi ih =>
-    simp only [Finset.prod_insert hi]
-    exact (h i (Finset.mem_insert_self i t)).mul
-      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+    OrderLE (fun s ↦ ∏ i ∈ t, F i s) A :=
+  multisetProd (m := t.val) h
 
 /-- The order does not increase under an affine substitution `s ↦ a * s + b`. -/
 theorem comp_mul_add (h : OrderLE f A) (a b : ℂ) : OrderLE (fun s ↦ f (a * s + b)) A := by
@@ -233,5 +248,38 @@ theorem orderLE_cexp_pow_iff {n : ℕ} (hn : n ≠ 0) :
 @[simp]
 theorem orderLE_cexp_iff : OrderLE cexp A ↔ 1 ≤ A := by
   simpa using orderLE_cexp_pow_iff (A := A) one_ne_zero
+
+/-! ### Lower bounds from factorial growth -/
+
+/-- If `f` is at least `n! / (L K ^ n)` along points `z n → ∞` with `‖z n‖ ≤ a n + b`, then `f`
+is not `O(exp (C ‖s‖))` for any `C`, since `n!` outgrows every geometric sequence. -/
+theorem not_isBigO_exp_mul_norm_of_factorial_le {z : ℕ → ℂ} {a b K L : ℝ}
+    (hz : Tendsto z atTop (cobounded ℂ)) (hnorm : ∀ n, ‖z n‖ ≤ a * n + b) (hK : 0 ≤ K)
+    (hL : 0 ≤ L) (hf : ∀ n, 1 ≤ n → (n.factorial : ℝ) ≤ L * K ^ n * ‖f (z n)‖) (C : ℝ) :
+    ¬ f =O[cobounded ℂ] fun s ↦ Real.exp (C * ‖s‖) := by
+  intro h
+  obtain ⟨c, hc0, hc⟩ := h.exists_pos
+  set M := K * Real.exp (|C| * a)
+  set D := L * c * Real.exp (|C| * b)
+  have hlim : Tendsto (fun n : ℕ ↦ D * (M ^ n / n.factorial)) atTop (𝓝 0) := by
+    simpa using (FloorSemiring.tendsto_pow_div_factorial_atTop M).const_mul D
+  obtain ⟨n, hn1, hlt, hle⟩ := ((eventually_ge_atTop 1).and
+    ((hlim.eventually (gt_mem_nhds one_pos)).and (hz.eventually hc.bound))).exists
+  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hle
+  have hexp : Real.exp (C * ‖z n‖) ≤ Real.exp (|C| * b) * Real.exp (|C| * a) ^ n := by
+    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    refine Real.exp_le_exp.2 ?_
+    calc C * ‖z n‖ ≤ |C| * ‖z n‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)
+      _ ≤ |C| * (a * n + b) := mul_le_mul_of_nonneg_left (hnorm n) (abs_nonneg C)
+      _ = |C| * b + n * (|C| * a) := by ring
+  have hfac : (n.factorial : ℝ) ≤ D * M ^ n :=
+    calc (n.factorial : ℝ) ≤ L * K ^ n * ‖f (z n)‖ := hf n hn1
+      _ ≤ L * K ^ n * (c * (Real.exp (|C| * b) * Real.exp (|C| * a) ^ n)) := by
+        gcongr
+        exact hle.trans (mul_le_mul_of_nonneg_left hexp hc0.le)
+      _ = D * M ^ n := by simp only [D, M, mul_pow]; ring
+  have hpos : (0 : ℝ) < n.factorial := by exact_mod_cast Nat.factorial_pos n
+  rw [← mul_div_assoc, div_lt_one hpos] at hlt
+  linarith
 
 end TauCeti

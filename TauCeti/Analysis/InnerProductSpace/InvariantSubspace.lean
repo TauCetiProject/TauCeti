@@ -23,6 +23,12 @@ For a bounded operator `A` on a Hilbert space and a complete subspace invariant 
 and its adjoint, the adjoint of the restriction of `A` is the restriction of the adjoint
 (`ContinuousLinearMap.adjoint_restrict`), so the restriction of a normal operator is normal
 (`IsStarNormal.restrict`).
+
+For a kernel, `Commute.starProjection_ker` deduces projection commutation
+from commutation with the operator and its adjoint. This kernel-projection argument is adapted
+from [AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer.
+
+[fredholm-paths]: https://github.com/alpha-squared-labs/Lean-Atiyah-Singer/blob/09fc7bab3f9ff606901bde4b5a5580470da63a70/AtiyahSinger/Analysis/FredholmPaths.lean
 -/
 
 public section
@@ -174,6 +180,23 @@ theorem ContinuousLinearMap.isReducing_adjoint_iff [CompleteSpace E] [U.HasOrtho
     {A : E →L[𝕜] E} : U.IsReducing A.adjoint ↔ U.IsReducing A := by
   rw [isReducing_iff_mem_invtSubmodule_adjoint, isReducing_iff_mem_invtSubmodule_adjoint,
     adjoint_adjoint, and_comm]
+
+/-- A kernel invariant under an operator and its adjoint has a commuting projection. -/
+theorem Commute.starProjection_ker [CompleteSpace E] {B T : E →L[𝕜] E}
+    (hBT : Commute B T) (hBTstar : Commute B (star T)) :
+    Commute B.ker.starProjection T := by
+  have hker (S : E →L[𝕜] E) (hBS : Commute B S) :
+      B.ker ∈ Module.End.invtSubmodule (S : Module.End 𝕜 E) := by
+    intro x hx
+    have hBx : B x = 0 := by
+      simpa only [ContinuousLinearMap.coe_coe] using LinearMap.mem_ker.mp hx
+    apply LinearMap.mem_ker.mpr
+    calc
+      B (S x) = S (B x) := congrArg (fun A : E →L[𝕜] E ↦ A x) hBS.eq
+      _ = 0 := by rw [hBx, map_zero]
+  apply Submodule.isReducing_coe_iff_commute_starProjection.mp
+  exact ContinuousLinearMap.isReducing_iff_mem_invtSubmodule_adjoint.mpr
+    ⟨hker T hBT, hker (star T) hBTstar⟩
 
 /-- On a finite-dimensional space, a subspace reduces an endomorphism `A` exactly when it is
 invariant under both `A` and its adjoint. -/

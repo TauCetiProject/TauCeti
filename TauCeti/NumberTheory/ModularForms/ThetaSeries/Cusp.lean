@@ -88,7 +88,7 @@ omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 /-- The theta series of a translate of a subgroup is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_thetaCoset (γ : E) : IsBoundedAtImInfty (thetaCoset L γ) := by
   by_cases h : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
-  · obtain ⟨y, hy, hs⟩ := h
+  · obtain ⟨y, _, hs⟩ := h
     exact UpperHalfPlane.isBoundedAtImInfty_iff.mpr
       ⟨_, y, fun _ hτ => norm_thetaCoset_le L γ hs hτ⟩
   · rw [thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs => h ⟨y, hy, hs⟩]
@@ -180,7 +180,7 @@ theorem isZeroAtImInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : IsZeroAtImInfty (
     rw [eq_neg_of_add_eq_zero_left h0]
     exact neg_mem v.2
   by_cases hex : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
-  · obtain ⟨y, hy, hs⟩ := hex
+  · obtain ⟨y, _, hs⟩ := hex
     simpa [h, UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter] using
       tendsto_thetaCoset_atImInfty_tsum_ite L γ hs
   · rw [thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs => hex ⟨y, hy, hs⟩]

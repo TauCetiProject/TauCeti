@@ -153,7 +153,7 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
 /-- One suspension step: if `H^{k+1}(Sⁿ)` vanishes for the unit sphere of `ℝⁿ⁺¹`, then
 `H^{k+2}(Sⁿ⁺¹)` vanishes for the unit sphere of an `(n + 2)`-dimensional space. -/
 private theorem subsingleton_deRhamCohomology_sphere_succ_succ [Fact (finrank ℝ E = n + 1 + 1)]
-    {k : ℕ} (h : Subsingleton
+    {k : ℕ} (_ : Subsingleton
       (deRhamCohomology (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (k + 1))) :
     Subsingleton (deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) :=
   (nonempty_linearEquiv_deRhamCohomology_sphere_succ (E := E) k).some.toEquiv.symm.subsingleton

@@ -337,7 +337,7 @@ theorem measurable_finiteZipfMeasure :
   apply measurable_from_prod_countable_right
   intro N
   apply Measure.measurable_measure.mpr
-  intro A hA
+  intro A _
   simp only [finiteZipfMeasure_apply]
   unfold finiteZipfNormalizer
   fun_prop

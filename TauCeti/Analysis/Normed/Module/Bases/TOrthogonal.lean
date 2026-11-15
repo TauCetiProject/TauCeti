@@ -103,7 +103,7 @@ theorem isTOrthogonalFamily_one_iff [IsUltrametricDist M] {e : I → M} :
       ∀ (s : Finset I) (a : I → R), ‖∑ i ∈ s, a i • e i‖₊ = s.sup fun i ↦ ‖a i • e i‖₊ := by
   simp only [isTOrthogonalFamily_def, one_mul]
   exact forall₂_congr fun s a ↦
-    ⟨fun h ↦ le_antisymm (Finset.nnnorm_sum_le_sup_nnnorm s _) h, ge_of_eq⟩
+    ⟨fun h ↦ le_antisymm (Finset.nnNorm_sum_le_sup_nnNorm s _) h, ge_of_eq⟩
 
 end Defs
 
@@ -143,8 +143,8 @@ theorem comp (he : IsTOrthogonalFamily R t e) {f : J → I} (hf : Function.Injec
 /-- The image of a `t`-orthogonal family under a linear isometry is `t`-orthogonal. -/
 theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsTOrthogonalFamily R t e)
     (u : M →ₗᵢ[R] N) : IsTOrthogonalFamily R t (u ∘ e) := fun s a ↦ by
-  have hterm (i : I) : ‖a i • u (e i)‖₊ = ‖a i • e i‖₊ := by rw [← map_smul, u.nnnorm_map]
-  simpa only [Function.comp_apply, hterm, ← map_smul, ← map_sum, u.nnnorm_map] using he s a
+  have hterm (i : I) : ‖a i • u (e i)‖₊ = ‖a i • e i‖₊ := by rw [← map_smul, u.nnNorm_map]
+  simpa only [Function.comp_apply, hterm, ← map_smul, ← map_sum, u.nnNorm_map] using he s a
 
 /-- **`t`-orthogonality of unconditional sums**: if `x` is the unconditional sum of the
 `a i • e i` for a `t`-orthogonal family `e`, then `t` times the norm of each term is at most
@@ -233,13 +233,13 @@ theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
     · simp
     have : c • w + z = c • (w - (-c⁻¹) • z) := by
       rw [smul_sub, smul_smul, mul_neg, mul_inv_cancel₀ hc, neg_smul, one_smul, sub_neg_eq_add]
-    rw [this, nnnorm_smul, nnnorm_smul, mul_left_comm]
+    rw [this, nnNorm_smul, nnNorm_smul, mul_left_comm]
     exact mul_le_mul_of_nonneg_left (hw _ (F.smul_mem _ hz)) zero_le
   rw [mul_max_of_nonneg _ _ zero_le]
   refine max_le h₁ ?_
   rcases le_or_gt ‖z‖₊ ‖c • w‖₊ with h | h
   · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
-  · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
+  · rw [IsUltrametricDist.nnNorm_add_eq_max_of_nnNorm_ne_nnNorm h.ne, max_eq_right h.le]
     exact mul_le_of_le_one_left zero_le hr
 
 /-- Adjoining a vector orthogonal to the span of a finite orthogonal family preserves

@@ -71,7 +71,7 @@ theorem IsTopologicallyFiniteType.isAdicHom {A B : Type*} [CommRing A] [Topologi
     [IsTopologicalRing A] [IsHuberRing A] [CommRing B] [TopologicalSpace B]
     [IsTopologicalRing B] {f : A →+* B} (hf : IsTopologicallyFiniteType f) :
     IsAdicHom f := by
-  obtain ⟨k, T, hfinite, hT, π, hπ, _⟩ := isTopologicallyFiniteType_iff.mp hf
+  obtain ⟨k, T, _, hT, π, hπ, _⟩ := isTopologicallyFiniteType_iff.mp hf
   have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
   exact IsAdicHom.of_continuous_isOpen_map hf.continuous fun _ hI ↦ hf.isOpen_map hI
 
@@ -185,7 +185,7 @@ theorem isStrictlyTopologicallyFiniteType_of_isAdic (hI : IsAdic I) (hfg : I.FG)
     (hB : IsAdic (I.map (algebraMap A B))) [hc : IsAdicComplete (I.map (algebraMap A B)) B]
     [Algebra.FiniteType (A ⧸ I) (B ⧸ I.map (algebraMap A B))] :
     IsStrictlyTopologicallyFiniteType (algebraMap A B) := by
-  set J := I.map (algebraMap A B) with hJ
+  set J := I.map (algebraMap A B)
   have : IsTopologicalRing B := hB ▸ J.nonarchimedean.toIsTopologicalRing
   let _ : UniformSpace B := IsTopologicalAddGroup.rightUniformSpace B
   have : IsUniformAddGroup B := isUniformAddGroup_of_addCommGroup
