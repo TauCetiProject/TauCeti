@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CanonicalProduct.Hadamard
+public import TauCeti.Analysis.Complex.Hadamard.OrderOne
 import Mathlib.Analysis.Calculus.Deriv.Star
+import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
 
 /-!
@@ -25,12 +26,12 @@ In the generic order-at-most-one Hadamard expansion
 `logDeriv f s = logDeriv f 0 + ∑' ρ, m_ρ * (1 / (s - ρ) + 1 / ρ)`, the linear coefficient
 `logDeriv f 0` is an a priori unknown global constant. The hypotheses here eliminate its real part
 so that downstream zero-free region and real-zero arguments see a pure zero sum:
-* `f 0 ≠ 0` ensures `0` is not a zero of `f` (so `E₁(s / ρ)` and `1 / ρ` are nonsingular at every
+* `f 0 ≠ 0` ensures `0` is not a zero of `f` (so `E₁(ρ⁻¹ * s)` and `1 / ρ` are nonsingular at every
   zero) and, via `f (1 - z) = c * conj (f (conj z))`, forces `c ≠ 0` and `f 1 ≠ 0`.
 * Combining `Re ρ ≤ B` with `1 - conj` zero symmetry confines all zeros to `1 - B ≤ Re ρ ≤ B`, so
   `∑' ρ, m_ρ * Re (1 / ρ)` and `∑' ρ, m_ρ * Re (1 / (s - ρ))` converge separately
-  (`TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div`,
-  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub`).
+  (`TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_of_re_le`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub_of_re_le`).
 * Differentiating `f (1 - z) = c * conj (f (conj z))` gives
   `logDeriv f (1 - conj z) = -conj (logDeriv f z)`, hence `Re (logDeriv f 1) = -Re (logDeriv f 0)`,
   while permuting the zeros by `ρ ↦ 1 - conj ρ` (`TauCeti.divisorSupportOneSubConj`) identifies
@@ -40,15 +41,21 @@ so that downstream zero-free region and real-zero arguments see a pure zero sum:
 
 ## Main results
 
-* `TauCeti.logDeriv_one_sub_conj_of_isOpen_of_ne_zero`,
-  `TauCeti.logDeriv_one_sub_conj_of_isOpen`, `TauCeti.logDeriv_one_sub_conj`: local open-set and
+* `TauCeti.logDeriv_one_sub_conj_nhds_of_ne_zero`,
+  `TauCeti.logDeriv_one_sub_conj_nhds`, `TauCeti.logDeriv_one_sub_conj`: local germ and
   global reflection identities `logDeriv f (1 - conj z) = -conj (logDeriv f z)` under
-  `f (1 - conj z) = u * conj (f z)`.
+  `f (1 - conj w) = u * conj (f w)`.
+* `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_of_re_le`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub_of_re_le`: separate summability of
+  `m_ρ * Re (1 / ρ)` and `m_ρ * Re (1 / (s - ρ))` from a one-sided bound `Re ρ ≤ B` and
+  `f (1 - z) = c * conj (f (conj z))`.
 * `TauCeti.OrderLE.re_logDeriv_zero_eq_neg_tsum`:
   `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` for an entire `f` of order at most `1` with
   `f 0 ≠ 0`, `Re ρ ≤ B` on zeros, and `f (1 - z) = c * conj (f (conj z))`.
-* `TauCeti.OrderLE.re_logDeriv_eq_tsum`: the constant-free expansion
-  `Re (logDeriv f s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))` away from the zeros of `f`.
+* `TauCeti.OrderLE.re_logDeriv_eq_tsum`,
+  `TauCeti.OrderLE.sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv`: the constant-free
+  expansion `Re (logDeriv f s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))` away from the zeros of `f`, and
+  its finite retained-zero subsum lower bound when `Re ρ ≤ Re s` on zeros.
 
 ## References
 
@@ -60,20 +67,21 @@ so that downstream zero-free region and real-zero arguments see a pure zero sum:
 public section
 
 open Complex ComplexConjugate Filter Set Topology
+open scoped BigOperators
 
 namespace TauCeti
 
 /-- **Local logarithmic-derivative symmetry across the critical line, for a nonzero multiplier.**
-If `f (1 - conj z) = u * conj (f z)` on an open set `Ω` and `u ≠ 0`, then
-`logDeriv f (1 - conj z) = -conj (logDeriv f z)` at every `z ∈ Ω`, with no symmetry assumption on
-`Ω` or differentiability assumption on `f`. -/
-theorem logDeriv_one_sub_conj_of_isOpen_of_ne_zero {Ω : Set ℂ} {f : ℂ → ℂ} {u : ℂ} (hu : u ≠ 0)
-    (hΩopen : IsOpen Ω) (hfe : ∀ z ∈ Ω, f (1 - conj z) = u * conj (f z)) {z : ℂ} (hz : z ∈ Ω) :
+If `(fun w ↦ f (1 - conj w)) =ᶠ[𝓝 z] fun w ↦ u * conj (f w)` and `u ≠ 0`, then
+`logDeriv f (1 - conj z) = -conj (logDeriv f z)`, with no differentiability assumption on `f`. -/
+theorem logDeriv_one_sub_conj_nhds_of_ne_zero {f : ℂ → ℂ} {u z : ℂ}
+    (hfe : (fun w : ℂ ↦ f (1 - conj w)) =ᶠ[𝓝 z] fun w : ℂ ↦ u * conj (f w)) (hu : u ≠ 0) :
     logDeriv f (1 - conj z) = -conj (logDeriv f z) := by
-  have hΩ' : IsOpen {w : ℂ | conj w ∈ Ω} := hΩopen.preimage Complex.continuous_conj
+  have hconj : Tendsto conj (𝓝 (conj z)) (𝓝 z) := by
+    simpa using Complex.continuous_conj.tendsto (conj z)
   have hEq : (fun w : ℂ ↦ f (1 - w)) =ᶠ[𝓝 (conj z)] fun w : ℂ ↦ u * (conj ∘ f ∘ conj) w := by
-    filter_upwards [hΩ'.mem_nhds (by simpa using hz)] with w hw
-    simpa [Function.comp_def] using hfe (conj w) hw
+    filter_upwards [hconj.eventually hfe] with w hw
+    simpa [Function.comp_def] using hw
   have hcongr : logDeriv (fun w : ℂ ↦ f (1 - w)) (conj z) =
       logDeriv (fun w : ℂ ↦ u * (conj ∘ f ∘ conj) w) (conj z) := by
     rw [logDeriv_apply, logDeriv_apply, hEq.deriv_eq, hEq.eq_of_nhds]
@@ -85,63 +93,64 @@ theorem logDeriv_one_sub_conj_of_isOpen_of_ne_zero {Ω : Set ℂ} {f : ℂ → �
   exact neg_eq_iff_eq_neg.mp (by rw [← hlhs, hcongr, hrhs])
 
 /-- **Local logarithmic-derivative symmetry across the critical line.** If
-`f (1 - conj z) = u * conj (f z)` on an open set `Ω`, then
-`logDeriv f (1 - conj z) = -conj (logDeriv f z)` at every `z ∈ Ω` with `1 - conj z ∈ Ω` (including
-the degenerate case `u = 0`). -/
-theorem logDeriv_one_sub_conj_of_isOpen {Ω : Set ℂ} {f : ℂ → ℂ} {u : ℂ} (hΩopen : IsOpen Ω)
-    (hfe : ∀ z ∈ Ω, f (1 - conj z) = u * conj (f z)) {z : ℂ} (hz : z ∈ Ω)
-    (hz' : 1 - conj z ∈ Ω) :
+`(fun w ↦ f (1 - conj w)) =ᶠ[𝓝 z] fun w ↦ u * conj (f w)` and the same germ identity holds at
+`1 - conj z`, then `logDeriv f (1 - conj z) = -conj (logDeriv f z)` (including the degenerate case
+`u = 0`). -/
+theorem logDeriv_one_sub_conj_nhds {f : ℂ → ℂ} {u z : ℂ}
+    (hfe : (fun w : ℂ ↦ f (1 - conj w)) =ᶠ[𝓝 z] fun w : ℂ ↦ u * conj (f w))
+    (hfe' : (fun w : ℂ ↦ f (1 - conj w)) =ᶠ[𝓝 (1 - conj z)] fun w : ℂ ↦ u * conj (f w)) :
     logDeriv f (1 - conj z) = -conj (logDeriv f z) := by
   rcases eq_or_ne u 0 with rfl | hu
-  · have h1 : f (1 - conj z) = 0 := by simpa using hfe z hz
-    have h2 : f z = 0 := by simpa [sub_sub_cancel] using hfe (1 - conj z) hz'
+  · have h1 : f (1 - conj z) = 0 := by simpa using hfe.eq_of_nhds
+    have h2 : f z = 0 := by simpa [sub_sub_cancel] using hfe'.eq_of_nhds
     simp [logDeriv_apply, h1, h2]
-  · exact logDeriv_one_sub_conj_of_isOpen_of_ne_zero hu hΩopen hfe hz
+  · exact logDeriv_one_sub_conj_nhds_of_ne_zero hfe hu
 
 /-- Under a whole-plane functional-conjugation symmetry `f (1 - z) = u * conj (f (conj z))`, the
 logarithmic derivative satisfies `logDeriv f (1 - conj z) = -conj (logDeriv f z)`. -/
 theorem logDeriv_one_sub_conj {f : ℂ → ℂ} {u : ℂ}
     (hfe : ∀ z : ℂ, f (1 - z) = u * conj (f (conj z))) (z : ℂ) :
     logDeriv f (1 - conj z) = -conj (logDeriv f z) :=
-  logDeriv_one_sub_conj_of_isOpen isOpen_univ (fun w _ ↦ by simpa using hfe (conj w))
-    (mem_univ z) (mem_univ _)
+  logDeriv_one_sub_conj_nhds
+    (Eventually.of_forall fun w ↦ by simpa using hfe (conj w))
+    (Eventually.of_forall fun w ↦ by simpa using hfe (conj w))
 
 namespace OrderLE
 
 /-- Under `f (1 - z) = c * conj (f (conj z))`, an upper bound `ρ.re ≤ B` on the real parts of all
-zeros also yields `1 - ρ.re ≤ B`, hence `|ρ.re| ≤ B`. -/
+zeros also yields `1 - ρ.re ≤ B`, hence `|ρ.re| ≤ max B |1 - B|`. -/
 private theorem abs_re_le_of_re_le {f : ℂ → ℂ} {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ B)
     {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
-    (ρ : ℂ) (hρ : f ρ = 0) : |ρ.re| ≤ B := by
+    (ρ : ℂ) (hρ : f ρ = 0) : |ρ.re| ≤ max B |1 - B| := by
   have hsym : f (1 - conj ρ) = 0 := by
     have := hfe (conj ρ)
     simpa [hρ] using this
   have h1 := hre (1 - conj ρ) hsym
   simp only [sub_re, one_re, conj_re] at h1
-  exact abs_le.mpr ⟨by linarith, hre ρ hρ⟩
+  have hlow : -max B |1 - B| ≤ 1 - B := by
+    have := neg_abs_le (1 - B)
+    linarith [le_max_right B |1 - B|]
+  exact abs_le.mpr ⟨by linarith, (hre ρ hρ).trans (le_max_left _ _)⟩
 
-/-- Splits `Re (logDeriv f s)` into `Re (logDeriv f 0)`, `∑' ρ, m_ρ * Re (1 / (s - ρ))`, and
-`∑' ρ, m_ρ * Re (1 / ρ)` when all zeros have bounded real part. -/
-private theorem re_logDeriv_eq_add_tsum_add_tsum {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    {B : ℝ} (habs : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B) {s : ℂ} (hs : f s ≠ 0) :
-    (logDeriv f s).re = (logDeriv f 0).re +
-      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re) +
-      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
-  have hc := (h.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hf s).of_norm
-  have hsub := h.summable_divisor_toNat_mul_re_one_div_sub hf habs s
-  have hinv := h.summable_divisor_toNat_mul_re_one_div hf habs
-  have htsum_re : (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)).re =
-      ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-        (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re +
-          ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
-    rw [← Complex.reCLM_apply, ContinuousLinearMap.map_tsum Complex.reCLM hc]
-    refine tsum_congr fun ρ ↦ ?_
-    rw [Complex.reCLM_apply, mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re, mul_add]
-  rw [h.logDeriv_eq_add_tsum hf hf0 hs, add_re, htsum_re, Summable.tsum_add hsub hinv, add_assoc]
+/-- Under `f (1 - z) = c * conj (f (conj z))` and a one-sided bound `Re ρ ≤ B` on all zeros of an
+entire function `f` of order less than two, the real-part series `ρ ↦ m_ρ * Re (1 / ρ)` is
+summable on the divisor support. -/
+theorem summable_divisor_toNat_mul_re_one_div_of_re_le {f : ℂ → ℂ} {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ B)
+    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  h.summable_divisor_toNat_mul_re_one_div hf hA (abs_re_le_of_re_le hre hfe)
+
+/-- Under `f (1 - z) = c * conj (f (conj z))` and a one-sided bound `Re ρ ≤ B` on all zeros of an
+entire function `f` of order less than two, the real-part series `ρ ↦ m_ρ * Re (1 / (s - ρ))` is
+summable on the divisor support for every `s : ℂ`. -/
+theorem summable_divisor_toNat_mul_re_one_div_sub_of_re_le {f : ℂ → ℂ} {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ B)
+    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) (s : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re) :=
+  h.summable_divisor_toNat_mul_re_one_div_sub hf hA (abs_re_le_of_re_le hre hfe) s
 
 /-- **Real-part formula for the Hadamard linear constant.** Let `f` be entire of growth order at
 most `1` with `f 0 ≠ 0`, all zeros satisfying `Re ρ ≤ B`, and `f (1 - z) = c * conj (f (conj z))`
@@ -195,6 +204,22 @@ theorem re_logDeriv_eq_tsum {f : ℂ → ℂ}
   rw [h.re_logDeriv_eq_add_tsum_add_tsum hf hf0 (abs_re_le_of_re_le hre hfe) hs,
     h.re_logDeriv_zero_eq_neg_tsum hf hf0 hre hfe]
   ring
+
+/-- **Retained-zero finite-subsum bound.** Under the hypotheses of `OrderLE.re_logDeriv_eq_tsum`,
+at any `s` with `f s ≠ 0` to the right of all zeros of `f` (`∀ ρ, f ρ = 0 → ρ.re ≤ s.re`), every
+finite subsum `∑ ρ ∈ S, m_ρ * Re (1 / (s - ρ))` is at most `Re (logDeriv f s)`. -/
+theorem sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv {f : ℂ → ℂ}
+    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
+    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
+    {s : ℂ} (hs : f s ≠ 0) (hle : ∀ ρ : ℂ, f ρ = 0 → ρ.re ≤ s.re) (S : Finset ℂ) :
+    ∑ ρ ∈ S, ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re ≤
+      (logDeriv f s).re := by
+  rw [h.re_logDeriv_eq_tsum hf hf0 hle hfe hs]
+  exact sum_divisor_toNat_mul_re_one_div_sub_le_tsum
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num))
+    (fun ρ hρ ↦ abs_re_le_of_re_le hle hfe ρ
+      ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne'))
+    (fun ρ hρ ↦ hle ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ.ne')) S
 
 end OrderLE
 

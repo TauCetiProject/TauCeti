@@ -181,17 +181,70 @@ theorem zetaEntireCompletion_eq_cexp_logDeriv_mul_divisorProductOne (s : ℂ) :
   simpa using h
 
 /-- **Hadamard product for `zetaEntireCompletion`.** Twice Riemann's ξ-function factors globally as
-`exp (a + b * s)` times the multipliable genus-one canonical product over its zeros. -/
+`exp (a + b * s)` times the multipliable genus-one canonical product over its zeros, with
+`exp a = zetaEntireCompletion 0` and `b = logDeriv zetaEntireCompletion 0`. -/
 theorem zetaEntireCompletion_hadamard :
-    ∃ a b : ℂ, ∀ s : ℂ,
+    ∃ a b : ℂ, exp a = zetaEntireCompletion 0 ∧ b = logDeriv zetaEntireCompletion 0 ∧ ∀ s : ℂ,
       Multipliable (fun ρ : ℂ ↦
-        weierstrassFactorOne (s / ρ) ^
+        weierstrassFactorOne (ρ⁻¹ * s) ^
           (MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat) ∧
       zetaEntireCompletion s = exp (a + b * s) * ∏' ρ : ℂ,
-        weierstrassFactorOne (s / ρ) ^
+        weierstrassFactorOne (ρ⁻¹ * s) ^
           (MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat :=
-  hadamard_of_orderLE_one differentiable_zetaEntireCompletion orderLE_zetaEntireCompletion
+  hadamard_of_orderLE_one orderLE_zetaEntireCompletion differentiable_zetaEntireCompletion
     zetaEntireCompletion_zero_ne_zero
+
+/-- Conjugation commutes with `logDeriv zetaEntireCompletion`. -/
+@[simp]
+theorem logDeriv_zetaEntireCompletion_conj (s : ℂ) :
+    logDeriv zetaEntireCompletion (conj s) = conj (logDeriv zetaEntireCompletion s) := by
+  have hfn : zetaEntireCompletion = conj ∘ zetaEntireCompletion ∘ conj :=
+    funext fun z ↦ by simp [Function.comp_def]
+  conv_lhs => rw [hfn]
+  rw [logDeriv_apply, logDeriv_apply, deriv_conj_conj]
+  simp
+
+/-- `logDeriv zetaEntireCompletion` is odd across the critical line `s ↦ 1 - s`. -/
+theorem logDeriv_zetaEntireCompletion_one_sub (s : ℂ) :
+    logDeriv zetaEntireCompletion (1 - s) = -logDeriv zetaEntireCompletion s := by
+  have h := logDeriv_one_sub_conj zetaEntireCompletion_one_sub_eq_conj_conj (conj s)
+  rwa [conj_conj, logDeriv_zetaEntireCompletion_conj, conj_conj] at h
+
+/-- `logDeriv zetaEntireCompletion` is real on the real axis. -/
+theorem im_logDeriv_zetaEntireCompletion_ofReal (σ : ℝ) :
+    (logDeriv zetaEntireCompletion σ).im = 0 := by
+  refine conj_eq_iff_im.mp ?_
+  simpa using (logDeriv_zetaEntireCompletion_conj σ).symm
+
+/-- The paired partial-fraction series of `zetaEntireCompletion` converges absolutely at every
+point `s : ℂ`. -/
+theorem summable_norm_divisor_zetaEntireCompletion_mul_one_div_sub_add_one_div (s : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor zetaEntireCompletion Set.univ).support ↦
+      ‖((MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat : ℂ) *
+        (1 / (s - ρ) + 1 / ρ)‖) :=
+  orderLE_zetaEntireCompletion.summable_norm_divisor_mul_one_div_sub_add_one_div
+    differentiable_zetaEntireCompletion (by norm_num) s
+
+/-- The reciprocal real-part series `∑' ρ, m_ρ * Re (1 / ρ)` over the zeros of
+`zetaEntireCompletion` is summable. -/
+theorem summable_divisor_zetaEntireCompletion_toNat_mul_re_one_div :
+    Summable (fun ρ : (MeromorphicOn.divisor zetaEntireCompletion Set.univ).support ↦
+      ((MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) :=
+  orderLE_zetaEntireCompletion.summable_divisor_toNat_mul_re_one_div_of_re_le
+    differentiable_zetaEntireCompletion (by norm_num)
+    (fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le)
+    zetaEntireCompletion_one_sub_eq_conj_conj
+
+/-- The unsubtracted real-part series `∑' ρ, m_ρ * Re (1 / (s - ρ))` over the zeros of
+`zetaEntireCompletion` is summable at every `s : ℂ`. -/
+theorem summable_divisor_zetaEntireCompletion_toNat_mul_re_one_div_sub (s : ℂ) :
+    Summable (fun ρ : (MeromorphicOn.divisor zetaEntireCompletion Set.univ).support ↦
+      ((MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat : ℝ) *
+        (1 / (s - ρ)).re) :=
+  orderLE_zetaEntireCompletion.summable_divisor_toNat_mul_re_one_div_sub_of_re_le
+    differentiable_zetaEntireCompletion (by norm_num)
+    (fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le)
+    zetaEntireCompletion_one_sub_eq_conj_conj s
 
 /-- Paired partial-fraction expansion of `logDeriv zetaEntireCompletion` off the zeros. -/
 theorem logDeriv_zetaEntireCompletion_eq_add_tsum {s : ℂ} (hs : zetaEntireCompletion s ≠ 0) :
@@ -213,17 +266,6 @@ theorem re_logDeriv_zetaEntireCompletion_zero :
     (fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le)
     zetaEntireCompletion_one_sub_eq_conj_conj
 
-/-- `logDeriv zetaEntireCompletion` is real on the real axis. -/
-theorem im_logDeriv_zetaEntireCompletion_ofReal (σ : ℝ) :
-    (logDeriv zetaEntireCompletion σ).im = 0 := by
-  have hfn : zetaEntireCompletion = conj ∘ zetaEntireCompletion ∘ conj :=
-    funext fun z ↦ by simp [Function.comp_def]
-  have hconj : conj (logDeriv zetaEntireCompletion σ) = logDeriv zetaEntireCompletion σ := by
-    conv_rhs => rw [hfn]
-    rw [logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-    simp
-  exact conj_eq_iff_im.mp hconj
-
 /-- Cancelled real-part partial-fraction expansion of `logDeriv zetaEntireCompletion` off the
 zeros: `Re (logDeriv zetaEntireCompletion s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))`. -/
 theorem re_logDeriv_zetaEntireCompletion_eq_tsum {s : ℂ} (hs : zetaEntireCompletion s ≠ 0) :
@@ -236,11 +278,20 @@ theorem re_logDeriv_zetaEntireCompletion_eq_tsum {s : ℂ} (hs : zetaEntireCompl
     (fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le)
     zetaEntireCompletion_one_sub_eq_conj_conj hs
 
+/-- On `1 ≤ Re s`, every finite subsum `∑ ρ ∈ S, m_ρ * Re (1 / (s - ρ))` over zeros of
+`zetaEntireCompletion` is bounded above by `Re (logDeriv zetaEntireCompletion s)`. -/
+theorem sum_divisor_zetaEntireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv {s : ℂ}
+    (hs : 1 ≤ s.re) (S : Finset ℂ) :
+    ∑ ρ ∈ S, ((MeromorphicOn.divisor zetaEntireCompletion Set.univ ρ).toNat : ℝ) *
+      (1 / (s - ρ)).re ≤ (logDeriv zetaEntireCompletion s).re :=
+  orderLE_zetaEntireCompletion.sum_divisor_toNat_mul_re_one_div_sub_le_re_logDeriv
+    differentiable_zetaEntireCompletion zetaEntireCompletion_zero_ne_zero
+    zetaEntireCompletion_one_sub_eq_conj_conj (zetaEntireCompletion_ne_zero_of_one_le_re hs)
+    (fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le.trans hs) S
+
 /-- On `1 ≤ Re s`, `Re (logDeriv zetaEntireCompletion s)` is nonnegative. -/
 theorem re_logDeriv_zetaEntireCompletion_nonneg {s : ℂ} (hs : 1 ≤ s.re) :
     0 ≤ (logDeriv zetaEntireCompletion s).re := by
-  rw [re_logDeriv_zetaEntireCompletion_eq_tsum (zetaEntireCompletion_ne_zero_of_one_le_re hs)]
-  exact tsum_divisor_toNat_mul_re_one_div_sub_nonneg differentiable_zetaEntireCompletion
-    fun _ hρ ↦ (re_mem_Ioo_of_zetaEntireCompletion_eq_zero hρ).2.le.trans hs
+  simpa using sum_divisor_zetaEntireCompletion_toNat_mul_re_one_div_sub_le_re_logDeriv hs ∅
 
 end TauCeti.LFunctions

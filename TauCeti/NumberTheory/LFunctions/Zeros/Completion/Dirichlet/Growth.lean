@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.FiniteOrder
 public import TauCeti.NumberTheory.LSeries.HurwitzZetaGrowth
 
+import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
+
 /-!
 # Order one and vertical-strip growth of primitive Dirichlet completions
 
@@ -21,8 +23,12 @@ entire parts of Hurwitz functional-equation pairs, whose kernels decay exponenti
 The split Mellin estimates therefore give an explicit bound
 `‖Λ(s)‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` on the whole plane. Hence the completion has order
 at most one (`dirichletData_completed_orderLE_one`, the Dirichlet instance of the order bound for
-split Mellin integrals), and the record has finite order. On each closed vertical strip the
-Mellin bounds depend only on the real part, so the completion has vertical-strip growth.
+split Mellin integrals). Combining with `orderLE_zetaEntireCompletion` at conductor `1` shows that
+`(dirichletData χ hχ).entireCompletion` has order at most one
+(`dirichletData_entireCompletion_orderLE_one`) and `dirichletData χ hχ` has finite order
+(`dirichletData_isFiniteOrder`) for every primitive Dirichlet character `χ`. On each closed
+vertical strip the Mellin bounds depend only on the real part, so the nonprincipal completion has
+vertical-strip growth.
 
 This route does not use Stirling's formula, partial summation or the functional equation.
 
@@ -67,16 +73,21 @@ theorem dirichletData_completed_orderLE_one (hne : χ ≠ 1) :
   obtain ⟨C, -, hC⟩ := exists_norm_dirichletData_completed_le_exp_mul_log χ hχ hne
   exact orderLE_one_of_norm_le_exp_mul_log hC
 
-/-- **Order at most one.** The entire completion of a primitive nonprincipal Dirichlet record has
-growth order at most `1`. -/
-theorem dirichletData_entireCompletion_orderLE_one (hne : χ ≠ 1) :
+/-- **Order at most one.** The entire completion of any primitive Dirichlet record has growth order
+at most `1`. -/
+theorem dirichletData_entireCompletion_orderLE_one :
     OrderLE (dirichletData χ hχ).entireCompletion 1 := by
-  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
-  exact dirichletData_completed_orderLE_one χ hχ hne
+  by_cases hN : N = 1
+  · subst N
+    rw [dirichletData_modOne, riemannZetaData_entireCompletion]
+    exact orderLE_zetaEntireCompletion
+  · have hne : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
+    rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
+    exact dirichletData_completed_orderLE_one χ hχ hne
 
-/-- A primitive nonprincipal Dirichlet record has finite order. -/
-theorem dirichletData_isFiniteOrder (hne : χ ≠ 1) : (dirichletData χ hχ).IsFiniteOrder :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ hne).isFiniteOrder
+/-- Any primitive Dirichlet record has finite order. -/
+theorem dirichletData_isFiniteOrder : (dirichletData χ hχ).IsFiniteOrder :=
+  (dirichletData_entireCompletion_orderLE_one χ hχ).isFiniteOrder
 
 /-- **Vertical-strip growth.** The completed function of a primitive nonprincipal Dirichlet
 record has vertical-strip growth. -/

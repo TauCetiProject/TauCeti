@@ -22,7 +22,7 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
@@ -32,8 +32,8 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
-    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, pool=pool)))
-    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot")
+    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, namespace_cap=namespace_cap, pool=pool)))
+    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
                          "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
@@ -92,7 +92,7 @@ class PickerWorkflow(unittest.TestCase):
         self.assertTrue(expression(condition, upstream_event="repository_dispatch",
                                    upstream_title="bors branch=main batch=12 head=" + "a" * 40))
 
-    def test_legacy_namespace_target_is_rejected_even_for_a_current_attempt(self):
+    def test_current_namespace_target_requires_the_matching_attempt(self):
         target = ["nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1", "namespace-features:container.privileged=true;github.run-id=42"]
         for name, job, picker in [
             ("pr-build.yml", "sandboxed-build", "pick-runner"),
@@ -100,8 +100,46 @@ class PickerWorkflow(unittest.TestCase):
         ]:
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
             source = workflow["jobs"][job]["runs-on"].replace("needs." + picker, "needs.pick-runner")
-            self.assertEqual(expression(source, target=json.dumps(target)), "ubuntu-24.04")
-            self.assertEqual(expression(source, target=json.dumps(target), attempt=2), "ubuntu-24.04")
+            self.assertEqual(expression(source, target=json.dumps(target), pool="namespace"), target)
+            self.assertEqual(expression(source, target=json.dumps(target), pool="namespace", attempt=2), "ubuntu-24.04")
+
+    def test_namespace_builds_share_exactly_eight_concurrency_groups(self):
+        target=json.dumps(["nscloud-ubuntu-24.04-amd64-8x16-with-features", "namespace-features:container.privileged=true"])
+        expected={f"tauceti-namespace-build-{slot}" for slot in range(8)}
+        for name,job,picker in (("pr-build.yml","sandboxed-build","pick-runner"),("nightly-verify.yml","reference","pick-reference-runner")):
+            workflow=yaml.safe_load((ROOT/".github/workflows"/name).read_text())
+            concurrency=workflow["jobs"][job]["concurrency"]
+            group=concurrency["group"].replace("needs."+picker,"needs.pick-runner")
+            actual={expression(group,target=target,pool="namespace",namespace_slot=str(slot)) for slot in range(8)}
+            self.assertEqual(actual,expected)
+            for invalid in ("", "8", "-1", "untrusted"):
+                self.assertEqual(expression(group,target=target,pool="namespace",namespace_slot=invalid),"tauceti-namespace-build-0")
+            self.assertEqual(expression(group,target=target,pool="namespace",attempt=2),"tauceti-hosted-bulk-0")
+            self.assertEqual(concurrency["queue"],"max")
+            self.assertFalse(concurrency["cancel-in-progress"])
+
+    def test_namespace_scheduler_groups_resize_with_runtime_cap(self):
+        target = json.dumps(["nscloud-ubuntu-24.04-amd64-8x16-with-features"])
+        for name, job, picker in (("pr-build.yml", "sandboxed-build", "pick-runner"),
+                                  ("nightly-verify.yml", "reference", "pick-reference-runner")):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            group = workflow["jobs"][job]["concurrency"]["group"].replace("needs." + picker, "needs.pick-runner")
+            for cap in (1, 4, 8, 20, 64):
+                actual = {expression(group, target=target, namespace_slot=str(slot), namespace_cap=str(cap))
+                          for slot in range(cap)}
+                self.assertEqual(actual, {f"tauceti-namespace-build-{slot}" for slot in range(cap)})
+                self.assertEqual(expression(group, target=target, namespace_slot=str(cap), namespace_cap=str(cap)),
+                                 "tauceti-namespace-build-0")
+            for cap in ("", "0", "65", "untrusted"):
+                self.assertEqual(expression(group, target=target, namespace_slot="1", namespace_cap=cap),
+                                 "tauceti-namespace-build-0")
+
+    def test_runtime_namespace_controls_and_slot_output_are_wired_to_picker(self):
+        job = PICKER["jobs"]["pick"]
+        step = next(s for s in job["steps"] if s.get("id") == "pick")
+        self.assertEqual(step["env"]["NAMESPACE_ENABLED"], "${{ vars.NAMESPACE_ENABLED }}")
+        self.assertEqual(step["env"]["NAMESPACE_BUILD_CAP"], "${{ vars.NAMESPACE_BUILD_CAP }}")
+        self.assertEqual(job["outputs"]["namespace-slot"], "${{ steps.pick.outputs.namespace_slot }}")
 
     def test_maintenance_build_capacity_is_limited_to_explicit_or_same_repo_bot_work(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -132,6 +170,14 @@ class PickerWorkflow(unittest.TestCase):
         for action in ("labeled", "unlabeled"):
             self.assertFalse(expression(condition, action=action))
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
+
+    def test_fleet_pr_queue_configuration_is_valid_and_small(self):
+        config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
+        self.assertIs(type(config["pr_queue_limit"]), int)
+        self.assertEqual(config["pr_queue_limit"], 3)
+        self.assertEqual(config["pr_order"], ["github", "fleet", "namespace"])
+        self.assertIs(config["namespace_enabled"], True)
+        self.assertEqual(config["namespace_build_cap"], 8)
 
     def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]

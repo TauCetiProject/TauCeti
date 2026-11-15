@@ -28,6 +28,8 @@ for set and probability integrals.
 
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
+* `MeasureTheory.integral_comp_comm_of_addMonoidHomClass` is the same statement for a bundled
+  continuous additive homomorphism of any class.
 
 ## Bounded multipliers
 
@@ -75,7 +77,9 @@ for set and probability integrals.
 ## Exponentials
 
 * `integrable_exp_neg_of_ae_nonneg` shows that the negative exponential of an almost-everywhere
-  nonnegative function is integrable on a finite measure space.
+  nonnegative function is integrable on a finite measure space, and
+  `integral_exp_neg_le_one_of_ae_nonneg` that its integral against a probability measure is at
+  most `1`.
 
 ## Set and probability integrals
 
@@ -204,6 +208,17 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
 
+/-- Integration commutes with a continuous additive map between real Banach spaces, for any bundled
+homomorphism class: this is `AddMonoidHom.integral_comp_comm` without the coercion to a bare
+additive homomorphism and the separate continuity argument. -/
+theorem MeasureTheory.integral_comp_comm_of_addMonoidHomClass {G X E F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [FunLike G E F] [AddMonoidHomClass G E F] [ContinuousMapClass G E F]
+    {μ : Measure X} (T : G) {f : X → E} (hf : Integrable f μ) :
+    ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) :=
+  AddMonoidHom.integral_comp_comm (T : E →+ F) (map_continuous T) hf
+
 /-- The integral of `g • f`, for a multiplier bounded by `K` on a set containing the support of
 the integrable function `f`, is at most `K ∫ ‖f‖`. -/
 theorem MeasureTheory.norm_integral_smul_le_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
@@ -252,6 +267,15 @@ theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : 
   (integrable_const 1).mono' hf.neg.exp.aestronglyMeasurable <| by
     filter_upwards [hf0] with x hx
     simpa [Real.abs_exp] using hx
+
+/-- The integral of the negative exponential of an almost-everywhere nonnegative function against
+a probability measure is at most `1`. No measurability is needed: a non-integrable integrand has
+integral `0`. -/
+theorem integral_exp_neg_le_one_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf0 : 0 ≤ᵐ[μ] f) :
+    ∫ x, Real.exp (-f x) ∂μ ≤ 1 :=
+  (integral_mono_of_nonneg (ae_of_all _ fun x ↦ (Real.exp_pos _).le) (integrable_const 1)
+    (hf0.mono fun x hx ↦ Real.exp_le_one_iff.2 (neg_nonpos.2 hx))).trans_eq (by simp)
 
 /-- The difference of the integrals of two almost everywhere strongly measurable functions is at
 most the integral of the norm of their difference. No integrability is assumed: when `u - v` is

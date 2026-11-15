@@ -27,15 +27,11 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt`, `AnalyticAt.natCast_toNat_divisor` — at a point
   where `f` is analytic, the divisor reads `analyticOrderNatAt f z` and casting
   `(divisor f U z).toNat` recovers `(divisor f U z : R)`.
-* `AnalyticAt.divisor_apply_eq_zero`, `AnalyticAt.notMem_divisor_support`,
-  `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` — the divisor vanishes (hence has no support)
-  where `f` is analytic and nonzero, so any support point where `f` is analytic is a zero.
-* `MeromorphicOn.divisor_norm_sublevel_finite`,
-  `TauCeti.tendsto_divisor_norm_sublevel_toFinset_atTop`,
-  `HasProd.tendsto_prod_divisor_norm_sublevel_atTop`,
-  `HasSum.tendsto_sum_divisor_norm_sublevel_atTop` — finitely many support points occur in each
-  norm sublevel over a proper normed field, real-radius norm sublevels are cofinal in the finite
-  subsets of the support, and finite partial products/sums over them converge.
+* `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
+* `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
+  such a point is off the divisor support, so any support point where `f` is analytic is a zero.
+* `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
+  norm sublevel over a proper normed field.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
   is bounded by the containing closed-ball count.
 * `MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq` — equal divisors determine equal finite
@@ -66,32 +62,6 @@ theorem MeromorphicOn.divisor_norm_sublevel_finite
   rintro z ⟨ρ, hρ, rfl⟩
   have hρ' : ‖(ρ : 𝕜)‖ ≤ R := hρ
   exact ⟨by simpa only [Metric.mem_closedBall, dist_zero_right] using hρ', ρ.property⟩
-
-/-- Over a proper normed field, the finite norm-sublevel subsets of the whole-space divisor support
-tend to `Filter.atTop` as the real radius tends to infinity. -/
-theorem TauCeti.tendsto_divisor_norm_sublevel_toFinset_atTop
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] (f : 𝕜 → E) :
-    Filter.Tendsto (fun R : ℝ ↦ (MeromorphicOn.divisor_norm_sublevel_finite f R).toFinset)
-      Filter.atTop Filter.atTop := by
-  refine Filter.tendsto_atTop.mpr fun t ↦ ?_
-  refine Filter.eventually_atTop.mpr ⟨(t.sup fun ρ ↦ ‖(ρ : 𝕜)‖₊ : NNReal), fun R hR ρ hρ ↦ ?_⟩
-  rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
-  exact (NNReal.coe_le_coe.mpr (Finset.le_sup hρ)).trans hR
-
-/-- For a multipliable family on the whole-space divisor support over a proper normed field, the
-finite partial products over real-radius norm sublevels converge to its product. -/
-@[to_additive
-  /-- For a summable family on the whole-space divisor support over a proper normed field, the
-  finite partial sums over real-radius norm sublevels converge to its sum. -/]
-theorem HasProd.tendsto_prod_divisor_norm_sublevel_atTop
-    {𝕜 E M : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CommMonoid M] [TopologicalSpace M]
-    {f : 𝕜 → E} {g : (MeromorphicOn.divisor f Set.univ).support → M} {L : M} (hg : HasProd g L) :
-    Filter.Tendsto
-      (fun R : ℝ ↦ ∏ ρ ∈ (MeromorphicOn.divisor_norm_sublevel_finite f R).toFinset, g ρ)
-      Filter.atTop (nhds L) :=
-  hg.comp (TauCeti.tendsto_divisor_norm_sublevel_toFinset_atTop f)
 
 /-- Summing divisor multiplicities over a bounded subset of whole-space support is bounded
 by the divisor count on the containing closed ball. -/
@@ -168,9 +138,9 @@ theorem AnalyticAt.divisor_apply_eq_zero {𝕜 E : Type*} [NontriviallyNormedFie
     · simp [hz]
   · exact MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm
 
-/-- A point where `f` is analytic and nonzero lies outside the support of `divisor f U`. No
-meromorphy hypothesis on `U` is needed. -/
-theorem AnalyticAt.notMem_divisor_support {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+/-- A point where a function is analytic and nonzero is off the support of its divisor on any
+set. -/
+theorem AnalyticAt.notMem_divisor_support_of_ne_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
     (hf : AnalyticAt 𝕜 f z) (hfz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f U).support :=
   Function.notMem_support.mpr (hf.divisor_apply_eq_zero hfz)
