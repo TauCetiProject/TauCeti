@@ -9,6 +9,7 @@ public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.Probability.Moments.Chebyshev
 
 /-!
 # Second spectral moment of a Wigner matrix
@@ -278,21 +279,9 @@ theorem tendsto_second_spectralMoment_sub_mean_probability
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) -
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n|})
-      atTop (𝓝 0) := by
-  have hinv : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ)⁻¹) atTop (𝓝 0) := by
-    simpa only [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  have hreal : Tendsto (fun n : ℕ ↦ (8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2)
-      atTop (𝓝 0) := by
-    convert ((hinv.pow 2).const_mul (8 * V)).div_const (ε ^ 2) using 1
-    · ext n
-      simp [div_eq_mul_inv, inv_pow]
-    · simp
-  have hbound : Tendsto (fun n : ℕ ↦ ENNReal.ofReal
-      ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
-    simpa using ENNReal.tendsto_ofReal hreal
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound
-    (fun _ ↦ bot_le) (fun n ↦ measure_second_spectralMoment_sub_mean_ge n
-      (hindep n) (hmem n) (hvar n) hε)
+      atTop (𝓝 0) :=
+  tendsto_measure_ge_nhds_zero_of_le_div_sq (E := ℝ) fun n ↦
+    measure_second_spectralMoment_sub_mean_ge n (hindep n) (hmem n) (hvar n) hε
 
 /-- The variance bound applies in particular when the original Wigner coordinates are jointly
 independent. -/

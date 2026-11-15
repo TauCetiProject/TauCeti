@@ -545,6 +545,22 @@ theorem step_down {j : ℕ} (hj : j < 2 * k) (hn : ¬ w (j + 1) = j + 1) :
   simp only [nsmul_eq_mul, mul_neg, mul_one] at hlt
   linarith
 
+/-- If a closed tree walk returns to the root `0` at time `m`, then every vertex visited at time
+`j ∈ [m, 2 * k]` is either `0` or first discovered strictly after time `m`. -/
+theorem eq_zero_or_lt_of_eq_zero {m : ℕ} (hm0 : w m = 0) :
+    ∀ {j : ℕ}, m ≤ j → j ≤ 2 * k → w j = 0 ∨ m < w j := by
+  intro j; induction j using Nat.strong_induction_on with | _ j ih => ?_
+  intro hmj hjk
+  rcases eq_or_lt_of_le hmj with rfl | hlt
+  · exact .inl hm0
+  obtain ⟨t, rfl⟩ : ∃ t, j = t + 1 := ⟨j - 1, by omega⟩
+  by_cases hup : w (t + 1) = t + 1
+  · exact .inr (by omega)
+  obtain ⟨hpos, hpar, -⟩ := hw.step_down (by omega) hup
+  have hmt : m < w t := (ih t (by omega) (by omega) (by omega)).resolve_left (by omega)
+  have := hw.le_self t (by omega)
+  exact hpar ▸ ih (w t - 1) (by omega) (by omega) (by omega)
+
 private theorem reverse_step_of_edge_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k)
     (hup : w (i + 1) = i + 1) (hne : j ≠ i)
     (he : s(w j, w (j + 1)) = s(w i, w (i + 1))) :
@@ -578,6 +594,32 @@ theorem exists_edge_fiber_eq_pair {i : ℕ} (hi : i < 2 * k) (hup : w (i + 1) = 
   obtain ⟨hj, he⟩ := mem_filter.mp hjS
   obtain ⟨h₁, h₂⟩ := hw.reverse_step_of_edge_eq hi (mem_range.mp hj) hup hji he
   exact ⟨j, mem_range.mp hj, h₁, h₂, hpair⟩
+
+/-- Every step of a closed tree walk has a unique distinct partner step traversing the same
+unordered edge, in the opposite direction, and the discovery step is the earlier of the two. -/
+theorem exists_other_step (i : Fin (2 * k)) :
+    ∃ j : Fin (2 * k), j ≠ i ∧ w j = w (i + 1) ∧ w (j + 1) = w i ∧
+      (∀ t : Fin (2 * k), s(w t, w (t + 1)) = s(w i, w (i + 1)) ↔ t = i ∨ t = j) ∧
+      (i < j ↔ w (i + 1) = i + 1) := by
+  obtain ⟨u, hu, hup, heu⟩ := hw.exists_up_edge i.isLt
+  have heu' : s(w i, w (i + 1)) = s(w u, w (u + 1)) := by simpa only [hup] using heu
+  obtain ⟨d, hd, hdu1, hdu2, hpair⟩ := hw.exists_edge_fiber_eq_pair hu hup
+  have hle_u := hw.le_self u hu.le
+  have hle_d := hw.le_self d hd.le
+  have hud : u < d := by omega
+  have hmem (t : Fin (2 * k)) :
+      s(w t, w (t + 1)) = s(w u, w (u + 1)) ↔ t.val = u ∨ t.val = d := by
+    simpa only [mem_filter, mem_range, t.isLt, true_and, mem_insert, mem_singleton] using
+      Finset.ext_iff.mp hpair t.val
+  rcases (hmem i).mp heu' with hi | hi
+  · refine ⟨⟨d, hd⟩, fun h ↦ by have : d = i.val := congrArg Fin.val h; omega,
+      by simp only [hi, hdu1, hup], by simp only [hi, hdu2], fun t ↦ ?_,
+      by simp only [Fin.lt_def, hi]; exact ⟨fun _ ↦ hup, fun _ ↦ hud⟩⟩
+    rw [heu', hmem t]; simp only [Fin.ext_iff, hi]
+  · refine ⟨⟨u, hu⟩, fun h ↦ by have : u = i.val := congrArg Fin.val h; omega,
+      by simp only [hi, hdu2], by simp only [hi, hup, hdu1], fun t ↦ ?_,
+      by simp only [Fin.lt_def, hi, hdu2]; omega⟩
+    rw [heu', hmem t, or_comm]; simp only [Fin.ext_iff, hi]
 
 /-- Up steps reconstruct the original tree walk on its full interval of definition. -/
 theorem walkOf_upSteps : ∀ j ≤ 2 * k, walkOf (upSteps k w) j = w j := by

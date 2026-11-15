@@ -18,10 +18,11 @@ length-`k` expected trace word by `B / (√n)^k`, without independence. There ar
 `n^r r^k` words visiting at most `r` vertices. Together these estimates suppress the words
 with fewer than the leading number of vertices in the normalized trace expansion.
 
-For independent centered entries, the singleton-edge reduction then gives a bound of order
-`n⁻¹` for the even-moment remainder after removing the words visiting `m + 1` vertices, and
-of order `n^(-1/2)` for the entire expected odd moment. The bounds are uniform over position
-and do not require identical distributions or any second-moment normalization.
+For independent coordinates with centered off-diagonal entries, the singleton-nonloop-edge
+reduction then gives a bound of order `n⁻¹` for the even-moment remainder after removing the
+leading words visiting `m + 1` vertices, and of order `n^(-1/2)` for the entire expected odd
+moment. Diagonal centering, identical distributions, and second-moment normalizations are not
+required.
 
 ## References
 
@@ -116,17 +117,16 @@ theorem norm_sum_integral_prod_wignerMatrix_le {k n r : ℕ} (hk : k ≠ 0)
 
 section Centered
 
-variable [IsFiniteMeasure P]
-  (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-  (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+variable (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
+  (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
 
-include hindep hξzero hηzero
+include hindep hξzero
 
-/-- For independent centered entries on a finite measure space with `2m`th absolute moments
+/-- For independent coordinates with centered off-diagonal entries and `2m`th absolute moments
 bounded by `B`, subtracting the sum over singleton-free words visiting `m + 1` vertices from
 the expected even trace and normalizing by `n⁻¹` leaves a remainder of norm at most
-`m^(2m) B / n`. The assumption `m ≠ 0` excludes the zeroth moment, whose empty word has no
-visited vertices. -/
+`m^(2m) B / n`. Diagonal entries need not be centered, and `m ≠ 0` excludes the zeroth moment,
+whose empty word has no visited vertices. -/
 theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le {m n : ℕ} (hm : m ≠ 0)
     {B : ℝ} (hξp : ∀ ij, MemLp (ξ ij) (2 * m : ℕ) P)
     (hηp : ∀ i, MemLp (η i) (2 * m : ℕ) P)
@@ -141,37 +141,38 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le {m n : �
   classical
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  let S : Finset (Fin (2 * m) → Fin n) := {w | ∀ t, ∃ s ≠ t,
-    s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))}
+  let S : Finset (Fin (2 * m) → Fin n) := {w | ∀ t, w t ≠ w (finRotate (2 * m) t) →
+    ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))}
   let F (w : Fin (2 * m) → Fin n) :=
     ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P
+  have hlead_eq : S.filter (fun w ↦ #(univ.image w) = m + 1) =
+      univ.filter fun w ↦
+        (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
+          #(univ.image w) = m + 1 := by
+    ext w; simp only [S, mem_filter, mem_univ, true_and]
+    exact ⟨fun ⟨hnl, hv⟩ ↦
+      ⟨(ne_and_no_singleton_edge_of_no_singleton_nonloop_edge_of_card_image_eq w hnl hv).2, hv⟩,
+      fun ⟨hall, hv⟩ ↦ ⟨fun t _ ↦ hall t, hv⟩⟩
   have hsplit : (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) -
-      ∑ w ∈ S with #(univ.image w) = m + 1, F w =
-        ∑ w ∈ S with #(univ.image w) ≠ m + 1, F w := by
-    rw [integral_trace_pow_wignerMatrix hindep hξzero hηzero (by omega) hξp hηp]
-    apply sub_eq_iff_eq_add.mpr
-    simpa only [S, F, add_comm] using
-      (sum_filter_add_sum_filter_not S (fun w ↦ #(univ.image w) = m + 1) F).symm
+      ∑ w ∈ S with #(univ.image w) = m + 1, F w = ∑ w ∈ S with #(univ.image w) ≠ m + 1, F w := by
+    rw [integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge hindep hξzero
+      (by omega) hξp hηp]
+    exact sub_eq_iff_eq_add.mpr (by simpa only [S, F, add_comm] using
+      (sum_filter_add_sum_filter_not S (fun w ↦ #(univ.image w) = m + 1) F).symm)
   have hbound := norm_sum_integral_prod_wignerMatrix_le (n := n) (r := m)
-    (by omega) hξp hηp hξ hη (S.filter fun w ↦ #(univ.image w) ≠ m + 1) (by
-      intro w hw
+    (by omega) hξp hηp hξ hη (S.filter fun w ↦ #(univ.image w) ≠ m + 1) fun w hw ↦ by
       obtain ⟨hwS, hwne⟩ := mem_filter.mp hw
-      have hv := card_image_le_div_two_add_one_of_no_singleton_edge w (mem_filter.mp hwS).2
-      omega)
-  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hs : (Real.sqrt n) ^ (2 * m) = (n : ℝ) ^ m := by
-    rw [pow_mul, Real.sq_sqrt (Nat.cast_nonneg _)]
-  -- Partition the singleton-free expansion into its maximal-vertex and remaining words.
-  simp only [filter_filter, S, F] at hsplit
-  rw [hsplit, norm_mul, norm_inv, Complex.norm_natCast]
-  calc
-    _ ≤ (n : ℝ)⁻¹ * ((m : ℝ) ^ (2 * m) * (n : ℝ) ^ m * (Real.sqrt n)⁻¹ ^ (2 * m) * B) :=
-      by simpa only [S, filter_filter] using mul_le_mul_of_nonneg_left hbound (by positivity)
-    _ = _ := by rw [inv_pow, hs]; field_simp
+      have := card_image_le_div_two_add_one_of_no_singleton_nonloop_edge w (mem_filter.mp hwS).2
+      omega
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  rw [← hlead_eq, hsplit, norm_mul, norm_inv, Complex.norm_natCast]
+  calc _ ≤ (n : ℝ)⁻¹ * ((m : ℝ) ^ (2 * m) * (n : ℝ) ^ m * (Real.sqrt n)⁻¹ ^ (2 * m) * B) :=
+        mul_le_mul_of_nonneg_left hbound (by positivity)
+    _ = _ := by rw [inv_pow, pow_mul (Real.sqrt n), Real.sq_sqrt (Nat.cast_nonneg _)]; field_simp
 
-/-- For independent centered entries on a finite measure space with `(2m + 1)`st absolute
+/-- For independent coordinates with centered off-diagonal entries and `(2m + 1)`st absolute
 moments bounded by `B`, the expected normalized odd Wigner moment has norm at most
-`(m + 1)^(2m + 1) B / √n`. No higher moments or identical distributions are required. -/
+`(m + 1)^(2m + 1) B / √n`. Neither diagonal centering nor identical distributions are required. -/
 theorem norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le {m n : ℕ}
     {B : ℝ} (hξp : ∀ ij, MemLp (ξ ij) (2 * m + 1 : ℕ) P)
     (hηp : ∀ i, MemLp (η i) (2 * m + 1 : ℕ) P)
@@ -182,25 +183,23 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le {m n : �
   classical
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  let S : Finset (Fin (2 * m + 1) → Fin n) := {w | ∀ t, ∃ s ≠ t,
-    s(w s, w (finRotate (2 * m + 1) s)) = s(w t, w (finRotate (2 * m + 1) t))}
+  let S : Finset (Fin (2 * m + 1) → Fin n) := {w | ∀ t, w t ≠ w (finRotate (2 * m + 1) t) →
+    ∃ s ≠ t, s(w s, w (finRotate (2 * m + 1) s)) = s(w t, w (finRotate (2 * m + 1) t))}
   have hbound := norm_sum_integral_prod_wignerMatrix_le (n := n) (r := m + 1)
-    (by omega) hξp hηp hξ hη S (by
-      intro w hw
-      have hv := card_image_le_div_two_add_one_of_no_singleton_edge w (mem_filter.mp hw).2
-      omega)
-  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hs : (Real.sqrt n) ^ (2 * m + 1) = (n : ℝ) ^ m * Real.sqrt n := by
-    rw [pow_succ, pow_mul, Real.sq_sqrt (Nat.cast_nonneg _)]
-  rw [integral_trace_pow_wignerMatrix hindep hξzero hηzero (by omega) hξp hηp,
+    (by omega) hξp hηp hξ hη S fun w hw ↦ by
+      have := card_image_le_div_two_add_one_of_no_singleton_nonloop_edge w (mem_filter.mp hw).2
+      omega
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  rw [integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge hindep hξzero
+      (by omega) hξp hηp,
     norm_mul, norm_inv, Complex.norm_natCast]
-  calc
-    _ ≤ (n : ℝ)⁻¹ * (((m + 1 : ℕ) : ℝ) ^ (2 * m + 1) * (n : ℝ) ^ (m + 1) *
-        (Real.sqrt n)⁻¹ ^ (2 * m + 1) * B) :=
-      mul_le_mul_of_nonneg_left hbound (by positivity)
-    _ = _ := by rw [inv_pow, hs]; push_cast; field_simp; ring
+  calc _ ≤ (n : ℝ)⁻¹ * (((m + 1 : ℕ) : ℝ) ^ (2 * m + 1) * (n : ℝ) ^ (m + 1) *
+        (Real.sqrt n)⁻¹ ^ (2 * m + 1) * B) := mul_le_mul_of_nonneg_left hbound (by positivity)
+    _ = _ := by
+      rw [inv_pow, pow_succ (Real.sqrt n), pow_mul, Real.sq_sqrt (Nat.cast_nonneg _)]
+      push_cast; field_simp; ring
 
-/-- For independent centered entries on a finite measure space with uniformly bounded `2m`th
+/-- For independent coordinates with centered off-diagonal entries and uniformly bounded `2m`th
 absolute moments, subtracting the sum over singleton-free words visiting `m + 1` vertices from
 the expected even trace and normalizing by `n⁻¹` gives a remainder tending to zero, for `m ≠ 0`. -/
 theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum {m : ℕ} (hm : m ≠ 0)
@@ -218,11 +217,11 @@ theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum {m : ℕ
     simpa using tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop
   exact squeeze_zero_norm (fun n ↦
     norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le
-      hindep hξzero hηzero hm hξp hηp hξ hη) hlim
+      hindep hξzero hm hξp hηp hξ hη) hlim
 
 /-- Every expected normalized odd Wigner moment converges to zero when the corresponding
-absolute moments of the independent centered entries on a finite measure space are uniformly
-bounded. -/
+absolute moments of the independent coordinates are uniformly bounded and the off-diagonal
+entries are centered. -/
 theorem tendsto_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix {m : ℕ}
     {B : ℝ} (hξp : ∀ ij, MemLp (ξ ij) (2 * m + 1 : ℕ) P)
     (hηp : ∀ i, MemLp (η i) (2 * m + 1 : ℕ) P)
@@ -236,7 +235,7 @@ theorem tendsto_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix {m : ℕ
       (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
   exact squeeze_zero_norm (fun n ↦
     norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le
-      hindep hξzero hηzero hξp hηp hξ hη) hlim
+      hindep hξzero hξp hηp hξ hη) hlim
 
 end Centered
 

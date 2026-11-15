@@ -14,19 +14,24 @@ import TauCeti.Data.Nat.Factorial.Basic
 /-!
 # Convergence of expected Wigner spectral moments to the semicircle moments
 
-Combining the exact enumeration of leading cyclic words (`card_filter_leadingCyclicWords`) with the
-entry-product evaluation (`integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`)
-and remainder bound (`norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le`)
-identifies the `O(1/n)` asymptotic of every even normalized expected trace of a Wigner matrix:
-for every `m : ℕ` and `n ≠ 0`,
+For a Wigner matrix `Hₙ = wignerMatrix ξ η n` whose entry array has jointly independent coordinates,
+centered off-diagonal entries with unit second absolute moments in the `n × n` corner, and
+coordinates in `L ^ (2 * m)` with `2m`-th absolute moments uniformly bounded by `B`, combining the
+exact enumeration of leading cyclic words (`card_filter_leadingCyclicWords`) with the entry-product
+evaluation (`integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`) and the
+nonleading remainder bound (`norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le`,
+proved from `integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge` and
+`norm_sum_integral_prod_wignerMatrix_le`) identifies the `O(1 / n)` asymptotic of every even
+normalized expected trace: for every `m : ℕ` and `n ≠ 0`,
 `‖n⁻¹ * E[tr(Hₙ ^ (2m))] - catalan m‖ ≤ (m ^ (2m) * B + catalan m * (m + 1).choose 2) / n`.
 
 Because `Hₙ` is Hermitian, `(Hₙ ^ k).trace` is real and `n⁻¹ * (Hₙ ^ k).trace` equals the `k`-th
 moment of the empirical spectral measure. Together with the `O(n ^ (-1/2))` bound on odd moments
-and the semicircle moment formulas (`integral_pow_two_mul_semicircleReal_zero` and
-`integral_pow_two_mul_add_one_semicircleReal_zero`), every expected empirical spectral moment of a
-Wigner matrix (or triangular Wigner array) converges to the corresponding moment of the standard
-semicircle distribution `semicircleReal 0 1`.
+under `L ^ (2 * m + 1)` moment bound `B` and the semicircle moment formulas
+(`integral_pow_two_mul_semicircleReal_zero` and `integral_pow_two_mul_add_one_semicircleReal_zero`),
+every expected `k`-th empirical spectral moment of a Wigner matrix (or triangular Wigner array)
+with independent coordinates, centered unit-variance off-diagonal entries, and uniformly bounded
+`k`-th absolute moments converges to the corresponding moment of `semicircleReal 0 1`.
 
 ## Main results
 
@@ -36,6 +41,9 @@ semicircle distribution `semicircleReal 0 1`.
   `O(1 / n)` rate of convergence of the normalized expected `2m`-th trace to `catalan m`.
 * `TauCeti.tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix`: convergence of the normalized
   expected `2m`-th trace to `catalan m` for all `m : ℕ`.
+* `TauCeti.Probability.abs_integral_spectralMoment_two_mul_wignerMatrix_sub_catalan_le`,
+  `TauCeti.Probability.abs_integral_spectralMoment_two_mul_add_one_wignerMatrix_le`: quantitative
+  error bounds for even and odd expected empirical spectral moments.
 * `TauCeti.Probability.tendsto_integral_spectralMoment_wignerMatrix_array`,
   `TauCeti.Probability.tendsto_integral_spectralMoment_wignerMatrix`: convergence of expected
   `k`-th empirical spectral moments to `∫ x, x ^ k ∂semicircleReal 0 1` for all `k : ℕ`.
@@ -81,30 +89,11 @@ section TraceMoments
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-omit [MeasurableSpace Ω] in
-/-- Because `wignerMatrix` is Hermitian, the trace of any natural power is real. -/
-theorem ofReal_re_trace_pow_wignerMatrix (n k : ℕ) (ω : Ω) :
-    (((wignerMatrix ξ η n ω ^ k).trace).re : ℂ) = (wignerMatrix ξ η n ω ^ k).trace := by
-  rw [(wignerMatrix_isHermitian ξ η ω n).trace_pow_eq_sum_eigenvalues_pow k,
-    Complex.re_sum, Complex.ofReal_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [RCLike.ofReal_eq_complex_ofReal, ← Complex.ofReal_pow, Complex.ofReal_re]
-
-/-- On a finite measure space, the trace of the `k`-th power of a Wigner matrix is integrable
-whenever all coordinates belong to `Lᵏ`. -/
-theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
-    (hξp : ∀ ij, MemLp (ξ ij) k P) (hηp : ∀ i, MemLp (η i) k P) (n : ℕ) :
-    Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · simp_rw [trace_pow_eq_sum_prod _ hk]
-    exact integrable_finsetSum _ fun w _ ↦
-      integrable_prod_wignerMatrix_apply (by simpa using hξp) (by simpa using hηp) _ _
-
 /-- **Leading trace-word sum.** For `m ≠ 0`, independent upper-triangular entries with unit second
-absolute moments give exact leading-word sum `(catalan m * n.descFactorial (m + 1)) * n⁻¹ ^ m`. -/
+absolute moments in the `n × n` corner give exact leading-word sum
+`(catalan m * n.descFactorial (m + 1)) * n⁻¹ ^ m`. -/
 theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0)
-    (hindep : iIndepFun ξ P) (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) :
+    (hindep : iIndepFun ξ P) (hsecond : ∀ ij, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) :
     (∑ w : Fin (2 * m) → Fin n with
         (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
           #(univ.image w) = m + 1,
@@ -117,82 +106,15 @@ theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0)
     Fintype.card_fin]
   simp [nsmul_eq_mul]
 
-private theorem norm_inv_mul_integral_trace_pow_two_mul_sub_leading_le {m n : ℕ} (hm : m ≠ 0)
-    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) {B : ℝ}
-    (hξp : ∀ ij, MemLp (ξ ij) (2 * m : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * m : ℕ) P)
-    (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B) (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * m) ∂P ≤ B) :
-    ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) -
-      ∑ w : Fin (2 * m) → Fin n with
-        (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-          #(univ.image w) = m + 1,
-        ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P)‖ ≤
-      (m : ℝ) ^ (2 * m) * B / n := by
-  classical
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  let S : Finset (Fin (2 * m) → Fin n) := {w | ∀ t, w t ≠ w (finRotate (2 * m) t) →
-    ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))}
-  let F (w : Fin (2 * m) → Fin n) :=
-    ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P
-  have hlead_eq : S.filter (fun w ↦ #(univ.image w) = m + 1) =
-      univ.filter fun w ↦
-        (∀ t, ∃ s ≠ t, s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t))) ∧
-          #(univ.image w) = m + 1 := by
-    ext w; simp only [S, mem_filter, mem_univ, true_and]
-    exact ⟨fun ⟨hnl, hv⟩ ↦
-      ⟨(no_singleton_edge_of_no_singleton_nonloop_edge_of_card_image_eq w hnl hv).2, hv⟩,
-      fun ⟨hall, hv⟩ ↦ ⟨fun t _ ↦ hall t, hv⟩⟩
-  have hsplit : (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) -
-      ∑ w ∈ S with #(univ.image w) = m + 1, F w = ∑ w ∈ S with #(univ.image w) ≠ m + 1, F w := by
-    rw [integral_trace_pow_wignerMatrix_of_ne hindep hξzero (by omega) hξp hηp]
-    exact sub_eq_iff_eq_add.mpr (by simpa only [S, F, add_comm] using
-      (sum_filter_add_sum_filter_not S (fun w ↦ #(univ.image w) = m + 1) F).symm)
-  have hbound := norm_sum_integral_prod_wignerMatrix_le (n := n) (r := m)
-    (by omega) hξp hηp hξ hη (S.filter fun w ↦ #(univ.image w) ≠ m + 1) fun w hw ↦ by
-      obtain ⟨hwS, hwne⟩ := mem_filter.mp hw
-      have := card_image_le_div_two_add_one_of_no_singleton_nonloop_edge w (mem_filter.mp hwS).2
-      omega
-  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  rw [← hlead_eq, hsplit, norm_mul, norm_inv, Complex.norm_natCast]
-  calc _ ≤ (n : ℝ)⁻¹ * ((m : ℝ) ^ (2 * m) * (n : ℝ) ^ m * (Real.sqrt n)⁻¹ ^ (2 * m) * B) :=
-        mul_le_mul_of_nonneg_left hbound (by positivity)
-    _ = _ := by rw [inv_pow, pow_mul (Real.sqrt n), Real.sq_sqrt (Nat.cast_nonneg _)]; field_simp
-
-private theorem norm_inv_mul_integral_trace_pow_two_mul_add_one_of_ne_le (m n : ℕ)
-    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) {B : ℝ}
-    (hξp : ∀ ij, MemLp (ξ ij) (2 * m + 1 : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * m + 1 : ℕ) P)
-    (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * m + 1) ∂P ≤ B)
-    (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * m + 1) ∂P ≤ B) :
-    ‖(n : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η n ω ^ (2 * m + 1)).trace ∂P‖ ≤
-      (m + 1 : ℝ) ^ (2 * m + 1) * B / Real.sqrt n := by
-  classical
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  let S : Finset (Fin (2 * m + 1) → Fin n) := {w | ∀ t, w t ≠ w (finRotate (2 * m + 1) t) →
-    ∃ s ≠ t, s(w s, w (finRotate (2 * m + 1) s)) = s(w t, w (finRotate (2 * m + 1) t))}
-  have hbound := norm_sum_integral_prod_wignerMatrix_le (n := n) (r := m + 1)
-    (by omega) hξp hηp hξ hη S fun w hw ↦ by
-      have := card_image_le_div_two_add_one_of_no_singleton_nonloop_edge w (mem_filter.mp hw).2
-      omega
-  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  rw [integral_trace_pow_wignerMatrix_of_ne hindep hξzero (by omega) hξp hηp,
-    norm_mul, norm_inv, Complex.norm_natCast]
-  calc _ ≤ (n : ℝ)⁻¹ * (((m + 1 : ℕ) : ℝ) ^ (2 * m + 1) * (n : ℝ) ^ (m + 1) *
-        (Real.sqrt n)⁻¹ ^ (2 * m + 1) * B) := mul_le_mul_of_nonneg_left hbound (by positivity)
-    _ = _ := by
-      rw [inv_pow, pow_succ (Real.sqrt n), pow_mul, Real.sq_sqrt (Nat.cast_nonneg _)]
-      push_cast; field_simp; ring
-
 /-- **Quantitative even trace-moment bound.** For independent coordinates with centered
-off-diagonal entries, unit off-diagonal second moments, and `2m`-th absolute moments bounded by
-`B`, the normalized expected `2m`-th trace (`n ≠ 0`) is within `O(1 / n)` of `catalan m` for every
-`m : ℕ`. Diagonal entries need not be centered. -/
+off-diagonal entries, unit off-diagonal second moments in the `n × n` corner, and `2m`-th absolute
+moments bounded by `B`, the normalized expected `2m`-th trace (`n ≠ 0`) is within `O(1 / n)` of
+`catalan m` for every `m : ℕ`. Diagonal entries need not be centered. -/
 theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le
     {m n : ℕ} (hn : n ≠ 0)
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) {B : ℝ}
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
+    (hsecond : ∀ ij, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * m : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * m : ℕ) P)
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B) (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * m) ∂P ≤ B) :
     ‖(n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - (catalan m : ℂ)‖ ≤
@@ -207,15 +129,16 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le
     positivity
   · have hindep_ξ : iIndepFun ξ P := by
       simpa only [Function.comp_def, Sum.elim_inl] using hindep.precomp Sum.inl_injective
-    have hrem := norm_inv_mul_integral_trace_pow_two_mul_sub_leading_le
-      (n := n) hm hindep hξzero hξp hηp hξ hη
+    have hrem := norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le
+      (n := n) hindep hξzero hm hξp hηp hξ hη
     rw [sum_integral_prod_wignerMatrix_leading (η := η) hm hindep_ξ hsecond, mul_sub] at hrem
     exact (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans <|
       (add_le_add hrem (norm_catalan_mul_descFactorial_inv_pow_sub_le hn)).trans_eq (by ring)
 
-/-- The normalized expected `2m`-th trace of a Wigner matrix with independent coordinates and
-centered unit-variance off-diagonal entries converges to `catalan m` for every `m : ℕ` (including
-`m = 0`). Diagonal entries need not be centered. -/
+/-- The normalized expected `2m`-th trace of a Wigner matrix with independent coordinates in
+`L ^ (2 * m)`, centered unit-variance off-diagonal entries, and `2m`-th absolute moments uniformly
+bounded by `B` converges to `catalan m` for every `m : ℕ` (including `m = 0`). Diagonal entries
+need not be centered. -/
 theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix {m : ℕ}
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) {B : ℝ}
@@ -227,7 +150,7 @@ theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix {m : ℕ}
   apply squeeze_zero_norm'
   · filter_upwards [eventually_ne_atTop 0] with n hn
     exact norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le
-      hn hindep hξzero hsecond hξp hηp hξ hη
+      hn hindep hξzero (fun ij _ ↦ hsecond ij) hξp hηp hξ hη
   · simpa using tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop
 
 end TraceMoments
@@ -256,8 +179,9 @@ theorem integral_spectralMoment_wignerMatrix_eq_re (k n : ℕ) :
       (((n + 1 : ℕ) : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η (n + 1) ω ^ k).trace ∂P).re := by
   have htr : (∫ ω, (wignerMatrix ξ η (n + 1) ω ^ k).trace ∂P) =
       ((∫ ω, ((wignerMatrix ξ η (n + 1) ω ^ k).trace).re ∂P : ℝ) : ℂ) := by
-    rw [integral_congr_ae (.of_forall fun ω ↦
-      (ofReal_re_trace_pow_wignerMatrix (ξ := ξ) (η := η) (n + 1) k ω).symm)]
+    rw [integral_congr_ae (.of_forall fun ω ↦ by
+      simpa only [RCLike.re_to_complex, RCLike.ofReal_eq_complex_ofReal] using
+        ((wignerMatrix_isHermitian ξ η ω (n + 1)).pow k).coe_re_trace.symm)]
     exact integral_complex_ofReal
   simp_rw [Matrix.integral_pow_spectralMeasure, Fintype.card_fin, RCLike.re_to_complex,
     integral_const_mul, htr]
@@ -265,10 +189,12 @@ theorem integral_spectralMoment_wignerMatrix_eq_re (k n : ℕ) :
     Nat.cast_add, Nat.cast_one]
 
 /-- Quantitative `O(1 / (n + 1))` error bound for even expected empirical spectral moments (for all
-`m, n : ℕ`). Diagonal entries need not be centered. -/
-theorem abs_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_catalan_le (m n : ℕ)
+`m, n : ℕ`). Diagonal entries need not be centered, and unit off-diagonal second moments are only
+required in the `(n + 1) × (n + 1)` corner. -/
+theorem abs_integral_spectralMoment_two_mul_wignerMatrix_sub_catalan_le (m n : ℕ)
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) {B : ℝ}
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
+    (hsecond : ∀ ij, ij.1.2 < n + 1 → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * m : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * m : ℕ) P)
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B) (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * m) ∂P ≤ B) :
     |(∫ ω, (∫ x, x ^ (2 * m) ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -282,7 +208,7 @@ theorem abs_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_catalan_le (m 
 
 /-- Quantitative `O(1 / √(n + 1))` error bound for odd expected empirical spectral moments. Neither
 diagonal centering nor a second-moment assumption is required. -/
-theorem abs_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le (m n : ℕ)
+theorem abs_integral_spectralMoment_two_mul_add_one_wignerMatrix_le (m n : ℕ)
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (2 * m + 1 : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * m + 1 : ℕ) P)
@@ -294,19 +220,21 @@ theorem abs_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le (m n : 
   rw [integral_spectralMoment_wignerMatrix_eq_re]
   exact (Complex.abs_re_le_norm _).trans (by
     simpa [Nat.cast_add, Nat.cast_one] using
-      norm_inv_mul_integral_trace_pow_two_mul_add_one_of_ne_le
-        m (n + 1) hindep hξzero hξp hηp hξ hη)
+      norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le
+        (m := m) (n := n + 1) hindep hξzero hξp hηp hξ hη)
 
 /-- **Expected spectral moment convergence for triangular Wigner arrays.** For jointly independent
-coordinates at each size `n + 1` with centered unit-variance off-diagonal entries and uniformly
-bounded `k`-th absolute moments, the expected `k`-th empirical spectral moment converges to the
-`k`-th moment of the standard semicircle law `semicircleReal 0 1`. -/
+coordinates at each size `n + 1` with centered off-diagonal entries, unit off-diagonal second
+moments in the `(n + 1) × (n + 1)` corner, and `L ^ k` coordinates whose `k`-th absolute moments
+are uniformly bounded by `B`, the expected `k`-th empirical spectral moment converges to the `k`-th
+moment of the standard semicircle law `semicircleReal 0 1`. -/
 theorem tendsto_integral_spectralMoment_wignerMatrix_array
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {k : ℕ} {B : ℝ}
     (hindep : ∀ n, iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
       Sum.elim (ξ n) (fun i ω ↦ (η n i ω : ℂ)) idx) (P n))
-    (hξzero : ∀ n ij, ∫ ω, ξ n ij ω ∂P n = 0) (hsecond : ∀ n ij, ∫ ω, ‖ξ n ij ω‖ ^ 2 ∂P n = 1)
+    (hξzero : ∀ n ij, ∫ ω, ξ n ij ω ∂P n = 0)
+    (hsecond : ∀ n ij, ij.1.2 < n + 1 → ∫ ω, ‖ξ n ij ω‖ ^ 2 ∂P n = 1)
     (hξp : ∀ n ij, MemLp (ξ n ij) k (P n)) (hηp : ∀ n i, MemLp (η n i) k (P n))
     (hξ : ∀ n ij, ∫ ω, ‖ξ n ij ω‖ ^ k ∂P n ≤ B) (hη : ∀ n i, ∫ ω, ‖η n i ω‖ ^ k ∂P n ≤ B) :
     Tendsto (fun n ↦ ∫ ω, (∫ x, x ^ k ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
@@ -319,21 +247,23 @@ theorem tendsto_integral_spectralMoment_wignerMatrix_array
       simpa only [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
     exact squeeze_zero_norm (fun n ↦ by
       simpa only [Real.norm_eq_abs] using
-        abs_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_catalan_le m n
+        abs_integral_spectralMoment_two_mul_wignerMatrix_sub_catalan_le m n
           (hindep n) (hξzero n) (hsecond n) (hξp n) (hηp n) (hξ n) (hη n))
       (by simpa [div_eq_mul_inv] using
         hinv.const_mul ((m : ℝ) ^ (2 * m) * B + catalan m * (m + 1).choose 2))
   · rw [integral_pow_two_mul_add_one_semicircleReal_zero]
     refine squeeze_zero_norm (fun n ↦ by
       simpa only [Real.norm_eq_abs] using
-        abs_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le m n
+        abs_integral_spectralMoment_two_mul_add_one_wignerMatrix_le m n
           (hindep n) (hξzero n) (hξp n) (hηp n) (hξ n) (hη n)) ?_
     simpa using tendsto_const_nhds.div_atTop
       (Real.tendsto_sqrt_atTop.comp
         (tendsto_atTop_add_const_right atTop 1 tendsto_natCast_atTop_atTop))
 
 /-- **Expected spectral moment convergence** to the standard semicircle moments for a fixed entry
-array `(ξ, η)`. -/
+array `(ξ, η)` with independent coordinates in `L ^ k`, centered unit-variance off-diagonal
+entries, and `k`-th absolute moments uniformly bounded by `B` (specializing
+`tendsto_integral_spectralMoment_wignerMatrix_array`). -/
 theorem tendsto_integral_spectralMoment_wignerMatrix {k : ℕ} {B : ℝ}
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
@@ -344,7 +274,7 @@ theorem tendsto_integral_spectralMoment_wignerMatrix {k : ℕ} {B : ℝ}
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P)
       atTop (𝓝 (∫ x, x ^ k ∂semicircleReal 0 1)) :=
   tendsto_integral_spectralMoment_wignerMatrix_array
-    (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ↦ hsecond)
+    (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ij _ ↦ hsecond ij)
     (fun _ ↦ hξp) (fun _ ↦ hηp) (fun _ ↦ hξ) (fun _ ↦ hη)
 
 end SpectralMoments

@@ -36,12 +36,15 @@ The path formulation includes the zero-step case and proves integrability first.
 * `TauCeti.indepFun_prod_wignerMatrix_apply_of_ne`: two finite products of Wigner entries reading
   disjoint sets of unordered positions are independent when the array entries are independent.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`,
-  `TauCeti.integral_prod_wignerMatrix_apply_eq_zero_of_ne`: for independent entries with centered
-  off-diagonal (or all) coordinates, a product reading some nonloop (or arbitrary) edge once has
+  `TauCeti.integral_prod_wignerMatrix_apply_eq_zero_of_ne`: for independent entries with all (or
+  off-diagonal) coordinates centered, a product reading some arbitrary (or nonloop) edge once has
   expectation zero.
-* `TauCeti.integral_trace_pow_wignerMatrix`, `TauCeti.integral_trace_pow_wignerMatrix_of_ne`: for
-  independent entries in `Lᵏ`, the expected trace of `Hₙᵏ` reduces to closed walks traversing each
-  (or each nonloop) edge at least twice.
+* `TauCeti.integrable_trace_pow_wignerMatrix`: on a finite measure space, `(Hₙ ^ k).trace` is
+  integrable when all coordinates belong to `Lᵏ`.
+* `TauCeti.integral_trace_pow_wignerMatrix`,
+  `TauCeti.integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge`: for independent
+  entries in `Lᵏ` (`k ≠ 0`) with all (or off-diagonal) coordinates centered, the expected trace of
+  `Hₙᵏ` reduces to closed walks traversing each (or each nonloop) edge at least twice.
 
 * `TauCeti.integrable_prod_wignerMatrix_apply_path` and
   `TauCeti.integral_prod_wignerMatrix_apply_path`: integrability and a second-moment product
@@ -151,13 +154,6 @@ theorem indepFun_prod_wignerMatrix_apply_of_ne {ι₁ ι₂ : Type*} [Fintype ι
   · simp only [Function.comp_apply, wignerMatrix_apply_eq_orientEntry, φ₁, X, e₁, c]
   · simp only [Function.comp_apply, wignerMatrix_apply_eq_orientEntry, φ₂, X, e₂, c]
 
-private theorem integral_wignerMatrix_apply_eq_zero_of_ne (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
-    {n : ℕ} {i j : Fin n} (hne : i ≠ j) :
-    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
-  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hne) with h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
-
 private theorem integral_prod_wignerMatrix_apply_eq_zero_of_step {ι : Type*} [Fintype ι]
     (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
@@ -209,10 +205,21 @@ theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι]
   integral_prod_wignerMatrix_apply_eq_zero_of_step hξm hηm hindep u v
     (integral_wignerMatrix_apply_eq_zero hξ hη (u t) (v t)) ht
 
+/-- On a finite measure space, the trace of the `k`-th power of a Wigner matrix is integrable
+whenever all coordinates belong to `Lᵏ`. -/
+theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
+    (hξp : ∀ ij, MemLp (ξ ij) k P) (hηp : ∀ i, MemLp (η i) k P) (n : ℕ) :
+    Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · simp_rw [trace_pow_eq_sum_prod _ hk]
+    exact integrable_finsetSum _ fun w _ ↦
+      integrable_prod_wignerMatrix_apply (by simpa using hξp) (by simpa using hηp) _ _
+
 /-- **Trace-word expansion without diagonal centring.** When the entries of the array are
 independent, in `Lᵏ` (`k ≠ 0`), and the off-diagonal coordinates `ξ` are centred, only closed walks
 with no singleton nonloop edge contribute to the expected trace of `Hₙᵏ`. -/
-theorem integral_trace_pow_wignerMatrix_of_ne
+theorem integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) {k : ℕ} (hk : k ≠ 0)
     (hξk : ∀ ij, MemLp (ξ ij) k P) (hηk : ∀ i, MemLp (η i) k P) (n : ℕ) :
@@ -237,7 +244,7 @@ centred and in `Lᵏ`, `k ≠ 0`. Then the expected trace of `Hₙᵏ` is the su
 `w : Fin k → Fin n` that traverse each of their edges `s(w t, w (t + 1))` at least twice, of the
 expected product of the entries of `Hₙ` along the walk: the closed walks with an edge traversed
 exactly once contribute zero. -/
-theorem integral_trace_pow_wignerMatrix [IsFiniteMeasure P]
+theorem integral_trace_pow_wignerMatrix
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {k : ℕ} (hk : k ≠ 0)
     (hξk : ∀ ij, MemLp (ξ ij) k P) (hηk : ∀ i, MemLp (η i) k P) (n : ℕ) :
@@ -245,15 +252,17 @@ theorem integral_trace_pow_wignerMatrix [IsFiniteMeasure P]
       ∑ w : Fin k → Fin n with
         ∀ t, ∃ s ≠ t, s(w s, w (finRotate k s)) = s(w t, w (finRotate k t)),
         ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t)) ∂P := by
-  simp_rw [trace_pow_eq_sum_prod _ hk]
-  rw [integral_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
-    (by simpa using hξk) (by simpa using hηk) _ _]
-  refine (Finset.sum_filter_of_ne fun w _ hw t ↦ ?_).symm
-  by_contra! h
-  exact hw (integral_prod_wignerMatrix_apply_eq_zero
-    (fun ij ↦ (hξk ij).aestronglyMeasurable.aemeasurable)
-    (fun i ↦ (hηk i).aestronglyMeasurable.aemeasurable) hindep hξ hη _ _
-    fun s hs ↦ by_contra fun hst ↦ h s hst hs)
+  classical
+  rw [integral_trace_pow_wignerMatrix_eq_sum_no_singleton_nonloop_edge hindep hξ hk hξk hηk]
+  refine (Finset.sum_subset (fun w hw ↦ ?_) fun w _ hw ↦ ?_).symm
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hw ⊢
+    exact fun t _ ↦ hw t
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_forall, not_exists, not_and] at hw
+    obtain ⟨t, ht⟩ := hw
+    exact integral_prod_wignerMatrix_apply_eq_zero
+      (fun ij ↦ (hξk ij).aestronglyMeasurable.aemeasurable)
+      (fun i ↦ (hηk i).aestronglyMeasurable.aemeasurable) hindep hξ hη _ _
+      fun s hs ↦ by_contra fun hst ↦ ht s hst hs
 
 end SingleEdge
 
@@ -348,26 +357,36 @@ theorem integral_prod_wignerMatrix_apply_path
   rw [Finset.prod_coe_sort _ (fun i : Fin (2 * m) ↦
     ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P)]
 
-/-- With unit off-diagonal second moments, every double-traversal tree path of length
-`2 * m` has expected entry product `n⁻ᵐ`. The zero-step path contributes `1`. -/
+/-- With unit off-diagonal second moments in the `n × n` corner, every double-traversal tree path
+of length `2 * m` has expected entry product `n⁻ᵐ`. The zero-step path contributes `1`. -/
 theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
     (hindep : iIndepFun ξ P)
-    (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
+    (hsecond : ∀ ij, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
     (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
     (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
       #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
     ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
       (n : ℂ)⁻¹ ^ m := by
-  have hξ (ij : StrictUpper) : AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P :=
-    (integrable_of_integral_eq_one (hsecond ij)).aestronglyMeasurable
-  rw [integral_prod_wignerMatrix_apply_path hξ hindep v hclosed hv he]
+  have := hindep.isProbabilityMeasure
+  let ξ' : StrictUpper → Ω → ℂ := fun ij ω ↦ if ij.1.2 < n then ξ ij ω else 1
+  have hindep' : iIndepFun ξ' P :=
+    hindep.comp (fun ij (z : ℂ) ↦ if ij.1.2 < n then z else 1) fun ij ↦
+      if h : ij.1.2 < n then by simpa [h] using measurable_id' else by simp [h]
+  have hsecond' (ij : StrictUpper) : ∫ ω, ‖ξ' ij ω‖ ^ 2 ∂P = 1 := by
+    by_cases h : ij.1.2 < n <;> simp [ξ', h, hsecond]
+  have hξ' (ij : StrictUpper) : AEStronglyMeasurable (fun ω ↦ ‖ξ' ij ω‖ ^ 2) P :=
+    (integrable_of_integral_eq_one (hsecond' ij)).aestronglyMeasurable
+  have hw (ω : Ω) : wignerMatrix ξ η n ω = wignerMatrix ξ' η n ω :=
+    wignerMatrix_congr ω (fun ij hij ↦ by simp [ξ', hij]) (fun _ _ ↦ rfl)
+  simp_rw [hw]
+  rw [integral_prod_wignerMatrix_apply_path hξ' hindep' v hclosed hv he]
   have hterm (i : Fin (2 * m)) (hi : i ∈
       ({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)) :
-      ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ := by
+      ∫ ω, ‖wignerMatrix ξ' η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ := by
     have hne := ne_of_canonicalWalk_succ_eq v i (mem_filter.mp hi).2
     simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, integral_const_mul,
-      hsecond, mul_one]
+      hsecond', mul_one]
   rw [prod_congr rfl hterm, prod_const, card_filter_canonicalWalk_succ_eq, hv,
     Nat.add_sub_cancel]
   simp only [Complex.ofReal_pow, Complex.ofReal_inv, Complex.ofReal_natCast]
@@ -409,11 +428,11 @@ theorem integral_prod_wignerMatrix_apply_leading [NeZero m]
 
 /-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
 edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
-Only independence and unit second absolute moments of the upper entries are required;
-centering, higher moments, and all conditions on the diagonal are unnecessary here. -/
+Only independence and unit second absolute moments of the upper entries in the `n × n` corner are
+required; centering, higher moments, and all conditions on the diagonal are unnecessary here. -/
 theorem integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one
     (hindep : iIndepFun ξ P)
-    (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) (w : Fin (2 * m) → Fin n)
+    (hsecond : ∀ ij, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) (w : Fin (2 * m) → Fin n)
     (h : ∀ i, ∃ j ≠ i,
       s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
     (hv : #(univ.image w) = m + 1) :

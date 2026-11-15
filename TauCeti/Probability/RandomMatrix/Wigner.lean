@@ -39,9 +39,10 @@ and resolvent methods:
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
   independent (`iIndepFun_wignerMatrix_apply_of_ne`,
   `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
-* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
-  give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
-  integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
+* centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero_of_ne`,
+  `integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries give `Lᵖ` matrix entries
+  (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is integrable when the entries
+  of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
   (`integral_re_trace_wignerMatrix_mul_self`).
@@ -372,16 +373,24 @@ section Entries
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 
+/-- If the off-diagonal coordinates of the array are centred, every off-diagonal entry of the
+Wigner matrix has expectation zero. -/
+theorem integral_wignerMatrix_apply_eq_zero_of_ne (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
+    {n : ℕ} {i j : Fin n} (hne : i ≠ j) :
+    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hne) with h | h
+  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
+  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
+
 /-- If the entries of the array are centred, every entry of the Wigner matrix has expectation
 zero. -/
 theorem integral_wignerMatrix_apply_eq_zero (hξ : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i, ∫ ω, η i ω ∂P = 0) {n : ℕ} (i j : Fin n) :
     ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ]
-  · obtain rfl := Fin.ext h
+  by_cases hne : i = j
+  · subst hne
     simp [integral_const_mul, integral_complex_ofReal, hη]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj, hξ]
+  · exact integral_wignerMatrix_apply_eq_zero_of_ne hξ hne
 
 /-- If the entries of the array lie in `Lᵖ`, so does every entry of the Wigner matrix. -/
 theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p P)
