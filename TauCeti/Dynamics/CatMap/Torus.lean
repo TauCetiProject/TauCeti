@@ -71,11 +71,9 @@ def catMapDiffeomorph :
 @[simp]
 theorem catMapDiffeomorph_apply (x : Fin 2 → AddCircle p) :
     catMapDiffeomorph p x = Matrix.smulVecHom catMap (AddCircle p) x := by
-  ext i
-  simp only [catMapDiffeomorph, Diffeomorph.constSmul_apply,
-    AddCircle.generalLinearGroup_smul_apply, smulVecHom_apply]
+  simp only [catMapDiffeomorph, Diffeomorph.constSmul_apply]
   -- The matrix underlying `toGL ⟨P, _⟩` is `P`.
-  rfl
+  exact AddCircle.generalLinearGroup_smul_eq_smulVecHom p _ x
 
 /-- The `n`-th iterate of the cat map is the map of the torus induced by the matrix `Pⁿ`. -/
 theorem iterate_catMapDiffeomorph (n : ℕ) (x : Fin 2 → AddCircle p) :
