@@ -401,19 +401,26 @@ theorem euclideanHausdorffMeasure_sphere (c : E) {r : ℝ} (hr : 0 < r) :
     _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_zero_one, smul_eq_mul, mul_comm]
 
-/-- A positive-radius sphere has finite codimension-one Euclidean Hausdorff measure. -/
-theorem euclideanHausdorffMeasure_sphere_lt_top (c : E) {r : ℝ} (hr : 0 < r) :
+/-- Every sphere has finite codimension-one Euclidean Hausdorff measure. -/
+theorem euclideanHausdorffMeasure_sphere_lt_top (c : E) (r : ℝ) :
     μHE[finrank ℝ E - 1] (sphere c r) < ∞ := by
-  rw [euclideanHausdorffMeasure_sphere c hr]
-  finiteness
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · simp [sphere_eq_empty_of_neg hr]
+  · rw [sphere_zero, Measure.euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def]
+    have h := hausdorffMeasure_le_one_of_subsingleton (s := {c}) subsingleton_singleton
+      (Nat.cast_nonneg (finrank ℝ E - 1))
+    exact ENNReal.mul_lt_top (by finiteness) (h.trans_lt (by simp))
+  · rw [euclideanHausdorffMeasure_sphere c hr]
+    finiteness
 
-/-- A continuous function on a positive-radius sphere is integrable for its
+/-- A continuous function on a sphere is integrable for its
 codimension-one Euclidean Hausdorff measure. -/
-theorem _root_.ContinuousOn.integrableOn_sphere {F : Type*} [NormedAddCommGroup F]
-    {f : E → F} {c : E} {r : ℝ} (hf : ContinuousOn f (sphere c r)) (hr : 0 < r) :
+theorem _root_.ContinuousOn.integrableOn_sphere_euclideanHausdorffMeasure
+    {F : Type*} [NormedAddCommGroup F]
+    {f : E → F} {c : E} {r : ℝ} (hf : ContinuousOn f (sphere c r)) :
     IntegrableOn f (sphere c r) μHE[finrank ℝ E - 1] :=
   hf.integrableOn_of_subset_isCompact (isCompact_sphere c r) isClosed_sphere.measurableSet
-    Subset.rfl (euclideanHausdorffMeasure_sphere_lt_top c hr).ne
+    Subset.rfl (euclideanHausdorffMeasure_sphere_lt_top c r).ne
 
 /-- The area `|Sⁿ|` of the unit round sphere `Sⁿ ⊆ ℝⁿ⁺¹`: the normalized `n`-dimensional Hausdorff
 measure of the unit sphere of `EuclideanSpace ℝ (Fin (n + 1))`. -/

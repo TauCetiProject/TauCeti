@@ -21,7 +21,7 @@ of the metric being measured. Coefficients may be arbitrary functions: symmetry 
 positive definiteness are not needed. Both quantities are unchanged by constant shifts
 and commute with constant rescaling. Additivity assumes differentiable coefficients
 (and integrable flux densities for the sphere integral). Continuous coefficient derivatives
-on a positive-radius sphere suffice for integrability. `normalizedCoordinateFlux_of_eqOn_const`
+on a sphere suffice for integrability. `normalizedCoordinateFlux_of_eqOn_const`
 evaluates any flux density constant on the sphere, without a conformal or radial hypothesis.
 
 `coordinateFluxIntegrand_scalar` reduces the integrand of `w δ` to
@@ -125,25 +125,25 @@ theorem continuousOn_coordinateFluxIntegrand
   unfold coordinateFluxIntegrand
   fun_prop
 
-/-- Continuous coefficient derivatives on a positive-radius sphere give an integrable flux
+/-- Continuous coefficient derivatives on a sphere give an integrable flux
 density for codimension-one Euclidean Hausdorff measure. -/
 theorem integrableOn_coordinateFluxIntegrand
     {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r : ℝ}
     (hg : ∀ i j, ContinuousOn (fun x => fderiv ℝ (fun y => g y i j) x)
-      (Metric.sphere 0 r)) (hr : 0 < r) :
+      (Metric.sphere 0 r)) :
     IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
       (Measure.euclideanHausdorffMeasure (n - 1)) := by
   simpa only [finrank_euclideanSpace_fin] using
-    (continuousOn_coordinateFluxIntegrand hg r).integrableOn_sphere hr
+    (continuousOn_coordinateFluxIntegrand hg r).integrableOn_sphere_euclideanHausdorffMeasure
 
-/-- A flux density constant on a positive-radius sphere is integrable there. -/
+/-- A flux density constant on a sphere is integrable there. -/
 theorem integrableOn_coordinateFluxIntegrand_of_eqOn_const
-    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r c : ℝ} (hr : 0 < r)
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r c : ℝ}
     (hc : Set.EqOn (coordinateFluxIntegrand n g r) (fun _ => c) (Metric.sphere 0 r)) :
     IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
       (Measure.euclideanHausdorffMeasure (n - 1)) := by
   simpa only [finrank_euclideanSpace_fin] using
-    (continuousOn_const.congr hc).integrableOn_sphere hr
+    (continuousOn_const.congr hc).integrableOn_sphere_euclideanHausdorffMeasure
 
 /-- The normalization denominator is `2(n - 1)|Sⁿ⁻¹|` in positive dimension. -/
 theorem normalizedCoordinateFlux_eq_div_roundSphereVolume
@@ -555,13 +555,35 @@ theorem coordinateFluxIntegrand_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
     hn.fderiv_norm_self, hxr]
   field_simp
 
-/-- Radial scalar coefficients have an integrable flux density on every positive-radius sphere. -/
-theorem integrableOn_coordinateFluxIntegrand_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
-    (hf : HasDerivAt f f' r) (hr : 0 < r) :
+/-- Radial scalar coefficients have an integrable flux density on every sphere, without
+any differentiability assumption on the radial function. -/
+theorem integrableOn_coordinateFluxIntegrand_scalar_radial (f : ℝ → ℝ) (r : ℝ) :
     IntegrableOn (coordinateFluxIntegrand n (fun y i j => if i = j then f ‖y‖ else 0) r)
-      (Metric.sphere 0 r) (Measure.euclideanHausdorffMeasure (n - 1)) :=
-  integrableOn_coordinateFluxIntegrand_of_eqOn_const hr
-    (fun _ hx => coordinateFluxIntegrand_scalar_radial hf hr hx)
+      (Metric.sphere 0 r) (Measure.euclideanHausdorffMeasure (n - 1)) := by
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · simp [Metric.sphere_eq_empty_of_neg hr]
+  · apply integrableOn_coordinateFluxIntegrand_of_eqOn_const (c := 0)
+    intro x _
+    simp [coordinateFluxIntegrand_def]
+  · by_cases hf : DifferentiableAt ℝ f r
+    · exact integrableOn_coordinateFluxIntegrand_of_eqOn_const
+        (fun _ hx => coordinateFluxIntegrand_scalar_radial hf.hasDerivAt hr hx)
+    · apply integrableOn_coordinateFluxIntegrand_of_eqOn_const (c := 0)
+      intro x hx
+      have hxr : ‖x‖ = r := by simpa using hx
+      have hd : ¬DifferentiableAt ℝ (fun y : EuclideanSpace ℝ (Fin n) => f ‖y‖) x := by
+        intro hd
+        -- Restriction to the radial line would make `f` differentiable at `r`.
+        have hp : DifferentiableAt ℝ (fun t : ℝ => (t / r) • x) r := by fun_prop
+        have hd' : DifferentiableAt ℝ (fun y => f ‖y‖) ((r / r) • x) := by
+          simpa [hr.ne'] using hd
+        have heq : (fun t : ℝ => f ‖(t / r) • x‖) =ᶠ[nhds r] f := by
+          filter_upwards [eventually_gt_nhds hr] with t ht
+          simp [norm_smul, Real.norm_eq_abs, abs_of_pos ht, abs_of_pos hr, hxr, hr.ne']
+        exact hf (DifferentiableAt.congr_of_eventuallyEq
+          (hd'.comp r (g := fun y : EuclideanSpace ℝ (Fin n) => f ‖y‖) hp) heq.symm)
+      rw [coordinateFluxIntegrand_scalar, fderiv_zero_of_not_differentiableAt hd]
+      simp
 
 /-- The normalized flux of a radial conformally Euclidean matrix in dimension at least two,
 with the sphere areas and dimension factors cancelled. -/
