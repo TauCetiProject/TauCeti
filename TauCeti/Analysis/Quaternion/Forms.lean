@@ -40,6 +40,8 @@ conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
 ## Main declarations
 
 * `TauCeti.Quaternion.dq`: the `1`-form `dq`, the inverse of the coordinate map `ℍ → (Fin 4 → ℝ)`.
+* `TauCeti.Quaternion.abs_le_norm_dq`, `TauCeti.Quaternion.norm_dq_le_two_mul_of_abs_le`:
+  comparison between individual real coordinates and the Euclidean norm `‖dq x‖`.
 * `TauCeti.Quaternion.Dq`: the `3`-form `Dq`, as a continuous alternating map.
 * `TauCeti.Quaternion.Dq_apply`: `Dq v` is the sum over the four coordinates `i` of
   `(-1) ^ i` times the `3 × 3` minor of `v` omitting coordinate `i`, times the `i`-th unit.
@@ -111,6 +113,37 @@ theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
   congr 2
   simp only [coe_dq, _root_.Quaternion.equivTuple]
   exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+
+/-- Every real coordinate of `x` is bounded in absolute value by the quaternionic norm `‖dq x‖`. -/
+theorem abs_le_norm_dq (x : Fin 4 → ℝ) (i : Fin 4) : |x i| ≤ ‖dq x‖ := by
+  rw [norm_dq, ← Real.norm_eq_abs]
+  exact PiLp.norm_apply_le (WithLp.toLp 2 x) i
+
+/-- The squared norm of `dq x` is the sum of squares of the four real coordinates. -/
+theorem sq_norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ ^ 2 = x 0 ^ 2 + x 1 ^ 2 + x 2 ^ 2 + x 3 ^ 2 := by
+  rw [sq, ← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
+  simp
+
+/-- In four real dimensions, if every coordinate of `x` satisfies `|x i| ≤ r`, then
+`‖dq x‖ ≤ √4 * r = 2 * r`. -/
+theorem norm_dq_le_two_mul_of_abs_le {x : Fin 4 → ℝ} {r : ℝ} (hx : ∀ i, |x i| ≤ r) :
+    ‖dq x‖ ≤ 2 * r := by
+  have hr : 0 ≤ r := (abs_nonneg (x 0)).trans (hx 0)
+  have hi (i : Fin 4) : x i ^ 2 ≤ r ^ 2 := by
+    rw [← sq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hx i) 2
+  have hle : ‖dq x‖ ^ 2 ≤ (2 * r) ^ 2 := by linarith [sq_norm_dq x, hi 0, hi 1, hi 2, hi 3]
+  nlinarith [norm_nonneg (dq x)]
+
+/-- Strict coordinate bounds `|x i| < r` in four real dimensions yield `‖dq x‖ < 2 * r`. -/
+theorem norm_dq_lt_two_mul_of_abs_lt {x : Fin 4 → ℝ} {r : ℝ} (hx : ∀ i, |x i| < r) :
+    ‖dq x‖ < 2 * r := by
+  have hr : 0 < r := (abs_nonneg (x 0)).trans_lt (hx 0)
+  have hi (i : Fin 4) : x i ^ 2 < r ^ 2 := by
+    rw [← sq_abs]
+    exact pow_lt_pow_left₀ (hx i) (abs_nonneg _) two_ne_zero
+  have hlt : ‖dq x‖ ^ 2 < (2 * r) ^ 2 := by linarith [sq_norm_dq x, hi 0, hi 1, hi 2, hi 3]
+  nlinarith [norm_nonneg (dq x)]
 
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/

@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Analytic.BochnerIntegral
 public import TauCeti.Analysis.Analytic.Composition
 public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Quaternion.Kernel
+public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Box
 import Mathlib.Analysis.Analytic.CPolynomialDef
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Quaternion.Cauchy.CutoffField
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Topology.ContinuousMap.Algebra
 import TauCeti.Topology.ContinuousMap.Compact
 
 /-!
-# Power-series expansion and real analyticity of Cauchy–Fueter potentials
+# Power-series expansion and real analyticity of Cauchy–Fueter potentials and regular functions
 
 For a pole `q₀ + h` displaced from `q₀` relative to an evaluation point `q ≠ q₀`, the Euclidean
 law of cosines writes `‖q - (q₀ + h)‖² = ‖q - q₀‖² * (1 - u)` with dimensionless quadratic
@@ -33,14 +36,42 @@ bound `HasFPowerSeriesOnBall.comp` yields a formal multilinear series
 `TauCeti.cauchyFueterKernelSeries φ hφ` in `C(K, ℍ)` — depending only on `(φ, q₀)` and not on `δ` —
 that represents `q ↦ cauchyFueterKernel (φ ·) q` on the full ball of radius `(√2 - 1) δ` around
 `q₀`. Pairing with any integrable quaternionic boundary density on a single compact piece or a
-finite family of compact faces (such as the eight faces of a four-dimensional box) transfers the
-same convergence ball, real analyticity, and `C^∞` smoothness to both left and right Cauchy–Fueter
-boundary potentials away from the boundary image.
+finite family of compact faces transfers the same convergence ball, real analyticity, and `C^∞`
+smoothness to both left and right Cauchy–Fueter boundary potentials away from the boundary image.
+
+Specializing the finite-face expansion to the eight three-dimensional faces of a coordinate box in
+`Fin 4 → ℝ` and combining it with the pointwise box Cauchy–Fueter representations
+`TauCeti.left_cauchyFueter_box` and `TauCeti.right_cauchyFueter_box` gives a quantitative
+`HasFPowerSeriesOnBall` expansion of radius `(√2 - 1) δ` for every left or right Fueter regular
+function at coordinate distance at least `δ > 0` from the box faces (and of radius
+`(√2 - 1) (R / 2)` when regular on `closedBall q₀ R`). In particular,
+pointwise left or right Fueter regularity on an open set automatically implies real analyticity
+(`AnalyticOnNhd ℝ`) and `C^∞` smoothness, with no continuity assumed on the first derivative.
+
+## Main declarations
+
+* `TauCeti.cauchyFueterKernelSeries`: formal multilinear series in `C(K, ℍ)` representing
+  `q ↦ cauchyFueterKernel (φ ·) q` away from a compact image `range φ`.
+* `TauCeti.hasFPowerSeriesOnBall_cauchyFueterKernel_continuousMap`: quantitative convergence of
+  `cauchyFueterKernelSeries` on `eball q₀ ((√2 - 1) δ)`.
+* `TauCeti.hasFPowerSeriesOnBall_sum_integral_cauchyFueterKernel_mul`,
+  `TauCeti.hasFPowerSeriesOnBall_sum_integral_mul_cauchyFueterKernel`: power-series expansions of
+  finite sums of left and right Cauchy–Fueter face potentials.
+* `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_of_box`,
+  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_of_box`,
+  `TauCeti.LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall`,
+  `TauCeti.RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall`: quantitative power-series
+  expansions of left and right Fueter regular functions on boxes and balls.
+* `TauCeti.LeftFueterOn.analyticAt`, `TauCeti.RightFueterOn.analyticAt`,
+  `TauCeti.LeftFueterOn.analyticOnNhd`, `TauCeti.RightFueterOn.analyticOnNhd`,
+  `TauCeti.LeftFueterOn.contDiffAt`, `TauCeti.RightFueterOn.contDiffAt`,
+  `TauCeti.LeftFueterOn.contDiffOn`, `TauCeti.RightFueterOn.contDiffOn`: real analyticity and
+  smoothness of pointwise left and right Fueter regular functions.
 
 ## References
 
 * I. Frenkel and M. Libine, *Quaternionic analysis, representation theory and physics*,
-  Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, Remark after Theorem 9.
+  Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, Theorem 9 and the remark following it.
 * A. Sudbery, *Quaternionic analysis*, Math. Proc. Cambridge Philos. Soc. 85 (1979), 199–225.
 -/
 
@@ -648,5 +679,244 @@ theorem contDiffOn_sum_integral_mul_cauchyFueterKernel
   (analyticOnNhd_sum_integral_mul_cauchyFueterKernel I φ μ hg).contDiffOn_of_completeSpace
 
 end FiniteFaceSums
+
+/-! ### Box potentials and real analyticity of Fueter regular functions -/
+
+section BoxRegularity
+
+open TauCeti.Quaternion
+
+/-- Parameterization of the eight compact three-dimensional faces `(i, β)` of `Icc a b`, sending
+`(i, true)` to the front face `x i = b i` and `(i, false)` to the back face `x i = a i`. -/
+private noncomputable def boxFaceMap (a b : Fin 4 → ℝ) (p : Fin 4 × Bool) :
+    C(Icc (a ∘ p.1.succAbove) (b ∘ p.1.succAbove), ℍ) :=
+  ⟨fun z ↦ dq (p.1.insertNth (bif p.2 then b p.1 else a p.1) z.1),
+    dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtype_val)⟩
+
+/-- If `x₀` lies at coordinate distance at least `δ` inside `Icc a b`, every point of each of the
+eight box faces lies at Euclidean distance at least `δ` from `dq x₀`. -/
+private theorem norm_boxFaceMap_sub_ge {a b x₀ : Fin 4 → ℝ} {δ : ℝ}
+    (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i) (p : Fin 4 × Bool)
+    (z : Icc (a ∘ p.1.succAbove) (b ∘ p.1.succAbove)) :
+    δ ≤ ‖boxFaceMap a b p z - dq x₀‖ := by
+  have hcoord := abs_le_norm_dq
+    (p.1.insertNth (bif p.2 then b p.1 else a p.1) z.1 - x₀) p.1
+  rw [map_sub] at hcoord
+  refine le_trans ?_ hcoord
+  rcases p with ⟨i, _ | _⟩ <;> simp only [Pi.sub_apply, Bool.cond_false, Bool.cond_true,
+    Fin.insertNth_apply_same]
+  · linarith [ha i, le_abs_self (x₀ i - a i), abs_sub_comm (a i) (x₀ i)]
+  · linarith [hb i, le_abs_self (b i - x₀ i)]
+
+/-- Signed normalized boundary weight `(± 1 / (2π²)) • w i (φ z)` on the face `p = (i, β)`. -/
+private noncomputable def boxFaceWeight (a b : Fin 4 → ℝ) (w : Fin 4 → ℍ → ℍ)
+    (p : Fin 4 × Bool) (z : Icc (a ∘ p.1.succAbove) (b ∘ p.1.succAbove)) : ℍ :=
+  bif p.2 then (1 / (2 * Real.pi ^ 2)) • w p.1 (boxFaceMap a b p z)
+  else -((1 / (2 * Real.pi ^ 2)) • w p.1 (boxFaceMap a b p z))
+
+private theorem integrable_boxFaceWeight {a b : Fin 4 → ℝ} (hab : a ≤ b) {w : Fin 4 → ℍ → ℍ}
+    (hw : ∀ i, ContinuousOn (w i) (dq '' Icc a b)) (p : Fin 4 × Bool) :
+    Integrable (boxFaceWeight a b w p) (Measure.comap Subtype.val volume) := by
+  have hface (c : ℝ) (hc : c ∈ Icc (a p.1) (b p.1)) :
+      Integrable (fun z : Icc (a ∘ p.1.succAbove) (b ∘ p.1.succAbove) ↦
+        (1 / (2 * Real.pi ^ 2)) • w p.1 (dq (p.1.insertNth c z.1)))
+        (Measure.comap Subtype.val volume) := by
+    have hcOn : ContinuousOn (fun x : Fin 3 → ℝ ↦ w p.1 (dq (p.1.insertNth c x)))
+        (Icc (a ∘ p.1.succAbove) (b ∘ p.1.succAbove)) :=
+      (hw p.1).comp
+        (dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_id)).continuousOn
+        fun _ hx ↦ mem_image_of_mem _ (Fin.insertNth_mem_Icc.2 ⟨hc, hx⟩)
+    exact ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).1
+      (hcOn.integrableOn_compact isCompact_Icc)).smul (1 / (2 * Real.pi ^ 2) : ℝ)
+  rcases p with ⟨i, _ | _⟩
+  · exact (hface (a i) ⟨le_rfl, hab i⟩).neg
+  · exact hface (b i) ⟨hab i, le_rfl⟩
+
+private theorem sum_integral_boxFaceWeight (a b : Fin 4 → ℝ) (w : Fin 4 → ℍ → ℍ)
+    (B : ℍ → ℍ → ℍ) (hsmul : ∀ (r : ℝ) k v, B k (r • v) = r • B k v)
+    (hneg : ∀ k v, B k (-v) = -B k v) (q : ℍ) :
+    (∑ p : Fin 4 × Bool,
+      ∫ z : Icc (a ∘ p.1.succAbove) (b ∘ p.1.succAbove),
+        B (cauchyFueterKernel (boxFaceMap a b p z) q) (boxFaceWeight a b w p z)
+        ∂Measure.comap Subtype.val volume) =
+      (1 / (2 * Real.pi ^ 2)) • boxBoundarySum a b
+        (fun i x ↦ B (cauchyFueterKernel (dq x) q) (w i (dq x))) := by
+  rw [Fintype.sum_prod_type, boxBoundarySum_def, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Fintype.sum_bool, smul_sub, sub_eq_add_neg]
+  congr 1
+  · simp only [boxFaceWeight, boxFaceMap, Bool.cond_true, ContinuousMap.coe_mk, hsmul,
+      integral_smul]
+    exact congrArg _ (integral_subtype_comap measurableSet_Icc fun x ↦
+      B (cauchyFueterKernel (dq (i.insertNth (b i) x)) q) (w i (dq (i.insertNth (b i) x))))
+  · simp only [boxFaceWeight, boxFaceMap, Bool.cond_false, ContinuousMap.coe_mk, hneg, hsmul,
+      integral_neg, integral_smul]
+    exact congrArg (fun t ↦ -((1 / (2 * Real.pi ^ 2)) • t))
+      (integral_subtype_comap measurableSet_Icc fun x ↦
+        B (cauchyFueterKernel (dq (i.insertNth (a i) x)) q) (w i (dq (i.insertNth (a i) x))))
+
+/-- Every quaternion in `eball (dq x₀) ((√2 - 1) δ)` has coordinates strictly inside `(a, b)` when
+`x₀` lies at coordinate distance at least `δ` from `a` and `b`. -/
+private theorem exists_dq_mem_openBox_of_mem_eball {a b x₀ : Fin 4 → ℝ} {δ : ℝ}
+    (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i) {q : ℍ}
+    (hq : q ∈ eball (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ))) :
+    ∃ x : Fin 4 → ℝ, dq x = q ∧ (∀ i, a i < x i) ∧ ∀ i, x i < b i := by
+  have hpos : 0 < (Real.sqrt 2 - 1) * δ := by
+    by_contra! hle
+    simp [ENNReal.ofReal_eq_zero.2 hle] at hq
+  let x : Fin 4 → ℝ := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q
+  have hxq : dq x = q := by simp [coe_dq, x]
+  have hlt : ‖dq (x - x₀)‖ < δ := by
+    rw [map_sub, hxq]
+    have h1 : ‖q - dq x₀‖ < (Real.sqrt 2 - 1) * δ := by
+      rwa [Metric.mem_eball, edist_dist, dist_eq_norm, ENNReal.ofReal_lt_ofReal_iff hpos] at hq
+    nlinarith [Real.one_lt_sqrt_two, Real.sqrt_two_lt_three_halves]
+  refine ⟨x, hxq, fun i ↦ ?_, fun i ↦ ?_⟩ <;>
+    have hi := (abs_le_norm_dq (x - x₀) i).trans_lt hlt <;>
+    rw [Pi.sub_apply, abs_lt] at hi <;> linarith [ha i, hb i]
+
+/-- Quantitative power-series representation on `eball (dq x₀) ((√2 - 1) δ)` for a function
+pointwise left Fueter regular on a closed coordinate box `dq '' Icc a b`. -/
+theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_box
+    {a b x₀ : Fin 4 → ℝ} {δ : ℝ} {f : ℍ → ℍ} (hf : LeftFueterOn f (dq '' Icc a b))
+    (hδ : 0 < δ) (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i) :
+    ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall f p (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  have hab : a ≤ b := fun i ↦ by linarith [ha i, hb i]
+  have hc : ContinuousOn f (dq '' Icc a b) := hf.differentiableOn.continuousOn
+  have hne : ∀ p ∈ (Finset.univ : Finset (Fin 4 × Bool)), ∀ z, boxFaceMap a b p z ≠ dq x₀ :=
+    fun p _ z heq ↦ by linarith [norm_boxFaceMap_sub_ge ha hb p z, norm_sub_eq_zero_iff.2 heq]
+  have hint : ∀ p ∈ (Finset.univ : Finset (Fin 4 × Bool)),
+      Integrable (boxFaceWeight a b (fun i q ↦ dq (Pi.single i 1) * f q) p)
+        (Measure.comap Subtype.val volume) :=
+    fun p _ ↦ integrable_boxFaceWeight hab (fun _ ↦ continuousOn_const.mul hc) p
+  refine ⟨_, (hasFPowerSeriesOnBall_sum_integral_cauchyFueterKernel_mul Finset.univ
+    (boxFaceMap a b) (fun _ ↦ Measure.comap Subtype.val volume) hne hδ
+    (fun p _ ↦ norm_boxFaceMap_sub_ge ha hb p) hint).congr fun q hq ↦ ?_⟩
+  obtain ⟨x, rfl, hxa, hxb⟩ := exists_dq_mem_openBox_of_mem_eball ha hb hq
+  have hopen : dq '' pi univ (fun i ↦ Ioo (a i) (b i)) \ {dq x} ⊆ dq '' Icc a b :=
+    sdiff_subset.trans (image_mono fun _ hy ↦
+      ⟨fun i ↦ (hy i (mem_univ i)).1.le, fun i ↦ (hy i (mem_univ i)).2.le⟩)
+  have hsum : (∑ p, ∫ z, cauchyFueterKernel (boxFaceMap a b p z) (dq x) *
+      boxFaceWeight a b (fun i y ↦ dq (Pi.single i 1) * f y) p z
+      ∂Measure.comap Subtype.val volume) =
+      (1 / (2 * Real.pi ^ 2)) • boxBoundarySum a b
+        (fun i y ↦ cauchyFueterKernel (dq y) (dq x) * dq (Pi.single i 1) * f (dq y)) := by
+    simpa only [mul_assoc] using sum_integral_boxFaceWeight a b
+      (fun i y ↦ dq (Pi.single i 1) * f y) (· * ·) (fun _ _ _ ↦ mul_smul_comm _ _ _) mul_neg (dq x)
+  exact hsum.trans (left_cauchyFueter_box hc (hf.mono hopen) hxa hxb).symm
+
+/-- Quantitative power-series representation on `eball (dq x₀) ((√2 - 1) δ)` for a function
+pointwise right Fueter regular on a closed coordinate box `dq '' Icc a b`. -/
+theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_box
+    {a b x₀ : Fin 4 → ℝ} {δ : ℝ} {f : ℍ → ℍ} (hf : RightFueterOn f (dq '' Icc a b))
+    (hδ : 0 < δ) (ha : ∀ i, δ ≤ x₀ i - a i) (hb : ∀ i, δ ≤ b i - x₀ i) :
+    ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall f p (dq x₀) (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
+  have hab : a ≤ b := fun i ↦ by linarith [ha i, hb i]
+  have hc : ContinuousOn f (dq '' Icc a b) := hf.differentiableOn.continuousOn
+  have hne : ∀ p ∈ (Finset.univ : Finset (Fin 4 × Bool)), ∀ z, boxFaceMap a b p z ≠ dq x₀ :=
+    fun p _ z heq ↦ by linarith [norm_boxFaceMap_sub_ge ha hb p z, norm_sub_eq_zero_iff.2 heq]
+  have hint : ∀ p ∈ (Finset.univ : Finset (Fin 4 × Bool)),
+      Integrable (boxFaceWeight a b (fun i q ↦ f q * dq (Pi.single i 1)) p)
+        (Measure.comap Subtype.val volume) :=
+    fun p _ ↦ integrable_boxFaceWeight hab (fun _ ↦ hc.mul continuousOn_const) p
+  refine ⟨_, (hasFPowerSeriesOnBall_sum_integral_mul_cauchyFueterKernel Finset.univ
+    (boxFaceMap a b) (fun _ ↦ Measure.comap Subtype.val volume) hne hδ
+    (fun p _ ↦ norm_boxFaceMap_sub_ge ha hb p) hint).congr fun q hq ↦ ?_⟩
+  obtain ⟨x, rfl, hxa, hxb⟩ := exists_dq_mem_openBox_of_mem_eball ha hb hq
+  have hopen : dq '' pi univ (fun i ↦ Ioo (a i) (b i)) \ {dq x} ⊆ dq '' Icc a b :=
+    sdiff_subset.trans (image_mono fun _ hy ↦
+      ⟨fun i ↦ (hy i (mem_univ i)).1.le, fun i ↦ (hy i (mem_univ i)).2.le⟩)
+  have hsum := sum_integral_boxFaceWeight a b (fun i y ↦ f y * dq (Pi.single i 1))
+    (fun k v ↦ v * k) (fun _ _ _ ↦ smul_mul_assoc _ _ _) (fun _ _ ↦ neg_mul _ _) (dq x)
+  exact hsum.trans (right_cauchyFueter_box hc (hf.mono hopen) hxa hxb).symm
+
+private theorem inscribedCube_subset_closedBall (x₀ : Fin 4 → ℝ) {R : ℝ} :
+    dq '' Icc (fun i ↦ x₀ i - R / 2) (fun i ↦ x₀ i + R / 2) ⊆ closedBall (dq x₀) R := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [mem_closedBall, dist_eq_norm, ← map_sub]
+  have habs (i : Fin 4) : |(x - x₀) i| ≤ R / 2 := by
+    rw [Pi.sub_apply, abs_le]
+    exact ⟨by linarith [(mem_Icc.1 hx).1 i], by linarith [(mem_Icc.1 hx).2 i]⟩
+  linarith [norm_dq_le_two_mul_of_abs_le habs]
+
+/-- Quantitative power-series representation on `eball q₀ ((√2 - 1) (R / 2))` for a function
+pointwise left Fueter regular on `closedBall q₀ R`. -/
+theorem LeftFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall
+    {q₀ : ℍ} {R : ℝ} {f : ℍ → ℍ} (hR : 0 < R) (hf : LeftFueterOn f (closedBall q₀ R)) :
+    ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall f p q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * (R / 2))) := by
+  let x₀ : Fin 4 → ℝ := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q₀
+  have hx₀ : dq x₀ = q₀ := by simp [coe_dq, x₀]
+  rw [← hx₀] at hf ⊢
+  exact (hf.mono (inscribedCube_subset_closedBall x₀)).exists_hasFPowerSeriesOnBall_of_box
+    (half_pos hR) (fun _ ↦ by linarith) (fun _ ↦ by linarith)
+
+/-- Quantitative power-series representation on `eball q₀ ((√2 - 1) (R / 2))` for a function
+pointwise right Fueter regular on `closedBall q₀ R`. -/
+theorem RightFueterOn.exists_hasFPowerSeriesOnBall_of_closedBall
+    {q₀ : ℍ} {R : ℝ} {f : ℍ → ℍ} (hR : 0 < R) (hf : RightFueterOn f (closedBall q₀ R)) :
+    ∃ p : FormalMultilinearSeries ℝ ℍ ℍ,
+      HasFPowerSeriesOnBall f p q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * (R / 2))) := by
+  let x₀ : Fin 4 → ℝ := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q₀
+  have hx₀ : dq x₀ = q₀ := by simp [coe_dq, x₀]
+  rw [← hx₀] at hf ⊢
+  exact (hf.mono (inscribedCube_subset_closedBall x₀)).exists_hasFPowerSeriesOnBall_of_box
+    (half_pos hR) (fun _ ↦ by linarith) (fun _ ↦ by linarith)
+
+/-- **Left Fueter regular functions are real analytic.** Pointwise left Fueter regularity on a
+neighbourhood of `q₀` implies real analyticity at `q₀`, with no continuity assumed on the first
+derivative. -/
+theorem LeftFueterOn.analyticAt {f : ℍ → ℍ} {s : Set ℍ} {q₀ : ℍ}
+    (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q₀) : AnalyticAt ℝ f q₀ := by
+  obtain ⟨R, hR, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hs
+  obtain ⟨_, hp⟩ := (hf.mono hball).exists_hasFPowerSeriesOnBall_of_closedBall hR
+  exact hp.analyticAt
+
+/-- **Right Fueter regular functions are real analytic.** Pointwise right Fueter regularity on a
+neighbourhood of `q₀` implies real analyticity at `q₀`, with no continuity assumed on the first
+derivative. -/
+theorem RightFueterOn.analyticAt {f : ℍ → ℍ} {s : Set ℍ} {q₀ : ℍ}
+    (hf : RightFueterOn f s) (hs : s ∈ 𝓝 q₀) : AnalyticAt ℝ f q₀ := by
+  obtain ⟨R, hR, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hs
+  obtain ⟨_, hp⟩ := (hf.mono hball).exists_hasFPowerSeriesOnBall_of_closedBall hR
+  exact hp.analyticAt
+
+/-- A function pointwise left Fueter regular on an open set `s` is real analytic on `s`. -/
+theorem LeftFueterOn.analyticOnNhd {f : ℍ → ℍ} {s : Set ℍ}
+    (hf : LeftFueterOn f s) (hs : IsOpen s) : AnalyticOnNhd ℝ f s :=
+  fun _ hq ↦ hf.analyticAt (hs.mem_nhds hq)
+
+/-- A function pointwise right Fueter regular on an open set `s` is real analytic on `s`. -/
+theorem RightFueterOn.analyticOnNhd {f : ℍ → ℍ} {s : Set ℍ}
+    (hf : RightFueterOn f s) (hs : IsOpen s) : AnalyticOnNhd ℝ f s :=
+  fun _ hq ↦ hf.analyticAt (hs.mem_nhds hq)
+
+/-- Pointwise left Fueter regularity on a neighbourhood of `q₀` implies `C^n` (in particular `C^∞`
+and `C^ω`) smoothness at `q₀`. -/
+theorem LeftFueterOn.contDiffAt {f : ℍ → ℍ} {s : Set ℍ} {q₀ : ℍ}
+    (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q₀) {n : WithTop ℕ∞} : ContDiffAt ℝ n f q₀ :=
+  (hf.analyticAt hs).contDiffAt
+
+/-- Pointwise right Fueter regularity on a neighbourhood of `q₀` implies `C^n` (in particular
+`C^∞` and `C^ω`) smoothness at `q₀`. -/
+theorem RightFueterOn.contDiffAt {f : ℍ → ℍ} {s : Set ℍ} {q₀ : ℍ}
+    (hf : RightFueterOn f s) (hs : s ∈ 𝓝 q₀) {n : WithTop ℕ∞} : ContDiffAt ℝ n f q₀ :=
+  (hf.analyticAt hs).contDiffAt
+
+/-- Pointwise left Fueter regularity on an open set `s` implies `C^n` (in particular `C^∞` and
+`C^ω`) smoothness on `s`. -/
+theorem LeftFueterOn.contDiffOn {f : ℍ → ℍ} {s : Set ℍ}
+    (hf : LeftFueterOn f s) (hs : IsOpen s) {n : WithTop ℕ∞} : ContDiffOn ℝ n f s :=
+  (hf.analyticOnNhd hs).contDiffOn_of_completeSpace
+
+/-- Pointwise right Fueter regularity on an open set `s` implies `C^n` (in particular `C^∞` and
+`C^ω`) smoothness on `s`. -/
+theorem RightFueterOn.contDiffOn {f : ℍ → ℍ} {s : Set ℍ}
+    (hf : RightFueterOn f s) (hs : IsOpen s) {n : WithTop ℕ∞} : ContDiffOn ℝ n f s :=
+  (hf.analyticOnNhd hs).contDiffOn_of_completeSpace
+
+end BoxRegularity
 
 end TauCeti
