@@ -197,9 +197,7 @@ private theorem setIntegral_indicator_matrixBilinearForm_nonpos
     filter_upwards [W1p.value_sub_ae up (W1p.posPart (by norm_num) (up - ε • v)),
       Lp.coeFn_posPart (W1p.value (up - ε • v)), W1p.value_sub_ae up (ε • v),
       Lp.coeFn_posPart (W1p.value u), W1p.value_smul_ae ε v, hvS] with x h1 h2 h3 h4 h5 h6 hxS
-    rw [h1, Pi.sub_apply, W1p.value_posPart (u := up - ε • v), h2, h3, Pi.sub_apply,
-      W1p.value_posPart, h4, h5, Pi.smul_apply, h6 hxS, smul_zero, sub_zero,
-      max_eq_left (le_max_right _ _), sub_self]
+    simp [h1, h2, h3, h4, h5, h6 hxS, up, W1p.value_posPart]
   have htest := hu ⟨_, hmem⟩ hnonneg hzero
   rw [energyFormH1_zero_zero_eq_setIntegral] at htest
   have hle := (integral_mono_ae
@@ -534,12 +532,9 @@ theorem exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff [
     have h2r : R / 4 ^ j = 2 * r := by rw [hr_def]; ring
     have hr2 : R / 4 ^ (j + 1) = r / 2 := by rw [hr_def, pow_succ]; ring
     have hr : 0 < r := by positivity
-    have hrR : r ≤ R := by
-      have : R / 4 ^ j ≤ R := div_le_self hR.le (one_le_pow₀ (by norm_num))
-      linarith
-    have h2rR : ball x₀ (2 * r) ⊆ ball x₀ R := ball_subset_ball (by
-      have : R / 4 ^ j ≤ R := div_le_self hR.le (one_le_pow₀ (by norm_num))
-      linarith)
+    have hjR : R / 4 ^ j ≤ R := div_le_self hR.le (one_le_pow₀ (by norm_num))
+    have hrR : r ≤ R := by linarith
+    have h2rR : ball x₀ (2 * r) ⊆ ball x₀ R := ball_subset_ball (by linarith)
     rw [h2r] at ih
     rw [hr2, pow_succ, mul_comm ((1 - δ) ^ j) (1 - δ), mul_assoc]
     refine hred h ha hboundary (fun v hv hvS => hu v hv ?_) hr ih (hext r hr hrR)
