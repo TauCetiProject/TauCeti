@@ -115,10 +115,19 @@ def facetPairing (j : ι) : Module.Dual ℝ (StrongDual ℝ V) :=
 theorem facetPairing_apply (j : ι) (x : StrongDual ℝ V) : facetPairing i u j x = x (i (u j)) :=
   (rfl)
 
+/-- Evaluation on a facet normal is continuous on the dual space. -/
+theorem continuous_facetPairing (j : ι) : Continuous (facetPairing i u j) :=
+  (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
+
 /-- The polyhedron `{x ∈ V* | ∀ j, c j ≤ ⟨x, u j⟩}` cut out by the half-spaces with inward
 normals `u j` and support constants `c j`. -/
 def facetPolyhedron : Set (StrongDual ℝ V) :=
   polyhedron (facetPairing i u) c
+
+/-- A facet polyhedron is the polyhedron of its facet pairings and support constants. -/
+theorem facetPolyhedron_eq_polyhedron :
+    facetPolyhedron i u c = polyhedron (facetPairing i u) c :=
+  (rfl)
 
 /-- A point `x` of `V*` is a *smooth vertex* of the facet presentation when the normals of the
 constraints active at `x` form a basis of the lattice `N`. -/
@@ -190,7 +199,7 @@ theorem isClosed_facetPolyhedron : IsClosed (facetPolyhedron i u c) := by
     ext; simp
   rw [this]
   exact isClosed_iInter fun j ↦
-    isClosed_le continuous_const (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
+    isClosed_le continuous_const (continuous_facetPairing i u j)
 
 /-- **Vertices of a facet polyhedron.** A point `x` of the polyhedron is a vertex exactly when
 no nonzero point of `V*` vanishes on all the normals active at `x`. -/
@@ -259,9 +268,9 @@ theorem exists_mem_extremePoints_activeSet_subset (hc : IsCompact (facetPolyhedr
   set s := activeSet (facetPairing i u) c x
   have hF := isExtreme_polyhedron_inter_setOf_subset_activeSet (f := facetPairing i u) (c := c) s
   have hclosed : IsClosed {y : StrongDual ℝ V | s ⊆ activeSet (facetPairing i u) c y} := by
-    simp only [Set.subset_def, mem_activeSet, facetPairing_apply, ofPred_forall]
+    simp only [Set.subset_def, mem_activeSet, ofPred_forall]
     exact isClosed_biInter fun j _ ↦
-      isClosed_eq (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous continuous_const
+      isClosed_eq (continuous_facetPairing i u j) continuous_const
   obtain ⟨v, hv⟩ := (hc.inter_right hclosed).extremePoints_nonempty ⟨x, hx, Set.Subset.rfl⟩
   exact ⟨v, hF.extremePoints_subset_extremePoints hv, (extremePoints_subset hv).2⟩
 
