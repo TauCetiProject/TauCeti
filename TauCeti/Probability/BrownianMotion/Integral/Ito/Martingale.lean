@@ -55,18 +55,6 @@ namespace TauCeti
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ}
 
-/-- Every `BrownianIntegrable` integrand belongs to `L²` of `(timeMeasure t).prod P` at each
-deterministic horizon `t`. -/
-theorem BrownianIntegrable.memLp_timeMeasure (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
-    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P) := by
-  simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hH.memLp t
-
-/-- Every `BrownianIntegrable` integrand belongs to `L²` of the finite-horizon predictable measure
-at each deterministic horizon. -/
-theorem BrownianIntegrable.memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (t : ℝ≥0) :
-    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P t) :=
-  (ℱ.memLp_predictableMeasure_iff P hH.isStronglyPredictable t 2).2 (hH.memLp_timeMeasure t)
-
 namespace IsItoIntegral
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of an integrand with finite expected
@@ -191,18 +179,12 @@ theorem BrownianIntegrable.exists_isItoIntegral
     hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, .of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩
   have hcM (m : ℕ) : ∀ᵐ ω ∂P, Continuous (fun t ↦ M m t ω) :=
-    (IsItoIntegral.simpleGains hcont (hτ m).monotoneOn (ha m)).ae_continuous
+    hcont.mono fun _ hω ↦ hω.simpleGains
   have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
     MemLp.of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
       (.of_forall (hb m j hj))
-  have hmem (m : ℕ) (t : ℝ≥0) : MemLp (M m t) 2 P := by
-    have hdef : M m t = fun ω ↦ ∑ j ∈ range (n m),
-        a m j ω * (W (min (τ m (j + 1)) t) ω - W (min (τ m j) t) ω) :=
-      funext (Finance.simpleGains_def (τ m) (n m) (a m) W t)
-    rw [hdef]
-    exact hW.memLp_sum_mul_sub_min (range (n m))
-      (fun j hj ↦ (hτ m).monotoneOn (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))
-      (fun j hj ↦ ha m j (mem_range.1 hj)) (fun j hj ↦ ha₂ m j (mem_range.1 hj)) t
+  have hmem (m : ℕ) (t : ℝ≥0) : MemLp (M m t) 2 P :=
+    (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ m).monotoneOn (ha m) (ha₂ m) t)
   have hcau (t : ℝ≥0) : CauchySeq (fun m ↦ (hmem m t).toLp (M m t)) := by
     let g := hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))
     refine Tendsto.cauchySeq (x := (Lp.memLp g).toLp g) ?_

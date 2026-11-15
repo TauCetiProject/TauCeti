@@ -133,21 +133,8 @@ theorem tendsto_measure_lintegral_energyLocalizer [IsFiniteMeasure P]
     (hH : LocallyBrownianIntegrable ℱ P H) (T : ℝ≥0) {ε : ℝ≥0∞} (hε : 0 < ε) :
     Tendsto (fun n : ℕ ↦ P {ω | ε ≤ ∫⁻ s,
       ‖(if (s : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω then
-          H s ω else 0) - H s ω‖ₑ ^ 2 ∂Probability.timeMeasure T}) atTop (𝓝 0) := by
-  have hτ := hH.isLocalizingSequence_energyLocalizer
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (hτ.toIsPreLocalizingSequence.tendsto_measure_le T) (fun _ ↦ zero_le) fun n ↦
-    measure_mono fun ω (hω : ε ≤ _) ↦ ?_
-  by_contra hnot
-  have hgt : (T : WithTop ℝ≥0) < nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω := not_le.1 hnot
-  have hzero : (∫⁻ s,
-      ‖(if (s : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω then
-          H s ω else 0) - H s ω‖ₑ ^ 2 ∂Probability.timeMeasure T) = 0 := by
-    refine (lintegral_congr_ae ?_).trans lintegral_zero
-    filter_upwards [Probability.ae_mem_Ioc_timeMeasure T] with s hs
-    have hsτ : (s : WithTop ℝ≥0) ≤ nnvolume.energyLocalizer H ((n : ℝ≥0) + 1) ω :=
-      (WithTop.coe_le_coe.2 hs.2).trans hgt.le
-    rw [ite_eq_left hsτ, sub_self, eNorm_zero, zero_pow (by norm_num)]
-  exact hε.not_ge (hzero ▸ hω)
+          H s ω else 0) - H s ω‖ₑ ^ 2 ∂Probability.timeMeasure T}) atTop (𝓝 0) :=
+  hH.isLocalizingSequence_energyLocalizer.toIsPreLocalizingSequence.tendsto_measure_lintegral_ite_le
+    H ((Probability.ae_mem_Ioc_timeMeasure T).mono fun _ hs ↦ hs.2) hε
 
 end TauCeti.LocallyBrownianIntegrable

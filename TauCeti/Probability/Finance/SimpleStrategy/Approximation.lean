@@ -269,9 +269,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm
         (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
           ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) := by
   have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P m
-    hH.isStronglyPredictable
-    (by simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def]
-        using hH.memLp m)
+    hH.isStronglyPredictable (hH.memLp_timeMeasure m)
     (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
   choose n τ a C hτ₀ hτ ha hb herr using hex
   refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb, fun T ↦ ?_⟩

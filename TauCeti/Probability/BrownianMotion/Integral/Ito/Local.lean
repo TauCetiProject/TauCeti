@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Martingale
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-import Mathlib.MeasureTheory.Integral.Indicator
+import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
 import TauCeti.Probability.Martingale.Local.Congruence
@@ -23,9 +23,13 @@ times, deduces the native local-martingale property, and constructs predictable 
 continuous Itô integral processes across the full pathwise square-energy domain
 `TauCeti.LocallyBrownianIntegrable`:
 
-* `IsItoIntegral.stoppedProcess`: against a filtered pre-Brownian motion `W`, stopping an Itô
-  integral `I` of `H` at a stopping time `τ` yields an Itô integral of the cutoff integrand
-  `H · 1_{[0, τ]}`, without assuming path continuity of `W` or adaptation of `I`.
+* `IsItoIntegral.stoppedProcess`, `IsItoIntegral.ite_Ioc`, and `IsItoIntegral.ite_Ioc_mul`: against
+  a filtered pre-Brownian motion `W`, stopping an Itô integral `I` of `H` at `τ` yields an Itô
+  integral of `H · 1_{[0, τ]}`, restricting `H` to `(σ, τ]` yields
+  `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`, and multiplying `H` on `(s, τ]` by an
+  `ℱ s`-measurable random variable `ξ` yields
+  `t ↦ ξ * (stoppedProcess I τ t - stoppedProcess I τ (min s t))`, without assuming path continuity
+  of `W` or adaptation of `I`.
 * `IsItoIntegral.stoppedProcess_indist_of_ae_eq`: local determination of `stoppedProcess I τ` by
   the restriction of the integrand to `[0, τ]`.
 * `IsItoIntegral.locally_martingale`: any strongly progressive Itô integral against a filtered
@@ -54,24 +58,6 @@ namespace TauCeti
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ} {τ : Ω → WithTop ℝ≥0}
 
-private theorem tendstoInMeasure_simpleGains_of_le
-    (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {v T : ℝ≥0} (hvT : v ≤ T)
-    {n : ℕ → ℕ} {g : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ}
-    (hg : ∀ m, MonotoneOn (g m) (Iic (n m)))
-    (ha : ∀ m j, j < n m → StronglyMeasurable[ℱ (g m j)] (a m j))
-    (hE : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun m ↦ P {ω | ε ≤
-      ∫⁻ s, ‖Finance.simpleHolding (g m) (n m) (a m) s ω - H s ω‖ₑ ^ 2
-        ∂Probability.timeMeasure T}) atTop (𝓝 0)) :
-    TendstoInMeasure P (fun m ↦ Finance.simpleGains (g m) (n m) (a m) W v) atTop (I v) := by
-  have hle : Probability.timeMeasure v ≤ Probability.timeMeasure T := by
-    rw [Probability.timeMeasure_def, Probability.timeMeasure_def]
-    exact Measure.restrict_mono_set _ (Ioc_subset_Ioc_right hvT)
-  refine hI.tendstoInMeasure_simpleGains hW hg ha fun δ hδ ↦ ?_
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hE δ hδ)
-    (fun _ ↦ zero_le) fun m ↦ measure_mono fun ω (hω : δ ≤ _) ↦ ?_
-  exact hω.trans (lintegral_mono' hle le_rfl)
-
 private theorem stoppedProcess_dyadicCeilTime
     (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hτ : IsStoppingTime ℱ τ) (d : ℕ) :
@@ -82,9 +68,9 @@ private theorem stoppedProcess_dyadicCeilTime
   refine ⟨hI.isStronglyPredictable.ite_le (hτ.dyadicCeilTime d),
     hI.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess, fun T ↦ ?_⟩
   obtain ⟨n, g, a, hg, ha, hE, _⟩ := hI.exists_seq_approx T
-  choose N r b hr hb hhold hgains using fun m ↦
-    Finance.exists_simpleHolding_stopped_dyadicCeilTime hτ d T (hg m) (ha m) W
-  refine ⟨N, r, b, hr, hb, fun ε hε ↦ ?_, fun ε hε ↦ ?_⟩
+  choose N r b _ hr hb _ hhold hgains using fun m ↦
+    Finance.exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime hτ d T (hg m) (ha m)
+  refine ⟨N, r, b, fun m ↦ (hr m).monotoneOn, hb, fun ε hε ↦ ?_, fun ε hε ↦ ?_⟩
   · have hsub (m : ℕ) :
         {ω | ε ≤ ∫⁻ s, ‖Finance.simpleHolding (r m) (N m) (b m) s ω -
           (if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0)‖ₑ ^ 2 ∂Probability.timeMeasure T} ⊆
@@ -92,7 +78,7 @@ private theorem stoppedProcess_dyadicCeilTime
           ∂Probability.timeMeasure T} := fun ω hω ↦ by
       refine hω.trans (lintegral_mono_ae ?_)
       filter_upwards [Probability.ae_mem_Ioc_timeMeasure T] with s hs
-      rw [hhold m s hs ω]
+      rw [hhold m s hs.2 ω]
       by_cases hsσ : (s : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ ω)
       · rw [ite_eq_left hsσ, ite_eq_left hsσ]
       · rw [ite_eq_right hsσ, ite_eq_right hsσ, sub_self, eNorm_zero, zero_pow (by norm_num)]
@@ -104,7 +90,7 @@ private theorem stoppedProcess_dyadicCeilTime
         (fun m ↦ P {ω | ε ≤ edist (Finance.simpleGains (g m) (n m) (a m) W v ω) (I v ω)})
         atTop (𝓝 0) := by
       obtain ⟨k, _, rfl⟩ := mem_image.1 hv
-      exact tendstoInMeasure_simpleGains_of_le hW hI (dyadicGrid_le d T k) hg ha hE ε hε
+      exact hI.tendstoInMeasure_simpleGains_of_le hW (dyadicGrid_le d T k) hg ha hE ε hε
     have hsum : Tendsto (fun m ↦ ∑ v ∈ S,
         P {ω | ε ≤ edist (Finance.simpleGains (g m) (n m) (a m) W v ω) (I v ω)})
         atTop (𝓝 0) := by
@@ -119,35 +105,8 @@ private theorem stoppedProcess_dyadicCeilTime
       refine mem_biUnion (mem_image.2 ⟨dyadicStopIndex d T (τ ω),
         mem_range.2 (Nat.lt_succ_of_le (dyadicStopIndex_le d T (τ ω))),
         dyadicGrid_dyadicStopIndex d T (τ ω)⟩) ?_
-      simpa only [mem_ofPred_eq, hgains m ω, stoppedProcess] using hω
+      simpa only [mem_ofPred_eq, hgains m W T le_rfl ω, stoppedProcess] using hω
     exact (measure_mono hsub).trans (measure_biUnion_finset_le S _)
-
-private theorem tendsto_measure_lintegral_dyadicCeilTime [IsFiniteMeasure P]
-    (hH : LocallyBrownianIntegrable ℱ P H) (hτ : IsStoppingTime ℱ τ)
-    (T : ℝ≥0) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun d ↦ P {ω | ε ≤ ∫⁻ s,
-      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ ω) then H s ω else 0) -
-        (if (s : WithTop ℝ≥0) ≤ τ ω then H s ω else 0)‖ₑ ^ 2
-      ∂Probability.timeMeasure T}) atTop (𝓝 0) := by
-  let F (d : ℕ) (s : ℝ≥0) (ω : Ω) : ℝ≥0∞ :=
-    ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ ω) then H s ω else 0) -
-      (if (s : WithTop ℝ≥0) ≤ τ ω then H s ω else 0)‖ₑ ^ 2
-  have hF_meas (d : ℕ) : Measurable (fun p : ℝ≥0 × Ω ↦ F d p.1 p.2) :=
-    (((hH.isStronglyPredictable.ite_le (hτ.dyadicCeilTime d)).sub
-      (hH.isStronglyPredictable.ite_le hτ)).mono ℱ.predictable_le_prod).measurable.eNorm
-      |>.pow_const 2
-  rw [← measure_empty (μ := P)]
-  refine tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop MeasurableSet.empty
-    (fun d ↦ (hF_meas d).lintegral_prod_left' measurableSet_Ici)
-    (hH.ae_memLp.mono fun ω hω ↦ ?_)
-  have hm := hω T
-  rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] at hm
-  have hlim := tendsto_lintegral_dyadicCeilTime (u := τ ω)
-    (hm.aestronglyMeasurable.eNorm.pow_const 2)
-    (hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hm).ne
-  filter_upwards [hlim.eventually (eventually_lt_nhds hε)] with d hd
-  simp only [Set.mem_empty_iff_false, iff_false, not_le]
-  exact hd
 
 namespace IsItoIntegral
 
@@ -164,10 +123,69 @@ theorem stoppedProcess (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     ((hW.martingale.stronglyAdapted s).mono (ℱ.le s)).aestronglyMeasurable
   refine of_seq (hI.isStronglyPredictable.ite_le hτ)
     (hI.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess) hId
-    (fun T _ hε ↦ tendsto_measure_lintegral_dyadicCeilTime hI.locallyBrownianIntegrable hτ T hε)
+    (fun T _ hε ↦ hI.locallyBrownianIntegrable.tendsto_measure_lintegral_dyadicCeilTime hτ T hε)
     fun T ↦ tendstoInMeasure_of_tendsto_ae (fun d ↦ (hId d).aestronglyMeasurable hWm T) ?_
   filter_upwards [hI.ae_continuous] with ω hω
   exact tendsto_stoppedProcess_dyadicCeilTime I τ T ω hω.continuousAt.continuousWithinAt
+
+/-- **Restricting an Itô integral to `(σ, τ]`.** Against a filtered pre-Brownian motion,
+restricting an integrand `H` to a stochastic interval `(σ, τ]` yields the Itô integral
+`stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`. No ordering between `σ` and `τ`, path
+continuity of `W`, or adaptation of `I` is needed. -/
+theorem ite_Ioc {σ : Ω → WithTop ℝ≥0} (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) :
+    IsItoIntegral ℱ P W
+      (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
+      (MeasureTheory.stoppedProcess I τ - MeasureTheory.stoppedProcess I (σ ⊓ τ)) := by
+  have hmin : IsStoppingTime ℱ (σ ⊓ τ) := hσ.min hτ
+  have heq : (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) -
+      (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ (σ ⊓ τ) ω then H t ω else 0) =
+      fun (t : ℝ≥0) ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0 := by
+    ext t ω
+    simp only [Pi.sub_apply, Pi.inf_apply, le_inf_iff]
+    by_cases h1 : (t : WithTop ℝ≥0) ≤ τ ω
+    · by_cases h2 : (t : WithTop ℝ≥0) ≤ σ ω
+      · rw [ite_eq_left h1, ite_eq_left ⟨h2, h1⟩, sub_self, ite_eq_right (fun h ↦ h2.not_gt h.1)]
+      · rw [ite_eq_left h1, ite_eq_right (fun h ↦ h2 h.1), sub_zero,
+          ite_eq_left ⟨not_le.1 h2, h1⟩]
+    · rw [ite_eq_right h1, ite_eq_right (fun h ↦ h1 h.2), sub_self,
+        ite_eq_right (fun h ↦ h1 h.2)]
+  exact heq ▸ (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hmin)
+
+/-- **Predictable `ℱ s`-multiplier rule on `(s, τ]`.** Against a filtered pre-Brownian motion,
+multiplying an integrand `H` on `(s, τ]` by an `ℱ s`-measurable random variable `ξ` yields the Itô
+integral `t ↦ ξ * (stoppedProcess I τ t - stoppedProcess I τ (min s t))`. Neither path continuity
+of `W` nor any moment or boundedness hypothesis on `ξ` is required. -/
+theorem ite_Ioc_mul (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (s : ℝ≥0) (hτ : IsStoppingTime ℱ τ)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    IsItoIntegral ℱ P W
+      (fun t ω ↦ if s < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then ξ ω * H t ω else 0)
+      (fun t ω ↦ ξ ω * (MeasureTheory.stoppedProcess I τ t ω -
+        MeasureTheory.stoppedProcess I τ (min s t) ω)) := by
+  have hH_eq : (fun (t : ℝ≥0) ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then
+      (if s < t then ξ ω * H t ω else 0) else 0) =
+      fun (t : ℝ≥0) ω ↦ if s < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then ξ ω * H t ω else 0 := by
+    ext t ω
+    by_cases ht : (t : WithTop ℝ≥0) ≤ τ ω
+    · by_cases hs : s < t
+      · rw [ite_eq_left ht, ite_eq_left hs, ite_eq_left ⟨hs, ht⟩]
+      · rw [ite_eq_left ht, ite_eq_right hs, ite_eq_right (fun h ↦ hs h.1)]
+    · rw [ite_eq_right ht, ite_eq_right (fun h ↦ ht h.2)]
+  have hI_eq : MeasureTheory.stoppedProcess (fun u ω ↦ ξ ω * (I u ω - I (min s u) ω)) τ =
+      fun t ω ↦ ξ ω * (MeasureTheory.stoppedProcess I τ t ω -
+        MeasureTheory.stoppedProcess I τ (min s t) ω) := by
+    ext t ω
+    simp only [MeasureTheory.stoppedProcess]
+    congr 2
+    cases τ ω with
+    | top =>
+      rw [min_eq_left le_top, min_eq_left le_top, WithTop.untopA, WithTop.untopD_coe,
+        WithTop.untopD_coe]
+    | coe r =>
+      rw [← WithTop.coe_min, ← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe,
+        WithTop.untopD_coe, min_assoc]
+  exact hH_eq ▸ hI_eq ▸ (hI.ite_lt_mul hW s hξ).stoppedProcess hW hτ
 
 /-- **Local congruence of Itô integrals.** Against a filtered pre-Brownian motion and at a stopping
 time `τ`, two Itô integrals whose integrands agree `(timeMeasure T).prod P`-almost everywhere on

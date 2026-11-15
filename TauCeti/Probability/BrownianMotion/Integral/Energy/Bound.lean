@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Probability.BrownianMotion.Martingale
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import TauCeti.Probability.Moments.Chebyshev
 
@@ -87,6 +90,23 @@ theorem monotoneOn_elementaryEnergy (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
 theorem elementaryEnergy_nonneg (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
     0 ≤ elementaryEnergy τ a n ω := by
   simpa using monotoneOn_elementaryEnergy (a := a) hτ ω (by simp) (by simp) (Nat.zero_le n)
+
+/-- On any nondecreasing grid whose terminal date lies within `t`, the lower square-norm integral of
+`Finance.simpleHolding τ n a` against `timeMeasure t` equals
+`ENNReal.ofReal (elementaryEnergy τ a n ω)`. -/
+theorem lintegral_enorm_sq_simpleHolding_eq_ofReal_elementaryEnergy {t : ℝ≥0}
+    (hτ : MonotoneOn τ (Iic n)) (ht : τ n ≤ t) (ω : Ω) :
+    ∫⁻ s, ‖Finance.simpleHolding τ n a s ω‖ₑ ^ 2 ∂timeMeasure t =
+      ENNReal.ofReal (elementaryEnergy τ a n ω) := by
+  rw [Finance.lintegral_enorm_sq_simpleHolding_timeMeasure hτ t ω,
+    elementaryEnergy_def, ENNReal.ofReal_sum_of_nonneg fun j hj ↦ ?_]
+  · refine sum_congr rfl fun j hj ↦ ?_
+    have hj' : j + 1 ≤ n := mem_range.1 hj
+    rw [min_eq_left ((hτ hj' self_mem_Iic hj').trans ht), ENNReal.ofReal_mul (sq_nonneg _),
+      (Real.enorm_sq_eq_ofReal_sq (a j ω)).symm]
+  · have hj' : j + 1 ≤ n := mem_range.1 hj
+    exact mul_nonneg (sq_nonneg _)
+      (sub_nonneg.2 (NNReal.coe_le_coe.2 (hτ (Nat.le_of_succ_le hj') hj' (Nat.le_succ j))))
 
 variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 variable {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
@@ -356,12 +376,8 @@ private theorem measure_exists_abs_simpleGains_energyCutoff_gt_le
   let b := energyCutoff τ a δ
   let X := Finance.simpleGains τ n b W
   have hQ := submartingale_sq_simpleGains_energyCutoff hW hτ ha δ
-  have hXcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω) := by
-    filter_upwards [hcont] with ω hω
-    simp only [X, Finance.simpleGains_def]
-    exact continuous_finsetSum _ fun i _ ↦ continuous_const.mul
-      ((hω.comp (continuous_const.min continuous_id)).sub
-        (hω.comp (continuous_const.min continuous_id)))
+  have hXcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω) :=
+    hcont.mono fun _ hω ↦ hω.simpleGains
   have hsecond : ∫ ω, X (τ n) ω ^ 2 ∂P ≤ δ := by
     simpa only [X, Finance.simpleGains_apply_eq_sum hτ (le_refl n)] using
       integral_sq_sum_mul_sub_energyCutoff_le hW hτ ha hδ

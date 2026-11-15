@@ -222,6 +222,12 @@ theorem simpleGains_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω �
     (ω : Ω) : simpleGains τ n (c • a) X t ω = c * simpleGains τ n a X t ω := by
   simp only [simpleGains_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_assoc]
 
+/-- Negating the strategy negates its gains. -/
+@[simp]
+theorem simpleGains_neg (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X : ι → Ω → ℝ) (t : ι)
+    (ω : Ω) : simpleGains τ n (-a) X t ω = -simpleGains τ n a X t ω := by
+  simpa only [neg_one_smul, neg_one_mul] using simpleGains_smul τ n (-1) a X t ω
+
 /-- The simple holding is additive in the strategy. -/
 @[simp]
 theorem simpleHolding_add (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ) (t : ι) (ω : Ω) :
@@ -237,6 +243,23 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   simp only [simpleHolding_def, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
+
+/-- Negating the strategy negates its simple holding. -/
+@[simp]
+theorem simpleHolding_neg (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleHolding τ n (-a) t ω = -simpleHolding τ n a t ω := by
+  simpa only [neg_one_smul, neg_one_mul] using simpleHolding_smul τ n (-1) a t ω
+
+/-- Elementary gains preserve sample-path continuity pathwise, without any order condition on the
+grid or measurability assumption on the strategy. -/
+theorem _root_.Continuous.simpleGains [TopologicalSpace ι] [OrderClosedTopology ι]
+    {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ} {X : ι → Ω → ℝ} {ω : Ω}
+    (hX : Continuous (fun t ↦ X t ω)) :
+    Continuous (fun t ↦ TauCeti.Finance.simpleGains τ n a X t ω) := by
+  simp only [simpleGains_def]
+  exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
+    ((hX.comp (continuous_const.min continuous_id)).sub
+      (hX.comp (continuous_const.min continuous_id)))
 
 /-! ### Measurability -/
 
