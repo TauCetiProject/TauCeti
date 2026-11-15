@@ -45,7 +45,7 @@ does this, without choosing a logarithm of the phase. Hence every smooth framed 
 framed-gauge representative which converges exponentially to the reference field
 (`TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`). This is the
 zeroth-order decay of the fields in the end trivialization; the decay of their derivatives is
-`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField`.
+`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`.
 
 ## Main definitions
 
@@ -235,17 +235,9 @@ private theorem norm_sub_referenceField_le (f : ContDiffBump (0 : ℝ)) {z : ℂ
   set y := gaugeTransform (windingPhase m)⁻¹ x
   set s := ‖sectionValue x z‖
   -- The section coordinates of the end trivialization are `(|α| / 2, 0)`.
-  have hsec : 2 * ((y z 2 : ℂ) + (y z 3 : ℂ) * I) = (s : ℂ) := by
-    rw [← sectionValue_apply]
-    exact sectionValue_gaugeTransform_inv_eq hphase.self_of_nhds
-  have hy2 : y z 2 = s / 2 := by
-    have := congrArg Complex.re hsec
-    simp only [mul_re, add_re, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at this
-    linarith
-  have hy3 : y z 3 = 0 := by
-    have := congrArg Complex.im hsec
-    simp only [mul_im, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at this
-    linarith
+  obtain ⟨hy2, hy3⟩ : y z 2 = s / 2 ∧ y z 3 = 0 := by
+    simpa only [ofReal_re, ofReal_im, zero_div] using
+      sectionValue_eq_iff.1 (sectionValue_gaugeTransform_inv_eq hphase.self_of_nhds)
   -- The connection coordinates of the end trivialization.
   have hy0 : |y z 0| ≤ 2 * ‖covariantDerivative x z 1‖ := by
     have h := abs_mul_norm_le_norm_covariantDerivative hz hp hq hphase 1

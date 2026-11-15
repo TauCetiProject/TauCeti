@@ -520,7 +520,6 @@ theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E �
   have h : iteratedFDeriv ℝ n (fun x ↦ Real.exp (ℓ' x) - 1) =O[cocompact E]
       fun x ↦ Real.exp (-(c * ‖x‖)) :=
     (hℓ'c.of_le (by simp)).isBigO_iteratedFDeriv_exp_sub_one
-      (hℓd'.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc))
       (by simpa using isBigO_exp_neg_mul_norm_of_le hc.le (cocompact E)) (hP n).1
   refine h.congr' (hagree.mono fun x hx ↦ ?_) EventuallyEq.rfl
   exact (((hx.fun_comp Real.exp).sub EventuallyEq.rfl).iteratedFDeriv ℝ n).eq_of_nhds
