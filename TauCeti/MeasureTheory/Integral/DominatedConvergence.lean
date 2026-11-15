@@ -20,7 +20,8 @@ which equal one on a closed ball and are supported in shrinking larger balls, an
 which equal one on balls exhausting a normed space, as well as convergence after removing a
 shrinking neighbourhood of zero from an integrable function vanishing at zero, and the convergence
 of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` with values in
-a compact set which converge pointwise, or along continuous paths which converge uniformly. An
+a compact set, or of a bounded continuous function along eventually continuous maps, which converge
+pointwise, or along continuous paths which converge uniformly. An
 interval integral `∫ t in a..b, f x t` also depends continuously on `x ∈ s` as soon as `f` is
 jointly continuous on `s ×ˢ uIcc a b`, including at boundary points of `s` (such as the endpoints
 of a closed interval), where Mathlib's
@@ -40,7 +41,8 @@ on the whole space.
   integral of an integrable function vanishing at zero.
 * `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
   `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` stay in a compact set and converge
-  pointwise.
+  pointwise; `TauCeti.tendsto_intervalIntegral_comp_of_tendsto_of_norm_le` is the same for a
+  bounded `Φ` along eventually continuous `y_i`, without the compact set.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
@@ -218,6 +220,25 @@ theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι
     (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
       (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
   exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
+    measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
+
+/-- **Dominated convergence for bounded continuous functions of converging maps.** Let
+`Φ : ℝ × V → E` be continuous and bounded, and let the maps `y i : ℝ → V` be eventually continuous
+on `[t₁, t₂]`. If the `y i` converge pointwise on `[t₁, t₂]` to `x`, then
+`∫_{t₁}^{t₂} Φ(t, y i t) dt` tends to `∫_{t₁}^{t₂} Φ(t, x t) dt`. Unlike
+`tendsto_intervalIntegral_comp_of_tendsto`, the bound on `Φ` replaces a compact set of values. -/
+theorem tendsto_intervalIntegral_comp_of_tendsto_of_norm_le {ι V E : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] [TopologicalSpace V] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Φ : ℝ × V → E} (hΦ : Continuous Φ) {C : ℝ} (hC : ∀ p, ‖Φ p‖ ≤ C) {y : ι → ℝ → V}
+    {x : ℝ → V} {t₁ t₂ : ℝ} (hy : ∀ᶠ i in l, ContinuousOn (y i) (uIcc t₁ t₂))
+    (hyx : ∀ t ∈ uIcc t₁ t₂, Tendsto (fun i ↦ y i t) l (𝓝 (x t))) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ (t, y i t)) l (𝓝 (∫ t in t₁..t₂, Φ (t, x t))) := by
+  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ C)
+    (hy.mono fun i hi ↦ ?_) (Eventually.of_forall fun i ↦ Eventually.of_forall fun t _ ↦ hC _)
+    intervalIntegrable_const
+    (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
+      (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
+  exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk hi)).aestronglyMeasurable
     measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
 
 /-- If `f` is continuous on `s ×ˢ uIcc a b`, then the interval integral `∫ t in a..b, f x t ∂μ`

@@ -95,8 +95,11 @@ inserted half are transported along `ψ` by the change of variables formula
 (`TauCeti.SmoothTwoForm.integral_floerEnergyDensity_image`,
 `TauCeti.SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`), and the two halves meet in
 the null circle `s_q = L/2`
-(`TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_inter_image`). The energy identity
-over the whole four-punctured sphere, as `R → ∞`, is not treated here.
+(`TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_inter_image`). Along a map
+continuous on the four-punctured sphere the curvature is integrable over each `Σ_R`
+(`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`). For a manifold target, the
+limit of the identity as `R → ∞`, over the whole four-punctured sphere, is taken in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Asymptotic`.
 
 ## References
 
@@ -382,6 +385,32 @@ private theorem integrableOn_hamiltonianCurvature_plumbedPerturbation_inserted
   rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L w), smul_eq_mul]
   exact hamiltonianCurvature_pairOfPantsPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
     (hT hw).1 (hT hw).2 _
+
+/-- **The curvature is integrable over the truncated plumbed sphere, for a manifold target.** Plumb
+the output end of a pair of pants with period-one `C¹` Hamiltonians `Ha` into the input end
+`q ≠ ∞` of one with period-one `C¹` Hamiltonians `Hb`, with `Hb q = Ha ∞`, along a neck of length
+`L > 4`. Along a map `u` continuous on the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, the curvature
+of the plumbed perturbation is integrable over the truncation `Σ_R` for every `R ≥ L/2`. -/
+theorem integrableOn_hamiltonianCurvature_plumbedTruncation (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : L / 2 ≤ R) {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)) (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) := by
+  have hR₀ (r r' : Puncture) : 0 ≤ Function.update (fun _ ↦ R) r (L / 2) r' :=
+    le_update_iff (x := fun _ ↦ (0 : ℝ)).2 ⟨by linarith, fun _ _ ↦ by linarith⟩ r'
+  rw [preimage_plumbedTruncation hq, preimage_truncation_inter_eq_preimage_truncationAt q hR,
+    preimage_truncation_inter_eq_preimage_truncationAt inf hR]
+  exact (integrableOn_hamiltonianCurvature_plumbedPerturbation_receiving ω hq hHb hHbs hab hL
+    (hR₀ q) (by simp) hu).union
+    (integrableOn_hamiltonianCurvature_plumbedPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
+      (hR₀ inf) (by simp) hu)
 
 end TauCeti.SmoothTwoForm
 
