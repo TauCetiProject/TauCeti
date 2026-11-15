@@ -7,9 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation.MeasurePreserving
-public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Completion
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
-import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
 
 /-!
 # Conditional expectations across completion
@@ -141,31 +140,8 @@ assumption or inclusion between the two original σ-algebras. -/
 theorem lpMeas_eventuallyMeasurableSpace {F 𝕜 : Type*} [RCLike 𝕜]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] (p : ℝ≥0∞) :
     lpMeas F 𝕜 (eventuallyMeasurableSpace m (ae μ)) p μ = lpMeas F 𝕜 m p μ := by
-  classical
   ext ξ
-  simp only [mem_lpMeas_iff_aestronglyMeasurable]
-  refine ⟨?_, fun hξ ↦ hξ.mono le_eventuallyMeasurableSpace⟩
-  rintro ⟨g, hg, hξg⟩
-  -- Select original-measurable representatives through piecewise combinations and limits.
-  have hgm : ∀ (g : Ω → F), StronglyMeasurable[eventuallyMeasurableSpace m (ae μ)] g →
-      AEStronglyMeasurable[m] g μ := by
-    intro g hg
-    induction g, hg using StronglyMeasurable.induction' with
-    | const c => exact stronglyMeasurable_const.aestronglyMeasurable
-    | @pcw f g s _ _ hs ihf ihg =>
-      obtain ⟨t, ht, hst⟩ := hs
-      refine ⟨t.piecewise (ihf.mk f) (ihg.mk g),
-        ihf.stronglyMeasurable_mk.piecewise ht ihg.stronglyMeasurable_mk, ?_⟩
-      filter_upwards [hst, ihf.ae_eq_mk, ihg.ae_eq_mk] with ω hω hfω hgω
-      simp only [Set.piecewise, ← hω, hfω, hgω]
-    | @lim f g _ _ ih hlim =>
-      let : MeasurableSpace Ω := m
-      refine ⟨fun ω ↦ limUnder atTop (fun n ↦ (ih n).mk (f n) ω),
-        StronglyMeasurable.limUnder (fun n ↦ (ih n).stronglyMeasurable_mk), ?_⟩
-      filter_upwards [ae_all_iff.2 (fun n ↦ (ih n).ae_eq_mk)] with ω hω
-      have hlim' := hlim ω
-      simp only [hω] at hlim'
-      exact hlim'.limUnder_eq.symm
-  exact (hgm g hg).congr hξg.symm
+  simp only [mem_lpMeas_iff_aestronglyMeasurable,
+    aestronglyMeasurable_eventuallyMeasurableSpace_iff]
 
 end TauCeti.MeasureTheory

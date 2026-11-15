@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Hermite
+public import TauCeti.Probability.BrownianMotion.Hermite.Basic
 public import TauCeti.Probability.Process.DyadicGrid
 import TauCeti.Probability.BrownianMotion.RightContinuity
 
@@ -77,15 +77,15 @@ products are orthonormal (`ProbabilityTheory.HasLaw.orthonormal_gaussianVectorHe
 they form a Hilbert basis of that space. The initial observation is discarded because `W 0 = 0`
 almost surely; no path regularity is needed. -/
 theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap
-    (hW : IsPreBrownianReal W P) (hmeas : ∀ s, Measurable (W s))
-    {k : ℕ} {t : Fin (k + 1) → ℝ≥0} (ht : StrictMono t) (ht0 : t 0 = 0) :
+    (hW : IsPreBrownianReal W P) {k : ℕ} {t : Fin (k + 1) → ℝ≥0}
+    (hmeas : ∀ i, Measurable (W (t i))) (ht : StrictMono t) (ht0 : t 0 = 0) :
     (Submodule.span ℝ (range (HasLaw.gaussianVectorHermite
       (hW.hasLaw_normalizedBrownianIncrements ht)
-      (measurable_normalizedBrownianIncrements fun i ↦ hmeas (t i))))).topologicalClosure =
+      (measurable_normalizedBrownianIncrements hmeas)))).topologicalClosure =
       lpMeas ℝ ℝ (⨆ j, (inferInstance : MeasurableSpace ℝ).comap (W (t j))) 2 P := by
   have hX := hW.hasLaw_normalizedBrownianIncrements ht
-  have hY := measurable_normalizedBrownianIncrements (t := t) fun i ↦ hmeas (t i)
-  have hobs : Measurable (fun ω i ↦ W (t i) ω) := Measurable.of_eval fun i ↦ hmeas (t i)
+  have hY := measurable_normalizedBrownianIncrements hmeas
+  have hobs : Measurable (fun ω i ↦ W (t i) ω) := Measurable.of_eval hmeas
   rw [← MeasurableSpace.comap_process_pi]
   refine le_antisymm (Submodule.topologicalClosure_minimal _ ?_
     (isClosed_aestronglyMeasurable hobs.comap_le)) fun u hu ↦ ?_
@@ -116,7 +116,8 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
         hmeas (dyadicTime T n i))))).topologicalClosure =
       lpMeas ℝ ℝ (Filtration.dyadicNatural W hmeas T n) 2 P := by
   rw [Filtration.dyadicNatural_eq_iSup]
-  exact hW.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap hmeas
+  exact hW.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap
+    (fun i ↦ hmeas (dyadicTime T n i))
     (strictMono_dyadicTime hT n) (dyadicTime_zero T n)
 
 end IsPreBrownianReal
