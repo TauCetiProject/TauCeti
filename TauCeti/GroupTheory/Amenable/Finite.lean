@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Algebra.Order.BigOperators.Expect
-public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.GroupTheory.Amenable.Multiplicative
 
 /-!
 # Finite averages; finite groups are amenable
@@ -32,20 +33,30 @@ Conversely, the uniform mean is the only left-invariant mean on a finite group: 
 `|G| * m f = ∑ x, f x`. In particular, on a group with one element the uniform
 mean is evaluation at that element.
 
+Additive counterparts are provided for `TauCeti.AddMean` and `TauCeti.AddAmenable`.
+
 ## Main definitions
 
-* `TauCeti.Mean.average F hF`: the average over a finite nonempty set `F`, as a mean.
-* `TauCeti.Mean.uniform G`: the normalized counting mean `f ↦ 𝔼 x, f x` on a finite group.
+* `TauCeti.Mean.average F hF`, `TauCeti.AddMean.average F hF`: the average over a finite nonempty
+  set `F`, as a mean.
+* `TauCeti.Mean.uniform G`, `TauCeti.AddMean.uniform A`: the normalized counting mean
+  `f ↦ 𝔼 x, f x` on a finite group.
 
 ## Main results
 
-* `TauCeti.Mean.average_singleton`: the average over a singleton is point evaluation.
-* `TauCeti.Mean.average_univ`: the average over the whole of a finite group is the uniform mean.
-* `TauCeti.Mean.uniform_apply`, `TauCeti.Mean.uniform_apply_eq_sum_div_card`: the value of the
-  uniform mean, for any choice of `Fintype` instance.
-* `TauCeti.Mean.isLeftInvariant_uniform`: the uniform mean is left invariant.
-* `TauCeti.Mean.isLeftInvariant_iff_eq_uniform`: it is the unique left-invariant mean.
-* `TauCeti.Amenable.of_finite`: finite topological groups are amenable.
+* `TauCeti.Mean.average_singleton`, `TauCeti.AddMean.average_singleton`: the average over a
+  singleton is point evaluation.
+* `TauCeti.Mean.average_univ`, `TauCeti.AddMean.average_univ`: the average over the whole of a
+  finite group is the uniform mean.
+* `TauCeti.Mean.uniform_apply`, `TauCeti.Mean.uniform_apply_eq_sum_div_card`,
+  `TauCeti.AddMean.uniform_apply`, `TauCeti.AddMean.uniform_apply_eq_sum_div_card`: the value of
+  the uniform mean, for any choice of `Fintype` instance.
+* `TauCeti.Mean.isLeftInvariant_uniform`, `TauCeti.AddMean.isLeftInvariant_uniform`: the uniform
+  mean is left invariant.
+* `TauCeti.Mean.isLeftInvariant_iff_eq_uniform`, `TauCeti.AddMean.isLeftInvariant_iff_eq_uniform`:
+  it is the unique left-invariant mean.
+* `TauCeti.Amenable.of_finite`, `TauCeti.AddAmenable.of_finite`: finite topological groups are
+  amenable.
 
 ## References
 
@@ -156,5 +167,112 @@ end Mean
 /-- A finite topological group is amenable, for any group topology. -/
 instance (priority := 100) Amenable.of_finite [Finite G] : Amenable G :=
   ⟨⟨Mean.uniform G, Mean.isLeftInvariant_uniform⟩⟩
+
+section Additive
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+
+namespace AddMean
+
+/-- The average `f ↦ 𝔼 x ∈ F, f x` over a finite nonempty set `F ⊆ A`, as a mean on `AddUCB A`. -/
+def average (F : Finset A) (hF : F.Nonempty) : AddMean A :=
+  mk₀
+    { toFun f := 𝔼 x ∈ F, (f : A →ᵇ ℝ) x
+      map_add' f f' := by simp [Finset.expect_add_distrib]
+      map_smul' c f := by simp [Finset.mul_expect] }
+    (fun f hf => Finset.expect_nonneg fun x _ => AddUCB.le_def.1 hf x)
+    (by simp [hF])
+
+section Average
+
+variable {F : Finset A} (hF : F.Nonempty)
+
+@[simp]
+theorem average_apply (f : AddUCB A) : average F hF f = 𝔼 x ∈ F, (f : A →ᵇ ℝ) x :=
+  mk₀_apply _ _ _ f
+
+/-- The average over `F` is the sum over `F` divided by the cardinality of `F`. -/
+theorem average_apply_eq_sum_div_card (f : AddUCB A) :
+    average F hF f = (∑ x ∈ F, (f : A →ᵇ ℝ) x) / F.card := by
+  rw [average_apply, Finset.expect_eq_sum_div_card]
+
+/-- The average over a singleton `{x}` is evaluation at `x`. -/
+@[simp]
+theorem average_singleton (x : A) : average {x} (Finset.singleton_nonempty x) = eval A x :=
+  ext fun f => by simp
+
+end Average
+
+section Uniform
+
+variable [Finite A]
+
+variable (A) in
+/-- The normalized counting mean `f ↦ 𝔼 x, f x` on a finite additive topological group `A`. -/
+def uniform : AddMean A :=
+  letI := Fintype.ofFinite A
+  average Finset.univ Finset.univ_nonempty
+
+/-- The uniform mean is the average over the group. The `Fintype` instance is arbitrary. -/
+@[simp]
+theorem uniform_apply [Fintype A] (f : AddUCB A) : uniform A f = 𝔼 x, (f : A →ᵇ ℝ) x := by
+  simp only [uniform, average_apply]
+  congr!
+
+/-- On a finite additive group, the average over the whole group is the uniform mean. -/
+@[simp]
+theorem average_univ [Fintype A] : average Finset.univ Finset.univ_nonempty = uniform A :=
+  ext fun f => by simp
+
+/-- The uniform mean is the sum over the group divided by its cardinality. The `Fintype` instance
+is arbitrary. -/
+theorem uniform_apply_eq_sum_div_card [Fintype A] (f : AddUCB A) :
+    uniform A f = (∑ x, (f : A →ᵇ ℝ) x) / Fintype.card A := by
+  rw [uniform_apply, Fintype.expect_eq_sum_div_card]
+
+/-- The uniform mean is left invariant, since left addition permutes the group. -/
+theorem isLeftInvariant_uniform : (uniform A).IsLeftInvariant := by
+  have := Fintype.ofFinite A
+  refine isLeftInvariant_iff.2 fun a f => ?_
+  simp only [uniform_apply, AddUCB.leftTranslation_apply]
+  exact Fintype.expect_equiv (Equiv.addLeft (-a)) _ _ fun _ => rfl
+
+/-- A left-invariant mean on a finite additive group is the uniform mean. -/
+theorem IsLeftInvariant.eq_uniform {m : AddMean A} (hm : m.IsLeftInvariant) : m = uniform A := by
+  have := Fintype.ofFinite A
+  refine ext fun f => ?_
+  have h := congr(m $(AddUCB.sum_leftTranslation f))
+  simp only [map_sum, hm.apply_leftTranslation, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, map_algebraMap] at h
+  rw [uniform_apply_eq_sum_div_card, ← h, mul_div_cancel_left₀]
+  exact Nat.cast_ne_zero.2 Fintype.card_ne_zero
+
+/-- On a finite additive group, the uniform mean is the unique left-invariant mean. -/
+theorem isLeftInvariant_iff_eq_uniform {m : AddMean A} : m.IsLeftInvariant ↔ m = uniform A :=
+  ⟨IsLeftInvariant.eq_uniform, fun h => h ▸ isLeftInvariant_uniform⟩
+
+end Uniform
+
+/-- On an additive group with one element, the uniform mean is evaluation at that element. -/
+theorem uniform_eq_eval [Subsingleton A] (x : A) : uniform A = eval A x :=
+  ext fun f => by
+    have : Unique A := uniqueOfSubsingleton x
+    rw [uniform_apply, Fintype.expect_eq_sum_div_card]
+    simp [Unique.eq_default x]
+
+end AddMean
+
+/-- Under `Mean.multiplicativeEquiv`, the uniform mean on `Multiplicative A` corresponds to the
+uniform mean on `A`. -/
+@[simp]
+theorem Mean.multiplicativeEquiv_uniform [Finite A] :
+    Mean.multiplicativeEquiv A (Mean.uniform (Multiplicative A)) = AddMean.uniform A :=
+  (Mean.isLeftInvariant_multiplicativeEquiv_iff.2 Mean.isLeftInvariant_uniform).eq_uniform
+
+/-- A finite additive topological group is amenable, for any additive group topology. -/
+instance (priority := 100) AddAmenable.of_finite [Finite A] : AddAmenable A :=
+  ⟨⟨AddMean.uniform A, AddMean.isLeftInvariant_uniform⟩⟩
+
+end Additive
 
 end TauCeti

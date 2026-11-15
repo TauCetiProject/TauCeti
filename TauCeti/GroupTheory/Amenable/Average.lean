@@ -211,4 +211,57 @@ theorem Amenable.of_hasFoelnerSets (_ : HasFoelnerSets G) : Amenable G :=
   let : MeasurableSpace G := ⊤
   .of_isFoelner (isFoelner_maxFoelner G MeasureTheory.Measure.count)
 
+section Additive
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+
+namespace AddMean
+
+variable {F : Finset A} (hF : F.Nonempty)
+
+/-- Averaging a left translate `L_a f` over `F` is averaging `f` over `-a +ᵥ F`. -/
+theorem average_leftTranslation [DecidableEq A] (a : A) (f : AddUCB A) :
+    average F hF (AddUCB.leftTranslation a f) = average (-a +ᵥ F) hF.vadd_finset f := by
+  simp only [average_apply, AddUCB.leftTranslation_apply, vadd_finset_def, vadd_eq_add,
+    expect_image (add_right_injective (-a)).injOn]
+
+/-- The averages of a left translate `L_a f` and of `f` over `F` differ by at most
+`‖f‖ · |(-a +ᵥ F) △ F| / |F|`. -/
+theorem abs_average_leftTranslation_sub_le [DecidableEq A] (a : A) (f : AddUCB A) :
+    |average F hF (AddUCB.leftTranslation a f) - average F hF f| ≤
+      ‖f‖ * #((-a +ᵥ F) ∆ F) / #F := by
+  rw [average_leftTranslation, average_apply_eq_sum_div_card, average_apply_eq_sum_div_card,
+    card_vadd_finset, ← sub_div, abs_div, Nat.abs_cast]
+  gcongr
+  have hbound (s : Finset A) : |∑ x ∈ s, (f : A →ᵇ ℝ) x| ≤ ‖f‖ * #s := by
+    simpa [mul_comm] using abs_sum_le_card_nsmul fun x (_ : x ∈ s) => AddUCB.abs_apply_le_norm f x
+  rw [← sum_sdiff_sub_sum_sdiff, symmDiff_def,
+    card_union_of_disjoint disjoint_sdiff_sdiff, Nat.cast_add, mul_add]
+  exact (abs_sub _ _).trans (add_le_add (hbound _) (hbound _))
+
+end AddMean
+
+/-- An additive group with Følner sets is amenable, for every additive group topology. -/
+theorem AddAmenable.of_hasAddFoelnerSets (h : HasAddFoelnerSets A) : AddAmenable A :=
+  amenable_multiplicative_iff.1 (.of_hasFoelnerSets (hasFoelnerSets_multiplicative_iff.2 h))
+
+/-- An additive topological group is amenable when it has finite nonempty sets `F i` with
+`|(a +ᵥ F i) △ F i| / |F i| → 0` for every `a`, along a nontrivial filter. -/
+theorem AddAmenable.of_tendsto_card_vadd_symmDiff_div_card [DecidableEq A] {ι : Type*}
+    {l : Filter ι} [l.NeBot] {F : ι → Finset A} (hne : ∀ i, (F i).Nonempty)
+    (h : ∀ a : A, Tendsto (fun i => (#((a +ᵥ F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
+    AddAmenable A :=
+  .of_hasAddFoelnerSets (.of_tendsto_card_vadd_symmDiff_div_card (Eventually.of_forall hne) h)
+
+/-- An additive topological group is amenable when it has an additive Følner family for counting
+measure, along a nontrivial filter. -/
+theorem AddAmenable.of_isAddFoelner [MeasurableSpace A] {ι : Type*}
+    {l : Filter ι} [l.NeBot] {F : ι → Set A}
+    (hF : IsAddFoelner A MeasureTheory.Measure.count l F) : AddAmenable A := by
+  classical
+  exact .of_hasAddFoelnerSets
+    (hasAddFoelnerSets_iff.2 fun K _ hε => hF.exists_finset_card_vadd_symmDiff_lt K hε)
+
+end Additive
+
 end TauCeti

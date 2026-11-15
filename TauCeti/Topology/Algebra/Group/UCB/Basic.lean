@@ -35,10 +35,12 @@ general group can differ, so no `IsUniformGroup` structure is used.
 
 ## Main definitions
 
-* `TauCeti.ucbSubalgebra 𝕜 G`: the subalgebra of `G →ᵇ 𝕜` defined by the same condition with
-  `‖·‖` in place of `|·|`, for a normed field `𝕜`.
-* `TauCeti.ucb G`: the subalgebra of `G →ᵇ ℝ` defined by the condition above, the case `𝕜 = ℝ`.
-* `TauCeti.UCB G`: its carrier type, a real Banach algebra and lattice.
+* `TauCeti.ucbSubalgebra 𝕜 G`, `TauCeti.addUcbSubalgebra 𝕜 G`: the subalgebra of `G →ᵇ 𝕜` defined
+  by the same condition with `‖·‖` in place of `|·|`, for a normed field `𝕜` and a multiplicative
+  or additive topological group `G`.
+* `TauCeti.ucb G`, `TauCeti.addUcb G`: the subalgebra of `G →ᵇ ℝ` defined by the condition above,
+  the case `𝕜 = ℝ`.
+* `TauCeti.UCB G`, `TauCeti.AddUCB G`: its carrier type, a real Banach algebra and lattice.
 
 ## Main results
 
@@ -100,6 +102,9 @@ variable {β : Type*} [PseudoMetricSpace β]
 
 /-- A function on a topological group is uniformly continuous for the right uniformity exactly
 when `f (u * x)` is uniformly close to `f x` for all `u` near `1`. -/
+@[to_additive uniformContinuous_addGroup_rightUniformSpace_iff
+/-- A function on a topological additive group is uniformly continuous for the right uniformity
+exactly when `f (u + x)` is uniformly close to `f x` for all `u` near `0`. -/]
 theorem uniformContinuous_rightUniformSpace_iff (f : G → β) :
     (letI : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
      UniformContinuous f) ↔
@@ -116,6 +121,8 @@ theorem uniformContinuous_rightUniformSpace_iff (f : G → β) :
 
 /-- A function on a topological group whose values `f (u * x)` are uniformly close to `f x` for
 all `u` near `1` is continuous. -/
+@[to_additive /-- A function on a topological additive group whose values `f (u + x)` are uniformly
+close to `f x` for all `u` near `0` is continuous. -/]
 theorem continuous_of_forall_eventually_dist_mul_lt {f : G → β}
     (h : ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, dist (f (u * x)) (f x) < ε) : Continuous f :=
   letI : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
@@ -125,10 +132,31 @@ end UniformContinuous
 
 section UCB
 
+/-- The bounded continuous functions `f : H →ᵇ 𝕜` on an additive topological group `H` such that
+`f (u + x)` is uniformly close to `f x` for all `u` near `0`, as a subalgebra of `H →ᵇ 𝕜`. The real
+space `addUcb H` is the case `𝕜 = ℝ`. -/
+@[to_additive_dont_translate]
+def addUcbSubalgebra (𝕜 H : Type*) [NormedField 𝕜] [AddGroup H] [TopologicalSpace H]
+    [IsTopologicalAddGroup H] : Subalgebra 𝕜 (H →ᵇ 𝕜) where
+  carrier := {f | ∀ ε > 0, ∀ᶠ u in 𝓝 (0 : H), ∀ x, ‖f (u + x) - f x‖ < ε}
+  mul_mem' {f g} hf hg := by
+    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
+      ← BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff] at hf hg ⊢
+    exact hf.mul hg
+  add_mem' {f g} hf hg := by
+    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
+      ← BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff] at hf hg ⊢
+    exact hf.add hg
+  algebraMap_mem' c := by
+    simp only [Set.mem_ofPred_eq, ← dist_eq_norm,
+      ← BoundedContinuousFunction.tendsto_compContinuous_addLeft_iff]
+    exact tendsto_const_nhds
+
 variable (𝕜 G) in
 /-- The bounded continuous functions `f : G →ᵇ 𝕜` such that `f (u * x)` is uniformly close to
 `f x` for all `u` near `1`, as a subalgebra of `G →ᵇ 𝕜`. The real space `ucb G` is the case
 `𝕜 = ℝ`. -/
+@[to_additive existing (dont_translate := 𝕜) addUcbSubalgebra, to_additive_dont_translate]
 def ucbSubalgebra : Subalgebra 𝕜 (G →ᵇ 𝕜) where
   carrier := {f | ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε}
   mul_mem' {f g} hf hg := by
@@ -145,12 +173,17 @@ def ucbSubalgebra : Subalgebra 𝕜 (G →ᵇ 𝕜) where
     exact tendsto_const_nhds
 
 /-- The defining condition of `ucbSubalgebra 𝕜 G`. -/
+@[to_additive (dont_translate := 𝕜) mem_addUcbSubalgebra_iff
+/-- The defining condition of `addUcbSubalgebra 𝕜 G`. -/]
 theorem mem_ucbSubalgebra_iff {f : G →ᵇ 𝕜} :
     f ∈ ucbSubalgebra 𝕜 G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, ‖f (u * x) - f x‖ < ε :=
   Iff.rfl
 
 /-- Membership in `ucbSubalgebra 𝕜 G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as
 `u → 1`. -/
+@[to_additive (dont_translate := 𝕜) mem_addUcbSubalgebra_iff_tendsto
+/-- Membership in `addUcbSubalgebra 𝕜 G` says that `u ↦ f (u + ·)` tends to `f` in supremum norm as
+`u → 0`. -/]
 theorem mem_ucbSubalgebra_iff_tendsto {f : G →ᵇ 𝕜} :
     f ∈ ucbSubalgebra 𝕜 G ↔
       Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) := by
@@ -160,6 +193,10 @@ theorem mem_ucbSubalgebra_iff_tendsto {f : G →ᵇ 𝕜} :
 /-- Postcomposing a function in `ucbSubalgebra 𝕜 G` with a continuous linear map `L : 𝕜 → 𝕜'`,
 such as the real or imaginary part `ℂ → ℝ` or the inclusion `ℝ → ℂ`, gives a function in
 `ucbSubalgebra 𝕜' G`. -/
+@[to_additive (dont_translate := 𝕜 𝕜' 𝕜'') compLeftContinuousBounded_mem_addUcbSubalgebra
+/-- Postcomposing a function in `addUcbSubalgebra 𝕜 G` with a continuous linear map `L : 𝕜 → 𝕜'`,
+such as the real or imaginary part `ℂ → ℝ` or the inclusion `ℝ → ℂ`, gives a function in
+`addUcbSubalgebra 𝕜' G`. -/]
 theorem compLeftContinuousBounded_mem_ucbSubalgebra {𝕜' 𝕜'' : Type*} [NormedField 𝕜']
     [NontriviallyNormedField 𝕜''] [NormedSpace 𝕜'' 𝕜] [NormedSpace 𝕜'' 𝕜'] (L : 𝕜 →L[𝕜''] 𝕜')
     {f : G →ᵇ 𝕜} (hf : f ∈ ucbSubalgebra 𝕜 G) :
@@ -171,6 +208,9 @@ theorem compLeftContinuousBounded_mem_ucbSubalgebra {𝕜' 𝕜'' : Type*} [Norm
 
 /-- A bounded continuous function with compact support belongs to `ucbSubalgebra 𝕜 G`: by the
 Heine–Cantor theorem it is uniformly continuous for the right uniformity of `G`. -/
+@[to_additive (dont_translate := 𝕜) mem_addUcbSubalgebra_of_hasCompactSupport
+/-- A bounded continuous function with compact support belongs to `addUcbSubalgebra 𝕜 G`: by the
+Heine–Cantor theorem it is uniformly continuous for the right uniformity of `G`. -/]
 theorem mem_ucbSubalgebra_of_hasCompactSupport {f : G →ᵇ 𝕜} (hf : HasCompactSupport f) :
     f ∈ ucbSubalgebra 𝕜 G := by
   let : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
@@ -180,31 +220,43 @@ theorem mem_ucbSubalgebra_of_hasCompactSupport {f : G →ᵇ 𝕜} (hf : HasComp
 variable (G) in
 /-- The real bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close to
 `f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℝ`. -/
-@[expose]
+@[expose, to_additive addUcb /-- The real bounded continuous functions `f` on `G` such that
+`f (u + x)` is uniformly close to `f x` for all `u` near `0`, as a subalgebra of `G →ᵇ ℝ`. -/,
+  to_additive_dont_translate]
 def ucb : Subalgebra ℝ (G →ᵇ ℝ) :=
   ucbSubalgebra ℝ G
 
 variable (G) in
 /-- The real Banach algebra of bounded functions on `G` that are uniformly continuous under small
 left multiplication, with the supremum norm, algebra operations and order of `G →ᵇ ℝ`. -/
+@[to_additive AddUCB /-- The real Banach algebra of bounded functions on `G` that are uniformly
+continuous under small left addition, with the supremum norm, algebra operations and order of
+`G →ᵇ ℝ`. -/, to_additive_dont_translate]
 abbrev UCB : Type _ := ucb G
 
 variable (G) in
 /-- `ucb G` is the case `𝕜 = ℝ` of `ucbSubalgebra 𝕜 G`. -/
+@[to_additive addUcb_eq_addUcbSubalgebra /-- `addUcb G` is the case `𝕜 = ℝ` of
+`addUcbSubalgebra 𝕜 G`. -/]
 theorem ucb_eq_ucbSubalgebra : ucb G = ucbSubalgebra ℝ G :=
   rfl
 
 /-- The defining condition of `ucb G`. -/
+@[to_additive mem_addUcb_iff /-- The defining condition of `addUcb G`. -/]
 theorem mem_ucb_iff {f : G →ᵇ ℝ} :
     f ∈ ucb G ↔ ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, |f (u * x) - f x| < ε := by
   simp only [ucb_eq_ucbSubalgebra, mem_ucbSubalgebra_iff, Real.norm_eq_abs]
 
 /-- Membership in `ucb G` says that `u ↦ f (u * ·)` tends to `f` in supremum norm as `u → 1`. -/
+@[to_additive mem_addUcb_iff_tendsto /-- Membership in `addUcb G` says that `u ↦ f (u + ·)` tends
+to `f` in supremum norm as `u → 0`. -/]
 theorem mem_ucb_iff_tendsto {f : G →ᵇ ℝ} :
     f ∈ ucb G ↔ Tendsto (fun u => f.compContinuous (ContinuousMap.mulLeft u)) (𝓝 1) (𝓝 f) := by
   rw [ucb_eq_ucbSubalgebra, mem_ucbSubalgebra_iff_tendsto]
 
 /-- Membership in `ucb G` is uniform continuity for the right uniformity of `G`. -/
+@[to_additive mem_addUcb_iff_uniformContinuous /-- Membership in `addUcb G` is uniform continuity
+for the right uniformity of `G`. -/]
 theorem mem_ucb_iff_uniformContinuous {f : G →ᵇ ℝ} :
     f ∈ ucb G ↔
       (letI : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
@@ -212,10 +264,14 @@ theorem mem_ucb_iff_uniformContinuous {f : G →ᵇ ℝ} :
   simp only [mem_ucb_iff, ← Real.dist_eq, uniformContinuous_rightUniformSpace_iff]
 
 /-- A bounded continuous function with compact support belongs to `ucb G`. -/
+@[to_additive mem_addUcb_of_hasCompactSupport /-- A bounded continuous function with compact
+support belongs to `addUcb G`. -/]
 theorem mem_ucb_of_hasCompactSupport {f : G →ᵇ ℝ} (hf : HasCompactSupport f) : f ∈ ucb G :=
   mem_ucbSubalgebra_of_hasCompactSupport hf
 
 /-- `ucb G` is closed in `G →ᵇ ℝ`: a uniform limit of functions in `ucb G` lies in `ucb G`. -/
+@[to_additive isClosed_addUcb /-- `addUcb G` is closed in `G →ᵇ ℝ`: a uniform limit of functions in
+`addUcb G` lies in `addUcb G`. -/]
 theorem isClosed_ucb : IsClosed (ucb G : Set (G →ᵇ ℝ)) := by
   refine isClosed_of_closure_subset fun f hf ε hε => ?_
   obtain ⟨g, hg, hfg⟩ := Metric.mem_closure_iff.1 hf (ε / 3) (by positivity)
@@ -235,70 +291,85 @@ theorem isClosed_ucb : IsClosed (ucb G : Set (G →ᵇ ℝ)) := by
 restated so that typeclass search finds it directly when `UCB G` occurs inside another type, such
 as the continuous dual `UCB G →L[ℝ] ℝ`; the search through `Subalgebra` and `G →ᵇ ℝ` fails
 there. -/
+@[to_additive instNormedAddCommGroupAddUCB
+/-- `AddUCB G` is a real normed group for the supremum norm of `G →ᵇ ℝ`. -/]
 instance : NormedAddCommGroup (UCB G) :=
   inferInstance
 
 /-- `UCB G` is a real Banach space. -/
+@[to_additive instCompleteSpaceAddUCB /-- `AddUCB G` is a real Banach space. -/]
 instance : CompleteSpace (UCB G) :=
   isClosed_ucb.completeSpace_coe
 
 /-- Scalar multiplication on `UCB G` scales the supremum norm: `‖c • f‖ = ‖c‖ * ‖f‖`. Typeclass
 search does not derive this from the inherited normed space structure, because the norm on
 `UCB G` is found through the normed ring structure of the subalgebra. -/
+@[to_additive instNormSMulClassRealAddUCB
+/-- Scalar multiplication on `AddUCB G` scales the supremum norm: `‖c • f‖ = ‖c‖ * ‖f‖`. -/]
 instance : NormSMulClass ℝ (UCB G) :=
   ⟨fun c f => norm_smul c (f : G →ᵇ ℝ)⟩
 
 /-- Constant functions belong to `ucb G`. -/
-@[simp]
+@[to_additive (attr := simp) const_mem_addUcb /-- Constant functions belong to `addUcb G`. -/]
 theorem const_mem_ucb (c : ℝ) : BoundedContinuousFunction.const G c ∈ ucb G :=
   fun ε hε => .of_forall fun _ _ => by simpa using hε
 
 /-- `ucb G` is closed under the pointwise maximum. -/
+@[to_additive sup_mem_addUcb /-- `addUcb G` is closed under the pointwise maximum. -/]
 theorem sup_mem_ucb {f g : G →ᵇ ℝ} (hf : f ∈ ucb G) (hg : g ∈ ucb G) : f ⊔ g ∈ ucb G := by
   rw [mem_ucb_iff_tendsto] at hf hg ⊢
   exact hf.sup_nhds hg
 
 /-- `ucb G` is closed under the pointwise minimum. -/
+@[to_additive inf_mem_addUcb /-- `addUcb G` is closed under the pointwise minimum. -/]
 theorem inf_mem_ucb {f g : G →ᵇ ℝ} (hf : f ∈ ucb G) (hg : g ∈ ucb G) : f ⊓ g ∈ ucb G := by
   rw [mem_ucb_iff_tendsto] at hf hg ⊢
   exact hf.inf_nhds hg
 
 /-- `ucb G` is closed under the pointwise absolute value. -/
+@[to_additive abs_mem_addUcb /-- `addUcb G` is closed under the pointwise absolute value. -/]
 theorem abs_mem_ucb {f : G →ᵇ ℝ} (hf : f ∈ ucb G) : |f| ∈ ucb G :=
   sup_mem_ucb hf (neg_mem hf)
 
 /-- `UCB G` is a lattice for the pointwise maximum and minimum. -/
+@[to_additive instLatticeAddUCB /-- `AddUCB G` is a lattice for the pointwise maximum and
+minimum. -/]
 instance : Lattice (UCB G) :=
   Subtype.lattice (fun _ _ => sup_mem_ucb) (fun _ _ => inf_mem_ucb)
 
 /-- The supremum norm of `UCB G` is solid for its pointwise order, as in `G →ᵇ ℝ`. -/
+@[to_additive instHasSolidNormAddUCB /-- The supremum norm of `AddUCB G` is solid for its pointwise
+order, as in `G →ᵇ ℝ`. -/]
 instance : HasSolidNorm (UCB G) where
   solid _ _ h := HasSolidNorm.solid (α := G →ᵇ ℝ) h
 
 namespace UCB
 
-@[simp, norm_cast]
+@[to_additive (attr := simp, norm_cast)]
 theorem coe_sup (f g : UCB G) : ((f ⊔ g : UCB G) : G →ᵇ ℝ) = (f : G →ᵇ ℝ) ⊔ (g : G →ᵇ ℝ) :=
   rfl
 
-@[simp, norm_cast]
+@[to_additive (attr := simp, norm_cast)]
 theorem coe_inf (f g : UCB G) : ((f ⊓ g : UCB G) : G →ᵇ ℝ) = (f : G →ᵇ ℝ) ⊓ (g : G →ᵇ ℝ) :=
   rfl
 
-@[simp, norm_cast]
+@[to_additive (attr := simp, norm_cast)]
 theorem coe_abs (f : UCB G) : ((|f| : UCB G) : G →ᵇ ℝ) = |(f : G →ᵇ ℝ)| :=
   rfl
 
 /-- Two elements of `UCB G` are equal when they agree at every point. -/
-@[ext]
+@[to_additive (attr := ext) /-- Two elements of `AddUCB G` are equal when they agree at every
+point. -/]
 theorem ext {f g : UCB G} (h : ∀ x, (f : G →ᵇ ℝ) x = (g : G →ᵇ ℝ) x) : f = g :=
   Subtype.ext (BoundedContinuousFunction.ext h)
 
 /-- The order on `UCB G` is the pointwise order. -/
+@[to_additive /-- The order on `AddUCB G` is the pointwise order. -/]
 theorem le_def {f g : UCB G} : f ≤ g ↔ ∀ x, (f : G →ᵇ ℝ) x ≤ (g : G →ᵇ ℝ) x :=
   Iff.rfl
 
 /-- Each value of an element of `UCB G` is bounded by its supremum norm. -/
+@[to_additive /-- Each value of an element of `AddUCB G` is bounded by its supremum norm. -/]
 theorem abs_apply_le_norm (f : UCB G) (x : G) : |(f : G →ᵇ ℝ) x| ≤ ‖f‖ :=
   (f : G →ᵇ ℝ).norm_coe_le_norm x
 
@@ -307,6 +378,11 @@ theorem le_norm_smul_one (f : UCB G) : f ≤ ‖f‖ • 1 :=
   le_def.2 fun x => by simpa using (f : G →ᵇ ℝ).apply_le_norm x
 
 end UCB
+
+/-- Every element of `AddUCB H` lies below the constant function with value its supremum norm. -/
+theorem AddUCB.le_norm_smul_one {H : Type*} [AddGroup H] [TopologicalSpace H]
+    [IsTopologicalAddGroup H] (f : AddUCB H) : f ≤ ‖f‖ • 1 :=
+  AddUCB.le_def.2 fun x => by simpa using (f : H →ᵇ ℝ).apply_le_norm x
 
 end UCB
 

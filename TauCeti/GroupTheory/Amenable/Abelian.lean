@@ -5,31 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Amenable.Discrete
 public import TauCeti.GroupTheory.Amenable.DirectedUnion
 public import TauCeti.GroupTheory.Amenable.Int
 public import TauCeti.GroupTheory.Amenable.Prod
-public import Mathlib.GroupTheory.NoncommPiCoprod
+public import TauCeti.GroupTheory.NoncommPiCoprod
 
 /-!
 # Amenability of commutative groups
 
-Every commutative topological group is amenable, with no hypothesis on its rank, its torsion or
-its topology.
+Every commutative topological group — additive (`AddCommGroup`) or multiplicative (`CommGroup`) —
+is amenable, with no hypothesis on its rank, its torsion or its topology.
 
-A finite subset `s` of a commutative group `G` is the image of the standard generators under
-the homomorphism `(s → Multiplicative ℤ) →* G` sending `n` to `∏ x ∈ s, x ^ (n x).toAdd`. This
-is Mathlib's `MonoidHom.noncommPiCoprod` of the maps `zpowersHom G x`, whose commutation
-hypothesis holds because `G` is commutative. Its source is a finite power of the integers with
-the discrete topology, so it is amenable by amenability of the integers and of finite products,
-and the homomorphism is continuous for every topology on `G`. Every finite subset of `G`
-therefore lies in the image of a continuous homomorphism from an amenable group, which is the
-directed-union criterion `TauCeti.Amenable.of_forall_finset_subset_range`.
+A finitely generated commutative additive group `A` is a surjective homomorphic image of `Fin n → ℤ`
+via `TauCeti.zmultiplesPiHom` (`AddGroup.fg_iff_exists_fin_addMonoidHom_surjective`). Equipping `ℤ`
+with the discrete topology makes `Fin n → ℤ` a finite product of amenable discrete groups
+(`TauCeti.AddAmenable.int`, `TauCeti.AddAmenable.pi`), so `A` is amenable for every additive group
+topology by `TauCeti.AddAmenable.of_surjective`.
 
-For an additive commutative group `A`, the instance applies to `Multiplicative A`, which carries
-the topology of `A` and is a topological group when `A` is a topological additive group.
+An arbitrary commutative additive group is exhausted by its finitely generated subgroups, each of
+which is amenable by the finitely generated case, so `TauCeti.AddAmenable.of_forall_fg` proves
+`TauCeti.AddAmenable.of_addCommGroup`. Transporting across `Additive` gives the multiplicative
+counterpart `TauCeti.Amenable.of_commGroup`, alongside the finitely generated theorem
+`TauCeti.Amenable.of_group_fg`.
 
 ## Main results
 
+* `TauCeti.AddAmenable.of_addGroup_fg`, `TauCeti.Amenable.of_group_fg`: finitely generated
+  commutative topological groups are amenable.
+* `TauCeti.AddAmenable.of_addCommGroup`: every commutative additive topological group is amenable.
 * `TauCeti.Amenable.of_commGroup`: every commutative topological group is amenable.
 
 ## References
@@ -43,18 +47,35 @@ public section
 
 namespace TauCeti
 
+/-- Every finitely generated commutative additive topological group is amenable: it is a surjective
+homomorphic image of a finite product of copies of `ℤ`. -/
+theorem AddAmenable.of_addGroup_fg {A : Type*} [AddCommGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A] [AddGroup.FG A] : AddAmenable A := by
+  obtain ⟨n, φ, hφ⟩ := AddGroup.fg_iff_exists_fin_addMonoidHom_surjective.1 ‹_›
+  let : TopologicalSpace ℤ := ⊥
+  have : DiscreteTopology ℤ := ⟨rfl⟩
+  exact .of_surjective φ hφ
+
+/-- Every commutative additive topological group is amenable, whatever its additive group topology:
+its finitely generated subgroups are amenable and exhaust the group. -/
+instance (priority := 100) AddAmenable.of_addCommGroup {A : Type*} [AddCommGroup A]
+    [TopologicalSpace A] [IsTopologicalAddGroup A] : AddAmenable A :=
+  .of_forall_fg fun K hK => by
+    have : AddGroup.FG K := (AddGroup.fg_iff_addSubgroup_fg K).2 hK
+    exact .of_addGroup_fg
+
+/-- Every finitely generated commutative topological group is amenable: it is a surjective
+homomorphic image of a finite product of copies of `Multiplicative ℤ`. -/
+theorem Amenable.of_group_fg {G : Type*} [CommGroup G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [Group.FG G] : Amenable G := by
+  obtain ⟨n, φ, hφ⟩ := Group.fg_iff_exists_fin_monoidHom_surjective.1 ‹_›
+  let : TopologicalSpace (Multiplicative ℤ) := ⊥
+  have : DiscreteTopology (Multiplicative ℤ) := ⟨rfl⟩
+  exact .of_surjective φ hφ
+
 /-- Every commutative topological group is amenable, whatever its group topology. -/
 instance (priority := 100) Amenable.of_commGroup {G : Type*} [CommGroup G] [TopologicalSpace G]
-    [IsTopologicalGroup G] : Amenable G := by
-  classical
-  have hcomm (s : Finset G) : Pairwise fun x y : s => ∀ m n : Multiplicative ℤ,
-      Commute (zpowersHom G x m) (zpowersHom G y n) := fun _ _ _ _ _ => .all _ _
-  -- For a finite set `s`, the homomorphism `n ↦ ∏ x ∈ s, x ^ (n x).toAdd` out of `s → ℤ`.
-  let φ (s : Finset G) : (s → Multiplicative ℤ) →ₜ* G :=
-    ⟨MonoidHom.noncommPiCoprod (fun x : s => zpowersHom G x) (hcomm s),
-      continuous_of_discreteTopology⟩
-  refine .of_forall_finset_subset_range φ fun s =>
-    ⟨s, fun x hx => ⟨Pi.mulSingle ⟨x, hx⟩ (.ofAdd 1), ?_⟩⟩
-  simp [φ, MonoidHom.noncommPiCoprod_mulSingle]
+    [IsTopologicalGroup G] : Amenable G :=
+  addAmenable_additive_iff.1 inferInstance
 
 end TauCeti

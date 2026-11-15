@@ -23,22 +23,29 @@ continuous dual of `UCB G`, and evaluation at a point of `G` is a mean, so this 
 
 ## Main definitions
 
-* `TauCeti.Mean G`: a positive normalized linear functional on `UCB G`.
-* `TauCeti.Mean.toContinuousLinearMap`: the continuous linear functional underlying a mean.
-* `TauCeti.Mean.eval`: evaluation at a point, as a mean.
+* `TauCeti.Mean G`, `TauCeti.AddMean H`: a positive normalized linear functional on `UCB G` or
+  `AddUCB H`.
+* `TauCeti.Mean.toContinuousLinearMap`, `TauCeti.AddMean.toContinuousLinearMap`: the continuous
+  linear functional underlying a mean.
+* `TauCeti.Mean.eval`, `TauCeti.AddMean.eval`: evaluation at a point, as a mean.
 
 ## Main results
 
-* `TauCeti.Mean.map_algebraMap`: a mean takes the value `c` at the constant function `c`.
-* `TauCeti.Mean.ciInf_le_apply`, `TauCeti.Mean.apply_le_ciSup`: `⨅ x, f x ≤ m f ≤ ⨆ x, f x`.
+* `TauCeti.Mean.map_algebraMap`, `TauCeti.AddMean.map_algebraMap`: a mean takes the value `c` at the
+  constant function `c`.
+* `TauCeti.Mean.ciInf_le_apply`, `TauCeti.Mean.apply_le_ciSup`: `⨅ x, f x ≤ m f ≤ ⨆ x, f x`;
+  likewise for `AddMean`.
 * `TauCeti.Mean.abs_apply_le_norm`, `TauCeti.Mean.abs_apply_sub_apply_le`: `|m f| ≤ ‖f‖` and
-  `|m f - m g| ≤ ‖f - g‖`.
-* `TauCeti.Mean.lipschitzWith`: a mean is `1`-Lipschitz; it is therefore a
-  `ContinuousLinearMapClass`.
-* `TauCeti.Mean.norm_toContinuousLinearMap`: a mean has operator norm one.
-* `TauCeti.Mean.mem_range_toContinuousLinearMap_iff`: the continuous linear functionals coming
+  `|m f - m g| ≤ ‖f - g‖`; likewise for `AddMean`.
+* `TauCeti.Mean.lipschitzWith`, `TauCeti.AddMean.lipschitzWith`: a mean is `1`-Lipschitz; it is
+  therefore a `ContinuousLinearMapClass`.
+* `TauCeti.Mean.norm_toContinuousLinearMap`, `TauCeti.AddMean.norm_toContinuousLinearMap`: a mean
+  has operator norm one.
+* `TauCeti.Mean.mem_range_toContinuousLinearMap_iff`,
+  `TauCeti.AddMean.mem_range_toContinuousLinearMap_iff`: the continuous linear functionals coming
   from means are exactly the positive ones taking the value `1` at `1`.
-* `TauCeti.Mean.convex_range_toContinuousLinearMap`: the means form a convex set.
+* `TauCeti.Mean.convex_range_toContinuousLinearMap`,
+  `TauCeti.AddMean.convex_range_toContinuousLinearMap`: the means form a convex set.
 
 ## References
 
@@ -52,6 +59,13 @@ noncomputable section
 open scoped BoundedContinuousFunction
 
 namespace TauCeti
+
+/-- A mean on `AddUCB H` for an additive topological group `H`: a positive real linear functional
+taking the value `1` at the constant function `1`. -/
+structure AddMean (H : Type*) [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H]
+    extends AddUCB H →ₚ[ℝ] ℝ where
+  /-- A mean takes the value `1` at the constant function `1`. -/
+  map_one' : toFun 1 = 1
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
@@ -205,5 +219,151 @@ instance : Nonempty (Mean G) :=
   ⟨eval G 1⟩
 
 end Mean
+
+namespace AddMean
+
+variable {H : Type*} [AddGroup H] [TopologicalSpace H] [IsTopologicalAddGroup H]
+
+instance : FunLike (AddMean H) (AddUCB H) ℝ where
+  coe m := m.toFun
+  coe_injective := by
+    rintro ⟨_, _⟩ ⟨_, _⟩ h
+    congr
+    exact DFunLike.coe_injective h
+
+instance : LinearMapClass (AddMean H) ℝ (AddUCB H) ℝ where
+  map_add m := map_add m.toPositiveLinearMap
+  map_smulₛₗ m := map_smul m.toPositiveLinearMap
+
+instance : OrderHomClass (AddMean H) (AddUCB H) ℝ where
+  map_rel m _ _ h := OrderHomClass.mono m.toPositiveLinearMap h
+
+/-- Two means are equal when they agree on every function. -/
+@[ext]
+theorem ext {m n : AddMean H} (h : ∀ f, m f = n f) : m = n :=
+  DFunLike.ext m n h
+
+@[simp]
+theorem coe_toPositiveLinearMap (m : AddMean H) : ⇑m.toPositiveLinearMap = ⇑m :=
+  (rfl)
+
+theorem toPositiveLinearMap_injective :
+    Function.Injective (toPositiveLinearMap : AddMean H → AddUCB H →ₚ[ℝ] ℝ) :=
+  fun _ _ h => ext fun f => DFunLike.congr_fun h f
+
+/-- A mean takes the value `1` at the constant function `1`. -/
+@[simp]
+theorem map_one (m : AddMean H) : m 1 = 1 :=
+  m.map_one'
+
+/-- A mean built from a linear functional which is nonnegative on nonnegative functions and takes
+the value `1` at `1`. -/
+def mk₀ (φ : AddUCB H →ₗ[ℝ] ℝ) (hφ : ∀ f, 0 ≤ f → 0 ≤ φ f) (h₁ : φ 1 = 1) : AddMean H :=
+  { PositiveLinearMap.mk₀ φ hφ with map_one' := h₁ }
+
+@[simp]
+theorem mk₀_apply (φ : AddUCB H →ₗ[ℝ] ℝ) (hφ : ∀ f, 0 ≤ f → 0 ≤ φ f) (h₁ : φ 1 = 1)
+    (f : AddUCB H) : mk₀ φ hφ h₁ f = φ f :=
+  (rfl)
+
+variable (m : AddMean H)
+
+/-- A mean takes the value `c` at the constant function `c`. -/
+@[simp]
+theorem map_algebraMap (c : ℝ) : m (algebraMap ℝ (AddUCB H) c) = c := by
+  simp [Algebra.algebraMap_eq_smul_one]
+
+/-- A mean of a function bounded above by `c` is at most `c`. -/
+theorem apply_le_of_forall_le {f : AddUCB H} {c : ℝ} (h : ∀ x, (f : H →ᵇ ℝ) x ≤ c) : m f ≤ c := by
+  have hf : f ≤ algebraMap ℝ (AddUCB H) c := AddUCB.le_def.2 (by simpa)
+  simpa using OrderHomClass.mono m hf
+
+/-- A mean of a function bounded below by `c` is at least `c`. -/
+theorem le_apply_of_forall_le {f : AddUCB H} {c : ℝ} (h : ∀ x, c ≤ (f : H →ᵇ ℝ) x) : c ≤ m f := by
+  have hf : algebraMap ℝ (AddUCB H) c ≤ f := AddUCB.le_def.2 (by simpa)
+  simpa using OrderHomClass.mono m hf
+
+/-- A mean of a function is at least the infimum of its values. -/
+theorem ciInf_le_apply (f : AddUCB H) : ⨅ x, (f : H →ᵇ ℝ) x ≤ m f :=
+  m.le_apply_of_forall_le fun x =>
+    ciInf_le ⟨-‖f‖, by rintro _ ⟨y, rfl⟩; exact (f : H →ᵇ ℝ).neg_norm_le_apply y⟩ x
+
+/-- A mean of a function is at most the supremum of its values. -/
+theorem apply_le_ciSup (f : AddUCB H) : m f ≤ ⨆ x, (f : H →ᵇ ℝ) x :=
+  m.apply_le_of_forall_le fun x =>
+    le_ciSup ⟨‖f‖, by rintro _ ⟨y, rfl⟩; exact (f : H →ᵇ ℝ).apply_le_norm y⟩ x
+
+/-- A mean of a function is bounded in absolute value by its supremum norm. -/
+theorem abs_apply_le_norm (f : AddUCB H) : |m f| ≤ ‖f‖ := by
+  simpa using PositiveLinearMap.abs_apply_le_mul_norm m (AddUCB.le_norm_smul_one (H := H)) f
+
+/-- A mean changes by at most the supremum distance between its arguments. -/
+theorem abs_apply_sub_apply_le (f g : AddUCB H) : |m f - m g| ≤ ‖f - g‖ := by
+  simpa using
+    PositiveLinearMap.abs_apply_sub_apply_le_mul_norm m (AddUCB.le_norm_smul_one (H := H)) f g
+
+/-- A mean is `1`-Lipschitz for the supremum norm. -/
+theorem lipschitzWith : LipschitzWith 1 m := by
+  simpa using
+    PositiveLinearMap.lipschitzWith_of_forall_le_norm_smul m (AddUCB.le_norm_smul_one (H := H))
+
+/-- A mean is continuous for the supremum norm. -/
+instance : ContinuousLinearMapClass (AddMean H) ℝ (AddUCB H) ℝ where
+  map_continuous m := m.lipschitzWith.continuous
+
+/-- The continuous linear functional underlying a mean. -/
+def toContinuousLinearMap : AddUCB H →L[ℝ] ℝ where
+  toLinearMap := m.toPositiveLinearMap.toLinearMap
+  cont := map_continuous m
+
+@[simp]
+theorem coe_toContinuousLinearMap : ⇑m.toContinuousLinearMap = ⇑m :=
+  (rfl)
+
+theorem toContinuousLinearMap_injective :
+    Function.Injective (toContinuousLinearMap : AddMean H → AddUCB H →L[ℝ] ℝ) :=
+  fun _ _ h => ext fun f => DFunLike.congr_fun h f
+
+/-- A mean has operator norm one. -/
+@[simp]
+theorem norm_toContinuousLinearMap : ‖m.toContinuousLinearMap‖ = 1 := by
+  rw [m.toContinuousLinearMap.opNorm_eq_apply_of_monotone (OrderHomClass.mono m)
+    AddUCB.le_norm_smul_one norm_one.le]
+  simp
+
+/-- A continuous linear functional on `AddUCB H` comes from a mean exactly when it is nonnegative
+on nonnegative functions and takes the value `1` at `1`. -/
+theorem mem_range_toContinuousLinearMap_iff {φ : AddUCB H →L[ℝ] ℝ} :
+    φ ∈ Set.range (toContinuousLinearMap : AddMean H → AddUCB H →L[ℝ] ℝ) ↔
+      (∀ f, 0 ≤ f → 0 ≤ φ f) ∧ φ 1 = 1 := by
+  refine ⟨?_, fun ⟨hφ, h₁⟩ => ⟨mk₀ φ.toLinearMap hφ h₁, rfl⟩⟩
+  rintro ⟨m, rfl⟩
+  exact ⟨fun f hf => by simpa using map_nonneg m hf, by simp⟩
+
+/-- The means on `AddUCB H` form a convex set of continuous linear functionals. -/
+theorem convex_range_toContinuousLinearMap :
+    Convex ℝ (Set.range (toContinuousLinearMap : AddMean H → AddUCB H →L[ℝ] ℝ)) := by
+  intro φ hφ ψ hψ a b ha hb hab
+  rw [mem_range_toContinuousLinearMap_iff] at hφ hψ ⊢
+  refine ⟨fun f hf => ?_, by simp [hφ.2, hψ.2, hab]⟩
+  have := hφ.1 f hf
+  have := hψ.1 f hf
+  simp only [add_apply, smul_apply, smul_eq_mul]
+  positivity
+
+variable (H) in
+/-- Evaluation at a point of `H` is a mean on `AddUCB H`. -/
+def eval (x : H) : AddMean H :=
+  mk₀ ((BoundedContinuousFunction.evalCLM ℝ x).toLinearMap ∘ₗ (addUcb H).val.toLinearMap)
+    (fun _ hf => AddUCB.le_def.1 hf x) rfl
+
+@[simp]
+theorem eval_apply (x : H) (f : AddUCB H) : eval H x f = (f : H →ᵇ ℝ) x :=
+  (rfl)
+
+instance : Nonempty (AddMean H) :=
+  ⟨eval H 0⟩
+
+end AddMean
 
 end TauCeti

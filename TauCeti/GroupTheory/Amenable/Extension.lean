@@ -176,15 +176,47 @@ amenable. -/
 theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
     Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) := by
   have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
-  refine ⟨fun _ => ⟨inferInstance, ?_⟩, fun ⟨_, _⟩ =>
-    .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
-  exact .of_denseRange ⟨QuotientGroup.mk' N, continuous_of_discreteTopology⟩
-    (QuotientGroup.mk'_surjective N).denseRange
+  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩,
+    fun ⟨_, _⟩ => .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable
 quotient. -/
 theorem Amenable.of_subgroup_quotient (N : Subgroup G) [N.Normal] [Amenable N]
     [Amenable (G ⧸ N)] : Amenable G :=
   (amenable_iff_subgroup_quotient N).2 ⟨‹_›, ‹_›⟩
+
+section Additive
+
+variable {A B C : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [AddGroup B] [TopologicalSpace B] [DiscreteTopology B]
+  [AddGroup C] [TopologicalSpace C] [DiscreteTopology C]
+
+/-- If `ψ : B →+ A` and `φ : A →+ C` are homomorphisms of discrete additive groups with
+`φ.ker ≤ ψ.range`, and `B` and `C` are amenable, then `A` is amenable. -/
+theorem AddAmenable.of_ker_le_range [AddAmenable B] [AddAmenable C] (ψ : B →+ A) (φ : A →+ C)
+    (h : φ.ker ≤ ψ.range) : AddAmenable A := by
+  rw [← amenable_multiplicative_iff]
+  refine .of_ker_le_range (AddMonoidHom.toMultiplicative ψ) (AddMonoidHom.toMultiplicative φ) ?_
+  intro x hx
+  have hx' : x.toAdd ∈ φ.ker := by
+    simpa [MonoidHom.mem_ker, AddMonoidHom.coe_toMultiplicative] using hx
+  obtain ⟨b, hb⟩ := h hx'
+  exact ⟨Multiplicative.ofAdd b, by simp [hb]⟩
+
+/-- A discrete additive group with a normal additive subgroup `N` is amenable exactly when `N` and
+`A ⧸ N` are amenable. -/
+theorem addAmenable_iff_addSubgroup_quotient (N : AddSubgroup A) [N.Normal] :
+    AddAmenable A ↔ AddAmenable N ∧ AddAmenable (A ⧸ N) := by
+  have := QuotientAddGroup.discreteTopology (isOpen_discrete (N : Set A))
+  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩,
+    fun ⟨_, _⟩ => .of_ker_le_range N.subtype (QuotientAddGroup.mk' N) (by simp)⟩
+
+/-- A discrete additive group is amenable when it has an amenable normal additive subgroup with
+amenable quotient. -/
+theorem AddAmenable.of_addSubgroup_quotient (N : AddSubgroup A) [N.Normal] [AddAmenable N]
+    [AddAmenable (A ⧸ N)] : AddAmenable A :=
+  (addAmenable_iff_addSubgroup_quotient N).2 ⟨‹_›, ‹_›⟩
+
+end Additive
 
 end TauCeti
