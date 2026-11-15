@@ -41,6 +41,9 @@ closed in the Banach algebra `C(ℤ_p, ℚ_p)`.
 * `TauCeti.Huber.isNaturallyComplete_iff`: for any uniform additive group structure on `M` whose
   topology is the module topology, natural completeness is completeness together with the Hausdorff
   property.
+* `TauCeti.Huber.IsNaturallyComplete.of_semilinearEquiv` and
+  `TauCeti.Huber.IsNaturallyComplete.of_equiv`: natural completeness is invariant under topological
+  semilinear equivalence and under linear equivalence.
 * `TauCeti.Huber.isNaturallyComplete_iff_t2Space`: a finite module over a complete first-countable
   ring is naturally complete exactly when its module topology is Hausdorff.
 * `TauCeti.Huber.isNaturallyComplete_iff_isClosed_ker`: it is naturally complete exactly when the
@@ -105,6 +108,51 @@ theorem isNaturallyComplete_iff [UniformSpace M] [IsUniformAddGroup M] [IsModule
 theorem IsNaturallyComplete.t2Space (h : IsNaturallyComplete A M) :
     @T2Space M (moduleTopology A M) :=
   h.2
+
+/-- **Natural completeness is invariant under mutually inverse topological semilinear maps.** If
+`σ : A →+* B` and `σ' : B →+* A` are continuous ring homomorphisms and `f : M →ₛₗ[σ] N` and
+`g : N →ₛₗ[σ'] M` are mutually inverse semilinear maps, then `N` is naturally complete over `B`
+whenever `M` is naturally complete over `A`. -/
+theorem IsNaturallyComplete.of_semilinear {B N : Type*} [Semiring B] [TopologicalSpace B]
+    [AddCommGroup N] [Module B N] {σ : A →+* B} {σ' : B →+* A} (hσ : Continuous σ)
+    (hσ' : Continuous σ') (f : M →ₛₗ[σ] N) (g : N →ₛₗ[σ'] M)
+    (hfg : Function.LeftInverse g f) (hgf : Function.RightInverse g f)
+    (h : IsNaturallyComplete A M) : IsNaturallyComplete B N := by
+  let _ : TopologicalSpace M := moduleTopology A M
+  let _ : TopologicalSpace N := moduleTopology B N
+  let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
+  let _ : IsTopologicalAddGroup N := IsModuleTopology.isTopologicalAddGroup B N
+  let _ : UniformSpace M := IsTopologicalAddGroup.rightUniformSpace M
+  let _ : UniformSpace N := IsTopologicalAddGroup.rightUniformSpace N
+  have _ : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
+  have _ : IsUniformAddGroup N := isUniformAddGroup_of_addCommGroup
+  have _ : IsModuleTopology A M := inferInstance
+  have _ : IsModuleTopology B N := inferInstance
+  have _ : T2Space M := h.2
+  have hf := IsModuleTopology.continuous_of_linearMapₛₗ hσ f
+  have hg := IsModuleTopology.continuous_of_linearMapₛₗ hσ' g
+  let ue : M ≃ᵤ N :=
+    { toFun := f
+      invFun := g
+      left_inv := hfg
+      right_inv := hgf
+      uniformContinuous_toFun := uniformContinuous_addMonoidHom_of_continuous
+        (f := f.toAddMonoidHom) hf
+      uniformContinuous_invFun := uniformContinuous_addMonoidHom_of_continuous
+        (f := g.toAddMonoidHom) hg }
+  exact ⟨(UniformEquiv.completeSpace_iff ue).mp h.1, .of_injective_continuous hgf.injective hg⟩
+
+/-- **Natural completeness is invariant under topological semilinear equivalence.** -/
+theorem IsNaturallyComplete.of_semilinearEquiv {B N : Type*} [Semiring B] [TopologicalSpace B]
+    [AddCommGroup N] [Module B N] {σ : A →+* B} {σ' : B →+* A} [RingHomInvPair σ σ']
+    [RingHomInvPair σ' σ] (hσ : Continuous σ) (hσ' : Continuous σ')
+    (e : M ≃ₛₗ[σ] N) (h : IsNaturallyComplete A M) : IsNaturallyComplete B N :=
+  IsNaturallyComplete.of_semilinear hσ hσ' e.toLinearMap e.symm.toLinearMap e.left_inv e.right_inv h
+
+/-- **Natural completeness is invariant under linear equivalence.** -/
+theorem IsNaturallyComplete.of_equiv {N : Type*} [AddCommGroup N] [Module A N] (e : M ≃ₗ[A] N)
+    (h : IsNaturallyComplete A M) : IsNaturallyComplete A N :=
+  IsNaturallyComplete.of_semilinearEquiv continuous_id continuous_id e h
 
 end Defs
 
