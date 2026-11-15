@@ -5,22 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Normed
 
 /-!
 # Integrated covariant ⋆-representations
 
 The vector-integrated form of a covariant representation preserves the twisted involution:
 `(π ⋊ U)(f*) = ((π ⋊ U)(f))*`. Together with multiplicativity, this gives a nonunital complex
-⋆-algebra homomorphism from the compact-support convolution algebra to bounded operators.
-This is the representation used to define the universal crossed-product norm. It is bounded by
-the L¹ norm of the convolution algebra.
+⋆-algebra homomorphism from the compact-support convolution algebra to bounded operators, which
+extends by continuity to a contractive nonunital ⋆-algebra homomorphism
+`CovariantRepresentation.integratedStarAlgHomL1` on the twisted L¹ completion
+`UniformSpace.Completion (ConvolutionAlgebra α μ)`. This is the representation used to define the
+universal crossed-product norm.
 
-The proof uses Haar inversion with the modular weight `c(g) = Δ(g)⁻¹`. All integrands tested
-in matrix coefficients have compact support, so no global σ-finiteness, separability, or
-operator-norm continuity of the unitary representation is required. Coefficient representations
-may be degenerate and coefficient algebras may be nonunital or zero.
+For any left-invariant measure finite on compact sets, integrals of compactly supported continuous
+functions are scalar multiples of Haar integrals, where Haar inversion cancels the modular weight
+`c(g) = Δ(g)⁻¹`. All integrands tested in matrix coefficients have compact support, so neither full
+support (`IsOpenPosMeasure`), global σ-finiteness, separability, nor operator-norm continuity of
+the unitary representation is required. Coefficient representations may be degenerate and
+coefficient algebras may be nonunital or zero.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2. The
 matrix-coefficient argument follows the existing scalar construction
@@ -32,7 +35,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory UniformSpace
 open scoped CompactlySupported InnerProductSpace
 
 namespace TauCeti.CStarAction.CovariantRepresentation
@@ -41,7 +44,7 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {α : CStarAction G A} (P : CovariantRepresentation α H)
-  (μ : Measure G) [μ.IsHaarMeasure]
+  (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
 
 /-- The vector-integrated covariant form sends the twisted involution to the operator adjoint.
 The modular factor in the involution cancels the change of Haar measure under inversion. -/
@@ -75,11 +78,37 @@ theorem integratedOperator_twistedInvolution (f : C_c(G, A)) :
               ⟪v, P.coefficient (f g⁻¹) (P.group g⁻¹ w)⟫_ℂ := by
           simp only [map_star, ContinuousLinearMap.star_eq_adjoint,
             ContinuousLinearMap.adjoint_inner_left]
-    _ = ∫ g, ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ ∂μ :=
-      integral_modularCharacter_smul_inv_eq_self (μ := μ)
-        (f := fun g => ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ)
-        (continuous_const.inner (P.continuous_integrand f w))
-        ((P.hasCompactSupport_integrand f w).comp_left (inner_zero_right v))
+    _ = ∫ g, ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ ∂μ := by
+      -- Rescale `μ` against a Haar measure on real linear functionals of the compact-support
+      -- integrand, where the modular inversion formula applies.
+      set F : G → ℂ := fun g => ⟪v, P.coefficient (f g) (P.group g w)⟫_ℂ
+      have hFc : Continuous F := continuous_const.inner (P.continuous_integrand f w)
+      have hFcs : HasCompactSupport F :=
+        (P.hasCompactSupport_integrand f w).comp_left (inner_zero_right v)
+      have hsmul_inv {E : Type} [Zero E] [SMulZeroClass ℝ E] {u : G → E}
+          (hu : HasCompactSupport u) :
+          HasCompactSupport fun g => (Measure.modularCharacter g : ℝ) • u g⁻¹ := by
+        rw [hasCompactSupport_iff_eventuallyEq]
+        refine (hasCompactSupport_iff_eventuallyEq.1
+          (hu.comp_homeomorph (Homeomorph.inv G))).mono fun g hg =>
+          smul_eq_zero_of_right _ hg
+      have hΨc : Continuous fun g => (Measure.modularCharacter g : ℝ) • F g⁻¹ :=
+        (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hFc.comp continuous_inv)
+      refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
+      set Fφ : G → ℝ := fun g => φ (F g)
+      have hFφc : Continuous Fφ := φ.continuous.comp hFc
+      have hFφcs : HasCompactSupport Fφ := hFcs.comp_left (map_zero φ)
+      have hΨφc : Continuous fun g => (Measure.modularCharacter g : ℝ) • Fφ g⁻¹ :=
+        (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hFφc.comp continuous_inv)
+      rw [← φ.integral_comp_comm (hΨc.integrable_of_hasCompactSupport (hsmul_inv hFcs)),
+        ← φ.integral_comp_comm (hFc.integrable_of_hasCompactSupport hFcs)]
+      simp_rw [map_smul]
+      rw [Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ Measure.haar
+          hΨφc (hsmul_inv hFφcs),
+        Measure.integral_isMulLeftInvariant_eq_smul_of_hasCompactSupport μ Measure.haar
+          hFφc hFφcs,
+        integral_smul_nnreal_measure, integral_smul_nnreal_measure]
+      exact congrArg _ (integral_modularCharacter_smul_inv_eq_self (μ := Measure.haar) hFφc hFφcs)
 
 /-- The integrated form as a nonunital complex ⋆-algebra homomorphism on the compact-support
 convolution algebra. Its values are defined by Hilbert-space vector integrals. -/
@@ -102,5 +131,45 @@ theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
 theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
     ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
   simpa [ConvolutionAlgebra.norm_eq_integral_norm] using P.norm_integratedOperator_le μ f.ofConv
+
+/-- The L¹ integrated form preserves the `⋆`-involution on the twisted L¹ completion. -/
+@[simp]
+theorem integratedOperatorL1_star (x : Completion (ConvolutionAlgebra α μ)) :
+    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_eq
+      ((P.continuous_integratedOperatorL1 μ).comp continuous_star)
+      (continuous_star.comp (P.continuous_integratedOperatorL1 μ))
+  | ih f =>
+    rw [← Completion.coe_star, P.integratedOperatorL1_coe, P.integratedOperatorL1_coe,
+      ConvolutionAlgebra.ofConv_star, P.integratedOperator_twistedInvolution]
+
+/-- The integrated form on `Completion (ConvolutionAlgebra α μ)` bundled as a nonunital complex
+`⋆`-algebra homomorphism. -/
+def integratedStarAlgHomL1 :
+    Completion (ConvolutionAlgebra α μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
+  __ := P.integratedOperatorL1 μ
+  map_star' := P.integratedOperatorL1_star μ
+
+@[simp]
+theorem integratedStarAlgHomL1_apply (x : Completion (ConvolutionAlgebra α μ)) :
+    P.integratedStarAlgHomL1 μ x = P.integratedOperatorL1 μ x :=
+  (rfl)
+
+@[simp]
+theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
+    (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ :=
+  (rfl)
+
+/-- The L¹ integrated `⋆`-homomorphism is continuous. -/
+@[fun_prop]
+theorem continuous_integratedStarAlgHomL1 : Continuous (P.integratedStarAlgHomL1 μ) :=
+  P.continuous_integratedOperatorL1 μ
+
+/-- The L¹ integrated `⋆`-homomorphism is a contraction on the twisted L¹ completion. -/
+theorem norm_integratedStarAlgHomL1_le (x : Completion (ConvolutionAlgebra α μ)) :
+    ‖P.integratedStarAlgHomL1 μ x‖ ≤ ‖x‖ :=
+  P.norm_integratedOperatorL1_le μ x
 
 end TauCeti.CStarAction.CovariantRepresentation

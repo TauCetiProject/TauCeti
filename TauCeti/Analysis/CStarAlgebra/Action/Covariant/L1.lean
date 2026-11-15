@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
+public import TauCeti.MeasureTheory.Measure.Regular
+public import TauCeti.Topology.Separation.TypeTags
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
 /-!
@@ -15,15 +16,23 @@ import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
 Let `P : CovariantRepresentation α H` be a covariant representation of a point-norm continuous
 action `α : CStarAction G A` on a Hilbert space `H`. In
-`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Normed`, the integrated form on `C_c(G, A)` is
-extended by continuity to `P.integratedOperatorL1 μ` on the abstract `L¹` completion
-`UniformSpace.Completion (ConvolutionAlgebra α μ)`.
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Normed` and
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star`, the compact-support integrated form
+`P.integratedOperator μ` (from `TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated`) is
+extended by continuity to `P.integratedOperatorL1 μ` and `P.integratedStarAlgHomL1 μ` on the
+abstract `L¹` completion `UniformSpace.Completion (ConvolutionAlgebra α μ)`.
 
 Here we construct the integrated form directly on the Bochner space `Lp A 1 μ` by Hilbert-space
 vector integration,
 `(P.integratedLp μ f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ`,
 for any inner-regular Borel measure (`[R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]`), and
-prove that it matches `P.integratedOperatorL1 μ` across `ConvolutionAlgebra.completionEquivL1`.
+prove that it matches `P.integratedOperatorL1 μ` across `ConvolutionAlgebra.completionEquivL1`. The
+vector-integral operator construction, covariance identities, and elementary-tensor comparison
+closely adapt the scalar integrated representation `ContRepresentation.integratedOperatorL1` in
+`TauCeti.RepresentationTheory.Continuous.Integrated.Basic` and the compact-support covariant form
+`CovariantRepresentation.integratedOperator` /
+`CovariantRepresentation.integratedOperator_eq_coefficient_mul_integratedOperatorL1` in
+`TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated`.
 
 Strong measurability of the integrand `g ↦ P.coefficient (f g) (P.group g v)` uses neither
 separability of `A` or `H`, second countability of `G`, nor operator-norm continuity of `P.group`:
@@ -43,24 +52,25 @@ measures need not have full support.
   bounded integrated operator `T` with `T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` and
   `‖T‖ ≤ ∫ g, ‖f g‖ ∂μ`.
 * `CovariantRepresentation.integratedLp_compLp_mul`,
-  `CovariantRepresentation.integratedLp_translateLp`: left coefficient covariance and group
-  covariance directly on `Lp A 1 μ`.
+  `CovariantRepresentation.integratedLp_translateLp`,
+  `CovariantRepresentation.integratedLp_convolutionL1`: left coefficient covariance, group
+  covariance, and multiplicativity under `CStarAction.convolutionL1` directly on `Lp A 1 μ` without
+  local compactness.
 * `CovariantRepresentation.integratedLp_completionEquivL1`,
-  `CovariantRepresentation.integratedOperatorL1_completionEquivL1_symm`: agreement of
-  `P.integratedLp μ` with `P.integratedOperatorL1 μ` across `completionEquivL1`.
-* `CovariantRepresentation.integratedLp_convolutionL1`,
-  `CovariantRepresentation.integratedOperatorL1_star`,
-  `CovariantRepresentation.integratedStarAlgHomL1`,
-  `CovariantRepresentation.integratedLp_twistedInvolutionL1`: multiplicativity under
-  `CStarAction.convolutionL1` and compatibility with the `⋆`-involution.
-* `CovariantRepresentation.integratedLp_smulRight`, `CovariantRepresentation.trivial_integratedLp`:
-  comparison with the scalar `ContRepresentation.integratedOperatorL1` on elementary tensors
-  `φ ⊗ a` and specialization to the trivial covariant representation.
+  `CovariantRepresentation.integratedOperatorL1_completionEquivL1_symm`,
+  `CovariantRepresentation.integratedLp_twistedInvolutionL1`: agreement of `P.integratedLp μ` with
+  `P.integratedOperatorL1 μ` across `completionEquivL1` and compatibility with
+  `CStarAction.twistedInvolutionL1`.
+* `CovariantRepresentation.integratedLp_compLp_smulRight`,
+  `CovariantRepresentation.integratedLp_trivial`: comparison with the scalar
+  `ContRepresentation.integratedOperatorL1` on elementary tensors `φ ⊗ a` and specialization to the
+  trivial covariant representation.
 
 ## References
 
 * Dana P. Williams, *Crossed Products of C*-Algebras*, Mathematical Surveys and Monographs,
   vol. 134, American Mathematical Society (2007), Chapter 2 (§2.3, Proposition 2.23).
+* Gerald B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC Press (2016), §3.2.
 -/
 
 public section
@@ -78,6 +88,13 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableS
   [BorelSpace G] [NonUnitalCStarAlgebra A] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] {α : CStarAction G A} (P : CovariantRepresentation α H)
 
+omit [R1Space G] [MeasurableSpace G] [BorelSpace G] in
+private theorem norm_coefficient_group_le (a : A) (g : G) (v : H) :
+    ‖P.coefficient a (P.group g v)‖ ≤ ‖a‖ * ‖v‖ := by
+  refine ((P.coefficient a).le_opNorm _).trans ?_
+  rw [P.isUnitary.norm_map]
+  exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
+
 /-- For a Bochner-integrable coefficient function `f : G → A` against an inner-regular Borel
 measure, each Hilbert-space orbit integrand `g ↦ P.coefficient (f g) (P.group g v)` is Bochner
 integrable. Neither separability of `H` or `A` nor σ-finiteness of `μ` is assumed. -/
@@ -90,26 +107,16 @@ theorem integrable_integrand_of_integrable {μ : Measure G} [μ.InnerRegularComp
   have hmeas : AEStronglyMeasurable (fun g => L (P.group g v) (f g)) μ :=
     hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
       (L.continuous.comp (P.continuous_orbit v))
-  refine (hf.norm.mul_const ‖v‖).mono' hmeas (.of_forall fun g => ?_)
-  calc
-    ‖P.coefficient (f g) (P.group g v)‖ ≤ ‖P.coefficient (f g)‖ * ‖P.group g v‖ :=
-      (P.coefficient (f g)).le_opNorm _
-    _ ≤ ‖f g‖ * ‖v‖ := by
-      rw [P.isUnitary.norm_map]
-      exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
+  exact (hf.norm.mul_const ‖v‖).mono' hmeas
+    (.of_forall fun g => norm_coefficient_group_le P _ g v)
 
 omit [R1Space G] [BorelSpace G] in
 private theorem norm_integral_integrand_le {μ : Measure G} {f : G → A} (hf : Integrable f μ)
     (v : H) :
     ‖∫ g, P.coefficient (f g) (P.group g v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
   rw [← integral_mul_const]
-  refine norm_integral_le_of_norm_le (hf.norm.mul_const _) (.of_forall fun g => ?_)
-  calc
-    ‖P.coefficient (f g) (P.group g v)‖ ≤ ‖P.coefficient (f g)‖ * ‖P.group g v‖ :=
-      (P.coefficient (f g)).le_opNorm _
-    _ ≤ ‖f g‖ * ‖v‖ := by
-      rw [P.isUnitary.norm_map]
-      exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
+  exact norm_integral_le_of_norm_le (hf.norm.mul_const _)
+    (.of_forall fun g => norm_coefficient_group_le P _ g v)
 
 /-- **Vector-valued `L¹` integrated form** of a covariant representation on `Lp A 1 μ`, sending
 `f` to the bounded operator `v ↦ ∫ g, P.coefficient (f g) (P.group g v) ∂μ`. -/
@@ -258,19 +265,45 @@ theorem integratedLp_convolutionAlgebra_toL1 {μ : Measure G} [IsFiniteMeasureOn
 /-- For the trivial covariant representation attached to `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)`, the `L¹`
 integrated form evaluates `π` at the Bochner integral `∫ g, f g ∂μ`. -/
 @[simp]
-theorem trivial_integratedLp {μ : Measure G} [μ.InnerRegularCompactLTTop]
+theorem integratedLp_trivial {μ : Measure G} [μ.InnerRegularCompactLTTop]
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (f : Lp A 1 μ) :
     (trivial (G := G) π).integratedLp μ f = π (∫ g, f g ∂μ) := by
   ext v
-  let L : A →L[ℂ] H :=
-    (ContinuousLinearMap.apply ℂ H v).comp
-      { toLinearMap := (π : A →ₗ[ℂ] H →L[ℂ] H), cont := map_continuous π }
-  have hL (a : A) : L a = π a v := rfl
   simpa only [integratedLp_apply, trivial_coefficient, trivial_group,
-    ContRepresentation.trivial_apply, one_apply_eq_self, hL] using
-    L.integral_comp_comm (L1.integrable_coeFn f)
+    ContRepresentation.trivial_apply, one_apply_eq_self] using
+    (trivial (G := G) π).integral_coefficient_apply (L1.integrable_coeFn f) v
 
 end IntegratedLp
+
+section Convolution
+
+variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  {α : CStarAction G A} (P : CovariantRepresentation α H)
+  {μ : Measure G} [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
+
+/-- `P.integratedLp μ` is multiplicative with respect to twisted `L¹` convolution
+`CStarAction.convolutionL1`. -/
+@[simp]
+theorem integratedLp_convolutionL1 (f g : Lp A 1 μ) :
+    P.integratedLp μ (α.convolutionL1 μ f g) =
+      P.integratedLp μ f * P.integratedLp μ g := by
+  ext v
+  let L : Lp A 1 μ →L[ℂ] H := (ContinuousLinearMap.apply ℂ H v).comp (P.integratedLp μ)
+  calc
+    P.integratedLp μ (α.convolutionL1 μ f g) v =
+        ∫ r, L ((ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) ∂μ := by
+      simpa only [L, α.convolutionL1_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.apply_apply] using
+        (L.integral_comp_comm (α.integrable_mul_translateLp (L1.integrable_coeFn f) g)).symm
+    _ = (P.integratedLp μ f * P.integratedLp μ g) v := by
+      rw [mul_apply_eq_comp, integratedLp_apply]
+      refine integral_congr_ae (.of_forall fun r => ?_)
+      simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+        P.integratedLp_compLp_mul, P.integratedLp_translateLp, mul_apply_eq_comp]
+
+end Convolution
 
 section CompletionComparison
 
@@ -308,65 +341,16 @@ theorem integratedOperatorL1_completionEquivL1_symm_apply (f : Lp A 1 μ) (v : H
       ∫ g, P.coefficient (f g) (P.group g v) ∂μ := by
   rw [P.integratedOperatorL1_completionEquivL1_symm, P.integratedLp_apply]
 
-/-- `P.integratedLp μ` is multiplicative with respect to twisted `L¹` convolution
-`CStarAction.convolutionL1`. -/
+/-- For a left-invariant measure finite on compact sets and inner regular on sets of finite measure,
+`P.integratedLp μ` sends `CStarAction.twistedInvolutionL1` to the operator adjoint. -/
 @[simp]
-theorem integratedLp_convolutionL1 (f g : Lp A 1 μ) :
-    P.integratedLp μ (α.convolutionL1 μ f g) =
-      P.integratedLp μ f * P.integratedLp μ g := by
-  rw [← P.integratedOperatorL1_completionEquivL1_symm,
-    ConvolutionAlgebra.completionEquivL1_symm_convolutionL1, map_mul,
-    P.integratedOperatorL1_completionEquivL1_symm,
-    P.integratedOperatorL1_completionEquivL1_symm]
-
-end CompletionComparison
-
-section HaarStar
-
-variable {G A H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-  {α : CStarAction G A} (P : CovariantRepresentation α H)
-
-/-- For a Haar measure, `P.integratedOperatorL1 μ` preserves the `⋆`-involution on the twisted `L¹`
-completion. -/
-@[simp]
-theorem integratedOperatorL1_star (μ : Measure G) [μ.IsHaarMeasure]
-    (x : Completion (ConvolutionAlgebra α μ)) :
-    P.integratedOperatorL1 μ (star x) = star (P.integratedOperatorL1 μ x) := by
-  induction x using Completion.induction_on with
-  | hp =>
-    exact isClosed_eq
-      ((P.continuous_integratedOperatorL1 μ).comp continuous_star)
-      (continuous_star.comp (P.continuous_integratedOperatorL1 μ))
-  | ih f =>
-    rw [← Completion.coe_star, P.integratedOperatorL1_coe, P.integratedOperatorL1_coe,
-      ConvolutionAlgebra.ofConv_star, P.integratedOperator_twistedInvolution]
-
-/-- The integrated form on `Completion (ConvolutionAlgebra α μ)` bundled as a nonunital complex
-`⋆`-algebra homomorphism for a Haar measure. -/
-def integratedStarAlgHomL1 (μ : Measure G) [μ.IsHaarMeasure] :
-    Completion (ConvolutionAlgebra α μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
-  __ := P.integratedOperatorL1 μ
-  map_star' := P.integratedOperatorL1_star μ
-
-@[simp]
-theorem integratedStarAlgHomL1_apply {μ : Measure G} [μ.IsHaarMeasure]
-    (x : Completion (ConvolutionAlgebra α μ)) :
-    P.integratedStarAlgHomL1 μ x = P.integratedOperatorL1 μ x :=
-  (rfl)
-
-/-- For an inner-regular Haar measure, `P.integratedLp μ` sends `CStarAction.twistedInvolutionL1` to
-the operator adjoint. -/
-@[simp]
-theorem integratedLp_twistedInvolutionL1 {μ : Measure G} [μ.IsHaarMeasure]
-    [μ.InnerRegularCompactLTTop] (f : Lp A 1 μ) :
+theorem integratedLp_twistedInvolutionL1 (f : Lp A 1 μ) :
     P.integratedLp μ (α.twistedInvolutionL1 μ f) = star (P.integratedLp μ f) := by
   rw [← P.integratedOperatorL1_completionEquivL1_symm,
     ConvolutionAlgebra.completionEquivL1_symm_twistedInvolutionL1, P.integratedOperatorL1_star,
     P.integratedOperatorL1_completionEquivL1_symm]
 
-end HaarStar
+end CompletionComparison
 
 section ScalarComparison
 
@@ -375,32 +359,37 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableS
   [CompleteSpace H] {α : CStarAction G A} (P : CovariantRepresentation α H)
   {μ : Measure G} [μ.InnerRegularCompactLTTop]
 
-/-- Equip `Additive G` with the measurable structure of `G` so `μ` and its `L¹` space transfer
-definitionally for the scalar comparison. -/
-@[reducible] local instance : MeasurableSpace (Additive G) := ‹MeasurableSpace G›
-local instance : R1Space (Additive G) := ‹R1Space G›
-local instance : BorelSpace (Additive G) := ‹BorelSpace G›
-local instance : Measure.InnerRegularCompactLTTop (α := Additive G) μ :=
-  inferInstanceAs (Measure.InnerRegularCompactLTTop (α := G) μ)
-
 /-- On an elementary `L¹` tensor `φ ⊗ a` (`φ : Lp ℂ 1 μ`, `a : A`), `P.integratedLp μ` factors as
 `P.coefficient a` times the scalar `ContRepresentation.integratedOperatorL1` of `P.group`. -/
-theorem integratedLp_smulRight (φ : Lp ℂ 1 μ) (a : A) :
+theorem integratedLp_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) :
     P.integratedLp μ ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) a).compLp φ) =
       P.coefficient a *
         (P.group.restrict (MulEquiv.multiplicativeAdditive G).toMonoidHom).integratedOperatorL1
-          (G := Additive G) (fun v => P.continuous_orbit v)
+          (G := Additive G) (fun v => (P.continuous_orbit v).comp continuous_toMul)
           (P.isUnitary.restrict (MulEquiv.multiplicativeAdditive G).toMonoidHom).exists_norm_le
-          (μ : Measure (Additive G))
-          (Integrable.toL1 (α := Additive G) (φ : Additive G → ℂ) (L1.integrable_coeFn φ)) := by
+          (μ.map Additive.ofMul)
+          (Lp.compMeasurePreserving Additive.toMul
+            (MeasurePreserving.symm MeasurableEquiv.additive (measurable_ofMul.measurePreserving μ))
+            φ) := by
   ext v
-  have hs := ContRepresentation.integratedOperatorL1_toL1
+  let hmp : MeasurePreserving Additive.toMul (μ.map Additive.ofMul) μ :=
+    MeasurePreserving.symm MeasurableEquiv.additive (measurable_ofMul.measurePreserving μ)
+  have hs := ContRepresentation.integratedOperatorL1_apply
     (G := Additive G)
     (π := P.group.restrict (MulEquiv.multiplicativeAdditive G).toMonoidHom)
-    (hcont := fun v => P.continuous_orbit v)
+    (hcont := fun v => (P.continuous_orbit v).comp continuous_toMul)
     (hbdd := (P.isUnitary.restrict (MulEquiv.multiplicativeAdditive G).toMonoidHom).exists_norm_le)
-    (μ := (μ : Measure (Additive G)))
-    (f := (φ : Additive G → ℂ)) (L1.integrable_coeFn φ) v
+    (μ := μ.map Additive.ofMul)
+    (Lp.compMeasurePreserving Additive.toMul hmp φ) v
+  have hmap :
+      ∫ x, (Lp.compMeasurePreserving Additive.toMul hmp φ) x • P.group (Additive.toMul x) v
+          ∂(μ.map Additive.ofMul) =
+        ∫ g, φ g • P.group g v ∂μ := by
+    refine (integral_congr_ae ?_).trans
+      (integral_map_equiv (MeasurableEquiv.additive (α := G))
+        fun x : Additive G => φ (Additive.toMul x) • P.group (Additive.toMul x) v)
+    filter_upwards [Lp.coeFn_compMeasurePreserving φ hmp] with x hx
+    rw [hx, Function.comp_apply]
   have hi : Integrable (fun g => φ g • P.group g v) μ := by
     refine ((L1.integrable_coeFn φ).norm.mul_const ‖v‖).mono'
       ((L1.integrable_coeFn φ).aefinStronglyMeasurable.aestronglyMeasurable_smul
@@ -416,7 +405,7 @@ theorem integratedLp_smulRight (φ : Lp ℂ 1 μ) (a : A) :
       rw [hg, ContinuousLinearMap.smulRight_apply, one_apply_eq_self, map_smul, smul_apply,
         ← map_smul]
     _ = _ := by
-      rw [mul_apply_eq_comp]
+      rw [mul_apply_eq_comp, ← hmap]
       exact congrArg (P.coefficient a) hs.symm
 
 end ScalarComparison

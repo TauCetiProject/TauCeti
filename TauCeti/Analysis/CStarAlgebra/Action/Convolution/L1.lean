@@ -14,9 +14,9 @@ public import TauCeti.MeasureTheory.Function.Lp.Star
 public import TauCeti.Topology.Algebra.UniformRing
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Realizing the twisted `L¹` Banach ⋆-algebra in Bochner `L¹`
@@ -28,36 +28,43 @@ possibly nonunital complex C⋆-algebra `A`. In
 `ConvolutionAlgebra.toL1 : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ`, and its abstract completion
 `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted `L¹` Banach ⋆-algebra.
 
-When `G` is locally compact and `μ` is finite on compact sets and inner regular on sets of finite
-measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), compactly supported
+When `G` is weakly locally compact and `μ` is finite on compact sets and inner regular on sets of
+finite measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), compactly supported
 continuous functions are dense in `Lp A 1 μ`. Consequently `toL1` has dense range and extends to a
 linear isometric equivalence
 `ConvolutionAlgebra.completionEquivL1 α μ : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ`.
 This holds without separability of `A`, second countability of `G`, σ-finiteness of `μ`, unitality
 of `A`, or full support of `μ`, including zero algebras and the zero measure.
 
-On `Lp A 1 μ` itself we construct the concrete dynamical operations and show that they match those
-of `Completion (ConvolutionAlgebra α μ)` across `completionEquivL1`:
+On `Lp A p μ` and `Lp A 1 μ` we construct the concrete dynamical operations and show that they match
+those of `Completion (ConvolutionAlgebra α μ)` across `completionEquivL1`:
 
 * `CStarAction.translateLp`: twisted left translation `(r • f)(s) = α r (f (r⁻¹ * s))` on
-  `Lp A p μ`, jointly continuous on `G × Lp A 1 μ`.
-* `CStarAction.convolutionL1`: twisted convolution on `Lp A 1 μ`, defined without countability or
+  `Lp A p μ`, jointly continuous on `G × Lp A p μ` for `1 ≤ p < ∞` whenever `μ` is locally finite,
+  inner regular on finite-measure sets, and left invariant (without local compactness).
+* `CStarAction.convolutionL1`: twisted convolution on `Lp A 1 μ`, defined for any locally finite,
+  inner-regular left-invariant Borel measure without local compactness, countability, or
   σ-finiteness hypotheses as the `Lp A 1 μ`-valued Bochner integral
-  `f ⋆_α g = ∫ r, (ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g) ∂μ`. On
-  compactly supported continuous coefficients it is represented almost everywhere by the pointwise
-  twisted convolution integral, so `completionEquivL1` intertwines multiplication in the completion
-  with `convolutionL1`.
+  `f ⋆_α g = ∫ r, (ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g) ∂μ`. Both the
+  vector-valued integral construction and the set-integral Fubini proof on `C_c(G, A)`
+  (`CStarAction.convolutionL1_toLp_ae_eq`) closely adapt the scalar group-convolution formalization
+  `MeasureTheory.Lp.convolutionL` and `MeasureTheory.Lp.convolutionL_toL1_ae_eq` in
+  `TauCeti.MeasureTheory.Function.Lp.GroupConvolution`. On locally compact `G`, `completionEquivL1`
+  intertwines multiplication in the completion with `convolutionL1`.
 * `CStarAction.twistedInvolutionL1`: the twisted involution on `Lp A 1 μ` as a conjugate-linear
   isometric equivalence, anti-multiplicative for `convolutionL1`, and represented almost everywhere
   by `s ↦ (Measure.modularCharacter s : ℝ) • α s (star (f s⁻¹))` for a regular Haar measure.
 
-For the trivial action on `ℂ`, `convolutionL1` and `twistedInvolutionL1` specialize to the scalar
-group convolution `MeasureTheory.Lp.convolutionL` and `star ∘ MeasureTheory.Lp.modularInversion`.
+For the trivial action on `ℂ`, `convolutionL1` and `twistedInvolutionL1` specialize to
+`MeasureTheory.Lp.convolutionL` and `star ∘ MeasureTheory.Lp.modularInversion`.
 
 ## References
 
 * Dana P. Williams, *Crossed Products of C*-Algebras*, Mathematical Surveys and Monographs,
   vol. 134, American Mathematical Society (2007), Chapter 2 (§§2.3, 2.5).
+* Gerald B. Folland, *A Course in Abstract Harmonic Analysis*, 2nd ed., CRC Press (2016), §2.5.
+* Bachir Bekka, Pierre de la Harpe, and Alain Valette, *Kazhdan's Property (T)*, New Mathematical
+  Monographs, vol. 11, Cambridge University Press (2008), proof of Theorem G.3.1.
 -/
 
 public section
@@ -123,6 +130,39 @@ private theorem coeFn_compActionLp (r : G) (u : Lp A p μ) :
   filter_upwards [(α.toContinuousLinearMap r).coeFn_compLp u] with s hs
   exact hs.trans (α.toContinuousLinearMap_apply r (u s))
 
+variable {μ p} in
+private theorem continuous_compActionLp (hp : p ≠ ∞) :
+    Continuous fun q : G × Lp A p μ => α.compActionLp μ p q.1 q.2 := by
+  refine continuous_prod_of_dense_continuous_lipschitzWith' _ 1
+    (Lp.simpleFunc.denseRange hp)
+    (fun r => (α.compActionLp μ p r).isometry.lipschitzWith) ?_
+  rintro _ ⟨φ, rfl⟩
+  induction φ using Lp.simpleFunc.induction (one_pos.trans_le Fact.out).ne' hp with
+  | indicatorConst c hs hμs =>
+    have hcomp (r : G) :
+        α.compActionLp μ p r (Lp.simpleFunc.indicatorConst p hs hμs.ne c) =
+          indicatorConstLp p hs hμs.ne (α r c) := by
+      rw [Lp.simpleFunc.coe_indicatorConst]
+      refine Lp.ext ?_
+      filter_upwards [α.coeFn_compActionLp μ p r (indicatorConstLp p hs hμs.ne c),
+        (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs.ne c) =ᵐ[μ] _),
+        (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs.ne (α r c)) =ᵐ[μ] _)]
+        with x hx₁ hx₂ hx₃
+      rw [hx₁, hx₂, hx₃]
+      exact (congrFun (Set.indicator_comp_of_zero (f := fun _ => c) (map_zero (α r))) x).symm
+    simp_rw [hcomp]
+    have hlip : LipschitzWith (Real.toNNReal (μ.real _ ^ (1 / p.toReal)))
+        (fun d : A => indicatorConstLp p hs hμs.ne d) :=
+      LipschitzWith.of_dist_le_mul fun d₁ d₂ => by
+        rw [dist_eq_norm, dist_eq_norm, indicatorConstLp_sub]
+        exact norm_indicatorConstLp_le.trans
+          (by
+            rw [mul_comm]
+            exact mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (norm_nonneg _))
+    exact hlip.continuous.comp (α.continuous_orbit c)
+  | add hf hg _ hu hv =>
+    simpa only [AddSubgroup.coe_add, map_add, Pi.add_def] using hu.add hv
+
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 /-- Twisted left translation `(r • f)(s) = α r (f (r⁻¹ * s))` on `Lp A p μ` for a left-invariant
@@ -150,10 +190,7 @@ def translateLp : G →* (Lp A p μ ≃ₗᵢ[ℂ] Lp A p μ) where
       (measurePreserving_mul_left μ r⁻¹).quasiMeasurePreserving.ae
         (Lp.coeFn_leftTranslation (𝕜 := ℂ) t f)] with s h₁ h₂ h₃ h₄ h₅ h₆
     simp only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_mul, Function.comp_apply]
-    have h₅' : (α.compActionLp μ p t (Lp.leftTranslation μ p ℂ t f) : G → A) (r⁻¹ * s) =
-        α t ((Lp.leftTranslation μ p ℂ t f : G → A) (r⁻¹ * s)) := h₅
-    have h₆' : (Lp.leftTranslation μ p ℂ t f : G → A) (r⁻¹ * s) = f (t⁻¹ * (r⁻¹ * s)) := h₆
-    rw [h₁, h₂, h₃, h₄, h₅', h₆', mul_inv_rev, mul_assoc, α.mul_apply]
+    rw [h₁, h₂, h₃, h₄, h₅, h₆, mul_inv_rev, mul_assoc, α.mul_apply]
 
 variable {μ p}
 
@@ -171,7 +208,7 @@ theorem translateLp_symm (r : G) :
 
 /-- For the trivial action, twisted left translation on `Lp A p μ` is ordinary left translation. -/
 @[simp]
-theorem trivial_translateLp (r : G) :
+theorem translateLp_trivial (r : G) :
     (trivial (G := G) (A := A)).translateLp μ p r = Lp.leftTranslation μ p ℂ r := by
   ext f : 1
   refine Lp.ext ?_
@@ -190,13 +227,13 @@ theorem translateLp_compLp_mul (r : G) (a : A) (f : Lp A p μ) :
       ((ContinuousLinearMap.mul ℂ A a).coeFn_compLp f),
     (ContinuousLinearMap.mul ℂ A (α r a)).coeFn_compLp (α.translateLp μ p r f),
     α.coeFn_translateLp r f] with s h₁ h₂ h₃ h₄
-  have h₂' : ((ContinuousLinearMap.mul ℂ A a).compLp f : G → A) (r⁻¹ * s) = a * f (r⁻¹ * s) := h₂
-  rw [h₁, h₂', map_mul, h₃, ContinuousLinearMap.mul_apply', h₄]
+  simp only [ContinuousLinearMap.mul_apply'] at h₂
+  rw [h₁, h₂, map_mul, h₃, ContinuousLinearMap.mul_apply', h₄]
 
 /-- On compactly supported continuous functions, `translateLp` agrees with `CStarAction.translate`.
 -/
 @[simp]
-theorem translateLp_toLp [IsTopologicalGroup G] [OpensMeasurableSpace G]
+theorem translateLp_toLp [ContinuousMul G] [OpensMeasurableSpace G]
     [IsFiniteMeasureOnCompacts μ] (r : G) (f : C_c(G, A)) :
     α.translateLp μ p r (CompactlySupportedContinuousMap.toLp p μ ℂ f) =
       CompactlySupportedContinuousMap.toLp p μ ℂ (α.translate r f) := by
@@ -206,8 +243,28 @@ theorem translateLp_toLp [IsTopologicalGroup G] [OpensMeasurableSpace G]
       (CompactlySupportedContinuousMap.coeFn_toLp (p := p) (μ := μ) ℂ f),
     CompactlySupportedContinuousMap.coeFn_toLp (p := p) (μ := μ) ℂ (α.translate r f)]
     with s h₁ h₂ h₃
-  have h₂' : (CompactlySupportedContinuousMap.toLp p μ ℂ f : G → A) (r⁻¹ * s) = f (r⁻¹ * s) := h₂
-  rw [h₁, h₂', h₃, translate_apply]
+  rw [h₁, h₂, h₃, translate_apply]
+
+/-- Twisted left translation on `Lp A p μ` is jointly continuous on `G × Lp A p μ` for `p < ∞`. -/
+@[fun_prop]
+theorem continuous_translateLp [IsTopologicalGroup G] [BorelSpace G]
+    [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] (hp : p ≠ ∞) :
+    Continuous fun q : G × Lp A p μ => α.translateLp μ p q.1 q.2 := by
+  have : Fact (p ≠ ∞) := ⟨hp⟩
+  have hdef : (fun q : G × Lp A p μ => α.translateLp μ p q.1 q.2) =
+      fun q => α.compActionLp μ p q.1 (DomMulAct.mk q.1⁻¹ • q.2) := by
+    ext q : 1
+    simp [translateLp, Lp.leftTranslation_apply]
+  rw [hdef]
+  exact (α.continuous_compActionLp hp).comp
+    (continuous_fst.prodMk ((DomMulAct.continuous_mk.comp continuous_fst.inv).smul continuous_snd))
+
+/-- Every orbit of twisted left translation in `Lp A p μ` is norm-continuous for `p < ∞`. -/
+@[fun_prop]
+theorem continuous_translateLp_apply [IsTopologicalGroup G] [BorelSpace G]
+    [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] (hp : p ≠ ∞) (f : Lp A p μ) :
+    Continuous fun r : G => α.translateLp μ p r f :=
+  (α.continuous_translateLp hp).comp (continuous_id.prodMk continuous_const)
 
 end TranslateLp
 
@@ -274,41 +331,47 @@ theorem completionEquivL1_symm_toL1 (f : ConvolutionAlgebra α μ) :
     (completionEquivL1 α μ).symm (toL1 f) = f :=
   LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ f
 
-end CompletionEquiv
+@[simp]
+theorem completionEquivL1_symm_toLp (f : C_c(G, A)) :
+    (completionEquivL1 α μ).symm (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
+      ((toConv f : ConvolutionAlgebra α μ) : Completion (ConvolutionAlgebra α μ)) := by
+  rw [← toL1_eq_toLp, completionEquivL1_symm_toL1]
 
-end ConvolutionAlgebra
+@[simp]
+theorem completionEquivL1_completion_coefficientMul (a : A)
+    (x : Completion (ConvolutionAlgebra α μ)) :
+    completionEquivL1 α μ ((coefficientMul a).completion x) =
+      (ContinuousLinearMap.mul ℂ A a).compLp (completionEquivL1 α μ x) := by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_eq
+      ((completionEquivL1 α μ).continuous.comp (coefficientMul a).completion.continuous)
+      (((ContinuousLinearMap.mul ℂ A a).compLpL 1 μ).continuous.comp
+        (completionEquivL1 α μ).continuous)
+  | ih f =>
+    rw [ContinuousLinearMap.completion_apply_coe, completionEquivL1_coe, completionEquivL1_coe,
+      toL1_coefficientMul]
 
-section ConvolutionL1
+@[simp]
+theorem completionEquivL1_map_coefficientMul (a : A)
+    (x : Completion (ConvolutionAlgebra α μ)) :
+    completionEquivL1 α μ (Completion.map (coefficientMul a) x) =
+      (ContinuousLinearMap.mul ℂ A a).compLp (completionEquivL1 α μ x) := by
+  rw [← ContinuousLinearMap.coe_completion, completionEquivL1_completion_coefficientMul]
 
-variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
-  (α : CStarAction G A) {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
-  [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
+@[simp]
+theorem completionEquivL1_symm_compLp_mul (a : A) (f : Lp A 1 μ) :
+    (completionEquivL1 α μ).symm ((ContinuousLinearMap.mul ℂ A a).compLp f) =
+      (coefficientMul a).completion ((completionEquivL1 α μ).symm f) := by
+  apply (completionEquivL1 α μ).injective
+  rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_completion_coefficientMul,
+    LinearIsometryEquiv.apply_symm_apply]
 
-/-- Twisted left translation on `Lp A 1 μ` is jointly continuous on `G × Lp A 1 μ`. -/
-@[fun_prop]
-theorem continuous_translateLp :
-    Continuous fun q : G × Lp A 1 μ => α.translateLp μ 1 q.1 q.2 := by
-  refine continuous_prod_of_dense_continuous_lipschitzWith' _ 1
-    (ConvolutionAlgebra.denseRange_toL1 (α := α) (μ := μ))
-    (fun r => (α.translateLp μ 1 r).isometry.lipschitzWith) ?_
-  rintro _ ⟨f, rfl⟩
-  have h : (fun r => α.translateLp μ 1 r (ConvolutionAlgebra.toL1 f)) =
-      fun r => ConvolutionAlgebra.toL1LI α μ (ConvolutionAlgebra.translateLIE r f) := by
-    ext r : 1
-    simp
-  rw [h]
-  exact (ConvolutionAlgebra.toL1LI α μ).continuous.comp
-    (ConvolutionAlgebra.continuous_translateLIE f)
+section TranslateCompletion
 
-/-- Every orbit of twisted left translation in `Lp A 1 μ` is norm-continuous. -/
-@[fun_prop]
-theorem continuous_translateLp_apply (f : Lp A 1 μ) :
-    Continuous fun r : G => α.translateLp μ 1 r f :=
-  α.continuous_translateLp.comp (continuous_id.prodMk continuous_const)
+variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 
-variable {α} in
-theorem ConvolutionAlgebra.completionEquivL1_translate (r : G)
+theorem completionEquivL1_completion_translateLIE (r : G)
     (x : Completion (ConvolutionAlgebra α μ)) :
     completionEquivL1 α μ ((translateLIE r).completion x) =
       α.translateLp μ 1 r (completionEquivL1 α μ x) := by
@@ -321,49 +384,65 @@ theorem ConvolutionAlgebra.completionEquivL1_translate (r : G)
     rw [LinearIsometryEquiv.completion_apply_coe, completionEquivL1_coe, completionEquivL1_coe,
       toL1_translateLIE]
 
-variable {α} in
 @[simp]
-theorem ConvolutionAlgebra.completionEquivL1_map_translateLIE (r : G)
+theorem completionEquivL1_map_translateLIE (r : G)
     (x : Completion (ConvolutionAlgebra α μ)) :
     completionEquivL1 α μ (Completion.map (translateLIE r) x) =
       α.translateLp μ 1 r (completionEquivL1 α μ x) := by
   simpa only [LinearIsometryEquiv.coe_completion] using
-    completionEquivL1_translate (α := α) r x
+    completionEquivL1_completion_translateLIE (α := α) r x
+
+@[simp]
+theorem completionEquivL1_symm_translateLp (r : G) (f : Lp A 1 μ) :
+    (completionEquivL1 α μ).symm (α.translateLp μ 1 r f) =
+      Completion.map (translateLIE r) ((completionEquivL1 α μ).symm f) := by
+  apply (completionEquivL1 α μ).injective
+  rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_map_translateLIE,
+    LinearIsometryEquiv.apply_symm_apply]
+
+end TranslateCompletion
+
+end CompletionEquiv
+
+end ConvolutionAlgebra
+
+section ConvolutionL1
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  (α : CStarAction G A) {μ : Measure G} [IsLocallyFiniteMeasure μ]
+  [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
+
+omit [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] in
+private theorem norm_compLp_mul_translateLp_le (a : A) (r : G) (g : Lp A 1 μ) :
+    ‖(ContinuousLinearMap.mul ℂ A a).compLp (α.translateLp μ 1 r g)‖ ≤ ‖a‖ * ‖g‖ := by
+  calc
+    ‖(ContinuousLinearMap.mul ℂ A a).compLp (α.translateLp μ 1 r g)‖ ≤
+        ‖ContinuousLinearMap.mul ℂ A a‖ * ‖α.translateLp μ 1 r g‖ :=
+      ContinuousLinearMap.norm_compLp_le _ _
+    _ ≤ ‖a‖ * ‖g‖ := by
+      rw [LinearIsometryEquiv.norm_map]
+      exact mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_apply_le ℂ A a)
+        (norm_nonneg g)
 
 /-- The `Lp A 1 μ`-valued integrand `r ↦ (f r) • (r • g)` of a twisted convolution is Bochner
-integrable, with neither separability of `A` nor σ-finiteness of `μ`. -/
+integrable, with neither local compactness of `G`, separability of `A`, nor σ-finiteness of `μ`. -/
 theorem integrable_mul_translateLp {f : G → A} (hf : Integrable f μ) (g : Lp A 1 μ) :
     Integrable (fun r => (ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) μ := by
   let B : Lp A 1 μ →L[ℂ] A →L[ℂ] Lp A 1 μ := ((ContinuousLinearMap.mul ℂ A).compLpL₂ 1 μ).flip
   have hmeas : AEStronglyMeasurable
       (fun r => B (α.translateLp μ 1 r g) (f r)) μ :=
     hf.aefinStronglyMeasurable.aestronglyMeasurable_clm_apply
-      (B.continuous.comp (α.continuous_translateLp_apply g))
-  refine (hf.norm.mul_const ‖g‖).mono' hmeas (.of_forall fun r => ?_)
-  calc
-    ‖(ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)‖ ≤
-        ‖ContinuousLinearMap.mul ℂ A (f r)‖ * ‖α.translateLp μ 1 r g‖ :=
-      ContinuousLinearMap.norm_compLp_le _ _
-    _ ≤ ‖f r‖ * ‖g‖ := by
-      rw [LinearIsometryEquiv.norm_map]
-      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg g)
-      exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun b => norm_mul_le _ _
+      (B.continuous.comp (α.continuous_translateLp_apply ENNReal.one_ne_top g))
+  exact (hf.norm.mul_const ‖g‖).mono' hmeas
+    (.of_forall fun r => α.norm_compLp_mul_translateLp_le (f r) r g)
 
-omit [LocallyCompactSpace G] [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] in
+omit [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] in
 private theorem norm_integral_mul_translateLp_le (f g : Lp A 1 μ) :
     ‖∫ r, (ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g) ∂μ‖ ≤ ‖f‖ * ‖g‖ := by
   rw [L1.norm_eq_integral_norm f, ← integral_mul_const]
-  refine norm_integral_le_of_norm_le ((L1.integrable_coeFn f).norm.mul_const _)
-    (.of_forall fun r => ?_)
-  calc
-    ‖(ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)‖ ≤
-        ‖ContinuousLinearMap.mul ℂ A (f r)‖ * ‖α.translateLp μ 1 r g‖ :=
-      ContinuousLinearMap.norm_compLp_le _ _
-    _ ≤ ‖f r‖ * ‖g‖ := by
-      rw [LinearIsometryEquiv.norm_map]
-      exact mul_le_mul_of_nonneg_right
-        (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun b => norm_mul_le _ _)
-        (norm_nonneg g)
+  exact norm_integral_le_of_norm_le ((L1.integrable_coeFn f).norm.mul_const _)
+    (.of_forall fun r => α.norm_compLp_mul_translateLp_le (f r) r g)
 
 variable (μ) in
 /-- **Twisted `L¹` convolution** for a C⋆-dynamical system, defined as the continuous bilinear map
@@ -443,12 +522,7 @@ theorem convolutionL1_toLp_ae_eq (f g : C_c(G, A)) :
   have hFs : HasCompactSupport (uncurry F) :=
     hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hFsupp
   refine (L1.integrable_coeFn _).ae_eq_of_forall_setIntegral_eq _ _
-    (α.convolution μ f g).integrable fun s _ _ => ?_
-  let T : Lp A 1 μ →L[ℂ] A :=
-    (L1.integralCLM' (μ := μ.restrict s) ℂ).comp (LpToLpRestrictCLM G A ℂ μ 1 s)
-  have hT (u : Lp A 1 μ) : T u = ∫ x in s, u x ∂μ := by
-    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
-    exact integral_congr_ae (LpToLpRestrictCLM_coeFn ℂ s u)
+    (α.convolution μ f g).integrable fun s _ hμs => ?_
   have hinner (r : G) :
       ∫ x in s, ((ContinuousLinearMap.mul ℂ A (f r)).compLp
         (α.translateLp μ 1 r (CompactlySupportedContinuousMap.toLp 1 μ ℂ g)) : G → A) x ∂μ =
@@ -459,16 +533,17 @@ theorem convolutionL1_toLp_ae_eq (f g : C_c(G, A)) :
       α.coeFn_translateLp r (CompactlySupportedContinuousMap.toLp 1 μ ℂ g),
       (measurePreserving_mul_left μ r⁻¹).quasiMeasurePreserving.ae
         (CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ g)] with x h₁ h₂ h₃
-    have h₃' : (CompactlySupportedContinuousMap.toLp 1 μ ℂ g : G → A) (r⁻¹ * x) = g (r⁻¹ * x) := h₃
-    rw [h₁, ContinuousLinearMap.mul_apply', h₂, h₃']
-  have hf_toLp : CompactlySupportedContinuousMap.toLp 1 μ ℂ f = f.integrable.toL1 f :=
-    Lp.ext ((CompactlySupportedContinuousMap.coeFn_toLp ℂ f).trans f.integrable.coeFn_toL1.symm)
-  rw [← hT, hf_toLp, α.convolutionL1_integrable_toL1 f.integrable,
-    ← T.integral_comp_comm (α.integrable_mul_translateLp f.integrable _)]
-  simp_rw [hT, hinner, convolution_apply]
-  exact integral_integral_swap_of_hasCompactSupport (μ := μ) (ν := μ.restrict s)
-    (f := fun r x => F x r) (hFc.comp continuous_swap)
-    (hFs.comp_homeomorph (Homeomorph.prodComm G G))
+    rw [h₁, ContinuousLinearMap.mul_apply', h₂, h₃]
+  rw [← Set.setIntegralLp_apply (𝕜 := ℂ) s hμs, α.convolutionL1_apply,
+    ← (Set.setIntegralLp (𝕜 := ℂ) s hμs).integral_comp_comm
+      (α.integrable_mul_translateLp (L1.integrable_coeFn _) _)]
+  simp_rw [Set.setIntegralLp_apply, convolution_apply]
+  refine (integral_congr_ae ?_).trans
+    (integral_integral_swap_of_hasCompactSupport (μ := μ) (ν := μ.restrict s)
+      (f := fun r x => F x r) (hFc.comp continuous_swap)
+      (hFs.comp_homeomorph (Homeomorph.prodComm G G)))
+  filter_upwards [CompactlySupportedContinuousMap.coeFn_toLp (p := 1) (μ := μ) ℂ f] with r hr
+  rw [hr, hinner r]
 
 @[simp]
 theorem convolutionL1_toLp (f g : C_c(G, A)) :
@@ -485,7 +560,101 @@ theorem ConvolutionAlgebra.toL1_mul (f g : ConvolutionAlgebra α μ) :
     toL1 (f * g) = α.convolutionL1 μ (toL1 f) (toL1 g) := by
   rw [toL1_eq_toLp, toL1_eq_toLp, toL1_eq_toLp, ofConv_mul, α.convolutionL1_toLp]
 
-variable {α} in
+/-- Pointwise left coefficient multiplication is a left multiplier of twisted `L¹` convolution. -/
+theorem compLp_mul_convolutionL1 (a : A) (f g : Lp A 1 μ) :
+    (ContinuousLinearMap.mul ℂ A a).compLp (α.convolutionL1 μ f g) =
+      α.convolutionL1 μ ((ContinuousLinearMap.mul ℂ A a).compLp f) g := by
+  have hmul (b : A) (u : Lp A 1 μ) :
+      (ContinuousLinearMap.mul ℂ A a).compLp ((ContinuousLinearMap.mul ℂ A b).compLp u) =
+        (ContinuousLinearMap.mul ℂ A (a * b)).compLp u := by
+    refine Lp.ext ?_
+    filter_upwards [(ContinuousLinearMap.mul ℂ A a).coeFn_compLp
+        ((ContinuousLinearMap.mul ℂ A b).compLp u),
+      (ContinuousLinearMap.mul ℂ A b).coeFn_compLp u,
+      (ContinuousLinearMap.mul ℂ A (a * b)).coeFn_compLp u] with s h₁ h₂ h₃
+    rw [h₁, h₂, h₃, ContinuousLinearMap.mul_apply', ContinuousLinearMap.mul_apply',
+      ContinuousLinearMap.mul_apply', mul_assoc]
+  let L : Lp A 1 μ →L[ℂ] Lp A 1 μ := (ContinuousLinearMap.mul ℂ A).compLpL₂ 1 μ a
+  calc
+    (ContinuousLinearMap.mul ℂ A a).compLp (α.convolutionL1 μ f g) =
+        ∫ r, L ((ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) ∂μ := by
+      simpa only [L, convolutionL1_apply, ContinuousLinearMap.compLpL₂_apply_apply] using
+        (L.integral_comp_comm (α.integrable_mul_translateLp (L1.integrable_coeFn f) g)).symm
+    _ = α.convolutionL1 μ ((ContinuousLinearMap.mul ℂ A a).compLp f) g := by
+      rw [convolutionL1_apply]
+      refine integral_congr_ae ?_
+      filter_upwards [(ContinuousLinearMap.mul ℂ A a).coeFn_compLp f] with r hr
+      rw [ContinuousLinearMap.compLpL₂_apply_apply, hmul, hr, ContinuousLinearMap.mul_apply']
+
+/-- Twisted left translation is a left multiplier of twisted `L¹` convolution. -/
+theorem translateLp_convolutionL1 (r : G) (f g : Lp A 1 μ) :
+    α.translateLp μ 1 r (α.convolutionL1 μ f g) =
+      α.convolutionL1 μ (α.translateLp μ 1 r f) g := by
+  let L : Lp A 1 μ →L[ℂ] Lp A 1 μ := (α.translateLp μ 1 r).toContinuousLinearEquiv
+  calc
+    α.translateLp μ 1 r (α.convolutionL1 μ f g) =
+        ∫ s, L ((ContinuousLinearMap.mul ℂ A (f s)).compLp (α.translateLp μ 1 s g)) ∂μ := by
+      simpa only [L, convolutionL1_apply, ContinuousLinearEquiv.coe_coe,
+        LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+        (L.integral_comp_comm (α.integrable_mul_translateLp (L1.integrable_coeFn f) g)).symm
+    _ = ∫ s, (ContinuousLinearMap.mul ℂ A (α r (f (r⁻¹ * (r * s))))).compLp
+          (α.translateLp μ 1 (r * s) g) ∂μ := by
+      refine integral_congr_ae (.of_forall fun s => ?_)
+      have hmul : α.translateLp μ 1 r (α.translateLp μ 1 s g) = α.translateLp μ 1 (r * s) g := by
+        rw [map_mul, LinearIsometryEquiv.coe_mul, Function.comp_apply]
+      simp only [L, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+        α.translateLp_compLp_mul, hmul, inv_mul_cancel_left]
+    _ = ∫ t, (ContinuousLinearMap.mul ℂ A (α r (f (r⁻¹ * t)))).compLp
+          (α.translateLp μ 1 t g) ∂μ :=
+      integral_mul_left_eq_self
+        (fun t => (ContinuousLinearMap.mul ℂ A (α r (f (r⁻¹ * t)))).compLp (α.translateLp μ 1 t g))
+        r
+    _ = α.convolutionL1 μ (α.translateLp μ 1 r f) g := by
+      rw [convolutionL1_apply]
+      refine integral_congr_ae ?_
+      filter_upwards [α.coeFn_translateLp r f] with t ht
+      rw [ht]
+
+/-- Twisted `L¹` convolution is associative on `Lp A 1 μ`. -/
+theorem convolutionL1_assoc (f g h : Lp A 1 μ) :
+    α.convolutionL1 μ (α.convolutionL1 μ f g) h =
+      α.convolutionL1 μ f (α.convolutionL1 μ g h) := by
+  let R : Lp A 1 μ →L[ℂ] Lp A 1 μ := (α.convolutionL1 μ).flip h
+  calc
+    α.convolutionL1 μ (α.convolutionL1 μ f g) h =
+        ∫ r, R ((ContinuousLinearMap.mul ℂ A (f r)).compLp (α.translateLp μ 1 r g)) ∂μ := by
+      simpa only [R, convolutionL1_apply, ContinuousLinearMap.flip_apply] using
+        (R.integral_comp_comm (α.integrable_mul_translateLp (L1.integrable_coeFn f) g)).symm
+    _ = α.convolutionL1 μ f (α.convolutionL1 μ g h) := by
+      rw [convolutionL1_apply]
+      refine integral_congr_ae (.of_forall fun r => ?_)
+      simp only [R, ContinuousLinearMap.flip_apply, ← α.compLp_mul_convolutionL1,
+        ← α.translateLp_convolutionL1]
+
+/-- For the trivial action on `ℂ`, `convolutionL1` coincides with the scalar group convolution
+`MeasureTheory.Lp.convolutionL`. -/
+@[simp]
+theorem convolutionL1_trivial (f g : Lp ℂ 1 μ) :
+    (trivial (G := G) (A := ℂ)).convolutionL1 μ f g =
+      Lp.convolutionL μ 1 ENNReal.one_ne_top f g := by
+  rw [convolutionL1_apply, Lp.convolutionL_apply]
+  refine integral_congr_ae (.of_forall fun r => ?_)
+  dsimp only
+  rw [translateLp_trivial]
+  refine Lp.ext ?_
+  filter_upwards [(ContinuousLinearMap.mul ℂ ℂ (f r)).coeFn_compLp (Lp.leftTranslation μ 1 ℂ r g),
+    Lp.coeFn_smul (f r) (Lp.leftTranslation μ 1 ℂ r g)] with s hs₁ hs₂
+  rw [hs₁, ContinuousLinearMap.mul_apply', hs₂, Pi.smul_apply, smul_eq_mul]
+
+end ConvolutionL1
+
+section CompletionMul
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
+  {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
+  [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
+
 /-- `completionEquivL1` intertwines multiplication in the abstract `L¹` completion with
 `CStarAction.convolutionL1` on `Lp A 1 μ`. -/
 @[simp]
@@ -499,7 +668,6 @@ theorem ConvolutionAlgebra.completionEquivL1_mul
     rw [← Completion.coe_mul', completionEquivL1_coe, completionEquivL1_coe,
       completionEquivL1_coe, toL1_mul]
 
-variable {α} in
 @[simp]
 theorem ConvolutionAlgebra.completionEquivL1_symm_convolutionL1 (f g : Lp A 1 μ) :
     (completionEquivL1 α μ).symm (α.convolutionL1 μ f g) =
@@ -508,57 +676,7 @@ theorem ConvolutionAlgebra.completionEquivL1_symm_convolutionL1 (f g : Lp A 1 μ
   rw [LinearIsometryEquiv.apply_symm_apply, completionEquivL1_mul,
     LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.apply_symm_apply]
 
-/-- Twisted `L¹` convolution is associative on `Lp A 1 μ`. -/
-theorem convolutionL1_assoc (f g h : Lp A 1 μ) :
-    α.convolutionL1 μ (α.convolutionL1 μ f g) h =
-      α.convolutionL1 μ f (α.convolutionL1 μ g h) := by
-  apply (ConvolutionAlgebra.completionEquivL1 α μ).symm.injective
-  simp [mul_assoc]
-
-/-- Twisted left translation is a left multiplier of twisted `L¹` convolution. -/
-theorem translateLp_convolutionL1 (r : G) (f g : Lp A 1 μ) :
-    α.translateLp μ 1 r (α.convolutionL1 μ f g) =
-      α.convolutionL1 μ (α.translateLp μ 1 r f) g := by
-  have hD := ConvolutionAlgebra.denseRange_toL1 (α := α) (μ := μ)
-  refine congrFun (Continuous.ext_on (hD.prod hD)
-    ((α.translateLp μ 1 r).continuous.comp (α.convolutionL1 μ).continuous₂)
-    ((α.convolutionL1 μ).continuous₂.comp
-      (((α.translateLp μ 1 r).continuous.comp continuous_fst).prodMk continuous_snd)) ?_) (f, g)
-  rintro ⟨_, _⟩ ⟨⟨u, rfl⟩, ⟨v, rfl⟩⟩
-  simp [← ConvolutionAlgebra.toL1_translateLIE, ← ConvolutionAlgebra.toL1_mul,
-    ConvolutionAlgebra.translateLIE_apply_mul]
-
-/-- Pointwise left coefficient multiplication is a left multiplier of twisted `L¹` convolution. -/
-theorem compLp_mul_convolutionL1 (a : A) (f g : Lp A 1 μ) :
-    (ContinuousLinearMap.mul ℂ A a).compLp (α.convolutionL1 μ f g) =
-      α.convolutionL1 μ ((ContinuousLinearMap.mul ℂ A a).compLp f) g := by
-  have hL : Continuous fun u : Lp A 1 μ => (ContinuousLinearMap.mul ℂ A a).compLp u :=
-    ((ContinuousLinearMap.mul ℂ A a).compLpL 1 μ).continuous
-  have hD := ConvolutionAlgebra.denseRange_toL1 (α := α) (μ := μ)
-  refine congrFun (Continuous.ext_on (hD.prod hD)
-    (hL.comp (α.convolutionL1 μ).continuous₂)
-    ((α.convolutionL1 μ).continuous₂.comp ((hL.comp continuous_fst).prodMk continuous_snd)) ?_)
-    (f, g)
-  rintro ⟨_, _⟩ ⟨⟨u, rfl⟩, ⟨v, rfl⟩⟩
-  simp [← ConvolutionAlgebra.toL1_coefficientMul, ← ConvolutionAlgebra.toL1_mul,
-    ConvolutionAlgebra.coefficientMul_apply_mul]
-
-/-- For the trivial action on `ℂ`, `convolutionL1` coincides with the scalar group convolution
-`MeasureTheory.Lp.convolutionL`. -/
-@[simp]
-theorem trivial_convolutionL1 (f g : Lp ℂ 1 μ) :
-    (trivial (G := G) (A := ℂ)).convolutionL1 μ f g =
-      Lp.convolutionL μ 1 ENNReal.one_ne_top f g := by
-  rw [convolutionL1_apply, Lp.convolutionL_apply]
-  refine integral_congr_ae (.of_forall fun r => ?_)
-  dsimp only
-  rw [trivial_translateLp]
-  refine Lp.ext ?_
-  filter_upwards [(ContinuousLinearMap.mul ℂ ℂ (f r)).coeFn_compLp (Lp.leftTranslation μ 1 ℂ r g),
-    Lp.coeFn_smul (f r) (Lp.leftTranslation μ 1 ℂ r g)] with s hs₁ hs₂
-  rw [hs₁, ContinuousLinearMap.mul_apply', hs₂, Pi.smul_apply, smul_eq_mul]
-
-end ConvolutionL1
+end CompletionMul
 
 section InvolutionL1
 
@@ -623,14 +741,11 @@ theorem twistedInvolutionL1_symm :
 theorem twistedInvolutionL1_convolutionL1 (f g : Lp A 1 μ) :
     α.twistedInvolutionL1 μ (α.convolutionL1 μ f g) =
       α.convolutionL1 μ (α.twistedInvolutionL1 μ g) (α.twistedInvolutionL1 μ f) := by
-  have hD := ConvolutionAlgebra.denseRange_toL1 (α := α) (μ := μ)
-  refine congrFun (Continuous.ext_on (hD.prod hD)
-    (f := fun p : Lp A 1 μ × Lp A 1 μ => α.twistedInvolutionL1 μ (α.convolutionL1 μ p.1 p.2))
-    (g := fun p : Lp A 1 μ × Lp A 1 μ =>
-      α.convolutionL1 μ (α.twistedInvolutionL1 μ p.2) (α.twistedInvolutionL1 μ p.1))
-    (by fun_prop) (by fun_prop) ?_) (f, g)
-  rintro ⟨_, _⟩ ⟨⟨u, rfl⟩, ⟨v, rfl⟩⟩
-  simp only [← ConvolutionAlgebra.toL1_mul, ← ConvolutionAlgebra.toL1_star, star_mul]
+  apply (ConvolutionAlgebra.completionEquivL1 α μ).symm.injective
+  simp only [ConvolutionAlgebra.completionEquivL1_symm_twistedInvolutionL1,
+    ConvolutionAlgebra.completionEquivL1_symm_convolutionL1]
+  exact star_mul ((ConvolutionAlgebra.completionEquivL1 α μ).symm f)
+    ((ConvolutionAlgebra.completionEquivL1 α μ).symm g)
 
 end InvolutionL1
 
@@ -666,8 +781,7 @@ private def actionPointwiseL1 {μ : Measure G} [μ.InnerRegularCompactLTTop] :
       Lp.coeFn_smul c u] with s h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply, h₃, h₄, Pi.smul_apply, map_smul]
   norm_map' u := by
-    change ‖(α.integrable_action_apply u).toL1 _‖ = ‖u‖
-    rw [L1.norm_eq_integral_norm, L1.norm_eq_integral_norm u]
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, L1.norm_eq_integral_norm]
     refine integral_congr_ae ?_
     filter_upwards [(α.integrable_action_apply u).coeFn_toL1] with s hs
     rw [hs, StarAlgEquiv.norm_map]
@@ -702,8 +816,7 @@ private theorem twistedInvolutionL1_eq_actionPointwiseL1 (f : Lp A 1 μ) :
     Lp.coeFn_modularInversion (𝕜 := ℝ) (ConvolutionAlgebra.toL1 g),
     (Measure.quasiMeasurePreserving_inv_of_regular μ).ae (ConvolutionAlgebra.coeFn_toL1 g)]
     with s h₁ h₂ h₃ h₄ h₅
-  have h₅' : (ConvolutionAlgebra.toL1 g : G → A) s⁻¹ = g.ofConv s⁻¹ := h₅
-  rw [h₁, ConvolutionAlgebra.ofConv_star, twistedInvolution_apply, h₂, h₃, Pi.star_apply, h₄, h₅']
+  rw [h₁, ConvolutionAlgebra.ofConv_star, twistedInvolution_apply, h₂, h₃, Pi.star_apply, h₄, h₅]
   simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, star_smul, star_trivial]
   rw [← map_smul, Complex.coe_smul]
 
@@ -723,7 +836,7 @@ theorem coeFn_twistedInvolutionL1 (f : Lp A 1 μ) :
 /-- For the trivial action and a regular Haar measure, `twistedInvolutionL1` is pointwise `star`
 composed with `MeasureTheory.Lp.modularInversion`. -/
 @[simp]
-theorem trivial_twistedInvolutionL1 (f : Lp A 1 μ) :
+theorem twistedInvolutionL1_trivial (f : Lp A 1 μ) :
     (trivial (G := G) (A := A)).twistedInvolutionL1 μ f =
       star (Lp.modularInversion μ 1 ℂ f) := by
   refine Lp.ext ?_

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 public import Mathlib.Topology.UrysohnsLemma
@@ -97,8 +98,9 @@ theorem exists_hasCompactSupport_eLpNorm_sub_indicator_le (hp : p ≠ ∞) (c : 
     by_cases hxK : x ∈ K
     · simp [hfK hxK, hKt hxK]
     by_cases hxUt : x ∈ U ∨ x ∈ t
-    · rw [Set.indicator_of_mem (show x ∈ (U \ K) ∪ (t \ K) from
-        hxUt.imp (fun h => ⟨h, hxK⟩) (fun h => ⟨h, hxK⟩))]
+    · rw [Set.indicator_of_mem
+        (hxUt.elim (fun h => Set.mem_union_left _ (And.intro h hxK))
+          (fun h => Set.mem_union_right _ (And.intro h hxK)))]
       by_cases hxt : x ∈ t
       · have hsub : f x • c - c = (f x - 1) • c := by rw [sub_smul, one_smul]
         rw [Set.indicator_of_mem hxt, hsub, norm_smul, Real.norm_eq_abs]
@@ -166,12 +168,45 @@ def toLp [OpensMeasurableSpace X] (p : ℝ≥0∞) (μ : Measure X) [IsFiniteMea
   map_smul' c f := by
     simpa only [coe_smul, RingHom.id_apply] using MemLp.toLp_const_smul c (f.memLp p μ)
 
+/-- `toLp p μ 𝕜 f` is the `Lᵖ` class `(f.memLp p μ).toLp f`. -/
+theorem toLp_apply [OpensMeasurableSpace X] {p : ℝ≥0∞} {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    (f : C_c(X, E)) :
+    toLp p μ 𝕜 f = (f.memLp p μ).toLp f :=
+  (rfl)
+
 /-- The `Lᵖ` class of a compactly supported continuous function is represented by that function. -/
 theorem coeFn_toLp [OpensMeasurableSpace X] {p : ℝ≥0∞} {μ : Measure X}
     [IsFiniteMeasureOnCompacts μ] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
     (f : C_c(X, E)) :
     toLp p μ 𝕜 f =ᵐ[μ] f :=
   (f.memLp p μ).coeFn_toLp
+
+/-- The `Lᵖ` norm of `toLp p μ 𝕜 f` is the `ℒp` seminorm of `f`. -/
+@[simp]
+theorem norm_toLp [OpensMeasurableSpace X] {p : ℝ≥0∞} {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    (f : C_c(X, E)) :
+    ‖toLp p μ 𝕜 f‖ = ENNReal.toReal (eLpNorm f p μ) :=
+  Lp.norm_toLp f (f.memLp p μ)
+
+/-- For a measure giving positive mass to nonempty open sets, `toLp` is injective on `C_c(X, E)`. -/
+theorem toLp_injective [OpensMeasurableSpace X] (p : ℝ≥0∞) (μ : Measure X)
+    [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
+    [IsBoundedSMul 𝕜 E] :
+    Function.Injective (toLp (X := X) (E := E) p μ 𝕜) := by
+  intro f g hfg
+  apply DFunLike.coe_injective
+  exact Measure.eq_of_ae_eq
+    ((coeFn_toLp 𝕜 f).symm.trans ((Lp.ext_iff.1 hfg).trans (coeFn_toLp 𝕜 g)))
+    f.continuous g.continuous
+
+@[simp]
+theorem toLp_inj [OpensMeasurableSpace X] {p : ℝ≥0∞} {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
+    [IsBoundedSMul 𝕜 E] {f g : C_c(X, E)} :
+    toLp p μ 𝕜 f = toLp p μ 𝕜 g ↔ f = g :=
+  (toLp_injective p μ 𝕜).eq_iff
 
 /-- Compactly supported continuous functions have dense range in `Lp E p μ` for `p < ∞`. -/
 theorem denseRange_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Regular
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
 # Continuous functions are a.e. strongly measurable for inner regular measures
@@ -49,8 +50,8 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 
 public section
 
-open Filter MeasureTheory Set TopologicalSpace
-open scoped ENNReal Topology
+open MeasureTheory Set TopologicalSpace
+open scoped ENNReal
 
 /-- A function `u` that vanishes wherever an a.e. finitely strongly measurable `f` vanishes is a.e.
 strongly measurable as soon as it is a.e. strongly measurable on the σ-finite set
@@ -139,21 +140,10 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continu
     [TopologicalSpace γ] [T2Space γ] [Zero γ] [Zero β] {f : α → γ}
     (hf : AEFinStronglyMeasurable f μ) {g : α → γ → β} (hg₁ : ∀ y, Continuous fun x ↦ g x y)
     (hg₂ : ∀ x, Continuous fun y ↦ g x y) (hg₀ : ∀ x, g x 0 = 0) :
-    AEStronglyMeasurable (fun x ↦ g x (f x)) μ := by
-  refine hf.aestronglyMeasurable_of_restrict ?_ fun x hx ↦ by simp [hx, hg₀]
-  set ν := μ.restrict hf.sigmaFiniteSet
-  have happrox : ∀ n, AEStronglyMeasurable (fun x ↦ g x (hf.finStronglyMeasurable_mk.approx n x))
-      ν := by
-    intro n
-    set φ := hf.finStronglyMeasurable_mk.approx n
-    have huniv : (⋃ y : φ.range, φ ⁻¹' {(y : γ)}) = univ := by
-      ext x
-      exact ⟨fun _ ↦ trivial, fun _ ↦ mem_iUnion.2 ⟨⟨φ x, φ.mem_range_self x⟩, rfl⟩⟩
-    rw [← Measure.restrict_univ (μ := ν), ← huniv, aestronglyMeasurable_iUnion_iff]
-    intro y
-    refine ((hg₁ y).aestronglyMeasurable_of_sigmaFinite.restrict).congr ?_
-    exact ae_restrict_of_forall_mem (φ.measurableSet_fiber y) fun x hx ↦ congrArg (g x) hx.symm
-  have hlim : AEStronglyMeasurable (fun x ↦ g x (hf.mk f x)) ν :=
-    aestronglyMeasurable_of_tendsto_ae atTop happrox (.of_forall fun x ↦
-      ((hg₂ x).tendsto _).comp (hf.finStronglyMeasurable_mk.tendsto_approx x))
-  exact hlim.congr (ae_restrict_of_ae (hf.ae_eq_mk.symm.mono fun x hx ↦ congrArg (g x) hx))
+    AEStronglyMeasurable (fun x ↦ g x (f x)) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    ((AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+      hf.ae_eq_mk⟩).apply_of_forall_of_continuousAt
+      (fun y ↦ (hg₁ y).aestronglyMeasurable_of_sigmaFinite)
+      (.of_forall fun x ↦ (hg₂ x).continuousAt))
+    fun x hx ↦ by simp [hx, hg₀]
