@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
-import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
 # Corestriction in group cohomology
@@ -169,15 +169,8 @@ corestriction is `[G : S]` times the identity, in every degree `n`. -/
 theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
     map S.subtype (𝟙 (res S.subtype A)) n ≫ corestriction S A n = S.index • 𝟙 _ := by
   classical
-  -- The functor `Hⁿ(G, -)` is the composite of two additive functors.
-  have hsmul : map (MonoidHom.id G) (S.index • 𝟙 A) n =
-      (HomologicalComplex.homologyFunctor _ _ n).map ((cochainsFunctor k G).map (S.index • 𝟙 A)) :=
-    rfl
   rw [← map_unit_comp_coindIso_hom, Category.assoc, coindIso_hom_comp_corestriction, ← map_id_comp,
-    TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app, hsmul,
-    CategoryTheory.Functor.map_nsmul, CategoryTheory.Functor.map_nsmul,
-      CategoryTheory.Functor.map_id]
-  exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
+    TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app, map_id_nsmul_id]
 
 /-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
 the index of `S`. -/
@@ -193,32 +186,7 @@ finite: when `S` has infinite index (`S.index = 0`), bijectivity of multiplicati
 theorem map_subtype_injective_of_bijective_nsmul (A : Rep.{u} k G)
     (hA : Function.Bijective fun a : A ↦ S.index • a) (n : ℕ) :
     Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) := by
-  classical
-  have hcoe : ⇑((S.index : k) • (LinearMap.id : A.V →ₗ[k] A.V)) = fun a : A ↦ S.index • a := by
-    ext a
-    simp [Nat.cast_smul_eq_nsmul]
-  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective ((S.index : k) • LinearMap.id) (hcoe ▸ hA)
-  let eA : A ≅ A := Rep.mkIso (Representation.Equiv.mk e fun g ↦ by ext x; simp [e])
-  have heA : eA.hom = S.index • 𝟙 A := by
-    rw [← Nat.cast_smul_eq_nsmul k]
-    ext x
-    simp [eA, e, Rep.smul_hom]
-  have hIsoA : IsIso (S.index • 𝟙 A) := heA ▸ eA.isIso_hom
-  have hFmap : (HomologicalComplex.homologyFunctor _ _ n).map
-      ((cochainsFunctor k G).map (S.index • 𝟙 A)) = S.index • 𝟙 (groupCohomology A n) := by
-    rw [CategoryTheory.Functor.map_nsmul, CategoryTheory.Functor.map_nsmul,
-      CategoryTheory.Functor.map_id]
-    exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
-  have hIsoH : IsIso (S.index • 𝟙 (groupCohomology A n)) :=
-    hFmap ▸ inferInstanceAs (IsIso ((HomologicalComplex.homologyFunctor _ _ n).map
-      ((cochainsFunctor k G).map (S.index • 𝟙 A))))
-  have hfunH : ⇑(ConcreteCategory.hom (S.index • 𝟙 (groupCohomology A n))) =
-      fun x : groupCohomology A n ↦ S.index • x := by
-    ext x
-    simp
-  have hinjH : Function.Injective fun x : groupCohomology A n ↦ S.index • x :=
-    hfunH ▸ (ConcreteCategory.bijective_of_isIso (S.index • 𝟙 (groupCohomology A n))).1
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ hinjH ?_
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ (nsmul_bijective A S.index hA n).1 ?_
   by_cases hS : S.FiniteIndex
   · simpa using index_nsmul_eq_zero_of_map_eq_zero S hx
   · simp [Subgroup.not_finiteIndex_iff.mp hS]
@@ -500,20 +468,9 @@ group is bijective on the coefficients, for instance for a representation on a `
 over any coefficient ring. -/
 theorem subsingleton_of_bijective_nsmul (A : Rep k G)
     (h : Function.Bijective fun a : A ↦ Nat.card G • a) (n : ℕ) :
-    Subsingleton (groupCohomology A (n + 1)) := by
-  have := Fintype.ofFinite G
-  -- Multiplication by `#G` is injective on Tate cohomology, which is group cohomology in
-  -- positive degree.
-  have hinj : Function.Injective fun x : tateCohomology A (n + 1 : ℕ) ↦ Nat.card G • x := by
-    simpa only [Nat.cast_smul_eq_nsmul] using
-      (TauCeti.TateCohomology.smul_bijective (Nat.card G : k) A
-        (by simpa only [Nat.cast_smul_eq_nsmul] using h) _).1
-  let e : tateCohomology A (n + 1 : ℕ) ≅ groupCohomology A (n + 1) :=
-    (TateCohomology.isoGroupCohomology (n + 1)).app A
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  have hx : e.inv.hom x = 0 :=
-    hinj <| by beta_reduce; rw [← map_nsmul, natCard_nsmul_eq_zero, map_zero, smul_zero]
-  rw [← e.inv_hom_id_apply x, hx, map_zero]
+    Subsingleton (groupCohomology A (n + 1)) :=
+  subsingleton_of_forall_eq 0 fun x ↦
+    (nsmul_bijective A (Nat.card G) h (n + 1)).1 (by simpa using natCard_nsmul_eq_zero x)
 
 /-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
 of the coefficient ring. -/

@@ -15,7 +15,7 @@ Let `N` be an abelian normal `p`-subgroup of a group `G`, and let `P` be a Sylow
 `G` of finite index. The image of `P` in `G ⧸ N` is a Sylow `p`-subgroup of `G ⧸ N` of finite
 index, and the underlying additive group of `N` is a `p`-group. Consequently restriction from
 `G ⧸ N` to the image of `P` is injective on `Hⁿ(G ⧸ N, N)` in every degree
-(`IsPGroup.map_subtype_quotientConjugationAction_injective`).
+(`IsPGroup.map_subtype_quotientConjugationAction_injective_sylow`).
 
 Combined with the restriction formula for the quotient extension (`Subgroup.subgroupOfCohomologyIso`
 and `Subgroup.map_subtype_cohomologyClass_factorSet_quotientExtension`) and the containment `N ≤ P`
@@ -30,9 +30,9 @@ applies without assuming `G` or `N` finite (only `[P.FiniteIndex]`).
 
 ## Main results
 
-* `IsPGroup.map_subtype_quotientConjugationAction_injective`: restriction to the image of a
+* `IsPGroup.map_subtype_quotientConjugationAction_injective_sylow`: restriction to the image of a
   finite-index Sylow `p`-subgroup `P` in `G ⧸ N` is injective on `Hⁿ(G ⧸ N, N)` in every degree.
-* `IsPGroup.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff`: the quotient
+* `IsPGroup.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`: the quotient
   extension class of `G` by `N` vanishes on the image of `P` if and only if it vanishes globally.
 * `IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`: the quotient extension
   class of `G` by `N` vanishes if and only if that of `P` by `N.subgroupOf P` vanishes.
@@ -62,7 +62,7 @@ attribute [local instance] Subgroup.quotientConjugationAction
 /-- **Restriction to the image of a finite-index Sylow `p`-subgroup is injective on
 `Hⁿ(G ⧸ N, N)`**, in every degree `n`, for any abelian normal `p`-subgroup `N` of `G`. Neither `G`
 nor `N` need be finite. -/
-theorem map_subtype_quotientConjugationAction_injective (hN : IsPGroup p N)
+theorem map_subtype_quotientConjugationAction_injective_sylow (hN : IsPGroup p N)
     (P : Sylow p G) [(P : Subgroup G).FiniteIndex] (n : ℕ) :
     Function.Injective (groupCohomology.map ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype
       (𝟙 (Rep.res ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype
@@ -73,21 +73,24 @@ theorem map_subtype_quotientConjugationAction_injective (hN : IsPGroup p N)
   have hQ : (Q : Subgroup (G ⧸ N)) = (P : Subgroup G).map (QuotientGroup.mk' N) := rfl
   have : (Q : Subgroup (G ⧸ N)).FiniteIndex :=
     hQ ▸ Subgroup.FiniteIndex.map_of_surjective (P : Subgroup G) (QuotientGroup.mk'_surjective N)
-  have hAdd : IsAddPGroup p (Rep.ofMulDistribMulAction (G ⧸ N) N) := fun x ↦ hN x.toMul
+  have hAdd : IsAddPGroup p (Rep.ofMulDistribMulAction (G ⧸ N) N) :=
+    IsAddPGroup.of_equiv
+      (fun x : Additive N ↦ by simpa only [← toMul_eq_one, toMul_nsmul] using hN x.toMul)
+      (Rep.toAdditive (M := G ⧸ N) (G := N)).symm
   exact TauCeti.groupCohomology.map_sylow_injective_of_isAddPGroup _ n hAdd Q
 
 /-- For an abelian normal `p`-subgroup `N` of `G` and a finite-index Sylow `p`-subgroup `P`, the
 quotient extension class of `G` by `N` vanishes on the image of `P` in `G ⧸ N` if and only if it
 vanishes on `G ⧸ N`. Neither `G` nor `N` need be finite. -/
-theorem map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff (hN : IsPGroup p N)
-    (P : Sylow p G) [(P : Subgroup G).FiniteIndex]
+theorem map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow
+    (hN : IsPGroup p N) (P : Sylow p G) [(P : Subgroup G).FiniteIndex]
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
     groupCohomology.map ((P : Subgroup G).map (QuotientGroup.mk' N)).subtype (𝟙 _) 2
         (TauCeti.GroupExtension.factorSet σ hσ
           N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
       (TauCeti.GroupExtension.factorSet σ hσ
         N.quotientExtension_inducesAction).cohomologyClass = 0 :=
-  map_eq_zero_iff _ (hN.map_subtype_quotientConjugationAction_injective P 2)
+  map_eq_zero_iff _ (hN.map_subtype_quotientConjugationAction_injective_sylow P 2)
 
 /-- **Sylow detection of the quotient extension class** (Gaschütz). For an abelian normal
 `p`-subgroup `N` of `G` and a finite-index Sylow `p`-subgroup `P`, the class of the quotient
@@ -101,7 +104,7 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow (hN : IsPG
         N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
       (TauCeti.GroupExtension.factorSet τ hτ
         (N.subgroupOf P).quotientExtension_inducesAction).cohomologyClass = 0 :=
-  (hN.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff P σ hσ).symm.trans
+  (hN.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow P σ hσ).symm.trans
     (Subgroup.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
       (hN.le_sylow_of_normal P) σ hσ τ hτ)
 
@@ -115,7 +118,7 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_exists_isLocalCo
     (TauCeti.GroupExtension.factorSet σ hσ
         N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
       ∃ K : Subgroup G, N.IsLocalComplement K P :=
-  (hN.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff P σ hσ).symm.trans
+  (hN.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow P σ hσ).symm.trans
     (Subgroup.exists_isLocalComplement_iff_map_subtype_cohomologyClass_eq_zero
       (hN.le_sylow_of_normal P) σ hσ).symm
 

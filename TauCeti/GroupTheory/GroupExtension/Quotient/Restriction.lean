@@ -31,11 +31,14 @@ When `[G : H]` is prime to `|N|`, `H` automatically contains `N`
 (`Subgroup.map_subtype_quotientConjugationAction_injective_of_coprime_index`), and the global
 extension class of `G` by `N` vanishes if and only if the local extension class of `H` by
 `N.subgroupOf H` vanishes
-(`Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`). Combining
-`[G : H] • x = 0` with `|N| • x = 0` (`TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`)
-gives the cohomological proof of Gaschütz's splitting criterion
-(`Subgroup.IsLocalComplement.cohomologyClass_factorSet_eq_zero_of_coprime_index`); neither `G`,
-`H`, nor `N` need be finite.
+(`Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`), equivalently
+if and only if `N` has a local complement in `H`
+(`Subgroup.cohomologyClass_eq_zero_iff_exists_isLocalComplement_of_coprime_index`).
+Combining `[G : H] • x = 0` with `|N| • x = 0`
+(`TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`) gives the cohomological proof of
+Gaschütz's splitting criterion
+(`Subgroup.IsLocalComplement.cohomologyClass_eq_zero_of_coprime_index`); neither `G`, `H`, nor `N`
+need be finite.
 
 ## Main definitions
 
@@ -58,9 +61,11 @@ gives the cohomological proof of Gaschütz's splitting criterion
 * `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`: when
   `[G : H]` is prime to `|N|`, the quotient extension class of `G` by `N` vanishes if and only if
   that of `H` by `N.subgroupOf H` vanishes.
-* `Subgroup.IsLocalComplement.cohomologyClass_factorSet_eq_zero_of_coprime_index`: a local
-  complement of `N` in a subgroup of index prime to `|N|` kills the global quotient extension
-  class.
+* `Subgroup.cohomologyClass_eq_zero_iff_exists_isLocalComplement_of_coprime_index`: when `[G : H]`
+  is prime to `|N|`, the quotient extension class of `G` by `N` vanishes if and only if `N` has a
+  local complement in `H`.
+* `Subgroup.IsLocalComplement.cohomologyClass_eq_zero_of_coprime_index`: a local complement of `N`
+  in a subgroup of index prime to `|N|` kills the global quotient extension class.
 
 ## References
 
@@ -102,7 +107,8 @@ in `G ⧸ N`. That image acts on `N.subgroupOf H` through
 `Subgroup.quotientSubgroupOfMulEquivMap` and the quotient conjugation action of `H`,
 and on `N` by restricting the quotient conjugation action of `G`. -/
 noncomputable def subgroupOfRepHom (hNH : N ≤ H) :
-    Rep.res (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    Rep.res ((quotientSubgroupOfMulEquivMap N H).symm :
+          H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
         (Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H)) ⟶
       Rep.res (H.map (QuotientGroup.mk' N)).subtype (Rep.ofMulDistribMulAction (G ⧸ N) N) :=
   Rep.ofHom ⟨(N.subgroupOfEquivOfLe hNH).toMonoidHom.toAdditive.toIntLinearMap, fun q => by
@@ -144,49 +150,55 @@ noncomputable def subgroupOfCohomologyIso (hNH : N ≤ H) (n : ℕ) :
       congrArg Additive.ofMul (subgroupOfEquivOfLe_smul hNH y x.toMul)) n
 
 /-- The forward direction of `Subgroup.subgroupOfCohomologyIso` is the map induced on cohomology by
-`(quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom` and `Subgroup.subgroupOfRepHom`. Not
-`@[simp]` because `simp` rewrites `MulEquiv.toMonoidHom` to a coercion, which no longer matches the
-domain of `Subgroup.subgroupOfRepHom`. -/
+`Subgroup.quotientSubgroupOfMulEquivMap` and `Subgroup.subgroupOfRepHom`. -/
+@[simp]
 theorem subgroupOfCohomologyIso_hom (hNH : N ≤ H) (n : ℕ) :
     (subgroupOfCohomologyIso hNH n).hom =
-      groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+      groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+            H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
         (subgroupOfRepHom hNH) n :=
   (groupCohomology.mapIso_hom ..).trans
     (groupCohomology.map_congr rfl (LinearMap.ext fun _ => rfl) n)
 
 /-- Postcomposing the transport map along `Subgroup.subgroupOfRepHom` with the inverse of
 `Subgroup.subgroupOfCohomologyIso` is the identity. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem map_subgroupOfRepHom_comp_subgroupOfCohomologyIso_inv (hNH : N ≤ H) (n : ℕ) :
-    groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+            H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
         (subgroupOfRepHom hNH) n ≫ (subgroupOfCohomologyIso hNH n).inv = 𝟙 _ := by
   rw [← subgroupOfCohomologyIso_hom, Iso.hom_inv_id]
 
 /-- Applying the inverse of `Subgroup.subgroupOfCohomologyIso` cancels transport along
 `Subgroup.subgroupOfRepHom`. -/
+@[simp]
 theorem subgroupOfCohomologyIso_inv_map_subgroupOfRepHom_apply (hNH : N ≤ H) (n : ℕ)
     (x : groupCohomology (Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H)) n) :
     (subgroupOfCohomologyIso hNH n).inv
-        (groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+        (groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+              H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
           (subgroupOfRepHom hNH) n x) = x := by
   rw [← subgroupOfCohomologyIso_hom]
   exact (subgroupOfCohomologyIso hNH n).hom_inv_id_apply x
 
 /-- Precomposing the transport map along `Subgroup.subgroupOfRepHom` with the inverse of
 `Subgroup.subgroupOfCohomologyIso` is the identity. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem subgroupOfCohomologyIso_inv_comp_map_subgroupOfRepHom (hNH : N ≤ H) (n : ℕ) :
     (subgroupOfCohomologyIso hNH n).inv ≫
-      groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+      groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+            H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
         (subgroupOfRepHom hNH) n = 𝟙 _ := by
   rw [← subgroupOfCohomologyIso_hom, Iso.inv_hom_id]
 
 /-- Transport along `Subgroup.subgroupOfRepHom` cancels the inverse of
 `Subgroup.subgroupOfCohomologyIso`. -/
+@[simp]
 theorem map_subgroupOfRepHom_subgroupOfCohomologyIso_inv_apply (hNH : N ≤ H) (n : ℕ)
     (x : groupCohomology (Rep.res (H.map (QuotientGroup.mk' N)).subtype
       (Rep.ofMulDistribMulAction (G ⧸ N) N)) n) :
-    groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+            H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
         (subgroupOfRepHom hNH) n ((subgroupOfCohomologyIso hNH n).inv x) = x := by
   rw [← subgroupOfCohomologyIso_hom]
   exact (subgroupOfCohomologyIso hNH n).inv_hom_id_apply x
@@ -194,25 +206,30 @@ theorem map_subgroupOfRepHom_subgroupOfCohomologyIso_inv_apply (hNH : N ≤ H) (
 /-- The transport map on cohomology along `Subgroup.quotientSubgroupOfMulEquivMap` and
 `Subgroup.subgroupOfRepHom` is an isomorphism in every degree. -/
 instance isIso_map_subgroupOfRepHom (hNH : N ≤ H) (n : ℕ) :
-    IsIso (groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    IsIso (groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+          H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
       (subgroupOfRepHom hNH) n) :=
   subgroupOfCohomologyIso_hom hNH n ▸ inferInstanceAs (IsIso (subgroupOfCohomologyIso hNH n).hom)
 
 /-- The transport map on cohomology along `Subgroup.quotientSubgroupOfMulEquivMap` and
 `Subgroup.subgroupOfRepHom` is bijective in every degree. -/
 theorem map_subgroupOfRepHom_bijective (hNH : N ≤ H) (n : ℕ) :
-    Function.Bijective (groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    Function.Bijective (groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+          H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
       (subgroupOfRepHom hNH) n) :=
   have := isIso_map_subgroupOfRepHom hNH n
   ConcreteCategory.bijective_of_isIso
-    (groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    (groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+          H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
       (subgroupOfRepHom hNH) n)
 
 /-- A cohomology class of `H ⧸ N.subgroupOf H` vanishes under transport along
 `Subgroup.subgroupOfRepHom` if and only if it is zero. -/
+@[simp]
 theorem map_subgroupOfRepHom_eq_zero_iff (hNH : N ≤ H) (n : ℕ)
     (x : groupCohomology (Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H)) n) :
-    groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+    groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+            H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
         (subgroupOfRepHom hNH) n x = 0 ↔ x = 0 :=
   map_eq_zero_iff _ (map_subgroupOfRepHom_bijective hNH n).injective
 
@@ -267,7 +284,8 @@ theorem map_subtype_cohomologyClass_factorSet_quotientExtension (hNH : N ≤ H)
     (τ : (N.subgroupOf H).quotientExtension.Section) (hτ : τ 1 = 1) :
     groupCohomology.map (H.map (QuotientGroup.mk' N)).subtype (𝟙 _) 2
         (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
-      groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+      groupCohomology.map ((quotientSubgroupOfMulEquivMap N H).symm :
+              H.map (QuotientGroup.mk' N) →* H ⧸ N.subgroupOf H)
           (subgroupOfRepHom hNH) 2
         (TauCeti.GroupExtension.factorSet τ hτ
           (N.subgroupOf H).quotientExtension_inducesAction).cohomologyClass := by
@@ -410,12 +428,26 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
     (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
       (le_of_coprime_index_card hcop) σ hσ τ hτ)
 
+/-- **Coprime-index local-complement criterion for the quotient extension class** (Gaschütz). When
+`[G : H]` is prime to `|N|`, the class of the quotient extension of `G` by `N` vanishes if and only
+if `N` has a local complement in `H`. Neither `G`, `H`, nor `N` need be finite. -/
+theorem cohomologyClass_eq_zero_iff_exists_isLocalComplement_of_coprime_index
+    (hcop : Nat.Coprime H.index (Nat.card N))
+    (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
+    (TauCeti.GroupExtension.factorSet σ hσ
+        N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
+      ∃ K : Subgroup G, N.IsLocalComplement K H :=
+  (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
+    hcop σ hσ).symm.trans
+    (exists_isLocalComplement_iff_map_subtype_cohomologyClass_eq_zero
+      (le_of_coprime_index_card hcop) σ hσ).symm
+
 /-- **Cohomological form of Gaschütz's splitting theorem.** If `N` has a local complement in a
 subgroup `H` whose index `[G : H]` is prime to `|N|`, then the class of the quotient extension of
 `G` by `N` vanishes (so `N` has a global complement in `G` by
 `Subgroup.exists_complement_iff_cohomologyClass_eq_zero`). Neither `G`, `H`, nor `N` need be
 finite. -/
-theorem IsLocalComplement.cohomologyClass_factorSet_eq_zero_of_coprime_index {K : Subgroup G}
+theorem IsLocalComplement.cohomologyClass_eq_zero_of_coprime_index {K : Subgroup G}
     (hK : N.IsLocalComplement K H) (hcop : Nat.Coprime H.index (Nat.card N))
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
     (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =

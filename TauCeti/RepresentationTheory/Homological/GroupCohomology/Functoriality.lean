@@ -18,10 +18,12 @@ This file evaluates Mathlib's pullbacks `groupCohomology.mapCocycles₁` and
 
 It also records that `Hⁿ(G, -)` is an additive functor on `Rep k G`, so that the map
 `groupCohomology.map (MonoidHom.id G) φ n` induced by a morphism `φ` of representations is
-additive in `φ`. Consequently cohomology commutes with binary biproducts: if `c` is a biproduct
-bicone of `A` and `B`, for instance the concrete product `Rep.binaryBicone A B` on `A × B`, the
-maps induced by its projections identify `Hⁿ(G, c.pt)` with `Hⁿ(G, A) × Hⁿ(G, B)`, and the maps
-induced by its inclusions give the inverse.
+additive in `φ`, respects natural-number scalar multiples (`groupCohomology.map_id_nsmul`,
+`groupCohomology.map_id_nsmul_id`), and preserves bijectivity of multiplication by a natural number
+(`groupCohomology.nsmul_bijective`). Consequently cohomology commutes with binary biproducts: if
+`c` is a biproduct bicone of `A` and `B`, for instance the concrete product `Rep.binaryBicone A B`
+on `A × B`, the maps induced by its projections identify `Hⁿ(G, c.pt)` with `Hⁿ(G, A) × Hⁿ(G, B)`,
+and the maps induced by its inclusions give the inverse.
 
 ## Main statements
 
@@ -29,6 +31,10 @@ induced by its inclusions give the inverse.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 * `TauCeti.groupCohomology.map_id_add`: the map induced on cohomology is additive in the
   morphism of representations.
+* `groupCohomology.map_id_nsmul`, `groupCohomology.map_id_nsmul_id`: `Hⁿ(G, -)` preserves
+  natural-number multiples of morphisms, in particular sending `c • 𝟙` to multiplication by `c`.
+* `groupCohomology.nsmul_bijective`: bijective multiplication by `m : ℕ` on a representation induces
+  bijective multiplication by `m` on its cohomology in every degree.
 * `CategoryTheory.Limits.BinaryBicone.IsBilimit.groupCohomologyProdEquiv`: the cohomology of a
   biproduct is the product of the cohomologies.
 -/
@@ -79,6 +85,35 @@ theorem map_id_zero (A B : Rep k G) (n : ℕ) : map (MonoidHom.id G) (0 : A ⟶ 
   (functor k G n).map_zero A B
 
 end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- The map on group cohomology induced by a natural-number multiple `c • φ` of a morphism of
+representations is `c` times the induced map. -/
+@[simp]
+theorem map_id_nsmul {A B : Rep k G} (c : ℕ) (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) (c • φ) n = c • map (MonoidHom.id G) φ n :=
+  (functor k G n).map_nsmul
+
+/-- The map on group cohomology induced by the multiple `c • 𝟙` of the identity of a representation
+is multiplication by `c`. -/
+theorem map_id_nsmul_id (A : Rep k G) (c n : ℕ) :
+    map (MonoidHom.id G) (c • 𝟙 A) n = c • 𝟙 _ := by
+  rw [map_id_nsmul, map_id]
+
+/-- Multiplication by a natural number `m` is bijective on group cohomology in every degree
+whenever it is bijective on the coefficients. -/
+theorem nsmul_bijective (A : Rep k G) (m : ℕ) (hA : Function.Bijective fun a : A ↦ m • a)
+    (n : ℕ) : Function.Bijective fun x : groupCohomology A n ↦ m • x := by
+  have : IsIso (m • 𝟙 A) := (ConcreteCategory.isIso_iff_bijective (m • 𝟙 A)).2 hA
+  have : IsIso (m • 𝟙 (groupCohomology A n)) := by
+    rw [← map_id_nsmul_id, ← functor_map]
+    exact Functor.map_isIso (functor k G n) (m • 𝟙 A)
+  exact ConcreteCategory.bijective_of_isIso (m • 𝟙 (groupCohomology A n))
+
+end groupCohomology
 
 namespace CategoryTheory.Limits.BinaryBicone.IsBilimit
 

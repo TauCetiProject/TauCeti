@@ -376,7 +376,7 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
 subgroup.** Neither `G`, `H`, nor `N` need be finite: when `N` is infinite (`Nat.card N = 0`),
 coprimality forces `H.index = 1` and hence `H = ⊤`; when `H` has infinite index (`H.index = 0`),
 coprimality forces `Nat.card N = 1` and hence `N = ⊥`. -/
-@[to_additive TauCeti.le_of_coprime_index_card_of_le_normalizer
+@[to_additive
   /-- An additive subgroup whose index is prime to the cardinality of a subgroup it normalises
   contains that subgroup. -/]
 theorem le_of_coprime_index_card_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N)
@@ -388,7 +388,7 @@ theorem le_of_coprime_index_card_of_le_normalizer {H N : Subgroup G} (hH : H ≤
 
 /-- **A subgroup whose index is prime to the cardinality of a normal subgroup contains that normal
 subgroup.** Neither `G`, `H`, nor `N` need be finite. -/
-@[to_additive TauCeti.le_of_coprime_index_card
+@[to_additive
   /-- An additive subgroup whose index is prime to the cardinality of a normal subgroup contains
   that normal subgroup. -/]
 theorem le_of_coprime_index_card {H N : Subgroup G} [N.Normal]
