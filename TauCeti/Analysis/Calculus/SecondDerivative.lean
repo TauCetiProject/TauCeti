@@ -130,6 +130,13 @@ namespace TauCeti
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- Negating a map negates its second derivative, including at points where the totalized
+first or second derivative is zero because differentiability fails. -/
+theorem fderiv_fderiv_neg {f : E → F} {x : E} :
+    fderiv 𝕜 (fderiv 𝕜 (-f)) x = -fderiv 𝕜 (fderiv 𝕜 f) x := by
+  have hneg : fderiv 𝕜 (-f) = -fderiv 𝕜 f := funext fun _ ↦ fderiv_neg
+  rw [hneg, fderiv_neg]
+
 /-- At a twice continuously differentiable point, `fderiv 𝕜 g` is differentiable, with derivative
 the second derivative of `g`. -/
 theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}

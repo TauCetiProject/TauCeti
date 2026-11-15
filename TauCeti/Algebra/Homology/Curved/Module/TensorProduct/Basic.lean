@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Curved.Module.Defs
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Defs
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Complex
+public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # Balanced tensor complexes of curved DG modules
@@ -251,7 +252,8 @@ noncomputable def curvedCochainComplexMap (f : M →ₗ[R] M') (g : N →ₗ[R] 
     (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
     curvedCochainComplex hM hN ⟶ curvedCochainComplex hM' hN' :=
   gradedCochainComplexHom (map f g hf hg) (isHomogeneous_map_grading f g hf hg hf₀ hg₀)
-    (curvedDifferential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd)
+    fun _ x ↦
+      LinearMap.congr_fun (curvedDifferential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd) x
 
 variable (f : M →ₗ[R] M') (g : N →ₗ[R] N')
   (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
@@ -348,8 +350,8 @@ noncomputable def curvedCochainComplexMapHomotopy {f₁ f₂ k : M →ₗ[R] M'}
       (curvedCochainComplexMap hM hN hM' hN' f₂ g hf₂ hg hf₂₀ hg₀ hf₂d hgd) :=
   gradedCochainComplexHomotopy _ _ _ _ (map k g hk hg)
     (by simpa only [add_zero] using isHomogeneous_map_grading k g hk hg hk₁ hg₀)
-    (map_eq_leibnizDifferential_comp_map_add_map_comp_add hM.leibniz
-      hN.leibniz hM'.leibniz hN'.leibniz hg hf₁ hf₂ hk hk₁ hfk hgd)
+    fun _ x ↦ LinearMap.congr_fun (map_eq_leibnizDifferential_comp_map_add_map_comp_add hM.leibniz
+      hN.leibniz hM'.leibniz hN'.leibniz hg hf₁ hf₂ hk hk₁ hfk hgd) x
 
 /-- In the canonical identifications of the complex terms with their degree pieces, the
 components of the homotopy induced by `k` act by the balanced tensor map `k ⊗ g`. -/
