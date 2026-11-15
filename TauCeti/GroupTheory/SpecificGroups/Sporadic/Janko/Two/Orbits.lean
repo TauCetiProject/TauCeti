@@ -7,21 +7,24 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Janko.Two.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
-import TauCeti.GroupTheory.GroupAction.Orbit.Closure
+import TauCeti.GroupTheory.GroupAction.Closure
 import Mathlib.Algebra.Group.Action.Prod
 import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Algebra.Group.Submonoid.BigOperators
+import Mathlib.Data.Nat.Bits
 
 /-!
-# The first two basic orbits of the second Janko group
+# The first three basic orbits of the second Janko group
 
-The degree-100 ATLAS model `TauCeti.Sporadic.J2` is transitive, and the orbit of `1` under
-its stabilizer of `0` has length `63`. These give the first two factors in a stabilizer-chain
-order computation: its order is `6300` times the order of its two-point stabilizer.
+The degree-100 ATLAS model `TauCeti.Sporadic.J2` is transitive, the orbit of `1` under
+its stabilizer of `0` has length `63`, and the orbit of `2` under its pointwise stabilizer
+of `0, 1` has length `24`. These give the first three factors in a stabilizer-chain
+order computation: its order is `151200` times the order of its three-point stabilizer.
 
-Explicit words in the two ATLAS generators witness both orbit lower bounds. For the upper
+Explicit words in the two ATLAS generators witness all three orbit lower bounds. For the upper
 bound on the second orbit, a binary relation on the 100 points is checked to be invariant under
-both generators. Its row at `0` has exactly 63 entries. The relation and the word tables are
+both generators. Its row at `0` has exactly 63 entries. The third orbit consists of the points
+other than `1` in that row but not in the row at `1`. The relation and the word tables are
 private computation data; all computations are checked by the kernel.
 
 ## References
@@ -299,14 +302,14 @@ private theorem orbital_a : ∀ x y, orbital (a x) (a y) = orbital x y := by
 private theorem orbital_b : ∀ x y, orbital (b x) (b y) = orbital x y := by
   decide +kernel
 
-private theorem orbit_pair_subset_orbital :
-    orbit J2 ((0, 1) : Fin 100 × Fin 100) ⊆ {p | orbital p.1 p.2 = true} := by
-  rw [J2_def]
-  apply orbit_closure_subset_of_finite (Set.toFinite _) (by decide +kernel)
-  intro g hg ⟨x, y⟩ hp
-  rcases hg with rfl | rfl
-  · simpa only [Set.mem_ofPred_eq, Prod.smul_mk, Equiv.Perm.smul_def, orbital_a] using hp
-  · simpa only [Set.mem_ofPred_eq, Prod.smul_mk, Equiv.Perm.smul_def, orbital_b] using hp
+private theorem orbital_apply {g : Equiv.Perm (Fin 100)} (hg : g ∈ J2) :
+    ∀ x y, orbital (g x) (g y) = orbital x y := by
+  rw [J2_def] at hg
+  intro x y
+  simpa only [Prod.smul_mk, Equiv.Perm.smul_def] using
+    TauCeti.apply_eq_of_mem_closure (f := fun p : Fin 100 × Fin 100 ↦ orbital p.1 p.2)
+      (by rintro _ (rfl | rfl) ⟨x, y⟩ <;>
+          simp only [Prod.smul_mk, Equiv.Perm.smul_def, orbital_a, orbital_b]) hg (x, y)
 
 private def secondOrbit : Finset (Fin 100) :=
   {1, 2, 3, 6, 8, 9, 12, 13, 14, 15, 17, 19, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 34,
@@ -448,10 +451,8 @@ private theorem orbit_stabilizer_eq_secondOrbit :
     apply (mem_secondOrbit _).2
     have hfix : (g : Equiv.Perm (Fin 100)) 0 = 0 := by
       simpa only [Equiv.Perm.smul_def] using mem_stabilizer_iff.mp g.2.2
-    have h := orbit_pair_subset_orbital
-      (mem_orbit_iff.mpr ⟨⟨g, g.2.1⟩, rfl⟩)
-    simpa only [Subgroup.smul_def, Prod.smul_mk, Equiv.Perm.smul_def,
-      Set.mem_ofPred_eq, hfix] using h
+    simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, hfix] using
+      (orbital_apply g.2.1 0 1).trans (by decide +kernel)
   · intro hx
     have hw := pairWord_spec x hx
     have hfix : word (pairWord x) ∈ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100) := by
@@ -483,5 +484,103 @@ theorem card_eq_mul_card_stabilizer_zero_one :
   simpa only [Finset.prod_range_succ, Finset.prod_range_zero, one_mul,
     ncard_orbit_zero, ncard_orbit_stabilizer_zero_one, Nat.reduceMul] using
     (J2.prod_ncard_orbit_mul_card_stabilizerChain basePoint 2).symm
+
+/-! ### The third basic orbit -/
+
+private def thirdOrbit : Finset (Fin 100) :=
+  {2, 3, 6, 15, 19, 23, 30, 31, 32, 35, 37, 39, 41, 49, 56, 63, 64, 69, 74, 76, 85, 90, 95, 97}
+
+private theorem mem_thirdOrbit : ∀ x : Fin 100,
+    x ∈ thirdOrbit ↔ x ≠ 1 ∧ orbital 0 x = true ∧ orbital 1 x = false := by
+  decide +kernel
+
+-- Breadth-first search on ordered triples supplies words fixing `0, 1` and sending `2` to `x`.
+-- Bits, least significant first, encode `a` as zero and `b` as one; the final one-bit is a marker.
+-- Other entries are unused. The decoding uses the same word evaluator as the earlier witnesses.
+private def tripleWord (x : Fin 100) : List (Fin 2) :=
+  let code : ℕ := match x.val with
+    | 2 => 1
+    | 3 => 95303937743542
+    | 6 => 763841372444341
+    | 15 => 528800680645080493
+    | 19 => 15108859229558454
+    | 23 => 359492458
+    | 30 => 193000964690897771
+    | 31 => 939972193131
+    | 32 => 30147829656922
+    | 35 => 57356430763
+    | 37 => 15390600217406827
+    | 39 => 192365447056108970
+    | 41 => 3121731710314
+    | 49 => 1597980526992090
+    | 56 => 766204598
+    | 63 => 120583007983318
+    | 64 => 29439145322
+    | 69 => 23559688007083
+    | 74 => 33132045242119595
+    | 76 => 49947707092395
+    | 85 => 30871449335412397
+    | 90 => 1489123519850
+    | 95 => 6277855663830
+    | 97 => 94237679638230
+    | _ => 1
+  code.bits.dropLast.map (fun t ↦ if t then 1 else 0)
+
+private theorem tripleWord_spec : ∀ x ∈ thirdOrbit,
+    word (tripleWord x) 0 = 0 ∧ word (tripleWord x) 1 = 1 ∧ word (tripleWord x) 2 = x := by
+  decide +kernel
+
+/-- The third basic orbit of the ATLAS model of `J₂`: the points reachable from `2` while
+fixing `0` and `1`. -/
+theorem orbit_stabilizer_zero_one_two :
+    orbit (J2.stabilizerChain basePoint 2) (basePoint 2) =
+      ({2, 3, 6, 15, 19, 23, 30, 31, 32, 35, 37, 39, 41, 49, 56, 63, 64, 69, 74, 76, 85, 90, 95,
+        97} : Finset (Fin 100)) := by
+  -- Fold the literal finset to match the membership and word lemmas for the private data.
+  change orbit (J2.stabilizerChain basePoint 2) (basePoint 2) = thirdOrbit
+  have h0 : basePoint 0 = 0 := by decide +kernel
+  have h1 : basePoint 1 = 1 := by decide +kernel
+  have h2 : basePoint 2 = 2 := by decide +kernel
+  rw [h2]
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
+    have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := by
+      simpa only [h0, Equiv.Perm.smul_def] using hfix 0 (by decide)
+    have hg1 : (g : Equiv.Perm (Fin 100)) 1 = 1 := by
+      simpa only [h1, Equiv.Perm.smul_def] using hfix 1 (by decide)
+    apply (mem_thirdOrbit _).mpr
+    refine ⟨?_, ?_, ?_⟩
+    · exact fun he ↦ (by decide : (2 : Fin 100) ≠ 1) (g.val.injective (he.trans hg1.symm))
+    · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, hg0] using
+        (orbital_apply hg 0 2).trans (by decide +kernel)
+    · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, hg1] using
+        (orbital_apply hg 1 2).trans (by decide +kernel)
+  · intro hx
+    obtain ⟨hw0, hw1, hw2⟩ := tripleWord_spec x hx
+    refine mem_orbit_iff.mpr ⟨⟨word (tripleWord x), ?_⟩, hw2⟩
+    apply (Subgroup.mem_stabilizerChain_iff _ _).mpr
+    refine ⟨word_mem _, fun j hj ↦ ?_⟩
+    have hj : j = 0 ∨ j = 1 := by omega
+    rcases hj with rfl | rfl
+    · simpa only [h0, Equiv.Perm.smul_def] using hw0
+    · simpa only [h1, Equiv.Perm.smul_def] using hw1
+
+/-- The third basic orbit, for the ordered base beginning `0, 1, 2`, has length 24. -/
+@[simp]
+theorem ncard_orbit_stabilizer_zero_one_two :
+    (orbit (J2.stabilizerChain basePoint 2) (basePoint 2)).ncard = 24 := by
+  rw [orbit_stabilizer_zero_one_two, Set.ncard_coe_finset]
+  decide +kernel
+
+/-- The first three basic orbits reduce the order of `J₂` to `151200` times the order of its
+three-point stabilizer. No order or triviality of that stabilizer is assumed. -/
+theorem card_eq_mul_card_stabilizer_zero_one_two :
+    Nat.card J2 = 151200 * Nat.card (J2.stabilizerChain basePoint 3) := by
+  simpa only [Finset.prod_range_succ, Finset.prod_range_zero, one_mul,
+    ncard_orbit_zero, ncard_orbit_stabilizer_zero_one, ncard_orbit_stabilizer_zero_one_two,
+    Nat.reduceMul] using
+    (J2.prod_ncard_orbit_mul_card_stabilizerChain basePoint 3).symm
 
 end TauCeti.Sporadic.J2

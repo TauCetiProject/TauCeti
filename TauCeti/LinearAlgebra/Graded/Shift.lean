@@ -58,8 +58,7 @@ adopts its Koszul sign as the evaluation-level definition of the suspended opera
 * `TauCeti.MultilinearMap.isHomogeneous_shift_iff`: shifting the inputs by `c` and the target by
   `r` translates degree `q` in the shifted gradings to degree `q + r - ∑ i, c i` in the original
   gradings.
-* `TauCeti.MultilinearMap.isHomogeneous_suspension_iff` and
-  `TauCeti.MultilinearMap.isHomogeneous_suspension_fin_iff`: an arity-`n` operation has degree one
+* `TauCeti.MultilinearMap.isHomogeneous_suspension_iff`: an arity-`n` operation has degree one
   after suspension exactly when it has degree `2 - n` before.
 * `MultilinearMap.suspend_suspend`: applying the suspension sign twice restores an operation.
 * `TauCeti.MultilinearMap.isHomogeneous_suspend_iff`: suspension preserves the equivalent
@@ -266,23 +265,14 @@ variable {R : Type uR} {κ : Type uκ} {M : Type uM} {σM : Type*}
 /-- **The suspension degree bridge.** An arity-`n` operation is homogeneous of degree one for the
 suspended grading `sA` exactly when it is homogeneous of degree `2 - n` for the original grading.
 This is the degree content of the square defining the suspended operations `bₙ` of an `A∞`
-algebra from its operations `mₙ`. -/
+algebra from its operations `mₙ`. Reading off `n = 1, 2, 3` gives the familiar degrees `1`, `0` and
+`-1` of the differential, the multiplication and the first higher product of an `A∞` algebra. -/
 theorem isHomogeneous_suspension_iff {f : MultilinearMap (RingHom.id R) (fun _ : κ ↦ M) M} {𝒜 : ℤ →
     σM} :
     IsHomogeneous f (fun _ ↦ Graded.shift 𝒜 1) (Graded.shift 𝒜 1) 1 ↔
       IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - Fintype.card κ) := by
   rw [isHomogeneous_shift_const_iff]
   norm_num
-
-/-- The suspension degree bridge for an operation of arity `n`. Reading off `n = 1, 2, 3` gives
-the familiar degrees `1`, `0` and `-1` of the differential, the multiplication and the first
-higher product of an `A∞` algebra. -/
-theorem isHomogeneous_suspension_fin_iff {n : ℕ} {f : MultilinearMap (RingHom.id R) (fun _ : Fin n
-    ↦ M) M}
-    {𝒜 : ℤ → σM} :
-    IsHomogeneous f (fun _ ↦ Graded.shift 𝒜 1) (Graded.shift 𝒜 1) 1 ↔
-      IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - n) := by
-  simp
 
 end Suspension
 
@@ -425,7 +415,7 @@ theorem isHomogeneous_suspend_iff {k : ℕ} {𝒜 : ℤ → σ} {d : ℕ → ℤ
     {f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) M} :
     IsHomogeneous (suspend d f) (fun _ ↦ Graded.shift 𝒜 1) (Graded.shift 𝒜 1) 1 ↔
       IsHomogeneous f (fun _ ↦ 𝒜) 𝒜 (2 - k) := by
-  rw [isHomogeneous_suspension_fin_iff]
+  rw [isHomogeneous_suspension_iff, Fintype.card_fin]
   constructor
   · intro hf
     rw [← suspend_suspend d f]
