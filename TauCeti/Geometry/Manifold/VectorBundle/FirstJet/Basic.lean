@@ -56,7 +56,10 @@ change of charts.
 * `TauCeti.FirstJetBundle.jet_snd_eq_mfderiv` and `TauCeti.FirstJetBundle.jet_snd_eq_mvfderiv`:
   the derivative coordinate of `j¹s(x)` is the manifold derivative of `s` read in the
   trivialization at `x`. For a section `σ` of a trivial bundle it is `mvfderiv I σ x`
-  (`TauCeti.FirstJetBundle.jet_trivial_snd_eq_mvfderiv`).
+  (`TauCeti.FirstJetBundle.jet_trivial_snd_eq_mvfderiv`), so the first jet is
+  `(σ x, mvfderiv I σ x)` (`TauCeti.FirstJetBundle.jet_trivial`); there the value of a jet is its
+  value coordinate (`TauCeti.FirstJetBundle.value_trivial`) and the jet of `L` is `(0, L)`
+  (`TauCeti.FirstJetBundle.ofDeriv_trivial`).
 * `TauCeti.FirstJetBundle.exists_contMDiffAt_jet_eq`: every first jet is the first jet of a
   section that is `C^n` at the base point.
 
@@ -380,6 +383,59 @@ section in the preferred chart of `M` and the preferred trivialization of `V` at
 abbrev FirstJetBundle : M → Type _ :=
   (firstJetBundleCore I F V).Fiber
 
+namespace FirstJetBundle
+
+variable {I F V} {x : M}
+
+/-! The fibre `FirstJetBundle I F V x` is a type synonym for `F × (E →L[𝕜] F)`, so the `Prod`
+coordinate lemmas do not fire on its algebraic operations; these restate them. -/
+
+/-- The value coordinate of the zero jet is zero. -/
+@[simp]
+theorem fst_zero : (0 : FirstJetBundle I F V x).1 = 0 := (rfl)
+
+/-- The derivative coordinate of the zero jet is zero. -/
+@[simp]
+theorem snd_zero : (0 : FirstJetBundle I F V x).2 = 0 := (rfl)
+
+/-- The value coordinate of a sum of jets is the sum of the value coordinates. -/
+@[simp]
+theorem fst_add (j k : FirstJetBundle I F V x) : (j + k).1 = j.1 + k.1 := (rfl)
+
+/-- The derivative coordinate of a sum of jets is the sum of the derivative coordinates. -/
+@[simp]
+theorem snd_add (j k : FirstJetBundle I F V x) : (j + k).2 = j.2 + k.2 := (rfl)
+
+/-- The value coordinate of the negative of a jet is the negative of its value coordinate. -/
+@[simp]
+theorem fst_neg (j : FirstJetBundle I F V x) : (-j).1 = -j.1 := (rfl)
+
+/-- The derivative coordinate of the negative of a jet is the negative of its derivative
+coordinate. -/
+@[simp]
+theorem snd_neg (j : FirstJetBundle I F V x) : (-j).2 = -j.2 := (rfl)
+
+/-- The value coordinate of a difference of jets is the difference of the value coordinates. -/
+@[simp]
+theorem fst_sub (j k : FirstJetBundle I F V x) : (j - k).1 = j.1 - k.1 := (rfl)
+
+/-- The derivative coordinate of a difference of jets is the difference of the derivative
+coordinates. -/
+@[simp]
+theorem snd_sub (j k : FirstJetBundle I F V x) : (j - k).2 = j.2 - k.2 := (rfl)
+
+/-- The value coordinate of a scalar multiple of a jet is the scalar multiple of its value
+coordinate. -/
+@[simp]
+theorem smul_fst (c : 𝕜) (j : FirstJetBundle I F V x) : (c • j).1 = c • j.1 := (rfl)
+
+/-- The derivative coordinate of a scalar multiple of a jet is the scalar multiple of its
+derivative coordinate. -/
+@[simp]
+theorem smul_snd (c : 𝕜) (j : FirstJetBundle I F V x) : (c • j).2 = c • j.2 := (rfl)
+
+end FirstJetBundle
+
 end
 
 /-- The vector bundle core of the first-jet bundle of a `C^(n+1)` vector bundle over a `C^(n+1)`
@@ -629,9 +685,7 @@ theorem value_surjective (x : M) : Function.Surjective (value I F (V := V) x) :=
   ⟨((trivializationAt F V x ⟨x, v⟩).2, 0), (value_apply I F x _).trans
     (Trivialization.symm_apply_apply_mk _ (mem_baseSet_trivializationAt F V x) v)⟩
 
-/-- **Every first jet is the first jet of a `C^n` section.** In the chart and trivialization at
-`x`, the first jet `(w, A)` is realized by the section with coordinates
-`y ↦ w + A (φ y - φ x)`, where `φ` is the extended chart at `x`. -/
+/-- **Every first jet is the first jet of a section that is `C^n` at the base point.** -/
 theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (j : FirstJetBundle I F V x) :
     ∃ s : ∀ y, V y, ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (s y)) x ∧
       jet I F s x = j := by
@@ -864,12 +918,34 @@ theorem jet_trivial_snd_eq_mvfderiv (σ : M → F) (x : M) :
   -- What remains is `mvfderiv I (fun y ↦ σ y) x = mvfderiv I σ x`, an eta-expansion.
   rfl
 
+/-- For a trivial bundle, the first jet of a section is its value and its vector-valued manifold
+derivative. -/
+theorem jet_trivial (σ : M → F) (x : M) :
+    jet I F (σ : ∀ y, Bundle.Trivial M F y) x =
+      ((σ x, mvfderiv I σ x) : FirstJetBundle I F (Bundle.Trivial M F) x) :=
+  Prod.ext (by simp) (jet_trivial_snd_eq_mvfderiv I F σ x)
+
 /-- The first jet of a constant section of a trivial bundle has value coordinate the constant
 and derivative coordinate zero. -/
 theorem jet_trivial_const (v : F) (x : M) :
     jet I F (fun _ ↦ v : ∀ y, Bundle.Trivial M F y) x =
       ((v, 0) : FirstJetBundle I F (Bundle.Trivial M F) x) :=
   Prod.ext (by simp) ((jet_trivial_snd_eq_mvfderiv I F _ x).trans (mvfderiv_const v))
+
+/-- For a trivial bundle, the value of a first jet is its value coordinate. -/
+theorem value_trivial (x : M) (j : FirstJetBundle I F (Bundle.Trivial M F) x) :
+    value I F x j = j.1 := by
+  rw [value_apply]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_symm_apply]
+
+/-- For a trivial bundle, the jet of a homomorphism `L` has value coordinate zero and derivative
+coordinate `L`. -/
+theorem ofDeriv_trivial (x : M) (L : TangentSpace I x →L[𝕜] Bundle.Trivial M F x) :
+    ofDeriv I F x L = ((0, L) : FirstJetBundle I F (Bundle.Trivial M F) x) := by
+  refine Prod.ext (ofDeriv_fst I F x L) (ContinuousLinearMap.ext fun v ↦ ?_)
+  -- The trivialization of a trivial bundle reads a vector as itself.
+  exact (trivializationAt F (Bundle.Trivial M F) x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+    (mem_univ x) (L v)
 
 end
 

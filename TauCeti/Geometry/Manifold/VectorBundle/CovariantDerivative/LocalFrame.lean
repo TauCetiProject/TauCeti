@@ -298,9 +298,8 @@ theorem frameCovariantDerivative_symmL_const (hx : x ∈ e.baseSet) (v : F) :
   simp only [hconst, zero_apply, zero_smul, Finset.sum_const_zero]
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] in
-/-- The section `z ↦ e.symm z v` has constant coefficients in the frame of `e` near a point of
-the base set, so its flat frame derivative vanishes there; off the base set the frame itself
-vanishes. -/
+/-- The flat frame derivative of the section `z ↦ e.symm z v` with constant coordinates `v`
+vanishes at every point. -/
 @[simp]
 theorem frameCovariantDerivative_symm_const (v : F) :
     frameCovariantDerivative I b e (fun z ↦ e.symm z v) x = 0 := by
