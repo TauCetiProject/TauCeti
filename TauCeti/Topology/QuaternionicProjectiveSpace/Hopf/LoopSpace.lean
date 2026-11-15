@@ -60,6 +60,8 @@ the integral homology of `ΩHPⁿ` to that of `S³ × ΩS⁴ⁿ⁺³`.
 
 ## Main results
 
+* `TauCeti.QuaternionicProjectiveSpace.hopfProduct_comp_prodMk_const_one`: on `{1} × ΩS⁴ⁿ⁺³`
+  the based Hopf product is the looped Hopf map `Ωq`.
 * `TauCeti.QuaternionicProjectiveSpace.map_hopfProduct_prod`:
   `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b`.
 * `TauCeti.QuaternionicProjectiveSpace.hopfLoopBoundaryHom_eq_one_iff`,
@@ -109,6 +111,17 @@ theorem hopfProduct_apply
     (p : sphere (0 : ℍ) 1 × MooreLoopSpace (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) v) :
     hopfProduct v j p = j p.1 * MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ rfl p.2 :=
   (rfl)
+
+/-- The based Hopf product `j ⋆ Ωq`, restricted to `{1} × ΩS⁴ⁿ⁺³`, is the looped Hopf map `Ωq`
+when `j 1` is the unit. -/
+theorem hopfProduct_comp_prodMk_const_one
+    {j : C(sphere (0 : ℍ) 1, MooreLoopSpace (QuaternionicProjectiveSpace n) (mk n v))}
+    (hj : j 1 = 1) :
+    (hopfProduct v j).comp ((ContinuousMap.const _ (1 : sphere (0 : ℍ) 1)).prodMk
+        (ContinuousMap.id _)) =
+      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap := by
+  ext1 γ
+  simp [hj]
 
 /-- The based Hopf product acts on homotopy groups by `(j ⋆ Ωq)_* (a × b) = j_* a * (Ωq)_* b`. -/
 @[simp]

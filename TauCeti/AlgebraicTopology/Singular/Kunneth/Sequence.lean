@@ -12,6 +12,7 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import TauCeti.CategoryTheory.GradedObject
 import TauCeti.CategoryTheory.Monoidal.Tor
@@ -80,6 +81,8 @@ without the splitting the extension would only show that `e²` kills it.
 * `TopCat.singularHomologyKunnethShortComplex` and
   `TopCat.singularHomologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
 * `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
+* `TopCat.isIso_singularHomologyKunneth_of_flat`: it is an isomorphism in positive degrees when
+  the homology of the first factor is flat.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
   hereditary commutative ring.
@@ -247,6 +250,19 @@ theorem singularHomologyKunnethShortComplex_shortExact (m : ℕ) :
     (singularHomologyKunnethShortComplex X Y M N m).ShortExact :=
   ShortComplex.shortExact_of_iso (homologyKunnethShortComplexIso X Y M N m)
     (homologyKunnethShortComplex_shortExact _ _ m)
+
+/-- **The Künneth theorem when one factor has flat homology.** If the cycles `Z_q(Y; N)` and the
+quotients `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a
+principal ideal domain, and every homology module `Hₚ(X; M)` is flat, then the Künneth map
+`⨁_{p + q = m + 1} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₘ₊₁(X × Y; M ⊗ N)` is an isomorphism: every `Tor₁`
+summand of the Künneth sequence vanishes. No hypothesis is placed on the homology of `Y`. -/
+theorem isIso_singularHomologyKunneth_of_flat
+    [∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)] (m : ℕ) :
+    IsIso (singularHomologyKunneth X Y M N (m + 1)) := by
+  refine (singularHomologyKunnethShortComplex_shortExact X Y M N m).isIso_f_iff.2 ?_
+  rw [IsZero.iff_id_eq_zero]
+  exact GradedObject.mapBifunctorMapObj_ext (h := fun p q _ ↦
+    (ModuleCat.isZero_Tor_succ_of_flat _ _ 0).eq_of_src _ _)
 
 /-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal
