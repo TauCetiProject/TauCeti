@@ -127,11 +127,16 @@ private theorem g2Root_add_two_smul_ne_root_of_short_add_short_eq_long (i j k l 
 their root string is two.  Consequently the associated Chevalley bracket coefficient is `±3`
 (the sign depending on the choice of Chevalley basis), and vanishes in characteristic three. -/
 theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 3)
+    (hj : g2Length j = 1) (hk : g2Length k = 3)
     (hadd : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i) :
       g2SimplyConnectedRootDatum.chainBotCoeff i j = 2 := by
   let P := g2SimplyConnectedRootDatum
+  have hi : g2Length i = 1 := by
+    rcases g2Length_eq_one_or_eq_three i with h | h
+    · exact h
+    · have := g2Length_eq_one_of_long_add_short_eq_root i j k h hj (hadd.trans (add_comm _ _))
+      omega
   have hadd_mem : P.root i + P.root j ∈ range P.root := by
     refine ⟨k, ?_⟩
     rw [hadd, add_comm]
@@ -214,17 +219,15 @@ theorem g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long
 /-- If a short root plus a long root is a root, subtracting the short root from the long
 one is not a root. Thus the short-root string through the long root starts at that root. -/
 theorem g2_root_sub_notMem_range_of_short_add_long_eq_root (i j k : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hj : g2Length j = 3)
     (hk : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i) :
     g2SimplyConnectedRootDatum.root j - g2SimplyConnectedRootDatum.root i ∉
       Set.range g2SimplyConnectedRootDatum.root := by
-  have hadd : g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j ∈
-      range g2SimplyConnectedRootDatum.root := ⟨k, hk.trans (add_comm _ _)⟩
-  have hbot :=
-    (g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long i j hi hj hadd).1
-  exact (g2SimplyConnectedRootDatum.chainBotCoeff_eq_zero_iff.mp hbot).resolve_left
-    (not_not.mpr (g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root' hadd))
+  simp only [Set.mem_range, g2SimplyConnectedRootDatum_root, g2Root_apply] at hk ⊢
+  rw [g2Length_apply] at hj
+  revert i j k
+  decide +kernel
 
 /-- A root equal to twice a short root plus a long root of `G₂` is short. -/
 theorem g2Length_eq_one_of_two_smul_short_add_long_eq_root (i j k : Fin 12)
@@ -239,46 +242,34 @@ theorem g2Length_eq_one_of_two_smul_short_add_long_eq_root (i j k : Fin 12)
 
 /-- A root equal to three times a short root plus twice a long root of `G₂` is long. -/
 theorem g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root (i j k : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hj : g2Length j = 3)
     (hk : g2SimplyConnectedRootDatum.root k =
       3 • g2SimplyConnectedRootDatum.root i + 2 • g2SimplyConnectedRootDatum.root j) :
     g2Length k = 3 := by
   simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hk
-  rw [g2Length_apply] at hi hj ⊢
+  rw [g2Length_apply] at hj ⊢
   revert i j k
   decide +kernel
 
 /-- The seven sums that give vanishing brackets in the short–long `G₂` configuration
 are neither roots nor zero. -/
 theorem g2_smul_short_add_smul_long_notMem_range_root_and_ne_zero (i j : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
-    (hadd : g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j ∈
-      Set.range g2SimplyConnectedRootDatum.root) (a b : ℕ)
+    (hi : g2Length i = 1) (hj : g2Length j = 3) (a b : ℕ)
     (hab : (a, b) ∈ ({(4, 1), (4, 2), (1, 2), (5, 2), (4, 3), (5, 3), (6, 3)} :
       Finset (ℕ × ℕ))) :
     a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j ∉
         Set.range g2SimplyConnectedRootDatum.root ∧
       a • g2SimplyConnectedRootDatum.root i + b • g2SimplyConnectedRootDatum.root j ≠ 0 := by
-  have hpair : g2SimplyConnectedRootDatum.pairing j i = -3 := by
-    obtain ⟨k, hk⟩ := hadd
-    simp only [g2SimplyConnectedRootDatum_root, g2SimplyConnectedRootDatum_pairing,
-      g2Root_apply, g2Coroot_apply] at hk ⊢
-    rw [g2Length_apply] at hi hj
-    revert i j k
-    decide +kernel
-  clear hadd
   simp only [Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq] at hab
   rcases hab with h | h | h | h | h | h | h <;> rcases h with ⟨rfl, rfl⟩ <;>
     simp only [Set.mem_range, not_exists, g2SimplyConnectedRootDatum_root,
       g2Root_apply] <;>
-    simp only [g2SimplyConnectedRootDatum_pairing, g2Root_apply, g2Coroot_apply] at hpair <;>
     rw [g2Length_apply] at hi hj <;> revert i j <;> decide +kernel
 
 /-- The bottom root-string coefficients for `α, β`, `α, α+β`, `α, 2α+β` and
 `2α+β, α+β` are respectively `0`, `1`, `2` and `2`, when `α` is short, `β` is long
 and their sum is a root. -/
 theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
-    (hi : g2Length i = 1) (hj : g2Length j = 3)
     (hk : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j)
     (hl : g2SimplyConnectedRootDatum.root l =
@@ -290,6 +281,12 @@ theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
       g2SimplyConnectedRootDatum.chainBotCoeff i l = 2 ∧
       g2SimplyConnectedRootDatum.chainBotCoeff l k = 2 := by
   let P := g2SimplyConnectedRootDatum
+  obtain ⟨hi, hj⟩ : g2Length i = 1 ∧ g2Length j = 3 := by
+    simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hk hl ho
+    simp only [g2Length_apply]
+    clear * - hk hl ho
+    revert i j k l o
+    decide +kernel
   have hroot : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
   have hlin := P.linearIndependent_of_add_mem_range_root' hroot
   have hbot : P.chainBotCoeff i j = 0 :=
@@ -301,12 +298,10 @@ theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
     rw [P.chainBotCoeff_of_add hlin' (hl.trans (add_comm _ _)), hbotk]
   have hklen := g2Length_eq_one_of_long_add_short_eq_root j i k hj hi
     (hk.trans (add_comm _ _))
-  have hllen := g2Length_eq_one_of_two_smul_short_add_long_eq_root i j l hi hj
-    (by rw [hl, hk]; module)
-  have holen := g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root i j o hi hj
+  have holen := g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root i j o hj
     (by rw [ho, hl, hk]; module)
   have hbotlk : P.chainBotCoeff l k = 2 :=
-    g2_chainBotCoeff_eq_two_of_short_add_short_eq_long l k o hllen hklen holen
+    g2_chainBotCoeff_eq_two_of_short_add_short_eq_long l k o hklen holen
       (ho.trans (add_comm _ _))
   exact ⟨hbot, hbotk, hbotl, hbotlk⟩
 

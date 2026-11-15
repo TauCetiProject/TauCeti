@@ -249,12 +249,12 @@ private theorem sum_degenerate_le (A B : Finset V) :
   have hI' (a : V) (s : Finset V) : ∑ b ∈ s, (if b = a then (1 : ℝ) else 0) ≤ 1 := by
     rw [sum_ite_eq']
     split_ifs <;> norm_num
-  have h₁ : ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
+  have h₁ : ∑ _ ∈ B, ∑ _ ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
       #B * #B * #A := by
     calc _ ≤ ∑ _y ∈ B, ∑ _y' ∈ B, ∑ _x ∈ A, (1 : ℝ) :=
           sum_le_sum fun _ _ ↦ sum_le_sum fun _ _ ↦ sum_le_sum fun x _ ↦ hI x A
       _ = _ := by simp only [sum_const, nsmul_eq_mul, mul_one, mul_assoc]
-  have h₂ : ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if y = y' then (1 : ℝ) else 0) ≤
+  have h₂ : ∑ y ∈ B, ∑ y' ∈ B, ∑ _ ∈ A, ∑ _ ∈ A, (if y = y' then (1 : ℝ) else 0) ≤
       #B * (#A * #A) := by
     calc _ = ∑ y ∈ B, ∑ y' ∈ B, (#A : ℝ) * (#A * if y = y' then 1 else 0) := by
           simp only [sum_const, nsmul_eq_mul]
@@ -386,7 +386,6 @@ theorem exists_split_abs_card_sub_le [Fintype κ] (𝒜 : Finset (Finset V)) {N 
     have hκ : (1 : ℝ) ≤ Fintype.card κ := by
       have : Nonempty κ := ⟨c⟩
       exact_mod_cast Fintype.card_pos
-    have hι : (1 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
     simp only [Nat.cast_zero, mul_zero]
     positivity
   obtain ⟨f, hf⟩ := exists_forall_splitBox_le (ι := ι) S 𝒜 hN₀ hN

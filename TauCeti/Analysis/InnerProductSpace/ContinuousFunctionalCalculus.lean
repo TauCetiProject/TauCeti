@@ -115,8 +115,9 @@ theorem spectrum_complexifyL2 {T : X →L[ℝ] X} (hT : IsSelfAdjoint T) :
       WithLp 2 (TauCeti.Complexification X)) :=
     StarModule.complexToReal (E := WithLp 2 (TauCeti.Complexification X) →L[ℂ]
       WithLp 2 (TauCeti.Complexification X))
-  simpa using (complexifyL2StarAlgHom X).spectrum_apply_eq_of_isClosedEmbedding
-    (isClosedEmbedding_complexifyL2StarAlgHom X) (q := IsSelfAdjoint) (by simpa using hT)
+  have hφ := isClosedEmbedding_complexifyL2StarAlgHom X
+  simpa using (complexifyL2StarAlgHom X).spectrum_apply_eq_of_injective_of_isClosed_range
+    hφ.injective hφ.isClosed_range (q := IsSelfAdjoint) (by simpa using hT)
 
 /-- Complexification commutes with the continuous functional calculus: for a bounded
 operator `T` on a real Hilbert space, `(f(T))_ℂ = f(T_ℂ)`. -/
@@ -317,7 +318,7 @@ theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
   -- isometric calculus on complex operators, whereas the real calculus is only bundled
   -- as a continuous calculus.
   have hself := (nonneg_iff_isPositive.mp hP₀).isSelfAdjoint
-  have hcont : ContinuousOn (fun r : ℝ ↦ r ^ s) (spectrum ℝ P) :=
+  have _ : ContinuousOn (fun r : ℝ ↦ r ^ s) (spectrum ℝ P) :=
     continuousOn_id.rpow_const fun r hr ↦ Or.inl
       (ne_of_gt (zero_lt_one.trans_le ((CFC.one_le_iff (R := ℝ) P).mp hP r hr)))
   rw [← norm_complexifyL2, complexifyL2_cfc (fun r : ℝ ↦ r ^ s) P]

@@ -134,7 +134,7 @@ theorem forall_weightedG2_single_vecMul_apply_eq_iff (g : GL (Fin 2) (ZMod N)) (
         ext i j
         fin_cases i <;> fin_cases j <;>
           simp only [Units.val_neg, Units.val_one, Matrix.neg_apply, Matrix.one_apply] <;> grind
-  · rintro (rfl | rfl) a ha
+  · rintro (rfl | rfl) a _
     · simp
     · simp [Matrix.vecMul_neg]
 

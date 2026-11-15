@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.CauchyKernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Integral.SchurTest
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
@@ -17,7 +18,8 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 The normalization `TauCeti.cauchyTransform f w = π⁻¹ ∫ z, (w - z)⁻¹ • f z` corresponds to
 `bar∂ = (∂ₛ + i ∂ₜ) / 2`. For input supported in the closed disc of radius `r` about `c`, the
 transform belongs to `Lᵖ` on the output disc of radius `R`, for every `1 ≤ p ≤ ∞`.
-The operator `TauCeti.cauchyTransformLp` has norm at most `2 * (r + R)`.
+The operator `TauCeti.cauchyTransformLp` has norm at most `2 * (r + R)`. Consequently the
+transform of compactly supported `Lᵖ` data is locally `Lᵖ` (`TauCeti.memLpLoc_cauchyTransform`).
 
 The proof applies the existing operator-valued Schur test. Integrating the reciprocal kernel over
 the input or output disc gives the common bound `2π(r + R)` before normalization. The result
@@ -90,7 +92,7 @@ private theorem lintegral_cauchyKernelL_le {c w : ℂ} (r R : ℝ≥0)
     (hw : w ∈ closedBall c (R : ℝ)) :
     ∫⁻ z, ‖cauchyKernelL (F := F) w z‖ₑ ∂(volume.restrict (closedBall c r)) ≤
       (2 * (r + R) : ℝ≥0) := by
-  rw [← ofReal_integral_norm_eq_lintegral_enorm (integrableOn_cauchyKernelL c w r),
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm (integrableOn_cauchyKernelL c w r),
     ← ENNReal.ofReal_coe_nnreal]
   apply ENNReal.ofReal_le_ofReal
   have hi := (Complex.locallyIntegrable_sub_inv w).integrableOn_isCompact
@@ -172,6 +174,19 @@ theorem memLp_cauchyTransform {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} {p : ℝ
     (cauchyKernelL_row c r R) (cauchyKernelL_column c r R)
   rw [cauchyTransform_eq_kernel_integral hs]
   exact h
+
+/-- The Cauchy transform of compactly supported `Lᵖ` data, `1 ≤ p ≤ ∞`, is locally `Lᵖ` on every
+subset of the plane. -/
+theorem memLpLoc_cauchyTransform {p : ℝ≥0∞} (hp : 1 ≤ p) {h : ℂ → F} (hh : MemLp h p)
+    (hc : HasCompactSupport h) {U : Set ℂ} : MemLpLoc p U (cauchyTransform h) := by
+  have hball (s : Set ℂ) (hs : Bornology.IsBounded s) : ∃ R : ℝ≥0, s ⊆ closedBall 0 R := by
+    obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall 0).1 hs
+    exact ⟨R.toNNReal, hR.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal R))⟩
+  obtain ⟨r, hr⟩ := hball _ hc.isCompact.isBounded
+  refine memLpLoc_iff.2 fun K _ hK ↦ ?_
+  obtain ⟨R, hR⟩ := hball K hK.isBounded
+  exact (memLp_cauchyTransform (R := R) hp (hh.restrict _)
+    ((subset_tsupport h).trans hr)).mono_measure (Measure.restrict_mono hR le_rfl)
 
 /-- The fixed-support function bound, with input and output radii explicit. It controls only the
 output disc, and includes every exponent from one through infinity. -/

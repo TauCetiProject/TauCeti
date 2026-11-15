@@ -77,8 +77,8 @@ theorem strictConvexSpace [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ∞) :
     simpa using ENNReal.toReal_strict_mono hp_top hp
   -- The integral of the `q`-th power of the pointwise norm is the `q`-th power of the norm.
   have hint (h : Lp E p μ) : ∫⁻ x, ‖h x‖ₑ ^ p.toReal ∂μ = ‖h‖ₑ ^ p.toReal := by
-    rw [Lp.enorm_def, eLpNorm_eq_eLpNorm' hp0 hp_top (Lp.aestronglyMeasurable h),
-      lintegral_rpow_enorm_eq_rpow_eLpNorm' (zero_lt_one.trans hq)]
+    rw [Lp.eNorm_def, eLpNorm_eq_eLpNorm' hp0 hp_top (Lp.aestronglyMeasurable h),
+      lintegral_rpow_eNorm_eq_rpow_eLpNorm' (zero_lt_one.trans hq)]
   have hone {h : Lp E p μ} (hh : ‖h‖ = 1) : ‖h‖ₑ = 1 := by
     rw [← ofReal_norm, hh, ENNReal.ofReal_one]
   have hmid : ‖(2⁻¹ : ℝ) • (f + g)‖ = 1 := by
@@ -93,7 +93,7 @@ theorem strictConvexSpace [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ∞) :
       simp only [F, hs, Pi.smul_apply, ha, Pi.add_apply]
     rw [← lintegral_congr_ae hcoe, hint, hone hmid, ENNReal.one_rpow]
   have hmeas (h : Lp E p μ) : AEMeasurable (fun x ↦ ‖h x‖ₑ ^ p.toReal) μ :=
-    (Lp.aestronglyMeasurable h).enorm.pow_const _
+    (Lp.aestronglyMeasurable h).eNorm.pow_const _
   have hG : ∫⁻ x, G x ∂μ = 1 := by
     rw [lintegral_add_left' ((hmeas f).const_mul _), lintegral_const_mul'' _ (hmeas f),
       lintegral_const_mul'' _ (hmeas g), hint, hint, hone hf, hone hg, ENNReal.one_rpow,

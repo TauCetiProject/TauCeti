@@ -32,11 +32,14 @@ Saturated chains are Mathlib's `RelSeries {(a, b) : α × α | a ⋖ b}`, the ta
 * `TauCeti.Order.IsCatenary.of_forall_exists_ordConnected`: a preorder is catenary as soon as any
   two comparable elements lie in a common catenary order-connected subset.
 * An order of Krull dimension at most one is catenary.
-* `TauCeti.Order.IsCatenary.krullDim_Icc_eq_length`: in a catenary partial order every saturated
-  chain from `a` to `b` has length the Krull dimension of the interval `[a, b]`.
+* `TauCeti.Order.IsCatenary.exists_covBy_series_of_lt`: in a catenary preorder any `a < b` are
+  joined by a saturated chain; `TauCeti.Order.IsCatenary.exists_covBy_series` is the form for
+  `a ≤ b` in a catenary partial order.
+* `TauCeti.Order.IsCatenary.krullDim_Icc_eq_length`: in a catenary preorder every saturated chain
+  from `a` to `b` has length the Krull dimension of the interval `[a, b]`.
 * `TauCeti.Order.krullDim_Icc_eq_length_of_add`: the same conclusion in any preorder where Krull
   dimension is additive on intervals.
-* `TauCeti.Order.isCatenary_iff_krullDim_Icc_add`: a partial order is catenary if and only if its
+* `TauCeti.Order.isCatenary_iff_krullDim_Icc_add`: a preorder is catenary if and only if its
   intervals have finite Krull dimension and Krull dimension is additive on intervals,
   `dim [a, c] = dim [a, b] + dim [b, c]` for `a ≤ b ≤ c`. This is the form in which catenarity is
   usually verified, for instance through a dimension formula.
@@ -160,6 +163,21 @@ instance of_krullDimLE_one [Order.KrullDimLE 1 α] : IsCatenary α :=
 
 end TauCeti.Order.IsCatenary
 
+namespace TauCeti.Order
+
+variable {α : Type*} [Preorder α] {a b : α}
+
+open _root_.Order in
+/-- An interval `[a, b]` between equivalent elements `a ≤ b ≤ a` has Krull dimension zero: it is
+nonempty and all its elements are equivalent. -/
+theorem krullDim_Icc_eq_zero_of_le_of_le (hab : a ≤ b) (hba : b ≤ a) :
+    krullDim (Set.Icc a b) = 0 :=
+  have : Nonempty (Set.Icc a b) := ⟨⟨a, le_rfl, hab⟩⟩
+  le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans (hba.trans x.2.1))
+    krullDim_nonneg
+
+end TauCeti.Order
+
 namespace CovBy
 
 variable {α : Type*} [Preorder α] {a b : α}
@@ -181,20 +199,19 @@ namespace TauCeti.Order.IsCatenary
 
 open _root_.Order
 
-variable {α : Type*} [PartialOrder α] [IsCatenary α]
+section Preorder
 
-/-- In a catenary partial order, a strict chain of greatest length between two comparable
-elements is saturated. -/
-private theorem exists_covBy_series_forall_length_le {a b : α} (hab : a ≤ b) :
+variable {α : Type*} [Preorder α] [IsCatenary α]
+
+/-- In a catenary preorder, a strict chain of greatest length between the endpoints of a given
+strict chain `t₀` is saturated. -/
+private theorem exists_covBy_series_forall_length_le {a b : α} (t₀ : LTSeries α)
+    (ht₀a : t₀.head = a) (ht₀b : t₀.last = b) :
     ∃ s : RelSeries {(x, y) : α × α | x ⋖ y}, s.head = a ∧ s.last = b ∧
       ∀ t : LTSeries α, t.head = a → t.last = b → t.length ≤ s.length := by
   classical
   obtain ⟨N, hN⟩ := exists_length_le a b
   let P (n : ℕ) : Prop := ∃ t : LTSeries α, t.head = a ∧ t.last = b ∧ t.length = n
-  obtain ⟨t₀, ht₀a, ht₀b⟩ : ∃ t : LTSeries α, t.head = a ∧ t.last = b := by
-    rcases hab.eq_or_lt with rfl | h
-    · exact ⟨RelSeries.singleton _ a, rfl, rfl⟩
-    · exact ⟨(RelSeries.singleton _ a).snoc b (by simpa using h), by simp, by simp⟩
   -- A strict chain from `a` to `b` of the greatest possible length.
   obtain ⟨t, hta, htb, htm⟩ : P (Nat.findGreatest P N) :=
     Nat.findGreatest_spec (hN t₀ ht₀a ht₀b) ⟨t₀, ht₀a, ht₀b, rfl⟩
@@ -209,33 +226,36 @@ private theorem exists_covBy_series_forall_length_le {a b : α} (hab : a ≤ b) 
   have := hmax u (by simp [u, hta]) (by simp [u, htb])
   simp [u] at this
 
-/-- In a catenary partial order, any two comparable elements are joined by a saturated chain. -/
-theorem exists_covBy_series {a b : α} (hab : a ≤ b) :
+/-- In a catenary preorder, any `a < b` are joined by a saturated chain. This is the preorder
+form of `exists_covBy_series`: if `a ≤ b`, `b ≤ a` and `a ≠ b`, then no saturated chain joins
+`a` to `b`. -/
+theorem exists_covBy_series_of_lt {a b : α} (hab : a < b) :
     ∃ s : RelSeries {(x, y) : α × α | x ⋖ y}, s.head = a ∧ s.last = b :=
-  let ⟨s, hsa, hsb, _⟩ := exists_covBy_series_forall_length_le hab
+  let ⟨s, hsa, hsb, _⟩ := exists_covBy_series_forall_length_le
+    ((RelSeries.singleton _ a).snoc b (by simpa using hab)) (by simp) (by simp)
   ⟨s, hsa, hsb⟩
 
-/-- In a catenary partial order, a saturated chain is at least as long as every strict chain
-lying between its endpoints. -/
+/-- In a catenary preorder, a saturated chain is at least as long as every strict chain lying
+between its endpoints. -/
 theorem length_le_of_covBy (s : RelSeries {(x, y) : α × α | x ⋖ y}) (t : LTSeries α)
     (hhead : s.head ≤ t.head) (hlast : t.last ≤ s.last) : t.length ≤ s.length := by
-  -- Extend `t` to a strict chain `u` from `s.head` to `s.last`.
-  obtain ⟨u, hua, hub, htu⟩ : ∃ u : LTSeries α, u.head = s.head ∧ u.last = s.last ∧
-      t.length ≤ u.length := by
-    obtain ⟨u, hu₁, hu₂, hu₃⟩ : ∃ u : LTSeries α, u.head = s.head ∧ u.last = t.last ∧
-        t.length ≤ u.length := by
-      rcases hhead.eq_or_lt with h | h
-      · exact ⟨t, h.symm, rfl, le_rfl⟩
-      · exact ⟨t.cons s.head h, by simp, by simp, by simp⟩
-    rcases hlast.eq_or_lt with h | h
-    · exact ⟨u, hu₁, hu₂.trans h, hu₃⟩
-    · exact ⟨u.snoc s.last (hu₂ ▸ h), by simp [hu₁], by simp, by simp; omega⟩
-  obtain ⟨s', hs'a, hs'b, hs'⟩ :=
-    exists_covBy_series_forall_length_le (hhead.trans (t.head_le_last.trans hlast))
-  exact htu.trans ((hs' u hua hub).trans (length_eq_of_covBy hs'a hs'b).le)
+  rcases Nat.eq_zero_or_pos t.length with ht | ht
+  · omega
+  -- Replace the endpoints of `t` by those of `s`, keeping the length: `s.head ≤ t 0 < t 1` and
+  -- `t (n - 1) < t n ≤ s.last`, where `n` is the length of `t`. As in `RelSeries.cons_self_tail`,
+  -- the first step `t.step ⟨0, ht⟩` relates `t.head` to `(t.tail _).head`.
+  let u₁ : LTSeries α := (t.tail ht.ne').cons s.head (hhead.trans_lt (t.step ⟨0, ht⟩))
+  let u : LTSeries α := u₁.eraseLast.snoc s.last
+    ((u₁.eraseLast_last_rel_last (by simp [u₁])).trans_le (by simpa [u₁] using hlast))
+  have hu : u.length = t.length := by simp [u, u₁]; omega
+  have hua : u.head = s.head := by simp [u, u₁]
+  have hub : u.last = s.last := by simp [u]
+  obtain ⟨s', hs'a, hs'b, hs'⟩ := exists_covBy_series_forall_length_le u hua hub
+  rw [← hu]
+  exact (hs' u hua hub).trans (length_eq_of_covBy hs'a hs'b).le
 
-/-- In a catenary partial order, the interval between the endpoints of a saturated chain has
-Krull dimension the length of the chain. -/
+/-- In a catenary preorder, the interval between the endpoints of a saturated chain has Krull
+dimension the length of the chain. -/
 theorem krullDim_Icc_eq_length (s : RelSeries {(x, y) : α × α | x ⋖ y}) :
     krullDim (Set.Icc s.head s.last) = s.length := by
   refine le_antisymm (iSup_le fun u => ?_) ?_
@@ -247,13 +267,22 @@ theorem krullDim_Icc_eq_length (s : RelSeries {(x, y) : α × α | x ⋖ y}) :
     exact LTSeries.length_le_krullDim
       ⟨t.length, fun i => ⟨t i, t.head_le i, t.monotone (Fin.le_last i)⟩, fun i => t.step i⟩
 
+end Preorder
+
+variable {α : Type*} [PartialOrder α] [IsCatenary α]
+
+/-- In a catenary partial order, any two comparable elements are joined by a saturated chain. -/
+theorem exists_covBy_series {a b : α} (hab : a ≤ b) :
+    ∃ s : RelSeries {(x, y) : α × α | x ⋖ y}, s.head = a ∧ s.last = b := by
+  rcases hab.eq_or_lt with rfl | h
+  · exact ⟨RelSeries.singleton _ a, rfl, rfl⟩
+  · exact exists_covBy_series_of_lt h
+
 end TauCeti.Order.IsCatenary
 
 namespace TauCeti.Order
 
 open _root_.Order IsCatenary
-
-section Preorder
 
 variable {α : Type*} [Preorder α]
 
@@ -267,9 +296,7 @@ theorem krullDim_Icc_eq_length_of_add
   induction hs : s.length generalizing s with
   | zero =>
     rw [show s.last = s.head from congrArg s (Fin.ext (by simp [hs])), Nat.cast_zero]
-    have : Nonempty (Set.Icc s.head s.head) := ⟨⟨s.head, le_rfl, le_rfl⟩⟩
-    exact le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.2.2.trans x.2.1)
-      krullDim_nonneg
+    exact krullDim_Icc_eq_zero_of_le_of_le le_rfl le_rfl
   | succ n ih =>
     have hpos : s.length ≠ 0 := by omega
     -- Split off the first covering pair `s.head ⋖ s 1` of `s`.
@@ -287,12 +314,8 @@ theorem krullDim_Icc_eq_length_of_add
     push_cast
     exact add_comm _ _
 
-end Preorder
-
-variable {α : Type*} [PartialOrder α]
-
-/-- A partial order is catenary if and only if every interval `[a, b]` has finite Krull dimension
-and Krull dimension is additive on intervals: `dim [a, c] = dim [a, b] + dim [b, c]` whenever
+/-- A preorder is catenary if and only if every interval `[a, b]` has finite Krull dimension and
+Krull dimension is additive on intervals: `dim [a, c] = dim [a, b] + dim [b, c]` whenever
 `a ≤ b ≤ c`. For the specialization order of a topological space this is the characterisation of
 catenary spaces by additivity of codimension (Stacks, Lemma 5.11.6 (02I6)). -/
 theorem isCatenary_iff_krullDim_Icc_add :
@@ -300,12 +323,22 @@ theorem isCatenary_iff_krullDim_Icc_add :
       ∀ a b c : α, a ≤ b → b ≤ c →
         krullDim (Set.Icc a c) = krullDim (Set.Icc a b) + krullDim (Set.Icc b c) := by
   refine ⟨fun _ => ⟨fun a b hab => ?_, fun a b c hab hbc => ?_⟩, fun ⟨hfin, hadd⟩ => ?_⟩
-  · obtain ⟨s, rfl, rfl⟩ := exists_covBy_series hab
+  · by_cases hba : b ≤ a
+    · exact (krullDim_Icc_eq_zero_of_le_of_le hab hba).trans_ne (by decide)
+    obtain ⟨s, rfl, rfl⟩ := exists_covBy_series_of_lt (hab.lt_of_not_ge hba)
     rw [krullDim_Icc_eq_length, ← WithBot.coe_top, ← WithBot.coe_natCast, Ne, WithBot.coe_inj]
     exact ENat.natCast_ne_top _
-  · -- Concatenate saturated chains from `a` to `b` and from `b` to `c`.
-    obtain ⟨s, rfl, rfl⟩ := exists_covBy_series hab
-    obtain ⟨t, hts, rfl⟩ := exists_covBy_series hbc
+  · -- If `b` is equivalent to `a` or to `c`, one interval has Krull dimension zero and the other
+    -- two coincide.
+    by_cases hba : b ≤ a
+    · rw [krullDim_Icc_eq_zero_of_le_of_le hab hba, zero_add,
+        (Set.Icc_subset_Icc_left hba).antisymm (Set.Icc_subset_Icc_left hab)]
+    by_cases hcb : c ≤ b
+    · rw [krullDim_Icc_eq_zero_of_le_of_le hbc hcb, add_zero,
+        (Set.Icc_subset_Icc_right hcb).antisymm (Set.Icc_subset_Icc_right hbc)]
+    -- Otherwise concatenate saturated chains from `a` to `b` and from `b` to `c`.
+    obtain ⟨s, rfl, rfl⟩ := exists_covBy_series_of_lt (hab.lt_of_not_ge hba)
+    obtain ⟨t, hts, rfl⟩ := exists_covBy_series_of_lt (hbc.lt_of_not_ge hcb)
     have hst := krullDim_Icc_eq_length (s.smash t hts.symm)
     have ht := krullDim_Icc_eq_length t
     rw [RelSeries.head_smash, RelSeries.last_smash] at hst

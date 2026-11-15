@@ -55,7 +55,6 @@ the canonical operation internal to integral lattices is the integer action defi
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1, form scaling and negation.
 -/
 
 public section

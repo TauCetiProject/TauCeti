@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
+import TauCeti.Geometry.Lie.RestrictScalars
 
 /-!
 # The analytic special linear group
@@ -37,6 +38,8 @@ Matrix-valued maps use the `L∞` operator norm. Enable `open scoped Matrix.Norm
 * `Matrix.SpecialLinearGroup.Model`: the model vector space.
 * `Matrix.SpecialLinearGroup.instChartedSpace`, `Matrix.SpecialLinearGroup.instIsManifold`,
   `Matrix.SpecialLinearGroup.instLieGroup`: the native analytic structures.
+* `Matrix.SpecialLinearGroup.instRealLieGroup`: the underlying real analytic Lie group
+  on the same charts.
 * `Matrix.SpecialLinearGroup.isSmoothEmbedding_subtypeVal`: the analytic matrix embedding.
 * `Matrix.SpecialLinearGroup.contMDiff_subtypeVal`, `Matrix.SpecialLinearGroup.contMDiff_toGL`:
   analytic inclusions into matrices and the general linear group.
@@ -157,6 +160,11 @@ instance instLieGroup : LieGroup 𝓘(𝕜, Model n 𝕜) ω (SpecialLinearGroup
       contMDiff_inv := (ContMDiff.iff_comp_isImmersion hi).2 ⟨continuous_inv, by
         simpa only [Function.comp_def, ← map_inv, SpecialLinearGroup.coe_GL_coe_matrix] using
           Units.contMDiff_val.comp (contMDiff_toGL (n := n) (𝕜 := 𝕜)).inv⟩ }
+
+/-- The native special linear group is a real analytic Lie group on its original atlas. -/
+instance (priority := 100) instRealLieGroup :
+    LieGroup 𝓘(ℝ, Model n 𝕜) ω (SpecialLinearGroup n 𝕜) :=
+  LieGroup.restrictScalars_self ℝ (𝕜 := 𝕜)
 
 /-- The tangent image at the identity consists exactly of the trace-zero matrices. -/
 theorem range_mvfderiv_subtypeVal_one :

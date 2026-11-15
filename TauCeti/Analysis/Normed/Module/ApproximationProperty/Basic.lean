@@ -138,7 +138,7 @@ theorem HasBoundedApproximationPropertyWith.of_tendsto {ι : Type*} {l : Filter 
 /-- Finite-dimensional normed spaces have the metric approximation property. -/
 theorem hasMetricApproximationProperty_of_finiteDimensional [FiniteDimensional 𝕜 E] :
     HasMetricApproximationProperty 𝕜 E := by
-  intro K hK ε hε
+  intro K _ ε hε
   exact ⟨ContinuousLinearMap.id 𝕜 E, .of_finite_dom, ContinuousLinearMap.norm_id_le,
     fun x _ => by simpa using hε⟩
 

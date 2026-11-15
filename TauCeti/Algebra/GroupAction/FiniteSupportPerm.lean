@@ -60,7 +60,7 @@ theorem eventually_eq_self_of_finite_compl_fixedBy {α : Type*} [Preorder α]
   rcases (MulAction.fixedBy α π)ᶜ.eq_empty_or_nonempty with hS | hS
   · obtain ⟨N⟩ := ‹Nonempty α›
     exact ⟨N, fun n _ => by_contra fun hn => hS.subset (by simpa using hn)⟩
-  · obtain ⟨M, hM, hmax⟩ := hπ.exists_maximal hS
+  · obtain ⟨M, _, hmax⟩ := hπ.exists_maximal hS
     obtain ⟨N, hMN⟩ := exists_gt M
     refine ⟨N, fun n hNn => by_contra fun hn => ?_⟩
     have hn' : n ∈ (MulAction.fixedBy α π)ᶜ := by simpa using hn

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 
 /-!
@@ -15,8 +14,10 @@ public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 For a two-sided ideal `I : TwoSidedIdeal A` of a possibly nonunital ring `A`, we equip `A ⧸ I` with
 its quotient nonunital ring structure, built on the additive subgroup quotient
 `A ⧸ I.toAddSubgroup` so that additive and metric quotient instances transfer definitionally. When
-`A` is unital, `A ⧸ I` agrees definitionally with `A ⧸ I.asIdeal` and inherits its ring and algebra
-instances without diamonds.
+`A` is unital, `A ⧸ I` agrees definitionally with `A ⧸ I.asIdeal` and inherits its ring instance
+without diamonds at instance transparency. The algebra instance is not diamond free there: its
+module structure is not defeq at instance transparency to the `ℕ`- and `ℤ`-module structures of the
+additive group quotient, nor to other module structures put on the quotient.
 
 ## Main definitions and results
 
@@ -179,7 +180,7 @@ theorem lift_surjective_of_surjective {I : TwoSidedIdeal A} [NonUnitalNonAssocSe
   obtain ⟨a, rfl⟩ := hsurj b
   exact ⟨mk I a, lift_mk I f hf a⟩
 
-theorem lift_injective_of_ker_le {I : TwoSidedIdeal A} [NonUnitalRing B]
+theorem lift_injective_of_ker_le {I : TwoSidedIdeal A} [NonUnitalNonAssocSemiring B]
     {f : A →ₙ+* B} (hf : ∀ a ∈ I, f a = 0) (hker : TwoSidedIdeal.ker f ≤ I) :
     Function.Injective (lift I f hf) := by
   rw [injective_iff_map_eq_zero]

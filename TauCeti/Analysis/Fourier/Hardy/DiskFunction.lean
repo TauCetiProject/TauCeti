@@ -305,14 +305,14 @@ theorem tendsto_eLpNorm_diskFunction_sub :
       (𝓝[<] 1) (𝓝 0) := by
   have hlim : Tendsto (fun r => ‖((x.radial r - x : HardySpace) :
       Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ₑ) (𝓝[<] (1 : ℝ)) (𝓝 0) := by
-    have h := ((continuous_enorm.comp continuous_subtype_val).tendsto 0).comp
+    have h := ((continuous_eNorm.comp continuous_subtype_val).tendsto 0).comp
       (tendsto_sub_nhds_zero_iff.mpr x.tendsto_radial)
     simpa [Function.comp_def] using h
   refine hlim.congr' ?_
   have hev : ∀ᶠ r in 𝓝[<] (1 : ℝ), |r| < 1 :=
     eventually_of_mem (Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)) fun r hr => abs_lt.mpr hr
   filter_upwards [hev] with r hr
-  rw [Lp.enorm_def]
+  rw [Lp.eNorm_def]
   refine eLpNorm_congr_ae ?_
   filter_upwards [Lp.coeFn_sub (x.radial r : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) x,
     x.coe_radial_ae_eq hr] with t ht hrad

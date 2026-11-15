@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Affine isometries
@@ -15,7 +18,12 @@ For a scalar `c` and an affine isometry `e : V ≃ᵃⁱ[𝕜] V₂` between nor
 isometry `TauCeti.dilateConj c e` has the linear part of `e` and translation part `c • e 0`. For
 `c ≠ 0` it is the conjugate `y ↦ c • e (c⁻¹ • y)` of `e` by the dilations by `c`.
 
-The derivative of an affine isometry equivalence has norm at most one.
+The derivative of an affine isometry equivalence has norm at most one. Composing a function with
+an affine isometry equivalence preserves the norms of its iterated derivatives: on the right in
+every order, and on the left in every positive order, since the translation part only shifts
+the values. These are the affine forms of Mathlib's
+`LinearIsometryEquiv.norm_iteratedFDeriv_comp_right` and
+`LinearIsometryEquiv.norm_iteratedFDeriv_comp_left`.
 
 ## Main declarations
 
@@ -24,6 +32,9 @@ The derivative of an affine isometry equivalence has norm at most one.
 * `TauCeti.dilateConj_symm_apply`: the inverse of `dilateConj c e`, written out pointwise.
 * `AffineIsometryEquiv.norm_fderiv_le`: the derivative of an affine isometry equivalence has norm
   at most one.
+* `AffineIsometryEquiv.norm_iteratedFDeriv_comp_left`,
+  `AffineIsometryEquiv.norm_iteratedFDeriv_comp_right`: composition with an affine isometry
+  equivalence preserves the norms of iterated derivatives.
 -/
 
 public section
@@ -37,6 +48,35 @@ theorem norm_fderiv_le {𝕜 W W₂ : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup W₂] [NormedSpace 𝕜 W₂]
     (e : W ≃ᵃⁱ[𝕜] W₂) (x : W) : ‖fderiv 𝕜 e x‖ ≤ 1 := by
   simpa using norm_fderiv_le_of_lipschitz 𝕜 e.lipschitzWith (x₀ := x)
+
+section IteratedFDeriv
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Postcomposition with an affine isometry equivalence preserves the norms of the iterated
+derivatives of positive order. In order zero the translation part changes the values. -/
+theorem norm_iteratedFDeriv_comp_left (g : F ≃ᵃⁱ[𝕜] G) (f : E → F) (x : E) {i : ℕ}
+    (hi : i ≠ 0) : ‖iteratedFDeriv 𝕜 i (g ∘ f) x‖ = ‖iteratedFDeriv 𝕜 i f x‖ := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hi
+  have hg : g ∘ f = fun y ↦ (g.linearIsometryEquiv ∘ f) y + g 0 := by
+    funext y
+    simpa using g.map_vadd 0 (f y)
+  rw [hg, TauCeti.iteratedFDeriv_succ_add_const,
+    LinearIsometryEquiv.norm_iteratedFDeriv_comp_left]
+
+/-- Precomposition with an affine isometry equivalence preserves the norms of the iterated
+derivatives. -/
+theorem norm_iteratedFDeriv_comp_right (g : E ≃ᵃⁱ[𝕜] F) (f : F → G) (x : E) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (f ∘ g) x‖ = ‖iteratedFDeriv 𝕜 i f (g x)‖ := by
+  have hg (y : E) : g y = g.linearIsometryEquiv y + g 0 := by simpa using g.map_vadd 0 y
+  have hfg : f ∘ g = (fun z ↦ f (z + g 0)) ∘ g.linearIsometryEquiv := by
+    funext y
+    simp [hg y]
+  rw [hfg, LinearIsometryEquiv.norm_iteratedFDeriv_comp_right, iteratedFDeriv_comp_add_right,
+    ← hg]
+
+end IteratedFDeriv
 
 end AffineIsometryEquiv
 

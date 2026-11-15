@@ -140,8 +140,8 @@ theorem HasUniformJetBoundsOn.comp {n : ℕ} {U : Set E} {V : Set F}
     (hmap : ∀ i, MapsTo (f i) U V) :
     HasUniformJetBoundsOn 𝕜 n U (fun i ↦ g i ∘ f i) := by
   intro m hm
-  obtain ⟨Af, hAf, hAf'⟩ := hf.bound_all hm
-  obtain ⟨Ag, hAg, hAg'⟩ := hg.bound_all hm
+  obtain ⟨Af, _, hAf'⟩ := hf.bound_all hm
+  obtain ⟨Ag, _, hAg'⟩ := hg.bound_all hm
   refine ⟨Nat.factorial m * Ag * (max Af 1) ^ m, fun i x hx ↦ ?_⟩
   apply norm_iteratedFDeriv_comp_le_of_contDiffAt
     ((hcg i (f i x) (hmap i hx)).of_le (by exact_mod_cast hm))

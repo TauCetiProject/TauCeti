@@ -75,7 +75,7 @@ theorem IsJordanCurve.two_mul_ediam_le_hausdorffMeasure (h : IsJordanCurve C) :
   have := Measure.nullSingletonClass_hausdorff X (show (0 : ℝ) < 1 by norm_num)
   -- Each pair of points of `C` is at distance at most half the length of `C`.
   have hpair (p : X) (hp : p ∈ C) (q : X) (hq : q ∈ C) : edist p q * 2 ≤ μH[1] C := by
-    rcases eq_or_ne p q with rfl | hpq
+    rcases eq_or_ne p q with rfl | _
     · simp
     obtain ⟨A, B, -, hBc, hA, hB, hAB, hAB'⟩ :=
       h.exists_isCompact_isConnected_union_eq_inter_eq_pair hp hq

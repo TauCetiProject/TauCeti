@@ -194,7 +194,7 @@ theorem cutNorm_le_iff {K : SymmKernel Ω μ} {C : ℝ} :
     cutNorm μ K ≤ C ↔
       ∀ S, MeasurableSet S → ∀ T, MeasurableSet T → |K.rectIntegral μ S T| ≤ C := by
   constructor
-  · intro h S hS T hT
+  · intro h S _ T _
     exact (abs_rectIntegral_le_cutNorm μ K S T).trans h
   · exact cutNorm_le μ
 
@@ -233,7 +233,7 @@ theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
   refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
   have hK : AEStronglyMeasurable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) :=
     K.measurable.aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK]
+  rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK]
   simp only [Real.norm_eq_abs]
 
 end FiniteMeasure
@@ -285,7 +285,7 @@ theorem cutNorm_sub_rev (K L : SymmKernel Ω μ) :
 theorem cutNorm_add_le (K L : SymmKernel Ω μ) :
     cutNorm μ (K + L) ≤ cutNorm μ K + cutNorm μ L := by
   apply cutNorm_le μ
-  intro S hS T hT
+  intro S _ T _
   rw [SymmKernel.rectIntegral_add]
   exact (abs_add_le _ _).trans (add_le_add
     (abs_rectIntegral_le_cutNorm μ K S T) (abs_rectIntegral_le_cutNorm μ L S T))

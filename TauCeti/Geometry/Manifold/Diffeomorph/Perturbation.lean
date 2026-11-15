@@ -121,12 +121,12 @@ theorem exists_diffeomorph_family_apply_eq_add (c : E) {r : ℝ} (hr : 0 < r) {n
   -- Each `p ↦ p + ρ p • κ d` is a perturbation of the identity of Lipschitz constant below `1`.
   have hlip (d : E) : LipschitzWith (L * ‖κ d‖₊) fun p ↦ ρ p • κ d := by
     refine LipschitzWith.of_dist_le_mul fun p q ↦ ?_
-    rw [dist_eq_norm, ← sub_smul, norm_smul, ← dist_eq_norm, NNReal.coe_mul, coe_nnnorm,
+    rw [dist_eq_norm, ← sub_smul, norm_smul, ← dist_eq_norm, NNReal.coe_mul, coe_nnNorm,
       mul_right_comm]
     exact mul_le_mul_of_nonneg_right (hL.dist_le_mul p q) (norm_nonneg _)
   have hlt (d : E) : L * ‖κ d‖₊ < 1 := by
     rcases hκ d with h | h
-    · rw [← NNReal.coe_lt_coe, NNReal.coe_mul, coe_nnnorm, NNReal.coe_one]
+    · rw [← NNReal.coe_lt_coe, NNReal.coe_mul, coe_nnNorm, NNReal.coe_one]
       exact (mul_le_mul_of_nonneg_left h.le L.coe_nonneg).trans_lt hLB
     · simp [h]
   have hτ (d : E) := ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith

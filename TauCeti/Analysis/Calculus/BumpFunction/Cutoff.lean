@@ -45,14 +45,16 @@ function is bounded and Hölder continuous with every exponent at most one
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a
-smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on
-the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported
-in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
-independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
-function supported in a closed ball with bounded gradient there has integral at most the squared
-bound times the volume of the ball
+with shrinking gaps. With such a cutoff of small gradient, an angle `θ` rising from `0` to `π / 2`
+across an annulus gives the IMS-type partition `cos² θ + sin² θ = 1` with gradients at most a
+prescribed `ε` (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth cutoff of the
+identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
+(`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a smooth, even, compactly
+supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius `r / 2`
+(`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported in `[c - r - 1, c + r + 1]`
+have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
+(`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
+ball with bounded gradient there has integral at most the squared bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
@@ -492,13 +494,12 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   have hD' := sub_sq_le_sq_sub_sq hr hrR.le
   have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
   have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sub_sq hr hrR
-  have hRr : 0 < R - r := sub_pos.2 hrR
   have hR : 0 < R := hr.trans_lt hrR
   obtain ⟨hψ1, hψ2, hψ3, hψ4⟩ := smoothTransition_radial_cutoff hr hrR x₀
-  set D := R ^ 2 - r ^ 2 with hD_def
+  set D := R ^ 2 - r ^ 2
   -- The gradient of the cutoff is `c (‖x - x₀‖ ^ 2) • (x - x₀)`; `c'` is the derivative of `c`.
-  set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
-  set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
+  set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D)
+  set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D)
   have hcd : ∀ τ, HasDerivAt c (c' τ) τ := fun τ =>
     ((((hS1.differentiable (by simp)) _).hasDerivAt.comp_sub_div (A := R ^ 2) (D := D)
       (τ := τ)).const_mul (-(2 / D))).congr_deriv (by simp only [c']; field_simp)
@@ -545,6 +546,44 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
         = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr
       _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
+
+open Real in
+/-- **A slowly rising angle.** For `0 ≤ R` and `0 < ε`, some smooth `θ` vanishes on the closed
+ball of radius `R`, equals `π / 2` near every point outside a larger ball of radius `R₂`, and has
+gradient at most `ε`. Then `cos θ` and `sin θ` form a partition of unity in the sense of squares
+whose gradients are at most `ε`, as used in IMS-type localization. The angle is
+`π / 2 * (1 - ψ)` for a radial cutoff `ψ` from `exists_forall_contDiff_cutoff_closedBall` with a
+gap large enough to make its gradient small. -/
+theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E] {R ε : ℝ}
+    (hR : 0 ≤ R) (hε : 0 < ε) :
+    ∃ R₂ > R, ∃ θ : E → ℝ, ContDiff ℝ ∞ θ ∧ (∀ z, ‖z‖ ≤ R → θ z = 0) ∧
+      (∀ z, R₂ < ‖z‖ → θ =ᶠ[𝓝 z] fun _ ↦ π / 2) ∧ ∀ z, ‖fderiv ℝ θ z‖ ≤ ε := by
+  obtain ⟨C, hC, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  set K : ℝ := π * C / (2 * ε) + 1
+  have hK : 0 < K := by positivity
+  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hcut 0 hR (lt_add_of_pos_right R hK)
+  refine ⟨R + K, lt_add_of_pos_right R hK, fun z ↦ π / 2 * (1 - ψ z),
+    contDiff_const.mul (contDiff_const.sub hψ), fun z hz ↦ ?_, fun z hz ↦ ?_, fun z ↦ ?_⟩
+  · have : ψ z = 1 := hψ1 (by simpa using hz)
+    simp [this]
+  · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
+    have : ψ w = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ by
+      have := hψt h
+      simp only [Metric.mem_closedBall, dist_zero_right] at this
+      linarith
+    simp [this]
+  · have hd : HasFDerivAt (fun z ↦ π / 2 * (1 - ψ z)) ((π / 2) • -fderiv ℝ ψ z) z :=
+      (((hψ.differentiable (by simp)) z).hasFDerivAt.const_sub 1).const_mul (π / 2)
+    have hg : ‖fderiv ℝ ψ z‖ ≤ C / K := by
+      have := hψd z
+      rwa [gradient, LinearIsometryEquiv.norm_map, add_sub_cancel_left] at this
+    have hCK : π * C ≤ 2 * ε * K := by
+      have : π * C / (2 * ε) * (2 * ε) = π * C := div_mul_cancel₀ _ (by positivity)
+      nlinarith
+    rw [hd.fderiv, norm_smul, norm_neg, Real.norm_eq_abs, abs_of_pos (by positivity)]
+    calc π / 2 * ‖fderiv ℝ ψ z‖ ≤ π / 2 * (C / K) := by gcongr
+      _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
+      _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
 
 /-- **A smooth cutoff of the identity on the line.** For `0 < r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
@@ -623,53 +662,30 @@ theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0
   obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hK c hr (lt_add_one r)
   have hψc : HasCompactSupport ψ := (isCompact_closedBall c _).of_isClosed_subset
     (isClosed_tsupport ψ) hψt
-  have hψ'cont : Continuous (deriv ψ) := hψ.continuous_deriv (by simp)
-  have hint : Integrable (fun s ↦ ψ s ^ 2) :=
-    Continuous.integrable_of_hasCompactSupport (hψ.continuous.pow 2)
-      (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
-  have hdint : Integrable (fun s ↦ deriv ψ s ^ 2) :=
-    Continuous.integrable_of_hasCompactSupport (hψ'cont.pow 2)
-      (hψc.deriv.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
-  have hA : volume (closedBall c (r + 1) \ ball c r) ≠ ⊤ :=
-    ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top).ne
   refine ⟨ψ, hψ, hψt, ?_, ?_⟩
   · -- `ψ = 1` on `closedBall c r`.
-    calc 2 * r = ∫ s, (closedBall c r).indicator (fun _ ↦ (1 : ℝ)) s := by
-          rw [integral_indicator_const _ measurableSet_closedBall,
-            Real.volume_real_closedBall hr, smul_eq_mul, mul_one]
-      _ ≤ ∫ s, ψ s ^ 2 := by
-          refine integral_mono ((integrable_indicator_iff measurableSet_closedBall).2
-            (integrableOn_const measure_closedBall_lt_top.ne)) hint fun s ↦ ?_
-          by_cases hs : s ∈ closedBall c r
-          · simp [indicator_of_mem hs, hψ1 hs]
-          · simp [indicator_of_notMem hs, sq_nonneg]
-  · -- `ψ'` is bounded by `K` and vanishes off the annulus `closedBall c (r + 1) \ ball c r`.
-    have hd (s : ℝ) : deriv ψ s ^ 2 ≤
-        (closedBall c (r + 1) \ ball c r).indicator (fun _ ↦ K ^ 2) s := by
-      by_cases hs : s ∈ closedBall c (r + 1) \ ball c r
-      · have h := hψd s
-        rw [gradient_eq_deriv', Real.norm_eq_abs, add_sub_cancel_left, div_one] at h
-        rw [indicator_of_mem hs, ← sq_abs]
-        exact pow_le_pow_left₀ (abs_nonneg _) h 2
-      · rw [indicator_of_notMem hs]
-        suffices deriv ψ s = 0 by simp [this]
-        rcases not_and_or.1 hs with hs | hs
-        · exact notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))
-        · have h1 : ψ =ᶠ[𝓝 s] fun _ ↦ 1 :=
-            Filter.eventually_of_mem (isOpen_ball.mem_nhds (not_not.1 hs)) fun t ht ↦
-              hψ1 (ball_subset_closedBall ht)
-          rw [h1.deriv_eq, deriv_const]
-    calc ∫ s, deriv ψ s ^ 2
-        ≤ ∫ s, (closedBall c (r + 1) \ ball c r).indicator (fun _ ↦ K ^ 2) s :=
-          integral_mono hdint ((integrable_indicator_iff
-            (measurableSet_closedBall.diff measurableSet_ball)).2 (integrableOn_const hA)) hd
-      _ = 2 * K ^ 2 := by
-          rw [integral_indicator_const _ (measurableSet_closedBall.diff measurableSet_ball),
-            measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
-              (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
-            Real.volume_real_closedBall (by linarith), measureReal_def, Real.volume_ball,
-            ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
-          ring
+    calc 2 * r = ∫ s in closedBall c r, ψ s ^ 2 := by
+          rw [setIntegral_congr_fun (g := fun _ ↦ 1) measurableSet_closedBall
+              fun s hs ↦ by simp [hψ1 hs],
+            setIntegral_const, Real.volume_real_closedBall hr, smul_eq_mul, mul_one]
+      _ ≤ ∫ s, ψ s ^ 2 := setIntegral_le_integral
+          ((hψ.pow 2).continuous.integrable_of_hasCompactSupport
+            (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)))
+          (.of_forall fun _ ↦ sq_nonneg _)
+  · -- `ψ'` vanishes off the annulus `closedBall c (r + 1) \ ball c r`, where `|ψ'| ≤ K`.
+    have h0 (s : ℝ) (hs : s ∉ closedBall c (r + 1) \ ball c r) : deriv ψ s ^ 2 = 0 := by
+      rcases not_and_or.1 hs with hs | hs
+      · simp [notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))]
+      · simp [(hψ1.eventuallyEq_of_mem (Filter.mem_of_superset
+          (isOpen_ball.mem_nhds (not_not.1 hs)) ball_subset_closedBall)).deriv_eq]
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero h0]
+    refine (Real.le_norm_self _).trans ((norm_setIntegral_le_of_norm_le_const (C := K ^ 2)
+      ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top) fun s _ ↦ ?_).trans_eq ?_)
+    · simpa [gradient_eq_deriv'] using pow_le_pow_left₀ (norm_nonneg _) (hψd s) 2
+    · rw [measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
+          (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
+        Real.volume_real_closedBall (by linarith), Real.volume_real_ball hr]
+      ring
 
 open MeasureTheory Metric in
 /-- A function whose gradient is at most `K` on a closed ball and vanishes off it has
