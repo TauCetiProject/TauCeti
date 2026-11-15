@@ -104,8 +104,8 @@ instance : Monoid (RootPairingIsogeny P P) where
   one := id P
   mul f g := comp f g
   mul_assoc := comp_assoc
-  one_mul := comp_id
-  mul_one := id_comp
+  one_mul := id_comp
+  mul_one := comp_id
 
 theorem mul_def (f g : RootPairingIsogeny P P) : f * g = comp f g := (rfl)
 

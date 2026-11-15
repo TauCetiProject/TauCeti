@@ -24,6 +24,12 @@ orientable if and only if its orientation double cover is disconnected
 (`TauCeti.Manifold.OrientationCover.orientable_iff_not_connectedSpace`). The deck involution
 reversing orientations is `TauCeti.VectorBundleOrientationCover.deck`.
 
+Without connectedness or separation assumptions, orientability is also equivalent to a
+homeomorphism from `M × Fin 2` to the cover commuting with projection to `M`
+(`TauCeti.Manifold.OrientationCover.orientable_iff_exists_homeomorph`). An explicit product
+trivialization from a chosen bundle orientation is
+`TauCeti.VectorBundleOrientation.coverHomeomorph`.
+
 Each fibre of the projection has two points, so the projection is proper
 (`TauCeti.Manifold.OrientationCover.isProperMap_proj`). Hence the orientation cover of a
 Hausdorff, respectively σ-compact, manifold is Hausdorff, respectively σ-compact.
@@ -38,6 +44,8 @@ Hausdorff, respectively σ-compact, manifold is Hausdorff, respectively σ-compa
 * `TauCeti.Manifold.OrientationCover.isProperMap_proj`: the projection is proper.
 * `TauCeti.Manifold.OrientationCover.orientable_iff_exists_section`: `M` is orientable if and
   only if its orientation double cover has a continuous section.
+* `TauCeti.Manifold.OrientationCover.orientable_iff_exists_homeomorph`: `M` is orientable if and
+  only if its orientation double cover is a product with `Fin 2` over `M`.
 * `TauCeti.Manifold.OrientationCover.orientable_iff_not_connectedSpace`: a connected `M` is
   orientable if and only if its orientation double cover is disconnected.
 
@@ -96,6 +104,15 @@ theorem orientable_iff_exists_section :
       ∃ s : M → OrientationCover I M, Continuous s ∧ ∀ x, (s x).proj = x := by
   rw [orientable_iff_nonempty_vectorBundleOrientation,
     VectorBundleOrientation.nonempty_iff_exists_section (Fintype.card_fin _)]
+
+/-- A manifold is orientable exactly when its orientation double cover is trivial over the
+manifold. The homeomorphism must commute with the projections, and the manifold need not be
+connected. -/
+theorem orientable_iff_exists_homeomorph :
+    Orientable I M ↔
+      ∃ e : M × Fin 2 ≃ₜ OrientationCover I M, ∀ p, (e p).proj = p.1 := by
+  rw [orientable_iff_nonempty_vectorBundleOrientation,
+    VectorBundleOrientation.nonempty_iff_exists_homeomorph (Fintype.card_fin _)]
 
 /-- A connected manifold is orientable if and only if its orientation double cover is
 disconnected. -/

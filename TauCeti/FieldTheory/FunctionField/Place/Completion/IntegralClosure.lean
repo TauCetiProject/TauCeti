@@ -36,12 +36,18 @@ The integral-closure identification parallels the affine-model theorem in
 transfer provides the intrinsic-place counterpart of
 `TauCeti/NumberTheory/NumberField/LocalGlobal/Separable.lean`.
 
+## Main definitions
+
+* `TauCeti.Place.completionIntegersIntegralClosureHom`: the canonical ring homomorphism
+  `𝒪'_P →+* 𝒪̂_{P'}` from the local integral closure at `P` to the completed valuation ring at `P'`.
+
 ## Main results
 
 * `TauCeti.Place.completionIntegersExtension_injective`,
-  `TauCeti.Place.isScalarTower_completionIntegers`, and
-  `TauCeti.Place.isTorsionFree_completionIntegers`: structural compatibility of the completed
-  valuation-ring extension `𝒪̂_P → 𝒪̂_{P'} → F̂_{P'}`.
+  `TauCeti.Place.isScalarTower_completionIntegers`,
+  `TauCeti.Place.isTorsionFree_completionIntegers`, and
+  `TauCeti.Place.completionIntegersIntegralClosureHom_injective`: structural compatibility of the
+  completed valuation-ring extension `𝒪̂_P → 𝒪̂_{P'} → F̂_{P'}` and the map `𝒪'_P →+* 𝒪̂_{P'}`.
 * `TauCeti.Place.ramificationIdx_completionPlace`: completion preserves the ramification index.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`: when the residue extension is finite,
   `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in `F̂_{P'}`.
@@ -134,6 +140,38 @@ theorem isSeparable_completionEmbedding [Algebra.IsSeparable F F'] (y : F') :
   simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_def] using
     (hom_eval₂ (minpoly F y) (algebraMap F F') P'.completionEmbedding.toRingHom y).symm.trans
       (by simp [← aeval_def])
+
+/-- The canonical ring homomorphism from the local integral closure `𝒪'_P` to the completed
+valuation ring `𝒪̂_{P'}` at a place `P'` lying over `P`. -/
+noncomputable def completionIntegersIntegralClosureHom :
+    integralClosure P.integers F' →+* P'.completionPlace.integers :=
+  P'.completionIntegersEmbedding.toRingHom.comp
+    ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers fun b ↦ by
+      subst hP
+      exact algebraMap_mem_integers_of_mem_integralClosure k F P' b)
+
+/-- Coercing `completionIntegersIntegralClosureHom` to `F̂_{P'}` is `P'.completionEmbedding`. -/
+@[simp]
+theorem coe_completionIntegersIntegralClosureHom (b : integralClosure P.integers F') :
+    (P.completionIntegersIntegralClosureHom P' hP b : P'.Completion) =
+      P'.completionEmbedding (b : F') := by
+  simp [completionIntegersIntegralClosureHom]
+
+/-- On `𝒪_P`, `completionIntegersIntegralClosureHom` agrees with `completionIntegersExtension`. -/
+@[simp]
+theorem completionIntegersIntegralClosureHom_algebraMap (r : P.integers) :
+    P.completionIntegersIntegralClosureHom P' hP
+        (algebraMap P.integers (integralClosure P.integers F') r) =
+      P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) := by
+  apply Subtype.ext
+  simp [coe_completionIntegersIntegralClosureHom, IsScalarTower.algebraMap_apply P.integers F F']
+
+/-- The canonical homomorphism `𝒪'_P →+* 𝒪̂_{P'}` is injective. -/
+theorem completionIntegersIntegralClosureHom_injective :
+    Function.Injective (P.completionIntegersIntegralClosureHom P' hP) := fun _ _ h ↦
+  Subtype.ext <| P'.completionEmbedding.toRingHom.injective <| by
+    simpa only [coe_completionIntegersIntegralClosureHom, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe] using congrArg Subtype.val h
 
 section FiniteResidue
 
