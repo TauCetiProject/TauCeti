@@ -31,6 +31,9 @@ cell by cell, that the skeleta of a CW complex form good pairs.
   `r⁻¹ • TauCeti.radialRetraction r`.
 * `TauCeti.radialPush_eq_smul`: it rescales each vector along its ray, by the factor
   `TauCeti.radialPushScale` depending only on the time and the norm.
+* `TauCeti.radialPushScale_def`, `TauCeti.radialPushScale_zero`, `TauCeti.radialPushScale_one`
+  and `TauCeti.radialPushScale_of_norm_eq_one`: its formula, its values at the two ends, and its
+  value on the unit sphere.
 * `TauCeti.radialPushScale_nonneg`, `TauCeti.radialPushScale_pos` and `TauCeti.radialPushScale_le`:
   bounds on this factor, and `TauCeti.continuousAt_radialPushScale`: its continuity off norm zero.
 * `TauCeti.norm_radialPush`: its norm is the linear interpolation of the endpoint norms.
@@ -79,9 +82,19 @@ theorem radialPush_one (r : ℝ) (y : E) : radialPush r 1 y = r⁻¹ • radialR
 noncomputable def radialPushScale (r : ℝ) (t : I) (a : ℝ) : ℝ :=
   1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / a))
 
+/-- The defining formula of the rescaling factor of `TauCeti.radialPush`. -/
+theorem radialPushScale_def (r : ℝ) (t : I) (a : ℝ) :
+    radialPushScale r t a = 1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / a)) :=
+  (rfl)
+
 /-- At time zero the radial push does not rescale. -/
 @[simp]
 theorem radialPushScale_zero (r a : ℝ) : radialPushScale r 0 a = 1 := by
+  simp [radialPushScale]
+
+/-- At time one the radial push rescales by the factor of `r⁻¹ • TauCeti.radialRetraction r`. -/
+@[simp]
+theorem radialPushScale_one (r a : ℝ) : radialPushScale r 1 a = r⁻¹ * min 1 (r / a) := by
   simp [radialPushScale]
 
 /-- The radial push rescales `y` along its ray, by a factor depending only on `t` and `‖y‖`. -/
@@ -126,7 +139,8 @@ theorem continuousAt_radialPushScale (r : ℝ) {p : I × ℝ} (hp : p.2 ≠ 0) :
     (continuousAt_const.min (continuousAt_const.div continuousAt_snd hp))))
 
 /-- For `0 < r ≤ 1` the radial push does not rescale vectors of norm one. -/
-theorem radialPushScale_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) : radialPushScale r t 1 = 1 := by
+theorem radialPushScale_of_norm_eq_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) :
+    radialPushScale r t 1 = 1 := by
   simp [radialPushScale, min_eq_right hr1, hr.ne']
 
 /-- On a vector of seminorm zero, the radial push contracts linearly to zero. -/
