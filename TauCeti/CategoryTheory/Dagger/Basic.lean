@@ -251,6 +251,62 @@ end IsUnitary
     have hd : dagger f = inv f := IsIso.eq_inv_of_hom_inv_id h.hom_dagger_id
     simpa only [hd] using h.dagger
 
+section InducedCategory
+
+/-- Induced categories inherit the dagger of the target category. -/
+instance inducedCategory {D : Type w} (F : D → C) : DaggerCategory (InducedCategory C F) where
+  dagger f := InducedCategory.homMk (dagger f.hom)
+  dagger_id _ := by ext; simp
+  dagger_comp _ _ := by ext; simp
+  dagger_dagger _ := by ext; simp
+
+/-- The underlying arrow of a dagger in an induced category is the dagger of the underlying
+arrow. -/
+@[simp, grind =] theorem inducedCategory_dagger_hom {D : Type w} {F : D → C}
+    {X Y : InducedCategory C F} (f : X ⟶ Y) :
+    (dagger f).hom = dagger f.hom := (rfl)
+
+/-- Constructing an arrow in an induced category commutes with taking daggers. -/
+@[simp, grind =] theorem inducedCategory_homMk_dagger {D : Type w} {F : D → C}
+    {X Y : InducedCategory C F} (f : F X ⟶ F Y) :
+    dagger (InducedCategory.homMk (F := F) (X := X) (Y := Y) f) =
+      InducedCategory.homMk (dagger f) := (rfl)
+
+instance [Preadditive C] [DaggerPreadditive C] {D : Type w} (F : D → C) :
+    DaggerPreadditive (InducedCategory C F) where
+  dagger_add _ _ := by ext; exact dagger_add _ _
+
+instance {R : Type*} [Semiring R] [Star R] [Preadditive C] [Linear R C]
+    [DaggerLinear R C] {D : Type w} (F : D → C) :
+    DaggerLinear R (InducedCategory C F) where
+  dagger_smul _ _ := by ext; exact dagger_smul _ _
+
+/-- Full subcategories inherit the dagger of the ambient category. -/
+instance fullSubcategory (Z : ObjectProperty C) : DaggerCategory Z.FullSubcategory :=
+  inducedCategory ObjectProperty.FullSubcategory.obj
+
+/-- The underlying arrow of a dagger in a full subcategory is the dagger of the underlying
+arrow. -/
+@[simp, grind =] theorem fullSubcategory_dagger_hom {Z : ObjectProperty C}
+    {X Y : Z.FullSubcategory} (f : X ⟶ Y) :
+    (dagger f).hom = dagger f.hom := (rfl)
+
+/-- Constructing an arrow in a full subcategory commutes with taking daggers. -/
+@[simp, grind =] theorem fullSubcategory_homMk_dagger {Z : ObjectProperty C}
+    {X Y : Z.FullSubcategory} (f : X.obj ⟶ Y.obj) :
+    dagger (Z.homMk f) = Z.homMk (dagger f) := (rfl)
+
+instance [Preadditive C] [DaggerPreadditive C] (Z : ObjectProperty C) :
+    DaggerPreadditive Z.FullSubcategory where
+  dagger_add _ _ := by ext; exact dagger_add _ _
+
+instance {R : Type*} [Semiring R] [Star R] [Preadditive C] [Linear R C]
+    [DaggerLinear R C] (Z : ObjectProperty C) :
+    DaggerLinear R Z.FullSubcategory :=
+  inferInstanceAs (DaggerLinear R (InducedCategory C ObjectProperty.FullSubcategory.obj))
+
+end InducedCategory
+
 end TauCeti
 
 namespace CategoryTheory.Iso
@@ -286,6 +342,9 @@ instance daggerStar : Star (End X) where
 
 /-- The endomorphism star acts by the dagger on its underlying arrow. -/
 @[simp, grind =] theorem star_asHom (f : End X) : (star f).asHom = dagger f.asHom := (rfl)
+
+/-- `End.of` sends the dagger of an endomorphism to its star. -/
+@[simp, grind =] theorem of_dagger (f : X ⟶ X) : End.of (dagger f) = star (End.of f) := (rfl)
 
 /-- The endomorphism dagger is involutive. -/
 instance daggerInvolutiveStar : InvolutiveStar (End X) where

@@ -62,6 +62,23 @@ theorem map_isUnitary (F : C ⥤ D) [F.PreservesDagger] {X Y : C} {f : X ⟶ Y}
   simp only [isUnitary_iff, ← map_dagger, ← Functor.map_comp, ← Functor.map_id,
     F.map_injective.eq_iff]
 
+/-- The forgetful functor from an induced category preserves daggers. -/
+instance {S : Type*} (F : S → C) : (inducedFunctor F).PreservesDagger where
+  map_dagger _ := (rfl)
+
+/-- The inclusion of a full subcategory preserves daggers. -/
+instance (Z : ObjectProperty C) : Z.ι.PreservesDagger where
+  map_dagger _ := (rfl)
+
+/-- The inclusion between nested full subcategories preserves daggers. -/
+instance {P Q : ObjectProperty C} (h : P ≤ Q) : (ObjectProperty.ιOfLE h).PreservesDagger where
+  map_dagger _ := (rfl)
+
+/-- Lifting a dagger-preserving functor into a full subcategory preserves daggers. -/
+instance (Z : ObjectProperty D) (F : C ⥤ D) (h : ∀ X, Z (F.obj X)) [F.PreservesDagger] :
+    (Z.lift F h).PreservesDagger where
+  map_dagger f := by ext; exact F.map_dagger f
+
 end CategoryTheory.Functor
 
 namespace CategoryTheory.NatTrans
