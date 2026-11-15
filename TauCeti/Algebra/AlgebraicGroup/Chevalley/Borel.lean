@@ -189,4 +189,18 @@ theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.r
   rw [D.weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff]
   exact D.rootSubgroupPoints_ofAdd_one_ne_one A (t.simpleIndex ht i)
 
+/-- The negative point subgroup meets the positive Borel-type subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem negativePoints_inf_borelSubgroup_eq_bot :
+    D.negativePoints A ⊓ D.borelSubgroup A = ⊥ :=
+  D.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot A
+
+/-- The positive Borel-type subgroup meets the negative point subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem borelSubgroup_inf_negativePoints_eq_bot :
+    D.borelSubgroup A ⊓ D.negativePoints A = ⊥ := by
+  rw [inf_comm, D.negativePoints_inf_borelSubgroup_eq_bot]
+
 end TauCeti.DynkinType.ChevalleyDatum
