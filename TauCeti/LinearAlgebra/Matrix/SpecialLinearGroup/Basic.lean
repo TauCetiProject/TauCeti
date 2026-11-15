@@ -78,6 +78,8 @@ proof is independent of the source's.
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring and `mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero` its upper-triangular
   diagonal specialization.
+* `Matrix.SpecialLinearGroup.coe_GL_eq_mapGL`: the coercion of `SL(n, ℤ)` into `GL(n, S)` is
+  `mapGL S`.
 * `Matrix.SpecialLinearGroup.coe_mapGL_int` and `Matrix.SpecialLinearGroup.mapGL_map_intCast`:
   the matrix of `mapGL S` on `SL(n, ℤ)` is the entrywise integer cast, and `mapGL S` absorbs
   base change from `ℤ`.
@@ -264,6 +266,11 @@ lemma map_mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R S : Type*} [Comm
     [Semiring S] (f : R →+* S) {g : SL(2, R)} (hg : g 1 0 = 0) :
     f (g 0 0) * f (g 1 1) = 1 := by
   rw [← map_mul, mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero hg, map_one]
+
+/-- The coercion of `SL(n, ℤ)` into `GL(n, S)` is `mapGL S`. -/
+lemma coe_GL_eq_mapGL {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
+    (g : SpecialLinearGroup n ℤ) : (g : GL n S) = mapGL S g :=
+  rfl
 
 /-- The matrix of `mapGL S σ` for an integral `σ` is its entrywise integer cast: this is
 `mapGL_coe_matrix` with `algebraMap ℤ S` written as `Int.cast`. -/

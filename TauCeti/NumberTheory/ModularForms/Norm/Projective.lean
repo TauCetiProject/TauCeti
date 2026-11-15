@@ -116,9 +116,9 @@ theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
   let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
   rw [hinv, orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp,
     orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp, Subgroup.conj_mapGL_neg,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (-γ), ← _root_.ModularForm.SL_slash,
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL (-γ), ← _root_.ModularForm.SL_slash,
     SL_slash_neg, _root_.ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL γ,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL γ,
     ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
   exact TauCeti.qExpansionOrderAtCusp_smul
     (ModularFormClass.analyticAt_cuspFunction_zero fγ Γγ.strictWidthInfty_pos

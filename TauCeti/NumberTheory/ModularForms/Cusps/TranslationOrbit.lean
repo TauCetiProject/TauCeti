@@ -72,7 +72,7 @@ theorem cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq {H : Subgroup SL(2,
     Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hmk))
   have hcoe : (((TSL ^ j * (mapGL ℝ).rangeRestrict γ')⁻¹ * (mapGL ℝ).rangeRestrict γ : 𝒮ℒ) :
       GL (Fin 2) ℝ) = mapGL ℝ ((ModularGroup.T ^ j * γ')⁻¹ * γ) := by
-    simp only [coe_TSL_zpow, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, map_mul, map_inv,
+    simp only [coe_TSL_zpow, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, map_mul, map_inv,
       Subgroup.coe_mul, InvMemClass.coe_inv, MonoidHom.coe_rangeRestrict]
   have hγ : γ = ModularGroup.T ^ j * γ' * h₀ := by
     rw [mapGL_injective (he.trans hcoe)]
@@ -153,7 +153,7 @@ private lemma mk_rangeRestrict_eq_of_mul_T_zpow {δ α h₀ : SL(2, ℤ)} (hh₀
       GL (Fin 2) ℝ) = mapGL ℝ h₀ := by
     rw [hδ]
     simp only [Subgroup.coe_mul, InvMemClass.coe_inv, coe_TSL_zpow,
-      TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MonoidHom.coe_rangeRestrict, map_mul,
+      Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MonoidHom.coe_rangeRestrict, map_mul,
       _root_.mul_inv_rev]
     group
   rw [hcoe]
@@ -207,7 +207,7 @@ private lemma cuspTranslationOrbit_mk_inv_eq_mk_neg_inv_iff_exists (γ : SL(2, �
         (mapGL ℝ).rangeRestrict (-γ⁻¹) : 𝒮ℒ) : GL (Fin 2) ℝ) =
           mapGL ℝ (-(γ * ModularGroup.T ^ (-j) * γ⁻¹)) := by
       simp only [Subgroup.coe_mul, InvMemClass.coe_inv, coe_TSL_zpow,
-        TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MonoidHom.coe_rangeRestrict, mapGL_neg,
+        Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MonoidHom.coe_rangeRestrict, mapGL_neg,
         map_mul, map_inv, map_zpow, _root_.zpow_neg, _root_.mul_inv_rev, inv_inv, mul_neg]
     rw [hcoe, Subgroup.mem_map_iff_mem (mapGL_injective (S := ℝ))] at hgq
     exact ⟨-j, hgq⟩

@@ -259,9 +259,9 @@ theorem orderAtCuspOrbit_smul [Γ.FiniteIndex]
   set Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))
   let fγ : ModularForm Γγ k := _root_.ModularForm.translate f (mapGL ℝ γ)
   rw [orderAtCuspOrbit_cuspOrbitOfSL2Z, orderAtCuspOrbit_cuspOrbitOfSL2Z, FunLike.coe_smul,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← _root_.ModularForm.SL_slash,
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← _root_.ModularForm.SL_slash,
     _root_.ModularForm.SL_smul_slash, _root_.ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ← _root_.ModularForm.coe_translate f (mapGL ℝ γ)]
   exact TauCeti.orderAtCusp_smul
     (ModularFormClass.analyticAt_cuspFunction_zero fγ (mul_pos two_pos Γγ.widthInfty_pos)
@@ -350,7 +350,7 @@ theorem _root_.ModularForm.mem_cuspFormSubmodule_iff_forall_orderAtCuspOrbit_pos
     exact hcusp hcγ (mapGL ℝ γ) rfl
   · rw [OnePoint.isZeroAt_iff_forall_SL2Z ((Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z _).mp hc)]
     intro γ _
-    rw [_root_.ModularForm.SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
+    rw [_root_.ModularForm.SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
     exact (orderAtCuspOrbit_cuspOrbitOfSL2Z_pos_iff hf' γ).mp (hpos (Γ.cuspOrbitOfSL2Z γ))
 
 /-- **Additivity on products at cusps (`ModularFormClass` form)**: if `fg` is a modular form of
