@@ -11,6 +11,8 @@ public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.RepresentationTheory.FDRep.Basic
+import TauCeti.RepresentationTheory.Continuous.Intertwining
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # Continuous finite-dimensional representations
@@ -38,6 +40,7 @@ continuous representations, is built in
   representations.
 * `TauCeti.ContFDRep.ofContRepresentation`: a representation on a finite-dimensional normed space,
   in any universe, continuous for the operator norm, as an object of `ContFDRep k G`.
+* `TauCeti.ContFDRep.ofContRepresentationIso`: equivalent representations give isomorphic objects.
 
 ## Main statements
 
@@ -48,6 +51,11 @@ continuous representations, is built in
 * `ContRepresentation.isContinuous_ofShrink_iff_continuous`: over a complete nontrivially normed
   field, a continuous representation on a finite-dimensional normed space has continuous matrix
   coefficients exactly when `G → (V →L[k] V)` is continuous.
+* `TauCeti.ContFDRep.isZero_ofContRepresentation`: a representation on a zero space is a zero
+  object.
+* `TauCeti.ContFDRep.finrank_hom_ofContRepresentation`: the morphisms between the objects of two
+  continuous representations are their continuous intertwiners, so the two spaces have the same
+  dimension.
 -/
 
 public section
@@ -216,5 +224,70 @@ theorem ContFDRep.ofContRepresentation_obj {𝕜 : Type u} [NontriviallyNormedFi
     [FiniteDimensional 𝕜 V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     (ContFDRep.ofContRepresentation π hπ).obj = FDRep.ofShrink π.toRepresentation :=
   (rfl)
+
+variable {k : Type u} [Field k] [TopologicalSpace k] in
+/-- The morphisms of `ContFDRep k G` form a finite-dimensional space. -/
+instance (X Y : ContFDRep k G) : FiniteDimensional k (X ⟶ Y) :=
+  (InducedCategory.homLinearEquiv (R := k)).symm.finiteDimensional
+
+namespace ContFDRep
+
+open ContRepresentation
+
+variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {V W : Type*}
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] [NormedAddCommGroup W]
+  [NormedSpace 𝕜 W] [FiniteDimensional 𝕜 W] {π : ContRepresentation 𝕜 G V}
+  {ρ : ContRepresentation 𝕜 G W}
+
+/-- **Equivalent continuous representations give isomorphic objects** of `ContFDRep 𝕜 G`. -/
+noncomputable def ofContRepresentationIso (hπ : Continuous π) (hρ : Continuous ρ)
+    (e : π.Equiv ρ) : ofContRepresentation π hπ ≅ ofContRepresentation ρ hρ :=
+  ObjectProperty.isoMk _ <| eqToIso (ofContRepresentation_obj π hπ) ≪≫
+    LinearEquiv.toFDRepIso
+      ((FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv ≪≫ₗ
+        e.toContinuousLinearEquiv.toLinearEquiv ≪≫ₗ
+        (FDRep.ofShrinkEquiv ρ.toRepresentation).toLinearEquiv.symm) (fun g x ↦ by
+      set e₁ := (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv
+      set e₂ := (FDRep.ofShrinkEquiv ρ.toRepresentation).toLinearEquiv
+      have h₁ : e₁ ((FDRep.ofShrink π.toRepresentation).ρ g x) = π g (e₁ x) :=
+        Representation.IntertwiningMap.isIntertwining _ _
+          (FDRep.ofShrinkEquiv π.toRepresentation).toIntertwiningMap g x
+      have h₂ : ∀ y, e₂ ((FDRep.ofShrink ρ.toRepresentation).ρ g y) = ρ g (e₂ y) :=
+        Representation.IntertwiningMap.isIntertwining _ _
+          (FDRep.ofShrinkEquiv ρ.toRepresentation).toIntertwiningMap g
+      apply e₂.injective
+      simp only [LinearEquiv.trans_apply, h₁, h₂, LinearEquiv.apply_symm_apply]
+      exact DFunLike.congr_fun (e.isIntertwining g) _) ≪≫
+    eqToIso (ofContRepresentation_obj ρ hρ).symm
+
+/-- A continuous representation on a zero space is a zero object of `ContFDRep 𝕜 G`. -/
+theorem isZero_ofContRepresentation [Subsingleton V] (hπ : Continuous π) :
+    IsZero (ofContRepresentation π hπ) := by
+  have : Subsingleton (ofContRepresentation π hπ).obj := by
+    rw [ofContRepresentation_obj]
+    exact (FDRep.ofShrinkEquiv π.toRepresentation).toLinearEquiv.toEquiv.subsingleton
+  refine (IsZero.iff_id_eq_zero _).2 ?_
+  apply (ObjectProperty.ι _).map_injective
+  ext x
+  exact Subsingleton.elim (α := (ofContRepresentation π hπ).obj) _ _
+
+/-- **Morphisms between continuous representations are their continuous intertwiners.** The
+morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous representations on
+finite-dimensional normed spaces form a space of the same dimension as the continuous intertwiners
+between them. -/
+theorem finrank_hom_ofContRepresentation (hπ : Continuous π) (hρ : Continuous ρ) :
+    Module.finrank 𝕜 (ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) =
+      Module.finrank 𝕜 (π →ⁱL ρ) := by
+  let e : (ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) ≃ₗ[𝕜] (π →ⁱL ρ) :=
+    InducedCategory.homLinearEquiv ≪≫ₗ
+      Linear.homCongr 𝕜 (eqToIso (ofContRepresentation_obj π hπ))
+        (eqToIso (ofContRepresentation_obj ρ hρ)) ≪≫ₗ
+      (FDRep.forget₂HomLinearEquiv _ _).symm ≪≫ₗ Rep.homLinearEquiv _ _ ≪≫ₗ
+      (FDRep.ofShrinkEquiv π.toRepresentation).intertwiningMapCongr
+        (FDRep.ofShrinkEquiv ρ.toRepresentation) ≪≫ₗ
+      ContRepresentation.intertwiningMapEquiv.symm
+  exact e.finrank_eq
+
+end ContFDRep
 
 end TauCeti
