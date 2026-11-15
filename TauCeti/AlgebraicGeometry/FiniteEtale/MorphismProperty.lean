@@ -125,25 +125,10 @@ theorem essSurj_pullback_iff (f : T ⟶ S) :
     (pullback f).EssSurj ↔
       (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := by
   let : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
-  constructor
-  · intro _
-    have : (pullback f ⋙ (equivOver T).functor).EssSurj := inferInstance
-    have : ((equivOver S).functor ⋙
-        MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj :=
-      Functor.essSurj_of_iso (pullbackCompEquivOver f)
-    have : ((equivOver S).inverse ⋙ (equivOver S).functor ⋙
-        MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := inferInstance
-    exact Functor.essSurj_of_iso
-      ((Functor.associator _ _ _).symm ≪≫
-        Functor.isoWhiskerRight (equivOver S).counitIso _ ≪≫ Functor.leftUnitor _)
-  · intro _
-    have : ((equivOver S).functor ⋙
-        MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := inferInstance
-    have : (pullback f ⋙ (equivOver T).functor).EssSurj :=
-      Functor.essSurj_of_iso (pullbackCompEquivOver f).symm
-    have : ((pullback f ⋙ (equivOver T).functor) ⋙ (equivOver T).inverse).EssSurj := inferInstance
-    exact Functor.essSurj_of_iso
-      (Functor.associator _ _ _ ≪≫
-        Functor.isoWhiskerLeft _ (equivOver T).unitIso.symm ≪≫ Functor.rightUnitor _)
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · have h := Functor.essSurj_of_iso (pullbackCompEquivOver f)
+    exact ⟨fun X ↦ Functor.essImage_comp_apply_of_essSurj.mp (h.mem_essImage X)⟩
+  · have := Functor.essSurj_of_iso (pullbackCompEquivOver f).symm
+    exact Functor.essSurj_of_comp_fully_faithful (pullback f) (equivOver T).functor
 
 end TauCeti.FiniteEtaleScheme

@@ -27,7 +27,8 @@ rings `𝒪_{X,s}` at points outside `U`.
 ## Main results
 
 * `TauCeti.FiniteEtaleScheme.exists_extend_of_purity_at_point`: single extension step across a point
-  `s ∉ U` whose strict generizations all lie in `U` and at which local purity holds.
+  `s` whose stalk preimage of `U` is the punctured spectrum of `X.presheaf.stalk s` and at which
+  local purity holds.
 * `AlgebraicGeometry.Scheme.Opens.finiteEtale_extend_of_purity`: essential surjectivity of
   `TauCeti.FiniteEtaleScheme.pullback U.ι` under local purity away from `U`.
 * `AlgebraicGeometry.Scheme.Opens.finiteEtaleOver_extend_of_purity`: corresponding essential
@@ -48,20 +49,16 @@ universe u
 
 namespace TauCeti.FiniteEtaleScheme
 
-/-- One extension step across a point `s ∉ U` whose strict generizations all lie in `U` and at
-which local purity holds. -/
+/-- One extension step across a point `s : X` whose stalk preimage of `U` is the punctured spectrum
+of `X.presheaf.stalk s` and at which local purity holds. -/
 theorem exists_extend_of_purity_at_point {X : Scheme.{u}} {U : X.Opens} [QuasiCompact U.ι]
-    {s : X} (hsU : s ∉ U) (hgen : ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U)
+    {s : X} (hpunc : X.fromSpecStalk s ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s))
     (hpurity : IsLocalRing.PurityHolds (X.presheaf.stalk s))
     (V : FiniteEtaleScheme U.toScheme) :
     ∃ (W : X.AffineOpenNhds s) (V' : FiniteEtaleScheme (U ⊔ W.opens).toScheme),
       Nonempty ((pullback (X.homOfLE le_sup_left)).obj V' ≅ V) := by
-  -- Since `s ∉ U` and all strict generizations of `s` lie in `U`, the preimage of `U` in
-  -- `Spec 𝒪_{X,s}` is the punctured spectrum; local purity extends the pulled-back cover across
-  -- `Spec 𝒪_{X,s}`, and stalk spreading glues it onto `U ⊔ W.opens`.
-  have hpunc :
-      X.fromSpecStalk s ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) :=
-    fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes hsU hgen
+  -- Since the preimage of `U` in `Spec 𝒪_{X,s}` is the punctured spectrum, local purity extends
+  -- the pulled-back cover across `Spec 𝒪_{X,s}`, and stalk spreading glues it onto `U ⊔ W.opens`.
   let toOs :
       (IsLocalRing.puncturedSpectrum (X.presheaf.stalk s)).toScheme ⟶
         (X.fromSpecStalk s ⁻¹ᵁ U).toScheme :=
@@ -86,7 +83,8 @@ theorem exists_extend_of_purity_at_point {X : Scheme.{u}} {U : X.Opens} [QuasiCo
       (pullback fromOs).mapIso eYs.symm ≪≫
       (pullbackCompIsoOfEq fromOs
         (IsLocalRing.puncturedSpectrum (X.presheaf.stalk s)).ι _ hfi).app Ys⟩
-  exact exists_spread_fromSpecStalk V Ys e₀
+  obtain ⟨W, V', eU, _, _⟩ := exists_spread_fromSpecStalk V Ys e₀
+  exact ⟨W, V', ⟨eU⟩⟩
 
 end TauCeti.FiniteEtaleScheme
 
@@ -101,8 +99,9 @@ theorem finiteEtale_extend_of_purity {X : Scheme.{u}} [NoetherianSpace X] (U : X
     (hpurity : ∀ s : X, s ∉ U → TauCeti.IsLocalRing.PurityHolds (X.presheaf.stalk s)) :
     (TauCeti.FiniteEtaleScheme.pullback U.ι).EssSurj := by
   -- Induct on `U'` with respect to `wellFounded_gt` on `X.Opens`: any proper open `U' ≠ ⊤`
-  -- misses the generic point `s` of an irreducible component of `X \ U'`, so all strict
-  -- generizations of `s` lie in `U'` and `exists_extend_of_purity_at_point` strictly enlarges `U'`.
+  -- misses the generic point `s` of an irreducible component of `X \ U'`, so the stalk preimage of
+  -- `U'` at `s` is the punctured spectrum and `exists_extend_of_purity_at_point` strictly enlarges
+  -- `U'`.
   suffices h :
       ∀ (U' : X.Opens), U ≤ U' →
         ∀ V' : TauCeti.FiniteEtaleScheme U'.toScheme,
@@ -124,12 +123,12 @@ theorem finiteEtale_extend_of_purity {X : Scheme.{u}} [NoetherianSpace X] (U : X
     exact (TauCeti.FiniteEtaleScheme.pullbackCompIsoOfEq U'.ι (inv U'.ι) (𝟙 _)
         (IsIso.hom_inv_id _)).app V'
       ≪≫ TauCeti.FiniteEtaleScheme.pullbackId.app V'
-  · obtain ⟨s, hsU', hgen⟩ := U'.exists_notMem_specializes_imp_mem htop
+  · obtain ⟨s, hsU', hpunc⟩ := U'.exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum htop
     have hsU : s ∉ U := fun hs ↦ hsU' (hUU' hs)
     have : NoetherianSpace U'.toScheme := U'.ι.isOpenEmbedding.isInducing.noetherianSpace
     have : QuasiCompact U'.ι := ⟨fun _ _ _ ↦ NoetherianSpace.isCompact _⟩
     obtain ⟨W, V'', ⟨eV''⟩⟩ :=
-      TauCeti.FiniteEtaleScheme.exists_extend_of_purity_at_point hsU' hgen (hpurity s hsU) V'
+      TauCeti.FiniteEtaleScheme.exists_extend_of_purity_at_point hpunc (hpurity s hsU) V'
     have hlt : U' < U' ⊔ W.opens := by
       refine lt_of_le_of_ne le_sup_left fun heq ↦ hsU' ?_
       have hsUW : s ∈ U' ⊔ W.opens := Or.inr W.mem

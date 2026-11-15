@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Ring
-public import Mathlib.AlgebraicGeometry.AffineTransitionLimit
 public import Mathlib.AlgebraicGeometry.Stalk
-public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
+public import TauCeti.AlgebraicGeometry.Limits.AffineTransition
 
 import Mathlib.CategoryTheory.Filtered.Final
-import TauCeti.Topology.Sober
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # The local scheme of a stalk as a cofiltered limit of affine open neighbourhoods
@@ -19,18 +18,15 @@ import TauCeti.Topology.Sober
 For a point `x` of a scheme `X`, the affine open neighbourhoods `W` of `x` form a cofiltered
 partially ordered set `X.AffineOpenNhds x`. The functor sending `W` to `W.opens.toScheme` has
 affine transition morphisms, and the morphisms `W.opens.fromSpecStalkOfMem x` assemble into a
-limiting cone with vertex `Spec 𝒪_{X,x}`. Dually, the stalk `𝒪_{X,x}` is canonically isomorphic to
-the concrete directed colimit `Ring.DirectLimit` of the section rings `Γ(X, W)` over
-`(X.AffineOpenNhds x)ᵒᵈ`.
+limiting cone with vertex `Spec 𝒪_{X,x}`. Dually, the concrete directed colimit `Ring.DirectLimit`
+of the section rings `Γ(X, W)` over `(X.AffineOpenNhds x)ᵒᵈ` is canonically isomorphic to the stalk
+`𝒪_{X,x}` (`directLimitRingEquivStalk`).
 
-Together with Mathlib's `AlgebraicGeometry.AffineTransitionLimit`, this presents both `Spec 𝒪_{X,x}`
-and the preimage `(X.fromSpecStalk x) ⁻¹ᵁ U` of any open `U ⊆ X` as cofiltered limits of
-quasi-separated (and, when `U.ι` is quasi-compact, quasi-compact) open subschemes of affine opens
+Combining this limit presentation of `Spec 𝒪_{X,x}` with `opensDiagram` and `opensCone` presents
+the preimage `(X.fromSpecStalk x) ⁻¹ᵁ U` of any open `U ⊆ X` as a cofiltered limit
+(`stalkOpensDiagram`, `stalkOpensCone`, `isLimitStalkOpensCone`) of quasi-separated (and, when
+`U.ι` is quasi-compact, quasi-compact) open subschemes `(U ⊓ W.opens).toScheme` of affine opens
 with affine transition maps.
-
-We also show that for any proper open `U ≠ ⊤` of a scheme `X`, the closed complement `X \ U`
-contains the generic point `s` of one of its irreducible components, and for such `s` the preimage
-`(X.fromSpecStalk s) ⁻¹ᵁ U` is the punctured spectrum of `𝒪_{X,s}`.
 
 ## Main definitions
 
@@ -40,29 +36,23 @@ contains the generic point `s` of one of its irreducible components, and for suc
   sending `W` to `W.opens.toScheme`.
 * `AlgebraicGeometry.Scheme.specStalkCone` and `AlgebraicGeometry.Scheme.isLimitSpecStalkCone`:
   `Spec 𝒪_{X,x}` as the limit of `X.affineOpenNhdsDiagram x`.
-* `AlgebraicGeometry.Scheme.stalkRingEquivDirectLimit`: the ring isomorphism between
-  `Ring.DirectLimit` over `(X.AffineOpenNhds x)ᵒᵈ` and `𝒪_{X,x}`.
-
-## Main results
-
-* `AlgebraicGeometry.Scheme.Opens.exists_notMem_specializes_imp_mem`: every proper open `U ≠ ⊤`
-  misses a point `s` whose strict generizations all lie in `U`.
-* `TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes` and
-  `AlgebraicGeometry.Scheme.Opens.exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum`: for
-  such a point `s`, the preimage of `U` in `Spec 𝒪_{X,s}` is
-  `IsLocalRing.puncturedSpectrum 𝒪_{X,s}`.
+* `AlgebraicGeometry.Scheme.directLimitRingEquivStalk`: the ring isomorphism from
+  `Ring.DirectLimit` over `(X.AffineOpenNhds x)ᵒᵈ` to `𝒪_{X,x}`.
+* `AlgebraicGeometry.Scheme.stalkOpensDiagram`, `AlgebraicGeometry.Scheme.stalkOpensCone`, and
+  `AlgebraicGeometry.Scheme.isLimitStalkOpensCone`: `(X.fromSpecStalk x ⁻¹ᵁ U).toScheme` as a
+  cofiltered limit over `Over W₀`, with stage/vertex identifications `stalkOpensObjIso`,
+  `stalkOpensConePtIso`, and `stalkOpensStageIso`.
 
 ## References
 
-* [Stacks Project, Section 32.20](https://stacks.math.columbia.edu/tag/0BQ5)
-* [Stacks Project, Lemma 58.21.6](https://stacks.math.columbia.edu/tag/0EY7)
+* [Stacks Project, Lemma 32.20.3](https://stacks.math.columbia.edu/tag/0BQ5)
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
+open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace TauCeti.AlgebraicGeometry
 
 universe u
 
@@ -71,7 +61,6 @@ namespace AlgebraicGeometry.Scheme
 variable (X : Scheme.{u}) (x : X)
 
 /-- The partially ordered set of affine open neighbourhoods of a point `x` in a scheme `X`. -/
-@[expose]
 def AffineOpenNhds : Type u :=
   {W : X.affineOpens // x ∈ W.1}
 
@@ -82,11 +71,28 @@ variable {X x}
 instance : PartialOrder (X.AffineOpenNhds x) :=
   inferInstanceAs (PartialOrder {W : X.affineOpens // x ∈ W.1})
 
+/-- Construct an affine open neighbourhood of `x` from an open subset `U : X.Opens`, a proof that
+`U` is affine, and a proof that `x ∈ U`. -/
+def mk (U : X.Opens) (hU : IsAffineOpen U) (hx : x ∈ U) : X.AffineOpenNhds x :=
+  ⟨⟨U, hU⟩, hx⟩
+
 /-- The underlying affine open of `X`. -/
-abbrev affineOpen (W : X.AffineOpenNhds x) : X.affineOpens := W.1
+def affineOpen (W : X.AffineOpenNhds x) : X.affineOpens := W.1
 
 /-- The underlying open subset of `X`. -/
-abbrev opens (W : X.AffineOpenNhds x) : X.Opens := W.1.1
+def opens (W : X.AffineOpenNhds x) : X.Opens := W.1.1
+
+/-- The underlying affine open of `AffineOpenNhds.mk`. -/
+@[simp]
+theorem mk_affineOpen (U : X.Opens) (hU : IsAffineOpen U) (hx : x ∈ U) :
+    (mk U hU hx).affineOpen = ⟨U, hU⟩ :=
+  (rfl)
+
+/-- The underlying open subset of `AffineOpenNhds.mk`. -/
+@[simp]
+theorem mk_opens (U : X.Opens) (hU : IsAffineOpen U) (hx : x ∈ U) :
+    (mk U hU hx).opens = U :=
+  (rfl)
 
 /-- The base point `x` belongs to `W`. -/
 theorem mem (W : X.AffineOpenNhds x) : x ∈ W.opens := W.2
@@ -94,10 +100,12 @@ theorem mem (W : X.AffineOpenNhds x) : x ∈ W.opens := W.2
 /-- The underlying open subset of `W` is affine. -/
 theorem isAffineOpen (W : X.AffineOpenNhds x) : IsAffineOpen W.opens := W.1.2
 
+/-- Two affine open neighbourhoods of `x` are equal when their underlying open subsets agree. -/
 @[ext]
 theorem ext {W₁ W₂ : X.AffineOpenNhds x} (h : W₁.opens = W₂.opens) : W₁ = W₂ :=
   Subtype.ext (Subtype.ext h)
 
+/-- Ordering on `X.AffineOpenNhds x` is inclusion of underlying open subsets. -/
 @[simp]
 theorem le_iff {W₁ W₂ : X.AffineOpenNhds x} : W₁ ≤ W₂ ↔ W₁.opens ≤ W₂.opens :=
   Iff.rfl
@@ -105,15 +113,15 @@ theorem le_iff {W₁ W₂ : X.AffineOpenNhds x} : W₁ ≤ W₂ ↔ W₁.opens �
 instance : Nonempty (X.AffineOpenNhds x) := by
   obtain ⟨_, ⟨W, hW, rfl⟩, hxW, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-  exact ⟨⟨⟨W, hW⟩, hxW⟩⟩
+  exact ⟨mk W hW hxW⟩
 
 instance : IsCofilteredOrEmpty (X.AffineOpenNhds x) where
   cone_objs W₁ W₂ := by
     have hx12 : x ∈ W₁.opens ⊓ W₂.opens := ⟨W₁.mem, W₂.mem⟩
     obtain ⟨_, ⟨W₃, hW₃, rfl⟩, hxW₃, hle⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open hx12 (W₁.opens ⊓ W₂.opens).isOpen
-    exact ⟨⟨⟨W₃, hW₃⟩, hxW₃⟩, homOfLE (hle.trans inf_le_left),
-      homOfLE (hle.trans inf_le_right), trivial⟩
+    exact ⟨mk W₃ hW₃ hxW₃, homOfLE (le_iff.mpr (hle.trans inf_le_left)),
+      homOfLE (le_iff.mpr (hle.trans inf_le_right)), trivial⟩
   cone_maps W₁ _ _ _ := ⟨W₁, 𝟙 W₁, Subsingleton.elim _ _⟩
 
 instance : IsCofiltered (X.AffineOpenNhds x) where
@@ -138,7 +146,7 @@ instance : (toOpenNhds X x).Initial := by
   obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hle⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open U.2 U.1.isOpen
   have hle' : (⟨W, hxW⟩ : OpenNhds x) ≤ U := hle
-  exact ⟨⟨⟨W, hW⟩, hxW⟩, ⟨homOfLE hle'⟩⟩
+  exact ⟨mk W hW hxW, ⟨homOfLE hle'⟩⟩
 
 end AffineOpenNhds
 
@@ -148,7 +156,9 @@ def affineOpenNhdsDiagram : X.AffineOpenNhds x ⥤ Scheme.{u} where
   obj W := W.opens.toScheme
   map f := X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f))
   map_id W := X.homOfLE_rfl W.opens
-  map_comp f g := (X.homOfLE_homOfLE (leOfHom f) (leOfHom g)).symm
+  map_comp f g :=
+    (X.homOfLE_homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f))
+      (AffineOpenNhds.le_iff.mp (leOfHom g))).symm
 
 instance (W : X.AffineOpenNhds x) : IsAffine ((X.affineOpenNhdsDiagram x).obj W) := by
   rw [affineOpenNhdsDiagram_obj]
@@ -165,13 +175,16 @@ def affineOpenNhdsDiagramIsoSpec :
         X.presheaf.rightOp ⋙ Scheme.Spec :=
   NatIso.ofComponents
     (fun W ↦ W.isAffineOpen.isoSpec)
-    (fun {_ _} f ↦ (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map _ _ (leOfHom f)).symm)
+    (fun {_ _} f ↦
+      (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map _ _ (AffineOpenNhds.le_iff.mp (leOfHom f))).symm)
 
+/-- Forward component of `affineOpenNhdsDiagramIsoSpec` at `W`. -/
 @[simp]
 theorem affineOpenNhdsDiagramIsoSpec_hom_app (W : X.AffineOpenNhds x) :
     (X.affineOpenNhdsDiagramIsoSpec x).hom.app W = W.isAffineOpen.isoSpec.hom :=
   NatIso.ofComponents_hom_app _ _ W
 
+/-- Inverse component of `affineOpenNhdsDiagramIsoSpec` at `W`. -/
 @[simp]
 theorem affineOpenNhdsDiagramIsoSpec_inv_app (W : X.AffineOpenNhds x) :
     (X.affineOpenNhdsDiagramIsoSpec x).inv.app W = W.isAffineOpen.isoSpec.inv :=
@@ -188,9 +201,11 @@ def specStalkCone : Cone (X.affineOpenNhdsDiagram x) where
         rw [Category.id_comp, ← cancel_mono W₂.opens.ι, Category.assoc, Scheme.homOfLE_ι,
           Opens.fromSpecStalkOfMem_ι, Opens.fromSpecStalkOfMem_ι] }
 
+/-- Vertex of `X.specStalkCone x`. -/
 @[simp]
 theorem specStalkCone_pt : (X.specStalkCone x).pt = Spec (X.presheaf.stalk x) := rfl
 
+/-- Projection of `X.specStalkCone x` to an affine open neighbourhood `W`. -/
 @[simp]
 theorem specStalkCone_π_app (W : X.AffineOpenNhds x) :
     (X.specStalkCone x).π.app W = W.opens.fromSpecStalkOfMem x W.mem := rfl
@@ -276,7 +291,7 @@ private theorem stalkRingHomFromDirectLimit_of (W : (X.AffineOpenNhds x)ᵒᵈ)
 
 /-- The canonical ring isomorphism from the concrete directed colimit of affine open section rings
 around `x` to the stalk `𝒪_{X,x}`. -/
-def stalkRingEquivDirectLimit :
+def directLimitRingEquivStalk :
     Ring.DirectLimit (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) ≃+*
       X.presheaf.stalk x := by
   refine RingEquiv.ofBijective (X.stalkRingHomFromDirectLimit x) ⟨?_, ?_⟩
@@ -293,81 +308,223 @@ def stalkRingEquivDirectLimit :
       obtain ⟨V, hxV, hV, hVW, _, heq⟩ :=
         TopCat.Presheaf.germ_eq_of_isBasis X.isBasis_affineOpens X.presheaf x
           (OrderDual.ofDual W).mem (OrderDual.ofDual W).mem hz0
-      let W' : (X.AffineOpenNhds x)ᵒᵈ := OrderDual.toDual ⟨⟨V, hV⟩, hxV⟩
-      have hWW' : W ≤ W' := hVW
+      let W' : (X.AffineOpenNhds x)ᵒᵈ := OrderDual.toDual (AffineOpenNhds.mk V hV hxV)
+      have hWW' : W ≤ W' :=
+        OrderDual.le_toDual.mpr (AffineOpenNhds.le_iff.mpr
+          ((AffineOpenNhds.mk_opens V hV hxV).le.trans hVW))
       have hmap0 : X.stalkDirectSystemMap x W W' hWW' s = 0 := heq.trans (map_zero _)
       rw [← Ring.DirectLimit.of_f (hij := hWW'), hmap0, map_zero]
   · intro t
     obtain ⟨V, hxV, hV, s, rfl⟩ :=
       TopCat.Presheaf.exists_mem_germ_eq_of_isBasis X.isBasis_affineOpens X.presheaf x t
-    let W : (X.AffineOpenNhds x)ᵒᵈ := OrderDual.toDual ⟨⟨V, hV⟩, hxV⟩
+    let W : (X.AffineOpenNhds x)ᵒᵈ := OrderDual.toDual (AffineOpenNhds.mk V hV hxV)
     let sW : X.stalkDirectSystemObj x W := s
     exact ⟨Ring.DirectLimit.of _ _ W sW, X.stalkRingHomFromDirectLimit_of x W sW⟩
 
+/-- Evaluation of `directLimitRingEquivStalk` on `Ring.DirectLimit.of` is the stalk germ. -/
 @[simp]
-theorem stalkRingEquivDirectLimit_of (W : (X.AffineOpenNhds x)ᵒᵈ)
+theorem directLimitRingEquivStalk_of (W : (X.AffineOpenNhds x)ᵒᵈ)
     (s : X.stalkDirectSystemObj x W) :
-    X.stalkRingEquivDirectLimit x
+    X.directLimitRingEquivStalk x
         (Ring.DirectLimit.of (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) W s) =
       X.presheaf.germ (OrderDual.ofDual W).opens x (OrderDual.ofDual W).mem s :=
   X.stalkRingHomFromDirectLimit_of x W s
 
-/-- Every proper open `U ≠ ⊤` of a scheme `X` misses the generic point `s` of an irreducible
-component of `X \ U`; every strict generization of `s` lies in `U`. -/
-theorem Opens.exists_notMem_specializes_imp_mem {X : Scheme.{u}} (U : X.Opens) (hU : U ≠ ⊤) :
-    ∃ s : X, s ∉ U ∧ ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U := by
-  obtain ⟨z₀, hz₀⟩ : ((U : Set X)ᶜ).Nonempty :=
-    Set.nonempty_compl.mpr fun h ↦ hU (SetLike.ext' (h.trans Opens.coe_top.symm))
-  let : QuasiSober ((U : Set X)ᶜ : Set X) :=
-    U.isOpen.isClosed_compl.isClosedEmbedding_subtypeVal.quasiSober
-  obtain ⟨s, hs, -⟩ := U.isOpen.isClosed_compl.exists_genericPoint_specializes hz₀
-  refine ⟨s.1, s.2, fun t hts hne ↦ ?_⟩
-  by_contra htU
-  have hts' : (⟨t, htU⟩ : ((U : Set X)ᶜ : Set X)) ⤳ s :=
-    Topology.IsInducing.subtypeVal.specializes_iff.mp hts
-  exact hne (congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hs) ⟨t, htU⟩ hts'))
+section StalkOpens
+
+/-- The diagram over `Over W₀` sending an affine open neighbourhood `j.left ≤ W₀` of `x` to the
+preimage of `U` in `j.left.opens.toScheme`. -/
+@[expose, implicit_reducible]
+def stalkOpensDiagram (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    Over W₀ ⥤ Scheme.{u} :=
+  opensDiagram (X.affineOpenNhdsDiagram x) W₀ (W₀.opens.ι ⁻¹ᵁ U)
+
+/-- The cone over `X.stalkOpensDiagram U x W₀` induced by `X.specStalkCone x`, with vertex
+canonically isomorphic to `(X.fromSpecStalk x ⁻¹ᵁ U).toScheme`. -/
+@[expose, implicit_reducible]
+def stalkOpensCone (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    Cone (X.stalkOpensDiagram U x W₀) :=
+  opensCone (X.affineOpenNhdsDiagram x) (X.specStalkCone x) W₀ (W₀.opens.ι ⁻¹ᵁ U)
+
+/-- `X.stalkOpensCone U x W₀` is a limit cone over `X.stalkOpensDiagram U x W₀`. -/
+def isLimitStalkOpensCone (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    IsLimit (X.stalkOpensCone U x W₀) :=
+  isLimitOpensCone (X.affineOpenNhdsDiagram x) (X.specStalkCone x)
+    (X.isLimitSpecStalkCone x) W₀ (W₀.opens.ι ⁻¹ᵁ U)
+
+instance {U : X.Opens} {x : X} (W₀ : X.AffineOpenNhds x) {j k : Over W₀} (f : j ⟶ k) :
+    IsAffineHom ((X.stalkOpensDiagram U x W₀).map f) := by
+  dsimp only [stalkOpensDiagram]
+  infer_instance
+
+instance {U : X.Opens} [QuasiCompact U.ι] {x : X} (W₀ : X.AffineOpenNhds x) (j : Over W₀) :
+    CompactSpace ((X.stalkOpensDiagram U x W₀).obj j) :=
+  isCompact_iff_compactSpace.mp <|
+    (((X.affineOpenNhdsDiagram x).map j.hom).isCompact_preimage
+      (W₀.opens.isCompact_ι_preimage_of_quasiCompact U W₀.isAffineOpen.isCompact))
+
+instance {U : X.Opens} {x : X} (W₀ : X.AffineOpenNhds x) (j : Over W₀) :
+    QuasiSeparatedSpace ((X.stalkOpensDiagram U x W₀).obj j) :=
+  (isQuasiSeparated_iff_quasiSeparatedSpace _
+    ((X.affineOpenNhdsDiagram x).map j.hom ⁻¹ᵁ (W₀.opens.ι ⁻¹ᵁ U)).2).mp
+    (.of_quasiSeparatedSpace _)
+
+/-- Canonical identification of stage `j` of `X.stalkOpensDiagram U x W₀` with
+`(j.left.opens.ι ⁻¹ᵁ U).toScheme`. -/
+def stalkOpensObjIso (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x} (j : Over W₀) :
+    (X.stalkOpensDiagram U x W₀).obj j ≅ (j.left.opens.ι ⁻¹ᵁ U).toScheme :=
+  opensDiagramObjIso (X.affineOpenNhdsDiagram x) W₀ (W₀.opens.ι ⁻¹ᵁ U) j ≪≫
+    j.left.opens.toScheme.isoOfEq
+      (by rw [← Scheme.Hom.comp_preimage, X.affineOpenNhdsDiagram_map, X.homOfLE_ι])
+
+/-- Canonical identification of the vertex of `X.stalkOpensCone U x W₀` with
+`(X.fromSpecStalk x ⁻¹ᵁ U).toScheme`. -/
+def stalkOpensConePtIso (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    (X.stalkOpensCone U x W₀).pt ≅ (X.fromSpecStalk x ⁻¹ᵁ U).toScheme :=
+  opensConePtIso (X.affineOpenNhdsDiagram x) (X.specStalkCone x) W₀ (W₀.opens.ι ⁻¹ᵁ U) ≪≫
+    (Spec (X.presheaf.stalk x)).isoOfEq
+      (by rw [← Scheme.Hom.comp_preimage, X.specStalkCone_π_app,
+        Scheme.Opens.fromSpecStalkOfMem_ι])
+
+/-- Compatibility of `stalkOpensDiagram` transition maps with `stalkOpensObjIso` and open
+inclusions. -/
+theorem stalkOpensDiagram_map_comp_objIso_hom_ι (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x}
+    {j k : Over W₀} (f : j ⟶ k) :
+    (X.stalkOpensDiagram U x W₀).map f ≫
+        (X.stalkOpensObjIso U x k).hom ≫ (k.left.opens.ι ⁻¹ᵁ U).ι =
+      (X.stalkOpensObjIso U x j).hom ≫ (j.left.opens.ι ⁻¹ᵁ U).ι ≫
+        X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom f.left)) := by
+  simp only [stalkOpensDiagram, stalkOpensObjIso, Iso.trans_hom, Category.assoc,
+    Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc]
+  rw [← Category.assoc, opensDiagram_map_comp_objIso_hom,
+    Category.assoc, Scheme.Hom.resLE_comp_ι, X.affineOpenNhdsDiagram_map x f.left]
+
+/-- Compatibility of `stalkOpensCone` projections with `stalkOpensConePtIso`, `stalkOpensObjIso`,
+and `fromSpecStalkOfMem`. -/
+theorem stalkOpensCone_π_app_comp_objIso_hom_ι (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x}
+    (j : Over W₀) :
+    (X.stalkOpensCone U x W₀).π.app j ≫
+        (X.stalkOpensObjIso U x j).hom ≫ (j.left.opens.ι ⁻¹ᵁ U).ι =
+      (X.stalkOpensConePtIso U x W₀).hom ≫ (X.fromSpecStalk x ⁻¹ᵁ U).ι ≫
+        j.left.opens.fromSpecStalkOfMem x j.left.mem := by
+  simp only [stalkOpensCone, stalkOpensObjIso, stalkOpensConePtIso, Iso.trans_hom, Category.assoc,
+    Scheme.isoOfEq_hom_ι, Scheme.isoOfEq_hom_ι_assoc]
+  rw [← Category.assoc, opensCone_π_app_comp_objIso_hom,
+    Category.assoc, Scheme.Hom.resLE_comp_ι, X.specStalkCone_π_app x j.left]
+
+/-- Canonical open immersion from the top stage `Over.mk (𝟙 W₀)` of `X.stalkOpensDiagram U x W₀`
+to `U.toScheme`. -/
+def stalkOpensTopToOpen (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    (X.stalkOpensDiagram U x W₀).obj (Over.mk (𝟙 W₀)) ⟶ U.toScheme :=
+  (X.stalkOpensObjIso U x (Over.mk (𝟙 W₀))).hom ≫ W₀.opens.ι.resLE U (W₀.opens.ι ⁻¹ᵁ U) le_rfl
+
+/-- Canonical open immersion from the top stage `Over.mk (𝟙 W₀)` of `X.stalkOpensDiagram U x W₀`
+to `W₀.opens.toScheme`. -/
+def stalkOpensTopToNhds (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    (X.stalkOpensDiagram U x W₀).obj (Over.mk (𝟙 W₀)) ⟶ W₀.opens.toScheme :=
+  (X.stalkOpensObjIso U x (Over.mk (𝟙 W₀))).hom ≫ (W₀.opens.ι ⁻¹ᵁ U).ι
+
+/-- The inclusions of the top stage of `X.stalkOpensDiagram U x W₀` into `U` and `W₀` agree in `X`.
+-/
+theorem stalkOpensTopToOpen_ι (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    X.stalkOpensTopToOpen U x W₀ ≫ U.ι = X.stalkOpensTopToNhds U x W₀ ≫ W₀.opens.ι := by
+  simp [stalkOpensTopToOpen, stalkOpensTopToNhds]
+
+/-- Composing the top-stage projection of `X.stalkOpensCone U x W₀` with `stalkOpensTopToNhds`
+factors through `stalkOpensConePtIso` and `W₀.opens.fromSpecStalkOfMem x W₀.mem`. -/
+theorem stalkOpensCone_π_top_toNhds (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    (X.stalkOpensCone U x W₀).π.app (Over.mk (𝟙 W₀)) ≫ X.stalkOpensTopToNhds U x W₀ =
+      ((X.stalkOpensConePtIso U x W₀).hom ≫ (X.fromSpecStalk x ⁻¹ᵁ U).ι) ≫
+        W₀.opens.fromSpecStalkOfMem x W₀.mem := by
+  simpa only [stalkOpensTopToNhds, Over.mk_left, Category.assoc] using
+    X.stalkOpensCone_π_app_comp_objIso_hom_ι U x (W₀ := W₀) (Over.mk (𝟙 W₀))
+
+/-- Composing the top-stage projection of `X.stalkOpensCone U x W₀` with `stalkOpensTopToOpen`
+factors through `stalkOpensConePtIso` and `(X.fromSpecStalk x).resLE U (X.fromSpecStalk x ⁻¹ᵁ U)`.
+-/
+theorem stalkOpensCone_π_top_toOpen (U : X.Opens) (x : X) (W₀ : X.AffineOpenNhds x) :
+    (X.stalkOpensCone U x W₀).π.app (Over.mk (𝟙 W₀)) ≫ X.stalkOpensTopToOpen U x W₀ =
+      (X.stalkOpensConePtIso U x W₀).hom ≫
+        (X.fromSpecStalk x).resLE U (X.fromSpecStalk x ⁻¹ᵁ U) le_rfl := by
+  rw [← cancel_mono U.ι, Category.assoc, X.stalkOpensTopToOpen_ι,
+    ← Category.assoc ((X.stalkOpensCone U x W₀).π.app _), X.stalkOpensCone_π_top_toNhds,
+    Category.assoc, Category.assoc, Scheme.Opens.fromSpecStalkOfMem_ι,
+    Category.assoc, Scheme.Hom.resLE_comp_ι]
+
+/-- Canonical isomorphism identifying `(U ⊓ k.left.opens).toScheme` with stage `k` of
+`X.stalkOpensDiagram U x W₀`. -/
+def stalkOpensStageIso (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x} (k : Over W₀) :
+    (U ⊓ k.left.opens).toScheme ≅ (X.stalkOpensDiagram U x W₀).obj k :=
+  (k.left.opens.ι.isoImage (k.left.opens.ι ⁻¹ᵁ U) ≪≫
+      X.isoOfEq ((k.left.opens.ι_image_preimage_eq_inf U).trans (inf_comm _ _))).symm ≪≫
+    (X.stalkOpensObjIso U x k).symm
+
+/-- Compatibility of `stalkOpensStageIso` with the transition map to `W₀.opens.toScheme`. -/
+theorem stalkOpensStageIso_hom_map_toNhds (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x}
+    {k : Over W₀} (fk : k ⟶ Over.mk (𝟙 W₀)) :
+    (X.stalkOpensStageIso U x k).hom ≫
+        (X.stalkOpensDiagram U x W₀).map fk ≫ X.stalkOpensTopToNhds U x W₀ =
+      X.homOfLE (U := U ⊓ k.left.opens) (V := k.left.opens) inf_le_right ≫
+        X.homOfLE (AffineOpenNhds.le_iff.mp (leOfHom k.hom)) := by
+  have hfk : fk.left = k.hom := by simpa using Over.w fk
+  have hmap := X.stalkOpensDiagram_map_comp_objIso_hom_ι U x fk
+  simp only [Over.mk_left] at hmap
+  have hfac : (k.left.opens.ι.isoImage (k.left.opens.ι ⁻¹ᵁ U) ≪≫
+        X.isoOfEq ((k.left.opens.ι_image_preimage_eq_inf U).trans (inf_comm _ _))).inv ≫
+      (k.left.opens.ι ⁻¹ᵁ U).ι =
+      X.homOfLE (U := U ⊓ k.left.opens) (V := k.left.opens) inf_le_right := by
+    rw [← cancel_mono k.left.opens.ι]; simp
+  simp only [stalkOpensStageIso, stalkOpensTopToNhds, Iso.trans_hom, Iso.symm_hom, Category.assoc]
+  rw [hmap, Iso.inv_hom_id_assoc, reassoc_of% hfac, hfk]
+
+/-- Compatibility of `stalkOpensStageIso` with the transition map to `U.toScheme`. -/
+theorem stalkOpensStageIso_hom_map_toOpen (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x}
+    {k : Over W₀} (fk : k ⟶ Over.mk (𝟙 W₀)) :
+    (X.stalkOpensStageIso U x k).hom ≫
+        (X.stalkOpensDiagram U x W₀).map fk ≫ X.stalkOpensTopToOpen U x W₀ =
+      X.homOfLE (U := U ⊓ k.left.opens) (V := U) inf_le_left := by
+  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, X.stalkOpensTopToOpen_ι,
+    ← Category.assoc ((X.stalkOpensDiagram U x W₀).map fk),
+    ← Category.assoc (X.stalkOpensStageIso U x k).hom, X.stalkOpensStageIso_hom_map_toNhds,
+    Category.assoc, X.homOfLE_ι, X.homOfLE_ι, X.homOfLE_ι]
+
+/-- Compatibility of `(stalkOpensConePtIso U x W₀).inv`, the cone leg `π.app k`, and
+`(stalkOpensStageIso U x k).inv` with the restriction of `X.fromSpecStalk x` to `U ⊓ k.left.opens`.
+-/
+theorem stalkOpensConePtIso_inv_π_stageIso_inv (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x}
+    (k : Over W₀) :
+    ((X.stalkOpensConePtIso U x W₀).inv ≫
+        (X.stalkOpensCone U x W₀).π.app k ≫
+        (X.stalkOpensStageIso U x k).inv) ≫
+      X.homOfLE (U := U ⊓ k.left.opens) (V := U) inf_le_left =
+      (X.fromSpecStalk x).resLE U (X.fromSpecStalk x ⁻¹ᵁ U) le_rfl := by
+  have hfac : (k.left.opens.ι ⁻¹ᵁ U).ι ≫ k.left.opens.ι =
+      ((X.stalkOpensObjIso U x k).inv ≫ (X.stalkOpensStageIso U x k).inv) ≫
+        X.homOfLE (U := U ⊓ k.left.opens) (V := U) inf_le_left ≫ U.ι := by
+    simp [stalkOpensStageIso]
+  rw [← cancel_mono U.ι]
+  simp only [Category.assoc, X.homOfLE_ι, Scheme.Hom.resLE_comp_ι]
+  have hπ := congrArg (· ≫ k.left.opens.ι) (X.stalkOpensCone_π_app_comp_objIso_hom_ι U x k)
+  simp only [Category.assoc, Scheme.Opens.fromSpecStalkOfMem_ι] at hπ
+  rw [hfac] at hπ
+  simp only [← Category.assoc] at hπ ⊢
+  have hπ' := congrArg ((X.stalkOpensConePtIso U x W₀).inv ≫ ·) hπ
+  simpa only [Category.assoc, X.homOfLE_ι, Iso.hom_inv_id_assoc, Iso.inv_hom_id_assoc] using hπ'
+
+/-- Compatibility of `(stalkOpensConePtIso U x W₀).inv`, the cone leg `π.app k`, and
+`(stalkOpensStageIso U x k).inv` with `k.left.opens.fromSpecStalkOfMem x k.left.mem`. -/
+theorem stalkOpensConePtIso_inv_π_stageIso_inv_nhds (U : X.Opens) (x : X) {W₀ : X.AffineOpenNhds x}
+    (k : Over W₀) :
+    ((X.stalkOpensConePtIso U x W₀).inv ≫
+        (X.stalkOpensCone U x W₀).π.app k ≫
+        (X.stalkOpensStageIso U x k).inv) ≫
+      X.homOfLE (U := U ⊓ k.left.opens) (V := k.left.opens) inf_le_right =
+      (X.fromSpecStalk x ⁻¹ᵁ U).ι ≫ k.left.opens.fromSpecStalkOfMem x k.left.mem := by
+  rw [← cancel_mono k.left.opens.ι]
+  simp only [Category.assoc, X.homOfLE_ι, Scheme.Opens.fromSpecStalkOfMem_ι]
+  have h := congrArg (· ≫ U.ι) (X.stalkOpensConePtIso_inv_π_stageIso_inv U x k)
+  simpa only [Category.assoc, X.homOfLE_ι, Scheme.Hom.resLE_comp_ι] using h
+
+end StalkOpens
 
 end AlgebraicGeometry.Scheme
-
-namespace TauCeti
-
-open AlgebraicGeometry
-
-/-- If `s ∉ U` and every strict generization of `s` lies in `U`, then the preimage of `U` along
-`Spec 𝒪_{X,s} ⟶ X` is the punctured spectrum of `𝒪_{X,s}`. -/
-theorem fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes
-    {X : Scheme.{u}} {U : X.Opens} {s : X} (hs : s ∉ U)
-    (hgen : ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U) :
-    (X.fromSpecStalk s) ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
-  ext p
-  rw [SetLike.mem_coe, SetLike.mem_coe, Scheme.Hom.mem_preimage]
-  refine Iff.trans ?_ (IsLocalRing.mem_puncturedSpectrum_iff (X.presheaf.stalk s) p).symm
-  constructor
-  · intro hpU hpc
-    subst hpc
-    exact hs (Scheme.fromSpecStalk_closedPoint (X := X) (x := s) ▸ hpU)
-  · intro hne
-    have hspec : X.fromSpecStalk s p ⤳ s :=
-      ((IsLocalRing.specializes_closedPoint p).map (X.fromSpecStalk s).continuous).trans
-        (specializes_of_eq Scheme.fromSpecStalk_closedPoint)
-    have hinj : X.fromSpecStalk s p ≠ s := by
-      intro heq
-      apply hne
-      exact (X.fromSpecStalk s).isEmbedding.injective
-        (heq.trans Scheme.fromSpecStalk_closedPoint.symm)
-    exact hgen hspec hinj
-
-end TauCeti
-
-namespace AlgebraicGeometry.Scheme.Opens
-
-/-- For any proper open `U ≠ ⊤` of a scheme `X`, there exists a point `s ∉ U` such that the
-preimage of `U` in `Spec 𝒪_{X,s}` is the punctured spectrum of `𝒪_{X,s}`. -/
-theorem exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum
-    {X : Scheme.{u}} (U : X.Opens) (hU : U ≠ ⊤) :
-    ∃ s : X, s ∉ U ∧
-      (X.fromSpecStalk s) ⁻¹ᵁ U = TauCeti.IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
-  obtain ⟨s, hs, hgen⟩ := U.exists_notMem_specializes_imp_mem hU
-  exact ⟨s, hs, TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes hs hgen⟩
-
-end AlgebraicGeometry.Scheme.Opens
