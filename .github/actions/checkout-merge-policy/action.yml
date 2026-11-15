@@ -18,7 +18,7 @@ runs:
     - uses: actions/checkout@v4
       with:
         repository: TauCetiProject/TauCetiReview
-        ref: 02ef1d946e97499d1b2620ba7666f9eb7f3d7e08
+        ref: 20b50dca4a88d1c8bb9180099e81232c5db8365a
         path: .tauceti-review
         sparse-checkout: runner
         persist-credentials: false
