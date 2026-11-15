@@ -204,9 +204,8 @@ theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRin
 
 end TauCeti
 
-/-- **A positive finite rank forces integrality**: if `0 < finrank K L` for a field `K` and a ring
-`L` over it, then `L` is finite over `K` (a module of infinite dimension has `finrank` zero), hence
-integral. -/
+/-- **A positive finite rank forces integrality**: if `0 < Module.finrank K L` for a field `K` and
+a ring `L` over it, then `L` is integral over `K`. -/
 theorem Algebra.IsIntegral.of_finrank_pos {K L : Type*} [Field K] [Ring L] [Algebra K L]
     (h : 0 < Module.finrank K L) : Algebra.IsIntegral K L :=
   haveI := Module.finite_of_finrank_pos h

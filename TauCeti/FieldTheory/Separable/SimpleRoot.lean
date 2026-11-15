@@ -63,8 +63,7 @@ theorem finiteDimensional_and_isSeparable_of_aeval_derivative_ne_zero (hgen : K�
 
 /-- **A separable generator with `2 z + u = 0` of a quadratic extension is trivial.** If `z`
 generates a separable extension `L / K`, satisfies `z² + u z - v = 0` and `2 z + u = 0`, then
-`L = K`: the minimal polynomial `m` of `z` divides the quadratic `X² + u X - v`, and `m'(z) ≠ 0`
-forces `m²` to divide it too, so `m` is linear. -/
+`L = K`, that is, `Module.finrank K L = 1`. -/
 theorem finrank_eq_one_of_two_mul_add_eq_zero [Algebra.IsSeparable K L] {u v : K} {z : L}
     (hgen : K⟮z⟯ = ⊤) (hz : z ^ 2 + algebraMap K L u * z - algebraMap K L v = 0)
     (hd : 2 * z + algebraMap K L u = 0) : Module.finrank K L = 1 := by
