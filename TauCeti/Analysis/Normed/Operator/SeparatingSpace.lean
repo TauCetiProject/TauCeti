@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
-public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Order.Filter.EventuallyConst
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
