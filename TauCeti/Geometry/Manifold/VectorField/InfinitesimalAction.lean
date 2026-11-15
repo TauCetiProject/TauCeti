@@ -35,14 +35,15 @@ factor by factor. Infinitesimal actions of `𝔤` on `M` and of `𝔥` on `N` gi
 action `(Z, Z') ↦ (Z_M, Z'_N)` of `𝔤 × 𝔥` on `M × N` (`TauCeti.InfinitesimalAction.prodMap`),
 whose orbit tangent spaces and isotropy algebras are the products of those of the factors. For
 maps `i₁ × i₂` and `p₁ × p₂` out of a product, the vertical vectors of `p₁ × p₂` are sent by
-`d(i₁ × i₂)` into the orbit directions of `S × S'` exactly when the same holds for both factors
-(`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff`). The basic
-example is the
-action of the Lie algebra of all endomorphisms of a finite-dimensional real vector space `V` on `V`
-by the linear vector fields `x ↦ A x` (`TauCeti.InfinitesimalAction.linear`), which restricts to
-the linear actions of the classical subalgebras, such as the symplectic Lie algebra. An abelian Lie
-algebra acts by translations, through the constant vector fields `x ↦ τ Z` of a linear map `τ`
-(`TauCeti.InfinitesimalAction.translation`).
+`d(i₁ × i₂)` into, or are exactly those sent into, the orbit directions of `S × S'` exactly when
+the same holds for both factors
+(`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_le_comap_map_eval_prodMap_iff`,
+`TauCeti.InfinitesimalAction.ker_mfderiv_prodMap_eq_comap_map_eval_prodMap_iff`). The basic
+example is the action of the Lie algebra of all endomorphisms of a finite-dimensional real vector
+space `V` on `V` by the linear vector fields `x ↦ A x` (`TauCeti.InfinitesimalAction.linear`),
+which restricts to the linear actions of the classical subalgebras, such as the symplectic Lie
+algebra. An abelian Lie algebra acts by translations, through the constant vector fields `x ↦ τ Z`
+of a linear map `τ` (`TauCeti.InfinitesimalAction.translation`).
 
 At a point `x`, an infinitesimal action has an **orbit tangent space** `𝔤 · x = {Z_M(x)}`
 (`TauCeti.InfinitesimalAction.orbitTangent`) and an **isotropy algebra** `𝔤_x = {Z | Z_M(x) = 0}`
@@ -299,6 +300,14 @@ theorem prodMap_apply (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalActio
     (Z : 𝔤 × 𝔥) : a.prodMap b Z = Manifold.prodVectorField (a Z.1) (b Z.2) :=
   (rfl)
 
+/-- Read in the product tangent space, the orbit map `Z ↦ Z_{M × N}(x, y)` of the componentwise
+action is the product of the orbit maps of the factors at `x` and at `y`. -/
+theorem tangentSpaceProdEquiv_comp_eval_prodMap (a : InfinitesimalAction 𝔤 I M)
+    (b : InfinitesimalAction 𝔥 J N) (p : M × N) :
+    (Manifold.tangentSpaceProdEquiv p).toLinearMap ∘ₗ (a.prodMap b).eval p =
+      (a.eval p.1).prodMap (b.eval p.2) :=
+  LinearMap.ext fun _ ↦ Manifold.tangentSpaceProdEquiv_prodVectorField _ _ p
+
 /-- The image of `S × S'` under the orbit map at `(x, y)` of the componentwise action consists of
 the tangent vectors whose components lie in the images of `S` and `S'` under the orbit maps of the
 factors. -/
@@ -307,10 +316,7 @@ theorem map_eval_prodMap (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAc
     (S.prod S').map ((a.prodMap b).eval p) =
       ((S.map (a.eval p.1)).prod (S'.map (b.eval p.2))).comap
         (Manifold.tangentSpaceProdEquiv p).toLinearMap := by
-  have h : (Manifold.tangentSpaceProdEquiv p).toLinearMap ∘ₗ (a.prodMap b).eval p =
-      (a.eval p.1).prodMap (b.eval p.2) :=
-    LinearMap.ext fun Z ↦ Manifold.tangentSpaceProdEquiv_prodVectorField _ _ p
-  rw [← LinearMap.prodMap_map_prod, ← h, Submodule.map_comp,
+  rw [← LinearMap.prodMap_map_prod, ← tangentSpaceProdEquiv_comp_eval_prodMap, Submodule.map_comp,
     Submodule.comap_map_eq_of_injective (Manifold.tangentSpaceProdEquiv p).injective]
 
 /-- The orbit tangent space at `(x, y)` of the componentwise action is `(𝔤 · x) × (𝔥 · y)`. -/
@@ -323,12 +329,21 @@ theorem orbitTangent_prodMap (a : InfinitesimalAction 𝔤 I M) (b : Infinitesim
     LinearMap.range_eq_map, LinearMap.range_eq_map, ← map_eval_prodMap, Submodule.prod_top]
 
 /-- The isotropy algebra at `(x, y)` of the componentwise action is `𝔤_x × 𝔥_y`. -/
+@[simp]
 theorem toSubmodule_isotropy_prodMap (a : InfinitesimalAction 𝔤 I M)
     (b : InfinitesimalAction 𝔥 J N) (p : M × N) :
     ((a.prodMap b).isotropy p).toSubmodule =
       (a.isotropy p.1).toSubmodule.prod (b.isotropy p.2).toSubmodule := by
   rw [prodMap_def, isotropy_prod, isotropy_comp, isotropy_comp]
   exact (LinearMap.prod_eq_inf_comap _ _).symm
+
+/-- An element `(Z, Z')` lies in the isotropy algebra at `(x, y)` of the componentwise action
+exactly when `Z ∈ 𝔤_x` and `Z' ∈ 𝔥_y`. -/
+theorem mem_isotropy_prodMap (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAction 𝔥 J N)
+    (p : M × N) {Z : 𝔤 × 𝔥} :
+    Z ∈ (a.prodMap b).isotropy p ↔ Z.1 ∈ a.isotropy p.1 ∧ Z.2 ∈ b.isotropy p.2 := by
+  rw [← LieSubalgebra.mem_toSubmodule, toSubmodule_isotropy_prodMap, Submodule.mem_prod,
+    LieSubalgebra.mem_toSubmodule, LieSubalgebra.mem_toSubmodule]
 
 /-- The componentwise action is locally free at `(x, y)` exactly when both factors are locally
 free, at `x` and at `y`. -/

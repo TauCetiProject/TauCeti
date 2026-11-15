@@ -27,9 +27,12 @@ moment map for the product form `σ₁.prod σ₂ = pr₁^* σ₁ + pr₂^* σ�
 `TauCeti.SmoothTwoForm.momentCocycle_prod`), so it vanishes exactly where both cocycles vanish
 (`TauCeti.SmoothTwoForm.momentCocycle_prodMap_eq_zero_iff`). Its differential is componentwise
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_apply`; for the diagonal action,
-`TauCeti.SmoothTwoForm.IsMomentMap.differential_prod_apply`), so the tangent spaces `ker dμ`
+`TauCeti.SmoothTwoForm.IsMomentMap.differential_prod_apply`): read in the product tangent space
+it is `dμ₁ × dμ₂` followed by `LinearMap.coprodEquiv`
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap`). So the tangent spaces `ker dμ`
 of its levels are the products of those of the factors
-(`TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_prodMap`).
+(`TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_prodMap`), and `dμ` is surjective exactly
+when `dμ₁` and `dμ₂` are (`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_surjective_iff`).
 
 The hypotheses on level data of
 `TauCeti.SmoothTwoForm.IsMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback` pass to
@@ -172,6 +175,28 @@ theorem differential_prodMap_apply (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ :
   refine LinearMap.ext fun Z ↦ ?_
   simp only [differential_apply_eq_eval₂, LinearMap.coprod_apply, eval₂_prod,
     InfinitesimalAction.prodMap_apply, Manifold.tangentSpaceProdEquiv_prodVectorField]
+
+/-- Read in the product tangent space, the differential of the moment map of a product is
+`(dμ₁)_{x₁} × (dμ₂)_{x₂}` followed by the identification `LinearMap.coprodEquiv` of
+`𝔤₁* × 𝔤₂*` with `(𝔤₁ × 𝔤₂)*`. -/
+theorem differential_prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂)
+    (p : M₁ × M₂) :
+    (h₁.prodMap h₂).differential p =
+      (LinearMap.coprodEquiv ℝ).toLinearMap ∘ₗ
+        ((h₁.differential p.1).prodMap (h₂.differential p.2)) ∘ₗ
+          (Manifold.tangentSpaceProdEquiv p).toLinearMap :=
+  LinearMap.ext fun v ↦ differential_prodMap_apply h₁ h₂ p v
+
+/-- The differential of the moment map of a product is surjective at `(x₁, x₂)` exactly when the
+differentials of `μ₁` at `x₁` and of `μ₂` at `x₂` are surjective. -/
+@[simp]
+theorem differential_prodMap_surjective_iff (h₁ : σ₁.IsMomentMap a₁ μ₁)
+    (h₂ : σ₂.IsMomentMap a₂ μ₂) (p : M₁ × M₂) :
+    Surjective ((h₁.prodMap h₂).differential p) ↔
+      Surjective (h₁.differential p.1) ∧ Surjective (h₂.differential p.2) := by
+  rw [differential_prodMap h₁ h₂, LinearMap.coe_comp, LinearMap.coe_comp]
+  simp only [LinearEquiv.coe_coe, LinearMap.coe_prodMap, ContinuousLinearEquiv.coe_toLinearEquiv,
+    EquivLike.comp_surjective, EquivLike.surjective_comp, Prod.map_surjective]
 
 /-- **The tangent spaces of a level of a product.** The kernel of the differential of the moment
 map of a product at `(x₁, x₂)` is `ker (dμ₁)_{x₁} × ker (dμ₂)_{x₂}`. -/
