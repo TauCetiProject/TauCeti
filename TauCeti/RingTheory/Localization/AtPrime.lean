@@ -100,17 +100,11 @@ instance faithfulSMul {C C' : Type*} [CommRing C] [CommRing C'] [IsDomain C'] [A
     [IsScalarTower C (Localization.AtPrime P) (Localization.AtPrime M')] :
     FaithfulSMul (Localization.AtPrime P) (Localization.AtPrime M') := by
   rw [faithfulSMul_iff_algebraMap_injective]
-  refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-  obtain ⟨⟨c, s⟩, hs⟩ := IsLocalization.surj P.primeCompl z
-  have hzs : z = IsLocalization.mk' _ c s := (IsLocalization.eq_mk'_iff_mul_eq.mpr hs)
-  have hc : algebraMap C (Localization.AtPrime M') c = 0 := by
-    rw [IsScalarTower.algebraMap_apply C (Localization.AtPrime P) (Localization.AtPrime M'),
-      ← hs, map_mul, hz, zero_mul]
-  rw [IsScalarTower.algebraMap_apply C C' (Localization.AtPrime M')] at hc
-  have hc0 : c = 0 := (FaithfulSMul.algebraMap_eq_zero_iff C C').mp <|
-    (injective_iff_map_eq_zero _).mp
-      (IsLocalization.injective _ M'.primeCompl_le_nonZeroDivisors) _ hc
-  simp [hzs, hc0]
+  refine IsLocalization.injective_of_map_algebraMap_zero (M := P.primeCompl) _ _ fun c hc ↦ ?_
+  have := FaithfulSMul.trans C C' (Localization.AtPrime M')
+  rw [← IsScalarTower.algebraMap_apply C (Localization.AtPrime P) (Localization.AtPrime M'),
+    FaithfulSMul.algebraMap_eq_zero_iff] at hc
+  simp [hc]
 
 end Localization.AtPrime
 

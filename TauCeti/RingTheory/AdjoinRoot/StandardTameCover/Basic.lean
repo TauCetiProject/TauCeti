@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
@@ -84,6 +84,9 @@ residue field as `A`; to use the residue-field API, first install
   nonzerodivisor iff `f` is.
 * `TauCeti.standardTameCover_etale`: if `f` and `e` are units, the cover is étale; it is a
   standard étale algebra by `Polynomial.Monic.isStandardEtale_adjoinRoot`.
+* `TauCeti.exists_surjective_tensor_standardTameCover`: if a field extension `L / K` of
+  `A`-algebras is generated over `K` by an `e`-th root of `f` with `e ≠ 0`, then
+  `K ⊗[A] A[x]/(x^e − f)` maps surjectively onto `L`.
 * `TauCeti.standardTameCover_etale_away`: if `e` is invertible in `A_f`, the cover is étale over
   `A_f` after inverting `f`.
 * `TauCeti.standardTameCover_etale_away_iff`: for `e ≥ 1`, étaleness away from `f` is equivalent
@@ -280,6 +283,30 @@ theorem standardTameCover_etale {f : A} {e : ℕ} (hf : IsUnit f) (he : IsUnit (
 monic. -/
 instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
   (monic_X_pow_sub_C f (NeZero.ne e)).finite_adjoinRoot
+
+/-- If a field extension `L / K` of `A`-algebras is generated over `K` by an `e`-th root `γ` of
+`f ∈ A` with `e ≠ 0`, then `K ⊗[A] standardTameCover A f e` maps surjectively onto `L` as a
+`K`-algebra. -/
+theorem exists_surjective_tensor_standardTameCover {K L : Type*} [Field K] [Field L]
+    [Algebra A K] [Algebra A L] [Algebra K L] [IsScalarTower A K L] {f : A} {e : ℕ} (he : e ≠ 0)
+    {γ : L} (hγ : γ ^ e = algebraMap A L f) (hgen : IntermediateField.adjoin K {γ} = ⊤) :
+    ∃ χ : K ⊗[A] standardTameCover A f e →ₐ[K] L, Function.Surjective χ := by
+  let ψ : standardTameCover A f e →ₐ[A] L :=
+    AdjoinRoot.liftAlgHom (X ^ e - C f) (Algebra.ofId A L) γ (by simp [hγ])
+  let χ : K ⊗[A] standardTameCover A f e →ₐ[K] L :=
+    Algebra.TensorProduct.lift (Algebra.ofId K L) ψ fun _ _ ↦ .all _ _
+  refine ⟨χ, ?_⟩
+  have hγ_int : IsIntegral K γ :=
+    (IsIntegral.of_pow (Nat.pos_of_ne_zero he) (hγ ▸ isIntegral_algebraMap (R := A))).tower_top
+  have hadj : Algebra.adjoin K ({γ} : Set L) = ⊤ :=
+    (IntermediateField.adjoin_simple_eq_top_iff_of_isAlgebraic hγ_int.isAlgebraic).mp hgen
+  have hmem : γ ∈ χ.range :=
+    ⟨1 ⊗ₜ[A] AdjoinRoot.root (X ^ e - C f), by simp [χ, ψ]⟩
+  have htop : χ.range = ⊤ :=
+    top_unique (hadj ▸ Algebra.adjoin_le (Set.singleton_subset_iff.mpr hmem))
+  intro x
+  have hx : x ∈ χ.range := htop ▸ Algebra.mem_top
+  exact (AlgHom.mem_range χ).mp hx
 
 section Maps
 

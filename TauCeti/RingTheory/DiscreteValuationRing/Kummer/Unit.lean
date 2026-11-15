@@ -38,38 +38,13 @@ unit root.
 
 public section
 
-open scoped TensorProduct
-open _root_.IntermediateField Polynomial
+open _root_.IntermediateField
 
 namespace TauCeti.IsDiscreteValuationRing
 
 variable {A K L : Type*} [CommRing A] [IsDomain A] [_root_.IsDiscreteValuationRing A]
   [Field K] [Algebra A K] [IsFractionRing A K]
   [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
-
-omit [_root_.IsDiscreteValuationRing A] [IsFractionRing A K] in
-/-- When `L = K(γ)` for an `n`-th root `γ` of `u ∈ A` with `n` invertible in `A`, the generic fibre
-`K ⊗[A] A[x]/(x ^ n - u)` maps surjectively onto `L`. -/
-private theorem exists_surjective_tensor_standardTameCover {u : A} {n : ℕ} (hn : IsUnit (n : A))
-    {γ : L} (hγ : γ ^ n = algebraMap A L u) (hgen : K⟮γ⟯ = ⊤) :
-    ∃ χ : K ⊗[A] standardTameCover A u n →ₐ[K] L, Function.Surjective χ := by
-  have hn₀ : n ≠ 0 := hn.neZero_natCast.out
-  let ψ : standardTameCover A u n →ₐ[A] L :=
-    AdjoinRoot.liftAlgHom (X ^ n - C u) (Algebra.ofId A L) γ (by simp [hγ])
-  let χ : K ⊗[A] standardTameCover A u n →ₐ[K] L :=
-    Algebra.TensorProduct.lift (Algebra.ofId K L) ψ fun _ _ ↦ .all _ _
-  refine ⟨χ, ?_⟩
-  have hγ_int : IsIntegral K γ :=
-    (IsIntegral.of_pow (Nat.pos_of_ne_zero hn₀) (hγ ▸ isIntegral_algebraMap (R := A))).tower_top
-  have hadj : Algebra.adjoin K ({γ} : Set L) = ⊤ :=
-    (adjoin_simple_eq_top_iff_of_isAlgebraic hγ_int.isAlgebraic).mp hgen
-  have hmem : γ ∈ χ.range :=
-    ⟨1 ⊗ₜ[A] AdjoinRoot.root (X ^ n - C u), by simp [χ, ψ]⟩
-  have htop : χ.range = ⊤ :=
-    top_unique (hadj ▸ Algebra.adjoin_le (Set.singleton_subset_iff.mpr hmem))
-  intro x
-  have hx : x ∈ χ.range := htop ▸ Algebra.mem_top
-  exact (AlgHom.mem_range χ).mp hx
 
 include K in
 /-- **Adjoining a tame root of a unit is unramified.** Let `A` be a discrete valuation ring with
@@ -81,7 +56,7 @@ theorem isUnramifiedWRT_of_pow_eq_of_isUnit {u : A} (hu : IsUnit u) {n : ℕ} (h
     Algebra.IsUnramifiedWRT A L ∧ FiniteDimensional K L ∧ Algebra.IsSeparable K L := by
   have := hn.neZero_natCast
   have := standardTameCover_etale hu hn
-  obtain ⟨χ, hχ⟩ := exists_surjective_tensor_standardTameCover hn hγ hgen
+  obtain ⟨χ, hχ⟩ := exists_surjective_tensor_standardTameCover (NeZero.ne n) hγ hgen
   obtain ⟨hfin, hsep⟩ := χ.finiteDimensional_and_isSeparable_of_surjective hχ
   exact ⟨χ.isUnramifiedWRT_of_surjective hχ, hfin, hsep⟩
 
