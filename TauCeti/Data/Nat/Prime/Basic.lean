@@ -29,9 +29,9 @@ a level `q * n` with a multiple `q * m` of the same `q`-part, as for congruence 
 For coprime natural bases `b ≤ a`, a prime dividing `a ^ n - b ^ n` with `n > 0` divides
 neither base; this ensures that their ratio modulo the prime is a unit.
 
-For a prime `p`, every prime `q ≠ p` is coprime to `p ^ k`, and a natural number `k` has no prime
-divisor distinct from `p` precisely when `k` is a power of `p` (equivalently, some prime `q ≠ p`
-divides `k` precisely when `k` is not a power of `p`).
+For a prime `p`, a natural number `k` has no prime divisor distinct from `p` precisely when `k` is
+a power of `p` (equivalently, some prime `q ≠ p` divides `k` precisely when `k` is not a power of
+`p`).
 
 ## Main declarations
 
@@ -43,7 +43,6 @@ divides `k` precisely when `k` is not a power of `p`).
   `a ^ n - b ^ n` and `a * b`, with `b ≤ a` and `n > 0`, divides `a.gcd b`.
 * `Nat.Coprime.not_dvd_mul_of_dvd_pow_sub_pow`: for coprime natural bases `b ≤ a`, prime
   divisors of `a ^ n - b ^ n` with `n > 0` do not divide the product of the bases.
-* `Nat.Prime.coprime_pow_of_prime_ne`: every prime `q ≠ p` is coprime to `p ^ k`.
 * `Nat.forall_prime_ne_not_dvd_iff_exists_pow`, `Nat.exists_prime_ne_dvd_iff_forall_pow_ne`:
   characterization of powers of a prime `p` by absence of prime divisors `q ≠ p`.
 -/
@@ -105,11 +104,6 @@ theorem Coprime.not_dvd_mul_of_dvd_pow_sub_pow {a b n p : ℕ} (hab : a.Coprime 
   have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
   rw [hab.gcd_eq_one] at h
   exact hp.not_dvd_one h
-
-/-- Every prime distinct from a prime `p` is coprime to `p ^ k`. -/
-theorem Prime.coprime_pow_of_prime_ne {p : ℕ} (hp : p.Prime) (k : ℕ) (q : ℕ)
-    (hq : q.Prime) (hqp : q ≠ p) : q.Coprime (p ^ k) :=
-  ((coprime_primes hq hp).mpr hqp).pow_right k
 
 /-- For a prime `p`, a natural number `k` has no prime divisor distinct from `p` if and only if
 `k` is a power of `p`. -/
