@@ -91,8 +91,8 @@ theorem etvDist_eq_two_mul_iSup_sub (h : μ univ = ν univ) :
     etvDist μ ν = 2 * ⨆ (A : Set α) (_ : MeasurableSet A), μ A - ν A := by
   have : IsFiniteMeasure ν := ⟨h ▸ measure_lt_top μ univ⟩
   rw [etvDist_eq_posPart_univ_add_negPart_univ,
-    ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ h, ← two_mul,
-    Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
+    ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ_iff.2 h,
+    ← two_mul, Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
 
 /-- **Total variation from eventwise bounds.** If every measurable event has `μ`-mass at most its
 `ν`-mass plus `c`, and `ν`-mass at most its `μ`-mass plus `d`, then `etvDist μ ν ≤ c + d`. -/

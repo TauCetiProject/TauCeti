@@ -6,8 +6,10 @@ Authors: Jon Crall, Claude Fable 5
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Probability.Moments.Chebyshev
 
-/-! # Convergence in measure from a vanishing high-probability rate
+/-! # Convergence in measure from moment and high-probability bounds
 
 A standard way to consume concentration inequalities: if for each index `i` the
 deviation `edist (f i x) (g x)` exceeds some deterministic `rate i` only on a
@@ -19,8 +21,13 @@ No measurability is required of the exceptional sets, since the squeeze only
 uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
+Convergence in mean square also implies convergence in measure, with integrability of the
+squared deviations required only eventually along the filter.
+
 ## Main results
 
+* `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
+  implies convergence in measure for any measure and filter.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist`: the `edist`
   form, for an `ℝ≥0∞`-valued rate and a target with an extended distance.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_dist`: the `dist`
@@ -107,3 +114,26 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   simp_rw [not_le]
 
 end TauCeti
+
+namespace MeasureTheory
+
+open Filter Topology
+
+/-- Convergence in mean square implies convergence in measure, for any measure and filter.
+Integrability of the squared deviations is needed only eventually. -/
+theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [SeminormedAddCommGroup E]
+    {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
+    (hint : ∀ᶠ k in l, Integrable (fun ω ↦ ‖f k ω - g ω‖ ^ 2) μ)
+    (hlim : Tendsto (fun k ↦ ∫ ω, ‖f k ω - g ω‖ ^ 2 ∂μ) l (𝓝 0)) :
+    TendstoInMeasure μ f l g := by
+  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
+  have hbound := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
+    (hlim.div_const (ε ^ 2))
+  simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hbound
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hint] with k hk
+  exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
+
+end MeasureTheory

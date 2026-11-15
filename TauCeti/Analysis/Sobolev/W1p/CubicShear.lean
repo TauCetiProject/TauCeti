@@ -5,23 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.PlaneShear
 public import TauCeti.Analysis.Sobolev.W1p.Basic
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
 /-!
 # The cubic shear: an `Lᵖ` isometry that is unbounded on `W^{1,p}`
 
-The cubic shear `φ(x, y) = (x, y + x³)` of the plane `ℝ²` is a smooth diffeomorphism with
-Jacobian determinant `1`, so it preserves Lebesgue measure (`TauCeti.measurePreserving_cubicShear`)
-and pullback `f ↦ f ∘ φ` is a linear isometry of every `Lᵖ(ℝ²)`, `1 ≤ p ≤ ∞`
-(Mathlib's `MeasureTheory.Lp.compMeasurePreservingₗᵢ`).
+The cubic shear `φ(x, y) = (x, y + x³)` of the plane `ℝ²`, the shear `TauCeti.planeShear (· ^ 3)`,
+is a smooth diffeomorphism with Jacobian determinant `1`, so it preserves Lebesgue measure
+(`TauCeti.measurePreserving_planeShear`) and pullback `f ↦ f ∘ φ` is a linear isometry of every
+`Lᵖ(ℝ²)`, `1 ≤ p ≤ ∞` (Mathlib's `MeasureTheory.Lp.compMeasurePreservingₗᵢ`).
 
 Its derivative is not bounded, and pullback is not bounded on the first-order Sobolev space
-`W^{1,p}(ℝ²)` for any `1 ≤ p ≤ ∞` (`TauCeti.W1p.not_exists_bound_comp_cubicShear`); in particular
-no bounded operator on `W^{1,p}(ℝ²)` acts by `u ↦ u ∘ φ`
-(`TauCeti.W1p.not_exists_continuousLinearMap_comp_cubicShear`). The reason is the chain rule
-`∂ₓ(f ∘ φ) = (∂ₓf) ∘ φ + 3x² (∂_y f) ∘ φ` (`TauCeti.fderiv_comp_cubicShear_apply_single_zero`):
+`W^{1,p}(ℝ²)` for any `1 ≤ p ≤ ∞` (`TauCeti.W1p.not_exists_bound_comp_planeShear_cube`); in
+particular no bounded operator on `W^{1,p}(ℝ²)` acts by `u ↦ u ∘ φ`
+(`TauCeti.W1p.not_exists_continuousLinearMap_comp_planeShear_cube`). The reason is the chain rule
+`∂ₓ(f ∘ φ) = (∂ₓf) ∘ φ + 3x² (∂_y f) ∘ φ` (`TauCeti.fderiv_comp_planeShear_apply`):
 translating a fixed smooth compactly supported `f` with `∂_y f ≠ 0` to `x ≈ k` leaves its
 `W^{1,p}` norm unchanged, while the `Lᵖ` norm of `∂ₓ(f ∘ φ)` grows like `3k²`.
 
@@ -33,14 +33,10 @@ bounded sets, so for a bounded open `V` pullback is bounded from `W^{1,p}(V)` to
 
 ## Main declarations
 
-* `TauCeti.cubicShear`: the homeomorphism `(x, y) ↦ (x, y + x³)` of `EuclideanSpace ℝ (Fin 2)`.
-* `TauCeti.measurePreserving_cubicShear`: it preserves Lebesgue measure.
-* `TauCeti.fderiv_cubicShear_apply`: its derivative `h ↦ h + 3x² h₀ e₁`.
-* `TauCeti.fderiv_comp_cubicShear_apply_single_zero`: the chain rule for `∂ₓ(f ∘ φ)`.
-* `TauCeti.W1p.not_exists_bound_comp_cubicShear`: no inequality `‖u ∘ φ‖ ≤ C ‖u‖` holds on
+* `TauCeti.W1p.not_exists_bound_comp_planeShear_cube`: no inequality `‖u ∘ φ‖ ≤ C ‖u‖` holds on
   `W^{1,p}(ℝ²)`.
-* `TauCeti.W1p.not_exists_continuousLinearMap_comp_cubicShear`: pullback by `φ` is not a bounded
-  operator on `W^{1,p}(ℝ²)`.
+* `TauCeti.W1p.not_exists_continuousLinearMap_comp_planeShear_cube`: pullback by `φ` is not a
+  bounded operator on `W^{1,p}(ℝ²)`.
 -/
 
 public section
@@ -52,111 +48,29 @@ namespace TauCeti
 open MeasureTheory Set Filter TopologicalSpace
 open scoped ENNReal Gradient ContDiff Topology
 
-/-- The cubic shear `(x, y) ↦ (x, y + x³)` of the Euclidean plane, a homeomorphism with inverse
-`(x, y) ↦ (x, y - x³)`. -/
-def cubicShear : EuclideanSpace ℝ (Fin 2) ≃ₜ EuclideanSpace ℝ (Fin 2) where
-  toFun v := v + (v 0 ^ 3) • EuclideanSpace.single 1 1
-  invFun v := v - (v 0 ^ 3) • EuclideanSpace.single 1 1
-  left_inv v := by simp
-  right_inv v := by simp
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-theorem cubicShear_apply (v : EuclideanSpace ℝ (Fin 2)) :
-    cubicShear v = v + (v 0 ^ 3) • EuclideanSpace.single 1 1 :=
-  (rfl)
-
-theorem cubicShear_symm_apply (v : EuclideanSpace ℝ (Fin 2)) :
-    cubicShear.symm v = v - (v 0 ^ 3) • EuclideanSpace.single 1 1 :=
-  (rfl)
-
-@[simp]
-theorem cubicShear_apply_zero (v : EuclideanSpace ℝ (Fin 2)) : cubicShear v 0 = v 0 := by
-  simp [cubicShear_apply]
-
-@[simp]
-theorem cubicShear_apply_one (v : EuclideanSpace ℝ (Fin 2)) :
-    cubicShear v 1 = v 1 + v 0 ^ 3 := by
-  simp [cubicShear_apply]
-
-@[simp]
-theorem cubicShear_symm_apply_zero (v : EuclideanSpace ℝ (Fin 2)) : cubicShear.symm v 0 = v 0 := by
-  simp [cubicShear_symm_apply]
-
-@[simp]
-theorem cubicShear_symm_apply_one (v : EuclideanSpace ℝ (Fin 2)) :
-    cubicShear.symm v 1 = v 1 - v 0 ^ 3 := by
-  simp [cubicShear_symm_apply]
-
-/-- The derivative of the cubic shear at `v` is `h ↦ h + 3 x² h₀ e₁`, where `x = v₀`. -/
-theorem hasFDerivAt_cubicShear (v : EuclideanSpace ℝ (Fin 2)) :
-    HasFDerivAt cubicShear
-      (ContinuousLinearMap.id ℝ _ + ((3 * v 0 ^ 2) • EuclideanSpace.proj 0).smulRight
-        (EuclideanSpace.single 1 1)) v := by
-  have h := ((EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2)).hasFDerivAt (x := v)).pow 3
-  have hφ : (cubicShear : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2)) =
-      fun w => w + EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2) w ^ 3 • EuclideanSpace.single 1 1 :=
-    funext fun w => by simp [cubicShear_apply]
-  rw [hφ]
-  refine ((hasFDerivAt_id v).add
-    (h.smul_const (EuclideanSpace.single 1 (1 : ℝ)))).congr_fderiv ?_
-  ext w : 1
-  simp [nsmul_eq_mul]
-
-theorem fderiv_cubicShear_apply (v h : EuclideanSpace ℝ (Fin 2)) :
-    fderiv ℝ cubicShear v h = h + (3 * v 0 ^ 2 * h 0) • EuclideanSpace.single 1 1 := by
-  simp [(hasFDerivAt_cubicShear v).fderiv, mul_assoc]
-
-theorem contDiff_cubicShear {n : WithTop ℕ∞} : ContDiff ℝ n cubicShear :=
-  contDiff_id.add (((EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2)).contDiff.pow 3).smul contDiff_const)
-
-/-- The cubic shear preserves Lebesgue measure: in coordinates it is the skew product of the
-identity with the translations `y ↦ y + x³`. -/
-theorem measurePreserving_cubicShear : MeasurePreserving cubicShear := by
-  have hS : MeasurePreserving (fun q : ℝ × ℝ => (q.1, q.2 + q.1 ^ 3)) := by
-    rw [Measure.volume_eq_prod]
-    exact (MeasurePreserving.id volume).skew_product (g := fun x y => y + x ^ 3) (by fun_prop)
-      (ae_of_all _ fun x => (measurePreserving_add_right volume (x ^ 3)).map_eq)
-  have h := (PiLp.volume_preserving_toLp (Fin 2)).comp <|
-    (volume_preserving_finTwoArrow ℝ).symm.comp <| hS.comp <|
-      (volume_preserving_finTwoArrow ℝ).comp (PiLp.volume_preserving_ofLp (Fin 2))
-  convert h using 1
-  funext v
-  ext i
-  fin_cases i <;> simp [MeasurableEquiv.finTwoArrow, cubicShear_apply]
-
-/-- **Chain rule for the cubic shear.** The derivative of `f ∘ φ` in the first coordinate direction
-is `∂ₓ(f ∘ φ) = (∂ₓf) ∘ φ + 3x² (∂_y f) ∘ φ`: the factor `3x²` is unbounded. -/
-theorem fderiv_comp_cubicShear_apply_single_zero {f : EuclideanSpace ℝ (Fin 2) → ℝ}
-    {v : EuclideanSpace ℝ (Fin 2)} (hf : DifferentiableAt ℝ f (cubicShear v)) :
-    fderiv ℝ (f ∘ cubicShear) v (EuclideanSpace.single 0 1) =
-      fderiv ℝ f (cubicShear v) (EuclideanSpace.single 0 1) +
-        3 * v 0 ^ 2 * fderiv ℝ f (cubicShear v) (EuclideanSpace.single 1 1) := by
-  rw [fderiv_comp v hf (hasFDerivAt_cubicShear v).differentiableAt,
-    ContinuousLinearMap.comp_apply, fderiv_cubicShear_apply]
-  simp
-
 /-! ### Unboundedness on `W^{1,p}` -/
 
 /-- The pointwise form of the growth estimate: for `f` supported in the ball of radius `R` and
 `R ≤ k`, translating by `k` in the first coordinate and pulling back by the cubic shear gives
-`3 (k - R)² |∂_y f| ≤ ‖∇g‖ + ‖∇f‖` at the shifted point, where `g = f ∘ (cubicShear - k e₀)`.
+`3 (k - R)² |∂_y f| ≤ ‖∇g‖ + ‖∇f‖` at the shifted point, where `g(w) = f (φ w - k e₀)`.
 Only differentiability of `f` at the shifted point is needed. -/
 private theorem norm_smul_fderiv_single_le {f : EuclideanSpace ℝ (Fin 2) → ℝ}
     {R k : ℝ} (hR : tsupport f ⊆ Metric.closedBall 0 R) (hk : R ≤ k)
     (w : EuclideanSpace ℝ (Fin 2))
-    (hf : DifferentiableAt ℝ f (cubicShear w - k • EuclideanSpace.single 0 1)) :
-    ‖(3 * (k - R) ^ 2) • fderiv ℝ f (cubicShear w - k • EuclideanSpace.single 0 1)
+    (hf : DifferentiableAt ℝ f (planeShear (· ^ 3) w - k • EuclideanSpace.single 0 1)) :
+    ‖(3 * (k - R) ^ 2) • fderiv ℝ f (planeShear (· ^ 3) w - k • EuclideanSpace.single 0 1)
         (EuclideanSpace.single 1 1)‖ ≤
-      ‖∇ (fun w => f (cubicShear w - k • EuclideanSpace.single 0 1)) w‖ +
-        ‖∇ f (cubicShear w - k • EuclideanSpace.single 0 1)‖ := by
+      ‖∇ (fun w => f (planeShear (· ^ 3) w - k • EuclideanSpace.single 0 1)) w‖ +
+        ‖∇ f (planeShear (· ^ 3) w - k • EuclideanSpace.single 0 1)‖ := by
   set c : EuclideanSpace ℝ (Fin 2) := k • EuclideanSpace.single 0 1
-  set T : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) := fun w => cubicShear w - c
+  set T : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) := fun w => planeShear (· ^ 3) w - c
   set D := fderiv ℝ f (T w) (EuclideanSpace.single 1 1)
   have hchain : fderiv ℝ (fun w => f (T w)) w (EuclideanSpace.single 0 1) =
       fderiv ℝ f (T w) (EuclideanSpace.single 0 1) + 3 * w 0 ^ 2 * D := by
-    have h := fderiv_comp_cubicShear_apply_single_zero (f := fun z => f (z - c)) (v := w)
-      ((differentiableAt_comp_sub c).2 hf)
+    have h := fderiv_comp_planeShear_apply (f := fun z => f (z - c)) (p := w)
+      ((differentiableAt_comp_sub c).2 hf) (differentiableAt_pow 3) (EuclideanSpace.single 0 1)
+    rw [show deriv (· ^ 3) (w 0) * (EuclideanSpace.single 0 1 : EuclideanSpace ℝ (Fin 2)) 0 =
+      3 * w 0 ^ 2 by simp] at h
     simp only [fderiv_comp_sub] at h
     exact h
   have hle : ∀ L : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ, ∀ i : Fin 2,
@@ -192,12 +106,12 @@ private theorem ofReal_mul_eLpNorm_fderiv_le {f : EuclideanSpace ℝ (Fin 2) →
     (hf : ContDiff ℝ 1 f) {R k : ℝ} (hR : tsupport f ⊆ Metric.closedBall 0 R) (hk : R ≤ k) :
     ENNReal.ofReal (3 * (k - R) ^ 2) *
         eLpNorm (fun z => fderiv ℝ f z (EuclideanSpace.single 1 1)) p volume ≤
-      eLpNorm (∇ fun w => f (cubicShear w - k • EuclideanSpace.single 0 1)) p volume +
+      eLpNorm (∇ fun w => f (planeShear (· ^ 3) w - k • EuclideanSpace.single 0 1)) p volume +
         eLpNorm (∇ f) p volume := by
   set c : EuclideanSpace ℝ (Fin 2) := k • EuclideanSpace.single 0 1
-  set T : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) := fun w => cubicShear w - c
+  set T : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) := fun w => planeShear (· ^ 3) w - c
   have hT : MeasurePreserving T := (measurePreserving_sub_right volume c).comp
-    measurePreserving_cubicShear
+    (measurePreserving_planeShear (continuous_pow 3).measurable)
   have hfd : Differentiable ℝ f := hf.differentiable one_ne_zero
   have hD : Continuous fun z => fderiv ℝ f z (EuclideanSpace.single 1 1) :=
     (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
@@ -211,7 +125,7 @@ private theorem ofReal_mul_eLpNorm_fderiv_le {f : EuclideanSpace ℝ (Fin 2) →
     _ = eLpNorm ((3 * (k - R) ^ 2) • (G ∘ T)) p volume := (eLpNorm_const_smul _ _ _ _).symm
     _ ≤ eLpNorm (fun w => ‖∇ (fun w => f (T w)) w‖ + ‖∇ f (T w)‖) p volume :=
         eLpNorm_mono_real (((hD.comp (continuous_sub_right c |>.comp
-          cubicShear.continuous)).aestronglyMeasurable).const_smul _) hpt
+          (continuous_planeShear (continuous_pow 3)))).aestronglyMeasurable).const_smul _) hpt
     _ ≤ eLpNorm (fun w => ‖∇ (fun w => f (T w)) w‖) p volume +
           eLpNorm (fun w => ‖∇ f (T w)‖) p volume :=
         eLpNorm_add_le (f := fun w => ‖∇ (fun w => f (T w)) w‖)
@@ -244,7 +158,7 @@ then testing it on the translate by `k e₀` of a smooth function `f` supported 
 radius `R ≤ k` bounds `3 (k - R)²` times the `Lᵖ` norm of `∂_y f` independently of `k`. -/
 private theorem mul_toReal_eLpNorm_fderiv_le_of_bound {C : ℝ}
     (hC : ∀ u v : W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ p,
-      W1p.value v =ᵐ[volume] W1p.value u ∘ cubicShear → ‖v‖ ≤ C * ‖u‖)
+      W1p.value v =ᵐ[volume] W1p.value u ∘ planeShear (· ^ 3) → ‖v‖ ≤ C * ‖u‖)
     {f : EuclideanSpace ℝ (Fin 2) → ℝ} (hf : ContDiff ℝ ∞ f) (hfs : HasCompactSupport f) {R k : ℝ}
     (hR : tsupport f ⊆ Metric.closedBall 0 R) (hk : R ≤ k) :
     3 * (k - R) ^ 2 *
@@ -259,9 +173,12 @@ private theorem mul_toReal_eLpNorm_fderiv_le_of_bound {C : ℝ}
   let fk : EuclideanSpace ℝ (Fin 2) → ℝ := fun w => f (w - c)
   have hfk : ContDiff ℝ ∞ fk := hf.comp (contDiff_id.sub contDiff_const)
   have hfks : HasCompactSupport fk := hfs.comp_homeomorph (Homeomorph.subRight c)
-  let gk : EuclideanSpace ℝ (Fin 2) → ℝ := fun w => f (cubicShear w - c)
-  have hgk : ContDiff ℝ 1 gk := (hfk.comp contDiff_cubicShear).of_le (by simp)
-  have hgks : HasCompactSupport gk := hfks.comp_homeomorph cubicShear
+  let gk : EuclideanSpace ℝ (Fin 2) → ℝ := fun w => f (planeShear (· ^ 3) w - c)
+  have hgk : ContDiff ℝ 1 gk :=
+    (hfk.comp (contDiff_planeShear (contDiff_id.pow 3))).of_le (by simp)
+  have hgks : HasCompactSupport gk := by
+    have h := hfks.comp_homeomorph (planeShearHomeomorph (continuous_pow 3))
+    rwa [coe_planeShearHomeomorph] at h
   obtain ⟨u, hu, -, hu0, hu1⟩ :=
     W1p.exists_value_gradient_ae_eq_of_hasCompactSupport (mu := volume) (p := p)
       (hfk.of_le (by simp)) hfks
@@ -285,7 +202,8 @@ private theorem mul_toReal_eLpNorm_fderiv_le_of_bound {C : ℝ}
       |C| * ((eLpNorm f p volume).toReal + (eLpNorm (∇ f) p volume).toReal) :=
     calc ‖W1p.gradient v‖ ≤ ‖v‖ := W1p.norm_gradient_le v
       _ ≤ C * ‖u‖ := hC u v
-        (hv.trans (measurePreserving_cubicShear.quasiMeasurePreserving.ae_eq_comp hu).symm)
+        (hv.trans ((measurePreserving_planeShear
+          (continuous_pow 3).measurable).quasiMeasurePreserving.ae_eq_comp hu).symm)
       _ ≤ |C| * ‖u‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg u)
       _ ≤ _ := by
         gcongr
@@ -303,9 +221,9 @@ private theorem mul_toReal_eLpNorm_fderiv_le_of_bound {C : ℝ}
 /-- **Pullback by the cubic shear is unbounded on `W^{1,p}(ℝ²)`.** For every `1 ≤ p ≤ ∞` there is
 no constant `C` with `‖u ∘ φ‖ ≤ C ‖u‖` for all `u` in `W^{1,p}(ℝ²)` such that `u ∘ φ` is again in
 `W^{1,p}(ℝ²)`, although `φ` preserves Lebesgue measure. -/
-theorem W1p.not_exists_bound_comp_cubicShear :
+theorem W1p.not_exists_bound_comp_planeShear_cube :
     ¬ ∃ C : ℝ, ∀ u v : W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ p,
-      W1p.value v =ᵐ[volume] W1p.value u ∘ cubicShear → ‖v‖ ≤ C * ‖u‖ := by
+      W1p.value v =ᵐ[volume] W1p.value u ∘ planeShear (· ^ 3) → ‖v‖ ≤ C * ‖u‖ := by
   rintro ⟨C, hC⟩
   obtain ⟨f, hf, hfs, hR, hf0⟩ := exists_testFunction
   set G : EuclideanSpace ℝ (Fin 2) → ℝ := fun z => fderiv ℝ f z (EuclideanSpace.single 1 1)
@@ -339,12 +257,12 @@ theorem W1p.not_exists_bound_comp_cubicShear :
 
 /-- **Pullback by the cubic shear is not a bounded operator on `W^{1,p}(ℝ²)`**, for any
 `1 ≤ p ≤ ∞`: no continuous linear map `T` on `W^{1,p}(ℝ²)` satisfies `T u = u ∘ φ`. -/
-theorem W1p.not_exists_continuousLinearMap_comp_cubicShear :
+theorem W1p.not_exists_continuousLinearMap_comp_planeShear_cube :
     ¬ ∃ T : W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ p →L[ℝ]
         W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ p,
-      ∀ u, W1p.value (T u) =ᵐ[volume] W1p.value u ∘ cubicShear := by
+      ∀ u, W1p.value (T u) =ᵐ[volume] W1p.value u ∘ planeShear (· ^ 3) := by
   rintro ⟨T, hT⟩
-  refine W1p.not_exists_bound_comp_cubicShear (p := p) ⟨‖T‖, fun u v huv => ?_⟩
+  refine W1p.not_exists_bound_comp_planeShear_cube (p := p) ⟨‖T‖, fun u v huv => ?_⟩
   have : v = T u := W1p.ext_value (Lp.ext (ae_restrict_of_ae (huv.trans (hT u).symm)))
   rw [this]
   exact T.le_opNorm u

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Integrability criteria
@@ -29,7 +30,9 @@ integrability of the corresponding absolute power.
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
-integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`).
+integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multiplier bounded on
+a set containing the support of an integrable function keeps it integrable
+(`MeasureTheory.Integrable.smul_of_support_subset`).
 -/
 
 public section
@@ -103,6 +106,16 @@ theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {
   exact hn.mono' (hg.aestronglyMeasurable.aemeasurable.pow_const p).aestronglyMeasurable
     (Filter.Eventually.of_forall fun y => by
       simpa only [Real.norm_eq_abs, abs_abs] using Real.abs_rpow_le_abs_rpow (g y) p)
+
+/-- An integrable function times a multiplier bounded on a set containing its support is
+integrable. -/
+theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [MeasurableSpace α]
+    {μ : Measure α} {f : α → E} {g : α → 𝕜} {s : Set α} {K : ℝ} (hf : Integrable f μ)
+    (hsupp : Function.support f ⊆ s) (hg : AEStronglyMeasurable g μ) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) :
+    Integrable (fun x ↦ g x • f x) μ :=
+  (hf.norm.const_mul K).mono' (hg.smul hf.1)
+    (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
 
 end MeasureTheory
 

@@ -20,6 +20,8 @@ functions, continuity of cumulative variation is equivalent to continuity of the
 The file also records that cumulative variation only depends on the function on `s`
 (`variationOnFromTo.eq_of_eqOn`), and the antitone counterpart
 `variationOnFromTo.comp_eq_of_antitoneOn` of Mathlib's `variationOnFromTo.comp_eq_of_monotoneOn`.
+Any two lower (resp. upper) bounds of `s` give the same cumulative variation
+(`variationOnFromTo.eq_of_mem_lowerBounds`, `variationOnFromTo.eq_of_mem_upperBounds`).
 -/
 
 public section
@@ -50,6 +52,92 @@ protected theorem comp_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β →
       eVariationOn.comp_inter_Icc_eq_of_antitoneOn f φ hφ hx hy]
   · rw [variationOnFromTo.eq_of_ge _ _ h, variationOnFromTo.eq_of_ge _ _ (hφ hy hx h),
       eVariationOn.comp_inter_Icc_eq_of_antitoneOn f φ hφ hy hx]
+
+/-- For a function of bounded variation on `s`, two cumulative variations from the same base point
+differ by at most the total variation on `s`. The base point and the two endpoints are arbitrary. -/
+protected theorem abs_sub_le_eVariationOn {f : α → E} {s : Set α}
+    (hf : BoundedVariationOn f s) {a x y : α} :
+    |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
+  -- every cumulative variation from `a` lies between minus the variation on the part of `s` below
+  -- `a` and the variation on the part above `a`, and these two variations add up to at most the
+  -- total
+  have hLR : (eVariationOn f (s ∩ Iic a)).toReal + (eVariationOn f (s ∩ Ici a)).toReal ≤
+      (eVariationOn f s).toReal := by
+    rw [← ENNReal.toReal_add (hf.mono inter_subset_left) (hf.mono inter_subset_left)]
+    exact ENNReal.toReal_mono hf <| (eVariationOn.add_le_union f (s := s ∩ Iic a)
+      (t := s ∩ Ici a) fun _ hu _ hv ↦ hu.2.trans hv.2).trans <|
+        eVariationOn.mono f (union_subset inter_subset_left inter_subset_left)
+  have hmem (z : α) : -(eVariationOn f (s ∩ Iic a)).toReal ≤ variationOnFromTo f s a z ∧
+      variationOnFromTo f s a z ≤ (eVariationOn f (s ∩ Ici a)).toReal := by
+    rcases le_total a z with h | h
+    · rw [variationOnFromTo.eq_of_le f s h]
+      exact ⟨(neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg,
+        ENNReal.toReal_mono (hf.mono inter_subset_left)
+          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Ici_self))⟩
+    · rw [variationOnFromTo.eq_of_ge f s h]
+      exact ⟨neg_le_neg (ENNReal.toReal_mono (hf.mono inter_subset_left)
+          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Iic_self))),
+        (neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg⟩
+  obtain ⟨hx₁, hx₂⟩ := hmem x
+  obtain ⟨hy₁, hy₂⟩ := hmem y
+  rw [abs_le]
+  constructor <;> linarith
+
+/-- The extended diameter of the set of cumulative variations from any base point is at most the
+total variation on `s`. -/
+protected theorem ediam_image_le (f : α → E) {s : Set α} (a : α) :
+    Metric.ediam (variationOnFromTo f s a '' s) ≤ eVariationOn f s := by
+  by_cases hf : BoundedVariationOn f s
+  swap
+  · rw [BoundedVariationOn, not_ne_iff] at hf
+    exact hf ▸ le_top
+  refine Metric.ediam_image_le_iff.2 fun x _ y _ ↦ ?_
+  rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hf]
+  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_sub_le_eVariationOn hf)
+
+/-- Replacing one lower bound `a` of `s` as base point by another lower bound `c` does not change
+the cumulative signed variation. -/
+protected theorem eq_of_mem_lowerBounds {f : α → E} {s : Set α} {a c : α}
+    (ha : a ∈ lowerBounds s) (hc : c ∈ lowerBounds s) :
+    variationOnFromTo f s a = variationOnFromTo f s c := by
+  wlog h : c ≤ a generalizing a c
+  · exact (this hc ha (le_of_not_ge h)).symm
+  symm
+  have hz : ∀ p q, q ≤ a → eVariationOn f (s ∩ Icc p q) = 0 := fun p q hq =>
+    eVariationOn.subsingleton f fun y hy z hz =>
+      (le_antisymm (hy.2.2.trans hq) (ha hy.1)).trans (le_antisymm (hz.2.2.trans hq) (ha hz.1)).symm
+  funext x
+  rcases le_or_gt a x with hx | hx
+  · rw [variationOnFromTo.eq_of_le _ _ (h.trans hx), variationOnFromTo.eq_of_le _ _ hx]
+    have hs : s ∩ Icc c x = s ∩ Icc a x := Set.ext fun y =>
+      ⟨fun hy => ⟨hy.1, ha hy.1, hy.2.2⟩, fun hy => ⟨hy.1, h.trans hy.2.1, hy.2.2⟩⟩
+    rw [hs]
+  · rw [variationOnFromTo.eq_of_ge _ _ hx.le, hz _ _ le_rfl]
+    rcases le_total c x with hcx | hxc
+    · rw [variationOnFromTo.eq_of_le _ _ hcx, hz _ _ hx.le, ENNReal.toReal_zero, neg_zero]
+    · rw [variationOnFromTo.eq_of_ge _ _ hxc, hz _ _ h]
+
+/-- Replacing one upper bound `b` of `s` as base point by another upper bound `c` does not change
+the cumulative signed variation. -/
+protected theorem eq_of_mem_upperBounds {f : α → E} {s : Set α} {b c : α}
+    (hb : b ∈ upperBounds s) (hc : c ∈ upperBounds s) :
+    variationOnFromTo f s b = variationOnFromTo f s c := by
+  wlog h : b ≤ c generalizing b c
+  · exact (this hc hb (le_of_not_ge h)).symm
+  symm
+  have hz : ∀ p q, b ≤ p → eVariationOn f (s ∩ Icc p q) = 0 := fun p q hp =>
+    eVariationOn.subsingleton f fun y hy z hz =>
+      (le_antisymm (hb hy.1) (hp.trans hy.2.1)).trans (le_antisymm (hb hz.1) (hp.trans hz.2.1)).symm
+  funext x
+  rcases le_or_gt x b with hx | hx
+  · rw [variationOnFromTo.eq_of_ge _ _ (hx.trans h), variationOnFromTo.eq_of_ge _ _ hx]
+    have hs : s ∩ Icc x c = s ∩ Icc x b := Set.ext fun y =>
+      ⟨fun hy => ⟨hy.1, hy.2.1, hb hy.1⟩, fun hy => ⟨hy.1, hy.2.1, hy.2.2.trans h⟩⟩
+    rw [hs]
+  · rw [variationOnFromTo.eq_of_le _ _ hx.le, hz _ _ le_rfl]
+    rcases le_total c x with hcx | hxc
+    · rw [variationOnFromTo.eq_of_le _ _ hcx, hz _ _ h]
+    · rw [variationOnFromTo.eq_of_ge _ _ hxc, hz _ _ hx.le, ENNReal.toReal_zero, neg_zero]
 
 end variationOnFromTo
 
@@ -182,15 +270,30 @@ end LocallyBoundedVariationOn
 
 namespace LocallyBoundedVariationOn
 
-variable {α X : Type*} [LinearOrder α] [DenselyOrdered α] [MetricSpace X]
-  {f : α → X} {a b c : α}
+variable {α X : Type*} [LinearOrder α] [DenselyOrdered α] [TopologicalSpace X]
+  [WeakEMetricSpace X] {f : α → X} {a b c : α}
 
 /-- Injectivity on the interior of an interval makes cumulative variation strictly increasing
 on the closed interval. Thus equal endpoint values do not obstruct the arclength coordinate. -/
 theorem strictMonoOn_variationOnFromTo_of_injOn_Ioo
-    (hf : LocallyBoundedVariationOn f (Icc a b)) (hc : c ∈ Icc a b)
-    (hinj : InjOn f (Ioo a b)) :
+    (hf : LocallyBoundedVariationOn f (Icc a b)) (hinj : InjOn f (Ioo a b)) :
     StrictMonoOn (variationOnFromTo f (Icc a b) c) (Icc a b) := by
+  rcases (Icc a b).eq_empty_or_nonempty with h0 | ⟨z, hz⟩
+  · intro x hx
+    rw [h0] at hx
+    exact hx.elim
+  have hab : a ≤ b := hz.1.trans hz.2
+  -- A base point outside `Icc a b` gives the same values as the nearest endpoint.
+  obtain ⟨c', hc, hcc⟩ : ∃ c' ∈ Icc a b,
+      variationOnFromTo f (Icc a b) c = variationOnFromTo f (Icc a b) c' := by
+    rcases lt_or_ge c a with h | h
+    · exact ⟨a, left_mem_Icc.2 hab,
+        variationOnFromTo.eq_of_mem_lowerBounds (fun _ hy => h.le.trans hy.1) fun _ hy => hy.1⟩
+    · rcases le_or_gt c b with h' | h'
+      · exact ⟨c, ⟨h, h'⟩, rfl⟩
+      · exact ⟨b, right_mem_Icc.2 hab,
+          variationOnFromTo.eq_of_mem_upperBounds (fun _ hy => hy.2.trans h'.le) fun _ hy => hy.2⟩
+  rw [hcc]
   have hm := variationOnFromTo.monotoneOn hf hc
   intro x hx y hy hxy
   refine lt_of_le_of_ne (hm hx hy hxy.le) ?_
@@ -200,14 +303,14 @@ theorem strictMonoOn_variationOnFromTo_of_injOn_Ioo
   obtain ⟨v, huv, hvy⟩ := exists_between huy
   have hu : u ∈ Icc a b := ⟨hx.1.trans hxu.le, huy.le.trans hy.2⟩
   have hv : v ∈ Icc a b := ⟨hu.1.trans huv.le, hvy.le.trans hy.2⟩
-  have heu : variationOnFromTo f (Icc a b) c u = variationOnFromTo f (Icc a b) c x :=
+  have heu : variationOnFromTo f (Icc a b) c' u = variationOnFromTo f (Icc a b) c' x :=
     le_antisymm ((hm hu hy huy.le).trans_eq heq.symm) (hm hx hu hxu.le)
-  have hev : variationOnFromTo f (Icc a b) c v = variationOnFromTo f (Icc a b) c x :=
+  have hev : variationOnFromTo f (Icc a b) c' v = variationOnFromTo f (Icc a b) c' x :=
     le_antisymm ((hm hv hy hvy.le).trans_eq heq.symm)
       (hm hx hv (hxu.trans huv).le)
-  have hd := hf.dist_le_abs_sub_variationOnFromTo hc hu hv
-  rw [heu, hev, sub_self, abs_zero] at hd
+  have hd := hf.edist_le_ofReal_variationOnFromTo_sub hc hu hv huv.le
+  rw [heu, hev, sub_self, ENNReal.ofReal_zero] at hd
   exact huv.ne (hinj ⟨hx.1.trans_lt hxu, huy.trans_le hy.2⟩
-    ⟨hu.1.trans_lt huv, hvy.trans_le hy.2⟩ (dist_le_zero.mp hd))
+    ⟨hu.1.trans_lt huv, hvy.trans_le hy.2⟩ (edist_le_zero.mp hd))
 
 end LocallyBoundedVariationOn

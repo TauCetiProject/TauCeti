@@ -126,7 +126,8 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_and_divMatrixGradient_eq_zer
     refine ⟨Omega, hx, fun k => ⟨0, ?_⟩⟩
     rw [← Wkp.valueL_apply, map_zero]
     exact Lp.coeFn_zero _ _ _
-  obtain ⟨g, hg, hug⟩ := UniformlyEllipticOn.exists_contDiffOn_ae_eq hlam hA hf
+  obtain ⟨g, hg, hug⟩ := UniformlyEllipticOn.exists_contDiffOn_ae_eq hlam hA (b := 0) (c := 0)
+    contDiffOn_const contDiffOn_const hf
     (fun v => by simpa using hu v)
   refine ⟨g, hg, hug, W1p.gradient_ae_eq_of_contDiffOn u (hg.of_le (by simp)) hug, ?_⟩
   have hp := divMatrixGradient_eq_neg_of_forall_energyFormH1_eq

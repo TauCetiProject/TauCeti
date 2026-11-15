@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 public import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 

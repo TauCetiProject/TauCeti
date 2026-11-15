@@ -67,15 +67,25 @@ on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent ve
   tensor vanishing is equivalent to pointwise vanishing in the model-space instances.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
+* `TauCeti.AlmostComplexStructure.nijenhuis_constSmooth`: the same for the constant structure
+  `AlmostComplexStructure.constSmooth` of a pointwise almost complex structure.
 
 ## Conventions
 
-No factor `1/4` is included; some sources use `N_J / 4` instead.
+The tensor is normalised as `N_J(X, Y) = [JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]`, with no factor
+`1/4` (some sources use `N_J / 4` instead). The normalisation and the overall sign vary between
+sources. Kobayashi and Nomizu define `N(X, Y) = 2 {[JX, JY] - [X, Y] - J[X, JY] - J[JX, Y]}`, which
+is twice `N_J` here, and the opposite overall sign `[X, Y] + J[JX, Y] + J[X, JY] - [JX, JY]` is also
+in common use. Statements about `N_J` here (for instance that the `(0,2)`-part of `dα` is
+`α ∘ N_J / 4`) refer to this normalisation and change accordingly under the others. The vanishing
+of the tensor does not depend on the convention.
 
 ## References
 
 * Daniel Huybrechts, *Complex Geometry: An Introduction*, Universitext, Springer, 2005,
   Section 2.6.
+* Shoshichi Kobayashi and Katsumi Nomizu, *Foundations of Differential Geometry, Volume II*,
+  Wiley, 1969, Chapter IX, Section 2.
 -/
 
 public noncomputable section
@@ -163,7 +173,6 @@ variable [FiniteDimensional ℝ E]
 bilinear map on `T_x M` whose value on the values at `x` of differentiable vector fields `X` and
 `Y` is `[JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]` at `x` (`nijenhuis_apply`). -/
 def nijenhuis (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x :=
-  have := FiniteDimensional.completeSpace ℝ E
   TensorialAt.mkHom₂ (J.nijenhuisAux · · x) x
     (fun Y _ ↦ J.nijenhuisAux_tensorial₁ Y) (fun X _ ↦ J.nijenhuisAux_tensorial₂ X)
 
@@ -186,9 +195,8 @@ theorem nijenhuis_apply {X Y : Π x : M, TangentSpace I x}
 about the Nijenhuis tensor at `x` reduce to statements about the Nijenhuis expression. -/
 private lemma nijenhuis_apply_extend (v w : TangentSpace I x) :
     J.nijenhuis x v w = J.nijenhuisAux (extend E v) (extend E w) x := by
-  conv_lhs => rw [← extend_apply_self E v, ← extend_apply_self E w]
-  exact J.nijenhuis_apply_eq_nijenhuisAux (mdifferentiableAt_extend ..)
-    (mdifferentiableAt_extend ..)
+  unfold nijenhuis
+  apply TensorialAt.mkHom₂_apply_eq_extend
 
 /-- The Nijenhuis tensor vanishes everywhere exactly when
 `[JX, JY] = [X, Y] + J[JX, Y] + J[X, JY]` for all vector fields differentiable at the point. -/
@@ -225,7 +233,6 @@ theorem nijenhuis_self (v : TangentSpace I x) : J.nijenhuis x v v = 0 := by
 @[simp]
 theorem nijenhuis_apply_left (v w : TangentSpace I x) :
     J.nijenhuis x (J x v) w = -J x (J.nijenhuis x v w) := by
-  have := FiniteDimensional.completeSpace ℝ E
   have hJX := J.mdifferentiableAt_apply_field (mdifferentiableAt_extend I E v)
   conv_lhs => rw [← extend_apply_self E v, ← extend_apply_self E w]
   rw [J.nijenhuis_apply_eq_nijenhuisAux hJX (mdifferentiableAt_extend ..),
@@ -248,7 +255,8 @@ theorem nijenhuis_apply_both (v w : TangentSpace I x) :
 
 /-- The almost complex structures `J` and `-J` have the same Nijenhuis tensor. -/
 @[simp]
-theorem nijenhuis_neg (x : M) : (-J).nijenhuis x = J.nijenhuis x := by
+theorem nijenhuis_neg : (-J).nijenhuis = J.nijenhuis := by
+  funext x
   ext v w
   rw [nijenhuis_apply_extend, nijenhuis_apply_extend]
   -- `(-J) X = -(J X)` pointwise; `← Pi.neg_def` folds this into `-(J X)`, the form used by
@@ -515,8 +523,9 @@ theorem SmoothAlmostComplexStructure.nijenhuis_eq_fderiv
 /-- A constant almost complex structure on a finite-dimensional real vector space has vanishing
 Nijenhuis tensor. -/
 @[simp]
-theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v)
-    (x : V) : (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis x = 0 := by
+theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) :
+    (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis = 0 := by
+  funext x
   -- Constant vector fields have constant images under a constant `J`, and all Lie brackets of
   -- constant vector fields on a vector space vanish by `mlieBracket_const_model_space`.
   have hconst (u : V) :=
@@ -531,13 +540,26 @@ theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc :
   -- Tangent vectors of the model space are vectors of `V`, so that the constant fields below are
   -- maps `V → V`.
   have key (v w : V) : (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis x v w = 0 := by
-    rw [show v = (fun _ : V ↦ v) x from rfl, show w = (fun _ : V ↦ w) x from rfl,
-      nijenhuis_apply _ (hconst v) (hconst w), hJ, hJ]
-    simp only [mlieBracket_const_model_space]
-    rw [map_zero]
-    simp
+    rw [nijenhuis_apply _ (hconst v) (hconst w), hJ, hJ]
+    simp only [mlieBracket_const_model_space, map_zero, sub_self]
   ext v w
   exact key v w
+
+/-- The constant smooth almost complex structure defined by a pointwise almost complex structure on
+a vector space is integrable. -/
+@[simp]
+theorem AlmostComplexStructure.nijenhuis_constSmooth (J : AlmostComplexStructure V) :
+    J.constSmooth.nijenhuis = 0 := by
+  -- `constSmooth` is `SmoothAlmostComplexStructure.const` by definition, but its body is not
+  -- exposed outside its module, so the equation is proved pointwise.
+  have h : J.constSmooth = SmoothAlmostComplexStructure.const
+      (LinearMap.toContinuousLinearMap J.toLinearMap) J.apply_apply := by
+    ext x v
+    exact (J.constSmooth_apply x v).trans
+      (SmoothAlmostComplexStructure.const_apply (LinearMap.toContinuousLinearMap J.toLinearMap)
+        J.apply_apply x v).symm
+  rw [h]
+  exact SmoothAlmostComplexStructure.nijenhuis_const _ _
 
 end Const
 
