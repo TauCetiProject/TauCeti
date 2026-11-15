@@ -179,7 +179,7 @@ theorem tateNorm_le_zpow_iff {x : A} {n : ℤ} :
 
 /-- Elements of the ring of definition have norm at most one. -/
 theorem tateNorm_le_one_of_mem {x : A} (hx : x ∈ d.ringOfDefinition) : tateNorm d x ≤ 1 :=
-  (tateNorm_apply d x).trans_le <| tateGauge_le_one (zero_le_one.trans d.one_lt_radius_inv.le) hx
+  (tateNorm_apply d x).trans_le <| tateGauge_le_one hx
 
 /-- The norm of a norm datum takes a value at most one at one. -/
 theorem tateNorm_one_le : tateNorm d 1 ≤ 1 :=

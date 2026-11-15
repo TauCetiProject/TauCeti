@@ -21,9 +21,9 @@ injective on the vertices of a cell sends it to an image cell of the same dimens
 vertices, it carries the increasing enumeration and the deleted-vertex faces of the cell to those
 of the image cell.
 
-These maps are basic infrastructure for subdivision and geometric realization in the geometric
-topology roadmap. We work with `PreAbstractSimplicialComplex`, since constructions such as links
-and elementary collapses naturally change the set of vertices represented by singleton faces.
+These maps are basic infrastructure for subdivision and geometric realization. We work with
+`PreAbstractSimplicialComplex`, since constructions such as links and elementary collapses
+naturally change the set of vertices represented by singleton faces.
 -/
 
 public section

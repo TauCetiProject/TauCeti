@@ -34,10 +34,9 @@ triple edge is precisely `G₂`.
 
 ## References
 
-This is the triple-edge branch of the classification of finite-type Cartan matrices in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.  See N. Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4--6*, Chapter VI, §4, and J. E. Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, §11.4.  The convention is Bourbaki's
+This is the triple-edge branch of the classification of finite-type Cartan matrices.  See
+N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, §4, and J. E. Humphreys,
+*Introduction to Lie Algebras and Representation Theory*, §11.4.  The convention is Bourbaki's
 `G₂` matrix `!![2, -1; -3, 2]`, with the short simple root first.
 -/
 

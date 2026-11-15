@@ -344,6 +344,17 @@ private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
+/-- The exchanged data of end data which are jointly `C^n` on `ℝ × M` are jointly `C^n`. -/
+theorem contMDiff_uncurry_exchangeEndData {n : WithTop ℕ∞} {G : Puncture → ℝ → M → ℝ}
+    (hG : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (G q))) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (exchangeEndData G q)) := by
+  cases q
+  · simpa using hG one
+  · simpa using hG zero
+  · rw [exchangeEndData_inf]
+    exact (hG inf).comp
+      (((contDiff_id.add contDiff_const).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+
 /-- **The translated plane datum is smooth.** For a period-one Hamiltonian of class `C^n` on
 `ℝ × M`, the negative plane datum translated by the parameter, `(c, w, x) ↦ K(w - c)(x)`, is `C^n`
 jointly in the parameter `c ∈ ℝ`, the domain point `w ∈ ℂ` and the target point. -/

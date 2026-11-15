@@ -48,8 +48,7 @@ theorem homDifferential_surjective_of_indecomposable (hpd : (titsForm Q).PosDef)
       (finrank_end_eq_one_of_indecomposable hpd M hM hfd)
   apply (homDifferential_surjective_iff M M hf hf).mpr
   rw [← titsForm_def, he, Nat.cast_one]
-  exact titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic
-    (isAcyclic_of_titsForm_posDef hpd) hpd M hM hfd
+  exact titsForm_dimVector_eq_one_of_indecomposable hpd M hM hfd
 
 /-- Every extension with isomorphic finite-dimensional indecomposable end terms splits
 when the Tits form is positive definite. -/

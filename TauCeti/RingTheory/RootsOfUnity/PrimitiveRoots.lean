@@ -194,13 +194,13 @@ abelianization agree on every root of unity: on the roots of unity of order `d` 
 the commutative group `(ZMod d)ˣ` (`IsPrimitiveRoot.autToPow`). -/
 theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [CommRing K]
     [CommRing M] [IsDomain M] [Algebra K M] {σ τ : M ≃ₐ[K] M}
-    (h : Abelianization.of σ = Abelianization.of τ) {n : ℕ} (hn : n ≠ 0) {μ : M}
+    (h : Group.Abelianization.of σ = Group.Abelianization.of τ) {n : ℕ} (hn : n ≠ 0) {μ : M}
     (hμ : μ ^ n = 1) : σ μ = τ μ := by
   have : NeZero (orderOf μ) :=
     ⟨(isOfFinOrder_iff_pow_eq_one.2 ⟨n, Nat.pos_of_ne_zero hn, hμ⟩).orderOf_pos.ne'⟩
   have hμ' := IsPrimitiveRoot.orderOf μ
-  have h' := congrArg (Abelianization.lift (hμ'.autToPow K)) h
-  rw [Abelianization.lift_apply_of, Abelianization.lift_apply_of] at h'
+  have h' := congrArg (Group.Abelianization.lift (hμ'.autToPow K)) h
+  rw [Group.Abelianization.lift_apply_of, Group.Abelianization.lift_apply_of] at h'
   rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']
 
 end TauCeti

@@ -221,7 +221,7 @@ private theorem isLipschitzParametrizable_image_frontier_paramSet :
       (expMapBasis '' frontier (paramSet K)) := by
   classical
   have hcard : Fintype.card {w : InfinitePlace K // w ≠ w₀} = rank K :=
-    (Fintype.card_congr equivFinRank).symm.trans (Fintype.card_fin _)
+    (Fintype.card_congr (NumberField.Units.equivFinRank K)).symm.trans (Fintype.card_fin _)
   refine .mono ?_ (image_frontier_paramSet_subset K)
   refine .union
     (.image_unitCube_of_contDiffOn hcard (ContDiff.contDiffOn (contDiff_faceMapZero K))) ?_

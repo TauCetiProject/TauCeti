@@ -14,8 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 This file passes from the local elementary-collapse move to finite simplicial collapses.  A
 complex `K` collapses to `L` when there is a finite, possibly empty, sequence of elementary
 collapses from `K` to `L`; it is collapsible when the endpoint can be a one-vertex complex.
-These are the collapse notions used in layer 11 of the geometric-topology roadmap and in the
-statement of Zeeman's conjecture.
+These are the collapse notions used in the statement of Zeeman's conjecture.
 
 As in `ElementaryCollapse`, the definitions use `PreAbstractSimplicialComplex`: collapsing a
 free vertex changes the set of vertices actually used by a complex.  The definitions follow

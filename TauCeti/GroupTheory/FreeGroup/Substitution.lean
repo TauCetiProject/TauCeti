@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
+public import TauCeti.GroupTheory.FreeGroup.Reduce
 
 /-!
 # Primitive-recursive substitution of free-group words
@@ -17,7 +18,10 @@ substitutions used when evaluating finite systems of equations over free groups.
 
 Substitution without free reduction is also recorded, for words in variables and constant
 letters (`FreeGroup.substituteVars`): it is the substitution in Makanin's generalised equations,
-where both sides must agree letter by letter.
+where both sides must agree letter by letter. It is primitive recursive jointly in the word
+and a finite table of the substituted words (`FreeGroup.primrec₂_substituteVars_getD`). It only
+depends on the words assigned to the generators that occur, so changing the word of one generator
+changes the substitution only at the letters of that generator.
 -/
 
 public section
@@ -38,6 +42,41 @@ the assigned word for a negative letter. -/
 /-- A negative letter is replaced by the inverse of its assigned word. -/
 @[simp] theorem substituteLetter_false (f : α → List (β × Bool)) (a : α) :
     substituteLetter f (a, false) = invRev (f a) := by simp [substituteLetter]
+
+/-- Substitution without free reduction only depends on the words assigned to the generators
+that occur. -/
+theorem flatMap_substituteLetter_congr {f g : α → List (β × Bool)} {w : List (α × Bool)}
+    (h : ∀ a ∈ w, f a.1 = g a.1) :
+    w.flatMap (substituteLetter f) = w.flatMap (substituteLetter g) :=
+  List.flatMap_congr fun a ha => by simp [substituteLetter, h a ha]
+
+/-- Renaming the generators of a word along `g` and then substituting `f` is substituting
+`f ∘ g`. -/
+@[simp]
+theorem flatMap_substituteLetter_map {γ : Type*} (f : α → List (β × Bool)) (g : γ → α)
+    (w : List (γ × Bool)) :
+    (w.map (Prod.map g id)).flatMap (substituteLetter f) =
+      w.flatMap (substituteLetter (f ∘ g)) := by
+  rw [List.flatMap_map]
+  exact List.flatMap_congr fun a _ => by simp [substituteLetter]
+
+/-- Changing the word assigned to a generator that does not occur in a word does not change the
+substitution without free reduction. -/
+theorem flatMap_substituteLetter_update_of_notMem [DecidableEq α] {w : List (α × Bool)} {y : α}
+    (hy : y ∉ w.map Prod.fst) (f : α → List (β × Bool)) (s : List (β × Bool)) :
+    w.flatMap (substituteLetter (Function.update f y s)) = w.flatMap (substituteLetter f) :=
+  flatMap_substituteLetter_congr fun a ha =>
+    Function.update_of_ne (fun h : a.1 = y => hy (h ▸ List.mem_map_of_mem ha)) _ _
+
+/-- Changing the word assigned to a generator that occurs in none of a list of words does not
+change the substitutions without free reduction into these words. -/
+theorem map_flatMap_substituteLetter_update_of_notMem [DecidableEq α]
+    {V : List (List (α × Bool))} {y : α} (hy : y ∉ V.flatten.map Prod.fst)
+    (f : α → List (β × Bool)) (s : List (β × Bool)) :
+    V.map (·.flatMap (substituteLetter (Function.update f y s))) =
+      V.map (·.flatMap (substituteLetter f)) :=
+  List.map_congr_left fun v hv => flatMap_substituteLetter_update_of_notMem
+    (fun h => hy (List.map_subset _ (fun _ ha => List.mem_flatten.2 ⟨v, hv, ha⟩) h)) f s
 
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem flatMap_substituteLetter_invRev (f : α → List (β × Bool)) (w : List (α × Bool)) :
@@ -136,6 +175,20 @@ theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) 
     substituteVars U (invRev w) = invRev (substituteVars U w) :=
   flatMap_substituteLetter_invRev _ w
 
+/-- Substituting into a formal inverse gives a reduced word exactly when substituting into the
+original word does. -/
+@[simp]
+theorem isReduced_substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
+    IsReduced (substituteVars U (invRev w)) ↔ IsReduced (substituteVars U w) := by
+  rw [substituteVars_invRev, isReduced_invRev]
+
+/-- If substituting into a word gives a reduced word, so does substituting into the word raised
+to a sign. -/
+theorem isReduced_substituteVars_cond (U : X → List (A × Bool)) (s : Bool)
+    (w : List ((X ⊕ A) × Bool)) (h : IsReduced (substituteVars U w)) :
+    IsReduced (substituteVars U (cond s w (invRev w))) := by
+  cases s <;> simpa
+
 /-- Substitution followed by free reduction is evaluation in the free group. -/
 theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     mk (substituteVars U w) = lift (Sum.elim (fun x => mk (U x)) of) (mk w) := by
@@ -144,6 +197,24 @@ theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × B
   funext y
   -- `of a` is the one-letter word `mk [(a, true)]` by definition.
   cases y <;> rfl
+
+/-- If substituting nonempty words for the variables, without free reduction, gives a reduced
+word, then the word in variables and letters was already reduced: a cancelling pair of letters
+is replaced by a nonempty word followed by its formal inverse. -/
+theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} (hU : ∀ x, U x ≠ [])
+    {w : List ((X ⊕ A) × Bool)} (h : IsReduced (substituteVars U w)) : IsReduced w := by
+  refine IsReduced.of_forall_not_step fun w' hstep => ?_
+  obtain @⟨L₁, L₂, y, b⟩ := hstep
+  have hinv : substituteVars U [(y, !b)] = FreeGroup.invRev (substituteVars U [(y, b)]) := by
+    rw [← substituteVars_invRev]
+    simp [FreeGroup.invRev]
+  have hred : IsReduced (substituteVars U [(y, b)] ++ substituteVars U [(y, !b)]) := by
+    refine h.infix ⟨substituteVars U L₁, substituteVars U L₂, ?_⟩
+    rw [← substituteVars_append, ← substituteVars_append, ← substituteVars_append]
+    simp
+  have hnil := hred.eq_of_mk_eq .nil <| by
+    rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
+  obtain x | a := y <;> cases b <;> simp [hU] at hnil
 
 end Vars
 
@@ -180,5 +251,25 @@ theorem primrec_toWord_map_mk [DecidableEq β] (g : α → β) (hg : Primrec g) 
     Primrec.list_cons.comp (Primrec.pair hg (Primrec.const true)) (Primrec.const [])
   simpa only [map_eq_lift, Function.comp_def, of] using
     (primrec_toWord_lift_mk (fun a : α => [(g a, true)]) htable)
+
+/-- Substitution of words for the variables of a word, without free reduction, is primitive
+recursive jointly in the word and a finite table of the substituted words; variables beyond the
+table receive the empty word. -/
+theorem primrec₂_substituteVars_getD {A : Type*} [Primcodable A] :
+    Primrec₂ fun (u : List (List (A × Bool))) (w : List ((ℕ ⊕ A) × Bool)) =>
+      substituteVars (fun x => u.getD x []) w := by
+  have table : Primrec₂ fun (u : List (List (A × Bool))) (y : ℕ ⊕ A) =>
+      Sum.elim (fun x => u.getD x []) (fun a => [(a, true)]) y :=
+    (Primrec.sumCasesOn Primrec.snd
+      ((Primrec.list_getD []).comp (Primrec.fst.comp Primrec.fst) Primrec.snd).to₂
+      (Primrec.list_cons.comp (Primrec.pair Primrec.snd (Primrec.const true))
+        (Primrec.const [])).to₂).to₂.of_eq fun u y => by cases y <;> rfl
+  have letter : Primrec₂ fun (u : List (List (A × Bool))) (y : (ℕ ⊕ A) × Bool) =>
+      substituteLetter (Sum.elim (fun x => u.getD x []) fun a => [(a, true)]) y :=
+    (Primrec.cond (Primrec.snd.comp Primrec.snd)
+      (table.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
+      (primrec_invRev.comp (table.comp Primrec.fst (Primrec.fst.comp Primrec.snd)))).to₂
+  exact (Primrec.list_flatMap Primrec.snd
+    (letter.comp (Primrec.fst.comp Primrec.fst) Primrec.snd).to₂).to₂
 
 end FreeGroup

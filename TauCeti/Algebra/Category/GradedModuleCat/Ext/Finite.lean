@@ -15,7 +15,9 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 Let `A` be a left Noetherian graded algebra over a field `k`. For a finitely generated graded
 module `X` and a finite-dimensional graded module `Y`, the groups `Extⁿ(X,Y{j})` are
 finite-dimensional and vanish outside a finite set of internal degrees `j`, for each fixed `n`.
-Neither a nonnegative algebra grading nor finite-dimensionality of `A` is required.
+Neither a nonnegative algebra grading nor finite-dimensionality of `A` is required; when `A` is
+finite-dimensional over `k`, `TauCeti.GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite`
+supplies left Noetherianity automatically.
 
 The internal support may depend on `n`. In particular, this theorem asserts no eventual
 cohomological vanishing: Euler-admissibility of these pairs is equivalent to a separate uniform
@@ -89,5 +91,14 @@ theorem isGradedEulerAdmissible_iff_isGradedExtBounded
     IsGradedEulerAdmissible.{w} k (shift 𝒜) X Y ↔
       IsGradedExtBounded.{w} (shift 𝒜) X Y :=
   ⟨fun h ↦ h.bounded, fun h ↦ ⟨isGradedExtInternallyFinite_of_finite X Y, h⟩⟩
+
+omit [IsNoetherianRing A] in
+/-- Over a finite-dimensional graded `k`-algebra, every finitely generated graded source and
+finite-dimensional graded target have internally finite bigraded Ext. -/
+theorem isGradedExtInternallyFinite_of_moduleFinite [Module.Finite k A]
+    (X Y : GradedModuleCat.{max uA v} 𝒜) [Module.Finite A X] [Module.Finite k Y] :
+    IsGradedExtInternallyFinite.{w} k (shift 𝒜) X Y := by
+  let : IsNoetherianRing A := IsNoetherianRing.of_finite k A
+  exact isGradedExtInternallyFinite_of_finite X Y
 
 end TauCeti.GradedModuleCat

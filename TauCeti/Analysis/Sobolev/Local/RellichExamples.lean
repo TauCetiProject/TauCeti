@@ -14,6 +14,7 @@ public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -112,7 +113,7 @@ private theorem eventually_le_eLpNorm_sineWave_sub (m : ℕ) :
       eLpNorm (sineWave m - sineWave n) 1 (volume.restrict centralSquare) := by
   filter_upwards [eventually_integral_sin_sub_sin_sq_ge (a := -1 / 2) (b := 1 / 2)
     (by norm_num) 0 m] with n hn
-  rw [eLpNorm_one_eq_lintegral_enorm
+  rw [eLpNorm_one_eq_lintegral_eNorm
     ((continuous_sineWave m).sub (continuous_sineWave n)).aestronglyMeasurable]
   have hF : Measurable fun x : ℝ => ‖sin (m * x) - sin (n * x)‖ₑ := by fun_prop
   have := Complex.setLIntegral_reProdIm_comp_re (Icc (-1 / 2 : ℝ) (1 / 2))
@@ -165,12 +166,12 @@ private theorem eventually_le_eLpNorm_fderiv_sineWave :
       eLpNorm (fderiv ℝ (sineWave m)) 1 (volume.restrict centralSquare) := by
   filter_upwards [eventually_ge_atTop 4] with m hm
   have hm' : (4 : ℝ) ≤ m := by exact_mod_cast hm
-  rw [fderiv_sineWave, eLpNorm_one_eq_lintegral_enorm (by fun_prop)]
-  simp_rw [enorm_smul, Complex.reCLM_enorm, mul_one]
+  rw [fderiv_sineWave, eLpNorm_one_eq_lintegral_eNorm (by fun_prop)]
+  simp_rw [eNorm_smul, Complex.reCLM_eNorm, mul_one]
   rw [Complex.setLIntegral_reProdIm_comp_re _ _ (F := fun x => ‖(m : ℝ) * cos (m * x)‖ₑ)
       (by fun_prop),
     volume_Icc_neg_half_half, one_mul]
-  simp_rw [enorm_mul, enorm_natCast]
+  simp_rw [eNorm_mul, eNorm_natCast]
   rw [lintegral_const_mul' _ _ (ENNReal.natCast_ne_top m)]
   gcongr
   have key := MeasureTheory.ofReal_integral_sq_div_le_lintegral_enorm
@@ -193,8 +194,8 @@ theorem tendsto_eLpNorm_fderiv_sineWave {p : ℝ≥0∞} (hp : 1 ≤ p) :
   set μ := volume.restrict (ball (0 : ℂ) 1)
   have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set C := μ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal)
-  have hC : C ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (MeasureTheory.sub_one_div_toReal_nonneg hp)
-    (measure_ne_top μ univ)
+  have hC : C ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp) (measure_ne_top μ univ)
   have hC0 : C ≠ 0 := by
     refine (ENNReal.rpow_pos ?_ (measure_ne_top μ univ)).ne'
     simpa [μ] using measure_ball_pos volume (0 : ℂ) one_pos
@@ -369,12 +370,12 @@ private theorem eventually_le_eLpNorm_fderiv_halfSine_sub :
   filter_upwards [eventually_ne_atTop 0] with m hm
   filter_upwards [eventually_ne_atTop 0, eventually_integral_sin_sub_sin_sq_ge (a := 0)
     (b := 1 / 2) (by norm_num) (π / 2) m] with n hn hint
-  rw [fderiv_halfSine hm, fderiv_halfSine hn, eLpNorm_one_eq_lintegral_enorm (by fun_prop)]
+  rw [fderiv_halfSine hm, fderiv_halfSine hn, eLpNorm_one_eq_lintegral_eNorm (by fun_prop)]
   have hpt : ∀ x : ℂ, ‖cos (m * x.im) • Complex.imCLM - cos (n * x.im) • Complex.imCLM‖ₑ =
       ‖cos (m * x.im) - cos (n * x.im)‖ₑ := fun x => by
     have : cos (m * x.im) • Complex.imCLM - cos (n * x.im) • Complex.imCLM =
         (cos (m * x.im) - cos (n * x.im)) • Complex.imCLM := (sub_smul _ _ _).symm
-    rw [this, enorm_smul, Complex.imCLM_enorm, mul_one]
+    rw [this, eNorm_smul, Complex.imCLM_eNorm, mul_one]
   simp only [Pi.sub_apply, hpt]
   rw [Complex.setLIntegral_reProdIm_comp_im _ _ (F := fun y => ‖cos (m * y) - cos (n * y)‖ₑ)
     (by fun_prop), volume_Icc_neg_half_half, one_mul]
