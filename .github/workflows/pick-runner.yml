@@ -36,6 +36,9 @@ on:
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
+      namespace-slot:
+        description: Namespace build concurrency slot, from 0 through 7
+        value: ${{ jobs.pick.outputs.namespace-slot }}
       hosted-slot:
         description: Native GitHub bulk-build concurrency slot, from 0 through 18
         value: ${{ jobs.pick.outputs.hosted-slot }}
@@ -58,7 +61,7 @@ on:
         description: Observed queued or running Namespace build jobs, excluding control jobs; empty when unknown
         value: ${{ jobs.pick.outputs.namespace_busy }}
       namespace_cap:
-        description: Approximate shared Namespace build-job cap used for this selection
+        description: Observational Namespace routing cap; build jobs also share eight scheduler groups
         value: ${{ jobs.pick.outputs.namespace_cap }}
 
 jobs:
@@ -71,6 +74,7 @@ jobs:
     continue-on-error: true
     outputs:
       hosted-slot: ${{ steps.hosted-slot.outputs.slot }}
+      namespace-slot: ${{ steps.hosted-slot.outputs.namespace-slot }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
@@ -88,6 +92,7 @@ jobs:
           import os
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               print("slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 19), file=output)
+              print("namespace-slot=" + str(int(os.environ["HOSTED_RUN_ID"]) % 8), file=output)
           PYTHON
       - name: Checkout workflow-pinned runner selector
         uses: actions/checkout@v4
@@ -99,10 +104,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@64fa9015b1f2b8c02964938fc21615796ece60ce
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e73fbfffcaa2cb0f7d474804288df508cdf57620
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 64fa9015b1f2b8c02964938fc21615796ece60ce
+          tools-ref: e73fbfffcaa2cb0f7d474804288df508cdf57620
           project-directory: .
       - name: Select destination in configured preference order
         id: pick
