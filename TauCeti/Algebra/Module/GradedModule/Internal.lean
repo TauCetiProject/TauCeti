@@ -42,13 +42,18 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `DirectSum.Decomposition`, as graded algebras store it.
 * `InternalGrading.map`: transport an internal grading across a linear equivalence.
 * `InternalGrading.koszulTwist`: the operator scaling degree-`e` elements by `(-1)^(q * e)`.
+* `InternalGrading.quadraticExponent`: the exponent `p choose 2` of the quadratic sign in
+  degree `p`.
 * `InternalGrading.quadraticTwist`: multiplication of degree `p` by
   `(-1)^(p choose 2)`.
+* `InternalGrading.quadraticTwistEquiv`: the quadratic twist as a linear involution.
 * `InternalGrading.twistedTuple`: a tuple with a consecutive block of letters Koszul-twisted.
 
 ## Main results
 
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
+  `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
   elements.
 * `TauCeti.InternalGrading.decompose_mem_of_mem_span_sigma`: the components of an element in the
@@ -62,6 +67,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
   is multiplicative and fixes the unit, so it may be applied factorwise to products.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
+* `TauCeti.InternalGrading.negOnePow_quadraticExponent_add`,
+  `TauCeti.InternalGrading.negOnePow_quadraticExponent_cancel` and
+  `TauCeti.InternalGrading.negOnePow_quadraticExponent_neg_add`: the quadratic signs differ under
+  addition by the Koszul sign.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
@@ -126,9 +135,21 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
     InternalGrading R M ι :=
   ⟨ℳ, DirectSum.Decomposition.isInternal ℳ⟩
 
+/-- The pieces of `ofDecomposition ℳ` are the given submodules `ℳ`. -/
 @[simp]
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
+
+/-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
+instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
+internality), but decompositions are unique. -/
+@[simp]
+theorem coe_decompose_ofDecomposition_piece_apply (ℳ : ι → Submodule R M)
+    [DirectSum.Decomposition ℳ] (x : M) (i : ι) :
+    (DirectSum.decompose (ofDecomposition ℳ).piece x i : M) = DirectSum.decompose ℳ x i := by
+  unfold ofDecomposition
+  exact congrArg (fun d ↦ ((@DirectSum.decompose _ _ _ _ _ _ _ ℳ d x i : M)))
+    (Subsingleton.elim _ _)
 
 /-- A submodule is homogeneous for the internal grading `ofDecomposition ℳ` exactly when it is
 homogeneous for `ℳ`: the decomposition carried by `ofDecomposition ℳ` is the given one, as
@@ -423,16 +444,12 @@ section FiniteSupport
 variable {ι : Type*} [DecidableEq ι]
   {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
 
-private theorem InternalGrading.finite_piece_ne_bot_aux (G : InternalGrading R M ι)
-    [Module.Finite R M] : {p | G.piece p ≠ ⊥}.Finite :=
-  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
-    (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
-
 /-- A finitely generated internally graded module has only finitely many nonzero homogeneous
 pieces. -/
 theorem InternalGrading.finite_piece_ne_bot (G : InternalGrading R M ι) [Module.Finite R M] :
     {p | G.piece p ≠ ⊥}.Finite :=
-  G.finite_piece_ne_bot_aux
+  G.isInternal.submodule_iSupIndep.finite_ne_bot_of_fg
+    (by rw [G.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
 /-- Summing the homogeneous components over the finite set of nonzero pieces reconstructs the
 original element. -/
@@ -855,12 +872,15 @@ theorem quadraticTwist_involutive (G : InternalGrading R M ℤ) :
 noncomputable def quadraticTwistEquiv (G : InternalGrading R M ℤ) : M ≃ₗ[R] M :=
   LinearEquiv.ofInvolutive G.quadraticTwist G.quadraticTwist_involutive
 
+/-- The quadratic twist equivalence acts as the quadratic twist. -/
 @[simp]
 theorem quadraticTwistEquiv_apply (G : InternalGrading R M ℤ) (x : M) :
     G.quadraticTwistEquiv x = G.quadraticTwist x := by
   exact congr_fun (LinearEquiv.coe_ofInvolutive G.quadraticTwist
     G.quadraticTwist_involutive) x
 
+/-- The inverse of the quadratic twist equivalence acts as the quadratic twist, since the twist is
+an involution. -/
 @[simp]
 theorem quadraticTwistEquiv_symm_apply (G : InternalGrading R M ℤ) (x : M) :
     G.quadraticTwistEquiv.symm x = G.quadraticTwist x := by

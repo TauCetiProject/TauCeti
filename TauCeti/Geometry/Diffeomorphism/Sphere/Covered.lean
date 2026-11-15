@@ -11,10 +11,8 @@ public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Sphere.Connected
 public import TauCeti.Topology.Grassmannian.SphereBundle.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
-import TauCeti.Analysis.Complex.Circle
-import TauCeti.Analysis.InnerProductSpace.PlaneRotation
+import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
 import TauCeti.Geometry.Manifold.Degree.Homological
-import TauCeti.Geometry.Manifold.Degree.SphereRotation
 import TauCeti.Geometry.Manifold.Instances.EuclideanProd
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup
@@ -57,8 +55,9 @@ along it.
 
 Directly for every odd-dimensional sphere `Sᵐ⁺¹` (`Even m`) in an `(m + 2)`-dimensional real inner
 product space `E`, planar rotations in the 2-planes `span {x₀, v}` (`(v, z) ∈ Sᵐ × S¹`) form a
-continuous family into `Diff(Sᵐ⁺¹)` whose evaluation at `x₀` is the rotation family
-`TauCeti.sphereRotationFamily x₀ : Sᵐ × S¹ → Sᵐ⁺¹`. Recharting `Sᵐ × S¹` on
+continuous family `TauCeti.sphereRotationDiff x₀ r` into `Diff(Sᵐ⁺¹)` whose evaluation at `x₀` is
+the rotation family `TauCeti.sphereRotationFamily x₀ : Sᵐ × S¹ → Sᵐ⁺¹`
+(`TauCeti.evalAt_comp_sphereRotationDiff`). Recharting `Sᵐ × S¹` on
 `EuclideanSpace ℝ (Fin (m + 1))` (`TauCeti.prodEuclideanChartedSpace`), the rotation family has
 degree `2` (`Orientation.degreeAtRegularValue_sphereRotationFamily_of_even`), so its image of the
 fundamental class is `2 • [Sᵐ⁺¹]`, showing that `Sᵐ⁺¹` is `2`-covered by diffeomorphisms
@@ -339,59 +338,6 @@ open scoped RealInnerProductSpace
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
 
-/-- The isometric embedding `ℂ →ₗᵢ[ℝ] E` sending `1` to `p` and `i` to a unit tangent vector `v`
-at `p`. -/
-private def planeEmbedding (p : sphere (0 : E) 1) (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
-    ℂ →ₗᵢ[ℝ] E :=
-  LinearIsometry.complexOfOrthonormal (norm_eq_of_mem_sphere p) (norm_eq_of_mem_sphere v)
-    (Submodule.mem_orthogonal_singleton_iff_inner_right.1 v.1.2)
-
-omit [FiniteDimensional ℝ E] in
-private theorem continuous_planeEmbedding (p : sphere (0 : E) 1) :
-    Continuous fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦
-      (planeEmbedding p x.1).toContinuousLinearMap :=
-  LinearIsometry.continuous_toContinuousLinearMap_complexOfOrthonormal continuous_const
-    (continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst))
-    (fun _ ↦ norm_eq_of_mem_sphere p) (fun x ↦ norm_eq_of_mem_sphere x.1)
-    fun x ↦ Submodule.mem_orthogonal_singleton_iff_inner_right.1 x.1.1.2
-
-/-- The planar rotations `(v, z) ↦ planeRotation (p, v) z` as a continuous map from `Sᵐ × S¹`
-into `Diff(Sᵐ⁺¹)`. -/
-private def rotationFamilyToDiffSphere (p : sphere (0 : E) 1) (r : ℕ∞ω) :
-    C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1,
-      Diff (𝓡 (m + 1)) (sphere (0 : E) 1) r) where
-  toFun x := LinearIsometryEquiv.unitSphereDiffHom r
-    ((planeEmbedding p x.1).planeRotation (Circle.homeomorphSphere.symm x.2))
-  continuous_toFun := by
-    refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
-    have hc : Continuous fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦
-        Circle.homeomorphSphere.symm x.2 :=
-      Circle.homeomorphSphere.symm.continuous.comp continuous_snd
-    simpa only [LinearIsometryEquiv.unitSphereDiffHom_apply] using
-      (LinearIsometry.continuous_toContinuousLinearEquiv_planeRotation
-        (continuous_planeEmbedding p) hc).toContMDiffMap_unitSphereDiffeomorph
-
-/-- Evaluating the planar-rotation family at `p` yields `TauCeti.sphereRotationFamily p`. -/
-private theorem evalAt_comp_rotationFamilyToDiffSphere (p : sphere (0 : E) 1) (r : ℕ∞ω) :
-    (Diffeomorph.evalAt (I := 𝓡 (m + 1)) p).comp (rotationFamilyToDiffSphere p r) =
-      ⟨sphereRotationFamily p, (contMDiff_sphereRotationFamily (m := m) p).continuous⟩ := by
-  ext x : 2
-  simp only [ContinuousMap.comp_apply, Diffeomorph.evalAt_apply, rotationFamilyToDiffSphere,
-    ContinuousMap.coe_mk, LinearIsometryEquiv.unitSphereDiffHom_apply,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, coe_sphereRotationFamily]
-  calc ((planeEmbedding p x.1).planeRotation (Circle.homeomorphSphere.symm x.2)) (p : E)
-      = ((planeEmbedding p x.1).planeRotation (Circle.homeomorphSphere.symm x.2))
-          (planeEmbedding p x.1 1) :=
-        congrArg _ (LinearIsometry.complexOfOrthonormal_one (norm_eq_of_mem_sphere p)
-          (norm_eq_of_mem_sphere x.1)
-          (Submodule.mem_orthogonal_singleton_iff_inner_right.1 x.1.1.2)).symm
-    _ = planeEmbedding p x.1 ((Circle.homeomorphSphere.symm x.2 : Circle) * (1 : ℂ)) :=
-        LinearIsometry.planeRotation_apply_map _ _ _
-    _ = (x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-        rw [mul_one, planeEmbedding, LinearIsometry.complexOfOrthonormal_apply,
-          Circle.coe_homeomorphSphere_symm_apply]
-        rfl
-
 include m in
 omit [FiniteDimensional ℝ E] in
 /-- A sphere of positive dimension contains a point distinct from both `x₀` and `-x₀`, obtained
@@ -465,8 +411,8 @@ theorem isCoveredByDiffeomorphisms_sphere_of_even
   have hcov : (oQ.toHomologicalOrientation finrank_euclideanSpace_fin).IsCoveredByDiffeomorphisms
       finrank_euclideanSpace_fin r x₀ 2 := by
     refine .of_mapFundamentalClass (oP'.toHomologicalOrientation finrank_euclideanSpace_fin)
-      finrank_euclideanSpace_fin (rotationFamilyToDiffSphere x₀ r) ?_
-    rw [evalAt_comp_rotationFamilyToDiffSphere]
+      finrank_euclideanSpace_fin (sphereRotationDiff (n := m + 1) x₀ r) ?_
+    rw [evalAt_comp_sphereRotationDiff]
     exact (Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul
       finrank_euclideanSpace_fin oP' oQ hreg).trans
       ((congrArg (· • _) hdeg).trans
