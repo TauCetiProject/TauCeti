@@ -484,12 +484,17 @@ theorem coe_interSwap_fst (x : C.inter) : (C.interSwap x : X₁ × X₀).1 = (x 
 @[simp]
 theorem coe_interSwap_snd (x : C.inter) : (C.interSwap x : X₁ × X₀).2 = (x : X₀ × X₁).1 := (rfl)
 
-theorem interFst_interSwap (x : C.inter) : C.swap.interFst (C.interSwap x) = C.interSnd x := (rfl)
+theorem interFst_interSwap (x : C.inter) : C.swap.interFst (C.interSwap x) = C.interSnd x := by
+  simp
 
-theorem interSnd_interSwap (x : C.inter) : C.swap.interSnd (C.interSwap x) = C.interFst x := (rfl)
+theorem interSnd_interSwap (x : C.inter) : C.swap.interSnd (C.interSwap x) = C.interFst x := by
+  simp
+
+theorem interSwap_symm : C.interSwap.symm = C.swap.interSwap := by ext x <;> rfl
 
 @[simp]
-theorem interSwap_symm : C.interSwap.symm = C.swap.interSwap := by ext x <;> rfl
+theorem swap_interSwap_interSwap (x : C.inter) : C.swap.interSwap (C.interSwap x) = x := by
+  rw [← interSwap_symm, LinearIsometryEquiv.symm_apply_apply]
 
 section SwapSum
 

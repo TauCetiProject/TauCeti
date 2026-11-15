@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Real parts of continuous linear functionals on balls
@@ -74,7 +75,7 @@ theorem exists_mul_norm_lt_re_apply (f : StrongDual 𝕜 E) {r : ℝ} (hr₀ : 0
 
 /-- On an `ℓ^∞`-normed product `E × F` over `RCLike` scalars, the operator norm of `Ψ` is at least
 the sum of the norms of its restrictions to the two factors. -/
-theorem norm_comp_inl_add_norm_comp_inr_le [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+private theorem norm_comp_inl_add_norm_comp_inr_le [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     (Ψ : StrongDual 𝕜 (E × F)) :
     ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ ≤ ‖Ψ‖ := by
   set f₀ := Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)
@@ -98,12 +99,7 @@ theorem norm_comp_inl_add_norm_comp_inr [SeminormedAddCommGroup F] [NormedSpace 
     (Ψ : StrongDual 𝕜 (E × F)) :
     ‖Ψ.comp (ContinuousLinearMap.inl 𝕜 E F)‖ + ‖Ψ.comp (ContinuousLinearMap.inr 𝕜 E F)‖ = ‖Ψ‖ :=
   le_antisymm (norm_comp_inl_add_norm_comp_inr_le Ψ) <|
-    Ψ.opNorm_le_bound (by positivity) fun p ↦ by
-      rw [← Ψ.comp_inl_add_comp_inr]
-      exact (norm_add_le _ _).trans <| (add_le_add ((Ψ.comp _).le_opNorm _)
-        ((Ψ.comp _).le_opNorm _)).trans <| by
-          rw [add_mul]
-          exact add_le_add (mul_le_mul_of_nonneg_left (norm_fst_le p) (norm_nonneg _))
-            (mul_le_mul_of_nonneg_left (norm_snd_le p) (norm_nonneg _))
+    (congrArg norm Ψ.coprod_comp_inl_inr.symm).trans_le
+      ((Ψ.comp (.inl 𝕜 E F)).opNorm_coprod_le (Ψ.comp (.inr 𝕜 E F)))
 
 end StrongDual

@@ -240,17 +240,17 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
   rw [hZ]
   exact T.range.isClosed_topologicalClosure
 
+end RCLike
+
 /-- Over `ℝ` or `ℂ`, the transpose `precomp 𝕜 T` on strong duals is injective if and only if `T`
 has dense range. -/
 @[simp]
-theorem injective_precomp_iff_denseRange [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-    (T : E →L[𝕜] F) :
+theorem injective_precomp_iff_denseRange [RCLike 𝕜] [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F) :
     Injective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔ DenseRange T := by
   rw [← coe_coe, ← LinearMap.ker_eq_bot, ker_precomp_eq_orthogonalBilin_range,
     ← Submodule.dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot, LinearMap.coe_range, coe_coe]
   rfl
-
-end RCLike
 
 section Complete
 

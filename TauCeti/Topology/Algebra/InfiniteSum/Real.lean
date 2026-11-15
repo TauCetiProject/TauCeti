@@ -47,8 +47,10 @@ analogue of the power-rule integral identity for tails.
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
-* `TauCeti.summable_pow_natAbs`, `TauCeti.tsum_pow_natAbs_ite_eq`: summability and nonzero-mode sum
-  `2 * (r * (1 - r)⁻¹)` of the bilateral geometric series `r ^ k.natAbs` on `ℤ` for `0 ≤ r < 1`.
+* `TauCeti.summable_pow_natAbs`, `TauCeti.tsum_pow_natAbs`,
+  `TauCeti.tsum_ite_eq_zero_pow_natAbs`: summability, sum `(1 + r) * (1 - r)⁻¹`, and nonzero-mode
+  sum `2 * (r * (1 - r)⁻¹)` of the bilateral geometric series `r ^ k.natAbs` on `ℤ` for
+  `0 ≤ r < 1`.
 -/
 
 public section
@@ -226,21 +228,26 @@ theorem summable_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
   Summable.of_nat_of_neg_add_one (summable_geometric_of_lt_one hr₀ hr₁)
     (pow_neg_succ_natAbs r ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r)
 
-/-- For `0 ≤ r < 1`, the nonzero modes of the bilateral geometric series `r ^ k.natAbs` sum to
-`2 * (r * (1 - r)⁻¹)`. -/
-theorem tsum_pow_natAbs_ite_eq {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
-    (∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) = 2 * (r * (1 - r)⁻¹) := by
+/-- For `0 ≤ r < 1`, the bilateral geometric series `k ↦ r ^ k.natAbs` on `ℤ` sums to
+`(1 + r) * (1 - r)⁻¹`. -/
+theorem tsum_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, r ^ k.natAbs) = (1 + r) * (1 - r)⁻¹ := by
   have h1 : (fun n : ℕ ↦ r ^ (n : ℤ).natAbs) = fun n : ℕ ↦ r ^ n := by ext n; simp
   have h2 := pow_neg_succ_natAbs r
+  rw [tsum_of_nat_of_neg_add_one (h1 ▸ summable_geometric_of_lt_one hr₀ hr₁)
+    (h2 ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r), h1, h2,
+    tsum_mul_left, tsum_geometric_of_lt_one hr₀ hr₁]
+  ring
+
+/-- For `0 ≤ r < 1`, the nonzero modes of the bilateral geometric series `r ^ k.natAbs` sum to
+`2 * (r * (1 - r)⁻¹)`. -/
+theorem tsum_ite_eq_zero_pow_natAbs {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r < 1) :
+    (∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs) = 2 * (r * (1 - r)⁻¹) := by
   have hite : (∑' k : ℤ, r ^ k.natAbs) =
       (1 : ℝ) + ∑' k : ℤ, if k = 0 then (0 : ℝ) else r ^ k.natAbs := by
     simpa using (summable_pow_natAbs hr₀ hr₁).tsum_eq_add_tsum_ite (0 : ℤ)
-  have htot : (∑' k : ℤ, r ^ k.natAbs) = (1 - r)⁻¹ + r * (1 - r)⁻¹ := by
-    rw [tsum_of_nat_of_neg_add_one (h1 ▸ summable_geometric_of_lt_one hr₀ hr₁)
-      (h2 ▸ (summable_geometric_of_lt_one hr₀ hr₁).mul_left r), h1, h2,
-      tsum_mul_left, tsum_geometric_of_lt_one hr₀ hr₁]
-  have halg : (1 - r)⁻¹ + r * (1 - r)⁻¹ = 1 + 2 * (r * (1 - r)⁻¹) := by
+  have halg : (1 + r) * (1 - r)⁻¹ = 1 + 2 * (r * (1 - r)⁻¹) := by
     have : 1 - r ≠ 0 := sub_ne_zero.2 hr₁.ne'; field_simp; ring
-  linarith
+  linarith [tsum_pow_natAbs hr₀ hr₁]
 
 end TauCeti

@@ -24,8 +24,9 @@ Schwartz functions, together with the cocompact decay of `t ↦ exp (c - δ * t 
   `(1 + r) ^ m * exp (-a r²)`.
 * `TauCeti.norm_exp_ofReal_mul_sub_sq`, `TauCeti.norm_exp_ofReal_mul_sub_sq_le`: modulus and closed
   unit-strip bound for `z ↦ exp (δ * (z - θ) ^ 2)`.
-* `TauCeti.tendsto_exp_sub_sq_cocompact`, `TauCeti.tendsto_norm_exp_ofReal_mul_sub_sq_cocompact`:
-  cocompact decay of `t ↦ exp (c - δ * t ^ 2)` and `t ↦ ‖exp (δ * (a + t * I - θ) ^ 2)‖`.
+* `TauCeti.tendsto_exp_sub_mul_sq_cocompact`,
+  `TauCeti.tendsto_norm_exp_ofReal_mul_add_mul_I_sub_sq_cocompact`: cocompact decay of
+  `t ↦ exp (c - δ * t ^ 2)` and `t ↦ ‖exp (δ * (a + t * I - θ) ^ 2)‖`.
 -/
 
 public section
@@ -80,7 +81,7 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
           Real.exp_zero, mul_one]
 
 /-- For `0 < δ` and any `c : ℝ`, `t ↦ exp (c - δ * t ^ 2)` tends to `0` along `cocompact ℝ`. -/
-theorem tendsto_exp_sub_sq_cocompact {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :
+theorem tendsto_exp_sub_mul_sq_cocompact {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :
     Tendsto (fun t : ℝ => Real.exp (c - δ * t ^ 2)) (cocompact ℝ) (𝓝 0) := by
   have hsq : Tendsto (fun t : ℝ => t ^ 2) (cocompact ℝ) atTop :=
     ((tendsto_pow_atTop two_ne_zero).comp (tendsto_norm_cocompact_atTop (E := ℝ))).congr
@@ -106,10 +107,10 @@ theorem norm_exp_ofReal_mul_sub_sq_le {δ : ℝ} (hδ : 0 ≤ δ) (θ : ℝ) {z 
 
 /-- Along any vertical line `a + t * I`, `‖exp (δ * (a + t * I - θ) ^ 2)‖` tends to `0` at
 infinity for `0 < δ`. -/
-theorem tendsto_norm_exp_ofReal_mul_sub_sq_cocompact {δ : ℝ} (hδ : 0 < δ) (θ a : ℝ) :
+theorem tendsto_norm_exp_ofReal_mul_add_mul_I_sub_sq_cocompact {δ : ℝ} (hδ : 0 < δ) (θ a : ℝ) :
     Tendsto (fun t : ℝ => ‖Complex.exp (δ * ((a : ℂ) + t * Complex.I - θ) ^ 2)‖)
       (cocompact ℝ) (𝓝 0) :=
-  (tendsto_exp_sub_sq_cocompact hδ (δ * (a - θ) ^ 2)).congr fun t => by
+  (tendsto_exp_sub_mul_sq_cocompact hδ (δ * (a - θ) ^ 2)).congr fun t => by
     rw [norm_exp_ofReal_mul_sub_sq]; congr 1; simp [mul_sub]
 
 end TauCeti

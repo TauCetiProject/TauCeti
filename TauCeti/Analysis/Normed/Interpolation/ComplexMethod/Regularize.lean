@@ -13,12 +13,19 @@ import Mathlib.Analysis.Normed.Group.Submodule
 # Endpoint identifications and regularization invariance in the complex method
 
 Using `CompatibleCouple.dense_elementaryStripTraces`, this file proves Bergh–Löfström,
-Theorem 4.2.2 (b)–(c):
-* **Endpoint identifications (Theorem 4.2.2 (b)):** `ComplexMethodSpace.norm_ofInter_zero`,
-  `ComplexMethodSpace.norm_ofInter_one`, `ComplexMethodSpace.fstClosureEquiv`,
-  `ComplexMethodSpace.sndClosureEquiv`, and `fstEquiv`, `sndEquiv` when `C.IsRegular`.
-* **Regularization invariance (Theorem 4.2.2 (c)):** `regularizeStripTracesEquiv` and
-  `ComplexMethodSpace.regularizeEquiv : [X₀°, X₁°]_θ ≃ₗᵢ[ℂ] [X₀, X₁]_θ`.
+Theorem 4.2.2 (b)–(c) for any Banach couple `(X₀, X₁)`:
+* **Endpoint identifications (Theorem 4.2.2 (b)):** upgrading the contractive projections
+  `ComplexMethodSpace.toFst` and `ComplexMethodSpace.toSnd` yields surjective linear isometries
+  `[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀°` (`ComplexMethodSpace.fstClosureEquiv`) and `[X₀, X₁]_1 ≃ₗᵢ[ℂ] X₁°`
+  (`ComplexMethodSpace.sndClosureEquiv`), where `X_j°` is the closure of `X₀ ∩ X₁` in `X_j`; when
+  `(X₀, X₁)` is regular (`C.IsRegular`), these become `[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀` and
+  `[X₀, X₁]_1 ≃ₗᵢ[ℂ] X₁` (`ComplexMethodSpace.fstEquiv`, `ComplexMethodSpace.sndEquiv`).
+* **Regularization invariance (Theorem 4.2.2 (c)):** passing to the regularized couple `(X₀°, X₁°)`
+  identifies admissible boundary traces isometrically
+  (`CompatibleCouple.regularizeStripTracesEquiv`) and therefore preserves the complex interpolation
+  space for every `θ : ℝ`: `[X₀°, X₁°]_θ ≃ₗᵢ[ℂ] [X₀, X₁]_θ`
+  (`ComplexMethodSpace.regularizeEquiv`). This reduces complex interpolation of general Banach
+  couples to regular Banach couples, where the dual couple `CompatibleCouple.dual` applies.
 
 ## References
 
@@ -30,7 +37,7 @@ Theorem 4.2.2 (b)–(c):
 
 public noncomputable section
 
-open Complex Filter Set Topology
+open Set
 open scoped ZeroAtInfty
 
 namespace TauCeti.CompatibleCouple
@@ -42,25 +49,6 @@ variable {X₀ X₁ V : Type*}
 
 /-! ### Endpoint closures and isometric identifications (Bergh–Löfström, Theorem 4.2.2 (b)) -/
 
-private theorem norm_expGaussianTrace_one_le (ω : ℝ) (x : C.inter) :
-    ‖C.expGaussianTrace one_pos ω x‖ ≤ max ‖C.interFst x‖ (Real.exp (1 + ω) * ‖C.interSnd x‖) := by
-  rw [← Submodule.norm_coe]
-  refine norm_prod_le_iff.2 ⟨(ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_,
-    (ZeroAtInftyContinuousMap.norm_le (by positivity)).2 fun t => ?_⟩
-  · rw [expGaussianTrace_apply_fst, norm_smul, Complex.norm_exp]
-    have hre : ((1 : ℂ) * ((t : ℂ) * I) ^ 2 + (ω : ℂ) * ((t : ℂ) * I)).re ≤ 0 := by
-      have : ((1 : ℂ) * ((t : ℂ) * I) ^ 2 + (ω : ℂ) * ((t : ℂ) * I)).re = -t ^ 2 := by simp [sq]
-      nlinarith [sq_nonneg t]
-    exact ((mul_le_mul_of_nonneg_right (Real.exp_le_one_iff.2 hre)
-      (norm_nonneg _)).trans_eq (one_mul _)).trans (le_max_left _ _)
-  · rw [expGaussianTrace_apply_snd, norm_smul, Complex.norm_exp]
-    have hre : ((1 : ℂ) * (1 + (t : ℂ) * I) ^ 2 + (ω : ℂ) * (1 + (t : ℂ) * I)).re ≤ 1 + ω := by
-      have : ((1 : ℂ) * (1 + (t : ℂ) * I) ^ 2 + (ω : ℂ) * (1 + (t : ℂ) * I)).re =
-          1 - t ^ 2 + ω := by simp [sq]
-      nlinarith [sq_nonneg t]
-    exact (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hre)
-      (norm_nonneg _)).trans (le_max_right _ _)
-
 private theorem stripTraces_eval_mem_closure [CompleteSpace X₀] [CompleteSpace X₁] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℂ E] (S : Submodule ℂ E) [IsClosed (S : Set E)]
     (ev : C.stripTraces →L[ℂ] E)
@@ -71,7 +59,8 @@ private theorem stripTraces_eval_mem_closure [CompleteSpace X₀] [CompleteSpace
       C.elementaryStripTraces_le (S := S.comap ev.toLinearMap) fun hδ ω x => helem hδ ω x)
     (C.dense_elementaryStripTraces g)
 
-/-- Every admissible boundary trace takes values in `C.fstClosure` (`X₀°`) on `re z = 0`. -/
+/-- When `(X₀, X₁)` is a Banach couple, every admissible boundary trace takes values in
+`C.fstClosure` (`X₀°`) on `re z = 0`. -/
 theorem stripTraces_fst_apply_mem_fstClosure [CompleteSpace X₀] [CompleteSpace X₁]
     (g : C.stripTraces) (t : ℝ) : (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t ∈ C.fstClosure := by
   simpa [ZeroAtInftyContinuousMap.evalCLM_apply] using stripTraces_eval_mem_closure C C.fstClosure
@@ -80,7 +69,8 @@ theorem stripTraces_fst_apply_mem_fstClosure [CompleteSpace X₀] [CompleteSpace
     (fun _ _ x => by simpa [ZeroAtInftyContinuousMap.evalCLM_apply] using
       C.fstClosure.smul_mem _ (C.interFst_mem_fstClosure x)) g
 
-/-- Every admissible boundary trace takes values in `C.sndClosure` (`X₁°`) on `re z = 1`. -/
+/-- When `(X₀, X₁)` is a Banach couple, every admissible boundary trace takes values in
+`C.sndClosure` (`X₁°`) on `re z = 1`. -/
 theorem stripTraces_snd_apply_mem_sndClosure [CompleteSpace X₀] [CompleteSpace X₁]
     (g : C.stripTraces) (t : ℝ) : (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t ∈ C.sndClosure := by
   simpa [ZeroAtInftyContinuousMap.evalCLM_apply] using stripTraces_eval_mem_closure C C.sndClosure
@@ -92,35 +82,6 @@ theorem stripTraces_snd_apply_mem_sndClosure [CompleteSpace X₀] [CompleteSpace
 namespace ComplexMethodSpace
 
 variable {C}
-
-/-- On `X₀ ∩ X₁`, the `[X₀, X₁]_0` norm coincides with the `X₀` norm. -/
-@[simp] theorem norm_ofInter_zero (x : C.inter) : ‖ofInter 0 x‖ = ‖C.interFst x‖ := by
-  have ht : Tendsto (fun ω : ℝ => max ‖C.interFst x‖ (Real.exp (1 + ω) * ‖C.interSnd x‖))
-      atBot (𝓝 ‖C.interFst x‖) := by
-    simpa [max_eq_left (norm_nonneg (C.interFst x))] using
-      (tendsto_const_nhds (x := ‖C.interFst x‖)).max ((Real.tendsto_exp_atBot.comp
-        (tendsto_atBot_add_const_left _ 1 tendsto_id)).mul_const ‖C.interSnd x‖)
-  refine le_antisymm (ge_of_tendsto' ht fun ω => ?_) (toFst_ofInter x ▸ norm_toFst_le _)
-  have heq : mk 0 (C.expGaussianTrace one_pos ω x) = ofInter 0 x := by simp
-  exact heq ▸ (norm_mk_le _).trans (norm_expGaussianTrace_one_le C ω x)
-
-/-- On `X₀ ∩ X₁`, the `[X₀, X₁]_1` norm coincides with the `X₁` norm. -/
-@[simp] theorem norm_ofInter_one (x : C.inter) : ‖ofInter 1 x‖ = ‖C.interSnd x‖ := by
-  have ht : Tendsto (fun ω : ℝ => max (Real.exp (-(1 + ω)) * ‖C.interFst x‖) ‖C.interSnd x‖)
-      atTop (𝓝 ‖C.interSnd x‖) := by
-    simpa [max_eq_right (norm_nonneg (C.interSnd x))] using
-      ((Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
-        (tendsto_atTop_add_const_left _ 1 tendsto_id))).mul_const ‖C.interFst x‖).max
-        (tendsto_const_nhds (x := ‖C.interSnd x‖))
-  refine le_antisymm (ge_of_tendsto' ht fun ω => ?_) (toSnd_ofInter x ▸ norm_toSnd_le _)
-  have heq : mk 1 (Complex.exp (-(1 + ω : ℂ)) • C.expGaussianTrace one_pos ω x) =
-      ofInter 1 x := by rw [map_smul, mk_expGaussianTrace, smul_smul, ← Complex.exp_add]; simp
-  rw [← heq]; refine (norm_mk_le _).trans ((norm_smul _ _).trans_le ?_)
-  rw [Complex.norm_exp, show (-(1 + ω : ℂ)).re = -(1 + ω) by simp]
-  refine (mul_le_mul_of_nonneg_left (norm_expGaussianTrace_one_le C ω x)
-    (Real.exp_pos _).le).trans_eq ?_
-  rw [mul_max_of_nonneg _ _ (Real.exp_pos _).le, ← mul_assoc, ← Real.exp_add,
-    neg_add_cancel, Real.exp_zero, one_mul]
 
 section Complete
 
@@ -151,7 +112,8 @@ private def codRestrictEquiv {E X α : Type*} [NormedAddCommGroup E] [NormedSpac
                      exact ⟨u, Subtype.ext hu⟩).closure_eq
 
 /-- **Endpoint identification at `0` (Bergh–Löfström, Theorem 4.2.2 (b)).** For any Banach couple
-`(X₀, X₁)`, evaluation at `0` is a surjective linear isometry `[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀°`. -/
+`(X₀, X₁)`, `ComplexMethodSpace.toFst` upgrades to a surjective linear isometry
+`[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀°`. -/
 def fstClosureEquiv (C : CompatibleCouple ℂ X₀ X₁ V) :
     C.ComplexMethodSpace 0 ≃ₗᵢ[ℂ] C.fstClosure :=
   codRestrictEquiv toFst C.fstClosure toFst_mem_fstClosure norm_toFst C.regularize.interFst
@@ -174,7 +136,8 @@ def fstClosureEquiv (C : CompatibleCouple ℂ X₀ X₁ V) :
   (fstClosureEquiv C).injective (Subtype.ext (by simp))
 
 /-- **Endpoint identification at `1` (Bergh–Löfström, Theorem 4.2.2 (b)).** For any Banach couple
-`(X₀, X₁)`, evaluation at `1` is a surjective linear isometry `[X₀, X₁]_1 ≃ₗᵢ[ℂ] X₁°`. -/
+`(X₀, X₁)`, `ComplexMethodSpace.toSnd` upgrades to a surjective linear isometry
+`[X₀, X₁]_1 ≃ₗᵢ[ℂ] X₁°`. -/
 def sndClosureEquiv (C : CompatibleCouple ℂ X₀ X₁ V) :
     C.ComplexMethodSpace 1 ≃ₗᵢ[ℂ] C.sndClosure :=
   codRestrictEquiv toSnd C.sndClosure toSnd_mem_sndClosure norm_toSnd C.regularize.interSnd
@@ -197,13 +160,17 @@ def sndClosureEquiv (C : CompatibleCouple ℂ X₀ X₁ V) :
   (sndClosureEquiv C).injective (Subtype.ext (by simp))
 
 /-- **Endpoint identification at `0` for regular Banach couples (Bergh–Löfström,
-Theorem 4.2.2 (b)).** When `(X₀, X₁)` is regular, evaluation at `0` gives `[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀`. -/
+Theorem 4.2.2 (b)).** When `(X₀, X₁)` is regular, `ComplexMethodSpace.toFst` upgrades to a
+surjective linear isometry `[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀`. -/
 def fstEquiv (hC : C.IsRegular) : C.ComplexMethodSpace 0 ≃ₗᵢ[ℂ] X₀ :=
   (fstClosureEquiv C).trans
     (.ofTop X₀ C.fstClosure (C.isRegular_iff_fstClosure_eq_top_and_sndClosure_eq_top.1 hC).1)
 
 @[simp] theorem fstEquiv_apply (hC : C.IsRegular) (u : C.ComplexMethodSpace 0) :
     fstEquiv hC u = toFst u := by simp [fstEquiv]
+@[simp] theorem fstEquiv_symm_toFst (hC : C.IsRegular) (u : C.ComplexMethodSpace 0) :
+    (fstEquiv hC).symm (toFst u) = u := by
+  rw [← fstEquiv_apply hC, (fstEquiv hC).symm_apply_apply]
 @[simp] theorem toFst_fstEquiv_symm (hC : C.IsRegular) (x₀ : X₀) :
     toFst ((fstEquiv hC).symm x₀) = x₀ :=
   (fstEquiv_apply hC _).symm.trans ((fstEquiv hC).apply_symm_apply x₀)
@@ -213,13 +180,17 @@ def fstEquiv (hC : C.IsRegular) : C.ComplexMethodSpace 0 ≃ₗᵢ[ℂ] X₀ :=
     (fstEquiv hC).symm (x : X₀ × X₁).1 = ofInter 0 x := (fstEquiv hC).injective (by simp)
 
 /-- **Endpoint identification at `1` for regular Banach couples (Bergh–Löfström,
-Theorem 4.2.2 (b)).** When `(X₀, X₁)` is regular, evaluation at `1` gives `[X₀, X₁]_1 ≃ₗᵢ[ℂ] X₁`. -/
+Theorem 4.2.2 (b)).** When `(X₀, X₁)` is regular, `ComplexMethodSpace.toSnd` upgrades to a
+surjective linear isometry `[X₀, X₁]_1 ≃ₗᵢ[ℂ] X₁`. -/
 def sndEquiv (hC : C.IsRegular) : C.ComplexMethodSpace 1 ≃ₗᵢ[ℂ] X₁ :=
   (sndClosureEquiv C).trans
     (.ofTop X₁ C.sndClosure (C.isRegular_iff_fstClosure_eq_top_and_sndClosure_eq_top.1 hC).2)
 
 @[simp] theorem sndEquiv_apply (hC : C.IsRegular) (u : C.ComplexMethodSpace 1) :
     sndEquiv hC u = toSnd u := by simp [sndEquiv]
+@[simp] theorem sndEquiv_symm_toSnd (hC : C.IsRegular) (u : C.ComplexMethodSpace 1) :
+    (sndEquiv hC).symm (toSnd u) = u := by
+  rw [← sndEquiv_apply hC, (sndEquiv hC).symm_apply_apply]
 @[simp] theorem toSnd_sndEquiv_symm (hC : C.IsRegular) (x₁ : X₁) :
     toSnd ((sndEquiv hC).symm x₁) = x₁ :=
   (sndEquiv_apply hC _).symm.trans ((sndEquiv hC).apply_symm_apply x₁)
@@ -238,16 +209,18 @@ end ComplexMethodSpace
 into `C.stripTraces`. -/
 def regularizeStripTracesIsometry : C.regularize.stripTraces →ₗᵢ[ℂ] C.stripTraces where
   toLinearMap := (stripTracesMap (D := C) C.fstClosure.subtypeL C.sndClosure.subtypeL
-    C.regularizeSum_compat).toLinearMap
+    C.fstToSum_subtypeL_regularize_interFst).toLinearMap
   norm_map' g := by
     rw [ContinuousLinearMap.coe_coe, ← Submodule.norm_coe, ← Submodule.norm_coe,
       Prod.norm_def, Prod.norm_def]
     congr 1 <;> rw [ZeroAtInftyContinuousMap.norm_eq_iSup_norm,
       ZeroAtInftyContinuousMap.norm_eq_iSup_norm] <;> simp
 
-private theorem regularizeStripTracesIsometry_apply (g : C.regularize.stripTraces) :
+/-- `C.regularizeStripTracesIsometry` acts as `CompatibleCouple.stripTracesMap` along the
+inclusions of `X₀°` and `X₁°`. -/
+theorem regularizeStripTracesIsometry_apply (g : C.regularize.stripTraces) :
     C.regularizeStripTracesIsometry g = stripTracesMap (D := C) C.fstClosure.subtypeL
-      C.sndClosure.subtypeL C.regularizeSum_compat g := (rfl)
+      C.sndClosure.subtypeL C.fstToSum_subtypeL_regularize_interFst g := (rfl)
 
 @[simp] theorem regularizeStripTracesIsometry_apply_fst (g : C.regularize.stripTraces) (t : ℝ) :
     (C.regularizeStripTracesIsometry g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t =
@@ -266,10 +239,6 @@ theorem stripEval_regularizeStripTracesIsometry (z : ℂ) (g : C.regularize.stri
 
 private theorem surjective_regularizeStripTracesIsometry [CompleteSpace X₀] [CompleteSpace X₁] :
     Function.Surjective C.regularizeStripTracesIsometry := by
-  have : CompleteSpace C.fstClosure :=
-    (inferInstance : IsClosed (C.fstClosure : Set X₀)).completeSpace_coe
-  have : CompleteSpace C.sndClosure :=
-    (inferInstance : IsClosed (C.sndClosure : Set X₁)).completeSpace_coe
   have hcl := C.regularizeStripTracesIsometry.isometry.isUniformInducing.isComplete_range.isClosed
   have hsub : (C.elementaryStripTraces : Set C.stripTraces) ⊆
       Set.range C.regularizeStripTracesIsometry := by
@@ -292,26 +261,34 @@ def regularizeStripTracesEquiv [CompleteSpace X₀] [CompleteSpace X₁] :
     (g : C.regularize.stripTraces) :
     C.regularizeStripTracesEquiv g = C.regularizeStripTracesIsometry g := by
   simp [regularizeStripTracesEquiv]
+@[simp] theorem regularizeStripTracesEquiv_symm_regularizeStripTracesIsometry
+    [CompleteSpace X₀] [CompleteSpace X₁] (g : C.regularize.stripTraces) :
+    C.regularizeStripTracesEquiv.symm (C.regularizeStripTracesIsometry g) = g := by
+  rw [← regularizeStripTracesEquiv_apply, C.regularizeStripTracesEquiv.symm_apply_apply]
+@[simp] theorem regularizeStripTracesIsometry_regularizeStripTracesEquiv_symm
+    [CompleteSpace X₀] [CompleteSpace X₁] (g : C.stripTraces) :
+    C.regularizeStripTracesIsometry (C.regularizeStripTracesEquiv.symm g) = g := by
+  rw [← regularizeStripTracesEquiv_apply, C.regularizeStripTracesEquiv.apply_symm_apply]
 @[simp] theorem regularizeStripTracesEquiv_symm_apply_fst [CompleteSpace X₀] [CompleteSpace X₁]
     (g : C.stripTraces) (t : ℝ) :
     (C.regularizeStripTracesEquiv.symm g : C₀(ℝ, C.fstClosure) × C₀(ℝ, C.sndClosure)).1 t =
       ⟨(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t, C.stripTraces_fst_apply_mem_fstClosure g t⟩ :=
   Subtype.ext <| by
-    rw [← regularizeStripTracesIsometry_apply_fst, ← regularizeStripTracesEquiv_apply,
-      C.regularizeStripTracesEquiv.apply_symm_apply]
+    rw [← regularizeStripTracesIsometry_apply_fst,
+      regularizeStripTracesIsometry_regularizeStripTracesEquiv_symm]
 @[simp] theorem regularizeStripTracesEquiv_symm_apply_snd [CompleteSpace X₀] [CompleteSpace X₁]
     (g : C.stripTraces) (t : ℝ) :
     (C.regularizeStripTracesEquiv.symm g : C₀(ℝ, C.fstClosure) × C₀(ℝ, C.sndClosure)).2 t =
       ⟨(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t, C.stripTraces_snd_apply_mem_sndClosure g t⟩ :=
   Subtype.ext <| by
-    rw [← regularizeStripTracesIsometry_apply_snd, ← regularizeStripTracesEquiv_apply,
-      C.regularizeStripTracesEquiv.apply_symm_apply]
+    rw [← regularizeStripTracesIsometry_apply_snd,
+      regularizeStripTracesIsometry_regularizeStripTracesEquiv_symm]
 @[simp] theorem regularizeSumMap_stripFunction_regularizeStripTracesEquiv_symm
     [CompleteSpace X₀] [CompleteSpace X₁] (g : C.stripTraces) (z : ℂ) :
     C.regularizeSumMap (C.regularize.stripFunction (C.regularizeStripTracesEquiv.symm g) z) =
       C.stripFunction g z := by
   simp only [← stripEval_apply, ← stripEval_regularizeStripTracesIsometry,
-    ← regularizeStripTracesEquiv_apply, C.regularizeStripTracesEquiv.apply_symm_apply]
+    regularizeStripTracesIsometry_regularizeStripTracesEquiv_symm]
 
 namespace ComplexMethodSpace
 
@@ -337,32 +314,29 @@ private theorem regularizeInvMap_norm_le (θ : ℝ) (u : C.ComplexMethodSpace θ
 `(X₀, X₁)` and `θ : ℝ`, passing to `(X₀°, X₁°)` preserves the complex interpolation space
 isometrically: `[X₀°, X₁°]_θ ≃ₗᵢ[ℂ] [X₀, X₁]_θ`. -/
 def regularizeEquiv (C : CompatibleCouple ℂ X₀ X₁ V) (θ : ℝ) :
-    C.regularize.ComplexMethodSpace θ ≃ₗᵢ[ℂ] C.ComplexMethodSpace θ where
-  toFun := map θ C.fstClosure.subtypeL C.sndClosure.subtypeL C.regularizeSum_compat
-  invFun := regularizeInvMap θ
-  left_inv u := by
-    obtain ⟨g, rfl⟩ := mk_surjective u
-    rw [map_mk, ← C.regularizeStripTracesIsometry_apply, ← C.regularizeStripTracesEquiv_apply,
-      regularizeInvMap_mk, C.regularizeStripTracesEquiv.symm_apply_apply]
-  right_inv u := by
-    obtain ⟨g, rfl⟩ := mk_surjective u
-    rw [regularizeInvMap_mk, map_mk, ← C.regularizeStripTracesIsometry_apply,
-      ← C.regularizeStripTracesEquiv_apply, C.regularizeStripTracesEquiv.apply_symm_apply]
-  map_add' := map_add _
-  map_smul' := map_smul _
-  norm_map' u := by
-    rw [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-    refine le_antisymm (norm_map_le_of_norm_le _ _ C.regularizeSum_compat
-      (fun x => (Submodule.norm_coe x).le) (fun x => (Submodule.norm_coe x).le) u) ?_
-    obtain ⟨g, rfl⟩ := mk_surjective u
-    rw [map_mk, ← C.regularizeStripTracesIsometry_apply]
-    have h := regularizeInvMap_norm_le θ (mk θ (C.regularizeStripTracesEquiv g))
-    rwa [regularizeInvMap_mk, C.regularizeStripTracesEquiv.symm_apply_apply,
-      C.regularizeStripTracesEquiv_apply] at h
+    C.regularize.ComplexMethodSpace θ ≃ₗᵢ[ℂ] C.ComplexMethodSpace θ :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := map θ C.fstClosure.subtypeL C.sndClosure.subtypeL
+        C.fstToSum_subtypeL_regularize_interFst
+      invFun := regularizeInvMap θ
+      left_inv := fun u => by
+        obtain ⟨g, rfl⟩ := mk_surjective u
+        simp [← C.regularizeStripTracesIsometry_apply]
+      right_inv := fun u => by
+        obtain ⟨g, rfl⟩ := mk_surjective u
+        simp [← C.regularizeStripTracesIsometry_apply]
+      map_add' := map_add _
+      map_smul' := map_smul _ }
+    (norm_map_le_of_norm_le _ _ C.fstToSum_subtypeL_regularize_interFst
+      (fun x => (Submodule.norm_coe x).le) (fun x => (Submodule.norm_coe x).le))
+    (regularizeInvMap_norm_le θ)
 
-private theorem regularizeEquiv_apply (θ : ℝ) (u : C.regularize.ComplexMethodSpace θ) :
+/-- `ComplexMethodSpace.regularizeEquiv` acts in the forward direction as `ComplexMethodSpace.map`
+along the inclusions of `X₀°` and `X₁°`. -/
+theorem regularizeEquiv_apply (θ : ℝ) (u : C.regularize.ComplexMethodSpace θ) :
     regularizeEquiv C θ u =
-      map θ C.fstClosure.subtypeL C.sndClosure.subtypeL C.regularizeSum_compat u := (rfl)
+      map θ C.fstClosure.subtypeL C.sndClosure.subtypeL
+        C.fstToSum_subtypeL_regularize_interFst u := (rfl)
 private theorem regularizeEquiv_symm_apply (θ : ℝ) (u : C.ComplexMethodSpace θ) :
     (regularizeEquiv C θ).symm u = regularizeInvMap θ u := (rfl)
 
@@ -387,7 +361,7 @@ private theorem regularizeEquiv_symm_apply (θ : ℝ) (u : C.ComplexMethodSpace 
     regularizeEquiv C θ (ofInter θ y) = ofInter θ (C.regularizeInterEquiv y) := by
   by_cases hθ : θ ∈ Icc 0 1
   · rw [regularizeEquiv_apply]
-    exact map_ofInter _ _ C.regularizeSum_compat hθ
+    exact map_ofInter _ _ C.fstToSum_subtypeL_regularize_interFst hθ
       ((C.interFst_regularizeInterEquiv y).trans (Submodule.subtypeL_apply _ _).symm)
   · simp [eq_zero_of_notMem hθ]
 @[simp] theorem regularizeEquiv_symm_ofInter (θ : ℝ) (x : C.inter) :

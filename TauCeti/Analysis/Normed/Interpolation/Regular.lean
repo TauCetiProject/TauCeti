@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 import TauCeti.Analysis.Normed.Module.Dual.Basic
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # Regular couples, regularization, and the dual couple
@@ -94,6 +95,9 @@ theorem sndClosure_def : C.sndClosure = C.interSnd.range.topologicalClosure := (
 instance : IsClosed (C.fstClosure : Set X₀) := Submodule.isClosed_topologicalClosure _
 instance : IsClosed (C.sndClosure : Set X₁) := Submodule.isClosed_topologicalClosure _
 
+instance [CompleteSpace X₀] : CompleteSpace C.fstClosure := IsClosed.completeSpace_coe
+instance [CompleteSpace X₁] : CompleteSpace C.sndClosure := IsClosed.completeSpace_coe
+
 @[simp] theorem coe_fstClosure : (C.fstClosure : Set X₀) = closure (Set.range C.interFst) := by
   rw [fstClosure_def, Submodule.topologicalClosure_coe, LinearMap.coe_range,
     ContinuousLinearMap.coe_coe]
@@ -119,7 +123,8 @@ theorem interSnd_mem_sndClosure (x : C.inter) : C.interSnd x ∈ C.sndClosure :=
 theorem isRegular_iff_fstClosure_eq_top_and_sndClosure_eq_top :
     C.IsRegular ↔ C.fstClosure = ⊤ ∧ C.sndClosure = ⊤ := by
   rw [isRegular_iff, fstClosure, sndClosure, ← Submodule.dense_iff_topologicalClosure_eq_top,
-    ← Submodule.dense_iff_topologicalClosure_eq_top]; rfl
+    ← Submodule.dense_iff_topologicalClosure_eq_top, LinearMap.coe_range, LinearMap.coe_range,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, DenseRange, DenseRange]
 
 /-- The *regularization* `(X₀°, X₁°)` of a compatible couple, replacing each endpoint by the norm
 closure of the intersection inside it. -/
@@ -134,17 +139,19 @@ def regularize : CompatibleCouple 𝕜 C.fstClosure C.sndClosure V where
 @[simp] theorem regularize_embed₁ : C.regularize.embed₁ = C.embed₁.comp C.sndClosure.subtypeL :=
   (rfl)
 
-/-- Passing to the regularization does not change the intersection: `(X₀° ∩ X₁°) ≃ₗᵢ[𝕜] X₀ ∩ X₁`. -/
+/-- Passing to the regularization does not change the intersection:
+`(X₀° ∩ X₁°) ≃ₗᵢ[𝕜] X₀ ∩ X₁`. -/
 def regularizeInterEquiv : C.regularize.inter ≃ₗᵢ[𝕜] C.inter where
-  toFun y := ⟨(y.1.1.1, y.1.2.1), by simpa [C.mem_inter_iff] using C.regularize.mem_inter_iff.1 y.2⟩
+  toFun y := ⟨(y.1.1.1, y.1.2.1),
+    by simpa [C.mem_inter_iff] using C.regularize.mem_inter_iff.1 y.2⟩
   invFun x := ⟨(⟨x.1.1, C.interFst_apply x ▸ C.interFst_mem_fstClosure x⟩,
     ⟨x.1.2, C.interSnd_apply x ▸ C.interSnd_mem_sndClosure x⟩),
     by simpa [C.regularize.mem_inter_iff] using C.mem_inter_iff.1 x.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  norm_map' _ := by rw [C.norm_inter, C.regularize.norm_inter]; rfl
+  left_inv _ := Subtype.ext <| Prod.ext (Subtype.ext rfl) (Subtype.ext rfl)
+  right_inv _ := Subtype.ext <| Prod.ext rfl rfl
+  map_add' _ _ := Subtype.ext <| Prod.ext rfl rfl
+  map_smul' _ _ := Subtype.ext <| Prod.ext rfl rfl
+  norm_map' _ := by simp [C.norm_inter, C.regularize.norm_inter]
 
 @[simp] theorem coe_regularizeInterEquiv_fst (y : C.regularize.inter) :
     (C.regularizeInterEquiv y : X₀ × X₁).1 = (y : C.fstClosure × C.sndClosure).1 := (rfl)
@@ -184,7 +191,8 @@ section RegularizeSum
 
 variable [ContinuousAdd V]
 
-theorem regularizeSum_compat (y : C.regularize.inter) :
+/-- The two routes from `X₀° ∩ X₁°` into `X₀ + X₁` agree. -/
+theorem fstToSum_subtypeL_regularize_interFst (y : C.regularize.inter) :
     C.fstToSum (C.fstClosure.subtypeL (C.regularize.interFst y)) =
       C.sndToSum (C.sndClosure.subtypeL (C.regularize.interSnd y)) := by
   rw [Submodule.subtypeL_apply, Submodule.subtypeL_apply, ← C.interFst_regularizeInterEquiv,
@@ -194,17 +202,17 @@ theorem regularizeSum_compat (y : C.regularize.inter) :
 /-- The canonical norm-nonincreasing injection from `X₀° + X₁°` into `X₀ + X₁`. -/
 def regularizeSumMap : C.regularize.SumSpace →L[𝕜] C.SumSpace :=
   C.regularize.sumLift (C.fstToSum.comp C.fstClosure.subtypeL)
-    (C.sndToSum.comp C.sndClosure.subtypeL) C.regularizeSum_compat
+    (C.sndToSum.comp C.sndClosure.subtypeL) C.fstToSum_subtypeL_regularize_interFst
 
 theorem regularizeSumMap_eq_sumLift : C.regularizeSumMap =
     C.regularize.sumLift (C.fstToSum.comp C.fstClosure.subtypeL)
-      (C.sndToSum.comp C.sndClosure.subtypeL) C.regularizeSum_compat := (rfl)
+      (C.sndToSum.comp C.sndClosure.subtypeL) C.fstToSum_subtypeL_regularize_interFst := (rfl)
 @[simp] theorem regularizeSumMap_fstToSum (x₀ : C.fstClosure) :
     C.regularizeSumMap (C.regularize.fstToSum x₀) = C.fstToSum x₀ :=
-  C.regularize.sumLift_fstToSum _ _ C.regularizeSum_compat x₀
+  C.regularize.sumLift_fstToSum _ _ C.fstToSum_subtypeL_regularize_interFst x₀
 @[simp] theorem regularizeSumMap_sndToSum (x₁ : C.sndClosure) :
     C.regularizeSumMap (C.regularize.sndToSum x₁) = C.sndToSum x₁ :=
-  C.regularize.sumLift_sndToSum _ _ C.regularizeSum_compat x₁
+  C.regularize.sumLift_sndToSum _ _ C.fstToSum_subtypeL_regularize_interFst x₁
 @[simp] theorem sumSpaceEmbed_regularizeSumMap (u : C.regularize.SumSpace) :
     C.sumSpaceEmbed (C.regularizeSumMap u) = C.regularize.sumSpaceEmbed u := by
   obtain ⟨x₀, x₁, rfl⟩ := C.regularize.exists_fstToSum_add_sndToSum_eq u; simp
@@ -254,20 +262,40 @@ def dual (hC : C.IsRegular) :
 
 section SumDual
 
-private theorem dualInter_compat (hC : C.IsRegular) (f : (C.dual hC).inter) (x : C.inter) :
+/-- A pair of functionals `(f₀, f₁) ∈ X₀* × X₁*` belongs to `(C.dual hC).inter` if and only if
+`f₀` and `f₁` agree on `C.inter`. -/
+theorem mem_dual_inter_iff (hC : C.IsRegular) {f : StrongDual 𝕜 X₀ × StrongDual 𝕜 X₁} :
+    f ∈ (C.dual hC).inter ↔ ∀ x : C.inter, f.1 (C.interFst x) = f.2 (C.interSnd x) := by
+  rw [(C.dual hC).mem_inter_iff, dual_embed₀, dual_embed₁, ContinuousLinearMap.ext_iff]
+  rfl
+
+/-- The two endpoint components of `f ∈ (C.dual hC).inter` agree on `C.inter`. -/
+theorem dual_interFst_apply_interFst (hC : C.IsRegular) (f : (C.dual hC).inter) (x : C.inter) :
     ((C.dual hC).interFst f) (C.interFst x) = ((C.dual hC).interSnd f) (C.interSnd x) := by
   rw [(C.dual hC).interFst_apply, (C.dual hC).interSnd_apply]
-  simpa [dual_embed₀, dual_embed₁] using DFunLike.congr_fun ((C.dual hC).mem_inter_iff.1 f.2) x
+  exact (C.mem_dual_inter_iff hC).1 f.2 x
 
 variable [ContinuousAdd V]
 
 private theorem sumDual_mem_inter (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
-    (Λ.comp C.fstToSum, Λ.comp C.sndToSum) ∈ (C.dual hC).inter := by
-  rw [mem_inter_iff, dual_embed₀, dual_embed₁]; ext x; exact congrArg Λ (C.fstToSum_interFst x)
+    (Λ.comp C.fstToSum, Λ.comp C.sndToSum) ∈ (C.dual hC).inter :=
+  (C.mem_dual_inter_iff hC).2 fun x => congrArg Λ (C.fstToSum_interFst x)
+
+private theorem norm_sumDual_le (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
+    ‖(⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩ :
+      (C.dual hC).inter)‖ ≤ ‖Λ‖ := by
+  rw [norm_inter]
+  exact max_le
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₀ =>
+      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_fstToSum_le x₀) (norm_nonneg Λ)))
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₁ =>
+      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_sndToSum_le x₁) (norm_nonneg Λ)))
+
 private theorem norm_sumLift_dualInter_le (hC : C.IsRegular) (f : (C.dual hC).inter) :
-    ‖C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f) (dualInter_compat C hC f)‖ ≤
-      ‖f‖ := by
-  set Λ := C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f) (dualInter_compat C hC f)
+    ‖C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f)
+      (C.dual_interFst_apply_interFst hC f)‖ ≤ ‖f‖ := by
+  set Λ := C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f)
+    (C.dual_interFst_apply_interFst hC f)
   refine Λ.opNorm_le_bound (norm_nonneg f) fun u => le_of_forall_pos_lt_add fun ε hε => ?_
   by_cases hf0 : ‖f‖ = 0
   · have hf₀ := norm_le_zero_iff.1 (((C.dual hC).norm_interFst_le f).trans_eq hf0)
@@ -294,29 +322,20 @@ private theorem norm_sumLift_dualInter_le (hC : C.IsRegular) (f : (C.dual hC).in
 restricting a continuous linear functional on `X₀ + X₁` to `X₀` and `X₁` identifies
 `StrongDual 𝕜 C.SumSpace` isometrically with `X₀* ∩ X₁*`. -/
 def sumDualEquivDualInter (hC : C.IsRegular) :
-    StrongDual 𝕜 C.SumSpace ≃ₗᵢ[𝕜] (C.dual hC).inter where
-  toFun Λ := ⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩
-  invFun f := C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f) (dualInter_compat C hC f)
-  left_inv _ := (C.sumLift_unique _ _ _ (by simp) (by simp)).symm
-  right_inv _ := Subtype.ext <| Prod.ext
-    (by dsimp only; rw [C.sumLift_comp_fstToSum, (C.dual hC).interFst_apply])
-    (by dsimp only; rw [C.sumLift_comp_sndToSum, (C.dual hC).interSnd_apply])
-  map_add' _ _ := by apply Subtype.ext; ext x <;> rfl
-  map_smul' _ _ := by apply Subtype.ext; ext x <;> rfl
-  norm_map' Λ := by
-    rw [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-    set f : (C.dual hC).inter := ⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩
-    refine le_antisymm (by
-      rw [norm_inter]; exact max_le
-        (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₀ =>
-          (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_fstToSum_le x₀) (norm_nonneg Λ)))
-        (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₁ =>
-          (Λ.le_opNorm _).trans
-            (mul_le_mul_of_nonneg_left (C.norm_sndToSum_le x₁) (norm_nonneg Λ)))) ?_
-    have hΛ : Λ = C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f)
-        (dualInter_compat C hC f) :=
-      C.sumLift_unique _ _ _ ((C.dual hC).interFst_apply f).symm ((C.dual hC).interSnd_apply f).symm
-    exact (congrArg norm hΛ).le.trans (norm_sumLift_dualInter_le C hC f)
+    StrongDual 𝕜 C.SumSpace ≃ₗᵢ[𝕜] (C.dual hC).inter :=
+  LinearIsometryEquiv.ofBounds
+    { toFun Λ := ⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩
+      invFun f := C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f)
+        (C.dual_interFst_apply_interFst hC f)
+      left_inv _ := (C.sumLift_unique _ _ _ (by simp) (by simp)).symm
+      right_inv _ := Subtype.ext <| Prod.ext
+        (by dsimp only; rw [C.sumLift_comp_fstToSum, (C.dual hC).interFst_apply])
+        (by dsimp only; rw [C.sumLift_comp_sndToSum, (C.dual hC).interSnd_apply])
+      map_add' _ _ := Subtype.ext <| Prod.ext (ContinuousLinearMap.ext fun _ => rfl)
+        (ContinuousLinearMap.ext fun _ => rfl)
+      map_smul' _ _ := Subtype.ext <| Prod.ext (ContinuousLinearMap.ext fun _ => rfl)
+        (ContinuousLinearMap.ext fun _ => rfl) }
+    (norm_sumDual_le C hC) (norm_sumLift_dualInter_le C hC)
 
 @[simp] theorem coe_sumDualEquivDualInter_fst (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
     (C.sumDualEquivDualInter hC Λ : StrongDual 𝕜 X₀ × StrongDual 𝕜 X₁).1 = Λ.comp C.fstToSum :=
@@ -330,10 +349,10 @@ theorem interSnd_sumDualEquivDualInter (hC : C.IsRegular) (Λ : StrongDual 𝕜 
     (C.dual hC).interSnd (C.sumDualEquivDualInter hC Λ) = Λ.comp C.sndToSum := by simp
 @[simp] theorem sumDualEquivDualInter_symm_fstToSum (hC : C.IsRegular) (f : (C.dual hC).inter)
     (x₀ : X₀) : (C.sumDualEquivDualInter hC).symm f (C.fstToSum x₀) = (C.dual hC).interFst f x₀ :=
-  C.sumLift_fstToSum _ _ (dualInter_compat C hC f) x₀
+  C.sumLift_fstToSum _ _ (C.dual_interFst_apply_interFst hC f) x₀
 @[simp] theorem sumDualEquivDualInter_symm_sndToSum (hC : C.IsRegular) (f : (C.dual hC).inter)
     (x₁ : X₁) : (C.sumDualEquivDualInter hC).symm f (C.sndToSum x₁) = (C.dual hC).interSnd f x₁ :=
-  C.sumLift_sndToSum _ _ (dualInter_compat C hC f) x₁
+  C.sumLift_sndToSum _ _ (C.dual_interFst_apply_interFst hC f) x₁
 
 end SumDual
 
@@ -357,23 +376,21 @@ private theorem norm_dualSum_sumSpaceEmbed_le (hC : C.IsRegular) (u : (C.dual hC
     ‖(C.dual hC).sumSpaceEmbed u‖ ≤ ‖u‖ := by
   refine ((C.dual hC).le_norm_sumSpace_iff).2 fun f₀ f₁ h => ?_
   subst h; rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x => ?_
-  calc ‖((C.dual hC).embed₀ f₀ + (C.dual hC).embed₁ f₁) x‖
-      ≤ ‖f₀ (C.interFst x)‖ + ‖f₁ (C.interSnd x)‖ := norm_add_le _ _
-    _ ≤ ‖f₀‖ * ‖C.interFst x‖ + ‖f₁‖ * ‖C.interSnd x‖ :=
-        add_le_add (f₀.le_opNorm _) (f₁.le_opNorm _)
-    _ ≤ (‖f₀‖ + ‖f₁‖) * ‖x‖ := by
-        rw [add_mul]
-        exact add_le_add (mul_le_mul_of_nonneg_left (C.norm_interFst_le x) (norm_nonneg f₀))
-          (mul_le_mul_of_nonneg_left (C.norm_interSnd_le x) (norm_nonneg f₁))
+  have hcoprod : (C.dual hC).embed₀ f₀ + (C.dual hC).embed₁ f₁ =
+      (f₀.coprod f₁).comp C.inter.subtypeL := by
+    ext x; simp [ContinuousLinearMap.coprod_apply]
+  rw [hcoprod]
+  exact ((f₀.coprod f₁).opNorm_comp_le C.inter.subtypeL).trans
+    ((mul_le_of_le_one_right (norm_nonneg _) C.inter.norm_subtypeL_le).trans
+      (f₀.opNorm_coprod_le f₁))
 private theorem exists_dualSum_eq_and_norm_le (hC : C.IsRegular) (φ : StrongDual 𝕜 C.inter) :
     ∃ u : (C.dual hC).SumSpace, (C.dual hC).sumSpaceEmbed u = φ ∧ ‖u‖ ≤ ‖φ‖ := by
   obtain ⟨Ψ, hΨ, hnorm⟩ := exists_extension_norm_eq C.inter φ
   set f₀ : StrongDual 𝕜 X₀ := Ψ.comp (ContinuousLinearMap.inl 𝕜 X₀ X₁)
   set f₁ : StrongDual 𝕜 X₁ := Ψ.comp (ContinuousLinearMap.inr 𝕜 X₀ X₁)
   refine ⟨(C.dual hC).fstToSum f₀ + (C.dual hC).sndToSum f₁, ?_,
-    ((C.dual hC).norm_fstToSum_add_sndToSum_le f₀ f₁).trans
-      ((StrongDual.norm_comp_inl_add_norm_comp_inr_le Ψ).trans_eq hnorm)⟩
+    ((C.dual hC).norm_fstToSum_add_sndToSum_le f₀ f₁).trans_eq
+      ((StrongDual.norm_comp_inl_add_norm_comp_inr Ψ).trans hnorm)⟩
   rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]; ext x
   simpa [f₀, f₁] using (Ψ.comp_inl_add_comp_inr (x : X₀ × X₁)).trans (hΨ x)
 private def dualSumLinearEquiv (hC : C.IsRegular) :
@@ -393,6 +410,13 @@ def dualSumEquivInterDual (hC : C.IsRegular) :
 
 @[simp] theorem dualSumEquivInterDual_apply (hC : C.IsRegular) (u : (C.dual hC).SumSpace) :
     C.dualSumEquivInterDual hC u = (C.dual hC).sumSpaceEmbed u := (rfl)
+@[simp] theorem norm_dual_sumSpaceEmbed (hC : C.IsRegular) (u : (C.dual hC).SumSpace) :
+    ‖(C.dual hC).sumSpaceEmbed u‖ = ‖u‖ :=
+  (C.dualSumEquivInterDual hC).norm_map u
+@[simp] theorem dualSumEquivInterDual_symm_sumSpaceEmbed (hC : C.IsRegular)
+    (u : (C.dual hC).SumSpace) :
+    (C.dualSumEquivInterDual hC).symm ((C.dual hC).sumSpaceEmbed u) = u :=
+  (C.dualSumEquivInterDual hC).symm_apply_apply u
 theorem dualSumEquivInterDual_fstToSum (hC : C.IsRegular) (f₀ : StrongDual 𝕜 X₀) :
     C.dualSumEquivInterDual hC ((C.dual hC).fstToSum f₀) = f₀.comp C.interFst :=
   (C.dual hC).sumSpaceEmbed_fstToSum f₀

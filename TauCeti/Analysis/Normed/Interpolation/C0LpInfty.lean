@@ -12,12 +12,14 @@ import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 /-!
 # The non-regular couple `(C₀(ℕ, E), ℓ^∞(ℕ, E))`
 
-`CompatibleCouple.c0LpInfty 𝕜 E` embeds `C₀(ℕ, E)` and `ℓ^∞(ℕ, E)` into `ℓ^∞(ℕ, E)`. Its
-intersection `C₀(ℕ, E)` is surjective (hence dense) in the first endpoint
-(`c0LpInfty_interFst_surjective`, `denseRange_c0LpInfty_interFst`) and not dense in the second when
-`E` is nontrivial (`not_denseRange_c0LpInfty_interSnd`), so the couple is not regular
-(`not_isRegular_c0LpInfty`) and dual restriction on the second endpoint is not injective
-(`not_injective_precomp_c0LpInfty_interSnd`).
+`CompatibleCouple.c0LpInfty 𝕜 E` embeds `C₀(ℕ, E)` and `ℓ^∞(ℕ, E)` into `ℓ^∞(ℕ, E)`. Its first
+intersection projection `interFst` is surjective onto `C₀(ℕ, E)`, hence has dense range
+(`c0LpInfty_interFst_surjective`, `denseRange_c0LpInfty_interFst`), whereas `interSnd` does not
+have dense range in `ℓ^∞(ℕ, E)` when `E` is nontrivial (`not_denseRange_c0LpInfty_interSnd`).
+This couple therefore witnesses that density of `X₀ ∩ X₁` in a single endpoint suffices neither
+for `CompatibleCouple.IsRegular` (`not_isRegular_c0LpInfty`) nor for injectivity of dual
+restriction on the other endpoint (`not_injective_precomp_c0LpInfty_interSnd`), motivating the
+two-sided density hypothesis in `CompatibleCouple.dual`.
 
 ## References
 
@@ -50,16 +52,17 @@ def c0LpInfty : CompatibleCouple 𝕜 C₀(ℕ, E) (lp (fun _ : ℕ ↦ E) ∞) 
 /-- The first projection from the intersection of `(C₀(ℕ, E), ℓ^∞(ℕ, E))` onto `C₀(ℕ, E)` is
 surjective. -/
 theorem c0LpInfty_interFst_surjective : Function.Surjective (c0LpInfty 𝕜 E).interFst := fun f =>
-  ⟨⟨(f, ZeroAtInftyContinuousMap.toLpInfty 𝕜 f), (c0LpInfty 𝕜 E).mem_inter_iff.2 rfl⟩, by simp⟩
+  ⟨⟨(f, ZeroAtInftyContinuousMap.toLpInfty 𝕜 f), by simp⟩, by simp⟩
 
 /-- The intersection of `(C₀(ℕ, E), ℓ^∞(ℕ, E))` is dense in the first endpoint `C₀(ℕ, E)`. -/
 theorem denseRange_c0LpInfty_interFst : DenseRange (c0LpInfty 𝕜 E).interFst :=
   (c0LpInfty_interFst_surjective 𝕜 E).denseRange
 
-/-- When `E` is nontrivial, the intersection of `(C₀(ℕ, E), ℓ^∞(ℕ, E))` is not dense in `ℓ^∞(ℕ, E)`:
-any nonzero constant sequence `e` has distance at least `‖e‖ / 2` from every null sequence. -/
+/-- When `E` is nontrivial, the intersection of `(C₀(ℕ, E), ℓ^∞(ℕ, E))` is not dense in
+`ℓ^∞(ℕ, E)`. -/
 theorem not_denseRange_c0LpInfty_interSnd [Nontrivial E] :
     ¬ DenseRange (c0LpInfty 𝕜 E).interSnd := by
+  -- A nonzero constant sequence `e` has `ℓ^∞` distance at least `‖e‖ / 2` from every null sequence.
   intro hd; obtain ⟨e, he⟩ := exists_ne (0 : E)
   have he0 : 0 < ‖e‖ := norm_pos_iff.2 he
   let u : lp (fun _ : ℕ ↦ E) ∞ :=

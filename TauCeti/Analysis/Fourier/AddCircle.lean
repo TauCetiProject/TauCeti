@@ -96,9 +96,10 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 * `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
   maps.
-* `TauCeti.integral_fourier_smul_sub_eq`, `TauCeti.exists_mem_span_fourier_integral_smul_sub_lt`:
-  circle convolution against `fourier m` extracts `fourier m x • fourierCoeff f m`, and continuous
-  Banach-space-valued maps on `AddCircle T` are uniformly approximated by convolving against scalar
+* `TauCeti.integral_fourier_smul_sub_eq`, `Continuous.exists_continuousMap_integral_smul_sub_lt`,
+  `Continuous.exists_mem_span_fourier_integral_smul_sub_lt`: circle convolution against
+  `fourier m` extracts `fourier m x • fourierCoeff f m`, and continuous Banach-space-valued maps on
+  `AddCircle T` are uniformly approximated by convolving against continuous kernels and scalar
   trigonometric polynomials.
 
 ## Tags
@@ -335,11 +336,12 @@ theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ�
   rw [fourierCoeff_congr_ae (Lp.coeFn_compMeasurePreserving f _)]
   exact fourierCoeff_comp_neg f n
 
-/-- Convolving a continuous map `f : AddCircle T → E` against `R : C(AddCircle T, ℂ)` gives an
+/-- Convolving a continuous map `f : AddCircle T → E` against `R : C(AddCircle T, 𝕜)` gives an
 integrable integrand with respect to `haarAddCircle`. -/
-theorem integrable_smul_sub_haarAddCircle {E : Type*} [NormedAddCommGroup E] [SMul ℂ E]
-    [ContinuousSMul ℂ E] (R : C(AddCircle T, ℂ)) {f : AddCircle T → E} (hf : Continuous f)
-    (x : AddCircle T) : Integrable (fun u : AddCircle T ↦ R u • f (x - u)) haarAddCircle :=
+theorem _root_.ContinuousMap.integrable_smul_sub_haarAddCircle {𝕜 E : Type*} [TopologicalSpace 𝕜]
+    [NormedAddCommGroup E] [SMul 𝕜 E] [ContinuousSMul 𝕜 E] (R : C(AddCircle T, 𝕜))
+    {f : AddCircle T → E} (hf : Continuous f) (x : AddCircle T) :
+    Integrable (fun u : AddCircle T ↦ R u • f (x - u)) haarAddCircle :=
   (R.continuous.smul (hf.comp (continuous_const.sub continuous_id))).integrable_of_hasCompactSupport
     (.of_compactSpace _)
 
@@ -355,13 +357,14 @@ theorem integral_fourier_smul_sub_eq {E : Type*} [NormedAddCommGroup E] [NormedS
       integral_sub_left_eq_self (fun v : AddCircle T ↦ fourier m (x - v) • f v) haarAddCircle x]
   simp_rw [fourier_apply_sub, mul_smul, integral_smul]; rfl
 
-/-- **Uniform convolution approximation by scalar trigonometric polynomials.** Every continuous
+/-- **Uniform convolution approximation by continuous kernels.** Every continuous
 Banach-space-valued map `f : AddCircle T → E` can be approximated uniformly on `AddCircle T` by
-convolving against a scalar trigonometric polynomial `Q ∈ Submodule.span ℂ (Set.range fourier)`. -/
-theorem exists_mem_span_fourier_integral_smul_sub_lt {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {f : AddCircle T → E} (hf : Continuous f) {ε : ℝ}
-    (hε : 0 < ε) : ∃ Q ∈ Submodule.span ℂ (Set.range (fourier (T := T))),
-      ∀ x : AddCircle T, ‖(∫ u : AddCircle T, Q u • f (x - u) ∂haarAddCircle) - f x‖ < ε := by
+convolving against a scalar continuous kernel `K : C(AddCircle T, ℂ)`. -/
+theorem _root_.Continuous.exists_continuousMap_integral_smul_sub_lt {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {f : AddCircle T → E}
+    (hf : Continuous f) {ε : ℝ} (hε : 0 < ε) : ∃ K : C(AddCircle T, ℂ),
+      ∀ x : AddCircle T, ‖(∫ u : AddCircle T, K u • f (x - u) ∂haarAddCircle) - f x‖ < ε := by
+  -- Build a normalized tent kernel supported on `{u | ‖u‖ < η}` from uniform continuity.
   obtain ⟨η, hη, huc⟩ := Metric.uniformContinuous_iff.1
     (CompactSpace.uniformContinuous_of_continuous hf) (ε / 2) (half_pos hε)
   let tent : AddCircle T → ℝ := fun u ↦ max 0 (1 - ‖u‖ / η)
@@ -381,6 +384,32 @@ theorem exists_mem_span_fourier_integral_smul_sub_lt {E : Type*} [NormedAddCommG
       dsimp [K]; rw [Complex.norm_real, Real.norm_of_nonneg (mul_nonneg (inv_nonneg.2 htent_pos.le)
         (le_max_left _ _))]]
     rw [integral_const_mul, inv_mul_cancel₀ htent_pos.ne']
+  refine ⟨K, fun x ↦ ?_⟩
+  have hintK := K.integrable_smul_sub_haarAddCircle hf x
+  have hintKx : Integrable (fun u : AddCircle T ↦ K u • f x) haarAddCircle :=
+    (K.continuous.smul continuous_const).integrable_of_hasCompactSupport (.of_compactSpace _)
+  refine lt_of_le_of_lt ?_ (half_lt_self hε)
+  conv_lhs => rw [show f x = ∫ u, K u • f x ∂haarAddCircle by
+    rw [integral_smul_const, hK_int, one_smul], ← integral_sub hintK hintKx]
+  refine (norm_integral_le_integral_norm _).trans <| (integral_mono (hintK.sub hintKx).norm
+    ((K.continuous.norm.mul_const (ε / 2)).integrable_of_hasCompactSupport (.of_compactSpace _))
+    fun u ↦ ?_).trans_eq (by rw [integral_mul_const, hK_norm, one_mul])
+  simp only [Pi.sub_apply, ← smul_sub, norm_smul]
+  by_cases hu : ‖u‖ < η
+  · rw [← dist_eq_norm]
+    exact mul_le_mul_of_nonneg_left (huc
+      (by rwa [dist_eq_norm, sub_right_comm, sub_self, zero_sub, norm_neg])).le (norm_nonneg _)
+  · simp [K, tent, max_eq_left (sub_nonpos.2 ((one_le_div hη).2 (not_lt.1 hu)))]
+
+/-- **Uniform convolution approximation by scalar trigonometric polynomials.** Every continuous
+Banach-space-valued map `f : AddCircle T → E` can be approximated uniformly on `AddCircle T` by
+convolving against a scalar trigonometric polynomial `Q ∈ Submodule.span ℂ (Set.range fourier)`. -/
+theorem _root_.Continuous.exists_mem_span_fourier_integral_smul_sub_lt {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] {f : AddCircle T → E}
+    (hf : Continuous f) {ε : ℝ} (hε : 0 < ε) :
+    ∃ Q ∈ Submodule.span ℂ (Set.range (fourier (T := T))),
+      ∀ x : AddCircle T, ‖(∫ u : AddCircle T, Q u • f (x - u) ∂haarAddCircle) - f x‖ < ε := by
+  obtain ⟨K, hconvK⟩ := hf.exists_continuousMap_integral_smul_sub_lt (half_pos hε)
   obtain ⟨M, hM, hfb⟩ := (isCompact_univ.image hf).isBounded.exists_pos_norm_le
   have hdense : K ∈ (Submodule.span ℂ (Set.range (fourier (T := T)))).topologicalClosure := by
     rw [span_fourier_closure_eq_top]; trivial
@@ -388,32 +417,17 @@ theorem exists_mem_span_fourier_integral_smul_sub_lt {E : Type*} [NormedAddCommG
     Metric.mem_closure_iff.1 hdense (ε / (2 * M)) (div_pos hε (by positivity))
   rw [dist_comm, dist_eq_norm] at hQK
   refine ⟨Q, hQmem, fun x ↦ ?_⟩
-  have hintQ := integrable_smul_sub_haarAddCircle Q hf x
-  have hintK := integrable_smul_sub_haarAddCircle K hf x
-  have hintKx : Integrable (fun u : AddCircle T ↦ K u • f x) haarAddCircle :=
-    (K.continuous.smul continuous_const).integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hconvK : ‖(∫ u, K u • f (x - u) ∂haarAddCircle) - f x‖ ≤ ε / 2 := by
-    conv_lhs => rw [show f x = ∫ u, K u • f x ∂haarAddCircle by
-      rw [integral_smul_const, hK_int, one_smul], ← integral_sub hintK hintKx]
-    refine (norm_integral_le_integral_norm _).trans <| (integral_mono (hintK.sub hintKx).norm
-      ((K.continuous.norm.mul_const (ε / 2)).integrable_of_hasCompactSupport (.of_compactSpace _))
-      fun u ↦ ?_).trans_eq (by rw [integral_mul_const, hK_norm, one_mul])
-    simp only [Pi.sub_apply, ← smul_sub, norm_smul]
-    by_cases hu : ‖u‖ < η
-    · rw [← dist_eq_norm]
-      exact mul_le_mul_of_nonneg_left (huc
-        (by rwa [dist_eq_norm, sub_right_comm, sub_self, zero_sub, norm_neg])).le (norm_nonneg _)
-    · simp [K, tent, max_eq_left (sub_nonpos.2 ((one_le_div hη).2 (not_lt.1 hu)))]
   have hdiff : ‖(∫ u, Q u • f (x - u) ∂haarAddCircle) -
       (∫ u, K u • f (x - u) ∂haarAddCircle)‖ < ε / 2 := by
-    rw [← integral_sub hintQ hintK]
+    rw [← integral_sub (Q.integrable_smul_sub_haarAddCircle hf x)
+      (K.integrable_smul_sub_haarAddCircle hf x)]
     refine (norm_integral_le_of_norm_le_const (C := ‖Q - K‖ * M) (.of_forall fun u ↦ ?_)).trans_lt
       (by rw [measureReal_def, measure_univ, ENNReal.toReal_one, mul_one]
           exact (mul_lt_mul_of_pos_right hQK hM).trans_eq (by field_simp))
     rw [← sub_smul, norm_smul]
     exact mul_le_mul (ContinuousMap.norm_coe_le_norm (Q - K) u)
       (hfb _ (Set.mem_image_of_mem _ (Set.mem_univ _))) (norm_nonneg _) (norm_nonneg _)
-  exact (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans_lt (by linarith)
+  exact (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans_lt (by linarith [hconvK x])
 
 /-- The `Lp` class of a Fourier monomial has modulus one almost everywhere. -/
 theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
