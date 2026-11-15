@@ -16,9 +16,11 @@ import TauCeti.RingTheory.PowerSeries.Expand
 The Cartier operator of modulus `q` and index `r` selects coefficients at the indices
 `q * n + r`. It is linear in the series. For an actual residue `r < q`, it commutes with
 multiplication by an expanded series, and the expanded Cartier components reconstruct the
-original series. Over a finite field, expansion by its cardinality is the Frobenius power,
-so these identities give the usual Cartier identities used in residue averaging. Since the `j`-th
-iterate of that expansion is the `q ^ j`-th power map
+original series. The Cartier components of a product are sums of products of components whose
+residues add up to the given residue, shifted by `X` when the residues carry; for modulus `2`
+this is the product formula for even and odd parts. Over a finite field, expansion by its
+cardinality is the Frobenius power, so these identities give the usual Cartier identities used
+in residue averaging. Since the `j`-th iterate of that expansion is the `q ^ j`-th power map
 (`FiniteField.PowerSeries.expand_card_pow_apply`),
 for a set `T` of series stable under the Cartier operators of modulus `q = |K|`, the powers
 `h ^ q ^ j` with `h ∈ T` lie in the `K[X]`-span of the powers `g ^ q ^ m` with `g ∈ T` whenever
@@ -182,6 +184,49 @@ theorem sum_X_pow_mul_expand_cartier (q : ℕ) (hq : q ≠ 0) (F : PowerSeries R
     · rfl
   · intro hnot
     exact (hnot (Finset.mem_range.mpr (Nat.mod_lt n hq'))).elim
+
+/-- At an actual residue `r`, the Cartier operator of modulus `q` sends `Xᵐ F(X^q)` to
+`X ^ (m / q) F(X)` when `m ≡ r [MOD q]`, and to zero otherwise. -/
+theorem cartier_X_pow_mul_expand (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (F : PowerSeries R) :
+    cartier R q r (X ^ m * expand q hq F) = if m % q = r then X ^ (m / q) * F else 0 := by
+  have hm : (X : R⟦X⟧) ^ m * expand q hq F = expand q hq (X ^ (m / q) * F) * X ^ (m % q) := by
+    rw [map_mul, map_pow, expand_X, ← pow_mul, mul_right_comm, ← pow_add, Nat.div_add_mod]
+  rw [hm, cartier_expand_mul q r hq hr, X_pow_eq (m % q), cartier_monomial q r _ hr, Nat.mod_mod,
+    Nat.mod_div_self, monomial_zero_eq_C, map_one]
+  split_ifs <;> simp
+
+/-- **Cartier components of a product.** At an actual residue `r`, the Cartier component of
+`F * G` collects the products of the components of `F` and `G` whose residues add up to `r`
+modulo `q`, shifted by `X` when the residues carry past `q`. -/
+theorem cartier_mul (q r : ℕ) (hq : q ≠ 0) (hr : r < q) (F G : PowerSeries R) :
+    cartier R q r (F * G) = ∑ a ∈ Finset.range q, ∑ b ∈ Finset.range q,
+      if (a + b) % q = r then X ^ ((a + b) / q) * (cartier R q a F * cartier R q b G)
+      else 0 := by
+  have hF := sum_X_pow_mul_expand_cartier q hq F
+  have hG := sum_X_pow_mul_expand_cartier q hq G
+  calc cartier R q r (F * G)
+      = cartier R q r ((∑ a ∈ Finset.range q, X ^ a * expand q hq (cartier R q a F)) *
+          ∑ b ∈ Finset.range q, X ^ b * expand q hq (cartier R q b G)) := by rw [← hF, ← hG]
+    _ = _ := by
+      simp_rw [Finset.sum_mul_sum, map_sum]
+      refine Finset.sum_congr rfl fun a _ ↦ Finset.sum_congr rfl fun b _ ↦ ?_
+      rw [← cartier_X_pow_mul_expand q r (a + b) hq hr, map_mul (expand q hq), pow_add]
+      congr 1
+      ring
+
+/-- The even part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
+even part of `F * G` is `F₀ G₀ + X F₁ G₁`. -/
+theorem cartier_two_zero_mul (F G : PowerSeries R) :
+    cartier R 2 0 (F * G) =
+      cartier R 2 0 F * cartier R 2 0 G + X * (cartier R 2 1 F * cartier R 2 1 G) := by
+  simp [cartier_mul 2 0 two_ne_zero two_pos, Finset.sum_range_succ]
+
+/-- The odd part of a product: writing `F(X) = F₀(X²) + X F₁(X²)` and similarly for `G`, the
+odd part of `F * G` is `F₀ G₁ + F₁ G₀`. -/
+theorem cartier_two_one_mul (F G : PowerSeries R) :
+    cartier R 2 1 (F * G) =
+      cartier R 2 0 F * cartier R 2 1 G + cartier R 2 1 F * cartier R 2 0 G := by
+  simp [cartier_mul 2 1 two_ne_zero one_lt_two, Finset.sum_range_succ]
 
 /-- A series whose coefficients vanish away from the multiples of `q` is the expansion of its
 residue-zero Cartier component. -/
