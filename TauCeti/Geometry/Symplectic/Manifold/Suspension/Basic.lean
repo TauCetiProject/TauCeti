@@ -73,8 +73,9 @@ holds with that `d`.
   `TauCeti.SmoothMappingTorus.isSymplectic_suspensionForm_iff`: `Ω` is closed, nondegenerate or
   symplectic exactly when `σ` is.
 * `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_mpullback_snd_fiberForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_wedge_timeForm`,
   `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_suspensionForm`: the orbit torus pulls `σ_v`
-  back to zero and `Ω` back to `ds ∧ dt_d`.
+  back to zero, and both `ds ∧ dt` and `Ω` back to `ds ∧ dt_d`.
 
 ## References
 
@@ -353,11 +354,13 @@ section OrbitTorus
 
 variable {d : ℕ} {x : M} (h : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
 
-/-- The orbit torus pulls the form `Ω = ds ∧ dt + σ_v` back to `ds ∧ dt_d`, the wedge of the time
-forms of the circles `ℝ / ℤ` and `ℝ / dℤ`: the fiber form `σ_v` vanishes on it. -/
+/-- The orbit torus pulls the wedge `ds ∧ dt` of the time forms of `(ℝ / ℤ) × Y_φ` back to
+`ds ∧ dt_d`, the wedge of the time forms of the circles `ℝ / ℤ` and `ℝ / dℤ`. -/
 @[simp]
-theorem mpullback_orbitTorus_suspensionForm :
-    SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) (suspensionForm φ σ hσ) =
+theorem mpullback_orbitTorus_wedge_timeForm :
+    SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
+        (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+          (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ))) =
       SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
   have hfst : Prod.fst ∘ orbitTorus φ h = Prod.fst :=
@@ -376,11 +379,18 @@ theorem mpullback_orbitTorus_suspensionForm :
     simp only [hsnd]
     rw [SmoothForm.mpullback_comp _ _ contMDiff_snd (contMDiff_closedOrbit h),
       LinearMap.comp_apply, mpullback_closedOrbit_timeForm]
+  rw [SmoothForm.mpullback_wedge, hds, hdt]
+
+/-- The orbit torus pulls the form `Ω = ds ∧ dt + σ_v` back to `ds ∧ dt_d`, the wedge of the time
+forms of the circles `ℝ / ℤ` and `ℝ / dℤ`: the fiber form `σ_v` vanishes on it. -/
+@[simp]
+theorem mpullback_orbitTorus_suspensionForm :
+    SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) (suspensionForm φ σ hσ) =
+      SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
   rw [suspensionForm_def, map_add, mpullback_orbitTorus_mpullback_snd_fiberForm h two_ne_zero,
     add_zero]
-  -- `Ω` has degree `2`, while the wedge of two one-forms has degree `1 + 1`.
-  exact (SmoothForm.mpullback_wedge (k := 1) (l := 1) _ (contMDiff_orbitTorus h) _ _).trans
-    (by rw [hds, hdt])
+  exact mpullback_orbitTorus_wedge_timeForm h
 
 end OrbitTorus
 
