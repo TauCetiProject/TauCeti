@@ -27,11 +27,17 @@ stronger lifting hypotheses on `φ` control the topological and metric behaviour
    series `g` over `S` lifts to a restricted series over `R` of Gauss norm strictly below `‖g‖ + ε`
    (`exists_restrictedMap_eq_and_norm_lt_add`), and `restrictedMap φ hφ` is an open quotient map
    (`isOpenQuotientMap_restrictedMap_of_forall_pos_exists_norm_le_add`). Together with contractivity
-   of `φ`, this hypothesis is both necessary and sufficient for the quotient Gauss norm on
-   `R{X/c} ⧸ ker` to agree with the Gauss norm on `S{X/c}` (`isometry_kerLift_restrictedMap_iff`,
-   `isometry_quotientKerEquivOfSurjective_restrictedMap_iff`). In particular, reducing modulo any
-   closed two-sided ideal `I` of `R` induces an isometric ring isomorphism
-   `R{X/c} ⧸ ker ≃+* (R ⧸ I){X/c}` (`Ideal.isometry_quotientKerEquivOfSurjective_restrictedMap_mk`).
+   of `φ`, this surjective sharp-lifting hypothesis is both necessary and sufficient for a
+   surjective `restrictedMap φ hφ` to induce an isometric first-isomorphism equivalence
+   `R{X/c} ⧸ ker ≃+* S{X/c}` (`isometry_quotientKerEquivOfSurjective_restrictedMap_iff`,
+   `isometry_quotientKerEquivOfSurjective_restrictedMap`). Without assuming surjectivity,
+   `(restrictedMap φ hφ).kerLift` is an isometry — equivalently the quotient Gauss norm on
+   `R{X/c} ⧸ ker` agrees with `‖restrictedMap φ hφ ·‖` — if and only if `φ.kerLift` is an isometry,
+   i.e. `φ` is contractive and each image `φ a` lifts to elements of norm arbitrarily close to
+   `‖φ a‖` (`isometry_kerLift_restrictedMap_iff`, `norm_mk_ker_restrictedMap_eq_iff`). In
+   particular, reducing modulo any closed two-sided ideal `I` of `R` induces an isometric ring
+   isomorphism `R{X/c} ⧸ ker ≃+* (R ⧸ I){X/c}`
+   (`Ideal.isometry_quotientKerEquivOfSurjective_restrictedMap_mk`).
 3. **Exact norm-attaining lifts** (`∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ ‖b‖` with contractive `φ`): every
    restricted series over `S` lifts to one over `R` of the exact same Gauss norm
    (`exists_restrictedMap_eq_and_norm_eq`).
@@ -190,14 +196,6 @@ theorem exists_restrictedMap_eq_and_norm_lt_add
   exact exists_restrictedMap_eq_restrictedMap_and_norm_lt_add φ hφ
     (fun a δ hδ ↦ hlift (φ a) δ hδ) f₀ hε
 
-/-- Non-strict form of `exists_restrictedMap_eq_and_norm_lt_add`. -/
-theorem exists_restrictedMap_eq_and_norm_le_add
-    (hlift : ∀ b, ∀ ε > 0, ∃ a, φ a = b ∧ ‖a‖ ≤ ‖b‖ + ε)
-    (g : IsRestricted.subring (R := S) c) {ε : ℝ} (hε : 0 < ε) :
-    ∃ f, restrictedMap φ hφ f = g ∧ ‖f‖ ≤ ‖g‖ + ε :=
-  let ⟨f, hf, hlt⟩ := exists_restrictedMap_eq_and_norm_lt_add φ hφ hlift g hε
-  ⟨f, hf, hlt.le⟩
-
 /-- **Exact Gauss-norm-attaining lifts.** If `φ` is contractive and every `b : S` admits a lift of
 norm at most `‖b‖`, then every restricted series over `S` admits a restricted lift of the exact
 same Gauss norm. -/
@@ -265,9 +263,9 @@ theorem isometry_quotientKerEquivOfSurjective_restrictedMap (hφ1 : ∀ a, ‖φ
     (hlift : ∀ b, ∀ ε > 0, ∃ a, φ a = b ∧ ‖a‖ ≤ ‖b‖ + ε) :
     Isometry ((restrictedMap (c := c) φ hφ).quotientKerEquivOfSurjective
       (restrictedMap_surjective_of_forall_pos_exists_norm_le_add φ hφ hlift)) :=
-  RingHom.isometry_quotientKerEquivOfSurjective_of_forall_pos_exists_norm_le_add
-    _ (norm_restrictedMap_le_of_norm_le φ hφ hφ1)
-    (fun g _ hε ↦ exists_restrictedMap_eq_and_norm_le_add φ hφ hlift g hε)
+  ((restrictedMap (c := c) φ hφ).isometry_quotientKerEquivOfSurjective_iff _).mpr
+    ⟨norm_restrictedMap_le_of_norm_le φ hφ hφ1,
+      fun g _ hε ↦ exists_restrictedMap_eq_and_norm_lt_add φ hφ hlift g hε⟩
 
 end IsometricQuotient
 

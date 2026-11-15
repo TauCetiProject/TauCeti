@@ -58,23 +58,9 @@ section AlgebraicBijectionFailsSurjectivity
 variable (p : ℕ) [hp : Fact p.Prime]
 
 open Classical in
-/-- The trivial absolute value on `ℤ_[p]` is nonarchimedean. -/
-private theorem isNonarchimedean_trivial_padicInt :
-    IsNonarchimedean (AbsoluteValue.trivial : AbsoluteValue ℤ_[p] ℝ) := by
-  intro x y
-  by_cases hxy : x + y = 0
-  · simp [hxy]
-  · have hxy' : x ≠ 0 ∨ y ≠ 0 := by
-      by_contra! h
-      exact hxy (by simp [h.1, h.2])
-    rcases hxy' with hx | hy
-    · simp [AbsoluteValue.trivial_apply hxy, AbsoluteValue.trivial_apply hx]
-    · simp [AbsoluteValue.trivial_apply hxy, AbsoluteValue.trivial_apply hy]
-
-open Classical in
 /-- `WithAbs AbsoluteValue.trivial` on `ℤ_[p]` carries an ultrametric distance. -/
 local instance : IsUltrametricDist (WithAbs (AbsoluteValue.trivial : AbsoluteValue ℤ_[p] ℝ)) :=
-  (isNonarchimedean_trivial_padicInt p).isUltrametricDist_withAbs
+  AbsoluteValue.isNonarchimedean_trivial.isUltrametricDist_withAbs
 
 open Classical in
 /-- The canonical ring isomorphism `WithAbs AbsoluteValue.trivial →+* ℤ_[p]` is contractive. -/
@@ -134,9 +120,6 @@ theorem not_surjective_restrictedMap_trivialPadicInt :
   have hlim : Tendsto (fun _ : Unit →₀ ℕ ↦ (1 : ℝ)) cofinite (𝓝 0) := by
     refine f.2.congr' (Eventually.of_forall fun t ↦ ?_)
     simp [hfnorm t, Finsupp.prod]
-  have : Infinite (Unit →₀ ℕ) :=
-    Infinite.of_injective (fun n : ℕ ↦ Finsupp.single () n) fun m n h ↦ by
-      simpa using congrArg (fun s : Unit →₀ ℕ ↦ s ()) h
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds hlim)
 
 end AlgebraicBijectionFailsSurjectivity
@@ -320,7 +303,6 @@ theorem exists_weightedMapCompletion_eq_and_norm_eq_tateQuotient {k : ℕ}
         ‖restrictedMvPowerSeriesCompletionGaussEquiv G‖ :=
   exists_weightedMapCompletion_eq_and_norm_eq
     (QuotientRing.isOpenQuotientMap_mk I).continuous
-    (fun a ↦ (one_mul ‖a‖).symm ▸ Ideal.Quotient.norm_mk_le_norm I a)
     (Ideal.Quotient.norm_mk_le_norm I)
     (fun q ↦ let ⟨f, hf, hnorm⟩ := I.exists_mk_eq_and_norm_eq_isRestricted_subring q
       ⟨f, hf, hnorm.le⟩)

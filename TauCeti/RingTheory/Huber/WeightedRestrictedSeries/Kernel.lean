@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 import Mathlib.RingTheory.MvPowerSeries.Ideal
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Kernels of coefficientwise maps of weighted restricted series
@@ -16,12 +17,17 @@ The ring homomorphism `TauCeti.Huber.weightedMap` induced by a continuous ring h
 when every coefficient lies in the kernel of `φ`. Likewise every series in the extension
 `J · A⟨X⟩_T` of an ideal `J` of `A` has all of its coefficients in `J`. Both statements hold for
 arbitrary weight families and need no completeness, surjectivity or open-mapping hypotheses.
+Continuity of `weightedMap` and `weightedMapCompletion` also makes their kernels closed whenever
+the target is `T₁` (automatic for the separated completion `weightedMapCompletion`).
 
 ## Main results
 
 * `TauCeti.Huber.mem_ker_weightedMap_iff`: the kernel of `weightedMap` is coefficientwise.
 * `TauCeti.Huber.weightedMap_injective`: an injective coefficient map induces an injective map on
   weighted restricted series.
+* `TauCeti.Huber.isClosed_ker_weightedMap` and `TauCeti.Huber.isClosed_ker_weightedMapCompletion`:
+  closedness of the kernels of `weightedMap` (for a `T₁` target) and `weightedMapCompletion` for
+  arbitrary compatible weight families.
 * `Ideal.coeff_mem_of_mem_map_weightedC`: series in `J · A⟨X⟩_T` have coefficients in `J`.
 -/
 
@@ -55,6 +61,23 @@ theorem weightedMap_injective {φ : A →+* B} (hφ : Continuous φ) {T : Fin k 
     simpa only [coe_weightedMap, MvPowerSeries.coeff_map] using
       congrArg (fun g : weightedRestrictedSubring S hS ↦
         MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) h
+
+/-- The kernel of `weightedMap` is closed whenever the target weighted restricted-series ring is
+`T₁` (in particular, at trivial weights over any `T₀` nonarchimedean ring). -/
+instance isClosed_ker_weightedMap {φ : A →+* B} (hφ : Continuous φ) {T : Fin k → Set A}
+    {S : Fin k → Set B} {hT : IsWeightFamily T} {hS : IsWeightFamily S}
+    {hTS : ∀ i, φ '' T i ⊆ S i} [T1Space (weightedRestrictedSubring S hS)] :
+    IsClosed (RingHom.ker (weightedMap hφ hT hS hTS) : Set (weightedRestrictedSubring T hT)) :=
+  RingHom.isClosed_ker (continuous_weightedMap hφ hT hS hTS)
+
+/-- The kernel of `weightedMapCompletion` is closed for any compatible weight families, without
+completeness or separation assumptions on the coefficient rings. -/
+instance isClosed_ker_weightedMapCompletion {φ : A →+* B} (hφ : Continuous φ) {T : Fin k → Set A}
+    {S : Fin k → Set B} {hT : IsWeightFamily T} {hS : IsWeightFamily S}
+    {hTS : ∀ i, φ '' T i ⊆ S i} :
+    IsClosed (RingHom.ker (weightedMapCompletion hφ hT hS hTS) :
+      Set (UniformSpace.Completion (weightedRestrictedSubring T hT))) :=
+  RingHom.isClosed_ker (continuous_weightedMapCompletion hφ hT hS hTS)
 
 end TauCeti.Huber
 

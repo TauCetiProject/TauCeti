@@ -77,16 +77,8 @@ variable {R S : Type*} [SeminormedRing R] [SeminormedRing S]
 /-- A ring homomorphism bounded by `C` descends to a homomorphism on `R ⧸ ker f` with the same
 norm bound `C`. -/
 theorem norm_kerLift_le (f : R →+* S) {C : ℝ} (hC : ∀ a, ‖f a‖ ≤ C * ‖a‖) (x : R ⧸ ker f) :
-    ‖f.kerLift x‖ ≤ C * ‖x‖ := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [kerLift_mk]
-  rcases le_or_gt C 0 with hC0 | hC0
-  · exact (hC a).trans (mul_le_mul_of_nonpos_left (Ideal.Quotient.norm_mk_le_norm (ker f) a) hC0)
-  · exact (QuotientAddGroup.norm_lift_apply_le (S := (ker f).toAddSubgroup)
-      ((f : R →+ S).mkNormedAddGroupHom C hC) (fun _ ↦ mem_ker.mp)
-      (Ideal.Quotient.mk (ker f) a)).trans
-      (mul_le_mul_of_nonneg_right (AddMonoidHom.mkNormedAddGroupHom_norm_le _ hC0.le hC)
-        (norm_nonneg _))
+    ‖f.kerLift x‖ ≤ C * ‖x‖ :=
+  Ideal.Quotient.norm_lift_apply_le (ker f) f (fun _ ↦ mem_ker.mp) hC x
 
 /-- Uniformly `L`-bounded preimages along a surjective ring homomorphism bound the inverse of the
 first-isomorphism equivalence by `L`. -/

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Restricted.Comparison
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Quotient
+
+import TauCeti.Logic.Equiv.Basic
 
 /-!
 # Kernels and bounded lifts across the Huber–Gauss restricted-series comparison
@@ -32,13 +32,9 @@ Mathlib's Gauss-normed subring `MvPowerSeries.IsRestricted.subring` and the Hube
   `restrictedMvPowerSeriesCompletionGaussEquiv_weightedAddMapCompletion`), obey the same norm
   bound `L`, and furnish continuous additive right inverses when `ψ` is a right inverse to `φ`
   (`rightInverse_weightedAddMap`, `rightInverse_weightedAddMapCompletion`).
-* **Open quotient maps and sharp Gauss-norm preimages:** uniformly bounded coefficient lifts
-  make both `weightedMap` and `weightedMapCompletion` open quotient maps for any image weight
-  family, without any Tate or completeness assumption
-  (`isOpenQuotientMap_weightedMap_of_exists_norm_le`,
-  `isOpenQuotientMap_weightedMapCompletion_of_exists_norm_le`), while at trivial weights bounded,
-  sharp approximate, and exact norm-attaining lifts transfer across both Huber carriers with the
-  same Gauss-norm bounds.
+* **Bounded, sharp approximate, and exact Gauss-norm lifts:** uniformly `L`-bounded, sharp
+  `(1 + ε)`-approximate, and exact norm-attaining coefficient lifts transfer across both Huber
+  carriers with the same compared Gauss-norm bounds.
 
 ## Main definitions
 
@@ -58,9 +54,6 @@ Mathlib's Gauss-normed subring `MvPowerSeries.IsRestricted.subring` and the Hube
 * `TauCeti.Huber.rightInverse_weightedAddMap` and
   `TauCeti.Huber.rightInverse_weightedAddMapCompletion`: continuous additive sections of
   `weightedMap` and `weightedMapCompletion`.
-* `TauCeti.Huber.isOpenQuotientMap_weightedMap_of_exists_norm_le` and
-  `TauCeti.Huber.isOpenQuotientMap_weightedMapCompletion_of_exists_norm_le`: open quotient maps on
-  weighted restricted series and their completions from uniformly bounded coefficient lifts.
 * `TauCeti.Huber.exists_weightedMapCompletion_eq_and_norm_le`,
   `TauCeti.Huber.exists_weightedMapCompletion_eq_and_norm_lt_add`, and
   `TauCeti.Huber.exists_weightedMapCompletion_eq_and_norm_eq`: bounded, sharp approximate, and
@@ -92,22 +85,6 @@ theorem ker_weightedMap_eq_comap_restrictedMvPowerSeriesGaussEquiv :
   simp only [Ideal.mem_comap, RingHom.mem_ker,
     ← restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ]
   exact (restrictedMvPowerSeriesGaussEquiv (n := k) (R := S)).map_eq_zero_iff.symm
-
-/-- At trivial weights over ultrametric normed rings, the kernel of `weightedMap` is closed. -/
-instance isClosed_ker_weightedMap :
-    IsClosed (RingHom.ker (weightedMap (k := k) hφc isWeightFamily_one_weight
-      isWeightFamily_one_weight (fun _ ↦ by simp)) :
-      Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-        isWeightFamily_one_weight)) :=
-  RingHom.isClosed_ker (continuous_weightedMap ..)
-
-/-- The kernel of `weightedMapCompletion` is closed for any compatible weight families, without
-completeness assumptions on the coefficient rings. -/
-instance isClosed_ker_weightedMapCompletion {T : Fin k → Set R} {T' : Fin k → Set S}
-    {hT : IsWeightFamily T} {hT' : IsWeightFamily T'} {hTT' : ∀ i, φ '' T i ⊆ T' i} :
-    IsClosed (RingHom.ker (weightedMapCompletion hφc hT hT' hTT') :
-      Set (UniformSpace.Completion (weightedRestrictedSubring T hT))) :=
-  RingHom.isClosed_ker (continuous_weightedMapCompletion hφc hT hT' hTT')
 
 variable [CompleteSpace R] [CompleteSpace S]
 
@@ -275,38 +252,7 @@ end AdditiveLift
 
 section BoundedAndSharpLifts
 
-/-- Transporting a preimage witness along ring equivalences `eA : A ≃+* A₀` and `eB : B ≃+* B₀`
-that intertwine `F : A →+* B` with `F₀ : A₀ →+* B₀` preserves any predicate on `eA f`. -/
-private theorem exists_eq_and_of_intertwine {A B A₀ B₀ : Type*} [Semiring A] [Semiring B]
-    [Semiring A₀] [Semiring B₀] {F : A →+* B} {F₀ : A₀ →+* B₀} (eA : A ≃+* A₀) (eB : B ≃+* B₀)
-    (hF : ∀ f, eB (F f) = F₀ (eA f)) {P : A₀ → Prop} {g : B}
-    (h : ∃ f₀, F₀ f₀ = eB g ∧ P f₀) :
-    ∃ f, F f = g ∧ P (eA f) := by
-  obtain ⟨f₀, hf₀, hP⟩ := h
-  refine ⟨eA.symm f₀, eB.injective ?_, by simpa only [RingEquiv.apply_symm_apply] using hP⟩
-  rw [hF, RingEquiv.apply_symm_apply, hf₀]
-
 variable {φ : R →+* S} {C : ℝ} (hφc : Continuous φ) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-
-/-- Uniformly `L`-bounded preimages along a continuous ring homomorphism `φ : R →+* S` make
-`weightedMap` an open quotient map for any image weight family, without any Tate or completeness
-hypothesis. -/
-theorem isOpenQuotientMap_weightedMap_of_exists_norm_le
-    {T : Fin k → Set R} {T' : Fin k → Set S}
-    (hT : IsWeightFamily T) (hT' : IsWeightFamily T') (hTT' : ∀ i, φ '' T i = T' i) {L : ℝ}
-    (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖) :
-    IsOpenQuotientMap (weightedMap hφc hT hT' (fun i ↦ (hTT' i).subset)) :=
-  (isOpenQuotientMap_of_exists_norm_le hφc hlift).weightedMap hT hT' hTT'
-
-/-- Uniformly `L`-bounded preimages along a continuous ring homomorphism `φ : R →+* S` make
-`weightedMapCompletion` an open quotient map on completed weighted restricted-series algebras for
-any image weight family, without requiring completeness of `R` or `S`. -/
-theorem isOpenQuotientMap_weightedMapCompletion_of_exists_norm_le
-    {T : Fin k → Set R} {T' : Fin k → Set S}
-    (hT : IsWeightFamily T) (hT' : IsWeightFamily T') (hTT' : ∀ i, φ '' T i = T' i) {L : ℝ}
-    (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖) :
-    IsOpenQuotientMap (weightedMapCompletion hφc hT hT' (fun i ↦ (hTT' i).subset)) :=
-  (isOpenQuotientMap_of_exists_norm_le hφc hlift).weightedMapCompletion hT hT' hTT'
 
 include hφ in
 /-- Uniformly `L`-bounded coefficient lifts produce Huber restricted-series preimages with the
@@ -317,8 +263,9 @@ theorem exists_weightedMap_eq_and_norm_le {L : ℝ}
     ∃ f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight,
       weightedMap hφc isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp) f = g ∧
       ‖restrictedMvPowerSeriesGaussEquiv f‖ ≤ L * ‖restrictedMvPowerSeriesGaussEquiv g‖ :=
-  exists_eq_and_of_intertwine restrictedMvPowerSeriesGaussEquiv
-    restrictedMvPowerSeriesGaussEquiv (restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ)
+  (restrictedMvPowerSeriesGaussEquiv.toEquiv.exists_eq_and_iff_of_injective
+    restrictedMvPowerSeriesGaussEquiv.injective
+    (restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ)).mpr
     (exists_restrictedMap_eq_and_norm_le φ hφ hlift (restrictedMvPowerSeriesGaussEquiv g))
 
 include hφ in
@@ -331,11 +278,11 @@ theorem exists_weightedMap_eq_and_norm_lt_add
     ∃ f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight,
       weightedMap hφc isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp) f = g ∧
       ‖restrictedMvPowerSeriesGaussEquiv f‖ < ‖restrictedMvPowerSeriesGaussEquiv g‖ + ε :=
-  exists_eq_and_of_intertwine restrictedMvPowerSeriesGaussEquiv
-    restrictedMvPowerSeriesGaussEquiv (restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ)
+  (restrictedMvPowerSeriesGaussEquiv.toEquiv.exists_eq_and_iff_of_injective
+    restrictedMvPowerSeriesGaussEquiv.injective
+    (restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ)).mpr
     (exists_restrictedMap_eq_and_norm_lt_add φ hφ hlift (restrictedMvPowerSeriesGaussEquiv g) hε)
 
-include hφ in
 /-- Exact norm-attaining lifts for a contractive `φ` produce Huber restricted-series preimages of
 the exact same compared Gauss norm. -/
 theorem exists_weightedMap_eq_and_norm_eq (hφ1 : ∀ r, ‖φ r‖ ≤ ‖r‖)
@@ -344,9 +291,11 @@ theorem exists_weightedMap_eq_and_norm_eq (hφ1 : ∀ r, ‖φ r‖ ≤ ‖r‖)
     ∃ f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight,
       weightedMap hφc isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp) f = g ∧
       ‖restrictedMvPowerSeriesGaussEquiv f‖ = ‖restrictedMvPowerSeriesGaussEquiv g‖ :=
-  exists_eq_and_of_intertwine restrictedMvPowerSeriesGaussEquiv
-    restrictedMvPowerSeriesGaussEquiv (restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ)
-    (exists_restrictedMap_eq_and_norm_eq φ hφ hφ1 hlift (restrictedMvPowerSeriesGaussEquiv g))
+  let hφ1' : ∀ r, ‖φ r‖ ≤ 1 * ‖r‖ := fun r ↦ (one_mul ‖r‖).symm ▸ hφ1 r
+  (restrictedMvPowerSeriesGaussEquiv.toEquiv.exists_eq_and_iff_of_injective
+    restrictedMvPowerSeriesGaussEquiv.injective
+    (restrictedMvPowerSeriesGaussEquiv_weightedMap hφc hφ1')).mpr
+    (exists_restrictedMap_eq_and_norm_eq φ hφ1' hφ1 hlift (restrictedMvPowerSeriesGaussEquiv g))
 
 variable [CompleteSpace R] [CompleteSpace S]
 
@@ -362,9 +311,9 @@ theorem exists_weightedMapCompletion_eq_and_norm_le {L : ℝ}
         (fun _ ↦ by simp) f = g ∧
       ‖restrictedMvPowerSeriesCompletionGaussEquiv f‖ ≤
         L * ‖restrictedMvPowerSeriesCompletionGaussEquiv g‖ :=
-  exists_eq_and_of_intertwine restrictedMvPowerSeriesCompletionGaussEquiv
-    restrictedMvPowerSeriesCompletionGaussEquiv
-    (restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion hφc hφ)
+  (restrictedMvPowerSeriesCompletionGaussEquiv.toEquiv.exists_eq_and_iff_of_injective
+    restrictedMvPowerSeriesCompletionGaussEquiv.injective
+    (restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion hφc hφ)).mpr
     (exists_restrictedMap_eq_and_norm_le φ hφ hlift
       (restrictedMvPowerSeriesCompletionGaussEquiv g))
 
@@ -380,13 +329,12 @@ theorem exists_weightedMapCompletion_eq_and_norm_lt_add
         (fun _ ↦ by simp) f = g ∧
       ‖restrictedMvPowerSeriesCompletionGaussEquiv f‖ <
         ‖restrictedMvPowerSeriesCompletionGaussEquiv g‖ + ε :=
-  exists_eq_and_of_intertwine restrictedMvPowerSeriesCompletionGaussEquiv
-    restrictedMvPowerSeriesCompletionGaussEquiv
-    (restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion hφc hφ)
+  (restrictedMvPowerSeriesCompletionGaussEquiv.toEquiv.exists_eq_and_iff_of_injective
+    restrictedMvPowerSeriesCompletionGaussEquiv.injective
+    (restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion hφc hφ)).mpr
     (exists_restrictedMap_eq_and_norm_lt_add φ hφ hlift
       (restrictedMvPowerSeriesCompletionGaussEquiv g) hε)
 
-include hφ in
 /-- Over complete ultrametric normed commutative rings, exact norm-attaining coefficient lifts for
 a contractive `φ` produce preimages in `R⟨X₁, …, Xₖ⟩` along `weightedMapCompletion` of the exact
 same compared Gauss norm. -/
@@ -398,10 +346,11 @@ theorem exists_weightedMapCompletion_eq_and_norm_eq (hφ1 : ∀ r, ‖φ r‖ �
         (fun _ ↦ by simp) f = g ∧
       ‖restrictedMvPowerSeriesCompletionGaussEquiv f‖ =
         ‖restrictedMvPowerSeriesCompletionGaussEquiv g‖ :=
-  exists_eq_and_of_intertwine restrictedMvPowerSeriesCompletionGaussEquiv
-    restrictedMvPowerSeriesCompletionGaussEquiv
-    (restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion hφc hφ)
-    (exists_restrictedMap_eq_and_norm_eq φ hφ hφ1 hlift
+  let hφ1' : ∀ r, ‖φ r‖ ≤ 1 * ‖r‖ := fun r ↦ (one_mul ‖r‖).symm ▸ hφ1 r
+  (restrictedMvPowerSeriesCompletionGaussEquiv.toEquiv.exists_eq_and_iff_of_injective
+    restrictedMvPowerSeriesCompletionGaussEquiv.injective
+    (restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion hφc hφ1')).mpr
+    (exists_restrictedMap_eq_and_norm_eq φ hφ1' hφ1 hlift
       (restrictedMvPowerSeriesCompletionGaussEquiv g))
 
 end BoundedAndSharpLifts

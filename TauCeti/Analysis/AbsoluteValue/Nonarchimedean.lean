@@ -46,6 +46,8 @@ finite place of the extension.
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
   general; the example at the end of the file checks that `|·| ^ 2` on `ℚ` is not an absolute
   value.
+* `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
+  divisors is nonarchimedean.
 
 ## References
 
@@ -63,6 +65,17 @@ theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] 
     [FaithfulSMul K L] [PartialOrder S] [Semiring S] {w : AbsoluteValue L S}
     (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
   rw [← LiesOver.under_eq w v, under_def, comp_apply]
+
+/-- The trivial absolute value is nonarchimedean. -/
+theorem isNonarchimedean_trivial {R S : Type*} [Semiring R] [DecidablePred fun x : R ↦ x = 0]
+    [NoZeroDivisors R] [Semiring S] [LinearOrder S] [IsStrictOrderedRing S] :
+    IsNonarchimedean (AbsoluteValue.trivial : AbsoluteValue R S) := by
+  intro x y
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rcases eq_or_ne (x + y) 0 with hxy | hxy
+    · simp [hxy]
+    · simp [trivial_apply hx, trivial_apply hxy]
 
 section Field
 
