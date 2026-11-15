@@ -35,7 +35,7 @@ For a function of a scalar first variable, the partial derivatives along the coo
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and more generally along any line `r ↦ p + r • q`.
 A function whose partial derivative in the first variable vanishes everywhere is constant along
-every horizontal line.
+every horizontal line; on a union `ℝ × T` of horizontal lines, the converse holds as well.
 
 The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
 expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
@@ -54,6 +54,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative in its real first variable is constant along horizontal lines.
 * `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `s → +∞`
   along each horizontal line vanishes.
+* `TauCeti.fderiv_fst_eqOn_zero_iff`: on `ℝ × T`, the partial derivative in the real first
+  variable vanishes exactly when the function is constant along horizontal lines.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
@@ -369,6 +371,26 @@ theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGr
   have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
     simpa [h] using hasDerivAt_slice_left (hu (s, b))
   exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
+
+/-- A function on `ℝ × F` that is differentiable at every point of `ℝ × T` has vanishing partial
+derivative in the first variable there exactly when it is constant along the horizontal lines
+through `T`. -/
+theorem fderiv_fst_eqOn_zero_iff {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G} {T : Set F}
+    (hu : ∀ z ∈ (Set.univ : Set ℝ) ×ˢ T, DifferentiableAt ℝ u z) :
+    Set.EqOn (fun z ↦ fderiv ℝ u z (1, 0)) 0 ((Set.univ : Set ℝ) ×ˢ T) ↔
+      ∀ s, ∀ t ∈ T, u (s, t) = u (0, t) := by
+  -- Along each horizontal line through `T`, the partial derivative is that of `r ↦ u (r, t)`.
+  have hline (r : ℝ) {t : F} (ht : t ∈ T) :
+      HasDerivAt (fun r ↦ u (r, t)) (fderiv ℝ u (r, t) (1, 0)) r :=
+    hasDerivAt_slice_left (hu (r, t) ⟨Set.mem_univ r, ht⟩)
+  refine ⟨fun h s t ht ↦ ?_, fun h z hz ↦ ?_⟩
+  · refine is_const_of_deriv_eq_zero (fun r ↦ (hline r ht).differentiableAt) (fun r ↦ ?_) s 0
+    rw [(hline r ht).deriv]
+    exact h ⟨Set.mem_univ r, ht⟩
+  · have hz' := hline z.1 hz.2
+    rw [show (fun r ↦ u (r, z.2)) = fun _ ↦ u (0, z.2) from funext fun r ↦ h r z.2 hz.2] at hz'
+    exact hz'.unique (hasDerivAt_const _ _)
 
 section FstClmApplySnd
 

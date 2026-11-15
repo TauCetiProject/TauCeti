@@ -38,7 +38,7 @@ derivative of such a cylinder sends `(a, b)` to `b (x' - X_{H_t}(x))`
 (`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`), and its energy density
 vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). A map differentiable on the strip is
 stationary there exactly when its `s`-derivative vanishes there
-(`TauCeti.fderiv_stdComplexLineReal_eqOn_zero_iff`). Conversely, for almost complex structures
+(`TauCeti.fderiv_fst_eqOn_zero_iff`). Conversely, for almost complex structures
 tamed by `ω`, a `C¹` solution has zero energy exactly when it is stationary
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`): the energy density of a solution
 vanishes only where `∂_s u = 0`.
@@ -58,8 +58,6 @@ compactness or transversality is asserted.
 
 ## Main results
 
-* `TauCeti.fderiv_stdComplexLineReal_eqOn_zero_iff`: a map is stationary on the strip exactly
-  when its `s`-derivative vanishes there.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`: stationary solutions are the
   Hamiltonian orbits.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`: a solution has zero energy exactly
@@ -150,27 +148,6 @@ private theorem closure_univ_prod_Ioo :
     closure ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = (univ : Set ℝ) ×ˢ Icc 0 1 := by
   rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one]
 
-omit [FiniteDimensional ℝ V] in
-/-- **Stationary maps are those with vanishing `s`-derivative.** A map that is differentiable at
-every point of the strip `ℝ × [0, 1]` has `∂_s u = 0` there exactly when it is stationary there,
-`u(s, t) = u(0, t)`. No equation is assumed. -/
-theorem _root_.TauCeti.fderiv_stdComplexLineReal_eqOn_zero_iff
-    (hu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, DifferentiableAt ℝ u z) :
-    EqOn (fun z ↦ fderiv ℝ u z stdComplexLineReal) 0 ((univ : Set ℝ) ×ˢ Icc 0 1) ↔
-      ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s, t) = u (0, t) := by
-  -- Along each horizontal line of the strip, `∂_s u` is the derivative of `r ↦ u(r, t)`.
-  have hline (r t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      HasDerivAt (fun r ↦ u (r, t)) (fderiv ℝ u (r, t) stdComplexLineReal) r := by
-    rw [stdComplexLineReal_eq]
-    exact hasDerivAt_slice_left (hu (r, t) ⟨mem_univ r, ht⟩)
-  refine ⟨fun h s t ht ↦ ?_, fun h z hz ↦ ?_⟩
-  · refine is_const_of_deriv_eq_zero (fun r ↦ (hline r t ht).differentiableAt) (fun r ↦ ?_) s 0
-    rw [(hline r t ht).deriv]
-    exact h ⟨mem_univ r, ht⟩
-  · have hz' := hline z.1 z.2 hz.2
-    rw [show (fun r ↦ u (r, z.2)) = fun _ ↦ u (0, z.2) from funext fun r ↦ h r z.2 hz.2] at hz'
-    exact hz'.unique (hasDerivAt_const _ _)
-
 /-- A map that is `C¹` on a neighbourhood of the closed strip `ℝ × [0, 1]`, solves the Floer
 equation for `K = H_t dt` and tamed almost complex structures there, and has zero energy density
 on the open strip `ℝ × (0, 1)`, is stationary on the closed strip. -/
@@ -190,7 +167,8 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
     have h := (ω.floerEnergyDensity_eq_zero_iff (hJ z hz') (hfloer z hz')).1 (h0 z hz)
     simpa using congrArg (· stdComplexLineReal) h
   -- By continuity it vanishes on the closed strip, so `u` is stationary there.
-  refine (fderiv_stdComplexLineReal_eqOn_zero_iff fun z hz ↦
+  rw [stdComplexLineReal_eq] at hds
+  refine (fderiv_fst_eqOn_zero_iff fun z hz ↦
     (hu.differentiableOn one_ne_zero z (hRU hz)).differentiableAt (hU.mem_nhds (hRU hz))).1 ?_
   exact hds.of_subset_closure
     (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono hRU)

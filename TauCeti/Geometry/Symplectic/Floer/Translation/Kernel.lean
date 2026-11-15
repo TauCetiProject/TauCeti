@@ -41,9 +41,9 @@ The two cases used in Floer theory are the following.
 
 The kernel element `∂s u` is not zero away from the stationary cylinders: a map differentiable on
 the strip `ℝ × [0, 1]` has `∂s u = 0` there exactly when `u(s, t) = u(0, t)`
-(`TauCeti.fderiv_stdComplexLineReal_eqOn_zero_iff`). Its size is the energy. For the perturbation
-`K = Kt dt` and a solution of the Floer equation for an almost complex structure `J`, the Floer
-energy density is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`
+(`TauCeti.fderiv_fst_eqOn_zero_iff`, since `∂s u` is `du` applied to `(1, 0)`). Its size is the
+energy. For the perturbation `K = Kt dt` and a solution of the Floer equation for an almost
+complex structure `J`, the Floer energy density is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`
 (`TauCeti.SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_eq_floerEnergyDensity`), so
 the squared `L²` norm of `∂s u` in these metrics is the energy of `u`. Thus along a nonstationary
 Floer cylinder of finite energy with compatible `J`, the translation generator is a nonzero
@@ -175,23 +175,5 @@ theorem floerLinearization_fderiv_stdComplexLineImag_eq_zero (hu : ContDiffAt �
     hKt hF
 
 end Cylinder
-
-section Energy
-
-variable (ω : SymplecticForm V) {Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-
-/-- **The energy density is the squared length of the translation generator.** For the
-perturbation `K = Kt dt` and a solution of the Floer equation at `z` for an almost complex
-structure `J`, the Floer energy density at `z` is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`. -/
-theorem associatedBilinForm_fderiv_stdComplexLineReal_eq_floerEnergyDensity
-    {J : AlmostComplexStructure V} {z : ℝ × ℝ}
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.associatedBilinForm J (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineReal) =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z := by
-  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal,
-    hamiltonianVectorField_const, Pi.zero_apply, sub_zero, associatedBilinForm_apply]
-
-end Energy
 
 end TauCeti.SymplecticForm
