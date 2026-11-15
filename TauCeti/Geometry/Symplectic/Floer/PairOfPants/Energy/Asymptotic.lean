@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # The energy identity on the whole pair of pants
@@ -43,9 +43,15 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 ## Main results
 
 * `TauCeti.Floer.tendsto_setIntegral_truncation`,
-  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`: integrals over `S` are limits of integrals over
-  its truncations, and integrals of a Hamiltonian along the end loops converge to its integral
-  along their pointwise limits.
+  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`,
+  `TauCeti.Floer.tendsto_intervalIntegral_endChart_of_isCompact`: integrals over `S` are limits of
+  integrals over its truncations, and integrals of a continuous Hamiltonian (bounded, or along a
+  map with image in a compact set) over the end loops converge to its integral along their
+  pointwise limits.
+* `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact`: when `u` maps
+  `S` into a compact set `B`, a nonnegative Floer energy density has finite integral as soon as the
+  area density and curvature term are integrable, without assuming convergence of the end integrals
+  beforehand.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -116,6 +122,31 @@ theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
       ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))) hmem
   exact ((hHc q).comp (continuous_id.prodMk hloop)).aestronglyMeasurable
 
+/-- If `u` is continuous on `S` and maps `S` into a compact set `B`, and along a family of heights
+`σ i → ∞` its loops along the circles `±σ i` of the end `q` converge pointwise on `[0, 1]` to `y`,
+then the integrals of a jointly continuous `H : ℝ → M → E` along them converge to its integral
+along `y`. No global bound on `H` outside `B` is needed. -/
+theorem tendsto_intervalIntegral_endChart_of_isCompact {ι M E : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : ℝ → M → E} (hHc : Continuous (uncurry H)) {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u thricePuncturedSphereReal) {B : Set M} (hB : IsCompact B)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B) {q : Puncture} {σ : ι → ℝ}
+    (hσ : Tendsto σ l atTop) {y : ℝ → M}
+    (hy : ∀ t ∈ Icc (0 : ℝ) 1,
+      Tendsto (fun i ↦ u (endChart q (q.endSign * σ i, t))) l (𝓝 (y t))) :
+    Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, H t (u (endChart q (q.endSign * σ i, t)))) l
+      (𝓝 (∫ t in (0 : ℝ)..1, H t (y t))) := by
+  have hmem {s : ℝ} (hs : 0 < s) (t : ℝ) :
+      endChart q (q.endSign * s, t) ∈ thricePuncturedSphereReal :=
+    endChart_mem_thricePuncturedSphereReal (by simpa [← mul_assoc] using hs)
+  refine tendsto_intervalIntegral_comp_of_tendsto (Φ := uncurry H)
+    (y := fun i t ↦ u (endChart q (q.endSign * σ i, t))) hHc hB
+    ((hσ.eventually_gt_atTop 0).mono fun i hi ↦ ?_)
+    ((hσ.eventually_gt_atTop 0).mono fun i hi t _ ↦ huB _ (hmem hi t))
+    (by rwa [uIcc_of_le zero_le_one])
+  exact (hu.comp_continuous ((contDiff_endChart q 0).continuous.comp (by fun_prop))
+    (hmem hi)).continuousOn
+
 end Floer
 
 namespace SmoothTwoForm
@@ -125,6 +156,49 @@ open Floer
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
+
+/-- **Finite Floer energy on a compact target set, without asymptotic convergence.** Let `ω` be a
+nondegenerate two-form on a finite-dimensional manifold `M`, and let `K` be `C¹` on `S × M` and
+equal to `H_q(t) dt` beyond `T₀` on each end `q`, for period-one Hamiltonians `H_q` that are
+jointly continuous on `ℝ × M`. Let `u` be `C¹` on `S`, mapping `S` into a compact set `B ⊆ M`,
+with nonnegative Floer energy density on `S` and integrable symplectic area density and curvature
+term `R_K(u)`. Then the Lebesgue integral of the Floer energy density of `u` is finite, without
+assuming beforehand that the end-loop integrals of `H_q` converge. -/
+theorem IsNondegenerate.lintegral_floerEnergyDensity_ne_top_of_isCompact
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} {u : ℝ × ℝ → M} {T₀ : ℝ}
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHc : ∀ q, Continuous (uncurry (H q)))
+    {B : Set M} (hB : IsCompact B)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) :
+    ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
+  choose C hC using fun q ↦ (isCompact_Icc.prod hB).exists_bound_of_continuousOn
+    (s := Icc (0 : ℝ) 1 ×ˢ B) (hHc q).continuousOn
+  refine ne_of_lt ((hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he
+    hA hR (C := fun q ↦ max (C q) 0) fun q s hs ↦ ?_).trans_lt ENNReal.ofReal_lt_top)
+  have hs_pos : 0 < q.endSign * s := by linarith [le_max_left 2 T₀]
+  refine (Real.norm_eq_abs _).symm.trans_le ((intervalIntegral.norm_integral_le_of_norm_le_const
+    (C := max (C q) 0) fun t ht ↦ ?_).trans_eq (by norm_num))
+  rw [uIoc_of_le zero_le_one] at ht
+  exact (hC q (t, u (endChart q (s, t)))
+    ⟨⟨ht.1.le, ht.2⟩, huB _ (endChart_mem_thricePuncturedSphereReal hs_pos)⟩).trans
+    (le_max_left _ _)
 
 /-- **The energy identity on the pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of bounded period-one `C¹` Hamiltonians `H_q` on a finite-dimensional

@@ -199,25 +199,25 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
     rw [hχ1 i x hi, one_smul]
 
 /-- **Dominated convergence for continuous functions of converging maps.** Let `Φ : ℝ × V → E`
-be continuous, and let the maps `y i : ℝ → V` be continuous on `[t₁, t₂]` with values there in a
-compact set `K`. If the `y i` converge pointwise on `[t₁, t₂]` to `x`, then
-`∫_{t₁}^{t₂} Φ(t, y i t) dt` tends to `∫_{t₁}^{t₂} Φ(t, x t) dt`. -/
+be continuous, and suppose that eventually along `l` the maps `y i : ℝ → V` are continuous on
+`[t₁, t₂]` with values there in a compact set `K`. If the `y i` converge pointwise on `[t₁, t₂]`
+to `x`, then `∫_{t₁}^{t₂} Φ(t, y i t) dt` tends to `∫_{t₁}^{t₂} Φ(t, x t) dt`. -/
 theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι}
     [l.IsCountablyGenerated] [TopologicalSpace V] [NormedAddCommGroup E] [NormedSpace ℝ E]
     {Φ : ℝ × V → E} (hΦ : Continuous Φ) {K : Set V} (hK : IsCompact K) {y : ι → ℝ → V}
-    {x : ℝ → V} {t₁ t₂ : ℝ} (hy : ∀ i, ContinuousOn (y i) (uIcc t₁ t₂))
-    (hyK : ∀ i, ∀ t ∈ uIcc t₁ t₂, y i t ∈ K)
+    {x : ℝ → V} {t₁ t₂ : ℝ} (hy : ∀ᶠ i in l, ContinuousOn (y i) (uIcc t₁ t₂))
+    (hyK : ∀ᶠ i in l, ∀ t ∈ uIcc t₁ t₂, y i t ∈ K)
     (hyx : ∀ t ∈ uIcc t₁ t₂, Tendsto (fun i ↦ y i t) l (𝓝 (x t))) :
     Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ (t, y i t)) l (𝓝 (∫ t in t₁..t₂, Φ (t, x t))) := by
   obtain ⟨C, hC⟩ := (isCompact_uIcc.prod hK).exists_bound_of_continuousOn hΦ.continuousOn
   refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ C)
-    (Eventually.of_forall fun i ↦ ?_)
-    (Eventually.of_forall fun i ↦ Eventually.of_forall fun t ht ↦
-      hC _ ⟨uIoc_subset_uIcc ht, hyK i t (uIoc_subset_uIcc ht)⟩)
+    (hy.mono fun i hyi ↦ ?_)
+    (hyK.mono fun i hyKi ↦ Eventually.of_forall fun t ht ↦
+      hC _ ⟨uIoc_subset_uIcc ht, hyKi t (uIoc_subset_uIcc ht)⟩)
     intervalIntegrable_const
     (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
       (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
-  exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
+  exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk hyi)).aestronglyMeasurable
     measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
 
 /-- If `f` is continuous on `s ×ˢ uIcc a b`, then the interval integral `∫ t in a..b, f x t ∂μ`

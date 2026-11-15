@@ -168,9 +168,10 @@ private theorem perturbedFDeriv_comp_positiveEndChart_eq
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag)
         (u ∘ positiveEndChart q) ζ :=
   ω.perturbedFDeriv_congr _
-    (funext fun x ↦ (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH hζ x).symm)
     (funext fun x ↦
-      (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH hH hζ x).symm)
+      (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le (hKH q) hζ x).symm)
+    (funext fun x ↦
+      (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le (hKH q) (hH q) hζ x).symm)
 
 /-- **The ends of a Floer pair of pants solve the Floer equation of a half-cylinder.** Let `K` be
 equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` solve the Floer equation

@@ -58,6 +58,9 @@ coordinate avoids a point of its circle has nullhomotopic inclusion.
   contractible exactly when its loop over a period is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
+* `IsPathConnected.exists_nullhomotopic_addCircle_of_periodic`: in a continuous family of
+  `T`-periodic curves indexed by a path-connected set, if one curve is contractible as a map from
+  `AddCircle T`, then every curve in the family is.
 * `AddCircle.nullhomotopic_subtypeVal_compl_singleton`: the circle with a point removed contracts
   in the circle.
 -/
@@ -204,6 +207,40 @@ theorem exists_nullhomotopic_iff_loop_homotopic_refl [Fact (0 < p)] (hp : Period
     exact ⟨g, hrot g ((key g hgγ).2 h), hgγ⟩
 
 end Function.Periodic
+
+/-- **Null-homotopy of periodic curves propagates along a path-connected parameter set.** Let `U`
+be a path-connected subset of `Y`, and let `u : Y × ℝ → X` be continuous on `U × ℝ` such that
+`t ↦ u (y, t)` is `T`-periodic for every `y ∈ U`. If at some `y₀ ∈ U` the circle map induced by
+`t ↦ u (y₀, t)` is null-homotopic, then so is the circle map induced by `t ↦ u (y, t)` for every
+`y ∈ U`. -/
+theorem IsPathConnected.exists_nullhomotopic_addCircle_of_periodic {Y X : Type*}
+    [TopologicalSpace Y] [TopologicalSpace X] {U : Set Y} (hU : IsPathConnected U)
+    {u : Y × ℝ → X} (hu : ContinuousOn u (U ×ˢ univ)) {T : ℝ}
+    (hper : ∀ y ∈ U, Function.Periodic (fun t ↦ u (y, t)) T) {y₀ : Y} (hy₀ : y₀ ∈ U)
+    (h₀ : ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (y₀, t))
+    {y : Y} (hy : y ∈ U) :
+    ∃ g : C(AddCircle T, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (y, t) := by
+  obtain ⟨g₀, ⟨c, hc⟩, hg₀⟩ := h₀
+  obtain ⟨γ, hγU⟩ := hU.joinedIn y hy y₀ hy₀
+  -- Along the path `γ` in `U`, the `T`-periodic curves descend to a homotopy on `I × AddCircle T`.
+  let F : I × AddCircle T → X := fun q ↦ (hper (γ q.1) (hγU q.1)).lift q.2
+  have hFc : Continuous F := by
+    rw [← (IsOpenQuotientMap.id.prodMap
+      (QuotientAddGroup.isOpenQuotientMap_mk (N := AddSubgroup.zmultiples T))).continuous_comp_iff]
+    have hcomp : F ∘ Prod.map id QuotientAddGroup.mk = fun q : I × ℝ ↦ u (γ q.1, q.2) :=
+      funext fun q ↦ (hper (γ q.1) (hγU q.1)).lift_coe q.2
+    rw [hcomp]
+    exact hu.comp_continuous ((γ.continuous.comp continuous_fst).prodMk continuous_snd)
+      fun q ↦ ⟨hγU q.1, mem_univ _⟩
+  let g : C(AddCircle T, X) := ⟨fun θ ↦ F (0, θ), hFc.comp (continuous_const.prodMk continuous_id)⟩
+  have hgg₀ : g.Homotopic g₀ := ⟨{
+    toContinuousMap := ⟨F, hFc⟩
+    map_zero_left := fun _ ↦ rfl
+    map_one_left := fun θ ↦ by
+      obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+      exact ((hper (γ 1) (hγU 1)).lift_coe t).trans (by rw [γ.target, ← hg₀ t]) }⟩
+  refine ⟨g, ⟨c, hgg₀.trans hc⟩, fun t ↦ ?_⟩
+  exact ((hper (γ 0) (hγU 0)).lift_coe t).trans (by rw [γ.source])
 
 namespace AddCircle
 
