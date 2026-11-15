@@ -53,8 +53,6 @@ vanishing ideal `I_x`, read through the identifications `I_x / I_x² ≃ T_x*M`
 
 ## Main results
 
-* `LinearMap.apply_apply_eq_of_apply_eq`: a map of sections that is linear over the smooth
-  functions is tensorial, its value at `x` only depends on the value of the section at `x`.
 * `TauCeti.smoothSectionCommutatorSymbol_mvfderiv`, `TauCeti.smoothSectionPrincipalSymbol_mvfderiv`:
   the values at differentials of functions are the iterated commutators.
 * `TauCeti.smoothSectionCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
@@ -68,7 +66,7 @@ vanishing ideal `I_x`, read through the identifications `I_x / I_x² ≃ T_x*M`
   `σ(P ∘ Q)(ξ) = σ(P)(ξ) ∘ σ(Q)(ξ)`.
 * `TauCeti.smoothSectionPrincipalSymbol_smul_function`: multiplying an operator by a smooth
   function `g` multiplies its principal symbol at `x` by `g x`.
-* `TauCeti.smoothSectionPrincipalSymbol_order_zero_apply`: an operator of order zero, that is a
+* `TauCeti.smoothSectionPrincipalSymbol_order_zero`: an operator of order zero, that is a
   map of sections linear over the smooth functions, has as principal symbol its fibre map at `x`.
 
 ## References
@@ -98,92 +96,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [FiberBundle F' W] [VectorBundle ℝ F' W]
   {x : M}
 
-/-! ### Linear maps over smooth functions are tensorial -/
-
-namespace LinearMap
-
-variable [FiniteDimensional ℝ F]
-
-/-- A map of sections that is linear over the smooth functions sends a section vanishing at `x`
-to a section vanishing at `x`. -/
-theorem apply_apply_eq_zero_of_apply_eq_zero
-    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) {s : Cₛ^∞⟮I; F, V⟯} (hs : s x = 0) :
-    L s x = 0 := by
-  refine TauCeti.apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top ?_
-  have h := Submodule.mem_map_of_mem (f := L)
-    (TauCeti.mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero hs)
-  rw [Submodule.map_smul''] at h
-  exact Submodule.smul_mono le_rfl le_top h
-
-/-- **Tensoriality.** The value at `x` of the image of a section under a map of sections that is
-linear over the smooth functions only depends on the value of the section at `x`. -/
-theorem apply_apply_eq_of_apply_eq
-    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) {s t : Cₛ^∞⟮I; F, V⟯} (h : s x = t x) :
-    L s x = L t x := by
-  have hst := L.apply_apply_eq_zero_of_apply_eq_zero (x := x) (s := s - t) (by simp [h])
-  rwa [map_sub, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at hst
-
-end LinearMap
-
 namespace TauCeti
-
-/-! ### Lifting covectors and fibre vectors -/
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-variable (I) in
-private theorem exists_toCotangent_comp_eq_id (x : M) :
-    ∃ g : (smoothVanishingIdeal I x).Cotangent →ₗ[ℝ] smoothVanishingIdeal I x,
-      (smoothVanishingIdeal I x).toCotangent.restrictScalars ℝ ∘ₗ g = LinearMap.id :=
-  LinearMap.exists_rightInverse_of_surjective _ <|
-    LinearMap.range_eq_top.2 (smoothVanishingIdeal I x).toCotangent_surjective
-
-/-- A real-linear choice of a smooth function vanishing at `x` with prescribed differential at
-`x`. -/
-private def covectorLift (hx : I.IsInteriorPoint x) :
-    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
-  (smoothVanishingIdeal I x).subtype.restrictScalars ℝ ∘ₗ
-    (exists_toCotangent_comp_eq_id I x).choose ∘ₗ (smoothCotangentEquiv hx).symm.toLinearMap
-
-private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
-  mem_smoothVanishingIdeal_iff.mp (Subtype.prop _)
-
-private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
-  set r := exists_toCotangent_comp_eq_id I x
-  have h := LinearMap.congr_fun r.choose_spec ((smoothCotangentEquiv hx).symm ξ)
-  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearMap.id_apply] at h
-  have hξ : covectorLift hx ξ = (r.choose ((smoothCotangentEquiv hx).symm ξ) : C^∞⟮I, M; ℝ⟯) :=
-    (rfl)
-  rw [hξ, ← smoothCotangentEquiv_toCotangent hx, h, LinearEquiv.apply_symm_apply]
-
-variable (I F V) in
-private theorem exists_evalLinearMap_comp_eq_id (x : M) :
-    ∃ g : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯, ContMDiffSection.evalLinearMap I F ∞ V x ∘ₗ g = LinearMap.id :=
-  LinearMap.exists_rightInverse_of_surjective _ <|
-    LinearMap.range_eq_top.2 (ContMDiffSection.evalLinearMap_surjective ∞ x)
-
-variable (I F V) in
-/-- A real-linear choice of a smooth section through each vector of the fibre at `x`. -/
-private def sectionLift (x : M) : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯ :=
-  (exists_evalLinearMap_comp_eq_id I F V x).choose
-
-private theorem sectionLift_apply_self (v : V x) : sectionLift I F V x v x = v := by
-  have h := LinearMap.congr_fun (exists_evalLinearMap_comp_eq_id I F V x).choose_spec v
-  rw [LinearMap.comp_apply, ContMDiffSection.evalLinearMap_apply, LinearMap.id_apply] at h
-  exact h
-
-/-- Every vector of the fibre at `x` is the value of a smooth section. -/
-private theorem exists_apply_eq (v : V x) : ∃ s : Cₛ^∞⟮I; F, V⟯, s x = v :=
-  ⟨sectionLift I F V x v, sectionLift_apply_self v⟩
-
-variable (I F V F' W) in
-/-- The fibre map at `x` of a map of sections that is linear over the smooth functions. -/
-private def fiberMap (x : M) :
-    (Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) →ₗ[ℝ] (V x →ₗ[ℝ] W x) where
-  toFun L := ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ L.restrictScalars ℝ ∘ₗ sectionLift I F V x
-  map_add' _ _ := by ext; simp
-  map_smul' _ _ := by ext; simp
 
 /-! ### The commutator symbol and the principal symbol -/
 
@@ -198,9 +111,9 @@ def smoothSectionCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m →ₗ[ℝ]
       MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) (V x →ₗ[ℝ] W x)
       where
-  toFun P := ((fiberMap I F V F' W x).compMultilinearMap
+  toFun P := ((smoothSectionFiberMap I F V F' W x).compMultilinearMap
       ((commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m) P)).compLinearMap
-    fun _ ↦ covectorLift hx
+    fun _ ↦ smoothCovectorLift hx
   map_add' P₁ P₂ := by ext; simp
   map_smul' c P := by ext; simp
 
@@ -260,12 +173,6 @@ theorem smoothSectionPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m
 
 variable [FiniteDimensional ℝ F]
 
-private theorem fiberMap_apply_apply (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯)
-    (s : Cₛ^∞⟮I; F, V⟯) : fiberMap I F V F' W x L (s x) = L s x := by
-  simp only [fiberMap, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply,
-    LinearMap.restrictScalars_apply, ContMDiffSection.evalLinearMap_apply]
-  exact L.apply_apply_eq_of_apply_eq (sectionLift_apply_self _)
-
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of smooth functions
 `f₁, …, fₘ` and on the value at `x` of a section `s`, is the value at `x` of the iterated
 commutator `[⋯[P, f₁], …, fₘ] s`. -/
@@ -275,22 +182,13 @@ theorem smoothSectionCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : �
     smoothSectionCommutatorSymbol I hx P (fun i ↦ mvfderiv I (f i) x) (s x) =
       commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m P f s x := by
   -- The lifts `gᵢ` of the differentials differ from `fᵢ - fᵢ(x)` by elements of `I_x²`.
-  set g : Fin m → C^∞⟮I, M; ℝ⟯ := fun i ↦ covectorLift hx (mvfderiv I (f i) x)
-  have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (h : C^∞⟮I, M; ℝ⟯) : MDifferentiableAt I 𝓘(ℝ, ℝ) h x :=
-    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-  have hg : ∀ i, (fun i ↦ g i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (f i x)) i - f i ∈
-      smoothVanishingIdeal I x ^ 2 := fun i ↦ by
-    refine mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx ?_ ?_
-    · simp [g, hc, covectorLift_apply_self]
-    · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
-        mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
-          mdifferentiableAt_const, mvfderiv_const, add_zero, mvfderiv_covectorLift, sub_self]
+  have hg (i : Fin m) := add_algebraMap_sub_mem_smoothVanishingIdeal_sq hx
+    (smoothCovectorLift_apply_self hx _) (mvfderiv_smoothCovectorLift hx (mvfderiv I (f i) x))
   have h := apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
     (commutatorSymbol_apply_sub_mem_smul_top P hg s)
   rw [commutatorSymbol_add_algebraMap, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
   rw [← h]
-  exact fiberMap_apply_apply _ s
+  exact smoothSectionFiberMap_apply_apply _ s
 
 /-- The commutator symbol is symmetric. -/
 theorem smoothSectionCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -300,7 +198,8 @@ theorem smoothSectionCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : 
   choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
   obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
   refine LinearMap.ext fun v ↦ ?_
-  obtain ⟨s, rfl⟩ := exists_apply_eq (I := I) (F := F) v
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  rw [ContMDiffSection.evalLinearMap_apply]
   have h := smoothSectionCommutatorSymbol_mvfderiv hx P (f ∘ σ) s
   rw [commutatorSymbol_comp_perm, ← smoothSectionCommutatorSymbol_mvfderiv hx P f s] at h
   exact h
@@ -332,7 +231,8 @@ theorem smoothSectionCommutatorSymbol_eq_zero_of_mem_differentialOperators
   ext ξ v
   choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
   obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-  obtain ⟨s, rfl⟩ := exists_apply_eq (I := I) (F := F) v
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  rw [ContMDiffSection.evalLinearMap_apply]
   simp [smoothSectionCommutatorSymbol_mvfderiv, (commutatorSymbol_eq_zero_iff P).2 hP]
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing commutator
@@ -387,7 +287,8 @@ theorem smoothSectionPrincipalSymbol_smul_function (hx : I.IsInteriorPoint x) {m
       g x • smoothSectionPrincipalSymbol I hx P ξ := by
   obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
   refine LinearMap.ext fun v ↦ ?_
-  obtain ⟨s, rfl⟩ := exists_apply_eq (I := I) (F := F) v
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  rw [ContMDiffSection.evalLinearMap_apply]
   rw [LinearMap.smul_apply, smoothSectionPrincipalSymbol_mvfderiv,
     smoothSectionPrincipalSymbol_mvfderiv, ← commutatorSymbol_const_apply,
     ← commutatorSymbol_const_apply, commutatorSymbol_mk_smul]
@@ -395,13 +296,26 @@ theorem smoothSectionPrincipalSymbol_smul_function (hx : I.IsInteriorPoint x) {m
   rw [smul_comm]
 
 /-- An operator of order at most zero, that is a map of sections linear over the smooth functions,
+has as principal symbol at every covector its fibre map at `x`
+(`TauCeti.smoothSectionFiberMap`). -/
+theorem smoothSectionPrincipalSymbol_order_zero (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 0)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothSectionPrincipalSymbol I hx P ξ =
+      smoothSectionFiberMap I F V F' W x
+        (commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 0 P Fin.elim0) := by
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
+  refine LinearMap.ext fun v ↦ ?_
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  simp [smoothSectionPrincipalSymbol_mvfderiv]
+
+/-- An operator of order at most zero, that is a map of sections linear over the smooth functions,
 has as principal symbol at every covector its fibre map at `x`: `σ(P)(ξ)(s x) = (P s)(x)`. -/
 theorem smoothSectionPrincipalSymbol_order_zero_apply (hx : I.IsInteriorPoint x)
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 0)
     (ξ : TangentSpace I x →L[ℝ] ℝ) (s : Cₛ^∞⟮I; F, V⟯) :
     smoothSectionPrincipalSymbol I hx P ξ (s x) = (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
-  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
-  simp [smoothSectionPrincipalSymbol_mvfderiv]
+  simp [smoothSectionPrincipalSymbol_order_zero]
 
 section Comp
 
@@ -425,18 +339,18 @@ theorem smoothSectionPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
       smoothSectionPrincipalSymbol I hx P ξ ∘ₗ smoothSectionPrincipalSymbol I hx Q ξ := by
   obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
   refine LinearMap.ext fun v ↦ ?_
-  obtain ⟨s, rfl⟩ := exists_apply_eq (I := I) (F := F) v
+  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  rw [ContMDiffSection.evalLinearMap_apply]
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the composition
   -- of the commutators of `P` and `Q`, and `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
   have key := congr($(commutatorSymbol_comp_const P Q f) s x)
   rw [LinearMap.smul_apply, LinearMap.comp_apply, ← Nat.cast_smul_eq_nsmul ℝ,
     ContMDiffSection.coe_smul, Pi.smul_apply] at key
-  rw [LinearMap.comp_apply, smoothSectionPrincipalSymbol_def, LinearMap.smul_apply,
-    smoothSectionCommutatorSymbol_mvfderiv hx _ fun _ ↦ f, key,
-    smoothSectionPrincipalSymbol_def, smoothSectionPrincipalSymbol_def, LinearMap.smul_apply,
-    LinearMap.smul_apply, smoothSectionCommutatorSymbol_mvfderiv hx Q fun _ ↦ f, map_smul,
-    smoothSectionCommutatorSymbol_mvfderiv hx P fun _ ↦ f, smul_smul, smul_smul,
-    Nat.cast_add_choose]
+  simp only [smoothSectionPrincipalSymbol_def, LinearMap.smul_apply, LinearMap.comp_apply,
+    map_smul, smul_smul]
+  rw [smoothSectionCommutatorSymbol_mvfderiv hx _ fun _ ↦ f, key,
+    smoothSectionCommutatorSymbol_mvfderiv hx Q fun _ ↦ f,
+    smoothSectionCommutatorSymbol_mvfderiv hx P fun _ ↦ f, smul_smul, Nat.cast_add_choose]
   congr 1
   have hm : (m.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 m.factorial_ne_zero
   have hk : (k.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 k.factorial_ne_zero

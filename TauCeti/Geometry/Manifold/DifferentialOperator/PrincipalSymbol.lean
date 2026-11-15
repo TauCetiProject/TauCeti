@@ -98,41 +98,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {x : M}
 
-/-! ### Lifting covectors to functions -/
-
-/-- The differential at `x` of the functions vanishing at `x`, as a real-linear map. -/
-private def vanishingIdealDifferential (hx : I.IsInteriorPoint x) :
-    smoothVanishingIdeal I x →ₗ[ℝ] (TangentSpace I x →L[ℝ] ℝ) :=
-  (smoothCotangentEquiv hx).toLinearMap ∘ₗ
-    ((smoothVanishingIdeal I x).toCotangent.restrictScalars ℝ)
-
-private theorem vanishingIdealDifferential_apply (hx : I.IsInteriorPoint x)
-    (f : smoothVanishingIdeal I x) :
-    vanishingIdealDifferential hx f = mvfderiv I (f : C^∞⟮I, M; ℝ⟯) x :=
-  smoothCotangentEquiv_toCotangent hx f
-
-private theorem exists_vanishingIdealDifferential_comp_eq_id (hx : I.IsInteriorPoint x) :
-    ∃ s : (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] smoothVanishingIdeal I x,
-      vanishingIdealDifferential hx ∘ₗ s = LinearMap.id :=
-  (vanishingIdealDifferential hx).exists_rightInverse_of_surjective <| LinearMap.range_eq_top.2 <|
-    (smoothCotangentEquiv hx).surjective.comp (smoothVanishingIdeal I x).toCotangent_surjective
-
-/-- A real-linear choice of a smooth function vanishing at `x` with prescribed differential at
-`x`. -/
-private def covectorLift (hx : I.IsInteriorPoint x) :
-    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
-  (smoothVanishingIdeal I x).subtype.restrictScalars ℝ ∘ₗ
-    (exists_vanishingIdealDifferential_comp_eq_id hx).choose
-
-private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
-  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose ξ).2
-
-private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
-  have h := congr($((exists_vanishingIdealDifferential_comp_eq_id hx).choose_spec) ξ)
-  rwa [LinearMap.comp_apply, vanishingIdealDifferential_apply] at h
-
 /-! ### The commutator symbol -/
 
 /-- Evaluation at `x` of the image of `1` under a linear map of smooth functions. -/
@@ -153,7 +118,7 @@ def smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
       MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ where
   toFun D := ((evalOneAt x).compMultilinearMap
       ((commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) D)).compLinearMap
-    fun _ ↦ covectorLift hx
+    fun _ ↦ smoothCovectorLift hx
   map_add' D₁ D₂ := by ext; simp
   map_smul' c D := by ext; simp
 
@@ -165,17 +130,8 @@ theorem smoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
     smoothCommutatorSymbol I hx D (fun i ↦ mvfderiv I (f i) x) =
       commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m D f 1 x := by
   -- The lifts `gᵢ` of the differentials differ from `fᵢ - fᵢ(x)` by elements of `I_x²`.
-  set g : Fin m → C^∞⟮I, M; ℝ⟯ := fun i ↦ covectorLift hx (mvfderiv I (f i) x)
-  have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
-  have hd (h : C^∞⟮I, M; ℝ⟯) : MDifferentiableAt I 𝓘(ℝ, ℝ) h x :=
-    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
-  have hg : ∀ i, (fun i ↦ g i + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (f i x)) i - f i ∈
-      smoothVanishingIdeal I x ^ 2 := fun i ↦ by
-    refine mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx ?_ ?_
-    · simp [g, hc, covectorLift_apply_self]
-    · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
-        mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
-          mdifferentiableAt_const, mvfderiv_const, add_zero, mvfderiv_covectorLift, sub_self]
+  have hg (i : Fin m) := add_algebraMap_sub_mem_smoothVanishingIdeal_sq hx
+    (smoothCovectorLift_apply_self hx _) (mvfderiv_smoothCovectorLift hx (mvfderiv I (f i) x))
   have h := commutatorSymbol_apply_sub_mem_smul_top D hg 1
   rw [commutatorSymbol_add_algebraMap, smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff,
     ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero] at h
@@ -326,7 +282,7 @@ theorem smoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
         ⟨(P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ (Q : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯),
           comp_mem_differentialOperators P.2 Q.2⟩ ξ =
       smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ := by
-  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
+  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_smoothCovectorLift hx ξ⟩
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the product of
   -- the commutators of `P` and `Q`, and `(m + k).choose m / (m + k)! = 1 / (m! k!)`.
   have key := congr($(commutatorSymbol_comp_const P Q f) 1 x)
@@ -402,7 +358,7 @@ theorem smoothPrincipalSymbol_vectorFieldDerivation (hx : I.IsInteriorPoint x)
     (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx ⟨vectorFieldDerivation X,
       (vectorFieldDerivation X).mem_differentialOperators_one⟩ ξ = ξ (X x) := by
-  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
+  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_smoothCovectorLift hx ξ⟩
   rw [smoothPrincipalSymbol_derivation_mvfderiv, ContMDiffSection.vectorFieldDerivation_apply_apply]
 
 /-- On a boundaryless manifold, a derivation `δ` of the smooth functions has principal symbol
@@ -413,7 +369,7 @@ theorem smoothPrincipalSymbol_derivation [BoundarylessManifold I M]
     smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint
       ⟨δ, δ.mem_differentialOperators_one⟩ ξ = ξ (δ.vectorField x) := by
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ :=
-    ⟨_, mvfderiv_covectorLift BoundarylessManifold.isInteriorPoint ξ⟩
+    ⟨_, mvfderiv_smoothCovectorLift BoundarylessManifold.isInteriorPoint ξ⟩
   rw [smoothPrincipalSymbol_derivation_mvfderiv, Derivation.mvfderiv_vectorField]
 
 end TauCeti

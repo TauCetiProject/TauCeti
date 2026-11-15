@@ -44,6 +44,10 @@ algebraic description of jets and differential operators.
 * `TauCeti.mem_smoothVanishingIdeal_sq_iff`: the same at every point of a boundaryless manifold.
 * `TauCeti.smoothCotangentEquiv`: the real-linear equivalence `I_x / I_x² ≃ T_x*M` sending the
   class of `f` to its differential at `x`.
+* `TauCeti.smoothCovectorLift`: a real-linear choice of a smooth function vanishing at `x` with
+  prescribed differential at `x`.
+* `TauCeti.add_algebraMap_sub_mem_smoothVanishingIdeal_sq`: a function vanishing at `x` with the
+  same differential as `f` differs from `f - f(x)` by an element of `I_x²`.
 * `TauCeti.smoothCotangentMap`: the pullback `I_x / I_x² → I_y / I_y²` along a smooth map `φ`
   with `φ y = x`, functorial in `φ`. Under `smoothCotangentEquiv` it is the transpose of `dφ_y`
   (`TauCeti.smoothCotangentEquiv_smoothCotangentMap`), so it is bijective when `dφ_y` is
@@ -362,6 +366,52 @@ theorem smoothCotangentEquiv_toCotangent {x : M} (hx : I.IsInteriorPoint x)
     smoothCotangentEquiv hx ((smoothVanishingIdeal I x).toCotangent f) =
       mvfderiv I (f : C^∞⟮I, M; ℝ⟯) x :=
   Ideal.Cotangent.lift_toCotangent _ (mvfderivSmoothVanishingIdeal_mul x) f
+
+/-- At an interior point `x`, if `g` vanishes at `x` and has the same differential at `x` as `f`,
+then `g` differs from `f - f(x)` by an element of `I_x²`. -/
+theorem add_algebraMap_sub_mem_smoothVanishingIdeal_sq {x : M} (hx : I.IsInteriorPoint x)
+    {f g : C^∞⟮I, M; ℝ⟯} (hg₀ : g x = 0) (hg₁ : mvfderiv I g x = mvfderiv I f x) :
+    g + algebraMap ℝ C^∞⟮I, M; ℝ⟯ (f x) - f ∈ smoothVanishingIdeal I x ^ 2 := by
+  have hc (c : ℝ) : ⇑(algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = fun _ ↦ c := funext fun _ ↦ by simp
+  have hd (h : C^∞⟮I, M; ℝ⟯) : MDifferentiableAt I 𝓘(ℝ, ℝ) h x :=
+    (h.contMDiff.mdifferentiable (by simp)).mdifferentiableAt
+  refine mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx ?_ ?_
+  · simp [hc, hg₀]
+  · rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_add, hc,
+      mvfderiv_sub ((hd _).add mdifferentiableAt_const) (hd _), mvfderiv_add (hd _)
+        mdifferentiableAt_const, mvfderiv_const, add_zero, hg₁, sub_self]
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+variable (I) in
+private theorem exists_toCotangent_comp_eq_id (x : M) :
+    ∃ g : (smoothVanishingIdeal I x).Cotangent →ₗ[ℝ] smoothVanishingIdeal I x,
+      (smoothVanishingIdeal I x).toCotangent.restrictScalars ℝ ∘ₗ g = LinearMap.id :=
+  LinearMap.exists_rightInverse_of_surjective _ <|
+    LinearMap.range_eq_top.2 (smoothVanishingIdeal I x).toCotangent_surjective
+
+/-- A real-linear choice, at an interior point `x`, of a smooth function vanishing at `x` with
+prescribed differential at `x` (`TauCeti.smoothCovectorLift_apply_self`,
+`TauCeti.mvfderiv_smoothCovectorLift`). -/
+def smoothCovectorLift {x : M} (hx : I.IsInteriorPoint x) :
+    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ :=
+  (smoothVanishingIdeal I x).subtype.restrictScalars ℝ ∘ₗ
+    (exists_toCotangent_comp_eq_id I x).choose ∘ₗ (smoothCotangentEquiv hx).symm.toLinearMap
+
+@[simp]
+theorem smoothCovectorLift_apply_self {x : M} (hx : I.IsInteriorPoint x)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) : smoothCovectorLift hx ξ x = 0 :=
+  mem_smoothVanishingIdeal_iff.mp (Subtype.prop _)
+
+@[simp]
+theorem mvfderiv_smoothCovectorLift {x : M} (hx : I.IsInteriorPoint x)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (smoothCovectorLift hx ξ) x = ξ := by
+  set r := exists_toCotangent_comp_eq_id I x
+  have h := LinearMap.congr_fun r.choose_spec ((smoothCotangentEquiv hx).symm ξ)
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearMap.id_apply] at h
+  have hξ : smoothCovectorLift hx ξ =
+      (r.choose ((smoothCotangentEquiv hx).symm ξ) : C^∞⟮I, M; ℝ⟯) :=
+    (rfl)
+  rw [hξ, ← smoothCotangentEquiv_toCotangent hx, h, LinearEquiv.apply_symm_apply]
 
 /-- **Coordinate differentials.** If, near an interior point `x`, a function `f` vanishing at `x`
 agrees with a linear functional `ℓ` of the chart coordinates, then the cotangent class of `f`
