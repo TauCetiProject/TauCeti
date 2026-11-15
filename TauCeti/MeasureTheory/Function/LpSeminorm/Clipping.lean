@@ -20,10 +20,11 @@ error by the fourth moment divided by `16 M²`, using the pointwise inequality f
 `TauCeti.Algebra.Order.Field.Clipping`. This controls the `L²` error of clipping Gaussian
 linear observables in the truncation proof of Grothendieck's inequality.
 
-`MeasureTheory.AEStronglyMeasurable.memLp_top_max_min` gives the essential bound for clipping
-an a.e. strongly measurable real function. `TauCeti.tendsto_eLpNorm_max_min_smul_sub` gives
-finite-exponent `Lᵖ` convergence of clipped scalar multipliers whenever the original product
-lies in `Lᵖ`, without any topology on the domain.
+`MeasureTheory.AEStronglyMeasurable.memLp_top_max_min` shows essential boundedness (`L^∞`
+membership) of an a.e. strongly measurable real function after clipping.
+`TauCeti.tendsto_eLpNorm_max_min_smul_sub` gives finite-exponent `Lᵖ` convergence of the scalar
+products with the clipped multipliers to `b • f` whenever `b • f` lies in `Lᵖ`, without any
+topology on the domain.
 
 The expression `max (-M) (min M x)` is the real-valued form of `Set.projIcc`.
 
@@ -74,9 +75,9 @@ namespace TauCeti
 open Filter
 open scoped Topology
 
-/-- Clipped scalar multipliers converge in every finite-exponent `Lᵖ` space whenever the
-original product lies there. No topology on the domain or integrability of the multiplier
-alone is required. -/
+/-- Scalar products with the clipped multipliers converge to `b • f` in every finite-exponent
+`Lᵖ` space whenever `b • f` lies there. No topology on the domain or integrability of the
+multiplier alone is required. -/
 theorem tendsto_eLpNorm_max_min_smul_sub {X F : Type*} [MeasurableSpace X] {μ : Measure X}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {b : X → ℝ} {f : X → F} {p : ℝ≥0∞}
     (hp : p ≠ ∞) (hb : AEStronglyMeasurable b μ) (hf : AEStronglyMeasurable f μ)

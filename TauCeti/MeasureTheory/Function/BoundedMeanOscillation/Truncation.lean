@@ -9,24 +9,26 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Algebra.Order.Group.MinMax
 
 /-!
-# Bounded approximation of BMO multipliers
+# BMO and VMO stability under symmetric clipping
 
-Lipschitz postcomposition preserves bounded and vanishing mean oscillation, with the bound
-`‖φ ∘ b‖_{BMO} ≤ 2 Lip(φ) ‖b‖_{BMO}`. In particular, clipping a real BMO function to
-`[-M, M]` gives bounded multipliers with a uniform BMO bound (`TauCeti.bmoSeminorm_max_min_le`),
-and preserves BMO and VMO for nonnegative heights (`TauCeti.MemBMO.max_min`,
-`TauCeti.MemVMO.max_min`). The VMO modulus has the same uniform bound
-(`TauCeti.vmoModulus_max_min_le`).
+Clipping a real function via `max (-M) (min M (b x))` increases its BMO seminorm and VMO
+modulus by at most a factor of two (`TauCeti.bmoSeminorm_max_min_le`,
+`TauCeti.vmoModulus_max_min_le`). These estimates use `LipschitzWith.bmoSeminorm_comp_le` and
+`LipschitzWith.vmoModulus_comp_le` from `TauCeti.MeasureTheory.Function.BoundedMeanOscillation`.
+For nonnegative heights, clipping preserves BMO and VMO for arbitrary measures on
+second-countable pseudometric spaces (`TauCeti.MemBMO.max_min`, `TauCeti.MemVMO.max_min`),
+without the local-finiteness assumption of the general postcomposition preservation theorems.
 
-These explicit multipliers have pointwise norm at most `|M|` (`TauCeti.abs_max_min_le`),
-and for nonnegative heights at most the original norm (`TauCeti.abs_max_min_le_abs`). They are
-equal to the original value once its absolute value is at most the height
-(`TauCeti.max_neg_min_eq_self_of_abs_le`). For essential boundedness and finite-exponent `Lᵖ`
-convergence of their scalar products, import `TauCeti.MeasureTheory.Function.LpSeminorm.Clipping`:
-see `MeasureTheory.AEStronglyMeasurable.memLp_top_max_min` and
-`TauCeti.tendsto_eLpNorm_max_min_smul_sub`.
-These facts permit passage from bounded multipliers to BMO multipliers in commutator estimates.
-This is not approximation in the BMO seminorm, which need not hold.
+For pointwise bounds and agreement, import `TauCeti.Algebra.Order.Group.MinMax`: the clipped
+value has norm at most `|M|` (`TauCeti.abs_max_min_le`), and for nonnegative heights at most the
+original norm (`TauCeti.abs_max_min_le_abs`). It equals the original value once its absolute
+value is at most the height (`TauCeti.max_neg_min_eq_self_of_abs_le`). This module is also
+re-exported by `TauCeti.MeasureTheory.Function.LpSeminorm.Clipping`, which provides essential
+boundedness (`MeasureTheory.AEStronglyMeasurable.memLp_top_max_min`) and finite-exponent `Lᵖ`
+convergence of scalar products with the clipped multipliers to `b • f` when `b • f` lies in `Lᵖ`
+(`TauCeti.tendsto_eLpNorm_max_min_smul_sub`). Together these results permit passage from bounded
+multipliers to BMO multipliers in commutator estimates. This is not approximation in the BMO
+seminorm, which need not hold.
 
 ## References
 
