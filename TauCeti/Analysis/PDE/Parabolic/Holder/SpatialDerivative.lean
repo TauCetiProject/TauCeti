@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated
+public import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 
@@ -62,74 +63,49 @@ noncomputable section
 namespace TauCeti.ParabolicCkHolderSpace
 
 open Set ParabolicSpaceTime
+open ContinuousMultilinearMap
+  (evalLastL evalLastL_apply evalLastL_comp_curryLeft norm_evalLastL_le)
 open scoped NNReal BoundedContinuousFunction
 
 variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-variable (F) in
-/-- Inserting `v` as the last of `m + 1` arguments, as a continuous linear map
-`(E [×(m+1)]→L[ℝ] F) →L[ℝ] (E [×m]→L[ℝ] F)`. -/
-private def evalLastL (v : E) (m : ℕ) : (E [×(m + 1)]→L[ℝ] F) →L[ℝ] (E [×m]→L[ℝ] F) :=
-  (ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin m ↦ E) (E →L[ℝ] F) F
-    (ContinuousLinearMap.apply ℝ F v)).comp
-    (continuousMultilinearCurryRightEquiv' ℝ m E F).toLinearIsometry.toContinuousLinearMap
-
-private theorem evalLastL_apply (v : E) {m : ℕ} (g : E [×(m + 1)]→L[ℝ] F) (w : Fin m → E) :
-    evalLastL F v m g w = g (Fin.snoc w v) :=
-  (rfl)
-
-/-- Inserting `v` last commutes with separating the first argument. -/
-private theorem evalLastL_comp_curryLeft (v : E) {m : ℕ} (g : E [×(m + 2)]→L[ℝ] F) :
-    (evalLastL F v m).comp g.curryLeft = (evalLastL F v (m + 1) g).curryLeft := by
-  ext u w
-  simp only [ContinuousLinearMap.comp_apply, evalLastL_apply,
-    ContinuousMultilinearMap.curryLeft_apply, Fin.cons_snoc_eq_snoc_cons]
-
-private theorem norm_evalLastL_le (v : E) (m : ℕ) : ‖evalLastL F v m‖ ≤ ‖v‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun g ↦ ?_
-  refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans ?_
-  refine mul_le_mul ?_ (LinearIsometryEquiv.norm_map _ g).le (norm_nonneg _) (norm_nonneg v)
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun φ ↦ ?_
-  rw [ContinuousLinearMap.apply_apply, mul_comm]
-  exact φ.le_opNorm v
-
 /-- The fields `D_t^r D_x^m (∂_v u)`: the fields `D_t^r D_x^(m+1) u` with `v` inserted last. -/
 private def lineDerivField (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
     slab (E := E) a b →ᵇ (E [×m]→L[ℝ] F) :=
-  BoundedContinuousFunction.comp (evalLastL F v m) (evalLastL F v m).lipschitzWith
+  BoundedContinuousFunction.comp (evalLastL ℝ F v m) (evalLastL ℝ F v m).lipschitzWith
     (mixedDerivL r (m + 1) f)
 
 private theorem lineDerivField_apply (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (p : slab (E := E) a b) :
-    lineDerivField v f r m p = evalLastL F v m (mixedDerivL r (m + 1) f p) :=
+    lineDerivField v f r m p = evalLastL ℝ F v m (mixedDerivL r (m + 1) f p) :=
   (rfl)
 
 /-- Postcomposition with `evalLastL` keeps a `γ`-Hölder map `γ`-Hölder. -/
 private theorem holderWith_evalLastL_comp (v : E) {m : ℕ} {X : Type*} [PseudoEMetricSpace X]
     {C γ : ℝ≥0} {g : X → E [×(m + 1)]→L[ℝ] F} (hg : HolderWith C γ g) :
-    HolderWith (‖evalLastL F v m‖₊ * C) γ fun p ↦ evalLastL F v m (g p) := by
-  have h := (holderWith_one.2 (evalLastL F v m).lipschitzWith).comp hg
+    HolderWith (‖evalLastL ℝ F v m‖₊ * C) γ fun p ↦ evalLastL ℝ F v m (g p) := by
+  have h := (holderWith_one.2 (evalLastL ℝ F v m).lipschitzWith).comp hg
   rwa [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
 
 private def lineDerivMap (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ParabolicCkHolderSpace k α E F hab :=
   mk (lineDerivField v f)
     (fun r m h t x ↦ by
-      have H := (evalLastL F v m).hasFDerivAt.comp x
+      have H := (evalLastL ℝ F v m).hasFDerivAt.comp x
         (hasFDerivAt_mixedDerivL f (r := r) (m := m + 1) (by omega) t x)
       rw [evalLastL_comp_curryLeft] at H
       simpa only [Function.comp_def, lineDerivField_apply] using H)
     (fun r m h x t ↦ by
       -- The chain rule through `HasFDerivWithinAt`: the multilinear maps carry two normed
       -- structures, and the derivative-within form unifies with the one of the field.
-      have H := ((evalLastL F v m).hasFDerivAt.comp_hasFDerivWithinAt (t : ℝ)
+      have H := ((evalLastL ℝ F v m).hasFDerivAt.comp_hasFDerivWithinAt (t : ℝ)
         (hasDerivWithinAt_mixedDerivL f (r := r) (m := m + 1) (by omega) x t).hasFDerivWithinAt
         ).hasDerivWithinAt
       simpa only [Function.comp_def, ParabolicC2HolderSpace.timeExtension_def,
         lineDerivField_apply, ContinuousLinearMap.coe_comp,
         ContinuousLinearMap.toSpanSingleton_apply, one_smul] using H)
-    (fun r m h ↦ ⟨‖evalLastL F v m‖₊ * ‖timeSliceL r (m + 1) f‖₊, fun x ↦ by
+    (fun r m h ↦ ⟨‖evalLastL ℝ F v m‖₊ * ‖timeSliceL r (m + 1) f‖₊, fun x ↦ by
       have hnorm : ‖timeSliceL r (m + 1) f x‖₊ ≤ ‖timeSliceL r (m + 1) f‖₊ := by
         exact_mod_cast lp.norm_apply_le_norm ENNReal.top_ne_zero (timeSliceL r (m + 1) f) x
       have H := holderWith_evalLastL_comp v
@@ -143,7 +119,7 @@ private def lineDerivMap (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
 
 private theorem mixedDerivL_lineDerivMap (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (p : slab (E := E) a b) :
-    mixedDerivL r m (lineDerivMap v f) p = evalLastL F v m (mixedDerivL r (m + 1) f p) := by
+    mixedDerivL r m (lineDerivMap v f) p = evalLastL ℝ F v m (mixedDerivL r (m + 1) f p) := by
   by_cases h : 2 * r + m ≤ k
   · have hf : mixedDerivL r m (lineDerivMap v f) = lineDerivField v f r m :=
       mixedDerivL_mk _ _ _ _ h
@@ -156,7 +132,7 @@ private theorem mixedDerivL_lineDerivMap (v : E) (f : ParabolicCkHolderSpace (k 
 private theorem mixedDerivHolderL_lineDerivMap (v : E)
     (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
     mixedDerivHolderL r m (lineDerivMap v f) =
-      HolderSpace.compLeftL (evalLastL F v m) (mixedDerivHolderL r (m + 1) f) := by
+      HolderSpace.compLeftL (evalLastL ℝ F v m) (mixedDerivHolderL r (m + 1) f) := by
   refine HolderSpace.ext fun p ↦ ?_
   rw [HolderSpace.compLeftL_apply]
   by_cases h : 2 * r + m = k
@@ -174,7 +150,7 @@ private theorem mixedDerivHolderL_lineDerivMap (v : E)
 private theorem timeSliceL_lineDerivMap (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (r m : ℕ) (x : E) :
     timeSliceL r m (lineDerivMap v f) x =
-      HolderSpace.compLeftL (evalLastL F v m) (timeSliceL r (m + 1) f x) := by
+      HolderSpace.compLeftL (evalLastL ℝ F v m) (timeSliceL r (m + 1) f x) := by
   refine HolderSpace.ext fun t ↦ ?_
   rw [HolderSpace.compLeftL_apply]
   by_cases h : 2 * r + m + 1 = k
@@ -186,8 +162,8 @@ private theorem timeSliceL_lineDerivMap (v : E) (f : ParabolicCkHolderSpace (k +
 
 private theorem norm_compLeftL_evalLastL_le (v : E) {m : ℕ} {γ : ℝ≥0} {X : Type*}
     [MetricSpace X] (g : HolderSpace γ X (E [×(m + 1)]→L[ℝ] F)) :
-    ‖HolderSpace.compLeftL (evalLastL F v m) g‖ ≤ ‖v‖ * ‖g‖ :=
-  ((HolderSpace.compLeftL (evalLastL F v m)).le_opNorm g).trans
+    ‖HolderSpace.compLeftL (evalLastL ℝ F v m) g‖ ≤ ‖v‖ * ‖g‖ :=
+  ((HolderSpace.compLeftL (evalLastL ℝ F v m)).le_opNorm g).trans
     (mul_le_mul_of_nonneg_right ((HolderSpace.norm_compLeftL_le _).trans
       (norm_evalLastL_le v m)) (norm_nonneg g))
 
@@ -199,12 +175,12 @@ private theorem norm_fields_lineDerivMap_le (v : E) (f : ParabolicCkHolderSpace 
         ‖mixedDerivHolderL r m (lineDerivMap v f)‖) ≤
       ‖v‖ * (‖mixedDerivL r (m + 1) f‖ + (‖timeSliceL r (m + 1) f‖ +
         ‖mixedDerivHolderL r (m + 1) f‖)) := by
-  have hL := norm_evalLastL_le (F := F) v m
+  have hL := norm_evalLastL_le (𝕜 := ℝ) (F := F) v m
   rw [mul_add, mul_add]
   gcongr
   · refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
     rw [mixedDerivL_lineDerivMap]
-    exact (evalLastL F v m).le_of_opNorm_le_of_le hL
+    exact (evalLastL ℝ F v m).le_of_opNorm_le_of_le hL
       ((mixedDerivL r (m + 1) f).norm_coe_le_norm p)
   · refine lp.norm_le_of_forall_le (by positivity) fun x ↦ ?_
     rw [timeSliceL_lineDerivMap]
@@ -227,9 +203,7 @@ private theorem norm_lineDerivMap_le (v : E) (f : ParabolicCkHolderSpace (k + 1)
 private theorem lineDerivMap_apply (v : E) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     (p : slab (E := E) a b) : lineDerivMap v f p = mixedDerivL 0 1 f p fun _ ↦ v := by
   rw [← mixedDerivL_zero_zero_apply (lineDerivMap v f) p 0, mixedDerivL_lineDerivMap,
-    evalLastL_apply]
-  -- `Fin.snoc` of the empty tuple and `v` is the constant tuple `v` by definition.
-  congr 1
+    evalLastL_apply, Fin.snoc_zero]
 
 /-- **The spatial derivative in a direction `v`**,
 `C_{par,b}^{k+1+α}(E; F) → C_{par,b}^{k+α}(E; F)` on a closed slab: `lineDerivL v u (x, t)` is
