@@ -48,7 +48,7 @@ In particular, positions need not be bounded. A predictable height times a later
 increment has mean zero when the product is integrable
 (`MeasureTheory.Martingale.integral_mul_sub_eq_zero`), with a Banach-valued scalar-action form
 `MeasureTheory.Martingale.integral_smul_sub_eq_zero`. Martingale values and increments inherit
-deterministic norm bounds and Lᵖ integrability from later values and longer increments
+deterministic norm bounds, and for `p ≥ 1` Lᵖ integrability, from later values and longer increments
 (`MeasureTheory.Martingale.ae_norm_le_of_le`, `MeasureTheory.Martingale.ae_norm_sub_le_of_le`,
 `MeasureTheory.Martingale.memLp_of_le`, `MeasureTheory.Martingale.memLp_sub_of_le`).
 Nonnegative submartingale values inherit Lᵖ
@@ -211,12 +211,24 @@ theorem Martingale.condExp_sub_ae_eq (hX : Martingale X ℱ μ) {s t u : ι}
   exact (condExp_sub (hX.integrable u) (hX.integrable s) _).trans
     ((hX.condExp_ae_eq htu).sub hs)
 
-/-- A martingale increment inherits Lᵖ integrability from a longer increment with the
-same starting date, for `p ≥ 1`. The initial value need only be integrable. -/
-theorem Martingale.memLp_sub_of_le (hX : Martingale X ℱ μ) {s t u : ι}
-    (hst : s ≤ t) (htu : t ≤ u) {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (hu : MemLp (X u - X s) p μ) : MemLp (X t - X s) p μ :=
-  (hu.condExp (m := ℱ t) hp).ae_eq (hX.condExp_sub_ae_eq hst htu)
+/-- A martingale increment inherits Lᵖ integrability from an increment over a containing
+interval, for `p ≥ 1`. The initial value need only be integrable. -/
+theorem Martingale.memLp_sub_of_le (hX : Martingale X ℱ μ) {s t u v : ι}
+    (hst : s ≤ t) (htu : t ≤ u) (huv : u ≤ v) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hv : MemLp (X v - X s) p μ) : MemLp (X u - X t) p μ := by
+  have hu := (hv.condExp (m := ℱ u) hp).ae_eq (hX.condExp_sub_ae_eq (hst.trans htu) huv)
+  have ht := (hv.condExp (m := ℱ t) hp).ae_eq (hX.condExp_sub_ae_eq hst (htu.trans huv))
+  simpa only [Pi.sub_def, sub_sub_sub_cancel_right] using hu.sub ht
+
+/-- On a nondecreasing finite grid, Lᵖ integrability of the total martingale increment
+implies Lᵖ integrability of each grid increment, for `p ≥ 1`. No Lᵖ assumption on the
+initial value is needed. -/
+theorem Martingale.memLp_sub_of_monotoneOn (hX : Martingale X ℱ μ) {τ : ℕ → ι} {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (hn : MemLp (X (τ n) - X (τ 0)) p μ) {i : ℕ} (hi : i < n) :
+    MemLp (X (τ (i + 1)) - X (τ i)) p μ :=
+  hX.memLp_sub_of_le (hτ (by simp) hi.le (Nat.zero_le i))
+    (hτ hi.le hi (Nat.le_succ i)) (hτ hi (by simp) hi) hp hn
 
 /-- The conditional square of a square-integrable real martingale value is
 the current square plus the conditional square of the future increment. -/

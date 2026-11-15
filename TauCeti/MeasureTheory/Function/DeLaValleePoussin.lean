@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
-public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
@@ -27,8 +27,8 @@ control on small sets from a uniform bound on `∫ Φ(‖fᵢ‖)`.
   (`TauCeti.exists_setLIntegral_enorm_le_mul_add`). In particular a family of a.e. strongly
   measurable functions with such a bound is uniformly integrable in Mathlib's sense
   (`TauCeti.unifIntegrable_of_lintegral_ofReal_le`).
-* On a finite measure space, a uniform bound on squared norms and almost-everywhere convergence
-  imply convergence of Bochner integrals
+* On a finite measure space, almost-everywhere convergence of square-integrable functions
+  with uniformly bounded integrals of squared norms implies convergence of Bochner integrals
   (`TauCeti.tendsto_integral_of_integral_norm_sq_le`).
 
 ## Implementation notes
@@ -217,9 +217,10 @@ theorem unifIntegrable_of_lintegral_ofReal_le {Φ : ℝ → ℝ}
     _ ≤ ε / 2 + ε / 2 := by gcongr
     _ = ε := ENNReal.add_halves ε
 
-/-- On a finite measure space, almost-everywhere convergence and a uniform bound on
-squared norms imply convergence of Bochner integrals. No integrability assumption on the
-limit is needed. -/
+/-- On a finite measure space, almost-everywhere convergence of square-integrable
+(`MemLp · 2 μ`) functions with uniformly bounded integrals of squared norms
+(`∫ x, ‖f k x‖ ^ 2 ∂μ ≤ B`) implies convergence of Bochner integrals.
+No integrability assumption on the limit is needed. -/
 theorem tendsto_integral_of_integral_norm_sq_le [NormedSpace ℝ F] [IsFiniteMeasure μ]
     {f : ℕ → α → F} {g : α → F} (hf : ∀ k, MemLp (f k) 2 μ) {B : ℝ}
     (hbound : ∀ k, ∫ x, ‖f k x‖ ^ 2 ∂μ ≤ B)

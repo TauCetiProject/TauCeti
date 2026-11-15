@@ -89,27 +89,15 @@ theorem integral_sq_sum_mul_sub [SigmaFiniteFiltration P ℱ] (hM : Martingale M
   · exact Or.inl (hτ (by simpa using (mem_range.mp hi)) (mem_range.mp hj).le h)
   · exact Or.inr (hτ (by simpa using (mem_range.mp hj)) (mem_range.mp hi).le h)
 
-/-- On a nondecreasing grid, Lᵖ integrability of the total martingale increment
-implies Lᵖ integrability of each grid increment, for `p ≥ 1`. No Lᵖ assumption on the
-initial value is needed. -/
-theorem memLp_sub_of_monotoneOn (hM : Martingale M ℱ P)
-    (hτ : MonotoneOn τ (Set.Iic n)) {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (h₂ : MemLp (M (τ n) - M (τ 0)) p P) {i : ℕ} (hi : i < n) :
-    MemLp (M (τ (i + 1)) - M (τ i)) p P := by
-  have h (j : ℕ) (hj : j ≤ n) : MemLp (M (τ j) - M (τ 0)) p P :=
-    hM.memLp_sub_of_le (hτ (by simp) hj (Nat.zero_le j))
-      (hτ hj (by simp) hj) hp h₂
-  simpa only [Pi.sub_def, sub_sub_sub_cancel_right] using (h (i + 1) hi).sub (h i hi.le)
-
-/-- Bounded a.e. predictable heights times grid increments have finite Lᵖ norm if the
-total martingale increment does, for `p ≥ 1`. -/
+/-- A bounded a.e. strongly measurable multiplier times a grid increment has finite Lᵖ
+norm if the total martingale increment does, for `p ≥ 1`.
+The multiplier need not be predictable. -/
 theorem memLp_mul_sub_of_bound (hM : Martingale M ℱ P)
     (hτ : MonotoneOn τ (Set.Iic n)) {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (h₂ : MemLp (M (τ n) - M (τ 0)) p P) {i : ℕ} (hi : i < n)
-    (ha : AEStronglyMeasurable[ℱ (τ i)] (a i) P) {C : ℝ}
-    (hb : ∀ᵐ ω ∂P, |a i ω| ≤ C) :
-    MemLp (fun ω ↦ a i ω * (M (τ (i + 1)) ω - M (τ i) ω)) p P := by
-  exact (memLp_top_of_bound (ha.mono (ℱ.le _)) C (by simpa only [Real.norm_eq_abs] using hb)).mul
+    (h₂ : MemLp (M (τ n) - M (τ 0)) p P) {i : ℕ} (hi : i < n) {ξ : Ω → ℝ}
+    (hξ : AEStronglyMeasurable ξ P) {C : ℝ} (hb : ∀ᵐ ω ∂P, |ξ ω| ≤ C) :
+    MemLp (fun ω ↦ ξ ω * (M (τ (i + 1)) ω - M (τ i) ω)) p P := by
+  exact (memLp_top_of_bound hξ C (by simpa only [Real.norm_eq_abs] using hb)).mul
     (hM.memLp_sub_of_monotoneOn hτ hp h₂ hi)
 
 /-- The expected sum of squared martingale increments equals the second moment of the
@@ -143,7 +131,7 @@ theorem integral_sq_sum_mul_sub_le [SigmaFiniteFiltration P ℱ] (hM : Martingal
   have hΔ (i : ℕ) (hi : i < n) : MemLp (Δ i) 2 P :=
     hM.memLp_sub_of_monotoneOn hτ (by norm_num) h₂ hi
   have hZ (i : ℕ) (hi : i < n) :=
-    hM.memLp_mul_sub_of_bound hτ (by norm_num) h₂ hi (ha i hi) (hb i hi)
+    hM.memLp_mul_sub_of_bound hτ (by norm_num) h₂ hi ((ha i hi).mono (ℱ.le _)) (hb i hi)
   rw [hM.integral_sq_sum_mul_sub hτ ha hZ]
   calc
     _ ≤ ∑ i ∈ range n, C ^ 2 * ∫ ω, Δ i ω ^ 2 ∂P := by
@@ -202,7 +190,8 @@ theorem integral_sq_sum_sq_sub_le [IsFiniteMeasure P] (hM : Martingale M ℱ P)
   let J (ω : Ω) := ∑ i ∈ range n, a i ω * (M (τ (i + 1)) ω - M (τ i) ω)
   have hJi : Integrable (fun ω ↦ J ω ^ 2) P := (memLp_finsetSum _ fun i hi ↦
     hM.memLp_mul_sub_of_bound hτ (by norm_num) h₂ (mem_range.mp hi)
-      (ha i (mem_range.mp hi).le).aestronglyMeasurable (hb' i (mem_range.mp hi).le)).integrable_sq
+      ((ha i (mem_range.mp hi).le).mono (ℱ.le _)).aestronglyMeasurable
+      (hb' i (mem_range.mp hi).le)).integrable_sq
   have hJ : ∫ ω, J ω ^ 2 ∂P ≤ C ^ 4 * P.real Set.univ := by
     have h := hM.integral_sq_sum_mul_sub_le_of_bound hτ
       (fun i hi ↦ (ha i hi.le).aestronglyMeasurable) hb (fun i hi ↦ hb' i hi.le)

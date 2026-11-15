@@ -76,9 +76,10 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
       norm_num [Real.holderTriple_iff])
     apply memLp_finsetSum _
     intro i hi
-    have hd := (hp 4 _ (humem k (i + 1) (mem_range.mp hi))).sub
-      (hp 4 _ (humem k i (mem_range.mp hi).le))
-    simpa only [pow_two, Pi.sub_def, sub_sub_sub_cancel_right] using hd.fun_mul hd
+    have hd := hM.memLp_sub_of_monotoneOn ((hu k).monotoneOn (Set.Iic (k + 1)))
+      (by norm_num : 1 ≤ (4 : ℝ≥0∞))
+      (by simpa only [huS, huT] using hp 4 T ⟨hST, le_rfl⟩) (mem_range.mp hi)
+    simpa only [pow_two, Pi.sub_def] using hd.fun_mul hd
   -- The moment bound replaces domination by the random variation.
   have hmean := TauCeti.tendsto_integral_of_integral_norm_sq_le hQ₂
     (by simpa only [Real.norm_eq_abs, sq_abs] using hbound) hQlim
