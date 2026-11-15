@@ -88,61 +88,45 @@ namespace TauCeti.Coxeter
 
 /-! ### One-degenerate orders of the classical diagrams -/
 
-private lemma lt_of_mem_prefix_finRange {n : ℕ} {S₁ S₂ : List (Fin n)} {z x : Fin n}
-    (hS : List.finRange n = S₁ ++ z :: S₂) (hx : x ∈ S₁) : x.val < z.val := by
+private lemma isOneDegenerateOrder_finRange {n : ℕ} {A : Matrix (Fin n) (Fin n) ℤ}
+    (h : ∀ x y z : Fin n, x.val < z.val → y.val < z.val → A z x ≠ 0 → A z y ≠ 0 → x.val = y.val) :
+    List.IsOneDegenerateOrder (fun i j : Fin n => A i j ≠ 0) (List.finRange n) := by
   have hpw : (List.finRange n).Pairwise (fun a b => a.val < b.val) :=
-    List.pairwise_iff_getElem.2 fun i j hi hj hij => by simpa using hij
+    List.pairwise_iff_getElem.2 fun _ _ _ _ hij => by simpa using hij
+  rw [List.isOneDegenerateOrder_iff]
+  intro S₁ z S₂ hS x hx y hy hzx hzy
   rw [hS, List.pairwise_append] at hpw
-  exact hpw.2.2 x hx z (List.mem_cons_self ..)
+  exact Fin.ext (h x y z (hpw.2.2 x hx z (List.mem_cons_self ..))
+    (hpw.2.2 y hy z (List.mem_cons_self ..)) hzx hzy)
 
 /-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
 type `Aₙ`. -/
 theorem isOneDegenerateOrder_A (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.A n i j ≠ 0) (List.finRange n) := by
-  rw [List.isOneDegenerateOrder_iff]
-  intro S₁ z S₂ hS x hx y hy hzx hzy
-  have hxz := lt_of_mem_prefix_finRange hS hx
-  have hyz := lt_of_mem_prefix_finRange hS hy
-  simp only [CartanMatrix.A, Matrix.of_apply] at hzx hzy
-  ext
-  split_ifs at hzx hzy <;> omega
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.A n i j ≠ 0) (List.finRange n) :=
+  isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
+    simp only [CartanMatrix.A, Matrix.of_apply] at hzx hzy; split_ifs at hzx hzy <;> omega
 
 /-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
 type `Bₙ`. -/
 theorem isOneDegenerateOrder_B (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.B n i j ≠ 0) (List.finRange n) := by
-  rw [List.isOneDegenerateOrder_iff]
-  intro S₁ z S₂ hS x hx y hy hzx hzy
-  have hxz := lt_of_mem_prefix_finRange hS hx
-  have hyz := lt_of_mem_prefix_finRange hS hy
-  simp only [CartanMatrix.B, Matrix.of_apply] at hzx hzy
-  ext
-  split_ifs at hzx hzy <;> omega
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.B n i j ≠ 0) (List.finRange n) :=
+  isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
+    simp only [CartanMatrix.B, Matrix.of_apply] at hzx hzy; split_ifs at hzx hzy <;> omega
 
 /-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
 type `Cₙ`. -/
 theorem isOneDegenerateOrder_C (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.C n i j ≠ 0) (List.finRange n) := by
-  rw [List.isOneDegenerateOrder_iff]
-  intro S₁ z S₂ hS x hx y hy hzx hzy
-  have hxz := lt_of_mem_prefix_finRange hS hx
-  have hyz := lt_of_mem_prefix_finRange hS hy
-  simp only [CartanMatrix.C, Matrix.of_apply] at hzx hzy
-  ext
-  split_ifs at hzx hzy <;> omega
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.C n i j ≠ 0) (List.finRange n) :=
+  isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
+    simp only [CartanMatrix.C, Matrix.of_apply] at hzx hzy; split_ifs at hzx hzy <;> omega
 
 /-- The Bourbaki numbering `List.finRange n` is a one-degenerate order of the Dynkin diagram of
 type `Dₙ`: every node `z` is adjacent to at most one node of smaller index (`z - 1` on the stem
 and on the first prong, and the branch node `n - 3` on the second prong `n - 1`). -/
 theorem isOneDegenerateOrder_D (n : ℕ) :
-    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.D n i j ≠ 0) (List.finRange n) := by
-  rw [List.isOneDegenerateOrder_iff]
-  intro S₁ z S₂ hS x hx y hy hzx hzy
-  have hxz := lt_of_mem_prefix_finRange hS hx
-  have hyz := lt_of_mem_prefix_finRange hS hy
-  simp only [CartanMatrix.D, Matrix.of_apply] at hzx hzy
-  ext
-  split_ifs at hzx hzy <;> omega
+    List.IsOneDegenerateOrder (fun i j : Fin n => CartanMatrix.D n i j ≠ 0) (List.finRange n) :=
+  isOneDegenerateOrder_finRange fun _ _ _ hxz hyz hzx hzy => by
+    simp only [CartanMatrix.D, Matrix.of_apply] at hzx hzy; split_ifs at hzx hzy <;> omega
 
 /-! ### Shared intertwining, cyclic-vector, and permutation machinery -/
 
@@ -155,8 +139,8 @@ private lemma mul_prod_map_reflMatrix {κ : Type*} [Fintype κ] [DecidableEq κ]
   induction l with
   | nil => simp
   | cons i l ih =>
-    simp only [List.map_cons, List.prod_cons]
-    rw [← Matrix.mul_assoc, hS i, Matrix.mul_assoc, ih, Matrix.mul_assoc]
+    simp only [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, hS i]
+    rw [Matrix.mul_assoc, ih, Matrix.mul_assoc]
 
 /-- Specialisation of `mul_prod_map_reflMatrix` to `coxeterElement A`. -/
 private lemma mul_coxeterElement {κ : Type*} [Fintype κ] [DecidableEq κ] {n : ℕ}
@@ -190,39 +174,32 @@ private theorem charpoly_and_orderOf_of_intertwine {κ : Type*} [Fintype κ] [De
     {P X Y : Matrix κ κ ℤ} (hdet : P.det ≠ 0) (hXY : P * X = Y * P) :
     X.charpoly = Y.charpoly ∧ orderOf X = orderOf Y := by
   let φ : Matrix κ κ ℤ →+* Matrix κ κ ℚ := (Int.castRingHom ℚ).mapMatrix
-  have hφ_inj : Function.Injective φ := by
-    intro M₁ M₂ h
-    exact Matrix.map_injective (Int.castRingHom ℚ).injective_int (by simpa [φ] using h)
+  have hφ_inj : Function.Injective φ := fun _ _ h =>
+    Matrix.map_injective (Int.castRingHom ℚ).injective_int (by simpa [φ] using h)
   have hu : IsUnit (φ P) := by
     rw [Matrix.isUnit_iff_isUnit_det, ← RingHom.map_det, isUnit_iff_ne_zero]
     exact Int.cast_ne_zero.mpr hdet
-  let Pq : Matrix κ κ ℚ := φ P
-  let Qq : Matrix κ κ ℚ := ↑hu.unit⁻¹
-  have hPQ : Pq * Qq = 1 := hu.mul_val_inv
-  have hQP : Qq * Pq = 1 := hu.val_inv_mul
-  have hconj : Pq * φ X = φ Y * Pq := by simpa only [Pq, map_mul] using congrArg φ hXY
-  have hY : φ Y = Pq * φ X * Qq := by
-    rw [hconj, Matrix.mul_assoc, hPQ, Matrix.mul_one]
+  let u := hu.unit
+  have hY : φ Y = u.val * φ X * (u⁻¹).val := by
+    have hconj : u.val * φ X = φ Y * u.val := by
+      simpa only [u, IsUnit.unit_spec, map_mul] using congrArg φ hXY
+    rw [hconj, Matrix.mul_assoc, u.mul_inv, Matrix.mul_one]
   refine ⟨?_, ?_⟩
   · apply Matrix.charpoly_eq_of_map_rat
     rw [← Y.charpoly_map (Int.castRingHom ℚ), ← (Int.castRingHom ℚ).mapMatrix_apply,
-      ← (Int.castRingHom ℚ).mapMatrix_apply, hY, Matrix.charpoly_mul_comm (Pq * φ X) Qq,
-      ← Matrix.mul_assoc, hQP, Matrix.one_mul]
+      ← (Int.castRingHom ℚ).mapMatrix_apply, hY, Matrix.charpoly_mul_comm (u.val * φ X),
+      ← Matrix.mul_assoc, u.inv_mul, Matrix.one_mul]
   · rw [← orderOf_injective φ.toMonoidHom hφ_inj X,
-      ← orderOf_injective φ.toMonoidHom hφ_inj Y, orderOf_eq_orderOf_iff]
-    intro k
-    have hk : Pq * φ X ^ k = φ Y ^ k * Pq := SemiconjBy.pow_right hconj k
-    constructor <;> intro h1
-    · have h1' : φ X ^ k = 1 := h1
-      calc
-        φ Y ^ k = φ Y ^ k * (Pq * Qq) := by rw [hPQ, Matrix.mul_one]
-        _ = (Pq * φ X ^ k) * Qq := by rw [← Matrix.mul_assoc, ← hk]
-        _ = 1 := by rw [h1', Matrix.mul_one, hPQ]
-    · have h1' : φ Y ^ k = 1 := h1
-      calc
-        φ X ^ k = (Qq * Pq) * φ X ^ k := by rw [hQP, Matrix.one_mul]
-        _ = Qq * (φ Y ^ k * Pq) := by rw [Matrix.mul_assoc, hk]
-        _ = 1 := by rw [h1', Matrix.one_mul, hQP]
+      ← orderOf_injective φ.toMonoidHom hφ_inj Y]
+    let ψ : Matrix κ κ ℚ ≃* Matrix κ κ ℚ :=
+      { toFun := fun M => u.val * M * (u⁻¹).val
+        invFun := fun M => (u⁻¹).val * M * u.val
+        left_inv := fun M => by simp [Matrix.mul_assoc]
+        right_inv := fun M => by simp [Matrix.mul_assoc]
+        map_mul' := fun M₁ M₂ => by simp [Matrix.mul_assoc] }
+    change orderOf (φ X) = orderOf (φ Y)
+    rw [hY]
+    exact (ψ.orderOf_eq (φ X)).symm
 
 /-- **Cyclic-vector criterion for the characteristic polynomial.** If `p` is monic of degree `n`,
 annihilates `M`, and the first `n` powers of `M` carry `e₀` to the standard basis vectors `eₘ`,
@@ -233,9 +210,9 @@ private theorem charpoly_eq_of_isMonicOfDegree_of_cyclic {n : ℕ} (hn : 0 < n)
     (hann : aeval M p = 0)
     (hcyc : ∀ m (hm : m < n), M ^ m *ᵥ Pi.single ⟨0, hn⟩ 1 = Pi.single ⟨m, hm⟩ 1) :
     M.charpoly = p := by
-  have hdeg_lt : (M.charpoly - p).natDegree < n := by
-    refine IsMonicOfDegree.natDegree_sub_lt hn.ne' ⟨?_, M.charpoly_monic⟩ hp
-    rw [Matrix.charpoly_natDegree_eq_dim, Fintype.card_fin]
+  have hdeg_lt : (M.charpoly - p).natDegree < n :=
+    IsMonicOfDegree.natDegree_sub_lt hn.ne'
+      ⟨by rw [Matrix.charpoly_natDegree_eq_dim, Fintype.card_fin], M.charpoly_monic⟩ hp
   have hann_sub : aeval M (M.charpoly - p) = 0 := by
     rw [map_sub, Matrix.aeval_self_charpoly, hann, sub_zero]
   rw [← sub_eq_zero]
@@ -245,16 +222,14 @@ private theorem charpoly_eq_of_isMonicOfDegree_of_cyclic {n : ℕ} (hn : 0 < n)
   rcases lt_or_ge j n with hj | hj
   · have hvec : (aeval M q *ᵥ Pi.single ⟨0, hn⟩ 1) ⟨j, hj⟩ = 0 := by
       rw [hann_sub, Matrix.zero_mulVec, Pi.zero_apply]
-    rw [aeval_eq_sum_range' hdeg_lt, Matrix.sum_mulVec, Finset.sum_apply] at hvec
-    have hsum : (∑ i ∈ Finset.range n,
-        ((q.coeff i • M ^ i) *ᵥ Pi.single ⟨0, hn⟩ 1) ⟨j, hj⟩) = q.coeff j := by
-      rw [Finset.sum_eq_single_of_mem j (Finset.mem_range.mpr hj)]
-      · rw [Matrix.smul_mulVec, Pi.smul_apply, hcyc j hj, Pi.single_eq_same, smul_eq_mul, mul_one]
-      · intro i hi hij
-        have hi' : i < n := Finset.mem_range.mp hi
-        rw [Matrix.smul_mulVec, Pi.smul_apply, hcyc i hi',
-          Pi.single_eq_of_ne (Fin.ne_of_val_ne hij.symm), smul_zero]
-    exact hsum.symm.trans hvec
+    rw [aeval_eq_sum_range' hdeg_lt, Matrix.sum_mulVec, Finset.sum_apply,
+      Finset.sum_eq_single_of_mem j (Finset.mem_range.mpr hj)] at hvec
+    · rw [Matrix.smul_mulVec, Pi.smul_apply, hcyc j hj, Pi.single_eq_same, smul_eq_mul,
+        mul_one] at hvec
+      exact hvec
+    · intro i hi hij
+      rw [Matrix.smul_mulVec, Pi.smul_apply, hcyc i (Finset.mem_range.mp hi),
+        Pi.single_eq_of_ne (Fin.ne_of_val_ne hij.symm), smul_zero]
   · exact coeff_eq_zero_of_natDegree_lt (hdeg_lt.trans_le hj)
 
 /-- Matrix whose `j`-th column is the `f j`-th standard basis vector, so right-multiplying by it
@@ -262,21 +237,16 @@ reindexes columns by `f`. -/
 private def colPermMat {κ : Type*} [DecidableEq κ] (f : κ → κ) : Matrix κ κ ℤ :=
   Matrix.of fun r j => if r = f j then 1 else 0
 
-private lemma colPermMat_id {κ : Type*} [DecidableEq κ] :
-    colPermMat (id : κ → κ) = 1 := by
-  ext i j
-  simp [colPermMat, Matrix.one_apply]
+private lemma colPermMat_id {κ : Type*} [DecidableEq κ] : colPermMat (id : κ → κ) = 1 := by
+  ext i j; simp [colPermMat, Matrix.one_apply]
 
 private lemma colPermMat_mul {κ : Type*} [Fintype κ] [DecidableEq κ] (f g : κ → κ) :
     colPermMat f * colPermMat g = colPermMat (f ∘ g) := by
-  ext i j
-  simp [Matrix.mul_apply, colPermMat]
+  ext i j; simp [Matrix.mul_apply, colPermMat]
 
 private lemma colPermMat_mulVec_single {κ : Type*} [Fintype κ] [DecidableEq κ]
-    (f : κ → κ) (j : κ) :
-    colPermMat f *ᵥ Pi.single j 1 = Pi.single (f j) 1 := by
-  ext r
-  simp [Matrix.mulVec, dotProduct, colPermMat, Pi.single_apply, eq_comm]
+    (f : κ → κ) (j : κ) : colPermMat f *ᵥ Pi.single j 1 = Pi.single (f j) 1 := by
+  ext r; simp [Matrix.mulVec_single, colPermMat, Pi.single_apply]
 
 private lemma colPermMat_mul_apply_of_involutive {κ₁ κ₂ : Type*} [Fintype κ₁] [DecidableEq κ₁]
     {f : κ₁ → κ₁} (hf : Function.Involutive f) (M : Matrix κ₁ κ₂ ℤ) (r : κ₁) (j : κ₂) :
@@ -290,48 +260,34 @@ private lemma colPermMat_mul_apply_of_involutive {κ₁ κ₂ : Type*} [Fintype 
 
 /-- Swap of `k` and `k + 1` in `Fin N`. -/
 private def adjSwapFun (N k : ℕ) (hk : k + 1 < N) (j : Fin N) : Fin N :=
-  if j.val = k then ⟨k + 1, hk⟩
-  else if j.val = k + 1 then ⟨k, by omega⟩
-  else j
+  if j.val = k then ⟨k + 1, hk⟩ else if j.val = k + 1 then ⟨k, by omega⟩ else j
 
 private lemma val_adjSwapFun (N k : ℕ) (hk : k + 1 < N) (j : Fin N) :
     (adjSwapFun N k hk j).val =
       if j.val = k then k + 1 else if j.val = k + 1 then k else j.val := by
-  unfold adjSwapFun
-  split_ifs <;> rfl
+  unfold adjSwapFun; split_ifs <;> rfl
 
 private lemma involutive_adjSwapFun (N k : ℕ) (hk : k + 1 < N) :
-    Function.Involutive (adjSwapFun N k hk) := by
-  intro j
-  apply Fin.ext
-  simp only [val_adjSwapFun]
-  split_ifs <;> omega
+    Function.Involutive (adjSwapFun N k hk) := fun j => Fin.ext <| by
+  simp only [val_adjSwapFun]; split_ifs <;> omega
 
 /-- Cyclic shift `0 ↦ 1 ↦ ⋯ ↦ k ↦ 0` on the first `k + 1` elements of `Fin N`, fixing `> k`. -/
 private def cyclePrefixFun (N k : ℕ) (hk : k < N) (j : Fin N) : Fin N :=
-  if h : j.val < k then ⟨j.val + 1, by omega⟩
-  else if j.val = k then ⟨0, by omega⟩
-  else j
+  if h : j.val < k then ⟨j.val + 1, by omega⟩ else if j.val = k then ⟨0, by omega⟩ else j
 
 private lemma val_cyclePrefixFun (N k : ℕ) (hk : k < N) (j : Fin N) :
     (cyclePrefixFun N k hk j).val =
       if j.val < k then j.val + 1 else if j.val = k then 0 else j.val := by
-  unfold cyclePrefixFun
-  split_ifs <;> rfl
+  unfold cyclePrefixFun; split_ifs <;> rfl
 
-private lemma cyclePrefixFun_zero {N : ℕ} (h0 : 0 < N) :
-    cyclePrefixFun N 0 h0 = id := by
-  funext j
-  apply Fin.ext
-  simp only [val_cyclePrefixFun, Nat.not_lt_zero, ↓reduceIte, id_eq]
-  split_ifs <;> omega
+private lemma cyclePrefixFun_zero {N : ℕ} (h0 : 0 < N) : cyclePrefixFun N 0 h0 = id :=
+  funext fun j => Fin.ext <| by
+    simp only [val_cyclePrefixFun, Nat.not_lt_zero, ↓reduceIte, id_eq]; split_ifs <;> omega
 
 private lemma cyclePrefixFun_comp_adjSwapFun {N k : ℕ} (hk : k + 1 < N) :
-    cyclePrefixFun N k (by omega) ∘ adjSwapFun N k hk = cyclePrefixFun N (k + 1) hk := by
-  funext j
-  apply Fin.ext
-  simp only [Function.comp_apply, val_cyclePrefixFun, val_adjSwapFun]
-  split_ifs <;> omega
+    cyclePrefixFun N k (by omega) ∘ adjSwapFun N k hk = cyclePrefixFun N (k + 1) hk :=
+  funext fun j => Fin.ext <| by
+    simp only [Function.comp_apply, val_cyclePrefixFun, val_adjSwapFun]; split_ifs <;> omega
 
 /-- The product of the first `k` adjacent-swap matrices `(0,1), (1,2), …, (k-1,k)` on `Fin N`
 is the `(k + 1)`-cycle `0 ↦ 1 ↦ ⋯ ↦ k ↦ 0`. -/
@@ -341,8 +297,7 @@ private lemma prod_take_adjSwap {N : ℕ} (S : Fin N → Matrix (Fin N) (Fin N) 
     (((List.finRange k).map fun i : Fin k => S ⟨i.val, by omega⟩).prod) =
       colPermMat (cyclePrefixFun N k hk) := by
   induction k with
-  | zero =>
-    simp [cyclePrefixFun_zero hk, colPermMat_id]
+  | zero => simp [cyclePrefixFun_zero hk, colPermMat_id]
   | succ k ih =>
     rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
       List.map_singleton, List.prod_singleton]
@@ -352,6 +307,18 @@ private lemma prod_take_adjSwap {N : ℕ} (S : Fin N → Matrix (Fin N) (Fin N) 
       ih (by omega) fun i => hS i.castSucc
     rw [hpre, hS (Fin.last k), colPermMat_mul]
     simp only [Fin.val_last, cyclePrefixFun_comp_adjSwapFun hk]
+
+/-- Factoring the product of `m + 1` reflections on `Fin (m + 1)` whose first `m` factors are
+adjacent swaps as the `(m + 1)`-cycle followed by the last reflection. -/
+private lemma prod_finRange_succ_adjSwap {m : ℕ}
+    (S : Fin (m + 1) → Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ)
+    (hS : ∀ i : Fin m, S i.castSucc = colPermMat (adjSwapFun (m + 1) i.val (by omega))) :
+    ((List.finRange (m + 1)).map S).prod =
+      colPermMat (cyclePrefixFun (m + 1) m (Nat.lt_succ_self m)) * S (Fin.last m) := by
+  rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
+    List.map_singleton, List.prod_singleton]
+  congr 1
+  exact prod_take_adjSwap S m (Nat.lt_succ_self m) hS
 
 /-! ### Type `Aₙ`: root-difference embedding into the `(n + 1)`-cycle -/
 
@@ -363,12 +330,7 @@ private def matPA (n : ℕ) : Matrix (Fin (n + 1)) (Fin n) ℤ :=
 private lemma matPA_mulVec_single (n : ℕ) (j : Fin n) :
     matPA n *ᵥ Pi.single j 1 =
       Pi.single ⟨j.val, by omega⟩ 1 - Pi.single ⟨j.val + 1, by omega⟩ 1 := by
-  ext r
-  rw [Matrix.mulVec, dotProduct, Finset.sum_eq_single j]
-  · simp [matPA, Pi.single_apply, Fin.ext_iff, eq_comm]
-  · intro k _ hkj
-    simp [hkj]
-  · intro h; exact absurd (Finset.mem_univ _) h
+  ext r; simp [Matrix.mulVec_single, matPA, Pi.single_apply, Fin.ext_iff, eq_comm]
 
 /-- Explicit left inverse of `matPA n`: summing rows `0, …, i` recovers the `i`-th coordinate. -/
 private def leftInvPA (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
@@ -376,36 +338,21 @@ private def leftInvPA (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
 
 private lemma leftInvPA_mul_matPA (n : ℕ) : leftInvPA n * matPA n = 1 := by
   ext i j
+  have hsum : ∀ k : Fin (n + 1),
+      (∑ r : Fin (n + 1), (if r.val ≤ i.val then (1 : ℤ) else 0) *
+        (if r.val = k.val then 1 else 0)) = if k.val ≤ i.val then 1 else 0 := fun k => by
+    rw [Finset.sum_eq_single k]
+    · simp
+    · intro r _ hr; simp [Fin.val_ne_of_ne hr]
+    · intro h; exact absurd (Finset.mem_univ _) h
   rw [Matrix.mul_apply]
-  simp only [leftInvPA, matPA, Matrix.of_apply, mul_sub, Finset.sum_sub_distrib]
-  have h1 : (∑ r : Fin (n + 1), (if r.val ≤ i.val then (1 : ℤ) else 0) *
-      (if r.val = j.val then 1 else 0)) = if j.val ≤ i.val then 1 else 0 := by
-    rw [Finset.sum_eq_single ⟨j.val, by omega⟩]
-    · simp
-    · intro r _ hr
-      have : r.val ≠ j.val := fun h => hr (Fin.ext h)
-      simp [this]
-    · intro h; exact absurd (Finset.mem_univ _) h
-  have h2 : (∑ r : Fin (n + 1), (if r.val ≤ i.val then (1 : ℤ) else 0) *
-      (if r.val = j.val + 1 then 1 else 0)) = if j.val + 1 ≤ i.val then 1 else 0 := by
-    rw [Finset.sum_eq_single ⟨j.val + 1, by omega⟩]
-    · simp
-    · intro r _ hr
-      have : r.val ≠ j.val + 1 := fun h => hr (Fin.ext h)
-      simp [this]
-    · intro h; exact absurd (Finset.mem_univ _) h
-  rw [h1, h2]
-  simp only [Matrix.one_apply, Fin.ext_iff]
+  simp only [leftInvPA, matPA, Matrix.of_apply, mul_sub, Finset.sum_sub_distrib,
+    hsum ⟨j.val, by omega⟩, hsum ⟨j.val + 1, by omega⟩, Matrix.one_apply, Fin.ext_iff]
   split_ifs <;> omega
 
 private lemma matPA_left_injective {n : ℕ} {κ : Type*} {X Y : Matrix (Fin n) κ ℤ}
     (h : matPA n * X = matPA n * Y) : X = Y := by
-  calc
-    X = (1 : Matrix (Fin n) (Fin n) ℤ) * X := (Matrix.one_mul X).symm
-    _ = leftInvPA n * matPA n * X := by rw [leftInvPA_mul_matPA]
-    _ = leftInvPA n * (matPA n * Y) := by rw [Matrix.mul_assoc, h]
-    _ = (1 : Matrix (Fin n) (Fin n) ℤ) * Y := by rw [← Matrix.mul_assoc, leftInvPA_mul_matPA]
-    _ = Y := Matrix.one_mul Y
+  simpa [← Matrix.mul_assoc, leftInvPA_mul_matPA] using congrArg (leftInvPA n * ·) h
 
 /-- Coordinate simple reflections of type `Aₙ` on `Fin (n + 1)`. -/
 private def reflCoordA (n : ℕ) (i : Fin (n + 1)) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
@@ -455,73 +402,43 @@ private lemma colPermMat_cycleFun_pow_mulVec_single (n m : ℕ) (j : Fin (n + 1)
     congr 1; ext
     simp [Nat.mod_add_mod, Nat.add_assoc, Nat.add_comm 1 m]
 
+private lemma colPermMat_cycleFun_pow_self (n : ℕ) :
+    colPermMat (cycleFun n) ^ (n + 1) = 1 := by
+  ext r j
+  have h := congrFun (colPermMat_cycleFun_pow_mulVec_single n (n + 1) j) r
+  simpa [Matrix.mulVec_single, Nat.mod_eq_of_lt j.isLt, Matrix.one_apply, Pi.single_apply,
+    eq_comm] using h
+
 private lemma coxA_pow_mulVec_single_zero {n : ℕ} (hn : 0 < n) (m : ℕ) (hm : m < n) :
     coxA n ^ m *ᵥ Pi.single ⟨0, hn⟩ 1 = Pi.single ⟨m, hm⟩ 1 := by
-  have hpow : matPA n * coxA n ^ m = colPermMat (cycleFun n) ^ m * matPA n :=
-    mul_pow_of_intertwine (matPA_mul_coxA n) m
   have hcol : (matPA n * coxA n ^ m) *ᵥ Pi.single ⟨0, hn⟩ 1 =
       matPA n *ᵥ Pi.single ⟨m, hm⟩ 1 := by
-    rw [hpow, ← Matrix.mulVec_mulVec, matPA_mulVec_single, matPA_mulVec_single,
-      Matrix.mulVec_sub, colPermMat_cycleFun_pow_mulVec_single,
+    rw [mul_pow_of_intertwine (matPA_mul_coxA n) m, ← Matrix.mulVec_mulVec, matPA_mulVec_single,
+      matPA_mulVec_single, Matrix.mulVec_sub, colPermMat_cycleFun_pow_mulVec_single,
       colPermMat_cycleFun_pow_mulVec_single]
-    have h0 : (⟨(0 + m) % (n + 1), Nat.mod_lt _ (Nat.succ_pos n)⟩ : Fin (n + 1)) =
-        ⟨m, by omega⟩ := by
-      ext; simp [Nat.mod_eq_of_lt (by omega : m < n + 1)]
-    have h1 : (⟨(0 + 1 + m) % (n + 1), Nat.mod_lt _ (Nat.succ_pos n)⟩ : Fin (n + 1)) =
-        ⟨m + 1, by omega⟩ := by
-      ext; simp [Nat.add_comm 1 m, Nat.mod_eq_of_lt (by omega : m + 1 < n + 1)]
-    rw [h0, h1]
+    congr 1
+    · congr 1; ext; simp [Nat.mod_eq_of_lt (by omega : m < n + 1)]
+    · congr 1; ext; simp [Nat.add_comm 1 m, Nat.mod_eq_of_lt (by omega : m + 1 < n + 1)]
   have h1 := congrArg (leftInvPA n *ᵥ ·) hcol
   rwa [Matrix.mulVec_mulVec, ← Matrix.mul_assoc, leftInvPA_mul_matPA, Matrix.one_mul,
     Matrix.mulVec_mulVec, leftInvPA_mul_matPA, Matrix.one_mulVec] at h1
-
-private lemma sum_cycle_single_apply (n : ℕ) (a r : Fin (n + 1)) :
-    (∑ m ∈ Finset.range (n + 1),
-      (Pi.single (M := fun _ : Fin (n + 1) => ℤ)
-        ⟨(a.val + m) % (n + 1), Nat.mod_lt _ (Nat.succ_pos n)⟩ 1) r) = 1 := by
-  have ha := a.isLt; have hr := r.isLt
-  let m₀ : ℕ := if a.val ≤ r.val then r.val - a.val else r.val + (n + 1) - a.val
-  have hm₀_lt : m₀ < n + 1 := by dsimp [m₀]; split_ifs <;> omega
-  rw [Finset.sum_eq_single_of_mem m₀ (Finset.mem_range.mpr hm₀_lt)]
-  · have hm₀ : (a.val + m₀) % (n + 1) = r.val := by
-      dsimp [m₀]
-      split_ifs with har
-      · rw [Nat.add_sub_of_le har, Nat.mod_eq_of_lt hr]
-      · have hsum : a.val + (r.val + (n + 1) - a.val) = r.val + (n + 1) := by omega
-        rw [hsum, Nat.add_mod_right, Nat.mod_eq_of_lt hr]
-    simp [hm₀]
-  · intro m hm hne
-    have hm_lt : m < n + 1 := Finset.mem_range.mp hm
-    have hne_mod : (a.val + m) % (n + 1) ≠ r.val := by
-      intro heq
-      apply hne
-      dsimp [m₀]
-      rcases lt_or_ge (a.val + m) (n + 1) with hlt | hge
-      · rw [Nat.mod_eq_of_lt hlt] at heq
-        split_ifs <;> omega
-      · have hsub : a.val + m = (a.val + m - (n + 1)) + (n + 1) := by omega
-        rw [hsub, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)] at heq
-        split_ifs <;> omega
-    simp [Fin.ext_iff, hne_mod.symm]
 
 private lemma sum_coxA_pow_eq_zero (n : ℕ) :
     (∑ m ∈ Finset.range (n + 1), coxA n ^ m) = 0 := by
   apply matPA_left_injective
   rw [Matrix.mul_zero, Matrix.mul_sum]
-  have hterm : ∀ m, matPA n * coxA n ^ m = colPermMat (cycleFun n) ^ m * matPA n :=
-    fun m => mul_pow_of_intertwine (matPA_mul_coxA n) m
-  simp_rw [hterm, ← Matrix.sum_mul]
+  simp_rw [mul_pow_of_intertwine (matPA_mul_coxA n), ← Matrix.sum_mul]
+  set C := colPermMat (cycleFun n)
+  have hgeom : (∑ m ∈ Finset.range (n + 1), C ^ m) * (1 - C) = 0 := by
+    rw [geom_sum_mul_neg, colPermMat_cycleFun_pow_self, sub_self]
   ext r j
-  have hval : ((∑ m ∈ Finset.range (n + 1), colPermMat (cycleFun n) ^ m) * matPA n) r j =
-      (((∑ m ∈ Finset.range (n + 1), colPermMat (cycleFun n) ^ m) *ᵥ
-        (matPA n *ᵥ Pi.single j 1)) r) := by
-    rw [Matrix.mulVec_mulVec]
-    simp [Matrix.mulVec, dotProduct, Pi.single_apply]
-  rw [hval, matPA_mulVec_single, Matrix.mulVec_sub, Matrix.sum_mulVec, Matrix.sum_mulVec,
-    Pi.sub_apply, Finset.sum_apply, Finset.sum_apply, Matrix.zero_apply, sub_eq_zero]
-  simp_rw [colPermMat_cycleFun_pow_mulVec_single]
-  rw [sum_cycle_single_apply n ⟨j.val, by omega⟩ r,
-    sum_cycle_single_apply n ⟨j.val + 1, by omega⟩ r]
+  have hcol : matPA n *ᵥ Pi.single j 1 = (1 - C) *ᵥ Pi.single ⟨j.val, by omega⟩ 1 := by
+    rw [matPA_mulVec_single, Matrix.sub_mulVec, Matrix.one_mulVec, colPermMat_mulVec_single]
+    congr 2; ext; simp [cycleFun_apply, Nat.mod_eq_of_lt (by omega : j.val + 1 < n + 1)]
+  have h0 : (((∑ m ∈ Finset.range (n + 1), C ^ m) * matPA n) *ᵥ Pi.single j 1) r = 0 := by
+    rw [← Matrix.mulVec_mulVec, hcol, Matrix.mulVec_mulVec, hgeom, Matrix.zero_mulVec,
+      Pi.zero_apply]
+  simpa [Matrix.mulVec_single] using h0
 
 /-- **The characteristic polynomial of the `Aₙ` Coxeter element is `1 + X + ⋯ + X^n`.** -/
 theorem charpoly_coxA (n : ℕ) :
@@ -534,42 +451,31 @@ theorem charpoly_coxA (n : ℕ) :
       by_cases hp0 : (∑ k ∈ Finset.range n, (X : ℤ[X]) ^ k) = 0
       · rw [hp0, natDegree_zero]; exact hn
       · rw [natDegree_lt_iff_degree_lt hp0]
-        refine (Polynomial.degree_sum_le (Finset.range n) fun k => (X : ℤ[X]) ^ k).trans_lt ?_
+        refine (Polynomial.degree_sum_le (Finset.range n) _).trans_lt ?_
         refine (Finset.sup_lt_iff (WithBot.bot_lt_coe n)).mpr fun k hk => ?_
         rw [degree_X_pow]
         exact WithBot.coe_lt_coe.2 (Finset.mem_range.mp hk)
-    have hann : aeval (coxA n) (∑ k ∈ Finset.range (n + 1), (X : ℤ[X]) ^ k) = 0 := by
-      simpa using sum_coxA_pow_eq_zero n
-    exact charpoly_eq_of_isMonicOfDegree_of_cyclic hn hmon hann (coxA_pow_mulVec_single_zero hn)
+    exact charpoly_eq_of_isMonicOfDegree_of_cyclic hn hmon (by simpa using sum_coxA_pow_eq_zero n)
+      (coxA_pow_mulVec_single_zero hn)
 
 /-- **The Coxeter number of `Aₙ` is `n + 1`**: the Coxeter element of type `Aₙ` has order
 `n + 1`. -/
 theorem orderOf_coxA (n : ℕ) : orderOf (coxA n) = n + 1 := by
   rcases n.eq_zero_or_pos with rfl | hn
   · exact orderOf_eq_one_iff.mpr (Subsingleton.elim _ _)
-  · refine (orderOf_eq_iff (Nat.succ_pos n)).mpr ⟨?_, fun m hm hpos h1 => ?_⟩
-    · have hgeom := geom_sum_mul (coxA n) (n + 1)
+  · have hpow : coxA n ^ (n + 1) = 1 := by
+      have hgeom := geom_sum_mul (coxA n) (n + 1)
       rw [sum_coxA_pow_eq_zero, zero_mul] at hgeom
       exact sub_eq_zero.mp hgeom.symm
-    · rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hm) with hmn | hmn
-      · have hv := coxA_pow_mulVec_single_zero hn m hmn
-        rw [h1, Matrix.one_mulVec] at hv
-        have := congrFun hv ⟨0, hn⟩
-        simp [Fin.ext_iff, hpos.ne'] at this
-      · rw [hmn] at h1
-        have hsum : ((∑ k ∈ Finset.range (n + 1), coxA n ^ k) *ᵥ
-            Pi.single ⟨0, hn⟩ (1 : ℤ)) ⟨0, hn⟩ = 0 := by
-          rw [sum_coxA_pow_eq_zero, Matrix.zero_mulVec, Pi.zero_apply]
-        rw [Finset.sum_range_succ, Matrix.add_mulVec, Matrix.sum_mulVec, Pi.add_apply,
-          Finset.sum_apply, h1, Matrix.one_mulVec, Pi.single_eq_same] at hsum
-        have hfirst : (∑ k ∈ Finset.range n,
-            (coxA n ^ k *ᵥ Pi.single ⟨0, hn⟩ (1 : ℤ)) ⟨0, hn⟩) = 1 := by
-          rw [Finset.sum_eq_single_of_mem 0 (Finset.mem_range.mpr hn)]
-          · rw [pow_zero, Matrix.one_mulVec, Pi.single_eq_same]
-          · intro k hk hk0
-            rw [coxA_pow_mulVec_single_zero hn k (Finset.mem_range.mp hk)]
-            simp [Fin.ext_iff, hk0.symm]
-        omega
+    refine (orderOf_eq_iff (Nat.succ_pos n)).mpr ⟨hpow, fun m hm hpos h1 => ?_⟩
+    rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hm) with hmn | hmn
+    · have hv := congrFun (coxA_pow_mulVec_single_zero hn m hmn) ⟨0, hn⟩
+      simp [h1, Fin.ext_iff, hpos.ne'] at hv
+    · rw [hmn] at h1
+      have hc1 : coxA n = 1 := by simpa [pow_succ, h1] using hpow
+      have hsum := congrFun₂ (sum_coxA_pow_eq_zero n) ⟨0, hn⟩ ⟨0, hn⟩
+      simp [hc1] at hsum
+      omega
 
 /-! ### The signed `n`-cycle model -/
 
@@ -584,17 +490,10 @@ private lemma negCycleMatrix_mulVec_single {n : ℕ} (j : Fin n) :
       if hj : j.val + 1 < n then Pi.single ⟨j.val + 1, hj⟩ 1
       else -Pi.single ⟨0, by have := j.isLt; omega⟩ 1 := by
   ext r
-  rw [Matrix.mulVec, dotProduct, Finset.sum_eq_single j]
-  · simp only [negCycleMatrix, Matrix.of_apply, Pi.single_eq_same, mul_one]
-    by_cases hj : j.val + 1 < n
-    · rw [ite_eq_left hj, dite_eq_left_of_eq_true (eq_true hj)]
-      simp only [Pi.single_apply, Fin.ext_iff]
-    · rw [ite_eq_right hj, dite_eq_right_of_eq_false (eq_false hj)]
-      simp only [Pi.neg_apply, Pi.single_apply, Fin.ext_iff]
-      split_ifs <;> omega
-  · intro k _ hkj
-    simp [hkj]
-  · intro h; exact absurd (Finset.mem_univ _) h
+  by_cases hj : j.val + 1 < n
+  · simp [Matrix.mulVec_single, negCycleMatrix, hj, Pi.single_apply, Fin.ext_iff]
+  · by_cases hr : r.val = 0 <;>
+      simp [Matrix.mulVec_single, negCycleMatrix, hj, hr, Pi.single_apply, Fin.ext_iff]
 
 private lemma negCycleMatrix_pow_mulVec_single {n : ℕ} (j : Fin n) (m : ℕ)
     (hm : j.val + m < n) :
@@ -612,27 +511,22 @@ private lemma negCycleMatrix_pow_self {n : ℕ} (hn : 1 ≤ n) :
   ext r j
   have hpow : (negCycleMatrix n ^ (j.val + (1 + (n - 1 - j.val))) *ᵥ Pi.single j 1) r =
       -(1 : Matrix (Fin n) (Fin n) ℤ) r j := by
-    rw [pow_add, pow_add, pow_one, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
-    have h1 := negCycleMatrix_pow_mulVec_single j (n - 1 - j.val) (by have := j.isLt; omega)
-    have hnot : ¬ (⟨j.val + (n - 1 - j.val), by have := j.isLt; omega⟩ : Fin n).val + 1 < n := by
-      have := j.isLt; simp; omega
-    rw [h1, negCycleMatrix_mulVec_single, dite_eq_right_of_eq_false (eq_false hnot),
+    rw [pow_add, pow_add, pow_one, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
+      negCycleMatrix_pow_mulVec_single j (n - 1 - j.val) (by have := j.isLt; omega),
+      negCycleMatrix_mulVec_single,
+      dite_eq_right_of_eq_false (eq_false (by have := j.isLt; simp; omega)),
       Matrix.mulVec_neg, negCycleMatrix_pow_mulVec_single ⟨0, by omega⟩ j.val (by simp)]
     simp [Matrix.one_apply, Pi.single_apply, Fin.ext_iff]
   have hsplit : j.val + (1 + (n - 1 - j.val)) = n := by have := j.isLt; omega
   rw [hsplit] at hpow
-  rw [Matrix.neg_apply, ← hpow, Matrix.mulVec, dotProduct, Finset.sum_eq_single j]
-  · simp
-  · intro k _ hkj; simp [hkj]
-  · intro h; exact absurd (Finset.mem_univ _) h
+  simpa [Matrix.mulVec_single] using hpow
 
 private lemma charpoly_negCycleMatrix {n : ℕ} (hn : 1 ≤ n) :
     (negCycleMatrix n).charpoly = X ^ n + 1 := by
   have hmon : ((X : ℤ[X]) ^ n + 1).IsMonicOfDegree n :=
     (isMonicOfDegree_X_pow ℤ n).add_right (by simpa using Nat.pos_of_ne_zero (by omega))
-  have hann : aeval (negCycleMatrix n) ((X : ℤ[X]) ^ n + 1) = 0 := by
-    simp [negCycleMatrix_pow_self hn]
-  refine charpoly_eq_of_isMonicOfDegree_of_cyclic (by omega) hmon hann fun m hm => ?_
+  refine charpoly_eq_of_isMonicOfDegree_of_cyclic (by omega) hmon
+    (by simp [negCycleMatrix_pow_self hn]) fun m hm => ?_
   simpa using negCycleMatrix_pow_mulVec_single (⟨0, by omega⟩ : Fin n) m (by simpa using hm)
 
 private lemma orderOf_negCycleMatrix {n : ℕ} (hn : 1 ≤ n) :
@@ -640,23 +534,17 @@ private lemma orderOf_negCycleMatrix {n : ℕ} (hn : 1 ≤ n) :
   refine (orderOf_eq_iff (by omega)).2 ⟨?_, fun m hm hpos h1 => ?_⟩
   · rw [mul_comm, pow_mul, negCycleMatrix_pow_self hn, neg_one_sq]
   · rcases lt_trichotomy m n with hlt | rfl | hgt
-    · have hv := negCycleMatrix_pow_mulVec_single (⟨0, by omega⟩ : Fin n) m (by simpa using hlt)
-      rw [h1, Matrix.one_mulVec] at hv
-      have := congrFun hv ⟨0, by omega⟩
-      simp [Fin.ext_iff, hpos.ne'] at this
-    · rw [negCycleMatrix_pow_self hn] at h1
-      have := congrFun₂ h1 ⟨0, by omega⟩ ⟨0, by omega⟩
-      simp at this
-    · have hsplit : m = n + (m - n) := by omega
-      rw [hsplit, pow_add, negCycleMatrix_pow_self hn, neg_one_mul] at h1
-      have hmn : m - n < n := by omega
-      have hv := negCycleMatrix_pow_mulVec_single (⟨0, by omega⟩ : Fin n) (m - n)
-        (by simpa using hmn)
-      have hneg1 : negCycleMatrix n ^ (m - n) = -1 := neg_eq_iff_eq_neg.mp h1
-      rw [hneg1] at hv
-      have := congrFun hv ⟨0, by omega⟩
-      have hmne : m - n ≠ 0 := by omega
-      simp [Fin.ext_iff, hmne.symm] at this
+    · have hv := congrFun (negCycleMatrix_pow_mulVec_single (⟨0, by omega⟩ : Fin n) m
+        (by simpa using hlt)) ⟨0, by omega⟩
+      simp [h1, Fin.ext_iff, hpos.ne'] at hv
+    · have h0 := congrFun₂ (negCycleMatrix_pow_self hn ▸ h1) ⟨0, by omega⟩ ⟨0, by omega⟩
+      simp at h0
+    · have hneg1 : negCycleMatrix n ^ (m - n) = -1 := by
+        rw [show m = n + (m - n) by omega, pow_add, negCycleMatrix_pow_self hn, neg_one_mul] at h1
+        exact neg_eq_iff_eq_neg.mp h1
+      have hv := congrFun (negCycleMatrix_pow_mulVec_single (⟨0, by omega⟩ : Fin n) (m - n)
+        (by simp; omega)) ⟨0, by omega⟩
+      simp [hneg1, Fin.ext_iff, show m - n ≠ 0 by omega] at hv
 
 /-! ### Type `Bₙ`: lower-unitriangular conjugation to the signed `n`-cycle -/
 
@@ -669,36 +557,30 @@ private def matPB (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
       if r = j then 1 else 0
 
 private lemma det_matPB (n : ℕ) : (matPB n).det = 1 := by
-  have htri : (matPB n).IsLowerTriangular := by
-    intro i j hij
+  have htri : (matPB n).IsLowerTriangular := fun i j hij => by
     have hlt : i.val < j.val := Fin.lt_def.mp hij
-    simp only [matPB, Matrix.of_apply, Fin.ext_iff]
-    split_ifs <;> omega
+    simp only [matPB, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
   rw [Matrix.det_of_isLowerTriangular _ htri]
   refine Finset.prod_eq_one fun i _ => ?_
-  simp only [matPB, Matrix.of_apply]
-  split_ifs <;> omega
+  simp only [matPB, Matrix.of_apply]; split_ifs <;> omega
 
 /-- Coordinate simple reflections of type `Bₙ`: adjacent swaps for `i < n - 1`, and negation of the
 last coordinate for `i = n - 1`. -/
 private def reflCoordB (n : ℕ) (i : Fin n) : Matrix (Fin n) (Fin n) ℤ :=
-  if hi : i.val + 1 < n then
-    colPermMat (adjSwapFun n i.val hi)
-  else
-    Matrix.diagonal fun r : Fin n => if r.val + 1 = n then -1 else 1
+  if hi : i.val + 1 < n then colPermMat (adjSwapFun n i.val hi)
+  else Matrix.diagonal fun r : Fin n => if r.val + 1 = n then -1 else 1
 
 private lemma matPB_mul_reflMatrix (n : ℕ) (i : Fin n) :
     matPB n * reflMatrix (CartanMatrix.B n) i = reflCoordB n i * matPB n := by
   ext r j
   rw [mul_reflMatrix_apply]
+  have := r.isLt; have := j.isLt; have := i.isLt
   by_cases hi : i.val + 1 < n
   · rw [reflCoordB, dite_eq_left_of_eq_true (eq_true hi),
       colPermMat_mul_apply_of_involutive (involutive_adjSwapFun n i.val hi)]
-    have := r.isLt; have := j.isLt
     simp only [matPB, CartanMatrix.B, Matrix.of_apply, val_adjSwapFun, Fin.ext_iff]
     split_ifs <;> omega
   · rw [reflCoordB, dite_eq_right_of_eq_false (eq_false hi), Matrix.diagonal_mul]
-    have := r.isLt; have := j.isLt; have := i.isLt
     simp only [matPB, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
     split_ifs <;> omega
 
@@ -707,34 +589,24 @@ private lemma matPB_mul_coxB {n : ℕ} (hn : 1 ≤ n) :
   rw [coxB, mul_coxeterElement (matPB n) (CartanMatrix.B n) (reflCoordB n) (matPB_mul_reflMatrix n)]
   congr 1
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-    List.map_singleton, List.prod_singleton]
-  have hpre : (((List.finRange m).map (reflCoordB (m + 1) ∘ Fin.castSucc)).prod) =
-      colPermMat (cyclePrefixFun (m + 1) m (Nat.lt_succ_self m)) := by
-    refine prod_take_adjSwap (N := m + 1) (reflCoordB (m + 1)) m (Nat.lt_succ_self m) fun i => ?_
-    simp [reflCoordB, Nat.add_lt_add_right i.isLt 1]
-  have hlast : reflCoordB (m + 1) (Fin.last m) =
-      Matrix.diagonal fun r : Fin (m + 1) => if r.val + 1 = m + 1 then -1 else 1 := by
-    simp [reflCoordB]
-  rw [hpre, hlast]
+  rw [prod_finRange_succ_adjSwap (reflCoordB (m + 1)) fun i => by
+    simp [reflCoordB, Nat.add_lt_add_right i.isLt 1]]
   ext r j
-  rw [Matrix.mul_diagonal]
   have := r.isLt; have := j.isLt
-  simp only [colPermMat, negCycleMatrix, Matrix.of_apply, Fin.ext_iff, val_cyclePrefixFun]
+  simp only [reflCoordB, Fin.val_last, lt_self_iff_false, ↓reduceDIte, Matrix.mul_diagonal,
+    colPermMat, negCycleMatrix, Matrix.of_apply, Fin.ext_iff, val_cyclePrefixFun]
   split_ifs <;> omega
 
 /-- **The characteristic polynomial of the `Bₙ` Coxeter element is `X^n + 1`** (`1 ≤ n`). -/
-theorem charpoly_coxB {n : ℕ} (hn : 1 ≤ n) :
-    (coxB n).charpoly = X ^ n + 1 := by
-  have h := charpoly_and_orderOf_of_intertwine (by rw [det_matPB]; norm_num) (matPB_mul_coxB hn)
-  exact h.1.trans (charpoly_negCycleMatrix hn)
+theorem charpoly_coxB {n : ℕ} (hn : 1 ≤ n) : (coxB n).charpoly = X ^ n + 1 :=
+  (charpoly_and_orderOf_of_intertwine (by rw [det_matPB]; norm_num) (matPB_mul_coxB hn)).1.trans
+    (charpoly_negCycleMatrix hn)
 
 /-- **The Coxeter number of `Bₙ` is `2 n`** (`1 ≤ n`): the Coxeter element of type `Bₙ` has order
 `2 n`. -/
-theorem orderOf_coxB {n : ℕ} (hn : 1 ≤ n) :
-    orderOf (coxB n) = 2 * n := by
-  have h := charpoly_and_orderOf_of_intertwine (by rw [det_matPB]; norm_num) (matPB_mul_coxB hn)
-  exact h.2.trans (orderOf_negCycleMatrix hn)
+theorem orderOf_coxB {n : ℕ} (hn : 1 ≤ n) : orderOf (coxB n) = 2 * n :=
+  (charpoly_and_orderOf_of_intertwine (by rw [det_matPB]; norm_num) (matPB_mul_coxB hn)).2.trans
+    (orderOf_negCycleMatrix hn)
 
 /-! ### Type `Cₙ`: diagonal conjugation to type `Bₙ` -/
 
@@ -744,33 +616,28 @@ private def diagBC (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
 
 private lemma det_diagBC_ne_zero (n : ℕ) : (diagBC n).det ≠ 0 := by
   rw [diagBC, Matrix.det_diagonal]
-  refine Finset.prod_ne_zero_iff.mpr fun k _ => ?_
-  split_ifs <;> norm_num
+  exact Finset.prod_ne_zero_iff.mpr fun k _ => by split_ifs <;> norm_num
 
 private lemma diagBC_mul_reflMatrix (n : ℕ) (i : Fin n) :
-    diagBC n * reflMatrix (CartanMatrix.C n) i =
-      reflMatrix (CartanMatrix.B n) i * diagBC n := by
+    diagBC n * reflMatrix (CartanMatrix.C n) i = reflMatrix (CartanMatrix.B n) i * diagBC n := by
   ext r j
   rw [diagBC, Matrix.diagonal_mul, Matrix.mul_diagonal]
   have := r.isLt; have := j.isLt; have := i.isLt
   simp only [reflMatrix_apply, CartanMatrix.B, CartanMatrix.C, Matrix.of_apply, Fin.ext_iff]
   split_ifs <;> omega
 
-private lemma diagBC_mul_coxC (n : ℕ) :
-    diagBC n * coxC n = coxB n * diagBC n :=
+private lemma diagBC_mul_coxC (n : ℕ) : diagBC n * coxC n = coxB n * diagBC n :=
   mul_coxeterElement (diagBC n) (CartanMatrix.C n) (reflMatrix (CartanMatrix.B n))
     (diagBC_mul_reflMatrix n)
 
 /-- **The characteristic polynomial of the `Cₙ` Coxeter element is `X^n + 1`** (`1 ≤ n`). -/
-theorem charpoly_coxC {n : ℕ} (hn : 1 ≤ n) :
-    (coxC n).charpoly = X ^ n + 1 :=
+theorem charpoly_coxC {n : ℕ} (hn : 1 ≤ n) : (coxC n).charpoly = X ^ n + 1 :=
   (charpoly_and_orderOf_of_intertwine (det_diagBC_ne_zero n) (diagBC_mul_coxC n)).1.trans
     (charpoly_coxB hn)
 
 /-- **The Coxeter number of `Cₙ` is `2 n`** (`1 ≤ n`): the Coxeter element of type `Cₙ` has order
 `2 n`. -/
-theorem orderOf_coxC {n : ℕ} (hn : 1 ≤ n) :
-    orderOf (coxC n) = 2 * n :=
+theorem orderOf_coxC {n : ℕ} (hn : 1 ≤ n) : orderOf (coxC n) = 2 * n :=
   (charpoly_and_orderOf_of_intertwine (det_diagBC_ne_zero n) (diagBC_mul_coxC n)).2.trans
     (orderOf_coxB hn)
 
@@ -788,74 +655,37 @@ private def matPD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
 `matPD n`. -/
 private def upperUD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun k j =>
-    if j.val + 1 < n then
-      if k = j then 1 else 0
-    else
-      (if k.val + 2 = n then 1 else 0) + (if k.val + 1 = n then 2 else 0)
+    if j.val + 1 < n then if k = j then 1 else 0
+    else (if k.val + 2 = n then 1 else 0) + (if k.val + 1 = n then 2 else 0)
 
-private lemma matPB_mul_upperUD {n : ℕ} (hn : 2 ≤ n) :
-    matPB n * upperUD n = matPD n := by
+private lemma matPB_mul_upperUD {n : ℕ} (hn : 2 ≤ n) : matPB n * upperUD n = matPD n := by
   ext r j
   rw [Matrix.mul_apply]
   by_cases hj : j.val + 1 < n
   · rw [Finset.sum_eq_single j]
     · simp [matPB, upperUD, matPD, hj]
-    · intro k _ hkj
-      simp [upperUD, hj, hkj]
+    · intro k _ hkj; simp [upperUD, hj, hkj]
     · intro h; exact absurd (Finset.mem_univ _) h
-  · have hsum : (∑ k : Fin n, matPB n r k * upperUD n k j) =
-        matPB n r ⟨n - 2, by omega⟩ * 1 + matPB n r ⟨n - 1, by omega⟩ * 2 := by
-      have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := by
-        simp [Fin.ext_iff]; omega
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ (⟨n - 2, by omega⟩ : Fin n)),
-        ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hne.symm, Finset.mem_univ _⟩)]
-      have hrest : ∑ k ∈ (Finset.univ.erase (⟨n - 2, by omega⟩ : Fin n)).erase
-          ⟨n - 1, by omega⟩, matPB n r k * upperUD n k j = 0 := by
-        refine Finset.sum_eq_zero fun k hk => ?_
-        have hk1 : k.val ≠ n - 1 := fun h => (Finset.mem_erase.mp hk).1 (Fin.ext h)
-        have hk2 : k.val ≠ n - 2 :=
-          fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp hk).2).1 (Fin.ext h)
-        have hzero : upperUD n k j = 0 := by
-          simp only [upperUD, Matrix.of_apply, hj, ↓reduceIte]
-          split_ifs <;> omega
-        rw [hzero, mul_zero]
-      rw [hrest, add_zero]
-      congr 2
-      · simp only [upperUD, Matrix.of_apply, hj, ↓reduceIte]
-        split_ifs <;> omega
-      · simp only [upperUD, Matrix.of_apply, hj, ↓reduceIte]
-        split_ifs <;> omega
-    rw [hsum]
+  · have h1 : ∀ k : Fin n, (k.val + 2 = n) ↔ k = ⟨n - 2, by omega⟩ := fun k => by
+      simp only [Fin.ext_iff]; omega
+    have h2 : ∀ k : Fin n, (k.val + 1 = n) ↔ k = ⟨n - 1, by omega⟩ := fun k => by
+      simp only [Fin.ext_iff]; omega
+    simp only [upperUD, Matrix.of_apply, hj, ↓reduceIte, mul_add, Finset.sum_add_distrib,
+      h1, h2, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ]
     have := r.isLt; have := j.isLt
-    have hpb2 : matPB n r ⟨n - 2, by omega⟩ =
-        (if r.val = n - 2 then 1 else 0) - (if r.val = n - 2 + 1 then 1 else 0) := by
-      simp only [matPB, Matrix.of_apply, Fin.ext_iff]
-      split_ifs <;> omega
-    have hpb1 : matPB n r ⟨n - 1, by omega⟩ = if r.val = n - 1 then 1 else 0 := by
-      simp only [matPB, Matrix.of_apply, Fin.ext_iff]
-      split_ifs <;> omega
-    rw [hpb2, hpb1]
-    simp only [matPD, Matrix.of_apply, hj, ↓reduceIte]
+    simp only [matPB, matPD, Matrix.of_apply, hj, ↓reduceIte, Fin.ext_iff]
     split_ifs <;> omega
 
 private lemma det_matPD {n : ℕ} (hn : 2 ≤ n) : (matPD n).det = 2 := by
   rw [← matPB_mul_upperUD hn, Matrix.det_mul, det_matPB, one_mul]
-  have htri : (upperUD n).IsUpperTriangular := by
-    intro i j hij
+  have htri : (upperUD n).IsUpperTriangular := fun i j hij => by
     have hlt : j.val < i.val := Fin.lt_def.mp hij
     have := i.isLt
-    simp only [upperUD, Matrix.of_apply, Fin.ext_iff]
-    split_ifs <;> omega
+    simp only [upperUD, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
   rw [Matrix.det_of_isUpperTriangular htri]
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Fin.prod_univ_castSucc]
-  have h1 : (∏ i : Fin m, upperUD (m + 1) i.castSucc i.castSucc) = 1 := by
-    refine Finset.prod_eq_one fun i _ => ?_
-    simp [upperUD]
-  have h2 : upperUD (m + 1) (Fin.last m) (Fin.last m) = 2 := by
-    simp only [upperUD, Matrix.of_apply, Fin.val_last]
-    split_ifs <;> omega
-  rw [h1, h2, one_mul]
+  rw [Fin.prod_univ_castSucc, Finset.prod_eq_one fun i _ => by simp [upperUD], one_mul]
+  simp only [upperUD, Matrix.of_apply, Fin.val_last]; split_ifs <;> omega
 
 private lemma cartanMatrixD_apply_of_lt {n : ℕ} {i : Fin n} (hi : i.val + 1 < n) (j : Fin n) :
     CartanMatrix.D n j i =
@@ -866,73 +696,54 @@ private lemma cartanMatrixD_apply_of_lt {n : ℕ} {i : Fin n} (hi : i.val + 1 < 
       else
         if i.val + 3 = n then -1 else 0 := by
   have := j.isLt
-  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
+  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
 
 private lemma cartanMatrixD_apply_of_not_lt {n : ℕ} {i : Fin n} (hi : ¬ i.val + 1 < n)
     (j : Fin n) :
     CartanMatrix.D n j i =
-      if j = i then 2
-      else if n ≤ 2 then 0
-      else if j.val + 3 = n then -1
-      else 0 := by
+      if j = i then 2 else if n ≤ 2 then 0 else if j.val + 3 = n then -1 else 0 := by
   have := i.isLt; have := j.isLt
-  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]
-  split_ifs <;> omega
+  simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff]; split_ifs <;> omega
+
+/-- Diagonal sign matrix negating the last two coordinates `n - 2` and `n - 1`. -/
+private def negLastTwo (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
+  Matrix.diagonal fun r : Fin n => if n ≤ r.val + 2 then -1 else 1
 
 /-- The last reflection of `Dₙ` in standard coordinates sends `eₙ₋₂ ↦ -eₙ₋₁`, `eₙ₋₁ ↦ -eₙ₋₂`, and
 fixes `eᵣ` for `r < n - 2`. -/
-private def lastReflD (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.of fun r j =>
-    if j.val + 2 = n then (if r.val + 1 = n then -1 else 0)
-    else if j.val + 1 = n then (if r.val + 2 = n then -1 else 0)
-    else (if r = j then 1 else 0)
+private def lastReflD {n : ℕ} (hn : 2 ≤ n) : Matrix (Fin n) (Fin n) ℤ :=
+  negLastTwo n * colPermMat (adjSwapFun n (n - 2) (by omega))
 
 private lemma lastReflD_mul_apply {n : ℕ} (hn : 2 ≤ n) {κ : Type*} (M : Matrix (Fin n) κ ℤ)
     (r : Fin n) (j : κ) :
-    (lastReflD n * M) r j =
+    (lastReflD hn * M) r j =
       if r.val + 1 = n then -M ⟨n - 2, by omega⟩ j
       else if r.val + 2 = n then -M ⟨n - 1, by omega⟩ j
       else M r j := by
-  rw [Matrix.mul_apply]
-  by_cases hr1 : r.val + 1 = n
-  · rw [ite_eq_left hr1, Finset.sum_eq_single ⟨n - 2, by omega⟩]
-    · simp only [lastReflD, Matrix.of_apply, hr1]
-      split_ifs <;> omega
-    · intro k _ hk
-      refine mul_eq_zero_of_left ?_ _
-      have hne : k.val + 2 ≠ n := fun h => hk (Fin.ext (by simp; omega))
-      have := k.isLt
-      simp only [lastReflD, Matrix.of_apply, hr1, Fin.ext_iff]
-      split_ifs <;> omega
-    · intro h; exact absurd (Finset.mem_univ _) h
-  · rw [ite_eq_right hr1]
-    by_cases hr2 : r.val + 2 = n
-    · rw [ite_eq_left hr2, Finset.sum_eq_single ⟨n - 1, by omega⟩]
-      · simp only [lastReflD, Matrix.of_apply, hr2]
-        split_ifs <;> omega
-      · intro k _ hk
-        refine mul_eq_zero_of_left ?_ _
-        have hne : k.val + 1 ≠ n := fun h => hk (Fin.ext (by simp; omega))
-        have := k.isLt
-        simp only [lastReflD, Matrix.of_apply, hr1, hr2, Fin.ext_iff]
-        split_ifs <;> omega
-      · intro h; exact absurd (Finset.mem_univ _) h
-    · rw [ite_eq_right hr2, Finset.sum_eq_single r]
-      · simp only [lastReflD, Matrix.of_apply, hr1, hr2, ↓reduceIte, one_mul]
-      · intro k _ hk
-        refine mul_eq_zero_of_left ?_ _
-        have hkr : r ≠ k := hk.symm
-        simp only [lastReflD, Matrix.of_apply, hr1, hr2, hkr, ↓reduceIte]
-        split_ifs <;> omega
-      · intro h; exact absurd (Finset.mem_univ _) h
+  rw [lastReflD, Matrix.mul_assoc, negLastTwo, Matrix.diagonal_mul,
+    colPermMat_mul_apply_of_involutive (involutive_adjSwapFun n (n - 2) (by omega))]
+  have := r.isLt
+  have hswap : adjSwapFun n (n - 2) (by omega) r =
+      if r.val + 1 = n then ⟨n - 2, by omega⟩
+      else if r.val + 2 = n then ⟨n - 1, by omega⟩
+      else r := Fin.ext <| by simp only [val_adjSwapFun, apply_ite Fin.val]; split_ifs <;> omega
+  rw [hswap]
+  split_ifs <;> simp <;> omega
+
+private lemma lastReflD_eq_swap_mul_diag {n : ℕ} (hn : 2 ≤ n) :
+    lastReflD hn = colPermMat (adjSwapFun n (n - 2) (by omega)) * negLastTwo n := by
+  ext r j
+  have := r.isLt; have := j.isLt
+  simp only [lastReflD, negLastTwo, Matrix.diagonal_mul, Matrix.mul_diagonal, colPermMat,
+    Matrix.of_apply, Fin.ext_iff, val_adjSwapFun]
+  split_ifs <;> omega
 
 /-- Coordinate simple reflections of type `Dₙ`. -/
-private def reflCoordD (n : ℕ) (i : Fin n) : Matrix (Fin n) (Fin n) ℤ :=
-  if hi : i.val + 1 < n then colPermMat (adjSwapFun n i.val hi) else lastReflD n
+private def reflCoordD {n : ℕ} (hn : 2 ≤ n) (i : Fin n) : Matrix (Fin n) (Fin n) ℤ :=
+  if hi : i.val + 1 < n then colPermMat (adjSwapFun n i.val hi) else lastReflD hn
 
 private lemma matPD_mul_reflMatrix {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
-    matPD n * reflMatrix (CartanMatrix.D n) i = reflCoordD n i * matPD n := by
+    matPD n * reflMatrix (CartanMatrix.D n) i = reflCoordD hn i * matPD n := by
   ext r j
   rw [mul_reflMatrix_apply]
   have := r.isLt; have := j.isLt; have := i.isLt
@@ -942,7 +753,7 @@ private lemma matPD_mul_reflMatrix {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
       cartanMatrixD_apply_of_lt hi j]
     by_cases hj : j.val + 1 < n
     · rcases eq_or_ne j i with rfl | hji
-      · simp only [ ↓reduceIte, matPD, Matrix.of_apply, hi, val_adjSwapFun]
+      · simp only [↓reduceIte, matPD, Matrix.of_apply, hi, val_adjSwapFun]
         split_ifs <;> omega
       · simp only [hji, hj, hi, ↓reduceIte, matPD, Matrix.of_apply, val_adjSwapFun]
         split_ifs <;> omega
@@ -968,88 +779,29 @@ private def modelDSucc (m : ℕ) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ :=
   (blockModelD m).reindex (finSumFinEquiv : Fin m ⊕ Fin 1 ≃ Fin (m + 1))
     (finSumFinEquiv : Fin m ⊕ Fin 1 ≃ Fin (m + 1))
 
-private lemma colPermMat_cyclePrefix_mul_apply {m : ℕ} {κ : Type*}
-    (M : Matrix (Fin (m + 1)) κ ℤ) (r : Fin (m + 1)) (j : κ) :
-    (colPermMat (cyclePrefixFun (m + 1) m (Nat.lt_succ_self m)) * M) r j =
-      if hr : 0 < r.val then M ⟨r.val - 1, by omega⟩ j else M ⟨m, by omega⟩ j := by
-  rw [Matrix.mul_apply]
-  by_cases hr : 0 < r.val
-  · rw [dite_eq_left_of_eq_true (eq_true hr), Finset.sum_eq_single ⟨r.val - 1, by omega⟩]
-    · have := r.isLt
-      simp only [colPermMat, Matrix.of_apply, Fin.ext_iff, val_cyclePrefixFun]
-      split_ifs <;> omega
-    · intro k _ hk
-      have hne : k.val ≠ r.val - 1 := fun h => hk (Fin.ext h)
-      have := r.isLt; have := k.isLt
-      simp only [colPermMat, Matrix.of_apply, Fin.ext_iff, val_cyclePrefixFun]
-      split_ifs <;> omega
-    · intro h; exact absurd (Finset.mem_univ _) h
-  · rw [dite_eq_right_of_eq_false (eq_false hr), Finset.sum_eq_single ⟨m, by omega⟩]
-    · simp only [colPermMat, Matrix.of_apply, Fin.ext_iff, val_cyclePrefixFun]
-      split_ifs <;> omega
-    · intro k _ hk
-      have hne : k.val ≠ m := fun h => hk (Fin.ext h)
-      have := k.isLt
-      simp only [colPermMat, Matrix.of_apply, Fin.ext_iff, val_cyclePrefixFun]
-      split_ifs <;> omega
-    · intro h; exact absurd (Finset.mem_univ _) h
-
 private lemma colPermMat_cyclePrefix_mul_lastReflD {m : ℕ} (hm : 1 ≤ m) :
-    colPermMat (cyclePrefixFun (m + 1) m (Nat.lt_succ_self m)) * lastReflD (m + 1) =
-      modelDSucc m := by
+    colPermMat (cyclePrefixFun (m + 1) m (Nat.lt_succ_self m)) *
+      lastReflD (n := m + 1) (by omega) = modelDSucc m := by
+  rw [lastReflD_eq_swap_mul_diag, ← Matrix.mul_assoc, colPermMat_mul]
   ext r j
-  rw [colPermMat_cyclePrefix_mul_apply]
-  refine Fin.lastCases ?_ (fun r₀ => ?_) r <;> refine Fin.lastCases ?_ (fun j₀ => ?_) j
-  · simp only [Fin.val_last, modelDSucc, Matrix.reindex_apply, Matrix.submatrix_apply,
-      finSumFinEquiv_symm_last, blockModelD, Matrix.fromBlocks_apply₂₂, Matrix.neg_apply,
-      Matrix.one_apply_eq]
-    rw [dite_eq_left_of_eq_true (eq_true (by omega : 0 < m))]
-    simp only [lastReflD, Matrix.of_apply, Fin.val_last, Fin.ext_iff]
-    split_ifs <;> omega
-  · have hj₀ := j₀.isLt
-    simp only [Fin.val_last, modelDSucc, Matrix.reindex_apply,
-      Matrix.submatrix_apply, finSumFinEquiv_symm_last, finSumFinEquiv_symm_apply_castSucc,
-      blockModelD, Matrix.fromBlocks_apply₂₁, Matrix.zero_apply]
-    rw [dite_eq_left_of_eq_true (eq_true (by omega : 0 < m))]
-    simp only [lastReflD, Matrix.of_apply, Fin.val_castSucc, Fin.ext_iff]
-    split_ifs <;> omega
-  · have hr₀ := r₀.isLt
-    simp only [Fin.val_castSucc, modelDSucc, Matrix.reindex_apply,
-      Matrix.submatrix_apply, finSumFinEquiv_symm_apply_castSucc, finSumFinEquiv_symm_last,
-      blockModelD, Matrix.fromBlocks_apply₁₂, Matrix.zero_apply]
-    by_cases hr : 0 < r₀.val
-    · rw [dite_eq_left_of_eq_true (eq_true hr)]
-      simp only [lastReflD, Matrix.of_apply, Fin.val_last, Fin.ext_iff]
-      split_ifs <;> omega
-    · rw [dite_eq_right_of_eq_false (eq_false hr)]
-      simp only [lastReflD, Matrix.of_apply, Fin.val_last, Fin.ext_iff]
-      split_ifs <;> omega
-  · have hr₀ := r₀.isLt; have hj₀ := j₀.isLt
-    simp only [Fin.val_castSucc, modelDSucc, Matrix.reindex_apply, Matrix.submatrix_apply,
-      finSumFinEquiv_symm_apply_castSucc, blockModelD, Matrix.fromBlocks_apply₁₁, negCycleMatrix,
-      Matrix.of_apply]
-    by_cases hr : 0 < r₀.val
-    · rw [dite_eq_left_of_eq_true (eq_true hr)]
-      simp only [lastReflD, Matrix.of_apply, Fin.val_castSucc, Fin.ext_iff]
-      split_ifs <;> omega
-    · rw [dite_eq_right_of_eq_false (eq_false hr)]
-      simp only [lastReflD, Matrix.of_apply, Fin.val_castSucc, Fin.ext_iff]
-      split_ifs <;> omega
+  rw [negLastTwo, Matrix.mul_diagonal]
+  refine Fin.lastCases ?_ (fun r₀ => ?_) r <;> refine Fin.lastCases ?_ (fun j₀ => ?_) j <;>
+    simp only [modelDSucc, Matrix.reindex_apply, Matrix.submatrix_apply, blockModelD,
+      finSumFinEquiv_symm_last, finSumFinEquiv_symm_apply_castSucc,
+      Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁,
+      Matrix.fromBlocks_apply₂₂, Matrix.neg_apply, Matrix.one_apply_eq, Matrix.zero_apply,
+      negCycleMatrix, colPermMat, Matrix.of_apply, Function.comp_apply, Fin.ext_iff,
+      Fin.val_last, Fin.val_castSucc, val_cyclePrefixFun, val_adjSwapFun] <;>
+    (try have := r₀.isLt) <;> (try have := j₀.isLt) <;> split_ifs <;> omega
 
 private lemma matPD_mul_coxD_succ {m : ℕ} (hm : 1 ≤ m) :
     matPD (m + 1) * coxD (m + 1) = modelDSucc m * matPD (m + 1) := by
   rw [coxD, mul_coxeterElement (matPD (m + 1)) (CartanMatrix.D (m + 1))
-    (reflCoordD (m + 1)) (matPD_mul_reflMatrix (by omega))]
+    (reflCoordD (by omega)) (matPD_mul_reflMatrix (by omega))]
   congr 1
-  rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
-    List.map_singleton, List.prod_singleton]
-  have hpre : (((List.finRange m).map (reflCoordD (m + 1) ∘ Fin.castSucc)).prod) =
-      colPermMat (cyclePrefixFun (m + 1) m (Nat.lt_succ_self m)) := by
-    refine prod_take_adjSwap (N := m + 1) (reflCoordD (m + 1)) m (Nat.lt_succ_self m) fun i => ?_
-    simp [reflCoordD, Nat.add_lt_add_right i.isLt 1]
-  have hlast : reflCoordD (m + 1) (Fin.last m) = lastReflD (m + 1) := by
-    simp [reflCoordD]
-  rw [hpre, hlast, colPermMat_cyclePrefix_mul_lastReflD hm]
+  rw [prod_finRange_succ_adjSwap (reflCoordD (by omega)) fun i => by
+    simp [reflCoordD, Nat.add_lt_add_right i.isLt 1]]
+  simpa [reflCoordD] using colPermMat_cyclePrefix_mul_lastReflD hm
 
 private lemma charpoly_modelDSucc {m : ℕ} (hm : 1 ≤ m) :
     (modelDSucc m).charpoly = (X ^ m + 1) * (X + 1) := by
@@ -1062,9 +814,8 @@ private lemma charpoly_modelDSucc {m : ℕ} (hm : 1 ≤ m) :
 private lemma orderOf_modelDSucc {m : ℕ} (hm : 1 ≤ m) :
     orderOf (modelDSucc m) = 2 * m := by
   let e : Fin m ⊕ Fin 1 ≃ Fin (m + 1) := finSumFinEquiv
-  let φ := (Matrix.reindexAlgEquiv ℤ ℤ e).toMulEquiv
   have he : orderOf (modelDSucc m) = orderOf (blockModelD m) :=
-    φ.orderOf_eq (blockModelD m)
+    (Matrix.reindexAlgEquiv ℤ ℤ e).toMulEquiv.orderOf_eq (blockModelD m)
   rw [he]
   refine (orderOf_eq_iff (by omega)).2 ⟨?_, fun k hk hpos h1 => ?_⟩
   · rw [blockModelD, Matrix.fromBlocks_diagonal_pow, pow_mul' (negCycleMatrix m),
@@ -1086,8 +837,7 @@ theorem charpoly_coxD {n : ℕ} (hn : 2 ≤ n) :
 
 /-- **The Coxeter number of `Dₙ` is `2 (n - 1)`** (`2 ≤ n`): the Coxeter element of type `Dₙ` has
 order `2 (n - 1)`. -/
-theorem orderOf_coxD {n : ℕ} (hn : 2 ≤ n) :
-    orderOf (coxD n) = 2 * (n - 1) := by
+theorem orderOf_coxD {n : ℕ} (hn : 2 ≤ n) : orderOf (coxD n) = 2 * (n - 1) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   have hm : 1 ≤ m := by omega
   have h := charpoly_and_orderOf_of_intertwine (by rw [det_matPD hn]; norm_num)
