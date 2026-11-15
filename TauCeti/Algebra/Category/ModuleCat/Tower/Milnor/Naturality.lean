@@ -207,9 +207,13 @@ theorem limOneToHomology_naturality (f : C ⟶ D)
     simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hn
   exact congrArg ((D.shortComplex_shortExact hD).δ i j hij) hp
 
+/-- Two chain maps into `C.limComplex` agree if they agree after every projection `limComplexπ`. -/
+theorem limComplex_hom_ext {X : HomologicalComplex (ModuleCat.{v} R) c} {f g : X ⟶ C.limComplex}
+    (h : ∀ n, f ≫ C.limComplexπ n = g ≫ C.limComplexπ n) : f = g :=
+  C.isLimitLimComplexCone.hom_ext fun ⟨n⟩ ↦ h n
+
 /-- If a map of towers is a quasi-isomorphism in degree `i` at every stage, then the induced
-map of product complexes is a quasi-isomorphism in degree `i`. No surjectivity on the towers is
-required. -/
+map of product complexes is a quasi-isomorphism in degree `i`. -/
 instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι)
     [∀ n, QuasiIsoAt (f.app (op n)) i] : QuasiIsoAt (productComplexMap f) i := by
   rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
@@ -218,13 +222,13 @@ instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι)
   have hbij (n : ℕ) : Function.Bijective (g.app (op n)).hom :=
     (ConcreteCategory.isIso_iff_bijective _).1
       ((quasiIsoAt_iff_isIso_homologyMap (f.app (op n)) i).1 inferInstance)
-  have hprod : Function.Bijective (ModuleTower.productMap g) := by
-    refine ⟨fun x y h ↦ funext fun n ↦ (hbij n).1 ?_, fun y ↦ ?_⟩
-    · simpa only [ModuleTower.productMap_apply] using congrFun h n
-    · choose z hz using fun n ↦ (hbij n).2 (y n)
-      exact ⟨z, funext fun n ↦ (ModuleTower.productMap_apply g z n).trans (hz n)⟩
+  have hprod : Function.Bijective (ModuleTower.productMap g) :=
+    ⟨fun x y h ↦ funext fun n ↦ (hbij n).1
+        (by simpa [ModuleTower.productMap_apply] using congrFun h n),
+      fun y ↦ let ⟨z, hz⟩ := Classical.axiomOfChoice fun n ↦ (hbij n).2 (y n)
+        ⟨z, funext fun n ↦ (ModuleTower.productMap_apply g z n).trans (hz n)⟩⟩
   have hnat : (D.productHomologyEquiv i : _ → _) ∘
-        (HomologicalComplex.homologyMap (productComplexMap f) i).hom =
+      (HomologicalComplex.homologyMap (productComplexMap f) i).hom =
       ModuleTower.productMap g ∘ (C.productHomologyEquiv i : _ → _) :=
     congrArg DFunLike.coe (productHomologyEquiv_naturality f i)
   exact ((D.productHomologyEquiv i).bijective.of_comp_iff' _).1
@@ -233,10 +237,8 @@ instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι)
 /-- A map of towers whose components are quasi-isomorphisms induces a quasi-isomorphism of
 product complexes, without surjectivity hypotheses on the towers. -/
 instance quasiIso_productComplexMap (f : C ⟶ D) [∀ n, QuasiIso (f.app (op n))] :
-    QuasiIso (productComplexMap f) := by
-  rw [quasiIso_iff]
-  intro i
-  infer_instance
+    QuasiIso (productComplexMap f) :=
+  (quasiIso_iff _).2 fun _ ↦ inferInstance
 
 /-- For towers whose shift maps on terms are surjective, if `f` is a levelwise quasi-isomorphism
 in degree `j` and in every preceding degree `i` with `c.Rel i j`, then `limComplexMap f` induces
@@ -250,15 +252,12 @@ theorem isIso_homologyMap_limComplexMap (f : C ⟶ D)
   have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁ (shortComplexMap f)
     (C.shortComplex_shortExact hC) (D.shortComplex_shortExact hD) j
   rw [shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃] at h
-  refine h (fun i hij ↦ ?_) (fun i hij ↦ ?_) ?_ ?_
-  · have := hrel i hij
-    have := (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) i).1 inferInstance
-    infer_instance
-  · have := hrel i hij
-    exact (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) i).1 inferInstance
-  · exact (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) j).1 inferInstance
-  · have := (quasiIsoAt_iff_isIso_homologyMap (productComplexMap f) j).1 inferInstance
-    infer_instance
+  have hi (i : ι) (hij : c.Rel i j) :
+      IsIso (HomologicalComplex.homologyMap (productComplexMap f) i) :=
+    have := hrel i hij; (quasiIsoAt_iff_isIso_homologyMap _ i).1 inferInstance
+  have : IsIso (HomologicalComplex.homologyMap (productComplexMap f) j) :=
+    (quasiIsoAt_iff_isIso_homologyMap _ j).1 inferInstance
+  exact h (fun i hij ↦ by have := hi i hij; infer_instance) hi this inferInstance
 
 /-- **Levelwise quasi-isomorphisms pass to the limit complex.** For towers whose shift maps on
 terms are surjective, a map of towers whose components are quasi-isomorphisms induces a

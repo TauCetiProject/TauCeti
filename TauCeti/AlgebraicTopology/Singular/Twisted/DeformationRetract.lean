@@ -14,30 +14,12 @@ import TauCeti.Algebra.Homology.HomologySequenceLemmas
 # Relative twisted homology of deformation retracts and triples
 
 If the inclusion `B ↪ A` of a topological pair `(A, B)` is a homotopy equivalence — for instance,
-when `A` deformation retracts onto `B` — then the induced map `C(B; L|_B) ⟶ C(A; L)` on twisted
-singular chains is a quasi-isomorphism, so the relative twisted chain complex `C(A, B; L)` is
-acyclic and `Hₖ(A, B; L) = 0` in every degree.
-
-For a triple `(X, A, B)` with `B ⊆ A ⊆ X` whose inner inclusion `B ↪ A` is a homotopy equivalence,
-the inner term `C(A, B; L|_A)` of the triple short exact sequence is acyclic, so the quotient map
-`C(X, B; L) ⟶ C(X, A; L)` (`TauCeti.TopTriple.twistedChainComplexTotalToOuter`) is a
-quasi-isomorphism for every local coefficient system `L` on `X`, inducing isomorphisms
-`Hₖ(X, B; L) ≅ Hₖ(X, A; L)` in every degree. Neither cofibration nor pointwise fixing of `B`
-during the deformation is required: any homotopy equivalence realized by the subspace inclusion,
-including deformation retractions in the weak sense, suffices.
-
-## Main results
-
-* `TopPair.acyclic_twistedChainComplex_of_homotopyEquiv` and
-  `TopPair.isZero_twistedHomology_of_homotopyEquiv`: acyclicity and vanishing of relative twisted
-  homology when the subspace inclusion is a homotopy equivalence, specialized to deformation
-  retractions in `TopPair.acyclic_twistedChainComplex_of_deformationRetraction`.
-* `TauCeti.TopTriple.quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv` and
-  `TauCeti.TopTriple.isIso_twistedHomologyTotalToOuter_of_homotopyEquiv`: the triple quotient map
-  `C(X, B; L) ⟶ C(X, A; L)` is a quasi-isomorphism when `B ↪ A` is a homotopy equivalence.
-* `TauCeti.TopTriple.quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction`:
-  for subsets `B ⊆ A` of `X`, if `A` deformation retracts onto `B`, then
-  `C(X, B; L) ⟶ C(X, A; L)` is a quasi-isomorphism.
+when `A` deformation retracts onto `B` — then `C(B; L|_B) ⟶ C(A; L)` is a quasi-isomorphism, so the
+relative twisted chain complex `C(A, B; L)` is acyclic
+(`acyclic_twistedChainComplex_of_homotopyEquiv`) and `Hₖ(A, B; L) = 0`. For a triple `(X, A, B)`
+whose inner inclusion `B ↪ A` is a homotopy equivalence, acyclicity of `C(A, B; L|_A)` makes
+`C(X, B; L) ⟶ C(X, A; L)` (`TauCeti.TopTriple.twistedChainComplexTotalToOuter`) a quasi-isomorphism
+for every local coefficient system `L` on `X`, without cofibration or pointwise-fixing hypotheses.
 
 ## References
 
@@ -63,10 +45,8 @@ chain complex `C(A, B; L)` is acyclic for every local coefficient system `L` on 
 theorem acyclic_twistedChainComplex_of_homotopyEquiv
     (e : ContinuousMap.HomotopyEquiv P.snd P.fst) (he : e.toFun = P.map.hom) :
     (P.twistedChainComplex L).Acyclic := by
-  have hq : QuasiIso (LocalCoefficientSystem.twistedChainComplexMap P.map L) := by
-    have h := e.quasiIso_twistedChainComplexMap L
-    rwa [he, TopCat.ofHom_hom] at h
-  exact (P.shortExact_twistedChainComplexShortComplex L).quasiIso_f_iff.1 hq
+  have h := e.quasiIso_twistedChainComplexMap L; rw [he, TopCat.ofHom_hom] at h
+  exact (P.shortExact_twistedChainComplexShortComplex L).quasiIso_f_iff.1 h
 
 /-- If the subspace inclusion of a pair `(A, B)` is a homotopy equivalence, its relative twisted
 homology vanishes in every degree. -/
@@ -82,7 +62,7 @@ theorem acyclic_twistedChainComplex_of_deformationRetraction (r : C(P.fst, P.snd
     (hH : (P.map.hom.comp r).Homotopic (ContinuousMap.id P.fst)) :
     (P.twistedChainComplex L).Acyclic :=
   P.acyclic_twistedChainComplex_of_homotopyEquiv L
-    (ContinuousMap.HomotopyEquiv.ofDeformationRetraction P.map.hom r hr hH)
+    (.ofDeformationRetraction P.map.hom r hr hH)
     (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun P.map.hom r hr hH)
 
 /-- If the ambient space of a pair `(A, B)` deformation retracts onto `B`, its relative twisted
@@ -118,8 +98,7 @@ map `Hₖ(X, B; L) ⟶ Hₖ(X, A; L)` is an isomorphism in every degree. -/
 theorem isIso_twistedHomologyTotalToOuter_of_homotopyEquiv
     (e : ContinuousMap.HomotopyEquiv T.thd T.snd) (he : e.toFun = T.innerMap.hom) (k : ℕ) :
     IsIso (T.twistedHomologyTotalToOuter L k) := by
-  have := T.quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv L e he
-  infer_instance
+  have := T.quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv L e he; infer_instance
 
 /-- For a triple `(X, A, B)` where `A` deformation retracts onto `B`, the quotient map
 `C(X, B; L) ⟶ C(X, A; L)` is a quasi-isomorphism. -/
@@ -128,7 +107,7 @@ theorem quasiIso_twistedChainComplexTotalToOuter_of_deformationRetraction
     (hH : (T.innerMap.hom.comp r).Homotopic (ContinuousMap.id T.snd)) :
     QuasiIso (T.twistedChainComplexTotalToOuter L) :=
   T.quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv L
-    (ContinuousMap.HomotopyEquiv.ofDeformationRetraction T.innerMap.hom r hr hH)
+    (.ofDeformationRetraction T.innerMap.hom r hr hH)
     (ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun T.innerMap.hom r hr hH)
 
 /-- For a triple `(X, A, B)` where `A` deformation retracts onto `B`, the quotient map
@@ -148,8 +127,7 @@ variable {X : TopCat.{v}} {A B : Set X} (hBA : B ⊆ A)
   (L : LocalCoefficientSystem.{u, v, max v w} R X)
 
 /-- For subsets `B ⊆ A` of `X`, if `A` deformation retracts onto `B`, then the quotient map
-`C(X, B; L) ⟶ C(X, A; L)` is a quasi-isomorphism for every local coefficient system `L` on `X`.
-Pointwise fixing of `B` during the homotopy is not required. -/
+`C(X, B; L) ⟶ C(X, A; L)` is a quasi-isomorphism for every local coefficient system `L` on `X`. -/
 theorem quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction
     (r : C(A, B)) (hr : ∀ b, r (ContinuousMap.inclusion hBA b) = b)
     (hH : ((ContinuousMap.inclusion hBA).comp r).Homotopic (ContinuousMap.id A)) :
@@ -173,7 +151,7 @@ theorem quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_weakDeformationRetr
     (hHB : ∀ t (x : A), (x : X) ∈ B → H (t, x) ∈ B) :
     QuasiIso ((ofSubset hBA).twistedChainComplexTotalToOuter L) :=
   (ofSubset hBA).quasiIso_twistedChainComplexTotalToOuter_of_homotopyEquiv L
-    (ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction hBA H hH hHA h₀ h₁ hHB)
+    (.ofWeakDeformationRetraction hBA H hH hHA h₀ h₁ hHB)
     (ContinuousMap.ext fun b ↦ Subtype.ext
       (ContinuousMap.HomotopyEquiv.coe_ofWeakDeformationRetraction_apply hBA H hH hHA h₀ h₁ hHB b))
 

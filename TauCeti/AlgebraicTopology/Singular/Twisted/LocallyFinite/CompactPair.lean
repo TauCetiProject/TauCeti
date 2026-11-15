@@ -11,41 +11,20 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Restricti
 /-!
 # Compact pairs and Borel–Moore homology of complements
 
-For a closed subset `A` of a Hausdorff space `X`, the complement `X \ A` is open in `X`. Given a
-compact exhaustion `K` of `X \ A` and a local coefficient system `L` on `X`, each subset `K n` is
-compact, so its ambient image `i '' K n` is closed and `A ⊆ (i '' K n)ᶜ`. The triple quotient maps
-`C(X, A; L) ⟶ C(X, (i '' K n)ᶜ; L)` assemble into a chain map
-`relativeToOpenRestrictionLim : C(X, A; L) ⟶ (openRestrictionTower i L K).limComplex`. Composing its
-induced map on homology with the inverse of the excision isomorphism from
-`TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Restriction` yields a canonical comparison
-morphism
-`twistedHomologyToBorelMooreHomologyCompl : H_j(X, A; L) ⟶ H_j^{BM}(X \ A; L|_{X \ A})`,
-independent of the compact exhaustion, natural in `L`, and compatible with open restriction along
-`X \ A ↪ X`. When `X` is compact, open restriction `H_j^{BM}(X; L) ⟶ H_j^{BM}(X \ A; L|_{X \ A})`
-factors through the relative quotient map `H_j(X; L) ⟶ H_j(X, A; L)` and this comparison map.
+For a closed subset `A` of a Hausdorff space `X` and a compact exhaustion `K` of `X \ A`, each
+ambient image `i '' K n` under `i = complInclusion A : Aᶜ ⟶ X` is closed with `A ⊆ (i '' K n)ᶜ`. The
+triple quotient maps `C(X, A; L) ⟶ C(X, (i '' K n)ᶜ; L)` induce a chain map
+`relativeToOpenRestrictionLim : C(X, A; L) ⟶ (openRestrictionTower i L K).limComplex`. Composing on
+homology with the inverse of the open-restriction excision isomorphism yields the comparison map
+`twistedHomologyToBorelMooreHomologyCompl : H_j(X, A; L) ⟶ H_j^{BM}(X \ A; L|_{X \ A})`, proved
+exhaustion-independent, natural in `L`, and compatible with `borelMooreHomologyOpenRestriction`.
 
-When `X` is compact Hausdorff and `A` admits a countable cofinal family of open neighbourhoods
-`U : ℕ → Set X` for which the triple quotient maps `C(X, A; L) ⟶ C(X, U n; L)` are
-quasi-isomorphisms — in particular, when each `U n` deformation retracts onto `A`, as for compact
-Euclidean/polyhedral NDR pairs — `CompactExhaustion.complOfCofinalNhds` extracts a shrinking
-subsequence `U (φ n)` with `closure (U (φ (n + 1))) ⊆ U (φ n)` whose complements `K n = (U (φ n))ᶜ`
-form a compact exhaustion of `X \ A`. By Milnor's limit criterion
-(`ComplexTower.quasiIso_isLimitLimComplexCone_lift`), `relativeToOpenRestrictionLim` is then a
-quasi-isomorphism, so the comparison map is an isomorphism
-`H_j(X, A; L) ≅ H_j^{BM}(X \ A; L|_{X \ A})` in every degree `j`.
-
-## Main definitions and results
-
-* `TauCeti.LocalCoefficientSystem.complInclusion`: the open inclusion `Aᶜ ⟶ X` in `TopCat`.
-* `TauCeti.LocalCoefficientSystem.twistedHomologyToBorelMooreHomologyComplOfExhaustion` and
-  `TauCeti.LocalCoefficientSystem.twistedHomologyToBorelMooreHomologyCompl`: the canonical
-  comparison map `H_j(X, A; L) ⟶ H_j^{BM}(X \ A; L|_{X \ A})`, proved independent of the exhaustion,
-  natural in `L`, and compatible with `borelMooreHomologyOpenRestriction`.
-* `TauCeti.LocalCoefficientSystem.twistedHomologyIsoBorelMooreHomologyComplOfExhaustion` and
-  `TauCeti.LocalCoefficientSystem.twistedHomologyIsoBorelMooreHomologyCompl`: the compact-pair
-  isomorphism `H_j(X, A; L) ≅ H_j^{BM}(X \ A; L|_{X \ A})`, specialized to neighbourhood families
-  that deformation retract onto `A` in
-  `twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction`.
+When `X` is compact Hausdorff and `A` admits a countable cofinal family `U : ℕ → Set X` of open
+neighbourhoods with quasi-isomorphic triple quotient maps `C(X, A; L) ⟶ C(X, U n; L)` — in
+particular, when each `U n` deformation retracts onto `A` — `CompactExhaustion.complOfCofinalNhds`
+and `ComplexTower.quasiIso_isLimitLimComplexCone_lift` make this comparison map an isomorphism
+`twistedHomologyIsoBorelMooreHomologyCompl` (and
+`twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction`).
 
 ## References
 
@@ -62,8 +41,6 @@ noncomputable section
 open CategoryTheory Limits Opposite Topology
 
 universe u v w
-
-/-! ### Comparison morphism from relative homology to Borel–Moore homology of the complement -/
 
 namespace TauCeti.LocalCoefficientSystem
 
@@ -85,8 +62,7 @@ theorem isOpenEmbedding_complInclusion {A : Set X} (hA : IsClosed A) :
 
 lemma subset_compl_image_complInclusion (A : Set X) (S : Set (TopCat.of (Aᶜ : Set X))) :
     A ⊆ (complInclusion A '' S)ᶜ := by
-  rintro x hx ⟨y, -, rfl⟩
-  exact y.2 hx
+  rintro _ hx ⟨y, -, rfl⟩; exact y.2 hx
 
 /-- The cone from `C(X, A; L)` to `openRestrictionTower (complInclusion A) L K` whose stage-`n` leg
 is the triple quotient map `C(X, A; L) ⟶ C(X, (complInclusion A '' K n)ᶜ; L)`. -/
@@ -98,15 +74,12 @@ def relativeOpenRestrictionCone (A : Set X) (L : LocalCoefficientSystem.{u, v, m
   π := NatTrans.ofOpSequence
     (fun n ↦ (TopTriple.ofSubset
       (subset_compl_image_complInclusion A (K n))).twistedChainComplexTotalToOuter L)
-    fun n ↦ by
-      apply (TopPair.ofSubset A).twistedChainComplex_hom_ext L
-      exact (congrArg (_ ≫ ·) (Category.id_comp _)).trans <|
-        ((TopTriple.ofSubset
-          (subset_compl_image_complInclusion A (K n))).twistedChainComplexπ_comp_totalToOuter
-            L).trans
-          (((TopTriple.ofSubset
-            (subset_compl_image_complInclusion A
-              (K (n + 1)))).twistedChainComplexπ_comp_totalToOuter_assoc L _).trans
+    fun n ↦ (TopPair.ofSubset A).twistedChainComplex_hom_ext L <|
+      (congrArg (_ ≫ ·) (Category.id_comp _)).trans <|
+        ((TopTriple.ofSubset (subset_compl_image_complInclusion A
+          (K n))).twistedChainComplexπ_comp_totalToOuter L).trans
+          (((TopTriple.ofSubset (subset_compl_image_complInclusion A
+            (K (n + 1)))).twistedChainComplexπ_comp_totalToOuter_assoc L _).trans
             (twistedChainComplexπ_comp_openRestrictionTower_map (complInclusion A) L K
               (homOfLE (Nat.le_succ n)).op)).symm
 
@@ -137,21 +110,16 @@ theorem twistedChainComplexπ_comp_relativeToOpenRestrictionLim (A : Set X)
     (L : LocalCoefficientSystem.{u, v, max v w} R X) (K : CompactExhaustion (Aᶜ : Set X)) :
     (TopPair.ofSubset A).twistedChainComplexπ L ≫ relativeToOpenRestrictionLim A L K =
       toLocallyFiniteChainComplex L ≫
-        locallyFiniteChainComplexToOpenRestrictionLim (complInclusion A) L K := by
-  apply (openRestrictionTower (complInclusion A) L K).isLimitLimComplexCone.hom_ext
-  rintro ⟨n⟩
-  let PiK := TopPair.ofSubset (complInclusion A '' K n)ᶜ
-  exact (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) (relativeToOpenRestrictionLim_comp_π A L K n)).trans <|
-      ((TopTriple.ofSubset
-        (subset_compl_image_complInclusion A (K n))).twistedChainComplexπ_comp_totalToOuter
-          L).trans <|
-        (PiK.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative
-          L _).symm.trans <|
-          (congrArg (_ ≫ ·)
-            (locallyFiniteChainComplexToOpenRestrictionLim_comp_π
-              (complInclusion A) L K n).symm).trans
-            (Category.assoc _ _ _).symm
+        locallyFiniteChainComplexToOpenRestrictionLim (complInclusion A) L K :=
+  (openRestrictionTower (complInclusion A) L K).limComplex_hom_ext fun n ↦
+    (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (relativeToOpenRestrictionLim_comp_π A L K n)).trans <|
+        ((TopTriple.ofSubset (subset_compl_image_complInclusion A
+          (K n))).twistedChainComplexπ_comp_totalToOuter L).trans <|
+          (TopPair.toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexToRelative
+            (TopPair.ofSubset (complInclusion A '' K n)ᶜ) L _).symm.trans <|
+            (congrArg (_ ≫ ·) (locallyFiniteChainComplexToOpenRestrictionLim_comp_π
+              (complInclusion A) L K n).symm).trans (Category.assoc _ _ _).symm
 
 @[reassoc (attr := simp)]
 lemma relativeToOpenRestrictionLim_comp_limComplexMap {A : Set X}
@@ -160,19 +128,17 @@ lemma relativeToOpenRestrictionLim_comp_limComplexMap {A : Set X}
     relativeToOpenRestrictionLim A L K' ≫
         ComplexTower.limComplexMap (openRestrictionTowerMap (complInclusion A) L h) =
       relativeToOpenRestrictionLim A L K := by
-  apply (openRestrictionTower (complInclusion A) L K).isLimitLimComplexCone.hom_ext
-  rintro ⟨n⟩
-  refine (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) (ComplexTower.limComplexMap_comp_π _ n)).trans <|
-      (relativeToOpenRestrictionLim_comp_π_assoc A L K' n _).trans <|
-        (?_ : _ = _).trans (relativeToOpenRestrictionLim_comp_π A L K n).symm
-  apply (TopPair.ofSubset A).twistedChainComplex_hom_ext L
-  exact ((TopTriple.ofSubset
-    (subset_compl_image_complInclusion A (K' n))).twistedChainComplexπ_comp_totalToOuter_assoc
-      L _).trans <|
-    (twistedChainComplexπ_comp_openRestrictionTowerMap_app (complInclusion A) L h n).trans
-      ((TopTriple.ofSubset
-        (subset_compl_image_complInclusion A (K n))).twistedChainComplexπ_comp_totalToOuter L).symm
+  refine (openRestrictionTower (complInclusion A) L K).limComplex_hom_ext fun n ↦
+    (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (ComplexTower.limComplexMap_comp_π _ n)).trans <|
+        (relativeToOpenRestrictionLim_comp_π_assoc A L K' n _).trans <|
+          (?_ : _ = _).trans (relativeToOpenRestrictionLim_comp_π A L K n).symm
+  refine (TopPair.ofSubset A).twistedChainComplex_hom_ext L <|
+    ((TopTriple.ofSubset (subset_compl_image_complInclusion A
+      (K' n))).twistedChainComplexπ_comp_totalToOuter_assoc L _).trans <|
+      (twistedChainComplexπ_comp_openRestrictionTowerMap_app (complInclusion A) L h n).trans
+        ((TopTriple.ofSubset (subset_compl_image_complInclusion A
+          (K n))).twistedChainComplexπ_comp_totalToOuter L).symm
 
 @[reassoc]
 lemma twistedChainComplexCoefficientMap_comp_relativeToOpenRestrictionLim (A : Set X)
@@ -181,52 +147,28 @@ lemma twistedChainComplexCoefficientMap_comp_relativeToOpenRestrictionLim (A : S
     (TopPair.ofSubset A).twistedChainComplexCoefficientMap η ≫
         relativeToOpenRestrictionLim A L' K =
       relativeToOpenRestrictionLim A L K ≫
-        ComplexTower.limComplexMap (openRestrictionTowerCoefficientMap (complInclusion A) K η) := by
-  apply (openRestrictionTower (complInclusion A) L' K).isLimitLimComplexCone.hom_ext
-  rintro ⟨n⟩
-  apply (TopPair.ofSubset A).twistedChainComplex_hom_ext L
-  have hL :
-      (TopPair.ofSubset A).twistedChainComplexπ L ≫
-          ((TopPair.ofSubset A).twistedChainComplexCoefficientMap η ≫
-            relativeToOpenRestrictionLim A L' K) ≫
-            (openRestrictionTower (complInclusion A) L' K).limComplexCone.π.app (op n) =
-        twistedChainComplexCoefficientMap η ≫
-          (TopPair.ofSubset (complInclusion A '' K n)ᶜ).twistedChainComplexπ L' :=
-    (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ _)
-        ((TopPair.ofSubset A).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc
-          η _)).trans <|
-        (Category.assoc _ _ _).trans <|
-          (congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans <|
+        ComplexTower.limComplexMap (openRestrictionTowerCoefficientMap (complInclusion A) K η) :=
+  (openRestrictionTower (complInclusion A) L' K).limComplex_hom_ext fun n ↦
+    (TopPair.ofSubset A).twistedChainComplex_hom_ext L <|
+      ((Category.assoc _ _ _).symm.trans <|
+        (congrArg (· ≫ _)
+          ((TopPair.ofSubset A).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc
+            η _)).trans <|
+          (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans <|
             (congrArg (_ ≫ ·)
               (congrArg (_ ≫ ·) (relativeToOpenRestrictionLim_comp_π A L' K n))).trans
-              (congrArg (_ ≫ ·)
-                ((TopTriple.ofSubset
-                  (subset_compl_image_complInclusion A
-                    (K n))).twistedChainComplexπ_comp_totalToOuter L'))
-  have hR :
-      (TopPair.ofSubset A).twistedChainComplexπ L ≫
-          (relativeToOpenRestrictionLim A L K ≫
-            ComplexTower.limComplexMap
-              (openRestrictionTowerCoefficientMap (complInclusion A) K η)) ≫
-            (openRestrictionTower (complInclusion A) L' K).limComplexCone.π.app (op n) =
-        twistedChainComplexCoefficientMap η ≫
-          (TopPair.ofSubset (complInclusion A '' K n)ᶜ).twistedChainComplexπ L' :=
-    (congrArg (_ ≫ ·) <|
-      (Category.assoc _ _ _).trans <|
-        (congrArg (_ ≫ ·)
-          (ComplexTower.limComplexMap_comp_π
+              (congrArg (_ ≫ ·) ((TopTriple.ofSubset (subset_compl_image_complInclusion A
+                (K n))).twistedChainComplexπ_comp_totalToOuter L'))).trans
+        ((congrArg (_ ≫ ·) <| (Category.assoc _ _ _).trans <|
+          (congrArg (_ ≫ ·) (ComplexTower.limComplexMap_comp_π
             (openRestrictionTowerCoefficientMap (complInclusion A) K η) n)).trans
-          (relativeToOpenRestrictionLim_comp_π_assoc A L K n _)).trans <|
-      ((TopTriple.ofSubset
-        (subset_compl_image_complInclusion A (K n))).twistedChainComplexπ_comp_totalToOuter_assoc
-          L _).trans <|
-        (congrArg (_ ≫ ·)
-          (openRestrictionTowerCoefficientMap_app (complInclusion A) K η n)).trans
-          ((TopPair.ofSubset
-            (complInclusion A '' K n)ᶜ).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap
-              η)
-  exact hL.trans hR.symm
+            (relativeToOpenRestrictionLim_comp_π_assoc A L K n _)).trans <|
+          ((TopTriple.ofSubset (subset_compl_image_complInclusion A
+            (K n))).twistedChainComplexπ_comp_totalToOuter_assoc L _).trans <|
+            (congrArg (_ ≫ ·)
+              (openRestrictionTowerCoefficientMap_app (complInclusion A) K η n)).trans
+              (TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap
+                (TopPair.ofSubset (complInclusion A '' K n)ᶜ) η)).symm
 
 section T2
 
@@ -429,8 +371,6 @@ end T2
 
 end ComparisonMap
 
-/-! ### Compact-pair isomorphism from cofinal open neighbourhoods -/
-
 section CofinalNeighborhoods
 
 private lemma quasiIso_twistedChainComplexTotalToOuter_of_eq {X : TopCat.{v}}
@@ -438,8 +378,7 @@ private lemma quasiIso_twistedChainComplexTotalToOuter_of_eq {X : TopCat.{v}}
     (hAB : A ⊆ B) (hAB' : A ⊆ B') (hBB' : B = B')
     [QuasiIso ((TopTriple.ofSubset hAB').twistedChainComplexTotalToOuter L)] :
     QuasiIso ((TopTriple.ofSubset hAB).twistedChainComplexTotalToOuter L) := by
-  subst hBB'
-  infer_instance
+  subst hBB'; infer_instance
 
 variable {X : TopCat.{v}} [CompactSpace X] [T2Space X] {A : Set X}
 
@@ -457,14 +396,11 @@ theorem quasiIso_relativeToOpenRestrictionLim_complOfCofinalNhds
     (openRestrictionTower_shift_surjective (complInclusion A) L K)
     (relativeOpenRestrictionCone A L K) fun j ↦ ⟨0, fun n _ ↦ ?_⟩
   have := hU_qi (CompactExhaustion.cofinalNhdsIndex hA hU_open hAU hU_cofinal n)
-  have hq : QuasiIso ((TopTriple.ofSubset
-      (subset_compl_image_complInclusion A (K n))).twistedChainComplexTotalToOuter L) :=
-    quasiIso_twistedChainComplexTotalToOuter_of_eq
-      (subset_compl_image_complInclusion A (K n))
-      (hAU (CompactExhaustion.cofinalNhdsIndex hA hU_open hAU hU_cofinal n))
-      (CompactExhaustion.compl_image_subtypeVal_complOfCofinalNhds
-        hA hU_open hAU hU_cofinal n)
-  exact (quasiIso_iff _).1 hq j
+  exact (quasiIso_iff _).1 (quasiIso_twistedChainComplexTotalToOuter_of_eq
+    (subset_compl_image_complInclusion A (K n))
+    (hAU (CompactExhaustion.cofinalNhdsIndex hA hU_open hAU hU_cofinal n))
+    (CompactExhaustion.compl_image_subtypeVal_complOfCofinalNhds
+      hA hU_open hAU hU_cofinal n)) j
 
 /-- **Compact-pair comparison is an isomorphism** for every compact exhaustion of `Aᶜ` whenever `A`
 admits a countable cofinal open neighbourhood family `U` with quasi-isomorphic triple quotient maps
@@ -478,12 +414,10 @@ theorem isIso_twistedHomologyToBorelMooreHomologyComplOfExhaustion_of_cofinal_nh
     IsIso (twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K j) := by
   let K₀ := CompactExhaustion.complOfCofinalNhds hA hU_open hAU hU_cofinal
   rw [twistedHomologyToBorelMooreHomologyComplOfExhaustion_eq hA L K K₀ j]
-  have := quasiIso_relativeToOpenRestrictionLim_complOfCofinalNhds
-    hA hU_open hAU hU_cofinal L hU_qi
+  have := quasiIso_relativeToOpenRestrictionLim_complOfCofinalNhds hA hU_open hAU hU_cofinal L hU_qi
   have := isIso_homologyMap_locallyFiniteToOpenRestrictionLim (complInclusion A)
     (isOpenEmbedding_complInclusion hA) L K₀ j
-  unfold twistedHomologyToBorelMooreHomologyComplOfExhaustion
-  infer_instance
+  unfold twistedHomologyToBorelMooreHomologyComplOfExhaustion; infer_instance
 
 /-- **Compact-pair Borel–Moore comparison isomorphism** `H_j(X, A; L) ≅ H_j^{BM}(X \ A; L|_{X \ A})`
 with respect to an explicit compact exhaustion `K` of `X \ A`. -/
@@ -508,13 +442,10 @@ theorem twistedHomologyIsoBorelMooreHomologyComplOfExhaustion_hom
     (K : CompactExhaustion (Aᶜ : Set X)) (j : ℕ) :
     (twistedHomologyIsoBorelMooreHomologyComplOfExhaustion
         hA hU_open hAU hU_cofinal L hU_qi K j).hom =
-      twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K j :=
-  (rfl)
+      twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K j := (rfl)
 
 /-- **Compact-pair Borel–Moore comparison isomorphism** `H_j(X, A; L) ≅ H_j^{BM}(X \ A; L|_{X \ A})`
-for `[WeaklyLocallyCompactSpace (Aᶜ : Set X)] [SigmaCompactSpace (Aᶜ : Set X)]` (both of which are
-supplied automatically by `(CompactExhaustion.complOfCofinalNhds ...).weaklyLocallyCompactSpace`
-and `.sigmaCompactSpace`). -/
+for `[WeaklyLocallyCompactSpace (Aᶜ : Set X)] [SigmaCompactSpace (Aᶜ : Set X)]`. -/
 def twistedHomologyIsoBorelMooreHomologyCompl
     [WeaklyLocallyCompactSpace (Aᶜ : Set X)] [SigmaCompactSpace (Aᶜ : Set X)]
     (hA : IsClosed A) {U : ℕ → Set X} (hU_open : ∀ n, IsOpen (U n)) (hAU : ∀ n, A ⊆ U n)
@@ -538,13 +469,10 @@ theorem twistedHomologyIsoBorelMooreHomologyCompl_hom
     (hU_qi : ∀ n, QuasiIso ((TopTriple.ofSubset (hAU n)).twistedChainComplexTotalToOuter L))
     (j : ℕ) :
     (twistedHomologyIsoBorelMooreHomologyCompl hA hU_open hAU hU_cofinal L hU_qi j).hom =
-      twistedHomologyToBorelMooreHomologyCompl hA L j :=
-  (rfl)
+      twistedHomologyToBorelMooreHomologyCompl hA L j := (rfl)
 
-/-- **Compact-pair Borel–Moore comparison isomorphism under deformation retractions:** if `A` is a
-closed subset of a compact Hausdorff space `X` admitting a countable cofinal family `U` of open
-neighbourhoods each of which deformation retracts onto `A`, then
-`H_j(X, A; L) ≅ H_j^{BM}(X \ A; L|_{X \ A})` for every local coefficient system `L` on `X`. -/
+/-- **Compact-pair Borel–Moore comparison isomorphism under deformation retractions** with respect
+to an explicit compact exhaustion `K` of `X \ A`. -/
 def twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetraction
     (hA : IsClosed A) {U : ℕ → Set X} (hU_open : ∀ n, IsOpen (U n)) (hAU : ∀ n, A ⊆ U n)
     (hU_cofinal : ∀ {W : Set X}, IsOpen W → A ⊆ W → ∃ n, U n ⊆ W)
@@ -556,8 +484,7 @@ def twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetraction
     (TopPair.ofSubset A).twistedHomology L j ≅
       borelMooreHomology ((pullback (complInclusion A).hom).obj L) j :=
   twistedHomologyIsoBorelMooreHomologyComplOfExhaustion hA hU_open hAU hU_cofinal L
-    (fun n ↦
-      let ⟨r, hr, hH⟩ := hU_ret n
+    (fun n ↦ let ⟨r, hr, hH⟩ := hU_ret n
       TopTriple.quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction
         (hAU n) L r hr hH) K j
 
@@ -572,8 +499,7 @@ theorem twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetrac
     (K : CompactExhaustion (Aᶜ : Set X)) (j : ℕ) :
     (twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetraction
         hA hU_open hAU hU_cofinal hU_ret L K j).hom =
-      twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K j :=
-  (rfl)
+      twistedHomologyToBorelMooreHomologyComplOfExhaustion hA L K j := (rfl)
 
 /-- **Compact-pair Borel–Moore comparison isomorphism under deformation retractions**, without
 explicit exhaustion parameter. -/
@@ -588,8 +514,7 @@ def twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction
     (TopPair.ofSubset A).twistedHomology L j ≅
       borelMooreHomology ((pullback (complInclusion A).hom).obj L) j :=
   twistedHomologyIsoBorelMooreHomologyCompl hA hU_open hAU hU_cofinal L
-    (fun n ↦
-      let ⟨r, hr, hH⟩ := hU_ret n
+    (fun n ↦ let ⟨r, hr, hH⟩ := hU_ret n
       TopTriple.quasiIso_twistedChainComplexTotalToOuter_ofSubset_of_deformationRetraction
         (hAU n) L r hr hH) j
 
@@ -604,8 +529,7 @@ theorem twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction_hom
     (L : LocalCoefficientSystem.{u, v, max v w} R X) (j : ℕ) :
     (twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction
         hA hU_open hAU hU_cofinal hU_ret L j).hom =
-      twistedHomologyToBorelMooreHomologyCompl hA L j :=
-  (rfl)
+      twistedHomologyToBorelMooreHomologyCompl hA L j := (rfl)
 
 end CofinalNeighborhoods
 

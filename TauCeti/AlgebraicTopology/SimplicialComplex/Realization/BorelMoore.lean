@@ -118,10 +118,9 @@ theorem realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion_hom
     (K.realizationTwistedHomologyIsoBorelMooreHomologyComplOfExhaustion P hfin L E j).hom =
       twistedHomologyToBorelMooreHomologyComplOfExhaustion (X := TopCat.of (Realization K))
         (K.subcomplexNDRPair P).isClosed L E j :=
-  letI := K.compactSpace_realization_of_finite_faces hfin
+  have := K.compactSpace_realization_of_finite_faces hfin
   twistedHomologyIsoBorelMooreHomologyComplOfExhaustionOfDeformationRetraction_hom
-    (X := TopCat.of (Realization K))
-    (K.subcomplexNDRPair P).isClosed
+    (X := TopCat.of (Realization K)) (K.subcomplexNDRPair P).isClosed
     (K.isOpen_iteratedOpenSimplicialNeighborhood P)
     (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
     (K.exists_iteratedOpenSimplicialNeighborhood_subset P hfin)
@@ -139,8 +138,7 @@ def realizationTwistedHomologyIsoBorelMooreHomologyCompl [Finite (Face K)]
           {y : Realization K | y.1.support ∈ P}).hom).obj L) j :=
   have := K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
   twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction
-    (X := TopCat.of (Realization K))
-    (K.subcomplexNDRPair P).isClosed
+    (X := TopCat.of (Realization K)) (K.subcomplexNDRPair P).isClosed
     (K.isOpen_iteratedOpenSimplicialNeighborhood P)
     (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
     (K.exists_iteratedOpenSimplicialNeighborhood_subset P (Set.toFinite K.faces))
@@ -152,10 +150,9 @@ theorem realizationTwistedHomologyIsoBorelMooreHomologyCompl_hom [Finite (Face K
     (K.realizationTwistedHomologyIsoBorelMooreHomologyCompl P L j).hom =
       twistedHomologyToBorelMooreHomologyCompl (X := TopCat.of (Realization K))
         (K.subcomplexNDRPair P).isClosed L j :=
-  letI := K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
+  have := K.compactSpace_realization_of_finite_faces (Set.toFinite K.faces)
   twistedHomologyIsoBorelMooreHomologyComplOfDeformationRetraction_hom
-    (X := TopCat.of (Realization K))
-    (K.subcomplexNDRPair P).isClosed
+    (X := TopCat.of (Realization K)) (K.subcomplexNDRPair P).isClosed
     (K.isOpen_iteratedOpenSimplicialNeighborhood P)
     (K.setOf_support_mem_subset_iteratedOpenSimplicialNeighborhood P)
     (K.exists_iteratedOpenSimplicialNeighborhood_subset P (Set.toFinite K.faces))
