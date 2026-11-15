@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The Mellin–Barnes integral of `(1 + u)^{-a}` and Barnes's first lemma
@@ -52,8 +52,8 @@ sequences (`max (-Re a, -Re b) < σ < min (Re c, Re d)`).
   `y ↦ Γ(a + i y) Γ(b + i y) Γ(c - i y) Γ(d - i y)` away from the poles of the four factors.
 * `Complex.integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma`: **Barnes's first lemma** (DLMF 5.13.3)
   on `i ℝ` for `a, b, c, d` in the open right half-plane.
-* `Complex.integral_Gamma_add_mul_Gamma_sub`: Barnes's first lemma on a general separating
-  vertical line `Re s = σ`.
+* `Complex.integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub`: Barnes's first lemma on a
+  general separating vertical line `Re s = σ`.
 
 ## References
 
@@ -144,9 +144,8 @@ theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
   refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
     (Eventually.of_forall fun y ↦ by simpa [hsub] using hC (a.im - y))
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ haσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+  simpa only [sub_add_eq_sub_sub] using
+    (continuous_Gamma_sub_mul_I (w := a - σ) (by simpa using haσ)).aestronglyMeasurable
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:
@@ -237,13 +236,8 @@ theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ}
   obtain ⟨Cb, hCb⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hb 0
   obtain ⟨Cd, hCd⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hd 0
   have h_ac := integrable_Gamma_add_mul_Gamma_sub ha hc
-  have h_bd_cont : Continuous fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
-    refine Continuous.mul (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-      (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-    · refine (differentiableAt_Gamma _ fun m h ↦ hb m ?_).continuousAt.comp (by fun_prop)
-      simpa using congrArg re h
-    · refine (differentiableAt_Gamma _ fun m h ↦ hd m ?_).continuousAt.comp (by fun_prop)
-      simpa using congrArg re h
+  have h_bd_cont : Continuous fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) :=
+    (continuous_Gamma_add_mul_I hb).mul (continuous_Gamma_sub_mul_I hd)
   have h_bd_bdd : ∀ y : ℝ, ‖Gamma (b + y * I) * Gamma (d - y * I)‖ ≤ Cb * Cd := by
     intro y
     have hb_eq : b + y * I = (b.re : ℂ) + ↑(b.im + y) * I := by
@@ -289,23 +283,14 @@ private theorem integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 
       refine ContinuousAt.cpow (by fun_prop) continuousAt_const ?_
       rw [← ofReal_one, ← ofReal_add]
       exact ofReal_mem_slitPlane.mpr (by linarith)
-    have hc3 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (b + p.2 * I)) p := by
-      refine (differentiableAt_Gamma _ fun m hm ↦ ?_).continuousAt.comp (by fun_prop)
-      have hre := congrArg re hm
-      simp at hre
-      linarith [m.cast_nonneg' (α := ℝ)]
-    have hc4 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (d - p.2 * I)) p := by
-      refine (differentiableAt_Gamma _ fun m hm ↦ ?_).continuousAt.comp (by fun_prop)
-      have hre := congrArg re hm
-      simp at hre
-      linarith [m.cast_nonneg' (α := ℝ)]
+    have hc3 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (b + p.2 * I)) p :=
+      (continuous_Gamma_add_mul_I
+        (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])).continuousAt.comp continuousAt_snd
+    have hc4 : ContinuousAt (fun p : ℝ × ℝ ↦ Gamma (d - p.2 * I)) p :=
+      (continuous_Gamma_sub_mul_I
+        (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])).continuousAt.comp continuousAt_snd
     exact (hc1.mul hc2).mul (hc3.mul hc4)
-  · have hae : ∀ᵐ p : ℝ × ℝ ∂(volume.restrict (Ioi (0 : ℝ))).prod volume, 0 < p.1 := by
-      rw [Measure.ae_prod_iff_ae_ae]
-      · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
-        exact Eventually.of_forall fun _ ↦ hu
-      · exact measurableSet_lt measurable_const measurable_fst
-    filter_upwards [hae] with p (hu : 0 < p.1)
+  · filter_upwards [TauCeti.ae_of_ae_fst (ae_restrict_mem measurableSet_Ioi)] with p (hu : 0 < p.1)
     rw [norm_mul, norm_mul, norm_mul, norm_mul, norm_cpow_eq_rpow_re_of_pos hu,
       norm_cpow_eq_rpow_re_of_pos hu]
     have hre : (c - (p.2 : ℂ) * I - 1).re = (c - 1).re := by simp
@@ -325,12 +310,6 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a
     ((u : ℂ) ^ (c - y * I - 1) * (1 + (u : ℂ)) ^ (-(a + c))) *
       (Gamma (b + y * I) * Gamma (d - y * I))
   have hF : Integrable (Function.uncurry F) (μ.prod volume) := integrable_barnesKernel ha hb hc hd
-  -- Positive real bases convert complex-exponent sums into products.
-  have hcpow_add {x : ℝ} (hx : 0 < x) (z₁ z₂ : ℂ) :
-      (x : ℂ) ^ (z₁ + z₂) = (x : ℂ) ^ z₁ * (x : ℂ) ^ z₂ := by
-    rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'),
-      cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'),
-      cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'), mul_add, Complex.exp_add]
   -- Integrating in `u` first yields `(Γ(a + c))⁻¹` times the four-Gamma integral.
   have h_u_first : ∫ y : ℝ, ∫ u, F u y ∂μ =
       (Gamma (a + c))⁻¹ * ∫ y : ℝ,
@@ -355,12 +334,11 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a
           ((u : ℂ) ^ (b + c - 1) * (1 + (u : ℂ)) ^ (-(a + c))) *
             ((u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) := by
         have hexp : c - (y : ℂ) * I - 1 = (b + c - 1) + (-(b + y * I)) := by ring
-        simp only [F, hexp, hcpow_add hu]
+        simp only [F, hexp, cpow_add _ _ (ofReal_ne_zero.mpr hu.ne')]
         ring
-      have h1u : (1 : ℂ) + (u : ℂ) = ((1 + u : ℝ) : ℂ) := by push_cast; ring
       have h1pow : (1 + (u : ℂ)) ^ (-(a + c)) * (1 + (u : ℂ)) ^ (-(b + d)) =
           (1 + (u : ℂ)) ^ (-(a + b + c + d)) := by
-        rw [h1u, ← hcpow_add (by linarith : 0 < 1 + u)]
+        rw [← cpow_add _ _ (by exact_mod_cast (by positivity : (1 : ℝ) + u ≠ 0))]
         congr 1
         ring
       simp_rw [hsplit]
@@ -399,8 +377,8 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a
 min (Re c, Re d)`,
 `(1 / 2π) ∫ Γ(a + σ + i y) Γ(b + σ + i y) Γ(c - σ - i y) Γ(d - σ - i y) dy =
   Γ(a + c) Γ(a + d) Γ(b + c) Γ(b + d) / Γ(a + b + c + d)`. -/
-theorem integral_Gamma_add_mul_Gamma_sub {a b c d : ℂ} {σ : ℝ} (ha : -a.re < σ)
-    (hb : -b.re < σ) (hc : σ < c.re) (hd : σ < d.re) :
+theorem integral_Gamma_add_mul_Gamma_add_mul_Gamma_sub_mul_Gamma_sub {a b c d : ℂ} {σ : ℝ}
+    (ha : -a.re < σ) (hb : -b.re < σ) (hc : σ < c.re) (hd : σ < d.re) :
     (2 * π : ℂ)⁻¹ * ∫ y : ℝ,
         Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
           Gamma (c - (σ + y * I)) * Gamma (d - (σ + y * I)) =

@@ -23,6 +23,10 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.multichoose_eq_inv_factorial_mul_eval_ascPochhammer` — expression of
+  `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero field.
+* `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
+  `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
 -/
 
 public section
@@ -31,6 +35,37 @@ open Filter Set Topology
 open scoped ENNReal
 
 namespace TauCeti
+
+/-- Over a field of characteristic zero, `Ring.multichoose x n` equals
+`(n!)⁻¹ * (ascPochhammer R n).eval x`. -/
+theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [Field R] [CharZero R]
+    (x : R) (n : ℕ) :
+    Ring.multichoose x n = (n.factorial : R)⁻¹ * (ascPochhammer R n).eval x := by
+  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
+  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_cast,
+    Polynomial.ascPochhammer_smeval_eq_eval] at h
+  rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+
+/-- Generalized multichoose norm bound: `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` whenever
+`‖w‖ ≤ r`. -/
+theorem norm_multichoose_le_of_norm_le {𝕂 : Type*} [RCLike 𝕂]
+    {w : 𝕂} {r : ℝ} (hr : ‖w‖ ≤ r) (n : ℕ) :
+    ‖Ring.multichoose w n‖ ≤ Ring.multichoose r n := by
+  have hp : ‖(ascPochhammer 𝕂 n).eval w‖ ≤ (ascPochhammer ℝ n).eval r := by
+    induction n with
+    | zero => simp
+    | succ k ih =>
+      rw [ascPochhammer_succ_right, ascPochhammer_succ_right, Polynomial.eval_mul,
+        Polynomial.eval_mul, norm_mul]
+      have hnonneg : 0 ≤ (ascPochhammer ℝ k).eval r := (norm_nonneg _).trans ih
+      have hstep : ‖(Polynomial.X + (k : Polynomial 𝕂)).eval w‖ ≤
+          (Polynomial.X + (k : Polynomial ℝ)).eval r := by
+        simp only [Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_natCast]
+        exact (norm_add_le w k).trans (by simpa using add_le_add_right hr (k : ℝ))
+      exact mul_le_mul ih hstep (norm_nonneg _) hnonneg
+  rw [multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
+    multichoose_eq_inv_factorial_mul_eval_ascPochhammer, norm_mul, norm_inv, RCLike.norm_natCast]
+  exact mul_le_mul_of_nonneg_left hp (by positivity)
 
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
 theorem hasSum_multichoose_mul_geometric_of_abs_lt_one {r x : ℝ} (hx : |x| < 1) :

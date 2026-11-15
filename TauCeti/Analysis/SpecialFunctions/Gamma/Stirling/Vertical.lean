@@ -9,6 +9,9 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
@@ -20,9 +23,10 @@ uniformly for `σ ∈ [a, b]` as `|t| → ∞`, that is along `cocompact ℝ`
 ([DLMF 5.11.9](https://dlmf.nist.gov/5.11.E9), with the remainder of
 [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1)). The statement is additive in `log ‖Γ‖`, so it adds
 up over finite products of shifted Gamma factors. Exponentiating and combining with compactness on
-bounded imaginary parts gives uniform norm bounds for `Γ` away from the real axis, on any
-pole-free vertical line, and for the entire reciprocal `Γ⁻¹` and its derivative across the whole
-strip.
+bounded imaginary parts gives uniform norm bounds with pointwise real-part exponents for `Γ` away
+from the real axis, on any pole-free vertical line (including complex shifts `w ± i y`), and for
+the entire reciprocal `Γ⁻¹` across the whole strip; Cauchy's estimate on unit circles then bounds
+the derivative of `Γ⁻¹` across the strip and uniformly on unit balls.
 
 The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_le`
 (`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Basic.lean`) at the angle `π / 4`.
@@ -50,12 +54,16 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 * `TauCeti.isBigO_log_norm_Gamma_vertical_line_sub`: the same on a single vertical line, along
   `cocompact ℝ`.
 * `TauCeti.exists_norm_Gamma_vertical_strip_le`: uniform upper bound
-  `C (1 + |Im s|) ^ (b - 1/2) exp (-π |Im s| / 2)` on `Re s ∈ [a, b]` and `δ ≤ |Im s|`.
-* `TauCeti.exists_norm_Gamma_vertical_line_le`: uniform upper bound
-  `C (1 + |t|) ^ (σ - 1/2) exp (-π |t| / 2)` on any vertical line avoiding the poles of `Γ`.
+  `C (1 + |Im s|) ^ (Re s - 1/2) exp (-π |Im s| / 2)` on `Re s ∈ [a, b]` and `δ ≤ |Im s|`.
+* `TauCeti.exists_norm_Gamma_vertical_line_le`, `TauCeti.exists_norm_Gamma_add_I_le`,
+  `TauCeti.exists_norm_Gamma_sub_I_le`: uniform upper bounds
+  `C (1 + |t|) ^ (σ - 1/2) exp (-π |t| / 2)` and `C (1 + |y|) ^ (Re w - 1/2) exp (-π |y| / 2)` on
+  pole-free vertical lines.
 * `TauCeti.exists_norm_inv_Gamma_vertical_strip_le`,
-  `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
-  and `‖deriv (Γ ·)⁻¹ s‖` across the whole strip `Re s ∈ [a, b]`.
+  `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`,
+  `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
+  and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
+  balls.
 -/
 
 public section
@@ -234,74 +242,44 @@ theorem isBigO_log_norm_Gamma_vertical_line_sub (σ : ℝ) :
   (isBigO_log_norm_Gamma_vertical_sub σ σ).comp_tendsto
     ((tendsto_principal.2 (Eventually.of_forall fun _ ↦ left_mem_Icc.2 le_rfl)).prodMk tendsto_id)
 
-/-- For `t ≥ 1` and any real exponent `p`, replacing `log t` by `log (1 + t)` changes `p log t` by
-at most `|p| log 2`. -/
-private lemma mul_log_le_mul_log_one_add (p : ℝ) {t : ℝ} (ht : 1 ≤ t) :
-    p * Real.log t ≤ p * Real.log (1 + t) + |p| * Real.log 2 := by
-  have ht0 : 0 < t := zero_lt_one.trans_le ht
-  have hlo : Real.log t ≤ Real.log (1 + t) := Real.log_le_log ht0 (by linarith)
-  have hhi : Real.log (1 + t) - Real.log t ≤ Real.log 2 := by
-    have h1 : Real.log (1 + t) ≤ Real.log (2 * t) := Real.log_le_log (by positivity) (by linarith)
-    rw [Real.log_mul two_ne_zero ht0.ne'] at h1
-    linarith
-  have habs : |Real.log t - Real.log (1 + t)| ≤ Real.log 2 := by
-    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.mpr hlo)]
-    exact hhi
-  have hmul : p * (Real.log t - Real.log (1 + t)) ≤ |p| * Real.log 2 :=
-    (le_abs_self _).trans <| by
-      rw [abs_mul]
-      exact mul_le_mul_of_nonneg_left habs (abs_nonneg p)
-  linarith
-
-/-- If `u, v ≥ 0` differ by at most `1`, then `(1 + u) ^ p ≤ 2 ^ |p| * (1 + v) ^ p` for every real
-exponent `p`. -/
-private lemma one_add_rpow_le_two_rpow_abs_mul (p : ℝ) {u v : ℝ} (hu : 0 ≤ u) (hv : 0 ≤ v)
-    (huv : |u - v| ≤ 1) :
-    (1 + u) ^ p ≤ 2 ^ |p| * (1 + v) ^ p := by
-  obtain ⟨h1, h2⟩ := abs_le.mp huv
-  rcases le_total 0 p with hp | hp
-  · calc (1 + u) ^ p ≤ (2 * (1 + v)) ^ p :=
-            Real.rpow_le_rpow (by positivity) (by linarith) hp
-      _ = 2 ^ |p| * (1 + v) ^ p := by
-            rw [Real.mul_rpow zero_le_two (by positivity), abs_of_nonneg hp]
-  · calc (1 + u) ^ p ≤ ((1 + v) * (2 : ℝ)⁻¹) ^ p :=
-            Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hp
-      _ = 2 ^ |p| * (1 + v) ^ p := by
-            rw [Real.mul_rpow (by positivity) (by positivity),
-              Real.inv_rpow zero_le_two, ← Real.rpow_neg zero_le_two, abs_of_nonpos hp, mul_comm]
+/-- Continuity of the Stirling comparison weight `(1 + |Im z|) ^ (p z) * exp (q z)`. -/
+private lemma continuous_stirlingWeight {p q : ℂ → ℝ} (hp : Continuous p) (hq : Continuous q) :
+    Continuous fun z : ℂ ↦ (((1 + |z.im|) ^ p z * Real.exp (q z) : ℝ) : ℂ) :=
+  continuous_ofReal.comp <|
+    ((continuous_const.add (continuous_abs.comp continuous_im)).rpow hp fun z ↦
+      Or.inl (add_pos_of_pos_of_nonneg one_pos (abs_nonneg z.im)).ne').mul
+      (Real.continuous_exp.comp hq)
 
 /-- Uniform upper bound for `‖Γ(s)‖` on a vertical strip `a ≤ Re s ≤ b` away from the real axis:
-for every `δ > 0`, `‖Γ(s)‖ ≤ C (1 + |Im s|) ^ (b - 1/2) exp (-π |Im s| / 2)` for all `s` with
+for every `δ > 0`, `‖Γ(s)‖ ≤ C (1 + |Im s|) ^ (Re s - 1/2) exp (-π |Im s| / 2)` for all `s` with
 `Re s ∈ [a, b]` and `δ ≤ |Im s|`. -/
 theorem exists_norm_Gamma_vertical_strip_le (a b : ℝ) {δ : ℝ} (hδ : 0 < δ) :
     ∃ C > 0, ∀ s : ℂ, s.re ∈ Icc a b → δ ≤ |s.im| →
-      ‖Complex.Gamma s‖ ≤ C * (1 + |s.im|) ^ (b - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := by
+      ‖Complex.Gamma s‖ ≤ C * (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := by
   obtain ⟨C₀, T₀, hS⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
   set T : ℝ := max (max T₀ 1) δ
   have hT1 : 1 ≤ T := (le_max_right T₀ 1).trans (le_max_left _ δ)
-  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (b - 1 / 2) * Real.exp (-(π * |s.im| / 2))
+  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2))
   have hw_pos (s : ℂ) : 0 < w s := mul_pos (Real.rpow_pos_of_pos (by positivity) _) (Real.exp_pos _)
   -- Compactness handles the bounded band `δ ≤ |Im s| ≤ T`.
   let K : Set ℂ := ((fun p : ℝ × ℝ ↦ (p.1 : ℂ) + p.2 * I) '' (Icc a b ×ˢ Icc (-T) T)) ∩
     {s : ℂ | δ ≤ |s.im|}
   have hK : IsCompact K := ((isCompact_Icc.prod isCompact_Icc).image (by fun_prop)).inter_right
     (isClosed_le continuous_const (continuous_abs.comp continuous_im))
-  have hcont : ContinuousOn (fun s : ℂ ↦ Complex.Gamma s / (w s : ℂ)) K := by
-    intro s hs
+  have hw_cont : Continuous fun z : ℂ ↦ (w z : ℂ) :=
+    continuous_stirlingWeight (by fun_prop) (by fun_prop)
+  have hcont : ContinuousOn (fun s : ℂ ↦ Complex.Gamma s / (w s : ℂ)) K := fun s hs ↦ by
     have him0 : s.im ≠ 0 := abs_pos.mp (hδ.trans_le hs.2)
     have hΓ : ContinuousAt Complex.Gamma s :=
-      (Complex.differentiableAt_Gamma s fun m hm ↦ him0 (by simp [hm])).continuousAt
-    have hw_cont : Continuous fun z : ℂ ↦ (w z : ℂ) := by
-      refine continuous_ofReal.comp ?_
-      exact ((continuous_const.add (continuous_abs.comp continuous_im)).rpow_const fun z ↦
-        Or.inl (add_pos_of_pos_of_nonneg one_pos (abs_nonneg z.im)).ne').mul (by fun_prop)
+      Complex.continuousAt_Gamma s fun m hm ↦ him0 (by simp [hm])
     exact (hΓ.div hw_cont.continuousAt (ofReal_ne_zero.mpr (hw_pos s).ne')).continuousWithinAt
   obtain ⟨C_mid, hC_mid⟩ := hK.exists_bound_of_continuousOn hcont
-  set C₁ : ℝ := Real.exp (|b - 1 / 2| * Real.log 2 + Real.log (2 * π) / 2 + |C₀|)
+  -- Stirling's vertical-strip formula handles the tail `|Im s| > T`.
+  set M_exp : ℝ := max |a - 1 / 2| |b - 1 / 2|
+  set C₁ : ℝ := Real.exp (M_exp * Real.log 2 + Real.log (2 * π) / 2 + |C₀|)
   refine ⟨max (max C₁ C_mid) 1, by positivity, fun s hs him ↦ ?_⟩
   rcases le_or_gt |s.im| T with hle | hgt
-  · have hsK : s ∈ K :=
-      ⟨⟨(s.re, s.im), ⟨hs, abs_le.mp hle⟩, re_add_im s⟩, him⟩
+  · have hsK : s ∈ K := ⟨⟨(s.re, s.im), ⟨hs, abs_le.mp hle⟩, re_add_im s⟩, him⟩
     have hbnd := hC_mid s hsK
     rw [norm_div, Complex.norm_real, Real.norm_of_nonneg (hw_pos s).le,
       div_le_iff₀ (hw_pos s)] at hbnd
@@ -313,24 +291,25 @@ theorem exists_norm_Gamma_vertical_strip_le (a b : ℝ) {δ : ℝ} (hδ : 0 < δ
       norm_pos_iff.mpr (Complex.Gamma_ne_zero fun m hm ↦ him0 (by simp [hm]))
     have hlog :=
       (abs_le.mp (hS s hs ((le_max_left T₀ 1).trans (le_max_left _ δ) |>.trans hgt.le))).2
-    have hlog_im : 0 ≤ Real.log |s.im| := Real.log_nonneg ht1
-    have hre_le : (s.re - 1 / 2) * Real.log |s.im| ≤ (b - 1 / 2) * Real.log |s.im| :=
-      mul_le_mul_of_nonneg_right (by linarith [hs.2]) hlog_im
     have herr : C₀ / |s.im| ≤ |C₀| :=
       (div_le_div_of_nonneg_right (le_abs_self C₀) (by positivity)).trans
         (div_le_self (abs_nonneg C₀) ht1)
+    have hp_le : |s.re - 1 / 2| * Real.log 2 ≤ M_exp * Real.log 2 :=
+      mul_le_mul_of_nonneg_right
+        (abs_le_max_abs_abs (by linarith [hs.1]) (by linarith [hs.2]))
+        (Real.log_nonneg one_le_two)
     have hexp_le : Real.log ‖Complex.Gamma s‖ ≤
-        (|b - 1 / 2| * Real.log 2 + Real.log (2 * π) / 2 + |C₀|) +
-          (b - 1 / 2) * Real.log (1 + |s.im|) + (-(π * |s.im| / 2)) := by
-      linarith [mul_log_le_mul_log_one_add (b - 1 / 2) ht1]
+        (M_exp * Real.log 2 + Real.log (2 * π) / 2 + |C₀|) +
+          (s.re - 1 / 2) * Real.log (1 + |s.im|) + (-(π * |s.im| / 2)) := by
+      linarith [Real.mul_log_le_mul_log_one_add (s.re - 1 / 2) ht1]
     calc ‖Complex.Gamma s‖ = Real.exp (Real.log ‖Complex.Gamma s‖) := (Real.exp_log hΓ0).symm
-      _ ≤ Real.exp ((|b - 1 / 2| * Real.log 2 + Real.log (2 * π) / 2 + |C₀|) +
-            (b - 1 / 2) * Real.log (1 + |s.im|) + (-(π * |s.im| / 2))) :=
+      _ ≤ Real.exp ((M_exp * Real.log 2 + Real.log (2 * π) / 2 + |C₀|) +
+            (s.re - 1 / 2) * Real.log (1 + |s.im|) + (-(π * |s.im| / 2))) :=
           Real.exp_le_exp.mpr hexp_le
-      _ = C₁ * (1 + |s.im|) ^ (b - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := by
+      _ = C₁ * (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := by
           rw [Real.exp_add, Real.exp_add, Real.rpow_def_of_pos (by positivity),
             mul_comm (Real.log _)]
-      _ ≤ max (max C₁ C_mid) 1 * (1 + |s.im|) ^ (b - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := by
+      _ ≤ max (max C₁ C_mid) 1 * (1 + |s.im|) ^ (s.re - 1 / 2) * Real.exp (-(π * |s.im| / 2)) := by
           gcongr
           exact (le_max_left C₁ C_mid).trans (le_max_left _ 1)
 
@@ -342,16 +321,14 @@ theorem exists_norm_Gamma_vertical_line_le {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠
   obtain ⟨C₁, hC₁, htail⟩ := exists_norm_Gamma_vertical_strip_le σ σ zero_lt_one
   let w : ℝ → ℝ := fun t ↦ (1 + |t|) ^ (σ - 1 / 2) * Real.exp (-(π * |t| / 2))
   have hw_pos (t : ℝ) : 0 < w t := mul_pos (Real.rpow_pos_of_pos (by positivity) _) (Real.exp_pos _)
-  have hcont : ContinuousOn (fun t : ℝ ↦ Complex.Gamma (σ + t * I) / (w t : ℂ)) (Icc (-1) 1) := by
-    intro t _
-    have hΓ : ContinuousAt (fun t : ℝ ↦ Complex.Gamma (σ + t * I)) t := by
-      refine (Complex.differentiableAt_Gamma _ fun m hm ↦ hσ m ?_).continuousAt.comp (by fun_prop)
-      simpa using congrArg Complex.re hm
-    have hw_cont : Continuous fun u : ℝ ↦ (w u : ℂ) := by
-      refine continuous_ofReal.comp ?_
-      exact ((continuous_const.add continuous_abs).rpow_const fun u ↦
-        Or.inl (add_pos_of_pos_of_nonneg one_pos (abs_nonneg u)).ne').mul (by fun_prop)
-    exact (hΓ.div hw_cont.continuousAt (ofReal_ne_zero.mpr (hw_pos t).ne')).continuousWithinAt
+  have hw_cont : Continuous fun u : ℝ ↦ (w u : ℂ) := by
+    simpa [w, Function.comp_def, Complex.ofReal_exp] using
+      (continuous_stirlingWeight (p := fun _ ↦ σ - 1 / 2) continuous_const
+        (by fun_prop : Continuous fun z : ℂ ↦ -(π * |z.im| / 2))).comp
+        (by fun_prop : Continuous fun u : ℝ ↦ (σ : ℂ) + u * I)
+  have hcont : ContinuousOn (fun t : ℝ ↦ Complex.Gamma (σ + t * I) / (w t : ℂ)) (Icc (-1) 1) :=
+    fun t _ ↦ ((Complex.continuous_Gamma_add_mul_I (by simpa using hσ)).continuousAt.div
+      hw_cont.continuousAt (ofReal_ne_zero.mpr (hw_pos t).ne')).continuousWithinAt
   obtain ⟨C₂, hC₂⟩ := isCompact_Icc.exists_bound_of_continuousOn hcont
   refine ⟨max C₁ C₂, lt_of_lt_of_le hC₁ (le_max_left _ _), fun t ↦ ?_⟩
   rcases le_or_gt |t| 1 with ht | ht
@@ -361,34 +338,72 @@ theorem exists_norm_Gamma_vertical_line_le {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠
     simpa only [w, mul_assoc] using hbnd.trans
       (mul_le_mul_of_nonneg_right (le_max_right C₁ C₂) (hw_pos t).le)
   · have hbnd := htail (σ + t * I) (by simp) (by simpa using ht.le)
-    have him : ((σ : ℂ) + t * I).im = t := by simp
-    rw [him] at hbnd
+    simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, ofReal_im,
+      mul_I_im, zero_add] at hbnd
     exact hbnd.trans (mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_right (le_max_left C₁ C₂) (by positivity)) (Real.exp_pos _).le)
 
+/-- Shifted vertical-line Stirling bound: if `Re w` is not a nonpositive integer, then
+`‖Γ(w + i y)‖ ≤ C (1 + |y|) ^ (Re w - 1/2) exp (-π |y| / 2)` for all `y : ℝ`. -/
+theorem exists_norm_Gamma_add_I_le {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    ∃ C > 0, ∀ y : ℝ,
+      ‖Complex.Gamma (w + y * I)‖ ≤
+        C * (1 + |y|) ^ (w.re - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
+  obtain ⟨C₀, hC₀, hbnd⟩ := exists_norm_Gamma_vertical_line_le hw
+  set p : ℝ := w.re - 1 / 2
+  refine ⟨C₀ * (1 + |w.im|) ^ |p| * Real.exp (π * |w.im| / 2), by positivity, fun y ↦ ?_⟩
+  have hw_eq : w + y * I = (w.re : ℂ) + ↑(w.im + y) * I := by
+    apply Complex.ext <;> simp
+  have h0 := hbnd (w.im + y)
+  rw [← hw_eq] at h0
+  have hrpow : (1 + |w.im + y|) ^ p ≤ (1 + |w.im|) ^ |p| * (1 + |y|) ^ p := by
+    simpa only [Real.norm_eq_abs] using one_add_norm_add_rpow_le_mul p w.im y
+  have hexp : Real.exp (-(π * |w.im + y| / 2)) ≤
+      Real.exp (π * |w.im| / 2) * Real.exp (-(π * |y| / 2)) := by
+    rw [← Real.exp_add]
+    refine Real.exp_le_exp.mpr ?_
+    have hsub : |y| ≤ |w.im| + |w.im + y| := by
+      simpa using abs_add_le (-w.im) (w.im + y)
+    nlinarith [Real.pi_pos]
+  calc ‖Complex.Gamma (w + y * I)‖
+      ≤ C₀ * (1 + |w.im + y|) ^ p * Real.exp (-(π * |w.im + y| / 2)) := h0
+    _ ≤ C₀ * ((1 + |w.im|) ^ |p| * (1 + |y|) ^ p) *
+          (Real.exp (π * |w.im| / 2) * Real.exp (-(π * |y| / 2))) := by gcongr
+    _ = C₀ * (1 + |w.im|) ^ |p| * Real.exp (π * |w.im| / 2) *
+          (1 + |y|) ^ p * Real.exp (-(π * |y| / 2)) := by ring
+
+/-- Reflected shifted vertical-line Stirling bound: if `Re w` is not a nonpositive integer, then
+`‖Γ(w - i y)‖ ≤ C (1 + |y|) ^ (Re w - 1/2) exp (-π |y| / 2)` for all `y : ℝ`. -/
+theorem exists_norm_Gamma_sub_I_le {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    ∃ C > 0, ∀ y : ℝ,
+      ‖Complex.Gamma (w - y * I)‖ ≤
+        C * (1 + |y|) ^ (w.re - 1 / 2) * Real.exp (-(π * |y| / 2)) := by
+  obtain ⟨C, hC, hbnd⟩ := exists_norm_Gamma_add_I_le hw
+  exact ⟨C, hC, fun y ↦ by simpa [sub_eq_add_neg] using hbnd (-y)⟩
+
 /-- Uniform upper bound for the reciprocal Gamma function across an entire vertical strip
 `a ≤ Re s ≤ b` (including at poles, where `(Γ s)⁻¹ = 0`):
-`‖(Γ s)⁻¹‖ ≤ C (1 + |Im s|) ^ (1/2 - a) exp (π |Im s| / 2)`. -/
+`‖(Γ s)⁻¹‖ ≤ C (1 + |Im s|) ^ (1/2 - Re s) exp (π |Im s| / 2)`. -/
 theorem exists_norm_inv_Gamma_vertical_strip_le (a b : ℝ) :
     ∃ C > 0, ∀ s : ℂ, s.re ∈ Icc a b →
-      ‖(Complex.Gamma s)⁻¹‖ ≤ C * (1 + |s.im|) ^ (1 / 2 - a) * Real.exp (π * |s.im| / 2) := by
+      ‖(Complex.Gamma s)⁻¹‖ ≤ C * (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp (π * |s.im| / 2) := by
   obtain ⟨C₀, T₀, hS⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
   set T : ℝ := max T₀ 1
   have hT1 : 1 ≤ T := le_max_right T₀ 1
-  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (1 / 2 - a) * Real.exp (π * |s.im| / 2)
+  let w : ℂ → ℝ := fun s ↦ (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp (π * |s.im| / 2)
   have hw_pos (s : ℂ) : 0 < w s := mul_pos (Real.rpow_pos_of_pos (by positivity) _) (Real.exp_pos _)
+  -- Compactness of `[a, b] × [-T, T]` bounds the entire function `Γ⁻¹` near the real axis.
   let K : Set ℂ := (fun p : ℝ × ℝ ↦ (p.1 : ℂ) + p.2 * I) '' (Icc a b ×ˢ Icc (-T) T)
   have hK : IsCompact K := (isCompact_Icc.prod isCompact_Icc).image (by fun_prop)
-  have hcont : ContinuousOn (fun s : ℂ ↦ (Complex.Gamma s)⁻¹ / (w s : ℂ)) K := by
-    intro s _
-    have hw_cont : Continuous fun z : ℂ ↦ (w z : ℂ) := by
-      refine continuous_ofReal.comp ?_
-      exact ((continuous_const.add (continuous_abs.comp continuous_im)).rpow_const fun z ↦
-        Or.inl (add_pos_of_pos_of_nonneg one_pos (abs_nonneg z.im)).ne').mul (by fun_prop)
-    exact (Complex.differentiable_one_div_Gamma.continuous.continuousAt.div hw_cont.continuousAt
+  have hw_cont : Continuous fun z : ℂ ↦ (w z : ℂ) :=
+    continuous_stirlingWeight (by fun_prop) (by fun_prop)
+  have hcont : ContinuousOn (fun s : ℂ ↦ (Complex.Gamma s)⁻¹ / (w s : ℂ)) K := fun s _ ↦
+    (Complex.differentiable_one_div_Gamma.continuous.continuousAt.div hw_cont.continuousAt
       (ofReal_ne_zero.mpr (hw_pos s).ne')).continuousWithinAt
   obtain ⟨C_mid, hC_mid⟩ := hK.exists_bound_of_continuousOn hcont
-  set C₁ : ℝ := Real.exp (|1 / 2 - a| * Real.log 2 - Real.log (2 * π) / 2 + |C₀|)
+  -- Stirling's vertical-strip lower bound on `log ‖Γ s‖` handles `|Im s| > T`.
+  set M_exp : ℝ := max |1 / 2 - b| |1 / 2 - a|
+  set C₁ : ℝ := Real.exp (M_exp * Real.log 2 - Real.log (2 * π) / 2 + |C₀|)
   refine ⟨max (max C₁ C_mid) 1, by positivity, fun s hs ↦ ?_⟩
   rcases le_or_gt |s.im| T with hle | hgt
   · have hsK : s ∈ K := ⟨(s.re, s.im), ⟨hs, abs_le.mp hle⟩, re_add_im s⟩
@@ -402,72 +417,153 @@ theorem exists_norm_inv_Gamma_vertical_strip_le (a b : ℝ) :
     have hΓ0 : 0 < ‖Complex.Gamma s‖ :=
       norm_pos_iff.mpr (Complex.Gamma_ne_zero fun m hm ↦ him0 (by simp [hm]))
     have hlog := (abs_le.mp (hS s hs ((le_max_left T₀ 1).trans hgt.le))).1
-    have hlog_im : 0 ≤ Real.log |s.im| := Real.log_nonneg ht1
-    have hre_ge : (a - 1 / 2) * Real.log |s.im| ≤ (s.re - 1 / 2) * Real.log |s.im| :=
-      mul_le_mul_of_nonneg_right (by linarith [hs.1]) hlog_im
     have herr : C₀ / |s.im| ≤ |C₀| :=
       (div_le_div_of_nonneg_right (le_abs_self C₀) (by positivity)).trans
         (div_le_self (abs_nonneg C₀) ht1)
+    have hp_le : |1 / 2 - s.re| * Real.log 2 ≤ M_exp * Real.log 2 :=
+      mul_le_mul_of_nonneg_right
+        (abs_le_max_abs_abs (by linarith [hs.2]) (by linarith [hs.1]))
+        (Real.log_nonneg one_le_two)
     have hexp_le : -Real.log ‖Complex.Gamma s‖ ≤
-        (|1 / 2 - a| * Real.log 2 - Real.log (2 * π) / 2 + |C₀|) +
-          (1 / 2 - a) * Real.log (1 + |s.im|) + π * |s.im| / 2 := by
-      linarith [mul_log_le_mul_log_one_add (1 / 2 - a) ht1]
+        (M_exp * Real.log 2 - Real.log (2 * π) / 2 + |C₀|) +
+          (1 / 2 - s.re) * Real.log (1 + |s.im|) + π * |s.im| / 2 := by
+      linarith [Real.mul_log_le_mul_log_one_add (1 / 2 - s.re) ht1]
     calc ‖(Complex.Gamma s)⁻¹‖
         = Real.exp (-Real.log ‖Complex.Gamma s‖) := by
             rw [norm_inv, Real.exp_neg, Real.exp_log hΓ0]
-      _ ≤ Real.exp ((|1 / 2 - a| * Real.log 2 - Real.log (2 * π) / 2 + |C₀|) +
-            (1 / 2 - a) * Real.log (1 + |s.im|) + π * |s.im| / 2) :=
+      _ ≤ Real.exp ((M_exp * Real.log 2 - Real.log (2 * π) / 2 + |C₀|) +
+            (1 / 2 - s.re) * Real.log (1 + |s.im|) + π * |s.im| / 2) :=
           Real.exp_le_exp.mpr hexp_le
-      _ = C₁ * (1 + |s.im|) ^ (1 / 2 - a) * Real.exp (π * |s.im| / 2) := by
+      _ = C₁ * (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp (π * |s.im| / 2) := by
           rw [Real.exp_add, Real.exp_add, Real.rpow_def_of_pos (by positivity),
             mul_comm (Real.log _)]
-      _ ≤ max (max C₁ C_mid) 1 * (1 + |s.im|) ^ (1 / 2 - a) * Real.exp (π * |s.im| / 2) := by
+      _ ≤ max (max C₁ C_mid) 1 * (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp (π * |s.im| / 2) := by
           gcongr
           exact (le_max_left C₁ C_mid).trans (le_max_left _ 1)
 
 /-- Uniform upper bound for the derivative of the entire function `z ↦ (Γ z)⁻¹` across a vertical
-strip `a ≤ Re s ≤ b`, deduced from `exists_norm_inv_Gamma_vertical_strip_le` on `[a - 1, b + 1]`
-by Cauchy's estimate on unit circles:
-`‖deriv (Γ ·)⁻¹ s‖ ≤ C (1 + |Im s|) ^ (3/2 - a) exp (π |Im s| / 2)`. -/
+strip `a ≤ Re s ≤ b`:
+`‖deriv (Γ ·)⁻¹ s‖ ≤ C (1 + |Im s|) ^ (3/2 - Re s) exp (π |Im s| / 2)`. -/
 theorem exists_norm_deriv_inv_Gamma_vertical_strip_le (a b : ℝ) :
     ∃ C > 0, ∀ s : ℂ, s.re ∈ Icc a b →
       ‖deriv (fun z : ℂ ↦ (Complex.Gamma z)⁻¹) s‖ ≤
-        C * (1 + |s.im|) ^ (3 / 2 - a) * Real.exp (π * |s.im| / 2) := by
+        C * (1 + |s.im|) ^ (3 / 2 - s.re) * Real.exp (π * |s.im| / 2) := by
   obtain ⟨C₀, hC₀, hbnd⟩ := exists_norm_inv_Gamma_vertical_strip_le (a - 1) (b + 1)
-  refine ⟨C₀ * 2 ^ |3 / 2 - a| * Real.exp (π / 2), by positivity, fun s hs ↦ ?_⟩
+  set M_exp : ℝ := max |3 / 2 - b| |3 / 2 - a|
+  refine ⟨C₀ * 2 ^ M_exp * Real.exp (π / 2), by positivity, fun s hs ↦ ?_⟩
   have hdiff : DiffContOnCl ℂ (fun z : ℂ ↦ (Complex.Gamma z)⁻¹) (Metric.ball s 1) :=
     Complex.differentiable_one_div_Gamma.diffContOnCl
   have hsphere : ∀ z ∈ Metric.sphere s 1, ‖(Complex.Gamma z)⁻¹‖ ≤
-      C₀ * 2 ^ |3 / 2 - a| * Real.exp (π / 2) * (1 + |s.im|) ^ (3 / 2 - a) *
+      C₀ * 2 ^ M_exp * Real.exp (π / 2) * (1 + |s.im|) ^ (3 / 2 - s.re) *
         Real.exp (π * |s.im| / 2) := by
     intro z hz
     have hzs : ‖z - s‖ = 1 := mem_sphere_iff_norm.mp hz
     have hre_diff : |z.re - s.re| ≤ 1 := by
       simpa only [← sub_re, hzs] using abs_re_le_norm (z - s)
-    have him_diff : |(|z.im| - |s.im|)| ≤ 1 :=
-      (abs_abs_sub_abs_le_abs_sub z.im s.im).trans <| by
-        simpa only [← sub_im, hzs] using abs_im_le_norm (z - s)
+    have him_diff : ‖z.im - s.im‖ ≤ 1 := by
+      simpa only [Real.norm_eq_abs, ← sub_im, hzs] using abs_im_le_norm (z - s)
     have hz_re : z.re ∈ Icc (a - 1) (b + 1) := by
       obtain ⟨h1, h2⟩ := abs_le.mp hre_diff
       exact ⟨by linarith [hs.1], by linarith [hs.2]⟩
-    have hz_bnd := hbnd z hz_re
-    have hexp_eq : (1 : ℝ) / 2 - (a - 1) = 3 / 2 - a := by ring
-    rw [hexp_eq] at hz_bnd
-    have hrpow := one_add_rpow_le_two_rpow_abs_mul (3 / 2 - a) (abs_nonneg z.im) (abs_nonneg s.im)
-      him_diff
+    have hrpow_z : (1 + |z.im|) ^ (1 / 2 - z.re) ≤ (1 + |z.im|) ^ (3 / 2 - s.re) :=
+      Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg z.im])
+        (by linarith [(abs_le.mp hre_diff).1])
+    have hrpow_shift : (1 + |z.im|) ^ (3 / 2 - s.re) ≤
+        2 ^ M_exp * (1 + |s.im|) ^ (3 / 2 - s.re) := by
+      have h1 := one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one (3 / 2 - s.re) him_diff
+      rw [Real.norm_eq_abs, Real.norm_eq_abs] at h1
+      exact h1.trans <| mul_le_mul_of_nonneg_right
+        (Real.rpow_le_rpow_of_exponent_le one_le_two
+          (abs_le_max_abs_abs (by linarith [hs.2]) (by linarith [hs.1])))
+        (by positivity)
     have hexp : Real.exp (π * |z.im| / 2) ≤ Real.exp (π / 2) * Real.exp (π * |s.im| / 2) := by
       rw [← Real.exp_add]
       refine Real.exp_le_exp.mpr ?_
-      have hz_im : |z.im| ≤ 1 + |s.im| := by linarith [(abs_le.mp him_diff).2]
+      have hz_im : |z.im| ≤ 1 + |s.im| := by
+        have := abs_sub_abs_le_abs_sub z.im s.im
+        rw [Real.norm_eq_abs] at him_diff
+        linarith [(abs_le.mp him_diff).2]
       nlinarith [Real.pi_pos]
     calc ‖(Complex.Gamma z)⁻¹‖
-        ≤ C₀ * (1 + |z.im|) ^ (3 / 2 - a) * Real.exp (π * |z.im| / 2) := hz_bnd
-      _ ≤ C₀ * (2 ^ |3 / 2 - a| * (1 + |s.im|) ^ (3 / 2 - a)) *
+        ≤ C₀ * (1 + |z.im|) ^ (1 / 2 - z.re) * Real.exp (π * |z.im| / 2) := hbnd z hz_re
+      _ ≤ C₀ * (2 ^ M_exp * (1 + |s.im|) ^ (3 / 2 - s.re)) *
             (Real.exp (π / 2) * Real.exp (π * |s.im| / 2)) := by
           gcongr
-      _ = C₀ * 2 ^ |3 / 2 - a| * Real.exp (π / 2) * (1 + |s.im|) ^ (3 / 2 - a) *
+          exact hrpow_z.trans hrpow_shift
+      _ = C₀ * 2 ^ M_exp * Real.exp (π / 2) * (1 + |s.im|) ^ (3 / 2 - s.re) *
             Real.exp (π * |s.im| / 2) := by ring
   simpa only [div_one] using
     Complex.norm_deriv_le_of_forall_mem_sphere_norm_le zero_lt_one hdiff hsphere
+
+/-- Uniform vertical-line bounds on `‖(Γ(w + i y))⁻¹‖` and `‖deriv (Γ ·)⁻¹ (w + i y)‖` for `w` in
+the open unit ball around `w₀`. -/
+theorem exists_norm_inv_Gamma_and_deriv_ball_add_I_le (w₀ : ℂ) :
+    ∃ C > 0, ∀ w ∈ Metric.ball w₀ 1, ∀ y : ℝ,
+      ‖(Complex.Gamma (w + y * I))⁻¹‖ ≤
+        C * (1 + |y|) ^ (3 / 2 - w₀.re) * Real.exp (π * |y| / 2) ∧
+      ‖deriv (fun z : ℂ ↦ (Complex.Gamma z)⁻¹) (w + y * I)‖ ≤
+        C * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp (π * |y| / 2) := by
+  obtain ⟨Ci, hCi, hbi⟩ := exists_norm_inv_Gamma_vertical_strip_le (w₀.re - 1) (w₀.re + 1)
+  obtain ⟨Cd, hCd, hbd⟩ := exists_norm_deriv_inv_Gamma_vertical_strip_le (w₀.re - 1) (w₀.re + 1)
+  let C_im (q : ℝ) : ℝ := (1 + (|w₀.im| + 1)) ^ |q| * Real.exp (π * (|w₀.im| + 1) / 2)
+  have hC_im_pos (q : ℝ) : 0 < C_im q := by positivity
+  have hshift (q : ℝ) {w : ℂ} (him_le : |w.im| ≤ |w₀.im| + 1) (y : ℝ) :
+      (1 + |(w + y * I).im|) ^ q * Real.exp (π * |(w + y * I).im| / 2) ≤
+        C_im q * (1 + |y|) ^ q * Real.exp (π * |y| / 2) := by
+    have him_eq : (w + y * I).im = w.im + y := by simp
+    rw [him_eq]
+    have hrp : (1 + |w.im + y|) ^ q ≤ (1 + |w.im|) ^ |q| * (1 + |y|) ^ q := by
+      simpa only [Real.norm_eq_abs] using one_add_norm_add_rpow_le_mul q w.im y
+    have hrp2 : (1 + |w.im|) ^ |q| ≤ (1 + (|w₀.im| + 1)) ^ |q| :=
+      Real.rpow_le_rpow (by positivity) (by linarith) (abs_nonneg q)
+    have hexp : Real.exp (π * |w.im + y| / 2) ≤
+        Real.exp (π * (|w₀.im| + 1) / 2) * Real.exp (π * |y| / 2) := by
+      rw [← Real.exp_add]
+      exact Real.exp_le_exp.mpr (by have := abs_add_le w.im y; nlinarith [Real.pi_pos])
+    calc (1 + |w.im + y|) ^ q * Real.exp (π * |w.im + y| / 2)
+        ≤ ((1 + (|w₀.im| + 1)) ^ |q| * (1 + |y|) ^ q) *
+            (Real.exp (π * (|w₀.im| + 1) / 2) * Real.exp (π * |y| / 2)) :=
+          mul_le_mul (hrp.trans (mul_le_mul_of_nonneg_right hrp2 (by positivity))) hexp
+            (Real.exp_pos _).le (by positivity)
+      _ = C_im q * (1 + |y|) ^ q * Real.exp (π * |y| / 2) := by dsimp [C_im]; ring
+  set C : ℝ := max (Ci * C_im (3 / 2 - w₀.re)) (Cd * C_im (5 / 2 - w₀.re))
+  have hC : 0 < C := lt_of_lt_of_le (mul_pos hCi (hC_im_pos _)) (le_max_left _ _)
+  refine ⟨C, hC, fun w hw y ↦ ?_⟩
+  have hww : ‖w - w₀‖ < 1 := mem_ball_iff_norm.mp hw
+  have hre_diff : |w.re - w₀.re| ≤ 1 := by
+    simpa [sub_re] using (abs_re_le_norm (w - w₀)).trans hww.le
+  have hre_mem : (w + y * I).re ∈ Icc (w₀.re - 1) (w₀.re + 1) := by
+    obtain ⟨h1, h2⟩ := abs_le.mp hre_diff
+    simp only [add_re, mul_I_re, ofReal_im, neg_zero, add_zero, mem_Icc]
+    exact ⟨by linarith, by linarith⟩
+  have him_le : |w.im| ≤ |w₀.im| + 1 := by
+    have him : |w.im - w₀.im| ≤ 1 := by
+      simpa [sub_im] using (abs_im_le_norm (w - w₀)).trans hww.le
+    linarith [abs_sub_abs_le_abs_sub w.im w₀.im, (abs_le.mp him).2]
+  refine ⟨?_, ?_⟩
+  · have hrp_up : (1 + |(w + y * I).im|) ^ (1 / 2 - (w + y * I).re) ≤
+        (1 + |(w + y * I).im|) ^ (3 / 2 - w₀.re) :=
+      Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg (w + y * I).im])
+        (by simp; linarith [(abs_le.mp hre_diff).1])
+    calc ‖(Complex.Gamma (w + y * I))⁻¹‖
+        ≤ Ci * ((1 + |(w + y * I).im|) ^ (3 / 2 - w₀.re) *
+            Real.exp (π * |(w + y * I).im| / 2)) := by
+            refine (hbi _ hre_mem).trans ?_; rw [← mul_assoc]; gcongr
+      _ ≤ Ci * (C_im (3 / 2 - w₀.re) * (1 + |y|) ^ (3 / 2 - w₀.re) * Real.exp (π * |y| / 2)) :=
+            mul_le_mul_of_nonneg_left (hshift _ him_le y) hCi.le
+      _ ≤ C * (1 + |y|) ^ (3 / 2 - w₀.re) * Real.exp (π * |y| / 2) := by
+            rw [← mul_assoc, ← mul_assoc]; gcongr; exact le_max_left _ _
+  · have hrp_up : (1 + |(w + y * I).im|) ^ (3 / 2 - (w + y * I).re) ≤
+        (1 + |(w + y * I).im|) ^ (5 / 2 - w₀.re) :=
+      Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg (w + y * I).im])
+        (by simp; linarith [(abs_le.mp hre_diff).1])
+    calc ‖deriv (fun z : ℂ ↦ (Complex.Gamma z)⁻¹) (w + y * I)‖
+        ≤ Cd * ((1 + |(w + y * I).im|) ^ (5 / 2 - w₀.re) *
+            Real.exp (π * |(w + y * I).im| / 2)) := by
+            refine (hbd _ hre_mem).trans ?_; rw [← mul_assoc]; gcongr
+      _ ≤ Cd * (C_im (5 / 2 - w₀.re) * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp (π * |y| / 2)) :=
+            mul_le_mul_of_nonneg_left (hshift _ him_le y) hCd.le
+      _ ≤ C * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp (π * |y| / 2) := by
+            rw [← mul_assoc, ← mul_assoc]; gcongr; exact le_max_right _ _
 
 end TauCeti

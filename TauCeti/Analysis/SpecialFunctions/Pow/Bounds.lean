@@ -121,8 +121,11 @@ function that does not need a derivative.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
-* `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one`:
-  `(1 + ‖x‖) ^ p ≤ 2 ^ (-p) (1 + ‖y‖) ^ p` for `p ≤ 0` and `‖y - x‖ ≤ 1`.
+* `TauCeti.one_add_norm_add_rpow_le_mul`: `(1 + ‖x + y‖) ^ p ≤ (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p`
+  for any `p : ℝ`.
+* `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one` and
+  `TauCeti.one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one`:
+  `(1 + ‖x‖) ^ p ≤ 2 ^ |p| (1 + ‖y‖) ^ p` when `x` and `y` are at distance at most `1`.
 * `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
   for `1 ≤ ‖ξ‖`.
 * `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
@@ -501,6 +504,24 @@ theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
   nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
     mul_nonneg (norm_nonneg x) (norm_nonneg y)]
 
+/-- Multiplicative shift bound (Peetre's inequality) for the weight `1 + ‖x‖`: for every real
+exponent `p`, `(1 + ‖x + y‖) ^ p ≤ (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p`. -/
+theorem one_add_norm_add_rpow_le_mul {E : Type*} [SeminormedAddGroup E] (p : ℝ) (x y : E) :
+    (1 + ‖x + y‖) ^ p ≤ (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p := by
+  rcases le_total 0 p with hp | hp
+  · calc (1 + ‖x + y‖) ^ p ≤ ((1 + ‖x‖) * (1 + ‖y‖)) ^ p :=
+            Real.rpow_le_rpow (by positivity) (one_add_norm_add_le x y) hp
+      _ = (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p := by
+            rw [Real.mul_rpow (by positivity) (by positivity), abs_of_nonneg hp]
+  · have h1 : (1 + ‖y‖) * (1 + ‖x‖)⁻¹ ≤ 1 + ‖x + y‖ := by
+      rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
+      simpa only [neg_add_cancel_left, norm_neg, mul_comm] using one_add_norm_add_le (-x) (x + y)
+    calc (1 + ‖x + y‖) ^ p ≤ ((1 + ‖y‖) * (1 + ‖x‖)⁻¹) ^ p :=
+            Real.rpow_le_rpow_of_nonpos (by positivity) h1 hp
+      _ = (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p := by
+            rw [Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow (by positivity),
+              ← Real.rpow_neg (by positivity), abs_of_nonpos hp, mul_comm]
+
 /-- For a nonpositive exponent `p` and points at distance at most `1`, the weight
 `(1 + ‖x‖) ^ p` is bounded by `2 ^ (-p)` times its value at `y`. -/
 theorem one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one {E : Type*} [SeminormedAddGroup E]
@@ -515,6 +536,17 @@ theorem one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one {E : Type*} [Semino
     _ = (2 : ℝ) ^ (-p) * (1 + ‖y‖) ^ p := by
       rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
       ring
+
+/-- For any real exponent `p` and points at distance at most `1`, the weight `(1 + ‖x‖) ^ p` is
+bounded by `2 ^ |p|` times its value at `y`. -/
+theorem one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one {E : Type*}
+    [SeminormedAddGroup E] (p : ℝ) {x y : E} (h : ‖x - y‖ ≤ 1) :
+    (1 + ‖x‖) ^ p ≤ (2 : ℝ) ^ |p| * (1 + ‖y‖) ^ p := by
+  calc (1 + ‖x‖) ^ p = (1 + ‖(x - y) + y‖) ^ p := by rw [sub_add_cancel]
+    _ ≤ (1 + ‖x - y‖) ^ |p| * (1 + ‖y‖) ^ p := one_add_norm_add_rpow_le_mul p (x - y) y
+    _ ≤ (2 : ℝ) ^ |p| * (1 + ‖y‖) ^ p := by
+        gcongr
+        linarith
 
 /-- Away from the origin, a power `‖ξ‖ ^ r` is bounded by a multiple of the Japanese bracket
 power: for `1 ≤ ‖ξ‖`, `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/

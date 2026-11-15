@@ -40,6 +40,9 @@ its coefficients.
   `Re s + n > 0`.
 * `Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow`: `‖Γ(σ + i t)‖ ≤ C (1 + t²)⁻ᵐ` for every
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
+* `Complex.continuousAt_Gamma_of_re_ne_neg_nat`, `Complex.continuous_Gamma_add_mul_I`,
+  `Complex.continuous_Gamma_sub_mul_I`: continuity of `Γ` away from `-ℕ` and along pole-free
+  vertical lines `y ↦ w ± i y`.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
@@ -133,16 +136,33 @@ theorem exists_norm_Gamma_le_mul_inv_one_add_sq_pow {σ : ℝ} (hσ : ∀ n : �
       Real.Gamma (σ + n) / (√c * (1 + t ^ 2) ^ m) by field_simp, le_div_iff₀ (by positivity)]
   exact (mul_le_mul_of_nonneg_left hP (norm_nonneg _)).trans hbound
 
+/-- `Complex.Gamma` is continuous at every `s` whose real part is not a nonpositive integer. -/
+theorem continuousAt_Gamma_of_re_ne_neg_nat {s : ℂ} (hs : ∀ n : ℕ, s.re ≠ -n) :
+    ContinuousAt Gamma s :=
+  continuousAt_Gamma s fun m hm ↦ hs m (by simpa using congrArg re hm)
+
+/-- Along any vertical line `y ↦ w + i y` avoiding the nonpositive-integer poles (`Re w ∉ -ℕ`),
+`y ↦ Γ(w + i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_add_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (w + y * I) :=
+  continuous_iff_continuousAt.mpr fun y ↦
+    (continuousAt_Gamma_of_re_ne_neg_nat (by simpa using hw)).comp (by fun_prop)
+
+/-- Along any vertical line `y ↦ w - i y` avoiding the nonpositive-integer poles (`Re w ∉ -ℕ`),
+`y ↦ Γ(w - i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_sub_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (w - y * I) :=
+  continuous_iff_continuousAt.mpr fun y ↦
+    (continuousAt_Gamma_of_re_ne_neg_nat (by simpa [sub_eq_add_neg] using hw)).comp (by fun_prop)
+
 /-- The Gamma function is integrable on every vertical line `Re s = σ` which avoids its poles,
 that is, for `σ` not a nonpositive integer. -/
 theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     VerticalIntegrable Gamma σ := by
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ 1
-  refine (integrable_inv_one_add_sq.const_mul C).mono' ?_
+  exact (integrable_inv_one_add_sq.const_mul C).mono'
+    (continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable
     (Eventually.of_forall fun t ↦ by simpa using hC t)
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun t ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
 
 /-- Mellin inversion for the Gamma function: on every vertical line `Re s = σ > 0`,
 `(1 / 2π) ∫ x^{-(σ + i t)} Γ(σ + i t) dt = e⁻ˣ` for `x > 0`. -/
