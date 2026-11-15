@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 
@@ -30,6 +33,8 @@ approximation numbers.
 * `IsCompactOperator.star`: on a Hilbert space, `star T` is compact when `T` is.
 * `ContinuousLinearMap.isCompactOperator_star_iff`: `star T` is compact exactly when `T` is.
 * `IsCompactOperator.conjStarAlgEquiv`: conjugating by a unitary preserves compactness.
+* `ContinuousLinearMap.compactOperatorStarSubalgebra`: the closed nonunital `⋆`-subalgebra of
+  compact operators on a Hilbert space.
 -/
 
 public section
@@ -83,5 +88,38 @@ theorem isCompactOperator_adjoint_iff {T : E →L[𝕜] F} :
 theorem isCompactOperator_star_iff {T : E →L[𝕜] E} :
     IsCompactOperator ⇑(star T) ↔ IsCompactOperator T := by
   rw [star_eq_adjoint, isCompactOperator_adjoint_iff]
+
+/-- The compact operators on a Hilbert space `E` form a nonunital `⋆`-subalgebra of `E →L[𝕜] E`. -/
+def compactOperatorStarSubalgebra (𝕜 E : Type*) [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] :
+    NonUnitalStarSubalgebra 𝕜 (E →L[𝕜] E) where
+  toSubmodule := compactOperator (RingHom.id 𝕜) E E
+  mul_mem' {_ g} hf _ := IsCompactOperator.comp_clm hf g
+  star_mem' {_} hf := IsCompactOperator.star hf
+
+/-- Membership in `compactOperatorStarSubalgebra 𝕜 E` is `IsCompactOperator`. -/
+@[simp]
+theorem mem_compactOperatorStarSubalgebra_iff {T : E →L[𝕜] E} :
+    T ∈ compactOperatorStarSubalgebra 𝕜 E ↔ IsCompactOperator T :=
+  Iff.rfl
+
+/-- The underlying `𝕜`-submodule of `compactOperatorStarSubalgebra 𝕜 E` is `compactOperator`. -/
+@[simp]
+theorem toSubmodule_compactOperatorStarSubalgebra :
+    (compactOperatorStarSubalgebra 𝕜 E).toSubmodule = compactOperator (RingHom.id 𝕜) E E :=
+  (rfl)
+
+/-- The `⋆`-subalgebra of compact operators on a Hilbert space is norm-closed. -/
+instance instIsClosedCompactOperatorStarSubalgebra :
+    IsClosed (compactOperatorStarSubalgebra 𝕜 E : Set (E →L[𝕜] E)) :=
+  isClosed_setOfPred_isCompactOperator
+
+/-- For a complex Hilbert space `H`, `compactOperatorStarSubalgebra ℂ H` is a `StarOrderedRing`
+under the Loewner order inherited from `H →L[ℂ] H`. -/
+noncomputable instance instStarOrderedRingCompactOperatorStarSubalgebra
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H] :
+    StarOrderedRing (compactOperatorStarSubalgebra ℂ H) :=
+  letI : StarModule ℝ (H →L[ℂ] H) := StarModule.complexToReal
+  Subtype.starOrderedRing (𝕜 := ℂ) (compactOperatorStarSubalgebra ℂ H)
 
 end ContinuousLinearMap
