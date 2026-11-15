@@ -21,7 +21,6 @@ public section
 
 /-- The continuous `R`-linear inclusion `selfAdjoint A →L[R] A` of the self-adjoint elements of a
 topological star module `A`, typed directly on `selfAdjoint A`. -/
-@[expose]
 def selfAdjoint.subtypeL (R A : Type*) [Semiring R] [Star R] [TrivialStar R] [AddCommGroup A]
     [Module R A] [StarAddMonoid A] [StarModule R A] [TopologicalSpace A] :
     selfAdjoint A →L[R] A where
@@ -35,7 +34,7 @@ def selfAdjoint.subtypeL (R A : Type*) [Semiring R] [Star R] [TrivialStar R] [Ad
 theorem selfAdjoint.coe_subtypeL (R A : Type*) [Semiring R] [Star R] [TrivialStar R]
     [AddCommGroup A] [Module R A] [StarAddMonoid A] [StarModule R A] [TopologicalSpace A] :
     ⇑(selfAdjoint.subtypeL R A) = (Subtype.val : selfAdjoint A → A) :=
-  rfl
+  (rfl)
 
 /-- Applying `selfAdjoint.subtypeL R A` extracts the ambient element. -/
 @[simp]
@@ -43,4 +42,4 @@ theorem selfAdjoint.subtypeL_apply {R A : Type*} [Semiring R] [Star R] [TrivialS
     [AddCommGroup A] [Module R A] [StarAddMonoid A] [StarModule R A] [TopologicalSpace A]
     (x : selfAdjoint A) :
     selfAdjoint.subtypeL R A x = (x : A) :=
-  rfl
+  (rfl)

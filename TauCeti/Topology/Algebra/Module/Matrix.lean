@@ -12,9 +12,10 @@ public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
-# Continuous matrix actions and block maps over a topological module
+# Continuous matrix actions, trace, and block maps over a topological module
 
 A matrix `A : Matrix κ ι R` acts on vectors `x : ι → M` with entries in an additive monoid `M` on
 which `R` acts additively by `k ↦ ∑ i, A k i • x i`. When `M` is a topological additive monoid on
@@ -26,14 +27,15 @@ matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R` it is `Ma
 The motivating case is `R = ℤ` and `M = AddCircle p`, where an integer matrix induces a map of
 tori `(ι → AddCircle p) → (κ → AddCircle p)`.
 
-The upper-right block projection and the matching insertion are continuous linear maps over
-any semiring and topological module, with arbitrary row and column index types. Their application
-lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_apply`.
+The matrix trace (`Matrix.traceCLM`), the upper-right block projection, and the matching insertion
+are continuous linear maps over any semiring and topological module. Their application lemmas are
+`Matrix.traceCLM_apply`, `Matrix.toBlocks₁₂CLM_apply`, and `Matrix.fromBlocks₁₂CLM_apply`.
 
 ## Main definitions
 
 * `Matrix.smulVecHom`: the continuous additive action of a matrix on vectors in an additive monoid
   with a distributive scalar action.
+* `Matrix.traceCLM`: matrix trace as a continuous linear map.
 * `Matrix.toBlocks₁₂CLM`: projection onto the upper-right block as a continuous linear map.
 * `Matrix.fromBlocks₁₂CLM`: insertion into the upper-right block as a continuous linear map.
 -/
@@ -128,5 +130,36 @@ def fromBlocks₁₂CLM :
     fromBlocks₁₂CLM 𝕜 (n := n) (l := l) A = fromBlocks 0 A 0 0 := by rfl
 
 end Blocks
+
+section Trace
+
+/-- `Matrix.trace` as a continuous linear map. -/
+def traceCLM (n α R : Type*) [Fintype n] [AddCommMonoid R] [TopologicalSpace R] [ContinuousAdd R]
+    [Semiring α] [Module α R] : Matrix n n R →L[α] R where
+  toLinearMap := Matrix.traceLinearMap n α R
+  cont := continuous_id.matrix_trace
+
+/-- Applying `Matrix.traceCLM` evaluates `Matrix.trace`. -/
+@[simp]
+theorem traceCLM_apply {n α R : Type*} [Fintype n] [AddCommMonoid R] [TopologicalSpace R]
+    [ContinuousAdd R] [Semiring α] [Module α R] (M : Matrix n n R) :
+    traceCLM n α R M = M.trace :=
+  (rfl)
+
+/-- Coercing `Matrix.traceCLM` to a function yields `Matrix.trace`. -/
+@[simp]
+theorem coe_traceCLM (n α R : Type*) [Fintype n] [AddCommMonoid R] [TopologicalSpace R]
+    [ContinuousAdd R] [Semiring α] [Module α R] :
+    ⇑(traceCLM n α R) = (Matrix.trace : Matrix n n R → R) :=
+  (rfl)
+
+/-- Forgetting continuity of `Matrix.traceCLM` recovers `Matrix.traceLinearMap`. -/
+@[simp]
+theorem toLinearMap_traceCLM (n α R : Type*) [Fintype n] [AddCommMonoid R] [TopologicalSpace R]
+    [ContinuousAdd R] [Semiring α] [Module α R] :
+    (traceCLM n α R).toLinearMap = Matrix.traceLinearMap n α R :=
+  (rfl)
+
+end Trace
 
 end Matrix

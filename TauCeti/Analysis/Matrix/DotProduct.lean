@@ -15,12 +15,20 @@ For a square matrix `A : Matrix n n 𝕜` over an `RCLike` field `𝕜`, the ses
 `star v ⬝ᵥ A *ᵥ v` splits into the weighted squared-norm sum `∑ i, A i i * ‖v i‖ ^ 2` and the
 off-diagonal form `star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v`
 (`Matrix.star_dotProduct_mulVec_eq_sum_diag_add`), with real-part counterpart
-`Matrix.re_star_dotProduct_mulVec_eq_sum_diag_add`.
+`Matrix.re_star_dotProduct_mulVec_eq_sum_diag_add`. This file also records that the Hermitian
+dot-product square `star v ⬝ᵥ v` equals the coercion of its real part
+(`Matrix.ofReal_re_dotProduct_star_self`).
 -/
 
 public section
 
 namespace Matrix
+
+/-- Over an `RCLike` field `𝕜`, the Hermitian dot-product square `star v ⬝ᵥ v` equals the coercion
+of its real part. -/
+theorem ofReal_re_dotProduct_star_self {n 𝕜 : Type*} [Fintype n] [RCLike 𝕜] (v : n → 𝕜) :
+    ((RCLike.re (star v ⬝ᵥ v) : ℝ) : 𝕜) = star v ⬝ᵥ v := by
+  simp [dotProduct, RCLike.conj_mul]
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 

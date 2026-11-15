@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import TauCeti.Probability.RandomMatrix.Wigner
+public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Analysis.Complex.NormSq
+public import TauCeti.Probability.RandomMatrix.Wigner
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Gaussian orthogonal and unitary ensembles
@@ -22,13 +25,27 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 ## Main definitions
 
 * `TauCeti.Probability.gaussianEnsemble`: the matrix built from the array `g`.
+* `TauCeti.Probability.gaussianEnsembleSelfAdjointCLM`: continuous `ℝ`-linear map bundling
+  `gaussianEnsemble β n` into `selfAdjoint (Matrix (Fin n) (Fin n) ℂ)`.
 
 ## Main results
 
-* `TauCeti.Probability.isHermitian_gaussianEnsemble`: the matrix is Hermitian.
-* `TauCeti.Probability.gaussianEnsemble_add` and `TauCeti.Probability.gaussianEnsemble_smul`: the
-  matrix is real-linear in the array.
+* `TauCeti.Probability.isHermitian_gaussianEnsemble`,
+  `TauCeti.Probability.isSymm_gaussianEnsemble_of_eq_one`, and
+  `TauCeti.Probability.isSymm_gaussianEnsemble_one`: Hermitian and (`β = 1`) symmetric structure.
+* `TauCeti.Probability.gaussianEnsemble_add`, `TauCeti.Probability.gaussianEnsemble_smul`,
+  `TauCeti.Probability.gaussianEnsemble_sum`, and
+  `TauCeti.Probability.gaussianEnsemble_eq_sum_single`: real-linearity and coordinate basis
+  expansion in the array.
 * `TauCeti.Probability.continuous_gaussianEnsemble`: it depends continuously on the array.
+* `TauCeti.Probability.sum_gaussianEnsemble_single_mul_mul_self_of_ne_one` and
+  `TauCeti.Probability.sum_gaussianEnsemble_single_mul_mul_self_of_eq_one`: quadratic Casimir
+  identities over the standard coordinate basis `Pi.single p 1`.
+* `TauCeti.Probability.sum_trace_mul_gaussianEnsemble_single_mul_of_ne_one`,
+  `TauCeti.Probability.sum_trace_mul_gaussianEnsemble_single_mul_of_eq_one`,
+  `TauCeti.Probability.sum_re_trace_mul_gaussianEnsemble_single_mul_of_ne_one`, and
+  `TauCeti.Probability.sum_re_trace_mul_gaussianEnsemble_single_mul_of_eq_one`: trace inner-product
+  identities over the coordinate basis.
 * `TauCeti.Probability.hasLaw_gaussianEnsemble`: with independent `N(0, v)` coordinates the
   ensemble has the law of `√v` times the ensemble of standard Gaussian coordinates.
 * `TauCeti.Probability.gaussianEnsemble_one_zero_zero_hasLaw` and
@@ -41,9 +58,9 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), §2.5.
+  University Press (2010), §2.5 and §4.3.1.
 * T. Tao, *Topics in Random Matrix Theory*, Graduate Studies in Mathematics 132, AMS (2012),
-  §2.6.
+  §2.6 and §3.1.
 -/
 
 public section
@@ -360,6 +377,326 @@ theorem integral_re_trace_gaussianEnsemble_two_sq_div {Ω : Type*} {mΩ : Measur
   have : (n : ℝ) ≠ 0 := by positivity
   field_simp
   ring
+
+section CasimirAndTrace
+
+/-- For `β = 1` (the GOE parameterization), `gaussianEnsemble β n g` is a symmetric matrix. -/
+theorem isSymm_gaussianEnsemble_of_eq_one {β n : ℕ} (hβ : β = 1) (g : Fin n × Fin n → ℝ) :
+    (gaussianEnsemble β n g).IsSymm := by
+  ext i j
+  rw [transpose_apply, gaussianEnsemble_apply, gaussianEnsemble_apply]
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · simp [hβ, hij, hij.ne, hij.not_gt, hij.ne']
+  · simp [hβ]
+  · simp [hβ, hji, hji.ne, hji.not_gt, hji.ne']
+
+/-- `gaussianEnsemble 1 n g` is symmetric for every array `g`. -/
+theorem isSymm_gaussianEnsemble_one (n : ℕ) (g : Fin n × Fin n → ℝ) :
+    (gaussianEnsemble 1 n g).IsSymm :=
+  isSymm_gaussianEnsemble_of_eq_one rfl g
+
+/-- Continuous `ℝ`-linear map bundling `gaussianEnsemble β n` into the real topological submodule
+`selfAdjoint (Matrix (Fin n) (Fin n) ℂ)`. -/
+def gaussianEnsembleSelfAdjointCLM (β n : ℕ) :
+    (Fin n × Fin n → ℝ) →L[ℝ] selfAdjoint (Matrix (Fin n) (Fin n) ℂ) where
+  toFun g := ⟨gaussianEnsemble β n g, (isHermitian_gaussianEnsemble β n g).isSelfAdjoint⟩
+  map_add' g h := Subtype.ext (gaussianEnsemble_add g h)
+  map_smul' c g := Subtype.ext (gaussianEnsemble_smul c g)
+  cont := continuous_gaussianEnsemble.subtype_mk _
+
+/-- Coercing `gaussianEnsembleSelfAdjointCLM β n g` to a matrix recovers
+`gaussianEnsemble β n g`. -/
+@[simp]
+theorem coe_gaussianEnsembleSelfAdjointCLM_apply (β n : ℕ) (g : Fin n × Fin n → ℝ) :
+    (gaussianEnsembleSelfAdjointCLM β n g : Matrix (Fin n) (Fin n) ℂ) =
+      gaussianEnsemble β n g :=
+  (rfl)
+
+/-- The Gaussian ensemble commutes with finite sums of arrays. -/
+theorem gaussianEnsemble_sum {ι : Type*} {β n : ℕ} (s : Finset ι)
+    (f : ι → Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (∑ x ∈ s, f x) = ∑ x ∈ s, gaussianEnsemble β n (f x) := by
+  rw [← coe_gaussianEnsembleSelfAdjointCLM_apply, map_sum]
+  simp
+
+/-- Coordinate basis expansion of `gaussianEnsemble β n g` along `Pi.single p 1`. -/
+theorem gaussianEnsemble_eq_sum_single {β n : ℕ} (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n g =
+      ∑ p : Fin n × Fin n, g p • gaussianEnsemble β n (Pi.single p 1) := by
+  conv_lhs => rw [pi_eq_sum_univ' g]
+  simp [gaussianEnsemble_sum]
+
+private theorem inv_sqrt_nat_sq (n : ℕ) :
+    (Real.sqrt n : ℂ)⁻¹ * (Real.sqrt n : ℂ)⁻¹ = (n : ℂ)⁻¹ := by
+  rw [← mul_inv, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg n),
+    Complex.ofReal_natCast]
+
+private theorem inv_sqrt_two_sq : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = (2 : ℂ)⁻¹ := by
+  rw [← mul_inv, ← Complex.ofReal_mul, Real.mul_self_sqrt (by positivity), Complex.ofReal_ofNat]
+
+private theorem sqrt_two_sq : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
+  rw [← Complex.ofReal_mul, Real.mul_self_sqrt (by positivity), Complex.ofReal_ofNat]
+
+private theorem gaussianEnsemble_single_apply_eq_zero {β n : ℕ} {p : Fin n × Fin n}
+    {i j : Fin n} (h1 : p ≠ (i, j)) (h2 : p ≠ (j, i)) :
+    gaussianEnsemble β n (Pi.single p 1) i j = 0 := by
+  rcases eq_or_ne i j with rfl | hij <;> simp [gaussianEnsemble_apply, h1.symm, h2.symm, *]
+
+private theorem sum_gaussianEnsemble_single_apply_mul_eq_pair (β n : ℕ) (i j k l : Fin n) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l =
+      ∑ p ∈ ({(i, j), (j, i)} : Finset (Fin n × Fin n)),
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l := by
+  refine (Finset.sum_subset (Finset.subset_univ _) fun p _ hp ↦ ?_).symm
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hp
+  rw [gaussianEnsemble_single_apply_eq_zero hp.1 hp.2, zero_mul]
+
+private theorem sum_gaussianEnsemble_single_apply_mul_eq_zero_of_not {β n : ℕ}
+    {i j k l : Fin n} (h1 : ¬ (i = l ∧ j = k)) (h2 : ¬ (i = k ∧ j = l)) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l = 0 :=
+  Finset.sum_eq_zero fun p _ ↦ by
+    by_cases hp : p = (i, j) ∨ p = (j, i)
+    · rw [gaussianEnsemble_single_apply_eq_zero (i := k) (j := l) (by grind) (by grind), mul_zero]
+    · rw [gaussianEnsemble_single_apply_eq_zero (i := i) (j := j) (by grind) (by grind), zero_mul]
+
+private theorem sum_gaussianEnsemble_single_apply_mul_of_lt_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    {i j : Fin n} (hij : i < j) (k l : Fin n) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l =
+      if i = l ∧ j = k then (n : ℂ)⁻¹ else 0 := by
+  by_cases h1 : i = l ∧ j = k
+  · rcases h1 with ⟨rfl, rfl⟩
+    rw [sum_gaussianEnsemble_single_apply_mul_eq_pair,
+      Finset.sum_pair (fun h ↦ hij.ne (Prod.mk.inj h).1)]
+    simp only [gaussianEnsemble_apply_of_lt_of_ne_one _ hβ hij,
+      gaussianEnsemble_apply_of_gt_of_ne_one _ hβ hij, Pi.single_apply, Prod.mk.injEq, hij.ne,
+      hij.ne', and_self, ↓reduceIte, Complex.ofReal_one, Complex.ofReal_zero, mul_one,
+      mul_zero, add_zero, zero_add, sub_zero, zero_sub, div_eq_mul_inv]
+    linear_combination (1 - Complex.I * Complex.I) *
+        ((Real.sqrt ↑n : ℂ)⁻¹ * (Real.sqrt ↑n : ℂ)⁻¹) * inv_sqrt_two_sq + inv_sqrt_nat_sq n -
+      ((Real.sqrt ↑n : ℂ)⁻¹ * (Real.sqrt ↑n : ℂ)⁻¹) * (2 : ℂ)⁻¹ * Complex.I_mul_I
+  · by_cases h2 : i = k ∧ j = l
+    · rcases h2 with ⟨rfl, rfl⟩
+      rw [sum_gaussianEnsemble_single_apply_mul_eq_pair,
+        Finset.sum_pair (fun h ↦ hij.ne (Prod.mk.inj h).1)]
+      simp only [gaussianEnsemble_apply_of_lt_of_ne_one _ hβ hij, Pi.single_apply, Prod.mk.injEq,
+        hij.ne, hij.ne', and_self, ↓reduceIte, Complex.ofReal_one, Complex.ofReal_zero,
+        mul_one, mul_zero, add_zero, zero_add, div_eq_mul_inv]
+      linear_combination ((Real.sqrt ↑n : ℂ)⁻¹ * (Real.sqrt ↑n : ℂ)⁻¹) *
+        ((Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹) * Complex.I_mul_I
+    · simp [h1, sum_gaussianEnsemble_single_apply_mul_eq_zero_of_not h1 h2]
+
+private theorem sum_gaussianEnsemble_single_apply_mul_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    (i j k l : Fin n) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l =
+      if i = l ∧ j = k then (n : ℂ)⁻¹ else 0 := by
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · exact sum_gaussianEnsemble_single_apply_mul_of_lt_of_ne_one hβ hij k l
+  · by_cases hkl : i = l ∧ i = k
+    · rcases hkl with ⟨rfl, rfl⟩
+      rw [sum_gaussianEnsemble_single_apply_mul_eq_pair, Finset.pair_eq_singleton,
+        Finset.sum_singleton]
+      simp [hβ, inv_sqrt_nat_sq]
+    · simp [hkl, sum_gaussianEnsemble_single_apply_mul_eq_zero_of_not hkl (by grind)]
+  · have h := congrArg star (sum_gaussianEnsemble_single_apply_mul_of_lt_of_ne_one hβ hji l k)
+    have hstar : ∀ p a b, star (gaussianEnsemble β n (Pi.single p 1) b a) =
+        gaussianEnsemble β n (Pi.single p 1) a b := fun p a b ↦ by
+      simpa [conjTranspose_apply] using
+        congr_fun₂ (isHermitian_gaussianEnsemble β n (Pi.single p 1)).eq a b
+    rw [show star (∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k) =
+        ∑ p : Fin n × Fin n,
+          gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l by
+      rw [star_sum]; exact Finset.sum_congr rfl fun p _ ↦ by
+        rw [star_mul', hstar, hstar, mul_comm]] at h
+    refine h.trans ?_
+    by_cases hc : i = l ∧ j = k
+    · rcases hc with ⟨rfl, rfl⟩; simp [RCLike.star_def, ← Complex.ofReal_natCast]
+    · have hc' : ¬ (j = k ∧ i = l) := by grind
+      simp [hc, hc']
+
+private theorem sum_gaussianEnsemble_single_apply_mul_of_lt_of_eq_one {β n : ℕ} (hβ : β = 1)
+    {i j : Fin n} (hij : i < j) (k l : Fin n) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l =
+      (n : ℂ)⁻¹ * ((if i = l ∧ j = k then 1 else 0) + (if i = k ∧ j = l then 1 else 0)) := by
+  by_cases h1 : i = l ∧ j = k
+  · rcases h1 with ⟨rfl, rfl⟩
+    rw [sum_gaussianEnsemble_single_apply_mul_eq_pair,
+      Finset.sum_pair (fun h ↦ hij.ne (Prod.mk.inj h).1)]
+    simp [gaussianEnsemble_apply_of_lt_of_eq_one _ hβ hij,
+      gaussianEnsemble_apply_of_gt_of_eq_one _ hβ hij, hij.ne, inv_sqrt_nat_sq]
+  · by_cases h2 : i = k ∧ j = l
+    · rcases h2 with ⟨rfl, rfl⟩
+      rw [sum_gaussianEnsemble_single_apply_mul_eq_pair,
+        Finset.sum_pair (fun h ↦ hij.ne (Prod.mk.inj h).1)]
+      simp [gaussianEnsemble_apply_of_lt_of_eq_one _ hβ hij, hij.ne, inv_sqrt_nat_sq]
+    · simp [h1, h2, sum_gaussianEnsemble_single_apply_mul_eq_zero_of_not h1 h2]
+
+private theorem sum_gaussianEnsemble_single_apply_mul_of_eq_one {β n : ℕ} (hβ : β = 1)
+    (i j k l : Fin n) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l =
+      (n : ℂ)⁻¹ * ((if i = l ∧ j = k then 1 else 0) + (if i = k ∧ j = l then 1 else 0)) := by
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · exact sum_gaussianEnsemble_single_apply_mul_of_lt_of_eq_one hβ hij k l
+  · by_cases hkl : i = l ∧ i = k
+    · rcases hkl with ⟨rfl, rfl⟩
+      rw [sum_gaussianEnsemble_single_apply_mul_eq_pair, Finset.pair_eq_singleton,
+        Finset.sum_singleton]
+      simp only [gaussianEnsemble_apply_self_of_eq_one _ hβ, Pi.single_eq_same, mul_one,
+        and_self, ↓reduceIte]
+      linear_combination (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) * inv_sqrt_nat_sq n +
+        (n : ℂ)⁻¹ * sqrt_two_sq
+    · have hkl' : ¬ (i = k ∧ i = l) := by grind
+      simp [hkl, hkl', sum_gaussianEnsemble_single_apply_mul_eq_zero_of_not hkl hkl']
+  · simp_rw [show ∀ p, gaussianEnsemble β n (Pi.single p 1) i j =
+        gaussianEnsemble β n (Pi.single p 1) j i from
+      fun p ↦ (isSymm_gaussianEnsemble_of_eq_one hβ (Pi.single p 1)).apply j i]
+    rw [sum_gaussianEnsemble_single_apply_mul_of_lt_of_eq_one hβ hji k l, add_comm]
+    congr 2 <;> exact if_congr and_comm rfl rfl
+
+private theorem sum_single_mul_mul_self_apply (β n : ℕ) (M : Matrix (Fin n) (Fin n) ℂ)
+    (i l : Fin n) :
+    (∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) * M * gaussianEnsemble β n (Pi.single p 1)) i l =
+      ∑ j : Fin n, ∑ k : Fin n, M j k * ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) i j * gaussianEnsemble β n (Pi.single p 1) k l := by
+  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine (Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm.trans <| Finset.sum_congr rfl fun j _ ↦
+    Finset.sum_congr rfl fun p _ ↦ by ring).trans Finset.sum_comm
+
+/-- **GUE Casimir identity**: for `β ≠ 1` and any `M`, `∑ p, Eₚ * M * Eₚ = (n⁻¹ * M.trace) • 1`. -/
+theorem sum_gaussianEnsemble_single_mul_mul_self_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    (M : Matrix (Fin n) (Fin n) ℂ) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) * M * gaussianEnsemble β n (Pi.single p 1) =
+      ((n : ℂ)⁻¹ * M.trace) • (1 : Matrix (Fin n) (Fin n) ℂ) := by
+  ext i l
+  rw [sum_single_mul_mul_self_apply]
+  simp_rw [sum_gaussianEnsemble_single_apply_mul_of_ne_one hβ]
+  by_cases hil : i = l <;> simp [hil, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- **GOE Casimir identity**: for `β = 1` and any `M`,
+`∑ p, Eₚ * M * Eₚ = n⁻¹ • (M.trace • 1 + Mᵀ)`. -/
+theorem sum_gaussianEnsemble_single_mul_mul_self_of_eq_one {β n : ℕ} (hβ : β = 1)
+    (M : Matrix (Fin n) (Fin n) ℂ) :
+    ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) * M * gaussianEnsemble β n (Pi.single p 1) =
+      (n : ℂ)⁻¹ • (M.trace • (1 : Matrix (Fin n) (Fin n) ℂ) + Mᵀ) := by
+  ext i l
+  rw [sum_single_mul_mul_self_apply]
+  simp_rw [sum_gaussianEnsemble_single_apply_mul_of_eq_one hβ, ← mul_assoc,
+    mul_comm (M _ _) (n : ℂ)⁻¹, mul_assoc, ← Finset.mul_sum, mul_add, Finset.sum_add_distrib]
+  have h1 : (∑ j : Fin n, ∑ k : Fin n, M j k * if i = l ∧ j = k then (1 : ℂ) else 0) =
+      if i = l then M.trace else 0 := by
+    by_cases hil : i = l <;> simp [hil, Matrix.trace]
+  have h2 : (∑ j : Fin n, ∑ k : Fin n, M j k * if i = k ∧ j = l then (1 : ℂ) else 0) = M l i := by
+    simp [ite_and]
+  rw [h1, h2]
+  simp [Matrix.one_apply]
+
+private theorem sum_trace_mul_eq_sum_cov (β n : ℕ) (X Y : Matrix (Fin n) (Fin n) ℂ) :
+    ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace =
+      ∑ i : Fin n, ∑ j : Fin n, ∑ k : Fin n, ∑ l : Fin n,
+        (X i j * Y k l) * ∑ p : Fin n × Fin n,
+          gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k := by
+  have hexp (p : Fin n × Fin n) :
+      (X * gaussianEnsemble β n (Pi.single p 1)).trace *
+        (Y * gaussianEnsemble β n (Pi.single p 1)).trace =
+      ∑ i : Fin n, ∑ j : Fin n, ∑ k : Fin n, ∑ l : Fin n, (X i j * Y k l) *
+        (gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k) := by
+    rw [Matrix.trace_mul_eq_sum X, Matrix.trace_mul_eq_sum Y, Finset.sum_mul]
+    simp_rw [Finset.sum_mul, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
+      Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ by ring
+  simp_rw [hexp, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm.trans <| Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
+
+/-- **GUE trace inner-product identity** for `β ≠ 1`. -/
+theorem sum_trace_mul_gaussianEnsemble_single_mul_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    (X Y : Matrix (Fin n) (Fin n) ℂ) :
+    ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace =
+      (n : ℂ)⁻¹ * (X * Y).trace := by
+  rw [sum_trace_mul_eq_sum_cov]
+  have hinner (i j : Fin n) : (∑ k : Fin n, ∑ l : Fin n, (X i j * Y k l) *
+      ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k) =
+      (n : ℂ)⁻¹ * (X i j * Y j i) := by
+    simp [sum_gaussianEnsemble_single_apply_mul_of_ne_one hβ, ite_and]
+    ring
+  simp_rw [hinner, ← Finset.mul_sum, ← Matrix.trace_mul_eq_sum]
+
+/-- **GOE trace inner-product identity** for `β = 1`. -/
+theorem sum_trace_mul_gaussianEnsemble_single_mul_of_eq_one {β n : ℕ} (hβ : β = 1)
+    (X Y : Matrix (Fin n) (Fin n) ℂ) :
+    ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace =
+      (n : ℂ)⁻¹ * ((X * Y).trace + (X * Yᵀ).trace) := by
+  rw [sum_trace_mul_eq_sum_cov]
+  have hinner (i j : Fin n) : (∑ k : Fin n, ∑ l : Fin n, (X i j * Y k l) *
+      ∑ p : Fin n × Fin n,
+        gaussianEnsemble β n (Pi.single p 1) j i * gaussianEnsemble β n (Pi.single p 1) l k) =
+      (n : ℂ)⁻¹ * (X i j * Y j i + X i j * Y i j) := by
+    simp [sum_gaussianEnsemble_single_apply_mul_of_eq_one hβ, mul_add, Finset.sum_add_distrib,
+      ite_and]
+    ring
+  simp_rw [hinner, ← Finset.mul_sum, Finset.sum_add_distrib]
+  simp [Matrix.trace_mul_eq_sum, transpose_apply]
+
+private theorem re_sum_trace_mul_gaussianEnsemble_single_mul (β n : ℕ)
+    {X Y : Matrix (Fin n) (Fin n) ℂ} (hX : X.IsHermitian) (hY : Y.IsHermitian) :
+    (∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace).re =
+      ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace.re *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace.re := by
+  have hreal {A B : Matrix (Fin n) (Fin n) ℂ} (hA : A.IsHermitian) (hB : B.IsHermitian) :
+      (((A * B).trace).re : ℂ) = (A * B).trace :=
+    RCLike.conj_eq_iff_re.mp (by
+      rw [← RCLike.star_def, ← trace_conjTranspose, conjTranspose_mul, hA.eq, hB.eq,
+        trace_mul_comm])
+  rw [Complex.re_sum]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  have hE := isHermitian_gaussianEnsemble β n (Pi.single p 1)
+  conv_lhs => rw [← hreal hX hE, ← hreal hY hE]
+  rw [← Complex.ofReal_mul, Complex.ofReal_re]
+
+/-- Real-part GUE trace inner-product identity for Hermitian matrices `X, Y`. -/
+theorem sum_re_trace_mul_gaussianEnsemble_single_mul_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    {X Y : Matrix (Fin n) (Fin n) ℂ} (hX : X.IsHermitian) (hY : Y.IsHermitian) :
+    ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace.re *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace.re =
+      (n : ℝ)⁻¹ * (X * Y).trace.re := by
+  rw [← re_sum_trace_mul_gaussianEnsemble_single_mul β n hX hY,
+    sum_trace_mul_gaussianEnsemble_single_mul_of_ne_one hβ, ← Complex.ofReal_natCast,
+    ← Complex.ofReal_inv, Complex.re_ofReal_mul]
+
+/-- Real-part GOE trace inner-product identity for Hermitian matrices `X, Y`. -/
+theorem sum_re_trace_mul_gaussianEnsemble_single_mul_of_eq_one {β n : ℕ} (hβ : β = 1)
+    {X Y : Matrix (Fin n) (Fin n) ℂ} (hX : X.IsHermitian) (hY : Y.IsHermitian) :
+    ∑ p : Fin n × Fin n,
+        (X * gaussianEnsemble β n (Pi.single p 1)).trace.re *
+          (Y * gaussianEnsemble β n (Pi.single p 1)).trace.re =
+      (n : ℝ)⁻¹ * ((X * Y).trace.re + (X * Yᵀ).trace.re) := by
+  rw [← re_sum_trace_mul_gaussianEnsemble_single_mul β n hX hY,
+    sum_trace_mul_gaussianEnsemble_single_mul_of_eq_one hβ, ← Complex.ofReal_natCast,
+    ← Complex.ofReal_inv, Complex.re_ofReal_mul, Complex.add_re]
+
+end CasimirAndTrace
 
 end Probability
 

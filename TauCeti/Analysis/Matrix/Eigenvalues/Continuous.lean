@@ -17,9 +17,12 @@ repeated eigenvalues, and measurable for the entrywise Borel structure on matric
 These results allow eigenvalues of a measurable random Hermitian matrix to be treated as
 random variables, without choosing measurable eigenvectors.
 
-We use the subtype of Hermitian matrices, with its inherited topology and measurable
-structure. Continuity uses the usual entrywise topology: Mathlib's Euclidean operator norm
-induces this same topology. Empty index types are allowed.
+We use both the subtype `{A : Matrix n n 𝕜 // A.IsHermitian}` and the self-adjoint submodule
+`selfAdjoint (Matrix n n 𝕜)`, with their inherited topologies and measurable structures.
+Continuity uses the usual entrywise topology: Mathlib's Euclidean operator norm induces this
+same topology. Consequently, the locus where a given sorted eigenvalue is simple and the open
+simple-spectrum locus `{X | StrictAnti X.2.isHermitian.eigenvalues₀}` are open in
+`selfAdjoint (Matrix n n 𝕜)`. Empty index types are allowed.
 
 ## References
 
@@ -63,6 +66,46 @@ theorem continuous_eigenvalues :
   -- The matrix-indexed list is the sorted list reindexed by a fixed finite equivalence.
   simpa only [IsHermitian.eigenvalues, Function.comp_def] using
     (continuous_apply _).comp (continuous_eigenvalues₀ (n := n) (𝕜 := 𝕜))
+
+/-- The sorted eigenvalue map is continuous on `selfAdjoint (Matrix n n 𝕜)`. -/
+@[fun_prop]
+theorem continuous_eigenvalues₀_selfAdjoint :
+    Continuous (fun X : selfAdjoint (Matrix n n 𝕜) ↦ X.2.isHermitian.eigenvalues₀) :=
+  continuous_eigenvalues₀.comp (continuous_subtype_val.subtype_mk fun X ↦ X.2.isHermitian)
+
+/-- Mathlib's matrix-indexed eigenvalue list is continuous on `selfAdjoint (Matrix n n 𝕜)`. -/
+@[fun_prop]
+theorem continuous_eigenvalues_selfAdjoint :
+    Continuous (fun X : selfAdjoint (Matrix n n 𝕜) ↦ X.2.isHermitian.eigenvalues) :=
+  continuous_eigenvalues.comp (continuous_subtype_val.subtype_mk fun X ↦ X.2.isHermitian)
+
+/-- Self-adjoint matrices whose `k`-th sorted eigenvalue is simple form an open set. -/
+theorem isOpen_setOf_forall_eigenvalues₀_ne (k : Fin (Fintype.card n)) :
+    IsOpen {X : selfAdjoint (Matrix n n 𝕜) |
+      ∀ j ≠ k, X.2.isHermitian.eigenvalues₀ j ≠ X.2.isHermitian.eigenvalues₀ k} := by
+  have heq : {X : selfAdjoint (Matrix n n 𝕜) |
+      ∀ j ≠ k, X.2.isHermitian.eigenvalues₀ j ≠ X.2.isHermitian.eigenvalues₀ k} =
+      ⋂ j ∈ Finset.univ.erase k, {X : selfAdjoint (Matrix n n 𝕜) |
+        X.2.isHermitian.eigenvalues₀ j ≠ X.2.isHermitian.eigenvalues₀ k} := by
+    ext X; simp [Finset.mem_erase]
+  rw [heq]
+  exact isOpen_biInter_finset fun j _ ↦ isOpen_ne_fun
+    ((continuous_apply j).comp continuous_eigenvalues₀_selfAdjoint)
+    ((continuous_apply k).comp continuous_eigenvalues₀_selfAdjoint)
+
+/-- The simple-spectrum locus `{X | StrictAnti X.2.isHermitian.eigenvalues₀}` is open in
+`selfAdjoint (Matrix n n 𝕜)`. -/
+theorem isOpen_setOf_strictAnti_eigenvalues₀ :
+    IsOpen {X : selfAdjoint (Matrix n n 𝕜) | StrictAnti X.2.isHermitian.eigenvalues₀} := by
+  have heq : {X : selfAdjoint (Matrix n n 𝕜) | StrictAnti X.2.isHermitian.eigenvalues₀} =
+      ⋂ i : Fin (Fintype.card n), ⋂ j : {j : Fin (Fintype.card n) // i < j},
+        {X : selfAdjoint (Matrix n n 𝕜) |
+          X.2.isHermitian.eigenvalues₀ j.1 < X.2.isHermitian.eigenvalues₀ i} := by
+    ext X; simp [StrictAnti, Subtype.forall]
+  rw [heq]
+  exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦ isOpen_lt
+    ((continuous_apply j.1).comp continuous_eigenvalues₀_selfAdjoint)
+    ((continuous_apply i).comp continuous_eigenvalues₀_selfAdjoint)
 
 variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 
