@@ -22,45 +22,58 @@ For an even full lattice `L` of rank `2k` and level `N`, its theta series is a m
 of weight `k` on `Γ₁(N)` with quadratic nebentypus `ZLattice.IsEven.thetaCharacter`. This file
 extends the evaluated Gauss-sum transformation law to every matrix of `Γ₀(N)` and bundles the
 result as `ZLattice.thetaFormOfLevel`. Membership in `TauCeti.modFormCharSpace` records the
-nebentypus in the diamond-eigenspace convention, without introducing a new type of modular form.
+nebentypus in the diamond-eigenspace convention, without introducing a new type of modular form;
+`ZLattice.restrict_thetaFormOfLevel_mem_modFormCharSpace` and
+`ZLattice.mcast_thetaFormOfLevel_mem_modFormCharSpace` transport this membership along level
+divisibility `level L ∣ N` and across a computed level `level L = N` to any Dirichlet character
+modulo `N` agreeing on units with the Kronecker symbol of `signedDiscr L`.
+
+Pulling a lattice back along a linear isometry preserves `thetaFormOfLevel`, and the theta form of
+an orthogonal direct sum `L ⊕ M` is the product of the restrictions of `Θ_L` and `Θ_M` to their
+common level `lcm (level L) (level M)`. When the quadratic theta character is trivial — in
+particular whenever `signedDiscr L` is a square
+(`ZLattice.IsEven.thetaCharacter_eq_one_of_isSquare`) — `Θ_L` is invariant under every matrix of
+`Γ₀(level L)` and `TauCeti.modFormCharSpaceOneEquiv` descends `thetaFormOfLevel` from `Γ₁(level L)`
+to a modular form `ZLattice.thetaFormGamma0` on the bare congruence subgroup `Γ₀(level L)`.
 
 The reduction to matrices with positive lower-left and positive odd upper-left entries uses
 translation invariance and the character parity `χ(-1) = (-1)^k`. Holomorphy and boundedness
 at all rational cusps are supplied by the analytic theory of theta series. The coefficients
-are the representation numbers of `L`. Because its constant term at `∞` is `1`, `thetaFormOfLevel`
-is nonzero and is never a cusp form; nonvanishing implies that its nebentypus is uniquely
-determined, and every diamond operator `⟨d⟩` (as well as its zero-extended natural-number form
-`⟨n⟩`) acts on it by the scalar `χ_L(d)` (resp. `χ_L(n)`).
-
-Pulling a lattice back along a linear isometry preserves `thetaFormOfLevel`, and the theta form of
-an orthogonal direct sum `L ⊕ M` is the product of the restrictions of `Θ_L` and `Θ_M` to their
-common level `lcm (level L) (level M)`. When the theta character is trivial — in particular when
-the signed discriminant `D_L` is a square — `Θ_L` is invariant under the full group `Γ₀(N)` and
-descends to a modular form `ZLattice.thetaFormGamma0` on `Γ₀(N)`. When `L` is unimodular both
-constructions agree with the level-one theta form, viewed on the smaller subgroup.
+are the representation numbers of `L`; when `L` is unimodular both bundled constructions agree with
+the level-one theta form, viewed on the smaller subgroup. Because its constant term at `∞` is `1`,
+`thetaFormOfLevel` is nonzero and is never a cusp form; nonvanishing implies that its nebentypus is
+uniquely determined, and every diamond operator `⟨d⟩` (as well as its zero-extended natural-number
+form `⟨n⟩`) acts on it by the scalar `χ_L(d)` (resp. `χ_L(n)`).
 
 ## Main definitions
 
-* `ZLattice.thetaFormOfLevel`: the theta series of an even full lattice of rank `2k`, as a modular
-  form of weight `k` on `Γ₁(level L)`.
-* `ZLattice.thetaFormGamma0`: the descent to `Γ₀(level L)` when `thetaCharacter` is trivial.
+* `ZLattice.thetaFormOfLevel`: the theta series of an even full lattice `L` of rank `2k`, as a
+  weight-`k` modular form on `Γ₁(level L)`.
+* `ZLattice.thetaFormGamma0`: when `hL.thetaCharacter _ = 1`, the descent of `thetaFormOfLevel`
+  to a weight-`k` modular form on `Γ₀(level L)`.
 
 ## Main statements
 
 * `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0`: the Hecke–Schoeneberg transformation law on
   `Γ₀(level L)`.
 * `ZLattice.thetaFormOfLevel_mem_modFormCharSpace`,
-  `ZLattice.mem_modFormCharSpace_thetaFormOfLevel_iff`: `Θ_L` lies in the character space of `χ_L`,
-  and of no other character.
+  `ZLattice.mem_modFormCharSpace_thetaFormOfLevel_iff`,
+  `ZLattice.restrict_thetaFormOfLevel_mem_modFormCharSpace`,
+  `ZLattice.mcast_thetaFormOfLevel_mem_modFormCharSpace`: unique character-space membership of
+  `thetaFormOfLevel`, and its compatibility with level restriction and level cast.
 * `ZLattice.diamondOp_thetaFormOfLevel`, `ZLattice.diamondOpNat_thetaFormOfLevel`,
-  `ZLattice.diamondOpNat_thetaFormOfLevel_of_coprime`: the diamond eigenvalues
-  `⟨d⟩ Θ_L = χ_L(d) Θ_L` and `⟨n⟩ Θ_L = χ_L(n) Θ_L`.
-* `ZLattice.not_isCuspForm_thetaFormOfLevel`, `ZLattice.not_isCuspForm_thetaFormGamma0`: `Θ_L` is
-  never a cusp form.
+  `ZLattice.diamondOpNat_thetaFormOfLevel_of_coprime`: diamond-operator eigenvalues on
+  `thetaFormOfLevel`.
 * `ZLattice.thetaFormOfLevel_comap`, `ZLattice.thetaFormOfLevel_orthSum`: invariance under linear
   isometries and multiplicativity on orthogonal direct sums.
-* `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0_of_isSquare`: trivial `Γ₀(level L)`-action when
-  `signedDiscr L` is a square.
+* `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0_of_thetaCharacter_eq_one`,
+  `ZLattice.IsEven.thetaSeries_slash_of_mem_Gamma0_of_isSquare`: trivial `Γ₀(level L)`-action when
+  the theta character is trivial or `signedDiscr L` is a square.
+* `ZLattice.coe_thetaFormGamma0`, `ZLattice.restrict_thetaFormGamma0`,
+  `ZLattice.qExpansion_thetaFormGamma0_coeff`, `ZLattice.thetaFormGamma0_ne_zero`,
+  `ZLattice.not_isCuspForm_thetaFormGamma0`, `ZLattice.thetaFormGamma0_eq_restrict_thetaForm`:
+  coercion, restriction to `Γ₁(level L)`, Fourier coefficients, nonvanishing, noncuspidality, and
+  compatibility with `ZLattice.thetaForm` for `thetaFormGamma0`.
 
 ## References
 
@@ -212,19 +225,33 @@ theorem restrict_thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : fin
   exact TauCeti.ModularForm.restrict_mem_modFormCharSpace _ h
     (thetaFormOfLevel_mem_modFormCharSpace hL hk)
 
-/-- Transported along a level equality `level L = N`, `thetaFormOfLevel` lies in the character
-space of `thetaCharacter` cast to modulus `N`. -/
+/-- Transporting `thetaFormOfLevel` along a computed level `level L = N` lands in the character
+space of any Dirichlet character modulo `N` whose values on integers coprime to `N` agree with the
+Kronecker symbol of `signedDiscr L`. -/
 theorem mcast_thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
-    {N : ℕ} (hN : level L = N) :
-    (thetaFormOfLevel hL hk).mcast rfl (by rw [hN]) ∈
-      TauCeti.modFormCharSpace k
-        (MulChar.equivToUnitHom (DirichletCharacter.changeLevel (dvd_of_eq hN)
-          (hL.thetaCharacter ⟨k, by omega⟩))) := by
-  subst hN
-  have hm : (thetaFormOfLevel hL hk).mcast rfl rfl = thetaFormOfLevel hL hk :=
-    ModularForm.ext fun _ ↦ rfl
-  simpa only [hm, DirichletCharacter.changeLevel_self] using
-    thetaFormOfLevel_mem_modFormCharSpace hL hk
+    {N : ℕ} (hN : level L = N)
+    {hΓ : (CongruenceSubgroup.Gamma1 N).map (mapGL ℝ) =
+      (CongruenceSubgroup.Gamma1 (level L)).map (mapGL ℝ)}
+    {χ : DirichletCharacter ℂ N}
+    (hχ : ∀ a : ℤ, IsCoprime a N → χ a = (TauCeti.kroneckerSym (signedDiscr L) a : ℂ)) :
+    (thetaFormOfLevel hL hk).mcast rfl hΓ ∈
+      TauCeti.modFormCharSpace k (MulChar.equivToUnitHom χ) := by
+  apply (TauCeti.mem_modFormCharSpace_iff_nebentypus _ _ _).mpr
+  intro A
+  have hA : (A : SL(2, ℤ)) ∈ CongruenceSubgroup.Gamma0 (level L) := hN ▸ A.property
+  have hunit : IsUnit (((A : SL(2, ℤ)) 1 1 : ℤ) : ZMod N) := by
+    simpa [CongruenceSubgroup.Gamma0Map_apply] using
+      ((CongruenceSubgroup.Gamma0Map N).toHomUnits A).isUnit
+  have haN : IsCoprime ((A : SL(2, ℤ)) 1 1) N :=
+    isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hunit)
+  have haL : IsCoprime ((A : SL(2, ℤ)) 1 1) (level L) := hN ▸ haN
+  have hval : hL.thetaCharacter ⟨k, by omega⟩ ((A : SL(2, ℤ)) 1 1 : ℤ) =
+      χ ((A : SL(2, ℤ)) 1 1 : ℤ) :=
+    (hL.thetaCharacter_intCast _ haL).trans (hχ _ haN).symm
+  simpa only [ModularForm.coe_mcast, coe_thetaFormOfLevel, MulChar.coe_equivToUnitHom,
+    MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply, ModularForm.SL_slash,
+    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← hval] using
+    hL.thetaSeries_slash_of_mem_Gamma0 hk hA
 
 /-- For an even unimodular lattice, the general-level construction is the restriction of the
 level-one theta form. In this case `level L = 1` by `ZLattice.IsEven.level_eq_one_iff`. -/
@@ -270,7 +297,7 @@ theorem thetaFormOfLevel_orthSum (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
 
 end Functoriality
 
-/-! ### Descent to `Γ₀(level L)` for trivial nebentypus -/
+/-! ### Trivial theta character: descent to `Γ₀(level L)` -/
 
 /-- When the theta character of `L` is trivial, its theta series is invariant under every matrix
 of `Γ₀(level L)`. -/
@@ -292,8 +319,11 @@ theorem IsEven.thetaSeries_slash_of_mem_Gamma0_of_isSquare (hL : IsEven L)
   hL.thetaSeries_slash_of_mem_Gamma0_of_thetaCharacter_eq_one hk
     (hL.thetaCharacter_eq_one_of_isSquare _ hD) hA
 
-/-- When `thetaCharacter` is trivial, the theta series of an even full lattice of rank `2k`
-descends from `Γ₁(level L)` to a modular form of weight `k` on `Γ₀(level L)`. -/
+/-- **The `Γ₀` theta form of an even lattice with trivial theta character.** When the quadratic
+theta character of an even full lattice `L` of rank `2k` is trivial — in particular when
+`signedDiscr L` is a square (`ZLattice.IsEven.thetaCharacter_eq_one_of_isSquare`) — its theta
+series descends from `Γ₁(level L)` to a modular form of weight `k` on `Γ₀(level L)` via
+`TauCeti.modFormCharSpaceOneEquiv`. -/
 noncomputable def thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hχ : hL.thetaCharacter ⟨k, by omega⟩ = 1) :
     ModularForm ((CongruenceSubgroup.Gamma0 (level L)).map (mapGL ℝ)) k :=
@@ -302,7 +332,7 @@ noncomputable def thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     simpa only [hχ, ← MulChar.mulEquivToUnitHom_apply, map_one] using
       thetaFormOfLevel_mem_modFormCharSpace hL hk⟩
 
-/-- `thetaFormGamma0` has `thetaSeries L` as its underlying function on `ℍ`. -/
+/-- The underlying function of the `Γ₀` theta form is the lattice theta series. -/
 @[simp]
 theorem coe_thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hχ : hL.thetaCharacter ⟨k, by omega⟩ = 1) :
@@ -310,24 +340,24 @@ theorem coe_thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
   have : NeZero (level L) := ⟨hL.isIntegral.level_pos.ne'⟩
   exact (TauCeti.coe_modFormCharSpaceOneEquiv_apply _).trans (coe_thetaFormOfLevel hL hk)
 
-/-- Restricting `thetaFormGamma0` from `Γ₀(level L)` back to `Γ₁(level L)` recovers
+/-- Restricting `thetaFormGamma0` from `Γ₀(level L)` to `Γ₁(level L)` recovers
 `thetaFormOfLevel`. -/
 @[simp]
 theorem restrict_thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hχ : hL.thetaCharacter ⟨k, by omega⟩ = 1) :
     (thetaFormGamma0 hL hk hχ).restrict
         (CongruenceSubgroup.Gamma1_map_le_Gamma0_map (level L)) =
-      thetaFormOfLevel hL hk :=
-  ModularForm.ext fun _ ↦ by simp [ModularForm.coe_restrict]
+      thetaFormOfLevel hL hk := by
+  ext τ
+  simp
 
-/-- The coefficients of `thetaFormGamma0` in `q = exp (2 π i τ)` are the representation numbers
-`r_L(2m)`. -/
+/-- The coefficients of the `Γ₀` theta form in `q = exp (2 π i τ)` are representation numbers. -/
 theorem qExpansion_thetaFormGamma0_coeff (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hχ : hL.thetaCharacter ⟨k, by omega⟩ = 1) (m : ℕ) :
     (qExpansion 1 (thetaFormGamma0 hL hk hχ)).coeff m = representationNumber L (2 * m) := by
   rw [coe_thetaFormGamma0, hL.qExpansion_thetaSeries_coeff]
 
-/-- The `Γ₀(level L)` theta form is nonzero. -/
+/-- The `Γ₀` theta form is nonzero. -/
 @[simp]
 theorem thetaFormGamma0_ne_zero (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hχ : hL.thetaCharacter ⟨k, by omega⟩ = 1) :
@@ -336,7 +366,7 @@ theorem thetaFormGamma0_ne_zero (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     rw [← coe_thetaFormGamma0 hL hk hχ, h, FunLike.coe_zero]
     rfl)
 
-/-- The `Γ₀(level L)` theta form is not a cusp form: its constant term at `∞` is `1`. -/
+/-- The `Γ₀` theta form is not a cusp form: its constant term at `∞` is `1`. -/
 @[simp]
 theorem not_isCuspForm_thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (hχ : hL.thetaCharacter ⟨k, by omega⟩ = 1) :
@@ -344,12 +374,13 @@ theorem not_isCuspForm_thetaFormGamma0 (hL : IsEven L) (hk : finrank ℝ E = 2 *
   have : NeZero (level L) := ⟨hL.isIntegral.level_pos.ne'⟩
   exact not_isCuspForm_of_coe_eq_thetaSeries L (coe_thetaFormGamma0 hL hk hχ)
 
-/-- For an even unimodular lattice, `thetaFormGamma0` agrees with the restriction of the level-one
-theta form `thetaForm`. -/
+/-- For an even unimodular lattice, `thetaFormGamma0` is the restriction of the level-one theta
+form `ZLattice.thetaForm`. -/
 theorem thetaFormGamma0_eq_restrict_thetaForm (hL : IsEven L) (hU : IsUnimodular L)
     (hk : finrank ℝ E = 2 * k) :
     thetaFormGamma0 hL hk (hL.thetaCharacter_eq_one_of_isUnimodular _ hU) =
-      (thetaForm hL hU hk).restrict (Subgroup.map_le_range _ _) :=
-  ModularForm.ext fun _ ↦ by simp [ModularForm.coe_restrict]
+      (thetaForm hL hU hk).restrict (Subgroup.map_le_range _ _) := by
+  ext τ
+  simp
 
 end ZLattice

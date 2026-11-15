@@ -14,6 +14,8 @@ public import TauCeti.Analysis.PSeries
 The zeros of an entire function of order at most `A`, counted with multiplicity,
 have summable reciprocal `p`th powers
 whenever `p > A`. Nonpositive exponents reduce to constants by Liouville's theorem.
+For order below two this is, with natural multiplicities, the inverse-square summability that the
+genus-one product `TauCeti.divisorProductOne` assumes.
 The family is indexed by the support of Mathlib's native divisor on the whole plane.
 Its integer values are nonnegative because the function is entire.
 
@@ -89,5 +91,19 @@ theorem OrderLE.summable_divisor_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
     have heq : f = fun _ : ℂ ↦ f 0 := funext fun z ↦ hc z 0
     rw [heq]
     simp [MeromorphicOn.divisor_const]
+
+/-- The zeros of an entire function of order less than two are inverse-square summable with their
+natural multiplicities. This is the summability hypothesis of the genus-one product
+`TauCeti.divisorProductOne`. -/
+theorem OrderLE.summable_divisor_toNat_mul_norm_inv_sq {f : ℂ → ℂ} {A : ℝ} (h : OrderLE f A)
+    (hf : Differentiable ℂ f) (hA : A < 2) :
+    Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
+      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
+  refine (h.summable_divisor_mul_norm_rpow hf hA).congr fun ρ ↦ ?_
+  have hd := MeromorphicOn.AnalyticOnNhd.divisor_nonneg (U := Set.univ)
+    (fun z _ ↦ hf.analyticAt z) ρ
+  rw [norm_inv, inv_pow, Real.rpow_neg (norm_nonneg _), Real.rpow_two]
+  congr 1
+  exact_mod_cast (Int.toNat_of_nonneg hd).symm
 
 end TauCeti
