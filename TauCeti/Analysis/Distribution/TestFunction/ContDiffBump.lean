@@ -11,18 +11,18 @@ public import Mathlib.Analysis.Distribution.TestFunction
 /-!
 # Smooth bump functions as test functions
 
-A smooth bump function `β : ContDiffBump c` on a real normed space is smooth, with support the
-closed ball `closedBall c β.rOut`. When this ball lies in an open set `Ω`, the bump function, with
-real or complex values, is a test function on `Ω`. Such test functions are the standard cutoffs
-equal to `1` near a point.
+A smooth bump function `β : ContDiffBump c` on a real normed space is smooth, with closed support
+(`tsupport`) the closed ball `closedBall c β.rOut`. When this ball lies in an open set `Ω`, the
+bump function, with real or complex values, is a test function on `Ω`. Such test functions are the
+standard cutoffs equal to `1` near a point.
 
 ## Main declarations
 
 * `ContDiffBump.toTestFunction`: the bump function as a test function on `Ω`, with values
-  `ContDiffBump.toTestFunction_apply` and support `ContDiffBump.tsupport_toTestFunction`.
+  `ContDiffBump.toTestFunction_apply` and closed support `ContDiffBump.tsupport_toTestFunction`.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -48,9 +48,10 @@ def toTestFunction (β : ContDiffBump c) (hβ : closedBall c β.rOut ⊆ Ω) : �
 @[simp]
 theorem toTestFunction_apply (β : ContDiffBump c) (hβ : closedBall c β.rOut ⊆ Ω) (x : E) :
     β.toTestFunction 𝕜 hβ x = β x :=
-  rfl
+  (rfl)
 
-/-- The support of a bump function viewed as a test function is its closed outer ball. -/
+/-- The closed support (`tsupport`) of a bump function viewed as a test function is its closed
+outer ball. -/
 theorem tsupport_toTestFunction (β : ContDiffBump c) (hβ : closedBall c β.rOut ⊆ Ω) :
     tsupport (β.toTestFunction 𝕜 hβ) = closedBall c β.rOut := by
   rw [← β.tsupport_eq, show ⇑(β.toTestFunction 𝕜 hβ) = (fun r : ℝ ↦ (r : 𝕜)) ∘ β from

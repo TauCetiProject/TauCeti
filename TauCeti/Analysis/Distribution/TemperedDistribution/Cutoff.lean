@@ -43,10 +43,10 @@ such points with the cut-off of its action on `T`.
   a Schwartz function `ψ`.
 * `Distribution.eq_cutoffTempered_of_forall`: uniqueness of the extension.
 * `Distribution.cutoffTempered_congr`: independence of the cutoff near the support of `T`.
+* `Distribution.smulLeftCLM_cutoffTempered`: if `φ = 1` on the support of `ψ`, then
+  `ψ (φ T) = ψ T`.
 * `Distribution.smulLeftCLM_iteratedLineDerivOp_cutoffTempered`: where `φ = 1`, derivatives and
   products of `φ T` are those of `T`.
-* `TestFunction.hasTemperateGrowth_mul`: the product `χ f` of a test function with a smooth
-  function has temperate growth.
 
 ## References
 
@@ -62,13 +62,6 @@ open Complex Filter Set TopologicalSpace TestFunction MeasureTheory
 open scoped Distributions Topology SchwartzMap ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
-
-/-- The product of a complex test function with a smooth function has temperate growth: it is
-smooth with compact support. Such products are the multipliers that localize a differential
-operator near the support of the test function. -/
-theorem TestFunction.hasTemperateGrowth_mul (χ : 𝓓(Ω, ℂ)) {f : E → ℂ} (hf : ContDiff ℝ ∞ f) :
-    (fun x ↦ χ x * f x).HasTemperateGrowth :=
-  χ.hasCompactSupport.mul_right.hasTemperateGrowth (χ.contDiff.mul hf)
 
 namespace Distribution
 
@@ -196,6 +189,21 @@ theorem cutoffTempered_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω,
 theorem cutoffTempered_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     (∑ i ∈ s, T i).cutoffTempered φ = ∑ i ∈ s, (T i).cutoffTempered φ :=
   map_sum (AddMonoidHom.mk' (cutoffTempered · φ) fun T S ↦ cutoffTempered_add T S φ) T s
+
+/-- **Locality of the cut-off.** If `φ = 1` on the support of a test function `ψ`, then the
+product `ψ (φ T)` is the cut-off `ψ T`. -/
+theorem smulLeftCLM_cutoffTempered {T : 𝓓'(Ω, ℂ)} {φ ψ : 𝓓(Ω, ℂ)}
+    (hφ : ∀ x ∈ tsupport ψ, φ x = 1) :
+    TemperedDistribution.smulLeftCLM ℂ (ψ : E → ℂ) (T.cutoffTempered φ) = T.cutoffTempered ψ := by
+  have hψ : (ψ : E → ℂ).HasTemperateGrowth := ψ.hasCompactSupport.hasTemperateGrowth ψ.contDiff
+  ext f
+  rw [TemperedDistribution.smulLeftCLM_apply_apply, cutoffTempered_def]
+  refine cutoffTempered_apply T φ fun x ↦ ?_
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
+    SchwartzMap.smulLeftCLM_apply_apply hψ, smul_eq_mul]
+  by_cases hx : x ∈ tsupport ψ
+  · rw [hφ x hx, one_mul]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end Cutoff
 

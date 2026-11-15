@@ -170,12 +170,8 @@ private theorem memSobolev_cutoffTempered_of_isElliptic (hg : ∀ i, ContDiff �
   -- Interior regularity puts `ψ u = ψ T` in `H^(s + k)`.
   have hreg := Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev hab
     (ψ := ψS) ψ.hasCompactSupport hp (haψ.mono fun x hx ξ ↦ by rw [hpC, hx ξ]) _ (hpu ▸ hs)
-  have hψT : TemperedDistribution.smulLeftCLM ℂ (ψS : CoordinateSpace d → ℂ)
-      (T.cutoffTempered φ) = T.cutoffTempered ψ := by
-    simpa [smulLeftCLM_const] using smulLeftCLM_iteratedLineDerivOp_cutoffTempered (T := T) hψ
-      (contDiff_const (c := (1 : ℝ))) (h := ψS) (fun x ↦ by rw [hψS, ofReal_one, mul_one])
-      (Fin.elim0 : Fin 0 → CoordinateSpace d)
-  rwa [hr.toBesselPotentialSpace_toDistr, hψT] at hreg
+  rwa [hr.toBesselPotentialSpace_toDistr, show (ψS : CoordinateSpace d → ℂ) = ψ from funext hψS,
+    smulLeftCLM_cutoffTempered hψ] at hreg
 
 /-- **Local elliptic regularity.** Let `P = ∑ i ∈ t, c i g i ∂^{m i}` be a differential operator
 of order at most `k` with smooth real coefficient functions `g i` and complex constants `c i`,
