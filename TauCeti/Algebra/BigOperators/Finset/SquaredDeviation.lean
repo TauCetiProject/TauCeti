@@ -13,7 +13,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Squared deviations from a finite mean
 
-The sum of squared deviations splits into the sum at the mean and the squared excess.
+The sum of squared deviations splits into the sum at the mean and the squared excess. Bounding the
+centered variance by the uncentered second moment `∑ i ∈ s, t i ^ 2` gives
+`∑ i ∈ s, (t i - c) ^ 2 ≤ ∑ i ∈ s, t i ^ 2 + (∑ i ∈ s, t i - s.card * c) ^ 2 / s.card`.
 -/
 
 public section
@@ -77,5 +79,23 @@ theorem sum_sq_sub_mean_eq_iff {ι : Type*} (s : Finset ι) (t : ι → ℝ)
   have hcard : (s.card : ℝ) ≠ 0 := by
     exact_mod_cast (card_ne_zero.mpr hs)
   rw [mul_eq_zero, or_iff_right hcard, sq_eq_zero_iff, sub_eq_zero]
+
+/-- Bounding squared deviations from an arbitrary constant `c` by the uncentered second moment plus
+the squared discrepancy of `∑ i ∈ s, t i` from `s.card * c` divided by `s.card` (including for
+`s = ∅`, where both sides vanish). -/
+theorem sum_sub_sq_le_sum_sq_add_div {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) :
+    (∑ i ∈ s, (t i - c) ^ 2) ≤
+      (∑ i ∈ s, t i ^ 2) + ((∑ i ∈ s, t i) - s.card * c) ^ 2 / s.card := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  have hcard : (s.card : ℝ) ≠ 0 := mod_cast hs.card_pos.ne'
+  have h0 : ∑ i ∈ s, (t i - (∑ j ∈ s, t j) / s.card) ^ 2 ≤ ∑ i ∈ s, t i ^ 2 := by
+    simpa using sum_sq_sub_mean_le s t 0
+  have heq : (s.card : ℝ) * (c - (∑ j ∈ s, t j) / s.card) ^ 2 =
+      ((∑ i ∈ s, t i) - s.card * c) ^ 2 / s.card := by
+    field_simp
+    ring
+  rw [sum_sq_sub_mean s t c, heq]
+  exact add_le_add h0 le_rfl
 
 end Finset

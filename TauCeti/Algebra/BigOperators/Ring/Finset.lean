@@ -30,6 +30,9 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
+
+`Finset.sum_ite_pow_of_subsingleton`: when at most one index of `s` satisfies `P`, any positive
+power `(∑ i ∈ s, if P i then w i else 0) ^ k` distributes into the conditional sum.
 -/
 
 public section
@@ -85,5 +88,22 @@ theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : 
     (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
     ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
   sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+/-- When at most one element of `s` satisfies `P`, any positive power `k ≠ 0` of the conditional sum
+`∑ i ∈ s, if P i then w i else 0` equals `∑ i ∈ s, if P i then w i ^ k else 0`. -/
+theorem sum_ite_pow_of_subsingleton {ι R : Type*} [Semiring R] (s : Finset ι)
+    (P : ι → Prop) [DecidablePred P] (w : ι → R) {k : ℕ} (hk : k ≠ 0)
+    (h : ∀ i ∈ s, ∀ j ∈ s, P i → P j → i = j) :
+    (∑ i ∈ s, if P i then w i else 0) ^ k = ∑ i ∈ s, if P i then w i ^ k else 0 := by
+  classical
+  by_cases hex : ∃ i ∈ s, P i
+  · obtain ⟨i₀, hi₀, hPi₀⟩ := hex
+    have h1 : ∀ j ∈ s, j ≠ i₀ → ¬ P j := fun j hj hne hPj ↦ hne (h j hj i₀ hi₀ hPj hPi₀)
+    rw [sum_eq_single i₀ (fun j hj hne ↦ ite_eq_right (h1 j hj hne)) (fun h' ↦ absurd hi₀ h'),
+      sum_eq_single i₀ (fun j hj hne ↦ ite_eq_right (h1 j hj hne)) (fun h' ↦ absurd hi₀ h'),
+      ite_eq_left hPi₀, ite_eq_left hPi₀]
+  · push Not at hex
+    rw [sum_eq_zero fun i hi ↦ ite_eq_right (hex i hi),
+      sum_eq_zero fun i hi ↦ ite_eq_right (hex i hi), zero_pow hk]
 
 end Finset
