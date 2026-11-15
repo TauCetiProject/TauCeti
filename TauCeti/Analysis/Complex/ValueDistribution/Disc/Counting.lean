@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.ValueDistribution.LogCounting.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
 public import TauCeti.Analysis.Meromorphic.Divisor
+import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.Analysis.Complex.ValueDistribution.LogCounting.Basic
 
 /-!
 # The disc-local Nevanlinna pole-counting function
@@ -77,25 +79,6 @@ open scoped Topology
 section NormedField
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- Each off-centre radial logarithmic weight `D(z) * log (r * ‖z‖⁻¹)` is nonnegative for a
-nonnegative `locallyFinsuppWithin` supported inside `closedBall 0 r` (at `z = 0`, `log 0 = 0`). -/
-private lemma locallyFinsuppWithin_mul_log_nonneg {U : Set 𝕜} {r : ℝ}
-    (hU : U ⊆ closedBall 0 r) {D : Function.locallyFinsuppWithin U ℤ} (hD : 0 ≤ D) (z : 𝕜) :
-    0 ≤ ((D z : ℤ) : ℝ) * Real.log (r * ‖z‖⁻¹) := by
-  by_cases hz0 : z = 0
-  · simp [hz0]
-  by_cases hzu : z ∈ U
-  · refine mul_nonneg (Int.cast_nonneg (hD z)) (Real.log_nonneg ?_)
-    rw [← div_eq_mul_inv, one_le_div (norm_pos_iff.2 hz0)]
-    exact mem_closedBall_zero_iff.1 (hU hzu)
-  · simp [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzu]
-
-/-- If `D : 𝕜 → ℤ` has finite support, then so does its radial logarithmic weighting
-`z ↦ D(z) * log (r * ‖z‖⁻¹)`. -/
-private lemma hasFiniteSupport_mul_log {D : 𝕜 → ℤ} (hD : D.HasFiniteSupport) (r : ℝ) :
-    (fun z ↦ (D z : ℝ) * Real.log (r * ‖z‖⁻¹)).HasFiniteSupport :=
-  hD.subset fun _ hz h0 ↦ hz (by simp [h0])
 
 namespace TauCeti
 
@@ -197,7 +180,8 @@ theorem discCounting_nonneg_of_one_le {r : ℝ} (hr : 1 ≤ r) (f : 𝕜 → E) 
     0 ≤ discCounting f r := by
   rw [discCounting_def]
   exact add_nonneg
-    (finsum_nonneg (locallyFinsuppWithin_mul_log_nonneg Subset.rfl fun _ ↦ negPart_nonneg _))
+    (finsum_nonneg (Function.locallyFinsuppWithin.mul_log_nonneg_of_subset_closedBall Subset.rfl
+      (negPart_nonneg _)))
     (mul_nonneg (Int.cast_nonneg (negPart_nonneg _)) (Real.log_nonneg hr))
 
 /-- Pole-counting positivity at a regular centre (Calegari–Dimitrov–Tang, Lemma 6.1.2): if the
@@ -215,7 +199,9 @@ theorem discCounting_nonneg_of_meromorphicOrderAt_nonneg {f : 𝕜 → E}
   have hD0 : (MeromorphicOn.divisor f (closedBall 0 r))⁻ 0 = 0 :=
     (hf.negPart_divisor_apply_eq_zero_iff (mem_closedBall_self hr.le)).2 h0
   rw [discCounting_def, hD0, Int.cast_zero, zero_mul, add_zero]
-  exact finsum_nonneg (locallyFinsuppWithin_mul_log_nonneg Subset.rfl fun _ ↦ negPart_nonneg _)
+  exact finsum_nonneg
+    (Function.locallyFinsuppWithin.mul_log_nonneg_of_subset_closedBall Subset.rfl
+      (negPart_nonneg _))
 
 /-- At `f = (·⁻¹)`, the single simple pole at the origin gives `discCounting (·⁻¹) r = log r` for
 all `0 < r`. -/
@@ -436,10 +422,12 @@ theorem discCounting_mono [ProperSpace 𝕜] {r₁ r₂ : ℝ} (hf : Meromorphic
   set D₂ := (divisor f (closedBall 0 r₂))⁻
   have hD₁ : (divisor f (closedBall 0 r₁))⁻ = D₂.restrict hsub := by
     rw [← hf.divisor_restrict hsub, Function.locallyFinsuppWithin.restrict_negPart]
+  have hD₁_fin : HasFiniteSupport (D₂.restrict hsub) :=
+    (D₂.restrict hsub).finiteSupport (isCompact_closedBall 0 r₁)
+  have hD₂_fin : HasFiniteSupport D₂ := D₂.finiteSupport (isCompact_closedBall 0 r₂)
   rw [discCounting_def, discCounting_def, hD₁]
-  refine add_le_add (finsum_le_finsum
-    (hasFiniteSupport_mul_log ((D₂.restrict hsub).finiteSupport (isCompact_closedBall 0 r₁)) r₁)
-    (hasFiniteSupport_mul_log (D₂.finiteSupport (isCompact_closedBall 0 r₂)) r₂) fun z ↦ ?_) ?_
+  refine add_le_add (finsum_le_finsum ((hD₁_fin.fun_comp Int.cast_zero).fun_mul_left _)
+    ((hD₂_fin.fun_comp Int.cast_zero).fun_mul_left _) fun z ↦ ?_) ?_
   · by_cases hz0 : z = 0
     · simp [hz0]
     by_cases hzb : z ∈ closedBall (0 : 𝕜) r₁
@@ -448,7 +436,7 @@ theorem discCounting_mono [ProperSpace 𝕜] {r₁ r₂ : ℝ} (hf : Meromorphic
       exact Real.log_le_log (mul_pos hr₁ (inv_pos.2 (norm_pos_iff.2 hz0)))
         (mul_le_mul_of_nonneg_right hr₁₂ (inv_nonneg.2 (norm_nonneg z)))
     · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hzb, Int.cast_zero, zero_mul]
-      exact locallyFinsuppWithin_mul_log_nonneg Subset.rfl (fun _ ↦ negPart_nonneg _) z
+      exact D₂.mul_log_nonneg_of_subset_closedBall Subset.rfl (negPart_nonneg _) z
   · rw [Function.locallyFinsuppWithin.restrict_apply, ite_eq_left (mem_closedBall_self hr₁.le)]
     exact mul_le_mul_of_nonneg_left (Real.log_le_log hr₁ hr₁₂)
       (Int.cast_nonneg (negPart_nonneg _))
@@ -477,6 +465,7 @@ theorem discCounting_eq_zero_iff_meromorphicOrderAt_nonneg [ProperSpace 𝕜]
   push Not at hr
   refine ⟨fun hcnt ↦ ?_, discCounting_eq_zero_of_meromorphicOrderAt_nonneg⟩
   set D := (divisor f (closedBall 0 r))⁻
+  have hD_fin : HasFiniteSupport D := D.finiteSupport (isCompact_closedBall 0 r)
   have hD0 : D 0 = 0 := (hf.negPart_divisor_apply_eq_zero_iff (mem_closedBall_self hr.le)).2 h0
   rw [discCounting_def, hD0, Int.cast_zero, zero_mul, add_zero] at hcnt
   -- On `ball 0 r \ {0}`, any pole contributes a strictly positive term to the `finsum`.
@@ -490,9 +479,9 @@ theorem discCounting_eq_zero_iff_meromorphicOrderAt_nonneg [ProperSpace 𝕜]
   have hDz : D z = 0 := by
     by_contra hne
     exact (finsum_pos
-      (locallyFinsuppWithin_mul_log_nonneg Subset.rfl fun _ ↦ negPart_nonneg _)
+      (D.mul_log_nonneg_of_subset_closedBall Subset.rfl (negPart_nonneg _))
       ⟨z, mul_pos (Int.cast_pos.2 ((negPart_nonneg _).lt_of_ne' hne)) hlog_pos⟩
-      (hasFiniteSupport_mul_log (D.finiteSupport (isCompact_closedBall 0 r)) r)).ne' hcnt
+      ((hD_fin.fun_comp Int.cast_zero).fun_mul_left _)).ne' hcnt
   exact (hf.negPart_divisor_apply_eq_zero_iff (ball_subset_closedBall hz)).1 hDz
 
 /-- Removable-germ vanishing criterion: under `MeromorphicOn f (closedBall 0 r)` and
@@ -598,8 +587,8 @@ theorem MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub_add
     simp [D, MeromorphicOn.divisor_inv, negPart_neg]
   have hDsplit : ∀ z, (D z : ℝ) = ((D⁺ z : ℤ) : ℝ) - ((D⁻ z : ℤ) : ℝ) := fun z ↦ by
     exact_mod_cast (posPart_sub_negPart (D z)).symm
-  have hs_pos := hasFiniteSupport_mul_log (D⁺.finiteSupport (isCompact_closedBall 0 r)) r
-  have hs_neg := hasFiniteSupport_mul_log (D⁻.finiteSupport (isCompact_closedBall 0 r)) r
+  have hDpos_fin : HasFiniteSupport D⁺ := D⁺.finiteSupport (isCompact_closedBall 0 r)
+  have hDneg_fin : HasFiniteSupport D⁻ := D⁻.finiteSupport (isCompact_closedBall 0 r)
   have hsum :
       (∑ᶠ u, (D u : ℝ) * Real.log (r * ‖(0 : ℂ) - u‖⁻¹)) =
         (∑ᶠ u, ((D⁺ u : ℤ) : ℝ) * Real.log (r * ‖u‖⁻¹)) -
@@ -610,7 +599,8 @@ theorem MeromorphicOn.circleAverage_log_norm_eq_discCounting_inv_sub_add
             ((D⁻ u : ℤ) : ℝ) * Real.log (r * ‖u‖⁻¹)) := by
       refine finsum_congr fun u ↦ ?_
       rw [zero_sub, norm_neg, hDsplit u, sub_mul]
-    rw [hcongr, finsum_sub_distrib hs_pos hs_neg]
+    rw [hcongr, finsum_sub_distrib ((hDpos_fin.fun_comp Int.cast_zero).fun_mul_left _)
+      ((hDneg_fin.fun_comp Int.cast_zero).fun_mul_left _)]
   rw [discCounting_def, discCounting_def, hDinv, hsum, hDsplit 0]
   ring
 

@@ -35,16 +35,20 @@ Cartan's formula without manufacturing any global extension:
   `discCharacteristic (f ^ n) r = n * discCharacteristic f r` and single-circle bounds under
   additive shifts and nonzero scalar multiples.
 * **Local First Main Theorem** (`MeromorphicOn.discCharacteristic_sub_discCharacteristic_inv`,
+  `MeromorphicOn.log_norm_meromorphicTrailingCoeffAt_le_discCharacteristic`,
   `MeromorphicOn.abs_discCharacteristic_sub_discCharacteristic_inv_sub_sub_log_le`, and
   `MeromorphicOn.abs_discCharacteristic_sub_discCharacteristic_one_div_sub_sub_log_le`):
   `discCharacteristic f r - discCharacteristic f⁻¹ r = log ‖meromorphicTrailingCoeffAt f 0‖` for
-  `0 < r`, and shifting by `a : ℂ` gives
+  `0 < r`, giving the centre lower bound
+  `log ‖meromorphicTrailingCoeffAt f 0‖ ≤ discCharacteristic f r` when
+  `0 ≤ meromorphicOrderAt f⁻¹ 0`, and shifting by `a : ℂ` gives
   `|discCharacteristic f r - discCharacteristic (fun z ↦ 1 / (f z - a)) r - log ‖c(f - a, 0)‖| ≤
     log⁺ ‖a‖ + log 2`.
 * **Disc-local Cartan formula and radial monotonicity**
   (`MeromorphicOn.discCharacteristic_eq_circleAverage_add_circleAverage`,
   `MeromorphicOn.discCharacteristic_mono`, `MeromorphicOn.discCharacteristic_monotoneOn_Ioc`,
   `MeromorphicOn.discCharacteristic_monotoneOn_Ioo`,
+  `AnalyticOnNhd.posLog_norm_apply_zero_le_proximity_top`,
   `AnalyticOnNhd.proximity_top_monotoneOn_Icc`, `AnalyticOnNhd.proximity_top_monotoneOn_Ico`, and
   `DifferentiableOn.proximity_top_monotoneOn_Ico`): for `f, g : ℂ → ℂ`,
   `discCharacteristic f` is monotone on `(0, R]` when `f` is meromorphic on `closedBall 0 R`
@@ -295,6 +299,17 @@ theorem discCharacteristic_sub_discCharacteristic_inv
   linarith [hsphere.proximity_top_sub_proximity_inv_top_eq_circleAverage,
     hf.circleAverage_log_norm_eq_discCounting_inv_sub_add hr]
 
+/-- First-main-theorem lower bound at the centre: if `f : ℂ → ℂ` is meromorphic on
+`closedBall 0 r` (`0 < r`) and `f⁻¹` has no pole at `0` (`0 ≤ meromorphicOrderAt f⁻¹ 0`, i.e., `f`
+does not have a zero of finite positive order at `0`), then
+`log ‖meromorphicTrailingCoeffAt f 0‖ ≤ discCharacteristic f r`. -/
+theorem log_norm_meromorphicTrailingCoeffAt_le_discCharacteristic
+    (hf : MeromorphicOn f (closedBall 0 r)) (hr : 0 < r)
+    (h0 : 0 ≤ meromorphicOrderAt f⁻¹ 0) :
+    Real.log ‖meromorphicTrailingCoeffAt f 0‖ ≤ discCharacteristic f r := by
+  linarith [hf.discCharacteristic_sub_discCharacteristic_inv hr,
+    discCharacteristic_nonneg_of_meromorphicOrderAt_nonneg h0 r]
+
 /-- Closed-subdisc form of the translated local First Main Theorem: for `f : ℂ → ℂ` meromorphic on
 `closedBall 0 r`, `a : ℂ`, and `0 < r`,
 `|discCharacteristic f r - discCharacteristic (fun z ↦ (f z - a)⁻¹) r - log ‖c(f - a, 0)‖| ≤
@@ -442,6 +457,26 @@ theorem abs_discCharacteristic_sub_discCharacteristic_one_div_sub_sub_log_le
 
 end MeromorphicOn
 
+/-- Lower bound at the origin for holomorphic proximity: if `g : ℂ → ℂ` is analytic on a
+neighbourhood of `closedBall 0 r` (`0 ≤ r`), then
+`log⁺ ‖g 0‖ ≤ ValueDistribution.proximity g ⊤ r`. -/
+theorem AnalyticOnNhd.posLog_norm_apply_zero_le_proximity_top {g : ℂ → ℂ} {r : ℝ}
+    (hg : AnalyticOnNhd ℂ g (closedBall 0 r)) (hr : 0 ≤ r) :
+    log⁺ ‖g 0‖ ≤ ValueDistribution.proximity g ⊤ r := by
+  rcases hr.lt_or_eq with hr_pos | rfl
+  · rw [posLog_apply]
+    refine max_le (ValueDistribution.proximity_nonneg r) ?_
+    by_cases hg0 : g 0 = 0
+    · simpa [hg0] using ValueDistribution.proximity_nonneg r
+    -- When `g 0 ≠ 0`, `g⁻¹` is analytic at `0`, so the local First Main Theorem lower bound applies
+    -- and `discCharacteristic g r` reduces to `proximity g ⊤ r`.
+    have hg0' : AnalyticAt ℂ g 0 := hg 0 (mem_closedBall_self hr_pos.le)
+    have hle := hg.meromorphicOn.log_norm_meromorphicTrailingCoeffAt_le_discCharacteristic hr_pos
+      (hg0'.inv hg0).meromorphicOrderAt_nonneg
+    rwa [(hg.mono ball_subset_closedBall).discCharacteristic_eq_proximity_top,
+      hg0'.meromorphicTrailingCoeffAt_of_ne_zero hg0] at hle
+  · rw [ValueDistribution.proximity_top, circleAverage_zero]
+
 /-- Radial monotonicity of holomorphic proximity on a closed disc (Calegari–Dimitrov–Tang,
 Corollary 6.2.9): if `g : ℂ → ℂ` is analytic on a neighbourhood of `closedBall 0 r₂` and
 `0 ≤ r₁ ≤ r₂`, then `ValueDistribution.proximity g ⊤ r₁ ≤ ValueDistribution.proximity g ⊤ r₂`. -/
@@ -454,22 +489,9 @@ theorem AnalyticOnNhd.proximity_top_mono {g : ℂ → ℂ} {r₁ r₂ : ℝ}
     rw [← hg₁.discCharacteristic_eq_proximity_top,
       ← (hg.mono ball_subset_closedBall).discCharacteristic_eq_proximity_top]
     exact hg.meromorphicOn.discCharacteristic_mono hr₁_pos hr₁₂
-  · rcases hr₁₂.lt_or_eq with hr₂_pos | rfl
-    · have h0 : ValueDistribution.proximity g ⊤ 0 = max 0 (Real.log ‖g 0‖) := by
-        rw [ValueDistribution.proximity_top, circleAverage_zero, posLog_apply]
-      have hprox_nonneg : 0 ≤ ValueDistribution.proximity g ⊤ r₂ :=
-        ValueDistribution.proximity_nonneg r₂
-      rw [h0]
-      by_cases hg0 : g 0 = 0
-      · simpa [hg0] using hprox_nonneg
-      have hg0' : AnalyticAt ℂ g 0 := hg 0 (mem_closedBall_self hr₂_pos.le)
-      have hinv := hg.meromorphicOn.discCharacteristic_sub_discCharacteristic_inv hr₂_pos
-      rw [(hg.mono ball_subset_closedBall).discCharacteristic_eq_proximity_top,
-        hg0'.meromorphicTrailingCoeffAt_of_ne_zero hg0] at hinv
-      have hnonneg := discCharacteristic_nonneg_of_meromorphicOrderAt_nonneg
-        (hg0'.inv hg0).meromorphicOrderAt_nonneg r₂
-      exact max_le hprox_nonneg (by linarith)
-    · exact le_rfl
+  · -- At `r₁ = 0`, `proximity g ⊤ 0 = log⁺ ‖g 0‖`, so the centre lower bound closes the goal.
+    rw [ValueDistribution.proximity_top, circleAverage_zero]
+    exact hg.posLog_norm_apply_zero_le_proximity_top hr₁₂
 
 /-- If `g : ℂ → ℂ` is analytic on `closedBall 0 R`, then `ValueDistribution.proximity g ⊤` is
 monotone on `Icc 0 R`. -/
