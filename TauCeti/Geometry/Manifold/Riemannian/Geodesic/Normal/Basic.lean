@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Normal domains and the Riemannian logarithm
@@ -39,6 +40,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   exponential map precomposed with a linear isomorphism carrying an open set into a normal domain
   is a partial diffeomorphism with that open set as source.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
+* `TauCeti.Manifold.exists_pos_maximalGeodesic_eq_iff_of_not_sameRay`: radial geodesics in
+  directions on no common ray meet for small nonnegative parameters only at zero parameters.
 * `TauCeti.Manifold.IsNormalDomain.ball`: a tangent ball contained in a normal domain is
   itself a normal domain.
 * `TauCeti.Manifold.isCompact_riemannianExp_image_closedBall`: a closed tangent ball in the
@@ -62,6 +65,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianExp_comp_mfderiv_riemannianLog`: the
   differentials of the logarithm and the exponential map are mutually inverse.
+* `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply` and
+  `TauCeti.Manifold.IsNormalDomain.mvfderiv_riemannianLog_self`: the differential of the logarithm
+  at the base point is the identity.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
   normal domain is defined at least up to time one.
 
@@ -73,7 +79,7 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 
 public section
 
-open Bundle Function Manifold Set
+open Bundle Function Manifold Metric Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -211,6 +217,39 @@ theorem exists_isNormalDomain_ball (p : M) :
     (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr),
     fun v hv => (hball hv).2.2, hinj.mono fun v hv => (hball hv).2.1,
     fun v => (hball v.2).1⟩
+
+/-- **Radial geodesics in different directions separate.** If the tangent vectors `v` and
+`w` at `p` do not lie on a common ray, the radial geodesics from `p` with these initial
+velocities meet for small nonnegative parameters exactly when both parameters vanish. -/
+theorem exists_pos_maximalGeodesic_eq_iff_of_not_sameRay {p : M} {v w : TangentSpace I p}
+    (hvw : ¬ SameRay ℝ v w) :
+    ∃ ε > 0, ∀ a ∈ Ico 0 ε, ∀ b ∈ Ico 0 ε,
+      maximalGeodesic I M p v a = maximalGeodesic I M p w b ↔ a = 0 ∧ b = 0 := by
+  obtain ⟨r, hr, hN⟩ := exists_isNormalDomain_ball (I := I) p
+  have hmem {x : TangentSpace I p} {a : ℝ} (ha : a ∈ Ico 0 (r / (‖x‖ + 1))) :
+      a • x ∈ ball (0 : TangentSpace I p) r := by
+    rw [mem_ball_zero_iff, norm_smul, Real.norm_eq_abs, abs_of_nonneg ha.1]
+    have h := ha.2
+    rw [lt_div_iff₀ (by positivity)] at h
+    nlinarith [norm_nonneg x, ha.1]
+  refine ⟨min (r / (‖v‖ + 1)) (r / (‖w‖ + 1)), by positivity, fun a ha b hb ↦ ?_⟩
+  refine ⟨fun hab ↦ ?_, ?_⟩
+  · have hav := hmem (x := v) ⟨ha.1, ha.2.trans_le (min_le_left _ _)⟩
+    have hbw := hmem (x := w) ⟨hb.1, hb.2.trans_le (min_le_right _ _)⟩
+    rw [← riemannianExp_smul, ← riemannianExp_smul] at hab
+    have heq := hN.injOn hav hbw hab
+    by_cases ha0 : a = 0
+    · refine ⟨ha0, ?_⟩
+      have hw : w ≠ 0 := fun hw ↦ hvw (by simp [hw])
+      simpa [ha0, hw] using heq.symm
+    · by_cases hb0 : b = 0
+      · have hv : v ≠ 0 := fun hv ↦ hvw (by simp [hv])
+        have : a = 0 := by simpa [hb0, hv] using heq
+        exact (ha0 this).elim
+      · exact (hvw (Or.inr (Or.inr ⟨a, b, lt_of_le_of_ne ha.1 (Ne.symm ha0),
+          lt_of_le_of_ne hb.1 (Ne.symm hb0), heq⟩))).elim
+  · rintro ⟨rfl, rfl⟩
+    simp
 
 /-! ### Compactly contained normal balls -/
 
@@ -421,6 +460,26 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
     riemannianLog I M p U p = 0 := by
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
+
+/-- The differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U)
+    (v : TangentSpace I p) :
+    mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) p v = v := by
+  have hcomp := DFunLike.congr_fun
+    (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp h.zero_mem) v
+  -- The composite runs through `TangentSpace I (riemannianExp I M p 0)`, which is only
+  -- definitionally `TangentSpace I p`, so `ContinuousLinearMap.comp_apply` and `id_apply` do not
+  -- match syntactically under `rw` or `simp`; unfold the application by defeq instead.
+  change mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) (riemannianExp I M p 0)
+    (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v) = v at hcomp
+  rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at hcomp
+
+/-- The vector-valued differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mvfderiv_riemannianLog_self (h : IsNormalDomain I M p U) :
+    mvfderiv I (riemannianLog I M p U) p = ContinuousLinearMap.id ℝ (TangentSpace I p) := by
+  ext v
+  simp only [mvfderiv_apply_eq_mfderiv_apply, h.mfderiv_riemannianLog_self_apply,
+    ContinuousLinearMap.id_apply]
 
 end IsNormalDomain
 

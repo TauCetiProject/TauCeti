@@ -45,7 +45,9 @@ they agree on the homogeneous single-coordinate functions `Pi.single x α`,
 `LinearMap.pi_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
-and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
+`DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
+`DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule to a natural-number-indexed
+internal decomposition.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements.
