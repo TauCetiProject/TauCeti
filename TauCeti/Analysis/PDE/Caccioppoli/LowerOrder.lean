@@ -17,8 +17,9 @@ Let `u ∈ H¹(Ω)` be a weak subsolution of the full divergence-form equation
 
 that is, `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the energy
 form with drift `b` and mass coefficient `c`. Let `a` be measurable and uniformly elliptic with
-constants `0 < λ ≤ Λ`, and let `b` and `c` be measurable and bounded, with `‖b‖ ≤ β`. For a level
-`k` with `w = (u - k)⁺ ∈ L²(Ω)`, every smooth `ψ` compactly supported in `Ω` satisfies
+constants `0 < λ ≤ Λ`, and let `b` and `c` be measurable and bounded, with `‖b‖ ≤ β` and
+`‖c‖ ≤ γ`. For a level `k` with `w = (u - k)⁺ ∈ L²(Ω)`, every smooth `ψ` compactly supported in
+`Ω` satisfies
 
 `∫_Ω ψ² ‖∇w‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² w² + (2β/λ)² ∫_Ω ψ² w² + (4/λ) ∫_Ω ψ² (f - c u) w`.
 
@@ -38,8 +39,8 @@ with `C` depending only on the dimension. Unlike the principal-part inequality
 `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le`, this is not invariant
 under dilations: the drift term is comparable to the cutoff term only on balls with `βR/λ`
 bounded. This is the energy estimate that De Giorgi's iteration needs for equations with
-lower-order terms. The boundedness hypothesis on `c` serves only to make the energy form
-integrable.
+lower-order terms. Under the sign condition `c ≥ 0`, the bound `γ` on `c` serves only to make the
+energy form integrable; without it, `γ` enters the estimate through `4γ/λ`.
 
 ## Main declarations
 

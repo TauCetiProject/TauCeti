@@ -399,12 +399,59 @@ theorem CaccioppoliAboveLinear.intro {u : W1p mu Omega 2} {k A B E : ℝ}
     CaccioppoliAboveLinear u k A B E :=
   h
 
+/-- For `u` in De Giorgi's class above `k` with a linear term, the truncation `w = (u - l)⁺` at a
+level `l ≥ k` with `w ∈ L²(Ω)` satisfies
+`∫_Ω ψ² ‖∇w‖² ≤ A ∫_Ω ‖∇ψ‖² w² + B ∫_Ω ψ² w² + E (l - k) ∫_Ω ψ² w` for every smooth `ψ`
+compactly supported in `Ω`. -/
+theorem CaccioppoliAboveLinear.setIntegral_sq_mul_norm_gradient_sq_le {u : W1p mu Omega 2}
+    {k A B E : ℝ} (h : CaccioppoliAboveLinear u k A B E) {l : ℝ} (hkl : k ≤ l)
+    (hl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∫ x in Omega, ψ x ^ 2 *
+        ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x‖ ^ 2 ∂mu ≤
+      A * ∫ x in Omega,
+          ‖∇ ψ x‖ ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu +
+        B * ∫ x in Omega,
+          ψ x ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ^ 2 ∂mu +
+        E * (l - k) * ∫ x in Omega,
+          ψ x ^ 2 * W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ∂mu :=
+  h l hkl hl hψ hcpt hts
+
+/-- De Giorgi's class above `k` with a linear term grows with the constants `A`, `B` and `E`. The
+level cannot be raised as for `TauCeti.PDE.CaccioppoliAbove.mono`: the coefficient `E (l - k)` of
+the linear term depends on the base level `k`. -/
+theorem CaccioppoliAboveLinear.mono {u : W1p mu Omega 2} {k A A' B B' E E' : ℝ}
+    (h : CaccioppoliAboveLinear u k A B E) (hA : A ≤ A') (hB : B ≤ B') (hE : E ≤ E') :
+    CaccioppoliAboveLinear u k A' B' E' :=
+  .intro fun l hkl hl ψ hψ hcpt hts => by
+    have hW0 : 0 ≤ ∫ x in Omega, ψ x ^ 2 *
+        W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hl) x ∂mu :=
+      integral_nonneg_of_ae (by
+        filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hl] with x hx
+        rw [hx]
+        positivity)
+    refine (h.setIntegral_sq_mul_norm_gradient_sq_le hkl hl hψ hcpt hts).trans <|
+      add_le_add (add_le_add
+        (mul_le_mul_of_nonneg_right hA (integral_nonneg fun _ => by positivity))
+        (mul_le_mul_of_nonneg_right hB (integral_nonneg fun _ => by positivity)))
+        (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hE (sub_nonneg.2 hkl)) hW0)
+
 /-- De Giorgi's class above `k` is the case `E = 0` of the class with a linear term. -/
 theorem CaccioppoliAbove.caccioppoliAboveLinear {u : W1p mu Omega 2} {k A B : ℝ}
     (h : CaccioppoliAbove u k A B) : CaccioppoliAboveLinear u k A B 0 :=
   .intro fun l hkl hl _ hψ hcpt hts => by
     rw [zero_mul, zero_mul, add_zero]
     exact h.setIntegral_sq_mul_norm_gradient_sq_le hkl hl hψ hcpt hts
+
+/-- De Giorgi's class above `k` with a vanishing linear term is De Giorgi's class above `k`. -/
+@[simp]
+theorem caccioppoliAboveLinear_zero_iff {u : W1p mu Omega 2} {k A B : ℝ} :
+    CaccioppoliAboveLinear u k A B 0 ↔ CaccioppoliAbove u k A B :=
+  ⟨fun h => .intro fun l hkl hl _ hψ hcpt hts => by
+    simpa only [zero_mul, add_zero] using
+      h.setIntegral_sq_mul_norm_gradient_sq_le hkl hl hψ hcpt hts,
+    CaccioppoliAbove.caccioppoliAboveLinear⟩
 
 /-- The radii `r₀ = R/2 + R/2^{j+1}`, `r₁ = R/2 + R/2^{j+2}` and `ρ = (r₀ + r₁)/2` of one step of
 De Giorgi's iteration on balls are ordered `0 < r₁ < ρ < r₀ ≤ R`, with gap `ρ - r₁ = R/2^{j+3}`. -/

@@ -72,12 +72,16 @@ subsolution whatever the sign of `c`.
   subsolutions belong to De Giorgi's class above every level `k ≥ 0`.
 * `TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: local
   boundedness of weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
-* `TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: the
-  two-sided bound `|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions.
+* `TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`:
+  the two-sided bound `|u| ≤ D (1 + (βR/λ)²)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions
+  with `c ≥ 0`.
 * `TauCeti.PDE.UniformlyEllipticOn.caccioppoliAboveLinear_lowerOrder`: without a sign condition
   on `c`, weak subsolutions belong to De Giorgi's class above `0` with a linear term.
 * `TauCeti.PDE.exists_ae_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: local
   boundedness of weak subsolutions with a mass coefficient of either sign.
+* `TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`: the
+  two-sided bound `|u| ≤ D (1 + (βR/λ)² + γR²/λ)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` for weak solutions
+  with a mass coefficient of either sign.
 * `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder`: its `Lᵖ` form,
   `0 < p ≤ 2`.
 
@@ -203,7 +207,8 @@ ball `B(x₀, R) ⊆ Ω`,
 This is the two-sided form of
 `TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`, applied at
 the level `0` to the weak subsolutions `u` and `-u`. -/
-theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder [Nonempty ι] :
+theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg
+    [Nonempty ι] :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
       {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ} {u : W1p mu Omega 2}
@@ -271,7 +276,7 @@ weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`. Then f
 The mass coefficient enters only through the dimensionless `γR²/λ`. Unlike
 `TauCeti.PDE.exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`, which
 assumes `c ≥ 0` and holds above every level `k ≥ 0`, the bound is above the level `0`: for `c < 0`
-a constant is no longer a subsolution, so levels `k > 0` are not comparable to `0`. -/
+a positive constant `k` is no longer a supersolution, so `u - k` need not be a subsolution. -/
 theorem exists_ae_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder [Nonempty ι] :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
@@ -330,6 +335,54 @@ theorem exists_ae_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder [Non
   simp only [sub_zero, zero_add] at hx
   refine hx.trans ?_
   gcongr ?_ * _ * _
+
+/-- **Local boundedness of weak solutions with a mass coefficient of either sign (De Giorgi).** In
+every dimension `n ≥ 1` there is `D > 0`, depending on `λ`, `Λ`, the dimension and the
+normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
+measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `b` and `c` be measurable
+with `‖b‖ ≤ β` and `‖c‖ ≤ γ` on `Ω`; no sign condition is imposed on `c`. Let `u ∈ H¹(Ω)` be a
+weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = 0`, that is `a(u, v) = 0` for every
+`v ∈ H¹₀(Ω)`. Then for every ball `B(x₀, R) ⊆ Ω`,
+
+`|u| ≤ D (1 + (βR/λ)² + γR²/λ)ⁿ R^{-n/2} ‖u‖_{L²(B(x₀, R))}` almost everywhere on `B(x₀, R/2)`.
+
+This is the two-sided form of
+`TauCeti.PDE.exists_ae_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder`, applied to the
+weak subsolutions `u` and `-u`. Under `c ≥ 0`,
+`TauCeti.PDE.exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder_of_nonneg`
+gives the bound without the term `γR²/λ`. -/
+theorem exists_ae_abs_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder [Nonempty ι] :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      AEStronglyMeasurable b (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = 0) →
+      Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        |W1p.value u x| ≤ D * (1 + (beta * R / lam) ^ 2 + gamma * R ^ 2 / lam) ^ Fintype.card ι *
+          R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_value_le_mul_pow_mul_rpow_mul_sqrt_setIntegral_lowerOrder (mu := mu)
+      (lam := lam) (Lam := Lam)
+  refine ⟨D, hD, ?_⟩
+  intro Omega a b c beta gamma u x₀ R h ha hb hc hb_bound hc_bound hu hball
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+  have hlam := h.pos
+  have hgamma : 0 ≤ gamma :=
+    (norm_nonneg _).trans (hc_bound x₀ (hball (Metric.mem_ball_self hR)))
+  have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (-u) (v : W1p mu Omega 2) = 0 := fun v => by
+    rw [energyFormH1_neg_left, hu v, neg_zero]
+  exact ae_abs_value_le_mul_sqrt_setIntegral_of_ae_value_le (by positivity) hball
+    (hbound h ha hb hc hb_bound hc_bound (fun v _ => (hu v).le) hball)
+    (hbound h ha hb hc hb_bound hc_bound (fun v _ => (hu' v).le) hball)
 
 /-- **Local boundedness of weak subsolutions in `Lᵖ` with lower-order terms (De Giorgi).** Let
 `0 < p ≤ 2` and `θ ≥ 0`. In every dimension `n ≥ 1` there is `D > 0`, depending on `λ`, `Λ`, `p`,

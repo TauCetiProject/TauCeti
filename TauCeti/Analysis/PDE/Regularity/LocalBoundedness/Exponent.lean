@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Function.L2Space
@@ -18,7 +17,8 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 /-!
 # `Lᵖ` local bounds from `L²` local bounds
 
-Let `w ≥ 0` be square integrable on a ball `B(x₀, R) ⊆ ℝⁿ`, and suppose that on every ball
+Let `mu` be a measure on `ℝⁿ` that is finite on compact sets, let `w ≥ 0` be square integrable
+with respect to `mu` on a ball `B(x₀, R) ⊆ ℝⁿ`, and suppose that on every ball
 `B(y, s) ⊆ B(x₀, R)` the supremum of `w` on the half ball is bounded by its `L²` norm,
 
 `w ≤ D s^e ‖w‖_{L²(B(y, s))}` almost everywhere on `B(y, s/2)`.
@@ -228,9 +228,10 @@ section L2ToLp
 
 variable [IsFiniteMeasureOnCompacts mu]
 
-/-- **`Lᵖ` local bounds from `L²` local bounds.** Fix `e`, `D` and `0 < p ≤ 2`. There is
-`C > 0`, depending only on these, such that the following holds. Let `w ≥ 0` be square
-integrable on `B(x₀, R)` and suppose that on every ball `B(y, s) ⊆ B(x₀, R)`,
+/-- **`Lᵖ` local bounds from `L²` local bounds.** Let `mu` be a measure on `ℝⁿ` that is finite on
+compact sets, and fix `e`, `D` and `0 < p ≤ 2`. There is `C > 0`, depending only on `mu`, `e`, `D`
+and `p`, such that the following holds. Let `w ≥ 0` be square integrable on `B(x₀, R)` and
+suppose that on every ball `B(y, s) ⊆ B(x₀, R)`,
 
 `w ≤ D s^e ‖w‖_{L²(B(y, s))}` almost everywhere on `B(y, s/2)`.
 
