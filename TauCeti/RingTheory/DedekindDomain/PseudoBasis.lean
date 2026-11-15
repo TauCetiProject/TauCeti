@@ -76,9 +76,10 @@ theorem exists_apply_eq_one_forall_smul_mem (Λ : Submodule R V) (f : V →ₗ[K
   set I := Λ.map (f.restrictScalars R)
   let I' : FractionalIdeal R⁰ K := ⟨I, FractionalIdeal.isFractional_of_fg hI⟩
   have hcoe : (I' : Submodule R K) = I := rfl
-  have hI' : I' ≠ 0 := fun h ↦ hf <| by rw [← hcoe, h, FractionalIdeal.coe_zero]
+  have hI' : I' ≠ 0 := fun h ↦ hf <| by rw [← hcoe, h, FractionalIdeal.coeToSubmodule_zero]
   have hmul : I * (I'⁻¹ : FractionalIdeal R⁰ K) = 1 := by
-    rw [← hcoe, ← FractionalIdeal.coe_mul, mul_inv_cancel₀ hI', FractionalIdeal.coe_one]
+    rw [← hcoe, ← FractionalIdeal.coeToSubmodule_mul, mul_inv_cancel₀ hI',
+      FractionalIdeal.coeToSubmodule_one]
   -- The vectors `v` with `I • v ⊆ Λ` form an `R`-submodule `N`; we show `1 ∈ f(N)`.
   let N : Submodule R V :=
     { carrier := {v | ∀ x ∈ I, x • v ∈ Λ}
@@ -131,7 +132,7 @@ private theorem exists_linearIndependent_forall_mem_iff [FiniteDimensional K V]
   have hcoe : (I' : Submodule R K) = I := rfl
   obtain ⟨a, J₀, ha, hIeq⟩ := FractionalIdeal.exists_eq_spanSingleton_mul I'
   have hmemI : ∀ t, t ∈ I ↔ ∃ j ∈ J₀, (algebraMap R K a)⁻¹ * algebraMap R K j = t := fun t ↦ by
-    rw [← hcoe, FractionalIdeal.mem_coe, hIeq, FractionalIdeal.mem_singleton_mul]
+    rw [← hcoe, FractionalIdeal.mem_coeToSubmodule, hIeq, FractionalIdeal.mem_singleton_mul]
     simp only [FractionalIdeal.mem_coeIdeal]
     grind
   have ha' : algebraMap R K a ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 ha

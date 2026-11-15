@@ -110,8 +110,8 @@ theorem mpullback_extChartAt_symm_apply_eq_tangentCoordChange (V : (x : M) → T
         (mpullback 𝓘(𝕜, E) I (extChartAt I x₁).symm V (extChartAt I x₁ p)) := by
   have h₁' : p ∈ (chartAt H x₁).source := by rwa [← extChartAt_source I]
   have h₂' : p ∈ (chartAt H x₂).source := by rwa [← extChartAt_source I]
-  rw [mpullback_extChartAt_symm_apply_eq_mfderiv V h₁,
-    mpullback_extChartAt_symm_apply_eq_mfderiv V h₂,
+  rw [mpullback_extChartAt_symm_apply_eq_mfderiv V h₁ (by simp [I.range_eq_univ]),
+    mpullback_extChartAt_symm_apply_eq_mfderiv V h₂ (by simp [I.range_eq_univ]),
     (hasMFDerivAt_extChartAt h₁').mfderiv, (hasMFDerivAt_extChartAt h₂').mfderiv,
     mfderiv_chartAt_eq_tangentCoordChange h₁', mfderiv_chartAt_eq_tangentCoordChange h₂']
   exact (tangentCoordChange_comp ⟨⟨mem_extChartAt_source p, h₁⟩, h₂⟩).symm
@@ -140,7 +140,8 @@ theorem hasFDerivAt_mpullback_extChartAt_symm_of_eq_zero
     rw [I.range_eq_univ, mpullbackWithin_univ, preimage_univ, inter_univ] at h
     exact h.differentiableAt univ_mem
   have hU₀ : mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V (extChartAt I x x) = 0 := by
-    rw [mpullback_extChartAt_symm_apply_eq_mfderiv V (mem_extChartAt_source x), hV₀]
+    rw [mpullback_extChartAt_symm_apply_eq_mfderiv V (mem_extChartAt_source x)
+      (by simp [I.range_eq_univ]), hV₀]
     exact map_zero _
   -- The transition map to the chart at `x'` is `C¹` near the chart image of `x`, so its derivative
   -- is continuous there.

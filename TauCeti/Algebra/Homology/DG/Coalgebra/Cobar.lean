@@ -70,7 +70,7 @@ open TensorProduct TensorAlgebra InternalGrading
 universe uR uC
 
 variable {R : Type uR} {C : Type uC} [CommRing R] [AddCommGroup C] [Module R C]
-  (G : InternalGrading R C) (Δ : C →ₗ[R] C ⊗[R] C) (d : C →ₗ[R] C)
+  (G : InternalGrading R C ℤ) (Δ : C →ₗ[R] C ⊗[R] C) (d : C →ₗ[R] C)
 
 /-- The quadratic part `c' ⊗ c'' ↦ s⁻¹ c' * s⁻¹ c''` of the cobar differential, with the Koszul
 sign `(-1) ^ |c'|` of `s⁻¹ ⊗ s⁻¹`. -/
