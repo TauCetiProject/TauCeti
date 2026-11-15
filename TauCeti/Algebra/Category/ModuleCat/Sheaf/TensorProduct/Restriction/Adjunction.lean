@@ -18,7 +18,7 @@ topological space, `F` is the inclusion of the opens of `U` into the opens of th
 pushforward along `φ` is restriction to `U`.
 
 Both pushforwards carry their canonical lax monoidal structures
-(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`), whose tensor maps send `m ⊗ n` to `m ⊗ n` on
+(`SheafOfModules.pushforwardLaxMonoidal`), whose tensor maps send `m ⊗ n` to `m ⊗ n` on
 sections. This file shows that the unit and the counit of the adjunction are compatible with
 these tensor maps (`SheafOfModules.pushforwardPushforwardAdj_unit_app_tensor` and
 `SheafOfModules.pushforwardPushforwardAdj_counit_app_tensor`); on sections both are restriction
@@ -48,6 +48,7 @@ is what lets it be compared, through mates, with the tensor comparison of a pull
 public section
 
 open CategoryTheory MonoidalCategory Functor.LaxMonoidal
+open SheafOfModules (pushforward_μ_app_tmul)
 
 namespace TauCeti
 
