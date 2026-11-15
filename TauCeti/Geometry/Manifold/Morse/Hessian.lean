@@ -768,6 +768,24 @@ theorem criticalHessian_apply_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(�
   rw [← (hfg f).fderiv.fderiv_eq, hDφ, hφx] at key
   exact key
 
+/-- At a critical point of a `C²` function on a boundaryless manifold, the derivative of a chart `e`
+of the `C²` maximal atlas is an isometry from the critical Hessian to the Hessian of the coordinate
+expression in `e`. -/
+private theorem exists_isometryEquiv_criticalHessian (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hcrit : mvfderiv I f x = 0) :
+    ∃ ι : (criticalHessian I f x).toBilinForm.IsometryEquiv
+        (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).toBilinForm,
+      (ι : TangentSpace I x ≃ₗ[ℝ] E).toLinearMap = (mvfderiv I (e.extend I) x).toLinearMap := by
+  obtain ⟨D, hD⟩ :=
+    isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+  have hH (u t : TangentSpace I x) : criticalHessian I f x u t =
+      fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x) (D u) (D t) := by
+    rw [criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit, ← hD]
+    simp only [ContinuousLinearEquiv.coe_coe]
+  refine ⟨⟨D.toLinearEquiv, fun u t ↦ (hH u t).symm⟩, ?_⟩
+  rw [← hD]
+  exact (D.toLinearMap_toContinuousLinearMap).symm
+
 /-- **The kernel of the critical Hessian in an arbitrary chart.** At a critical point of a `C²`
 function on a boundaryless manifold, a tangent vector lies in the kernel of the critical Hessian
 exactly when its image under the derivative of a chart `e` of the `C²` maximal atlas lies in the
@@ -777,19 +795,10 @@ theorem ker_criticalHessian_eq_comap_of_mem_maximalAtlas (hf : ContMDiffAt I �
     (criticalHessian I f x).ker =
       (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker.comap
         (mvfderiv I (e.extend I) x).toLinearMap := by
-  obtain ⟨D, hD⟩ :=
-    isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
-  have hH (u t : TangentSpace I x) : criticalHessian I f x u t =
-      fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x) (D u) (D t) := by
-    rw [criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit, ← hD]
-    rfl
-  ext u
-  rw [Submodule.mem_comap, LinearMap.mem_ker, LinearMap.mem_ker, ← hD]
-  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe]
-  -- The chart derivative `D` is onto, so `H (D u)` vanishes once it vanishes on every `D t`.
-  refine ⟨fun hu ↦ ContinuousLinearMap.ext fun t ↦ ?_, fun hu ↦ ContinuousLinearMap.ext fun t ↦ ?_⟩
-  · rw [← D.apply_symm_apply t, ← hH, hu, zero_apply, zero_apply]
-  · rw [hH, hu, zero_apply, zero_apply]
+  obtain ⟨ι, hι⟩ := exists_isometryEquiv_criticalHessian he hx hf hcrit
+  rw [← ContinuousLinearMap.ker_toBilinForm, ← ContinuousLinearMap.ker_toBilinForm, ← ι.map_ker,
+    ← hι]
+  exact (Submodule.comap_map_eq_of_injective ι.toLinearEquiv.injective _).symm
 
 /-- **The dimension of the kernel of the critical Hessian in an arbitrary chart.** At a critical
 point of a `C²` function on a boundaryless manifold, the kernel of the critical Hessian has the
@@ -799,11 +808,9 @@ theorem finrank_ker_criticalHessian_eq_of_mem_maximalAtlas (hf : ContMDiffAt I �
     (hcrit : mvfderiv I f x = 0) :
     Module.finrank ℝ (criticalHessian I f x).ker =
       Module.finrank ℝ (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker := by
-  obtain ⟨D, hD⟩ :=
-    isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
-  rw [ker_criticalHessian_eq_comap_of_mem_maximalAtlas he hx hf hcrit, ← hD]
-  -- The preimage of a subspace under the linear equivalence `D` is linearly equivalent to it.
-  exact (D.toLinearEquiv.ofSubmodule' _).finrank_eq
+  obtain ⟨ι, -⟩ := exists_isometryEquiv_criticalHessian he hx hf hcrit
+  rw [← ContinuousLinearMap.ker_toBilinForm, ← ContinuousLinearMap.ker_toBilinForm, ← ι.map_ker,
+    LinearEquiv.finrank_map_eq]
 
 /-- **Nondegeneracy in an arbitrary chart.** On a boundaryless manifold, `x` is a nondegenerate
 critical point of `f` exactly when the coordinate expression of `f` in any chart `e` of the `C²`

@@ -66,8 +66,9 @@ makes the moment function Morse–Bott.
 * `TauCeti.ProjectiveMomentChart.one_add_sum_mul_fderiv_fderiv_model_apply` and
   `TauCeti.ProjectiveMomentChart.fderiv_fderiv_model_apply_eq_zero_iff`: the Hessian of the chart
   model at an arbitrary critical point, and its kernel.
-* `TauCeti.extend_apply_eq_zero_or_of_mem_criticalPoints`: in the affine chart at `k`, every
-  nonzero coordinate of a critical point carries the weight `w k`.
+* `affineOpenPartialHomeomorph_extend_eq_zero_or_of_mem_criticalPoints_projectiveMomentFunction`:
+  in the affine chart at `k`, every nonzero coordinate of a critical point carries the weight
+  `w k`.
 * `TauCeti.one_add_sum_mul_criticalHessian_projectiveMomentFunction_apply` and
   `TauCeti.mem_ker_criticalHessian_projectiveMomentFunction_iff`: the critical Hessian of the
   moment function at a critical point, and its kernel, read in an affine chart.
@@ -698,8 +699,8 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff {w : F
 
 /-- A critical point of the moment function in the affine chart at `k` is a critical point of the
 chart model: every nonzero chart coordinate carries the weight `w k`. -/
-theorem extend_apply_eq_zero_or_of_mem_criticalPoints {w : Fin (n + 1) → ℝ}
-    {k : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+theorem affineOpenPartialHomeomorph_extend_eq_zero_or_of_mem_criticalPoints_projectiveMomentFunction
+    {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
     (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w))
     (hk : x ∈ affineOpen k) (j : Fin n) :
     (affineOpenPartialHomeomorph (K := 𝕜) k).extend 𝓘(ℝ, Fin n → 𝕜) x j = 0 ∨
@@ -729,7 +730,8 @@ theorem one_add_sum_mul_criticalHessian_projectiveMomentFunction_apply {w : Fin 
     ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
     projectiveMomentFunction_comp_extend_symm]
   exact one_add_sum_mul_fderiv_fderiv_model_apply
-    (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk) _ _
+    (affineOpenPartialHomeomorph_extend_eq_zero_or_of_mem_criticalPoints_projectiveMomentFunction
+      hx hk) _ _
 
 /-- **The kernel of the critical Hessian of the moment function in an affine chart.** Let `x` be a
 critical point in the affine open where the `k`-th homogeneous coordinate is nonzero, and let `D`
@@ -750,7 +752,8 @@ theorem mem_ker_criticalHessian_projectiveMomentFunction_iff {w : Fin (n + 1) �
     Submodule.mem_comap, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
     ContinuousLinearMap.coe_coe, projectiveMomentFunction_comp_extend_symm]
   exact fderiv_fderiv_model_apply_eq_zero_iff
-    (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk) _
+    (affineOpenPartialHomeomorph_extend_eq_zero_or_of_mem_criticalPoints_projectiveMomentFunction
+      hx hk) _
 
 /-- **The kernel of the critical Hessian of the moment function.** At a critical point `x`, the
 kernel of the critical Hessian has real dimension `dim_ℝ 𝕜` times the number of coordinates whose
@@ -765,7 +768,9 @@ theorem finrank_ker_criticalHessian_projectiveMomentFunction {w : Fin (n + 1) �
     (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k) (by simpa using hk)
     ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
     projectiveMomentFunction_comp_extend_symm,
-    finrank_ker_fderiv_fderiv_model (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk),
+    finrank_ker_fderiv_fderiv_model
+      (affineOpenPartialHomeomorph_extend_eq_zero_or_of_mem_criticalPoints_projectiveMomentFunction
+        hx hk),
     projectiveMomentFunction_eq_of_mem_criticalPoints hx hk]
   exact congrArg _ ((ncard_preimage_succAbove k {i | w i = w k}).trans
     (ncard_sdiff_singleton_of_mem (s := {i | w i = w k}) rfl))
@@ -783,7 +788,9 @@ theorem manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints
     (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k) (by simpa using hk)
     ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
     projectiveMomentFunction_comp_extend_symm,
-    morseIndex_model (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk),
+    morseIndex_model
+      (affineOpenPartialHomeomorph_extend_eq_zero_or_of_mem_criticalPoints_projectiveMomentFunction
+        hx hk),
     projectiveMomentFunction_eq_of_mem_criticalPoints hx hk]
   -- The weights below `w k` all sit at indices other than `k`.
   exact congrArg _ ((ncard_preimage_succAbove k {i | w i < w k}).trans
