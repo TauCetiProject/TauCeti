@@ -55,11 +55,9 @@ theorem exists_norm_eq_re_eval_ge (P : Polynomial ℂ) (hn : 0 < P.natDegree) :
         simp only [z, mul_pow]; ring
       _ = _ := by rw [hleadw]; push_cast; ring
   have hzB : B ≤ ‖z‖ := by rw [hz]; exact (le_max_left _ _).trans hR
-  have herror := hB hzB
-  -- The asymptotic estimate uses subtraction of functions. Evaluate it at z by unfolding
-  -- pointwise subtraction and function application.
-  change ‖P.eval z - P.leadingCoeff * z ^ P.natDegree‖ ≤
-    (1 / 2 : ℝ) * ‖P.leadingCoeff * z ^ P.natDegree‖ at herror
+  have herror : ‖P.eval z - P.leadingCoeff * z ^ P.natDegree‖ ≤
+      (1 / 2 : ℝ) * ‖P.leadingCoeff * z ^ P.natDegree‖ := by
+    simpa only [Set.mem_ofPred_eq, Pi.sub_apply] using hB hzB
   have hreal := neg_le_of_abs_le (Complex.abs_re_le_norm
     (P.eval z - P.leadingCoeff * z ^ P.natDegree))
   rw [hlead] at herror hreal
