@@ -36,6 +36,8 @@ can only increase it. At a single place the two bounds read
 
 * `NumberField.prod_apply_le_mulHeight₁` and `NumberField.inv_mulHeight₁_le_prod_apply`: the two
   halves of the fundamental inequality.
+* `NumberField.one_le_prod_apply_of_forall_le_one`: the product over all infinite places and a
+  finite set of finite places is at least one for a nonzero element integral outside that set.
 * `NumberField.prod_max_apply_one_le_mulHeight₁`: the upper bound with every local factor
   truncated to `max |x|_v 1`.
 * `NumberField.prod_min_one_apply_eq_inv_mulHeight₁`: over all places the truncated local factors
@@ -107,6 +109,17 @@ theorem inv_mulHeight₁_le_prod_apply {x : K} (hx : x ≠ 0) :
     mul_pos (Finset.prod_pos fun v _ ↦ pow_pos (InfinitePlace.pos_iff.mpr hx) _)
       (Finset.prod_pos fun v _ ↦ FinitePlace.pos_iff.mpr hx)
   exact (inv_le_comm₀ hpos (mulHeight₁_pos x)).mp h
+
+/-- A nonzero element integral at every finite place outside `Sfin` has product of local
+absolute values at least one over all infinite places and `Sfin`. -/
+theorem one_le_prod_apply_of_forall_le_one {x : K} (hx : x ≠ 0)
+    (h : ∀ v : FinitePlace K, v ∉ Sfin → v x ≤ 1) :
+    1 ≤ (∏ v : InfinitePlace K, v x ^ v.mult) * ∏ v ∈ Sfin, v x := by
+  rw [← prod_abs_eq_one hx]
+  exact mul_le_mul_of_nonneg_left
+    (Finset.finprod_le_prod_of_le_one₀ Sfin (FinitePlace.hasFiniteMulSupport hx)
+      (fun v ↦ apply_nonneg v x) h)
+    (Finset.prod_nonneg fun v _ ↦ pow_nonneg (apply_nonneg v x) _)
 
 /-! ### The truncated product -/
 

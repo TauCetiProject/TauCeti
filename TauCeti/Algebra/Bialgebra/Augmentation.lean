@@ -11,8 +11,9 @@ public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 /-!
 # The augmentation point of a commutative bialgebra
 
-The counit of a commutative bialgebra over a field defines a point of its prime spectrum. For a
-Hopf algebra, this is the identity point of the represented affine group.
+The counit of a commutative bialgebra over an integral domain defines a point of its prime
+spectrum. For a Hopf algebra over a field, this is the identity point of the represented affine
+group.
 
 ## Main declarations
 
@@ -27,11 +28,12 @@ namespace TauCeti.Bialgebra
 
 universe u v
 
-variable (k : Type u) [Field k]
+variable (k : Type u) [CommRing k] [IsDomain k]
 variable (H : Type v) [CommRing H] [Bialgebra k H]
 
-/-- The point of `Spec H` defined by the counit of a commutative bialgebra. For a Hopf algebra,
-this is the identity point of the represented affine group. -/
+/-- The point of `Spec H` defined by the counit of a commutative bialgebra over an integral
+domain. For a Hopf algebra over a field, this is the identity point of the represented affine
+group. -/
 abbrev augmentationPoint : Spec (CommRingCat.of H) :=
   AlgHom.kernelPoint (_root_.Bialgebra.counitAlgHom k H)
 

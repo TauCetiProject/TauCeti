@@ -145,7 +145,7 @@ def limOneMultiplicationTowerEquiv :
   (QuotientAddGroup.quotientAddEquivOfEq (by
       ext a
       rw [Submodule.mem_toAddSubgroup, mem_range_shift_multiplicationTower_iff]
-      simp [QuotientAddGroup.eq_zero_iff])).trans
+      simp [QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_zmultiples_iff])).trans
     (QuotientAddGroup.quotientKerEquivOfSurjective
       ((QuotientAddGroup.mk' (Int.castAddHom ℤ_[p]).range).comp (padicSum p))
       ((QuotientAddGroup.mk'_surjective _).comp (padicSum_surjective p)))

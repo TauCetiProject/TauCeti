@@ -50,6 +50,7 @@ the currents of high order are not two-sided.
 * `TauCeti.ModuleTower.limSmul`: the action of `lim A ⧸ Jₙ` on a smooth `A`-module.
 * `TauCeti.ModuleTower.limMul`: the multiplication of `lim A ⧸ Jₙ`.
 * `TauCeti.ModuleTower.limRing`: the ring structure of `lim A ⧸ Jₙ`.
+* `TauCeti.ModuleTower.toLimRingHom`: the canonical ring homomorphism `A → lim A ⧸ Jₙ`.
 * `TauCeti.ModuleTower.limModule`: the module structure over `lim A ⧸ Jₙ` of a smooth `A`-module.
 
 ## Main results
@@ -341,6 +342,25 @@ def limRing : Ring (quotients J hJ).lim where
   mul_assoc := limMul_assoc hJr
   one_mul := one_limMul hJr
   mul_one := limMul_one hJr
+
+/-- **The canonical ring homomorphism** `A → lim A ⧸ Jₙ`, for the ring structure
+`TauCeti.ModuleTower.limRing` given by the right-shift estimate. -/
+def toLimRingHom :
+    letI := limRing (hJ := hJ) hJr
+    A →+* (quotients J hJ).lim :=
+  letI := limRing (hJ := hJ) hJr
+  { toFun := toLimQuotients J hJ
+    map_one' := rfl
+    map_mul' := toLimQuotients_mul hJr
+    map_zero' := map_zero _
+    map_add' := map_add _ }
+
+/-- The canonical ring homomorphism is the canonical map `A → lim A ⧸ Jₙ`. -/
+@[simp]
+theorem coe_toLimRingHom :
+    letI := limRing (hJ := hJ) hJr
+    ⇑(toLimRingHom hJr) = toLimQuotients J hJ :=
+  (rfl)
 
 /-- **A smooth module is a module over the completion** `lim A ⧸ Jₙ`, for the ring structure
 `TauCeti.ModuleTower.limRing`, through the action `TauCeti.ModuleTower.limSmul`: a point acts on a

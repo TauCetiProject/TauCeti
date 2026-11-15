@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Alternating
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # Weyl-invariant elements of the group algebra of a weight space
@@ -55,6 +56,8 @@ data in which `ρ` is not a weight.
   a base is Weyl invariance.
 * `TauCeti.weylReindex_ofIdx`: along a simple reflection `sᵢ`, `σ_{sᵢ}` is the domain reindexing
   along `P.reflection i`, the form used by the Demazure operators.
+* `RootPairing.mapDomainRingEquiv_reflection_mapDomain_smul`: over any coefficient semiring,
+  reindexing along `w` and then along the reflection `sᵢ` is reindexing along `sᵢ w`.
 * `TauCeti.isWeylInvariant_iff_weylReindex_eq`: the invariants are the common fixed points of the
   reindexings `σ_w`.
 * `TauCeti.IsWeylInvariant.twistedWeylReindex_mul`: the twisted reindexing is linear over the
@@ -68,11 +71,10 @@ data in which `ρ` is not a weight.
 
 ## References
 
-This is the "a product of a Weyl-invariant and an alternating element" step of the Weyl character
-formula route fixed by Layer 6 ("the Weyl character, dimension, and Kostant formulas") of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. As with `TauCeti.weylNumerator`
-and `TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is stated for an abstract
-root pairing and the Lie-algebra statement is a specialization rather than a rebuild.
+This is the step of the proof of the Weyl character formula showing that a product of a
+Weyl-invariant and an alternating element is alternating. As with `TauCeti.weylNumerator` and
+`TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is stated for an abstract root
+pairing and the Lie-algebra statement is a specialization rather than a rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.2.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII, §7.
@@ -130,6 +132,20 @@ lemma weylReindex_ofIdx (i : ι) (f : AddMonoidAlgebra ℤ M) :
 lemma weylReindex_mul (v w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
     weylReindex P (v * w) f = weylReindex P v (weylReindex P w f) :=
   AddMonoidAlgebra.ext (Finsupp.ext fun x ↦ by simp [mul_inv_rev, mul_smul])
+
+variable {P} in
+/-- Reindexing along `w` and then along `sᵢ` is reindexing along `sᵢ w`, for the domain
+reindexings of a group algebra over any coefficient semiring. -/
+@[simp]
+theorem _root_.RootPairing.mapDomainRingEquiv_reflection_mapDomain_smul {S : Type*} [Semiring S]
+    (i : ι) (w : P.weylGroup) (f : AddMonoidAlgebra S M) :
+    AddMonoidAlgebra.mapDomainRingEquiv S (P.reflection i).toAddEquiv
+        (AddMonoidAlgebra.mapDomain (w • ·) f) =
+      AddMonoidAlgebra.mapDomain ((RootPairing.weylGroup.ofIdx P i * w) • ·) f := by
+  rw [AddMonoidAlgebra.mapDomainRingEquiv_eq_mapDomain, AddMonoidAlgebra.mapDomain_mapDomain]
+  refine congrArg (AddMonoidAlgebra.mapDomain · f) (funext fun m ↦ ?_)
+  rw [Function.comp_apply, mul_smul, RootPairing.weylGroup.ofIdx_smul,
+    RootPairing.Equiv.reflection_smul, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
 
 /-! ### Weyl invariance -/
 

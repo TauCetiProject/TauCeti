@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.Algebra.Lie.Cohomology.Continuous
+public import TauCeti.Algebra.Lie.Cohomology.Continuous.Basic
 public import TauCeti.Algebra.Lie.Extension.Basic
 
 /-!
@@ -139,6 +139,37 @@ def inl : L →L[R] ofTwoCocycle c where
 
 @[simp]
 lemma inl_apply (x : L) : inl c x = ofProd c (x, 0) := (rfl)
+
+/-- The Lie section over a subalgebra where the cocycle vanishes is continuous. -/
+theorem continuous_sectionOfVanishing (S : LieSubalgebra R L)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
+    Continuous (sectionOfVanishing c S hc) :=
+  ((inl c).continuous.comp continuous_subtype_val).congr fun x ↦ by simp
+
+/-- With discrete coefficient coordinates, the split-preimage equivalence is continuous. -/
+theorem continuous_splitEquivOfVanishing [LieModule.IsTrivial L M]
+    {N : Type*} [LieRing N] [LieAlgebra R N] [IsLieAbelian N]
+    [TopologicalSpace N] [DiscreteTopology N]
+    (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
+    Continuous (splitEquivOfVanishing c S e hc) := by
+  apply continuous_induced_rng.mpr
+  simp only [Function.comp_def, coe_splitEquivOfVanishing]
+  apply continuous_iff.mpr
+  simp only [Equiv.symm_apply_apply]
+  exact ⟨continuous_subtype_val.comp continuous_fst,
+    (IsLocallyConstant.of_discrete e.symm).comp_continuous continuous_snd⟩
+
+/-- The inverse split-preimage equivalence is continuous for any topology on the coefficient
+coordinates, since the coefficient projection is locally constant. -/
+theorem continuous_splitEquivOfVanishing_symm [LieModule.IsTrivial L M]
+    {N : Type*} [LieRing N] [LieAlgebra R N] [IsLieAbelian N] [TopologicalSpace N]
+    (S : LieSubalgebra R L) (e : M ≃ₗ[R] N)
+    (hc : ∀ x ∈ S, ∀ y ∈ S, (c : twoCochain R L M) x y = 0) :
+    Continuous (splitEquivOfVanishing c S e hc).symm := by
+  exact ((((continuous_proj c).comp continuous_subtype_val).subtype_mk _).prodMk
+    (((isLocallyConstant_snd c).comp_continuous continuous_subtype_val).comp e).continuous).congr
+      fun v ↦ (splitEquivOfVanishing_symm_apply c S e hc v).symm
 
 /-- The section `inl` is a right inverse of the projection. -/
 lemma proj_inl (x : L) : proj c (inl c x) = x := by

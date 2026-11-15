@@ -13,7 +13,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 # Dilation scaling of the `Lᵖ` seminorm
 
 Dilating the variable of a function on a finite-dimensional real normed space `E` by `r⁻¹`, for
-`r > 0`, multiplies its `Lᵖ` seminorm against an additive Haar measure by `r ^ (n / p)`, where
+`r ≠ 0`, multiplies its `Lᵖ` seminorm against an additive Haar measure by `|r| ^ (n / p)`, where
 `n` is the dimension of `E`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and
 `p = ∞` by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`, so at those two exponents
 the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integral law
@@ -32,35 +32,36 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
 
 ## Main declarations
 
-* `TauCeti.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
-* `TauCeti.eLpNorm_comp_continuousLinearEquiv`: `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
-* `TauCeti.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity for the `Lᵖ`
-  seminorms on `e ⁻¹' s` and on `s`.
+* `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`:
+  `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
+  for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
 -/
 
 public section
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-open MeasureTheory Module
+open Module
 open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
   {G : Type*} [TopologicalSpace G] [ContinuousENorm G]
 
-/-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`, where
-`n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`, which is `0` at
-`p = 0` and `p = ∞`, where the factor is thus `1`. -/
-theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
+/-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p` for
+`r ≠ 0`, where `n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`,
+which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞) :
     eLpNorm (fun x => u (r⁻¹ • x)) p μ =
-      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by
-  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr.ne'
+      ENNReal.ofReal (|r| ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by
+  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
   rw [← Function.comp_def, ← (measurableEmbedding_const_smul₀ hr').eLpNorm_map_measure,
-    Measure.map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
+    map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
   congr 1
-  rw [inv_pow, inv_inv, abs_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
-    ← Real.rpow_natCast, ← Real.rpow_mul hr.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
+  rw [inv_pow, inv_inv, abs_pow, ENNReal.ofReal_rpow_of_pos (by positivity), ← Real.rpow_natCast,
+    ← Real.rpow_mul (abs_nonneg r), one_div, ENNReal.toReal_inv, div_eq_mul_inv]
 
 /-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
 automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
@@ -72,10 +73,10 @@ theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
       ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
         eLpNorm u p (μ.restrict s) := by
   have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-  have hmap : Measure.map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have hmap : map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
+    map_linearMap_addHaar_eq_smul_addHaar μ hdet
   have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, Measure.restrict_smul,
+  rw [← he.eLpNorm_map_measure, ← he.restrict_map, hmap, restrict_smul,
     eLpNorm_smul_measure_of_ne_zero (by simpa using hdet), smul_eq_mul]
 
 /-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
@@ -86,16 +87,8 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
-end TauCeti
-
-namespace MeasureTheory.Measure
-
-open Module TauCeti
-open scoped ENNReal
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}
+variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {r s : ℝ}
 
 variable (μ p) in
 /-- **The normalized dilation of `Lᵖ`** by a factor `r > 0`, as a linear isometric equivalence:
@@ -116,8 +109,8 @@ noncomputable def dilateLp (r : ℝ) (hr : 0 < r) : Lp F p μ ≃ₗᵢ[ℝ] Lp 
         rw [Lp.compEquivOfMapLeSmul_apply]
         exact Lp.coeFn_compOfMapLeSmul _ _ _ f
       have hPf : ‖P f‖ = r ^ ((finrank ℝ E : ℝ) / p.toReal) * ‖f‖ := by
-        rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hae, eLpNorm_comp_inv_smul μ _ hr,
-          ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+        rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hae, eLpNorm_comp_inv_smul μ _ hr.ne',
+          abs_of_pos hr, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
       simp only [LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
         LinearEquiv.smulOfNeZero_apply, norm_smul,
         Real.norm_eq_abs, abs_of_pos (Real.rpow_pos_of_pos hr _), hPf, ← mul_assoc,

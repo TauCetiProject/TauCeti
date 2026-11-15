@@ -96,8 +96,7 @@ theorem tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
     (le_principal_iff.mpr (U.eventually_specialOrthogonal g))
     (Eventually.of_forall fun n p hp ↦ by
       rw [finiteAdelicSpecialOrthogonalDiagonal_apply, map_pow]
-      exact (U.specialOrthogonal p).pow_mem hp _)
-    (fun p _ ↦ (U.specialOrthogonal p).one_mem)).mpr
+      exact (U.specialOrthogonal p).pow_mem hp _)).mpr
   simpa only [finiteAdelicSpecialOrthogonalDiagonal_apply, RestrictedProduct.one_apply, g, φ]
     using hlocal
 

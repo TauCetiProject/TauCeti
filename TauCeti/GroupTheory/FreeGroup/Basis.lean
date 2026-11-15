@@ -11,15 +11,18 @@ import Mathlib.GroupTheory.FreeGroup.Reduce
 /-!
 # Basic facts about free bases
 
-Two elementary consequences of the universal property of a free basis `b : FreeGroupBasis ι H`.
+Elementary consequences of the universal property of a free basis `b : FreeGroupBasis ι H`.
 
 ## Main results
 
+* `FreeGroupBasis.closure_range_eq_top`: a free basis generates the group.
 * `FreeGroupBasis.injective_lift_comp`: if `FreeGroup α` surjects onto `H`, a function on the
   basis `ι` is determined by the values of its extension to `H` on the images of the elements
   of `α`.
 * `FreeGroupBasis.nontrivial_of_not_commute`: a free basis of a group containing two
   noncommuting elements has at least two elements.
+* `FreeGroupBasis.exists_comp_eq_of_surjective`: a homomorphism out of a group with a free basis
+  lifts through every surjective homomorphism.
 -/
 
 public section
@@ -27,6 +30,14 @@ public section
 namespace FreeGroupBasis
 
 variable {ι H : Type*} [Group H]
+
+/-- A free basis generates the group. -/
+@[simp]
+theorem closure_range_eq_top (b : FreeGroupBasis ι H) : Subgroup.closure (Set.range b) = ⊤ := by
+  have : FreeGroup.lift b = b.repr.symm.toMonoidHom :=
+    FreeGroup.ext_hom _ _ fun i => b.repr.injective (by simp)
+  rw [← FreeGroup.lift_surjective_iff_closure_range_eq_top, this]
+  exact b.repr.symm.surjective
 
 /-- If `f : FreeGroup α →* H` is surjective, a function on the basis `ι`, extended to a
 homomorphism on `H`, is determined by its values on the images of the elements of `α`. -/
@@ -48,5 +59,12 @@ theorem nontrivial_of_not_commute (b : FreeGroupBasis ι H) {x y : H} (h : ¬Com
     FreeGroup.isMulCommutative_iff_subsingleton.mpr (not_nontrivial_iff_subsingleton.mp hι)
   have : IsMulCommutative H := b.repr.symm.surjective.isMulCommutative
   exact h (this.is_comm.comm x y)
+
+/-- **Free groups are projective**: a homomorphism `π` out of a group with a free basis lifts
+through every surjective homomorphism `p`, by lifting the image of each basis element. -/
+theorem exists_comp_eq_of_surjective (b : FreeGroupBasis ι H) {E G : Type*} [Group E] [Group G]
+    {p : E →* G} (hp : Function.Surjective p) (π : H →* G) : ∃ ψ : H →* E, p.comp ψ = π :=
+  ⟨b.lift fun i ↦ (hp (π (b i))).choose, b.ext_hom _ _ fun i ↦ by
+    simpa using (hp (π (b i))).choose_spec⟩
 
 end FreeGroupBasis

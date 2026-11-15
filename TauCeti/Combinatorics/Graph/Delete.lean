@@ -18,8 +18,10 @@ This file computes edge deletion `Graph.deleteEdges` in two families of multigra
 removes edges from `F`. These identities let deletion-based connectivity predicates be compared
 with their simple-graph versions and evaluated on explicit examples. It also records that
 deletion is antitone in the deleted set, `Graph.deleteEdges_anti_right`, complementing Mathlib's
-`Graph.deleteEdges_mono_left`. Vertex deletion commutes with simplification up to the canonical
-isomorphism `Graph.toSimpleGraphDeleteVertsIso`; its vertex map retains the original point.
+`Graph.deleteEdges_mono_left`, and that it gives a spanning subgraph,
+`Graph.deleteEdges_isSpanningSubgraph`. Vertex deletion commutes with simplification up to the
+canonical isomorphism `Graph.toSimpleGraphDeleteVertsIso`; its vertex map retains the original
+point.
 -/
 
 public section
@@ -35,6 +37,10 @@ variable {α β : Type*}
 theorem deleteEdges_anti_right (G : Graph α β) {F₁ F₂ : Set β} (h : F₁ ⊆ F₂) :
     G.deleteEdges F₂ ≤ G.deleteEdges F₁ := by
   simpa [union_eq_right.mpr h] using (G.deleteEdges F₁).deleteEdges_le (F := F₂)
+
+/-- Deleting edges keeps every vertex, so it gives a spanning subgraph. -/
+theorem deleteEdges_isSpanningSubgraph (G : Graph α β) (F : Set β) : G.deleteEdges F ≤s G :=
+  ⟨deleteEdges_le, vertexSet_deleteEdges ..⟩
 
 /-- Deleting edges commutes with regarding a simple graph as a multigraph. -/
 @[simp]

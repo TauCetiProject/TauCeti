@@ -73,7 +73,7 @@ directly. No proof code is transcribed.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups ModularForm
 

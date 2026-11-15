@@ -20,21 +20,16 @@ namespace Polynomial
 variable {K : Type*} [CommSemiring K] [NoZeroDivisors K] [WfDvdMonoid K]
 
 /-- An odd-degree polynomial has an odd-degree irreducible factor. -/
-theorem exists_irreducible_factor_of_odd_natDegree (p : K[X]) (hp : Odd p.natDegree) :
+theorem exists_irreducible_factor_of_odd_natDegree {p : K[X]} (hp : Odd p.natDegree) :
     ∃ q : K[X], Irreducible q ∧ Odd q.natDegree ∧ q ∣ p := by
-  revert hp
   induction p using WfDvdMonoid.induction_on_irreducible with
-  | zero => simp
-  | unit p hp => simp [natDegree_eq_zero_of_isUnit hp]
-  | mul p q hp hq ih =>
-    intro hodd
+  | zero => simp at hp
+  | unit p hu => simp [natDegree_eq_zero_of_isUnit hu] at hp
+  | mul p q hp0 hq ih =>
+    rw [natDegree_mul hq.ne_zero hp0] at hp
     by_cases hoddq : Odd q.natDegree
     · exact ⟨q, hq, hoddq, dvd_mul_right q p⟩
-    have hoddp : Odd p.natDegree := by
-      rw [natDegree_mul hq.ne_zero hp, Nat.odd_iff] at hodd
-      rw [Nat.odd_iff] at hoddq ⊢
-      omega
-    obtain ⟨r, hr, hrodd, hrp⟩ := ih hoddp
+    obtain ⟨r, hr, hrodd, hrp⟩ := ih (by grind)
     exact ⟨r, hr, hrodd, hrp.trans (dvd_mul_left p q)⟩
 
 end Polynomial

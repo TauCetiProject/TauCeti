@@ -31,6 +31,8 @@ by parts.
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
 * `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization:
   `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
+* `TauCeti.Probability.gaussianPDFReal_neg` and `TauCeti.Probability.gaussianPDFReal_zero_neg` —
+  reflection `gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x` and evenness at zero mean.
 * `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
   mean.
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
@@ -76,6 +78,16 @@ theorem gaussianPDFReal_eq_gaussianPDFReal_zero_one (m : ℝ) (v : ℝ≥0) (x :
   simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero, div_pow, Real.sq_sqrt hv'.le,
     Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * π)]
   field_simp
+
+/-- Negating the argument of `gaussianPDFReal` negates the mean parameter. -/
+theorem gaussianPDFReal_neg (m : ℝ) (v : ℝ≥0) (x : ℝ) :
+    gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x := by
+  simp only [gaussianPDFReal, show -(-x - m) ^ 2 = -(x - -m) ^ 2 by ring]
+
+/-- Any centered Gaussian density is an even function. -/
+theorem gaussianPDFReal_zero_neg (v : ℝ≥0) (x : ℝ) :
+    gaussianPDFReal 0 v (-x) = gaussianPDFReal 0 v x := by
+  rw [gaussianPDFReal_neg, neg_zero]
 
 /-- The Gaussian density of `N(m, v)` decreases to the right of its mean. -/
 theorem antitoneOn_gaussianPDFReal (m : ℝ) (v : ℝ≥0) :

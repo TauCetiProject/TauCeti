@@ -49,10 +49,9 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   [hX : Fact (∀ y : X, coheight y ≤ 1)] [X.Over (Spec (.of k))]
   [IsProper (X ↘ Spec (.of k))]
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-  (hk : IsIntegrallyClosedIn k X.functionField)
   {p : CodimensionOnePoint X} (hp : (X ↘ Spec (.of k)).residueDegree p = 1)
 
-include hk hp
+include hp
 
 variable {g : X.functionFieldˣ}
   (hg : X.ord (g : X.functionField) p = WeilDivisor.coeff (0 : SchemeWeilDivisor X) p + 1)
@@ -74,7 +73,7 @@ theorem cohomologyδ_residueShortComplex_zero_injective_of_genus_pos (hgenus : 0
     exact (congrArg (fun C : ShortComplex X.Modules ↦
       Function.Surjective (Scheme.Modules.cohomologyMap C.f 0))
         (residueShortComplex_def hg)).mpr
-      (cohomologyMap_sheafHomOfLE_zero_add_ofPoint_bijective_of_genus_pos k hk hp hgenus).2
+      (cohomologyMap_sheafHomOfLE_zero_add_ofPoint_bijective_of_genus_pos k hp hgenus).2
   apply (injective_iff_map_eq_zero (Scheme.Modules.cohomologyδ hS 0 1 rfl)).mpr
   intro x hx
   obtain ⟨y, rfl⟩ := (Scheme.Modules.exact_cohomologyMap_cohomologyδ hS 0 1 rfl x).mp hx
@@ -110,7 +109,7 @@ theorem cohomologyδ_residueShortComplex_zero_bijective_of_genus_eq_one
       Scheme.finrank_cohomology_zero_skyscraperResidueField, hp,
       Scheme.Modules.finrank_cohomology_congr k (sheafZeroIsoTrivial hX.out) 1,
       ← Scheme.genus_def, hgenus]
-  have hi := cohomologyδ_residueShortComplex_zero_injective_of_genus_pos k hk hp hg (by omega)
+  have hi := cohomologyδ_residueShortComplex_zero_injective_of_genus_pos k hp hg (by omega)
   have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
     (f := Scheme.Modules.cohomologyδBaseLinear k X hS 0 1 rfl)).mp (by
       simpa only [Scheme.Modules.coe_cohomologyδBaseLinear] using hi)

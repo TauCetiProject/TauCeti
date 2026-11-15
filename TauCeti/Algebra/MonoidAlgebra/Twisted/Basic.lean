@@ -58,10 +58,11 @@ a basis and the multiplication table above holds on the nose.
 
 `IsFactorSet` is a `Prop`-valued class on the raw function `α`, spelled out as the multiplicative
 `2`-cocycle identity `α (g * h) j * α g h = α h j * α g (h * j)` together with the normalization
-`α 1 g = α g 1 = 1`, rather than as `groupCohomology.IsMulCocycle₂` for the trivial action of `G`
-on `kˣ`: the twisted algebra wants `α` curried, and wants the normalization, which the cocycle
-identity alone gives only up to the constant `α 1 1`. Carrying the hypotheses in a class keeps the
-type `twistedMonoidAlgebra k G α` free of proof arguments.
+`α 1 g = 1`, rather than as `groupCohomology.IsMulCocycle₂` for the trivial action of `G` on `kˣ`:
+the twisted algebra wants `α` curried, and wants the normalization, which the cocycle identity
+alone gives only up to the constant `α 1 1`. The other normalization `α g 1 = 1` follows from these
+two (`TauCeti.IsFactorSet.one_right`). Carrying the hypotheses in a class keeps the type
+`twistedMonoidAlgebra k G α` free of proof arguments.
 
 `α g h` is the value of the factor set at the ordered pair `(g, h)`. The multiplication
 `e g * e h = (α g h : k) • e (g * h)` follows the left-action convention used for projective
@@ -100,10 +101,9 @@ class IsFactorSet {k G : Type*} [CommSemiring k] [Monoid G] (α : G → G → k�
   /-- The multiplicative `2`-cocycle identity, the associativity constraint of the twisted
   product. -/
   cocycle (g h j : G) : α (g * h) j * α g h = α h j * α g (h * j)
-  /-- Normalization on the left, half of the unitality of the twisted product. -/
+  /-- Normalization on the left, half of the unitality of the twisted product. The other half,
+  `α g 1 = 1`, follows from the cocycle identity (`TauCeti.IsFactorSet.one_right`). -/
   one_left (g : G) : α 1 g = 1
-  /-- Normalization on the right, half of the unitality of the twisted product. -/
-  one_right (g : G) : α g 1 = 1
 
 namespace IsFactorSet
 
@@ -111,11 +111,16 @@ section Monoid
 
 variable {k G : Type*} [CommSemiring k] [Monoid G]
 
+/-- Normalization on the right, the other half of the unitality of the twisted product: the
+cocycle identity at `(g, 1, 1)` reads `α g 1 * α g 1 = α 1 1 * α g 1`, and `α 1 1 = 1`. -/
+theorem one_right {α : G → G → kˣ} [self : IsFactorSet α] (g : G) : α g 1 = 1 := by
+  have h := cocycle (α := α) g 1 1
+  rwa [mul_one, mul_one, one_left (α := α), one_mul, mul_eq_right] at h
+
 /-- The trivial factor set, whose twisted monoid algebra is the ordinary monoid algebra. -/
 instance : IsFactorSet (1 : G → G → kˣ) where
   cocycle _ _ _ := by simp
   one_left _ := rfl
-  one_right _ := rfl
 
 /-- The pointwise product of two factor sets is a factor set. It is the factor set of a tensor
 product of projective representations (`TauCeti.IsProjectiveRep.tensorProduct`). -/
@@ -124,7 +129,6 @@ instance mul (α β : G → G → kˣ) [IsFactorSet α] [IsFactorSet β] : IsFac
     simp only [Pi.mul_apply]
     rw [mul_mul_mul_comm, cocycle (α := α), cocycle (α := β), mul_mul_mul_comm]
   one_left g := by simp [one_left (α := α), one_left (α := β)]
-  one_right g := by simp [one_right (α := α), one_right (α := β)]
 
 /-- The pointwise inverse of a factor set is a factor set. -/
 instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
@@ -132,7 +136,6 @@ instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
     simp only [Pi.inv_apply]
     rw [← mul_inv, cocycle (α := α), mul_inv]
   one_left g := by simp [one_left (α := α)]
-  one_right g := by simp [one_right (α := α)]
 
 end Monoid
 
@@ -158,7 +161,6 @@ theorem comp (f : G →* H) (β : H → H → kˣ) [IsFactorSet β] :
     IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂) where
   cocycle g₁ g₂ g₃ := by simpa only [map_mul] using cocycle (α := β) (f g₁) (f g₂) (f g₃)
   one_left g := by simpa only [map_one] using one_left (α := β) (f g)
-  one_right g := by simpa only [map_one] using one_right (α := β) (f g)
 
 /-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
 factor set is itself a normalized factor set. -/
@@ -173,9 +175,6 @@ theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective 
   one_left a := by
     obtain ⟨g, rfl⟩ := hf a
     simpa only [map_one] using h.one_left g
-  one_right a := by
-    obtain ⟨g, rfl⟩ := hf a
-    simpa only [map_one] using h.one_right g
 
 end Comp
 
@@ -291,16 +290,13 @@ noncomputable def twistedMonoidAlgebra : Subalgebra k (Module.End k (G →₀ k)
       rw [← twistedTranslation_one k α]
       exact Submodule.subset_span ⟨1, rfl⟩)
     (by
-      have hle : Submodule.span k (Set.range (twistedTranslation k α)) *
-          Submodule.span k (Set.range (twistedTranslation k α)) ≤
-          Submodule.span k (Set.range (twistedTranslation k α)) := by
-        rw [Submodule.span_mul_span]
-        refine Submodule.span_le.2 ?_
-        rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨h, rfl⟩, rfl⟩
-        refine SetLike.mem_coe.2 ?_
-        simp only [twistedTranslation_mul]
-        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨g * h, rfl⟩)
-      exact fun x y hx hy ↦ hle (Submodule.mul_mem_mul hx hy))
+      -- The span is closed under products since the products of its spanning operators are
+      -- multiples of spanning operators (`TauCeti.twistedTranslation_mul`).
+      refine fun x y hx hy ↦ Submodule.mul_le.1 ?_ x hx y hy
+      rw [Submodule.span_mul_span, Submodule.span_le]
+      rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨h, rfl⟩, rfl⟩
+      simp only [SetLike.mem_coe, twistedTranslation_mul]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨g * h, rfl⟩))
 
 @[simp]
 theorem toSubmodule_twistedMonoidAlgebra :
@@ -400,23 +396,12 @@ noncomputable def lift (u : G → A) (hu₁ : u 1 = 1)
   AlgHom.ofLinearMap ((basis k G α).constr k u)
     (by rw [← of_one (α := α), constr_of, hu₁])
     (by
-      have hleft : ∀ (g : G) (y : twistedMonoidAlgebra k G α),
-          ((basis k G α).constr k u) (of g * y)
-            = ((basis k G α).constr k u) (of g) * ((basis k G α).constr k u) y := by
-        intro g
-        have key : ((basis k G α).constr k u) ∘ₗ LinearMap.mulLeft k (of g)
-            = LinearMap.mulLeft k (((basis k G α).constr k u) (of g)) ∘ₗ
-              ((basis k G α).constr k u) := by
-          refine (basis k G α).ext fun h ↦ ?_
-          simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, basis_apply, of_mul_of,
-            map_smul, constr_of, hu g h]
-        exact fun y ↦ congrFun (congrArg DFunLike.coe key) y
-      intro x y
-      have key : ((basis k G α).constr k u) ∘ₗ LinearMap.mulRight k y
-          = LinearMap.mulRight k (((basis k G α).constr k u) y) ∘ₗ ((basis k G α).constr k u) := by
-        refine (basis k G α).ext fun g ↦ ?_
-        simpa using hleft g y
-      exact congrFun (congrArg DFunLike.coe key) x)
+      -- Multiplicativity is an equality of bilinear maps, so it suffices to check it on pairs of
+      -- basis elements, where it is the hypothesis `hu`.
+      have key : (LinearMap.mul k _).compr₂ ((basis k G α).constr k u) =
+          (LinearMap.mul k A).compl₁₂ ((basis k G α).constr k u) ((basis k G α).constr k u) :=
+        (basis k G α).ext fun g ↦ (basis k G α).ext fun h ↦ by simp [constr_of, hu]
+      exact LinearMap.congr_fun₂ key)
 
 @[simp]
 theorem lift_of (u : G → A) (hu₁ : u 1 = 1)
@@ -461,8 +446,6 @@ noncomputable def monoidAlgebraEquiv :
 theorem monoidAlgebraEquiv_of (g : G) :
     monoidAlgebraEquiv k G (of g) = MonoidAlgebra.single g (1 : k) :=
   toMonoidAlgebra_of k G g
-
-variable {k G}
 
 end Trivial
 

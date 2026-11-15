@@ -61,7 +61,7 @@ private lemma simplex_comp_π {n : ℕ} (σ : (TopCat.toSSet.obj Q.snd) _⦋n⦌
   rw [← ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f, Category.assoc,
     ← Category.assoc _ _ ((Q.twistedChainComplexπ L).f n),
     ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f, Category.id_comp]
-  exact Q.ιTwistedChainComplex_comp_twistedChainComplexπ L n σ
+  exact Q.ιTwistedChainComplex_twistedChainComplexπ_f L n σ
 
 private lemma simplicial_h_comp_π {n : ℕ} (i : Fin (n + 1))
     (σ : (TopCat.toSSet.obj P.snd) _⦋n⦌) :

@@ -145,7 +145,7 @@ supported on the ramification set `brauerSupport K x`. -/
 def brLocalization : Br K →+ (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
     ((w : InfinitePlace K) → Br w.Completion) where
   toFun x :=
-    (dfinsuppOfFiniteSupport (fun v ↦ brBaseChange K (v.adicCompletion K) x)
+    (DFinsupp.ofSupportFinite (fun v ↦ brBaseChange K (v.adicCompletion K) x)
       ((hasFiniteSupport_finiteInvAt K x).subset fun v hv ↦
         mt (finiteInvAt_eq_zero_iff K v x).1 hv),
       fun w ↦ brBaseChange K w.Completion x)
@@ -157,7 +157,7 @@ def brLocalization : Br K →+ (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adic
 @[simp]
 theorem brLocalization_fst_apply (x : Br K) (v : HeightOneSpectrum (𝓞 K)) :
     (brLocalization K x).1 v = brBaseChange K (v.adicCompletion K) x :=
-  dfinsuppOfFiniteSupport_apply _ _ v
+  DFinsupp.ofSupportFinite_apply _ _ v
 
 /-- The component of the localization map at an infinite place `w` is base change to `K_w`. -/
 @[simp]

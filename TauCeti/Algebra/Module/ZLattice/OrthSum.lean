@@ -45,10 +45,14 @@ for instance the even unimodular lattice `E₈ ⊕ E₈` of rank `16`.
 * `ZLattice.orthSumEquivProd L M`: the identification of `L ⊕ M` with `L × M` as `ℤ`-modules.
 * `ZLattice.quotientSmulOrthSumEquiv L M c`: the identification of `(L ⊕ M) / c (L ⊕ M)` with
   `(L / cL) × (M / cM)`.
+* `ZLattice.dualOrthSumEquiv L M`, `ZLattice.discriminantGroupOrthSumEquiv L M`: the `ℤ`-linear
+  identifications `(L ⊕ M)^∨ ≃ₗ[ℤ] L^∨ × M^∨` and `A_{L ⊕ M} ≃ₗ[ℤ] A_L × A_M`.
 
 ## Main statements
 
 * `ZLattice.dual_orthSum`: `(L ⊕ M)^∨ = L^∨ ⊕ M^∨`.
+* `ZLattice.card_discriminantGroup_orthSum`: the order of the discriminant group of `L ⊕ M` is the
+  product of the orders of the discriminant groups of `L` and `M`.
 * `ZLattice.isIntegral_orthSum_iff`, `ZLattice.isEven_orthSum_iff`,
   `ZLattice.isUnimodular_orthSum_iff`: `L ⊕ M` is integral, even or unimodular if and only if
   both `L` and `M` are.
@@ -194,6 +198,66 @@ theorem dual_orthSum (L : Submodule ℤ E) (M : Submodule ℤ F) :
   · obtain ⟨a, ha⟩ := hL _ hy
     obtain ⟨b, hb⟩ := hM _ hz
     exact ⟨a + b, by rw [ha, hb, Int.cast_add]⟩
+
+/-- As a `ℤ`-module, the dual of an orthogonal direct sum `L ⊕ M` is `L^∨ × M^∨`. -/
+noncomputable def dualOrthSumEquiv (L : Submodule ℤ E) (M : Submodule ℤ F) :
+    dual (orthSum L M) ≃ₗ[ℤ] dual L × dual M :=
+  (LinearEquiv.ofEq _ _ (dual_orthSum L M)).trans (orthSumEquivProd (dual L) (dual M))
+
+/-- The first component of `dualOrthSumEquiv L M x` is the first component of `x`. -/
+@[simp]
+theorem coe_dualOrthSumEquiv_apply_fst (L : Submodule ℤ E) (M : Submodule ℤ F)
+    (x : dual (orthSum L M)) :
+    ((dualOrthSumEquiv L M x).1 : E) = (x : WithLp 2 (E × F)).fst := by
+  simp [dualOrthSumEquiv]
+
+/-- The second component of `dualOrthSumEquiv L M x` is the second component of `x`. -/
+@[simp]
+theorem coe_dualOrthSumEquiv_apply_snd (L : Submodule ℤ E) (M : Submodule ℤ F)
+    (x : dual (orthSum L M)) :
+    ((dualOrthSumEquiv L M x).2 : F) = (x : WithLp 2 (E × F)).snd := by
+  simp [dualOrthSumEquiv]
+
+/-- `(dualOrthSumEquiv L M).symm` embeds `(p.1, p.2)` into `WithLp 2 (E × F)`. -/
+@[simp]
+theorem coe_dualOrthSumEquiv_symm_apply (L : Submodule ℤ E) (M : Submodule ℤ F)
+    (p : dual L × dual M) :
+    ((dualOrthSumEquiv L M).symm p : WithLp 2 (E × F)) = toLp 2 ((p.1 : E), (p.2 : F)) := by
+  simp [dualOrthSumEquiv]
+
+/-- The discriminant group of an orthogonal direct sum `L ⊕ M` is the product of the discriminant
+groups of `L` and `M`. -/
+noncomputable def discriminantGroupOrthSumEquiv (L : Submodule ℤ E) (M : Submodule ℤ F) :
+    DiscriminantGroup (orthSum L M) ≃ₗ[ℤ] DiscriminantGroup L × DiscriminantGroup M :=
+  let f := ((L.submoduleOf (dual L)).mkQ.prodMap (M.submoduleOf (dual M)).mkQ) ∘ₗ
+    (dualOrthSumEquiv L M).toLinearMap
+  have hf : Function.Surjective f :=
+    (Function.Surjective.prodMap (mkQ_surjective _) (mkQ_surjective _)).comp
+      (dualOrthSumEquiv L M).surjective
+  have hker : LinearMap.ker f = (orthSum L M).submoduleOf (dual (orthSum L M)) := by
+    ext x
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.prodMap_apply,
+      mkQ_apply, mkQ_apply, Prod.mk_eq_zero, discriminantGroup_mk_eq_zero_iff,
+      discriminantGroup_mk_eq_zero_iff]
+    simp [submoduleOf]
+  (quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
+
+/-- The class of `x ∈ (L ⊕ M)^∨` corresponds to the pair of classes of its components. -/
+@[simp]
+theorem discriminantGroupOrthSumEquiv_mk (L : Submodule ℤ E) (M : Submodule ℤ F)
+    (x : dual (orthSum L M)) :
+    discriminantGroupOrthSumEquiv L M (Submodule.Quotient.mk x) =
+      (Submodule.Quotient.mk (dualOrthSumEquiv L M x).1,
+        Submodule.Quotient.mk (dualOrthSumEquiv L M x).2) :=
+  (rfl)
+
+/-- The order of the discriminant group of `L ⊕ M` is the product of the orders of the discriminant
+groups of `L` and `M`. -/
+@[simp]
+theorem card_discriminantGroup_orthSum (L : Submodule ℤ E) (M : Submodule ℤ F) :
+    Nat.card (DiscriminantGroup (orthSum L M)) =
+      Nat.card (DiscriminantGroup L) * Nat.card (DiscriminantGroup M) := by
+  rw [Nat.card_congr (discriminantGroupOrthSumEquiv L M).toEquiv, Nat.card_prod]
 
 /-! ### Integral, even and unimodular orthogonal direct sums -/
 

@@ -343,6 +343,74 @@ theorem isEmpty_of_mem_crossingChangeHexagonCompositeDecompositions {x z : GridS
     exact ⟨G.isEmpty_of_mem_unblockedRectangles hr,
       ((G.mem_crossingChangeCommutationHexagons C t _).mp hP).1⟩
 
+/-- A rectangle `S` and a crossing-change hexagon `H` covering, without overlap, the squares of two
+disjoint sets carrying no `X`-marking, carry no `X`-marking, and the product of their weights is
+the product of the variables of the `O`-markings in those two sets. -/
+theorem disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq
+    {u v u' v' : GridState n} {A B : Finset (Fin n × Fin n)}
+    (S : GridRectangleBetween u v) (H : GridCommutationHexagonBetween a C.turnRow t u' v')
+    (hkey : A ∪ B = S.toGridRectangle.coveredSquares ∪ H.crossingCoveredSquares ∧
+      Disjoint A B ∧ Disjoint S.toGridRectangle.coveredSquares H.crossingCoveredSquares)
+    (hAX : Disjoint A G.XSet) (hBX : Disjoint B G.XSet) :
+    Disjoint S.toGridRectangle.coveredSquares G.XSet ∧ Disjoint H.crossingCoveredSquares G.XSet ∧
+      G.OMonomial R S.toGridRectangle * G.crossingChangeCommutationHexagonWeight C t R H =
+        (∏ p ∈ A, if p ∈ G.OSet then MvPolynomial.X p.1 else 1) *
+          ∏ p ∈ B, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 := by
+  obtain ⟨hunion, hAB, hSH⟩ := hkey
+  have hX : Disjoint (S.toGridRectangle.coveredSquares ∪ H.crossingCoveredSquares) G.XSet := by
+    rw [← hunion]
+    exact Finset.disjoint_union_left.mpr ⟨hAX, hBX⟩
+  refine ⟨(Finset.disjoint_union_left.mp hX).1, (Finset.disjoint_union_left.mp hX).2, ?_⟩
+  rw [crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares,
+    ← prod_ite_OSet_eq_prod_OColumnsOfSquares, OMonomial_eq_prod_coveredSquares,
+    ← Finset.prod_union hSH, ← hunion, Finset.prod_union hAB]
+
+/-- An empty crossing-change hexagon carrying no `X`-marking, followed by an empty rectangle
+carrying none, is a counted composite whose weight is the product of their weights. -/
+theorem exists_inl_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
+    {E : GridRectangleDecomposition x z}
+    (H : GridCommutationHexagonBetween a C.turnRow t x E.middle)
+    (hHE : H.toGridRectangleBetween = E.first) (hHe : E.first.IsEmpty) (hSe : E.second.IsEmpty)
+    (hHX : Disjoint H.crossingCoveredSquares G.XSet)
+    (hSX : Disjoint E.second.toGridRectangle.coveredSquares G.XSet) :
+    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧ F.toRectangleDecomposition = E ∧
+        G.crossingChangeHexagonCompositeWeight C t R F =
+          G.crossingChangeCommutationHexagonWeight C t R H *
+            G.OMonomial R E.second.toGridRectangle := by
+  refine ⟨.inl ⟨E.middle, H, E.second⟩, ?_, ?_, ?_⟩
+  · simp only [inl_mem_crossingChangeHexagonCompositeDecompositions,
+      mem_crossingChangeHexagonRectangleDecompositions, GridHexagonRectangleDecomposition.hexagon,
+      GridHexagonRectangleDecomposition.rectangle, mem_unblockedRectangles,
+      mem_crossingChangeCommutationHexagons, hHE]
+    exact ⟨⟨hHe, hHX⟩, hSe, hSX⟩
+  · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
+      GridHexagonRectangleDecomposition.toRectangleDecomposition, hHE]
+  · rw [crossingChangeHexagonCompositeWeight_inl, crossingChangeHexagonRectangleWeight_def]
+
+/-- An empty rectangle carrying no `X`-marking, followed by an empty crossing-change hexagon
+carrying none, is a counted composite whose weight is the product of their weights. -/
+theorem exists_inr_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
+    {E : GridRectangleDecomposition x z}
+    (H : GridCommutationHexagonBetween a C.turnRow t E.middle z)
+    (hHE : H.toGridRectangleBetween = E.second) (hSe : E.first.IsEmpty) (hHe : E.second.IsEmpty)
+    (hSX : Disjoint E.first.toGridRectangle.coveredSquares G.XSet)
+    (hHX : Disjoint H.crossingCoveredSquares G.XSet) :
+    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧ F.toRectangleDecomposition = E ∧
+        G.crossingChangeHexagonCompositeWeight C t R F =
+          G.OMonomial R E.first.toGridRectangle *
+            G.crossingChangeCommutationHexagonWeight C t R H := by
+  refine ⟨.inr ⟨E.middle, E.first, H⟩, ?_, ?_, ?_⟩
+  · simp only [inr_mem_crossingChangeHexagonCompositeDecompositions,
+      mem_crossingChangeRectangleHexagonDecompositions, GridRectangleHexagonDecomposition.hexagon,
+      GridRectangleHexagonDecomposition.rectangle, mem_unblockedRectangles,
+      mem_crossingChangeCommutationHexagons, hHE]
+    exact ⟨⟨hSe, hSX⟩, hHe, hHX⟩
+  · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
+      GridRectangleHexagonDecomposition.toRectangleDecomposition, hHE]
+  · rw [crossingChangeHexagonCompositeWeight_inr, crossingChangeRectangleHexagonWeight_def]
+
 variable (G C t)
 
 /-- The hexagon--rectangle matrix product of the crossing change homotopy is the sum of the

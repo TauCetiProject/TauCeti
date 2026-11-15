@@ -79,8 +79,17 @@ theorem pow_mul_inv_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀
   rw [hexp, zpow_sub₀ ha, zpow_natCast, zpow_natCast, inv_pow, div_eq_mul_inv]
 
 /-- If `a ^ (2 * r + k) = 1`, then the `r`-th power of `a ^ (-2)` is `a ^ k`. -/
-theorem zpow_neg_two_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀} (ha : a ≠ 0) {r : ℕ}
+theorem zpow_neg_two_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀} {r : ℕ}
     {k : ℤ} (h : a ^ (2 * r + k) = 1) : (a ^ (-2 : ℤ)) ^ r = a ^ k := by
+  by_cases ha : a = 0
+  · subst ha
+    by_cases hk : 2 * (r : ℤ) + k = 0
+    · obtain rfl : k = -2 * r := by omega
+      rcases Nat.eq_zero_or_pos r with rfl | hr
+      · simp
+      · simp [zero_zpow, hr.ne']
+    · rw [zero_zpow _ hk] at h
+      exact (zero_ne_one h).elim
   rw [← zpow_natCast, ← zpow_mul, ← mul_one (a ^ ((-2 : ℤ) * r)), ← h, ← zpow_add₀ ha]
   congr 1
   omega

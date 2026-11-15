@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Connection
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv

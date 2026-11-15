@@ -376,12 +376,6 @@ private theorem transpose_coe_transvectionWeylElement_symm (hij : i ≠ j) :
     by_cases hbi : b = i <;> by_cases hbj : b = j <;>
       simp_all [Matrix.one_apply, eq_comm]
 
-omit [Fintype n] in
-private theorem transpose_transvection (a b : n) (c : A) :
-    (Matrix.transvection a b c).transpose = Matrix.transvection b a c := by
-  simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_one,
-    Matrix.transpose_single]
-
 private theorem coe_mul_transvectionWeylElement_symm_apply (hij : i ≠ j) (M : Matrix n n A)
     (a b : n) :
     (M * ((transvectionWeylElement (A := A) hij.symm : GL n A) : Matrix n n A)) a b =
@@ -450,7 +444,8 @@ theorem transvectionWeylElement_mul_transvectionUnit_mul_inv_symm (hij : i ≠ j
     (transvectionWeylElement_mul_transvectionUnit_mul_inv_self (A := A) hij c))
   apply Units.ext
   simpa only [Units.val_mul, coe_transvectionUnit, Matrix.transpose_mul, mul_assoc,
-    transpose_transvection, transpose_coe_transvectionWeylElement_symm (A := A) hij, hT] using h
+    Matrix.transpose_transvection, transpose_coe_transvectionWeylElement_symm (A := A) hij,
+    hT] using h
 
 /-- Conjugation by the Weyl representative exchanging `i` and `j` replaces the left index `j`
 of `xⱼₖ(c)` by `i`. -/
@@ -641,3 +636,21 @@ theorem reindexGL_transvectionUnit (e : n ≃ m) (hij : i ≠ j) (a : A) :
     submatrix_one_equiv]
 
 end Equiv
+
+namespace RingHom
+
+open TauCeti
+
+variable {A B n : Type*} [Ring A] [Ring B] [Fintype n] [DecidableEq n]
+
+/-- Applying a ring homomorphism entrywise to a transvection applies it to the coefficient.
+This holds for noncommutative rings as well. -/
+@[simp]
+theorem unitsMap_mapMatrix_transvectionUnit (f : A →+* B) {i j : n} (hij : i ≠ j) (a : A) :
+    Units.map (f.mapMatrix (m := n) : Matrix n n A →* Matrix n n B)
+      (transvectionUnit hij a) = transvectionUnit hij (f a) := by
+  ext r s
+  simp [Matrix.single_apply, Matrix.one_apply]
+  split_ifs <;> simp_all
+
+end RingHom

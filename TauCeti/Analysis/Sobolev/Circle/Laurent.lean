@@ -130,7 +130,7 @@ def indicator (S : Set ℤ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
     { toFun a := ⟨S.indicator a.coeff, memℓp_of_forall_le (weight_mul_norm_indicator_le S a)⟩
       map_add' a b := CircleSobolev.ext (Set.indicator_add' S a.coeff b.coeff)
       map_smul' c a := CircleSobolev.ext (Set.indicator_const_smul S c a.coeff) }
-    1 fun a ↦ norm_le_of_forall_le zero_le_one (weight_mul_norm_indicator_le S a)
+    1 fun a ↦ norm_le_of_forall_le (weight_mul_norm_indicator_le S a)
 
 @[simp]
 theorem coeff_indicator (S : Set ℤ) (a : CircleSobolev s E) :
@@ -138,7 +138,7 @@ theorem coeff_indicator (S : Set ℤ) (a : CircleSobolev s E) :
   (rfl)
 
 theorem norm_indicator_le (S : Set ℤ) (a : CircleSobolev s E) : ‖indicator S a‖ ≤ ‖a‖ := by
-  simpa using norm_le_of_forall_le zero_le_one (weight_mul_norm_indicator_le S a)
+  simpa using norm_le_of_forall_le (C := 1) (weight_mul_norm_indicator_le S a)
 
 theorem opNorm_indicator_le (S : Set ℤ) :
     ‖(indicator S : CircleSobolev s E →L[ℂ] CircleSobolev s E)‖ ≤ 1 :=

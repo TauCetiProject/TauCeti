@@ -152,36 +152,9 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_of_isAddKleinFour
   let y := e (0, 1)
   have he11 : e (1, 1) = x + y := by
     simpa [x, y] using e.map_add (1, 0) (0, 1)
-  have hxne : x ≠ 0 := by
-    rw [Ne, ← map_zero e, e.injective.eq_iff]
-    decide
-  have hxy : A.toFiniteBilinearModule.pairing x y ≠ 0 := by
-    intro hxy
-    -- If the cross term vanished, `x` would pair trivially with all four elements.
-    have hxpair : A.toFiniteBilinearModule.pairing x = 0 := by
-      apply AddMonoidHom.ext
-      intro a
-      obtain ⟨⟨c, d⟩, rfl⟩ := e.surjective a
-      -- Expose evaluation at the four coordinate vectors of the Klein four-group.
-      change A.toFiniteBilinearModule.pairing x (e (c, d)) =
-        (0 : AddCircle (1 : ℚ))
-      rcases (by decide : ∀ t : ZMod 2, t = 0 ∨ t = 1) c with rfl | rfl <;>
-        rcases (by decide : ∀ t : ZMod 2, t = 0 ∨ t = 1) d with rfl | rfl
-      · rw [show e (0, 0) = 0 by simp, map_zero]
-      · simpa [y] using hxy
-      · simpa [x] using hAlt x
-      · rw [he11, A.toFiniteBilinearModule.pairing_add_right, hAlt x, hxy, add_zero]
-    exact hxne (FiniteBilinearModule.IsNondegenerate.injective _ hA
-      (hxpair.trans (map_zero _).symm))
-  have htwoPair : (2 : ℤ) • A.toFiniteBilinearModule.pairing x y = 0 := by
-    rw [← map_zsmul]
-    have hy2 : (2 : ℤ) • y = 0 := by
-      simpa only [ofNat_zsmul, IsAddKleinFour.exponent_two] using
-        AddMonoid.exponent_nsmul_eq_zero y
-    rw [hy2, map_zero]
   have hpair : A.toFiniteBilinearModule.pairing x y =
       ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) :=
-    (AddCircle.eq_zero_or_eq_coe_period_div_two (1 : ℚ) two_ne_zero htwoPair).resolve_left hxy
+    FiniteBilinearModule.pairing_eq_half_of_addEquiv A.toFiniteBilinearModule hA hAlt e
   have htwoQuad (a : A) : (2 : ℤ) • A.quadratic a = 0 := by
     have hpolar : (2 : ℕ) • A.quadratic a = 0 := by
       rw [← QuadraticMap.polar_self, A.polar_eq_pairing, hAlt]

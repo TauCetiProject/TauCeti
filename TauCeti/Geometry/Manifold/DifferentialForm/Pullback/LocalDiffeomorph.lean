@@ -9,6 +9,9 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Pullback of forms along local diffeomorphisms
@@ -35,10 +38,19 @@ when it is invariant under the family (`IsLocalDiffeomorph.exists_mpullback_eq_i
 surjective smooth local diffeomorphism the descended form of a smooth form is smooth
 (`IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`).
 
+A pullback identity between coordinate expressions in a chart is carried to the manifold by
+conjugating with the chart
+(`TauCeti.RoughForm.exists_partialDiffeomorph_mpullback_eq_of_inChartAt`). Its flat counterpart
+conjugates by a partial diffeomorphism `Θ` of normed spaces: if a partial diffeomorphism `Ψ`
+pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω₁` back to `ω₀`
+(`TauCeti.exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj`).
+
 ## Main results
 
 * `IsLocalDiffeomorph.mpullback_injective`: pullback along a surjective local diffeomorphism is
   injective.
+* `IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff`: a pullback along a local diffeomorphism
+  vanishes at a point exactly when the form vanishes at its image.
 * `IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff`,
   `IsLocalDiffeomorph.isSmoothForm_mpullback_iff`: a form is `C^m` exactly when its pullback
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
@@ -50,6 +62,11 @@ surjective smooth local diffeomorphism the descended form of a smooth form is sm
   `IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff`: a (smooth) form is the pullback of a
   (smooth) form along a local diffeomorphism exactly when it is invariant under a family of maps
   over it that is transitive on its fibres.
+* `TauCeti.RoughForm.exists_partialDiffeomorph_mpullback_eq_of_inChartAt`: a partial
+  diffeomorphism of the model space relating the coordinate expressions of two forms in a chart
+  gives a partial diffeomorphism of the manifold relating the forms.
+* `TauCeti.exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj`: conjugating a
+  pullback identity of flat `k`-forms by a partial diffeomorphism.
 
 ## References
 
@@ -81,15 +98,24 @@ theorem IsLocalDiffeomorph.mpullback_injective (hf : IsLocalDiffeomorph I I' n f
     Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) :=
   mpullback_injective_of_surjective hsurj fun x ↦ (hf.isInvertible_mfderiv hn x).surjective
 
+/-- A form pulled back along a `C^n` local diffeomorphism at `x`, `n ≠ 0`, vanishes at `x` exactly
+when the form vanishes at `f x`. -/
+theorem IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff (hf : IsLocalDiffeomorphAt I I' n f x)
+    (hn : n ≠ 0) {ω : RoughForm I' M' F k} : mpullback I I' f ω x = 0 ↔ ω (f x) = 0 := by
+  simpa only [mpullback_zero, Pi.zero_apply] using
+    mpullback_apply_eq_mpullback_apply_iff (ω := ω) (η := 0) (hf.isInvertible_mfderiv hn).surjective
+
 section Descent
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
-/-- Let `f` be a `C^n` local diffeomorphism, `n ≠ 0`, and let `σ` be a family of differentiable
-self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the fibres of `f`. Then a form
-invariant under every `σ i` is basic for `f`. -/
+/-- Let `f` be a `C^n` local diffeomorphism, `n ≠ 0`, and let `σ` be a family of self-maps of `M`
+over `f` (`f ∘ σ i = f`) that is transitive on the fibres of `f`. Then a form invariant under every
+`σ i` is basic for `f`. No differentiability of `σ` is assumed: where `σ i` is not differentiable
+its derivative is the junk value `0`, and invariance then forces the form to vanish there (in
+positive degree). -/
 theorem IsLocalDiffeomorph.isBasic_of_mpullback_eq {ι : Type*} (hf : IsLocalDiffeomorph I I' n f)
-    (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
+    (hn : n ≠ 0) {σ : ι → M → M}
     (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
     {α : RoughForm I M V k} (hα : ∀ i, mpullback I I (σ i) α = α) : RoughForm.IsBasic I' f α := by
   refine RoughForm.isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
@@ -97,12 +123,32 @@ theorem IsLocalDiffeomorph.isBasic_of_mpullback_eq {ι : Type*} (hf : IsLocalDif
   -- `x` is `y` or `σ i y` for some `i`; `tangentSpaceCast` is the identity of the model space.
   rcases hσf y x hxy.symm with rfl | ⟨i, rfl⟩
   · exact congrArg _ (funext fun j ↦ hinj _ (hvw j))
+  by_cases hd : MDifferentiableAt I I (σ i) y
   · rw [← congrFun (hα i) y, mpullback_apply]
     refine congrArg _ (funext fun j ↦ hinj _ ?_)
     -- By the chain rule, `df_y` factors through the derivative of `σ i`.
-    have hcomp := mfderiv_comp y (hf.mdifferentiable hn (σ i y)) (hσ i y)
+    have hcomp := mfderiv_comp y (hf.mdifferentiable hn (σ i y)) hd
     rw [hfσ i] at hcomp
     exact (hvw j).trans (congrArg (· (w j)) hcomp)
+  · rcases Nat.eq_zero_or_pos k with rfl | hk
+    · rw [← congrFun (hα i) y, mpullback_apply]
+      exact congrArg _ (funext fun j ↦ j.elim0)
+    · -- In positive degree `α` vanishes at every point where some `σ j` is not differentiable,
+      -- since its pullback there is evaluated on the zero derivative.
+      have hzero : ∀ (j : ι) (z : M), ¬ MDifferentiableAt I I (σ j) z →
+          ∀ u : Fin k → TangentSpace I z, α z u = 0 := by
+        intro j z hz u
+        rw [← congrFun (hα j) z, mpullback_apply]
+        exact (α (σ j z)).map_coord_zero ⟨0, hk⟩
+          (by simp [mfderiv_zero_of_not_mdifferentiableAt hz])
+      have hy : ∀ z, z = y → ∀ u : Fin k → TangentSpace I z, α z u = 0 := by
+        rintro z rfl u
+        exact hzero i z hd u
+      rw [hzero i y hd w]
+      rcases hσf (σ i y) y hxy with h | ⟨j, hj⟩
+      · exact hy _ h v
+      · rw [← congrFun (hα j) (σ i y), mpullback_apply]
+        exact hy _ hj _
 
 /-- **Descent of forms along a local diffeomorphism.** Let `f` be a `C^n` local diffeomorphism,
 `n ≠ 0`, and let `σ` be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that
@@ -117,7 +163,7 @@ theorem IsLocalDiffeomorph.exists_mpullback_eq_iff {ι : Type*} (hf : IsLocalDif
     (∃ ω : RoughForm I' M' V k, mpullback I I' f ω = α) ↔ ∀ i, mpullback I I (σ i) α = α := by
   refine ⟨?_, fun hα ↦ (RoughForm.exists_mpullback_eq_iff_isBasic fun x ↦
     .of_isInvertible (hf.isInvertible_mfderiv hn x)).mpr
-      (hf.isBasic_of_mpullback_eq hn hσ hfσ hσf hα)⟩
+      (hf.isBasic_of_mpullback_eq hn hfσ hσf hα)⟩
   rintro ⟨ω, rfl⟩ i
   rw [← mpullback_comp (hσ i) (hf.mdifferentiable hn), hfσ i]
 
@@ -175,3 +221,136 @@ theorem IsLocalDiffeomorph.isClosed_mpullback_iff [IsManifold I 2 M] [IsManifold
     {φ : SmoothForm I' M' F k} : (SmoothForm.mpullback f hf.contMDiff φ).IsClosed ↔ φ.IsClosed :=
   SmoothForm.isClosed_mpullback_iff_of_surjective hf.contMDiff hsurj
     fun x ↦ (hf.isInvertible_mfderiv (by simp) x).surjective
+
+namespace TauCeti
+
+/-- **Conjugating a pullback identity by a coordinate change.** Let `Θ` be a `C^r` partial
+diffeomorphism from `F` to `E`, and let `Ψ` be a `C^r` partial diffeomorphism of `F` whose
+source contains an open set `O ⊆ Θ.source`, which maps `O` into `Θ.source` and pulls `Θ^* ω₁`
+back to `Θ^* ω₀` on `O`. Then the conjugate `Θ ∘ Ψ ∘ Θ⁻¹`, defined on `Θ '' O`, is a `C^r`
+partial diffeomorphism of `E` which pulls `ω₁` back to `ω₀` on its source. -/
+theorem exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {ω₀ ω₁ : E → E [⋀^Fin k]→L[ℝ] G}
+    {r : ℕ∞} (hr : 1 ≤ r)
+    (Θ : OpenPartialHomeomorph F E) (hΘ : ContDiffOn ℝ r Θ Θ.source)
+    (hΘsymm : ContDiffOn ℝ r Θ.symm Θ.target) (Ψ : PartialDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, F) F F r)
+    {O : Set F} (hO : IsOpen O) (hOΘ : O ⊆ Θ.source) (hOΨ : O ⊆ Ψ.source)
+    (hΨO : MapsTo Ψ O Θ.source)
+    (hΨ : ∀ z ∈ O,
+      ((ω₁ (Θ (Ψ z))).compContinuousLinearMap (fderiv ℝ Θ (Ψ z))).compContinuousLinearMap
+        (fderiv ℝ Ψ z) = (ω₀ (Θ z)).compContinuousLinearMap (fderiv ℝ Θ z)) :
+    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E r,
+      (∀ z ∈ O, Θ z ∈ Φ.source ∧ Φ (Θ z) = Θ (Ψ z)) ∧
+      ∀ x ∈ Φ.source, (ω₁ (Φ x)).compContinuousLinearMap (fderiv ℝ Φ x) = ω₀ x := by
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := (lt_of_lt_of_le zero_lt_one (by exact_mod_cast hr)).ne'
+  let Θd : PartialDiffeomorph 𝓘(ℝ, F) 𝓘(ℝ, E) F E r :=
+    PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘ hΘsymm
+  let Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E r :=
+    (Θd.restrOpen O hO).symm.trans (Ψ.trans Θd)
+  have hΦeq : Φ.toPartialEquiv = ((Θ.toPartialEquiv.restr O).symm).trans
+      (Ψ.toPartialEquiv.trans Θ.toPartialEquiv) := by
+    simp only [Φ, Θd, PartialDiffeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.symm_toPartialEquiv, OpenPartialHomeomorph.trans_toPartialEquiv,
+      PartialDiffeomorph.restrOpen_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+      PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
+  have hΦ (x : E) : Φ x = Θ (Ψ (Θ.symm x)) := by
+    rw [hΦeq]
+    simp
+  have hΦsrc (x : E) : x ∈ Φ.source ↔
+      x ∈ Θ.target ∧ Θ.symm x ∈ O ∧ Θ.symm x ∈ Ψ.source ∧ Ψ (Θ.symm x) ∈ Θ.source := by
+    rw [hΦeq]
+    simp [and_assoc]
+  refine ⟨Φ, fun z hz ↦ ?_, fun x hx ↦ ?_⟩
+  · have hzΘ : Θ.symm (Θ z) = z := Θ.left_inv (hOΘ hz)
+    rw [hΦsrc, hΦ, hzΘ]
+    exact ⟨⟨Θ.map_source (hOΘ hz), hz, hOΨ hz, hΨO hz⟩, rfl⟩
+  obtain ⟨hxt, hxO, hxΨ, hΨx⟩ := (hΦsrc x).1 hx
+  have hd (w : F) (hw : w ∈ Θ.source) : HasFDerivAt Θ (fderiv ℝ Θ w) w :=
+    ((hΘ.contDiffAt (Θ.open_source.mem_nhds hw)).differentiableAt hr0).hasFDerivAt
+  have hdsymm : HasFDerivAt Θ.symm (fderiv ℝ Θ.symm x) x :=
+    ((hΘsymm.contDiffAt (Θ.open_target.mem_nhds hxt)).differentiableAt hr0).hasFDerivAt
+  have hdΨ : HasFDerivAt Ψ (fderiv ℝ Ψ (Θ.symm x)) (Θ.symm x) :=
+    (mdifferentiableAt_iff_differentiableAt.1 (Ψ.mdifferentiableAt hr0 hxΨ)).hasFDerivAt
+  -- The chain rule for `Φ = Θ ∘ Ψ ∘ Θ⁻¹`, and `dΘ ∘ dΘ⁻¹ = id` since `Θ ∘ Θ⁻¹ = id` near `x`.
+  have hΦd : fderiv ℝ Φ x = (fderiv ℝ Θ (Ψ (Θ.symm x))).comp
+      ((fderiv ℝ Ψ (Θ.symm x)).comp (fderiv ℝ Θ.symm x)) := by
+    rw [show (Φ : E → E) = Θ ∘ Ψ ∘ Θ.symm from funext hΦ]
+    exact ((hd _ hΨx).comp x (hdΨ.comp x hdsymm)).fderiv
+  have hid : (fderiv ℝ Θ (Θ.symm x)).comp (fderiv ℝ Θ.symm x) = ContinuousLinearMap.id ℝ E := by
+    have heq : Θ ∘ Θ.symm =ᶠ[𝓝 x] id :=
+      eventually_of_mem (Θ.open_target.mem_nhds hxt) fun w hw ↦ Θ.right_inv hw
+    exact (((hd _ (Θ.map_target hxt)).comp x hdsymm).congr_of_eventuallyEq heq.symm).unique
+      (hasFDerivAt_id x)
+  ext v
+  have h := congrArg (fun A : F [⋀^Fin k]→L[ℝ] G ↦ A (fun i ↦ fderiv ℝ Θ.symm x (v i)))
+    (hΨ _ hxO)
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def] at h
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def, hΦd,
+    ContinuousLinearMap.comp_apply, hΦ]
+  rw [h, Θ.right_inv hxt]
+  exact congrArg (ω₀ x) (funext fun i ↦ DFunLike.congr_fun hid (v i))
+
+end TauCeti
+
+namespace TauCeti.RoughForm
+
+/-- **Transport through a chart.** Let `φ` be the preferred chart at `x₀`, and let `Φf` be a `C^n`
+partial diffeomorphism of the model space, `1 ≤ n`, which pulls the coordinate expression of `ω₁`
+in `φ` back to that of `ω₀` on its source. Then `φ⁻¹ ∘ Φf ∘ φ`, defined where `φ` and `Φf` take
+values in the interior of the chart target, is a `C^n` partial diffeomorphism of `M` which pulls
+`ω₁` back to `ω₀` on its source. -/
+theorem exists_partialDiffeomorph_mpullback_eq_of_inChartAt [IsManifold I n M] (hn : 1 ≤ n)
+    {ω₀ ω₁ : RoughForm I M F k} (x₀ : M) (Φf : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E n)
+    (hpb : ∀ z ∈ Φf.source,
+      (ω₁.inChartAt x₀ (Φf z)).compContinuousLinearMap (fderiv ℝ Φf z) = ω₀.inChartAt x₀ z) :
+    ∃ Φ : PartialDiffeomorph I I M M n, (∀ x, x ∈ Φ.source ↔
+        (x ∈ (extChartAt I x₀).source ∧ extChartAt I x₀ x ∈ interior (extChartAt I x₀).target) ∧
+          extChartAt I x₀ x ∈ Φf.source ∧
+            Φf (extChartAt I x₀ x) ∈ interior (extChartAt I x₀).target) ∧
+      (∀ x, Φ x = (extChartAt I x₀).symm (Φf (extChartAt I x₀ x))) ∧
+      ∀ x ∈ Φ.source, mpullback I I Φ ω₁ x = ω₀ x := by
+  have : IsManifold I 1 M := IsManifold.of_le hn
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
+  set φ := extChartAt I x₀ with hφ
+  let e₀ := extChartPartialDiffeomorph I n x₀
+  let Φ : PartialDiffeomorph I I M M n := e₀.trans (Φf.trans e₀.symm)
+  have hΦeq : Φ.toPartialEquiv =
+      e₀.toPartialEquiv.trans (Φf.toPartialEquiv.trans e₀.toPartialEquiv.symm) := by
+    simp only [Φ, PartialDiffeomorph.trans_toPartialEquiv,
+      OpenPartialHomeomorph.trans_toPartialEquiv, PartialDiffeomorph.symm_toPartialEquiv,
+      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv]
+  have hΦ (x : M) : Φ x = φ.symm (Φf (φ x)) := by
+    rw [hΦeq]
+    simp [e₀, hφ]
+  have hΦsrc (x : M) : x ∈ Φ.source ↔ (x ∈ φ.source ∧ φ x ∈ interior φ.target) ∧
+      φ x ∈ Φf.source ∧ Φf (φ x) ∈ interior φ.target := by
+    rw [hΦeq]
+    simp [e₀, hφ, extChartPartialDiffeomorph_source]
+  refine ⟨Φ, hΦsrc, hΦ, fun x hx ↦ ?_⟩
+  obtain ⟨⟨hxs, -⟩, hxf, hfW⟩ := (hΦsrc x).1 hx
+  have hΦxs : Φ x ∈ φ.source := hΦ x ▸ φ.map_target (interior_subset hfW)
+  have hφΦ : φ (Φ x) = Φf (φ x) := by rw [hΦ, φ.right_inv (interior_subset hfW)]
+  have hφd (z : M) (hz : z ∈ φ.source) : MDifferentiableAt I 𝓘(ℝ, E) φ z :=
+    mdifferentiableAt_extChartAt (by rwa [← extChartAt_source (I := I)])
+  -- The chain rule for `φ ∘ Φ = Φf ∘ φ`, valid near `x`.
+  have hloc : φ ∘ Φ =ᶠ[𝓝 x] Φf ∘ φ :=
+    eventually_of_mem (Φ.open_source.mem_nhds hx) fun x' hx' ↦ by
+      obtain ⟨-, -, hW'⟩ := (hΦsrc x').1 hx'
+      rw [Function.comp_apply, hΦ, φ.right_inv (interior_subset hW'), Function.comp_apply]
+  have hchain (w : TangentSpace I x) :
+      mvfderiv I φ (Φ x) (mfderiv I I Φ x w) = fderiv ℝ Φf (φ x) (mvfderiv I φ x w) := by
+    rw [← mvfderiv_comp_apply x (hφd _ hΦxs) (Φ.mdifferentiableAt hn0 hx),
+      hloc.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt
+        (mdifferentiableAt_iff_differentiableAt.1 (Φf.mdifferentiableAt hn0 hxf))
+        (hφd x hxs)]
+  ext v
+  have h := congrArg (fun A : E [⋀^Fin k]→L[ℝ] F ↦ A (fun j ↦ mvfderiv I φ x (v j)))
+    (hpb (φ x) hxf)
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def] at h
+  rw [mpullback_apply, apply_eq_inChartAt_mvfderiv ω₁ hΦxs, apply_eq_inChartAt_mvfderiv ω₀ hxs,
+    ← hφ, hφΦ]
+  simp only [hchain]
+  exact h
+
+end TauCeti.RoughForm

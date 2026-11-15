@@ -36,7 +36,7 @@ the third by a suitable walk to another vertex with three distinct neighbours
 Hence the loop deformation with coefficient one on that walk is not formal, equivalently not
 `A∞` isomorphic to the strict zigzag algebra, and the strict zigzag algebra is not intrinsically
 formal. For the affine `D₄` graph the walk is Liu--Wang's `β₄ α₁ β₁ α₄`; see
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
 In terms of degrees, the strict zigzag algebra is not intrinsically formal when `G` has a vertex of
 degree at least four, or two distinct vertices of degree at least three in one connected
@@ -45,7 +45,7 @@ results assume that `2` is invertible, as the invariance of the quartic obstruct
 finite trees which are not Dynkin diagrams they cover all except those with exactly one vertex of
 degree three and none of larger degree, such as the affine `E₆`, `E₇` and `E₈` graphs; in
 particular they cover the affine `Dₙ` graphs, see
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Basic`.
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Basic`.
 
 ## Main results
 

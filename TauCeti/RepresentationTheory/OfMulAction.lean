@@ -50,6 +50,10 @@ Galois group.
   subgroup gives the permutation representation of the subgroup.
 * `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
   `single g c` is `c` times the left regular action of `g`.
+* `Representation.leftRegular_apply_eq_single_mul`: the left regular action of `g` is left
+  multiplication by `single g 1`.
+* `Representation.IntertwiningMap.apply_eq_mul_apply_single_one`: an endomorphism of the left
+  regular representation, as an intertwining map, is right multiplication by its value at `1`.
 * `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
   representation are right multiplications.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
@@ -108,6 +112,27 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
   | zero => simp
   | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
   | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
+
+/-- A monoid element acts on the regular representation by left multiplication with the
+corresponding basis element: the case `c = 1` of `TauCeti.single_mul_eq_smul_ofMulAction`,
+oriented to rewrite the action. -/
+theorem _root_.Representation.leftRegular_apply_eq_single_mul (g : G) (x : MonoidAlgebra k G) :
+    leftRegular k G g x = MonoidAlgebra.single g 1 * x := by
+  rw [single_mul_eq_smul_ofMulAction, one_smul]
+
+/-- **An endomorphism of the regular representation is right multiplication** by its value at
+`1`: the intertwining-map form, over any semiring, of `Rep.leftRegularHomEquiv_symm_apply`. -/
+theorem _root_.Representation.IntertwiningMap.apply_eq_mul_apply_single_one
+    (f : (leftRegular k G).IntertwiningMap (leftRegular k G)) (x : MonoidAlgebra k G) :
+    f x = x * f (MonoidAlgebra.single 1 1) := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => rw [map_zero, zero_mul]
+  | add x y hx hy => rw [map_add, hx, hy, add_mul]
+  | single g c =>
+    have hg : MonoidAlgebra.single g c = c • leftRegular k G g (MonoidAlgebra.single 1 1) := by
+      simp [leftRegular_apply_eq_single_mul]
+    conv_lhs => rw [hg, map_smul, f.isIntertwining, leftRegular_apply_eq_single_mul]
+    rw [← smul_mul_assoc, MonoidAlgebra.smul_single', mul_one]
 
 /-- The permutation representation of a subgroup `H` on `k[X]` is the restriction of that of
 `G`. -/
@@ -236,31 +261,18 @@ of `x`. -/
 theorem coeff_norm_ofMulAction_single_self (x : X) (r : k) :
     ((ofMulAction k G X).norm (single x r)).coeff x = Nat.card (stabilizer G x) • r := by
   classical
-  simp only [coeff_norm_ofMulAction, coeff_single, Finsupp.single_apply]
-  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, Nat.card_eq_fintype_card,
-    Fintype.card_subtype]
-  congr 2
-  ext g
-  simp [eq_comm]
+  simp [coeff_single, Finsupp.single_apply, Finset.sum_ite, Nat.card_eq_fintype_card,
+    Fintype.card_subtype, eq_comm]
 
 /-- The norm of `single x r` vanishes off the orbit of `x`. -/
 theorem coeff_norm_ofMulAction_single_of_notMem_orbit {x y : X} (h : y ∉ orbit G x) (r : k) :
     ((ofMulAction k G X).norm (single x r)).coeff y = 0 := by
   classical
-  refine (coeff_norm_ofMulAction _ _).trans (Finset.sum_eq_zero fun g _ ↦ ?_)
-  rw [coeff_single, Finsupp.single_apply, ite_eq_right_iff]
-  rintro rfl
-  exact absurd ⟨g⁻¹, inv_smul_smul g y⟩ h
+  simp_all [coeff_single, mem_orbit_iff, ← inv_smul_eq_iff]
 
 end Norm
 
-end TauCeti
-
 /-! ### The orbit-sum basis of the invariants -/
-
-namespace TauCeti
-
-open _root_.MonoidAlgebra _root_.MulAction Representation
 
 section OrbitSumBasis
 
@@ -359,19 +371,11 @@ theorem ofMulAction_invariantOrbitSumBasis_mk {d : D} (hd : d ∈ Subgroup.norma
 
 variable (X)
 
-omit [Finite X] in
-/-- The invariants of `k[X]` under the subgroup `I`, read through the permutation representation
-of the ambient group, are those of the permutation representation of `I`. -/
-theorem invariants_ofMulAction_comp_subtype :
-    invariants ((ofMulAction k D X).comp I.subtype) = (ofMulAction k I X).invariants := by
-  ext v
-  simp [ofMulAction_subgroup]
-
 /-- The linear isomorphism underlying `TauCeti.orbitSumEquiv`. -/
 private noncomputable def orbitSumLinearEquiv :
     k[orbitRel.Quotient I X] ≃ₗ[k] invariants ((ofMulAction k D X).comp I.subtype) :=
   (MonoidAlgebra.basis _ k).equiv ((invariantOrbitSumBasis k I X).map
-    (LinearEquiv.ofEq _ _ (invariants_ofMulAction_comp_subtype k X I).symm)) (.refl _)
+    (LinearEquiv.ofEq _ _ (by rw [ofMulAction_comp_subtype]))) (.refl _)
 
 private theorem coe_orbitSumLinearEquiv_single (ω : orbitRel.Quotient I X) :
     (orbitSumLinearEquiv k X I (single ω 1) : k[X]) = invariantOrbitSumBasis k I X ω := by
@@ -401,8 +405,8 @@ over that orbit. -/
 theorem coe_orbitSumEquiv_single (ω : orbitRel.Quotient I X) (r : k) :
     (orbitSumEquiv k X I (single ω r) : k[X]) = r • (invariantOrbitSumBasis k I X ω : k[X]) := by
   have hr : single ω r = r • single ω (1 : k) := by simp
-  rw [hr, map_smul, Submodule.coe_smul]
-  exact congrArg (r • ·) (coe_orbitSumLinearEquiv_single k X I ω)
+  rw [hr, map_smul, Submodule.coe_smul, orbitSumEquiv, Equiv.mk_apply,
+    coe_orbitSumLinearEquiv_single]
 
 /-- The coefficient of the image of `v` under the orbit-sum equivalence at `x` is the coefficient
 of `v` at the orbit of `x`. -/

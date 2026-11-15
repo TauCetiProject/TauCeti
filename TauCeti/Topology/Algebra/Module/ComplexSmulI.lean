@@ -12,10 +12,11 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 /-!
 # Multiplication by `i` on complex modules
 
-Multiplication by `i` is a real continuous linear automorphism of any complex module with continuous
-multiplication by constant scalars, with inverse multiplication by `-i`. It is the conjugating
-operator by which complex linearity of a real-linear map is tested: a continuous real-linear map
-between complex modules that commutes with it is continuous complex-linear.
+Multiplication by `i` is a real continuous linear automorphism of any complex module with a
+compatible real scalar action (`IsScalarTower ℝ ℂ X`) and continuous multiplication by constant
+scalars, with inverse multiplication by `-i`. It is the conjugating operator by which complex
+linearity of a real-linear map is tested: a continuous real-linear map between complex modules that
+commutes with it is continuous complex-linear.
 
 ## Main definitions and results
 
@@ -29,11 +30,11 @@ public section
 
 namespace Complex
 
-variable (X : Type*) [AddCommGroup X] [TopologicalSpace X] [Module ℂ X]
-  [ContinuousConstSMul ℂ X]
+variable (X : Type*) [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] [Module ℂ X]
+  [IsScalarTower ℝ ℂ X] [ContinuousConstSMul ℂ X]
 
-/-- Multiplication by `i` as a real continuous linear equivalence of a complex module with
-continuous multiplication by constant scalars. -/
+/-- Multiplication by `i` as a real continuous linear equivalence of a complex module with a
+compatible real scalar action and continuous multiplication by constant scalars. -/
 noncomputable def smulIEquiv : X ≃L[ℝ] X :=
   ContinuousLinearEquiv.smulLeft (Units.mk0 I I_ne_zero)
 

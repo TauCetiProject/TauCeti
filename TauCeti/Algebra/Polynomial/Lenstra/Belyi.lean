@@ -136,7 +136,7 @@ theorem eq_of_comp_lenstraPolynomial_comp_eq {f g : K[X]} {α β a b : K} (hf : 
     simp only [hpq, map_neg, map_mul]
     linear_combination (-p) * hcc
   obtain ⟨ha1, hb, hαβ, -⟩ :=
-    (lenstraPolynomial_comp_affine_eq_iff hα0 hα1 hβ0 hβ1 ha (inv_ne_zero hc)).mp hpβ
+    (lenstraPolynomial_comp_affine_eq_iff hα0 hα1 hβ0 hβ1 (inv_ne_zero hc)).mp hpβ
   exact ⟨ha1, hb, hαβ⟩
 
 /-- If a field endomorphism `σ` moves `α`, then no affine change of variable carries `q ∘ p_α`,

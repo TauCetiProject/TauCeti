@@ -15,7 +15,9 @@ Compute the Conway polynomial of a closed braid by Seifert's algorithm on any re
 word. The word algorithm includes the zero value for a disconnected Seifert surface.
 Word independence allows it to descend to braids. Cyclic rotation gives conjugation invariance,
 and either sign of stabilization preserves the polynomial. Thus Markov-equivalent braids have
-equal Conway polynomials.
+equal Conway polynomials. The polynomial vanishes on a braid with an uncrossed strand and
+satisfies the Conway skein relation; `TauCeti.KnotTheory.Markov.Alexander` uses these facts to
+identify it with the normalized Burau invariant.
 
 This is the Seifert-matrix algorithm on the braid presentation. No geometric correspondence
 between braid closures and smooth links is assumed.
@@ -77,6 +79,29 @@ namespace MarkovBraid
 theorem conwayPolynomial_one (n : ℕ) :
     conwayPolynomial ⟨n, 1⟩ = if n = 0 then 1 else 0 := by
   rw [conwayPolynomial_eq_of_toBraid_eq (w := []) (toBraid_nil (n := n + 1)), conwayPolynomial_nil]
+
+/-- Adding an uncrossed strand makes the Conway polynomial vanish: the closure becomes split. -/
+@[simp]
+theorem conwayPolynomial_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    conwayPolynomial ⟨n + 1, strandIncl b⟩ = 0 := by
+  obtain ⟨w, rfl⟩ := toBraid_surjective b
+  rw [← toBraid_strandIncl, conwayPolynomial_mk, BraidWord.conwayPolynomial_strandIncl]
+
+/-- **The Conway skein relation for closed braids.** Changing one crossing of a braid from
+positive to negative, and smoothing it, give the three closures of a skein triple, and
+`∇₊ - ∇₋ = z ∇₀`. -/
+theorem conwayPolynomial_skein {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
+    conwayPolynomial ⟨n, b * sigma (n := n + 1) i * c⟩ -
+        conwayPolynomial ⟨n, b * (sigma (n := n + 1) i)⁻¹ * c⟩ =
+      Polynomial.X * conwayPolynomial ⟨n, b * c⟩ := by
+  obtain ⟨u, rfl⟩ := toBraid_surjective b
+  obtain ⟨v, rfl⟩ := toBraid_surjective c
+  have hw (ε : ℤˣ) : toBraid (u ++ ((i, ε) :: v : BraidWord (n + 1))) =
+      u.toBraid * sigma (n := n + 1) i ^ (ε : ℤ) * v.toBraid := by
+    rw [toBraid_append, toBraid_cons, mul_assoc]
+  rw [conwayPolynomial_eq_of_toBraid_eq (β := ⟨n, _⟩) ((hw 1).trans (by simp)),
+    conwayPolynomial_eq_of_toBraid_eq (β := ⟨n, _⟩) ((hw (-1)).trans (by simp)),
+    ← toBraid_append, conwayPolynomial_mk, BraidWord.conwayPolynomial_skein]
 
 /-- The right-handed trefoil has Conway polynomial `1 + X²`. -/
 @[simp]

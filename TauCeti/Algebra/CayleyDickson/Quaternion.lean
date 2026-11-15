@@ -44,13 +44,23 @@ for which both cancellation laws hold on either side.
 
 ## Main results
 
+* `TauCeti.CayleyDickson.trace_surjective`: when `2` is invertible, the trace is onto.
 * `TauCeti.CayleyDickson.self_mul_star` and `TauCeti.CayleyDickson.self_add_star`: the norm and the
   trace are the scalars `x * star x` and `x + star x`.
+* `TauCeti.CayleyDickson.mul_self` and `TauCeti.CayleyDickson.mul_add_mul_comm`: the rank-two
+  equation and its polarization.
+* `TauCeti.CayleyDickson.star_mem_of_one_mem`: a submodule containing `1` is closed under
+  conjugation.
 * `TauCeti.CayleyDickson.normSq_mul`: the norm is **multiplicative**.
+* `TauCeti.CayleyDickson.trace_mul_comm`, `TauCeti.CayleyDickson.trace_mul_assoc` and
+  `TauCeti.CayleyDickson.trace_mul_cycle`: the trace of a product does not depend on the order of
+  two factors, nor on the bracketing or a cyclic rotation of three.
 * `TauCeti.CayleyDickson.star_mul_mul_left` and `TauCeti.CayleyDickson.mul_mul_star_right`: the
   inverse properties.
 * `TauCeti.CayleyDickson.left_alternative`, `TauCeti.CayleyDickson.right_alternative`,
   `TauCeti.CayleyDickson.flexible`: the double of the quaternions is **alternative**.
+* `TauCeti.CayleyDickson.re_mul_comm` and `TauCeti.CayleyDickson.re_mul_mul`: the real part of a
+  product is invariant under exchanging two factors and under reassociating three.
 * `TauCeti.CayleyDickson.normSq_eq_zero`: over a linearly ordered ring the norm is definite, and
   the double has no zero divisors.
 * `TauCeti.CayleyDickson.mul_inv_cancel₀`, `TauCeti.CayleyDickson.inv_mul_cancel₀` and the four
@@ -152,11 +162,45 @@ theorem trace_one : trace (1 : CayleyDickson ℍ[R]) = 2 := by simp
 `TauCeti.CayleyDickson.trace_one`. -/
 theorem trace_star : trace (star x) = trace x := by simp
 
+/-- When `2` is invertible, the trace is onto: `T (r • ⅟2 • 1) = r`. -/
+theorem trace_surjective [Invertible (2 : R)] :
+    Function.Surjective (trace : CayleyDickson ℍ[R] →ₗ[R] R) :=
+  fun r => ⟨r • ⅟(2 : R) • (1 : CayleyDickson ℍ[R]), by simp⟩
+
+/-- **The trace is symmetric in a product**: `T (x * y) = T (y * x)`. -/
+theorem trace_mul_comm : trace (x * y) = trace (y * x) := by
+  simp
+  ring
+
+/-- **The trace is associative in a triple product**: `T ((x * y) * z) = T (x * (y * z))`, so the
+trace of a product of three octonions does not depend on how it is bracketed. -/
+theorem trace_mul_assoc : trace (x * y * z) = trace (x * (y * z)) := by
+  simp
+  ring
+
+/-- **The trace is invariant under cyclic permutation of a triple product.** -/
+theorem trace_mul_cycle : trace (x * y * z) = trace (z * x * y) := by
+  rw [trace_mul_comm, trace_mul_assoc]
+
+/-- Scalars pass through the involution of the double. This is the `StarModule` law, which cannot
+be an instance here because a general commutative ring carries no involution. -/
+theorem star_smul (r : R) : star (r • x) = r • star x := by
+  ext <;> simp [QuaternionAlgebra.star_smul]
+
 /-! ### The norm and the trace as products and sums with the involution -/
 
 /-- An element times its conjugate is its norm. -/
 theorem self_mul_star : x * star x = normSq x • 1 := by
   ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
+
+/-- **The trace pairing `T (x * star y)` is symmetric**, since conjugation reverses products and
+preserves the trace. -/
+theorem trace_mul_star_comm : trace (x * star y) = trace (y * star x) := by
+  rw [← trace_star, star_mul, star_star]
+
+/-- The trace of an element times its conjugate is twice its norm. -/
+theorem trace_mul_star_self : trace (x * star x) = 2 * normSq x := by
+  rw [self_mul_star, map_smul, trace_one, smul_eq_mul, mul_comm]
 
 /-- The conjugate of an element times the element is its norm. -/
 theorem star_mul_self : star x * x = normSq x • 1 := by
@@ -179,6 +223,21 @@ theorem star_eq_trace_smul_one_sub : star x = trace x • 1 - x := by
 of the quadratic polynomial `X ^ 2 - T x * X + N x`. -/
 theorem mul_self : x * x = trace x • x - normSq x • 1 := by
   ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
+
+/-- The polarization of the rank-two equation `a * a = T a • a - N a • 1` at `x` and `y`: the
+symmetrized product `x * y + y * x` lies in the span of `1`, `x` and `y`. -/
+theorem mul_add_mul_comm :
+    x * y + y * x = trace y • x + trace x • y +
+      (normSq x + normSq y - normSq (x + y)) • (1 : CayleyDickson ℍ[R]) := by
+  ext <;> simp [normSq_def, Quaternion.normSq_def'] <;> ring
+
+/-- A submodule of the double of the quaternions that contains `1` is closed under conjugation, as
+`star a = T a • 1 - a`. -/
+theorem star_mem_of_one_mem {S : Type*} [SetLike S (CayleyDickson ℍ[R])]
+    [AddSubgroupClass S (CayleyDickson ℍ[R])] [SMulMemClass S R (CayleyDickson ℍ[R])] {s : S}
+    {a : CayleyDickson ℍ[R]} (h₁ : 1 ∈ s) (ha : a ∈ s) : star a ∈ s := by
+  rw [star_eq_trace_smul_one_sub]
+  exact sub_mem (SMulMemClass.smul_mem _ h₁) ha
 
 /-! ### The inverse properties -/
 
@@ -215,6 +274,23 @@ theorem right_alternative : x * y * y = x * (y * y) := by
 /-- **The flexible law** of the octonions. -/
 theorem flexible : x * y * x = x * (y * x) := by
   ext <;> simp <;> ring
+
+/-! ### Real parts of products -/
+
+/-- The real part of a product does not depend on the order of the factors. -/
+theorem re_mul_comm : (x * y).fst.re = (y * x).fst.re := by
+  simp
+  ring
+
+/-- The real part of a triple product does not depend on how it is bracketed. -/
+theorem re_mul_mul : (x * y * z).fst.re = (x * (y * z)).fst.re := by
+  simp
+  ring
+
+/-- The norm of a sum is the sum of the norms plus twice the real part of `x * star y`. -/
+theorem normSq_add : normSq (x + y) = normSq x + normSq y + 2 * (x * star y).fst.re := by
+  simp [normSq_def, Quaternion.normSq_def']
+  ring
 
 end CommRing
 

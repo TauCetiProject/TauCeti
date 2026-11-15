@@ -31,7 +31,8 @@ equation.
 ## Main declarations
 
 * `TauCeti.GLSymplecticFin.diagonal`: the diagonal split-torus homomorphism into the symplectic
-  matrix group.
+  matrix group, the Levi embedding of the diagonal torus of `GL m`
+  (`TauCeti.GLSymplecticFin.leviHom_diagGL`).
 * `TauCeti.GLSymplecticFin.diagonalTorus`: the subgroup of paired diagonal matrices, with
   membership characterized by `TauCeti.GLSymplecticFin.mem_diagonalTorus_iff`.
 * `TauCeti.GLSymplecticFin.RootSubgroupIndex.character`: the character of the diagonal torus
@@ -127,6 +128,11 @@ theorem coe_diagonal (t : Fin m → Rˣ) :
         simp [diagonalCoordinates, finSumFinEquiv_symm_addNat]
       · have hji : j ≠ i := Ne.symm hij
         simp [hij, hji]
+
+/-- **The symplectic diagonal torus is the diagonal torus of the Levi subgroup**: the paired
+diagonal matrix of `t` is the Levi embedding of the diagonal matrix of `t`. -/
+theorem leviHom_diagGL (t : Fin m → Rˣ) : leviHom (diagGL t) = diagonal t :=
+  (rfl)
 
 /-- The symplectic diagonal homomorphism is injective. -/
 theorem diagonal_injective : Function.Injective (diagonal (m := m) (R := R)) := by

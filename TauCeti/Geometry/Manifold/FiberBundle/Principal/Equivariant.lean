@@ -156,6 +156,14 @@ theorem diffeomorphOfEquivariant_symm_proj (y : ManifoldTotalSpace G Q) :
       ((ManifoldTotalSpace.homeomorph G Q).symm y).proj := by
   rw [homeomorph_symm_diffeomorphOfEquivariant_symm_apply]
 
+/-- `diffeomorphOfEquivariant` is equivariant for the right `G`-actions on the charted total
+spaces. -/
+theorem diffeomorphOfEquivariant_op_smul (g : G) (x : ManifoldTotalSpace G P) :
+    diffeomorphOfEquivariant G e he hf (op g • x) =
+      op g • diffeomorphOfEquivariant G e he hf x := by
+  obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+  simp [he]
+
 end
 
 end TauCeti.PrincipalBundle

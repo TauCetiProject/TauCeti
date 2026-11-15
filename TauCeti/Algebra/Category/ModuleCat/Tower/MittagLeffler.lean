@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
-public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.CategoryTheory.CofilteredSystem
 public import Mathlib.RingTheory.Artinian.Module
+
+import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Mittag-Leffler towers of modules
@@ -36,22 +37,22 @@ transitions reduce a family in `∏ₙ Aₙ`, modulo the image of the shift, to 
 * `TauCeti.ModuleTower.IsMittagLeffler`: the Mittag-Leffler condition on a tower of modules.
 * `TauCeti.ModuleTower.isMittagLeffler_iff_ranges`: it holds exactly when, for every `n`, the
   images `range (Aₖ → Aₙ)` are eventually constant.
-* `TauCeti.ModuleTower.isMittagLeffler_of_surjective`,
-  `TauCeti.ModuleTower.isMittagLeffler_of_isArtinian`: towers with surjective transitions, and
-  towers of Artinian modules, are Mittag-Leffler.
+* `TauCeti.ModuleTower.isMittagLeffler_of_surjective_of_le`,
+  `TauCeti.ModuleTower.isMittagLeffler_of_surjective`,
+  `TauCeti.ModuleTower.isMittagLeffler_of_isArtinian`: towers with eventually surjective
+  transitions, towers with surjective transitions, and towers of Artinian modules, are
+  Mittag-Leffler.
 * `TauCeti.ModuleTower.shift_surjective_of_isMittagLeffler`,
   `TauCeti.ModuleTower.subsingleton_limOne_of_isMittagLeffler`: Mittag-Leffler towers have
   surjective shift map, hence vanishing `lim¹`.
 
 ## References
 
-* [Stacks: Algebra, Definition 10.86.1, Tag 0594](https://stacks.math.columbia.edu/tag/0594)
+* [Stacks: Algebra, Definition 10.86.1, Tag 0595](https://stacks.math.columbia.edu/tag/0595)
 * [Stacks: More on Algebra, Lemma 15.88.1, Tag 07KW](https://stacks.math.columbia.edu/tag/07KW)
 -/
 
 public section
-
-noncomputable section
 
 namespace TauCeti
 
@@ -100,12 +101,21 @@ theorem isMittagLeffler_iff_ranges : F.IsMittagLeffler ↔
       ← hm (max m k) (le_max_left m k)]
     exact F.range_transitionOfLE_le hnk (le_max_right m k)
 
+/-- **Towers whose transitions are eventually surjective are Mittag-Leffler**: it suffices that
+`F.transition n` is surjective for all `n ≥ N`. For `N = 0` this covers towers with surjective
+transitions. -/
+theorem isMittagLeffler_of_surjective_of_le (N : ℕ)
+    (h : ∀ n, N ≤ n → Function.Surjective (F.transition n)) : F.IsMittagLeffler := by
+  refine (F.isMittagLeffler_iff_ranges).2 fun n ↦ ⟨max n N, le_max_left n N, fun k hk ↦ ?_⟩
+  rw [← F.transitionOfLE_comp_transitionOfLE (le_max_left n N) hk, LinearMap.range_comp,
+    LinearMap.range_eq_top.2
+      (F.transitionOfLE_surjective (fun i hi ↦ h i ((le_max_right n N).trans hi)) hk),
+    Submodule.map_top]
+
 /-- **Towers with surjective transitions are Mittag-Leffler.** -/
 theorem isMittagLeffler_of_surjective (h : ∀ n, Function.Surjective (F.transition n)) :
     F.IsMittagLeffler :=
-  (F.isMittagLeffler_iff_ranges).2 fun n ↦ ⟨n, le_rfl, fun k hnk ↦ by
-    rw [LinearMap.range_eq_top.2 (F.transitionOfLE_surjective h _),
-      LinearMap.range_eq_top.2 (F.transitionOfLE_surjective h _)]⟩
+  F.isMittagLeffler_of_surjective_of_le 0 fun n _ ↦ h n
 
 /-- **Towers of Artinian modules are Mittag-Leffler**: the images of the composite transitions
 `Aₖ → Aₙ` form a descending chain of submodules of `Aₙ`, which stabilises. This covers towers of
@@ -142,15 +152,11 @@ private theorem exists_sub_shift_mem (B : ∀ n, Submodule R (F.obj (op n)))
     congr 1
     exact Finset.sum_congr rfl fun k hk ↦ (hg_succ (Finset.mem_Ico.1 hk).1).symm
   -- An increasing sequence of truncation points `Mₙ ≥ n + 1` with `Mₙ ≥ mₙ`.
-  let M (n : ℕ) : ℕ := n + 1 + (Finset.range (n + 1)).sup m
+  let M (n : ℕ) : ℕ := n + 1 + partialSups m n
   have hM_succ (n : ℕ) : n + 1 ≤ M n := Nat.le_add_right _ _
-  have hM_mono (n : ℕ) : M n ≤ M (n + 1) := by
-    have : (Finset.range (n + 1)).sup m ≤ (Finset.range (n + 1 + 1)).sup m :=
-      Finset.sup_mono (Finset.range_subset_range.2 (Nat.le_succ _))
-    simp only [M]
-    omega
-  have hM_ge (n : ℕ) : m n ≤ M n :=
-    (Finset.le_sup (Finset.self_mem_range_succ n)).trans (Nat.le_add_left _ _)
+  have hM_mono (n : ℕ) : M n ≤ M (n + 1) :=
+    Nat.add_le_add (Nat.le_succ _) ((partialSups m).monotone (Nat.le_succ n))
+  have hM_ge (n : ℕ) : m n ≤ M n := (le_partialSups m n).trans (Nat.le_add_left _ _)
   refine ⟨fun n ↦ s n (M n), fun n ↦ ?_⟩
   -- `bₙ - δ(y)ₙ = s n Mₙ₊₁ - s n Mₙ` is a sum of terms `φₙₖ(bₖ)` with `k ≥ Mₙ ≥ mₙ`.
   have hsum : b n - F.shift (fun n ↦ s n (M n)) n =

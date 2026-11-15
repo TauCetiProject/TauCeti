@@ -28,6 +28,8 @@ adjoints of the forgetful functor to simplicial sets, and both are fully faithfu
 * `TauCeti.MarkedSSet.forget`: the forgetful functor to simplicial sets.
 * `TauCeti.MarkedSSet.flat`: the functor `X ↦ X♭`, marking only the degenerate edges.
 * `TauCeti.MarkedSSet.sharp`: the functor `X ↦ X♯`, marking every edge.
+* `TauCeti.MarkedSSet.ofEdges X S`: the simplicial set `X` marked at the edges in `S` and at its
+  degenerate edges.
 * `TauCeti.MarkedSSet.flatForgetAdj`, `TauCeti.MarkedSSet.forgetSharpAdj`: the adjunctions
   `(-)♭ ⊣ forget ⊣ (-)♯`.
 
@@ -196,6 +198,37 @@ instance : flat.{u}.Faithful :=
   fullyFaithfulFlat.faithful
 
 end flat
+
+section ofEdges
+
+/-- The simplicial set `X` marked at the edges in `S` and at its degenerate edges. -/
+abbrev ofEdges (X : SSet.{u}) (S : Set (X _⦋1⦌)) : MarkedSSet.{u} where
+  toSSet := X
+  marked := Set.range (X.σ 0) ∪ S
+  σ_mem_marked x := Or.inl ⟨x, rfl⟩
+
+/-- The marked edges of `ofEdges X S` are the degenerate edges of `X` and the edges in `S`.
+Since `ofEdges` is reducible, `simp` already rewrites this membership with `Set.mem_union` and
+`Set.mem_range`, so this lemma is not tagged `@[simp]`. -/
+lemma mem_ofEdges_marked_iff {X : SSet.{u}} {S : Set (X _⦋1⦌)} {e : X _⦋1⦌} :
+    e ∈ (ofEdges X S).marked ↔ (∃ x, X.σ 0 x = e) ∨ e ∈ S :=
+  Iff.rfl
+
+/-- A morphism of simplicial sets out of `X` which sends the edges in `S` to marked edges, as a
+morphism of marked simplicial sets out of `ofEdges X S`. -/
+def ofEdgesHom {X : SSet.{u}} {S : Set (X _⦋1⦌)} {Y : MarkedSSet.{u}} (f : X ⟶ Y.toSSet)
+    (hf : ∀ e ∈ S, f.app _ e ∈ Y.marked) : ofEdges X S ⟶ Y :=
+  ⟨f, by
+    rintro e (⟨x, rfl⟩ | he)
+    · exact map_σ_mem_marked f x
+    · exact hf e he⟩
+
+@[simp]
+lemma ofEdgesHom_hom {X : SSet.{u}} {S : Set (X _⦋1⦌)} {Y : MarkedSSet.{u}} (f : X ⟶ Y.toSSet)
+    (hf : ∀ e ∈ S, f.app _ e ∈ Y.marked) : (ofEdgesHom f hf).hom = f :=
+  (rfl)
+
+end ofEdges
 
 section sharp
 

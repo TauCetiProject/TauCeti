@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LocallyClosed
 public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.LocallyClosed
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
 # Projective orbit schemes
@@ -22,6 +23,10 @@ This is the scheme on which to study flatness of the orbit map and its compariso
 the homogeneous quotient by the stabilizer of the line. Flatness and that quotient
 comparison are separate results. No smoothness or reducedness hypothesis is imposed on
 the group; when the group is reduced, so is the orbit scheme.
+
+If the geometric orbit is closed, its inclusion is a closed immersion into projective space,
+so `Comodule.isProper_projectiveOrbitToSpec_of_isClosed` makes the orbit scheme proper over
+the base field, without reducedness or connectedness assumptions on the group.
 
 The construction combines `Comodule.isLocallyClosed_range_projectiveOrbitMap` with
 `Scheme.Hom.locallyClosedImage` and its factorization API.
@@ -140,6 +145,19 @@ noncomputable def projectiveOrbitToSpec (m : M) (hm : Module.IsUnimodular k m) :
 theorem projectiveOrbitToSpec_def (m : M) (hm : Module.IsUnimodular k m) :
     projectiveOrbitToSpec (H := H) m hm =
       projectiveOrbitι (H := H) m hm ≫ SymmetricAlgebra.projToSpec k (Module.Dual k M) := (rfl)
+
+variable (M) in
+/-- A projective orbit with closed geometric image is proper over the base field.
+The group need not be reduced, smooth, or connected. -/
+theorem isProper_projectiveOrbitToSpec_of_isClosed
+    (m : M) (hm : Module.IsUnimodular k m)
+    (hclosed : IsClosed (Set.range (projectiveOrbitMap (H := H) m hm))) :
+    IsProper (projectiveOrbitToSpec (H := H) m hm) := by
+  let _ : IsClosedImmersion (projectiveOrbitι (H := H) m hm) :=
+    IsClosedImmersion.of_isPreimmersion _ (by
+      simpa only [range_projectiveOrbitι] using hclosed)
+  rw [projectiveOrbitToSpec_def]
+  infer_instance
 
 /-- The orbit factorization is a morphism over the base field. -/
 @[reassoc (attr := simp)]

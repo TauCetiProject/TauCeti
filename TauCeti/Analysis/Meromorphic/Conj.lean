@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.Order
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Reflecting a function across the real axis
@@ -35,14 +36,11 @@ open ComplexConjugate Filter Topology
 
 variable {f : ℂ → ℂ} {x : ℂ}
 
-/-- If `f` is analytic at `x`, then `conj ∘ f ∘ conj` is analytic at `conj x`. -/
+/-- If `f` is analytic at `x`, then `conj ∘ f ∘ conj` is analytic at `conj x`. This is the
+one-variable case of `AnalyticAt.star_star`. -/
 theorem AnalyticAt.conj_conj (hf : AnalyticAt ℂ f x) :
     AnalyticAt ℂ (conj ∘ f ∘ conj) (conj x) := by
-  rw [Complex.analyticAt_iff_eventually_differentiableAt] at hf ⊢
-  have hconj : Tendsto conj (𝓝 (conj x)) (𝓝 x) :=
-    Complex.continuous_conj.tendsto' _ _ (Complex.conj_conj x)
-  filter_upwards [hconj.eventually hf] with z hz
-  exact differentiableAt_conj_conj_iff.2 hz
+  simpa only [Complex.star_def] using hf.star_star
 
 /-- A function `f` is analytic at `conj x` iff `conj ∘ f ∘ conj` is analytic at `x`. -/
 @[simp]

@@ -12,7 +12,9 @@ import Mathlib.CategoryTheory.Sites.EpiMono
 import TauCeti.Algebra.Category.Grp.IsSheafFor
 import TauCeti.CategoryTheory.Sites.IsSheafFor
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
+import TauCeti.Topology.Sheaves.Exact
 import TauCeti.Topology.Sheaves.Flasque.Basic
+import TauCeti.Topology.Sheaves.InjectiveImage
 import TauCeti.CategoryTheory.Limits.Lattice
 
 /-!
@@ -58,8 +60,6 @@ injective sheaf, which is flasque, so that its Čech complexes are exact for all
   for every member `Y` of `B`.
 * `TauCeti.Topology.prod_pi_mem_of_inf_mem`: a set of opens closed under binary intersections
   contains the finite intersections `Y ∩ U (a 0) ∩ ⋯ ∩ U (a n)` of its members.
-* `TopCat.Sheaf.exists_mem_lift_of_epi`: along an epimorphism of sheaves, sections lift locally on
-  the members of a set of opens which contains a basis inside each of its members.
 
 ## References
 
@@ -100,53 +100,7 @@ theorem isCechAcyclicOn_iff {F : Sheaf (Opens.grothendieckTopology X) AddCommGrp
           QuasiIso (cechAugmentation U isTerminalTop ((prod.functor.obj Y).op ⋙ F.obj)) :=
   Iff.rfl
 
-/-- Let `B` be a set of opens containing, inside each of its members, a basis of the topology of
-that member. Along an epimorphism of sheaves `π : F ⟶ G`, a section of `G` over a member `Y` of `B`
-lifts, near every point of `Y`, on a member of `B` contained in `Y`. -/
-theorem _root_.TopCat.Sheaf.exists_mem_lift_of_epi
-    (hbasis : ∀ U ∈ B, ∀ V : Opens X, V ≤ U → ∀ x ∈ V, ∃ W ∈ B, x ∈ W ∧ W ≤ V)
-    {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}} (π : F ⟶ G) [Epi π]
-    {Y : Opens X} (hY : Y ∈ B) (s : G.obj.obj (op Y)) (x : X) (hx : x ∈ Y) :
-    ∃ V ∈ B, x ∈ V ∧ ∃ h : V ≤ Y, ∃ t : F.obj.obj (op V),
-      π.hom.app (op V) t = G.obj.map (homOfLE h).op s := by
-  have : Sheaf.IsLocallySurjective π := (Sheaf.isLocallySurjective_iff_epi' _ π).2 inferInstance
-  obtain ⟨V, f, ⟨t, ht⟩, hxV⟩ :=
-    Presheaf.imageSieve_mem (Opens.grothendieckTopology X) π.hom s x hx
-  obtain ⟨W, hW, hxW, hWV⟩ := hbasis Y hY V f.le x hxV
-  refine ⟨W, hW, hxW, hWV.trans f.le, F.obj.map (homOfLE hWV).op t, ?_⟩
-  rw [← ConcreteCategory.comp_apply, π.hom.naturality, ConcreteCategory.comp_apply, ht,
-    ← ConcreteCategory.comp_apply, ← G.obj.map_comp]
-  rfl
-
-variable (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
-
-/-- The sequence of presheaves `0 ⟶ F ⟶ I ⟶ G ⟶ 0`, where `F ⟶ I` is the chosen embedding into an
-injective sheaf and `G` is the image presheaf of `I ⟶ Q`, for `Q` its cokernel sheaf. -/
-private abbrev imageSeq : ShortComplex ((Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u}) :=
-  ShortComplex.mk (Injective.ι F).hom (factorThruImage (cokernel.π (Injective.ι F)).hom) (by
-    rw [← cancel_mono (image.ι _), Category.assoc, image.fac, zero_comp]
-    exact ((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{u})).zero)
-
-/-- The sequence `0 ⟶ F ⟶ I ⟶ G ⟶ 0` is exact on every open: the kernel of `I(V) ⟶ Q(V)` is
-`F(V)`, and `G(V)` is the image of `I(V)` in `Q(V)`. -/
-private lemma imageSeq_shortExact (V : (Opens X)ᵒᵖ) :
-    ((imageSeq F).map ((evaluation _ AddCommGrpCat.{u}).obj V)).ShortExact := by
-  have hE := (injectiveCokernelSequence_shortExact F).exact.map_of_mono_of_preservesKernel
-    (sheafToPresheaf _ AddCommGrpCat.{u} ⋙ (evaluation _ AddCommGrpCat.{u}).obj V)
-    inferInstance inferInstance
-  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-  · rw [ShortComplex.ab_exact_iff] at hE ⊢
-    intro x hx
-    apply hE x
-    dsimp at hx ⊢
-    have h := congrArg ((image.ι (cokernel.π (Injective.ι F)).hom).app V) hx
-    rwa [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, image.fac, map_zero] at h
-  · exact Functor.map_mono (sheafToPresheaf _ AddCommGrpCat.{u} ⋙
-      (evaluation _ AddCommGrpCat.{u}).obj V) (Injective.ι F)
-  · dsimp
-    infer_instance
-
-variable {F}
+variable {F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
 
 /-- For `F` Čech acyclic on `B`, the image presheaf of `I ⟶ Q` is Čech acyclic for the finite
 covers of members of `B` by members of `B`, like `F` and the flasque sheaf `I`. -/
@@ -158,9 +112,10 @@ private lemma quasiIso_cechAugmentation_image (hF : IsCechAcyclicOn B F) {ι : T
   have : TopCat.Presheaf.IsFlasque (TopCat.Sheaf.presheaf (Injective.under F)) :=
     isFlasque_of_injective (Injective.under F)
   exact quasiIso_cechAugmentation_X₃_of_shortExact U isTerminalTop
-    ((imageSeq F).map ((Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj
+    (F.injectiveImageSequence.map ((Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj
       (prod.functor.obj Y).op))
-    (imageSeq_shortExact F _) (fun _ _ ↦ imageSeq_shortExact F _) (hF U Y hY hU hYU)
+    (F.injectiveImageSequence_map_shortExact _)
+    (fun _ _ ↦ F.injectiveImageSequence_map_shortExact _) (hF U Y hY hU hYU)
     (TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque (Injective.under F) U Y hYU)
 
 /-- Let `π : F₂ ⟶ F₃` be a morphism of sheaves, `G` its image presheaf, and `U i` opens covering

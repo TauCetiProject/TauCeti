@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import Mathlib.MeasureTheory.Group.Circle
 public import TauCeti.NumberTheory.LSeries.Continuity
+
+import TauCeti.Analysis.Fourier.RiemannLebesgue
 
 /-!
 # Fourier identities for Wiener--Ikehara
@@ -35,7 +38,7 @@ The proofs are adapted from `PrimeNumberTheoremAnd/Wiener.lean` in the Apache-2.
 `second_fourier`, and `limiting_fourier_aux`. The statements here use Mathlib's
 `LSeriesSummable` directly, remove the source project's local `nterm` wrapper, and rely on
 Mathlib's APIs together with the local vertical-line continuity theorem
-`LSeriesSummable.continuous_LSeries_vertical`.
+`TauCeti.LSeries.continuous_vertical`.
 
 ## References
 
@@ -50,12 +53,6 @@ open Complex Filter FourierTransform MeasureTheory Real Set
 open scoped ComplexConjugate Real Topology
 
 variable {a : ℕ → ℂ} {psi : ℝ → ℂ} {x sigma t : ℝ}
-
-private instance : MeasurableSpace Circle :=
-  inferInstanceAs <| MeasurableSpace <| Subtype (· ∈ Metric.sphere (0 : ℂ) 1)
-
-private instance : BorelSpace Circle :=
-  inferInstanceAs <| BorelSpace <| Subtype (· ∈ Metric.sphere (0 : ℂ) 1)
 
 private lemma fourierIntegrand_aemeasurable (hpsi : AEStronglyMeasurable psi)
     (x : ℝ) (n : ℕ) :
@@ -133,13 +130,13 @@ theorem tsum_term_mul_fourier_eq_integral (hpsi : Integrable psi) (hx : 0 < x)
         · exact (by fun_prop : Measurable fun u : ℝ ↦
             fourierChar (-(u * (1 / (2 * π) * Real.log (_ / x))))).aemeasurable.smul
               hpsi.aemeasurable
-      · simp only [enorm_mul]
+      · simp only [eNorm_mul]
         simp_rw [lintegral_const_mul'' _ (fourierIntegrand_aemeasurable hpsi.aestronglyMeasurable
           x _)]
         calc
           _ = (∑' n : ℕ, ‖_root_.LSeries.term a sigma n‖ₑ) *
               ∫⁻ u : ℝ, ‖psi u‖ₑ := by
-            simp [ENNReal.tsum_mul_right, enorm_eq_nnnorm]
+            simp [ENNReal.tsum_mul_right, eNorm_eq_nnNorm]
           _ ≠ ⊤ := ENNReal.mul_ne_top (summable_enorm_term_ne_top hsigma)
             (ne_top_of_lt hpsi.2)
     _ = _ := by
@@ -172,7 +169,7 @@ private lemma poleFubiniIntegrable (hpsi : Integrable psi) (hsigma : 1 < sigma) 
     let f₂ : ℝ → ENNReal := fun v ↦ ‖psi v‖ₑ
     suffices ∫⁻ p : ℝ × ℝ, f₁ p.1 * f₂ p.2
         ∂((volume.restrict (Ici (-Real.log x))).prod volume) < ⊤ by
-      simpa [hasFiniteIntegral_iff_enorm, enorm_eq_nnnorm, Function.uncurry,
+      simpa [hasFiniteIntegral_iff_eNorm, eNorm_eq_nnNorm, Function.uncurry,
         Complex.norm_exp]
     refine (lintegral_prod_mul ?_ ?_).trans_lt ?_ <;> try fun_prop
     exact ENNReal.mul_lt_top (exp_mul_integrableOn_Ici hsigma x).2 hpsi.2
@@ -238,6 +235,27 @@ theorem integral_exp_mul_fourier_eq (hpsi : Integrable psi) (hx : 0 < x) (hsigma
 
 /-! ### Subtracting the pole -/
 
+/-- The integrand of the Dirichlet-series side is integrable once `psi` is: the series is bounded
+on the line `Re s = sigma` by its absolutely convergent value. -/
+private lemma integrable_LSeries_mul_mul_cpow (hpsi : Integrable psi) (hx : 0 < x)
+    (hsigmaSum : LSeriesSummable a (sigma : ℂ)) :
+    Integrable fun t : ℝ ↦ LSeries a (sigma + t * I) * psi t * x ^ (t * I) := by
+  have hLbound (t : ℝ) : ‖LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I)‖ ≤
+      ∑' n : ℕ, ‖_root_.LSeries.term a (sigma : ℂ) n‖ := by
+    rw [norm_mul, norm_cpow_mul_I hx, mul_one]
+    calc
+      ‖LSeries a ((sigma : ℂ) + t * I)‖
+          ≤ ∑' n : ℕ, ‖_root_.LSeries.term a ((sigma : ℂ) + t * I) n‖ :=
+        norm_tsum_le_tsum_norm (summable_norm_iff.mpr (hsigmaSum.of_re_le_re (by simp)))
+      _ = _ := by
+        refine tsum_congr fun n ↦ ?_
+        simp only [_root_.LSeries.norm_term_eq]
+        simp
+  exact (hpsi.bdd_mul (f := fun t : ℝ ↦ LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I))
+    ((TauCeti.LSeries.continuous_vertical a (sigma : ℂ)).mul
+      (continuous_cpow_mul_I hx)).aestronglyMeasurable
+    (.of_forall hLbound)).congr (.of_forall fun t ↦ by ring)
+
 /-- Subtracting the simple-pole Fourier identity from the Dirichlet-series identity leaves exactly
 the integral of the pole-subtracted remainder `G`. Only the values of `G` on the vertical line
 `Re s = sigma` enter, so no continuity or limiting behaviour of `G` on the boundary line is
@@ -256,50 +274,12 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral {G : ℂ → ℂ} {A : ℂ}
       ∫ t : ℝ, G (sigma + t * I) * psi t * x ^ (t * I) := by
   have hseries := tsum_term_mul_fourier_eq_integral hpsi hx hsigmaSum
   have hpole := integral_exp_mul_fourier_eq hpsi hx hsigma
-  have hxpow : Continuous fun t : ℝ ↦ (x : ℂ) ^ (t * I) :=
-    continuous_const.cpow (continuous_ofReal.mul continuous_const) (by simp [hx])
-  have hxnorm (t : ℝ) : ‖(x : ℂ) ^ (t * I)‖ = 1 := by
-    rw [Complex.norm_cpow_eq_rpow_re_of_pos hx]
-    simp
-  have hdenom (t : ℝ) : (sigma : ℂ) + t * I - 1 ≠ 0 := by
-    intro h
-    have hre := congrArg Complex.re h
-    simp at hre
-    linarith
-  -- The two integrands are bounded multiples of `psi`, so `Integrable psi` suffices.
-  have hLbound (t : ℝ) : ‖LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I)‖ ≤
-      ∑' n : ℕ, ‖_root_.LSeries.term a (sigma : ℂ) n‖ := by
-    rw [norm_mul, hxnorm, mul_one]
-    calc
-      ‖LSeries a ((sigma : ℂ) + t * I)‖
-          ≤ ∑' n : ℕ, ‖_root_.LSeries.term a ((sigma : ℂ) + t * I) n‖ :=
-        norm_tsum_le_tsum_norm (summable_norm_iff.mpr (hsigmaSum.of_re_le_re (by simp)))
-      _ = _ := by
-        refine tsum_congr fun n ↦ ?_
-        simp only [_root_.LSeries.norm_term_eq]
-        simp
-  have hpolebound (t : ℝ) :
-      ‖1 / ((sigma : ℂ) + t * I - 1) * (x : ℂ) ^ (t * I)‖ ≤ (sigma - 1)⁻¹ := by
-    rw [norm_mul, hxnorm, mul_one, norm_div, norm_one, one_div]
-    refine inv_anti₀ (by linarith) ?_
-    calc
-      sigma - 1 = ((sigma : ℂ) + t * I - 1).re := by simp
-      _ ≤ _ := re_le_norm _
-  have hseriesI : Integrable fun t : ℝ ↦
-      LSeries a (sigma + t * I) * psi t * x ^ (t * I) := by
-    exact (hpsi.bdd_mul (f := fun t : ℝ ↦ LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I))
-      (hsigmaSum.continuous_LSeries_vertical.mul hxpow).aestronglyMeasurable
-      (.of_forall hLbound)).congr (.of_forall fun t ↦ by ring)
+  have hseriesI := integrable_LSeries_mul_mul_cpow hpsi hx hsigmaSum
   have hpoleI : Integrable fun t : ℝ ↦
       A * (x ^ (1 - sigma) : ℝ) *
-        ((x ^ (sigma - 1) : ℝ) * ((1 / (sigma + t * I - 1)) * psi t * x ^ (t * I))) := by
-    have hbdd : Integrable fun t : ℝ ↦
-        1 / ((sigma : ℂ) + t * I - 1) * (x : ℂ) ^ (t * I) * psi t := by
-      refine hpsi.bdd_mul (f := fun t : ℝ ↦ 1 / ((sigma : ℂ) + t * I - 1) * (x : ℂ) ^ (t * I))
-        ?_ (.of_forall hpolebound)
-      exact ((continuous_const.div (by fun_prop) hdenom).mul hxpow).aestronglyMeasurable
-    exact (hbdd.const_mul (A * (x ^ (1 - sigma) : ℝ) * (x ^ (sigma - 1) : ℝ))).congr
-      (.of_forall fun t ↦ by ring)
+        ((x ^ (sigma - 1) : ℝ) * ((1 / (sigma + t * I - 1)) * psi t * x ^ (t * I))) :=
+    ((integrable_inv_sub_one_mul_mul_cpow hpsi hx hsigma).const_mul
+      (A * (x ^ (1 - sigma) : ℝ) * (x ^ (sigma - 1) : ℝ))).congr (.of_forall fun t ↦ by ring)
   have hpoleConst :
       A * (x ^ (1 - sigma) : ℝ) *
           ((x ^ (sigma - 1) : ℝ) *

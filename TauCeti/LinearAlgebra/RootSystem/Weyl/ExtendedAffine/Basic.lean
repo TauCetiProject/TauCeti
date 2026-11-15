@@ -38,9 +38,9 @@ this specializes to the classical statement: `W_aff` is normal in `W_ext`, with 
 
 For a finite, reduced, irreducible, crystallographic pairing over an archimedean linearly ordered
 field, `W_aff` is transitive on the alcoves, so the stabilizer of the fundamental alcove in `W_ext`
-still maps onto `P∨ / Q∨` (`RootPairing.fundamentalAlcoveStabilizerToQuotient_surjective`, in
-`TauCeti.LinearAlgebra.RootSystem.Weyl.ExtendedAffine.Alcove`). Classically `W_aff` acts simply
-transitively on the alcoves, which makes this an isomorphism; that step is not taken here.
+still maps onto `P∨ / Q∨`, and since `W_aff` acts freely on the alcoves this restriction is an
+isomorphism (`RootPairing.fundamentalAlcoveStabilizerEquivQuotient`, in
+`TauCeti.LinearAlgebra.RootSystem.Weyl.ExtendedAffine.Alcove`).
 
 Like `W_aff`, the group `W_ext` permutes the affine root hyperplanes `αⱼ = m`: each element carries
 the affine function `αⱼ` to `αⱼ' + m` for a root `αⱼ'` and an integer `m`

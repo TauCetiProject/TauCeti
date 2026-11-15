@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Extreme
+public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
+public import Mathlib.Topology.Compactness.LocallyFinite
 import TauCeti.Analysis.Convex.Extreme
+import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Restricting a geometric simplicial complex to a set
@@ -22,6 +25,9 @@ When moreover `B` is an extreme subset of `|K|` (for instance a face of a convex
 `B` can be shrunk to a face with all its vertices in `B`. So a triangulation of a convex polytope
 induces a triangulation of each of its faces. This is what lets triangulations of polytopes
 meeting along common faces be compared, and glued, face by face.
+
+The restriction of a locally finite complex to a compact set has finitely many faces
+(`Geometry.SimplicialComplex.finite_faces_restrict`).
 
 ## Main definitions
 
@@ -91,6 +97,22 @@ theorem space_restrict_subset (hB : Convex 𝕜 B) : (K.restrict B).space ⊆ K.
 
 end OrderedRing
 
+section Compact
+
+variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E] {K : SimplicialComplex 𝕜 E} {B : Set E}
+
+/-- Only finitely many simplices of a locally finite complex have all their vertices in a
+compact set. -/
+theorem finite_faces_restrict (hK : LocallyFinite fun s : K.faces => convexHull 𝕜 (s : Set E))
+    (hB : IsCompact B) : (K.restrict B).faces.Finite := by
+  refine ((hK.finite_nonempty_inter_compact hB).image Subtype.val).subset ?_
+  intro s hs
+  obtain ⟨v, hv⟩ := K.nonempty_of_mem_faces hs.1
+  exact ⟨⟨s, hs.1⟩, ⟨v, subset_convexHull 𝕜 _ hv, hs.2 hv⟩, rfl⟩
+
+end Compact
+
 section LinearOrderedField
 
 variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
@@ -125,5 +147,21 @@ theorem space_restrict_of_isExtreme (hB : IsExtreme 𝕜 K.space B) (hBc : Conve
   exact mem_space_iff.2 ⟨t, ht, hxt⟩
 
 end LinearOrderedField
+
+section Intrinsic
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- If a convex set `C` meets the simplicial complex `L` exactly in the subcomplex covering its
+intrinsic frontier, and its intrinsic interior avoids `|L|`, then the restriction of `L` to `C`
+has the intrinsic frontier of `C` as its space. -/
+theorem space_restrict_eq_intrinsicFrontier {L : SimplicialComplex ℝ E} {C : Set E}
+    (hCv : Convex ℝ C) (hfr : intrinsicFrontier ℝ C ⊆ (L.restrict C).space)
+    (hint : Disjoint (intrinsicInterior ℝ C) L.space) :
+    (L.restrict C).space = intrinsicFrontier ℝ C := by
+  exact ((space_restrict_subset hCv).trans fun _ ⟨hxL, hxC⟩ =>
+    TauCeti.inter_subset_intrinsicFrontier_of_disjoint hint ⟨hxC, hxL⟩).antisymm hfr
+
+end Intrinsic
 
 end Geometry.SimplicialComplex

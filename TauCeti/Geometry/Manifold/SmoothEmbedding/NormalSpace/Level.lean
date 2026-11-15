@@ -100,10 +100,6 @@ variable [CompleteSpace 𝕜]
 continuous linear equivalence from the normal space of `f` at `x` onto `V`
 (`TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel_normalClass`). -/
 noncomputable def normalSpaceEquivOfLevel : f.NormalSpace x hn ≃L[𝕜] V :=
-  -- Tangent spaces are their model spaces, so the normal space is finite-dimensional.
-  haveI : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  haveI : FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
-    inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
   (f.normalSpaceLinearEquivOfLevel x hn hgf hsurj hdim).toContinuousLinearEquiv
 
 /-- The normal-space equivalence induced by `g` sends the normal class of an ambient tangent

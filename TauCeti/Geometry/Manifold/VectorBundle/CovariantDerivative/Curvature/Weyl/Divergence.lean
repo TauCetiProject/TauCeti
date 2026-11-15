@@ -42,6 +42,9 @@ identity `2 div Ric = d Scal` identifies with `d (tr_g P)`. The difference is `(
   smooth vector fields.
 * `CovariantDerivative.IsMetricCompatible.sum_derivWeylTensor_self_eq_mul_cottonTensor`:
   `div W = (n - 3) C`.
+* `CovariantDerivative.IsMetricCompatible.cottonTensor_eq_zero_of_eventually_weylTensor_eq_zero`:
+  away from dimensions `2` and `3`, vanishing Weyl tensor near a point forces vanishing Cotton
+  tensor at that point.
 
 ## References
 
@@ -53,7 +56,7 @@ identity `2 div Ric = d Scal` identifies with `d (tr_g P)`. The difference is `(
 public section
 
 open Bundle FiberBundle LinearMap.BilinForm
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -142,9 +145,7 @@ theorem IsMetricCompatible.derivWeylTensor_eq_mvfderiv_sub
   have hd (S : Π y : M, TangentSpace I y) (hS : CMDiff ∞ (T% S)) : MDiffAt (T% S) x :=
     hS.mdifferentiableAt (by simp)
   -- The Riemann part is the covariant derivative of `⟨R(U, V)W, Z⟩`.
-  have hR := hcov.inner_derivCurvature (extend E d) hU hV hW hZ x
-  simp only [extend_apply_self] at hR
-  rw [derivCurvature_apply, ← derivCurvatureTensor_apply cov cov x d hU hV hW] at hR
+  have hR := hcov.inner_derivCurvatureTensor cov x d hU hV hW hZ
   have hRd : MDiffAt (fun y ↦ inner ℝ (curvature y (U y) (V y) (W y)) (Z y)) x := by
     have h := TauCeti.Manifold.mdifferentiableAt_inner
       (hd _ (cov.contMDiff_curvatureOperator hU hV hW)) (hd Z hZ)
@@ -215,5 +216,36 @@ theorem IsMetricCompatible.sum_derivWeylTensor_self_eq_mul_cottonTensor {ι : Ty
     linear_combination (inner ℝ u w * h₁ - inner ℝ u v * h₂) / 2
   · field_simp
     linear_combination ((Module.finrank ℝ E : ℝ) - 1) * (inner ℝ u w * h₁ - inner ℝ u v * h₂)
+
+/-- A Weyl tensor that vanishes near a point has zero covariant derivative there. -/
+theorem IsMetricCompatible.derivWeylTensor_eq_zero_of_eventually_weylTensor_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov)
+    {x : M} (h : ∀ᶠ y in 𝓝 x, cov.weylTensor y = 0) (d : TangentSpace I x) :
+    cov.derivWeylTensor x d = 0 := by
+  ext u v w z
+  obtain ⟨U, hU, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨V, hV, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ z
+  have hz : (fun y ↦ cov.weylTensor y (U y) (V y) (W y) (Z y)) =ᶠ[𝓝 x] 0 :=
+    h.mono fun y hy ↦ by simp [hy]
+  rw [hcov.derivWeylTensor_eq_mvfderiv_sub hU hV hW hZ, hz.mvfderiv_eq, h.self_of_nhds]
+  simp
+
+/-- In dimensions other than `2` and `3`, vanishing Weyl tensor near a point forces vanishing
+Cotton tensor at the point, by `div W = (dim M - 3) C`. -/
+theorem IsMetricCompatible.cottonTensor_eq_zero_of_eventually_weylTensor_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0)
+    (hn₂ : Module.finrank ℝ E ≠ 2) (hn₃ : Module.finrank ℝ E ≠ 3)
+    {x : M} (h : ∀ᶠ y in 𝓝 x, cov.weylTensor y = 0) : cov.cottonTensor x = 0 := by
+  have hn : (Module.finrank ℝ E : ℝ) - 3 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn₃)
+  ext u v w
+  have hdiv := hcov.sum_derivWeylTensor_self_eq_mul_cottonTensor ht hn₂ x
+    (stdOrthonormalBasis ℝ (TangentSpace I x)) u v w
+  simp only [hcov.derivWeylTensor_eq_zero_of_eventually_weylTensor_eq_zero h,
+    LinearMap.zero_apply, Finset.sum_const_zero] at hdiv
+  exact (mul_eq_zero.mp hdiv.symm).resolve_left hn
 
 end CovariantDerivative

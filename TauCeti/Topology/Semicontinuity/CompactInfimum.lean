@@ -32,8 +32,12 @@ and in particular of continuous functions, which is `upperSemicontinuous_iInf`.
 
 * `LowerSemicontinuous.exists_iInf_eq`: on a nonempty compact space, a lower
   semicontinuous function attains its infimum.
+* `LowerSemicontinuous.lt_ciInf_iff`: on a nonempty compact space, a strict lower bound holds for
+  the infimum of a lower semicontinuous function if and only if it holds pointwise.
 * `LowerSemicontinuous.iInf_of_compactSpace`: the partial infimum of a jointly lower
   semicontinuous function over a compact first factor is lower semicontinuous.
+* `Continuous.iInf_of_compactSpace`: the partial infimum of a jointly continuous function over a
+  compact first factor is continuous.
 -/
 
 public section
@@ -51,6 +55,18 @@ theorem exists_iInf_eq [CompactSpace X] [Nonempty X] {f : X → β}
   obtain ⟨x₀, -, hx₀⟩ :=
     (hf.lowerSemicontinuousOn univ).exists_isMinOn univ_nonempty isCompact_univ
   exact ⟨x₀, (Equiv.Set.univ X).iInf_comp.symm.trans (hx₀.iInf_eq (mem_univ x₀))⟩
+
+/-- On a nonempty compact space, a strict lower bound holds for the infimum of a lower
+semicontinuous function if and only if it holds at every point. -/
+theorem lt_ciInf_iff [CompactSpace X] [Nonempty X] {f : X → β}
+    (hf : LowerSemicontinuous f) {b : β} :
+    b < ⨅ x, f x ↔ ∀ x, b < f x := by
+  have : Nonempty β := ⟨b⟩
+  have hbdd : BddBelow (range f) :=
+    image_univ ▸ (hf.lowerSemicontinuousOn univ).bddBelow_of_isCompact isCompact_univ
+  refine ⟨fun hb x => hb.trans_le (ciInf_le hbdd x), fun hb => ?_⟩
+  obtain ⟨x₀, hx₀⟩ := hf.exists_iInf_eq
+  exact hx₀.symm ▸ hb x₀
 
 /-- The infimum of a jointly lower semicontinuous function over a compact first factor is a lower
 semicontinuous function of the second variable.
@@ -79,3 +95,11 @@ theorem iInf_of_compactSpace [CompactSpace X] {f : X × Y → β}
   exact (huv ⟨hu (mem_univ x₀), hy⟩).trans_le hx₀.ge
 
 end LowerSemicontinuous
+
+/-- The infimum of a jointly continuous function over a compact first factor is a continuous
+function of the second variable. -/
+theorem Continuous.iInf_of_compactSpace [CompactSpace X] [TopologicalSpace β] [OrderTopology β]
+    {f : X × Y → β} (hf : Continuous f) :
+    Continuous fun y => ⨅ x, f (x, y) := by
+  simpa only [image_univ, sInf_range] using
+    isCompact_univ.continuous_sInf (f := fun y x => f (x, y)) (hf.comp continuous_swap)

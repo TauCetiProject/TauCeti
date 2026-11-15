@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.GiryMonad
-public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
 
@@ -29,8 +28,7 @@ independent exponential variables is Laplace.
 * `TauCeti.Probability.isProbabilityMeasure_discreteLaplaceMeasure` proves normalization, and
   `TauCeti.Probability.discreteLaplaceMeasure_singleton` computes the native masses;
 * `TauCeti.Probability.discreteLaplaceMeasure_zero_right` identifies the `q = 0` boundary as a
-  point mass, and `TauCeti.Probability.support_discreteLaplaceMeasure` gives full integer support
-  for `0 < q < 1`;
+  point mass;
 * `TauCeti.Probability.map_add_const_discreteLaplaceMeasure` and
   `TauCeti.Probability.map_neg_discreteLaplaceMeasure` give translation and reflection;
 * `TauCeti.Probability.measurable_discreteLaplaceMeasure` proves joint parameter measurability of
@@ -71,11 +69,20 @@ def discreteLaplaceMeasure (m : ℤ) (q : ℝ) : Measure ℤ :=
     Measure.sum fun k => ENNReal.ofReal (discreteLaplaceWeightReal m q k) • Measure.dirac k
   else 0
 
-/-- In the valid parameter range, the discrete Laplace law is its weighted Dirac sum. -/
-theorem discreteLaplaceMeasure_eq_sum_dirac (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) :
+/-- For `0 ≤ q`, the discrete Laplace law is its weighted Dirac sum. For `q ≥ 1` both sides are
+zero. -/
+theorem discreteLaplaceMeasure_eq_sum_dirac (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) :
     discreteLaplaceMeasure m q =
       Measure.sum fun k => ENNReal.ofReal (discreteLaplaceWeightReal m q k) • Measure.dirac k := by
-  simp [discreteLaplaceMeasure, hq0, hq1]
+  by_cases hq1 : q < 1
+  · simp [discreteLaplaceMeasure, hq0, hq1]
+  · have hnonpos (k : ℤ) : discreteLaplaceWeightReal m q k ≤ 0 := by
+      have h1 : 1 - q ≤ 0 := by linarith [not_lt.mp hq1]
+      have h2 : 0 ≤ q ^ (k - m).natAbs := by positivity
+      have h3 : 0 < 1 + q := by linarith
+      rw [discreteLaplaceWeightReal_def]
+      exact div_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonpos_of_nonneg h1 h2) h3.le
+    simp [discreteLaplaceMeasure, hq1, ENNReal.ofReal_of_nonpos (hnonpos _)]
 
 /-- Outside the parameter range `0 ≤ q < 1`, the discrete Laplace law is totalized to zero. -/
 @[simp]
@@ -119,32 +126,32 @@ theorem hasSum_discreteLaplaceWeightReal (m : ℤ) {q : ℝ} (hq : |q| < 1) :
 /-- The discrete Laplace law is a probability measure for `0 ≤ q < 1`. -/
 theorem isProbabilityMeasure_discreteLaplaceMeasure (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q)
     (hq1 : q < 1) : IsProbabilityMeasure (discreteLaplaceMeasure m q) := by
-  rw [discreteLaplaceMeasure_eq_sum_dirac m hq0 hq1]
+  rw [discreteLaplaceMeasure_eq_sum_dirac m hq0]
   have hq : |q| < 1 := abs_lt.mpr ⟨by linarith, hq1⟩
   exact (hasSum_discreteLaplaceWeightReal m hq).isProbabilityMeasure_sum_dirac
     (discreteLaplaceWeightReal_nonneg m hq0 hq1.le)
 
-/-- The singleton mass of the discrete Laplace law in its valid parameter range. -/
+/-- The singleton mass of the discrete Laplace law for `0 ≤ q`. -/
 @[simp]
-theorem discreteLaplaceMeasure_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) (k : ℤ) :
+theorem discreteLaplaceMeasure_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (k : ℤ) :
     discreteLaplaceMeasure m q {k} = ENNReal.ofReal (discreteLaplaceWeightReal m q k) := by
-  rw [discreteLaplaceMeasure_eq_sum_dirac m hq0 hq1]
+  rw [discreteLaplaceMeasure_eq_sum_dirac m hq0]
   exact Measure.sum_smul_dirac_singleton
 
-/-- The real singleton mass of the discrete Laplace law in its valid parameter range. -/
-theorem discreteLaplaceMeasure_real_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1)
+/-- The real singleton mass of the discrete Laplace law for `0 ≤ q ≤ 1`. -/
+theorem discreteLaplaceMeasure_real_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
     (k : ℤ) : (discreteLaplaceMeasure m q).real {k} = discreteLaplaceWeightReal m q k := by
-  rw [measureReal_def, discreteLaplaceMeasure_singleton m hq0 hq1,
-    ENNReal.toReal_ofReal (discreteLaplaceWeightReal_nonneg m hq0 hq1.le k)]
+  rw [measureReal_def, discreteLaplaceMeasure_singleton m hq0,
+    ENNReal.toReal_ofReal (discreteLaplaceWeightReal_nonneg m hq0 hq1 k)]
 
-/-! ### Boundary and support -/
+/-! ### Boundary and positivity -/
 
 /-- The parameter `q = 0` gives the point mass at the center. -/
 @[simp]
 theorem discreteLaplaceMeasure_zero_right (m : ℤ) :
     discreteLaplaceMeasure m 0 = Measure.dirac m := by
   refine Measure.ext_of_singleton fun k => ?_
-  rw [discreteLaplaceMeasure_singleton m le_rfl zero_lt_one, Measure.dirac_apply,
+  rw [discreteLaplaceMeasure_singleton m le_rfl, Measure.dirac_apply,
     discreteLaplaceWeightReal_def]
   by_cases hk : k = m
   · simp [hk]
@@ -154,17 +161,8 @@ theorem discreteLaplaceMeasure_zero_right (m : ℤ) :
 /-- For `0 < q < 1`, every integer has positive discrete Laplace mass. -/
 theorem discreteLaplaceMeasure_singleton_pos (m : ℤ) {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1)
     (k : ℤ) : 0 < discreteLaplaceMeasure m q {k} := by
-  rw [discreteLaplaceMeasure_singleton m hq0.le hq1, ENNReal.ofReal_pos]
+  rw [discreteLaplaceMeasure_singleton m hq0.le, ENNReal.ofReal_pos]
   exact discreteLaplaceWeightReal_pos m hq0 hq1 k
-
-/-- For `0 < q < 1`, the discrete Laplace law has full topological support on `ℤ`. -/
-theorem support_discreteLaplaceMeasure (m : ℤ) {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1) :
-    (discreteLaplaceMeasure m q).support = univ := by
-  ext k
-  simp only [mem_univ, iff_true, Measure.mem_support_iff_forall]
-  intro U hU
-  exact (discreteLaplaceMeasure_singleton_pos m hq0 hq1 k).trans_le
-    (measure_mono (singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 /-! ### Translation and reflection -/
 
@@ -177,7 +175,7 @@ theorem map_add_const_discreteLaplaceMeasure (m n : ℤ) (q : ℝ) :
     have hpre : (· + n) ⁻¹' {k} = {k - n} := by
       ext; simp [eq_sub_iff_add_eq, ← sub_eq_add_neg]
     rw [Measure.map_apply (by fun_prop) (measurableSet_singleton k), hpre,
-      discreteLaplaceMeasure_singleton _ hq.1 hq.2, discreteLaplaceMeasure_singleton _ hq.1 hq.2,
+      discreteLaplaceMeasure_singleton _ hq.1, discreteLaplaceMeasure_singleton _ hq.1,
       discreteLaplaceWeightReal_def, discreteLaplaceWeightReal_def, sub_sub, add_comm n m]
   · simp [hq]
 
@@ -190,7 +188,7 @@ theorem map_neg_discreteLaplaceMeasure (m : ℤ) (q : ℝ) :
     have hpre : Neg.neg ⁻¹' {k} = {-k} := by ext; simp
     have habs : (k - -m).natAbs = (-k - m).natAbs := by omega
     rw [Measure.map_apply (by fun_prop) (measurableSet_singleton k), hpre,
-      discreteLaplaceMeasure_singleton _ hq.1 hq.2, discreteLaplaceMeasure_singleton _ hq.1 hq.2,
+      discreteLaplaceMeasure_singleton _ hq.1, discreteLaplaceMeasure_singleton _ hq.1,
       discreteLaplaceWeightReal_def, discreteLaplaceWeightReal_def, habs]
   · simp [hq]
 

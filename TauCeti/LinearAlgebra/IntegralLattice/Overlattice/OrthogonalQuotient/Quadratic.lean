@@ -72,7 +72,6 @@ class of a dual vector of `M`, which both comparisons are built from, is defined
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4,
   Proposition 1.4.1, stated there in the full-norm `ℚ/2ℤ` convention.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
 -/
 
 public section

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Pullback
+public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Pullback.Basic
 public import TauCeti.CategoryTheory.Linear.LinearFunctor
 
 /-!

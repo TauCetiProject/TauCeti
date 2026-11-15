@@ -50,10 +50,18 @@ both sides, in order to apply the rule to `e.symm` as well.
   from `E` to `E₀`.
 * `ContinuousLinearMap.HasLeftInverse.isImmersion`: a continuous linear map with a continuous
   linear left inverse is an immersion.
+* `TauCeti.isImmersion_prodMkRight_of_extChartAt_eq_zero`: the slice `x ↦ (c, x)` of a product
+  `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
 * `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
   modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
+* `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
+  `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
+  lowering the regularity order preserves immersions.
+* `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
+  immersion data, a point `b` of the source chart is sent by `f` to the point read as
+  `h.equiv (b, 0)` in the target chart.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -302,6 +310,22 @@ theorem _root_.ContinuousLinearMap.HasLeftInverse.isImmersion {f : E →L[𝕜] 
       e.symm fun u _ ↦ ?_
   simp [e]
 
+/-! ### Slices of a product -/
+
+/-- **Slices of a product.** If the preferred chart of `N` at `c` sends `c` to `0`, then the slice
+`x ↦ (c, x)` of the product `N × M` is a `C^n` immersion with complement `E'`: in product charts
+it is the inclusion `u ↦ (0, u)`. -/
+theorem isImmersion_prodMkRight_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold J n N]
+    {c : N} (hc : extChartAt J c c = 0) :
+    IsImmersion I (J.prod I) n (Prod.mk c : M → N × M) :=
+  IsImmersionOfComplement.isImmersion (F := E') fun x ↦
+    IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
+      (continuous_const.prodMk continuous_id).continuousAt
+      (ContinuousLinearEquiv.prodComm 𝕜 E E') fun u hu ↦ by
+        simp only [Function.comp_apply, ContinuousLinearEquiv.prodComm_apply, Prod.swap_prod_mk]
+        rw [extChartAt_prod, PartialEquiv.prod_coe]
+        simp only [hc, (extChartAt I x).right_inv hu]
+
 /-! ### Immersions into finite-dimensional models -/
 
 section FiniteDimensional
@@ -349,5 +373,62 @@ theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [N
   omega
 
 end Euclidean
+
+/-! ### Monotonicity in the regularity order -/
+
+section OfLe
+
+variable {m : ℕ∞ω}
+
+/-- Lowering the regularity order preserves the immersion normal form at a point, with the same
+complement. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.of_le {x : M}
+    (h : IsImmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsImmersionAtOfComplement F I J n f x :=
+  IsImmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being an immersion at a point. -/
+theorem _root_.Manifold.IsImmersionAt.of_le {x : M}
+    (h : IsImmersionAt I J m f x) (hnm : n ≤ m) :
+    IsImmersionAt I J n f x :=
+  (h.isImmersionAtOfComplement_complement.of_le hnm).isImmersionAt
+
+/-- Lowering the regularity order preserves immersions with a fixed complement. -/
+theorem _root_.Manifold.IsImmersionOfComplement.of_le
+    (h : IsImmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsImmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves immersions. -/
+theorem _root_.Manifold.IsImmersion.of_le
+    (h : IsImmersion I J m f) (hnm : n ≤ m) :
+    IsImmersion I J n f :=
+  (h.isImmersionOfComplement_complement.of_le hnm).isImmersion
+
+end OfLe
+
+/-! ### Points of the source read in the immersion charts -/
+
+/-- In the charts `φ = h.domChart.extend I` and `e = h.codChart.extend J` of immersion data `h` of
+`f` at `x`, every point `b` of the target of `φ` is sent to the slice: `f (φ⁻¹ b)` lies in the
+chart `e`, corresponds to `h.equiv (b, 0)`, and `h.equiv (b, 0)` lies in the target of `e`. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq {x : M}
+    (h : IsImmersionAtOfComplement F I J n f x) {b : E} (hb : b ∈ (h.domChart.extend I).target) :
+    f ((h.domChart.extend I).symm b) ∈ h.codChart.source ∧
+      h.codChart.extend J (f ((h.domChart.extend I).symm b)) = h.equiv (b, 0) ∧
+      (h.codChart.extend J).symm (h.equiv (b, 0)) = f ((h.domChart.extend I).symm b) ∧
+      h.equiv (b, 0) ∈ (h.codChart.extend J).target := by
+  have hsrc : (h.domChart.extend I).symm b ∈ h.domChart.source := by
+    simpa using (h.domChart.extend I).map_target hb
+  have hy : f ((h.domChart.extend I).symm b) ∈ h.codChart.source :=
+    h.source_subset_preimage_source hsrc
+  have hw : h.codChart.extend J (f ((h.domChart.extend I).symm b)) = h.equiv (b, 0) :=
+    h.writtenInCharts hb
+  refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
+  rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
 
 end TauCeti

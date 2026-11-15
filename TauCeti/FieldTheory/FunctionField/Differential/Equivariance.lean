@@ -95,7 +95,7 @@ theorem weilDifferentialRepresentation_weilDifferentialOfSeparating (hF : IsFunc
     weilDifferentialOfSeparating_def hF hx]
   refine weilDifferentialCotrace_apply_eq_repartitionTrace (i₁ := A₁)
     (IsFunctionField.ratFunc k) hF σ
-    (map_algebraMap_ratFuncAlgebraOfTranscendental σ σ.injective hx) _ β _ fun P ↦ ?_
+    (map_algebraMap_ratFuncAlgebraOfTranscendental σ hx) _ β _ fun P ↦ ?_
   have hσ : σ.restrictScalars k = σ := AlgEquiv.ext fun _ ↦ rfl
   simp [Place.smul_eq_map, AlgEquiv.aut_inv, hσ]
 

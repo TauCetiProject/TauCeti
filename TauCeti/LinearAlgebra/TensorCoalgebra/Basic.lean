@@ -24,8 +24,8 @@ empty word are the separate type `TauCeti.TensorWords`, built in
 `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic`.
 
 The construction uses Mathlib's `TensorPower` and direct-sum/tensor-product equivalences, together
-with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction in
-the `DGAInfinity` roadmap.
+with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction of
+`A∞` algebras (`TauCeti.AInfinityAlgebra`).
 
 ## Main definitions
 
@@ -70,6 +70,10 @@ namespace ReducedTensorWords
 noncomputable def of (n : {n : ℕ // 0 < n}) :
     TensorPower R n.1 M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n
+
+/-- Inclusion into reduced tensor words is the direct-sum inclusion. -/
+theorem of_def (n : {n : ℕ // 0 < n}) :
+    of R M n = DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n := (rfl)
 
 /-- The positive tensor-power inclusions generate all reduced tensor words. -/
 theorem iSup_range_of : ⨆ n : {n : ℕ // 0 < n}, LinearMap.range (of R M n) = ⊤ := by

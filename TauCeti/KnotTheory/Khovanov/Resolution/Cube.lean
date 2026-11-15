@@ -40,6 +40,8 @@ All in the namespace `TauCeti.PDCode`:
 * `cubeState S`: the state with the `B`-smoothing exactly at the crossings of `S`.
 * `resolutionCube D hD R j`: the degree-`j` quantum component of the cube of resolutions of the
   planar code `D`, a functor `Finset (Fin n) ⥤ ModuleCat R`.
+* `resolutionCubeObjCongr`: reindexing the circle tensors along a bijection of resolved circles,
+  as a linear equivalence of vertices of cubes of resolutions with pieces of the same degree.
 * `khovanovBracket D hD R`: the unnormalized Khovanov complex, as a graded object of cochain
   complexes indexed by the quantum degree.
 
@@ -54,9 +56,10 @@ All in the namespace `TauCeti.PDCode`:
 
 ## References
 
-* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §3.
+* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000),
+  §§3.2, 4.2.
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*,
-  Algebr. Geom. Topol. 2 (2002), §2.2.
+  Algebr. Geom. Topol. 2 (2002), §§3.1-3.2.
 -/
 
 public section
@@ -66,8 +69,6 @@ noncomputable section
 open CategoryTheory Finset
 
 namespace TauCeti.PDCode
-
-universe u
 
 variable {n : ℕ}
 
@@ -136,6 +137,8 @@ end TauCeti.OrientedPDCode
 
 namespace TauCeti.PDCode
 
+universe u
+
 variable {n : ℕ}
 
 /-- The vertex `S` is recovered from its state. -/
@@ -152,12 +155,12 @@ theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
 crossing `a ∈ T \ S`. -/
 theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) (j : Fin n) (hj : j ≠ a) : cubeState S j = cubeState T j := by
-  obtain ⟨b, hbS, rfl⟩ := h.exists_finset_insert
+  obtain ⟨b, -, rfl⟩ := h.exists_finset_insert
   obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
   simp [cubeState, hj]
 
-/-- Along an edge `S ⋖ T` of the cube, the states of `S` and `T` differ at the added crossing
-`a ∈ T \ S`. -/
+/-- If `a ∉ S` and `a ∈ T`, the states of `S` and `T` differ at `a` (in particular, along an edge
+`S ⋖ T` of the cube, at its added crossing). -/
 theorem cubeState_ne_of_notMem_of_mem {S T : Finset (Fin n)} {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) : cubeState S a ≠ cubeState T a := by
   simp [cubeState, haS, haT]
@@ -330,6 +333,29 @@ theorem coe_resolutionCubeVertexEquiv (S : Finset (Fin n)) (x : (D.resolutionCub
       D.resolutionCubeι hD R j S x :=
   (rfl)
 
+/-- Reindexing the circle tensors along a bijection `e` of resolved circles, as a linear
+equivalence from the vertex `S` of the degree-`j` cube of resolutions of `D` to the vertex `S'`
+of the degree-`j'` cube of resolutions of `D'`, whose pieces have the same degree
+`j - |S| = j' - |S'|`. It is characterized by
+`TauCeti.PDCode.resolutionCubeι_resolutionCubeObjCongr`. -/
+def resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' : D'.IsPlanar) {j' : ℤ}
+    {S : Finset (Fin n)} {S' : Finset (Fin m)}
+    (e : D.ResolvedCircle (cubeState S) ≃ D'.ResolvedCircle (cubeState S'))
+    (h : j - #S = j' - #S') :
+    (D.resolutionCube hD R j).obj S ≃ₗ[R] (D'.resolutionCube hD' R j').obj S' :=
+  (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e).ofSubmodules _ _ (by
+    rw [Khovanov.map_reindex_circleQuantumGrading_piece, h])
+
+/-- `TauCeti.PDCode.resolutionCubeObjCongr` reindexes the circle tensor along the bijection of
+resolved circles. -/
+theorem resolutionCubeι_resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' : D'.IsPlanar)
+    {j' : ℤ} {S : Finset (Fin n)} {S' : Finset (Fin m)}
+    (e : D.ResolvedCircle (cubeState S) ≃ D'.ResolvedCircle (cubeState S'))
+    (h : j - #S = j' - #S') (x : (D.resolutionCube hD R j).obj S) :
+    (D'.resolutionCubeι hD' R j' S').hom (D.resolutionCubeObjCongr hD R j hD' e h x) =
+      PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e ((D.resolutionCubeι hD R j S).hom x) := by
+  unfold resolutionCubeObjCongr; rfl
+
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =
       resolutionCubeEdge D hD R j (covBy_insert ha) :=
@@ -362,11 +388,12 @@ crossing added along the edge. This restates
 `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι` for a target which is only
 propositionally `insert a S`. -/
 theorem resolutionCube_map_homOfLE_comp_resolutionCubeι {S T : Finset (Fin n)} {a : Fin n}
-    (ha : a ∉ S) (hT : insert a S = T) (hST : S ⊆ T)
+    (hT : insert a S = T) (hST : S ⊆ T)
     (hst : ∀ i, i ≠ a → cubeState S i = cubeState T i) (hc : cubeState S a ≠ cubeState T a)
     (h : #(D.circlesAt (cubeState S) a) = 2 ∨ #(D.circlesAt (cubeState T) a) = 2) :
     (D.resolutionCube hD R j).map (homOfLE hST) ≫ D.resolutionCubeι hD R j T =
       D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (D.resolutionEdgeMap hst hc h R) := by
+  have ha : a ∉ S := fun hm => hc (by subst hT; simp [Finset.insert_eq_of_mem hm])
   subst hT
   exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j ha
 

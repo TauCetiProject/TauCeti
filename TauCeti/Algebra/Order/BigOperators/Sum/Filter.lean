@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # Finite sums over filters
@@ -25,10 +26,14 @@ namespace Finset
 /-- For a positive family on a finite type with at least two elements, the sum over all indices
 other than a given one is positive. -/
 theorem sum_filter_ne_pos {ι M : Type*} [Fintype ι] [DecidableEq ι] [Nontrivial ι]
-    [AddCommMonoid M] [Preorder M] [IsOrderedCancelAddMonoid M] [AddLeftStrictMono M] {a : ι → M}
+    [AddCommMonoid M] [Preorder M] [AddLeftStrictMono M] {a : ι → M}
     (ha : ∀ i, 0 < a i) (i : ι) : 0 < ∑ j with j ≠ i, a j := by
   obtain ⟨j, hj⟩ := exists_ne i
-  exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simpa using hj⟩
+  suffices ∀ t : Finset ι, t.Nonempty → 0 < ∑ k ∈ t, a k from this _ ⟨j, by simpa using hj⟩
+  intro t ht
+  induction ht using Finset.Nonempty.cons_induction with
+  | singleton k => simpa using ha k
+  | cons k t hk _ ih => rw [sum_cons]; exact (ha k).trans (lt_add_of_pos_right _ ih)
 
 variable {ι α M : Type*} [DecidableEq α] [AddCommMonoid M] {a : ι → α} {e : ι → M} {p q : α}
 
@@ -37,8 +42,7 @@ over the terms indexed by `q` vanishes whenever `q ≤ p` fails, for instance wh
 theorem sum_filter_eq_zero_of_forall_ne_zero_le [LE α] (s : Finset ι) (hqp : ¬q ≤ p)
     (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
     ∑ i ∈ s with a i = q, e i = 0 :=
-  sum_eq_zero fun i hi ↦ by_contra fun hei ↦
-    hqp <| (mem_filter.1 hi).2 ▸ ha i (mem_filter.1 hi).1 hei
+  sum_filter_eq_zero_of_ne fun i hi hei hq ↦ hqp (hq ▸ ha i hi hei)
 
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
 sum at or beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from

@@ -61,8 +61,13 @@ variable {R S : Type*} [CommRing R] [IsDomain R] [CommRing S] [Algebra R S]
 /-- **There are at most `Module.finrank R S` primes above a prime.** Every ramification index and
 inertia degree in the fundamental identity is positive, so every prime above `p` contributes at
 least one to the rank. -/
-theorem ncard_primesOver_le_finrank (p : Ideal R) [p.IsPrime] :
+theorem ncard_primesOver_le_finrank (p : Ideal R) :
     (p.primesOver S).ncard ≤ finrank R S := by
+  by_cases hp : p.IsPrime
+  swap
+  · have : p.primesOver S = ∅ := Set.eq_empty_of_forall_notMem fun P hP ↦
+      hp (hP.2.over.symm ▸ hP.1.under R)
+    simp [this]
   have : Fintype (p.primesOver S) := (Algebra.QuasiFinite.finite_primesOver p).fintype
   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_eq_sum_ones,
     ← Ideal.sum_ramification_inertia_eq_finrank p S]

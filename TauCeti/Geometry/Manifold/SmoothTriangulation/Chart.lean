@@ -22,8 +22,11 @@ embedded rectilinear complexes in coordinate charts whose images cover `M`, and 
 together. We supply the local input at interior points: every interior point `x` of a Hausdorff
 manifold which is both `Cⁿ` and `C¹`, modelled on a finite-dimensional space `E`, lies in the
 interior of the image of a closed embedding of a closed simplex of the top dimension `finrank ℝ E`
-which is a `Cⁿ` immersion of the simplex. The simplex is the image under the inverse chart of a
-small simplex around the chart image of `x`, spanned by an affine basis of `E`.
+which is a `Cⁿ` immersion of the simplex. The embedded simplex can be chosen inside any prescribed
+neighbourhood of `x`. Compact sets of interior points therefore admit finite covers by interiors
+of such embedded simplices, subordinate to a prescribed neighbourhood at each selected point.
+The simplex is the image under the inverse chart of a small simplex around the chart image of `x`,
+spanned by an affine basis of `E`.
 
 ## Main results
 
@@ -34,7 +37,9 @@ small simplex around the chart image of `x`, spanned by an affine basis of `E`.
 * `ModelWithCorners.IsInteriorPoint.exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds`:
   every interior point of a Hausdorff manifold modelled on a finite-dimensional space is in the
   interior of the image of a `Cⁿ` closed embedding of a top-dimensional simplex which is an
-  immersion of the simplex.
+  immersion of the simplex, contained in a prescribed neighbourhood.
+* `IsCompact.exists_finite_isSimplexImmersion_cover`: compact sets of interior points have finite
+  covers by interiors of embedded immersed simplices, subordinate to prescribed neighbourhoods.
 
 ## References
 
@@ -104,18 +109,21 @@ open TauCeti
 /-- **Embedded simplices at interior points.** Every interior point `x` of a Hausdorff `Cⁿ`
 manifold modelled on a finite-dimensional space `E` has a neighbourhood which is the image of a
 closed embedding of a simplex with `finrank ℝ E + 1` vertices that is a `Cⁿ` immersion of the
-simplex. The simplex is the image under the inverse chart at `x` of a small rectilinear simplex
-around the chart image of `x`. -/
+simplex. It can be chosen inside any prescribed neighbourhood `s` of `x`. The simplex is the
+image under the inverse chart at `x` of a small rectilinear simplex around the chart image
+of `x`. -/
 theorem exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds [FiniteDimensional ℝ E]
     [T2Space M] [IsManifold I n M] [IsManifold I 1 M] {x : M} (hx : I.IsInteriorPoint x)
-    (hσ : σ.card = finrank ℝ E + 1) :
+    (hσ : σ.card = finrank ℝ E + 1) {s : Set M} (hs : s ∈ 𝓝 x) :
     ∃ g : StandardSimplex σ → M,
-      IsSimplexImmersion I n g ∧ IsClosedEmbedding g ∧ range g ∈ 𝓝 x := by
+      IsSimplexImmersion I n g ∧ IsClosedEmbedding g ∧ range g ∈ 𝓝 x ∧ range g ⊆ s := by
   classical
   -- An affine basis of `E`, indexed by `σ`, whose closed simplex lies in the chart target and
   -- contains the chart image of `x` in its interior.
   obtain ⟨b₀, hbx, hbt⟩ := exists_mem_interior_convexHull_affineBasis
-    (mem_interior_iff_mem_nhds.mp (ModelWithCorners.isInteriorPoint_iff.mp hx))
+    (Filter.inter_mem
+      (mem_interior_iff_mem_nhds.mp (ModelWithCorners.isInteriorPoint_iff.mp hx))
+      (extChartAt_preimage_mem_nhds hs))
   let b : AffineBasis σ ℝ E := b₀.reindex (Fintype.equivOfCardEq (by simp [hσ]))
   have hb : range b = range b₀ := by
     rw [AffineBasis.coe_reindex, EquivLike.range_comp]
@@ -123,53 +131,56 @@ theorem exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds [FiniteDimens
   -- The simplex in `E` spanned by `b`, read in barycentric coordinates.
   let L : (σ → ℝ) →ₗ[ℝ] E := Fintype.linearCombination ℝ b
   let p : StandardSimplex σ → E := fun y => L fun a => y.1 a
-  have hL (v : σ → ℝ) (hv : ∑ a, v a = 0) (hv0 : L v = 0) : v = 0 := by
-    refine funext fun a => (affineIndependent_iff_of_fintype ℝ ⇑b).mp b.ind v hv ?_ a
-    rwa [Finset.weightedVSub_eq_linear_combination _ hv, ← Fintype.linearCombination_apply]
-  have hsum (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
-    simpa using (Finset.standardSimplexHomeomorph σ y).total_of_fintype
-  have hp : range p = convexHull ℝ (range b) := by
-    refine Subset.antisymm ?_ fun z hz => ?_
-    · rintro _ ⟨y, rfl⟩
-      simp only [p, L, Fintype.linearCombination_apply]
-      exact (convex_convexHull ℝ _).sum_mem (fun a _ => StandardSimplex.nonneg y a) (hsum y)
-        fun a _ => subset_convexHull ℝ _ (mem_range_self a)
-    -- A point of the closed simplex is the image of its barycentric coordinates.
-    rw [b.convexHull_eq_nonneg_coord] at hz
-    let w : Convexity.StdSimplex ℝ σ :=
-      ⟨Finsupp.equivFunOnFinite.symm fun a => b.coord a z, fun a => hz a, by
-        rw [Finsupp.sum_fintype _ _ fun _ => rfl]
-        simpa using b.sum_coord_apply_eq_one z⟩
-    refine ⟨(Finset.standardSimplexHomeomorph σ).symm w, ?_⟩
-    have hw : (fun a : σ => ((Finset.standardSimplexHomeomorph σ).symm w).1 a) =
-        fun a => b.coord a z := by
-      funext a
-      rw [← Finset.standardSimplexHomeomorph_weights, Homeomorph.apply_symm_apply]
-      exact Finsupp.equivFunOnFinite_symm_apply_apply _ _
-    simp only [p]
-    rw [hw, Fintype.linearCombination_apply, b.linear_combination_coord_eq_self]
-  have hpt : range p ⊆ (extChartAt I x).target := hp ▸ hbt
+  have hL (v : σ → ℝ) (hv : ∑ a, v a = 0) (hv0 : L v = 0) : v = 0 :=
+    funext fun a => b.ind.eq_zero_of_sum_eq_zero (s := Finset.univ) hv
+      (by simpa [L, Fintype.linearCombination_apply] using hv0) a (Finset.mem_univ a)
+  have hp : range p = convexHull ℝ (range b) := Finset.range_linearCombination_standardSimplex b
+  have hpt : range p ⊆ (extChartAt I x).target := fun z hz => (hbt (hp ▸ hz)).1
   have hpc : Continuous p := L.continuous_of_finiteDimensional.comp <|
     continuous_pi fun a => (continuous_apply (a : ι)).comp continuous_induced_dom
-  have hpi : Injective p := by
-    intro y y' hyy'
-    have hv := hL ((fun a : σ => y.1 a) - fun a : σ => y'.1 a)
-      (by simp only [Pi.sub_apply, Finset.sum_sub_distrib, hsum, sub_self])
-      (by rw [map_sub]; exact sub_eq_zero.mpr hyy')
-    refine (Finset.standardSimplexHomeomorph σ).injective (Convexity.StdSimplex.ext ?_)
-    ext a
-    simpa [sub_eq_zero] using congrFun hv a
+  have hpi : Injective p := Finset.injective_linearCombination_standardSimplex b.ind
   refine ⟨(extChartAt I x).symm ∘ p,
-    (LinearMap.isSimplexImmersion L hL).extChartAt_symm_comp hpt, ?_, ?_⟩
+    (LinearMap.isSimplexImmersion L hL).extChartAt_symm_comp hpt, ?_, ?_, ?_⟩
   · refine Continuous.isClosedEmbedding
       ((continuousOn_extChartAt_symm x).comp_continuous hpc fun y => hpt (mem_range_self y))
       fun y y' hyy' => hpi ?_
     exact (extChartAt I x).symm.injOn (hpt (mem_range_self y)) (hpt (mem_range_self y')) hyy'
-  -- Every point of the chart source whose chart image lies in the simplex is in the image.
-  filter_upwards [extChartAt_source_mem_nhds (I := I) x,
-    (continuousAt_extChartAt (I := I) x).preimage_mem_nhds (mem_interior_iff_mem_nhds.mp hbx)]
-    with y hys hyp
-  obtain ⟨z, hz⟩ : extChartAt I x y ∈ range p := hp ▸ hyp
-  exact ⟨z, by rw [comp_apply, hz, (extChartAt I x).left_inv hys]⟩
+  · -- Every point of the chart source whose chart image lies in the simplex is in the image.
+    filter_upwards [extChartAt_source_mem_nhds (I := I) x,
+      (continuousAt_extChartAt (I := I) x).preimage_mem_nhds (mem_interior_iff_mem_nhds.mp hbx)]
+      with y hys hyp
+    obtain ⟨z, hz⟩ : extChartAt I x y ∈ range p := hp ▸ hyp
+    exact ⟨z, by rw [comp_apply, hz, (extChartAt I x).left_inv hys]⟩
+  · rintro _ ⟨y, rfl⟩
+    exact (hbt (hp ▸ mem_range_self (f := p) y)).2
 
 end ModelWithCorners.IsInteriorPoint
+
+namespace IsCompact
+
+/-- A compact set of interior points has a finite cover by interiors of closed embeddings of
+top-dimensional simplices which are `Cⁿ` immersions of the simplex. The simplex at each
+selected point lies in its prescribed neighbourhood. No
+compatibility between different simplices is assumed or asserted. This supplies the finite
+local cover used before fitting simplices together in a smooth triangulation. -/
+theorem exists_finite_isSimplexImmersion_cover [FiniteDimensional ℝ E] [T2Space M]
+    [IsManifold I n M] [IsManifold I 1 M] {K : Set M} (hK : IsCompact K)
+    (hI : ∀ x ∈ K, I.IsInteriorPoint x) (hσ : σ.card = finrank ℝ E + 1)
+    (U : M → Set M) (hU : ∀ x ∈ K, U x ∈ 𝓝 x) :
+    ∃ t : Finset K, ∃ g : t → StandardSimplex σ → M,
+      (∀ x, TauCeti.IsSimplexImmersion I n (g x) ∧ IsClosedEmbedding (g x) ∧
+        range (g x) ∈ 𝓝 (x.1 : K).1 ∧ range (g x) ⊆ U (x.1 : K).1) ∧
+      K ⊆ ⋃ x, interior (range (g x)) := by
+  classical
+  have hlocal (x : K) := (hI x x.2).exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds
+    (n := n) hσ (hU x x.2)
+  choose f hf hc hn hs using hlocal
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K => interior (range (f x)))
+    (fun _ => isOpen_interior) (fun x hx =>
+      mem_iUnion.mpr ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.mpr (hn ⟨x, hx⟩)⟩)
+  refine ⟨t, fun x => f x.1, fun x => ⟨hf _, hc _, hn _, hs _⟩, ?_⟩
+  intro x hx
+  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (ht hx)
+  exact mem_iUnion.mpr ⟨⟨y, hy⟩, hxy⟩
+
+end IsCompact

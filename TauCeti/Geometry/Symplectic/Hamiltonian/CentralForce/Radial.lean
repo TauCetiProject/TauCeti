@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.InnerProductSpace.QuadraticForm.TwoVector
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Radial reduction of central-force motion
@@ -76,6 +77,9 @@ Two consequences describe the qualitative radial motion:
   energy, with equality exactly at the radial turning points.
 * `stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential_eq_zero_iff`:
   the equilibria of the reduced system are the critical points of the effective potential.
+* `TauCeti.centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt`,
+  `TauCeti.hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential`: along the
+  reduced motion the energy `H_ℓ` is conserved and `r' = p_r / m`.
 * `TauCeti.forall_hasDerivAt_circularMotion_iff`: circular motions solve Hamilton's equations
   exactly at the critical points of the effective potential.
 
@@ -156,6 +160,15 @@ theorem hasDerivAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : �
     · field_simp
       ring
 
+/-- Away from `r = 0`, the effective potential is continuous wherever `U` is. -/
+theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} (hU : ContinuousAt U r)
+    (hr : r ≠ 0) :
+    ContinuousAt (effectivePotential m ℓ U) r := by
+  have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m) / r ^ 2 + U r :=
+    funext fun r ↦ by rw [effectivePotential_apply, div_div]
+  rw [hUℓ]
+  exact (continuousAt_const.div (continuousAt_id.pow 2) (pow_ne_zero 2 hr)).add hU
+
 /-- Away from `r = 0`, `r` is a critical point of the effective potential exactly when
 `U'(r) = ℓ² / (m r³)`. -/
 theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ}
@@ -171,6 +184,26 @@ theorem centralForceHamiltonian_effectivePotential_apply {m ℓ : ℝ} {U : ℝ 
     centralForceHamiltonian m (effectivePotential m ℓ U) (r, p_r) =
       p_r ^ 2 / (2 * m) + ℓ ^ 2 / (2 * m * r ^ 2) + U r := by
   simp [Real.norm_of_nonneg hr, add_assoc]
+
+/-- On the half-line `r > 0`, the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
+continuous wherever `U` is. -/
+theorem continuousAt_centralForceHamiltonian_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hr : 0 < r) (hU : ContinuousAt U r) (p_r : ℝ) :
+    ContinuousAt (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) := by
+  refine continuousAt_centralForceHamiltonian ?_
+  rw [Real.norm_of_nonneg hr.le]
+  exact continuousAt_effectivePotential hU hr.ne'
+
+/-- On the half-line `r > 0`, the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
+differentiable wherever `U` is. -/
+theorem differentiableAt_centralForceHamiltonian_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hr : 0 < r) (hU : DifferentiableAt ℝ U r) (p_r : ℝ) :
+    DifferentiableAt ℝ (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) := by
+  have hV : HasDerivAt (effectivePotential m ℓ U) (deriv U r - ℓ ^ 2 / (m * r ^ 3))
+      ‖((r, p_r) : ℝ × ℝ).1‖ := by
+    rw [Real.norm_of_nonneg hr.le]
+    exact hasDerivAt_effectivePotential hU.hasDerivAt hr.ne'
+  exact (hasFDerivAt_centralForceHamiltonian hV hr.ne').differentiableAt
 
 /-! ### The energy in radial form -/
 
@@ -212,12 +245,18 @@ theorem centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential 
     centralForceHamiltonian_effectivePotential_apply (norm_nonneg _), effectivePotential_apply,
     add_assoc]
 
-/-- **The effective potential bounds the energy.** For a nonnegative mass, away from the collision
-set, `U_ℓ(‖q‖) ≤ H(q, p)` for the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`. So a motion
-of energy `E` and angular momentum `ℓ` stays in the region `U_ℓ(r) ≤ E`. -/
+/-- **The effective potential bounds the energy.** For a nonnegative mass,
+`U_ℓ(‖q‖) ≤ H(q, p)` for the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`. So a motion
+of energy `E` and angular momentum `ℓ` stays in the region `U_ℓ(r) ≤ E`. At the collision
+`q = 0` the squared angular momentum vanishes and the bound reads `U 0 ≤ ‖p‖² / (2m) + U 0`. -/
 theorem effectivePotential_le_centralForceHamiltonian {m ℓ : ℝ} (hm : 0 ≤ m) {U : ℝ → ℝ}
-    {x : V × V} (hq : x.1 ≠ 0) (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
+    {x : V × V} (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
     effectivePotential m ℓ U ‖x.1‖ ≤ centralForceHamiltonian m U x := by
+  rcases eq_or_ne x.1 0 with hq | hq
+  · have h0 : ℓ ^ 2 = 0 := by simpa [hq] using hℓ
+    rw [effectivePotential_apply, centralForceHamiltonian_apply, hq, h0]
+    have hk : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
+    simpa using hk
   rw [centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential hq hℓ]
   exact le_add_of_nonneg_left (div_nonneg (sq_nonneg _) (by linarith))
 
@@ -291,7 +330,7 @@ theorem radialProjection_circularMotion (m : ℝ) {r₀ : ℝ} (hr₀ : 0 ≤ r�
     (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (huw : ⟪u, w⟫_ℝ = 0) (t : ℝ) :
     radialProjection (circularMotion m r₀ ω u w t) = (r₀, 0) := by
   have h : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw (by simpa using huw)
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw (by simpa using huw)).2
       (Real.cos_sq_add_sin_sq (ω * t))
   simp only [circularMotion, radialProjection, radialMomentum, norm_smul, h, Real.norm_eq_abs,
     abs_of_nonneg hr₀, mul_one, Prod.mk.injEq, true_and]
@@ -307,11 +346,11 @@ theorem sq_sub_inner_sq_circularMotion (m r₀ ω : ℝ) {u w : V} (hu : ‖u‖
       (m * r₀ ^ 2 * ω) ^ 2 := by
   have huw' : RCLike.re ⟪u, w⟫_ℝ = 0 := by simpa using huw
   have h₁ : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw huw').2
       (Real.cos_sq_add_sin_sq (ω * t))
   have h₂ : ‖-Real.sin (ω * t) • u + Real.cos (ω * t) • w‖ = 1 := by
-    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
-      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))
+    simpa using (norm_smul_add_smul_eq_one_iff (𝕜 := ℝ) hu hw huw'
+      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))).2
       (by rw [neg_sq]; exact Real.sin_sq_add_cos_sq (ω * t))
   simp only [circularMotion, norm_smul, h₁, h₂, Real.norm_eq_abs, mul_one, mul_pow, sq_abs,
     inner_smul_left, inner_smul_right, inner_add_left, inner_add_right, real_inner_self_eq_norm_sq,
@@ -353,6 +392,44 @@ theorem
     hasDerivAt_effectivePotential_zero_iff hU hr.ne']
   simp [hm, sub_eq_zero, eq_comm (a := U')]
 
+/-- **Energy conservation for the radial motion.** The reduced Hamiltonian
+`H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is constant along an integral curve of its Hamiltonian vector
+field on `[t₁, t₂]` in the half-line `r > 0`, with `U` differentiable along it. -/
+theorem centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt {m ℓ : ℝ} {U : ℝ → ℝ}
+    {γ : ℝ → ℝ × ℝ} {t₁ t₂ : ℝ}
+    (hγ : ∀ t ∈ Set.Icc t₁ t₂, HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
+    (hr : ∀ t ∈ Set.Icc t₁ t₂, 0 < (γ t).1)
+    (hU : ∀ t ∈ Set.Icc t₁ t₂, DifferentiableAt ℝ U (γ t).1) :
+    ∀ t ∈ Set.Icc t₁ t₂, centralForceHamiltonian m (effectivePotential m ℓ U) (γ t) =
+      centralForceHamiltonian m (effectivePotential m ℓ U) (γ t₁) := by
+  have hd (t : ℝ) (ht : t ∈ Set.Icc t₁ t₂) :
+      HasDerivAt (fun s ↦ centralForceHamiltonian m (effectivePotential m ℓ U) (γ s)) 0 t := by
+    have hU' : HasDerivAt (effectivePotential m ℓ U)
+        (deriv U (γ t).1 - ℓ ^ 2 / (m * (γ t).1 ^ 3)) ‖(γ t).1‖ := by
+      rw [Real.norm_of_nonneg (hr t ht).le]
+      exact hasDerivAt_effectivePotential (hU t ht).hasDerivAt (hr t ht).ne'
+    have hH := hasFDerivAt_centralForceHamiltonian (m := m) hU' (hr t ht).ne'
+    have h := hH.comp_hasDerivAt t (hγ t ht)
+    rwa [← hH.fderiv, SymplecticForm.fderiv_apply_hamiltonianVectorField] at h
+  exact constant_of_has_deriv_right_zero (fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt)
+    fun t ht ↦ (hd t (Set.Ico_subset_Icc_self ht)).hasDerivWithinAt
+
+/-- **The radial velocity.** Along an integral curve of the reduced Hamiltonian vector field in
+the half-line `r > 0`, with `U` differentiable at the radius, the radius has derivative
+`r' = p_r / m`. -/
+theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential {m ℓ : ℝ}
+    {U : ℝ → ℝ} {γ : ℝ → ℝ × ℝ} {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
+    (hr : 0 < (γ t).1) (hU : DifferentiableAt ℝ U (γ t).1) :
+    HasDerivAt (fun s ↦ (γ s).1) ((γ t).2 / m) t := by
+  rw [← Prod.mk.eta (p := γ t),
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
+      hU.hasDerivAt hr] at hγ
+  convert (hasFDerivAt_fst (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
+    simp [Function.comp_def]
+
 /-! ### The radial projection of the Hamiltonian flow -/
 
 /-- **Radial reduction of the Hamiltonian vector field.** Away from the collision set, the radial
@@ -380,13 +457,13 @@ theorem fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian {
     ring
 
 /-- **Radial reduction of central-force motion.** Let `γ` be an integral curve of the Hamiltonian
-vector field of a central-force Hamiltonian on a preconnected open set `s` of times, avoiding the
+vector field of a central-force Hamiltonian on a preconnected set `s` of times, avoiding the
 collision set, with `U` differentiable along it. If `ℓ²` is the squared angular momentum
 `‖q‖² ‖p‖² - ⟪q, p⟫²` of `γ` at one time `t₀ ∈ s`, then `t ↦ (‖q(t)‖, p_r(t))` is an integral curve
 on `s` of the Hamiltonian vector field of the reduced Hamiltonian
 `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)`. -/
 theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : ℝ → V × V} {s : Set ℝ}
-    (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hs : IsPreconnected s)
     (hγ : ∀ t ∈ s, HasDerivAt γ
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U) (γ t)) t)
     (hq : ∀ t ∈ s, (γ t).1 ≠ 0) (hU : ∀ t ∈ s, DifferentiableAt ℝ U ‖(γ t).1‖) {t₀ : ℝ}
@@ -399,7 +476,7 @@ theorem hasDerivAt_radialProjection_comp {m ℓ : ℝ} {U : ℝ → ℝ} {γ : �
   have h := ((hasFDerivAt_radialProjection (hq t ht)).comp_hasDerivAt t (hγ t ht))
   rwa [← (hasFDerivAt_radialProjection (hq t ht)).fderiv,
     fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian (hU t ht).hasDerivAt
-      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hs' hγ hq hU ht₀ ht).symm)] at h
+      (hq t ht) (hℓ.trans (sq_sub_inner_sq_eq_of_hasDerivAt hs hγ ht₀ ht).symm)] at h
 
 /-! ### Circular orbits -/
 

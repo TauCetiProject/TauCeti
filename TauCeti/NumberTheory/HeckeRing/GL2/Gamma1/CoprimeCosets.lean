@@ -23,8 +23,9 @@ remaining case,
 `Γ₁(N) · diag(1, p) · Γ₁(N) = (⋃_{b < p} Γ₁(N) · !![1, b; 0, p])  ∪  Γ₁(N) · σ · diag(p, 1)`,
 
 a disjoint union of `p + 1` **right** cosets. Here `σ = !![m, n; N, p]` is any integral matrix
-with `m p − n N = 1`: an element of `Γ₀(N)`, *not* of `Γ₁(N)`, and it is that twist which later
-supplies the factor `χ(p)` in the Hecke recurrence at a good prime.
+with `m p − n N = 1`: an element of `Γ₀(N)` whose lower-right entry is `p`, so that it lies in
+`Γ₁(N)` only when `p ≡ 1 (mod N)`, and it is that twist which later supplies the factor `χ(p)`
+in the Hecke recurrence at a good prime.
 
 ## Where the hypotheses enter
 
@@ -63,7 +64,7 @@ Disjointness of the last coset from the others uses only `1 < p` and integrality
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none`:
   `diag(1, p) · !![m p, n; N, 1] = σ · diag(p, 1)` with `!![m p, n; N, 1] ∈ Γ₁(N)` — the reverse
   inclusion for the twisted coset.
-* `HeckeRing.GL2.exists_adjugateGL_natDiagGL_eq`: for an index coprime to the level, the
+* `HeckeRing.GL2.exists_adjugate_natDiagGL_eq`: for an index coprime to the level, the
   adjugate of `diag(1, n)` factors on either side through `diag(1, n)`, a `Γ₁(N)` element,
   and a `Γ₀(N)` element whose diamond label is `n⁻¹`.
 * `HeckeRing.GL2.exists_natDiagGL_mul_mapGL_eq_of_isCoprime`: for `t` coprime to `n N`, matrices
@@ -108,20 +109,20 @@ variable {N p : ℕ} {σ : SL(2, ℤ)}
 
 local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
 
--- Kept separate so that the real matrix computation of `exists_adjugateGL_natDiagGL_eq` runs on
+-- Kept separate so that the real matrix computation of `exists_adjugate_natDiagGL_eq` runs on
 -- the explicit matrices of `A` and `B`, away from the congruence conditions.
-private lemma adjugateGL_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : ℤ}
+private lemma adjugate_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : ℤ}
     (huv : u * n + v * N = 1) {A B : SL(2, ℤ)}
     (hA : (↑(mapGL ℝ A) : Matrix (Fin 2) (Fin 2) ℝ) = !![(n : ℝ), -v; (N : ℝ), u])
     (hB : (↑(mapGL ℝ B) : Matrix (Fin 2) (Fin 2) ℝ) = !![(u : ℝ) * n, v; -(N : ℝ), 1]) :
-    TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) = mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
-      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+    (φ (natDiagGL 2 ![1, n])).adjugate = mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+      (φ (natDiagGL 2 ![1, n])).adjugate =
         φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
   have hR : (u : ℝ) * n + v * N = 1 := by exact_mod_cast huv
   -- over `ℝ`, every entry of either factorisation is a multiple of `u n + v N = 1`
   refine ⟨Units.ext ?_, Units.ext ?_⟩
   all_goals
-    rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
+    rw [map_mul, map_mapGL, GeneralLinearGroup.coe_adjugate, Units.val_mul, Units.val_mul,
       Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hA, hB,
       Matrix.adjugate_fin_two_of, Matrix.mul_fin_two, Matrix.mul_fin_two]
     congrm !![?_, ?_; ?_, ?_]
@@ -134,12 +135,12 @@ private lemma adjugateGL_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : �
 either side.** For `n` coprime to `N` there are `A ∈ Γ₀(N)` with diamond label `⟨n⟩⁻¹` (its
 lower-right entry is `n⁻¹ mod N`) and `B ∈ Γ₁(N)` with
 `adj(diag(1, n)) = A · diag(1, n) · B = B · diag(1, n) · A` in `GL₂(ℝ)`. -/
-lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
+lemma exists_adjugate_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N,
       (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧ ∃ B ∈ Gamma1 N,
-        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        (φ (natDiagGL 2 ![1, n])).adjugate =
           mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
-        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        (φ (natDiagGL 2 ![1, n])).adjugate =
           φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
   obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
   let A : SL(2, ℤ) :=
@@ -148,7 +149,7 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
   refine ⟨A, mem_Gamma0_iff_dvd.mpr dvd_rfl, eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
     mem_Gamma1_of_dvd_lowerRow (dvd_neg.mpr dvd_rfl) (dvd_zero _),
-    adjugateGL_natDiagGL_eq_of_coe_mapGL huv (by rw [coe_mapGL_fin_two]; simp [A])
+    adjugate_natDiagGL_eq_of_coe_mapGL huv (by rw [coe_mapGL_fin_two]; simp [A])
       (by rw [coe_mapGL_fin_two]; simp [B])⟩
   -- the diamond label of `A` is its lower-right entry `u`, and `u n ≡ 1 (mod N)`
   simpa [A, Gamma0Map_apply] using congrArg (Int.cast : ℤ → ZMod N) huv
@@ -311,17 +312,13 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep (hp : p.Prime) (hσ10 : σ 1 0 = 
     exact ⟨some ⟨j.val, j.val_lt⟩,
       exists_mem_Gamma1_natDiagGL_mul_of_dvd hγ j.val_lt (mul_comm _ (γ 0 0) ▸ hj)⟩
 
-/-- **The twisted representative lies in none of the upper-triangular cosets.** For `1 < p`
-and `σ` whose lower-right entry is `p`, the right coset of `σ · diag(p, 1)` modulo any
-subgroup `G ≤ SL(2, ℤ)` differs from that of every `!![1, b; 0, p]`. -/
-private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < p)
-    (hσ11 : σ 1 1 = (p : ℤ)) (b : Fin p) :
+/-- **The twisted representative lies in none of the upper-triangular cosets.** For `1 < p`,
+the right coset of `σ · diag(p, 1)` modulo any subgroup `G ≤ SL(2, ℤ)` differs from that of every
+`!![1, b; 0, p]`. -/
+private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < p) (b : Fin p) :
     MulOpposite.op (primeRep σ p (some b)) • ((G.map (mapGL ℚ)) : Set (GL (Fin 2) ℚ)) ≠
       MulOpposite.op (primeRep σ p none) • ((G.map (mapGL ℚ)) : Set (GL (Fin 2) ℚ)) := by
   have hp0 : 0 < p := by omega
-  have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * σ 1 0 = 1 := by
-    rw [← hσ11]
-    exact fin_two_mul_sub_mul_eq_one σ
   intro heq
   obtain ⟨τ, -, hτeq⟩ := Subgroup.mem_map.mp ((rightCoset_eq_iff _).mp heq)
   have hmul : (mapGL ℚ τ : GL (Fin 2) ℚ) * upperTriRep p b = primeRep σ p none := by
@@ -335,26 +332,36 @@ private lemma op_primeRep_smul_some_ne_none {G : Subgroup SL(2, ℤ)} (hp : 1 < 
   have h01 : ((τ 0 0 : ℤ) : ℚ) * (b : ℚ) + ((τ 0 1 : ℤ) : ℚ) * (p : ℚ) = ((σ 0 1 : ℤ) : ℚ) := by
     simpa using congrFun (congrFun hmat 0) 1
   rw [h00] at h01
+  have h11 : ((τ 1 0 : ℤ) : ℚ) * (b : ℚ) + ((τ 1 1 : ℤ) : ℚ) * (p : ℚ) = ((σ 1 1 : ℤ) : ℚ) := by
+    simpa using congrFun (congrFun hmat 1) 1
+  have h10 : ((τ 1 0 : ℤ) : ℚ) = ((σ 1 0 : ℤ) : ℚ) * (p : ℚ) := by
+    simpa using congrFun (congrFun hmat 1) 0
+  rw [h10] at h11
+  have hn' : (σ 1 1 : ℤ) = (p : ℤ) * (σ 1 0 * (b : ℕ) + τ 1 1) := by
+    have hQ : ((σ 1 1 : ℤ) : ℚ) = (((p : ℤ) * (σ 1 0 * (b : ℕ) + τ 1 1) : ℤ) : ℚ) := by
+      push_cast at h11 ⊢
+      linarith
+    exact_mod_cast hQ
   have hn : (σ 0 1 : ℤ) = (p : ℤ) * (σ 0 0 * (b : ℕ) + τ 0 1) := by
     have hQ : ((σ 0 1 : ℤ) : ℚ) = (((p : ℤ) * (σ 0 0 * (b : ℕ) + τ 0 1) : ℤ) : ℚ) := by
       push_cast at h01 ⊢
       linarith
     exact_mod_cast hQ
   have hdvd : (p : ℤ) ∣ 1 :=
-    ⟨σ 0 0 - (σ 0 0 * (b : ℕ) + τ 0 1) * σ 1 0, by linear_combination -hσdet - σ 1 0 * hn⟩
+    ⟨σ 0 0 * (σ 1 0 * (b : ℕ) + τ 1 1) - (σ 0 0 * (b : ℕ) + τ 0 1) * σ 1 0, by
+      linear_combination σ 0 0 * hn' - σ 1 0 * hn - fin_two_mul_sub_mul_eq_one σ⟩
   have hle := Int.le_of_dvd one_pos hdvd
   omega
 
 /-- **The `p + 1` right cosets are pairwise distinct**, modulo any subgroup `G ≤ SL(2, ℤ)`,
-whenever `1 < p` and `σ` has lower-right entry `p`. -/
-theorem op_primeRep_smul_injective {G : Subgroup SL(2, ℤ)} (hp : 1 < p)
-    (hσ11 : σ 1 1 = (p : ℤ)) :
+whenever `1 < p`. -/
+theorem op_primeRep_smul_injective {G : Subgroup SL(2, ℤ)} (hp : 1 < p) :
     Function.Injective fun i : Option (Fin p) ↦
       MulOpposite.op (primeRep σ p i) • ((G.map (mapGL ℚ)) : Set (GL (Fin 2) ℚ)) := by
   rintro (_ | b₁) (_ | b₂) h
   · rfl
-  · exact absurd h.symm (op_primeRep_smul_some_ne_none hp hσ11 b₂)
-  · exact absurd h (op_primeRep_smul_some_ne_none hp hσ11 b₁)
+  · exact absurd h.symm (op_primeRep_smul_some_ne_none hp b₂)
+  · exact absurd h (op_primeRep_smul_some_ne_none hp b₁)
   · simpa using op_upperTriRep_smul_injective (G := G) (by simpa using h)
 
 /-- **The `Tₚ` double coset at a prime `p ∤ N` is the union of `p + 1` right cosets.**
@@ -389,7 +396,7 @@ theorem doubleCoset_natDiagGL_eq_iUnion_rightCosets_of_prime (hp : p.Prime)
     | some b =>
       exact ⟨mapGL ℚ (ModularGroup.T ^ (b : ℤ)),
         Subgroup.mem_map_of_mem _ (T_zpow_mem_Gamma1 N _), by
-        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow hp.pos b]⟩
+        rw [primeRep_some, natDiagGL_mul_mapGL_T_zpow b]⟩
 
 /-- The decomposition of `doubleCoset_natDiagGL_eq_iUnion_rightCosets_of_prime`, read at the
 chosen representative `D.out` of `diagCosetGamma1 N p` — the shape the slash-sum machinery of

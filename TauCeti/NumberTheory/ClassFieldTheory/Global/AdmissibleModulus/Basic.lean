@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Basic
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.ArtinNorm
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
@@ -63,6 +62,9 @@ the real place of `ℚ` in that of `ℚ(i)/ℚ` (`mem_abelianConductor_infiniteP
 
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_iff_abelianConductor_dvd`: a modulus is
   admissible exactly when the conductor divides it.
+* `TauCeti.ClassFieldTheory.exponent_abelianConductor_le_iff`: the exponent of a finite place
+  `v` in the conductor is at most `n` exactly when the classes of the ideles concentrated at `v`
+  with component in `U(K_v, n)` are norms from `L`.
 * `TauCeti.ClassFieldTheory.abelianConductor_dvd_abelianConductor`: in a tower `K ⊆ L ⊆ M`, the
   conductor of `L/K` divides that of `M/K`.
 * `TauCeti.ClassFieldTheory.ofCompletion_neg_one_notMem_range_ideleClassNormMap`: if `L` contains a
@@ -93,6 +95,39 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace TauCeti.GlobalNumber
 variable (K L : Type) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
 /-! ### The class of `-1` at a real place -/
+
+/-- **The product formula forces `-1` into the principal units.** If the `p`-adic cyclotomic
+characters of the local Artin symbols of `α⁻¹` lie in `U = 1 + pⁿ ℤ_p` at every place other than
+the real place `w`, and that of the local Artin symbol of `-α⁻¹` lies in `U` at `w`, then
+`-1 ∈ U`, since the cyclotomic characters of the local Artin symbols of `α⁻¹` multiply to `1` and
+the one of `Art_w(-1)` is `-1`. -/
+private theorem neg_one_mem_unitsPrincipal_of_forall_mem (p : ℕ) [Fact p.Prime] {n : ℕ}
+    {w : InfinitePlace K} (hw : w.IsReal) (α : Kˣ)
+    (hA : ∀ v : HeightOneSpectrum (𝓞 K),
+      abelianizedLocalCyclotomicCharacter p (v.adicCompletion K)
+        (artinMap (v.adicCompletion K) (Units.map (algebraMap K (v.adicCompletion K)) α⁻¹)) ∈
+          unitsPrincipal p n)
+    (hB : ∀ v : InfinitePlace K, v ≠ w →
+      abelianizedLocalCyclotomicCharacter p v.Completion
+        (infiniteArtinAt v (Units.map (algebraMap K v.Completion) α⁻¹)) ∈ unitsPrincipal p n)
+    (hC : abelianizedLocalCyclotomicCharacter p w.Completion
+      (infiniteArtinAt w (-1 * Units.map (algebraMap K w.Completion) α⁻¹)) ∈
+        unitsPrincipal p n) :
+    (-1 : ℤ_[p]ˣ) ∈ unitsPrincipal p n := by
+  classical
+  set U := unitsPrincipal p n
+  have hneg : abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w (-1)) = -1 :=
+    abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg w hw p (by simp)
+  rw [map_mul, map_mul, hneg, neg_one_mul] at hC
+  -- The product formula then puts `-1` in `U = 1 + pⁿ ℤ_p`.
+  have hprod := finprod_mul_prod_abelianizedLocalCyclotomicCharacter_artinMap_eq_one p α⁻¹
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ w)] at hprod
+  have hP := U.prod_mem (t := Finset.univ.erase w) fun v hv ↦ hB v (Finset.ne_of_mem_erase hv)
+  have hF := finprod_induction (· ∈ U) U.one_mem (fun _ _ ↦ U.mul_mem) hA
+  have key := congrArg Neg.neg hprod
+  rw [← mul_neg, ← neg_mul] at key
+  rw [← key]
+  exact U.mul_mem hF (U.mul_mem hC hP)
 
 /-- **The class of `-1` at a real place is not a norm from an extension containing `μ_{pⁿ}`.**
 Let `w` be a real place of `K` and let `L/K` contain a primitive `pⁿ`-th root of unity with
@@ -139,19 +174,8 @@ theorem ofCompletion_neg_one_notMem_range_ideleClassNormMap (p : ℕ) [Fact p.Pr
     have hw' := hinf w
     rw [map_mul, ideleInfiniteCoord_ofCompletion_self, ideleInfiniteCoord_unitEmbedding] at hw'
     exact abelianizedLocalCyclotomicCharacter_infiniteArtinAt_mem_unitsPrincipal p hζ w hw'
-  have hneg : abelianizedLocalCyclotomicCharacter p w.Completion (infiniteArtinAt w (-1)) = -1 :=
-    abelianizedLocalCyclotomicCharacter_infiniteArtinAt_eq_neg_one_of_neg w hw p (by simp)
-  rw [map_mul, map_mul, hneg, neg_one_mul] at hC
-  -- The product formula then puts `-1` in `U = 1 + pⁿ ℤ_p`.
-  have hprod := finprod_mul_prod_abelianizedLocalCyclotomicCharacter_artinMap_eq_one p α⁻¹
-  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ w)] at hprod
-  have hP := U.prod_mem (t := Finset.univ.erase w) fun v hv ↦ hB v (Finset.ne_of_mem_erase hv)
-  have hF := finprod_induction (· ∈ U) U.one_mem (fun _ _ ↦ U.mul_mem) hA
-  have key := congrArg Neg.neg hprod
-  rw [← mul_neg, ← neg_mul] at key
-  refine neg_one_notMem_unitsPrincipal hpn ?_
-  rw [← key]
-  exact U.mul_mem hF (U.mul_mem hC hP)
+  exact neg_one_notMem_unitsPrincipal hpn
+    (neg_one_mem_unitsPrincipal_of_forall_mem K p hw α hA hB hC)
 
 /-! ### Admissible moduli -/
 
@@ -202,6 +226,18 @@ theorem isAdmissibleModulus_iff_abelianConductor_dvd (𝔪 : Modulus K) :
   rw [abelianConductor, OpenSubgroup.ideleClassConductor_dvd_iff]
   -- The open subgroup `⟨N_{L/K}(C_L), _⟩` coerces to `N_{L/K}(C_L)` by projection.
   exact isAdmissibleModulus_iff.symm
+
+/-- **The exponents of the conductor are local.** The exponent of a finite place `v` of `K` in the
+conductor of `L/K` is at most `n` exactly when the class of every idele concentrated at `v` with
+component in `U(K_v, n)` is a norm from `L`. -/
+theorem exponent_abelianConductor_le_iff (v : HeightOneSpectrum (𝓞 K)) {n : ℕ} :
+    (abelianConductor K L).exponent v ≤ n ↔
+      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+        (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
+          (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  rw [abelianConductor]
+  -- The open subgroup `⟨N_{L/K}(C_L), _⟩` coerces to `N_{L/K}(C_L)` by projection.
+  exact OpenSubgroup.exponent_ideleClassConductor_le_iff
 
 variable (K L) in
 /-- The conductor of `L/K` is admissible for `L/K`. -/

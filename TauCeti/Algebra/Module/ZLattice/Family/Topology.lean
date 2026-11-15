@@ -46,6 +46,8 @@ holomorphic triviality.
   fibres are compact.
 * `TauCeti.t2Space_torusFamily`: the total space is Hausdorff over a Hausdorff base.
 * `TauCeti.compactSpace_torusFamily`: the total space is compact over a compact base.
+* `TauCeti.locallyCompactSpace_torusFamily`: the total space is locally compact over a locally
+  compact base.
 
 ## References
 
@@ -62,17 +64,26 @@ namespace TauCeti
 
 section Trivialization
 
-variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ]
-  [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+
+omit [TopologicalSpace Y] in
+/-- Over a nonempty base, the injectivity of the periods makes `Λ` a free module of finite rank:
+it is isomorphic to a lattice in `E`. -/
+private theorem isEmpty_or_free_and_finite (hinj : ∀ y, Injective (P y)) :
+    IsEmpty Y ∨ Module.Free ℤ Λ ∧ Module.Finite ℤ Λ := by
+  rcases isEmpty_or_nonempty Y with hY | ⟨⟨y⟩⟩
+  · exact Or.inl hY
+  · exact Or.inr (ZLattice.module_free_and_finite_of_injective ℝ (P y) (hinj y))
 
 /-- The projection of the family is the first projection of `Y × T` read through a homeomorphism
 over `Y`, where `T` is the standard torus `ℝ^ι/ℤ^ι` of a lattice basis of `Λ`, in its orbit-space
 model, which is compact and Hausdorff. This is `TauCeti.torusFamilyHomeomorphProd` for the chosen
 basis, followed on the torus factor by `Submodule.orbitRelQuotientContinuousAddEquiv`. -/
-private theorem exists_homeomorph_prod_fst_eq_torusFamilyProjection
-    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) :
+private theorem exists_homeomorph_prod_fst_eq_torusFamilyProjection [Module.Free ℤ Λ]
+    [Module.Finite ℤ Λ] (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) :
     letI := periodAddAction P
     ∃ e : AddAction.orbitRel.Quotient Λ (Y × E) ≃ₜ
         Y × AddAction.orbitRel.Quotient
@@ -93,6 +104,12 @@ hypothesis on `Y` is needed. -/
 theorem isProperMap_torusFamilyProjection (hcont : ∀ l, Continuous fun y ↦ P y l)
     (hinj : ∀ y, Injective (P y)) : IsProperMap (torusFamilyProjection P) := by
   let _ := periodAddAction P
+  rcases isEmpty_or_free_and_finite P hinj with hY | ⟨_, _⟩
+  · have : IsEmpty (AddAction.orbitRel.Quotient Λ (Y × E)) := Quotient.instIsEmpty
+    exact (isProperMap_iff_isClosedMap_and_compact_fibers).2
+      ⟨continuous_torusFamilyProjection P, fun s _ ↦ by
+        rw [Set.image_eq_empty.2 (Set.eq_empty_of_isEmpty s)]; exact isClosed_empty,
+        fun y ↦ (Set.toFinite _).isCompact⟩
   obtain ⟨e, he⟩ := exists_homeomorph_prod_fst_eq_torusFamilyProjection P hcont hinj
   have hp : torusFamilyProjection P = Prod.fst ∘ e := funext fun z ↦ (he z).symm
   rw [hp]
@@ -105,6 +122,9 @@ theorem t2Space_torusFamily [T2Space Y] (hcont : ∀ l, Continuous fun y ↦ P y
     letI := periodAddAction P
     T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) := by
   let _ := periodAddAction P
+  rcases isEmpty_or_free_and_finite P hinj with hY | ⟨_, _⟩
+  · have : IsEmpty (AddAction.orbitRel.Quotient Λ (Y × E)) := Quotient.instIsEmpty
+    infer_instance
   obtain ⟨e, -⟩ := exists_homeomorph_prod_fst_eq_torusFamilyProjection P hcont hinj
   exact e.symm.t2Space
 
@@ -115,9 +135,31 @@ theorem compactSpace_torusFamily [CompactSpace Y] (hcont : ∀ l, Continuous fun
     letI := periodAddAction P
     CompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) := by
   let _ := periodAddAction P
+  rcases isEmpty_or_free_and_finite P hinj with hY | ⟨_, _⟩
+  · have : IsEmpty (AddAction.orbitRel.Quotient Λ (Y × E)) := Quotient.instIsEmpty
+    infer_instance
   obtain ⟨e, -⟩ := exists_homeomorph_prod_fst_eq_torusFamilyProjection P hcont hinj
   exact e.symm.compactSpace
 
 end Trivialization
+
+section LocallyCompact
+
+variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ] {E : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] (P : Y → Λ →ₗ[ℤ] E)
+
+/-- **A family of tori over a locally compact base is locally compact.** For a continuous family of
+periods over a locally compact space `Y`, the total space `(Y × E)/Λ` is locally compact, as the
+image of the locally compact space `Y × E` under the orbit map of the period translation action, an
+open quotient map. No fullness, discreteness or injectivity of the periods is needed. -/
+theorem locallyCompactSpace_torusFamily [LocallyCompactSpace Y]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) :
+    letI := periodAddAction P
+    LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) := by
+  let _ := periodAddAction P
+  have := continuousConstVAdd_periodAddAction P hcont
+  exact AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
+
+end LocallyCompact
 
 end TauCeti

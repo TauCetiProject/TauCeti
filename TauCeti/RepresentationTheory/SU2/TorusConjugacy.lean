@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Spectrum
+public import TauCeti.Analysis.Matrix.Normal
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
 
@@ -14,24 +14,14 @@ public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
 
 The maximal torus `T` of `SU(2)` built in `TauCeti/RepresentationTheory/SU2/Basic.lean` meets
 every conjugacy class: for every `g : SU(2)` there is `u : SU(2)` with `u g u⁻¹ ∈ T`. This is the
-torus-conjugacy input the compact-group roadmap asks for before the classification of the
-irreducible representations of `SU(2)`, and it is what makes a class function on `SU(2)`
-determined by its restriction to the circle.
+input to the classification of the irreducible representations of `SU(2)`, and it makes a class
+function on `SU(2)` determined by its restriction to the circle.
 
-The proof is unitary diagonalisation, arranged so that it only needs Mathlib's spectral theorem
-for *Hermitian* matrices. Mathlib has no spectral theorem for normal or unitary matrices, but in
-`SU(2)` one is not needed: writing `G` for the matrix of `g`, the determinant condition forces the
-Hermitian part of `G` to be a scalar,
-
-`G + G* = (tr G) • 1`   (`TauCeti.SU2.coe_add_star`),
-
-because `G* = G⁻¹` is the adjugate of `G` (`Matrix.specialUnitaryGroup.star_eq_adjugate`)
-and a `2 × 2` matrix and its adjugate add up to the trace. So `G` differs from the Hermitian
-matrix `H = i (G - G*)` by a scalar matrix, and any unitary that diagonalises `H` diagonalises
-`G`. The eigenvector unitary supplied by the spectral theorem need not have determinant one, but
-it can be rescaled by a scalar of modulus one until it does
-(`Matrix.exists_circle_smul_mem_specialUnitaryGroup`), and rescaling by a scalar does not
-change the conjugation it induces.
+The proof is unitary diagonalisation. A special unitary matrix is normal, so the spectral theorem
+for normal matrices (`Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal`) diagonalises it by
+a unitary matrix. That unitary need not have determinant one, but it can be rescaled by a scalar of
+modulus one until it does (`Matrix.exists_circle_smul_mem_specialUnitaryGroup`), and rescaling by a
+scalar does not change the conjugation it induces.
 
 ## Main results
 
@@ -66,41 +56,6 @@ namespace SU2
 
 /-! ### Torus conjugacy -/
 
-/-- **Conjugating by `U` carries `a • 1 + b • H` to `a • 1 + b • (star U * H * U)`.** So whenever
-`star U` is a left inverse of `U`, any `U` that diagonalises `H` also diagonalises every matrix of
-that form: conjugation is linear, and it fixes the identity precisely because `star U * U = 1`. -/
-private theorem isDiag_star_left_conjugate_of_eq_smul_one_add_smul {R n : Type*}
-    [CommSemiring R] [Star R] [Fintype n] [DecidableEq n] {G H U : Matrix n n R} {a b : R}
-    (hdecomp : G = a • (1 : Matrix n n R) + b • H)
-    (hUU : star U * U = 1) (hdiagH : (star U * H * U).IsDiag) :
-    (star U * G * U).IsDiag := by
-  have hexpand : star U * G * U = a • (1 : Matrix n n R) + b • (star U * H * U) := by
-    conv_lhs => rw [hdecomp]
-    simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one]
-    rw [hUU]
-  rw [hexpand]
-  exact (Matrix.isDiag_one.smul _).add (hdiagH.smul _)
-
-/-- **A special unitary matrix is a scalar plus a multiple of `I • (g - star g)`.** The identity
-`g = (tr g / 2) • 1 + (-I / 2) • (I • (g - star g))` holds because `g + star g` is the scalar
-`tr g`. -/
-private theorem coe_eq_smul_one_add_smul_I_smul_sub_star (g : SU2) :
-    (g : Matrix (Fin 2) (Fin 2) ℂ)
-      = (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) / 2) • (1 : Matrix (Fin 2) (Fin 2) ℂ)
-        + (-Complex.I / 2) •
-          (Complex.I • ((g : Matrix (Fin 2) (Fin 2) ℂ) - star (g : Matrix (Fin 2) (Fin 2) ℂ))) := by
-  have hscalar : (Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) / 2) •
-      (1 : Matrix (Fin 2) (Fin 2) ℂ)
-      = (2⁻¹ : ℂ) • ((g : Matrix (Fin 2) (Fin 2) ℂ) + star (g : Matrix (Fin 2) (Fin 2) ℂ)) := by
-    rw [coe_add_star g, smul_smul]
-    congr 1
-    ring
-  have hI : (-Complex.I / 2) * Complex.I = 2⁻¹ := by
-    rw [div_mul_eq_mul_div, neg_mul, Complex.I_mul_I]
-    norm_num
-  rw [smul_smul, hI, hscalar]
-  module
-
 /-- **A unitary that diagonalises `g` rescales to a special unitary one.** Multiplying a unitary by
 a unit-modulus scalar leaves the conjugate `star u * g * u` unchanged, and some such multiple is
 special unitary, so `g` is conjugate into the torus inside `SU(2)`. -/
@@ -128,24 +83,13 @@ private theorem exists_conj_mem_torus_of_isDiag_star_left_conjugate (g : SU2)
 /-- **Torus conjugacy for `SU(2)`**: every element of `SU(2)` is conjugate into the maximal torus.
 Equivalently, every special unitary `2 × 2` matrix is diagonalised by a special unitary matrix. -/
 theorem exists_conj_mem_torus (g : SU2) : ∃ u : SU2, u * g * u⁻¹ ∈ torus := by
-  set G : Matrix (Fin 2) (Fin 2) ℂ := (g : Matrix (Fin 2) (Fin 2) ℂ)
-  set H : Matrix (Fin 2) (Fin 2) ℂ := Complex.I • (G - star G) with hHdef
-  -- `H` is Hermitian: conjugating negates both `Complex.I` and `G - star G`.
-  have hHerm : H.IsHermitian := by
-    rw [Matrix.isHermitian_iff_isSelfAdjoint, isSelfAdjoint_iff, hHdef, star_smul, star_sub,
-      star_star, Complex.star_def, Complex.conj_I, neg_smul, ← smul_neg, neg_sub]
-  -- Mathlib's spectral theorem diagonalises `H` by a unitary matrix.
-  obtain ⟨U, hdiagH⟩ : ∃ U : Matrix.unitaryGroup (Fin 2) ℂ,
-      (star (U : Matrix (Fin 2) (Fin 2) ℂ) * H * (U : Matrix (Fin 2) (Fin 2) ℂ)).IsDiag := by
-    refine ⟨hHerm.eigenvectorUnitary, ?_⟩
-    have h := hHerm.conjStarAlgAut_star_eigenvectorUnitary (𝕜 := ℂ)
-    rw [Unitary.conjStarAlgAut_star_apply] at h
-    rw [h]
-    exact Matrix.isDiag_diagonal _
-  -- `G` is a scalar plus a multiple of `H`, so that unitary diagonalises `G` too.
-  exact exists_conj_mem_torus_of_isDiag_star_left_conjugate g
-    (isDiag_star_left_conjugate_of_eq_smul_one_add_smul
-      (coe_eq_smul_one_add_smul_I_smul_sub_star g) (Matrix.UnitaryGroup.star_mul_self U) hdiagH)
+  have : IsStarNormal (g : Matrix (Fin 2) (Fin 2) ℂ) :=
+    Unitary.coe_isStarNormal
+      (⟨g, Matrix.specialUnitaryGroup_le_unitaryGroup g.2⟩ : Matrix.unitaryGroup (Fin 2) ℂ)
+  obtain ⟨U, hU, d, hd⟩ :=
+    Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal (g : Matrix (Fin 2) (Fin 2) ℂ)
+  exact exists_conj_mem_torus_of_isDiag_star_left_conjugate g (U := ⟨U, hU⟩)
+    (hd ▸ Matrix.isDiag_diagonal d)
 
 /-- Every element of `SU(2)` is conjugate to the torus element `diag (z, z⁻¹)` for some point `z`
 of the circle: `TauCeti.SU2.exists_conj_mem_torus` read through the parametrisation

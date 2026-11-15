@@ -10,6 +10,7 @@ public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.Simple
+public import TauCeti.LinearAlgebra.AffineSpace.Basic
 public import TauCeti.LinearAlgebra.AffineSpace.Triangle.Chart
 
 /-!
@@ -325,7 +326,7 @@ end Boundary
 
 section Simplicity
 
-variable [IsOrderedRing R] [Nontrivial R]
+variable [IsOrderedRing R]
 
 namespace IsDeltaMove
 
@@ -336,6 +337,7 @@ include h
 was simple before. -/
 theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple R) :
     poly.IsSimple R := by
+  have := AddTorsor.nontrivial_of_ne R V (hq.hasNondegenerateEdges 0)
   refine ⟨fun k => ?_, fun k₁ k₂ x hne hx₁ hx₂ => ?_⟩
   · by_cases hk : k = i
     · exact hk ▸ h.left_ne_right
@@ -371,8 +373,9 @@ theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple
 
 /-- **A Δ-move keeps a polygon simple.** -/
 theorem isSimple_insertVertex (hp : poly.IsSimple R) :
-    (poly.insertVertex i c).IsSimple R :=
-  hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
+    (poly.insertVertex i c).IsSimple R := by
+  have := AddTorsor.nontrivial_of_ne R V (hp.hasNondegenerateEdges i)
+  exact hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
     (fun _ hk _ hx ↦ h.edgeSet_inter_closedInterior_subset hk
       ⟨hx.1, hx.2.elim (fun hx ↦ h.affineSegment_left_subset_closedInterior hx)
         (fun hx ↦ h.affineSegment_right_subset_closedInterior hx)⟩)
@@ -440,7 +443,7 @@ theorem isDeltaMove_of_chart {m : ℕ} {q : Polygon P m} {j : Fin m} {w : P}
     funext k
     fin_cases k <;> rfl
   refine ⟨hind', fun k hk => ?_⟩
-  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ hφ (x := x) (y := y) (z := z)
+  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ (x := x) (y := y) (z := z)
     (by rw [← hx, ← hy, ← hz]), hx, hy, ← image_pair]
   exact hedge k hk
 
@@ -452,7 +455,6 @@ theorem IsDeltaMove.closedInterior_eq_image (h : poly.IsDeltaMove R i c) :
     h.triangle.closedInterior = TauCeti.triangleChart R (poly i) (poly (finRotate n i)) c ''
       convexHull R {((0 : R), (0 : R)), (1, 0), (0, 1)} :=
   Affine.Triangle.closedInterior_eq_image_convexHull _
-    (TauCeti.triangleChart_injective h.affineIndependent)
     (by rw [IsDeltaMove.triangle_points, TauCeti.triangleChart_apply_zero_zero,
       TauCeti.triangleChart_apply_one_zero, TauCeti.triangleChart_apply_zero_one])
 
@@ -472,6 +474,23 @@ theorem toPolygon_insertVertex_one (t : Affine.Triangle R P) (c : P) :
 
 variable [PartialOrder R] [IsOrderedAddMonoid R]
 
+omit [IsOrderedAddMonoid R] in
+/-- A point of the triangle `bdc`, where `c = b + (d - a)`, is `a + (w₀ + w₂) • u + (w₁ + w₂) • v`
+for the sides `u = b - a` and `v = d - a` and barycentric weights `w` of the triangle. -/
+private lemma exists_weights_of_mem_closedInterior_parallelogram {a b d x : P}
+    (hind : AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b])
+    (hx : x ∈ (⟨_, hind⟩ : Affine.Triangle R P).closedInterior) :
+    ∃ w : Fin 3 → R, (∀ j, 0 ≤ w j) ∧ w 0 + w 1 + w 2 = 1 ∧
+      x -ᵥ a = (w 0 + w 2) • (b -ᵥ a) + (w 1 + w 2) • (d -ᵥ a) := by
+  obtain ⟨w, hw, hw01, rfl⟩ := hx
+  refine ⟨w, fun j => (hw01 j).1, by rwa [Fin.sum_univ_three] at hw, ?_⟩
+  rw [Finset.univ.affineCombination_eq_weightedVSubOfPoint_vadd_of_sum_eq_one w _ hw a,
+    vadd_vsub, Finset.weightedVSubOfPoint_apply, Fin.sum_univ_three]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.tail_cons, Matrix.head_cons]
+  rw [vadd_vsub_assoc, add_comm (d -ᵥ a), smul_add, add_smul, add_smul]
+  abel
+
 /-- **A triangle becomes a parallelogram by a Δ-move.** For a triangle with vertices `a`, `b`, `d`,
 inserting the fourth vertex `c = b + (d - a)` of the parallelogram after `b` is a Δ-move across the
 edge `bd`, turning the triangle `abd` into the parallelogram `abcd`
@@ -482,48 +501,22 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
   set b := t.points 1 with hb
   set d := t.points 2 with hd
   set c := (d -ᵥ a) +ᵥ b
-  -- Measured from `a`, the sides `u = b - a` and `v = d - a` are linearly independent, and the
-  -- fourth vertex is `c - a = u + v`.
+  -- Measured from `a`, the sides `u = b - a` and `v = d - a` are linearly independent.
   have hli : LinearIndependent R ![b -ᵥ a, d -ᵥ a] := by
     convert ((affineIndependent_iff_linearIndependent_vsub R _ 0).1 t.independent).comp
       ![⟨1, by decide⟩, ⟨2, by decide⟩] (by decide) using 1
     ext j
     fin_cases j <;> rfl
-  have hc : c -ᵥ a = (b -ᵥ a) + (d -ᵥ a) := by
-    rw [vadd_vsub_assoc, add_comm]
   -- Measured from `b`, the sides `d - b = v - u` and `c - b = v` of the triangle `bdc` are
   -- linearly independent.
-  have hind : AffineIndependent R ![b, d, c] := by
-    rw [affineIndependent_iff_linearIndependent_vsub R _ 0,
-      ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
-    have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
-    have hcb : c -ᵥ b = d -ᵥ a := vadd_vsub _ _
-    have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] := by
-      simpa only [sub_eq_add_neg, add_comm (d -ᵥ a), LinearIndependent.pair_add_left_iff,
-        LinearIndependent.pair_neg_left_iff] using hli
-    convert hli' using 1
-    ext j
-    fin_cases j
-    · exact hdb
-    · exact hcb
-  -- A point of the triangle `bdc` is `a + (w₀ + w₂) • u + (w₁ + w₂) • v`.
-  have hT {x : P} (hx : x ∈ (⟨_, hind⟩ : Affine.Triangle R P).closedInterior) :
-      ∃ w : Fin 3 → R, (∀ j, 0 ≤ w j) ∧ w 0 + w 1 + w 2 = 1 ∧
-        x -ᵥ a = (w 0 + w 2) • (b -ᵥ a) + (w 1 + w 2) • (d -ᵥ a) := by
-    obtain ⟨w, hw, hw01, rfl⟩ := hx
-    refine ⟨w, fun j => (hw01 j).1, by rwa [Fin.sum_univ_three] at hw, ?_⟩
-    rw [Finset.univ.affineCombination_eq_weightedVSubOfPoint_vadd_of_sum_eq_one w _ hw a,
-      vadd_vsub, Finset.weightedVSubOfPoint_apply, Fin.sum_univ_three]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-      Matrix.tail_cons, Matrix.head_cons]
-    rw [hc, smul_add, add_smul, add_smul]
-    abel
+  have hind := hli.affineIndependent_vsub_vadd
   have hpoints : t.toPolygon.vertices = t.points := rfl
   have h01 : finRotate 3 0 = 1 := by decide
   have h12 : finRotate 3 1 = 2 := by decide
   have h20 : finRotate 3 2 = 0 := by decide
   refine ⟨by rwa [hpoints, h12], fun k hk x ⟨hxk, hxT⟩ => ?_⟩
-  obtain ⟨w, hw0, hw1, hx⟩ := hT hxT
+  obtain ⟨w, hw0, hw1, hx⟩ :=
+    exists_weights_of_mem_closedInterior_parallelogram hind hxT
   rw [Polygon.edgeSet, hpoints] at hxk
   rw [hpoints, h12]
   have hk' : k = 0 ∨ k = 2 := by
@@ -564,7 +557,7 @@ namespace TauCeti
 
 namespace SimplePolygon
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
   [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- The simple polygon obtained from `p` by the Δ-move inserting `c` after vertex `i`. -/

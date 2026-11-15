@@ -34,7 +34,7 @@ use `IsNormalScheme (Spec R)` for it.
   iff every localization of `R` at a prime is an integrally closed domain.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_iff_forall_affineOpens`: a scheme is normal iff the
   ring of sections over every affine open is normal.
-* `TauCeti.AlgebraicGeometry.isNormalScheme_iff_forall_exists_affineOpens`: it suffices that
+* `TauCeti.AlgebraicGeometry.isNormalScheme_iff_forall_exists_affineOpens`: a scheme is normal iff
   every point has an affine open neighbourhood with normal ring of sections.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_iff_openCover`: normality is local on an open
   cover.
@@ -91,7 +91,7 @@ variable {X : Scheme.{u}}
 
 /-- A scheme is normal iff each of its local rings is an integrally closed domain; this is the
 definition, as a single condition per point. -/
-@[simp] theorem isNormalScheme_iff_forall_stalk :
+theorem isNormalScheme_iff_forall_stalk :
     IsNormalScheme X ↔
       ∀ x : X, IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
   ⟨fun _ _ ↦ ⟨inferInstance, inferInstance⟩, fun h ↦ ⟨fun x ↦ (h x).1, fun x ↦ (h x).2⟩⟩
@@ -159,8 +159,10 @@ theorem isNormalScheme_iff_forall_affineOpens :
       X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
     exact ⟨_, hU.fromSpec, hU.isOpenImmersion_fromSpec, h ⟨U, hU⟩, hU.range_fromSpec.ge hxU⟩
 
-/-- A scheme is normal as soon as every point has an affine open neighbourhood whose ring of
-sections is normal. Stacks, Lemma 28.7.2 (033J), the affine open covering form. -/
+/-- A scheme is normal if and only if every point has an affine open neighbourhood whose ring of
+sections is normal (the forward direction restricts to an affine open neighbourhood, the converse
+is the criterion that normality is local). Stacks, Lemma 28.7.2 (033J), the affine open covering
+form. -/
 @[stacks 033J "affine open covering form"]
 theorem isNormalScheme_iff_forall_exists_affineOpens :
     IsNormalScheme X ↔
@@ -200,8 +202,8 @@ theorem IsNormalScheme.isIntegrallyClosed_of_isAffineOpen [IsNormalScheme X]
 /-- On a locally Noetherian normal scheme the local ring at a point of coheight one is a
 discrete valuation ring. Stacks, Lemma 10.119.7 (00PD). -/
 @[stacks 00PD "the codimension-one stalk"]
-theorem IsNormalScheme.isDiscreteValuationRing_stalk (X : Scheme.{u}) [IsLocallyNoetherian X]
-    [IsNormalScheme X] (x : X) (hx : coheight x = 1) :
+theorem IsNormalScheme.isDiscreteValuationRing_stalk [IsLocallyNoetherian X] [IsNormalScheme X]
+    (x : X) (hx : coheight x = 1) :
     IsDiscreteValuationRing (X.presheaf.stalk x) := by
   have hdim : ringKrullDim (X.presheaf.stalk x) = 1 := by
     rw [ringKrullDim_stalk_eq_coheight]

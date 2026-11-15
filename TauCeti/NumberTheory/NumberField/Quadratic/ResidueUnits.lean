@@ -100,7 +100,6 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
       refine mul_right_cancel₀ (pow_ne_zero (1 * 2) hp0) ?_
       push_cast
       linear_combination key
-    open RamificationInertia in
     rw [← Ideal.pow_inertiaDeg p 𝔭.1,
       (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank _ 𝔭.1
         (by rw [hg, NumberField.RingOfIntegers.rank, hK])).2]

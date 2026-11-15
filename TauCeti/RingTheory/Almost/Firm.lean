@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.FiveLemma
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Bousfield
+public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.CategoryTheory.Adjunction.Restrict
 public import Mathlib.CategoryTheory.Localization.HasLocalization
@@ -30,8 +31,7 @@ the almost isomorphisms, which fixes the category of firm modules as the localiz
 
 The basic input is that `m~` is an idempotent `V`-module
 (`TauCeti.Almost.BasicSetup.tildeTensorIdealEquiv`), so `m~` is itself firm. The flatness of `m~`
-is used for the closure of firm modules under kernels and extensions, and to see that `m~ ⊗[V] −`
-turns almost isomorphisms into isomorphisms.
+is used for the closure of firm modules under kernels and extensions.
 
 ## Main definitions
 
@@ -46,6 +46,7 @@ turns almost isomorphisms into isomorphisms.
 
 * `TauCeti.Almost.BasicSetup.isFirm_tilde` and `TauCeti.Almost.BasicSetup.isFirm_tilde_tensor`:
   `m~` and every module `m~ ⊗[V] M` are firm.
+* `TauCeti.Almost.BasicSetup.IsFirm.tensorProduct`: a tensor product with a firm module is firm.
 * `TauCeti.Almost.BasicSetup.isFirm_classical`, `TauCeti.Almost.BasicSetup.isFirm_zero_iff` and
   `TauCeti.Almost.BasicSetup.isFirm_self_iff`: every module is firm for the classical setup, only
   the zero module is firm for the zero setup, and `V` is firm only if `m = V`.
@@ -56,6 +57,9 @@ turns almost isomorphisms into isomorphisms.
   and extensions.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso.bijective_of_isFirm`: an almost isomorphism between firm
   modules is bijective.
+* `TauCeti.Almost.BasicSetup.isAlmostIso_tildeAct`: the action map is an almost isomorphism.
+* `TauCeti.Almost.BasicSetup.linearMap_eq_zero_of_ideal_smul`: a linear map from a module with
+  surjective action map vanishes if every scalar in the setup ideal kills it.
 * `TauCeti.Almost.BasicSetup.firmInclusionAdj`: the inclusion of firm modules is left adjoint to
   `firm`.
 * `TauCeti.Almost.BasicSetup.firmAdj`: `firm` is left adjoint to `closure`, and `closure` is fully
@@ -176,12 +180,35 @@ theorem isFirm_tilde_tensor : S.IsFirm (S.tilde ⊗[V] M) := by
     (LinearEquiv.bijective _)
 
 variable {S M} in
+/-- A tensor product with a firm module is firm: `P ⊗[V] M ≅ P ⊗[V] (m~ ⊗[V] M)` is of the form
+`m~ ⊗[V] (P ⊗[V] M)`. -/
+theorem IsFirm.tensorProduct (P : Type*) [AddCommGroup P] [Module V P] (hM : S.IsFirm M) :
+    S.IsFirm (P ⊗[V] M) :=
+  (LinearEquiv.isFirm_iff S ((LinearEquiv.ofBijective _ hM).symm.lTensor P ≪≫ₗ
+    TensorProduct.leftComm V P S.tilde M)).mpr (S.isFirm_tilde_tensor _)
+
+variable {S M} in
 /-- A firm module that is almost zero is zero: its action map is a surjection from
 `m~ ⊗[V] M = 0`. -/
 theorem IsFirm.subsingleton_of_isAlmostZero (hM : S.IsFirm M) (h : S.IsAlmostZero M) :
     Subsingleton M :=
   have := (S.isAlmostZero_iff_subsingleton_tilde_tensor M).mp h
   hM.surjective.subsingleton
+
+variable {S M} in
+/-- A linear map from a module with surjective action map vanishes if every scalar in the
+setup ideal kills it. -/
+theorem linearMap_eq_zero_of_ideal_smul (hM : Function.Surjective (S.tildeAct M))
+    (f : M →ₗ[V] N)
+    (hf : ∀ ε ∈ S.ideal, ε • f = 0) : f = 0 := by
+  ext x
+  obtain ⟨t, rfl⟩ := hM x
+  induction t using TensorProduct.inductionOn with
+  | add t u ht hu => simp [ht, hu]
+  | tmul t y =>
+    rw [tildeAct_tmul, map_smul]
+    have ht : S.tildeMul t ∈ S.ideal := S.range_tildeMul.le ⟨t, rfl⟩
+    exact LinearMap.congr_fun (hf _ ht) y
 
 /-- For the classical setup `(V, V)` every module is firm. -/
 theorem isFirm_classical : (classical V).IsFirm M := by
@@ -317,6 +344,14 @@ theorem firm_map_hom {M N : ModuleCat.{u} V} (f : M ⟶ N) :
     (S.firm.map f).hom = ModuleCat.ofHom (f.hom.lTensor S.tilde) :=
   (rfl)
 
+instance : S.firm.Linear V where
+  map_smul f r := by
+    apply S.isFirm.ι.map_injective
+    rw [S.isFirm.ι.map_smul]
+    apply ModuleCat.hom_ext
+    -- The inclusion forgets the full-subcategory wrapper and `ofHom` wraps a linear map.
+    exact LinearMap.lTensor_smul S.tilde r f.hom
+
 /-- The inverse of the action map of a firm module. -/
 private noncomputable def tildeActInv (N : S.Firm) : N.obj →ₗ[V] S.tilde ⊗[V] N.obj :=
   (LinearEquiv.ofBijective _ ((S.isFirm_iff _).mp N.property)).symm.toLinearMap
@@ -436,6 +471,16 @@ theorem closure_map {N N' : S.Firm} (f : N ⟶ N') :
     S.closure.map f = (ihom (ModuleCat.of V S.tilde)).map f.hom :=
   (rfl)
 
+/-- The functor `N ↦ Hom_V(m~, N)` on firm modules is additive. -/
+instance : S.closure.Additive :=
+  inferInstanceAs (Functor.Additive (S.isFirm.ι ⋙
+    (linearCoyoneda V (ModuleCat.{u} V)).obj (Opposite.op (ModuleCat.of V S.tilde))))
+
+/-- The functor `N ↦ Hom_V(m~, N)` on firm modules is `V`-linear. -/
+instance : S.closure.Linear V :=
+  inferInstanceAs (Functor.Linear V (S.isFirm.ι ⋙
+    (linearCoyoneda V (ModuleCat.{u} V)).obj (Opposite.op (ModuleCat.of V S.tilde))))
+
 /-- The functor `firm` is left adjoint to `closure` (Bhatt, Construction 4.1.5): this is the
 tensor-hom adjunction for `m~`, restricted to firm modules. -/
 noncomputable def firmAdj : S.firm ⊣ S.closure :=
@@ -538,6 +583,9 @@ instance : PreservesFiniteColimits S.firm :=
   have : PreservesColimitsOfSize.{0, 0} S.firm := S.firmAdj.leftAdjoint_preservesColimits
   inferInstance
 
+instance : S.firm.Additive :=
+  Functor.additive_of_preserves_binary_products _
+
 /-- The functor `firm : ModuleCat V ⥤ S.Firm` is a localization functor for the almost
 isomorphisms (Bhatt, Proposition 4.1.7(2); Gabber–Ramero, Proposition 2.2.21): it is exact with a
 fully faithful right adjoint, and it kills exactly the almost zero modules. -/
@@ -554,6 +602,13 @@ noncomputable instance hasLocalization :
     MorphismProperty.HasLocalization.{u}
       (S.almostZero : ObjectProperty (ModuleCat.{u} V)).isoModSerre where
   L := S.firm
+
+/-- The action map `m~ ⊗ M → M` is an almost isomorphism. -/
+theorem isAlmostIso_tildeAct (M : ModuleCat.{u} V) :
+    S.IsAlmostIso (M := S.tilde ⊗[V] M) (S.tildeAct M) := by
+  apply S.isAlmostIso_iff_lTensor_bijective.mpr
+  rw [S.lTensor_tildeAct]
+  exact S.isFirm_tilde_tensor M
 
 end Category
 

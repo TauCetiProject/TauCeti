@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Geometry.Lie.Exponential.Units.Basic
 import Mathlib.Analysis.Normed.Ring.Units
 
 /-!
@@ -32,6 +33,17 @@ Hermitian matrices. The matrix statement is `Matrix.GeneralLinearGroup.cartanHom
 `TauCeti/Analysis/Matrix/Cartan.lean`. Topologically, the homeomorphism identifies `Aˣ` with the
 product of the unitary group and the real vector space `selfAdjoint A`.
 
+The decomposition restricts to a subgroup `G` of `Aˣ` that is closed under `a ↦ a⋆` and such that,
+for self-adjoint `x`, the line `t ↦ exp (t x)` lies in `G` as soon as `exp x` does. For `a ∈ G`,
+the element `a⋆ a = exp (2 x)` lies in `G`, hence so does the line through `x`, and then so does
+the unitary factor `a exp (-x)`. Thus `G` is homeomorphic to the product of its unitary elements
+and of the self-adjoint elements of its Lie algebra `{x | ∀ t, exp (t x) ∈ G}`. For a subgroup of
+`GL(n, ℝ)` or `GL(n, ℂ)` this is the global Cartan decomposition `G = K exp 𝔭`, with `K = G ∩ U(n)`
+and `𝔭` the Hermitian part of the Lie algebra of `G`. The hypotheses hold for the special linear
+groups (`Matrix.SpecialLinearGroup.cartanHomeomorph`) and, more generally, for real algebraic groups
+stable under conjugate transpose; they fail for a discrete subgroup such as the powers of a
+positive diagonal matrix, which is not a product of this form.
+
 ## Main declarations
 
 * `IsSelfAdjoint.isStrictlyPositive_exp`: the exponential of a self-adjoint element is strictly
@@ -47,6 +59,12 @@ product of the unitary group and the real vector space `selfAdjoint A`.
   `(u, x) ↦ u * exp x`, with `TauCeti.val_cartanHomeomorph_apply`,
   `TauCeti.cartanHomeomorph_symm_apply_fst` and `TauCeti.coe_cartanHomeomorph_symm_apply_snd`
   computing it and its inverse.
+* `TauCeti.cartanHomeomorph_mem_iff`: for a subgroup `G` as above, `u * exp x` lies in `G` exactly
+  when `u` does and the whole line `exp (t x)` does.
+* `Subgroup.cartanHomeomorph`: the Cartan decomposition of such a subgroup, the
+  homeomorphism `{u ∈ unitary A | u ∈ G} × {x ∈ selfAdjoint A | ∀ t, exp (t x) ∈ G} ≃ₜ G`, with
+  `Subgroup.val_cartanHomeomorph_apply`, `Subgroup.coe_cartanHomeomorph_symm_apply_fst` and
+  `Subgroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse.
 
 ## References
 
@@ -55,6 +73,8 @@ product of the unitary group and the real vector space `selfAdjoint A`.
 * Brian C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition, Graduate Texts
   in Mathematics 222, Springer, 2015, Section 2.5 (the polar decomposition `A = U e^X` of
   `GL(n, ℂ)` with `U` unitary and `X` self-adjoint).
+* G. D. Mostow, *Self-adjoint groups*, Annals of Mathematics (2) 62 (1955), 44–55 (the Cartan
+  decomposition of an algebraic group of matrices closed under conjugate transpose).
 -/
 
 public section
@@ -193,5 +213,99 @@ theorem cartanHomeomorph_symm_apply_fst (a : Aˣ) :
 theorem coe_cartanHomeomorph_symm_apply_snd (a : Aˣ) :
     (((cartanHomeomorph A).symm a).2 : A) = CFC.log (CFC.sqrt (star (a : A) * a)) :=
   (rfl)
+
+section Subgroup
+
+/-! ### The Cartan decomposition of a subgroup closed under the involution -/
+
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+/-- The Cartan decomposition map sends `(u, x)` to the product of the units `u` and `exp x`. -/
+theorem cartanHomeomorph_apply (p : unitary A × selfAdjoint A) :
+    cartanHomeomorph A p = Unitary.toUnits p.1 * expUnit (p.2 : A) :=
+  Units.ext (by simp)
+
+variable {G : Subgroup Aˣ}
+
+/-- Let `G` be a subgroup of the units closed under the involution, such that the exponential
+line `t ↦ exp (t x)` stays in `G` as soon as `exp x` does, for self-adjoint `x`. Then for `u`
+unitary and `x` self-adjoint, `u * exp x` lies in `G` exactly when `u` lies in `G` and `x` lies in
+the Lie algebra `{x | ∀ t, exp (t x) ∈ G}` of `G`. -/
+theorem cartanHomeomorph_mem_iff (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G)
+    (p : unitary A × selfAdjoint A) :
+    cartanHomeomorph A p ∈ G ↔
+      Unitary.toUnits p.1 ∈ G ∧ ∀ t : ℝ, expUnit (t • (p.2 : A)) ∈ G := by
+  obtain ⟨u, x, hx⟩ := p
+  refine ⟨fun h ↦ ?_, fun ⟨hu, hx'⟩ ↦ ?_⟩
+  · -- `a⋆ a = exp x⋆ u⋆ u exp x = exp (2 x)`, so the line through `2 x` lies in `G`.
+    have h2 : expUnit ((2 : ℝ) • x) = star (cartanHomeomorph A (u, ⟨x, hx⟩)) *
+        cartanHomeomorph A (u, ⟨x, hx⟩) := by
+      refine Units.ext ?_
+      simp only [expUnit_coe, Units.val_mul, Units.coe_star, val_cartanHomeomorph_apply, star_mul,
+        (hx.exp).star_eq, mul_assoc, ← mul_assoc (star (u : A)), Unitary.coe_star_mul_self,
+        one_mul]
+      rw [← exp_add_of_commute (Commute.refl x), two_smul]
+    have hline (t : ℝ) : expUnit (t • x) ∈ G := by
+      have h2x : IsSelfAdjoint ((2 : ℝ) • x) := by
+        rw [two_smul]
+        exact hx.add hx
+      have := hexp _ h2x (h2 ▸ G.mul_mem (hstar _ h) h) (t / 2)
+      rwa [smul_smul, div_mul_cancel₀ t two_ne_zero] at this
+    refine ⟨?_, hline⟩
+    -- The unitary factor is `a * (exp x)⁻¹`.
+    have hu : Unitary.toUnits u = cartanHomeomorph A (u, ⟨x, hx⟩) * (expUnit x)⁻¹ := by
+      rw [cartanHomeomorph_apply, mul_inv_cancel_right]
+    rw [hu]
+    exact G.mul_mem h (G.inv_mem (by simpa using hline 1))
+  · rw [cartanHomeomorph_apply]
+    exact G.mul_mem hu (by simpa using hx' 1)
+
+variable (G) in
+/-- **The Cartan decomposition of a subgroup closed under the involution.** Let `G` be a subgroup
+of the units closed under `a ↦ a⋆`, such that for self-adjoint `x` with `exp x ∈ G` the whole line
+`exp (t x)` lies in `G`. Then `(u, x) ↦ u * exp x` is a homeomorphism from the product of the
+unitary elements of `G` and the self-adjoint elements `x` of the Lie algebra of `G`, those with
+`exp (t x) ∈ G` for every real `t`, onto `G`.
+
+For a subgroup of `GL(n, ℝ)` or `GL(n, ℂ)` satisfying these hypotheses, such as `SL(n, ℝ)` or
+`SL(n, ℂ)`, this is the global Cartan decomposition `G = K exp 𝔭`, with `K = G ∩ U(n)` and `𝔭` the
+Hermitian part of the Lie algebra of `G`. -/
+def _root_.Subgroup.cartanHomeomorph (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) :
+    {u : unitary A // Unitary.toUnits u ∈ G} ×
+        {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G} ≃ₜ G :=
+  (Homeomorph.Set.prod {u : unitary A | Unitary.toUnits u ∈ G}
+      {x : selfAdjoint A | ∀ t : ℝ, expUnit (t • (x : A)) ∈ G}).symm.trans <|
+    (TauCeti.cartanHomeomorph A).subtype fun p ↦ (cartanHomeomorph_mem_iff hstar hexp p).symm
+
+/-- The Cartan decomposition of a subgroup sends `(u, x)` to `u * exp x`. -/
+@[simp]
+theorem _root_.Subgroup.val_cartanHomeomorph_apply (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G)
+    (p : {u : unitary A // Unitary.toUnits u ∈ G} ×
+      {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G}) :
+    ((G.cartanHomeomorph hstar hexp p : Aˣ) : A) =
+      (p.1 : A) * exp ((p.2 : selfAdjoint A) : A) :=
+  TauCeti.val_cartanHomeomorph_apply _
+
+/-- The unitary factor of the Cartan decomposition of an element `a` of a subgroup is its polar
+unitary factor. -/
+@[simp]
+theorem _root_.Subgroup.coe_cartanHomeomorph_symm_apply_fst (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) (a : G) :
+    (((G.cartanHomeomorph hstar hexp).symm a).1 : unitary A) = (a : Aˣ).polarUnitary :=
+  (rfl)
+
+/-- The self-adjoint factor of the Cartan decomposition of an element `a` of a subgroup is
+`log √(a⋆ a)`. -/
+@[simp]
+theorem _root_.Subgroup.coe_cartanHomeomorph_symm_apply_snd (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) (a : G) :
+    ((((G.cartanHomeomorph hstar hexp).symm a).2 : selfAdjoint A) : A) =
+      CFC.log (CFC.sqrt (star ((a : Aˣ) : A) * (a : Aˣ))) :=
+  (rfl)
+
+end Subgroup
 
 end TauCeti

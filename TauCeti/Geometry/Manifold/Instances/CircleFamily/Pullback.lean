@@ -357,29 +357,41 @@ def fiberProductHomeomorph (hp : Continuous p) :
 theorem coe_fiberProductHomeomorph (hp : Continuous p) (z : Pullback p) :
     (fiberProductHomeomorph p hp z).1 = (z.base, toCircleFamily p z) := (rfl)
 
+/-- Normalize real representatives by dividing the time coordinate by the period at the base
+point. For continuous periods this is a homeomorphism of `B × ℝ`. -/
+def realNormalizationHomeomorph (hp : Continuous p) : B × ℝ ≃ₜ B × ℝ where
+  toFun z := (z.1, z.2 / (p z.1 : ℝ))
+  invFun z := (z.1, z.2 * (p z.1 : ℝ))
+  left_inv z := by simp [(p z.1).property.ne']
+  right_inv z := by simp [(p z.1).property.ne']
+  continuous_toFun := continuous_fst.prodMk
+    (continuous_snd.div ((continuous_subtype_val.comp hp).comp continuous_fst)
+      fun z ↦ (p z.1).property.ne')
+  continuous_invFun := continuous_fst.prodMk
+    (continuous_snd.mul ((continuous_subtype_val.comp hp).comp continuous_fst))
+
+/-- Real normalization divides the time coordinate by the period. -/
+@[simp]
+theorem realNormalizationHomeomorph_apply (hp : Continuous p) (z : B × ℝ) :
+    realNormalizationHomeomorph p hp z = (z.1, z.2 / (p z.1 : ℝ)) := (rfl)
+
+/-- Inverse real normalization multiplies the normalized time by the period. -/
+@[simp]
+theorem realNormalizationHomeomorph_symm_apply (hp : Continuous p) (z : B × ℝ) :
+    (realNormalizationHomeomorph p hp).symm z = (z.1, z.2 * (p z.1 : ℝ)) := (rfl)
+
 /-- For continuous periods, the real representative map is a covering map. In normalized
 coordinates it is the quotient map of the unit circle after dividing the time by the period. -/
 theorem isCoveringMap_representative (hp : Continuous p) : IsCoveringMap (representative p) := by
-  have hpos : ∀ b, (p b : ℝ) ≠ 0 := fun b ↦ (p b).property.ne'
-  let g : B × ℝ ≃ₜ B × ℝ :=
-    { toFun z := (z.1, z.2 / (p z.1 : ℝ))
-      invFun z := (z.1, z.2 * (p z.1 : ℝ))
-      left_inv z := by simp [hpos]
-      right_inv z := by simp [hpos]
-      continuous_toFun := continuous_fst.prodMk
-        (continuous_snd.div ((continuous_subtype_val.comp hp).comp continuous_fst)
-          fun z ↦ hpos z.1)
-      continuous_invFun := continuous_fst.prodMk
-        (continuous_snd.mul ((continuous_subtype_val.comp hp).comp continuous_fst)) }
-  have h : representative p =
-      (normalizationHomeomorph p).symm ∘ Prod.map id ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ g := by
+  have h : representative p = (normalizationHomeomorph p).symm ∘
+      Prod.map id ((↑) : ℝ → AddCircle (1 : ℝ)) ∘ realNormalizationHomeomorph p hp := by
     funext z
     rw [Function.comp_apply, Function.comp_apply, eq_comm, Homeomorph.symm_apply_eq,
       coe_normalizationHomeomorph, normalizationEquiv_representative]
     rfl
   rw [h]
   exact ((IsCoveringMap.id.prodMap (AddCircle.isCoveringMap_coe 1)).comp_homeomorph
-    g).homeomorph_comp (normalizationHomeomorph p).symm
+    (realNormalizationHomeomorph p hp)).homeomorph_comp (normalizationHomeomorph p).symm
 
 /-! ### Continuity of base change -/
 
@@ -611,13 +623,11 @@ theorem normalization_representative (n : ℕ∞ω) (z : B × ℝ) :
   rw [coe_normalization, normalizationEquiv_representative]
 
 /-- Normalize real representatives by dividing the time coordinate by the period at the base
-point. For `C^n` periods this is a `C^n` diffeomorphism of `B × ℝ`. -/
+point. For `C^n` periods this is a `C^n` diffeomorphism of `B × ℝ`, with the underlying
+equivalence of `realNormalizationHomeomorph`. -/
 def realNormalization (hp : ContMDiff IB 𝓘(ℝ) n p) :
     (B × ℝ) ≃ₘ^n⟮IB.prod 𝓘(ℝ), IB.prod 𝓘(ℝ)⟯ B × ℝ where
-  toFun z := (z.1, z.2 / (p z.1 : ℝ))
-  invFun z := (z.1, z.2 * (p z.1 : ℝ))
-  left_inv z := by simp [(p z.1).property.ne']
-  right_inv z := by simp [(p z.1).property.ne']
+  __ := (realNormalizationHomeomorph p hp.continuous).toEquiv
   contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_snd.div₀
     ((contMDiff_subtype_val.comp hp).comp contMDiff_fst) fun z ↦ (p z.1).property.ne')
   contMDiff_invFun := contMDiff_fst.prodMk

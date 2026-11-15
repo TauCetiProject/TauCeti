@@ -122,7 +122,7 @@ theorem approximatesLinearOn_of_finite_closed_cover {ι : Type*} [Finite ι]
     ApproximatesLinearOn g A s ε := by
   apply LipschitzOnWith.approximatesLinearOn
   refine hs.lipschitzOnWith_of_finite_closed_cover C hC hcover fun i => ?_
-  exact (hconv i).lipschitzOnWith_of_nnnorm_hasFDerivWithin_le
+  exact (hconv i).lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
     (fun x hx => (hg i x hx).sub A.hasFDerivWithinAt) (hbound i)
 
 end Convex

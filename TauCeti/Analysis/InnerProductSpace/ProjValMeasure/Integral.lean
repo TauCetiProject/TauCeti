@@ -46,6 +46,8 @@ continuous extension `LinearMap.extendOfNorm`.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
 * `ProjValMeasure.integral_indicator`: the integral of a measurable indicator is the projection.
+* `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
+  commutes with every projection.
 * `ProjValMeasure.integral_diag_eq_inner_integral`: diagonal matrix elements of the integral are
   integrals against the diagonal measures.
 * `ProjValMeasure.norm_integral_le`: a pointwise bound on the symbol bounds the operator norm.
@@ -273,6 +275,20 @@ theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : Measurable
     ← BoundedBorelFunction.ofSimpleFunc_piecewise_const_zero,
     integral_ofSimpleFunc_eq_simpleIntegral]
   exact (P.setToSimpleFunc_smulProj_piecewise 1 hB).trans (one_smul ℂ _)
+
+/-- An operator commutes with the integral of every bounded Borel symbol iff it commutes with the
+projection of every measurable set: integrals of simple symbols are linear combinations of
+projections, and simple symbols are dense. -/
+theorem forall_commute_integral_iff (P : ProjValMeasure X H) (A : H →L[ℂ] H) :
+    (∀ f, Commute A (P.integral f)) ↔ ∀ B hB, Commute A (P.proj B hB) := by
+  refine ⟨fun h B hB => P.integral_indicator hB ▸ h _, fun h f => ?_⟩
+  induction f using BoundedBorelFunction.denseRange_ofSimpleFunc.induction_on with
+  | hp =>
+    exact isClosed_eq (continuous_const.mul P.continuous_integral)
+      (P.continuous_integral.mul continuous_const)
+  | ih s =>
+    rw [integral_ofSimpleFunc]
+    exact Commute.sum_right _ _ _ fun c _ => (h _ _).smul_right c
 
 /-- Diagonal matrix elements of the integral are integrals against the diagonal measures:
 `∫ f d(P.diag ξ) = ⟪ξ, (∫ f dP) ξ⟫`. -/

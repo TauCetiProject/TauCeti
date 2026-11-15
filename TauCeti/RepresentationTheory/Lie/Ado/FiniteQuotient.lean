@@ -68,8 +68,6 @@ theorem finiteDimensional_quotient_centralAugmentationIdeal_pow
   obtain ⟨-, -, c, -, haug, hS⟩ := exists_pCentralGenerators_moduleFinite K L p
   obtain ⟨-, hfin⟩ := hS
   set S := Algebra.adjoin K (Set.range c)
-  let _ : Algebra S Uₖ := Subalgebra.centralSubalgebraAlgebra S
-  have htower : IsScalarTower K S Uₖ := Subalgebra.isScalarTower_centralSubalgebraAlgebra S
   have hmodfin : Module.Finite S Uₖ := hfin
   set s : Set S := ((↑) : S → Subalgebra.center K Uₖ) ⁻¹' Set.range c
   have hsfin : s.Finite :=
@@ -77,14 +75,11 @@ theorem finiteDimensional_quotient_centralAugmentationIdeal_pow
   have htop : Algebra.adjoin K s = ⊤ := Algebra.adjoin_adjoin_coe_preimage
   have hmem : ∀ x ∈ s, algebraMap S Uₖ x ∈ HopfIdeal.centralAugmentationIdeal K Uₖ := by
     rintro x ⟨i, hi⟩
-    rw [Subalgebra.centralSubalgebraAlgebra_algebraMap_apply]
+    rw [Subalgebra.algebraMap_def, Subalgebra.centerAlgebra_algebraMap_apply]
     refine HopfIdeal.mem_centralAugmentationIdeal_of_mem_centralAugmentation K Uₖ ?_
     rw [HopfIdeal.mem_centralAugmentation]
     exact ⟨((x : Subalgebra.center K Uₖ)).property, hi ▸ haug i⟩
-  -- The action of `S` on `U(L)` is a local instance built from `S`, so neither the scalar tower
-  -- nor the module-finiteness over it is found by instance synthesis; both are passed by hand.
-  exact @finite_quotient_pow_of_algebraMap_mem K S Uₖ _ _ _ _ _ _ htower hmodfin
-    s hsfin htop _ _ hmem n
+  exact finite_quotient_pow_of_algebraMap_mem hsfin htop hmem n
 
 end UniversalEnvelopingAlgebra
 

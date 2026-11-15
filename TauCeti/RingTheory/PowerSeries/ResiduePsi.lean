@@ -76,7 +76,7 @@ theorem residuePsi_coe_polynomial_of_natDegree_lt (p : ℕ) (P : Polynomial (ZMo
     exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
   · rw [coeff_C, ite_eq_right (Nat.succ_ne_zero n)]
     apply Finset.sum_eq_zero
-    intro i hi
+    intro i _
     rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_natDegree_lt, mul_zero]
     nlinarith
 
@@ -94,7 +94,7 @@ theorem residuePsi_monomial (m : ℕ) (a : ZMod p) :
   classical
   simp only [residuePsi, LinearMap.sum_apply, LinearMap.smul_apply]
   rw [Finset.sum_congr rfl fun i hi ↦ congrArg (fun F ↦ (-1 : ZMod p) ^ i • F)
-    (cartier_monomial p i m (NeZero.ne p) (Finset.mem_range.mp hi) a)]
+    (cartier_monomial p i m (Finset.mem_range.mp hi) a)]
   simp [Nat.mod_lt m (Nat.pos_of_ne_zero (NeZero.ne p)), ← map_smul]
 
 /-- Residue averaging fixes constant series. -/

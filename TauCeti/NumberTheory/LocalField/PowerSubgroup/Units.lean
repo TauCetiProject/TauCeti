@@ -56,7 +56,7 @@ theorem card_integerUnitPowerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
       ext
       simp [hn0]
     simpa [hker, (AddEquiv.additiveMultiplicative ℤ).toIntLinearEquiv.finrank_eq] using
-      Subgroup.index_range_powMonoidHom_of_fg (Multiplicative ℤ) hn0
+      Subgroup.index_range_powMonoidHom_of_fg (Multiplicative ℤ) n
   have hcount : Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
       n * Nat.card (𝒪[K]ˣ ⧸ (powMonoidHom n : 𝒪[K]ˣ →* 𝒪[K]ˣ).range) := by
     rw [← Subgroup.index_eq_card, ← Subgroup.index_map_equiv _ e,

@@ -59,19 +59,6 @@ theorem isPolygonalOnInterval_bowTieCurve : IsPolygonalOnInterval bowTieCurve 0 
 theorem bowTieCurve_closed : bowTieCurve 0 = bowTieCurve 4 := by
   norm_num [bowTieCurve]
 
-private theorem bowTieCurve_avoids (y : ℝ) (hy : y = 3 / 4 ∨ y = 1 / 4) :
-    (⟨1 / 2, y⟩ : ℂ) ∉ bowTieCurve '' uIcc 0 4 := by
-  rintro ⟨t, _, heq⟩
-  rcases hy with rfl | rfl
-  all_goals
-    unfold bowTieCurve at heq
-    split_ifs at heq
-    all_goals
-      have hr := congrArg Complex.re heq
-      have hi := congrArg Complex.im heq
-      norm_num at *
-  all_goals linarith
-
 private theorem bowTieFan_avoids (y : ℝ) (hy : y = 3 / 4 ∨ y = 1 / 4) (i : Fin 4) :
     (⟨1 / 2, y⟩ : ℂ) ∉
       segment ℝ 0 (bowTieCurve (i.castSucc : ℝ)) ∪
@@ -93,7 +80,6 @@ private theorem bowTieFan_avoids (y : ℝ) (hy : y = 3 / 4 ∨ y = 1 / 4) (i : F
   all_goals linarith
 
 private theorem bowTie_index_eq_two_triangles {z : ℂ}
-    (hz : z ∉ bowTieCurve '' uIcc 0 4)
     (hf : ∀ i : Fin 4, z ∉
       segment ℝ 0 (bowTieCurve (i.castSucc : ℝ)) ∪
         segment ℝ (bowTieCurve (i.castSucc : ℝ)) (bowTieCurve (i.succ : ℝ)) ∪
@@ -112,7 +98,7 @@ private theorem bowTie_index_eq_two_triangles {z : ℂ}
           (bowTieCurve (i.succ : ℝ) - bowTieCurve (i.castSucc : ℝ)) := by
     simpa using bowTieCurve_subdivision i t (by simpa using ht)
   have h := windingNumber_eq_sum_triangleCurve (a := 0) (b := 4)
-    hs (by norm_num) (by norm_num) hseg bowTieCurve_closed 0 hz hf
+    hs (by norm_num) (by norm_num) hseg bowTieCurve_closed 0 hf
   have hv : (⟨1, 1⟩ : ℂ) = 1 + Complex.I := by apply Complex.ext <;> simp
   have hI : (⟨0, 1⟩ : ℂ) = Complex.I := by apply Complex.ext <;> simp
   have h1 : (⟨1, 0⟩ : ℂ) = 1 := by apply Complex.ext <;> simp
@@ -167,8 +153,7 @@ private theorem bowTie_lower_interior :
 /-- The upper lobe has positive index one at an explicit interior point. -/
 theorem windingNumber_bowTieCurve_upper :
     Contour.windingNumber bowTieCurve 0 4 ⟨1 / 2, 3 / 4⟩ = 1 := by
-  rw [bowTie_index_eq_two_triangles (bowTieCurve_avoids _ (Or.inl rfl))
-    (bowTieFan_avoids _ (Or.inl rfl)),
+  rw [bowTie_index_eq_two_triangles (bowTieFan_avoids _ (Or.inl rfl)),
     windingNumber_triangleCurve_eq_one (by norm_num [triangleDet_def]) bowTie_upper_interior]
   have hout : (⟨1 / 2, 3 / 4⟩ : ℂ) ∉ convexHull ℝ {0, Complex.I, 1} := by
     have hsub : convexHull ℝ {0, Complex.I, 1} ⊆ {z : ℂ | z.re + z.im ≤ 1} :=
@@ -182,8 +167,7 @@ theorem windingNumber_bowTieCurve_upper :
 /-- The lower lobe has negative index one at an explicit interior point. -/
 theorem windingNumber_bowTieCurve_lower :
     Contour.windingNumber bowTieCurve 0 4 ⟨1 / 2, 1 / 4⟩ = -1 := by
-  rw [bowTie_index_eq_two_triangles (bowTieCurve_avoids _ (Or.inr rfl))
-    (bowTieFan_avoids _ (Or.inr rfl)),
+  rw [bowTie_index_eq_two_triangles (bowTieFan_avoids _ (Or.inr rfl)),
     windingNumber_triangleCurve_eq_neg_one (by norm_num [triangleDet_def]) bowTie_lower_interior]
   have hout : (⟨1 / 2, 1 / 4⟩ : ℂ) ∉ convexHull ℝ {0, 1 + Complex.I, Complex.I} := by
     have hsub : convexHull ℝ {0, 1 + Complex.I, Complex.I} ⊆ {z : ℂ | z.re - z.im ≤ 0} :=

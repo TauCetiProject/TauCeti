@@ -15,7 +15,7 @@ import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 import TauCeti.RingTheory.Valuation.LtAddSubgroup
 import TauCeti.RingTheory.Valuation.ValuationRing
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # The adic spectrum of a discrete valuation ring

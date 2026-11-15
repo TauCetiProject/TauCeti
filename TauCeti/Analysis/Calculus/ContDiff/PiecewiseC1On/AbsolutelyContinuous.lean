@@ -48,15 +48,15 @@ theorem IsPiecewiseC1On.exists_lipschitzOnWith (hγ : IsPiecewiseC1On γ a b) :
       dist (γ x) (γ y) ≤ K * (y - x) := by
     refine Icc_induction_of_disjoint_Ioo (p := p)
       (Q := fun c d => dist (γ c) (γ d) ≤ K * (d - c)) (fun c d hcd hsub hdisj => ?_)
-      (fun c m d _ _ h₁ h₂ => ?_) hxy hsub
+      (fun c m d _ _ _ h₁ h₂ => ?_) hxy hsub
     · rcases hcd.eq_or_lt with rfl | hcd
       · simp
       have hlip : LipschitzOnWith K γ (Ioo c d) :=
-        (convex_Ioo c d).lipschitzOnWith_of_nnnorm_deriv_le
+        (convex_Ioo c d).lipschitzOnWith_of_nnNorm_deriv_le
           (fun t ht => ((hC1 c d hsub hdisj).differentiableOn one_ne_zero).differentiableAt
             (Icc_mem_nhds ht.1 ht.2))
           fun t ht => by
-            rw [← NNReal.coe_le_coe, coe_nnnorm]
+            rw [← NNReal.coe_le_coe, coe_nnNorm]
             exact hC _ ⟨t, hsub (Ioo_subset_Icc_self ht), rfl⟩
       replace hlip := hlip.closure (by rw [closure_Ioo hcd.ne]; exact hγ.continuousOn.mono hsub)
       rw [closure_Ioo hcd.ne] at hlip

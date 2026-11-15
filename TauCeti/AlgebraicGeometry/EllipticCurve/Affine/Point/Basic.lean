@@ -49,6 +49,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.cast_zero` and `WeierstrassCurve.Affine.Point.cast_some`:
   transport along an equality of curves, as in `AddEquiv.cast` and `Equiv.cast`, fixes the
   point at infinity and keeps the coordinates of a point.
+* `WeierstrassCurve.Affine.Point.xCoord_cast` and `WeierstrassCurve.Affine.Point.yCoord_cast`:
+  the coordinate accessors are unchanged by that transport.
 
 The coordinate accessors let regular functions be evaluated at translates of the generic point.
 These evaluations define the pullback of translation on the curve's function field.
@@ -205,6 +207,20 @@ lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
     (hns : V.toAffine.Nonsingular x y) :
     cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (some x y hns)
       = some x y (h ▸ hns) := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the `x`-coordinate,
+the point at infinity included. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this
+`cast`. -/
+lemma xCoord_cast {V V' : WeierstrassCurve R} (h : V = V') (P : V.toAffine.Point) :
+    xCoord (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) P) = xCoord P := by
+  subst h; rfl
+
+/-- Transport of affine points along an equality of Weierstrass curves keeps the `y`-coordinate,
+the point at infinity included. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this
+`cast`. -/
+lemma yCoord_cast {V V' : WeierstrassCurve R} (h : V = V') (P : V.toAffine.Point) :
+    yCoord (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) P) = yCoord P := by
   subst h; rfl
 
 end Cast

@@ -111,6 +111,13 @@ theorem IsEntire.hasSum_evalAt [CompleteSpace A] (hf : f.IsEntire) (b : A) :
   rw [evalAt_def]
   exact (hf.summable_smul_pow b).hasSum
 
+/-- The truncations of an entire series `f`, evaluated at any `b` in a complete seminormed algebra,
+converge to `f(b)`. -/
+theorem IsEntire.tendsto_aeval_trunc [CompleteSpace A] (hf : f.IsEntire) (b : A) :
+    Tendsto (fun n ↦ Polynomial.aeval b (trunc n f)) atTop (𝓝 (f.evalAt b)) := by
+  simpa [Polynomial.aeval_def, eval₂_trunc_eq_sum_range, Algebra.smul_def] using
+    (hf.hasSum_evalAt b).tendsto_sum_nat
+
 /-- Evaluation of entire series commutes with continuous algebra homomorphisms:
 `ψ (f(b)) = f(ψ b)`. -/
 theorem IsEntire.map_evalAt [CompleteSpace A] {B F : Type*} [Semiring B] [Algebra R B]
@@ -145,14 +152,8 @@ theorem IsEntire.evalAt_smul (hf : f.IsEntire) (a : R) (b : A) :
 /-- Evaluation commutes with finite sums of entire series. -/
 theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
     (hf : ∀ i ∈ s, (f i).IsEntire) (b : A) :
-    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    rw [Finset.sum_insert hi, Finset.sum_insert hi,
-      (hf i (by simp)).evalAt_add (IsEntire.sum fun j hj ↦ hf j (by simp [hj])),
-      ih fun j hj ↦ hf j (by simp [hj])]
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b :=
+  evalAt_sum_of_summable_norm s fun i hi ↦ (hf i hi).summable_norm_smul_pow b
 
 /-- Evaluation is multiplicative on entire series: this is the Cauchy product formula for the
 absolutely convergent series `∑ aₙ • bⁿ` and `∑ cₙ • bⁿ`. -/

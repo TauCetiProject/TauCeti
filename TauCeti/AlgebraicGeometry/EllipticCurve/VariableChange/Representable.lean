@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.CategoryTheory.Yoneda
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Ring.ULift
@@ -269,6 +270,36 @@ classified by `h`. -/
 theorem universalChange_map_pushoutLift :
     (universalChange B').map (pushoutLift f p) = (universalChange B).map p.1.2 :=
   map_lift _
+
+open CategoryTheory CategoryTheory.Limits in
+/-- The coefficient-extension square is a pushout in the category of commutative rings.
+This is the categorical form of `pushoutLift`, with no flatness assumption. -/
+theorem isPushout {B B' : Type u} [CommRing B] [CommRing B'] (f : B →+* B') :
+    CategoryTheory.IsPushout (CommRingCat.ofHom f)
+      (CommRingCat.ofHom (algebraMap B (ChangeRing B)))
+      (CommRingCat.ofHom (algebraMap B' (ChangeRing B')))
+      (CommRingCat.ofHom (map f)) := by
+  have comm : CommRingCat.ofHom f ≫ CommRingCat.ofHom (algebraMap B' (ChangeRing B')) =
+      CommRingCat.ofHom (algebraMap B (ChangeRing B)) ≫ CommRingCat.ofHom (map f) := by
+    exact congrArg CommRingCat.ofHom (map_comp_algebraMap f).symm
+  let desc (s : PushoutCocone (CommRingCat.ofHom f)
+      (CommRingCat.ofHom (algebraMap B (ChangeRing B)))) :=
+    CommRingCat.ofHom (pushoutLift f ⟨(s.inl.hom, s.inr.hom),
+      congrArg CommRingCat.Hom.hom s.condition⟩)
+  refine ⟨⟨comm⟩, ⟨PushoutCocone.IsColimit.mk comm desc ?_ ?_ ?_⟩⟩
+  · intro s
+    exact congrArg CommRingCat.ofHom (pushoutLift_comp_algebraMap f _)
+  · intro s
+    exact congrArg CommRingCat.ofHom (pushoutLift_comp_map f _)
+  · intro s m hm hn
+    apply CommRingCat.hom_ext
+    apply (pushoutLift f).symm.injective
+    apply Subtype.ext
+    apply Prod.ext
+    · simpa only [pushoutLift_symm_apply_fst, desc, CommRingCat.hom_ofHom, CommRingCat.hom_comp,
+        pushoutLift_comp_algebraMap] using congrArg CommRingCat.Hom.hom hm
+    · simpa only [pushoutLift_symm_apply_snd, desc, CommRingCat.hom_ofHom, CommRingCat.hom_comp,
+        pushoutLift_comp_map] using congrArg CommRingCat.Hom.hom hn
 
 end ChangeRing
 

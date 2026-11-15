@@ -14,7 +14,7 @@ public import TauCeti.Topology.Algebra.ProperAction.GermKernel
 
 import Mathlib.Dynamics.FixedPoints.Topology
 import TauCeti.Geometry.Manifold.Algebra.SMul
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!

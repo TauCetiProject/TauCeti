@@ -134,7 +134,7 @@ private theorem aeval_eq_zero_of_apply_two_eq_zero [Infinite K] (hG : G.IsHomoge
     have hb : b = b 1 • ![b 0 / b 1, 1, 0] := by
       ext i
       fin_cases i <;> simp [hb2, hb1, mul_div_cancel₀]
-    rw [hb, hG.aeval_smul, h1, smul_zero]
+    rw [hb, hG.aeval_smul_of_algebra, h1, smul_zero]
   by_cases hb1 : b 1 = 0
   · -- The point `(1 : 0 : 0)` is a zero of `t ↦ G(1, t, 0)`, which vanishes for `t ≠ 0`.
     have hR : (aeval ![1, Polynomial.X, 0] G : K[X]) = 0 :=
@@ -154,7 +154,7 @@ private theorem aeval_eq_zero_of_apply_two_eq_zero [Infinite K] (hG : G.IsHomoge
     have hb' : b = b 0 • ![1, 0, 0] := by
       ext i
       fin_cases i <;> simp [hb1, hb]
-    rw [hb', hG.aeval_smul, h3, smul_zero]
+    rw [hb', hG.aeval_smul_of_algebra, h3, smul_zero]
   · exact h2 b hb hb1
 
 /-- If the binary form `G(X₀, X₁, 0)` vanishes, then along the line at infinity the partial
@@ -412,48 +412,20 @@ private theorem irreducible_map_dehomogenize_two (hG : G.IsHomogeneous d)
   rw [aeval_dehomogenize, insertNth_two, h, aeval_C] at hxy
   exact hc.ne_zero ((map_eq_zero_iff _ (algebraMap k F).injective).mp hxy.symm)
 
-/-- **The projected equation of a smooth projective plane curve**: under the hypotheses of
-`TauCeti.genus_eq_of_isHomogeneous_of_lt_card`, some `c ∈ k` with `G(c, 1, 0) ≠ 0` makes
-`u = x - c y` transcendental, and the sheared affine equation `g' ∈ k[X, Y]` is irreducible of
-total degree `d` with the coefficient of `Y^d` equal to `1`, smooth in both affine charts, and
-satisfies `g'(u, y) = 0` and `∂g'/∂Y (u, y) ≠ 0`. -/
-private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
+/-- For `G(c, 1, 0) ≠ 0`, the sheared and normalized affine equation
+`g' = G(X₀ + c X₁, X₁, 1) / G(c, 1, 0)` of a smooth projective plane curve with a point
+`(x : y : 1)` is irreducible of total degree `d` with the coefficient of `Y^d` equal to `1`, and is
+smooth in both affine charts. -/
+private theorem irreducible_dehomogenize_linearSubst_shear (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    (hcard : ((d + 1 : ℕ) : ℕ∞) < ENat.card k)
-    {x y : F} (hx : Transcendental k x) (h : aeval ![x, y, 1] G = 0) :
-    ∃ (c : k) (g' : MvPolynomial (Fin 2) k), eval ![c, 1, 0] G ≠ 0 ∧
-      Transcendental k (x - algebraMap k F c * y) ∧ Irreducible g' ∧
-      g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 ∧ g'.totalDegree = d ∧
+    {x y : F} (h : aeval ![x, y, 1] G = 0) {c : k} (hc : eval ![c, 1, 0] G ≠ 0) :
+    let g' := dehomogenize 2 (C (eval ![c, 1, 0] G)⁻¹ * linearSubst (shear c) G)
+    Irreducible g' ∧ g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 ∧ g'.totalDegree = d ∧
       Ideal.span {g', pderiv 0 g', pderiv 1 g'} = ⊤ ∧
       Ideal.span {g'.inftyChart g'.totalDegree, pderiv 0 (g'.inftyChart g'.totalDegree),
-        pderiv 1 (g'.inftyChart g'.totalDegree)} = ⊤ ∧
-      aeval ![x - algebraMap k F c * y, y] g' = 0 ∧
-      aeval ![x - algebraMap k F c * y, y] (pderiv 1 g') ≠ 0 := by
-  have hpt : ∀ u v : F, (2 : Fin 3).insertNth 1 ![u, v] = ![u, v, 1] := fun u v ↦
-    insertNth_two u v 1
+        pderiv 1 (g'.inftyChart g'.totalDegree)} = ⊤ := by
   have h21 : (2 : Fin 3).succAbove 1 = 1 := rfl
-  have h20 : (2 : Fin 3).succAbove 0 = 0 := rfl
   set g := dehomogenize 2 G with hg_def
-  -- The affine chart is smooth, so `∂g/∂X₀` and `∂g/∂X₁` do not both vanish at `(x, y)`.
-  have hsm2 := span_dehomogenize_two_pderiv_eq_top hG hsm
-  have hgxy : aeval ![x, y] g = 0 := by rw [aeval_dehomogenize, hpt, h]
-  set a := aeval ![x, y, 1] (pderiv 0 G) with ha_def
-  set b := aeval ![x, y, 1] (pderiv 1 G) with hb_def
-  have ha : aeval ![x, y] (pderiv 0 g) = a := by
-    rw [pderiv_dehomogenize, h20, aeval_dehomogenize, hpt]
-  have hb : aeval ![x, y] (pderiv 1 g) = b := by
-    rw [pderiv_dehomogenize, h21, aeval_dehomogenize, hpt]
-  have hab : a ≠ 0 ∨ b ≠ 0 := by
-    by_contra! hab
-    have hle : Ideal.span {g, pderiv 0 g, pderiv 1 g} ≤
-        RingHom.ker (aeval ![x, y] : MvPolynomial (Fin 2) k →ₐ[k] F) := by
-      rw [Ideal.span_le]
-      rintro q (rfl | rfl | rfl) <;> simp [RingHom.mem_ker, hgxy, ha, hb, hab.1, hab.2]
-    rw [hsm2] at hle
-    simpa using RingHom.mem_ker.mp (hle (Submodule.mem_top (x := 1)))
-  obtain ⟨c, hc, hcab⟩ := exists_eval_ne_zero_and_mul_add_ne_zero hG
-    (aeval_X_one_zero_ne_zero (K := K) hG hsm h) hcard hab
-  -- The sheared and normalized equation `G' = G(X₀ + c X₁, X₁, X₂) / G(c, 1, 0)`.
   set μ := (eval ![c, 1, 0] G)⁻¹ with hμ
   have hμ0 : μ ≠ 0 := inv_ne_zero hc
   set G' := C μ * linearSubst (shear c) G with hG'_def
@@ -493,38 +465,74 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
   have hsmI := span_inftyChart_pderiv_eq_top hG' hsm'
   rw [← hg'_def] at hsmA hsmI
   rw [← hdeg'] at hsmI
+  exact ⟨hirr', hlead, hdeg', hsmA, hsmI⟩
+
+/-- **The projected equation of a smooth projective plane curve**: under the hypotheses of
+`TauCeti.genus_eq_of_isHomogeneous_of_lt_card`, some `c ∈ k` with `G(c, 1, 0) ≠ 0` makes
+`u = x - c y` transcendental, and the sheared affine equation `g' ∈ k[X, Y]` is irreducible of
+total degree `d` with the coefficient of `Y^d` equal to `1`, smooth in both affine charts, and
+satisfies `g'(u, y) = 0` and `∂g'/∂Y (u, y) ≠ 0`. -/
+private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
+    (hcard : ((d + 1 : ℕ) : ℕ∞) < ENat.card k)
+    {x y : F} (hx : Transcendental k x) (h : aeval ![x, y, 1] G = 0) :
+    ∃ (c : k) (g' : MvPolynomial (Fin 2) k), eval ![c, 1, 0] G ≠ 0 ∧
+      Transcendental k (x - algebraMap k F c * y) ∧ Irreducible g' ∧
+      g'.coeff (Finsupp.single 1 g'.totalDegree) = 1 ∧ g'.totalDegree = d ∧
+      Ideal.span {g', pderiv 0 g', pderiv 1 g'} = ⊤ ∧
+      Ideal.span {g'.inftyChart g'.totalDegree, pderiv 0 (g'.inftyChart g'.totalDegree),
+        pderiv 1 (g'.inftyChart g'.totalDegree)} = ⊤ ∧
+      aeval ![x - algebraMap k F c * y, y] g' = 0 ∧
+      aeval ![x - algebraMap k F c * y, y] (pderiv 1 g') ≠ 0 := by
+  have hpt : ∀ u v : F, (2 : Fin 3).insertNth 1 ![u, v] = ![u, v, 1] := fun u v ↦
+    insertNth_two u v 1
+  have h21 : (2 : Fin 3).succAbove 1 = 1 := rfl
+  have h20 : (2 : Fin 3).succAbove 0 = 0 := rfl
+  set g := dehomogenize 2 G
+  -- The affine chart is smooth, so `∂g/∂X₀` and `∂g/∂X₁` do not both vanish at `(x, y)`.
+  have hsm2 := span_dehomogenize_two_pderiv_eq_top hG hsm
+  have hgxy : aeval ![x, y] g = 0 := by rw [aeval_dehomogenize, hpt, h]
+  set a := aeval ![x, y, 1] (pderiv 0 G) with ha_def
+  set b := aeval ![x, y, 1] (pderiv 1 G) with hb_def
+  have ha : aeval ![x, y] (pderiv 0 g) = a := by
+    rw [pderiv_dehomogenize, h20, aeval_dehomogenize, hpt]
+  have hb : aeval ![x, y] (pderiv 1 g) = b := by
+    rw [pderiv_dehomogenize, h21, aeval_dehomogenize, hpt]
+  have hab : a ≠ 0 ∨ b ≠ 0 := by
+    by_contra! hab
+    have hle : Ideal.span {g, pderiv 0 g, pderiv 1 g} ≤
+        RingHom.ker (aeval ![x, y] : MvPolynomial (Fin 2) k →ₐ[k] F) := by
+      rw [Ideal.span_le]
+      rintro q (rfl | rfl | rfl) <;> simp [RingHom.mem_ker, hgxy, ha, hb, hab.1, hab.2]
+    rw [hsm2] at hle
+    simpa using RingHom.mem_ker.mp (hle (Submodule.mem_top (x := 1)))
+  obtain ⟨c, hc, hcab⟩ := exists_eval_ne_zero_and_mul_add_ne_zero hG
+    (aeval_X_one_zero_ne_zero (K := K) hG hsm h) hcard hab
+  obtain ⟨hirr', hlead, hdeg', hsmA, hsmI⟩ := irreducible_dehomogenize_linearSubst_shear hG hsm h hc
+  set μ := (eval ![c, 1, 0] G)⁻¹
+  have hμ0 : μ ≠ 0 := inv_ne_zero hc
+  set g' := dehomogenize 2 (C μ * linearSubst (shear c) G) with hg'_def
   -- The projection from `(c : 1 : 0)` is `u = x - c y`.
   set u := x - algebraMap k F c * y with hu_def
   have hxu : u + algebraMap k F c * y = x := by rw [hu_def]; ring
   have heval : ∀ v w : F,
       aeval ![v, w] g' = algebraMap k F μ * aeval ![v + algebraMap k F c * w, w, 1] G :=
     fun v w ↦ by
-      rw [hg'_def, aeval_dehomogenize, hpt, hG'_def, map_mul, aeval_C, aeval_linearSubst_shear]
+      rw [hg'_def, aeval_dehomogenize, hpt, map_mul, aeval_C, aeval_linearSubst_shear]
       simp
-  -- If `u` were algebraic over `k`, then `y`, a root of the monic `g'(u, Y)`, would be algebraic
-  -- over `k(u)`, hence over `k`, and so would `x = u + c y`.
-  have hu : Transcendental k u := by
-    intro hua
-    have := IntermediateField.isAlgebraic_adjoin_simple hua.isIntegral
-    have hdegL : (g'.map (algebraMap k k⟮u⟯)).totalDegree ≤ g'.totalDegree :=
-      Finset.sup_mono (support_map_subset _ _)
-    have hmonL := Polynomial.Bivariate.monic_equivMvPolynomial_symm hdegL
-      (by rw [coeff_map, hlead, map_one])
-    have hyL : IsAlgebraic k⟮u⟯ y :=
-      Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero
-        (a := IntermediateField.AdjoinSimple.gen k u) (hmonL.map _).ne_zero
-        (by rw [IntermediateField.AdjoinSimple.algebraMap_gen, aeval_map_algebraMap, heval, hxu, h,
-          mul_zero])
-    exact hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
-      (hyL.restrictScalars_of_isIntegral k)))
   -- `∂g'/∂Y (u, y) = (c ∂G/∂X₀ + ∂G/∂X₁)(x, y, 1) / G(c, 1, 0)`, nonzero by the choice of `c`.
   have hpd : aeval ![u, y] (pderiv 1 g') = algebraMap k F μ * (algebraMap k F c * a + b) := by
-    rw [hg'_def, pderiv_dehomogenize, h21, aeval_dehomogenize, hpt, hG'_def, pderiv_C_mul,
+    rw [hg'_def, pderiv_dehomogenize, h21, aeval_dehomogenize, hpt, pderiv_C_mul,
       pderiv_linearSubst, Fin.sum_univ_three]
     simp only [map_mul, map_add, aeval_C]
     rw [aeval_linearSubst_shear, aeval_linearSubst_shear, aeval_linearSubst_shear]
     simp [shear, hxu, ha_def, hb_def]
-  exact ⟨c, g', hc, hu, hirr', hlead, hdeg', hsmA, hsmI, by rw [heval, hxu, h, mul_zero],
+  have hroot : aeval ![u, y] g' = 0 := by rw [heval, hxu, h, mul_zero]
+  -- If `u` were algebraic, so would be `y` (a root of the monic `g'(u, Y)`) and `x = u + c y`.
+  have hu : Transcendental k u := fun hua ↦
+    hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
+      (Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero hlead hua hroot)))
+  exact ⟨c, g', hc, hu, hirr', hlead, hdeg', hsmA, hsmI, hroot,
     hpd ▸ mul_ne_zero ((map_ne_zero _).mpr hμ0) hcab⟩
 
 /-- **A separating projection of a smooth projective plane curve**: let `G ∈ k[X₀, X₁, X₂]` be
@@ -561,30 +569,6 @@ theorem exists_isSeparable_finrank_eq_of_isHomogeneous_of_lt_card (hG : G.IsHomo
   rw [← Algebra.finrank_eq_of_equiv_equiv e (RingEquiv.refl F) he,
     finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero hirr' hlead hgen' hy', hdeg']
 
-/-- **The genus of a smooth projective plane curve, over a constant field with more than `d + 1`
-elements**: let `G ∈ k[X₀, X₁, X₂]` be homogeneous of degree `d` with every point of `G = 0` over
-an algebraically closed extension `K` of `k` nonsingular, and let `F / k` be generated by a
-transcendental `x` and an element `y` with `G(x, y, 1) = 0`, where `k` is the exact constant field
-of `F`. If `k` has more than `d + 1` elements, then `F` has
-genus `(d - 1)(d - 2) / 2`. -/
-theorem genus_eq_of_isHomogeneous_of_lt_card (hex : IsIntegrallyClosedIn k F)
-    (hG : G.IsHomogeneous d)
-    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    (hcard : ((d + 1 : ℕ) : ℕ∞) < ENat.card k)
-    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
-    genus k F = (d - 1) * (d - 2) / 2 := by
-  -- Project from the centre `(c : 1 : 0)` and apply the genus formula to the projected equation.
-  obtain ⟨c, g', -, hu, hirr', hlead, hdeg', hsmA, hsmI, hy', hpd⟩ :=
-    exists_aeval_sub_mul_eq_zero hG hsm hcard hx h
-  let _ := ratFuncAlgebraOfTranscendental hu
-  have := isScalarTower_ratFuncAlgebraOfTranscendental hu
-  have hX : algebraMap (RatFunc k) F RatFunc.X = x - algebraMap k F c * y :=
-    algebraMap_ratFuncAlgebraOfTranscendental_X hu
-  have hgen' := adjoin_simple_eq_top_of_algebraMap_X_eq hX hgen
-  rw [← hX] at hy' hpd
-  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero hgen' hy' hpd
-  rw [genus_eq_of_aeval_eq_zero hex hirr' hlead hsmA hsmI hgen' hy', hdeg']
-
 /-- **The constant field of a smooth projective plane curve**: let `G ∈ k[X₀, X₁, X₂]` be
 homogeneous of degree `d`, with every point of `G = 0` over an algebraically closed extension `K`
 of `k` nonsingular, and let `F / k` be generated by a transcendental `x` and an element `y` with
@@ -604,6 +588,29 @@ theorem isIntegrallyClosedIn_of_isHomogeneous (hG : G.IsHomogeneous d)
   exact isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen hirr'
     ((AlgHom.congr_fun
       (Polynomial.Bivariate.aevalAeval_comp_equivMvPolynomial_symm (R := k) x y) _).trans h₂)
+
+/-- **The genus of a smooth projective plane curve, over a constant field with more than `d + 1`
+elements**: let `G ∈ k[X₀, X₁, X₂]` be homogeneous of degree `d` with every point of `G = 0` over
+an algebraically closed extension `K` of `k` nonsingular, and let `F / k` be generated by a
+transcendental `x` and an element `y` with `G(x, y, 1) = 0`. If `k` has more than `d + 1`
+elements, then `F` has genus `(d - 1)(d - 2) / 2`. -/
+theorem genus_eq_of_isHomogeneous_of_lt_card (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
+    (hcard : ((d + 1 : ℕ) : ℕ∞) < ENat.card k)
+    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
+    genus k F = (d - 1) * (d - 2) / 2 := by
+  -- Project from the centre `(c : 1 : 0)` and apply the genus formula to the projected equation.
+  obtain ⟨c, g', -, hu, hirr', hlead, hdeg', hsmA, hsmI, hy', hpd⟩ :=
+    exists_aeval_sub_mul_eq_zero hG hsm hcard hx h
+  let _ := ratFuncAlgebraOfTranscendental hu
+  have := isScalarTower_ratFuncAlgebraOfTranscendental hu
+  have hX : algebraMap (RatFunc k) F RatFunc.X = x - algebraMap k F c * y :=
+    algebraMap_ratFuncAlgebraOfTranscendental_X hu
+  have hgen' := adjoin_simple_eq_top_of_algebraMap_X_eq hX hgen
+  rw [← hX] at hy' hpd
+  obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_aeval_pderiv_one_ne_zero hgen' hy' hpd
+  rw [genus_eq_of_aeval_eq_zero (isIntegrallyClosedIn_of_isHomogeneous hG hsm hx hgen h) hirr'
+    hlead hsmA hsmI hgen' hy', hdeg']
 
 omit [IsAlgClosed K] in
 /-- The hypotheses of `TauCeti.genus_eq_of_isHomogeneous` survive a constant field extension
@@ -654,15 +661,14 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
     have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
     have hF : IsFunctionField k F := isFunctionField_of_aeval_eq_zero hirr.of_map.ne_zero hx hgen
       (by rwa [aeval_dehomogenize, insertNth_two])
-    have hex' := hex.of_constantCompositum_eq_top hc
     -- Embed `k'` in `K` over `k`.
     let _ : Algebra k' K := (IsAlgClosed.lift : k' →ₐ[k] K).toRingHom.toAlgebra
     have : IsScalarTower k k' K :=
       .of_algebraMap_eq fun c ↦ ((IsAlgClosed.lift : k' →ₐ[k] K).commutes c).symm
     obtain ⟨hsm', hx', hgen', h'⟩ := nonsingular_map_of_constantCompositum_eq_top hc hsm hx hgen h
     rw [← genus_eq_genus_of_constantCompositum_eq_top hF hex hc]
-    exact genus_eq_of_isHomogeneous_of_lt_card (K := K) hex' (hG.map _) hsm' hcard hx' hgen' h'
-  · exact genus_eq_of_isHomogeneous_of_lt_card hex hG hsm (by simp) hx hgen h
+    exact genus_eq_of_isHomogeneous_of_lt_card (K := K) (hG.map _) hsm' hcard hx' hgen' h'
+  · exact genus_eq_of_isHomogeneous_of_lt_card hG hsm (by simp) hx hgen h
 
 omit [IsAlgClosed K] in
 /-- **Moving the affine chart.** A point `(x, y)` of `G = 0` in the chart `Xᵢ = 1`, with

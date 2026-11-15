@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.StandardComodule
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.WeightTorus
 
 /-!
 # The standard comodule of the generated type-Bₙ₊₁ spin subgroup
@@ -66,6 +67,10 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin (n + 1)))).obj :=
   generatedCoordinateLift n R (.inr ())
 
+/-- The generated weight-torus map is the torus branch of the generator lifts. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap n R = generatedCoordinateLift n R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient spin weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
@@ -73,6 +78,18 @@ theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
       GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ R (basisWeight n) := by
   rw [generatedWeightTorusCoordinateMap, generatedCoordinateMap_comp_generatedCoordinateLift,
     generatorCoordinateMap_inr]
+
+/-- The generated weight-torus coordinate map is surjective over every commutative ring. -/
+theorem generatedWeightTorusCoordinateMap_surjective :
+    Function.Surjective (generatedWeightTorusCoordinateMap n R).hom := by
+  have h : Function.Surjective
+      (coordinateMap n R ≫ weightTorusToBaseChangeCoordinateMap n R).hom := by
+    simpa only [CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using
+      (weightTorusToBaseChangeCoordinateMap_surjective n R).comp (coordinateMap_surjective n R)
+  rw [coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
+    ← generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap] at h
+  exact Function.Surjective.of_comp
+    (by simpa only [CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using h)
 
 /-- A point induced by a generated root-subgroup lift maps to the numbered spin root matrix with
 the same parameter, over every value algebra. -/

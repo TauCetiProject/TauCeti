@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
 
 /-!

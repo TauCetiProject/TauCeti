@@ -50,7 +50,7 @@ conjugation action.
 * `ConjClasses.card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf`: that
   quotient equals the order of the centralizer divided by the order of the member.
 * `ConjClasses.one_div_orderOf_div_card_div_card_carrier_mul_orderOf`: dividing `1 / orderOf σ`
-  by that quotient, in a semifield of characteristic zero, leaves `#C / #G`.
+  by that quotient, in a division semiring of characteristic zero, leaves `#C / #G`.
 * `ConjClasses.ncard_carrier_mk_eq_card_filter` and
   `ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
   cardinality of a `Finset`, which makes it computable.
@@ -86,19 +86,16 @@ triviality of the inner action require a group.
 The inversion is an instance rather than a plain function so that the notation `C⁻¹`, the
 involutivity lemma `inv_inv` and the reindexing equivalence `Equiv.inv` are all available for
 conjugacy classes. Powering is instead a named definition `ConjClasses.pow` with a `Pow` instance
-delegating to it, so that the roadmap's `C.pow j` and the notation `C ^ j` are the same function;
+delegating to it, so that `C.pow j` and the notation `C ^ j` are the same function;
 the lemmas below are all stated in the `^` form. There is still no
 multiplication on `ConjClasses M` — `Pow (ConjClasses M) ℕ` is a bare power operation, not the
 `npow` field of a monoid structure, and none of the lemmas here presuppose one.
 
-The power operation is developed for the Chebotarev roadmap (`Chebotarev/README.md` Layer 1,
-"consumed Frobenius classes and powers of conjugacy classes", whose `Suggested.lean` pins these
-signatures); its consumer there is the von Mangoldt fibre, which sums over the classes `C ^ j`.
-That is also why a `pow_two_cyclicFour` regression is kept: a group of
-exponent two has no proper nonidentity square, so it cannot separate a correct power operation
-from one that collapses to the identity. It is `private`, being a check on this development
-rather than reusable conjugacy-class API. This operation is *not* adapted from the
-Birkbeck–Brasca `chebotarev-density` development, which works with `ConjClasses.mk` and
+The classes `C ^ j` are what the von Mangoldt sums of the Chebotarev density theorem range over.
+A `private` regression `pow_two_cyclicFour` checks the power operation in the cyclic group of
+order four: a group of exponent two has no proper nonidentity square, so it cannot separate a
+correct power operation from one that collapses to the identity. This operation is *not* adapted
+from the Birkbeck–Brasca `chebotarev-density` development, which works with `ConjClasses.mk` and
 `Subgroup.zpowers` directly and never forms `C ^ j`.
 
 The two arithmetic statements concern the quotient `#G / (#C * orderOf σ)`. The first says the
@@ -144,15 +141,14 @@ theorem inv_mk (g : G) : (ConjClasses.mk g)⁻¹ = ConjClasses.mk g⁻¹ :=
 /-- The class of the identity is its own inverse. -/
 @[simp]
 theorem inv_one : (1 : ConjClasses G)⁻¹ = 1 := by
-  rw [ConjClasses.one_eq_mk_one, inv_mk, _root_.inv_one]
+  rw [one_eq_mk_one, inv_mk, _root_.inv_one]
 
 /-- An element lies in the inverse of a conjugacy class exactly when its inverse lies in the
 class. -/
 @[simp]
 theorem mem_carrier_inv_iff {C : ConjClasses G} {x : G} :
     x ∈ (C⁻¹).carrier ↔ x⁻¹ ∈ C.carrier := by
-  rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mem_carrier_iff_mk_eq,
-    ← inv_mk, inv_eq_iff_eq_inv]
+  rw [mem_carrier_iff_mk_eq, mem_carrier_iff_mk_eq, ← inv_mk, inv_eq_iff_eq_inv]
 
 /-- **A conjugacy class and its inverse have the same size**, inversion of the group restricting to
 a bijection between them.
@@ -184,10 +180,11 @@ theorem ncard_carrier_mk (g : G) :
 
 /-- **The conjugacy class of a central element is a single point**: nothing moves it. -/
 @[simp]
-theorem ncard_carrier_mk_of_mem_center {g : G} (hg : g ∈ Subgroup.center G) :
-    (ConjClasses.mk g).carrier.ncard = 1 := by
-  rw [ncard_carrier_mk, Subgroup.centralizer_eq_top_iff_subset.mpr
-    (Set.singleton_subset_iff.mpr hg), Subgroup.index_top]
+theorem ncard_carrier_mk_of_mem_center {M : Type*} [Monoid M] {g : M}
+    (hg : g ∈ Submonoid.center M) : (ConjClasses.mk g).carrier.ncard = 1 := by
+  refine Set.ncard_eq_one.mpr ⟨g, Set.eq_singleton_iff_unique_mem.mpr ⟨mem_carrier_mk, ?_⟩⟩
+  intro x hx
+  exact (mk_eq_mk_iff_isConj.mp (mem_carrier_iff_mk_eq.mp hx)).eq_of_right_mem_center hg
 
 /-- **The size of a conjugacy class is the index of the centralizer of any of its members**, in
 `Nat.card` form.
@@ -204,19 +201,13 @@ The statement also covers infinite groups, using `Nat.card`. -/
 theorem card_carrier_mk_pow (g : G) {n : ℕ}
     (hn : (orderOf g).Coprime n) :
     Nat.card (ConjClasses.mk (g ^ n)).carrier = Nat.card (ConjClasses.mk g).carrier := by
-  have hcentral : Subgroup.centralizer ({g ^ n} : Set G) = Subgroup.centralizer {g} := by
-    ext x
-    simp only [Subgroup.mem_centralizer_singleton_iff]
-    constructor
-    · intro hx
-      obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp
-        (mem_zpowers_pow_iff.mpr hn.symm.gcd_eq_one : g ∈ Subgroup.zpowers (g ^ n))
-      exact hm ▸ (Commute.zpow_right hx m).eq
-    · exact fun hx ↦ (Commute.pow_right hx n).eq
-  -- At a quotient constructor, the carrier is the set of conjugates by definition.
-  have hcarrier (x : G) : (ConjClasses.mk x).carrier = conjugatesOf x := (rfl)
-  simp only [hcarrier, Nat.card_coe_set_eq]
-  rw [← Subgroup.index_centralizer_eq_ncard, ← Subgroup.index_centralizer_eq_ncard, hcentral]
+  -- `g` and `g ^ n` generate the same cyclic subgroup, so they have the same centralizer.
+  have hzpowers : Subgroup.zpowers (g ^ n) = Subgroup.zpowers g :=
+    le_antisymm (Subgroup.zpowers_le.mpr (Subgroup.pow_mem _ (Subgroup.mem_zpowers g) n))
+      (Subgroup.zpowers_le.mpr (mem_zpowers_pow_iff.mpr hn.symm))
+  rw [card_carrier_mk, card_carrier_mk, ← Subgroup.centralizer_closure,
+    ← Subgroup.zpowers_eq_closure, hzpowers, Subgroup.zpowers_eq_closure,
+    Subgroup.centralizer_closure]
 
 /-- **The size of a conjugacy class as a `Finset` cardinality**: the members of the class of `g`
 are the elements of the monoid whose class is that of `g`, so in a finite monoid with decidable
@@ -229,7 +220,7 @@ theorem ncard_carrier_mk_eq_card_filter {M : Type*} [Monoid M] [Fintype M] [Deci
   rw [← Set.ncard_coe_finset]
   congr 1
   ext x
-  simp [_root_.ConjClasses.mem_carrier_iff_mk_eq]
+  simp [mem_carrier_iff_mk_eq]
 
 /-- The size of a conjugacy class as a computable `Finset` cardinality, in `Nat.card` form.
 See `ncard_carrier_mk_eq_card_filter` for the `simp` normal form. -/
@@ -242,10 +233,8 @@ theorem card_carrier_mk_eq_card_filter {M : Type*} [Monoid M] [Fintype M] [Decid
 /-- **The size of a conjugacy class divides the order of the group**, being the index of a
 centralizer. -/
 theorem card_carrier_dvd_card (C : ConjClasses G) : Nat.card C.carrier ∣ Nat.card G := by
-  obtain ⟨x, rfl⟩ := ConjClasses.exists_rep C
-  calc Nat.card (ConjClasses.mk x).carrier
-      = (Subgroup.centralizer {x}).index := card_carrier_mk x
-    _ ∣ Nat.card G := Subgroup.index_dvd_card _
+  obtain ⟨x, rfl⟩ := exists_rep C
+  exact card_carrier_mk x ▸ Subgroup.index_dvd_card _
 
 /-- The size of a conjugacy class is nonzero in any semiring in which the order of the group is
 nonzero: it divides that order. -/
@@ -295,12 +284,6 @@ end TauCeti
 
 namespace ConjClasses
 
--- Source. Both statements are specified by the Chebotarev roadmap. The divisibility is the
--- declaration pinned at `TauCetiRoadmap/Chebotarev/Suggested.lean` lines 377-382, there stated
--- with `[Finite G]`. The quotient identity is `TauCetiRoadmap/Chebotarev/README.md` §8.2, which
--- writes it `#G / (#C * f) = #Centralizer_G(σ) / f` for `f = orderOf σ` and asks for
--- `#C * f ∣ #G` as a separate statement.
-
 /-- **The size of a conjugacy class times the order of a member divides the order of the group.**
 
 For a *finite* group this is what makes `Nat.card G / (Nat.card C.carrier * orderOf σ)` an exact
@@ -314,7 +297,7 @@ theorem card_carrier_mul_orderOf_dvd {G : Type*} [Group G] (C : ConjClasses G) (
   subst hσ
   obtain ⟨k, hk⟩ := (Subgroup.centralizer {σ}).orderOf_dvd_natCard
     (Subgroup.mem_centralizer_singleton_iff.mpr rfl)
-  exact ⟨k, by rw [ConjClasses.card_carrier_mk, mul_assoc, ← hk, Subgroup.index_mul_card]⟩
+  exact ⟨k, by rw [card_carrier_mk, mul_assoc, ← hk, Subgroup.index_mul_card]⟩
 
 /-- **That quotient is positive.** For a finite group the class size times the order of a member
 divides the group order and both are positive, so the ratio `Nat.card G / (#C.carrier * orderOf σ)`
@@ -344,15 +327,17 @@ theorem card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf {G : T
       = Nat.card (Subgroup.centralizer {σ}) / orderOf σ := by
   rw [mem_carrier_iff_mk_eq] at hσ
   subst hσ
-  rw [ConjClasses.card_carrier_mk, ← Subgroup.index_mul_card (Subgroup.centralizer {σ}),
+  rw [card_carrier_mk, ← Subgroup.index_mul_card (Subgroup.centralizer {σ}),
     Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hindex)]
 
 /-- **Dividing `1 / orderOf σ` by that quotient leaves `#C / #G`.** Since
-`#C.carrier * orderOf σ` divides `#G`, the quotient casts to the exact ratio, and in a semifield of
-characteristic zero `(1 / orderOf σ) / (#G / (#C.carrier * orderOf σ)) = #C.carrier / #G`.
+`#C.carrier * orderOf σ` divides `#G`, the quotient casts to the exact ratio, and in a division
+semiring of characteristic zero
+`(1 / orderOf σ) / (#G / (#C.carrier * orderOf σ)) = #C.carrier / #G`.
 For infinite groups both sides vanish because `Nat.card G = 0`. -/
 theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group G]
-    {K : Type*} [Semifield K] [CharZero K] (C : ConjClasses G) (σ : G) (hσ : σ ∈ C.carrier) :
+    {K : Type*} [DivisionSemiring K] [CharZero K] (C : ConjClasses G) (σ : G)
+    (hσ : σ ∈ C.carrier) :
     (1 / orderOf σ : K) / ((Nat.card G / (Nat.card C.carrier * orderOf σ) : ℕ) : K) =
       Nat.card C.carrier / Nat.card G := by
   cases finite_or_infinite G with
@@ -363,14 +348,12 @@ theorem one_div_orderOf_div_card_div_card_carrier_mul_orderOf {G : Type*} [Group
       rw [Nat.cast_div (C.card_carrier_mul_orderOf_dvd σ hσ)
         (by push_cast; exact mul_ne_zero hC hord)]
       push_cast
-      rw [div_div_eq_mul_div, one_div_mul_eq_div, mul_div_cancel_right₀ _ hord]
+      -- Natural-number casts commute, so `orderOf σ` cancels without commutativity of `K`.
+      rw [div_div_eq_mul_div, (Nat.cast_commute (Nat.card C.carrier) (orderOf σ : K)).eq, one_div,
+        inv_mul_cancel_left₀ hord]
   | inr h => simp [Nat.card_eq_zero_of_infinite]
 
-end ConjClasses
-
 /-! ### Powers of a conjugacy class -/
-
-namespace ConjClasses
 
 variable {M : Type*} [Monoid M]
 
@@ -382,7 +365,7 @@ def pow (C : ConjClasses M) (j : ℕ) : ConjClasses M :=
   Quotient.map (· ^ j) (fun _ _ h ↦ IsConj.pow j h) C
 
 instance instPowNat : Pow (ConjClasses M) ℕ :=
-  ⟨ConjClasses.pow⟩
+  ⟨pow⟩
 
 /-- The `j`-th power of the class of `a` is the class of `a ^ j`. -/
 @[simp]
@@ -390,36 +373,33 @@ theorem mk_pow (a : M) (j : ℕ) : ConjClasses.mk a ^ j = ConjClasses.mk (a ^ j)
   -- `pow` is sealed, so this is no longer `rfl`: a theorem exported from this module may only
   -- unfold exposed definitions. Go through `pow`'s equation lemma, after which the statement is
   -- exactly `Quotient`'s computation rule for `Quotient.map`.
-  change ConjClasses.pow (ConjClasses.mk a) j = ConjClasses.mk (a ^ j)
-  rw [ConjClasses.pow]
+  change pow (ConjClasses.mk a) j = ConjClasses.mk (a ^ j)
+  rw [pow]
   exact Quotient.map_mk _ _ _
 
 /-- An element lies in `C ^ j` exactly when it is a `j`-th power of a member of `C`. -/
 @[simp]
 theorem mem_pow_iff {C : ConjClasses M} {τ : M} {j : ℕ} :
     τ ∈ (C ^ j).carrier ↔ ∃ σ ∈ C.carrier, σ ^ j = τ := by
-  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
-  simp only [mk_pow, _root_.ConjClasses.mem_carrier_iff_mk_eq,
-    _root_.ConjClasses.mk_eq_mk_iff_isConj]
-  refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun ⟨σ, ⟨c, hc⟩, hσ⟩ ↦ hσ ▸ ⟨c, hc.pow_right j⟩⟩
-  -- Conjugating `a` back by `c` produces a member of `C` whose `j`-th power is `τ`.
-  have hσ : SemiconjBy (c : M) (↑c⁻¹ * a * ↑c) a := by
-    simp [SemiconjBy, ← mul_assoc]
-  refine ⟨↑c⁻¹ * a * ↑c, ⟨c, hσ⟩, ?_⟩
-  have h1 : (c : M) * (↑c⁻¹ * a * ↑c) ^ j = a ^ j * ↑c := hσ.pow_right j
-  have h2 : (c : M) * τ = a ^ j * ↑c := hc
-  exact (Units.mul_right_inj c).mp (h1.trans h2.symm)
+  obtain ⟨a, rfl⟩ := exists_rep C
+  simp only [mk_pow, mem_carrier_iff_mk_eq, mk_eq_mk_iff_isConj]
+  refine ⟨fun h ↦ ?_, fun ⟨σ, ⟨c, hc⟩, hσ⟩ ↦ hσ ▸ ⟨c, hc.pow_right j⟩⟩
+  -- Conjugating `a` by the unit carrying `a ^ j` to `τ` gives a member of `C` whose `j`-th power
+  -- is `τ`.
+  obtain ⟨c, hc⟩ := h.symm
+  exact ⟨c * a * ↑c⁻¹, IsConj.symm ⟨c, Units.mk_semiconjBy c a⟩,
+    by rw [Units.conj_pow, hc.eq, Units.mul_inv_cancel_right]⟩
 
 /-- The zeroth power of any conjugacy class is the class of `1`. -/
 @[simp]
 theorem pow_zero (C : ConjClasses M) : C ^ 0 = 1 := by
-  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
-  rw [mk_pow, _root_.pow_zero, ← _root_.ConjClasses.one_eq_mk_one]
+  obtain ⟨a, rfl⟩ := exists_rep C
+  rw [mk_pow, _root_.pow_zero, ← one_eq_mk_one]
 
 /-- The first power of a conjugacy class is the class itself. -/
 @[simp]
 theorem pow_one (C : ConjClasses M) : C ^ 1 = C := by
-  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+  obtain ⟨a, rfl⟩ := exists_rep C
   rw [mk_pow, _root_.pow_one]
 
 /-- Iterated powers compose: raising `C ^ i` to the `j`-th power gives `C ^ (i * j)`. Tagged
@@ -429,7 +409,7 @@ Note this is the mirror image of Mathlib's root-level `pow_mul`, which orients t
 other way for monoid elements. -/
 @[simp]
 theorem pow_mul (C : ConjClasses M) (i j : ℕ) : (C ^ i) ^ j = C ^ (i * j) := by
-  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+  obtain ⟨a, rfl⟩ := exists_rep C
   rw [mk_pow, mk_pow, mk_pow, _root_.pow_mul]
 
 /-- The image of the class of `a` under `ConjClasses.map f` is the class of `f a`. -/
@@ -437,7 +417,7 @@ theorem pow_mul (C : ConjClasses M) (i j : ℕ) : (C ^ i) ^ j = C ^ (i * j) := b
 -- so this reduction is stated here once and every naturality statement below rewrites with it.
 @[simp]
 theorem map_mk {N : Type*} [Monoid N] (f : M →* N) (a : M) :
-    ConjClasses.map f (ConjClasses.mk a) = ConjClasses.mk (f a) := rfl
+    map f (ConjClasses.mk a) = ConjClasses.mk (f a) := rfl
 
 end ConjClasses
 
@@ -467,8 +447,8 @@ theorem conjClassesEquiv_apply (e : M ≃* N) (C : ConjClasses M) :
 image. -/
 @[simp]
 theorem conjClassesEquiv_mk (e : M ≃* N) (a : M) :
-    e.conjClassesEquiv (ConjClasses.mk a) = ConjClasses.mk (e a) := by
-  exact ConjClasses.map_mk e.toMonoidHom a
+    e.conjClassesEquiv (ConjClasses.mk a) = ConjClasses.mk (e a) :=
+  ConjClasses.map_mk e.toMonoidHom a
 
 /-- Equivalences on conjugacy classes respect composition of multiplicative equivalences. -/
 @[simp]
@@ -496,7 +476,7 @@ theorem conjClassesEquiv_symm_mk (e : M ≃* N) (b : N) :
 /-- The identity multiplicative equivalence induces the identity on conjugacy classes. -/
 @[simp]
 theorem conjClassesEquiv_refl :
-    (MulEquiv.refl M).conjClassesEquiv = Equiv.refl (ConjClasses M) := by
+    (refl M).conjClassesEquiv = Equiv.refl (ConjClasses M) := by
   ext C
   obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
   simp
@@ -516,8 +496,8 @@ variable {M : Type*} [Monoid M]
 /-- Powering a conjugacy class is natural in the monoid. -/
 @[simp]
 theorem map_pow {N : Type*} [Monoid N] (f : M →* N) (C : ConjClasses M) (j : ℕ) :
-    ConjClasses.map f (C ^ j) = ConjClasses.map f C ^ j := by
-  obtain ⟨a, rfl⟩ := ConjClasses.exists_rep C
+    map f (C ^ j) = map f C ^ j := by
+  obtain ⟨a, rfl⟩ := exists_rep C
   -- Every reduction here is named rather than left to definitional unfolding: `map_mk` computes
   -- the map on representatives, after which `mk_pow` handles both powers and `map_pow` finishes
   -- in `N`.
@@ -555,7 +535,7 @@ theorem mk_ne_mk_of_orderOf_ne {a b : M} (h : orderOf a ≠ orderOf b) :
   apply h
   rw [orderOf_eq_orderOf_iff]
   intro n
-  have hc := ConjClasses.mk_eq_mk_iff_isConj.mp hclasses
+  have hc := mk_eq_mk_iff_isConj.mp hclasses
   constructor <;> intro hpow
   · simpa only [hpow, isConj_one_right] using hc.pow n
   · simpa only [hpow, isConj_one_right] using hc.symm.pow n

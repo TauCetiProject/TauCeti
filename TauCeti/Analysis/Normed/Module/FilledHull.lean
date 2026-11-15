@@ -214,7 +214,8 @@ theorem connectedComponentIn_compl_eq_of_unbounded_component (h : 1 < Module.ran
   obtain ⟨x', hx'c, hx'R⟩ := hesc x hx
   obtain ⟨y', hy'c, hy'R⟩ := hesc y hy
   have h1 : y' ∈ connectedComponentIn Kᶜ x' :=
-    (isPreconnected_compl_closedBall h 0 R).subset_connectedComponentIn hx'R hext hy'R
+    (isPathConnected_compl_closedBall h 0 R).isConnected.isPreconnected.subset_connectedComponentIn
+      hx'R hext hy'R
   rw [connectedComponentIn_eq hx'c, connectedComponentIn_eq h1, ← connectedComponentIn_eq hy'c]
 
 /-- **Two points in different components of the complement of a bounded set cannot both lie outside

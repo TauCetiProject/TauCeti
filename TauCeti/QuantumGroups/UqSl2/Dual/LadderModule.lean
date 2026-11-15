@@ -119,7 +119,7 @@ private def dualHighestHom (hq : IsGenericQuantumParameter q) :
 
 private theorem dualHighestHom_vec (hq : IsGenericQuantumParameter q) (j : ℕ) :
     dualHighestHom (m := m) (ε := ε) hq (vec q m ε j) =
-      (∏ t ∈ Finset.range j, quantumInteger q (t + 1))⁻¹ •
+      (quantumFactorial q j)⁻¹ •
         (rep q m ε).hopfDual (f q ^ j) ((basis q m ε).coord (Fin.last m)) :=
   lift_vec hq coord_last_weight e_smul_coord_last f_pow_smul_coord_last j
 
@@ -150,7 +150,7 @@ theorem contragredientEquiv_vec_zero (hq : IsGenericQuantumParameter q) :
 /-- Every ladder vector maps to the normalized contragredient lowering string. -/
 theorem contragredientEquiv_vec (hq : IsGenericQuantumParameter q) (j : ℕ) :
     contragredientEquiv (m := m) (ε := ε) hq (vec q m ε j) =
-      (∏ t ∈ Finset.range j, quantumInteger q (t + 1))⁻¹ •
+      (quantumFactorial q j)⁻¹ •
         (rep q m ε).hopfDual (f q ^ j) ((basis q m ε).coord (Fin.last m)) := by
   rw [contragredientEquiv_apply, dualHighestHom_vec]
 
@@ -158,7 +158,7 @@ theorem contragredientEquiv_vec (hq : IsGenericQuantumParameter q) (j : ℕ) :
 they are the finite product forced by the antipode action and the normalized lowering ladder. -/
 theorem contragredientEquiv_vec_apply_vec (hq : IsGenericQuantumParameter q) (j : ℕ) (i : ℤ) :
     contragredientEquiv (m := m) (ε := ε) hq (vec q m ε j) (vec q m ε i) =
-      (∏ t ∈ Finset.range j, quantumInteger q (t + 1))⁻¹ *
+      (quantumFactorial q j)⁻¹ *
         (∏ t ∈ Finset.range j,
           (-(ε : ℂ) * q ^ ((m : ℤ) - 2 * (i + t)) * quantumInteger q (i + t + 1))) *
         (if (m : ℤ) = i + j then 1 else 0) := by

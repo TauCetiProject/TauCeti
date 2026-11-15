@@ -232,6 +232,27 @@ variable {ι : Type*} [Fintype ι] {φ : ι → (ZMod p)[X]} {e : ι → ℕ} {�
   (`notMem_adjoin_of_natCast_mul_eq`). So `β` has order `p` in `𝓞 K / A`, and `p` divides the
   index (`dvd_index_of_ne_one_of_dvd_map`). -/
 
+open scoped Classical in
+/-- If `P` is a prime of `𝓞 K` containing `p` and `Φ i (θ)`, then the product of the
+`Φ j (θ) ^ e j` over the indices `j ≠ i` is not in `P`, as the `φ j` are distinct irreducible
+monic polynomials. -/
+private theorem prod_erase_pow_notMem (hφ : ∀ i, Irreducible (φ i))
+    (hφm : ∀ i, (φ i).Monic) (hinj : Function.Injective φ)
+    (hΦ : ∀ i, (Φ i).map (Int.castRingHom (ZMod p)) = φ i)
+    {P : Ideal (𝓞 K)} [P.IsPrime] (hp : (p : 𝓞 K) ∈ P) {i : ι}
+    (hi : aeval θ.1 (Φ i) ∈ P) :
+    ∏ j ∈ Finset.univ.erase i, aeval θ.1 (Φ j) ^ e j ∉ P := by
+  classical
+  have hPtop : P ≠ ⊤ := Ideal.IsPrime.ne_top inferInstance
+  have hirr : Irreducible ((Φ i).map (Int.castRingHom (ZMod p))) := hΦ i ▸ hφ i
+  intro htP
+  obtain ⟨j, hj, hjP⟩ := Ideal.IsPrime.prod_mem_iff.mp htP
+  have hjP' : aeval θ.1 (Φ j) ∈ P := Ideal.IsPrime.mem_of_pow_mem inferInstance _ hjP
+  have hdvd := Polynomial.map_zmod_dvd_map_of_aeval_mem θ.1 hPtop hp hirr hi hjP'
+  rw [hΦ i, hΦ j] at hdvd
+  exact (Finset.mem_erase.mp hj).1 (hinj (eq_of_monic_of_associated (hφm i) (hφm j)
+    ((hφ i).associated_of_dvd (hφ j) hdvd))).symm
+
 /-- **The key step of Dedekind's criterion.** Let `P` be a prime of `𝓞 K` containing `p` and
 `Φ i (θ)`. If `e i = 1`, or if `φ i` does not divide the reduction of `H`, then there is
 `σ ∈ ℤ[θ]` outside `P` such that `σ z ∈ ℤ[θ]` whenever `p z ∈ ℤ[θ]`. -/
@@ -253,14 +274,7 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
     (Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i)).symm
   have htA : t ∈ θ.adjoin :=
     Subalgebra.prod_mem _ fun j _ => Subalgebra.pow_mem _ (θ.aeval_mem_adjoin _) _
-  have htP : t ∉ P := by
-    intro htP
-    obtain ⟨j, hj, hjP⟩ := Ideal.IsPrime.prod_mem_iff.mp htP
-    have hjP' : aeval θ.1 (Φ j) ∈ P := Ideal.IsPrime.mem_of_pow_mem inferInstance _ hjP
-    have hdvd := Polynomial.map_zmod_dvd_map_of_aeval_mem θ.1 hPtop hp hirr hi hjP'
-    rw [hΦ i, hΦ j] at hdvd
-    exact (Finset.mem_erase.mp hj).1 (hinj (eq_of_monic_of_associated (hφm i) (hφm j)
-      ((hφ i).associated_of_dvd (hφ j) hdvd))).symm
+  have htP : t ∉ P := θ.prod_erase_pow_notMem hφ hφm hinj hΦ hp hi
   rcases hcrit with h1 | hnd
   · -- `e i = 1`: multiply by `t`.
     refine ⟨t, htA, htP, fun z hz => ?_⟩
@@ -296,6 +310,24 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
       rw [this]
       exact θ.adjoin.neg_mem (θ.adjoin.mul_mem (θ.aeval_mem_adjoin _) hz)
 
+omit [Fact p.Prime] in
+/-- If `σ z ∈ ℤ[θ]` whenever `p z ∈ ℤ[θ]`, then `σ ^ k z ∈ ℤ[θ]` whenever `p ^ k z ∈ ℤ[θ]`. -/
+private theorem pow_mul_mem_adjoin_of_forall_mul_mem {σ : 𝓞 K}
+    (hσ : ∀ z : 𝓞 K, (p : 𝓞 K) * z ∈ θ.adjoin → σ * z ∈ θ.adjoin) (k : ℕ) :
+    ∀ z : 𝓞 K, (p : 𝓞 K) ^ k * z ∈ θ.adjoin → σ ^ k * z ∈ θ.adjoin := by
+  induction k with
+  | zero => intro z hz; simpa using hz
+  | succ k ih =>
+    intro z hz
+    have h1 : (p : 𝓞 K) * ((p : 𝓞 K) ^ k * z) ∈ θ.adjoin := by
+      rw [← mul_assoc, ← pow_succ']
+      exact hz
+    have h2 : (p : 𝓞 K) ^ k * (σ * z) ∈ θ.adjoin := by
+      rw [mul_left_comm]
+      exact hσ _ h1
+    rw [pow_succ, mul_assoc]
+    exact ih _ h2
+
 /-- **Dedekind's criterion, the sufficient direction.** If for every `i` either `e i = 1` or
 `φ i` does not divide the reduction of `H`, then `p` does not divide the index `[𝓞 K : ℤ[θ]]`. -/
 theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible (φ i))
@@ -319,20 +351,7 @@ theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible 
   have hi : aeval θ.1 (Φ i) ∈ P := Ideal.IsPrime.mem_of_pow_mem inferInstance _ hi
   obtain ⟨σ, _, hσP, hσ⟩ :=
     θ.exists_notMem_mul_mem_adjoin hφ hφm hinj hΦ hH hp (he i) hi (hcrit i)
-  have hiter : ∀ k (z : 𝓞 K), (p : 𝓞 K) ^ k * z ∈ θ.adjoin → σ ^ k * z ∈ θ.adjoin := by
-    intro k
-    induction k with
-    | zero => intro z hz; simpa using hz
-    | succ k ih =>
-      intro z hz
-      have h1 : (p : 𝓞 K) * ((p : 𝓞 K) ^ k * z) ∈ θ.adjoin := by
-        rw [← mul_assoc, ← pow_succ']
-        exact hz
-      have h2 : (p : 𝓞 K) ^ k * (σ * z) ∈ θ.adjoin := by
-        rw [mul_left_comm]
-        exact hσ _ h1
-      rw [pow_succ, mul_assoc]
-      exact ih _ h2
+  have hiter := pow_mul_mem_adjoin_of_forall_mul_mem θ hσ
   obtain ⟨k, N, hN, hkN⟩ :=
     Nat.exists_eq_pow_mul_and_not_dvd θ.index_pos.ne' p (Fact.out : p.Prime).ne_one
   have hindex : ∀ x : 𝓞 K, (θ.index : 𝓞 K) * x ∈ θ.adjoin := fun x => by
@@ -411,14 +430,8 @@ theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
     simp only [map_mul, map_natCast]
     exact hβp
   have hβA : βₒ ∉ θ.adjoin := θ.notMem_adjoin_of_natCast_mul_eq (hΦ i ▸ hφi) hφG hpβ
-  have hq0 : θ.adjoin.toSubmodule.mkQ βₒ ≠ 0 := by
-    rw [Ne, mkQ_eq_zero_iff]
-    exact hβA
-  have hpq : p • θ.adjoin.toSubmodule.mkQ βₒ = 0 := by
-    rw [nsmul_mkQ_eq_zero_iff, hpβ]
-    exact θ.adjoin.mul_mem (θ.aeval_mem_adjoin _) (θ.aeval_mem_adjoin _)
-  rw [index_def, ← addOrderOf_eq_prime hpq hq0]
-  exact addOrderOf_dvd_natCard _
+  exact θ.dvd_index_of_natCast_mul_mem_adjoin hβA
+    (hpβ ▸ θ.adjoin.mul_mem (θ.aeval_mem_adjoin _) (θ.aeval_mem_adjoin _))
 
 /-- **Dedekind's criterion.** Let `θ` be an integral primitive element of `K` with minimal
 polynomial `f = minpoly ℤ θ`, let `p` be a prime, and factor `f mod p = ∏ i, φ i ^ e i` into

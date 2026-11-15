@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
@@ -17,7 +17,6 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import Mathlib.RingTheory.SimpleModule.Rank
 
 /-!
 # Compactly supported de Rham cohomology of `ℝⁿ`
@@ -41,11 +40,13 @@ supported primitive of `ω`
 degree-zero form).
 
 In the top degree `H^n_c(E)` is a line
-(`TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`), and for every orientation of
-`E` integration `H^n_c(E) → ℝ` is an isomorphism
-(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`,
-`TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`). A normalized bump function times
-a determinant form has integral one, so integration is onto and it remains to bound the dimension.
+(`TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`). Integration
+`H^n_c(E) → ℝ` is onto, since a normalized bump function times a determinant form has integral one,
+so it remains to bound the dimension. That integration is an isomorphism, and that a compactly
+supported top form is compactly supported exact exactly when its integral vanishes, are the special
+cases `E` of the results for connected manifolds
+(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral`,
+`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`).
 For `n ≥ 2` the same argument applies in degree `n`: if `ω₁ = dη₁` and `ω₂ = dη₂` are compactly
 supported closed `n`-forms, then `η₁` and `η₂` are closed on the complement of a large closed ball,
 whose `(n - 1)`-st cohomology is that of `Sⁿ⁻¹`, a line. A nontrivial combination
@@ -63,10 +64,8 @@ duality on oriented manifolds, which proceed by Mayer–Vietoris arguments over 
   `k ≠ dim E`.
 * `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`: `H^n_c(E)` is one-dimensional
   for `n = dim E`.
-* `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`: for an
-  orientation of `E`, integration `H^n_c(E) → ℝ` is bijective.
-* `TauCeti.compactlySupportedDeRhamCohomologyNormedSpaceEquiv`: the resulting isomorphism
-  `H^n_c(E) ≃ₗ[ℝ] ℝ`.
+* `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite`: `H^k_c(E)` is
+  one-dimensional for `k = dim E` and zero otherwise.
 
 ## References
 
@@ -85,23 +84,13 @@ open scoped ContDiff Manifold Topology
 namespace TauCeti
 
 /-- For every orientation `o` of a finite-dimensional real normed space `E` of dimension `n`,
-integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral `±1`. -/
+integration `H^n_c(E) → ℝ` is nonzero: the class of a bump form has integral one. -/
 private theorem compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
     (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
     ∃ v, compactlySupportedDeRhamCohomology.integral o v ≠ 0 := by
-  have hn : Fintype.card (Fin n) = finrank ℝ E := o.card_eq
-  let b := Module.finBasisOfFinrankEq ℝ E (by simpa using hn.symm)
-  obtain ⟨φ₀, hφ₀⟩ := b.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one hn
-  refine ⟨compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) n φ₀, ?_⟩
-  -- `o` is the constant orientation of `b` or its opposite, so the integral is `±1`.
-  rw [compactlySupportedDeRhamCohomology.integral_mk]
-  rcases Manifold.Orientation.eq_or_eq_neg o (Manifold.Orientation.model b.orientation hn)
-    with rfl | rfl
-  · rw [hφ₀]
-    exact one_ne_zero
-  · rw [integralTopForm_neg, hφ₀]
-    norm_num
+  obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.surjective_integral o 1
+  exact ⟨v, hv.trans_ne one_ne_zero⟩
 
 section InnerProductSpace
 
@@ -187,8 +176,8 @@ private theorem mem_exactCompactlySupportedForms_top {k : ℕ} (hk : 0 < k)
   obtain ⟨ρ, hρ, hρU, hρc⟩ := exists_cutoff_compl_closedBall (E := E) R
   rcases j with _ | j
   · -- In degree one, `η` is a function, constant on the connected set `U`.
-    have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp <|
-      isPreconnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
+    have : PathConnectedSpace U := isPathConnected_iff_pathConnectedSpace.mp <|
+      isPathConnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
     have hUc : IsCompact {x : (⊤ : Opens E) | (x : E) ∉ U} := by
       let Φ : (⊤ : Opens E) ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E := Diffeomorph.ofTop _ rfl
       have : {x : (⊤ : Opens E) | (x : E) ∉ U} = Φ ⁻¹' closedBall 0 R := by
@@ -327,46 +316,23 @@ theorem finrank_compactlySupportedDeRhamCohomology_normedSpace {k : ℕ} (hk : f
   · -- `E` is a line: transfer from `ℝ`, where integration is an isomorphism.
     let Φ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, ℝ)⟯ ℝ :=
       (ContinuousLinearEquiv.ofFinrankEq (hk.trans (finrank_self ℝ).symm)).toDiffeomorph
-    let o : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
-      Manifold.Orientation.model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
     rw [← (compactlySupportedDeRhamCohomology.equivOfDiffeomorph Φ 1).finrank_eq,
-      (LinearEquiv.ofBijective _
-        (compactlySupportedDeRhamCohomology.bijective_integral_real o)).finrank_eq, finrank_self]
+      (LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_real
+        Manifold.Orientation.real)).finrank_eq, finrank_self]
   · -- Transfer from the Euclidean space of the same dimension.
     rw [← (compactlySupportedDeRhamCohomology.equivOfDiffeomorph
       (toEuclidean (E := E)).toDiffeomorph (n + 2)).finrank_eq]
     exact finrank_compactlySupportedDeRhamCohomology_innerProductSpace
       (by rw [finrank_euclideanSpace_fin, hk])
 
-variable {E}
-
-/-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For every orientation `o` of a
-finite-dimensional real normed space `E` of dimension `n`, integration `H^n_c(E) → ℝ` is
-bijective. -/
-theorem compactlySupportedDeRhamCohomology.bijective_integral_normedSpace {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
-    Function.Bijective (compactlySupportedDeRhamCohomology.integral o) := by
-  have : IsSimpleModule ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n) :=
-    isSimpleModule_iff_finrank_eq_one.mpr
-      (finrank_compactlySupportedDeRhamCohomology_normedSpace E (by simpa using o.card_eq.symm))
-  obtain ⟨v, hv⟩ := compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace o
-  exact LinearMap.bijective_of_ne_zero fun h ↦ hv (by rw [h, LinearMap.zero_apply])
-
-/-- **The top compactly supported de Rham cohomology of `ℝⁿ`.** For an orientation `o` of a
-finite-dimensional real normed space `E` of dimension `n`, integration is a linear isomorphism
-`H^n_c(E) ≃ₗ[ℝ] ℝ`. -/
-def compactlySupportedDeRhamCohomologyNormedSpaceEquiv {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n)) :
-    compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n ≃ₗ[ℝ] ℝ :=
-  LinearEquiv.ofBijective _ (compactlySupportedDeRhamCohomology.bijective_integral_normedSpace o)
-
-/-- The isomorphism `H^n_c(E) ≃ₗ[ℝ] ℝ` is integration. -/
-@[simp]
-theorem compactlySupportedDeRhamCohomologyNormedSpaceEquiv_apply {n : ℕ}
-    (o : Manifold.Orientation 𝓘(ℝ, E) E (Fin n))
-    (x : compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E n) :
-    compactlySupportedDeRhamCohomologyNormedSpaceEquiv o x =
-      compactlySupportedDeRhamCohomology.integral o x :=
-  LinearEquiv.ofBijective_apply _ _
+/-- **The compactly supported de Rham cohomology of `ℝⁿ`.** On a finite-dimensional real normed
+space `E`, `H^k_c(E)` is one-dimensional in degree `k = dim E` and zero in every other degree. -/
+theorem finrank_compactlySupportedDeRhamCohomology_normedSpace_eq_ite (k : ℕ) :
+    finrank ℝ (compactlySupportedDeRhamCohomology 𝓘(ℝ, E) E k) =
+      if k = finrank ℝ E then 1 else 0 := by
+  split_ifs with h
+  · exact finrank_compactlySupportedDeRhamCohomology_normedSpace E h.symm
+  · have := subsingleton_compactlySupportedDeRhamCohomology_normedSpace E h
+    exact finrank_zero_of_subsingleton
 
 end TauCeti

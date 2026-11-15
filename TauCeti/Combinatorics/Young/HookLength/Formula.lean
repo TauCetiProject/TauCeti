@@ -168,6 +168,54 @@ private theorem sum_betaNumber_sub_sum_range (μ : YoungDiagram) {r : ℕ} (hr :
   push_cast
   ring
 
+/-- The induction hypothesis of `standardCount_mul_prod_factorial_betaNumber_aux` at a corner `c`
+of `μ`, rescaled by the beta-number of the row of `c`. -/
+private theorem standardCount_erase_mul_prod_factorial_betaNumber {n : ℕ}
+    (ih : ∀ (μ : YoungDiagram) (r : ℕ), μ.card = n → μ.colLen 0 ≤ r →
+      (standardCount μ : ℤ) * ∏ i ∈ range r, ((μ.betaNumber r i)! : ℤ)
+        = (n ! : ℤ) * ∏ k ∈ range r, ∏ l ∈ Ico (k + 1) r,
+            ((μ.betaNumber r k : ℤ) - (μ.betaNumber r l : ℤ)))
+    {μ : YoungDiagram} {r : ℕ} (hcard : μ.card = n + 1) (hr : μ.colLen 0 ≤ r) {c : ℕ × ℕ}
+    (hc : c ∈ corners μ) :
+    (standardCount (μ.erase c) : ℤ) * ∏ i ∈ range r, ((μ.betaNumber r i) ! : ℤ)
+      = (n ! : ℤ) * ((μ.betaNumber r c.1 : ℤ) *
+          ∏ k ∈ range r, ∏ l ∈ Ico (k + 1) r,
+            (Function.update (fun j => (μ.betaNumber r j : ℤ)) c.1
+                ((μ.betaNumber r c.1 : ℤ) - 1) k
+              - Function.update (fun j => (μ.betaNumber r j : ℤ)) c.1
+                  ((μ.betaNumber r c.1 : ℤ) - 1) l)) := by
+    have hcc : IsCorner μ c := mem_corners.mp hc
+    have hb : 1 ≤ μ.betaNumber r c.1 := by
+      rw [betaNumber_def, hcc.rowLen_eq_snd_add_one]; omega
+    have hcard' : (μ.erase c).card = n := by have := hcc.card_erase; omega
+    have hr' : (μ.erase c).colLen 0 ≤ r := by
+      rw [hcc.colLen_erase]; split_ifs <;> omega
+    -- the erased beta-numbers are the original ones with the corner's row lowered by one
+    have hbeta : ∀ i, (((μ.erase c).betaNumber r i : ℕ) : ℤ)
+        = Function.update (fun j => (μ.betaNumber r j : ℤ)) c.1
+            ((μ.betaNumber r c.1 : ℤ) - 1) i := by
+      intro i
+      rcases eq_or_ne c.1 i with rfl | h
+      · rw [hcc.betaNumber_erase r c.1, ite_eq_left rfl, Function.update_self]
+        omega
+      · rw [hcc.betaNumber_erase r i, ite_eq_right h, Function.update_of_ne (Ne.symm h)]
+    -- `βᵢ ! = βᵢ * (βᵢ - 1) !` at the corner's row, and nothing changes elsewhere
+    have hmem : c.1 ∈ range r := mem_range.mpr (hcc.fst_lt_colLen_zero.trans_le hr)
+    have hfact : (μ.betaNumber r c.1 : ℤ) *
+        ∏ i ∈ range r, (((μ.erase c).betaNumber r i) ! : ℤ)
+          = ∏ i ∈ range r, ((μ.betaNumber r i) ! : ℤ) := by
+      rw [← Finset.mul_prod_erase (range r) (fun i => (((μ.erase c).betaNumber r i) ! : ℤ)) hmem,
+        ← Finset.mul_prod_erase (range r) (fun i => ((μ.betaNumber r i) ! : ℤ)) hmem,
+        ← mul_assoc]
+      refine congrArg₂ (· * ·) ?_ (Finset.prod_congr rfl fun i hi => ?_)
+      · rw [hcc.betaNumber_erase r c.1, ite_eq_left rfl, ← Nat.cast_mul,
+          Nat.mul_factorial_pred (by omega)]
+      · rw [hcc.betaNumber_erase r i, ite_eq_right (Ne.symm (Finset.ne_of_mem_erase hi))]
+    rw [← hfact, ← mul_assoc, mul_comm ((standardCount (μ.erase c) : ℤ)), mul_assoc,
+      ih (μ.erase c) r hcard' hr', ← mul_assoc, mul_comm ((μ.betaNumber r c.1 : ℤ)), mul_assoc]
+    exact congrArg _ (congrArg _ (Finset.prod_congr rfl fun k _ =>
+      Finset.prod_congr rfl fun l _ => by rw [hbeta k, hbeta l]))
+
 /-- The inductive form of the Frobenius determinant formula, with the number of cells fixed so
 that the corner recursion is an ordinary induction. -/
 private theorem standardCount_mul_prod_factorial_betaNumber_aux (n : ℕ) :
@@ -191,46 +239,8 @@ private theorem standardCount_mul_prod_factorial_betaNumber_aux (n : ℕ) :
   | succ n ih =>
     intro μ r hcard hr
     -- the induction hypothesis at each corner, rescaled by the beta-number of its row
-    have hcorner : ∀ c ∈ corners μ,
-        (standardCount (μ.erase c) : ℤ) * ∏ i ∈ range r, ((μ.betaNumber r i) ! : ℤ)
-          = (n ! : ℤ) * ((μ.betaNumber r c.1 : ℤ) *
-              ∏ k ∈ range r, ∏ l ∈ Ico (k + 1) r,
-                (Function.update (fun j => (μ.betaNumber r j : ℤ)) c.1
-                    ((μ.betaNumber r c.1 : ℤ) - 1) k
-                  - Function.update (fun j => (μ.betaNumber r j : ℤ)) c.1
-                      ((μ.betaNumber r c.1 : ℤ) - 1) l)) := by
-      intro c hc
-      have hcc : IsCorner μ c := mem_corners.mp hc
-      have hb : 1 ≤ μ.betaNumber r c.1 := by
-        rw [betaNumber_def, hcc.rowLen_eq_snd_add_one]; omega
-      have hcard' : (μ.erase c).card = n := by have := hcc.card_erase; omega
-      have hr' : (μ.erase c).colLen 0 ≤ r := by
-        rw [hcc.colLen_erase]; split_ifs <;> omega
-      -- the erased beta-numbers are the original ones with the corner's row lowered by one
-      have hbeta : ∀ i, (((μ.erase c).betaNumber r i : ℕ) : ℤ)
-          = Function.update (fun j => (μ.betaNumber r j : ℤ)) c.1
-              ((μ.betaNumber r c.1 : ℤ) - 1) i := by
-        intro i
-        rcases eq_or_ne c.1 i with rfl | h
-        · rw [hcc.betaNumber_erase r c.1, ite_eq_left rfl, Function.update_self]
-          omega
-        · rw [hcc.betaNumber_erase r i, ite_eq_right h, Function.update_of_ne (Ne.symm h)]
-      -- `βᵢ ! = βᵢ * (βᵢ - 1) !` at the corner's row, and nothing changes elsewhere
-      have hmem : c.1 ∈ range r := mem_range.mpr (hcc.fst_lt_colLen_zero.trans_le hr)
-      have hfact : (μ.betaNumber r c.1 : ℤ) *
-          ∏ i ∈ range r, (((μ.erase c).betaNumber r i) ! : ℤ)
-            = ∏ i ∈ range r, ((μ.betaNumber r i) ! : ℤ) := by
-        rw [← Finset.mul_prod_erase (range r) (fun i => (((μ.erase c).betaNumber r i) ! : ℤ)) hmem,
-          ← Finset.mul_prod_erase (range r) (fun i => ((μ.betaNumber r i) ! : ℤ)) hmem,
-          ← mul_assoc]
-        refine congrArg₂ (· * ·) ?_ (Finset.prod_congr rfl fun i hi => ?_)
-        · rw [hcc.betaNumber_erase r c.1, ite_eq_left rfl, ← Nat.cast_mul,
-            Nat.mul_factorial_pred (by omega)]
-        · rw [hcc.betaNumber_erase r i, ite_eq_right (Ne.symm (Finset.ne_of_mem_erase hi))]
-      rw [← hfact, ← mul_assoc, mul_comm ((standardCount (μ.erase c) : ℤ)), mul_assoc,
-        ih (μ.erase c) r hcard' hr', ← mul_assoc, mul_comm ((μ.betaNumber r c.1 : ℤ)), mul_assoc]
-      exact congrArg _ (congrArg _ (Finset.prod_congr rfl fun k _ =>
-        Finset.prod_congr rfl fun l _ => by rw [hbeta k, hbeta l]))
+    have hcorner := fun c hc ↦
+      standardCount_erase_mul_prod_factorial_betaNumber ih hcard hr (c := c) hc
     have hzero : ∀ i ∈ range r, (∀ c ∈ corners μ, c.1 ≠ i) →
         (μ.betaNumber r i : ℤ) *
           ∏ k ∈ range r, ∏ l ∈ Ico (k + 1) r,

@@ -138,9 +138,9 @@ theorem apply_one_zero_eq_zero_of_smul_splitTriangularForm_eq {s c d : ℤ} (hs 
   apply hs
   linear_combination -s * hdet - γ 0 0 * hrel₁ - γ 1 0 * hrel₂
 
-/-- For a fixed nonzero square root, triangular forms are properly equivalent exactly
+/-- For a fixed square root, triangular forms are properly equivalent exactly
 when their last coefficients are congruent modulo that root. -/
-theorem exists_smul_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
+theorem exists_smul_splitTriangularForm_eq_iff (s c d : ℤ) :
     (∃ γ : SL(2, ℤ), γ • splitTriangularForm s c = splitTriangularForm s d) ↔
       s ∣ c - d := by
   constructor
@@ -149,12 +149,20 @@ theorem exists_smul_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
     rw [Matrix.det_fin_two] at hdet
     have hc := congrArg BinaryQuadraticForm.c hγ
     simp only [smul_c, splitTriangularForm, zero_mul, zero_sub] at hc
-    have hr := apply_one_zero_eq_zero_of_smul_splitTriangularForm_eq hs hγ
-    have hpt : γ 0 0 * γ 1 1 = 1 := by simpa only [hr, mul_zero, sub_zero] using hdet
-    have hp2 : γ 0 0 ^ 2 = 1 := by
-      rcases Int.eq_one_or_neg_one_of_mul_eq_one hpt with hp | hp <;> simp [hp]
-    refine ⟨γ 0 0 * γ 0 1, ?_⟩
-    linear_combination hc - c * hp2
+    by_cases hr : γ 1 0 = 0
+    · have hpt : γ 0 0 * γ 1 1 = 1 := by simpa only [hr, mul_zero, sub_zero] using hdet
+      have hp2 : γ 0 0 ^ 2 = 1 := by
+        rcases Int.eq_one_or_neg_one_of_mul_eq_one hpt with hp | hp <;> simp [hp]
+      refine ⟨γ 0 0 * γ 0 1, ?_⟩
+      linear_combination hc - c * hp2
+    · -- a nonzero lower left entry forces `s = 0` and then `c = d = 0`
+      obtain rfl : s = 0 := by_contra fun hs ↦
+        hr (apply_one_zero_eq_zero_of_smul_splitTriangularForm_eq hs hγ)
+      have ha := congrArg BinaryQuadraticForm.a hγ
+      simp only [smul_a, splitTriangularForm, zero_mul, zero_sub, neg_zero] at ha hc
+      obtain rfl : c = 0 := by simpa [hr] using ha
+      subst hc
+      simp
   · rintro ⟨n, hn⟩
     refine ⟨ModularGroup.T ^ n, ?_⟩
     ext <;> simp [splitTriangularForm]
@@ -206,7 +214,7 @@ theorem exists_smul_eq_splitTriangularForm_of_discrim_eq_sq (f : BinaryQuadratic
     refine ⟨γ, f.content * e, ?_⟩
     rw [← f.content_smul_primPart, smul_comm, hγ]
     ext <;> simp [splitTriangularForm]
-  obtain ⟨τ, hτ⟩ := (exists_smul_splitTriangularForm_eq_iff s c (c % s) hs).mpr
+  obtain ⟨τ, hτ⟩ := (exists_smul_splitTriangularForm_eq_iff s c (c % s)).mpr
     Int.dvd_self_sub_emod
   exact ⟨τ * γ, c % s, Int.emod_nonneg c hs, Int.emod_lt_abs c hs, by rw [mul_smul, hγ, hτ]⟩
 
@@ -228,12 +236,12 @@ theorem card_stabilizer_of_discrim_eq_sq {f : BinaryQuadraticForm ℤ} {s : ℤ}
   rw [← card_stabilizer_smul γ f, hγ, card_stabilizer_splitTriangularForm hs]
 
 /-- Equality in the existing proper-class quotient is the same congruence criterion. -/
-@[simp] theorem properClass_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
+@[simp] theorem properClass_splitTriangularForm_eq_iff (s c d : ℤ) :
     (Quotient.mk'' (splitTriangularForm s c) :
         MulAction.orbitRel.Quotient SL(2, ℤ) (BinaryQuadraticForm ℤ)) =
       Quotient.mk'' (splitTriangularForm s d) ↔ s ∣ c - d := by
   rw [Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
-    exists_smul_splitTriangularForm_eq_iff s d c hs]
+    exists_smul_splitTriangularForm_eq_iff s d c]
   constructor <;> intro h <;> simpa only [neg_sub] using h.neg_right
 
 end TauCeti.BinaryQuadraticForm

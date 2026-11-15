@@ -197,7 +197,7 @@ theorem pbwGradedMul_comm (i j : ℕ) (x : PBWGradedPiece R L i)
           all_goals try exact Nat.add_comm i j
           apply (Submodule.Quotient.eq _).mpr
           rw [mem_previousRestricted_iff, Submodule.coe_sub,
-            wordFiltration_coe_cast _ (Nat.add_comm i j),
+            wordFiltration.coe_cast _ (Nat.add_comm i j),
             ← pbwFiltrationPrevious_def R L]
           simpa only [Nat.add_comm i j, Submodule.coe_mk] using
             mul_sub_mul_mem_pbwFiltrationPrevious R L hx hy
@@ -262,7 +262,7 @@ theorem prod_map_pbwGradedGenerator (l : List L) :
       rw [gradedPiece_cast_mk]
       all_goals try exact h
       apply (Submodule.Quotient.eq _).mpr
-      rw [mem_previousRestricted_iff, Submodule.coe_sub, wordFiltration_coe_cast _ h]
+      rw [mem_previousRestricted_iff, Submodule.coe_sub, wordFiltration.coe_cast _ h]
       simp only [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
         sub_self]
       exact Submodule.zero_mem _

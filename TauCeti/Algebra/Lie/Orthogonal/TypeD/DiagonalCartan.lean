@@ -157,8 +157,8 @@ variable [CommRing K] [DecidableEq ι] [Fintype ι]
 /-- Every `diag(d, -d)` is skew-adjoint for the split type-`D` form. -/
 theorem typeDDiagonalMatrix_mem_typeD (d : ι → K) :
     typeDDiagonalMatrix d ∈ LieAlgebra.Orthogonal.typeD ι K := by
-  simpa [typeDDiagonalMatrix, typeDDiagonalValue, Pi.neg_def] using
-    fromBlocks_mem_typeD (diagonal d) 0 0 (by simp) (by simp)
+  rw [typeDDiagonalMatrix, typeDDiagonalValue, ← fromBlocks_diagonal]
+  exact fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, by simp⟩
 
 /-! ### The Cartan subalgebra and its coordinates -/
 

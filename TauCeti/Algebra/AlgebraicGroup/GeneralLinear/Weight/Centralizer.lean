@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Basic
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Functorial
 import TauCeti.LinearAlgebra.Matrix.MonoidAlgebra
 
 /-!
@@ -18,11 +18,16 @@ when the weights are distinct, the centralizer consists of diagonal matrices. Th
 hold over every commutative base ring and every value algebra: comparison with the universal
 torus point, not merely rational points, separates weights even over finite fields.
 
+For a closed subgroup of the general linear group containing this weight torus, the same
+criterion identifies its schematic centralizer with the inverse image of the diagonal torus.
+
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§16 and 26.
 * The universal-point coefficient argument is adapted from
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Centralizer`.
+* The closed-immersion criteria generalize the computation in
+  `TauCeti.Algebra.Lie.E7.Minuscule.Generated.TorusCentralizer`.
 -/
 
 public section
@@ -31,7 +36,7 @@ open TensorProduct WithConv
 
 namespace TauCeti.GeneralLinear
 
-universe u v w
+universe u v w x
 
 variable {R : Type u} [CommRing R] {X : Type v} [CommGroup X] {n : ℕ}
 
@@ -144,5 +149,38 @@ theorem centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag
     (fun i ↦ .ofAdd (Finsupp.equivFunOnFinite.symm (wt i)))
     (Multiplicative.ofAdd.injective.comp (Finsupp.equivFunOnFinite.symm.injective.comp hwt))
     (weightTorusCoordinateBialgHom_X wt) g
+
+variable {K : Type x} [CommRing K] [HopfAlgebra R K]
+
+/-- In a closed matrix subgroup containing a torus with distinct weights, schematic
+centralization of that torus is equivalent to diagonality of the matrix, over every value
+algebra. The composite equation specifies the torus representation in the ambient group. -/
+theorem _root_.BialgHom.mem_centralizerPointsSubgroup_iff_isDiag_of_comp
+    (ρ : coordinateHopfAlgebra R n →ₐc[R] K) (hρ : Function.Surjective ρ)
+    {σ : Type v} [Finite σ] (π : K →ₐc[R] MonoidAlgebra R (Multiplicative (σ →₀ ℤ)))
+    (wt : Fin n → σ → ℤ) (hwt : Function.Injective wt)
+    (hcomp : π.comp ρ = weightTorusCoordinateBialgHom wt)
+    (A : CommAlgCat.{w} R) (g : HopfAlgebra.points (R := R) (H := K) A) :
+    g ∈ BialgHom.centralizerPointsSubgroup π A ↔
+      (pointsMulEquiv n (BialgHom.mapDomain ρ g) : Matrix (Fin n) (Fin n) A).IsDiag := by
+  have h := BialgHom.centralizerHopfIdeal_comp_le_ker_iff ρ hρ π g
+  rw [hcomp, centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag _ hwt] at h
+  rw [BialgHom.centralizerPointsSubgroup, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  simpa only [IsConcreteLE.le_iff, RingHom.mem_ker, HopfIdeal.mem_toIdeal] using h.symm
+
+/-- The schematic centralizer of a multiplicity-free weight torus in a closed matrix subgroup
+is the inverse image of the ambient diagonal torus, over every value algebra. -/
+theorem _root_.BialgHom.centralizerPointsSubgroup_eq_comap_diagonalTorus_of_comp
+    (ρ : coordinateHopfAlgebra R n →ₐc[R] K) (hρ : Function.Surjective ρ)
+    {σ : Type v} [Finite σ] (π : K →ₐc[R] MonoidAlgebra R (Multiplicative (σ →₀ ℤ)))
+    (wt : Fin n → σ → ℤ) (hwt : Function.Injective wt)
+    (hcomp : π.comp ρ = weightTorusCoordinateBialgHom wt) (A : CommAlgCat.{w} R) :
+    BialgHom.centralizerPointsSubgroup π A =
+      (TauCeti.diagonalTorus A n).comap
+        ((pointsMulEquiv (R := R) n).toMonoidHom.comp (BialgHom.mapDomain ρ)) := by
+  ext g
+  simp only [Subgroup.mem_comap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    mem_diagonalTorus_iff]
+  exact BialgHom.mem_centralizerPointsSubgroup_iff_isDiag_of_comp ρ hρ π wt hwt hcomp A g
 
 end TauCeti.GeneralLinear

@@ -59,6 +59,22 @@ theorem mem_normalizerPoints (g : WithConv (H →ₐ[R] R)) :
       (HopfIdeal.kerOfSurjective π hπ).conjugate g = HopfIdeal.kerOfSurjective π hπ := by
   rw [normalizerPoints, MulAction.mem_stabilizer_iff, HopfIdeal.smul_eq_conjugate]
 
+/-- **A point satisfying a normalization equation normalizes the subgroup scheme.** If inverse
+conjugation by `g` restricts to the closed diagonalizable subgroup as the coordinate map of an
+automorphism `w` of its character group, then `g` stabilizes the defining Hopf ideal. -/
+theorem mem_normalizerPoints_of_comp_eq (g : WithConv (H →ₐ[R] R)) (w : X ≃* X)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) :
+    g ∈ normalizerPoints π hπ := by
+  have hinv := HopfAlgebra.comp_pointConjugationAlgHom_eq_symm_comp π.toAlgHom g _ hg
+  rw [mem_normalizerPoints]
+  apply HopfIdeal.ext
+  intro x
+  rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_kerOfSurjective, HopfIdeal.mem_kerOfSurjective]
+  have hx := AlgHom.congr_fun hinv x
+  simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, AlgEquiv.coe_toAlgHom] at hx
+  rw [hx, map_eq_zero_iff _ (AlgEquiv.injective _)]
+
 /-- The points of the diagonalizable subgroup map into its scheme normalizer. -/
 noncomputable def mapDomainToNormalizer :
     WithConv (MonoidAlgebra R X →ₐ[R] R) →* normalizerPoints π hπ :=
@@ -127,28 +143,18 @@ private noncomputable def normalizerCharacterEquiv (g : normalizerPoints π hπ)
   toFun := MonoidAlgebra.mapDomainBialgHomPreimage R (normalizerCoordinateMap π hπ g)
   invFun := MonoidAlgebra.mapDomainBialgHomPreimage R (normalizerCoordinateMap π hπ g⁻¹)
   left_inv x := by
-    let : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-    apply MonoidAlgebra.single_left_injective (R := R) (M := X) one_ne_zero
-    dsimp only
-    rw [← MonoidAlgebra.mapDomainBialgHomPreimage_single,
-      ← MonoidAlgebra.mapDomainBialgHomPreimage_single]
-    rw [← BialgHom.comp_apply, ← normalizerCoordinateMap_mul]
-    simp [normalizerCoordinateMap_one]
+    simp [← MonoidHom.comp_apply, ← MonoidAlgebra.mapDomainBialgHomPreimage_comp,
+      ← normalizerCoordinateMap_mul, normalizerCoordinateMap_one]
   right_inv x := by
-    let : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
-    apply MonoidAlgebra.single_left_injective (R := R) (M := X) one_ne_zero
-    dsimp only
-    rw [← MonoidAlgebra.mapDomainBialgHomPreimage_single,
-      ← MonoidAlgebra.mapDomainBialgHomPreimage_single]
-    rw [← BialgHom.comp_apply, ← normalizerCoordinateMap_mul]
-    simp [normalizerCoordinateMap_one]
+    simp [← MonoidHom.comp_apply, ← MonoidAlgebra.mapDomainBialgHomPreimage_comp,
+      ← normalizerCoordinateMap_mul, normalizerCoordinateMap_one]
   map_mul' := (MonoidAlgebra.mapDomainBialgHomPreimage R
     (normalizerCoordinateMap π hπ g)).map_mul
 
 private theorem normalizerCharacterEquiv_single (g : normalizerPoints π hπ) (x : X) :
     normalizerCoordinateMap π hπ g (MonoidAlgebra.single x 1) =
       MonoidAlgebra.single (normalizerCharacterEquiv π hπ g x) 1 :=
-  MonoidAlgebra.mapDomainBialgHomPreimage_single R _ x
+  (MonoidAlgebra.single_mapDomainBialgHomPreimage R _ x 1).symm
 
 private theorem normalizerCoordinateMap_eq_domCongr (g : normalizerPoints π hπ) :
     (normalizerCoordinateMap π hπ g).toAlgHom =
@@ -207,6 +213,13 @@ theorem normalizerCharacterHom_unique (g : normalizerPoints π hπ) (w : X ≃* 
   ext x
   apply MonoidAlgebra.single_left_injective (R := R) (M := X) one_ne_zero
   simpa using AlgHom.congr_fun he (MonoidAlgebra.single x 1)
+
+/-- A point satisfying the normalization equation for `w` acts on characters by `w`. -/
+theorem normalizerCharacterHom_of_comp_eq (g : WithConv (H →ₐ[R] R)) (w : X ≃* X)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) :
+    normalizerCharacterHom π hπ ⟨g, mem_normalizerPoints_of_comp_eq π hπ g w hg⟩ = w :=
+  (normalizerCharacterHom_unique π hπ _ w hg).symm
 
 /-- A normalizing point acts trivially on characters exactly when its inverse conjugation
 restricts to the identity on the subgroup scheme. -/

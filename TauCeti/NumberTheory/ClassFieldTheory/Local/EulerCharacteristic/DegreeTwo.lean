@@ -99,8 +99,7 @@ theorem finrank_continuousCohomology_two_fdGalRepOfQuotient {ℓ : ℕ} [Fact �
         (V := TensorProduct (ZMod ℓ) (Module.Dual (ZMod ℓ) M) A)
         (Representation.tprod (Representation.dual M.ρ) A.ρ)) := by
   have hℓp : ℓ.Prime := Fact.out
-  have : V.toSubgroup.FiniteIndex :=
-    ⟨fun h => hℓp.one_lt.ne' (Nat.coprime_zero_left ℓ |>.1 (h ▸ hV))⟩
+  have := V.toSubgroup.finiteIndex_of_index_coprime hℓp.ne_one hV
   have : Invertible (Nat.card (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) : ZMod ℓ) :=
     invertibleOfNonzero <| by
       rw [Ne, ZMod.natCast_eq_zero_iff]

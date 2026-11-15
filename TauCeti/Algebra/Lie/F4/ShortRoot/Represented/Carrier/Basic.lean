@@ -255,7 +255,7 @@ noncomputable def f4ShortRootCarrierMiddleEquivQuotient :
     f4ShortRootCarrierCotangentIdeal.toSubmodule
     f4ShortRootCarrierCotangentRange.toSubmodule
     (A.map e.toLinearMap) (B.map e.toLinearMap) hA hB
-  let eMap := TauCeti.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
+  let eMap := LinearMap.mapSubquotientEquivOfInjective e.toLinearMap e.injective A B
   let eTrace := Submodule.quotEquivOfEq (R := 𝔽₂) (M := ↥B)
     f4ShortRootRepresentedIdeal (Submodule.comap B.subtype A) htrace.symm
   let eCarrier := f4ShortRootCarrierRangeEquivToSubmodule

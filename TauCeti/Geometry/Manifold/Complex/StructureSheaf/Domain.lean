@@ -31,7 +31,7 @@ second countability are not needed. Zero-dimensional models are included.
 * Lars Hörmander, *An Introduction to Complex Analysis in Several Variables*, §2.2.
 * Otto Forster, *Lectures on Riemann Surfaces*, §§1, 6 and 16, for the curve case.
 * The section argument uses `ContMDiff.eq_of_eventuallyEq`;
-  the passage to stalks uses `TopCat.Presheaf.stalk_noZeroDivisors_of_hasBasis`.
+  the passage to stalks uses `TopCat.Presheaf.noZeroDivisors_stalk_of_hasBasis`.
 -/
 
 public noncomputable section
@@ -77,7 +77,7 @@ instance stalkIsDomain (x : X) :
     (LocallyConnectedSpace.open_connected_basis x).to_hasBasis
       (fun C hC ↦ ⟨⟨C, hC.1⟩, hC.2, Subset.rfl⟩)
       (fun U hU ↦ ⟨U, ⟨U.isOpen, hU⟩, Subset.rfl⟩)
-  have : NoZeroDivisors (F.stalk x) := F.stalk_noZeroDivisors_of_hasBasis x hB fun U hU ↦ by
+  have : NoZeroDivisors (F.stalk x) := F.noZeroDivisors_stalk_of_hasBasis x hB fun U hU ↦ by
     have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp hU.2.isPreconnected
     infer_instance
   exact NoZeroDivisors.to_isDomain _

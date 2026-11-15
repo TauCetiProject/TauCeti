@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.StandardComodule
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Functorial
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Centralizer
 
 /-!
@@ -45,19 +44,13 @@ theorem mem_centralizerPointsSubgroup_iff_isDiag (A : CommAlgCat.{v} R)
       (GeneralLinear.pointsMulEquiv 56
         (BialgHom.mapDomain (generatedCoordinateMap R).hom g) :
           Matrix (Fin 56) (Fin 56) A).IsDiag := by
-  have hcomp : (generatedWeightTorusCoordinateMap R).hom.comp
-        (generatedCoordinateMap R).hom =
-      GeneralLinear.weightTorusCoordinateBialgHom (S := R) DynkinType.e7MinusculeWeight := by
-    rw [← CommHopfAlgCat.hom_comp,
-      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
-      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  have h := BialgHom.centralizerHopfIdeal_comp_le_ker_iff
+  exact BialgHom.mem_centralizerPointsSubgroup_iff_isDiag_of_comp
     (generatedCoordinateMap R).hom (generatedCoordinateMap_surjective R)
-    (generatedWeightTorusCoordinateMap R).hom g
-  rw [hcomp, GeneralLinear.centralizerHopfIdeal_weightTorus_le_ker_iff_isDiag _
-    DynkinType.e7MinusculeWeight_injective] at h
-  rw [BialgHom.centralizerPointsSubgroup, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  simpa only [IsConcreteLE.le_iff, RingHom.mem_ker, HopfIdeal.mem_toIdeal] using h.symm
+    (generatedWeightTorusCoordinateMap R).hom DynkinType.e7MinusculeWeight
+    DynkinType.e7MinusculeWeight_injective
+    (by rw [← CommHopfAlgCat.hom_comp,
+      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
+      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]) A g
 
 /-- On every value algebra, the schematic torus centralizer is the inverse image of the full
 diagonal torus under the generated carrier's closed matrix embedding. -/
@@ -66,9 +59,12 @@ theorem centralizerPointsSubgroup_eq_comap_diagonalTorus (A : CommAlgCat.{v} R) 
       (diagonalTorus A 56).comap
         ((GeneralLinear.pointsMulEquiv (R := R) 56).toMonoidHom.comp
           (BialgHom.mapDomain (generatedCoordinateMap R).hom)) := by
-  ext g
-  simp only [Subgroup.mem_comap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    mem_diagonalTorus_iff]
-  exact mem_centralizerPointsSubgroup_iff_isDiag R A g
+  exact BialgHom.centralizerPointsSubgroup_eq_comap_diagonalTorus_of_comp
+    (generatedCoordinateMap R).hom (generatedCoordinateMap_surjective R)
+    (generatedWeightTorusCoordinateMap R).hom DynkinType.e7MinusculeWeight
+    DynkinType.e7MinusculeWeight_injective
+    (by rw [← CommHopfAlgCat.hom_comp,
+      generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
+      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]) A
 
 end TauCeti.E7Minuscule.Generated

@@ -389,7 +389,7 @@ private theorem upperTriangularDefiningIdeal_le_ker_weightTorusCoordinateMap :
         (GeneralLinear.coordinateRingMap ℤ (r + 1) (MvPolynomial.X (a, b)))) = 0 := by
     rw [GeneralLinear.weightTorusCoordinateMap_X]
     simp only [hba.ne', ↓reduceIte]
-  simpa only [BialgHom.coe_toAlgHom] using hzero
+  simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom] using hzero
 
 /-- **The positive numbered root subgroup, factored through the upper-triangular subgroup scheme
 of the type-`A_r` carrier.** -/

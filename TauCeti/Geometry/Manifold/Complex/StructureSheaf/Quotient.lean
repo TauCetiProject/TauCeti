@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.LocalRing
 public import TauCeti.Topology.Category.TopCat.Quotient
 import Mathlib.Algebra.Category.Ring.FilteredColimits
-import TauCeti.Topology.Sheaves.CommRingCat
+import TauCeti.Topology.Sheaves.DisjointGluing
 
 /-!
 # Holomorphic functions on normalization quotients

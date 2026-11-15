@@ -13,8 +13,10 @@ public import TauCeti.Analysis.Normed.Ring.MulUnit
 # Rescaling multivariate power series
 
 This file records general facts about Mathlib's coefficientwise rescaling of multivariate
-power series. Rescaling by multiplicative units transports weighted coefficient norms, and hence
-restrictedness, when the weights are changed by the corresponding scalar norms; in particular,
+power series. If scalars `uᵢ` scale norms in a module by `rᵢ / sᵢ`, then the monomial `uᵗ` turns
+weighted norms at `s` into weighted norms at `r`. Hence rescaling by multiplicative units
+transports weighted coefficient norms, and restrictedness, when the weights are changed by the
+corresponding scalar norms; in particular,
 rescaling by the inverses of multiplicative units `uᵢ` turns the weighted coefficient norms at the
 radii `‖uᵢ‖⁻¹` into plain coefficient norms. Rescaling by a
 family of units and then by their inverses is the identity. Substituting a family into a rescaled
@@ -23,6 +25,50 @@ power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)
 -/
 
 public section
+
+namespace TauCeti.MvPowerSeries
+
+variable {σ R E : Type*} [SeminormedCommRing R] [SeminormedAddCommGroup E] [Module R E]
+  {r s : σ → ℝ}
+
+/-- If each `u i` scales norms in `E` by `r i / s i`, then the monomial `uᵗ` scales the weighted
+coefficient norms: `‖uᵗ • e‖ * sᵗ = ‖e‖ * rᵗ`. -/
+theorem norm_prod_pow_smul_mul_prod (u : σ → R)
+    (hu : ∀ i (e : E), ‖u i • e‖ * s i = ‖e‖ * r i) (t : σ →₀ ℕ) (e : E) :
+    ‖(t.prod fun i m ↦ u i ^ m) • e‖ * t.prod (s · ^ ·) = ‖e‖ * t.prod (r · ^ ·) := by
+  classical
+  have hpow (i : σ) (m : ℕ) (e : E) : ‖u i ^ m • e‖ * s i ^ m = ‖e‖ * r i ^ m := by
+    induction m generalizing e with
+    | zero => simp
+    | succ m ih =>
+      calc ‖u i ^ (m + 1) • e‖ * s i ^ (m + 1) = ‖u i • u i ^ m • e‖ * s i * s i ^ m := by
+            rw [pow_succ', mul_smul, pow_succ']
+            ring
+        _ = ‖e‖ * r i ^ (m + 1) := by
+            rw [hu, mul_right_comm, ih, pow_succ, mul_assoc]
+  simp only [Finsupp.prod]
+  induction t.support using Finset.induction_on generalizing e with
+  | empty => simp
+  | insert i S hi ih =>
+    simp only [Finset.prod_insert hi]
+    calc ‖(u i ^ t i * ∏ j ∈ S, u j ^ t j) • e‖ * (s i ^ t i * ∏ j ∈ S, s j ^ t j)
+        = ‖u i ^ t i • (∏ j ∈ S, u j ^ t j) • e‖ * s i ^ t i * ∏ j ∈ S, s j ^ t j := by
+          rw [mul_smul]
+          ring
+      _ = ‖(∏ j ∈ S, u j ^ t j) • e‖ * (∏ j ∈ S, s j ^ t j) * r i ^ t i := by
+          rw [hpow]
+          ring
+      _ = ‖e‖ * (r i ^ t i * ∏ j ∈ S, r j ^ t j) := by
+          rw [ih]
+          ring
+
+/-- Multiplicative units `u i` with `‖u i‖ * s i = r i` scale norms in `R` by `r i / s i`, which is
+the scaling hypothesis of `norm_prod_pow_smul_mul_prod` for `E = R`. -/
+theorem norm_smul_mul_of_isNormMulUnit (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
+    (hrs : ∀ i, ‖u i‖ * s i = r i) (i : σ) (e : R) : ‖u i • e‖ * s i = ‖e‖ * r i := by
+  rw [smul_eq_mul, (hu i).norm_mul, mul_right_comm, hrs, mul_comm]
+
+end TauCeti.MvPowerSeries
 
 namespace MvPowerSeries
 
@@ -36,23 +82,9 @@ theorem norm_coeff_rescale_mul_prod (u : σ → R) (hu : ∀ i, IsNormMulUnit (u
     (hrs : ∀ i, ‖u i‖ * s i = r i) (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
     ‖coeff n (rescale u f)‖ * n.prod (s · ^ ·) =
       ‖coeff n f‖ * n.prod (r · ^ ·) := by
-  classical
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · let _ : Subsingleton R := hR
-    simp [Subsingleton.elim (coeff n (rescale u f)) 0, Subsingleton.elim (coeff n f) 0]
-  · let _ : Nontrivial R := hR
-    by_cases hn : n.support.Nonempty
-    · obtain ⟨i, hi⟩ := hn
-      let _ : NormOneClass R := ⟨(hu i).norm_one⟩
-      have hpow (j : σ) (_ : j ∈ n.support) : IsNormMulUnit (u j ^ n j) := (hu j).pow _
-      rw [coeff_rescale, Finsupp.prod, (IsNormMulUnit.prod hpow).norm_mul,
-        IsNormMulUnit.norm_prod hpow, mul_right_comm, mul_comm]
-      congr 1
-      simp only [Finsupp.prod, ← Finset.prod_mul_distrib]
-      exact Finset.prod_congr rfl fun j _ ↦ by rw [(hu j).norm_pow, ← mul_pow, hrs j]
-    · have hn0 : n = 0 := Finsupp.support_eq_empty.mp (Finset.not_nonempty_iff_eq_empty.mp hn)
-      subst n
-      simp
+  rw [coeff_rescale]
+  exact TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod (E := R) u
+    (TauCeti.MvPowerSeries.norm_smul_mul_of_isNormMulUnit u hu hrs) n _
 
 /-- Rescaling by multiplicative units converts restrictedness at `r` into restrictedness at `s`
 when `‖u i‖ * s i = r i`. -/

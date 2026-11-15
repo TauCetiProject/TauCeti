@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Family
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Existence
 
 /-!
 # Regularity of Levi-Civita connections of nondegenerate metrics
@@ -50,6 +51,8 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
 * `contMDiffOn_covariantDerivative_of_isLeviCivitaConnection` and
   `contMDiff_covariantDerivative_of_isLeviCivitaConnection`: joint regularity of the Levi-Civita
   connections of a smooth nondegenerate metric family.
+* `contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection`: joint regularity of
+  `(s, y) ↦ ∇ˢ_X Z (y)` along a parameter curve.
 
 ## References
 
@@ -83,6 +86,39 @@ variable {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
   {g : P → ContMDiffNondegenerateMetric (I := I) (M := M)}
   {cov : P → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+
+/-- Levi-Civita connections of a family of nondegenerate metrics, jointly `C^(n+1)` in the
+parameter and the point, have jointly `C^n` pairings `g_p(∇ᵖ_X Y, Z)` with a `C^(n+1)` vector field
+`Z`, on `P × s` for an open set `s` on which `X`, `Y` and `Z` are `C^(n+1)`. This is the Koszul
+formula, half of which is the pairing. -/
+private theorem contMDiffOn_metric_covariantDerivative_apply_of_isLeviCivitaConnection
+    {s : Set M} {Z : Π x : M, TangentSpace I x}
+    (hcov : ∀ p, (g p).IsLeviCivitaConnection (cov p)) (hn : n ≤ ∞) (hs : IsOpen s)
+    (hg : ContMDiffOn (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) (n + 1)
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (g q.1 q.2))
+      (univ ×ˢ s))
+    (hX : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (X y)) s)
+    (hY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Y y)) s)
+    (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
+    ContMDiffOn (IP.prod I) 𝓘(ℝ) n
+      (fun q : P × M ↦ g q.1 q.2 (cov q.1 Y q.2 (X q.2)) (Z q.2)) (univ ×ˢ s) := by
+  have hn₂ : n + 2 ≤ ∞ := by simpa using hn
+  have : IsManifold I (n + 1 + 1) M :=
+    IsManifold.of_le (n := ∞) (by simpa only [add_assoc, one_add_one_eq_two] using hn₂)
+  have : IsManifold I (n + 1) M := IsManifold.of_le (n := ∞) (by simpa using hn)
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hK := (contMDiffOn_const (c := (2 : ℝ)⁻¹)).mul
+    (contMDiffOn_koszulBilinear_family (b := fun p ↦ g p) hs hn₂ hg hX hY hZ)
+  refine hK.congr fun q hq ↦ ?_
+  have hXd := (hX.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
+  have hYd := (hY.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
+  have hZd := (hZ.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
+  have hkos := (hcov q.1).two_apply_eq_koszul hXd hYd hZd
+  rw [ContMDiffNondegenerateMetric.koszul_apply, ← koszulBilinear_apply] at hkos
+  simp only [Pi.mul_apply]
+  linarith
 
 /-- Levi-Civita connections of a family of nondegenerate metrics, jointly `C^(n+1)` in the
 parameter and the point, differentiate vector fields jointly in the parameter and the point with
@@ -123,20 +159,9 @@ private theorem contMDiffOn_covariantDerivative_apply_of_isLeviCivitaConnection
   -- half the Koszul expressions.
   have heval (j : Fin (finrank ℝ E)) : ContMDiffOn (IP.prod I) 𝓘(ℝ) n
       (fun q : P × M ↦ g q.1 q.2 (cov q.1 Y q.2 (X q.2)) (chartLocalFrame (I := I) x j q.2))
-      (univ ×ˢ s) := by
-    have hK := (contMDiffOn_const (c := (2 : ℝ)⁻¹)).mul
-      (contMDiffOn_koszulBilinear_family (b := fun p ↦ g p) hs hn₂ (hg.mono hsW)
-        (hX.mono inter_subset_left) (hY.mono inter_subset_left) (hframe j))
-    refine hK.congr fun q hq ↦ ?_
-    have hXd := ((hX.mono inter_subset_left).mdifferentiableOn (by simp)).mdifferentiableAt
-      (hs.mem_nhds hq.2)
-    have hYd := ((hY.mono inter_subset_left).mdifferentiableOn (by simp)).mdifferentiableAt
-      (hs.mem_nhds hq.2)
-    have hZd := ((hframe j).mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
-    have hkos := (hcov q.1).two_apply_eq_koszul hXd hYd hZd
-    rw [ContMDiffNondegenerateMetric.koszul_apply, ← koszulBilinear_apply] at hkos
-    simp only [Pi.mul_apply]
-    linarith
+      (univ ×ˢ s) :=
+    contMDiffOn_metric_covariantDerivative_apply_of_isLeviCivitaConnection hcov hn hs
+      (hg.mono hsW) (hX.mono inter_subset_left) (hY.mono inter_subset_left) (hframe j)
   have hflat : ContMDiffOn (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n
       (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) q.2 (g q.1 q.2 (cov q.1 Y q.2 (X q.2))))
@@ -144,7 +169,7 @@ private theorem contMDiffOn_covariantDerivative_apply_of_isLeviCivitaConnection
     refine contMDiffOn_hom_of_localFrame (I := I) (e := trivializationAt E (TangentSpace I) x)
       (e' := trivializationAt ℝ (Trivial M ℝ) x) (finBasis ℝ E) contMDiffOn_snd hbase
       fun j q hq ↦ ?_
-    rw [contMDiffWithinAt_totalSpace]
+    rw [contMDiffWithinAt_totalSpace_iff]
     refine ⟨contMDiffWithinAt_snd, ?_⟩
     simpa [Trivial.eq_trivialization, ← chartLocalFrame_def] using heval j q hq
   -- The fibrewise inverses of the metrics are jointly regular, and recover the vectors.
@@ -263,6 +288,41 @@ theorem contMDiff_covariantDerivative_of_isLeviCivitaConnection
   rw [← contMDiffOn_univ, ← univ_prod_univ]
   exact contMDiffOn_covariantDerivative_of_isLeviCivitaConnection hcov hn isOpen_univ
     hY.contMDiffOn
+
+/-- **Joint regularity of Levi-Civita connections along a parameter curve.** Let `c` be a parameter
+curve which is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of the metric at `c s` for
+every `s`. For `X` which is `C²` and `Z` which is `C³` at `x`, the vector fields `∇ˢ_X Z` are
+jointly `C²` in `(s, y)` at `(t, x)`, as a map into the tangent bundle. -/
+theorem contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection
+    (g : ContMDiffNondegenerateMetricFamily I M IP P) {c : ℝ → P}
+    {cov : ℝ → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)} {t : ℝ} {x : M}
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s))
+    {X Z : Π y : M, TangentSpace I y} (hX : CMDiffAt 2 (T% X) x) (hZ : CMDiffAt 3 (T% Z) x) :
+    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
+      (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x) := by
+  -- `Z` is `C³` on an open neighbourhood `u` of `x`.
+  obtain ⟨u', hu', hZu'⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hZ
+  obtain ⟨u, huu', hu, hxu⟩ := mem_nhds_iff.mp hu'
+  have hZu := hZu'.mono huu'
+  -- The canonical Levi-Civita connections are jointly `C²` along `Z` over `P × u`.
+  have hCov := g.contMDiffOn_covariantDerivative_of_isLeviCivitaConnection
+    (cov := fun p ↦ (g.metric p).leviCivitaConnection) (n := 2)
+    (fun p ↦ (g.metric p).isLeviCivitaConnection_leviCivitaConnection) (by simp) hu hZu
+  have hX' : ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E)) 2
+      (fun r : P × M ↦ TotalSpace.mk' E r.2 (X r.2)) (c t, x) :=
+    hX.comp (c t, x) contMDiffAt_snd
+  have hApply := ((hCov (c t, x) ⟨mem_univ _, hxu⟩).clm_bundle_apply hX'.contMDiffWithinAt)
+    |>.contMDiffAt ((isOpen_univ.prod hu).mem_nhds ⟨mem_univ _, hxu⟩)
+  have hcurve : ContMDiffAt (𝓘(ℝ).prod I) (IP.prod I) 2 (fun q : ℝ × M ↦ (c q.1, q.2)) (t, x) :=
+    (hc.comp (t, x) contMDiffAt_fst).prodMk contMDiffAt_snd
+  refine (hApply.comp (t, x) hcurve).congr_of_eventuallyEq ?_
+  -- Near `x`, `Z` is differentiable, so `∇ˢ_X Z` agrees with the canonical connection there.
+  filter_upwards [continuousAt_snd.preimage_mem_nhds (hu.mem_nhds hxu)] with q hq
+  have hZq : MDiffAt (T% Z) q.2 :=
+    ((hZu q.2 hq).contMDiffAt (hu.mem_nhds hq)).mdifferentiableAt (by simp)
+  simp only [Function.comp_apply]
+  rw [(hcov q.1).uniqueness (g.metric (c q.1)).isLeviCivitaConnection_leviCivitaConnection hZq]
 
 end ContMDiffNondegenerateMetricFamily
 

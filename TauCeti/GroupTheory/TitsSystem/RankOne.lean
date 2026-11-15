@@ -83,7 +83,7 @@ def ofRankOne (hn : (n : G) * n ∈ B) (hN : ∀ x ∈ N, x ∈ B ∨ (n : G)⁻
     · rw [← (QuotientGroup.eq (s := B.subgroupOf N) (a := n) (b := x)).mpr
         (Subgroup.mem_subgroupOf.mpr (by simpa using hx))]
       exact Subgroup.subset_closure rfl
-  exists_simpleRep_sq_mem s hs := ⟨n, hs.symm, Subgroup.mem_subgroupOf.mpr hn⟩
+  exists_simpleRep_mul_self_mem s hs := ⟨n, hs.symm, Subgroup.mem_subgroupOf.mpr hn⟩
   mul_doubleCoset_subset s hs := ⟨n, hs.symm, fun w ↦
     B.doubleCoset_mul_doubleCoset_subset_union hn (hN w w.2) hbruhat⟩
   exists_conj_not_mem s hs := by

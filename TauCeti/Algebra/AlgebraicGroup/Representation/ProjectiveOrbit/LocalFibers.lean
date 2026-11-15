@@ -39,6 +39,32 @@ variable {R H M A : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [AddCommMonoid M] [Module R M] [Comodule R H M]
   [Module.Finite R M] [Module.Projective R M] [CommRing A] [Algebra R A]
 
+/-- If `m` is unimodular, the degree-one homogeneous coordinates pulled back along an algebra
+point `g` generate the unit ideal of the global sections of `Spec A`. -/
+private theorem span_orbitCoordinates_degree_one_eq_top
+    (m : M) (hm : Module.IsUnimodular R m) (g : H →ₐ[R] A) :
+    Ideal.span (((Scheme.ΓSpecIso (.of A)).inv.hom.comp
+      (g.comp (orbitCoordinates (H := H) m)).toRingHom) ''
+        (SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) 1 : Set _)) = ⊤ := by
+  let coords (q : H →ₐ[R] A) :=
+    (Scheme.ΓSpecIso (.of A)).inv.hom.comp
+      (q.comp (orbitCoordinates (H := H) m)).toRingHom
+  have hc : Ideal.span (Set.range fun φ : Module.Dual R M ↦
+      coords g (SymmetricAlgebra.ι R (Module.Dual R M) φ)) = ⊤ := by
+    have he : (Set.range fun φ : Module.Dual R M ↦
+        coords g (SymmetricAlgebra.ι R (Module.Dual R M) φ)) =
+        ((Scheme.ΓSpecIso (.of A)).inv.hom.comp g.toRingHom) ''
+          (Set.range fun φ : Module.Dual R M ↦ matrixCoefficient (C := H) φ m) := by
+      ext z
+      simp [coords, Set.mem_image]
+    rw [he, ← Ideal.map_span,
+      (span_matrixCoefficient_eq_top_iff_isUnimodular m).mpr hm, Ideal.map_top]
+  apply top_unique
+  rw [← hc]
+  apply Ideal.span_mono
+  rintro _ ⟨φ, rfl⟩
+  exact ⟨_, SymmetricAlgebra.ι_mem_homogeneousSubmodule R (Module.Dual R M) φ, rfl⟩
+
 /-- Equality of projective orbit images is equivalent to Zariski-local unit
 proportionality of matrix coefficients. The affine open cover and the unit on each
 member are existential; no global chart or reducedness hypothesis is required. -/
@@ -76,22 +102,8 @@ theorem projectiveOrbitMap_SpecMap_eq_iff_exists_affineOpenCover_unit
         congrArg (fun e : H →+* Γ(Spec (.of A), ⊤) ↦
           e.comp (orbitCoordinates (H := H) m).toRingHom) hn.symm
   -- Unimodularity supplies the degree-one cover required by the projective criterion.
-  have hspan : Ideal.span (coords g '' (𝒜 1 : Set _)) = ⊤ := by
-    have hc : Ideal.span (Set.range fun φ : Module.Dual R M ↦
-        coords g (SymmetricAlgebra.ι R (Module.Dual R M) φ)) = ⊤ := by
-      have he : (Set.range fun φ : Module.Dual R M ↦
-          coords g (SymmetricAlgebra.ι R (Module.Dual R M) φ)) =
-          ((Scheme.ΓSpecIso (.of A)).inv.hom.comp g.toRingHom) ''
-            (Set.range fun φ : Module.Dual R M ↦ matrixCoefficient (C := H) φ m) := by
-        ext z
-        simp [coords, Set.mem_image]
-      rw [he, ← Ideal.map_span,
-        (span_matrixCoefficient_eq_top_iff_isUnimodular m).mpr hm, Ideal.map_top]
-    apply top_unique
-    rw [← hc]
-    apply Ideal.span_mono
-    rintro _ ⟨φ, rfl⟩
-    exact ⟨_, SymmetricAlgebra.ι_mem_homogeneousSubmodule R (Module.Dual R M) φ, rfl⟩
+  have hspan : Ideal.span (coords g '' (𝒜 1 : Set _)) = ⊤ :=
+    span_orbitCoordinates_degree_one_eq_top m hm g
   rw [hcoord g, hcoord h,
     Proj.fromOfGlobalSections_eq_iff_exists_affineOpenCover_unit_rescaling
       𝒜 (coords g) (coords h) (hirr g) (hirr h) hspan]

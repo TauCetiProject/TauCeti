@@ -106,7 +106,6 @@ theorem finrank_span_pow_mul_pow_eq_genus {x y : F} {n : ℕ}
     norm_num at h2 hc
     simp [hc, h2]
   · zify [hn2] at hc
-    have hA : ((n : ℤ) - 2) * (n - 2 + 1) = (n - 1) * (n - 2) := by ring
     zify
     linarith
 
@@ -177,7 +176,7 @@ theorem pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero (hF : IsFu
       (Units.mk0 RatFunc.X RatFunc.X_ne_zero)) i)
     (pow_mem_riemannRochSpace_zsmul (mem_riemannRochSpace_poles_of_aeval_eq_zero hF hlead hy) j)
   rw [← add_zsmul] at hmem
-  exact riemannRochSpace_mono ((Divisor.isEffective_poles hF _).zsmul_le_zsmul h) hmem
+  exact riemannRochSpace_mono (zsmul_le_zsmul_left (Divisor.poles_nonneg hF _) h) hmem
 
 variable [IsScalarTower k (RatFunc k) F]
 
@@ -306,7 +305,7 @@ theorem weilDifferentialFiltration_zero_eq_span_of_aeval_eq_zero (hF : IsFunctio
         ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2) hω
   rw [weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero hF
     hex hirr hlead hsm hsm' hgen hy rfl] at hW
-  rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hω hW 0, sub_zero,
+  rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hW 0, sub_zero,
     riemannRochSpace_sub_three_zsmul_poles_eq_span_of_aeval_eq_zero hF hex hirr hlead hsm hsm' hgen
       hy,
     Submodule.map_span, Set.image_image]

@@ -34,6 +34,7 @@ the vertex `e i`, so it respects the simple positive pinning. The relabellings a
 
 ## Main definitions
 
+* `Matrix.ShellLieAlgebra.rootReindex`: the signed permutation on the root coefficients.
 * `Matrix.ShellLieAlgebra.reindex`: the relabelling `H_h ↦ H_(h ∘ e.symm)`,
   `x_a ↦ σ(a) x_(a ∘ e.symm)`, as a linear equivalence.
 * `Matrix.ShellLieAlgebra.reindexLieEquiv`: the same map as an equivalence of Lie algebras over
@@ -67,6 +68,28 @@ attribute [local instance] trivialMulDistribMulAction
 
 variable {I J K : Type*} [Fintype I] [LinearOrder I] [Fintype J] [LinearOrder J] [Fintype K]
   [LinearOrder K] {B : Matrix I I ℤ} {B' : Matrix J J ℤ} (e : I ≃ J) (he : B.reindex e e = B')
+
+/-- The action on the root coefficients: `δ_a ↦ s_σ(a) δ_(σa)`.
+It is independent of the full Cartan group and its automorphism. -/
+noncomputable def rootReindex (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) :
+    (B.normTwoShell →₀ ℤ) ≃ₗ[ℤ] (B.normTwoShell →₀ ℤ) :=
+  Finsupp.basisSingleOne.equiv
+    (Finsupp.basisSingleOne.unitsSMul
+      (fun a ↦ inversionSign B σ ((normTwoShellCongr hσ).symm a)))
+    (normTwoShellCongr hσ)
+
+/-- A root coordinate vector is sent to the relabelled coordinate with its pinned sign. -/
+@[simp]
+theorem rootReindex_single (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B)
+    (a : B.normTwoShell) (n : ℤ) :
+    rootReindex σ hσ (Finsupp.single a n) =
+      inversionSign B σ a • Finsupp.single (normTwoShellCongr hσ a) n := by
+  have hone : rootReindex σ hσ (Finsupp.single a 1) =
+      inversionSign B σ a • Finsupp.single (normTwoShellCongr hσ a) 1 := by
+    rw [rootReindex, ← congrFun Finsupp.coe_basisSingleOne a, Basis.equiv_apply,
+      Basis.unitsSMul_apply, Equiv.symm_apply_apply, Finsupp.coe_basisSingleOne]
+  rw [← Finsupp.smul_single_one a n, map_smul, hone, smul_comm,
+    Finsupp.smul_single_one]
 
 /-- **Relabelling the signed shell Lie algebra.** For a relabelling `e : I ≃ J` of the vertices of
 `B` with `B.reindex e e = B'`, the linear equivalence `ShellLieAlgebra B ≃ₗ[ℤ] ShellLieAlgebra B'`

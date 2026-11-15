@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import TauCeti.GroupTheory.Index.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
 
@@ -17,10 +18,7 @@ import TauCeti.Data.ZMod.Units
 The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong approximation for
 `SL₂`; Shimura §1.6, Serre Ch. VII) — jointly so at two coprime moduli, by the Chinese
 remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` sends
-`-I` to `-I`. Base change is functorial: `SL(n, -)` carries a composite of ring homs to the
-composite of the induced group homs, and the identity to the identity, which is what lets a
-congruence on a whole matrix be reduced along a further ring map in one step rather than entry
-by entry. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
+`-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
 recorded here for downstream matrix computations, together with what the determinant says about
 a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation `a d - b c = 1` for
 the top row `(a, b)`.
@@ -55,9 +53,6 @@ proof is independent of the source's.
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
-* `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
-  laws for base change, which support whole-matrix reduction arguments such as the level
-  antitonicity of the principal congruence subgroups.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
@@ -65,13 +60,25 @@ proof is independent of the source's.
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
   leaves sums over all row vectors unchanged.
+* `Matrix.SpecialLinearGroup.vecMul_map_mul` and
+  `Matrix.SpecialLinearGroup.vecMul_map_inv_vecMul_map`: through a ring hom of the entries,
+  the right action on row vectors composes as a right action, and `g⁻¹` is undone by `g`.
 * `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
   `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
   `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
+* `Matrix.SpecialLinearGroup.vecMul_inv_apply_zero` and
+  `Matrix.SpecialLinearGroup.vecMul_inv_apply_one`: the coordinates of `x ᵥ* γ⁻¹` for
+  `γ ∈ SL₂(R)` in terms of those of `x` and `γ`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
+* `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
+  ring, indexed by a nonempty type, is nonzero.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
+* `Matrix.SpecialLinearGroup.coe_GL_eq_mapGL`: the coercion of `SL(n, ℤ)` into `GL(n, S)` is
+  `mapGL S`.
+* `Matrix.SpecialLinearGroup.coe_mapGL_int`: the matrix of `mapGL S` on `SL(n, ℤ)` is the
+  entrywise integer cast.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
@@ -83,6 +90,11 @@ proof is independent of the source's.
   `{±I}` when `R` has no zero divisors.
 * `Matrix.SpecialLinearGroup.finite_center` and
   `Matrix.SpecialLinearGroup.card_center_le_two`: that centre is finite, of order at most two.
+* `Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem`: a subgroup of `SL₂` contains the centre
+  exactly when it contains `-I`.
+* `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
+  `Matrix.SpecialLinearGroup.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
+  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
   `= 1` case, `Disjoint (center _) Γ ↔ -I ∉ Γ`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff` and
@@ -114,26 +126,18 @@ instance {R : Type*} [CommRing R] [Countable R] {n : Type*} [Fintype n] [Decidab
   letI : Countable (Matrix n n R) := inferInstanceAs (Countable (n → n → R))
   inferInstanceAs (Countable { A : Matrix n n R // A.det = 1 })
 
-/-- **Functoriality of the induced map on special linear groups, identity law.** Base change
-along the identity ring hom is the identity. -/
-@[simp]
-theorem map_id {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
-    map (n := n) (RingHom.id R) = MonoidHom.id (SpecialLinearGroup n R) := rfl
-
-/-- **Functoriality of the induced map on special linear groups, composition law.** Base change
-along `f` and then along `g` is base change along `g ∘ f`, so a composite of induced maps is
-again a single induced map. -/
-@[simp]
-theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Type*} [Fintype n]
-    [DecidableEq n] (f : R →+* S) (g : S →+* T) :
-    (map (n := n) g).comp (map f) = map (g.comp f) := rfl
+/-- A square matrix of determinant one over a nontrivial ring, indexed by a nonempty type, is
+nonzero. -/
+theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
+    [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
+  A.det_ne_zero (by rw [h, det_zero])
 
 /-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
 @[simp]
 theorem map_intCast_coe {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
     [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n ℤ) :
     map f (g : SpecialLinearGroup n R) = (g : SpecialLinearGroup n S) := by
-  rw [← MonoidHom.comp_apply, map_comp,
+  rw [← MonoidHom.comp_apply, map_comp_map,
     RingHom.ext_int (f.comp (Int.castRingHom R)) (Int.castRingHom S)]
 
 /-- The inclusion into the general linear group commutes with entrywise ring maps. -/
@@ -193,6 +197,21 @@ theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintyp
       right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
     _ _ fun _ ↦ rfl
 
+/-- The right action of a special linear group on row vectors, through a ring homomorphism of the
+entries, composes as a right action: `r (g h) = (r g) h`. -/
+theorem vecMul_map_mul {A R : Type*} [CommRing A] [Ring R] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : A →+* R) (r : n → R) (g h : SpecialLinearGroup n A) :
+    r ᵥ* (↑(g * h) : Matrix n n A).map f =
+      (r ᵥ* (g : Matrix n n A).map f) ᵥ* (h : Matrix n n A).map f := by
+  rw [vecMul_vecMul, ← Matrix.map_mul, ← coe_mul]
+
+/-- Acting on a row vector by `g⁻¹` and then by `g` gives back the row vector: `(r g⁻¹) g = r`. -/
+theorem vecMul_map_inv_vecMul_map {A R : Type*} [CommRing A] [Ring R] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : A →+* R) (r : n → R) (g : SpecialLinearGroup n A) :
+    (r ᵥ* (↑g⁻¹ : Matrix n n A).map f) ᵥ* (g : Matrix n n A).map f = r := by
+  rw [← vecMul_map_mul, inv_mul_cancel, coe_one,
+    Matrix.map_one _ (map_zero _) (map_one _), vecMul_one]
+
 /-- For `γ = [a, b; c, d] ∈ SL₂(ℤ)`, the bottom row of `γ⁻¹` is `(-c, a)`: its `n`-th multiple,
 cast to any commutative ring `R`, is `n • ((0, 1) ᵥ* γ⁻¹)`. -/
 theorem intCast_comp_vecCons_eq_zsmul_vecMul_inv {R : Type*} [CommRing R] (γ : SL(2, ℤ))
@@ -209,6 +228,17 @@ theorem neg_vecMul_inv {R : Type*} [CommRing R] (v : Fin 2 → R) (γ : SL(2, �
   ext i
   fin_cases i <;> simp [vecMul, dotProduct]
 
+/-- The first coordinate of `x γ⁻¹` for `γ ∈ SL₂(R)`. -/
+lemma vecMul_inv_apply_zero {R : Type*} [CommRing R] (x : Fin 2 → R) (γ : SL(2, R)) :
+    (x ᵥ* ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) 0 = x 0 * γ 1 1 - x 1 * γ 1 0 := by
+  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
+  ring
+
+/-- The second coordinate of `x γ⁻¹` for `γ ∈ SL₂(R)`. -/
+lemma vecMul_inv_apply_one {R : Type*} [CommRing R] (x : Fin 2 → R) (γ : SL(2, R)) :
+    (x ᵥ* ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) 1 = -(x 0 * γ 0 1) + x 1 * γ 0 0 := by
+  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
+
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
     g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
@@ -218,6 +248,18 @@ lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
 lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2, ℤ)) :
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
+
+/-- The coercion of `SL(n, ℤ)` into `GL(n, S)` is `mapGL S`. -/
+lemma coe_GL_eq_mapGL {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
+    (g : SpecialLinearGroup n ℤ) : (g : GL n S) = mapGL S g :=
+  rfl
+
+/-- The matrix of `mapGL S σ` for an integral `σ` is its entrywise integer cast: this is
+`mapGL_coe_matrix` with `algebraMap ℤ S` written as `Int.cast`. -/
+lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
+    (σ : SpecialLinearGroup n ℤ) :
+    (↑(mapGL S σ) : Matrix n n S) = (σ : Matrix n n ℤ).map (Int.cast : ℤ → S) := by
+  simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -424,6 +466,42 @@ theorem disjoint_center_iff_neg_one_notMem [NoZeroDivisors R] [NeZero (2 : R)]
       (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ := by
   rw [← Subgroup.subgroupOf_eq_bot, ← Subgroup.card_eq_one]
   exact card_center_subgroupOf_eq_one_iff Γ
+
+/-- **A subgroup of `SL₂` contains the centre exactly when it contains `-I`**, the centre being
+`{±I}` by `mem_center_iff_eq_one_or_eq_neg_one`. -/
+@[simp]
+theorem center_le_iff_neg_one_mem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} :
+    Subgroup.center (SpecialLinearGroup (Fin 2) R) ≤ Γ ↔
+      (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ := by
+  refine ⟨fun h ↦ h (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)), fun h g hg ↦ ?_⟩
+  rcases mem_center_iff_eq_one_or_eq_neg_one.mp hg with rfl | rfl
+  · exact Γ.one_mem
+  · exact h
+
+/-- **The `±Γ` factor of two, index form**: when `-I ∉ Γ`, the index of `Γ` in `SL₂(R)` is
+twice the index of `±Γ`, the centre being `{±I}` by `mem_center_iff_eq_one_or_eq_neg_one`.
+
+This is the conversion the general-level valence formula and the Sturm bound are stated
+against: both read `k · [SL₂(ℤ) : ±Γ] / 12`, while a full-coset norm product is computed over
+`Γ`-cosets, which is twice as many. -/
+theorem index_eq_two_mul_index_withCenter_of_neg_one_notMem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} (h : (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ) :
+    Γ.index = 2 * Γ.withCenter.index :=
+  Subgroup.index_eq_two_mul_index_withCenter
+    (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
+    fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
+
+/-- **The `±Γ` factor of two, relative-index form**: `Γ` has index `2` inside `±Γ` when
+`-I ∉ Γ`. The geometric reading of
+`index_eq_two_mul_index_withCenter_of_neg_one_notMem`: adjoining `-I` exactly halves the
+number of cosets. -/
+theorem relIndex_withCenter_eq_two_of_neg_one_notMem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} (h : (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ) :
+    Γ.relIndex Γ.withCenter = 2 :=
+  Subgroup.relIndex_withCenter_eq_two
+    (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
+    fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
 
 /-- **The `±I` factor is `2` exactly when `-I ∈ Γ`.** The part of the centre that `Γ` contains is
 `{I}` or `{±I}` according to whether `Γ` contains `-I`, so the centre factor in the stabiliser

@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.HomDensity
 public import TauCeti.Combinatorics.DenseGraphLimits.Separation.Forward
 public import Mathlib.MeasureTheory.Measure.DiracProba
 public import Mathlib.MeasureTheory.Measure.GiryMonad
-import TauCeti.MeasureTheory.Measure.FiniteOrder
+import TauCeti.MeasureTheory.Measure.WellFoundedOrder
 
 /-!
 # Graphon mixtures of exchangeable graph laws
@@ -127,7 +127,7 @@ every evaluation. -/
 theorem measurable_sampleGraphOnSpace (n : ℕ) :
     Measurable (sampleGraphOnSpace (μ := μ) n) := by
   classical
-  refine Measurable.measure_of_Ici_of_finite fun F => ?_
+  refine Measurable.measure_of_Ici_of_wellFoundedGT fun F => ?_
   simp_rw [sampleGraphOnSpace_Ici]
   exact ENNReal.measurable_ofReal.comp (continuous_homDensityOnSpace F).measurable
 

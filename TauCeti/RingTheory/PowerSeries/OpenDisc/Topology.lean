@@ -60,6 +60,32 @@ theorem coe_restrict (r : Set.Ioo (0 : ℝ) R₀) (f : OnOpenDisc.subring R R₀
     (restrict r f : R⟦X⟧) = f :=
   GaussFamily.coe_restrict _ r f
 
+/-- The variable has Gauss norm equal to the radius of the smaller closed disc. -/
+@[simp]
+theorem norm_restrict_X [NormOneClass R] (r : Set.Ioo (0 : ℝ) R₀) :
+    ‖restrict r (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R R₀)‖ = r := by
+  have h : restrict r (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R R₀) =
+      (⟨X, by
+        rw [PowerSeries.X_eq]
+        exact PowerSeries.isRestricted_monomial (r : ℝ) 1 (1 : R)⟩ :
+        IsRestricted.subring (R := R) (r : ℝ)) :=
+    Subtype.ext (by simp)
+  rw [h, norm_X]
+
+/-- Restriction to a smaller closed disc is injective, since it preserves every coefficient. -/
+theorem restrict_injective (r : Set.Ioo (0 : ℝ) R₀) :
+    Function.Injective (restrict (R := R) r) := fun f g h ↦
+  Subtype.ext (by simpa only [coe_restrict] using congrArg Subtype.val h)
+
+/-- Restriction sends a constant to the same scalar in the closed-disc algebra. -/
+@[simp]
+theorem restrict_polynomialHom_C {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    (r : Set.Ioo (0 : ℝ) R₀) (a : S) :
+    restrict r (OnOpenDisc.polynomialHom (Polynomial.C a)) =
+      algebraMap S (IsRestricted.subring (R := S) (r : ℝ)) a := by
+  apply Subtype.ext
+  simp
+
 /-- Restriction of an open-disc series to all smaller positive closed discs at once. -/
 noncomputable def restrictFamily :
     OnOpenDisc.subring R R₀ →+* ∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := R) (r : ℝ) :=
@@ -128,6 +154,21 @@ theorem denseRange_polynomialHom : DenseRange (OnOpenDisc.polynomialHom (R := R)
   GaussFamily.denseRange_polynomialHom isUniformInducing_restrictFamily _
     OnOpenDisc.coe_polynomialHom
 
+/-- Continuous ring homomorphisms out of the open-disc algebra are determined by coefficients
+and the variable. -/
+theorem ringHom_ext {A : Type*} [Semiring A] [TopologicalSpace A] [T2Space A]
+    {φ ψ : OnOpenDisc.subring R R₀ →+* A} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (hC : ∀ a, φ (OnOpenDisc.polynomialHom (Polynomial.C a)) =
+      ψ (OnOpenDisc.polynomialHom (Polynomial.C a)))
+    (hX : φ (OnOpenDisc.polynomialHom Polynomial.X) = ψ (OnOpenDisc.polynomialHom Polynomial.X)) :
+    φ = ψ := by
+  have hpol : φ.comp OnOpenDisc.polynomialHom = ψ.comp OnOpenDisc.polynomialHom :=
+    Polynomial.ringHom_ext hC hX
+  exact RingHom.ext (congrFun (hφ.ext_on denseRange_polynomialHom hψ
+    (fun _ ⟨p, hp⟩ ↦ by
+      subst hp
+      exact RingHom.congr_fun hpol p)))
+
 variable [Fact (0 < R₀)]
 
 -- The radii below a positive boundary form a nonempty family.
@@ -142,6 +183,7 @@ theorem uniformContinuous_coeff (n : ℕ) :
     UniformContinuous fun f : OnOpenDisc.subring R R₀ ↦ coeff n (f : R⟦X⟧) :=
   GaussFamily.uniformContinuous_coeff isUniformInducing_restrictFamily n
 
+omit [Fact (0 < R₀)] in
 /-- The restriction image consists exactly of families with radius-independent coefficients. -/
 theorem range_restrictFamily :
     Set.range (restrictFamily (R := R) (R₀ := R₀)) =

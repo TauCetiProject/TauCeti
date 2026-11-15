@@ -35,9 +35,11 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
 * `TauCeti.IntegralLattice.natCard_discriminantGroup`: the discriminant-group cardinality is the
   lattice discriminant.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_ofGramMatrix`: the formula for a lattice
-  constructed from a nonsingular integral symmetric matrix.
+  constructed from an integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
   pairing into `pℤ` with all of `L` lies in `p L`.
+* `TauCeti.IntegralLattice.exists_isCoprime_integralForm`: for a prime `p` prime to `det L`, a
+  vector outside `p L` pairs with some lattice vector coprimely to `p`.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_dvd_pow_finrank` and
   `TauCeti.IntegralLattice.exists_mem_dualCarrier_eq_nsmul`: a discriminant group killed by `n`
   has order dividing `n^r`, `r` the rank, and if the order is `n^r` then `L = nLᵛ`.
@@ -45,8 +47,6 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2).
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`.
 -/
 
 public section
@@ -85,17 +85,24 @@ theorem dualCarrierBasis_det_carrierInDualBasis (L : IntegralLattice V)
 
 open Classical in
 /-- The discriminant group has cardinality equal to the absolute value of the Gram determinant in
-any carrier basis. -/
+any carrier basis. For a degenerate lattice both sides are `0`: the discriminant group is
+infinite, so its cardinality is `0`. -/
 theorem natCard_discriminantGroup_eq_natAbs_gramDet (L : IntegralLattice V)
-    [L.IsNondegenerate] {ι : Type v} [Fintype ι]
-    (b : Basis ι ℤ L) :
+    {ι : Type v} [Fintype ι] (b : Basis ι ℤ L) :
     Nat.card L.DiscriminantGroup = (L.gramDet b).natAbs := by
-  rw [← L.dualCarrierBasis_det_carrierInDualBasis b]
-  exact (Submodule.natAbs_det_basis_change (L.dualCarrierBasis b) L.carrierInDual
-    (L.carrierInDualBasis b)).symm
+  by_cases h : L.form.Nondegenerate
+  · let _ : L.IsNondegenerate := ⟨h⟩
+    rw [← L.dualCarrierBasis_det_carrierInDualBasis b]
+    exact (Submodule.natAbs_det_basis_change (L.dualCarrierBasis b) L.carrierInDual
+      (L.carrierInDualBasis b)).symm
+  · have hinf : Infinite L.DiscriminantGroup :=
+      not_finite_iff_infinite.mp fun hfin ↦ h (L.finite_discriminantGroup_iff_nondegenerate.mp hfin)
+    rw [Nat.card_eq_zero_of_infinite, ← L.discriminant_eq_natAbs_gramDet b,
+      (L.discriminant_eq_zero_iff).mpr h]
 
-/-- **The order of the discriminant group is the lattice discriminant.** -/
-theorem natCard_discriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
+/-- **The order of the discriminant group is the lattice discriminant.** For a degenerate lattice
+both sides are `0`: the discriminant group is infinite, so its cardinality is `0`. -/
+theorem natCard_discriminantGroup (L : IntegralLattice V) :
     Nat.card L.DiscriminantGroup = L.discriminant := by
   classical
   rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
@@ -103,7 +110,7 @@ theorem natCard_discriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
 
 /-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
 `p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. -/
-theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ}
+theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) {p : ℕ}
     [NeZero p] (hp : p.Coprime L.discriminant) {v : L}
     (hv : ∀ w : L, (p : ℤ) ∣ L.integralForm v w) :
     (p : ℚ)⁻¹ • (v : V) ∈ L.carrier := by
@@ -129,15 +136,25 @@ theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegen
     ((addOrderOf_dvd_natCard x).trans (L.natCard_discriminantGroup).dvd)
   exact (L.discriminantGroup_mk_eq_zero_iff _).mp (AddMonoid.addOrderOf_eq_one_iff.mp horder)
 
+/-- **A vector outside `p L` pairs with some lattice vector coprimely to `p`** when the prime `p`
+is prime to the discriminant. -/
+theorem exists_isCoprime_integralForm (L : IntegralLattice V) {p : ℕ}
+    (hp : p.Prime) (hd : p.Coprime L.discriminant) {v : L} (hv : ∀ y : L, v ≠ (p : ℤ) • y) :
+    ∃ w : L, IsCoprime (L.integralForm v w) p := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  by_contra! h
+  have hmem := L.inv_smul_mem_carrier_of_forall_dvd hd fun w ↦ by
+    simpa [isCoprime_comm, Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp hp)] using h w
+  exact hv ⟨_, hmem⟩ (Subtype.ext (by simp [← Nat.cast_smul_eq_nsmul ℚ, hp.ne_zero]))
+
 open Classical in
-/-- The discriminant group of a lattice constructed from a nonsingular integral symmetric matrix
-has cardinality equal to the absolute value of that matrix's determinant. -/
+/-- The discriminant group of a lattice constructed from an integral symmetric matrix has
+cardinality equal to the absolute value of that matrix's determinant; for a singular matrix both
+sides are `0`, the discriminant group being infinite. -/
 @[simp]
 theorem natCard_discriminantGroup_ofGramMatrix {ι : Type v} [Fintype ι]
-    (b : Basis ι ℚ V) (G : Matrix ι ι ℤ) (hG : G.IsSymm) (hdet : G.det ≠ 0) :
+    (b : Basis ι ℚ V) (G : Matrix ι ι ℤ) (hG : G.IsSymm) :
     Nat.card (ofGramMatrix b G hG).DiscriminantGroup = G.det.natAbs := by
-  have : (ofGramMatrix b G hG).IsNondegenerate :=
-    isNondegenerate_ofGramMatrix b G hG hdet
   rw [natCard_discriminantGroup, discriminant_ofGramMatrix]
 
 /-! ## Discriminant groups killed by `n` -/

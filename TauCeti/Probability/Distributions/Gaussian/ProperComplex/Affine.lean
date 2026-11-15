@@ -15,11 +15,13 @@ import TauCeti.Probability.Distributions.Gaussian.Affine
 A complex affine map `z ↦ L *ᵥ z + c` sends a proper complex Gaussian with mean `m`
 and positive semidefinite covariance `C` to the proper complex Gaussian with mean
 `L *ᵥ m + c` and covariance `L * C * Lᴴ`. Rectangular maps allow singular images
-and coordinate restrictions. Multiplication by a unit complex scalar preserves a
-centered proper complex Gaussian law.
+and coordinate restrictions. The real and imaginary parts of a coordinate have a planar
+Gaussian law with spherical covariance equal to half the complex variance. Multiplication
+by a unit complex scalar preserves a centered proper complex Gaussian law.
 
 The affine identity follows by realification from
-`TauCeti.Probability.map_affine_multivariateGaussian`.
+`TauCeti.Probability.map_affine_multivariateGaussian`. The planar marginal uses
+`TauCeti.Probability.map_comp_multivariateGaussian` after realification.
 
 ## References
 
@@ -76,6 +78,38 @@ theorem map_comp_properComplexGaussianMeasure (m : ι → ℂ) {C : Matrix ι ι
     ext i j
     simp [L, Matrix.mul_apply, Matrix.one_apply]
   simpa only [hL, hcov, add_zero] using map_affine_properComplexGaussianMeasure m hC L 0
+
+/-- The real and imaginary parts of a proper complex Gaussian coordinate form a planar
+Gaussian with their respective means and spherical covariance equal to half the complex
+variance. Zero coordinate variance is included. -/
+@[simp]
+theorem map_finTwo_re_im_eval_properComplexGaussianMeasure (m : ι → ℂ)
+    {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (i : ι) :
+    (properComplexGaussianMeasure m C).map
+        (fun z ↦ WithLp.toLp 2 ![(z i).re, (z i).im]) =
+      multivariateGaussian (WithLp.toLp 2 ![(m i).re, (m i).im])
+        (((C i i).re / 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ)) := by
+  have him : (C i i).im = 0 := by
+    have h := congrArg Complex.im (hC.isHermitian.apply i i)
+    simp only [Complex.star_def, Complex.conj_im] at h
+    linarith
+  let f : Fin 2 → ι ⊕ ι := ![Sum.inl i, Sum.inr i]
+  have hcov : (complexGaussianRealCovariance C).submatrix f f =
+      ((C i i).re / 2) • (1 : Matrix (Fin 2) (Fin 2) ℝ) := by
+    ext a b
+    fin_cases a <;> fin_cases b <;> simp [f, him]
+  have h := map_comp_multivariateGaussian (complexToRealEuclidean ι m)
+    ((posSemidef_complexGaussianRealCovariance_iff C).2 hC) f
+  rw [← map_complexToRealEuclidean_properComplexGaussianMeasure,
+    Measure.map_map (by fun_prop) (by fun_prop), hcov] at h
+  convert h using 1
+  · congr 1
+    funext z
+    ext a
+    fin_cases a <;> simp [f]
+  · congr 1
+    ext a
+    fin_cases a <;> simp [f]
 
 /-- A centered proper complex Gaussian is invariant under multiplication by any unit
 complex scalar, including singular and invalid covariance parameters. -/

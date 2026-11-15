@@ -71,14 +71,25 @@ structure TwoTermSupport where
   ne : a ≠ b
   /-- All differentials out of the high term vanish. -/
   outgoing : ∀ j, K.d b j = 0
-  /-- All differentials into the low term vanish. -/
-  incoming : ∀ j, K.d j a = 0
   /-- Every other term is zero. -/
   support : ∀ j, j ≠ a → j ≠ b → IsZero (K.X j)
 
 namespace TwoTermSupport
 
-variable {C₁} [HasZeroObject C₁]
+variable {C₁}
+
+/-- All differentials into the low term vanish: a differential into the low term starts at the
+high term, where every differential vanishes, or at a zero term. -/
+theorem incoming (s : TwoTermSupport C₁) (j : ℤ) : s.K.d j s.a = 0 := by
+  by_cases hj : j = s.b
+  · subst hj
+    exact s.outgoing _
+  by_cases hja : j = s.a
+  · subst hja
+    exact s.K.shape _ _ (by simp)
+  · exact (s.support j hja hj).eq_of_src _ _
+
+variable [HasZeroObject C₁]
 
 local notation "c" => ComplexShape.up ℤ
 
@@ -679,6 +690,14 @@ theorem mapTwoTermSupport_shortExact :
   apply shortExact_of_degreewise_shortExact
   intro j
   exact (F.mapTwoTermSupportDegreewiseSplitting s N j).shortExact
+
+/-- The endpoint replacement of the mapped support short complex is short exact. -/
+theorem mapTwoTermSupportReframed_shortExact {E₁ E₃ : CochainComplex C₂ ℤ ⥤ CochainComplex D ℤ}
+    (u₁ : F.mapBifunctorLeft (.up ℤ) (.up ℤ) ((single C₁ (.up ℤ) s.b).obj s.B) ≅ E₁)
+    (u₃ : F.mapBifunctorLeft (.up ℤ) (.up ℤ) ((single C₁ (.up ℤ) s.a).obj s.A) ≅ E₃) :
+    (F.mapTwoTermSupportReframed s u₁ u₃).ShortExact :=
+  ShortComplex.shortExact_of_iso (F.mapTwoTermSupportReframedIso s u₁ u₃)
+    (F.mapTwoTermSupport_shortExact s)
 
 end Abelian
 

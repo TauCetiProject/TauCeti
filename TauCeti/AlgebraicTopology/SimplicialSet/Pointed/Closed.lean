@@ -265,6 +265,29 @@ lemma ihom_obj_point_coe_app_apply {n m : SimplexCategoryᵒᵖ} (f : n ⟶ m) (
   -- the internal hom of `MonoidalClosed` here, so the unfolded goal is closed by `map_point`.
   map_point Y _
 
+/-- Precomposition of a based mapping simplex acts on its source components. -/
+@[simp]
+lemma pre_right_app_coe_app_apply {W : PointedSSet.{u}} (i : W ⟶ X)
+    {n m : SimplexCategoryᵒᵖ} (φ : ((ihom X).obj Y).right.obj n)
+    (f : n ⟶ m) (x : W.right.obj m) :
+    dsimp% ((((MonoidalClosed.pre i).app Y).right.app n φ :
+      (basedMaps W Y).obj n).1.app m f x) =
+        (φ : (basedMaps X Y).obj n).1.app m f (i.right.app m x) := by
+  have h := congrArg (fun k : W ⊗ (ihom X).obj Y ⟶ Y ↦
+    k.right.app m (smashMk x (((ihom X).obj Y).right.map f φ)))
+    (MonoidalClosed.id_tensor_pre_app_comp_ev i Y)
+  simp only [Under.comp_right, NatTrans.comp_app, types_comp_apply,
+    whiskerLeft_app_smashMk, whiskerRight_app_smashMk,
+    ← MonoidalClosed.uncurry_id_eq_ev, uncurry_right_app_smashMk,
+    Under.id_right, NatTrans.id_app, types_id_apply] at h
+  have hn := congrArg (fun ψ : ((ihom W).obj Y).right.obj m ↦
+    (ψ : (basedMaps W Y).obj m).1.app m (𝟙 m) x)
+    (NatTrans.naturality_apply ((MonoidalClosed.pre i).app Y).right f φ)
+  simpa only [Under.comp_right, NatTrans.comp_app, types_comp_apply,
+    whiskerLeft_app_smashMk, whiskerRight_app_smashMk,
+    ihom_obj_right_map_coe_app_apply,
+    Category.comp_id] using hn.symm.trans h
+
 /-- The internal hom acts on based maps by postcomposition. -/
 @[simp]
 lemma ihom_map_right_app_coe_app_apply (g : Y ⟶ Z) {n m : SimplexCategoryᵒᵖ}
@@ -409,6 +432,36 @@ lemma ihom_map_right_comp_ι (X : PointedSSet.{u}) (p : E ⟶ B) :
       (basedMaps X E).ι ≫ (CategoryTheory.ihom X.right).map p.right := by
   ext n : 1
   rfl
+
+/-- Inclusion of based maps into unpointed maps commutes with precomposition. -/
+@[simp, reassoc]
+lemma pre_right_comp_ι {W X : PointedSSet.{u}} (i : W ⟶ X) (E : PointedSSet.{u}) :
+    ((MonoidalClosed.pre i).app E).right ≫ (basedMaps W E).ι =
+      (basedMaps X E).ι ≫ (MonoidalClosed.pre i.right).app E.right := by
+  ext n : 1
+  apply ConcreteCategory.hom_ext
+  intro φ
+  apply Functor.functorHom_ext fun m f ↦ ?_
+  ext x
+  have h := congrArg (fun k : W.right ⊗ (CategoryTheory.ihom X.right).obj E.right ⟶
+      E.right ↦ k.app m (x, ((CategoryTheory.ihom X.right).obj E.right).map f φ.1))
+    (MonoidalClosed.id_tensor_pre_app_comp_ev i.right E.right)
+  have hn := congrArg (fun ψ : ((CategoryTheory.ihom W.right).obj E.right).obj m ↦
+    ψ.app m (𝟙 m) x)
+    (NatTrans.naturality_apply ((MonoidalClosed.pre i.right).app E.right) f φ.1)
+  -- The unpointed internal hom is the native functor HomObj; evaluation is application.
+  change (((MonoidalClosed.pre i.right).app E.right).app m
+    (((CategoryTheory.ihom X.right).obj E.right).map f φ.1)).app m (𝟙 m) x =
+      φ.1.app m (f ≫ 𝟙 m) (i.right.app m x) at h
+  -- Its simplicial operators precompose the simplex index.
+  change (((MonoidalClosed.pre i.right).app E.right).app n φ.1).app m (f ≫ 𝟙 m) x =
+    _ at hn
+  -- The subcomplex inclusions forget the proofs that the mapping simplices are based.
+  change (((MonoidalClosed.pre i).app E).right.app n φ :
+    (basedMaps W E).obj n).1.app m f x =
+      (((MonoidalClosed.pre i.right).app E.right).app n φ.1).app m f x
+  rw [pre_right_app_coe_app_apply]
+  simpa only [Category.comp_id] using (hn.trans h).symm
 
 end Restriction
 

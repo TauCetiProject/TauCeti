@@ -37,6 +37,12 @@ Summing the indicators over the classes gives the indicator of the ideals prime 
 The product is `finiteEulerCorrection 𝔪 s`; at a real `s > 0` it is `1` exactly when the finite
 part of `𝔪` is trivial (`finiteEulerCorrection_eq_one_iff`).
 
+For `𝔪 ∣ 𝔫` the transition map `classMap : Cl_𝔫 → Cl_𝔪` sends the class of an ideal prime to `𝔫₀`
+to its class modulo `𝔪`, so the indicators of the classes of `𝔫` over a class `c` of `𝔪` sum to
+the indicator of `c` restricted to the ideals prime to `𝔫₀`. When every prime dividing `𝔫₀`
+divides `𝔪₀` nothing is lost, and the partial zeta function of `c` is the sum of the partial zeta
+functions of the classes of `𝔫` over it.
+
 The number of ideals of class `c` of norm at most `x` is `κ_𝔪 x + O(x ^ (1 - 1 / [K : ℚ]))`, with
 `κ_𝔪 = rayClassIdealMainTerm 𝔪` the same for every class. By partial summation,
 `ζ(s, c) - κ_𝔪 / (s - 1)` continues holomorphically to `Re s > 1 - 1 / [K : ℚ]`, so every
@@ -55,6 +61,10 @@ partial zeta function has a simple pole at `s = 1` with the common residue
   prime to `𝔪₀`.
 * `TauCeti.LFunctions.idealSummatory_rayClassCoeff`: the partial sums of a class indicator are the
   ray class ideal counts.
+* `TauCeti.LFunctions.sum_rayClassCoeff_classMap_apply`: for `𝔪 ∣ 𝔫`, the indicators of the
+  classes of `𝔫` over a class `c` of `𝔪` sum to the indicator of `c` restricted to the ideals prime
+  to `𝔫₀`, and `sum_rayClassCoeff_classMap` is the case without new primes, in which the sum is the
+  indicator of `c`.
 * `TauCeti.LFunctions.LSeriesSummable_rayClassCoeff`: the Dirichlet series of a ray class
   converges absolutely on `Re s > 1`.
 * `TauCeti.LFunctions.sum_LSeries_rayClassCoeff`: the sum over the ray classes is
@@ -64,6 +74,8 @@ partial zeta function has a simple pole at `s = 1` with the common residue
   exactly when the finite part of `𝔪` is trivial.
 * `TauCeti.LFunctions.sum_LSeries_rayClassCoeff_eq_dedekindZeta_iff`: at a real `s > 1` the sum
   over the ray classes is `ζ_K(s)` exactly when the finite part of `𝔪` is trivial.
+* `TauCeti.LFunctions.sum_LSeries_rayClassCoeff_classMap`: for `𝔪 ∣ 𝔫` without new primes, the
+  partial zeta function of a class of `𝔪` is the sum of those of the classes of `𝔫` over it.
 * `TauCeti.LFunctions.exists_differentiableOn_eq_LSeries_rayClassCoeff_sub`:
   `ζ(s, c) - κ_𝔪 / (s - 1)` extends holomorphically from `Re s > 1` to
   `Re s > 1 - 1 / [K : ℚ]`.
@@ -189,6 +201,44 @@ theorem idealSummatory_rayClassCoeff (𝔪 : Modulus K) (c : RayClassGroup 𝔪)
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
 
+/-! ### Change of modulus -/
+
+open scoped Classical in
+/-- **Change of modulus for the class indicators.** For `𝔪 ∣ 𝔫` and a ray class `c` of `𝔪`, the
+indicators of the ray classes of `𝔫` lying over `c` under the transition map `classMap` sum to the
+indicator of `c` restricted to the ideals prime to the finite part of `𝔫`. An ideal prime to
+`𝔫₀` lies in exactly one class of `𝔫`, whose image under `classMap` is its class modulo `𝔪`. -/
+theorem sum_rayClassCoeff_classMap_apply {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    [Fintype (RayClassGroup 𝔫)] [DecidableEq (RayClassGroup 𝔪)] (c : RayClassGroup 𝔪)
+    (I : (Ideal (𝓞 K))⁰) :
+    ∑ c' with classMap h c' = c, rayClassCoeff 𝔫 c' I =
+      if 𝔫.IsCoprimeTo (I : Ideal (𝓞 K)) then rayClassCoeff 𝔪 c I else 0 := by
+  by_cases hI : 𝔫.IsCoprimeTo (I : Ideal (𝓞 K))
+  · have hI𝔪 : 𝔪.IsCoprimeTo (I : Ideal (𝓞 K)) := Modulus.mem_integralIdealsPrimeTo.mp
+      (integralIdealsPrimeTo_antitone h (Modulus.mem_integralIdealsPrimeTo.mpr hI))
+    simp_rw [ite_eq_left hI, rayClassCoeff_apply_of_isCoprimeTo _ hI,
+      rayClassCoeff_apply_of_isCoprimeTo _ hI𝔪, Finset.sum_ite_eq, Finset.mem_filter,
+      Finset.mem_univ, true_and, classMap_idealClass]
+    congr 3
+    exact Subtype.ext (coe_integralIdealsPrimeToInclusion h _)
+  · simp [hI]
+
+/-- **Change of modulus without new primes.** If `𝔪 ∣ 𝔫` and every prime dividing `𝔫₀` divides
+`𝔪₀`, as when only the exponents or the real places of the modulus grow, then the indicator of a
+ray class `c` of `𝔪` is the sum of the indicators of the ray classes of `𝔫` lying over `c`. -/
+theorem sum_rayClassCoeff_classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (h' : 𝔫.support ⊆ 𝔪.support) [Fintype (RayClassGroup 𝔫)] [DecidableEq (RayClassGroup 𝔪)]
+    (c : RayClassGroup 𝔪) :
+    ∑ c' with classMap h c' = c, rayClassCoeff 𝔫 c' = rayClassCoeff 𝔪 c := by
+  classical
+  funext I
+  rw [Finset.sum_apply, sum_rayClassCoeff_classMap_apply h c I, ite_eq_left_iff]
+  intro hI
+  refine (rayClassCoeff_apply_of_not_isCoprimeTo c fun hI𝔪 ↦ hI ?_).symm
+  -- the support of `𝔫` is contained in that of `𝔪`, so coprimality to `𝔪` gives coprimality to `𝔫`
+  obtain ⟨hne, hdvd⟩ := Modulus.isCoprimeTo_iff.mp hI𝔪
+  exact Modulus.isCoprimeTo_iff.mpr ⟨hne, fun v hv ↦ hdvd v (h' hv)⟩
+
 /-! ### The finite Euler correction -/
 
 /-- **The finite Euler correction** `∏_{𝔭 ∣ 𝔪₀} (1 - N(𝔭) ^ (-s))`: the Euler factors of `ζ_K`
@@ -295,6 +345,24 @@ theorem sum_LSeries_rayClassCoeff_eq_dedekindZeta_iff (𝔪 : Modulus K)
   rw [sum_LSeries_rayClassCoeff 𝔪 hs', mul_eq_left₀ (dedekindZeta_ne_zero_of_one_lt_re hs'),
     finiteEulerCorrection_eq_one_iff 𝔪 (zero_lt_one.trans hs)]
 
+/-- **Change of modulus for the partial zeta functions, without new primes.** If `𝔪 ∣ 𝔫` and
+every prime dividing `𝔫₀` divides `𝔪₀`, then on `Re s > 1` the partial zeta function of a ray class
+`c` of `𝔪` is the sum of the partial zeta functions of the ray classes of `𝔫` lying over `c`. When
+`𝔫₀` has primes not dividing `𝔪₀` the two sides differ by the ideals of class `c` that meet those
+primes, and the sum over the fibre is expressed through the deleted Euler factors of the
+characters of `𝔪` by
+`TauCeti.LFunctions.sum_inv_mul_LSeries_toUnitaryIdealWeight_mul_eulerCorrection`. -/
+theorem sum_LSeries_rayClassCoeff_classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (h' : 𝔫.support ⊆ 𝔪.support) [Fintype (RayClassGroup 𝔫)] [DecidableEq (RayClassGroup 𝔪)]
+    (c : RayClassGroup 𝔪) {s : ℂ} (hs : 1 < s.re) :
+    ∑ c' with classMap h c' = c, LSeries (normCoeff K (rayClassCoeff 𝔫 c')) s =
+      LSeries (normCoeff K (rayClassCoeff 𝔪 c)) s := by
+  rw [← LSeries_sum fun c' _ ↦ LSeriesSummable_rayClassCoeff 𝔫 c' hs,
+    ← sum_rayClassCoeff_classMap h h' c, map_sum]
+  congr 1
+  funext n
+  simp only [Finset.sum_apply, sum_apply]
+
 /-- **The partial sums of the coefficients of a ray class are the ray class ideal counts**: the
 norm coefficients of `rayClassCoeff 𝔪 c` up to `n` add up to the number of ideals of class `c`
 of norm at most `n`. -/
@@ -315,9 +383,7 @@ theorem exists_differentiableOn_eq_LSeries_rayClassCoeff_sub (𝔪 : Modulus K)
       ∀ s : ℂ, 1 < s.re →
         G s = LSeries (normCoeff K (rayClassCoeff 𝔪 c)) s - rayClassIdealMainTerm 𝔪 / (s - 1) := by
   refine TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO _ _
-    (sub_nonneg.mpr (div_le_one_of_le₀ (Nat.one_le_cast.mpr Module.finrank_pos)
-      (Nat.cast_nonneg _)))
-    (sub_le_self _ (by positivity)) ?_ fun s hs ↦ LSeriesSummable_rayClassCoeff 𝔪 c hs
+    ?_ fun s hs ↦ LSeriesSummable_rayClassCoeff 𝔪 c hs
   -- the partial sums are the class counts, which are `κ_𝔪 n + O(n ^ (1 - 1 / [K : ℚ]))`
   have hsum (n : ℕ) : ∑ k ∈ Finset.Icc 1 n, normCoeff K (rayClassCoeff 𝔪 c) k -
       (rayClassIdealMainTerm 𝔪 : ℂ) * n =

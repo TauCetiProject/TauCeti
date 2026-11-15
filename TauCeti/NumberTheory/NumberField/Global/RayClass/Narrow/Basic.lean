@@ -230,6 +230,16 @@ theorem ker_classMap_narrowModulus :
 
 /-! ### Totally complex fields -/
 
+variable (K) in
+/-- Over a totally complex number field, the narrow modulus is the trivial modulus. -/
+@[simp]
+theorem narrowModulus_eq_one [IsTotallyComplex K] : narrowModulus K = Modulus.one K := by
+  apply Modulus.ext
+  · simp
+  · apply Finset.ext
+    rintro ⟨w, hw⟩
+    exact (InfinitePlace.not_isReal_iff_isComplex.mpr (IsTotallyComplex.isComplex w) hw).elim
+
 /-- **Over a totally complex field the transition map to the trivial modulus is injective**: the
 positivity conditions of the narrow modulus are vacuous, so every principal fractional ideal
 already has a totally positive generator. -/

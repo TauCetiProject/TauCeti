@@ -146,8 +146,8 @@ theorem NullChain.integrable_and_integral_eq_zero {d : Coordinate} {U : Set ℂ}
     Integrable d.proj P c ∧ integral d.proj P c = 0 := by
   induction h with
   | zero => exact ⟨integrable_zero _ _, map_zero _⟩
-  | add h₁ h₂ ih₁ ih₂ => exact ⟨ih₁.1.add ih₂.1, by simp [ih₁.2, ih₂.2]⟩
-  | neg h ih => exact ⟨integrable_neg_iff.mpr ih.1, by simp [ih.2]⟩
+  | add _ _ ih₁ ih₂ => exact ⟨ih₁.1.add ih₂.1, by simp [ih₁.2, ih₂.2]⟩
+  | neg _ ih => exact ⟨integrable_neg_iff.mpr ih.1, by simp [ih.2]⟩
   | constant γ hγ =>
     have hi := TauCeti.BoxIntegral.hasIntegral_Henstock_of_path_projection_constant d.proj γ hγ P
     exact ⟨(integrable_ofPath_iff _ _ _).2 hi.integrable,

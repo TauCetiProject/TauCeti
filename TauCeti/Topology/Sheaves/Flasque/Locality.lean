@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Topology.Sheaves.Functors
 public import TauCeti.Topology.Sheaves.Presheaf
@@ -47,6 +48,8 @@ to flasque sheaves is then flasque.
   has an open neighbourhood on which its restriction is flasque;
 * `TopCat.Sheaf.isFlasque_of_locally_iso`: a sheaf which is locally isomorphic to flasque sheaves
   is flasque.
+* `CategoryTheory.Sheaf.isFlasque`: flasque sheaves, as a class of objects closed under
+  isomorphisms.
 
 ## References
 
@@ -212,3 +215,24 @@ end Restriction
 end Sheaf
 
 end TopCat
+
+namespace CategoryTheory.Sheaf
+
+/-- Flasque sheaves on `X` with values in `A`, as a class of objects. -/
+def isFlasque (X : TopCat.{u}) (A : Type*) [Category* A] :
+    ObjectProperty (Sheaf (Opens.grothendieckTopology X) A) :=
+  fun G ↦ TopCat.Presheaf.IsFlasque G.obj
+
+/-- A sheaf satisfies `isFlasque` exactly when its underlying presheaf is flasque. -/
+@[simp]
+lemma isFlasque_iff {X : TopCat.{u}} {A : Type*} [Category* A]
+    {G : Sheaf (Opens.grothendieckTopology X) A} :
+    isFlasque X A G ↔ TopCat.Presheaf.IsFlasque G.obj :=
+  Iff.rfl
+
+/-- A sheaf isomorphic to a flasque sheaf is flasque. -/
+instance {X : TopCat.{u}} {A : Type*} [Category* A] :
+    (isFlasque X A).IsClosedUnderIsomorphisms where
+  of_iso e h := @TopCat.Presheaf.IsFlasque.of_iso _ _ _ _ _ ((sheafToPresheaf _ _).mapIso e) h
+
+end CategoryTheory.Sheaf

@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Artinian.Module
-public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!
 # Existence of projective covers over a semiprimary ring
@@ -94,41 +93,24 @@ of `M` on a suitable submodule `P` of `N`; that cover property is all the statem
 theorem exists_isProjectiveCover_comp_subtype [IsSemiprimaryRing R] {N : Type w} [AddCommGroup N]
     [Module R N] [Module.Projective R N] (p : N →ₗ[R] M) (hp : Function.Surjective p) :
     ∃ P : Submodule R N, IsProjectiveCover (p ∘ₗ P.subtype) := by
-  classical
-  -- `p` descends to a surjection of radical quotients.
-  have hcomap : Ring.jacobson R • (⊤ : Submodule R N) ≤
-      (Ring.jacobson R • (⊤ : Submodule R M)).comap p := by
-    rw [← Submodule.map_le_iff_le_comap, Submodule.map_smul'']
-    exact Submodule.smul_mono le_rfl le_top
-  set q : (N ⧸ Ring.jacobson R • (⊤ : Submodule R N)) →ₗ[R]
-      M ⧸ Ring.jacobson R • (⊤ : Submodule R M) := Submodule.mapQ _ _ p hcomap
-  have hq : ∀ n : N, q (Submodule.Quotient.mk n) = Submodule.Quotient.mk (p n) := fun n =>
+  -- The map induced by `p` on radical quotients is onto.
+  let q := Submodule.mapQ _ _ p (Submodule.smul_top_le_comap_smul_top (Ring.jacobson R) p)
+  have hq (n : N) : q (Submodule.Quotient.mk n) = Submodule.Quotient.mk (p n) :=
     Submodule.mapQ_apply _ _ p n
-  have hqsurj : Function.Surjective q := by
-    intro z
-    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
-    obtain ⟨n, rfl⟩ := hp x
-    exact ⟨Submodule.Quotient.mk n, hq n⟩
+  have hqsurj : Function.Surjective q := LinearMap.range_eq_top.mp (by
+    rw [Submodule.range_mapQ, LinearMap.range_eq_top.mpr hp, Submodule.map_top,
+      Submodule.range_mkQ])
   -- The kernel of `q` splits off, because the radical quotient of `N` is semisimple.
   have hss := isSemisimpleModule_quotient_jacobson_smul_top R N
-  obtain ⟨C, hC⟩ := exists_isCompl (LinearMap.ker q)
-  set ebar : Module.End R (N ⧸ Ring.jacobson R • (⊤ : Submodule R N)) :=
-    C.projection (LinearMap.ker q) hC.symm
-  have hebar : IsIdempotentElem ebar := Submodule.isIdempotentElem_projection _
-  have hrangebar : LinearMap.range ebar = C := Submodule.range_projection _
-  have hsub : ∀ x, x - ebar x ∈ LinearMap.ker q := fun x => Submodule.sub_projection_mem hC.symm x
+  obtain ⟨ebar, hebar, hqe, hdisj⟩ := q.exists_isIdempotentElem_comp_eq_disjoint_ker
   -- Lift `ebar`: the reduction map is onto with nil kernel.
-  obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent
-    (Ideal.endMapQ (Ring.jacobson R) N)
-    (fun _ hg => Ideal.isNilpotent_of_mem_ker_endMapQ _ N IsSemiprimaryRing.isNilpotent hg)
-    ebar (RingHom.mem_range.mpr (Ideal.endMapQ_surjective _ N ebar)) hebar
-  have hfix : ∀ x ∈ LinearMap.range e, e x = x := by
-    rintro _ ⟨y, rfl⟩
-    exact (mul_apply_eq_comp e e y).symm.trans (DFunLike.congr_fun he.eq y)
-  have hebar_mk : ∀ n : N, ebar (Submodule.Quotient.mk n) = Submodule.Quotient.mk (e n) := by
-    intro n
-    rw [← hee]
+  obtain ⟨e, he, hebar_eq⟩ :=
+    Ideal.exists_isIdempotentElem_endMapQ_eq IsSemiprimaryRing.isNilpotent hebar
+  have hebar_mk (n : N) : ebar (Submodule.Quotient.mk n) = Submodule.Quotient.mk (e n) := by
+    rw [← hebar_eq]
     exact Ideal.endMapQ_mk _ N e n
+  have hfix (x : N) (hx : x ∈ LinearMap.range e) : e x = x :=
+    LinearMap.IsIdempotentElem.mem_range_iff he |>.mp hx
   -- Nakayama: the radical multiple of any module is superfluous in it.
   have hsuperM : IsSuperfluous (Ring.jacobson R • (⊤ : Submodule R M)) :=
     isSuperfluous_smul_top_of_isNilpotent IsSemiprimaryRing.isNilpotent
@@ -144,29 +126,25 @@ theorem exists_isProjectiveCover_comp_subtype [IsSemiprimaryRing R] {N : Type w}
     obtain ⟨n, rfl⟩ := Submodule.Quotient.mk_surjective _ z
     have hzz : (Submodule.Quotient.mk x : M ⧸ Ring.jacobson R • (⊤ : Submodule R M))
         = Submodule.Quotient.mk (p (e n)) := by
-      rw [← hq, ← hebar_mk, ← hz]
-      have hker := hsub (Submodule.Quotient.mk n)
-      rw [LinearMap.mem_ker, map_sub, sub_eq_zero] at hker
-      exact hker
+      rw [← hq, ← hebar_mk, ← hz, ← LinearMap.comp_apply q ebar, hqe]
     exact Submodule.mem_sup.mpr ⟨x - p (e n), (Submodule.Quotient.eq _).mp hzz,
       p (e n), Submodule.mem_map_of_mem ⟨n, rfl⟩, by abel⟩
-  · -- An element of the kernel reduces into `C ⊓ ker q = ⊥`, so lies in `J • N`, so in `J • P`.
+  · -- An element of the kernel reduces into `range ebar ⊓ ker q = ⊥`, so lies in `J • N`, so in
+    -- `J • P`.
     refine (isSuperfluous_smul_top_of_isNilpotent
       (M := ↥(LinearMap.range e)) IsSemiprimaryRing.isNilpotent).mono ?_
     rintro ⟨x, hx⟩ hker
     have hpx : p x = 0 := LinearMap.mem_ker.mp hker
-    have hmemC : (Submodule.Quotient.mk x : N ⧸ Ring.jacobson R • (⊤ : Submodule R N)) ∈ C := by
+    have hmemrange : (Submodule.Quotient.mk x : N ⧸ Ring.jacobson R • (⊤ : Submodule R N))
+        ∈ LinearMap.range ebar := by
       obtain ⟨y, rfl⟩ := hx
-      exact hrangebar ▸ ⟨Submodule.Quotient.mk y, hebar_mk y⟩
+      exact ⟨Submodule.Quotient.mk y, hebar_mk y⟩
     have hmemker : (Submodule.Quotient.mk x : N ⧸ Ring.jacobson R • (⊤ : Submodule R N))
         ∈ LinearMap.ker q := by
       rw [LinearMap.mem_ker, hq, hpx]
       exact Submodule.Quotient.mk_zero _
-    have hinf : (Submodule.Quotient.mk x : N ⧸ Ring.jacobson R • (⊤ : Submodule R N))
-        ∈ C ⊓ LinearMap.ker q := ⟨hmemC, hmemker⟩
-    rw [hC.symm.inf_eq_bot, Submodule.mem_bot] at hinf
     have hxJN : x ∈ Ring.jacobson R • (⊤ : Submodule R N) :=
-      (Submodule.Quotient.mk_eq_zero _).mp hinf
+      (Submodule.Quotient.mk_eq_zero _).mp (Submodule.disjoint_def.mp hdisj _ hmemrange hmemker)
     rw [Submodule.mem_smul_top_iff]
     have hmap : x ∈ Submodule.map e (Ring.jacobson R • (⊤ : Submodule R N)) :=
       ⟨x, hxJN, hfix x hx⟩

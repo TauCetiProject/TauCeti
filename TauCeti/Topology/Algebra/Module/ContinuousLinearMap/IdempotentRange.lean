@@ -23,6 +23,9 @@ For a retract `r ∘ i = id` of `M` through `N`, the extension `i ∘ e ∘ r` o
 of `M` is idempotent when `e` is, and `i` identifies the range of `e` with the range of
 `i ∘ e ∘ r` (`ContinuousLinearMap.rangeEquivOfRetract`).
 
+A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g ∘ f`
+(`ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`).
+
 ## Main definitions
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
@@ -38,6 +41,8 @@ of `M` is idempotent when `e` is, and `i` identifies the range of `e` with the r
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
   along a retract is idempotent.
+* `ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`: if `g` is a pseudo-inverse
+  of `f`, then `g ∘ f` is a continuous projection.
 
 ## References
 
@@ -145,6 +150,14 @@ theorem coe_rangeEquiv_symm_apply (w : q.range) :
 end ContinuousLinearMap.IsIdempotentElem
 
 namespace ContinuousLinearMap
+
+/-- If `g` is a pseudo-inverse of `f`, that is `f ∘ g ∘ f = f`, then `g ∘ f` is a projection. -/
+theorem isIdempotentElem_comp_of_comp_comp_eq_self {R M N : Type*} [Semiring R]
+    [TopologicalSpace M] [AddCommMonoid M] [Module R M] [TopologicalSpace N] [AddCommMonoid N]
+    [Module R N] {f : M →L[R] N} {g : N →L[R] M} (hfg : f ∘L g ∘L f = f) :
+    IsIdempotentElem (g ∘L f) := by
+  ext v
+  simpa using congrArg g congr($hfg v)
 
 section Retract
 

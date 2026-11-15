@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Green.WindingWeight.Bound
 public import TauCeti.Analysis.Green.WindingWeight.FiniteSum
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import TauCeti.MeasureTheory.Integral.KernelPotential
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!

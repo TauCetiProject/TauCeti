@@ -47,17 +47,10 @@ theorem map_baseChange_generatedDefiningIdeal_le :
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56).hom.hom ≤
       generatedDefiningIdeal S := by
   rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def]
-  refine (HopfIdeal.map_mono _
-    (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le
-      (K := S) (generatorCoordinateMap R))).trans ?_
-  rw [CommHopfAlgCat.map_commonKernelHopfIdeal]
-  rw [← CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective
-    (fun j ↦ (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56).inv ≫
-      CommHopfAlgCat.baseChangeMap (generatorCoordinateMap R j))
-    (fun j ↦ (generatorCoordinateAlgebraBaseChangeIso R S j).hom) fun j ↦
-      (ConcreteCategory.bijective_of_isIso
-        (generatorCoordinateAlgebraBaseChangeIso R S j).hom).1]
-  simp only [Category.assoc, generatorCoordinateMap_baseChange, le_refl]
+  exact CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal_le
+    (generatorCoordinateMap R) (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56)
+    (generatorCoordinateAlgebraBaseChangeIso R S) (generatorCoordinateMap S)
+    (fun j ↦ by simpa only [Category.assoc] using generatorCoordinateMap_baseChange R S j)
 
 private theorem baseChangeDefiningIdeal_le_ker :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := S) (generatedDefiningIdeal R)).toIdeal ≤

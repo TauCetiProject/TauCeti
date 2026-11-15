@@ -9,6 +9,10 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.LinearAlgebra.Matrix.PosSemidef
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.Positive
+
+import TauCeti.LinearAlgebra.Matrix.Vec
 
 /-!
 # Determinant inequalities for positive-semidefinite matrices
@@ -17,8 +21,17 @@ The determinant is monotone on the positive-semidefinite cone. Hadamard--Fischer
 bounds a block determinant by the product of its diagonal-block determinants.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
-All statements include singular matrices and empty blocks, over either real or
-complex scalars.
+The monotonicity and block statements include singular matrices and empty blocks,
+over either real or complex scalars.
+
+For real positive-semidefinite `n × n` matrices, the inequality of arithmetic and
+geometric means for the eigenvalues gives `det A ≤ (tr A / n) ^ n`, and its mixed
+form `det A * det B ≤ (tr (A * B) / n) ^ n` is the pointwise step of the
+Aleksandrov–Bakelman–Pucci maximum principle. Read through the standard basis of `ℝⁿ`, it bounds
+`det T det A` by `(∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ` for a positive operator `T`
+(`LinearMap.IsPositive.det_mul_det_le_sum_mul_apply_div_card_pow`), where the principal part
+`∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ = tr (A M_T)` (`LinearMap.IsSymmetric.trace_mul_toMatrix`) is nonnegative
+(`LinearMap.IsPositive.sum_mul_apply_nonneg`).
 
 ## References
 
@@ -147,4 +160,96 @@ theorem PosSemidef.det_mul_det_fromBlocks_le
 
 end Blocks
 
+section ArithmeticMean
+
+variable [Fintype n] [DecidableEq n]
+
+/-- **The determinant–trace inequality.** The determinant of a real positive-semidefinite
+`n × n` matrix is at most the `n`-th power of the mean of its eigenvalues,
+`det A ≤ (tr A / n) ^ n`: the inequality of arithmetic and geometric means for the eigenvalues.
+For `n = 0` both sides are `1`. -/
+theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSemidef) :
+    A.det ≤ (A.trace / Fintype.card n) ^ Fintype.card n := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · simp
+  set μ := hA.isHermitian.eigenvalues
+  have hμ := hA.eigenvalues_nonneg
+  have hdet : A.det = ∏ i, μ i := by simpa using hA.isHermitian.det_eq_prod_eigenvalues
+  have htr : A.trace = ∑ i, μ i := by simpa using hA.isHermitian.trace_eq_sum_eigenvalues
+  have hcard : (Fintype.card n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hamgm := Real.geom_mean_le_arith_mean_weighted Finset.univ
+    (fun _ => (Fintype.card n : ℝ)⁻¹) μ (fun _ _ => by positivity)
+    (by simp [Finset.card_univ, hcard]) fun i _ => hμ i
+  rw [Real.finsetProd_rpow _ _ fun i _ => hμ i, ← Finset.mul_sum, ← div_eq_inv_mul] at hamgm
+  have hprod : 0 ≤ ∏ i, μ i := Finset.prod_nonneg fun i _ => hμ i
+  rw [hdet, htr, ← Real.rpow_inv_natCast_pow hprod (Fintype.card_ne_zero (α := n))]
+  exact pow_le_pow_left₀ (Real.rpow_nonneg hprod _) hamgm _
+
+/-- **The mixed determinant–trace inequality.** For real positive-semidefinite `n × n` matrices
+`A` and `B`, `det A * det B ≤ (tr (A * B) / n) ^ n`. -/
+theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    A.det * B.det ≤ ((A * B).trace / Fintype.card n) ^ Fintype.card n := by
+  set S := CFC.sqrt A
+  have hS : S.IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
+  have hN : (S * B * S).PosSemidef := by
+    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same S
+  have hdet : (S * B * S).det = A.det * B.det := by
+    rw [← CFC.sqrt_mul_sqrt_self A hA.nonneg]
+    simp only [det_mul, S]
+    ring
+  rw [← hdet, ← trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt]
+  exact hN.det_le_trace_div_card_pow
+
+end ArithmeticMean
+
 end Matrix
+
+namespace LinearMap
+
+open Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- For a symmetric operator `T` on `ℝⁿ`, the trace of `A` times the matrix of `T` is
+`∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`. -/
+theorem IsSymmetric.trace_mul_toMatrix {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι}
+    (hT : T.IsSymmetric) (A : Matrix ι ι ℝ) :
+    (A * LinearMap.toMatrix (EuclideanSpace.basisFun ι ℝ).toBasis
+      (EuclideanSpace.basisFun ι ℝ).toBasis T).trace =
+      ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i := by
+  have hsym (i j : ι) :
+      T (EuclideanSpace.single i 1) j = T (EuclideanSpace.single j 1) i := by
+    simpa [EuclideanSpace.inner_single_right, EuclideanSpace.inner_single_left] using
+      hT (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+  simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply, LinearMap.toMatrix_apply,
+    OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
+    EuclideanSpace.basisFun_apply, EuclideanSpace.basisFun_repr, hsym]
+
+/-- **The principal part of a positive operator.** If `T` is a positive operator on `ℝⁿ` and `A`
+is positive semidefinite, then `0 ≤ ∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`. -/
+theorem IsPositive.sum_mul_apply_nonneg
+    {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι} (hT : T.IsPositive) {A : Matrix ι ι ℝ}
+    (hA : A.PosSemidef) : 0 ≤ ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i := by
+  rw [← hT.isSymmetric.trace_mul_toMatrix]
+  simpa using
+    hA.trace_transpose_mul_mul_mul_nonneg ((LinearMap.posSemidef_toMatrix_iff _).2 hT)
+      (1 : Matrix ι ι ℝ)
+
+/-- **The determinant bound for a positive operator.** If `T` is a positive operator on `ℝⁿ` and
+`A` is positive semidefinite, then `det T det A ≤ (∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ`: the determinant–trace
+inequality `Matrix.PosSemidef.det_mul_det_le_trace_mul_div_card_pow` for `A` and the matrix of
+`T`. Applied to `T = -D²u` on the upper contact set, it bounds the Hessian determinant by the
+elliptic operator. -/
+theorem IsPositive.det_mul_det_le_sum_mul_apply_div_card_pow
+    {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι} (hT : T.IsPositive) {A : Matrix ι ι ℝ}
+    (hA : A.PosSemidef) :
+    LinearMap.det T * A.det ≤
+      ((∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i) / Fintype.card ι) ^
+        Fintype.card ι := by
+  rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun ι ℝ).toBasis, mul_comm,
+    ← hT.isSymmetric.trace_mul_toMatrix]
+  exact hA.det_mul_det_le_trace_mul_div_card_pow ((LinearMap.posSemidef_toMatrix_iff _).2 hT)
+
+end LinearMap

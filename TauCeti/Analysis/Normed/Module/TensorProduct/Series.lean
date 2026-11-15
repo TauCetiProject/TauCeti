@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Group.Completion
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
+public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Series representations of completed projective tensors
@@ -34,6 +36,9 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
   of pure tensors is at most its cost.
 * `TauCeti.CompletedProjectiveTensor.norm_lt_iff_exists_hasSum_tmul`: the combined
   characterization of the strict sublevel sets of the norm.
+* `TauCeti.CompletedProjectiveTensor.exists_hasSum_tmul_tendsto_zero`: over `ℝ` and `ℂ`, a series
+  representation `u = ∑ n, x n ⊗ₜ y n` with `∑ n, ‖x n‖` finite and `y n → 0`, obtained by
+  rescaling the factors of a series of finite cost.
 
 ## References
 
@@ -42,9 +47,9 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
 
 public section
 
-open scoped TensorProduct
+open scoped TensorProduct Topology
 
-open UniformSpace
+open Filter UniformSpace
 
 namespace TauCeti.CompletedProjectiveTensor
 
@@ -152,5 +157,41 @@ theorem norm_lt_iff_exists_hasSum_tmul {u : CompletedProjectiveTensor 𝕜 E F} 
       Summable (fun n ↦ ‖x n‖ * ‖y n‖) ∧ ∑' n, ‖x n‖ * ‖y n‖ < c :=
   ⟨exists_hasSum_tmul_of_norm_lt u, fun ⟨_, _, hu, hxy, hc⟩ ↦
     (norm_le_tsum_of_hasSum_tmul hu hxy).trans_lt hc⟩
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Every element `u` of the completed projective tensor product is the sum of a series of pure
+tensors `∑ n, x n ⊗ₜ y n` in which `∑ n, ‖x n‖` is finite and `y n` tends to zero. The second
+factors therefore lie in a norm-compact set. -/
+theorem exists_hasSum_tmul_tendsto_zero (u : CompletedProjectiveTensor 𝕜 E F) :
+    ∃ (x : ℕ → E) (y : ℕ → F),
+      HasSum (fun n ↦ ((⟨x n ⊗ₜ y n⟩ : ProjectiveTensor 𝕜 E F) :
+        CompletedProjectiveTensor 𝕜 E F)) u ∧
+      Summable (fun n ↦ ‖x n‖) ∧ Tendsto y atTop (𝓝 0) := by
+  obtain ⟨x, y, hu, hxy, -⟩ := exists_hasSum_tmul_of_norm_lt u (lt_add_one ‖u‖)
+  -- Weights `c n → ∞` keeping the costs summable; move `c n * ‖y n‖` from `y n` to `x n`.
+  obtain ⟨c, hc1, hc, hcxy⟩ := hxy.exists_tendsto_atTop_summable_mul
+  have hc0 (n : ℕ) : 0 < c n := zero_lt_one.trans_le (hc1 n)
+  set t : ℕ → 𝕜 := fun n ↦ ((c n * ‖y n‖ : ℝ) : 𝕜) with ht_def
+  have ht (n : ℕ) (hy : y n ≠ 0) : t n ≠ 0 := by
+    simp [ht_def, (hc0 n).ne', hy]
+  have hnt (n : ℕ) : ‖t n‖ = c n * ‖y n‖ := by
+    simp [ht_def, (hc0 n).le]
+  refine ⟨fun n ↦ t n • x n, fun n ↦ (t n)⁻¹ • y n, ?_, ?_, ?_⟩
+  · convert hu using 3 with n
+    by_cases hy : y n = 0
+    · simp [hy]
+    · rw [TensorProduct.smul_tmul, smul_smul, mul_inv_cancel₀ (ht n hy), one_smul]
+  · exact hcxy.congr fun n ↦ by rw [norm_smul, hnt]; ring
+  · refine squeeze_zero_norm (fun n ↦ ?_) (tendsto_inv_atTop_zero.comp hc)
+    by_cases hy : y n = 0
+    · simpa [hy] using (hc0 n).le
+    · have : ‖y n‖ ≠ 0 := norm_ne_zero_iff.2 hy
+      simp [norm_smul, hnt, field]
+
+end RCLike
 
 end TauCeti.CompletedProjectiveTensor

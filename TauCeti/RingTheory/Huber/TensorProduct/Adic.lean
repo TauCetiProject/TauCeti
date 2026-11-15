@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.AdicCompletion.UniformCompletion
 public import TauCeti.RingTheory.Huber.TensorProduct.Completion
 import TauCeti.RingTheory.Huber.Completion.Noetherian
 import TauCeti.RingTheory.Ideal.Operations
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Completed tensor products of adic rings

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # The multivariate Gamma function

@@ -51,7 +51,7 @@ public section
 
 namespace TauCeti.Iwasawa
 
-open Submodule
+open _root_.Submodule
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommGroup M] [Module A M]
 

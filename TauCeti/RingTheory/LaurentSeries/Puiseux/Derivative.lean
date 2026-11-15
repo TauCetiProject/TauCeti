@@ -137,6 +137,18 @@ theorem derivation_eq_zero_iff {x : puiseuxField K} :
     ratHahnSeriesDerivation_eq_zero_iff]
   simp only [← Subtype.coe_inj, IntermediateField.coe_algebraMap_apply]
 
+/-- A coefficient-field algebra endomorphism sends the parameter to an element with nonzero
+derivative. No continuity assumption is needed. -/
+theorem derivation_map_single_one_ne_zero (ρ : puiseuxField K →ₐ[K] puiseuxField K) :
+    derivation K (ρ (single K 1 1)) ≠ 0 := by
+  intro hzero
+  obtain ⟨a, ha⟩ := derivation_eq_zero_iff.mp hzero
+  have ht : algebraMap K (puiseuxField K) a = single K 1 1 :=
+    ρ.injective ((ρ.commutes a).trans ha)
+  have hd := congrArg (derivation K) ht
+  rw [Derivation.map_algebraMap, derivation_single_one] at hd
+  exact zero_ne_one hd
+
 end puiseuxField
 
 end TauCeti

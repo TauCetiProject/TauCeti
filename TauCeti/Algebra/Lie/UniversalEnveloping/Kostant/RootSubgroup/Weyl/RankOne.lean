@@ -135,6 +135,13 @@ theorem kostantWeylParam_sq (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
   rw [sq, kostantWeylParam_mul_kostantWeylParam e h ρ M hM hi hj b wt hwt hT hα hαneg,
     mul_inv_cancel]
 
+/-- The Weyl representative multiplied by itself is the coroot value at `-1`. -/
+theorem kostantWeylGL_mul_self (A : CommAlgCat.{w} ℤ) :
+    kostantWeylGL e h ρ M hM hi hj A * kostantWeylGL e h ρ M hM hi hj A =
+      kostantCoordinateCocharacter M b wt A c (-1) := by
+  simpa only [kostantWeylParam_one, sq] using
+    kostantWeylParam_sq e h ρ M hM hi hj b wt hwt hT hα hαneg A 1
+
 /-- **Steinberg's element acts on the torus by the reflection** `s_α`:
 `n_α(u) t(s) n_α(u)⁻¹ = t(s_α s)`. The coroot value `h_α(u)` relating `n_α(u)` to the Weyl
 representative lies in the torus, which is commutative. -/

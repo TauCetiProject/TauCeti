@@ -22,6 +22,13 @@ DG resolutions. It does not assert that the twisted modules are resolutions. For
 bases, the signed map and parametrized equation recover `homotopyMap` and
 `ParametrizedCocycle`, with the regular algebra as coefficients.
 
+Tensoring with a DG right module transports the homotopy to finite-support coefficient
+vectors. Since the signed row map is graded linear of odd degree, the coefficient factor
+carries its Koszul sign: `α ⊗ g ↦ (-1)^|α| α ⊗ H g`. The tensor differential then turns the
+free-module identity into `D ∘ H + H ∘ D = Ψ¹ - Ψ⁰` on coefficient vectors
+(`RowFiniteParametrizedCocycle.coefficientHomotopy_differential`). For finite bases this
+coefficient homotopy is the existing `homotopyMap`.
+
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
@@ -31,11 +38,11 @@ bases, the signed map and parametrized equation recover `homotopyMap` and
 
 public noncomputable section
 
-open DirectSum
+open DirectSum MulOpposite
 
 namespace TauCeti
 
-universe uR uA uP uQ
+universe uR uA uM uP uQ
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
@@ -71,6 +78,26 @@ theorem ext {η θ : RowFiniteParametrizedCocycle ν₀ ν₁}
   funext x
   exact Finsupp.ext (hh x)
 
+/-- A parametrized cocycle from homotopy rows `h x` of total degree `-indP x - 1`, the degrees of
+a homotopy, satisfying the generator equation. -/
+def ofTotalGrading (h : P → Q →₀ A) (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x - 1))
+    (hhd : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
+      rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x) :
+    RowFiniteParametrizedCocycle ν₀ ν₁ where
+  h := h
+  mem_graded x y := by
+    convert (mem_rowFiniteTotalGrading_iff _ _).mp (hh x) y using 2
+    ring
+  parametrized := hhd
+
+@[simp]
+theorem ofTotalGrading_h (h : P → Q →₀ A)
+    (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x - 1))
+    (hhd : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
+      rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x) :
+    (ofTotalGrading h hh hhd).h = h :=
+  (rfl)
+
 variable (η : RowFiniteParametrizedCocycle ν₀ ν₁)
 
 /-- The signed map of a parametrized cocycle lowers total degree by one. -/
@@ -89,34 +116,11 @@ theorem rowFiniteSignedMap_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ 
       rowFiniteSignedMap (𝒜 := 𝒜) η.h
         (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) =
       Finsupp.linearCombination A ν₁.ν f - Finsupp.linearCombination A ν₀.ν f := by
-  classical
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f g hf hg =>
-    simp only [map_add]
-    rw [add_add_add_comm, hf, hg]
-    abel
-  | single x a =>
-    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q a =>
-      -- The two terms involving d(a) cancel; the remaining terms are a times the row equation.
-      rw [rowFiniteSignedMap_single η.h x a.2,
-        LinearMap.map_smul_of_tower,
-        rowFiniteTwistedDifferential_smul mQ.m hA a.2,
-        rowFiniteTwistedDifferential_single mP.m x a.2, map_add,
-        rowFiniteSignedMap_single η.h x (hA.map_mem a.2),
-        LinearMap.map_smul_of_tower, rowFiniteSignedMap_smul η.h a.2]
-      simp only [smul_add, smul_smul, Int.units_mul_self, one_smul,
-        Int.negOnePow_succ, Units.neg_smul, Finsupp.linearCombination_single]
-      have hrow := congrArg (fun v ↦ (a : A) • v) (η.parametrized x)
-      simp only [smul_add, smul_sub] at hrow
-      abel_nf at hrow ⊢
-      exact hrow
-    | add a b ha hb =>
-      simp only [Finsupp.single_add, map_add]
-      rw [add_add_add_comm, ha, hb]
-      abel
+  have key := linearCombination_eq_add_rowFiniteSignedMap
+    (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) mP.m
+    (e := fun x ↦ ν₁.ν x - ν₀.ν x) (fun x ↦ (η.parametrized x).symm) f
+  rw [← key]
+  simp only [Finsupp.linearCombination_apply, smul_sub, Finsupp.sum_sub]
 
 /-- A homogeneous row's Koszul contribution with an odd shifted degree has the opposite sign
 from the corresponding index-difference sum. -/
@@ -153,6 +157,143 @@ theorem parametrized_iff (h : P → Q →₀ A)
   · intro heq
     rw [heq]
     abel
+
+section Coefficients
+
+open BalancedTensorProduct
+
+variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
+variable (ℳ) in
+/-- The homotopy rows tensored with right coefficients. A coefficient passes through with its
+Koszul sign, `α ⊗ g ↦ (-1)^|α| α ⊗ H g`, where `H` is the signed row map. -/
+def tensorHomotopy : BalancedTensorProduct R A M (P →₀ A) →ₗ[R]
+    BalancedTensorProduct R A M (Q →₀ A) :=
+  koszulMapRight ℳ (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h)
+
+/-- On pure tensors, the coefficient acquires its Koszul twist and the free factor its signed
+homotopy row. -/
+@[simp]
+theorem tensorHomotopy_tmul (α : M) (g : P →₀ A) :
+    η.tensorHomotopy ℳ (tmul R A α g) =
+      tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 α)
+        (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) :=
+  koszulMapRight_tmul (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h) α g
+
+/-- On a homogeneous coefficient of degree `q`, the Koszul twist is the sign `(-1)^q`. -/
+theorem tensorHomotopy_tmul_of_mem {q : ℤ} {α : M} (hα : α ∈ ℳ q) (g : P →₀ A) :
+    η.tensorHomotopy ℳ (tmul R A α g) =
+      ((q.negOnePow : ℤ) : R) • tmul R A α (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) :=
+  koszulMapRight_tmul_of_mem (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h) hα g
+
+variable [IsScalarTower R Aᵐᵒᵖ M] {hA : IsDGAlgebra 𝒜 d} {dM : M →ₗ[R] M}
+
+/-- The tensored homotopy rows are a chain homotopy between the tensored continuation maps,
+for the balanced tensor differentials. -/
+theorem tensorHomotopy_differential (hM : IsDGRightModule hA ℳ dM)
+    (z : BalancedTensorProduct R A M (P →₀ A)) :
+    differential hM (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) (η.tensorHomotopy ℳ z) +
+        η.tensorHomotopy ℳ (differential hM (mP.isDGLeftModule_rowFiniteTwistedDifferential hA) z) =
+      ν₁.tensorMap z - ν₀.tensorMap z := by
+  have key : differential hM (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) ∘ₗ
+        η.tensorHomotopy ℳ +
+      η.tensorHomotopy ℳ ∘ₗ differential hM (mP.isDGLeftModule_rowFiniteTwistedDifferential hA) =
+      ν₁.tensorMap - ν₀.tensorMap := by
+    refine hom_ext fun α g ↦ ?_
+    simpa only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      RowFiniteContinuationCocycle.tensorMap_tmul, LinearMap.restrictScalars_apply,
+      tensorHomotopy] using
+      (tmul_sub_tmul_eq_add_koszulMapRight hM.isHomogeneous
+        (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h)
+        (g₁ := (Finsupp.linearCombination A ν₁.ν).restrictScalars R)
+        (g₂ := (Finsupp.linearCombination A ν₀.ν).restrictScalars R)
+        (fun g ↦ (η.rowFiniteSignedMap_differential hA g).symm)
+        (fun hm x ↦ by
+          rw [differential_tmul_of_mem hM _ hm, Units.smul_def, ← Int.cast_smul_eq_zsmul R])
+        (fun hm x ↦ by
+          rw [differential_tmul_of_mem hM _ hm, Units.smul_def, ← Int.cast_smul_eq_zsmul R])
+        α g).symm
+  exact LinearMap.congr_fun key z
+
+variable (ℳ) in
+/-- The chain homotopy on finite-support coefficient vectors, transported from the tensored
+homotopy rows along the free-module tensor identification. -/
+def coefficientHomotopy : (P →₀ M) →ₗ[R] (Q →₀ M) :=
+  (finsuppScalarRight R A M Q).toLinearMap ∘ₗ η.tensorHomotopy ℳ ∘ₗ
+    (finsuppScalarRight R A M P).symm.toLinearMap
+
+/-- The coefficient homotopy is the tensored homotopy under the tensor identification. -/
+@[simp]
+theorem coefficientHomotopy_finsuppScalarRight (z : BalancedTensorProduct R A M (P →₀ A)) :
+    η.coefficientHomotopy ℳ (finsuppScalarRight R A M P z) =
+      finsuppScalarRight R A M Q (η.tensorHomotopy ℳ z) := by
+  simp [coefficientHomotopy]
+
+/-- The image of an elementary coefficient vector is its homotopy row acting on the
+Koszul-twisted coefficient. -/
+theorem coefficientHomotopy_single (x : P) (α : M) :
+    η.coefficientHomotopy ℳ (Finsupp.single x α) =
+      (η.h x).sum fun y a ↦
+        Finsupp.single y (op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α) := by
+  rw [single_eq_finsuppScalarRight_tmul R A M P x α, coefficientHomotopy_finsuppScalarRight,
+    tensorHomotopy_tmul, rowFiniteSignedMap_single_one, finsuppScalarRight_tmul]
+
+/-- The entry formula for an elementary coefficient vector:
+`H (α ⊗ x) y = (-1)^|α| α · h x y`, with the sign given by the Koszul twist. -/
+@[simp]
+theorem coefficientHomotopy_single_apply (x : P) (α : M) (y : Q) :
+    η.coefficientHomotopy ℳ (Finsupp.single x α) y =
+      op (η.h x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1 α := by
+  rw [single_eq_finsuppScalarRight_tmul R A M P x α, coefficientHomotopy_finsuppScalarRight,
+    tensorHomotopy_tmul, rowFiniteSignedMap_single_one, finsuppScalarRight_tmul_apply]
+
+/-- The coefficient homotopy lowers total degree by one. -/
+theorem coefficientHomotopy_mem_totalGrading {n : ℤ} {f : P →₀ M}
+    (hf : f ∈ rowFiniteTotalGrading ℳ indP n) :
+    η.coefficientHomotopy ℳ f ∈ rowFiniteTotalGrading ℳ indQ (n - 1) := by
+  classical
+  rw [mem_rowFiniteTotalGrading_iff] at hf ⊢
+  intro y
+  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum, Finset.sum_apply']
+  simp only [coefficientHomotopy_single_apply]
+  refine Submodule.sum_mem _ fun x _ ↦ ?_
+  have hε : (InternalGrading.ofDecomposition ℳ).koszulTwist 1 (f x) ∈ ℳ (n + indP x) := by
+    rw [koszulTwist_one_eq_negOnePow_smul (R := R) (hf x)]
+    exact Submodule.smul_of_tower_mem _ _ (hf x)
+  have := op_smul_mem_of_mem_graded (η.mem_graded x y) hε
+  convert this using 2; ring
+
+/-- **The chain homotopy with DG right coefficients.** The coefficient homotopy of a
+row-finite parametrized cocycle satisfies `D ∘ H + H ∘ D = Ψ¹ - Ψ⁰` on finite-support
+coefficient vectors, for an arbitrary graded basis. -/
+theorem coefficientHomotopy_differential (hM : IsDGRightModule hA ℳ dM) (f : P →₀ M) :
+    mQ.coefficientDifferential hM (η.coefficientHomotopy ℳ f) +
+        η.coefficientHomotopy ℳ (mP.coefficientDifferential hM f) =
+      ν₁.coefficientMap f - ν₀.coefficientMap f := by
+  rw [← (finsuppScalarRight R A M P).apply_symm_apply f,
+    coefficientHomotopy_finsuppScalarRight, mQ.coefficientDifferential_finsuppScalarRight,
+    mP.coefficientDifferential_finsuppScalarRight, coefficientHomotopy_finsuppScalarRight,
+    RowFiniteContinuationCocycle.coefficientMap_finsuppScalarRight,
+    RowFiniteContinuationCocycle.coefficientMap_finsuppScalarRight, ← map_add, ← map_sub,
+    η.tensorHomotopy_differential hM]
+
+/-- For finite bases, the actual finite-support/function equivalence recovers the original
+homotopy map, with the same right action and Koszul sign. -/
+theorem linearEquivFunOnFinite_coefficientHomotopy [Fintype P] [Finite Q] (f : P →₀ M) :
+    Finsupp.linearEquivFunOnFinite R M Q (η.coefficientHomotopy ℳ f) =
+      homotopyMap (fun x y ↦ η.h x y) ℳ (Finsupp.linearEquivFunOnFinite R M P f) := by
+  classical
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg => simp only [map_add, hf, hg]
+  | single x α =>
+    rw [Finsupp.linearEquivFunOnFinite_single]
+    ext y
+    simp [Pi.single_apply, apply_ite]
+
+end Coefficients
 
 end RowFiniteParametrizedCocycle
 

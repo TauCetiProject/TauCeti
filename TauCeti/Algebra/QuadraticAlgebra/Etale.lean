@@ -28,7 +28,7 @@ namespace QuadraticAlgebra
 unit. -/
 theorem etale_iff_isUnit_discr {R : Type*} [CommRing R] {a b : R} :
     Algebra.Etale R (QuadraticAlgebra R a b) ↔ IsUnit (discr a b) := by
-  rw [TauCeti.Algebra.etale_iff_isUnit_discr R _ (basis a b), Algebra.discr_quadraticAlgebra]
+  rw [TauCeti.Algebra.etale_iff_isUnit_discr (basis a b), Algebra.discr_quadraticAlgebra]
 
 /-- A quadratic algebra over a field with nonzero discriminant is étale. -/
 theorem etale_of_discr_ne_zero {K : Type*} [Field K] {a b : K} (hd : discr a b ≠ 0) :

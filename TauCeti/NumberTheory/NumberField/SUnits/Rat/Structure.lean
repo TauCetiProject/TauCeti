@@ -91,7 +91,7 @@ theorem sUnits_rat_fg :
 private theorem intCast_mem_sUnits_rat (ε : ℤˣ) :
     Units.map (Int.castRingHom ℚ).toMonoidHom ε ∈
       Set.unit {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} ℚ := by
-  refine (mem_sUnits_rat_iff_forall_padicValRat_eq_zero (S := (S : Set ℕ))).2 fun p hp _ ↦ ?_
+  refine (mem_sUnits_rat_iff_forall_padicValRat_eq_zero (S := (S : Set ℕ))).2 fun p _ _ ↦ ?_
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
 
 private theorem natCast_mem_sUnits_rat {p : ℕ} (hp : p.Prime) (hpS : p ∈ S) :

@@ -245,18 +245,28 @@ variable [Fintype V] [DecidableRel G.Adj] [Fintype m] [DecidableEq m]
 
 /-- **Nonzero cyclic classes from a matrix representation of a subgraph.** Let `f` be a copy of a
 graph `H` in `G`, not necessarily induced, and let `β` be a family of matrices on `H` satisfying
-the signless relations. If a nonempty product of backtracks `c → a → c` at a vertex `c` of `H`
+the signless relations. If a product of backtracks `c → a → c` at a vertex `c` of `H`
 acts at `c` by a matrix of nonzero trace, then the corresponding product of backtracks of `G` at
 `f c` is an element of path degree `2 * l.length` of `Π⁺(G)` which does not lie in the commutator
 submodule `[Π⁺(G), Π⁺(G)]`: its class in the cyclic quotient is nonzero. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero
     (f : H.Copy G) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {c : W}
-    (l : List {a // H.Adj c a}) (hl : l ≠ [])
+    (l : List {a // H.Adj c a})
     (htr : trace (l.map fun a => β a.1 c * β c a.1).prod ≠ 0) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
+  -- The empty product is the vertex idempotent at `f c`, of trace `trace 1`.
+  rcases eq_or_ne l [] with rfl | hl
+  · refine ⟨_, signlessPreprojectiveMk_mem_grade k _ (vertexIdempotent_mem_grade_zero
+      (vertex G (f c))), fun hx => htr ?_⟩
+    have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
+      (signlessMatrixRepresentation k (f.extendByZero β)
+        (f.sum_extendByZero_mul_extendByZero β hβ)) hx
+    rw [signlessMatrixRepresentation_vertexIdempotent, trace_kronecker, trace_single_eq_same,
+      one_mul] at htrace
+    simpa using htrace
   -- The backtracks of `G` at `f c` along the image of the list.
   let l' : List {w // G.Adj (f c) w} :=
     l.map fun a : {a // H.Adj c a} => ⟨f a.1, f.toHom.map_adj a.2⟩
@@ -288,20 +298,20 @@ omit [DecidableRel H.Adj] in
 variable (k) in
 /-- **Nonzero cyclic classes from an integer matrix representation of a subgraph.** An integer
 matrix family on `H` which vanishes off the edges and satisfies the signless relations, together
-with a nonempty product of backtracks at a vertex `c` of `H` acting at `c` with trace one, gives
+with a product of backtracks at a vertex `c` of `H` acting at `c` with trace one, gives
 an element of path degree `2 * l.length` of `Π⁺(G)` outside `[Π⁺(G), Π⁺(G)]` along any copy of
 `H` in `G`, over every nontrivial commutative ring. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
     [Nontrivial k] (f : H.Copy G) (β : W → W → Matrix m m ℤ)
     (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0) (h : ∀ v, ∑ w, β w v * β v w = 0) {c : W}
-    (l : List {a // H.Adj c a}) (hl : l ≠ [])
+    (l : List {a // H.Adj c a})
     (htr : trace (l.map fun a => β a.1 c * β c a.1).prod = 1) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
   refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
     (fun i j => (Int.castRingHom k).mapMatrix (β i j))
-    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l hl ?_
+    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l ?_
   have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.1 c) *
       (Int.castRingHom k).mapMatrix (β c a.1)) =
       (l.map fun a => β a.1 c * β c a.1).map (Int.castRingHom k).mapMatrix := by

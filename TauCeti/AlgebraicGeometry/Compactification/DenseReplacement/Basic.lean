@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.CategoryTheory.Adjunction.Reflective
 public import TauCeti.AlgebraicGeometry.Compactification.BaseChange
-public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
+public import TauCeti.AlgebraicGeometry.Compactification.Closure
 
 /-!
 # Dense replacement of scheme compactifications
@@ -72,8 +72,7 @@ image of the interior, with the induced open immersion and the restricted proper
 -- maps usable for dependent morphism equations in importing modules.
 @[expose, implicit_reducible] def denseReplacement (C : Compactification f) :
     DenseCompactification f :=
-  ⟨ofHom C.j.toImage (C.j.imageι ≫ C.p) (by simp),
-    (denseCompactificationProperty_iff f _).mpr inferInstance⟩
+  DenseCompactification.ofImmersion C.j C.p C.obj.ι_π
 
 @[simp]
 theorem denseReplacement_Xbar (C : Compactification f) :

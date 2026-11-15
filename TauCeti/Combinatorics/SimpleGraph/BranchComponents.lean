@@ -138,7 +138,6 @@ theorem IsTree.exists_equiv_pathGraph_components [Fintype V] [DecidableEq V] [De
   have hdegree (v : ↥(ConnectedComponent.supp (e i))) : (e i).toSimpleGraph.degree v ≤ 2 :=
     le_trans (((e i).toSimpleGraph_hom.toCopy Subtype.val_injective).degree_le v) (hdeg v.val)
   rw [Nat.card_eq_fintype_card]
-  exact TauCeti.IsTree.nonempty_iso_pathGraph_of_degree_le_two
-    (hH.isTree_connectedComponent (e i)) hdegree
+  exact (hH.isTree_connectedComponent (e i)).nonempty_iso_pathGraph_of_degree_le_two hdegree
 
 end TauCeti

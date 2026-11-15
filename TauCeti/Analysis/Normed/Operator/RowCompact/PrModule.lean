@@ -57,6 +57,8 @@ row-compact idempotent `i ∘ e ∘ r` of the model space
   compactness.
 * `ContinuousLinearMap.IsPrCompact.comp_clm`, `ContinuousLinearMap.IsPrCompact.clm_comp`,
   `ContinuousLinearMap.isPrCompact_of_tendsto`: the closed operator ideal property.
+* `ContinuousLinearMap.IsPrCompact.aeval`: polynomials with zero constant coefficient preserve
+  row compactness.
 * `ContinuousLinearMap.IsPrCompact.tendsto_ringOpNorm_comp_indicatorCLM_comp_sub`: a row-compact
   map is the operator-norm limit of its truncations `rN ∘ π_S ∘ iN ∘ u` through any presentation
   of the target.
@@ -295,6 +297,14 @@ theorem IsPrCompact.clm_comp {u : M →L[R] N} (hu : u.IsPrCompact) (w : N →L[
   have h := hu.isRowCompact_comp (iP.comp w) rM
   rw [comp_assoc] at h
   exact isPrCompact_of_isRowCompact_comp hM hP h
+
+/-- A polynomial with zero constant coefficient preserves row compactness on modules with
+property (Pr), over ultrametric Tate scalars. -/
+theorem IsPrCompact.aeval [ContinuousConstSMul R M] {u : M →L[R] M} (hu : u.IsPrCompact)
+    {B : Polynomial R} (hB0 : B.coeff 0 = 0) : (Polynomial.aeval u B).IsPrCompact := by
+  obtain ⟨B', rfl⟩ := Polynomial.X_dvd_iff.2 hB0
+  rw [map_mul, Polynomial.aeval_X, mul_def]
+  exact hu.comp_clm _ hu.hasPr_source
 
 end Ideal
 

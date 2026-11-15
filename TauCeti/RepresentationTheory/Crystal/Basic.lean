@@ -39,8 +39,8 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.dual`: the dual crystal, exchanging `e` with `f`, `ε` with `φ` and
   negating the weight.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
-* `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
-  composition and duals.
+* `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals that are defined
+  everywhere (no element is sent to `0`), with identities, composition and duals.
 * `TauCeti.NormalCrystal.StrictIso`: strict isomorphisms of normal crystals, with inverses,
   composition and duals.
 * `TauCeti.NormalCrystal.transport`: the transport of a normal crystal along a bijection of the
@@ -172,24 +172,24 @@ theorem ε_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
     have := c.ε_of_e_eq_some hy
     rw [← d.ε_of_e_eq_some hdy, ih y (by omega)]
 
-/-- A weight-preserving map commuting with the raising operators preserves the lengths of
-lowering strings. -/
-theorem φ_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
-    (hwt : ∀ x, d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) (x : B) :
+/-- A map commuting with the raising operators preserves the lengths of lowering strings at every
+point where it preserves the weight. -/
+theorem φ_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'} (x : B)
+    (hwt : d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) :
     d.φ i (g x) = c.φ i x := by
   have hd := d.φ_sub_ε i (g x)
   have hc := c.φ_sub_ε i x
   rw [hwt, c.ε_apply_eq_of_e_map d hg] at hd
   omega
 
-/-- A weight-preserving map commuting with the raising operators commutes with the lowering
-operators. -/
-theorem f_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
-    (hwt : ∀ x, d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) (x : B) :
+/-- A map commuting with the raising operators commutes with the lowering operators at every
+point where it preserves the weight. -/
+theorem f_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'} (x : B)
+    (hwt : d.wt (g x) = c.wt x) (hg : ∀ x, d.e i (g x) = (c.e i x).map g) :
     d.f i (g x) = (c.f i x).map g := by
   cases h : c.f i x with
   | none =>
-    rw [Option.map_none, ← d.φ_eq_zero_iff, c.φ_apply_eq_of_e_map d hwt hg, c.φ_eq_zero_iff, h]
+    rw [Option.map_none, ← d.φ_eq_zero_iff, c.φ_apply_eq_of_e_map d x hwt hg, c.φ_eq_zero_iff, h]
   | some y =>
     rw [Option.map_some, d.f_eq_some_iff, hg, c.f_eq_some_iff.1 h, Option.map_some]
 
@@ -199,9 +199,9 @@ theorem ext {c d : NormalCrystal P b B} (hwt : c.wt = d.wt) (he : c.e = d.e) : c
   have he' (i : b.support) (x : B) : d.e i (id x) = (c.e i x).map id := by simp [he]
   have hwt' (x : B) : d.wt (id x) = c.wt x := by simp [hwt]
   have hε : c.ε = d.ε := funext₂ fun i x => (c.ε_apply_eq_of_e_map d (he' i) x).symm
-  have hφ : c.φ = d.φ := funext₂ fun i x => (c.φ_apply_eq_of_e_map d hwt' (he' i) x).symm
+  have hφ : c.φ = d.φ := funext₂ fun i x => (c.φ_apply_eq_of_e_map d x (hwt' x) (he' i)).symm
   have hf : c.f = d.f := funext₂ fun i x => by
-    simpa using (c.f_apply_eq_of_e_map d hwt' (he' i) x).symm
+    simpa using (c.f_apply_eq_of_e_map d x (hwt' x) (he' i)).symm
   cases c; cases d
   simp_all
 
@@ -381,7 +381,12 @@ end Strings
 /-- A **strict morphism** of normal crystals: a map of the underlying types preserving weights and
 commuting with the raising operators. It then also preserves the string lengths and commutes with
 the lowering operators (`TauCeti.NormalCrystal.StrictHom.ε_apply`,
-`TauCeti.NormalCrystal.StrictHom.φ_apply`, `TauCeti.NormalCrystal.StrictHom.f_apply`). -/
+`TauCeti.NormalCrystal.StrictHom.φ_apply`, `TauCeti.NormalCrystal.StrictHom.f_apply`).
+
+This is a total map `B → B'`. Kashiwara's strict morphisms are maps `B ⊔ {0} → B' ⊔ {0}` fixing `0`,
+which may also send elements, even whole connected components, to `0`; `StrictHom` is the case in
+which no element is sent to `0`. For isomorphisms (`TauCeti.NormalCrystal.StrictIso`) the two
+conventions agree. -/
 structure StrictHom (c : NormalCrystal P b B) (d : NormalCrystal P b B') where
   /-- The underlying map. -/
   toFun : B → B'
@@ -416,17 +421,20 @@ theorem wt_apply : d.wt (ψ x) = c.wt x := ψ.wt_toFun x
 @[simp]
 theorem e_apply : d.e i (ψ x) = (c.e i x).map ψ := ψ.e_toFun i x
 
+/-- A strict morphism preserves the string lengths `ε i`. -/
 @[simp]
 theorem ε_apply : d.ε i (ψ x) = c.ε i x :=
   c.ε_apply_eq_of_e_map d (ψ.e_apply i) x
 
+/-- A strict morphism preserves the string lengths `φ i`. -/
 @[simp]
 theorem φ_apply : d.φ i (ψ x) = c.φ i x :=
-  c.φ_apply_eq_of_e_map d ψ.wt_apply (ψ.e_apply i) x
+  c.φ_apply_eq_of_e_map d x (ψ.wt_apply x) (ψ.e_apply i)
 
+/-- A strict morphism commutes with the lowering operators. -/
 @[simp]
 theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ :=
-  c.f_apply_eq_of_e_map d ψ.wt_apply (ψ.e_apply i) x
+  c.f_apply_eq_of_e_map d x (ψ.wt_apply x) (ψ.e_apply i)
 
 @[simp]
 theorem eIter_apply (n : ℕ) : d.eIter i n (ψ x) = (c.eIter i n x).map ψ := by

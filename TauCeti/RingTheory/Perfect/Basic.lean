@@ -25,7 +25,7 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   of `x` is its `p ^ n`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
 * `TauCeti.isReduced_of_perfectRing`: a perfect ring of prime characteristic is reduced.
-* `TauCeti.mul_eq_zero_of_mul_pow_expChar_eq_zero`: `a * b ^ p = 0` implies `a * b = 0`.
+* `TauCeti.mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing`: `a * b ^ p = 0` implies `a * b = 0`.
 * `TauCeti.mul_iterateFrobeniusEquiv_symm_succ_eq_zero`: an element killing the `p ^ n`-th root
   of `x` also kills its `p ^ (n + 1)`-th root.
 * `TauCeti.frobeniusEquiv_symm_smul`: over a perfect ring of scalars, `p`-th roots are semilinear
@@ -72,15 +72,19 @@ theorem isReduced_of_perfectRing [hp : Fact p.Prime] : IsReduced R :=
     rw [map_zero, iterateFrobeniusEquiv_def,
       pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hn]⟩
 
-/-- In a perfect ring of exponential characteristic `p`, if `a` kills `b ^ p` then `a` kills
+omit [ExpChar R p] in
+/-- In a perfect ring for the exponent `p`, if `a` kills `b ^ p` then `a` kills
 `b`. -/
-theorem mul_eq_zero_of_mul_pow_expChar_eq_zero {a b : R} (h : a * b ^ p = 0) : a * b = 0 := by
-  -- In exponential characteristic `1` there is nothing to prove; otherwise `R` is reduced.
-  obtain hp | rfl := expChar_is_prime_or_one R p
-  · have := Fact.mk hp
-    have := isReduced_of_perfectRing R p
-    exact mul_eq_zero_of_mul_pow_eq_zero h
-  · simpa using h
+theorem mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing {a b : R} (h : a * b ^ p = 0) :
+    a * b = 0 := by
+  -- Frobenius is injective; for `p = 0` it is constant, so `R` is trivial.
+  have hinj := (PerfectRing.bijective_frobenius (R := R) (p := p)).1
+  cases p with
+  | zero => exact hinj (by simp : (a * b) ^ 0 = (0 : R) ^ 0)
+  | succ q =>
+    refine hinj (show (a * b) ^ (q + 1) = (0 : R) ^ (q + 1) by
+      rw [mul_pow, zero_pow q.succ_ne_zero,
+        show a ^ (q + 1) * b ^ (q + 1) = a ^ q * (a * b ^ (q + 1)) by ring, h, mul_zero])
 
 /-- If `c` kills the `p ^ n`-th root of `x`, then it kills the `p ^ (n + 1)`-th root of `x`. -/
 theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
@@ -88,7 +92,7 @@ theorem mul_iterateFrobeniusEquiv_symm_succ_eq_zero {x c : R} {n : ℕ}
     c * (iterateFrobeniusEquiv R p (n + 1)).symm x = 0 := by
   -- The `p ^ n`-th root is the `p`-th power of the `p ^ (n + 1)`-th root.
   rw [← iterateFrobeniusEquiv_symm_succ_pow x n] at h
-  exact mul_eq_zero_of_mul_pow_expChar_eq_zero h
+  exact mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing h
 
 /-- If `c` kills the `p ^ n`-th root of `x`, then it kills every positive power of the
 `p ^ (n + 1)`-th root of `x`. -/

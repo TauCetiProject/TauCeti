@@ -7,20 +7,22 @@ module
 
 public import Mathlib.GroupTheory.Abelianization.Finite
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # The character group of a finite group is the dual of its abelianization
 
 A linear character of a group `G`, a homomorphism `G →* Mˣ` into the units of a commutative
 monoid, kills every commutator, so it factors uniquely through the abelianization. Mathlib's
-`Abelianization.lift` is that bijection, and Mathlib's
+`Group.Abelianization.lift` is that bijection, and Mathlib's
 `CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity` counts the characters of a finite *commutative*
 group. Composing the two counts the characters of an arbitrary finite group:
 
-`Nat.card (G →* Mˣ) = Nat.card (Abelianization G)`.
+`Nat.card (G →* Mˣ) = Nat.card (Group.Abelianization G)`.
 
 The hypothesis is the one Mathlib's counting theorem carries, asked of the abelianization rather
-than of `G`: writing `n` for `Monoid.exponent (Abelianization G)`, `HasEnoughRootsOfUnity M n` asks
+than of `G`: writing `n` for `Monoid.exponent (Group.Abelianization G)`, `HasEnoughRootsOfUnity M n`
+asks
 that `M` contain a primitive `n`-th root of unity and that the `n`-th roots of unity in `M` form a
 cyclic group. An algebraically closed field of characteristic zero satisfies it for every `n`. It is
 a sufficient condition, not one shown here to be necessary, but some hypothesis on `M` is needed:
@@ -39,6 +41,9 @@ complete list of linear characters.
 * `CommGroup.card_monoidHom_not_le_ker`: for a finite commutative group `G` and a subgroup `H`,
   the characters of `G` that are nontrivial on `H` are `#G - #(G ⧸ H)` in number, since those
   trivial on `H` are the characters of `G ⧸ H` (Mathlib's `CommGroup.card_domRestrictHom_ker`).
+* `CommGroup.finsum_domRestrictHom`: for a subgroup `H` of a finite commutative group `G`, a
+  function of the restriction to `H`, summed over the characters of `G`, is `#(G ⧸ H)` times its
+  sum over the characters of `H`.
 
 ## References
 
@@ -51,13 +56,14 @@ public section
 namespace TauCeti
 
 /-- **The linear characters of a finite group are counted by its abelianization.** Every
-homomorphism `G →* Mˣ` factors uniquely through `Abelianization G`, and the characters of a finite
+homomorphism `G →* Mˣ` factors uniquely through `Group.Abelianization G`, and the characters of a
+finite
 commutative group with enough roots of unity in `M` are as many as its elements. -/
 theorem card_monoidHom_eq_card_abelianization (G M : Type*) [Group G] [Finite G] [CommMonoid M]
-    [HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization G))] :
-    Nat.card (G →* Mˣ) = Nat.card (Abelianization G) := by
-  rw [← CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity (Abelianization G) M]
-  exact Nat.card_congr Abelianization.lift
+    [HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization G))] :
+    Nat.card (G →* Mˣ) = Nat.card (Group.Abelianization G) := by
+  rw [← CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity (Group.Abelianization G) M]
+  exact Nat.card_congr Group.Abelianization.lift
 
 end TauCeti
 
@@ -78,5 +84,24 @@ theorem card_monoidHom_not_le_ker (H : Subgroup G) :
     exact Nat.card_congr (Equiv.subtypeEquivRight fun φ ↦ by simp [IsConcreteLE.le_iff])
   rw [← card_monoidHom_of_hasEnoughRootsOfUnity G M, ← hle, Nat.card_eq_fintype_card,
     Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_subtype_compl]
+
+/-- **Summing over characters through a restriction.** If `M` has enough roots of unity, every
+character of a subgroup `H` of a finite commutative group `G` extends to exactly `#(G ⧸ H)`
+characters of `G`. So a function `g` of the restriction to `H`, summed over the characters of `G`,
+is `#(G ⧸ H)` times its sum over the characters of `H`. -/
+theorem finsum_domRestrictHom {N : Type*} [AddCommMonoid N] (H : Subgroup G)
+    (g : (H →* Mˣ) → N) :
+    ∑ᶠ χ : G →* Mˣ, g (MonoidHom.domRestrictHom H Mˣ χ) =
+      Nat.card (G ⧸ H) • ∑ᶠ ψ : H →* Mˣ, g ψ := by
+  have : HasEnoughRootsOfUnity M (Monoid.exponent H) :=
+    HasEnoughRootsOfUnity.of_dvd M (Monoid.exponent_submonoid_dvd H.toSubmonoid)
+  have := Fintype.ofFinite (G →* Mˣ)
+  have := Fintype.ofFinite (H →* Mˣ)
+  -- Restriction is surjective, so each fibre is a coset of its kernel, of order `#(G ⧸ H)`.
+  rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, ← card_domRestrictHom_ker M H]
+  -- Apply the multiplicative fibre-counting formula in `Multiplicative N` and transport it back.
+  simpa only [Function.comp_apply, toAdd_prod, toAdd_pow, toAdd_ofAdd] using
+    congrArg Multiplicative.toAdd <| MonoidHom.prod_comp_of_surjective _
+      (MonoidHom.domRestrict_surjective M H) (Multiplicative.ofAdd ∘ g)
 
 end CommGroup

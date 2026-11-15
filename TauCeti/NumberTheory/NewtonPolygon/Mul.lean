@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.Minkowski.SlopeData
+public import TauCeti.Analysis.Convex.Sequence.Vertex
 public import TauCeti.NumberTheory.NewtonPolygon.Slopes
 import Mathlib.Tactic.LinearCombination
 
@@ -34,6 +35,12 @@ If such contacts exist at every slope, the Newton polygon of the product is the 
 of the Newton polygons of the factors; the polynomial identity is the case of finitely many
 finite heights.
 
+At a common slope where both power-series polygons have finite faces, the product has the
+finite face whose absolute endpoints are the sums of those of the factors. This local law
+requires no convergence hypothesis and does not assert a global product identity outside the
+face. Singleton faces are allowed and contribute width zero; endpoints include any initial
+order of vanishing.
+
 ## Main results
 
 * `PowerSeries.addValuation_coeff_mul_eq_add_of_isLeast` and
@@ -53,15 +60,19 @@ finite heights.
 * `PowerSeries.newtonPolygon_mul_of_forall_exists_mem_supportingFace`: if the coefficient
   heights of both factors touch supporting lines of every slope, the Newton polygon of the
   product is the Minkowski sum of the Newton polygons of the factors.
+* `PowerSeries.isFiniteFace_newtonPolygon_mul`: finite faces at a common slope add under
+  multiplication, with both absolute endpoints adding.
 * `Polynomial.newtonPolygon_mul`: the Newton polygon of a product of polynomials is the
   Minkowski sum of the Newton polygons of the factors. No hypothesis is needed: if either
   factor has the empty polygon, so does the product.
 * `Polynomial.supportingValue_addValuation_coeff_mul`: supporting values of coefficient heights
   add under multiplication of polynomials, at every slope.
-* `Polynomial.newtonSlopes_mul`: if both factors have nonempty Newton polygons, the finite
-  slope multiset of the product is the sum of the finite slope multisets of the factors.
-* `Polynomial.newtonSlopes_le_of_dvd`: if only zero has infinite valuation, the finite slopes of
-  a factor of a nonzero polynomial are among those of the polynomial, with multiplicity.
+* `Polynomial.newtonSlopes_mul`, `Polynomial.newtonSlopes_prod` and
+  `Polynomial.newtonSlopes_finprod`: when the factors have nonempty Newton polygons, the finite
+  slope multiset of a product of polynomials is the sum of the finite slope multisets of the
+  factors.
+* `Polynomial.newtonSlopes_le_of_dvd`: the finite slopes of a factor of a polynomial with a
+  nonempty Newton polygon are among those of the polynomial, with multiplicity.
 
 ## References
 
@@ -71,7 +82,7 @@ finite heights.
   MIT 18.787, fall 2007, §§1–2. Kedlaya plots coefficient points at negative indices; our
   convention uses positive indices, so the slopes have the opposite sign.
 * N. Koblitz, *p-adic Numbers, p-adic Analysis, and Zeta-Functions*, second edition,
-  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §3.
+  Graduate Texts in Mathematics 58, Springer, 1984, Chapter IV §§3–4.
 -/
 
 public section
@@ -256,9 +267,64 @@ theorem newtonPolygon_mul_of_forall_exists_mem_supportingFace
     (newtonPolygon_ne_top_of_mem_supportingFace v hd₀ hj₀),
     supportingValue_newtonPolygon_mul v hc hi hd hj]
 
+/-- Finite Newton faces at a common slope add under multiplication, with both absolute
+endpoints adding. This is a local product law: the polygons need not agree with their
+Minkowski sum away from this face. No convergence hypothesis is required. -/
+theorem isFiniteFace_newtonPolygon_mul {σ : ℝ} {l u l' u' : ℕ}
+    (hf : IsFiniteFace (f.newtonPolygon v) σ l u)
+    (hg : IsFiniteFace (g.newtonPolygon v) σ l' u') :
+    IsFiniteFace ((f * g).newtonPolygon v) σ (l + l') (u + u') := by
+  have hfa : IsAdmissible fun n => v (coeff n f) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top
+      (by simpa only [newtonPolygon_def] using hf.left_ne_top)
+  have hga : IsAdmissible fun n => v (coeff n g) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top
+      (by simpa only [newtonPolygon_def] using hg.left_ne_top)
+  have hF := isLowerConvexEnvelope_newtonPolygon hfa
+  have hG := isLowerConvexEnvelope_newtonPolygon hga
+  obtain ⟨c, hc, hfl, hfu⟩ :=
+    hF.exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace hf
+  obtain ⟨d, hd, hgl, hgu⟩ :=
+    hG.exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace hg
+  have hcF : IsSupportingLine (f.newtonPolygon v) σ c :=
+    isSupportingLine_iff_forall.mpr
+      (hF.greatest (isConvexSeq_affine c σ) (isSupportingLine_iff_forall.mp hc))
+  have hdG : IsSupportingLine (g.newtonPolygon v) σ d :=
+    isSupportingLine_iff_forall.mpr
+      (hG.greatest (isConvexSeq_affine d σ) (isSupportingLine_iff_forall.mp hd))
+  have hprod : IsAdmissible fun n => v (coeff n (f * g)) :=
+    (hc.minkowskiSum hd).isAdmissible.mono (minkowskiSum_le_addValuation_coeff_mul v)
+  have hle := minkowskiSum_newtonPolygon_le_newtonPolygon_mul v hfa hga
+  -- At either extreme split, the unique dominant coefficient makes the lower bound exact.
+  have hend (i j : ℕ)
+      (hi : i ∈ supportingFace (fun n => v (coeff n f)) σ c)
+      (hj : j ∈ supportingFace (fun n => v (coeff n g)) σ d)
+      (hij : v (coeff (i + j) (f * g)) = v (coeff i f) + v (coeff j g)) :
+      (f * g).newtonPolygon v (i + j) =
+        minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) (i + j) := by
+    have hiF := hF.supportingFace_subset hc hi
+    have hjG := hG.supportingFace_subset hd hj
+    have hfi : f.newtonPolygon v i = v (coeff i f) :=
+      (mem_supportingFace.mp hiF).trans (mem_supportingFace.mp hi).symm
+    have hgj : g.newtonPolygon v j = v (coeff j g) :=
+      (mem_supportingFace.mp hjG).trans (mem_supportingFace.mp hj).symm
+    apply le_antisymm ?_ (hle (i + j))
+    calc
+      (f * g).newtonPolygon v (i + j) ≤ v (coeff (i + j) (f * g)) :=
+        newtonPolygon_le hprod _
+      _ = f.newtonPolygon v i + g.newtonPolygon v j := by rw [hij, hfi, hgj]
+      _ = minkowskiSum (f.newtonPolygon v) (g.newtonPolygon v) (i + j) :=
+        (minkowskiSum_add_eq_of_mem_supportingFace hcF hiF hdG hjG).symm
+  exact (hf.minkowskiSum hg).of_le_of_eq_endpoints
+    (isConvexSeq_newtonPolygon (f * g) v) hle
+    (hend l l' hfl.1 hgl.1 (addValuation_coeff_mul_eq_add_of_isLeast v hc hfl hd hgl))
+    (hend u u' hfu.1 hgu.1 (addValuation_coeff_mul_eq_add_of_isGreatest v hc hfu hd hgu))
+
 end PowerSeries
 
 namespace Polynomial
+
+section Ring
 
 variable {R : Type*} [Ring R] (f g : R[X]) (v : AddValuation R (WithTop ℝ))
 
@@ -326,19 +392,59 @@ theorem newtonSlopes_mul (hf : f.newtonPolygon v ≠ ⊤) (hg : g.newtonPolygon 
     (by rw [FiniteSlopeData.heights_minkowskiSum, hd₁, hd₂, newtonPolygon_mul])
 
 variable {f g v} in
-/-- If only zero has infinite valuation, the finite slopes of a factor `g` of a nonzero
-polynomial `f` are among the finite slopes of `f`, counted with multiplicity. -/
-theorem newtonSlopes_le_of_dvd (hv : ∀ x, v x = ⊤ → x = 0) (hf : f ≠ 0) (hgf : g ∣ f) :
+/-- If `f` has a nonempty Newton polygon, the finite slopes of a factor `g` of `f` are among the
+finite slopes of `f`, counted with multiplicity. This holds for every nonzero `f` when only zero
+has infinite valuation, by `Polynomial.newtonPolygon_ne_top_of_ne_zero`. -/
+theorem newtonSlopes_le_of_dvd (hf : f.newtonPolygon v ≠ ⊤) (hgf : g ∣ f) :
     g.newtonSlopes v ≤ f.newtonSlopes v := by
   obtain ⟨h, rfl⟩ := hgf
-  have hg : g ≠ 0 := by
-    rintro rfl
-    exact hf (zero_mul h)
-  have hh : h ≠ 0 := by
-    rintro rfl
-    exact hf (mul_zero g)
-  rw [newtonSlopes_mul _ _ v (newtonPolygon_ne_top_of_ne_zero hv hg)
-    (newtonPolygon_ne_top_of_ne_zero hv hh)]
+  have hg : g.newtonPolygon v ≠ ⊤ := fun hg => hf (by rw [newtonPolygon_mul, hg, top_minkowskiSum])
+  have hh : h.newtonPolygon v ≠ ⊤ := fun hh => hf (by rw [newtonPolygon_mul, hh, minkowskiSum_top])
+  rw [newtonSlopes_mul _ _ v hg hh]
   exact Multiset.le_add_right _ _
+
+end Ring
+
+section CommRing
+
+variable {ι R : Type*} [CommRing R] (v : AddValuation R (WithTop ℝ))
+
+/-- A finite product of polynomials with nonempty Newton polygons has a nonempty Newton polygon. -/
+theorem newtonPolygon_ne_top_prod (s : Finset ι) (g : ι → R[X])
+    (hg : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤) : (∏ i ∈ s, g i).newtonPolygon v ≠ ⊤ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using monic_one.newtonPolygon_ne_top v
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, newtonPolygon_mul]
+    obtain ⟨m, hm⟩ := Function.ne_iff.mp (hg a (Finset.mem_insert_self a s))
+    obtain ⟨n, hn⟩ := Function.ne_iff.mp (ih fun i hi => hg i (Finset.mem_insert_of_mem hi))
+    intro htop
+    exact (minkowskiSum_ne_top_iff.mpr ⟨m, n, rfl, hm, hn⟩) (congrFun htop (m + n))
+
+/-- The finite slope multiset of a finite product of polynomials with nonempty Newton polygons is
+the sum of the finite slope multisets of the factors. -/
+theorem newtonSlopes_prod (s : Finset ι) (g : ι → R[X])
+    (hg : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤) :
+    (∏ i ∈ s, g i).newtonSlopes v = ∑ i ∈ s, (g i).newtonSlopes v := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using newtonSlopes_C v (1 : R)
+  | insert a s ha ih =>
+    have hs : ∀ i ∈ s, (g i).newtonPolygon v ≠ ⊤ := fun i hi => hg i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.sum_insert ha,
+      newtonSlopes_mul _ _ v (hg a (Finset.mem_insert_self a s))
+        (newtonPolygon_ne_top_prod v s g hs),
+      ih hs]
+
+/-- The finite slope multiset of a finitely supported product `∏ᶠ i, g i`, whose nontrivial
+factors have nonempty Newton polygons, is the sum of their finite slope multisets. -/
+theorem newtonSlopes_finprod (g : ι → R[X]) (hfin : (Function.mulSupport g).Finite)
+    (hg : ∀ i ∈ Function.mulSupport g, (g i).newtonPolygon v ≠ ⊤) :
+    (∏ᶠ i, g i).newtonSlopes v = ∑ i ∈ hfin.toFinset, (g i).newtonSlopes v := by
+  rw [finprod_eq_prod g hfin]
+  exact newtonSlopes_prod v hfin.toFinset g fun i hi => hg i (hfin.mem_toFinset.mp hi)
+
+end CommRing
 
 end Polynomial

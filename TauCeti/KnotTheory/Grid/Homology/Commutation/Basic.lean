@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Residual.Assembly
 public import TauCeti.KnotTheory.Grid.Commutation.Grading.Map
-public import TauCeti.KnotTheory.Grid.Homology.Bigraded
+public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic
 public import TauCeti.KnotTheory.Grid.Homology.Alexander
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 

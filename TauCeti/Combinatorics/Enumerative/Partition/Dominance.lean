@@ -199,4 +199,47 @@ theorem dominates_indiscrete_iff {n : ℕ} {μ : n.Partition} :
     μ.Dominates (indiscrete n) ↔ μ = indiscrete n :=
   ⟨fun h => h.antisymm (indiscrete_dominates μ), by rintro rfl; exact dominates_refl _⟩
 
+/-- The partition `(n - 1, 1)` dominates exactly the partitions other than `(n)`.
+Thus it is the unique coatom of the dominance order for `n ≥ 2`. -/
+theorem dominates_iff_ne_indiscrete_of_parts_eq_pair {n : ℕ} {μ ν : n.Partition}
+    (hμ : μ.parts = {n - 1, 1}) : μ.Dominates ν ↔ ν ≠ indiscrete n := by
+  have hn : 2 ≤ n := by
+    have := μ.parts_pos (show n - 1 ∈ μ.parts by simp [hμ])
+    omega
+  have hsort : μ.parts.sort (· ≥ ·) = [n - 1, 1] := by
+    rw [hμ, Multiset.insert_eq_cons,
+      Multiset.sort_cons _ _ _ (by simp; omega), Multiset.sort_singleton]
+  have hne : μ ≠ indiscrete n := by
+    intro h
+    have hcard := congrArg Multiset.card (hμ.symm.trans (congrArg parts h))
+    simp [indiscrete_parts (by omega : n ≠ 0)] at hcard
+  constructor
+  · intro h hν
+    exact hne (dominates_indiscrete_iff.mp (hν ▸ h))
+  · intro hν
+    rw [dominates_iff]
+    intro k
+    have hsum := sum_sort_parts ν
+    have hle := (List.take_sublist k (ν.parts.sort (· ≥ ·))).sum_le_sum
+      (fun _ _ => Nat.zero_le _)
+    rw [hsort]
+    rcases k with _ | k
+    · simp
+    rcases k with _ | k
+    · cases hs : ν.parts.sort (· ≥ ·) with
+      | nil => simp [hs] at hsum; omega
+      | cons a l =>
+        cases l with
+        | nil =>
+          have ha : a = n := by simpa [hs] using hsum
+          apply (hν (sort_parts_injective (by
+            simp [hs, ha, indiscrete_parts (by omega : n ≠ 0)]))).elim
+        | cons b l =>
+          have hbmem : b ∈ ν.parts.sort (· ≥ ·) := by rw [hs]; simp
+          have hb : 0 < b := ν.parts_pos ((Multiset.mem_sort _).mp hbmem)
+          simp only [hs, List.sum_cons] at hsum
+          simp only [List.take_succ_cons, List.take_zero, List.sum_cons, List.sum_nil]
+          omega
+    · simpa [Nat.sub_add_cancel (by omega : 1 ≤ n)] using hle.trans_eq hsum
+
 end Nat.Partition

@@ -15,8 +15,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestrict
 
 Let `N` be an open normal subgroup of `G`, let `p` be prime to `[G : N]`, and let `A` be a
 finite `ZMod p`-module with the discrete topology on which `N` acts trivially. This file
-constructs the canonical comparison (available for any topological group acting trivially on a
-discrete `A`)
+constructs the canonical comparison (available for any `p`, any topological group acting
+trivially on `A`, and any finite free discrete `ZMod p`-module `A`)
 
 ```text
 H¹(N, ZMod p) ⊗ A ≃ H¹(N, A).
@@ -75,11 +75,12 @@ variable {p : ℕ} {H : Type uG} [Group H] [TopologicalSpace H]
   [IsTopologicalAddGroup A] [DistribMulAction H A] [ContinuousSMul H A]
   [DiscreteTopology A]
 
-/-- **The first-cohomology tensor comparison.** If `H` acts trivially on a finite
-`ZMod p`-module `A` with the discrete topology, evaluation identifies `H¹(H, ZMod p) ⊗ A` with
-`H¹(H, A)`. The map is canonical even though a basis is used to prove its bijectivity. -/
+/-- **The first-cohomology tensor comparison.** If `H` acts trivially on a finite free
+`ZMod p`-module `A` with the discrete topology (for prime `p`: any finite-dimensional one),
+evaluation identifies `H¹(H, ZMod p) ⊗ A` with `H¹(H, A)`. The map is canonical even though a
+basis is used to prove its bijectivity. -/
 noncomputable def h1TensorEquiv
-    (htriv : ∀ (h : H) (a : A), h • a = a) [Fact p.Prime]
+    (htriv : ∀ (h : H) (a : A), h • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A] :
     H1 H (ZMod p) ⊗[ZMod p] A ≃ₗ[ZMod p] H1 H A :=
   TensorProduct.congr
@@ -91,7 +92,7 @@ noncomputable def h1TensorEquiv
 /-- On a pure tensor, `h1TensorEquiv` is pointwise evaluation followed by scalar multiplication. -/
 @[simp]
 theorem h1TensorEquiv_tmul_apply
-    (htriv : ∀ (h : H) (a : A), h • a = a) [Fact p.Prime]
+    (htriv : ∀ (h : H) (a : A), h • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A] (x : H1 H (ZMod p)) (a : A) (h : H) :
     Additive.toMul (H1EquivOfSmulEqSelf htriv (h1TensorEquiv htriv (x ⊗ₜ a))) h =
       Multiplicative.ofAdd
@@ -151,7 +152,7 @@ theorem h1TensorConj_tmul (g : G) (x : H1 N (ZMod p)) (a : A) :
 
 /-- Equivariance of `h1TensorEquiv` on pure tensors. -/
 theorem h1TensorEquiv_conj_tmul
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A] (g : G) (x : H1 N (ZMod p)) (a : A) :
     h1TensorEquiv hN (explicitConj1 N g x ⊗ₜ (g • a)) =
       explicitConj1 N g (h1TensorEquiv hN (x ⊗ₜ a)) := by
@@ -185,7 +186,7 @@ theorem h1TensorEquiv_conj_tmul
 /-- **The first-cohomology tensor comparison is equivariant** for the diagonal conjugation and
 coefficient action. -/
 theorem h1TensorEquiv_conj
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A] (g : G) (z : H1 N (ZMod p) ⊗[ZMod p] A) :
     h1TensorEquiv hN (h1TensorConj g z) = explicitConj1 N g (h1TensorEquiv hN z) := by
   induction z using TensorProduct.inductionOn with
@@ -212,7 +213,7 @@ theorem mem_h1TensorConjInvariants_iff {z : H1 N (ZMod p) ⊗[ZMod p] A} :
 
 /-- Equivariance restricts `h1TensorEquiv` to the invariant subspaces. -/
 noncomputable def h1TensorInvariantsEquiv
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A] :
     h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A) ≃ₗ[ZMod p]
       AddSubgroup.toZModSubmodule p (H1ConjInvariants G A N) where
@@ -232,7 +233,7 @@ noncomputable def h1TensorInvariantsEquiv
 /-- The forward map of `h1TensorInvariantsEquiv` is `h1TensorEquiv` on underlying elements. -/
 @[simp]
 theorem h1TensorInvariantsEquiv_apply
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A]
     (z : h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A)) :
     (h1TensorInvariantsEquiv hN z : H1 N A) =
@@ -244,7 +245,7 @@ theorem h1TensorInvariantsEquiv_apply
 elements. -/
 @[simp]
 theorem h1TensorInvariantsEquiv_symm_apply
-    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
+    (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Module.Free (ZMod p) A]
     [Module.Finite (ZMod p) A]
     (x : AddSubgroup.toZModSubmodule p (H1ConjInvariants G A N)) :
     ((h1TensorInvariantsEquiv hN).symm x : H1 N (ZMod p) ⊗[ZMod p] A) =
@@ -255,10 +256,10 @@ theorem h1TensorInvariantsEquiv_symm_apply
 /-- **Coprime descent followed by the tensor comparison.** -/
 noncomputable def h1CoprimeTensorInvariantsEquiv
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) :
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p) :
     H1 G A ≃ₗ[ZMod p]
       h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A) :=
+  haveI := N.finiteIndex_of_index_coprime (Fact.out : p.Prime).ne_one hcop
   h1CoprimeDescentEquiv hopen hcop ≪≫ₗ (h1TensorInvariantsEquiv hN).symm
 
 /-- The forward map of `h1CoprimeTensorInvariantsEquiv` is restriction to `N` followed by the
@@ -266,10 +267,11 @@ inverse tensor comparison. -/
 @[simp]
 theorem h1CoprimeTensorInvariantsEquiv_apply
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) (x : H1 G A) :
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p)
+    (x : H1 G A) :
     (h1CoprimeTensorInvariantsEquiv hN hopen hcop x : H1 N (ZMod p) ⊗[ZMod p] A) =
       (h1TensorEquiv hN).symm (explicitResConj1 G A N x : H1 N A) := by
+  have := N.finiteIndex_of_index_coprime (Fact.out : p.Prime).ne_one hcop
   rw [h1CoprimeTensorInvariantsEquiv, LinearEquiv.trans_apply,
     h1TensorInvariantsEquiv_symm_apply, h1CoprimeDescentEquiv_apply]
 
@@ -278,8 +280,7 @@ index prime to `p` acting trivially on `A`, the dimension of `H¹(G, A)` is the 
 invariants in `H¹(N, ZMod p) ⊗ A`. -/
 theorem finrank_H1_eq_finrank_tensorInvariants
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) :
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p) :
     Module.finrank (ZMod p) (H1 G A) =
       Module.finrank (ZMod p)
         (h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A)) :=
@@ -371,8 +372,8 @@ consumed by `finrankTensorInvariantsK0`: the right side is the invariant dimensi
 of the quotient representation `H¹(N, ZMod p)` with `A`. -/
 theorem finrank_H1_eq_finrank_representationInvariants
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) (ρ : Representation (ZMod p) (G ⧸ N) A)
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p)
+    (ρ : Representation (ZMod p) (G ⧸ N) A)
     (hρ : ∀ (g : G) (a : A), ρ (g : G ⧸ N) a = g • a) :
     Module.finrank (ZMod p) (H1 G A) =
       Module.finrank (ZMod p) (Representation.invariants

@@ -35,20 +35,18 @@ They include zero factors and empty products, and use Mathlib's `Polynomial.supN
 
 public section
 
-open Polynomial
-
-namespace TauCeti
+namespace Polynomial
 
 /-- A norm-preserving ring homomorphism preserves the coefficient sup norm. -/
 @[simp]
-theorem _root_.Polynomial.supNorm_map {R S : Type*} [SeminormedRing R] [SeminormedRing S]
+theorem supNorm_map {R S : Type*} [SeminormedRing R] [SeminormedRing S]
     (p : R[X]) (f : R →+* S) [RingHomIsometric f] :
     (p.map f).supNorm = p.supNorm := by
   simp only [supNorm_eq_iSup, coeff_map, RingHomIsometric.norm_map]
 
 /-- Reversing a polynomial preserves its coefficient sup norm. -/
 @[simp]
-theorem _root_.Polynomial.supNorm_reverse {R : Type*} [SeminormedRing R] (p : R[X]) :
+theorem supNorm_reverse {R : Type*} [SeminormedRing R] (p : R[X]) :
     p.reverse.supNorm = p.supNorm := by
   apply le_antisymm
   · obtain ⟨i, hi⟩ := p.reverse.exists_eq_supNorm
@@ -59,7 +57,7 @@ theorem _root_.Polynomial.supNorm_reverse {R : Type*} [SeminormedRing R] (p : R[
     simpa only [coeff_reverse, revAt_invol] using p.reverse.le_supNorm (revAt p.natDegree i)
 
 /-- A coefficient is bounded by its binomial weight times the coefficient sup norm. -/
-theorem _root_.Polynomial.norm_coeff_le_choose_mul_supNorm {A : Type*} [SeminormedRing A]
+theorem norm_coeff_le_choose_mul_supNorm {A : Type*} [SeminormedRing A]
     (p : A[X]) (k : ℕ) :
     ‖p.coeff k‖ ≤ (p.natDegree.choose k : ℝ) * p.supNorm := by
   by_cases hk : k ≤ p.natDegree
@@ -70,7 +68,7 @@ theorem _root_.Polynomial.norm_coeff_le_choose_mul_supNorm {A : Type*} [Seminorm
 
 /-- Each coefficient of a finite product is bounded by a binomial coefficient of the
 sum of the degrees times the product of the coefficient sup norms. -/
-theorem _root_.Polynomial.norm_coeff_prod_le_choose_mul_prod_supNorm
+theorem norm_coeff_prod_le_choose_mul_prod_supNorm
     {A ι : Type*} [SeminormedCommRing A] [NormOneClass A]
     (s : Finset ι) (f : ι → A[X]) (k : ℕ) :
     ‖(∏ i ∈ s, f i).coeff k‖ ≤
@@ -94,7 +92,7 @@ theorem _root_.Polynomial.norm_coeff_prod_le_choose_mul_prod_supNorm
 
 /-- The coefficient sup norm of a finite product is at most the largest binomial
 coefficient of the sum of the degrees times the product of the sup norms. -/
-theorem _root_.Polynomial.supNorm_prod_le_choose_mul_prod_supNorm
+theorem supNorm_prod_le_choose_mul_prod_supNorm
     {A ι : Type*} [SeminormedCommRing A] [NormOneClass A]
     (s : Finset ι) (f : ι → A[X]) :
     (∏ i ∈ s, f i).supNorm ≤
@@ -109,7 +107,7 @@ theorem _root_.Polynomial.supNorm_prod_le_choose_mul_prod_supNorm
 /-- The coefficient sup norm of a product of polynomials over a seminormed
 commutative domain is at most `2^d` times the product of the coefficient sup norms,
 where `d` is the degree of the product. -/
-theorem _root_.Polynomial.supNorm_prod_le_two_pow_mul_prod_supNorm
+theorem supNorm_prod_le_two_pow_mul_prod_supNorm
     {A ι : Type*} [SeminormedCommRing A] [NormOneClass A] [IsDomain A]
     (s : Finset ι) (f : ι → A[X]) :
     (∏ i ∈ s, f i).supNorm ≤
@@ -131,7 +129,7 @@ theorem _root_.Polynomial.supNorm_prod_le_two_pow_mul_prod_supNorm
 /-- Multiplication by a constant scales the coefficient sup norm when the
 coefficient norm is multiplicative. -/
 @[simp]
-theorem _root_.Polynomial.supNorm_mul_C {A : Type*} [SeminormedRing A] [NormMulClass A]
+theorem supNorm_mul_C {A : Type*} [SeminormedRing A] [NormMulClass A]
     (p : A[X]) (a : A) : (p * C a).supNorm = p.supNorm * ‖a‖ := by
   apply le_antisymm
   · obtain ⟨i, hi⟩ := (p * C a).exists_eq_supNorm
@@ -140,4 +138,4 @@ theorem _root_.Polynomial.supNorm_mul_C {A : Type*} [SeminormedRing A] [NormMulC
   · obtain ⟨i, hi⟩ := p.exists_eq_supNorm
     simpa only [coeff_mul_C, norm_mul, ← hi] using (p * C a).le_supNorm i
 
-end TauCeti
+end Polynomial

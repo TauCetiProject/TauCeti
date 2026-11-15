@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.NumberTheory.LFunctions.Data.Series
-public import TauCeti.NumberTheory.LFunctions.Data.Comparison
+public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
@@ -21,11 +21,12 @@ completed function is Mathlib's `completedRiemannZeta`, and its polar divisor co
 simple poles at `0` and `1`.
 
 This file defines that card, `TauCeti.LFunctions.riemannZetaData`, shows that it is its own dual,
-and proves that it satisfies `HasDirichletAgreement`, `HasMeromorphicContinuation` and
-`HasFunctionalEquation`. The analytic input is the meromorphy and the simple poles of
-`completedRiemannZeta` (`TauCeti.NumberTheory.LSeries.CompletedRiemannZeta`) and, from Mathlib,
-the functional equation `completedRiemannZeta_one_sub`, the reflection symmetry
-`completedRiemannZeta_conj`, and the Dirichlet series
+and proves that it satisfies `HasDirichletAgreement`, `HasMeromorphicContinuation`,
+`HasFunctionalEquation` and `HasAverageCoefficientGrowth`. The analytic input is the meromorphy
+and the simple poles of `completedRiemannZeta`
+(`TauCeti.NumberTheory.LSeries.CompletedRiemannZeta`) and, from Mathlib, the functional equation
+`completedRiemannZeta_one_sub`, the reflection symmetry `completedRiemannZeta_conj`,
+and the Dirichlet series
 `ArithmeticFunction.LSeries_zeta_eq_riemannZeta`.
 
 ## Main results
@@ -86,6 +87,12 @@ theorem riemannZetaData_degree : riemannZetaData.degree = 1 := by
 @[simp]
 theorem riemannZetaData_gammaFactor (s : ℂ) : riemannZetaData.gammaFactor s = Gammaℝ s := by
   simp [AnalyticLFunctionData.gammaFactor_def]
+
+/-- The Riemann zeta coefficients satisfy the average absolute growth bound. -/
+theorem riemannZetaData_hasAverageCoefficientGrowth :
+    riemannZetaData.HasAverageCoefficientGrowth := by
+  apply AnalyticLFunctionData.hasAverageCoefficientGrowth_of_norm_coeff_le
+  exact ⟨1, fun n hn ↦ by simp [hn]⟩
 
 /-- The Riemann zeta card is its own dual. -/
 @[simp]

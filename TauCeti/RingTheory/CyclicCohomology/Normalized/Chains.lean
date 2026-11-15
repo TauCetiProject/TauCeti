@@ -24,8 +24,9 @@ transposes are exactly the existing normalized cochain operators, so the cochain
 give `b² = B² = bB + Bb = 0` on chains. On a tensor, `B` is the signed sum of cyclic
 rotations with an initial unit. These are the operators used for periodic Chern chains.
 
-This file uses the quotient-by-degeneracies model; it does not yet identify it with the
-tensor product having factors `A / R1` or compare its homology with the full complex.
+This file uses the quotient-by-degeneracies model. Its identification with the tensor product
+having factors `A / R1` is in `Normalized.TensorCoordinates`. Comparison of its homology with
+the full complex is not established here.
 
 ## References
 
@@ -73,7 +74,7 @@ namespace normalizedHochschildChains
 
 /-- The universal normalized multilinear tensor. -/
 def tensor (n : ℕ) :
-    MultilinearMap R (fun _ : Fin (n + 1) ↦ A) (normalizedHochschildChains R A n) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) (normalizedHochschildChains R A n) :=
   (degenerateHochschildChains R A n).mkQ.compMultilinearMap (tprod R)
 
 /-- A tensor with a noninitial unit is zero in normalized chains. -/

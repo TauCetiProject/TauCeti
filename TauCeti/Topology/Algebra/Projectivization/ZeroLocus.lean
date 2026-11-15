@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
 public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 public import TauCeti.Topology.Algebra.Projectivization
@@ -29,6 +29,10 @@ such a family and a point of its zero locus, so that its fibre over `c` is the z
 equations `c i`. It is closed in the product of the coefficient space with projective space.
 Since projective space is compact, the projection of the incidence variety to the coefficient
 space is a proper map; in particular it maps closed subsets to closed subsets.
+
+For a fixed family of homogeneous equations, the points of projective space at which the
+cone Jacobian is surjective form an open set, by lower semicontinuity of the rank, so the points of
+the zero locus where the Jacobian test fails form a closed set.
 
 The locus `complexProjectiveBadRankLocus N d` of incidence points where the cone Jacobian of
 the equations does not have full rank is closed as well, by lower semicontinuity of the rank.
@@ -56,6 +60,8 @@ affine zero locus of the dehomogenized equations.
 * `TauCeti.isClosed_complexProjectiveIncidence`: the incidence variety is closed.
 * `TauCeti.isProperMap_complexProjectiveIncidence_fst`: its projection to the coefficient space
   is proper.
+* `TauCeti.isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep`: the points at which the cone
+  Jacobian of a fixed family is surjective form an open set.
 * `TauCeti.isClosed_complexProjectiveBadRankLocus`: the bad-rank locus is closed.
 * `TauCeti.isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt`: the coefficients whose cone
   Jacobian has full rank at every nonzero common zero form an open set.
@@ -159,6 +165,26 @@ theorem isProperMap_complexProjectiveIncidence_fst (d : ι → ℕ) :
     IsProperMap fun x : complexProjectiveIncidence N d ↦ x.1.1 :=
   isProperMap_fst_of_compactSpace.restrict (isClosed_complexProjectiveIncidence d)
 
+/-! ### Full rank at a point -/
+
+/-- **Full rank is an open condition on the point.** For a family of homogeneous
+equations, the points of projective space at which the cone Jacobian is surjective form an open
+set. In particular, the points of the zero locus where the cone Jacobian is not surjective form a
+closed set. -/
+theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep
+    {p : ι → MvPolynomial (Fin N) ℂ} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) :
+    IsOpen {L : ℙ ℂ (Fin N → ℂ) | (jacobiMatrixAt p L.rep).mulVec.Surjective} := by
+  rw [← Projectivization.isQuotientMap_mk'.isOpen_preimage]
+  have hJ : Continuous fun v : {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt p v.1 :=
+    continuous_matrix fun i j ↦ by
+      simpa only [jacobiMatrixAt_apply, Function.comp_def] using
+        (continuous_eval _).comp continuous_subtype_val
+  convert Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ using 1
+  ext v
+  simp only [Set.mem_preimage, Projectivization.mk'_eq_mk, Set.mem_ofPred_eq]
+  exact mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk hp (Projectivization.rep_ne_zero _) v.2
+    (Projectivization.mk_rep _)
+
 /-! ### The bad-rank locus -/
 
 variable (N) in
@@ -187,7 +213,7 @@ theorem complexProjectiveBadRankLocus_subset (d : ι → ℕ) :
 /-- A pair `(c, [v])` lies in the bad-rank locus exactly when every equation `c i` vanishes at
 `v` and the cone Jacobian of the equations at `v` is not surjective, for any representative
 `v`. -/
-theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
+theorem mk_mem_complexProjectiveBadRankLocus_iff
     (c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) (v : Fin N → ℂ) (hv : v ≠ 0) :
     (c, Projectivization.mk ℂ v hv) ∈ complexProjectiveBadRankLocus N d ↔
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) ∧
@@ -199,7 +225,7 @@ theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
 
 /-- The bad-rank locus is closed: the cone Jacobian depends continuously on the coefficients and
 the point, and full rank is an open condition. -/
-theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
+theorem isClosed_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (complexProjectiveBadRankLocus N d) := by
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
@@ -216,14 +242,14 @@ theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
     Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_compl_iff]
 
 /-- The projection of the bad-rank locus to the coefficient space is closed. -/
-theorem isClosed_image_fst_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
+theorem isClosed_image_fst_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (Prod.fst '' complexProjectiveBadRankLocus N d) :=
   isClosedMap_fst_of_compactSpace _ (isClosed_complexProjectiveBadRankLocus d)
 
 /-- **Full rank is an open condition on the equations.** The families `c` of homogeneous
 equations of degrees `d` whose cone Jacobian is surjective at every nonzero common zero form an
 open subset of the coefficient space. -/
-theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d : ι → ℕ) :
+theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt (d : ι → ℕ) :
     IsOpen {c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i) | ∀ v : Fin N → ℂ, v ≠ 0 →
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) →
         (jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective} := by
@@ -268,9 +294,8 @@ noncomputable def complexProjectiveZeroLocusAffineOpenHomeomorph
     (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1)) :
     ↥(complexProjectiveZeroLocus p ∩ Projectivization.affineOpen i) ≃ₜ
       affineZeroLocus fun k ↦ dehomogenize i (p k) :=
-  (Projectivization.affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource
-    (by simp)
-    (by simpa using image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
+  Projectivization.interAffineOpenHomeomorph
+    (image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
 
 /-- The homeomorphism `TauCeti.complexProjectiveZeroLocusAffineOpenHomeomorph` is the affine
 chart. -/

@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import TauCeti.Analysis.Complex.AtInfinity
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Logic.Function.Update
 
 /-!
 # Topology of the upper half-plane
@@ -31,7 +31,10 @@ half-plane, and so transfers limits at infinity in it to limits at `0`.  More ge
 continuous on the closed upper half-plane with a limit at infinity, precomposed with this map and
 given that limit at `0`, stays continuous there, and now tends at infinity to its value at `c`. If
 the function is injective away from its zeros, so is the new one, provided the value at `0` is not
-a nonzero value of the old one.
+a nonzero value of the old one. Likewise, for a function `f` continuous on the closed upper
+half-plane and tending to infinity there, the map `w ↦ b / (f (-w⁻¹) - c)` extended by `0` at the
+origin is continuous, and, for `b ≠ 0`, injective when `f` is, on a half-ball where
+`f (-w⁻¹) ≠ c` at nonzero `w`.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
@@ -40,8 +43,7 @@ A closed rectangle `[a, b] × [c, d]` with `0 < c` lies in `ℍ` and is compact 
 
 The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
 preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
-closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`; transported by the
-`PSL(2, ℝ)`-action, this identifies the boundary of a half-plane bounded by a geodesic line.
+closed half-plane `{z | a ≤ z.re}`, and likewise for `{z | z.re < a}`.
 
 Since `w ↦ re w + exp (im w) i` is a continuous bijection from `ℂ` onto `ℍ`, the complement of a
 countable subset of `ℍ` is path connected and dense, as it is in the plane. Removing countably
@@ -56,14 +58,16 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet`.
 * `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
-* `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
+* `TauCeti.notMem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
-* `TauCeti.tendsto_comp_neg_inv_cobounded`.
+* `TauCeti.tendsto_comp_neg_inv_nhdsWithin_zero`, `TauCeti.continuousOn_comp_neg_inv`.
 * `TauCeti.continuousOn_update_comp_const_sub_inv`,
   `TauCeti.tendsto_update_comp_const_sub_inv_cobounded`,
   `TauCeti.insert_image_update_comp_const_sub_inv`,
   `TauCeti.injOn_update_comp_const_sub_inv`: moving infinity to a real point.
+* `TauCeti.continuousOn_update_div_sub_neg_inv`, `TauCeti.injOn_update_div_sub_neg_inv`: the
+  reciprocal `b / (f (-w⁻¹) - c)`, extended by `0` at the origin.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
@@ -86,8 +90,9 @@ open Bornology Complex Filter Metric Set Topology UpperHalfPlane
 namespace Real
 
 /-- Every real point is in the closure of the open upper half-plane, so limits along the
-half-plane at a real point are well posed. -/
-theorem nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
+half-plane at a real point are well posed. An instance, so that `tendsto_nhds_unique` and its
+relatives apply along the half-plane at a real point directly. -/
+instance nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
     (𝓝[upperHalfPlaneSet] ((x : ℂ))).NeBot :=
   mem_closure_iff_nhdsWithin_neBot.mp (by simp [upperHalfPlaneSet])
 
@@ -96,22 +101,20 @@ end Real
 namespace TauCeti
 
 /-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
-is continuous at `x` and maps the upper half-plane into the disc, on whose closure `G` is
-continuous. -/
-theorem mem_closedBall_and_eq_of_tendsto {G h f : ℂ → ℂ} {x : ℝ} {w : ℂ}
-    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousAt h (x : ℂ))
-    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ ball (0 : ℂ) 1)
+is continuous within the half-plane at `x` and maps the upper half-plane into the closed disc, on
+which `G` is continuous. -/
+theorem mem_closedBall_and_eq_of_tendsto {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {G f : ℂ → Y} {h : ℂ → ℂ} {x : ℝ} {w : Y}
+    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousWithinAt h upperHalfPlaneSet (x : ℂ))
+    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ closedBall (0 : ℂ) 1)
     (hf : ∀ z ∈ upperHalfPlaneSet, f z = G (h z))
     (hfw : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
     h x ∈ closedBall (0 : ℂ) 1 ∧ G (h x) = w := by
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hev : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), h z ∈ closedBall (0 : ℂ) 1 :=
-    eventually_nhdsWithin_of_forall fun z hz => ball_subset_closedBall (hmaps z hz)
-  have ht : Tendsto h (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (h x)) :=
-    hh.tendsto.mono_left nhdsWithin_le_nhds
-  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto ht hev
+    eventually_nhdsWithin_of_forall hmaps
+  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto hh.tendsto hev
   refine ⟨hmem, tendsto_nhds_unique ?_ hfw⟩
-  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨ht, hev⟩)).congr'
+  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨hh.tendsto, hev⟩)).congr'
     (eventually_nhdsWithin_of_forall fun z hz => (hf z hz).symm)
 
 /-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
@@ -130,10 +133,11 @@ instance cobounded_inf_principal_upperHalfPlaneSet_neBot :
   simp only [Set.mem_preimage, upperHalfPlaneSet, Set.mem_ofPred_eq]
   simpa using ht
 
-/-- For a function conjugation-symmetric near infinity and continuous at all sufficiently distant
-real points, decay along the upper half-plane implies decay along the whole plane. -/
+/-- For a function conjugation-symmetric near infinity and continuous within the upper half-plane
+at all sufficiently distant real points, decay along the upper half-plane implies decay along the
+whole plane. -/
 theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
-    (hcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hlim : Tendsto φ (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 0)) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
@@ -152,7 +156,7 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
         rw [← hzre]
         exact Real.nhdsWithin_upperHalfPlaneSet_neBot _
       apply le_of_tendsto (x := 𝓝[upperHalfPlaneSet] z)
-        (((hR hzR).1 hreal.symm).norm.tendsto.mono_left nhdsWithin_le_nhds)
+        (((hR hzR).1 hreal.symm).norm.tendsto)
       filter_upwards [nhdsWithin_le_nhds
         (Metric.isClosed_closedBall.isOpen_compl.mem_nhds hzR), self_mem_nhdsWithin] with w hw hwim
       exact (by simpa using (hR hw).2 hwim : ‖φ w‖ < ε / 2).le
@@ -167,11 +171,12 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
     simpa only [hzconj, norm_conj] using h
 
 /-- A conjugation-symmetric continuation agreeing with `ψ` above the real axis tends to zero
-at infinity if `z * ψ z` has a finite limit there within the upper half-plane. -/
+at infinity if `z * ψ z` has a finite limit there within the upper half-plane. The continuation
+`φ` must also be continuous within the upper half-plane at all sufficiently distant real points. -/
 theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
     {φ ψ : ℂ → ℂ} {c : ℂ}
     (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
-    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφ : EqOn φ ψ upperHalfPlaneSet) : Tendsto φ (cobounded ℂ) (𝓝 0) := by
   apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
@@ -191,7 +196,7 @@ theorem mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
 
 /-- An injection on the closed upper half-plane cannot send a real point into the image of the
 open upper half-plane. -/
-theorem not_mem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
+theorem notMem_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) {z : ℂ} (hz : z.im = 0) :
     f z ∉ f '' upperHalfPlaneSet := by
   rintro ⟨y, hy, heq⟩
@@ -248,10 +253,18 @@ theorem tendsto_const_sub_inv_nhdsWithin_zero (c : ℝ) :
 /-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
 infinity, so a limit of `f` at infinity in the closed upper half-plane is a limit of `w ↦ f (-w⁻¹)`
 at `0` in the punctured closed upper half-plane. -/
-theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ → α}
+theorem tendsto_comp_neg_inv_nhdsWithin_zero {α : Type*} {l : Filter α} {f : ℂ → α}
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) l) :
     Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
   simpa [Function.comp_def] using hp.comp (tendsto_const_sub_inv_nhdsWithin_zero 0)
+
+/-- If `f` is continuous on the closed upper half-plane, then `w ↦ f (-w⁻¹)` is continuous on the
+closed upper half-plane with `0` removed. -/
+theorem continuousOn_comp_neg_inv {α : Type*} [TopologicalSpace α] {f : ℂ → α}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) :
+    ContinuousOn (fun w => f (-w⁻¹)) ({w : ℂ | 0 ≤ w.im} \ {0}) := fun _ hw =>
+  (hfc _ (im_neg_inv_nonneg.mpr hw.1)).comp (f := fun w : ℂ => -w⁻¹)
+    (continuousAt_inv₀ hw.2).neg.continuousWithinAt fun _ hy => im_neg_inv_nonneg.mpr hy.1
 
 /-- For real `c`, the Möbius map `z ↦ c - z⁻¹` carries the closed upper half-plane near infinity
 to the closed upper half-plane near `c`. -/
@@ -328,15 +341,43 @@ theorem injOn_update_comp_const_sub_inv {α : Type*} [Zero α] {g : ℂ → α}
       (hGz : Function.update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L z ≠ 0) :
       (c : ℂ) - z⁻¹ ∈ {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0} :=
     ⟨(im_const_sub_inv_nonneg c).mpr hz, by rwa [Function.update_of_ne hz0] at hGz⟩
-  rintro z ⟨hz, hGz⟩ z' ⟨hz', hGz'⟩ h
-  rcases eq_or_ne z 0 with rfl | hz0 <;> rcases eq_or_ne z' 0 with rfl | hz0'
-  · rfl
-  · rw [Function.update_self, Function.update_of_ne hz0'] at h
-    exact (hL ⟨_, hT hz' hz0' hGz', h.symm⟩).elim
-  · rw [Function.update_self, Function.update_of_ne hz0] at h
-    exact (hL ⟨_, hT hz hz0 hGz, h⟩).elim
-  · rw [Function.update_of_ne hz0, Function.update_of_ne hz0'] at h
-    exact inv_injective (sub_right_injective (hgi (hT hz hz0 hGz) (hT hz' hz0' hGz') h))
+  refine Set.injOn_update_of_injOn_diff (fun z hz z' hz' h => ?_) fun z hz hz0 h =>
+    hL ⟨_, hT hz.1 hz0 hz.2, h⟩
+  exact inv_injective (sub_right_injective
+    (hgi (hT hz.1.1 hz.2 hz.1.2) (hT hz'.1.1 hz'.2 hz'.1.2) h))
+
+/-- The map `w ↦ b / (f (-w⁻¹) - c)`, extended by `0` at the origin, is continuous on the part of
+the closed upper half-plane in `ball 0 r`, when `f` is continuous on the closed upper half-plane,
+tends to infinity at infinity there, and `f (-w⁻¹) ≠ c` at every nonzero `w` of that half-ball. -/
+theorem continuousOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
+    ContinuousOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  have hT := tendsto_comp_neg_inv_nhdsWithin_zero hp
+  refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+  · exact continuousWithinAt_const.div
+      (((continuousOn_comp_neg_inv hfc).mono (sdiff_subset_sdiff_left inter_subset_right) w
+        hw).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
+  · have hlim := (tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded c).comp
+      (hT.mono_left (nhdsWithin_mono _
+        (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))).const_mul b
+    simpa only [mul_zero, Function.comp_def, div_eq_mul_inv] using hlim
+
+/-- The map `w ↦ b / (f (-w⁻¹) - c)`, extended by `0` at the origin, is injective on the part of
+the closed upper half-plane in `ball 0 r`, when `f` is injective on the closed upper half-plane,
+`b ≠ 0`, and `f (-w⁻¹) ≠ c` at every nonzero `w` of that half-ball. -/
+theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
+    InjOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  refine Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw hw0 =>
+    div_ne_zero hb (hne w hw.1 hw.2 hw0)
+  have h' := congrArg (·⁻¹) h
+  simp only [inv_div, div_left_inj₀ hb, sub_left_inj] at h'
+  simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) h'
 
 end TauCeti
 

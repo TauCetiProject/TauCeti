@@ -29,6 +29,11 @@ groups of finite rank follows, through the Hilbert basis theorem.
 
 ## Main results
 
+* `TauCeti.injective_freeGroup_lift_transvection_of_two_le_abs`: Sanov's theorem, in the general
+  form over a linearly ordered commutative ring: the transvections with parameters `c`, `d`,
+  `2 ≤ |c|`, `2 ≤ |d|`, freely generate a free subgroup of `SL(2, R)`.
+* `TauCeti.injective_freeGroup_lift_conj_transvection_of_two_le_abs`: the conjugates `Bᵏ A B⁻ᵏ`
+  for distinct `k` freely generate a free subgroup of `SL(2, R)`.
 * `TauCeti.injective_freeGroup_lift_transvection_two`: Sanov's theorem, `A` and `B` freely
   generate a free subgroup of `SL(2, ℤ)`.
 * `TauCeti.injective_freeGroup_lift_conj_transvection_two`: the conjugates `Bᵏ A B⁻ᵏ` for
@@ -57,53 +62,81 @@ open Matrix Matrix.SpecialLinearGroup
 
 namespace TauCeti
 
-/-- A nonzero power of the transvection with parameter `2` at `(i, j)` maps the cone
-`{|v i| < |v j|}` of `ℤ²` into the opposite cone `{|v j| < |v i|}`. -/
-private lemma transvection_two_zpow_smul_subset {i j : Fin 2} (hij : i ≠ j) {n : ℤ}
-    (hn : n ≠ 0) :
-    transvection hij (2 : ℤ) ^ n • {v : Fin 2 → ℤ | |v i| < |v j|} ⊆
-      {v : Fin 2 → ℤ | |v j| < |v i|} := by
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- A nonzero power of the transvection with parameter `c`, `2 ≤ |c|`, at `(i, j)` maps the cone
+`{|v i| < |v j|}` of `R²` into the opposite cone `{|v j| < |v i|}`. -/
+private lemma transvection_zpow_smul_subset {i j : Fin 2} (hij : i ≠ j) {c : R} (hc : 2 ≤ |c|)
+    {n : ℤ} (hn : n ≠ 0) :
+    transvection hij c ^ n • {v : Fin 2 → R | |v i| < |v j|} ⊆
+      {v : Fin 2 → R | |v j| < |v i|} := by
   rintro _ ⟨v, hv, rfl⟩
   simp only [Set.mem_ofPred_eq] at hv ⊢
-  -- The `n`-th power is the transvection with parameter `n * 2`, which adds `n * 2 * v j` to
+  -- The `n`-th power is the transvection with parameter `n * c`, which adds `n * c * v j` to
   -- the `i`-th coordinate and leaves the `j`-th coordinate unchanged.
   rw [transvection_zpow, transvection_smul_apply_self, transvection_smul_apply_of_ne _ _ _ hij.symm,
-    smul_eq_mul]
-  have h2 : 2 * |v j| ≤ |n * 2 * v j| := by
-    rw [abs_mul, abs_mul, abs_two]
-    nlinarith [Int.one_le_abs hn, abs_nonneg (v j)]
-  have h3 : |n * 2 * v j| ≤ |v i + n * 2 * v j| + |-v i| := by
-    simpa using abs_add_le (v i + n * 2 * v j) (-v i)
+    zsmul_eq_mul]
+  have hn' : (1 : R) ≤ |(n : R)| := by exact_mod_cast Int.one_le_abs hn
+  have h2 : 2 * |v j| ≤ |n * c * v j| := by
+    rw [abs_mul, abs_mul]
+    have h4 : 2 ≤ |(n : R)| * |c| := by nlinarith [abs_nonneg c]
+    nlinarith [abs_nonneg (v j)]
+  have h3 : |n * c * v j| ≤ |v i + n * c * v j| + |-v i| := by
+    simpa using abs_add_le (v i + n * c * v j) (-v i)
   rw [abs_neg] at h3
   linarith
 
-/-- The cone `{|v 1| < |v 0|}` of `ℤ²` meets the opposite cone in no point. -/
+variable (R) in
+omit [IsStrictOrderedRing R] in
+/-- The cone `{|v 1| < |v 0|}` of `R²` meets the opposite cone in no point. -/
 private lemma disjoint_cones :
-    Disjoint {v : Fin 2 → ℤ | |v 1| < |v 0|} {v : Fin 2 → ℤ | |v 0| < |v 1|} :=
+    Disjoint {v : Fin 2 → R | |v 1| < |v 0|} {v : Fin 2 → R | |v 0| < |v 1|} :=
   Set.disjoint_left.mpr fun _ h h' => by
     simp only [Set.mem_ofPred_eq] at h h'
     exact lt_asymm h h'
 
+/-- **Sanov's theorem**, in the general form over a linearly ordered commutative ring `R`: for
+`c, d : R` with `2 ≤ |c|` and `2 ≤ |d|`, the matrices `[[1, c], [0, 1]]` and `[[1, 0], [d, 1]]`
+freely generate a free subgroup of rank two of `SL(2, R)`. -/
+theorem injective_freeGroup_lift_transvection_of_two_le_abs {c d : R} (hc : 2 ≤ |c|)
+    (hd : 2 ≤ |d|) :
+    Function.Injective (FreeGroup.lift ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) c,
+      transvection (one_ne_zero : (1 : Fin 2) ≠ 0) d]) :=
+  FreeGroup.injective_lift_of_ping_pong_pair ⟨![1, 0], by simp⟩ (disjoint_cones R)
+    (fun _ hn => transvection_zpow_smul_subset _ hc hn)
+    (fun _ hn => transvection_zpow_smul_subset _ hd hn)
+
+/-- For distinct integers `k i`, the conjugates `Bᵏ⁽ⁱ⁾ A B⁻ᵏ⁽ⁱ⁾` of `A = [[1, c], [0, 1]]` by
+powers of `B = [[1, 0], [d, 1]]`, with `2 ≤ |c|` and `2 ≤ |d|`, freely generate a free subgroup
+of `SL(2, R)`. -/
+theorem injective_freeGroup_lift_conj_transvection_of_two_le_abs {ι : Type*} {k : ι → ℤ}
+    (hk : Function.Injective k) {c d : R} (hc : 2 ≤ |c|) (hd : 2 ≤ |d|) :
+    Function.Injective (FreeGroup.lift fun i =>
+      transvection (one_ne_zero : (1 : Fin 2) ≠ 0) d ^ k i *
+        transvection (zero_ne_one : (0 : Fin 2) ≠ 1) c *
+          (transvection (one_ne_zero : (1 : Fin 2) ≠ 0) d ^ k i)⁻¹) :=
+  FreeGroup.injective_lift_conj_zpow_of_ping_pong ⟨![1, 0], by simp⟩ (disjoint_cones R)
+    (fun _ hn => transvection_zpow_smul_subset _ hc hn)
+    (fun _ hn => transvection_zpow_smul_subset _ hd hn) hk
+
 /-- **Sanov's theorem.** The matrices `[[1, 2], [0, 1]]` and `[[1, 0], [2, 1]]` freely generate
-a free subgroup of rank two of `SL(2, ℤ)`. -/
+a free subgroup of rank two of `SL(2, ℤ)`. This is the case `R = ℤ`, `c = d = 2` of
+`injective_freeGroup_lift_transvection_of_two_le_abs`. -/
 theorem injective_freeGroup_lift_transvection_two :
     Function.Injective (FreeGroup.lift ![transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ),
       transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ)]) :=
-  FreeGroup.injective_lift_of_ping_pong_pair ⟨![1, 0], by simp⟩ disjoint_cones
-    (fun _ hn => transvection_two_zpow_smul_subset _ hn)
-    (fun _ hn => transvection_two_zpow_smul_subset _ hn)
+  injective_freeGroup_lift_transvection_of_two_le_abs (by norm_num) (by norm_num)
 
 /-- For distinct integers `k i`, the conjugates `Bᵏ⁽ⁱ⁾ A B⁻ᵏ⁽ⁱ⁾` of `A = [[1, 2], [0, 1]]` by
-powers of `B = [[1, 0], [2, 1]]` freely generate a free subgroup of `SL(2, ℤ)`. -/
+powers of `B = [[1, 0], [2, 1]]` freely generate a free subgroup of `SL(2, ℤ)`. This is the case
+`R = ℤ`, `c = d = 2` of `injective_freeGroup_lift_conj_transvection_of_two_le_abs`. -/
 theorem injective_freeGroup_lift_conj_transvection_two {ι : Type*} {k : ι → ℤ}
     (hk : Function.Injective k) :
     Function.Injective (FreeGroup.lift fun i =>
       transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ) ^ k i *
         transvection (zero_ne_one : (0 : Fin 2) ≠ 1) (2 : ℤ) *
           (transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (2 : ℤ) ^ k i)⁻¹) :=
-  FreeGroup.injective_lift_conj_zpow_of_ping_pong ⟨![1, 0], by simp⟩ disjoint_cones
-    (fun _ hn => transvection_two_zpow_smul_subset _ hn)
-    (fun _ hn => transvection_two_zpow_smul_subset _ hn) hk
+  injective_freeGroup_lift_conj_transvection_of_two_le_abs hk (by norm_num) (by norm_num)
 
 /-- **Free groups of countable rank are linear over `ℤ`.** Every free group on a countable basis
 embeds in `SL(2, ℤ)`. -/

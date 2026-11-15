@@ -321,6 +321,14 @@ theorem ofFn_comp_mem_expand_iff (p : GluePattern) (f : Fin p.length → ℕ)
   · rintro ⟨h, hh, rfl⟩
     exact ⟨h * g, mul_mem hh hg, rfl⟩
 
+/-- **The expansion of a pattern is invariant under its indicated permutations**, read on words
+indexed by `Fin n` for `n` the length of the pattern. -/
+theorem ofFn_comp_permCongr_mem_expand_iff (p : GluePattern) {n : ℕ} (h : p.length = n)
+    {g : Equiv.Perm (Fin p.length)} (hg : g ∈ p.symmetries) (d : Fin n → ℕ) :
+    List.ofFn (d ∘ (finCongr h).permCongr g) ∈ p.expand ↔ List.ofFn d ∈ p.expand := by
+  subst h
+  exact p.ofFn_comp_mem_expand_iff d hg
+
 end GluePattern
 
 end TauCeti

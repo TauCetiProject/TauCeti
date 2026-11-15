@@ -27,6 +27,9 @@ algebra.
 ## Main declarations
 
 * `CategoryTheory.GradedObject.ιTotal`: the inclusion of the summand `Xᵢ` into `∐ᵢ Xᵢ`;
+* `CategoryTheory.GradedObject.descTotal`: descent from the total object, characterized by
+  `CategoryTheory.GradedObject.ιTotal_descTotal`, with extensionality given by
+  `CategoryTheory.GradedObject.total_hom_ext`;
 * `CategoryTheory.GradedObject.totalTensorDesc`: the morphism out of `(∐ᵢ Xᵢ) ⊗ (∐ⱼ Yⱼ)` given on
   each summand `Xᵢ ⊗ Yⱼ`, with the extensionality lemma
   `CategoryTheory.GradedObject.total_tensor_hom_ext`;
@@ -60,6 +63,22 @@ degree `i`. -/
 lemma ιTotal_total_map {X Y : GradedObject I C} (f : X ⟶ Y) (i : I) :
     ιTotal X i ≫ (total I C).map f = f i ≫ ιTotal Y i :=
   Sigma.ι_map _ _
+
+/-- A family of morphisms on the graded components descends to the total object. -/
+def descTotal {X : GradedObject I C} {A : C} (φ : ∀ i, X i ⟶ A) :
+    (total I C).obj X ⟶ A :=
+  Sigma.desc φ
+
+/-- Descent from the total object restricts to the prescribed map on each component. -/
+@[reassoc (attr := simp)]
+lemma ιTotal_descTotal {X : GradedObject I C} {A : C} (φ : ∀ i, X i ⟶ A) (i : I) :
+    ιTotal X i ≫ descTotal φ = φ i :=
+  Sigma.ι_comp_desc φ i
+
+/-- Morphisms out of a total object agree if they agree on every graded component. -/
+lemma total_hom_ext {X : GradedObject I C} {A : C} {f g : (total I C).obj X ⟶ A}
+    (h : ∀ i, ιTotal X i ≫ f = ιTotal X i ≫ g) : f = g :=
+  Sigma.hom_ext _ _ h
 
 variable [MonoidalCategory C]
 
@@ -137,7 +156,7 @@ variable [AddMonoid I]
   [∀ (X₁ X₂ : GradedObject I C), HasTensor X₁ X₂]
   [∀ (X₁ X₂ X₃ : GradedObject I C), HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject I C), HasGoodTensorTensor₂₃ X₁ X₂ X₃]
-  [DecidableEq I] [HasInitial C]
+  [DecidableEq I]
   [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
   [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), HasTensor₄ObjExt X₁ X₂ X₃ X₄]
@@ -292,7 +311,7 @@ variable [AddCommMonoid I] [BraidedCategory C]
   [∀ (X₁ X₂ : GradedObject I C), HasTensor X₁ X₂]
   [∀ (X₁ X₂ X₃ : GradedObject I C), HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject I C), HasGoodTensorTensor₂₃ X₁ X₂ X₃]
-  [DecidableEq I] [HasInitial C]
+  [DecidableEq I]
   [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
   [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), HasTensor₄ObjExt X₁ X₂ X₃ X₄]

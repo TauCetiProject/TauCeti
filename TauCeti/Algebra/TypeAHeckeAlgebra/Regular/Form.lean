@@ -137,6 +137,12 @@ theorem canonicalTrace_star_mul_self_eq_zero_iff [Finite W] (x : TypeAHeckeAlgeb
   · rintro rfl
     simp
 
+/-- The real-parameter involution is proper: `x* x = 0` forces `x = 0`. -/
+instance : IsProperStar (TypeAHeckeAlgebra 𝕜 q n) where
+  eq_zero_of_star_mul_self_eq_zero {x} hx :=
+    (canonicalTrace_star_mul_self_eq_zero_iff (permCoxeterSystem n) x).mp
+      (by rw [hx, map_zero])
+
 /-- The positive definite regular inner product `⟨x,y⟩ = τ(x* y)`. This core supplies the
 normed and inner product space structures without choosing a global norm instance. -/
 @[instance_reducible]

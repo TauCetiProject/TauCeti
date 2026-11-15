@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.Topology.Order.OrderClosed
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -75,11 +76,6 @@ variable {x c : ℝ}
 noncomputable def perronIntegrand (x c t : ℝ) : ℂ :=
   (x : ℂ) ^ ((c : ℂ) + t * I) / ((c : ℂ) + t * I)
 
-/-- A point of the vertical line `Re s = c` is nonzero as soon as `c` is.  Mathlib's
-`Complex.ne_zero_of_re_pos` covers only the positive-real-part case. -/
-private theorem ofReal_add_mul_I_ne_zero_of_re (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
-  fun h => hc (by simpa using congrArg Complex.re h)
-
 /-- At the endpoint `x = 1` the Perron integrand is the reciprocal of the point of the line. -/
 @[simp]
 theorem perronIntegrand_one (c t : ℝ) : perronIntegrand 1 c t = ((c : ℂ) + t * I)⁻¹ := by
@@ -115,7 +111,7 @@ theorem continuous_perronIntegrand (hx : x ≠ 0) (hc : c ≠ 0) :
     continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
   have hcpow : Continuous fun s : ℂ => (x : ℂ) ^ s :=
     continuous_iff_continuousAt.2 fun _ => continuousAt_const_cpow (mod_cast hx)
-  exact (hcpow.comp hline).div hline fun t => ofReal_add_mul_I_ne_zero_of_re hc t
+  exact (hcpow.comp hline).div hline fun t => Complex.ofReal_add_mul_I_ne_zero hc t
 
 /-- The Perron integrand is integrable over every bounded piece of a vertical line off the
 imaginary axis. -/
@@ -580,9 +576,9 @@ private theorem norm_integral_perronFn_sub_two_pi_le_of_le (hx1 : 1 < x) (hc : 0
     integral_perronDslope_comp hx (continuous_horizontalLine T)
       (ofReal_add_mul_I_ne_zero_of_im hT.ne'),
     integral_perronDslope_comp hx (continuous_verticalLine c)
-      (ofReal_add_mul_I_ne_zero_of_re hc.ne'),
+      (Complex.ofReal_add_mul_I_ne_zero hc.ne'),
     integral_perronDslope_comp hx (continuous_verticalLine (-B))
-      (ofReal_add_mul_I_ne_zero_of_re (neg_ne_zero.2 hB0.ne'))] at hcauchy
+      (Complex.ofReal_add_mul_I_ne_zero (neg_ne_zero.2 hB0.ne'))] at hcauchy
   -- The four sides of the integrand at `1` contribute the residue `2 π i`.
   have e₁ := integral_perronFn_one_horizontal_diff hT.ne' (-B) c
   have e₂ := integral_perronFn_one_vertical hc.ne' T

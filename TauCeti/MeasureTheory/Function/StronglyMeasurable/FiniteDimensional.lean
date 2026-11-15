@@ -13,8 +13,8 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 A function `T : α → E →L[𝕜] F` is almost everywhere strongly measurable for the operator norm
 exactly when each orbit `a ↦ T a v` is, provided `E` is finite-dimensional
-(`TauCeti.aestronglyMeasurable_clm_apply_iff`). One direction is Mathlib's
-`MeasureTheory.AEStronglyMeasurable.apply_continuousLinearMap` and holds in general. For the other,
+(`TauCeti.aestronglyMeasurable_clm_apply_iff`). One direction holds in general, since evaluation
+at `v` is a continuous linear map `ContinuousLinearMap.apply`. For the other,
 `T a = ∑ i, (b.coord i).smulRight (T a (b i))` for a basis `b` of `E`, a finite sum of continuous
 linear images of the orbits `a ↦ T a (b i)`.
 
@@ -33,13 +33,14 @@ namespace TauCeti
 
 variable {α 𝕜 E F : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NontriviallyNormedField 𝕜]
   [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- On a finite-dimensional space, an operator-valued function is almost everywhere strongly
 measurable for the operator norm exactly when each of its orbits `a ↦ T a v` is. -/
 theorem aestronglyMeasurable_clm_apply_iff {T : α → E →L[𝕜] F} :
     AEStronglyMeasurable T μ ↔ ∀ v, AEStronglyMeasurable (fun a ↦ T a v) μ := by
-  refine ⟨fun h v ↦ h.apply_continuousLinearMap v, fun h ↦ ?_⟩
+  refine ⟨fun h v ↦ (ContinuousLinearMap.apply 𝕜 F v).continuous.comp_aestronglyMeasurable h,
+    fun h ↦ ?_⟩
   let b := Module.finBasis 𝕜 E
   have hT : T = fun a ↦ ∑ i, (b.coord i).toContinuousLinearMap.smulRight (T a (b i)) := by
     ext a v

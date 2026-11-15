@@ -9,7 +9,7 @@ import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.KnotTheory.Grid.Differential.Square.Annulus
 public import TauCeti.KnotTheory.Grid.Differential.Square.DoubleTransposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
-public import TauCeti.KnotTheory.Grid.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
 
 /-!
 # The grid differentials square to zero

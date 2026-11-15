@@ -263,7 +263,7 @@ theorem exists_continuousOn_closure_eqOn_of_forall_exists_diam_union_le (hUo : I
       frontier (f '' U) ∩ frontier (f '' (U ∩ ball w ρ)) ⊆ E ∧
       diam (f '' (U ∩ sphere w ρ) ∪ E) ≤ ε) :
     ∃ F : ℂ → ℂ, ContinuousOn F (closure U) ∧ EqOn F f U :=
-  exists_continuousOn_closure_eqOn_of_isBounded hUo hd.continuousOn hb fun w hw =>
+  exists_continuousOn_closure_eqOn_of_isBounded hd.continuousOn hb fun w hw =>
     subsingleton_clusterSetOn_of_forall_exists_diam_union_le hUo hd hinj hb (h w hw)
 
 end TauCeti

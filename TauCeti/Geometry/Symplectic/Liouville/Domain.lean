@@ -29,7 +29,8 @@ without boundary, the frontier of `W` is exactly the level
 hypersurfaces of contact type, and the ambient form `ω` is then symplectic
 (`TauCeti.IsLiouvilleDomain.isSymplectic`). Since `ω` is smooth and closed, the Liouville field
 of `α` is a Liouville vector field of `ω`, `L_Z ω = ω`
-(`TauCeti.isLiouvilleVectorField_mextDeriv_of_interior_eq`).
+(`TauCeti.IsLiouvilleDomain.isLiouvilleVectorField`, from
+`TauCeti.isLiouvilleVectorField_mextDeriv_of_interior_eq`).
 
 The boundary of a Liouville domain, with the atlas of a regular level, is a hypersurface of
 restricted contact type with primitive `α`
@@ -46,6 +47,8 @@ primitive `-λ` of the cotangent bundle
 ## Main results
 
 * `TauCeti.IsLiouvilleDomain.isSymplectic`: the ambient form is symplectic.
+* `TauCeti.IsLiouvilleDomain.isLiouvilleVectorField`: the Liouville field of `α` is a Liouville
+  vector field of `ω`.
 * `TauCeti.IsLiouvilleDomain.exists_sublevel_of_interior_eq`: every vector field `Z` with
   `ι_Z ω = α` points strictly out of a Liouville domain along its boundary.
 * `TauCeti.IsLiouvilleDomain.exists_isRestrictedContactType`: the boundary is a regular level of
@@ -117,6 +120,14 @@ theorem contMDiff_of_interior_eq (h : IsLiouvilleDomain ω α W)
     ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) := by
   obtain ⟨Z', hZ's, hZ', -⟩ := h.exists_liouville_outward
   rwa [h.isNondegenerate.interior_injective (hZ.trans hZ'.symm)]
+
+/-- **The Liouville field of a Liouville domain is a Liouville vector field** of the ambient form,
+`L_Z ω = ω`: the form is exact, `ω = dα`, and `ι_Z dα = α`. -/
+theorem isLiouvilleVectorField (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) : IsLiouvilleVectorField ω.1 Z := by
+  have := isLiouvilleVectorField_mextDeriv_of_interior_eq (α.isSmoothForm.of_le (by simp))
+    ((h.contMDiff_of_interior_eq hZ).mdifferentiable (by simp)) (by rw [h.mextDeriv_eq, hZ])
+  rwa [h.mextDeriv_eq] at this
 
 /-- **The Liouville field points out of a Liouville domain.** If `ι_Z ω = α`, then `W = {f ≤ c}`
 for a continuous function `f`, smooth along the level `f⁻¹(c)`, with `df(Z) > 0` there. -/

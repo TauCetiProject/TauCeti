@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Basic
 public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Singular
-public import TauCeti.Analysis.Matrix.SpectralMeasure
+public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 
 /-!
 # The Hoffman–Wielandt inequality for Hermitian matrices

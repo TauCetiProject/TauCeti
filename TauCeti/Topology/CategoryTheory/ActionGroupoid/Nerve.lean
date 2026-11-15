@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Nerve
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
-public import TauCeti.Topology.CategoryTheory.Nerve
+public import TauCeti.Topology.CategoryTheory.CoarseSpace
 
 /-!
 # The topological nerve and classifying space of an action groupoid
@@ -165,6 +165,12 @@ def coarseMap :
     fatClassifyingSpace (ActionCategory G X) ⟶ TopCat.of (MulAction.orbitRel.Quotient G X) :=
   fatRealization.augment (coarseAugmentation G X)
 
+variable (G X) in
+/-- The coarse map is the augmentation of the fat realization induced by the coarse
+augmentation. -/
+theorem coarseMap_eq_augment :
+    coarseMap G X = fatRealization.augment (coarseAugmentation G X) := (rfl)
+
 /-- The coarse map sends a point of the simplex of a string of composable arrows to the orbit of
 any point of the string. -/
 theorem coarseMap_ι (m : SemiSimplexCategory)
@@ -172,6 +178,17 @@ theorem coarseMap_ι (m : SemiSimplexCategory)
     (t : SemiSimplexCategory.toTop.obj m) (i : Fin (_ + 1)) :
     coarseMap G X (fatRealization.ι _ m (F, t)) = ⟦(F.obj i).back⟧ :=
   (fatRealization.augment_ι (coarseAugmentation G X) m F t).trans (F.quotient_mk_back_obj i).symm
+
+/-- The action-groupoid coarse map agrees with the general groupoid coarse projection
+under the canonical identification of action orbits with isomorphism classes. -/
+theorem orbitQuotientEquivIsomorphismClasses_coarseMap
+    (p : fatClassifyingSpace (ActionCategory G X)) :
+    orbitQuotientEquivIsomorphismClasses G X (coarseMap G X p) =
+      fatClassifyingSpace.coarseMap (continuous_source G X) p := by
+  obtain ⟨m, F, t, rfl⟩ := fatRealization.ι_jointly_surjective _ p
+  have hgeneral := fatClassifyingSpace.coarseMap_ι (continuous_source G X) m F t
+  rw [coarseMap_ι m F t 0, hgeneral, orbitQuotientEquivIsomorphismClasses_mk]
+  exact congrArg (Quotient.mk _) ((objEquiv G X).apply_symm_apply (F.obj 0))
 
 /-- The coarse map is surjective: each orbit is the image of the vertex of a `0`-simplex. -/
 theorem coarseMap_surjective : Function.Surjective (coarseMap G X) := by

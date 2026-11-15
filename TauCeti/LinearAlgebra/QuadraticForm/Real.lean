@@ -62,6 +62,8 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
   normal form of its signature.
+* `QuadraticForm.equivalent_weightedSumSquares_ite_lt_sigNeg`: the same normal form on the
+  coordinate space, with the `sigNeg Q` negative squares first.
 * `QuadraticForm.exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq`: every signature `(p, n - p)` is
   realized by a regular form on the coordinate space `ℝⁿ`.
 * `QuadraticForm.equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq`: a regular real form is
@@ -357,6 +359,30 @@ theorem equivalent_realSignatureForm_iff (p q p' q' : ℕ) :
 theorem equivalent_realSignatureForm (Q : _root_.QuadraticForm ℝ M) (hQ : Q.Nondegenerate) :
     Q.Equivalent (realSignatureForm (sigPos Q) (sigNeg Q)) :=
   (equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq hQ _ _).mpr ⟨rfl, rfl⟩
+
+/-- **Sylvester's normal form with the negative squares first.** A regular real quadratic form
+`Q` on an `n`-dimensional space is isometric to the diagonal form
+`-x₀² - ⋯ - x_{q-1}² + x_q² + ⋯ + x_{n-1}²` on `Fin n → ℝ`, where `q = sigNeg Q`. This is the
+coordinate order of Morse charts, in which the negative directions of a Hessian come first. -/
+theorem equivalent_weightedSumSquares_ite_lt_sigNeg (Q : _root_.QuadraticForm ℝ M)
+    (hQ : Q.Nondegenerate) :
+    Q.Equivalent (weightedSumSquares ℝ fun i : Fin (Module.finrank ℝ M) ↦
+      if i.val < sigNeg Q then (-1 : ℝ) else 1) := by
+  have hdim : Module.finrank ℝ M = sigNeg Q + sigPos Q := by
+    rw [← sigPos_add_sigNeg_of_nondegenerate Q hQ, add_comm]
+  -- Send the first `sigNeg Q` coordinates to the negative block of the signature normal form.
+  let e : Fin (Module.finrank ℝ M) ≃ Fin (sigPos Q) ⊕ Fin (sigNeg Q) :=
+    (finCongr hdim).trans (finSumFinEquiv.symm.trans (Equiv.sumComm _ _))
+  have hweight : (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) ∘ e =
+      fun i ↦ if i.val < sigNeg Q then -1 else 1 := by
+    funext i
+    obtain ⟨j, rfl⟩ := (finCongr hdim).symm.surjective i
+    induction j using Fin.addCases with
+    | left j => simp [e]
+    | right j => simp [e]
+  refine (equivalent_realSignatureForm Q hQ).trans ?_
+  rw [realSignatureForm_def]
+  exact (equivalent_weightedSumSquares_of_comp_eq e hweight).symm
 
 /-- Every signature `(p, n - p)` with `p ≤ n` is the signature of a regular quadratic form on the
 coordinate space `ℝⁿ`: the normal form `realSignatureForm p (n - p)` transported along a bijection

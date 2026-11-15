@@ -8,10 +8,10 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.Algebra.Module.Submodule.Pointwise
-import Mathlib.LinearAlgebra.Quotient.Pi
 import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.Tactic.LinearCombination
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Reduction modulo `p` of finite free `ℤ_p`-modules
@@ -50,32 +50,9 @@ theorem natCard_quotient_padicInt_smul_top (M : Type u) [AddCommGroup M] [Module
     [Module.Free ℤ_[p] M] [Module.Finite ℤ_[p] M] :
     Nat.card (M ⧸ (p : ℤ_[p]) • (⊤ : Submodule ℤ_[p] M)) =
       p ^ Module.finrank ℤ_[p] M := by
-  classical
-  let ι := Module.Free.ChooseBasisIndex ℤ_[p] M
-  let b := Module.Free.chooseBasis ℤ_[p] M
-  let e : (M ⧸ (p : ℤ_[p]) • (⊤ : Submodule ℤ_[p] M)) ≃ₗ[ℤ_[p]]
-      ((i : ι) → ℤ_[p]) ⧸ (p : ℤ_[p]) • (⊤ : Submodule ℤ_[p] (ι → ℤ_[p])) :=
-    QuotSMulTop.congr (p : ℤ_[p]) b.equivFun
-  have hpi : (p : ℤ_[p]) • (⊤ : Submodule ℤ_[p] (ι → ℤ_[p])) =
-      Submodule.pi Set.univ (fun _ : ι ↦ Ideal.span {(p : ℤ_[p])}) := by
-    ext x
-    simp only [Submodule.mem_smul_pointwise_iff_exists, Submodule.mem_top,
-      Submodule.mem_pi, Set.mem_univ, forall_const, Ideal.mem_span_singleton]
-    constructor
-    · rintro ⟨y, -, hy⟩ i
-      exact ⟨y i, (congrFun hy i).symm⟩
-    · intro hx
-      choose y hy using hx
-      exact ⟨y, trivial, (funext hy).symm⟩
-  let q : (((i : ι) → ℤ_[p]) ⧸ (p : ℤ_[p]) •
-      (⊤ : Submodule ℤ_[p] (ι → ℤ_[p]))) ≃ₗ[ℤ_[p]]
-      ((i : ι) → (ℤ_[p] ⧸ Ideal.span {(p : ℤ_[p])})) :=
-    (Submodule.quotEquivOfEq _ _ hpi).trans
-      (Submodule.quotientPi fun _ : ι ↦ Ideal.span {(p : ℤ_[p])})
-  rw [Nat.card_congr e.toEquiv, Nat.card_congr q.toEquiv, Nat.card_pi,
+  rw [QuotSMulTop.natCard_eq_pow_finrank,
     PadicInt.natCard_quotient_span (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero),
-    PadicInt.valuation_p, pow_one, Finset.prod_const, Finset.card_univ,
-    ← Module.finrank_eq_card_chooseBasisIndex]
+    PadicInt.valuation_p, pow_one]
 
 namespace PadicInt
 

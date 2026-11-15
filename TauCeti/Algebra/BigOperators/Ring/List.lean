@@ -16,17 +16,18 @@ In an `R`-algebra `A`, the product of a list is affine in each factor. In partic
 factor `a` by the scalar `algebraMap R A c` changes the product by `c` times the product of the
 list with that factor deleted. This is the step that centres one letter of a word at a time.
 
-An additive map `δ` of a possibly noncommutative ring obeying the Leibniz rule
-`δ (a * b) = δ a * b + a * δ b` sends an ordered product `f 0 * ⋯ * f (n - 1)` to the sum, over the
-positions `k`, of the same product with the factor `f k` replaced by `δ (f k)`. The rule covers
-both a derivation of a commutative ring and the inner derivation `⁅a, -⁆` of an associative ring,
-which is how the commutator with a Lie generator acts on a word in a universal enveloping algebra.
+A map `δ` of a possibly noncommutative, nonassociative semiring with cancellative addition
+obeying the Leibniz rule `δ (a * b) = δ a * b + a * δ b` sends an ordered product
+`f 0 * ⋯ * f (n - 1)`, bracketed to the right, to the sum, over the positions `k`, of the same
+product with the factor `f k` replaced by `δ (f k)`. The rule covers both a derivation of a
+commutative ring and the inner derivation `⁅a, -⁆` of an associative ring, which is how the
+commutator with a Lie generator acts on a word in a universal enveloping algebra.
 
 ## Main results
 
 * `List.prod_append_sub_algebraMap_cons`:
   `(l₁ ++ (a - algebraMap R A c) :: l₂).prod = (l₁ ++ a :: l₂).prod - c • (l₁ ++ l₂).prod`.
-* `AddMonoidHom.map_prod_ofFn_of_leibniz`: the Leibniz rule for an ordered product of `n` factors.
+* `TauCeti.map_prod_ofFn_of_leibniz`: the Leibniz rule for an ordered product of `n` factors.
 -/
 
 public section
@@ -43,21 +44,20 @@ theorem prod_append_sub_algebraMap_cons (l₁ l₂ : List A) (a : A) (c : R) :
 
 end List
 
-namespace AddMonoidHom
+namespace TauCeti
 
-variable {A : Type*} [Ring A]
+variable {A : Type*} [NonAssocSemiring A] [IsLeftCancelAdd A]
 
-/-- **The Leibniz rule for an ordered product.** An additive map `δ` with
-`δ (a * b) = δ a * b + a * δ b` sends the product `f 0 * ⋯ * f (n - 1)` to the sum over `k` of the
-same product with its `k`-th factor replaced by `δ (f k)`. The ring need not be commutative. -/
-theorem map_prod_ofFn_of_leibniz (δ : A →+ A) (hδ : ∀ a b, δ (a * b) = δ a * b + a * δ b)
+/-- **The Leibniz rule for an ordered product.** On a semiring `A` with cancellative addition, a
+map `δ` with `δ (a * b) = δ a * b + a * δ b` sends the product `f 0 * (f 1 * ⋯ * f (n - 1))`,
+bracketed to the right as `List.prod` does, to the sum over `k` of the same product with its
+`k`-th factor replaced by `δ (f k)`. For `n = 0` this says `δ 1 = 0`. The semiring need be neither
+commutative nor associative, and `δ` need not be additive. -/
+theorem map_prod_ofFn_of_leibniz (δ : A → A) (hδ : ∀ a b, δ (a * b) = δ a * b + a * δ b)
     {n : ℕ} (f : Fin n → A) :
     δ (List.ofFn f).prod = ∑ k, (List.ofFn (Function.update f k (δ (f k)))).prod := by
   induction n with
-  | zero =>
-    have h := hδ 1 1
-    simp only [mul_one, one_mul, left_eq_add] at h
-    simp [h]
+  | zero => simpa using hδ 1 1
   | succ n ih =>
     rw [List.ofFn_succ, List.prod_cons, hδ, ih, Fin.sum_univ_succ, Finset.mul_sum]
     congr 1
@@ -69,4 +69,4 @@ theorem map_prod_ofFn_of_leibniz (δ : A →+ A) (hδ : ∀ a b, δ (a * b) = δ
       funext i
       simp only [Function.update_apply, Fin.succ_inj]
 
-end AddMonoidHom
+end TauCeti

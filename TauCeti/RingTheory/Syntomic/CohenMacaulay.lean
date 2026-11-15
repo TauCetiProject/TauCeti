@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Syntomic.StandardSyntomic
+public import TauCeti.RingTheory.CohenMacaulay.Flat
 public import TauCeti.RingTheory.CohenMacaulay.Presentation
 
 /-!
-# Cohen–Macaulay local rings of standard syntomic algebras over fields
+# Cohen–Macaulay standard syntomic algebras
 
 A standard syntomic algebra over a field is a global complete intersection, so its local
 rings are Cohen–Macaulay by the presentation criterion in
@@ -18,14 +19,21 @@ rings are Cohen–Macaulay by the presentation criterion in
 This supplies the fibrewise Cohen–Macaulay input for duality of syntomic curves, in particular
 nodal curves. No reducedness or smoothness of the complete intersection is assumed.
 
+Since a standard syntomic algebra is flat and its fibres are standard syntomic over the residue
+fields, a standard syntomic algebra over a Cohen–Macaulay ring is again a Cohen–Macaulay ring
+(`TauCeti.Ring.IsCohenMacaulay.of_flat`).
+
 ## References
 
 * The Stacks Project, Section 10.135, *Local complete intersections* (Tag 00S8).
+* H. Matsumura, *Commutative Ring Theory*, Corollary of Theorem 23.3.
 -/
 
 public section
 
 open scoped TensorProduct
+
+universe u
 
 namespace TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension
 
@@ -51,5 +59,21 @@ theorem isCohenMacaulay_localization (p : Ideal A) [p.IsPrime] :
     have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
     rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv,
       hA.ringKrullDim_tensorProduct_of_field k]
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+    [h : IsStandardSyntomicOfRelativeDimension n R S]
+
+include h in
+/-- A standard syntomic algebra over a Cohen–Macaulay ring is a Cohen–Macaulay ring. -/
+theorem isCohenMacaulay [Ring.IsCohenMacaulay R] : Ring.IsCohenMacaulay S := by
+  have := h.flat
+  have := h.finitePresentation
+  have : IsNoetherianRing S := _root_.Algebra.FiniteType.isNoetherianRing R S
+  refine .of_flat (R := R) fun p _ ↦ ?_
+  have := (inferInstance : IsStandardSyntomicOfRelativeDimension n p.ResidueField
+    (p.Fiber S)).finitePresentation
+  have : IsNoetherianRing (p.Fiber S) :=
+    _root_.Algebra.FiniteType.isNoetherianRing p.ResidueField (p.Fiber S)
+  exact ⟨isCohenMacaulay_localization (n := n) (k := p.ResidueField)⟩
 
 end TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension

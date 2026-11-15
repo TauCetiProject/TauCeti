@@ -75,12 +75,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {U : OpenSubgroup G} [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup]
   (hU : U.toSubgroup.index = 1)
 
--- Tensor induction uses the direct-sum scalar action of the total resolution, rather than
--- the fallback integer action on its underlying additive group.
-private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+open scoped TopRep.GradedResolution
 
 /-- The trivial `𝔽₂` coefficients of `U`, as a smooth discrete representation. -/
 private noncomputable abbrev coeffs : SmoothDiscreteTopRep.{0, u, u} ℤ U.toSubgroup :=

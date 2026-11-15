@@ -38,7 +38,8 @@ on the target, so they follow by covering `L` by affine schemes; the rank is com
 fibres.
 
 That the family is itself a subgroup scheme of `L ×_{Spec R} Spec H` over `L`, that is, that the
-group law of `Spec H` restricts to it, is not proved here.
+group law of `Spec H` restricts to it, is `Module.Grassmannian.universalSubgroup` in
+`TauCeti.AlgebraicGeometry.Grassmannian.UniversalSubgroup`.
 
 ## Main definitions
 

@@ -24,7 +24,7 @@ computed from the determinant formula `NumberField.det_basisOfFractionalIdeal_eq
 
 public section
 
-open Module NumberField
+open NumberField
 open scoped nonZeroDivisors
 
 namespace NumberField
@@ -39,28 +39,18 @@ theorem relIndex_fractionalIdeal_eq_absNorm_div_absNorm {I J : (FractionalIdeal 
     ((J : Submodule (𝓞 K) K).toAddSubgroup.relIndex (I : Submodule (𝓞 K) K).toAddSubgroup : ℚ) =
       FractionalIdeal.absNorm (J : FractionalIdeal (𝓞 K)⁰ K) /
         FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) := by
-  classical
   -- Reindex the `ℚ`-bases of `K` coming from `ℤ`-bases of `I` and `J` by the index type of the
   -- integral basis, so that all three bases share one index type.
-  have equiv (L : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-      Free.ChooseBasisIndex ℤ (𝓞 K) ≃ Free.ChooseBasisIndex ℤ L :=
-    Fintype.equivOfCardEq <| by
-      rw [← finrank_eq_card_chooseBasisIndex, ← finrank_eq_card_chooseBasisIndex,
-        fractionalIdeal_rank]
-  let bI := (basisOfFractionalIdeal K I).reindex (equiv I).symm
-  let bJ := (basisOfFractionalIdeal K J).reindex (equiv J).symm
+  let e (L : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :=
+    (integralBasis K).indexEquiv (basisOfFractionalIdeal K L)
+  let b (L : (FractionalIdeal (𝓞 K)⁰ K)ˣ) := (basisOfFractionalIdeal K L).reindex (e L).symm
   have closure_eq (L : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-      (L : Submodule (𝓞 K) K).toAddSubgroup =
-        AddSubgroup.closure (Set.range ((basisOfFractionalIdeal K L).reindex (equiv L).symm)) := by
-    rw [Basis.range_reindex, ← Submodule.span_int_eq_addSubgroupClosure]
+      (L : Submodule (𝓞 K) K).toAddSubgroup = AddSubgroup.closure (Set.range (b L)) := by
     ext x
-    simp [mem_span_basisOfFractionalIdeal]
-  have hI : |(integralBasis K).det bI| = FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) :=
-    det_basisOfFractionalIdeal_eq_absNorm K I (equiv I)
-  have hJ : |(integralBasis K).det bJ| = FractionalIdeal.absNorm (J : FractionalIdeal (𝓞 K)⁰ K) :=
-    det_basisOfFractionalIdeal_eq_absNorm K J (equiv J)
-  rw [AddSubgroup.relIndex_eq_abs_det _ _ hJI bJ bI (closure_eq J) (closure_eq I), ← hI, ← hJ,
-    ← (integralBasis K).det_mul_det bI bJ, abs_mul,
-    mul_div_cancel_left₀ _ (abs_ne_zero.mpr ((integralBasis K).isUnit_det bI).ne_zero)]
+    simp [b, ← Submodule.span_int_eq_addSubgroupClosure, mem_span_basisOfFractionalIdeal]
+  rw [AddSubgroup.relIndex_eq_abs_det _ _ hJI (b J) (b I) (closure_eq J) (closure_eq I),
+    ← det_basisOfFractionalIdeal_eq_absNorm K I (e I),
+    ← det_basisOfFractionalIdeal_eq_absNorm K J (e J), ← (integralBasis K).det_mul_det (b I) (b J),
+    abs_mul, mul_div_cancel_left₀ _ (abs_ne_zero.mpr ((integralBasis K).isUnit_det _).ne_zero)]
 
 end NumberField

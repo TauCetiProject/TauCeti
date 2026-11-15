@@ -336,7 +336,7 @@ theorem newtonSlopes_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
   obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp hc
   have hpoly : (f.comp (C c * X)).newtonPolygon v =
       fun n => f.newtonPolygon v n + ((0 + r * n : ℝ) : WithTop ℝ) := by
-    simp only [f.newtonPolygon_comp_C_mul_X v hc, ← hr, ← WithTop.coe_nsmul, nsmul_eq_mul,
+    simp only [f.newtonPolygon_comp_C_mul_X v c, ← hr, ← WithTop.coe_nsmul, nsmul_eq_mul,
       zero_add, mul_comm]
   refine newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
     (by rw [hpoly, finiteEdges_add_affine, Set.image_id]) fun n hn => ?_
@@ -376,8 +376,10 @@ theorem newtonSlopes_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTo
     (f.map φ).newtonSlopes w = (f.newtonSlopes v).map (c * ·) := by
   have hpoly := f.newtonPolygon_map_eq_map_mul v φ hc hφ
   exact newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
-    (by rw [hpoly, finiteEdges_map_mul, Set.image_id])
-    fun n _ => by rw [hpoly, id, unitSlope_map_mul]
+    (by rw [hpoly, finiteEdges_map (f := (c * ·)), Set.image_id])
+    fun n _ => by
+      rw [hpoly, id]
+      simpa using unitSlope_map (h := f.newtonPolygon v) (AddMonoidHom.mulLeft c) n
 
 /-! ### Linear polynomials -/
 

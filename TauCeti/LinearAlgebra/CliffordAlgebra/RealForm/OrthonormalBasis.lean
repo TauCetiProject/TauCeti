@@ -64,6 +64,13 @@ namespace OrthonormalBasis
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   {n : ℕ} (b : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 
+include b hQ in
+/-- A negative norm-square form on a space with a nonempty orthonormal basis is nonzero. -/
+theorem ne_zero_of_neg_norm_sq [Nonempty (Fin n)] : Q ≠ 0 := by
+  intro hz
+  have hv := hQ (b (Classical.arbitrary (Fin n)))
+  simp [hz] at hv
+
 /-- The coordinates of an orthonormal basis `b`, `x ↦ ∑ i, x i • b i`, as an isometry from the
 negated positive-definite coordinate form `-realCliffordForm n 0` to a form `Q v = -‖v‖²`. -/
 def negRealCliffordFormIsometryEquiv : (-realCliffordForm n 0).IsometryEquiv Q where

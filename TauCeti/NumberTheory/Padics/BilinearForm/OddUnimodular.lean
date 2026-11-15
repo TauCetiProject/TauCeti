@@ -95,7 +95,7 @@ private theorem Equivalent.isSquare_prod_mul_prod_and_eight_dvd {B : BilinForm �
     IsSquare ((∏ i, B (b i) (b i)) * ∏ i, C (c i) (c i)) ∧
       (8 : ℤ_[2]) ∣ ∑ i, C (c i) (c i) - ∑ i, B (b i) (b i) := by
   have hbdet : IsUnit (B.toMatrix b).det := hb.isUnit_det_toMatrix hbu
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hbdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hbdet
   refine ⟨?_, h.eight_dvd_sum_apply_self_sub_sum_apply_self PadicInt.two_dvd_sq_sub_self hb hc⟩
   simpa [hb.toMatrix_eq_diagonal, hc.toMatrix_eq_diagonal] using h.isSquare_det_mul_det b c
 
@@ -211,7 +211,7 @@ private theorem exists_toZModPow_three_apply_self_eq {B : BilinForm ℤ_[2] M} {
     exact ⟨j, x, y, hx.trans h.symm, hy, hxy⟩
   -- Otherwise every `dᵢ` lies in `{y, 5y}` and every `vⱼ` in `{-y, -5y}`, where `y = d₀`.
   push Not at hA hB5
-  set y := PadicInt.toZModPow 3 (B (b 0) (b 0)) with hy
+  set y := PadicInt.toZModPow 3 (B (b 0) (b 0))
   have hdy (i : Fin (m + 2)) : PadicInt.toZModPow 3 (B (b i) (b i)) = y ∨
       PadicInt.toZModPow 3 (B (b i) (b i)) = 5 * y := by
     have key : ∀ a b c : ZMod (2 ^ 3), a * a = 1 → b * b = 1 → c * c = 1 → c ≠ a → c ≠ 5 * a →
@@ -258,6 +258,45 @@ private theorem exists_basis_orthogonal_span_singleton {B : BilinForm ℤ_[2] M}
   rw [eight_dvd_sub_iff_toZModPow_three_eq, hcS] at hS
   exact ⟨t, ht, htu, hP, hS⟩
 
+/-- The rank-one case of `exists_basis_iIsOrtho_apply_self_eq_aux`: rescale the basis vector. -/
+private theorem exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one {B : BilinForm ℤ_[2] M}
+    {b : Basis (Fin 1) ℤ_[2] M} {v : Fin 1 → ℤ_[2]} (hv : ∀ i, IsUnit (v i))
+    (hP : PadicInt.toZModPow 3 (∏ i, B (b i) (b i)) = PadicInt.toZModPow 3 (∏ i, v i)) :
+    ∃ c : Basis (Fin 1) ℤ_[2] M, B.iIsOrtho c ∧ ∀ i, B (c i) (c i) = v i := by
+  simp only [Fin.prod_univ_succ, Fin.prod_univ_zero, mul_one] at hP
+  obtain ⟨s, hs, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hv 0) hP
+  refine ⟨b.unitsSMul fun _ ↦ hs.unit, iIsOrtho_def.mpr fun i j hij ↦ ?_, fun i ↦ ?_⟩
+  · exact (hij (Fin.ext (by omega))).elim
+  · obtain rfl : i = 0 := Fin.ext (by omega)
+    simp only [Basis.unitsSMul_apply, Units.smul_def, IsUnit.unit_spec, map_smul,
+      LinearMap.smul_apply, smul_eq_mul, hsv]
+    ring
+
+/-- Removing the `j`-th entry of a family of `ℤ_[2]`-units from its product, modulo `8`: if `v j`
+times `P` has the same product class as `v`, then `P` has that of the family with `v j` removed
+and the entries swapped to the front. -/
+private theorem toZModPow_three_prod_tail_swap_eq {m : ℕ} (v : Fin (m + 2) → ℤ_[2])
+    (j : Fin (m + 2)) (hj : IsUnit (v j)) {P : ℤ_[2]}
+    (h : PadicInt.toZModPow 3 (v j * P) = PadicInt.toZModPow 3 (∏ i, v i)) :
+    PadicInt.toZModPow 3 P = PadicInt.toZModPow 3 (∏ i, Fin.tail (v ∘ Equiv.swap 0 j) i) := by
+  have hcancel : ∀ a x z : ZMod (2 ^ 3), a * a = 1 → a * x = a * z → x = z := by decide
+  have hvP : ∏ i, v i = v j * ∏ i, Fin.tail (v ∘ Equiv.swap 0 j) i := by
+    rw [← Equiv.prod_comp (Equiv.swap 0 j), Fin.prod_univ_succ]
+    simp [Fin.tail]
+  refine hcancel _ _ _ (isUnit_iff_toZModPow_three_mul_self.mp hj) ?_
+  rw [← map_mul, ← map_mul, ← hvP, ← h]
+
+/-- The additive analogue of `toZModPow_three_prod_tail_swap_eq`, for sums. -/
+private theorem toZModPow_three_sum_tail_swap_eq {m : ℕ} (v : Fin (m + 2) → ℤ_[2])
+    (j : Fin (m + 2)) {S : ℤ_[2]}
+    (h : PadicInt.toZModPow 3 (v j + S) = PadicInt.toZModPow 3 (∑ i, v i)) :
+    PadicInt.toZModPow 3 S = PadicInt.toZModPow 3 (∑ i, Fin.tail (v ∘ Equiv.swap 0 j) i) := by
+  have hvS : ∑ i, v i = v j + ∑ i, Fin.tail (v ∘ Equiv.swap 0 j) i := by
+    rw [← Equiv.sum_comp (Equiv.swap 0 j), Fin.sum_univ_succ]
+    simp [Fin.tail]
+  refine add_left_cancel (a := PadicInt.toZModPow 3 (v j)) ?_
+  rw [← map_add, ← map_add, ← hvS, ← h]
+
 /-- The inductive core of `LinearMap.BilinForm.iIsOrtho.exists_basis_iIsOrtho_apply_self_eq`,
 with the invariants compared modulo `8`. -/
 private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
@@ -274,20 +313,10 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   | succ n ih =>
   intro M _ _ B b hb hbu v hv hP hS
   rcases n with _ | m
-  · -- In rank one, rescale the basis vector.
-    simp only [Fin.prod_univ_succ, Fin.prod_univ_zero, mul_one] at hP
-    obtain ⟨s, hs, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hbu 0) (hv 0) hP
-    refine ⟨b.unitsSMul fun _ ↦ hs.unit, iIsOrtho_def.mpr fun i j hij ↦ ?_, fun i ↦ ?_⟩
-    · exact (hij (Fin.ext (by omega))).elim
-    · obtain rfl : i = 0 := Fin.ext (by omega)
-      simp only [Basis.unitsSMul_apply, Units.smul_def, IsUnit.unit_spec, map_smul,
-        LinearMap.smul_apply, smul_eq_mul, hsv]
-      ring
+  · exact exists_basis_iIsOrtho_apply_self_eq_of_card_eq_one hv hP
   -- Choose a vector representing some `vⱼ` with an odd complement, rescaled to represent `vⱼ`.
   obtain ⟨j, x, y, hxv, hyu, hxy⟩ := exists_toZModPow_three_apply_self_eq hb hbu hv hP hS
-  have hxu : IsUnit (B x x) :=
-    isUnit_iff_toZModPow_three_mul_self.mpr (hxv ▸ isUnit_iff_toZModPow_three_mul_self.mp (hv j))
-  obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq hxu (hv j) hxv
+  obtain ⟨s, -, hsv⟩ := exists_eq_sq_mul_of_toZModPow_three_eq (hv j) hxv
   set x' := s • x with hx'
   have hx'x' : B x' x' = v j := by
     simp only [hx', map_smul, LinearMap.smul_apply, smul_eq_mul, hsv]
@@ -299,21 +328,8 @@ private theorem exists_basis_iIsOrtho_apply_self_eq_aux (n : ℕ) :
   -- Remove `vⱼ` from the target; the complement has the remaining invariants.
   let w : Fin (m + 2) → ℤ_[2] := v ∘ Equiv.swap 0 j
   let v' : Fin (m + 1) → ℤ_[2] := Fin.tail w
-  have hvP : ∏ i, v i = v j * ∏ i, v' i := by
-    rw [← Equiv.prod_comp (Equiv.swap 0 j), Fin.prod_univ_succ]
-    simp [w, v', Fin.tail]
-  have hvS : ∑ i, v i = v j + ∑ i, v' i := by
-    rw [← Equiv.sum_comp (Equiv.swap 0 j), Fin.sum_univ_succ]
-    simp [w, v', Fin.tail]
-  have hcancel : ∀ a x z : ZMod (2 ^ 3), a * a = 1 → a * x = a * z → x = z := by decide
-  have htP' : PadicInt.toZModPow 3 (∏ i, B (t i) (t i)) =
-      PadicInt.toZModPow 3 (∏ i, v' i) := by
-    refine hcancel _ _ _ (isUnit_iff_toZModPow_three_mul_self.mp (hv j)) ?_
-    rw [← map_mul, ← map_mul, ← hvP, ← htP, hP]
-  have htS' : PadicInt.toZModPow 3 (∑ i, B (t i) (t i)) =
-      PadicInt.toZModPow 3 (∑ i, v' i) := by
-    refine add_left_cancel (a := PadicInt.toZModPow 3 (v j)) ?_
-    rw [← map_add, ← map_add, ← hvS, ← htS, hS]
+  have htP' := toZModPow_three_prod_tail_swap_eq v j (hv j) (htP.symm.trans hP)
+  have htS' := toZModPow_three_sum_tail_swap_eq v j (htS.symm.trans hS)
   -- The inductive hypothesis realizes the rest of the target on the complement; adjoin `x'`.
   obtain ⟨t', ht', ht'v⟩ := ih (B := B.restrict (B.orthogonal (ℤ_[2] ∙ x'))) t ht htu
     v' (fun i ↦ hv _) htP' htS'
@@ -397,8 +413,8 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det_and_eight_dvd_of_odd {B : Bil
     hCodd
   have : Free ℤ_[2] M := .of_basis b
   have : Free ℤ_[2] N := .of_basis c
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hBdet
-  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det C hCdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hBdet
+  have : C.IsPerfPair := c.isPerfPair_of_isUnit_det c C hCdet
   have hb'det : (B.toMatrix b').det = ∏ i, B (b' i) (b' i) := hb'.det_toMatrix
   have hc'det : (C.toMatrix c').det = ∏ i, C (c' i) (c' i) := hc'.det_toMatrix
   have hb'P := IsUnit.prod_univ_iff.mpr hb'u

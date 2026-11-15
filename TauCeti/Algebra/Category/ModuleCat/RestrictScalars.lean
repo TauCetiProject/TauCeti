@@ -20,7 +20,8 @@ finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it.
 
 * Along a **surjective** ring homomorphism, finite generation is preserved and reflected: every
   scalar of `S` is the image of a scalar of `R`, so the `S`-span and the `R`-span of a set
-  coincide.
+  coincide. For the same reason every `R`-linear map between such modules is `S`-linear, so
+  restriction of scalars is full.
 * Along a ring homomorphism making `S` a **finitely generated** `R`-module, finite generation is
   preserved, so restriction of scalars is a functor between the categories of finitely generated
   modules.
@@ -42,11 +43,15 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
 * `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
   `algebraMap R S` gives back its compatible `R`-module structure.
+* `ModuleCat.restrictScalarsOpOpIso`: restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries the
+  `Aᵐᵒᵖᵐᵒᵖ`-module `Aᵐᵒᵖ` to the regular module `A`.
 
 ## Main results
 
 * `RingHom.finite_restrictScalars_iff` and `RingHom.isFG_restrictScalars_iff`: finite generation
   is invariant under restriction of scalars along a surjective ring homomorphism.
+* `RingHom.full_restrictScalars`: restriction of scalars along a surjective ring homomorphism is
+  full.
 * `RingHom.isFG_restrictScalars_of_finite`: finite generation is preserved by restriction of
   scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
 * `RingHom.projective_restrictScalars_of_projective`: projectivity is preserved by restriction of
@@ -91,6 +96,20 @@ theorem finite_restrictScalars_iff (f : R →+* S) (hf : Function.Surjective f)
   LinearMap.finite_iff_of_bijective (f.restrictScalarsSemilinearMap M)
     Function.bijective_id
 
+/-- **Restriction of scalars along a surjective ring homomorphism is full.** An `R`-linear map
+between `S`-modules with scalars restricted along a surjective `f : R →+* S` is `S`-linear, since
+every scalar of `S` is the image of a scalar of `R`. -/
+theorem full_restrictScalars (f : R →+* S) (hf : Function.Surjective f) :
+    (ModuleCat.restrictScalars.{v} f).Full where
+  map_surjective {M N} g :=
+    ⟨ModuleCat.ofHom
+      { toFun := g
+        map_add' := map_add g.hom
+        map_smul' := fun s m ↦ by
+          obtain ⟨r, rfl⟩ := hf s
+          rw [RingHom.id_apply, ← ModuleCat.restrictScalars.smul_def' f r m, map_smul,
+            ModuleCat.restrictScalars.smul_def] }, rfl⟩
+
 /-- Restricting scalars along a surjective ring homomorphism preserves and reflects the object
 property of being finitely generated. -/
 theorem isFG_restrictScalars_iff (f : R →+* S) (hf : Function.Surjective f)
@@ -127,7 +146,7 @@ theorem projective_restrictScalars_of_projective (f : R →+* S)
   have : IsScalarTower R S M := ⟨fun r s m ↦ mul_smul (f r) s m⟩
   -- Elaborated before being matched against the goal, so that the `R`-module structure of `M`
   -- is the local one carrying the scalar tower; the goal's is defeq but not syntactically equal.
-  have hRM : Module.Projective R M := Module.Projective.trans (S := S)
+  have hRM : Module.Projective R M := Module.Projective.trans S M
   exact hRM
 
 /-- **Restriction of scalars on finitely generated modules.** A ring homomorphism
@@ -234,5 +253,26 @@ theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Mo
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
   (rfl)
+
+section OpOp
+
+variable (A : Type u) [Ring A]
+
+/-- Restricting scalars along `A ≃+* Aᵐᵒᵖᵐᵒᵖ` carries `Aᵐᵒᵖ`, the regular right module of `Aᵐᵒᵖ`, to
+the regular module `A`, through `MulOpposite.unop`. -/
+noncomputable def restrictScalarsOpOpIso :
+    (restrictScalars.{u} (RingEquiv.opOp A).toRingHom).obj (of Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ) ≅ of A A :=
+  let X := (restrictScalars.{u} (RingEquiv.opOp A).toRingHom).obj (of Aᵐᵒᵖᵐᵒᵖ Aᵐᵒᵖ)
+  let e : X ≃ₗ[A] A :=
+    { (MulOpposite.opAddEquiv : A ≃+ Aᵐᵒᵖ).symm with
+      map_smul' := fun a x ↦ by
+        rw [restrictScalars.smul_def]
+        -- The element `x` of the restricted module is an element of `Aᵐᵒᵖ`, on which `op (op a)`
+        -- acts by right multiplication by `op a`.
+        exact (congrArg MulOpposite.unop (op_smul_eq_mul (MulOpposite.op a) (x : Aᵐᵒᵖ))).trans
+          (MulOpposite.unop_mul (x : Aᵐᵒᵖ) (MulOpposite.op a)) }
+  e.toModuleIso
+
+end OpOp
 
 end ModuleCat

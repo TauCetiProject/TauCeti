@@ -47,6 +47,8 @@ conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
   `i`-th direction is `(-1) ^ i` times the `i`-th unit.
 * `TauCeti.Quaternion.inner_dq_Dq`: `⟪dq w, Dq v⟫_ℝ = det (w, v 0, v 1, v 2)`.
 * `TauCeti.Quaternion.Dq_star`: the pullback of `Dq` under quaternion conjugation is `-star Dq`.
+* `ContinuousLinearEquiv.Dq_map_succAbove`: the oriented affine face coefficient is the
+  corresponding row of the cofactor transform, with the signed determinant.
 
 ## References
 
@@ -101,6 +103,20 @@ theorem dq_single (i : Fin 4) (r : ℝ) :
 /-- `dq` is the inverse of the coordinate map `QuaternionAlgebra.linearEquivTuple`. -/
 theorem coe_dq : ⇑dq = (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm :=
   (rfl)
+
+/-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
+`EuclideanSpace ℝ (Fin 4)`. -/
+theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
+  rw [← _root_.Quaternion.norm_toLp_equivTuple]
+  congr 2
+  simp only [coe_dq, _root_.Quaternion.equivTuple]
+  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+
+/-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
+with them. -/
+theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
+    ∑ i : Fin 4, ⟪q, dq (Pi.single i 1)⟫ • dq (Pi.single i 1) = q := by
+  ext <;> simp [Fin.sum_univ_four, _root_.Quaternion.inner_def, dq_apply, Pi.single_apply]
 
 /-! ### The `3`-form `Dq` -/
 
@@ -186,3 +202,56 @@ theorem Dq_star {v w : Fin 3 → Fin 4 → ℝ} (h : ∀ r, dq (w r) = star (dq 
   ring
 
 end TauCeti.Quaternion
+
+open TauCeti.Quaternion
+
+namespace ContinuousLinearEquiv
+
+/-- Under an invertible real linear change of tangent coordinates, the interior-product
+identity for `Dq` transforms by the signed determinant and the inverse change on the test vector. -/
+theorem inner_dq_Dq_map (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ))
+    (w : Fin 4 → ℝ) (v : Fin 3 → Fin 4 → ℝ) :
+    ⟪dq w, Dq (fun r ↦ L (v r))⟫ =
+      LinearMap.det L.toLinearMap * ⟪dq (L.symm w), Dq v⟫ := by
+  rw [inner_dq_Dq, inner_dq_Dq]
+  have h := (Pi.basisFun ℝ (Fin 4)).det_comp L.toLinearMap (Fin.cons (L.symm w) v)
+  simp only [Pi.basisFun_det_apply] at h
+  convert h using 1
+  congr 1
+  ext i
+  refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp
+
+/-- The oriented tangent coefficient of an affine front face is the corresponding row
+of the cofactor transform. The inverse is not transposed: its entry here is `(j,i)`. -/
+theorem Dq_map_succAbove (L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)) (j : Fin 4) :
+    (-1 : ℝ) ^ (j : ℕ) • Dq (fun r ↦ L (Pi.single (j.succAbove r) 1)) =
+      LinearMap.det L.toLinearMap • dq (fun i ↦ L.symm (Pi.single i 1) j) := by
+  have h (i : Fin 4) := inner_dq_Dq_map L (Pi.single i 1)
+    (fun r ↦ Pi.single (j.succAbove r) 1)
+  simp only [Dq_succAbove, inner_smul_right] at h
+  have hs : (-1 : ℝ) ^ (j : ℕ) * (-1 : ℝ) ^ (j : ℕ) = 1 := by
+    rw [← pow_add, ← two_mul, pow_mul]
+    norm_num
+  have h' (i : Fin 4) :
+      ⟪dq (Pi.single i 1),
+        (-1 : ℝ) ^ (j : ℕ) • Dq (fun r ↦ L (Pi.single (j.succAbove r) 1))⟫ =
+      LinearMap.det L.toLinearMap * L.symm (Pi.single i 1) j := by
+    rw [inner_smul_right, h]
+    have hb (x : Fin 4 → ℝ) :
+        ⟪dq x, QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) j⟫ = x j := by
+      have he := dq_single j 1
+      simp only [one_smul] at he
+      rw [← he]
+      fin_cases j <;> simp [Quaternion.inner_def, dq_apply]
+    rw [hb]
+    calc
+      _ = ((-1 : ℝ) ^ (j : ℕ) * (-1 : ℝ) ^ (j : ℕ)) *
+          (LinearMap.det L.toLinearMap * L.symm (Pi.single i 1) j) := by ring
+      _ = _ := by rw [hs, one_mul]
+  ext
+  · simpa [Quaternion.inner_def, dq_apply] using h' 0
+  · simpa [Quaternion.inner_def, dq_apply] using h' 1
+  · simpa [Quaternion.inner_def, dq_apply] using h' 2
+  · simpa [Quaternion.inner_def, dq_apply] using h' 3
+
+end ContinuousLinearEquiv

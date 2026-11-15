@@ -107,7 +107,7 @@ theorem image_setOf_isNilpotent_ad_sl [PerfectField K]
       {X : Matrix n n K | IsNilpotent X} := by
   ext X
   simp only [Set.mem_image, Set.mem_ofPred_eq, isNilpotent_ad_sl_iff hn]
-  refine ⟨fun ⟨x, hx, hxX⟩ ↦ hxX ▸ hx, fun hX ↦ ⟨⟨X, ?_⟩, hX, rfl⟩⟩
+  refine ⟨fun ⟨_, hx, hxX⟩ ↦ hxX ▸ hx, fun hX ↦ ⟨⟨X, ?_⟩, hX, rfl⟩⟩
   exact (SpecialLinear.mem_sl_iff).mpr (Matrix.isNilpotent_trace_of_isNilpotent hX).eq_zero
 
 end TauCeti

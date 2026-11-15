@@ -62,10 +62,11 @@ open Metric Set Topology
 variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- The inverse of `unitBall` in explicit radial coordinates. -/
-theorem _root_.Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
-    (Homeomorph.unitBall.symm y : W) =
-      (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 := by
-  exact (Homeomorph.unitBall_symm_apply y).trans
+theorem Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
+    (Homeomorph.unitBall.symm y : W) = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
+  -- Compose the explicit formulas as terms: the intermediate subtypes are the source and target
+  -- of the partial homeomorphism rather than `ball 0 1`, so `simp` cannot chain the rewrites.
+  (Homeomorph.unitBall_symm_apply y).trans
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
       (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
@@ -226,7 +227,6 @@ theorem coe_cubeHomeomorphClosedBall_symm_apply (z : closedBall (0 : N → ℝ) 
   rw [Homeomorph.apply_symm_apply] at h
   linarith
 
-open unitInterval in
 /-- **The closed unit ball of a finite-dimensional real normed space is a cube.** The closed unit
 ball of a real normed space of finite dimension `k` is homeomorphic to the cube `Iᵏ`. -/
 theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -278,15 +278,20 @@ theorem coe_closedBallHomeomorphOfFinrankEq_apply
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
 
-/-- **Convex bodies are balls.** A compact convex set with nonempty interior in a
-finite-dimensional real normed space is homeomorphic to the closed unit ball of any real normed
-space of the same dimension. -/
+omit [FiniteDimensional ℝ E] in
+/-- **Convex bodies are balls.** A compact convex set with nonempty interior in a real normed space
+(which is then finite-dimensional, by Riesz's theorem) is homeomorphic to the closed unit ball of
+any finite-dimensional real normed space of the same dimension. -/
 theorem nonempty_homeomorph_closedBall_of_convex {s : Set E} (hc : Convex ℝ s)
     (hs : IsCompact s) (hn : (interior s).Nonempty)
     (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
     Nonempty (s ≃ₜ closedBall (0 : F) 1) := by
+  -- a compact set with an interior point forces `E` to be finite-dimensional (Riesz)
+  obtain ⟨x, hx⟩ := hn
+  have : FiniteDimensional ℝ E :=
+    .of_totallyBounded_nhds ℝ (mem_interior_iff_mem_nhds.mp hx) hs.totallyBounded
   obtain ⟨h, -, hcl, -⟩ :=
-    exists_homeomorph_image_interior_closure_frontier_eq_unitBall hc hn hs.isBounded
+    exists_homeomorph_image_interior_closure_frontier_eq_unitBall hc ⟨x, hx⟩ hs.isBounded
   rw [hs.isClosed.closure_eq] at hcl
   exact ⟨((h.image s).trans (Homeomorph.setCongr hcl)).trans
     (closedBallHomeomorphOfFinrankEq hEF)⟩
@@ -296,9 +301,10 @@ end FinrankEq
 /-- A product of two nondegenerate closed real intervals is homeomorphic to the closed unit ball
 of any two-dimensional real normed space. -/
 theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {a b c d : ℝ} (hab : a < b) (hcd : c < d)
+    [NormedSpace ℝ F] {a b c d : ℝ} (hab : a < b) (hcd : c < d)
     (hF : Module.finrank ℝ F = 2) :
     Nonempty ((Icc a b ×ˢ Icc c d) ≃ₜ closedBall (0 : F) 1) :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   nonempty_homeomorph_closedBall_of_convex ((convex_Icc _ _).prod (convex_Icc _ _))
     (isCompact_Icc.prod isCompact_Icc)
     (by rw [interior_prod_eq, interior_Icc, interior_Icc]

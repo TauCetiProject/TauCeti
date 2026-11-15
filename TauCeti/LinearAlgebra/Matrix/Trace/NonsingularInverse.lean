@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Trace
-import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
 # Traces of products with an inverse

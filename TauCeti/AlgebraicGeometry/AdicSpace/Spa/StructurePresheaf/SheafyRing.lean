@@ -37,10 +37,13 @@ does not require completeness.
 * `TauCeti.Huber.isSheafyRing_iff_isSheaf_rationalSubsetLimitPresheaf`: for any pair of
   definition `P` of `Â`, `A` is sheafy exactly when the presheaf `V ↦ lim_{U ⊆ V} Â⟨U⟩` of limits
   over rational subsets built from `P` is a sheaf for every ring of integral elements of `Â`.
-* `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation`: if `A` is sheafy, every ring of
-  integral elements `A⁺` of `A` satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`; the
-  intermediate step `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation_completionPlus` gives
-  the same for `Â⁺`, the closure of the image of `A⁺`.
+* `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation` and
+  `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheafyRing`: if `A` is sheafy,
+  every ring of integral elements `A⁺` of `A` satisfies
+  `TauCeti.Huber.IsSheafyForEveryPresentation`, so the presentation-limit structure presheaf of
+  `Spa(A, A⁺)` is a sheaf; the intermediate step
+  `TauCeti.Huber.IsSheafyRing.isSheafyForEveryPresentation_completionPlus` gives the same for `Â⁺`,
+  the closure of the image of `A⁺`.
 * `TauCeti.Huber.isSheafyRing_iff_forall_isSheafyForEveryPresentation`: a complete Hausdorff
   Huber ring `B` is sheafy exactly when every ring of integral elements of `B` satisfies
   `TauCeti.Huber.IsSheafyForEveryPresentation`.
@@ -121,6 +124,16 @@ theorem IsSheafyRing.isSheafyForEveryPresentation (h : IsSheafyRing A) {Aplus : 
     (hAplus : IsRingOfIntegralElements Aplus) : IsSheafyForEveryPresentation Aplus :=
   (isSheafyForEveryPresentation_completionPlus_iff hAplus).mp
     (h.isSheafyForEveryPresentation_completionPlus hAplus)
+
+/-- **The structure presheaf of `Spa(A, A⁺)` is a sheaf when `A` is a sheafy Huber ring** and `A⁺`
+is a ring of integral elements containing `P.ringOfDefinition`. Neither completeness nor a Tate
+hypothesis on `A` is required. -/
+theorem _root_.TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheafyRing
+    (P : PairOfDefinition A) {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus)
+    (hP : P.ringOfDefinition ≤ Aplus) (hA : IsSheafyRing A) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus) :=
+  (hA.isSheafyForEveryPresentation hAplus).isSheaf P hP
 
 /-- **Sheafiness of a complete Hausdorff Huber ring**: a complete Hausdorff Huber ring `B` is sheafy
 exactly when every ring of integral elements `B⁺` of `B` itself satisfies

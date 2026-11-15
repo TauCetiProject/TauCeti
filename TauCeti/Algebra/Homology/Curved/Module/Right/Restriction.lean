@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Algebra.Hom.Basic
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.RestrictScalars
 
 /-!

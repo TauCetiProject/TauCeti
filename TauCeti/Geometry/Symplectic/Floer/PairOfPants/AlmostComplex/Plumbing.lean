@@ -25,7 +25,8 @@ and external manifold parameter. In particular the moving seam introduces no los
 regularity: near it both formulas are the same cylindrical structure.
 
 The structures act on a fixed symplectic vector space; the external parameter may be a target
-point. This is not a construction of sections of the tangent bundle of a general target.
+point. The construction on the tangent bundle of a manifold target, which applies this one in
+each tangent fiber, is `TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex`.
 The two pieces may use different compatible base structures in their Cayley constructions.
 
 ## References
@@ -181,27 +182,15 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
       (by linarith : (q.endCoord p.2.1).re ≤ p.1 - 2)]
     rfl
   · have h2 : 2 < (q.endCoord w).re := by linarith
-    set w' := (w - q.endCenter) / q.plumbingFactor L
-    have hw'0 : w' ≠ 0 := q.sub_endCenter_div_plumbingFactor_ne_zero L hc
-    have hw'1 : w' ≠ 1 := fun h => hw.2
-      ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))
+    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).2
+    rw [coe_plumbingPreimage] at hw'
     -- The inserted piece also moves with the length through the inverse plumbing map.
-    have hfactor : ContDiff ℝ n (fun l : ℝ => q.plumbingFactor l) := by
-      have hr : ContDiff ℝ n (fun l : ℝ => Real.exp (-(2 * π * l)) / 2) := by fun_prop
-      simpa only [plumbingFactor_eq_mul_ofReal, Function.comp_apply, Complex.ofRealCLM_apply] using
-        (contDiff_const (𝕜 := ℝ) (c := q.endScale)).mul (Complex.ofRealCLM.contDiff.comp hr)
-    have hf : ContDiffAt ℝ n
-        (fun p : ℝ × ℂ => (p.2 - q.endCenter) / q.plumbingFactor p.1) (L, w) := by
-      have hg : ContDiff ℝ n (fun p : ℝ × ℂ => q.plumbingFactor p.1) :=
-        hfactor.comp contDiff_fst
-      simpa only [div_eq_mul_inv, Pi.inv_apply] using
-        ((contDiff_snd (𝕜 := ℝ)).sub (contDiff_const (c := q.endCenter))).contDiffAt.mul
-          ((hg.contDiffAt (x := (L, w))).inv (q.plumbingFactor_ne_zero L))
+    have hf := (q.contDiff_inverse_plumbingMap (n := n)).contDiffAt (x := (L, w))
     have hcoord : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
         (fun p : ℝ × (ℂ × M) => (p.2.1 - q.endCenter) / q.plumbingFactor p.1) (L, (w, x)) :=
       hf.contMDiffAt.comp (f := fun p : ℝ × (ℂ × M) => (p.1, p.2.1)) (L, (w, x))
         (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
-    refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨w', hw'0, hw'1⟩ x).comp
+    refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨_, hw'⟩ x).comp
       (L, (w, x)) (hcoord.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (lt_mem_nhds h2)] with p hp
     rw [plumbedAlmostComplex_eq_inserted hₐ hᵦ hq hab hp]

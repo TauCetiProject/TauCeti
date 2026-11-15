@@ -42,7 +42,7 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   algebra.
 * `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
   restricted at a polyradius bounded below by some `ρ > 1`.
-* `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
+* `TauCeti.Dagger.washnitzerAlgebra.renameAlgEquiv`: renaming the variables along an equivalence.
 * `TauCeti.Dagger.washnitzerAlgebra.isEmptyAlgEquiv`: with no variables, `W` is the coefficient
   ring, via the constant coefficient.
 
@@ -56,7 +56,7 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   `TauCeti.Dagger.washnitzerAlgebra_toSubring_lt`: over a nontrivially normed field it is a
   proper subring as soon as there is a variable, while `W` is everything when there is none
   (`TauCeti.Dagger.washnitzerAlgebra_eq_top`), and then every series is a constant
-  (`TauCeti.Dagger.algebraMap_washnitzerAlgebra_surjective`).
+  (`TauCeti.Dagger.washnitzerAlgebra.algebraMap_surjective`).
 * `TauCeti.Dagger.eventually_isRestricted_of_mem_washnitzerAlgebra`: an overconvergent series is
   restricted at every radius `ρ > 1` close enough to `1`, so finitely many overconvergent series
   share such a radius.
@@ -192,12 +192,6 @@ theorem mem_washnitzerAlgebra_iff_norm_coeff_le [Finite σ] {f : MvPowerSeries �
 theorem washnitzerAlgebra_eq_top [IsEmpty σ] : washnitzerAlgebra σ R = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ ⟨2, one_lt_two, isRestricted_of_finite_support _ (Set.toFinite _)⟩
 
-/-- Without variables every overconvergent series is a constant. -/
-theorem algebraMap_washnitzerAlgebra_surjective [IsEmpty σ] :
-    Function.Surjective (algebraMap R (washnitzerAlgebra σ R)) := fun f ↦
-  let ⟨r, hr⟩ := C_surjective (f : MvPowerSeries σ R)
-  ⟨r, Subtype.ext hr⟩
-
 /-- The Monsky–Washnitzer algebra lies in the unit-radius Tate algebra. -/
 theorem washnitzerAlgebra_toSubring_le :
     (washnitzerAlgebra σ R).toSubring ≤ IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)) :=
@@ -212,7 +206,8 @@ theorem algebraMap_surjective [IsEmpty σ] :
   obtain ⟨c, hc⟩ := C_surjective (σ := σ) (f : MvPowerSeries σ R)
   exact ⟨c, Subtype.ext (by simpa [MvPowerSeries.algebraMap_apply] using hc)⟩
 
-/-- Renaming variables along an equivalence preserves overconvergence. -/
+/-- **Renaming the variables of overconvergent series.** Renaming along an equivalence
+`e : σ ≃ τ` is an `R`-algebra isomorphism `R⟨X_σ⟩† ≃ R⟨X_τ⟩†`. -/
 noncomputable def renameAlgEquiv {τ : Type*} (e : σ ≃ τ) :
     washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
   AlgEquiv.ofRingEquiv
@@ -341,34 +336,10 @@ theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i,
     (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
   (rfl)
 
-/-- A renamed series is overconvergent iff the original one is. -/
-private theorem renameEquiv_mem_iff {τ : Type*} (e : σ ≃ τ) (f : MvPowerSeries σ R) :
-    f ∈ washnitzerAlgebra σ R ↔
-      _root_.MvPowerSeries.renameEquiv R e f ∈ washnitzerAlgebra τ R := by
-  simp only [mem_washnitzerAlgebra]
-  exact exists_congr fun ρ ↦
-    and_congr_right' (isRestricted_renameEquiv_iff e (c := fun _ ↦ ρ)).symm
-
-/-- **Renaming the variables of overconvergent series.** Renaming along an equivalence
-`e : σ ≃ τ` is an `R`-algebra isomorphism `R⟨X_σ⟩† ≃ R⟨X_τ⟩†`. -/
-noncomputable def renameEquiv {τ : Type*} (e : σ ≃ τ) :
-    washnitzerAlgebra σ R ≃ₐ[R] washnitzerAlgebra τ R :=
-  AlgEquiv.ofRingEquiv
-    (f := (_root_.MvPowerSeries.renameEquiv R e).toRingEquiv.restrict _ _ (renameEquiv_mem_iff e))
-    fun r ↦ Subtype.ext (rename_C _ r)
-
-/-- The renaming isomorphism of overconvergent series is `MvPowerSeries.renameEquiv` on the
-underlying series. -/
-@[simp]
-theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
-    (washnitzerAlgebra.renameEquiv e f : MvPowerSeries τ R) =
-      _root_.MvPowerSeries.renameEquiv R e f :=
-  (rfl)
-
 /-- Renaming the variables commutes with the inclusion of the polynomials. -/
 @[simp]
-theorem renameEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolynomial σ R) :
-    washnitzerAlgebra.renameEquiv e (ofMvPolynomial σ R p) =
+theorem renameAlgEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolynomial σ R) :
+    renameAlgEquiv e (ofMvPolynomial σ R p) =
       ofMvPolynomial τ R (MvPolynomial.rename e p) :=
   Subtype.ext (by simp [_root_.MvPowerSeries.rename_coe])
 

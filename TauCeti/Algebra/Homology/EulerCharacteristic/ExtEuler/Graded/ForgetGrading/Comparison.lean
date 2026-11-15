@@ -301,7 +301,7 @@ theorem gradedExtForget_bijective [GradedAlgebra 𝒜] [IsNoetherianRing A]
       (gradedExtForget 𝒜 S.X₃ Y (n + 1))
       (gradedExtForget_comp_lmap_precomp_mk₀ S.f n).symm
       (gradedExtForget_comp_lmap_precomp_extClass hS Y n).symm
-      (Function.Exact.directSum fun j ↦ (ShortComplex.ab_exact_iff_function_exact _).1
+      (DirectSum.exact_lmap_iff.mpr fun j ↦ (ShortComplex.ab_exact_iff_function_exact _).1
         (Ext.contravariant_sequence_exact₁' hS _ n (n + 1) (add_comm 1 n)))
       ((ShortComplex.ab_exact_iff_function_exact _).1
         (Ext.contravariant_sequence_exact₁' hS' _ n (n + 1) (add_comm 1 n)))

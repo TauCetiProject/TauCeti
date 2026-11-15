@@ -47,6 +47,10 @@ vanishes on the vectors of type `(1,0)`.
   a real vector, with `TauCeti.AlmostComplexStructure.holomorphicPart_mem_eigenspace_baseChange_I`,
   `TauCeti.AlmostComplexStructure.antiholomorphicPart_mem_eigenspace_baseChange_neg_I` and
   `TauCeti.AlmostComplexStructure.holomorphicPart_add_antiholomorphicPart`.
+* `TauCeti.AlmostComplexStructure.holomorphicPart_injective` and
+  `TauCeti.AlmostComplexStructure.range_holomorphicPart`, with their `(0,1)` counterparts: taking
+  the `(1,0)`-part is a real-linear isomorphism of `V` onto the `i`-eigenspace, and taking the
+  `(0,1)`-part one onto the `-i`-eigenspace.
 * `TauCeti.AlmostComplexStructure.baseChange_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.baseChange_antiholomorphicPart`: the complexified complex
   structure commutes with taking the `(1,0)`- and `(0,1)`-parts.
@@ -203,6 +207,65 @@ theorem eigenspace_neg_baseChange_I :
   rw [← one_tmul_realPart_add_I_tmul_imaginaryPart _ u,
     one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff,
     one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff, neg_apply, neg_neg]
+
+/-! ## Real and imaginary parts of the `(1,0)` and `(0,1)` parts -/
+
+/-- The real part of `v^(1,0)` is `v / 2`. -/
+@[simp]
+theorem realPart_holomorphicPart (v : V) :
+    realPart V (J.holomorphicPart v) = (2⁻¹ : ℝ) • v := by
+  simp [holomorphicPart_apply]
+
+/-- The imaginary part of `v^(1,0)` is `-J v / 2`. -/
+@[simp]
+theorem imaginaryPart_holomorphicPart (v : V) :
+    imaginaryPart V (J.holomorphicPart v) = -((2⁻¹ : ℝ) • J v) := by
+  simp [holomorphicPart_apply]
+
+/-- The real part of `v^(0,1)` is `v / 2`. -/
+@[simp]
+theorem realPart_antiholomorphicPart (v : V) :
+    realPart V (J.antiholomorphicPart v) = (2⁻¹ : ℝ) • v := by
+  simp [antiholomorphicPart_apply]
+
+/-- The imaginary part of `v^(0,1)` is `J v / 2`. -/
+@[simp]
+theorem imaginaryPart_antiholomorphicPart (v : V) :
+    imaginaryPart V (J.antiholomorphicPart v) = (2⁻¹ : ℝ) • J v := by
+  simp [antiholomorphicPart_apply]
+
+/-- A real vector is determined by its `(1,0)`-part. -/
+theorem holomorphicPart_injective : Function.Injective J.holomorphicPart := fun v w h ↦ by
+  simpa using congrArg (realPart V) h
+
+/-- A real vector is determined by its `(0,1)`-part. -/
+theorem antiholomorphicPart_injective : Function.Injective J.antiholomorphicPart := fun v w h ↦ by
+  simpa using congrArg (realPart V) h
+
+/-- The `(1,0)`-parts of real vectors are exactly the vectors of type `(1,0)`: taking the
+`(1,0)`-part is a real-linear isomorphism of `V` onto the `i`-eigenspace of the complexified
+complex structure. -/
+theorem range_holomorphicPart :
+    LinearMap.range J.holomorphicPart =
+      (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I).restrictScalars ℝ := by
+  ext u
+  refine ⟨fun ⟨v, hv⟩ ↦ hv ▸ J.holomorphicPart_mem_eigenspace_baseChange_I v, fun hu ↦ ?_⟩
+  rw [Submodule.restrictScalars_mem, ← one_tmul_realPart_add_I_tmul_imaginaryPart V u,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_I_iff] at hu
+  refine ⟨(2 : ℝ) • realPart V u, complexification_ext ?_ ?_⟩ <;> simp [smul_smul, hu]
+
+/-- The `(0,1)`-parts of real vectors are exactly the vectors of type `(0,1)`: taking the
+`(0,1)`-part is a real-linear isomorphism of `V` onto the `-i`-eigenspace of the complexified
+complex structure. -/
+theorem range_antiholomorphicPart :
+    LinearMap.range J.antiholomorphicPart =
+      (Module.End.eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)).restrictScalars ℝ := by
+  ext u
+  refine ⟨fun ⟨v, hv⟩ ↦ hv ▸ J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v,
+    fun hu ↦ ?_⟩
+  rw [Submodule.restrictScalars_mem, ← one_tmul_realPart_add_I_tmul_imaginaryPart V u,
+    one_tmul_add_I_tmul_mem_eigenspace_baseChange_neg_I_iff] at hu
+  refine ⟨(2 : ℝ) • realPart V u, complexification_ext ?_ ?_⟩ <;> simp [smul_smul, hu]
 
 /-! ## Conjugation of the `(1,0)` and `(0,1)` parts -/
 

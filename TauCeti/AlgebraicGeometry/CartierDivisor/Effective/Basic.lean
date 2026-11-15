@@ -172,6 +172,61 @@ theorem isEffective_principalCartierDivisor_iff (f : X.functionFieldˣ) :
       (principalCartierDivisor_restrict X f ⊤).symm]
   simp only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, mul_one]
 
+variable {D : CartierDivisor X}
+
+/-- For an effective Cartier divisor, `𝒪_X(-D)` is contained in `𝒪_X(0)`. -/
+lemma IsEffective.sections_neg_le_zero (hD : D.IsEffective) (U : X.Opens) :
+    (-D).sections U ≤ (0 : CartierDivisor X).sections U := by
+  intro s hs
+  apply mem_sections_iff_exists.mpr
+  intro x hx
+  have : Nonempty U := ⟨⟨x, hx⟩⟩
+  obtain ⟨f, hf, hfr⟩ := isEffective_iff_exists.mp hD x
+  refine ⟨1, isLocalEquationAt_zero x, ?_⟩
+  simpa using Subring.mul_mem _ hfr ((mem_sections.mp hs) x hx f⁻¹ hf.inv)
+
+/-- The inclusion of `𝒪_X(-D)` in the structure sheaf for an effective Cartier divisor. -/
+def IsEffective.sheafToUnit (hD : D.IsEffective) :
+    (-D).sheaf ⟶ SheafOfModules.unit X.ringCatSheaf :=
+  (0 : CartierDivisor X).sheafLift (-D).sheafι
+    (fun U s ↦ hD.sections_neg_le_zero U ((-D).sheafι_app_mem U s)) ≫
+      (eqToIso (congrArg sheaf (principalCartierDivisor_one X))).inv ≫
+        (unitIsoSheafPrincipalCartierDivisor X 1).inv
+
+/-- The inclusion of `𝒪_X(-D)` in the structure sheaf preserves its rational section. -/
+@[simp, reassoc]
+lemma IsEffective.sheafToUnit_toRationalFunctions (hD : D.IsEffective) :
+    hD.sheafToUnit ≫ Scheme.toRationalFunctions X = (-D).sheafι := by
+  let α := (0 : CartierDivisor X).sheafLift (-D).sheafι
+    (fun U s ↦ hD.sections_neg_le_zero U ((-D).sheafι_app_mem U s))
+  let β := (eqToIso (congrArg sheaf (principalCartierDivisor_one X))).inv
+  have he (E F : CartierDivisor X) (h : E = F) :
+      (eqToIso (congrArg sheaf h)).inv ≫ E.sheafι = F.sheafι := by
+    subst h
+    simp
+  have hp : (unitIsoSheafPrincipalCartierDivisor X 1).inv ≫ Scheme.toRationalFunctions X =
+      (principalCartierDivisor X 1).sheafι :=
+    (unitIsoSheafPrincipalCartierDivisor_inv_toRationalFunctions 1).trans <|
+      (congrArg ((principalCartierDivisor X 1).sheafι ≫ ·)
+        (Scheme.rationalFunctionsMul_one (X := X))).trans (Category.comp_id _)
+  -- Associativity is applied as equality terms because the structure sheaf's module
+  -- category and `X.Modules` are not identified by rewriting at instance transparency.
+  exact (Category.assoc α (β ≫ _) _).trans <|
+    (congrArg (α ≫ ·) <| (Category.assoc β _ _).trans <|
+      (congrArg (β ≫ ·) hp).trans (he _ _ (principalCartierDivisor_one X))).trans
+        (sheafLift_ι _ _ _)
+
+/-- Including a section of `𝒪_X(-D)` in the structure sheaf preserves its rational section. -/
+@[simp]
+lemma IsEffective.toRationalFunctions_app_sheafToUnit_app (hD : D.IsEffective)
+    (U : X.Opens) (t : Γ((-D).sheaf, U)) :
+    (Scheme.toRationalFunctions X).app U (hD.sheafToUnit.app U t) =
+      (-D).sheafι.app U t :=
+  congrArg (fun ψ ↦ ψ.app U t) hD.sheafToUnit_toRationalFunctions
+
+instance (hD : D.IsEffective) : Mono hD.sheafToUnit :=
+  mono_of_mono_fac hD.sheafToUnit_toRationalFunctions
+
 end Scheme.CartierDivisor
 
 end

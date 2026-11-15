@@ -28,6 +28,8 @@ This is the analogue for boundaries of Mathlib's description of horns in
 * `SSet.boundary.IsCompatible.of_hom`: the faces of a map `∂Δ[n + 1] ⟶ X` are compatible.
 * `SSet.boundary.eq_ι_comp_iff`: a map `∂Δ[n + 1] ⟶ X` is the restriction of a simplex `σ`
   exactly when its faces are the faces of `σ`.
+* `SSet.boundary.vertex`, `SSet.boundary.vertex_val` and `SSet.boundary.map_const_yonedaEquiv_ι`:
+  the vertices of `∂Δ[n + 1]`, their values in `Δ[n + 1]`, and the vertices of its faces.
 -/
 
 public section
@@ -161,6 +163,25 @@ lemma eq_ι_comp_iff (σ₀ : (∂Δ[n + 1] : SSet) ⟶ X) (σ : Δ[n + 1] ⟶ X
   · rintro rfl j
     rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp]
   · rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp, h]
+
+/-- The vertex `i` of the boundary `∂Δ[n + 1]`. -/
+def vertex (n : ℕ) (i : Fin (n + 2)) : (∂Δ[n + 1] : SSet.{u}) _⦋0⦌ :=
+  ⟨stdSimplex.obj₀Equiv.symm i, by rw [boundary_obj_eq_univ 0 (n + 1)]; trivial⟩
+
+/-- The vertex `i` of `∂Δ[n + 1]` is the vertex `i` of `Δ[n + 1]`. -/
+@[simp]
+lemma vertex_val (n : ℕ) (i : Fin (n + 2)) :
+    (vertex.{u} n i).val = stdSimplex.obj₀Equiv.symm i := by
+  rw [vertex]
+
+/-- The vertex `p` of the face `ι l` of the boundary `∂Δ[n + 1]` is its vertex `l.succAbove p`. -/
+lemma map_const_yonedaEquiv_ι (l : Fin (n + 2)) (p : Fin (n + 1)) :
+    (∂Δ[n + 1] : SSet.{u}).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ p).op (yonedaEquiv (ι l)) =
+      vertex n (l.succAbove p) := by
+  apply Subtype.ext
+  ext i
+  fin_cases i
+  rfl
 
 end boundary
 

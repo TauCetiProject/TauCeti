@@ -122,6 +122,18 @@ theorem continuousFiniteQuotientPair_hom_apply (hVU : V ≤ U)
   rw [continuousFiniteQuotientPair]
   exact ofDiscreteModulePair_hom_apply _ _ _ m
 
+/-- The coefficient pair is the dictionary image of the inclusion of fixed points. -/
+theorem continuousFiniteQuotientPair_eq_ofDiscreteModulePair (hVU : V ≤ U) :
+    continuousFiniteQuotientPair G M hVU =
+      ofDiscreteModulePair (continuousFiniteQuotientMap G hVU :
+        G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup)
+        (fixedPointsInclusion (M := M) hVU :
+          FixedPoints.addSubgroup U.toSubgroup M →+
+            FixedPoints.addSubgroup V.toSubgroup M).toIntLinearMap
+        (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU) :=
+  (ofDiscreteModulePair_eq_of_hom_apply _ _ _ _
+    (continuousFiniteQuotientPair_hom_apply G M hVU)).symm
+
 /-- At a repeated level the coefficient pair is heterogeneously equal to the identity pair. -/
 private theorem continuousFiniteQuotientPair_refl (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientPair G M (le_refl U) ≍

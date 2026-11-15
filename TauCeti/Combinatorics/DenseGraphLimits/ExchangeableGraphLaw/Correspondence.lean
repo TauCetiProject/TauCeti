@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Existence
 import TauCeti.Combinatorics.DenseGraphLimits.Separation.Inverse
-import TauCeti.MeasureTheory.Measure.FiniteMeasureExt
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext
 
 /-!
 # Exchangeable graph laws correspond to mixing measures on graphon space

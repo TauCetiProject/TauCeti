@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Moments.Basic
 
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import Mathlib.Probability.Moments.SubGaussian
 
 /-!
 # Moment- and cumulant-generating functions of Gaussian linear functionals
@@ -31,6 +32,8 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `ProbabilityTheory.IsGaussian.mgf_dual` computes the moment-generating function of an almost
   everywhere measurable continuous linear functional of a Gaussian measure from its mean and
   variance.
+* `ProbabilityTheory.IsGaussian.lintegral_ofReal_exp_mul_dual` gives the same exponential
+  moment as a nonnegative integral.
 * `TauCeti.Probability.integrableExpSet_inner_multivariateGaussian` gives the exact domain for a
   directional
   functional of a multivariate Gaussian.
@@ -41,6 +44,8 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `TauCeti.Probability.integral_exp_nat_mul_sin_gaussianReal` and
   `TauCeti.Probability.integral_cos_gaussianReal` evaluate two real integrals against the standard
   Gaussian law.
+* `TauCeti.Probability.gaussian_exp_integral`, `gaussian_x_exp_integral` and
+  `gaussian_x_exp_integrable` give its exponential and first tilted moments.
 
 ## References
 
@@ -81,14 +86,54 @@ theorem mgf_dual (L : StrongDual ℝ E) (t : ℝ) (hL : AEMeasurable L μ := by 
   rw [Real.coe_toNNReal _ (variance_nonneg _ _)]
   ring_nf
 
+/-- The exponential moment of an almost everywhere measurable continuous linear functional of a
+Gaussian measure as a nonnegative integral:
+`∫⁻ exp (t L) dμ = exp (t μ[L] + t² / 2 · Var[L; μ])`. -/
+theorem lintegral_ofReal_exp_mul_dual (L : StrongDual ℝ E) (t : ℝ)
+    (hL : AEMeasurable L μ := by fun_prop) :
+    ∫⁻ y, .ofReal (Real.exp (t * L y)) ∂μ =
+      .ofReal (Real.exp (t * μ[L] + t ^ 2 / 2 * Var[L; μ])) := by
+  have hint : t ∈ integrableExpSet L μ := by simp [integrableExpSet_dual L hL]
+  rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (Real.exp_pos _).le),
+    ← mgf_dual L t hL, mgf]
+
 end IsGaussian
 
 end ProbabilityTheory
 
 open ProbabilityTheory
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
+
+/-- The exponential moment of the standard Gaussian. -/
+theorem gaussian_exp_integral (a : ℝ) :
+    ∫ x : ℝ, Real.exp (a * x) ∂ProbabilityTheory.gaussianReal 0 1 = Real.exp (a ^ 2 / 2) := by
+  have h := congrFun (ProbabilityTheory.mgf_fun_id_gaussianReal (μ := 0) (v := 1)) a
+  simpa [ProbabilityTheory.mgf] using h
+
+/-- The first exponentially tilted moment of the standard Gaussian. -/
+theorem gaussian_x_exp_integral (a : ℝ) :
+    ∫ x : ℝ, x * Real.exp (a * x) ∂ProbabilityTheory.gaussianReal 0 1 =
+      a * Real.exp (a ^ 2 / 2) := by
+  open ProbabilityTheory Real in
+    have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
+      simp
+    have h := deriv_mgf ha
+    rw [mgf_fun_id_gaussianReal] at h
+    have hd : HasDerivAt (fun t : ℝ => exp (0 * t + (1 : ℝ≥0) * t ^ 2 / 2))
+        (a * exp (a ^ 2 / 2)) a := by
+      convert ((hasDerivAt_id a).pow 2 |>.div_const 2).exp using 1 <;> simp; ring
+    rw [hd.deriv] at h
+    exact h.symm
+
+/-- The first exponentially tilted moment of the standard Gaussian is integrable. -/
+theorem gaussian_x_exp_integrable (a : ℝ) :
+    Integrable (fun x : ℝ => x * Real.exp (a * x)) (ProbabilityTheory.gaussianReal 0 1) := by
+  open ProbabilityTheory in
+    have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
+      simp
+    simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 

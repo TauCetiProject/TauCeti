@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Fock
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
+import TauCeti.LinearAlgebra.CliffordAlgebra.Annihilation
 import TauCeti.LinearAlgebra.CliffordAlgebra.PBW
 
 /-!
@@ -204,27 +205,6 @@ private theorem carPositiveUnits_ortho {i j k l : n}
       · simp [hkj, hli]
     · simp [hkj]
 
-omit [LinearOrder n] in
-private theorem iota_mul_prod_eq_zero_of_mem
-    {a : Matrix n n K} {l : List (Matrix n n K)}
-    (ha : a ∈ l) (hQ : traceQuadraticForm K n a = 0)
-    (ho : ∀ b ∈ l, (traceQuadraticForm K n).IsOrtho a b) :
-    CliffordAlgebra.ι (traceQuadraticForm K n) a
-        * (l.map (CliffordAlgebra.ι (traceQuadraticForm K n))).prod = 0 := by
-  induction l with
-  | nil => simp at ha
-  | cons b l ih =>
-      rw [List.mem_cons] at ha
-      rcases ha with rfl | ha
-      · simp only [List.map_cons, List.prod_cons]
-        rw [← mul_assoc, CliffordAlgebra.ι_sq_scalar, hQ, map_zero, zero_mul]
-      · have hab := ho b List.mem_cons_self
-        have hol : ∀ c ∈ l, (traceQuadraticForm K n).IsOrtho a c :=
-          fun c hc => ho c (List.mem_cons_of_mem b hc)
-        simp only [List.map_cons, List.prod_cons]
-        rw [← mul_assoc, CliffordAlgebra.ι_mul_ι_comm_of_isOrtho hab, neg_mul,
-          mul_assoc, ih ha hol, mul_zero, neg_zero]
-
 /-- The ordered positive-root product is nonzero over any field. -/
 theorem carHighestWeightVector_ne_zero :
     carHighestWeightVector K n ≠ 0 := by
@@ -247,7 +227,7 @@ private theorem positive_iota_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) :
     CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i j 1)
         * carHighestWeightVector K n = 0 := by
-  apply iota_mul_prod_eq_zero_of_mem (carPositiveMatrixUnitFamily_mem hij)
+  apply CliffordAlgebra.ι_mul_prod_map_ι_eq_zero (carPositiveMatrixUnitFamily_mem hij)
   · rw [traceQuadraticForm_apply, Matrix.trace_single_mul, Matrix.single_apply]
     simp [ne_of_lt hij]
   · intro b hb

@@ -74,13 +74,8 @@ private noncomputable def opNegι :
     { toFun := fun x => MulOpposite.op (-_root_.UniversalEnvelopingAlgebra.ι R x)
       map_add' := fun x y => by simp [add_comm]
       map_smul' := fun r x => by simp }
-  map_lie' := by
-    intro x y
-    apply MulOpposite.unop_injective
-    simp only [MulOpposite.unop_op, LieRing.of_associative_ring_bracket,
-      MulOpposite.unop_sub, MulOpposite.unop_mul]
-    rw [LieHom.map_lie]
-    simp only [LieRing.of_associative_ring_bracket, neg_sub, neg_mul_neg]
+  map_lie' {x y} := MulOpposite.unop_injective <| by
+    simp [LieRing.of_associative_ring_bracket]
 
 end TauCeti.UniversalEnvelopingAlgebra
 
@@ -124,15 +119,8 @@ theorem antipodeOp_unique
       (UniversalEnvelopingAlgebra R L)ᵐᵒᵖ) :
     (∀ x, f (UniversalEnvelopingAlgebra.ι R x) =
       MulOpposite.op (-UniversalEnvelopingAlgebra.ι R x)) ↔ f = antipodeOp R := by
-  rw [antipodeOp]
-  refine Iff.trans ?_ (UniversalEnvelopingAlgebra.lift_unique R
-      (TauCeti.UniversalEnvelopingAlgebra.opNegι R) f)
-  constructor
-  · intro h
-    funext x
-    simpa [TauCeti.UniversalEnvelopingAlgebra.opNegι] using h x
-  · intro h x
-    simpa [TauCeti.UniversalEnvelopingAlgebra.opNegι] using congrFun h x
+  rw [antipodeOp, ← UniversalEnvelopingAlgebra.lift_unique, funext_iff]
+  simp [TauCeti.UniversalEnvelopingAlgebra.opNegι]
 
 /-- The antipode of a universal enveloping algebra, as a linear endomorphism of its underlying
 module. -/
@@ -187,30 +175,28 @@ theorem antipode_pow (a : UniversalEnvelopingAlgebra R L) (n : ℕ) :
     antipode R (a ^ n) = antipode R a ^ n := by
   rw [antipode_apply, map_pow, MulOpposite.unop_pow, antipode_apply]
 
+/-- The antipode reverses a word in canonical Lie generators, with one minus sign per factor. -/
+theorem antipode_prod_map_ι (l : List L) :
+    antipode R (l.map (ι R)).prod =
+      (-1 : R) ^ l.length • (l.reverse.map (ι R)).prod := by
+  induction l with
+  | nil => simp
+  | cons x l ih =>
+    simp [List.reverse_cons, ih, pow_succ]
+
 /-- Applying the opposite-valued antipode and then its opposite transform is the identity. -/
 private theorem opComm_antipodeOp_comp_antipodeOp :
     (AlgHom.opComm (antipodeOp R)).comp (antipodeOp R) =
       AlgHom.id R (UniversalEnvelopingAlgebra R L) := by
-  apply UniversalEnvelopingAlgebra.hom_ext
-  apply LieHom.ext
-  intro x
-  simp only [AlgHom.coe_toLieHom, LieHom.comp_apply, AlgHom.comp_apply, antipodeOp_ι,
-    AlgHom.id_apply, AlgHom.opComm_apply_apply, MulOpposite.unop_op]
-  rw [map_neg, antipodeOp_ι]
+  ext x
   simp
 
 /-- The opposite transform of the opposite-valued antipode is also a right inverse. -/
 private theorem antipodeOp_comp_opComm_antipodeOp :
     (antipodeOp R).comp (AlgHom.opComm (antipodeOp R)) =
-      AlgHom.id R ((UniversalEnvelopingAlgebra R L)ᵐᵒᵖ) := by
-  apply AlgHom.ext
-  intro a
-  induction a using MulOpposite.rec' with
-  | _ a =>
-      simp only [AlgHom.comp_apply, AlgHom.opComm_apply_apply, MulOpposite.unop_op,
-        AlgHom.id_apply]
-      exact congrArg MulOpposite.op
-        (AlgHom.congr_fun (opComm_antipodeOp_comp_antipodeOp R) a)
+      AlgHom.id R ((UniversalEnvelopingAlgebra R L)ᵐᵒᵖ) :=
+  AlgHom.ext fun a => MulOpposite.unop_injective <| by
+    simpa using AlgHom.congr_fun (opComm_antipodeOp_comp_antipodeOp R) a.unop
 
 /-- A universal enveloping algebra is canonically equivalent to its opposite algebra by negating
 the Lie generators. -/
@@ -267,6 +253,7 @@ noncomputable def antipodeComap (S : Subring (UniversalEnvelopingAlgebra R L)) :
     Subring (UniversalEnvelopingAlgebra R L) :=
   (Subring.op S).comap (antipodeOp R).toRingHom
 
+/-- An element lies in `antipodeComap R S` exactly when its antipode lies in `S`. -/
 @[simp]
 theorem mem_antipodeComap {S : Subring (UniversalEnvelopingAlgebra R L)}
     {a : UniversalEnvelopingAlgebra R L} :

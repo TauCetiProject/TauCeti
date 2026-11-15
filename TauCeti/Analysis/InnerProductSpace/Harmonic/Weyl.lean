@@ -13,8 +13,10 @@ import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.MeasureTheory.Integral.Average
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Convergence
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -34,8 +36,9 @@ let `Ω ⊆ E` be open. A function `u` locally integrable on `Ω` is **weakly ha
 
 that is, if its distributional Laplacian vanishes on `Ω`. Every harmonic function is weakly
 harmonic (`InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn`). **Weyl's lemma** is
-the converse: a weakly harmonic function agrees almost everywhere on `Ω` with a function harmonic
-on `Ω`, that is, twice continuously differentiable with vanishing Laplacian. No differentiability
+the converse for finite-dimensional real normed coefficient spaces: a weakly harmonic function
+agrees almost everywhere on `Ω` with a function harmonic on `Ω`, that is, twice continuously
+differentiable with vanishing Laplacian. No differentiability
 of `u` is assumed, so a locally integrable distributional solution of `Δu = 0` is, after
 modification on a null set, a classical one.
 
@@ -57,10 +60,12 @@ A locally uniform limit of harmonic functions is harmonic, and since also `uₙ 
 everywhere (Lebesgue differentiation), this limit is a harmonic function equal to `u` almost
 everywhere on `ball x R`.
 
-These local harmonic representatives are glued by the limit of the ball averages of `u`: near
-each point, the average of `u` over every small ball about `y` equals the value at `y` of the
+For real-valued functions, these local harmonic representatives are glued by the limit of the
+ball averages of `u`: near each point, the average of `u` over every small ball about `y` equals
+the value at `y` of the
 local representative, by its mean-value property. This defines a single function, harmonic on `Ω`
-and equal to `u` almost everywhere on `Ω`.
+and equal to `u` almost everywhere on `Ω`. For finite-dimensional coefficients, apply the scalar
+result to each continuous coordinate functional and reconstruct by a finite sum.
 
 ## Main declarations
 
@@ -68,7 +73,13 @@ and equal to `u` almost everywhere on `Ω`.
 * `TauCeti.WeaklyHarmonicOn.mono`, `TauCeti.WeaklyHarmonicOn.congr_ae`,
   `TauCeti.WeaklyHarmonicOn.add`, …: weak harmonicity is local, depends only on the a.e. class of
   the function on `Ω`, and is closed under the linear operations.
-* `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`: weak derivatives of weakly harmonic functions
+* `TauCeti.WeaklyHarmonicOn.clm_comp`: continuous linear maps preserve weak harmonicity.
+* `TauCeti.integrable_laplacian_smul_of_locallyIntegrableOn`: `Δφ • w` is integrable for a test
+  function `φ` and `w` locally integrable on `Ω`.
+* `TauCeti.weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`: two functions with the same
+  distributional Laplacian differ by a weakly harmonic function.
+* `TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`,
+  `TauCeti.HasWeakFDerivOn.weaklyHarmonicOn`: weak derivatives of weakly harmonic functions
   are weakly harmonic.
 * `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`: **Weyl's lemma**.
 * `TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`: a continuous function is harmonic on `Ω` if and
@@ -163,11 +174,25 @@ variable [OpensMeasurableSpace E]
 
 /-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
 globally integrable one. -/
-private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
+theorem integrable_laplacian_smul_of_locallyIntegrableOn (hw : LocallyIntegrableOn w Ω μ)
+    (φ : 𝓓(Ω, ℝ)) :
     Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
   simpa only [TestFunction.laplacianCLM_apply] using
-    integrable_smul_of_locallyIntegrableOn hw (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ)
+    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw
 
+/-- The full weak Fréchet derivative of a weakly harmonic function is weakly harmonic.
+Each evaluation is a weak directional derivative, and evaluation commutes with integration. -/
+theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω w W) (hw : WeaklyHarmonicOn μ Ω w) :
+    WeaklyHarmonicOn μ Ω W := by
+  have := h.completeSpace
+  refine ⟨h.locallyIntegrableOn_deriv, fun φ => ?_⟩
+  ext v
+  rw [ContinuousLinearMap.integral_apply (integrable_laplacian_smul_of_locallyIntegrableOn
+    h.locallyIntegrableOn_deriv φ) v]
+  exact (h.hasWeakLineDerivOn v).weaklyHarmonicOn hw |>.integral_laplacian_smul_eq_zero φ
+
+omit [OpensMeasurableSpace E] in
 /-- Replacing `w` by a function agreeing with it almost everywhere on `Ω` preserves weak
 harmonicity: only the restriction of `w` to `Ω` is seen. -/
 theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
@@ -175,7 +200,7 @@ theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
   refine ⟨h.locallyIntegrableOn.congr hw, fun φ ↦ ?_⟩
   rw [← h.integral_laplacian_smul_eq_zero φ]
   refine integral_congr_ae ?_
-  filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hw] with x hx
+  filter_upwards [ae_imp_of_ae_restrict hw] with x hx
   by_cases hxΩ : x ∈ (Ω : Set E)
   · rw [hx hxΩ]
   · rw [image_eq_zero_of_notMem_tsupport fun h' ↦
@@ -187,21 +212,41 @@ theorem WeaklyHarmonicOn.add {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ �
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ + w₂) := by
   refine ⟨h₁.locallyIntegrableOn.add h₂.locallyIntegrableOn, fun φ ↦ ?_⟩
   simp only [Pi.add_apply, smul_add]
-  rw [integral_add (integrable_laplacian_smul h₁.locallyIntegrableOn φ)
-    (integrable_laplacian_smul h₂.locallyIntegrableOn φ), h₁.integral_laplacian_smul_eq_zero φ,
-    h₂.integral_laplacian_smul_eq_zero φ, add_zero]
+  rw [integral_add (integrable_laplacian_smul_of_locallyIntegrableOn h₁.locallyIntegrableOn φ)
+    (integrable_laplacian_smul_of_locallyIntegrableOn h₂.locallyIntegrableOn φ),
+    h₁.integral_laplacian_smul_eq_zero φ, h₂.integral_laplacian_smul_eq_zero φ, add_zero]
 
 /-- Weak harmonicity is preserved by subtraction. -/
 theorem WeaklyHarmonicOn.sub {w₁ w₂ : E → F} (h₁ : WeaklyHarmonicOn μ Ω w₁)
     (h₂ : WeaklyHarmonicOn μ Ω w₂) : WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
   simpa [sub_eq_add_neg] using h₁.add h₂.neg
 
+/-- Two functions locally integrable on `Ω` with the same distributional Laplacian on `Ω` differ
+by a weakly harmonic function. -/
+theorem weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {w₁ w₂ : E → F}
+    (h₁ : LocallyIntegrableOn w₁ Ω μ) (h₂ : LocallyIntegrableOn w₂ Ω μ)
+    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • w₁ x ∂μ = ∫ x, Δ (φ : E → ℝ) x • w₂ x ∂μ) :
+    WeaklyHarmonicOn μ Ω (w₁ - w₂) := by
+  refine ⟨h₁.sub h₂, fun φ ↦ ?_⟩
+  simp only [Pi.sub_apply, smul_sub]
+  rw [integral_sub (integrable_laplacian_smul_of_locallyIntegrableOn h₁ φ)
+    (integrable_laplacian_smul_of_locallyIntegrableOn h₂ φ), h φ, sub_self]
+
+/-- A continuous linear map of complete real normed spaces preserves weak harmonicity. -/
+theorem WeaklyHarmonicOn.clm_comp [CompleteSpace F] {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] (h : WeaklyHarmonicOn μ Ω w) (L : F →L[ℝ] G) :
+    WeaklyHarmonicOn μ Ω (fun x ↦ L (w x)) := by
+  refine ⟨L.locallyIntegrableOn_comp h.locallyIntegrableOn, fun φ ↦ ?_⟩
+  simpa only [map_smul, h.integral_laplacian_smul_eq_zero φ, map_zero] using
+    L.integral_comp_comm
+      (integrable_laplacian_smul_of_locallyIntegrableOn h.locallyIntegrableOn φ)
+
 end OpensMeasurable
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
 /-- **A harmonic function is weakly harmonic.** -/
-theorem _root_.InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn [CompleteSpace F]
+theorem _root_.InnerProductSpace.HarmonicOnNhd.weaklyHarmonicOn
     (h : HarmonicOnNhd w Ω) : WeaklyHarmonicOn μ Ω w :=
   ⟨h.contDiffOn.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet,
     h.integral_laplacian_smul_eq_zero⟩
@@ -285,8 +330,8 @@ private theorem dist_setAverage_ball_le_of_harmonicOnNhd {U f : E → ℝ} {y : 
           (integral_congr_ae (ae_of_all _ fun z ↦ by simp [norm_sub_rev]))
     _ ≤ ∫ z, ‖(U - f) z‖ ∂μ := setIntegral_le_integral hUf.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
     _ = (eLpNorm (U - f) 1 μ).toReal := by
-        rw [eLpNorm_one_eq_lintegral_enorm hUf.aestronglyMeasurable]
-        exact integral_norm_eq_lintegral_enorm hUf.aestronglyMeasurable
+        rw [eLpNorm_one_eq_lintegral_eNorm hUf.aestronglyMeasurable]
+        exact integral_norm_eq_lintegral_eNorm hUf.aestronglyMeasurable
 
 /-- **Weyl's lemma near a point.** If `u` is weakly harmonic on `Ω` and
 `closedBall x (3 * R) ⊆ Ω`, then `u` agrees almost everywhere on `ball x R` with a function
@@ -348,7 +393,7 @@ private theorem exists_harmonicOnNhd_ball_ae_eq (hu : LocallyIntegrableOn u Ω �
 /-- **Weyl's lemma.** Let `u` be weakly harmonic on the open set `Ω`: locally integrable there,
 with `∫ Δφ • u ∂μ = 0` for every test function `φ ∈ 𝓓(Ω)`. Then `u` agrees almost everywhere on
 `Ω` with a function harmonic on `Ω`. -/
-theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq (hw : WeaklyHarmonicOn μ Ω u) :
+private theorem exists_harmonicOnNhd_ae_eq_real (hw : WeaklyHarmonicOn μ Ω u) :
     ∃ v : E → ℝ, HarmonicOnNhd v Ω ∧ u =ᵐ[μ.restrict Ω] v := by
   obtain ⟨hu, hΔ⟩ := hw
   -- Around each point of `Ω`, a ball on which `u` has a harmonic representative.
@@ -392,14 +437,33 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq (hw : WeaklyHarmonicOn μ Ω
     refine Classical.not_imp.2 ⟨ball_subset_ball (half_le_self (hR x hxΩ).le) hyB, ?_⟩
     rwa [← hv x hxΩ hyB]
 
+/-- **Weyl's lemma with finite-dimensional coefficients.** A weakly harmonic function with
+values in a finite-dimensional real normed space agrees almost everywhere with a function
+harmonic on the same open set. No differentiability of the original function is assumed. -/
+theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq [FiniteDimensional ℝ F]
+    (hw : WeaklyHarmonicOn μ Ω w) :
+    ∃ v : E → F, HarmonicOnNhd v Ω ∧ w =ᵐ[μ.restrict Ω] v := by
+  classical
+  let b := Module.finBasis ℝ F
+  have hi : ∀ i, ∃ h : E → ℝ, HarmonicOnNhd h Ω ∧
+      (fun x => b.repr (w x) i) =ᵐ[μ.restrict Ω] h := fun i => by
+    exact exists_harmonicOnNhd_ae_eq_real
+      (hw.clm_comp (b.coord i).toContinuousLinearMap)
+  choose h hh hae using hi
+  refine ⟨fun x => ∑ i, h i x • b i, HarmonicOnNhd.sum fun i _ =>
+    (hh i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i)), ?_⟩
+  filter_upwards [ae_all_iff.2 hae] with x hx
+  conv_lhs => rw [← b.sum_repr (w x)]
+  exact Finset.sum_congr rfl fun i _ => by rw [hx i]
+
 /-- **Weyl's lemma for continuous functions.** A function continuous on the open set `Ω` is
 harmonic on `Ω` if and only if it is weakly harmonic there: `∫ Δφ • u ∂μ = 0` for every test
 function `φ ∈ 𝓓(Ω)`. -/
-theorem harmonicOnNhd_iff_weaklyHarmonicOn (hu : ContinuousOn u Ω) :
-    HarmonicOnNhd u Ω ↔ WeaklyHarmonicOn μ Ω u := by
+theorem harmonicOnNhd_iff_weaklyHarmonicOn [FiniteDimensional ℝ F] (hu : ContinuousOn w Ω) :
+    HarmonicOnNhd w Ω ↔ WeaklyHarmonicOn μ Ω w := by
   refine ⟨HarmonicOnNhd.weaklyHarmonicOn, fun hw ↦ ?_⟩
   obtain ⟨v, hv, huv⟩ := hw.exists_harmonicOnNhd_ae_eq
-  have heq : EqOn u v Ω :=
+  have heq : EqOn w v Ω :=
     Measure.eqOn_open_of_ae_eq huv Ω.isOpen hu hv.contDiffOn.continuousOn
   exact fun x hx ↦ (harmonicAt_congr_nhds
     (eventually_of_mem (Ω.isOpen.mem_nhds hx) heq)).2 (hv x hx)

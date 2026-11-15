@@ -16,8 +16,9 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 
 Vanishing and direct sums of objects of `ModuleCat R` are naturally expressed categorically, as
 `CategoryTheory.Limits.IsZero` and biproducts `M ⊞ N`, while the dimension counts that consume them
-speak of `Module.finrank`. This file supplies the translations between the two: a zero object has
-finrank zero, and finrank is additive on biproducts of finite free modules
+speak of `Module.finrank`. This file supplies the translations between the two: the ring itself
+has finrank one (`ModuleCat.finrank_of_self`), a zero object has finrank zero, and finrank is
+additive on biproducts of finite free modules
 (`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`).
 
 Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
@@ -41,13 +42,22 @@ universe v u
 
 namespace ModuleCat
 
-variable {R : Type u} [Ring R] [Nontrivial R]
+variable {R : Type u} [Ring R]
+
+section Nontrivial
+
+variable [Nontrivial R]
+
+/-- The ring `R`, as an object of `ModuleCat R`, has finrank one. -/
+theorem finrank_of_self (R : Type u) [Ring R] [StrongRankCondition R] :
+    Module.finrank R (ModuleCat.of R R) = 1 :=
+  Module.finrank_self R
 
 /-- A zero object in `ModuleCat R` has finrank zero. -/
 theorem finrank_eq_zero_of_isZero {X : ModuleCat.{v} R} (hX : IsZero X) :
-    Module.finrank R X = 0 := by
-  let _ : Subsingleton X := ModuleCat.subsingleton_of_isZero hX
-  exact Module.finrank_zero_of_subsingleton
+    Module.finrank R X = 0 :=
+  have := subsingleton_of_isZero hX
+  Module.finrank_zero_of_subsingleton
 
 /-- If an `ℕ`-indexed family in `ModuleCat R` vanishes from degree `N` on, the alternating
 `finsum` of its finranks is the honest finite sum over the degrees below `N`. -/
@@ -56,13 +66,14 @@ theorem finsum_neg_one_pow_finrank_eq_sum_range {M : ℕ → ModuleCat.{v} R} {N
     ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * Module.finrank R (M n) =
       ∑ n ∈ Finset.range N, (-1 : ℤ) ^ n * Module.finrank R (M n) := by
   refine finsum_eq_sum_of_support_subset _ fun n hn ↦ ?_
-  rw [Finset.coe_range, Set.mem_Iio]
-  by_contra h
-  exact hn (by simp [finrank_eq_zero_of_isZero (hN n (not_lt.1 h))])
+  contrapose hn
+  simp [finrank_eq_zero_of_isZero (hN n (by simpa using hn))]
+
+end Nontrivial
 
 /-- The finrank of a biproduct of finite free modules is the sum of their finranks. -/
 @[simp]
-theorem finrank_biprod {R : Type u} [Ring R] [StrongRankCondition R] (M N : ModuleCat.{v} R)
+theorem finrank_biprod [StrongRankCondition R] (M N : ModuleCat.{v} R)
     [Module.Free R M] [Module.Free R N] [Module.Finite R M] [Module.Finite R N] :
     Module.finrank R ↑(M ⊞ N) = Module.finrank R M + Module.finrank R N :=
   (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans Module.finrank_prod

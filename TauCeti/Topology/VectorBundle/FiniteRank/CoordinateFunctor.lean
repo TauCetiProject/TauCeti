@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
@@ -26,6 +26,9 @@ Together these form a functor `CoordinateFunctor.functor` between the categories
 bundle cores, which is additive when the action on maps is (`CoordinateFunctor.functor_additive`).
 An additive bundle operation preserves Whitney sums, by Mathlib's preservation of biproducts by
 additive functors. Trivial cores are sent to trivial cores (`CoordinateFunctor.mapCoreTrivialIso`).
+Since the construction acts only on transition maps, it commutes strictly with pullback along
+continuous maps of bases (`CoordinateFunctor.mapCore_pullback`,
+`CoordinateFunctor.functor_comp_pullbackFunctor`).
 
 Realification and complexification of bundles arise in this way.
 
@@ -185,6 +188,35 @@ def mapCoreTrivialIso (n : ℕ) :
     (Φ.mapCoreTrivialIso B n).inv.fiberMap x = ContinuousLinearMap.id 𝕜' (Fin (Φ.rank n) → 𝕜') := by
   rw [mapCoreTrivialIso]
   exact FiniteRankBundleCore.fiberMap_constIso_inv _ _ _ x
+
+section Pullback
+
+variable {X : Type*} {Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A continuous coordinate functor commutes strictly with pullback: both sides have the
+pulled-back charts and the transformed pulled-back transitions. -/
+@[simp] theorem mapCore_pullback (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    Φ.mapCore (A.pullback f) = (Φ.mapCore A).pullback f := (rfl)
+
+/-- The transformed pullback of a bundle map is the pullback of the transformed bundle map. -/
+@[simp] theorem mapHom_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y)) :
+    Φ.mapHom (FiniteRankBundleCore.pullbackMap a f) =
+      FiniteRankBundleCore.pullbackMap (Φ.mapHom a) f :=
+  FiniteRankBundleCore.hom_ext fun x =>
+    -- Both fibre maps are `Φ.map (a.fiberMap (f x))`, on the same coordinate spaces.
+    ((Φ.fiberMap_mapHom _ x).trans
+      (congrArg Φ.map (FiniteRankBundleCore.fiberMap_pullbackMap a f x))).trans
+      ((Φ.fiberMap_mapHom a (f x)).symm.trans
+        (FiniteRankBundleCore.fiberMap_pullbackMap (Φ.mapHom a) f x).symm)
+
+/-- The bundle operation of a continuous coordinate functor commutes strictly with pullback, as
+functors. -/
+theorem functor_comp_pullbackFunctor (f : C(X, Y)) :
+    Φ.functor Y ⋙ FiniteRankBundleCore.pullbackFunctor f =
+      FiniteRankBundleCore.pullbackFunctor f ⋙ Φ.functor X :=
+  Functor.hext (fun _ => rfl) fun _ _ a => heq_of_eq (Φ.mapHom_pullbackMap a f).symm
+
+end Pullback
 
 end CoordinateFunctor
 end TauCeti

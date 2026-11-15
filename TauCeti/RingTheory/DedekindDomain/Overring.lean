@@ -149,15 +149,12 @@ theorem map_asIdeal_eq_asIdeal_of_valuation_eq [IsDedekindDomain B] [IsFractionR
     let Q : HeightOneSpectrum B :=
       ⟨M, hM.isPrime, fun hM0 ↦ hI0 (le_bot_iff.mp (hM0 ▸ hIM))⟩
     have hQ : v.valuation K = Q.valuation K := by
-      refine Valuation.eq_valuation_of_forall_mem_asIdeal_iff (Q.valuation_surjective K)
-        (fun a ↦ ?_) (fun a ↦ ?_)
-      · rw [IsScalarTower.algebraMap_apply A B K]
-        exact Q.valuation_le_one _
-      · rw [IsScalarTower.algebraMap_apply A B K, Q.valuation_lt_one_iff_mem]
-        refine ⟨fun ha ↦ hIM (Ideal.mem_map_of_mem _ ha), fun ha ↦ ?_⟩
-        have hvle : v.asIdeal ≤ M.comap (algebraMap A B) := fun a' ha' ↦
-          hIM (Ideal.mem_map_of_mem _ ha')
-        exact v.isMaximal.eq_of_le (Ideal.IsPrime.comap _).ne_top hvle ▸ ha
+      refine Valuation.eq_valuation_of_forall_mem_asIdeal_iff (Q.valuation_surjective K) fun a ↦ ?_
+      rw [IsScalarTower.algebraMap_apply A B K, Q.valuation_lt_one_iff_mem]
+      refine ⟨fun ha ↦ hIM (Ideal.mem_map_of_mem _ ha), fun ha ↦ ?_⟩
+      have hvle : v.asIdeal ≤ M.comap (algebraMap A B) := fun a' ha' ↦
+        hIM (Ideal.mem_map_of_mem _ ha')
+      exact v.isMaximal.eq_of_le (Ideal.IsPrime.comap _).ne_top hvle ▸ ha
     exact congrArg HeightOneSpectrum.asIdeal (valuation_injective (K := K) (hQ.symm.trans h.symm))
   -- so the part of `I` prime to `𝔓` is trivial, and `I` is a power of `𝔓`
   obtain ⟨Q, hPQ, hIQ⟩ := Ideal.eq_prime_pow_mul_coprime hI0 𝔓.asIdeal

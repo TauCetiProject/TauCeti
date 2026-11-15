@@ -198,7 +198,7 @@ theorem lintegral_lintegral_enorm_fderiv_lt_top (h : IsContinuityEquation μ v a
     exact ENNReal.ofReal_le_ofReal <|
       (fderiv ℝ φ _).le_of_opNorm_le_of_le (hC _) (by simp [Prod.norm_def])
   have hv (t : ℝ) : Measurable fun x ↦ 1 + ‖v t x‖ₑ :=
-    measurable_const.add (h.measurable_velocity.comp measurable_prodMk_left).enorm
+    measurable_const.add (h.measurable_velocity.comp measurable_prodMk_left).eNorm
   have hm : Measurable fun t ↦ μ t univ := (Measure.measurable_coe .univ).comp h.measurable
   calc ∫⁻ t in Ioo a b, ∫⁻ x, ‖fderiv ℝ φ (t, x) (1, v t x)‖ₑ ∂μ t
       ≤ ∫⁻ t in Ioo a b, ENNReal.ofReal C * (μ t univ + ∫⁻ x, ‖v t x‖ₑ ∂μ t) := by
@@ -220,7 +220,7 @@ theorem ae_integrable_fderiv (h : IsContinuityEquation μ v a b) {φ : ℝ × E 
     (measurable_fderiv_apply ℝ φ).comp
       (measurable_id.prodMk (measurable_const.prodMk h.measurable_velocity))
   rw [← ae_restrict_iff' measurableSet_Ioo]
-  filter_upwards [ae_lt_top' (hF.enorm.aemeasurable_lintegral_measure
+  filter_upwards [ae_lt_top' (hF.eNorm.aemeasurable_lintegral_measure
       h.measurable h.ae_measure_univ_ne_top)
     (h.lintegral_lintegral_enorm_fderiv_lt_top hφ hφc).ne] with t ht
   exact ⟨(hF.comp measurable_prodMk_left).aestronglyMeasurable, ht⟩
@@ -235,7 +235,7 @@ theorem integrableOn_integral_fderiv (h : IsContinuityEquation μ v a b) {φ : �
       (measurable_id.prodMk (measurable_const.prodMk h.measurable_velocity))
   refine ⟨hF.stronglyMeasurable.aestronglyMeasurable_integral_measure
     h.measurable h.ae_measure_univ_ne_top, ?_⟩
-  exact (lintegral_mono fun t ↦ enorm_integral_le_lintegral_enorm _).trans_lt
+  exact (lintegral_mono fun t ↦ eNorm_integral_le_lintegral_eNorm _).trans_lt
     (h.lintegral_lintegral_enorm_fderiv_lt_top hφ hφc)
 
 /-- For almost every time `t ∈ (a, b)`, the slice `μₜ` is finite and `vₜ` is `μₜ`-integrable. -/
@@ -243,7 +243,7 @@ theorem ae_isFiniteMeasure_and_integrable (h : IsContinuityEquation μ v a b) :
     ∀ᵐ t ∂volume.restrict (Ioo a b), IsFiniteMeasure (μ t) ∧ Integrable (v t) (μ t) := by
   have hm : Measurable fun t ↦ μ t univ := (Measure.measurable_coe .univ).comp h.measurable
   filter_upwards [ae_lt_top hm h.lintegral_measure_univ_lt_top.ne,
-    ae_lt_top' (h.measurable_velocity.enorm.aemeasurable_lintegral_measure
+    ae_lt_top' (h.measurable_velocity.eNorm.aemeasurable_lintegral_measure
       h.measurable h.ae_measure_univ_ne_top)
       h.lintegral_lintegral_enorm_lt_top.ne] with t h₁ h₂
   exact ⟨⟨h₁⟩, (h.measurable_velocity.comp measurable_prodMk_left).aestronglyMeasurable, h₂⟩
@@ -260,10 +260,10 @@ theorem integrableOn_measureReal_univ (h : IsContinuityEquation μ v a b) :
 theorem integrableOn_integral_norm (h : IsContinuityEquation μ v a b) :
     IntegrableOn (fun t ↦ ∫ x, ‖v t x‖ ∂μ t) (Ioo a b) := by
   refine (integrable_toReal_of_lintegral_ne_top
-    (h.measurable_velocity.enorm.aemeasurable_lintegral_measure
+    (h.measurable_velocity.eNorm.aemeasurable_lintegral_measure
       h.measurable h.ae_measure_univ_ne_top)
     h.lintegral_lintegral_enorm_lt_top.ne).congr (ae_of_all _ fun t ↦ ?_)
-  exact (integral_norm_eq_lintegral_enorm
+  exact (integral_norm_eq_lintegral_eNorm
     (h.measurable_velocity.comp measurable_prodMk_left).aestronglyMeasurable).symm
 
 /-- For a bounded jointly strongly measurable function `f` of time and space with values in a
@@ -333,6 +333,29 @@ private lemma integrable_fderiv_apply_one {S : Type*} [MeasurableSpace S] {ν : 
     Integrable (fun q ↦ fderiv ℝ φ (G q) (1, Y q)) ν :=
   integrable_fderiv_apply hφ1 hφc hG ((integrable_const 1).prodMk hY)
 
+/-- The laws `(γ · t)₊ P` of a measurable family of curves solve the continuity equation with a
+measurable velocity `v`, once `v` is integrable against them and the distributional identity holds
+after pulling each slice back to `P`. -/
+private lemma isContinuityEquation_map_of_forall {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsFiniteMeasure P] {γ : Ω → ℝ → E} (hγ : Measurable (uncurry γ))
+    (hv : Measurable (uncurry v)) (hint : ∫⁻ t in Ioo a b, ∫⁻ x, ‖v t x‖ₑ ∂P.map (γ · t) < ∞)
+    (h : ∀ ⦃φ : ℝ × E → ℝ⦄, ContDiff ℝ 1 φ → HasCompactSupport φ →
+      tsupport φ ⊆ Ioo a b ×ˢ univ →
+      ∫ t in Ioo a b, ∫ ω, fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)) ∂P = 0) :
+    IsContinuityEquation (fun t ↦ P.map (γ · t)) v a b := by
+  have hγt (t : ℝ) : Measurable (γ · t) := hγ.comp measurable_prodMk_right
+  refine ⟨MeasureTheory.measurable_map_of_measurable_uncurry (hγ.comp measurable_swap), hv, ?_,
+    hint, fun φ hφ hφc hφs ↦ ?_⟩
+  · simp only [Measure.map_apply (hγt _) MeasurableSet.univ, preimage_univ, setLIntegral_const]
+    exact ENNReal.mul_lt_top (measure_lt_top P univ) measure_Ioo_lt_top
+  have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
+    (measurable_fderiv_apply ℝ φ).comp (measurable_id.prodMk (measurable_const.prodMk hv))
+  have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂P.map (γ · t) =
+      ∫ ω, fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)) ∂P :=
+    integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
+  simp_rw [hpush]
+  exact h (hφ.of_le (by simp)) hφc hφs
+
 /-- **Lagrangian solutions of the continuity equation.** Let `P` be a finite measure on a parameter
 space `Ω` and `γ : Ω → ℝ → E` a jointly measurable family of curves. If `P`-almost every curve is
 absolutely continuous on `[a, b]` and follows the velocity field `v`, in the sense that
@@ -350,32 +373,21 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
   -- the curves read as a function of `(t, ω)`
   have hγ' : Measurable fun q : ℝ × Ω ↦ γ q.2 q.1 := hγ.comp measurable_swap
   have hvγ : Measurable fun q : ℝ × Ω ↦ ‖v q.1 (γ q.2 q.1)‖ₑ :=
-    (hv.comp (measurable_fst.prodMk hγ')).enorm
+    (hv.comp (measurable_fst.prodMk hγ')).eNorm
   have hint' : ∫⁻ t in Ioo a b, ∫⁻ ω, ‖v t (γ ω t)‖ₑ ∂P < ∞ := by
     rwa [← lintegral_lintegral_swap (f := fun ω t ↦ ‖v t (γ ω t)‖ₑ)
       (hvγ.comp measurable_swap).aemeasurable]
-  refine ⟨MeasureTheory.measurable_map_of_measurable_uncurry (hγ.comp measurable_swap), hv, ?_, ?_,
-    fun φ hφ hφc hφs ↦ ?_⟩
-  · simp only [Measure.map_apply (hγt _) MeasurableSet.univ, preimage_univ, setLIntegral_const]
-    exact ENNReal.mul_lt_top (measure_lt_top P univ) measure_Ioo_lt_top
+  refine isContinuityEquation_map_of_forall P hγ hv ?_ fun φ hφ1 hφc hφs ↦ ?_
   · have hmap (t : ℝ) : ∫⁻ x, ‖v t x‖ₑ ∂P.map (γ · t) = ∫⁻ ω, ‖v t (γ ω t)‖ₑ ∂P :=
-      lintegral_map (hv.comp measurable_prodMk_left).enorm (hγt t)
+      lintegral_map (hv.comp measurable_prodMk_left).eNorm (hγt t)
     simpa only [hmap] using hint'
-  -- the integrand `(t, x) ↦ fderiv ℝ φ (t, x) (1, v t x)` is measurable and has linear growth
-  have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
-  have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, v q.1 q.2) :=
-    (measurable_fderiv_apply ℝ φ).comp (measurable_id.prodMk (measurable_const.prodMk hv))
-  have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, v t x) ∂P.map (γ · t) =
-      ∫ ω, fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)) ∂P :=
-    integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
-  simp_rw [hpush]
   -- swap the order of integration, then integrate along each curve
   have : IsFiniteMeasure (volume.restrict (Ioo a b)) := ⟨by simp⟩
   have hInt : Integrable (uncurry fun t ω ↦ fderiv ℝ φ (t, γ ω t) (1, v t (γ ω t)))
       ((volume.restrict (Ioo a b)).prod P) := by
     refine integrable_fderiv_apply_one hφ1 hφc (measurable_fst.prodMk hγ').aestronglyMeasurable
       ⟨(hv.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable, ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
+    rw [hasFiniteIntegral_iff_eNorm]
     simpa only [lintegral_prod _ hvγ.aemeasurable] using hint'
   rw [integral_integral_swap hInt]
   refine integral_eq_zero_of_ae ?_
@@ -463,8 +475,8 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   have hW : Measurable W := hV.comp measurable_swap
   have hWint : Integrable W ν := by
     refine ⟨hW.aestronglyMeasurable, ?_⟩
-    rw [hasFiniteIntegral_iff_enorm, hν, lintegral_prod _ hW.enorm.aemeasurable,
-      lintegral_lintegral_swap (f := fun t ω ↦ ‖V ω t‖ₑ) hW.enorm.aemeasurable]
+    rw [hasFiniteIntegral_iff_eNorm, hν, lintegral_prod _ hW.eNorm.aemeasurable,
+      lintegral_lintegral_swap (f := fun t ω ↦ ‖V ω t‖ₑ) hW.eNorm.aemeasurable]
     exact hint
   -- the conditional expectation of the velocity is a function `u` of the time and the position
   obtain ⟨u, hu, hcu⟩ := (stronglyMeasurable_condExp (μ := ν) (f := W)
@@ -473,34 +485,24 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   have hbound (p : ℝ) (hp : 1 ≤ p) : ∫⁻ t in Ioo a b, ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) ≤
       ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ ^ p) ∂P := by
     have h := MeasureTheory.lintegral_enorm_condExp_rpow_le (μ := ν)
-      (m := MeasurableSpace.comap G inferInstance) hW.aestronglyMeasurable hp
+      (m := MeasurableSpace.comap G inferInstance) W hp
     rw [hcu] at h
     have hmap (t : ℝ) : ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) = ∫⁻ ω, ‖u (t, γ ω t)‖ₑ ^ p ∂P :=
-      lintegral_map ((hu.measurable.comp measurable_prodMk_left).enorm.pow_const _) (hγt t)
+      lintegral_map ((hu.measurable.comp measurable_prodMk_left).eNorm.pow_const _) (hγt t)
     simp_rw [hmap]
     rw [lintegral_lintegral_swap (f := fun ω t ↦ ‖V ω t‖ₑ ^ p)
-      (hV.enorm.pow_const _).aemeasurable]
-    rwa [hν, lintegral_prod _ ((hu.measurable.comp hG).enorm.pow_const _).aemeasurable,
-      lintegral_prod _ (hW.enorm.pow_const _).aemeasurable] at h
-  refine ⟨fun t x ↦ u (t, x), ⟨MeasureTheory.measurable_map_of_measurable_uncurry
-    (hγ.comp measurable_swap), hu.measurable, ?_, ?_, fun φ hφ hφc hφs ↦ ?_⟩, hcu.symm, hbound⟩
-  · simp only [Measure.map_apply (hγt _) MeasurableSet.univ, preimage_univ, setLIntegral_const]
-    exact ENNReal.mul_lt_top (measure_lt_top P univ) measure_Ioo_lt_top
+      (hV.eNorm.pow_const _).aemeasurable]
+    rwa [hν, lintegral_prod _ ((hu.measurable.comp hG).eNorm.pow_const _).aemeasurable,
+      lintegral_prod _ (hW.eNorm.pow_const _).aemeasurable] at h
+  refine ⟨fun t x ↦ u (t, x), isContinuityEquation_map_of_forall P hγ hu.measurable ?_
+    fun φ hφ1 hφc hφs ↦ ?_, hcu.symm, hbound⟩
   · have h1 := hbound 1 le_rfl
     simp only [ENNReal.rpow_one] at h1
     exact h1.trans_lt hint
-  -- push the slices back to `(a, b) × Ω`, replace `u ∘ G` by `W`, and integrate along each curve
-  have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by simp)
+  -- pull the slices back to `(a, b) × Ω`, replace `u ∘ G` by `W`, and integrate along each curve
   have hcint : Integrable (fun q ↦ u (G q)) ν := by
     rw [← Function.comp_def, ← hcu]
     exact integrable_condExp
-  have hF : Measurable fun q : ℝ × E ↦ fderiv ℝ φ q (1, u q) :=
-    (measurable_fderiv_apply ℝ φ).comp
-      (measurable_id.prodMk (measurable_const.prodMk hu.measurable))
-  have hpush (t : ℝ) : ∫ x, fderiv ℝ φ (t, x) (1, u (t, x)) ∂P.map (γ · t) =
-      ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P :=
-    integral_map (hγt t).aemeasurable (hF.comp measurable_prodMk_left).aestronglyMeasurable
-  simp_rw [hpush]
   calc ∫ t in Ioo a b, ∫ ω, fderiv ℝ φ (t, γ ω t) (1, u (t, γ ω t)) ∂P
       = ∫ q, fderiv ℝ φ (G q) (1, u (G q)) ∂ν :=
       (integral_prod _ (integrable_fderiv_apply_one hφ1 hφc hG.aestronglyMeasurable hcint)).symm
@@ -526,7 +528,7 @@ theorem isContinuityEquation_map_add_smul (μ : Measure E) [IsFiniteMeasure μ] 
     (.of_forall fun x ↦ .of_forall fun t _ ↦ ?_) ?_
   · simpa using ((hasDerivAt_id' t).smul_const w).const_add x
   · simp only [lintegral_const, Measure.restrict_apply_univ]
-    exact ENNReal.mul_lt_top (ENNReal.mul_lt_top enorm_lt_top measure_Ioo_lt_top)
+    exact ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top measure_Ioo_lt_top)
       (measure_lt_top μ univ)
 
 /-- **A stationary law solves the continuity equation.** A finite measure which does not move

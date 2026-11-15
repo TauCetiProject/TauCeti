@@ -31,7 +31,12 @@ on the current generators (`LieAlgebra.ofTwoCocycle.derivation_ext_envelopingι`
 If `h` has order at least `P`, the vector field `h d/dt` sends currents of order at least `N` to
 currents of order at least `P + N - 1`. So when `h` has positive order it preserves each order
 submodule `a_N` and each left ideal `I_N = U · ι(a_N)`
-(`TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation_mem_orderLeftIdeal`). The lifts commute
+(`TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation_mem_orderLeftIdeal`). When `h` has order
+at least `0`, that is `h ∈ R[[t]]`, it preserves the power-series currents `a_0 = L[[t]]`, since
+the derivative of a power series is a power series, and hence the left ideal `I₀`
+(`TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_zero`). The lifts
+satisfy the commutator relations of vector fields, `[δ_{h₁}, δ_{h₂}] = δ_{h₁ h₂' - h₂ h₁'}`
+(`TauCeti.CurrentAlgebra.lie_vectorFieldEnvelopingDerivation`). The lifts commute
 with the level comparison `TauCeti.CurrentAlgebra.levelEnvelopingEquiv` between
 `U(ĝ_Ψ) / (ι K - 1)` and `U(ĝ_Φ) / (ι K - k)` for `Ψ = k • Φ`, for every `k`, including `k = 0`
 (`TauCeti.CurrentAlgebra.levelEnvelopingEquiv_vectorFieldEnvelopingDerivation`).
@@ -40,7 +45,8 @@ The main example is the **degree derivation** `d = t d/dt`, the vector field of 
 multiplies the coefficient of `tⁿ` by `n`, so on modes `x_n = tⁿ ⊗ x` it acts by `[d, x_n] = n x_n`
 (`TauCeti.CurrentAlgebra.vectorFieldDerivation_single_one_single_tmul`). Since `t` has order one,
 `d` preserves every `I_N`. The vector field `h = 1` is the translation `d/dt`, which lowers orders
-by one.
+by one: `d/dt` sends `x_n` to `n x_{n - 1}`
+(`TauCeti.CurrentAlgebra.vectorFieldDerivation_one_single_tmul`).
 
 The current derivation is Mathlib's `Lie.Derivation.ofDerivation` of the derivation `h d/dt` of
 `R⸨X⸩`, written as `h t⁻¹` times the Euler operator `HahnSeries.weightDerivation` of the integer
@@ -63,8 +69,13 @@ the dual numbers, as in `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation
   the residue pairing.
 * `TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation_envelopingι`: the lift acts by `h d/dt`
   on the current generators.
+* `TauCeti.CurrentAlgebra.lie_vectorFieldDerivation` and
+  `TauCeti.CurrentAlgebra.lie_vectorFieldEnvelopingDerivation`: the commutator of the vector fields
+  of `h₁` and `h₂` is the vector field of `h₁ h₂' - h₂ h₁'`.
 * `TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation_mem_orderLeftIdeal`: vector fields of
   positive order preserve each `I_N`.
+* `TauCeti.CurrentAlgebra.vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_zero`: vector fields
+  of order at least `0` preserve `I₀`.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv_vectorFieldEnvelopingDerivation`: the lifts commute
   with the level comparison.
 * `TauCeti.CurrentAlgebra.coeff_vectorFieldDerivation_single_one`: the degree derivation multiplies
@@ -186,6 +197,51 @@ theorem coeff_vectorFieldDerivation_single_one (n : ℤ) (u : C) :
   | tmul f x =>
     rw [vectorFieldDerivation_tmul, coeff_tmul, coeff_tmul,
       LaurentSeries.coeff_single_one_mul_derivative, smul_assoc]
+
+/-- The vector field of `-h` is the negative of the vector field of `h`. -/
+@[simp]
+theorem vectorFieldDerivation_neg (h : R⸨X⸩) :
+    vectorFieldDerivation R L (-h) = -vectorFieldDerivation R L h := by
+  ext u
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => rw [map_add, map_add, hu, hv]
+  | tmul f x => simp [TensorProduct.neg_tmul]
+
+/-- **The translation on modes**: `d/dt` sends `x_n = r tⁿ ⊗ x` to `n x_{n - 1}`. -/
+theorem vectorFieldDerivation_one_single_tmul (n : ℤ) (r : R) (x : L) :
+    vectorFieldDerivation R L 1 (single n r ⊗ₜ x) = n • (single (n - 1) r ⊗ₜ x) := by
+  rw [vectorFieldDerivation_tmul, one_mul, LaurentSeries.derivative_apply,
+    LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one, TensorProduct.smul_tmul']
+  exact congrArg (· ⊗ₜ x) (map_zsmul (HahnSeries.single.addMonoidHom (n - 1)) n r)
+
+/-- **The commutator of vector fields**: `[h₁ d/dt, h₂ d/dt] = (h₁ h₂' - h₂ h₁') d/dt`. -/
+theorem lie_vectorFieldDerivation (h₁ h₂ : R⸨X⸩) :
+    ⁅vectorFieldDerivation R L h₁, vectorFieldDerivation R L h₂⁆ =
+      vectorFieldDerivation R L
+        (h₁ * LaurentSeries.derivative R h₂ - h₂ * LaurentSeries.derivative R h₁) := by
+  ext u
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => rw [map_add, map_add, hu, hv]
+  | tmul f x =>
+    rw [LieDerivation.commutator_apply]
+    simp only [vectorFieldDerivation_tmul, ← TensorProduct.sub_tmul, LaurentSeries.derivative_mul]
+    congr 1
+    ring
+
+/-- **Vector fields regular at the origin preserve the power-series currents**: if `h` has order
+at least `0`, then `h d/dt` maps the currents `L[[t]]` of order at least `0` into themselves. -/
+theorem vectorFieldDerivation_mem_orderSubmodule_zero {h : R⸨X⸩} (hh : 0 ≤ h.orderTop) {u : C}
+    (hu : u ∈ orderSubmodule R L 0) : vectorFieldDerivation R L h u ∈ orderSubmodule R L 0 := by
+  rw [orderSubmodule_def] at hu
+  induction hu using Submodule.span_induction with
+  | mem u hu =>
+    obtain ⟨f, x, hf, rfl⟩ := hu
+    rw [vectorFieldDerivation_tmul]
+    exact tmul_mem_orderSubmodule R L _
+      (by exact_mod_cast LaurentSeries.zero_le_orderTop_mul_derivative hh (by exact_mod_cast hf)) x
+  | zero => simp
+  | add u v _ _ hu hv => simpa only [map_add] using add_mem hu hv
+  | smul r u _ hu => simpa only [map_smul] using Submodule.smul_mem _ r hu
 
 end Currents
 
@@ -336,6 +392,27 @@ theorem vectorFieldEnvelopingDerivation_ι (h : R⸨X⸩) (x : ofTwoCocycle c) :
     vectorFieldExtensionDerivation_ofProd, ι_ofProd, Algebra.algebraMap_eq_smul_one, map_smul,
     derivationLieAlgebra.apply_one_eq_zero, smul_zero, map_zero, mul_zero, map_zero]
 
+/-- A vector field of order at least `P` carries `I_N` into `I_(min N (P + N - 1))`.
+The minimum accounts for differentiating the left factor in a left-ideal generator. -/
+theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_min {P N : ℤ} {h : R⸨X⸩}
+    (hh : (P : WithTop ℤ) ≤ h.orderTop) {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
+    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
+      orderLeftIdeal Φ hΦ hΦs a (min N (P + N - 1)) := by
+  rw [orderLeftIdeal_def] at hx
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨u, hu, rfl⟩ := hx
+    rw [vectorFieldEnvelopingDerivation_envelopingι]
+    exact orderLeftIdeal_antitone Φ hΦ hΦs a (min_le_right _ _)
+      (envelopingι_mem_orderLeftIdeal (vectorFieldDerivation_mem_orderSubmodule hh hu))
+  | zero => simp
+  | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
+  | smul y x hx' hx =>
+    rw [smul_eq_mul, derivationLieAlgebra.leibniz]
+    exact add_mem (Submodule.smul_mem _ _
+      (orderLeftIdeal_antitone Φ hΦ hΦs a (min_le_left _ _)
+        (by rwa [orderLeftIdeal_def]))) (Submodule.smul_mem _ y hx)
+
 /-- **Vector fields of positive order preserve the left ideals.** If `h` has order at least one,
 for instance for the degree derivation `t d/dt`, the lift carries each `I_N = U · ι(a_N)` into
 itself. -/
@@ -343,18 +420,48 @@ theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal {h : R⸨X⸩}
     (hh : (1 : WithTop ℤ) ≤ h.orderTop) {N : ℤ} {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
     (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
       orderLeftIdeal Φ hΦ hΦs a N := by
+  simpa using vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_min Φ hΦ hΦs a hh hx
+
+/-- If the vector field `h d/dt` maps the currents of order at least `N` into themselves, its lift
+carries the left ideal `I_N = U · ι(a_N)` into itself. -/
+theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo {h : R⸨X⸩} {N : ℤ}
+    (hN : Set.MapsTo (vectorFieldDerivation R L h) (orderSubmodule R L N) (orderSubmodule R L N))
+    {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a N) :
+    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
+      orderLeftIdeal Φ hΦ hΦs a N := by
   rw [orderLeftIdeal_def] at hx
   induction hx using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨u, hu, rfl⟩ := hx
     rw [vectorFieldEnvelopingDerivation_envelopingι]
-    apply envelopingι_mem_orderLeftIdeal
-    simpa using vectorFieldDerivation_mem_orderSubmodule (P := 1) (by exact_mod_cast hh) hu
+    exact envelopingι_mem_orderLeftIdeal (hN hu)
   | zero => simp
   | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
   | smul y x hx' hx =>
     rw [smul_eq_mul, derivationLieAlgebra.leibniz]
     exact add_mem (Submodule.smul_mem _ _ (by rwa [orderLeftIdeal_def])) (Submodule.smul_mem _ y hx)
+
+/-- **Vector fields regular at the origin preserve `I₀`.** If `h` has order at least `0`, for
+instance for the translation `d/dt`, the lift carries the left ideal `I₀ = U · ι(L[[t]])` into
+itself. -/
+theorem vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_zero {h : R⸨X⸩} (hh : 0 ≤ h.orderTop)
+    {x : UK} (hx : x ∈ orderLeftIdeal Φ hΦ hΦs a 0) :
+    (vectorFieldEnvelopingDerivation Φ hΦ hΦs a h : Module.End R UK) x ∈
+      orderLeftIdeal Φ hΦ hΦs a 0 :=
+  vectorFieldEnvelopingDerivation_mem_orderLeftIdeal_of_mapsTo Φ hΦ hΦs a
+    (fun _ hu ↦ vectorFieldDerivation_mem_orderSubmodule_zero hh hu) hx
+
+/-- **The lifts of vector fields satisfy the commutator relations of vector fields**:
+`[δ_{h₁}, δ_{h₂}] = δ_{h₁ h₂' - h₂ h₁'}` on `U(ĝ) / (ι K - a)`. -/
+theorem lie_vectorFieldEnvelopingDerivation (h₁ h₂ : R⸨X⸩) :
+    ⁅vectorFieldEnvelopingDerivation Φ hΦ hΦs a h₁, vectorFieldEnvelopingDerivation Φ hΦ hΦs a h₂⁆ =
+      vectorFieldEnvelopingDerivation Φ hΦ hΦs a
+        (h₁ * LaurentSeries.derivative R h₂ - h₂ * LaurentSeries.derivative R h₁) :=
+  derivation_ext_envelopingι c a fun u ↦ by
+    -- The commutator of the current vector fields, then normalization of both commutators.
+    rw [vectorFieldEnvelopingDerivation_envelopingι, ← lie_vectorFieldDerivation]
+    simp only [LieDerivation.commutator_apply, map_sub, LieSubalgebra.coe_bracket, Ring.lie_def,
+      LinearMap.sub_apply, mul_apply_eq_comp, vectorFieldEnvelopingDerivation_envelopingι]
 
 /-- **The degree derivation on the mode generators**: `[d, x_n] = n x_n`. -/
 theorem vectorFieldEnvelopingDerivation_single_one_envelopingι_single_tmul (n : ℤ) (r : R)

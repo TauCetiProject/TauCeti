@@ -60,9 +60,15 @@ theorem mem_Icc (f : ExcessFlow lo hi b) : f.val ∈ Set.Icc lo hi := f.property
 theorem excessAt_eq (f : ExcessFlow lo hi b) (x : V) : excessAt f.val x = b x :=
   congrFun f.property.2 x
 
+/-- On a vertex set that no arrow enters or leaves, such as a weakly connected component, the
+prescribed excess of a feasible assignment has total zero. -/
+theorem sum_eq_zero_of_forall_mem_iff (f : ExcessFlow lo hi b) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → (x ∈ S ↔ y ∈ S)) : ∑ v ∈ S, b v = 0 := by
+  simpa only [f.excessAt_eq] using sum_excessAt_eq_zero_of_forall_mem_iff f.val hS
+
 /-- Prescribed excess of a feasible assignment has total zero. -/
-theorem sum_eq_zero (f : ExcessFlow lo hi b) : ∑ v, b v = 0 := by
-  simpa only [← f.property.2] using sum_excessAt f.val
+theorem sum_eq_zero (f : ExcessFlow lo hi b) : ∑ v, b v = 0 :=
+  f.sum_eq_zero_of_forall_mem_iff fun _ _ _ ↦ by simp
 
 end ExcessFlow
 

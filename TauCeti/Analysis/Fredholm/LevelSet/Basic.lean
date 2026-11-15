@@ -57,6 +57,8 @@ already cut down to `TauCeti.levelSetImplicitCoordSource` so that they can be co
 
 * `TauCeti.levelSetChart`: the chart `{x | f x = c} → ker f'` at a regular point `a`, given by
   projecting `x - a` onto `ker f'` along the chosen complement.
+* `TauCeti.exists_mem_nhds_forall_mem_source_and_levelSetChart_mem`: a neighbourhood of the chart
+  origin pulls back to a neighbourhood of the base point on which the chart is defined.
 * `ContinuousLinearMap.kerModelEquiv`: the identification of `ker f'` with the model space
   `Fin n → 𝕜`, when `ker f'` is finite-dimensional of dimension `n`.
 * `TauCeti.levelSetChartModel`: the chart read through that identification.
@@ -201,6 +203,24 @@ theorem levelSetChart_symm_zero (hf : HasStrictFDerivAt f f' a) (hf' : f'.range 
   rw [← levelSetChart_apply_self hf hf' hker ha]
   exact (levelSetChart hf hf' hker ha).left_inv (mem_levelSetChart_source hf hf' hker ha)
 
+/-- A neighbourhood `N` of the chart origin pulls back along the level-set chart to a
+neighbourhood `Q` of the base point in the ambient space: every point of the level set in `Q` lies
+in the source of the chart, and its chart image lies in `N`. This confines a statement about the
+chart, near its origin, to a neighbourhood of the base point itself. -/
+theorem exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+    (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) (ha : f a = c) {N : Set f'.ker}
+    (hN : N ∈ 𝓝 (0 : f'.ker)) :
+    ∃ Q ∈ 𝓝 a, ∀ w : ↥{z | f z = c}, (w : E) ∈ Q →
+      w ∈ (levelSetChart hf hf' hker ha).source ∧ levelSetChart hf hf' hker ha w ∈ N := by
+  set Φ := levelSetChart hf hf' hker ha
+  have hz0 : (⟨a, ha⟩ : ↥{z | f z = c}) ∈ Φ.source := mem_levelSetChart_source hf hf' hker ha
+  have hΦ0 : Φ ⟨a, ha⟩ = 0 := levelSetChart_apply_self hf hf' hker ha
+  have hQ' : Φ.source ∩ Φ ⁻¹' N ∈ 𝓝 (⟨a, ha⟩ : ↥{z | f z = c}) :=
+    Filter.inter_mem (Φ.open_source.mem_nhds hz0) (Φ.continuousAt hz0 (hΦ0 ▸ hN))
+  obtain ⟨Q, hQnhds, hQsub⟩ := (mem_nhds_subtype _ _ _).1 hQ'
+  exact ⟨Q, hQnhds, fun w hw ↦ hQsub hw⟩
+
 /-! ### The chart in the model space -/
 
 section Model
@@ -216,6 +236,35 @@ noncomputable def _root_.ContinuousLinearMap.kerModelEquiv {n : ℕ} (T : E →L
     ↥T.ker ≃L[𝕜] (Fin n → 𝕜) :=
   have := hfin
   ContinuousLinearEquiv.ofFinrankEq (by rw [hn, Module.finrank_fin_fun])
+
+/-- A surjective Fredholm map `D : E → F` of index `n` gives a linear homeomorphism
+`(Fin n → 𝕜) × F ≃ E` whose inverse has the kernel model coordinate of the chosen kernel
+projection as first component and `D` itself as second component. -/
+theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_symm_eq {n : ℕ}
+    (D : E →L[𝕜] F) (hFred : D.IsFredholm)
+    (hsurj : Function.Surjective D) (hindex : D.index = n) :
+    ∃ A : ((Fin n → 𝕜) × F) ≃L[𝕜] E,
+      (∀ x, (A.symm x).1 = D.kerModelEquiv hFred.finite_ker
+        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq D hsurj).2 hindex)
+        (Classical.choose hFred.closedComplemented_ker x)) ∧
+      ∀ x, (A.symm x).2 = D x := by
+  let K := D.kerModelEquiv hFred.finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq D hsurj).2 hindex)
+  let L := D.implicitCoordEquiv (LinearMap.range_eq_top.2 hsurj)
+    hFred.closedComplemented_ker
+  have hL (x : E) : L x = (D x, Classical.choose hFred.closedComplemented_ker x) :=
+    D.implicitCoordEquiv_apply _ _ x
+  let A : ((Fin n → 𝕜) × F) ≃L[𝕜] E :=
+    ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
+      (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm
+  -- Inverting the product equivalences puts the kernel coordinate first.
+  have hA_symm (x : E) : A.symm x = (K (L x).2, (L x).1) := by
+    simp only [A, ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodComm_symm,
+      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.prodComm_apply,
+      ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply,
+      Prod.fst_swap, Prod.snd_swap]
+  exact ⟨A, fun x ↦ by rw [hA_symm, hL], fun x ↦ by rw [hA_symm, hL]⟩
 
 /-- The chart of a regular level set, read in the model space `Fin n → 𝕜` through
 `ContinuousLinearMap.kerModelEquiv`. -/

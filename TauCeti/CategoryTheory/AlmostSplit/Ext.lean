@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.AlmostSplit.Basic
+public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 public import TauCeti.Algebra.Homology.Ext.Presentation
+import TauCeti.CategoryTheory.AlmostSplit.Minimal
 
 /-!
 # Extension classes and left almost-split maps
@@ -18,6 +19,9 @@ Auslander–Reiten duality into the factorization property of an actual sequence
 
 The factorization test uses the kernel of `TauCeti.homBoundary`, computed from Mathlib's
 contravariant long exact Ext sequence. No finiteness or linearity assumption is needed.
+
+When the right-hand end has a local endomorphism ring, the same condition characterizes almost-split
+sequences (`CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_extClass`).
 
 ## References
 
@@ -60,5 +64,14 @@ theorem isLeftAlmostSplit_f_iff_extClass (hS : S.ShortExact) :
     have hz := (hfactor S.X₁ (𝟙 S.X₁)).mpr
       ⟨retraction S.f, IsSplitMono.id S.f⟩
     exact hne (by simpa using hz)
+
+/-- **The extension-class criterion in an abelian category**: a short exact sequence with local
+right-hand endomorphism ring is almost split exactly when its class is nonzero and is killed by
+pushforward along every map out of the first term that is not a split monomorphism. -/
+theorem isAlmostSplit_iff_extClass (hS : S.ShortExact) [IsLocalRing (End S.X₃)] :
+    S.IsAlmostSplit ↔ hS.extClass ≠ 0 ∧
+      ∀ (N : C) (g : S.X₁ ⟶ N), ¬ IsSplitMono g →
+        hS.extClass.comp (Ext.mk₀ g) (add_zero 1) = 0 :=
+  hS.isAlmostSplit_iff_isLeftAlmostSplit.trans hS.isLeftAlmostSplit_f_iff_extClass
 
 end CategoryTheory.ShortComplex.ShortExact

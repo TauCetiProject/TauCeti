@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.DoldKan.ModuleCat
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.HomotopyGroup
-public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup
+public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup.Basic
 
 /-!
 # Homotopy groups of simplicial modules

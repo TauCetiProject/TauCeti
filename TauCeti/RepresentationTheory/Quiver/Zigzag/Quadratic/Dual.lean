@@ -252,6 +252,96 @@ section Orthogonal
 
 variable [∀ v : V, Fintype (G.neighborSet v)]
 
+omit [Finite V] in
+/-- Indexing the signless relators by the graph vertices names the same family. -/
+private theorem range_signlessPreprojectiveRelator_eq :
+    (Set.range fun v : DoubledQuiver G => signlessPreprojectiveRelator k v) =
+      Set.range fun v : V => signlessPreprojectiveRelator k (vertex G v) := by
+  refine Set.eq_of_subset_of_subset ?_ ?_
+  · rintro _ ⟨v, rfl⟩
+    obtain ⟨w, rfl⟩ := exists_eq_vertex G v
+    exact ⟨w, signlessPreprojectiveRelator_congr k (vertex G w) _ _⟩
+  · rintro _ ⟨w, rfl⟩
+    exact ⟨vertex G w, signlessPreprojectiveRelator_congr k (vertex G w) _ _⟩
+
+omit [Finite V] [∀ v : V, Fintype (G.neighborSet v)] in
+/-- A coordinate of an element orthogonal to the quadratic relators on a length-two path which
+is not a loop vanishes. -/
+private theorem repr_eq_zero_of_mem_quadraticOrthogonal {f : pathAlgebra k (DoubledQuiver G)}
+    (hf : f ∈ quadraticOrthogonal k (DoubledQuiver G) (quadraticZigzagRelations k G))
+    {a b : DoubledQuiver G} (p : _root_.Quiver.Path a b) (hp : p.length = 2) (hab : a ≠ b) :
+    (pathAlgebraBasis k (DoubledQuiver G)).repr f ⟨a, b, p⟩ = 0 := by
+  rw [quadraticZigzagRelations_eq_span, mem_quadraticOrthogonal_span_iff] at hf
+  simpa only [pathPairing_apply_ofPath] using
+    hf.2 _ (IsQuadraticZigzagRelator.nonreturn p hp hab)
+
+omit [Finite V] [∀ v : V, Fintype (G.neighborSet v)] in
+/-- The coordinates of an element orthogonal to the quadratic relators on the backtracks based
+at one vertex agree. -/
+private theorem repr_backtrackPath_eq_of_mem_quadraticOrthogonal
+    {f : pathAlgebra k (DoubledQuiver G)}
+    (hf : f ∈ quadraticOrthogonal k (DoubledQuiver G) (quadraticZigzagRelations k G))
+    {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j') :
+    (pathAlgebraBasis k (DoubledQuiver G)).repr f
+        ⟨vertex G i, vertex G i, backtrackPath G h⟩ =
+      (pathAlgebraBasis k (DoubledQuiver G)).repr f
+        ⟨vertex G i, vertex G i, backtrackPath G h'⟩ := by
+  rw [quadraticZigzagRelations_eq_span, mem_quadraticOrthogonal_span_iff] at hf
+  simpa only [map_sub, pathPairing_apply_ofPath, sub_eq_zero] using
+    hf.2 _ (IsQuadraticZigzagRelator.equal_backtracks (backtrackPath G h)
+      (backtrackPath G h') (length_backtrackPath G h) (length_backtrackPath G h'))
+
+/-- An element orthogonal to the quadratic zigzag relations is a combination of the signless
+relators. -/
+private theorem mem_span_signlessPreprojectiveRelator_of_mem_quadraticOrthogonal
+    {f : pathAlgebra k (DoubledQuiver G)}
+    (hf : f ∈ quadraticOrthogonal k (DoubledQuiver G) (quadraticZigzagRelations k G)) :
+    f ∈ Submodule.span k
+      (Set.range fun v : V => signlessPreprojectiveRelator k (vertex G v)) := by
+  classical
+  have hdeg : f ∈ grade k (DoubledQuiver G) 2 := by
+    have h := hf
+    rw [quadraticZigzagRelations_eq_span, mem_quadraticOrthogonal_span_iff] at h
+    exact h.1
+  let _ := Fintype.ofFinite V
+  -- The common coordinate of `f` at each vertex, zero at an isolated vertex.
+  set c : V → k := fun u => if h : ∃ j, G.Adj u j then
+    (pathAlgebraBasis k (DoubledQuiver G)).repr f
+      ⟨vertex G u, vertex G u, backtrackPath G h.choose_spec⟩ else 0 with hc
+  have hcval : ∀ {u j : V} (h : G.Adj u j), c u =
+      (pathAlgebraBasis k (DoubledQuiver G)).repr f
+        ⟨vertex G u, vertex G u, backtrackPath G h⟩ := fun {u j} h => by
+    simp only [hc]
+    rw [dite_eq_left (⟨j, h⟩ : ∃ j, G.Adj u j)]
+    exact repr_backtrackPath_eq_of_mem_quadraticOrthogonal k G hf _ h
+  have hfeq : f = ∑ v : V, c v • signlessPreprojectiveRelator k (vertex G v) := by
+    refine (Module.Basis.ext_elem_iff (pathAlgebraBasis k (DoubledQuiver G))).2 fun x => ?_
+    obtain ⟨a, b, p⟩ := x
+    rw [map_sum, Finsupp.finsetSum_apply]
+    simp only [map_smul, Finsupp.smul_apply, smul_eq_mul]
+    obtain ⟨a₀, rfl⟩ := exists_eq_vertex G a
+    obtain ⟨b₀, rfl⟩ := exists_eq_vertex G b
+    by_cases hlen : p.length = 2
+    · by_cases hab : a₀ = b₀
+      · subst hab
+        obtain ⟨j, hj, rfl⟩ := exists_eq_backtrackPath G p hlen
+        rw [Finset.sum_eq_single a₀,
+          repr_signlessPreprojectiveRelator_backtrackPath_self k G a₀ hj, mul_one, hcval hj]
+        · intro w _ hw
+          rw [repr_signlessPreprojectiveRelator_backtrackPath_of_ne k G w hj hw, mul_zero]
+        · intro hmem
+          exact absurd (Finset.mem_univ _) hmem
+      · rw [repr_eq_zero_of_mem_quadraticOrthogonal k G hf p hlen fun h => hab ((vertex_inj G).1 h)]
+        refine (Finset.sum_eq_zero fun w _ => ?_).symm
+        rw [repr_signlessPreprojectiveRelator_eq_zero_of_ne k G w
+          (fun h => hab ((vertex_inj G).1 h)), mul_zero]
+    · rw [Finsupp.notMem_support_iff.1 fun hx => hlen (mem_grade_iff.1 hdeg _ hx)]
+      refine (Finset.sum_eq_zero fun w _ => ?_).symm
+      rw [repr_signlessPreprojectiveRelator_eq_zero_of_length_ne k G w hlen, mul_zero]
+  rw [hfeq]
+  exact Submodule.sum_mem _ fun v _ => Submodule.smul_mem _ _
+    (Submodule.subset_span (Set.mem_range_self v))
+
 /-- **The quadratic dual relations of a zigzag algebra are the signless preprojective relations**:
 the orthogonal complement of the quadratic zigzag relations is spanned by the sums of the
 backtracks at the vertices. -/
@@ -260,73 +350,9 @@ theorem quadraticOrthogonal_quadraticZigzagRelations :
       Submodule.span k
         (Set.range fun v : DoubledQuiver G => signlessPreprojectiveRelator k v) := by
   classical
-  -- Indexing the relators by the graph vertices names the same family.
-  have hrange : (Set.range fun v : DoubledQuiver G => signlessPreprojectiveRelator k v) =
-      Set.range fun v : V => signlessPreprojectiveRelator k (vertex G v) := by
-    refine Set.eq_of_subset_of_subset ?_ ?_
-    · rintro _ ⟨v, rfl⟩
-      obtain ⟨w, rfl⟩ := exists_eq_vertex G v
-      exact ⟨w, signlessPreprojectiveRelator_congr k (vertex G w) _ _⟩
-    · rintro _ ⟨w, rfl⟩
-      exact ⟨vertex G w, signlessPreprojectiveRelator_congr k (vertex G w) _ _⟩
-  rw [hrange]
+  rw [range_signlessPreprojectiveRelator_eq]
   refine le_antisymm (fun f hf => ?_) ?_
-  -- An orthogonal element is the combination of the relators read off its own coordinates on the
-  -- backtracks.
-  · rw [quadraticZigzagRelations_eq_span, mem_quadraticOrthogonal_span_iff] at hf
-    obtain ⟨hdeg, horth⟩ := hf
-    -- A coordinate of `f` on a length-two path which is not a loop vanishes.
-    have hne : ∀ {a b : DoubledQuiver G} (p : _root_.Quiver.Path a b), p.length = 2 → a ≠ b →
-        (pathAlgebraBasis k (DoubledQuiver G)).repr f ⟨a, b, p⟩ = 0 := fun p hp hab => by
-      simpa only [pathPairing_apply_ofPath] using
-        horth _ (IsQuadraticZigzagRelator.nonreturn p hp hab)
-    -- The coordinates of `f` on the backtracks based at one vertex agree.
-    have hconst : ∀ {i j j' : V} (h : G.Adj i j) (h' : G.Adj i j'),
-        (pathAlgebraBasis k (DoubledQuiver G)).repr f
-            ⟨vertex G i, vertex G i, backtrackPath G h⟩ =
-          (pathAlgebraBasis k (DoubledQuiver G)).repr f
-            ⟨vertex G i, vertex G i, backtrackPath G h'⟩ := fun h h' => by
-      simpa only [map_sub, pathPairing_apply_ofPath, sub_eq_zero] using
-        horth _ (IsQuadraticZigzagRelator.equal_backtracks (backtrackPath G h)
-          (backtrackPath G h') (length_backtrackPath G h) (length_backtrackPath G h'))
-    let _ := Fintype.ofFinite V
-    -- The common coordinate of `f` at each vertex, zero at an isolated vertex.
-    set c : V → k := fun u => if h : ∃ j, G.Adj u j then
-      (pathAlgebraBasis k (DoubledQuiver G)).repr f
-        ⟨vertex G u, vertex G u, backtrackPath G h.choose_spec⟩ else 0 with hc
-    have hcval : ∀ {u j : V} (h : G.Adj u j), c u =
-        (pathAlgebraBasis k (DoubledQuiver G)).repr f
-          ⟨vertex G u, vertex G u, backtrackPath G h⟩ := fun {u j} h => by
-      simp only [hc]
-      rw [dite_eq_left (⟨j, h⟩ : ∃ j, G.Adj u j)]
-      exact hconst _ h
-    have hfeq : f = ∑ v : V, c v • signlessPreprojectiveRelator k (vertex G v) := by
-      refine (Module.Basis.ext_elem_iff (pathAlgebraBasis k (DoubledQuiver G))).2 fun x => ?_
-      obtain ⟨a, b, p⟩ := x
-      rw [map_sum, Finsupp.finsetSum_apply]
-      simp only [map_smul, Finsupp.smul_apply, smul_eq_mul]
-      obtain ⟨a₀, rfl⟩ := exists_eq_vertex G a
-      obtain ⟨b₀, rfl⟩ := exists_eq_vertex G b
-      by_cases hlen : p.length = 2
-      · by_cases hab : a₀ = b₀
-        · subst hab
-          obtain ⟨j, hj, rfl⟩ := exists_eq_backtrackPath G p hlen
-          rw [Finset.sum_eq_single a₀,
-            repr_signlessPreprojectiveRelator_backtrackPath_self k G a₀ hj, mul_one, hcval hj]
-          · intro w _ hw
-            rw [repr_signlessPreprojectiveRelator_backtrackPath_of_ne k G w hj hw, mul_zero]
-          · intro hmem
-            exact absurd (Finset.mem_univ _) hmem
-        · rw [hne p hlen fun h => hab ((vertex_inj G).1 h)]
-          refine (Finset.sum_eq_zero fun w _ => ?_).symm
-          rw [repr_signlessPreprojectiveRelator_eq_zero_of_ne k G w
-            (fun h => hab ((vertex_inj G).1 h)), mul_zero]
-      · rw [Finsupp.notMem_support_iff.1 fun hx => hlen (mem_grade_iff.1 hdeg _ hx)]
-        refine (Finset.sum_eq_zero fun w _ => ?_).symm
-        rw [repr_signlessPreprojectiveRelator_eq_zero_of_length_ne k G w hlen, mul_zero]
-    rw [hfeq]
-    exact Submodule.sum_mem _ fun v _ => Submodule.smul_mem _ _
-      (Submodule.subset_span (Set.mem_range_self v))
+  · exact mem_span_signlessPreprojectiveRelator_of_mem_quadraticOrthogonal k G hf
   -- Conversely each relator is homogeneous of degree two and orthogonal to both families of
   -- quadratic relators.
   · rw [Submodule.span_le]

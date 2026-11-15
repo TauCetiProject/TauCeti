@@ -21,6 +21,12 @@ In a perfect extended metric space, a nonempty open set also splits into two dis
 open sets of small diameter whose closures stay inside it: the open-set counterpart of Mathlib's
 `Perfect.small_diam_splitting`, used to build Cantor schemes of open sets.
 
+The same split holds for an open set with uncountable image under a continuous map `f` from a
+second countable extended pseudometric space into a Hausdorff space, with uncountable and disjoint
+images: the points with a neighbourhood of countable image have countable image by second
+countability, so the open set contains two condensation points of `f` with distinct values. This
+is the step of the perfect set theorem for analytic sets.
+
 ## Main results
 
 * `Perfect.continuum_le_mk`: a nonempty perfect subset of a completely metrizable space has at
@@ -28,6 +34,9 @@ open sets of small diameter whose closures stay inside it: the open-set counterp
 * `Perfect.mk_eq_continuum`: a nonempty perfect subset of a Polish space has exactly `𝔠` points.
 * `IsOpen.exists_disjoint_closure_subset`: in a perfect extended metric space, a nonempty open set
   contains two disjoint nonempty open sets of small diameter, with closures inside it.
+* `Continuous.exists_split_of_not_countable_image`: for a continuous map from a second countable
+  extended pseudometric space into a Hausdorff space, an open set with uncountable image contains
+  two open sets of small diameter, with closures inside it, with uncountable and disjoint images.
 
 ## References
 
@@ -37,7 +46,7 @@ open sets of small diameter whose closures stay inside it: the open-set counterp
 
 public section
 
-open Set Function Cardinal TopologicalSpace Topology
+open Set Function Filter Cardinal TopologicalSpace Topology
 open scoped ENNReal
 
 universe u
@@ -99,3 +108,62 @@ theorem IsOpen.exists_disjoint_closure_subset [PerfectSpace X] {V : Set X} (hV :
     exacts [hdiam hW₀r, hdiam hW₁r]
   · refine (Metric.eball_disjoint ?_).mono hW₀r hW₁r
     exact (add_le_add (min_le_left _ _) (min_le_left _ _)).trans (ENNReal.add_halves _).le
+
+end Split
+
+section SplitImage
+
+variable {Y : Type*}
+
+/-- **Splitting an open set with uncountable image**: an open set `U` with uncountable image
+under a continuous map `f` from a second countable extended pseudometric space into a Hausdorff
+space contains two open sets of diameter at most `ε`, with closures inside `U`, with uncountable
+images under `f`, and whose images under `f` are disjoint. -/
+theorem Continuous.exists_split_of_not_countable_image [PseudoEMetricSpace Y]
+    [SecondCountableTopology Y] [T2Space X] {f : Y → X} (hf : Continuous f) {U : Set Y}
+    (hU : IsOpen U) (hfU : ¬(f '' U).Countable) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ W : Bool → Set Y, (∀ b, IsOpen (W b) ∧ ¬(f '' W b).Countable ∧ closure (W b) ⊆ U ∧
+      Metric.ediam (W b) ≤ ε) ∧ ∀ x ∈ W false, ∀ y ∈ W true, f x ≠ f y := by
+  -- the points with a neighbourhood of countable image have countable image
+  set N := {y | ∃ V ∈ 𝓝 y, (f '' V).Countable}
+  have hN : (f '' N).Countable := by
+    choose! V hV hVc using fun y (hy : y ∈ N) => hy
+    obtain ⟨t, htN, htc, hNt⟩ :=
+      TopologicalSpace.countable_cover_nhdsWithin fun y hy => mem_nhdsWithin_of_mem_nhds (hV y hy)
+    refine (htc.biUnion fun y hy => hVc y (htN hy)).mono ?_
+    rintro _ ⟨y, hy, rfl⟩
+    obtain ⟨z, hz, hyz⟩ := mem_iUnion₂.1 (hNt hy)
+    exact mem_iUnion₂.2 ⟨z, hz, mem_image_of_mem f hyz⟩
+  -- so `U` contains two condensation points with distinct values
+  have hdiff : ¬(f '' (U \ N)).Countable := fun h =>
+    hfU <| (h.union hN).mono fun _ ⟨y, hyU, hy⟩ => by
+      by_cases hyN : y ∈ N
+      · exact Or.inr ⟨y, hyN, hy⟩
+      · exact Or.inl ⟨y, ⟨hyU, hyN⟩, hy⟩
+  obtain ⟨_, ⟨y₀, ⟨hy₀U, hy₀N⟩, rfl⟩, _, ⟨y₁, ⟨hy₁U, hy₁N⟩, rfl⟩, hne⟩ :=
+    not_subsingleton_iff.1 fun h => hdiff h.countable
+  obtain ⟨V₀, V₁, hV₀, hV₁, hy₀V, hy₁V, hV⟩ := t2_separation hne
+  -- a small open neighbourhood of a condensation point, inside `U` and mapped into `V`
+  have piece (y : Y) (hyU : y ∈ U) (hyN : y ∉ N) (V : Set X) (hVo : IsOpen V) (hyV : f y ∈ V) :
+      ∃ W, IsOpen W ∧ ¬(f '' W).Countable ∧ closure W ⊆ U ∧ Metric.ediam W ≤ ε ∧ W ⊆ f ⁻¹' V := by
+    obtain ⟨t, ht, htc, htUV⟩ :=
+      exists_mem_nhds_isClosed_subset ((hU.inter (hVo.preimage hf)).mem_nhds ⟨hyU, hyV⟩)
+    have hsub : closure (interior t ∩ Metric.eball y (ε / 2)) ⊆ U ∩ f ⁻¹' V :=
+      ((closure_mono (inter_subset_left.trans interior_subset)).trans htc.closure_subset).trans
+        htUV
+    refine ⟨interior t ∩ Metric.eball y (ε / 2), isOpen_interior.inter Metric.isOpen_eball,
+      fun hc => hyN ⟨_, inter_mem (interior_mem_nhds.2 ht)
+        (Metric.eball_mem_nhds y (ENNReal.half_pos hε.ne')), hc⟩,
+      hsub.trans inter_subset_left, ?_, subset_closure.trans (hsub.trans inter_subset_right)⟩
+    calc Metric.ediam (interior t ∩ Metric.eball y (ε / 2))
+        ≤ Metric.ediam (Metric.eball y (ε / 2)) := Metric.ediam_mono inter_subset_right
+      _ ≤ 2 * (ε / 2) := Metric.ediam_eball_le
+      _ = ε := ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top
+  obtain ⟨W₀, hW₀⟩ := piece y₀ hy₀U hy₀N V₀ hV₀ hy₀V
+  obtain ⟨W₁, hW₁⟩ := piece y₁ hy₁U hy₁N V₁ hV₁ hy₁V
+  refine ⟨fun b => bif b then W₁ else W₀, fun b => ?_, fun x hx y hy hxy => ?_⟩
+  · cases b
+    exacts [⟨hW₀.1, hW₀.2.1, hW₀.2.2.1, hW₀.2.2.2.1⟩, ⟨hW₁.1, hW₁.2.1, hW₁.2.2.1, hW₁.2.2.2.1⟩]
+  · exact hV.ne_of_mem (hW₀.2.2.2.2 hx) (hW₁.2.2.2.2 hy) hxy
+
+end SplitImage

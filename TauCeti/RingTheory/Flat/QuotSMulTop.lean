@@ -77,8 +77,9 @@ theorem isSMulRegular_tensorProduct_of_isSMulRegular_quotient [Module.Finite S N
     exact ((AlgebraTensorModule.tensorQuotEquivQuotMapSMul (S := S) (N := N)
       (maximalIdeal R)).isSMulRegular_congr y).mpr hy
   have hfin (k : ℕ) := injective_rTensor_of_isFiniteLength hκ
-    (Ideal.isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal _
-      (by rw [Ideal.radical_pow _ k.succ_ne_zero, (maximalIdeal.isMaximal R).isPrime.radical]) M)
+    (Ideal.isFiniteLength_quotient_smul_top_of_isMaximal_radical _ (by
+      rw [Ideal.radical_pow _ k.succ_ne_zero, (maximalIdeal.isMaximal R).isPrime.radical]
+      infer_instance) M)
   have : Module.Finite S (N ⊗[R] M) := .equiv (AlgebraTensorModule.cancelBaseChange R S S N M)
   unfold IsSMulRegular
   rw [← show ⇑(f.rTensor M) = (y • ·) from

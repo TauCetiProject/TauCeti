@@ -49,6 +49,8 @@ is established.
   exponent of the constant extension vanishes.
 * `TauCeti.Place.isUnramifiedAt_of_constantCompositum_eq_top`: each corresponding local model is
   unramified.
+* `TauCeti.Place.exists_finiteDimensional_ramificationIdx_constantCompositum_eq_one`: in an
+  algebraic constant extension, every place has index one over a finite part of it.
 * `TauCeti.Place.ramificationIdx_eq_one_of_constantCompositum_eq_top`: every place has
   ramification index one, even in an infinite separable algebraic constant extension.
 * `TauCeti.isIntegrallyClosedIn_of_isTotallyRamified`: a finite separable extension with a
@@ -135,6 +137,35 @@ theorem isUnramifiedAt_of_constantCompositum_eq_top
   exact (differentExponent_eq_zero_iff k F P').mp
     (differentExponent_eq_zero_of_constantCompositum_eq_top hcomp P')
 
+omit [Algebra k F] [Algebra k F'] [IsScalarTower k F F'] [IsScalarTower k k' F'] in
+/-- **A place has ramification index one over a finite part of an algebraic constant
+extension**: if `F' = F · k'` with `k' / k` algebraic, then every place `P'` of `F'` has
+ramification index one over `F · L` for some finite subextension `L / k` of `k' / k`, since a
+uniformizer of `P'` already lies in such an `F · L`. This reduces ramification-index statements
+for infinite constant extensions to finite ones. -/
+theorem exists_finiteDimensional_ramificationIdx_constantCompositum_eq_one
+    [Algebra.IsAlgebraic k k'] (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    ∃ L : IntermediateField k k', FiniteDimensional k L ∧
+      ramificationIdx (constantCompositum F L F') P' = 1 := by
+  obtain ⟨t, ht⟩ := P'.exists_isUniformizer
+  rw [isUniformizer_iff_ord_eq_one] at ht
+  obtain ⟨L, hL, htL⟩ :=
+    exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
+      (k := k) (F := F) (by rw [hcomp]; exact IntermediateField.mem_top (x := t))
+  refine ⟨L, hL, ?_⟩
+  let E := constantCompositum F L F'
+  let : Algebra L E := constantCompositumAlgebra F L F'
+  have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
+  -- Since `t` belongs to `E` and has order one upstairs, the index over `E` is one.
+  have hord : Valuation.ord (P'.valuation.comap (algebraMap E F')) (⟨t, htL⟩ : E) =
+      ((1 : ℕ) : ℤ) := by
+    rw [Valuation.ord_comap]
+    simpa using ht
+  rw [ramificationIdx_def]
+  have h1 := Valuation.ordIndex_le _ one_pos hord
+  have h2 := Valuation.ordIndex_pos _ (f := (⟨t, htL⟩ : E)) (by rw [hord]; simp)
+  exact le_antisymm h1 h2
+
 /-- Every place in an arbitrary separable algebraic constant extension has ramification index
 one. Neither finiteness of the constant extension nor exactness of the constants is required. -/
 theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
@@ -142,19 +173,14 @@ theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
     (hcomp : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     ramificationIdx F P' = 1 := by
   let : Algebra.IsSeparable F F' := isSeparable_of_constantCompositum_eq_top (k := k) hcomp
-  -- A uniformizer already occurs over a finite extension of the constants.
-  obtain ⟨t, ht⟩ := P'.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  obtain ⟨L, hL, htL⟩ :=
-    exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
-      (k := k) (F := F) (by rw [hcomp]; exact IntermediateField.mem_top (x := t))
+  -- The index over a finite part `F · L` of the extension is one.
+  obtain ⟨L, hL, he⟩ := exists_finiteDimensional_ramificationIdx_constantCompositum_eq_one
+    (k := k) hcomp P'
   let : FiniteDimensional k L := hL
   let E := constantCompositum F L F'
-  let : Algebra L E := ((algebraMap L F').codRestrict E
-    (algebraMap_mem_constantCompositum F L F')).toAlgebra
-  have : IsScalarTower L E F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  let : Algebra L E := constantCompositumAlgebra F L F'
+  have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
+  have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
   have hE : constantCompositum F L E = ⊤ :=
     (constantCompositum_eq_top_iff F L F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
@@ -167,11 +193,6 @@ theorem ramificationIdx_eq_one_of_constantCompositum_eq_top
     rw [ramificationIdx_eq_ramificationIdx_center (R := (Q.restrict k F).integers) k F Q
       (algebraMap_mem_integers_of_mem_integralClosure k F Q), ← centerIntegralClosure_def]
     exact Ideal.ramificationIdx_eq_one_of_isUnramifiedAt
-  -- Since `t` belongs to `E` and has order one upstairs, the remaining index is one too.
-  have he : P'.ramificationIdx E = 1 := by
-    have hord := ord_algebraMap_restrict L E P' (⟨t, htL⟩ : E)
-    rw [IntermediateField.algebraMap_apply, ht] at hord
-    exact_mod_cast Int.eq_one_of_mul_eq_one_right (by positivity) hord.symm
   rw [ramificationIdx_restrict_mul (k₁ := L) (F₀ := F) (F₁ := E), he, one_mul]
   exact hQ
 

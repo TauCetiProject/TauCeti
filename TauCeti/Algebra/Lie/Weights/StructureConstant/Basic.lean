@@ -160,12 +160,21 @@ N(α, β) * N(-α, γ) = q * (p + 1),
 ```
 
 where `β - pα, …, β, …, β + qα` is the `α`-string through `β`. -/
-theorem structureConstant_mul_structureConstant (hα : α.IsNonZero) (hβ : β.IsNonZero) :
+theorem structureConstant_mul_structureConstant (hβ : β.IsNonZero) :
     hx.structureConstant α β γ hγ hαβ *
         hx.structureConstant (-α) γ β hβ (by
           rw [Weight.coe_neg, hαβ]
           abel) =
       (chainTopCoeff α β * (chainBotCoeff α β + 1) : ℕ) := by
+  by_cases hα : α.IsNonZero
+  swap
+  · -- At a zero weight both sides vanish.
+    have hz : α.IsZero := not_not.mp hα
+    have h0 : hx.structureConstant α β γ hγ hαβ = 0 := by
+      rw [eq_comm, hx.eq_structureConstant_iff α β γ hγ hαβ, hx.eq_zero_of_isZero α hz]
+      simp
+    rw [h0, hz.eq]
+    simp
   apply mul_eq_of_lie_eq_smul hα hβ (hx.isSl2Triple α hα) (hx.mem_rootSpace α)
     (hx.mem_rootSpace (-α)) (hx.mem_rootSpace β) (hx.ne_zero β hβ)
     (hx.lie_eq_structureConstant_smul α β γ hγ hαβ)

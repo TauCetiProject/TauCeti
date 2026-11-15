@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Sign.Basic
-public import TauCeti.ModelTheory.Algebra.OrderedRing.MvPolynomial
+public import Mathlib.ModelTheory.Order
+public import TauCeti.ModelTheory.Algebra.Ring.MvPolynomial
 public import TauCeti.ModelTheory.Complexity
 
 /-!
@@ -139,7 +140,7 @@ theorem exists_isQF_realize_iff_sign {ι : Type*} [Finite ι]
         [LinearOrder R] [(Language.ring.sum Language.order).OrderedStructure R]
         (v : α → R) (xs : Fin n → R),
         φ.Realize v xs ↔ Φ fun i ↦ SignType.sign (aeval (Sum.elim v xs) (p i)) := by
-  choose t ht using fun i ↦ Term.toMvPolynomial_surjective (p i)
+  choose t ht using fun i ↦ Term.toMvPolynomial_surjective (L := Language.order) (p i)
   -- The disjunction, over the sign vectors `s` satisfying `Φ`, of the statements that the
   -- polynomials have the signs `s`.
   refine ⟨iSup fun s : {s // Φ s} ↦ iInf fun i ↦ (t i).signFormula (s.1 i),

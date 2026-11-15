@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.RingTheory.Polynomial.Wronskian
+-- Proof-only: the quotient rule.
+import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Algebra.Polynomial.Eval.SMul
 import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Analysis.Calculus.ContDiff.Polynomial
@@ -18,7 +21,8 @@ import TauCeti.Algebra.Polynomial.Taylor
 # Iterated derivatives of polynomial functions and Taylor polynomials of rational functions
 
 The `n`-th derivative of the function `x ↦ p.eval x` is the function of the `n`-th formal
-derivative of `p`.
+derivative of `p`. Where `Q` does not vanish, the derivative of the rational function `P / Q` is
+`W(Q, P) / Q²`, for `W(Q, P) = Q P' - Q' P` the Wronskian.
 
 If `Q a ≠ 0`, the rational function `P / Q` is smooth near `a`. Its Taylor polynomial `T` of
 order `m` at `a` is characterized algebraically by `T * Q ≡ P` modulo `(X - a) ^ m`. This
@@ -28,6 +32,12 @@ partial-fraction expansion of a rational function with a pole of order `m` at `a
 ## Main results
 
 * `Polynomial.iteratedDeriv`: the iterated derivative of a polynomial function.
+* `Polynomial.hasDerivAt_eval_div_eval`: the quotient rule `(P / Q)' = W(Q, P) / Q²`.
+
+* `Polynomial.iteratedDeriv_eval_zero`: its value at `0` is `n !` times the coefficient of
+  degree `n`.
+* `Polynomial.iteratedDeriv_div_factorial_eq_coeff_of_eventuallyEq`: the Taylor coefficients at
+  `0` of a function agreeing near `0` with a polynomial are its coefficients.
 * `Polynomial.X_sub_C_pow_dvd_sub_sum_iteratedDeriv_mul`: `(X - a) ^ m` divides `P - T * Q`,
   where `T` is the order-`m` Taylor polynomial of `P / Q` at `a`.
 -/
@@ -58,7 +68,31 @@ theorem iteratedDeriv_eq_factorial_mul_eval_hasseDeriv (p : 𝕜[X]) (n : ℕ) (
   rw [Polynomial.iteratedDeriv, ← factorial_smul_hasseDeriv]
   simp [nsmul_eq_mul]
 
+/-- **The quotient rule for a rational function**: where `Q a ≠ 0`, the function `P / Q` has
+derivative `W(Q, P) / Q²` at `a`, for `W(Q, P) = Q P' - Q' P` the Wronskian. -/
+theorem hasDerivAt_eval_div_eval {P Q : 𝕜[X]} {a : 𝕜} (hQ : Q.eval a ≠ 0) :
+    HasDerivAt (fun x ↦ P.eval x / Q.eval x) ((wronskian Q P).eval a / Q.eval a ^ 2) a := by
+  convert (P.hasDerivAt a).div (Q.hasDerivAt a) hQ using 1
+  rw [wronskian]
+  simp only [eval_sub, eval_mul]
+  ring
+
+/-- The `n`-th derivative of a polynomial function at `0` is `n !` times the coefficient of
+degree `n`. -/
+theorem iteratedDeriv_eval_zero (p : 𝕜[X]) (n : ℕ) :
+    iteratedDeriv n (fun x ↦ p.eval x) 0 = n ! * p.coeff n := by
+  rw [iteratedDeriv_eq_factorial_mul_eval_hasseDeriv, ← coeff_zero_eq_eval_zero, hasseDeriv_coeff]
+  simp
+
 variable [CharZero 𝕜]
+
+/-- If `f` agrees near `0` with the polynomial function of `p`, then the `n`-th Taylor coefficient
+`f⁽ⁿ⁾(0) / n!` of `f` at `0` is the coefficient of degree `n` of `p`. -/
+theorem iteratedDeriv_div_factorial_eq_coeff_of_eventuallyEq {f : 𝕜 → 𝕜} {p : 𝕜[X]}
+    (h : f =ᶠ[nhds 0] fun x ↦ p.eval x) (n : ℕ) :
+    iteratedDeriv n f 0 / n ! = p.coeff n := by
+  rw [h.iteratedDeriv_eq, iteratedDeriv_eval_zero,
+    mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
 
 /-- Let `Q` not vanish at `a`, and let `T` be the Taylor polynomial of order `m` of the rational
 function `P / Q` at `a`. Then `T * Q` agrees with `P` to order `m` at `a`. -/

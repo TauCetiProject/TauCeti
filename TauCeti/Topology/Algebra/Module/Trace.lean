@@ -49,6 +49,14 @@ theorem traceCLM_apply (T : V →L[𝕜] V) :
     traceCLM 𝕜 V T = LinearMap.trace 𝕜 V (T : V →ₗ[𝕜] V) :=
   (rfl)
 
+/-- The trace of a composition does not depend on the order of the factors:
+`tr (S ∘ T) = tr (T ∘ S)`. -/
+theorem _root_.ContinuousLinearMap.traceCLM_comp_comm (S T : V →L[𝕜] V) :
+    traceCLM 𝕜 V (S ∘L T) = traceCLM 𝕜 V (T ∘L S) := by
+  rw [traceCLM_apply, traceCLM_apply, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearMap.toLinearMap_comp]
+  exact LinearMap.trace_comp_comm' (T : V →ₗ[𝕜] V) (S : V →ₗ[𝕜] V)
+
 /-- The trace is invariant under conjugation by a continuous linear equivalence:
 `tr (e ∘ T ∘ e⁻¹) = tr T`. -/
 theorem _root_.ContinuousLinearEquiv.traceCLM_comp_comp_symm {W : Type*} [AddCommGroup W]

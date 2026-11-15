@@ -111,7 +111,7 @@ theorem conreyGenerator_three : conreyGenerator 3 = 2 := by
   rw [htot] at h
   -- Neither `0` nor `1` has order `6` modulo `9`.
   by_contra hlt
-  interval_cases hg : conreyGenerator 3
+  interval_cases _ : conreyGenerator 3
   · rw [Nat.cast_zero, orderOf_eq_zero_iff'.mpr fun n hn ↦ by rw [zero_pow hn.ne']; decide] at h
     exact absurd h (by norm_num)
   · rw [Nat.cast_one, orderOf_one] at h
@@ -260,7 +260,7 @@ theorem conreyLocal_eq_one_iff {p e : ℕ} (hp : p.Prime) (m : (ZMod (p ^ e))ˣ)
       exact Subsingleton.elim _ _
     · -- Pair `m` with `-1` and with `5`, whose coordinates are `(1, 0)` and `(0, 1)`.
       have h1 := DFunLike.congr_fun h (-1)
-      have h5 := DFunLike.congr_fun h (ZMod.unitsTwoPowFive e)
+      have h5 := DFunLike.congr_fun h (ZMod.unitFive (n := e + 2))
       simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_neg_one, toAdd_ofAdd,
         ofAdd_zero, map_one, mul_one, MonoidHom.one_apply] at h1
       simp only [conreyTwoPow_add_two_apply, ZMod.unitsTwoPowEquiv_five, toAdd_ofAdd, ofAdd_zero,

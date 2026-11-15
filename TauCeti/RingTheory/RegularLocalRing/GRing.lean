@@ -5,15 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
-public import Mathlib.RingTheory.AdicCompletion.Completeness
-public import Mathlib.RingTheory.AdicCompletion.Noetherian
-public import Mathlib.RingTheory.Finiteness.Prod
-public import Mathlib.RingTheory.HopkinsLevitzki
-public import Mathlib.RingTheory.KrullDimension.PID
-public import Mathlib.RingTheory.Localization.LocalizationLocalization
-public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap
+import Mathlib.RingTheory.AdicCompletion.Completeness
+import Mathlib.RingTheory.AdicCompletion.Noetherian
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # G-rings
@@ -45,7 +40,7 @@ G-ring is the first half of quasi-excellence; the second is the J-2 condition on
 
 public section
 
-universe u
+universe u v
 
 open IsLocalRing PowerSeries
 
@@ -79,7 +74,7 @@ theorem isGRing_iff {R : Type u} [CommRing R] :
 
 namespace IsGRing
 
-variable {R S : Type u} [CommRing R] [CommRing S]
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S]
 
 /-- Being a G-ring is invariant under ring isomorphisms. -/
 theorem of_ringEquiv [IsGRing R] (e : R ≃+* S) : IsGRing S where

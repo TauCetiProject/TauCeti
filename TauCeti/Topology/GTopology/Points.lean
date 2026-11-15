@@ -17,6 +17,9 @@ Its fiber on a presheaf is the colimit over admissible neighbourhoods, with the 
 restriction maps. This identifies classical neighbourhood stalks with native site fibers,
 so the site-point API applies without introducing a separate category of sheaves or stalks.
 For the G-topology of ordinary open covers, the comparison recovers Mathlib's stalk.
+For coefficients in a concrete category whose forgetful functor preserves filtered colimits,
+every element of a classical stalk is a germ, and two sections have the same germ exactly
+when they agree on a common smaller admissible neighbourhood.
 
 The construction of `point` adapts `Opens.pointGrothendieckTopology` in Mathlib
 (by Joël Riou), replacing ordinary open covers by admissible covers. Classical points
@@ -77,6 +80,18 @@ theorem pointElement_down (x : X) (U : B) (h : (G.point x).fiber.obj U) :
 theorem point_map_pointElement (x : X) {U V : B} (f : U ⟶ V) (hx : x ∈ ι U) :
     (G.point x).fiber.map f (G.pointElement x hx) =
       G.pointElement x (ι.monotone (leOfHom f) hx) := (rfl)
+
+/-- The fiber of the classical point over an admissible open is inhabited exactly when the
+open contains the point. -/
+theorem nonempty_point_fiber_obj_iff (x : X) (U : B) :
+    Nonempty ((G.point x).fiber.obj U) ↔ x ∈ ι U :=
+  ⟨fun ⟨h⟩ ↦ h.down.down, fun h ↦ ⟨G.pointElement x h⟩⟩
+
+/-- The fiber of any point of the G-site over an admissible open has at most one element:
+the open maps monomorphically to the terminal admissible open `⊤`, since the site is a poset. -/
+instance (U : B) (Φ : GrothendieckTopology.Point.{v} G.grothendieckTopology) :
+    Subsingleton (Φ.fiber.obj U) :=
+  Φ.subsingleton_fiber_obj (homOfLE le_top) isTerminalTop
 
 /-- The forgetful functor from admissible neighbourhoods of a point to admissible opens. -/
 @[simps!]
@@ -148,6 +163,63 @@ theorem nhdsColimitIso_naturality {Q : Bᵒᵖ ⥤ A} (f : P ⟶ Q) :
   simp
 
 end Fibers
+
+section Concrete
+
+variable {A : Type w} [Category.{t} A] [HasColimitsOfSize.{v, v} A]
+  {FC : A → A → Type*} {CC : A → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
+  [ConcreteCategory A FC] [PreservesFilteredColimitsOfSize.{v, v} (forget A)]
+  {P : Bᵒᵖ ⥤ A} {x : X}
+
+/-- Every element of a classical stalk is the germ of a section over an admissible
+neighbourhood of the point. -/
+theorem exists_toPresheafFiber_pointElement_eq (p : ToType ((G.point x).presheafFiber.obj P)) :
+    ∃ (U : B) (hx : x ∈ ι U) (s : ToType (P.obj (op U))),
+      (G.point x).toPresheafFiber U (G.pointElement x hx) P s = p := by
+  obtain ⟨U, h, s, rfl⟩ := (G.point x).toPresheafFiber_jointly_surjective p
+  exact ⟨U, h.down.down, s, rfl⟩
+
+/-- Two sections over the same admissible neighbourhood of `x` have the same germ at `x` if and
+only if they agree on a smaller admissible neighbourhood of `x`. -/
+theorem toPresheafFiber_pointElement_eq_iff' {U : B} (hx : x ∈ ι U)
+    (s t : ToType (P.obj (op U))) :
+    (G.point x).toPresheafFiber U (G.pointElement x hx) P s =
+        (G.point x).toPresheafFiber U (G.pointElement x hx) P t ↔
+      ∃ (V : B) (h : V ≤ U), x ∈ ι V ∧ P.map (homOfLE h).op s = P.map (homOfLE h).op t := by
+  refine ((G.point x).toPresheafFiber_eq_iff' U _ s t).trans ⟨?_, ?_⟩
+  · rintro ⟨V, f, ⟨⟨hV⟩⟩, -, hst⟩
+    exact ⟨V, leOfHom f, hV, hst⟩
+  · rintro ⟨V, h, hV, hst⟩
+    exact ⟨V, homOfLE h, G.pointElement x hV, Subsingleton.elim _ _, hst⟩
+
+/-- Two sections over admissible neighbourhoods of `x` have the same germ at `x` if and only if
+they agree on a common smaller admissible neighbourhood of `x`. -/
+theorem toPresheafFiber_pointElement_eq_iff {U V : B} (hU : x ∈ ι U) (hV : x ∈ ι V)
+    (s : ToType (P.obj (op U))) (t : ToType (P.obj (op V))) :
+    (G.point x).toPresheafFiber U (G.pointElement x hU) P s =
+        (G.point x).toPresheafFiber V (G.pointElement x hV) P t ↔
+      ∃ (W : B) (hWU : W ≤ U) (hWV : W ≤ V), x ∈ ι W ∧
+        P.map (homOfLE hWU).op s = P.map (homOfLE hWV).op t := by
+  have hUV : x ∈ ι (U ⊓ V) := (G.map_inf U V).symm ▸ ⟨hU, hV⟩
+  -- The restricted fiber element is the neighbourhood element by proof irrelevance.
+  have hs : (G.point x).toPresheafFiber (U ⊓ V) (G.pointElement x hUV) P
+      (P.map (homOfLE inf_le_left).op s) =
+        (G.point x).toPresheafFiber U (G.pointElement x hU) P s :=
+    (G.point x).toPresheafFiber_w_apply (homOfLE inf_le_left) _ P s
+  have ht : (G.point x).toPresheafFiber (U ⊓ V) (G.pointElement x hUV) P
+      (P.map (homOfLE inf_le_right).op t) =
+        (G.point x).toPresheafFiber V (G.pointElement x hV) P t :=
+    (G.point x).toPresheafFiber_w_apply (homOfLE inf_le_right) _ P t
+  rw [← hs, ← ht]
+  refine (G.toPresheafFiber_pointElement_eq_iff' hUV _ _).trans ⟨?_, ?_⟩
+  · rintro ⟨W, hW, hxW, hst⟩
+    refine ⟨W, hW.trans inf_le_left, hW.trans inf_le_right, hxW, ?_⟩
+    simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using hst
+  · rintro ⟨W, hWU, hWV, hxW, hst⟩
+    refine ⟨W, le_inf hWU hWV, hxW, ?_⟩
+    simpa [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp] using hst
+
+end Concrete
 
 /-- Transporting the point, presheaf and admissible open transports germs compatibly. -/
 @[reassoc]

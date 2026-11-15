@@ -154,15 +154,50 @@ theorem sum_singularValues_mul_le_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ} {c :
   rw [hsum]
   refine le_trans ?_ ((kyFanSum_def A _).symm.trans_le
     (A.kyFanSum_mono (min_le_left k (finrank 𝕜 E))))
-  refine TauCeti.sum_range_mul_le_sum_range_of_sum_le (min_le_right _ _) (fun j hj ↦ ?_)
+  refine TauCeti.sum_range_mul_le_sum_range_of_sum_le (min_le_right _ _) (fun j _ hj ↦ ?_)
     (fun j hj ↦ ?_) ?_ (fun i _ ↦ A.singularValues_antitone (Nat.le_succ i))
     (A.singularValues_nonneg _)
   · simpa [hj] using hc0 ⟨j, hj⟩
-  · simpa [hj] using hc1 ⟨j, hj⟩
+  · have hj := hj.trans_le (min_le_right _ _)
+    simpa [hj] using hc1 ⟨j, hj⟩
   · have h1 := hsum fun _ ↦ 1
     simp only [one_mul] at h1
     rw [← h1, Nat.cast_min]
     exact le_min hck hcard
+
+/-- The expansion step of `LinearMap.norm_sum_inner_add_inner_le_kyFanSum`: writing `A` in its
+singular system and bounding each coefficient by the arithmetic-geometric mean inequality, the sum
+is at most the singular values weighted by the averages of the weights `a` and `b` that the pairs
+place on the right and left singular vectors. -/
+private theorem norm_sum_inner_add_inner_le_sum_singularValues_mul {ι : Type*} [Fintype ι]
+    (A : E →ₗ[𝕜] F) {P₁ Q₁ : F →ₗ[𝕜] F} {P₂ Q₂ : E →ₗ[𝕜] E} {u : ι → F} {v : ι → E}
+    (a b : Fin (finrank 𝕜 E) → ℝ)
+    (ha : a = fun j ↦
+      ∑ i, (‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖ ^ 2 + ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ^ 2))
+    (hb : b = fun j ↦
+      ∑ i, (‖⟪A.leftSingularVector j, P₁ (u i)⟫‖ ^ 2 +
+        ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖ ^ 2)) :
+    ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖ ≤
+      ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
+  calc ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖
+      = ‖∑ j : Fin (finrank 𝕜 E), (A.singularValues j : 𝕜) *
+          ∑ i, (⟪A.rightSingularBasis j, P₂ (v i)⟫ * ⟪P₁ (u i), A.leftSingularVector j⟫ +
+            ⟪A.rightSingularBasis j, Q₂ (v i)⟫ * ⟪Q₁ (u i), A.leftSingularVector j⟫)‖ := by
+        congr 1
+        simp_rw [A.apply_eq_sum_singularValues_smul, inner_sum, inner_smul_right,
+          ← sum_add_distrib, mul_sum]
+        rw [sum_comm]
+        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun i _ ↦ by ring
+    _ ≤ ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
+        refine (norm_sum_le _ _).trans (sum_le_sum fun j _ ↦ ?_)
+        rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (A.singularValues_nonneg _)]
+        refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans ?_) (A.singularValues_nonneg _)
+        simp only [ha, hb, ← sum_add_distrib, sum_div]
+        refine sum_le_sum fun i _ ↦ (norm_add_le _ _).trans ?_
+        rw [norm_mul, norm_mul, norm_inner_symm (P₁ (u i)), norm_inner_symm (Q₁ (u i))]
+        nlinarith [two_mul_le_add_sq ‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖
+          ‖⟪A.leftSingularVector j, P₁ (u i)⟫‖, two_mul_le_add_sq
+          ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖]
 
 /-- **Ky Fan's maximum principle for pairs of contractions.** Let `P₁, Q₁` be symmetric operators
 on `F` with `‖P₁ y‖² + ‖Q₁ y‖² ≤ ‖y‖²` for every `y`, and `P₂, Q₂` symmetric operators on `E` with
@@ -221,29 +256,11 @@ theorem norm_sum_inner_add_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E �
           linarith [A.sum_norm_inner_leftSingularVector_sq_le (P₁ (u i)),
             A.sum_norm_inner_leftSingularVector_sq_le (Q₁ (u i))]
       _ = Fintype.card ι := by simp
-  refine le_trans ?_ (A.sum_singularValues_mul_le_kyFanSum (c := fun j ↦ (a j + b j) / 2)
+  refine le_trans (norm_sum_inner_add_inner_le_sum_singularValues_mul A a b ha hb)
+    (A.sum_singularValues_mul_le_kyFanSum (c := fun j ↦ (a j + b j) / 2)
     (fun j ↦ by rw [ha, hb]; positivity) (fun j ↦ by linarith [ha1 j, hb1 j])
     (by rw [← sum_div, sum_add_distrib]; linarith))
-  -- Expand `A` in its singular system and bound each coefficient by AM-GM.
-  calc ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖
-      = ‖∑ j : Fin (finrank 𝕜 E), (A.singularValues j : 𝕜) *
-          ∑ i, (⟪A.rightSingularBasis j, P₂ (v i)⟫ * ⟪P₁ (u i), A.leftSingularVector j⟫ +
-            ⟪A.rightSingularBasis j, Q₂ (v i)⟫ * ⟪Q₁ (u i), A.leftSingularVector j⟫)‖ := by
-        congr 1
-        simp_rw [A.apply_eq_sum_singularValues_smul, inner_sum, inner_smul_right,
-          ← sum_add_distrib, mul_sum]
-        rw [sum_comm]
-        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun i _ ↦ by ring
-    _ ≤ ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
-        refine (norm_sum_le _ _).trans (sum_le_sum fun j _ ↦ ?_)
-        rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (A.singularValues_nonneg _)]
-        refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans ?_) (A.singularValues_nonneg _)
-        simp only [ha, hb, ← sum_add_distrib, sum_div]
-        refine sum_le_sum fun i _ ↦ (norm_add_le _ _).trans ?_
-        rw [norm_mul, norm_mul, norm_inner_symm (P₁ (u i)), norm_inner_symm (Q₁ (u i))]
-        nlinarith [two_mul_le_add_sq ‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖
-          ‖⟪A.leftSingularVector j, P₁ (u i)⟫‖, two_mul_le_add_sq
-          ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖]
+
 
 /-- **Ky Fan's maximum principle**, the upper bound: for orthonormal families `(uᵢ)` in `F` and
 `(vᵢ)` in `E` with `k` members, `‖∑ᵢ ⟪uᵢ, A vᵢ⟫‖` is at most the Ky Fan `k`-sum of `A`. -/
@@ -294,7 +311,8 @@ theorem sum_antitone_mul_re_inner_le_sum_mul_singularValues (B : E →ₗ[𝕜] 
             (fun i ↦ u (Fin.castLE hk i)) (fun i ↦ v (Fin.castLE hk i))
             (hu.comp _ (Fin.castLE_injective hk)) (hv.comp _ (Fin.castLE_injective hk))
     simpa [LinearMap.kyFanSum_def, g] using hreal
-  have hcross := TauCeti.sum_range_mul_le_sum_range_mul (w := w) hfg hw hw0
+  have hcross := TauCeti.sum_range_smul_le_sum_range_smul (w := w) hfg hw hw0
+  simp only [smul_eq_mul] at hcross
   rw [← Fin.sum_univ_eq_sum_range (fun i ↦ w i * f i),
     ← Fin.sum_univ_eq_sum_range (fun i ↦ w i * g i)] at hcross
   simpa [f, g] using hcross
@@ -462,7 +480,7 @@ theorem kyFanSum_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : E' ≃ₗ�
 in the target ambient space, does not change its Ky Fan singular-value sums. -/
 @[simp]
 theorem kyFanSum_subtype_comp_comp_orthogonalProjectionOnto
-    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F) [U.HasOrthogonalProjection]
+    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F)
     (T : U →ₗ[𝕜] W) (k : ℕ) :
     (W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap).kyFanSum k =
       T.kyFanSum k := by
@@ -508,8 +526,9 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
         sum_congr rfl fun j hj ↦ by simp [Finset.mem_range.mp hj]
     _ ≤ ∑ j ∈ Finset.range (Fintype.card ι), if h : j < n then hT.eigenvalues hn ⟨j, h⟩ else 0 :=
         TauCeti.sum_range_mul_le_sum_range_of_sum_eq hk
-          (fun j hj ↦ by simp only [hj, dite_true, hc]; positivity)
+          (fun j _ hj ↦ by simp only [hj, dite_true, hc]; positivity)
           (fun j hj ↦ by
+            have hj : j < n := hj.trans_le hk
             simpa [hj, hc, norm_inner_symm] using
               hw.sum_inner_products_le (s := univ) (hT.eigenvectorBasis hn ⟨j, hj⟩))
           hmass fun j hj ↦ by

@@ -86,11 +86,8 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
 
 ## References
 
-This is the linearization step of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-"projective representations, factor sets, and the Schur multiplier": it is the mechanism behind the
-representation group, through which every projective representation of `G` lifts to an ordinary
-linear representation of a central extension.
+The linearization is the mechanism behind the representation group, through which every projective
+representation of `G` lifts to an ordinary linear representation of a central extension.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.
@@ -145,7 +142,6 @@ theorem FactorSet.isFactorSet_curry (α : FactorSet G kˣ)
     (htriv : ∀ (g : G) (a : kˣ), g • a = a) : IsFactorSet (Function.curry ⇑α) where
   cocycle g h j := by simpa [Function.curry, htriv] using α.isMulCocycle₂ g h j
   one_left g := α.map_one_fst g
-  one_right g := α.map_one_snd g
 
 /-- **A normalized factor set in the curried sense of `TauCeti.IsFactorSet`, bundled as a
 `TauCeti.FactorSet`** for a trivial action of `G` on `kˣ`. This is what makes the central extension

@@ -254,6 +254,26 @@ theorem gradedFunctional_crossedHom_gradedPowIterBracket_of_apply_eq_neg_one (hn
     decide
   · rw [ite_eq_right h3, ite_eq_right h3, neg_zero, map_zero]
 
+/-- **The graded functionals of the orientation on the tail classes `π^{m+1} ξ_a`.** For `χ`
+with `χ(x_j) = 1` for `j ≠ 2, 4`, the value of `Δ_{m+1}(D_i)` on a combination
+`Σ_{a ≠ 2, 4} c_a π^{m+1} ξ_a` is the coefficient `c_i` (read as `0` when `i = 2, 4`). -/
+private theorem gradedFunctional_sum_smul_gradedPowIter_gradedMkZero (hn3 : 3 < n)
+    (h : ∀ j : Fin n, j ≠ ⟨1, by omega⟩ → j ≠ ⟨3, hn3⟩ → χ (of j) = 1) (m : ℕ) (i : Fin n)
+    (c : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩} → ZMod 2) :
+    (isCrossedHom_crossedHom χ (Pi.single i 1)).gradedFunctional
+        ((isProP_freeProP 2 (Fin n)).mem_unitsPrincipal_one χ) (continuous_crossedHom χ _) (m + 1)
+        (∑ a : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩}, c a •
+          gradedPowIter 2 (freeProP 2 (Fin n)) (m + 1)
+            (gradedMkZero 2 (freeProP 2 (Fin n)) (of a))) =
+      ∑ a : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩},
+        c a * if (a : Fin n) = i then 1 else 0 := by
+  classical
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _
+    (h a a.2.2 a.2.1), crossedHom_of, Pi.single_apply, smul_eq_mul]
+  split_ifs <;> simp
+
 /-- **The image of `δ_ρ` on `gr_m(X)^n` is the common kernel in `gr_{m+1}(X)` of the graded
 functionals of the orientation** (Labute, §4.2, Lemma 4 (4)). Let `n ≥ 4` be even, `f ≥ 2`, `ρ`
 the class of `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯`, `χ` a continuous character with `χ(x₂) = -1`,
@@ -300,22 +320,11 @@ theorem mem_map_basisModificationDelta_demushkinWordTwoEven_iff_forall_gradedFun
             demushkinWordTwoEven_mem_pLowerCentralSeries_one (dvd_zero 2) (by omega) n _⟩) v) = 0 :=
       gradedFunctional_basisModificationDelta_demushkinWordTwoEven_eq_zero hn3 (by omega) hm h₁ h₃
         h _ _ fun j ↦ Submodule.mem_pi.1 hv j (Set.mem_univ j)
-    have hΔT (i : Fin n) : (isCrossedHom_crossedHom χ (Pi.single i 1)).gradedFunctional
-        ((isProP_freeProP 2 (Fin n)).mem_unitsPrincipal_one χ) (continuous_crossedHom χ _) (m + 1)
-        (∑ a : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩}, c a •
-          gradedPowIter 2 (freeProP 2 (Fin n)) (m + 1)
-            (gradedMkZero 2 (freeProP 2 (Fin n)) (of a))) =
-        ∑ a : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩},
-          c a * if (a : Fin n) = i then 1 else 0 := by
-      rw [map_sum]
-      refine Finset.sum_congr rfl fun a _ ↦ ?_
-      rw [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _
-        (h a a.2.2 a.2.1), crossedHom_of, Pi.single_apply, smul_eq_mul]
-      split_ifs <;> simp
     -- `Δ_{m+1}(D₄)` reads off `d`.
     have hd : d = 0 := by
       have h4 := hΔ ⟨3, hn3⟩ (Fin.ne_of_val_ne (by norm_num))
-      rw [map_add, map_add, hΔv, hΔT, map_smul,
+      rw [map_add, map_add, hΔv, gradedFunctional_sum_smul_gradedPowIter_gradedMkZero hn3 h m _ c,
+        map_smul,
         gradedFunctional_crossedHom_gradedPowIterBracket_of_apply_eq_neg_one hn3 h₁ m
           (Fin.ne_of_val_ne (by norm_num)), ite_eq_left rfl, smul_eq_mul, mul_one, zero_add,
         Finset.sum_eq_zero fun a _ ↦ by rw [ite_eq_right a.2.1, mul_zero], zero_add] at h4
@@ -323,7 +332,8 @@ theorem mem_map_basisModificationDelta_demushkinWordTwoEven_iff_forall_gradedFun
     -- `Δ_{m+1}(D_a)` reads off `c_a` for `a ≠ 2, 4`.
     have hc (a : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩}) : c a = 0 := by
       have ha := hΔ a a.2.2
-      rw [map_add, map_add, hΔv, hΔT, map_smul,
+      rw [map_add, map_add, hΔv, gradedFunctional_sum_smul_gradedPowIter_gradedMkZero hn3 h m _ c,
+        map_smul,
         gradedFunctional_crossedHom_gradedPowIterBracket_of_apply_eq_neg_one hn3 h₁ m a.2.2,
         ite_eq_right a.2.1, smul_zero, add_zero, zero_add,
         Finset.sum_eq_single a

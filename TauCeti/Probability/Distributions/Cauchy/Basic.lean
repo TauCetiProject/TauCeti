@@ -69,6 +69,7 @@ a common location and scale has exactly the parent law.
   `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — the zero-scale exponential moments;
 * `TauCeti.Probability.cauchyPDFReal_zero_loc_isBigO_rpow_neg_two` — centred Cauchy density
   has quadratic decay at infinity;
+* `TauCeti.Probability.contDiff_cauchyPDFReal` — the Cauchy density is smooth;
 * `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
   `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
   transform;
@@ -129,6 +130,18 @@ theorem cauchyPDFReal_zero_loc_isBigO_rpow_neg_two (γ : ℝ≥0) :
         (by nlinarith [sq_nonneg (γ : ℝ)])
     _ = ((γ : ℝ) / Real.pi) * (x ^ 2)⁻¹ := div_eq_mul_inv _ _
 
+/-- The Cauchy density is smooth, including at zero scale, where it vanishes identically. -/
+theorem contDiff_cauchyPDFReal (x₀ : ℝ) (γ : ℝ≥0) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (cauchyPDFReal x₀ γ) := by
+  rcases eq_or_ne γ 0 with rfl | hγ
+  · rw [cauchyPDFReal_scale_zero]
+    exact contDiff_const
+  · have h : cauchyPDFReal x₀ γ = fun x ↦ Real.pi⁻¹ * γ * ((x - x₀) ^ 2 + (γ : ℝ) ^ 2)⁻¹ :=
+      funext (cauchyPDFReal_def x₀ γ)
+    rw [h]
+    exact contDiff_const.mul ((((contDiff_id.sub contDiff_const).pow 2).add contDiff_const).inv
+      fun x ↦ by positivity)
+
 /-- The scaled arctangent has the Cauchy density as its derivative. -/
 theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :
     HasDerivAt (fun z => Real.arctan ((z - x₀) / (γ : ℝ)) / Real.pi)
@@ -173,7 +186,7 @@ theorem cdf_cauchyMeasure_of_scale_ne_zero (x₀ : ℝ) {γ : ℝ≥0} (hγ : γ
       1 / 2 + Real.arctan ((x - x₀) / (γ : ℝ)) / Real.pi := by
   rw [cdf_eq_real, cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
   rw [measureReal_withDensity_ofReal (ae_of_all _ fun y ↦ (cauchyPDF_pos x₀ hγ y).le)
-    measurableSet_Iic (integrable_cauchyPDFReal x₀).integrableOn]
+    measurableSet_Iic (measurable_cauchyPDFReal x₀ γ).aemeasurable]
   exact integral_Iic_cauchyPDFReal x₀ hγ x
 
 /-- **The cumulative distribution function at zero scale.** Mathlib totalizes the Cauchy family

@@ -72,6 +72,13 @@ theorem ext_ncoeff {A B : VertexOperator R V} (h : ∀ n : ℤ, A[[n]] = B[[n]])
 theorem ext_ncoeff_iff {A B : VertexOperator R V} : A = B ↔ ∀ n : ℤ, A[[n]] = B[[n]] :=
   ⟨fun h _ ↦ h ▸ rfl, ext_ncoeff⟩
 
+/-- Every vector is killed by all sufficiently high normalized coefficients of a field. -/
+theorem exists_forall_ncoeff_apply_eq_zero (A : VertexOperator R V) (v : V) :
+    ∃ N : ℕ, ∀ n : ℤ, (N : ℤ) ≤ n → (A[[n]]) v = 0 := by
+  refine ⟨(-((HahnModule.of R).symm (A v)).order + 1).toNat, fun n hn ↦ ?_⟩
+  apply ncoeff_eq_zero_of_lt_order
+  omega
+
 /-- `A` and `B` are **mutually local of order at most `N`**: `(z - w)ᴺ [A(z), B(w)] = 0`. In
 normalized coefficients, for all integers `m` and `n`,
 `∑_{i + j = N} (-1)ʲ (N choose i) [A₍ₘ₊ᵢ₎, B₍ₙ₊ⱼ₎] = 0`. -/

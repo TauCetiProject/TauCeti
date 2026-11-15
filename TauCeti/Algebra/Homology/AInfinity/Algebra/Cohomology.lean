@@ -253,6 +253,12 @@ theorem exists_cohomologyClass_eq (𝒜 : AInfinityAlgebra R A) (c : 𝒜.Cohomo
   induction c using Submodule.Quotient.induction_on with
   | H x => exact ⟨x, x.2, rfl⟩
 
+/-- Equal cycles represent the same cohomology class, whatever proofs of membership are used. -/
+theorem cohomologyClass_congr (𝒜 : AInfinityAlgebra R A) {x y : A} (hx : x ∈ 𝒜.cycles)
+    (hy : y ∈ 𝒜.cycles) (h : x = y) : 𝒜.cohomologyClass hx = 𝒜.cohomologyClass hy := by
+  subst h
+  rfl
+
 /-- Two cycles represent the same cohomology class exactly when their difference is a boundary. -/
 @[simp]
 theorem cohomologyClass_eq_iff (𝒜 : AInfinityAlgebra R A) {x y : A}
@@ -421,7 +427,7 @@ theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :
   simp
 
 /-- The internal grading of the cycles by homogeneous cycles. -/
-noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles :=
+noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles ℤ :=
   𝒜.grading.submodule 𝒜.cycles 𝒜.isHomogeneous_cycles
 
 /-- A cycle has degree `p` exactly when its underlying element does. -/
@@ -449,7 +455,7 @@ theorem isHomogeneous_boundariesInCycles (𝒜 : AInfinityAlgebra R A) :
 
 /-- The internal grading of the cohomology: its degree-`p` piece consists of the classes of
 homogeneous cycles of degree `p`. -/
-noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology :=
+noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology ℤ :=
   𝒜.cyclesGrading.quotient 𝒜.boundariesInCycles 𝒜.isHomogeneous_boundariesInCycles
 
 /-- A cohomology class has degree `p` exactly when it is represented by a cycle of degree `p`. -/

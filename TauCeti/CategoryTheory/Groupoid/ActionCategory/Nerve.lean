@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.CategoryTheory.ComposableArrows.Basic
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Order.Fin.Induction
 
 /-!
@@ -19,6 +19,10 @@ labels `gₖ` of its consecutive arrows, with `xₖ₊₁ = gₖ • xₖ`. This
 labels along a string behind this description, and the resulting bijection
 `TauCeti.ActionGroupoid.nerveEquiv` between the `n`-simplices of the nerve and `X × Gⁿ`. Every
 label is retained, including labels acting trivially.
+
+For an invariant subset `U`, a string of `G ⋉ X` comes from the full subcategory `G ⋉ U`
+exactly when its first point lies in `U`
+(`TauCeti.ActionGroupoid.range_mapComposableArrows_obj_restrict`).
 
 For a group action, all points of a string lie in one orbit
 (`CategoryTheory.ComposableArrows.quotient_mk_back_obj`).
@@ -129,6 +133,19 @@ theorem back_obj_nerveEquiv_symm (p : X × (Fin n → G)) (i : Fin (n + 1)) :
 theorem label_nerveEquiv_symm (p : X × (Fin n → G)) (k : Fin n) :
     ((((nerveEquiv G X n).symm p).map (homOfLE k.castSucc_le_succ)).hom : G) = p.2 k :=
   congrFun (congrArg Prod.snd ((nerveEquiv G X n).apply_symm_apply p)) k
+
+/-- A string of composable arrows of `G ⋉ X` comes from `G ⋉ U` exactly when its first vertex lies
+in the invariant subset `U`. -/
+theorem range_mapComposableArrows_obj_restrict (U : SubMulAction G X) (n : ℕ) :
+    Set.range ((restrict U).mapComposableArrows n).obj = {F | (F.obj 0).back ∈ U} := by
+  ext F
+  refine ⟨?_, fun hF => ?_⟩
+  · rintro ⟨F', rfl⟩
+    simp
+  · -- Every vertex is a translate of the first one, so it lies in `U` as well.
+    have hF' (i : Fin (n + 1)) : (F.obj i).back ∈ U :=
+      F.back_obj_eq_smul i ▸ U.smul_mem _ hF
+    exact ⟨restrictLift U F hF', restrictLift_comp_restrict U F hF'⟩
 
 end TauCeti.ActionGroupoid
 

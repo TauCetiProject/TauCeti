@@ -90,6 +90,62 @@ theorem latticeDefect_eq_zero_of_bijective_zsmul (V : Type u) [AddCommGroup V]
   rw [latticeDefect_def]
   simp
 
+/-- The non-injective step of `latticeDefect_eq_zero_of_finite`: if multiplication by `ℓ` is not
+injective, the torsion kernel has zero defect and the image is strictly smaller, so the induction
+hypothesis applies. -/
+private theorem latticeDefect_eq_zero_of_not_injective_zsmul [Fact ℓ.Prime] {n : ℕ}
+    (ih : ∀ m < n, ∀ (W : Type u) [AddCommGroup W] [DistribMulAction G W] [Finite W],
+      Nat.card W = m → latticeDefect k G ℓ W = 0)
+    (W : Type u) [AddCommGroup W] [DistribMulAction G W] [Finite W] (hn : Nat.card W = n)
+    (hf : ¬ Injective fun x : W => (ℓ : ℤ) • x) :
+    latticeDefect k G ℓ W = 0 := by
+  classical
+  let f : W →+[G] W := SMulCommClass.toDistribMulActionHom G W (ℓ : ℤ)
+  -- The canonical integer-linear map has the same underlying function as `f`.
+  let m := f.toAddMonoidHom.toIntLinearMap
+  have hm (x : W) : m x = f x := rfl
+  let T := Submodule.torsionBy ℤ W (ℓ : ℤ)
+  let I := m.range
+  let := Fintype.ofFinite T
+  let := Fintype.ofFinite I
+  -- Restrict the action to the kernel and image; Mathlib pulls back the action laws.
+  let : SMul G T := ⟨fun g x => ⟨g • x, by
+    rw [Submodule.mem_torsionBy_iff] at *
+    rw [smul_comm, (Submodule.mem_torsionBy_iff _ _).mp x.property, smul_zero]⟩⟩
+  let : DistribMulAction G T := Subtype.coe_injective.distribMulAction
+    T.subtype.toAddMonoidHom (fun _ _ => rfl)
+  let : SMul G I := ⟨fun g x => ⟨g • x, by
+    obtain ⟨y, hy⟩ := x.property
+    exact ⟨g • y, by simpa only [hm, map_smul f] using congrArg (g • ·) hy⟩⟩⟩
+  let : DistribMulAction G I := Subtype.coe_injective.distribMulAction
+    I.subtype.toAddMonoidHom (fun _ _ => rfl)
+  let i : T →+[G] W :=
+    { T.subtype.toAddMonoidHom with map_smul' := fun _ _ => rfl }
+  let q : W →+[G] I :=
+    { m.rangeRestrict.toAddMonoidHom with
+      map_smul' := fun g x => Subtype.ext (map_smul f g x) }
+  have hi : Injective i := Subtype.coe_injective
+  have hq : Surjective q := m.surjective_rangeRestrict
+  have hmker : m.ker = T := by
+    ext x
+    simp only [LinearMap.mem_ker, hm]
+    rfl
+  have hiq : Exact i q := LinearMap.exact_iff.mpr <| by
+    rw [LinearMap.ker_rangeRestrict, Submodule.range_subtype, hmker]
+  -- Noninjectivity forces a strict decrease, so the image satisfies the induction hypothesis.
+  have hlt : Nat.card I < n := by
+    rw [← hn]
+    refine lt_of_le_of_ne (Nat.card_le_card_of_surjective q hq) ?_
+    intro hcard
+    apply hf
+    intro x y hxy
+    exact (hq.bijective_of_nat_card_le hcard.ge).1 (Subtype.ext hxy)
+  have hT : latticeDefect k G ℓ T = 0 :=
+    latticeDefect_eq_zero_of_isTorsionBy k G ℓ T
+      (Submodule.torsionBy_isTorsionBy _)
+  rw [latticeDefect_add_of_exact k G ℓ i q hi hiq hq, hT,
+    ih (Nat.card I) hlt I rfl, zero_add]
+
 /- The argument uses multiplication by a prime `ℓ`. Its kernel is killed by `ℓ` and therefore has
 zero defect. If multiplication is injective, finiteness makes it bijective, so both reduction
 and torsion vanish. Otherwise its image has smaller cardinality, and additivity reduces the
@@ -103,8 +159,7 @@ theorem latticeDefect_eq_zero_of_finite [Fact ℓ.Prime] (V : Type u) [AddCommGr
     letI := Fintype.ofFinite V
     latticeDefect k G ℓ V = 0 := by
   classical
-  let := Fintype.ofFinite V
-  suffices H : ∀ n (W : Type u) [AddCommGroup W] [DistribMulAction G W] [Fintype W],
+  suffices H : ∀ n (W : Type u) [AddCommGroup W] [DistribMulAction G W] [Finite W],
       Nat.card W = n → latticeDefect k G ℓ W = 0 from H _ V rfl
   intro n
   induction n using Nat.strong_induction_on with
@@ -114,51 +169,7 @@ theorem latticeDefect_eq_zero_of_finite [Fact ℓ.Prime] (V : Type u) [AddCommGr
     by_cases hf : Injective f
     · exact latticeDefect_eq_zero_of_bijective_zsmul k G ℓ W
         ⟨hf, Finite.injective_iff_surjective.mp hf⟩
-    · -- Reduce by the exact sequence from the torsion kernel to the multiplication image.
-      -- The canonical integer-linear map has the same underlying function as `f`.
-      let m := f.toAddMonoidHom.toIntLinearMap
-      have hm (x : W) : m x = f x := rfl
-      let T := Submodule.torsionBy ℤ W (ℓ : ℤ)
-      let I := m.range
-      let := Fintype.ofFinite T
-      let := Fintype.ofFinite I
-      -- Restrict the action to the kernel and image; Mathlib pulls back the action laws.
-      let : SMul G T := ⟨fun g x => ⟨g • x, by
-        rw [Submodule.mem_torsionBy_iff] at *
-        rw [smul_comm, (Submodule.mem_torsionBy_iff _ _).mp x.property, smul_zero]⟩⟩
-      let : DistribMulAction G T := Subtype.coe_injective.distribMulAction
-        T.subtype.toAddMonoidHom (fun _ _ => rfl)
-      let : SMul G I := ⟨fun g x => ⟨g • x, by
-        obtain ⟨y, hy⟩ := x.property
-        exact ⟨g • y, by simpa only [hm, map_smul f] using congrArg (g • ·) hy⟩⟩⟩
-      let : DistribMulAction G I := Subtype.coe_injective.distribMulAction
-        I.subtype.toAddMonoidHom (fun _ _ => rfl)
-      let i : T →+[G] W :=
-        { T.subtype.toAddMonoidHom with map_smul' := fun _ _ => rfl }
-      let q : W →+[G] I :=
-        { m.rangeRestrict.toAddMonoidHom with
-          map_smul' := fun g x => Subtype.ext (map_smul f g x) }
-      have hi : Injective i := Subtype.coe_injective
-      have hq : Surjective q := m.surjective_rangeRestrict
-      have hmker : m.ker = T := by
-        ext x
-        simp only [LinearMap.mem_ker, hm]
-        rfl
-      have hiq : Exact i q := LinearMap.exact_iff.mpr <| by
-        rw [LinearMap.ker_rangeRestrict, Submodule.range_subtype, hmker]
-      -- Noninjectivity forces a strict decrease, so the image satisfies the induction hypothesis.
-      have hlt : Nat.card I < n := by
-        rw [← hn]
-        refine lt_of_le_of_ne (Nat.card_le_card_of_surjective q hq) ?_
-        intro hcard
-        apply hf
-        intro x y hxy
-        exact (hq.bijective_of_nat_card_le hcard.ge).1 (Subtype.ext hxy)
-      have hT : latticeDefect k G ℓ T = 0 :=
-        latticeDefect_eq_zero_of_isTorsionBy k G ℓ T
-          (Submodule.torsionBy_isTorsionBy _)
-      rw [latticeDefect_add_of_exact k G ℓ i q hi hiq hq, hT,
-        ih (Nat.card I) hlt I rfl, zero_add]
+    · exact latticeDefect_eq_zero_of_not_injective_zsmul k G ℓ ih W hn hf
 
 /-- An inclusion with finite cokernel preserves the lattice defect. The short exact sequence is
 given by equivariant maps, so neither its source nor its middle term needs to be finite. -/

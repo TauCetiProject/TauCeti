@@ -117,7 +117,7 @@ the extended Lie-module map. -/
     baseChangeEquiv A (a ⊗ₜ[R] f) = a • f.baseChange A := by
   ext b
   simp only [← LieModuleHom.coe_toLinearMap, toLinearMap_baseChangeEquiv_tmul,
-    linearMapBaseChangeEquiv_tmul, baseChange_toLinearMap, smul_apply,
+    linearMapBaseChangeEquiv_tmul, toLinearMap_baseChange, smul_apply,
     LinearMap.smul_apply]
 
 end LieModuleHom

@@ -22,9 +22,9 @@ structure, a diffeomorphism.  The characteristic lemmas record both coordinate p
 identify the zero slice, so later collar constructions do not need to unfold the coordinate
 implementation.
 
-This is the standard-model prerequisite for the collar-neighbourhood target in Layer 1 of the
-GeometricTopology roadmap.  The global collar theorem requires patching these local product
-coordinates on an arbitrary manifold and is not proved here.
+This is the standard-model step towards the collar-neighbourhood theorem.  The global collar
+theorem requires patching these local product coordinates on an arbitrary manifold and is not
+proved here.
 
 ## Main definitions
 
@@ -49,6 +49,8 @@ coordinates on an arbitrary manifold and is not proved here.
   model charted over itself, the chart structure used by charts of product manifolds.
 * `EuclideanHalfSpace.collarModelChartedSpace_chartAt` and
   `EuclideanHalfSpace.collarModelChartedSpace_atlas`: its preferred chart and its atlas.
+* `EuclideanHalfSpace.exists_continuousLinearEquiv_image_range_prod`: the product model
+  `ℝⁿ × [0, ∞)` and the half-space model are linearly equivalent, with matching ranges.
 
 ## Downstream target
 
@@ -313,5 +315,17 @@ theorem collarModelChartedSpace_atlas (n : ℕ) :
         (collarModelChartedSpace n) =
       {(collarDiffeomorph (k := ⊤) n).symm.toHomeomorph.toOpenPartialHomeomorph} :=
   (rfl)
+
+/-- The product model `ℝⁿ × [0, ∞)` is linearly the half-space model of dimension `n + 1`: a
+continuous linear equivalence of the ambient spaces carries the range of `(𝓡 n).prod (𝓡∂ 1)` onto
+the range `{y | 0 ≤ y 0}` of `𝓡∂ (n + 1)`. -/
+theorem exists_continuousLinearEquiv_image_range_prod (n : ℕ) :
+    ∃ A : (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) ≃L[ℝ]
+      EuclideanSpace ℝ (Fin (n + 1)), A '' range ((𝓡 n).prod (𝓡∂ 1)) = range (𝓡∂ (n + 1)) := by
+  refine ⟨collarAmbientEquiv n, ?_⟩
+  ext y
+  rw [ContinuousLinearEquiv.image_eq_preimage_symm, mem_preimage, ModelWithCorners.range_prod,
+    range_modelWithCornersEuclideanHalfSpace, range_modelWithCornersEuclideanHalfSpace]
+  simp [collarAmbientEquiv_symm_apply_snd_apply_zero]
 
 end TauCeti.EuclideanHalfSpace

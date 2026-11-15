@@ -62,11 +62,7 @@ theorem exists_blowup_extension [IsLocallyNoetherian Y] (U : Y.Opens)
       IsPullback I.blowupToBase b j J.blowupToBase := by
     rw [← hJI]
     exact ⟨J.blowupMap j, J.isPullback_blowupMap_of_flat j⟩
-  refine ⟨J, b, hJI, hJ, ?_, hb,
+  exact ⟨J, b, hJI, hJ, inferInstance, hb,
     J.isIso_blowupToBase_restrict_of_disjoint_support hJ⟩
-  apply J.isProper_blowupToBase
-  intro V
-  have := IsLocallyNoetherian.component_noetherian V
-  exact IsNoetherian.noetherian _
 
 end AlgebraicGeometry.Scheme.IdealSheafData

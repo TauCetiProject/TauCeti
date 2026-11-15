@@ -53,11 +53,13 @@ theorem sphereYamabeConstant_pos {n : ℕ} (hn : 1 < n) : 0 < sphereYamabeConsta
   rw [sphereYamabeConstant_def]
   exact mul_pos (mul_pos (by linarith) (by linarith)) (by positivity)
 
-/-- In dimension `n ≠ 0`, `Y(Sⁿ) |Sⁿ| ^ ((n - 2) / n) = n (n - 1) |Sⁿ|`. For `n > 2` the exponent
-`(n - 2) / n` is `2 / pₙ`, with `pₙ = 2 n / (n - 2)`. -/
-theorem sphereYamabeConstant_mul_roundSphereVolume_rpow {n : ℕ} (hn : n ≠ 0) :
+/-- `Y(Sⁿ) |Sⁿ| ^ ((n - 2) / n) = n (n - 1) |Sⁿ|`. For `n > 2` the exponent
+`(n - 2) / n` is `2 / pₙ`, with `pₙ = 2 n / (n - 2)`. For `n = 0` both sides are `0`. -/
+theorem sphereYamabeConstant_mul_roundSphereVolume_rpow {n : ℕ} :
     sphereYamabeConstant n * roundSphereVolume n ^ (((n : ℝ) - 2) / n) =
       n * (n - 1) * roundSphereVolume n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [sphereYamabeConstant_def]
   have hn' : (n : ℝ) ≠ 0 := by exact_mod_cast hn
   have hexp : 2 / (n : ℝ) + ((n : ℝ) - 2) / n = 1 := by
     field_simp

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.DVR
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
@@ -37,6 +37,8 @@ Theory*, §1.3.
 * `Chow.RatEquiv X k`: the subgroup of `Z_k(X)` of cycles rationally equivalent to zero, those of
   the form `Σ_j (i_j)_* div(r_j)` for such a family (`Chow.mem_ratEquiv_iff`)
   ([Stacks, Definition 42.19.1 and Remark 42.19.6](https://stacks.math.columbia.edu/tag/02RV)).
+  In particular a single pushforward `i_* div(r)` is rationally equivalent to zero
+  (`Chow.mem_ratEquiv_of_coe_eq_map_div`).
   Local finiteness is imposed on the supports `|W_j|`, not merely on the principal cycles: an
   infinite family of copies of one subscheme with `r_j = 1` is not allowed.
 * `Chow.ChowGroup X k`: the Chow group `CH_k(X) = Z_k(X) / RatEquiv X k`, with the class map
@@ -145,6 +147,11 @@ with height weights. -/
 noncomputable def component (j : F.ι) : AlgebraicCycle X ℤ :=
   AlgebraicCycle.map (F.i j) height height (AlgebraicCycle.div (F.r j))
 
+/-- The `j`-th summand is the pushforward `(i j)_* div (r j)`. -/
+lemma component_def (j : F.ι) :
+    F.component j = AlgebraicCycle.map (F.i j) height height (AlgebraicCycle.div (F.r j)) := by
+  rw [component]
+
 /-- At a point of `W j`, the `j`-th summand is the order of vanishing of `r j`. -/
 @[simp]
 lemma component_apply (j : F.ι) (y : F.W j) :
@@ -232,7 +239,7 @@ private lemma component_inv (j : F.ι) : F.inv.component j = -F.component j := b
   · obtain ⟨y, rfl⟩ := hx
     refine (F.inv.component_apply j y).trans ?_
     rw [Function.locallyFinsuppWithin.coe_neg, Pi.neg_apply, F.component_apply j y,
-      ← TauCeti.AlgebraicGeometry.Scheme.ord_inv, ← Units.val_inv_eq_inv_val]
+      ← AlgebraicGeometry.Scheme.ord_inv, ← Units.val_inv_eq_inv_val]
     -- `F.inv` has the subschemes of `F` and the rational functions `(F.r j)⁻¹`, by definition.
     rfl
   · simp [F.component_apply_eq_zero_of_notMem_range j hx,
@@ -271,6 +278,27 @@ variable {X} in
 lemma mem_ratEquiv_iff {k : ℤ} {α : cyclesOfDimension X k} :
     α ∈ RatEquiv X k ↔ ∃ F : RatEquivFamily X k, F.cycle = α :=
   Iff.rfl
+
+variable {X} in
+/-- The pushforward `i_* div r` of the principal cycle of a nonzero rational function `r` on an
+integral closed subscheme `i : W ⟶ X` of dimension `k + 1` is rationally equivalent to zero. -/
+lemma mem_ratEquiv_of_coe_eq_map_div {k : ℤ} {W : Scheme.{u}} [IsIntegral W]
+    [IsLocallyNoetherian W] (i : W ⟶ X)
+    [IsClosedImmersion i] (hW : genericPoint W ∈ pointsOfDimension W (k + 1))
+    (r : W.functionFieldˣ) {α : cyclesOfDimension X k}
+    (hα : (α : AlgebraicCycle X ℤ) = AlgebraicCycle.map i height height (AlgebraicCycle.div r)) :
+    α ∈ RatEquiv X k := by
+  -- The family with the single member `(W, r)`.
+  let F : RatEquivFamily X k :=
+    { ι := PUnit
+      W _ := W
+      i _ := i
+      genericPoint_mem _ := hW
+      r _ := r
+      locallyFinite := locallyFinite_of_finite _ }
+  refine ⟨F, Function.locallyFinsuppWithin.ext fun x ↦ ?_⟩
+  -- The only summand of `F` is `i_* div r`.
+  rw [RatEquivFamily.cycle_apply, finsum_unique, hα, RatEquivFamily.component_def]
 
 /-- If `X` has no points of dimension `k + 1`, then no nonzero `k`-cycle is rationally equivalent
 to zero. -/

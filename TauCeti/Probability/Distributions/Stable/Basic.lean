@@ -44,7 +44,7 @@ private theorem exists_standardStableLaw {α β : ℝ} (hα : α ∈ Ioo 0 2) (h
       charFun μ = fun t ↦ Complex.exp (stableCharacteristicExponent α β t) := by
   let μ (n : ℕ) : ProbabilityMeasure ℝ :=
     ⟨stableCompensatedPoissonMeasure α β ((2 : ℝ)⁻¹ ^ n),
-      isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ (by positivity)⟩
+      isProbabilityMeasure_stableCompensatedPoissonMeasure α β _⟩
   obtain ⟨ν, hν, -⟩ := exists_probabilityMeasure_of_tendsto_charFun (μ := μ)
     (Complex.continuous_exp.continuousAt.comp
       (continuousAt_stableCharacteristicExponent_zero hα.1 β))
@@ -118,6 +118,17 @@ theorem charFun_stableMeasure {α β : ℝ} (hα : α ∈ Ioc 0 2) (hβ : |β| �
   · rw [charFun_map_affine, charFun_standardStableLaw, ← Complex.exp_add,
       Complex.ofReal_mul]
 
+/-- The real part of the characteristic function of a centered symmetric stable law. -/
+@[simp]
+theorem charFun_stableMeasure_zero_skew_zero_location_re {α : ℝ} (hα : α ∈ Ioc 0 2)
+    (s : ℝ≥0) (t : ℝ) :
+    (charFun (stableMeasure α 0 s 0) t).re = Real.exp (-|s * t| ^ α) := by
+  have hψ : stableCharacteristicExponent α 0 (s * t) = ((-|s * t| ^ α : ℝ) : ℂ) :=
+    Complex.ext (by simp [hα.1.ne']) (by rw [stableCharacteristicExponent_im_eq_mul]; simp)
+  rw [charFun_stableMeasure hα (by simp), hψ]
+  simp only [zero_mul, Complex.ofReal_zero, zero_add]
+  exact Complex.exp_ofReal_re _
+
 /-- At valid shapes, scale zero is the Dirac law at the location. -/
 @[simp]
 theorem stableMeasure_zero_scale {α β : ℝ} (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (m : ℝ) :
@@ -139,7 +150,7 @@ theorem tendsto_stableCompensatedPoissonMeasure_invTwoPow {α β : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun n : ℕ ↦
       (⟨stableCompensatedPoissonMeasure α β ((2 : ℝ)⁻¹ ^ n),
-        isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ (by positivity)⟩ :
+        isProbabilityMeasure_stableCompensatedPoissonMeasure α β _⟩ :
         ProbabilityMeasure ℝ)) atTop
       (𝓝 (⟨stableMeasure α β 1 0,
         isProbabilityMeasure_stableMeasure ⟨hα.1, hα.2.le⟩ hβ 1 0⟩ : ProbabilityMeasure ℝ)) := by

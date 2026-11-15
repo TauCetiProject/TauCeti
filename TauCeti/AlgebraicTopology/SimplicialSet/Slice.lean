@@ -41,6 +41,7 @@ to standard simplices.
   restrictions of the corresponding map `X ⋆ K ⟶ C`.
 * `SSet.slice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
+* `SSet.slice.isIso_π`: the slice over the empty diagram is the whole simplicial set.
 * `SSet.slice.isPullback_map`: slices preserve pullback squares.
 * `SSet.slice.isPullback_restrictionMap`, `SSet.slice.restrictionMap_comp` and
   `SSet.slice.isPullback_restrictionMapComp`: the behaviour of restriction maps under base change
@@ -352,6 +353,17 @@ lemma comp_π (F : X ⟶ slice p) : F ≫ π p = join.inl X K ≫ (homEquiv F).1
   simp only [TypeCat.Fun.toFun_apply, NatTrans.comp_app, ConcreteCategory.comp_apply]
   rw [π_app, homEquiv_symm_app_coe, join.inl_map_assoc, ← Category.assoc, yonedaEquiv_comp,
     yonedaEquiv_comp, Equiv.apply_symm_apply]
+
+variable (p) in
+/-- The slice over the empty diagram is the whole simplicial set: when `K` is empty, the
+projection `C_{/p} ⟶ C` is an isomorphism. -/
+lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
+  refine isIso_of_yoneda_map_bijective _ fun X ↦ ⟨fun F G h ↦ hom_ext ?_, fun g ↦ ?_⟩
+  · have := join.isIso_inl (K := X) hK
+    simpa only [comp_π, cancel_epi] using h
+  · have := join.isIso_inl (K := X) hK
+    refine ⟨homEquiv.symm ⟨inv (join.inl X K) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
+    simp
 
 section map
 

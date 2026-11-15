@@ -61,8 +61,8 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection {
     have hx := hzero x
     rw [← hWU] at hx
     exact hx
-  obtain ⟨r, hr, hrR, hdisc⟩ := hW.exists_contMDiffMap_closedBall_subset (I := I)
-    hWzero R.contMDiff.continuous hR
+  obtain ⟨r, hr, hrR, hdisc⟩ := exists_contMDiffMap_closedBall_subset (I := I)
+    (fun x => hW.mem_nhds (hWzero x)) R.contMDiff.continuous.lowerSemicontinuous hR
   refine ⟨r, hr, isOpenEmbedding_normalTubeOfRadius_of_le r.contMDiff.continuous
     (fun x => (hrR x).le) hemb, ?_, ?_⟩
   · intro x v hv

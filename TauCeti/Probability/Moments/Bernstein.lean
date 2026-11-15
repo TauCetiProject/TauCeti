@@ -9,6 +9,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
+import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Moments.Basic
 
 /-!
@@ -95,16 +96,8 @@ theorem mgf_sum_le_exp_of_ae_le {ι : Type*} {X : ι → Ω → ℝ} (h_indep : 
     mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t ≤
       exp ((∑ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ) * t ^ 2 / (2 * (1 - t * b / 3))) := by
   have : IsProbabilityMeasure μ := h_indep.isProbabilityMeasure
-  -- Restrict the family to `s`, where the measurability hypotheses hold.
-  have hprod : mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
-    have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀ (t := t)
-      (fun i : s ↦ (hX i i.2).aestronglyMeasurable.aemeasurable) Finset.univ
-    rw [Finset.prod_coe_sort s (fun i ↦ mgf (X i) μ t)] at h
-    rw [← h]
-    congr 1
-    ext ω
-    simp only [Finset.sum_apply]
-    exact (Finset.sum_coe_sort s (fun i ↦ X i ω)).symm
+  have hprod : mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t :=
+    h_indep.mgf_sum_of_aemeasurable fun i hi ↦ (hX i hi).aestronglyMeasurable.aemeasurable
   rw [hprod, Finset.sum_mul, Finset.sum_div, exp_sum]
   exact Finset.prod_le_prod₀ (fun i _ ↦ mgf_nonneg)
     (fun i hi ↦ (hX i hi).mgf_le_exp_of_ae_le (hmean i hi) (hb i hi) ht htb)
@@ -189,12 +182,8 @@ theorem measureReal_abs_sum_ge_le_of_abs_le {ι : Type*} {X : ι → Ω → ℝ}
   have hupper := h_indep.measureReal_sum_ge_le_of_ae_le hL2 hmean hup hε
   simp only [neg_sq, Finset.sum_neg_distrib] at hlow
   calc μ.real {ω | ε ≤ |∑ i ∈ s, X i ω|}
-      ≤ μ.real ({ω | ε ≤ ∑ i ∈ s, X i ω} ∪ {ω | ε ≤ -∑ i ∈ s, X i ω}) := by
-        refine measureReal_mono (fun ω hω ↦ ?_)
-        simp only [Set.mem_ofPred_eq, Set.mem_union] at hω ⊢
-        rcases le_abs'.1 hω with h | h
-        · exact Or.inr (by linarith)
-        · exact Or.inl h
-    _ ≤ _ := (measureReal_union_le _ _).trans (by linarith)
+      ≤ μ.real {ω | ε ≤ ∑ i ∈ s, X i ω} + μ.real {ω | ε ≤ -∑ i ∈ s, X i ω} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ ≤ _ := (add_le_add hupper hlow).trans (le_of_eq (by ring))
 
 end ProbabilityTheory.iIndepFun

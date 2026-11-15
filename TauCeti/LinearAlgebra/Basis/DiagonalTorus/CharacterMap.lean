@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Divisible
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.End.Basic
 -- Baer's criterion for divisible groups, used only in `torusPointMap_surjective_of_injective`.
@@ -106,6 +105,18 @@ theorem torusPointMap_apply (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) (s : κ
     torusPointMap φ s i = torusCharacter s (φ (Pi.single i 1)) :=
   torusCharacterHom_apply _ s i
 
+omit [Fintype κ] [DecidableEq ι] in
+/-- Precomposition of characters with an equivalence relabels torus coordinates by its inverse. -/
+@[simp]
+theorem torusPointMap_funCongrLeft [Fintype ι] [DecidableEq κ] (σ : ι ≃ κ) (s : ι → Rˣ) :
+    torusPointMap (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap s = fun i => s (σ.symm i) := by
+  classical
+  funext i
+  have hsingle : (LinearMap.funLeft ℤ ℤ σ) (Pi.single i 1) = Pi.single (σ.symm i) 1 :=
+    Pi.single_comp_equiv σ i 1
+  rw [torusPointMap_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
+    hsingle, torusCharacter_single, zpow_one]
+
 /-- **Characters pull back along `torusPointMap φ` by `φ`.** The value of a character `χ` at the
 image of `s` is the value of `φ χ` at `s`. -/
 @[simp]
@@ -115,6 +126,18 @@ theorem torusCharacter_torusPointMap [Fintype ι] (φ : (ι → ℤ) →ₗ[ℤ]
   rw [torusCharacter_def]
   refine Finset.prod_congr rfl fun i _ => ?_
   rw [map_zsmul, torusCharacter_zsmul, torusPointMap_apply]
+
+/-- A torus point is in the kernel of the dual map exactly when it evaluates to one on the
+image of the lattice map. -/
+theorem mem_ker_torusPointMap_iff [Finite ι] (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) (s : κ → Rˣ) :
+    s ∈ (torusPointMap φ).ker ↔ ∀ μ, torusCharacter s (φ μ) = 1 := by
+  let := Fintype.ofFinite ι
+  rw [MonoidHom.mem_ker]
+  constructor
+  · intro hs μ
+    rw [← torusCharacter_torusPointMap, hs, torusCharacter_one]
+  · intro hs
+    exact funext fun i => (torusPointMap_apply φ s i).trans (hs (Pi.single i 1))
 
 /-- The identity of the character lattice gives the identity of the torus. -/
 @[simp]
@@ -169,14 +192,29 @@ theorem torusPointMap_injective [Finite ι] {K : Type*} [Field K] [Infinite K] :
     simpa only [weightChar_apply, torusPointMap_apply, LinearMap.comp_apply, LinearMap.coe_single]
       using congrFun (DFunLike.congr_fun h s) i
 
+/-- The dual of a split-injective lattice map is surjective on torus points over every
+commutative ring. -/
+theorem torusPointMap_surjective_of_leftInverse [Finite ι]
+    (ψ : (κ → ℤ) →ₗ[ℤ] (ι → ℤ)) {φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)}
+    (h : ψ ∘ₗ φ = LinearMap.id) : Function.Surjective (torusPointMap (R := R) φ) := by
+  classical
+  let := Fintype.ofFinite ι
+  intro s
+  refine ⟨torusPointMap ψ s, ?_⟩
+  rw [← MonoidHom.comp_apply, ← torusPointMap_comp, h, torusPointMap_id,
+    MonoidHom.id_apply]
+
 /-- **The dual of an injective lattice map is surjective on torus points when the units are
 divisible**, for instance over an algebraically closed field. The units form a divisible, hence
 injective, `ℤ`-module, so every character of the source lattice, read as a homomorphism into the
 units, extends along `φ`. -/
-theorem torusPointMap_surjective_of_injective [Finite ι] [RootableBy Rˣ ℕ]
+theorem torusPointMap_surjective_of_injective [RootableBy Rˣ ℕ]
     {φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)} (hφ : Function.Injective φ) :
     Function.Surjective (torusPointMap (R := R) φ) := by
   classical
+  -- An injective map into a finite-rank lattice has a finite source.
+  have : Finite ι := ((Pi.linearIndependent_single_one ι ℤ).map' φ
+    (LinearMap.ker_eq_bot.mpr hφ)).finite_of_isNoetherian
   have := Fintype.ofFinite ι
   intro s
   let : DivisibleBy (Additive Rˣ) ℕ :=
@@ -234,6 +272,14 @@ theorem isCharacterMap_iff :
     IsCharacterMap T F φ ↔ ∀ s, F (T s) = T (torusPointMap φ s) :=
   Iff.rfl
 
+/-- Raising every torus parameter to the `n`-th power pulls characters back by `n • id`. -/
+theorem IsCharacterMap.of_map_eq_pow {n : ℕ} (h : ∀ s, F (T s) = T (s ^ n)) :
+    IsCharacterMap T F (n • LinearMap.id) := by
+  rw [isCharacterMap_iff]
+  intro s
+  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
+    MonoidHom.id_apply] using h s
+
 /-- A character map as an equation of homomorphisms out of the torus. -/
 theorem isCharacterMap_iff_comp :
     IsCharacterMap T F φ ↔ F.comp T = T.comp (torusPointMap φ) := by
@@ -255,6 +301,17 @@ pulling back along `F`. -/
 theorem IsCharacterMap.comp (hF : IsCharacterMap T F φ) (hF' : IsCharacterMap T F' ψ) :
     IsCharacterMap T (F.comp F') (ψ * φ) := fun s => by
   rw [MonoidHom.comp_apply, hF', hF, torusPointMap_mul, MonoidHom.comp_apply]
+
+/-- The pullback of an iterate is the corresponding power of the character map. -/
+theorem IsCharacterMap.pow {F : Monoid.End G} (hF : IsCharacterMap T F φ) (n : ℕ) :
+    IsCharacterMap T (HPow.hPow (α := Monoid.End G) F n) (φ ^ n) := by
+  -- In `Monoid.End G`, the unit is `MonoidHom.id` and multiplication is `MonoidHom.comp`
+  -- by definition, so the identity and composition lemmas apply directly in both cases.
+  induction n with
+  | zero => exact isCharacterMap_id T
+  | succ n ih =>
+      rw [pow_succ', pow_succ]
+      exact hF.comp ih
 
 /-- **Uniqueness of character maps over an infinite field.** If the torus parametrization is
 injective, an endomorphism has at most one character map. Over a finite field this fails, which

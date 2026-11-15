@@ -75,17 +75,18 @@ The Chevalley involution exchanges `x α` with `-x (-α)`, so it commutes with t
 automorphism, and the sign theorem for normalising automorphisms applies. -/
 theorem weylAut_apply_eq_or_eq_neg (i j : H.root) :
     weylAut (hx.toIsSl2System.isSl2Triple i (LieSubalgebra.isNonZero_coe_root i))
-          (hx.toIsSl2System.isNilpotent_ad_rootVector i)
-          (hx.toIsSl2System.isNilpotent_ad_rootVector (-i)) (x j) =
+          (hx.toIsSl2System.isNilpotent_ad_rootVector i).exists_pow_apply_eq_zero
+          (hx.toIsSl2System.isNilpotent_ad_rootVector (-i)).exists_pow_apply_eq_zero (x j) =
         x ((rootSystem H).reflectionPerm i j) ∨
       weylAut (hx.toIsSl2System.isSl2Triple i (LieSubalgebra.isNonZero_coe_root i))
-          (hx.toIsSl2System.isNilpotent_ad_rootVector i)
-          (hx.toIsSl2System.isNilpotent_ad_rootVector (-i)) (x j) =
+          (hx.toIsSl2System.isNilpotent_ad_rootVector i).exists_pow_apply_eq_zero
+          (hx.toIsSl2System.isNilpotent_ad_rootVector (-i)).exists_pow_apply_eq_zero (x j) =
         -x ((rootSystem H).reflectionPerm i j) := by
   have hα := LieSubalgebra.isNonZero_coe_root i
   have hW := hx.toIsSl2System.map_weylAut_eq_self hα
   have hcomm (z : L) := ((ω : L →ₗ⁅K⁆ L).map_weylAut (hx.toIsSl2System.isSl2Triple i hα)
-    (hx.toIsSl2System.isNilpotent_ad_rootVector i) (hx.toIsSl2System.isNilpotent_ad_rootVector (-i))
+    (hx.toIsSl2System.isNilpotent_ad_rootVector i).exists_pow_apply_eq_zero
+    (hx.toIsSl2System.isNilpotent_ad_rootVector (-i)).exists_pow_apply_eq_zero
     (hx.map_root i) (by rw [LieEquiv.coe_toLieHom, hx.map_root, neg_neg]) z).symm
   -- the permuted weight is the reflected root
   have hperm : weightPerm _ hW (j : Weight K H L) =

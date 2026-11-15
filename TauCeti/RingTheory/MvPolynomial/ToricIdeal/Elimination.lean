@@ -48,8 +48,6 @@ theorem toricIdeal_eq_comap_graph (a : ι → σ →₀ ℕ) :
     toricIdeal R a =
       (Ideal.span (Set.range fun i ↦ X (Sum.inr i) -
         rename Sum.inl (monomial (a i) (1 : R)))).comap (rename (R := R) Sum.inr) := by
-  rw [← ker_aeval_eq_comap_graph]
-  ext p
-  simp only [mem_toricIdeal_iff, RingHom.mem_ker, single_eq_monomial]
+  rw [toricIdeal_eq_ker_aeval_monomial, ker_aeval_eq_comap_graph]
 
 end TauCeti

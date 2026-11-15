@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.Holder.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -26,7 +26,8 @@ is the Cauchy potential of `Δg`, also at the initial time `t = 0` when `a = 0`.
 bounds then follow from the maximum principle `TauCeti.norm_heatCauchyPotential_le`, and the
 parabolic Hölder seminorms of the two top-order fields from the parabolic Hölder estimate
 `TauCeti.holderWith_heatCauchyPotential` applied to `D²g` and `Δg`. In particular `u` solves the
-heat equation `∂ₜu = Δu` on the closed slab, and when `a = 0` its initial trace is `g`.
+heat equation `∂ₜu = Δu` on the closed slab, and when `a = 0` and `F` is complete its initial trace
+is `g`.
 
 This is the initial-data part of the solution operator of the Cauchy problem
 `∂ₜu - Δu = f`, `u(·, 0) = g` in parabolic Hölder spaces, whose solution is the sum of the Cauchy
@@ -39,7 +40,8 @@ potential of `g` and the Duhamel potential of `f`.
 * `TauCeti.heatCauchyPotentialL_apply` and its companions: the four fields of the potential.
 * `TauCeti.timeDerivL_heatCauchyPotentialL_eq_laplacian`: the heat equation `∂ₜu = Δu`.
 * `TauCeti.norm_heatCauchyPotentialL_le`: the operator-norm bound `(1 + dim E) (1 + M_α)`.
-* `TauCeti.spatialTrace_heatCauchyPotentialL_left`: the initial trace of the potential is `g`.
+* `TauCeti.spatialTrace_heatCauchyPotentialL_left`: for complete `F`, the initial trace of the
+  potential is `g`.
 
 ## References
 
@@ -122,8 +124,6 @@ private theorem norm_slabPotentialHolder_le (hc : Continuous h) (hM : ∀ y, ‖
 end SlabPotential
 
 /-! ### The potential as an order-two parabolic Hölder map -/
-
-variable [CompleteSpace F]
 
 variable (hab : a < b) (ha : 0 ≤ a)
 
@@ -277,9 +277,21 @@ theorem norm_heatCauchyPotentialL_le :
 
 /-- **Attainment of the initial datum.** On the slab `E × [0, b]`, the initial trace of the Cauchy
 potential of `g` is `g`. -/
-theorem spatialTrace_heatCauchyPotentialL_left (hb : 0 < b) (g : CkHolderSpace 2 α E F) :
+theorem spatialTrace_heatCauchyPotentialL_left [CompleteSpace F] (hb : 0 < b)
+    (g : CkHolderSpace 2 α E F) :
     (heatCauchyPotentialL hb le_rfl g).spatialTrace ⟨0, left_mem_Icc.2 hb.le⟩ = g := by
   ext x
   simp
+
+/-- The Cauchy heat potential is annihilated by the scalar Euclidean heat operator, including
+at both endpoints of the time slab. -/
+theorem ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatCauchyPotentialL
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+      (heatCauchyPotentialL hab ha g) = 0 := by
+  ext p
+  rw [euclideanParabolicOperatorL_one_apply, timeDerivL_heatCauchyPotentialL_eq_laplacian, sub_self,
+    HolderSpace.zero_apply]
 
 end TauCeti

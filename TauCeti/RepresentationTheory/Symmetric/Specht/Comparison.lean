@@ -37,8 +37,6 @@ order of the row group.  Both sides are irreducible, so this intertwiner is an e
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapters 3--4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3, “Polytabloids and the Specht module”.
 -/
 
 public section
