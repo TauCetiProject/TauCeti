@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.RingTheory.Flat.LocallyFree
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.FittingIdeal.Span
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
@@ -201,20 +200,15 @@ theorem rankLocus_eq_bot_of_le (N : G(k, A ⊗[R] M; A)) (F : Submodule R M) {s 
   refine ideal_eq_bot_of_localization' _ fun J hJ ↦ ?_
   have := hJ.isPrime
   let B := Localization.AtPrime J
-  have hmap : Ideal.map (algebraMap A B) (N.rankLocus F s) =
-      (map (IsScalarTower.toAlgHom R A B) N).rankLocus F s := by
-    rw [rankLocus_map]
-    rfl
-  rw [hmap, rankLocus_def]
   set N' := map (IsScalarTower.toAlgHom R A B) N
-  have := N'.finite_quotient
-  have := N'.projective_quotient
+  have hmap : Ideal.map (algebraMap A B) (N.rankLocus F s) = N'.rankLocus F s :=
+    (rankLocus_map (IsScalarTower.toAlgHom R A B) N F s).symm
+  rw [hmap, rankLocus_def]
+  have := N'.finite_quotient; have := N'.projective_quotient
   have : Module.Free B ((B ⊗[R] M) ⧸ N'.toSubmodule) := Module.free_of_flat_of_isLocalRing
   let b := Module.finBasis B ((B ⊗[R] M) ⧸ N'.toSubmodule)
-  have hcard : Nat.card (Fin (finrank B ((B ⊗[R] M) ⧸ N'.toSubmodule))) < s + 1 := by
-    rw [Nat.card_fin, TauCeti.Module.finrank_eq_of_rankAtStalk_eq (funext N'.rankAtStalk_eq)]
-    omega
-  exact Submodule.minorsIdeal_eq_bot_of_le_span_range (by rw [b.span_eq]; exact le_top) hcard
+  exact Submodule.minorsIdeal_eq_bot_of_le_span_range (by rw [b.span_eq]; exact le_top) <| by
+    rw [Nat.card_fin, TauCeti.Module.finrank_eq_of_rankAtStalk_eq (funext N'.rankAtStalk_eq)]; omega
 
 section Field
 
