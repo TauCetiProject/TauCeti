@@ -46,15 +46,12 @@ and carry the restricted Riemannian metrics.
 * `Isometry.exists_linearIsometry_apply_riemannianExp_eq`: `f (exp_p v) = exp_{f p} (L v)` on a
   normal ball, for a linear isometry `L : T_p M →ₗᵢ[ℝ] T_{f p} N`.
 * `Isometry.contMDiff`: a distance-preserving map into a complete manifold is smooth.
-* `Isometry.inner_mfderiv`, `Isometry.norm_mfderiv`: its differential preserves inner products
-  and norms.
+* `Isometry.inner_mfderiv`: its differential preserves inner products.
 * `IsometryEquiv.toRiemannianIsometry`: a distance-preserving bijection onto a complete
   Riemannian manifold as a smooth Riemannian isometry. With the `IsometryClass` coercion back to
   `M ≃ᵢ N` it is a bijection (`IsometryEquiv.toIsometryEquiv_toRiemannianIsometry`,
   `TauCeti.RiemannianIsometry.toRiemannianIsometry_toIsometryEquiv`), compatible with
-  identities, inverses and composites.
-* `TauCeti.RiemannianIsometry.isometryEquivMulEquiv`: on a complete manifold, the group of smooth
-  Riemannian isometries is isomorphic to the group of isometries of the Riemannian distance.
+  identities, inverses, composites and the group operations of `Isom I M` and `M ≃ᵢ M`.
 
 ## References
 
@@ -368,12 +365,6 @@ theorem inner_mfderiv (hf : Isometry f) (p : M) (v w : TangentSpace I p) :
   -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
   exact h
 
-/-- The differential of a distance-preserving map preserves norms. -/
-theorem norm_mfderiv (hf : Isometry f) (p : M) (v : TangentSpace I p) :
-    ‖mfderiv I J f p v‖ = ‖v‖ := by
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-    ← real_inner_self_eq_norm_sq, hf.inner_mfderiv]
-
 end EMetric
 
 end Isometry
@@ -522,10 +513,6 @@ variable
   {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-
-section Map
-
-variable
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
   {N : Type*} [EMetricSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
@@ -540,31 +527,5 @@ theorem toRiemannianIsometry_toIsometryEquiv (Φ : RiemannianIsometry I J M N) :
     (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ := by
   ext x
   simp
-
-end Map
-
-variable (I M) [CompleteSpace M]
-
-/-- **The smooth and the metric isometry groups agree.** On a complete finite-dimensional
-Riemannian manifold without boundary, forgetting the smooth structure is a group isomorphism from
-the smooth Riemannian isometries onto the isometries of the Riemannian extended distance. -/
-def isometryEquivMulEquiv : Isom I M ≃* (M ≃ᵢ M) where
-  toFun Φ := Φ
-  invFun e := e.toRiemannianIsometry I I
-  left_inv := toRiemannianIsometry_toIsometryEquiv
-  right_inv := IsometryEquiv.toIsometryEquiv_toRiemannianIsometry I I
-  map_mul' := toIsometryEquiv_mul
-
-/-- The isomorphism of isometry groups forgets the smooth structure. -/
-@[simp]
-theorem isometryEquivMulEquiv_apply (Φ : Isom I M) :
-    isometryEquivMulEquiv I M Φ = (Φ : M ≃ᵢ M) :=
-  (rfl)
-
-/-- The inverse isomorphism of isometry groups is `IsometryEquiv.toRiemannianIsometry`. -/
-@[simp]
-theorem isometryEquivMulEquiv_symm_apply (e : M ≃ᵢ M) :
-    (isometryEquivMulEquiv I M).symm e = e.toRiemannianIsometry I I :=
-  (rfl)
 
 end TauCeti.RiemannianIsometry
