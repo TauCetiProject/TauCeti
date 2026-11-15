@@ -12,8 +12,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.LinearAlgebra.DirectSum.Finite
-import Mathlib.Algebra.Category.ModuleCat.Biproducts
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 import Mathlib.CategoryTheory.Preadditive.LeftExact
 -- Non-public: monomorphisms and epimorphisms of functors into an abelian category are
 -- monomorphisms and epimorphisms at every object.
