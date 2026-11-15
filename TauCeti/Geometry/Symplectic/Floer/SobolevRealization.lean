@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # The linearized Floer operator on `W^{1,2}` of the cylinder
@@ -167,13 +168,11 @@ private theorem continuous_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V 
 
 /-- **The coefficients of the linearized Floer operator along a Floer trajectory are bounded.**
 Let `H` be a jointly `C²` Hamiltonian, `J_t(y)` a `C¹` family of almost complex structures and
-`u` a `C¹` map whose loops converge uniformly to orbits `xm` at `-∞` and `xp` at `+∞`, with slice
+`u` a `C¹` map whose loops converge uniformly to loops `xm` at `-∞` and `xp` at `+∞`, with slice
 defect `∂t u - X_{H_t}(u)` tending uniformly to zero at both ends. Then the coefficient field of
 the linearized Floer operator of the datum `K = H_t dt` is essentially bounded on the cylinder. -/
 theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
-    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t)
-    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (H t) (xp t)) t)
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
     {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u)
@@ -203,11 +202,9 @@ theorem memLp_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     rw [show sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u = _ from
       funext (sliceDefect_def _ u)]
     exact h₁.sub (hX.continuous.comp (continuous_snd.prodMk hu.continuous))
-  obtain ⟨Cu, hCu⟩ := exists_forall_norm_le_of_tendstoUniformlyOn hu.continuous
-    (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt).continuousOn
-    (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt).continuousOn huxm huxp
-  obtain ⟨Cδ, hCδ⟩ := exists_forall_norm_le_of_tendstoUniformlyOn hδc continuousOn_const
-    continuousOn_const hδm hδp
+  obtain ⟨Cu, hCu⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hu.continuous
+    huxm huxp
+  obtain ⟨Cδ, hCδ⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hδc hδm hδp
   set K : Set (ℝ × V) := Icc 0 1 ×ˢ Metric.closedBall 0 Cu
   have hK : IsCompact K := isCompact_Icc.prod (isCompact_closedBall 0 Cu)
   obtain ⟨BJ, hBJ⟩ := hK.exists_bound_of_continuousOn hJ.continuous.continuousOn
@@ -252,17 +249,12 @@ private theorem exists_estimate_floerJetCoeff (ω : SymplecticForm V) {H : ℝ �
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    ∃ C T : ℝ, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
-        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
-            ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
-          C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerJetCoeff
-            (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-            (fun w ↦ H w.2) u z (jet ξ z)‖ ^ 2) +
-            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
+    ∃ C T : ℝ, HasSemiFredholmEstimate (ω.floerJetCoeff
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u)
+      C T := by
   obtain ⟨C, -, T, hest⟩ := ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
     hX hH hxm hndm hxp hndp hJ hJxm hJxp hu hJu huxm huxp hδm hδp
-  refine ⟨C, T, fun ξ hξ hper a b hab hvan ↦ ?_⟩
+  refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξ hper a b hab hvan ↦ ?_⟩
   simpa only [floerJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
     hest hξ hper hab hvan
 
@@ -296,7 +288,7 @@ theorem finiteDimensional_ker_floerSobolevOperator (ω : SymplecticForm V) {H : 
   obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff ω hX hH hxm hndm hxp hndp hJ hJxm hJxp hu
     hJu huxm huxp hδm hδp
   exact finiteDimensional_ker_jetOperator_comp_subtypeL
-    (ω.memLp_floerJetCoeff hH hxm hxp hJ hu huxm huxp hδm hδp) hest
+    (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp) hest
 
 /-- **The linearized Floer operator along a Floer trajectory has closed range on `W^{1,2}`.**
 Under the hypotheses of
@@ -326,6 +318,6 @@ theorem isClosed_range_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ →
   obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff ω hX hH hxm hndm hxp hndp hJ hJxm hJxp hu
     hJu huxm huxp hδm hδp
   exact isClosed_range_jetOperator_comp_subtypeL
-    (ω.memLp_floerJetCoeff hH hxm hxp hJ hu huxm huxp hδm hδp) hest
+    (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp) hest
 
 end TauCeti.SymplecticForm

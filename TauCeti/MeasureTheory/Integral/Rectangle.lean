@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -43,13 +45,26 @@ a doubly (twisted) periodic map are used.
   segments `[a₁, b₁] × {t}`.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
+* `TauCeti.lintegral_strip_shift`, `TauCeti.lintegral_Icc_neg_one_two_le`,
+  `TauCeti.eLpNorm_Icc_neg_one_two_le`: for a function of period one in the second coordinate,
+  integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over `ℝ × [-1, 2]` are
+  controlled by those over the fundamental strip `ℝ × [0, 1]`.
+
+Lebesgue measure on `ℝ × ℝ` is recorded as an additive Haar measure, hence translation invariant;
+instance search does not see through `volume` to the product measure.
 -/
 
 public section
 
 open Set MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
+
+/-- Lebesgue measure on the plane `ℝ × ℝ` is an additive Haar measure, so in particular it is
+invariant under translations. -/
+instance isAddHaarMeasure_volume_real_prod : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure :=
+  Measure.prod.instIsAddHaarMeasure _ _
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {a₁ b₁ a₂ b₂ : ℝ}
@@ -150,12 +165,8 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
     (hMi : IntegrableOn M (Icc c d ×ˢ I))
     (hfM : ∀ z ∈ Icc c d ×ˢ I, f (z + (L, 0)) ≤ M z) :
     ∫ z in Icc (c + L) (d + L) ×ˢ I, f z ≤ ∫ z in Icc c d ×ˢ I, M z := by
-  have he : MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) := by
-    -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-    have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-      rw [Measure.volume_eq_prod]
-      infer_instance
-    exact measurePreserving_add_right volume (L, 0)
+  have he : MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
+    measurePreserving_add_right volume (L, 0)
   have hemb : MeasurableEmbedding (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
     measurableEmbedding_addRight (L, 0)
   have hpre : (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
@@ -230,6 +241,73 @@ theorem neg_mul_setIntegral_le_setIntegral_deriv_mul {β : ℝ → ℝ} (hβ : C
       intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ hβ.differentiable one_ne_zero x)
         (hβ'.intervalIntegrable _ _)]
   rwa [integral_neg, hvol, setIntegral_prod_mul (deriv β) B, ← hvol, hftc] at hle
+
+/-! ### Periodicity in the second coordinate -/
+
+/-- For a function invariant under translation by `(0, k)`, the integrals over the strips
+`ℝ × [k, k + 1]` and `ℝ × [0, 1]` agree. -/
+theorem lintegral_strip_shift {g : ℝ × ℝ → ℝ≥0∞} (k : ℝ)
+    (hg : ∀ z, g (z + ((0 : ℝ), k)) = g z) :
+    ∫⁻ z in univ ×ˢ Icc k (k + 1), g z = ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+  have hφ := measurePreserving_add_right (volume : Measure (ℝ × ℝ)) ((0 : ℝ), k)
+  have hpre : (· + ((0 : ℝ), k)) ⁻¹' (univ ×ˢ Icc k (k + 1)) = univ ×ˢ Icc (0 : ℝ) 1 := by
+    ext ⟨s, t⟩
+    simp only [mem_preimage, Prod.mk_add_mk, add_zero, mem_prod, mem_univ, mem_Icc, true_and]
+    constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  rw [← hφ.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) g, hpre]
+  simp only [hg]
+
+/-- For a function of period one in `t`, the integral over `ℝ × [-1, 2]` is at most three times
+the integral over the strip `ℝ × [0, 1]`. -/
+theorem lintegral_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞}
+    (hg : ∀ s t, g (s, t + 1) = g (s, t)) :
+    ∫⁻ z in univ ×ˢ Icc (-1) 2, g z ≤ 3 * ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+  have h₁ : ∀ z, g (z + ((0 : ℝ), (1 : ℝ))) = g z := fun ⟨s, t⟩ ↦ by simpa using hg s t
+  have hm₁ : ∀ z, g (z + ((0 : ℝ), (-1 : ℝ))) = g z := fun ⟨s, t⟩ ↦ by
+    simpa [sub_eq_add_neg] using (hg s (t - 1)).symm
+  have hU : (univ : Set ℝ) ×ˢ Icc (-1 : ℝ) 2 ⊆ ((univ : Set ℝ) ×ˢ Icc (-1) (-1 + 1)) ∪
+      ((univ : Set ℝ) ×ˢ Icc 0 1) ∪ ((univ : Set ℝ) ×ˢ Icc 1 (1 + 1)) := by
+    rintro ⟨s, t⟩ ⟨-, ht₁, ht₂⟩
+    simp only [mem_union, mem_prod, mem_univ, mem_Icc, true_and]
+    by_cases h0 : t ≤ 0
+    · exact Or.inl (Or.inl ⟨ht₁, by linarith⟩)
+    · by_cases h1 : t ≤ 1
+      · exact Or.inl (Or.inr ⟨by linarith, h1⟩)
+      · exact Or.inr ⟨by linarith, by linarith⟩
+  calc ∫⁻ z in univ ×ˢ Icc (-1) 2, g z
+      ≤ ∫⁻ z in ((univ : Set ℝ) ×ˢ Icc (-1) (-1 + 1)) ∪ ((univ : Set ℝ) ×ˢ Icc 0 1) ∪
+          ((univ : Set ℝ) ×ˢ Icc 1 (1 + 1)), g z :=
+        lintegral_mono_set hU
+    _ ≤ (∫⁻ z in univ ×ˢ Icc (-1) (-1 + 1), g z) + (∫⁻ z in univ ×ˢ Icc 0 1, g z) +
+          ∫⁻ z in univ ×ˢ Icc 1 (1 + 1), g z :=
+        (lintegral_union_le _ _ _).trans (add_le_add_left (lintegral_union_le _ _ _) _)
+    _ = 3 * ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+        rw [lintegral_strip_shift _ hm₁, lintegral_strip_shift _ h₁]
+        ring
+
+/-- For a function of period one in `t`, the `L²` norm over `ℝ × [-1, 2]` is at most twice the
+`L²` norm over the strip `ℝ × [0, 1]`. -/
+theorem eLpNorm_Icc_neg_one_two_le {F : Type*} [NormedAddCommGroup F] {f : ℝ × ℝ → F}
+    (hfm : AEStronglyMeasurable f volume) (hf : ∀ s t, f (s, t + 1) = f (s, t)) :
+    eLpNorm f 2 (volume.restrict (univ ×ˢ Icc (-1) 2)) ≤
+      2 * eLpNorm f 2 (volume.restrict (univ ×ˢ Icc 0 1)) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hfm.restrict,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hfm.restrict]
+  have h := lintegral_Icc_neg_one_two_le (g := fun z ↦ ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal)
+    fun s t ↦ by simp only [hf]
+  calc (∫⁻ z in univ ×ˢ Icc (-1) 2, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal)
+      ≤ (3 * ∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) :=
+        ENNReal.rpow_le_rpow h (by norm_num)
+    _ = 3 ^ (1 / (2 : ℝ≥0∞).toReal) *
+          (∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)
+    _ ≤ 2 * (∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) := by
+        gcongr
+        calc (3 : ℝ≥0∞) ^ (1 / (2 : ℝ≥0∞).toReal) ≤ 4 ^ (1 / (2 : ℝ≥0∞).toReal) :=
+              ENNReal.rpow_le_rpow (by norm_num) (by norm_num)
+          _ = 2 := by
+              rw [show (4 : ℝ≥0∞) = 2 ^ (2 : ℝ) by norm_num, ← ENNReal.rpow_mul]
+              norm_num
 
 end TauCeti
 
