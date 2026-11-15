@@ -57,8 +57,8 @@ quotient vanishes modulo `p`, that is `|a| ^ (p - 1) ≡ 1 (mod p ^ 2)`
   natural number `n` not divisible by `p`.
 * `IsPrimitiveRoot.eisenstein_reciprocity`: **the Eisenstein reciprocity law**
   `(α / a)_p = (a / α)_p` for primary `α` and an integer `a` not divisible by `p`.
-* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_natCast_mk_toInteger` and
-  `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger`:
+* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_natCast_mk_toInteger_of_prime` and
+  `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_prime`:
   `(ζ / a)_p = ζ ^ ((|a| ^ (p - 1) - 1) / p)` for `p ∤ a`.
 * `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_pow_mul`:
   `((ζ ^ c * α) / a)_p = ζ ^ (c (|a| ^ (p - 1) - 1) / p) · (a / (ζ ^ c * α))_p`.
@@ -106,7 +106,7 @@ private theorem eq_of_pow_eq_of_not_dvd {R : Type*} [Monoid R] {x y : R} (hx : x
 
 /-- **The `p`-th power residue symbol of `ζ` at a natural number.** For `p ∤ n`, the symbol of `ζ`
 at `n 𝓞 K` is `ζ ^ ((n ^ (p - 1) - 1) / p)`. -/
-theorem powerResidueSymbolIdeal_span_natCast_mk_toInteger {n : ℕ} (hn : ¬ p ∣ n) :
+theorem powerResidueSymbolIdeal_span_natCast_mk_toInteger_of_prime {n : ℕ} (hn : ¬ p ∣ n) :
     powerResidueSymbolIdeal (span {(n : 𝓞 K)}) p (Ideal.Quotient.mk _ hζ.toInteger) =
       hζ.toInteger ^ ((n ^ (p - 1) - 1) / p) := by
   have hp : p.Prime := Fact.out
@@ -119,7 +119,7 @@ theorem powerResidueSymbolIdeal_span_natCast_mk_toInteger {n : ℕ} (hn : ¬ p �
 
 /-- **The `p`-th power residue symbol of `ζ` at a rational integer.** For `p ∤ a`, the symbol of
 `ζ` at `a 𝓞 K` is `ζ ^ ((|a| ^ (p - 1) - 1) / p)`. -/
-theorem powerResidueSymbolIdeal_span_intCast_mk_toInteger {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) :
+theorem powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_prime {a : ℤ} (ha : ¬ (p : ℤ) ∣ a) :
     powerResidueSymbolIdeal (span {(a : 𝓞 K)}) p (Ideal.Quotient.mk _ hζ.toInteger) =
       hζ.toInteger ^ ((a.natAbs ^ (p - 1) - 1) / p) := by
   have hna : ¬ p ∣ a.natAbs := by rwa [← Int.natCast_dvd]
@@ -127,7 +127,7 @@ theorem powerResidueSymbolIdeal_span_intCast_mk_toInteger {a : ℤ} (ha : ¬ (p 
     rcases Int.natAbs_eq a with h | h
     · conv_lhs => rw [h, Int.cast_natCast]
     · conv_lhs => rw [h, Int.cast_neg, Int.cast_natCast, span_singleton_neg]
-  rw [hspan, hζ.powerResidueSymbolIdeal_span_natCast_mk_toInteger hna]
+  rw [hspan, hζ.powerResidueSymbolIdeal_span_natCast_mk_toInteger_of_prime hna]
 
 /-- Eisenstein reciprocity at the norm of a maximal ideal `P` whose norm is prime to `p`:
 `(α / N P)_p = (N P / α)_p`. -/
@@ -275,7 +275,7 @@ theorem powerResidueSymbolIdeal_span_intCast_mk_toInteger_pow_mul (hp2 : p ≠ 2
   have hunit : IsUnit (hζ.toInteger ^ c) :=
     (hζ.toInteger_isPrimitiveRoot.isUnit hp.ne_zero).pow c
   rw [span_singleton_mul_left_unit hunit, map_mul, map_mul, map_pow, map_pow,
-    hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger ha, ← pow_mul, mul_comm _ c,
+    hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_prime ha, ← pow_mul, mul_comm _ c,
     hζ.eisenstein_reciprocity hp2 hα ha]
 
 /-- **When the non-primary associate `ζ * α` satisfies reciprocity against `a`.** For primary `α`
