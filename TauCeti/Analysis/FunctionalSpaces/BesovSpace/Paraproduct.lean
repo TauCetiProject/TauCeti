@@ -8,12 +8,16 @@ module
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Ball
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.Normed.Group.Pointwise
+import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Holder
 
 /-!
-# Bony's paraproduct decomposition
+# Bony's paraproduct decomposition and the paraproduct estimates
 
 Let `Δⱼ` be the inhomogeneous Littlewood–Paley blocks of a bump function `φ`
 (`TemperedDistribution.littlewoodPaleyBlock`), and let `S_m u = ∑_{k < m} Δₖ u` be the
@@ -56,6 +60,25 @@ for every `m`, since `S_m` is convolution with an `L¹`-dilate of `𝓕⁻ φ`
 `‖S_m u‖_p ≤ 2^{-α m} ‖u‖ / (2^{-α} - 1)`, summing the geometric bounds of the blocks
 (`TauCeti.BesovSpace.norm_lowPass_le_of_neg`).
 
+Combining these with the reconstruction of a Besov element from pieces with spectra in dyadic
+annuli or balls gives the **paraproduct and resonant estimates** of Bahouri–Chemin–Danchin,
+Theorems 2.82 and 2.85. Let `1/r = 1/p₁ + 1/p₂`, `u ∈ B^s_{p₁,q}` and `v ∈ B^{s'}_{p₂,q'}`, and
+let the gap satisfy `φ.rOut < 2^N φ.rIn` for the paraproducts. Then each series below converges in
+the tempered distributions, with sum in the stated Besov space and norm bounded by a constant
+depending only on `φ`, `N` and the regularity indices, never on the integrability exponents:
+
+* `T_u v ∈ B^{s'}_{r,q'}` with norm `≲ ‖f‖_{p₁} ‖v‖` when `u` is an `L^{p₁}` function `f`, and
+  `T_u v ∈ B^{s+s'}_{r,q'}` with norm `≲ ‖u‖ ‖v‖` when `s < 0`;
+* symmetrically, `T_v u ∈ B^s_{r,q}` when `v` is an `L^{p₂}` function, and
+  `T_v u ∈ B^{s+s'}_{r,q}` when `s' < 0`;
+* `R(u, v) ∈ B^{s+s'}_{r,q'}` with norm `≲ ‖u‖ ‖v‖` when `s + s' > 0`.
+
+For `p₁ = p₂ = q = q' = ∞` these are the estimates on the Hölder–Zygmund spaces
+`𝒞^s = B^s_{∞,∞}`: `‖T_f g‖_{𝒞^β} ≲ ‖f‖_∞ ‖g‖_{𝒞^β}`, `‖T_f g‖_{𝒞^{α+β}} ≲ ‖f‖_{𝒞^α} ‖g‖_{𝒞^β}`
+for `α < 0` and `‖R(f, g)‖_{𝒞^{α+β}} ≲ ‖f‖_{𝒞^α} ‖g‖_{𝒞^β}` for `α + β > 0`. Only the `ℓ^∞`
+size of the blocks of `u` enters the bounds for `T_u v` and `R(u, v)`, so they hold with
+`‖u‖_{B^s_{p₁,∞}} ≤ ‖u‖_{B^s_{p₁,q}}` in place of `‖u‖`.
+
 ## Main declarations
 
 * `TauCeti.BesovSpace.lowPass`: the low-frequency cut-off `S_m u = ∑_{k < m} Δₖ u` as an `Lᵖ`
@@ -71,6 +94,13 @@ for every `m`, since `S_m` is convolution with an `L¹`-dilate of `𝓕⁻ φ`
 * `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq` and
   `TauCeti.BesovSpace.norm_lowPass_le_of_neg`: the size of the low-frequency cut-offs.
 * `TauCeti.BesovSpace.lowPass_smul_lowPass`: Bony's decomposition of `S_M u · S_M v`.
+* `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq` and
+  `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg`: the paraproduct
+  estimates for `T_u v`.
+* `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq` and
+  `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_neg`: the paraproduct
+  estimates for `T_v u`.
+* `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`: the resonant estimate.
 
 ## References
 
@@ -344,5 +374,292 @@ theorem lowPass_smul_lowPass (N M : ℕ) (u : BesovSpace ℂ φ s p₁ q) (v : B
   split_ifs <;> first | (exfalso; omega) | simp
 
 end Decomposition
+
+section Estimates
+
+/-!
+### The paraproduct and resonant estimates
+
+Each term of a paraproduct is a product of a low-frequency cut-off and a block, with spectrum in
+a dyadic annulus once the gap `N` satisfies `φ.rOut < 2^N φ.rIn`. Hölder's inequality bounds its
+`Lʳ` norm by the size of the cut-off times `‖Δⱼ v‖_{p₂}`, and the reconstruction from annular
+pieces (`TauCeti.BesovSpace.exists_hasSum_toDistr_and_norm_le_of_annulus`) sums the terms into a
+Besov space. The terms of the resonant part are spectrally localized only in balls, and are
+summed by `TauCeti.BesovSpace.exists_hasSum_toDistr_and_norm_le_of_ball`, which needs positive
+total regularity.
+-/
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
+
+/-- **The windows of the resonant term.** For `v ∈ B^s_{p,q}` and a gap `N`, the sums
+`∑_{|k - j| ≤ N} Δₖ v` satisfy `2^{js} ‖∑_{|k - j| ≤ N} Δₖ v‖_p ≤ 2^{|s| N} Wⱼ` for a sequence
+`W ∈ ℓ^q` of norm at most `2 (N + 1) ‖v‖`. -/
+private theorem exists_lp_rpow_mul_norm_sum_block_le [Fact (1 ≤ q)] (v : BesovSpace G φ s p q)
+    (N : ℕ) :
+    ∃ W : lp (fun _ : ℕ ↦ ℝ) q, (∀ j : ℕ,
+      2 ^ (s * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖ ≤ 2 ^ (|s| * N) * W j) ∧
+      ‖W‖ ≤ 2 * (N + 1 : ℕ) * ‖v‖ := by
+  obtain ⟨b, hb, hbv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  -- The window sums of the weighted block norms of `v`, as an element of `ℓ^q`.
+  set W : lp (fun _ : ℕ ↦ ℝ) q :=
+    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), b k, (lp.memℓp b).sum_Ico_sub_add _⟩
+  -- The entries of the anonymous `lp` element `W` are its defining sequence by definition.
+  have hW (j : ℕ) : W j = ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), b k := rfl
+  refine ⟨W, fun j ↦ ?_, (lp.norm_le_of_forall_eq_sum_Ico_sub_add _ hW).trans (by gcongr)⟩
+  calc 2 ^ (s * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖
+      ≤ ∑ k ∈ Finset.Icc (j - N) (j + N), 2 ^ (s * j) * ‖v.block k‖ := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ ∑ k ∈ Finset.Icc (j - N) (j + N), 2 ^ (|s| * N) * b k := by
+        refine Finset.sum_le_sum fun k hk ↦ ?_
+        rw [Finset.mem_Icc] at hk
+        rw [hb, ← mul_assoc]
+        gcongr
+        refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
+          (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+        all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
+    _ ≤ 2 ^ (|s| * N) * W j := by
+        rw [← Finset.mul_sum, hW]
+        refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
+          (fun k hk ↦ ?_) fun k _ _ ↦ ?_) (by positivity)
+        · simp only [Finset.mem_Icc, Finset.mem_Ico] at hk ⊢
+          omega
+        · rw [hb]
+          positivity
+
+variable (φ) in
+/-- **Summing the terms of a paraproduct.** Let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is
+`C ≥ 0` with the following property. If `gⱼ ∈ Lʳ` has spectrum in the annulus of a paraproduct
+term (`TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_smul_block`) and
+`2^{jt} ‖gⱼ‖_r ≤ K 2^{js} ‖Δⱼ v‖_p` for some `v ∈ B^s_{p,q}`, then `∑ⱼ gⱼ` converges in the
+tempered distributions to an element of `B^t_{r,q}` of norm at most `C K ‖v‖`. -/
+private theorem exists_hasSum_toDistr_and_norm_le_of_le_block (t : ℝ) {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p r q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)] [Fact (1 ≤ q)]
+      (g : ℕ → Lp F r (volume : Measure E)) (v : BesovSpace G φ s p q) {K : ℝ}, 0 ≤ K →
+      (∀ j : ℕ, IsVanishingOn (𝓕 (g j : 𝓢'(E, F)) : 𝓢'(E, F))
+        (closedBall 0 (2 ^ j * (2 * φ.rOut)) \
+          ball 0 (2 ^ j * ((φ.rIn - φ.rOut / 2 ^ N) / 2)))ᶜ) →
+      (∀ j : ℕ, 2 ^ (t * j) * ‖g j‖ ≤ K * (2 ^ (s * j) * ‖v.block j‖)) →
+      ∃ w : BesovSpace F φ t r q, HasSum (fun j ↦ (g j : 𝓢'(E, F))) w.toDistr ∧
+        ‖w‖ ≤ C * K * ‖v‖ := by
+  have ha : 0 < (φ.rIn - φ.rOut / 2 ^ N) / 2 := by
+    have : φ.rOut / 2 ^ N < φ.rIn := by rwa [div_lt_iff₀ (by positivity), mul_comm]
+    linarith
+  obtain ⟨C, hC⟩ := exists_hasSum_toDistr_and_norm_le_of_annulus (F := F) φ t ha (2 * φ.rOut)
+  refine ⟨max C 0, le_max_right C 0, fun {p r q} _ _ _ g v K hK hg hgv ↦ ?_⟩
+  obtain ⟨b, hb, hbv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  have hball (j : ℕ) : ball (0 : E) (2 ^ j * ((φ.rIn - φ.rOut / 2 ^ N) / 2)) ⊆
+      (closedBall 0 (2 ^ j * (2 * φ.rOut)) \ ball 0 (2 ^ j * ((φ.rIn - φ.rOut / 2 ^ N) / 2)))ᶜ :=
+    fun _ hx hx' ↦ hx'.2 hx
+  obtain ⟨w, hw, hwn⟩ := hC g (K • b) (fun j ↦ (hg j).mono (compl_subset_compl.2 sdiff_subset))
+    (fun j _ ↦ (hg j).mono (hball j))
+    (fun j ↦ by rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hb]; exact hgv j)
+  refine ⟨w, hw, hwn.trans ?_⟩
+  calc C * ‖K • b‖ ≤ max C 0 * (K * ‖b‖) := by
+        rw [norm_smul, Real.norm_of_nonneg hK]
+        gcongr
+        exact le_max_left C 0
+    _ ≤ max C 0 * K * ‖v‖ := by
+        rw [mul_assoc]
+        gcongr
+
+variable {s' : ℝ}
+
+variable (φ) in
+/-- **The paraproduct `T_u v` with an `L^{p₁}` low-frequency factor** (Bahouri–Chemin–Danchin,
+Theorem 2.82). Let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`, depending only on
+`φ`, `N` and `s'`, with the following property. If the tempered distribution of `u` is an
+`L^{p₁}` function `f` and `v ∈ B^{s'}_{p₂,q'}`, then the paraproduct
+`T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` converges in the tempered distributions to an element of
+`B^{s'}_{r,q'}`, `1/r = 1/p₁ + 1/p₂`, of norm at most `C ‖f‖_{p₁} ‖v‖`. For `p₁ = ∞` this is
+`‖T_u v‖_{B^{s'}_{p₂,q'}} ≤ C ‖u‖_∞ ‖v‖_{B^{s'}_{p₂,q'}}`. -/
+theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (s' : ℝ) {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {p₁ p₂ r q q' : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)]
+      [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r] [Fact (1 ≤ q')] (u : BesovSpace ℂ φ s p₁ q)
+      {f : Lp ℂ p₁ (volume : Measure E)}, u.toDistr = f → ∀ v : BesovSpace F φ s' p₂ q',
+      ∃ w : BesovSpace F φ s' r q', HasSum (fun j ↦
+        ((u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+        ‖w‖ ≤ C * ‖f‖ * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ := exists_hasSum_toDistr_and_norm_le_of_le_block (F := F) (G := F) φ s' hN
+  set K₀ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
+  refine ⟨C * K₀, by positivity, fun {s p₁ p₂ r q q'} _ _ _ _ _ u f hf v ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := hC (fun j ↦ u.lowPass (j - N) • v.block j) v (K := K₀ * ‖f‖)
+    (by positivity) (fun j ↦ isVanishingOn_fourier_lowPass_smul_block N j u v) fun j ↦ by
+      calc 2 ^ (s' * j) * ‖(u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E))‖
+          ≤ 2 ^ (s' * j) * (‖u.lowPass (j - N)‖ * ‖v.block j‖) := by
+            gcongr
+            exact Lp.norm_smul_le _ _
+        _ ≤ 2 ^ (s' * j) * (K₀ * ‖f‖ * ‖v.block j‖) := by
+            gcongr
+            exact norm_lowPass_le_of_toDistr_eq u hf _
+        _ = K₀ * ‖f‖ * (2 ^ (s' * j) * ‖v.block j‖) := by ring
+  exact ⟨w, hw, hwn.trans_eq (by ring)⟩
+
+variable (φ) in
+/-- **The paraproduct `T_v u` with an `L^{p₂}` low-frequency factor** (Bahouri–Chemin–Danchin,
+Theorem 2.82). Let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`, depending only on
+`φ`, `N` and `s`, with the following property. If `u ∈ B^s_{p₁,q}` and the tempered distribution of
+`v` is an `L^{p₂}` function `g`, then the paraproduct `T_v u = ∑ⱼ Δⱼ u · S_{j-N} v` converges in
+the tempered distributions to an element of `B^s_{r,q}`, `1/r = 1/p₁ + 1/p₂`, of norm at most
+`C ‖u‖ ‖g‖_{p₂}`. -/
+theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (s : ℝ) {N : ℕ}
+    (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s' : ℝ} {p₁ p₂ r q q' : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)]
+      [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r] [Fact (1 ≤ q)] (u : BesovSpace ℂ φ s p₁ q)
+      (v : BesovSpace F φ s' p₂ q') {g : Lp F p₂ (volume : Measure E)}, v.toDistr = g →
+      ∃ w : BesovSpace F φ s r q, HasSum (fun j ↦
+        ((u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+        ‖w‖ ≤ C * ‖u‖ * ‖g‖ := by
+  obtain ⟨C, hC0, hC⟩ := exists_hasSum_toDistr_and_norm_le_of_le_block (F := F) (G := ℂ) φ s hN
+  set K₀ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
+  refine ⟨C * K₀, by positivity, fun {s' p₁ p₂ r q q'} _ _ _ _ _ u v g hg ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := hC (fun j ↦ u.block j • v.lowPass (j - N)) u (K := K₀ * ‖g‖)
+    (by positivity) (fun j ↦ isVanishingOn_fourier_block_smul_lowPass N j u v) fun j ↦ by
+      calc 2 ^ (s * j) * ‖(u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E))‖
+          ≤ 2 ^ (s * j) * (‖u.block j‖ * ‖v.lowPass (j - N)‖) := by
+            gcongr
+            exact Lp.norm_smul_le _ _
+        _ ≤ 2 ^ (s * j) * (‖u.block j‖ * (K₀ * ‖g‖)) := by
+            gcongr
+            exact norm_lowPass_le_of_toDistr_eq v hg _
+        _ = K₀ * ‖g‖ * (2 ^ (s * j) * ‖u.block j‖) := by ring
+  exact ⟨w, hw, hwn.trans_eq (by ring)⟩
+
+/-- For `s < 0` and `m ≤ j`, the bound `2^{-s m}` of the cut-off `S_m` of an element of `B^s`
+trades the weight `2^{(s + s') j}` for `2^{s' j}`. -/
+private theorem two_rpow_add_mul_mul_two_rpow_neg_mul_le {s : ℝ} (hs : s < 0) (s' : ℝ) {m j : ℕ}
+    (hmj : m ≤ j) : (2 : ℝ) ^ ((s + s') * j) * 2 ^ (-s * m) ≤ 2 ^ (s' * j) := by
+  rw [← Real.rpow_add two_pos]
+  refine Real.rpow_le_rpow_of_exponent_le one_le_two ?_
+  have : (m : ℝ) ≤ j := by exact_mod_cast hmj
+  nlinarith
+
+variable (φ) in
+/-- **The paraproduct `T_u v` at negative regularity of `u`** (Bahouri–Chemin–Danchin,
+Theorem 2.82). Let `s < 0` and let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
+depending only on `φ`, `N`, `s` and `s'`, with the following property. If `u ∈ B^s_{p₁,q}` and
+`v ∈ B^{s'}_{p₂,q'}`, then the paraproduct `T_u v = ∑ⱼ S_{j-N} u · Δⱼ v` converges in the tempered
+distributions to an element of `B^{s+s'}_{r,q'}`, `1/r = 1/p₁ + 1/p₂`, of norm at most
+`C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_lowPass_smul_block_and_norm_le_of_neg {s : ℝ} (hs : s < 0) (s' : ℝ)
+    {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q' : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [p₁.HolderTriple p₂ r] [Fact (1 ≤ q)] [Fact (1 ≤ q')] (u : BesovSpace ℂ φ s p₁ q)
+      (v : BesovSpace F φ s' p₂ q'),
+      ∃ w : BesovSpace F φ (s + s') r q', HasSum (fun j ↦
+        ((u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+        ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_hasSum_toDistr_and_norm_le_of_le_block (F := F) (G := F) φ (s + s') hN
+  have hd : 0 < (2 : ℝ) ^ (-s) - 1 := sub_pos.2 (Real.one_lt_rpow one_lt_two (neg_pos.2 hs))
+  refine ⟨C / (2 ^ (-s) - 1), by positivity, fun {p₁ p₂ r q q'} _ _ _ _ _ _ u v ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := hC (fun j ↦ u.lowPass (j - N) • v.block j) v
+    (K := ‖u‖ / (2 ^ (-s) - 1)) (by positivity)
+    (fun j ↦ isVanishingOn_fourier_lowPass_smul_block N j u v) fun j ↦ by
+      calc 2 ^ ((s + s') * j) * ‖(u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E))‖
+          ≤ 2 ^ ((s + s') * j) * (‖u.lowPass (j - N)‖ * ‖v.block j‖) := by
+            gcongr
+            exact Lp.norm_smul_le _ _
+        _ ≤ 2 ^ ((s + s') * j) *
+            (2 ^ (-s * (j - N : ℕ)) / (2 ^ (-s) - 1) * ‖u‖ * ‖v.block j‖) := by
+            gcongr
+            exact norm_lowPass_le_of_neg hs u _
+        _ = 2 ^ ((s + s') * j) * 2 ^ (-s * (j - N : ℕ)) *
+            (‖u‖ / (2 ^ (-s) - 1) * ‖v.block j‖) := by ring
+        _ ≤ 2 ^ (s' * j) * (‖u‖ / (2 ^ (-s) - 1) * ‖v.block j‖) := by
+            gcongr
+            exact two_rpow_add_mul_mul_two_rpow_neg_mul_le hs s' (Nat.sub_le j N)
+        _ = ‖u‖ / (2 ^ (-s) - 1) * (2 ^ (s' * j) * ‖v.block j‖) := by ring
+  exact ⟨w, hw, hwn.trans_eq (by ring)⟩
+
+variable (φ) in
+/-- **The paraproduct `T_v u` at negative regularity of `v`** (Bahouri–Chemin–Danchin,
+Theorem 2.82). Let `s' < 0` and let the gap `N` satisfy `φ.rOut < 2^N φ.rIn`. There is `C ≥ 0`,
+depending only on `φ`, `N`, `s` and `s'`, with the following property. If `u ∈ B^s_{p₁,q}` and
+`v ∈ B^{s'}_{p₂,q'}`, then the paraproduct `T_v u = ∑ⱼ Δⱼ u · S_{j-N} v` converges in the tempered
+distributions to an element of `B^{s+s'}_{r,q}`, `1/r = 1/p₁ + 1/p₂`, of norm at most
+`C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (s : ℝ) (hs' : s' < 0)
+    {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q' : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [p₁.HolderTriple p₂ r] [Fact (1 ≤ q)] [Fact (1 ≤ q')] (u : BesovSpace ℂ φ s p₁ q)
+      (v : BesovSpace F φ s' p₂ q'),
+      ∃ w : BesovSpace F φ (s + s') r q, HasSum (fun j ↦
+        ((u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+        ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_hasSum_toDistr_and_norm_le_of_le_block (F := F) (G := ℂ) φ (s + s') hN
+  have hd : 0 < (2 : ℝ) ^ (-s') - 1 := sub_pos.2 (Real.one_lt_rpow one_lt_two (neg_pos.2 hs'))
+  refine ⟨C / (2 ^ (-s') - 1), by positivity, fun {p₁ p₂ r q q'} _ _ _ _ _ _ u v ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := hC (fun j ↦ u.block j • v.lowPass (j - N)) u
+    (K := ‖v‖ / (2 ^ (-s') - 1)) (by positivity)
+    (fun j ↦ isVanishingOn_fourier_block_smul_lowPass N j u v) fun j ↦ by
+      calc 2 ^ ((s + s') * j) * ‖(u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E))‖
+          ≤ 2 ^ ((s + s') * j) * (‖u.block j‖ * ‖v.lowPass (j - N)‖) := by
+            gcongr
+            exact Lp.norm_smul_le _ _
+        _ ≤ 2 ^ ((s + s') * j) *
+            (‖u.block j‖ * (2 ^ (-s' * (j - N : ℕ)) / (2 ^ (-s') - 1) * ‖v‖)) := by
+            gcongr
+            exact norm_lowPass_le_of_neg hs' v _
+        _ = 2 ^ ((s' + s) * j) * 2 ^ (-s' * (j - N : ℕ)) *
+            (‖v‖ / (2 ^ (-s') - 1) * ‖u.block j‖) := by rw [add_comm s s']; ring
+        _ ≤ 2 ^ (s * j) * (‖v‖ / (2 ^ (-s') - 1) * ‖u.block j‖) := by
+            gcongr
+            exact two_rpow_add_mul_mul_two_rpow_neg_mul_le hs' s (Nat.sub_le j N)
+        _ = ‖v‖ / (2 ^ (-s') - 1) * (2 ^ (s * j) * ‖u.block j‖) := by ring
+  exact ⟨w, hw, hwn.trans_eq (by ring)⟩
+
+variable (φ) in
+/-- **The resonant estimate** (Bahouri–Chemin–Danchin, Theorem 2.85). Let `0 < s + s'` and let
+`N` be a gap. There is `C ≥ 0`, depending only on `φ`, `N`, `s` and `s'`, with the following
+property. If `u ∈ B^s_{p₁,q}` and `v ∈ B^{s'}_{p₂,q'}`, then the resonant term
+`R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` converges in the tempered distributions to an element of
+`B^{s+s'}_{r,q'}`, `1/r = 1/p₁ + 1/p₂`, of norm at most `C ‖u‖ ‖v‖`. -/
+theorem exists_hasSum_block_smul_sum_block_and_norm_le (hss' : 0 < s + s') (N : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q' : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [p₁.HolderTriple p₂ r] [Fact (1 ≤ q)] [Fact (1 ≤ q')] (u : BesovSpace ℂ φ s p₁ q)
+      (v : BesovSpace F φ s' p₂ q'),
+      ∃ w : BesovSpace F φ (s + s') r q', HasSum (fun j ↦
+        ((u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
+          Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧
+        ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_hasSum_toDistr_and_norm_le_of_ball (F := F) φ hss' ((1 + 2 ^ N) * φ.rOut)
+  set K : ℝ := 2 ^ (|s'| * N)
+  refine ⟨C * K * (2 * (N + 1 : ℕ)), by positivity,
+    fun {p₁ p₂ r q q'} _ _ _ _ _ _ u v ↦ ?_⟩
+  obtain ⟨W, hwin, hWn⟩ := exists_lp_rpow_mul_norm_sum_block_le v N
+  obtain ⟨w, hw, hwn⟩ := hC (fun j ↦ u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k)
+    ((‖u‖ * K) • W)
+    (fun j ↦ isVanishingOn_fourier_block_smul_sum_block N j (fun k hk ↦ (Finset.mem_Icc.1 hk).2)
+      u v) fun j ↦ by
+      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul]
+      calc 2 ^ ((s + s') * j) *
+            ‖(u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
+              Lp F r (volume : Measure E))‖
+          ≤ 2 ^ (s * j + s' * j) *
+            (‖u.block j‖ * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖) := by
+            rw [add_mul]
+            gcongr
+            exact Lp.norm_smul_le _ _
+        _ = (2 ^ (s * j) * ‖u.block j‖) *
+            (2 ^ (s' * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖) := by
+            rw [Real.rpow_add two_pos]
+            ring
+        _ ≤ ‖u‖ * (K * W j) :=
+            mul_le_mul (rpow_mul_norm_block_le u j) (hwin j) (by positivity) (norm_nonneg u)
+        _ = ‖u‖ * K * W j := by ring
+  refine ⟨w, hw, hwn.trans ?_⟩
+  calc C * ‖(‖u‖ * K) • W‖ = C * (‖u‖ * K) * ‖W‖ := by
+        rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+        ring
+    _ ≤ C * (‖u‖ * K) * (2 * (N + 1 : ℕ) * ‖v‖) := by gcongr
+    _ = C * K * (2 * (N + 1 : ℕ)) * ‖u‖ * ‖v‖ := by ring
+
+end Estimates
 
 end TauCeti.BesovSpace
