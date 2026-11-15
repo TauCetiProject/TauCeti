@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Finrank
-import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Inhomogeneous terms in charts
@@ -86,9 +85,9 @@ theorem chartTerm_apply (ν : InhomogeneousTerm j J) (φ : OpenPartialHomeomorph
 theorem chartTerm_zero (φ : OpenPartialHomeomorph P ℂ) (ψ : OpenPartialHomeomorph M G) :
     (0 : InhomogeneousTerm j J).chartTerm φ ψ = fun _ _ ↦ 0 := by
   funext z v
-  rw [chartTerm_apply, ZeroMemClass.coe_zero,
-    DomainDependentHomSection.tangentHom_zero, zero_apply, map_zero,
-    smul_zero]
+  -- Keep `mvfderiv`, valued in `G`, rather than `mfderiv`, valued in a tangent space of `G`,
+  -- so that the module laws simp applies are those of `G`; likewise below.
+  simp [chartTerm_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
 /-- Reading in charts is additive in the inhomogeneous term. -/
 @[simp]
@@ -96,9 +95,7 @@ theorem chartTerm_add (ν μ : InhomogeneousTerm j J) (φ : OpenPartialHomeomorp
     (ψ : OpenPartialHomeomorph M G) :
     (ν + μ).chartTerm φ ψ = ν.chartTerm φ ψ + μ.chartTerm φ ψ := by
   funext z v
-  rw [Pi.add_apply, Pi.add_apply, chartTerm_apply, chartTerm_apply, chartTerm_apply,
-    Submodule.coe_add, DomainDependentHomSection.tangentHom_add, add_apply,
-    map_add, smul_add]
+  simp [chartTerm_apply, -mvfderiv_apply_eq_mfderiv_apply]
 
 /-- Reading in charts commutes with real scalar multiplication of the inhomogeneous term. -/
 @[simp]
@@ -106,9 +103,7 @@ theorem chartTerm_smul (c : ℝ) (ν : InhomogeneousTerm j J) (φ : OpenPartialH
     (ψ : OpenPartialHomeomorph M G) :
     (c • ν).chartTerm φ ψ = c • ν.chartTerm φ ψ := by
   funext z v
-  rw [Pi.smul_apply, Pi.smul_apply, chartTerm_apply, chartTerm_apply, Submodule.coe_smul,
-    DomainDependentHomSection.tangentHom_smul, smul_apply, map_smul,
-    smul_comm]
+  simp [chartTerm_apply, -mvfderiv_apply_eq_mfderiv_apply, smul_smul, mul_comm]
 
 /-- Reading in charts commutes with negation of the inhomogeneous term. -/
 @[simp]
@@ -130,10 +125,7 @@ theorem chartTerm_ofLE (ν : InhomogeneousTerm j J) (hmn : m ≤ n)
     (φ : OpenPartialHomeomorph P ℂ) (ψ : OpenPartialHomeomorph M G) :
     (ν.ofLE hmn).chartTerm φ ψ = ν.chartTerm φ ψ := by
   funext z v
-  rw [chartTerm_apply, chartTerm_apply]
-  generalize mfderiv 𝓘(ℝ, ℂ) IP φ.symm z (1 : ℂ) = w
-  rw [DomainDependentHomSection.tangentHom_apply, DomainDependentHomSection.tangentHom_apply,
-    ofLE_val_apply]
+  simp [chartTerm_apply]
 
 /-- Replacing the structures of an inhomogeneous term by equal ones does not change it read in
 charts. -/

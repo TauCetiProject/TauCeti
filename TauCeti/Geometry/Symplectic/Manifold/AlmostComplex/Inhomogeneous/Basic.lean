@@ -363,6 +363,23 @@ theorem ofEq_sub (ν μ : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStr
     {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
     (ν - μ).ofEq hj hJ = ν.ofEq hj hJ - μ.ofEq hj hJ := (rfl)
 
+/-- Forgetting no regularity leaves a forcing term unchanged, up to the equalities
+`j.ofLE le_rfl = j` and `J.ofLE le_rfl = J` of its structures. -/
+@[simp]
+theorem ofLE_refl (ν : InhomogeneousTerm j J) :
+    ν.ofLE le_rfl = ν.ofEq j.ofLE_refl.symm J.ofLE_refl.symm := by
+  ext q v
+  rfl
+
+/-- Successive regularity downgrades of a forcing term compose, up to the corresponding
+equalities of its structures. -/
+@[simp]
+theorem ofLE_ofLE (ν : InhomogeneousTerm j J) {m l : ℕ∞} (hmn : m ≤ n) (hlm : l ≤ m) :
+    (ν.ofLE hmn).ofLE hlm = (ν.ofLE (hlm.trans hmn)).ofEq (j.ofLE_ofLE hmn hlm).symm
+      (J.ofLE_ofLE hmn hlm).symm := by
+  ext q v
+  rfl
+
 /-- Compose a forcing term with jointly regular complex-linear source and target bundle maps.
 The domain and target structures may both change. -/
 def compose (ν : InhomogeneousTerm j J)

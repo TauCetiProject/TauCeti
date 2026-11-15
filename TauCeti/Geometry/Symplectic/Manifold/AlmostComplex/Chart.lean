@@ -226,9 +226,10 @@ theorem fderiv_chart_comp_add_eq_zero_iff {ψ : OpenPartialHomeomorph M G} {g : 
   have hD : ∀ w : TangentSpace 𝓘(ℝ, ℂ) z, fderiv ℝ (ψ ∘ g) z w =
       mfderiv I 𝓘(ℝ, G) ψ (g z) (mfderiv 𝓘(ℝ, ℂ) I g z w) := fun w ↦ by
     have h := mfderiv_comp_apply z hψ hg w
-    rwa [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    simp only [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_symm_apply] at h
+    -- `h` is stated in the tangent space at `ψ (g z)`, which is `G` by definition.
+    exact h
   have hA := J.chartPushforward_apply_chartPushforward_apply ψ (ψ.map_source hgz)
     (by rwa [ψ.left_inv hgz]) hψs
   have hinv := ψ.mfderiv_symm_apply_mfderiv_apply hgz hψ hψs

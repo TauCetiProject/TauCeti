@@ -324,8 +324,7 @@ theorem chartField_neg (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
     (φ : OpenPartialHomeomorph P D) (ψ : OpenPartialHomeomorph M G) :
     (-J).chartField φ ψ = -J.chartField φ ψ := by
   funext z v
-  rw [chartField_apply, freeze_neg, ContMDiffAlmostComplexStructure.chartPushforward_neg,
-    Pi.neg_apply, Pi.neg_apply, Pi.neg_apply, chartField_apply]
+  simp [chartField_apply]
 
 /-- On a normed space, read in the identity chart, a structure is its value at the domain point
 `φ⁻¹ z`. -/
