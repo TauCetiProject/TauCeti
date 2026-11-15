@@ -48,6 +48,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   `TauCeti.W1p0.norm_extendByZeroL` and its value and gradient components; it is functorial in
   `Ω` by `TauCeti.W1p0.extendByZeroL_self` and
   `TauCeti.W1p0.extendByZeroL_extendByZeroL`.
+* `TauCeti.W1p0.value_extendByZeroL_ae_eq_indicator`: the value of the extension is the indicator
+  of the value of `u`.
 * `TauCeti.W1p0.value_extendByZeroL_ae_eq_zero_compl`: the whole-space extension vanishes almost
   everywhere off `Ω`.
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
@@ -272,22 +274,24 @@ theorem W1p0.value_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p)
   rw [W1p.value_coe, W1p.value_coe, W1p0.coe_extendByZeroL,
     Sobolev1JetLp.value_extendByZeroₗᵢ]
 
+/-- The value component of the zero extension of `u ∈ W^{1,p}_0(Ω)` to `Ω' ⊇ Ω` is, almost
+everywhere on `Ω'`, the value of `u` on `Ω` and zero off `Ω`. -/
+theorem W1p0.value_extendByZeroL_ae_eq_indicator (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) =ᵐ[mu.restrict Omega']
+      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
+  rw [W1p0.value_extendByZeroL]
+  exact coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+    (W1p.value (u : W1p mu Omega p))
+
 /-- The value component of the whole-space zero extension of `u ∈ W^{1,p}_0(Ω)` vanishes almost
 everywhere off `Ω`. Thus its support is contained in `Ω` up to a null set; when `Ω` is bounded,
 this is the fixed-bounded-support input for Fréchet--Kolmogorov. -/
 theorem W1p0.value_extendByZeroL_ae_eq_zero_compl (u : W1p0 mu Omega p) :
     ∀ᵐ x ∂mu, x ∉ (Omega : Set E) →
       W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) x = 0 := by
-  rw [W1p0.value_extendByZeroL (Omega' := ⊤) le_top u]
-  have hvalue : ⇑(extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
-      (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤))
-      (W1p.value (u : W1p mu Omega p))) =ᵐ[mu]
-      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using
-      coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet
-        (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (u : W1p mu Omega p))
-  filter_upwards [hvalue] with x hx hxo
-  rw [hx, Set.indicator_of_notMem hxo]
+  filter_upwards [(ae_restrict_iff' (⊤ : Opens E).isOpen.measurableSet).1
+    (W1p0.value_extendByZeroL_ae_eq_indicator le_top u)] with x hx hxo
+  rw [hx (by simp), Set.indicator_of_notMem hxo]
 
 /-- The gradient component of the extension is the zero-extension of the gradient component. -/
 @[simp]
