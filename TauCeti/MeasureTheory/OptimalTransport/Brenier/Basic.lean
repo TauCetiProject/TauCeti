@@ -74,13 +74,16 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing the quadratic
   Wasserstein distance between laws with finite second moments has cyclically monotone support for
   the cost `‖x - y‖ ^ 2 / 2`;
-* `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt`,
-  `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt`,
+* `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt` — on a real
+  Hilbert space, a plan concentrated on the subdifferential graph of a lower semicontinuous
+  function `u` that is finite nearby and differentiable almost everywhere along the first marginal
+  is the graph plan of `∇ u`;
+* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt`,
   `TauCeti.IsOptimalCoupling.unique_of_forall_convex_ae_differentiableAt`,
   `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_of_forall_convex_ae_differentiableAt`,
   and `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_forall_convex_ae_differentiableAt` — the
-  forward Brenier theorems on a separable real Hilbert space under an almost-everywhere
-  differentiability hypothesis for convex potentials along the source measure;
+  finite-dimensional forward Brenier core under an almost-everywhere differentiability hypothesis
+  for convex potentials along the source measure;
 * `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential` — for an absolutely continuous
   source, a plan concentrated on the subdifferential graph of a proper lower
   semicontinuous convex function is the graph plan of its gradient, differentiable almost
@@ -420,13 +423,13 @@ theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
 
 end InnerProduct
 
-section SeparableHilbert
+section Hilbert
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [MeasurableSpace E] [BorelSpace E] {μ ν : Measure E} {π : Measure (E × E)}
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {π : Measure (E × E)}
 
-/-- **A plan on a subdifferential graph is the graph plan of the gradient** under an
-almost-everywhere differentiability hypothesis on `u` along `μ`. -/
+/-- **A plan on a subdifferential graph is the graph plan of the gradient** on a real Hilbert space
+under an almost-everywhere differentiability hypothesis on `u` along `μ`. -/
 theorem eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt (hπ : π.fst = μ)
     {u : E → EReal} (hlsc : LowerSemicontinuous u)
     (hu_diff : (∀ x, u x ≠ ⊥) → ∀ᵐ x ∂μ, u x ≠ ⊤ →
@@ -461,11 +464,16 @@ theorem eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt (
   refine ⟨hdiff, ?_⟩
   rw [eq_graphPlan_of_ae_snd_eq (measurable_gradient _).aemeasurable hgraph, hπ]
 
-variable [SecondCountableTopology E]
+end Hilbert
 
-/-- **An optimal quadratic plan is induced by the gradient of a convex function** whenever `μ`
-sees every convex `u : E → EReal` (never `⊥`) finite on a neighbourhood and differentiable almost
-everywhere on `{x | u x ≠ ⊤}`. -/
+section FiniteDimensional
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ ν : Measure E} {π : Measure (E × E)}
+
+/-- **An optimal quadratic plan is induced by the gradient of a convex function** on a
+finite-dimensional real inner product space whenever `μ` sees every convex `u : E → EReal`
+(never `⊥`) finite on a neighbourhood and differentiable almost everywhere on `{x | u x ≠ ⊤}`. -/
 theorem IsOptimalCoupling.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt
     [IsFiniteMeasure μ]
     (hμ_diff : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
@@ -485,8 +493,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient_of_forall_convex_ae_diffe
       (hμ_diff u hconv) hsub'
   exact ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩
 
-/-- **Uniqueness of the optimal quadratic plan** under an almost-everywhere differentiability
-hypothesis for convex functions along `μ`. -/
+/-- **Uniqueness of the optimal quadratic plan** on a finite-dimensional real inner product space
+under an almost-everywhere differentiability hypothesis for convex functions along `μ`. -/
 theorem IsOptimalCoupling.unique_of_forall_convex_ae_differentiableAt [IsFiniteMeasure μ]
     (hμ_diff : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
       ∀ᵐ x ∂μ, u x ≠ ⊤ →
@@ -513,9 +521,9 @@ theorem IsOptimalCoupling.unique_of_forall_convex_ae_differentiableAt [IsFiniteM
     eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_left le_rfl) hae),
     h.fst_eq, h'.fst_eq]
 
-/-- **Brenier's theorem** on a separable real Hilbert space whenever `μ` sees every convex
-`u : E → EReal` (never `⊥`) finite on a neighbourhood and differentiable almost everywhere on
-`{x | u x ≠ ⊤}`. -/
+/-- **Brenier's theorem** on a finite-dimensional real inner product space whenever `μ` sees every
+convex `u : E → EReal` (never `⊥`) finite on a neighbourhood and differentiable almost everywhere
+on `{x | u x ≠ ⊤}`. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_of_forall_convex_ae_differentiableAt
     [IsProbabilityMeasure μ]
     (hμ_diff : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
@@ -555,8 +563,8 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_of_forall_convex_ae_dif
     ((((hiff S hS.toHasLaw).1 hS).unique_of_forall_convex_ae_differentiableAt
       hμ_diff hπ hfin).trans hgraph)
 
-/-- **Brenier's theorem for the cost `edist ^ 2`** under an almost-everywhere differentiability
-hypothesis for convex functions along `μ`. -/
+/-- **Brenier's theorem for the cost `edist ^ 2`** on a finite-dimensional real inner product space
+under an almost-everywhere differentiability hypothesis for convex functions along `μ`. -/
 theorem IsOptimalCoupling.exists_eq_graphPlan_of_forall_convex_ae_differentiableAt
     [IsFiniteMeasure μ]
     (hμ_diff : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
@@ -577,13 +585,7 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_forall_convex_ae_differentiable
     hopt.exists_eq_graphPlan_gradient_of_forall_convex_ae_differentiableAt hμ_diff hfin'
   exact ⟨_, measurable_gradient _, hgraph⟩
 
-end SeparableHilbert
-
-section FiniteDimensional
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {ρ : Measure E} [ρ.IsAddHaarMeasure]
-  {μ ν : Measure E} {π : Measure (E × E)}
+variable {ρ : Measure E} [ρ.IsAddHaarMeasure]
 
 /-- **A plan on a subdifferential graph is the graph plan of the gradient.** Let `π` be a plan
 with first marginal `μ` on a finite-dimensional real inner product space, with `μ` absolutely

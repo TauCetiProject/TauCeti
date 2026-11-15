@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 -- dimension.
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 

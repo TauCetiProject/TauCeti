@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.EffectiveDomain
 public import TauCeti.Analysis.Convex.Subdifferential
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -26,6 +27,10 @@ on `K`. Hence
 the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact. The same
 compactness, with Rademacher's theorem, shows that `f` has a subgradient at every point of `D`;
 in particular a real function convex on an open set has a supporting hyperplane at each point.
+Combining local nonemptiness of the subdifferential with continuity of local subgradient selections
+at single-valued points yields Rockafellar's differentiability criterion
+(`TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential`): at `x ∈ D`, the real
+representative `(f ·).toReal` is differentiable at `x` precisely when `∂f(x)` is a subsingleton.
 
 For a real function `u` continuous on the compact closure of a set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
@@ -58,6 +63,9 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
   point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
   around which `f` is finite;
+* `TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential` — **Rockafellar's
+  differentiability criterion**: on `D`, `(f ·).toReal` is differentiable at `x` if and only if
+  `(subdifferential (innerₗ E) f x).Subsingleton`;
 * `ConvexOn.exists_forall_add_inner_le` — a real function convex on an open set has a subgradient
   relative to that set at each of its points;
 * `TauCeti.exists_forall_add_apply_le_of_forall_frontier` — continuous-linear-functional slopes
@@ -74,7 +82,8 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 
 ## References
 
-* R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, 1970, Theorem 24.7.
+* R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, 1970, Theorems 24.7 and
+  25.1.
 * C. E. Gutiérrez, *The Monge–Ampère Equation*, 2nd ed., Progress in Nonlinear Differential
   Equations and Their Applications 89, Birkhäuser, 2016, §§1.1–1.2.
 -/
@@ -251,6 +260,30 @@ theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x,
     ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
   Filter.eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
     fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
+
+open scoped Topology in
+/-- **Rockafellar's differentiability criterion** (Rockafellar, *Convex Analysis*, Theorem 25.1).
+Let `f : E → EReal` have convex real epigraph and never take the value `⊥` on a finite-dimensional
+real inner product space `E`. At an interior point `x` of `{x | f x ≠ ⊤}`, the real representative
+`x' ↦ (f x').toReal` is differentiable at `x` if and only if the subdifferential
+`subdifferential (innerₗ E) f x` contains at most one element. -/
+theorem differentiableAt_toReal_iff_subsingleton_subdifferential {x : E}
+    (hx : x ∈ interior {x | f x ≠ ⊤}) :
+    DifferentiableAt ℝ (fun x' => (f x').toReal) x ↔
+      (subdifferential (innerₗ E) f x).Subsingleton := by
+  have hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤ := mem_interior_iff_mem_nhds.1 hx
+  refine ⟨fun hd y₁ hy₁ y₂ hy₂ => ?_, fun hsub => ?_⟩
+  · rw [← gradient_toReal_eq_of_mem_subdifferential hy₁ hdom hd,
+      ← gradient_toReal_eq_of_mem_subdifferential hy₂ hdom hd]
+  · classical
+    let T : E → E := fun z =>
+      if h : (subdifferential (innerₗ E) f z).Nonempty then h.choose else 0
+    have hT : ∀ᶠ z in 𝓝 x, T z ∈ subdifferential (innerₗ E) f z := by
+      filter_upwards [eventually_nonempty_subdifferential hf hbot hdom] with z hz
+      simp only [T, hz, ↓reduceDIte]
+      exact hz.choose_spec
+    exact (hasGradientAt_toReal_of_continuousAt_subgradient
+      (continuousAt_of_subsingleton_subdifferential hf hbot hx hsub hT) hT).differentiableAt
 
 end FiniteDimensional
 

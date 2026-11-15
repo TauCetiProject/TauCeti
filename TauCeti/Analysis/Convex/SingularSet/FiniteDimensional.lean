@@ -5,25 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Differentiability
-public import TauCeti.Analysis.Convex.SingularSet.Basic
-public import TauCeti.Analysis.Convex.SubgradientImage
-public import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import TauCeti.Analysis.Convex.SingularSet.Basic
+public import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
 import TauCeti.Analysis.Convex.Separation
+import TauCeti.Analysis.Convex.SubgradientImage
 
 /-!
 # Singular sets and effective-domain frontiers of convex functions in finite dimension
 
 Let `E` be a finite-dimensional real inner product space and let `f : E → EReal` have convex real
-epigraph and never take the value `⊥`. At an interior point `x` of the effective domain
+epigraph and never take the value `⊥`. By Rockafellar's differentiability criterion
+(`TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential` in
+`TauCeti.Analysis.Convex.SubgradientImage`), at an interior point `x` of the effective domain
 `D = {x | f x ≠ ⊤}`, the real representative `x' ↦ (f x').toReal` is differentiable at `x`
-precisely when the subdifferential `∂f(x)` for the inner product contains at most one vector
-(`TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential`, Rockafellar's Theorem 25.1).
-Indeed, any subgradient selection near `x` is continuous at `x` by
-`TauCeti.continuousAt_of_subsingleton_subdifferential`, where it is the gradient by
-`TauCeti.hasGradientAt_toReal_of_continuousAt_subgradient`.
+precisely when the subdifferential `∂f(x)` for the inner product contains at most one vector.
 
 Points where `∂f(x)` is not a subsingleton have two subgradients differing along some vector `v` of
 an orthonormal basis of `E`. Applying
@@ -47,9 +44,6 @@ sees `f` finite on a neighbourhood and differentiable almost everywhere on `{x |
 
 ## Main statements
 
-* `TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential` — **Rockafellar's
-  differentiability criterion**: on `interior {x | f x ≠ ⊤}`, `(f ·).toReal` is differentiable at
-  `x` if and only if `(subdifferential (innerₗ E) f x).Subsingleton`;
 * `OrthonormalBasis.exists_lipschitzWith_graphs_cover_not_subsingleton_subdifferential`,
   `TauCeti.exists_lipschitzWith_graphs_cover_not_subsingleton_subdifferential`, and
   `TauCeti.ae_subsingleton_subdifferential_of_null_lipschitz_graphs` — points where `∂f(x)` has at
@@ -86,37 +80,6 @@ open Filter MeasureTheory Metric Module Set
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
-
-section DifferentiabilityCriterion
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {f : E → EReal}
-
-/-- **Rockafellar's differentiability criterion** (Rockafellar, *Convex Analysis*, Theorem 25.1).
-Let `f : E → EReal` have convex real epigraph and never take the value `⊥` on a finite-dimensional
-real inner product space `E`. At an interior point `x` of `{x | f x ≠ ⊤}`, the real representative
-`x' ↦ (f x').toReal` is differentiable at `x` if and only if the subdifferential
-`subdifferential (innerₗ E) f x` contains at most one element. -/
-theorem differentiableAt_toReal_iff_subsingleton_subdifferential
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥)
-    {x : E} (hx : x ∈ interior {x | f x ≠ ⊤}) :
-    DifferentiableAt ℝ (fun x' => (f x').toReal) x ↔
-      (subdifferential (innerₗ E) f x).Subsingleton := by
-  have hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤ := mem_interior_iff_mem_nhds.1 hx
-  refine ⟨fun hd y₁ hy₁ y₂ hy₂ => ?_, fun hsub => ?_⟩
-  · rw [← gradient_toReal_eq_of_mem_subdifferential hy₁ hdom hd,
-      ← gradient_toReal_eq_of_mem_subdifferential hy₂ hdom hd]
-  · classical
-    let T : E → E := fun z =>
-      if h : (subdifferential (innerₗ E) f z).Nonempty then h.choose else 0
-    have hT : ∀ᶠ z in 𝓝 x, T z ∈ subdifferential (innerₗ E) f z := by
-      filter_upwards [eventually_nonempty_subdifferential hf hbot hdom] with z hz
-      simp only [T, hz, ↓reduceDIte]
-      exact hz.choose_spec
-    exact (hasGradientAt_toReal_of_continuousAt_subgradient
-      (continuousAt_of_subsingleton_subdifferential hf hbot hx hsub hT) hT).differentiableAt
-
-end DifferentiabilityCriterion
 
 section HyperplaneGraphs
 
