@@ -27,8 +27,8 @@ with eigenvalue `1 + b` in the radial direction and `1` in the tangential direct
 symmetric, measurable and uniformly elliptic with constants `1` and `1 + b`
 (`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient_of_nonneg`), homogeneous of degree `0`
 (`TauCeti.PDE.radialCoefficient_smul`) and, for `b ≠ 0`, discontinuous at the origin
-(`TauCeti.PDE.not_continuousAt_radialCoefficient`). For `b ≠ 0` the diagonal entries of every
-radial coefficient `α I + b x̂ x̂ᵀ` do not have vanishing mean oscillation
+(`TauCeti.PDE.not_continuousAt_radialCoefficient`). For `b ≠ 0` and `n ≥ 2` the diagonal entries
+of every radial coefficient `α I + b x̂ x̂ᵀ` do not have vanishing mean oscillation
 (`TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`). The proof finds in every ball `B(0, r)` a
 ball of radius `r / 8` on which the entry stays `|b| / 10` away from its average over `B(0, r)`,
 so that the mean oscillation over `B(0, r)` is at least `|b| / (10 · 8ⁿ)`, however small `r` is.
@@ -51,8 +51,8 @@ to `n - 1`.
 
 ## Main declarations
 
-* `TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`: the diagonal entries of a radial
-  coefficient are not in VMO.
+* `TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`: for `b ≠ 0` and `n ≥ 2`, the diagonal
+  entries of a radial coefficient are not in VMO.
 * `TauCeti.PDE.sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow`: the operator applied
   to `‖x‖ ^ γ` away from the origin.
 * `TauCeti.PDE.ae_sum_radialCoefficient_mul_iteratedGradient_eq_of_value_ae_eq_norm_rpow`: the
