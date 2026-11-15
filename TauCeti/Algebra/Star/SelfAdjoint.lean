@@ -38,6 +38,11 @@ element `2 p - 1` is again self-adjoint.
 
 public section
 
+/-- Negation preserves the self-adjointness instance of a parameter. -/
+instance TauCeti.instFactIsSelfAdjointNeg {R : Type*} [AddGroup R] [StarAddMonoid R]
+    {x : R} [Fact (IsSelfAdjoint x)] : Fact (IsSelfAdjoint (-x)) :=
+  ⟨(Fact.out : IsSelfAdjoint x).neg⟩
+
 section Nilpotent
 
 variable {R : Type*} [MonoidWithZero R] [StarMul R] [IsProperStar R]
