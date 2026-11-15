@@ -15,22 +15,22 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Convergence
 # Solving Poisson's equation along an exhaustion
 
 Let `Ω` be a subset of a finite-dimensional real inner product space, exhausted by sets
-`K n ⊆ interior (K (n + 1))`, so that `Ω` is open. Suppose `uₙ` is of class `C^k`, `k ≥ 2`, at
-every point of `K n` and solves Poisson's equation `Δuₙ = f` near `K n`. Two successive local
-solutions differ near `K n` by a harmonic function. If `Hₙ` is harmonic on all of `Ω` and
-approximates `uₙ₊₁ - uₙ` uniformly on `K n` with summable errors, then the corrected telescoping
-series
+`K n ⊆ interior (K (n + 1))`, so that `Ω` is open, and let `F` be a finite-dimensional real
+normed space. Suppose `uₙ : E → F` is of class `C^k`, `k ≥ 2`, at every point of `K n` and solves
+Poisson's equation `Δuₙ = f` near `K n`. Two successive local solutions differ near `K n` by a
+harmonic function. If `Hₙ` is harmonic on all of `Ω` and approximates `uₙ₊₁ - uₙ` uniformly on
+`K n` with summable errors, then the corrected telescoping series
 
 `v = u₀ + ∑ₙ (uₙ₊₁ - uₙ - Hₙ)`
 
-converges on `Ω`, is of class `C^k` there, and solves `Δv = f` on all of `Ω`.
+is of class `C^k` on `Ω` and solves `Δv = f` on all of `Ω`.
 
 This is the step that turns approximation of harmonic functions on the sets of an exhaustion
 (Runge approximation) into global solvability of Poisson's equation on `Ω`, and from there into
 surjectivity of the top-degree Dolbeault operator. Local solutions near compact sets are provided
-by `TauCeti.exists_contDiff_laplacian_eventuallyEq_nhdsSet`; compact exhaustions by sets with no
-relatively compact holes, on which harmonic Runge approximation is available, by
-`IsOpen.exists_isFilledIn_compact_exhaustion`.
+by `TauCeti.exists_contDiff_laplacian_eventuallyEq_nhdsSet`, and compact exhaustions by sets with
+no relatively compact holes, the setting of harmonic Runge approximation, which would supply the
+`Hₙ`, by `IsOpen.exists_isFilledIn_compact_exhaustion`.
 
 Only uniform approximation on each `K n` is needed. On `interior (K N)` the tail
 `∑_{n ≥ N} (uₙ₊₁ - uₙ - Hₙ)` is a uniform limit of harmonic functions, hence harmonic
@@ -40,9 +40,8 @@ function.
 
 ## Main declarations
 
-* `TauCeti.summable_sub_sub`: the corrected differences are summable at every point of `Ω`.
-* `TauCeti.contDiffOn_add_tsum_sub_sub`: `v` is of class `C^k` on `Ω`.
-* `TauCeti.laplacian_add_tsum_sub_sub`: `Δv = f` on `Ω`.
+* `TauCeti.contDiffOn_add_tsum_sub_sub_of_harmonicOnNhd`: `v` is of class `C^k` on `Ω`.
+* `TauCeti.laplacian_add_tsum_sub_sub_eq_of_harmonicOnNhd`: `Δv = f` on `Ω`.
 
 ## References
 
@@ -59,27 +58,17 @@ namespace TauCeti
 
 open InnerProductSpace Laplacian Filter Set Topology
 
-variable {E : Type*} {Ω : Set E} {K : ℕ → Set E} {u H : ℕ → E → ℝ} {ε : ℕ → ℝ}
+variable {E F : Type*} [NormedAddCommGroup F] {Ω : Set E} {K : ℕ → Set E} {u H : ℕ → E → F}
+  {f : E → F} {ε : ℕ → ℝ} {k : WithTop ℕ∞}
 
 /-- At a point of `K N`, the corrected differences of index at least `N` are bounded by the
 errors. -/
-private theorem abs_sub_sub_le (hK : Monotone K)
-    (hHu : ∀ n, ∀ x ∈ K n, |u (n + 1) x - u n x - H n x| ≤ ε n) {N : ℕ} {x : E} (hx : x ∈ K N)
+private theorem norm_sub_sub_le (hK : Monotone K)
+    (hHu : ∀ n, ∀ x ∈ K n, ‖u (n + 1) x - u n x - H n x‖ ≤ ε n) {N : ℕ} {x : E} (hx : x ∈ K N)
     (m : ℕ) : ‖u (m + N + 1) x - u (m + N) x - H (m + N) x‖ ≤ ε (m + N) :=
   hHu _ x (hK (Nat.le_add_left N m) hx)
 
-/-- **Summability of the corrected differences.** If functions `Hₙ` approximate the
-differences `uₙ₊₁ - uₙ` on the sets of an increasing sequence `K n` with summable errors, then the
-corrected differences `uₙ₊₁ x - uₙ x - Hₙ x` are summable at every point `x` of `⋃ n, K n`. -/
-theorem summable_sub_sub (hK : Monotone K) (hε : Summable ε)
-    (hHu : ∀ n, ∀ x ∈ K n, |u (n + 1) x - u n x - H n x| ≤ ε n) {x : E} (hx : x ∈ ⋃ n, K n) :
-    Summable fun n ↦ u (n + 1) x - u n x - H n x := by
-  obtain ⟨N, hN⟩ := mem_iUnion.1 hx
-  exact (summable_nat_add_iff N).1 <|
-    ((summable_nat_add_iff N).2 hε).of_norm_bounded (abs_sub_sub_le hK hHu hN)
-
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {f : E → ℝ}
-  {k : WithTop ℕ∞}
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F]
 
 /-- Two local solutions of `Δu = f` differ by a harmonic function, and so do their differences
 corrected by a harmonic function. -/
@@ -89,15 +78,13 @@ private theorem harmonicOnNhd_sub_sub (hK : ∀ n, K n ⊆ interior (K (n + 1)))
     HarmonicOnNhd (fun x ↦ u (n + 1) x - u n x - H n x) (K n) := by
   intro x hx
   have hx₁ : x ∈ K (n + 1) := (hK n).trans interior_subset hx
-  -- Both local solutions are `C²` near `x`.
-  have hcd : ∀ m, x ∈ K m → ∀ᶠ y in 𝓝 x, ContDiffAt ℝ 2 (u m) y := fun m hm ↦
-    ((hu m x hm).of_le hk).eventually (by simp)
-  have hd : HarmonicAt (u (n + 1) - u n) x := by
-    refine ⟨((hcd _ hx₁).self_of_nhds).sub (hcd _ hx).self_of_nhds, ?_⟩
-    filter_upwards [(huf (n + 1)).filter_mono (nhds_le_nhdsSet hx₁),
-      (huf n).filter_mono (nhds_le_nhdsSet hx), hcd _ hx₁, hcd _ hx] with y h₁ h₀ hc₁ hc₀
-    rw [hc₁.laplacian_sub hc₀, h₁, h₀, sub_self, Pi.zero_apply]
+  have hd : HarmonicAt (u (n + 1) - u n) x :=
+    ((hu (n + 1) x hx₁).of_le hk).harmonicAt_sub_of_laplacian_eventuallyEq
+      ((hu n x hx).of_le hk) <| ((huf (n + 1)).filter_mono (nhds_le_nhdsSet hx₁)).trans
+        ((huf n).filter_mono (nhds_le_nhdsSet hx)).symm
   exact hd.sub (hH n x (hKΩ ▸ mem_iUnion_of_mem n hx))
+
+variable [FiniteDimensional ℝ F]
 
 /-- Near each point of `Ω`, the corrected telescoping series is a local solution `u_N` plus a
 harmonic function. -/
@@ -105,8 +92,8 @@ private theorem exists_harmonicAt_eventuallyEq_add (hK : ∀ n, K n ⊆ interior
     (hKΩ : ⋃ n, K n = Ω) (hk : 2 ≤ k)
     (hu : ∀ n, ∀ x ∈ K n, ContDiffAt ℝ k (u n) x) (huf : ∀ n, Δ (u n) =ᶠ[𝓝ˢ (K n)] f)
     (hH : ∀ n, HarmonicOnNhd (H n) Ω) (hε : Summable ε)
-    (hHu : ∀ n, ∀ x ∈ K n, |u (n + 1) x - u n x - H n x| ≤ ε n) {x : E} (hx : x ∈ Ω) :
-    ∃ N, x ∈ K N ∧ ∃ w : E → ℝ, HarmonicAt w x ∧
+    (hHu : ∀ n, ∀ x ∈ K n, ‖u (n + 1) x - u n x - H n x‖ ≤ ε n) {x : E} (hx : x ∈ Ω) :
+    ∃ N, x ∈ K N ∧ ∃ w : E → F, HarmonicAt w x ∧
       (fun y ↦ u 0 y + ∑' n, (u (n + 1) y - u n y - H n y)) =ᶠ[𝓝 x] u N + w := by
   have hmono : Monotone K := monotone_nat_of_le_succ fun n ↦ (hK n).trans interior_subset
   -- Choose `N` with `x ∈ interior (K N)`.
@@ -115,12 +102,12 @@ private theorem exists_harmonicAt_eventuallyEq_add (hK : ∀ n, K n ⊆ interior
   have hxN : x ∈ interior (K N) := hK J hJ
   have hKNΩ : K N ⊆ Ω := hKΩ ▸ subset_iUnion K N
   -- The tail of the series is a uniform limit on `K N` of harmonic functions.
-  set g : ℕ → E → ℝ := fun m y ↦ u (m + N + 1) y - u (m + N) y - H (m + N) y
+  set g : ℕ → E → F := fun m y ↦ u (m + N + 1) y - u (m + N) y - H (m + N) y
   have hεN : Summable fun m ↦ ε (m + N) := (summable_nat_add_iff N).2 hε
   have htail : HarmonicOnNhd (fun y ↦ ∑' m, g m y) (interior (K N)) := by
     refine harmonicOnNhd_of_tendstoLocallyUniformlyOn isOpen_interior
       (Eventually.of_forall fun M ↦ HarmonicOnNhd.sum fun m _ ↦ ?_)
-      ((tendstoUniformlyOn_tsum_nat hεN fun m y hy ↦ abs_sub_sub_le hmono hHu hy m).mono
+      ((tendstoUniformlyOn_tsum_nat hεN fun m y hy ↦ norm_sub_sub_le hmono hHu hy m).mono
         interior_subset).tendstoLocallyUniformlyOn
     exact (harmonicOnNhd_sub_sub hK hKΩ hk hu huf hH (m + N)).mono <| interior_subset.trans <|
       hmono (Nat.le_add_left N m)
@@ -132,32 +119,36 @@ private theorem exists_harmonicAt_eventuallyEq_add (hK : ∀ n, K n ⊆ interior
   filter_upwards [isOpen_interior.mem_nhds hxN] with y hy
   have hyN : y ∈ K N := interior_subset hy
   have hsum : Summable fun m ↦ g m y :=
-    hεN.of_norm_bounded (abs_sub_sub_le hmono hHu hyN)
+    hεN.of_norm_bounded (norm_sub_sub_le hmono hHu hyN)
   rw [Pi.add_apply, ← hsum.sum_add_tsum_nat_add', Finset.sum_sub_distrib,
     Finset.sum_range_sub (fun n ↦ u n y)]
-  ring
+  abel
 
 /-- **Regularity of the corrected telescoping series.** Let `Ω` be exhausted by sets
-`K n ⊆ interior (K (n + 1))`. Let `uₙ` be of class `C^k`, `k ≥ 2`, at every point of `K n`,
-with `Δuₙ = f` near `K n`, and let `Hₙ` be harmonic on `Ω` with `|uₙ₊₁ - uₙ - Hₙ| ≤ εₙ` on
-`K n`, where `ε` is summable. Then `v = u₀ + ∑ₙ (uₙ₊₁ - uₙ - Hₙ)` is of class `C^k` on `Ω`. -/
-theorem contDiffOn_add_tsum_sub_sub (hK : ∀ n, K n ⊆ interior (K (n + 1)))
-    (hKΩ : ⋃ n, K n = Ω) (hk : 2 ≤ k) (hu : ∀ n, ∀ x ∈ K n, ContDiffAt ℝ k (u n) x)
+`K n ⊆ interior (K (n + 1))`. Let `uₙ`, with values in a finite-dimensional real normed space,
+be of class `C^k`, `k ≥ 2`, at every point of `K n`, with `Δuₙ = f` near `K n`, and let `Hₙ` be
+harmonic on `Ω` with `‖uₙ₊₁ - uₙ - Hₙ‖ ≤ εₙ` on `K n`, where `ε` is summable.
+Then `v = u₀ + ∑ₙ (uₙ₊₁ - uₙ - Hₙ)` is of class `C^k` on `Ω`. -/
+theorem contDiffOn_add_tsum_sub_sub_of_harmonicOnNhd
+    (hK : ∀ n, K n ⊆ interior (K (n + 1))) (hKΩ : ⋃ n, K n = Ω) (hk : 2 ≤ k)
+    (hu : ∀ n, ∀ x ∈ K n, ContDiffAt ℝ k (u n) x)
     (huf : ∀ n, Δ (u n) =ᶠ[𝓝ˢ (K n)] f) (hH : ∀ n, HarmonicOnNhd (H n) Ω) (hε : Summable ε)
-    (hHu : ∀ n, ∀ x ∈ K n, |u (n + 1) x - u n x - H n x| ≤ ε n) :
+    (hHu : ∀ n, ∀ x ∈ K n, ‖u (n + 1) x - u n x - H n x‖ ≤ ε n) :
     ContDiffOn ℝ k (fun x ↦ u 0 x + ∑' n, (u (n + 1) x - u n x - H n x)) Ω := by
   intro x hx
   obtain ⟨N, hxN, w, hw, hv⟩ := exists_harmonicAt_eventuallyEq_add hK hKΩ hk hu huf hH hε hHu hx
   exact (((hu N x hxN).add hw.analyticAt.contDiffAt).congr_of_eventuallyEq hv).contDiffWithinAt
 
 /-- **Poisson's equation along an exhaustion.** Let `Ω` be exhausted by sets
-`K n ⊆ interior (K (n + 1))`. Let `uₙ` be of class `C^k`, `k ≥ 2`, at every point of `K n`,
-with `Δuₙ = f` near `K n`, and let `Hₙ` be harmonic on `Ω` with `|uₙ₊₁ - uₙ - Hₙ| ≤ εₙ` on
-`K n`, where `ε` is summable. Then `v = u₀ + ∑ₙ (uₙ₊₁ - uₙ - Hₙ)` solves `Δv = f` on all of `Ω`. -/
-theorem laplacian_add_tsum_sub_sub (hK : ∀ n, K n ⊆ interior (K (n + 1)))
-    (hKΩ : ⋃ n, K n = Ω) (hk : 2 ≤ k) (hu : ∀ n, ∀ x ∈ K n, ContDiffAt ℝ k (u n) x)
+`K n ⊆ interior (K (n + 1))`. Let `uₙ`, with values in a finite-dimensional real normed space,
+be of class `C^k`, `k ≥ 2`, at every point of `K n`, with `Δuₙ = f` near `K n`, and let `Hₙ` be
+harmonic on `Ω` with `‖uₙ₊₁ - uₙ - Hₙ‖ ≤ εₙ` on `K n`, where `ε` is summable.
+Then `v = u₀ + ∑ₙ (uₙ₊₁ - uₙ - Hₙ)` solves `Δv = f` on all of `Ω`. -/
+theorem laplacian_add_tsum_sub_sub_eq_of_harmonicOnNhd
+    (hK : ∀ n, K n ⊆ interior (K (n + 1))) (hKΩ : ⋃ n, K n = Ω) (hk : 2 ≤ k)
+    (hu : ∀ n, ∀ x ∈ K n, ContDiffAt ℝ k (u n) x)
     (huf : ∀ n, Δ (u n) =ᶠ[𝓝ˢ (K n)] f) (hH : ∀ n, HarmonicOnNhd (H n) Ω) (hε : Summable ε)
-    (hHu : ∀ n, ∀ x ∈ K n, |u (n + 1) x - u n x - H n x| ≤ ε n) {x : E} (hx : x ∈ Ω) :
+    (hHu : ∀ n, ∀ x ∈ K n, ‖u (n + 1) x - u n x - H n x‖ ≤ ε n) {x : E} (hx : x ∈ Ω) :
     Δ (fun x ↦ u 0 x + ∑' n, (u (n + 1) x - u n x - H n x)) x = f x := by
   obtain ⟨N, hxN, w, hw, hv⟩ :=
     exists_harmonicAt_eventuallyEq_add hK hKΩ hk hu huf hH hε hHu hx

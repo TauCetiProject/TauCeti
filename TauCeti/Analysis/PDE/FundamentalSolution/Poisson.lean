@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
@@ -19,12 +19,13 @@ that Poisson's equation `Δu = g` has a solution `u` of class `C^k` on all of `E
 function `g` with compact support, `2 ≤ k ≤ ∞`, and deduces that `Δu = f` can be solved near any
 compact subset `K` of an open set `Ω` on which `f` is `C^k`.
 
-The solution is minus the Newtonian potential of `g`. The potentials are constructed on the
-model spaces `EuclideanSpace ℝ (Fin d)` (`TauCeti.laplacian_newtonianKernel_convolution`, for
+A solution is obtained as minus the Newtonian potential of `g`. The potentials are constructed on
+the model spaces `EuclideanSpace ℝ (Fin d)` (`TauCeti.laplacian_newtonianKernel_convolution`, for
 `d ≥ 3`) and `ℂ` (`TauCeti.laplacian_planarNewtonianKernel_convolution`, for `d = 2`), and they
 are transported to `E` along a linear isometry, which commutes with the Laplacian
 (`TauCeti.laplacian_comp_linearIsometryEquiv_right`). For the local statement, `f` is first
-multiplied by a smooth cutoff equal to one near `K` and supported in `Ω`.
+replaced by a compactly supported `C^k` function equal to it near `K`
+(`ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact`).
 
 Local solutions of this kind are the building blocks of the solution of `Δv = f` on an arbitrary
 open set `Ω` along a compact exhaustion
@@ -70,8 +71,7 @@ private theorem exists_contDiff_laplacian_eq_of_linearIsometryEquiv {E' : Type*}
 
 /-- **Poisson's equation with compactly supported data.** In a finite-dimensional real inner
 product space of dimension at least two, every `C^k` function `g` with compact support,
-`2 ≤ k ≤ ∞`, is the Laplacian of a `C^k` function on the whole space. The solution is minus the
-Newtonian potential of `g`. -/
+`2 ≤ k ≤ ∞`, is the Laplacian of a `C^k` function on the whole space. -/
 theorem exists_contDiff_laplacian_eq_of_hasCompactSupport (hE : 2 ≤ Module.finrank ℝ E)
     {k : ℕ∞} (hk : 2 ≤ k) {g : E → F} (hg : ContDiff ℝ k g) (hc : HasCompactSupport g) :
     ∃ u : E → F, ContDiff ℝ k u ∧ Δ u = g := by
@@ -99,14 +99,8 @@ theorem exists_contDiff_laplacian_eventuallyEq_nhdsSet (hE : 2 ≤ Module.finran
     (hk : 2 ≤ k) {Ω K : Set E} (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) {f : E → F}
     (hf : ContDiffOn ℝ k f Ω) :
     ∃ u : E → F, ContDiff ℝ k u ∧ Δ u =ᶠ[𝓝ˢ K] f := by
-  obtain ⟨ψ, hψ, -, hψK, hψc, hψΩ⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hΩ hKΩ
-  obtain ⟨u, hu, hΔ⟩ := exists_contDiff_laplacian_eq_of_hasCompactSupport hE hk
-    (hf.contDiff_smul_of_tsupport_subset hΩ (hψ.of_le (WithTop.coe_le_coe.2 le_top)).contDiffOn hψΩ)
-    (hψc.smul_right (f' := f))
-  refine ⟨u, hu, ?_⟩
-  rw [hΔ]
-  refine eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_
-  filter_upwards [hψK x hx] with y hy
-  simp [hy]
+  obtain ⟨g, hg, hgc, -, -, hgf⟩ := hf.exists_contDiff_eventuallyEq_on_isCompact hK hΩ hKΩ
+  obtain ⟨u, hu, hΔ⟩ := exists_contDiff_laplacian_eq_of_hasCompactSupport hE hk hg hgc
+  exact ⟨u, hu, hΔ ▸ eventually_nhdsSet_iff_forall.2 hgf⟩
 
 end TauCeti
