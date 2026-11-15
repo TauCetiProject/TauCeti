@@ -65,7 +65,14 @@ deployment = "cloudflare"
 [services.fleet]
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
-pr_order = ["github", "fleet"]
+# Defaults only: NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables
+# control live routing without a source PR; zero cap disables new Namespace work.
+namespace_enabled = true
+namespace_build_cap = 8
+pr_order = ["github", "fleet", "namespace"]
+# Keep a few PR builds waiting for the next fleet runner when GitHub is full.
+# This observational limit can briefly overshoot under simultaneous pickers.
+pr_queue_limit = 3
 staging_order = ["tauchonki2"]
 
 # Staging is reserved for these hosts; other membership comes from the registered runners.
@@ -103,10 +110,10 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="1bf9f4c05329ad5e707ca52cbed602de1f93a9db"
+ref="2e715e060777c57cb634987090139964547b6fc8"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
-ref="042a6c0a608a63074da75d437369885c92642c51"
+ref="02ef1d946e97499d1b2620ba7666f9eb7f3d7e08"
 [tools.progress]
 repo="TauCetiProject/TauCetiProgress"
 ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"
