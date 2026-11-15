@@ -83,6 +83,19 @@ theorem isLatticeRational_iff :
 theorem isLatticeRational_hull_image (i : N →+ V) (s : Finset N) :
     IsLatticeRational i (PointedCone.hull ℝ (i '' (s : Set N))) := ⟨s, rfl⟩
 
+/-- A finite generating set contained in the image of the lattice generates a lattice-rational
+cone. -/
+theorem isLatticeRational_hull_of_forall_mem_range (s : Finset V)
+    (hs : ∀ x ∈ s, ∃ n : N, i n = x) :
+    IsLatticeRational i (PointedCone.hull ℝ (s : Set V)) := by
+  classical
+  have hs' : (s : Set V) ⊆ i '' (Set.univ : Set N) := by
+    intro x hx
+    obtain ⟨n, hn⟩ := hs x hx
+    exact ⟨n, Set.mem_univ _, hn⟩
+  obtain ⟨t, -, ht⟩ := Finset.subset_set_image_iff.mp hs'
+  exact isLatticeRational_iff.mpr ⟨t, by rw [← Finset.coe_image, ht]⟩
+
 /-- The zero cone is lattice rational. -/
 @[simp]
 theorem isLatticeRational_bot (i : N →+ V) : IsLatticeRational i (⊥ : PointedCone ℝ V) :=

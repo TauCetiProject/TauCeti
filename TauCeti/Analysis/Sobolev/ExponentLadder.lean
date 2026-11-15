@@ -89,7 +89,6 @@ product exponent exceeds two. Here `a = (p - 2) / (2 p)` and the last two recipr
 private theorem ladder_final_exponents {p a : ℝ} (hp : 2 < p) (ha : a = (p - 2) / (2 * p)) :
     1 / (3 * a / 2) < 2 * p / (p - 2) ∧ 2 * p / (p - 2) < 1 / (a / 2) ∧
       2 < 1 / (1 / p + a / 2) := by
-  have hp0 : 0 < p := by linarith
   have hapos : 0 < a := ha ▸ div_pos (by linarith) (by positivity)
   have hae : a = 1 / 2 - 1 / p := by
     rw [ha]
@@ -102,7 +101,6 @@ private theorem ladder_final_exponents {p a : ℝ} (hp : 2 < p) (ha : a = (p - 2
     one_div_lt_one_div_of_lt (by positivity) (by linarith), ?_⟩
   apply (lt_div_iff₀ (by positivity : 0 < 1 / p + a / 2)).2
   rw [hae]
-  have h := (one_div_lt_one_div_of_lt (by norm_num : (0 : ℝ) < 2) hp)
   linarith
 
 /-- The reciprocal of the initial exponent lies strictly between `1 / p` and `(p - 1) / p`. -/
@@ -155,7 +153,7 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
     push_cast
     ring
   have hmono : StrictMonoOn q (Set.Iic N) := by
-    intro i hi j hj hij
+    intro i _ j hj hij
     have hcast : (i : ℝ) < j := by exact_mod_cast hij
     have hbij : b j < b i := by dsimp only [b]; nlinarith
     exact one_div_lt_one_div_of_lt (hb j hj) hbij
@@ -229,7 +227,6 @@ Beurling transform is unbounded. -/
 theorem productExponent_conjugate {p : ℝ} (hp : 1 < p) :
     p * (p / (p - 1)) / (p + p / (p - 1)) = 1 := by
   have h1 : p - 1 ≠ 0 := by linarith
-  have h2 : p * (p - 1) + p ≠ 0 := by nlinarith
   field_simp
   ring
 

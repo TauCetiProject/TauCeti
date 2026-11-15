@@ -56,6 +56,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [ContMDiffVectorBundle 1 G W I]
   {x : M}
 
+omit [FiniteDimensional 𝕜 G] in
 /-- In local frames of `V` and `W`, the induced Hom connection is `dA + Γ_W A - A Γ_V`.
 The first index is the row (output, `W`) index, and the second is the column (input, `V`)
 index. -/

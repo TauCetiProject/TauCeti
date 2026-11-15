@@ -48,6 +48,10 @@ uses.
   Mayer–Vietoris sequence of two pairs, applied to `a ⌣ b|`, is `δ a ⌣ b`.
 * `TopCat.interToUnionMap`: the map of pairs `(U ∩ V, A ∩ B) ⟶ (U ∪ V, A ∪ B)` along which `b`
   is restricted.
+* `TopCat.interToLeftMap`, `TopCat.interToRightMap`, `TopCat.leftToUnionMap`,
+  `TopCat.rightToUnionMap`: the other inclusions of pairs among `(U ∩ V, A ∩ B)`, `(U, A)`,
+  `(V, B)` and `(U ∪ V, A ∪ B)`, and how they compose to `TopCat.interToUnionMap`
+  (`TopCat.interToLeftMap_comp_leftToUnionMap`, `TopCat.interToRightMap_comp_rightToUnionMap`).
 
 ## References
 
@@ -94,28 +98,46 @@ abbrev interToUnionMap :
     Set.subset_union_left)) fun _ hx ↦ Set.subset_union_left hx.1
 
 /-- The map of pairs `(U ∩ V, A ∩ B) ⟶ (U, A)` induced by the inclusion. -/
-private abbrev interToLeftMap :
+abbrev interToLeftMap :
     TopPair.ofInclusion (Set.inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hAU :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.inter_subset_left)
     fun _ hx ↦ Set.inter_subset_left hx
 
 /-- The map of pairs `(U ∩ V, A ∩ B) ⟶ (V, B)` induced by the inclusion. -/
-private abbrev interToRightMap :
+abbrev interToRightMap :
     TopPair.ofInclusion (Set.inter_subset_inter hAU hBV) ⟶ TopPair.ofInclusion hBV :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.inter_subset_right)
     fun _ hx ↦ Set.inter_subset_right hx
 
 /-- The map of pairs `(U, A) ⟶ (U ∪ V, A ∪ B)` induced by the inclusion. -/
-private abbrev leftToUnionMap :
+abbrev leftToUnionMap :
     TopPair.ofInclusion hAU ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_left)
     fun _ hx ↦ Set.subset_union_left hx
 
 /-- The map of pairs `(V, B) ⟶ (U ∪ V, A ∪ B)` induced by the inclusion. -/
-private abbrev rightToUnionMap :
+abbrev rightToUnionMap :
     TopPair.ofInclusion hBV ⟶ TopPair.ofInclusion (Set.union_subset_union hAU hBV) :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion Set.subset_union_right)
     fun _ hx ↦ Set.subset_union_right hx
+
+/-- Including `(U ∩ V, A ∩ B)` into `(U, A)` and then into `(U ∪ V, A ∪ B)` is
+`interToUnionMap`. -/
+@[reassoc]
+theorem interToLeftMap_comp_leftToUnionMap :
+    interToLeftMap hAU hBV ≫ leftToUnionMap hAU hBV = interToUnionMap hAU hBV := by
+  rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U ∩ V → U ∪ V`.
+  rfl
+
+/-- Including `(U ∩ V, A ∩ B)` into `(V, B)` and then into `(U ∪ V, A ∪ B)` is
+`interToUnionMap`. -/
+@[reassoc]
+theorem interToRightMap_comp_rightToUnionMap :
+    interToRightMap hAU hBV ≫ rightToUnionMap hAU hBV = interToUnionMap hAU hBV := by
+  rw [← TopPair.ofInclusionMap_comp]
+  -- Both sides are induced by the inclusion `U ∩ V → U ∪ V`.
+  rfl
 
 /-- The pair `(U ∩ V, A ∩ B)`. -/
 private abbrev interPair : TopPair.{w} := TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)
@@ -289,21 +311,21 @@ private lemma cupLift_g_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   have hgx := hg
   rw [HomologicalComplex.biprod_desc_f_apply, HomologicalComplex.neg_f_apply, ModuleCat.hom_neg,
     LinearMap.neg_apply] at hgx
   -- Restricting the components of the lift to `(U ∩ V, A ∩ B)`.
   have eU := cupLift_restrict_component k hAU hBV _ u μ (interToLeftMap hAU hBV)
-    (leftToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yU b'
+    (leftToUnionMap hAU hBV) (interToLeftMap_comp_leftToUnionMap hAU hBV) rfl yU b'
   have eV := cupLift_restrict_component k hAU hBV _ u μ (interToRightMap hAU hBV)
-    (rightToUnionMap hAU hBV) (by rw [← TopPair.ofInclusionMap_comp]; congr 1) rfl yV b'
+    (rightToUnionMap hAU hBV) (interToRightMap_comp_rightToUnionMap hAU hBV) rfl yV b'
   -- Cupping is linear in its first argument.
   have hlin : ∀ (a₁ a₂ : ((toSSet.obj (TopPair.ofInclusion
       (Set.inter_subset_inter hAU hBV)).fst).chainComplex R).X p ⟶ M)
@@ -389,13 +411,13 @@ private lemma cupLift_d_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   have hdb : ((unionPair hAU hBV).singularChainComplex S).d
       (q + 1) q ≫ b' = 0 := d_comp_linearYonedaObj_iCycles q (q + 1) β
   refine (HomologicalComplex.biprod_lift_f_apply _ _ _ _).trans (Eq.trans ?_
@@ -468,13 +490,13 @@ private lemma pairMayerVietorisδ_cup_eq (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L
   -- Names for the cochains in the chase, as morphisms of `C`.
   set yU : ((toSSet.obj (of ↥U)).chainComplex R).X p ⟶ M :=
     ((biprod.fst : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyU
+      _).f p).hom x₂
   set yV : ((toSSet.obj (of ↥V)).chainComplex R).X p ⟶ M :=
     ((biprod.snd : (of ↥U).singularCochainComplex R k M ⊞ (of ↥V).singularCochainComplex R k M ⟶
-      _).f p).hom x₂ with hyV
+      _).f p).hom x₂
   set b' : ((unionPair hAU hBV).singularChainComplex S).X q ⟶
     N := ((unionPair hAU hBV).singularCochainComplex
-      S k N).iCycles q β with hb'
+      S k N).iCycles q β
   -- The pair sequence: `x₂ ⌣ β|` lifts `α ⌣ β|`, and its coboundary is the restriction of
   -- `ζ ⌣ β`.
   refine (SSetPair.shortExact_mayerVietorisCochainShortComplex T k L

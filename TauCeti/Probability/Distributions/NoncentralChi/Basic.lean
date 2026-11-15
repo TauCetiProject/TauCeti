@@ -206,7 +206,7 @@ private theorem noncentralChiMeasure_singleton_zero (hs : 0 < s) :
   apply measure_congr
   filter_upwards [ae_nonneg_noncentralChiSquaredMeasure k (δ ^ 2)] with y hy
   simp only [mem_Iic, mem_singleton_iff]
-  exact propext ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
+  exact ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
 
 /-- The atom of the degree-zero law at positive scale has mass `exp (-δ ^ 2 / 2)`, including
 mass one at zero noncentrality. -/

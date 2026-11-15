@@ -13,9 +13,12 @@ import Mathlib.LinearAlgebra.Projection
 # Split exactness of the rows of the cyclic bicomplex
 
 In degree `n`, write `λ` for the signed cyclic operator and `N = 1 + λ + ⋯ + λⁿ`.
+Without any invertibility hypothesis, the unscaled row homotopy
+`H' = ∑ j ≤ n, ∑ k < j, λᵏ` (`TauCeti.cyclicRowHomotopySum`) satisfies
+`(1 - λ) H' = H' (1 - λ) = (n + 1) - N`.
 When `n + 1` is invertible in the commutative coefficient semiring, averaging gives a projection
-`P = N / (n + 1)` onto the cyclic cochains. The operator
-`H = (∑ j ≤ n, ∑ k < j, λᵏ) / (n + 1)` satisfies
+`P = N / (n + 1)` onto the cyclic cochains, and the scaled operator
+`H = H' / (n + 1)` (`TauCeti.cyclicRowHomotopy`) satisfies
 `(1 - λ) H = H (1 - λ) = 1 - P`.
 
 Consequently the row alternating between `1 - λ` and `N` is exact at both kinds
@@ -37,28 +40,78 @@ namespace TauCeti
 -- Scaling cochain endomorphisms requires commuting scalar actions on the cochain module.
 -- Mathlib supplies these instances here for commutative coefficient semirings.
 variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommGroup M]
-  [Module R M] {n : ℕ} [Invertible (n + 1 : R)]
+  [Module R M] {n : ℕ}
+
+variable (R A M n) in
+/-- The unscaled cyclic row homotopy `H' = ∑_{j ≤ n} ∑_{k < j} λᵏ` on `n`-cochains. When `n + 1` is
+invertible in `R`, `TauCeti.cyclicRowHomotopy` is `⅟(n + 1 : R) • cyclicRowHomotopySum`. -/
+def cyclicRowHomotopySum :
+    Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
+  ∑ j ∈ Finset.range (n + 1), ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k
+
+variable (R A M n) in
+/-- The explicit finite-sum formula for the unscaled cyclic row homotopy. -/
+theorem cyclicRowHomotopySum_def :
+    cyclicRowHomotopySum R A M n =
+      ∑ j ∈ Finset.range (n + 1), ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k :=
+  (rfl)
+
+/-- `(1 - λ) H' = (n + 1) - N` on `n`-cochains, without any invertibility hypothesis on `R`. -/
+theorem one_sub_cyclicOperator_mul_cyclicRowHomotopySum :
+    (1 - cyclicOperator R A M n) * cyclicRowHomotopySum R A M n =
+      (n + 1 : R) • 1 - cyclicNorm R A M n := by
+  rw [cyclicRowHomotopySum, Finset.mul_sum]
+  simp only [mul_neg_geom_sum, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_range, ← cyclicNorm_def]
+  simp [← Nat.cast_smul_eq_nsmul R]
+
+/-- `H' (1 - λ) = (n + 1) - N` on `n`-cochains, without any invertibility hypothesis on `R`. -/
+theorem cyclicRowHomotopySum_mul_one_sub_cyclicOperator :
+    cyclicRowHomotopySum R A M n * (1 - cyclicOperator R A M n) =
+      (n + 1 : R) • 1 - cyclicNorm R A M n := by
+  rw [cyclicRowHomotopySum, Finset.sum_mul]
+  simp only [geom_sum_mul_neg, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_range, ← cyclicNorm_def]
+  simp [← Nat.cast_smul_eq_nsmul R]
+
+/-- Pointwise form of `one_sub_cyclicOperator_mul_cyclicRowHomotopySum`. -/
+theorem one_sub_cyclicOperator_apply_cyclicRowHomotopySum
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    (1 - cyclicOperator R A M n) (cyclicRowHomotopySum R A M n φ) =
+      (n + 1 : R) • φ - cyclicNorm R A M n φ := by
+  simpa only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self] using
+    LinearMap.congr_fun one_sub_cyclicOperator_mul_cyclicRowHomotopySum φ
+
+/-- Pointwise form of `cyclicRowHomotopySum_mul_one_sub_cyclicOperator`. -/
+theorem cyclicRowHomotopySum_apply_one_sub_cyclicOperator
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
+    cyclicRowHomotopySum R A M n ((1 - cyclicOperator R A M n) φ) =
+      (n + 1 : R) • φ - cyclicNorm R A M n φ := by
+  simpa only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self] using
+    LinearMap.congr_fun cyclicRowHomotopySum_mul_one_sub_cyclicOperator φ
+
+variable [Invertible (n + 1 : R)]
 
 variable (R A M n) in
 /-- Averaging over cyclic rotations projects onto the cyclic cochains. -/
 noncomputable def cyclicAverage :
-    Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+    Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
   ⅟(n + 1 : R) • cyclicNorm R A M n
 
 /-- The cyclic average is the cyclic norm divided by the number of arguments. -/
 -- Keep averaging intact under simplification so its projection identities remain normal forms.
-theorem cyclicAverage_apply (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+theorem cyclicAverage_apply (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n φ = ⅟(n + 1 : R) • cyclicNorm R A M n φ := (rfl)
 
 /-- Averaging takes values in the cyclic cochains. -/
 theorem cyclicAverage_mem_cyclicCochains
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n φ ∈ cyclicCochains R A M n :=
   (cyclicCochains R A M n).smul_mem _ (cyclicNorm_mem_cyclicCochains φ)
 
 /-- Averaging fixes every cyclic cochain. -/
 theorem cyclicAverage_apply_of_mem_cyclicCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ cyclicCochains R A M n) : cyclicAverage R A M n φ = φ := by
   rw [cyclicAverage_apply, cyclicNorm_apply_of_mem_cyclicCochains hφ,
     invOf_smul_smul]
@@ -66,7 +119,7 @@ theorem cyclicAverage_apply_of_mem_cyclicCochains
 /-- The cyclic average is idempotent. -/
 @[simp]
 theorem cyclicAverage_cyclicAverage
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicAverage R A M n (cyclicAverage R A M n φ) = cyclicAverage R A M n φ :=
   cyclicAverage_apply_of_mem_cyclicCochains
     (cyclicAverage_mem_cyclicCochains φ)
@@ -110,9 +163,8 @@ variable (R A M n) in
 /-- The cyclic row homotopy. Its product with `1 - λ` on either side is `1 - P`,
 where `P` is cyclic averaging. -/
 noncomputable def cyclicRowHomotopy :
-    Module.End R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
-  ⅟(n + 1 : R) • ∑ j ∈ Finset.range (n + 1),
-    ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k
+    Module.End R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
+  ⅟(n + 1 : R) • cyclicRowHomotopySum R A M n
 
 variable (R A M n) in
 /-- The explicit finite-sum formula for the cyclic row homotopy. -/
@@ -125,23 +177,19 @@ theorem cyclicRowHomotopy_def :
 theorem one_sub_cyclicOperator_mul_cyclicRowHomotopy :
     (1 - cyclicOperator R A M n) * cyclicRowHomotopy R A M n =
       1 - cyclicAverage R A M n := by
-  rw [cyclicRowHomotopy_def, mul_smul_comm, Finset.mul_sum]
-  simp only [mul_neg_geom_sum, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_range, ← cyclicNorm_def]
-  simp [smul_sub, ← Nat.cast_smul_eq_nsmul R, cyclicAverage]
+  rw [cyclicRowHomotopy, mul_smul_comm, one_sub_cyclicOperator_mul_cyclicRowHomotopySum,
+    smul_sub, invOf_smul_smul, cyclicAverage]
 
 /-- The row homotopy splits `1 - λ` on the right, up to the cyclic projection. -/
 theorem cyclicRowHomotopy_mul_one_sub_cyclicOperator :
     cyclicRowHomotopy R A M n * (1 - cyclicOperator R A M n) =
       1 - cyclicAverage R A M n := by
-  rw [cyclicRowHomotopy_def, smul_mul_assoc, Finset.sum_mul]
-  simp only [geom_sum_mul_neg, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_range, ← cyclicNorm_def]
-  simp [smul_sub, ← Nat.cast_smul_eq_nsmul R, cyclicAverage]
+  rw [cyclicRowHomotopy, smul_mul_assoc, cyclicRowHomotopySum_mul_one_sub_cyclicOperator,
+    smul_sub, invOf_smul_smul, cyclicAverage]
 
 /-- Applying the row homotopy gives a preimage of `φ - P φ` under `1 - λ`. -/
 theorem one_sub_cyclicOperator_apply_cyclicRowHomotopy
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     (1 - cyclicOperator R A M n) (cyclicRowHomotopy R A M n φ) =
       φ - cyclicAverage R A M n φ := by
   simpa only [mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self] using

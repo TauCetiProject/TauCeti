@@ -45,20 +45,38 @@ the position and the frequency.
   The coefficients of the terms only depend on the coefficients of the two symbols
   (`TauCeti.Symbol.coefficient_sharpTerm_congr`) and depend linearly on each of them, also for
   linear combinations of symbols of different orders
-  (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions). For a constant symbol
+  (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions), and near a point
+  only on their values near that point
+  (`TauCeti.Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq`). For a constant symbol
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
-  `TauCeti.Symbol.sharpTerm_const_succ`).
+  `TauCeti.Symbol.sharpTerm_const_succ`), and on the right this holds for every symbol that does
+  not depend on the position (`TauCeti.Symbol.sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero`).
 * `TauCeti.Symbol.sharpRemainder a b hb N`: the remainder `a # b - ∑_{k < N} sharpTerm a b k`, a
   symbol of order `m' + m - N`.
 * `TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`: **the composition expansion**
   `a # b = ∑_{k < N} sharpTerm a b k + sharpRemainder a b hb N`, for every `N`.
 * `TauCeti.Symbol.sharp_eq_comp_add_sharpRemainder_one`: in particular `a # b` agrees with the
   pointwise composition `a ∘ b` up to a symbol of order `m' + m - 1`.
+* `TauCeti.Symbol.IsUniform.sharpTerm`, `TauCeti.Symbol.IsUniform.sharpRemainder`: **the uniform
+  expansion**. If the estimates of `a` and `b` hold uniformly in the position, then so do those of
+  every term of the expansion. If those of `a` do and `b` has compact spatial support (hence is
+  uniform, `TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), then so do those of every
+  remainder, so the expansion holds in the uniform symbol classes.
+* `TauCeti.Symbol.isSmoothing_sharp_sub_comp`: if `a` vanishes outside `K` and `b` does not depend
+  on the position near `K`, then `a # b` and `a ∘ b` differ by a smoothing symbol.
 * `TauCeti.Symbol.isAsymptoticSum_sharp`: `a # b ∼ ∑ₖ sharpTerm a b k` as an asymptotic sum
   (`TauCeti.Symbol.IsAsymptoticSum`), so the terms determine `a # b` modulo smoothing symbols.
 * `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if `a` and `b` both have compact
   spatial support and their values commute pointwise, for instance for scalar symbols, the
   commutator symbol `a # b - b # a` has order `m' + m - 1`.
+* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp_sub_commutator`: **the commutator
+  expansion**. In general `a # b - b # a` is
+  `[a, b] - i ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{ξⱼ} b ∘ ∂_{xⱼ} a)` up to a symbol of order
+  `m' + m - 2`, where `[a, b]` is the pointwise commutator.
+* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket`: if every value of `a`
+  commutes with every value of `b`, for instance if one of them is scalar, then
+  `a # b - b # a = -i {a, b}` up to a symbol of order `m' + m - 2`, where
+  `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` is the Poisson bracket.
 * `TauCeti.ClassicalSymbol.exists_sharp_sub_cutoffSymbol_principal_comp`: **the principal symbol
   of a composition**. For classical `a` and `b`, the symbol `a # b` differs from the cut-off
   composition `χ(ξ) (σ(a) ∘ σ(b))` of the principal symbols by a symbol of order `m' + m - 1`.
@@ -80,10 +98,10 @@ matching identity for the polynomial `∑_{k < N} t^k sharpTerm a b k`. So the d
 remainder `a #_t b - ∑_{k < N + 1} t^k sharpTerm a b k` is `-i` times the sum over `j` of the
 remainders with `N` terms of `(∂_{ξⱼ} a, ∂_{xⱼ} b)`, and this remainder vanishes at `t = 0`.
 By induction on `N` and the mean value inequality on `[0, 1]`, the remainder is bounded by
-`C ⟨ξ⟩ ^ (m' + m - N)`, locally uniformly in the position: each step lowers the order of `a` by
-one. The base case is the bound `‖a #_t b‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniform for `|t| ≤ 2` by
-Peetre's inequality and the rapid decay of `b̂`
-(`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le`, for the
+`C ⟨ξ⟩ ^ (m' + m - N)`, locally uniformly in the position, and uniformly if the estimates of `a`
+are: each step lowers the order of `a` by one. The base case is the bound
+`‖a #_t b‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniform for `|t| ≤ 2` by Peetre's inequality and the rapid decay
+of `b̂` (`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le`, for the
 integrand `TauCeti.Symbol.sharpIntegrand a b (2πt)` of `a #_t b`).
 
 The derivative estimates follow from the Leibniz rules, which hold for `a # b` and for each
@@ -104,7 +122,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform Finset
-open scoped ContDiff RealInnerProductSpace SchwartzMap
+open scoped ContDiff RealInnerProductSpace SchwartzMap Topology
 
 namespace TauCeti
 
@@ -189,6 +207,29 @@ theorem coefficient_sharpTerm_congr {μ μ' : ℝ} {a : Symbol n W U m'} {a' : S
   funext ⟨x, ξ⟩
   simp only [coefficient_sharpTerm, ha, hb]
 
+/-- **Locality of the composition expansion.** Let `ψ` be a function of the position, `a'` a
+symbol with `a'(x, ξ) = ψ(x) a(x, ξ)`, and `b'` a symbol which agrees with `b` at all positions
+near the support of `ψ`. Then every term of the expansion of `a' # b'` is `ψ(x)` times the
+corresponding term of `a # b`. -/
+theorem coefficient_sharpTerm_of_eq_smul_of_eventuallyEq {μ μ' : ℝ} {ψ : CoordinateSpace n → ℂ}
+    {a : Symbol n W U m'} {a' : Symbol n W U μ'} {b : Symbol n V W m} {b' : Symbol n V W μ}
+    (ha : ∀ x ξ, a'.coefficient (x, ξ) = ψ x • a.coefficient (x, ξ))
+    (hb : ∀ᶠ x in nhdsSet (tsupport ψ), ∀ ξ, b'.coefficient (x, ξ) = b.coefficient (x, ξ))
+    (k : ℕ) (x ξ : CoordinateSpace n) :
+    (a'.sharpTerm b' k).coefficient (x, ξ) = ψ x • (a.sharpTerm b k).coefficient (x, ξ) := by
+  -- The frequency derivatives of `a'` at `x` are `ψ x` times those of `a`.
+  have hfreq (w : List (Fin n)) :
+      mixedDeriv [] w a'.coefficient x ξ = ψ x • mixedDeriv [] w a.coefficient x ξ := by
+    have h : (fun η ↦ a'.coefficient (x, η)) = ψ x • fun η ↦ a.coefficient (x, η) :=
+      funext fun η ↦ ha x η
+    simp only [mixedDeriv_def, coordinateDeriv_nil, h, coordinateDeriv_const_smul, Pi.smul_apply]
+  simp only [coefficient_sharpTerm, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  rw [hfreq, ContinuousLinearMap.smul_comp, smul_comm (ψ x)]
+  by_cases hx : x ∈ tsupport ψ
+  · rw [mixedDeriv_congr_of_eventually (nhds_le_nhdsSet hx hb)]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
 /-- The terms of the composition expansion are linear in the first symbol: a linear relation
 `a₀ = ∑ᵢ cᵢ aᵢ` between the coefficients of symbols `aᵢ` of possibly different orders gives the
 same relation `sharpTerm a₀ b k = ∑ᵢ cᵢ sharpTerm aᵢ b k` between the coefficients of the terms. -/
@@ -268,22 +309,24 @@ theorem const_sharpTerm_succ (T : W →L[ℂ] U) (b : Symbol n V W m) (k : ℕ) 
   simp only [h, ContinuousLinearMap.zero_comp, Finset.sum_const_zero, smul_zero, coefficient_zero,
     Pi.zero_apply]
 
+/-- Only the pointwise composition survives in the composition expansion of a symbol on the right
+that does not depend on the position: its later terms vanish. -/
+theorem sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero {b : Symbol n V W m}
+    (hb : ∀ j, spatialDeriv j b = 0) (a : Symbol n W U m') (k : ℕ) :
+    a.sharpTerm b (k + 1) = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coefficient_sharpTerm_succ, coefficient_sharpTerm, hb]
+
 /-- Only the pointwise composition survives in the composition expansion of a constant symbol on
 the right: its later terms vanish. -/
 @[simp]
 theorem sharpTerm_const_succ (a : Symbol n W U m') (T : V →L[ℂ] W) (k : ℕ) :
-    a.sharpTerm (const T) (k + 1) = 0 := by
-  ext1
-  funext ⟨x, ξ⟩
-  have hT : (const T : Symbol n V W 0).coefficient = fun p ↦ (fun _ ↦ T) p.2 :=
-    funext (coefficient_const T)
-  have h (w : Fin (k + 1) → Fin n) :
-      mixedDeriv (List.ofFn w) [] (const T : Symbol n V W 0).coefficient x ξ = 0 := by
-    rw [hT]
-    exact mixedDeriv_comp_snd (fun _ ↦ T) (α := List.ofFn w) (by simp) [] x ξ
-  rw [coefficient_sharpTerm]
-  simp only [h, ContinuousLinearMap.comp_zero, Finset.sum_const_zero, smul_zero, coefficient_zero,
-    Pi.zero_apply]
+    a.sharpTerm (const T) (k + 1) = 0 :=
+  sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero (fun j ↦ by
+    ext1
+    funext ⟨x, ξ⟩
+    simp [coefficient_const, coordinateDeriv_const _ (List.cons_ne_nil j [])]) a k
 
 /-- **Leibniz rule in the position** for the terms of the composition expansion. -/
 theorem spatialDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
@@ -313,6 +356,34 @@ theorem coefficient_frequencyDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m')
     refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
     rw [ih, frequencyDeriv_comm, spatialDeriv_frequencyDeriv_comm]
 
+/-- If the estimates of `a` and `b` hold uniformly in the position, then so do those of every term
+of the composition expansion. -/
+theorem IsUniform.sharpTerm {a : Symbol n W U m'} {b : Symbol n V W m} (ha : a.IsUniform)
+    (hb : b.IsUniform) (k : ℕ) : (a.sharpTerm b k).IsUniform := by
+  induction k generalizing m m' with
+  | zero => exact (ha.comp hb).inclusion _
+  | succ k ih =>
+    rw [sharpTerm_succ]
+    refine ((IsUniform.sum fun j _ ↦ ?_).smul _).inclusion _
+    exact ih (ha.frequencyDeriv j) (hb.spatialDeriv j)
+
+/-- The terms of positive index `k` of the expansion of `a # b` vanish when `a` vanishes at
+positions outside `K` and `b` does not depend on the position near each point of `K`: every such
+term contains a frequency derivative of `a` and a position derivative of `b`. -/
+private theorem coefficient_sharpTerm_eq_zero {a : Symbol n W U m'} {b : Symbol n V W m}
+    {K : Set (CoordinateSpace n)} (haK : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0)
+    (hbK : ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, b.coefficient (y, ξ) = b.coefficient (x, ξ))
+    {k : ℕ} (hk : k ≠ 0) (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.sharpTerm b k).coefficient p = 0 := by
+  obtain ⟨x, ξ⟩ := p
+  rw [coefficient_sharpTerm, Finset.sum_eq_zero fun w _ ↦ ?_, smul_zero]
+  by_cases hx : x ∈ K
+  · have hw : List.ofFn w ≠ [] := by simpa using hk
+    rw [mixedDeriv_congr_of_eventually (b := fun q ↦ b.coefficient (x, q.2))
+      ((hbK x hx).mono fun y hy η ↦ hy η),
+      mixedDeriv_comp_snd (fun η ↦ b.coefficient (x, η)) hw, ContinuousLinearMap.comp_zero]
+  · simp [mixedDeriv_def, haK x hx, ← Pi.zero_def]
+
 end Term
 
 /-! ### The interpolating family `a #_t b` -/
@@ -332,14 +403,15 @@ private theorem abs_mul_two_pi_le {t : ℝ} (ht : |t| ≤ 2) : |t * (2 * π)| �
   rw [abs_mul, abs_of_pos Real.two_pi_pos]
   nlinarith [Real.pi_pos]
 
-/-- `‖(a #_t b)(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniformly for `|t| ≤ 2` and positions in a compact
-set. -/
+/-- `‖(a #_t b)(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniformly for `|t| ≤ 2` and positions in a set on
+which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
 private theorem exists_norm_scaledSharp_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2)) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, |t| ≤ 2 → ∀ x ∈ K, ∀ ξ,
       ‖scaledSharp a b t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
   obtain ⟨C, hC0, hC⟩ :=
-    hb.exists_norm_integral_sharpIntegrand_le a hK (R := 4 * π) (by linarith [Real.two_le_pi])
+    hb.exists_norm_integral_sharpIntegrand_le ha (R := 4 * π) (by linarith [Real.two_le_pi])
   exact ⟨C, hC0, fun t ht ↦ hC _ (abs_mul_two_pi_le ht)⟩
 
 /-- At `t = 1` the family is the composition symbol. -/
@@ -418,9 +490,9 @@ private theorem hasDerivAt_scaledSharp (hb : b.HasCompactSpatialSupport) {t₀ :
     (x ξ : CoordinateSpace n) :
     HasDerivAt (fun t ↦ scaledSharp a b t x ξ)
       (∑ j, (-Complex.I) • scaledSharp (frequencyDeriv j a) (spatialDeriv j b) t₀ x ξ) t₀ := by
-  choose C hC0 hC using fun j ↦ (hb.spatialDeriv j).exists_norm_sharpIntegrand_le
-    (frequencyDeriv j a) (isCompact_singleton (x := x)) ((n : ℝ) + 1) (R := 4 * π)
-    (by linarith [Real.two_le_pi])
+  choose C _ hC using fun j ↦ (hb.spatialDeriv j).exists_norm_sharpIntegrand_le
+    ((frequencyDeriv j a).exists_bound_coefficient {x} isCompact_singleton) ((n : ℝ) + 1)
+    (R := 4 * π) (by linarith [Real.two_le_pi])
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by
     rw [Metric.mem_ball, Real.dist_eq] at ht
     have := abs_sub_abs_le_abs_sub t t₀
@@ -515,21 +587,28 @@ private theorem remainderAt_zero [CompleteSpace W] [CompleteSpace U]
   simp
 
 /-- **The remainder estimate.** `‖a #_t b - ∑_{k < N} t^k sharpTerm a b k‖ ≤ C ⟨ξ⟩ ^ (m' + m - N)`,
-uniformly for `t ∈ [0, 1]` and positions in a compact set. -/
-private theorem exists_norm_remainderAt_le [CompleteSpace W] [CompleteSpace U] (N : ℕ) :
-    ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m}, b.HasCompactSpatialSupport →
-      ∀ {K : Set (CoordinateSpace n)}, IsCompact K → ∃ C, 0 ≤ C ∧ ∀ t ∈ Set.Icc (0 : ℝ) 1,
-        ∀ x ∈ K, ∀ ξ, ‖remainderAt a b N t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N) / 2) := by
+uniformly for `t ∈ [0, 1]` and positions in a set `K` on which every symbol `a` satisfying a
+predicate `P`, stable under frequency derivatives, is bounded by `C ⟨ξ⟩ ^ m'`. -/
+private theorem exists_norm_remainderAt_le [CompleteSpace W] [CompleteSpace U]
+    (P : ∀ {m' : ℝ}, Symbol n W U m' → Prop)
+    (hPfrequency : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (frequencyDeriv j a))
+    {K : Set (CoordinateSpace n)}
+    (hP : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a →
+      ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (N : ℕ) :
+    ∀ {m m' : ℝ} {a : Symbol n W U m'}, P a → ∀ {b : Symbol n V W m}, b.HasCompactSpatialSupport →
+      ∃ C, 0 ≤ C ∧ ∀ t ∈ Set.Icc (0 : ℝ) 1, ∀ x ∈ K, ∀ ξ,
+        ‖remainderAt a b N t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N) / 2) := by
   induction N with
   | zero =>
-    intro m m' a b hb K hK
-    obtain ⟨C, hC0, hC⟩ := exists_norm_scaledSharp_le (a := a) hb hK
+    intro m m' a ha b hb
+    obtain ⟨C, hC0, hC⟩ := exists_norm_scaledSharp_le hb (hP ha)
     refine ⟨C, hC0, fun t ht x hx ξ ↦ ?_⟩
     have ht2 : |t| ≤ 2 := abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩
     simpa [remainderAt] using hC t ht2 x hx ξ
   | succ N ih =>
-    intro m m' a b hb K hK
-    choose C hC0 hC using fun j ↦ ih (frequencyDeriv j a) (hb.spatialDeriv j) hK
+    intro m m' a ha b hb
+    choose C hC0 hC using fun j ↦ ih (hPfrequency ha j) (hb.spatialDeriv j)
     refine ⟨∑ j, C j, Finset.sum_nonneg fun j _ ↦ hC0 j, fun t ht x hx ξ ↦ ?_⟩
     have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' - 1 + m - N) / 2) =
         (1 + ‖ξ‖ ^ 2) ^ ((m' + m - ((N + 1 : ℕ) : ℝ)) / 2) := by
@@ -590,30 +669,46 @@ private theorem coefficient_frequencyDeriv_remainderSymbol (hb : b.HasCompactSpa
     Finset.sum_add_distrib]
   abel
 
-/-- The remainder is bounded by `C ⟨ξ⟩ ^ (m' + m - N)` for positions in a compact set. -/
+section Bounds
+
+variable (P : ∀ {m' : ℝ}, Symbol n W U m' → Prop)
+  (hPspatial : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (spatialDeriv j a))
+  (hPfrequency : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a → ∀ j, P (frequencyDeriv j a))
+  {K : Set (CoordinateSpace n)}
+  (hP : ∀ {m' : ℝ} {a : Symbol n W U m'}, P a →
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+
+include hPfrequency hP in
+/-- The remainder is bounded by `C ⟨ξ⟩ ^ (m' + m - N)` for positions in a set `K` on which every
+symbol `a` satisfying a predicate `P`, stable under frequency derivatives, is bounded by
+`C ⟨ξ⟩ ^ m'`. -/
 private theorem exists_norm_coefficient_remainderSymbol_le [CompleteSpace W] [CompleteSpace U]
-    (hb : b.HasCompactSpatialSupport) (N : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    (ha : P a) (hb : b.HasCompactSpatialSupport) (N : ℕ) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖(remainderSymbol a hb N).coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_remainderAt_le N a hb hK
+  obtain ⟨C, hC0, hC⟩ := exists_norm_remainderAt_le P hPfrequency hP N ha hb
   refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
   simpa [coefficient_remainderSymbol] using hC 1 ⟨zero_le_one, le_rfl⟩ x hx ξ
 
+include hPspatial hPfrequency hP in
 /-- The symbol estimates of order `m' + m - N` for the remainder, from the Leibniz rules: each
 derivative falls on one of the two symbols, and a frequency derivative lowers the order of that
 symbol by one. -/
 private theorem exists_bound_remainderSymbol [CompleteSpace W] [CompleteSpace U]
-    (hb : b.HasCompactSpatialSupport) (N : ℕ) (α β : List (Fin n)) {K : Set (CoordinateSpace n)}
-    (hK : IsCompact K) :
+    (ha : P a) (hb : b.HasCompactSpatialSupport) (N : ℕ) (α β : List (Fin n)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (remainderSymbol a hb N).coefficient x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) :=
-  exists_norm_mixedDeriv_le_of_leibniz N (fun a _ hb ↦ (remainderSymbol a hb N).coefficient)
+  exists_norm_mixedDeriv_le_of_leibniz N P hPspatial hPfrequency
+    (fun a _ hb ↦ (remainderSymbol a hb N).coefficient)
     (fun a _ hb ↦ (remainderSymbol a hb N).contDiff_coefficient)
     (fun a _ hb j x ξ ↦ by
       rw [← coefficient_spatialDeriv, spatialDeriv_remainderSymbol, coefficient_add, Pi.add_apply])
     (fun a _ hb j x ξ ↦ by
       rw [← coefficient_frequencyDeriv, coefficient_frequencyDeriv_remainderSymbol, Pi.add_apply])
-    (fun _ _ hb _ hK ↦ exists_norm_coefficient_remainderSymbol_le hb N hK) a hb α β hK
+    (fun _ ha _ hb ↦ exists_norm_coefficient_remainderSymbol_le P hPfrequency hP ha hb N)
+    a ha hb α β
+
+end Bounds
 
 variable [CompleteSpace W] [CompleteSpace U]
 
@@ -623,7 +718,8 @@ terms, a symbol of order `m' + m - N` (`sharp_eq_sum_sharpTerm_add_sharpRemainde
 def sharpRemainder (hb : b.HasCompactSpatialSupport) (N : ℕ) : Symbol n V U (m' + m - N) where
   coefficient := (remainderSymbol a hb N).coefficient
   contDiff_coefficient := (remainderSymbol a hb N).contDiff_coefficient
-  exists_bound _ hK α β := exists_bound_remainderSymbol hb N α β hK
+  exists_bound K hK α β := exists_bound_remainderSymbol (fun _ ↦ True) (fun _ _ ↦ trivial)
+    (fun _ _ ↦ trivial) (fun {_} a _ ↦ a.exists_bound_coefficient K hK) trivial hb N α β
 
 @[simp]
 theorem coefficient_sharpRemainder (hb : b.HasCompactSpatialSupport) (N : ℕ) :
@@ -641,6 +737,16 @@ theorem sharp_eq_sum_sharpTerm_add_sharpRemainder (hb : b.HasCompactSpatialSuppo
   ext1
   simp
 
+/-- **Uniform remainders.** If the estimates of `a` hold uniformly in the position, then so do
+those of every remainder `a # b - ∑_{k < N} sharpTerm a b k` of the composition expansion. -/
+theorem IsUniform.sharpRemainder (ha : a.IsUniform) (hb : b.HasCompactSpatialSupport) (N : ℕ) :
+    (a.sharpRemainder b hb N).IsUniform := isUniform_iff.2 fun α β ↦ by
+  obtain ⟨C, hC0, hC⟩ := exists_bound_remainderSymbol IsUniform (fun ha j ↦ ha.spatialDeriv j)
+    (fun ha j ↦ ha.frequencyDeriv j) (K := Set.univ)
+    (fun ha ↦ ha.exists_bound_coefficient.imp fun _ hC ↦ ⟨hC.1, fun x _ ξ ↦ hC.2 x ξ⟩) ha hb N
+    α β
+  exact ⟨C, hC0, fun x ξ ↦ hC x (Set.mem_univ x) ξ⟩
+
 /-- The composition symbol `a # b` is the pointwise composition `a ∘ b` up to a symbol of order
 `m' + m - 1`. -/
 theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
@@ -648,6 +754,23 @@ theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
   ext1
   funext p
   simp
+
+/-- **Locality of the composition symbol.** Let `b` have compact spatial support. If `a` vanishes
+at positions outside `K` and `b` does not depend on the position near each point of `K`, for
+instance if `b` is the symbol of multiplication by a compactly supported smooth function equal to
+`1` on a neighbourhood of `K`, then `a # b` agrees with the pointwise composition `a ∘ b` up to a
+smoothing symbol. -/
+theorem isSmoothing_sharp_sub_comp (hb : b.HasCompactSpatialSupport)
+    {K : Set (CoordinateSpace n)} (haK : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0)
+    (hbK : ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, b.coefficient (y, ξ) = b.coefficient (x, ξ)) :
+    (a.sharp b hb - a.comp b).IsSmoothing := by
+  rw [isSmoothing_iff]
+  intro m''
+  obtain ⟨N, hN⟩ := exists_nat_ge (m' + m - m'')
+  refine ⟨inclusion (by push_cast; linarith) (a.sharpRemainder b hb (N + 1)), ?_⟩
+  rw [coefficient_inclusion, coefficient_sharpRemainder, Finset.sum_range_succ', coefficient_sub]
+  funext p
+  simp [coefficient_sharpTerm_eq_zero haK hbK]
 
 /-- The composition symbol is an asymptotic sum `a # b ∼ ∑ₖ sharpTerm a b k` of the terms of the
 expansion, of orders `m' + m - k`. In particular it is determined by the terms modulo smoothing
@@ -682,6 +805,54 @@ theorem exists_coefficient_eq_sharp_sub_sharp {a : Symbol n V V m'} {b : Symbol 
   simp only [coefficient_sub, coefficient_inclusion, Pi.sub_apply, coefficient_sharpRemainder,
     Finset.sum_range_one, coefficient_sharpTerm_zero, h]
   abel
+
+/-- **The commutator expansion to second order.** For symbols `a` of order `m'` and `b` of order
+`m` with compact spatial support, the composition symbol `a # b - b # a` of the commutator
+`[Op(a), Op(b)]` is
+
+`[a, b] - i ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{ξⱼ} b ∘ ∂_{xⱼ} a)`
+
+up to a symbol `r` of order `m' + m - 2`, where `[a, b] = a ∘ b - b ∘ a` is the pointwise
+commutator. -/
+theorem exists_coefficient_eq_sharp_sub_sharp_sub_commutator {a : Symbol n V V m'}
+    {b : Symbol n V V m} (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport) :
+    ∃ r : Symbol n V V (m' + m - 2), ∀ p, r.coefficient p =
+      (a.sharp b hb).coefficient p - (b.sharp a ha).coefficient p -
+        ((a.coefficient p).comp (b.coefficient p) - (b.coefficient p).comp (a.coefficient p)) +
+        Complex.I • ∑ j, (((frequencyDeriv j a).coefficient p).comp
+            ((spatialDeriv j b).coefficient p) -
+          ((frequencyDeriv j b).coefficient p).comp ((spatialDeriv j a).coefficient p)) := by
+  refine ⟨(inclusion (by simp) (a.sharpRemainder b hb 2) : Symbol n V V (m' + m - 2)) -
+    inclusion (by push_cast; linarith) (b.sharpRemainder a ha 2), fun p ↦ ?_⟩
+  simp only [coefficient_sub, coefficient_inclusion, Pi.sub_apply, coefficient_sharpRemainder,
+    Finset.sum_range_succ, Finset.sum_range_zero, zero_add, Pi.add_apply,
+    coefficient_sharpTerm_zero, coefficient_sharpTerm_one, Finset.sum_sub_distrib, smul_sub,
+    neg_smul]
+  abel
+
+/-- **The Poisson bracket formula for commutators.** If every value of `a` commutes with every
+value of `b`, for instance if one of them is a scalar symbol times the identity, the composition
+symbol `a # b - b # a` of `[Op(a), Op(b)]` is `-i {a, b}` up to a symbol `r` of order
+`m' + m - 2`, where `{a, b} = ∑ⱼ (∂_{ξⱼ} a ∘ ∂_{xⱼ} b - ∂_{xⱼ} a ∘ ∂_{ξⱼ} b)` is the Poisson
+bracket. -/
+theorem exists_coefficient_eq_sharp_sub_sharp_add_poissonBracket {a : Symbol n V V m'}
+    {b : Symbol n V V m} (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    (hab : ∀ p q, Commute (a.coefficient p) (b.coefficient q)) :
+    ∃ r : Symbol n V V (m' + m - 2), r.coefficient =
+      (a.sharp b hb).coefficient - (b.sharp a ha).coefficient +
+        Complex.I • (a.poissonBracket b).coefficient := by
+  obtain ⟨r, hr⟩ := exists_coefficient_eq_sharp_sub_sharp_sub_commutator ha hb
+  refine ⟨r, funext fun p ↦ ?_⟩
+  have h0 : (a.coefficient p).comp (b.coefficient p) =
+      (b.coefficient p).comp (a.coefficient p) := by
+    simpa only [ContinuousLinearMap.mul_def] using (hab p p).eq
+  -- The derivatives of `a` and `b` inherit the commutation of their values.
+  have hder : ∀ j, ((frequencyDeriv j b).coefficient p).comp ((spatialDeriv j a).coefficient p) =
+      ((spatialDeriv j a).coefficient p).comp ((frequencyDeriv j b).coefficient p) := fun j ↦ by
+    simpa only [ContinuousLinearMap.mul_def] using (commute_coefficient_frequencyDeriv (fun q ↦
+      (commute_coefficient_spatialDeriv (fun p' ↦ hab p' q) j p).symm) j p).eq
+  simp only [hr p, h0, hder, sub_self, sub_zero, coefficient_poissonBracket,
+    Pi.add_apply, Pi.sub_apply, Pi.smul_apply]
 
 end Commutator
 

@@ -22,7 +22,7 @@ strand shift of a cycle word (`TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep_eq_smu
 A Markov trace with parameter `z` takes the value `(q * z) ^ (m - 1)` on `ζₘ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleWord`). The cycle words determine
 every tracial, block-multiplicative functional, and so in particular the Markov traces; this is
-proved with the cocenter of the stages, in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter`.
+proved with the cocenter of the stages, in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic`.
 
 The same word in the Hecke algebra presented on `m` strands is
 `TauCeti.TypeAHeckeAlgebra.cycleWord`, built from the descending last-strand words

@@ -36,8 +36,6 @@ submodule is `TauCeti.toMatrixAlgEquiv_extensionBasis_isUpperUnitriangular`, in
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 4.8.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
-
-This supplies the Lie--Kolchin solvability step in Layer 5 of the ReductiveGroups roadmap.
 -/
 
 public section

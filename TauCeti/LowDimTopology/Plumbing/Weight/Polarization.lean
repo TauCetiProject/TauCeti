@@ -34,10 +34,7 @@ direction `v` changes the weight by `χ_k(E_v)` minus the pairing of the current
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose weight functions are "built from these covectors and the plumbing intersection form" and
-whose cube weights obey a first-difference recursion. The convention
-`χ_k(x) = -(⟨k, x⟩ + x · x) / 2` and its quadratic behaviour follow Némethi,
+The convention `χ_k(x) = -(⟨k, x⟩ + x · x) / 2` and its quadratic behaviour follow Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

@@ -36,8 +36,7 @@ field `L` together with a `K`-algebra homomorphism `f : L →ₐ[K] A`; no injec
 needed, because a ring homomorphism out of a field into a nontrivial ring is automatically
 injective (`RingHom.injective`), so `f` really does exhibit `L` as a subfield of `A`.
 
-This file proves the two facts about such an `L` that Layer 6 of the semisimple-algebra roadmap
-asks for:
+This file proves two facts about such an `L`:
 
 * its degree is bounded by the degree of the algebra,
   `Module.finrank K L ≤ TauCeti.Algebra.deg K A`;
@@ -107,9 +106,6 @@ it is stated for every finite-dimensional central simple `A`. What a division al
 
 ## References
 
-This is the maximal-subfield half of the fourth bullet of Layer 6 ("Splitting fields, maximal
-subfields, and the index") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 13.
 -/

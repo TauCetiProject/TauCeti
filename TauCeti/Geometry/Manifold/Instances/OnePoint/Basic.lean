@@ -39,13 +39,17 @@ inverted chart (`OnePoint.mdifferentiableAt_iff_of_eq_infty`).
 * `OnePoint.affineChart` and `OnePoint.invChart`: the two charts of `OnePoint 𝕜`.
 * `OnePoint.instChartedSpace`: the charted space structure, with preferred charts
   `OnePoint.chartAt_coe` and `OnePoint.chartAt_infty`.
-* `OnePoint.instIsManifold`: the analytic manifold structure.
+* `OnePoint.instIsManifold`: the analytic manifold structure, whose maximal atlas contains both
+  charts (`OnePoint.affineChart_mem_maximalAtlas` and `OnePoint.invChart_mem_maximalAtlas`).
 * `OnePoint.contMDiff_coe` and `OnePoint.contMDiff_invChart_symm`: the inverses of the two charts,
   the inclusion `𝕜 → OnePoint 𝕜` and `w ↦ w⁻¹` (with `0 ↦ ∞`), are analytic.
 * `OnePoint.mdifferentiableAt_iff_of_ne_infty`, `OnePoint.mdifferentiableAt_iff_of_eq_infty`
   and `OnePoint.mdifferentiableAt_coe_comp_iff`: differentiability of maps into `OnePoint 𝕜`.
 * `OnePoint.mfderiv_apply_eq_of_hasDerivAt`: the derivative of a self-map of `OnePoint 𝕜`, read
   in the preferred charts, from the derivative of its chart expression.
+* `OnePoint.writtenInExtChartAt_coe_of_ne_infty`, `OnePoint.writtenInExtChartAt_coe_of_eq_infty`
+  and `OnePoint.invChart_eq_inv_writtenInExtChartAt_coe`: the local expression of a self-map of
+  `OnePoint 𝕜` at a finite point, and its reciprocal read in the inverted chart at the target.
 
 ## References
 
@@ -262,6 +266,20 @@ instance instIsManifold : IsManifold 𝓘(𝕜) ω (OnePoint 𝕜) := by
     simp [invChart_symm_of_ne_zero (hsub hw)]
   · exact hself _
 
+/-- The affine chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
+theorem affineChart_mem_maximalAtlas {n : ℕ∞ω} :
+    (affineChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
+  simpa only [chartAt_coe] using
+    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) ((0 : 𝕜) : OnePoint 𝕜)
+
+/-- The inverted chart belongs to the maximal atlas of `OnePoint 𝕜` at every regularity. -/
+theorem invChart_mem_maximalAtlas {n : ℕ∞ω} :
+    (invChart : OpenPartialHomeomorph (OnePoint 𝕜) 𝕜) ∈
+      IsManifold.maximalAtlas 𝓘(𝕜) n (OnePoint 𝕜) := by
+  simpa only [chartAt_infty] using
+    IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜)) (n := n) (∞ : OnePoint 𝕜)
+
 /-! ### Differentiable maps into the projective line
 
 For `𝕜 = ℂ`, differentiability of a map into `OnePoint ℂ` is holomorphy into the Riemann sphere.
@@ -328,6 +346,38 @@ theorem mfderiv_apply_eq_of_hasDerivAt {f : OnePoint 𝕜 → OnePoint 𝕜} {x 
   simp only [hw, modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
     Function.comp_apply, id_eq, hφ.fderiv_eq, hc.hasFDerivAt.fderiv]
   exact (ContinuousLinearMap.toSpanSingleton_apply 𝕜 c v).trans (mul_comm v c)
+
+/-- A self-map `f` of the projective line with `f x` finite at a finite point `x` reads
+`z ↦ f z` in the affine charts at `x` and at `f x`. -/
+theorem writtenInExtChartAt_coe_of_ne_infty {f : OnePoint 𝕜 → OnePoint 𝕜} {x : 𝕜}
+    (hx : f x ≠ (∞ : OnePoint 𝕜)) :
+    writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (x : OnePoint 𝕜) f = fun z : 𝕜 ↦ affineChart (f z) := by
+  obtain ⟨p, hp⟩ := ne_infty_iff_exists.1 hx
+  funext z
+  simp [writtenInExtChartAt, ← hp]
+
+/-- A self-map `f` of the projective line with `f x = ∞` at a finite point `x` reads
+`z ↦ invChart (f z)` in the affine chart at `x` and the inverted chart at `∞`. -/
+theorem writtenInExtChartAt_coe_of_eq_infty {f : OnePoint 𝕜 → OnePoint 𝕜} {x : 𝕜}
+    (hx : f x = (∞ : OnePoint 𝕜)) :
+    writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (x : OnePoint 𝕜) f = fun z : 𝕜 ↦ invChart (f z) := by
+  funext z
+  simp [writtenInExtChartAt, hx]
+
+/-- When `f x = p` is finite at a finite point `x`, the local expression of `f` at `x` takes the
+value `p` at `x`. -/
+theorem writtenInExtChartAt_coe_self_of_eq_coe {f : OnePoint 𝕜 → OnePoint 𝕜} {x p : 𝕜}
+    (hx : f x = p) : writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (x : OnePoint 𝕜) f x = p := by
+  simp only [writtenInExtChartAt_coe_of_ne_infty (hx ▸ coe_ne_infty p), hx, affineChart_coe]
+
+/-- When `f x` is finite at a finite point `x`, `invChart (f z)` is the reciprocal of the local
+expression of `f` at `x` evaluated at `z`, for every `z : 𝕜`, with `0⁻¹ = 0` where `f z` is `0` or
+`∞`. When moreover `f x ≠ 0`, the function `z ↦ invChart (f z)` is the local expression of `f` at
+`x` read in the inverted chart at `f x` instead of the affine chart. -/
+theorem invChart_eq_inv_writtenInExtChartAt_coe {f : OnePoint 𝕜 → OnePoint 𝕜} {x : 𝕜}
+    (hx : f x ≠ (∞ : OnePoint 𝕜)) (z : 𝕜) :
+    invChart (f z) = (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (x : OnePoint 𝕜) f z)⁻¹ := by
+  simp only [writtenInExtChartAt_coe_of_ne_infty hx, ← inv_invChart, inv_inv]
 
 end Proper
 

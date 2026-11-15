@@ -30,10 +30,6 @@ This file computes the elementary moments and transforms of the real-valued Bern
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
 * `charFun_bernoulliMeasure` computes the characteristic function.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, “Bernoulli and binomial”.
 -/
 
 public section

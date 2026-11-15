@@ -79,11 +79,11 @@ private theorem exists_component_factor {P K : Matrix ι κ ℝ}
     · exact hedge i j' ((supportGraph_adj_inl_inr K i j').1 hab)
     · exact (hedge i' j ((supportGraph_adj_inr_inl K j i').1 hab)).symm
     · exact False.elim ((supportGraph_not_adj_inr_inr K j j') hab)
-  have hwalk : ∀ a b (p : K.supportGraph.Walk a b), f a = f b := by
+  have hwalk : ∀ a b (_ : K.supportGraph.Walk a b), f a = f b := by
     intro a b p
     induction p with
     | nil => rfl
-    | cons hab p ih => exact (hadj _ _ hab).trans ih
+    | cons hab _ ih => exact (hadj _ _ hab).trans ih
   exact ⟨SimpleGraph.ConnectedComponent.lift f (fun a b p _ ↦ hwalk a b p), fun _ ↦ rfl⟩
 
 /-- Two nonzero factor pairs give the same diagonal scaling exactly when they differ by

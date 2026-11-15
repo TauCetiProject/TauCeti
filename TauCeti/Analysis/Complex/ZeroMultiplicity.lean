@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Analytic.Order
-import TauCeti.Analysis.Complex.Wirtinger.Similarity
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Topology.Algebra.Polynomial
 
@@ -32,6 +31,9 @@ factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), so `f` has 
 multiplicity function (`TauCeti.IsZeroMultiplicity.unique`); it is positive exactly at the zeros of
 `f`.
 
+Near `z`, `f` vanishes to every order `k ≤ n z`: `‖f w‖ ≤ C ‖w - z‖ ^ k`
+(`TauCeti.IsZeroMultiplicity.exists_eventually_norm_le_mul_pow`).
+
 This file proves how zero multiplicities transform:
 
 * under an affine change of variable `w ↦ c w + a` with `c ≠ 0`, the multiplicity is pulled back
@@ -46,6 +48,8 @@ This file proves how zero multiplicities transform:
 
 If `f` has no zeros near infinity, its multiplicities are the counts of a multiset of points,
 which they determine: the divisor of zeros of `f` (`TauCeti.IsZeroMultiplicity.exists_eq_count`).
+Then `f` is `exp L` times the product of the linear factors of its divisor, for a continuous `L`
+(`TauCeti.IsZeroMultiplicity.exists_continuous_eq_exp_mul_prod_pow`).
 When moreover `f(z) (z / |z|)⁻ᵐ → 1` at infinity, that divisor has `m` points
 (`TauCeti.IsZeroMultiplicity.card_eq_of_tendsto_mul_inv_pow`).
 
@@ -113,6 +117,19 @@ theorem eq_zero_iff (h : IsZeroMultiplicity f n) {z : ℂ} : n z = 0 ↔ f z ≠
 theorem pos_iff (h : IsZeroMultiplicity f n) {z : ℂ} : 0 < n z ↔ f z = 0 := by
   rw [Nat.pos_iff_ne_zero, Ne, h.eq_zero_iff, not_not]
 
+/-- A function vanishes at `z` at least to every order `k` up to its multiplicity there:
+`‖f w‖ ≤ C ‖w - z‖ ^ k` near `z`. -/
+theorem exists_eventually_norm_le_mul_pow (h : IsZeroMultiplicity f n) {z : ℂ} {k : ℕ}
+    (hk : k ≤ n z) : ∃ C, ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ C * ‖w - z‖ ^ k := by
+  obtain ⟨v, hv, -, hf⟩ := isZeroMultiplicity_iff.1 h z
+  refine ⟨‖v z‖ + 1, ?_⟩
+  filter_upwards [hf, hv.norm.eventually (ge_mem_nhds (lt_add_one ‖v z‖)),
+    Metric.ball_mem_nhds z one_pos] with w hw hvw hwz
+  have hd : ‖w - z‖ ≤ 1 := (mem_ball_iff_norm.1 hwz).le
+  rw [hw, norm_mul, norm_pow, mul_comm]
+  exact mul_le_mul hvw (pow_le_pow_of_le_one (norm_nonneg _) hd hk) (by positivity)
+    (by positivity)
+
 /-- **Affine change of variable.** If `c ≠ 0`, the zero multiplicity of `w ↦ f (c w + a)` at `z`
 is that of `f` at `c z + a`. -/
 theorem comp_mul_add (h : IsZeroMultiplicity f n) {c : ℂ} (hc : c ≠ 0) (a : ℂ) :
@@ -146,6 +163,17 @@ theorem exists_eq_count (h : IsZeroMultiplicity f n) (htail : ∀ᶠ w in cocomp
   have hfin := finite_support_of_eventually_eq_pow_mul (isZeroMultiplicity_iff.1 h) htail
   refine ⟨(Finsupp.ofSupportFinite n hfin).toMultiset, funext fun z ↦ ?_⟩
   simp [Finsupp.ofSupportFinite_coe]
+
+/-- **Global factorization through the divisor of zeros.** If the zero multiplicities of `f` are
+the counts of a multiset `D`, then `f w = exp (L w) * ∏ z ∈ D.toFinset, (w - z) ^ count z D` for a
+continuous `L`. -/
+theorem exists_continuous_eq_exp_mul_prod_pow {D : Multiset ℂ}
+    (h : IsZeroMultiplicity f fun z ↦ D.count z) :
+    ∃ L : ℂ → ℂ, Continuous L ∧
+      ∀ w, f w = Complex.exp (L w) * ∏ z ∈ D.toFinset, (w - z) ^ D.count z :=
+  TauCeti.exists_continuous_eq_exp_mul_prod_pow h.continuous D.toFinset
+    (fun z _ ↦ isZeroMultiplicity_iff.1 h z)
+    fun _ hw ↦ Multiset.mem_toFinset.2 (Multiset.count_pos.1 (h.pos_iff.2 hw))
 
 /-- **The degree of the divisor of zeros.** If `f(z) (z / |z|)⁻ᵐ → 1` at infinity and the zero
 multiplicities of `f` are the counts of `D`, then `D` has `m` points. -/

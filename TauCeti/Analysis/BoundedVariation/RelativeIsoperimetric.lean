@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import TauCeti.Analysis.BoundedVariation.Poincare
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
@@ -51,8 +50,6 @@ inequality.
 
 public section
 
-noncomputable section
-
 namespace TauCeti
 
 open MeasureTheory Metric Module Set TopologicalSpace
@@ -79,13 +76,13 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
   -- `μ(t ∩ B) / 2 ≤ ∫_{t ∩ B} |u - a| ≤ C μ(t ∩ B) ^ (1/n) P(s; B)` with `C` the
   -- Poincaré–Wirtinger constant of `B`, and `2C ≤ 2 ^ (n + 1) ω ^ (-1/n)`.
   have hb' : 2⁻¹ ≤ ‖b - a‖ₑ := by
-    rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_inv_of_pos two_pos,
+    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_inv_of_pos two_pos,
       ← one_div]
     exact ENNReal.ofReal_le_ofReal hb
   have hlow : 2⁻¹ * μ (t ∩ B) ≤ ∫⁻ x in t ∩ B, ‖u x - a‖ₑ ∂μ := by
     rw [← setLIntegral_const]
     refine setLIntegral_mono_ae
-      ((hu.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mono_measure
+      ((hu.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.mono_measure
         (Measure.restrict_mono inter_subset_right le_rfl)) ?_
     exact Filter.Eventually.of_forall fun x hx => by rw [htb x hx]; exact hb'
   have hup := setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex

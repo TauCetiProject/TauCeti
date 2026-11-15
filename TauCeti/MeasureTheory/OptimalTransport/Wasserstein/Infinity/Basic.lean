@@ -191,11 +191,11 @@ theorem wassersteinEDist_top_le_iff (μ ν : Measure X) [IsFiniteMeasure μ]
     refine ⟨π, hπ, ?_⟩
     have hbound := ae_le_eLpNormEssSup (f := fun z : X × X ↦ edist z.1 z.2) (μ := π)
     rw [← eLpNorm_exponent_top measurable_edist.aestronglyMeasurable, hval] at hbound
-    simp only [enorm_eq_self] at hbound
+    simp only [eNorm_eq_self] at hbound
     exact hbound.mono fun _ hz ↦ hz.trans h
   · rintro ⟨π, hπ, hbound⟩
     refine (wassersteinEDist_le hπ ∞).trans ?_
     rw [eLpNorm_exponent_top measurable_edist.aestronglyMeasurable]
-    exact eLpNormEssSup_le_of_ae_enorm_bound (by simpa only [enorm_eq_self] using hbound)
+    exact eLpNormEssSup_le_of_ae_eNorm_bound (by simpa only [eNorm_eq_self] using hbound)
 
 end TauCeti

@@ -174,7 +174,7 @@ private theorem ae_norm_energyFormH1_le :
 /-- Under the standing hypotheses on the coefficients, the energy forms of `L(t)` satisfy
 Gårding's inequality on `H¹₀(Ω)` with the constants `λ/2` and `λ/2 + |γ| + β²/(2λ)` for almost
 every `t`. -/
-private theorem ae_garding_energyFormH1 :
+theorem ae_garding_energyFormH1 :
     ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
       lam / 2 * ‖v‖ ^ 2 - (lam / 2 + |gamma| + beta ^ 2 / (2 * lam)) * ‖W1p0.valueL v‖ ^ 2 ≤
         energyFormH1 (a t) (b t) (c t) (v : W1p mu Omega 2) (v : W1p mu Omega 2) := by
@@ -188,7 +188,7 @@ include ht in
 /-- Under the standing hypotheses on the coefficients on a nondegenerate interval, the ellipticity
 constants satisfy `0 < λ` and `0 ≤ Λ`, and the energy forms of `L(t)` are the values of a single
 family of bounded operators `H¹₀(Ω) → H⁻¹(Ω)` for almost every `t`. -/
-private theorem exists_ae_apply_eq_energyFormH1_of_lt :
+theorem exists_ae_apply_eq_energyFormH1_of_lt :
     0 < lam ∧ 0 ≤ Lam ∧ ∃ A : ℝ → W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
       ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v : W1p0 mu Omega 2,
         A t u v = energyFormH1 (a t) (b t) (c t) (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by

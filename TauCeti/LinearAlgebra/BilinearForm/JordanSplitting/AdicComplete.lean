@@ -178,7 +178,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
   let U (i : ℕ) := (C i).toMatrix (d i)
   have hCapp (i : ℕ) (x y : N i) : π ^ i * C i x y = B x y := by
     simpa using LinearMap.congr_fun₂ (hC i) x y
-  have hUdet (i : ℕ) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (C i) (hCp i)
+  have hUdet (i : ℕ) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (d i) (C i) (hCp i)
   have hUs (i : ℕ) : (U i).IsSymm := by
     ext a a'
     refine (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ i)).mp ?_
@@ -198,7 +198,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
       (Matrix.isUnit_nonsing_inv_det _ (hUdet (m - k)))
     rw [hEapp, Nat.sub_sub_self hk]
   refine ⟨D, hDs hEs, isJordanSplitting_reverse h.isInternal htop horth hmod, horth,
-    fun i hi ↦ ⟨d i, ?_⟩, fun i hi heven w hw ↦ ?_⟩
+    fun i hi ↦ ⟨d i, ?_⟩, fun i _ heven w hw ↦ ?_⟩
   · have hBU : (B.restrict (N i)).toMatrix (d i) = π ^ i • U i := by
       ext a a'
       simp [U, toMatrix_apply, ← hCapp]

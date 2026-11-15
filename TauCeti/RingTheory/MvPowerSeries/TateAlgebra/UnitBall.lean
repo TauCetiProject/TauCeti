@@ -96,7 +96,7 @@ theorem mem_unitClosedBall_iff [NormOneClass R]
     {f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)} :
     f ∈ Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) ↔
       ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ 1 := by
-  simp [norm_le_iff zero_le_one]
+  simp [norm_le_iff]
 
 /-- **Coefficient criterion for the open Gauss unit ball.** A unit-radius restricted series has
 norm less than one exactly when all its coefficients do. -/
@@ -185,8 +185,8 @@ theorem coeff_restrictedIntegerEquiv_symm (f : T°) (t : σ →₀ ℕ) :
 /-- `restrictedIntegerEquiv` preserves the Gauss norm. -/
 @[simp]
 theorem norm_restrictedIntegerEquiv (f : Tint) : ‖(restrictedIntegerEquiv f : T)‖ = ‖f‖ := by
-  refine le_antisymm ((norm_le_iff (norm_nonneg f)).mpr fun t ↦ ?_)
-    ((norm_le_iff (norm_nonneg _)).mpr fun t ↦ ?_)
+  refine le_antisymm (norm_le_iff.mpr fun t ↦ ?_)
+    (norm_le_iff.mpr fun t ↦ ?_)
   · simpa using norm_coeff_mul_prod_le f t
   · simpa using norm_coeff_mul_prod_le (restrictedIntegerEquiv f : T) t
 

@@ -269,6 +269,31 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
   exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
     ((contDiffAt_const.sub contDiffAt_id).inverse hu)).comp_contMDiffAt hCs
 
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` at a point `p` is itself `C^n` at `p`: it is the inverse Cayley chart
+applied to its Cayley coordinates. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiffAt_cayley`. -/
+theorem Compatible.contMDiffAt_of_contMDiffAt_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞} {p : N}
+    (hCs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) p) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) p := by
+  have hC (y : N) : (LinearMap.toContinuousLinearMap (J₀.cayley (J y))).toLinearMap ∈
+      ω.cayleyBall J₀ := by
+    simpa only [LinearMap.coe_toContinuousLinearMap] using h₀.cayley_mem_cayleyBall (hJ y)
+  -- Each structure is the inverse Cayley chart applied to its own Cayley coordinate.
+  have hJC (y : N) : J y = (h₀.cayleyEquiv.symm ⟨_, hC y⟩).val :=
+    congrArg Subtype.val (h₀.cayleyEquiv.eq_symm_apply.2 (Subtype.ext (by
+      simp only [Compatible.cayleyEquiv_apply_coe, LinearMap.coe_toContinuousLinearMap])) :
+        (⟨J y, hJ y⟩ : {J : AlmostComplexStructure V // ω.Tames J}) = _)
+  have hfun : (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) =
+      fun y => LinearMap.toContinuousLinearMap (h₀.cayleyEquiv.symm ⟨_, hC y⟩).val.toLinearMap :=
+    funext fun y => congrArg (fun J : AlmostComplexStructure V =>
+      LinearMap.toContinuousLinearMap J.toLinearMap) (hJC y)
+  rw [hfun]
+  exact h₀.contMDiffAt_cayleyEquiv_symm hC hCs
+
 /-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
 structures on a manifold to a `C^n` family of Cayley coordinates. -/
 theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexStructure V}
@@ -278,6 +303,17 @@ theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexSt
     ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
       (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) :=
   fun p => h₀.contMDiffAt_cayley (hJ p) (hJs p)
+
+/-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
+`ω`-compatible `J₀` are `C^n` is itself `C^n`. This is the converse of
+`TauCeti.SymplecticForm.Tames.contMDiff_cayley`. -/
+theorem Compatible.contMDiff_of_contMDiff_cayley (h₀ : ω.Compatible J₀)
+    {J : N → AlmostComplexStructure V} (hJ : ∀ y, ω.Tames (J y)) {n : WithTop ℕ∞}
+    (hCs : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y)))) :
+    ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) :=
+  fun p => h₀.contMDiffAt_of_contMDiffAt_cayley hJ (hCs p)
 
 end Manifold
 
@@ -316,6 +352,12 @@ theorem Compatible.cayleyInterp_zero (h₀ : ω.Compatible J₀) (h₁ : ω.Comp
 theorem Compatible.cayleyInterp_one (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) :
     h₀.cayleyInterp h₁ (b := 1) (by simp) = J₁ := by
   exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₁.tames (by simp)
+
+/-- Interpolating a structure with itself leaves it fixed at every weight. -/
+@[simp]
+theorem Compatible.cayleyInterp_self (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₀)
+    {b : ℝ} (hb : b ∈ Icc 0 1) : h₀.cayleyInterp h₁ hb = J₀ := by
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₀.tames (by simp)
 
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
@@ -401,20 +443,6 @@ theorem Tames.isUnit_one_sub_mul_of_toLinearMap (h₀ : ω.Tames J₀) (h₁ : �
   rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
   simpa [hA, hB] using h₀.isUnit_one_sub_mul h₁
 
-/-- In operator-norm coordinates, the Cayley transform is the rational expression
-`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`. -/
-theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁)
-    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
-    LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
-  apply ContinuousLinearMap.coe_injective
-  have hinv := (h₀.isUnit_one_sub_mul_of_toLinearMap h₁ hA hB).map_ringInverse
-    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
-  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
-  rw [AlmostComplexStructure.cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
-    cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
-    ContinuousLinearMap.toLinearMap_mul, hinv]
-  simp [hA, hB]
-
 /-- In operator-norm coordinates, the tame structure whose Cayley coordinate at `J₀` is `b` times
 that of a tame `J₁`, for `|b| ≤ 1`, is `J₀ (1 + b C)(1 - b C)⁻¹`, where `C` is the Cayley
 coordinate of `J₁`. -/
@@ -435,7 +463,7 @@ theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h₀ : ω
   have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
     ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
   rw [hsymm, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
-    h₀.tames.toContinuousLinearMap_cayley h₁ hA hB, hA']
+    J₀.toContinuousLinearMap_cayley J₁ hA hB, hA']
 
 /-- In operator-norm coordinates, compatible Cayley interpolation is the rational
 expression `cayleyPathFormula` with the same weight and endpoints. -/
@@ -466,7 +494,7 @@ theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
     (h₁ : ω.Tames J₁) {b : ℝ} (hb : |b| ≤ 1) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     IsUnit (1 - b • cayleyFormula A B) := by
-  rw [← h₀.tames.toContinuousLinearMap_cayley h₁ hA hB]
+  rw [← J₀.toContinuousLinearMap_cayley J₁ hA hB]
   refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀) ?_
   simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
     using h₀.smul_cayley_mem_cayleyBall h₁ hb

@@ -12,10 +12,6 @@ import Mathlib.LinearAlgebra.Span.Defs
 /-!
 # Kernels of commuting endomorphisms
 
-In a commuting square `f' ∘ d = e ∘ f` of linear maps, `f` sends the kernel of `d` into the
-kernel of `e` (`LinearMap.map_mem_ker_of_comp_eq`); with `f' = f`, this is how a chain map acts on
-cycles.
-
 Let `r₁` and `r₂` be endomorphisms of a module `M` with `ker r₁ ⊓ ker r₂ = ⊥`, let `l₁` and `l₂`
 be endomorphisms commuting with both, and let `Y ≤ ker r₁` and `Z ≤ ker r₂` be submodules. Then
 `ξ ∈ (Y ⊓ ker l₁) ⊔ (Z ⊓ ker l₂)` if and only if `ξ ∈ Y ⊔ Z`, `r₁ ξ ∈ ker l₂` and `r₂ ξ ∈ ker l₁`.
@@ -27,7 +23,6 @@ right-action form of their Lemma 2), `l₁`, `l₂` the left multiplications by 
 
 ## Main results
 
-* `LinearMap.map_mem_ker_of_comp_eq`: a commuting square sends kernel to kernel.
 * `TauCeti.End.mem_inf_ker_sup_inf_ker_iff`: the splitting statement above.
 
 ## References
@@ -37,18 +32,6 @@ right-action form of their Lemma 2), `l₁`, `l₂` the left multiplications by 
 -/
 
 public section
-
-namespace LinearMap
-
-/-- In a commuting square `f' ∘ d = e ∘ f` of linear maps, `f` sends the kernel of `d` into the
-kernel of `e`. -/
-theorem map_mem_ker_of_comp_eq {R M M' N N' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N] [Module R N] [AddCommMonoid N']
-    [Module R N'] {d : M →ₗ[R] M'} {e : N →ₗ[R] N'} (f : M →ₗ[R] N) {f' : M' →ₗ[R] N'}
-    (hf : f' ∘ₗ d = e ∘ₗ f) {x : M} (hx : x ∈ ker d) : f x ∈ ker e := by
-  rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
-
-end LinearMap
 
 namespace TauCeti.End
 

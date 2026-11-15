@@ -43,7 +43,7 @@ namespace TauCeti
 
 variable (R : Type*) [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
-local instance : CompleteSpace R := FiniteDimensional.complete ℝ R
+local instance : CompleteSpace R := FiniteDimensional.completeSpace ℝ R
 attribute [local instance] normedAlgebraRatOfReal
 local instance : FiniteDimensional ℝ
     (LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ) :=
