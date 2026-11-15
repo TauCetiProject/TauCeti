@@ -337,8 +337,9 @@ theorem genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal (c : Module.Ba
   have := HasUniqueDiv.of_isTorsionFree k (SymmetricAlgebra k (Module.Dual k 𝔤) ⧸ I)
   have h := map_genericActionMatrix_pow_card_eq_zero (Ideal.Quotient.mk I) c
     fun j hj _ ↦ Ideal.Quotient.eq_zero_iff_mem.mpr (tracePowerPolynomial_mem_nilpotentConeIdeal hj)
-  rw [← Matrix.map_pow] at h
-  exact Ideal.Quotient.eq_zero_iff_mem.mp (congrFun₂ h p q)
+  have hpq := congrFun₂ h p q
+  rw [← Matrix.map_pow, Matrix.map_apply, Matrix.zero_apply] at hpq
+  exact Ideal.Quotient.eq_zero_iff_mem.mp hpq
 
 /-- **Points of the nilpotent cone act nilpotently, with a uniform bound.** For a connected affine
 group over an algebraically closed field of characteristic zero, let `φ : O(𝔤) → B` be a point of
