@@ -728,14 +728,6 @@ theorem isZigzagAlgebraIntrinsicallyFormal_of_subsingleton (k : Type w) [CommRin
 
 /-! ### Connected non-formality criteria on the public zigzag algebra -/
 
-omit [Finite V] in
-private theorem nontrivial_of_isContained_valid {t : AffineDynkinType} (ht : t.Valid)
-    (hG : t.graph.IsContained G) : Nontrivial V := by
-  obtain ⟨f⟩ := hG
-  obtain ⟨_, hj⟩ := t.exists_adj_graph ht ⟨0, t.nodes_pos⟩
-  let _ : Nontrivial (Fin t.nodes) := hj.nontrivial
-  exact f.injective.nontrivial
-
 /-- On a connected nontrivial graph, any non-formal loop deformation on `nonisolatedZigzagQuotient`
 yields a non-formal minimal strictly unital `A∞` deformation on `zigzagAlgebra k G`, refuting
 `IsZigzagAlgebraIntrinsicallyFormal k G`. -/
@@ -777,7 +769,8 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D [Nontrivial k]
     [Invertible (2 : k)] (hconn : G.Connected) {n : ℕ} (hn : 4 ≤ n)
     (hG : (AffineDynkinType.D n).graph.IsContained G) :
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V := nontrivial_of_isContained_valid (AffineDynkinType.valid_D.2 hn) hG
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained (AffineDynkinType.valid_D.2 hn) hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hn hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
@@ -795,7 +788,8 @@ nontrivial `ℚ`-algebra. -/
 theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6 [Nontrivial k] [Algebra ℚ k]
     (hconn : G.Connected) (hG : AffineDynkinType.E6.graph.IsContained G) :
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V := nontrivial_of_isContained_valid (by decide) hG
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E6 hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E6
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
@@ -812,7 +806,8 @@ nontrivial `ℚ`-algebra. -/
 theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7 [Nontrivial k] [Algebra ℚ k]
     (hconn : G.Connected) (hG : AffineDynkinType.E7.graph.IsContained G) :
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V := nontrivial_of_isContained_valid (by decide) hG
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E7 hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
@@ -829,7 +824,8 @@ nontrivial `ℚ`-algebra. -/
 theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8 [Nontrivial k] [Algebra ℚ k]
     (hconn : G.Connected) (hG : AffineDynkinType.E8.graph.IsContained G) :
     ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
-  have : Nontrivial V := nontrivial_of_isContained_valid (by decide) hG
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E8 hG
   obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8
     (k := k) (hns := hconn.preconnected.exists_adj_of_nontrivial) hG
   exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn hnf
@@ -882,15 +878,9 @@ theorem exists_isZigzagAInfinityDeformation_not_isFormal (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ∃ 𝒜 : AInfinityAlgebra k (zigzagAlgebra k G),
       IsZigzagAInfinityDeformation k G 𝒜 ∧ ¬𝒜.IsFormal := by
-  classical
-  have := Fintype.ofFinite V
-  have : Nontrivial V := by
-    rcases hG.isContained_affineDynkinType_of_not_exists_dynkinType_iso hD with
-      ⟨n, hn, h⟩ | h | h | h
-    · exact nontrivial_of_isContained_valid (AffineDynkinType.valid_D.2 hn) h
-    · exact nontrivial_of_isContained_valid (by decide) h
-    · exact nontrivial_of_isContained_valid (by decide) h
-    · exact nontrivial_of_isContained_valid (by decide) h
+  obtain ⟨t, ht, -, h⟩ :=
+    hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
+  have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
   obtain ⟨_, _, _, c, hc, hnf⟩ := hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra
     (k := k) (hns := hG.connected.preconnected.exists_adj_of_nontrivial) hD
   exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
