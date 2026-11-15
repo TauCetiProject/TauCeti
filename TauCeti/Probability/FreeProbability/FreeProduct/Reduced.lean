@@ -77,6 +77,13 @@ theorem representation_hilbertClassMap (a b : LinearAlgebra.FreeProduct ℂ A) :
       (freeProductPositiveFunctional φ hφ).hilbertClassMap (a * b) :=
   (freeProductPositiveFunctional φ hφ).boundedRepresentation_hilbertClassMap _ a b
 
+/-- The vacuum vector state on all bounded operators of the GNS space restricts, along the
+representation, to the algebraic free-product state. -/
+theorem hilbertPositiveLinearMap_representation (a : LinearAlgebra.FreeProduct ℂ A) :
+    (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap (representation φ hφ a) =
+      freeProductPositiveFunctional φ hφ a :=
+  (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_boundedRepresentation _ a
+
 /-- The vacuum vector, represented by the unit of the algebraic free product. -/
 def vacuum : HilbertSpace φ hφ :=
   (freeProductPositiveFunctional φ hφ).hilbertCyclicVector

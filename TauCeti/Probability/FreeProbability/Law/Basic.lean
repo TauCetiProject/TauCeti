@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -48,6 +49,8 @@ probability measures on `ℝ`.
 * `PositiveLinearMap.eq_law_iff`: `μ_a` is the only finite measure on `ℝ` with this property for
   continuous `f`.
 * `PositiveLinearMap.law_compl_spectrum`: `μ_a` is concentrated on `spectrum ℝ a`.
+* `PositiveLinearMap.support_law_subset_spectrum`, `PositiveLinearMap.isCompact_support_law`:
+  the support of `μ_a` is a compact subset of `spectrum ℝ a`.
 * `PositiveLinearMap.integrable_law`: every `f` continuous on `spectrum ℝ a` is `μ_a`-integrable.
 * `PositiveLinearMap.isProbabilityMeasure_law`: `μ_a` is a probability measure when `φ 1 = 1`.
 * `PositiveLinearMap.ofReal_integral_pow_law`: the moments of `μ_a` are `φ (a ^ n)`.
@@ -160,6 +163,15 @@ theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
 @[simp]
 theorem restrict_spectrum_law (a : A) : (law φ a).restrict (spectrum ℝ a) = law φ a :=
   Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (law_compl_spectrum φ a))
+
+/-- The support of the law `μ_a` is contained in the spectrum of `a`. -/
+theorem support_law_subset_spectrum (a : A) : (law φ a).support ⊆ spectrum ℝ a :=
+  Measure.support_subset_of_isClosed (spectrum.isClosed a) (mem_ae_iff.2 (law_compl_spectrum φ a))
+
+/-- The law `μ_a` has compact support. -/
+theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
+  (ContinuousFunctionalCalculus.isCompact_spectrum a).of_isClosed_subset Measure.isClosed_support
+    (support_law_subset_spectrum φ a)
 
 /-- Every function continuous on the spectrum of `a` is integrable against the law `μ_a`. -/
 theorem integrable_law (a : A) (f : ℝ → ℝ)
