@@ -13,8 +13,11 @@ import TauCeti.Analysis.Normed.Operator.Basic
 
 Mathlib equips the space `C₀(α, β)` of continuous functions vanishing at infinity with the sup
 distance and, for normed fields, with a normed-space structure. This file supplies the structure
-needed for scalar actions beyond normed fields:
+needed for scalar actions beyond normed fields and degenerate domains/codomains:
 
+* `ZeroAtInftyContinuousMap.instUniqueOfIsEmpty` and
+  `ZeroAtInftyContinuousMap.instUniqueOfSubsingleton`: `0` is the unique element of `C₀(α, β)`
+  when `α` is empty or `β` is a subsingleton;
 * `ZeroAtInftyContinuousMap.instIsBoundedSMul`: a bounded scalar action on `β` induces one on
   `C₀(α, β)`, so for instance `C₀(α, R)` is a module with contractive action over a seminormed
   ring `R`;
@@ -44,6 +47,17 @@ open scoped ZeroAtInfty BoundedContinuousFunction
 namespace ZeroAtInftyContinuousMap
 
 variable {α β : Type*} [TopologicalSpace α]
+
+/-- On an empty domain, `0` is the unique continuous function vanishing at infinity. -/
+instance instUniqueOfIsEmpty [IsEmpty α] [TopologicalSpace β] [Zero β] : Unique C₀(α, β) where
+  default := 0
+  uniq f := eq_of_empty f 0
+
+/-- Into a subsingleton codomain, `0` is the unique continuous function vanishing at infinity. -/
+instance instUniqueOfSubsingleton [TopologicalSpace β] [Zero β] [Subsingleton β] :
+    Unique C₀(α, β) where
+  default := 0
+  uniq f := ext fun x => Subsingleton.elim (f x) 0
 
 section PseudoMetric
 
