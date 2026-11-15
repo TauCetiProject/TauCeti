@@ -157,26 +157,6 @@ private lemma radialPush_eq_collarScale_mul (t : I) {x : ℝ} (hx : 0 ≤ x) :
     radialPush (2⁻¹ : ℝ) t x = collarScale t x * x := by
   rw [radialPush_eq_smul, smul_eq_mul, Real.norm_of_nonneg hx, collarScale]
 
-/-- The radial push keeps nonnegative real numbers nonnegative. -/
-private lemma radialPush_nonneg (t : I) {x : ℝ} (hx : 0 ≤ x) : 0 ≤ radialPush (2⁻¹ : ℝ) t x := by
-  rw [radialPush_eq_collarScale_mul t hx]
-  exact mul_nonneg (collarScale_nonneg t hx) hx
-
-/-- The radial push stays in `[x, 1]` from a point `x` of `[0, 1]`. -/
-private lemma le_radialPush_le_one (t : I) {x : ℝ} (hx : 0 ≤ x) (hx1 : x ≤ 1) :
-    x ≤ radialPush (2⁻¹ : ℝ) t x ∧ radialPush (2⁻¹ : ℝ) t x ≤ 1 := by
-  have hx1' : ‖x‖ ≤ 1 := by rwa [Real.norm_of_nonneg hx]
-  have h := norm_le_norm_radialPush (r := 2⁻¹) (by norm_num) (by norm_num) t hx1'
-  rw [Real.norm_of_nonneg hx, Real.norm_of_nonneg (radialPush_nonneg t hx)] at h
-  exact ⟨h, (Real.le_norm_self _).trans (norm_radialPush_le_one (r := 2⁻¹) t hx1')⟩
-
-/-- At time one, the radial push sends `[1/2, ∞)` to `1`. -/
-private lemma radialPush_one_eq_one {x : ℝ} (hx : 2⁻¹ ≤ x) : radialPush (2⁻¹ : ℝ) 1 x = 1 := by
-  have hx0 : 0 ≤ x := le_trans (by norm_num) hx
-  have h := norm_radialPush_one (r := 2⁻¹) (y := x) (by norm_num)
-    (by rwa [Real.norm_of_nonneg hx0])
-  rwa [Real.norm_of_nonneg (radialPush_nonneg 1 hx0)] at h
-
 variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   (hρ : IsFiberGauge ρ)
@@ -188,7 +168,7 @@ private def discCollar : C(I × gaugeDiscBundle ρ, gaugeDiscBundle ρ) where
   toFun p := ⟨TotalSpace.mk' F p.2.1.proj (collarScale p.1 (ρ p.2) • p.2.1.2), by
     rw [mem_gaugeDiscBundle, hρ.smul_of_nonneg (collarScale_nonneg _ (hρ.nonneg _)),
       ← radialPush_eq_collarScale_mul _ (hρ.nonneg _)]
-    exact (le_radialPush_le_one _ (hρ.nonneg _) (mem_gaugeDiscBundle.1 p.2.2)).2⟩
+    exact radialPush_le_one _ (mem_gaugeDiscBundle.1 p.2.2)⟩
   continuous_toFun := by
     have hv : Continuous fun p : I × gaugeDiscBundle ρ ↦ (p.2 : TotalSpace F E) :=
       continuous_subtype_val.comp continuous_snd
@@ -219,13 +199,14 @@ private lemma apply_discCollar (t : I) (v : gaugeDiscBundle ρ) :
 private lemma discCollar_mem_outerCollar (t : I) {v : gaugeDiscBundle ρ} (hv : v ∈ outerCollar ρ) :
     discCollar hρ (t, v) ∈ outerCollar ρ := by
   rw [mem_outerCollar, apply_discCollar hρ]
-  exact hv.trans_le (le_radialPush_le_one t (hρ.nonneg _) (mem_gaugeDiscBundle.1 v.2)).1
+  exact hv.trans_le
+    (le_radialPush (by norm_num) (by norm_num) t (hρ.nonneg _) (mem_gaugeDiscBundle.1 v.2))
 
 /-- At time one the collar deformation pushes the outer collar onto the sphere bundle. -/
 private lemma discCollar_one_mem_gaugeSphereBundle {v : gaugeDiscBundle ρ}
     (hv : v ∈ outerCollar ρ) : (discCollar hρ (1, v) : TotalSpace F E) ∈ gaugeSphereBundle ρ := by
   rw [mem_gaugeSphereBundle, apply_discCollar hρ]
-  exact radialPush_one_eq_one hv.le
+  exact radialPush_one_eq_one (by norm_num) hv.le
 
 /-- The collar deformation fixes the sphere bundle at every time. -/
 private lemma discCollar_of_mem_gaugeSphereBundle (t : I) {v : gaugeDiscBundle ρ}

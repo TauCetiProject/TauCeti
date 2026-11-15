@@ -40,6 +40,8 @@ cell by cell, that the skeleta of a CW complex form good pairs.
 * `TauCeti.inv_norm_smul_radialPush`: for `r > 0` it moves every vector along its ray.
 * `TauCeti.radialPush_of_norm_eq_one`: it fixes the unit sphere.
 * `TauCeti.norm_radialPush_one`: at the end it sends the shell `r ≤ ‖y‖` to the unit sphere.
+* `TauCeti.radialPush_nonneg`, `TauCeti.radialPush_le_one`, `TauCeti.le_radialPush` and
+  `TauCeti.radialPush_one_eq_one`: the same facts on the real line, without norms.
 
 ## References
 
@@ -178,5 +180,48 @@ theorem radialPush_of_norm_eq_one (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hy : ‖
 theorem norm_radialPush_one (hr : 0 < r) (hy : r ≤ ‖y‖) : ‖radialPush r 1 y‖ = 1 := by
   rw [norm_radialPush hr.le]
   simp [min_eq_right hy, hr.ne']
+
+/-! ### The radial push on the real line -/
+
+section Real
+
+variable {x : ℝ}
+
+/-- The factor by which `TauCeti.radialPush` rescales a vector is nonnegative, for every radius. -/
+private lemma radialPush_factor_nonneg (r : ℝ) (t : I) {a : ℝ} (ha : 0 ≤ a) :
+    0 ≤ 1 - (t : ℝ) + (t : ℝ) * (r⁻¹ * min 1 (r / a)) := by
+  have hk : 0 ≤ r⁻¹ * min 1 (r / a) := by
+    rcases le_or_gt 0 r with hr | hr
+    · exact mul_nonneg (inv_nonneg.2 hr) (le_min zero_le_one (div_nonneg hr ha))
+    · exact mul_nonneg_of_nonpos_of_nonpos (inv_nonpos.2 hr.le)
+        ((min_le_right _ _).trans (div_nonpos_of_nonpos_of_nonneg hr.le ha))
+  nlinarith [t.2.1, t.2.2, mul_nonneg t.2.1 hk]
+
+/-- On the real line, `TauCeti.radialPush` keeps nonnegative numbers nonnegative. -/
+theorem radialPush_nonneg (t : I) (hx : 0 ≤ x) : 0 ≤ radialPush r t x := by
+  rw [radialPush_eq_smul, smul_eq_mul]
+  exact mul_nonneg (radialPush_factor_nonneg r t (norm_nonneg x)) hx
+
+/-- On the real line, `TauCeti.radialPush` keeps numbers at most `1` at most `1`. -/
+theorem radialPush_le_one (t : I) (hx : x ≤ 1) : radialPush r t x ≤ 1 := by
+  rcases le_total x 0 with hx0 | hx0
+  · rw [radialPush_eq_smul, smul_eq_mul]
+    nlinarith [radialPush_factor_nonneg r t (norm_nonneg x)]
+  · exact (Real.le_norm_self _).trans
+      (norm_radialPush_le_one t (by rwa [Real.norm_of_nonneg hx0]))
+
+/-- On `[0, 1]`, `TauCeti.radialPush` does not decrease real numbers. -/
+theorem le_radialPush (hr : 0 < r) (hr1 : r ≤ 1) (t : I) (hx : 0 ≤ x) (hx1 : x ≤ 1) :
+    x ≤ radialPush r t x := by
+  have h := norm_le_norm_radialPush hr hr1 t (y := x) (by rwa [Real.norm_of_nonneg hx])
+  rwa [Real.norm_of_nonneg hx, Real.norm_of_nonneg (radialPush_nonneg t hx)] at h
+
+/-- At the end, `TauCeti.radialPush r` sends every real number at least `r > 0` to `1`. -/
+theorem radialPush_one_eq_one (hr : 0 < r) (hx : r ≤ x) : radialPush r 1 x = 1 := by
+  have hx0 : 0 < x := hr.trans_le hx
+  have hnx : ‖x‖ = x := Real.norm_of_nonneg hx0.le
+  rw [radialPush_one_of_le_norm hr (by rwa [hnx]), hnx, smul_eq_mul, inv_mul_cancel₀ hx0.ne']
+
+end Real
 
 end TauCeti
