@@ -57,93 +57,6 @@ namespace TauCeti.TwoComplex
 
 variable {V W A : Type*}
 
-/-! ### Face membership and permutation symmetry on unoriented simplices -/
-
-section DecidableEq
-
-variable [DecidableEq V]
-
-/-- The three vertices of a filled triangle are pairwise distinct. -/
-theorem ne_of_triple_mem_triangles {X : TwoComplex V} {u v z : V}
-    (ht : ({u, v, z} : Finset V) ∈ X.triangles) : u ≠ v ∧ u ≠ z ∧ v ≠ z :=
-  card_triple_eq_three_iff.mp (X.triangle_card _ ht)
-
-/-- The first two listed vertices of a filled triangle span an edge. Permuting `{u, v, z}` yields
-the other two boundary edges as well. -/
-theorem pair_mem_edges_of_triple_mem_triangles {X : TwoComplex V} {u v z : V}
-    (ht : ({u, v, z} : Finset V) ∈ X.triangles) : ({u, v} : Finset V) ∈ X.edges := by
-  have huv := (ne_of_triple_mem_triangles ht).1
-  refine X.edge_mem_of_subset _ ht {u, v} ?_ (card_pair huv)
-  intro x hx
-  simp only [mem_insert, mem_singleton] at hx ⊢
-  tauto
-
-/-- For an edge `{u, v}` of `X`, membership in the link of `x` is equivalent to `{x, u, v}` being a
-filled triangle; disjointness `x ∉ {u, v}` follows automatically from the triangle cardinality. -/
-theorem pair_mem_linkEdges_iff_of_mem_edges {X : TwoComplex V} {x u v : V}
-    (he : ({u, v} : Finset V) ∈ X.edges) :
-    ({u, v} : Finset V) ∈ X.linkEdges x ↔ ({x, u, v} : Finset V) ∈ X.triangles := by
-  rw [X.mem_linkEdges]
-  refine ⟨fun h => h.2.2, fun ht => ⟨he, ?_, ht⟩⟩
-  obtain ⟨hxu, hxv, -⟩ := ne_of_triple_mem_triangles ht
-  simp [hxu, hxv]
-
-/-- A binary weight symmetric on the edges of `X` takes the same value on any two presentations of
-the same edge. -/
-theorem apply_eq_of_pair_eq {B : Sort*} (X : TwoComplex V) (w : V → V → B)
-    (hw : ∀ ⦃u v⦄, ({u, v} : Finset V) ∈ X.edges → w u v = w v u) {u₁ v₁ u₂ v₂ : V}
-    (he : ({u₁, v₁} : Finset V) ∈ X.edges) (hp : ({u₁, v₁} : Finset V) = {u₂, v₂}) :
-    w u₁ v₁ = w u₂ v₂ := by
-  have hne : u₁ ≠ v₁ := card_pair_eq_two_iff.mp (X.edge_card _ he)
-  have h₁ : u₁ = u₂ ∨ u₁ = v₂ := by simpa using Finset.ext_iff.mp hp u₁
-  have h₂ : v₁ = u₂ ∨ v₁ = v₂ := by simpa using Finset.ext_iff.mp hp v₁
-  rcases h₁ with rfl | rfl
-  · rcases h₂ with rfl | rfl
-    · exact (hne rfl).elim
-    · rfl
-  · rcases h₂ with rfl | rfl
-    · exact hw he
-    · exact (hne rfl).elim
-
-/-- A ternary weight on `V` that is invariant on the triangles of `X` under cyclic rotation
-`(u, v, z) ↦ (v, z, u)` and transposition `(u, v, z) ↦ (v, u, z)` takes the same value on all six
-presentations of any filled triangle. -/
-theorem apply_eq_of_triple_eq {B : Sort*} (X : TwoComplex V) (w : V → V → V → B)
-    (hrot : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ X.triangles → w v z u = w u v z)
-    (hswap : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ X.triangles → w v u z = w u v z)
-    {u₁ v₁ z₁ u₂ v₂ z₂ : V} (ht : ({u₁, v₁, z₁} : Finset V) ∈ X.triangles)
-    (hp : ({u₁, v₁, z₁} : Finset V) = {u₂, v₂, z₂}) :
-    w u₁ v₁ z₁ = w u₂ v₂ z₂ := by
-  have ht_vzu : ({v₁, z₁, u₁} : Finset V) ∈ X.triangles := by
-    convert ht using 1; ext; simp; tauto
-  have ht_zuv : ({z₁, u₁, v₁} : Finset V) ∈ X.triangles := by
-    convert ht using 1; ext; simp; tauto
-  have h_vzu : w v₁ z₁ u₁ = w u₁ v₁ z₁ := hrot ht
-  have h_zuv : w z₁ u₁ v₁ = w u₁ v₁ z₁ := (hrot ht_vzu).trans h_vzu
-  have h_vuz : w v₁ u₁ z₁ = w u₁ v₁ z₁ := hswap ht
-  have h_zvu : w z₁ v₁ u₁ = w u₁ v₁ z₁ := (hswap ht_vzu).trans h_vzu
-  have h_uzv : w u₁ z₁ v₁ = w u₁ v₁ z₁ := (hswap ht_zuv).trans h_zuv
-  obtain ⟨hne₁₂, hne₁₃, hne₂₃⟩ := ne_of_triple_mem_triangles (hp ▸ ht)
-  have hu₂ : u₂ = u₁ ∨ u₂ = v₁ ∨ u₂ = z₁ := by
-    simpa using (Finset.ext_iff.mp hp u₂).mpr (by simp)
-  have hv₂ : v₂ = u₁ ∨ v₂ = v₁ ∨ v₂ = z₁ := by
-    simpa using (Finset.ext_iff.mp hp v₂).mpr (by simp)
-  have hz₂ : z₂ = u₁ ∨ z₂ = v₁ ∨ z₂ = z₁ := by
-    simpa using (Finset.ext_iff.mp hp z₂).mpr (by simp)
-  rcases hu₂ with rfl | rfl | rfl <;>
-    rcases hv₂ with rfl | rfl | rfl <;>
-    rcases hz₂ with rfl | rfl | rfl <;>
-    first
-    | contradiction
-    | rfl
-    | exact h_vzu.symm
-    | exact h_zuv.symm
-    | exact h_vuz.symm
-    | exact h_zvu.symm
-    | exact h_uzv.symm
-
-end DecidableEq
-
 /-! ### Oriented edges and triangles in a linear order -/
 
 section OrderedFaces
@@ -162,6 +75,14 @@ private theorem edgeOrderEmb_apply (X : TwoComplex V) (e : X.edges) :
     edgeOrderEmb X e = (Set.powersetCard.ofLtPair.symm ⟨e.1, X.edge_card e.1 e.2⟩).1 :=
   rfl
 
+private theorem edgeOrderEmb_of_lt (X : TwoComplex V) {u v : V} (hlt : u < v)
+    (he : ({u, v} : Finset V) ∈ X.edges) :
+    edgeOrderEmb X ⟨{u, v}, he⟩ = (u, v) := by
+  have hq : (⟨{u, v}, X.edge_card _ he⟩ : Set.powersetCard V 2) =
+      Set.powersetCard.ofLtPair ⟨(u, v), hlt⟩ :=
+    Subtype.ext (Set.powersetCard.val_ofLtPair ⟨(u, v), hlt⟩).symm
+  rw [edgeOrderEmb_apply, hq, Equiv.symm_apply_apply]
+
 /-- The edges of `X`, each oriented as its unique increasing pair `(u, v)` with `u < v`. -/
 noncomputable def orderedEdges (X : TwoComplex V) : Finset (V × V) :=
   X.edges.attach.map (edgeOrderEmb X)
@@ -178,12 +99,7 @@ theorem mem_orderedEdges (X : TwoComplex V) (p : V × V) :
         (Set.powersetCard.ofLtPair.symm s).1.2} : Finset V) = e :=
       Set.powersetCard.pair_ofLtPair_symm s
     exact ⟨(Set.powersetCard.ofLtPair.symm s).2, by simpa [edgeOrderEmb_apply, hs] using he⟩
-  · rintro ⟨hlt, he⟩
-    refine ⟨{p.1, p.2}, he, ?_⟩
-    have hq : (⟨{p.1, p.2}, X.edge_card _ he⟩ : Set.powersetCard V 2) =
-        Set.powersetCard.ofLtPair ⟨p, hlt⟩ :=
-      Subtype.ext (Set.powersetCard.val_ofLtPair ⟨p, hlt⟩).symm
-    rw [edgeOrderEmb_apply, hq, Equiv.symm_apply_apply]
+  · exact fun ⟨hlt, he⟩ => ⟨{p.1, p.2}, he, edgeOrderEmb_of_lt X hlt he⟩
 
 /-- The first vertex of an oriented edge strictly precedes the second. -/
 theorem fst_lt_snd_of_mem_orderedEdges {X : TwoComplex V} {p : V × V} (hp : p ∈ X.orderedEdges) :
@@ -211,15 +127,8 @@ theorem orderedEdges_eq_filter [Fintype V] (X : TwoComplex V) :
 noncomputable def orderedEdgesEquiv (X : TwoComplex V) : X.orderedEdges ≃ X.edges where
   toFun p := ⟨{p.1.1, p.1.2}, pair_mem_edges_of_mem_orderedEdges p.2⟩
   invFun e := ⟨edgeOrderEmb X e, mem_map_of_mem _ (mem_attach _ e)⟩
-  left_inv p := by
-    apply Subtype.ext
-    dsimp only
-    have hlt := fst_lt_snd_of_mem_orderedEdges p.2
-    have he := pair_mem_edges_of_mem_orderedEdges p.2
-    have hq : (⟨{p.1.1, p.1.2}, X.edge_card _ he⟩ : Set.powersetCard V 2) =
-        Set.powersetCard.ofLtPair ⟨p.1, hlt⟩ :=
-      Subtype.ext (Set.powersetCard.val_ofLtPair ⟨p.1, hlt⟩).symm
-    rw [edgeOrderEmb_apply, hq, Equiv.symm_apply_apply]
+  left_inv p := Subtype.ext (edgeOrderEmb_of_lt X
+    (fst_lt_snd_of_mem_orderedEdges p.2) (pair_mem_edges_of_mem_orderedEdges p.2))
   right_inv e := by
     apply Subtype.ext
     exact Set.powersetCard.pair_ofLtPair_symm ⟨e.1, X.edge_card e.1 e.2⟩
@@ -267,6 +176,14 @@ private theorem triangleOrderEmb_apply (X : TwoComplex V) (t : X.triangles) :
       (Set.powersetCard.ofLtTriple.symm ⟨t.1, X.triangle_card t.1 t.2⟩).1 :=
   rfl
 
+private theorem triangleOrderEmb_of_lt (X : TwoComplex V) {u v z : V} (hlt₁ : u < v) (hlt₂ : v < z)
+    (ht : ({u, v, z} : Finset V) ∈ X.triangles) :
+    triangleOrderEmb X ⟨{u, v, z}, ht⟩ = (u, v, z) := by
+  have hq : (⟨{u, v, z}, X.triangle_card _ ht⟩ : Set.powersetCard V 3) =
+      Set.powersetCard.ofLtTriple ⟨(u, v, z), hlt₁, hlt₂⟩ :=
+    Subtype.ext (Set.powersetCard.val_ofLtTriple ⟨(u, v, z), hlt₁, hlt₂⟩).symm
+  rw [triangleOrderEmb_apply, hq, Equiv.symm_apply_apply]
+
 /-- The filled triangles of `X`, each oriented as its unique increasing triple `(u, v, z)` with
 `u < v < z`. -/
 noncomputable def orderedTriangles (X : TwoComplex V) : Finset (V × V × V) :=
@@ -288,12 +205,7 @@ theorem mem_orderedTriangles (X : TwoComplex V) (t : V × V × V) :
       Set.powersetCard.triple_ofLtTriple_symm q
     exact ⟨(Set.powersetCard.ofLtTriple.symm q).2.1, (Set.powersetCard.ofLtTriple.symm q).2.2,
       by simpa [triangleOrderEmb_apply, hq] using hs⟩
-  · rintro ⟨hlt₁, hlt₂, ht⟩
-    refine ⟨{t.1, t.2.1, t.2.2}, ht, ?_⟩
-    have hq : (⟨{t.1, t.2.1, t.2.2}, X.triangle_card _ ht⟩ : Set.powersetCard V 3) =
-        Set.powersetCard.ofLtTriple ⟨t, hlt₁, hlt₂⟩ :=
-      Subtype.ext (Set.powersetCard.val_ofLtTriple ⟨t, hlt₁, hlt₂⟩).symm
-    rw [triangleOrderEmb_apply, hq, Equiv.symm_apply_apply]
+  · exact fun ⟨hlt₁, hlt₂, ht⟩ => ⟨{t.1, t.2.1, t.2.2}, ht, triangleOrderEmb_of_lt X hlt₁ hlt₂ ht⟩
 
 /-- In an oriented triangle, the first vertex strictly precedes the second. -/
 theorem fst_lt_snd_fst_of_mem_orderedTriangles {X : TwoComplex V} {t : V × V × V}
@@ -324,20 +236,18 @@ theorem mk_fst_snd_fst_mem_orderedEdges {X : TwoComplex V} {t : V × V × V}
 /-- The last two vertices of an oriented triangle form an oriented edge. -/
 theorem snd_mem_orderedEdges {X : TwoComplex V} {t : V × V × V}
     (ht : t ∈ X.orderedTriangles) : (t.2.1, t.2.2) ∈ X.orderedEdges := by
-  refine (X.mem_orderedEdges _).mpr ⟨snd_fst_lt_snd_snd_of_mem_orderedTriangles ht, ?_⟩
-  have ht' : ({t.2.1, t.2.2, t.1} : Finset V) ∈ X.triangles := by
-    convert triple_mem_triangles_of_mem_orderedTriangles ht using 1
-    ext; simp; tauto
-  exact pair_mem_edges_of_triple_mem_triangles ht'
+  refine (X.mem_orderedEdges _).mpr ⟨snd_fst_lt_snd_snd_of_mem_orderedTriangles ht,
+    pair_mem_edges_of_triple_mem_triangles (z := t.1) ?_⟩
+  have hmem := triple_mem_triangles_of_mem_orderedTriangles ht
+  rwa [pair_comm t.2.2 t.1, insert_comm t.2.1 t.1]
 
 /-- The first and third vertices of an oriented triangle form an oriented edge. -/
 theorem mk_fst_snd_snd_mem_orderedEdges {X : TwoComplex V} {t : V × V × V}
     (ht : t ∈ X.orderedTriangles) : (t.1, t.2.2) ∈ X.orderedEdges := by
-  refine (X.mem_orderedEdges _).mpr ⟨fst_lt_snd_snd_of_mem_orderedTriangles ht, ?_⟩
-  have ht' : ({t.1, t.2.2, t.2.1} : Finset V) ∈ X.triangles := by
-    convert triple_mem_triangles_of_mem_orderedTriangles ht using 1
-    ext; simp; tauto
-  exact pair_mem_edges_of_triple_mem_triangles ht'
+  refine (X.mem_orderedEdges _).mpr ⟨fst_lt_snd_snd_of_mem_orderedTriangles ht,
+    pair_mem_edges_of_triple_mem_triangles (z := t.2.1) ?_⟩
+  have hmem := triple_mem_triangles_of_mem_orderedTriangles ht
+  rwa [pair_comm t.2.2 t.2.1]
 
 /-- Over a finite vertex type, `orderedTriangles` is the filter of increasing triples spanning a
 filled triangle. -/
@@ -354,16 +264,9 @@ noncomputable def orderedTrianglesEquiv (X : TwoComplex V) :
     X.orderedTriangles ≃ X.triangles where
   toFun t := ⟨{t.1.1, t.1.2.1, t.1.2.2}, triple_mem_triangles_of_mem_orderedTriangles t.2⟩
   invFun s := ⟨triangleOrderEmb X s, mem_map_of_mem _ (mem_attach _ s)⟩
-  left_inv t := by
-    apply Subtype.ext
-    dsimp only
-    have hlt₁ := fst_lt_snd_fst_of_mem_orderedTriangles t.2
-    have hlt₂ := snd_fst_lt_snd_snd_of_mem_orderedTriangles t.2
-    have ht := triple_mem_triangles_of_mem_orderedTriangles t.2
-    have hq : (⟨{t.1.1, t.1.2.1, t.1.2.2}, X.triangle_card _ ht⟩ : Set.powersetCard V 3) =
-        Set.powersetCard.ofLtTriple ⟨t.1, hlt₁, hlt₂⟩ :=
-      Subtype.ext (Set.powersetCard.val_ofLtTriple ⟨t.1, hlt₁, hlt₂⟩).symm
-    rw [triangleOrderEmb_apply, hq, Equiv.symm_apply_apply]
+  left_inv t := Subtype.ext (triangleOrderEmb_of_lt X
+    (fst_lt_snd_fst_of_mem_orderedTriangles t.2) (snd_fst_lt_snd_snd_of_mem_orderedTriangles t.2)
+    (triple_mem_triangles_of_mem_orderedTriangles t.2))
   right_inv s := by
     apply Subtype.ext
     exact Set.powersetCard.triple_ofLtTriple_symm ⟨s.1, X.triangle_card s.1 s.2⟩
@@ -500,41 +403,18 @@ end Sums
 
 section OrderIndependence
 
-/-- Pair finsets built under two `DecidableEq` instances are propositionally equal. -/
-private theorem pair_congr_decidableEq (d₁ d₂ : DecidableEq V) (u v : V) :
-    @insert V (Finset V) (@Finset.instInsert V d₁) u {v} =
-      @insert V (Finset V) (@Finset.instInsert V d₂) u {v} := by
-  ext x
-  simp
-
-/-- Triple finsets built under two `DecidableEq` instances are propositionally equal. -/
-private theorem triple_congr_decidableEq (d₁ d₂ : DecidableEq V) (u v z : V) :
-    @insert V (Finset V) (@Finset.instInsert V d₁) u
-        (@insert V (Finset V) (@Finset.instInsert V d₁) v {z}) =
-      @insert V (Finset V) (@Finset.instInsert V d₂) u
-        (@insert V (Finset V) (@Finset.instInsert V d₂) v {z}) := by
-  ext x
-  simp
-
 /-- An oriented edge sum whose summand is symmetric on the edges of `X` does not depend on the
 linear order used to orient the edges. -/
 theorem sum_orderedEdges_congr_order [DecidableEq V] (l₁ l₂ : LinearOrder V) [AddCommMonoid A]
     (X : TwoComplex V) (w : V → V → A)
     (hw : ∀ ⦃u v⦄, ({u, v} : Finset V) ∈ X.edges → w u v = w v u) :
     ∑ p ∈ @orderedEdges V l₁ X, w p.1 p.2 = ∑ p ∈ @orderedEdges V l₂ X, w p.1 p.2 := by
-  have hw₁ : ∀ ⦃u v⦄,
-      @insert V (Finset V) (@Finset.instInsert V l₁.toDecidableEq) u {v} ∈ X.edges →
-        w u v = w v u := by
-    intro u v he
-    rw [pair_congr_decidableEq l₁.toDecidableEq ‹DecidableEq V› u v] at he
-    exact hw he
-  have hf : ∀ (l : LinearOrder V),
-      ∑ e ∈ X.edges, @edgeLift V A l₁ _ X w e = ∑ p ∈ @orderedEdges V l X, w p.1 p.2 := by
-    intro l
-    refine @sum_edges_eq_sum_orderedEdges V A l _ X (@edgeLift V A l₁ _ X w) w fun u v _ he => ?_
-    rw [pair_congr_decidableEq l.toDecidableEq l₁.toDecidableEq u v] at he ⊢
-    exact @edgeLift_pair V A l₁ _ X w hw₁ u v he
-  exact (hf l₁).symm.trans (hf l₂)
+  -- Identify `DecidableEq V` instances via `Subsingleton.elim` so pair finsets agree.
+  obtain rfl : ‹DecidableEq V› = l₁.toDecidableEq := Subsingleton.elim _ _
+  rw [← @sum_edges_edgeLift V A l₁ _ X w hw]
+  refine @sum_edges_eq_sum_orderedEdges V A l₂ _ X (@edgeLift V A l₁ _ X w) w fun u v _ he => ?_
+  rw [Subsingleton.elim l₂.toDecidableEq l₁.toDecidableEq] at he ⊢
+  exact @edgeLift_pair V A l₁ _ X w hw u v he
 
 /-- An oriented triangle sum whose summand is invariant under cyclic rotation and vertex swap on the
 triangles of `X` does not depend on the linear order used to orient the triangles. -/
@@ -544,29 +424,13 @@ theorem sum_orderedTriangles_congr_order [DecidableEq V] (l₁ l₂ : LinearOrde
     (hswap : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ X.triangles → w v u z = w u v z) :
     ∑ t ∈ @orderedTriangles V l₁ X, w t.1 t.2.1 t.2.2 =
       ∑ t ∈ @orderedTriangles V l₂ X, w t.1 t.2.1 t.2.2 := by
-  have hrot₁ : ∀ ⦃u v z⦄,
-      @insert V (Finset V) (@Finset.instInsert V l₁.toDecidableEq) u
-          (@insert V (Finset V) (@Finset.instInsert V l₁.toDecidableEq) v {z}) ∈ X.triangles →
-        w v z u = w u v z := by
-    intro u v z ht
-    rw [triple_congr_decidableEq l₁.toDecidableEq ‹DecidableEq V› u v z] at ht
-    exact hrot ht
-  have hswap₁ : ∀ ⦃u v z⦄,
-      @insert V (Finset V) (@Finset.instInsert V l₁.toDecidableEq) u
-          (@insert V (Finset V) (@Finset.instInsert V l₁.toDecidableEq) v {z}) ∈ X.triangles →
-        w v u z = w u v z := by
-    intro u v z ht
-    rw [triple_congr_decidableEq l₁.toDecidableEq ‹DecidableEq V› u v z] at ht
-    exact hswap ht
-  have hf : ∀ (l : LinearOrder V),
-      ∑ s ∈ X.triangles, @triangleLift V A l₁ _ X w s =
-        ∑ t ∈ @orderedTriangles V l X, w t.1 t.2.1 t.2.2 := by
-    intro l
-    refine @sum_triangles_eq_sum_orderedTriangles V A l _ X (@triangleLift V A l₁ _ X w) w
-      fun u v z _ _ ht => ?_
-    rw [triple_congr_decidableEq l.toDecidableEq l₁.toDecidableEq u v z] at ht ⊢
-    exact @triangleLift_triple V A l₁ _ X w hrot₁ hswap₁ u v z ht
-  exact (hf l₁).symm.trans (hf l₂)
+  -- Identify `DecidableEq V` instances via `Subsingleton.elim` so triple finsets agree.
+  obtain rfl : ‹DecidableEq V› = l₁.toDecidableEq := Subsingleton.elim _ _
+  rw [← @sum_triangles_triangleLift V A l₁ _ X w hrot hswap]
+  refine @sum_triangles_eq_sum_orderedTriangles V A l₂ _ X (@triangleLift V A l₁ _ X w) w
+    fun u v z _ _ ht => ?_
+  rw [Subsingleton.elim l₂.toDecidableEq l₁.toDecidableEq] at ht ⊢
+  exact @triangleLift_triple V A l₁ _ X w hrot hswap u v z ht
 
 end OrderIndependence
 
@@ -700,25 +564,22 @@ theorem sum_vertex_orderedEdges_complete [Fintype V] (w : V → V → V → A)
     ∑ x : V, ∑ p ∈ (complete V).orderedEdges,
         (if x = p.1 ∨ x = p.2 then 0 else w x p.1 p.2) =
       3 • ∑ t ∈ (complete V).orderedTriangles, w t.1 t.2.1 t.2.2 := by
-  rw [← (complete V).sum_vertex_orderedEdges w
-    (fun u v z ht => by
-      obtain ⟨h₁, h₂, h₃⟩ := ne_of_triple_mem_triangles ht
-      exact hrot h₁ h₂ h₃)
-    (fun u v z ht => by
-      obtain ⟨h₁, h₂, h₃⟩ := ne_of_triple_mem_triangles ht
-      exact hswap h₁ h₂ h₃)]
-  refine sum_congr rfl fun x _ => sum_congr rfl fun p hp => ?_
-  have hpne : p.1 ≠ p.2 := fst_ne_snd_of_mem_orderedEdges hp
-  by_cases hx : x = p.1 ∨ x = p.2
-  · have hnot : ({x, p.1, p.2} : Finset V) ∉ (complete V).triangles := by
-      intro ht
-      obtain ⟨h₁, h₂, -⟩ := ne_of_triple_mem_triangles ht
-      exact hx.elim h₁ h₂
-    simp only [hx, hnot, ↓reduceIte]
-  · rcases not_or.mp hx with ⟨hx₁, hx₂⟩
-    have ht : ({x, p.1, p.2} : Finset V) ∈ (complete V).triangles :=
-      (mem_triangles_complete _).mpr (card_triple_eq_three_iff.mpr ⟨hx₁, hx₂, hpne⟩)
-    simp only [hx, ht, ↓reduceIte]
+  have hrot' : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ (complete V).triangles → w v z u = w u v z :=
+    fun _ _ _ ht => let ⟨h₁, h₂, h₃⟩ := ne_of_triple_mem_triangles ht; hrot h₁ h₂ h₃
+  have hswap' : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ (complete V).triangles → w v u z = w u v z :=
+    fun _ _ _ ht => let ⟨h₁, h₂, h₃⟩ := ne_of_triple_mem_triangles ht; hswap h₁ h₂ h₃
+  rw [← sum_triangles_triangleLift (complete V) w hrot' hswap',
+    ← sum_vertex_edges_complete (triangleLift (complete V) w)]
+  refine sum_congr rfl fun x _ => ((complete V).sum_edges_eq_sum_orderedEdges
+    (fun e => if x ∈ e then 0 else triangleLift (complete V) w (insert x e))
+    (fun u v => if x = u ∨ x = v then 0 else w x u v)
+    fun u v _ he => ?_).symm
+  by_cases hx : x ∈ ({u, v} : Finset V)
+  · simp [hx, show (x = u ∨ x = v) from by simpa using hx]
+  · have ht : ({x, u, v} : Finset V) ∈ (complete V).triangles := by
+      rw [mem_triangles_complete, card_insert_of_notMem hx, (mem_edges_complete _).mp he]
+    simp [hx, show ¬(x = u ∨ x = v) from by simpa using hx,
+      triangleLift_triple (complete V) w hrot' hswap' ht]
 
 end StarDoubleCount
 

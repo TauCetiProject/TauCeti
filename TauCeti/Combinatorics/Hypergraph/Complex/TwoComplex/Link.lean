@@ -43,6 +43,16 @@ theorem mem_linkEdges (X : TwoComplex V) (x : V) (e : Finset V) :
     e ∈ X.linkEdges x ↔ e ∈ X.edges ∧ x ∉ e ∧ insert x e ∈ X.triangles := by
   simp [linkEdges]
 
+/-- For an edge `{u, v}` of `X`, membership in the link of `x` is equivalent to `{x, u, v}` being a
+filled triangle; disjointness `x ∉ {u, v}` follows automatically from the triangle cardinality. -/
+theorem pair_mem_linkEdges_iff_of_mem_edges {X : TwoComplex V} {x u v : V}
+    (he : ({u, v} : Finset V) ∈ X.edges) :
+    ({u, v} : Finset V) ∈ X.linkEdges x ↔ ({x, u, v} : Finset V) ∈ X.triangles := by
+  rw [X.mem_linkEdges]
+  refine ⟨fun h => h.2.2, fun ht => ⟨he, ?_, ht⟩⟩
+  obtain ⟨hxu, hxv, -⟩ := ne_of_triple_mem_triangles ht
+  simp [hxu, hxv]
+
 /-- Removing a vertex from a triangle gives an edge in its link. -/
 theorem erase_mem_linkEdges (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.triangles)
     {x : V} (hx : x ∈ t) : t.erase x ∈ X.linkEdges x := by

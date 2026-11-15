@@ -76,6 +76,78 @@ theorem edges_ofHypergraphComplex (C : HypergraphComplex 3 V) :
 theorem triangles_ofHypergraphComplex (C : HypergraphComplex 3 V) :
     (ofHypergraphComplex C).triangles = C.faces 3 (by decide) := (rfl)
 
+section DecidableEq
+
+variable [DecidableEq V]
+
+/-- The three vertices of a filled triangle are pairwise distinct. -/
+theorem ne_of_triple_mem_triangles {X : TwoComplex V} {u v z : V}
+    (ht : ({u, v, z} : Finset V) ∈ X.triangles) : u ≠ v ∧ u ≠ z ∧ v ≠ z :=
+  card_triple_eq_three_iff.mp (X.triangle_card _ ht)
+
+/-- The first two listed vertices of a filled triangle span an edge. Permuting `{u, v, z}` yields
+the other two boundary edges as well. -/
+theorem pair_mem_edges_of_triple_mem_triangles {X : TwoComplex V} {u v z : V}
+    (ht : ({u, v, z} : Finset V) ∈ X.triangles) : ({u, v} : Finset V) ∈ X.edges :=
+  X.edge_mem_of_subset _ ht {u, v} (by simp [insert_subset_iff])
+    (card_pair (ne_of_triple_mem_triangles ht).1)
+
+/-- A binary weight symmetric on the edges of `X` takes the same value on any two presentations of
+the same edge. -/
+theorem apply_eq_of_pair_eq {B : Sort*} (X : TwoComplex V) (w : V → V → B)
+    (hw : ∀ ⦃u v⦄, ({u, v} : Finset V) ∈ X.edges → w u v = w v u) {u₁ v₁ u₂ v₂ : V}
+    (he : ({u₁, v₁} : Finset V) ∈ X.edges) (hp : ({u₁, v₁} : Finset V) = {u₂, v₂}) :
+    w u₁ v₁ = w u₂ v₂ := by
+  have hne : u₁ ≠ v₁ := card_pair_eq_two_iff.mp (X.edge_card _ he)
+  have h₁ : u₁ = u₂ ∨ u₁ = v₂ := by simpa using Finset.ext_iff.mp hp u₁
+  have h₂ : v₁ = u₂ ∨ v₁ = v₂ := by simpa using Finset.ext_iff.mp hp v₁
+  rcases h₁ with rfl | rfl
+  · rcases h₂ with rfl | rfl
+    · exact (hne rfl).elim
+    · rfl
+  · rcases h₂ with rfl | rfl
+    · exact hw he
+    · exact (hne rfl).elim
+
+/-- A ternary weight on `V` that is invariant on the triangles of `X` under cyclic rotation
+`(u, v, z) ↦ (v, z, u)` and transposition `(u, v, z) ↦ (v, u, z)` takes the same value on all six
+presentations of any filled triangle. -/
+theorem apply_eq_of_triple_eq {B : Sort*} (X : TwoComplex V) (w : V → V → V → B)
+    (hrot : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ X.triangles → w v z u = w u v z)
+    (hswap : ∀ ⦃u v z⦄, ({u, v, z} : Finset V) ∈ X.triangles → w v u z = w u v z)
+    {u₁ v₁ z₁ u₂ v₂ z₂ : V} (ht : ({u₁, v₁, z₁} : Finset V) ∈ X.triangles)
+    (hp : ({u₁, v₁, z₁} : Finset V) = {u₂, v₂, z₂}) :
+    w u₁ v₁ z₁ = w u₂ v₂ z₂ := by
+  have ht_vzu : ({v₁, z₁, u₁} : Finset V) ∈ X.triangles := by
+    rwa [pair_comm z₁ u₁, insert_comm v₁ u₁]
+  have ht_zuv : ({z₁, u₁, v₁} : Finset V) ∈ X.triangles := by
+    rwa [insert_comm z₁ u₁, pair_comm z₁ v₁]
+  have h_vzu : w v₁ z₁ u₁ = w u₁ v₁ z₁ := hrot ht
+  have h_zuv : w z₁ u₁ v₁ = w u₁ v₁ z₁ := (hrot ht_vzu).trans h_vzu
+  have h_vuz : w v₁ u₁ z₁ = w u₁ v₁ z₁ := hswap ht
+  have h_zvu : w z₁ v₁ u₁ = w u₁ v₁ z₁ := (hswap ht_vzu).trans h_vzu
+  have h_uzv : w u₁ z₁ v₁ = w u₁ v₁ z₁ := (hswap ht_zuv).trans h_zuv
+  obtain ⟨hne₁₂, hne₁₃, hne₂₃⟩ := ne_of_triple_mem_triangles (hp ▸ ht)
+  have hu₂ : u₂ = u₁ ∨ u₂ = v₁ ∨ u₂ = z₁ := by
+    simpa using (Finset.ext_iff.mp hp u₂).mpr (by simp)
+  have hv₂ : v₂ = u₁ ∨ v₂ = v₁ ∨ v₂ = z₁ := by
+    simpa using (Finset.ext_iff.mp hp v₂).mpr (by simp)
+  have hz₂ : z₂ = u₁ ∨ z₂ = v₁ ∨ z₂ = z₁ := by
+    simpa using (Finset.ext_iff.mp hp z₂).mpr (by simp)
+  rcases hu₂ with rfl | rfl | rfl <;>
+    rcases hv₂ with rfl | rfl | rfl <;>
+    rcases hz₂ with rfl | rfl | rfl <;>
+    first
+    | contradiction
+    | rfl
+    | exact h_vzu.symm
+    | exact h_zuv.symm
+    | exact h_vuz.symm
+    | exact h_zvu.symm
+    | exact h_uzv.symm
+
+end DecidableEq
+
 section FiniteVertices
 
 variable [Fintype V]
