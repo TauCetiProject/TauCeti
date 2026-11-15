@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
 import TauCeti.Analysis.Normed.Module.Basic
@@ -24,9 +25,11 @@ integrable function whose norm is almost everywhere at least one is finite
 (`MeasureTheory.Integrable.isFiniteMeasure_of_one_le_norm`).
 
 For absolute moments, a real function in `Lᵖ` of positive real order has an integrable `p`-th
-power, membership of the identity in `Lᵖ` gives integrability of its norm power even on a
-seminormed group, and on the real line positive-order `Lᵖ` membership is equivalent to
-integrability of the corresponding absolute power.
+power (`MeasureTheory.MemLp.integrable_rpow`), and when the function is almost everywhere
+nonnegative its extended `p`-th moment agrees with `ENNReal.ofReal` of its Bochner `p`-th moment
+(`MeasureTheory.MemLp.lintegral_ofReal_rpow_eq_ofReal_integral`). Membership of the identity in
+`Lᵖ` gives integrability of its norm power even on a seminormed group, and on the real line
+positive-order `Lᵖ` membership is equivalent to integrability of the corresponding absolute power.
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
@@ -106,6 +109,19 @@ theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {
   exact hn.mono' (hg.aestronglyMeasurable.aemeasurable.pow_const p).aestronglyMeasurable
     (Filter.Eventually.of_forall fun y => by
       simpa only [Real.norm_eq_abs, abs_abs] using Real.abs_rpow_le_abs_rpow (g y) p)
+
+/-- For a positive real order `p` and an almost everywhere nonnegative `g` in `Lᵖ`, the lower
+integral of `ENNReal.ofReal (g y) ^ p` equals `ENNReal.ofReal` of the Bochner `p`-th moment. -/
+theorem MemLp.lintegral_ofReal_rpow_eq_ofReal_integral {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {g : X → ℝ} {p : ℝ} (hg : MemLp g (ENNReal.ofReal p) μ) (hp : 0 < p)
+    (hnn : 0 ≤ᵐ[μ] g) :
+    ∫⁻ y, ENNReal.ofReal (g y) ^ p ∂μ = ENNReal.ofReal (∫ y, g y ^ p ∂μ) := by
+  rw [ofReal_integral_eq_lintegral_ofReal (hg.integrable_rpow hp)
+    (hnn.mono fun _ h => Real.rpow_nonneg h _)]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hnn] with y hy
+  rw [Pi.zero_apply] at hy
+  exact ENNReal.ofReal_rpow_of_nonneg hy hp.le
 
 /-- An integrable function times a multiplier bounded on a set containing its support is
 integrable. -/

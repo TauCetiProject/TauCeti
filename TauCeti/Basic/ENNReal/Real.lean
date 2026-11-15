@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Basic.ENNReal.Real
 import Mathlib.Basic.ENNReal.Inv
 import Mathlib.Basic.Real.Pointwise
 
 /-!
-# `ENNReal.ofReal` of differences and suprema of maxima
+# `ENNReal.ofReal` of positive parts, differences, and suprema of maxima
 
-For `0 ≤ q ≤ p`, the embedding `ENNReal.ofReal` splits `p` into `p - q` and `q`. With `p = 1`
-and `q = θ`, this says that the interpolation weights `1 - θ` and `θ` sum to one in `ℝ≥0∞`.
+Because `ENNReal.ofReal` vanishes on `(-∞, 0]`, it absorbs the positive part
+(`ENNReal.ofReal_posPart`), and for `p > 1` it preserves the Hölder conjugate ratio `p / (p - 1)`
+(`ENNReal.ofReal_div_sub_one`). For `0 ≤ q ≤ p`, `ENNReal.ofReal` splits `p` into `p - q` and `q`.
+With `p = 1` and `q = θ`, this says that the interpolation weights `1 - θ` and `θ` sum to one in
+`ℝ≥0∞`.
 
 For a class `P` of functions `α → ℝ`, the quantity
 `⨆ (F : α → ℝ) (_ : P F), ENNReal.ofReal (⨆ x, F x)` in `ℝ≥0∞` is the supremum of the maxima of
@@ -24,6 +28,9 @@ reparametrization of the class along surjections.
 
 ## Main results
 
+* `ENNReal.ofReal_posPart`: `ENNReal.ofReal (x⁺) = ENNReal.ofReal x`.
+* `ENNReal.ofReal_div_sub_one`:
+  `ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1)` for `1 < p`.
 * `TauCeti.ofReal_sub_add_ofReal`: `ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p`
   for `0 ≤ q ≤ p`.
 * `TauCeti.le_ofReal_inv_add_mul_of_add_le`: if `a + b ≤ V` and `b ≥ ω V`, then
@@ -37,6 +44,22 @@ reparametrization of the class along surjections.
 public section
 
 open scoped ENNReal
+
+namespace ENNReal
+
+/-- `ENNReal.ofReal` absorbs the positive part since it already vanishes on `(-∞, 0]`. -/
+@[simp]
+theorem ofReal_posPart (x : ℝ) : ENNReal.ofReal (x⁺) = ENNReal.ofReal x := by
+  rcases le_total 0 x with hx | hx
+  · rw [posPart_eq_self.2 hx]
+  · rw [posPart_eq_zero.2 hx, ofReal_zero, ofReal_eq_zero.2 hx]
+
+/-- For `1 < p`, `ENNReal.ofReal` commutes with the Hölder conjugate ratio `p / (p - 1)`. -/
+theorem ofReal_div_sub_one {p : ℝ} (hp : 1 < p) :
+    ENNReal.ofReal (p / (p - 1)) = ENNReal.ofReal p / (ENNReal.ofReal p - 1) := by
+  rw [ofReal_div_of_pos (sub_pos.2 hp), ofReal_sub _ zero_le_one, ofReal_one]
+
+end ENNReal
 
 namespace TauCeti
 
