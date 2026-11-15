@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
+import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
 # The `W^{1,p}` estimate for coefficients of small mean oscillation
@@ -41,12 +42,13 @@ the a priori integrability that the Fefferman–Stein inequality requires; it ho
 when `∇u ∈ Lᵖ` vanishes outside a bounded set, as for a cutoff of a local solution.
 
 Coefficients of vanishing mean oscillation have small mean oscillation on small balls only: on
-every ball `B` of radius at most some `R₀`. The same estimate holds for them, with the same `C`,
-as long as `∇u` vanishes outside a set `S` whose measure is small at the scale `R₀`,
-`|S| ≤ δ |B(0, R₀)|`, for instance outside a ball of radius `δ^(1/(n + 1)) R₀`
+every ball `B` of radius at most some `R₀`. The same estimate holds for them, with a constant
+depending only on `n`, `p`, `λ` and `Λ`, not on `R₀`, as long as `∇u` vanishes outside a set `S`
+whose measure is small at the scale `R₀`, `|S| ≤ δ |B(0, R₀)|`, for instance outside a ball of
+radius `δ^(1/(n + 1)) R₀`
 (`TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le_of_ae_eq_zero`).
-This small-support estimate is the localized form that a partition of unity subordinate to balls
-of that radius combines into estimates at all scales.
+This is the small-support estimate on which Krylov's localization to VMO coefficients rests; the
+cutoff step, which introduces a zero-order term, is not treated here.
 
 ## The argument
 
@@ -154,23 +156,19 @@ private theorem ofReal_mul_le_ofReal_mul_mul {e K I : ℝ} {M : ℝ≥0∞} (he 
   rw [ENNReal.ofReal_mul he, ENNReal.ofReal_mul he, mul_assoc]
   gcongr
 
-/-- The `1/q`-th power of the average of `‖h‖^(2q)` over a ball containing `x` is at most
-`(2^(n + 1))^(1/q)` times the `1/q`-th power of the centred maximal function of `‖h‖^(2q)` at
+/-- In `ℝ^{n+1}`, the `t`-th power of the average of `‖h‖ ^ k` over a ball containing `x` is at
+most `(2^(n + 1))^t` times the `t`-th power of the centred maximal function of `‖h‖ₑ ^ k` at
 `x`. -/
-private theorem ofReal_setAverage_norm_rpow_rpow_inv_le
-    {h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {q : ℝ} (hq : 0 < q)
-    {c x : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ} (hx : x ∈ ball c r) :
-    ENNReal.ofReal ((⨍ y in ball c r, ‖h y‖ ^ (2 * q)) ^ q⁻¹) ≤
-      ENNReal.ofReal ((2 ^ (n + 1)) ^ q⁻¹) *
-        maximalFunction volume (fun y => ‖h y‖ₑ ^ (2 * q)) x ^ q⁻¹ := by
-  have hq1 : 0 ≤ q⁻¹ := inv_nonneg.2 hq.le
-  rw [← ENNReal.ofReal_rpow_of_nonneg (average_nonneg fun y => by positivity) hq1,
-    ← ENNReal.ofReal_rpow_of_nonneg (by positivity) hq1, ← ENNReal.mul_rpow_of_nonneg _ _ hq1]
-  gcongr
-  simpa only [finrank_euclideanSpace, Fintype.card_fin, ENNReal.ofReal_pow zero_le_two,
-    ENNReal.ofReal_ofNat] using
-    ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction volume
-      (by positivity : (0 : ℝ) ≤ 2 * q) hx
+private theorem ofReal_setAverage_norm_rpow_rpow_le
+    {h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {k t : ℝ} (hk : 0 ≤ k)
+    (ht : 0 ≤ t) {c x : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ} (hx : x ∈ ball c r) :
+    ENNReal.ofReal ((⨍ y in ball c r, ‖h y‖ ^ k) ^ t) ≤
+      ENNReal.ofReal ((2 ^ (n + 1)) ^ t) *
+        maximalFunction volume (fun y => ‖h y‖ₑ ^ k) x ^ t := by
+  rw [← ENNReal.ofReal_rpow_of_nonneg (x := 2 ^ (n + 1)) (by positivity) ht,
+    ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+  simpa only [finrank_euclideanSpace, Fintype.card_fin] using
+    ofReal_setAverage_norm_rpow_rpow_le_two_pow_rpow_mul_maximalFunction_rpow volume hk ht hx
 
 /-- **The mean oscillation estimate on one ball, in averages.** Let `u ∈ H¹(ℝ^{n+1})` solve
 `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, let `κ ≥ 1`, and freeze the coefficients on `B_{κρ}` at an elliptic
@@ -277,17 +275,11 @@ private theorem sq_setLAverage_enorm_gradient_sub_le
   have hκ0 : 0 < κ := zero_lt_one.trans_le hκ
   have hxr : x ∈ ball c r := ball_subset_ball (le_mul_of_one_le_left hρ.le hκ) hx
   -- Every average over `B_r ∋ x` is at most `2^(n + 1)` times the centred maximal function at `x`.
-  have hM : ∀ (h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) {k : ℝ},
-      0 ≤ k → ENNReal.ofReal (⨍ y in ball c r, ‖h y‖ ^ k) ≤
-        ENNReal.ofReal (2 ^ (n + 1)) * maximalFunction volume (fun y => ‖h y‖ₑ ^ k) x :=
-    fun h k hk => by
-      simpa only [finrank_euclideanSpace, Fintype.card_fin, ENNReal.ofReal_pow zero_le_two,
-        ENNReal.ofReal_ofNat] using
-        ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction volume hk hxr
-  have hE1 := hM g zero_le_two
-  have hE2 := hM G zero_le_two
-  simp only [Real.rpow_two, ENNReal.rpow_two] at hE1 hE2
-  have hE3 := ofReal_setAverage_norm_rpow_rpow_inv_le (h := g) hq.pos hxr
+  have hE1 := ofReal_setAverage_norm_rpow_rpow_le (h := g) zero_le_two zero_le_one hxr
+  have hE2 := ofReal_setAverage_norm_rpow_rpow_le (h := G) zero_le_two zero_le_one hxr
+  simp only [Real.rpow_one, ENNReal.rpow_one, Real.rpow_two, ENNReal.rpow_two] at hE1 hE2
+  have hE3 := ofReal_setAverage_norm_rpow_rpow_le (h := g) (by linarith [hq.pos] : 0 ≤ 2 * q)
+    (inv_nonneg.2 hq.pos.le) hxr
   -- Jensen's inequality on `B_ρ`.
   have : IsFiniteMeasure (volume.restrict (ball c ρ)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
@@ -344,101 +336,34 @@ private theorem sq_sharpMaximalFunction_gradient_le
   rw [ENNReal.le_rpow_inv_iff two_pos, ENNReal.rpow_two]
   exact sq_setLAverage_enorm_gradient_sub_le ha hbd hu h2p hgp hGp hq hqp hρ hκ hx hA hδ
 
-/-- A set of measure at most `ε |B(0, R₀)|` has measure at most `κ^(n + 1) ε |B(c, ρ)|` when
-`R₀ ≤ κ ρ`. -/
-private theorem measure_le_ofReal_mul_measure_ball {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    (c : EuclideanSpace ℝ (Fin (n + 1))) {R₀ ρ κ ε : ℝ} (hκ : 0 ≤ κ) (hR₀ : R₀ ≤ κ * ρ)
-    (hS : volume S ≤ ENNReal.ofReal ε * volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R₀)) :
-    volume S ≤ ENNReal.ofReal (κ ^ (n + 1) * ε) * volume (ball c ρ) := by
-  have hball : volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R₀) ≤
-      ENNReal.ofReal (κ ^ (n + 1)) * volume (ball c ρ) :=
-    calc _ ≤ volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (κ * ρ)) :=
-          measure_mono (ball_subset_ball hR₀)
-      _ = _ := by
-          rw [Measure.addHaar_ball_mul volume 0 hκ, finrank_euclideanSpace_fin,
-            Measure.addHaar_ball_center volume c]
-  rw [ENNReal.ofReal_mul (by positivity), mul_comm (ENNReal.ofReal _), mul_assoc]
-  exact hS.trans (by gcongr)
-
-/-- **The mean oscillation on a large ball, from a small support.** Let `g` vanish almost
-everywhere outside a set `S` with `|S| ≤ ε |B(0, R₀)|`, and let `B_ρ = ball c ρ` with `R₀ ≤ κ ρ`.
-Then the square mean oscillation of `g` on `B_ρ` is at most
-`4 (κ^(n + 1) ε)^(1/q') (⨍_{B_ρ} ‖g‖^(2q))^(1/q)`, for Hölder conjugate exponents `q, q'`: the
-set `S` fills at most the fraction `κ^(n + 1) ε` of `B_ρ`, and Hölder's inequality bounds
-`⨍_{B_ρ} ‖g‖²`. -/
-private theorem setAverage_norm_sub_sq_le_of_ae_eq_zero
-    {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {q q' : ℝ}
-    (hq : q.HolderConjugate q') {c : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ}
-    (hg : MemLp g (ENNReal.ofReal (2 * q)) (volume.restrict (ball c ρ)))
-    {S : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hgS : ∀ᵐ x, x ∉ S → g x = 0) {R₀ κ ε : ℝ}
-    (hρ : 0 < ρ) (hκ : 0 ≤ κ) (hR₀ : R₀ ≤ κ * ρ) (hε : 0 ≤ ε)
-    (hS : volume S ≤ ENNReal.ofReal ε * volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R₀)) :
-    ⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ 2 ≤
-      4 * (κ ^ (n + 1) * ε) ^ q'⁻¹ * (⨍ y in ball c ρ, ‖g y‖ ^ (2 * q)) ^ q⁻¹ := by
-  have : IsFiniteMeasure (volume.restrict (ball c ρ)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  set V : ℝ := volume.real (ball c ρ)
-  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume c hρ).ne' measure_ball_lt_top.ne
-  have hX : 0 ≤ κ ^ (n + 1) * ε := by positivity
-  -- The part of `S` in `B_ρ` fills at most the fraction `κ^(n + 1) ε` of `B_ρ`.
-  have hSV : (volume.restrict (ball c ρ)).real S ≤ κ ^ (n + 1) * ε * V := by
-    have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      measure_ball_lt_top.ne) ((Measure.restrict_apply_le (μ := volume) (ball c ρ) S).trans
-        (measure_le_ofReal_mul_measure_ball c hκ hR₀ hS))
-    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hX] at h
-  -- The square mean oscillation is at most `4 ⨍ ‖g‖²`, which Hölder's inequality bounds.
-  have h2 : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * q) := by
-    rw [← ENNReal.ofReal_ofNat 2]
-    exact ENNReal.ofReal_le_ofReal (by linarith [hq.lt])
-  have hg2 := hg.mono_exponent h2
-  have hosc := setIntegral_norm_sub_setAverage_sq_le measure_ball_lt_top.ne
-    (hg2.integrableOn_of_subset one_le_two subset_rfl measure_ball_lt_top.ne)
-    (hg2.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne 0)
-  simp only [sub_zero] at hosc
-  have hΘ := integral_norm_sq_le_of_ae_eq_zero
-    ((Measure.restrict_apply_le (μ := volume) (ball c ρ) S).trans_lt (hS.trans_lt
-      (ENNReal.mul_lt_top ENNReal.ofReal_lt_top measure_ball_lt_top))).ne hq
-    (ae_restrict_of_ae hgS) hg
-  set I := ∫ x in ball c ρ, ‖g x‖ ^ (2 * q)
-  have hI : 0 ≤ I := integral_nonneg fun x => by positivity
-  have havg : ∀ f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ,
-      ⨍ x in ball c ρ, f x = V⁻¹ * ∫ x in ball c ρ, f x := fun f => by
-    rw [setAverage_eq, smul_eq_mul]
-  rw [havg (fun x => ‖g x - ⨍ z in ball c ρ, g z‖ ^ 2), havg (fun x => ‖g x‖ ^ (2 * q))]
-  -- Pass to averages: `V⁻¹ = V^(-1/q') V^(-1/q)`.
-  have hVq : V ^ q'⁻¹ * V ^ q⁻¹ = V := by
-    rw [← Real.rpow_add hV, add_comm, hq.inv_add_inv_eq_one, Real.rpow_one]
-  calc V⁻¹ * ∫ x in ball c ρ, ‖g x - ⨍ z in ball c ρ, g z‖ ^ 2
-      ≤ V⁻¹ * (4 * ((κ ^ (n + 1) * ε * V) ^ q'⁻¹ * I ^ q⁻¹)) :=
-        mul_le_mul_of_nonneg_left (hosc.trans (mul_le_mul_of_nonneg_left (hΘ.trans
-          (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow measureReal_nonneg hSV
-            hq.symm.inv_nonneg) (Real.rpow_nonneg hI _))) zero_le_four)) (inv_nonneg.2 hV.le)
-    _ = 4 * (κ ^ (n + 1) * ε) ^ q'⁻¹ * (V⁻¹ * I) ^ q⁻¹ := by
-        rw [Real.mul_rpow hX hV.le, Real.mul_rpow (inv_nonneg.2 hV.le) hI,
-          Real.inv_rpow hV.le]
-        nth_rewrite 1 [← hVq]
-        have : 0 < V ^ q'⁻¹ := Real.rpow_pos_of_pos hV _
-        have : 0 < V ^ q⁻¹ := Real.rpow_pos_of_pos hV _
-        field_simp
-
-/-- **The mean oscillation estimate on a large ball.** Under the hypotheses of
-`setAverage_norm_sub_sq_le_of_ae_eq_zero`, for `x ∈ B_ρ = ball c ρ` the square of the mean
-oscillation of `g` on `B_ρ` is bounded by the `1/q`-th power of the maximal function of
-`‖g‖^(2q)` at `x`, with the factor `(κ^(n + 1) ε)^(1/q')`. -/
+/-- **The mean oscillation estimate on a large ball.** Let `g` vanish almost everywhere outside a
+set `S` with `|S| ≤ ε |B(0, R₀)|`, and let `x ∈ B_ρ = ball c ρ` with `R₀ ≤ κ ρ`. Then the square
+of the mean oscillation of `g` on `B_ρ` is bounded by the `1/q`-th power of the maximal function
+of `‖g‖^(2q)` at `x`, with the factor `(κ^(n + 1) ε)^(1/q')`: the set `S` fills at most the
+fraction `κ^(n + 1) ε` of `B_ρ`, and `TauCeti.setAverage_norm_sub_sq_le_of_ae_eq_zero` applies. -/
 private theorem sq_setLAverage_enorm_sub_le_of_ae_eq_zero
     {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {p : ℝ≥0∞}
-    (h2p : 2 ≤ p) (hgp : MemLp g p volume) {q q' : ℝ} (hq : q.HolderConjugate q')
+    (hgp : MemLp g p volume) {q q' : ℝ} (hq : q.HolderConjugate q')
     (hqp : ENNReal.ofReal (2 * q) ≤ p) {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
     (hgS : ∀ᵐ x, x ∉ S → g x = 0) {c x : EuclideanSpace ℝ (Fin (n + 1))} {R₀ ρ κ ε : ℝ}
-    (hρ : 0 < ρ) (hκ : 0 ≤ κ) (hR₀ : R₀ ≤ κ * ρ) (hε : 0 ≤ ε)
+    (hκ : 0 ≤ κ) (hR₀ : R₀ ≤ κ * ρ) (hε : 0 ≤ ε)
     (hS : volume S ≤ ENNReal.ofReal ε * volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R₀))
     (hx : x ∈ ball c ρ) :
     (⨍⁻ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ₑ) ^ 2 ≤
       supportCoeff n κ q q' ε * maximalFunction volume (fun y => ‖g y‖ₑ ^ (2 * q)) x ^ q⁻¹ := by
   have : IsFiniteMeasure (volume.restrict (ball c ρ)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have h2p : 2 ≤ p := le_trans (by
+    rw [← ENNReal.ofReal_ofNat 2]
+    exact ENNReal.ofReal_le_ofReal (by linarith [hq.lt])) hqp
+  -- The set `S` fills at most the fraction `κ^(n + 1) ε` of `B_ρ`.
+  have hSρ : volume S ≤ ENNReal.ofReal (κ ^ (n + 1) * ε) * volume (ball c ρ) := by
+    rw [ENNReal.ofReal_mul (by positivity), mul_comm (ENNReal.ofReal _), mul_assoc]
+    refine hS.trans (mul_le_mul_right ?_ _)
+    simpa only [finrank_euclideanSpace, Fintype.card_fin] using
+      measure_ball_le_ofReal_pow_mul_measure_ball (μ := volume) 0 c hκ hR₀
   have h1 := setAverage_norm_sub_sq_le_of_ae_eq_zero hq
-    ((hgp.restrict (ball c ρ)).mono_exponent hqp) hgS hρ hκ hR₀ hε hS
+    ((hgp.restrict (ball c ρ)).mono_exponent hqp) (ae_restrict_of_ae hgS) (by positivity) hSρ
   have hjensen := sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq
     (h := fun y => g y - ⨍ z in ball c ρ, g z)
     (((hgp.restrict (ball c ρ)).mono_exponent h2p).integrableOn_norm_sub_sq_of_subset subset_rfl
@@ -446,7 +371,8 @@ private theorem sq_setLAverage_enorm_sub_le_of_ae_eq_zero
   unfold supportCoeff
   exact hjensen.trans ((ENNReal.ofReal_le_ofReal h1).trans (ofReal_mul_le_ofReal_mul_mul
     (mul_nonneg zero_le_four (Real.rpow_nonneg (mul_nonneg (pow_nonneg hκ _) hε) _))
-    (ofReal_setAverage_norm_rpow_rpow_inv_le hq.pos hx)))
+    (ofReal_setAverage_norm_rpow_rpow_le (by linarith [hq.pos] : 0 ≤ 2 * q)
+      (inv_nonneg.2 hq.pos.le) hx)))
 
 /-- **Krylov's pointwise estimate when the coefficients have small mean oscillation on small balls
 only.** Let the coefficients be close in mean to an elliptic constant matrix on every ball of
@@ -491,7 +417,7 @@ private theorem sq_sharpMaximalFunction_gradient_le_of_ae_eq_zero
     rw [← add_assoc]
     exact (sq_setLAverage_enorm_gradient_sub_le ha hbd hu h2p hgp hGp hq hqp hρ hκ hx hA
       hδ).trans le_self_add
-  · exact (sq_setLAverage_enorm_sub_le_of_ae_eq_zero h2p hgp hq hqp hgS hρ
+  · exact (sq_setLAverage_enorm_sub_le_of_ae_eq_zero hgp hq hqp hgS
       (zero_le_one.trans hκ) hR.le hε hS hx).trans (le_add_self.trans le_add_self)
 
 /-- The estimate before absorption: `∫ ‖g‖^s` is bounded by the Fefferman–Stein constant times

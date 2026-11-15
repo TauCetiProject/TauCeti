@@ -11,10 +11,13 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Variants of Hölder's inequality
@@ -46,7 +49,8 @@ for Hölder conjugate exponents `q, q'`, so the weighted integral is small when 
 small. This is how the mean oscillation of the coefficients enters regularity estimates for
 divergence-form equations. With `θ` the indicator of a set `S` outside which `g` vanishes, it reads
 `∫ ‖g‖² ≤ ν(S)^(1/q') (∫ ‖g‖^(2q))^(1/q)`: a function carried by a set of small measure has small
-square integral relative to its `L^{2q}` norm.
+square integral relative to its `L^{2q}` norm. On a set `s` that `S` fills at most to the fraction
+`ε`, the square mean oscillation of `g` on `s` is then at most `4 ε^(1/q') (⨍_s ‖g‖^(2q))^(1/q)`.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
@@ -60,6 +64,8 @@ expected products without any independence assumption.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
 * `TauCeti.integral_norm_sq_le_of_ae_eq_zero`: Hölder's inequality for a function vanishing
   outside a set.
+* `TauCeti.setAverage_norm_sub_sq_le_of_ae_eq_zero`: the square mean oscillation of a function
+  vanishing outside a set of small relative measure.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -230,6 +236,59 @@ theorem integral_norm_sq_le_of_ae_eq_zero {E : Type*} [NormedAddCommGroup E] {g 
   rwa [setIntegral_eq_integral_of_ae_compl_eq_zero (hgS.mono fun x hx hxS => by simp [hx hxS]),
     setIntegral_eq_integral_of_ae_compl_eq_zero
       (hgS.mono fun x hx hxS => by simp [hx hxS, Real.zero_rpow h2q])] at h
+
+/-- **The square mean oscillation of a function carried by a small set.** Let `g` vanish almost
+everywhere on `s` outside a set `S` with `ν(S) ≤ ε ν(s)`, and let `‖g‖ ∈ L^{2q}(s)` for a pair of
+Hölder conjugate exponents `q, q'`. Then the square mean oscillation of `g` on `s` is
+at most `4 ε^(1/q') (⨍_s ‖g‖^(2q))^(1/q)`. -/
+theorem setAverage_norm_sub_sq_le_of_ae_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {g : β → E} {s S : Set β} {q q' : ℝ}
+    (hq : q.HolderConjugate q') (hg : MemLp g (ENNReal.ofReal (2 * q)) (ν.restrict s))
+    (hgS : ∀ᵐ x ∂ν.restrict s, x ∉ S → g x = 0) {ε : ℝ} (hε : 0 ≤ ε)
+    (hS : ν S ≤ ENNReal.ofReal ε * ν s) :
+    ⨍ x in s, ‖g x - ⨍ y in s, g y ∂ν‖ ^ 2 ∂ν ≤
+      4 * ε ^ q'⁻¹ * (⨍ x in s, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹ := by
+  -- If `ν s` is `0` or `∞`, every average over `s` is `0`.
+  rcases eq_or_ne (ν.real s) 0 with h0 | h0
+  · simp [setAverage_eq, h0, Real.zero_rpow (inv_ne_zero hq.ne_zero)]
+  have hs : ν s ≠ ∞ := (ENNReal.toReal_ne_zero.1 h0).2
+  have : IsFiniteMeasure (ν.restrict s) := isFiniteMeasure_restrict.2 hs
+  set V : ℝ := ν.real s
+  have hV : 0 < V := measureReal_nonneg.lt_of_ne' h0
+  -- The part of `S` in `s` fills at most the fraction `ε` of `s`.
+  have hSs : ν.restrict s S ≤ ENNReal.ofReal ε * ν s := (Measure.restrict_apply_le s S).trans hS
+  have hSV : (ν.restrict s).real S ≤ ε * V := by
+    have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hs) hSs
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hε] at h
+  -- The square mean oscillation is at most `4 ∫_s ‖g‖²`, which Hölder's inequality bounds.
+  have h2 : (2 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * q) := by
+    rw [← ENNReal.ofReal_ofNat 2]
+    exact ENNReal.ofReal_le_ofReal (by linarith [hq.lt])
+  have hg2 := hg.mono_exponent h2
+  have hosc := setIntegral_norm_sub_setAverage_sq_le hs (hg2.integrableOn_of_subset one_le_two
+    subset_rfl hs) (hg2.integrableOn_norm_sub_sq_of_subset subset_rfl hs 0)
+  simp only [sub_zero] at hosc
+  have hΘ := integral_norm_sq_le_of_ae_eq_zero
+    (hSs.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hs.lt_top)).ne hq hgS hg
+  set I := ∫ x in s, ‖g x‖ ^ (2 * q) ∂ν
+  have hI : 0 ≤ I := integral_nonneg fun x => by positivity
+  have havg : ∀ f : β → ℝ, ⨍ x in s, f x ∂ν = V⁻¹ * ∫ x in s, f x ∂ν := fun f => by
+    rw [setAverage_eq, smul_eq_mul]
+  rw [havg (fun x => ‖g x - ⨍ y in s, g y ∂ν‖ ^ 2), havg (fun x => ‖g x‖ ^ (2 * q))]
+  -- Pass to averages: `V⁻¹ = (V^(1/q'))⁻¹ (V^(1/q))⁻¹`.
+  have hVq : V⁻¹ = (V ^ q'⁻¹)⁻¹ * (V ^ q⁻¹)⁻¹ := by
+    rw [← mul_inv, ← Real.rpow_add hV, add_comm, hq.inv_add_inv_eq_one, Real.rpow_one]
+  have : 0 < V ^ q'⁻¹ := Real.rpow_pos_of_pos hV _
+  have : 0 < V ^ q⁻¹ := Real.rpow_pos_of_pos hV _
+  calc V⁻¹ * ∫ x in s, ‖g x - ⨍ y in s, g y ∂ν‖ ^ 2 ∂ν
+      ≤ V⁻¹ * (4 * ((ε * V) ^ q'⁻¹ * I ^ q⁻¹)) :=
+        mul_le_mul_of_nonneg_left (hosc.trans (mul_le_mul_of_nonneg_left (hΘ.trans
+          (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow measureReal_nonneg hSV
+            hq.symm.inv_nonneg) (Real.rpow_nonneg hI _))) zero_le_four)) (inv_nonneg.2 hV.le)
+    _ = 4 * ε ^ q'⁻¹ * (V⁻¹ * I) ^ q⁻¹ := by
+        rw [Real.mul_rpow hε hV.le, Real.mul_rpow (inv_nonneg.2 hV.le) hI, Real.inv_rpow hV.le,
+          hVq]
+        field_simp
 
 end TauCeti
 

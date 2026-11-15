@@ -20,6 +20,8 @@ volumes is explicit. This comparison is the basic step of stopping-time argument
 
 ## Main statements
 
+* `TauCeti.measure_ball_le_ofReal_pow_mul_measure_ball`: a ball of radius `R ≤ κ ρ` has measure
+  at most `κ ^ dim E` times that of a ball of radius `ρ`.
 * `TauCeti.setLAverage_ball_le`: the average over `B(x, ρ) ⊆ B(x₀, R)` is at most
   `(R / ρ) ^ dim E` times the average over `B(x₀, R)`.
 -/
@@ -33,6 +35,16 @@ open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- A ball of radius `R ≤ κ ρ` has measure at most `κ ^ dim E` times the measure of a ball of
+radius `ρ`, with any centres. -/
+theorem measure_ball_le_ofReal_pow_mul_measure_ball (x c : E) {R ρ κ : ℝ} (hκ : 0 ≤ κ)
+    (hR : R ≤ κ * ρ) : μ (ball x R) ≤ ENNReal.ofReal (κ ^ finrank ℝ E) * μ (ball c ρ) := by
+  rcases hκ.eq_or_lt with rfl | hκ
+  · rw [ball_eq_empty.2 (by simpa using hR), measure_empty]
+    exact zero_le
+  calc μ (ball x R) ≤ μ (ball x (κ * ρ)) := measure_mono (ball_subset_ball hR)
+    _ = _ := by rw [Measure.addHaar_ball_mul_of_pos μ x hκ, Measure.addHaar_ball_center μ c]
 
 /-- The average over a ball `B(x, ρ) ⊆ B(x₀, R)` is at most `(R / ρ) ^ dim E` times the average over
 `B(x₀, R)`. -/

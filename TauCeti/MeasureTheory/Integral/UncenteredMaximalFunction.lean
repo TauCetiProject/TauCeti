@@ -43,6 +43,8 @@ the value `1 / x`.
   additive Haar measure.
 * `TauCeti.ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction`: the consequence
   `⨍_B ‖h‖ ^ k ≤ 2ⁿ M(‖h‖ ^ k)(x)` for every ball `B ∋ x`.
+* `TauCeti.ofReal_setAverage_norm_rpow_rpow_le_two_pow_rpow_mul_maximalFunction_rpow`: its
+  `t`-th power, `(⨍_B ‖h‖ ^ k)^t ≤ (2ⁿ)^t M(‖h‖ ^ k)(x)^t`.
 
 ## References
 
@@ -158,6 +160,19 @@ theorem ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction (μ : Measure
         (uncenteredMaximalFunction_le_two_pow_mul_maximalFunction μ (fun z => ‖h z‖ₑ ^ k) x)
   · rw [setAverage_eq, integral_undef hi, smul_zero, ENNReal.ofReal_zero]
     exact zero_le
+
+/-- For `x` in a ball `B`, `k ≥ 0` and `t ≥ 0`, the `t`-th power of the average of `‖h‖ ^ k` over
+`B` is at most `(2ⁿ)^t` times the `t`-th power of the maximal function of `‖h‖ₑ ^ k` at `x`, for an
+additive Haar measure on a real normed space of dimension `n`. -/
+theorem ofReal_setAverage_norm_rpow_rpow_le_two_pow_rpow_mul_maximalFunction_rpow
+    (μ : Measure E) [μ.IsAddHaarMeasure] {G : Type*} [NormedAddCommGroup G] {h : E → G} {k t : ℝ}
+    (hk : 0 ≤ k) (ht : 0 ≤ t) {x y : E} {r : ℝ} (hx : x ∈ ball y r) :
+    ENNReal.ofReal ((⨍ z in ball y r, ‖h z‖ ^ k ∂μ) ^ t) ≤
+      (2 ^ finrank ℝ E) ^ t * maximalFunction μ (fun z => ‖h z‖ₑ ^ k) x ^ t := by
+  rw [← ENNReal.ofReal_rpow_of_nonneg (average_nonneg fun z => by positivity) ht,
+    ← ENNReal.mul_rpow_of_nonneg _ _ ht]
+  gcongr
+  exact ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction μ hk hx
 
 end Haar
 
