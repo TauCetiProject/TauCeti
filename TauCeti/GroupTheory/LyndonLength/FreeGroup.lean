@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.Reduce
 public import TauCeti.GroupTheory.LyndonLength.Separated
-import TauCeti.GroupTheory.FreeGroup.BigPowers
+import TauCeti.GroupTheory.FreeGroup.Centralizer
 
 /-!
 # Word length on a free group is a free regular Lyndon length function

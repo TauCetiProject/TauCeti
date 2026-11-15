@@ -34,8 +34,9 @@ as the stabilization of the cancellation, which is the form given here.
   function along a homomorphism.
 * `TauCeti.LyndonLength.isSeparated_inv_inv_iff`, `TauCeti.LyndonLength.IsSeparated.pow_left`,
   `TauCeti.LyndonLength.IsSeparated.pow_right`: separation under inverses and powers.
-* `TauCeti.LyndonLength.IsFree.not_isSeparated_inv_right`: for a free Lyndon length function, a
-  nontrivial element is not separated from its inverse.
+* `TauCeti.LyndonLength.IsFree.isSeparated_inv_right_iff`,
+  `TauCeti.LyndonLength.IsFree.isSeparated_inv_left_iff`: for a free Lyndon length function, an
+  element and its inverse are separated only when the element is the identity.
 
 ## References
 
@@ -122,10 +123,11 @@ theorem IsSeparated.pow_right {l : LyndonLength G Λ} {u v : G} (h : l.IsSeparat
     l.IsSeparated u (v ^ k) := by
   simpa using (h.inv_inv.pow_left k).inv_inv
 
-/-- For a free Lyndon length function, a nontrivial element is not separated from its inverse. -/
-theorem IsFree.not_isSeparated_inv_right {l : LyndonLength G Λ} (hl : l.IsFree) {u : G}
-    (hu : u ≠ 1) : ¬l.IsSeparated u u⁻¹ := by
-  rintro ⟨r, hr⟩
+/-- For a free Lyndon length function, an element is separated from its inverse only when it is
+the identity. -/
+theorem IsFree.isSeparated_inv_right_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
+    l.IsSeparated u u⁻¹ ↔ u = 1 := by
+  refine ⟨fun ⟨r, hr⟩ => by_contra fun hu => ?_, fun h => h ▸ isSeparated_one_left l _⟩
   -- At `m = n`, the cancellation in `uᵐ u⁻ᵐ` is `l (uᵐ)`, which would be constant for `m ≥ r`.
   have hconst (m : ℕ) (hm : r ≤ m) : l (u ^ m) = l (u ^ r) := by
     simpa using hr m m hm hm
@@ -134,10 +136,10 @@ theorem IsFree.not_isSeparated_inv_right {l : LyndonLength G Λ} (hl : l.IsFree)
   · exact hu (hl.eq_one_of_map_eq_zero (by simpa [h1, pow_succ] using hconst (r + 1) r.le_succ))
   · exact (hl.lt_map_sq _ h1).ne' (by rw [← pow_mul, hconst _ (Nat.le_mul_of_pos_right r two_pos)])
 
-/-- For a free Lyndon length function, the inverse of a nontrivial element is not separated from
-the element. -/
-theorem IsFree.not_isSeparated_inv_left {l : LyndonLength G Λ} (hl : l.IsFree) {u : G}
-    (hu : u ≠ 1) : ¬l.IsSeparated u⁻¹ u := by
-  simpa using hl.not_isSeparated_inv_right (inv_ne_one.2 hu)
+/-- For a free Lyndon length function, the inverse of an element is separated from the element
+only when the element is the identity. -/
+theorem IsFree.isSeparated_inv_left_iff {l : LyndonLength G Λ} (hl : l.IsFree) {u : G} :
+    l.IsSeparated u⁻¹ u ↔ u = 1 := by
+  simpa using hl.isSeparated_inv_right_iff (u := u⁻¹)
 
 end TauCeti.LyndonLength
