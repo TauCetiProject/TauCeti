@@ -139,7 +139,6 @@ theorem areaWeight_smul_gradient_upperCatenoidHeight {x : E} (hx : 1 < ‖x‖) 
   let ρ : ℝ := ‖x‖
   let a : ℝ := (Real.sqrt (ρ ^ 2 - 1))⁻¹
   have hρ : ρ ≠ 0 := by dsimp [ρ]; positivity
-  have ha : 0 ≤ a := by dsimp [a]; positivity
   have hgrad : ∇ upperCatenoidHeight x = (a * ρ⁻¹) • x := by
     rw [(hasGradientAt_upperCatenoidHeight hx).gradient]
     simp only [smul_smul]
