@@ -113,13 +113,16 @@ theorem weylUnit_smul_mem {v : V} (hv : v ∈ M) :
     ((weylUnit hi hj : (Module.End ℚ V)ˣ) : Module.End ℚ V) • v ∈ M := by
   rw [coe_weylUnit, mul_smul, mul_smul]
   simpa using
-    (exp_zsmul_smul_mem hi (fun n _ hw =>
+    (exp_zsmul_smul_mem
+     (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
         dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) 1
       (by simpa using
-        (exp_zsmul_smul_mem hj (fun n _ hw =>
+        (exp_zsmul_smul_mem
+         (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) (fun n _ hw =>
             dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hw) (-1)
           (by simpa using
-            (exp_zsmul_smul_mem hi (fun n _ hw =>
+            (exp_zsmul_smul_mem
+             (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
               dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) 1 hv)))))
 
 /-- The inverse of the Weyl element preserves the lattice, by the same computation with every
@@ -128,13 +131,16 @@ theorem inv_weylUnit_smul_mem {v : V} (hv : v ∈ M) :
     (((weylUnit hi hj : (Module.End ℚ V)ˣ)⁻¹ : (Module.End ℚ V)ˣ) : Module.End ℚ V) • v ∈ M := by
   rw [coe_inv_weylUnit, mul_smul, mul_smul]
   simpa using
-    (exp_zsmul_smul_mem hi (fun n _ hw =>
+    (exp_zsmul_smul_mem
+     (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
         dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) (-1)
       (by simpa using
-        (exp_zsmul_smul_mem hj (fun n _ hw =>
+        (exp_zsmul_smul_mem
+         (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) (fun n _ hw =>
             dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hw) 1
           (by simpa using
-            (exp_zsmul_smul_mem hi (fun n _ hw =>
+            (exp_zsmul_smul_mem
+             (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
               dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) (-1) hv)))))
 
 /-- The Weyl element restricted to an integral automorphism of the lattice. -/
@@ -286,8 +292,8 @@ theorem kostantWeylPoints_conj_baseChangeExp (u : A) :
     exact hMneg
   rw [kostantWeylPoints_toLinearMap, kostantWeylPoints_symm_toLinearMap, kostantWeylRestrict,
     baseChange_integralUnitRestrict_conj_baseChangeExp
-      (R := A) _ M _ _ _ _ hi u,
-    baseChangeExp_congr hconj M hMconj hMneg, baseChangeExp_neg _ M hMneg hMj hj]
+      (R := A) _ M _ _ _ _ u,
+    baseChangeExp_congr hconj M hMconj hMneg, baseChangeExp_neg _ M hMneg hMj]
 
 /-- The Weyl element is natural in the ring of points: it is the scalar extension of a single
 integral automorphism, so applying a ring homomorphism to the scalar coordinate of every tensor

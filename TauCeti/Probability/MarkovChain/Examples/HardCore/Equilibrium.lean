@@ -155,6 +155,7 @@ theorem tendsto_tvDist (a : ℝ≥0) (ha : 0 < a) (ν : Measure (State G))
     (kernel G (activityProbability a)).tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent
       (Kernel.isRecurrent_of_finite (κ := kernel G (activityProbability a) ∥ₖ
         kernel G (activityProbability a)) (empty G, empty G)) ν (G.hardCorePMF a).toMeasure
+      (measure_univ.trans measure_univ.symm)
 
 /-- At activity one the heat bath samples independent vertex sets uniformly in the limit. -/
 theorem tendsto_tvDist_uniform (ν : Measure (State G)) [IsProbabilityMeasure ν] :

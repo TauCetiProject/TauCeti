@@ -114,6 +114,13 @@ theorem extDeriv_sub {ω₁ ω₂ : E → E [⋀^Fin n]→L[𝕜] F} (hω₁ : D
     rw [neg_one_smul, sub_eq_add_neg]
   rw [h, extDeriv_add hω₁ (hω₂.const_smul _), extDeriv_smul, neg_one_smul, sub_eq_add_neg]
 
+/-- Where a differential form is not differentiable, its exterior derivative is `0`, by the junk
+value convention of the Fréchet derivative. -/
+theorem extDeriv_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
+  rw [extDeriv, fderiv_zero_of_not_differentiableAt h]
+  ext v
+  simp [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
+
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
 theorem extDerivWithin_congr_set' (y : E) (h : s =ᶠ[𝓝[{y}ᶜ] x] t) :
@@ -142,7 +149,7 @@ theorem extDerivWithin_extDerivWithin_congr_set (h : s =ᶠ[𝓝 x] t) :
     extDerivWithin (extDerivWithin ω s) s x = extDerivWithin (extDerivWithin ω t) t x := by
   rw [extDerivWithin_congr_set h]
   apply Filter.EventuallyEq.extDerivWithin_eq
-  · filter_upwards [h.eventuallyEq_nhds.filter_mono nhdsWithin_le_nhds] with y hy
+  · filter_upwards [(Filter.Eventually.eventually_nhds h).filter_mono nhdsWithin_le_nhds] with y hy
     exact extDerivWithin_congr_set hy
   · exact extDerivWithin_congr_set h
 
@@ -255,7 +262,7 @@ theorem extDeriv_pullback_eq_zero {E' : Type*} [NormedAddCommGroup E'] [NormedSp
     (hω : DifferentiableAt 𝕜 ω (A x)) (hdω : extDeriv ω (A x) = 0) :
     extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap A) x = 0 := by
   rw [A.extDeriv_pullback hω, hdω]
-  ext v
+  ext _
   simp
 
 /-- Pulling a `C^r` form on `t` back along a continuous linear map `A` gives a `C^r` form on

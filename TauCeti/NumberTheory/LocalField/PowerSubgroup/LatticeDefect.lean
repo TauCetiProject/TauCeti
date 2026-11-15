@@ -305,7 +305,6 @@ private noncomputable def deepUnitLogHom {n : ℕ}
   map_zero' := by simp
   map_add' u v := by simp
   map_smul' σ u := Subtype.ext <| by
-    have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hn
     rw [AlgEquiv.coe_smul_integerRing, coe_deepUnitExpLogEquiv_apply,
       coe_deepUnitExpLogEquiv_apply, Additive.toMul_smul, AlgEquiv.val_coe_smul_unitFiltration]
     exact (AlgEquiv.map_log σ (u.toMul : Lˣ)).symm

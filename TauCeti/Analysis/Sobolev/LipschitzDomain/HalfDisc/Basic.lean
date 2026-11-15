@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
-public import TauCeti.Analysis.Sobolev.LipschitzDomain.BallGraph
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Graph
 
 /-!
 # Half-discs are Lipschitz domains
@@ -32,6 +32,8 @@ The frontier is compact, so a single Lipschitz bound serves all frontier points
 ## Main declarations
 
 * `TauCeti.halfDisc`: the open half-disc of radius `r`.
+* `TauCeti.closure_halfDisc`, `TauCeti.frontier_halfDisc`: its closure is the closed half-disc and
+  its frontier is the flat segment together with the closed arc.
 * `TauCeti.isLipschitzDomain_halfDisc`: the half-disc is a Lipschitz domain.
 * `TauCeti.exists_isLipschitzDomainWith_halfDisc`: the half-disc is a Lipschitz domain with a
   uniform Lipschitz bound.
@@ -75,6 +77,47 @@ private theorem closure_halfDisc_subset (r : ℝ) :
   closure_minimal (inter_subset_inter ball_subset_closedBall fun _ (hx : 0 < _) => hx.le)
     (isClosed_closedBall.inter (isClosed_le continuous_const
       (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst))
+
+/-- For `0 < r` the closure of the half-disc is the closed half-disc
+`closedBall 0 r ∩ {x | 0 ≤ x.fst}`. -/
+theorem closure_halfDisc {r : ℝ} (hr : 0 < r) :
+    closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) = closedBall 0 r ∩ {x | 0 ≤ x.fst} := by
+  -- Every point of the closed half-disc is a limit of points of the open segment joining it to
+  -- the interior point `(r / 2, 0)`.
+  refine (closure_halfDisc_subset r).antisymm fun x hx => ?_
+  rw [mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq] at hx
+  set c : WithLp 2 (ℝ × ℝ) := WithLp.toLp 2 (r / 2, 0)
+  have hc : ‖c‖ = r / 2 := by
+    refine (sq_eq_sq₀ (norm_nonneg c) (by positivity)).1 ?_
+    simp [c, abs_of_pos hr]
+  refine closure_mono ?_ (segment_subset_closure_openSegment (right_mem_segment ℝ c x))
+  rintro _ ⟨a, b, ha, hb, hab, rfl⟩
+  rw [SetLike.mem_coe, mem_halfDisc]
+  constructor
+  · calc ‖a • c + b • x‖ ≤ a * ‖c‖ + b * ‖x‖ := by
+          refine (norm_add_le _ _).trans_eq ?_
+          rw [norm_smul, norm_smul, Real.norm_of_nonneg ha.le, Real.norm_of_nonneg hb.le]
+      _ < r := by rw [hc]; nlinarith
+  · have : (a • c + b • x).fst = a * (r / 2) + b * x.fst := by simp [c]
+    rw [this]
+    nlinarith
+
+/-- For `0 < r` the frontier of the half-disc is the union of the flat segment `{0} × [-r, r]`
+and the closed arc of the circle of radius `r` with nonnegative first coordinate. -/
+theorem frontier_halfDisc {r : ℝ} (hr : 0 < r) :
+    frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) =
+      closedBall 0 r ∩ {x | x.fst = 0} ∪ sphere 0 r ∩ {x | 0 ≤ x.fst} := by
+  rw [(halfDisc r).isOpen.frontier_eq, closure_halfDisc hr]
+  ext x
+  simp only [mem_sdiff, mem_inter_iff, mem_union, mem_closedBall_zero_iff, mem_sphere_zero_iff_norm,
+    SetLike.mem_coe, mem_halfDisc, mem_ofPred_eq, not_and_or, not_lt]
+  constructor
+  · rintro ⟨⟨h₁, h₂⟩, h₃ | h₃⟩
+    · exact Or.inr ⟨le_antisymm h₁ h₃, h₂⟩
+    · exact Or.inl ⟨h₁, le_antisymm h₃ h₂⟩
+  · rintro (⟨h₁, h₂⟩ | ⟨h₁, h₂⟩)
+    · exact ⟨⟨h₁, h₂.ge⟩, Or.inr h₂.le⟩
+    · exact ⟨⟨h₁.le, h₂⟩, Or.inl h₁.ge⟩
 
 /-- A Lipschitz chart of the half-disc centred at a point `p` of the arc `‖p‖ = r` with
 `p.fst > 0`, whose normal direction points to the centre of the disc. -/

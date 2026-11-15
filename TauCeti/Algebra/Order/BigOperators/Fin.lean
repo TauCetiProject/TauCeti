@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.Algebra.Order.GroupWithZero.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
-import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 
 /-!
 # Order estimates for sums and products of finite sequences
@@ -35,8 +35,8 @@ namespace Fin
 
 /-- A nonnegative sequence whose terms at least halve at each step sums to at most twice its
 first term. -/
-theorem sum_le_two_mul_of_two_mul_succ_le {R : Type*} [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] {n : ℕ} {r : Fin (n + 1) → R} (hr : ∀ i, 0 ≤ r i)
+theorem sum_le_two_mul_of_two_mul_succ_le {R : Type*} [NonAssocSemiring R] [Preorder R]
+    [AddLeftMono R] {n : ℕ} {r : Fin (n + 1) → R} (hr : ∀ i, 0 ≤ r i)
     (h : ∀ i : Fin n, 2 * r i.succ ≤ r i.castSucc) : ∑ i, r i ≤ 2 * r 0 := by
   induction n with
   | zero =>
@@ -57,15 +57,22 @@ position at most `D * j`, the product of the selected terms raised to the power 
 product of the whole sequence: the `j`-th block of `D` consecutive terms bounds the `D`-th power of
 the `j`-th selected term from above. -/
 theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorder R]
-    [ZeroLEOneClass R] [PosMulMono R] {D k : ℕ} {c : Fin (D * k) → R} (hc0 : ∀ i, 0 ≤ c i)
+    [PosMulMono R] {D k : ℕ} {c : Fin (D * k) → R} (hc0 : ∀ i, 0 ≤ c i)
     (hc : Monotone c) {s : Fin k → Fin (D * k)} (hs : ∀ j, (s j : ℕ) ≤ D * j) :
     (∏ j, c (s j)) ^ D ≤ ∏ i, c i := by
+  obtain rfl | hD := D.eq_zero_or_pos
+  · -- `Fin (0 * k)` is empty, so both sides are `1`.
+    have : IsEmpty (Fin (0 * k)) := ⟨fun i ↦ by simpa using i.2⟩
+    simp
   let e : Fin k × Fin D ≃ Fin (D * k) := finProdFinEquiv.trans (finCongr (Nat.mul_comm k D))
   have he (p : Fin k × Fin D) : (e p : ℕ) = p.2 + D * p.1 := by simp [e]
+  have hD' : (Finset.univ : Finset (Fin D)).Nonempty := ⟨⟨0, hD⟩, Finset.mem_univ _⟩
   rw [← e.prod_comp, Fintype.prod_prod_type, ← Finset.prod_pow]
-  refine Finset.prod_le_prod₀ (fun _ _ ↦ pow_nonneg (hc0 _) _) fun j _ ↦ ?_
+  refine Finset.prod_le_prod_of_nonneg_of_le (fun j _ ↦ ?_) fun j _ ↦ ?_
+  · rw [← Fin.prod_const]
+    exact Finset.prod_nonneg_of_nonempty hD' fun _ _ ↦ hc0 _
   rw [← Fin.prod_const]
-  refine Finset.prod_le_prod₀ (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
+  refine Finset.prod_le_prod_of_nonneg_of_le (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
   rw [Fin.le_iff_val_le_val, he]
   exact (hs j).trans (Nat.le_add_left _ _)
 

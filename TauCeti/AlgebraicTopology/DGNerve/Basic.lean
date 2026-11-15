@@ -104,12 +104,14 @@ theorem Coherences.congr {X : Fin (n + 1) → C} (f : Coherences R X) {i j : Fin
 /-- Composites of coherences indexed by equal sets of interior vertices agree. -/
 theorem Coherences.dgComp_congr {X : Fin (n + 1) → C} (f : Coherences R X)
     {i t j : Fin (n + 1)} {S₁ S₁' S₂ S₂' : Finset (Fin (n + 1))} {p p' q q' r : ℤ}
-    (h₁ : S₁ = S₁') (h₂ : S₂ = S₂') (hp : p = p') (hq : q = q') {hit : i ≤ t} {htj : t ≤ j}
+    (h₁ : S₁ = S₁') (h₂ : S₂ = S₂') {hit : i ≤ t} {htj : t ≤ j}
     {hS₁ : S₁ ⊆ Ioo i t} {hS₁' : S₁' ⊆ Ioo i t} {hS₂ : S₂ ⊆ Ioo t j} {hS₂' : S₂' ⊆ Ioo t j}
     {hp₁ : p + #S₁ = 0} {hp₁' : p' + #S₁' = 0} {hq₂ : q + #S₂ = 0} {hq₂' : q' + #S₂' = 0}
     {e : p + q = r} {e' : p' + q' = r} :
     dgComp R (f i t S₁ p hit hS₁ hp₁) (f t j S₂ q htj hS₂ hq₂) e =
       dgComp R (f i t S₁' p' hit hS₁' hp₁') (f t j S₂' q' htj hS₂' hq₂') e' := by
+  have hp : p = p' := by subst h₁; omega
+  have hq : q = q' := by subst h₂; omega
   subst h₁ h₂ hp hq
   rfl
 
@@ -172,7 +174,7 @@ theorem boundary_two {X : Fin 3 → C} (f : Coherences R X) :
   have hκ : ((#{s ∈ ({1} : Finset (Fin 3)) | s < 1} : ℕ) *
       (#{s ∈ ({1} : Finset (Fin 3)) | 1 < s} : ℕ) : ℤ).negOnePow = 1 := by decide
   rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, neg_sub]
-  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
+  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide))
     (Coherences.congr _ (by decide))
 
 /-- Coherences pulled back along a strictly monotone map `e`: the coherence indexed by `i`, `S`
@@ -243,7 +245,7 @@ theorem boundary_comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
   refine congrArg₂ (· - ·) (Coherences.congr f (image_erase he.injective _ _)) ?_
   congr 1
   · rw [hlt, hgt]
-  · exact Coherences.dgComp_congr f e₁ e₂ (by rw [hlt]) (by rw [hgt])
+  · exact Coherences.dgComp_congr f e₁ e₂
 
 variable (R C) in
 /-- An `n`-simplex of the differential graded nerve: objects `X 0, …, X n` with coherences
@@ -378,10 +380,26 @@ theorem dgComp_mapCoh_of_eq_right {i t j : Fin (m + 1)} {S₁ S₂ : Finset (Fin
 /-- Removing either of two interior vertices with the same image gives the same pulled-back
 coherence. -/
 theorem mapCoh_erase_eq_mapCoh_erase {i j u v : Fin (m + 1)} {S : Finset (Fin (m + 1))}
-    {d : ℤ} (hu : u ∈ S) (hv : v ∈ S) (h : α u = α v) {hij : i ≤ j}
+    {d : ℤ} (h : α u = α v) {hij : i ≤ j}
     {hSu : S.erase u ⊆ Ioo i j} {hSv : S.erase v ⊆ Ioo i j} {hdu : d + #(S.erase u) = 0}
     {hdv : d + #(S.erase v) = 0} :
     x.mapCoh α i j (S.erase u) d hij hSu hdu = x.mapCoh α i j (S.erase v) d hij hSv hdv := by
+  have hcard : #(S.erase u) = #(S.erase v) := by omega
+  by_cases huv : u ∈ S ∧ v ∈ S
+  swap
+  · have hn : u ∉ S ∧ v ∉ S := by
+      by_cases hu : u ∈ S <;> by_cases hv : v ∈ S
+      · exact absurd ⟨hu, hv⟩ huv
+      · rw [card_erase_of_mem hu, erase_eq_of_notMem hv] at hcard
+        have := card_pos.2 ⟨u, hu⟩
+        omega
+      · rw [erase_eq_of_notMem hu, card_erase_of_mem hv] at hcard
+        have := card_pos.2 ⟨v, hv⟩
+        omega
+      · exact ⟨hu, hv⟩
+    congr 1
+    rw [erase_eq_of_notMem hn.1, erase_eq_of_notMem hn.2]
+  obtain ⟨hu, hv⟩ := huv
   have himage : (S.erase u).image α = (S.erase v).image α := by
     ext y
     simp only [mem_image, mem_erase]
@@ -396,8 +414,6 @@ theorem mapCoh_erase_eq_mapCoh_erase {i j u v : Fin (m + 1)} {S : Finset (Fin (m
       · subst hsu
         exact ⟨v, ⟨fun hvu ↦ hsv hvu.symm, hv⟩, h.symm⟩
       · exact ⟨s, ⟨hsu, hs⟩, rfl⟩
-  have hcard : #(S.erase u) = #(S.erase v) := by
-    rw [card_erase_of_mem hu, card_erase_of_mem hv]
   by_cases hc : #((S.erase u).image α) = #(S.erase u) ∧ (S.erase u).image α ⊆ Ioo (α i) (α j)
   · have hc' : #((S.erase v).image α) = #(S.erase v) ∧
         (S.erase v).image α ⊆ Ioo (α i) (α j) := by rwa [← himage, ← hcard]
@@ -459,7 +475,7 @@ private lemma dgDifferential_mapCoh_eq_coh {a b : Fin (m + 1)} {T : Finset (Fin 
   · rw [← e₄, hcard]
   · exact Coherences.congr _ e₁
   · rw [← e₂, ← e₃, hcard, hcard]
-  · exact Coherences.dgComp_congr _ e₂ e₃ (by rw [← e₂, hcard]) (by rw [← e₃, hcard])
+  · exact Coherences.dgComp_congr _ e₂ e₃
 
 /-- Removing an interior vertex `t` other than two collapsed vertices `u < v` leaves a collapsed
 pair, so the corresponding face term of the dg nerve equation for the pullback vanishes. -/
@@ -628,7 +644,7 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
           · exact ⟨huT, le_rfl⟩
           · exact ⟨hs, huv.le.trans hvs⟩
       rw [hσ, card_insert_of_notMem (fun hu ↦ (mem_filter.1 hu).2.not_gt huv),
-        x.mapCoh_erase_eq_mapCoh_erase α huT hvT hα (hSv := (erase_subset _ _).trans hT)
+        x.mapCoh_erase_eq_mapCoh_erase α hα (hSv := (erase_subset _ _).trans hT)
           (hdv := add_one_add_card_erase_eq_zero hvT hd)]
       simp [Int.negOnePow_succ]
     · rintro ⟨t, ht⟩ - hne
@@ -837,7 +853,7 @@ theorem coh_eq_dgComp_of_coh_eq_zero (x : Simplex R C n) {i t j : Fin (n + 1)} (
       Int.negOnePow_zero]
   rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, eq_comm, neg_eq_zero, sub_eq_zero] at key
   exact (Coherences.congr _ (by simp)).trans (key.trans
-    (Coherences.dgComp_congr _ (by simp) (by simp) (by simp) (by simp)))
+    (Coherences.dgComp_congr _ (by simp) (by simp)))
 
 /-- When the Hom complexes vanish in degree `-1`, the edge from `i` to `j` of a simplex is the
 composite of the edges from `i` to `t` and from `t` to `j`, for all `i ≤ t ≤ j`. -/

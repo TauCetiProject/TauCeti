@@ -88,7 +88,7 @@ omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
 /-- The theta series of a translate of a subgroup is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_thetaCoset (γ : E) : IsBoundedAtImInfty (thetaCoset L γ) := by
   by_cases h : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
-  · obtain ⟨y, hy, hs⟩ := h
+  · obtain ⟨y, _, hs⟩ := h
     exact UpperHalfPlane.isBoundedAtImInfty_iff.mpr
       ⟨_, y, fun _ hτ => norm_thetaCoset_le L γ hs hτ⟩
   · rw [thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs => h ⟨y, hy, hs⟩]
@@ -180,7 +180,7 @@ theorem isZeroAtImInfty_thetaCoset {γ : E} (hγ : γ ∉ L) : IsZeroAtImInfty (
     rw [eq_neg_of_add_eq_zero_left h0]
     exact neg_mem v.2
   by_cases hex : ∃ y : ℝ, 0 < y ∧ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)
-  · obtain ⟨y, hy, hs⟩ := hex
+  · obtain ⟨y, _, hs⟩ := hex
     simpa [h, UpperHalfPlane.IsZeroAtImInfty, ZeroAtFilter] using
       tendsto_thetaCoset_atImInfty_tsum_ite L γ hs
   · rw [thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs => hex ⟨y, hy, hs⟩]
@@ -202,11 +202,13 @@ theorem qExpansion_thetaSeries_coeff_zero {h : ℝ} (hh : 0 < h)
     valueAtInfty_thetaSeries]
 
 variable {L} in
+omit [DiscreteTopology L] in
 /-- For an even lattice, the constant term of the `q`-expansion of `Θ_L` in
 `q = exp (2 π i τ)` is `1`. -/
 theorem IsEven.qExpansion_thetaSeries_coeff_zero (hL : IsEven L) :
-    (qExpansion 1 (thetaSeries L)).coeff 0 = 1 :=
-  ZLattice.qExpansion_thetaSeries_coeff_zero L one_pos hL.thetaSeries_one_vadd
+    (qExpansion 1 (thetaSeries L)).coeff 0 = 1 := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaSeries_coeff_zero L one_pos hL.thetaSeries_one_vadd
 
 end Normed
 
@@ -215,11 +217,13 @@ section InnerProduct
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {L : Submodule ℤ E} [DiscreteTopology L]
 
+omit [DiscreteTopology L] in
 /-- For an integral lattice, the constant term of the `q`-expansion of `Θ_L` with period `2`, in
 `exp (π i τ)`, is `1`. -/
 theorem IsIntegral.qExpansion_two_thetaSeries_coeff_zero (hL : IsIntegral L) :
-    (qExpansion 2 (thetaSeries L)).coeff 0 = 1 :=
-  ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
+    (qExpansion 2 (thetaSeries L)).coeff 0 = 1 := by
+  have := hL.discreteTopology
+  exact ZLattice.qExpansion_thetaSeries_coeff_zero L two_pos hL.thetaSeries_two_vadd
 
 end InnerProduct
 

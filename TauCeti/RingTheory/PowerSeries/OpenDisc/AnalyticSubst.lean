@@ -40,6 +40,7 @@ attribute [local instance] radius_pos
 private noncomputable def substRadius : Set.Ioo (0 : ℝ) S₀ :=
   ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
 
+omit [Fact (0 < S₀)] in
 private theorem summable_subst (g : OnOpenDisc.subring R S₀)
     (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
     (f : OnOpenDisc.subring R R₀) :
@@ -62,6 +63,7 @@ private theorem summable_subst (g : OnOpenDisc.subring R S₀)
   rw [Filter.map_congr (Filter.Eventually.of_forall hsum)]
   exact summable_iff_cauchySeq_finset.mp hrestricted
 
+omit [Fact (0 < S₀)] in
 private theorem restrict_tsum_subst (g : OnOpenDisc.subring R S₀)
     (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
     (f : OnOpenDisc.subring R R₀) (s : Set.Ioo (0 : ℝ) S₀) :

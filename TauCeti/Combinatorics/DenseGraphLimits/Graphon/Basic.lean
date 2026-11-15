@@ -24,8 +24,8 @@ domain — be applied to graphons without a second definition.
 
 **Graphons carry no algebra.** They are deliberately not an `AddCommGroup` or a `Module`: the
 `[0, 1]` constraint is not preserved by addition, negation, or scaling, so `U - W` is a kernel and
-not a graphon. This is exactly why the roadmap puts the cut norm on `SymmKernel` and the range
-constraint here.
+not a graphon. This is exactly why the cut norm lives on `SymmKernel` and the range constraint
+here.
 
 **The measure is a genuine parameter here.** Unlike `SymmKernel`, whose measure is a phantom
 argument, `Graphon` requires `[IsProbabilityMeasure μ]`: the analytic theory built on graphons —
@@ -50,11 +50,6 @@ homomorphism densities, the cut metric, sampling — integrates against `μ` and
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the graphon carrier and the
-  constant graphon. The signature follows `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
-  Homomorphism densities, the cut norm and cut distance, the `GraphonSpace` quotient and its
-  a.e.-identification, and the step graphon of a finite graph are separate targets and are not built
-  here.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013).
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §7.

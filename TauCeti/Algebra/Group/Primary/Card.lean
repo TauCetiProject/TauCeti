@@ -19,8 +19,7 @@ need not be prime). For a finite commutative group `A`, the order of `A[n^∞]` 
 `#A`: its prime factors divide `n`, and the index `[A : A[n^∞]]` is prime to `n` (both by Cauchy's
 theorem). So finite groups of the same order have `n`-primary components of the same order.
 
-For a prime `n` this is also a consequence of Sylow theory
-(`TauCeti.AddCommGroup.natCard_primaryComponent`).
+For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` dividing `#A`.
 
 ## Main results
 
@@ -30,6 +29,8 @@ For a prime `n` this is also a consequence of Sylow theory
 * `TauCeti.AddCommGroup.natCard_primaryComponent_dvd_of_natCard_dvd` and
   `TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq`: for finite groups, `#A[n^∞]`
   only depends on `#A`.
+* `TauCeti.AddCommGroup.natCard_primaryComponent`: for a prime `p` and a finite group,
+  `#A[p^∞] = p ^ v_p(#A)`.
 -/
 
 public section
@@ -77,11 +78,14 @@ theorem dvd_of_prime_dvd_natCard_primaryComponent {n p : ℕ}
   exact addOrderOf_dvd_of_nsmul_eq_zero (Subtype.ext hk)
 
 /-- **The order of the `n`-primary component is monotone in the order of the group**: if
-`#A ∣ #B` for finite commutative groups, then `#A[n^∞] ∣ #B[n^∞]`. -/
-theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite A] [Finite B]
+`#A ∣ #B` for commutative groups with `B` finite, then `#A[n^∞] ∣ #B[n^∞]` (`A` is then finite
+too). -/
+theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite B]
     (h : Nat.card A ∣ Nat.card B) (n : ℕ) :
     Nat.card (AddCommGroup.primaryComponent A n) ∣
       Nat.card (AddCommGroup.primaryComponent B n) := by
+  have : Finite A :=
+    Nat.finite_of_card_ne_zero (ne_zero_of_dvd_ne_zero (Nat.card_pos (α := B)).ne' h)
   -- `#A[n^∞]` divides `#B = #B[n^∞] · [B : B[n^∞]]` and is prime to the index
   have hcop : (Nat.card (AddCommGroup.primaryComponent A n)).Coprime
       (AddCommGroup.primaryComponent B n).index :=
@@ -92,13 +96,30 @@ theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite A] [Finite B]
   rw [AddSubgroup.card_mul_index]
   exact (AddSubgroup.card_addSubgroup_dvd_card _).trans h
 
-/-- **Finite commutative groups of the same order have `n`-primary components of the same
+/-- **Commutative groups of the same finite order have `n`-primary components of the same
 order.** -/
-theorem natCard_primaryComponent_eq_of_natCard_eq [Finite A] [Finite B]
+theorem natCard_primaryComponent_eq_of_natCard_eq [Finite B]
     (h : Nat.card A = Nat.card B) (n : ℕ) :
-    Nat.card (AddCommGroup.primaryComponent A n) = Nat.card (AddCommGroup.primaryComponent B n) :=
-  Nat.dvd_antisymm (natCard_primaryComponent_dvd_of_natCard_dvd h.dvd n)
-    (natCard_primaryComponent_dvd_of_natCard_dvd h.symm.dvd n)
+    Nat.card (AddCommGroup.primaryComponent A n) =
+      Nat.card (AddCommGroup.primaryComponent B n) := by
+  have : Finite A := Nat.finite_of_card_ne_zero (h ▸ Nat.card_pos.ne')
+  exact Nat.dvd_antisymm (natCard_primaryComponent_dvd_of_natCard_dvd h.dvd n)
+      (natCard_primaryComponent_dvd_of_natCard_dvd h.symm.dvd n)
+
+/-- **The order of a prime-primary component** of a finite commutative group is the corresponding
+prime-power factor of the group order. -/
+theorem natCard_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] {p : ℕ} (hp : p.Prime) :
+    Nat.card (AddCommGroup.primaryComponent A p) = p ^ (Nat.card A).factorization p := by
+  -- `#A[p^∞]` is a power of `p`, and the complementary factor `[A : A[p^∞]]` is prime to `p`
+  obtain ⟨k, hk⟩ : ∃ k, Nat.card (AddCommGroup.primaryComponent A p) = p ^ k :=
+    ⟨_, Nat.eq_prime_pow_of_unique_prime_dvd Nat.card_pos.ne' fun {q} hq hqd ↦
+      (Nat.prime_dvd_prime_iff_eq hq hp).mp (dvd_of_prime_dvd_natCard_primaryComponent hq hqd)⟩
+  have hi : (AddCommGroup.primaryComponent A p).index.factorization p = 0 :=
+    Nat.factorization_eq_zero_of_not_dvd
+      (hp.coprime_iff_not_dvd.mp (coprime_index_primaryComponent p).symm)
+  rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
+    Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite]
+  simp [hp.factorization_pow, hi]
 
 end AddCommGroup
 

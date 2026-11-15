@@ -41,7 +41,7 @@ open TauCeti.AlgebraicGeometry (WeilDivisor)
 
 universe u
 
-variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   {E : WeilDivisor X} {g : X → ℂ} {x : X}
 
 /-- The function `g` normalized as a section of `𝒪_E`: removable singularities are filled, and
@@ -49,7 +49,7 @@ the values at the poles allowed by `E` are `0`. -/
 def toDivisorSection (E : WeilDivisor X) (g : X → ℂ) : X → ℂ :=
   {y | E y ≤ 0}.indicator fun y ↦ affineChart (sphereMap g y)
 
-omit [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] in
+omit [ChartedSpace ℂ X] in
 /-- The value of `toDivisorSection E g` at `y` is the filled value of `g` if `E y ≤ 0`, and `0`
 otherwise. -/
 theorem toDivisorSection_apply (E : WeilDivisor X) (g : X → ℂ) (y : X) :

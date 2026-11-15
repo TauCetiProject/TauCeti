@@ -711,6 +711,33 @@ theorem self_trans_symm (E : D.ResolutionEquiv D') : E.trans E.symm = refl D := 
 theorem symm_trans_self (E : D.ResolutionEquiv D') : E.symm.trans E = refl D' := by
   ext <;> simp
 
+/-- Equal codes have the same smoothings: the identification along an equality of codes is the
+identity on crossings, half-edges and crossing-free labels. -/
+def ofEq {D₁ D₂ : PDCode n} (h : D₁ = D₂) : D₁.ResolutionEquiv D₂ where
+  crossingEquiv := Equiv.refl _
+  halfEdgeEquiv := Equiv.refl _
+  crossinglessEquiv := finCongr (congrArg crossinglessComponentCount h)
+  edgePair_apply _ := by subst h; rfl
+  statePerm_apply _ _ := by subst h; rfl
+
+/-- The identification along an equality of codes is the identity on crossings. -/
+@[simp]
+theorem ofEq_crossingEquiv {D₁ D₂ : PDCode n} (h : D₁ = D₂) :
+    (ofEq h).crossingEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- The identification along an equality of codes is the identity on half-edges. -/
+@[simp]
+theorem ofEq_halfEdgeEquiv {D₁ D₂ : PDCode n} (h : D₁ = D₂) :
+    (ofEq h).halfEdgeEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- The identification along an equality of codes keeps the crossing-free labels. -/
+@[simp]
+theorem ofEq_crossinglessEquiv {D₁ D₂ : PDCode n} (h : D₁ = D₂) :
+    (ofEq h).crossinglessEquiv = finCongr (congrArg crossinglessComponentCount h) :=
+  (rfl)
+
 /-- **Relabelling** the half-edges along `half` and the crossings along `cross` identifies the
 smoothings of `D` with those of the relabelled code. The crossing-free circles keep their
 labels. -/

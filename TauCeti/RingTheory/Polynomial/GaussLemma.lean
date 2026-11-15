@@ -35,17 +35,21 @@ open Polynomial
 
 open scoped nonZeroDivisors
 
-variable {R K : Type*} [CommRing R] [IsDomain R] [IsGCDMonoid R] [Field K] [Algebra R K]
+variable {R K : Type*} [CommRing R] [IsGCDMonoid R] [Field K] [Algebra R K]
   [IsFractionRing R K]
 
 namespace Polynomial
 
-/-- A nonzero polynomial over the fraction field of a GCD domain is a unit as soon as every
+/-- A polynomial over the fraction field of a GCD domain is a unit as soon as every
 primitive polynomial whose image divides it is a unit. -/
-theorem isUnit_of_forall_isPrimitive_map_dvd {q : K[X]} (hq : q ≠ 0)
+theorem isUnit_of_forall_isPrimitive_map_dvd {q : K[X]}
     (h : ∀ q₀ : R[X], q₀.IsPrimitive → q₀.map (algebraMap R K) ∣ q → IsUnit q₀) :
     IsUnit q := by
+  have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
   let := Classical.arbitrary (NormalizedGCDMonoid R)
+  have hq : q ≠ 0 := by
+    rintro rfl
+    exact not_isUnit_X (h X monic_X.isPrimitive (by simp))
   obtain ⟨b, hb, hbq⟩ := IsLocalization.integerNormalization_spec R⁰ q
   apply isUnit_or_eq_zero_of_isUnit_integerNormalization_primPart (R := R) hq
   refine h _ (isPrimitive_primPart _) ?_
@@ -59,13 +63,10 @@ end Polynomial
 /-- A squarefree polynomial over a GCD domain stays squarefree over the fraction field. -/
 theorem Squarefree.map_fraction_map {p : R[X]} (hp : Squarefree p) :
     Squarefree (p.map (algebraMap R K)) := by
+  have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
   let := Classical.arbitrary (NormalizedGCDMonoid R)
-  have hinj := IsFractionRing.injective R K
   intro q hq
-  have hq0 : q ≠ 0 := by
-    rintro rfl
-    exact hp.ne_zero ((Polynomial.map_eq_zero_iff hinj).1 (zero_dvd_iff.1 (by simpa using hq)))
-  refine isUnit_of_forall_isPrimitive_map_dvd hq0 fun q₀ hq₀ hdvd ↦ hp q₀ ?_
+  refine isUnit_of_forall_isPrimitive_map_dvd fun q₀ hq₀ hdvd ↦ hp q₀ ?_
   refine (hq₀.mul hq₀).dvd_of_fraction_map_dvd_fraction_map (K := K) ?_
   rw [Polynomial.map_mul]
   exact (mul_dvd_mul hdvd hdvd).trans hq
@@ -74,13 +75,8 @@ theorem Squarefree.map_fraction_map {p : R[X]} (hp : Squarefree p) :
 field. -/
 theorem IsRelPrime.map_fraction_map {p q : R[X]} (h : IsRelPrime p q) :
     IsRelPrime (p.map (algebraMap R K)) (q.map (algebraMap R K)) := by
-  have hinj := IsFractionRing.injective R K
+  have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
   intro d hdp hdq
-  have hd0 : d ≠ 0 := by
-    rintro rfl
-    have hp := (Polynomial.map_eq_zero_iff hinj).1 (zero_dvd_iff.1 hdp)
-    have hq := (Polynomial.map_eq_zero_iff hinj).1 (zero_dvd_iff.1 hdq)
-    exact not_isRelPrime_zero_zero (hp ▸ hq ▸ h)
-  exact isUnit_of_forall_isPrimitive_map_dvd hd0 fun d₀ hd₀ hdvd ↦
+  exact isUnit_of_forall_isPrimitive_map_dvd fun d₀ hd₀ hdvd ↦
     h (hd₀.dvd_of_fraction_map_dvd_fraction_map (hdvd.trans hdp))
       (hd₀.dvd_of_fraction_map_dvd_fraction_map (hdvd.trans hdq))

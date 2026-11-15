@@ -175,10 +175,6 @@ there and `y² - x³` has a pole of order at most five. -/
 private theorem infinityPlace_veluY_sq_sub_veluX_pow_three_le :
     W.infinityPlace (veluY W Φ ^ 2 - veluX W Φ ^ 3) ≤ WithZero.exp 5 := by
   classical
-  have hx : W.infinityPlace (genericX W) = WithZero.exp 2 := by
-    rw [genericX_def]; exact infinityPlace.X W
-  have hy : W.infinityPlace (genericY W) = WithZero.exp 3 := by
-    rw [genericY_def]; exact infinityPlace.mk_Y W
   have hXx : W.infinityPlace (veluX W Φ - genericX W) ≤ 1 := by
     rw [veluX_def, genericX_def]
     exact infinityPlace_normalized_sum_sub_le_one W Φ _ _
@@ -209,20 +205,25 @@ private theorem infinityPlace_veluY_sq_sub_veluX_pow_three_le :
   · rw [map_mul]
     refine (mul_le_of_le_one_left' hYy).trans ((v.map_add_le ?_ ?_))
     · rw [hY]; exact hexp _ _ (by norm_num)
-    · rw [hy]; exact hexp _ _ (by norm_num)
+    · rw [infinityPlace_genericY]; exact hexp _ _ (by norm_num)
   · rw [map_mul]
     refine (mul_le_of_le_one_left' hXx).trans (v.map_add_le (v.map_add_le ?_ ?_) ?_)
     · rw [map_pow, hX, ← WithZero.exp_nsmul]; exact hexp _ _ (by norm_num)
-    · rw [map_mul, hX, hx, ← WithZero.exp_add]; exact hexp _ _ (by norm_num)
-    · rw [map_pow, hx, ← WithZero.exp_nsmul]; exact hexp _ _ (by norm_num)
+    · rw [map_mul, hX, infinityPlace_genericX, ← WithZero.exp_add]
+      exact hexp _ _ (by norm_num)
+    · rw [map_pow, infinityPlace_genericX, ← WithZero.exp_nsmul]
+      exact hexp _ _ (by norm_num)
   · refine v.map_sub_le (v.map_sub_le (v.map_add_le (v.map_add_le ?_ ?_) ?_) ?_) ?_
-    · rw [map_mul, map_pow, hx, ← WithZero.exp_nsmul]
+    · rw [map_mul, map_pow, infinityPlace_genericX, ← WithZero.exp_nsmul]
       exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
-    · rw [map_mul, hx]; exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
+    · rw [map_mul, infinityPlace_genericX]
+      exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
     · exact (hc _).trans h1
-    · rw [map_mul, map_mul, hx, hy, mul_assoc, ← WithZero.exp_add]
+    · rw [map_mul, map_mul, infinityPlace_genericX, infinityPlace_genericY, mul_assoc,
+        ← WithZero.exp_add]
       exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
-    · rw [map_mul, hy]; exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
+    · rw [map_mul, infinityPlace_genericY]
+      exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
 
 section Relation
 

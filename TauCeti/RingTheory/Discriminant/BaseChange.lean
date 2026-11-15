@@ -11,8 +11,8 @@ public import TauCeti.RingTheory.NormTrace.BaseChange
 /-!
 # Discriminants under base change
 
-The trace matrix of an arbitrary family, and the discriminant of a finite family, in a finite
-free algebra commute with scalar extension. In particular, for a basis `b` of `S` over `R` and
+The trace matrix of an arbitrary family, and the discriminant of a finite family, in a free
+algebra commute with scalar extension. In particular, for a basis `b` of `S` over `R` and
 an `R`-algebra `A`, the discriminant of the base-changed basis of `A ⊗[R] S` over `A` is the
 image of the discriminant of `b`. This lets statements about discriminants pass to residue
 fields and localizations.
@@ -44,7 +44,7 @@ variable {R S A ι : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing A]
 
 /-- The trace matrix of a base-changed family is the image of its original trace matrix. -/
 @[simp]
-theorem Algebra.traceMatrix_baseChange [Module.Free R S] [Module.Finite R S]
+theorem Algebra.traceMatrix_baseChange [Module.Free R S]
     (b : ι → S) :
     Algebra.traceMatrix A (fun i ↦ (1 : A) ⊗ₜ[R] b i) =
       (Algebra.traceMatrix R b).map (algebraMap R A) := by
@@ -53,8 +53,8 @@ theorem Algebra.traceMatrix_baseChange [Module.Free R S] [Module.Finite R S]
 
 /-- The discriminant of a base-changed finite family is the image of its original discriminant. -/
 @[simp]
-theorem Algebra.discr_baseChange [Module.Free R S] [Module.Finite R S] [Fintype ι]
-    [DecidableEq ι] (b : ι → S) :
+theorem Algebra.discr_baseChange [Module.Free R S] [Fintype ι] [DecidableEq ι]
+    (b : ι → S) :
     Algebra.discr A (fun i ↦ (1 : A) ⊗ₜ[R] b i) = algebraMap R A (Algebra.discr R b) := by
   rw [Algebra.discr_def, Algebra.discr_def, Algebra.traceMatrix_baseChange, RingHom.map_det,
     RingHom.mapMatrix_apply]
@@ -65,7 +65,6 @@ theorem Algebra.discr_basis_baseChange [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι R S) :
     Algebra.discr A (Algebra.TensorProduct.basis A b) = algebraMap R A (Algebra.discr R b) := by
   have : Module.Free R S := Module.Free.of_basis b
-  have : Module.Finite R S := Module.Finite.of_basis b
   have hb : (Algebra.TensorProduct.basis A b : ι → A ⊗[R] S) =
       (fun i ↦ (1 : A) ⊗ₜ[R] b i) := by
     funext i

@@ -122,7 +122,7 @@ theorem abs_inducedCopyCount_sub_expectedInducedCount_le_of_topRegular
   have hreg : C.skeleton.IsPairColorRegular (inducedCountingSchedule3 F.k ε n) := by
     simpa [PairSkeleton3.lowerSkeletonRegular_iff, n] using hlower
   have hmain := abs_inducedCopyCount_sub_expectedInducedCount_le_of_placed_le (H := H)
-    (H' := H') hC (inducedCountingSchedule3_nonneg F.k hε.le n) hreg hε hcells
+    (H' := H') hC hreg hε hcells
     (routeBudget3_nonneg C F.k (by positivity : (0 : ℝ) ≤ ε / 6)) fun _ hφ _ hψ ↦
       abs_placedInducedCopyCount_sub_expectedInducedCountAt_le_routeBudget3 hφ hε.le hlower hr hψ
   -- The six charges: edits, local counting, actual and predicted exceptional copies,

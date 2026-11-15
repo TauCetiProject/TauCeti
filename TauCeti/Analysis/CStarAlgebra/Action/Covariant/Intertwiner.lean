@@ -72,7 +72,7 @@ theorem comp_integratedOperator {T : H →L[ℂ] K}
   rw [← ContinuousLinearMap.comp_apply T, hπ, ContinuousLinearMap.comp_apply,
     ← ContinuousLinearMap.comp_apply T, hU, ContinuousLinearMap.comp_apply]
 
-variable [IsTopologicalGroup G] [LocallyCompactSpace G] [R1Space G] [MeasurableMul G]
+variable [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableMul G]
   [μ.IsMulLeftInvariant]
   [μ.IsOpenPosMeasure]
 

@@ -209,12 +209,6 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
   (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 
-/-- Left translation of a matrix coefficient acts on its second vector. -/
-theorem leftRegularLp_matrixCoeffLp (hunitary : IsUnitary π) (g : G) (v w : V) :
-    leftRegularLp 𝕜 G g (matrixCoeffLp π hπ v w) = matrixCoeffLp π hπ v (π g w) := by
-  rw [← traceCoeffLp_rankOne π hπ hunitary v w, leftRegularLp_traceCoeffLp,
-    InnerProductSpace.comp_rankOne, traceCoeffLp_rankOne π hπ hunitary]
-
 /-- The matrix-coefficient map in its second vector, intertwining a finite-dimensional
 unitary representation with left translation on `L²(G)`. -/
 noncomputable def matrixCoeffLpIntertwiner (hunitary : IsUnitary π) (v : V) :

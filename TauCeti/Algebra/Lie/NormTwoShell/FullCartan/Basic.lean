@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.FullCartan
 public import TauCeti.Algebra.Lie.NormTwoShell.Basic
 
 /-!
@@ -126,47 +127,46 @@ end ShellCartanDatum
 variable {B : Matrix I I ℤ} {Y : Type*} [AddCommGroup Y]
 
 /-- The carrier `Y × (Φ →₀ ℤ)` of the signed Lie algebra of the norm-two shell `Φ` of `B` over the
-full Cartan lattice `Y` of `D`. The bracket is `Matrix.FullShellLieAlgebra.bracketBilin`. -/
+full Cartan lattice `Y` of `D`, built on `TauCeti.FullCartan`. The bracket is
+`Matrix.FullShellLieAlgebra.bracketBilin`. -/
 def FullShellLieAlgebra (_D : ShellCartanDatum B Y) : Type _ :=
-  Y × (B.normTwoShell →₀ ℤ)
+  TauCeti.FullCartan Y B.normTwoShell
 
 namespace FullShellLieAlgebra
 
 variable (D : ShellCartanDatum B Y)
 
 noncomputable instance : AddCommGroup (FullShellLieAlgebra D) :=
-  inferInstanceAs (AddCommGroup (Y × (B.normTwoShell →₀ ℤ)))
+  inferInstanceAs (AddCommGroup (TauCeti.FullCartan Y B.normTwoShell))
 
 /-- The identification of `FullShellLieAlgebra D` with the product `Y × (Φ →₀ ℤ)` defining it. -/
 noncomputable def equivProd : FullShellLieAlgebra D ≃ₗ[ℤ] Y × (B.normTwoShell →₀ ℤ) :=
-  LinearEquiv.refl ℤ _
+  TauCeti.FullCartan.equivProd Y B.normTwoShell
 
 /-- The Cartan vector `H_y` of `y : Y`, as a linear map `Y →ₗ[ℤ] FullShellLieAlgebra D`. -/
 noncomputable def cartan : Y →ₗ[ℤ] FullShellLieAlgebra D :=
-  (equivProd D).symm.toLinearMap ∘ₗ LinearMap.inl ℤ Y (B.normTwoShell →₀ ℤ)
+  TauCeti.FullCartan.cartan Y B.normTwoShell
 
 /-- The root vector `x_a` of a vector `a` of the norm-two shell. -/
 noncomputable def root (a : B.normTwoShell) : FullShellLieAlgebra D :=
-  (equivProd D).symm (0, Finsupp.single a 1)
+  TauCeti.FullCartan.root Y B.normTwoShell a
 
 @[simp]
-theorem equivProd_cartan (y : Y) : equivProd D (cartan D y) = (y, 0) := by
-  simp [cartan]
+theorem equivProd_cartan (y : Y) : equivProd D (cartan D y) = (y, 0) :=
+  TauCeti.FullCartan.equivProd_cartan y
 
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
-    equivProd D (root D a) = (0, Finsupp.single a 1) := by
-  simp [root]
+    equivProd D (root D a) = (0, Finsupp.single a 1) :=
+  TauCeti.FullCartan.equivProd_root a
 
 variable {D} in
 /-- Two linear maps out of `FullShellLieAlgebra D` agree once they agree on all Cartan vectors and
 on all root vectors. -/
 theorem linearMap_ext {N : Type*} [AddCommGroup N] {f g : FullShellLieAlgebra D →ₗ[ℤ] N}
     (hc : ∀ y, f (cartan D y) = g (cartan D y)) (hr : ∀ a, f (root D a) = g (root D a)) :
-    f = g := by
-  have key : f ∘ₗ (equivProd D).symm.toLinearMap = g ∘ₗ (equivProd D).symm.toLinearMap :=
-    LinearMap.prod_ext (LinearMap.ext hc) (Finsupp.lhom_ext' fun a ↦ LinearMap.ext_ring (hr a))
-  simpa using congr($key ∘ₗ (equivProd D).toLinearMap)
+    f = g :=
+  TauCeti.FullCartan.linearMap_ext hc hr
 
 /-- The map `H_h ↦ H_(h∨)`, `x_a ↦ x_a` from the signed Lie algebra of the norm-two shell, with
 Cartan part `Q`, to the one over the full Cartan lattice of `D`. -/
@@ -233,25 +233,11 @@ theorem rootBracket_of_notMem_of_add_ne_zero {a b : B.normTwoShell}
     rootBracket D a b = 0 := by
   rw [rootBracket, ShellLieAlgebra.rootBracket_of_notMem_of_add_ne_zero h h', map_zero]
 
-/-- The action `y ↦ (x_b ↦ ⟨b, y⟩ x_b)` of the Cartan lattice on the root part. -/
-private noncomputable def cartanAction :
-    Y →ₗ[ℤ] (B.normTwoShell →₀ ℤ) →ₗ[ℤ] FullShellLieAlgebra D :=
-  (Finsupp.linearCombination ℤ fun b : B.normTwoShell ↦
-    (D.weight b).smulRight (root D b)).flip
-
-/-- The root bracket, extended bilinearly to the root part. -/
-private noncomputable def rootPart :
-    (B.normTwoShell →₀ ℤ) →ₗ[ℤ] (B.normTwoShell →₀ ℤ) →ₗ[ℤ] FullShellLieAlgebra D :=
-  Finsupp.linearCombination ℤ fun a ↦ Finsupp.linearCombination ℤ fun b ↦ rootBracket D a b
-
 /-- The bracket of `FullShellLieAlgebra D`, as the bilinear map determined by `⁅H_y, H_z⁆ = 0`,
 `⁅H_y, x_b⁆ = ⟨b, y⟩ x_b`, `⁅x_a, H_z⁆ = -⟨a, z⟩ x_a` and `⁅x_a, x_b⁆ = rootBracket D a b`. -/
 noncomputable def bracketBilin :
     FullShellLieAlgebra D →ₗ[ℤ] FullShellLieAlgebra D →ₗ[ℤ] FullShellLieAlgebra D :=
-  let fst := LinearMap.fst ℤ Y (B.normTwoShell →₀ ℤ) ∘ₗ (equivProd D).toLinearMap
-  let snd := LinearMap.snd ℤ Y (B.normTwoShell →₀ ℤ) ∘ₗ (equivProd D).toLinearMap
-  (cartanAction D).compl₁₂ fst snd - ((cartanAction D).compl₁₂ fst snd).flip +
-    (rootPart D).compl₁₂ snd snd
+  TauCeti.FullCartan.bracketBilin (fun a ↦ D.weight a) (rootBracket D)
 
 /-- The bracket of `FullShellLieAlgebra D` is `Matrix.FullShellLieAlgebra.bracketBilin`. It is a
 Lie bracket for positive definite `B` with even diagonal, see `Matrix.FullShellLieAlgebra.lieRing`.
@@ -299,25 +285,25 @@ protected theorem lie_neg (x y : FullShellLieAlgebra D) : ⁅x, -y⁆ = -⁅x, y
 
 /-- Cartan vectors commute. -/
 @[simp]
-theorem cartan_lie_cartan (y z : Y) : ⁅cartan D y, cartan D z⁆ = 0 := by
-  simp [← bracketBilin_apply_apply, bracketBilin]
+theorem cartan_lie_cartan (y z : Y) : ⁅cartan D y, cartan D z⁆ = 0 :=
+  TauCeti.FullCartan.bracketBilin_cartan_cartan _ _ y z
 
 /-- The Cartan vector `H_y` acts on the root vector `x_b` by the root weight `⟨b, y⟩`. -/
 @[simp]
 theorem cartan_lie_root (y : Y) (b : B.normTwoShell) :
-    ⁅cartan D y, root D b⁆ = D.weight b y • root D b := by
-  simp [← bracketBilin_apply_apply, bracketBilin, cartanAction]
+    ⁅cartan D y, root D b⁆ = D.weight b y • root D b :=
+  TauCeti.FullCartan.bracketBilin_cartan_root _ _ y b
 
 /-- The bracket `⁅x_a, H_z⁆ = -⟨a, z⟩ x_a`. -/
 @[simp]
 theorem root_lie_cartan (a : B.normTwoShell) (z : Y) :
-    ⁅root D a, cartan D z⁆ = -(D.weight a z • root D a) := by
-  simp [← bracketBilin_apply_apply, bracketBilin, cartanAction]
+    ⁅root D a, cartan D z⁆ = -(D.weight a z • root D a) :=
+  TauCeti.FullCartan.bracketBilin_root_cartan _ _ a z
 
 /-- The bracket of two root vectors is their root bracket. -/
 @[simp]
-theorem root_lie_root (a b : B.normTwoShell) : ⁅root D a, root D b⁆ = rootBracket D a b := by
-  simp [← bracketBilin_apply_apply, bracketBilin, rootPart]
+theorem root_lie_root (a b : B.normTwoShell) : ⁅root D a, root D b⁆ = rootBracket D a b :=
+  TauCeti.FullCartan.bracketBilin_root_root _ _ a b
 
 @[simp]
 protected theorem units_smul_lie (u : ℤˣ) (x y : FullShellLieAlgebra D) :
@@ -358,121 +344,52 @@ theorem rootBracket_swap (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a b : B.
     rootBracket D b a = -rootBracket D a b := by
   rw [rootBracket, ShellLieAlgebra.rootBracket_swap hB hdiag, map_neg, toFull_rootBracket]
 
+/-- **Alternation of the root bracket**, for a symmetric `B` with even diagonal. -/
+theorem rootBracket_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (a : B.normTwoShell) :
+    rootBracket D a a = 0 := by
+  simpa [ShellLieAlgebra.root_lie_root] using
+    congr(toFull D $(ShellLieAlgebra.lie_self hB hdiag (ShellLieAlgebra.root B a)))
+
 /-- **Antisymmetry of the bracket**, for a symmetric `B` with even diagonal. -/
 protected theorem lie_skew (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
-    (x y : FullShellLieAlgebra D) : ⁅y, x⁆ = -⁅x, y⁆ := by
-  have key : (bracketBilin D).flip = -bracketBilin D := by
-    refine linearMap_ext (fun y ↦ linearMap_ext (fun z ↦ ?_) fun b ↦ ?_)
-      fun a ↦ linearMap_ext (fun z ↦ ?_) fun b ↦ ?_ <;>
-      simp only [LinearMap.flip_apply, LinearMap.neg_apply, bracketBilin_apply_apply]
-    · simp
-    · simp
-    · simp
-    · rw [root_lie_root, root_lie_root, rootBracket_swap hB hdiag]
-  simpa using congr($key x y)
+    (x y : FullShellLieAlgebra D) : ⁅y, x⁆ = -⁅x, y⁆ :=
+  TauCeti.FullCartan.bracketBilin_skew (rootBracket_swap hB hdiag) x y
 
 /-- **The bracket is alternating**, for a symmetric `B` with even diagonal. The group `Y` may have
 `2`-torsion, so this is not a consequence of antisymmetry alone. -/
 protected theorem lie_self (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i))
-    (x : FullShellLieAlgebra D) : ⁅x, x⁆ = 0 := by
-  -- By antisymmetry `x ↦ ⁅x, x⁆` is additive, so it suffices to check it on generators.
-  let q : FullShellLieAlgebra D →+ FullShellLieAlgebra D :=
-    { toFun x := ⁅x, x⁆
-      map_zero' := FullShellLieAlgebra.zero_lie 0
-      map_add' x y := by
-        simp only [FullShellLieAlgebra.add_lie, FullShellLieAlgebra.lie_add,
-          FullShellLieAlgebra.lie_skew hB hdiag x y]
-        abel }
-  have key : q.toIntLinearMap = 0 := linearMap_ext (by simp [q]) fun a ↦ by
-    simpa [q] using congr(toFull D $(ShellLieAlgebra.lie_self hB hdiag (ShellLieAlgebra.root B a)))
-  exact congr($key x)
+    (x : FullShellLieAlgebra D) : ⁅x, x⁆ = 0 :=
+  TauCeti.FullCartan.bracketBilin_self (rootBracket_swap hB hdiag) (rootBracket_self hB hdiag) x
 
 /-! ### The Jacobi identity -/
+
+private theorem cartan_bracketBilin_rootBracket (y : Y) (a b : B.normTwoShell) :
+    bracketBilin D (cartan D y) (rootBracket D a b) =
+      (D.weight a y + D.weight b y) • rootBracket D a b := by
+  rw [bracketBilin_apply_apply, cartan_lie_rootBracket, map_add, LinearMap.add_apply]
 
 /-- The Jacobi identity for three root vectors, transported from the shell algebra. -/
 private theorem jacobi_root_root_root (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     (a b c : B.normTwoShell) :
-    ⁅root D a, ⁅root D b, root D c⁆⁆ + ⁅root D b, ⁅root D c, root D a⁆⁆ +
-      ⁅root D c, ⁅root D a, root D b⁆⁆ = 0 := by
-  have hS := hB.isHermitian.isSymm
-  simpa [toFull_lie hS] using congr(toFull D $(ShellLieAlgebra.lie_jacobi hB hdiag
-    (ShellLieAlgebra.root B a) (ShellLieAlgebra.root B b) (ShellLieAlgebra.root B c)))
-
-/-- The Jacobi identity for two Cartan vectors and a root vector. -/
-private theorem jacobi_cartan_cartan_root (y z : Y) (c : B.normTwoShell) :
-    ⁅cartan D y, ⁅cartan D z, root D c⁆⁆ + ⁅cartan D z, ⁅root D c, cartan D y⁆⁆ +
-      ⁅root D c, ⁅cartan D y, cartan D z⁆⁆ = 0 := by
-  simp only [cartan_lie_root, root_lie_cartan, cartan_lie_cartan, FullShellLieAlgebra.lie_smul,
-    FullShellLieAlgebra.lie_neg, FullShellLieAlgebra.lie_zero]
-  module
-
-/-- The Jacobi identity for a Cartan vector and two root vectors. -/
-private theorem jacobi_cartan_root_root (hB : B.IsSymm) (hdiag : ∀ i, Even (B i i)) (y : Y)
-    (b c : B.normTwoShell) :
-    ⁅cartan D y, ⁅root D b, root D c⁆⁆ + ⁅root D b, ⁅root D c, cartan D y⁆⁆ +
-      ⁅root D c, ⁅cartan D y, root D b⁆⁆ = 0 := by
-  simp only [root_lie_root, cartan_lie_rootBracket, root_lie_cartan, cartan_lie_root,
-    FullShellLieAlgebra.lie_smul, FullShellLieAlgebra.lie_neg, rootBracket_swap hB hdiag b c,
-    map_add, LinearMap.add_apply]
-  module
-
-/-- The Jacobi identity with the first two arguments Cartan or root vectors. -/
-private theorem jacobi_gen_gen (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
-    (u v : Y ⊕ B.normTwoShell) (z : FullShellLieAlgebra D) :
-    let gen : Y ⊕ B.normTwoShell → FullShellLieAlgebra D := Sum.elim (cartan D) (root D)
-    ⁅gen u, ⁅gen v, z⁆⁆ + ⁅gen v, ⁅z, gen u⁆⁆ + ⁅z, ⁅gen u, gen v⁆⁆ = 0 := by
-  intro gen
-  have hS := hB.isHermitian.isSymm
-  have key : bracketBilin D (gen u) ∘ₗ bracketBilin D (gen v) +
-      bracketBilin D (gen v) ∘ₗ (bracketBilin D).flip (gen u) +
-      (bracketBilin D).flip (bracketBilin D (gen u) (gen v)) = 0 := by
-    refine linearMap_ext (fun y ↦ ?_) fun c ↦ ?_ <;>
-      simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.flip_apply,
-        bracketBilin_apply_apply, LinearMap.zero_apply] <;>
-      rcases u with x | a <;> rcases v with x' | b <;> simp only [gen, Sum.elim_inl, Sum.elim_inr]
-    · simp
-    · rw [add_rotate, add_rotate]
-      exact jacobi_cartan_cartan_root _ _ _
-    · rw [add_rotate]
-      exact jacobi_cartan_cartan_root _ _ _
-    · rw [add_rotate, add_rotate]
-      exact jacobi_cartan_root_root hS hdiag _ _ _
-    · exact jacobi_cartan_cartan_root _ _ _
-    · exact jacobi_cartan_root_root hS hdiag _ _ _
-    · rw [add_rotate]
-      exact jacobi_cartan_root_root hS hdiag _ _ _
-    · exact jacobi_root_root_root hB hdiag _ _ _
-  simpa using congr($key z)
+    ⁅root D a, rootBracket D b c⁆ + ⁅root D b, rootBracket D c a⁆ +
+      ⁅root D c, rootBracket D a b⁆ = 0 := by
+  simpa [toFull_lie hB.isHermitian.isSymm] using congr(toFull D $(ShellLieAlgebra.lie_jacobi hB
+    hdiag (ShellLieAlgebra.root B a) (ShellLieAlgebra.root B b) (ShellLieAlgebra.root B c)))
 
 /-- **The Jacobi identity**, for a positive definite `B` with even diagonal. -/
 protected theorem lie_jacobi (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     (x y z : FullShellLieAlgebra D) :
-    ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 := by
-  -- Each side is linear in each variable, so it suffices to check it on Cartan and root vectors,
-  -- one variable at a time.
-  have h₂ (u : Y ⊕ B.normTwoShell) (y z : FullShellLieAlgebra D) :
-      ⁅Sum.elim (cartan D) (root D) u, ⁅y, z⁆⁆ + ⁅y, ⁅z, Sum.elim (cartan D) (root D) u⁆⁆ +
-        ⁅z, ⁅Sum.elim (cartan D) (root D) u, y⁆⁆ = 0 := by
-    have key : bracketBilin D (Sum.elim (cartan D) (root D) u) ∘ₗ (bracketBilin D).flip z +
-        (bracketBilin D).flip (bracketBilin D z (Sum.elim (cartan D) (root D) u)) +
-        bracketBilin D z ∘ₗ bracketBilin D (Sum.elim (cartan D) (root D) u) = 0 :=
-      linearMap_ext (fun y ↦ by simpa using jacobi_gen_gen hB hdiag u (.inl y) z)
-        fun b ↦ by simpa using jacobi_gen_gen hB hdiag u (.inr b) z
-    simpa using congr($key y)
-  have key : (bracketBilin D).flip (bracketBilin D y z) + bracketBilin D y ∘ₗ bracketBilin D z +
-      bracketBilin D z ∘ₗ (bracketBilin D).flip y = 0 :=
-    linearMap_ext (fun x ↦ by simpa using h₂ (.inl x) y z) fun a ↦ by simpa using h₂ (.inr a) y z
-  simpa using congr($key x)
+    ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 :=
+  TauCeti.FullCartan.bracketBilin_jacobi (rootBracket_swap hB.isHermitian.isSymm hdiag)
+    cartan_bracketBilin_rootBracket (jacobi_root_root_root hB hdiag) x y z
 
 /-- **The Leibniz form of the Jacobi identity**, for a positive definite `B` with even
 diagonal. -/
 protected theorem leibniz_lie (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     (x y z : FullShellLieAlgebra D) :
-    ⁅x, ⁅y, z⁆⁆ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆ := by
-  have hS := hB.isHermitian.isSymm
-  rw [FullShellLieAlgebra.lie_skew hS hdiag z ⁅x, y⁆, FullShellLieAlgebra.lie_skew hS hdiag z x,
-    FullShellLieAlgebra.lie_neg, ← sub_eq_zero, ← FullShellLieAlgebra.lie_jacobi hB hdiag x y z]
-  abel
+    ⁅x, ⁅y, z⁆⁆ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆ :=
+  TauCeti.FullCartan.bracketBilin_leibniz (rootBracket_swap hB.isHermitian.isSymm hdiag)
+    cartan_bracketBilin_rootBracket (jacobi_root_root_root hB hdiag) x y z
 
 variable (D) in
 /-- **The signed Lie ring of the norm-two shell over a full Cartan lattice**, for a positive

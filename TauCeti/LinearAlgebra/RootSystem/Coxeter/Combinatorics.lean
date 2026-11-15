@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Coxeter.LongestElement
 public import TauCeti.GroupTheory.Coxeter.Poincare
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.LongestElement
@@ -26,11 +27,13 @@ just to a chosen expression.
   reduced, with its length equal to the inversion count of the lower element.
 * `RootPairing.length_weylCoxeterSystem_longestElement` identifies the length of the longest
   element with the number of positive roots.
+* `RootPairing.isLongest_longestElement`: the longest element complements lengths,
+  `ℓ (w * w₀) + ℓ w = ℓ w₀`, so it reverses the Bruhat order of the Weyl group and of its
+  parabolic quotients (`TauCeti.GroupTheory.Coxeter.LongestElement`).
 
 The length and reducedness comparisons come from `TauCeti.length_weylCoxeterSystem_eq` and
 `TauCeti.isReduced_weylCoxeterSystem_iff`. The longest element here is the existing
-`TauCeti.longestElement`, whose definition assumes a spanning root system; the polynomial and
-subword results do not make that assumption.
+`TauCeti.longestElement`. None of these results requires the roots to span the weight space.
 
 ## References
 
@@ -85,8 +88,15 @@ theorem bruhatLE_wordProd_iff_exists_reduced_sublist {u : P.weylGroup} {l : List
     exact (P.bruhatLE_wordProd_iff_exists_sublist b hl).mpr ⟨s, hs, hsu⟩
 
 /-- The longest element has Coxeter length equal to the number of positive roots. -/
-theorem length_weylCoxeterSystem_longestElement [P.IsRootSystem] :
+theorem length_weylCoxeterSystem_longestElement :
     (weylCoxeterSystem P b).length (longestElement P b) = (posRoots P b).ncard := by
   rw [length_weylCoxeterSystem_eq, ncard_inversions_longestElement]
+
+/-- **The longest element of the Weyl group is a longest element of the Weyl Coxeter system**:
+`ℓ (w * w₀) + ℓ w = ℓ w₀` for every `w`. -/
+theorem isLongest_longestElement :
+    (weylCoxeterSystem P b).IsLongest (longestElement P b) := by
+  simp only [CoxeterSystem.isLongest_iff, length_weylCoxeterSystem_eq, inversions_longestElement]
+  exact ncard_inversions_mul_longestElement_add_ncard_inversions P b
 
 end RootPairing

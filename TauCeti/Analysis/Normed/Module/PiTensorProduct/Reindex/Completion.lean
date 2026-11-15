@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Reindex.Basic
 public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Completion
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Symmetry of completed projective tensor products
@@ -20,7 +21,7 @@ respects identity relabelings and composition.
 No topology, separation, or completeness assumption on the factors is needed: the projective
 topology is specified by the seminorm families, and the separated completion is taken after
 forming the tensor product. The construction extends `ProjectiveTensorProduct.reindex` and
-its inverse using Mathlib's `ContinuousLinearMap.completion`.
+its inverse using `ContinuousLinearEquiv.completion`.
 -/
 
 public section
@@ -40,20 +41,8 @@ noncomputable section
 For two factors, the transposition gives the completed tensor flip. -/
 def reindex (e : ι ≃ κ) :
     CompletedProjectiveTensorProduct p ≃L[𝕜]
-      CompletedProjectiveTensorProduct (fun j => p (e.symm j)) := by
-  let f := (ProjectiveTensorProduct.reindex p e).toContinuousLinearMap.completion
-  let g := (ProjectiveTensorProduct.reindex p e).symm.toContinuousLinearMap.completion
-  refine
-    { f.toLinearMap with
-      invFun := g
-      left_inv := ?_
-      right_inv := ?_
-      continuous_toFun := f.continuous
-      continuous_invFun := g.continuous }
-  · exact congr_fun (Completion.ext (g.continuous.comp f.continuous) continuous_id
-      (fun x => by simp [f, g]))
-  · exact congr_fun (Completion.ext (f.continuous.comp g.continuous) continuous_id
-      (fun x => by simp [f, g]))
+      CompletedProjectiveTensorProduct (fun j => p (e.symm j)) :=
+  (ProjectiveTensorProduct.reindex p e).completion
 
 /-- Completed reindexing extends the reindexing of algebraic projective tensors. -/
 @[simp]

@@ -70,16 +70,19 @@ open Finset
 
 variable {A : Type*} [Ring A] [Module ℚ A]
 
-/-- Taking a nilpotent exponential in the opposite ring and reading it back in the original ring
-gives the original exponential. -/
+/-- Taking the exponential in the opposite ring and reading it back in the original ring gives the
+original exponential. Both sides take the junk value `0` at a non-nilpotent element. -/
 @[simp]
-theorem unop_exp_op {x : A} (hx : IsNilpotent x) :
-    MulOpposite.unop (exp (MulOpposite.op x)) = exp x := by
-  obtain ⟨k, hk⟩ := hx
-  have hk_op : MulOpposite.op x ^ k = 0 := by
-    rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
-  rw [exp_eq_sum hk, exp_eq_sum hk_op]
-  simp
+theorem unop_exp_op {x : A} : MulOpposite.unop (exp (MulOpposite.op x)) = exp x := by
+  by_cases hx : IsNilpotent x
+  · obtain ⟨k, hk⟩ := hx
+    have hk_op : MulOpposite.op x ^ k = 0 := by
+      rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
+    rw [exp_eq_sum hk, exp_eq_sum hk_op]
+    simp
+  · have hx_op : ¬ IsNilpotent (MulOpposite.op x) := by simpa only [isNilpotent_op] using hx
+    simp [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx),
+      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx_op)]
 
 variable {R : Type*} [Semiring R] [Module R A]
 
@@ -134,7 +137,7 @@ namespace IsNilpotent
 
 open Finset
 
-variable {A : Type*} [Ring A] [Module ℚ A] [IsScalarTower ℚ A A] [SMulCommClass ℚ A A]
+variable {A : Type*} [Ring A] [Module ℚ A]
 
 /-- The exponential preserves nilpotency bounds: if `a ^ n = 0`, then `(exp a - 1) ^ n = 0`. -/
 theorem pow_exp_sub_one_eq_zero {a : A} {n : ℕ} (ha : a ^ n = 0) : (exp a - 1) ^ n = 0 := by
@@ -190,33 +193,54 @@ theorem exp_zsmul_eq_sum_zsmul_dividedPower {x : A} {k : ℕ} (hk : x ^ k = 0) (
     exp (t • x) = ∑ i ∈ range k, t ^ i • Associative.dividedPower i x :=
   exp_smul_eq_sum_smul_dividedPower hk t
 
-/-- An additive subgroup containing every divided power of a nilpotent element contains every
-integral exponential of it. -/
-theorem exp_zsmul_mem {x : A} (hx : IsNilpotent x) {S : Type*} [SetLike S A]
+/-- The exponential of a nonzero integer multiple of a non-nilpotent element is `0` by
+convention. -/
+theorem exp_zsmul_eq_zero_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) {t : ℤ} (ht : t ≠ 0) :
+    exp (t • x) = 0 := by
+  have hnil : ¬ IsNilpotent (t • x) := fun h => hx <| by
+    simpa [← Int.cast_smul_eq_zsmul ℚ, smul_smul, ht] using h.smul ((t : ℚ)⁻¹)
+  rw [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hnil)]
+  simp
+
+/-- An additive subgroup containing every divided power of an element contains every integral
+exponential of it. For a nilpotent element this is the integrality of root subgroup maps; for a
+non-nilpotent one the exponential is `0` by convention for `t ≠ 0` and `1` for `t = 0`. -/
+theorem exp_zsmul_mem {x : A} {S : Type*} [SetLike S A]
     [AddSubgroupClass S A] {T : S} (hT : ∀ i, Associative.dividedPower i x ∈ T) (t : ℤ) :
     exp (t • x) ∈ T := by
-  obtain ⟨k, hk⟩ := hx
-  rw [exp_zsmul_eq_sum_zsmul_dividedPower hk]
-  exact sum_mem fun i _ => zsmul_mem (hT i) _
+  by_cases hx : IsNilpotent x
+  · obtain ⟨k, hk⟩ := hx
+    rw [exp_zsmul_eq_sum_zsmul_dividedPower hk]
+    exact sum_mem fun i _ => zsmul_mem (hT i) _
+  · obtain rfl | ht := eq_or_ne t 0
+    · simpa [Associative.dividedPower_zero] using hT 0
+    · rw [exp_zsmul_eq_zero_of_not_isNilpotent hx ht]
+      simp
 
 section Modules
 
 variable {V : Type*} [AddCommGroup V] [Module A V]
 
-/-- An additive subgroup of a module that is stable under the action of every divided power of a
-nilpotent element is stable under the action of every integral exponential of it.
+/-- An additive subgroup of a module that is stable under the action of every divided power of an
+element is stable under the action of every integral exponential of it. For a non-nilpotent
+element the exponential is `0` by convention for `t ≠ 0` and `1` for `t = 0`.
 
 For the divided powers of a Chevalley root vector this says that a root subgroup element preserves
 an admissible lattice. -/
-theorem exp_zsmul_smul_mem {x : A} (hx : IsNilpotent x) {S : Type*} [SetLike S V]
+theorem exp_zsmul_smul_mem {x : A} {S : Type*} [SetLike S V]
     [AddSubgroupClass S V] {M : S}
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (t : ℤ)
     {v : V} (hv : v ∈ M) : exp (t • x) • v ∈ M := by
-  obtain ⟨k, hk⟩ := hx
-  rw [exp_zsmul_eq_sum_zsmul_dividedPower hk, Finset.sum_smul]
-  exact sum_mem fun n _ => by
-    rw [← Int.cast_smul_eq_zsmul A, smul_assoc, Int.cast_smul_eq_zsmul]
-    exact zsmul_mem (hM n v hv) _
+  by_cases hx : IsNilpotent x
+  · obtain ⟨k, hk⟩ := hx
+    rw [exp_zsmul_eq_sum_zsmul_dividedPower hk, Finset.sum_smul]
+    exact sum_mem fun n _ => by
+      rw [← Int.cast_smul_eq_zsmul A, smul_assoc, Int.cast_smul_eq_zsmul]
+      exact zsmul_mem (hM n v hv) _
+  · obtain rfl | ht := eq_or_ne t 0
+    · simpa using hv
+    · rw [exp_zsmul_eq_zero_of_not_isNilpotent hx ht]
+      simp
 
 end Modules
 
@@ -320,10 +344,10 @@ private noncomputable def expZSMulAddEquiv {x : A} (hx : IsNilpotent x)
     (t : Multiplicative ℤ) : M ≃+ M where
   toFun v := ⟨(expSMulHom ℤ hx t : Aˣ) • (v : V), by
     simpa only [Units.smul_def, coe_expSMulHom] using
-      exp_zsmul_smul_mem hx hM (Multiplicative.toAdd t) v.2⟩
+      exp_zsmul_smul_mem hM (Multiplicative.toAdd t) v.2⟩
   invFun v := ⟨(expSMulHom ℤ hx t)⁻¹ • (v : V), by
     simpa only [← map_inv, Units.smul_def, coe_expSMulHom] using
-      exp_zsmul_smul_mem hx hM (Multiplicative.toAdd t⁻¹) v.2⟩
+      exp_zsmul_smul_mem hM (Multiplicative.toAdd t⁻¹) v.2⟩
   left_inv v := by
     apply Subtype.ext
     simp

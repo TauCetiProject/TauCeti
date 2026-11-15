@@ -217,8 +217,11 @@ nonzero matrix blocks over nontrivial coefficients has at most `finrank k A` of 
 
 For the group algebra of a finite group over a splitting field this bounds the number of irreducible
 representations by the order of the group. -/
-theorem card_le_finrank_of_algEquiv_pi_matrix [Finite ι] [∀ i, NeZero (d i)]
+theorem card_le_finrank_of_algEquiv_pi_matrix [∀ i, NeZero (d i)]
     [∀ i, Nontrivial (D i)] : Nat.card ι ≤ Module.finrank k A := by
+  rcases finite_or_infinite ι with hι | hι
+  swap
+  · simp [Nat.card_eq_zero_of_infinite]
   have : Fintype ι := Fintype.ofFinite ι
   rw [finrank_eq_sum_sq_finrank k e, Nat.card_eq_fintype_card, ← Finset.card_univ,
     Finset.card_eq_sum_ones]

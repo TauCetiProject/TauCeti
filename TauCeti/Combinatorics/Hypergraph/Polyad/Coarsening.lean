@@ -177,7 +177,7 @@ theorem coarsen_ofTriple (x : {x : Fin 3 → V // Function.Injective x}) :
 
 open Classical in
 /-- The fine supports with a given coarse parent partition that parent's support. -/
-theorem biUnion_support_coarsen [DecidableEq κ] [Fintype κ'] (P : Polyad3 S) :
+theorem biUnion_support_coarsen [Fintype κ'] (P : Polyad3 S) :
     (univ.filter fun Q : Polyad3 T ↦ Q.coarsen hV f = P).biUnion support = P.support := by
   classical
   ext x
@@ -190,7 +190,7 @@ theorem biUnion_support_coarsen [DecidableEq κ] [Fintype κ'] (P : Polyad3 S) :
 
 open Classical in
 /-- Fine support sizes add up exactly to the support size of the coarse parent. -/
-theorem sum_card_support_coarsen [DecidableEq κ] [Fintype κ'] (P : Polyad3 S) :
+theorem sum_card_support_coarsen [Fintype κ'] (P : Polyad3 S) :
     ∑ Q : Polyad3 T with Q.coarsen hV f = P, #Q.support = #P.support := by
   classical
   rw [← biUnion_support_coarsen hV f hf P, card_biUnion]

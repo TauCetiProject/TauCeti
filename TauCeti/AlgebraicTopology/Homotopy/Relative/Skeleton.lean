@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Compression
-public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!

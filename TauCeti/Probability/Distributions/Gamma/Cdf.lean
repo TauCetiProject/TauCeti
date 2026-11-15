@@ -17,12 +17,8 @@ This file computes `ProbabilityTheory.cdf (gammaMeasure a r)` in closed form: fo
 shape `a` and a positive rate `r` it is the regularized lower incomplete gamma function
 `TauCeti.regularizedGamma` read at the rate-scaled point, `P(a, r * x)`.
 
-This is the gamma entry of the closed-form cdf target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2.
-
 The identity holds for every real `x`, with no sign hypothesis: below the support both sides
-vanish, because `TauCeti.regularizedGamma` is extended by `0` there. That agreement at the
-clamping convention is the reason the roadmap prescribes the totalizations it does.
+vanish, because `TauCeti.regularizedGamma` is extended by `0` there.
 
 The computation is one change of variables. Mathlib's
 `ProbabilityTheory.cdf_gammaMeasure_eq_integral` presents the cdf as the integral of
@@ -34,8 +30,7 @@ into the variable, the integrand becomes `Γ(a)⁻¹ * r * ((r * t) ^ (a - 1) * 
 
 At shape `a = 1` the result recovers Mathlib's `ProbabilityTheory.cdf_expMeasure_eq`, since
 `ProbabilityTheory.expMeasure r` is `gammaMeasure 1 r` and
-`TauCeti.regularizedGamma_one` evaluates `P(1, y)` as `1 - exp (-y)`; this is the exponential
-completion check of the same layer.
+`TauCeti.regularizedGamma_one` evaluates `P(1, y)` as `1 - exp (-y)`.
 
 ## Main results
 
@@ -51,8 +46,6 @@ completion check of the same layer.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 2, the "Closed-form cdfs and
-  tails" target.
 * *NIST Digital Library of Mathematical Functions*, [§8.2](https://dlmf.nist.gov/8.2).
 -/
 
@@ -118,7 +111,7 @@ theorem cdf_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
   rw [hsplit, setIntegral_congr_fun measurableSet_Ioc
       (fun t ht => gammaPDFReal_eq_comp_mul hr ht.1),
     ← intervalIntegral.integral_of_le hx.le, intervalIntegral.integral_const_mul, hsubst,
-    ← lowerIncompleteGamma_eq_integral ha (by positivity), regularizedGamma_eq_div]
+    ← lowerIncompleteGamma_eq_integral (by positivity), regularizedGamma_eq_div]
   field_simp
 
 /-- A Gamma law of positive shape and rate has positive survival at every finite point. -/

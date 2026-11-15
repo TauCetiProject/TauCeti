@@ -100,7 +100,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
         simp_rw [hw, mul_pow]
         simp [mul_sum]
       omega
-    obtain ⟨i, hi⟩ := exists_eq_single_or_neg_single_of_sum_sq_eq_one w hsumw
+    obtain ⟨i, hi⟩ := sum_sq_eq_one_iff.mp hsumw
     refine ⟨i, hi.imp (fun h ↦ ?_) (fun h ↦ ?_)⟩ <;>
       funext j <;> by_cases hj : j = i
     · subst j

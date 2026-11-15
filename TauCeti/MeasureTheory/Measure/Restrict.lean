@@ -6,19 +6,38 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.Topology.Sets.Opens
 
 /-!
-# Event probabilities from restricted pushforwards
+# Restricted measures
 
 A restricted pushforward equal to a scalar multiple of a measure gives a factorization
 of preimage-event probabilities. This converts restricted distribution identities into
 independence identities without requiring the restricting event to be measurable.
+
+Restricting a measure to the whole space, written as the top open set, does not change it
+(`MeasureTheory.Measure.restrict_coe_opens_top`). Spaces of functions on an open set `Ω` are
+built on `μ.restrict Ω`, so this identifies their whole-space instances with the spaces for `μ`.
+
+On a finite type, the restriction of a measure to its points of finite mass is a finite measure
+(`MeasureTheory.Measure.isFiniteMeasure_restrict_setOf_measure_singleton_ne_top`).
 -/
 
 public section
 
 open MeasureTheory Set
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+/-- Restricting a measure to the whole space, as the top open set, does not change it. -/
+theorem restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [TopologicalSpace α]
+    (μ : Measure α) :
+    μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α) = μ := by
+  rw [TopologicalSpace.Opens.coe_top, restrict_univ]
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 
@@ -32,3 +51,16 @@ theorem measure_preimage_inter_eq_of_map_restrict_eq_smul
     smul_apply, smul_eq_mul] using congrArg (fun ν : Measure E ↦ ν C) h
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- On a finite type, the restriction of a measure to the points of finite mass is finite. -/
+theorem isFiniteMeasure_restrict_setOf_measure_singleton_ne_top {α : Type*} [Finite α]
+    [MeasurableSpace α] (ν : Measure α) :
+    IsFiniteMeasure (ν.restrict {x | ν {x} ≠ ⊤}) := by
+  rw [isFiniteMeasure_restrict]
+  have h := measure_biUnion_ne_top (μ := ν) (Set.toFinite {x | ν {x} ≠ ⊤})
+    (f := fun x ↦ {x}) fun x hx ↦ hx
+  rwa [Set.biUnion_of_singleton] at h
+
+end MeasureTheory.Measure

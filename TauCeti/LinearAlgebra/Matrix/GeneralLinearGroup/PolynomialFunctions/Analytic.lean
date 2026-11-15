@@ -44,9 +44,9 @@ namespace TauCeti.Matrix.GeneralLinearGroup
 theorem contMDiff_of_mem_rationalFunctions {𝕜 : Type*}
     [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n : ℕ} {f : GL (Fin n) 𝕜 → 𝕜}
     (hf : f ∈ rationalFunctions 𝕜 n) :
-    let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.complete 𝕜 _
+    let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.completeSpace 𝕜 _
     ContMDiff 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜) 𝓘(𝕜) ω f := by
-  let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.complete 𝕜 _
+  let _ : CompleteSpace (Matrix (Fin n) (Fin n) 𝕜) := FiniteDimensional.completeSpace 𝕜 _
   dsimp only
   obtain ⟨P, m, hP⟩ := mem_rationalFunctions_iff_inv.mp hf
   have hev (Q : MvPolynomial (Fin n × Fin n) 𝕜) :
@@ -58,10 +58,10 @@ theorem contMDiff_of_mem_rationalFunctions {𝕜 : Type*}
     have hc : ContDiff 𝕜 ω (fun M ↦ MvPolynomial.eval (c M) Q) :=
       (AnalyticOnNhd.eval_linearMap c Q).contDiff
     exact hc.contMDiff.comp Units.contMDiff_val
+  obtain ⟨Q, hQ⟩ := mem_polynomialFunctions.mp (det_mem_polynomialFunctions (k := 𝕜) (n := n))
   have hd : ContMDiff 𝓘(𝕜, Matrix (Fin n) (Fin n) 𝕜) 𝓘(𝕜) ω
-      (fun g : GL (Fin n) 𝕜 ↦ (g : Matrix (Fin n) (Fin n) 𝕜).det) := by
-    simpa only [eval_entries_det_mvPolynomialX] using hev
-      (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) 𝕜))
+      (fun g : GL (Fin n) 𝕜 ↦ (g : Matrix (Fin n) (Fin n) 𝕜).det) :=
+    (hev Q).congr hQ
   have hnonzero (g : GL (Fin n) 𝕜) : (g : Matrix (Fin n) (Fin n) 𝕜).det ^ m ≠ 0 :=
     pow_ne_zero m (Matrix.GeneralLinearGroup.det_ne_zero g)
   exact (((hd.pow m).inv₀ hnonzero).mul (hev P)).congr fun g ↦ by

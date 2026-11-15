@@ -76,7 +76,8 @@ private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x
     RingHom.ext fun q ↦ by rw [MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_id]
   have hp0 : p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a)) ≠ 0 := by
     rw [heval]
-    exact map_prod_ne_zero _ _ _ fun k _ ↦ hfiber k _ hφaS
+    exact (Polynomial.map_prod _ _ _).trans_ne
+      (Finset.prod_ne_zero_iff.2 fun k _ ↦ hfiber k _ hφaS)
   have hd : ∀ᶠ u in 𝓝 a,
       (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))).natDegree =
         (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a))).natDegree := by
@@ -159,7 +160,8 @@ private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : �
       (D₁'.multiplicity_pos_iff z').mp hpos |>.2
   simpa only [hθ u, hθ v] using
     p.orderAt_root_eq_of_orderAt_discr_eq isOpen_ball (convex_ball a r).isPreconnected hφr
-      (fun z hz ↦ map_prod_ne_zero _ _ _ fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩))
+      (fun z hz ↦ (Polynomial.map_prod _ _ _).trans_ne
+        (Finset.prod_ne_zero_iff.2 fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩)))
       (fun z hz ↦ hm _ (hrmem ⟨z, hz⟩)) hθcont hroot u.2 v.2
 
 /-- **Chart-local lifting of a non-nullified family.** Let `e` be an analytic chart of `S` around
@@ -230,12 +232,12 @@ theorem exists_analytic_delineation_of_orderAt_discr_eq
       (by rwa [Fintype.prod_unique])⟩
   simp only [Fintype.prod_unique] at hD
   -- Polynomial coefficients are intrinsically analytic, so the glued real roots are too.
-  have hcoeff (k : Unit) (j : ℕ) : AnalyticOnSubmanifold d
+  have hcoeff (j : ℕ) : AnalyticOnSubmanifold d
       (fun x ↦ (p.map (MvPolynomial.eval x)).coeff j) S :=
     hS.analyticOnSubmanifold_coeff_map_eval p j
   refine ⟨D, fun i ↦ ?_, hD⟩
   let r := Function.extend Subtype.val (D.root i) (fun _ ↦ 0)
   have hr (x : S) : r x = D.root i x := Subtype.val_injective.extend_apply _ _ x
-  exact ⟨r, D.analyticOnSubmanifold_root hS hcoeff i hr, hr⟩
+  exact ⟨r, D.analyticOnSubmanifold_root hS (fun _ ↦ hcoeff) i hr, hr⟩
 
 end TauCeti

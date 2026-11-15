@@ -320,7 +320,7 @@ private lemma peterssonInnerCosets_restrict_restrict_eq_zero_of_mem_cuspFormsNew
   rw [hn, hm] at hlcm
   rw [hn] at hgcd
   exact CuspForm.peterssonInnerCosets_restrict_restrict_eq_zero (D := Gamma1 n)
-    (Gamma1_le_Gamma1_of_dvd hnm) (Gamma1_le_Gamma1_of_dvd (Dvd.intro_left q hn))
+    (Gamma1_le_Gamma1_of_dvd (Dvd.intro_left q hn))
     (by rw [← hlcm, Gamma1_lcm_eq_inf]) (fun _ hx ↦ exists_mul_eq_of_mem_Gamma1_gcd (hgcd ▸ hx))
     (fun ψ ↦ (CuspForm.mem_peterssonOrthogonal_iff.mp hG) _
       (restrict_mem_cuspFormsOldAt (dvd_of_eq hn) k ψ)) φ
@@ -351,9 +351,10 @@ private lemma peterssonInnerCosets_levelRaise_restrict_eq_zero_of_mem_cuspFormsN
       ((CuspForm.mem_peterssonOrthogonal_iff.mp hG) _
         (levelRaise_mem_cuspFormsOldAt (dvd_of_eq hn) (dvd_of_eq hn) k ψ))
   have h := CuspForm.peterssonInnerCosets_restrict_restrict_eq_zero
-    (Gamma1_le_Gamma1_of_dvd hnm) (gamma1Conj_le_Gamma1 (dvd_of_eq hn))
-    (gamma1Conj_eq_inf hm hlcm)
-    (fun _ hx ↦ exists_mul_gamma1Conj_eq_of_mem_Gamma1 hqK hgcd hx) hF φ
+    (gamma1Conj_le_Gamma1 (dvd_of_eq hn))
+    (gamma1Conj_eq_inf (dvd_of_eq hm) hlcm)
+    (fun _ hx ↦ exists_mul_gamma1Conj_eq_of_mem_Gamma1
+      (UniqueFactorizationMonoid.radical_dvd_self.trans hqK) hgcd hx) hF φ
   convert h using 2
   refine DFunLike.coe_injective ?_
   simp only [CuspForm.coe_restrict, CuspForm.coe_translate]

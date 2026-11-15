@@ -135,5 +135,25 @@ theorem eq_one_of_mem_center_of_odd (h2 : IsRegular (2 : R))
   apply Subtype.ext
   simp [hc, hc1, scalar_apply]
 
+/-- In dimension at most two, the special orthogonal group of a commutative ring is commutative. -/
+theorem mul_comm_of_le_two {m : ℕ} (hm : m ≤ 2) (x y : specialOrthogonalGroup (Fin m) R) :
+    x * y = y * x := by
+  interval_cases m
+  · exact Subtype.ext (Matrix.ext fun i ↦ i.elim0)
+  · refine Subtype.ext (Matrix.ext fun i j ↦ ?_)
+    simp [Matrix.mul_apply, Fin.eq_zero i, Fin.eq_zero j, mul_comm]
+  · -- A special orthogonal `2 × 2` matrix has the form `!![a, b; -b, a]`.
+    have key (z : specialOrthogonalGroup (Fin 2) R) :
+        (z : Matrix (Fin 2) (Fin 2) R) = !![(z : Matrix (Fin 2) (Fin 2) R) 0 0,
+          (z : Matrix (Fin 2) (Fin 2) R) 0 1; -(z : Matrix (Fin 2) (Fin 2) R) 0 1,
+          (z : Matrix (Fin 2) (Fin 2) R) 0 0] := by
+      obtain ⟨h₁, h₂, -⟩ := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp z.2
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [h₁, h₂]
+    refine Subtype.ext ?_
+    rw [Submonoid.coe_mul, Submonoid.coe_mul, key x, key y]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
 end SpecialOrthogonalGroup
 end Matrix

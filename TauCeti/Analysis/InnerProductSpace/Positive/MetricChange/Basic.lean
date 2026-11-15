@@ -26,8 +26,8 @@ of the continuous functional calculus is an isometry from `(E, ⟪·, ·⟫)` to
 carries orthonormal frames for the original inner product to orthonormal frames for `h`, and its
 inverse, the square root `CFC.sqrt H`, carries `h`-orthonormal frames back.
 
-Unlike the eigenbasis construction of `TauCeti.exists_continuousLinearEquiv_inner_map_map`, this
-transport involves no choice. It is characterized as the unique positive operator `S` with
+Unlike `TauCeti.exists_continuousLinearEquiv_inner_map_map`, which only asserts existence, this
+transport is a specific operator. It is characterized as the unique positive operator `S` with
 `S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry equivalence `e`
 conjugates the transport by `e`, and likewise its inverse. The transport and its inverse depend
 continuously on `h`, because the real continuous functional calculus is isometric. When `E` is
@@ -251,17 +251,24 @@ theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[
     metricChangeTransport_mul_mul_self hK, map_one]
   exact ⟨map_nonneg _ (isStrictlyPositive_metricChangeTransport hK).nonneg, rfl⟩
 
-/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` with positive Riesz
-operator back along a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of
-its Riesz operator by `e`. -/
+/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` back along a linear
+isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of its Riesz operator by `e`. This
+holds for every `k`; when the Riesz operator `k♯` is not nonnegative both sides are `0`, as
+`CFC.sqrt` is `0` there. -/
 theorem sqrt_continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
-    (hK : 0 ≤ k♯) (x : E) :
+    (x : E) :
     CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ x =
       e.symm (CFC.sqrt k♯ (e x)) := by
   suffices CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ =
       e.symm.conjStarAlgEquiv (CFC.sqrt k♯) from congr($this x)
-  rw [continuousLinearMapOfBilin_bilinearComp, CFC.sqrt_eq_iff _ _ (map_nonneg _ hK)
-    (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul, CFC.sqrt_mul_sqrt_self _ hK]
+  rw [continuousLinearMapOfBilin_bilinearComp]
+  by_cases hK : 0 ≤ k♯
+  · rw [CFC.sqrt_eq_iff _ _ (map_nonneg _ hK) (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul,
+      CFC.sqrt_mul_sqrt_self _ hK]
+  · have hK' : ¬ 0 ≤ e.symm.conjStarAlgEquiv k♯ := fun h ↦ hK <| by
+      have h' := map_nonneg e.conjStarAlgEquiv h
+      rwa [show e.conjStarAlgEquiv (e.symm.conjStarAlgEquiv k♯) = k♯ by ext; simp] at h'
+    rw [CFC.sqrt_of_not_nonneg hK, CFC.sqrt_of_not_nonneg hK', map_zero]
 
 /-- **Isometries onto a second inner product.** On a finite-dimensional space, the linear maps
 `S` that are isometries from the original inner product to `h` are exactly the composites of the
@@ -293,7 +300,7 @@ inner product. -/
 theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ E]
     {h : E →L[ℝ] E →L[ℝ] ℝ} :
     IsStrictlyPositive h♯ ↔ (∀ u v, h u v = h v u) ∧ ∀ v, v ≠ 0 → 0 < h v v := by
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   have hinner : ∀ u v, ⟪u, h♯ v⟫_ℝ = h v u := fun u v ↦ by
     rw [real_inner_comm, continuousLinearMapOfBilin_apply]
   rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,
@@ -336,6 +343,28 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_of_injective [FiniteDimens
 end InnerProductSpace
 
 namespace ContinuousLinearMap
+
+/-- Real bilinear forms with strictly positive Riesz operators form a convex set. -/
+theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpace E] :
+    Convex ℝ {h : E →L[ℝ] E →L[ℝ] ℝ | IsStrictlyPositive h♯} := by
+  intro h hh k hk a b ha hb hab
+  have heq : (a • h + b • k)♯ = a • h♯ + b • k♯ := by
+    ext u
+    apply ext_inner_right ℝ
+    intro v
+    simp [inner_add_left, inner_smul_left, continuousLinearMapOfBilin_apply]
+  rw [Set.mem_ofPred_eq, heq]
+  exact convex_setOf_isStrictlyPositive hh hk ha hb hab
+
+/-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_lineMap [CompleteSpace E]
+    (h k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯)
+    (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    IsStrictlyPositive (AffineMap.lineMap h k t)♯ := by
+  rw [AffineMap.lineMap_apply_module]
+  exact convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin hH hK
+    (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
 
 /-- Pullback of a positive metric by a continuous linear equivalence of real Hilbert spaces
 is positive. No preservation of the reference inner products is needed. -/

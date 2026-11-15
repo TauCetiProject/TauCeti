@@ -107,9 +107,9 @@ theorem mlieBracket_restrictScalars
   simp only [MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply R hf',
     (hnear W).mvfderiv_eq, (hnear V).mvfderiv_eq,
     MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply R
-      (TauCeti.mdifferentiableAt_mvfderiv_apply hf le_rfl hW),
+      (TauCeti.mdifferentiableAt_mvfderiv_apply hf le_minSmoothness hW),
     MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply R
-      (TauCeti.mdifferentiableAt_mvfderiv_apply hf le_rfl hV)]
+      (TauCeti.mdifferentiableAt_mvfderiv_apply hf le_minSmoothness hV)]
   simpa only [AddEquiv.apply_symm_apply] using mvfderiv_mlieBracket hf le_rfl hV hW
 
 end VectorField

@@ -41,8 +41,6 @@ exactly for the diagrams with at most one row and those with at most one column.
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layers 0 and 5.
 -/
 
 public section
@@ -129,8 +127,8 @@ variable {μ : YoungDiagram}
 
 /-- The **row-superstandard tableau** of `μ`: the standard Young tableau numbering the cells of
 `μ` in reading order, left to right along the first row, then left to right along the second, and
-so on.  This is the tableau at which the classical-groups roadmap fixes the Young symmetrizer
-`c_λ`. -/
+so on.  Its Young symmetrizer is the one used by `Nat.Partition.youngSymmetrizer` and
+`TauCeti.weylModuleOfShape`. -/
 noncomputable def rowSuperstandard (μ : YoungDiagram) : StandardYoungTableau μ where
   toTableau :=
     Equiv.ofBijective

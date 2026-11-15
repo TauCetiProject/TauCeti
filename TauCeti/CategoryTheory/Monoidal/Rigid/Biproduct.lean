@@ -154,8 +154,12 @@ theorem inr_rightDualBiprodIso_inv :
 
 end BinaryBiproduct
 
-variable [Preadditive C] [MonoidalPreadditive C] {ι : Type w} [Finite ι]
-  (X Y : ι → C) [HasBiproduct X] [HasBiproduct Y] [∀ i, ExactPairing (X i) (Y i)]
+variable [Preadditive C] [MonoidalPreadditive C] {ι : Type w}
+
+section Pairing
+
+variable [Finite ι] (X Y : ι → C) [HasBiproduct X] [HasBiproduct Y]
+  [∀ i, ExactPairing (X i) (Y i)]
 
 /-- Exact pairings are closed under finite biproducts: if `Y i` is a right dual of `X i` for each
 `i`, then `⨁ Y` is a right dual of `⨁ X`, with coevaluation and evaluation the sums of those of
@@ -196,23 +200,37 @@ noncomputable instance ExactPairing.biproduct : ExactPairing (⨁ X) (⨁ Y) :=
             Limits.comp_zero]) (by simp),
         biproduct.ι_π_self, evaluation_coevaluation_tensorHom, Category.assoc] }
 
+end Pairing
+
+section Formula
+
 namespace ExactPairing
 
+variable [Fintype ι] (X Y : ι → C) [HasBiproduct X] [HasBiproduct Y]
+  [∀ i, ExactPairing (X i) (Y i)]
+
 /-- The coevaluation of the biproduct pairing is the sum of the coevaluations of the summands. -/
-theorem biproduct_coevaluation [Fintype ι] :
+theorem biproduct_coevaluation :
     η_ (⨁ X) (⨁ Y) = ∑ i, η_ (X i) (Y i) ≫ (biproduct.ι X i ⊗ₘ biproduct.ι Y i) :=
-  by
-    obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
-    rfl
+  Finset.sum_congr (s₁ := @Finset.univ ι (Fintype.ofFinite ι)) (Finset.ext fun _ ↦ by simp)
+    fun _ _ ↦ rfl
 
 /-- The evaluation of the biproduct pairing is the sum of the evaluations of the summands. -/
-theorem biproduct_evaluation [Fintype ι] :
+theorem biproduct_evaluation :
     ε_ (⨁ X) (⨁ Y) = ∑ i, (biproduct.π Y i ⊗ₘ biproduct.π X i) ≫ ε_ (X i) (Y i) :=
-  by
-    obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
-    rfl
+  Finset.sum_congr (s₁ := @Finset.univ ι (Fintype.ofFinite ι)) (Finset.ext fun _ ↦ by simp)
+    fun _ _ ↦ rfl
 
-variable {X Y}
+end ExactPairing
+
+end Formula
+
+section Summand
+
+namespace ExactPairing
+
+variable [Finite ι] {X Y : ι → C} [HasBiproduct X] [HasBiproduct Y]
+  [∀ i, ExactPairing (X i) (Y i)]
 
 /-- On the summand `Y i ⊗ X i`, the evaluation of the biproduct pairing is the evaluation of the
 `i`-th summand. -/
@@ -265,5 +283,7 @@ theorem coevaluation_biproduct_π_tensorHom_biproduct_π_of_ne {i j : ι} (h : i
   · rw [biproduct.ι_π_ne _ hk, MonoidalPreadditive.zero_tensor, Limits.comp_zero]
 
 end ExactPairing
+
+end Summand
 
 end TauCeti

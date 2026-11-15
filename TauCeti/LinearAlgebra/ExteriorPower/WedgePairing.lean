@@ -187,8 +187,8 @@ theorem sign_mul_sign_compl {I : Type*} [LinearOrder I] [Fintype I] {k l : ℕ}
     (disjoint_iff_eq_compl h').2 ((compl h).symm_apply_apply s).symm
   set b := Pi.basisFun ℤ I
   -- Both products of `e_s` and `e_t` are signed copies of the top basis vector `e_univ`.
-  have hmul : ∀ {m n : ℕ} (hmn : m + n = Fintype.card I) (u : powersetCard I m)
-      (v : powersetCard I n) (huv : Disjoint u.val v.val),
+  have hmul : ∀ {m n : ℕ} (_ : m + n = Fintype.card I) (u : powersetCard I m)
+      (v : powersetCard I n) (_ : Disjoint u.val v.val),
       b.ExteriorAlgebra u * b.ExteriorAlgebra v =
         powersetCard.sign u • b.ExteriorAlgebra Finset.univ := fun hmn u v huv ↦ by
     have hunion : (disjUnion huv : Finset I) = Finset.univ :=

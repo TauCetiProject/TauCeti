@@ -121,8 +121,6 @@ theorem toPLPath_stretch_eq_prod_subdivisionWord (π : LSPath P b lam) (n : ℕ)
 
 end Realization
 
-variable [P.flip.IsReduced]
-
 /-- For a dominant shape, one positive integer clears the durations of all LS paths
 simultaneously. Each segment then has a strictly positive integral multiplicity. -/
 theorem exists_uniform_integral_durations (hlam : lam ∈ dominantChamber P b) :

@@ -150,7 +150,7 @@ infinity, the first-order form of `z ∘ φ = c z + O(z²)` (Silverman IV.4). -/
 theorem leadingCoeff_num_xRatFunc_mul_sq : φ.xRatFunc.num.leadingCoeff * c ^ 2 = 1 := by
   set N := φ.xRatFunc.num
   set D := φ.xRatFunc.denom
-  set d := D.natDegree with hd
+  set d := D.natDegree
   have hN : N.natDegree = d + 1 := natDegree_num_xRatFunc_eq_succ_of_eq_smul hc hc0 h2
   have hN0 : N.leadingCoeff ≠ 0 :=
     leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt (n := d) (by omega))
@@ -158,15 +158,21 @@ theorem leadingCoeff_num_xRatFunc_mul_sq : φ.xRatFunc.num.leadingCoeff * c ^ 2 
   have hwdeg : (wronskian D N).natDegree ≤ 2 * d := by
     have : (wronskian D N).natDegree < d + N.natDegree := natDegree_wronskian_lt_add hw
     omega
+  -- The top coefficient of `w`, in degree `2 d = d + deg N - 1`.
+  have hwtop : (wronskian D N).coeff (2 * d) = N.leadingCoeff := by
+    rw [show 2 * d = D.natDegree + N.natDegree - 1 by omega,
+      coeff_wronskian_natDegree_add_natDegree_sub_one, hN, φ.xRatFunc.monic_denom.leadingCoeff]
+    push_cast
+    ring
   -- The top coefficient of the left-hand side `w² Ψ₂Sq₁`, in degree `2 (2 d) + 3`.
   have hlhs : (wronskian D N ^ 2 * W₁.Ψ₂Sq).coeff (2 * (2 * d) + 3) = N.leadingCoeff ^ 2 * 4 := by
     rw [coeff_mul_add_eq_of_natDegree_le (natDegree_pow_le_of_le 2 hwdeg) W₁.natDegree_Ψ₂Sq_le,
-      coeff_pow_of_natDegree_le hwdeg, coeff_wronskian_of_natDegree_eq_succ hN,
-      φ.xRatFunc.monic_denom.leadingCoeff, one_mul, WeierstrassCurve.coeff_Ψ₂Sq]
+      coeff_pow_of_natDegree_le hwdeg, hwtop, WeierstrassCurve.coeff_Ψ₂Sq]
   -- The same degree is the degree `d + 3 deg N` of the right-hand side.
   obtain ⟨hdeg, hlc⟩ := natDegree_and_leadingCoeff_rhs (φ := φ) hc0 h2
   have hidx : 2 * (2 * d) + 3 = d + 3 * N.natDegree := by omega
-  have h := congrArg (coeff · (2 * (2 * d) + 3)) (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
+  have h := congrArg (fun p : F[X] ↦ p.coeff (2 * (2 * d) + 3))
+    (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
   rw [hlhs, hidx, ← hdeg, coeff_natDegree, hlc] at h
   have h4 : (4 : F) * N.leadingCoeff ^ 2 ≠ 0 :=
     mul_ne_zero (four_ne_zero_of_two_ne_zero h2) (pow_ne_zero 2 hN0)

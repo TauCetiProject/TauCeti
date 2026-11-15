@@ -54,7 +54,7 @@ variable [IsStrictOrderedRing S]
 
 private theorem fractionRingAbsHom_nonneg (v : AbsoluteValue R S) (x : F) :
     0 ≤ fractionRingAbsHom F v x := by
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective R x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective R x
   simp only [map_div₀, fractionRingAbsHom_algebraMap]
   exact div_nonneg (v.nonneg a) (v.nonneg b)
 
@@ -84,7 +84,7 @@ theorem fractionRingAbsoluteValue_algebraMap (v : AbsoluteValue R S) (a : R) :
 theorem fractionRingAbsoluteValue_unique (v : AbsoluteValue R S) (w : AbsoluteValue F S)
     (hw : ∀ a, w (algebraMap R F a) = v a) : w = fractionRingAbsoluteValue F v := by
   ext x
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective R x
+  obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective R x
   simp [hw]
 
 /-- Extending a nonarchimedean absolute value preserves the ultrametric inequality. -/

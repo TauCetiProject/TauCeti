@@ -17,11 +17,10 @@ import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 Let `C` be a torsion-free coalgebra over a domain `k` whose group-like elements span `C`. Over a
 field and for `C` a commutative Hopf algebra, this says that `C` is the coordinate algebra of a
-diagonalizable group. This file proves that every `C`-comodule is the sum of its group-like weight
-spaces, and, when it is torsion-free, their internal direct sum: every representation of a
-diagonalizable group is diagonalizable. Conversely, over a field, the group-like elements span
-`C` as soon as every finite-dimensional subcomodule of the regular comodule is spanned by its
-group-like weight spaces.
+diagonalizable group. This file proves that every `C`-comodule is the internal direct sum of its
+group-like weight spaces: every representation of a diagonalizable group is diagonalizable.
+Conversely, over a field, the group-like elements span `C` as soon as every finite-dimensional
+subcomodule of the regular comodule is spanned by its group-like weight spaces.
 
 The proof expands the coaction in the basis `Subcoalgebra.groupLikeBasis` of `C` formed by the
 group-like elements. Writing `ρ m = ∑_g m_g ⊗ g`, the counit law gives `m = ∑_g m_g`, and
@@ -30,10 +29,14 @@ weight `g`.
 
 ## Main declarations
 
+* `TauCeti.Comodule.coactComponent_groupLikeBasis_coord_of_mem_weightSpace`: the coordinate of the
+  coaction along a group-like basis vector projects each weight space onto the corresponding one.
 * `TauCeti.Comodule.iSup_groupLikeWeightSpace_eq_top`: a comodule over a group-like-spanned
   coalgebra is spanned by its group-like weight spaces.
-* `TauCeti.Comodule.isInternal_groupLikeWeightSpace`: a torsion-free comodule over a
-  group-like-spanned coalgebra is the internal direct sum of its group-like weight spaces.
+* `TauCeti.Comodule.iSupIndep_groupLikeWeightSpace_of_groupLikeSetSpan_eq_top`: over a
+  group-like-spanned coalgebra the group-like weight spaces of a comodule are independent.
+* `TauCeti.Comodule.isInternal_groupLikeWeightSpace`: a comodule over a group-like-spanned
+  coalgebra is the internal direct sum of its group-like weight spaces.
 * `TauCeti.Subcoalgebra.groupLikeSetSpan_eq_top_of_forall_finite_subcomodule`: conversely, a
   coalgebra over a field is spanned by its group-like elements once every finite-dimensional
   subcomodule of the regular comodule is spanned by its group-like weight spaces.
@@ -88,6 +91,19 @@ theorem coactComponent_groupLikeBasis_coord_mem_weightSpace
   rw [coactComponent_coactComponent, coord_comp_tensorComponent_comp_comul,
     coactComponent_apply, map_smul, LinearMap.smul_apply, ← coactComponent_apply]
 
+open scoped Classical in
+/-- The coordinate of a coaction along the group-like basis vector `g` projects a vector of the
+weight space of `h` to itself if `h = g` and to zero otherwise. -/
+theorem coactComponent_groupLikeBasis_coord_of_mem_weightSpace
+    (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤)
+    (g h : GroupLike k C) {m : M} (hm : m ∈ _root_.GroupLike.weightSpace (M := M) h) :
+    coactComponent (R := k) (C := C) (M := M) ((Subcoalgebra.groupLikeBasis hC).coord g) m =
+      if h = g then m else 0 := by
+  rw [coactComponent_apply, _root_.GroupLike.mem_weightSpace.mp hm,
+    _root_.LinearMap.tensorComponent_tmul, Module.Basis.coord_apply,
+    ← Subcoalgebra.groupLikeBasis_apply hC h, Module.Basis.repr_self, Finsupp.single_apply]
+  split_ifs <;> simp
+
 /-- **A comodule over a coalgebra spanned by its group-like elements is spanned by its group-like
 weight spaces.** -/
 theorem iSup_groupLikeWeightSpace_eq_top
@@ -122,21 +138,38 @@ theorem iSup_groupLikeWeightSpace_eq_top
   rw [he, ← coactComponent_apply]
   exact coactComponent_groupLikeBasis_coord_mem_weightSpace hC g m
 
+/-- **Over a coalgebra spanned by its group-like elements, the group-like weight spaces of a
+comodule are supremum-independent**, without assuming the comodule `M` is torsion-free. -/
+theorem iSupIndep_groupLikeWeightSpace_of_groupLikeSetSpan_eq_top
+    (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤) :
+    iSupIndep (_root_.GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) := by
+  classical
+  intro g
+  rw [disjoint_iff, eq_bot_iff]
+  intro m ⟨hg, hrest⟩
+  have hker : (⨆ (h : GroupLike k C) (_ : h ≠ g), _root_.GroupLike.weightSpace (M := M) h) ≤
+      LinearMap.ker (coactComponent (R := k) (C := C) (M := M)
+        ((Subcoalgebra.groupLikeBasis hC).coord g)) :=
+    iSup₂_le fun h hh n hn ↦ by
+      simp [coactComponent_groupLikeBasis_coord_of_mem_weightSpace hC g h hn, hh]
+  have h1 := coactComponent_groupLikeBasis_coord_of_mem_weightSpace hC g g hg
+  rw [LinearMap.mem_ker.mp (hker hrest)] at h1
+  simpa using h1.symm
+
 section Internal
 
 attribute [local instance] Classical.decEq
 
-/-- **A torsion-free comodule over a coalgebra spanned by its group-like elements is the internal
-direct sum of its group-like weight spaces.** Over a field this says that every representation
-of a diagonalizable group is diagonalizable. -/
-theorem isInternal_groupLikeWeightSpace [Module.IsTorsionFree k M]
+/-- **A comodule over a coalgebra spanned by its group-like elements is the internal direct sum
+of its group-like weight spaces.** Over a field this says that every representation of a
+diagonalizable group is diagonalizable. -/
+theorem isInternal_groupLikeWeightSpace
     (hC : Subcoalgebra.groupLikeSetSpan (R := k) (C := C) Set.univ = ⊤) :
     DirectSum.IsInternal
-      (_root_.GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) := by
-  classical
-  let _ : Module.Projective k C := Module.Projective.of_basis (Subcoalgebra.groupLikeBasis hC)
-  exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
-    ⟨iSupIndep_groupLikeWeightSpace, iSup_groupLikeWeightSpace_eq_top hC⟩
+      (_root_.GroupLike.weightSpace (M := M) : GroupLike k C → Submodule k M) :=
+  (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
+    ⟨iSupIndep_groupLikeWeightSpace_of_groupLikeSetSpan_eq_top hC,
+      iSup_groupLikeWeightSpace_eq_top hC⟩
 
 end Internal
 

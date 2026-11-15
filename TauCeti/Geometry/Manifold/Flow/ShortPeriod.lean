@@ -89,7 +89,7 @@ theorem exists_mem_nhds_forall_isMIntegralCurve_eq_const_of_periodic
     (contMDiffAt_maximalIntegralCurve (n := 0) (by simpa using hv p)).continuousAt
   have hp : maximalIntegralCurve v p 0 = p := by
     rw [← flowOf_apply]
-    exact flowOf_zero hv p
+    exact flowOf_zero v p
   obtain ⟨W, hW, U, hU, hWU⟩ :=
     mem_nhds_prod_iff.1 (hflow.preimage_mem_nhds (by simpa only [hp] using hN))
   obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU

@@ -117,7 +117,7 @@ symbols of the components of `a`, at the finite places and at the infinite place
 ```
 -/
 theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
-    (χ : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ)) (a : IdeleGroup (𝓞 K) K) :
+    (χ : Additive (Group.Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ)) (a : IdeleGroup (𝓞 K) K) :
     χ (globalArtinMap K L ι (.ofMul (a : IdeleClassGroup (𝓞 K) K))) =
       ∑ᶠ v, χ (.ofMul (localArtinAt K L v (v.ideleFiniteCoord a))) +
         ∑ w, χ (.ofMul (infiniteLocalArtinAt K L w (w.ideleInfiniteCoord a))) := by
@@ -126,14 +126,14 @@ theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
   obtain ⟨a', ha', hground⟩ := exists_ideleLevel_ground_eq K L a
   -- The character `χ`, read on the layer of `L` and on `G_K`.
   let χ' := χ.comp (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).toAddMonoidHom
-  let ψ := (χ.comp Abelianization.of.toAdditive).comp ι.restrictNormalHom.toAdditive
+  let ψ := (χ.comp Group.Abelianization.of.toAdditive).comp ι.restrictNormalHom.toAdditive
   have hψ (g : AbsoluteGaloisGroup K) : ψ (.ofMul g) =
-      χ' (.ofMul (Abelianization.of
+      χ' (.ofMul (Group.Abelianization.of
         ((galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
           (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup)))) := by
     simp only [ψ, χ', AddMonoidHom.comp_apply, MonoidHom.coe_toAdditive,
       Function.comp_apply, toMul_ofMul, AddEquiv.coe_toAddMonoidHom,
-      MulEquiv.toAdditive_apply_apply, abelianizationCongr_of]
+      MulEquiv.toAdditive_apply_apply, Group.abelianizationCongr_of]
     rw [← layerGalEquiv_symm_restrictNormalHom ι g, MulEquiv.apply_symm_apply]
   -- Embeddings of separable closures reading the components of `a`, and representatives of the
   -- local Artin symbols of the components.
@@ -181,7 +181,7 @@ theorem globalArtinMap_eq_zero_of_forall_eq_one (ι : L →ₐ[K] SeparableClosu
     globalArtinMap K L ι (.ofMul (a : IdeleClassGroup (𝓞 K) K)) = 0 := by
   refine CharacterModule.eq_zero_of_character_apply fun χ ↦ ?_
   -- A character of `Gal(L/K)^ab` is an additive map to `ℚ/ℤ`.
-  let χ' : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
+  let χ' : Additive (Group.Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
   have h := apply_globalArtinMap_eq_finsum K L ι χ' a
   simp only [hfin, hinf, ofMul_one, map_zero, finsum_zero, Finset.sum_const_zero,
     add_zero] at h
@@ -199,7 +199,7 @@ theorem globalArtinMap_local (ι : L →ₐ[K] SeparableClosure K) (v : HeightOn
       .ofMul (localArtinAt K L v x) := by
   refine sub_eq_zero.mp (CharacterModule.eq_zero_of_character_apply fun χ ↦ ?_)
   -- A character of `Gal(L/K)^ab` is an additive map to `ℚ/ℤ`.
-  let χ' : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
+  let χ' : Additive (Group.Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
   have h := apply_globalArtinMap_eq_finsum K L ι χ' (IdeleGroup.ofAdicCompletion (𝓞 K) K v x)
   rw [finsum_eq_single _ v fun v' hv' ↦ by
     rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv', map_one, ofMul_one,
@@ -222,7 +222,7 @@ theorem globalArtinMap_infiniteLocal (ι : L →ₐ[K] SeparableClosure K) (w : 
       .ofMul (infiniteLocalArtinAt K L w x) := by
   refine sub_eq_zero.mp (CharacterModule.eq_zero_of_character_apply fun χ ↦ ?_)
   -- A character of `Gal(L/K)^ab` is an additive map to `ℚ/ℤ`.
-  let χ' : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
+  let χ' : Additive (Group.Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
   have h := apply_globalArtinMap_eq_finsum K L ι χ' (IdeleGroup.ofCompletion (𝓞 K) K w x)
   rw [Fintype.sum_eq_single w fun w' hw' ↦ by
     rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w' hw', map_one, ofMul_one,

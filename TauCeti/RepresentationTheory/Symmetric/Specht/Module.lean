@@ -27,10 +27,10 @@ subrepresentation, because relabeling a tableau translates its polytabloid:
 `e_{σt} = σ · e_t`.  Since the symmetric group acts transitively on tableaux, `S^μ` is in fact
 the span of the orbit of a single polytabloid.
 
-The conventions here are the ones the Schur-Weyl roadmap pins, and they have to be used
-together: `M^μ` is a **left** module on the **left** cosets of the Young subgroup, the polytabloid
-is the **column** antisymmetrization `b_t · {t}` of the tabloid, and the Young symmetrizer is
-`c_t = a_t b_t`.  The opposite choices produce the dual Specht module.
+The conventions here have to be used together: `M^μ` is a **left** module on the **left** cosets
+of the Young subgroup, the polytabloid is the **column** antisymmetrization `b_t · {t}` of the
+tabloid, and the Young symmetrizer is `c_t = a_t b_t`.  The opposite choices produce the dual
+Specht module.
 
 The bridge between the two indexings is `rowYoungConjugator t`, the permutation carrying the
 consecutive-block labeling of the shape of `μ` to the labeling of `t`: its coset is the tabloid of
@@ -53,6 +53,8 @@ here do not require characteristic zero.
 * `TauCeti.spechtSubrepresentation`: the span of the polytabloids, as a subrepresentation of `M^μ`.
 * `TauCeti.spechtModule`: the Specht module `S^μ` of a partition `μ` of `n`, that subrepresentation
   of the diagram of `μ` bundled as a finitely generated representation of `Sₙ`.
+* `TauCeti.spechtSubrepresentationCongr`: the transport of a Specht module along an equation of
+  diagrams.
 
 ## Main results
 
@@ -76,8 +78,6 @@ here do not require characteristic zero.
 ## References
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapters 3 and 4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3, "Polytabloids and the Specht module".
 -/
 
 public section
@@ -400,6 +400,24 @@ noncomputable abbrev spechtModule {n : ℕ} (μ : n.Partition) :
     FDRep R (Equiv.Perm (Fin n)) :=
   FDRep.of ((spechtSubrepresentation (R := R) (YoungDiagram.ofPartition μ)).toRepresentation.comp
     (finCongr (YoungDiagram.card_ofPartition μ).symm).permCongrHom.toMonoidHom)
+
+/-- **Specht modules of equal diagrams are equivalent**, the symmetric groups on their labels both
+being identified with `Sₙ`.  This transports a Specht module along an equation of diagrams such as
+`YoungDiagram.ofPartition_conjugate`. -/
+noncomputable def spechtSubrepresentationCongr {n : ℕ} {D E : YoungDiagram}
+    (h : D = E) (hD : n = D.card) (hE : n = E.card) :
+    Representation.Equiv ((spechtSubrepresentation (R := R) D).toRepresentation.comp
+        (finCongr hD).permCongrHom.toMonoidHom)
+      ((spechtSubrepresentation (R := R) E).toRepresentation.comp
+        (finCongr hE).permCongrHom.toMonoidHom) := by
+  subst h
+  exact .refl _
+
+/-- Transport along the trivial equation of diagrams is the identity. -/
+@[simp]
+theorem spechtSubrepresentationCongr_rfl {n : ℕ} (D : YoungDiagram) (hD hD' : n = D.card) :
+    spechtSubrepresentationCongr (R := R) rfl hD hD' = .refl _ :=
+  (rfl)
 
 end CommRing
 

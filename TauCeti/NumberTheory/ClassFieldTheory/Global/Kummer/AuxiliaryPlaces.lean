@@ -45,7 +45,8 @@ public noncomputable section
 
 open IsDedekindDomain NumberField IntermediateField
 open TauCeti.NumberField TauCeti.NumberFieldArithmetic
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.ClassFieldTheory
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 

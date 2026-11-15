@@ -17,7 +17,7 @@ summands. A slash is zero at `c` exactly when the original function is zero at `
 rational (`IsCusp.smul_map_ratCast`). So a function vanishing at every cusp has a slash sum
 vanishing at every cusp, whatever representatives were chosen.
 
-This is the step the Layer 2 statement "`Tₙ` preserves `S_k`" rests on.
+This is the step the statement "`Tₙ` preserves `S_k`" rests on.
 
 Both are stated for an arbitrary arithmetic `Γ`, which is the hypothesis a `CuspForm Γ k`
 supplies through `zero_at_cusps'`. `IsCusp.smul_map_ratCast` reduces to `𝒮ℒ` internally via

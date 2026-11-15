@@ -32,10 +32,8 @@ It is exercised: every finitely supported coefficient sequence has an entire ext
 `LSeries.HasEntireExtension.existsUnique` pins down the unique extension.
 
 Ported from the AINTLIB `LeanModularForms` project
-(`LeanModularForms/Modularforms/LFunction.lean`). This is prerequisite infrastructure:
-general `LSeries` API with no modular-forms dependence, supplied ahead of the
-ModularForms roadmap's Layer-7 entirety/functional-equation obligations, and usable by
-any Dirichlet-series development.
+(`LeanModularForms/Modularforms/LFunction.lean`). It is general `LSeries` API with no
+modular-forms dependence, usable by any Dirichlet-series development.
 
 ## References
 

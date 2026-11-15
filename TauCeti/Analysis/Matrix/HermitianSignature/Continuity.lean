@@ -57,8 +57,6 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
     ∀ᶠ B in 𝓝 A, B.IsHermitian →
       ∃ R : Matrix ι ι 𝕜, IsUnit R.det ∧ Rᴴ * A * R = B := by
   let adj : Matrix ι ι 𝕜 → Matrix ι ι 𝕜 := fun R => A⁻¹ * Rᴴ * A
-  have hadj_one : adj 1 = 1 := by
-    simp [adj, A.nonsing_inv_mul hdet]
   have hadj_mul (R S : Matrix ι ι 𝕜) : adj (R * S) = adj S * adj R := by
     simp only [adj, conjTranspose_mul]
     simp only [Matrix.mul_assoc, A.mul_nonsing_inv_cancel_left (Rᴴ * A) hdet]
@@ -79,7 +77,7 @@ theorem eventually_exists_conjTranspose_mul_mul_eq (hA : A.IsHermitian)
   have hunit : ∀ᶠ B in 𝓝 A, IsUnit (R B) :=
     hR.eventually (Units.isOpen.mem_nhds isUnit_one)
   filter_upwards [hC.eventually TauCeti.eventually_mul_self_sqrtNearOne,
-    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_one hadj_mul),
+    hC.eventually (TauCeti.eventually_sqrtNearOne_fixed hadj.continuousAt hadj_mul),
     hunit] with B hs hu hunit
   intro hB
   have hs' : R B * R B = A⁻¹ * B := hs

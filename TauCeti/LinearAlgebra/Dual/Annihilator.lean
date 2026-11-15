@@ -27,6 +27,10 @@ The dual map `f^* : N^* → M^*` of a linear map `f : M → N` exchanges kernel 
 duality. Over any commutative ring, `ker f^*` is the space of functionals vanishing on `range f`,
 which is `(coker f)^*` (`LinearMap.kerDualMapEquiv`). Over a field, `coker f^* = M^* ⧸ range f^*`
 is `(ker f)^*` by restriction (`LinearMap.cokerDualMapEquiv`).
+
+The linear algebra of Lagrange multipliers follows over a field: if `DF` does not map `ker D` onto
+its codomain, then some nonzero functional `f` makes `f ∘ DF` a pullback `g ∘ D`
+(`LinearMap.exists_ne_zero_comp_eq_comp_of_map_ker_ne_top`).
 -/
 
 public section
@@ -146,5 +150,27 @@ theorem finrank_quotient_range_dualMap :
   f.cokerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
 
 end Field
+
+section Lagrange
+
+variable {k V W U : Type*} [Field k] [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W] [AddCommGroup U] [Module k U]
+
+/-- **Lagrange multipliers**, linear-algebra form. If `DF` does not map the kernel of `D` onto its
+codomain, then some nonzero functional `f` and some functional `g` satisfy `f ∘ DF = g ∘ D`. -/
+theorem exists_ne_zero_comp_eq_comp_of_map_ker_ne_top {D : V →ₗ[k] W} {DF : V →ₗ[k] U}
+    (h : (ker D).map DF ≠ ⊤) :
+    ∃ f : Module.Dual k U, f ≠ 0 ∧ ∃ g : Module.Dual k W, f ∘ₗ DF = g ∘ₗ D := by
+  obtain ⟨f, hf0, hf⟩ :=
+    Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 h) inferInstance
+  have hmem : f ∘ₗ DF ∈ (ker D).dualAnnihilator := by
+    refine (Submodule.mem_dualAnnihilator _).2 fun v hv ↦ ?_
+    have hv' : f (DF v) ∈ ((ker D).map DF).map f := ⟨DF v, ⟨v, hv, rfl⟩, rfl⟩
+    rwa [hf, Submodule.mem_bot] at hv'
+  rw [← range_dualMap_eq_dualAnnihilator_ker] at hmem
+  obtain ⟨g, hg⟩ := hmem
+  exact ⟨f, hf0, g, hg.symm⟩
+
+end Lagrange
 
 end LinearMap

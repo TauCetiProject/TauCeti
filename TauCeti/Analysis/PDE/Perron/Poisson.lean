@@ -155,7 +155,7 @@ theorem exists_contDiffOn_laplacian_eq_continuousOn_closure_eqOn_frontier {α : 
     rw [(hw.contDiffAt (hΩ.mem_nhds hx)).laplacian_add (hv x hx).1, hΔw x hx,
       (hv x hx).2.self_of_nhds, Pi.zero_apply, add_zero]
   refine ⟨w + v, hu, hwc.add hvc, hΔ, fun x hx => ?_, fun x hx =>
-    exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian hα hα1 hΩ hu (fun y hy => ?_) hx⟩
+    exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian hα1 hΩ hu (fun y hy => ?_) hx⟩
   · rw [Pi.add_apply, hvg hx, Pi.sub_apply, add_sub_cancel]
   · obtain ⟨T, hT, K, hK⟩ := hfH y hy
     refine ⟨T ∩ Ω, Filter.inter_mem hT (hΩ.mem_nhds hy), K, fun a ha b hb => ?_⟩

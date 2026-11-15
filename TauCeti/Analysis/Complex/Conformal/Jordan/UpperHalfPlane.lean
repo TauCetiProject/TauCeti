@@ -58,7 +58,7 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier {�
     exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier hΩo hΩc hΩb hΩJ
   have himg : g '' ball 0 1 = Ω := hgΩ.image_eq
   exact exists_continuousOn_bijOn_upperHalfPlaneSet_of_injOn_closedBall hgc hgd
-    (injOn_closedBall_of_isJordanCurve_frontier one_pos hgd hgΩ.injOn (himg ▸ hΩb) (himg ▸ hΩJ)
+    (injOn_closedBall_of_isJordanCurve_frontier hgd hgΩ.injOn (himg ▸ hΩb) (himg ▸ hΩJ)
       hgc fun _ _ => rfl) himg hp
 
 /-- Real prevertices: if `f` maps the real line surjectively onto a set `T`, then distinct points

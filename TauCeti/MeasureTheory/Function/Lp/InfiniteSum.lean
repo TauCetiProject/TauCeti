@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
-# Pointwise bounds for infinite sums in `Lᵖ`
+# Pointwise behaviour of infinite sums in `Lᵖ`
 
 If a family `u` in `Lᵖ` has sum `v` in the `Lᵖ` norm, then `‖v x‖ₑ ≤ ∑' i, ‖u i x‖ₑ` at almost
 every point. Unlike `MeasureTheory.Lp.hasSum_coeFn_tsum`, this needs neither a countable index
@@ -20,6 +20,8 @@ converges to `v` almost everywhere. A typical use is a sum of functions with dis
 ## Main declarations
 
 * `MeasureTheory.Lp.ae_enorm_le_tsum_enorm_of_hasSum`: the pointwise bound.
+* `MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`: for a countable family, the sum in `Lᵖ`
+  agrees almost everywhere with the pointwise sum, wherever the latter exists.
 -/
 
 public section
@@ -45,10 +47,22 @@ theorem ae_enorm_le_tsum_enorm_of_hasSum {u : κ → Lp E p μ} {v : Lp E p μ} 
   have hsum : ∀ᵐ x ∂μ, ∀ n, (⇑(∑ i ∈ S n, u i) : α → E) x = ∑ i ∈ S n, u i x :=
     ae_all_iff.2 fun n => coeFn_fun_finsetSum (S n) _
   filter_upwards [hS, hsum] with x hx hxsum
-  refine le_of_tendsto' (continuous_enorm.tendsto _ |>.comp hx) fun n => ?_
+  refine le_of_tendsto' (continuous_eNorm.tendsto _ |>.comp hx) fun n => ?_
   simp only [Function.comp_apply, hxsum n]
-  exact (enorm_sum_le _ _).trans <| (_root_.sum_le_tsum _).trans <|
+  exact (eNorm_sum_le _ _).trans <| (_root_.sum_le_tsum _).trans <|
     tsum_comp_le_tsum_of_injective Subtype.val_injective fun i => ‖u i x‖ₑ
+
+/-- If a countable family `u` in `Lᵖ` has sum `v`, and at almost every point the values `u i x`
+have sum `g x`, then `v = g` almost everywhere: the `Lᵖ` sum agrees with the pointwise sum. -/
+theorem ae_eq_of_hasSum_of_ae_hasSum [Countable κ] {u : κ → Lp E p μ} {v : Lp E p μ}
+    {g : α → E} (h : HasSum u v) (hg : ∀ᵐ x ∂μ, HasSum (fun i ↦ u i x) (g x)) :
+    v =ᵐ[μ] g := by
+  obtain ⟨S, hS, hSv⟩ := (tendstoInMeasure_of_tendsto_Lp h).exists_seq_tendsto_ae'
+  have hsum : ∀ᵐ x ∂μ, ∀ n, (⇑(∑ i ∈ S n, u i) : α → E) x = ∑ i ∈ S n, u i x :=
+    ae_all_iff.2 fun n => coeFn_fun_finsetSum (S n) _
+  filter_upwards [hSv, hsum, hg] with x hx hxsum hgx
+  simp only [hxsum] at hx
+  exact tendsto_nhds_unique hx (hgx.comp hS)
 
 end Lp
 

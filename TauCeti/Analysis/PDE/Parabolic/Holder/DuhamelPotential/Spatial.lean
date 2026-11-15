@@ -42,7 +42,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Every spatial slice of the bounded Hölder Duhamel potential is `C²`, including time zero.
 Only positivity of the spatial Hölder exponent is needed for this regularity. -/
-theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL [CompleteSpace F]
+theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL
     (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) :
     ContDiff ℝ 2 (fun x => heatDuhamelPotentialHolderL hα hα₂ f (slabMk x t)) := by
@@ -68,8 +68,6 @@ private theorem hessian_apply (hα : 0 < α) (hα₂ : α ≤ 2)
       iteratedFDeriv ℝ 2 (heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
         (p : ParabolicSpaceTime E).time) (p : ParabolicSpaceTime E).space := by
   simp only [hessian, heatDuhamelPotentialHolderL_apply, time_slabMk, space_slabMk, coe_slabTime]
-
-variable [CompleteSpace F]
 
 private theorem exists_holderWith_hessian (hα : 0 < α) (hα₁ : α < 1) :
     ∃ C : ℝ≥0, ∀ (T : ℝ≥0) (f : HolderSpace α (slab (E := E) 0 T) F),
@@ -108,7 +106,7 @@ private theorem norm_hessian_le (hα : 0 < α) (hα₁ : α < 1)
     rw [coe_slabTime] at hp
     rw [abs_of_nonneg hp.1]
     exact Real.sqrt_le_sqrt hp.2
-  simpa only [hzero, dist_zero_right, NNReal.coe_mul, coe_nnnorm] using
+  simpa only [hzero, dist_zero_right, NNReal.coe_mul, coe_nnNorm] using
     (holderWith_hessian hα hα₁ f).dist_le_of_le hd
 
 private def hessianHolder (hα : 0 < α) (hα₁ : α < 1)

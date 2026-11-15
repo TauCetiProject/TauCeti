@@ -69,6 +69,18 @@ theorem topRegularRefinementBound_def (t r : ℕ) (η ε : ℝ) (m : ℕ) :
       (fun m ↦ m * 2 ^ (6 * r * (t ^ 3 * m ^ 3)))^[⌊1 / (η ^ 3 * ε)⌋₊ + 1] m :=
   (rfl)
 
+/-- The bound on the number of pair colors produced by top regularization is monotone in the
+initial number of pair colors. -/
+theorem topRegularRefinementBound_mono (t r : ℕ) (η ε : ℝ) :
+    Monotone (topRegularRefinementBound t r η ε) := by
+  refine Monotone.iterate (fun a b hab ↦ ?_) _
+  gcongr
+
+/-- Top regularization never lowers the number of pair colors. -/
+theorem le_topRegularRefinementBound (t r : ℕ) (η ε : ℝ) (m : ℕ) :
+    m ≤ topRegularRefinementBound t r η ε m :=
+  Function.id_le_iterate_of_id_le (fun m ↦ Nat.le_mul_of_pos_right m (by positivity)) _ m
+
 namespace Colored3Graph
 
 variable [DecidableEq κ] (H : Colored3Graph κ V)

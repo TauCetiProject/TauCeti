@@ -124,15 +124,16 @@ theorem betaNumber_sub_hookLength (hi : i < r) (hc : c < μ.rowLen i) :
   simp only [hookLength_def, armLength_def, legLength_def, betaNumber_def]
   omega
 
-/-- **The complements of the hook lengths of a row avoid the beta-numbers inside the bound.** By
-`YoungDiagram.betaNumber_sub_hookLength` the claim is that `c + r - μ.colLen c` is never a
-beta-number `βⱼ` with `j < r`, that is, that `c + j + 1 = μ.colLen c + μ.rowLen j` is impossible:
-the right-hand side is at least `c + j + 2` when the cell `(j, c)` lies in `μ` and at most `c + j`
-when it does not. -/
-theorem betaNumber_sub_hookLength_ne_betaNumber (hi : i < r) (hc : c < μ.rowLen i) (hj : j < r) :
+/-- **The complements of the hook lengths of a row avoid the beta-numbers inside the bound.** For
+a row index `i < r`, by `YoungDiagram.betaNumber_sub_hookLength` the claim is that
+`c + r - μ.colLen c` is never a beta-number `βⱼ` with `j < r`, that is, that
+`c + j + 1 = μ.colLen c + μ.rowLen j` is impossible: the right-hand side is at least `c + j + 2`
+when the cell `(j, c)` lies in `μ` and at most `c + j` when it does not. The statement itself
+needs no bound on `i`. -/
+theorem betaNumber_sub_hookLength_ne_betaNumber (hc : c < μ.rowLen i) (hj : j < r) :
     μ.betaNumber r i - μ.hookLength (i, c) ≠ μ.betaNumber r j := by
-  rw [betaNumber_sub_hookLength hi hc]
-  simp only [betaNumber_def]
+  have hcol : i < μ.colLen c := mem_iff_lt_colLen.mp (mem_iff_lt_rowLen.mpr hc)
+  simp only [hookLength_def, armLength_def, legLength_def, betaNumber_def]
   by_cases hm : (j, c) ∈ μ
   · have h1 : j < μ.colLen c := mem_iff_lt_colLen.mp hm
     have h2 : c < μ.rowLen j := mem_iff_lt_rowLen.mp hm
@@ -178,12 +179,12 @@ private theorem injOn_betaNumber_Ico (μ : YoungDiagram) (r i : ℕ) :
 
 /-- The complements of the hook lengths of row `i` and the later beta-numbers are disjoint, by
 `YoungDiagram.betaNumber_sub_hookLength_ne_betaNumber`. -/
-private theorem disjoint_image_betaNumber_sub_hookLength (hr : μ.colLen 0 ≤ r) :
+private theorem disjoint_image_betaNumber_sub_hookLength :
     Disjoint ((range (μ.rowLen i)).image fun c => μ.betaNumber r i - μ.hookLength (i, c))
       ((Ico (i + 1) r).image (μ.betaNumber r)) := by
   simp only [disjoint_left, mem_image, mem_range, mem_Ico]
   rintro m ⟨c, hc, rfl⟩ ⟨j, ⟨-, hj⟩, hmj⟩
-  exact betaNumber_sub_hookLength_ne_betaNumber (lt_of_lt_rowLen hr hc) hc hj hmj.symm
+  exact betaNumber_sub_hookLength_ne_betaNumber hc hj hmj.symm
 
 /-- **The hook lengths of a single row, through beta-numbers.** The complements
 `βᵢ - hookLength μ (i, c)` of the hook lengths of row `i`, together with the later beta-numbers
@@ -205,7 +206,7 @@ theorem image_betaNumber_sub_hookLength_union_image_betaNumber (hr : μ.colLen 0
     · obtain ⟨j, hj, rfl⟩ := mem_image.mp hm
       obtain ⟨hj₁, hj₂⟩ := mem_Ico.mp hj
       exact mem_range.mpr (μ.betaNumber_lt_betaNumber hj₁ hj₂)
-  · rw [card_union_of_disjoint (disjoint_image_betaNumber_sub_hookLength hr),
+  · rw [card_union_of_disjoint disjoint_image_betaNumber_sub_hookLength,
       card_image_of_injOn (strictMonoOn_betaNumber_sub_hookLength hr).injOn,
       card_image_of_injOn (μ.injOn_betaNumber_Ico r i),
       card_range, card_range, Nat.card_Ico, betaNumber_def]
@@ -221,7 +222,7 @@ theorem prod_hookLength_row_mul_prod_betaNumber_sub_eq_factorial (hr : μ.colLen
   have hfact : ∏ m ∈ range (μ.betaNumber r i), (μ.betaNumber r i - m) = (μ.betaNumber r i) ! := by
     rw [← Nat.descFactorial_eq_prod_range, Nat.descFactorial_self]
   rw [← hfact, ← image_betaNumber_sub_hookLength_union_image_betaNumber hr,
-    prod_union (disjoint_image_betaNumber_sub_hookLength hr),
+    prod_union disjoint_image_betaNumber_sub_hookLength,
     prod_image (strictMonoOn_betaNumber_sub_hookLength hr).injOn,
     prod_image (μ.injOn_betaNumber_Ico r i)]
   refine congrArg₂ (· * ·) (prod_congr rfl fun c hc => ?_) rfl

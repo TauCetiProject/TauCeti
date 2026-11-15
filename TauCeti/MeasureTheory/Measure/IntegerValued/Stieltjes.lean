@@ -43,8 +43,7 @@ theorem isIntegerValued_measure (f : StieltjesFunction ℝ≥0)
   have hmass (t : ℝ≥0) : ∃ n : ℕ, f.measure (Iic t) = n := by
     obtain ⟨n, hn⟩ := hf t
     exact ⟨n, by simp [hn]⟩
-  apply Measure.isIntegerValued_of_restrict
-    (s := fun n : ℕ => Iic (n : ℝ≥0)) (fun _ => measurableSet_Iic)
+  apply Measure.isIntegerValued_of_restrict (s := fun n : ℕ => Iic (n : ℝ≥0))
   · ext t
     simp only [mem_iUnion, mem_Iic, mem_univ, iff_true]
     exact exists_nat_ge t

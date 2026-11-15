@@ -20,7 +20,7 @@ A root `ω` of `X² + X + 1` labels the four elements as `0, 1, ω, ω²`.
 The explicit enumeration supports finite calculations over this alphabet without choosing
 another model of the field. In a field of order four the roots are exactly the elements other
 than `0` and `1`. Such a root is a cube root of unity, a field of order four has characteristic
-two, and squaring exchanges the two roots in characteristic two.
+two, and squaring exchanges the two roots.
 
 Additively, a field of four elements is the Klein four-group: `zmodTwoProdAddEquiv` sends
 `(a, b) : ZMod 2 × ZMod 2` to `a + bω`, so that the three nonzero elements `1, ω, ω²` correspond
@@ -33,17 +33,21 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [Finite F]
 
+omit [Finite F] in
 /-- A field of order four has characteristic two. -/
 theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   let := Fintype.ofFinite F
   let := charP_of_card_eq_prime_pow (Nat.card_eq_fintype_card.symm.trans hF : _ = 2 ^ 2)
   exact CharTwo.two_eq_zero
 
+omit [Finite F] in
 /-- In a field of order four, the roots of `X² + X + 1` are exactly the elements other than zero
 and one. -/
 @[simp]
 theorem sq_add_self_add_one_eq_zero_iff_of_natCard_eq_four (hF : Nat.card F = 4) {ω : F} :
     ω ^ 2 + ω + 1 = 0 ↔ ω ≠ 0 ∧ ω ≠ 1 := by
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   refine ⟨fun hω ↦ ⟨?_, ?_⟩, fun ⟨h0, h1⟩ ↦ ?_⟩
   · rintro rfl
     simp at hω
@@ -56,21 +60,26 @@ theorem sq_add_self_add_one_eq_zero_iff_of_natCard_eq_four (hF : Nat.card F = 4)
     linear_combination hpow
   exact (mul_eq_zero.mp hmul).resolve_left (sub_ne_zero.mpr h1)
 
-/-- Squaring preserves roots of `X² + X + 1` in characteristic two. -/
-theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R] [CharP R 2]
+/-- In any commutative semiring, the square of a root of `X² + X + 1` is again a root. -/
+theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R]
     {ω : R} (hω : ω ^ 2 + ω + 1 = 0) : (ω ^ 2) ^ 2 + ω ^ 2 + 1 = 0 := by
-  simpa only [map_add, map_pow, map_one, map_zero, frobenius_def] using
-    congrArg (frobenius R 2) hω
+  -- `(ω ^ 2 + 1) * (ω ^ 2 + ω + 1) = ((ω ^ 2) ^ 2 + ω ^ 2 + 1) + ω * (ω ^ 2 + ω + 1)`
+  have h : (ω ^ 2 + 1) * (ω ^ 2 + ω + 1) =
+      ((ω ^ 2) ^ 2 + ω ^ 2 + 1) + ω * (ω ^ 2 + ω + 1) := by ring
+  rw [hω] at h
+  simpa using h.symm
 
 /-- A root of `X² + X + 1` is a cube root of unity. -/
 theorem pow_three_eq_one_of_sq_add_self_add_one_eq_zero {R : Type*} [CommRing R] {ω : R}
     (hω : ω ^ 2 + ω + 1 = 0) : ω ^ 3 = 1 := by
   linear_combination (ω - 1) * hω
 
+omit [Finite F] in
 /-- Every field of order four contains a root of `X² + X + 1`. -/
 theorem exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) :
     ∃ ω : F, ω ^ 2 + ω + 1 = 0 := by
   classical
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   let := Fintype.ofFinite F
   have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   obtain ⟨ω, _, hω⟩ := Finset.exists_mem_notMem_of_card_lt_card
@@ -84,6 +93,7 @@ theorem exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four (hF : Nat.card F =
 private noncomputable def zmodTwoHom (hF : Nat.card F = 4) (x : F) : ZMod 2 →+ F :=
   ZMod.lift 2 ⟨zmultiplesHom F x, by simp [two_eq_zero_of_natCard_eq_four hF]⟩
 
+omit [Finite F] in
 private theorem zmodTwoHom_apply (hF : Nat.card F = 4) (x : F) (a : ZMod 2) :
     zmodTwoHom hF x a = (a.val : F) * x := by
   have hcases : ∀ c : ZMod 2, c = 0 ∨ c = 1 := by decide
@@ -195,10 +205,12 @@ theorem univ_eq_zero_one_root_sq [Fintype F] [DecidableEq F] (hF : Nat.card F = 
   rw [← Finset.map_univ_equiv (finFourEquiv hF hω), hfin]
   simp [finFourEquiv_apply]
 
+omit [Finite F] in
 /-- The absolute trace of a field of order four to its prime field is `z ↦ z + z²`. -/
 theorem algebraMap_trace_eq_add_sq_of_natCard_eq_four [Algebra (ZMod 2) F] (hF : Nat.card F = 4)
     (z : F) :
     algebraMap (ZMod 2) F (Algebra.trace (ZMod 2) F z) = z + z ^ 2 := by
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   let := Fintype.ofFinite F
   have hfinrank : Module.finrank (ZMod 2) F = 2 := by
     have hcard := Module.card_eq_pow_finrank (K := ZMod 2) (V := F)

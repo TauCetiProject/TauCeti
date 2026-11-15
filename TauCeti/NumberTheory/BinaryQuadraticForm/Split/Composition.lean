@@ -74,8 +74,8 @@ def splitProperClassMk (s : ℕ) (c : ℤ) (hc : IsCoprime (s : ℤ) c) : SplitP
   rfl
 
 /-- Triangular representatives give the same proper class exactly when their coefficients
-have the same residue modulo the nonzero square root. -/
-@[simp] theorem splitProperClassMk_eq_iff (s : ℕ) [NeZero s] (c d : ℤ)
+have the same residue modulo the square root. -/
+@[simp] theorem splitProperClassMk_eq_iff (s : ℕ) (c d : ℤ)
     (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
     splitProperClassMk s c hc = splitProperClassMk s d hd ↔ (c : ZMod s) = d := by
   rw [splitProperClassMk, splitProperClassMk, Quotient.eq,
@@ -84,8 +84,8 @@ have the same residue modulo the nonzero square root. -/
   -- are definitionally the original triangular forms.
   change MulAction.orbitRel SL(2, ℤ) (BinaryQuadraticForm ℤ)
     (splitTriangularForm s c) (splitTriangularForm s d) ↔ (c : ZMod s) = d
-  rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff _ _ _
-    (Nat.cast_ne_zero.mpr (NeZero.ne s)), ZMod.intCast_eq_intCast_iff_dvd_sub, dvd_sub_comm]
+  rw [← Quotient.eq, properClass_splitTriangularForm_eq_iff,
+    ZMod.intCast_eq_intCast_iff_dvd_sub, dvd_sub_comm]
 
 /-- A unit residue gives the proper class of its triangular form. -/
 def splitUnitToProperClass (s : ℕ) (u : (ZMod s)ˣ) : SplitProperClass s :=

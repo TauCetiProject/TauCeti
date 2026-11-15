@@ -74,10 +74,7 @@ variable [IsDiscreteValuationRing 𝒪[L]] in
 theorem valuation_smul (σ : G) (x : L) : valuation L (σ • x) = valuation L x := by
   by_cases hx : valuation L x ≤ 1
   · exact valuation_smul_integer σ ⟨x, hx⟩
-  · have hx0 : x ≠ 0 := by
-      rintro rfl
-      simp at hx
-    have hinv : valuation L x⁻¹ ≤ 1 := by
+  · have hinv : valuation L x⁻¹ ≤ 1 := by
       rw [map_inv₀]
       exact inv_le_one_of_one_le₀ (not_le.1 hx).le
     have h := valuation_smul_integer σ ⟨x⁻¹, hinv⟩

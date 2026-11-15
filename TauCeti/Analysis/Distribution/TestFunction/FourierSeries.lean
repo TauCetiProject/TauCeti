@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Fourier.PoissonSummation
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
 # Fourier series of test functions supported in a small compact set
@@ -55,7 +55,7 @@ the resulting double series converge.
 * `ContDiffMapSupportedIn.seminorm_modulate_le`: the polynomial bound on the derivatives of a
   modulated cutoff.
 * `ContDiffMapSupportedIn.exists_seminorm_modulate_le`: a continuous seminorm grows at most
-  polynomially along modulated cutoffs.
+  polynomially along modulated cutoffs, with a degree independent of the cutoff.
 * `ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier`: the Fourier transform of a
   smooth function supported in `K` decays rapidly along a lattice.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
@@ -90,21 +90,6 @@ private def phase (w : E) : E →L[ℝ] ℂ :=
 private theorem phase_apply (w x : E) : phase w x = 2 * π * I * ⟪x, w⟫ := by
   simp [phase, real_inner_comm]
 
-private theorem norm_phase_le (w : E) : ‖phase w‖ ≤ 2 * π * ‖w‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
-    have h : ‖phase w x‖ = 2 * π * |⟪x, w⟫| := by
-      rw [phase_apply]
-      simp [abs_of_pos Real.pi_pos]
-    rw [h]
-    calc 2 * π * |⟪x, w⟫| ≤ 2 * π * (‖w‖ * ‖x‖) := by
-          gcongr
-          exact abs_real_inner_le_norm x w |>.trans_eq (mul_comm _ _)
-      _ = 2 * π * ‖w‖ * ‖x‖ := by ring
-
-private theorem norm_exp_phase (w x : E) : ‖cexp (phase w x)‖ = 1 := by
-  rw [phase_apply, norm_exp]
-  simp
-
 private theorem contDiff_exp_phase (w : E) : ContDiff ℝ ∞ fun x ↦ cexp (phase w x) :=
   (phase w).contDiff.cexp
 
@@ -112,10 +97,13 @@ private theorem contDiff_exp_phase (w : E) : ContDiff ℝ ∞ fun x ↦ cexp (ph
 `(2π ‖w‖) ^ k`. -/
 private theorem norm_iteratedFDeriv_exp_phase_le (w x : E) (k : ℕ) :
     ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase w y)) x‖ ≤ (2 * π * ‖w‖) ^ k := by
-  refine ((phase w).norm_iteratedFDeriv_cexp_comp_le k x).trans ?_
-  rw [norm_exp_phase, one_mul]
-  gcongr
-  exact norm_phase_le w
+  have h : (fun y ↦ cexp (phase w y)) = TauCeti.fourierAtom (-w) := by
+    ext y
+    rw [TauCeti.fourierAtom_apply, phase_apply, inner_neg_right]
+    push_cast
+    ring_nf
+  rw [h, ← norm_neg w]
+  exact TauCeti.norm_iteratedFDeriv_fourierAtom_le (-w) x k
 
 /-- `(1 + 2π a) ^ k ≤ (2π) ^ k (1 + a) ^ k` for `a ≥ 0`, since `2π ≥ 1`. -/
 private theorem one_add_two_pi_mul_pow_le {a : ℝ} (ha : 0 ≤ a) (k : ℕ) :
@@ -201,7 +189,7 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
   calc ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) *
         ‖iteratedFDeriv ℝ i (fun y ↦ cexp (phase w y)) x‖ * ‖iteratedFDeriv ℝ (k - i) χ x‖
       ≤ ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * (2 * π * ‖w‖) ^ i * S := by
-        gcongr with i hi
+        gcongr with i _
         · exact norm_iteratedFDeriv_exp_phase_le w x i
         · exact hχ _ (Nat.sub_le k i)
     _ = S * (1 + 2 * π * ‖w‖) ^ k := by
@@ -210,16 +198,18 @@ theorem seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (w : E) (k : ℕ) :
         ring
 
 /-- Every continuous seminorm `q` on `𝓓_{K}(E, F)` grows at most polynomially along the
-modulated cutoffs `χ.modulate w`: there are `C` and `k` with
-`q (χ.modulate w) ≤ C (1 + ‖w‖) ^ k` for every frequency `w`. Applied to `ψ ↦ ‖T ψ‖`, this bounds
-the images of modulated cutoffs under a continuous linear map `T` to a normed space. -/
-theorem exists_seminorm_modulate_le (χ : 𝓓_{K}(E, F)) (q : Seminorm ℂ 𝓓_{K}(E, F))
-    (hq : Continuous q) : ∃ C k, ∀ w : E, q (χ.modulate w) ≤ C * (1 + ‖w‖) ^ k := by
+modulated cutoffs `χ.modulate w`, with a degree independent of the cutoff: there is a `k` such
+that for every `χ` there is a `C` with `q (χ.modulate w) ≤ C (1 + ‖w‖) ^ k` for every frequency
+`w`. Applied to `ψ ↦ ‖T ψ‖`, this bounds the images of modulated cutoffs under a continuous linear
+map `T` to a normed space. -/
+theorem exists_seminorm_modulate_le (q : Seminorm ℂ 𝓓_{K}(E, F)) (hq : Continuous q) :
+    ∃ k : ℕ, ∀ χ : 𝓓_{K}(E, F), ∃ C, ∀ w : E, q (χ.modulate w) ≤ C * (1 + ‖w‖) ^ k := by
   obtain ⟨s, C, -, hC⟩ :=
     Seminorm.bound_of_continuous (ContDiffMapSupportedIn.withSeminorms ℂ E F ⊤ K) q hq
   set k := s.sup id
+  refine ⟨k, fun χ ↦ ?_⟩
   set S := ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K k χ
-  refine ⟨C * (S * (2 * π) ^ k), k, fun w ↦ ?_⟩
+  refine ⟨C * (S * (2 * π) ^ k), fun w ↦ ?_⟩
   have h1 : 1 ≤ 1 + 2 * π * ‖w‖ := by
     have := Real.pi_pos
     nlinarith [norm_nonneg w]

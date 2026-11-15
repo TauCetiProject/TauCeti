@@ -318,13 +318,12 @@ private lemma exists_harmonicOnNhd_eqOn_perronSolution (hΩ : IsOpen Ω)
     fun v hv x hx ↦ le_perronSolution hΩ hb ⟨M, hM⟩ hv (hball x hx)
   obtain ⟨w, hw, hmono, hcw⟩ :=
     exists_monotone_perronFamily_le_iSup_ballLift hΩ hb ⟨M, hM⟩ hne hr hrΩ
-  obtain ⟨hW, hWbdd⟩ := harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw hmono
+  obtain ⟨hW, _⟩ := harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw hmono
   -- `W`, the limit of the lifts of the monotone sequence, lies below the Perron solution on the
   -- ball and agrees with it at `c`.
   set W := fun x ↦ ⨆ n, ballLift c r (w n) x
   have hWu : ∀ x ∈ ball c r, W x ≤ perronSolution Ω g x := fun x hx ↦
     ciSup_le fun n ↦ hle _ (ballLift_mem_perronFamily hΩ hr hrΩ (hw n)) x hx
-  have hWc : W c = perronSolution Ω g c := le_antisymm (hWu c hc) hcw
   refine ⟨W, hW, fun z hz ↦ ?_⟩
   by_contra hzne
   -- Otherwise some member `v'` of the Perron family has `W z < v' z`.

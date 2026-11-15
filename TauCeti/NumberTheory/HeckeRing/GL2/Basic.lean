@@ -59,17 +59,17 @@ lemma heckeTDiag_def (a d : ℕ) :
 
 /-- `T(a, d)` is the diagonal Hecke element when the divisor-pair conditions hold.
 
-All three hypotheses are needed. `0 < d` does not follow from `0 < a` and `a ∣ d`: in `ℕ`
-every number divides `0`, so `a = 1, d = 0` satisfies both while `0 < d` fails — and that is
-exactly the tuple on which `natDiagGL` takes its junk value, which the `0 < d` branch of
-`heckeTDiag` exists to exclude. -/
+Both hypotheses are needed. `0 < d` does not follow from `a ∣ d`: in `ℕ` every number divides
+`0`, so `a = 1, d = 0` satisfies divisibility while `0 < d` fails — and that is exactly the tuple
+on which `natDiagGL` takes its junk value, which the `0 < d` branch of `heckeTDiag` exists to
+exclude. Positivity of `a` follows from `0 < d` and `a ∣ d`. -/
 -- Deliberately not `@[simp]`: it rewrites *past* `heckeTDiag_one_one`. With this tagged,
 -- `heckeTDiag 1 1` normalises to `diagElem ![1, 1]` rather than to `1`, and it stops there —
 -- `diagElem_one` is stated for `fun _ ↦ 1`, which `![1, 1]` does not match syntactically. The
 -- identity normal form `T(1, 1) = 1` is the more useful one, so this stays a cited lemma.
-lemma heckeTDiag_eq_diagElem {a d : ℕ} (ha : 0 < a) (hd : 0 < d) (h : a ∣ d) :
+lemma heckeTDiag_eq_diagElem {a d : ℕ} (hd : 0 < d) (h : a ∣ d) :
     heckeTDiag a d = diagElem ![a, d] :=
-  ite_eq_left ⟨ha, hd, h⟩
+  ite_eq_left ⟨Nat.pos_of_dvd_of_pos h hd, hd, h⟩
 
 /-- `T(a, d)` is zero when the divisor-pair conditions fail. -/
 @[simp]
@@ -104,12 +104,12 @@ lemma heckeTScalar_zero : heckeTScalar 0 = 0 := by
 -- `heckeTDiag`, the normal form the GL₂ multiplication table works in.
 lemma heckeTScalar_of_pos {c : ℕ} (hc : 0 < c) :
     heckeTScalar c = diagElem (fun _ : Fin 2 ↦ c) := by
-  rw [heckeTScalar, heckeTDiag_eq_diagElem hc hc dvd_rfl]
+  rw [heckeTScalar, heckeTDiag_eq_diagElem hc dvd_rfl]
   exact congrArg diagElem (funext fun i ↦ by fin_cases i <;> rfl)
 
 /-- `T(1, 1)` is the identity. -/
 @[simp] lemma heckeTDiag_one_one : heckeTDiag 1 1 = 1 := by
-  rw [heckeTDiag_eq_diagElem one_pos one_pos dvd_rfl,
+  rw [heckeTDiag_eq_diagElem one_pos dvd_rfl,
     show ![1, 1] = (fun _ : Fin 2 ↦ 1) from funext fun i ↦ by fin_cases i <;> rfl]
   exact diagElem_one
 
@@ -209,11 +209,10 @@ lemma heckeTDiag_mul_of_coprime (a b da db : ℕ)
   swap
   · rw [heckeTDiag_eq_zero h2, mul_zero,
       heckeTDiag_eq_zero (by simpa [Nat.mul_comm] using hzero b a db da hcop.symm h2)]
-  obtain ⟨ha, hda, hdva⟩ := h1
+  obtain ⟨_, hda, hdva⟩ := h1
   obtain ⟨_, hdb, hdvb⟩ := h2
-  have hb : 0 < b := Nat.pos_of_dvd_of_pos hdvb hdb
-  rw [heckeTDiag_eq_diagElem ha hda hdva, heckeTDiag_eq_diagElem hb hdb hdvb,
-    heckeTDiag_eq_diagElem (Nat.mul_pos ha hb) (Nat.mul_pos hda hdb) (Nat.mul_dvd_mul hdva hdvb)]
+  rw [heckeTDiag_eq_diagElem hda hdva, heckeTDiag_eq_diagElem hdb hdvb,
+    heckeTDiag_eq_diagElem (Nat.mul_pos hda hdb) (Nat.mul_dvd_mul hdva hdvb)]
   have hprod : diagElem ((![a, da] : Fin 2 → ℕ) * ![b, db]) =
       diagElem (![a * b, da * db] : Fin 2 → ℕ) :=
     congrArg diagElem (funext fun i ↦ by fin_cases i <;> simp [Pi.mul_apply])

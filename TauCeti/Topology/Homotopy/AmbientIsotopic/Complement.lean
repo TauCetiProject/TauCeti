@@ -13,19 +13,17 @@ public import TauCeti.Topology.Homotopy.AmbientIsotopic.Basic
 The point of ambient isotopy, as opposed to the naive isotopy of
 `TauCeti.Topology.Homotopy.Isotopy.Basic`, is that it moves the *whole* ambient space, not just an
 embedded image. Consequently an ambient isotopy carrying a map `f` to a map `g` induces a
-homeomorphism of their complements `(range f)ᶜ ≃ₜ (range g)ᶜ`. This is exactly why the
-geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 4, "knot theory")
-insists that knot invariants be built on ambient isotopy: the complement of a knot is the basic
-invariant, and it is a homeomorphism invariant of the ambient-isotopy class precisely because of
-the theorem in this file. The module docstring of `TauCeti.Topology.Homotopy.Isotopy.Basic` states
-this fact in prose ("an ambient isotopy induces a homeomorphism of complements"); here it is
-proved.
+homeomorphism of their complements `(range f)ᶜ ≃ₜ (range g)ᶜ`. This is why knot invariants are
+built on ambient isotopy: the complement of a knot is the basic invariant, and it is a
+homeomorphism invariant of the ambient-isotopy class precisely because of the theorem in this
+file. The module docstring of `TauCeti.Topology.Homotopy.Isotopy.Basic` states this fact in prose
+("an ambient isotopy induces a homeomorphism of complements"); here it is proved.
 
 Everything is stated for arbitrary continuous maps `f : C(X, Y)`, since the range and its
-complement make sense without an embedding hypothesis; the embedded case (knots) is the intended
-specialisation. Both witnessing homeomorphisms are restrictions of the ambient isotopy's final
-homeomorphism `Φ.finalHomeomorph`: their underlying-value maps are `Φ.finalHomeomorph` itself and
-their inverses are `Φ.finalHomeomorph.symm`, as recorded by the `coe_…_apply` lemmas below.
+complement make sense without an embedding hypothesis; the embedded case covers knots. Both
+witnessing homeomorphisms are restrictions of the ambient isotopy's final homeomorphism
+`Φ.finalHomeomorph`: their underlying-value maps are `Φ.finalHomeomorph` itself and their
+inverses are `Φ.finalHomeomorph.symm`, as recorded by the `coe_…_apply` lemmas below.
 
 ## Main definitions
 

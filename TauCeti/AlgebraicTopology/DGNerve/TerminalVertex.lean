@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGNerve.Boundary
-public import TauCeti.AlgebraicTopology.DGNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
 import TauCeti.Data.Finset.Basic
 
@@ -73,38 +72,11 @@ private theorem isTerminalVertex_of_exactAt {Y : C}
   rw [SSet.isTerminalVertex_iff]
   intro n σ₀ hσ₀
   have hY := obj_last_of_map_const σ₀ hσ₀
-  obtain _ | m := n
-  · -- A map `∂Δ[1] ⟶ N_dg(C)` extends by the zero morphism.
-    let X₀ := Simplex.obj (R := R) (SSet.yonedaEquiv (boundary.ι 1 ≫ σ₀)) 0
-    let e : (dgNerve R C) _⦋1⦌ := Simplex.edge (0 : dgCycles R X₀ Y)
-    refine ⟨SSet.yonedaEquiv.symm e, (boundary.eq_ι_comp_iff _ _).2 fun j ↦ ?_⟩
-    rw [Equiv.apply_symm_apply]
-    refine Simplex.ext_zero ?_
-    fin_cases j
-    · exact hY
-    · rfl
-  -- Glue the faces of `σ₀` to coherences on its vertices.
-  obtain ⟨f, hself, heq, hfaces⟩ := DGNerve.exists_coherences_of_faces (R := R) (fun _ ↦ True)
-    (fun i ↦ Simplex.obj (R := R) (σ₀.app _ (boundary.vertex (m + 1) i)) 0)
-    (fun l _ ↦ SSet.yonedaEquiv (boundary.ι l ≫ σ₀)) (fun l _ p ↦ obj_yonedaEquiv_ι_comp σ₀ l p)
-    (fun _ _ _ _ hab ↦ map_yonedaEquiv_ι_comp σ₀ hab)
-  have hself' := fun i ↦ hself i ((exists_ne i).imp fun _ hl ↦ ⟨trivial, hl⟩)
-  have heq' : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) → _ :=
-    fun i j S d hij hS hd hl ↦ heq i j S d hij hS hd (hl.imp fun _ hl ↦ ⟨trivial, hl⟩)
-  have hd : (-(m + 1 : ℕ) : ℤ) + #(Ioo 0 (Fin.last (m + 2))) = 0 := by simp
-  -- The last vertex is `Y`, so the obstruction to filling is a cycle of degree `-m` into `Y`,
-  -- hence a boundary.
-  have hexact := h (Simplex.obj (R := R) (σ₀.app _ (boundary.vertex (m + 1) 0)) 0) _
-    (by omega : -(m + 1 : ℕ) + 1 ≤ (0 : ℤ))
-  rw [← hY, obj_yonedaEquiv_ι_comp, Fin.succAbove_zero, Fin.succ_last] at hexact
-  obtain ⟨g, hg⟩ := (exactAt_iff_forall_exists_dgDifferential_eq R).1 hexact _
-    (f.dgDifferential_boundary_eq_zero heq' hd)
-  obtain ⟨x, hxobj, hxcoh⟩ := (f.exists_simplex_iff_of_boundary hself' heq' hd).2 ⟨g, hg⟩
-  let x' : (dgNerve R C) _⦋m + 2⦌ := x
-  refine ⟨SSet.yonedaEquiv.symm x', (boundary.eq_ι_comp_iff _ _).2 fun l ↦ ?_⟩
-  rw [Equiv.apply_symm_apply, dgNerve_δ]
-  exact (hfaces x hxobj (fun i j S d hij hS hd ⟨l, _, hl⟩ ↦ hxcoh i j S d hij hS hd ⟨l, hl⟩) l
-    trivial).symm
+  rw [obj_yonedaEquiv_ι_comp, Fin.succAbove_zero, Fin.succ_last] at hY
+  apply exists_extension_of_exactAt
+  intro hn
+  rw [hY]
+  exact h _ _ (by omega)
 
 /-! ### The sphere attached to a cycle -/
 

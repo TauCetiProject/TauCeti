@@ -65,12 +65,6 @@ The file follows the type-`A` counterpart
 `TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/DeterminantOne.lean`, which proves the same
 containment for the special linear group; the class-two exponential computation and the symplectic
 matrix identities are specific to this file.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: the full-weight type `C` carrier is now proved to lie
-in the expected pinned ambient group. Its consumer is milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which needs a simply connected pinned carrier for the
-`C_n(q)` family.
 -/
 
 public section

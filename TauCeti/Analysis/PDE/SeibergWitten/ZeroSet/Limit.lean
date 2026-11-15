@@ -151,7 +151,7 @@ then eventually the support of `Θ i` is disjoint from `K`. -/
 theorem eventually_disjoint_tsupport_cutoffCurrent {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {χ : ℝ → ℝ} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → E → ℂ}
     {Z : ι → Closeds E} {Z₀ : Closeds E} (C c c₀ : ℝ) (hc : 0 < c)
-    (hα : ∀ i, ContDiff ℝ 2 (α i)) (hb : ∀ i, Differentiable ℝ (b i))
+    (hα : ∀ i, ContDiff ℝ 2 (α i))
     {σ : ℝ} (hσ₀ : 0 ≤ σ) (hσ₁ : σ < 1) (hχ : EqOn χ 1 (Ioi σ))
     (hr : Tendsto r l atTop) (hh : Tendsto h l (𝓝 0)) (hZ : Tendsto Z l (𝓝 Z₀))
     {K : Set E} (hK : IsCompact K) (hKZ : Disjoint K Z₀) (hh₀ : ∀ᶠ i in l, 0 < h i)
@@ -162,7 +162,7 @@ theorem eventually_disjoint_tsupport_cutoffCurrent {E : Type*} [NormedAddCommGro
   filter_upwards [eventually_forall_lt_of_tendsto (s := fun i x ↦ Complex.normSq (α i x)) C c c₀
     hc hσ₁ hr hh hZ hK hKZ hh₀ hbound] with i hi
   refine Set.disjoint_left.2 fun x hx hxΘ ↦ ?_
-  have := tsupport_cutoffCurrent_subset hσ₀ (hα i) (hb i) hχ hxΘ
+  have := tsupport_cutoffCurrent_subset hσ₀ (hα i) hχ hxΘ
   exact (hi x hx).not_ge this
 
 end TauCeti.SeibergWitten

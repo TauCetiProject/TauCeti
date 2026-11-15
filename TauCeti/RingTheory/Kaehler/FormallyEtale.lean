@@ -51,6 +51,9 @@ the common zero locus `T ⧸ (aᵢ)` of such elements is then étale over `R`
   carries a basis to a basis;
 * `TauCeti.etale_aeval_of_basis`: a smooth algebra is étale over the polynomial ring on elements
   whose differentials form a basis of its differentials;
+* `Module.Basis.etale_aeval_localization_away_det`: after inverting the determinant of the
+  differentials of finitely many elements in a basis of the differentials of a smooth algebra, it is
+  étale over the polynomial ring on those elements;
 * `Module.Basis.etale_quotient_span_range`: the common zero locus of such elements is étale over
   the base.
 
@@ -145,9 +148,10 @@ theorem bijective_mapBaseChange_of_basis {ι : Type*} (bS : Basis ι S Ω[S⁄R]
   exact LinearEquiv.bijective _
 
 /-- **The Jacobian criterion for étaleness.** If `T` is smooth over `R` and the differentials
-`d aᵢ` of finitely many elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
-polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. -/
-theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : ι → T)
+`d aᵢ` of elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
+polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. The index type is then automatically finite unless `T` is
+trivial. -/
+theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} (a : ι → T)
     (b : Basis ι T Ω[T⁄R]) (hb : ∀ i, b i = D R T (a i)) :
     (MvPolynomial.aeval (R := R) a).toRingHom.Etale := by
   let := (MvPolynomial.aeval (R := R) a).toAlgebra
@@ -158,8 +162,15 @@ theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : 
       bijective_mapBaseChange_of_basis (mvPolynomialBasis R ι) b fun i ↦ by
         rw [mvPolynomialBasis_apply, map_D, hb, RingHom.algebraMap_toAlgebra]
         simp
-  have : Algebra.FinitePresentation (MvPolynomial ι R) T :=
-    .of_restrict_scalars_finitePresentation R _ _
+  have : Algebra.FinitePresentation (MvPolynomial ι R) T := by
+    by_cases hT : Subsingleton T
+    · -- the zero ring is the quotient of `R[Xᵢ]` by the unit ideal
+      exact .of_surjective (f := Algebra.ofId (MvPolynomial ι R) T)
+        (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩)
+        (by rw [RingHom.ker_eq_top_of_subsingleton]; exact Ideal.fg_top _)
+    · have := not_subsingleton_iff_nontrivial.mp hT
+      have : Finite ι := Module.Finite.finite_basis b
+      exact .of_restrict_scalars_finitePresentation R _ _
   exact RingHom.etale_algebraMap.mpr ⟨inferInstance, inferInstance⟩
 
 end TauCeti
@@ -168,12 +179,36 @@ namespace Module.Basis
 
 open KaehlerDifferential MvPolynomial
 
+/-- If `W₁` is smooth over `A` and `d` is the determinant of the differentials `d aᵢ` in a basis
+of `Ω[W₁⁄A]`, then after inverting `d` the map `A[Xᵢ] → W₁[1/d]` given by `Xᵢ ↦ aᵢ` is étale. -/
+theorem etale_aeval_localization_away_det {A W₁ : Type*} [CommRing A] [CommRing W₁]
+    [Algebra A W₁] [Algebra.Smooth A W₁] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (bW₁ : Basis ι W₁ Ω[W₁⁄A]) (a : ι → W₁) (d : W₁)
+    (hd : d = bW₁.det fun i ↦ D A W₁ (a i)) :
+    (MvPolynomial.aeval (R := A)
+      fun i ↦ algebraMap W₁ (Localization.Away d) (a i)).toRingHom.Etale := by
+  subst hd
+  set d := bW₁.det fun i ↦ D A W₁ (a i)
+  -- The differentials of the `aᵢ` form a basis of `Ω[W'⁄A]`: their determinant in the basis
+  -- induced by `bW₁` is the unit `d`.
+  let bW' := TauCeti.kaehlerBasisOfFormallyEtale A W₁ (Localization.Away d) bW₁
+  have hdet : bW'.det (fun i ↦ D A (Localization.Away d) (algebraMap W₁ _ (a i))) =
+      algebraMap W₁ (Localization.Away d) d := by
+    rw [← TauCeti.kaehlerBasisOfFormallyEtale_det_map]
+    congr 1
+    ext i
+    simp
+  obtain ⟨hli, hspan⟩ := bW'.is_basis_iff_det.mpr
+    (hdet ▸ IsLocalization.Away.algebraMap_isUnit d)
+  have : Algebra.Smooth A (Localization.Away d) := .comp A W₁ _
+  exact TauCeti.etale_aeval_of_basis _ (.mk hli hspan.ge) fun i ↦ by simp
+
 /-- **The common zero locus of étale coordinates is étale over the base.** If `W` is smooth over
 `A` and the differentials of `x : ι → W` form a basis of `Ω[W⁄A]`, then `W ⧸ (x)` is étale over
 `A`. It is the base change of the étale map `A[Xᵢ] → W`, `Xᵢ ↦ xᵢ`
 (`TauCeti.etale_aeval_of_basis`), along `A[Xᵢ] → A[Xᵢ] ⧸ (Xᵢ) ≃ A`. -/
 theorem etale_quotient_span_range {A W : Type*} [CommRing A] [CommRing W] [Algebra A W]
-    [Algebra.Smooth A W] {ι : Type*} [Finite ι] {x : ι → W}
+    [Algebra.Smooth A W] {ι : Type*} {x : ι → W}
     (b : Basis ι W Ω[W⁄A]) (hb : ∀ i, b i = D A W (x i)) :
     Algebra.Etale A (W ⧸ Ideal.span (Set.range x)) := by
   let R := MvPolynomial ι A

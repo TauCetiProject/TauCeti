@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
 import TauCeti.Analysis.Calculus.Deriv.Const
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
 /-!
 # Short closed characteristics on the levels of an energy function
@@ -81,44 +80,6 @@ namespace SmoothTwoForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M} {W : Set M} {F : M → ℝ} {a b τ : ℝ}
-
-/-- **Orbits of `φ ∘ F`.** A `T`-periodic orbit `γ` of `X_{φ ∘ F}` whose loop is contractible in
-`W` is constant as soon as, writing `c = φ'(F (γ 0))`, the level of `γ 0` carries no closed
-characteristic contractible in `W` of period at most `T |c|` when `c ≠ 0`. Indeed `F` is constant
-along `γ`, and along its level `X_{φ ∘ F} = c X_F`: if `c = 0` then the field vanishes along `γ`,
-so `γ` is constant, and otherwise `t ↦ γ (t / c)` is such a closed characteristic. -/
-private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegenerate)
-    (hF : MDifferentiable I 𝓘(ℝ) F) {φ : ℝ → ℝ} (hφ : Differentiable ℝ φ) {T : ℝ} (hT : 0 < T)
-    {γ : ℝ → M} (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (φ ∘ F)))
-    {g : C(AddCircle T, W)} (hg : g.Nullhomotopic) (hgγ : ∀ t : ℝ, (g t : M) = γ t)
-    (horb : deriv φ (F (γ 0)) ≠ 0 → ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F (F (γ 0))
-      (T * |deriv φ (F (γ 0))|)) :
-    ∀ t, γ t = γ 0 := by
-  set c := deriv φ (F (γ 0))
-  have hX (x : M) :
-      σ.hamiltonianVectorField (φ ∘ F) x = deriv φ (F x) • σ.hamiltonianVectorField F x :=
-    hamiltonianVectorField_comp (hφ _) (hF x)
-  -- `F` is constant along `γ`, since `dF(X_{φ ∘ F}) = φ'(F) dF(X_F) = 0`.
-  have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
-    (hγ.isMIntegralCurveOn univ).apply_eq_of_mvfderiv_apply_eq_zero isOpen_univ
-      isPreconnected_univ (fun u _ ↦ hF _) (fun u _ ↦ by
-        rw [hX, map_smul,
-          (hσ.isHamiltonianVectorField_hamiltonianVectorField F).mvfderiv_apply_self, smul_zero])
-      (mem_univ 0) (mem_univ t)
-  have hXγ (t : ℝ) :
-      σ.hamiltonianVectorField (φ ∘ F) (γ t) = c • σ.hamiltonianVectorField F (γ t) := by
-    rw [hX, hlev]
-  by_cases hc : c = 0
-  · exact fun t ↦ hγ.apply_eq_of_forall_eq_zero (fun u ↦ by rw [hXγ, hc, zero_smul]) 0 t
-  -- Otherwise `t ↦ γ (t / c)` is a closed characteristic of period `T |c|`, which is excluded.
-  by_contra hne
-  have hγc : IsMIntegralCurve γ (c⁻¹⁻¹ • σ.hamiltonianVectorField F) := fun t ↦ by
-    rw [inv_inv, Pi.smul_apply, ← hXγ]
-    exact hγ t
-  have h := hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
-    (inv_ne_zero hc) hγc (not_forall.1 hne) hlev ⟨g, hg, hgγ⟩
-  rw [abs_inv, div_inv_eq_mul] at h
-  exact horb hc h
 
 /-- **Admissibility of `μ ∘ F`.** Let `F` be smooth with `{F ≤ b}` compact and contained in the
 interiors of `W` and of `M`, taking values below `a < b` somewhere and above `b` somewhere in the

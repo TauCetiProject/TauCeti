@@ -55,6 +55,7 @@ variable [Fintype ι] [IsManifold I 2 M]
   {e₀ e₁ : Trivialization E (TotalSpace.proj : TotalSpace E (TangentSpace I : M → Type _) → M)}
   [MemTrivializationAtlas e₀] [MemTrivializationAtlas e₁]
 
+omit [FiniteDimensional 𝕜 E] in
 /-- The coefficients of the field `z ↦ e₁.symmL z V` in the frame of the trivialization `e₀` at `x₀`
 are, near `x`, the coordinates of `tangentCoordChange I x x₀ z V`, so its flat derivative in that
 frame at `x` is `e₀.symmL x` applied to the derivative of the tangent coordinate change. -/
@@ -117,7 +118,7 @@ private theorem continuousLinearMapAt_christoffelForm
     subst he₁
     exact symmL_trivializationAt_self (I := I) x U
   have h1 : e₁.symmL 𝕜 x (christoffelMap b hcov' x V U) = christoffelForm b hcov' x V U := by
-    rw [christoffelMap_apply b hcov' hx₁ (V : E) (U : E),
+    rw [christoffelMap_apply (x := x) b hcov' (V : E) (U : E),
       e₁.symmL_continuousLinearMapAt (R := 𝕜) hx₁]
     simp only [hV, hU]
   rw [← h1]
@@ -178,7 +179,7 @@ theorem christoffelMap_coordChange [Fintype ι] [IsManifold I 2 M]
   calc christoffelMap b hcov x (tangentCoordChange I x x₀ x V)
         (tangentCoordChange I x x₀ x U) =
       e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov x V U) := by
-        rw [christoffelMap_apply b hcov hx₀', hsymmL (V : E), hsymmL (U : E)]
+        rw [christoffelMap_apply (x := x) b hcov, hsymmL (V : E), hsymmL (U : E)]
     _ = tangentCoordChange I x x₀ x (christoffelMap b hcov' x V U)
         - mvfderiv I (fun z => tangentCoordChange I x x₀ z V) x U := by
         rw [← hmap']

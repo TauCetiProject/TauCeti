@@ -99,6 +99,16 @@ theorem isLattice_iff : μ.IsLattice ↔ ∃ a, μ.IsLatticeSpan a := Iff.rfl
 
 theorem IsLatticeSpan.isLattice (h : μ.IsLatticeSpan a) : μ.IsLattice := ⟨a, h⟩
 
+/-- A nonlattice probability measure has mass strictly below one at zero. -/
+theorem measure_singleton_zero_lt_one_of_not_isLattice [IsProbabilityMeasure μ]
+    (hNL : ¬ μ.IsLattice) : μ {0} < 1 := by
+  by_contra h
+  have hzero : μ {0} = 1 := le_antisymm prob_le_one (not_lt.1 h)
+  apply hNL
+  refine ⟨1, zero_lt_one, ?_⟩
+  filter_upwards [(mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).2 hzero] with x hx
+  exact ⟨0, by simp [mem_singleton_iff.1 hx]⟩
+
 /-- An absolutely continuous measure retains every lattice span of the dominating measure. -/
 theorem IsLatticeSpan.of_absolutelyContinuous (h : μ.IsLatticeSpan a) {ν : Measure ℝ≥0}
     (hν : ν ≪ μ) : ν.IsLatticeSpan a :=
@@ -121,7 +131,6 @@ theorem IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton (h : μ.IsLatticeSpan
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx
   obtain ⟨k, rfl⟩ := hx
-  apply propext
   simp only [mem_Ioc, mem_singleton_iff]
   have hle : (k : ℝ≥0) * a ≤ ((n + 1 : ℕ) : ℝ≥0) * a ↔ k ≤ n + 1 := by
     rw [mul_le_mul_iff_left₀ h.pos]
@@ -142,7 +151,6 @@ theorem IsLatticeSpan.measure_Iic_eq_of_mem_Ico (h : μ.IsLatticeSpan a) {t : �
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx
   obtain ⟨k, rfl⟩ := hx
-  apply propext
   simp only [mem_Iic]
   constructor
   · intro hk

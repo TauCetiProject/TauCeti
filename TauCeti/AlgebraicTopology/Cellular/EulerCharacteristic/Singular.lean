@@ -21,10 +21,12 @@ large degrees, so the sum has finite support.
 
 Finite generation over a noetherian ring needs only finitely many cells in the degree in
 question, and no dimension bound: sequential colimits of modules are exact, so the comparison
-holds for every CW pair. Vanishing in a degree with no cells works, for a finite-dimensional CW
-pair, for any coefficient object in an abelian category with coproducts exact for the cell
-sets. The ordinary singular homology statements are obtained from the quotient map for the empty
-subspace, not from a separate comparison.
+holds for every CW pair. Vanishing in a degree `n` with no cells works whenever the inclusion of
+the `(n + 1)`-skeleton induces an isomorphism on `Hₙ` (in particular for every finite-dimensional
+CW pair, and for every CW pair when sequential colimits are exact in the coefficient category, such
+as modules over any ring), for any coefficient object in an abelian category with coproducts exact
+for the cell sets. The ordinary singular homology statements are obtained from the quotient map for
+the empty subspace, not from a separate comparison.
 
 The source is A. Hatcher, *Algebraic Topology*, Section 2.2, Theorems 2.35 and 2.44.
 -/
@@ -46,12 +48,16 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X}
 
 section Vanishing
 
-variable [FiniteDimensional C] {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
+variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
   [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (R : A)
 
-/-- Relative singular homology of a finite-dimensional CW pair vanishes in any degree
-in which the relative CW structure has no cells. -/
+/-- Relative singular homology of a CW pair vanishes in any degree `n` in which the relative CW
+structure has no cells, provided the `(n + 1)`-skeleton comparison map is an isomorphism on `Hₙ`
+(as holds for every finite-dimensional CW pair and whenever sequential colimits are exact in `A`,
+for instance for modules over any ring). -/
 theorem isZero_singularHomology_complexBasePair_of_isEmpty_cell (n : ℕ)
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 1)) R n)]
     [IsEmpty (cell C n)] : IsZero ((complexBasePair C).singularHomology R n) := by
   have hX : IsZero ((cellularChainComplex C R).X n) := by
     rw [cellularChainComplex_X]
@@ -61,7 +67,7 @@ theorem isZero_singularHomology_complexBasePair_of_isEmpty_cell (n : ℕ)
 
 /-- Relative singular homology of a finite-dimensional CW pair vanishes in all sufficiently
 large degrees, without any finiteness assumption on the number of cells in each degree. -/
-theorem eventually_isZero_singularHomology_complexBasePair :
+theorem eventually_isZero_singularHomology_complexBasePair [FiniteDimensional C] :
     ∀ᶠ n in Filter.atTop, IsZero ((complexBasePair C).singularHomology R n) :=
   FiniteDimensional.eventually_isEmpty_cell.mono fun n hn ↦
     have : IsEmpty (cell C n) := hn
@@ -71,7 +77,7 @@ end Vanishing
 
 section Ring
 
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+variable {k : Type u} [Ring k] (M : ModuleCat.{w} k)
 
 /-- Over a noetherian ring, relative singular homology of a CW pair is finitely generated in each
 degree with finitely many cells, for finitely generated coefficients. -/
@@ -116,18 +122,23 @@ section Absolute
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 
-/-- Ordinary singular homology of a finite-dimensional CW complex vanishes in any degree in which
-it has no cells. -/
-theorem isZero_singularHomology_of_isEmpty_cell [FiniteDimensional C] {A : Type u}
+/-- Ordinary singular homology of a CW complex vanishes in any degree `n` in which it has no cells,
+provided the `(n + 1)`-skeleton comparison map is an isomorphism on `Hₙ` (as holds for every
+finite-dimensional CW complex and whenever sequential colimits are exact in `A`, for instance for
+modules over any ring). -/
+theorem isZero_singularHomology_of_isEmpty_cell {A : Type u}
     [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (R : A) (n : ℕ) [IsEmpty (cell C n)] :
+    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (R : A) (n : ℕ)
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+      (skeletonBasePairToComplex C (n + 1)) R n)]
+    [IsEmpty (cell C n)] :
     IsZero (((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C)) :=
   (asIso ((complexBasePair C).singularHomologyπ R n)).isZero_iff.mpr
     (isZero_singularHomology_complexBasePair_of_isEmpty_cell C R n)
 
 section Ring
 
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+variable {k : Type u} [Ring k] (M : ModuleCat.{w} k)
 
 /-- Over a noetherian ring, ordinary singular homology of a CW complex is finitely generated in
 each degree with finitely many cells, for finitely generated coefficients. -/

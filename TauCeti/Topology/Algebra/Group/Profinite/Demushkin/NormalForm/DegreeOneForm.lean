@@ -932,19 +932,19 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoEven (hn : Even n) {a f : �
   · simpa [show i - 1 + 1 = i by omega] using keyEven (i - 1) (by omega) (by omega) (by omega)
 
 /-- **Labute's normal form modulo `λ_2`, the nonalternating case of odd rank.** Let `F` be the
-free pro-`2` group on `n` generators, `n` odd, and let `ρ ∈ gr_1(F)` have nondegenerate degree-one
-form that is not alternating. Then for every `f ≥ 2` a continuous automorphism of `F` carries `ρ`
-to the class of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, which is the class of
-`x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+free pro-`2` group on `n` generators, `n` odd, and let `ρ ∈ gr_1(F)` have nondegenerate
+degree-one form (which is then automatically not alternating). Then for every `f ≥ 2` a continuous
+automorphism of `F` carries `ρ` to the class of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`, which is
+the class of `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd
-    (hnd : (degreeOneForm ρ).Nondegenerate) (hnalt : ¬ (degreeOneForm ρ).IsAlt) (hn : Odd n)
-    {f : ℕ} (hf : 2 ≤ f) :
+    (hnd : (degreeOneForm ρ).Nondegenerate) (hn : Odd n) {f : ℕ} (hf : 2 ≤ f) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       gradedMap 2 (e : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom
           (e : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1 ρ =
         gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
           demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩ :=
-  exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd hnalt
+  exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd
+    (not_isAlt_degreeOneForm_of_odd_card ρ hnd (by simpa using hn))
     (nondegenerate_degreeOneForm_demushkinWordTwoOdd hn (zero_lt_two.trans_le hf))
     (not_isAlt_degreeOneForm_demushkinWordTwoOdd hn.pos (zero_lt_two.trans_le hf))
 
@@ -967,16 +967,17 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoOddTop (hn : Odd n) :
 
 /-- **Labute's normal form modulo `λ_2`, the nonalternating case of odd rank, at level
 `f = ∞`.** Let `F` be the free pro-`2` group on `n` generators, `n` odd, and let `ρ ∈ gr_1(F)`
-have nondegenerate degree-one form that is not alternating. Then a continuous automorphism of `F`
-carries `ρ` to the class of `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
+have nondegenerate degree-one form (which is then automatically not alternating). Then a
+continuous automorphism of `F` carries `ρ` to the class of `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop
-    (hnd : (degreeOneForm ρ).Nondegenerate) (hnalt : ¬ (degreeOneForm ρ).IsAlt) (hn : Odd n) :
+    (hnd : (degreeOneForm ρ).Nondegenerate) (hn : Odd n) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       gradedMap 2 (e : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom
           (e : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1 ρ =
         gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
           demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ :=
-  exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd hnalt
+  exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd
+    (not_isAlt_degreeOneForm_of_odd_card ρ hnd (by simpa using hn))
     (nondegenerate_degreeOneForm_demushkinWordTwoOddTop hn)
     (not_isAlt_degreeOneForm_demushkinWordTwoOddTop hn.pos)
 

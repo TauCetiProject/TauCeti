@@ -244,7 +244,7 @@ theorem depthAt_prod (hy : y ∈ range I) {y' : E'} (hy' : y' ∈ range I') :
   have hcone : posTangentConeAt (range (I.prod I')) (y, y') =
       posTangentConeAt (range I) y ×ˢ posTangentConeAt (range I') y' := by
     rw [range_prod]
-    exact I.convex_range.posTangentConeAt_prod I'.convex_range hy hy'
+    exact I.convex_range.posTangentConeAt_prod I'.convex_range
   have hfin (V : Submodule ℝ E) (V' : Submodule ℝ E') :
       finrank ℝ (V.prod V') = finrank ℝ V + finrank ℝ V' := by
     rw [(Submodule.prodEquiv V V').finrank_eq, finrank_prod]

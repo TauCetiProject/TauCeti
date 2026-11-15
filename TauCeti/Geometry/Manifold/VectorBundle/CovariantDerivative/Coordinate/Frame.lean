@@ -10,13 +10,16 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 public import TauCeti.Geometry.Manifold.VectorField.CoordinateFrame
 
 /-!
-# Symmetry of the Christoffel symbols in a coordinate frame
+# Christoffel symbols in a coordinate frame
 
 Torsion-freedom of a covariant derivative on the tangent bundle says that `∇_X Y - ∇_Y X` is the
 Lie bracket `[X, Y]`.  Since the vector fields of a coordinate frame commute, a torsion-free
 connection satisfies `∇_{∂ᵢ} ∂ⱼ = ∇_{∂ⱼ} ∂ᵢ`.  This is the classical symmetry
 `Γᵏᵢⱼ = Γᵏⱼᵢ` of the Christoffel symbols in a chart, and gives the corresponding symmetry of the
 model-space Christoffel map.
+
+The Christoffel map read in the canonical trivialization at a point `x` is also the covariant
+derivative at `x` of the vector fields with constant coordinates in the chart at `x`.
 
 ## Main results
 
@@ -25,6 +28,8 @@ model-space Christoffel map.
 * `TauCeti.Manifold.christoffelSymbol_comm` and `TauCeti.Manifold.christoffelMap_comm`: the
   Christoffel symbols and Christoffel map of a torsion-free covariant derivative are symmetric in
   their two lower arguments.
+* `TauCeti.Manifold.covariantDerivative_extend_eq_christoffelMap`: at `x`, the covariant derivative
+  of the vector field with constant coordinates `w` in the chart at `x` is the Christoffel map.
 
 ## References
 
@@ -81,6 +86,7 @@ theorem christoffelSymbol_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [Fintype ι]
 
+omit [CompleteSpace E] in
 /-- **The Christoffel map of a torsion-free connection is symmetric.**  Read in the canonical
 tangent-bundle trivialization at `x₀`, the model-space Christoffel map of a torsion-free covariant
 derivative is a symmetric bilinear map. -/
@@ -90,6 +96,7 @@ theorem christoffelMap_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x₀
         (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x v w =
       christoffelMap b (cov.isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x w v := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have hbase : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
   -- A continuous bilinear map is determined by its values on a pair of basis vectors.
   have hsymm : christoffelMap b (cov.isCovariantDerivativeOn
@@ -104,6 +111,24 @@ theorem christoffelMap_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x₀
     exact Finset.sum_congr rfl fun k _ ↦ by rw [christoffelSymbol_comm ht b x₀ hx i j k]
   conv_lhs => rw [hsymm]
   rw [ContinuousLinearMap.flip_apply]
+
+omit [CompleteSpace E] in
+/-- **The Christoffel map in the chart at a point.** At `x`, a covariant derivative differentiates
+the extension `W = FiberBundle.extend E w` of a tangent vector `w` at `x`, the vector field with
+constant coordinates `w` in the canonical tangent-bundle trivialization at `x`, along `v` by the
+Christoffel map read in that trivialization: `∇_v W = Γ(w, v)`. -/
+theorem covariantDerivative_extend_eq_christoffelMap (b : Basis ι 𝕜 E) (v w : TangentSpace I x) :
+    cov (FiberBundle.extend E w) x v =
+      christoffelMap b (cov.isCovariantDerivativeOn
+        (s := (trivializationAt E (TangentSpace I) x).baseSet)) x w v := by
+  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt' x
+  have h := covariantDerivative_symm_apply_symm b (cov.isCovariantDerivativeOn
+    (s := (trivializationAt E (TangentSpace I) x).baseSet)) hx w v
+  rw [← extend_eq_trivializationAt_symm] at h
+  -- `v : TangentSpace I x` only matches the lemma's `u : E` when given explicitly.
+  simpa only [TangentBundle.trivializationAt_symm_apply_self,
+    TangentBundle.trivializationAt_symm_apply_self (I := I) x v] using h
 
 end Christoffel
 

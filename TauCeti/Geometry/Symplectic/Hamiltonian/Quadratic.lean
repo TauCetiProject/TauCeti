@@ -81,6 +81,9 @@ quadratic form whose Hamiltonian endomorphism preserves both summands is a direc
 * `TauCeti.SymplecticForm.commute_fderiv_hamiltonianVectorField`: at a common critical point of
   two functions which Poisson-commute near it, the linearizations of their Hamiltonian vector
   fields commute.
+* `TauCeti.SymplecticForm.polar_hessianQuadraticForm_hamiltonianVectorField_eq_zero`: at a
+  critical point of `f`, the Hamiltonian vector of a function Poisson-commuting with `f` near the
+  point lies in the radical of the Hessian of `f`.
 
 ## References
 
@@ -478,6 +481,39 @@ theorem commute_fderiv_hamiltonianVectorField {F G : V → ℝ} {x : V} (hF : Co
   rw [← fderiv_hamiltonianVectorField ω hF, ← fderiv_hamiltonianVectorField ω hG] at h
   refine (commute_iff_eq _ _).2 (ContinuousLinearMap.ext fun v ↦ ?_)
   simpa using LinearMap.congr_fun h.eq v
+
+/-- **The Hamiltonian vector of a commuting function lies in the radical of the Hessian.** If `f`
+is `C²` and critical at `x`, and `H` is `C²` at `x` and Poisson-commutes with `f` on a
+neighbourhood of `x`, then the Hessian of `f` at `x` pairs `X_H(x)` with every vector to zero.
+Indeed `df(X_H) = -{H, f}` vanishes near `x`, and its derivative at `x` is
+`v ↦ D²f_x(v, X_H(x))` because `df_x = 0`. -/
+theorem polar_hessianQuadraticForm_hamiltonianVectorField_eq_zero {f H : V → ℝ} {x : V}
+    (hf : ContDiffAt ℝ 2 f x) (hfx : fderiv ℝ f x = 0) (hH : ContDiffAt ℝ 2 H x)
+    (hHf : ω.poissonBracket H f =ᶠ[𝓝 x] 0) (v : V) :
+    QuadraticMap.polar (hessianQuadraticForm f x) (ω.hamiltonianVectorField H x) v = 0 := by
+  have hdf := (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hdH := (hH.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) x := by
+    have hdef : ω.hamiltonianVectorField H =
+        fun y ↦ ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H y) :=
+      funext (hamiltonianVectorField_def ω H)
+    rw [hdef]
+    exact (ω.toBilinForm.toContinuousBilinearMap.inverse.hasFDerivAt.comp x
+      hdH.hasFDerivAt).differentiableAt
+  -- The function `y ↦ df_y (X_H y) = -{H, f}(y)` vanishes near `x`.
+  have hzero : (fun y ↦ fderiv ℝ f y (ω.hamiltonianVectorField H y)) =ᶠ[𝓝 x] fun _ ↦ 0 := by
+    filter_upwards [hHf] with y hy
+    rw [← apply_hamiltonianVectorField, ← neg_eq_zero, ω.neg_eq]
+    simpa [poissonBracket_def] using hy
+  have hderiv := hdf.hasFDerivAt.clm_apply hX.hasFDerivAt
+  rw [hzero.hasFDerivAt_iff, hfx, ContinuousLinearMap.zero_comp, zero_add] at hderiv
+  have h0 := congr($((hasFDerivAt_const (0 : ℝ) x).unique hderiv) v)
+  simp only [zero_apply, ContinuousLinearMap.flip_apply] at h0
+  rw [QuadraticMap.polar]
+  simp only [hessianQuadraticForm_apply, map_add, add_apply]
+  rw [hf.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])
+    (ω.hamiltonianVectorField H x) v, ← h0]
+  ring
 
 end Analytic
 

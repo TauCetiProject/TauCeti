@@ -176,8 +176,8 @@ theorem mem_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n} (hj : P.vertex j
   rw [hj] at hnext
   rw [mem_vertexSector_iff, mem_closure_leftHalfPlane_iff_sideForm_nonpos,
     mem_closure_leftHalfPlane_iff_sideForm_nonpos,
-    hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
-    hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
+    hprev.sideForm_eq_of_inr_infty_right,
+    hnext.sideForm_eq_of_inr_infty_left, coe_re,
     sub_nonpos, sub_nonpos, and_comm]
 
 /-- At a vertex at `∞`, the interior of the sector is the open vertical strip between the
@@ -192,8 +192,8 @@ theorem mem_interior_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n}
   rw [hj] at hnext
   rw [mem_interior_vertexSector_iff, mem_leftHalfPlane_iff_sideForm_neg,
     mem_leftHalfPlane_iff_sideForm_neg,
-    hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
-    hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
+    hprev.sideForm_eq_of_inr_infty_right,
+    hnext.sideForm_eq_of_inr_infty_left, coe_re,
     sub_neg, sub_neg, and_comm]
 
 /-- At a vertex at `∞`, the vertical through the next vertex lies strictly to the left of the
@@ -207,7 +207,7 @@ theorem re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty {j : Fin n}
     (hj ▸ (P.vertex_ne_vertex_add_one j).symm)
     (fun h ↦ add_one_add_one_ne_self P.three_le j (by rw [h, sub_add_cancel]))
     (fun h ↦ P.vertex_ne_vertex_add_one j (by rw [sub_add_cancel] at h; rw [h]))
-  rwa [hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
+  rwa [hprev.sideForm_eq_of_inr_infty_right,
     sub_neg] at h
 
 /-- Near an ideal vertex at `∞`, the polygon agrees with the vertical strip of its vertex sector:

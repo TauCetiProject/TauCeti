@@ -19,9 +19,8 @@ value algebra. No antipode is needed for the assembly or base change: these use 
 structure on finite comodules. Compatibility with the point action additionally assumes a Hopf
 algebra, whose antipode makes each point action invertible.
 
-The base-changed family is natural in the comodule, is the identity at the tensor unit, and is
-compatible with the tensor comparison, because base change of endomorphisms
-(`Module.End.mapValue`) preserves each of those. Feeding it to
+The base-changed family is natural in the comodule and compatible with the tensor comparison,
+because base change of endomorphisms (`Module.End.mapValue`) preserves both. Feeding it to
 `TauCeti.Tannaka.monoidalAutOfComponents` produces the base-changed tensor automorphism.
 
 Compatibility with the point action is `tensorAutMapValue_fgPointTensorIso`: pushing a point
@@ -76,19 +75,6 @@ private theorem baseChangeComponent_natural (f : A →ₐ[R] B)
     (scalarExtensionComponent R H A η M) (scalarExtensionComponent R H A η N)
     (scalarExtensionComponent_natural R H A η g)
 
-/-- The base-changed component family of a tensor automorphism is the identity at the tensor
-unit. -/
-private theorem baseChangeComponent_tensorUnit (f : A →ₐ[R] B)
-    (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor R H A)) :
-    Module.End.mapValueGL f
-        (scalarExtensionComponentGL R H A η (𝟙_ (FGComoduleCat R H))) = 1 := by
-  have h1 : scalarExtensionComponentGL R H A η (𝟙_ (FGComoduleCat R H)) = 1 := by
-    apply Units.ext
-    rw [scalarExtensionComponentGL_coe, scalarExtensionComponent_tensorUnit,
-      ← Module.End.one_eq_id]
-    rfl
-  rw [h1, map_one]
-
 /-- The base-changed component family of a tensor automorphism is compatible with the tensor
 comparison of scalar extensions. -/
 private theorem baseChangeComponent_tensor (f : A →ₐ[R] B)
@@ -120,7 +106,6 @@ noncomputable def tensorAutMapValue (f : A →ₐ[R] B)
   monoidalAutOfComponents R H B
     (fun M ↦ Module.End.mapValueGL f (scalarExtensionComponentGL R H A η M))
     (fun {_ _} g ↦ baseChangeComponent_natural R H A B f η g)
-    (baseChangeComponent_tensorUnit R H A B f η)
     (baseChangeComponent_tensor R H A B f η)
 
 /-- The transported component of a base-changed tensor automorphism is the base change of the

@@ -19,8 +19,9 @@ nontrivially, as do three subspaces whose dimensions sum to more than twice the 
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
-dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
-subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
+of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
@@ -138,6 +139,43 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
+
+/-- A subspace of rank at least `k` contains a subspace of rank exactly `k`: the span of `k`
+linearly independent vectors of it. The rank of `M` may be an infinite cardinal. -/
+theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) ≤ Module.rank 𝕜 M) :
+    ∃ N ≤ M, Module.rank 𝕜 N = k := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank hk
+  have hv' : LinearIndependent 𝕜 (M.subtype ∘ v) := hv.map' M.subtype M.ker_subtype
+  have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range (M.subtype ∘ v))
+  refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
+    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).2), ?_⟩
+  rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
+
+/-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
+`dim G + 1`, `T` and the kernel of a surjection `π` span the space, and some `v ∈ T` with
+`dg v ≠ 0` for a linear form `dg` lies in the kernel of `π`, then `T ⊓ ker dg` meets `ker π`
+trivially, that is, `π` is injective on `T ⊓ ker dg`. -/
+theorem disjoint_inf_ker_ker_of_finrank_eq_succ {G : Type*} [AddCommGroup G] [Module 𝕜 G]
+    {T : Submodule 𝕜 E} {π : E →ₗ[𝕜] G} {dg : E →ₗ[𝕜] 𝕜} {v : E}
+    (hπs : Function.Surjective π) (hTπ : T ⊔ LinearMap.ker π = ⊤)
+    (hdim : Module.finrank 𝕜 T = Module.finrank 𝕜 G + 1) (hvs : v ∈ T) (hvπ : π v = 0)
+    (hgv : dg v ≠ 0) :
+    Disjoint (T ⊓ LinearMap.ker dg) (LinearMap.ker π) := by
+  have : FiniteDimensional 𝕜 T := Module.finite_of_finrank_eq_succ hdim
+  have hv0 : v ≠ 0 := by rintro rfl; exact hgv (map_zero _)
+  have hsurj : Function.Surjective (π.domRestrict T) :=
+    (LinearMap.surjective_domRestrict_iff hπs).2 (codisjoint_iff.2 hTπ)
+  have : FiniteDimensional 𝕜 G := Module.Finite.of_surjective _ hsurj
+  have hker : LinearMap.ker (π.domRestrict T) = (T ⊓ LinearMap.ker π).comap T.subtype := by
+    rw [LinearMap.ker_domRestrict, Submodule.comap_inf, Submodule.comap_subtype_self, top_inf_eq]
+  have hkerπ := LinearMap.finrank_range_add_finrank_ker (π.domRestrict T)
+  rw [LinearMap.range_eq_top_of_surjective _ hsurj, finrank_top, hker,
+    (Submodule.comapSubtypeEquivOfLe inf_le_left).finrank_eq] at hkerπ
+  have hline : T ⊓ LinearMap.ker π = 𝕜 ∙ v :=
+    eq_span_singleton_of_mem_of_finrank_eq_one (by omega) ⟨hvs, hvπ⟩ hv0
+  rw [disjoint_iff, inf_right_comm, hline]
+  exact (Submodule.disjoint_span_singleton_of_notMem
+    (s := LinearMap.ker dg) fun h ↦ hgv (LinearMap.mem_ker.1 h)).symm.eq_bot
 
 /-- A subspace with more dimensions than a finite set has elements contains a vector outside the
 span of the set. -/

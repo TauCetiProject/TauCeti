@@ -112,13 +112,14 @@ universe u u' v v'
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 variable (k' F')
 
 section FiniteFibres
 
-variable [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+variable [Algebra.IsIntegral F F']
+  [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-- The candidate coefficient family of the conorm is finitely supported: a place contributing to
 it lies over a place in the support of `D`, and each of those has only finitely many places above
@@ -412,7 +413,8 @@ end Degree
 
 section FiniteFibres
 
-variable [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+variable [Algebra.IsIntegral F F']
+  [hfinite : ∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
 
 /-! ### Principal divisors and divisor classes -/
 
