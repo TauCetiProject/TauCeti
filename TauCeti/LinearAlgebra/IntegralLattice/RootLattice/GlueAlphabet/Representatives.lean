@@ -504,6 +504,70 @@ theorem glueDualVector_zero (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLace
     t.glueDualVector hv ht 0 = 0 :=
   Subtype.ext (t.glueVector_zero ht)
 
+/-- Transporting a discriminant class along `Isometry.ofEq` identifies dual representatives with the
+same ambient coordinate vector. -/
+private theorem mk_eq_discriminantGroupEquiv_ofEq_mk {V : Type*} [AddCommGroup V] [Module ℚ V]
+    {L M : IntegralLattice V} (h : L = M) (x : M.dualCarrier) (y : L.dualCarrier)
+    (hxy : (x : V) = (y : V)) :
+    (Submodule.Quotient.mk x : M.DiscriminantGroup) =
+      (Isometry.ofEq h).discriminantGroupEquiv (Submodule.Quotient.mk y) := by
+  rw [Isometry.discriminantGroupEquiv_mk]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext
+    (hxy.trans (((Isometry.ofEq h).coe_dualCarrierEquiv_apply y).trans
+      (Isometry.ofEq_apply h y)).symm))
+
+/-- In every valid simply-laced Dynkin type, the representative of label `0` projects to the zero
+discriminant class `glueAlphabetIsometry (glueLabelEquiv 0)`. -/
+private theorem mk_glueLabelVector_zero (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
+    (h0 : 0 < t.glueLabelCount) :
+    Submodule.Quotient.mk ⟨t.glueLabelVector 0,
+        t.glueLabelVector_mem_dualCarrier hv ht h0⟩ =
+      t.glueAlphabetIsometry hv ht (t.glueLabelEquiv ht ⟨0, h0⟩) := by
+  have hzero : (⟨t.glueLabelVector 0, t.glueLabelVector_mem_dualCarrier hv ht h0⟩ :
+      (t.rootLattice ht).dualCarrier) = 0 := Subtype.ext t.glueLabelVector_zero
+  have heq : (⟨0, h0⟩ : Fin t.glueLabelCount) = ⟨0, t.glueLabelCount_pos ht⟩ := rfl
+  rw [heq, glueLabelEquiv_zero, map_zero, hzero, Submodule.Quotient.mk_zero]
+  rfl
+
+/-- Regardless of parity, `rootLatticeIsometryCheckerboard` maps the class of label `1` of `Dₙ` to
+`checkerboardSpinorClass n`. -/
+private theorem discriminantGroupEquiv_mk_glueLabelVector_D_one (n : ℕ) (hv : (D n).Valid)
+    (ht : (D n).IsSimplyLaced) (h1 : 1 < (D n).glueLabelCount) :
+    (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv
+        (Submodule.Quotient.mk ⟨(D n).glueLabelVector 1,
+          (D n).glueLabelVector_mem_dualCarrier hv ht h1⟩) =
+      checkerboardSpinorClass n := by
+  rw [Isometry.discriminantGroupEquiv_mk, mk_eq_checkerboardSpinorClass_iff,
+    Isometry.coe_dualCarrierEquiv_apply,
+    rootLatticeIsometryCheckerboard_glueLabelVector_one n (valid_D.mp hv) ht, sub_self]
+  exact zero_mem _
+
+/-- Regardless of parity, `rootLatticeIsometryCheckerboard` maps the class of label `2` of `Dₙ` to
+`checkerboardVectorClass n`. -/
+private theorem discriminantGroupEquiv_mk_glueLabelVector_D_two (n : ℕ) [NeZero n]
+    (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) (h2 : 2 < (D n).glueLabelCount) :
+    (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv
+        (Submodule.Quotient.mk ⟨(D n).glueLabelVector 2,
+          (D n).glueLabelVector_mem_dualCarrier hv ht h2⟩) =
+      checkerboardVectorClass n := by
+  rw [Isometry.discriminantGroupEquiv_mk, mk_eq_checkerboardVectorClass_iff,
+    Isometry.coe_dualCarrierEquiv_apply,
+    rootLatticeIsometryCheckerboard_glueLabelVector_two n (valid_D.mp hv) ht, sub_self]
+  exact zero_mem _
+
+/-- Regardless of parity, `rootLatticeIsometryCheckerboard` maps the class of label `3` of `Dₙ` to
+`checkerboardCospinorClass n`. -/
+private theorem discriminantGroupEquiv_mk_glueLabelVector_D_three (n : ℕ) [NeZero n]
+    (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) (h3 : 3 < (D n).glueLabelCount) :
+    (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv
+        (Submodule.Quotient.mk ⟨(D n).glueLabelVector 3,
+          (D n).glueLabelVector_mem_dualCarrier hv ht h3⟩) =
+      checkerboardCospinorClass n := by
+  rw [Isometry.discriminantGroupEquiv_mk, mk_eq_checkerboardCospinorClass_iff,
+    Isometry.coe_dualCarrierEquiv_apply,
+    rootLatticeIsometryCheckerboard_glueLabelVector_three n (valid_D.mp hv) ht, sub_self]
+  exact zero_mem _
+
 /-- Helper: in `Dₙ`, the quotient class of `glueLabelVector a` matches `glueAlphabetIsometry` on
 `glueLabelEquiv ht a`. -/
 private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).IsSimplyLaced)
@@ -513,62 +577,34 @@ private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).Is
       (D n).glueAlphabetIsometry hv ht ((D n).glueLabelEquiv ht a) := by
   have hn4 : 4 ≤ n := valid_D.mp hv
   have : NeZero n := ⟨by omega⟩
-  set e := rootLatticeIsometryCheckerboard n hn4 ht
-  have hcoe (k : Fin 4) :
-      (e.dualCarrierEquiv ⟨(D n).glueLabelVector k.val,
-        (D n).glueLabelVector_mem_dualCarrier hv ht k.isLt⟩ : Fin n → ℚ) =
-        e ((D n).glueLabelVector k.val) :=
-    e.coe_dualCarrierEquiv_apply _
   obtain ⟨k, hk⟩ := a
+  rcases Nat.eq_zero_or_pos k with rfl | hkpos
+  · exact mk_glueLabelVector_zero (D n) hv ht hk
+  apply (rootLatticeIsometryCheckerboard n hn4 ht).discriminantGroupEquiv.injective
   rcases Nat.even_or_odd n with hpar | hpar
-  · refine Eq.trans ?_ (glueAlphabetIsometry_D_apply_of_even n hv ht hpar _).symm
-    apply e.discriminantGroupEquiv.injective
-    rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
+  · rw [glueAlphabetIsometry_D_apply_of_even n hv ht hpar, Isometry.discriminantGroupEquiv_symm,
       LinearEquiv.apply_symm_apply, glueLabelEquiv_D_of_even n ht hpar]
+    dsimp only
     interval_cases k
-    · have hd : (((0 / 2 : ℕ) : ZMod 2), ((0 % 2 : ℕ) : ZMod 2)) = 0 := by decide
-      rw [hd, map_zero, Submodule.Quotient.mk_eq_zero, mem_carrierInDual_iff, hcoe ⟨0, hk⟩,
-        glueLabelVector_zero, map_zero]
-      exact zero_mem _
-    · have hd : (((1 / 2 : ℕ) : ZMod 2), ((1 % 2 : ℕ) : ZMod 2)) = (0, 1) := by decide
-      rw [hd, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
-        mk_eq_checkerboardSpinorClass_iff, hcoe ⟨1, hk⟩,
-        rootLatticeIsometryCheckerboard_glueLabelVector_one n hn4 ht, sub_self]
-      exact zero_mem _
-    · have hd : (((2 / 2 : ℕ) : ZMod 2), ((2 % 2 : ℕ) : ZMod 2)) = (1, 0) := by decide
-      rw [hd, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero,
-        mk_eq_checkerboardVectorClass_iff, hcoe ⟨2, hk⟩,
-        rootLatticeIsometryCheckerboard_glueLabelVector_two n hn4 ht, sub_self]
-      exact zero_mem _
-    · have hd : (((3 / 2 : ℕ) : ZMod 2), ((3 % 2 : ℕ) : ZMod 2)) = (1, 1) := by decide
-      rw [hd, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one,
-        mk_eq_checkerboardCospinorClass_iff, hcoe ⟨3, hk⟩,
-        rootLatticeIsometryCheckerboard_glueLabelVector_three n hn4 ht, sub_self]
-      exact zero_mem _
-  · refine Eq.trans ?_ (glueAlphabetIsometry_D_apply_of_odd n hv ht hpar _).symm
-    apply e.discriminantGroupEquiv.injective
-    rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_one n hv ht hk).trans <|
+        (zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one n hpar).symm.trans
+          (congrArg _ (by decide))
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_two n hv ht hk).trans <|
+        (zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero n hpar).symm.trans
+          (congrArg _ (by decide))
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_three n hv ht hk).trans <|
+        (zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one n hpar).symm.trans
+          (congrArg _ (by decide))
+  · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, Isometry.discriminantGroupEquiv_symm,
       LinearEquiv.apply_symm_apply, glueLabelEquiv_D_of_odd n ht hpar]
+    dsimp only
     interval_cases k
-    · have hd : ((0 : ℕ) : ZMod 4) = 0 := by decide
-      rw [hd, map_zero, Submodule.Quotient.mk_eq_zero, mem_carrierInDual_iff, hcoe ⟨0, hk⟩,
-        glueLabelVector_zero, map_zero]
-      exact zero_mem _
-    · have hd : ((1 : ℕ) : ZMod 4) = 1 := by decide
-      rw [hd, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
-        mk_eq_checkerboardSpinorClass_iff, hcoe ⟨1, hk⟩,
-        rootLatticeIsometryCheckerboard_glueLabelVector_one n hn4 ht, sub_self]
-      exact zero_mem _
-    · have hd : ((2 : ℕ) : ZMod 4) = 2 := by decide
-      rw [hd, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two,
-        mk_eq_checkerboardVectorClass_iff, hcoe ⟨2, hk⟩,
-        rootLatticeIsometryCheckerboard_glueLabelVector_two n hn4 ht, sub_self]
-      exact zero_mem _
-    · have hd : ((3 : ℕ) : ZMod 4) = 3 := by decide
-      rw [hd, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three,
-        mk_eq_checkerboardCospinorClass_iff, hcoe ⟨3, hk⟩,
-        rootLatticeIsometryCheckerboard_glueLabelVector_three n hn4 ht, sub_self]
-      exact zero_mem _
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_one n hv ht hk).trans
+        (zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one n hpar).symm
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_two n hv ht hk).trans
+        (zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two n hpar).symm
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_three n hv ht hk).trans
+        (zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three n hpar).symm
 
 /-- **The representative of a bounded printed label projects to the discriminant class named by
 that label.** -/
@@ -579,88 +615,51 @@ theorem mk_glueLabelVector (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced
       t.glueAlphabetIsometry hv ht (t.glueLabelEquiv ht a) := by
   cases t with
   | A n =>
-    refine Eq.trans ?_ (glueAlphabetIsometry_A_apply n hv ht ((A n).glueLabelEquiv ht a)).symm
-    let e := Isometry.ofEq (rootLattice_A n ht).symm
     have hmem :
-        (fun j : Fin n ↦ (A n).glueLabelVector a.val j) ∈ (typeARootLattice n).dualCarrier := by
-      have hsub := (typeARootLattice n).le_dualCarrier
-        (glueLabelVector_A_sub_nsmul_mem_carrier n a.isLt.le)
-      have hw : (a.val : ℤ) • typeAFundamentalWeight n ∈ (typeARootLattice n).dualCarrier :=
-        Submodule.smul_mem _ _ (typeAFundamentalWeight_mem_dualCarrier n)
-      have hadd := Submodule.add_mem _ hsub hw
-      rwa [sub_add_cancel] at hadd
-    have hmkA : (Submodule.Quotient.mk ⟨fun j : Fin n ↦ (A n).glueLabelVector a.val j, hmem⟩ :
-        (typeARootLattice n).DiscriminantGroup) =
-        typeADiscriminantGroupEquiv n ((A n).glueLabelEquiv ht a) := by
-      rw [glueLabelEquiv_A, typeADiscriminantGroupEquiv_apply, ZMod.val_natCast_of_lt a.isLt,
-        ← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff]
-      exact glueLabelVector_A_sub_nsmul_mem_carrier n a.isLt.le
-    rw [← hmkA]
-    refine Eq.trans ?_ (e.discriminantGroupEquiv_mk _).symm
-    exact congrArg Submodule.Quotient.mk (Subtype.ext
-      ((e.coe_dualCarrierEquiv_apply ⟨fun j : Fin n ↦ (A n).glueLabelVector a.val j, hmem⟩).trans
-        (Isometry.ofEq_apply (rootLattice_A n ht).symm _)).symm)
+        (fun j : Fin n ↦ (A n).glueLabelVector a.val j) ∈ (typeARootLattice n).dualCarrier :=
+      rootLattice_A n ht ▸ (A n).glueLabelVector_mem_dualCarrier hv ht a.isLt
+    refine Eq.trans ?_ (glueAlphabetIsometry_A_apply n hv ht ((A n).glueLabelEquiv ht a)).symm
+    rw [glueLabelEquiv_A, typeADiscriminantGroupEquiv_apply, ZMod.val_natCast_of_lt a.isLt,
+      ← natCast_zsmul,
+      ← (mk_eq_zsmul_typeAFundamentalWeightClass_iff ⟨_, hmem⟩ _).mpr
+        (glueLabelVector_A_sub_nsmul_mem_carrier n a.isLt.le)]
+    exact mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_A n ht).symm _ _ rfl
   | D n => exact mk_glueLabelVector_D n hv ht a
   | E6 =>
-    refine Eq.trans ?_ (glueAlphabetIsometry_E6_apply hv ht (E6.glueLabelEquiv ht a)).symm
-    let e := Isometry.ofEq (rootLattice_E6 ht).symm
     obtain ⟨k, hk⟩ := a
-    simp only [glueLabelCount] at hk
-    rw [glueLabelEquiv_E6]
+    have hk3 : k < 3 := hk
     interval_cases k
-    · have hd : ((0 : ℕ) : ZMod 3) = 0 := by decide
-      rw [hd, map_zero, map_zero]
-      have hzero : (⟨E6.glueLabelVector (⟨0, hk⟩ : Fin E6.glueLabelCount).val,
-          E6.glueLabelVector_mem_dualCarrier hv ht hk⟩ : (E6.rootLattice ht).dualCarrier) = 0 :=
-        Subtype.ext (glueLabelVector_zero E6)
-      exact (congrArg Submodule.Quotient.mk hzero).trans (Submodule.Quotient.mk_zero _)
-    · have hd : ((1 : ℕ) : ZMod 3) = 1 := by decide
-      rw [hd, typeE₆DiscriminantGroupEquiv_apply_one, ← mk_typeE₆MinusculeWeightDual]
-      refine Eq.trans ?_ (e.discriminantGroupEquiv_mk _).symm
-      exact congrArg Submodule.Quotient.mk (Subtype.ext
-        ((e.coe_dualCarrierEquiv_apply typeE₆MinusculeWeightDual).trans
-          ((Isometry.ofEq_apply (rootLattice_E6 ht).symm _).trans
-            coe_typeE₆MinusculeWeightDual)).symm)
-    · have hd : ((2 : ℕ) : ZMod 3) = -1 := by decide
-      rw [hd, map_neg, typeE₆DiscriminantGroupEquiv_apply_one, ← mk_typeE₆MinusculeWeightDual,
-        ← Submodule.Quotient.mk_neg]
-      refine Eq.trans ?_ (e.discriminantGroupEquiv_mk _).symm
-      exact congrArg Submodule.Quotient.mk (Subtype.ext
-        ((e.coe_dualCarrierEquiv_apply (-typeE₆MinusculeWeightDual)).trans
-          ((Isometry.ofEq_apply (rootLattice_E6 ht).symm _).trans
-            ((Submodule.coe_neg typeE₆RootLattice.dualCarrier typeE₆MinusculeWeightDual).trans
-              (congrArg Neg.neg coe_typeE₆MinusculeWeightDual)))).symm)
+    · exact mk_glueLabelVector_zero E6 hv ht hk
+    · refine Eq.trans ?_ (glueAlphabetIsometry_E6_apply hv ht (E6.glueLabelEquiv ht ⟨1, hk⟩)).symm
+      have hd : ((1 : ℕ) : ZMod 3) = 1 := rfl
+      rw [glueLabelEquiv_E6, hd, typeE₆DiscriminantGroupEquiv_apply_one,
+        ← mk_typeE₆MinusculeWeightDual]
+      exact mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_E6 ht).symm _ _
+        (glueLabelVector_E6_one.trans coe_typeE₆MinusculeWeightDual.symm)
+    · refine Eq.trans ?_ (glueAlphabetIsometry_E6_apply hv ht (E6.glueLabelEquiv ht ⟨2, hk⟩)).symm
+      have hd : ((2 : ℕ) : ZMod 3) = -1 := by decide
+      rw [glueLabelEquiv_E6, hd, map_neg, typeE₆DiscriminantGroupEquiv_apply_one,
+        ← mk_typeE₆MinusculeWeightDual, ← Submodule.Quotient.mk_neg]
+      exact mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_E6 ht).symm _ _
+        (glueLabelVector_E6_two.trans
+          ((congrArg Neg.neg coe_typeE₆MinusculeWeightDual).symm.trans
+            (Submodule.coe_neg _ _).symm))
   | E7 =>
-    refine Eq.trans ?_ (glueAlphabetIsometry_E7_apply hv ht (E7.glueLabelEquiv ht a)).symm
-    let e := Isometry.ofEq (rootLattice_E7 ht).symm
     obtain ⟨k, hk⟩ := a
-    simp only [glueLabelCount] at hk
-    rw [glueLabelEquiv_E7]
+    have hk2 : k < 2 := hk
     interval_cases k
-    · have hd : ((0 : ℕ) : ZMod 2) = 0 := by decide
-      rw [hd, map_zero, map_zero]
-      have hzero : (⟨E7.glueLabelVector (⟨0, hk⟩ : Fin E7.glueLabelCount).val,
-          E7.glueLabelVector_mem_dualCarrier hv ht hk⟩ : (E7.rootLattice ht).dualCarrier) = 0 :=
-        Subtype.ext (glueLabelVector_zero E7)
-      exact (congrArg Submodule.Quotient.mk hzero).trans (Submodule.Quotient.mk_zero _)
-    · have hd : ((1 : ℕ) : ZMod 2) = 1 := by decide
-      rw [hd, typeE₇DiscriminantGroupEquiv_apply_one, ← mk_typeE₇MinusculeWeightDual]
-      refine Eq.trans ?_ (e.discriminantGroupEquiv_mk _).symm
-      exact congrArg Submodule.Quotient.mk (Subtype.ext
-        ((e.coe_dualCarrierEquiv_apply typeE₇MinusculeWeightDual).trans
-          ((Isometry.ofEq_apply (rootLattice_E7 ht).symm _).trans
-            coe_typeE₇MinusculeWeightDual)).symm)
+    · exact mk_glueLabelVector_zero E7 hv ht hk
+    · refine Eq.trans ?_ (glueAlphabetIsometry_E7_apply hv ht (E7.glueLabelEquiv ht ⟨1, hk⟩)).symm
+      have hd : ((1 : ℕ) : ZMod 2) = 1 := rfl
+      rw [glueLabelEquiv_E7, hd, typeE₇DiscriminantGroupEquiv_apply_one,
+        ← mk_typeE₇MinusculeWeightDual]
+      exact mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_E7 ht).symm _ _
+        (glueLabelVector_E7_one.trans coe_typeE₇MinusculeWeightDual.symm)
   | E8 =>
     obtain ⟨k, hk⟩ := a
-    simp only [glueLabelCount] at hk
+    have hk1 : k < 1 := hk
     obtain rfl : k = 0 := by omega
-    have hzero : (⟨E8.glueLabelVector (⟨0, hk⟩ : Fin E8.glueLabelCount).val,
-        E8.glueLabelVector_mem_dualCarrier hv ht hk⟩ : (E8.rootLattice ht).dualCarrier) = 0 :=
-      Subtype.ext (glueLabelVector_zero E8)
-    have hrhs : E8.glueAlphabetIsometry hv ht (E8.glueLabelEquiv ht ⟨0, hk⟩) = 0 := by
-      rw [glueLabelEquiv_E8, map_zero]
-    exact ((congrArg Submodule.Quotient.mk hzero).trans (Submodule.Quotient.mk_zero _)).trans
-      hrhs.symm
+    exact mk_glueLabelVector_zero E8 hv ht hk
   | B n => exact absurd ht (not_isSimplyLaced_B n)
   | C n => exact absurd ht (not_isSimplyLaced_C n)
   | F4 => exact absurd ht not_isSimplyLaced_F4

@@ -186,12 +186,42 @@ theorem lattice_carrier_eq_sup_span (r : RootfulNiemeierType)
     ∀ i, Fin (r.componentType i).rank → ℚ :=
   glueDigitsVector r.componentType l
 
+/-- Expanding `r.glueVector` as `glueDigitsVector` on the row's components. -/
+theorem glueVector_def (r : RootfulNiemeierType) (l : List ℕ) :
+    r.glueVector l = glueDigitsVector r.componentType l :=
+  (rfl)
+
+/-- Evaluating `r.glueVector l` at component `i` gives `(r.componentType i).glueLabelVector` of the
+`i`-th digit. -/
+@[simp]
+theorem glueVector_apply (r : RootfulNiemeierType) (l : List ℕ)
+    (i : Fin r.components.length) :
+    r.glueVector l i = (r.componentType i).glueLabelVector (l.getD i 0) :=
+  (rfl)
+
 /-- **The computable canonical coordinate vector of a glue word** of row `r`, assembling
 `TauCeti.DynkinType.glueVector` componentwise via `TauCeti.DynkinType.glueWordVector`. -/
 @[expose] def glueWordVector (r : RootfulNiemeierType)
     (w : ∀ i, (r.componentType i).glueAlphabet (r.isSimplyLaced_componentType i)) :
     ∀ i, Fin (r.componentType i).rank → ℚ :=
   DynkinType.glueWordVector r.componentType r.isSimplyLaced_componentType w
+
+/-- Expanding `r.glueWordVector` as `DynkinType.glueWordVector` on the row's components. -/
+theorem glueWordVector_def (r : RootfulNiemeierType)
+    (w : ∀ i, (r.componentType i).glueAlphabet (r.isSimplyLaced_componentType i)) :
+    r.glueWordVector w =
+      DynkinType.glueWordVector r.componentType r.isSimplyLaced_componentType w :=
+  (rfl)
+
+/-- Evaluating `r.glueWordVector w` at component `i` gives `(r.componentType i).glueVector` of
+`w i`. -/
+@[simp]
+theorem glueWordVector_apply (r : RootfulNiemeierType)
+    (w : ∀ i, (r.componentType i).glueAlphabet (r.isSimplyLaced_componentType i))
+    (i : Fin r.components.length) :
+    r.glueWordVector w i =
+      (r.componentType i).glueVector (r.isSimplyLaced_componentType i) (w i) :=
+  (rfl)
 
 /-- Evaluating `r.glueVector` on the encoded digits of `w` recovers `r.glueWordVector w`. -/
 @[simp]
