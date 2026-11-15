@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 /-!
 # Coprimality and nonzero least common multiples
 
+Shifting an inner summand by `m` preserves coprimality with `m` (`Nat.coprime_add_self_add_right`).
 For `q ≠ 0` and `N ≠ 0`, the natural numbers `q` and `q ^ N - 1` are coprime, because any common
 divisor of `q` and `q ^ N - 1` also divides `q ^ N - (q ^ N - 1) = 1`. This is the coprimality
 needed to view `q` as a unit of `ZMod (q ^ N - 1)`.
@@ -25,6 +26,7 @@ coprime only to `1`.
 
 ## Main results
 
+* `Nat.coprime_add_self_add_right`: shifting an inner summand by `m` preserves coprimality with `m`.
 * `Nat.coprime_pow_sub_one`: `q` is coprime to `q ^ N - 1`.
 * `Nat.neZero_lcm`: `NeZero (lcm m n)` for nonzero `m` and `n`.
 * `Nat.Coprime.eq_one_of_exists_eq_zero`: coprime products and a zero entry in one family force the
@@ -38,6 +40,11 @@ namespace Nat
 /-- The least common multiple of two nonzero natural numbers is nonzero. -/
 instance neZero_lcm (m n : ℕ) [NeZero m] [NeZero n] : NeZero (lcm m n) :=
   ⟨lcm_ne_zero (NeZero.ne m) (NeZero.ne n)⟩
+
+/-- Shifting an inner summand by `m` preserves coprimality with `m`. -/
+@[simp]
+theorem coprime_add_self_add_right {m n k : ℕ} : Coprime m (n + m + k) ↔ Coprime m (n + k) := by
+  rw [Nat.add_right_comm n m k, coprime_add_self_right]
 
 /-- If `q ≠ 0` and `N ≠ 0`, then `q` is coprime to `q ^ N - 1`. -/
 theorem coprime_pow_sub_one {q N : ℕ} (hq : q ≠ 0) (hN : N ≠ 0) : q.Coprime (q ^ N - 1) :=

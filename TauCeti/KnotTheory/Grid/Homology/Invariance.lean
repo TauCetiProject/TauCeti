@@ -22,7 +22,8 @@ in the sense of `GridDiagram.IsKnot.UnblockedHomologyIsomorphic`
 comparisons, together with cyclic permutations and commutations, cover all eight elementary
 stabilization types. Passing to the equivalence closure includes arbitrary destabilizations and
 move sequences between diagrams of different sizes. Consequently the diagram invariant
-`GridDiagram.IsKnot.tau` is unchanged by grid moves (`GridDiagram.IsKnot.tau_eq_of_movesTo`).
+`GridDiagram.IsKnot.tau` is unchanged by grid moves (`GridDiagram.IsKnot.tau_eq_of_movesTo`), as
+well as by diagonal reflection (`GridDiagram.IsKnot.tau_transpose`).
 
 This establishes independence of the presenting diagram for the isomorphism class of the
 Alexander-graded `K[U]`-module `GH⁻`, and hence for `τ`. It does not identify the homology maps
@@ -34,8 +35,9 @@ associated to different move sequences, and it says nothing about the Maslov gra
   including a destabilization, preserves `GH⁻` as an Alexander-graded `K[U]`-module.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_of_movesTo`: **invariance of `GH⁻`**,
   knot grids connected by grid moves have isomorphic Alexander-graded `GH⁻`.
-* `TauCeti.GridDiagram.IsKnot.tau_eq_of_movesTo`: knot grids connected by grid moves have the
-  same invariant `τ`.
+* `TauCeti.GridDiagram.IsKnot.tau_eq_of_movesTo` and `TauCeti.GridDiagram.IsKnot.tau_transpose`:
+  knot grids connected by grid moves, or related by diagonal reflection, have the same invariant
+  `τ`.
 
 ## References
 
@@ -48,6 +50,8 @@ invariance theorems using `GridDiagram.IsStabilization.exists_commutationMovesTo
 public section
 
 namespace TauCeti.GridDiagram.IsKnot
+
+section MovesTo
 
 variable {n m : ℕ} {G : GridDiagram n} {G' : GridDiagram m}
     (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
@@ -111,5 +115,14 @@ theorem unblockedHomologyIsomorphic_of_movesTo (hG' : G'.IsKnot) (h : G.MovesTo 
 theorem tau_eq_of_movesTo (hG' : G'.IsKnot) (h : G.MovesTo G') :
     hG.tau K = hG'.tau K :=
   (hG.unblockedHomologyIsomorphic_of_movesTo K hG' h).tau_eq
+
+end MovesTo
+
+/-- Diagonal reflection preserves the invariant `τ` of a knot grid diagram. -/
+@[simp]
+theorem tau_transpose {n : ℕ} {G : GridDiagram n} (hG : G.transpose.IsKnot)
+    (K : Type*) [CommRing K] [CharP K 2] :
+    hG.tau K = ((G.isKnot_transpose).mp hG).tau K :=
+  (((G.isKnot_transpose).mp hG).unblockedHomologyIsomorphic_transpose K).tau_eq.symm
 
 end TauCeti.GridDiagram.IsKnot

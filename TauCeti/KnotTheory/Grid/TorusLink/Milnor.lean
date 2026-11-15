@@ -7,6 +7,8 @@ module
 
 public import TauCeti.KnotTheory.Grid.TorusLink.UnknottingNumber
 import Mathlib.Algebra.Field.ZMod
+import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Data.Nat.GCD
 import TauCeti.KnotTheory.Grid.CrossingChange.Tau
 
 /-!
@@ -78,10 +80,7 @@ open GridDiagram
 presented by `torusLink p q` has unknotting number at least `p * q / 2`. -/
 theorem le_unknottingNumber_toGridLink_torusLink (p q : ℕ) (h : (p + 1).Coprime (q + 1)) :
     ((p * q / 2 : ℕ) : ℕ∞) ≤ (torusLink p q).toGridLink.unknottingNumber := by
-  let _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hK : (torusLink p q).toGridLink.IsKnot :=
-    (isKnot_toGridLink _).mpr ((isKnot_torusLink_iff p q).mpr h)
-  have hle := hK.natAbs_tau_le_unknottingNumber (ZMod 2)
+  have hle := (isKnot_toGridLink_torusLink h).natAbs_tau_le_unknottingNumber (ZMod 2)
   rwa [tau_toGridLink_torusLink (ZMod 2) h, Int.natAbs_neg, Int.natAbs_natCast] at hle
 
 /-- **The Milnor conjecture for grid torus knots.** If `P = p + 1` and `Q = q + 1` are coprime, the
@@ -92,32 +91,17 @@ theorem unknottingNumber_toGridLink_torusLink (p q : ℕ) (h : (p + 1).Coprime (
   le_antisymm (unknottingNumber_toGridLink_torusLink_le p q h)
     (le_unknottingNumber_toGridLink_torusLink p q h)
 
-/-- Adding `p + 1` to the second factor increases `p * q / 2` by `(p + 1).choose 2`. -/
-private theorem mul_add_succ_div_two (p q : ℕ) :
-    p * (q + (p + 1)) / 2 = (p + 1).choose 2 + p * q / 2 := by
-  obtain ⟨k, hk⟩ := (Nat.even_mul_succ_self p).two_dvd
-  have hc : (p + 1).choose 2 = k := by
-    rw [Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm, hk]
-    omega
-  rw [hc, Nat.mul_add, hk]
-  omega
-
 /-- Removing a full twist from a torus knot requires at least `(p + 1).choose 2` crossing
 changes. -/
 theorem le_crossingChangeGraph_edist_torusLink_add (p q : ℕ) (h : (p + 1).Coprime (q + 1)) :
     ((p + 1).choose 2 : ℕ∞) ≤
       crossingChangeGraph.edist (torusLink p (q + (p + 1))).toGridLink
         (torusLink p q).toGridLink := by
-  let _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have h' : (p + 1).Coprime (q + (p + 1) + 1) := by
-    rwa [Nat.add_right_comm q (p + 1) 1, Nat.coprime_add_self_right]
-  have hK₁ : (torusLink p (q + (p + 1))).toGridLink.IsKnot :=
-    (isKnot_toGridLink _).mpr ((isKnot_torusLink_iff p (q + (p + 1))).mpr h')
-  have hK₂ : (torusLink p q).toGridLink.IsKnot :=
-    (isKnot_toGridLink _).mpr ((isKnot_torusLink_iff p q).mpr h)
-  have hle := hK₁.natAbs_tau_sub_le_edist hK₂ (ZMod 2)
+  have h' := Nat.coprime_add_self_add_right.mpr h
+  have hle := (isKnot_toGridLink_torusLink h').natAbs_tau_sub_le_edist
+    (isKnot_toGridLink_torusLink h) (ZMod 2)
   rw [tau_toGridLink_torusLink (ZMod 2) h', tau_toGridLink_torusLink (ZMod 2) h,
-    mul_add_succ_div_two] at hle
+    Nat.mul_add_succ_div_two] at hle
   have hdiff :
       ((-(((p + 1).choose 2 + p * q / 2 : ℕ) : ℤ) - -((p * q / 2 : ℕ) : ℤ)).natAbs : ℕ∞) =
         ((p + 1).choose 2 : ℕ∞) :=
@@ -138,18 +122,20 @@ exactly `(p + 1).choose 2`. -/
 theorem unknottingNumber_toGridLink_torusLink_add (p q : ℕ) (h : (p + 1).Coprime (q + 1)) :
     (torusLink p (q + (p + 1))).toGridLink.unknottingNumber =
       (p + 1).choose 2 + (torusLink p q).toGridLink.unknottingNumber := by
-  have h' : (p + 1).Coprime (q + (p + 1) + 1) := by
-    rwa [Nat.add_right_comm q (p + 1) 1, Nat.coprime_add_self_right]
-  rw [unknottingNumber_toGridLink_torusLink p (q + (p + 1)) h',
-    unknottingNumber_toGridLink_torusLink p q h, ← Nat.cast_add, mul_add_succ_div_two]
+  rw [unknottingNumber_toGridLink_torusLink p (q + (p + 1))
+    (Nat.coprime_add_self_add_right.mpr h),
+    unknottingNumber_toGridLink_torusLink p q h, ← Nat.cast_add, Nat.mul_add_succ_div_two]
 
 /-- The `(p + 1, k (p + 1) + 1)` torus knot has unknotting number `k * (p + 1).choose 2`. -/
 theorem unknottingNumber_toGridLink_torusLink_mul (p k : ℕ) :
     (torusLink p (k * (p + 1))).toGridLink.unknottingNumber = k * (p + 1).choose 2 := by
-  rw [unknottingNumber_toGridLink_torusLink p (k * (p + 1))
-    ((Nat.coprime_mul_right_add_right _ _ _).mpr (Nat.coprime_one_right _)), ← Nat.cast_mul,
-    Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm (p + 1) p, Nat.mul_left_comm,
-    Nat.mul_div_assoc _ (Nat.even_mul_succ_self p).two_dvd]
+  induction k with
+  | zero =>
+    rw [Nat.zero_mul]
+    simp [torusLink_zero_right]
+  | succ k ih =>
+    rw [Nat.succ_mul, unknottingNumber_toGridLink_torusLink_add p (k * (p + 1)) (by simp), ih,
+      Nat.cast_add_one, add_one_mul, add_comm]
 
 /-- The `(2, 2k + 1)` torus knot has unknotting number `k`. -/
 theorem unknottingNumber_toGridLink_torusLink_one_two_mul (k : ℕ) :

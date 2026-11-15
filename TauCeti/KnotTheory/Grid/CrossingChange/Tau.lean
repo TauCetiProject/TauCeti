@@ -177,23 +177,14 @@ end IsKnot
 
 /-! ### Cross-commutation bounds on knot diagrams -/
 
-/-- A column cross-commutation between knot grid diagrams alters `τ` by at most `1` in absolute
-value. -/
-theorem IsColumnCrossCommutation.abs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
-    (h : G.IsColumnCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
-    (K : Type*) [CommRing K] [CharP K 2] :
-    |hG'.tau K - hG.tau K| ≤ 1 := by
-  obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff _ _).mp h
-  exact hG.abs_tau_swapColumns_sub_tau_le_one K ha
-
 /-- A column cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
 theorem IsColumnCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
     (h : G.IsColumnCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
     (K : Type*) [CommRing K] [CharP K 2] :
     (hG'.tau K - hG.tau K).natAbs ≤ 1 := by
-  have habs := h.abs_tau_sub_le_one hG hG' K
-  rw [← Int.natCast_natAbs] at habs
-  exact Nat.cast_le.mp habs
+  obtain ⟨a, ha, rfl⟩ := (isColumnCrossCommutation_iff _ _).mp h
+  exact Nat.cast_le.mp
+    ((Int.natCast_natAbs _).trans_le (hG.abs_tau_swapColumns_sub_tau_le_one K ha))
 
 /-- A row cross-commutation between knot grid diagrams alters `τ` by at most `1`. -/
 theorem IsRowCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
@@ -204,15 +195,6 @@ theorem IsRowCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagra
     ((G.isColumnCrossCommutation_transpose G').mpr h).natAbs_tau_sub_le_one
       ((G.isKnot_transpose).mpr hG) ((G'.isKnot_transpose).mpr hG') K
 
-/-- A row cross-commutation between knot grid diagrams alters `τ` by at most `1` in absolute
-value. -/
-theorem IsRowCrossCommutation.abs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
-    (h : G.IsRowCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
-    (K : Type*) [CommRing K] [CharP K 2] :
-    |hG'.tau K - hG.tau K| ≤ 1 := by
-  rw [← Int.natCast_natAbs]
-  exact Nat.cast_le.mpr (h.natAbs_tau_sub_le_one hG hG' K)
-
 /-- Any cross-commutation (of rows or columns) between knot grid diagrams alters `τ` by at most
 `1`. -/
 theorem IsCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
@@ -222,14 +204,6 @@ theorem IsCrossCommutation.natAbs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n
   rcases (isCrossCommutation_iff _ _).mp h with h | h
   · exact h.natAbs_tau_sub_le_one hG hG' K
   · exact h.natAbs_tau_sub_le_one hG hG' K
-
-/-- Any cross-commutation between knot grid diagrams alters `τ` by at most `1` in absolute value. -/
-theorem IsCrossCommutation.abs_tau_sub_le_one {n : ℕ} {G G' : GridDiagram n}
-    (h : G.IsCrossCommutation G') (hG : G.IsKnot) (hG' : G'.IsKnot)
-    (K : Type*) [CommRing K] [CharP K 2] :
-    |hG'.tau K - hG.tau K| ≤ 1 := by
-  rw [← Int.natCast_natAbs]
-  exact Nat.cast_le.mpr (h.natAbs_tau_sub_le_one hG hG' K)
 
 end GridDiagram
 
@@ -245,14 +219,6 @@ theorem IsCrossingChange.natAbs_tau_sub_le_one {L L' : GridLink}
   obtain ⟨n, G, G', hcross, rfl, rfl⟩ := (isCrossingChange_iff _ _).mp h
   rw [IsKnot.tau_toGridLink, IsKnot.tau_toGridLink]
   exact hcross.natAbs_tau_sub_le_one _ _ K
-
-/-- A crossing change between grid knots alters `τ` by at most `1` in absolute value. -/
-theorem IsCrossingChange.abs_tau_sub_le_one {L L' : GridLink}
-    (h : IsCrossingChange L L') (hL : L.IsKnot) (hL' : L'.IsKnot)
-    (K : Type*) [CommRing K] [CharP K 2] :
-    |hL'.tau K - hL.tau K| ≤ 1 := by
-  rw [← Int.natCast_natAbs]
-  exact Nat.cast_le.mpr (h.natAbs_tau_sub_le_one hL hL' K)
 
 namespace IsKnot
 
@@ -290,13 +256,6 @@ theorem natAbs_tau_le_unknottingNumber {L : GridLink} (hL : L.IsKnot)
     ((hL.tau K).natAbs : ℕ∞) ≤ L.unknottingNumber := by
   simpa only [unknottingNumber_def, tau_unknot, sub_zero] using
     hL.natAbs_tau_sub_le_edist isKnot_unknot K
-
-/-- If a grid knot can be unknotted in at most `m` crossing changes, then `|τ(L)| ≤ m`. -/
-theorem abs_tau_le_of_unknottingNumber_le {L : GridLink} (hL : L.IsKnot)
-    (K : Type*) [Field K] [CharP K 2] {m : ℕ} (hu : L.unknottingNumber ≤ m) :
-    |hL.tau K| ≤ m := by
-  rw [← Int.natCast_natAbs]
-  exact Nat.cast_le.mpr (Nat.cast_le.mp ((hL.natAbs_tau_le_unknottingNumber K).trans hu))
 
 end IsKnot
 
