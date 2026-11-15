@@ -14,7 +14,7 @@ import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.PDE.Vortex.Potential
-import TauCeti.Analysis.SpecialFunctions.Exp.Modular
+import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -23,7 +23,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 
 Let `P` be a complex polynomial of degree `m ≥ 1`. A plane vortex with zero divisor `P` is
 obtained from a solution `w` of the reduced equation `Δw = (exp (2w) h - 1) / 8 + g`, with
-`h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`, and Taubes obtains `w` as the minimizer
+`h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`, and Taubes obtains `w` as a minimizer
 of the functional `I` of `TauCeti.Vortex.sobolevReducedFunctional` on `H¹(ℂ) = W^{1,2}(ℂ)`.
 
 This file carries out the direct method of the calculus of variations:
@@ -37,26 +37,26 @@ This file carries out the direct method of the calculus of variations:
   (`TauCeti.Vortex.exists_norm_le_of_sobolevReducedFunctional_le`), and closed balls of the
   Hilbert space `H¹(ℂ)` are weakly compact.
 
-Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
-integrable.
+The minimizer is unique. The Dirichlet energy `‖∇u‖₂² / 2` is a quadratic form, the potential is
+the integral of the convex function `h (exp (2t) - 1 - 2t)` and the linear term is linear, so at
+the midpoint `m` of `u` and `v` the parallelogram law gives
 
-The minimizer is unique. For `φ(t) = exp (2t) - 1 - 2t` the midpoint defect is explicit,
-`(φ(a) + φ(b)) / 2 - φ((a + b) / 2) = (exp a - exp b)² / 2`, so where `I(u)` and `I(v)` are finite
+`2 I(m) + ‖∇(u - v)‖₂² / 4 ≤ I(u) + I(v)`
 
-`2 I((u + v) / 2) + (1 / 16) ∫ h (exp u - exp v)² ≤ I(u) + I(v)`
-
-(`TauCeti.Vortex.two_mul_sobolevReducedFunctional_midpoint_add_le`). For two minimizers `u` and
-`v`, both `I(u)` and `I(v)` are at most `I((u + v) / 2)`, so `∫ h (exp u - exp v)² ≤ 0` and
-`exp u = exp v` wherever `h > 0`, that is off the finitely many zeros of `P`
-(`TauCeti.Vortex.eq_of_forall_sobolevReducedFunctional_le`,
-`TauCeti.Vortex.existsUnique_forall_sobolevReducedFunctional_le`). The minimizer is therefore a
-function of `P`, `TauCeti.Vortex.reducedMinimizer`, characterized by
-`TauCeti.Vortex.eq_reducedMinimizer_iff`; it depends on `P` only through `I`
+(`TauCeti.Vortex.sobolevReducedFunctional_midpoint_add_add_le`). At a minimizer `u` this becomes
+the quadratic growth bound `I(u) + ‖∇(v - u)‖₂² / 4 ≤ I(v)` for every `v`
+(`TauCeti.Vortex.sobolevReducedFunctional_add_le_of_forall_le`). Two minimizers therefore have
+the same weak gradient, so they differ by a constant, which vanishes because both are square
+integrable on the plane (`TauCeti.Vortex.eq_of_forall_sobolevReducedFunctional_le`,
+`TauCeti.Vortex.existsUnique_forall_sobolevReducedFunctional_le`). The solution of the reduced
+equation obtained by minimization is thus a function of `P`, `TauCeti.Vortex.reducedMinimizer`,
+characterized by `TauCeti.Vortex.eq_reducedMinimizer_iff`; it depends on `P` only through `I`
 (`TauCeti.Vortex.reducedMinimizer_eq_of_forall_sobolevReducedFunctional_eq`). Its laws under
 translations, rotations and constant changes of the line frame are in
 `TauCeti.Analysis.PDE.Vortex.Equivariance`.
 
-The weak Euler–Lagrange equation of the minimizer is in
+Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
+integrable. The weak Euler–Lagrange equation of the minimizer is in
 `TauCeti.Analysis.PDE.Vortex.EulerLagrange`; its regularity is not treated here.
 
 ## References
@@ -64,7 +64,7 @@ The weak Euler–Lagrange equation of the minimizer is in
 * C. H. Taubes, *Arbitrary N-vortex solutions to the first order Ginzburg–Landau equations*,
   Comm. Math. Phys. 72 (1980), 277–292.
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
-  Chapter III, Section 4.
+  Chapter III, Section 4. The functional is strictly convex there, which gives uniqueness.
 -/
 
 public section
@@ -184,193 +184,85 @@ theorem exists_forall_sobolevReducedFunctional_le {P : Polynomial ℂ} (hm : 0 <
     refine h0.trans (le_of_lt (not_le.mp fun hv' ↦ hv (hR v ?_)))
     exact_mod_cast hv'
 
-/-! ### Convexity and uniqueness -/
+/-! ### Uniqueness of the minimizer -/
 
-variable {P : Polynomial ℂ}
+/-- The minimum of Taubes's functional is a real number: it lies between `⊥` and `I(0) = 0`. -/
+private theorem exists_coe_eq_of_forall_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
+    (hu : ∀ w, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P w) :
+    ∃ a : ℝ, sobolevReducedFunctional P u = a :=
+  ⟨(sobolevReducedFunctional P u).toReal, (EReal.coe_toReal
+    (((hu 0).trans_eq sobolevReducedFunctional_zero).trans_lt EReal.zero_lt_top).ne
+    (sobolevReducedFunctional_ne_bot P u)).symm⟩
 
-/-- **The potential at a midpoint.** Let `a` and `b` be real functions on the plane whose
-potentials `h φ(a)` and `h φ(b)`, with `h = ‖P‖² / (1 + ‖P‖²)` and `φ(t) = exp (2t) - 1 - 2t`, are
-integrable. Then the defect `D = h (exp a - exp b)²` and the potential of the pointwise midpoint
-`(a + b) / 2` are integrable, and the latter integrates to `(∫ h φ(a) + ∫ h φ(b) - ∫ D) / 2`:
-pointwise, `(φ(a) + φ(b)) / 2 - φ((a + b) / 2) = (exp a - exp b)² / 2`. -/
-private theorem integral_potential_midpoint {a b : ℂ → ℝ} (ha : AEStronglyMeasurable a)
-    (hb : AEStronglyMeasurable b)
-    (hpa : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * a z) - 1 - 2 * a z))
-    (hpb : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * b z) - 1 - 2 * b z)) :
-    Integrable (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (a z) - Real.exp (b z)) ^ 2) ∧
-      Integrable (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * ((a z + b z) / 2)) - 1 - 2 * ((a z + b z) / 2))) ∧
-      ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-          (Real.exp (2 * ((a z + b z) / 2)) - 1 - 2 * ((a z + b z) / 2)) =
-        ((∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * a z) - 1 - 2 * a z)) +
-          (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * b z) - 1 - 2 * b z)) -
-          ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-            (Real.exp (a z) - Real.exp (b z)) ^ 2) / 2 := by
-  set D : ℂ → ℝ := fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-    (Real.exp (a z) - Real.exp (b z)) ^ 2 with hD
-  -- `D = h φ(a) + h φ(b) - 2 h φ((a + b) / 2)`, from `exp (2t) = (exp t)²`.
-  have hDeq (z : ℂ) : D z =
-      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * a z) - 1 - 2 * a z) +
-      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * b z) - 1 - 2 * b z) -
-      2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * ((a z + b z) / 2)) - 1 - 2 * ((a z + b z) / 2))) := by
-    have hab : Real.exp (2 * ((a z + b z) / 2)) = Real.exp (a z) * Real.exp (b z) := by
-      rw [← Real.exp_add]; ring_nf
-    simp only [hD, hab, show ∀ t, Real.exp (2 * t) = Real.exp t ^ 2 from fun t ↦ by
-      rw [← Real.exp_nat_mul]; ring_nf]
-    ring
-  have hD0 : 0 ≤ D := fun z ↦ by positivity
-  have hmid0 (z : ℂ) : 0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * ((a z + b z) / 2)) - 1 - 2 * ((a z + b z) / 2)) :=
-    mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-  have hDm : AEStronglyMeasurable D := by
-    have hhc : Continuous fun z : ℂ ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
-      fun_prop (disch := intro z; positivity)
-    have hF : Continuous fun p : ℝ × ℝ ↦ (Real.exp p.1 - Real.exp p.2) ^ 2 := by fun_prop
-    exact (hhc.aestronglyMeasurable.mul (hF.comp_aestronglyMeasurable (ha.prodMk hb))).congr
-      (ae_of_all _ fun z ↦ by simp only [hD, Pi.mul_apply])
-  -- `0 ≤ D ≤ h φ(a) + h φ(b)`.
-  have hDi : Integrable D := by
-    refine (hpa.add hpb).mono' hDm (ae_of_all _ fun z ↦ ?_)
-    rw [Real.norm_eq_abs, abs_of_nonneg (hD0 z), hDeq z]
-    simp only [Pi.add_apply]
-    linarith [hmid0 z]
-  refine ⟨hDi, (((hpa.add hpb).sub hDi).div_const 2).congr (ae_of_all _ fun z ↦ ?_), ?_⟩
-  · simp only [Pi.add_apply, Pi.sub_apply, hDeq z]
-    ring
-  have e := integral_sub (hpa.add hpb) hDi
-  simp only [Pi.add_apply] at e
-  rw [← integral_add hpa hpb, ← e, ← integral_div]
-  exact integral_congr_ae (ae_of_all _ fun z ↦ by simp only [hDeq z]; ring)
+/-- **Quadratic growth of Taubes's functional at its minimizer.** If `u` minimizes Taubes's
+functional on `H¹(ℂ)`, then `I(u) + ‖∇(v - u)‖₂² / 4 ≤ I(v)` for every `v ∈ H¹(ℂ)`. -/
+theorem sobolevReducedFunctional_add_le_of_forall_le {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+    {u : W1p (volume : Measure ℂ) ⊤ 2} (hu : ∀ w, sobolevReducedFunctional P u ≤
+      sobolevReducedFunctional P w) (v : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P u + ((‖W1p.gradient (v - u)‖ ^ 2 / 4 : ℝ) : EReal) ≤
+      sobolevReducedFunctional P v := by
+  obtain ⟨a, ha⟩ := exists_coe_eq_of_forall_le hu
+  have hmid := sobolevReducedFunctional_midpoint_add_add_le hm u v
+  have hle := hu (midpoint ℝ u v)
+  rw [← norm_neg, ← W1p.gradient_neg, neg_sub] at hmid
+  induction hv : sobolevReducedFunctional P v using EReal.rec with
+  | bot => exact absurd hv (sobolevReducedFunctional_ne_bot P v)
+  | top => exact le_top
+  | coe b =>
+    rw [ha] at hle hmid ⊢
+    rw [hv] at hmid
+    induction hm' : sobolevReducedFunctional P (midpoint ℝ u v) using EReal.rec with
+    | bot => exact absurd hm' (sobolevReducedFunctional_ne_bot P _)
+    | top =>
+      rw [hm', EReal.top_add_top, EReal.top_add_of_ne_bot (EReal.coe_ne_bot _)] at hmid
+      exact absurd (top_le_iff.mp hmid) (EReal.coe_ne_top _)
+    | coe c =>
+      rw [hm'] at hle hmid
+      norm_cast at hle hmid ⊢
+      linarith
 
-/-- **Midpoint convexity of Taubes's functional.** For a complex polynomial `P` of degree at least
-one and `u, v ∈ H¹(ℂ)` at which Taubes's functional `I` is finite, the defect
-`h (exp u - exp v)²`, `h = ‖P‖² / (1 + ‖P‖²)`, is integrable and
-
-`2 I((u + v) / 2) + (1 / 16) ∫ h (exp u - exp v)² ≤ I(u) + I(v)`. -/
-theorem two_mul_sobolevReducedFunctional_midpoint_add_le (hm : 0 < P.natDegree)
-    {u v : W1p (volume : Measure ℂ) ⊤ 2} (hu : sobolevReducedFunctional P u ≠ ⊤)
-    (hv : sobolevReducedFunctional P v ≠ ⊤) :
-    Integrable (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (W1p.value u z) - Real.exp (W1p.value v z)) ^ 2) ∧
-      2 * sobolevReducedFunctional P ((1 / 2 : ℝ) • (u + v)) +
-          (((∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-            (Real.exp (W1p.value u z) - Real.exp (W1p.value v z)) ^ 2) / 16 : ℝ) : EReal) ≤
-        sobolevReducedFunctional P u + sobolevReducedFunctional P v := by
-  have hpu := sobolevReducedFunctional_ne_top_iff.1 hu
-  have hpv := sobolevReducedFunctional_ne_top_iff.1 hv
-  have hua := W1p.memLp_value u
-  have hva := W1p.memLp_value v
-  obtain ⟨hDi, hpm, hpot⟩ := integral_potential_midpoint hua.aestronglyMeasurable
-    hva.aestronglyMeasurable hpu hpv
-  refine ⟨hDi, ?_⟩
-  -- The value of the midpoint is the pointwise midpoint of the values.
-  have hval : (W1p.value ((1 / 2 : ℝ) • (u + v)) : ℂ → ℝ) =ᵐ[volume]
-      fun z ↦ (W1p.value u z + W1p.value v z) / 2 := by
-    have h1 := W1p.value_add_ae u v
-    have h2 := W1p.value_smul_ae (1 / 2 : ℝ) (u + v)
-    simp only [Opens.coe_top, Measure.restrict_univ] at h1 h2
-    filter_upwards [h1, h2] with z hz1 hz2
-    rw [hz2, Pi.smul_apply, hz1, Pi.add_apply, smul_eq_mul]
-    ring
-  have hpmeq := hval.mono fun z (hz : W1p.value ((1 / 2 : ℝ) • (u + v)) z = _) ↦
-    congrArg (fun t ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * t) - 1 - 2 * t)) hz
-  rw [← integral_congr_ae hpmeq] at hpot
-  -- The linear term of the midpoint is the mean of those of `u` and `v`.
-  have hcL := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
-  have hcu : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z := hcL.integrable_mul hua
-  have hcv : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z := hcL.integrable_mul hva
-  have hlin : ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value ((1 / 2 : ℝ) • (u + v)) z =
-      ((∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z) +
-      ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z) / 2 := by
-    rw [← integral_add hcu hcv, ← integral_div]
-    exact integral_congr_ae (hval.mono fun z hz ↦ by simp only [hz]; ring)
-  -- The Dirichlet energy of the midpoint is at most the mean of those of `u` and `v`.
-  have hnorm : ‖W1p.gradient ((1 / 2 : ℝ) • (u + v))‖ ^ 2 ≤
-      (‖W1p.gradient u‖ ^ 2 + ‖W1p.gradient v‖ ^ 2) / 2 := by
-    rw [← W1p.gradientL_apply, map_smul, map_add, W1p.gradientL_apply, W1p.gradientL_apply,
-      norm_smul, Real.norm_eq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2)]
-    have htri := norm_add_le (W1p.gradient u) (W1p.gradient v)
-    nlinarith [sq_nonneg (‖W1p.gradient u‖ - ‖W1p.gradient v‖),
-      norm_nonneg (W1p.gradient u + W1p.gradient v)]
-  have h2 : ((2 : ℝ) : EReal) = 2 := rfl
-  rw [sobolevReducedFunctional_eq_coe hpu, sobolevReducedFunctional_eq_coe hpv,
-    sobolevReducedFunctional_eq_coe ((integrable_congr hpmeq).2 hpm), hpot, hlin, ← h2,
-    ← EReal.coe_mul, ← EReal.coe_add, ← EReal.coe_add, EReal.coe_le_coe_iff]
-  linarith
-
-/-- **Uniqueness of the minimizer of Taubes's functional.** For a complex polynomial `P` of degree
-at least one, two minimizers of `TauCeti.Vortex.sobolevReducedFunctional P` on `H¹(ℂ)` are equal. -/
-theorem eq_of_forall_sobolevReducedFunctional_le (hm : 0 < P.natDegree)
+/-- **Uniqueness of the minimizer of Taubes's functional.** Two minimizers of Taubes's functional
+on `H¹(ℂ)` are equal. -/
+theorem eq_of_forall_sobolevReducedFunctional_le {P : Polynomial ℂ} (hm : 0 < P.natDegree)
     {u v : W1p (volume : Measure ℂ) ⊤ 2}
     (hu : ∀ w, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P w)
     (hv : ∀ w, sobolevReducedFunctional P v ≤ sobolevReducedFunctional P w) : u = v := by
-  -- Compare both minimizers with their midpoint, using midpoint convexity. Both have finite
-  -- functional, at most `I(0) = 0`.
-  have hfin {w : W1p (volume : Measure ℂ) ⊤ 2}
-      (hw : ∀ w', sobolevReducedFunctional P w ≤ sobolevReducedFunctional P w') :
-      sobolevReducedFunctional P w ≠ ⊤ :=
-    ((hw 0).trans_lt (by rw [sobolevReducedFunctional_zero]; exact EReal.zero_lt_top)).ne
-  have hpu := sobolevReducedFunctional_ne_top_iff.1 (hfin hu)
-  have hpv := sobolevReducedFunctional_ne_top_iff.1 (hfin hv)
-  obtain ⟨hDi, hle⟩ := two_mul_sobolevReducedFunctional_midpoint_add_le hm (hfin hu) (hfin hv)
-  -- The midpoint has finite functional, since `2 I((u + v) / 2)` is at most `I(u) + I(v)`.
-  have hmtop : sobolevReducedFunctional P ((1 / 2 : ℝ) • (u + v)) ≠ ⊤ := by
-    intro htop
-    rw [htop, sobolevReducedFunctional_eq_coe hpu, sobolevReducedFunctional_eq_coe hpv,
-      EReal.mul_top_of_pos (by norm_num), EReal.top_add_coe, ← EReal.coe_add, top_le_iff] at hle
-    exact EReal.coe_ne_top _ hle
-  have hpm := sobolevReducedFunctional_ne_top_iff.1 hmtop
-  -- Both values are at most the value at the midpoint, so the defect integrates to zero.
-  have hum := hu ((1 / 2 : ℝ) • (u + v))
-  have hvm := hv ((1 / 2 : ℝ) • (u + v))
-  rw [sobolevReducedFunctional_eq_coe hpu, sobolevReducedFunctional_eq_coe hpm,
-    EReal.coe_le_coe_iff] at hum
-  rw [sobolevReducedFunctional_eq_coe hpv, sobolevReducedFunctional_eq_coe hpm,
-    EReal.coe_le_coe_iff] at hvm
-  have h2 : ((2 : ℝ) : EReal) = 2 := rfl
-  rw [sobolevReducedFunctional_eq_coe hpu, sobolevReducedFunctional_eq_coe hpv,
-    sobolevReducedFunctional_eq_coe hpm, ← h2, ← EReal.coe_mul, ← EReal.coe_add,
-    ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
-  have hD0 : 0 ≤ fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (W1p.value u z) - Real.exp (W1p.value v z)) ^ 2 := fun z ↦ by positivity
-  have hDz := (integral_eq_zero_iff_of_nonneg hD0 hDi).1
-    (le_antisymm (by linarith) (integral_nonneg hD0))
-  -- Off the finitely many zeros of `P` the weight is positive, so the values agree.
-  have hroots : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ {z | P.IsRoot z} :=
-    measure_eq_zero_iff_ae_notMem.1 ((Polynomial.finite_setOfPred_isRoot
-      (Polynomial.ne_zero_of_natDegree_gt hm)).measure_zero _)
-  have hae : (W1p.value u : ℂ → ℝ) =ᵐ[volume] W1p.value v := by
-    filter_upwards [hDz, hroots] with z hz hzr
-    have hpos : 0 < ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
-      have : 0 < ‖P.eval z‖ := norm_pos_iff.2 hzr
-      positivity
-    have hsq : (Real.exp (W1p.value u z) - Real.exp (W1p.value v z)) ^ 2 = 0 :=
-      (mul_eq_zero.1 hz).resolve_left hpos.ne'
-    exact Real.exp_injective (sub_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hsq))
-  refine W1p.ext_value (Lp.ext ?_)
-  simpa only [Opens.coe_top, Measure.restrict_univ] using hae
+  -- The weak gradient of `v - u` vanishes.
+  have hgrad : W1p.gradient (v - u) = 0 := by
+    have h := (sobolevReducedFunctional_add_le_of_forall_le hm hu v).trans (hv u)
+    obtain ⟨a, ha⟩ := exists_coe_eq_of_forall_le hu
+    rw [ha, ← EReal.coe_add, EReal.coe_le_coe_iff] at h
+    exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp (by
+      nlinarith [sq_nonneg ‖W1p.gradient (v - u)‖]))
+  -- So `v - u` is almost everywhere constant, and a square integrable constant on `ℂ` is `0`.
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (by simpa using isPreconnected_univ) hgrad
+  simp only [Opens.coe_top, Measure.restrict_univ] at hc
+  have hconst : MemLp (fun _ : ℂ ↦ c) 2 := (W1p.memLp_value (v - u)).ae_eq hc
+  have hc0 : c = 0 := by
+    rcases (memLp_const_iff two_ne_zero ENNReal.ofNat_ne_top).mp hconst with h | h
+    · exact h
+    · exact absurd h (by simp [measure_univ_of_isAddLeftInvariant])
+  have hsub := W1p.value_sub_ae v u
+  simp only [Opens.coe_top, Measure.restrict_univ] at hsub
+  refine (W1p.ext_value (Lp.ext ?_)).symm
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  filter_upwards [hsub, hc] with z hs hz
+  rw [hz, hc0, Pi.sub_apply] at hs
+  linarith
 
 /-- **Existence and uniqueness of the minimizer of Taubes's functional.** For a complex polynomial
-`P` of degree at least one, `TauCeti.Vortex.sobolevReducedFunctional P` has exactly one minimizer
-on `H¹(ℂ)`. -/
-theorem existsUnique_forall_sobolevReducedFunctional_le (hm : 0 < P.natDegree) :
+`P` of degree at least one, Taubes's functional has exactly one minimizer on `H¹(ℂ)`. -/
+theorem existsUnique_forall_sobolevReducedFunctional_le {P : Polynomial ℂ}
+    (hm : 0 < P.natDegree) :
     ∃! u : W1p (volume : Measure ℂ) ⊤ 2,
-      ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v :=
-  let ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hm
-  ⟨u, hu, fun _ hv ↦ eq_of_forall_sobolevReducedFunctional_le hm hv hu⟩
+      ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v := by
+  obtain ⟨u, hu⟩ := exists_forall_sobolevReducedFunctional_le hm
+  exact ⟨u, hu, fun v hv ↦ eq_of_forall_sobolevReducedFunctional_le hm hv hu⟩
 
 /-! ### The minimizer -/
 
-variable (P) in
+variable (P : Polynomial ℂ) in
 /-- **The minimizer of Taubes's functional** `TauCeti.Vortex.sobolevReducedFunctional P` on
 `H¹(ℂ)`. When `P` has degree at least one, it is the unique minimizer
 (`TauCeti.Vortex.eq_reducedMinimizer_iff`); its smooth representative corrects the background
@@ -381,13 +273,14 @@ def reducedMinimizer : W1p (volume : Measure ℂ) ⊤ 2 :=
   Classical.epsilon fun u ↦ ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v
 
 /-- The minimizer minimizes Taubes's functional. -/
-theorem forall_sobolevReducedFunctional_reducedMinimizer_le (hm : 0 < P.natDegree)
-    (v : W1p (volume : Measure ℂ) ⊤ 2) :
+theorem forall_sobolevReducedFunctional_reducedMinimizer_le {P : Polynomial ℂ}
+    (hm : 0 < P.natDegree) (v : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional P (reducedMinimizer P) ≤ sobolevReducedFunctional P v :=
   Classical.epsilon_spec (exists_forall_sobolevReducedFunctional_le hm) v
 
 /-- An element of `H¹(ℂ)` is the minimizer of Taubes's functional exactly when it minimizes it. -/
-theorem eq_reducedMinimizer_iff (hm : 0 < P.natDegree) {u : W1p (volume : Measure ℂ) ⊤ 2} :
+theorem eq_reducedMinimizer_iff {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+    {u : W1p (volume : Measure ℂ) ⊤ 2} :
     u = reducedMinimizer P ↔ ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v :=
   ⟨fun h ↦ h ▸ forall_sobolevReducedFunctional_reducedMinimizer_le hm,
     fun hu ↦ eq_of_forall_sobolevReducedFunctional_le hm hu
@@ -395,7 +288,7 @@ theorem eq_reducedMinimizer_iff (hm : 0 < P.natDegree) {u : W1p (volume : Measur
 
 /-- The minimizer depends on `P` only through Taubes's functional: polynomials with the same
 functional have the same minimizer. -/
-theorem reducedMinimizer_eq_of_forall_sobolevReducedFunctional_eq {Q : Polynomial ℂ}
+theorem reducedMinimizer_eq_of_forall_sobolevReducedFunctional_eq {P Q : Polynomial ℂ}
     (h : ∀ u, sobolevReducedFunctional Q u = sobolevReducedFunctional P u) :
     reducedMinimizer Q = reducedMinimizer P := by
   simp only [reducedMinimizer, h]
