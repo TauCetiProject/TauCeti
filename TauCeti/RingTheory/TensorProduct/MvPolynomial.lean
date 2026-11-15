@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeRightExact
+public import Mathlib.RingTheory.TensorProduct.MvPolynomial
+import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.RingTheory.TensorProduct.IsIntegral
 
 /-!
 # Extension of scalars of multivariate polynomials
@@ -27,6 +32,13 @@ functionals `MvPolynomial.lcoeff R e` on the polynomial leg.
 The cokernel of finitely many relations over `R[X_σ]`, with coefficients extended to `A`, is the
 base change along `R → A` of the cokernel of the original relations.
 
+Evaluating `S[X_ι]` at `1 ⊗ₜ yᵢ` inside `S ⊗[R] A` factors as `(algebraTensorAlgEquiv R S).symm`
+followed by `lTensor S (aeval y)`
+(`MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm`,
+`MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm`). Consequently, module-finiteness
+and integrality of `MvPolynomial.aeval y` are preserved under arbitrary base change `S / R`
+(`MvPolynomial.finite_aeval_one_tmul`, `MvPolynomial.isIntegral_aeval_one_tmul`).
+
 ## Main declarations
 
 * `MvPolynomial.algebraTensorAlgEquiv_sum_tmul_pow_mul_pow`: the binomial expansion of
@@ -35,6 +47,11 @@ base change along `R → A` of the cokernel of the original relations.
   are equal.
 * `MvPolynomial.exists_isBaseChange_quotient_range_linearCombination`: taking the cokernel of
   finitely many relations over a polynomial ring commutes with extending the coefficients.
+* `MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm`,
+  `MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm`: `aeval (1 ⊗ₜ y ·)` factors
+  through `MvPolynomial.algebraTensorAlgEquiv` and `Algebra.TensorProduct.lTensor`.
+* `MvPolynomial.finite_aeval_one_tmul`, `MvPolynomial.isIntegral_aeval_one_tmul`: scalar extension
+  preserves module-finiteness and integrality of `MvPolynomial.aeval`.
 -/
 
 public section
@@ -136,5 +153,68 @@ theorem exists_isBaseChange_quotient_range_linearCombination {R A : Type*} [Comm
     comm₁ comm₂ hb₁ hb₂ e₀ s₀ e₁ s₁⟩
 
 end QuotientRange
+
+section BaseChange
+
+section CommSemiring
+
+variable {ι R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+
+/-- Evaluating polynomials over `S` at `1 ⊗ₜ[R] y i` in `S ⊗[R] A` factors as the `S`-algebra
+isomorphism `(algebraTensorAlgEquiv R S).symm` followed by `lTensor S (aeval y)`. -/
+theorem aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm {S : Type*} [CommSemiring S]
+    [Algebra R S] (y : ι → A) :
+    aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i) =
+      (Algebra.TensorProduct.lTensor S (aeval (R := R) y)).comp
+        (algebraTensorAlgEquiv R S).symm.toAlgHom :=
+  algHom_ext fun i ↦ by simp
+
+/-- Evaluating a polynomial over `S` at `1 ⊗ₜ[R] y i` in `S ⊗[R] A` agrees with transporting along
+`(algebraTensorAlgEquiv R S).symm` and applying `id_S ⊗ aeval y`. -/
+theorem aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm {S : Type*} [CommSemiring S]
+    [Algebra R S] (y : ι → A) (p : MvPolynomial ι S) :
+    aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i) p =
+      Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)
+        ((algebraTensorAlgEquiv R S).symm p) := by
+  have hl : (Algebra.TensorProduct.lTensor (S := S) S (aeval (R := R) y)).restrictScalars R =
+      Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y) := by
+    ext <;> simp
+  rw [aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm, AlgHom.comp_apply,
+    AlgEquiv.coe_toAlgHom, ← AlgHom.restrictScalars_apply R, hl]
+
+private theorem aeval_one_tmul_toRingHom {S : Type*} [CommSemiring S] [Algebra R S] (y : ι → A) :
+    (aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i)).toRingHom =
+      (Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)).toRingHom.comp
+        (algebraTensorAlgEquiv R S).symm.toRingHom :=
+  RingHom.ext (aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm y)
+
+end CommSemiring
+
+section CommRing
+
+variable {ι R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- Module-finiteness of `MvPolynomial.aeval y` is preserved under base change to any `R`-algebra
+`S`. -/
+theorem finite_aeval_one_tmul (S : Type*) [CommRing S] [Algebra R S] {y : ι → A}
+    (hfin : (aeval (R := R) y).Finite) :
+    (aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i)).Finite := by
+  rw [AlgHom.Finite, aeval_one_tmul_toRingHom]
+  exact (RingHom.Finite.tensorProductMap (AlgHom.Finite.id R S) hfin).comp
+    (RingHom.Finite.of_surjective _ (algebraTensorAlgEquiv R S).symm.surjective)
+
+/-- Integrality of `MvPolynomial.aeval y` is preserved under base change to any `R`-algebra `S`. -/
+theorem isIntegral_aeval_one_tmul (S : Type*) [CommRing S] [Algebra R S] {y : ι → A}
+    (hint : (aeval (R := R) y).toRingHom.IsIntegral) :
+    (aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i)).toRingHom.IsIntegral := by
+  rw [aeval_one_tmul_toRingHom]
+  exact RingHom.IsIntegral.trans _ _
+    (RingHom.isIntegral_of_surjective _ (algebraTensorAlgEquiv R S).symm.surjective)
+    (RingHom.IsIntegral.tensorProductMap (f := AlgHom.id R S)
+      (RingHom.isIntegral_of_surjective _ Function.surjective_id) hint)
+
+end CommRing
+
+end BaseChange
 
 end MvPolynomial

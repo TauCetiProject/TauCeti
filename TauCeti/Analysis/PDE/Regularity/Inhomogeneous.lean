@@ -160,7 +160,7 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le [Nonempty ι] {lam Lam :
   -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hsqrt := TauCeti.MeasureTheory.sqrt_integral_sq_le_of_ae_abs_sub_le hW
+  have hsqrt := TauCeti.MeasureTheory.sqrt_integral_sq_le_of_ae_abs_sub_le
     (((Lp.memLp (W1p.value u)).integrable_sq).mono_measure (Measure.restrict_mono hball le_rfl))
     hug
   rw [measureReal_restrict_apply_univ, Measure.sqrt_addHaar_real_ball mu x₀ hR,
