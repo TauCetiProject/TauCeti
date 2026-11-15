@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Complement
-public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable.Order
+public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable.Basic
 
 /-!
 # Projections, isometries, and unitary equivalences of Hilbert C⋆-modules
@@ -68,16 +68,11 @@ theorem isIdempotentElem_toContinuousLinearMap {P : Adjointable A E E} (hP : IsI
   simpa only [coe_toContinuousLinearMapAlgHom] using
     hP.map (toContinuousLinearMapAlgHom (A := A) (E := E))
 
-/-- The range of an idempotent adjointable endomorphism is its fixed-point set. -/
-theorem range_eq_fixedPoints_of_isIdempotentElem {P : Adjointable A E E}
-    (hP : IsIdempotentElem P) : Set.range P = {x : E | P x = x} := by
-  ext x; refine ⟨?_, fun hx ↦ ⟨x, hx⟩⟩
-  rintro ⟨y, rfl⟩; simpa only [Set.mem_ofPred_eq, mul_apply] using congrArg (· y) hP.eq
-
 /-- Every idempotent adjointable endomorphism has closed range. -/
 theorem isClosed_range_of_isIdempotentElem {P : Adjointable A E E} (hP : IsIdempotentElem P) :
-    IsClosed (Set.range P) :=
-  range_eq_fixedPoints_of_isIdempotentElem hP ▸ isClosed_eq (map_continuous P) continuous_id
+    IsClosed (Set.range P) := by
+  simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe, coe_toContinuousLinearMap] using
+    ContinuousLinearMap.IsIdempotentElem.isClosed_range (isIdempotentElem_toContinuousLinearMap hP)
 
 /-- The range and kernel of an idempotent adjointable endomorphism are topological complements. -/
 theorem isTopCompl_range_ker_of_isIdempotentElem {P : Adjointable A E E}
@@ -92,8 +87,8 @@ theorem inner_map_self_of_isStarProjection {P : Adjointable A E E} (hP : IsStarP
     hP.isIdempotentElem.eq]
 
 /-- For a star projection `P`, `P x` is orthogonal to `y - P y` in the `A`-valued inner product. -/
-theorem inner_sub_self_of_isStarProjection {P : Adjointable A E E} (hP : IsStarProjection P)
-    (x y : E) : inner A (P x) (y - P y) = 0 := by
+theorem inner_apply_sub_apply_eq_zero_of_isStarProjection {P : Adjointable A E E}
+    (hP : IsStarProjection P) (x y : E) : inner A (P x) (y - P y) = 0 := by
   rw [inner_sub_right, ← P.adjoint_inner_right, ← P.adjoint_inner_right,
     isSelfAdjoint_iff'.mp hP.isSelfAdjoint, ← mul_apply, hP.isIdempotentElem.eq, sub_self]
 
@@ -104,7 +99,7 @@ theorem apply_eq_zero_iff_forall_inner_map_eq_zero_of_isStarProjection {P : Adjo
     rw [← P.adjoint_inner_right, isSelfAdjoint_iff'.mp hP.isSelfAdjoint, hy, inner_zero_right],
    fun h ↦ by
     rw [← inner_self (A := A), inner_map_self_of_isStarProjection hP,
-      ← inner_eq_right_of_isSelfAdjoint hP.isSelfAdjoint]
+      ← isSelfAdjoint_iff'.mp hP.isSelfAdjoint, P.adjoint_inner_right]
     exact h y⟩
 
 /-- **C⋆-valued Pythagorean identity** for a star projection `P`:
@@ -112,7 +107,8 @@ theorem apply_eq_zero_iff_forall_inner_map_eq_zero_of_isStarProjection {P : Adjo
 theorem inner_self_eq_add_inner_sub_self_of_isStarProjection {P : Adjointable A E E}
     (hP : IsStarProjection P) (x : E) :
     inner A x x = inner A (P x) (P x) + inner A (x - P x) (x - P x) := by
-  have horth₁ : inner A (P x) (x - P x) = 0 := inner_sub_self_of_isStarProjection hP x x
+  have horth₁ : inner A (P x) (x - P x) = 0 :=
+    inner_apply_sub_apply_eq_zero_of_isStarProjection hP x x
   have horth₂ : inner A (x - P x) (P x) = 0 := by rw [← star_inner, horth₁, star_zero]
   conv_lhs => rw [← add_sub_cancel (P x) x]
   rw [inner_add_left, inner_add_right, inner_add_right, horth₁, horth₂, add_zero, zero_add]
@@ -146,10 +142,8 @@ theorem adjoint_comp_self_eq_one_iff {T : Adjointable A E F} :
 /-- `T* ∘ T = 1` iff `T` preserves all diagonal inner products `⟪T x, T x⟫_A = ⟪x, x⟫_A`. -/
 theorem adjoint_comp_self_eq_one_iff_forall_inner_self {T : Adjointable A E F} :
     T.adjoint.comp T = 1 ↔ ∀ x : E, inner A (T x) (T x) = inner A x x := by
-  refine ⟨fun h x ↦ adjoint_comp_self_eq_one_iff.mp h x x, fun h ↦ ?_⟩
-  exact ext <| LinearMap.congr_fun <| (CStarModule.ext_inner_map (A := A) _ _).mp fun x ↦ by
-    simpa only [ContinuousLinearMap.coe_coe, toContinuousLinearMap_apply, comp_apply,
-      adjoint_inner_right, one_apply] using h x
+  refine ⟨fun h x ↦ adjoint_comp_self_eq_one_iff.mp h x x, fun h ↦ ext_inner_map.mp fun x ↦ ?_⟩
+  rw [comp_apply, adjoint_inner_right, one_apply, h x]
 
 /-- If `T* ∘ T = 1`, then `T` preserves norms: `‖T x‖ = ‖x‖`. -/
 theorem norm_map_of_adjoint_comp_self_eq_one {T : Adjointable A E F}

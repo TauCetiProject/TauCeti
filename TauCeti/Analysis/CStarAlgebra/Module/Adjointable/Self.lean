@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable.Basic
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
@@ -74,6 +73,8 @@ theorem mulLeft_add (a b : A) : mulLeft (a + b) = mulLeft a + mulLeft b := by ex
 theorem mulLeft_mul (a b : A) : mulLeft (a * b) = mulLeft a * mulLeft b := by ext; simp [mul_assoc]
 theorem mulLeft_smul (c : ℂ) (a : A) : mulLeft (c • a) = c • mulLeft a := by
   ext; simp [smul_mul_assoc]
+theorem mulLeft_star (a : A) : mulLeft (star a) = star (mulLeft a) := by
+  rw [star_def, adjoint_mulLeft]
 
 /-- Left multiplication embeds any C⋆-algebra `A` into `Adjointable Aᵐᵒᵖ A A` as a non-unital
 `⋆`-algebra homomorphism. -/
@@ -83,7 +84,7 @@ noncomputable def mulLeftNonUnitalStarAlgHom : A →⋆ₙₐ[ℂ] Adjointable A
   map_zero' := mulLeft_zero
   map_add' := mulLeft_add
   map_mul' := mulLeft_mul
-  map_star' a := by rw [star_def]; exact (adjoint_mulLeft a).symm
+  map_star' := mulLeft_star
 
 @[simp] theorem mulLeftNonUnitalStarAlgHom_apply (a : A) :
     mulLeftNonUnitalStarAlgHom a = mulLeft a := by rfl
@@ -127,7 +128,7 @@ noncomputable def mulLeftStarAlgEquiv : A ≃⋆ₐ[ℂ] Adjointable Aᵐᵒᵖ 
   right_inv T := (eq_mulLeft_apply_one T).symm
   map_mul' := mulLeft_mul
   map_add' := mulLeft_add
-  map_star' a := by rw [star_def]; exact (adjoint_mulLeft a).symm
+  map_star' := mulLeft_star
   map_smul' := mulLeft_smul
 
 @[simp] theorem mulLeftStarAlgEquiv_apply (a : A) : mulLeftStarAlgEquiv a = mulLeft a := by rfl
@@ -167,17 +168,9 @@ theorem isClosed_vanishingAtZeroSubmodule :
 instance instCompleteSpaceVanishingAtZeroSubmodule : CompleteSpace vanishingAtZeroSubmodule :=
   isClosed_vanishingAtZeroSubmodule.completeSpace_coe
 
-/-- The inclusion `vanishingAtZeroSubmodule ↪ C(unitInterval, ℂ)` as a complex-linear isometry. -/
-noncomputable def vanishingAtZeroInclusionₗᵢ :
-    vanishingAtZeroSubmodule →ₗᵢ[ℂ] C(unitInterval, ℂ) where
-  toFun f := (f : C(unitInterval, ℂ))
-  map_add' _ _ := by rfl
-  map_smul' _ _ := by rfl
-  norm_map' _ := by rfl
-
 /-- The bounded complex-linear inclusion `vanishingAtZeroSubmodule →L[ℂ] C(unitInterval, ℂ)`. -/
 noncomputable def vanishingAtZeroInclusion : vanishingAtZeroSubmodule →L[ℂ] C(unitInterval, ℂ) :=
-  vanishingAtZeroInclusionₗᵢ.toContinuousLinearMap
+  (vanishingAtZeroSubmodule.restrictScalars ℂ).subtypeₗᵢ.toContinuousLinearMap
 
 @[simp] theorem vanishingAtZeroInclusion_apply (f : vanishingAtZeroSubmodule) :
     vanishingAtZeroInclusion f = (f : C(unitInterval, ℂ)) := by rfl
@@ -188,14 +181,14 @@ theorem vanishingAtZeroInclusion_op_smul (a : C(unitInterval, ℂ)) (f : vanishi
 
 /-- `vanishingAtZeroInclusion` is isometric. -/
 theorem isometry_vanishingAtZeroInclusion : Isometry vanishingAtZeroInclusion :=
-  vanishingAtZeroInclusionₗᵢ.isometry
+  (vanishingAtZeroSubmodule.restrictScalars ℂ).subtypeₗᵢ.isometry
 
 /-- **Lance's non-adjointability counterexample**: `vanishingAtZeroInclusion` is an isometric right
 `C(unitInterval, ℂ)`-module homomorphism between complete Hilbert modules with no adjoint. -/
 theorem not_isAdjointable_vanishingAtZeroInclusion :
     ¬ IsAdjointable C(unitInterval, ℂ)ᵐᵒᵖ vanishingAtZeroInclusion := by
   intro hadj
-  obtain ⟨S, hS⟩ := (isAdjointable_mulOpposite_iff (B := C(unitInterval, ℂ))).mp hadj
+  obtain ⟨S, hS⟩ := (isAdjointable_iff_unop_inner (B := C(unitInterval, ℂ))).mp hadj
   let t₀ : C(unitInterval, ℂ) :=
     ⟨fun x : unitInterval ↦ ((x : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩
   let h : C(unitInterval, ℂ) := (S 1 : C(unitInterval, ℂ))

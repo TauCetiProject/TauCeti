@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Classes
-public import TauCeti.Analysis.CStarAlgebra.Module.Action
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 
 /-!
@@ -79,7 +78,7 @@ theorem isAdjointable_iff {T : E → F} :
   exists_congr fun _ ↦ isAdjointPair_inner_iff
 
 /-- Right-module form of `isAdjointable_iff` for `CStarModule Bᵐᵒᵖ`. -/
-theorem isAdjointable_mulOpposite_iff {B E F : Type*}
+theorem isAdjointable_iff_unop_inner {B E F : Type*}
     [NonUnitalSeminormedRing B] [StarRing B] [Module ℂ B] [StarModule ℂ B] [PartialOrder B]
     [AddCommGroup E] [Module ℂ E] [SMul Bᵐᵒᵖ E] [Norm E] [CStarModule Bᵐᵒᵖ E]
     [AddCommGroup F] [Module ℂ F] [SMul Bᵐᵒᵖ F] [Norm F] [CStarModule Bᵐᵒᵖ F] {T : E → F} :
@@ -193,6 +192,14 @@ theorem toContinuousLinearMap_injective :
 @[simp] theorem toContinuousLinearMap_inj {T₁ T₂ : Adjointable A E F} :
     T₁.toContinuousLinearMap = T₂.toContinuousLinearMap ↔ T₁ = T₂ :=
   toContinuousLinearMap_injective.eq_iff
+
+/-- Two adjointable endomorphisms are equal if and only if they have the same diagonal inner
+products `⟪x, S x⟫_A = ⟪x, T x⟫_A`. -/
+theorem ext_inner_map {S T : Adjointable A E E} :
+    (∀ x : E, inner A x (S x) = inner A x (T x)) ↔ S = T := by
+  rw [← toContinuousLinearMap_inj, ← ContinuousLinearMap.coe_inj,
+    ← CStarModule.ext_inner_map (A := A)]
+  rfl
 
 /-- Construct an `Adjointable` operator from two continuous complex-linear maps satisfying
 `⟪T x, y⟫_A = ⟪x, S y⟫_A`. -/
@@ -341,6 +348,10 @@ def toContinuousLinearMapAddMonoidHom : Adjointable A E F →+ (E →L[ℂ] F) w
   map_zero' := toContinuousLinearMap_zero
   map_add' := toContinuousLinearMap_add
 
+@[simp] theorem coe_toContinuousLinearMapAddMonoidHom :
+    ⇑(toContinuousLinearMapAddMonoidHom (A := A) (E := E) (F := F)) = toContinuousLinearMap :=
+  (rfl)
+
 instance instModuleComplex : Module ℂ (Adjointable A E F) :=
   Function.Injective.module ℂ toContinuousLinearMapAddMonoidHom
     (by exact toContinuousLinearMap_injective) (by intro _ _; rfl)
@@ -350,6 +361,9 @@ def toContinuousLinearMapₗ : Adjointable A E F →ₗ[ℂ] (E →L[ℂ] F) whe
   toFun := toContinuousLinearMap
   map_add' := toContinuousLinearMap_add
   map_smul' := toContinuousLinearMap_smul
+
+@[simp] theorem coe_toContinuousLinearMapₗ :
+    ⇑(toContinuousLinearMapₗ (A := A) (E := E) (F := F)) = toContinuousLinearMap := (rfl)
 
 @[simp] theorem adjoint_zero : (0 : Adjointable A E F).adjoint = 0 :=
   toContinuousLinearMap_injective rfl
@@ -415,17 +429,8 @@ theorem comp_smul (c : ℂ) (S : Adjointable A F G) (T : Adjointable A E F) :
 instance instOne : One (Adjointable A E E) := ⟨Adjointable.id A E⟩
 instance instMul : Mul (Adjointable A E E) := ⟨comp⟩
 
-instance instNatCast : NatCast (Adjointable A E E) :=
-  ⟨fun n ↦ mkOfInner (n : E →L[ℂ] E) (n : E →L[ℂ] E) fun _ _ ↦ by
-    rw [← Nat.smul_one_eq_cast]
-    simp only [_root_.smul_apply, one_apply_eq_self, ← Nat.cast_smul_eq_nsmul ℂ,
-      inner_smul_left_complex, inner_smul_right_complex, star_natCast]⟩
-
-instance instIntCast : IntCast (Adjointable A E E) :=
-  ⟨fun z ↦ mkOfInner (z : E →L[ℂ] E) (z : E →L[ℂ] E) fun _ _ ↦ by
-    rw [← Int.smul_one_eq_cast]
-    simp only [_root_.smul_apply, one_apply_eq_self, ← Int.cast_smul_eq_zsmul ℂ,
-      inner_smul_left_complex, inner_smul_right_complex, star_intCast]⟩
+instance instNatCast : NatCast (Adjointable A E E) := ⟨fun n ↦ n • 1⟩
+instance instIntCast : IntCast (Adjointable A E E) := ⟨fun z ↦ z • 1⟩
 
 instance instPow : Pow (Adjointable A E E) ℕ :=
   ⟨fun T n ↦ mkOfInner (T.toContinuousLinearMap ^ n) (T.adjoint.toContinuousLinearMap ^ n)
@@ -448,9 +453,9 @@ theorem mul_def (S T : Adjointable A E E) : S * T = S.comp T := (rfl)
 @[simp] theorem toContinuousLinearMap_pow (T : Adjointable A E E) (n : ℕ) :
     (T ^ n).toContinuousLinearMap = T.toContinuousLinearMap ^ n := (rfl)
 @[simp] theorem toContinuousLinearMap_natCast (n : ℕ) :
-    (n : Adjointable A E E).toContinuousLinearMap = n := (rfl)
+    (n : Adjointable A E E).toContinuousLinearMap = n := nsmul_one n
 @[simp] theorem toContinuousLinearMap_intCast (z : ℤ) :
-    (z : Adjointable A E E).toContinuousLinearMap = z := (rfl)
+    (z : Adjointable A E E).toContinuousLinearMap = z := zsmul_one z
 
 instance instRing : Ring (Adjointable A E E) :=
   toContinuousLinearMap_injective.ring _ toContinuousLinearMap_zero toContinuousLinearMap_one

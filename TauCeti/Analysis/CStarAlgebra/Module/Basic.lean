@@ -164,24 +164,24 @@ def ofLinearIsometry (f : F →ₗᵢ[ℂ] E) (hf : ∀ (a : A) (x : F), f (a �
     rw [← f.norm_map x]
     exact norm_eq_sqrt_norm_inner_self (f x)
 
+/-- The inner product pulled back along `ofLinearIsometry f hf` is `⟪f x, f y⟫_A`. -/
+@[simp]
+theorem ofLinearIsometry_inner (f : F →ₗᵢ[ℂ] E) (hf : ∀ (a : A) (x : F), f (a • x) = a • f x)
+    (x y : F) :
+    letI := ofLinearIsometry f hf
+    inner A x y = inner A (f x) (f y) := (rfl)
+
 end Pullback
 
 section Submodule
 
 variable {A E : Type*} [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E] [CStarModule A E]
+  [NormedAddCommGroup E] [Module ℂ E] [Module A E] [IsScalarTower ℂ A E] [CStarModule A E]
 
 /-- Any `A`-submodule of a Hilbert C⋆-module `E` inherits a `CStarModule A` structure by
 restriction. For right Hilbert `B`-modules over a unital C⋆-algebra `B`, apply with `A = Bᵐᵒᵖ`. -/
-instance instSubmodule (M : Submodule A E) : CStarModule A M where
-  inner x y := inner A (x : E) (y : E)
-  inner_add_right := inner_add_right
-  inner_self_nonneg := inner_self_nonneg
-  inner_self := inner_self.trans Submodule.coe_eq_zero
-  inner_op_smul_right := inner_op_smul_right
-  inner_smul_right_complex := inner_smul_right_complex
-  star_inner x y := star_inner (x : E) (y : E)
-  norm_eq_sqrt_norm_inner_self x := norm_eq_sqrt_norm_inner_self (x : E)
+instance instSubmodule (M : Submodule A E) : CStarModule A M :=
+  ofLinearIsometry (M.restrictScalars ℂ).subtypeₗᵢ fun _ _ ↦ rfl
 
 /-- The inner product on an `A`-submodule agrees with the ambient inner product. -/
 @[simp]

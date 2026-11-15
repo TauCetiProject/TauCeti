@@ -74,9 +74,7 @@ theorem isSelfAdjoint_inner_of_isSelfAdjoint {T : Adjointable A E E} (hT : IsSel
 theorem isSelfAdjoint_iff_forall_isSelfAdjoint_inner {T : Adjointable A E E} :
     IsSelfAdjoint T ↔ ∀ x : E, IsSelfAdjoint (inner A x (T x)) := by
   refine ⟨fun hT x ↦ isSelfAdjoint_inner_of_isSelfAdjoint hT x, fun h ↦ isSelfAdjoint_iff'.mpr ?_⟩
-  exact ext <| LinearMap.congr_fun <| (CStarModule.ext_inner_map (A := A) _ _).mp fun x ↦ by
-    simpa only [ContinuousLinearMap.coe_coe, toContinuousLinearMap_apply, adjoint_inner_right,
-      ← star_inner x (T x)] using (h x).star_eq
+  exact ext_inner_map.mp fun x ↦ by rw [adjoint_inner_right, ← star_inner, (h x).star_eq]
 
 end SelfAdjoint
 
