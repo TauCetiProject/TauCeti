@@ -337,73 +337,54 @@ theorem continuous_linearIsometryEquiv_comp_left {F' : Type*} [NormedAddCommGrou
       simp [lp.inner_ampliation_apply, LinearIsometryEquiv.inner_map_eq_flip]
 
 private theorem summable_norm_sq_lp_lp {ι G : Type*} [NormedAddCommGroup G]
-    (ζ : ℓ²(ℕ, ℓ²(ι, G))) : Summable (fun p : ℕ × ι ↦ ‖ζ p.1 p.2‖ ^ (2 : ℝ)) := by
+    (ζ : ℓ²(ℕ, ℓ²(ι, G))) : Summable fun p : ℕ × ι ↦ ‖ζ p.1 p.2‖ ^ (2 : ℝ) := by
   have hp2 : 0 < (2 : ℝ≥0∞).toReal := by simp
-  refine (summable_prod_of_nonneg fun p ↦ by positivity).2 ⟨fun n ↦ ?_, ?_⟩
-  · exact (lp.memℓp (ζ n)).summable hp2
-  · refine ((lp.memℓp ζ).summable hp2).congr fun n ↦ ?_
-    simpa using (lp.hasSum_norm hp2 (ζ n)).tsum_eq.symm
+  refine (summable_prod_of_nonneg fun _ ↦ by positivity).2
+    ⟨fun n ↦ (lp.memℓp (ζ n)).summable hp2, ((lp.memℓp ζ).summable hp2).congr fun n ↦ by
+      simpa using (lp.hasSum_norm hp2 (ζ n)).tsum_eq.symm⟩
 
 private theorem memℓp_extend_of_lp_lp {ι G : Type*} [NormedAddCommGroup G]
     (ζ : ℓ²(ℕ, ℓ²(ι, G))) {S : Set (ℕ × ι)} {e : S → ℕ} (he : Function.Injective e) :
-    Memℓp (Function.extend e (fun p : S ↦ ζ p.1.1 p.1.2) 0) 2 := by
-  refine memℓp_gen <| (he.summable_iff fun k hk ↦ ?_).1 ?_
-  · simp [Function.extend_apply' _ _ _ hk]
-  · refine ((summable_norm_sq_lp_lp ζ).comp_injective Subtype.val_injective).congr fun p ↦ ?_
-    simp [he.extend_apply]
+    Memℓp (Function.extend e (fun p : S ↦ ζ p.1.1 p.1.2) 0) 2 :=
+  memℓp_gen <| (he.summable_iff fun _ hk ↦ by simp [Function.extend_apply' _ _ _ hk]).1 <|
+    ((summable_norm_sq_lp_lp ζ).comp_injective Subtype.val_injective).congr fun _ ↦ by
+      simp [he.extend_apply]
 
-/-- Reindexing the double sum `∑ₙ ∑ᵢ ⟪ηₙᵢ, T ξₙᵢ⟫` of a sequence in `ℓ²(ℕ, ℓ²(ι, ·))` into a
-single `ℕ`-indexed `ℓ²` pairing, using countable support of `ξ`. -/
 private theorem exists_nat_lp_inner_ampliation_eq {ι : Type*}
     (ξ : ℓ²(ℕ, ℓ²(ι, E))) (η : ℓ²(ℕ, ℓ²(ι, F))) :
     ∃ (ξ' : ℓ²(ℕ, E)) (η' : ℓ²(ℕ, F)), ∀ T : E →L[𝕜] F,
-      ⟪η, lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ⟫_𝕜 =
-        ⟪η', lp.ampliation ℕ 2 T ξ'⟫_𝕜 := by
+      ⟪η, lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ⟫_𝕜 = ⟪η', lp.ampliation ℕ 2 T ξ'⟫_𝕜 := by
   classical
   have hp2 : 0 < (2 : ℝ≥0∞).toReal := by simp
   let S : Set (ℕ × ι) := ⋃ n : ℕ, Prod.mk n '' Function.support (ξ n)
-  have hS : S.Countable := Set.countable_iUnion fun n ↦
+  have : Countable S := (Set.countable_iUnion fun n ↦
     (((lp.memℓp (ξ n)).summable hp2).countable_support.mono fun i hi ↦ by
-      simp [Function.mem_support.mp hi]).image _
-  have : Countable S := hS.to_subtype
+      simp [Function.mem_support.mp hi]).image _).to_subtype
   obtain ⟨e, he⟩ := Countable.exists_injective_nat S
   let ξf : ℕ → E := Function.extend e (fun p : S ↦ ξ p.1.1 p.1.2) 0
   let ηf : ℕ → F := Function.extend e (fun p : S ↦ η p.1.1 p.1.2) 0
   refine ⟨⟨ξf, memℓp_extend_of_lp_lp ξ he⟩, ⟨ηf, memℓp_extend_of_lp_lp η he⟩, fun T ↦ ?_⟩
   simp only [lp.inner_ampliation_apply]
-  have hTsum : Summable (fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜) := by
+  have hTsum : Summable fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜 := by
     refine Summable.of_norm_bounded (((summable_norm_sq_lp_lp η).add
       (summable_norm_sq_lp_lp ξ)).mul_left (max ‖T‖ 1 / 2)) fun p ↦ ?_
-    have hcs : ‖⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜‖ ≤ ‖T‖ * (‖η p.1 p.2‖ * ‖ξ p.1 p.2‖) := by
-      calc ‖⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜‖ ≤ ‖η p.1 p.2‖ * ‖T (ξ p.1 p.2)‖ :=
-            norm_inner_le_norm _ _
-        _ ≤ ‖η p.1 p.2‖ * (‖T‖ * ‖ξ p.1 p.2‖) := by gcongr; exact T.le_opNorm _
-        _ = ‖T‖ * (‖η p.1 p.2‖ * ‖ξ p.1 p.2‖) := by ring
-    have hsq : 2 * (‖η p.1 p.2‖ * ‖ξ p.1 p.2‖) ≤
-        ‖η p.1 p.2‖ ^ (2 : ℝ) + ‖ξ p.1 p.2‖ ^ (2 : ℝ) := by
-      norm_cast
-      nlinarith [sq_nonneg (‖η p.1 p.2‖ - ‖ξ p.1 p.2‖)]
+    have hcs : ‖⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜‖ ≤ ‖η p.1 p.2‖ * (‖T‖ * ‖ξ p.1 p.2‖) :=
+      (norm_inner_le_norm _ _).trans (by gcongr; exact T.le_opNorm _)
+    have hsq : 2 * (‖η p.1 p.2‖ * ‖ξ p.1 p.2‖) ≤ ‖η p.1 p.2‖ ^ (2 : ℝ) + ‖ξ p.1 p.2‖ ^ (2 : ℝ) := by
+      norm_cast; nlinarith [sq_nonneg (‖η p.1 p.2‖ - ‖ξ p.1 p.2‖)]
     nlinarith [le_max_left ‖T‖ 1, mul_nonneg (norm_nonneg (η p.1 p.2)) (norm_nonneg (ξ p.1 p.2)),
-      le_trans zero_le_one (le_max_right ‖T‖ 1)]
-  rw [← hTsum.tsum_prod]
-  have hsub : ∑' p : ℕ × ι, ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜 =
-      ∑' p : S, ⟪η p.1.1 p.1.2, T (ξ p.1.1 p.1.2)⟫_𝕜 :=
-    ((Subtype.val_injective (p := (· ∈ S))).tsum_eq
-      (f := fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜) fun p hp ↦ by
-        have hξne : ξ p.1 p.2 ≠ 0 := fun h0 ↦ hp (by simp [h0])
-        exact ⟨⟨p, Set.mem_iUnion.2 ⟨p.1, p.2, hξne, rfl⟩⟩, rfl⟩).symm
-  rw [hsub]
-  refine (tsum_congr fun p : S ↦ ?_).trans
-    (he.tsum_eq (f := fun k ↦ ⟪ηf k, T (ξf k)⟫_𝕜) fun k hk ↦ ?_)
-  · simp [ξf, ηf, he.extend_apply]
-  · by_contra hk'
-    exact hk (by simp [ξf, Function.extend_apply' _ _ _ hk'])
+      zero_le_one.trans (le_max_right ‖T‖ 1)]
+  refine hTsum.tsum_prod.symm.trans <| ((Subtype.val_injective (p := (· ∈ S))).tsum_eq
+    (f := fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜) fun p hp ↦ ⟨⟨p, Set.mem_iUnion.2
+      ⟨p.1, p.2, fun h0 ↦ hp (by simp [h0]), rfl⟩⟩, rfl⟩).symm.trans <|
+    (tsum_congr fun p : S ↦ by simp [ξf, ηf, he.extend_apply]).trans <|
+    he.tsum_eq (f := fun k ↦ ⟪ηf k, T (ξf k)⟫_𝕜) fun k hk ↦ by
+      by_contra hk'; exact hk (by simp [ξf, Function.extend_apply' _ _ _ hk'])
 
 /-- Ampliation to `ℓ²(ι, ·)` is ultraweakly continuous for any index type `ι`. -/
 @[fun_prop]
 theorem continuous_ampliation (ι : Type*) :
-    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
-      ofCLM (lp.ampliation ι 2 A.toCLM) :=
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (lp.ampliation ι 2 A.toCLM) :=
   continuous_of_continuous_inner_ampliation_apply fun ξ η ↦ by
     obtain ⟨ξ', η', h⟩ := exists_nat_lp_inner_ampliation_eq (𝕜 := 𝕜) ξ η
     exact (continuous_inner_ampliation_apply ξ' η').congr fun A ↦ (h A.toCLM).symm
