@@ -20,7 +20,7 @@ Mathlib's canonical Gram inner product, characterized on decomposable `k`-vector
 `⟪x₁ ∧ ⋯ ∧ xₖ, y₁ ∧ ⋯ ∧ yₖ⟫ = det (⟪xᵢ, yⱼ⟫)`. Because the exterior algebra is the internal
 direct sum of its homogeneous exterior powers `⨁ k : ℕ, ⋀[ℝ]^k V`, assembling these degreewise
 inner products orthogonally yields a canonical symmetric positive definite bilinear form
-`TauCeti.ExteriorAlgebra.gramBilinForm V` on the full exterior algebra `ExteriorAlgebra ℝ V`,
+`ExteriorAlgebra.gramBilinForm V` on the full exterior algebra `ExteriorAlgebra ℝ V`,
 without choosing a basis and without registering a competing global norm instance on the exterior
 algebra.
 
@@ -37,29 +37,29 @@ making the complexified increasing wedge basis orthonormal.
 
 ## Main definitions
 
-* `TauCeti.ExteriorAlgebra.gramBilinForm V`: the canonical basis-free exterior Gram bilinear form
+* `ExteriorAlgebra.gramBilinForm V`: the canonical basis-free exterior Gram bilinear form
   on `ExteriorAlgebra ℝ V`, assembling `innerₗ (⋀[ℝ]^k V)` orthogonally across all degrees `k`.
 
 ## Main results
 
-* `TauCeti.ExteriorAlgebra.gramBilinForm_coe_coe`,
-  `TauCeti.ExteriorAlgebra.gramBilinForm_eq_zero_of_mem_exteriorPower`, and
-  `TauCeti.ExteriorAlgebra.gramBilinForm_ιMulti_ιMulti`: `gramBilinForm V` restricts to the Gram
+* `ExteriorAlgebra.gramBilinForm_coe_coe`,
+  `ExteriorAlgebra.gramBilinForm_eq_zero_of_mem_exteriorPower`, and
+  `ExteriorAlgebra.gramBilinForm_ιMulti_ιMulti`: `gramBilinForm V` restricts to the Gram
   inner product on each `⋀[ℝ]^k V`, makes distinct degrees orthogonal, and evaluates as the
   `k × k` Gram determinant on decomposable `k`-vectors.
-* `TauCeti.ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra`: for every ordered orthonormal
+* `ExteriorAlgebra.gramBilinForm_toBasis_exteriorAlgebra`: for every ordered orthonormal
   basis `e` of `V`, `gramBilinForm V` agrees with the form making `e.toBasis.ExteriorAlgebra`
   orthonormal.
-* `TauCeti.ExteriorAlgebra.isSymm_gramBilinForm` and
-  `TauCeti.ExteriorAlgebra.posDef_toQuadraticMap_gramBilinForm`: `gramBilinForm V` is symmetric
+* `ExteriorAlgebra.isSymm_gramBilinForm` and
+  `ExteriorAlgebra.posDef_toQuadraticMap_gramBilinForm`: `gramBilinForm V` is symmetric
   and positive definite.
-* `TauCeti.ExteriorAlgebra.sesqComplexification_gramBilinForm_subtype_baseChange` and
-  `TauCeti.ExteriorAlgebra.sesqComplexification_gramBilinForm_subtype_baseChange_eq_zero_of_ne`:
+* `ExteriorAlgebra.sesqComplexification_gramBilinForm_subtype_baseChange` and
+  `ExteriorAlgebra.sesqComplexification_gramBilinForm_subtype_baseChange_eq_zero_of_ne`:
   on `ℂ ⊗[ℝ] ExteriorAlgebra ℝ V`, `(gramBilinForm V).sesqComplexification` restricts to
   `LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))` in degree `k` and makes distinct
   degrees orthogonal.
-* `TauCeti.ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv` and
-  `TauCeti.ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_coe`: under
+* `ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv` and
+  `ExteriorAlgebra.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_coe`: under
   `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ`, the Hermitian form making the increasing wedge basis of
   `e.toBasis.baseChange ℂ` orthonormal is `(gramBilinForm V).sesqComplexification` for every
   ordered orthonormal basis `e` of `V`, and restricts in degree `k` to
@@ -79,7 +79,7 @@ noncomputable section
 open Matrix Module
 open scoped ComplexOrder DirectSum RealInnerProductSpace TensorProduct
 
-namespace TauCeti.ExteriorAlgebra
+namespace ExteriorAlgebra
 
 section Real
 
@@ -89,7 +89,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 all degrees `k : ℕ` of Mathlib's Gram inner product `innerₗ (⋀[ℝ]^k V)` along the homogeneous
 grading `DirectSum.decomposeLinearEquiv (fun k : ℕ ↦ ⋀[ℝ]^k V)`. -/
 def gramBilinForm (V : Type*) [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] : LinearMap.BilinForm ℝ (_root_.ExteriorAlgebra ℝ V) :=
+    [FiniteDimensional ℝ V] : LinearMap.BilinForm ℝ (ExteriorAlgebra ℝ V) :=
   let d := DirectSum.decomposeLinearEquiv (fun k : ℕ ↦ ⋀[ℝ]^k V)
   DirectSum.toModule ℝ ℕ _
     (fun k ↦ (innerₗ (⋀[ℝ]^k V)).compl₂
@@ -110,7 +110,7 @@ theorem gramBilinForm_restrict (k : ℕ) :
 
 /-- **Distinct exterior powers are orthogonal** for `gramBilinForm V`. -/
 theorem gramBilinForm_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
-    {x y : _root_.ExteriorAlgebra ℝ V} (hx : x ∈ ⋀[ℝ]^p V) (hy : y ∈ ⋀[ℝ]^q V) :
+    {x y : ExteriorAlgebra ℝ V} (hx : x ∈ ⋀[ℝ]^p V) (hy : y ∈ ⋀[ℝ]^q V) :
     gramBilinForm V x y = 0 := by
   let x' : ⋀[ℝ]^p V := ⟨x, hx⟩
   let y' : ⋀[ℝ]^q V := ⟨y, hy⟩
@@ -122,7 +122,7 @@ theorem gramBilinForm_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
 /-- **Gram-determinant formula** for `gramBilinForm V`: on decomposable `k`-vectors,
 `gramBilinForm V` evaluates as `det (⟪xᵢ, yⱼ⟫)`. -/
 theorem gramBilinForm_ιMulti_ιMulti (k : ℕ) (x y : Fin k → V) :
-    gramBilinForm V (_root_.ExteriorAlgebra.ιMulti ℝ k x) (_root_.ExteriorAlgebra.ιMulti ℝ k y) =
+    gramBilinForm V (ExteriorAlgebra.ιMulti ℝ k x) (ExteriorAlgebra.ιMulti ℝ k y) =
       (Matrix.of fun i j ↦ ⟪x i, y j⟫).det := by
   rw [← _root_.exteriorPower.ιMulti_apply_coe, ← _root_.exteriorPower.ιMulti_apply_coe,
     gramBilinForm_coe_coe, _root_.exteriorPower.inner_ιMulti_ιMulti, ← Matrix.det_transpose]
@@ -132,16 +132,16 @@ theorem gramBilinForm_ιMulti_ιMulti (k : ℕ) (x y : Fin k → V) :
 @[simp]
 theorem gramBilinForm_one_one : gramBilinForm V 1 1 = 1 := by
   have h := gramBilinForm_ιMulti_ιMulti (V := V) 0 ![] ![]
-  simpa only [_root_.ExteriorAlgebra.ιMulti_zero_apply, Matrix.det_fin_zero] using h
+  simpa only [ExteriorAlgebra.ιMulti_zero_apply, Matrix.det_fin_zero] using h
 
 /-- In degree one, `gramBilinForm V` restricts to the inner product on `V`. -/
 @[simp]
 theorem gramBilinForm_ι_ι (x y : V) :
-    gramBilinForm V (_root_.ExteriorAlgebra.ι ℝ x) (_root_.ExteriorAlgebra.ι ℝ y) = ⟪x, y⟫ := by
-  have hx : _root_.ExteriorAlgebra.ι ℝ x = _root_.ExteriorAlgebra.ιMulti ℝ 1 ![x] := by
-    simp [_root_.ExteriorAlgebra.ιMulti_succ_apply, _root_.ExteriorAlgebra.ιMulti_zero_apply]
-  have hy : _root_.ExteriorAlgebra.ι ℝ y = _root_.ExteriorAlgebra.ιMulti ℝ 1 ![y] := by
-    simp [_root_.ExteriorAlgebra.ιMulti_succ_apply, _root_.ExteriorAlgebra.ιMulti_zero_apply]
+    gramBilinForm V (ExteriorAlgebra.ι ℝ x) (ExteriorAlgebra.ι ℝ y) = ⟪x, y⟫ := by
+  have hx : ExteriorAlgebra.ι ℝ x = ExteriorAlgebra.ιMulti ℝ 1 ![x] := by
+    simp [ExteriorAlgebra.ιMulti_succ_apply, ExteriorAlgebra.ιMulti_zero_apply]
+  have hy : ExteriorAlgebra.ι ℝ y = ExteriorAlgebra.ιMulti ℝ 1 ![y] := by
+    simp [ExteriorAlgebra.ιMulti_succ_apply, ExteriorAlgebra.ιMulti_zero_apply]
   rw [hx, hy, gramBilinForm_ιMulti_ιMulti, Matrix.det_fin_one]
   rfl
 
@@ -149,7 +149,7 @@ theorem gramBilinForm_ι_ι (x y : V) :
 `gramBilinForm V`**: `gramBilinForm V` agrees with the form making `e.toBasis.ExteriorAlgebra`
 orthonormal. -/
 theorem gramBilinForm_toBasis_exteriorAlgebra {I : Type*} [Fintype I] [LinearOrder I]
-    (e : OrthonormalBasis I ℝ V) (x y : _root_.ExteriorAlgebra ℝ V) :
+    (e : OrthonormalBasis I ℝ V) (x y : ExteriorAlgebra ℝ V) :
     gramBilinForm V x y =
       toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra e.toBasis.ExteriorAlgebra
         (1 : Matrix (Finset I) (Finset I) ℝ) x y := by
@@ -158,13 +158,13 @@ theorem gramBilinForm_toBasis_exteriorAlgebra {I : Type*} [Fintype I] [LinearOrd
     refine LinearMap.ext_basis e.toBasis e.toBasis fun i j ↦ ?_
     rw [toLinearMapₛₗ₂_apply_basis, Matrix.one_apply]
     exact (orthonormal_iff_ite.mp e.orthonormal i j).symm
-  let B : _root_.ExteriorAlgebra ℝ V →ₗ⋆[ℝ] _root_.ExteriorAlgebra ℝ V →ₗ[ℝ] ℝ :=
+  let B : ExteriorAlgebra ℝ V →ₗ⋆[ℝ] ExteriorAlgebra ℝ V →ₗ[ℝ] ℝ :=
     { toFun := gramBilinForm V
       map_add' := map_add _
       map_smul' := fun r s ↦ by simp }
   have hB : B = toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis.ExteriorAlgebra
       e.toBasis.ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℝ) := by
-    refine _root_.ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti e.toBasis B
+    refine ExteriorAlgebra.eq_toLinearMapₛₗ₂_of_ιMulti e.toBasis B
       (fun hpq _ hs _ ht ↦ gramBilinForm_eq_zero_of_mem_exteriorPower hpq hs ht) (fun p u v ↦ ?_)
     rw [he]
     exact gramBilinForm_ιMulti_ιMulti p u v
@@ -214,7 +214,7 @@ theorem isSymm_sesqComplexification_gramBilinForm :
 
 /-- `(gramBilinForm V).sesqComplexification` is strictly positive on nonzero complexified forms. -/
 theorem sesqComplexification_gramBilinForm_self_pos
-    {x : ℂ ⊗[ℝ] _root_.ExteriorAlgebra ℝ V} (hx : x ≠ 0) :
+    {x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V} (hx : x ≠ 0) :
     0 < (gramBilinForm V).sesqComplexification x x :=
   LinearMap.BilinForm.sesqComplexification_self_pos isSymm_gramBilinForm
     posDef_toQuadraticMap_gramBilinForm hx
@@ -253,8 +253,8 @@ theorem sesqComplexification_gramBilinForm_subtype_baseChange_eq_zero_of_ne {p q
 theorem sesqComplexification_gramBilinForm_baseChangeEquiv_symm_coe_coe {k : ℕ}
     (a b : ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) :
     (gramBilinForm V).sesqComplexification
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) =
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) =
       LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))
         (TauCeti.exteriorPower.equivBaseChange ℂ k a)
         (TauCeti.exteriorPower.equivBaseChange ℂ k b) := by
@@ -266,11 +266,11 @@ theorem sesqComplexification_gramBilinForm_baseChangeEquiv_symm_coe_coe {k : ℕ
 pullback of `(gramBilinForm V).sesqComplexification` along
 `(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm`. -/
 theorem sesqComplexification_gramBilinForm_baseChangeEquiv_symm_eq_zero_of_mem_exteriorPower
-    {p q : ℕ} (hpq : p ≠ q) {a b : _root_.ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)}
+    {p q : ℕ} (hpq : p ≠ q) {a b : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)}
     (ha : a ∈ ⋀[ℂ]^p (ℂ ⊗[ℝ] V)) (hb : b ∈ ⋀[ℂ]^q (ℂ ⊗[ℝ] V)) :
     (gramBilinForm V).sesqComplexification
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) = 0 := by
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) = 0 := by
   simpa only [TauCeti.exteriorPower.subtype_baseChange_equivBaseChange] using
     sesqComplexification_gramBilinForm_subtype_baseChange_eq_zero_of_ne hpq
       (TauCeti.exteriorPower.equivBaseChange ℂ p ⟨a, ha⟩)
@@ -281,24 +281,24 @@ pulling the Hermitian form of `(e.toBasis.baseChange ℂ).ExteriorAlgebra` back 
 `ExteriorAlgebra.baseChangeEquiv ℝ V ℂ` gives `(gramBilinForm V).sesqComplexification`. -/
 theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
     {I : Type*} [Fintype I] [LinearOrder I] (e : OrthonormalBasis I ℝ V)
-    (x y : ℂ ⊗[ℝ] _root_.ExteriorAlgebra ℝ V) :
+    (x y : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) (e.toBasis.baseChange ℂ).ExteriorAlgebra
         (e.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ)
-        (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
-        (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y) =
+        (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ x)
+        (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ y) =
       (gramBilinForm V).sesqComplexification x y := by
   have hbasis (S : Finset I) :
-      _root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ ((1 : ℂ) ⊗ₜ[ℝ] e.toBasis.ExteriorAlgebra S) =
+      ExteriorAlgebra.baseChangeEquiv ℝ V ℂ ((1 : ℂ) ⊗ₜ[ℝ] e.toBasis.ExteriorAlgebra S) =
         (e.toBasis.baseChange ℂ).ExteriorAlgebra S := by
-    apply (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm.injective
+    apply (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm.injective
     rw [AlgEquiv.symm_apply_apply,
-      _root_.ExteriorAlgebra.basis_apply_ofCard (e.toBasis.baseChange ℂ) (rfl : S.card = S.card),
-      _root_.ExteriorAlgebra.basis_apply_ofCard e.toBasis (rfl : S.card = S.card)]
-    simp only [_root_.ExteriorAlgebra.ιMulti_family, Function.comp_def, Basis.baseChange_apply,
-      _root_.ExteriorAlgebra.baseChangeEquiv_symm_ιMulti_tmul, Finset.prod_const_one]
+      ExteriorAlgebra.basis_apply_ofCard (e.toBasis.baseChange ℂ) (rfl : S.card = S.card),
+      ExteriorAlgebra.basis_apply_ofCard e.toBasis (rfl : S.card = S.card)]
+    simp only [ExteriorAlgebra.ιMulti_family, Function.comp_def, Basis.baseChange_apply,
+      ExteriorAlgebra.baseChangeEquiv_symm_ιMulti_tmul, Finset.prod_const_one]
   set H := toLinearMapₛₗ₂ (starRingEnd ℂ) (e.toBasis.baseChange ℂ).ExteriorAlgebra
     (e.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ)
-  let f := (_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).toLinearMap
+  let f := (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).toLinearMap
   have key : (H.comp f).compl₂ f = (gramBilinForm V).sesqComplexification := by
     refine LinearMap.ext_basis (e.toBasis.ExteriorAlgebra.baseChange ℂ)
       (e.toBasis.ExteriorAlgebra.baseChange ℂ) fun S T ↦ ?_
@@ -317,16 +317,16 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
 back along `(ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm`. -/
 theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra
     {I : Type*} [Fintype I] [LinearOrder I] (e : OrthonormalBasis I ℝ V)
-    (a b : _root_.ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) :
+    (a b : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) :
     toLinearMapₛₗ₂ (starRingEnd ℂ) (e.toBasis.baseChange ℂ).ExteriorAlgebra
         (e.toBasis.baseChange ℂ).ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℂ) a b =
       (gramBilinForm V).sesqComplexification
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) := by
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b) := by
   simpa only [AlgEquiv.apply_symm_apply] using
     toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv e
-      ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
-      ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b)
+      ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm a)
+      ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm b)
 
 /-- **Degree-`k` comparison of the complexified wedge-basis form**: for every ordered orthonormal
 basis `e` of `V`, the restriction of the Hermitian form of
@@ -351,10 +351,10 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_coe
 theorem sesqComplexification_gramBilinForm_baseChangeEquiv_symm_ιMulti_ιMulti
     (k : ℕ) (x y : Fin k → ℂ ⊗[ℝ] V) :
     (gramBilinForm V).sesqComplexification
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm
-          (_root_.ExteriorAlgebra.ιMulti ℂ k x))
-        ((_root_.ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm
-          (_root_.ExteriorAlgebra.ιMulti ℂ k y)) =
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm
+          (ExteriorAlgebra.ιMulti ℂ k x))
+        ((ExteriorAlgebra.baseChangeEquiv ℝ V ℂ).symm
+          (ExteriorAlgebra.ιMulti ℂ k y)) =
       (Matrix.of fun i j ↦
         LinearMap.BilinForm.sesqComplexification (innerₗ V) (x i) (y j)).det := by
   let e := stdOrthonormalBasis ℝ V
@@ -368,8 +368,8 @@ theorem sesqComplexification_gramBilinForm_baseChangeEquiv_symm_ιMulti_ιMulti
       innerₗ_apply_apply, e.coe_toBasis, orthonormal_iff_ite.mp e.orthonormal i j]
     split_ifs <;> simp
   rw [← toLinearMapₛₗ₂_baseChange_exteriorAlgebra e,
-    _root_.ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti, he]
+    ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti, he]
 
 end Complexification
 
-end TauCeti.ExteriorAlgebra
+end ExteriorAlgebra
