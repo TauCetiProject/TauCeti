@@ -22,10 +22,11 @@ import TauCeti.Data.Nat.GCD
 At a root of unity `ζ` whose square `ζ²` has multiplicative order `L ≥ 1`, the simple root
 parameters `ζᵢ = ζ^(dᵢ)` of a symmetrizable Cartan datum have `ζᵢ²` of node-dependent order
 `ℓᵢ = L / gcd(L, dᵢ)`, the least positive exponent `m` with `ζ^(2 m dᵢ) = 1`. When `L` is not
-coprime to every `dᵢ`, the exponents `ℓᵢ` vary across the diagram and Lusztig's quantum Frobenius
-homomorphism lands not in the enveloping algebra of the original Cartan matrix `A`, but in the
-algebra attached to the **modified datum** `(A*, d*)` with entries `aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ`,
-symmetrizer `dᵢ* = ℓᵢ² dᵢ`, and target parameters `ζᵢ* = ζ^(dᵢ ℓᵢ²) ∈ {1, -1}`.
+coprime to every `dᵢ`, the exponents `ℓᵢ` may vary across the diagram; Lusztig's quantum Frobenius
+homomorphism lands in the algebra attached to the **modified datum** `(A*, d*)` with entries
+`aᵢⱼ* = ℓⱼ aᵢⱼ / ℓᵢ`, symmetrizer `dᵢ* = ℓᵢ² dᵢ`, and target parameters
+`ζᵢ* = ζ^(dᵢ ℓᵢ²) ∈ {1, -1}` (whose Cartan matrix `A*` still equals `A` whenever the orders `ℓᵢ`
+are constant, and differs from `A` only when `ℓᵢ` varies across an edge).
 
 This file develops the matrix, arithmetic, graph and root-of-unity theory of these Frobenius order
 data for an arbitrary `TauCeti.SymmetrizableDatum`:
@@ -40,7 +41,7 @@ data for an arbitrary `TauCeti.SymmetrizableDatum`:
   (`TauCeti.SymmetrizableDatum.frobeniusOrder_dvd_frobeniusOrder_mul_cartan`), and the resulting
   modified `SymmetrizableDatum` (`TauCeti.SymmetrizableDatum.modifiedDatum`) with symmetrized
   matrix `(dᵢ* aᵢⱼ*) = (ℓᵢ ℓⱼ dᵢ aᵢⱼ)`;
-* **nondivisibility** (`TauCeti.SymmetrizableDatum.IsNondivisible`), where `L` is coprime to every
+* **nondivisibility** (`TauCeti.SymmetrizableDatum.Nondivisible`), where `L` is coprime to every
   `dᵢ` so `ℓᵢ = L` and `A* = A`, and **Lusztig's conditions**
   (`TauCeti.SymmetrizableDatum.LusztigConditions`), requiring a bipartite diagram (no odd cycle) and
   `1 - aᵢⱼ ≤ ℓᵢ` whenever `i ≠ j` and `2 ≤ ℓⱼ`;
@@ -429,35 +430,35 @@ theorem modifiedDatum_sum (A' : SymmetrizableDatum J) (L : ℕ) (hL : 0 < L) :
 
 /-- Parameter order `L` is **nondivisible** for `A` if `L` is coprime to every symmetrizer entry
 `dᵢ`. In that case `ℓᵢ = L` for every `i` and `A* = A`. -/
-def IsNondivisible (L : ℕ) : Prop :=
+def Nondivisible (L : ℕ) : Prop :=
   ∀ i, Nat.Coprime L (A.symmetrizer i)
 
-lemma isNondivisible_def (L : ℕ) :
-    A.IsNondivisible L ↔ ∀ i, Nat.Coprime L (A.symmetrizer i) := .rfl
+lemma nondivisible_def (L : ℕ) :
+    A.Nondivisible L ↔ ∀ i, Nat.Coprime L (A.symmetrizer i) := .rfl
 
-theorem IsNondivisible.frobeniusOrder_eq {A : SymmetrizableDatum I} {L : ℕ}
-    (h : A.IsNondivisible L) (i : I) :
+theorem Nondivisible.frobeniusOrder_eq {A : SymmetrizableDatum I} {L : ℕ}
+    (h : A.Nondivisible L) (i : I) :
     A.frobeniusOrder L i = L := by
   rw [frobeniusOrder_def, (h i).gcd_eq_one, Nat.div_one]
 
-theorem isNondivisible_iff_forall_frobeniusOrder_eq {L : ℕ} (hL : 0 < L) :
-    A.IsNondivisible L ↔ ∀ i, A.frobeniusOrder L i = L :=
+theorem nondivisible_iff_forall_frobeniusOrder_eq {L : ℕ} (hL : 0 < L) :
+    A.Nondivisible L ↔ ∀ i, A.frobeniusOrder L i = L :=
   forall_congr' fun i ↦ (A.frobeniusOrder_eq_self_iff hL i).symm
 
-theorem IsNondivisible.modifiedDatum_cartan {A : SymmetrizableDatum I} {L : ℕ}
-    (h : A.IsNondivisible L) (hL : 0 < L) :
+theorem Nondivisible.modifiedDatum_cartan {A : SymmetrizableDatum I} {L : ℕ}
+    (h : A.Nondivisible L) (hL : 0 < L) :
     (A.modifiedDatum L hL).cartan = A.cartan :=
   A.modifiedDatum_cartan_eq_of_frobeniusOrder_eq hL fun i j ↦ by
     rw [h.frobeniusOrder_eq i, h.frobeniusOrder_eq j]
 
-theorem IsNondivisible.modifiedDatum_symmetrizer {A : SymmetrizableDatum I} {L : ℕ}
-    (h : A.IsNondivisible L) (hL : 0 < L) (i : I) :
+theorem Nondivisible.modifiedDatum_symmetrizer {A : SymmetrizableDatum I} {L : ℕ}
+    (h : A.Nondivisible L) (hL : 0 < L) (i : I) :
     (A.modifiedDatum L hL).symmetrizer i = L ^ 2 * A.symmetrizer i := by
   rw [modifiedDatum_symmetrizer_apply, h.frobeniusOrder_eq i]
 
 /-- For a normalized simply-laced datum (`dᵢ = 1` for all `i`), every `L` is nondivisible. -/
-theorem isNondivisible_of_symmetrizer_eq_one (hd : ∀ i, A.symmetrizer i = 1) (L : ℕ) :
-    A.IsNondivisible L :=
+theorem nondivisible_of_symmetrizer_eq_one (hd : ∀ i, A.symmetrizer i = 1) (L : ℕ) :
+    A.Nondivisible L :=
   fun i ↦ by rw [hd i]; exact Nat.coprime_one_right L
 
 /-- For a normalized simply-laced datum (`dᵢ = 1` for all `i`) and every `L > 0`, the modified
@@ -465,7 +466,7 @@ Cartan matrix equals `A`. -/
 theorem modifiedDatum_cartan_of_symmetrizer_eq_one (hd : ∀ i, A.symmetrizer i = 1)
     {L : ℕ} (hL : 0 < L) :
     (A.modifiedDatum L hL).cartan = A.cartan :=
-  (A.isNondivisible_of_symmetrizer_eq_one hd L).modifiedDatum_cartan hL
+  (A.nondivisible_of_symmetrizer_eq_one hd L).modifiedDatum_cartan hL
 
 /-- **Lusztig's root-of-unity conditions** on `A` at parameter order `L` (Lusztig 1993, §35.1.2;
 McGerty 2007, §4): the diagram of `A` is bipartite (equivalently, every closed walk — in particular
@@ -672,10 +673,10 @@ theorem lusztigConditions_normalizeSymmetrizer_iff (L : ℕ) :
 
 /-- On a nonempty index type, `L` is nondivisible for `d` if and only if `gcd(L, gcdᵢ dᵢ) = 1` and
 the reduced order `L'` is nondivisible for `d_norm`. -/
-theorem isNondivisible_iff_coprime_gcd_and_normalizeSymmetrizer [Nonempty I] (L : ℕ) :
-    A.IsNondivisible L ↔
+theorem nondivisible_iff_coprime_gcd_and_normalizeSymmetrizer [Nonempty I] (L : ℕ) :
+    A.Nondivisible L ↔
       Nat.Coprime L (Finset.univ.gcd A.symmetrizer) ∧
-        A.normalizeSymmetrizer.IsNondivisible (A.reducedOrder L) := by
+        A.normalizeSymmetrizer.Nondivisible (A.reducedOrder L) := by
   refine ⟨fun h ↦ ?_, fun ⟨hcop, hnorm⟩ i ↦ ?_⟩
   · obtain ⟨i₀⟩ := ‹Nonempty I›
     have hcop : Nat.Coprime L (Finset.univ.gcd A.symmetrizer) :=

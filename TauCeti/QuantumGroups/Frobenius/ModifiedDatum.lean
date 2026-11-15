@@ -81,6 +81,9 @@ lemma frobeniusOrder_pos {L : ℕ} (hL : 0 < L) (i : ι) : 0 < D.frobeniusOrder 
 lemma frobeniusOrder_ne_zero {L : ℕ} (hL : 0 < L) (i : ι) : D.frobeniusOrder L i ≠ 0 :=
   D.toSymmetrizableDatum.frobeniusOrder_ne_zero hL i
 
+lemma frobeniusOrder_dvd (L : ℕ) (i : ι) : D.frobeniusOrder L i ∣ L :=
+  D.toSymmetrizableDatum.frobeniusOrder_dvd L i
+
 /-- The target root-of-unity parameter `ζᵢ* = ζ^(dᵢ ℓᵢ²)` of a `CartanDatum` at node `i`. -/
 def frobeniusTarget {M : Type*} [Monoid M] (ζ : M) (L : ℕ) (i : ι) : M :=
   D.toSymmetrizableDatum.frobeniusTarget ζ L i
@@ -89,13 +92,36 @@ def frobeniusTarget {M : Type*} [Monoid M] (ζ : M) (L : ℕ) (i : ι) : M :=
 lemma toSymmetrizableDatum_frobeniusTarget {M : Type*} [Monoid M] (ζ : M) (L : ℕ) (i : ι) :
     D.toSymmetrizableDatum.frobeniusTarget ζ L i = D.frobeniusTarget ζ L i := (rfl)
 
+lemma frobeniusTarget_def {M : Type*} [Monoid M] (ζ : M) (L : ℕ) (i : ι) :
+    D.frobeniusTarget ζ L i = ζ ^ (D.symmetrizer i * D.frobeniusOrder L i ^ 2) := by
+  simpa using D.toSymmetrizableDatum.frobeniusTarget_def ζ L i
+
+/-- If `ζ^(2 L) = 1`, then `(ζᵢ*)² = 1` at every node `i`. -/
+theorem frobeniusTarget_sq_eq_one {M : Type*} [Monoid M] {ζ : M} {L : ℕ}
+    (hζ : ζ ^ (2 * L) = 1) (i : ι) :
+    D.frobeniusTarget ζ L i ^ 2 = 1 :=
+  D.toSymmetrizableDatum.frobeniusTarget_sq_eq_one hζ i
+
 /-- Parameter order `L` is **nondivisible** for `D` if `L` is coprime to every `dᵢ`. -/
-def IsNondivisible (L : ℕ) : Prop :=
-  D.toSymmetrizableDatum.IsNondivisible L
+def Nondivisible (L : ℕ) : Prop :=
+  D.toSymmetrizableDatum.Nondivisible L
 
 @[simp]
-lemma toSymmetrizableDatum_isNondivisible (L : ℕ) :
-    D.toSymmetrizableDatum.IsNondivisible L ↔ D.IsNondivisible L := .rfl
+lemma toSymmetrizableDatum_nondivisible (L : ℕ) :
+    D.toSymmetrizableDatum.Nondivisible L ↔ D.Nondivisible L := .rfl
+
+lemma nondivisible_def (L : ℕ) :
+    D.Nondivisible L ↔ ∀ i, Nat.Coprime L (D.symmetrizer i) := by
+  simpa using D.toSymmetrizableDatum.nondivisible_def L
+
+theorem Nondivisible.frobeniusOrder_eq {D : CartanDatum ι X Y} {L : ℕ}
+    (h : D.Nondivisible L) (i : ι) :
+    D.frobeniusOrder L i = L :=
+  SymmetrizableDatum.Nondivisible.frobeniusOrder_eq h i
+
+theorem nondivisible_iff_forall_frobeniusOrder_eq {L : ℕ} (hL : 0 < L) :
+    D.Nondivisible L ↔ ∀ i, D.frobeniusOrder L i = L :=
+  D.toSymmetrizableDatum.nondivisible_iff_forall_frobeniusOrder_eq hL
 
 /-- **Lusztig's root-of-unity conditions** on `D` at parameter order `L`: the diagram of `D` is
 bipartite and `1 - aᵢⱼ ≤ ℓᵢ` whenever `i ≠ j` and `2 ≤ ℓⱼ`. -/
@@ -106,6 +132,23 @@ def LusztigConditions (L : ℕ) : Prop :=
 lemma toSymmetrizableDatum_lusztigConditions (L : ℕ) :
     D.toSymmetrizableDatum.LusztigConditions L ↔ D.LusztigConditions L := .rfl
 
+lemma lusztigConditions_def (L : ℕ) :
+    D.LusztigConditions L ↔
+      (diagramGraph D.cartan).IsBipartite ∧
+        ∀ i j, i ≠ j → 2 ≤ D.frobeniusOrder L j → 1 - D.cartan i j ≤ D.frobeniusOrder L i := by
+  simpa using D.toSymmetrizableDatum.lusztigConditions_def L
+
+theorem LusztigConditions.isBipartite {D : CartanDatum ι X Y} {L : ℕ}
+    (h : D.LusztigConditions L) :
+    (diagramGraph D.cartan).IsBipartite :=
+  ((D.lusztigConditions_def L).mp h).1
+
+theorem LusztigConditions.one_sub_cartan_le {D : CartanDatum ι X Y} {L : ℕ}
+    (h : D.LusztigConditions L) {i j : ι}
+    (hij : i ≠ j) (hj : 2 ≤ D.frobeniusOrder L j) :
+    1 - D.cartan i j ≤ D.frobeniusOrder L i :=
+  ((D.lusztigConditions_def L).mp h).2 i j hij hj
+
 /-- The reduced parameter order `L' = L / gcd(L, gcdᵢ dᵢ)` on a finite index type. -/
 def reducedOrder [Fintype ι] (L : ℕ) : ℕ :=
   D.toSymmetrizableDatum.reducedOrder L
@@ -113,6 +156,16 @@ def reducedOrder [Fintype ι] (L : ℕ) : ℕ :=
 @[simp]
 lemma toSymmetrizableDatum_reducedOrder [Fintype ι] (L : ℕ) :
     D.toSymmetrizableDatum.reducedOrder L = D.reducedOrder L := (rfl)
+
+lemma reducedOrder_def [Fintype ι] (L : ℕ) :
+    D.reducedOrder L = L / Nat.gcd L (Finset.univ.gcd D.symmetrizer) := by
+  simpa using D.toSymmetrizableDatum.reducedOrder_def L
+
+lemma reducedOrder_pos [Fintype ι] {L : ℕ} (hL : 0 < L) : 0 < D.reducedOrder L :=
+  D.toSymmetrizableDatum.reducedOrder_pos hL
+
+lemma reducedOrder_dvd [Fintype ι] (L : ℕ) : D.reducedOrder L ∣ L :=
+  D.toSymmetrizableDatum.reducedOrder_dvd L
 
 /-! ### The residue map and the modified weight lattice `X*` -/
 
@@ -131,19 +184,17 @@ of `TauCeti.CartanDatum.weightResidue`. -/
 def modifiedWeightLattice (L : ℕ) : Submodule ℤ X :=
   LinearMap.ker (D.weightResidue L)
 
-lemma ker_weightResidue (L : ℕ) :
-    LinearMap.ker (D.weightResidue L) = D.modifiedWeightLattice L := (rfl)
-
+@[simp]
 theorem mem_modifiedWeightLattice_iff (L : ℕ) (x : X) :
     x ∈ D.modifiedWeightLattice L ↔ ∀ i, (D.frobeniusOrder L i : ℤ) ∣ D.pairing x (D.coroot i) := by
-  rw [← ker_weightResidue, LinearMap.mem_ker, funext_iff]
+  rw [modifiedWeightLattice, LinearMap.mem_ker, funext_iff]
   exact forall_congr' fun i ↦ by
     rw [weightResidue_apply, Pi.zero_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 @[simp]
 theorem modifiedWeightLattice_one : D.modifiedWeightLattice 1 = ⊤ := by
   ext x
-  simp [mem_modifiedWeightLattice_iff, frobeniusOrder_def]
+  simp [frobeniusOrder_def]
 
 /-- Every `L`-multiple of a weight lies in `X*`, since `ℓᵢ ∣ L`. -/
 theorem nsmul_mem_modifiedWeightLattice (L : ℕ) (x : X) :
@@ -151,15 +202,15 @@ theorem nsmul_mem_modifiedWeightLattice (L : ℕ) (x : X) :
   rw [mem_modifiedWeightLattice_iff]
   intro i
   rw [map_nsmul, LinearMap.smul_apply, nsmul_eq_mul]
-  exact dvd_mul_of_dvd_left (Int.ofNat_dvd.mpr (D.toSymmetrizableDatum.frobeniusOrder_dvd L i)) _
+  exact dvd_mul_of_dvd_left (Int.ofNat_dvd.mpr (D.frobeniusOrder_dvd L i)) _
 
 /-- In the nondivisible case, `X*` consists of the weights whose coroot pairings are all multiples
 of `L`. -/
-theorem IsNondivisible.mem_modifiedWeightLattice_iff {D : CartanDatum ι X Y} {L : ℕ}
-    (h : D.IsNondivisible L) (x : X) :
+theorem Nondivisible.mem_modifiedWeightLattice_iff {D : CartanDatum ι X Y} {L : ℕ}
+    (h : D.Nondivisible L) (x : X) :
     x ∈ D.modifiedWeightLattice L ↔ ∀ i, (L : ℤ) ∣ D.pairing x (D.coroot i) := by
   rw [CartanDatum.mem_modifiedWeightLattice_iff]
-  exact forall_congr' fun i ↦ by rw [← toSymmetrizableDatum_frobeniusOrder, h.frobeniusOrder_eq i]
+  exact forall_congr' fun i ↦ by rw [h.frobeniusOrder_eq i]
 
 /-- On a finite index type and for `L > 0`, the modified weight lattice `X*` has finite index in
 `X`. -/
@@ -203,6 +254,7 @@ def modifiedRoot (L : ℕ) (i : ι) : D.modifiedWeightLattice L :=
 lemma coe_modifiedRoot (L : ℕ) (i : ι) :
     (D.modifiedRoot L i : X) = D.frobeniusOrder L i • D.root i := (rfl)
 
+/-- For `L > 0`, the modified simple roots `αᵢ* = ℓᵢ • αᵢ` are `ℤ`-linearly independent in `X*`. -/
 theorem linearIndependent_modifiedRoot {L : ℕ} (hL : 0 < L) :
     LinearIndependent ℤ (D.modifiedRoot L) := by
   rw [linearIndependent_iff']
@@ -269,6 +321,8 @@ theorem modifiedCoroot_modifiedRoot {L : ℕ} (hL : 0 < L) (i j : ι) :
       (D.toSymmetrizableDatum.modifiedDatum L hL).cartan i j := by
   simp [modifiedCoroot_apply, coe_modifiedRoot]
 
+/-- For `L > 0`, the modified simple coroots `hᵢ*` are `ℤ`-linearly independent in
+`Y* = Hom(X*, ℤ)`. -/
 theorem linearIndependent_modifiedCoroot {L : ℕ} (hL : 0 < L) :
     LinearIndependent ℤ (D.modifiedCoroot L) := by
   rw [linearIndependent_iff']
@@ -376,6 +430,8 @@ section NormalizeSymmetrizer
 
 variable [Fintype ι]
 
+/-- Normalizing the symmetrizer of `D` and replacing `L` by the reduced order `L'` leaves every
+Frobenius order unchanged. -/
 @[simp]
 theorem frobeniusOrder_normalizeSymmetrizer (L : ℕ) (i : ι) :
     D.normalizeSymmetrizer.frobeniusOrder (D.reducedOrder L) i = D.frobeniusOrder L i := by
@@ -390,7 +446,7 @@ theorem modifiedWeightLattice_normalizeSymmetrizer (L : ℕ) :
     D.normalizeSymmetrizer.modifiedWeightLattice (D.reducedOrder L) =
       D.modifiedWeightLattice L := by
   ext x
-  simp [mem_modifiedWeightLattice_iff]
+  simp
 
 end NormalizeSymmetrizer
 

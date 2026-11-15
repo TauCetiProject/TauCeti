@@ -14,9 +14,11 @@ public import TauCeti.QuantumGroups.Frobenius.ModifiedDatum
 When a symmetrizable Cartan datum `A` is of finite type, Lusztig's modified datum `(A*, d*)` at any
 parameter order `L ≥ 1` remains of finite type:
 
-* positive definiteness of the symmetrized matrix, `Matrix.IsFiniteCartan`, and
-  `TauCeti.IsFiniteType` are all preserved by `TauCeti.SymmetrizableDatum.modifiedDatum`
-  (`TauCeti.SymmetrizableDatum.posDef_symmetrizedMatrix_modifiedDatum_iff`,
+* positive definiteness of row-weighted matrices `(dᵢ aᵢⱼ)` (under `dᵢ ↦ ℓᵢ² dᵢ`) and of the
+  symmetrized matrix, `Matrix.IsFiniteCartan`, and `TauCeti.IsFiniteType` are all preserved by
+  `TauCeti.SymmetrizableDatum.modifiedDatum`
+  (`TauCeti.SymmetrizableDatum.posDef_mul_modifiedDatum_cartan_iff`,
+  `TauCeti.SymmetrizableDatum.posDef_symmetrizedMatrix_modifiedDatum_iff`,
   `TauCeti.SymmetrizableDatum.isFiniteCartan_modifiedDatum`,
   `TauCeti.SymmetrizableDatum.isFiniteType_modifiedDatum_iff`);
 * the diagram of any finite-type Cartan matrix is acyclic and hence bipartite, so the odd-cycle
@@ -53,78 +55,64 @@ variable {I : Type*} (A : SymmetrizableDatum I)
 
 /-! ### Preservation of positive definiteness and finite type -/
 
+/-- Scaling a rational row-weight `d` by `ℓᵢ²` preserves positive definiteness when passing from
+`A` to `A*`, since `(ℓᵢ² dᵢ) aᵢⱼ* = ℓᵢ (dᵢ aᵢⱼ) ℓⱼ` is congruent to `(dᵢ aᵢⱼ)` by the invertible
+diagonal matrix `diag(ℓᵢ)`. -/
+theorem posDef_mul_modifiedDatum_cartan_iff {L : ℕ} (hL : 0 < L) (d : I → ℚ) :
+    (_root_.Matrix.of fun i j ↦
+      (A.frobeniusOrder L i : ℚ) ^ 2 * d i * ((A.modifiedDatum L hL).cartan i j : ℚ)).PosDef ↔
+      (_root_.Matrix.of fun i j ↦ d i * (A.cartan i j : ℚ)).PosDef := by
+  classical
+  rw [_root_.Matrix.posDef_iff_submatrix_finset, _root_.Matrix.posDef_iff_submatrix_finset]
+  refine forall_congr' fun s ↦ ?_
+  let U : _root_.Matrix s s ℚ := _root_.Matrix.diagonal fun i ↦ (A.frobeniusOrder L i : ℚ)
+  have hU : IsUnit U := _root_.Matrix.isUnit_diagonal.mpr <| Pi.isUnit_iff.mpr fun i ↦
+    (Nat.cast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)).isUnit
+  have hcongr : (_root_.Matrix.of fun i j ↦
+      (A.frobeniusOrder L i : ℚ) ^ 2 * d i * ((A.modifiedDatum L hL).cartan i j : ℚ)).submatrix
+      (↑) (↑) =
+      star U * (_root_.Matrix.of fun i j ↦ d i * (A.cartan i j : ℚ)).submatrix (↑) (↑) * U := by
+    ext i j
+    have hij : (A.frobeniusOrder L i : ℚ) * ((A.modifiedDatum L hL).cartan i j : ℚ) =
+        A.frobeniusOrder L j * (A.cartan i j : ℚ) := by
+      exact_mod_cast A.frobeniusOrder_mul_modifiedDatum_cartan L hL i j
+    simp only [U, _root_.Matrix.star_eq_conjTranspose, _root_.Matrix.diagonal_conjTranspose,
+      star_trivial, _root_.Matrix.diagonal_mul, _root_.Matrix.mul_diagonal,
+      _root_.Matrix.submatrix_apply, _root_.Matrix.of_apply]
+    linear_combination (A.frobeniusOrder L i : ℚ) * d i * hij
+  rw [hcongr, _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hU]
+
 /-- For any symmetrizable datum and `L > 0`, the symmetrized matrix of the modified datum is
 positive definite over `ℤ` if and only if the original symmetrized matrix is positive definite. -/
 @[simp]
 theorem posDef_symmetrizedMatrix_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
     (A.modifiedDatum L hL).symmetrizedMatrix.PosDef ↔ A.symmetrizedMatrix.PosDef := by
-  classical
-  rw [← TauCeti.Matrix.posDef_map_intCast_iff, ← TauCeti.Matrix.posDef_map_intCast_iff,
-    _root_.Matrix.posDef_iff_submatrix_finset, _root_.Matrix.posDef_iff_submatrix_finset]
-  refine forall_congr' fun s ↦ ?_
-  let U : _root_.Matrix s s ℚ := _root_.Matrix.diagonal fun i ↦ (A.frobeniusOrder L i : ℚ)
-  have hU : IsUnit U := _root_.Matrix.isUnit_diagonal.mpr <| Pi.isUnit_iff.mpr fun i ↦
-    (Nat.cast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)).isUnit
-  have hcongr : ((A.modifiedDatum L hL).symmetrizedMatrix.map (Int.cast : ℤ → ℚ)).submatrix
-      (↑) (↑) = star U * (A.symmetrizedMatrix.map (Int.cast : ℤ → ℚ)).submatrix (↑) (↑) * U := by
-    ext i j
-    simp only [U, _root_.Matrix.star_eq_conjTranspose, _root_.Matrix.diagonal_conjTranspose,
-      star_trivial, _root_.Matrix.diagonal_mul, _root_.Matrix.mul_diagonal,
-      _root_.Matrix.submatrix_apply, _root_.Matrix.map_apply, symmetrizedMatrix_modifiedDatum_apply]
-    push_cast
-    ring
-  rw [hcongr, _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hU]
+  rw [← TauCeti.Matrix.posDef_map_intCast_iff, ← TauCeti.Matrix.posDef_map_intCast_iff]
+  convert A.posDef_mul_modifiedDatum_cartan_iff hL (fun i ↦ (A.symmetrizer i : ℚ)) using 2 <;>
+    ext i j <;> simp
 
 /-- Modifying a symmetrizable datum preserves `TauCeti.IsFiniteType`. -/
 @[simp]
 theorem isFiniteType_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
     IsFiniteType (A.modifiedDatum L hL).cartan ↔ IsFiniteType A.cartan := by
+  have hw (i : I) : (0 : ℚ) < A.frobeniusOrder L i := Nat.cast_pos.mpr (A.frobeniusOrder_pos hL i)
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have := h.finite
-    classical
-    have _i : Fintype I := Fintype.ofFinite I
     obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-    have hw (i : I) : (0 : ℚ) < A.frobeniusOrder L i :=
-      Nat.cast_pos.mpr (A.frobeniusOrder_pos hL i)
     refine isFiniteType_of A.diag A.offDiag_nonpos
       (d := fun i ↦ d i / (A.frobeniusOrder L i : ℚ) ^ 2)
-      (fun i ↦ div_pos (hd i) (pow_pos (hw i) 2)) ?_
-    let U : _root_.Matrix I I ℚ := _root_.Matrix.diagonal fun i ↦ (A.frobeniusOrder L i : ℚ)⁻¹
-    have hU : IsUnit U := _root_.Matrix.isUnit_diagonal.mpr <| Pi.isUnit_iff.mpr fun i ↦
-      (inv_ne_zero (hw i).ne').isUnit
-    rw [← _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hU] at hpd
+      (fun i ↦ div_pos (hd i) (pow_pos (hw i) 2))
+      ((A.posDef_mul_modifiedDatum_cartan_iff hL _).mp ?_)
     convert hpd using 1
     ext i j
-    have hij : (A.frobeniusOrder L i : ℚ) * ((A.modifiedDatum L hL).cartan i j : ℚ) =
-        A.frobeniusOrder L j * (A.cartan i j : ℚ) := by
-      exact_mod_cast A.frobeniusOrder_mul_modifiedDatum_cartan L hL i j
-    have hli := (hw i).ne'
-    have hlj := (hw j).ne'
-    simp only [U, _root_.Matrix.star_eq_conjTranspose, _root_.Matrix.diagonal_conjTranspose,
-      star_trivial, _root_.Matrix.diagonal_mul, _root_.Matrix.mul_diagonal, _root_.Matrix.of_apply]
-    field_simp
-    linear_combination -d i * hij
+    rw [_root_.Matrix.of_apply, _root_.Matrix.of_apply,
+      mul_div_cancel₀ _ (pow_ne_zero 2 (hw i).ne')]
   · have := h.finite
-    classical
-    have _i : Fintype I := Fintype.ofFinite I
     obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-    have hw (i : I) : (0 : ℚ) < A.frobeniusOrder L i :=
-      Nat.cast_pos.mpr (A.frobeniusOrder_pos hL i)
-    refine isFiniteType_of (A.modifiedDatum L hL).diag (A.modifiedDatum L hL).offDiag_nonpos
+    exact isFiniteType_of (A.modifiedDatum L hL).diag (A.modifiedDatum L hL).offDiag_nonpos
       (d := fun i ↦ (A.frobeniusOrder L i : ℚ) ^ 2 * d i)
-      (fun i ↦ mul_pos (pow_pos (hw i) 2) (hd i)) ?_
-    let U : _root_.Matrix I I ℚ := _root_.Matrix.diagonal fun i ↦ (A.frobeniusOrder L i : ℚ)
-    have hU : IsUnit U := _root_.Matrix.isUnit_diagonal.mpr <| Pi.isUnit_iff.mpr fun i ↦
-      (hw i).ne'.isUnit
-    rw [← _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hU] at hpd
-    convert hpd using 1
-    ext i j
-    have hij : (A.frobeniusOrder L i : ℚ) * ((A.modifiedDatum L hL).cartan i j : ℚ) =
-        A.frobeniusOrder L j * (A.cartan i j : ℚ) := by
-      exact_mod_cast A.frobeniusOrder_mul_modifiedDatum_cartan L hL i j
-    simp only [U, _root_.Matrix.star_eq_conjTranspose, _root_.Matrix.diagonal_conjTranspose,
-      star_trivial, _root_.Matrix.diagonal_mul, _root_.Matrix.mul_diagonal, _root_.Matrix.of_apply]
-    linear_combination (A.frobeniusOrder L i : ℚ) * d i * hij
+      (fun i ↦ mul_pos (pow_pos (hw i) 2) (hd i))
+      ((A.posDef_mul_modifiedDatum_cartan_iff hL d).mpr hpd)
 
 /-- Modifying a symmetrizable datum preserves Mathlib's `Matrix.IsFiniteCartan`. -/
 theorem isFiniteCartan_modifiedDatum [Fintype I] [DecidableEq I]
@@ -138,20 +126,11 @@ theorem isFiniteCartan_modifiedDatum [Fintype I] [DecidableEq I]
     refine ⟨fun i ↦ (A.frobeniusOrder L i : ℤ) ^ 2 * d i,
       fun i ↦ mul_pos (pow_pos (Int.natCast_pos.mpr (A.frobeniusOrder_pos hL i)) 2) (hd i), ?_⟩
     rw [← TauCeti.Matrix.posDef_map_intCast_iff] at hpd ⊢
-    let U : _root_.Matrix I I ℚ := _root_.Matrix.diagonal fun i ↦ (A.frobeniusOrder L i : ℚ)
-    have hU : IsUnit U := _root_.Matrix.isUnit_diagonal.mpr <| Pi.isUnit_iff.mpr fun i ↦
-      (Nat.cast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)).isUnit
-    rw [← _root_.Matrix.IsUnit.posDef_star_left_conjugate_iff hU] at hpd
-    convert hpd using 1
+    have hpd' : (_root_.Matrix.of fun i j ↦ (d i : ℚ) * (A.cartan i j : ℚ)).PosDef := by
+      convert hpd using 1; ext i j; simp
+    convert (A.posDef_mul_modifiedDatum_cartan_iff hL fun i ↦ (d i : ℚ)).mpr hpd' using 1
     ext i j
-    have hij : (A.frobeniusOrder L i : ℚ) * ((A.modifiedDatum L hL).cartan i j : ℚ) =
-        A.frobeniusOrder L j * (A.cartan i j : ℚ) := by
-      exact_mod_cast A.frobeniusOrder_mul_modifiedDatum_cartan L hL i j
-    simp only [U, _root_.Matrix.star_eq_conjTranspose, _root_.Matrix.diagonal_conjTranspose,
-      star_trivial, _root_.Matrix.diagonal_mul, _root_.Matrix.mul_diagonal,
-      _root_.Matrix.map_apply]
-    push_cast
-    linear_combination (A.frobeniusOrder L i : ℚ) * (d i : ℚ) * hij
+    simp [mul_assoc]
 
 /-- In finite type, the diagram is automatically bipartite (since it is acyclic), so Lusztig's
 conditions reduce to the inequalities `1 - aᵢⱼ ≤ ℓᵢ` for `i ≠ j` with `2 ≤ ℓⱼ`. -/
@@ -346,8 +325,8 @@ example :
       g2ScaledDatum.reducedOrder 4 = 2 ∧
       g2ScaledDatum.frobeniusOrder 4 = ![2, 2] ∧
       (g2ScaledDatum.modifiedDatum 4 (by decide)).cartan = g2ScaledDatum.cartan ∧
-      ¬ g2ScaledDatum.IsNondivisible 4 ∧
-      g2ScaledDatum.normalizeSymmetrizer.IsNondivisible (g2ScaledDatum.reducedOrder 4) := by
+      ¬ g2ScaledDatum.Nondivisible 4 ∧
+      g2ScaledDatum.normalizeSymmetrizer.Nondivisible (g2ScaledDatum.reducedOrder 4) := by
   refine ⟨by decide, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · ext i j
     · fin_cases i <;> fin_cases j <;> simp [g2ScaledDatum, g2NormDatum]
@@ -356,28 +335,28 @@ example :
   · rw [reducedOrder_def]; decide
   · funext i; fin_cases i <;> simp [frobeniusOrder_def, g2ScaledDatum]
   · ext i j; fin_cases i <;> fin_cases j <;> simp [frobeniusOrder_def, g2ScaledDatum]
-  · rw [isNondivisible_def]; intro h
+  · rw [nondivisible_def]; intro h
     exact absurd (h 0) (by simp only [g2ScaledDatum]; decide)
-  · rw [isNondivisible_def]; intro i
+  · rw [nondivisible_def]; intro i
     fin_cases i <;>
       simp only [reducedOrder_def, normalizeSymmetrizer_symmetrizer, g2ScaledDatum] <;> decide
 
 -- Check 2: `G₂` with `d = (1, 3)` at `L = 3` has `ℓ = (3, 1)`, `A* = [[2, -1], [-3, 2]] = Aᵀ`,
--- `d* = (9, 3)`, symmetrized off-diagonal `-9`, fails `IsNondivisible 3`, and fails
+-- `d* = (9, 3)`, symmetrized off-diagonal `-9`, fails `Nondivisible 3`, and fails
 -- `LusztigConditions 3` at `(i, j) = (1, 0)`.
 example :
     g2NormDatum.frobeniusOrder 3 = ![3, 1] ∧
       (g2NormDatum.modifiedDatum 3 (by decide)).cartan = !![2, -1; -3, 2] ∧
       (g2NormDatum.modifiedDatum 3 (by decide)).symmetrizer = ![9, 3] ∧
       (g2NormDatum.modifiedDatum 3 (by decide)).symmetrizedMatrix 0 1 = -9 ∧
-      ¬ g2NormDatum.IsNondivisible 3 ∧
+      ¬ g2NormDatum.Nondivisible 3 ∧
       ¬ g2NormDatum.LusztigConditions 3 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · funext i; fin_cases i <;> simp [frobeniusOrder_def, g2NormDatum]
   · ext i j; fin_cases i <;> fin_cases j <;> simp [frobeniusOrder_def, g2NormDatum]
   · funext i; fin_cases i <;> simp [frobeniusOrder_def, g2NormDatum]
   · simp [frobeniusOrder_def, g2NormDatum]
-  · rw [isNondivisible_def]; intro h; exact absurd (h 1) (by simp [g2NormDatum])
+  · rw [nondivisible_def]; intro h; exact absurd (h 1) (by simp [g2NormDatum])
   · intro h
     have h10 := h.one_sub_cartan_le (i := 1) (j := 0) (by decide)
       (by simp [frobeniusOrder_def, g2NormDatum])
@@ -399,16 +378,16 @@ example :
   simp [h1, map_nsmul] at heval
 
 -- Check 3: `B₂` with `d = (1, 2)` at `L = 2` has `ℓ = (2, 1)`, `A* = [[2, -1], [-2, 2]] = Aᵀ`,
--- fails `IsNondivisible 2`, and fails `LusztigConditions 2` at `(1, 0)`.
+-- fails `Nondivisible 2`, and fails `LusztigConditions 2` at `(1, 0)`.
 example :
     b2NormDatum.frobeniusOrder 2 = ![2, 1] ∧
       (b2NormDatum.modifiedDatum 2 (by decide)).cartan = !![2, -1; -2, 2] ∧
-      ¬ b2NormDatum.IsNondivisible 2 ∧
+      ¬ b2NormDatum.Nondivisible 2 ∧
       ¬ b2NormDatum.LusztigConditions 2 := by
   refine ⟨?_, ?_, ?_, ?_⟩
   · funext i; fin_cases i <;> simp [frobeniusOrder_def, b2NormDatum]
   · ext i j; fin_cases i <;> fin_cases j <;> simp [frobeniusOrder_def, b2NormDatum]
-  · rw [isNondivisible_def]; intro h; exact absurd (h 1) (by simp [b2NormDatum])
+  · rw [nondivisible_def]; intro h; exact absurd (h 1) (by simp [b2NormDatum])
   · intro h
     have h10 := h.one_sub_cartan_le (i := 1) (j := 0) (by decide)
       (by simp [frobeniusOrder_def, b2NormDatum])
@@ -417,11 +396,11 @@ example :
 -- Check 4: `G₂` with `d = (1, 3)` at `L = 2` is nondivisible (`ℓ = (2, 2)`, `A* = A`), yet
 -- Lusztig's second condition fails (`1 - a₀₁ = 4 > 2 = ℓ₀`).
 example :
-    g2NormDatum.IsNondivisible 2 ∧
+    g2NormDatum.Nondivisible 2 ∧
       g2NormDatum.frobeniusOrder 2 = ![2, 2] ∧
       ¬ g2NormDatum.LusztigConditions 2 := by
   refine ⟨?_, ?_, ?_⟩
-  · rw [isNondivisible_def]; intro i
+  · rw [nondivisible_def]; intro i
     fin_cases i <;> simp only [g2NormDatum] <;> decide
   · funext i; fin_cases i <;> simp [frobeniusOrder_def, g2NormDatum]
   · intro h
