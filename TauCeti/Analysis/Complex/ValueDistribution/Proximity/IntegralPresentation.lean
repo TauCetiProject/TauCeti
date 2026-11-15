@@ -153,8 +153,6 @@ meromorphic on `sphere 0 |R|`, then `a ↦ circleAverage (Real.log ‖f · - a�
 integrable on the unit circle. -/
 theorem circleIntegrable_circleAverage_log_norm_sub (hf : MeromorphicOn f (sphere 0 |R|)) :
     CircleIntegrable (fun a ↦ circleAverage (fun z ↦ Real.log ‖f z - a‖) 0 R) 0 1 := by
-  by_cases hR : R = 0
-  · simp [hR, circleAverage_zero, norm_sub_rev, circleIntegrable_log_norm_sub_const]
   have h_int := hf.integrableOn_log_norm_circleMap_sub
   rw [uIoc_of_le two_pi_pos.le, IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
     at h_int
