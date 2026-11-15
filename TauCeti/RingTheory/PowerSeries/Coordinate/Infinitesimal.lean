@@ -270,7 +270,8 @@ theorem infinitesimal_inv {e : S} (he : e ^ 2 = 0) {a : S⟦X⟧} (ha : constant
 
 /-- In the coordinate composition group `TauCeti.FormalCoordinate S`, the commutator of `X + e₁ a`
 and `X + e₂ b` carries `b a' - a b'`, the opposite sign to the operator commutator
-`TauCeti.infinitesimalSubstAlgEquiv_commutator`, because `φ ↦ σ_φ` reverses multiplication. -/
+`TauCeti.infinitesimalSubstAlgEquiv_commutator`, by
+`TauCeti.FormalCoordinate.substAlgEquiv_commutatorElement`. -/
 @[simp]
 theorem infinitesimal_commutator {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0) (he₂ : e₂ ^ 2 = 0)
     {a b : S⟦X⟧} (ha : constantCoeff a = 0) (hb : constantCoeff b = 0) :
@@ -278,15 +279,8 @@ theorem infinitesimal_commutator {e₁ e₂ : S} (he₁ : e₁ ^ 2 = 0) (he₂ :
       infinitesimal (e₁ * e₂) (by rw [mul_pow, he₁, zero_mul])
         (b * d⁄dX a - a * d⁄dX b) (by simp [ha, hb]) := by
   refine substAlgEquiv_injective ?_
-  have hanti (φ ψ : FormalCoordinate S) :
-      (⁅φ, ψ⁆).substAlgEquiv = ⁅ψ⁻¹.substAlgEquiv, φ⁻¹.substAlgEquiv⁆ := by
-    simp [commutatorElement_def, ← substAlgEquiv_symm, AlgEquiv.aut_inv, mul_assoc]
-  rw [hanti, infinitesimal_inv, infinitesimal_inv, substAlgEquiv_infinitesimal,
-    substAlgEquiv_infinitesimal, infinitesimalSubstAlgEquiv_commutator,
-    substAlgEquiv_infinitesimal]
-  congr 1
-  · exact mul_comm e₂ e₁
-  · simp
+  rw [substAlgEquiv_commutatorElement]
+  simp [mul_comm e₂ e₁]
 
 /-- The linear coefficient of `TauCeti.FormalCoordinate.infinitesimal e he a ha` is
 `1 + e * coeff 1 a`. -/

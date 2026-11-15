@@ -241,6 +241,14 @@ theorem substAlgEquiv_mul (φ ψ : FormalCoordinate R) :
     (φ * ψ).substAlgEquiv = ψ.substAlgEquiv * φ.substAlgEquiv :=
   AlgEquiv.ext fun f ↦ by simp [subst_subst]
 
+open scoped commutatorElement in
+/-- Because `φ ↦ σ_φ` reverses composition, it sends the group commutator `⁅φ, ψ⁆` to
+`⁅σ_{ψ⁻¹}, σ_{φ⁻¹}⁆`. -/
+@[simp]
+theorem substAlgEquiv_commutatorElement (φ ψ : FormalCoordinate R) :
+    (⁅φ, ψ⁆).substAlgEquiv = ⁅ψ⁻¹.substAlgEquiv, φ⁻¹.substAlgEquiv⁆ := by
+  simp [commutatorElement_def, ← substAlgEquiv_symm, AlgEquiv.aut_inv, mul_assoc]
+
 @[simp]
 theorem substAlgEquiv_one : (1 : FormalCoordinate R).substAlgEquiv = 1 :=
   AlgEquiv.ext fun f ↦ by simp

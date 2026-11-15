@@ -56,12 +56,14 @@ theorem map_fstHom_dualNumberUnit {R B : Type*} [CommSemiring R] [Ring B] [Algeb
   ext
   simp
 
-variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
-
 /-- Coordinatewise scalar multiplication associates with multiplication of dual numbers. -/
-instance dualNumberIsScalarTower : IsScalarTower R (DualNumber B) (DualNumber B) where
+instance dualNumberIsScalarTower {R B : Type*} [Monoid R] [Semiring B]
+    [DistribMulAction R B] [IsScalarTower R B B] :
+    IsScalarTower R (DualNumber B) (DualNumber B) where
   smul_assoc r x y := by
-    ext <;> simp [smul_eq_mul, smul_add]
+    ext <;> simp [smul_eq_mul, smul_add, smul_mul_assoc]
+
+variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- Coordinatewise scalar multiplication commutes with left multiplication of dual numbers. -/
 instance dualNumberSMulCommClass : SMulCommClass R (DualNumber B) (DualNumber B) where
@@ -70,12 +72,8 @@ instance dualNumberSMulCommClass : SMulCommClass R (DualNumber B) (DualNumber B)
 
 /-- Dual numbers over an Artinian ring form an Artinian ring. -/
 instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
-    IsArtinianRing (DualNumber R) := by
-  have : IsScalarTower R (DualNumber R) (DualNumber R) :=
-    ⟨fun r x y ↦ by
-      simpa only [smul_eq_mul, ← TrivSqZeroExt.inl_mul_eq_smul] using
-        mul_assoc (TrivSqZeroExt.inl r) x y⟩
-  exact isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
+    IsArtinianRing (DualNumber R) :=
+  isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
 
 /-- Multiplication by `ε` on the dual numbers is exact. -/
 theorem dualNumber_mul_eps_exact {R : Type*} [Semiring R] :
@@ -159,6 +157,10 @@ theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
 /-- The dual numbers are a finite module over their coefficient ring, with basis `1, ε`. -/
 instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
   Module.Finite.of_basis (dualNumberBasis R)
+
+/-- The dual numbers are a free module over their coefficient ring, with basis `1, ε`. -/
+instance dualNumberModuleFree : Module.Free R (DualNumber R) :=
+  Module.Free.of_basis (dualNumberBasis R)
 
 variable {R}
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.CommRing
 public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.RingTheory.AlgebraTower
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.DualNumber.Basic
@@ -49,6 +50,8 @@ the presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]`
 
 * `DualNumber.inl_eps_pow_two`, `DualNumber.inl_eps_mul_eps`: `(inl ε) ^ 2 = 0` and
   `inl ε * ε = ε • ε` in `R[ε][ε]`.
+* `TauCeti.finrank_iteratedDualNumber`: `Module.finrank R R[ε][ε] = 4` under
+  `StrongRankCondition R`.
 * `TauCeti.iteratedDualNumber_algHom_ext`: `R`-algebra maps out of `R[ε][ε]` are determined by
   their values on `inl ε` and `ε`.
 * `DualNumber.ker_aeval_inl_eps_eps`: the kernel of `MvPolynomial.aeval ![inl ε, ε]` is
@@ -115,13 +118,6 @@ section Basis
 
 variable (R : Type*) [Semiring R]
 
-/-- Scalar actions of `R` and `R[ε]` on the iterated dual numbers `R[ε][ε]` form a scalar tower. -/
-instance iteratedDualNumberIsScalarTower : IsScalarTower R R[ε] R[ε][ε] :=
-  have : IsScalarTower R R[ε] R[ε] :=
-    ⟨fun r x y ↦ by
-      simpa only [smul_eq_mul, ← inl_mul_eq_smul] using mul_assoc (inl r) x y⟩
-  inferInstance
-
 /-- The `R`-module basis `{1, inl ε, ε, ε • ε}` of the iterated dual numbers `R[ε][ε]`, indexed
 by `Fin 2 × Fin 2` via `(i, j) ↦ (inl ε) ^ i * ε ^ j`. -/
 noncomputable def iteratedDualNumberBasis : Module.Basis (Fin 2 × Fin 2) R R[ε][ε] :=
@@ -130,6 +126,17 @@ noncomputable def iteratedDualNumberBasis : Module.Basis (Fin 2 × Fin 2) R R[ε
 /-- The iterated dual numbers `R[ε][ε]` are a finite `R`-module (of rank four). -/
 instance iteratedDualNumberModuleFinite : Module.Finite R R[ε][ε] :=
   Module.Finite.of_basis (iteratedDualNumberBasis R)
+
+/-- The iterated dual numbers `R[ε][ε]` are a free `R`-module on `{1, inl ε, ε, ε • ε}`. -/
+instance iteratedDualNumberModuleFree : Module.Free R R[ε][ε] :=
+  Module.Free.of_basis (iteratedDualNumberBasis R)
+
+/-- Over a semiring satisfying the strong rank condition, the iterated dual numbers `R[ε][ε]`
+have `R`-rank four. -/
+@[simp]
+theorem finrank_iteratedDualNumber [StrongRankCondition R] :
+    Module.finrank R R[ε][ε] = 4 := by
+  simp [Module.finrank_eq_card_basis (iteratedDualNumberBasis R)]
 
 /-- The `(0, 0)` basis element of `TauCeti.iteratedDualNumberBasis` is `1`. -/
 @[simp]
@@ -200,9 +207,7 @@ theorem iteratedDualNumber_algHom_ext ⦃f g : R[ε][ε] →ₐ[R] A⦄
     DualNumber.algHom_ext (by simpa using h₁)
   refine DualNumber.algHom_ext' hinl ?_
   ext x
-  simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply,
-    AlgHom.toLinearMap_apply, LinearMap.toSpanSingleton_apply, ← inl_mul_eq_smul, map_mul, h₂]
-  exact congr($(congr($hinl x)) * g ε)
+  simp [← inl_mul_eq_smul, show f (inl x) = g (inl x) from congr($hinl x), h₂]
 
 /-- Universal property of the iterated dual numbers: `R`-algebra homomorphisms `R[ε][ε] →ₐ[R] A`
 correspond bijectively to pairs `(e₁, e₂)` of commuting square-zero elements of `A`. -/
@@ -231,8 +236,8 @@ theorem iteratedDualNumberLift_apply
     (e : {e : A × A // e.1 * e.1 = 0 ∧ e.2 * e.2 = 0 ∧ Commute e.1 e.2}) (z : R[ε][ε]) :
     iteratedDualNumberLift e z =
       algebraMap R A z.fst.fst + algebraMap R A z.fst.snd * e.val.1 +
-        (algebraMap R A z.snd.fst + algebraMap R A z.snd.snd * e.val.1) * e.val.2 :=
-  (rfl)
+        (algebraMap R A z.snd.fst + algebraMap R A z.snd.snd * e.val.1) * e.val.2 := by
+  simp [iteratedDualNumberLift, DualNumber.lift_apply_apply]
 
 /-- `TauCeti.iteratedDualNumberLift` sends `inl ε` to the first chosen square-zero element. -/
 @[simp]
@@ -440,6 +445,13 @@ section MvPolynomialQuotient
 
 variable (R : Type*) [CommRing R]
 
+private theorem mk_X_mul_self_eq_zero (i : Fin 2) :
+    let I : Ideal (MvPolynomial (Fin 2) R) :=
+      Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}
+    Ideal.Quotient.mkₐ R I (MvPolynomial.X i) * Ideal.Quotient.mkₐ R I (MvPolynomial.X i) = 0 := by
+  simp only [← sq, ← map_pow, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+  fin_cases i <;> exact Ideal.subset_span (by simp)
+
 /-- The bivariate polynomial presentation `R[X₀, X₁] / (X₀², X₁²) ≃ₐ[R] R[ε][ε]` of the iterated
 dual numbers, sending the residue class of `X 0` to `inl ε` and the residue class of `X 1` to
 `ε`. -/
@@ -449,23 +461,22 @@ noncomputable def iteratedDualNumberMvPolynomialQuotientAlgEquiv :
       R[ε][ε] :=
   let I : Ideal (MvPolynomial (Fin 2) R) :=
     Ideal.span {(MvPolynomial.X 0 : MvPolynomial (Fin 2) R) ^ 2, MvPolynomial.X 1 ^ 2}
+  have hI : ∀ p ∈ I, MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p = 0 := fun _ hp ↦
+    RingHom.mem_ker.mp ((DualNumber.ker_aeval_inl_eps_eps (R := R)).symm ▸ hp)
+  -- `Ideal.Quotient.liftₐ` uses `Ring` quotient instances rather than the `CommRing` shortcut,
+  -- so we rewrite via `liftₐ_comp` before `simp` unfolds `liftₐ_apply`.
+  have hlift (p : MvPolynomial (Fin 2) R) :
+      Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) hI
+        (Ideal.Quotient.mkₐ R I p) = MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p :=
+    congr($(Ideal.Quotient.liftₐ_comp I _ hI) p)
   AlgEquiv.ofAlgHom
-    (Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) fun _ hp ↦
-      RingHom.mem_ker.mp ((DualNumber.ker_aeval_inl_eps_eps (R := R)).symm ▸ hp))
+    (Ideal.Quotient.liftₐ I (MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])]) hI)
     (iteratedDualNumberLift ⟨(Ideal.Quotient.mkₐ R I (MvPolynomial.X 0),
         Ideal.Quotient.mkₐ R I (MvPolynomial.X 1)),
-      by rw [← sq, ← map_pow, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
-         exact Ideal.subset_span (Or.inl rfl),
-      by rw [← sq, ← map_pow, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
-         exact Ideal.subset_span (Or.inr rfl),
-      Commute.all _ _⟩)
+      mk_X_mul_self_eq_zero R 0, mk_X_mul_self_eq_zero R 1, Commute.all _ _⟩)
     (iteratedDualNumber_algHom_ext
-      (by rw [AlgHom.comp_apply, iteratedDualNumberLift_inl_eps, ← AlgHom.comp_apply,
-            Ideal.Quotient.liftₐ_comp, MvPolynomial.aeval_X, Matrix.cons_val_zero,
-            AlgHom.id_apply])
-      (by rw [AlgHom.comp_apply, iteratedDualNumberLift_eps, ← AlgHom.comp_apply,
-            Ideal.Quotient.liftₐ_comp, MvPolynomial.aeval_X, Matrix.cons_val_one,
-            Matrix.cons_val_fin_one, AlgHom.id_apply]))
+      (by simp [-Ideal.Quotient.liftₐ_apply, -Ideal.Quotient.mkₐ_eq_mk, hlift])
+      (by simp [-Ideal.Quotient.liftₐ_apply, -Ideal.Quotient.mkₐ_eq_mk, hlift]))
     (Ideal.Quotient.algHom_ext _ (by
       rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
       refine MvPolynomial.algHom_ext fun i ↦ ?_
@@ -479,8 +490,10 @@ variable {R}
 theorem iteratedDualNumberMvPolynomialQuotientAlgEquiv_mk (p : MvPolynomial (Fin 2) R) :
     iteratedDualNumberMvPolynomialQuotientAlgEquiv R
         (Ideal.Quotient.mk (Ideal.span {MvPolynomial.X 0 ^ 2, MvPolynomial.X 1 ^ 2}) p) =
-      MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p :=
-  (rfl)
+      MvPolynomial.aeval ![inl (ε : R[ε]), (ε : R[ε][ε])] p := by
+  simp only [iteratedDualNumberMvPolynomialQuotientAlgEquiv, AlgEquiv.ofAlgHom_apply,
+    Ideal.Quotient.liftₐ_apply]
+  exact Ideal.Quotient.lift_mk _ _ _
 
 /-- `TauCeti.iteratedDualNumberMvPolynomialQuotientAlgEquiv` sends the residue class of `X 0` to
 `inl ε`. -/
