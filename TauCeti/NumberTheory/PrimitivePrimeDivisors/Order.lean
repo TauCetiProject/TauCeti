@@ -15,12 +15,15 @@ A prime not dividing the denominator divides a difference of powers exactly when
 multiplicative order of the ratio of the bases divides the exponent. For coprime natural
 bases, a prime divisor is primitive exactly when that order equals the exponent. In
 particular, a primitive prime divisor at exponent `n` is congruent to `1` modulo `n`
-and is larger than `n`.
+and is larger than `n`. Likewise, for bases `b ≤ a` and `0 < n`, a prime divides
+`a ^ n + b ^ n` and no `a ^ k - b ^ k` with `0 < k < 2 * n` exactly when it divides neither
+base and the ratio of the bases has order `2 * n` modulo that prime.
 
 The integer criterion needs no ordering of the bases. Its natural-number version assumes
 `b ≤ a`, so that subtraction does not truncate. Only the denominator must be nonzero
 modulo the prime for the criterion itself; nonvanishing of both bases is needed for the
-positive-order conclusion. Both divisibility criteria include exponent zero.
+positive-order conclusion, and conversely a nonzero order forces both bases to be prime to
+`p`. Both divisibility criteria include exponent zero.
 
 ## References
 
@@ -149,5 +152,50 @@ theorem exponent_lt_of_primitive {p : ℕ} (hp : p.Prime)
   have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt)
     (hp.dvd_sub_one_of_primitive hn hdiv hprev)
   omega
+
+/-- Modulo a prime `p`, the ratio `a * b⁻¹` has nonzero multiplicative order if and only if
+`p` divides neither base. -/
+theorem orderOf_ratio_ne_zero_iff {p : ℕ} (hp : p.Prime) {a b : ℕ} :
+    orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) ≠ 0 ↔ ¬ p ∣ a * b := by
+  refine ⟨fun h hmul => h ?_, fun hab => (hp.orderOf_ratio_pos hab).ne'⟩
+  let : Fact p.Prime := ⟨hp⟩
+  rcases hp.dvd_mul.mp hmul with ha | hb
+  · rw [(ZMod.natCast_eq_zero_iff a p).mpr ha, zero_mul, orderOf_zero]
+  · rw [(ZMod.natCast_eq_zero_iff b p).mpr hb, inv_zero, mul_zero, orderOf_zero]
+
+/-- For natural bases `b ≤ a` and `0 < n`, a prime divides `a ^ n + b ^ n` and no
+`a ^ k - b ^ k` with `0 < k < 2 * n` exactly when it divides neither base and the ratio
+`a * b⁻¹` has order `2 * n` modulo that prime. Neither direction needs `a` and `b` coprime,
+since `k = 1 < 2 * n` already excludes primes dividing `a - b`. Divisibility of `a ^ n + b ^ n`
+alone does not force order `2 * n`: at `(a, b, n) = (2, 1, 3)` the prime `3` divides
+`2 ^ 3 + 1 = 9` with order `2`. -/
+theorem dvd_pow_add_pow_and_not_dvd_iff_orderOf_eq {p : ℕ} (hp : p.Prime)
+    {a b n : ℕ} (hba : b ≤ a) (hn : 0 < n) :
+    (p ∣ a ^ n + b ^ n ∧ ∀ k, 0 < k → k < 2 * n → ¬ p ∣ a ^ k - b ^ k) ↔
+      ¬ p ∣ a * b ∧ orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = 2 * n := by
+  constructor
+  · rintro ⟨hsum, hprev⟩
+    have h1 : ¬ p ∣ a - b := by simpa using hprev 1 Nat.one_pos (by omega)
+    have hprod : ¬ p ∣ a * b := by
+      intro hmul
+      rcases hp.dvd_mul.mp hmul with ha | hb
+      · have hbn : p ∣ b ^ n := (Nat.dvd_add_right (dvd_pow ha hn.ne')).mp hsum
+        exact h1 (Nat.dvd_sub ha (hp.dvd_of_dvd_pow hbn))
+      · have han : p ∣ a ^ n := (Nat.dvd_add_left (dvd_pow hb hn.ne')).mp hsum
+        exact h1 (Nat.dvd_sub (hp.dvd_of_dvd_pow han) hb)
+    have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
+    have h2n : p ∣ a ^ (2 * n) - b ^ (2 * n) := by
+      rw [mul_comm 2 n, pow_mul, pow_mul, Nat.pow_two_sub_pow_two]
+      exact dvd_mul_of_dvd_left hsum _
+    exact ⟨hprod, hp.orderOf_ratio_eq_of_primitive hba hb (by omega) h2n hprev⟩
+  · rintro ⟨hprod, hord⟩
+    have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
+    have hprev : ∀ k, 0 < k → k < 2 * n → ¬ p ∣ a ^ k - b ^ k := fun k hk hkn hdiv =>
+      (not_le_of_gt hkn) (Nat.le_of_dvd hk
+        (hord ▸ (hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mp hdiv))
+    have h2n : p ∣ a ^ (2 * n) - b ^ (2 * n) :=
+      (hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb (2 * n)).mpr (hord ▸ dvd_refl _)
+    rw [mul_comm 2 n, pow_mul, pow_mul, Nat.pow_two_sub_pow_two] at h2n
+    exact ⟨(hp.dvd_mul.mp h2n).resolve_right (hprev n hn (by omega)), hprev⟩
 
 end Nat.Prime

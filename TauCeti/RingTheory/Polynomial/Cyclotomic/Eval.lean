@@ -17,6 +17,9 @@ powers `(a - b) ^ φ(n)` and `(a + b) ^ φ(n)`:
 non-strict bounds hold for every `n` and also at `b = 0`, where `Φ_n(a, 0) = a ^ φ(n)`. These are
 the two-variable forms of Mathlib's bounds `(q - 1) ^ φ(n) < Φ_n(q) < (q + 1) ^ φ(n)` for real
 `q > 1`, obtained from `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)`; they are also stated for integer bases.
+Combining the lower bound at `(a ^ p, b ^ p)` with the upper bound at `(a, b)` across
+`Φ_{p m}(a, b) Φ_m(a, b) = Φ_m(a ^ p, b ^ p)` gives `((a ^ p - b ^ p) / (a + b)) ^ φ(m) <
+Φ_{p m}(a, b)` for a prime `p ∤ m` and real `0 < b < a`, with equality at `b = 0`.
 For a prime `p` and bases `a, b ≥ 1`, the geometric sum
 `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `p`, and exceeds `p` once `a > 1`.
 
@@ -31,9 +34,12 @@ divisors.
 * `TauCeti.sub_pow_totient_le_homogeneousCyclotomic`,
   `TauCeti.homogeneousCyclotomic_le_add_pow_totient`: the non-strict bounds over `ℝ`, for every
   `n` and `0 ≤ b < a`.
+* `TauCeti.pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic`,
+  `TauCeti.pow_sub_pow_div_add_pow_totient_le_homogeneousCyclotomic`: the quotient-power lower
+  bounds for `Φ_{p m}(a, b)` when `p` is prime and `p ∤ m`.
 * `Int.sub_pow_totient_lt_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_lt_add_pow_totient`,
   `Int.sub_pow_totient_le_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_le_add_pow_totient`:
-  the same bounds for integer bases.
+  the bounds `(a ∓ b) ^ φ(n)` for integer bases.
 * `TauCeti.natCast_le_homogeneousCyclotomic_prime`,
   `TauCeti.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
   `a > 1`, in an ordered commutative ring.
@@ -94,6 +100,47 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℝ} (hb : 0 �
   calc _ ≤ (a / b + 1) ^ n.totient * b ^ n.totient := mul_le_mul_of_nonneg_right
         (cyclotomic_eval_le_add_one_pow_totient ((one_lt_div hb).2 hba) n) (pow_nonneg hb.le _)
     _ = (a + b) ^ n.totient := by rw [← mul_pow, add_one_mul, div_mul_cancel₀ a hb.ne']
+
+/-- For a prime `p` not dividing `m` and real `0 < b < a`,
+`((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)`. Both `b > 0` and `p ∤ m` are needed:
+at `b = 0` equality holds, and when `p ∣ m` the two sides have different homogeneity degrees. -/
+theorem pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic {p m : ℕ} (hp : p.Prime)
+    (hpm : ¬p ∣ m) {a b : ℝ} (hb : 0 < b) (hba : b < a) :
+    ((a ^ p - b ^ p) / (a + b)) ^ m.totient < homogeneousCyclotomic (p * m) a b := by
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact hpm (dvd_zero p)
+  have hab_pos : 0 < a + b := by linarith
+  have hpow_lt : b ^ p < a ^ p := pow_lt_pow_left₀ hba hb.le hp.ne_zero
+  have hΦm_pos : 0 < homogeneousCyclotomic m a b := homogeneousCyclotomic_pos hb.le hba m
+  -- Multiply by `Φ_m(a, b) > 0` and rewrite `Φ_{p m}(a, b) Φ_m(a, b)` as `Φ_m(a ^ p, b ^ p)`.
+  refine lt_of_mul_lt_mul_right ?_ hΦm_pos.le
+  rw [mul_comm p m, homogeneousCyclotomic_mul_prime_mul_homogeneousCyclotomic hp hpm a b]
+  rcases eq_or_lt_of_le (Nat.one_le_iff_ne_zero.2 hm0) with hm1 | hm2
+  · rw [← hm1, Nat.totient_one, pow_one, homogeneousCyclotomic_one, homogeneousCyclotomic_one]
+    calc (a ^ p - b ^ p) / (a + b) * (a - b)
+        < (a ^ p - b ^ p) / (a + b) * (a + b) :=
+          mul_lt_mul_of_pos_left (by linarith) (div_pos (sub_pos.2 hpow_lt) hab_pos)
+      _ = a ^ p - b ^ p := div_mul_cancel₀ _ hab_pos.ne'
+  · calc ((a ^ p - b ^ p) / (a + b)) ^ m.totient * homogeneousCyclotomic m a b
+        ≤ ((a ^ p - b ^ p) / (a + b)) ^ m.totient * (a + b) ^ m.totient :=
+          mul_le_mul_of_nonneg_left (homogeneousCyclotomic_le_add_pow_totient m hb.le hba)
+            (pow_nonneg (div_nonneg (sub_nonneg.2 hpow_lt.le) hab_pos.le) _)
+      _ = (a ^ p - b ^ p) ^ m.totient := by rw [← mul_pow, div_mul_cancel₀ _ hab_pos.ne']
+      _ < homogeneousCyclotomic m (a ^ p) (b ^ p) :=
+          sub_pow_totient_lt_homogeneousCyclotomic hm2 (pow_pos hb p) hpow_lt
+
+/-- For a prime `p` not dividing `m` and real `0 ≤ b < a`,
+`((a ^ p - b ^ p) / (a + b)) ^ φ(m) ≤ Φ_{p m}(a, b)`, with equality at `b = 0`. -/
+theorem pow_sub_pow_div_add_pow_totient_le_homogeneousCyclotomic {p m : ℕ} (hp : p.Prime)
+    (hpm : ¬p ∣ m) {a b : ℝ} (hb : 0 ≤ b) (hba : b < a) :
+    ((a ^ p - b ^ p) / (a + b)) ^ m.totient ≤ homogeneousCyclotomic (p * m) a b := by
+  rcases hb.eq_or_lt with rfl | hb
+  · have hap : a ^ p / a = a ^ (p - 1) := by
+      conv_lhs => rw [← Nat.sub_add_cancel hp.one_le, pow_succ, mul_div_cancel_right₀ _ hba.ne']
+    rw [zero_pow hp.ne_zero, sub_zero, add_zero, hap, ← pow_mul,
+      homogeneousCyclotomic_zero_right, Nat.totient_mul_of_prime_of_not_dvd hp hpm, mul_comm]
+  · exact (pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic hp hpm hb hba).le
 
 /-! ### Prime indices -/
 
