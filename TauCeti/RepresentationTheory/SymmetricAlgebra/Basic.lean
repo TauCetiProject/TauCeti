@@ -76,6 +76,9 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
   `Algebra.IsInvariant`.
 * `Representation.symmetricAlgebraInvariants_comp_subtype`: the invariants of the restriction to
   a subgroup `H` are the fixed points of `H` under the bundled action of `G`.
+* `Representation.symmetricAlgebraInvariants_le_comp` and
+  `Representation.symmetricAlgebraInvariants_dual_le_comp_subtype`: pulling a representation back
+  along a monoid homomorphism or restricting to a subgroup enlarges the invariant subalgebra.
 * `Representation.isIntegral_symmetricAlgebraInvariants`: for a finite group, `Sym M` is integral
   over the invariant subalgebra.
 
@@ -286,14 +289,23 @@ theorem map_symmetricAlgebraInvariants_of_leftInverse {f : M →ₗ[R] N} {s : N
 
 end Map
 
+/-- Pulling a representation back along a monoid homomorphism enlarges its invariant subalgebra in
+the symmetric algebra. -/
+theorem symmetricAlgebraInvariants_le_comp {H : Type*} [Monoid H] (f : H →* G) :
+    ρ.symmetricAlgebraInvariants ≤ Representation.symmetricAlgebraInvariants (ρ.comp f) :=
+  fun p hp ↦ (mem_symmetricAlgebraInvariants _ p).2 fun h ↦ by
+    rw [symmetricAlgebra_comp_apply]; exact (ρ.mem_symmetricAlgebraInvariants p).1 hp (f h)
+
 /-- Pulling a representation back along a surjective homomorphism does not change its invariant
 subalgebra in the symmetric algebra. This equality preserves the ambient graded algebra. -/
 theorem symmetricAlgebraInvariants_comp_of_surjective {H : Type*} [Monoid H]
     (f : H →* G) (hf : Function.Surjective f) :
-    Representation.symmetricAlgebraInvariants (ρ.comp f) = ρ.symmetricAlgebraInvariants := by
-  ext p
-  simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_comp_apply]
-  exact ⟨fun hp g ↦ by obtain ⟨h, rfl⟩ := hf g; exact hp h, fun hp h ↦ hp (f h)⟩
+    Representation.symmetricAlgebraInvariants (ρ.comp f) = ρ.symmetricAlgebraInvariants :=
+  le_antisymm
+    (fun p hp ↦ (ρ.mem_symmetricAlgebraInvariants p).2 fun g ↦ by
+      obtain ⟨h, rfl⟩ := hf g; simpa [symmetricAlgebra_comp_apply] using
+        (mem_symmetricAlgebraInvariants (ρ.comp f) p).1 hp h)
+    (ρ.symmetricAlgebraInvariants_le_comp f)
 
 /-- The action of `G` on `Sym M` induced by `ρ`, as a representation by linear maps over the
 invariant subalgebra `Sym(M)^G`: each `ρ g` fixes the invariants, so it is linear over them. Its
@@ -364,6 +376,14 @@ theorem symmetricAlgebraInvariants_comp_subtype (H : Subgroup G) :
   ext p
   simp [FixedPoints.mem_subalgebra, Subgroup.smul_def, symmetricAlgebraMulSemiringAction_smul,
     symmetricAlgebra_comp_apply]
+
+/-- Contragredient symmetric-algebra invariants of `G` on `Sym(M*)` lie in the invariants of the
+restriction to any subgroup `H ≤ G`. -/
+theorem symmetricAlgebraInvariants_dual_le_comp_subtype (H : Subgroup G) :
+    ρ.dual.symmetricAlgebraInvariants ≤ (dual (ρ.comp H.subtype)).symmetricAlgebraInvariants := by
+  have h : dual (ρ.comp H.subtype) = ρ.dual.comp H.subtype := by ext; simp
+  rw [h]
+  exact ρ.dual.symmetricAlgebraInvariants_le_comp H.subtype
 
 end Group
 

@@ -7,38 +7,32 @@ module
 
 public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.RepresentationTheory.Stabilizer
-public import TauCeti.RepresentationTheory.Quotient
 import Mathlib.Algebra.Module.Submodule.Union
 import Mathlib.LinearAlgebra.FixedSubmodule
+import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # Pointwise stabilizers of subsets and subspaces in representations
 
-Let a group `G` act linearly on an `R`-module `M` through a representation `ρ`. Every element fixing
-a set `s` of vectors pointwise fixes its `R`-linear span (`Representation.biInf_stabilizer_span`).
+Let a group `G` act linearly on an `R`-module `M` through `ρ`. Every element fixing a set `s`
+pointwise fixes `Submodule.span R s` (`Representation.biInf_stabilizer_span`), and pulling `ρ` back
+along a group homomorphism pulls back point stabilizers (`Representation.stabilizer_comp`) and
+pushes them forward when surjective (`Representation.map_stabilizer_comp_of_surjective`).
 
-When `G` is finite and acts on a vector space `V` over an infinite field `K`, the pointwise
-stabilizer `⨅ w ∈ U, ρ.stabilizer w` of any subspace `U` (and hence of any subset `s`, inside
-`Submodule.span K s`) is realized as the stabilizer `ρ.stabilizer v` of a single general-position
-vector `v ∈ U`: for each `g` not fixing `U` pointwise, `U ∩ ker (ρ g - 1)` is a proper subspace of
-`U`, and `U` is not covered by finitely many proper subspaces
-(`Submodule.exists_forall_notMem_of_forall_ne_top`). Neither finite-dimensionality of `V` nor any
-characteristic assumption beyond `Infinite K` is needed.
-
-Finally, quotienting `G` by a normal subgroup acting trivially pulls back point stabilizers without
-change.
+When `G` is finite and acts on a vector space `V` over an infinite field `K` (without dimension or
+characteristic restrictions), the pointwise stabilizer `⨅ w ∈ U, ρ.stabilizer w` of any subspace `U`
+equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via subspace avoidance
+(`Submodule.exists_forall_notMem_of_forall_ne_top`).
 
 ## Main results
 
-* `Representation.biInf_stabilizer_span`: the pointwise stabilizer of `Submodule.span R s` equals
-  the pointwise stabilizer of `s`.
-* `Representation.exists_mem_stabilizer_eq_biInf`: over an infinite field, every subspace `U` of a
-  representation of a finite group contains a vector whose stabilizer is the pointwise stabilizer
-  of `U`.
-* `Representation.exists_mem_span_stabilizer_eq_biInf`: the analogous general-position witness in
-  `Submodule.span K s` for an arbitrary subset `s`.
-* `Representation.comap_mk'_stabilizer_ofQuotient` and `Representation.map_mk'_stabilizer`: point
-  stabilizers commute with passing to a quotient by a trivially acting normal subgroup.
+* `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
+* `Representation.stabilizer_comp`, `Representation.map_stabilizer_comp_of_surjective`,
+  `Representation.comap_mk'_stabilizer_ofQuotient`, and `Representation.map_mk'_stabilizer`:
+  pullback and pushforward of point stabilizers under group homomorphisms and quotients.
+* `Representation.exists_mem_stabilizer_eq_biInf` and
+  `Representation.exists_mem_span_stabilizer_eq_biInf`: general-position stabilizer witnesses in `U`
+  and `Submodule.span K s` over an infinite field.
 
 ## References
 
@@ -53,38 +47,46 @@ namespace Representation
 section Semiring
 
 variable {R G M : Type*} [Semiring R] [Group G] [AddCommMonoid M] [Module R M]
-variable (ρ : Representation R G M)
+  (ρ : Representation R G M)
 
 /-- The pointwise stabilizer of the `R`-linear span of `s` equals the pointwise stabilizer of
 `s`. -/
-@[simp]
-theorem biInf_stabilizer_span (s : Set M) :
+@[simp] theorem biInf_stabilizer_span (s : Set M) :
     (⨅ v ∈ Submodule.span R s, ρ.stabilizer v) = ⨅ v ∈ s, ρ.stabilizer v := by
-  refine le_antisymm (le_iInf₂ fun v hv ↦ iInf₂_le v (Submodule.subset_span hv)) ?_
-  refine le_iInf₂ fun v hv ↦ ?_
+  refine le_antisymm (le_iInf₂ fun v hv ↦ iInf₂_le v (Submodule.subset_span hv)) (le_iInf₂ ?_)
+  intro v hv
   induction hv using Submodule.span_induction with
   | mem x hx => exact iInf₂_le x hx
   | zero => simp [stabilizer_zero]
   | add x y _ _ ihx ihy => exact (le_inf ihx ihy).trans (ρ.le_stabilizer_add x y)
   | smul r x _ ihx => exact ihx.trans (ρ.le_stabilizer_smul r x)
 
+/-- Pulling a representation back along a group homomorphism `f` pulls back point stabilizers by
+`Subgroup.comap f`. -/
+@[simp] theorem stabilizer_comp {H : Type*} [Group H] (f : H →* G) (v : M) :
+    stabilizer (ρ.comp f) v = (ρ.stabilizer v).comap f := rfl
+
+/-- Pushing forward the stabilizer of `v` in `ρ.comp f` along a surjective group homomorphism `f`
+recovers `ρ.stabilizer v`. -/
+theorem map_stabilizer_comp_of_surjective {H : Type*} [Group H] {f : H →* G}
+    (hf : Function.Surjective f) (v : M) :
+    (stabilizer (ρ.comp f) v).map f = ρ.stabilizer v := by
+  rw [ρ.stabilizer_comp f v, Subgroup.map_comap_eq_self_of_surjective hf]
+
 /-- Pulling back the stabilizer of `v` in a quotient by a trivially acting normal subgroup recovers
 `ρ.stabilizer v`. -/
-@[simp]
-theorem comap_mk'_stabilizer_ofQuotient (S : Subgroup G) [S.Normal]
+@[simp] theorem comap_mk'_stabilizer_ofQuotient (S : Subgroup G) [S.Normal]
     [IsTrivial (ρ.comp S.subtype)] (v : M) :
     ((ρ.ofQuotient S).stabilizer v).comap (QuotientGroup.mk' S) = ρ.stabilizer v := by
-  ext g
-  simp [Subgroup.mem_comap, QuotientGroup.mk'_apply, ρ.ofQuotient_coe_apply S g v]
+  rw [← (ρ.ofQuotient S).stabilizer_comp (QuotientGroup.mk' S) v, ρ.ofQuotient_comp_mk' S]
 
 /-- Pushing `ρ.stabilizer v` forward along the quotient by a trivially acting normal subgroup gives
 the stabilizer of `v` in the quotient representation. -/
-@[simp]
-theorem map_mk'_stabilizer (S : Subgroup G) [S.Normal]
+@[simp] theorem map_mk'_stabilizer (S : Subgroup G) [S.Normal]
     [IsTrivial (ρ.comp S.subtype)] (v : M) :
     (ρ.stabilizer v).map (QuotientGroup.mk' S) = (ρ.ofQuotient S).stabilizer v := by
-  rw [← ρ.comap_mk'_stabilizer_ofQuotient S v,
-    Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective S)]
+  simpa only [ρ.ofQuotient_comp_mk' S] using
+    (ρ.ofQuotient S).map_stabilizer_comp_of_surjective (QuotientGroup.mk'_surjective S) v
 
 end Semiring
 
@@ -100,21 +102,12 @@ theorem exists_mem_stabilizer_eq_biInf (U : Submodule K V) :
     ∃ v ∈ U, ρ.stabilizer v = ⨅ w ∈ U, ρ.stabilizer w := by
   classical
   set H : Subgroup G := ⨅ w ∈ U, ρ.stabilizer w
-  -- Each `g ∉ H` fixes only a proper subspace of `U`.
-  let p : {g : G // g ∉ H} → Submodule K U :=
-    fun g ↦ (ρ g.1).fixedSubmodule.comap U.subtype
-  have hp (g : {g : G // g ∉ H}) : p g ≠ ⊤ := by
-    intro htop
-    apply g.2
-    rw [Subgroup.mem_iInf]
-    intro w
-    rw [Subgroup.mem_iInf]
-    intro hw
-    have hmem : (⟨w, hw⟩ : U) ∈ p g := htop ▸ Submodule.mem_top
-    simpa [p] using hmem
+  let p : {g : G // g ∉ H} → Submodule K U := fun g ↦ (ρ g.1).fixedSubmodule.comap U.subtype
+  have hp (g : {g : G // g ∉ H}) : p g ≠ ⊤ := fun htop ↦ g.2 <|
+    Subgroup.mem_iInf.mpr fun w ↦ Subgroup.mem_iInf.mpr fun hw ↦ by
+      simpa [p] using (htop ▸ Submodule.mem_top : (⟨w, hw⟩ : U) ∈ p g)
   obtain ⟨u, hu⟩ := Submodule.exists_forall_notMem_of_forall_ne_top p hp
-  refine ⟨u.1, u.2, le_antisymm ?_ (iInf₂_le u.1 u.2)⟩
-  intro g hg
+  refine ⟨u.1, u.2, le_antisymm (fun g hg ↦ ?_) (iInf₂_le u.1 u.2)⟩
   by_contra hgH
   exact hu ⟨g, hgH⟩ (by simpa [p] using hg)
 

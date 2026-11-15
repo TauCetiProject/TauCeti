@@ -78,7 +78,7 @@ Noetherian or finite-generation hypotheses.
   a localization sequence is exact at the localized module.
 * `AdicCompletion.flat_mapₐ_of_isLocalization`: the completion of a localization `S` of a
   noetherian ring `R` is flat over the completion of `R`.
-* `AdicCompletion.mapₐ_algebraMap_bijective_of_isMaximal` and
+* `AdicCompletion.mapₐ_ofId_bijective_of_isMaximal` and
   `AdicCompletion.equivMaximalIdealOfAtPrime`: completing `R` at a maximal ideal `p` agrees
   canonically with completing the localization `Rₚ` at its maximal ideal.
 
@@ -274,7 +274,7 @@ variable {R : Type*} [CommRing R] (p : Ideal R) [p.IsMaximal]
 /-- Completing a commutative ring `R` at a maximal ideal `p` is canonically bijective onto the
 completion of any localization `Rₚ` at `p` along its maximal ideal. Neither Noetherianity nor
 finite generation of `p` is required. -/
-theorem mapₐ_algebraMap_bijective_of_isMaximal
+theorem mapₐ_ofId_bijective_of_isMaximal
     (hp : p ≤ (IsLocalRing.maximalIdeal Rₚ).comap (Algebra.ofId R Rₚ) :=
       (IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map) :
     Function.Bijective (mapₐ (Algebra.ofId R Rₚ) hp) := by
@@ -282,7 +282,7 @@ theorem mapₐ_algebraMap_bijective_of_isMaximal
   have hq : ⇑(Ideal.quotientMap (IsLocalRing.maximalIdeal Rₚ ^ n) (Algebra.ofId R Rₚ).toRingHom
       ((Ideal.pow_right_mono hp n).trans (Ideal.le_comap_pow _ n))) =
       ⇑(IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n) :=
-    funext fun x ↦ by obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x; rfl
+    funext fun x ↦ by obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x; simp
   exact hq ▸ (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n).bijective
 
 /-- The canonical `R`-algebra isomorphism between the `p`-adic completion of `R` at a maximal ideal
@@ -292,7 +292,7 @@ noncomputable def equivMaximalIdealOfAtPrime :
   AlgEquiv.ofBijective
     (mapₐ (Algebra.ofId R Rₚ)
       ((IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map))
-    (mapₐ_algebraMap_bijective_of_isMaximal p Rₚ)
+    (mapₐ_ofId_bijective_of_isMaximal p Rₚ)
 
 /-- As an algebra homomorphism, `equivMaximalIdealOfAtPrime` is `mapₐ (Algebra.ofId R Rₚ)`. -/
 @[simp]
