@@ -61,6 +61,8 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
   on smooth singular homology.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
+* `TauCeti.exists_contMDiff_contraction_of_starConvex`: a star-convex open subset of a normed space
+  is smoothly contractible.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has a star-convex open
   subset of a normed space.
 
@@ -229,6 +231,27 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
   rw [smoothSingularSubcomplexMap_id, SSet.homologyMap_id, SSet.homologyMap_comp] at hid
   rw [IsZero.iff_id_eq_zero, hid, hpt.eq_of_src (SSet.homologyMap s R n) 0, comp_zero]
 
+/-- **The smooth contraction of a star-convex open subset.** An open subset `U` of a normed space,
+star-convex about `c ∈ U`, is contracted to `c` by the smooth map
+`(t, x) ↦ c + (1 - ψ t) • (x - c)`, with `ψ` the smooth transition function from `0` to `1`; it
+stays in `U`. -/
+theorem exists_contMDiff_contraction_of_starConvex {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V} (hU : StarConvex ℝ c (U : Set V))
+    (hc : c ∈ U) : ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ F ∧
+      (∀ x, F (0, x) = x) ∧ ∀ x, F (1, x) = ⟨c, hc⟩ := by
+  have hmem : ∀ p : ℝ × U, c + (1 - Real.smoothTransition p.1) • ((p.2 : V) - c) ∈ U :=
+    fun p ↦ hU.add_smul_sub_mem p.2.2 (by linarith [Real.smoothTransition.le_one p.1])
+      (by linarith [Real.smoothTransition.nonneg p.1])
+  refine ⟨fun p ↦ ⟨_, hmem p⟩, ?_, fun x ↦ Subtype.ext (by simp [Real.smoothTransition.zero]),
+    fun x ↦ Subtype.ext (by simp [Real.smoothTransition.one])⟩
+  rw [← ContMDiff.subtypeVal_comp_iff]
+  have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
+    Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
+  have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ fun p : ℝ × U ↦ (p.2 : V) :=
+    contMDiff_subtype_val.comp contMDiff_snd
+  exact ContMDiff.add contMDiff_const
+    (ContMDiff.smul (ContMDiff.sub contMDiff_const hψ) (hx.sub contMDiff_const))
+
 /-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
 The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
 smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
@@ -246,20 +269,7 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
       rw [hempty] at hx
       exact hx
     exact (HomologicalComplex.homologyFunctor C _ n).map_isZero (SSet.isZero_chainComplex _ R)
-  have hmem : ∀ p : ℝ × U, c + (1 - Real.smoothTransition p.1) • ((p.2 : V) - c) ∈ U :=
-    fun p ↦ hU.add_smul_sub_mem p.2.2 (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  let F : ℝ × U → U := fun p ↦ ⟨_, hmem p⟩
-  have hF : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ F := by
-    rw [← ContMDiff.subtypeVal_comp_iff]
-    have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ fun p : ℝ × U ↦ (p.2 : V) :=
-      contMDiff_subtype_val.comp contMDiff_snd
-    exact ContMDiff.add contMDiff_const
-      (ContMDiff.smul (ContMDiff.sub contMDiff_const hψ) (hx.sub contMDiff_const))
-  exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF ⟨c, hU.mem hne⟩
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.zero]))
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.one])) hn
+  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex hU (hU.mem hne)
+  exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF _ h₀ h₁ hn
 
 end TauCeti
