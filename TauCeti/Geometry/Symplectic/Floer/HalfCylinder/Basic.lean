@@ -350,6 +350,24 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
       (hseq.congr' (hφ.eventually hAeq.symm)))
   simpa [Function.comp_def] using htop.comp tendsto_neg_atBot_atTop
 
+/-- **Nondegenerate orbits are isolated.** Suppose that the suspension of the Hamiltonian vector
+field is globally Lipschitz, so that its evolution `φ` is defined, and let `x` be a `1`-periodic
+orbit of the Hamiltonian vector field whose initial point is a nondegenerate fixed point of the
+time-one map `φ(0, 1)`. Then `x` has a uniform neighbourhood containing no other `1`-periodic
+orbit. -/
+theorem exists_pos_forall_eq_of_isNondegenerateFixedPt {L : ℝ≥0}
+    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
+      (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H t) (y t)) t) →
+      (∀ t, dist (y t) (x t) < ε) → y = x := by
+  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map.
+  have hiso := hnd.eventually_not_isFixedPt
+  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
+  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
+  exact ⟨ε, hε, fun y hyper hy hyx ↦ h y hy hyper (hyx 0)⟩
+
 /-- **Convergence of a finite-energy Floer half-cylinder to a nondegenerate orbit.** Under the
 hypotheses of `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`, suppose
 moreover that the derivative of `u` is bounded on the half-cylinder, that the suspension of the
@@ -379,10 +397,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
     (fun v t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
       hfloer hE) hC fun x hxper hx hxK ↦ ?_
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map.
-  have hiso := (hnd x hxper hx hxK).eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
-  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hy hyper (hyx 0)⟩
+  obtain ⟨ε, hε, h⟩ := exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx (hnd x hxper hx hxK)
+  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy hyx⟩
 
 end TauCeti.SymplecticForm

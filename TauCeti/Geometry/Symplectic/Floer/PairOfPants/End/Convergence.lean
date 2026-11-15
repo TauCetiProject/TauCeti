@@ -82,7 +82,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- An orbit of the positive end Hamiltonian `H'_q` which, read with the time `±t` of the end,
 starts at a nondegenerate fixed point of the time-one map of `H_q`, is isolated among the
 `1`-periodic orbits of `H'_q`. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt {q : Puncture} {L : ℝ≥0}
+private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian
+    {q : Puncture} {L : ℝ≥0}
     (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q))) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (x 0)) :
@@ -166,7 +167,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer
       have hnd₀ := hnd _ (periodic_comp_endSign_mul hxper) (hasDerivAt_comp_endSign_mul hx)
         fun t ↦ hxB _
       rw [mul_zero] at hnd₀
-      obtain ⟨ε, hε, h⟩ := exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx hnd₀
+      obtain ⟨ε, hε, h⟩ :=
+        exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian hL hx hnd₀
       exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ?_⟩
