@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.Calculus.Deriv.Star
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Complex conjugation of integer-weight polylogarithms
@@ -69,21 +70,6 @@ theorem polylog_neg_nat_conj (r : ℕ) (z : ℂ) :
       simpa [hcomp] using hd
     rw [polylog_neg_nat_succ, polylog_neg_nat_succ, hderiv, map_mul]
 
-/-- For `z` off the open ray `(1, ∞)` and `t ∈ [0, 1]`, the radial factor `1 - t z` never lies on
-the open negative real axis, so its principal argument is not `π`. -/
-private lemma arg_one_sub_ofReal_mul_ne_pi {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) : ((1 : ℂ) - (t : ℂ) * z).arg ≠ Real.pi := by
-  rw [ne_eq, Complex.arg_eq_pi_iff]
-  rintro ⟨hre, him⟩
-  simp only [Complex.sub_re, Complex.one_re, Complex.mul_re, Complex.ofReal_re,
-    Complex.ofReal_im, zero_mul, sub_zero, Complex.sub_im, Complex.one_im, Complex.mul_im,
-    add_zero, zero_sub, neg_eq_zero, mul_eq_zero] at hre him
-  rcases hz with hzim | hzre
-  · rcases him with rfl | hzim'
-    · linarith
-    · exact hzim hzim'
-  · nlinarith [ht.1, ht.2]
-
 /-- Every integer-weight polylogarithm commutes with complex conjugation off the open cut `(1, ∞)`,
 that is, whenever `z.im ≠ 0 ∨ z.re ≤ 1`. -/
 theorem polylog_conj_of_im_ne_zero_or_re_le_one (n : ℤ) {z : ℂ} (hz : z.im ≠ 0 ∨ z.re ≤ 1) :
@@ -96,14 +82,14 @@ theorem polylog_conj_of_im_ne_zero_or_re_le_one (n : ℤ) {z : ℂ} (hz : z.im �
     · simp [polylog_zero_weight]
     · rw [Int.ofNat_eq_natCast, zero_add, Nat.cast_one, polylog_one, polylog_one, map_neg]
       have harg : (1 - z).arg ≠ Real.pi := by
-        simpa using arg_one_sub_ofReal_mul_ne_pi hz (right_mem_Icc.mpr zero_le_one)
+        simpa using Complex.arg_one_sub_ofReal_mul_ne_pi hz (right_mem_Icc.mpr zero_le_one)
       rw [← Complex.log_conj _ harg, map_sub, map_one]
     · rw [Int.ofNat_eq_natCast, polylog_nat_add_two, polylog_nat_add_two, map_mul, map_inv₀,
         map_natCast, ← intervalIntegral.intervalIntegral_conj]
       congr 1
       refine intervalIntegral.integral_congr fun t ht ↦ ?_
       rw [uIcc_of_le zero_le_one] at ht
-      have harg := arg_one_sub_ofReal_mul_ne_pi hz ht
+      have harg := Complex.arg_one_sub_ofReal_mul_ne_pi hz ht
       have hconj : (1 : ℂ) - (t : ℂ) * conj z = conj ((1 : ℂ) - (t : ℂ) * z) := by
         simp
       rw [hconj, Complex.log_conj _ harg]

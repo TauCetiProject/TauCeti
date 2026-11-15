@@ -221,156 +221,27 @@ theorem integral_radialIntegrand_eq_of_eqOn (k : ℕ) (z : ℂ) {g : ℝ → ℂ
   filter_upwards [hIoo, ae_one_sub_ofReal_mul_ne_zero z] with t ht₁ ht₂ htIoc
   exact hg ⟨ht₁ htIoc, ht₂⟩
 
-/-- Away from the single real point `Re(z⁻¹)`, the logarithm `Log (1 - t z)` for `1 / 2 < ‖z‖ ≤ R'`
-and `t ∈ (0, 1]` is controlled by a translated real logarithm `|log (|t - Re(z⁻¹)|)|`. -/
-private lemma norm_log_one_sub_ofReal_mul_le {R' : ℝ} {z : ℂ}
-    (hz_half : 1 / 2 < ‖z‖) (hzR : ‖z‖ ≤ R') {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) 1)
-    (hts : t ≠ (z⁻¹).re) :
-    ‖Complex.log (1 - t * z)‖ ≤
-      (Real.log (1 + R') + Real.log 2 + Real.pi) + |Real.log (|t - (z⁻¹).re|)| := by
-  have hz0 : z ≠ 0 := norm_pos_iff.mp (by positivity)
-  have hfac : (1 : ℂ) - (t : ℂ) * z = -z * ((t : ℂ) - z⁻¹) := by
-    field_simp
-    ring
-  have hsub : |t - (z⁻¹).re| ≤ ‖(t : ℂ) - z⁻¹‖ := by
-    simpa [Complex.sub_re] using Complex.abs_re_le_norm ((t : ℂ) - z⁻¹)
-  have hlow : 1 / 2 * |t - (z⁻¹).re| ≤ ‖1 - (t : ℂ) * z‖ := by
-    rw [hfac, norm_mul, norm_neg]
-    exact mul_le_mul hz_half.le hsub (abs_nonneg _) (norm_nonneg z)
-  have hhigh : ‖1 - (t : ℂ) * z‖ ≤ 1 + R' := by
-    calc ‖1 - (t : ℂ) * z‖ ≤ ‖(1 : ℂ)‖ + ‖(t : ℂ) * z‖ := norm_sub_le _ _
-      _ ≤ 1 + R' := by
-        rw [norm_one, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.1.le]
-        nlinarith [ht.2, norm_nonneg z]
-  have hpos_abs : 0 < |t - (z⁻¹).re| := abs_pos.mpr (sub_ne_zero.mpr hts)
-  have hpos_low : 0 < 1 / 2 * |t - (z⁻¹).re| := by positivity
-  have hlog_low : -Real.log 2 + Real.log (|t - (z⁻¹).re|) ≤ Real.log ‖1 - (t : ℂ) * z‖ := by
-    have h := Real.log_le_log hpos_low hlow
-    rwa [Real.log_mul (by norm_num) hpos_abs.ne', one_div, Real.log_inv] at h
-  have hlog_high : Real.log ‖1 - (t : ℂ) * z‖ ≤ Real.log (1 + R') :=
-    Real.log_le_log (hpos_low.trans_le hlow) hhigh
-  have hlog_abs : |Real.log ‖1 - (t : ℂ) * z‖| ≤
-      Real.log (1 + R') + Real.log 2 + |Real.log (|t - (z⁻¹).re|)| := by
-    rw [abs_le]
-    constructor <;> linarith [Real.log_nonneg (by linarith : (1 : ℝ) ≤ 1 + R'),
-      Real.log_nonneg (by norm_num : (1 : ℝ) ≤ 2),
-      neg_abs_le (Real.log (|t - (z⁻¹).re|)), abs_nonneg (Real.log (|t - (z⁻¹).re|))]
-  calc ‖Complex.log (1 - t * z)‖
-      ≤ |(Complex.log (1 - t * z)).re| + |(Complex.log (1 - t * z)).im| :=
-        Complex.norm_le_abs_re_add_abs_im _
-    _ ≤ (Real.log (1 + R') + Real.log 2 + Real.pi) + |Real.log (|t - (z⁻¹).re|)| := by
-        rw [Complex.log_re, Complex.log_im]
-        linarith [Complex.abs_arg_le_pi (1 - t * z)]
-
-/-- Translating `s ∈ [-2, 2]` keeps the `L²` integral of `log |t - s|` on `(0, 1]` uniformly bounded
-by the `L²` integral of `log |u|` on `[-2, 3]`. -/
-private lemma lintegral_log_abs_sub_sq_le {s : ℝ} (hs : |s| ≤ 2) :
-    ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (Real.log (|t - s|) ^ 2) ≤
-      ∫⁻ u in Icc (-2 : ℝ) 3, ENNReal.ofReal (Real.log ‖u‖ ^ 2) := by
-  rw [← lintegral_indicator measurableSet_Ioc, ← lintegral_indicator measurableSet_Icc,
-    ← lintegral_add_right_eq_self
-      ((Icc (-2 : ℝ) 3).indicator fun u ↦ ENNReal.ofReal (Real.log ‖u‖ ^ 2)) (-s)]
-  refine lintegral_mono fun t ↦ ?_
-  by_cases ht : t ∈ Ioc (0 : ℝ) 1
-  · have hmem : t + -s ∈ Icc (-2 : ℝ) 3 := by
-      rw [abs_le] at hs
-      exact ⟨by linarith [ht.1], by linarith [ht.2]⟩
-    simp [ht, hmem, sub_eq_add_neg, Real.norm_eq_abs]
-  · simp [ht]
-
-/-- For `1 / 2 < ‖z‖ ≤ R'`, shifting by `Re(z⁻¹) ∈ [-2, 2]` bounds the `L²` integral of
-`Log (1 - t z)` on `(a, 1]`. -/
-private lemma lintegral_log_one_sub_sq_le_of_half_lt {R' a : ℝ} (ha0 : 0 < a) {z : ℂ}
-    (hz_half : 1 / 2 < ‖z‖) (hzR : ‖z‖ ≤ R') :
-    ∫⁻ t in Ioc a 1, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ 2) ≤
-      ENNReal.ofReal (2 * (Real.log (1 + R') + Real.log 2 + Real.pi) ^ 2) +
-        ENNReal.ofReal 2 * ∫⁻ u in Icc (-2 : ℝ) 3, ENNReal.ofReal (Real.log ‖u‖ ^ 2) := by
-  set M₀ : ℝ := Real.log (1 + R') + Real.log 2 + Real.pi
-  set s : ℝ := (z⁻¹).re
-  have hs : |s| ≤ 2 := by
-    calc |s| ≤ ‖z⁻¹‖ := Complex.abs_re_le_norm z⁻¹
-      _ = ‖z‖⁻¹ := norm_inv z
-      _ ≤ 2 := by rw [inv_le_comm₀ (by positivity) (by positivity)]; linarith
-  have hae : ∀ᵐ t : ℝ ∂volume.restrict (Ioc a 1),
-      ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ 2) ≤
-        ENNReal.ofReal (2 * M₀ ^ 2) +
-          ENNReal.ofReal 2 * ENNReal.ofReal (Real.log (|t - s|) ^ 2) := by
-    have hne : ∀ᵐ t : ℝ ∂volume.restrict (Ioc a 1), t ≠ s :=
-      ae_restrict_of_ae (by rw [ae_iff]; simp)
-    filter_upwards [ae_restrict_mem measurableSet_Ioc, hne] with t ht hts
-    have hbound := norm_log_one_sub_ofReal_mul_le hz_half hzR ⟨ha0.trans ht.1, ht.2⟩ hts
-    have hsq : ‖Complex.log (1 - t * z)‖ ^ 2 ≤ 2 * M₀ ^ 2 + 2 * Real.log (|t - s|) ^ 2 := by
-      have h1 := pow_le_pow_left₀ (norm_nonneg _) hbound 2
-      have h2 : |Real.log (|t - s|)| ^ 2 = Real.log (|t - s|) ^ 2 := sq_abs _
-      nlinarith [sq_nonneg (M₀ - |Real.log (|t - s|)|)]
-    rw [← ENNReal.ofReal_mul zero_le_two, ← ENNReal.ofReal_add (by positivity) (by positivity)]
-    exact ENNReal.ofReal_le_ofReal hsq
-  calc ∫⁻ t in Ioc a 1, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ 2)
-      ≤ ∫⁻ t in Ioc (0 : ℝ) 1, (ENNReal.ofReal (2 * M₀ ^ 2) +
-          ENNReal.ofReal 2 * ENNReal.ofReal (Real.log (|t - s|) ^ 2)) :=
-        (lintegral_mono_ae hae).trans
-          (lintegral_mono' (Measure.restrict_mono (Ioc_subset_Ioc_left ha0.le) le_rfl) le_rfl)
-    _ = ENNReal.ofReal (2 * M₀ ^ 2) +
-          ENNReal.ofReal 2 * ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (Real.log (|t - s|) ^ 2) := by
-        have hm : Measurable fun t : ℝ ↦ ENNReal.ofReal (Real.log (|t - s|) ^ 2) := by fun_prop
-        rw [lintegral_add_left measurable_const, lintegral_const, Measure.restrict_apply_univ,
-          Real.volume_Ioc, sub_zero, ENNReal.ofReal_one, mul_one, lintegral_const_mul _ hm]
-    _ ≤ ENNReal.ofReal (2 * M₀ ^ 2) +
-          ENNReal.ofReal 2 * ∫⁻ u in Icc (-2 : ℝ) 3, ENNReal.ofReal (Real.log ‖u‖ ^ 2) := by
-        gcongr _ + _ * ?_; exact lintegral_log_abs_sub_sq_le hs
-
-/-- Away from `t = 0`, the radial integrand's `L²` integral on `(a, 1]` is uniformly bounded over
-`‖z‖ ≤ R'`. -/
-private lemma lintegral_radialIntegrand_sq_Ioc_one_le (k : ℕ) {R' a : ℝ} (hR' : 0 ≤ R')
-    (ha0 : 0 < a) (ha1 : a ≤ 1) {z : ℂ} (hzR : ‖z‖ ≤ R') :
+/-- Away from `t = 0` (`0 < a ≤ 1`), the `L²` norm of the polylogarithm radial integrand on `(a, 1]`
+is bounded by `(|log a| ^ k / a) ^ 2` times the `L²` norm of `t ↦ Log (1 - t * z)` on `(a, 1]`. -/
+theorem setLIntegral_norm_radialIntegrand_sq_Ioc_le (k : ℕ) {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1)
+    (z : ℂ) :
     ∫⁻ t in Ioc a 1,
         ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2) ≤
       ENNReal.ofReal ((|Real.log a| ^ k / a) ^ 2) *
-        (ENNReal.ofReal (2 * (Real.log (1 + R') + Real.log 2 + Real.pi) ^ 2) +
-          ENNReal.ofReal 2 * ∫⁻ u in Icc (-2 : ℝ) 3, ENNReal.ofReal (Real.log ‖u‖ ^ 2)) := by
-  set Ka : ℝ := |Real.log a| ^ k / a
-  set M₀ : ℝ := Real.log (1 + R') + Real.log 2 + Real.pi
-  have hM₀ : 3 / 4 ≤ M₀ := by
-    linarith [Real.two_le_pi, Real.log_nonneg (by linarith : (1 : ℝ) ≤ 1 + R'),
-      Real.log_nonneg (by norm_num : (1 : ℝ) ≤ 2)]
-  have hKa : ∫⁻ t in Ioc a 1,
-        ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2) ≤
-      ENNReal.ofReal (Ka ^ 2) *
         ∫⁻ t in Ioc a 1, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ 2) := by
-    rw [← lintegral_const_mul _ (by fun_prop)]
-    refine setLIntegral_mono' measurableSet_Ioc fun t ht ↦ ?_
-    have ht0 : 0 < t := ha0.trans ht.1
-    have hlogt : |Real.log t| ≤ |Real.log a| := by
-      rw [abs_of_nonpos (Real.log_nonpos ht0.le ht.2), abs_of_nonpos (Real.log_nonpos ha0.le ha1)]
-      exact neg_le_neg (Real.log_le_log ha0 ht.1.le)
-    have h1 : ‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ≤
-        Ka * ‖Complex.log (1 - t * z)‖ := by
-      rw [norm_radialIntegrand ht0]
-      calc |Real.log t| ^ k * ‖Complex.log (1 - t * z)‖ / t
-          ≤ |Real.log a| ^ k * ‖Complex.log (1 - t * z)‖ / a := by gcongr; exact ht.1.le
-        _ = Ka * ‖Complex.log (1 - t * z)‖ := by ring
-    rw [← ENNReal.ofReal_mul (sq_nonneg _)]
-    exact ENNReal.ofReal_le_ofReal
-      ((pow_le_pow_left₀ (norm_nonneg _) h1 2).trans_eq (mul_pow _ _ 2))
-  refine hKa.trans ?_
-  gcongr
-  rcases le_or_gt ‖z‖ (1 / 2) with hz_half | hz_half
-  · calc ∫⁻ t in Ioc a 1, ENNReal.ofReal (‖Complex.log (1 - t * z)‖ ^ 2)
-        ≤ ∫⁻ _ in Ioc (0 : ℝ) 1, ENNReal.ofReal (2 * M₀ ^ 2) := by
-          refine (setLIntegral_mono' measurableSet_Ioc fun t ht ↦ ?_).trans
-            (lintegral_mono' (Measure.restrict_mono (Ioc_subset_Ioc_left ha0.le) le_rfl) le_rfl)
-          have htz : ‖-((t : ℂ) * z)‖ ≤ 1 / 2 := by
-            rw [norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg (ha0.trans ht.1).le]
-            nlinarith [ht.2, norm_nonneg z]
-          have hlog : ‖Complex.log (1 - t * z)‖ ≤ M₀ := by
-            have h := Complex.norm_log_one_add_half_le_self (z := -((t : ℂ) * z)) htz
-            rw [← sub_eq_add_neg] at h
-            linarith
-          exact ENNReal.ofReal_le_ofReal
-            ((pow_le_pow_left₀ (norm_nonneg _) hlog 2).trans (by nlinarith))
-      _ = ENNReal.ofReal (2 * M₀ ^ 2) := by simp [Real.volume_Ioc]
-      _ ≤ _ := le_self_add
-  · exact lintegral_log_one_sub_sq_le_of_half_lt ha0 hz_half hzR
+  rw [← lintegral_const_mul _ (by fun_prop)]
+  refine setLIntegral_mono' measurableSet_Ioc fun t ht ↦ ?_
+  have ht0 : 0 < t := ha0.trans ht.1
+  have hlogt : |Real.log t| ≤ |Real.log a| := by
+    rw [abs_of_nonpos (Real.log_nonpos ht0.le ht.2), abs_of_nonpos (Real.log_nonpos ha0.le ha1)]
+    exact neg_le_neg (Real.log_le_log ha0 ht.1.le)
+  have h1 : ‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ≤
+      (|Real.log a| ^ k / a) * ‖Complex.log (1 - t * z)‖ := by
+    rw [norm_radialIntegrand ht0, div_mul_eq_mul_div]
+    exact div_le_div₀ (by positivity) (by gcongr) ha0 ht.1.le
+  rw [← ENNReal.ofReal_mul (sq_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal
+    ((pow_le_pow_left₀ (norm_nonneg _) h1 2).trans_eq (mul_pow _ _ 2))
 
 /-- Over any bounded ball `‖z‖ ≤ R`, the radial integrand of weight `k + 2` has a uniform `L²`
 bound on `(0, 1]`. -/
@@ -380,35 +251,27 @@ theorem exists_lintegral_norm_radialIntegrand_sq_le (k : ℕ) (R : ℝ) :
         ENNReal.ofReal (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2) ≤
           C := by
   set R' : ℝ := max R 0
-  have hR' : 0 ≤ R' := le_max_right R 0
   set a : ℝ := 1 / (2 * (R' + 1)) with ha_def
   have ha0 : 0 < a := by positivity
-  have ha1 : a ≤ 1 := by rw [ha_def, div_le_one (by positivity)]; linarith
+  have ha1 : a ≤ 1 := by rw [ha_def, div_le_one (by positivity)]; linarith [le_max_right R 0]
   have haR : a * R' ≤ 1 / 2 := by
     rw [ha_def, div_mul_eq_mul_div, one_mul, div_le_iff₀ (by positivity)]
-    linarith
+    linarith [le_max_right R 0]
   set I₁ : ℝ≥0∞ := ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (Real.log t ^ (2 * k))
   have hI₁ : I₁ < ∞ := by
     refine lt_of_le_of_lt (lintegral_mono fun t ↦ ?_)
       (intervalIntegrable_log_pow (2 * k) (a := 0) (b := 1)).1.hasFiniteIntegral
     rw [← ofReal_norm, Real.norm_eq_abs]
     exact ENNReal.ofReal_le_ofReal (le_abs_self _)
-  set I₂ : ℝ≥0∞ := ∫⁻ u in Icc (-2 : ℝ) 3, ENNReal.ofReal (Real.log ‖u‖ ^ 2)
-  have hI₂ : I₂ < ∞ := by
-    refine lt_of_le_of_lt (lintegral_mono fun u ↦ ?_)
-      ((locallyIntegrable_log_norm_pow (E := ℝ) (μ := volume) 2).integrableOn_isCompact
-        (isCompact_Icc (a := (-2 : ℝ)) (b := 3))).hasFiniteIntegral
-    rw [← ofReal_norm, Real.norm_eq_abs]
-    exact ENNReal.ofReal_le_ofReal (le_abs_self _)
-  set M₀ : ℝ := Real.log (1 + R') + Real.log 2 + Real.pi
+  obtain ⟨C₂, hC₂, hC₂z⟩ := exists_setLIntegral_norm_log_one_sub_ofReal_mul_sq_le a 1 R'
   set Ka : ℝ := |Real.log a| ^ k / a
-  refine ⟨ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ +
-      ENNReal.ofReal (Ka ^ 2) * (ENNReal.ofReal (2 * M₀ ^ 2) + ENNReal.ofReal 2 * I₂),
+  refine ⟨ENNReal.ofReal ((3 / 2 * R') ^ 2) * I₁ + ENNReal.ofReal (Ka ^ 2) * C₂,
     by finiteness, fun z hz ↦ ?_⟩
   have hzR : ‖z‖ ≤ R' := hz.trans (le_max_left R 0)
   rw [(Ioc_union_Ioc_eq_Ioc ha0.le ha1).symm]
-  refine (lintegral_union_le _ (Ioc 0 a) (Ioc a 1)).trans
-    (add_le_add ?_ (lintegral_radialIntegrand_sq_Ioc_one_le k hR' ha0 ha1 hzR))
+  refine (lintegral_union_le _ (Ioc 0 a) (Ioc a 1)).trans (add_le_add ?_
+    ((setLIntegral_norm_radialIntegrand_sq_Ioc_le k ha0 ha1 z).trans
+      (by gcongr; exact hC₂z z hzR)))
   calc ∫⁻ t in Ioc 0 a, ENNReal.ofReal
           (‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - t * z)) / t‖ ^ 2)
       ≤ ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal ((3 / 2 * R') ^ 2 * Real.log t ^ (2 * k)) := by

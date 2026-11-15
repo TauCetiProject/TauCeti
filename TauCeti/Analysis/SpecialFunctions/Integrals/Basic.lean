@@ -44,6 +44,9 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_log_pow_div_self` and `TauCeti.integral_neg_log_pow_div_self`:
+  `∫ t in a..b, (log t) ^ k / t = ((log b) ^ (k + 1) - (log a) ^ (k + 1)) / (k + 1)` and its
+  signed counterpart when `0 ∉ [[a, b]]`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -258,6 +261,37 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
   · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
     have := hpos σ hσ
     positivity
+
+/-- For any interval avoiding `0`, an antiderivative of `t ↦ (log t) ^ k / t` is
+`t ↦ (log t) ^ (k + 1) / (k + 1)`. -/
+theorem integral_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ t : ℝ in a..b, Real.log t ^ k / t =
+      (Real.log b ^ (k + 1) - Real.log a ^ (k + 1)) / (k + 1 : ℝ) := by
+  have hne (t : ℝ) (ht : t ∈ Set.uIcc a b) : t ≠ 0 := fun ht0 ↦ h (ht0 ▸ ht)
+  refine (intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (f := fun t : ℝ ↦ Real.log t ^ (k + 1) / (k + 1 : ℝ)) (fun t ht ↦ ?_) ?_).trans
+    (sub_div _ _ _).symm
+  · have hd := ((Real.hasDerivAt_log (hne t ht)).pow (k + 1)).div_const (k + 1 : ℝ)
+    refine hd.congr_deriv ?_
+    have hk1 : (k + 1 : ℝ) ≠ 0 := by positivity
+    push_cast
+    field_simp
+  · refine ContinuousOn.intervalIntegrable fun t ht ↦ ?_
+    exact (((Real.continuousAt_log (hne t ht)).pow k).div continuousAt_id
+      (hne t ht)).continuousWithinAt
+
+/-- For any interval avoiding `0`, an antiderivative of `t ↦ (-log t) ^ k / t` is
+`t ↦ -(-log t) ^ (k + 1) / (k + 1)`. -/
+theorem integral_neg_log_pow_div_self (k : ℕ) {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
+    ∫ t : ℝ in a..b, (-Real.log t) ^ k / t =
+      ((-Real.log a) ^ (k + 1) - (-Real.log b) ^ (k + 1)) / (k + 1 : ℝ) := by
+  have hexp (t : ℝ) : (-Real.log t) ^ k / t = (-1 : ℝ) ^ k * (Real.log t ^ k / t) := by
+    rw [neg_eq_neg_one_mul, mul_pow, mul_div_assoc]
+  simp_rw [hexp]
+  rw [intervalIntegral.integral_const_mul, integral_log_pow_div_self k h]
+  simp only [neg_eq_neg_one_mul (Real.log a), neg_eq_neg_one_mul (Real.log b), mul_pow,
+    pow_succ (-1 : ℝ) k]
+  ring
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
