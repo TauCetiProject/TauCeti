@@ -603,6 +603,13 @@ theorem contDiff_positiveEndChart (q : Puncture) (n : WithTop ℕ∞) :
     ContDiff ℝ n (positiveEndChart q) :=
   (contDiff_endChart q n).comp (contDiff_const_smul q.endSign)
 
+/-- The derivative at `z` of the translate `z ↦ φ'_q(z + c)` of the positive end chart is the
+derivative of the positive end chart at `z + c`. -/
+theorem hasFDerivAt_positiveEndChart_add (q : Puncture) (c z : ℝ × ℝ) :
+    HasFDerivAt (fun z ↦ positiveEndChart q (z + c)) (fderiv ℝ (positiveEndChart q) (z + c)) z :=
+  ((contDiff_positiveEndChart q 1).differentiable one_ne_zero _).hasFDerivAt.comp z
+    ((hasFDerivAt_id z).add_const c)
+
 /-- The positive end charts are holomorphic. -/
 theorem isComplexLinearMap_fderiv_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)

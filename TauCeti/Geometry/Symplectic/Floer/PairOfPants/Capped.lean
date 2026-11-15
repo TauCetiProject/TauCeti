@@ -380,8 +380,9 @@ theorem perturbationPullback_positiveEndChart_add_cappedPerturbation {q : Punctu
     PSSPlane.endComponent_eq (periodic_positiveEndHamiltonian hH)]
   simp only [Prod.fst_add, Prod.snd_add, add_zero, Complex.equivRealProdCLM_symm_apply_im,
     PSSPlane.endSign_negative]
-  rw [cappedEndProfile_def, smoothTransition.one_of_one_le (by linarith), one_mul,
-    show L + 3 - (z.1 + (L + 4)) = -1 * z.1 - 1 by ring]
+  -- The translation by `L + 4` turns the neck profile into the transition `β(-s - 1)` of the plane.
+  have hs : L + 3 - (z.1 + (L + 4)) = -1 * z.1 - 1 := by ring
+  rw [cappedEndProfile_def, smoothTransition.one_of_one_le (by linarith), one_mul, hs]
   ring
 
 /-! ### Smoothness -/

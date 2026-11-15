@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Compactness of the capped pair of pants as the necks stretch
@@ -81,20 +82,6 @@ open scoped NNReal ENNReal
 namespace TauCeti.SymplecticForm
 
 open Floer
-
-/-- A function continuous and nonnegative on a measurable set `Ω`, whose lower integral over `Ω`
-is at most `E`, is integrable on `Ω` with integral at most `E`. -/
-private theorem integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le {f : ℝ × ℝ → ℝ}
-    {Ω : Set (ℝ × ℝ)} (hΩ : MeasurableSet Ω) (hf : ContinuousOn f Ω) (hf0 : ∀ z ∈ Ω, 0 ≤ f z)
-    {E : ℝ≥0} (hE : ∫⁻ z in Ω, ENNReal.ofReal (f z) ≤ E) :
-    IntegrableOn f Ω ∧ ∫ z in Ω, f z ≤ E := by
-  have hint : IntegrableOn f Ω := ⟨hf.aestronglyMeasurable hΩ,
-    (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩ hf0)).2
-      (hE.trans_lt ENNReal.coe_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hΩ hf0)
-    hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal E.coe_nonneg (hE.trans_eq ENNReal.ofReal_coe_nnreal.symm)
 
 section PairOfPants
 
@@ -180,11 +167,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedPert
     refine le_trans (le_of_eq (setLIntegral_congr_fun hΩ.measurableSet fun z hz ↦ ?_))
       ((setLIntegral_le_lintegral _ _).trans (hE k))
     rw [ω.floerEnergyDensity_congr_perturbation _ (hKp k (hΩT hz) 1) (hKp k (hΩT hz) I)]
-  have hIE (k : ℕ) := integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le hΩ.measurableSet
-    ((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
+  have hIE (k : ℕ) := MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
       ((hu k).of_le (by norm_num)) ((hP 1).of_le (by norm_num)) ((hP I).of_le (by norm_num))).mono
-        hΩS)
-    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt z (hΩT hz) _ (huK k hz)) (hflp k hz)) (hlin k)
+        hΩS).aestronglyMeasurable hΩ.measurableSet)
+    (ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJt z (hΩT hz) _ (huK k hz)) (hflp k hz)) (hlin k)
   exact hconv hΩ hΩT (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hflp k hz) huK
     (fun k ↦ (hIE k).1) fun k ↦ (hIE k).2
 
@@ -196,14 +184,6 @@ section Plane
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {q : Puncture} {L : ℝ}
-
-/-- The derivative of the positive end chart translated by `L + 4` is that of the positive end
-chart at the translated point. -/
-private theorem hasFDerivAt_positiveEndChart_add (q : Puncture) (L : ℝ) (z : ℝ × ℝ) :
-    HasFDerivAt (fun z ↦ positiveEndChart q (z + (L + 4, 0)))
-      (fderiv ℝ (positiveEndChart q) (z + (L + 4, 0))) z :=
-  (((contDiff_positiveEndChart q 1).differentiable one_ne_zero _).hasFDerivAt).comp z
-    ((hasFDerivAt_id z).add_const _)
 
 omit [FiniteDimensional ℝ V] in
 /-- On the part `s > 0` of the positive end chart of `q`, the components of the capped perturbation
@@ -248,7 +228,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add_of_cappedPe
       (PSSPlane.negative.endComponent (positiveEndHamiltonian H q) 1)
       (PSSPlane.negative.endComponent (positiveEndHamiltonian H q) I)
       (fun z ↦ u (positiveEndChart q (z + (L + 4, 0)))) z : ℝ × ℝ →ₗ[ℝ] V) := by
-  have hψ := hasFDerivAt_positiveEndChart_add q L z
+  have hψ := hasFDerivAt_positiveEndChart_add q (L + 4, 0) z
   have h0 : 0 < (z + (L + 4, 0)).1 := by
     rw [Prod.fst_add]
     linarith
@@ -292,8 +272,9 @@ theorem lintegral_floerEnergyDensity_comp_positiveEndChart_add_eq_image_cappedPe
     have hb' : b + (L + 4, 0) ∈ univ ×ˢ Ico t₀ (t₀ + 1) := ⟨mem_univ _, by simpa using (hΩb hb).2⟩
     exact add_right_cancel (injOn_positiveEndChart q t₀ ha' hb' hab)
   refine (lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hΩ hinj
-    (fun z _ ↦ (hasFDerivAt_positiveEndChart_add q L z).differentiableAt) fun z hz ↦ ?_).symm
-  have hψ := hasFDerivAt_positiveEndChart_add q L z
+    (fun z _ ↦ (hasFDerivAt_positiveEndChart_add q (L + 4, 0) z).differentiableAt)
+    fun z hz ↦ ?_).symm
+  have hψ := hasFDerivAt_positiveEndChart_add q (L + 4, 0) z
   have h0 : 0 < (z + (L + 4, 0)).1 := by
     rw [Prod.fst_add]
     linarith [hΩL z hz]
@@ -408,10 +389,12 @@ theorem
   have hwΩ (k : ℕ) : ContDiffOn ℝ 3 (w k) Ω :=
     (hu k).comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
       fun _ hz ↦ hψS k hz
-  have hIE (k : ℕ) := integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le hΩm
-    (ω.continuousOn_floerEnergyDensity hΩ ((hwΩ k).of_le (by norm_num))
-      ((hP 1).of_le (by norm_num)).contDiffOn ((hP I).of_le (by norm_num)).contDiffOn)
-    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK k hz)) (hflw k hz)) (hlin k)
+  have hIE (k : ℕ) := MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le
+    ((ω.continuousOn_floerEnergyDensity hΩ ((hwΩ k).of_le (by norm_num))
+      ((hP 1).of_le (by norm_num)).contDiffOn ((hP I).of_le (by norm_num)).contDiffOn
+        ).aestronglyMeasurable hΩm)
+    (ae_restrict_of_forall_mem hΩm fun z hz ↦
+      ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK k hz)) (hflw k hz)) (hlin k)
   exact hconv hΩ hΩD hwΩ (fun k z hz ↦ hflw k hz) huK (fun k ↦ (hIE k).1) fun k ↦ (hIE k).2
 
 end PlaneCompactness

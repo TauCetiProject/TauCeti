@@ -332,9 +332,11 @@ theorem cappedAlmostComplex_cylindricalEndLift_endSign_mul_add (h₀ : ω.Compat
   have him : (↑q.endSign * (z + ↑(L + 4))).im = q.endSign * z.im := by simp
   refine h₀.eq_of_cayley_eq (tames_cappedAlmostComplex h₀ r L _ x)
     (tames_negativePlaneAlmostComplex h₀ _ x) ?_
+  -- The translation by `L + 4` turns the neck profile into the transition `β(-Re z - 1)`.
+  have hs : L + 3 - (z.re + L + 4) = -z.re - 1 := by ring
   rw [cayley_cappedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp r L (by rw [hre]; linarith),
     hre, him, smoothTransition.one_of_one_le hr, smoothTransition.one_of_one_le (by linarith),
-    one_mul, one_mul, show L + 3 - (z.re + L + 4) = -z.re - 1 by ring]
+    one_mul, one_mul, hs]
   rcases lt_or_ge z.re 0 with hz₀ | hz₀
   · -- On the end of the plane the negative plane structure is given by the same formula.
     have hJp' : Function.Periodic (fun t ↦ J q (q.endSign * t)) 1 := by
