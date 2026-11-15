@@ -141,8 +141,8 @@ theorem globalArtinEquiv_mk (ι : L →ₐ[K] SeparableClosure K) (c : IdeleClas
           (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))
           (NormalLayer.groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)
             (globalGroundEquiv K (.ofMul c)))) := by
-  rw [globalArtinEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
-    globalLayerNormQuotientEquiv_mk, ClassFormation.artinMap_apply]
+  rw [ClassFormation.artinMap_apply, ← globalLayerNormQuotientEquiv_mk]
+  rfl
 
 /-- **Finite global reciprocity does not depend on the embedding** of `L` into the separable
 closure: the layer of `L` is the same for every embedding, and two embeddings change the

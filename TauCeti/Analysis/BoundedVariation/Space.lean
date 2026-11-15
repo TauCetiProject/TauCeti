@@ -114,18 +114,13 @@ def bvSubmodule (μ : Measure E) (Ω : Opens E) : Submodule ℝ (E →₁[μ.res
     simp only [Set.mem_ofPred_eq]
     rw [totalVariationOn_congr_ae (Lp.coeFn_zero ℝ 1 (μ.restrict Ω)), totalVariationOn_zero]
     exact ENNReal.zero_lt_top
-  add_mem' := by
-    intro u v hu hv
-    simp only [Set.mem_ofPred_eq] at hu hv ⊢
-    rw [totalVariationOn_congr_ae (Lp.coeFn_add u v)]
-    exact (totalVariationOn_add_le
-      (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn u))).trans_lt
-        (ENNReal.add_lt_top.mpr ⟨hu, hv⟩)
-  smul_mem' := by
-    intro c u hu
-    simp only [Set.mem_ofPred_eq] at hu ⊢
-    rw [totalVariationOn_congr_ae (Lp.coeFn_smul c u), totalVariationOn_smul]
-    exact ENNReal.mul_lt_top (by finiteness) hu
+  add_mem' {u v} hu hv := by
+    rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_add u v)]
+    exact ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).add
+      (memBV_iff.mpr ⟨L1.integrable_coeFn v, hv⟩)).totalVariationOn_lt_top
+  smul_mem' c u hu := by
+    rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_smul c u)]
+    exact ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).smul c).totalVariationOn_lt_top
 
 /-- Almost-everywhere classes of integrable functions with finite total variation on `Ω`.
 The wrapper gives this space its BV norm, independently of the weaker inherited `L¹` norm. -/
@@ -202,12 +197,19 @@ instance : SMul ℝ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 instance : SMul ℕ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 instance : SMul ℤ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 
+/-- The `L¹` class of the zero BV class is zero. -/
 @[simp] theorem toL1_zero : (0 : BV μ Ω).toL1 = 0 := (rfl)
+/-- The `L¹` class of a sum of BV classes is the sum of the `L¹` classes. -/
 @[simp] theorem toL1_add (u v : BV μ Ω) : (u + v).toL1 = u.toL1 + v.toL1 := (rfl)
+/-- The `L¹` class of the negative of a BV class is the negative of its `L¹` class. -/
 @[simp] theorem toL1_neg (u : BV μ Ω) : (-u).toL1 = -u.toL1 := (rfl)
+/-- The `L¹` class of a difference of BV classes is the difference of the `L¹` classes. -/
 @[simp] theorem toL1_sub (u v : BV μ Ω) : (u - v).toL1 = u.toL1 - v.toL1 := (rfl)
+/-- The `L¹` class of a real multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_smul (c : ℝ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
+/-- The `L¹` class of a natural multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_nsmul (c : ℕ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
+/-- The `L¹` class of an integer multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_zsmul (c : ℤ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
 
 instance : AddCommGroup (BV μ Ω) :=
@@ -296,6 +298,7 @@ def toL1CLM : BV μ Ω →L[ℝ] (E →₁[μ.restrict Ω] ℝ) :=
       intro u
       simpa using norm_toL1_le u)
 
+/-- The continuous linear inclusion `toL1CLM` agrees with `toL1` on every BV class. -/
 @[simp]
 theorem toL1CLM_apply (u : BV μ Ω) : toL1CLM u = u.toL1 := (rfl)
 
