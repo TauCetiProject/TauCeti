@@ -18,14 +18,14 @@ import TauCeti.Combinatorics.Enumerative.RandomColoring
 
 Let `x₀ : ι → κ` be a coloring of a finite set `Ω` whose color classes already have small
 discrepancy on a finite family of test sets `T i ⊆ Ω`, and let `p` be a target probability
-distribution on `κ`. Resampling all of `Ω` independently from `p` achieves the target densities
-on every test set (`TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`), but may recolor a
-constant fraction of `Ω` even when the empirical distribution `q` of `x₀` on `Ω` is already
-close to `p`.
+distribution on `κ`. Resampling all of `Ω` independently from `p` approximates the target color
+counts `p c * #(T i)` within a prescribed discrepancy bound on every test set
+(`TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`), but may recolor a constant fraction
+of `Ω` even when the empirical distribution `q` of `x₀` on `Ω` is already close to `p`.
 
-This file constructs a coupled recoloring that edits essentially the minimum possible number of
-points—half the `ℓ¹` distance between the empirical counts and `p · #Ω`—while still achieving
-the target densities `p` on every test set:
+This file constructs a coupled recoloring that edits at most half the `ℓ¹` distance between the
+empirical counts and `p · #Ω`, up to an additive `card κ * a` error, while approximating the
+target counts `p c * #(T i)` within the error bound `card κ * (a + b)` on every test set:
 
 * Deficit and exact color classes (`q c ≤ p c`) are left untouched.
 * Each excess color class `Ω_c` (`q c > p c`) is recolored independently according to the
