@@ -152,9 +152,8 @@ private theorem straightening_mul_conjTranspose :
 theorem diagonalStraightening_mem_unitaryGroup :
     diagonalStraightening n ∈ unitaryGroup (n ⊕ n) ℂ := by
   rw [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonalStraightening_def,
-    conjTranspose_smul, smul_mul_smul, straightening_mul_conjTranspose, smul_smul,
-    star_inv₀, star_def, conj_ofReal, ← mul_inv, sqrt_two_mul_sqrt_two,
-    inv_mul_cancel₀ two_ne_zero, one_smul]
+    conjTranspose_smul, smul_mul_smul, straightening_mul_conjTranspose]
+  simp [smul_smul, ← mul_inv, sqrt_two_mul_sqrt_two]
 
 /-- The diagonal straightening of the graph frame of the identity, whose columns span the
 diagonal, is the real matrix `√2 • 1`. -/
@@ -165,8 +164,9 @@ private theorem diagonalStraightening_mul_graphFrame_one :
       (fromBlocks (1 : Matrix n n ℂ) 1 (Complex.I • 1) (-(Complex.I • 1)))ᴴ := by
     rw [← realify_one (𝕜 := ℂ) (ι := n), graphFrame_realify, fromBlocks_conjTranspose]
     simp
-  rw [h, diagonalStraightening_def, Matrix.smul_mul, straightening_mul_conjTranspose, smul_smul,
-    inv_sqrt_two, mul_assoc, inv_mul_cancel₀ two_ne_zero, mul_one, map_ofReal_sqrt_two_smul_one]
+  rw [h, diagonalStraightening_def, Matrix.smul_mul, straightening_mul_conjTranspose,
+    map_ofReal_sqrt_two_smul_one]
+  simp [smul_smul, inv_sqrt_two]
 
 /-- **The diagonal straightening carries the diagonal onto the real points**: the image under it
 of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
@@ -226,10 +226,8 @@ theorem souriau_graphUnitaryFrame_one :
     souriau (graphUnitaryFrame (1 : GLSymplectic n ℝ)) = 1 := by
   have h : (graphUnitaryFrame (1 : GLSymplectic n ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
       ((1 : unitaryGroup (n ⊕ n) ℂ) : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
-    rw [realImage_graphUnitaryFrame, OneMemClass.coe_one, Units.val_one,
-      realImage_diagonalStraightening_mul_graphFrame_one, OneMemClass.coe_one,
-      ← Matrix.map_one ((↑) : ℝ → ℂ) Complex.ofReal_zero Complex.ofReal_one,
-      realImage_map_ofReal isUnit_one]
+    simpa [realImage_graphUnitaryFrame, realImage_diagonalStraightening_mul_graphFrame_one]
+      using (realImage_map_ofReal (isUnit_one (M := Matrix (n ⊕ n) (n ⊕ n) ℝ))).symm
   rw [souriau_eq_of_realImage_eq h]
   exact Subtype.ext (by simp)
 
@@ -329,9 +327,9 @@ private theorem diagonalStraightening_mul_graphFrame_realify_eq (W : Matrix n n 
 private theorem realifyGraphFrame_mem_unitaryGroup (W : unitaryGroup n ℂ) :
     realifyGraphFrame (W : Matrix n n ℂ) ∈ unitaryGroup (n ⊕ n) ℂ := by
   set c : ℂ := (2 : ℂ)⁻¹ * ((√2 : ℝ) : ℂ)
-  have hTT : (diagonalStraightening n)ᴴ * diagonalStraightening n = 1 := by
-    rw [← star_eq_conjTranspose]
-    exact mem_unitaryGroup_iff'.1 diagonalStraightening_mem_unitaryGroup
+  have hTT : ∀ X, (diagonalStraightening n)ᴴ * (diagonalStraightening n * X) = X := fun X ↦ by
+    rw [← Matrix.mul_assoc, ← star_eq_conjTranspose,
+      mem_unitaryGroup_iff'.1 diagonalStraightening_mem_unitaryGroup, Matrix.one_mul]
   have hV : realifyGraphFrame (W : Matrix n n ℂ) =
       c • (diagonalStraightening n * graphFrame (W : Matrix n n ℂ).realify) := by
     rw [diagonalStraightening_mul_graphFrame_realify, smul_smul, realifyGraphFrame, mul_assoc,
@@ -339,9 +337,9 @@ private theorem realifyGraphFrame_mem_unitaryGroup (W : unitaryGroup n ℂ) :
   have hc : star c * c * 2 = 1 := by
     simp only [c, star_mul', star_inv₀, star_def, conj_ofReal, map_ofNat]
     linear_combination (1 / 2 : ℂ) * sqrt_two_mul_sqrt_two
-  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, hV, conjTranspose_smul, smul_mul_smul,
-    conjTranspose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc (diagonalStraightening n)ᴴ, hTT,
-    Matrix.one_mul, conjTranspose_graphFrame_realify_mul_self, smul_smul, hc, one_smul]
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, hV]
+  simp only [conjTranspose_smul, conjTranspose_mul, smul_mul_smul, Matrix.mul_assoc, hTT,
+    conjTranspose_graphFrame_realify_mul_self, smul_smul, hc, one_smul]
 
 /-- **The graph of a realified symmetric unitary matrix.** If `W` is a unitary matrix with
 `Wᵀ = W`, for instance a diagonal one, the straightened graph of its realification is framed by
