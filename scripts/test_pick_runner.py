@@ -22,20 +22,20 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", namespace_slot="0", namespace_cap="8", staging_target="", pool="github", skip_build=False, label_head="", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
-    source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
+    source = source.replace("!contains", "not contains").replace("!startsWith", "not startsWith").replace("!(", "not (").replace(".labels.*.name", ".label_names")
     github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
         action=action, workflow_run=SimpleNamespace(event=upstream_event, display_title=upstream_title), label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
-    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, pool=pool)))
-    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot")
+    needs = SimpleNamespace(picker=SimpleNamespace(outputs=SimpleNamespace(attempt=picker_attempt, runner=target, hosted_slot=hosted_slot, namespace_slot=namespace_slot, namespace_cap=namespace_cap, pool=pool)))
+    source = source.replace("needs.pick-runner", "needs.picker").replace("inputs.fleet-staging", "inputs.staging").replace("outputs.hosted-slot", "outputs.hosted_slot").replace("outputs.namespace-slot", "outputs.namespace_slot")
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
-                         "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
+                         "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance, skip_build=skip_build, label_head=label_head), "fromJSON": json.loads,
                          "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
                          "vars": SimpleNamespace(FLEET_CI_ENABLED="true", PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
 
@@ -92,7 +92,7 @@ class PickerWorkflow(unittest.TestCase):
         self.assertTrue(expression(condition, upstream_event="repository_dispatch",
                                    upstream_title="bors branch=main batch=12 head=" + "a" * 40))
 
-    def test_legacy_namespace_target_is_rejected_even_for_a_current_attempt(self):
+    def test_current_namespace_target_requires_the_matching_attempt(self):
         target = ["nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1", "namespace-features:container.privileged=true;github.run-id=42"]
         for name, job, picker in [
             ("pr-build.yml", "sandboxed-build", "pick-runner"),
@@ -100,8 +100,46 @@ class PickerWorkflow(unittest.TestCase):
         ]:
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
             source = workflow["jobs"][job]["runs-on"].replace("needs." + picker, "needs.pick-runner")
-            self.assertEqual(expression(source, target=json.dumps(target)), "ubuntu-24.04")
-            self.assertEqual(expression(source, target=json.dumps(target), attempt=2), "ubuntu-24.04")
+            self.assertEqual(expression(source, target=json.dumps(target), pool="namespace"), target)
+            self.assertEqual(expression(source, target=json.dumps(target), pool="namespace", attempt=2), "ubuntu-24.04")
+
+    def test_namespace_builds_share_exactly_eight_concurrency_groups(self):
+        target=json.dumps(["nscloud-ubuntu-24.04-amd64-8x16-with-features", "namespace-features:container.privileged=true"])
+        expected={f"tauceti-namespace-build-{slot}" for slot in range(8)}
+        for name,job,picker in (("pr-build.yml","sandboxed-build","pick-runner"),("nightly-verify.yml","reference","pick-reference-runner")):
+            workflow=yaml.safe_load((ROOT/".github/workflows"/name).read_text())
+            concurrency=workflow["jobs"][job]["concurrency"]
+            group=concurrency["group"].replace("needs."+picker,"needs.pick-runner")
+            actual={expression(group,target=target,pool="namespace",namespace_slot=str(slot)) for slot in range(8)}
+            self.assertEqual(actual,expected)
+            for invalid in ("", "8", "-1", "untrusted"):
+                self.assertEqual(expression(group,target=target,pool="namespace",namespace_slot=invalid),"tauceti-namespace-build-0")
+            self.assertEqual(expression(group,target=target,pool="namespace",attempt=2),"tauceti-hosted-bulk-0")
+            self.assertEqual(concurrency["queue"],"max")
+            self.assertFalse(concurrency["cancel-in-progress"])
+
+    def test_namespace_scheduler_groups_resize_with_runtime_cap(self):
+        target = json.dumps(["nscloud-ubuntu-24.04-amd64-8x16-with-features"])
+        for name, job, picker in (("pr-build.yml", "sandboxed-build", "pick-runner"),
+                                  ("nightly-verify.yml", "reference", "pick-reference-runner")):
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text())
+            group = workflow["jobs"][job]["concurrency"]["group"].replace("needs." + picker, "needs.pick-runner")
+            for cap in (1, 4, 8, 20, 64):
+                actual = {expression(group, target=target, namespace_slot=str(slot), namespace_cap=str(cap))
+                          for slot in range(cap)}
+                self.assertEqual(actual, {f"tauceti-namespace-build-{slot}" for slot in range(cap)})
+                self.assertEqual(expression(group, target=target, namespace_slot=str(cap), namespace_cap=str(cap)),
+                                 "tauceti-namespace-build-0")
+            for cap in ("", "0", "65", "untrusted"):
+                self.assertEqual(expression(group, target=target, namespace_slot="1", namespace_cap=cap),
+                                 "tauceti-namespace-build-0")
+
+    def test_runtime_namespace_controls_and_slot_output_are_wired_to_picker(self):
+        job = PICKER["jobs"]["pick"]
+        step = next(s for s in job["steps"] if s.get("id") == "pick")
+        self.assertEqual(step["env"]["NAMESPACE_ENABLED"], "${{ vars.NAMESPACE_ENABLED }}")
+        self.assertEqual(step["env"]["NAMESPACE_BUILD_CAP"], "${{ vars.NAMESPACE_BUILD_CAP }}")
+        self.assertEqual(job["outputs"]["namespace-slot"], "${{ steps.pick.outputs.namespace_slot }}")
 
     def test_maintenance_build_capacity_is_limited_to_explicit_or_same_repo_bot_work(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -118,17 +156,66 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-pr-approved"), "pr-build pr=7 head=" + "a" * 40)
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-staging"), "bors branch=main batch=12 head=" + "a" * 40 + " base=" + "b" * 40)
 
-    def test_label_events_only_route_self_tested_prs(self):
+    def test_self_tested_prs_skip_picker_before_allocating_any_runner(self):
         condition = BUILD["jobs"]["pick-runner"]["if"]
-        for action in ("labeled", "unlabeled"):
-            self.assertFalse(expression(condition, action=action))
-            self.assertTrue(expression(condition, action=action, label="self-tested"))
-            self.assertFalse(expression(condition, action=action, labels=("self-tested",)))
-            self.assertFalse(expression(condition, action=action, label="full-lint"))
-            for label in ("full-lint", "lint-repair"):
-                self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
-            self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
         self.assertTrue(expression(condition))
+        for action in ("synchronize", "opened", "reopened"):
+            self.assertFalse(expression(condition, action=action, label="self-tested", labels=("self-tested",)))
+        for label in ("full-lint", "lint-repair"):
+            self.assertTrue(expression(condition, action="labeled", label=label, labels=("self-tested", label)))
+        self.assertTrue(expression(condition, event="repository_dispatch", action="tauceti-bors-staging",
+                                   labels=("self-tested",)))
+        self.assertTrue(expression(condition, labels=("self-tested",), head_ref="lint-repair/main"))
+        self.assertFalse(expression(condition, event="workflow_dispatch", skip_build=True))
+        self.assertTrue(expression(condition, event="workflow_dispatch", skip_build=False))
+        # A manual-input flag cannot suppress a staging dispatch.
+        self.assertTrue(expression(condition, event="repository_dispatch", skip_build=True,
+                                   action="tauceti-bors-staging"))
+
+    def test_labels_are_filtered_before_dispatching_a_build(self):
+        self.assertEqual(BUILD[True]["pull_request_target"]["types"], ["opened", "synchronize", "reopened"])
+        router = yaml.safe_load((ROOT / ".github/workflows/full-lint-label.yml").read_text())
+        self.assertEqual(router[True]["pull_request_target"]["types"], ["labeled", "unlabeled"])
+        job = router["jobs"]["rebuild"]
+        for action in ("labeled", "unlabeled"):
+            for labels in ((), ("self-tested",)):
+                self.assertFalse(expression(job["if"], action=action, labels=labels))
+            self.assertTrue(expression(job["if"], action=action, label="self-tested"))
+            for label in ("full-lint", "lint-repair"):
+                self.assertTrue(expression(job["if"], action=action, label=label, labels=("self-tested",)))
+        self.assertTrue(expression(job["if"], action="labeled", label="full-lint"))
+        self.assertFalse(expression(job["if"], action="unlabeled", label="full-lint"))
+        self.assertFalse(expression(job["if"], action="labeled", label="lint-repair"))
+        skip = job["steps"][0]["env"]["SKIP_BUILD"]
+        self.assertTrue(expression(skip, labels=("self-tested",)))
+        self.assertFalse(expression(skip))
+        for label in ("full-lint", "lint-repair"):
+            self.assertFalse(expression(skip, labels=("self-tested", label)))
+        self.assertFalse(expression(skip, labels=("self-tested",), head_ref="lint-repair/main"))
+        maintenance = job["steps"][0]["env"]["MAINTENANCE"]
+        self.assertFalse(expression(maintenance))
+        for branch in ("lint-repair/main", "bump-mathlib/next"):
+            self.assertTrue(expression(maintenance, author_type="Bot", head_ref=branch))
+            self.assertFalse(expression(maintenance, author_type="Bot", head_ref=branch, head_repo="fork/repo"))
+        dispatch = job["steps"][0]["run"]
+        self.assertIn('-f skip_build="$SKIP_BUILD"', dispatch)
+        self.assertIn('-f label_head="$LABEL_HEAD"', dispatch)
+        self.assertIn('-f maintenance="$MAINTENANCE"', dispatch)
+        self.assertIs(BUILD[True]["workflow_dispatch"]["inputs"]["skip_build"]["default"], False)
+
+    def test_dispatched_label_rebuild_retains_fleet_eligibility(self):
+        picker = BUILD["jobs"]["pick-runner"]["with"]
+        self.assertTrue(expression(picker["fleet-pr"], event="workflow_dispatch", label_head="a" * 40))
+        self.assertFalse(expression(picker["fleet-pr"], event="workflow_dispatch"))
+        self.assertIn("inputs.label_head", picker["pr-head"])
+
+    def test_fleet_pr_queue_configuration_is_valid_and_small(self):
+        config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
+        self.assertIs(type(config["pr_queue_limit"]), int)
+        self.assertEqual(config["pr_queue_limit"], 3)
+        self.assertEqual(config["pr_order"], ["github", "fleet", "namespace"])
+        self.assertIs(config["namespace_enabled"], True)
+        self.assertEqual(config["namespace_build_cap"], 8)
 
     def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -176,10 +263,9 @@ class PickerWorkflow(unittest.TestCase):
             "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
             "fleet-74773fc7f54d4877add11d80113fe340"])
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
-        token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
-        self.assertTrue(token["continue-on-error"])
-        self.assertIn("inputs.pr-number > 0", token["if"])
-        self.assertIn("'self-tested'", token["if"])
+        self.assertFalse(any("create-github-app-token" in s.get("uses", "") for s in pick["steps"]))
+        self.assertFalse(any("self_tested.py" in s.get("run", "") for s in pick["steps"]))
+        self.assertNotIn("skip-pr-build", pick["outputs"])
         self.assertTrue(pick["continue-on-error"])
         step = next(s for s in pick["steps"] if s.get("id") == "pick")
         self.assertEqual(step["run"], "python3 scripts/fleet_runner.py --route")

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
-import TauCeti.Analysis.CStarAlgebra.State.Extension
+import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
@@ -16,23 +16,24 @@ import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 States of a possibly nonunital C⋆-algebra `A` recover its norm on normal elements, detect
 self-adjointness and positivity, and separate points.
 
-For a unital C⋆-algebra `B` and a normal element `b : B`, every point `z ∈ spectrum ℂ b` is
-attained by a state of `B` (`TauCeti.exists_mem_stateSpace_apply_eq_of_mem_spectrum`), combining
-Gelfand duality (`WeakDual.CharacterSpace.mem_spectrum_iff_exists`) on the elemental subalgebra
-with Hahn–Banach state extension (`StarSubalgebra.exists_mem_stateSpace_forall_apply_coe_eq`).
+For a unital C⋆-algebra `B` and any element `b : B`, every point `z ∈ spectrum ℂ b` is attained by
+a state of `B` (`TauCeti.exists_mem_stateSpace_apply_eq_of_mem_spectrum`), applying spectral state
+attainment on normal elements
+(`CStarAlgebra.exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`)
+to `star x * x` or `x * star x` for `x = algebraMap ℂ B z - b` together with Cauchy–Schwarz.
 Passing to the minimal unitization `A⁺¹` and restricting norm-attaining states back to `A` via
 `TauCeti.pullbackFunctional_inr_mem_stateSpace_of_norm_apply_eq_norm` extends norm attainment and
-separation to every C⋆-algebra `A`, without assuming a unit or nontriviality:
+separation to every C⋆-algebra `A`:
 
 * `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero` and
-  `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm`: for normal `a`, a state attains `‖a‖` in
-  modulus.
+  `TauCeti.exists_mem_stateSpace_norm_apply_eq_norm`: for normal `a` (`a ≠ 0`, or `[Nontrivial A]`),
+  a state attains `‖a‖` in modulus.
 * `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero` and
-  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg`: for `0 ≤ a`, a state takes the value
-  `‖a‖` at `a`.
+  `TauCeti.exists_mem_stateSpace_apply_eq_norm_of_nonneg`: for `0 ≤ a` (`a ≠ 0`, or
+  `[Nontrivial A]`), a state takes the value `‖a‖` at `a`.
 * `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero` and
-  `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq`: a state takes the value
-  `‖a‖ ^ 2` at `star a * a`.
+  `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq`: for `a ≠ 0` (or `[Nontrivial A]`),
+  a state takes the value `‖a‖ ^ 2` at `star a * a`.
 * `TauCeti.stateSpace_nonempty_iff`: `A` admits a state if and only if `A` is nontrivial.
 * `TauCeti.norm_eq_iSup_norm_apply_stateSpace`: for normal `a`, `‖a‖ = ⨆ φ : stateSpace A, ‖φ a‖`.
 * `TauCeti.eq_zero_of_forall_mem_stateSpace_apply_eq_zero`,
@@ -44,7 +45,7 @@ separation to every C⋆-algebra `A`, without assuming a unit or nontriviality:
 
 ## References
 
-* J. Peterson, *Notes on Operator Algebras*, Propositions 4.1.4 and 4.1.5, p. 56.
+* J. Peterson, *Notes on von Neumann algebras*, Propositions 4.1.4 and 4.1.5, p. 56.
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Academic Press, 1990, Theorem 3.3.6.
 -/
 
@@ -59,23 +60,43 @@ section Unital
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-/-- **Spectral attainment by states.** For a normal element `b` of a unital C⋆-algebra `B`, every
+private theorem exists_mem_stateSpace_apply_eq_of_isStarNormal_of_mem_spectrum (b : B)
+    [IsStarNormal b] {z : ℂ} (hz : z ∈ spectrum ℂ b) : ∃ φ ∈ stateSpace B, φ b = z := by
+  obtain ⟨ω, -, hnorm, hp⟩ :=
+    CStarAlgebra.exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum hz
+  exact ⟨StrongDual.toWeakDual (ω : B →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm,
+    by simpa using hp 0 1⟩
+
+/-- **Spectral attainment by states.** For every element `b` of a unital C⋆-algebra `B`, every
 spectral value `z ∈ spectrum ℂ b` is attained by some state `φ ∈ stateSpace B`. -/
-theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) [IsStarNormal b] {z : ℂ}
+theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) {z : ℂ}
     (hz : z ∈ spectrum ℂ b) : ∃ φ ∈ stateSpace B, φ b = z := by
-  let S := StarAlgebra.elemental ℂ b
-  have : IsClosed (S : Set B) := StarAlgebra.elemental.isClosed ℂ b
-  let bS : S := ⟨b, StarAlgebra.elemental.self_mem ℂ b⟩
-  -- View `z` in the spectrum of `b` inside the commutative C⋆-subalgebra `S`, get a character
-  -- attaining `z` by Gelfand duality, and extend that character state to `B`.
-  have hzS : z ∈ spectrum ℂ bS := by rwa [StarSubalgebra.mem_spectrum_iff]
-  obtain ⟨χ, hχ⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1 hzS
-  have hid : StrongDual.toWeakDual (ContinuousLinearMap.id ℂ ℂ) ∈ stateSpace ℂ := by
-    simp [stateSpace_complex]
-  have hχ_state : pullbackFunctional S χ (StrongDual.toWeakDual (.id ℂ ℂ)) ∈ stateSpace S :=
-    mapsTo_pullbackFunctional_stateSpace χ hid
-  obtain ⟨φ, hφ, hφS⟩ := StarSubalgebra.exists_mem_stateSpace_forall_apply_coe_eq S hχ_state
-  exact ⟨φ, hφ, (hφS bS).trans (by simpa using hχ)⟩
+  rw [spectrum.mem_iff] at hz
+  set x : B := algebraMap ℂ B z - b
+  have hvanish {y : B} (hy : ¬ IsUnit (star y * y)) : ∃ φ ∈ stateSpace B, φ y = 0 := by
+    have : IsStarNormal (star y * y) := (star_mul_self_nonneg y).isSelfAdjoint.isStarNormal
+    have h0 : (0 : ℂ) ∈ spectrum ℂ (star y * y) := by rw [spectrum.mem_iff]; simpa using hy
+    obtain ⟨φ, hφ, hφ0⟩ :=
+      exists_mem_stateSpace_apply_eq_of_isStarNormal_of_mem_spectrum (star y * y) h0
+    have hle : ‖φ y‖ ^ 2 ≤ 0 := by simpa [hφ0] using norm_apply_sq_le_of_mem_stateSpace hφ y
+    exact ⟨φ, hφ, norm_eq_zero.1 (sq_eq_zero_iff.1 (le_antisymm hle (sq_nonneg _)))⟩
+  have hnot : ¬ IsUnit (star x * x) ∨ ¬ IsUnit (star (star x) * star x) := by
+    rw [← not_and_or]
+    rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
+    rw [star_star] at hv
+    have hl : (↑u⁻¹ * star x) * x = 1 := by rw [mul_assoc, ← hu, u.inv_mul]
+    have hr : x * (star x * ↑v⁻¹) = 1 := by rw [← mul_assoc, ← hv, v.mul_inv]
+    exact hz ⟨⟨x, star x * ↑v⁻¹, hr, left_inv_eq_right_inv hl hr ▸ hl⟩, rfl⟩
+  have ⟨φ, hφ, hφx⟩ : ∃ φ ∈ stateSpace B, φ x = 0 := by
+    rcases hnot with h1 | h2
+    · exact hvanish h1
+    · obtain ⟨φ, hφ, hφsx⟩ := hvanish h2
+      exact ⟨φ, hφ, star_eq_zero.1 ((map_star_of_mem_stateSpace hφ x).symm.trans hφsx)⟩
+  refine ⟨φ, hφ, ?_⟩
+  have hsub : z - φ b = 0 := by
+    simpa [x, map_sub, Algebra.algebraMap_eq_smul_one, map_smul, map_one_of_mem_stateSpace hφ]
+      using hφx
+  exact (sub_eq_zero.1 hsub).symm
 
 end Unital
 
@@ -103,17 +124,10 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero {a : A} [IsStarNorma
 possibly nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `φ a = ‖a‖`. -/
 theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero {a : A} (ha : 0 ≤ a)
     (ha0 : a ≠ 0) : ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
-  have ha_inr : 0 ≤ (a : A⁺¹) := Unitization.inr_nonneg_iff.2 ha
-  have : IsStarNormal (a : A⁺¹) := ha_inr.isSelfAdjoint.isStarNormal
-  have hmem : (‖a‖ : ℂ) ∈ spectrum ℂ (a : A⁺¹) := by
-    simpa [Unitization.norm_inr] using
-      spectrum.algebraMap_mem ℂ (CStarAlgebra.norm_mem_spectrum_of_nonneg (a : A⁺¹) ha_inr)
-  obtain ⟨ψ, hψ, hψa⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum (a : A⁺¹) hmem
-  have hψ_norm : ‖ψ (a : A⁺¹)‖ = ‖a‖ := by
-    rw [hψa, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg a)]
-  exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ,
-    pullbackFunctional_inr_mem_stateSpace_of_norm_apply_eq_norm hψ ha0 hψ_norm,
-    by simpa using hψa⟩
+  have := ha.isSelfAdjoint.isStarNormal
+  obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero ha0
+  exact ⟨φ, hφ, (Complex.norm_of_nonneg' (map_nonneg_of_mem_stateSpace hφ ha)).symm.trans
+    (congr_arg Complex.ofReal hφa)⟩
 
 /-- For any nonzero element `a` of a possibly nonunital C⋆-algebra `A`, there is a state
 `φ ∈ stateSpace A` with `φ (star a * a) = ‖a‖ ^ 2`. -/
@@ -247,7 +261,6 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
         smul_nonneg hpos.le hcφ
   rw [← Unitization.inr_nonneg_iff]
   have ha_inr_sa : IsSelfAdjoint (a : A⁺¹) := ha_sa.inr ℂ
-  have : IsStarNormal (a : A⁺¹) := ha_inr_sa.isStarNormal
   rw [StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) (a : A⁺¹) ha_inr_sa]
   intro r hr
   have hrc : (r : ℂ) ∈ spectrum ℂ (a : A⁺¹) := by simpa using spectrum.algebraMap_mem ℂ hr
