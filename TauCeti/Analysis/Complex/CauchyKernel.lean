@@ -21,9 +21,10 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 The complex reciprocal and its norm are locally integrable. Their integrals over a disk admit a
 uniform bound in terms of the radius when the pole lies in that disk, and the integral of the
 reciprocal over any set is bounded by `2π` plus the measure of the set, uniformly in the pole.
-The truncated kernel is in `L^q` for `q < 2`, and compact truncation also gives local `L¹`
-continuity as the pole varies. The Cauchy
-integral of complex data splits into the integrals of their real and imaginary parts.
+The truncated kernel is in `L^q` for `q < 2`, with an explicit `O(R ^ (2 / q - 1))` norm that
+vanishes as `R → 0`, and compact truncation gives local `L^q` continuity (`1 ≤ q < 2`) as the pole
+varies. The Cauchy integral of complex data splits into the integrals of their real and imaginary
+parts.
 -/
 
 public section
@@ -31,7 +32,7 @@ public section
 noncomputable section
 
 open MeasureTheory Metric Set Filter
-open scoped Topology
+open scoped Topology ENNReal
 
 namespace Complex
 
@@ -164,6 +165,102 @@ theorem integral_norm_truncatedCauchyKernel {R : ℝ} (hR : 0 ≤ R) :
     simp only [truncatedCauchyKernel_def, norm_indicator_eq_indicator_norm, norm_inv]
   rw [heq, integral_indicator isClosed_closedBall.measurableSet]
   simpa only [sub_zero] using integral_norm_sub_inv_closedBall hR (0 : ℂ)
+
+/-- The `L^q` norm of the truncated reciprocal kernel for `0 < q < 2` and `0 ≤ R`. -/
+theorem eLpNorm_truncatedCauchyKernel {q : ENNReal} (hq0 : q ≠ 0) (hq : q < 2) {R : ℝ}
+    (hR : 0 ≤ R) :
+    eLpNorm (truncatedCauchyKernel R) q volume =
+      ENNReal.ofReal ((2 * Real.pi / (2 - q.toReal)) ^ q.toReal⁻¹ * R ^ (2 / q.toReal - 1)) := by
+  have hqt : q ≠ ⊤ := ne_top_of_lt hq
+  have hqpos : 0 < q.toReal := ENNReal.toReal_pos hq0 hqt
+  have hqreal : q.toReal < 2 := by
+    exact_mod_cast (ENNReal.toReal_lt_toReal hqt (by simp)).2 hq
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqt
+    (measurable_truncatedCauchyKernel R).aestronglyMeasurable]
+  have hind : (fun z : ℂ ↦ ‖truncatedCauchyKernel R z‖ₑ ^ q.toReal) =
+      (closedBall 0 R).indicator (fun z ↦ ‖z⁻¹‖ₑ ^ q.toReal) := by
+    ext1 z
+    by_cases hz : z ∈ closedBall (0 : ℂ) R
+    · simp [truncatedCauchyKernel_def, indicator_of_mem hz]
+    · simp [truncatedCauchyKernel_def, indicator_of_notMem hz, ENNReal.zero_rpow_of_pos hqpos]
+  have hae : (fun z : ℂ ↦ ‖z⁻¹‖ₑ ^ q.toReal) =ᵐ[volume.restrict (closedBall (0 : ℂ) R)]
+      fun z ↦ ‖z‖ₑ ^ (-q.toReal) := by
+    filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.mpr (measure_singleton (0 : ℂ)))] with z hz
+    have hzp : 0 < ‖z‖ := norm_pos_iff.mpr hz
+    rw [← ofReal_norm, ← ofReal_norm, norm_inv, ENNReal.ofReal_inv_of_pos hzp,
+      ENNReal.inv_rpow, ← ENNReal.rpow_neg]
+  have hrad := setLIntegral_closedBall_enorm_sub_rpow (mu := volume) (E := ℂ) (s := -q.toReal)
+    (by simpa [Complex.finrank_real_complex] using neg_lt_neg hqreal) hR 0
+  norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at hrad
+  rw [one_div, hind, lintegral_indicator measurableSet_closedBall, lintegral_congr_ae hae, hrad,
+    ← sub_eq_add_neg, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity)]
+  congr 1
+  have hdiv : 2 * Real.pi * (R ^ (2 - q.toReal) / (2 - q.toReal)) =
+      (2 * Real.pi / (2 - q.toReal)) * R ^ (2 - q.toReal) := by ring
+  rw [hdiv, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hR]
+  congr 2
+  field_simp [hqpos.ne']
+
+/-- As the cutoff radius shrinks to zero, the `L^q` norm of the truncated reciprocal kernel tends
+to zero for every `0 < q < 2`. -/
+theorem tendsto_eLpNorm_truncatedCauchyKernel_nhds_zero {q : ENNReal} (hq0 : q ≠ 0)
+    (hq : q < 2) :
+    Tendsto (fun R : ℝ ↦ eLpNorm (truncatedCauchyKernel R) q volume) (𝓝 0) (𝓝 0) := by
+  have hqt : q ≠ ⊤ := ne_top_of_lt hq
+  have hqpos : 0 < q.toReal := ENNReal.toReal_pos hq0 hqt
+  have hqreal : q.toReal < 2 := by
+    exact_mod_cast (ENNReal.toReal_lt_toReal hqt (by simp)).2 hq
+  have hs : 0 < 2 / q.toReal - 1 := sub_pos.mpr ((one_lt_div hqpos).mpr hqreal)
+  let C := (2 * Real.pi / (2 - q.toReal)) ^ q.toReal⁻¹
+  have hcont : Continuous fun R : ℝ ↦ ENNReal.ofReal (C * |R| ^ (2 / q.toReal - 1)) :=
+    ENNReal.continuous_ofReal.comp
+      (continuous_const.mul (continuous_abs.rpow_const fun _ ↦ Or.inr hs.le))
+  have hlim : Tendsto (fun R : ℝ ↦ eLpNorm (truncatedCauchyKernel |R|) q volume) (𝓝 0) (𝓝 0) := by
+    simp_rw [eLpNorm_truncatedCauchyKernel hq0 hq (abs_nonneg _)]
+    exact hcont.tendsto' 0 0 (by simp [Real.zero_rpow hs.ne'])
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
+    fun R ↦ eLpNorm_mono (measurable_truncatedCauchyKernel R).aestronglyMeasurable fun z ↦ ?_
+  simp only [truncatedCauchyKernel_def, norm_indicator_eq_indicator_norm]
+  exact indicator_le_indicator_of_subset (closedBall_subset_closedBall (le_abs_self R))
+    (fun _ ↦ norm_nonneg _) z
+
+/-- Moving the pole continuously gives local `L^q` convergence of the complex reciprocal kernel,
+for every `1 ≤ q < 2`. -/
+theorem tendsto_eLpNorm_sub_inv_sub_sub_inv_closedBall {q : ENNReal} (hq1 : 1 ≤ q)
+    (hq : q < 2) {ι : Type*} {l : Filter ι} {wn : ι → ℂ} {w : ℂ} (hw : Tendsto wn l (𝓝 w))
+    (c : ℂ) (R : ℝ) :
+    Tendsto (fun n ↦ eLpNorm (fun z ↦ (z - wn n)⁻¹ - (z - w)⁻¹) q
+      (volume.restrict (closedBall c R))) l (𝓝 0) := by
+  let T := ‖c‖ + R + ‖w‖ + 1
+  have hk := memLp_truncatedCauchyKernel hq T
+  have hsub : Tendsto (fun n ↦ w - wn n) l (𝓝 0) := by
+    simpa only [sub_self] using (tendsto_const_nhds (x := w)).sub hw
+  have hlim := (hk.tendsto_eLpNorm_comp_add_sub hq1 (ne_top_of_lt hq)).comp hsub
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hw.eventually (ball_mem_nhds w zero_lt_one)] with n hn
+  have hnNorm : ‖wn n‖ ≤ ‖w‖ + 1 := norm_le_norm_add_const_of_dist_le (mem_ball.mp hn).le
+  have hae : (fun z : ℂ ↦ (z - wn n)⁻¹ - (z - w)⁻¹) =ᵐ[volume.restrict (closedBall c R)]
+      fun z ↦ truncatedCauchyKernel T (z - wn n) - truncatedCauchyKernel T (z - w) := by
+    filter_upwards [ae_restrict_mem measurableSet_closedBall] with z hz
+    have hzNorm : ‖z‖ ≤ ‖c‖ + R := norm_le_norm_add_const_of_dist_le (mem_closedBall.mp hz)
+    have hzn : z - wn n ∈ closedBall 0 T :=
+      mem_closedBall_zero_iff.mpr ((norm_sub_le z (wn n)).trans (by dsimp [T]; linarith))
+    have hzw : z - w ∈ closedBall 0 T :=
+      mem_closedBall_zero_iff.mpr ((norm_sub_le z w).trans (by dsimp [T]; linarith))
+    simp only [truncatedCauchyKernel_def, Set.indicator_of_mem hzn, Set.indicator_of_mem hzw]
+  have hm : AEStronglyMeasurable
+      (fun z ↦ truncatedCauchyKernel T (z + (w - wn n)) - truncatedCauchyKernel T z) volume :=
+    ((measurable_truncatedCauchyKernel T).comp (measurable_id.add_const _)).sub
+      (measurable_truncatedCauchyKernel T) |>.aestronglyMeasurable
+  have htr : eLpNorm (fun z ↦ truncatedCauchyKernel T (z - wn n) - truncatedCauchyKernel T (z - w))
+      q volume = eLpNorm (fun z ↦ truncatedCauchyKernel T (z + (w - wn n)) -
+        truncatedCauchyKernel T z) q volume := by
+    simpa only [Function.comp_def, sub_add_sub_cancel] using
+      eLpNorm_comp_measurePreserving hm (measurePreserving_sub_right volume w)
+  dsimp only [Function.comp_apply]
+  rw [eLpNorm_congr_ae hae, ← htr]
+  exact eLpNorm_mono_measure _ Measure.restrict_le_self
 
 /-- Moving the pole continuously gives local `L¹` convergence of the complex reciprocal kernel. -/
 theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : Filter ι}
