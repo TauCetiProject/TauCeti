@@ -89,16 +89,19 @@ theorem inertiaDegree_pos (L : IntermediateField K (SeparableClosure K))
   have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
   exact TauCeti.inertiaDegree_pos
 
-/-- The residue degree of a finite subextension divides its degree over `K`. -/
-theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K))
-    [Module.Finite K L] : L.inertiaDegree ∣ Module.finrank K L := by
-  rw [inertiaDegree_eq]
-  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
-  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
-  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
-  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
-  exact ⟨ramificationIndex K L,
-    (ramificationIndex_mul_inertiaDegree K L).symm.trans (mul_comm _ _)⟩
+/-- The residue degree of a subextension divides its degree over `K`, including the infinite case
+where both vanish. -/
+theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K)) :
+    L.inertiaDegree ∣ Module.finrank K L := by
+  by_cases h : Module.Finite K L
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact ⟨ramificationIndex K L,
+      (ramificationIndex_mul_inertiaDegree K L).symm.trans (mul_comm _ _)⟩
+  · simp [inertiaDegree_of_not_finite h, Module.finrank_of_not_finite h]
 
 /-- The residue degree vanishes exactly on infinite subextensions. -/
 @[simp]

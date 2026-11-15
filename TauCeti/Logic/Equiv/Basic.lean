@@ -9,7 +9,7 @@ public import Mathlib.Logic.Equiv.Basic
 public import Mathlib.Order.Defs.LinearOrder
 
 /-!
-# Commuting two subtype restrictions
+# Subtype and fiber equivalences
 
 Restricting a type `E` first to the elements satisfying `p` and then to those satisfying `q`
 leaves the same elements as restricting in the opposite order. When the second predicate in each
@@ -21,6 +21,10 @@ A function `f : α → β` with `f i = f j` at two distinct points is determined
 from `j`, since its value at `j` is its value at `i`. The equivalence
 `Equiv.subtypeApplyEqApplyEquivFun` restricts such functions to `{a // a ≠ j}`; it counts the
 functions identifying two given points, as in collision bounds for uniform sampling.
+
+Equivalences `e : α ≃ β` intertwining maps `f : α → γ` and `g : β → γ` correspond to families of
+fiber equivalences `{a // f a = c} ≃ {b // g b = c}` (`Equiv.fiberEquiv`), upgrading
+`Equiv.ofFiberEquiv` to a two-way equivalence.
 
 The file also records that the transposition of two points of a linear order is the transposition
 of their minimum and maximum (`Equiv.swap_min_max`).
@@ -102,14 +106,10 @@ theorem swap_min_max {α : Type*} [LinearOrder α] (a b : α) :
 families of equivalences between the corresponding fibers `{a // f a = c} ≃ {b // g b = c}`. -/
 def fiberEquiv {α β γ : Type*} (f : α → γ) (g : β → γ) :
     {e : α ≃ β // ∀ a, g (e a) = f a} ≃ ∀ c : γ, {a // f a = c} ≃ {b // g b = c} where
-  toFun e c :=
-    { toFun := fun a ↦ ⟨e.1 a.1, (e.2 a.1).trans a.2⟩
-      invFun := fun b ↦ ⟨e.1.symm b.1, by rw [← e.2, e.1.apply_symm_apply, b.2]⟩
-      left_inv := fun a ↦ Subtype.ext (e.1.symm_apply_apply a.1)
-      right_inv := fun b ↦ Subtype.ext (e.1.apply_symm_apply b.1) }
+  toFun e _ := e.1.subtypeEquiv fun a ↦ by rw [e.2]
   invFun e := ⟨ofFiberEquiv e, fun a ↦ ofFiberEquiv_map e a⟩
-  left_inv e := Subtype.ext <| Equiv.ext fun _ ↦ rfl
-  right_inv e := funext fun c ↦ Equiv.ext fun ⟨a, ha⟩ ↦ by subst ha; rfl
+  left_inv _ := Subtype.ext <| Equiv.ext fun _ ↦ rfl
+  right_inv _ := funext fun _ ↦ Equiv.ext fun ⟨_, ha⟩ ↦ by subst ha; rfl
 
 /-- Applying `Equiv.fiberEquiv` on a fiber `c` applies the underlying equivalence. -/
 @[simp]
@@ -118,11 +118,19 @@ theorem coe_fiberEquiv_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
     ((fiberEquiv f g e c a : {b // g b = c}) : β) = e.1 a.1 :=
   (rfl)
 
-/-- Applying the inverse of `Equiv.fiberEquiv` evaluates the fiber equivalence at `f a`. -/
+/-- Applying the inverse of `Equiv.fiberEquiv` on a fiber `c` applies the inverse of the
+underlying equivalence. -/
 @[simp]
-theorem coe_fiberEquiv_symm_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
-    (e : ∀ c : γ, {a // f a = c} ≃ {b // g b = c}) (a : α) :
-    (((fiberEquiv f g).symm e : α ≃ β) a : β) = (e (f a) ⟨a, rfl⟩).1 :=
+theorem coe_fiberEquiv_apply_symm_apply {α β γ : Type*} (f : α → γ) (g : β → γ)
+    (e : {e : α ≃ β // ∀ a, g (e a) = f a}) (c : γ) (b : {b // g b = c}) :
+    (((fiberEquiv f g e c).symm b : {a // f a = c}) : α) = e.1.symm b.1 :=
+  (rfl)
+
+/-- The inverse of `Equiv.fiberEquiv` is `Equiv.ofFiberEquiv`. -/
+@[simp]
+theorem coe_fiberEquiv_symm {α β γ : Type*} (f : α → γ) (g : β → γ)
+    (e : ∀ c : γ, {a // f a = c} ≃ {b // g b = c}) :
+    ((fiberEquiv f g).symm e : α ≃ β) = ofFiberEquiv e :=
   (rfl)
 
 end Equiv

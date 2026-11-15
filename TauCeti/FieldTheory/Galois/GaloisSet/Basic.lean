@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.GroupTheory.Perm.FiberSubgroup
 import TauCeti.Logic.Equiv.Option
 
 /-!
@@ -26,6 +27,12 @@ is the orbit size. In particular, a nonempty labelled action is transitive exact
 the fixed field of a point stabilizer has degree `n`. These results use Mathlib's infinite
 Galois correspondence and orbit–stabilizer theorem. The conversion from continuous finite
 actions uses `TauCeti.isOpen_ker_toPermHom`.
+
+A family of Galois sets combines along a block labelling `Fin n ≃ Σ i, Fin (d i)` into a
+disjoint-union Galois set (`TauCeti.GaloisSet.sigma`) preserving point stabilizers on each block
+(`TauCeti.GaloisSet.stabilizer_sigma_symm_apply`); conversely, an action preserving the blocks
+restricts to each block (`TauCeti.GaloisSet.restrictBlock`,
+`TauCeti.GaloisSet.sigma_restrictBlock_eq`).
 
 Conversely, an open subgroup `H` of index `n` and a labelling `Fin n ≃ G ⧸ H` of its cosets
 give a transitive Galois set (`TauCeti.GaloisSet.ofQuotient`). For a subextension `L` of degree
@@ -248,24 +255,23 @@ theorem fixedField_stabilizer_trivial (i : Fin n) :
     simp [MulAction.mem_stabilizer_iff]
   rw [hstab, InfiniteGalois.fixedField_bot]
 
-/-- Disjoint union of a finite family of Galois sets, labelled along
-`b : Fin n ≃ Σ i, Fin (d i)`. -/
-def sigma {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+/-- Disjoint union of a family of Galois sets, labelled along `b : Fin n ≃ Σ i, Fin (d i)`. -/
+def sigma {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
     (ρ : ∀ i, GaloisSet K (d i)) : GaloisSet K n :=
   ⟨b.symm.permCongrHom.toMonoidHom.comp
-      { toFun := fun σ ↦ Equiv.Perm.sigmaCongrRight fun i ↦ (ρ i).val σ
-        map_one' := Equiv.ext fun ⟨i, j⟩ ↦ by simp
-        map_mul' := fun σ τ ↦ Equiv.ext fun ⟨i, j⟩ ↦ by simp },
+      ((Equiv.Perm.sigmaCongrRightHom fun i ↦ Fin (d i)).comp
+        (MonoidHom.pi fun i ↦ (ρ i).val)),
     by
-      refine Subgroup.isOpen_mono (H₁ := ⨅ i, (ρ i).val.ker) (fun σ hσ ↦ ?_)
-        (by simpa [Subgroup.coe_iInf] using isOpen_iInter_of_finite fun i ↦ (ρ i).property)
+      refine Subgroup.isOpen_mono (H₁ := ⨅ j : Fin n, (ρ (b j).1).val.ker) (fun σ hσ ↦ ?_)
+        (by simpa [Subgroup.coe_iInf] using
+          isOpen_iInter_of_finite fun j : Fin n ↦ (ρ (b j).1).property)
       simp only [Subgroup.mem_iInf, MonoidHom.mem_ker] at hσ ⊢
       ext j
-      simp [hσ]⟩
+      simp [hσ j]⟩
 
 /-- The permutation of a disjoint union of Galois sets acts inside each block. -/
 @[simp]
-theorem sigma_val_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+theorem sigma_val_apply {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
     (ρ : ∀ i, GaloisSet K (d i))
     (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n) :
     (sigma b ρ).val σ j = b.symm ⟨(b j).1, (ρ (b j).1).val σ (b j).2⟩ :=
@@ -273,7 +279,7 @@ theorem sigma_val_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n �
 
 /-- Labelling a disjoint union of Galois sets along `b` is equivariant with respect to the sigma
 action on the blocks. -/
-theorem sigma_smul_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
+theorem sigma_smul_apply {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
     (ρ : ∀ i, GaloisSet K (d i))
     (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n) :
     letI : ∀ i, MulAction (SeparableClosure K ≃ₐ[K] SeparableClosure K) (Fin (d i)) :=
@@ -289,7 +295,7 @@ theorem sigma_smul_apply {ι : Type*} [Fintype ι] {d : ι → ℕ} (b : Fin n �
 /-- In a disjoint union of Galois sets, the stabilizer of `b.symm ⟨i, x⟩` is the stabilizer of `x`
 in the `i`-th block. -/
 @[simp]
-theorem stabilizer_sigma_symm_apply {ι : Type*} [Fintype ι] {d : ι → ℕ}
+theorem stabilizer_sigma_symm_apply {ι : Type*} {d : ι → ℕ}
     (b : Fin n ≃ Σ i, Fin (d i)) (ρ : ∀ i, GaloisSet K (d i)) (i : ι) (x : Fin (d i)) :
     (letI := (sigma b ρ).mulAction
     MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) (b.symm ⟨i, x⟩)) =
@@ -302,6 +308,63 @@ theorem stabilizer_sigma_symm_apply {ι : Type*} [Fintype ι] {d : ι → ℕ}
   simp only [MulAction.mem_stabilizer_iff]
   rw [← b.apply_eq_iff_eq, sigma_smul_apply, b.apply_symm_apply, Sigma.smul_mk,
     Sigma.mk.inj_iff, heq_eq_eq, and_iff_right rfl]
+
+/-- Restricting a labelled Galois set to the `i`-th block of an invariant decomposition
+`b : Fin n ≃ Σ i, Fin (d i)`. -/
+def restrictBlock {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1)
+    (i : ι) : GaloisSet K (d i) :=
+  let f : Fin n → ι := fun j ↦ (b j).1
+  let e : {j : Fin n // f j = i} ≃ Fin (d i) :=
+    (b.subtypeEquiv fun _ ↦ Iff.rfl).trans (Equiv.sigmaSubtype i)
+  ⟨e.permCongrHom.toMonoidHom.comp
+      ((Pi.evalMonoidHom (fun k ↦ Equiv.Perm {j : Fin n // f j = k}) i).comp
+        ((fiberSubgroupMulEquivPiPerm f).toMonoidHom.comp
+          (ρ.val.codRestrict (fiberSubgroup f) fun σ ↦ mem_fiberSubgroup.mpr (hb σ)))),
+    Subgroup.isOpen_mono (H₁ := ρ.val.ker)
+      (fun σ hσ ↦ by
+        rw [MonoidHom.mem_ker] at hσ ⊢
+        have hcod : ρ.val.codRestrict (fiberSubgroup f)
+            (fun τ ↦ mem_fiberSubgroup.mpr (hb τ)) σ = 1 := Subtype.ext hσ
+        ext x
+        simp [hcod])
+      ρ.property⟩
+
+/-- The permutation on the `i`-th block induced by `restrictBlock` reads the action of `ρ` on
+`b.symm ⟨i, x⟩` inside the fiber over `i`. -/
+@[simp]
+theorem restrictBlock_val_apply {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1)
+    (i : ι) (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (x : Fin (d i)) :
+    (ρ.restrictBlock b hb i).val σ x =
+      Equiv.sigmaSubtype i
+        ⟨b (ρ.val σ (b.symm ⟨i, x⟩)),
+          (hb σ (b.symm ⟨i, x⟩)).trans (by rw [b.apply_symm_apply])⟩ := by
+  dsimp only [restrictBlock, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    Equiv.permCongrHom_coe, Equiv.permCongr_apply, Equiv.trans_apply, Equiv.symm_trans_apply]
+  congr 1
+  apply Subtype.ext
+  simp only [Equiv.subtypeEquiv_symm, Equiv.subtypeEquiv_apply, Pi.evalMonoidHom_apply,
+    fiberSubgroupMulEquivPiPerm_apply_coe]
+  rfl
+
+/-- Reassembling the block restrictions of `ρ` along `b` recovers `ρ`. -/
+theorem sigma_restrictBlock_eq {ι : Type*} {d : ι → ℕ} (ρ : GaloisSet K n)
+    (b : Fin n ≃ Σ i, Fin (d i))
+    (hb : ∀ (σ : SeparableClosure K ≃ₐ[K] SeparableClosure K) (j : Fin n),
+      (b (ρ.val σ j)).1 = (b j).1) :
+    sigma b (fun i ↦ ρ.restrictBlock b hb i) = ρ := by
+  have hmk : ∀ {a : ι} (s : {p : Σ i, Fin (d i) // p.1 = a}),
+      (⟨a, Equiv.sigmaSubtype a s⟩ : Σ i, Fin (d i)) = s.1 := by
+    rintro a ⟨⟨_, _⟩, rfl⟩
+    rfl
+  refine ext fun σ j ↦ ?_
+  rw [sigma_val_apply, restrictBlock_val_apply, hmk]
+  simp [Sigma.eta]
 
 /-! ### Transitive Galois sets from open subgroups -/
 

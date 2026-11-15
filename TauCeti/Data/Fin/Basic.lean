@@ -148,8 +148,6 @@ range, so the value is a `dite` rather than a plain application.
   rays of a `Fin` family and the consecutive closed intervals cover the whole order.
 * `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
   that lie in the range of a monotone `Fin` family lie between its first and last values.
-* `Fin.sigma_mk_cast`: rebuilding a pair in `Σ j, Fin (d j)` over an equal first coordinate via
-  `Fin.cast` recovers the pair.
 -/
 
 public section
@@ -768,14 +766,6 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     have := succAbove_predAbove (p := l.castPred hl) (i := v)
       (by rwa [castSucc_castPred])
     rwa [castSucc_castPred] at this
-
-/-- Rebuilding a pair `p : Σ j, Fin (d j)` over a block index `i` equal to `p.1` by casting its
-second coordinate along `h : p.1 = i` recovers `p`. -/
-theorem sigma_mk_cast {ι : Type*} {d : ι → ℕ} {i : ι} {p : Σ j, Fin (d j)} (h : p.1 = i) :
-    (⟨i, p.2.cast (congrArg d h)⟩ : Σ j, Fin (d j)) = p := by
-  cases p
-  subst h
-  rfl
 
 end Fin
 

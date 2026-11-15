@@ -31,7 +31,9 @@ mass is valued in `ℝ≥0∞`.
 ## Main definitions and results
 
 * `TauCeti.GaloisSet.discriminantExponent`: the discriminant exponent of a labelled Galois set.
-* `TauCeti.GaloisSet.discriminantExponent_eq_of_equiv`: invariance under equivariant relabelling.
+* `TauCeti.GaloisSet.discriminantExponent_eq_of_equiv` and
+  `TauCeti.GaloisSet.discriminantExponent_sigma`: invariance under equivariant relabelling and
+  additivity on disjoint unions.
 * `TauCeti.etaleMass`: the étale mass `M_n(K)`.
 * `TauCeti.GaloisSet.discriminantExponent_of_isTransitive`: the transitive case.
 * `TauCeti.tsum_isTransitive_one_div_natCard_residueField_pow_discriminantExponent`: the
@@ -106,6 +108,19 @@ theorem discriminantExponent_of_subsingleton [Subsingleton (Fin n)] (ρ : Galois
     ρ.discriminantExponent = 0 := by
   let := ρ.mulAction
   exact orbitDiscriminantExponent_of_subsingleton K
+
+/-- The discriminant exponent of a disjoint union of Galois sets is the sum of their
+discriminant exponents. -/
+@[simp]
+theorem discriminantExponent_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
+    (b : Fin n ≃ Σ i, Fin (d i)) (ρ : ∀ i, GaloisSet K (d i)) :
+    (sigma b ρ).discriminantExponent = ∑ i, (ρ i).discriminantExponent := by
+  let : ∀ i, MulAction Gal(SeparableClosure K/K) (Fin (d i)) := fun i ↦ (ρ i).mulAction
+  let := (sigma b ρ).mulAction
+  rw [discriminantExponent_def,
+    orbitDiscriminantExponent_eq_of_equiv K b (sigma_smul_apply b ρ),
+    orbitDiscriminantExponent_sigma K]
+  exact Finset.sum_congr rfl fun i _ ↦ (ρ i).discriminantExponent_def.symm
 
 end GaloisSet
 

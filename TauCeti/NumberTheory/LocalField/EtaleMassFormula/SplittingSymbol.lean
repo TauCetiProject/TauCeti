@@ -98,11 +98,24 @@ theorem splittingSymbolExponent_singleton (x : ℕ × ℕ) :
     splittingSymbolExponent {x} = x.1 * (x.2 - 1) := by
   simp [splittingSymbolExponent]
 
+/-- Adding a factor `(f, e)` increases the discriminant exponent by `f * (e - 1)`. -/
+@[simp]
+theorem splittingSymbolExponent_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent (x ::ₘ σ) = x.1 * (x.2 - 1) + splittingSymbolExponent σ := by
+  simp [splittingSymbolExponent]
+
 /-- The discriminant exponent of a sum of splitting symbols is the sum of their exponents. -/
 @[simp]
 theorem splittingSymbolExponent_add (σ τ : Multiset (ℕ × ℕ)) :
     splittingSymbolExponent (σ + τ) =
       splittingSymbolExponent σ + splittingSymbolExponent τ := by
+  simp [splittingSymbolExponent]
+
+/-- Repeating a factor `(f, e)` `n` times multiplies its discriminant exponent `f * (e - 1)` by
+`n`. -/
+@[simp]
+theorem splittingSymbolExponent_replicate (n : ℕ) (x : ℕ × ℕ) :
+    splittingSymbolExponent (Multiset.replicate n x) = n * (x.1 * (x.2 - 1)) := by
   simp [splittingSymbolExponent]
 
 /-- The defining formula of `ramificationPartition`. -/
@@ -139,6 +152,36 @@ theorem splittingSymbolAut_zero : splittingSymbolAut 0 = 1 := by
 theorem splittingSymbolAut_singleton (x : ℕ × ℕ) : splittingSymbolAut {x} = x.1 := by
   simp [splittingSymbolAut]
 
+/-- Adjoining a factor `x = (f, e)` to `σ` multiplies `#Aut(σ)` by `f * (σ.count x + 1)`. -/
+@[simp]
+theorem splittingSymbolAut_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolAut (x ::ₘ σ) = x.1 * (σ.count x + 1) * splittingSymbolAut σ := by
+  classical
+  let s : Finset (ℕ × ℕ) := insert x σ.toFinset
+  rw [splittingSymbolAut_eq_prod_of_subset (x ::ₘ σ) (s := s) (by simp [s]),
+    splittingSymbolAut_eq_prod_of_subset σ (s := s) (Finset.subset_insert x _),
+    ← Finset.mul_prod_erase s _ (Finset.mem_insert_self x _),
+    ← Finset.mul_prod_erase s _ (Finset.mem_insert_self x _),
+    Multiset.count_cons_self, pow_succ', Nat.factorial_succ]
+  have hrest :
+      (∏ y ∈ s.erase x, y.1 ^ (x ::ₘ σ).count y * ((x ::ₘ σ).count y)!) =
+        ∏ y ∈ s.erase x, y.1 ^ σ.count y * (σ.count y)! :=
+    Finset.prod_congr rfl fun y hy => by
+      rw [Multiset.count_cons_of_ne (Finset.ne_of_mem_erase hy)]
+  rw [hrest]
+  ring
+
+/-- A splitting symbol consisting of `n` copies of `x = (f, e)` has `f ^ n * n !` automorphisms. -/
+@[simp]
+theorem splittingSymbolAut_replicate (n : ℕ) (x : ℕ × ℕ) :
+    splittingSymbolAut (Multiset.replicate n x) = x.1 ^ n * n ! := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Multiset.replicate_succ, splittingSymbolAut_cons, Multiset.count_replicate_self, ih,
+      pow_succ', Nat.factorial_succ]
+    ring
+
 /-- The empty splitting symbol has the empty ramification partition. -/
 @[simp]
 theorem ramificationPartition_zero : ramificationPartition 0 = 0 := by
@@ -160,6 +203,26 @@ theorem ramificationPartition_singleton (x : ℕ × ℕ) :
   split_ifs with h
   · exact Multiset.filter_eq_nil.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
   · exact Multiset.filter_eq_self.2 fun a ha => by rw [Multiset.eq_of_mem_replicate ha]; omega
+
+/-- Adjoining a factor `(f, e)` prepends `f` copies of `e - 1` when `e > 1` (and nothing when
+`e ≤ 1`) to the ramification partition. -/
+@[simp]
+theorem ramificationPartition_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    ramificationPartition (x ::ₘ σ) =
+      (if x.2 ≤ 1 then 0 else Multiset.replicate x.1 (x.2 - 1)) + ramificationPartition σ := by
+  rw [← Multiset.singleton_add, ramificationPartition_add, ramificationPartition_singleton]
+
+/-- Repeating a factor `(f, e)` `n` times gives `n * f` copies of `e - 1` when `e > 1`, and the
+empty ramification partition when `e ≤ 1`. -/
+@[simp]
+theorem ramificationPartition_replicate (n : ℕ) (x : ℕ × ℕ) :
+    ramificationPartition (Multiset.replicate n x) =
+      if x.2 ≤ 1 then 0 else Multiset.replicate (n * x.1) (x.2 - 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Multiset.replicate_succ, ramificationPartition_cons, ih]
+    split_ifs <;> simp [Nat.succ_mul, add_comm, ← Multiset.replicate_add]
 
 /-- The parts of the ramification partition are the `e - 1 ≠ 0` for the factors `(f, e)` of `σ`
 with `f ≠ 0`. -/
