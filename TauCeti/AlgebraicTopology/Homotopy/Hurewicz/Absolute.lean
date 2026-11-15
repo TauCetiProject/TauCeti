@@ -170,6 +170,14 @@ theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup 
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
   (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
 
+/-- The forward map of the Hurewicz isomorphism is the integral Hurewicz homomorphism
+`HomotopyGroup.hurewiczIntHom`. -/
+theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
+    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
+    (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
+    hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=
+  AddEquiv.ofBijective_apply _ _ _
+
 /-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
 `GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/
 theorem hurewiczAddEquiv_ofMul_mk (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
