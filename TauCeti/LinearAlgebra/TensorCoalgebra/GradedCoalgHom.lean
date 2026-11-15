@@ -209,10 +209,8 @@ theorem isGradedCoderivationAlong_id_id_iff {q : ℤ}
   rw [isGradedCoderivationAlong_iff, isGradedCoderivation_iff, ← LinearMap.rTensor_def,
     ← LinearMap.lTensor_def, LinearMap.comp_assoc]
 
-/-- Two coderivations along pairs of maps that agree on the words of length at most `n - 1`, and
-whose letter components agree on the words of length at most `n`, agree on those words: the value
-on a word is determined by its letter and its deconcatenation, which only involves shorter words,
-and the letterwise Koszul twist preserves tensor length. -/
+/-- Two coderivations along pairs of maps agreeing on words of length at most `n - 1` and with the
+same letter component on words of length at most `n` agree on those words. -/
 theorem IsGradedCoderivationAlong.apply_eq_of_mem_filtration {q : ℤ}
     {F₁ F₁' F₂ F₂' D₁ D₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (h₁ : IsGradedCoderivationAlong G q F₁ F₁' D₁)
@@ -222,27 +220,23 @@ theorem IsGradedCoderivationAlong.apply_eq_of_mem_filtration {q : ℤ}
     (hl : ∀ z ∈ filtration R M n, letter R N (D₁ z) = letter R N (D₂ z))
     {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) : D₁ z = D₂ z := by
   induction n generalizing z with
-  | zero =>
-      rw [filtration_zero] at hz
-      simp only [(Submodule.mem_bot R).1 hz, map_zero]
+  | zero => rw [filtration_zero] at hz; simp only [(Submodule.mem_bot R).1 hz, map_zero]
   | succ n ih =>
-      have ih' : ∀ u ∈ filtration R M n, D₁ u = D₂ u := fun u hu ↦
-        ih (fun w hw ↦ hF w (filtration_monotone R M (Nat.sub_le n 1) hw))
-          (fun w hw ↦ hF' w (filtration_monotone R M (Nat.sub_le n 1) hw))
-          (fun w hw ↦ hl w (filtration_monotone R M n.le_succ hw)) hu
-      refine eq_of_deconcatenation_eq_of_letter_eq R N ?_ (hl z hz)
-      obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
-      rw [h₁.deconcatenation_apply, h₂.deconcatenation_apply, ← hw]
-      clear hw
-      induction w using TensorProduct.inductionOn with
-      | tmul u v =>
-          simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
-            LinearMap.rTensor_tmul]
-          rw [ih' _ u.2, ih' _ v.2, hF' _ v.2,
-            hF _ ((isCoalgHom_map (G.koszulTwist q)).mem_filtration u.2)]
-      | add u v hu hv =>
-          simp only [map_add] at hu hv ⊢
-          rw [add_add_add_comm, hu, hv, add_add_add_comm]
+    have ih' : ∀ u ∈ filtration R M n, D₁ u = D₂ u := fun _ hu ↦
+      ih (fun w hw ↦ hF w (filtration_monotone R M (Nat.sub_le n 1) hw))
+        (fun w hw ↦ hF' w (filtration_monotone R M (Nat.sub_le n 1) hw))
+        (fun w hw ↦ hl w (filtration_monotone R M n.le_succ hw)) hu
+    refine eq_of_deconcatenation_eq_of_letter_eq R N ?_ (hl z hz)
+    obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
+    rw [h₁.deconcatenation_apply, h₂.deconcatenation_apply, ← hw]; clear hw
+    induction w using TensorProduct.inductionOn with
+    | tmul u v =>
+      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
+        LinearMap.rTensor_tmul]
+      rw [ih' _ u.2, ih' _ v.2, hF' _ v.2,
+        hF _ ((isCoalgHom_map (G.koszulTwist q)).mem_filtration u.2)]
+    | add _ _ hu hv =>
+      simp only [map_add] at hu hv ⊢; rw [add_add_add_comm, hu, hv, add_add_add_comm]
 
 /-- A coderivation along a pair of maps is determined by its letter component: two
 coderivations along the same pair of maps whose letter components agree are equal.  This is an
@@ -257,12 +251,11 @@ theorem IsGradedCoderivationAlong.eq_of_letter_comp_eq {q : ℤ}
   exact h₁.apply_eq_of_mem_filtration h₂ (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
     (fun w _ ↦ LinearMap.congr_fun hl w) hn
 
-/-- The length-`n` component of the Taylor expansion `gradedCoderivAlong G q F F' h`: either the
-whole word is collapsed to `h(x₁ ⋯ xₙ)`, or a nonempty first block `B₁` of `d` letters is split
-off and contributes `h(B₁) · F'(B₂)` together with `(π ∘ F ∘ τ)(B₁) · D(B₂)`. -/
-private noncomputable def gradedCoderivAlongComponent (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) :
+section GradedCoderivAlong
+variable (G) (q : ℤ) (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
+  (h : ReducedTensorWords R M →ₗ[R] N)
+
+private noncomputable def gradedCoderivAlongComponent :
     (n : ℕ) → TensorPower R n M →ₗ[R] ReducedTensorWords R N
   | n =>
     (if hn : 0 < n then ofLetter R N ∘ₗ h ∘ₗ of R M ⟨n, hn⟩ else 0) +
@@ -271,186 +264,124 @@ private noncomputable def gradedCoderivAlongComponent (G : InternalGrading R M �
             (F' ∘ₗ of R M ⟨n - d.1, Nat.sub_pos_of_lt d.2⟩)) +
           TensorProduct.lift ((prepend R N).compl₁₂
             ((letter R N ∘ₗ F ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q)) ∘ₗ
-              of R M ⟨d.1, hd⟩)
-            (gradedCoderivAlongComponent G q F F' h (n - d.1)))) ∘ₗ
-          TensorPower.splitAt R M n d.1 d.2.le
-        else 0
+              of R M ⟨d.1, hd⟩) (gradedCoderivAlongComponent (n - d.1)))) ∘ₗ
+          TensorPower.splitAt R M n d.1 d.2.le else 0
 termination_by n => n
 decreasing_by have := d.isLt; omega
 
-/-- The Taylor expansion of a family of components `h : Tᶜ(M) ⟶ N` as a `q`-twisted coderivation
-along coalgebra morphisms `F` and `F'`: on a word `x₁ ⋯ xₙ` it splits off the first nonempty
-block recursively, applying `h` on one block, `F` (preceded by the letterwise Koszul twist) on the
-blocks to its left, and `F'` on the remaining word to its right. -/
-noncomputable def gradedCoderivAlong (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) :
-    ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N :=
-  DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦
-    gradedCoderivAlongComponent G q F F' h n.1
+/-- The Taylor expansion of `h : Tᶜ(M) ⟶ N` as a `q`-twisted coderivation along coalgebra
+morphisms `F` and `F'`. -/
+noncomputable def gradedCoderivAlong : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N :=
+  DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦ gradedCoderivAlongComponent G q F F' h n.1
 
-/-- The recursive evaluation rule of `gradedCoderivAlong` on a pure tensor word. -/
-private theorem gradedCoderivAlong_of_tprod (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
+private theorem gradedCoderivAlong_of_tprod {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
     gradedCoderivAlong G q F F' h (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)) =
-      ofLetter R N (h (subword R x 0 n)) +
-        ∑ d ∈ Finset.range n,
-          (prepend R N (h (subword R x 0 d)) (F' (subword R x d (n - d))) +
-            prepend R N
-              (letter R N (F (ReducedTensorWords.map (R := R) (G.koszulTwist q)
-                (subword R x 0 d))))
-              (gradedCoderivAlong G q F F' h (subword R x d (n - d)))) := by
+      ofLetter R N (h (subword R x 0 n)) + ∑ d ∈ Finset.range n,
+        (prepend R N (h (subword R x 0 d)) (F' (subword R x d (n - d))) +
+          prepend R N (letter R N (F (ReducedTensorWords.map (R := R) (G.koszulTwist q)
+            (subword R x 0 d)))) (gradedCoderivAlong G q F F' h (subword R x d (n - d)))) := by
   rw [gradedCoderivAlong, toModule_of, gradedCoderivAlongComponent, dite_eq_left hn,
     ← of_tprod_eq_subword R hn x]
   simp only [LinearMap.add_apply, LinearMap.coe_comp, Function.comp_apply, LinearMap.sum_apply]
-  congr 1
-  rw [Finset.sum_range]
-  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [Finset.sum_range]; congr 1; refine Finset.sum_congr rfl fun d _ ↦ ?_
   rcases Nat.eq_zero_or_pos d.1 with hd | hd
-  · rw [dite_eq_right (by omega)]
-    simp only [hd, subword_length_zero, map_zero, LinearMap.zero_apply, add_zero]
+  · simp [hd, subword_length_zero]
   · have _ := d.isLt
     rw [dite_eq_left hd, subword_eq_of_tprod R x hd (by omega),
       subword_eq_of_tprod R x (a := d.1) (b := n - d.1) (by omega) (by omega), toModule_of]
     simp only [LinearMap.add_apply, LinearMap.coe_comp, Function.comp_apply,
-      TensorPower.splitAt_tprod, TensorProduct.lift.tmul, LinearMap.compl₁₂_apply]
-    have heq : ∀ h₁ h₂, of R M ⟨d.1, h₁⟩ (PiTensorProduct.tprod R fun i ↦ x (Fin.castLE h₂ i)) =
-        of R M ⟨d.1, hd⟩ (PiTensorProduct.tprod R fun j ↦ x ⟨0 + j.1, by omega⟩) :=
-      fun _ _ ↦ of_tprod_congr R M hd rfl fun j ↦ congrArg x (Fin.ext (by simp))
-    rw [heq]
+      TensorPower.splitAt_tprod, TensorProduct.lift.tmul, LinearMap.compl₁₂_apply, Nat.zero_add]
+    rfl
 
-/-- The recursive evaluation rule of `gradedCoderivAlong` on a block of a tensor word: either the
-whole block is collapsed to `h(B)`, or a nonempty first block `B₁` is split off and contributes
-`h(B₁) · F'(B₂)` plus `(π ∘ F ∘ τ)(B₁) · D(B₂)`.  The summand `d = 0` vanishes. -/
-theorem gradedCoderivAlong_subword (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
+/-- Recursive evaluation rule of `gradedCoderivAlong` on a block of a tensor word. -/
+theorem gradedCoderivAlong_subword {n : ℕ} (x : Fin n → M) (a b : ℕ) :
     gradedCoderivAlong G q F F' h (subword R x a b) =
-      ofLetter R N (h (subword R x a b)) +
-        ∑ d ∈ Finset.range b,
-          (prepend R N (h (subword R x a d)) (F' (subword R x (a + d) (b - d))) +
-            prepend R N
-              (letter R N (F (ReducedTensorWords.map (R := R) (G.koszulTwist q)
-                (subword R x a d))))
-              (gradedCoderivAlong G q F F' h (subword R x (a + d) (b - d)))) := by
+      ofLetter R N (h (subword R x a b)) + ∑ d ∈ Finset.range b,
+        (prepend R N (h (subword R x a d)) (F' (subword R x (a + d) (b - d))) +
+          prepend R N (letter R N (F (ReducedTensorWords.map (R := R) (G.koszulTwist q)
+            (subword R x a d))))
+            (gradedCoderivAlong G q F F' h (subword R x (a + d) (b - d)))) := by
   by_cases hb : 0 < b ∧ a + b ≤ n
-  · obtain ⟨hb0, hab⟩ := hb
-    have hy : ∀ c d : ℕ, c + d ≤ b → subword R (fun j : Fin b ↦ x ⟨a + j.1, by omega⟩) c d =
+  · have hy : ∀ c d : ℕ, c + d ≤ b → subword R (fun j : Fin b ↦ x ⟨a + j.1, by omega⟩) c d =
         subword R x (a + c) d := fun c d hcd ↦
       subword_congr R _ x hcd (by omega) fun j hj ↦ congrArg x (Fin.ext (by simp only; omega))
-    have hx := congrArg (gradedCoderivAlong G q F F' h) (subword_eq_of_tprod R x hb0 hab)
-    rw [hx, gradedCoderivAlong_of_tprod G q F F' h hb0, hy 0 b (by omega), Nat.add_zero]
-    congr 1
-    refine Finset.sum_congr rfl fun d hd ↦ ?_
-    rw [Finset.mem_range] at hd
-    rw [hy 0 d (by omega), hy d (b - d) (by omega), Nat.add_zero]
+    conv_lhs => rw [subword_eq_of_tprod R x hb.1 hb.2]
+    rw [gradedCoderivAlong_of_tprod G q F F' h hb.1, hy 0 b (by omega), Nat.add_zero]
+    refine congrArg (ofLetter R N (h (subword R x a b)) + ·) (Finset.sum_congr rfl fun d hd ↦ ?_)
+    rw [Finset.mem_range] at hd; rw [hy 0 d (by omega), hy d (b - d) (by omega), Nat.add_zero]
   · have hzero : subword R x a b = 0 := by
       rcases not_and_or.1 hb with hb0 | hab
       · rw [show b = 0 by omega, subword_length_zero]
       · exact subword_eq_zero_of_lt_add R x (by omega)
     rw [hzero, map_zero, map_zero, map_zero, zero_add]
-    refine (Finset.sum_eq_zero fun d hd ↦ ?_).symm
-    rw [Finset.mem_range] at hd
-    rcases not_and_or.1 hb with hb0 | hab
-    · omega
-    · rw [subword_eq_zero_of_lt_add R x (a := a + d) (by omega), map_zero, map_zero, map_zero,
-        map_zero, add_zero]
+    refine (Finset.sum_eq_zero fun d hd ↦ ?_).symm; rw [Finset.mem_range] at hd
+    simp [subword_eq_zero_of_lt_add R x (a := a + d) (b := b - d) (by omega)]
 
 /-- The Taylor expansion `gradedCoderivAlong G q F F' h` has letter component `h`. -/
-@[simp]
-theorem letter_comp_gradedCoderivAlong (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) :
-    letter R N ∘ₗ gradedCoderivAlong G q F F' h = h := by
-  refine linearMap_ext R M fun n x ↦ ?_
-  rw [LinearMap.comp_apply, of_tprod_eq_subword R n.2, gradedCoderivAlong_subword, map_add,
-    map_sum, letter_ofLetter]
-  simp only [map_add, letter_prepend, add_zero, Finset.sum_const_zero]
-
-/-- On a single letter, `gradedCoderivAlong G q F F' h` is the single letter given by the
-arity-one component of `h`. -/
-@[simp]
-theorem gradedCoderivAlong_ofLetter (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) (a : M) :
+@[simp] theorem letter_comp_gradedCoderivAlong :
+    letter R N ∘ₗ gradedCoderivAlong G q F F' h = h :=
+  linearMap_ext R M fun n x ↦ by
+    rw [LinearMap.comp_apply, of_tprod_eq_subword R n.2, gradedCoderivAlong_subword, map_add,
+      map_sum, letter_ofLetter]
+    simp only [map_add, letter_prepend, add_zero, Finset.sum_const_zero]
+/-- On a single letter, `gradedCoderivAlong G q F F' h` is given by the arity-one part of `h`. -/
+@[simp] theorem gradedCoderivAlong_ofLetter (a : M) :
     gradedCoderivAlong G q F F' h (ofLetter R M a) = ofLetter R N (h (ofLetter R M a)) := by
   have hs := gradedCoderivAlong_subword G q F F' h (fun _ : Fin 1 ↦ a) 0 1
   rw [subword_one R M _ Nat.one_pos, Finset.sum_range_one, subword_length_zero] at hs
   simpa only [map_zero, LinearMap.zero_apply, add_zero] using hs
 
-/-- Expanding `D` on the left factor of the cuts of a block into first-block summands. -/
-private theorem sum_gradedCoderivAlong_tmul_eq (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
+private theorem sum_range_subword_tmul_pad {n : ℕ} (x : Fin n → M) (a b : ℕ)
+    (f : ℕ → ℕ → ReducedTensorWords R N)
+    (g : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N) (hf : ∀ e, f e e = 0) :
+    ∑ e ∈ Finset.range b, (∑ d ∈ Finset.range e, f d e) ⊗ₜ[R]
+        g (subword R x (a + e) (b - e)) =
+      ∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1),
+        f d e ⊗ₜ[R] g (subword R x (a + d + (e - d)) (b - d - (e - d))) := by
+  refine Finset.sum_congr rfl fun e _ ↦ ?_
+  rw [TensorProduct.sum_tmul, Finset.sum_range_succ, hf, TensorProduct.zero_tmul, add_zero]
+  refine Finset.sum_congr rfl fun d hd ↦ ?_; rw [Finset.mem_range] at hd
+  rw [show a + d + (e - d) = a + e by omega, show b - d - (e - d) = b - e by omega]
+private theorem sum_gradedCoderivAlong_tmul_eq {n : ℕ} (x : Fin n → M) (a b : ℕ) :
     ∑ e ∈ Finset.range b, gradedCoderivAlong G q F F' h (subword R x a e) ⊗ₜ[R]
         F' (subword R x (a + e) (b - e)) =
       (∑ d ∈ Finset.range b, ofLetter R N (h (subword R x a d)) ⊗ₜ[R]
           F' (subword R x (a + d) (b - d))) +
-        (∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1),
-          prepend R N (h (subword R x a d)) (F' (subword R x (a + d) (e - d))) ⊗ₜ[R]
+        (∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1), prepend R N (h (subword R x a d))
+          (F' (subword R x (a + d) (e - d))) ⊗ₜ[R]
             F' (subword R x (a + d + (e - d)) (b - d - (e - d)))) +
-        ∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1),
-          prepend R N
-            (letter R N (F (ReducedTensorWords.map (R := R) (G.koszulTwist q)
-              (subword R x a d))))
-            (gradedCoderivAlong G q F F' h (subword R x (a + d) (e - d))) ⊗ₜ[R]
+        ∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1), prepend R N
+          (letter R N (F (ReducedTensorWords.map (R := R) (G.koszulTwist q) (subword R x a d))))
+          (gradedCoderivAlong G q F F' h (subword R x (a + d) (e - d))) ⊗ₜ[R]
             F' (subword R x (a + d + (e - d)) (b - d - (e - d))) := by
-  simp only [gradedCoderivAlong_subword G q F F' h x a, TensorProduct.add_tmul,
-    TensorProduct.sum_tmul, Finset.sum_add_distrib]
-  rw [add_assoc]
-  congr 1
-  rw [← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun e _ ↦ ?_
-  rw [Finset.sum_range_succ, Finset.sum_range_succ]
-  simp only [Nat.sub_self, subword_length_zero, map_zero, TensorProduct.zero_tmul, add_zero]
-  rw [← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun d hd ↦ ?_
-  rw [Finset.mem_range] at hd
-  rw [show a + d + (e - d) = a + e by omega, show b - d - (e - d) = b - e by omega]
-
-/-- Expanding a coalgebra morphism `K` on the left factor of the cuts of a block into first-block
-summands. -/
+  simp only [gradedCoderivAlong_subword G q F F' h x a, Finset.sum_add_distrib,
+    TensorProduct.add_tmul]
+  rw [sum_range_subword_tmul_pad x a b _ F' (fun _ ↦ by simp [subword_length_zero]),
+    sum_range_subword_tmul_pad x a b _ F' (fun _ ↦ by simp [subword_length_zero]), add_assoc]
 private theorem sum_coalgHom_tmul_eq
     {K D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hK : IsCoalgHom R K) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
     ∑ e ∈ Finset.range b, K (subword R x a e) ⊗ₜ[R] D (subword R x (a + e) (b - e)) =
       (∑ d ∈ Finset.range b, ofLetter R N (letter R N (K (subword R x a d))) ⊗ₜ[R]
           D (subword R x (a + d) (b - d))) +
-        ∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1),
-          prepend R N (letter R N (K (subword R x a d)))
-            (K (subword R x (a + d) (e - d))) ⊗ₜ[R]
+        ∑ e ∈ Finset.range b, ∑ d ∈ Finset.range (e + 1), prepend R N
+          (letter R N (K (subword R x a d))) (K (subword R x (a + d) (e - d))) ⊗ₜ[R]
             D (subword R x (a + d + (e - d)) (b - d - (e - d))) := by
-  have hK_sub : ∀ e : ℕ, K (subword R x a e) = ofLetter R N (letter R N (K (subword R x a e))) +
-      ∑ d ∈ Finset.range e,
-        prepend R N (letter R N (K (subword R x a d))) (K (subword R x (a + d) (e - d))) := by
-    intro e
+  rw [Finset.sum_congr rfl fun e _ ↦ congrArg (· ⊗ₜ[R] _) (show K (subword R x a e) =
+      ofLetter R N (letter R N (K (subword R x a e))) + ∑ d ∈ Finset.range e,
+        prepend R N (letter R N (K (subword R x a d))) (K (subword R x (a + d) (e - d))) by
     conv_lhs => rw [hK.eq_coalgHom, coalgHom_subword]
-    rw [← hK.eq_coalgHom]
-    rfl
-  trans ∑ e ∈ Finset.range b, (ofLetter R N (letter R N (K (subword R x a e))) +
-      ∑ d ∈ Finset.range e,
-        prepend R N (letter R N (K (subword R x a d))) (K (subword R x (a + d) (e - d)))) ⊗ₜ[R]
-      D (subword R x (a + e) (b - e))
-  · exact Finset.sum_congr rfl fun e _ ↦
-      congrArg (· ⊗ₜ[R] D (subword R x (a + e) (b - e))) (hK_sub e)
-  simp only [TensorProduct.add_tmul, TensorProduct.sum_tmul, Finset.sum_add_distrib]
-  congr 1
-  refine Finset.sum_congr rfl fun e _ ↦ ?_
-  rw [Finset.sum_range_succ]
-  simp only [Nat.sub_self, subword_length_zero, map_zero, TensorProduct.zero_tmul, add_zero]
-  refine Finset.sum_congr rfl fun d hd ↦ ?_
-  rw [Finset.mem_range] at hd
-  rw [show a + d + (e - d) = a + e by omega, show b - d - (e - d) = b - e by omega]
+    rw [← hK.eq_coalgHom]; rfl)]
+  simp only [TensorProduct.add_tmul, Finset.sum_add_distrib]
+  rw [sum_range_subword_tmul_pad x a b _ D (fun _ ↦ by simp [subword_length_zero])]
+end GradedCoderivAlong
 
-/-- Deconcatenation of `gradedCoderivAlong` on a block of a tensor word. -/
 private theorem deconcatenation_gradedCoderivAlong_subword (G : InternalGrading R M ℤ) (q : ℤ)
     {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F') (h : ReducedTensorWords R M →ₗ[R] N)
     {n : ℕ} (x : Fin n → M) (b a : ℕ) :
     deconcatenation R N (gradedCoderivAlong G q F F' h (subword R x a b)) =
-      TensorProduct.map (gradedCoderivAlong G q F F' h) F'
-          (deconcatenation R M (subword R x a b)) +
+      TensorProduct.map (gradedCoderivAlong G q F F' h) F' (deconcatenation R M (subword R x a b)) +
         TensorProduct.map (F ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q))
           (gradedCoderivAlong G q F F' h) (deconcatenation R M (subword R x a b)) := by
   set D := gradedCoderivAlong G q F F' h
@@ -460,29 +391,24 @@ private theorem deconcatenation_gradedCoderivAlong_subword (G : InternalGrading 
     have hP₁ : ∀ d ∈ Finset.range b,
         LinearMap.rTensor (ReducedTensorWords R N) (prepend R N (h (subword R x a d)))
             (deconcatenation R N (F' (subword R x (a + d) (b - d)))) =
-          ∑ c ∈ Finset.range (b - d),
-            prepend R N (h (subword R x a d)) (F' (subword R x (a + d) c)) ⊗ₜ[R]
-              F' (subword R x (a + d + c) (b - d - c)) := fun d _ ↦ by
-      rw [hF'.deconcatenation_apply, map_deconcatenation_subword, map_sum]
-      simp only [LinearMap.rTensor_tmul]
+          ∑ c ∈ Finset.range (b - d), prepend R N (h (subword R x a d))
+            (F' (subword R x (a + d) c)) ⊗ₜ[R] F' (subword R x (a + d + c) (b - d - c)) :=
+      fun d _ ↦ by
+        rw [hF'.deconcatenation_apply, map_deconcatenation_subword, map_sum]
+        simp only [LinearMap.rTensor_tmul]
     have hP₂ : ∀ d ∈ Finset.range b,
         LinearMap.rTensor (ReducedTensorWords R N)
             (prepend R N (letter R N (Fτ (subword R x a d))))
             (deconcatenation R N (D (subword R x (a + d) (b - d)))) =
-          (∑ c ∈ Finset.range (b - d),
-            prepend R N (letter R N (Fτ (subword R x a d))) (D (subword R x (a + d) c)) ⊗ₜ[R]
-              F' (subword R x (a + d + c) (b - d - c))) +
-          ∑ c ∈ Finset.range (b - d),
-            prepend R N (letter R N (Fτ (subword R x a d))) (Fτ (subword R x (a + d) c)) ⊗ₜ[R]
-              D (subword R x (a + d + c) (b - d - c)) := by
-      intro d hd
-      rw [Finset.mem_range] at hd
+          (∑ c ∈ Finset.range (b - d), prepend R N (letter R N (Fτ (subword R x a d)))
+            (D (subword R x (a + d) c)) ⊗ₜ[R] F' (subword R x (a + d + c) (b - d - c))) +
+          ∑ c ∈ Finset.range (b - d), prepend R N (letter R N (Fτ (subword R x a d)))
+            (Fτ (subword R x (a + d) c)) ⊗ₜ[R] D (subword R x (a + d + c) (b - d - c)) := by
+      intro d hd; rw [Finset.mem_range] at hd
       rcases Nat.eq_zero_or_pos d with rfl | hd0
-      · simp only [subword_length_zero, map_zero, LinearMap.rTensor_zero, LinearMap.zero_apply,
-          TensorProduct.zero_tmul, Finset.sum_const_zero, add_zero]
+      · simp [subword_length_zero]
       · rw [ih (b - d) (by omega) (a + d), map_add, map_deconcatenation_subword,
-          map_deconcatenation_subword, map_sum, map_sum]
-        simp only [LinearMap.rTensor_tmul]
+          map_deconcatenation_subword, map_sum, map_sum]; simp only [LinearMap.rTensor_tmul]
     dsimp only [D, Fτ, LinearMap.comp_apply] at hP₂
     rw [gradedCoderivAlong_subword, map_add, deconcatenation_ofLetter, zero_add, map_sum,
       map_deconcatenation_subword, map_deconcatenation_subword]
@@ -491,28 +417,26 @@ private theorem deconcatenation_gradedCoderivAlong_subword (G : InternalGrading 
       ← Finset.sum_range_diag_flip, ← Finset.sum_range_diag_flip, ← Finset.sum_range_diag_flip,
       sum_gradedCoderivAlong_tmul_eq G q F F' h x a b,
       sum_coalgHom_tmul_eq (hF.comp (isCoalgHom_map _)) x a b]
-    dsimp only [D, Fτ, LinearMap.comp_apply]
-    abel
+    dsimp only [D, Fτ, LinearMap.comp_apply]; abel
 
 /-- When `F` and `F'` are coalgebra morphisms, `gradedCoderivAlong G q F F' h` is a `q`-twisted
 coderivation along `F` and `F'`. -/
 theorem isGradedCoderivationAlong_gradedCoderivAlong (G : InternalGrading R M ℤ) (q : ℤ)
     {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F') (h : ReducedTensorWords R M →ₗ[R] N) :
-    IsGradedCoderivationAlong G q F F' (gradedCoderivAlong G q F F' h) := by
-  rw [isGradedCoderivationAlong_iff]
-  refine linearMap_ext R M fun n x ↦ ?_
-  have hmap : ∀ w, TensorProduct.map F (gradedCoderivAlong G q F F' h)
-      (LinearMap.rTensor (ReducedTensorWords R M)
-        (ReducedTensorWords.map (R := R) (G.koszulTwist q)) w) =
-      TensorProduct.map (F ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q))
-        (gradedCoderivAlong G q F F' h) w := fun w ↦ by
-    rw [LinearMap.rTensor_def, ← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearMap.comp_id]
-  simp only [LinearMap.comp_apply, LinearMap.add_apply, hmap, of_tprod_eq_subword R n.2]
-  exact deconcatenation_gradedCoderivAlong_subword G q hF hF' h x n.1 0
+    IsGradedCoderivationAlong G q F F' (gradedCoderivAlong G q F F' h) :=
+  isGradedCoderivationAlong_iff.2 <| linearMap_ext R M fun n x ↦ by
+    have hmap : ∀ w, TensorProduct.map F (gradedCoderivAlong G q F F' h)
+        (LinearMap.rTensor (ReducedTensorWords R M)
+          (ReducedTensorWords.map (R := R) (G.koszulTwist q)) w) =
+        TensorProduct.map (F ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q))
+          (gradedCoderivAlong G q F F' h) w := fun _ ↦ by
+      rw [LinearMap.rTensor_def, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
+        LinearMap.comp_id]
+    simp only [LinearMap.comp_apply, LinearMap.add_apply, hmap, of_tprod_eq_subword R n.2]
+    exact deconcatenation_gradedCoderivAlong_subword G q hF hF' h x n.1 0
 
-/-- Every coderivation along two coalgebra morphisms is the Taylor expansion of its own letter
-component. -/
+/-- Every coderivation along two coalgebra morphisms is the Taylor expansion of its letter part. -/
 theorem IsGradedCoderivationAlong.eq_gradedCoderivAlong {q : ℤ}
     {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F')
@@ -526,31 +450,21 @@ noncomputable def gradedCoderivAlongEquivTaylor (G : InternalGrading R M ℤ) (q
     {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F') :
     {D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N //
-        IsGradedCoderivationAlong G q F F' D} ≃
-      (ReducedTensorWords R M →ₗ[R] N) where
+        IsGradedCoderivationAlong G q F F' D} ≃ (ReducedTensorWords R M →ₗ[R] N) where
   toFun D := letter R N ∘ₗ D.1
   invFun h := ⟨gradedCoderivAlong G q F F' h,
     isGradedCoderivationAlong_gradedCoderivAlong G q hF hF' h⟩
   left_inv D := Subtype.ext (D.2.eq_gradedCoderivAlong hF hF').symm
   right_inv h := letter_comp_gradedCoderivAlong G q F F' h
+@[simp] theorem gradedCoderivAlongEquivTaylor_apply (G : InternalGrading R M ℤ) (q : ℤ)
+    {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (hF : IsCoalgHom R F)
+    (hF' : IsCoalgHom R F') (D) :
+    gradedCoderivAlongEquivTaylor G q hF hF' D = letter R N ∘ₗ D.1 := (rfl)
+@[simp] theorem gradedCoderivAlongEquivTaylor_symm_apply (G : InternalGrading R M ℤ) (q : ℤ)
+    {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (hF : IsCoalgHom R F)
+    (hF' : IsCoalgHom R F') (h) :
+    ((gradedCoderivAlongEquivTaylor G q hF hF').symm h).1 = gradedCoderivAlong G q F F' h := (rfl)
 
-@[simp]
-theorem gradedCoderivAlongEquivTaylor_apply (G : InternalGrading R M ℤ) (q : ℤ)
-    {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
-    (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F')
-    (D : {D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N //
-      IsGradedCoderivationAlong G q F F' D}) :
-    gradedCoderivAlongEquivTaylor G q hF hF' D = letter R N ∘ₗ D.1 :=
-  (rfl)
-
-@[simp]
-theorem gradedCoderivAlongEquivTaylor_symm_apply (G : InternalGrading R M ℤ) (q : ℤ)
-    {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
-    (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F') (h : ReducedTensorWords R M →ₗ[R] N) :
-    ((gradedCoderivAlongEquivTaylor G q hF hF').symm h).1 = gradedCoderivAlong G q F F' h :=
-  (rfl)
-
-/-- Homogeneity of `gradedCoderivAlong` on a block of homogeneous letters. -/
 private theorem gradedCoderivAlong_subword_mem_gradedPiece {q r : ℤ}
     {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     {h : ReducedTensorWords R M →ₗ[R] N}
@@ -561,119 +475,51 @@ private theorem gradedCoderivAlong_subword_mem_gradedPiece {q r : ℤ}
     (b a : ℕ) (hab : a + b ≤ n) :
     gradedCoderivAlong G q F F' h (subword R x a b) ∈
       gradedPiece H ((∑ j ∈ Finset.range b, g (a + j)) + r) := by
+  set s := fun k l ↦ ∑ j ∈ Finset.range l, g (k + j)
   induction b using Nat.strong_induction_on generalizing a with
   | _ b ih =>
     rw [gradedCoderivAlong_subword]
-    refine add_mem (ofLetter_mem_gradedPiece H (hh.map_mem
-      (subword_mem_gradedPiece x g hxg a b))) (Submodule.sum_mem _ fun d hd ↦ ?_)
+    refine add_mem (ofLetter_mem_gradedPiece H (hh.map_mem (subword_mem_gradedPiece x g hxg a b)))
+      (Submodule.sum_mem _ fun d hd ↦ ?_)
     rw [Finset.mem_range] at hd
     rcases Nat.eq_zero_or_pos d with rfl | hd0
-    · simp only [subword_length_zero, map_zero, LinearMap.zero_apply, add_zero]
-      exact zero_mem _
+    · simp [subword_length_zero]
     · have hB₁ := subword_mem_gradedPiece x g hxg a d
       have hB₂ := subword_mem_gradedPiece x g hxg (a + d) (b - d)
-      have hsum : (∑ j ∈ Finset.range b, g (a + j)) + r =
-          (∑ j ∈ Finset.range d, g (a + j)) +
-            ((∑ j ∈ Finset.range (b - d), g (a + d + j)) + r) := by
-        rw [← Nat.add_sub_cancel' hd.le, Finset.sum_range_add, Nat.add_sub_cancel_left]
-        simp only [add_assoc]
-      refine add_mem ?_ ?_
-      · rw [show (∑ j ∈ Finset.range b, g (a + j)) + r =
-            ((∑ j ∈ Finset.range d, g (a + j)) + r) +
-              ∑ j ∈ Finset.range (b - d), g (a + d + j) by rw [hsum]; ring]
-        refine prepend_mem_gradedPiece (hh.map_mem hB₁) ?_
-        simpa only [add_zero] using hF'.map_mem hB₂
-      · rw [hsum]
-        refine prepend_mem_gradedPiece ?_ (ih (b - d) (by omega) (a + d) (by omega))
-        have hτB₁ : ReducedTensorWords.map (R := R) (G.koszulTwist q) (subword R x a d) ∈
-            gradedPiece G (∑ j ∈ Finset.range d, g (a + j)) := by
-          rw [map_koszulTwist_apply_of_mem G hB₁ q]
-          exact Submodule.smul_mem _ _ hB₁
-        simpa only [add_zero] using (isHomogeneous_letter H).map_mem (hF.map_mem hτB₁)
+      have hsum : s a b + r = s a d + (s (a + d) (b - d) + r) := by
+        simp only [s]; rw [← Nat.add_sub_cancel' hd.le, Finset.sum_range_add,
+          Nat.add_sub_cancel_left]; simp only [add_assoc]
+      refine add_mem (show _ ∈ gradedPiece H (s a b + r) by
+        rw [show s a b + r = (s a d + r) + s (a + d) (b - d) by rw [hsum]; ring]
+        exact prepend_mem_gradedPiece (hh.map_mem hB₁)
+          (add_zero (s (a + d) (b - d)) ▸ hF'.map_mem hB₂)) ?_
+      rw [hsum]; refine prepend_mem_gradedPiece ?_ (ih (b - d) (by omega) (a + d) (by omega))
+      have hτB₁ : ReducedTensorWords.map (R := R) (G.koszulTwist q) (subword R x a d) ∈
+          gradedPiece G (s a d) :=
+        map_koszulTwist_apply_of_mem G hB₁ q ▸ Submodule.smul_mem _ _ hB₁
+      exact add_zero (s a d) ▸ (isHomogeneous_letter H).map_mem (add_zero (s a d) ▸ hF.map_mem hτB₁)
 
 /-- If `F` and `F'` have degree zero and `h` has degree `r`, then `gradedCoderivAlong G q F F' h`
-has degree `r`, independently of the twist parameter `q`. -/
+has degree `r`, independently of `q`. -/
 theorem isHomogeneous_gradedCoderivAlong {q r : ℤ}
     {F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     {h : ReducedTensorWords R M →ₗ[R] N}
     (hF : LinearMap.IsHomogeneous F (gradedPiece G) (gradedPiece H) 0)
     (hF' : LinearMap.IsHomogeneous F' (gradedPiece G) (gradedPiece H) 0)
     (hh : LinearMap.IsHomogeneous h (gradedPiece G) H.piece r) :
-    LinearMap.IsHomogeneous (gradedCoderivAlong G q F F' h) (gradedPiece G) (gradedPiece H) r := by
-  rw [LinearMap.isHomogeneous_def]
-  intro D z hz
-  refine gradedPiece_induction
-    (motive := fun w ↦ gradedCoderivAlong G q F F' h w ∈ gradedPiece H (D + r)) hz ?_ ?_ ?_
-  · intro n hn 𝒟 x hx hD
-    set g : ℕ → ℤ := fun k ↦ if hk : k < n then 𝒟 ⟨k, hk⟩ else 0 with hg
-    have hxg : ∀ i : Fin n, x i ∈ G.piece (g i) := fun i ↦ by simpa [hg] using hx i
-    have hsum : ∑ j ∈ Finset.range n, g (0 + j) = D := by
-      rw [← hD, ← Fin.sum_univ_eq_sum_range (fun j ↦ g (0 + j)) n]
-      exact Finset.sum_congr rfl fun i _ ↦ by simp [hg]
-    rw [of_tprod_eq_subword R hn, ← hsum]
-    exact gradedCoderivAlong_subword_mem_gradedPiece hF hF' hh x g hxg n 0 (by omega)
-  · intro u v _ _ hu hv
-    rw [map_add]
-    exact add_mem hu hv
-  · intro c u _ hu
-    rw [map_smul]
-    exact Submodule.smul_mem _ _ hu
-
-/-- When `F'` is a coalgebra morphism, `gradedCoderivAlong G q F F' h` does not increase tensor
-length on a block of a tensor word. -/
-theorem gradedCoderivAlong_subword_mem_filtration (G : InternalGrading R M ℤ) (q : ℤ)
-    (F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    {F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (hF' : IsCoalgHom R F')
-    (h : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
-    gradedCoderivAlong G q F F' h (subword R x a b) ∈ filtration R N b := by
-  induction b using Nat.strong_induction_on generalizing a with
-  | _ b ih =>
-    rcases Nat.eq_zero_or_pos b with rfl | hb
-    · rw [subword_length_zero, map_zero]
-      exact Submodule.zero_mem _
-    rw [gradedCoderivAlong_subword]
-    refine Submodule.add_mem _ (filtration_monotone R N hb (ofLetter_mem_filtration R N _))
-      (Submodule.sum_mem _ fun d hd ↦ ?_)
-    rw [Finset.mem_range] at hd
-    rcases Nat.eq_zero_or_pos d with rfl | hd0
-    · simp only [subword_length_zero, map_zero, LinearMap.zero_apply, add_zero]
-      exact Submodule.zero_mem _
-    · refine Submodule.add_mem _ ?_ ?_
-      · exact filtration_monotone R N (by omega) (prepend_mem_filtration R N _
-          (hF'.mem_filtration (subword_mem_filtration R M x (a + d) le_rfl)))
-      · exact filtration_monotone R N (by omega)
-          (prepend_mem_filtration R N _ (ih (b - d) (by omega) (a + d)))
-
-/-- When `F'` is a coalgebra morphism, `gradedCoderivAlong G q F F' h` preserves the conilpotence
-filtration. -/
-theorem gradedCoderivAlong_mem_filtration (G : InternalGrading R M ℤ) (q : ℤ)
-    (F : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    {F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (hF' : IsCoalgHom R F')
-    (h : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} {z : ReducedTensorWords R M}
-    (hz : z ∈ filtration R M n) :
-    gradedCoderivAlong G q F F' h z ∈ filtration R N n := by
-  have hle : filtration R M n ≤ (filtration R N n).comap (gradedCoderivAlong G q F F' h) := by
-    rw [filtration_le_iff]
-    rintro k hk _ ⟨x, rfl⟩
-    simp only [Submodule.mem_comap]
-    induction x using PiTensorProduct.induction_on with
-    | smul_tprod r y =>
-        rw [map_smul, map_smul, of_tprod_eq_subword R k.2]
-        exact Submodule.smul_mem _ _ (filtration_monotone R N hk
-          (gradedCoderivAlong_subword_mem_filtration G q F hF' h y 0 k.1))
-    | add u v hu hv =>
-        rw [map_add, map_add]
-        exact Submodule.add_mem _ hu hv
-  exact hle hz
-
-/-- Every coderivation along two coalgebra morphisms preserves the conilpotence filtration. -/
-theorem IsGradedCoderivationAlong.mem_filtration {q : ℤ}
-    {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
-    (hF : IsCoalgHom R F) (hF' : IsCoalgHom R F')
-    (hD : IsGradedCoderivationAlong G q F F' D) {n : ℕ} {z : ReducedTensorWords R M}
-    (hz : z ∈ filtration R M n) : D z ∈ filtration R N n := by
-  rw [hD.eq_gradedCoderivAlong hF hF']
-  exact gradedCoderivAlong_mem_filtration G q F hF' _ hz
+    LinearMap.IsHomogeneous (gradedCoderivAlong G q F F' h) (gradedPiece G) (gradedPiece H) r :=
+  LinearMap.isHomogeneous_def.2 fun D z hz ↦
+    gradedPiece_induction (motive := fun w ↦
+        gradedCoderivAlong G q F F' h w ∈ gradedPiece H (D + r)) hz (fun n hn 𝒟 x hx hD ↦ by
+      set g : ℕ → ℤ := fun k ↦ if hk : k < n then 𝒟 ⟨k, hk⟩ else 0 with hg
+      have hsum : ∑ j ∈ Finset.range n, g (0 + j) = D := by
+        rw [← hD, ← Fin.sum_univ_eq_sum_range (fun j ↦ g (0 + j)) n]
+        exact Finset.sum_congr rfl fun i _ ↦ by simp [hg]
+      rw [of_tprod_eq_subword R hn, ← hsum]
+      exact gradedCoderivAlong_subword_mem_gradedPiece hF hF' hh x g
+        (fun i ↦ by simpa [hg] using hx i) n 0 (by omega))
+      (fun _ _ _ _ hu hv ↦ by rw [map_add]; exact add_mem hu hv)
+      (fun _ _ _ hu ↦ by rw [map_smul]; exact Submodule.smul_mem _ _ hu)
 
 /-- The zero map is a coderivation along every pair of maps. -/
 theorem isGradedCoderivationAlong_zero (G : InternalGrading R M ℤ) (q : ℤ)
@@ -794,9 +640,8 @@ theorem IsCoalgHom.comp_eq_comp_iff_letter_comp_eq
     bN ∘ₗ F = F ∘ₗ bM ↔ letter R N ∘ₗ bN ∘ₗ F = letter R N ∘ₗ F ∘ₗ bM :=
   ⟨fun h ↦ by rw [h], hF.comp_eq_comp_of_letter_comp_eq hF₀ hbM hbN⟩
 
-/-- If a linear map `D` vanishes on the words of length at most `n` and satisfies the `(F, F')`
-co-Leibniz rule at a word `z` of length at most `n + 1`, then `D z` is a single letter: every cut
-of `z` has both halves of length at most `n`, where `D` vanishes. -/
+/-- If `D` vanishes on words of length at most `n` and satisfies the `(F, F')` co-Leibniz rule at a
+word `z` of length at most `n + 1`, then `D z` is a single letter. -/
 theorem eq_ofLetter_letter_of_deconcatenation_eq_of_mem_filtration
     (G : InternalGrading R M ℤ) (q : ℤ)
     {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} {n : ℕ}
@@ -808,34 +653,27 @@ theorem eq_ofLetter_letter_of_deconcatenation_eq_of_mem_filtration
           (LinearMap.rTensor (ReducedTensorWords R M)
             (ReducedTensorWords.map (R := R) (G.koszulTwist q)) (deconcatenation R M z))) :
     D z = ofLetter R N (letter R N (D z)) := by
-  have hz₀ : ∀ (g : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N),
-      ∀ w ∈ filtration R M 0, g w = 0 := fun g w hw ↦ by
-    rw [filtration_zero] at hw
-    rw [(Submodule.mem_bot R).1 hw, map_zero]
-  have hmap : TensorProduct.map F D
-      (LinearMap.rTensor (ReducedTensorWords R M)
-        (ReducedTensorWords.map (R := R) (G.koszulTwist q)) (deconcatenation R M z)) =
-      TensorProduct.map (F ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist q)) D
-        (deconcatenation R M z) := by
-    rw [LinearMap.rTensor_def, ← LinearMap.comp_apply, ← TensorProduct.map_comp, LinearMap.comp_id]
+  obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
   have hΔ₀ : deconcatenation R N (D z) = 0 := by
-    rw [hΔ, hmap, map_deconcatenation_eq_zero_of_mem_filtration R M hD₀ (hz₀ F')
-      (by simpa only [Nat.add_zero] using hz),
-      map_deconcatenation_eq_zero_of_mem_filtration R M (hz₀ _) hD₀
-      (by simpa only [Nat.zero_add] using hz), add_zero]
+    rw [hΔ, ← hw]; clear hw
+    induction w using TensorProduct.inductionOn with
+    | tmul u v =>
+      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
+        LinearMap.rTensor_tmul, hD₀ _ u.2, hD₀ _ v.2, TensorProduct.zero_tmul,
+        TensorProduct.tmul_zero, add_zero]
+    | add _ _ hu hv => simp only [map_add] at hu hv ⊢; rw [add_add_add_comm, hu, hv, add_zero]
   obtain ⟨y, hy⟩ := (deconcatenation_eq_zero_iff R N).1 hΔ₀
   rw [← hy, letter_ofLetter]
 
-/-- A coderivation along a pair of maps that vanishes on the words of length at most `n` takes
-single-letter values on the words of length at most `n + 1`. -/
+/-- A coderivation along a pair of maps vanishing on words of length at most `n` takes
+single-letter values on words of length at most `n + 1`. -/
 theorem IsGradedCoderivationAlong.apply_eq_ofLetter_letter_of_mem_filtration {q : ℤ}
     {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hD : IsGradedCoderivationAlong G q F F' D) {n : ℕ}
     (hD₀ : ∀ w ∈ filtration R M n, D w = 0) {z : ReducedTensorWords R M}
     (hz : z ∈ filtration R M (n + 1)) :
     D z = ofLetter R N (letter R N (D z)) :=
-  eq_ofLetter_letter_of_deconcatenation_eq_of_mem_filtration G q hD₀ hz
-    (hD.deconcatenation_apply z)
+  eq_ofLetter_letter_of_deconcatenation_eq_of_mem_filtration G q hD₀ hz (hD.deconcatenation_apply z)
 
 /-! ### Differences of coalgebra morphisms and odd coderivations -/
 
@@ -849,9 +687,8 @@ theorem IsGradedCoderivationAlong.sub {q : ℤ}
     {F F' D D' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hD : IsGradedCoderivationAlong G q F F' D) (hD' : IsGradedCoderivationAlong G q F F' D') :
     IsGradedCoderivationAlong G q F F' (D - D') := by
-  have heq : D - D' = D + (-1 : R) • D' := LinearMap.ext fun z ↦ by simp [sub_eq_add_neg]
-  rw [heq]
-  exact hD.add (hD'.smul (-1))
+  convert hD.add (hD'.smul (-1 : R)) using 1
+  exact LinearMap.ext fun z ↦ by simp [sub_eq_add_neg]
 
 /-- The difference of two coalgebra morphisms `F` and `F'` is an untwisted coderivation along `F`
 and `F'`: `Δ (F - F') = ((F - F') ⊗ F' + F ⊗ (F - F')) Δ`. -/
@@ -899,28 +736,30 @@ theorem IsGradedCoderivationAlong.deconcatenation_comp_sub_negOnePow_smul_comp_o
             (ReducedTensorWords.map (R := R) (G.koszulTwist (t + q)))
             (deconcatenation R M z)) := by
   set c : R := (((q * r).negOnePow : ℤ) : R) with hc
-  have hτF : ∀ w, ReducedTensorWords.map (R := R) (H.koszulTwist q) (F w) =
-      F (ReducedTensorWords.map (R := R) (G.koszulTwist q) w) := fun w ↦ by
+  -- The commutation rules of the maps involved with the letterwise twists.
+  have hτF : ∀ z, ReducedTensorWords.map (R := R) (H.koszulTwist q) (F z) =
+      F (ReducedTensorWords.map (R := R) (G.koszulTwist q) z) := fun z ↦ by
     simpa only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.comp_apply] using LinearMap.congr_fun (hF₀.map_koszulTwist_comp q) w
-  have hτD : ∀ w, ReducedTensorWords.map (R := R) (H.koszulTwist q) (D w) =
-      c • D (ReducedTensorWords.map (R := R) (G.koszulTwist q) w) := fun w ↦ by
+      LinearMap.comp_apply] using LinearMap.congr_fun (hF₀.map_koszulTwist_comp q) z
+  have hτD : ∀ z, ReducedTensorWords.map (R := R) (H.koszulTwist q) (D z) =
+      c • D (ReducedTensorWords.map (R := R) (G.koszulTwist q) z) := fun z ↦ by
     simpa only [LinearMap.comp_apply, LinearMap.smul_apply] using
-      LinearMap.congr_fun (hD₁.map_koszulTwist_comp q) w
-  have hτb : ∀ w, ReducedTensorWords.map (R := R) (G.koszulTwist t) (bM w) =
-      c • bM (ReducedTensorWords.map (R := R) (G.koszulTwist t) w) := fun w ↦ by
+      LinearMap.congr_fun (hD₁.map_koszulTwist_comp q) z
+  have hτb : ∀ z, ReducedTensorWords.map (R := R) (G.koszulTwist t) (bM z) =
+      c • bM (ReducedTensorWords.map (R := R) (G.koszulTwist t) z) := fun z ↦ by
     simpa only [hs, LinearMap.comp_apply, LinearMap.smul_apply] using
-      LinearMap.congr_fun (hbM₁.map_koszulTwist_comp t) w
-  have hττ : ∀ w, ReducedTensorWords.map (R := R) (G.koszulTwist q)
-      (ReducedTensorWords.map (R := R) (G.koszulTwist t) w) =
-        ReducedTensorWords.map (R := R) (G.koszulTwist (t + q)) w := fun w ↦ by
+      LinearMap.congr_fun (hbM₁.map_koszulTwist_comp t) z
+  have hττ : ∀ z, ReducedTensorWords.map (R := R) (G.koszulTwist q)
+      (ReducedTensorWords.map (R := R) (G.koszulTwist t) z) =
+        ReducedTensorWords.map (R := R) (G.koszulTwist (t + q)) z := fun z ↦ by
     rw [← LinearMap.comp_apply, ← ReducedTensorWords.map_comp,
       InternalGrading.koszulTwist_comp, add_comm]
-  have hττ' : ∀ w, ReducedTensorWords.map (R := R) (G.koszulTwist t)
-      (ReducedTensorWords.map (R := R) (G.koszulTwist q) w) =
-        ReducedTensorWords.map (R := R) (G.koszulTwist (t + q)) w := fun w ↦ by
+  have hττ' : ∀ z, ReducedTensorWords.map (R := R) (G.koszulTwist t)
+      (ReducedTensorWords.map (R := R) (G.koszulTwist q) z) =
+        ReducedTensorWords.map (R := R) (G.koszulTwist (t + q)) z := fun z ↦ by
     rw [← LinearMap.comp_apply, ← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp]
-  have hcc : ∀ x : ReducedTensorWords R N ⊗[R] ReducedTensorWords R N, c • c • x = x := fun x ↦ by
+  have hcc : ∀ x : ReducedTensorWords R N ⊗[R] ReducedTensorWords R N, c • c • x = x := by
+    intro x
     rw [smul_smul, hc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
       Int.cast_one, one_smul]
   obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
@@ -972,39 +811,6 @@ theorem IsGradedCoderivationAlong.comp_sub_negOnePow_smul_comp {t q r s : ℤ}
       (fun w _ ↦ LinearMap.congr_fun hF w) (fun w _ ↦ LinearMap.congr_fun hF' w)
       (filtration_monotone R M n.le_succ hn)
 
-/-- Filtration-localized form of `IsGradedCoderivationAlong.comp_add_comp`: when `F` and `F'`
-intertwine odd coderivations `b_M` and `b_N` on the words of length at most `n`, the sum
-`b_N ∘ D + D ∘ b_M` satisfies the untwisted `(F, F')` co-Leibniz rule on every word of length at
-most `n + 1`. -/
-theorem IsGradedCoderivationAlong.deconcatenation_comp_add_comp_of_mem_filtration {q r s : ℤ}
-    {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
-    {bM : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
-    {bN : ReducedTensorWords R N →ₗ[R] ReducedTensorWords R N}
-    (hD : IsGradedCoderivationAlong G q F F' D)
-    (hD₁ : LinearMap.IsHomogeneous D (gradedPiece G) (gradedPiece H) r)
-    (hr : (q * r).negOnePow = -1)
-    (hbM : IsGradedCoderivation G q bM)
-    (hbM₁ : LinearMap.IsHomogeneous bM (gradedPiece G) (gradedPiece G) s)
-    (hs : (q * s).negOnePow = -1) (hbN : IsGradedCoderivation H q bN)
-    (hF₀ : LinearMap.IsHomogeneous F (gradedPiece G) (gradedPiece H) 0) {n : ℕ}
-    (hF : ∀ w ∈ filtration R M n, bN (F w) = F (bM w))
-    (hF' : ∀ w ∈ filtration R M n, bN (F' w) = F' (bM w))
-    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M (n + 1)) :
-    deconcatenation R N ((bN ∘ₗ D + D ∘ₗ bM) z) =
-      TensorProduct.map (bN ∘ₗ D + D ∘ₗ bM) F' (deconcatenation R M z) +
-        TensorProduct.map F (bN ∘ₗ D + D ∘ₗ bM) (deconcatenation R M z) := by
-  have h := hD.deconcatenation_comp_sub_negOnePow_smul_comp_of_mem_filtration hD₁ hbM hbM₁
-    (hs.trans hr.symm) hbN hF₀ hF hF' hz
-  have he : bN ∘ₗ D - ((((q * r).negOnePow : ℤ) : R)) • (D ∘ₗ bM) = bN ∘ₗ D + D ∘ₗ bM :=
-    LinearMap.ext fun w ↦ by
-      rw [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.add_apply, hr, Units.val_neg,
-        Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul, sub_neg_eq_add]
-  have hτ : G.koszulTwist (q + q) = G.koszulTwist 0 := by
-    rw [← InternalGrading.koszulTwist_comp, InternalGrading.koszulTwist_comp_self,
-      InternalGrading.koszulTwist_zero]
-  simpa only [he, hτ, InternalGrading.koszulTwist_zero, ReducedTensorWords.map_id,
-    LinearMap.rTensor_id, LinearMap.id_apply] using h
-
 /-- Let `D` be an odd coderivation along `F` and `F'`, where `F` has degree zero and both `F` and
 `F'` intertwine odd graded coderivations `b_M` of `Tᶜ(M)` and `b_N` of `Tᶜ(N)`.  Then
 `b_N ∘ D + D ∘ b_M` is an untwisted coderivation along `F` and `F'`.  This is the case of
@@ -1023,14 +829,43 @@ theorem IsGradedCoderivationAlong.comp_add_comp {q r s : ℤ}
     (hF₀ : LinearMap.IsHomogeneous F (gradedPiece G) (gradedPiece H) 0)
     (hF : bN ∘ₗ F = F ∘ₗ bM) (hF' : bN ∘ₗ F' = F' ∘ₗ bM) :
     IsGradedCoderivationAlong G 0 F F' (bN ∘ₗ D + D ∘ₗ bM) := by
-  rw [isGradedCoderivationAlong_iff, InternalGrading.koszulTwist_zero, ReducedTensorWords.map_id,
-    LinearMap.rTensor_id, LinearMap.id_comp]
-  refine LinearMap.ext fun z ↦ ?_
-  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-  simpa only [LinearMap.comp_apply, LinearMap.add_apply] using
-    hD.deconcatenation_comp_add_comp_of_mem_filtration hD₁ hr hbM hbM₁ hs hbN hF₀
-      (fun w _ ↦ LinearMap.congr_fun hF w) (fun w _ ↦ LinearMap.congr_fun hF' w)
-      (filtration_monotone R M n.le_succ hn)
+  have h := hD.comp_sub_negOnePow_smul_comp hD₁ hbM hbM₁ (hs.trans hr.symm) hbN hF₀ hF hF'
+  have he : bN ∘ₗ D - ((((q * r).negOnePow : ℤ) : R)) • (D ∘ₗ bM) = bN ∘ₗ D + D ∘ₗ bM :=
+    LinearMap.ext fun z ↦ by
+      rw [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.add_apply, hr, Units.val_neg,
+        Units.val_one, Int.cast_neg, Int.cast_one, neg_one_smul, sub_neg_eq_add]
+  rw [he] at h
+  have hτ : G.koszulTwist (q + q) = G.koszulTwist 0 := by
+    rw [← InternalGrading.koszulTwist_comp, InternalGrading.koszulTwist_comp_self,
+      InternalGrading.koszulTwist_zero]
+  rwa [isGradedCoderivationAlong_iff, hτ, ← isGradedCoderivationAlong_iff] at h
+
+/-- Filtration-localized form of `IsGradedCoderivationAlong.comp_add_comp`. -/
+theorem IsGradedCoderivationAlong.deconcatenation_comp_add_comp_of_mem_filtration {q r s : ℤ}
+    {F F' D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    {bM : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    {bN : ReducedTensorWords R N →ₗ[R] ReducedTensorWords R N}
+    (hD : IsGradedCoderivationAlong G q F F' D)
+    (hD₁ : LinearMap.IsHomogeneous D (gradedPiece G) (gradedPiece H) r)
+    (hr : (q * r).negOnePow = -1) (hbM : IsGradedCoderivation G q bM)
+    (hbM₁ : LinearMap.IsHomogeneous bM (gradedPiece G) (gradedPiece G) s)
+    (hs : (q * s).negOnePow = -1) (hbN : IsGradedCoderivation H q bN)
+    (hF₀ : LinearMap.IsHomogeneous F (gradedPiece G) (gradedPiece H) 0) {n : ℕ}
+    (hF : ∀ w ∈ filtration R M n, bN (F w) = F (bM w))
+    (hF' : ∀ w ∈ filtration R M n, bN (F' w) = F' (bM w))
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M (n + 1)) :
+    deconcatenation R N ((bN ∘ₗ D + D ∘ₗ bM) z) =
+      TensorProduct.map (bN ∘ₗ D + D ∘ₗ bM) F' (deconcatenation R M z) +
+        TensorProduct.map F (bN ∘ₗ D + D ∘ₗ bM) (deconcatenation R M z) := by
+  have he : bN ∘ₗ D - ((((q * r).negOnePow : ℤ) : R)) • (D ∘ₗ bM) = bN ∘ₗ D + D ∘ₗ bM :=
+    LinearMap.ext fun w ↦ by simp [hr, sub_neg_eq_add]
+  have hτ : G.koszulTwist (q + q) = G.koszulTwist 0 := by
+    rw [← InternalGrading.koszulTwist_comp, InternalGrading.koszulTwist_comp_self,
+      InternalGrading.koszulTwist_zero]
+  simpa only [he, hτ, InternalGrading.koszulTwist_zero, ReducedTensorWords.map_id,
+    LinearMap.rTensor_id, LinearMap.id_apply] using
+    hD.deconcatenation_comp_sub_negOnePow_smul_comp_of_mem_filtration hD₁ hbM hbM₁
+      (hs.trans hr.symm) hbN hF₀ hF hF' hz
 
 /-- **The homotopy equation is determined by its letter component.**  Under the hypotheses of
 `IsGradedCoderivationAlong.comp_add_comp`, if `F'` is also a coalgebra morphism, then

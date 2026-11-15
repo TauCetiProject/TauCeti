@@ -12,63 +12,34 @@ import TauCeti.Algebra.Homology.AInfinity.Algebra.BarDifferential
 /-!
 # Homotopy inverses of A-infinity morphisms
 
-Let `f : A ⟶ B` be a morphism of `A∞` algebras over a commutative ring `R`, with bar map `F`.  In
-`TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy.Equiv` we projected any two-sided `A∞`
-homotopy equivalence (`TauCeti.AInfinityHom.HomotopyEquiv`) to a homogeneous degree-`(-1)` linear
-chain-homotopy equivalence between the unary complexes (`HomotopyEquiv.toLinearHomotopyEquiv`).
+We prove the converse to `TauCeti.AInfinityHom.HomotopyEquiv.toLinearHomotopyEquiv`: over any
+commutative ring `R`, a homogeneous degree-`(-1)` linear chain-homotopy equivalence `e` with
+`e.hom = f.linearPart` lifts to a two-sided `A∞` homotopy equivalence with forward morphism `f`,
+inverse linear part `e.inv`, and right linear homotopy `e.homotopyHomInv`
+(`HomotopyEquiv.ofLinear`).  This yields the linear criterion, closure under composition,
+homotopy invariance, and two-out-of-three.
 
-In this file we prove the converse: any homogeneous degree-`(-1)` chain-homotopy equivalence `e`
-between `(A, m₁)` and `(B, m₁)` whose forward map is `f.linearPart` lifts to a two-sided `A∞`
-homotopy equivalence with forward morphism `f`, inverse linear part `e.inv`, and right linear
-homotopy `e.homotopyHomInv` (`HomotopyEquiv.ofLinear`).  Hence an `A∞` morphism over `R` is a
-homotopy equivalence if and only if its linear part admits a graded chain-homotopy inverse
-(`isHomotopyEquiv_iff_exists_linearHomotopyEquiv`).  Because `A∞` homotopies on reduced bar
-constructions are coderivations along distinct pairs of coalgebra maps, they cannot be composed
-vertically by naive addition; passing through `isHomotopyEquiv_iff_exists_linearHomotopyEquiv`
-immediately yields closure of `A∞` homotopy equivalences under composition (`HomotopyEquiv.trans`,
-`IsHomotopyEquiv.comp`), invariance under `A∞` homotopy (`Homotopy.isHomotopyEquiv_iff`), and
-two-out-of-three (`IsHomotopyEquiv.of_precomp`, `IsHomotopyEquiv.of_postcomp`).  The specialization
-to quasi-isomorphisms over a field (the Whitehead theorem for `A∞` algebras) is proved in
-`TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Homotopy.Whitehead`.
-
-The lifting proof works directly on reduced bar constructions by induction along the word-length
-filtration, in two stages:
-1. **Right homotopy inverse.** Starting from `g₁ = e.inv` and `h₁ = e.homotopyHomInv` on single
-   letters, assume Taylor maps `g_k : Tᶜ(sB) ⟶ sA` and `h_k : Tᶜ(sB) ⟶ sB` have been constructed so
-   that `G_k = coalgHom g_k` and `K_k = gradedCoderivAlong (F ∘ G_k) id h_k` satisfy
-   `b_A ∘ G_k - G_k ∘ b_B = 0` and `(F ∘ G_k - id) - (b_B ∘ K_k + K_k ∘ b_B) = 0` on words of
-   length at most `k`.  On words of length `k + 1` both defects take single-letter values `Φ` and
-   `Ψ` satisfying `d_A ∘ Φ + Φ ∘ b_{B,1} = 0` and `d_B ∘ Ψ - Ψ ∘ b_{B,1} = f₁ ∘ Φ`, which are
-   killed simultaneously by explicit arity-`(k + 1)` corrections built from `e`.  Taking the
-   stabilising limit over `k` produces `g : B ⟶ A` and a right homotopy `H_B : f ∘ g ⇒ id_B`.
-2. **Left homotopy.** With `g` and `H_B` fixed, `g ∘ f` already has linear part chain-homotopic to
-   `id_A`, and `K_B ∘ F - F ∘ K_A` measures compatibility with `H_B`.  Starting at `k = 0`, we
-   simultaneously lift the Taylor components of a left homotopy `K_A` along `(G ∘ F, id)` and a
-   degree-`(-2)` auxiliary `(F ∘ G ∘ F, F)`-coderivation `T` killing both
-   `(G ∘ F - id) - (b_A ∘ K_A + K_A ∘ b_A)` and `(K_B ∘ F - F ∘ K_A) - (b_B ∘ T - T ∘ b_A)` at each
-   arity, without assuming side or adjointness conditions on the linear homotopies of `e`.
+The lifting proceeds by word-length filtration induction on the reduced bar construction in two
+stages: first lift a right inverse `g` and right homotopy `H_B : f ∘ g ⇒ id`, then lift a left
+homotopy `K_A : g ∘ f ⇒ id` alongside a degree-`(-2)` `(F ∘ G ∘ F, F)`-coderivation `T`.
 
 ## Main definitions
 
-* `TauCeti.AInfinityHom.HomotopyEquiv.ofLinear`: lift a graded linear chain-homotopy equivalence on
-  `f.linearPart` to an `A∞` homotopy equivalence with forward morphism `f`.
+* `TauCeti.AInfinityHom.HomotopyEquiv.ofLinear`: lift a linear chain-homotopy equivalence on
+  `f.linearPart` to an `A∞` homotopy equivalence.
 * `TauCeti.AInfinityHom.HomotopyEquiv.trans`: compose two `A∞` homotopy equivalences.
 
 ## Main results
 
-* `TauCeti.AInfinityHom.isHomotopyEquiv_iff_exists_linearHomotopyEquiv`: over any commutative ring,
-  `f` is an `A∞` homotopy equivalence if and only if `f.linearPart` extends to a homogeneous
-  degree-`(-1)` linear chain-homotopy equivalence.
-* `TauCeti.AInfinityHom.IsHomotopyEquiv.comp`, `TauCeti.AInfinityHom.Homotopy.isHomotopyEquiv_iff`,
-  `TauCeti.AInfinityHom.IsHomotopyEquiv.of_precomp`, and
-  `TauCeti.AInfinityHom.IsHomotopyEquiv.of_postcomp`: closure under composition, homotopy
-  invariance, and two-out-of-three for `A∞` homotopy equivalences.
+* `TauCeti.AInfinityHom.isHomotopyEquiv_iff_exists_linearHomotopyEquiv`,
+  `TauCeti.AInfinityHom.IsHomotopyEquiv.comp`, `TauCeti.AInfinityHom.Homotopy.isHomotopyEquiv_iff`,
+  `TauCeti.AInfinityHom.IsHomotopyEquiv.of_precomp`,
+  `TauCeti.AInfinityHom.IsHomotopyEquiv.of_postcomp`.
 
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.7.
-* K. Lefèvre-Hasegawa, *Sur les A-infini catégories*, thèse de doctorat, Université Paris 7
-  (2003), Section 1.3.
+* K. Lefèvre-Hasegawa, *Sur les A-infini catégories*, Université Paris 7 (2003), Section 1.3.
 * J.-L. Loday and B. Vallette, *Algebraic Operads*, Theorem 10.4.4.
 -/
 
@@ -89,597 +60,426 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
 
 /-! ### Arity-by-arity lifting of linear chain-homotopy equivalences -/
 
-section Lifting
-
 open ReducedTensorWords
 
-/-- Assemble a sequence of Taylor maps `φ n` into a single map taking `φ k` on words of length `k`.
-When `φ (n + 1)` agrees with `φ n` on `filtration R M n` for every `n`, this agrees with `φ n` on
-`filtration R M n`. -/
-private noncomputable def stabilisingTaylor {M N : Type*} [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] (φ : ℕ → ReducedTensorWords R M →ₗ[R] N) :
+section Helpers
+variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+private noncomputable def stabilisingTaylor (φ : ℕ → ReducedTensorWords R M →ₗ[R] N) :
     ReducedTensorWords R M →ₗ[R] N :=
   DirectSum.toModule R _ _ fun k ↦ φ k.1 ∘ₗ of R M k
-
-private theorem stabilisingTaylor_eq_of_le {M N : Type*} [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] {φ : ℕ → ReducedTensorWords R M →ₗ[R] N}
-    (hφ : ∀ n, ∀ z ∈ filtration R M n, φ (n + 1) z = φ n z) {k n : ℕ} (hkn : k ≤ n)
-    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M k) : φ n z = φ k z := by
-  induction n, hkn using Nat.le_induction with
-  | base => rfl
-  | succ n hkn ih => rw [hφ n z (filtration_monotone R M hkn hz), ih]
-
-private theorem stabilisingTaylor_apply_of_mem_filtration {M N : Type*} [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] {φ : ℕ → ReducedTensorWords R M →ₗ[R] N}
+private theorem stabilisingTaylor_apply_of_mem_filtration {φ : ℕ → ReducedTensorWords R M →ₗ[R] N}
     (hφ : ∀ n, ∀ z ∈ filtration R M n, φ (n + 1) z = φ n z) {n : ℕ}
-    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) :
-    stabilisingTaylor φ z = φ n z := by
-  have h : filtration R M n ≤ LinearMap.eqLocus (stabilisingTaylor φ) (φ n) := by
-    rw [filtration_le_iff]
-    rintro k hk _ ⟨x, rfl⟩
-    rw [LinearMap.mem_eqLocus, stabilisingTaylor, toModule_of, LinearMap.comp_apply,
-      stabilisingTaylor_eq_of_le hφ hk (of_mem_filtration R M le_rfl x)]
-  exact h hz
-
-private theorem isHomogeneous_stabilisingTaylor {M N : Type*} [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {r : ℤ}
-    {φ : ℕ → ReducedTensorWords R M →ₗ[R] N}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) : stabilisingTaylor φ z = φ n z :=
+  (show filtration R M n ≤ LinearMap.eqLocus (stabilisingTaylor φ) (φ n) by
+    clear hz; rw [filtration_le_iff]; rintro _ hk _ ⟨x, rfl⟩
+    rw [LinearMap.mem_eqLocus, stabilisingTaylor, toModule_of, LinearMap.comp_apply]
+    induction n, hk using Nat.le_induction with
+    | base => rfl
+    | succ n hk ih =>
+      rw [hφ n _ (filtration_monotone R M hk (of_mem_filtration R M le_rfl x)), ih]) hz
+private theorem isHomogeneous_stabilisingTaylor {G : InternalGrading R M ℤ}
+    {H : InternalGrading R N ℤ} {r : ℤ} {φ : ℕ → ReducedTensorWords R M →ₗ[R] N}
     (hφ : ∀ n, ∀ z ∈ filtration R M n, φ (n + 1) z = φ n z)
     (hdeg : ∀ n, LinearMap.IsHomogeneous (φ n) (gradedPiece G) H.piece r) :
-    LinearMap.IsHomogeneous (stabilisingTaylor φ) (gradedPiece G) H.piece r := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p z hz
-  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-  rw [stabilisingTaylor_apply_of_mem_filtration hφ hn]
-  exact (hdeg n).map_mem hz
-
-/-- Shifting both source and target internal gradings by `1` preserves the degree of a homogeneous
-linear map. -/
-private theorem isHomogeneous_shift_one {M N : Type*} [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {r : ℤ}
-    {u : M →ₗ[R] N} (hu : LinearMap.IsHomogeneous u G.piece H.piece r) :
-    LinearMap.IsHomogeneous u (G.shift 1).piece (H.shift 1).piece r := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p x hx
-  rw [InternalGrading.shift_piece] at hx ⊢
-  rw [show p + r + 1 = (p + 1) + r by ring]
-  exact hu.map_mem hx
-
-private theorem letter_barDifferential_apply {M : Type*} [AddCommGroup M] [Module R M]
-    (ℳ : AInfinityAlgebra R M) (w : ReducedTensorWords R M) :
-    letter R M (ℳ.barDifferential w) = ℳ.taylor w :=
-  LinearMap.congr_fun ℳ.letter_comp_barDifferential w
-
-private theorem letter_coalgHom_apply {M N : Type*} [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] (φ : ReducedTensorWords R M →ₗ[R] N)
-    (w : ReducedTensorWords R M) :
-    letter R N (coalgHom R φ w) = φ w :=
-  LinearMap.congr_fun (letter_comp_coalgHom φ) w
-
-private theorem letter_gradedCoderivAlong_apply {M N : Type*} [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] (G : InternalGrading R M ℤ) (q : ℤ)
-    (F F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N)
-    (h : ReducedTensorWords R M →ₗ[R] N) (w : ReducedTensorWords R M) :
-    letter R N (gradedCoderivAlong G q F F' h w) = h w :=
-  LinearMap.congr_fun (letter_comp_gradedCoderivAlong G q F F' h) w
-
-private theorem letter_barMap_apply {M N : Type*} [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] {ℳ : AInfinityAlgebra R M} {𝒩 : AInfinityAlgebra R N}
-    (φ : AInfinityHom ℳ 𝒩) (w : ReducedTensorWords R M) :
-    letter R N (φ.barMap w) = φ.taylor w :=
-  (LinearMap.congr_fun φ.taylor_def w).symm
-
-private theorem barDifferential_barDifferential_apply {M : Type*} [AddCommGroup M] [Module R M]
-    (ℳ : AInfinityAlgebra R M) (w : ReducedTensorWords R M) :
+    LinearMap.IsHomogeneous (stabilisingTaylor φ) (gradedPiece G) H.piece r :=
+  LinearMap.isHomogeneous_def.2 fun _ z hz ↦ by
+    obtain ⟨n, hn⟩ := exists_mem_filtration R M z
+    rw [stabilisingTaylor_apply_of_mem_filtration hφ hn]; exact (hdeg n).map_mem hz
+private theorem barDifferential_sq_apply (ℳ : AInfinityAlgebra R M) (w : ReducedTensorWords R M) :
     ℳ.barDifferential (ℳ.barDifferential w) = 0 := by
   simpa only [LinearMap.comp_apply, LinearMap.zero_apply] using
     LinearMap.congr_fun ℳ.barDifferential_sq w
-
-/-- Projecting onto words of length one and then taking single letters is `letter`. -/
-private theorem letter_comp_lengthProj_one (M : Type*) [AddCommMonoid M] [Module R M] :
-    letter R M ∘ₗ lengthProj R M (1 : {n : ℕ // 0 < n}) = letter R M := by
-  refine linearMap_ext R M fun k x ↦ ?_
-  rw [LinearMap.comp_apply]
-  by_cases hk : k = (1 : {n : ℕ // 0 < n})
-  · subst hk
-    rw [lengthProj_of_self]
-  · rw [lengthProj_of_of_ne R M hk, map_zero, letter_of_of_ne_one R M hk]
-
-/-- The unary bar differential commutes with every word-length projection. -/
-private theorem lengthProj_comp_unaryBarDifferential (ℳ : AInfinityAlgebra R A)
+private theorem lengthProj_comp_unaryBarDifferential (ℳ : AInfinityAlgebra R M)
     (n : {n : ℕ // 0 < n}) :
-    lengthProj R A n ∘ₗ ℳ.unaryBarDifferential = ℳ.unaryBarDifferential ∘ₗ lengthProj R A n := by
-  rw [ℳ.unaryBarDifferential_eq_gradedCoderiv]
-  exact lengthProj_comp_gradedCoderiv (ℳ.grading.shift 1) 1
-    (by rw [LinearMap.comp_assoc, letter_comp_lengthProj_one]) rfl
-
-/-- If `D` vanishes on `filtration R A k`, precomposing `D ∘ b` with `lengthProj (k + 1)` replaces
-the full bar differential `b` by `unaryBarDifferential` and commutes `lengthProj` past it. -/
-private theorem apply_barDifferential_lengthProj_eq {P : Type*} [AddCommGroup P] [Module R P]
-    (ℳ : AInfinityAlgebra R A) {D : ReducedTensorWords R A →ₗ[R] P} {k : ℕ}
-    (hD₀ : ∀ u ∈ filtration R A k, D u = 0) (w : ReducedTensorWords R A) :
-    D (ℳ.barDifferential (lengthProj R A ⟨k + 1, k.succ_pos⟩ w)) =
-      D (lengthProj R A ⟨k + 1, k.succ_pos⟩ (ℳ.unaryBarDifferential w)) := by
-  set p := lengthProj R A ⟨k + 1, k.succ_pos⟩
-  have hhigh : ℳ.higherBarDifferential (p w) ∈ filtration R A k :=
-    ℳ.higherBarDifferential_filtration k
-      ⟨p w, lengthProj_mem_filtration R A ⟨k + 1, k.succ_pos⟩ w, rfl⟩
-  have hcomm := LinearMap.congr_fun (lengthProj_comp_unaryBarDifferential ℳ ⟨k + 1, k.succ_pos⟩) w
-  rw [ℳ.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, hD₀ _ hhigh, add_zero,
-    ← LinearMap.comp_apply p, hcomm, LinearMap.comp_apply]
-
-/-- Perturbing Taylor components `g` by `δg` vanishing on `filtration R B k` leaves `coalgHom`
-unchanged on `filtration R B k` and adds `ofLetter (δg z)` on `filtration R B (k + 1)`. -/
-private theorem coalgHom_add_apply_of_mem_filtration (G : InternalGrading R B ℤ)
-    {g δg : ReducedTensorWords R B →ₗ[R] A} {k : ℕ}
-    (hδ : ∀ u ∈ filtration R B k, δg u = 0) :
-    (∀ u ∈ filtration R B k, coalgHom R (g + δg) u = coalgHom R g u) ∧
-      ∀ z ∈ filtration R B (k + 1),
-        coalgHom R (g + δg) z = coalgHom R g z + ofLetter R A (δg z) := by
-  have hk : ∀ u ∈ filtration R B k, coalgHom R (g + δg) u = coalgHom R g u := fun u hu ↦
-    (isCoalgHom_coalgHom _).apply_eq_of_mem_filtration (isCoalgHom_coalgHom _)
-      (fun w hw ↦ by
-        rw [letter_coalgHom_apply, letter_coalgHom_apply, LinearMap.add_apply, hδ w hw, add_zero])
-      hu
-  refine ⟨hk, fun z hz ↦ ?_⟩
-  have hsub := ((isCoalgHom_coalgHom (R := R) (g + δg)).isGradedCoderivationAlong_sub
-    (G := G) (isCoalgHom_coalgHom g)).apply_eq_ofLetter_letter_of_mem_filtration
-    (fun w hw ↦ by rw [LinearMap.sub_apply, hk w hw, sub_self]) hz
-  rw [LinearMap.sub_apply, map_sub, letter_coalgHom_apply, letter_coalgHom_apply,
-    LinearMap.add_apply, add_sub_cancel_left] at hsub
-  exact eq_add_of_sub_eq' hsub
-
-/-- Perturbing Taylor components `h` by `δh` vanishing on `filtration R M k`, while changing the
-left coalgebra morphism only above `filtration R M k`, leaves `gradedCoderivAlong` unchanged on
-`filtration R M k` and adds `ofLetter (δh z)` on `filtration R M (k + 1)`. -/
-private theorem gradedCoderivAlong_add_apply_of_mem_filtration
-    {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    (G : InternalGrading R M ℤ) (q : ℤ)
+    lengthProj R M n ∘ₗ ℳ.unaryBarDifferential = ℳ.unaryBarDifferential ∘ₗ lengthProj R M n :=
+  ℳ.unaryBarDifferential_eq_gradedCoderiv ▸ lengthProj_comp_gradedCoderiv (ℳ.grading.shift 1) 1 (by
+    rw [LinearMap.comp_assoc]; congr 1; refine linearMap_ext R M fun k x ↦ ?_
+    rw [LinearMap.comp_apply]; by_cases hk : k = 1
+    · subst hk; rw [lengthProj_of_self]
+    · rw [lengthProj_of_of_ne R M hk, map_zero, letter_of_of_ne_one R M hk]) rfl
+private theorem isHomogeneous_obstruction {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+    {r : ℤ} {D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    (hD : LinearMap.IsHomogeneous D (gradedPiece G) (gradedPiece H) r) (n : {n : ℕ // 0 < n}) :
+    LinearMap.IsHomogeneous (letter R N ∘ₗ D ∘ₗ lengthProj R M n) (gradedPiece G) H.piece r := by
+  simpa only [zero_add, add_zero] using
+    (isHomogeneous_letter H).comp (hD.comp (isHomogeneous_lengthProj G n))
+private theorem isHomogeneous_barDiff_comm {ℳ : AInfinityAlgebra R M} {𝒩 : AInfinityAlgebra R N}
+    {r : ℤ} {K : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    (hK : LinearMap.IsHomogeneous K (gradedPiece (ℳ.grading.shift 1))
+      (gradedPiece (𝒩.grading.shift 1)) r) :
+    LinearMap.IsHomogeneous (𝒩.barDifferential ∘ₗ K + K ∘ₗ ℳ.barDifferential)
+        (gradedPiece (ℳ.grading.shift 1)) (gradedPiece (𝒩.grading.shift 1)) (r + 1) ∧
+      LinearMap.IsHomogeneous (𝒩.barDifferential ∘ₗ K - K ∘ₗ ℳ.barDifferential)
+        (gradedPiece (ℳ.grading.shift 1)) (gradedPiece (𝒩.grading.shift 1)) (r + 1) :=
+  have h₁ := 𝒩.isHomogeneous_barDifferential.comp hK
+  have h₂ := add_comm 1 r ▸ hK.comp ℳ.isHomogeneous_barDifferential
+  ⟨h₁.add h₂, h₁.sub h₂⟩
+private theorem obstruction_eq_of_barDifferential {ℳ : AInfinityAlgebra R M}
+    {𝒩 : AInfinityAlgebra R N} {D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} {k : ℕ}
+    (hD₀ : ∀ u ∈ filtration R M k, D u = 0)
+    (hD₁ : ∀ z ∈ filtration R M (k + 1), D z = ofLetter R N (letter R N (D z)))
+    (s : ℤ) {rhs : ReducedTensorWords R M →ₗ[R] N}
+    (h : ∀ w, 𝒩.barDifferential (D (lengthProj R M ⟨k + 1, k.succ_pos⟩ w)) +
+      s • D (ℳ.barDifferential (lengthProj R M ⟨k + 1, k.succ_pos⟩ w)) = ofLetter R N (rhs w)) :
+    𝒩.differential ∘ₗ (letter R N ∘ₗ D ∘ₗ lengthProj R M ⟨k + 1, k.succ_pos⟩) +
+      s • ((letter R N ∘ₗ D ∘ₗ lengthProj R M ⟨k + 1, k.succ_pos⟩) ∘ₗ ℳ.unaryBarDifferential) =
+      rhs :=
+  LinearMap.ext fun w ↦ by
+    have hw := congrArg (letter R N) (h w)
+    rw [map_add, map_zsmul, letter_ofLetter,
+      hD₁ _ (lengthProj_mem_filtration R M ⟨k + 1, k.succ_pos⟩ w),
+      AInfinityAlgebra.barDifferential_ofLetter, letter_ofLetter,
+      ← AInfinityAlgebra.differential_apply, ℳ.barDifferential_eq_unary_add_higher,
+      LinearMap.add_apply, map_add, hD₀ _ (ℳ.higherBarDifferential_filtration k
+        ⟨_, lengthProj_mem_filtration R M ⟨k + 1, k.succ_pos⟩ w, rfl⟩), add_zero,
+      ← LinearMap.comp_apply ℳ.unaryBarDifferential, ← lengthProj_comp_unaryBarDifferential,
+      LinearMap.comp_apply] at hw
+    simpa only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.comp_apply] using hw
+private theorem defect_eq_ofLetter_obstruction
+    {D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} {k : ℕ}
+    (hD₀ : ∀ u ∈ filtration R M k, D u = 0)
+    (hD₁ : ∀ z ∈ filtration R M (k + 1), D z = ofLetter R N (letter R N (D z)))
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M (k + 1)) :
+    D z = ofLetter R N ((letter R N ∘ₗ D ∘ₗ lengthProj R M ⟨k + 1, k.succ_pos⟩) z) :=
+  (hD₁ z hz).trans <| congrArg (ofLetter R N) <|
+    (apply_lengthProj_of_mem_filtration R M (f := letter R N ∘ₗ D)
+      (fun u hu ↦ by rw [LinearMap.comp_apply, hD₀ u hu, map_zero]) hz).symm
+private theorem barDifferential_perturb_apply (ℳ : AInfinityAlgebra R M)
+    {F₁ F₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    {δ : ReducedTensorWords R M →ₗ[R] N} {k : ℕ}
+    (h₁ : ∀ u ∈ filtration R M k, F₁ u = F₂ u)
+    (h₂ : ∀ u ∈ filtration R M (k + 1), F₁ u = F₂ u + ofLetter R N (δ u))
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M (k + 1)) :
+    F₁ (ℳ.barDifferential z) =
+      F₂ (ℳ.barDifferential z) + ofLetter R N (δ (ℳ.unaryBarDifferential z)) := by
+  rw [ℳ.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, map_add,
+    h₂ _ (ℳ.unaryBarDifferential_filtration (k + 1) ⟨z, hz, rfl⟩),
+    h₁ _ (ℳ.higherBarDifferential_filtration k ⟨z, hz, rfl⟩)]; abel
+private theorem coalgHom_add_apply_of_mem_filtration (G : InternalGrading R M ℤ)
+    {g δg : ReducedTensorWords R M →ₗ[R] N} {k : ℕ} (hδ : ∀ u ∈ filtration R M k, δg u = 0) :
+    (∀ u ∈ filtration R M k, coalgHom R (g + δg) u = coalgHom R g u) ∧
+      ∀ z ∈ filtration R M (k + 1),
+        coalgHom R (g + δg) z = coalgHom R g z + ofLetter R N (δg z) := by
+  have hk : ∀ u ∈ filtration R M k, coalgHom R (g + δg) u = coalgHom R g u := fun u hu ↦
+    (isCoalgHom_coalgHom _).apply_eq_of_mem_filtration (isCoalgHom_coalgHom _) (fun w hw ↦ by
+      simp only [← LinearMap.comp_apply (letter R N), letter_comp_coalgHom, LinearMap.add_apply,
+        hδ w hw, add_zero]) hu
+  refine ⟨hk, fun z hz ↦ eq_add_of_sub_eq' ?_⟩
+  simpa only [LinearMap.sub_apply, map_sub, ← LinearMap.comp_apply (letter R N),
+    letter_comp_coalgHom, LinearMap.add_apply, add_sub_cancel_left] using
+    ((isCoalgHom_coalgHom (R := R) (g + δg)).isGradedCoderivationAlong_sub (G := G)
+      (isCoalgHom_coalgHom g)).apply_eq_ofLetter_letter_of_mem_filtration
+        (fun w hw ↦ by rw [LinearMap.sub_apply, hk w hw, sub_self]) hz
+private theorem gradedCoderivAlong_add_apply_of_mem_filtration (G : InternalGrading R M ℤ) (q : ℤ)
     {F₁ F₂ F' : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
     (hF₁ : IsCoalgHom R F₁) (hF₂ : IsCoalgHom R F₂) (hF' : IsCoalgHom R F')
     {h δh : ReducedTensorWords R M →ₗ[R] N} {k : ℕ}
-    (hF : ∀ u ∈ filtration R M k, F₁ u = F₂ u)
-    (hδ : ∀ u ∈ filtration R M k, δh u = 0) :
+    (hF : ∀ u ∈ filtration R M k, F₁ u = F₂ u) (hδ : ∀ u ∈ filtration R M k, δh u = 0) :
     (∀ u ∈ filtration R M k,
         gradedCoderivAlong G q F₁ F' (h + δh) u = gradedCoderivAlong G q F₂ F' h u) ∧
       ∀ z ∈ filtration R M (k + 1),
         gradedCoderivAlong G q F₁ F' (h + δh) z =
           gradedCoderivAlong G q F₂ F' h z + ofLetter R N (δh z) := by
+  have h₁ := isGradedCoderivationAlong_gradedCoderivAlong G q hF₁ hF' (h + δh)
+  have h₂ := isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF' (h + δh)
+  have h₃ := isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF' h
   have hD₁₂ : ∀ z ∈ filtration R M (k + 1),
       gradedCoderivAlong G q F₁ F' (h + δh) z = gradedCoderivAlong G q F₂ F' (h + δh) z :=
-    fun z hz ↦
-      (isGradedCoderivationAlong_gradedCoderivAlong G q hF₁ hF' _).apply_eq_of_mem_filtration
-        (isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF' _)
-        (fun w hw ↦ hF w (by simpa only [Nat.add_sub_cancel] using hw))
-        (fun _ _ ↦ rfl)
-        (fun w _ ↦ by rw [letter_gradedCoderivAlong_apply, letter_gradedCoderivAlong_apply]) hz
+    fun z hz ↦ h₁.apply_eq_of_mem_filtration h₂ (fun w hw ↦ hF w (Nat.add_sub_cancel k 1 ▸ hw))
+      (fun _ _ ↦ rfl) (fun _ _ ↦ by
+        simp only [← LinearMap.comp_apply (letter R N), letter_comp_gradedCoderivAlong]) hz
   have hk : ∀ u ∈ filtration R M k,
       gradedCoderivAlong G q F₂ F' (h + δh) u = gradedCoderivAlong G q F₂ F' h u :=
-    fun u hu ↦
-      (isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF' _).apply_eq_of_mem_filtration
-        (isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF' _)
-        (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-        (fun w hw ↦ by
-          rw [letter_gradedCoderivAlong_apply, letter_gradedCoderivAlong_apply,
-            LinearMap.add_apply, hδ w hw, add_zero]) hu
-  refine ⟨fun u hu ↦ (hD₁₂ u (filtration_monotone R M k.le_succ hu)).trans (hk u hu), fun z hz ↦ ?_⟩
-  have hsub := ((isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF' (h + δh)).sub
-    (isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF'
-      h)).apply_eq_ofLetter_letter_of_mem_filtration
-    (fun w hw ↦ by rw [LinearMap.sub_apply, hk w hw, sub_self]) hz
-  rw [LinearMap.sub_apply, map_sub, letter_gradedCoderivAlong_apply,
-    letter_gradedCoderivAlong_apply, LinearMap.add_apply, add_sub_cancel_left] at hsub
-  rw [hD₁₂ z hz, eq_add_of_sub_eq' hsub]
+    fun u hu ↦ h₂.apply_eq_of_mem_filtration h₃ (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun w hw ↦ by
+      simp only [← LinearMap.comp_apply (letter R N), letter_comp_gradedCoderivAlong,
+        LinearMap.add_apply, hδ w hw, add_zero]) hu
+  refine ⟨fun u hu ↦ (hD₁₂ u (filtration_monotone R M k.le_succ hu)).trans (hk u hu),
+    fun z hz ↦ (hD₁₂ z hz).trans <| eq_add_of_sub_eq' ?_⟩
+  simpa only [LinearMap.sub_apply, map_sub, ← LinearMap.comp_apply (letter R N),
+    letter_comp_gradedCoderivAlong, LinearMap.add_apply, add_sub_cancel_left] using
+    (h₂.sub h₃).apply_eq_ofLetter_letter_of_mem_filtration
+      (fun w hw ↦ by rw [LinearMap.sub_apply, hk w hw, sub_self]) hz
+private theorem coalgHom_stabilisingTaylor_apply (φ : ℕ → ReducedTensorWords R M →ₗ[R] N)
+    (hφ : ∀ n, ∀ u ∈ filtration R M n, φ (n + 1) u = φ n u) {m : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M m) :
+    coalgHom R (stabilisingTaylor φ) z = coalgHom R (φ m) z :=
+  (isCoalgHom_coalgHom _).apply_eq_of_mem_filtration (isCoalgHom_coalgHom _) (fun u hu ↦ by
+    simp only [← LinearMap.comp_apply (letter R N), letter_comp_coalgHom,
+      stabilisingTaylor_apply_of_mem_filtration hφ hu]) hz
+private theorem gradedCoderivAlong_stabilisingTaylor_apply (G : InternalGrading R M ℤ) (q : ℤ)
+    {F₁ F₂ F'₁ F'₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N}
+    (hF₁ : IsCoalgHom R F₁) (hF₂ : IsCoalgHom R F₂)
+    (hF'₁ : IsCoalgHom R F'₁) (hF'₂ : IsCoalgHom R F'₂)
+    (φ : ℕ → ReducedTensorWords R M →ₗ[R] N)
+    (hφ : ∀ n, ∀ u ∈ filtration R M n, φ (n + 1) u = φ n u) {m : ℕ}
+    (hF : ∀ u ∈ filtration R M m, F₁ u = F₂ u) (hF' : ∀ u ∈ filtration R M m, F'₁ u = F'₂ u)
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M m) :
+    gradedCoderivAlong G q F₁ F'₁ (stabilisingTaylor φ) z =
+      gradedCoderivAlong G q F₂ F'₂ (φ m) z :=
+  (isGradedCoderivationAlong_gradedCoderivAlong G q hF₁ hF'₁ _).apply_eq_of_mem_filtration
+    (isGradedCoderivationAlong_gradedCoderivAlong G q hF₂ hF'₂ _)
+    (fun u hu ↦ hF u (filtration_monotone R M (Nat.sub_le m 1) hu))
+    (fun u hu ↦ hF' u (filtration_monotone R M (Nat.sub_le m 1) hu)) (fun u hu ↦ by
+      simp only [← LinearMap.comp_apply (letter R N), letter_comp_gradedCoderivAlong,
+        stabilisingTaylor_apply_of_mem_filtration hφ hu]) hz
+private theorem taylor_homotopy_of_defect_zero {ℳ : AInfinityAlgebra R M} (F : AInfinityHom ℳ ℳ)
+    {F' K K' : Module.End R (ReducedTensorWords R M)} (φ : ℕ → ReducedTensorWords R M →ₗ[R] M)
+    (hφ : ∀ n, ∀ u ∈ filtration R M n, φ (n + 1) u = φ n u) {m : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M m)
+    (hD : ((F' - (LinearMap.id : Module.End R (ReducedTensorWords R M))) -
+      (ℳ.barDifferential ∘ₗ K' + K' ∘ₗ ℳ.barDifferential)) z = 0)
+    (hF : F.barMap z = F' z) (hK : K z = K' z) (hlK' : letter R M ∘ₗ K' = φ m) :
+    (F.taylor - (AInfinityHom.id ℳ).taylor) z =
+      (ℳ.taylor ∘ₗ K + stabilisingTaylor φ ∘ₗ ℳ.barDifferential) z := by
+  have h := congrArg (letter R M) hD
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply,
+    map_sub, map_add, map_zero, sub_eq_zero] at h
+  rw [← LinearMap.comp_apply (letter R M) ℳ.barDifferential, ℳ.letter_comp_barDifferential,
+    ← LinearMap.comp_apply (letter R M) K', hlK'] at h
+  rw [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    F.taylor_def, LinearMap.comp_apply, hF, taylor_id, hK,
+    stabilisingTaylor_apply_of_mem_filtration hφ (ℳ.barDifferential_mem_filtration hz)]; exact h
+end Helpers
 
 /-! #### Parametric linear obstruction solver -/
 
-/-- First component `δg = γ - g₁ ∘ (Ψ + f₁ ∘ γ)` (with `γ = h_A ∘ Φ - g₁ ∘ Ψ`) solving the coupled
-linear obstruction system `d_A ∘ δg - δg ∘ d_W = -Φ` and `f₁ ∘ δg - (d_B ∘ δh + δh ∘ d_W) = -Ψ`. -/
-private def solveStepG {W : Type*} [AddCommGroup W] [Module R W]
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    (Φ : W →ₗ[R] A) (Ψ : W →ₗ[R] B) : W →ₗ[R] A :=
-  (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ) -
-    e.inv ∘ₗ (Ψ + e.hom ∘ₗ (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ))
+section Solver
+variable {W : Type*} [AddCommGroup W] [Module R W]
+  (e : LinearHomotopyEquiv AA.differential BB.differential)
 
-/-- Second component `δh = -h_B ∘ (Ψ + f₁ ∘ γ)` of the coupled linear obstruction solver. -/
-private def solveStepH {W : Type*} [AddCommGroup W] [Module R W]
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    (Φ : W →ₗ[R] A) (Ψ : W →ₗ[R] B) : W →ₗ[R] B :=
-  -(e.homotopyHomInv ∘ₗ (Ψ + e.hom ∘ₗ (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ)))
-
-private theorem solveStepG_apply_eq_zero {W : Type*} [AddCommGroup W] [Module R W]
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B} {u : W} (hΦ : Φ u = 0) (hΨ : Ψ u = 0) :
-    solveStepG e Φ Ψ u = 0 := by
-  simp only [solveStepG, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
-    hΦ, hΨ, map_zero, sub_zero, add_zero]
-
-private theorem solveStepH_apply_eq_zero {W : Type*} [AddCommGroup W] [Module R W]
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B} {u : W} (hΦ : Φ u = 0) (hΨ : Ψ u = 0) :
-    solveStepH e Φ Ψ u = 0 := by
-  simp only [solveStepH, LinearMap.neg_apply, LinearMap.sub_apply, LinearMap.add_apply,
-    LinearMap.comp_apply, hΦ, hΨ, map_zero, sub_zero, add_zero, neg_zero]
-
-private theorem isHomogeneous_solveStepG {W : Type*} [AddCommGroup W] [Module R W]
-    {𝒲 : ℤ → Submodule R W} {e : LinearHomotopyEquiv AA.differential BB.differential}
+private def solveGamma (Φ : W →ₗ[R] A) (Ψ : W →ₗ[R] B) : W →ₗ[R] A :=
+  e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ
+private def solveZ (Φ : W →ₗ[R] A) (Ψ : W →ₗ[R] B) : W →ₗ[R] B :=
+  Ψ + e.hom ∘ₗ solveGamma e Φ Ψ
+private def solveStepG (Φ : W →ₗ[R] A) (Ψ : W →ₗ[R] B) : W →ₗ[R] A :=
+  solveGamma e Φ Ψ - e.inv ∘ₗ solveZ e Φ Ψ
+private def solveStepH (Φ : W →ₗ[R] A) (Ψ : W →ₗ[R] B) : W →ₗ[R] B :=
+  -(e.homotopyHomInv ∘ₗ solveZ e Φ Ψ)
+private theorem solveStep_apply_eq_zero {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B} {u : W}
+    (hΦ : Φ u = 0) (hΨ : Ψ u = 0) : solveStepG e Φ Ψ u = 0 ∧ solveStepH e Φ Ψ u = 0 := by
+  simp only [solveStepG, solveStepH, solveZ, solveGamma, LinearMap.neg_apply, LinearMap.sub_apply,
+    LinearMap.add_apply, LinearMap.comp_apply, hΦ, hΨ, map_zero, sub_zero, add_zero, neg_zero,
+    and_self]
+private theorem isHomogeneous_solveStep {𝒲 : ℤ → Submodule R W}
+    {e : LinearHomotopyEquiv AA.differential BB.differential}
     (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) {r : ℤ}
     {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B}
     (hΦ : LinearMap.IsHomogeneous Φ 𝒲 (AA.grading.shift 1).piece (r + 1))
     (hΨ : LinearMap.IsHomogeneous Ψ 𝒲 (BB.grading.shift 1).piece r) :
-    LinearMap.IsHomogeneous (solveStepG e Φ Ψ) 𝒲 (AA.grading.shift 1).piece r := by
-  rw [solveStepG]
-  have hγ : LinearMap.IsHomogeneous (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ) 𝒲
-      (AA.grading.shift 1).piece r := by
-    refine LinearMap.IsHomogeneous.sub ?_ ?_
-    · simpa only [add_neg_cancel_right] using (isHomogeneous_shift_one hG.homotopyInvHom).comp hΦ
-    · simpa only [add_zero] using (isHomogeneous_shift_one hG.inv).comp hΨ
-  have hZ : LinearMap.IsHomogeneous (Ψ + e.hom ∘ₗ (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ)) 𝒲
-      (BB.grading.shift 1).piece r := by
-    refine hΨ.add ?_
-    simpa only [add_zero] using (isHomogeneous_shift_one hG.hom).comp hγ
-  refine hγ.sub ?_
-  simpa only [add_zero] using (isHomogeneous_shift_one hG.inv).comp hZ
-
-private theorem isHomogeneous_solveStepH {W : Type*} [AddCommGroup W] [Module R W]
-    {𝒲 : ℤ → Submodule R W} {e : LinearHomotopyEquiv AA.differential BB.differential}
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) {r : ℤ}
-    {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B}
-    (hΦ : LinearMap.IsHomogeneous Φ 𝒲 (AA.grading.shift 1).piece (r + 1))
-    (hΨ : LinearMap.IsHomogeneous Ψ 𝒲 (BB.grading.shift 1).piece r) :
-    LinearMap.IsHomogeneous (solveStepH e Φ Ψ) 𝒲 (BB.grading.shift 1).piece (r + -1) := by
-  rw [solveStepH]
-  have hγ : LinearMap.IsHomogeneous (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ) 𝒲
-      (AA.grading.shift 1).piece r := by
-    refine LinearMap.IsHomogeneous.sub ?_ ?_
-    · simpa only [add_neg_cancel_right] using (isHomogeneous_shift_one hG.homotopyInvHom).comp hΦ
-    · simpa only [add_zero] using (isHomogeneous_shift_one hG.inv).comp hΨ
-  have hZ : LinearMap.IsHomogeneous (Ψ + e.hom ∘ₗ (e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ)) 𝒲
-      (BB.grading.shift 1).piece r := by
-    refine hΨ.add ?_
-    simpa only [add_zero] using (isHomogeneous_shift_one hG.hom).comp hγ
-  exact ((isHomogeneous_shift_one hG.homotopyHomInv).comp hZ).neg
-
-private theorem solveStep_gamma_eqs {W : Type*} [AddCommGroup W] [Module R W]
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    {dW : Module.End R W} {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B}
-    (hΦ : AA.differential ∘ₗ Φ + Φ ∘ₗ dW = 0)
-    (hΨ : BB.differential ∘ₗ Ψ - Ψ ∘ₗ dW = e.hom ∘ₗ Φ) (w : W) :
-    let γ := e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ
-    let Z := Ψ + e.hom ∘ₗ γ
-    (AA.differential (γ w) - γ (dW w) = -Φ w) ∧ BB.differential (Z w) = Z (dW w) := by
-  intro γ Z
-  have hΦw : Φ (dW w) = -AA.differential (Φ w) :=
-    eq_neg_of_add_eq_zero_right (by simpa using LinearMap.congr_fun hΦ w)
-  have hΨw' : BB.differential (Ψ w) - Ψ (dW w) = e.hom (Φ w) := by
-    simpa only [LinearMap.sub_apply, LinearMap.comp_apply] using LinearMap.congr_fun hΨ w
-  have hΨw : Ψ (dW w) = BB.differential (Ψ w) - e.hom (Φ w) := by
-    rw [← hΨw']; abel
-  have hinv := LinearMap.congr_fun e.dM_comp_homotopyInvHom_add_homotopyInvHom_comp_dM (Φ w)
-  simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-    LinearMap.id_apply] at hinv
-  have hγ : AA.differential (γ w) - γ (dW w) = -Φ w := by
-    simp only [γ, LinearMap.sub_apply, LinearMap.comp_apply, map_sub, hΦw, hΨw, map_neg,
-      e.dM_inv_apply]
-    rw [eq_sub_of_add_eq hinv]
-    abel
-  refine ⟨hγ, sub_eq_zero.1 ?_⟩
-  simp only [Z, LinearMap.add_apply, LinearMap.comp_apply, map_add, e.dN_hom_apply]
-  rw [show BB.differential (Ψ w) + e.hom (AA.differential (γ w)) -
-      (Ψ (dW w) + e.hom (γ (dW w))) =
-      (BB.differential (Ψ w) - Ψ (dW w)) + e.hom (AA.differential (γ w) - γ (dW w)) by
-    rw [map_sub]; abel, hΨw', hγ, map_neg, add_neg_cancel]
-
-private theorem solveStep_eqs {W : Type*} [AddCommGroup W] [Module R W]
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    {dW : Module.End R W} {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B}
+    LinearMap.IsHomogeneous (solveStepG e Φ Ψ) 𝒲 (AA.grading.shift 1).piece r ∧
+      LinearMap.IsHomogeneous (solveStepH e Φ Ψ) 𝒲 (BB.grading.shift 1).piece (r + -1) :=
+  have hγ : LinearMap.IsHomogeneous (solveGamma e Φ Ψ) 𝒲 (AA.grading.shift 1).piece r :=
+    (add_neg_cancel_right r 1 ▸
+      (LinearMap.isHomogeneous_shift_piece_iff.2 hG.homotopyInvHom).comp hΦ).sub
+      (add_zero r ▸ (LinearMap.isHomogeneous_shift_piece_iff.2 hG.inv).comp hΨ)
+  have hZ : LinearMap.IsHomogeneous (solveZ e Φ Ψ) 𝒲 (BB.grading.shift 1).piece r :=
+    hΨ.add (add_zero r ▸ (LinearMap.isHomogeneous_shift_piece_iff.2 hG.hom).comp hγ)
+  ⟨hγ.sub (add_zero r ▸ (LinearMap.isHomogeneous_shift_piece_iff.2 hG.inv).comp hZ),
+    ((LinearMap.isHomogeneous_shift_piece_iff.2 hG.homotopyHomInv).comp hZ).neg⟩
+private theorem solveStep_eqs {dW : Module.End R W} {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B}
     (hΦ : AA.differential ∘ₗ Φ + Φ ∘ₗ dW = 0)
     (hΨ : BB.differential ∘ₗ Ψ - Ψ ∘ₗ dW = e.hom ∘ₗ Φ) :
     (AA.differential ∘ₗ solveStepG e Φ Ψ - solveStepG e Φ Ψ ∘ₗ dW = -Φ) ∧
       (e.hom ∘ₗ solveStepG e Φ Ψ -
         (BB.differential ∘ₗ solveStepH e Φ Ψ + solveStepH e Φ Ψ ∘ₗ dW) = -Ψ) := by
-  set γ : W →ₗ[R] A := e.homotopyInvHom ∘ₗ Φ - e.inv ∘ₗ Ψ
-  set Z : W →ₗ[R] B := Ψ + e.hom ∘ₗ γ
+  have hγ : ∀ w, AA.differential (solveGamma e Φ Ψ w) - solveGamma e Φ Ψ (dW w) = -Φ w :=
+    fun w ↦ by
+      have h1 := LinearMap.congr_fun e.dM_comp_homotopyInvHom_add_homotopyInvHom_comp_dM (Φ w)
+      have h2 := congrArg e.inv (LinearMap.congr_fun hΨ w)
+      have hΦw := LinearMap.congr_fun hΦ w
+      simp only [solveGamma, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+        LinearMap.id_apply, LinearMap.zero_apply, map_sub, e.dM_inv_apply] at h1 h2 hΦw ⊢
+      rw [eq_sub_of_add_eq h1, eq_add_of_sub_eq h2, eq_neg_of_add_eq_zero_right hΦw, map_neg]; abel
+  have hZ : ∀ w, BB.differential (solveZ e Φ Ψ w) = solveZ e Φ Ψ (dW w) := fun w ↦ by
+    have hΨw := LinearMap.congr_fun hΨ w
+    simp only [solveZ, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, map_add,
+      e.dN_hom_apply] at hΨw ⊢
+    rw [eq_add_of_sub_eq hΨw, eq_add_of_sub_eq (hγ w), map_add, map_neg]; abel
   refine ⟨LinearMap.ext fun w ↦ ?_, LinearMap.ext fun w ↦ ?_⟩
-  · obtain ⟨hγ, hZ⟩ := solveStep_gamma_eqs e hΦ hΨ w
-    simp only [solveStepG, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.neg_apply]
-    change AA.differential (γ w - e.inv (Z w)) - (γ (dW w) - e.inv (Z (dW w))) = -Φ w
-    rw [map_sub, e.dM_inv_apply, hZ, sub_sub_sub_comm, sub_self, sub_zero, hγ]
-  · obtain ⟨_, hZ⟩ := solveStep_gamma_eqs e hΦ hΨ w
+  · simp only [solveStepG, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.neg_apply,
+      map_sub, e.dM_inv_apply, hZ w]
+    rw [sub_sub_sub_comm, sub_self, sub_zero, hγ w]
+  · have hH := LinearMap.congr_fun e.dN_comp_homotopyHomInv_add_homotopyHomInv_comp_dN
+      (solveZ e Φ Ψ w)
     simp only [solveStepG, solveStepH, LinearMap.sub_apply, LinearMap.add_apply,
-      LinearMap.neg_apply, LinearMap.comp_apply]
-    change e.hom (γ w - e.inv (Z w)) -
-      (BB.differential (-(e.homotopyHomInv (Z w))) + -(e.homotopyHomInv (Z (dW w)))) = -Ψ w
-    have hhom := LinearMap.congr_fun e.dN_comp_homotopyHomInv_add_homotopyHomInv_comp_dN (Z w)
-    simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-      LinearMap.id_apply] at hhom
-    rw [map_sub, map_neg, ← hZ, ← neg_add, hhom]
-    dsimp only [Z, LinearMap.add_apply, LinearMap.comp_apply]
-    abel
+      LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.id_apply, map_sub, map_neg] at hH ⊢
+    rw [← hZ w, eq_sub_of_add_eq hH]
+    simp only [solveZ, LinearMap.add_apply, LinearMap.comp_apply]; abel
+private theorem solveStep_eqs_neg {dW : Module.End R W} {Φ : W →ₗ[R] A} {Ψ : W →ₗ[R] B}
+    (hΦ : AA.differential ∘ₗ Φ - Φ ∘ₗ dW = 0)
+    (hΨ : BB.differential ∘ₗ Ψ + Ψ ∘ₗ dW = e.hom ∘ₗ Φ) :
+    (AA.differential ∘ₗ solveStepG e (-Φ) (-Ψ) + solveStepG e (-Φ) (-Ψ) ∘ₗ dW = Φ) ∧
+      (e.hom ∘ₗ solveStepG e (-Φ) (-Ψ) +
+        (BB.differential ∘ₗ (-solveStepH e (-Φ) (-Ψ)) -
+          (-solveStepH e (-Φ) (-Ψ)) ∘ₗ dW) = Ψ) := by
+  have h := solveStep_eqs e (dW := -dW) (Φ := -Φ) (Ψ := -Ψ)
+    (by simp only [LinearMap.comp_neg, LinearMap.neg_comp, neg_neg, neg_add_eq_sub]
+        rw [← neg_sub, hΦ, neg_zero])
+    (by simp only [LinearMap.comp_neg, LinearMap.neg_comp, neg_neg, ← neg_add', hΨ])
+  exact ⟨by simpa only [LinearMap.comp_neg, sub_neg_eq_add, neg_neg] using h.1,
+    by have h2 := h.2
+       simp only [LinearMap.comp_neg, LinearMap.neg_comp, neg_neg] at h2 ⊢
+       exact Eq.trans (by abel) h2⟩
+end Solver
 
 /-! #### Stage 1: lifting the right homotopy inverse -/
 
-/-- Data at stage `k` of the right-inverse induction: suspended Taylor components `gTaylor` (degree
-`0`) and `hTaylor` (degree `-1`) whose bar expansions satisfy the morphism and right-homotopy
-equations on `filtration R B k`. -/
-private structure RightStage (f : AInfinityHom AA BB) (k : ℕ) where
+section Right
+variable (f : AInfinityHom AA BB)
+
+private noncomputable abbrev rightBarHomotopy (gT : ReducedTensorWords R B →ₗ[R] A)
+    (hT : ReducedTensorWords R B →ₗ[R] B) : Module.End R (ReducedTensorWords R B) :=
+  gradedCoderivAlong (BB.grading.shift 1) 1 (f.barMap ∘ₗ coalgHom R gT) LinearMap.id hT
+private noncomputable abbrev rightDefectE (gT : ReducedTensorWords R B →ₗ[R] A) :
+    ReducedTensorWords R B →ₗ[R] ReducedTensorWords R A :=
+  AA.barDifferential ∘ₗ coalgHom R gT - coalgHom R gT ∘ₗ BB.barDifferential
+private noncomputable abbrev rightDefectD (gT : ReducedTensorWords R B →ₗ[R] A)
+    (hT : ReducedTensorWords R B →ₗ[R] B) : Module.End R (ReducedTensorWords R B) :=
+  (f.barMap ∘ₗ coalgHom R gT - LinearMap.id) -
+    (BB.barDifferential ∘ₗ rightBarHomotopy f gT hT +
+      rightBarHomotopy f gT hT ∘ₗ BB.barDifferential)
+private structure RightStage (k : ℕ) where
   gTaylor : ReducedTensorWords R B →ₗ[R] A
   hTaylor : ReducedTensorWords R B →ₗ[R] B
   hg : LinearMap.IsHomogeneous gTaylor (gradedPiece (BB.grading.shift 1))
     (AA.grading.shift 1).piece 0
   hh : LinearMap.IsHomogeneous hTaylor (gradedPiece (BB.grading.shift 1))
     (BB.grading.shift 1).piece (-1)
-  hE : ∀ z ∈ filtration R B k,
-    (AA.barDifferential ∘ₗ coalgHom R gTaylor - coalgHom R gTaylor ∘ₗ BB.barDifferential) z = 0
-  hD : ∀ z ∈ filtration R B k,
-    ((f.barMap ∘ₗ coalgHom R gTaylor - (LinearMap.id : Module.End R (ReducedTensorWords R B))) -
-      (BB.barDifferential ∘ₗ gradedCoderivAlong (BB.grading.shift 1) 1
-          (f.barMap ∘ₗ coalgHom R gTaylor) LinearMap.id hTaylor +
-        gradedCoderivAlong (BB.grading.shift 1) 1
-          (f.barMap ∘ₗ coalgHom R gTaylor) LinearMap.id hTaylor ∘ₗ BB.barDifferential)) z = 0
+  hE : ∀ z ∈ filtration R B k, rightDefectE (AA := AA) (BB := BB) gTaylor z = 0
+  hD : ∀ z ∈ filtration R B k, rightDefectD f gTaylor hTaylor z = 0
 
-private noncomputable abbrev RightStage.barMap {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) : ReducedTensorWords R B →ₗ[R] ReducedTensorWords R A :=
-  coalgHom R S.gTaylor
-
-private noncomputable abbrev RightStage.barHomotopy {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) : Module.End R (ReducedTensorWords R B) :=
-  gradedCoderivAlong (BB.grading.shift 1) 1 (f.barMap ∘ₗ S.barMap) LinearMap.id S.hTaylor
-
-private noncomputable abbrev RightStage.defectE {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) : ReducedTensorWords R B →ₗ[R] ReducedTensorWords R A :=
-  AA.barDifferential ∘ₗ S.barMap - S.barMap ∘ₗ BB.barDifferential
-
-private noncomputable abbrev RightStage.defectD {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) : Module.End R (ReducedTensorWords R B) :=
-  (f.barMap ∘ₗ S.barMap - LinearMap.id) -
-    (BB.barDifferential ∘ₗ S.barHomotopy + S.barHomotopy ∘ₗ BB.barDifferential)
-
-private noncomputable abbrev RightStage.obstructionΦ {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) : ReducedTensorWords R B →ₗ[R] A :=
-  letter R A ∘ₗ S.defectE ∘ₗ lengthProj R B ⟨k + 1, k.succ_pos⟩
-
-private noncomputable abbrev RightStage.obstructionΨ {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) : ReducedTensorWords R B →ₗ[R] B :=
-  letter R B ∘ₗ S.defectD ∘ₗ lengthProj R B ⟨k + 1, k.succ_pos⟩
-
-/-- Trivial stage `k = 0` sharing the arity-one Taylor maps of `rightStageOne`. -/
-private noncomputable def rightStageZero (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) : RightStage f 0 where
-  gTaylor := e.inv ∘ₗ letter R B
-  hTaylor := e.homotopyHomInv ∘ₗ letter R B
-  hg := by
-    simpa only [zero_add] using
-      (isHomogeneous_shift_one hG.inv).comp (isHomogeneous_letter (BB.grading.shift 1))
-  hh := by
-    simpa only [zero_add] using
-      (isHomogeneous_shift_one hG.homotopyHomInv).comp (isHomogeneous_letter (BB.grading.shift 1))
-  hE z hz := by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]
-  hD z hz := by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]
-
-/-- Base stage `k = 1` of the right-inverse induction, built from `e.inv` and `e.homotopyHomInv`. -/
-private noncomputable def rightStageOne (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) : RightStage f 1 where
-  gTaylor := e.inv ∘ₗ letter R B
-  hTaylor := e.homotopyHomInv ∘ₗ letter R B
-  hg := (rightStageZero f e hG).hg
-  hh := (rightStageZero f e hG).hh
-  hE := by
-    refine apply_eq_zero_of_mem_filtration_one R B (LinearMap.ext fun b ↦ ?_)
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, coalgHom_ofLetter, letter_ofLetter,
-      AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
-      e.dM_inv_apply, sub_self, LinearMap.zero_apply]
-  hD := by
-    refine apply_eq_zero_of_mem_filtration_one R B (LinearMap.ext fun b ↦ ?_)
-    have hB := LinearMap.congr_fun e.dN_comp_homotopyHomInv_add_homotopyHomInv_comp_dN b
-    simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-      LinearMap.id_apply, he] at hB
-    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.id_apply,
-      coalgHom_ofLetter, gradedCoderivAlong_ofLetter, letter_ofLetter, f.barMap_ofLetter,
-      AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
-      ← map_add, ← map_sub, hB, sub_self, LinearMap.zero_apply]
-
-/-- On `filtration R B (k + 1)`, both defects of a `RightStage f k` are single letters. -/
-private theorem rightStage_defects_eq_ofLetter {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) {z : ReducedTensorWords R B} (hz : z ∈ filtration R B (k + 1)) :
-    S.defectE z = ofLetter R A (letter R A (S.defectE z)) ∧
-      S.defectD z = ofLetter R B (letter R B (S.defectD z)) := by
-  have hGc : IsCoalgHom R S.barMap := isCoalgHom_coalgHom S.gTaylor
-  have hGh : LinearMap.IsHomogeneous S.barMap (gradedPiece (BB.grading.shift 1))
-      (gradedPiece (AA.grading.shift 1)) 0 := isHomogeneous_coalgHom S.hg
-  have hEc : IsGradedCoderivationAlong (BB.grading.shift 1) 1 S.barMap S.barMap S.defectE :=
-    (AA.isGradedCoderivation_barDifferential.comp_isCoalgHom hGc hGh).sub
-      (hGc.comp_isGradedCoderivation BB.isGradedCoderivation_barDifferential)
-  refine ⟨hEc.apply_eq_ofLetter_letter_of_mem_filtration S.hE hz, ?_⟩
-  have hFGh : LinearMap.IsHomogeneous (f.barMap ∘ₗ S.barMap) (gradedPiece (BB.grading.shift 1))
-      (gradedPiece (BB.grading.shift 1)) 0 := by
-    simpa only [add_zero] using f.isHomogeneous_barMap.comp hGh
-  have hKc : IsGradedCoderivationAlong (BB.grading.shift 1) 1 (f.barMap ∘ₗ S.barMap) LinearMap.id
-      S.barHomotopy :=
-    isGradedCoderivationAlong_gradedCoderivAlong _ 1 (f.isCoalgHom_barMap.comp hGc)
-      (isCoalgHom_id B) S.hTaylor
-  have hKh : LinearMap.IsHomogeneous S.barHomotopy (gradedPiece (BB.grading.shift 1))
-      (gradedPiece (BB.grading.shift 1)) (-1) :=
-    isHomogeneous_gradedCoderivAlong (q := 1) hFGh (LinearMap.isHomogeneous_id _) S.hh
-  have hFG_int : ∀ w ∈ filtration R B k,
-      BB.barDifferential ((f.barMap ∘ₗ S.barMap) w) =
-        (f.barMap ∘ₗ S.barMap) (BB.barDifferential w) := fun w hw ↦ by
-    simp only [LinearMap.comp_apply, f.barDifferential_barMap]
-    exact congrArg f.barMap (sub_eq_zero.1 (S.hE w hw))
+variable {f}
+private noncomputable abbrev RightStage.obstructionΦ {k : ℕ} (S : RightStage f k) :
+    ReducedTensorWords R B →ₗ[R] A :=
+  letter R A ∘ₗ rightDefectE (AA := AA) (BB := BB) S.gTaylor ∘ₗ lengthProj R B ⟨k + 1, k.succ_pos⟩
+private noncomputable abbrev RightStage.obstructionΨ {k : ℕ} (S : RightStage f k) :
+    ReducedTensorWords R B →ₗ[R] B :=
+  letter R B ∘ₗ rightDefectD f S.gTaylor S.hTaylor ∘ₗ lengthProj R B ⟨k + 1, k.succ_pos⟩
+private theorem rightStage_defects_eq_ofLetter {k : ℕ} (S : RightStage f k)
+    {z : ReducedTensorWords R B} (hz : z ∈ filtration R B (k + 1)) :
+    rightDefectE (AA := AA) (BB := BB) S.gTaylor z =
+        ofLetter R A (letter R A (rightDefectE (AA := AA) (BB := BB) S.gTaylor z)) ∧
+      rightDefectD f S.gTaylor S.hTaylor z =
+        ofLetter R B (letter R B (rightDefectD f S.gTaylor S.hTaylor z)) := by
+  have hGc := isCoalgHom_coalgHom (R := R) S.gTaylor
+  have hGh := isHomogeneous_coalgHom S.hg
+  refine ⟨((AA.isGradedCoderivation_barDifferential.comp_isCoalgHom hGc hGh).sub
+    (hGc.comp_isGradedCoderivation BB.isGradedCoderivation_barDifferential))
+      |>.apply_eq_ofLetter_letter_of_mem_filtration S.hE hz, ?_⟩
+  have hFGh := add_zero (0 : ℤ) ▸ f.isHomogeneous_barMap.comp hGh
   have hΔ₁ := ((f.isCoalgHom_barMap.comp hGc).isGradedCoderivationAlong_sub
     (G := BB.grading.shift 1) (isCoalgHom_id B)).deconcatenation_apply z
-  have hΔ₂ := hKc.deconcatenation_comp_add_comp_of_mem_filtration hKh (by decide)
-    BB.isGradedCoderivation_barDifferential BB.isHomogeneous_barDifferential (by decide)
-    BB.isGradedCoderivation_barDifferential hFGh hFG_int (fun _ _ ↦ rfl) hz
+  have hΔ₂ := (isGradedCoderivationAlong_gradedCoderivAlong (BB.grading.shift 1) 1
+    (f.isCoalgHom_barMap.comp hGc) (isCoalgHom_id B)
+    S.hTaylor).deconcatenation_comp_add_comp_of_mem_filtration
+    (isHomogeneous_gradedCoderivAlong (q := 1) hFGh (LinearMap.isHomogeneous_id _) S.hh)
+    (by decide) BB.isGradedCoderivation_barDifferential BB.isHomogeneous_barDifferential (by decide)
+    BB.isGradedCoderivation_barDifferential hFGh (fun w hw ↦ by
+      simp only [LinearMap.comp_apply, f.barDifferential_barMap]
+      exact congrArg f.barMap (sub_eq_zero.1 (S.hE w hw))) (fun _ _ ↦ rfl) hz
   refine eq_ofLetter_letter_of_deconcatenation_eq_of_mem_filtration (BB.grading.shift 1) 0
-    (F := f.barMap ∘ₗ S.barMap) (F' := LinearMap.id) (D := S.defectD) S.hD hz ?_
+    (F := f.barMap ∘ₗ coalgHom R S.gTaylor) (F' := LinearMap.id) S.hD hz ?_
   simp only [InternalGrading.koszulTwist_zero, ReducedTensorWords.map_id, LinearMap.rTensor_id,
     LinearMap.id_apply] at hΔ₁ ⊢
   rw [LinearMap.sub_apply, map_sub, hΔ₁, hΔ₂, sub_eq_iff_eq_add, add_add_add_comm]
-  have hcancel : S.defectD +
-      (BB.barDifferential ∘ₗ S.barHomotopy + S.barHomotopy ∘ₗ BB.barDifferential) =
-      f.barMap ∘ₗ S.barMap - LinearMap.id := LinearMap.ext fun _ ↦ sub_add_cancel _ _
   simp only [← LinearMap.add_apply, ← TensorProduct.map_add_left, ← TensorProduct.map_add_right,
-    hcancel]
-
-/-- The length-`(k + 1)` obstruction components `Φ` and `Ψ` of a `RightStage f k` satisfy the
-coupled linear differential equations over `BB.unaryBarDifferential`. -/
-private theorem rightStage_obstruction_eqs {f : AInfinityHom AA BB} {k : ℕ} (S : RightStage f k) :
+    show rightDefectD f S.gTaylor S.hTaylor +
+        (BB.barDifferential ∘ₗ rightBarHomotopy f S.gTaylor S.hTaylor +
+          rightBarHomotopy f S.gTaylor S.hTaylor ∘ₗ BB.barDifferential) =
+        f.barMap ∘ₗ coalgHom R S.gTaylor - LinearMap.id from
+      LinearMap.ext fun _ ↦ sub_add_cancel _ _]
+private theorem rightStage_obstruction_eqs {k : ℕ} (S : RightStage f k) :
     (AA.differential ∘ₗ S.obstructionΦ + S.obstructionΦ ∘ₗ BB.unaryBarDifferential = 0) ∧
       (BB.differential ∘ₗ S.obstructionΨ - S.obstructionΨ ∘ₗ BB.unaryBarDifferential =
         f.linearPart ∘ₗ S.obstructionΦ) := by
-  set p := lengthProj R B ⟨k + 1, k.succ_pos⟩
-  have hAE (u : ReducedTensorWords R B) :
-      AA.barDifferential (S.defectE u) + S.defectE (BB.barDifferential u) = 0 := by
-    simp only [RightStage.defectE, LinearMap.sub_apply, LinearMap.comp_apply, map_sub,
-      barDifferential_barDifferential_apply, map_zero]
-    abel
-  have hBD (u : ReducedTensorWords R B) :
-      BB.barDifferential (S.defectD u) - S.defectD (BB.barDifferential u) =
-        f.barMap (S.defectE u) := by
-    simp only [RightStage.defectD, RightStage.defectE, LinearMap.sub_apply, LinearMap.add_apply,
-      LinearMap.comp_apply, LinearMap.id_apply, map_sub, map_add, f.barDifferential_barMap,
-      barDifferential_barDifferential_apply, map_zero]
-    abel
-  refine ⟨LinearMap.ext fun w ↦ ?_, LinearMap.ext fun w ↦ ?_⟩
-  · have hEp := (rightStage_defects_eq_ofLetter S
-      (lengthProj_mem_filtration R B ⟨k + 1, k.succ_pos⟩ w)).1
-    have hcomm := apply_barDifferential_lengthProj_eq BB
-      (D := letter R A ∘ₗ S.defectE)
-      (fun u hu ↦ by rw [LinearMap.comp_apply, S.hE u hu, map_zero]) w
-    have hzero := hAE (p w)
-    rw [hEp, AInfinityAlgebra.barDifferential_ofLetter] at hzero
-    have hzero' := congrArg (letter R A) hzero
-    rw [map_add, map_zero, letter_ofLetter, ← AInfinityAlgebra.differential_apply] at hzero'
-    rw [LinearMap.comp_apply, LinearMap.comp_apply] at hcomm
-    rw [hcomm] at hzero'
-    simpa only [RightStage.obstructionΦ, LinearMap.add_apply, LinearMap.comp_apply,
-      LinearMap.zero_apply] using hzero'
-  · have hdef := rightStage_defects_eq_ofLetter S
-      (lengthProj_mem_filtration R B ⟨k + 1, k.succ_pos⟩ w)
-    have hcomm := apply_barDifferential_lengthProj_eq BB
-      (D := letter R B ∘ₗ S.defectD)
-      (fun u hu ↦ by rw [LinearMap.comp_apply, S.hD u hu, map_zero]) w
-    have hrel := hBD (p w)
-    rw [hdef.2, hdef.1, AInfinityAlgebra.barDifferential_ofLetter, f.barMap_ofLetter] at hrel
-    have hrel' := congrArg (letter R B) hrel
-    rw [map_sub, letter_ofLetter, letter_ofLetter, ← AInfinityAlgebra.differential_apply] at hrel'
-    rw [LinearMap.comp_apply, LinearMap.comp_apply] at hcomm
-    rw [hcomm] at hrel'
-    simpa only [RightStage.obstructionΦ, RightStage.obstructionΨ, LinearMap.sub_apply,
-      LinearMap.comp_apply] using hrel'
-
-private theorem rightStage_isHomogeneous_obstructions {f : AInfinityHom AA BB} {k : ℕ}
-    (S : RightStage f k) :
+  have hE₁ : ∀ z ∈ filtration R B (k + 1), _ := fun z hz ↦ (rightStage_defects_eq_ofLetter S hz).1
+  have hD₁ : ∀ z ∈ filtration R B (k + 1), _ := fun z hz ↦ (rightStage_defects_eq_ofLetter S hz).2
+  refine ⟨by simpa only [one_zsmul] using
+      obstruction_eq_of_barDifferential S.hE hE₁ (1 : ℤ) (rhs := 0) (fun w ↦ by
+        simp only [rightDefectE, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.zero_apply,
+          map_sub, barDifferential_sq_apply, map_zero]; abel),
+    by simpa only [neg_one_zsmul, ← sub_eq_add_neg] using
+      obstruction_eq_of_barDifferential S.hD hD₁ (-1 : ℤ) (rhs := f.linearPart ∘ₗ S.obstructionΦ)
+        (fun w ↦ by
+          rw [LinearMap.comp_apply, ← f.barMap_ofLetter, RightStage.obstructionΦ,
+            LinearMap.comp_apply, LinearMap.comp_apply,
+            ← hE₁ _ (lengthProj_mem_filtration R B ⟨k + 1, k.succ_pos⟩ w)]
+          simp only [rightDefectD, rightDefectE, LinearMap.sub_apply, LinearMap.add_apply,
+            LinearMap.comp_apply, LinearMap.id_apply, map_sub, map_add, f.barDifferential_barMap,
+            barDifferential_sq_apply, map_zero]; abel)⟩
+private theorem rightStage_isHomogeneous_obstructions {k : ℕ} (S : RightStage f k) :
     LinearMap.IsHomogeneous S.obstructionΦ (gradedPiece (BB.grading.shift 1))
         (AA.grading.shift 1).piece (0 + 1) ∧
       LinearMap.IsHomogeneous S.obstructionΨ (gradedPiece (BB.grading.shift 1))
-        (BB.grading.shift 1).piece 0 := by
-  have hGh : LinearMap.IsHomogeneous S.barMap (gradedPiece (BB.grading.shift 1))
-      (gradedPiece (AA.grading.shift 1)) 0 := isHomogeneous_coalgHom S.hg
-  have hFGh : LinearMap.IsHomogeneous (f.barMap ∘ₗ S.barMap) (gradedPiece (BB.grading.shift 1))
-      (gradedPiece (BB.grading.shift 1)) 0 := by
-    simpa only [add_zero] using f.isHomogeneous_barMap.comp hGh
-  refine ⟨?_, ?_⟩
-  · have hEh : LinearMap.IsHomogeneous S.defectE (gradedPiece (BB.grading.shift 1))
-        (gradedPiece (AA.grading.shift 1)) 1 := by
-      refine LinearMap.IsHomogeneous.sub ?_ ?_
-      · simpa only [zero_add] using AA.isHomogeneous_barDifferential.comp hGh
-      · simpa only [add_zero] using hGh.comp BB.isHomogeneous_barDifferential
-    simpa only [zero_add, add_zero] using
-      (isHomogeneous_letter _).comp (hEh.comp (isHomogeneous_lengthProj _ _))
-  · have hKh := isHomogeneous_gradedCoderivAlong (q := 1) hFGh (LinearMap.isHomogeneous_id _) S.hh
-    have hDh : LinearMap.IsHomogeneous S.defectD (gradedPiece (BB.grading.shift 1))
-        (gradedPiece (BB.grading.shift 1)) 0 := by
-      refine (hFGh.sub (LinearMap.isHomogeneous_id _)).sub ?_
-      refine LinearMap.IsHomogeneous.add ?_ ?_
-      · simpa only [neg_add_cancel] using BB.isHomogeneous_barDifferential.comp hKh
-      · simpa only [add_neg_cancel] using hKh.comp BB.isHomogeneous_barDifferential
-    simpa only [add_zero] using
-      (isHomogeneous_letter _).comp (hDh.comp (isHomogeneous_lengthProj _ _))
-
-private theorem rightStageSucc_hE {f : AInfinityHom AA BB} {k : ℕ} (S : RightStage f k)
-    {δg : ReducedTensorWords R B →ₗ[R] A} (hδg₀ : ∀ u ∈ filtration R B k, δg u = 0)
-    (hsol₁ : AA.differential ∘ₗ δg - δg ∘ₗ BB.unaryBarDifferential = -S.obstructionΦ)
-    {z : ReducedTensorWords R B} (hz : z ∈ filtration R B (k + 1)) :
-    (AA.barDifferential ∘ₗ coalgHom R (S.gTaylor + δg) -
-      coalgHom R (S.gTaylor + δg) ∘ₗ BB.barDifferential) z = 0 := by
-  have hG_step := coalgHom_add_apply_of_mem_filtration (BB.grading.shift 1) (g := S.gTaylor) hδg₀
-  have hhigh : BB.higherBarDifferential z ∈ filtration R B k :=
-    BB.higherBarDifferential_filtration k ⟨z, hz, rfl⟩
-  have hunary : BB.unaryBarDifferential z ∈ filtration R B (k + 1) :=
-    BB.unaryBarDifferential_filtration (k + 1) ⟨z, hz, rfl⟩
-  have hEz : AA.barDifferential (S.barMap z) - S.barMap (BB.barDifferential z) =
-      ofLetter R A (S.obstructionΦ z) :=
-    (rightStage_defects_eq_ofLetter S hz).1.trans (congrArg (ofLetter R A)
-      (apply_lengthProj_of_mem_filtration R B (f := letter R A ∘ₗ S.defectE)
-        (fun u hu ↦ by rw [LinearMap.comp_apply, S.hE u hu, map_zero]) hz).symm)
-  have hGz : coalgHom R (S.gTaylor + δg) (BB.barDifferential z) =
-      S.barMap (BB.barDifferential z) + ofLetter R A (δg (BB.unaryBarDifferential z)) := by
-    rw [BB.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, map_add,
-      hG_step.2 _ hunary, hG_step.1 _ hhigh]
-    abel
-  have hsol₁z : AA.differential (δg z) - δg (BB.unaryBarDifferential z) = -S.obstructionΦ z := by
-    simpa only [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.neg_apply] using
-      LinearMap.congr_fun hsol₁ z
-  rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply, hG_step.2 z hz, hGz,
-    map_add, AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
-    eq_add_of_sub_eq hEz, eq_add_of_sub_eq hsol₁z, map_add, map_neg]
-  abel
-
-private theorem rightStageSucc_hD {f : AInfinityHom AA BB} {k : ℕ} (S : RightStage f k)
+        (BB.grading.shift 1).piece 0 :=
+  have hGh := isHomogeneous_coalgHom S.hg
+  have hFGh := add_zero (0 : ℤ) ▸ f.isHomogeneous_barMap.comp hGh
+  have hKh := isHomogeneous_gradedCoderivAlong (q := 1) hFGh (LinearMap.isHomogeneous_id _) S.hh
+  ⟨isHomogeneous_obstruction (isHomogeneous_barDiff_comm hGh).2 _,
+    isHomogeneous_obstruction ((hFGh.sub (LinearMap.isHomogeneous_id _)).sub
+      (neg_add_cancel (1 : ℤ) ▸ (isHomogeneous_barDiff_comm hKh).1)) _⟩
+private theorem rightStageSucc_defects {k : ℕ} (S : RightStage f k)
     {δg : ReducedTensorWords R B →ₗ[R] A} {δh : ReducedTensorWords R B →ₗ[R] B}
     (hδg₀ : ∀ u ∈ filtration R B k, δg u = 0) (hδh₀ : ∀ u ∈ filtration R B k, δh u = 0)
+    (hsol₁ : AA.differential ∘ₗ δg - δg ∘ₗ BB.unaryBarDifferential = -S.obstructionΦ)
     (hsol₂ : f.linearPart ∘ₗ δg -
       (BB.differential ∘ₗ δh + δh ∘ₗ BB.unaryBarDifferential) = -S.obstructionΨ)
     {z : ReducedTensorWords R B} (hz : z ∈ filtration R B (k + 1)) :
-    ((f.barMap ∘ₗ coalgHom R (S.gTaylor + δg) -
-        (LinearMap.id : Module.End R (ReducedTensorWords R B))) -
-      (BB.barDifferential ∘ₗ gradedCoderivAlong (BB.grading.shift 1) 1
-          (f.barMap ∘ₗ coalgHom R (S.gTaylor + δg)) LinearMap.id (S.hTaylor + δh) +
-        gradedCoderivAlong (BB.grading.shift 1) 1
-          (f.barMap ∘ₗ coalgHom R (S.gTaylor + δg)) LinearMap.id (S.hTaylor + δh) ∘ₗ
-          BB.barDifferential)) z = 0 := by
+    rightDefectE (AA := AA) (BB := BB) (S.gTaylor + δg) z = 0 ∧
+      rightDefectD f (S.gTaylor + δg) (S.hTaylor + δh) z = 0 := by
   have hG_step := coalgHom_add_apply_of_mem_filtration (BB.grading.shift 1) (g := S.gTaylor) hδg₀
-  have hK_step := gradedCoderivAlong_add_apply_of_mem_filtration (BB.grading.shift 1) 1
-    (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom (S.gTaylor + δg)))
-    (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom S.gTaylor)) (isCoalgHom_id B)
-    (h := S.hTaylor) (fun u hu ↦ congrArg f.barMap (hG_step.1 u hu)) hδh₀
-  have hhigh : BB.higherBarDifferential z ∈ filtration R B k :=
-    BB.higherBarDifferential_filtration k ⟨z, hz, rfl⟩
-  have hunary : BB.unaryBarDifferential z ∈ filtration R B (k + 1) :=
-    BB.unaryBarDifferential_filtration (k + 1) ⟨z, hz, rfl⟩
-  have hDz : (f.barMap (S.barMap z) - z) -
-      (BB.barDifferential (S.barHomotopy z) + S.barHomotopy (BB.barDifferential z)) =
-      ofLetter R B (S.obstructionΨ z) :=
-    (rightStage_defects_eq_ofLetter S hz).2.trans (congrArg (ofLetter R B)
-      (apply_lengthProj_of_mem_filtration R B (f := letter R B ∘ₗ S.defectD)
-        (fun u hu ↦ by rw [LinearMap.comp_apply, S.hD u hu, map_zero]) hz).symm)
-  have hKz : gradedCoderivAlong (BB.grading.shift 1) 1
-      (f.barMap ∘ₗ coalgHom R (S.gTaylor + δg)) LinearMap.id (S.hTaylor + δh)
-      (BB.barDifferential z) =
-      S.barHomotopy (BB.barDifferential z) + ofLetter R B (δh (BB.unaryBarDifferential z)) := by
-    rw [BB.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, map_add,
-      hK_step.2 _ hunary, hK_step.1 _ hhigh]
-    abel
-  have hsol₂z : f.linearPart (δg z) -
-      (BB.differential (δh z) + δh (BB.unaryBarDifferential z)) = -S.obstructionΨ z := by
-    simpa only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
-      LinearMap.neg_apply] using LinearMap.congr_fun hsol₂ z
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
-  rw [hG_step.2 z hz, hK_step.2 z hz, hKz, map_add, map_add, f.barMap_ofLetter,
-    AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
-    eq_add_of_sub_eq (eq_add_of_sub_eq hDz), eq_add_of_sub_eq hsol₂z, map_add, map_add, map_neg]
-  abel
+  refine ⟨?_, ?_⟩
+  · have hEz := defect_eq_ofLetter_obstruction S.hE
+      (fun w hw ↦ (rightStage_defects_eq_ofLetter S hw).1) hz
+    have hsol₁z := LinearMap.congr_fun hsol₁ z
+    simp only [LinearMap.sub_apply, LinearMap.neg_apply] at hsol₁z
+    generalize S.obstructionΦ z = φ at hEz hsol₁z
+    simp only [rightDefectE, LinearMap.sub_apply, LinearMap.comp_apply] at hEz hsol₁z ⊢
+    rw [hG_step.2 z hz, barDifferential_perturb_apply BB hG_step.1 hG_step.2 hz, map_add,
+      AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
+      eq_add_of_sub_eq hEz, eq_add_of_sub_eq hsol₁z, map_add, map_neg]; abel
+  · have hK_step := gradedCoderivAlong_add_apply_of_mem_filtration (BB.grading.shift 1) 1
+      (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom (S.gTaylor + δg)))
+      (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom S.gTaylor)) (isCoalgHom_id B)
+      (h := S.hTaylor) (fun u hu ↦ congrArg f.barMap (hG_step.1 u hu)) hδh₀
+    have hDz := defect_eq_ofLetter_obstruction S.hD
+      (fun w hw ↦ (rightStage_defects_eq_ofLetter S hw).2) hz
+    have hsol₂z := LinearMap.congr_fun hsol₂ z
+    simp only [LinearMap.sub_apply, LinearMap.neg_apply] at hsol₂z
+    generalize S.obstructionΨ z = ψ at hDz hsol₂z
+    simp only [rightDefectD, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+      LinearMap.id_apply] at hDz hsol₂z ⊢
+    rw [hG_step.2 z hz, hK_step.2 z hz, barDifferential_perturb_apply BB hK_step.1 hK_step.2 hz,
+      map_add, map_add, f.barMap_ofLetter, AInfinityAlgebra.barDifferential_ofLetter,
+      ← AInfinityAlgebra.differential_apply, eq_add_of_sub_eq (eq_add_of_sub_eq hDz),
+      eq_add_of_sub_eq hsol₂z, map_add, map_add, map_neg]; abel
 
-/-- Inductive step of the right-inverse construction: lift a `RightStage f k` to
-`RightStage f (k + 1)` without changing the Taylor components on `filtration R B k`. -/
-private noncomputable def rightStageSucc (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) {k : ℕ}
-    (S : RightStage f k) :
+section BuildRight
+variable (f) (e : LinearHomotopyEquiv AA.differential BB.differential)
+  (he : e.hom = f.linearPart) (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1))
+
+private noncomputable def rightStageOne : RightStage f 1 where
+  gTaylor := e.inv ∘ₗ letter R B
+  hTaylor := e.homotopyHomInv ∘ₗ letter R B
+  hg := add_zero (0 : ℤ) ▸ (LinearMap.isHomogeneous_shift_piece_iff.2 hG.inv).comp
+    (isHomogeneous_letter (BB.grading.shift 1))
+  hh := zero_add (-1 : ℤ) ▸ (LinearMap.isHomogeneous_shift_piece_iff.2 hG.homotopyHomInv).comp
+    (isHomogeneous_letter (BB.grading.shift 1))
+  hE := apply_eq_zero_of_mem_filtration_one R B <| LinearMap.ext fun b ↦ by
+    simp only [rightDefectE, LinearMap.comp_apply, LinearMap.sub_apply, coalgHom_ofLetter,
+      letter_ofLetter, AInfinityAlgebra.barDifferential_ofLetter,
+      ← AInfinityAlgebra.differential_apply, e.dM_inv_apply, sub_self, LinearMap.zero_apply]
+  hD := apply_eq_zero_of_mem_filtration_one R B <| LinearMap.ext fun b ↦ by
+    have hB := LinearMap.congr_fun e.dN_comp_homotopyHomInv_add_homotopyHomInv_comp_dN b
+    simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      LinearMap.id_apply, he] at hB
+    simp only [rightDefectD, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.add_apply,
+      LinearMap.id_apply, coalgHom_ofLetter, gradedCoderivAlong_ofLetter, letter_ofLetter,
+      f.barMap_ofLetter, AInfinityAlgebra.barDifferential_ofLetter,
+      ← AInfinityAlgebra.differential_apply, ← map_add, ← map_sub, hB, sub_self,
+      LinearMap.zero_apply]
+private noncomputable def rightStageSucc {k : ℕ} (S : RightStage f k) :
     {S' : RightStage f (k + 1) //
       (∀ z ∈ filtration R B k, S'.gTaylor z = S.gTaylor z) ∧
         (∀ z ∈ filtration R B k, S'.hTaylor z = S.hTaylor z)} := by
@@ -687,635 +487,339 @@ private noncomputable def rightStageSucc (f : AInfinityHom AA BB)
   set δh := solveStepH e S.obstructionΦ S.obstructionΨ
   have hp₀ : ∀ u ∈ filtration R B k, lengthProj R B ⟨k + 1, k.succ_pos⟩ u = 0 := fun u hu ↦
     lengthProj_apply_eq_zero_of_mem_filtration R B (Nat.lt_succ_self k) hu
-  have hδg₀ : ∀ u ∈ filtration R B k, δg u = 0 := fun u hu ↦
-    solveStepG_apply_eq_zero e
+  have hδ₀ : ∀ u ∈ filtration R B k, δg u = 0 ∧ δh u = 0 := fun u hu ↦
+    solveStep_apply_eq_zero e
       (by simp only [RightStage.obstructionΦ, LinearMap.comp_apply, hp₀ u hu, map_zero])
       (by simp only [RightStage.obstructionΨ, LinearMap.comp_apply, hp₀ u hu, map_zero])
-  have hδh₀ : ∀ u ∈ filtration R B k, δh u = 0 := fun u hu ↦
-    solveStepH_apply_eq_zero e
-      (by simp only [RightStage.obstructionΦ, LinearMap.comp_apply, hp₀ u hu, map_zero])
-      (by simp only [RightStage.obstructionΨ, LinearMap.comp_apply, hp₀ u hu, map_zero])
-  have hdeg := rightStage_isHomogeneous_obstructions S
+  have hdeg := isHomogeneous_solveStep hG
+    (rightStage_isHomogeneous_obstructions S).1 (rightStage_isHomogeneous_obstructions S).2
   have hob := rightStage_obstruction_eqs S
-  have hsol := solveStep_eqs e hob.1 (by rw [he]; exact hob.2)
-  refine ⟨⟨S.gTaylor + δg, S.hTaylor + δh,
-    S.hg.add (isHomogeneous_solveStepG hG hdeg.1 hdeg.2),
-    S.hh.add (by simpa only [zero_add] using isHomogeneous_solveStepH hG hdeg.1 hdeg.2),
-    fun z hz ↦ rightStageSucc_hE S hδg₀ hsol.1 hz,
-    fun z hz ↦ rightStageSucc_hD S hδg₀ hδh₀ (by rw [← he]; exact hsol.2) hz⟩,
-    fun z hz ↦ by rw [LinearMap.add_apply, hδg₀ z hz, add_zero],
-    fun z hz ↦ by rw [LinearMap.add_apply, hδh₀ z hz, add_zero]⟩
-
-/-- Full `ℕ`-indexed sequence of right stages starting at `rightStageZero` and `rightStageOne`. -/
-private noncomputable def rightStageNat (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    ∀ n : ℕ, RightStage f n
-  | 0 => rightStageZero f e hG
+  have hsol := solveStep_eqs e hob.1 (he.symm ▸ hob.2)
+  have hdef := fun {z} (hz : z ∈ filtration R B (k + 1)) ↦ rightStageSucc_defects S
+    (fun u hu ↦ (hδ₀ u hu).1) (fun u hu ↦ (hδ₀ u hu).2) hsol.1 (he ▸ hsol.2) hz
+  exact ⟨⟨S.gTaylor + δg, S.hTaylor + δh, S.hg.add hdeg.1,
+    S.hh.add (zero_add (-1 : ℤ) ▸ hdeg.2), fun _ hz ↦ (hdef hz).1, fun _ hz ↦ (hdef hz).2⟩,
+    fun z hz ↦ by rw [LinearMap.add_apply, (hδ₀ z hz).1, add_zero],
+    fun z hz ↦ by rw [LinearMap.add_apply, (hδ₀ z hz).2, add_zero]⟩
+private noncomputable def rightStageNat : ∀ n : ℕ, RightStage f n
+  | 0 => let S := rightStageOne f e he hG
+    ⟨S.gTaylor, S.hTaylor, S.hg, S.hh,
+      fun _ hz ↦ by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero],
+      fun _ hz ↦ by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]⟩
   | 1 => rightStageOne f e he hG
-  | m + 2 => (rightStageSucc f e he hG (rightStageNat f e he hG (m + 1))).1
-
-private theorem rightStageNat_stabilises (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) (n : ℕ) :
+  | n + 2 => (rightStageSucc f e he hG (rightStageNat (n + 1))).1
+private theorem rightStageNat_stabilises : ∀ n : ℕ,
     (∀ z ∈ filtration R B n,
         (rightStageNat f e he hG (n + 1)).gTaylor z = (rightStageNat f e he hG n).gTaylor z) ∧
       (∀ z ∈ filtration R B n,
-        (rightStageNat f e he hG (n + 1)).hTaylor z = (rightStageNat f e he hG n).hTaylor z) := by
-  cases n with
-  | zero => exact ⟨fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
-  | succ m =>
-      exact ⟨(rightStageSucc f e he hG (rightStageNat f e he hG (m + 1))).2.1,
-        (rightStageSucc f e he hG (rightStageNat f e he hG (m + 1))).2.2⟩
-
-private noncomputable abbrev liftInvTaylor (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    ReducedTensorWords R B →ₗ[R] A :=
-  stabilisingTaylor fun n ↦ (rightStageNat f e he hG n).gTaylor
-
-/-- The lifted right-inverse `A∞` morphism `g : BB ⟶ AA`. -/
-private noncomputable def liftInv (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) : AInfinityHom BB AA :=
-  AInfinityHom.ofTaylor (liftInvTaylor f e he hG)
+        (rightStageNat f e he hG (n + 1)).hTaylor z = (rightStageNat f e he hG n).hTaylor z)
+  | 0 => ⟨fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
+  | n + 1 => (rightStageSucc f e he hG (rightStageNat f e he hG (n + 1))).2
+private noncomputable def liftInv : AInfinityHom BB AA :=
+  AInfinityHom.ofTaylor (stabilisingTaylor fun n ↦ (rightStageNat f e he hG n).gTaylor)
     (isHomogeneous_stabilisingTaylor (fun n ↦ (rightStageNat_stabilises f e he hG n).1)
-      fun n ↦ (rightStageNat f e he hG n).hg)
-    (LinearMap.ext fun z ↦ by
+      fun n ↦ (rightStageNat f e he hG n).hg) (LinearMap.ext fun z ↦ by
       have hstab := fun n ↦ (rightStageNat_stabilises f e he hG n).1
       obtain ⟨m, hm⟩ := exists_mem_filtration R B z
-      have hz : z ∈ filtration R B (m + 1) := filtration_monotone R B m.le_succ hm
-      have hG_eq : coalgHom R (liftInvTaylor f e he hG) z =
-          coalgHom R (rightStageNat f e he hG (m + 1)).gTaylor z :=
-        (isCoalgHom_coalgHom _).apply_eq_of_mem_filtration (isCoalgHom_coalgHom _)
-          (fun u hu ↦ by
-            rw [letter_coalgHom_apply, letter_coalgHom_apply,
-              stabilisingTaylor_apply_of_mem_filtration hstab hu]) hz
-      have hE := congrArg (letter R A) ((rightStageNat f e he hG (m + 1)).hE z hz)
-      simp only [LinearMap.sub_apply, LinearMap.comp_apply, map_sub, map_zero, sub_eq_zero] at hE
-      rw [letter_barDifferential_apply, letter_coalgHom_apply] at hE
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, hG_eq,
-        stabilisingTaylor_apply_of_mem_filtration hstab (BB.barDifferential_mem_filtration hz),
-        hE])
-
-private theorem linearPart_liftInv (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    (liftInv f e he hG).linearPart = e.inv := by
-  have hstab := fun n ↦ (rightStageNat_stabilises f e he hG n).1
-  refine LinearMap.ext fun b ↦ ?_
-  rw [linearPart_apply, liftInv, AInfinityHom.taylor_ofTaylor,
-    stabilisingTaylor_apply_of_mem_filtration hstab (ofLetter_mem_filtration R B b)]
-  exact congrArg e.inv (letter_ofLetter R B b)
-
-private noncomputable abbrev liftRightHomotopyTaylor (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    ReducedTensorWords R B →ₗ[R] B :=
-  stabilisingTaylor fun n ↦ (rightStageNat f e he hG n).hTaylor
-
-/-- The lifted right homotopy `f ∘ liftInv ⇒ id_B`. -/
-private noncomputable def liftRightHomotopy (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
+      have hE := congrArg (letter R A) ((rightStageNat f e he hG m).hE z hm)
+      simp only [rightDefectE, LinearMap.sub_apply, LinearMap.comp_apply, map_sub, map_zero,
+        sub_eq_zero] at hE
+      rw [← LinearMap.comp_apply (letter R A), AA.letter_comp_barDifferential,
+        ← LinearMap.comp_apply (letter R A), letter_comp_coalgHom] at hE
+      rw [LinearMap.comp_apply, LinearMap.comp_apply,
+        coalgHom_stabilisingTaylor_apply _ hstab hm,
+        stabilisingTaylor_apply_of_mem_filtration hstab (BB.barDifferential_mem_filtration hm)]
+      exact hE)
+private noncomputable def liftRightHomotopy :
     Homotopy (f.comp (liftInv f e he hG)) (AInfinityHom.id BB) :=
-  Homotopy.ofTaylor (liftRightHomotopyTaylor f e he hG)
+  Homotopy.ofTaylor (stabilisingTaylor fun n ↦ (rightStageNat f e he hG n).hTaylor)
     (isHomogeneous_stabilisingTaylor (fun n ↦ (rightStageNat_stabilises f e he hG n).2)
-      fun n ↦ (rightStageNat f e he hG n).hh)
-    (LinearMap.ext fun z ↦ by
-      set g := liftInv f e he hG with hg_def
+      fun n ↦ (rightStageNat f e he hG n).hh) (LinearMap.ext fun z ↦ by
       have hg_stab := fun n ↦ (rightStageNat_stabilises f e he hG n).1
       have hh_stab := fun n ↦ (rightStageNat_stabilises f e he hG n).2
       obtain ⟨m, hm⟩ := exists_mem_filtration R B z
-      have hz : z ∈ filtration R B (m + 1) := filtration_monotone R B m.le_succ hm
-      have hG_eq : ∀ w ∈ filtration R B (m + 1),
-          g.barMap w = coalgHom R (rightStageNat f e he hG (m + 1)).gTaylor w :=
-        fun w hw ↦ g.isCoalgHom_barMap.apply_eq_of_mem_filtration (isCoalgHom_coalgHom _)
-          (fun u hu ↦ by
-            rw [letter_barMap_apply, letter_coalgHom_apply, hg_def, liftInv,
-              AInfinityHom.taylor_ofTaylor, stabilisingTaylor_apply_of_mem_filtration hg_stab hu])
-          hw
-      have hK_eq : gradedCoderivAlong (BB.grading.shift 1) 1 (f.comp g).barMap
-          (AInfinityHom.id BB).barMap (liftRightHomotopyTaylor f e he hG) z =
-          (rightStageNat f e he hG (m + 1)).barHomotopy z :=
-        (isGradedCoderivationAlong_gradedCoderivAlong _ 1 (f.comp g).isCoalgHom_barMap
-          (AInfinityHom.id BB).isCoalgHom_barMap _).apply_eq_of_mem_filtration
-          (isGradedCoderivationAlong_gradedCoderivAlong _ 1
-            (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom _)) (isCoalgHom_id B) _)
-          (fun u hu ↦ by
-            rw [barMap_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-              hG_eq u (filtration_monotone R B (by omega) hu)])
-          (fun u _ ↦ by rw [barMap_id, LinearMap.id_apply])
-          (fun u hu ↦ by
-            rw [letter_gradedCoderivAlong_apply, letter_gradedCoderivAlong_apply,
-              stabilisingTaylor_apply_of_mem_filtration hh_stab hu]) hz
-      have hD := congrArg (letter R B) ((rightStageNat f e he hG (m + 1)).hD z hz)
-      simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
-        LinearMap.id_apply, map_sub, map_add, map_zero, sub_eq_zero] at hD
-      rw [letter_barMap_apply, letter_barDifferential_apply, letter_gradedCoderivAlong_apply] at hD
-      rw [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        taylor_comp, LinearMap.comp_apply, taylor_id, hG_eq z hz, hK_eq,
-        stabilisingTaylor_apply_of_mem_filtration hh_stab (BB.barDifferential_mem_filtration hz)]
-      exact hD)
-
-private theorem linearHomotopy_liftRightHomotopy (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    (liftRightHomotopy f e he hG).linearHomotopy = e.homotopyHomInv := by
-  have hh_stab := fun n ↦ (rightStageNat_stabilises f e he hG n).2
-  refine LinearMap.ext fun b ↦ ?_
-  rw [liftRightHomotopy, Homotopy.linearHomotopy_ofTaylor, LinearMap.comp_apply,
-    stabilisingTaylor_apply_of_mem_filtration hh_stab (ofLetter_mem_filtration R B b)]
-  exact congrArg e.homotopyHomInv (letter_ofLetter R B b)
+      have hG_eq : ∀ w ∈ filtration R B m,
+          (liftInv f e he hG).barMap w = coalgHom R (rightStageNat f e he hG m).gTaylor w :=
+        fun w hw ↦ by
+          rw [liftInv, barMap_ofTaylor]; exact coalgHom_stabilisingTaylor_apply _ hg_stab hw
+      exact taylor_homotopy_of_defect_zero (f.comp (liftInv f e he hG)) _ hh_stab hm
+        ((rightStageNat f e he hG m).hD z hm)
+        (by rw [barMap_comp, LinearMap.comp_apply, LinearMap.comp_apply, hG_eq z hm])
+        (gradedCoderivAlong_stabilisingTaylor_apply (BB.grading.shift 1) 1
+          (f.comp (liftInv f e he hG)).isCoalgHom_barMap
+          (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom _))
+          (AInfinityHom.id BB).isCoalgHom_barMap (isCoalgHom_id B) _ hh_stab
+          (fun u hu ↦ by rw [barMap_comp, LinearMap.comp_apply, LinearMap.comp_apply, hG_eq u hu])
+          (fun _ _ ↦ by rw [barMap_id, LinearMap.id_apply]) hm)
+        (letter_comp_gradedCoderivAlong _ _ _ _ _))
+end BuildRight
+end Right
 
 /-! #### Stage 2: lifting the left homotopy alongside a compatibility 2-homotopy -/
 
-/-- Data at stage `k` of the left-homotopy induction, given `g : BB ⟶ AA` and
-`H_B : f ∘ g ⇒ id_B`: Taylor maps `kATaylor` (degree `-1`) and `tTaylor` (degree `-2`) whose bar
-expansions `K_A` and `T` satisfy the left-homotopy equation and `H_B`-compatibility equation on
-`filtration R A k`. -/
-private structure LeftStage (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
-    (H_B : Homotopy (f.comp g) (AInfinityHom.id BB)) (k : ℕ) where
+section Left
+variable (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
+  (H_B : Homotopy (f.comp g) (AInfinityHom.id BB))
+
+private noncomputable abbrev leftBarHomotopy (kT : ReducedTensorWords R A →ₗ[R] A) :
+    Module.End R (ReducedTensorWords R A) :=
+  gradedCoderivAlong (AA.grading.shift 1) 1 (g.comp f).barMap LinearMap.id kT
+private noncomputable abbrev leftBarTwoHomotopy (tT : ReducedTensorWords R A →ₗ[R] B) :
+    ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B :=
+  gradedCoderivAlong (AA.grading.shift 1) 0 (f.barMap ∘ₗ (g.comp f).barMap) f.barMap tT
+private noncomputable abbrev leftDefectM (kT : ReducedTensorWords R A →ₗ[R] A) :
+    Module.End R (ReducedTensorWords R A) :=
+  ((g.comp f).barMap - LinearMap.id) -
+    (AA.barDifferential ∘ₗ leftBarHomotopy f g kT + leftBarHomotopy f g kT ∘ₗ AA.barDifferential)
+private noncomputable abbrev leftDefectU (kT : ReducedTensorWords R A →ₗ[R] A)
+    (tT : ReducedTensorWords R A →ₗ[R] B) :
+    ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B :=
+  (H_B.barHomotopy ∘ₗ f.barMap - f.barMap ∘ₗ leftBarHomotopy f g kT) -
+    (BB.barDifferential ∘ₗ leftBarTwoHomotopy f g tT -
+      leftBarTwoHomotopy f g tT ∘ₗ AA.barDifferential)
+private structure LeftStage (k : ℕ) where
   kATaylor : ReducedTensorWords R A →ₗ[R] A
   tTaylor : ReducedTensorWords R A →ₗ[R] B
   hkA : LinearMap.IsHomogeneous kATaylor (gradedPiece (AA.grading.shift 1))
     (AA.grading.shift 1).piece (-1)
   ht : LinearMap.IsHomogeneous tTaylor (gradedPiece (AA.grading.shift 1))
     (BB.grading.shift 1).piece (-2)
-  hM : ∀ z ∈ filtration R A k,
-    (((g.comp f).barMap - (LinearMap.id : Module.End R (ReducedTensorWords R A))) -
-      (AA.barDifferential ∘ₗ gradedCoderivAlong (AA.grading.shift 1) 1
-          (g.comp f).barMap LinearMap.id kATaylor +
-        gradedCoderivAlong (AA.grading.shift 1) 1
-          (g.comp f).barMap LinearMap.id kATaylor ∘ₗ AA.barDifferential)) z = 0
-  hU : ∀ z ∈ filtration R A k,
-    ((H_B.barHomotopy ∘ₗ f.barMap - f.barMap ∘ₗ gradedCoderivAlong (AA.grading.shift 1) 1
-        (g.comp f).barMap LinearMap.id kATaylor) -
-      (BB.barDifferential ∘ₗ gradedCoderivAlong (AA.grading.shift 1) 0
-          (f.barMap ∘ₗ (g.comp f).barMap) f.barMap tTaylor -
-        gradedCoderivAlong (AA.grading.shift 1) 0
-          (f.barMap ∘ₗ (g.comp f).barMap) f.barMap tTaylor ∘ₗ AA.barDifferential)) z = 0
+  hM : ∀ z ∈ filtration R A k, leftDefectM f g kATaylor z = 0
+  hU : ∀ z ∈ filtration R A k, leftDefectU f g H_B kATaylor tTaylor z = 0
 
-private noncomputable abbrev LeftStage.barHomotopy {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) : Module.End R (ReducedTensorWords R A) :=
-  gradedCoderivAlong (AA.grading.shift 1) 1 (g.comp f).barMap LinearMap.id S.kATaylor
-
-private noncomputable abbrev LeftStage.barTwoHomotopy {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B :=
-  gradedCoderivAlong (AA.grading.shift 1) 0 (f.barMap ∘ₗ (g.comp f).barMap) f.barMap S.tTaylor
-
-private noncomputable abbrev LeftStage.defectM {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) : Module.End R (ReducedTensorWords R A) :=
-  ((g.comp f).barMap - LinearMap.id) -
-    (AA.barDifferential ∘ₗ S.barHomotopy + S.barHomotopy ∘ₗ AA.barDifferential)
-
-private noncomputable abbrev LeftStage.defectU {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B :=
-  (H_B.barHomotopy ∘ₗ f.barMap - f.barMap ∘ₗ S.barHomotopy) -
-    (BB.barDifferential ∘ₗ S.barTwoHomotopy - S.barTwoHomotopy ∘ₗ AA.barDifferential)
-
-private noncomputable abbrev LeftStage.obstructionΘ {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) : ReducedTensorWords R A →ₗ[R] A :=
-  letter R A ∘ₗ S.defectM ∘ₗ lengthProj R A ⟨k + 1, k.succ_pos⟩
-
-private noncomputable abbrev LeftStage.obstructionΥ {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) : ReducedTensorWords R A →ₗ[R] B :=
-  letter R B ∘ₗ S.defectU ∘ₗ lengthProj R A ⟨k + 1, k.succ_pos⟩
-
-/-- Base stage `k = 0` of the left-homotopy induction: `0` vanishes on `filtration R A 0 = ⊥`. -/
-private noncomputable def leftStageZero (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
-    (H_B : Homotopy (f.comp g) (AInfinityHom.id BB)) : LeftStage f g H_B 0 where
-  kATaylor := 0
-  tTaylor := 0
-  hkA := LinearMap.isHomogeneous_zero _ _ _
-  ht := LinearMap.isHomogeneous_zero _ _ _
-  hM z hz := by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]
-  hU z hz := by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]
-
-/-- Both defects `defectM` and `defectU` of a `LeftStage f g H_B k` are globally coderivations
-along `((g.comp f).barMap, id)` and `(f.barMap ∘ (g.comp f).barMap, f.barMap)` respectively. -/
-private theorem leftStage_isGradedCoderivationAlong {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) :
-    IsGradedCoderivationAlong (AA.grading.shift 1) 0 (g.comp f).barMap LinearMap.id S.defectM ∧
-      IsGradedCoderivationAlong (AA.grading.shift 1) 1
-        (f.barMap ∘ₗ (g.comp f).barMap) f.barMap S.defectU := by
-  have hKAc : IsGradedCoderivationAlong (AA.grading.shift 1) 1 (g.comp f).barMap LinearMap.id
-      S.barHomotopy :=
-    isGradedCoderivationAlong_gradedCoderivAlong _ 1 (g.comp f).isCoalgHom_barMap
-      (isCoalgHom_id A) S.kATaylor
-  have hKAh := isHomogeneous_gradedCoderivAlong (q := 1) (g.comp f).isHomogeneous_barMap
-    (LinearMap.isHomogeneous_id _) S.hkA
-  have hMc : IsGradedCoderivationAlong (AA.grading.shift 1) 0 (g.comp f).barMap LinearMap.id
-      S.defectM :=
-    ((g.comp f).isCoalgHom_barMap.isGradedCoderivationAlong_sub (isCoalgHom_id A)).sub
-      (hKAc.comp_add_comp hKAh (by decide) AA.isGradedCoderivation_barDifferential
-        AA.isHomogeneous_barDifferential (by decide) AA.isGradedCoderivation_barDifferential
-        (g.comp f).isHomogeneous_barMap (g.comp f).barDifferential_comp_barMap
-        (by rw [LinearMap.comp_id, LinearMap.id_comp]))
+variable {f g H_B}
+private noncomputable abbrev LeftStage.obstructionΘ {k : ℕ} (S : LeftStage f g H_B k) :
+    ReducedTensorWords R A →ₗ[R] A :=
+  letter R A ∘ₗ leftDefectM f g S.kATaylor ∘ₗ lengthProj R A ⟨k + 1, k.succ_pos⟩
+private noncomputable abbrev LeftStage.obstructionΥ {k : ℕ} (S : LeftStage f g H_B k) :
+    ReducedTensorWords R A →ₗ[R] B :=
+  letter R B ∘ₗ leftDefectU f g H_B S.kATaylor S.tTaylor ∘ₗ lengthProj R A ⟨k + 1, k.succ_pos⟩
+private noncomputable def leftStageZero : LeftStage f g H_B 0 where
+  kATaylor := 0; tTaylor := 0
+  hkA := LinearMap.isHomogeneous_zero _ _ _; ht := LinearMap.isHomogeneous_zero _ _ _
+  hM _ hz := by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]
+  hU _ hz := by rw [filtration_zero] at hz; rw [(Submodule.mem_bot R).1 hz, map_zero]
+private theorem leftStage_isGradedCoderivationAlong {k : ℕ} (S : LeftStage f g H_B k) :
+    IsGradedCoderivationAlong (AA.grading.shift 1) 0 (g.comp f).barMap LinearMap.id
+        (leftDefectM f g S.kATaylor) ∧
+      IsGradedCoderivationAlong (AA.grading.shift 1) 1 (f.barMap ∘ₗ (g.comp f).barMap) f.barMap
+        (leftDefectU f g H_B S.kATaylor S.tTaylor) := by
+  have hKAc := isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) 1
+    (g.comp f).isCoalgHom_barMap (isCoalgHom_id A) S.kATaylor
   have hKBf : IsGradedCoderivationAlong (AA.grading.shift 1) 1
       (f.barMap ∘ₗ (g.comp f).barMap) f.barMap (H_B.barHomotopy ∘ₗ f.barMap) := by
     have h := H_B.isGradedCoderivationAlong_barHomotopy.comp_isCoalgHom f.isCoalgHom_barMap
       f.isHomogeneous_barMap
-    have heq : (f.comp g).barMap ∘ₗ f.barMap = f.barMap ∘ₗ (g.comp f).barMap := by
-      rw [barMap_comp, barMap_comp, LinearMap.comp_assoc]
-    rwa [heq, barMap_id, LinearMap.id_comp] at h
-  have hfKA : IsGradedCoderivationAlong (AA.grading.shift 1) 1
-      (f.barMap ∘ₗ (g.comp f).barMap) f.barMap (f.barMap ∘ₗ S.barHomotopy) := by
-    simpa only [LinearMap.comp_id] using
-      f.isCoalgHom_barMap.comp_isGradedCoderivationAlong hKAc
-  have hFGFh : LinearMap.IsHomogeneous (f.barMap ∘ₗ (g.comp f).barMap)
-      (gradedPiece (AA.grading.shift 1)) (gradedPiece (BB.grading.shift 1)) 0 := by
-    simpa only [add_zero] using f.isHomogeneous_barMap.comp (g.comp f).isHomogeneous_barMap
-  have hTc : IsGradedCoderivationAlong (AA.grading.shift 1) 0
-      (f.barMap ∘ₗ (g.comp f).barMap) f.barMap S.barTwoHomotopy :=
-    isGradedCoderivationAlong_gradedCoderivAlong _ 0
-      (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap) f.isCoalgHom_barMap S.tTaylor
-  have hTh := isHomogeneous_gradedCoderivAlong (q := 0) hFGFh f.isHomogeneous_barMap S.ht
-  have hFGF_int : BB.barDifferential ∘ₗ (f.barMap ∘ₗ (g.comp f).barMap) =
-      (f.barMap ∘ₗ (g.comp f).barMap) ∘ₗ AA.barDifferential := by
-    rw [← LinearMap.comp_assoc, f.barDifferential_comp_barMap, LinearMap.comp_assoc,
-      (g.comp f).barDifferential_comp_barMap, LinearMap.comp_assoc]
-  have hT_comm : IsGradedCoderivationAlong (AA.grading.shift 1) 1
-      (f.barMap ∘ₗ (g.comp f).barMap) f.barMap
-      (BB.barDifferential ∘ₗ S.barTwoHomotopy - S.barTwoHomotopy ∘ₗ AA.barDifferential) := by
-    have h := hTc.comp_sub_negOnePow_smul_comp hTh AA.isGradedCoderivation_barDifferential
-      AA.isHomogeneous_barDifferential (q := 1) (by decide) BB.isGradedCoderivation_barDifferential
-      hFGFh hFGF_int f.barDifferential_comp_barMap
+    rwa [show (f.comp g).barMap ∘ₗ f.barMap = f.barMap ∘ₗ (g.comp f).barMap by
+      rw [barMap_comp, barMap_comp, LinearMap.comp_assoc], barMap_id, LinearMap.id_comp] at h
+  have hFGFh := add_zero (0 : ℤ) ▸ f.isHomogeneous_barMap.comp (g.comp f).isHomogeneous_barMap
+  have hT_comm : IsGradedCoderivationAlong (AA.grading.shift 1) 1 (f.barMap ∘ₗ (g.comp f).barMap)
+      f.barMap (BB.barDifferential ∘ₗ leftBarTwoHomotopy f g S.tTaylor -
+        leftBarTwoHomotopy f g S.tTaylor ∘ₗ AA.barDifferential) := by
     have hone : ((1 * (-2 : ℤ)).negOnePow : ℤ) = 1 := by decide
-    simpa only [zero_add, hone, Int.cast_one, one_smul] using h
-  exact ⟨hMc, (hKBf.sub hfKA).sub hT_comm⟩
-
-private theorem leftStage_barDifferential_defects {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) :
-    (AA.barDifferential ∘ₗ S.defectM - S.defectM ∘ₗ AA.barDifferential = 0) ∧
-      (BB.barDifferential ∘ₗ S.defectU + S.defectU ∘ₗ AA.barDifferential =
-        f.barMap ∘ₗ S.defectM) := by
-  refine ⟨LinearMap.ext fun w ↦ ?_, LinearMap.ext fun w ↦ ?_⟩
-  · simp only [LeftStage.defectM, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
-      LinearMap.id_apply, map_sub, map_add, (g.comp f).barDifferential_barMap,
-      barDifferential_barDifferential_apply, map_zero]
-    abel
-  · have hHB : BB.barDifferential (H_B.barHomotopy (f.barMap w)) +
-        H_B.barHomotopy (f.barMap (AA.barDifferential w)) =
-        f.barMap ((g.comp f).barMap w) - f.barMap w := by
-      have h := H_B.barMap_sub_barMap_apply (f.barMap w)
-      rw [barMap_comp, barMap_id, LinearMap.comp_apply, LinearMap.id_apply,
-        f.barDifferential_barMap] at h
-      rw [barMap_comp, LinearMap.comp_apply]
-      exact h.symm
-    simp only [LeftStage.defectU, LeftStage.defectM, LinearMap.sub_apply, LinearMap.add_apply,
-      LinearMap.comp_apply, LinearMap.id_apply, map_sub, map_add, f.barDifferential_barMap,
-      barDifferential_barDifferential_apply, map_zero]
-    rw [eq_sub_of_add_eq hHB]
-    abel
-
-/-- The length-`(k + 1)` obstruction components `Θ` and `Υ` of a `LeftStage f g H_B k` satisfy
-`d_A ∘ Θ - Θ ∘ b_{A,1} = 0` and `d_B ∘ Υ + Υ ∘ b_{A,1} = f₁ ∘ Θ`. -/
-private theorem leftStage_obstruction_eqs {f : AInfinityHom AA BB} {g : AInfinityHom BB AA}
-    {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ} (S : LeftStage f g H_B k) :
+    simpa only [zero_add, hone, Int.cast_one, one_smul] using
+      (isGradedCoderivationAlong_gradedCoderivAlong (AA.grading.shift 1) 0
+        (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap) f.isCoalgHom_barMap
+        S.tTaylor).comp_sub_negOnePow_smul_comp
+        (isHomogeneous_gradedCoderivAlong (q := 0) hFGFh f.isHomogeneous_barMap S.ht)
+        AA.isGradedCoderivation_barDifferential AA.isHomogeneous_barDifferential (q := 1)
+        (by decide) BB.isGradedCoderivation_barDifferential hFGFh
+        (by rw [← LinearMap.comp_assoc, f.barDifferential_comp_barMap, LinearMap.comp_assoc,
+          (g.comp f).barDifferential_comp_barMap, LinearMap.comp_assoc])
+        f.barDifferential_comp_barMap
+  exact ⟨((g.comp f).isCoalgHom_barMap.isGradedCoderivationAlong_sub (isCoalgHom_id A)).sub
+      (hKAc.comp_add_comp (isHomogeneous_gradedCoderivAlong (q := 1)
+          (g.comp f).isHomogeneous_barMap (LinearMap.isHomogeneous_id _) S.hkA)
+        (by decide) AA.isGradedCoderivation_barDifferential AA.isHomogeneous_barDifferential
+        (by decide) AA.isGradedCoderivation_barDifferential (g.comp f).isHomogeneous_barMap
+        (g.comp f).barDifferential_comp_barMap (by rw [LinearMap.comp_id, LinearMap.id_comp])),
+    (hKBf.sub (by simpa only [LinearMap.comp_id] using
+      f.isCoalgHom_barMap.comp_isGradedCoderivationAlong hKAc)).sub hT_comm⟩
+private theorem leftStage_obstruction_eqs {k : ℕ} (S : LeftStage f g H_B k) :
     (AA.differential ∘ₗ S.obstructionΘ - S.obstructionΘ ∘ₗ AA.unaryBarDifferential = 0) ∧
       (BB.differential ∘ₗ S.obstructionΥ + S.obstructionΥ ∘ₗ AA.unaryBarDifferential =
         f.linearPart ∘ₗ S.obstructionΘ) := by
-  set p := lengthProj R A ⟨k + 1, k.succ_pos⟩
-  have hcod := leftStage_isGradedCoderivationAlong S
-  have hbd := leftStage_barDifferential_defects S
-  refine ⟨LinearMap.ext fun w ↦ ?_, LinearMap.ext fun w ↦ ?_⟩
-  · have hMp := hcod.1.apply_eq_ofLetter_letter_of_mem_filtration S.hM
-      (lengthProj_mem_filtration R A ⟨k + 1, k.succ_pos⟩ w)
-    have hcomm := apply_barDifferential_lengthProj_eq AA
-      (D := letter R A ∘ₗ S.defectM)
-      (fun u hu ↦ by rw [LinearMap.comp_apply, S.hM u hu, map_zero]) w
-    have hzero := LinearMap.congr_fun hbd.1 (p w)
-    rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.zero_apply,
-      hMp, AInfinityAlgebra.barDifferential_ofLetter] at hzero
-    have hzero' := congrArg (letter R A) hzero
-    rw [map_sub, map_zero, letter_ofLetter, ← AInfinityAlgebra.differential_apply] at hzero'
-    rw [LinearMap.comp_apply, LinearMap.comp_apply] at hcomm
-    rw [hcomm] at hzero'
-    simpa only [LeftStage.obstructionΘ, LinearMap.sub_apply, LinearMap.comp_apply,
-      LinearMap.zero_apply] using hzero'
-  · have hMp := hcod.1.apply_eq_ofLetter_letter_of_mem_filtration S.hM
-      (lengthProj_mem_filtration R A ⟨k + 1, k.succ_pos⟩ w)
-    have hUp := hcod.2.apply_eq_ofLetter_letter_of_mem_filtration S.hU
-      (lengthProj_mem_filtration R A ⟨k + 1, k.succ_pos⟩ w)
-    have hcomm := apply_barDifferential_lengthProj_eq AA
-      (D := letter R B ∘ₗ S.defectU)
-      (fun u hu ↦ by rw [LinearMap.comp_apply, S.hU u hu, map_zero]) w
-    have hrel := LinearMap.congr_fun hbd.2 (p w)
-    rw [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-      hUp, hMp, AInfinityAlgebra.barDifferential_ofLetter, f.barMap_ofLetter] at hrel
-    have hrel' := congrArg (letter R B) hrel
-    rw [map_add, letter_ofLetter, letter_ofLetter, ← AInfinityAlgebra.differential_apply] at hrel'
-    rw [LinearMap.comp_apply, LinearMap.comp_apply] at hcomm
-    rw [hcomm] at hrel'
-    simpa only [LeftStage.obstructionΘ, LeftStage.obstructionΥ, LinearMap.add_apply,
-      LinearMap.comp_apply] using hrel'
-
-private theorem leftStage_isHomogeneous_obstructions {f : AInfinityHom AA BB}
-    {g : AInfinityHom BB AA} {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ}
-    (S : LeftStage f g H_B k) :
+  have hM₁ : ∀ z ∈ filtration R A (k + 1), _ := fun z hz ↦
+    (leftStage_isGradedCoderivationAlong S).1.apply_eq_ofLetter_letter_of_mem_filtration S.hM hz
+  have hU₁ : ∀ z ∈ filtration R A (k + 1), _ := fun z hz ↦
+    (leftStage_isGradedCoderivationAlong S).2.apply_eq_ofLetter_letter_of_mem_filtration S.hU hz
+  refine ⟨by simpa only [neg_one_zsmul, ← sub_eq_add_neg] using
+      obstruction_eq_of_barDifferential S.hM hM₁ (-1 : ℤ) (rhs := 0) (fun w ↦ by
+        simp only [leftDefectM, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+          LinearMap.id_apply, LinearMap.zero_apply, map_sub, map_add,
+          (g.comp f).barDifferential_barMap, barDifferential_sq_apply, map_zero]; abel),
+    by simpa only [one_zsmul] using
+      obstruction_eq_of_barDifferential S.hU hU₁ (1 : ℤ) (rhs := f.linearPart ∘ₗ S.obstructionΘ)
+        (fun w ↦ by
+          have hHB := H_B.barMap_sub_barMap_apply
+            (f.barMap (lengthProj R A ⟨k + 1, k.succ_pos⟩ w))
+          rw [barMap_comp, barMap_id, LinearMap.comp_apply, LinearMap.id_apply,
+            f.barDifferential_barMap] at hHB
+          rw [LinearMap.comp_apply, ← f.barMap_ofLetter, LeftStage.obstructionΘ,
+            LinearMap.comp_apply, LinearMap.comp_apply,
+            ← hM₁ _ (lengthProj_mem_filtration R A ⟨k + 1, k.succ_pos⟩ w)]
+          simp only [leftDefectU, leftDefectM, LinearMap.sub_apply, LinearMap.add_apply,
+            LinearMap.comp_apply, LinearMap.id_apply, map_sub, map_add, f.barDifferential_barMap,
+            barDifferential_sq_apply, map_zero]
+          rw [barMap_comp, LinearMap.comp_apply, eq_sub_of_add_eq hHB.symm]; abel)⟩
+private theorem leftStage_isHomogeneous_obstructions {k : ℕ} (S : LeftStage f g H_B k) :
     LinearMap.IsHomogeneous (-S.obstructionΘ) (gradedPiece (AA.grading.shift 1))
         (AA.grading.shift 1).piece (-1 + 1) ∧
       LinearMap.IsHomogeneous (-S.obstructionΥ) (gradedPiece (AA.grading.shift 1))
-        (BB.grading.shift 1).piece (-1) := by
+        (BB.grading.shift 1).piece (-1) :=
   have hKAh := isHomogeneous_gradedCoderivAlong (q := 1) (g.comp f).isHomogeneous_barMap
     (LinearMap.isHomogeneous_id _) S.hkA
-  have hFGFh : LinearMap.IsHomogeneous (f.barMap ∘ₗ (g.comp f).barMap)
-      (gradedPiece (AA.grading.shift 1)) (gradedPiece (BB.grading.shift 1)) 0 := by
-    simpa only [add_zero] using f.isHomogeneous_barMap.comp (g.comp f).isHomogeneous_barMap
-  have hTh := isHomogeneous_gradedCoderivAlong (q := 0) hFGFh f.isHomogeneous_barMap S.ht
-  refine ⟨?_, ?_⟩
-  · have hMh : LinearMap.IsHomogeneous S.defectM (gradedPiece (AA.grading.shift 1))
-        (gradedPiece (AA.grading.shift 1)) 0 := by
-      refine ((g.comp f).isHomogeneous_barMap.sub (LinearMap.isHomogeneous_id _)).sub ?_
-      refine LinearMap.IsHomogeneous.add ?_ ?_
-      · simpa only [neg_add_cancel] using AA.isHomogeneous_barDifferential.comp hKAh
-      · simpa only [add_neg_cancel] using hKAh.comp AA.isHomogeneous_barDifferential
-    simpa only [neg_add_cancel, add_zero] using
-      ((isHomogeneous_letter _).comp (hMh.comp (isHomogeneous_lengthProj _ _))).neg
-  · have hUh : LinearMap.IsHomogeneous S.defectU (gradedPiece (AA.grading.shift 1))
-        (gradedPiece (BB.grading.shift 1)) (-1) := by
-      refine LinearMap.IsHomogeneous.sub ?_ ?_
-      · refine LinearMap.IsHomogeneous.sub ?_ ?_
-        · simpa only [zero_add] using H_B.isHomogeneous_barHomotopy.comp f.isHomogeneous_barMap
-        · simpa only [add_zero] using f.isHomogeneous_barMap.comp hKAh
-      · refine LinearMap.IsHomogeneous.sub ?_ ?_
-        · simpa only [show (-2 : ℤ) + 1 = -1 by ring] using
-            BB.isHomogeneous_barDifferential.comp hTh
-        · simpa only [show (1 : ℤ) + -2 = -1 by ring] using
-            hTh.comp AA.isHomogeneous_barDifferential
-    simpa only [zero_add, add_zero] using
-      ((isHomogeneous_letter _).comp (hUh.comp (isHomogeneous_lengthProj _ _))).neg
-
-private theorem leftStageSucc_hM {f : AInfinityHom AA BB} {g : AInfinityHom BB AA}
-    {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ} (S : LeftStage f g H_B k)
-    {δkA : ReducedTensorWords R A →ₗ[R] A} (hδkA₀ : ∀ u ∈ filtration R A k, δkA u = 0)
-    (hsol₁ : AA.differential ∘ₗ δkA + δkA ∘ₗ AA.unaryBarDifferential = S.obstructionΘ)
-    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A (k + 1)) :
-    (((g.comp f).barMap - (LinearMap.id : Module.End R (ReducedTensorWords R A))) -
-      (AA.barDifferential ∘ₗ gradedCoderivAlong (AA.grading.shift 1) 1
-          (g.comp f).barMap LinearMap.id (S.kATaylor + δkA) +
-        gradedCoderivAlong (AA.grading.shift 1) 1
-          (g.comp f).barMap LinearMap.id (S.kATaylor + δkA) ∘ₗ AA.barDifferential)) z = 0 := by
-  have hcod := leftStage_isGradedCoderivationAlong S
-  have hKA_step := gradedCoderivAlong_add_apply_of_mem_filtration (AA.grading.shift 1) 1
-    (g.comp f).isCoalgHom_barMap (g.comp f).isCoalgHom_barMap (isCoalgHom_id A)
-    (h := S.kATaylor) (fun _ _ ↦ rfl) hδkA₀
-  have hhigh : AA.higherBarDifferential z ∈ filtration R A k :=
-    AA.higherBarDifferential_filtration k ⟨z, hz, rfl⟩
-  have hunary : AA.unaryBarDifferential z ∈ filtration R A (k + 1) :=
-    AA.unaryBarDifferential_filtration (k + 1) ⟨z, hz, rfl⟩
-  have hMz : ((g.comp f).barMap z - z) -
-      (AA.barDifferential (S.barHomotopy z) + S.barHomotopy (AA.barDifferential z)) =
-      ofLetter R A (S.obstructionΘ z) :=
-    (hcod.1.apply_eq_ofLetter_letter_of_mem_filtration S.hM hz).trans (congrArg (ofLetter R A)
-      (apply_lengthProj_of_mem_filtration R A (f := letter R A ∘ₗ S.defectM)
-        (fun u hu ↦ by rw [LinearMap.comp_apply, S.hM u hu, map_zero]) hz).symm)
-  have hKAz : gradedCoderivAlong (AA.grading.shift 1) 1 (g.comp f).barMap LinearMap.id
-      (S.kATaylor + δkA) (AA.barDifferential z) =
-      S.barHomotopy (AA.barDifferential z) + ofLetter R A (δkA (AA.unaryBarDifferential z)) := by
-    rw [AA.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, map_add,
-      hKA_step.2 _ hunary, hKA_step.1 _ hhigh]
-    abel
-  have hsol₁z : AA.differential (δkA z) + δkA (AA.unaryBarDifferential z) = S.obstructionΘ z := by
-    simpa only [LinearMap.add_apply, LinearMap.comp_apply] using LinearMap.congr_fun hsol₁ z
-  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
-  rw [hKA_step.2 z hz, hKAz, map_add, AInfinityAlgebra.barDifferential_ofLetter,
-    ← AInfinityAlgebra.differential_apply, eq_add_of_sub_eq (eq_add_of_sub_eq hMz), ← hsol₁z,
-    map_add]
-  abel
-
-private theorem leftStageSucc_hU {f : AInfinityHom AA BB} {g : AInfinityHom BB AA}
-    {H_B : Homotopy (f.comp g) (AInfinityHom.id BB)} {k : ℕ} (S : LeftStage f g H_B k)
+  have hTh := isHomogeneous_gradedCoderivAlong (q := 0)
+    (add_zero (0 : ℤ) ▸ f.isHomogeneous_barMap.comp (g.comp f).isHomogeneous_barMap)
+    f.isHomogeneous_barMap S.ht
+  ⟨(neg_add_cancel (1 : ℤ)).symm ▸ (isHomogeneous_obstruction
+      (((g.comp f).isHomogeneous_barMap.sub (LinearMap.isHomogeneous_id _)).sub
+        (neg_add_cancel (1 : ℤ) ▸ (isHomogeneous_barDiff_comm hKAh).1)) _).neg,
+    (isHomogeneous_obstruction
+      (((zero_add (-1 : ℤ) ▸ H_B.isHomogeneous_barHomotopy.comp f.isHomogeneous_barMap).sub
+        (add_zero (-1 : ℤ) ▸ f.isHomogeneous_barMap.comp hKAh)).sub
+        ((show (-2 : ℤ) + 1 = -1 from rfl) ▸ (isHomogeneous_barDiff_comm hTh).2)) _).neg⟩
+private theorem leftStageSucc_defects {k : ℕ} (S : LeftStage f g H_B k)
     {δkA : ReducedTensorWords R A →ₗ[R] A} {δt : ReducedTensorWords R A →ₗ[R] B}
     (hδkA₀ : ∀ u ∈ filtration R A k, δkA u = 0) (hδt₀ : ∀ u ∈ filtration R A k, δt u = 0)
+    (hsol₁ : AA.differential ∘ₗ δkA + δkA ∘ₗ AA.unaryBarDifferential = S.obstructionΘ)
     (hsol₂ : f.linearPart ∘ₗ δkA +
       (BB.differential ∘ₗ δt - δt ∘ₗ AA.unaryBarDifferential) = S.obstructionΥ)
     {z : ReducedTensorWords R A} (hz : z ∈ filtration R A (k + 1)) :
-    ((H_B.barHomotopy ∘ₗ f.barMap - f.barMap ∘ₗ gradedCoderivAlong (AA.grading.shift 1) 1
-        (g.comp f).barMap LinearMap.id (S.kATaylor + δkA)) -
-      (BB.barDifferential ∘ₗ gradedCoderivAlong (AA.grading.shift 1) 0
-          (f.barMap ∘ₗ (g.comp f).barMap) f.barMap (S.tTaylor + δt) -
-        gradedCoderivAlong (AA.grading.shift 1) 0
-          (f.barMap ∘ₗ (g.comp f).barMap) f.barMap (S.tTaylor + δt) ∘ₗ
-          AA.barDifferential)) z = 0 := by
-  have hcod := leftStage_isGradedCoderivationAlong S
+    leftDefectM f g (S.kATaylor + δkA) z = 0 ∧
+      leftDefectU f g H_B (S.kATaylor + δkA) (S.tTaylor + δt) z = 0 := by
   have hKA_step := gradedCoderivAlong_add_apply_of_mem_filtration (AA.grading.shift 1) 1
     (g.comp f).isCoalgHom_barMap (g.comp f).isCoalgHom_barMap (isCoalgHom_id A)
     (h := S.kATaylor) (fun _ _ ↦ rfl) hδkA₀
-  have hT_step := gradedCoderivAlong_add_apply_of_mem_filtration (AA.grading.shift 1) 0
-    (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap)
-    (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap) f.isCoalgHom_barMap
-    (h := S.tTaylor) (fun _ _ ↦ rfl) hδt₀
-  have hhigh : AA.higherBarDifferential z ∈ filtration R A k :=
-    AA.higherBarDifferential_filtration k ⟨z, hz, rfl⟩
-  have hunary : AA.unaryBarDifferential z ∈ filtration R A (k + 1) :=
-    AA.unaryBarDifferential_filtration (k + 1) ⟨z, hz, rfl⟩
-  have hUz : (H_B.barHomotopy (f.barMap z) - f.barMap (S.barHomotopy z)) -
-      (BB.barDifferential (S.barTwoHomotopy z) - S.barTwoHomotopy (AA.barDifferential z)) =
-      ofLetter R B (S.obstructionΥ z) :=
-    (hcod.2.apply_eq_ofLetter_letter_of_mem_filtration S.hU hz).trans (congrArg (ofLetter R B)
-      (apply_lengthProj_of_mem_filtration R A (f := letter R B ∘ₗ S.defectU)
-        (fun u hu ↦ by rw [LinearMap.comp_apply, S.hU u hu, map_zero]) hz).symm)
-  have hTz : gradedCoderivAlong (AA.grading.shift 1) 0 (f.barMap ∘ₗ (g.comp f).barMap)
-      f.barMap (S.tTaylor + δt) (AA.barDifferential z) =
-      S.barTwoHomotopy (AA.barDifferential z) + ofLetter R B (δt (AA.unaryBarDifferential z)) := by
-    rw [AA.barDifferential_eq_unary_add_higher, LinearMap.add_apply, map_add, map_add,
-      hT_step.2 _ hunary, hT_step.1 _ hhigh]
-    abel
-  have hsol₂z : f.linearPart (δkA z) +
-      (BB.differential (δt z) - δt (AA.unaryBarDifferential z)) = S.obstructionΥ z := by
-    simpa only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply] using
-      LinearMap.congr_fun hsol₂ z
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply]
-  rw [hKA_step.2 z hz, hT_step.2 z hz, hTz, map_add, map_add, f.barMap_ofLetter,
-    AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
-    eq_add_of_sub_eq (eq_add_of_sub_eq hUz), ← hsol₂z, map_add, map_sub]
-  abel
+  refine ⟨?_, ?_⟩
+  · have hMz := defect_eq_ofLetter_obstruction S.hM (fun w hw ↦
+      (leftStage_isGradedCoderivationAlong S).1.apply_eq_ofLetter_letter_of_mem_filtration
+        S.hM hw) hz
+    have hsol₁z := LinearMap.congr_fun hsol₁ z
+    generalize S.obstructionΘ z = θ at hMz hsol₁z
+    simp only [leftDefectM, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+      LinearMap.id_apply] at hMz hsol₁z ⊢
+    rw [hKA_step.2 z hz, barDifferential_perturb_apply AA hKA_step.1 hKA_step.2 hz, map_add,
+      AInfinityAlgebra.barDifferential_ofLetter, ← AInfinityAlgebra.differential_apply,
+      eq_add_of_sub_eq (eq_add_of_sub_eq hMz), ← hsol₁z, map_add]; abel
+  · have hT_step := gradedCoderivAlong_add_apply_of_mem_filtration (AA.grading.shift 1) 0
+      (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap)
+      (f.isCoalgHom_barMap.comp (g.comp f).isCoalgHom_barMap) f.isCoalgHom_barMap
+      (h := S.tTaylor) (fun _ _ ↦ rfl) hδt₀
+    have hUz := defect_eq_ofLetter_obstruction S.hU (fun w hw ↦
+      (leftStage_isGradedCoderivationAlong S).2.apply_eq_ofLetter_letter_of_mem_filtration
+        S.hU hw) hz
+    have hsol₂z := LinearMap.congr_fun hsol₂ z
+    generalize S.obstructionΥ z = υ at hUz hsol₂z
+    simp only [leftDefectU, LinearMap.sub_apply, LinearMap.add_apply,
+      LinearMap.comp_apply] at hUz hsol₂z ⊢
+    rw [hKA_step.2 z hz, hT_step.2 z hz, barDifferential_perturb_apply AA hT_step.1 hT_step.2 hz,
+      map_add, map_add, f.barMap_ofLetter, AInfinityAlgebra.barDifferential_ofLetter,
+      ← AInfinityAlgebra.differential_apply, eq_add_of_sub_eq (eq_add_of_sub_eq hUz),
+      ← hsol₂z, map_add, map_sub]; abel
 
-/-- Inductive step of the left-homotopy construction: lift a `LeftStage f g H_B k` to `k + 1`
-without changing `kATaylor` on `filtration R A k`. -/
-private noncomputable def leftStageSucc (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
-    (H_B : Homotopy (f.comp g) (AInfinityHom.id BB))
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) {k : ℕ}
-    (S : LeftStage f g H_B k) :
+section BuildLeft
+variable (f g H_B) (e : LinearHomotopyEquiv AA.differential BB.differential)
+  (he : e.hom = f.linearPart) (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1))
+
+private noncomputable def leftStageSucc {k : ℕ} (S : LeftStage f g H_B k) :
     {S' : LeftStage f g H_B (k + 1) //
       ∀ z ∈ filtration R A k, S'.kATaylor z = S.kATaylor z} := by
   set δkA := solveStepG e (-S.obstructionΘ) (-S.obstructionΥ)
   set δt := -(solveStepH e (-S.obstructionΘ) (-S.obstructionΥ))
-  have hpΘ : ∀ u ∈ filtration R A k, (-S.obstructionΘ) u = 0 := fun u hu ↦ by
-    simp only [LeftStage.obstructionΘ, LinearMap.neg_apply, LinearMap.comp_apply,
-      lengthProj_apply_eq_zero_of_mem_filtration R A (n := ⟨k + 1, k.succ_pos⟩)
-        (Nat.lt_succ_self k) hu, map_zero, neg_zero]
-  have hpΥ : ∀ u ∈ filtration R A k, (-S.obstructionΥ) u = 0 := fun u hu ↦ by
-    simp only [LeftStage.obstructionΥ, LinearMap.neg_apply, LinearMap.comp_apply,
-      lengthProj_apply_eq_zero_of_mem_filtration R A (n := ⟨k + 1, k.succ_pos⟩)
-        (Nat.lt_succ_self k) hu, map_zero, neg_zero]
-  have hδkA₀ : ∀ u ∈ filtration R A k, δkA u = 0 := fun u hu ↦
-    solveStepG_apply_eq_zero e (hpΘ u hu) (hpΥ u hu)
-  have hδt₀ : ∀ u ∈ filtration R A k, δt u = 0 := fun u hu ↦ by
-    rw [LinearMap.neg_apply, solveStepH_apply_eq_zero e (hpΘ u hu) (hpΥ u hu), neg_zero]
-  have hdeg := leftStage_isHomogeneous_obstructions S
+  have hp₀ : ∀ u ∈ filtration R A k, lengthProj R A ⟨k + 1, k.succ_pos⟩ u = 0 := fun u hu ↦
+    lengthProj_apply_eq_zero_of_mem_filtration R A (Nat.lt_succ_self k) hu
+  have hδ₀ : ∀ u ∈ filtration R A k, δkA u = 0 ∧ δt u = 0 := fun u hu ↦ by
+    have h := solveStep_apply_eq_zero e (Φ := -S.obstructionΘ) (Ψ := -S.obstructionΥ) (u := u)
+      (by simp only [LeftStage.obstructionΘ, LinearMap.neg_apply, LinearMap.comp_apply,
+        hp₀ u hu, map_zero, neg_zero])
+      (by simp only [LeftStage.obstructionΥ, LinearMap.neg_apply, LinearMap.comp_apply,
+        hp₀ u hu, map_zero, neg_zero])
+    exact ⟨h.1, by simp only [δt, LinearMap.neg_apply, h.2, neg_zero]⟩
+  have hdeg := isHomogeneous_solveStep hG
+    (leftStage_isHomogeneous_obstructions S).1 (leftStage_isHomogeneous_obstructions S).2
   have hob := leftStage_obstruction_eqs S
-  have hsol := solveStep_eqs e (dW := -AA.unaryBarDifferential)
-    (Φ := -S.obstructionΘ) (Ψ := -S.obstructionΥ)
-    (LinearMap.ext fun z ↦ by
-      have h := LinearMap.congr_fun hob.1 z
-      simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.neg_apply,
-        LinearMap.comp_apply, LinearMap.zero_apply, map_neg, sub_eq_zero] at h ⊢
-      rw [h]; abel)
-    (LinearMap.ext fun z ↦ by
-      have h := LinearMap.congr_fun hob.2 z
-      simp only [he, LinearMap.add_apply, LinearMap.sub_apply, LinearMap.neg_apply,
-        LinearMap.comp_apply, map_neg] at h ⊢
-      rw [← h]; abel)
-  have hsol₁' : AA.differential ∘ₗ δkA + δkA ∘ₗ AA.unaryBarDifferential = S.obstructionΘ :=
-    LinearMap.ext fun z ↦ by
-      have h := LinearMap.congr_fun hsol.1 z
-      simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.neg_apply,
-        LinearMap.comp_apply, map_neg] at h ⊢
-      simpa only [sub_neg_eq_add, neg_neg] using h
-  have hsol₂' : f.linearPart ∘ₗ δkA +
-      (BB.differential ∘ₗ δt - δt ∘ₗ AA.unaryBarDifferential) = S.obstructionΥ :=
-    LinearMap.ext fun z ↦ by
-      have h := LinearMap.congr_fun hsol.2 z
-      simp only [δt, he, LinearMap.add_apply, LinearMap.sub_apply, LinearMap.neg_apply,
-        LinearMap.comp_apply, map_neg] at h ⊢
-      rw [eq_add_of_sub_eq h]
-      abel
-  refine ⟨⟨S.kATaylor + δkA, S.tTaylor + δt,
-    S.hkA.add (isHomogeneous_solveStepG hG hdeg.1 hdeg.2),
-    S.ht.add (by simpa only [show (-1 : ℤ) + -1 = -2 by ring] using
-      (isHomogeneous_solveStepH hG hdeg.1 hdeg.2).neg),
-    fun z hz ↦ leftStageSucc_hM S hδkA₀ hsol₁' hz,
-    fun z hz ↦ leftStageSucc_hU S hδkA₀ hδt₀ hsol₂' hz⟩,
-    fun z hz ↦ by rw [LinearMap.add_apply, hδkA₀ z hz, add_zero]⟩
-
-/-- Full `ℕ`-indexed sequence of left stages starting at `leftStageZero`. -/
-private noncomputable def leftStageNat (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
-    (H_B : Homotopy (f.comp g) (AInfinityHom.id BB))
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    ∀ n : ℕ, LeftStage f g H_B n
-  | 0 => leftStageZero f g H_B
-  | n + 1 => (leftStageSucc f g H_B e he hG (leftStageNat f g H_B e he hG n)).1
-
-private theorem leftStageNat_stabilises (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
-    (H_B : Homotopy (f.comp g) (AInfinityHom.id BB))
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) (n : ℕ) :
+  have hsol := solveStep_eqs_neg e hob.1 (he.symm ▸ hob.2)
+  have hdef := fun {z} (hz : z ∈ filtration R A (k + 1)) ↦ leftStageSucc_defects S
+    (fun u hu ↦ (hδ₀ u hu).1) (fun u hu ↦ (hδ₀ u hu).2) hsol.1 (he ▸ hsol.2) hz
+  exact ⟨⟨S.kATaylor + δkA, S.tTaylor + δt, S.hkA.add hdeg.1, S.ht.add hdeg.2.neg,
+    fun _ hz ↦ (hdef hz).1, fun _ hz ↦ (hdef hz).2⟩,
+    fun z hz ↦ by rw [LinearMap.add_apply, (hδ₀ z hz).1, add_zero]⟩
+private noncomputable def leftStageNat : ∀ n : ℕ, LeftStage f g H_B n
+  | 0 => leftStageZero
+  | n + 1 => (leftStageSucc f g H_B e he hG (leftStageNat n)).1
+private theorem leftStageNat_stabilises (n : ℕ) :
     ∀ z ∈ filtration R A n,
       (leftStageNat f g H_B e he hG (n + 1)).kATaylor z =
         (leftStageNat f g H_B e he hG n).kATaylor z :=
   (leftStageSucc f g H_B e he hG (leftStageNat f g H_B e he hG n)).2
-
-private noncomputable abbrev liftLeftHomotopyTaylor (f : AInfinityHom AA BB)
-    (g : AInfinityHom BB AA) (H_B : Homotopy (f.comp g) (AInfinityHom.id BB))
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    ReducedTensorWords R A →ₗ[R] A :=
-  stabilisingTaylor fun n ↦ (leftStageNat f g H_B e he hG n).kATaylor
-
-/-- The lifted left homotopy `g ∘ f ⇒ id_A` given any right homotopy `H_B : f ∘ g ⇒ id_B`. -/
-private noncomputable def liftLeftHomotopy (f : AInfinityHom AA BB) (g : AInfinityHom BB AA)
-    (H_B : Homotopy (f.comp g) (AInfinityHom.id BB))
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    Homotopy (g.comp f) (AInfinityHom.id AA) :=
-  Homotopy.ofTaylor (liftLeftHomotopyTaylor f g H_B e he hG)
+private noncomputable def liftLeftHomotopy : Homotopy (g.comp f) (AInfinityHom.id AA) :=
+  Homotopy.ofTaylor (stabilisingTaylor fun n ↦ (leftStageNat f g H_B e he hG n).kATaylor)
     (isHomogeneous_stabilisingTaylor (leftStageNat_stabilises f g H_B e he hG)
-      fun n ↦ (leftStageNat f g H_B e he hG n).hkA)
-    (LinearMap.ext fun z ↦ by
+      fun n ↦ (leftStageNat f g H_B e he hG n).hkA) (LinearMap.ext fun z ↦ by
       have hstab := leftStageNat_stabilises f g H_B e he hG
       obtain ⟨m, hm⟩ := exists_mem_filtration R A z
-      have hz : z ∈ filtration R A (m + 1) := filtration_monotone R A m.le_succ hm
-      have hKA_eq : gradedCoderivAlong (AA.grading.shift 1) 1 (g.comp f).barMap
-          (AInfinityHom.id AA).barMap (liftLeftHomotopyTaylor f g H_B e he hG) z =
-          (leftStageNat f g H_B e he hG (m + 1)).barHomotopy z :=
-        (isGradedCoderivationAlong_gradedCoderivAlong _ 1 (g.comp f).isCoalgHom_barMap
-          (AInfinityHom.id AA).isCoalgHom_barMap _).apply_eq_of_mem_filtration
-          (isGradedCoderivationAlong_gradedCoderivAlong _ 1 (g.comp f).isCoalgHom_barMap
-            (isCoalgHom_id A) _)
-          (fun _ _ ↦ rfl) (fun u _ ↦ by rw [barMap_id, LinearMap.id_apply])
-          (fun u hu ↦ by
-            rw [letter_gradedCoderivAlong_apply, letter_gradedCoderivAlong_apply,
-              stabilisingTaylor_apply_of_mem_filtration hstab hu]) hz
-      have hM := congrArg (letter R A) ((leftStageNat f g H_B e he hG (m + 1)).hM z hz)
-      simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply,
-        map_sub, map_add, map_zero, sub_eq_zero] at hM
-      rw [letter_barMap_apply, letter_barDifferential_apply, letter_gradedCoderivAlong_apply] at hM
-      rw [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        taylor_id, hKA_eq,
-        stabilisingTaylor_apply_of_mem_filtration hstab (AA.barDifferential_mem_filtration hz)]
-      exact hM)
-
-end Lifting
+      exact taylor_homotopy_of_defect_zero (g.comp f) _ hstab hm
+        ((leftStageNat f g H_B e he hG m).hM z hm) rfl
+        (gradedCoderivAlong_stabilisingTaylor_apply (AA.grading.shift 1) 1
+          (g.comp f).isCoalgHom_barMap (g.comp f).isCoalgHom_barMap
+          (AInfinityHom.id AA).isCoalgHom_barMap (isCoalgHom_id A) _ hstab
+          (fun _ _ ↦ rfl) (fun _ _ ↦ by rw [barMap_id, LinearMap.id_apply]) hm)
+        (letter_comp_gradedCoderivAlong _ _ _ _ _))
+end BuildLeft
+end Left
 
 /-! ### Lifting linear chain-homotopy equivalences and closure properties -/
 
 namespace HomotopyEquiv
 
+section OfLinear
+variable (f : AInfinityHom AA BB) (e : LinearHomotopyEquiv AA.differential BB.differential)
+  (he : e.hom = f.linearPart) (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1))
+
 /-- Lift a homogeneous degree-`(-1)` linear chain-homotopy equivalence `e` with
 `e.hom = f.linearPart` to a two-sided `A∞` homotopy equivalence with forward morphism `f`, inverse
 linear part `e.inv`, and right linear homotopy `e.homotopyHomInv`. -/
-noncomputable def ofLinear (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    HomotopyEquiv AA BB where
-  hom := f
-  inv := liftInv f e he hG
+noncomputable def ofLinear : HomotopyEquiv AA BB where
+  hom := f; inv := liftInv f e he hG
   homotopyInvHomId := liftLeftHomotopy f (liftInv f e he hG) (liftRightHomotopy f e he hG) e he hG
   homotopyHomInvId := liftRightHomotopy f e he hG
 
-@[simp]
-theorem hom_ofLinear (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    (ofLinear f e he hG).hom = f := (rfl)
-
-@[simp]
-theorem linearPart_inv_ofLinear (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
-    (ofLinear f e he hG).inv.linearPart = e.inv :=
-  linearPart_liftInv f e he hG
-
-@[simp]
-theorem linearHomotopy_homotopyHomInvId_ofLinear (f : AInfinityHom AA BB)
-    (e : LinearHomotopyEquiv AA.differential BB.differential) (he : e.hom = f.linearPart)
-    (hG : e.IsHomogeneous AA.grading.piece BB.grading.piece (-1)) :
+@[simp] theorem hom_ofLinear : (ofLinear f e he hG).hom = f := (rfl)
+@[simp] theorem linearPart_inv_ofLinear : (ofLinear f e he hG).inv.linearPart = e.inv :=
+  LinearMap.ext fun b ↦ by
+    dsimp only [ofLinear, liftInv]
+    rw [linearPart_apply, AInfinityHom.taylor_ofTaylor,
+      stabilisingTaylor_apply_of_mem_filtration (fun n ↦ (rightStageNat_stabilises f e he hG n).1)
+        (ofLetter_mem_filtration R B b)]
+    exact congrArg e.inv (letter_ofLetter R B b)
+@[simp] theorem linearHomotopy_homotopyHomInvId_ofLinear :
     (ofLinear f e he hG).homotopyHomInvId.linearHomotopy = e.homotopyHomInv :=
-  linearHomotopy_liftRightHomotopy f e he hG
+  LinearMap.ext fun b ↦ by
+    dsimp only [ofLinear, liftRightHomotopy]
+    rw [Homotopy.linearHomotopy_ofTaylor, LinearMap.comp_apply,
+      stabilisingTaylor_apply_of_mem_filtration (fun n ↦ (rightStageNat_stabilises f e he hG n).2)
+        (ofLetter_mem_filtration R B b)]
+    exact congrArg e.homotopyHomInv (letter_ofLetter R B b)
+end OfLinear
+
+section Trans
+variable (e₁ : HomotopyEquiv AA BB) (e₂ : HomotopyEquiv BB CC)
 
 /-- Compose two `A∞` homotopy equivalences by lifting the composite of their underlying linear
 chain-homotopy equivalences along `e₂.hom.comp e₁.hom`. -/
-noncomputable def trans (e₁ : HomotopyEquiv AA BB) (e₂ : HomotopyEquiv BB CC) :
-    HomotopyEquiv AA CC :=
-  ofLinear (e₂.hom.comp e₁.hom)
-    (e₁.toLinearHomotopyEquiv.trans e₂.toLinearHomotopyEquiv)
-    (by rw [LinearHomotopyEquiv.hom_trans, hom_toLinearHomotopyEquiv,
-      hom_toLinearHomotopyEquiv, linearPart_comp])
+noncomputable def trans : HomotopyEquiv AA CC :=
+  ofLinear (e₂.hom.comp e₁.hom) (e₁.toLinearHomotopyEquiv.trans e₂.toLinearHomotopyEquiv)
+    (by rw [LinearHomotopyEquiv.trans_hom, toLinearHomotopyEquiv_hom, toLinearHomotopyEquiv_hom,
+      linearPart_comp])
     (e₁.isHomogeneous_toLinearHomotopyEquiv.trans e₂.isHomogeneous_toLinearHomotopyEquiv)
 
-@[simp]
-theorem hom_trans (e₁ : HomotopyEquiv AA BB) (e₂ : HomotopyEquiv BB CC) :
-    (e₁.trans e₂).hom = e₂.hom.comp e₁.hom := (rfl)
-
-@[simp]
-theorem linearPart_inv_trans (e₁ : HomotopyEquiv AA BB) (e₂ : HomotopyEquiv BB CC) :
+@[simp] theorem hom_trans : (e₁.trans e₂).hom = e₂.hom.comp e₁.hom := (rfl)
+@[simp] theorem linearPart_inv_trans :
     (e₁.trans e₂).inv.linearPart = e₁.inv.linearPart ∘ₗ e₂.inv.linearPart := by
-  rw [trans, linearPart_inv_ofLinear, LinearHomotopyEquiv.inv_trans,
-    inv_toLinearHomotopyEquiv, inv_toLinearHomotopyEquiv]
-
+  rw [trans, linearPart_inv_ofLinear, LinearHomotopyEquiv.trans_inv,
+    toLinearHomotopyEquiv_inv, toLinearHomotopyEquiv_inv]
+end Trans
 end HomotopyEquiv
 
 /-- **Linear criterion for `A∞` homotopy equivalences.**  Over any commutative ring, an `A∞`
@@ -1324,14 +828,12 @@ homogeneous degree-`(-1)` linear chain-homotopy equivalence between the unary co
 theorem isHomotopyEquiv_iff_exists_linearHomotopyEquiv (f : AInfinityHom AA BB) :
     f.IsHomotopyEquiv ↔
       ∃ e : LinearHomotopyEquiv AA.differential BB.differential,
-        e.hom = f.linearPart ∧ e.IsHomogeneous AA.grading.piece BB.grading.piece (-1) := by
-  constructor
-  · intro hf
-    obtain ⟨E, rfl⟩ := (isHomotopyEquiv_iff_exists_homotopyEquiv f).1 hf
-    exact ⟨E.toLinearHomotopyEquiv, E.hom_toLinearHomotopyEquiv,
-      E.isHomogeneous_toLinearHomotopyEquiv⟩
-  · rintro ⟨e, he, hG⟩
-    exact (HomotopyEquiv.ofLinear f e he hG).isHomotopyEquiv_hom
+        e.hom = f.linearPart ∧ e.IsHomogeneous AA.grading.piece BB.grading.piece (-1) :=
+  ⟨fun hf ↦ by
+      obtain ⟨E, rfl⟩ := (isHomotopyEquiv_iff_exists_homotopyEquiv f).1 hf
+      exact ⟨E.toLinearHomotopyEquiv, E.toLinearHomotopyEquiv_hom,
+        E.isHomogeneous_toLinearHomotopyEquiv⟩,
+    fun ⟨e, he, hG⟩ ↦ (HomotopyEquiv.ofLinear f e he hG).isHomotopyEquiv_hom⟩
 
 /-- `A∞` homotopy equivalences are closed under composition. -/
 theorem IsHomotopyEquiv.comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
@@ -1343,42 +845,36 @@ theorem IsHomotopyEquiv.comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
 /-- Homotopic `A∞` morphisms are homotopy equivalences together. -/
 theorem Homotopy.isHomotopyEquiv_iff {f g : AInfinityHom AA BB} (h : Homotopy f g) :
     f.IsHomotopyEquiv ↔ g.IsHomotopyEquiv := by
-  simp only [isHomotopyEquiv_iff_exists_linearHomotopyEquiv]
-  constructor
-  · rintro ⟨e, he, hG⟩
-    have hs : e.hom - g.linearPart =
-        BB.differential ∘ₗ h.linearHomotopy + h.linearHomotopy ∘ₗ AA.differential := by
-      rw [he, h.differential_comp_linearHomotopy_add]
-    exact ⟨e.ofHomotopy g.differential_comp_linearPart h.linearHomotopy hs,
-      e.hom_ofHomotopy _ _ hs,
-      hG.ofHomotopy g.differential_comp_linearPart g.isHomogeneous_linearPart
-        h.isHomogeneous_linearHomotopy hs⟩
-  · rintro ⟨e, he, hG⟩
-    have hs : e.hom - f.linearPart =
-        BB.differential ∘ₗ (-h.linearHomotopy) + (-h.linearHomotopy) ∘ₗ AA.differential := by
-      rw [he, LinearMap.comp_neg, LinearMap.neg_comp, ← neg_add,
-        h.differential_comp_linearHomotopy_add, neg_sub]
-    exact ⟨e.ofHomotopy f.differential_comp_linearPart (-h.linearHomotopy) hs,
-      e.hom_ofHomotopy _ _ hs,
-      hG.ofHomotopy f.differential_comp_linearPart f.isHomogeneous_linearPart
-        h.isHomogeneous_linearHomotopy.neg hs⟩
+  have step : ∀ {f₁ f₂ : AInfinityHom AA BB} (s : A →ₗ[R] B),
+      LinearMap.IsHomogeneous s AA.grading.piece BB.grading.piece (-1) →
+      BB.differential ∘ₗ s + s ∘ₗ AA.differential = f₁.linearPart - f₂.linearPart →
+      f₁.IsHomotopyEquiv → f₂.IsHomotopyEquiv := fun {f₁ f₂} s hs₀ hs hf₁ ↦ by
+    obtain ⟨e, he, hG⟩ := (isHomotopyEquiv_iff_exists_linearHomotopyEquiv f₁).1 hf₁
+    have hs' : e.hom - f₂.linearPart = BB.differential ∘ₗ s + s ∘ₗ AA.differential := by rw [he, hs]
+    exact (isHomotopyEquiv_iff_exists_linearHomotopyEquiv f₂).2
+      ⟨e.ofHomotopy f₂.differential_comp_linearPart s hs', e.ofHomotopy_hom _ _ hs',
+        hG.ofHomotopy f₂.differential_comp_linearPart f₂.isHomogeneous_linearPart hs₀ hs'⟩
+  refine ⟨step h.linearHomotopy h.isHomogeneous_linearHomotopy
+      h.differential_comp_linearHomotopy_add,
+    step (-h.linearHomotopy) h.isHomogeneous_linearHomotopy.neg ?_⟩
+  rw [LinearMap.comp_neg, LinearMap.neg_comp, ← neg_add,
+    h.differential_comp_linearHomotopy_add, neg_sub]
 
 /-- Two out of three: if `f` and `g ∘ f` are `A∞` homotopy equivalences, then so is `g`. -/
 theorem IsHomotopyEquiv.of_precomp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
     (hf : f.IsHomotopyEquiv) (hgf : (g.comp f).IsHomotopyEquiv) : g.IsHomotopyEquiv := by
   obtain ⟨e, rfl⟩ := (isHomotopyEquiv_iff_exists_homotopyEquiv f).1 hf
-  have h : Homotopy ((g.comp e.hom).comp e.inv) g := by
-    simpa only [comp_assoc, comp_id] using e.homotopyHomInvId.compRight g
-  exact h.isHomotopyEquiv_iff.1 (hgf.comp e.isHomotopyEquiv_inv)
+  exact (show Homotopy ((g.comp e.hom).comp e.inv) g by
+    simpa only [comp_assoc, comp_id] using e.homotopyHomInvId.compRight g).isHomotopyEquiv_iff.1
+    (hgf.comp e.isHomotopyEquiv_inv)
 
 /-- Two out of three: if `g` and `g ∘ f` are `A∞` homotopy equivalences, then so is `f`. -/
 theorem IsHomotopyEquiv.of_postcomp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB}
     (hg : g.IsHomotopyEquiv) (hgf : (g.comp f).IsHomotopyEquiv) : f.IsHomotopyEquiv := by
   obtain ⟨e, rfl⟩ := (isHomotopyEquiv_iff_exists_homotopyEquiv g).1 hg
-  have h : Homotopy (e.inv.comp (e.hom.comp f)) f := by
-    simpa only [← comp_assoc, id_comp] using e.homotopyInvHomId.compLeft f
-  exact h.isHomotopyEquiv_iff.1 (e.isHomotopyEquiv_inv.comp hgf)
-
+  exact (show Homotopy (e.inv.comp (e.hom.comp f)) f by
+    simpa only [← comp_assoc, id_comp] using e.homotopyInvHomId.compLeft f).isHomotopyEquiv_iff.1
+    (e.isHomotopyEquiv_inv.comp hgf)
 end CommRing
 
 end AInfinityHom
