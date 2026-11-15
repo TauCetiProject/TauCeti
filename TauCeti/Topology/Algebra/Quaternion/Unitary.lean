@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import Mathlib.Analysis.Quaternion
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -26,6 +27,8 @@ The group of unit Hamilton quaternions is simply connected.
 
 * `Quaternion.unitaryHomeomorphSphere` identifies the unitary Hamilton quaternions with their unit
   sphere.
+* `Quaternion.unitaryHomeomorphEuclideanSphere` identifies them with the unit sphere `S³` of
+  `EuclideanSpace ℝ (Fin 4)`.
 * `Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup` identifies the unit quaternions with
   the special unitary group of degree two as topological groups.
 * `Quaternion.instSimplyConnectedSpaceUnitary`: the unit Hamilton quaternions are simply
@@ -80,6 +83,33 @@ theorem coe_unitaryHomeomorphSphere_symm_apply (q : sphere (0 : ℍ[ℝ]) 1) :
     (unitaryHomeomorphSphere.symm q : ℍ[ℝ]) = q := by
   rw [unitaryHomeomorphSphere]
   rfl
+
+/-- **The unit Hamilton quaternions are the unit sphere `S³` of `ℝ⁴`**, through the coordinates
+`(re, imI, imJ, imK)` of `Quaternion.linearIsometryEquivTuple`. -/
+noncomputable def unitaryHomeomorphEuclideanSphere :
+    unitary ℍ[ℝ] ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 4)) 1 :=
+  unitaryHomeomorphSphere.trans (linearIsometryEquivTuple.toHomeomorph.subtype fun q ↦ by
+    simp [-linearIsometryEquivTuple_apply])
+
+/-- The point of `S³` attached to a unit quaternion is its coordinate vector. -/
+@[simp]
+theorem coe_unitaryHomeomorphEuclideanSphere_apply (q : unitary ℍ[ℝ]) :
+    (unitaryHomeomorphEuclideanSphere q : EuclideanSpace ℝ (Fin 4)) =
+      linearIsometryEquivTuple (q : ℍ[ℝ]) :=
+  (rfl)
+
+/-- The unit quaternion attached to a point of `S³` has that point as coordinate vector. -/
+@[simp]
+theorem coe_unitaryHomeomorphEuclideanSphere_symm_apply
+    (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
+    (unitaryHomeomorphEuclideanSphere.symm x : ℍ[ℝ]) = linearIsometryEquivTuple.symm x :=
+  (rfl)
+
+/-- Antipodal points of `S³` correspond to opposite unit quaternions. -/
+@[simp]
+theorem unitaryHomeomorphEuclideanSphere_symm_neg (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
+    unitaryHomeomorphEuclideanSphere.symm (-x) = -unitaryHomeomorphEuclideanSphere.symm x :=
+  Subtype.ext (by simp [Unitary.coe_neg, -linearIsometryEquivTuple_symm_apply])
 
 /-- The group of unit Hamilton quaternions is simply connected. -/
 instance instSimplyConnectedSpaceUnitary : SimplyConnectedSpace (unitary ℍ[ℝ]) := by
