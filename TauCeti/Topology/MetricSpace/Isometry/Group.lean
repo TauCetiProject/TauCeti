@@ -212,8 +212,8 @@ private theorem compactSpace_self : CompactSpace (α ≃ᵢ α) := by
     ((continuous_apply x).edist (continuous_apply y)) continuous_const
 
 /-- **van Dantzig–van der Waerden.** Isometric equivalences from a compact metric space into a
-metric space form a compact space; in particular the isometry group `α ≃ᵢ α` is compact. -/
-instance instCompactSpace {β : Type*} [EMetricSpace β] : CompactSpace (α ≃ᵢ β) := by
+pseudo-emetric space form a compact space; in particular the isometry group `α ≃ᵢ α` is compact. -/
+instance instCompactSpace {β : Type*} [PseudoEMetricSpace β] : CompactSpace (α ≃ᵢ β) := by
   have := compactSpace_self (α := α)
   rcases isEmpty_or_nonempty (α ≃ᵢ β) with _ | ⟨⟨e₀⟩⟩
   · infer_instance

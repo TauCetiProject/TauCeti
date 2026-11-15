@@ -38,9 +38,9 @@ a squared-distance chart around `f p` back to a tuple of smooth squared-distance
   normal-ball centres `y i` is smooth on the intersection of their open `r`-balls.
 * `TauCeti.Manifold.mvfderiv_pi_toReal_edist_sq_apply`: its differential at `p` has `i`-th
   component `-2 * ⟪log_p (y i), ·⟫`.
-* `TauCeti.Manifold.isLocalDiffeomorphAt_pi_toReal_edist_sq_riemannianExp`: placing centres at
-  `exp_p (t • b i)` along an orthonormal basis `b` of `T_p M` gives a smooth local diffeomorphism
-  at `p`.
+* `TauCeti.Manifold.IsNormalDomain.isLocalDiffeomorphAt_pi_toReal_edist_sq_riemannianExp`: placing
+  centres at `exp_p (t • b i)` along an orthonormal basis `b` of `T_p M` gives a smooth local
+  diffeomorphism at `p`.
 * `TauCeti.Manifold.exists_partialDiffeomorph_pi_toReal_edist_sq`: inside any neighbourhood `s` of
   `p`, there exist `d = finrank ℝ E` centres `y i ∈ s` such that
   `z ↦ fun i ↦ (edist (y i) z).toReal ^ 2` restricts to a smooth partial diffeomorphism on an open
@@ -48,9 +48,9 @@ a squared-distance chart around `f p` back to a tuple of smooth squared-distance
 
 ## References
 
-* M. Taylor, *Finsler structures and smoothness of isometries*, Proc. Amer. Math. Soc. 134 (2006),
-  no. 8, 2419–2423; and *Existence and smoothness of the exponential map, and smoothness of
-  isometries*, unpublished notes (distance coordinates via Gauss's lemma and the inverse function
+* M. Taylor, *Measure Theory and Integration*, Graduate Studies in Mathematics 76, AMS, 2006,
+  Appendix E; and *Finsler structures and smoothness of isometries*, Proc. Amer. Math. Soc. 134
+  (2006), no. 8, 2419–2423 (distance coordinates via Gauss's lemma and the inverse function
   theorem).
 * S. Kobayashi, K. Nomizu, *Foundations of Differential Geometry*, Vol. I, Interscience, 1963,
   Ch. IV, Theorem 3.10 (Myers–Steenrod theorem).
@@ -104,19 +104,18 @@ theorem mvfderiv_pi_toReal_edist_sq_apply {ι : Type*} [Fintype ι] {y : ι → 
       (fun z : M ↦ fun j : ι ↦ (edist (y j) z).toReal ^ 2) p :=
     ((contMDiffOn_pi_toReal_edist_sq hy hU).contMDiffAt (hs.mem_nhds hps)).mdifferentiableAt
       (by simp)
-  let proj : (ι → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj i
-  have hproj :=
-    TauCeti.mvfderiv_comp_apply_of_differentiableAt (φ := proj) proj.differentiableAt hdiff w
-  simpa only [proj.fderiv, proj, Function.comp_def, ContinuousLinearMap.proj_apply] using
+  have hproj := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).mvfderiv_comp_apply
+    hdiff w
+  simpa only [Function.comp_def, ContinuousLinearMap.proj_apply] using
     hproj.symm.trans ((hy i).mvfderiv_toReal_edist_sq_apply (hU i) hp hV (hyp i) w)
 
 /-- **Squared-distance coordinates along an orthonormal frame.** If `b` is an orthonormal basis of
 `T_p M`, `t ≠ 0` satisfies `|t| < r`, and the open tangent ball of radius `r` is a normal domain at
 `p` and at every point `y i = exp_p (t • b i)`, then `z ↦ fun i ↦ (edist (y i) z).toReal ^ 2` is a
 smooth local diffeomorphism at `p`. -/
-theorem isLocalDiffeomorphAt_pi_toReal_edist_sq_riemannianExp {ι : Type*} [Fintype ι] {p : M}
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {r t : ℝ} (ht : t ≠ 0) (htr : |t| < r)
-    (hp : IsNormalDomain I M p (Metric.ball 0 r))
+theorem IsNormalDomain.isLocalDiffeomorphAt_pi_toReal_edist_sq_riemannianExp
+    {ι : Type*} [Fintype ι] {p : M} {r t : ℝ} (hp : IsNormalDomain I M p (Metric.ball 0 r))
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (ht : t ≠ 0) (htr : |t| < r)
     (hy : ∀ i, IsNormalDomain I M (riemannianExp I M p (t • b i)) (Metric.ball 0 r)) :
     IsLocalDiffeomorphAt I 𝓘(ℝ, ι → ℝ) ∞
       (fun z : M ↦ fun i : ι ↦ (edist (riemannianExp I M p (t • b i)) z).toReal ^ 2) p := by
@@ -196,7 +195,7 @@ theorem exists_partialDiffeomorph_pi_toReal_edist_sq (p : M) {s : Set M} (hs : s
   have hp_norm : IsNormalDomain I M p (Metric.ball 0 r) := (hW p (hU_sub hpU).2).1
   have hy_norm : ∀ i, IsNormalDomain I M (y i) (Metric.ball 0 r) :=
     fun i ↦ (hW (y i) (hU_sub (htU i)).2).1
-  have hloc := isLocalDiffeomorphAt_pi_toReal_edist_sq_riemannianExp b ht_pos.ne' htr hp_norm
+  have hloc := hp_norm.isLocalDiffeomorphAt_pi_toReal_edist_sq_riemannianExp b ht_pos.ne' htr
     hy_norm
   let Ψ := hloc.localInverse.symm
   refine ⟨y, Ψ.restrOpen U hUo, fun i ↦ (hU_sub (htU i)).1, ?_, ?_, fun z hz ↦ ?_⟩

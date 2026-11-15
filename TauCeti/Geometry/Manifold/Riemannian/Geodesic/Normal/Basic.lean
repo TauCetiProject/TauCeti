@@ -58,6 +58,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
   the normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
+* `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_neg_mfderiv_riemannianExp_radial`: the
+  logarithm of `p` at `exp_p v` is the negated arrival velocity `-d(exp_p)_v v`.
 * `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`: the logarithm is smooth on the
   normal neighbourhood.
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
@@ -425,6 +427,18 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
     riemannianLog I M p U p = 0 := by
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
+
+/-- **The logarithm of the base point along a radial geodesic.** If `v` lies in the domain of
+`exp_p` and `-d(exp_p)_v v` lies in a normal domain `V` at `exp_p v`, then `log_{exp_p v} p` is
+the negated arrival velocity `-d(exp_p)_v v`. -/
+theorem riemannianLog_eq_neg_mfderiv_riemannianExp_radial
+    {V : Set (TangentSpace I (riemannianExp I M p v))}
+    (hq : IsNormalDomain I M (riemannianExp I M p v) V) (hv : v ∈ expDomain I M p)
+    (hw : -mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v ∈ V) :
+    riemannianLog I M (riemannianExp I M p v) V p =
+      -mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
+  have hrev := riemannianExp_neg_mfderiv_riemannianExp_radial hv
+  simpa only [hrev] using hq.riemannianLog_riemannianExp hw
 
 /-- The differential of the logarithm at the base point is the identity. -/
 @[simp] theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U)

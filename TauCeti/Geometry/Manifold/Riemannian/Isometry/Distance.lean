@@ -89,6 +89,12 @@ theorem toIsometryEquiv_symm (Φ : RiemannianIsometry I J M N) :
   apply (Φ : M ≃ᵢ N).injective
   simp
 
+/-- Evaluating the inverse of `(Φ : M ≃ᵢ N)` agrees with `Φ.symm`. -/
+@[simp]
+theorem coe_toIsometryEquiv_symm (Φ : RiemannianIsometry I J M N) :
+    ⇑(Φ : M ≃ᵢ N).symm = ⇑Φ.symm := by
+  rw [← toIsometryEquiv_symm, IsometryClass.coe_coe]
+
 /-- The identity Riemannian isometry induces the identity metric equivalence. -/
 @[simp]
 theorem toIsometryEquiv_refl :

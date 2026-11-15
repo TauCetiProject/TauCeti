@@ -10,7 +10,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Topology
 public import TauCeti.Topology.MetricSpace.Isometry.Group
+import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
@@ -31,11 +33,12 @@ Applying the same argument to the local inverse shows `f` is a smooth local diff
 Once `f` is differentiable at `p`, comparing its germ in normal coordinates at `p` and `f p` along
 radial rays shows `‖df_p v‖ = ‖v‖`, hence `df_p` preserves inner products by polarization.
 
-For a family of metric equivalences `e : M ≃ᵢ N` on a compact source `M`, expressing `e` locally as
+For a family of metric equivalences `e : M ≃ᵢ N`, expressing `e` locally as
 `Φ_N.symm (fun i ↦ (edist (e.symm (y_N i)) ·).toReal ^ 2)` writes the coordinate representative of
 `e` as a smooth function of the evaluation points `e.symm (y_N i)` and the source chart coordinate.
 Since inversion and evaluation are continuous in the compact-open topology on `M ≃ᵢ N`, all chart
-iterated derivatives vary continuously with `e`, identifying the weak Whitney `C^∞` topology on
+iterated derivatives vary continuously with `e` (`IsometryEquiv.continuous_toContMDiffMap`), and
+when `M` is compact this identifies the weak Whitney `C^∞` topology on
 `RiemannianIsometry I J M N` with the compact-open topology on `M ≃ᵢ N`. Combining with the
 van Dantzig–van der Waerden theorem (`IsometryEquiv.instCompactSpace`) shows that
 `RiemannianIsometry I J M N` and `Isom I M` are compact Hausdorff spaces in the weak Whitney
@@ -63,27 +66,34 @@ topology.
   `MDifferentiableAt.inner_mfderiv_eq_of_eventually_edist_eq`: a map differentiable at `p` that
   preserves extended distances from `p` near `p` preserves norms and inner products on `T_p M`.
 * `TauCeti.Manifold.contMDiffAt_of_isometry_domRestrict`,
-  `TauCeti.Manifold.isLocalDiffeomorphAt_of_isometry_domRestrict`: a map restricting to a metric
-  isometry on an open neighbourhood `U` of `p` with `f '' U ∈ 𝓝 (f p)` is smooth and a smooth
-  local diffeomorphism at `p`.
+  `TauCeti.Manifold.isLocalDiffeomorphAt_of_isometry_domRestrict`,
+  `TauCeti.Manifold.isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict`: a map
+  restricting locally around each point `p` to a metric isometry on an open neighbourhood `U` with
+  `f '' U ∈ 𝓝 (f p)` is smooth, a smooth local diffeomorphism, and a smooth local Riemannian
+  isometry.
 * `Isometry.isLocalRiemannianIsometry_of_isOpen_range`: a metric isometry with open range is a
   smooth local Riemannian isometry.
 * `IsometryEquiv.contMDiff`: every metric equivalence `M ≃ᵢ N` is smooth.
+* `IsometryEquiv.continuous_toContMDiffMap`, `IsometryEquiv.continuous_toRiemannianIsometry`:
+  promoting metric equivalences is continuous from the compact-open topology into the weak Whitney
+  `C^∞` topology.
 * `TauCeti.RiemannianIsometry.exists_coe_eq_iff_isometry_and_surjective`,
   `TauCeti.RiemannianIsometry.exists_isom_coe_eq_iff_isometry`: smooth Riemannian isometries are
   characterized among maps by preserving the Riemannian distance (and surjectivity, automatic for
   self-maps of compact manifolds).
 * `TauCeti.RiemannianIsometry.compactSpace_weakWhitney`: `RiemannianIsometry I J M N` is compact
-  in the weak Whitney topology when `M` is compact.
+  in the weak Whitney topology when `M` is compact and Hausdorff.
 
 ## References
 
 * S. B. Myers, N. E. Steenrod, *The group of isometries of a Riemannian manifold*, Ann. of Math.
   (2) 40 (1939), 400–416.
-* M. Taylor, *Finsler structures and smoothness of isometries*, Proc. Amer. Math. Soc. 134 (2006),
-  no. 8, 2419–2423.
+* M. Taylor, *Measure Theory and Integration*, Graduate Studies in Mathematics 76, AMS, 2006,
+  Appendix E; and *Finsler structures and smoothness of isometries*, Proc. Amer. Math. Soc. 134
+  (2006), no. 8, 2419–2423.
 * S. Kobayashi, K. Nomizu, *Foundations of Differential Geometry*, Vol. I, Interscience, 1963,
   Ch. IV, Theorem 3.10.
+* P. Petersen, *Riemannian Geometry*, 3rd ed., Springer GTM 171, 2016, §5.6.2.
 -/
 
 public section
@@ -92,6 +102,60 @@ open Bundle Filter Function Manifold Metric Set Topology
 open scoped ContDiff ENNReal Manifold
 
 noncomputable section
+
+section GroupToIsometryEquiv
+
+namespace TauCeti.RiemannianIsometry
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+
+/-- The unit of `Isom I M` coerces to the unit of `M ≃ᵢ M`. -/
+@[simp]
+theorem toIsometryEquiv_one : ((1 : Isom I M) : M ≃ᵢ M) = 1 := by
+  ext x
+  simp
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves multiplication. -/
+@[simp]
+theorem toIsometryEquiv_mul (Φ Ψ : Isom I M) :
+    ((Φ * Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) * (Ψ : M ≃ᵢ M) := by
+  ext x
+  simp
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves inversion. -/
+@[simp]
+theorem toIsometryEquiv_inv (Φ : Isom I M) :
+    ((Φ⁻¹ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← toIsometryEquiv_mul, inv_mul_cancel, toIsometryEquiv_one])
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves division. -/
+@[simp]
+theorem toIsometryEquiv_div (Φ Ψ : Isom I M) :
+    ((Φ / Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) / (Ψ : M ≃ᵢ M) := by
+  simp [div_eq_mul_inv]
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves natural powers. -/
+@[simp]
+theorem toIsometryEquiv_pow (Φ : Isom I M) (n : ℕ) :
+    ((Φ ^ n : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves integer powers. -/
+@[simp]
+theorem toIsometryEquiv_zpow (Φ : Isom I M) (n : ℤ) :
+    ((Φ ^ n : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) ^ n := by
+  cases n with
+  | ofNat n => simp
+  | negSucc n => simp
+
+end TauCeti.RiemannianIsometry
+
+end GroupToIsometryEquiv
 
 section Differential
 
@@ -108,6 +172,25 @@ variable
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   [IsRiemannianManifold J N]
+
+/-- If a map between real normed spaces is differentiable at `0` and preserves norms near `0`,
+its Fréchet derivative at `0` preserves norms. -/
+private theorem DifferentiableAt.norm_fderiv_zero_eq
+    {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] {Ψ : E₁ → E₂}
+    (hΨ : DifferentiableAt ℝ Ψ 0) (hnorm : ∀ᶠ u in 𝓝 (0 : E₁), ‖Ψ u‖ = ‖u‖) (v : E₁) :
+    ‖fderiv ℝ Ψ 0 v‖ = ‖v‖ := by
+  have hΨ0 : Ψ 0 = 0 := by
+    have h0 := hnorm.self_of_nhds
+    rwa [norm_zero, norm_eq_zero] at h0
+  have hpair := hΨ.hasFDerivAt.prodMk (hasFDerivAt_id (0 : E₁))
+  refine le_antisymm ?_ ?_
+  · simpa using hpair.norm_apply_le_mul_norm_apply
+      (L := ContinuousLinearMap.fst ℝ E₂ E₁) (M := ContinuousLinearMap.snd ℝ E₂ E₁)
+      (A := 1) (hnorm.mono fun u hu ↦ by simp [hΨ0, hu]) v
+  · simpa using hpair.norm_apply_le_mul_norm_apply
+      (L := ContinuousLinearMap.snd ℝ E₂ E₁) (M := ContinuousLinearMap.fst ℝ E₂ E₁)
+      (A := 1) (hnorm.mono fun u hu ↦ by simp [hΨ0, hu]) v
 
 namespace MDifferentiableAt
 
@@ -128,29 +211,29 @@ theorem norm_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
   have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 :=
     (contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt (by simp)
   have hLf : MDifferentiableAt I 𝓘(ℝ, TangentSpace J (f p)) (L ∘ f) p := hL.comp p hf
-  have hΨ_mdiff : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) 𝓘(ℝ, TangentSpace J (f p)) Ψ 0 :=
-    hLf.comp_of_eq 0 hexp (riemannianExp_zero p)
-  have hΨ_diff : DifferentiableAt ℝ Ψ 0 := mdifferentiableAt_iff_differentiableAt.1 hΨ_mdiff
-  have hΨ0 : Ψ 0 = 0 := by simp [Ψ, L, hN.riemannianLog_self]
+  have hΨ_diff : DifferentiableAt ℝ Ψ 0 :=
+    mdifferentiableAt_iff_differentiableAt.1 (hLf.comp_of_eq 0 hexp (riemannianExp_zero p))
   have hfderiv : fderiv ℝ Ψ 0 v = mfderiv I J f p v := by
-    let v₀ : TangentSpace 𝓘(ℝ, TangentSpace I p) (0 : TangentSpace I p) := v
-    have h1 : fderiv ℝ Ψ 0 v =
-        mfderiv 𝓘(ℝ, TangentSpace I p) 𝓘(ℝ, TangentSpace J (f p)) Ψ 0 v₀ :=
-      (TauCeti.mvfderiv_eq_fderiv_apply Ψ 0 v₀).symm.trans (mvfderiv_apply_eq_mfderiv_apply Ψ 0 v₀)
-    have h2 := DFunLike.congr_fun (mfderiv_comp_of_eq hLf hexp (riemannianExp_zero p)) v₀
-    change mfderiv 𝓘(ℝ, TangentSpace I p) 𝓘(ℝ, TangentSpace J (f p)) Ψ 0 v₀ =
-      mfderiv I 𝓘(ℝ, TangentSpace J (f p)) (L ∘ f) (riemannianExp I M p 0)
-        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v₀) at h2
-    rw [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at h2
-    change mfderiv 𝓘(ℝ, TangentSpace I p) 𝓘(ℝ, TangentSpace J (f p)) Ψ 0 v₀ =
-      mfderiv I 𝓘(ℝ, TangentSpace J (f p)) (L ∘ f) p v at h2
-    rw [mfderiv_comp_apply p hL hf v, hN.mfderiv_riemannianLog_self_apply] at h2
-    exact h1.trans h2
+    let v₀ : TangentSpace 𝓘(ℝ, TangentSpace I p) (0 : TangentSpace I p) :=
+      (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).symm v
+    calc fderiv ℝ Ψ 0 v
+        = mvfderiv 𝓘(ℝ, TangentSpace I p) Ψ 0 v₀ := by
+            rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+              ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+      _ = mvfderiv I (L ∘ f) p (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v₀) :=
+            mvfderiv_comp_apply_of_eq 0 hLf hexp (riemannianExp_zero p) v₀
+      _ = mvfderiv I (L ∘ f) p v :=
+            congrArg (mvfderiv I (L ∘ f) p) <|
+              (congrArg (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0)
+                (NormedSpace.fromTangentSpace_symm_apply (𝕜 := ℝ) (0 : TangentSpace I p) v)).trans
+                (mfderiv_riemannianExp_apply_zero (I := I) p v)
+      _ = mfderiv I J f p v := by
+            rw [mvfderiv_comp_apply p hL hf v, hN.mvfderiv_riemannianLog_self,
+              ContinuousLinearMap.id_apply]
   -- Near `0 ∈ T_p M`, `exp_p u` stays in the normal ball at `p`, lands in the normal ball at
   -- `f p`, and lies in the region where `f` preserves distance from `p`, so `‖Ψ u‖ = ‖u‖`.
   have hexp_cont : ContinuousAt (riemannianExp I M p) 0 :=
     continuousAt_riemannianExp (zero_mem_expDomain p)
-  have hf_cont : ContinuousAt f p := hf.continuousAt
   have hnorm_ev : ∀ᶠ u : TangentSpace I p in 𝓝 0, ‖Ψ u‖ = ‖u‖ := by
     have h1 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p), u ∈ Metric.ball (0 : TangentSpace I p) rM :=
       Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hrM)
@@ -161,38 +244,15 @@ theorem norm_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
         f (riemannianExp I M p u) ∈ eball (f p) (ENNReal.ofReal rN) := by
       have hballN : eball (f p) (ENNReal.ofReal rN) ∈ 𝓝 (f p) :=
         Metric.isOpen_eball.mem_nhds (Metric.mem_eball_self (ENNReal.ofReal_pos.2 hrN))
-      exact (hf_cont.comp_of_eq hexp_cont (riemannianExp_zero p)).preimage_mem_nhds
+      exact (hf.continuousAt.comp_of_eq hexp_cont (riemannianExp_zero p)).preimage_mem_nhds
         (by simpa only [comp_apply, riemannianExp_zero] using hballN)
     filter_upwards [h1, h2, h3] with u hu1 hu2 hu3
     have hlog := hN.toReal_edist_eq_norm_riemannianLog_of_mem_eball subset_rfl hu3
     simp only [Ψ, L, comp_apply]
     rw [← hlog, hu2, hM.edist_riemannianExp_eq_of_mem_ball subset_rfl hu1, ← ofReal_norm,
       ENNReal.toReal_ofReal (norm_nonneg u)]
-  let φ : ℝ → TangentSpace J (f p) := fun s ↦ Ψ (s • v)
-  have hray_deriv : HasDerivAt φ (fderiv ℝ Ψ 0 v) 0 := by
-    have hs : HasDerivAt (fun s : ℝ ↦ s • v) v 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v)
-    have hΨ_fderiv : HasFDerivAt Ψ (fderiv ℝ Ψ 0) ((0 : ℝ) • v) := by
-      rw [zero_smul]
-      exact hΨ_diff.hasFDerivAt
-    exact hΨ_fderiv.comp_hasDerivAt (0 : ℝ) hs
-  have hslope_norm :=
-    ((hasDerivAt_iff_tendsto_slope_zero.1 hray_deriv).mono_left (nhdsGT_le_nhdsNE 0)).norm
-  have hray_cont : ContinuousAt (fun s : ℝ ↦ s • v) 0 := by fun_prop
-  have hray_tendsto : Tendsto (fun s : ℝ ↦ s • v) (𝓝 0) (𝓝 0) := by
-    simpa only [zero_smul] using hray_cont.tendsto
-  have hray_norm : ∀ᶠ s : ℝ in 𝓝[>] 0, ‖s⁻¹ • (φ (0 + s) - φ 0)‖ = ‖v‖ := by
-    have hev1 : ∀ᶠ s : ℝ in 𝓝[>] 0, 0 < s := self_mem_nhdsWithin
-    have hev2 : ∀ᶠ s : ℝ in 𝓝[>] 0, ‖Ψ (s • v)‖ = ‖s • v‖ :=
-      nhdsWithin_le_nhds (hray_tendsto.eventually hnorm_ev)
-    filter_upwards [hev1, hev2] with s hs hv_eq
-    simp only [φ, zero_add, zero_smul, hΨ0, sub_zero]
-    rw [norm_smul, hv_eq, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hs.le),
-      Real.norm_of_nonneg hs.le, ← mul_assoc, inv_mul_cancel₀ hs.ne', one_mul]
-  have hlim : Tendsto (fun _ : ℝ ↦ ‖v‖) (𝓝[>] 0) (𝓝 ‖fderiv ℝ Ψ 0 v‖) :=
-    hslope_norm.congr' hray_norm
   rw [← hfderiv]
-  exact tendsto_nhds_unique hlim tendsto_const_nhds
+  exact hΨ_diff.norm_fderiv_zero_eq hnorm_ev v
 
 /-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
 neighbourhood of `p`, then `df_p` preserves inner products of tangent vectors. -/
@@ -316,6 +376,25 @@ theorem isLocalDiffeomorphAt_of_isometry_domRestrict {f : M → N} {U : Set M} {
           (mem_of_superset (hU'o.mem_nhds (hg_mem hy)) hU'_sub_im)).contMDiffWithinAt }
   exact TauCeti.isLocalDiffeomorphAt_of_eqOn (Φ := Ψ) hpU' (eqOn_refl f U')
 
+/-- If `f : M → N` restricts around each point `p : M` to a metric isometry on an open
+neighbourhood `U` with `f '' U ∈ 𝓝 (f p)`, then `f` is a smooth local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict {f : M → N}
+    (hf : ∀ p : M, ∃ U : Set M, IsOpen U ∧ p ∈ U ∧ Isometry (U.domRestrict f) ∧ f '' U ∈ 𝓝 (f p)) :
+    TauCeti.IsLocalRiemannianIsometry I J f where
+  contMDiff p :=
+    let ⟨_, hUo, hpU, hfU_isom, hfU_nhds⟩ := hf p
+    contMDiffAt_of_isometry_domRestrict hUo hpU hfU_isom hfU_nhds
+  isInvertible_mfderiv p :=
+    let ⟨_, hUo, hpU, hfU_isom, hfU_nhds⟩ := hf p
+    (isLocalDiffeomorphAt_of_isometry_domRestrict (I := I) (J := J) hUo hpU hfU_isom hfU_nhds)
+      |>.isInvertible_mfderiv (by simp)
+  inner_mfderiv p :=
+    let ⟨U, hUo, hpU, hfU_isom, hfU_nhds⟩ := hf p
+    ((contMDiffAt_of_isometry_domRestrict (I := I) (J := J) hUo hpU hfU_isom hfU_nhds)
+      |>.mdifferentiableAt (by simp))
+      |>.inner_mfderiv_eq_of_eventually_edist_eq
+        (eventually_of_mem (hUo.mem_nhds hpU) fun y hy ↦ hfU_isom.edist_eq ⟨p, hpU⟩ ⟨y, hy⟩)
+
 end TauCeti.Manifold
 
 /-! ### Global metric isometries and metric equivalences -/
@@ -349,13 +428,10 @@ theorem isLocalDiffeomorph_of_isOpen_range {f : M → N} (hf : Isometry f)
 
 /-- A metric isometry `f : M → N` with open range is a smooth local Riemannian isometry. -/
 theorem isLocalRiemannianIsometry_of_isOpen_range {f : M → N} (hf : Isometry f)
-    (hr : IsOpen (range f)) : TauCeti.IsLocalRiemannianIsometry I J f where
-  contMDiff := hf.contMDiff_of_isOpen_range hr
-  isInvertible_mfderiv x := (hf.isLocalDiffeomorph_of_isOpen_range hr x).isInvertible_mfderiv
-    (by simp)
-  inner_mfderiv x :=
-    ((hf.contMDiff_of_isOpen_range hr x).mdifferentiableAt (by simp))
-      |>.inner_mfderiv_eq_of_eventually_edist_eq (Eventually.of_forall fun y ↦ hf.edist_eq x y)
+    (hr : IsOpen (range f)) : TauCeti.IsLocalRiemannianIsometry I J f :=
+  isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict fun p ↦
+    ⟨univ, isOpen_univ, mem_univ p, hf.comp (fun _ _ ↦ rfl),
+      by simpa only [image_univ] using hr.mem_nhds (mem_range_self p)⟩
 
 /-- A surjective metric isometry `f : M → N` is smooth. -/
 theorem contMDiff_of_surjective {f : M → N} (hf : Isometry f) (hsurj : Surjective f) :
@@ -407,6 +483,12 @@ theorem toRiemannianIsometry_symm (e : M ≃ᵢ N) :
   apply (EquivLike.injective (e.toRiemannianIsometry I J))
   simp
 
+/-- Evaluating `(e.toRiemannianIsometry I J).symm` agrees with `e.symm`. -/
+@[simp]
+theorem coe_toRiemannianIsometry_symm (e : M ≃ᵢ N) :
+    ⇑(e.toRiemannianIsometry I J).symm = ⇑e.symm := by
+  rw [← toRiemannianIsometry_symm, coe_toRiemannianIsometry]
+
 /-- Promoting the identity metric equivalence gives the identity smooth Riemannian isometry. -/
 @[simp]
 theorem toRiemannianIsometry_refl :
@@ -421,6 +503,51 @@ theorem toIsometryEquiv_toRiemannianIsometry (e : M ≃ᵢ N) :
     ((e.toRiemannianIsometry I J : TauCeti.RiemannianIsometry I J M N) : M ≃ᵢ N) = e := by
   ext x
   rfl
+
+/-- Promoting `1 : M ≃ᵢ M` gives `1 : TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_one :
+    (1 : M ≃ᵢ M).toRiemannianIsometry I I = (1 : TauCeti.Isom I M) := by
+  ext x
+  simp
+
+/-- Promoting a product in `M ≃ᵢ M` gives the product in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_mul (e₁ e₂ : M ≃ᵢ M) :
+    (e₁ * e₂).toRiemannianIsometry I I =
+      e₁.toRiemannianIsometry I I * e₂.toRiemannianIsometry I I := by
+  ext x
+  simp
+
+/-- Promoting an inverse in `M ≃ᵢ M` gives the inverse in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_inv (e : M ≃ᵢ M) :
+    e⁻¹.toRiemannianIsometry I I = (e.toRiemannianIsometry I I)⁻¹ :=
+  eq_inv_of_mul_eq_one_left
+    (by rw [← toRiemannianIsometry_mul, inv_mul_cancel, toRiemannianIsometry_one])
+
+/-- Promoting a quotient in `M ≃ᵢ M` gives the quotient in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_div (e₁ e₂ : M ≃ᵢ M) :
+    (e₁ / e₂).toRiemannianIsometry I I =
+      e₁.toRiemannianIsometry I I / e₂.toRiemannianIsometry I I := by
+  simp [div_eq_mul_inv]
+
+/-- Promoting a natural power in `M ≃ᵢ M` gives the natural power in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_pow (e : M ≃ᵢ M) (n : ℕ) :
+    (e ^ n).toRiemannianIsometry I I = e.toRiemannianIsometry I I ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
+/-- Promoting an integer power in `M ≃ᵢ M` gives the integer power in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_zpow (e : M ≃ᵢ M) (n : ℤ) :
+    (e ^ n).toRiemannianIsometry I I = e.toRiemannianIsometry I I ^ n := by
+  cases n with
+  | ofNat n => simp
+  | negSucc n => simp
 
 variable
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
@@ -450,11 +577,27 @@ def riemannianIsometryOfCompactSpace [CompactSpace M] {f : M → M} (hf : Isomet
     TauCeti.Isom I M :=
   hf.isometryEquivOfCompactSpace.toRiemannianIsometry I I
 
+/-- `hf.riemannianIsometryOfCompactSpace I` is `hf.isometryEquivOfCompactSpace` promoted via
+`IsometryEquiv.toRiemannianIsometry`. -/
+theorem riemannianIsometryOfCompactSpace_def [CompactSpace M] {f : M → M} (hf : Isometry f) :
+    hf.riemannianIsometryOfCompactSpace I =
+      hf.isometryEquivOfCompactSpace.toRiemannianIsometry I I :=
+  (rfl)
+
 /-- The underlying map of `hf.riemannianIsometryOfCompactSpace I` is `f`. -/
 @[simp]
 theorem coe_riemannianIsometryOfCompactSpace [CompactSpace M] {f : M → M} (hf : Isometry f) :
     ⇑(hf.riemannianIsometryOfCompactSpace I) = f := by
-  simp [riemannianIsometryOfCompactSpace]
+  simp [riemannianIsometryOfCompactSpace_def]
+
+/-- Forgetting smoothness on `hf.riemannianIsometryOfCompactSpace I` recovers
+`hf.isometryEquivOfCompactSpace`. -/
+@[simp]
+theorem toIsometryEquiv_riemannianIsometryOfCompactSpace [CompactSpace M] {f : M → M}
+    (hf : Isometry f) :
+    ((hf.riemannianIsometryOfCompactSpace I : TauCeti.Isom I M) : M ≃ᵢ M) =
+      hf.isometryEquivOfCompactSpace := by
+  simp [riemannianIsometryOfCompactSpace_def]
 
 end Isometry
 
@@ -522,18 +665,20 @@ def isometryEquivMulEquiv : Isom I M ≃* (M ≃ᵢ M) where
 
 /-- The underlying equivalence of `isometryEquivMulEquiv` is `isometryEquivEquiv`. -/
 @[simp]
-theorem coe_isometryEquivMulEquiv :
+theorem toEquiv_isometryEquivMulEquiv :
     (isometryEquivMulEquiv I M : Isom I M ≃ (M ≃ᵢ M)) = isometryEquivEquiv I I M M :=
   (rfl)
 
+-- See note [hom simp lemma priority]
 /-- `isometryEquivMulEquiv` sends an element of `Isom I M` to its metric equivalence. -/
-@[simp]
+@[simp low]
 theorem isometryEquivMulEquiv_apply (Φ : Isom I M) :
     isometryEquivMulEquiv I M Φ = (Φ : M ≃ᵢ M) :=
   (rfl)
 
+-- See note [hom simp lemma priority]
 /-- `isometryEquivMulEquiv.symm` promotes a self-metric equivalence via `toRiemannianIsometry`. -/
-@[simp]
+@[simp low]
 theorem isometryEquivMulEquiv_symm_apply (e : M ≃ᵢ M) :
     (isometryEquivMulEquiv I M).symm e = e.toRiemannianIsometry I I :=
   (rfl)
@@ -543,6 +688,166 @@ end TauCeti.RiemannianIsometry
 end Differential
 
 /-! ### Identification of the weak Whitney topology with the compact-open topology -/
+
+section ContinuousToIsometryEquiv
+
+open scoped TauCeti.DiffeomorphWeakWhitney TauCeti.RiemannianIsometryWeakWhitney
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsRiemannianManifold I M] [CompactSpace M]
+  {N : Type*} [PseudoEMetricSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+  [IsRiemannianManifold J N]
+
+/-- Forgetting smoothness is continuous from the weak Whitney `C^∞` topology on
+`TauCeti.RiemannianIsometry I J M N` to the compact-open topology on `M ≃ᵢ N`. -/
+theorem TauCeti.RiemannianIsometry.continuous_toIsometryEquiv :
+    Continuous (fun Φ : TauCeti.RiemannianIsometry I J M N ↦ (Φ : M ≃ᵢ N)) :=
+  IsometryEquiv.continuous_iff.2 fun x ↦
+    (Diffeomorph.continuous_eval_const x).comp
+      TauCeti.RiemannianIsometry.isEmbedding_toDiffeomorph.continuous
+
+end ContinuousToIsometryEquiv
+
+section ChartEdistSqParam
+
+open TauCeti TauCeti.Manifold
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+
+/-- Smoothness at `((z₀ : E), fun i ↦ extChartAt I (a₀ i) (a₀ i))` of the local squared-distance
+coordinate formula `q ↦ extChartAt J y (Φ.symm fun i ↦ (edist ...).toReal ^ 2)`. -/
+private theorem contDiffAt_chart_edist_sq_param {x : M} {y : N}
+    (z₀ : (extChartAt I x).target) {WMo : Set M} {r : ℝ} (hWMo : IsOpen WMo)
+    (hWM_norm : ∀ q ∈ WMo, IsNormalDomain I M q (Metric.ball 0 r)) {d : ℕ}
+    {a₀ : Fin d → M}
+    (ha₀ : ∀ i, a₀ i ∈ WMo ∧ edist (a₀ i) ((extChartAt I x).symm z₀) < ENNReal.ofReal r)
+    {Φ : PartialDiffeomorph J 𝓘(ℝ, Fin d → ℝ) N (Fin d → ℝ) ∞} {q₀ : N}
+    (hq₀_src : q₀ ∈ Φ.source) (hq₀_ext : q₀ ∈ (extChartAt J y).source)
+    (hcoord₀ :
+      (fun i ↦ (edist (a₀ i) ((extChartAt I x).symm z₀)).toReal ^ 2) = Φ q₀) :
+    ContDiffAt ℝ ∞
+      (fun q : E × (Fin d → E) ↦
+        extChartAt J y (Φ.symm fun i ↦
+          (edist ((extChartAt I (a₀ i)).symm (q.2 i))
+            ((extChartAt I x).symm q.1)).toReal ^ 2))
+      ((z₀ : E), fun i ↦ extChartAt I (a₀ i) (a₀ i)) := by
+  set b₀ : E := (z₀ : E)
+  set ξ₀ : Fin d → E := fun i ↦ extChartAt I (a₀ i) (a₀ i)
+  let coordTuple : E × (Fin d → E) → Fin d → ℝ := fun q i ↦
+    (edist ((extChartAt I (a₀ i)).symm (q.2 i)) ((extChartAt I x).symm q.1)).toReal ^ 2
+  have hcoord_b₀ξ₀ : coordTuple (b₀, ξ₀) = Φ q₀ := by
+    simpa only [coordTuple, ξ₀, b₀, extChartAt_to_inv] using hcoord₀
+  have h1 : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) I ∞
+      (fun q : E × (Fin d → E) ↦ (extChartAt I x).symm q.1) (b₀, ξ₀) :=
+    ((contMDiffOn_extChartAt_symm x).contMDiffAt
+      ((isOpen_extChartAt_target x).mem_nhds z₀.2)).comp (b₀, ξ₀) contDiffAt_fst.contMDiffAt
+  have htuple : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) 𝓘(ℝ, Fin d → ℝ) ∞ coordTuple (b₀, ξ₀) := by
+    refine (contDiffAt_pi.2 fun i ↦ ?_).contMDiffAt
+    have hproj : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) 𝓘(ℝ, E) ∞
+        (fun q : E × (Fin d → E) ↦ q.2 i) (b₀, ξ₀) :=
+      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d ↦ E) i).contDiff.contDiffAt.comp
+        (b₀, ξ₀) contDiffAt_snd).contMDiffAt
+    have h2 : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) I ∞
+        (fun q : E × (Fin d → E) ↦ (extChartAt I (a₀ i)).symm (q.2 i)) (b₀, ξ₀) :=
+      ((contMDiffOn_extChartAt_symm (a₀ i)).contMDiffAt
+        ((isOpen_extChartAt_target (a₀ i)).mem_nhds (mem_extChartAt_target (a₀ i)))).comp
+        (b₀, ξ₀) hproj
+    have hdSq := contMDiffAt_toReal_edist_sq hWMo hWM_norm (ha₀ i).1 (ha₀ i).2
+    have hval : ((extChartAt I (a₀ i)).symm (ξ₀ i), (extChartAt I x).symm b₀) =
+        (a₀ i, (extChartAt I x).symm z₀) :=
+      Prod.ext (extChartAt_to_inv (a₀ i)) rfl
+    exact contMDiffAt_iff_contDiffAt.mp (hdSq.comp_of_eq (h2.prodMk h1) hval)
+  have hΦsymm : ContMDiffAt 𝓘(ℝ, Fin d → ℝ) J ∞ Φ.symm (coordTuple (b₀, ξ₀)) := by
+    rw [hcoord_b₀ξ₀]
+    exact Φ.symm.contMDiffOn.contMDiffAt (Φ.open_target.mem_nhds (Φ.map_source hq₀_src))
+  have hval_N : Φ.symm (coordTuple (b₀, ξ₀)) = q₀ := by
+    rw [hcoord_b₀ξ₀]
+    exact Φ.left_inv hq₀_src
+  have hq₀_chart : q₀ ∈ (chartAt H' y).source := by rwa [extChartAt_source] at hq₀_ext
+  have hextJ : ContMDiffAt J 𝓘(ℝ, F) ∞ (extChartAt J y) q₀ := contMDiffAt_extChartAt' hq₀_chart
+  exact contMDiffAt_iff_contDiffAt.mp (hextJ.comp_of_eq (hΦsymm.comp (b₀, ξ₀) htuple) hval_N)
+
+end ChartEdistSqParam
+
+section JetParam
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- If a family `g : P → M → N` has coordinate representative locally equal to `Fmap (·, ξ p)` for
+a `C^∞` map `Fmap` and a parameter map `ξ` continuous at `p₀`, then its chart `m`-jet stays inside
+any open set `V` containing the `m`-jet at `(p₀, z₀)`. -/
+private theorem tendsto_chartJet_of_local_param {P : Type*} [TopologicalSpace P]
+    {g : P → M → N} {p₀ : P} {x : M} {y : N} {m : ℕ} {z₀ : (extChartAt I x).target}
+    {V : Set (E [×m]→L[ℝ] F)} (hV : IsOpen V) {d : ℕ} {Fmap : E × (Fin d → E) → F}
+    {ξ : P → Fin d → E} {Up : Set P} {Ub : Set E} (hUp : IsOpen Up) (hp₀ : p₀ ∈ Up)
+    (hUb : IsOpen Ub) (hz₀ : (z₀ : E) ∈ Ub) (hξ : ContinuousAt ξ p₀)
+    (hF : ContDiffAt ℝ ∞ Fmap ((z₀ : E), ξ p₀))
+    (hagree : ∀ ⦃p : P⦄, p ∈ Up → ∀ ⦃b : E⦄, b ∈ Ub →
+      g p ((extChartAt I x).symm b) ∈ (extChartAt J y).source ∧
+        extChartAt J y (g p ((extChartAt I x).symm b)) = Fmap (b, ξ p))
+    (hV₀ : iteratedFDerivWithin ℝ m (extChartAt J y ∘ g p₀ ∘ (extChartAt I x).symm)
+      (extChartAt I x).target z₀ ∈ V) :
+    ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
+      g q.1 ((extChartAt I x).symm q.2) ∈ (extChartAt J y).source ∧
+        iteratedFDerivWithin ℝ m (extChartAt J y ∘ g q.1 ∘ (extChartAt I x).symm)
+          (extChartAt I x).target q.2 ∈ V := by
+  obtain ⟨W_F, hWF_nhds, hFW⟩ := hF.contDiffOn (m := (m : WithTop ℕ∞)) (by simp) (by simp)
+  obtain ⟨W_Fo, hWFo_sub, hWFo_open, h₀_W⟩ := _root_.mem_nhds_iff.1 hWF_nhds
+  have hpart_cont : ContinuousAt
+      (fun q : E × (Fin d → E) ↦ iteratedFDeriv ℝ m (fun b ↦ Fmap (b, q.2)) q.1)
+      ((z₀ : E), ξ p₀) :=
+    ((hFW.mono hWFo_sub).continuousOn_iteratedFDeriv_partial hWFo_open le_rfl).continuousAt
+      (hWFo_open.mem_nhds h₀_W)
+  let Θ : P × (extChartAt I x).target → E × (Fin d → E) := fun q ↦ (q.2, ξ q.1)
+  have hΘ0 : Θ (p₀, z₀) = ((z₀ : E), ξ p₀) := rfl
+  have hΘ_cont : ContinuousAt Θ (p₀, z₀) :=
+    (continuous_subtype_val.comp continuous_snd).continuousAt.prodMk
+      (hξ.comp continuous_fst.continuousAt)
+  have hjet_eq {p : P} (hp : p ∈ Up) {z : (extChartAt I x).target} (hz : (z : E) ∈ Ub) :
+      iteratedFDerivWithin ℝ m (extChartAt J y ∘ g p ∘ (extChartAt I x).symm)
+          (extChartAt I x).target z =
+        iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ (p, z)).2)) (Θ (p, z)).1 := by
+    rw [iteratedFDerivWithin_of_isOpen m (isOpen_extChartAt_target x) z.2]
+    have hev : (extChartAt J y ∘ g p ∘ (extChartAt I x).symm) =ᶠ[𝓝 (z : E)]
+        fun b ↦ Fmap (b, (Θ (p, z)).2) :=
+      eventually_of_mem (hUb.mem_nhds hz) fun b hb ↦ (hagree hp hb).2
+    exact (hev.iteratedFDeriv ℝ m).eq_of_nhds
+  have hV_at_0 : iteratedFDeriv ℝ m (fun b ↦ Fmap (b, ξ p₀)) (z₀ : E) ∈ V := by
+    have h := hjet_eq hp₀ hz₀
+    rw [hΘ0] at h
+    rwa [← h]
+  have hev_V : ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
+      iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ q).2)) (Θ q).1 ∈ V :=
+    (hpart_cont.comp_of_eq hΘ_cont hΘ0).preimage_mem_nhds (hV.mem_nhds hV_at_0)
+  have hev_UpUb : ∀ᶠ q : P × (extChartAt I x).target in 𝓝 (p₀, z₀),
+      q.1 ∈ Up ∧ (q.2 : E) ∈ Ub :=
+    (hUp.prod (hUb.preimage continuous_subtype_val)).mem_nhds ⟨hp₀, hz₀⟩
+  filter_upwards [hev_UpUb, hev_V] with ⟨p, z⟩ ⟨hp, hz⟩ hVz
+  exact ⟨(hagree hp hz).1, (hjet_eq hp hz).symm ▸ hVz⟩
+
+end JetParam
 
 section WeakWhitney
 
@@ -558,24 +863,24 @@ variable
   {M : Type*} [EMetricSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsRiemannianManifold I M] [CompactSpace M]
+  [IsRiemannianManifold I M]
   {N : Type*} [EMetricSpace N] [ChartedSpace H' N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   [IsRiemannianManifold J N]
 
-/-- Promoting a metric equivalence `M ≃ᵢ N` on a compact Riemannian manifold `M` to a smooth
-Riemannian isometry is continuous from the compact-open topology to the weak Whitney `C^∞`
-topology. -/
-theorem IsometryEquiv.continuous_toRiemannianIsometry :
-    Continuous (IsometryEquiv.toRiemannianIsometry I J :
-      (M ≃ᵢ N) → RiemannianIsometry I J M N) := by
-  refine RiemannianIsometry.continuous_weakWhitney_iff.2 ?_
-  refine Diffeomorph.continuous_weakWhitney_iff.2 ?_
-  refine continuous_iff_continuousAt.2 fun e₀ ↦ ?_
-  refine ContMDiffMap.tendsto_manifoldWeakWhitney_iff.2 fun x y m hm K hK V hV h₀ ↦ ?_
-  simp only [ContMDiffMap.mem_chartJetSet] at h₀ ⊢
-  refine hK.eventually_forall_of_forall_eventually fun z₀ hz₀ ↦ ?_
+/-- Near `(e₀, z₀)`, the coordinate representative `extChartAt J y ∘ e ∘ (extChartAt I x).symm`
+equals `Fmap (·, ξ e)` for a `C^∞` map `Fmap` and a continuous parameter map `ξ`. -/
+private theorem IsometryEquiv.exists_contDiffAt_chart_param (e₀ : M ≃ᵢ N) {x : M} {y : N}
+    (z₀ : (extChartAt I x).target)
+    (he₀z₀ : e₀ ((extChartAt I x).symm z₀) ∈ (extChartAt J y).source) :
+    ∃ (d : ℕ) (Fmap : E × (Fin d → E) → F) (ξ : (M ≃ᵢ N) → Fin d → E)
+      (Ue : Set (M ≃ᵢ N)) (Ub : Set E),
+      IsOpen Ue ∧ e₀ ∈ Ue ∧ IsOpen Ub ∧ (z₀ : E) ∈ Ub ∧
+      ContinuousAt ξ e₀ ∧ ContDiffAt ℝ ∞ Fmap ((z₀ : E), ξ e₀) ∧
+      ∀ ⦃e : M ≃ᵢ N⦄, e ∈ Ue → ∀ ⦃b : E⦄, b ∈ Ub →
+        e ((extChartAt I x).symm b) ∈ (extChartAt J y).source ∧
+          extChartAt J y (e ((extChartAt I x).symm b)) = Fmap (b, ξ e) := by
   set p₀ : M := (extChartAt I x).symm z₀
   obtain ⟨r, hr, WM, hWM_nhds, hWM⟩ :=
     exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p₀
@@ -585,7 +890,7 @@ theorem IsometryEquiv.continuous_toRiemannianIsometry :
   -- centres `yN i` pull back under `e₀.symm` into `WMo ∩ eball p₀ (r / 2)`.
   have hsN : (e₀.toHomeomorph '' (WMo ∩ eball p₀ (ENNReal.ofReal (r / 2)))) ∩
       (extChartAt J y).source ∈ 𝓝 (e₀ p₀) := by
-    refine inter_mem ?_ ((isOpen_extChartAt_source y).mem_nhds (h₀ z₀ hz₀).1)
+    refine inter_mem ?_ ((isOpen_extChartAt_source y).mem_nhds he₀z₀)
     exact e₀.toHomeomorph.isOpenMap.image_mem_nhds
       ((hWMo_open.inter Metric.isOpen_eball).mem_nhds ⟨hp₀WMo, Metric.mem_eball_self hr2⟩)
   set d := Module.finrank ℝ F
@@ -597,145 +902,84 @@ theorem IsometryEquiv.continuous_toRiemannianIsometry :
     have hqa : q = a₀ i := by simp [a₀, ← hqe]
     refine ⟨hqa ▸ hqW, (hqa ▸ Metric.mem_eball.1 hqball).trans ?_⟩
     exact (ENNReal.ofReal_lt_ofReal_iff hr).2 (half_lt_self hr)
-  set b₀ : E := (z₀ : E)
-  set ξ₀ : Fin d → E := fun i ↦ extChartAt I (a₀ i) (a₀ i)
-  -- Express the coordinate representative locally as `F (b, ξ)` on `E × (Fin d → E)`.
-  let coordTuple : E × (Fin d → E) → Fin d → ℝ := fun q i ↦
-    (edist ((extChartAt I (a₀ i)).symm (q.2 i)) ((extChartAt I x).symm q.1)).toReal ^ 2
-  let Fmap : E × (Fin d → E) → F := fun q ↦ extChartAt J y (Φ.symm (coordTuple q))
-  have hcoord_b₀ξ₀ : coordTuple (b₀, ξ₀) = Φ (e₀ p₀) := by
+  let Fmap : E × (Fin d → E) → F := fun q ↦
+    extChartAt J y (Φ.symm fun i ↦
+      (edist ((extChartAt I (a₀ i)).symm (q.2 i)) ((extChartAt I x).symm q.1)).toReal ^ 2)
+  let ξ : (M ≃ᵢ N) → Fin d → E := fun e i ↦ extChartAt I (a₀ i) (e.symm (yN i))
+  have hcoord₀ : (fun i ↦ (edist (a₀ i) p₀).toReal ^ 2) = Φ (e₀ p₀) := by
     rw [hΦ_eq (e₀ p₀) he₀p₀_src]
     ext i
     have hiso : edist (yN i) (e₀ p₀) = edist (a₀ i) p₀ := by
       simpa only [a₀, e₀.apply_symm_apply] using e₀.edist_eq (e₀.symm (yN i)) p₀
     rw [hiso]
-    simp only [coordTuple, ξ₀, b₀, p₀, extChartAt_to_inv]
-  have hF_smooth : ContDiffAt ℝ ∞ Fmap (b₀, ξ₀) := by
-    have h1 : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) I ∞
-        (fun q : E × (Fin d → E) ↦ (extChartAt I x).symm q.1) (b₀, ξ₀) :=
-      ((contMDiffOn_extChartAt_symm x).contMDiffAt
-        ((isOpen_extChartAt_target x).mem_nhds z₀.2)).comp (b₀, ξ₀) contDiffAt_fst.contMDiffAt
-    have htuple : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) 𝓘(ℝ, Fin d → ℝ) ∞ coordTuple (b₀, ξ₀) := by
-      refine (contDiffAt_pi.2 fun i ↦ ?_).contMDiffAt
-      have hproj : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) 𝓘(ℝ, E) ∞
-          (fun q : E × (Fin d → E) ↦ q.2 i) (b₀, ξ₀) :=
-        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin d ↦ E) i).contDiff.contDiffAt.comp
-          (b₀, ξ₀) contDiffAt_snd).contMDiffAt
-      have h2 : ContMDiffAt 𝓘(ℝ, E × (Fin d → E)) I ∞
-          (fun q : E × (Fin d → E) ↦ (extChartAt I (a₀ i)).symm (q.2 i)) (b₀, ξ₀) :=
-        ((contMDiffOn_extChartAt_symm (a₀ i)).contMDiffAt
-          ((isOpen_extChartAt_target (a₀ i)).mem_nhds (mem_extChartAt_target (a₀ i)))).comp
-          (b₀, ξ₀) hproj
-      have hdSq := contMDiffAt_toReal_edist_sq hWMo_open
-        (fun q hq ↦ (hWM q (hWMo_sub hq)).1) (ha₀_mem i).1 (ha₀_mem i).2
-      have hval : ((extChartAt I (a₀ i)).symm (ξ₀ i), (extChartAt I x).symm b₀) = (a₀ i, p₀) :=
-        Prod.ext (extChartAt_to_inv (a₀ i)) rfl
-      exact contMDiffAt_iff_contDiffAt.mp (hdSq.comp_of_eq (h2.prodMk h1) hval)
-    have hΦsymm : ContMDiffAt 𝓘(ℝ, Fin d → ℝ) J ∞ Φ.symm (coordTuple (b₀, ξ₀)) := by
-      rw [hcoord_b₀ξ₀]
-      exact Φ.symm.contMDiffOn.contMDiffAt (Φ.open_target.mem_nhds (Φ.map_source he₀p₀_src))
-    have hval_N : Φ.symm (coordTuple (b₀, ξ₀)) = e₀ p₀ := by
-      rw [hcoord_b₀ξ₀]
-      exact Φ.left_inv he₀p₀_src
-    have he₀p₀_chart : e₀ p₀ ∈ (chartAt H' y).source := by
-      have he₀p₀_ext : e₀ p₀ ∈ (extChartAt J y).source := (h₀ z₀ hz₀).1
-      rwa [extChartAt_source] at he₀p₀_ext
-    have hextJ : ContMDiffAt J 𝓘(ℝ, F) ∞ (extChartAt J y) (e₀ p₀) :=
-      contMDiffAt_extChartAt' he₀p₀_chart
-    exact contMDiffAt_iff_contDiffAt.mp (hextJ.comp_of_eq (hΦsymm.comp (b₀, ξ₀) htuple) hval_N)
-  obtain ⟨W_F, hWF_nhds, hFW⟩ := hF_smooth.contDiffOn (m := (m : WithTop ℕ∞)) hm (by simp)
-  obtain ⟨W_Fo, hWFo_sub, hWFo_open, hb₀ξ₀_W⟩ := _root_.mem_nhds_iff.1 hWF_nhds
-  have hpart_cont : ContinuousAt
-      (fun q : E × (Fin d → E) ↦ iteratedFDeriv ℝ m (fun b ↦ Fmap (b, q.2)) q.1) (b₀, ξ₀) :=
-    ((hFW.mono hWFo_sub).continuousOn_iteratedFDeriv_partial hWFo_open le_rfl).continuousAt
-      (hWFo_open.mem_nhds hb₀ξ₀_W)
-  -- Find open neighbourhoods `Ue` of `e₀` and `Ub ⊆ (extChartAt I x).target` of `b₀` on which
-  -- the coordinate representative of `e` agrees with `Fmap`.
+  have hF_smooth : ContDiffAt ℝ ∞ Fmap ((z₀ : E), ξ e₀) :=
+    contDiffAt_chart_edist_sq_param z₀ hWMo_open (fun q hq ↦ (hWM q (hWMo_sub hq)).1) ha₀_mem
+      he₀p₀_src he₀z₀ hcoord₀
+  have hsymm_cont (i : Fin d) : Continuous (fun e : M ≃ᵢ N ↦ e.symm (yN i)) :=
+    IsometryEquiv.continuous_iff.1 IsometryEquiv.continuous_symm (yN i)
+  have hξ_cont : ContinuousAt ξ e₀ :=
+    continuousAt_pi.2 fun i ↦
+      (continuousAt_extChartAt (a₀ i)).comp_of_eq (hsymm_cont i).continuousAt rfl
   have heval_cont : Continuous (fun p : (M ≃ᵢ N) × (extChartAt I x).target ↦
       p.1 ((extChartAt I x).symm p.2)) :=
     continuous_fst.eval (((continuousOn_extChartAt_symm x).domRestrict).comp continuous_snd)
-  have hopen_vis : IsOpen {p : (M ≃ᵢ N) × (extChartAt I x).target |
-      p.1 ((extChartAt I x).symm p.2) ∈ Φ.source} :=
-    Φ.open_source.preimage heval_cont
   obtain ⟨Ue₁, Uz, hUe₁o, hUzo, he₀Ue₁, hz₀Uz, hUeUz⟩ :=
-    isOpen_prod_iff.1 hopen_vis e₀ z₀ he₀p₀_src
+    isOpen_prod_iff.1 (Φ.open_source.preimage heval_cont) e₀ z₀ he₀p₀_src
   obtain ⟨Ub', hUb'o, hUb'_eq⟩ := isOpen_induced_iff.1 hUzo
   set Ub : Set E := (extChartAt I x).target ∩ Ub'
   have hUbo : IsOpen Ub := (isOpen_extChartAt_target x).inter hUb'o
-  have hb₀Ub : b₀ ∈ Ub := ⟨z₀.2, by rwa [← hUb'_eq] at hz₀Uz⟩
-  have hsymm_cont (i : Fin d) : Continuous (fun e : M ≃ᵢ N ↦ e.symm (yN i)) :=
-    (IsometryEquiv.continuous_iff.1 IsometryEquiv.continuous_symm (yN i))
+  have hb₀Ub : (z₀ : E) ∈ Ub := ⟨z₀.2, by rwa [← hUb'_eq] at hz₀Uz⟩
   set Ue : Set (M ≃ᵢ N) :=
     Ue₁ ∩ ⋂ i : Fin d, (fun e : M ≃ᵢ N ↦ e.symm (yN i)) ⁻¹' (extChartAt I (a₀ i)).source
   have hUeo : IsOpen Ue := hUe₁o.inter <| isOpen_iInter_of_finite fun i ↦
     (isOpen_extChartAt_source (a₀ i)).preimage (hsymm_cont i)
   have he₀Ue : e₀ ∈ Ue := ⟨he₀Ue₁, mem_iInter.2 fun i ↦ mem_extChartAt_source (a₀ i)⟩
-  have hF_agree {e : M ≃ᵢ N} (he : e ∈ Ue) {b : E} (hb : b ∈ Ub) :
-      (extChartAt J y ∘ e ∘ (extChartAt I x).symm) b =
-        Fmap (b, fun i ↦ extChartAt I (a₀ i) (e.symm (yN i))) := by
-    have hzb : (⟨b, hb.1⟩ : (extChartAt I x).target) ∈ Uz := by rw [← hUb'_eq]; exact hb.2
-    have hmemΦ : e ((extChartAt I x).symm b) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hzb)
-    have hct : coordTuple (b, fun i ↦ extChartAt I (a₀ i) (e.symm (yN i))) =
-        Φ (e ((extChartAt I x).symm b)) := by
-      rw [hΦ_eq _ hmemΦ]
-      ext i
-      have hi_src : e.symm (yN i) ∈ (extChartAt I (a₀ i)).source := mem_iInter.1 he.2 i
-      simp only [coordTuple, (extChartAt I (a₀ i)).left_inv hi_src]
-      have hiso : edist (yN i) (e ((extChartAt I x).symm b)) =
-          edist (e.symm (yN i)) ((extChartAt I x).symm b) := by
-        simpa only [e.apply_symm_apply] using
-          e.edist_eq (e.symm (yN i)) ((extChartAt I x).symm b)
-      rw [hiso]
-    simp only [Fmap, comp_apply, hct]
-    exact congrArg (extChartAt J y) (Φ.left_inv hmemΦ).symm
-  -- Map `(e, z)` to `(z, fun i ↦ extChartAt I (a₀ i) (e.symm (yN i)))` and pass to `m`-jets.
-  let Θ : (M ≃ᵢ N) × (extChartAt I x).target → E × (Fin d → E) :=
-    fun p ↦ (p.2, fun i ↦ extChartAt I (a₀ i) (p.1.symm (yN i)))
-  have hΘ0 : Θ (e₀, z₀) = (b₀, ξ₀) := rfl
-  have hΘ_cont : ContinuousAt Θ (e₀, z₀) := by
-    refine (continuous_subtype_val.comp continuous_snd).continuousAt.prodMk ?_
-    refine continuousAt_pi.2 fun i ↦ ?_
-    exact (continuousAt_extChartAt (a₀ i)).comp_of_eq
-      ((hsymm_cont i).comp continuous_fst).continuousAt rfl
-  have hjet_eq {e : M ≃ᵢ N} (he : e ∈ Ue) {z : (extChartAt I x).target} (hz : (z : E) ∈ Ub) :
-      iteratedFDerivWithin ℝ m (extChartAt J y ∘ e ∘ (extChartAt I x).symm)
-          (extChartAt I x).target z =
-        iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ (e, z)).2)) (Θ (e, z)).1 := by
-    rw [iteratedFDerivWithin_of_isOpen m (isOpen_extChartAt_target x) z.2]
-    have hev : (extChartAt J y ∘ e ∘ (extChartAt I x).symm) =ᶠ[𝓝 (z : E)]
-        fun b ↦ Fmap (b, (Θ (e, z)).2) :=
-      eventually_of_mem (hUbo.mem_nhds hz) fun b hb ↦ hF_agree he hb
-    exact (hev.iteratedFDeriv ℝ m).eq_of_nhds
-  have hV_at_0 : iteratedFDeriv ℝ m (fun b ↦ Fmap (b, ξ₀)) b₀ ∈ V := by
-    change iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ (e₀, z₀)).2)) (Θ (e₀, z₀)).1 ∈ V
-    rw [← hjet_eq he₀Ue hb₀Ub]
-    exact (h₀ z₀ hz₀).2
-  have hev_V : ∀ᶠ p : (M ≃ᵢ N) × (extChartAt I x).target in 𝓝 (e₀, z₀),
-      iteratedFDeriv ℝ m (fun b ↦ Fmap (b, (Θ p).2)) (Θ p).1 ∈ V :=
-    (hpart_cont.comp_of_eq hΘ_cont hΘ0).preimage_mem_nhds (hV.mem_nhds hV_at_0)
-  have hev_UeUb : ∀ᶠ p : (M ≃ᵢ N) × (extChartAt I x).target in 𝓝 (e₀, z₀),
-      p.1 ∈ Ue ∧ (p.2 : E) ∈ Ub :=
-    ((hUeo.prod (hUbo.preimage continuous_subtype_val)).mem_nhds ⟨he₀Ue, hb₀Ub⟩)
-  filter_upwards [hev_UeUb, hev_V] with ⟨e, z⟩ ⟨he, hz⟩ hVz
-  have hzb : z ∈ Uz := by rw [← hUb'_eq]; exact hz.2
-  have hmemΦ : e ((extChartAt I x).symm z) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hzb)
+  refine ⟨d, Fmap, ξ, Ue, Ub, hUeo, he₀Ue, hUbo, hb₀Ub, hξ_cont, hF_smooth, fun e he b hb ↦ ?_⟩
+  have hzb : (⟨b, hb.1⟩ : (extChartAt I x).target) ∈ Uz := by rw [← hUb'_eq]; exact hb.2
+  have hmemΦ : e ((extChartAt I x).symm b) ∈ Φ.source := hUeUz (mk_mem_prod he.1 hzb)
   refine ⟨(hΦ_sub hmemΦ).2, ?_⟩
-  change iteratedFDerivWithin ℝ m (extChartAt J y ∘ e ∘ (extChartAt I x).symm)
-    (extChartAt I x).target z ∈ V
-  rwa [hjet_eq he hz]
+  have hct : (fun i ↦
+      (edist ((extChartAt I (a₀ i)).symm (ξ e i)) ((extChartAt I x).symm b)).toReal ^ 2) =
+      Φ (e ((extChartAt I x).symm b)) := by
+    rw [hΦ_eq _ hmemΦ]
+    ext i
+    have hi_src : e.symm (yN i) ∈ (extChartAt I (a₀ i)).source := mem_iInter.1 he.2 i
+    simp only [ξ, (extChartAt I (a₀ i)).left_inv hi_src]
+    have hiso : edist (yN i) (e ((extChartAt I x).symm b)) =
+        edist (e.symm (yN i)) ((extChartAt I x).symm b) := by
+      simpa only [e.apply_symm_apply] using e.edist_eq (e.symm (yN i)) ((extChartAt I x).symm b)
+    rw [hiso]
+  dsimp only [Fmap]
+  rw [hct]
+  exact congrArg (extChartAt J y) (Φ.left_inv hmemΦ).symm
+
+/-- Promoting a metric equivalence `e : M ≃ᵢ N` between smooth boundaryless Riemannian manifolds
+to a smooth map `C^∞⟮I, M; J, N⟯` is continuous from the compact-open topology to the weak Whitney
+`C^∞` topology. -/
+theorem IsometryEquiv.continuous_toContMDiffMap :
+    Continuous fun e : M ≃ᵢ N ↦ (e.toRiemannianIsometry I J).toDiffeomorph.toContMDiffMap := by
+  refine continuous_iff_continuousAt.2 fun e₀ ↦ ?_
+  refine ContMDiffMap.tendsto_manifoldWeakWhitney_iff.2 fun x y m _ K hK V hV h₀ ↦ ?_
+  simp only [ContMDiffMap.mem_chartJetSet, Diffeomorph.coe_coe,
+    RiemannianIsometry.coe_toDiffeomorph, IsometryEquiv.coe_toRiemannianIsometry] at h₀ ⊢
+  refine hK.eventually_forall_of_forall_eventually fun z₀ hz₀ ↦ ?_
+  obtain ⟨d, Fmap, ξ, Ue, Ub, hUeo, he₀, hUbo, hz₀Ub, hξ, hF, hagree⟩ :=
+    e₀.exists_contDiffAt_chart_param (I := I) (J := J) z₀ (h₀ z₀ hz₀).1
+  exact tendsto_chartJet_of_local_param (I := I) (J := J) hV hUeo he₀ hUbo hz₀Ub hξ hF hagree
+    (h₀ z₀ hz₀).2
+
+variable [CompactSpace M]
+
+/-- Promoting a metric equivalence `M ≃ᵢ N` on a compact Riemannian manifold `M` to a smooth
+Riemannian isometry is continuous from the compact-open topology to the weak Whitney `C^∞`
+topology. -/
+theorem IsometryEquiv.continuous_toRiemannianIsometry :
+    Continuous (IsometryEquiv.toRiemannianIsometry I J :
+      (M ≃ᵢ N) → RiemannianIsometry I J M N) :=
+  RiemannianIsometry.continuous_weakWhitney_iff.2
+    (Diffeomorph.continuous_weakWhitney_iff.2 IsometryEquiv.continuous_toContMDiffMap)
 
 namespace TauCeti.RiemannianIsometry
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [J.Boundaryless]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
-/-- Forgetting smoothness is continuous from the weak Whitney `C^∞` topology on
-`RiemannianIsometry I J M N` to the compact-open topology on `M ≃ᵢ N`. -/
-theorem continuous_toIsometryEquiv :
-    Continuous (fun Φ : RiemannianIsometry I J M N ↦ (Φ : M ≃ᵢ N)) :=
-  IsometryEquiv.continuous_iff.2 fun x ↦
-    (Diffeomorph.continuous_eval_const x).comp isEmbedding_toDiffeomorph.continuous
 
 variable (I J M N) in
 /-- **Homeomorphism between smooth Riemannian isometries and metric equivalences.** On a compact
@@ -775,7 +1019,7 @@ def isometryEquivContinuousMulEquiv : Isom I M ≃ₜ* (M ≃ᵢ M) :=
 /-- The underlying multiplicative equivalence of `isometryEquivContinuousMulEquiv` is
 `isometryEquivMulEquiv`. -/
 @[simp]
-theorem coe_isometryEquivContinuousMulEquiv :
+theorem toMulEquiv_isometryEquivContinuousMulEquiv :
     (isometryEquivContinuousMulEquiv I M : Isom I M ≃* (M ≃ᵢ M)) = isometryEquivMulEquiv I M :=
   (rfl)
 
@@ -786,30 +1030,64 @@ theorem toHomeomorph_isometryEquivContinuousMulEquiv :
     (isometryEquivContinuousMulEquiv I M).toHomeomorph = isometryEquivHomeomorph I I M M :=
   (rfl)
 
+-- See note [hom simp lemma priority]
 /-- `isometryEquivContinuousMulEquiv` sends an element of `Isom I M` to its metric equivalence. -/
-@[simp]
+@[simp low]
 theorem isometryEquivContinuousMulEquiv_apply (Φ : Isom I M) :
     isometryEquivContinuousMulEquiv I M Φ = (Φ : M ≃ᵢ M) :=
   (rfl)
 
+-- See note [hom simp lemma priority]
 /-- `isometryEquivContinuousMulEquiv.symm` promotes a self-metric equivalence via
 `toRiemannianIsometry`. -/
-@[simp]
+@[simp low]
 theorem isometryEquivContinuousMulEquiv_symm_apply (e : M ≃ᵢ M) :
     (isometryEquivContinuousMulEquiv I M).symm e = e.toRiemannianIsometry I I :=
   (rfl)
 
+end TauCeti.RiemannianIsometry
+
+end WeakWhitney
+
+section CompactWeakWhitney
+
+open TauCeti
+open scoped TauCeti.RiemannianIsometryWeakWhitney
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [CompactSpace M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
 /-- **Compactness of the space of Riemannian isometries in the weak Whitney topology.** When `M` is
-a compact smooth boundaryless Riemannian manifold, `RiemannianIsometry I J M N` (and in particular
-`Isom I M`) is compact in the weak Whitney `C^∞` topology. -/
-theorem compactSpace_weakWhitney : CompactSpace (RiemannianIsometry I J M N) :=
-  (isometryEquivHomeomorph I J M N).symm.compactSpace
+a compact Hausdorff smooth boundaryless Riemannian manifold, `RiemannianIsometry I J M N` (and in
+particular `Isom I M`) is compact in the weak Whitney `C^∞` topology. -/
+theorem TauCeti.RiemannianIsometry.compactSpace_weakWhitney :
+    CompactSpace (RiemannianIsometry I J M N) := by
+  cases isEmpty_or_nonempty (RiemannianIsometry I J M N) with
+  | inl => infer_instance
+  | inr h =>
+    obtain ⟨Φ₀⟩ := h
+    have : CompactSpace N := Φ₀.toDiffeomorph.toHomeomorph.compactSpace
+    have : T2Space N := Φ₀.toDiffeomorph.toHomeomorph.symm.isEmbedding.t2Space
+    have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := E)
+      (V := fun x : M ↦ TangentSpace I x)
+    have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := ∞) (F := F)
+      (V := fun y : N ↦ TangentSpace J y)
+    let : EMetricSpace M := .ofRiemannianMetric I M
+    let : EMetricSpace N := .ofRiemannianMetric J N
+    exact (TauCeti.RiemannianIsometry.isometryEquivHomeomorph I J M N).symm.compactSpace
 
 scoped[TauCeti.RiemannianIsometryWeakWhitney] attribute [instance]
   TauCeti.RiemannianIsometry.compactSpace_weakWhitney
 
-end TauCeti.RiemannianIsometry
-
-end WeakWhitney
+end CompactWeakWhitney
 
 end
