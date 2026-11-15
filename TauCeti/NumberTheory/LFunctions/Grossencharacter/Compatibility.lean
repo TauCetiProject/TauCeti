@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 
 /-!
 # Hecke's unit relation for a presentation
@@ -29,6 +29,9 @@ Over `ℚ(i)` the angular character `(α) ↦ (α / conj α) ^ (2k)` has finite 
 
 ## Main results
 
+* `TauCeti.LFunctions.Grossencharacter.coe_idealCharacter_toPrincipalIdeal`: on the principal
+  ideal of an element prime to `𝔪`, the ideal character of the presented Hecke character is the
+  full ideal value `χ_u((a)) N(a) ^ σ`.
 * `TauCeti.LFunctions.Grossencharacter.compatibility`: Hecke's unit relation, and
   `TauCeti.LFunctions.Grossencharacter.compatibility_inv` its form solved for the finite value.
 
@@ -99,6 +102,41 @@ private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter 
     χ.toHeckeCharacter_primeIdele v hv𝔪 u hu]
   simp only [g, MonoidHom.coe_mk, OneHom.coe_mk]
 
+/-- An element of `Kˣ` that is a unit at the primes dividing `𝔪` generates a fractional ideal prime
+to the finite conductor of the presented character, which divides the finite part of `𝔪`. -/
+theorem toPrincipalIdeal_mem_idealsPrimeTo (χ : Grossencharacter K 𝔪) {x : Kˣ}
+    (hx : x ∈ primeToSubgroup 𝔪) :
+    toPrincipalIdeal (𝓞 K) K x ∈ idealsPrimeTo
+      ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :=
+  NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mpr
+    (primeToSubgroup_le_of_dvd χ.finiteConductor_dvd_finitePart hx)
+
+/-- **The ideal character on a principal ideal prime to `𝔪`.** For `a ∈ 𝓞_K` generating an ideal
+prime to `𝔪`, the ideal character of the presented Hecke character at `(a)` is the full ideal value
+`χ_u((a)) N(a) ^ σ` of the presentation. -/
+theorem coe_idealCharacter_toPrincipalIdeal (χ : Grossencharacter K 𝔪) (x : Kˣ)
+    (hx : x ∈ primeToSubgroup 𝔪) (a : 𝓞 K) (ha : algebraMap (𝓞 K) K a = x) :
+    (χ.toHeckeCharacter.idealCharacter
+        ⟨toPrincipalIdeal (𝓞 K) K x, χ.toPrincipalIdeal_mem_idealsPrimeTo hx⟩ : ℂ) =
+      χ.unitaryWeight.1 (Ideal.span {a}) *
+        ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) := by
+  set 𝔣 : Modulus K :=
+    ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩
+  have h𝔣 : 𝔣 ∣ 𝔪 :=
+    Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩
+  have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 :=
+    Modulus.mem_integralIdealsPrimeTo.mpr
+      (Modulus.isCoprimeTo_of_dvd_span_singleton ha.symm hx dvd_rfl)
+  -- The fractional ideal of `x` is the integral ideal `(a)`.
+  have hideal : NumberFieldArithmetic.integralIdealsAwayHom K 𝔣.support
+        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem⟩) =
+      ⟨toPrincipalIdeal (𝓞 K) K x, χ.toPrincipalIdeal_mem_idealsPrimeTo hx⟩ :=
+    Subtype.ext (Units.ext (by
+      rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
+        coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]))
+  rw [← hideal]
+  exact coe_idealCharacter_integralIdealsAwayHom χ h𝔣 ⟨_, hmem⟩
+
 /-- **Hecke's unit relation.** For `a ∈ 𝓞_K` with `a ≡ 1 mod* 𝔪`, the full ideal value
 `χ_u((a)) N(a) ^ σ` of a presentation is the inverse of the archimedean monomial
 `∏_τ τ(a) ^ (n τ)` of its algebraic infinity type `n`:
@@ -109,30 +147,8 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
       ∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ = 1 := by
   set ψ := χ.toHeckeCharacter
-  set 𝔣 : Modulus K := ⟨ψ.finiteConductor, ψ.finiteConductor_ne_bot, ∅⟩
-  have h𝔣 : 𝔣 ∣ 𝔪 :=
+  have h𝔣 : (⟨ψ.finiteConductor, ψ.finiteConductor_ne_bot, ∅⟩ : Modulus K) ∣ 𝔪 :=
     Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩
-  have hx𝔣 : IsCongrOne 𝔣 x := hx.mono h𝔣
-  -- The fractional ideal of `x` is the integral ideal `(a)`, prime to `𝔪` and to `𝔣`.
-  have hspan : ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) =
-      ((toPrincipalIdeal (𝓞 K) K x : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]
-  have hne : Ideal.span {a} ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]
-    rintro rfl
-    exact x.ne_zero (by rw [← ha, map_zero])
-  have hmem {𝔫 : Modulus K} (h𝔫 : IsCongrOne 𝔫 x) :
-      Ideal.span {a} ∈ NumberFieldArithmetic.integralIdealsAway 𝔫.support :=
-    NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero.mpr ⟨hne, fun v hv ↦ by
-      rw [hspan]
-      exact NumberFieldArithmetic.mem_idealsAway_iff.mp h𝔫.toPrincipalIdeal_mem_idealsPrimeTo v hv⟩
-  have hideal : NumberFieldArithmetic.integralIdealsAwayHom K 𝔣.support
-        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem hx⟩) =
-      ⟨toPrincipalIdeal (𝓞 K) K x, hx𝔣.toPrincipalIdeal_mem_idealsPrimeTo⟩ :=
-    Subtype.ext (Units.ext (by
-      rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
-        hspan]))
-  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ h𝔣 ⟨_, hmem hx⟩
   -- The ideal character of `(x)` is the inverse of the archimedean monomial: at a real place
   -- where the parities differ, the place divides `𝔪`, where `x` is positive.
   have hpos (w : {w : InfinitePlace K // w.IsReal})
@@ -140,8 +156,10 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
         (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w) :
       0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
     (isCongrOne_iff.mp hx).2 w (not_imp_comm.mp (χ.realParity_eq w) hw)
-  rw [hideal, ψ.idealCharacter_apply_toPrincipalIdeal_eq_embeddingCharacter_inv χ.infinityType
-      χ.agreesOnIdentityComponent x hx𝔣 hpos,
+  have hfinite := χ.coe_idealCharacter_toPrincipalIdeal x
+    (congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx)) a ha
+  rw [ψ.idealCharacter_apply_toPrincipalIdeal_eq_embeddingCharacter_inv χ.infinityType
+      χ.agreesOnIdentityComponent x (hx.mono h𝔣) hpos,
     Units.val_inv_eq_inv_val, AlgebraicInfinityType.coe_embeddingCharacter_apply] at hfinite
   rw [← hfinite]
   refine inv_mul_cancel₀ (Finset.prod_ne_zero_iff.mpr fun τ _ ↦ zpow_ne_zero _ ?_)

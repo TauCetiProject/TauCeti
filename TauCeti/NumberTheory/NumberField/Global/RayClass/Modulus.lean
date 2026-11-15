@@ -572,6 +572,16 @@ theorem Modulus.isCoprimeTo_of_dvd_span_singleton {m : Modulus K} {J : Ideal (�
     exact (valuation_lt_one_iff_mem (K := K) v a).mpr hmem
   exact absurd (mem_primeToSubgroup.mp hx v ((Modulus.mem_support_iff m v).mp hv)) hlt.ne
 
+/-- **A principal ideal is prime to the modulus exactly when its generator is a unit at the
+finite part.** -/
+theorem Modulus.isCoprimeTo_span_singleton_iff {m : Modulus K} {a : 𝓞 K} {x : Kˣ}
+    (hxa : (x : K) = a) : m.IsCoprimeTo (Ideal.span {a}) ↔ x ∈ primeToSubgroup m := by
+  refine ⟨fun h ↦ mem_primeToSubgroup.mpr fun v hv ↦ ?_,
+    fun hx ↦ isCoprimeTo_of_dvd_span_singleton hxa hx dvd_rfl⟩
+  rw [hxa, valuation_of_algebraMap, intValuation_eq_one_iff]
+  exact fun hva ↦ (isCoprimeTo_iff.mp h).2 v ((mem_support_iff m v).mpr hv)
+    (Ideal.dvd_span_singleton.mpr hva)
+
 /-- **Being prime to the modulus is comaximality with its finite part.**  A prime dividing both `I`
 and the finite part is exactly a prime of the support dividing `I`, and such a prime exists as soon
 as `I` and the finite part fail to generate the unit ideal. -/
