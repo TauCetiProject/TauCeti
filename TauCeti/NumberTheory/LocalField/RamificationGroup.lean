@@ -74,6 +74,9 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   `TauCeti.LocalFieldsRamification.map_autCongr_lowerRamificationGroup`: transport of the lower
   filtration along valuation-preserving or base-continuous ring equivalences and `K`-algebra
   equivalences.
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroupReal_eq_ramificationGroupReal` and
+  `TauCeti.LocalFieldsRamification.lowerJump_iff_isLocalRingLowerJump`: agreement with the
+  `TauCeti.IsLocalRing` lower filtration and lower breaks on `𝒪[L]`.
 
 ## References
 
@@ -290,6 +293,12 @@ theorem lowerRamificationGroupReal_def (u : ℝ) :
     lowerRamificationGroupReal K L u = lowerRamificationGroup K L ⌈u⌉ :=
   TauCeti.IsLocalRing.ramificationGroupReal_def _ _ u
 
+/-- `lowerRamificationGroupReal` agrees with `TauCeti.IsLocalRing.ramificationGroupReal` on
+`𝒪[L]`. -/
+theorem lowerRamificationGroupReal_eq_ramificationGroupReal (u : ℝ) :
+    lowerRamificationGroupReal K L u =
+      TauCeti.IsLocalRing.ramificationGroupReal (L ≃ₐ[K] L) 𝒪[L] u := (rfl)
+
 variable {K L} in
 /-- Membership in the real-indexed lower ramification groups. -/
 @[simp]
@@ -333,6 +342,12 @@ def LowerJump (u : RamificationIndexDomain) : Prop :=
 theorem lowerJump_iff (u : RamificationIndexDomain) :
     LowerJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
       lowerRamificationGroupReal K L v < lowerRamificationGroupReal K L u := Iff.rfl
+
+/-- `LowerJump` agrees with `TauCeti.IsLocalRing.LowerJump` on `𝒪[L]`. -/
+theorem lowerJump_iff_isLocalRingLowerJump (u : RamificationIndexDomain) :
+    LowerJump K L u ↔ TauCeti.IsLocalRing.LowerJump (L ≃ₐ[K] L) 𝒪[L] u := by
+  rw [lowerJump_iff, TauCeti.IsLocalRing.lowerJump_iff]
+  exact ⟨fun hu v huv ↦ hu ⟨v, u.2.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
 
 /-- Every lower break occurs at an integer index. -/
 theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :

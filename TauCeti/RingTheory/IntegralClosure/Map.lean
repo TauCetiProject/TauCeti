@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import TauCeti.RingTheory.Ideal.GoingUp
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Functoriality of integral closures
@@ -23,6 +24,8 @@ integral over `R`, so lying over applies along the restricted map.
 * `AlgHom.mapIntegralClosure_injective`: it preserves injectivity.
 * `Ideal.exists_isPrime_comap_mapIntegralClosure_eq`: a prime of the integral closure in `A` is
   the contraction of a prime of the integral closure in `B` along an injective `f`.
+* `TauCeti.isLocalRing_integralClosure_of_injective`: if the integral closure in `B` is local and
+  `f` is injective, then the integral closure in `A` is local.
 -/
 
 public section
@@ -61,3 +64,15 @@ theorem Ideal.exists_isPrime_comap_mapIntegralClosure_eq (P : Ideal (integralClo
       (f.mapIntegralClosure : integralClosure R A →+* integralClosure R B)).mp
         (AlgHom.mapIntegralClosure_injective hf)]
     exact bot_le
+
+/-- Along an injective `R`-algebra map `f : A →ₐ[R] B`, if `integralClosure R B` is a local ring,
+then `integralClosure R A` is also a local ring. -/
+theorem TauCeti.isLocalRing_integralClosure_of_injective [IsLocalRing (integralClosure R B)]
+    {f : A →ₐ[R] B} (hf : Function.Injective f) : IsLocalRing (integralClosure R A) := by
+  have hf_int : f.mapIntegralClosure.toRingHom.IsIntegral :=
+    RingHom.IsIntegral.tower_top (algebraMap R (integralClosure R A))
+      f.mapIntegralClosure.toRingHom
+      (f.mapIntegralClosure.comp_algebraMap.symm ▸ algebraMap_isIntegral_iff.mpr inferInstance)
+  have : IsLocalHom f.mapIntegralClosure.toRingHom :=
+    hf_int.isLocalHom (AlgHom.mapIntegralClosure_injective hf)
+  exact f.mapIntegralClosure.toRingHom.domain_isLocalRing

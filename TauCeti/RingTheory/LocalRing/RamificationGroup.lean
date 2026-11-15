@@ -42,6 +42,7 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroupReal G S u`: the same family reindexed by a real number
   through `⌈·⌉`, the convention under which the step function is constant on `(i - 1, i]`.
 * `TauCeti.IsLocalRing.RamificationGroupGraded G S i`: the successive quotient `G_i / G_{i+1}`.
+* `TauCeti.IsLocalRing.LowerJump G S u`: a strict break of the real-indexed lower filtration.
 * `TauCeti.IsLocalRing.lowerIndex S σ`: over a discrete valuation ring, Serre's lower index
   `i_G(σ) = min_x v (σ x - x)` in `ℕ∞`.
 
@@ -87,10 +88,13 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow`: along an
   equivariant homomorphism of local rings inducing isomorphisms `S ⧸ 𝔪 ^ n ≃ T ⧸ 𝔪 ^ n`, such as
   the inclusion of a discrete valuation ring into its completion, the ramification groups are the
-  preimages of each other.
+  preimages of each other; `ramificationGroup_integralClosure_eq_comap_autCongr` specializes ring
+  isomorphism transport to algebra equivalences on `integralClosure`.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
+* `TauCeti.IsLocalRing.lowerJump_eq_intCast` and `TauCeti.IsLocalRing.lowerJump_intCast_iff`:
+  every lower break is an integer `i ≥ -1`, characterized by `G_{i+1} < G_i`.
 
 ## References
 
@@ -756,6 +760,19 @@ theorem ramificationGroup_eq_comap_of_smul_eq {e : G →* H}
     ramificationGroup G S i = (ramificationGroup H S i).comap e := by
   ext g; simp [mem_ramificationGroup_iff, he g]
 
+/-- A `K`-algebra equivalence `e : E ≃ₐ[K] E'` over a base ring `A` pulls back every lower
+ramification group on `integralClosure A E'` along `e.autCongr` to that on `integralClosure A E`. -/
+theorem ramificationGroup_integralClosure_eq_comap_autCongr {A K E E' : Type*} [CommRing A]
+    [CommRing K] [CommRing E] [CommRing E'] [Algebra A K] [Algebra K E] [Algebra A E]
+    [IsScalarTower A K E] [Algebra K E'] [Algebra A E'] [IsScalarTower A K E']
+    [IsLocalRing (integralClosure A E)] [IsLocalRing (integralClosure A E')] (e : E ≃ₐ[K] E')
+    (i : ℤ) : ramificationGroup (E ≃ₐ[K] E) (integralClosure A E) i =
+      (ramificationGroup (E' ≃ₐ[K] E') (integralClosure A E') i).comap
+        (e.autCongr : (E ≃ₐ[K] E) →* (E' ≃ₐ[K] E')) := by
+  refine ramificationGroup_eq_comap_of_ringEquiv
+    (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv) (fun _ _ ↦ Subtype.ext ?_) i
+  simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]
+
 end Comap
 
 section Real
@@ -814,31 +831,26 @@ theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft 
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
 
 variable {G S} in
-/-- On any subinterval `(m, u] ⊆ (m, m + 1]`, the real-indexed filtration is constant. -/
 theorem ramificationGroupReal_eq_of_mem_Ioc {m : ℕ} {u t : ℝ} (h₂ : u ≤ m + 1)
     (ht₁ : (m : ℝ) < t) (ht₂ : t ≤ u) :
     ramificationGroupReal G S t = ramificationGroupReal G S u := by
-  rw [ramificationGroupReal_eq_of_sub_one_lt_of_le G S (i := m + 1) (by push_cast; linarith)
-      (by push_cast; linarith),
+  have heq {x : ℝ} (h₁ : (m : ℝ) < x) (hx : x ≤ m + 1) :=
     ramificationGroupReal_eq_of_sub_one_lt_of_le G S (i := m + 1) (by push_cast; linarith)
-      (by push_cast; linarith)]
+      (by push_cast; linarith)
+  exact (heq ht₁ (ht₂.trans h₂)).trans (heq (ht₁.trans_le ht₂) h₂).symm
 
 /-- A **lower break** of the ramification filtration: `G_v < G_u` for every `v > u`. -/
 def LowerJump (u : ℝ) : Prop :=
   ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
 
-/-- Defining criterion for `LowerJump`. -/
 theorem lowerJump_iff (u : ℝ) : LowerJump G S u ↔
     ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u := Iff.rfl
 
 variable {G S} in
-/-- Every lower break is at least `-1`. -/
 theorem LowerJump.neg_one_le {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
-  by_contra! hlt
-  have hdrop := hu (-1) hlt
+  by_contra! hlt; have hdrop := hu (-1) hlt
   rw [ramificationGroupReal_eq_top_of_le_neg_one G S le_rfl,
-    ramificationGroupReal_eq_top_of_le_neg_one G S hlt.le] at hdrop
-  exact hdrop.false
+    ramificationGroupReal_eq_top_of_le_neg_one G S hlt.le] at hdrop; exact hdrop.false
 
 variable {G S} in
 /-- Every lower break is an integer `i ≥ -1`. -/
@@ -849,14 +861,13 @@ theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 
   rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at hstrict; exact hstrict.false
 
 /-- An integer `i` is a lower break if and only if `G_{i+1} < G_i`. -/
-@[simp]
-theorem lowerJump_intCast_iff (i : ℤ) :
+@[simp] theorem lowerJump_intCast_iff (i : ℤ) :
     LowerJump G S i ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i :=
   ⟨fun h ↦ by
       simpa only [ramificationGroupReal_intCast] using h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith),
-    fun h _ hv ↦ by
-      rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
-      exact (ramificationGroup_antitone G S (Int.add_one_le_iff.2 (Int.lt_ceil.2 hv))).trans_lt h⟩
+   fun h _ hv ↦ by
+     rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
+     exact (ramificationGroup_antitone G S (Int.add_one_le_iff.2 (Int.lt_ceil.2 hv))).trans_lt h⟩
 
 end Real
 

@@ -83,7 +83,7 @@ theorem differentIdeal_eq_pow_maximalIdeal_of_separable_residue
     differentIdeal A B = maximalIdeal B ^
       (∑ᶠ i : ℕ, (Nat.card (IsLocalRing.ramificationGroup G B (i : ℤ)) - 1)) := by
   let : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  have := IsGaloisGroup.moduleFinite G A B
+  have := TauCeti.IsGaloisGroup.moduleFinite G A B
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
   exact differentIdeal_eq_pow_maximalIdeal_of_adjoin_eq_top A B G hx
 
