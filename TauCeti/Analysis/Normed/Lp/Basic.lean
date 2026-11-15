@@ -26,10 +26,10 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
 linearly independent, and
-vectors in their span vanish outside the corresponding indices, and subtracting a finite sum of
-coordinate vectors zeroes out those coordinates without increasing the `ℓᵖ` norm
-(`lp.sub_sum_single_apply`, `lp.norm_sub_sum_single_le`). These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
+vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
+normed rings at every exponent. Subtracting a finite sum of coordinate vectors zeroes out those
+coordinates (`lp.sub_sum_single_apply`) and, for `p ≠ 0`, does not increase the `ℓᵖ` norm
+(`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of single-coordinate
 vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
 `lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at

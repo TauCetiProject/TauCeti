@@ -54,28 +54,7 @@ private theorem two_rpow_mul_norm_compLp_le {μ : Measure E} {p : ℝ≥0∞} (s
 
 namespace TemperedDistribution
 
-/-- Littlewood–Paley blocks commute with post-composition by a continuous linear map on the fiber:
-`Δⱼ` acts on test functions, whereas `L` acts on values. -/
-theorem littlewoodPaleyBlock_postcomp (φ : ContDiffBump (0 : E)) (j : ℕ)
-    (L : F →L[ℂ] G) (u : 𝓢'(E, F)) :
-    littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u) =
-      PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L (littlewoodPaleyBlock F φ j u) := by
-  ext ψ
-  simp only [littlewoodPaleyBlock_apply, PointwiseConvergenceCLM.postcomp_apply_apply,
-    fourierMultiplierCLM_apply_apply]
-
 variable [CompleteSpace F] [CompleteSpace G]
-
-/-- If the `j`-th Littlewood–Paley block of `u` is the `Lᵖ` function `f`, then the `j`-th block of
-`L ∘ u` is `L.compLp f`. -/
-theorem littlewoodPaleyBlock_postcomp_eq_compLp {φ : ContDiffBump (0 : E)} {j : ℕ}
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] (L : F →L[ℂ] G) {u : 𝓢'(E, F)}
-    {f : Lp F p (volume : Measure E)} (hf : littlewoodPaleyBlock F φ j u = f) :
-    littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u) =
-      (L.compLp f : 𝓢'(E, G)) := by
-  rw [littlewoodPaleyBlock_postcomp, hf]
-  ext ψ
-  rw [PointwiseConvergenceCLM.postcomp_apply_apply, Lp.toTemperedDistribution_compLp_apply]
 
 /-- Applying a continuous linear map `L : F →L[ℂ] G` to the values of a tempered distribution in
 `B^s_{p,q}(E, F)` produces a tempered distribution in `B^s_{p,q}(E, G)`. -/
@@ -172,7 +151,7 @@ theorem postcomp_comp (L₁ : G →L[ℂ] H) (L₂ : F →L[ℂ] G) :
   simp only [ContinuousLinearMap.comp_apply, toDistr_postcomp_apply]
 
 @[simp]
-theorem postcomp_comp_apply (L₁ : G →L[ℂ] H) (L₂ : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
+theorem postcomp_postcomp (L₁ : G →L[ℂ] H) (L₂ : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
     postcomp φ s p q L₁ (postcomp φ s p q L₂ u) = postcomp φ s p q (L₁.comp L₂) u := by
   rw [postcomp_comp, ContinuousLinearMap.comp_apply]
 
@@ -183,8 +162,8 @@ def postcompEquiv (e : F ≃L[ℂ] G) : BesovSpace F φ s p q ≃L[ℂ] BesovSpa
   ContinuousLinearEquiv.equivOfInverse
     (postcomp φ s p q (e : F →L[ℂ] G))
     (postcomp φ s p q (e.symm : G →L[ℂ] F))
-    (fun u ↦ by simp [postcomp_comp_apply])
-    (fun v ↦ by simp [postcomp_comp_apply])
+    (fun u ↦ by simp [postcomp_postcomp])
+    (fun v ↦ by simp [postcomp_postcomp])
 
 @[simp]
 theorem coe_postcompEquiv (e : F ≃L[ℂ] G) :

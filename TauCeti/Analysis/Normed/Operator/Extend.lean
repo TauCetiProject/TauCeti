@@ -57,15 +57,18 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
-variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] [RingHomIsometric σ₁₂]
-
-/-- The corestriction of an operator to the closure of its range has dense range. -/
-theorem denseRange_codRestrict_topologicalClosure (g : E →L[𝕜] G) :
-    DenseRange (g.codRestrict (LinearMap.range (g : E →ₗ[𝕜] G)).topologicalClosure
+/-- The corestriction of a continuous semilinear map to the closure of its range has dense range. -/
+theorem denseRange_codRestrict_topologicalClosure {R₁ R₂ M₁ M₂ : Type*} [Semiring R₁] [Semiring R₂]
+    {σ : R₁ →+* R₂} [RingHomSurjective σ] [AddCommMonoid M₁] [Module R₁ M₁] [TopologicalSpace M₁]
+    [AddCommMonoid M₂] [Module R₂ M₂] [TopologicalSpace M₂] [ContinuousAdd M₂]
+    [ContinuousConstSMul R₂ M₂] (g : M₁ →SL[σ] M₂) :
+    DenseRange (g.codRestrict (LinearMap.range (g : M₁ →ₛₗ[σ] M₂)).topologicalClosure
       fun x ↦ Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ x)) := by
   rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
   exact (Submodule.topologicalClosure_coe _).subset
+
+variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F] [RingHomIsometric σ₁₂]
 
 /-- An operator `f` factors as `S ∘ g` through the range of `g`, with `‖S‖ ≤ C`, if and only if
 `‖f x‖ ≤ C ‖g x‖` for all `x`. -/
