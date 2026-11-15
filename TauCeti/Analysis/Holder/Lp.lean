@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Holder.Normed
 
 import Mathlib.Analysis.Normed.Module.Completion
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -21,12 +24,17 @@ as an element of the global Hölder normed space (a Banach space when the target
 pointwise estimate compares the function with its average on a ball: Hölder continuity controls the
 difference from the average, while Hölder's inequality controls the average itself.
 
+It also bounds the `L²` oscillation of a function that is Hölder on a set contained in a ball in a
+finite-dimensional space, as used in Campanato's approach to Schauder estimates.
+
 ## Main declarations
 
 * `HolderWith.enorm_le_add_eLpNorm`: a global Hölder function in `Lᵖ` has a pointwise bound.
 * `HolderWith.norm_le_add_eLpNorm_toReal`: the same bound for the real-valued norm.
 * `HolderWith.toHolderSpace`: bundle a global Hölder `Lᵖ` function in `TauCeti.HolderSpace`.
 * `HolderWith.norm_toHolderSpace_le`: the resulting Hölder-space norm estimate.
+* `HolderOnWith.setIntegral_norm_sub_sq_le`: if `G` is `α`-Hölder with constant `K` on a set
+  `s ⊆ ball x₀ r` and `y ∈ s`, then `∫_s ‖G - G y‖² ≤ 2^(2α) |B₁| K² r^(n + 2α)`.
 -/
 
 public section
@@ -189,3 +197,50 @@ theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 �
     exact_mod_cast hb.nnholderNorm_le
 
 end HolderWith
+
+namespace HolderOnWith
+
+open MeasureTheory Metric Module
+open scoped NNReal
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {G : E → F} {K α : ℝ≥0} {s : Set E} {x₀ y : E} {r : ℝ}
+
+/-- **The `L²` oscillation of a Hölder function.** If `G` is `α`-Hölder with constant `K` on a set
+`s ⊆ ball x₀ r` and `y ∈ s`, then `∫_s ‖G - G y‖² ≤ 2^(2α) |B₁| K² r^(n + 2α)`, where `|B₁|` is
+the measure of the unit ball and `n` is the dimension. -/
+theorem setIntegral_norm_sub_sq_le (hG : HolderOnWith K α G s) (hsr : s ⊆ ball x₀ r)
+    (hy : y ∈ s) :
+    ∫ x in s, ‖G x - G y‖ ^ 2 ∂mu ≤
+      2 ^ (2 * (α : ℝ)) * mu.real (ball (0 : E) 1) * (K : ℝ) ^ 2 *
+        r ^ ((finrank ℝ E : ℝ) + 2 * α) := by
+  have hr : 0 < r := pos_of_mem_ball (hsr hy)
+  -- On `s`, `G` stays within `K (2 r)^α` of `G y`.
+  have hbd : ∀ x ∈ s, ‖‖G x - G y‖ ^ 2‖ ≤ ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 := fun x hx => by
+    rw [norm_pow, norm_norm, ← dist_eq_norm]
+    refine pow_le_pow_left₀ dist_nonneg ((hG.dist_le hx hy).trans
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg ?_ α.2) K.2)) 2
+    linarith [dist_triangle_right x y x₀, mem_ball.1 (hsr hx), mem_ball.1 (hsr hy)]
+  have hs : mu s < ⊤ := (measure_mono hsr).trans_lt measure_ball_lt_top
+  have hvol : mu.real s ≤ r ^ finrank ℝ E * mu.real (ball (0 : E) 1) := by
+    rw [← mu.addHaar_real_ball_of_pos x₀ hr]
+    exact measureReal_mono hsr measure_ball_lt_top.ne
+  have h2 : ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 =
+      2 ^ (2 * (α : ℝ)) * (K : ℝ) ^ 2 * r ^ (2 * (α : ℝ)) := by
+    rw [mul_pow, ← Real.rpow_natCast ((2 * r) ^ (α : ℝ)) 2, ← Real.rpow_mul (by linarith),
+      Real.mul_rpow (by norm_num) hr.le, mul_comm (α : ℝ)]
+    push_cast
+    ring
+  calc ∫ x in s, ‖G x - G y‖ ^ 2 ∂mu
+      ≤ ‖∫ x in s, ‖G x - G y‖ ^ 2 ∂mu‖ := Real.le_norm_self _
+    _ ≤ ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 * mu.real s :=
+      norm_setIntegral_le_of_norm_le_const hs hbd
+    _ ≤ ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 * (r ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by
+      gcongr
+    _ = 2 ^ (2 * (α : ℝ)) * mu.real (ball (0 : E) 1) * (K : ℝ) ^ 2 *
+        r ^ ((finrank ℝ E : ℝ) + 2 * α) := by
+      rw [h2, Real.rpow_add hr, Real.rpow_natCast]
+      ring
+
+end HolderOnWith
