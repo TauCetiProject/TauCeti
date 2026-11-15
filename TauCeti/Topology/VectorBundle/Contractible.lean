@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.VectorBundle.HomotopyInvariance
 public import TauCeti.Topology.VectorBundle.OrthonormalTrivialization
-public import TauCeti.Topology.VectorBundle.SphereBundle
+public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.Topology.FiberBundle.Pullback
 
 /-!

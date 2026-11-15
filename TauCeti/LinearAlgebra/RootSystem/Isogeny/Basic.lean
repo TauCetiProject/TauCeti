@@ -461,11 +461,11 @@ def id (P : RootPairing ι R M N) : RootPairingIsogeny P P :=
   ext <;> simp
 
 /-- Composing an isogeny on the left with the identity isogeny does not change it. -/
-@[simp] theorem comp_id (f : RootPairingIsogeny P Q) : comp (id Q) f = f := by
+@[simp] theorem id_comp (f : RootPairingIsogeny P Q) : comp (id Q) f = f := by
   ext <;> simp [comp, id, ofEquiv]
 
 /-- Composing an isogeny on the right with the identity isogeny does not change it. -/
-@[simp] theorem id_comp (f : RootPairingIsogeny P Q) : comp f (id P) = f := by
+@[simp] theorem comp_id (f : RootPairingIsogeny P Q) : comp f (id P) = f := by
   ext <;> simp [comp, id, ofEquiv]
 
 variable {ι₄ M₄ N₄ : Type*} [AddCommGroup M₄] [Module R M₄]
@@ -511,7 +511,7 @@ theorem comp_ofEquiv_smulId_eq_iff [Module.Free ℤ M] [Module.Finite ℤ M]
     apply LinearEquiv.toLinearMap_injective
     exact LinearMap.ext fun x => by simpa using hx x
   · rintro rfl
-    rw [ofEquiv_one, comp_id]
+    rw [ofEquiv_one, id_comp]
 
 end RootPairingIsogeny
 
