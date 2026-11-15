@@ -5,8 +5,8 @@ Authors: Codex, Alexander Richard Towell
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Probability.Exchangeability.SamplingWithoutReplacement
+public import TauCeti.Probability.PopulationSampling.Discrepancy
 
 /-!
 # Quantitative finite de Finetti approximation
@@ -15,8 +15,9 @@ Let `x : κ → α` be a nonempty finite population. Its empirical distribution 
 of the uniform law on `κ` by `x`. Sampling `ι` entries from that distribution independently is
 therefore the same as choosing a uniform map `ι → κ` and reading the selected entries of `x`.
 
-The general sampling laws, their empirical-product characterization, and their collision bounds
-live in `TauCeti.Probability.PopulationSampling.Finite`.
+The general sampling laws, their empirical-product characterization, and their collision and
+total-variation bounds live in `TauCeti.Probability.PopulationSampling.Finite` and
+`TauCeti.Probability.PopulationSampling.Discrepancy`.
 
 For a random population with law `ρ`, `sampleWithReplacement ρ` draws the population and,
 independently, a uniform map `ι → κ`, and reads the selected entries. It is the same
@@ -32,30 +33,35 @@ sampleWithReplacement (prefixLaw μ X n) A ≤ prefixLaw μ X m A + choose(m, 2)
 ```
 
 Thus, for `n > 0`, every `m`-coordinate marginal of an `n`-exchangeable process is quantitatively
-approximated by a mixture of `m`-fold product measures of empirical distributions; for
-`n = m = 0` both sides are the shared sampling construction on the empty index type. The bound is
-stated eventwise, which fixes its normalization; in terms of Mathlib's total variation distance
-`etvDist`, the signed-measure norm `‖P - Q‖` (twice `sup_A |P A - Q A|`), it gives
-`etvDist P Q ≤ 2 * choose(m, 2) / n`.
+approximated by a mixture of `m`-fold product measures of empirical distributions; for `m ≤ 1`
+(including `n = m = 0`) the two laws coincide (`sampleWithReplacement_eq_prefixLaw_of_le_one`).
+The bound is stated eventwise, which fixes its normalization; in terms of Mathlib's total variation
+distances `etvDist` and `tvDist`, the signed-measure norm `‖P - Q‖` (twice `sup_A |P A - Q A|`), it
+gives `etvDist P Q ≤ 2 * choose(m, 2) / n`, while for each individual event `A` the real
+probability difference satisfies `|P.real A - Q.real A| ≤ choose(m, 2) / n`.
 
 Counting injective selections instead of using the union bound gives the sharper eventwise
 error `1 - n.descFactorial m / n^m`, and twice that error for the signed-measure norm.
 This includes `m = n = 0`, whose error is zero. For a nonempty population the error is the
-exact index-collision probability; it need not equal the discrepancy of the sampled values,
-since distinct indices can hold the same value.
+exact index-collision probability; when the observed `n`-tuple is constant on a measurable event
+`S`, that error scales down by `(prefixLaw μ X n) Sᶜ`.
 
 ## Main declarations
 
+* `TauCeti.Probability.ExchangeableAt.sampleWithReplacement_eq_prefixLaw_of_le_one`: exact
+  equality of the `m`-prefix law and the with-replacement sample when `m ≤ 1`;
 * `TauCeti.Probability.ExchangeableAt.finiteDeFinetti`: the paired eventwise finite de Finetti
   bound;
 * `TauCeti.Probability.ExchangeableAt.prefixLaw_le_sampleWithReplacement_add` and
   `TauCeti.Probability.ExchangeableAt.sampleWithReplacement_le_prefixLaw_add`: the two sides of
   the finite de Finetti bound;
-* `TauCeti.Probability.ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le`: the same
-  bound for Mathlib's total variation distance `etvDist`, with the signed-measure normalization.
+* `TauCeti.Probability.ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le`,
+  `TauCeti.Probability.ExchangeableAt.tvDist_prefixLaw_sampleWithReplacement_le`, and
+  `TauCeti.Probability.ExchangeableAt.abs_prefixLaw_real_sub_sampleWithReplacement_real_le`:
+  the total-variation and real eventwise forms;
 * `TauCeti.Probability.ExchangeableAt.finiteDeFinetti_exact_collision`: the sharper eventwise
-  bound using the exact collision probability, with a corresponding total-variation theorem.
-  The two named one-sided corollaries have the suffix `add_exact_collision`.
+  bound using the exact collision probability, with corresponding `etvDist`, `tvDist`, and
+  `Measure.real` theorems and constant-population mixture sharpenings.
 
 ## References
 
@@ -80,6 +86,17 @@ namespace Probability
 variable {α : Type*} [MeasurableSpace α]
 
 section FiniteExchangeability
+
+/-- For a prefix of length `m ≤ 1` (`m = 0` or `m = 1`), sampling with replacement from the
+`n`-prefix law of an `n`-exchangeable process reproduces the `m`-prefix law exactly. Only
+finiteness of `μ` is needed. -/
+theorem ExchangeableAt.sampleWithReplacement_eq_prefixLaw_of_le_one
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hm : m ≤ 1) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
+    sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) = prefixLaw μ X m := by
+  rw [← sampleWithoutReplacement_eq_sampleWithReplacement_of_card_le_one (by simpa using hm),
+    h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
 
 /-- **Finite de Finetti theorem.** If the first `n` coordinates of a process are exchangeable and
 `m ≤ n`, then its `m`-prefix law and the with-replacement sample of its `n`-prefix law differ by
@@ -116,17 +133,16 @@ theorem ExchangeableAt.finiteDeFinetti_exact_collision
         (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) ∧
       sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
         (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) := by
-  let _ : Nonempty (Fin m → Fin n) := ⟨fun i => i.castLE hmn⟩
   let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
     rw [prefixLaw_def, blockLaw_def]
     infer_instance
   rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
   constructor
   · simpa using
-      sampleWithoutReplacement_le_sampleWithReplacement_add_collision
+      sampleWithoutReplacement_le_sampleWithReplacement_add_exact_collision
         (ρ := prefixLaw μ X n) A
   · simpa using
-      sampleWithReplacement_le_sampleWithoutReplacement_add_collision
+      sampleWithReplacement_le_sampleWithoutReplacement_add_exact_collision
         (ρ := prefixLaw μ X n) A
 
 /-- **Exact finite de Finetti bound, exchangeable law to empirical mixture.** Under finite
@@ -190,10 +206,12 @@ theorem ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
     etvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
       2 * (m.choose 2 / n) := by
-  rw [two_mul]
-  exact etvDist_le_of_forall_le_add
-    (fun A _ => h.prefixLaw_le_sampleWithReplacement_add hmn hX A)
-    (fun A _ => h.sampleWithReplacement_le_prefixLaw_add hmn hX A)
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using etvDist_sampleWithoutReplacement_sampleWithReplacement_le
+    (ι := Fin m) (prefixLaw μ X n)
 
 /-- The finite de Finetti approximation with exact collision error, for Mathlib's total
 variation distance `etvDist`. Its signed-measure normalization is twice the probability-distance
@@ -204,10 +222,141 @@ theorem ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le_exact_collisio
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
     etvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
       2 * (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) := by
-  rw [two_mul]
-  exact etvDist_le_of_forall_le_add
-    (fun A _ => h.prefixLaw_le_sampleWithReplacement_add_exact_collision hmn hX A)
-    (fun A _ => h.sampleWithReplacement_le_prefixLaw_add_exact_collision hmn hX A)
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using etvDist_sampleWithoutReplacement_sampleWithReplacement_le_exact_collision
+    (ι := Fin m) (prefixLaw μ X n)
+
+/-- Real total-variation (`tvDist`) form of `etvDist_prefixLaw_sampleWithReplacement_le`. -/
+theorem ExchangeableAt.tvDist_prefixLaw_sampleWithReplacement_le
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
+    tvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
+      2 * (m.choose 2 / (n : ℝ)) := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using tvDist_sampleWithoutReplacement_sampleWithReplacement_le
+    (ι := Fin m) (prefixLaw μ X n)
+
+/-- Real total-variation (`tvDist`) form of
+`etvDist_prefixLaw_sampleWithReplacement_le_exact_collision`. -/
+theorem ExchangeableAt.tvDist_prefixLaw_sampleWithReplacement_le_exact_collision
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
+    tvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
+      2 * (1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m) := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using tvDist_sampleWithoutReplacement_sampleWithReplacement_le_exact_collision
+    (ι := Fin m) (prefixLaw μ X n)
+
+/-- Real eventwise finite de Finetti bound (factor `1`, for arbitrary subsets `A`). -/
+theorem ExchangeableAt.abs_prefixLaw_real_sub_sampleWithReplacement_real_le
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
+    |(prefixLaw μ X m).real A -
+        (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)).real A| ≤
+      m.choose 2 / (n : ℝ) := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using abs_sampleWithoutReplacement_real_sub_sampleWithReplacement_real_le
+    (ι := Fin m) (prefixLaw μ X n) A
+
+/-- Real eventwise exact-collision finite de Finetti bound (factor `1`, for arbitrary subsets
+`A`). -/
+theorem ExchangeableAt.abs_prefixLaw_real_sub_sampleWithReplacement_real_le_exact_collision
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (A : Set (Fin m → α)) :
+    |(prefixLaw μ X m).real A -
+        (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)).real A| ≤
+      1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using
+    abs_sampleWithoutReplacement_real_sub_sampleWithReplacement_real_le_exact_collision
+      (ι := Fin m) (prefixLaw μ X n) A
+
+/-- When the `n`-prefix of an `n`-exchangeable process is constant on a measurable set `S` of
+`n`-tuples, the exact-collision finite de Finetti error on `A` scales by `(prefixLaw μ X n) Sᶜ`. -/
+theorem ExchangeableAt.prefixLaw_le_sampleWithReplacement_add_mul_compl_of_const
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ)
+    {S : Set (Fin n → α)} (hS : MeasurableSet S) (hS' : ∀ x ∈ S, ∀ k₁ k₂, x k₁ = x k₂)
+    (A : Set (Fin m → α)) :
+    prefixLaw μ X m A ≤ sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A +
+      (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) * prefixLaw μ X n Sᶜ := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using sampleWithoutReplacement_le_sampleWithReplacement_add_mul_compl_of_const
+    (prefixLaw μ X n) (Fin.castLEEmb hmn) hS hS' A
+
+/-- Converse of `ExchangeableAt.prefixLaw_le_sampleWithReplacement_add_mul_compl_of_const`. -/
+theorem ExchangeableAt.sampleWithReplacement_le_prefixLaw_add_mul_compl_of_const
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ)
+    {S : Set (Fin n → α)} (hS : MeasurableSet S) (hS' : ∀ x ∈ S, ∀ k₁ k₂, x k₁ = x k₂)
+    (A : Set (Fin m → α)) :
+    sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) A ≤ prefixLaw μ X m A +
+      (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) * prefixLaw μ X n Sᶜ := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using sampleWithReplacement_le_sampleWithoutReplacement_add_mul_compl_of_const
+    (prefixLaw μ X n) (Fin.castLEEmb hmn) hS hS' A
+
+/-- `etvDist` finite de Finetti sharpening when the `n`-prefix is constant on a measurable set
+`S`. -/
+theorem ExchangeableAt.etvDist_prefixLaw_sampleWithReplacement_le_two_mul_compl_of_const
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ)
+    {S : Set (Fin n → α)} (hS : MeasurableSet S) (hS' : ∀ x ∈ S, ∀ k₁ k₂, x k₁ = x k₂) :
+    etvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
+      2 * ((1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m) * prefixLaw μ X n Sᶜ) := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using
+    etvDist_sampleWithoutReplacement_sampleWithReplacement_le_two_mul_compl_of_const
+      (prefixLaw μ X n) (Fin.castLEEmb hmn) hS hS'
+
+/-- Real total-variation (`tvDist`) finite de Finetti sharpening when the `n`-prefix is constant
+on a measurable set `S`. -/
+theorem ExchangeableAt.tvDist_prefixLaw_sampleWithReplacement_le_two_mul_compl_of_const
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ)
+    {S : Set (Fin n → α)} (hS : MeasurableSet S) (hS' : ∀ x ∈ S, ∀ k₁ k₂, x k₁ = x k₂) :
+    tvDist (prefixLaw μ X m) (sampleWithReplacement (ι := Fin m) (prefixLaw μ X n)) ≤
+      2 * ((1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m) *
+        (1 - (prefixLaw μ X n S).toReal)) := by
+  let _ : IsProbabilityMeasure (prefixLaw μ X n) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [← h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
+  simpa using
+    tvDist_sampleWithoutReplacement_sampleWithReplacement_le_two_mul_compl_of_const
+      (prefixLaw μ X n) (Fin.castLEEmb hmn) hS hS'
 
 end FiniteExchangeability
 

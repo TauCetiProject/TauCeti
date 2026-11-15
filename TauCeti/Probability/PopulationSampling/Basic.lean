@@ -27,11 +27,14 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 * `measurable_reindexPopulation` — measurability of the joint selection/population evaluation;
 * `samplePopulation` — sample a random population along an independent random selection;
 * `samplePopulation_map` — measurable observations commute with sampling;
-* `samplePopulation_dirac_comp` — its deterministic-population composition form;
+* `samplePopulation_dirac_comp`, `samplePopulation_dirac_const` — deterministic-population
+  composition and constant-population forms;
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
   conditioning on the selection or on the population;
 * `samplePopulation_eq_bind`, `samplePopulation_eq_bind_population` — its form as a mixture,
-  over the selection law or over the population law, of the samples with that input fixed.
+  over the selection law or over the population law, of the samples with that input fixed;
+* `samplePopulation_le_add_lintegral`, `samplePopulation_le_add_mul_measure_add_compl` —
+  integrating deterministic-population eventwise bounds across a random population law.
 -/
 
 public section
@@ -39,6 +42,7 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -174,6 +178,164 @@ theorem samplePopulation_eq_bind_population (σ : Measure (ι → κ)) [SFinite 
     measurable_swap, Measure.prod_eq_of_sfinite, Measure.map_bind
     Measurable.map_prodMk_left.aemeasurable hswap.aemeasurable]
   simp_rw [Measure.map_map hswap measurable_prodMk_left, Function.comp_def, Prod.swap_prod_mk]
+
+/-- For an s-finite population law over a countable index type with measurable singletons and any
+selection law `σ`, `samplePopulation σ ρ` vanishes if and only if either `σ` or `ρ` vanishes. -/
+theorem samplePopulation_eq_zero_iff {σ : Measure (ι → κ)} {ρ : Measure (κ → α)} [SFinite ρ] :
+    samplePopulation σ ρ = 0 ↔ σ = 0 ∨ ρ = 0 := by
+  rw [← Measure.measure_univ_eq_zero, samplePopulation_def,
+    Measure.map_apply measurable_reindexPopulation .univ, Set.preimage_univ,
+    ← Set.univ_prod_univ, Measure.prod_prod, mul_eq_zero, Measure.measure_univ_eq_zero,
+    Measure.measure_univ_eq_zero]
+
+/-- Sampling a constant deterministic population produces the constant sample weighted by the
+total mass of the selection law. -/
+theorem samplePopulation_dirac_const (σ : Measure (ι → κ)) [SFinite σ] (c : α) :
+    samplePopulation σ (Measure.dirac (fun _ : κ => c)) =
+      σ Set.univ • Measure.dirac (fun _ : ι => c) := by
+  rw [samplePopulation_dirac, Measure.map_const]
+
+/-- Integrating a populationwise upper bound on a measurable event across an s-finite population
+law. No measurability hypothesis is required on the error function `g`. -/
+theorem samplePopulation_le_add_lintegral_of_measurableSet
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂] {ρ : Measure (κ → α)} [SFinite ρ]
+    {g : (κ → α) → ℝ≥0∞} {A : Set (ι → α)} (hA : MeasurableSet A)
+    (h : ∀ᵐ x ∂ρ, samplePopulation σ₁ (Measure.dirac x) A ≤
+      samplePopulation σ₂ (Measure.dirac x) A + g x) :
+    samplePopulation σ₁ ρ A ≤ samplePopulation σ₂ ρ A + ∫⁻ x, g x ∂ρ := by
+  rw [samplePopulation_apply_population hA, samplePopulation_apply_population hA]
+  have hf : Measurable (fun x : κ → α => σ₂ ((fun k i => x (k i)) ⁻¹' A)) :=
+    measurable_measure_prodMk_right (measurable_reindexPopulation hA)
+  calc
+    (∫⁻ x, σ₁ ((fun k i => x (k i)) ⁻¹' A) ∂ρ)
+        ≤ ∫⁻ x, σ₂ ((fun k i => x (k i)) ⁻¹' A) + g x ∂ρ := by
+          refine lintegral_mono_ae (h.mono fun x hx => ?_)
+          simpa only [samplePopulation_dirac,
+            Measure.map_apply (measurable_readPopulation x) hA] using hx
+    _ = (∫⁻ x, σ₂ ((fun k i => x (k i)) ⁻¹' A) ∂ρ) + ∫⁻ x, g x ∂ρ :=
+          lintegral_add_left hf g
+
+/-- Integrating populationwise upper bounds on measurable events across an s-finite population law
+yields an upper bound on every subset `A` (measurable or not). -/
+theorem samplePopulation_le_add_lintegral
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂] {ρ : Measure (κ → α)} [SFinite ρ]
+    {g : (κ → α) → ℝ≥0∞}
+    (h : ∀ B, MeasurableSet B → ∀ᵐ x ∂ρ,
+      samplePopulation σ₁ (Measure.dirac x) B ≤
+        samplePopulation σ₂ (Measure.dirac x) B + g x)
+    (A : Set (ι → α)) :
+    samplePopulation σ₁ ρ A ≤ samplePopulation σ₂ ρ A + ∫⁻ x, g x ∂ρ := by
+  calc
+    samplePopulation σ₁ ρ A
+        ≤ samplePopulation σ₁ ρ (toMeasurable (samplePopulation σ₂ ρ) A) :=
+          measure_mono (subset_toMeasurable _ _)
+    _ ≤ samplePopulation σ₂ ρ (toMeasurable (samplePopulation σ₂ ρ) A) + ∫⁻ x, g x ∂ρ :=
+          samplePopulation_le_add_lintegral_of_measurableSet
+            (measurableSet_toMeasurable _ _) (h _ (measurableSet_toMeasurable _ _))
+    _ = samplePopulation σ₂ ρ A + ∫⁻ x, g x ∂ρ := by rw [measure_toMeasurable]
+
+/-- Two-regime population mixture bound on a measurable event: if deterministic populations in a
+measurable set `S` satisfy an eventwise error bound `c₁` and populations outside `S` satisfy `c₂`,
+then the mixed sampling laws differ on `A` by at most `c₁ * ρ S + c₂ * ρ Sᶜ`. -/
+theorem samplePopulation_le_add_mul_measure_add_compl_of_measurableSet
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂] {ρ : Measure (κ → α)} [SFinite ρ]
+    {S : Set (κ → α)} (hS : MeasurableSet S) {c₁ c₂ : ℝ≥0∞} {A : Set (ι → α)}
+    (hA : MeasurableSet A)
+    (h₁ : ∀ x ∈ S, samplePopulation σ₁ (Measure.dirac x) A ≤
+      samplePopulation σ₂ (Measure.dirac x) A + c₁)
+    (h₂ : ∀ x ∉ S, samplePopulation σ₁ (Measure.dirac x) A ≤
+      samplePopulation σ₂ (Measure.dirac x) A + c₂) :
+    samplePopulation σ₁ ρ A ≤ samplePopulation σ₂ ρ A + (c₁ * ρ S + c₂ * ρ Sᶜ) := by
+  let g : (κ → α) → ℝ≥0∞ :=
+    fun x => S.indicator (fun _ => c₁) x + Sᶜ.indicator (fun _ => c₂) x
+  have hg : ∫⁻ x, g x ∂ρ = c₁ * ρ S + c₂ * ρ Sᶜ := by
+    rw [lintegral_add_left (measurable_const.indicator hS),
+      lintegral_indicator_const hS, lintegral_indicator_const hS.compl]
+  rw [← hg]
+  refine samplePopulation_le_add_lintegral_of_measurableSet hA (ae_of_all _ fun x => ?_)
+  by_cases hx : x ∈ S
+  · simpa [g, hx] using h₁ x hx
+  · simpa [g, hx] using h₂ x hx
+
+/-- Two-regime population mixture bound for arbitrary events: deterministic bounds `c₁` on a
+measurable set `S` of populations and `c₂` on `Sᶜ` integrate to `c₁ * ρ S + c₂ * ρ Sᶜ`. -/
+theorem samplePopulation_le_add_mul_measure_add_compl
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂] {ρ : Measure (κ → α)} [SFinite ρ]
+    {S : Set (κ → α)} (hS : MeasurableSet S) {c₁ c₂ : ℝ≥0∞}
+    (h₁ : ∀ B, MeasurableSet B → ∀ x ∈ S,
+      samplePopulation σ₁ (Measure.dirac x) B ≤ samplePopulation σ₂ (Measure.dirac x) B + c₁)
+    (h₂ : ∀ B, MeasurableSet B → ∀ x ∉ S,
+      samplePopulation σ₁ (Measure.dirac x) B ≤ samplePopulation σ₂ (Measure.dirac x) B + c₂)
+    (A : Set (ι → α)) :
+    samplePopulation σ₁ ρ A ≤ samplePopulation σ₂ ρ A + (c₁ * ρ S + c₂ * ρ Sᶜ) := by
+  calc
+    samplePopulation σ₁ ρ A
+        ≤ samplePopulation σ₁ ρ (toMeasurable (samplePopulation σ₂ ρ) A) :=
+          measure_mono (subset_toMeasurable _ _)
+    _ ≤ samplePopulation σ₂ ρ (toMeasurable (samplePopulation σ₂ ρ) A) +
+          (c₁ * ρ S + c₂ * ρ Sᶜ) :=
+          samplePopulation_le_add_mul_measure_add_compl_of_measurableSet hS
+            (measurableSet_toMeasurable _ _)
+            (h₁ _ (measurableSet_toMeasurable _ _))
+            (h₂ _ (measurableSet_toMeasurable _ _))
+    _ = samplePopulation σ₂ ρ A + (c₁ * ρ S + c₂ * ρ Sᶜ) := by rw [measure_toMeasurable]
+
+/-- Real-saving form of `samplePopulation_le_add_mul_measure_add_compl_of_measurableSet` for a
+probability population law: if populations in a measurable set `S` improve a universal upper bound
+`C ≥ 0` by `δ ≤ C` on `A`, then the mixed sampling laws satisfy the upper bound
+`ENNReal.ofReal (C - δ * (ρ S).toReal)`. -/
+theorem samplePopulation_le_add_ofReal_sub_mul_toReal_of_measurableSet
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂]
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ]
+    {S : Set (κ → α)} (hS : MeasurableSet S) {C δ : ℝ} (hC : 0 ≤ C) (hδC : δ ≤ C)
+    {A : Set (ι → α)} (hA : MeasurableSet A)
+    (h₁ : ∀ x ∈ S, samplePopulation σ₁ (Measure.dirac x) A ≤
+      samplePopulation σ₂ (Measure.dirac x) A + ENNReal.ofReal (C - δ))
+    (h₂ : ∀ x ∉ S, samplePopulation σ₁ (Measure.dirac x) A ≤
+      samplePopulation σ₂ (Measure.dirac x) A + ENNReal.ofReal C) :
+    samplePopulation σ₁ ρ A ≤
+      samplePopulation σ₂ ρ A + ENNReal.ofReal (C - δ * (ρ S).toReal) := by
+  refine (samplePopulation_le_add_mul_measure_add_compl_of_measurableSet hS hA h₁ h₂).trans_eq ?_
+  congr 1
+  have hq_le : (ρ S).toReal ≤ 1 := by
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (prob_le_one (μ := ρ) (s := S))
+  have hcompl : ρ Sᶜ = ENNReal.ofReal (1 - (ρ S).toReal) := by
+    rw [measure_compl hS (measure_ne_top ρ S), measure_univ,
+      ← ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self),
+      ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one]
+  conv_lhs => rw [← ENNReal.ofReal_toReal (measure_ne_top ρ S)]
+  rw [hcompl, ← ENNReal.ofReal_mul (sub_nonneg.2 hδC), ← ENNReal.ofReal_mul hC,
+    ← ENNReal.ofReal_add (mul_nonneg (sub_nonneg.2 hδC) ENNReal.toReal_nonneg)
+      (mul_nonneg hC (sub_nonneg.2 hq_le))]
+  congr 1
+  ring
+
+/-- Arbitrary-event form of `samplePopulation_le_add_ofReal_sub_mul_toReal_of_measurableSet`:
+if populations in a measurable set `S` improve a universal upper bound `C ≥ 0` by `δ ≤ C` on
+every measurable event, the bound `ENNReal.ofReal (C - δ * (ρ S).toReal)` holds on every set. -/
+theorem samplePopulation_le_add_ofReal_sub_mul_toReal
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂]
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ]
+    {S : Set (κ → α)} (hS : MeasurableSet S) {C δ : ℝ} (hC : 0 ≤ C) (hδC : δ ≤ C)
+    (h₁ : ∀ B, MeasurableSet B → ∀ x ∈ S, samplePopulation σ₁ (Measure.dirac x) B ≤
+      samplePopulation σ₂ (Measure.dirac x) B + ENNReal.ofReal (C - δ))
+    (h₂ : ∀ B, MeasurableSet B → ∀ x ∉ S, samplePopulation σ₁ (Measure.dirac x) B ≤
+      samplePopulation σ₂ (Measure.dirac x) B + ENNReal.ofReal C)
+    (A : Set (ι → α)) :
+    samplePopulation σ₁ ρ A ≤
+      samplePopulation σ₂ ρ A + ENNReal.ofReal (C - δ * (ρ S).toReal) := by
+  calc
+    samplePopulation σ₁ ρ A
+        ≤ samplePopulation σ₁ ρ (toMeasurable (samplePopulation σ₂ ρ) A) :=
+          measure_mono (subset_toMeasurable _ _)
+    _ ≤ samplePopulation σ₂ ρ (toMeasurable (samplePopulation σ₂ ρ) A) +
+          ENNReal.ofReal (C - δ * (ρ S).toReal) :=
+          samplePopulation_le_add_ofReal_sub_mul_toReal_of_measurableSet hS hC hδC
+            (measurableSet_toMeasurable _ _)
+            (h₁ _ (measurableSet_toMeasurable _ _))
+            (h₂ _ (measurableSet_toMeasurable _ _))
+    _ = samplePopulation σ₂ ρ A + ENNReal.ofReal (C - δ * (ρ S).toReal) := by
+          rw [measure_toMeasurable]
 
 end SamplePopulation
 
