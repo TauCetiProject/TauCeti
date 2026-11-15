@@ -81,7 +81,6 @@ private theorem tendsto_inv_sub_comp_const_sub_inv (hq : q ∉ closure U) {f : �
     (hx : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
     Tendsto (fun z => (f ((c : ℂ) - z⁻¹) - q)⁻¹) (𝓝[upperHalfPlaneSet] (((c - x)⁻¹ : ℝ) : ℂ))
       (𝓝 (w - q)⁻¹) := by
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hwq : w - q ≠ 0 := fun h => hq (sub_eq_zero.mp h ▸
     mem_closure_of_tendsto hx (eventually_nhdsWithin_of_forall fun z hz => hfU hz))
   have hs : (((c - x)⁻¹ : ℝ) : ℂ) ≠ 0 := by

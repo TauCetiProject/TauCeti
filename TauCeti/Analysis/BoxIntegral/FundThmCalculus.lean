@@ -8,18 +8,22 @@ module
 public import TauCeti.Analysis.BoxIntegral.IntervalIntegral
 public import Mathlib.Analysis.BoxIntegral.DivergenceTheorem
 public import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.BoxIntegral.Basic
+import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
 # The Henstock–Kurzweil fundamental theorem of calculus
 
 The `GP` integral agrees with the Henstock–Kurzweil integral on one-dimensional boxes.
-For a continuous Banach-valued function `f` with derivative `f'` outside a countable exceptional
-set, the Henstock–Kurzweil integral of `f'` equals `f b - f a`. The derivative need not be
-Bochner integrable, and its values at the exceptions are arbitrary.
+For a continuous function `f` with values in a real normed space (not necessarily complete) and
+derivative `f'` outside a countable exceptional set, the Henstock–Kurzweil integral of `f'` equals
+`f b - f a`. The derivative need not be Bochner integrable, and its values at the exceptions are
+arbitrary.
 
-The FTC is derived from Mathlib's `BoxIntegral.hasIntegral_GP_pderiv` using the GP–Henstock
-equivalence in dimension one. Finite exceptional sets, such as break points of piecewise
-differentiable parametrizations, are a special case of the countable hypothesis.
+The FTC is derived from Mathlib's `BoxIntegral.hasIntegral_GP_pderiv`, applied in the completion
+of the codomain, using the GP–Henstock equivalence in dimension one. Finite exceptional sets,
+such as break points of piecewise differentiable parametrizations, are a special case of the
+countable hypothesis.
 -/
 
 public section
@@ -74,7 +78,8 @@ theorem hasIntegral_GP_iff_Henstock_fin_one {E F : Type*} [NormedAddCommGroup E]
 /-- Henstock–Kurzweil FTC for continuous Banach-valued primitives, with a countable exceptional
 set. There is no integrability or boundedness requirement on the derivative; its values on the
 exceptional set do not affect the integral. -/
-theorem hasIntegral_Henstock_of_hasDerivWithinAt_off_countable {E : Type*} [NormedAddCommGroup E]
+private theorem hasIntegral_Henstock_of_hasDerivWithinAt_off_countable_of_completeSpace
+    {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {a b : ℝ} (hab : a < b) {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (Icc a b))
     (hd : ∀ x ∈ Icc a b \ s, HasDerivWithinAt f (f' x) (Icc a b) x) :
@@ -97,10 +102,26 @@ theorem hasIntegral_Henstock_of_hasDerivWithinAt_off_countable {E : Type*} [Norm
   simpa [Fin.insertNth_apply_same, BoxIntegral.integral_const,
     BoxAdditiveMap.volume_apply] using h
 
+/-- Henstock–Kurzweil FTC for continuous primitives with values in a normed space, with a countable
+exceptional set. There is no integrability or boundedness requirement on the derivative; its values
+on the exceptional set do not affect the integral. The space need not be complete. -/
+theorem hasIntegral_Henstock_of_hasDerivWithinAt_off_countable {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {a b : ℝ} (hab : a < b) {f f' : ℝ → E} {s : Set ℝ}
+    (hs : s.Countable) (hc : ContinuousOn f (Icc a b))
+    (hd : ∀ x ∈ Icc a b \ s, HasDerivWithinAt f (f' x) (Icc a b) x) :
+    HasIntegral (intervalBox a b hab) IntegrationParams.Henstock
+      (fun x ↦ f' (x 0)) BoxAdditiveMap.volume (f b - f a) := by
+  let e := UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := E)
+  have h := hasIntegral_Henstock_of_hasDerivWithinAt_off_countable_of_completeSpace hab
+    (f := fun t ↦ e (f t)) (f' := fun t ↦ e (f' t)) hs (e.continuous.comp_continuousOn hc)
+    fun x hx ↦ e.toContinuousLinearMap.hasFDerivAt.comp_hasDerivWithinAt x (hd x hx)
+  rw [← map_sub] at h
+  exact e.hasIntegral_volume_comp_iff.1 h
+
 /-- Henstock–Kurzweil FTC assuming differentiability only in the interior, outside a countable
 exceptional set. No derivative is required at either endpoint. -/
 theorem hasIntegral_Henstock_of_hasDerivAt_off_countable {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] {a b : ℝ} (hab : a < b) {f f' : ℝ → E} {s : Set ℝ}
+    [NormedSpace ℝ E] {a b : ℝ} (hab : a < b) {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (Icc a b))
     (hd : ∀ x ∈ Ioo a b \ s, HasDerivAt f (f' x) x) :
     HasIntegral (intervalBox a b hab) IntegrationParams.Henstock

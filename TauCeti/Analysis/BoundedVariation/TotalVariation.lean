@@ -31,8 +31,8 @@ differentiability assumption, which is what lower semicontinuity and compactness
 
 The measure `μ` is a parameter, as in `TauCeti.HasWeakFDerivOn`. The pairing `∫ u div φ ∂μ` is
 the distributional pairing for an additive Haar measure `μ`, and that hypothesis is carried by
-the results that need it: a constant function has total variation zero only against a
-translation-invariant measure.
+the results that need it: against an additive Haar measure a constant function has total
+variation zero.
 
 For `u` not locally integrable on `Ω` the integrals in the supremum may be Mathlib's junk value
 `0` for non-integrable functions, so the results that split integrals assume local integrability.
@@ -98,7 +98,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The **total variation** of `u : E → ℝ` on the open set `Ω`, relative to the measure `μ`:
 the extended supremum of `∫ div φ * u ∂μ` over test vector fields `φ ∈ 𝓓(Ω, E)` with
 `‖φ x‖ ≤ 1` everywhere. For `μ` an additive Haar measure this is the variation `|Du|(Ω)` of the
-distributional derivative of `u` on `Ω`, defined by duality. -/
+distributional derivative of `u` on `Ω`, defined by duality, provided `u` is locally integrable on
+`Ω` (otherwise the integrals may be junk values). -/
 def totalVariationOn (μ : Measure E) (Ω : Opens E) (u : E → ℝ) : ℝ≥0∞ :=
   ⨆ (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1), ENNReal.ofReal (∫ x, divergenceCLM φ x * u x ∂μ)
 
@@ -489,12 +490,8 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
     rw [h.integral_divergenceCLM_smul_eq_neg_integral φ, ← integral_neg]
     simp
   simp_rw [key]
-  refine le_antisymm (iSup₂_le fun φ hφ => ?_) (iSup₂_le fun φ hφ => ?_)
-  · exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
-      ENNReal.ofReal (∫ x, U x (φ x) ∂μ)) (-φ) (fun x => by simpa using hφ x) le_rfl
-  · exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
-      ENNReal.ofReal (∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ)) (-φ) (fun x => by simpa using hφ x)
-      (by simp)
+  simpa using (Equiv.neg 𝓓(Ω, E)).iSup_comp (g := fun φ => ⨆ (_ : ∀ x, ‖φ x‖ ≤ 1),
+    ENNReal.ofReal (∫ x, U x (φ x) ∂μ))
 
 /-- A weakly differentiable function has finite total variation on `Ω`, against an additive Haar
 measure, exactly when its weak derivative is integrable on `Ω`. -/

@@ -56,7 +56,7 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
 * `ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`: the same local inverse
-  carries a differential identity `dg_z u = v (g z)` over to `d(g⁻¹)_y (v y) = u`.
+  carries differential identities `dg_z (u i) = v i (g z)` over to `d(g⁻¹)_y (v i y) = u i`.
 * `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 
@@ -229,19 +229,19 @@ theorem ContDiffOn.exists_openPartialHomeomorph
   intro w hw
   exact (hstrict.contDiffAt_toOpenPartialHomeomorph_symm hw.1 (hgAt _ hw.2)).contDiffWithinAt
 
-/-- **Local inversion transports a differential identity.** In the setting of
-`TauCeti.ContDiffOn.exists_openPartialHomeomorph`, if the derivative of `g` at every point `z ∈ s`
-sends a fixed vector `u` to `v (g z)`, then the `C^n` local inverse can be chosen so that its
-derivative at every point `y` of its target sends `v y` back to `u`. -/
+/-- **Local inversion transports differential identities.** In the setting of
+`TauCeti.ContDiffOn.exists_openPartialHomeomorph`, if for each index `i` the derivative of `g` at
+every point `z ∈ s` sends a fixed vector `u i` to `v i (g z)`, then the `C^n` local inverse can be
+chosen so that its derivative at every point `y` of its target sends each `v i y` back to `u i`. -/
 theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
     (hg : ContDiffOn 𝕂 n g s) (hs : IsOpen s) (ha : a ∈ s) (hn : 1 ≤ n)
-    {e : E ≃L[𝕂] F} (he : (e : E →L[𝕂] F) = fderiv 𝕂 g a) {v : F → F} {u : E}
-    (hgu : ∀ z ∈ s, fderiv 𝕂 g z u = v (g z)) :
+    {e : E ≃L[𝕂] F} (he : (e : E →L[𝕂] F) = fderiv 𝕂 g a) {ι : Type*} {v : ι → F → F}
+    {u : ι → E} (hgu : ∀ z ∈ s, ∀ i, fderiv 𝕂 g z (u i) = v i (g z)) :
     ∃ Θ : OpenPartialHomeomorph E F, (Θ : E → F) = g ∧ a ∈ Θ.source ∧ Θ.source ⊆ s ∧
-      ContDiffOn 𝕂 n Θ.symm Θ.target ∧ ∀ y ∈ Θ.target, fderiv 𝕂 Θ.symm y (v y) = u := by
+      ContDiffOn 𝕂 n Θ.symm Θ.target ∧ ∀ y ∈ Θ.target, ∀ i, fderiv 𝕂 Θ.symm y (v i y) = u i := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   obtain ⟨Θ, hΘ, haΘ, hΘs, hΘc⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph hg hs ha hn he
-  refine ⟨Θ, hΘ, haΘ, hΘs, hΘc, fun y hy ↦ ?_⟩
+  refine ⟨Θ, hΘ, haΘ, hΘs, hΘc, fun y hy i ↦ ?_⟩
   -- Differentiate `Θ.symm ∘ g = id`, valid near `Θ.symm y`, at `Θ.symm y`.
   have hz := Θ.map_target hy
   have hgy : g (Θ.symm y) = y := hΘ ▸ Θ.right_inv hy
@@ -254,9 +254,9 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
   have hid : Θ.symm ∘ g =ᶠ[𝓝 (Θ.symm y)] id :=
     eventually_of_mem (Θ.open_source.mem_nhds hz) fun x hx ↦ by
       rw [Function.comp_apply, ← hΘ, Θ.left_inv hx, id]
-  have h := congrArg (fun L : E →L[𝕂] E ↦ L u)
+  have h := congrArg (fun L : E →L[𝕂] E ↦ L (u i))
     ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
-  simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz), hgy,
+  simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz) i, hgy,
     ContinuousLinearMap.id_apply] using h
 
 /-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible
