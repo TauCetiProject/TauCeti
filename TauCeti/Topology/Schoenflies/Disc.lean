@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Schoenflies.Components
 import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Topology.CellularSet.InverseSet
+import TauCeti.Topology.CellularSet.InverseSet.Sphere
 import TauCeti.Topology.Schoenflies.Collapse
 import TauCeti.Topology.Schoenflies.Hemisphere
 

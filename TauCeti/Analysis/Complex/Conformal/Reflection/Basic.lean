@@ -14,6 +14,7 @@ public import Mathlib.Topology.Piecewise
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Calculus.FDeriv.Semilinear
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Data.Set.Function
 
 /-!
 # Conjugation and holomorphic domains
@@ -180,19 +181,9 @@ domain to its lower half-plane part.
 -/
 lemma image_conj_inter_im_pos_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) :
     (starRingEnd ℂ) '' (Ω ∩ {z | 0 < z.im}) = Ω ∩ {z | z.im < 0} := by
+  rw [hΩ.image_inter_eq_preimage_of_involutive starRingEnd_self_apply]
   ext z
-  constructor
-  · rintro ⟨w, ⟨hwΩ, hwim⟩, rfl⟩
-    constructor
-    · exact hΩ hwΩ
-    · rw [Set.mem_ofPred_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_neg_of_pos hwim
-  · rintro ⟨hzΩ, hzim⟩
-    refine ⟨(starRingEnd ℂ) z, ⟨?_, ?_⟩, ?_⟩
-    · exact hΩ hzΩ
-    · rw [Set.mem_ofPred_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_pos.mpr hzim
-    · rw [starRingEnd_self_apply]
+  simp
 
 /--
 For a domain closed under conjugation, conjugation carries the lower half-plane part of the
@@ -200,19 +191,9 @@ domain to its upper half-plane part.
 -/
 lemma image_conj_inter_im_neg_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) :
     (starRingEnd ℂ) '' (Ω ∩ {z | z.im < 0}) = Ω ∩ {z | 0 < z.im} := by
+  rw [hΩ.image_inter_eq_preimage_of_involutive starRingEnd_self_apply]
   ext z
-  constructor
-  · rintro ⟨w, ⟨hwΩ, hwim⟩, rfl⟩
-    constructor
-    · exact hΩ hwΩ
-    · rw [Set.mem_ofPred_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_pos.mpr hwim
-  · rintro ⟨hzΩ, hzim⟩
-    refine ⟨(starRingEnd ℂ) z, ⟨?_, ?_⟩, ?_⟩
-    · exact hΩ hzΩ
-    · rw [Set.mem_ofPred_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_neg_of_pos hzim
-    · rw [starRingEnd_self_apply]
+  simp
 
 /--
 Conjugating both source and target preserves continuity on reflected sets.
@@ -286,18 +267,9 @@ the domain to its closed lower half-plane part.
 -/
 lemma image_conj_inter_im_nonneg_of_symmetric {Ω : Set ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) :
     (starRingEnd ℂ) '' (Ω ∩ {z | 0 ≤ z.im}) = Ω ∩ {z | z.im ≤ 0} := by
-  ext w
-  simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_ofPred_eq]
-  constructor
-  · rintro ⟨x, ⟨hxΩ, hxim⟩, rfl⟩
-    refine ⟨hΩ hxΩ, ?_⟩
-    rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-    exact neg_nonpos.mpr hxim
-  · rintro ⟨hwΩ, hwim⟩
-    refine ⟨(starRingEnd ℂ) w, ⟨hΩ hwΩ, ?_⟩, ?_⟩
-    · rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_nonneg.mpr hwim
-    · rw [starRingEnd_self_apply]
+  rw [hΩ.image_inter_eq_preimage_of_involutive starRingEnd_self_apply]
+  ext z
+  simp
 
 /--
 Antiholomorphic-composition prerequisite for Schwarz reflection.
