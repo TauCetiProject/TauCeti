@@ -79,8 +79,7 @@ private def mixedDerivLinearMap (α β : List (Fin n)) (x : CoordinateSpace n)
   toFun a := mixedDeriv α β a.coefficient x ξ
   map_add' a b := mixedDeriv_coefficient_add a b α β x ξ.2
   map_smul' c a := by
-    rw [coefficient_smul, mixedDeriv_const_smul]
-    rfl
+    rw [coefficient_smul, mixedDeriv_const_smul, RingHom.id_apply]
 
 /-- The seminorm `p_{K,α,β}` on the homogeneous symbols of degree `m`: the best constant `C` in
 the estimate `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` for all positions `x ∈ K` and all
@@ -142,10 +141,11 @@ theorem seminorm_le_iff_norm_eq_one {K : Compacts (CoordinateSpace n)} {α β : 
   -- Rescale `ξ` to the unit sphere and use the homogeneity of `∂_x^α ∂_ξ^β a`.
   have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
   have hs : ‖‖ξ‖⁻¹ • ξ‖ = 1 := by rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hn.ne']
-  have hξ' : ξ = ‖ξ‖ • ‖ξ‖⁻¹ • ξ := (smul_inv_smul₀ hn.ne' ξ).symm
   have hu : ‖ξ‖⁻¹ • ξ ≠ 0 := norm_ne_zero_iff.1 (by rw [hs]; exact one_ne_zero)
-  rw [hξ', mixedDeriv_coefficient_smul_frequency a α β x hu hn, norm_smul,
-    Real.norm_of_nonneg (Real.rpow_nonneg hn.le _), ← hξ', mul_comm]
+  have hscale : mixedDeriv α β a.coefficient x ξ =
+      ‖ξ‖ ^ (m - β.length) • mixedDeriv α β a.coefficient x (‖ξ‖⁻¹ • ξ) := by
+    rw [← mixedDeriv_coefficient_smul_frequency a α β x hu hn, smul_inv_smul₀ hn.ne']
+  rw [hscale, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg hn.le _), mul_comm]
   exact mul_le_mul_of_nonneg_right (h x hx _ hs) (Real.rpow_nonneg hn.le _)
 
 end Seminorm

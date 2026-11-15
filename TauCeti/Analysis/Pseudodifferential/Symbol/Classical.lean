@@ -729,10 +729,9 @@ theorem remainder_replacePrincipal_succ (N : ℕ) :
   funext p
   have h0 : ((b.replacePrincipal χ a).term 0).coefficient p = a.coefficient p := by
     rw [← coefficient_principal, principal_replacePrincipal]
-  rw [coefficient_remainder, coefficient_remainder, Finset.sum_range_succ',
-    Finset.sum_range_succ', h0, toSymbol_replacePrincipal, ← coefficient_principal]
-  simp only [term_replacePrincipal_succ, Symbol.coefficient_add, Pi.add_apply,
-    coefficient_cutoffSymbol, HomogeneousSymbol.coefficient_sub, Pi.sub_apply, smul_sub]
+  simp only [coefficient_remainder, Finset.sum_range_succ', h0, toSymbol_replacePrincipal,
+    term_replacePrincipal_succ, Symbol.coefficient_add, Pi.add_apply, coefficient_cutoffSymbol,
+    HomogeneousSymbol.coefficient_sub, Pi.sub_apply, smul_sub, ← coefficient_principal]
   abel
 
 @[simp]

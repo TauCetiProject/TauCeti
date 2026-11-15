@@ -49,8 +49,7 @@ def weightedSup : Seminorm 𝕜 E :=
 private theorem smul_comp_normSeminorm_apply (i : ι) (a : E) :
     (invWeight w hw i • (normSeminorm 𝕜 F).comp (L i)) a =
       ‖L i a‖ / w i := by
-  rw [smul_apply, comp_apply, coe_normSeminorm, NNReal.smul_def, smul_eq_mul, coe_invWeight,
-    div_eq_inv_mul]
+  simp [NNReal.smul_def, coe_invWeight, div_eq_inv_mul]
 
 /-- The seminorms `a ↦ ‖L i a‖ / w i` are bounded above exactly when every `a` satisfies an
 estimate `‖L i a‖ ≤ C * w i` for all `i`. -/
