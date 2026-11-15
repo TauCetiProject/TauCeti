@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.GaussSum.Stickelberger
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.RingTheory.Ideal.Norm.Galois
 import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
@@ -49,6 +50,9 @@ The decomposition group of `P` corresponds to the subgroup of `(ℤ/m)ˣ` genera
 of `P`, and the multiplicity of each in `P ^ γ` is a sum of the same shape over a coset of `⟨p⟩`.
 Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 
+Galois equivariance of the `m`-th power residue symbol together with `∏_σ σ 𝔞 = (N 𝔞)` evaluates
+the symbol of `α ^ γ` at any ideal `𝔞` as the symbol of `α` at `(N 𝔞)`.
+
 ## Main results
 
 * `Ideal.intValuation_smul_stickelbergerPhi`: `v_P(σ(Φ(P))) = ∑_{i < f} (p ^ i c(σ) mod m)`.
@@ -56,6 +60,8 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 * `Ideal.span_stickelbergerPhi`: `(Φ(A)) = ∏_σ (σ⁻¹ A) ^ c(σ)` for `A` prime to `m`.
 * `Ideal.span_stickelbergerPhi_span_singleton`: `(Φ((α))) = (∏_σ (σ⁻¹ α) ^ c(σ))` for `α` prime
   to `m`.
+* `Ideal.powerResidueSymbolIdeal_stickelbergerProduct`,
+  `Ideal.powerResidueSymbol_stickelbergerProduct`: `(α ^ γ / 𝔞)_m = (α / N 𝔞)_m` for `m ≥ 2`.
 
 ## References
 
@@ -359,5 +365,60 @@ theorem span_stickelbergerPhi_span_singleton (hm : 2 ≤ m) {α : 𝓞 K}
       span {TauCeti.stickelbergerProduct m α} := by
   rw [TauCeti.stickelbergerProduct_def, span_stickelbergerPhi hm hα, ← prod_span_singleton]
   simp only [smul_closure, Set.smul_set_singleton, span_singleton_pow]
+
+/-- **Galois transport of the power residue symbol along the cyclotomic character.** For `m ≥ 2`
+and `σ ∈ Gal(K/ℚ)`, `(α / σ 𝔞)_m = ((σ⁻¹ α) / 𝔞)_m ^ c(σ)`. -/
+theorem powerResidueSymbolIdeal_smul_eq_pow (hm : 2 ≤ m) (σ : Gal(K/ℚ)) (𝔞 : Ideal (𝓞 K))
+    (α : 𝓞 K) :
+    powerResidueSymbolIdeal (σ • 𝔞) m (Quotient.mk (σ • 𝔞) α) =
+      powerResidueSymbolIdeal 𝔞 m (Quotient.mk 𝔞 (σ⁻¹ • α)) ^
+        (galEquivZMod m K σ : ZMod m).val := by
+  set τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
+  have hα : τ (σ⁻¹ • α) = α := smul_inv_smul σ α
+  have hmap : σ • powerResidueSymbolIdeal 𝔞 m (Quotient.mk 𝔞 (σ⁻¹ • α)) =
+      powerResidueSymbolIdeal (σ • 𝔞) m (Quotient.mk (σ • 𝔞) α) := by
+    have h := map_powerResidueSymbolIdeal (n := m) 𝔞 τ (σ⁻¹ • α)
+    rw [hα] at h
+    exact h
+  rw [← hmap]
+  by_cases hu : IsUnit (Quotient.mk 𝔞 (σ⁻¹ • α))
+  · exact galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbolIdeal_pow_eq_one hu)
+  · have : Fact (1 < m) := ⟨hm⟩
+    have hc0 : (galEquivZMod m K σ : ZMod m).val ≠ 0 :=
+      (ZMod.val_ne_zero _).mpr (Units.ne_zero _)
+    rw [MulChar.map_nonunit _ hu, smul_zero, zero_pow hc0]
+
+/-- **The power residue symbol of the Stickelberger product.** In the `m`-th cyclotomic field,
+`m ≥ 2`, `(α ^ γ / 𝔞)_m = (α / N 𝔞)_m` for every ideal `𝔞` of `𝓞 K` and every `α ∈ 𝓞 K`. -/
+theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) :
+    powerResidueSymbolIdeal 𝔞 m (Quotient.mk 𝔞 (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm 𝔞 : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm 𝔞 : 𝓞 K)}) α) := by
+  classical
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  rw [TauCeti.stickelbergerProduct_def, map_prod, map_prod]
+  simp_rw [map_pow, ← powerResidueSymbolIdeal_smul_eq_pow hm]
+  obtain rfl | h𝔞 := eq_or_ne 𝔞 ⊥
+  · have hbot (σ : Gal(K/ℚ)) :
+        powerResidueSymbolIdeal (σ • (⊥ : Ideal (𝓞 K))) m (Quotient.mk (σ • ⊥) α) =
+          powerResidueSymbolIdeal ⊥ m (Quotient.mk ⊥ α) := by
+      rw [smul_bot]
+    simp_rw [hbot]
+    rw [Finset.prod_const, absNorm_bot, Nat.cast_zero, span_singleton_zero,
+      powerResidueSymbolIdeal_bot]
+    by_cases hα : IsUnit (Quotient.mk (⊥ : Ideal (𝓞 K)) α)
+    · rw [MulChar.one_apply hα, one_pow]
+    · rw [MulChar.map_nonunit _ hα, zero_pow Finset.univ_nonempty.card_ne_zero]
+  · have hσ : ∀ σ ∈ (Finset.univ : Finset Gal(K/ℚ)), σ • 𝔞 ≠ ⊥ := fun σ _ h ↦
+      h𝔞 (by simpa using congrArg (σ⁻¹ • ·) h)
+    rw [← powerResidueSymbolIdeal_finsetProd_right _ hσ, prod_smul_eq_span_absNorm Gal(K/ℚ) 𝔞]
+
+/-- At a maximal ideal `P`, `(α ^ γ / P)_m = (α / N P)_m` for `m ≥ 2`. -/
+theorem powerResidueSymbol_stickelbergerProduct (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (α : 𝓞 K) :
+    powerResidueSymbol P m (Quotient.mk P (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm P : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm P : 𝓞 K)}) α) := by
+  rw [← powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbolIdeal_stickelbergerProduct hm]
 
 end Ideal

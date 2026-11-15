@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Unit
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.EisensteinPrimary
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Eisenstein.Primary
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootsOfUnity
 
 /-!

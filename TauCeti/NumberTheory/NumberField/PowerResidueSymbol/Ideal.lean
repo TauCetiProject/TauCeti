@@ -35,6 +35,8 @@ zero ideal, which has no prime factors, is the trivial character.
   `Ideal.powerResidueSymbol`.
 * `Ideal.powerResidueSymbolIdeal_mul_right`: `(α / 𝔞 𝔟)_n = (α / 𝔞)_n (α / 𝔟)_n` for nonzero
   `𝔞` and `𝔟`.
+* `Ideal.powerResidueSymbolIdeal_finsetProd_right`: `(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n` for nonzero
+  factors `𝔞ᵢ`.
 * `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
   each quotient.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
@@ -164,6 +166,23 @@ theorem powerResidueSymbolIdeal_mul_right_intCast (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 
     powerResidueSymbolIdeal (𝔞 * 𝔟) n (m : 𝓞 K ⧸ 𝔞 * 𝔟) =
       powerResidueSymbolIdeal 𝔞 n (m : 𝓞 K ⧸ 𝔞) * powerResidueSymbolIdeal 𝔟 n (m : 𝓞 K ⧸ 𝔟) := by
   simpa using powerResidueSymbolIdeal_mul_right (n := n) h𝔞 h𝔟 (m : 𝓞 K)
+
+/-- **Multiplicativity across a finite product of nonzero ideals.**
+`(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n` when every factor `𝔞ᵢ` is nonzero. -/
+theorem powerResidueSymbolIdeal_finsetProd_right {ι : Type*} (s : Finset ι)
+    {f : ι → Ideal (𝓞 K)} (hf : ∀ i ∈ s, f i ≠ ⊥) (α : 𝓞 K) :
+    powerResidueSymbolIdeal (∏ i ∈ s, f i) n (Quotient.mk (∏ i ∈ s, f i) α) =
+      ∏ i ∈ s, powerResidueSymbolIdeal (f i) n (Quotient.mk (f i) α) := by
+  classical
+  induction s using Finset.cons_induction with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, one_eq_top, powerResidueSymbolIdeal_top]
+  | cons a s has ih =>
+    have ha : f a ≠ ⊥ := hf a (Finset.mem_cons_self a s)
+    have hs : ∀ i ∈ s, f i ≠ ⊥ := fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)
+    have hprod : ∏ i ∈ s, f i ≠ ⊥ := by
+      rw [← zero_eq_bot]
+      exact Finset.prod_ne_zero_iff.mpr fun i hi ↦ by rw [zero_eq_bot]; exact hs i hi
+    rw [Finset.prod_cons, Finset.prod_cons, powerResidueSymbolIdeal_mul_right ha hprod, ih hs]
 
 /-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`. -/
 theorem powerResidueSymbolIdeal_pow_right (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) (k : ℕ) :
