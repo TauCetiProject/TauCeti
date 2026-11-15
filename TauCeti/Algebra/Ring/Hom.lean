@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Commute
-public import Mathlib.Data.Set.Operations
+public import Mathlib.Algebra.Ring.Equiv
 import Mathlib.Data.Nat.Cast.Basic
-import Mathlib.Data.Set.Function
 
 /-!
-# Multiplicative maps into rings
+# Multiplicative maps, ring homomorphisms, and ring equivalences
 
 The element `-1` squares to `1`. A multiplicative map into a ring without zero divisors
 therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
@@ -22,12 +21,19 @@ A ring homomorphism fixes natural number casts, so it preserves membership state
 controls denominators under ring endomorphisms that preserve a subring, as in integrality arguments
 for Hazewinkel's functional equation.
 
+A ring equivalence `e : R ≃+* S` transports polynomial equations in both directions by applying
+`e` and `e.symm`. In particular, it preserves solvability of the binary quadratic norm equation
+`b = x² - a y²`, which transports Hilbert symbols and local and global quadratic norm equations
+along field and completion isomorphisms.
+
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
+* `RingEquiv.exists_eq_sq_sub_mul_sq_map_iff`: a ring equivalence preserves solvability of
+  `b = x² - a y²`.
 -/
 
 public section
@@ -62,3 +68,19 @@ theorem natCast_pow_mul_apply_mem {R S F : Type*} [Semiring R] [Semiring S]
   simpa only [map_mul, map_pow, map_natCast] using hf hx
 
 end Set.MapsTo
+
+namespace RingEquiv
+
+-- Not `@[simp]`: the left-hand side is headed by `Exists`, which would index under a wildcard key.
+/-- A ring isomorphism preserves solvability of the binary quadratic norm equation
+`b = x² - a y²`. -/
+theorem exists_eq_sq_sub_mul_sq_map_iff {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S)
+    (a b : R) :
+    (∃ x y : S, e b = x ^ 2 - e a * y ^ 2) ↔ ∃ x y : R, b = x ^ 2 - a * y ^ 2 := by
+  constructor
+  · rintro ⟨x, y, h⟩
+    exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+  · rintro ⟨x, y, h⟩
+    exact ⟨e x, e y, by simp [h]⟩
+
+end RingEquiv

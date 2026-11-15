@@ -27,11 +27,12 @@ the interval counterparts of Mathlib's `fourierCoeff.add`, bounds the coefficien
 on `(a, b]` (`TauCeti.norm_fourierCoeffOn_le`), and computes the coefficients of the
 Fourier monomials themselves (`TauCeti.fourierCoeffOn_fourier`), the interval counterpart of
 Mathlib's `fourierCoeff_fourier`, in particular for a circle `c + w e^{2πimt/(b-a)}`
-(`TauCeti.fourierCoeffOn_const_add_mul_fourier`). Conversely, a function continuous on `[a, b]` is
-determined there by its Fourier coefficients (`TauCeti.eqOn_Icc_of_fourierCoeffOn_eq`); the
-endpoint `a`, which the coefficients do not see, is recovered by continuity. In particular, it is
-a circle `c + w e^{2πist/(b-a)}` on `[a, b]` exactly when its coefficients vanish outside the
-frequencies `0` and `s` (`TauCeti.exists_eqOn_const_add_mul_fourier_iff`).
+(`TauCeti.fourierCoeffOn_const_add_mul_fourier`). Conversely, a function continuous on `[a, b]`
+with values in a complete normed complex space is determined there by its Fourier coefficients
+(`TauCeti.eqOn_Icc_of_fourierCoeffOn_eq`); the endpoint `a`, which the coefficients do not see,
+is recovered by continuity. In particular, a complex function is a circle `c + w e^{2πist/(b-a)}`
+on `[a, b]` exactly when its coefficients vanish outside the frequencies `0` and `s`
+(`TauCeti.exists_eqOn_const_add_mul_fourier_iff`).
 
 For a function on `AddCircle T`, the Fourier coefficients are those of its lift on any period
 interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each derivative of a
@@ -124,10 +125,12 @@ theorem fourierCoeffOn_const_add_mul_fourier (hab : a < b) (c w : ℂ) (m n : �
   simp only [Pi.single_apply]
   split_ifs <;> ring
 
-/-- **Uniqueness of Fourier coefficients on an interval.** Two complex functions continuous on
-`[a, b]` with the same Fourier coefficients on `[a, b]` agree on `[a, b]`. -/
-theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : ContinuousOn f [[a, b]])
-    (hg : ContinuousOn g [[a, b]]) (h : ∀ n, fourierCoeffOn hab f n = fourierCoeffOn hab g n) :
+/-- **Uniqueness of Fourier coefficients on an interval.** Two functions continuous on `[a, b]`
+with values in a complete normed complex space and with the same Fourier coefficients on
+`[a, b]` agree on `[a, b]`. -/
+theorem eqOn_Icc_of_fourierCoeffOn_eq [CompleteSpace E] (hab : a < b) {f g : ℝ → E}
+    (hf : ContinuousOn f [[a, b]]) (hg : ContinuousOn g [[a, b]])
+    (h : ∀ n, fourierCoeffOn hab f n = fourierCoeffOn hab g n) :
     EqOn f g (Icc a b) := by
   have hfg : ContinuousOn (fun t ↦ f t - g t) [[a, b]] := hf.sub hg
   have hae := hfg.intervalIntegrable.1.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero hab fun n ↦ by

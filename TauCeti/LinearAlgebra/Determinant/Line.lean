@@ -66,15 +66,17 @@ the linear algebra itself is standard.
 
 ## Main results
 
-* `TauCeti.finrank_detLine`: the determinant line of a finite free module has rank one.
+* `TauCeti.finrank_detLine`: the determinant line of a free module has rank one (for a module that
+  is not finite, by the `finrank = 0` convention).
 * `TauCeti.instInvertibleDetLine`: the determinant line of a finite free module is an invertible
   module.
 * `LinearEquiv.detLineCongr_refl`, `LinearEquiv.detLineCongr_trans`,
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
-* `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces with
-  finite-dimensional kernel and cokernel has dimension one.
+* `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
+  dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
+  convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
@@ -115,10 +117,16 @@ variable (R : Type*) [CommRing R] (V : Type*) [AddCommGroup V] [Module R V]
 finite free module it is free of rank one (`TauCeti.finrank_detLine`). -/
 abbrev detLine : Type _ := ⋀[R]^(finrank R V) V
 
-/-- The determinant line of a finite free module has rank one. -/
-theorem finrank_detLine [Nontrivial R] [Module.Free R V] [Module.Finite R V] :
+/-- The determinant line of a free module has rank one. For a module that is not finite, `finrank`
+is `0` by convention and the determinant line is `⋀⁰ V ≃ R`. -/
+theorem finrank_detLine [Nontrivial R] [Module.Free R V] :
     finrank R (detLine R V) = 1 := by
-  simp [detLine]
+  by_cases hV : Module.Finite R V
+  · simp [detLine]
+  · have h : finrank R V = 0 := Module.finrank_of_not_finite hV
+    unfold detLine
+    rw [h]
+    exact (exteriorPower.zeroEquiv R V).finrank_eq.trans (Module.finrank_self R)
 
 /-- The determinant line of a finite free module is an invertible module, so that it cancels
 against its dual: `det V ⊗ (det V)^* ≃ R` (`Module.Invertible.linearEquiv`). -/
@@ -487,9 +495,11 @@ section Field
 variable {K : Type*} [Field K] {M N : Type*} [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N]
 
-/-- The determinant line of a linear map with finite-dimensional kernel and cokernel is a line. -/
-theorem finrank_detLine (f : M →ₗ[K] N) [FiniteDimensional K (ker f)]
-    [FiniteDimensional K (N ⧸ range f)] : finrank K f.detLine = 1 := by
+/-- The determinant line of a linear map between vector spaces is a line. When the kernel is not
+finite-dimensional, its determinant line is `⋀[K]^0 (ker f) ≃ K` by the `finrank` convention, and
+likewise for the cokernel. -/
+theorem finrank_detLine (f : M →ₗ[K] N) :
+    finrank K f.detLine = 1 := by
   rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
     TauCeti.finrank_detLine]
 

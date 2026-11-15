@@ -111,6 +111,11 @@ theorem head?_merzljakovWord (a b : α) (ms : List ℕ) :
 theorem length_merzljakovBlock (a b : α) (m : ℕ) : (merzljakovBlock a b m).length = m + 2 := by
   simp [merzljakovBlock]
 
+/-- The formal inverse of the block `b a^m b` is `b⁻¹ a^{-m} b⁻¹`. -/
+theorem invRev_merzljakovBlock (a b : α) (m : ℕ) :
+    invRev (merzljakovBlock a b m) = (b, false) :: (replicate m (a, false) ++ [(b, false)]) := by
+  simp [invRev, merzljakovBlock_eq]
+
 /-- The Merzljakov word with exponents `m₁, …, m_n` has `m₁ + ⋯ + m_n + n + 1` letters. -/
 @[simp]
 theorem length_merzljakovWord (a b : α) (ms : List ℕ) :

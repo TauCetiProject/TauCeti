@@ -452,6 +452,10 @@ theorem Walk.connected_walkGraph {x y : α} (p : G.Walk x y) : (G.walkGraph p).C
 instance [Finite V(G)] : Finite G.ConnectedComponent :=
   G.connectedComponentEquiv.finite_iff.mpr inferInstance
 
+/-- A multigraph without actual vertices has no connected-component subgraphs. -/
+instance [IsEmpty V(G)] : IsEmpty G.ConnectedComponent :=
+  G.connectedComponentEquiv.isEmpty
+
 /-- The number of connected-component subgraphs of `G`, or `0` if there are infinitely many. -/
 noncomputable def componentCount (G : Graph α β) : Nat :=
   Nat.card G.ConnectedComponent
