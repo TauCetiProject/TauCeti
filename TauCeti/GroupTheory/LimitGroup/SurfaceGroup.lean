@@ -189,9 +189,8 @@ section Nonorientable
 
 open SurfaceGroup.Nonorientable
 
-/-- **Lyndon.** The fundamental group `S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` of the closed
-nonorientable surface of genus three is not residually free: residually free groups satisfy Vaught's
-condition, while `c₁ ^ 2 c₂ ^ 2 c₃ ^ 2 = 1` in `S⁻(3, 0)` although `c₁` and `c₂` do not commute. -/
+/-- The fundamental group `S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` of the closed
+nonorientable surface of genus three is not residually free. -/
 theorem not_isResiduallyFree_nonorientable_three_zero :
     ¬IsResiduallyFree (SurfaceGroup.Nonorientable 3 0) := fun h ↦ by
   have hc : c 3 0 0 ^ 2 * c 3 0 1 ^ 2 * c 3 0 2 ^ 2 = 1 := by

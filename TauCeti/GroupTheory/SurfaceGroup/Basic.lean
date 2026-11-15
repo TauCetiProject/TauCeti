@@ -64,8 +64,7 @@ surface glued from two pieces along a boundary curve.
 ## Main results
 
 * `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
-  commute only when they are equal, as one sees by sending them to two reflections of the
-  dihedral group of order `6`.
+  commute only when they are equal.
 
 ## References
 
