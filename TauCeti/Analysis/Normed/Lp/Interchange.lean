@@ -38,13 +38,8 @@ theorem memℓp_piLp_iff {f : ∀ a, PiLp q (E a)} :
     Memℓp f p ↔ ∀ i, Memℓp (fun a ↦ f a i) p := by
   refine ⟨fun hf i ↦ hf.mono' fun a ↦ PiLp.norm_apply_le (f a) i, fun hf ↦ ?_⟩
   classical
-  have hsingle (i : ι) : Memℓp (fun a ↦ PiLp.single q i (f a i)) p :=
+  simpa only [PiLp.univ_sum_single] using Memℓp.finsetSum Finset.univ fun i _ ↦
     (hf i).mono' fun a ↦ (PiLp.norm_single q (E a) i (f a i)).le
-  have hsum (s : Finset ι) : Memℓp (fun a ↦ ∑ i ∈ s, PiLp.single q i (f a i)) p := by
-    induction s using Finset.induction_on with
-    | empty => simpa using (zero_mem_ℓp' (E := fun a ↦ PiLp q (E a)) (p := p))
-    | insert j s hj ih => simpa only [Finset.sum_insert hj, Pi.add_def] using (hsingle j).add ih
-  simpa only [PiLp.univ_sum_single] using hsum Finset.univ
 
 end TauCeti
 
@@ -121,7 +116,7 @@ variable {p 𝕜 E}
 @[simp] theorem piLpEquiv_single_single [DecidableEq α] [DecidableEq ι] (a : α) (j : ι)
     (x : E a j) :
     piLpEquiv p 𝕜 E (lp.single p a (PiLp.single p j x)) = PiLp.single p j (lp.single p a x) := by
-  ext i b; rcases eq_or_ne i j with rfl | hij <;> rcases eq_or_ne b a with rfl | hba <;> simp [*]
+  ext i : 1; rcases eq_or_ne i j with rfl | hij <;> simp [*]
 
 /-- On `PiLp.single p j g`, `(lp.piLpEquiv).symm` evaluates at `a` to `PiLp.single p j (g a)`. -/
 @[simp] theorem piLpEquiv_symm_single_apply [DecidableEq ι] (j : ι) (g : lp (fun a ↦ E a j) p)
@@ -133,8 +128,8 @@ variable {p 𝕜 E}
 @[simp] theorem piLpEquiv_symm_single_single [DecidableEq α] [DecidableEq ι] (j : ι) (a : α)
     (x : E a j) :
     (piLpEquiv p 𝕜 E).symm (PiLp.single p j (lp.single p a x)) =
-      lp.single p a (PiLp.single p j x) := by
-  ext b i; rcases eq_or_ne b a with rfl | hba <;> rcases eq_or_ne i j with rfl | hij <;> simp [*]
+      lp.single p a (PiLp.single p j x) :=
+  (piLpEquiv p 𝕜 E).symm_apply_eq.mpr (piLpEquiv_single_single (𝕜 := 𝕜) a j x).symm
 
 end NormedRing
 

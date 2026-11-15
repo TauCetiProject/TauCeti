@@ -114,7 +114,7 @@ theorem mem_blockHardySubmodule_iff_piLpEquiv {r : ℕ}
       e.toLinearIsometry.toContinuousLinearMap
     refine proj_i.continuous.apply_mem_of_mem_topologicalClosure_span isClosed_hardySubmodule ?_ hf
     rintro _ ⟨⟨n, j⟩, rfl⟩
-    simp only [coe_coe, proj_i, comp_apply, LinearIsometry.coe_toContinuousLinearMap,
+    simp only [proj_i, comp_apply, LinearIsometry.coe_toContinuousLinearMap,
       LinearIsometryEquiv.coe_toLinearIsometry, PiLp.proj_apply, e, piLpEquiv_blockFourierMode]
     split_ifs; · exact fourierBasis_mem_hardySubmodule n
     exact hardySubmodule.zero_mem
@@ -122,7 +122,7 @@ theorem mem_blockHardySubmodule_iff_piLpEquiv {r : ℕ}
     refine (Lp.piLpSingleLI 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1)) i).continuous
       |>.apply_mem_of_mem_topologicalClosure_span (isClosed_blockHardySubmodule r) ?_
         (hardySubmodule_def ▸ hf i)
-    rintro _ ⟨n, rfl⟩; rw [LinearIsometry.coe_toLinearMap, piLpSingleLI_fourierBasis]
+    rintro _ ⟨n, rfl⟩; rw [piLpSingleLI_fourierBasis]
     exact blockFourierMode_mem_blockHardySubmodule r n i
 
 /-- `f` lies in `blockHardySubmodule r` iff all negative Fourier coefficients vanish. -/
@@ -142,7 +142,7 @@ theorem dense_span_blockFourierMode (r : ℕ) :
   refine (Lp.piLpSingleLI 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1)) i).continuous
     |>.apply_mem_of_mem_topologicalClosure_span (isClosed_topologicalClosure _) ?_
       ((fourierBasis (T := 1)).dense_span.symm ▸ mem_top)
-  rintro _ ⟨n, rfl⟩; rw [LinearIsometry.coe_toLinearMap, piLpSingleLI_fourierBasis]
+  rintro _ ⟨n, rfl⟩; rw [piLpSingleLI_fourierBasis]
   exact le_topologicalClosure _ (subset_span ⟨(n, i), rfl⟩)
 
 /-- High Fourier modes shift any vector trigonometric polynomial into `blockHardySubmodule r`. -/
@@ -377,9 +377,7 @@ theorem coe_blockHardyEquiv_symm_blockHardyBasis (r : ℕ) (p : ℕ × Fin r) :
 @[simp] theorem blockHardyRepr_single_hardyBasis {r : ℕ} (i : Fin r) (n : ℕ) :
     blockHardyRepr r (PiLp.single 2 i (hardyBasis n)) =
       lp.single 2 n (EuclideanSpace.single i 1) := by
-  ext m j; rw [blockHardyRepr_apply, lp.single_apply]
-  rcases eq_or_ne m n with rfl | hmn <;> rcases eq_or_ne j i with rfl | hji <;>
-    simp [*, HilbertBasis.repr_self, lp.single_apply, EuclideanSpace.single]
+  simp [blockHardyRepr, HilbertBasis.repr_self]
 
 /-- `blockHardyRepr r` sends `blockHardyBasis r p` to `lp.single 2 p.1 (single p.2 1)`. -/
 theorem blockHardyRepr_blockHardyBasis (r : ℕ) (p : ℕ × Fin r) :

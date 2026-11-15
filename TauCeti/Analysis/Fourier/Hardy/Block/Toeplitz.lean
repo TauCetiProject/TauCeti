@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.Hardy.Block.Basic
 public import TauCeti.Analysis.Fourier.Hardy.BrownHalmos
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+import TauCeti.Analysis.InnerProductSpace.Compression
 
 /-!
 # Block Toeplitz operators and the block Brown–Halmos theorem
@@ -189,9 +190,15 @@ private theorem norm_operatorMultiplication_le_norm_blockToeplitz {r : ℕ} (A :
         blockToeplitz r A ∘L (blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap := by
     ext f : 1; simp [blockToeplitz_apply]
   refine ((blockHardySubmodule r).norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
-    (Lp.operatorMultiplication 2 A) (dense_span_blockFourierMode r)
-    (fun _ hg ↦ eventually_fourierLp_smul_mem_blockHardySubmodule hg) fun N g ↦
-      Lp.operatorMultiplication_lpSMul_right (fourierLp (T := 1) ∞ N) A g).trans ?_
+    (Lp.operatorMultiplication 2 A) (l := Filter.atTop)
+    (fun N : ℤ ↦ ⟨(Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)).toLinearMap,
+      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one
+        (ae_norm_fourierLp_eq_one (T := 1) ∞ N)⟩)
+    (dense_span_blockFourierMode r) (fun _ hg ↦ by
+      simpa only [LinearIsometry.coe_mk, coe_coe, Lp.multiplicationOperator_apply] using
+        eventually_fourierLp_smul_mem_blockHardySubmodule hg) fun N g ↦ by
+      simpa only [LinearIsometry.coe_mk, coe_coe, Lp.multiplicationOperator_apply] using
+        Lp.operatorMultiplication_lpSMul_right (fourierLp (T := 1) ∞ N) A g).trans ?_
   rw [hT]; grw [opNorm_comp_le, opNorm_comp_le, LinearIsometry.norm_toContinuousLinearMap_le,
     LinearIsometry.norm_toContinuousLinearMap_le]; simp
 

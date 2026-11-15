@@ -42,7 +42,7 @@ variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 variable (p) in
-/-- Pointwise application of `A : Lp (E →L[𝕜] F) ∞ μ` as a continuous bilinear map on `Lp E p μ`. -/
+/-- Continuous bilinear map sending `(A, f)` to pointwise application `x ↦ A x (f x)`. -/
 def operatorMultiplication : Lp (E →L[𝕜] F) ∞ μ →L[𝕜] Lp E p μ →L[𝕜] Lp F p μ :=
   (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p
 

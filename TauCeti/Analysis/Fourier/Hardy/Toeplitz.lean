@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.Basic
 public import TauCeti.MeasureTheory.Function.Lp.ContinuousFunctions
+import TauCeti.Analysis.InnerProductSpace.Compression
 
 /-!
 # Toeplitz operators on boundary Hardy space
@@ -334,73 +335,22 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ ≤ ‖a‖ :=
   norm_compress_multiplicationOperator_le a
 
-private theorem norm_inner_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-    (H : Submodule ℂ (Lp E 2 (AddCircle.haarAddCircle (T := 1)))) [H.HasOrthogonalProjection]
-    (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp E 2 (AddCircle.haarAddCircle (T := 1)))
-    {f g : Lp E 2 (AddCircle.haarAddCircle (T := 1))}
-    (hf : ∀ᶠ N : ℤ in Filter.atTop,
-      (fourierLp (T := 1) ∞ N • f : Lp E 2 (AddCircle.haarAddCircle (T := 1))) ∈ H)
-    (hg : ∀ᶠ N : ℤ in Filter.atTop,
-      (fourierLp (T := 1) ∞ N • g : Lp E 2 (AddCircle.haarAddCircle (T := 1))) ∈ H)
-    (hcomm : ∀ (N : ℤ) (h : Lp E 2 (AddCircle.haarAddCircle (T := 1))),
-      M (fourierLp (T := 1) ∞ N • h) = fourierLp (T := 1) ∞ N • M h) :
-    ‖⟪f, M g⟫_ℂ‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖ * ‖f‖ * ‖g‖ := by
-  obtain ⟨N, hfN, hgN⟩ := (hf.and hg).exists
-  have hu := ae_norm_fourierLp_eq_one (T := 1) ∞ N
-  have hnorm (h : Lp E 2 (AddCircle.haarAddCircle (T := 1))) :
-      ‖(fourierLp (T := 1) ∞ N • h : Lp E 2 (AddCircle.haarAddCircle (T := 1)))‖ = ‖h‖ := by
-    rw [← Lp.multiplicationOperator_apply,
-      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu]
-  set T := H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL
-  have hinner : ⟪f, M g⟫_ℂ = ⟪(⟨_, hfN⟩ : ↥H), T ⟨_, hgN⟩⟫_ℂ := by
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.coe_mk,
-      Submodule.subtypeL_apply, hcomm N g, ← Lp.multiplicationOperator_apply,
-      ← Lp.multiplicationOperator_apply]
-    exact ((LinearMap.norm_map_iff_inner_map_map
-      (Lp.multiplicationOperator (E := E) (fourierLp (T := 1) ∞ N))).1
-        (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f (M g)).symm
-  calc ‖⟪f, M g⟫_ℂ‖ ≤ ‖(⟨_, hfN⟩ : ↥H)‖ * (‖T‖ * ‖(⟨_, hgN⟩ : ↥H)‖) := by
-        rw [hinner]; exact (norm_inner_le_norm _ _).trans (by gcongr; exact T.le_opNorm _)
-    _ = ‖T‖ * ‖f‖ * ‖g‖ := by
-        rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_mk, Submodule.coe_mk,
-          hnorm, hnorm]; ring
-
-/-- If `M` on `Lp E 2 haarAddCircle` commutes with `fourierLp ∞ N • ·` and high modes eventually
-shift a dense set `s` into `H`, then `‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖`. -/
-theorem _root_.Submodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-    (H : Submodule ℂ (Lp E 2 (AddCircle.haarAddCircle (T := 1)))) [H.HasOrthogonalProjection]
-    (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp E 2 (AddCircle.haarAddCircle (T := 1)))
-    {s : Set (Lp E 2 (AddCircle.haarAddCircle (T := 1)))} (hs : Dense s)
-    (hshift : ∀ g ∈ s, ∀ᶠ N : ℤ in Filter.atTop,
-      (fourierLp (T := 1) ∞ N • g : Lp E 2 (AddCircle.haarAddCircle (T := 1))) ∈ H)
-    (hcomm : ∀ (N : ℤ) (g : Lp E 2 (AddCircle.haarAddCircle (T := 1))),
-      M (fourierLp (T := 1) ∞ N • g) = fourierLp (T := 1) ∞ N • M g) :
-    ‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖ := by
-  set T := H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL
-  have hbound : ∀ p : Lp E 2 (AddCircle.haarAddCircle (T := 1)) ×
-      Lp E 2 (AddCircle.haarAddCircle (T := 1)), ‖⟪p.1, M p.2⟫_ℂ‖ ≤ ‖T‖ * ‖p.1‖ * ‖p.2‖ :=
-    (hs.prod hs).induction
-      (fun p hp ↦ norm_inner_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL H M
-        (hshift p.1 hp.1) (hshift p.2 hp.2) hcomm) (isClosed_le (by fun_prop) (by fun_prop))
-  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg T) fun x y hx hy ↦ ?_
-  calc RCLike.re ⟪M x, y⟫_ℂ ≤ ‖⟪M x, y⟫_ℂ‖ := RCLike.re_le_norm _
-    _ = ‖⟪y, M x⟫_ℂ‖ := norm_inner_symm _ _
-    _ ≤ ‖T‖ := by simpa only [hx, hy, mul_one] using hbound (y, x)
-
 /-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
 private theorem norm_multiplicationOperator_le_norm_toeplitz
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
   rw [toeplitz_apply]
   refine hardySubmodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
-    (Lp.multiplicationOperator a)
+    (Lp.multiplicationOperator a) (l := Filter.atTop)
+    (fun N : ℤ ↦ ⟨(Lp.multiplicationOperator (fourierLp (T := 1) ∞ N)).toLinearMap,
+      Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one
+        (ae_norm_fourierLp_eq_one (T := 1) ∞ N)⟩)
     (Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span)
-    (fun _ hg ↦ eventually_fourierLp_smul_mem_hardySubmodule hg) fun N g ↦ ?_
-  simpa only [mul_apply_eq_comp, Lp.multiplicationOperator_apply] using
-    congrArg (· g) (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq.symm
+    (fun _ hg ↦ ?_) fun N g ↦ ?_
+  · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, Lp.multiplicationOperator_apply]
+      using eventually_fourierLp_smul_mem_hardySubmodule hg
+  · simpa only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, mul_apply_eq_comp] using
+      congrArg (· g) (Lp.commute_multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N) a).eq.symm
 
 /-- **Symbol norm.** The operator norm of the Toeplitz operator `T_a` is the `L∞` norm of its
 symbol. -/
