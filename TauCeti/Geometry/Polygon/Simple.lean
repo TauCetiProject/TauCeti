@@ -32,7 +32,8 @@ the unit circle `Circle`. A framing is not part of this presentation: a framing 
 knot is a chosen push-off, which is separate data on top of the simple polygon, as for
 `TauCeti.SmoothCircleEmbedding`. Nothing here depends on the dimension of the ambient space.
 
-The first simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`. The polygon with
+The basic examples of simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`
+(over `ℝ` they are the smallest nonempty ones, `Polygon.IsSimple.three_le`). The polygon with
 no vertices is vacuously simple and has empty boundary, so the results about the boundary assume
 `NeZero n`.
 
@@ -472,13 +473,9 @@ theorem boundaryParam_rotate (t : ℝ) :
 `-(i + 1)`, where `i` is the edge it runs along at time `t`. -/
 theorem edgeIndexAt_neg {t : ℝ} (ht : Int.fract t ≠ 0) :
     edgeIndexAt n (-t) = -finRotate n (edgeIndexAt n t) := by
-  have hfract := (Int.fract_nonneg t).lt_of_ne' ht
-  rw [Int.fract] at hfract
-  have hfloor : ⌊-t⌋ = -⌊t⌋ - 1 := by
-    rw [Int.floor_eq_iff]
-    push_cast
-    constructor <;> linarith [Int.lt_floor_add_one t]
-  rw [edgeIndexAt, edgeIndexAt, hfloor, ← vertexIndex_add_one, ← vertexIndex_neg, neg_add']
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_neg,
+    (Int.ceil_eq_floor_add_one_iff_notMem t).2 (Int.fract_ne_zero_iff.1 ht), vertexIndex_neg,
+    vertexIndex_add_one]
 
 /-- The reversal `poly.reverse` traverses the boundary of `poly` backwards from vertex `0`: its
 boundary parametrization at time `t` is that of `poly` at time `-t`. -/
@@ -521,6 +518,7 @@ of vertices. -/
 noncomputable def boundaryParamCircle : AddCircle (n : ℝ) → P :=
   poly.periodic_boundaryParam.lift
 
+/-- The circle parametrization, composed with the quotient map, is the boundary parametrization. -/
 @[simp]
 theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.boundaryParam t :=
   poly.periodic_boundaryParam.lift_coe t
@@ -528,8 +526,8 @@ theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.bo
 omit [NeZero n] in
 /-- The circle parametrization depends affinely on an inserted vertex. This expresses a moving
 polygon as the pointwise affine interpolation of its endpoint parametrizations. -/
-theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (poly : Polygon V n) (i : Fin n) (a b : V) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
+theorem boundaryParamCircle_insertVertex_lineMap
+    (poly : Polygon P n) (i : Fin n) (a b : P) (t : ℝ) (z : AddCircle ((n + 1 : ℕ) : ℝ)) :
     (poly.insertVertex i (AffineMap.lineMap a b t)).boundaryParamCircle z =
       AffineMap.lineMap ((poly.insertVertex i a).boundaryParamCircle z)
         ((poly.insertVertex i b).boundaryParamCircle z) t := by
@@ -542,7 +540,8 @@ theorem boundaryParamCircle_insertVertex_lineMap {V : Type*} [AddCommGroup V] [M
   obtain ⟨u, rfl⟩ := QuotientAddGroup.mk_surjective z
   simp only [boundaryParamCircle_coe, boundaryParam_eq_edgePath_edgeIndexAt, edgePath]
   rw [hv, hv]
-  simp only [AffineMap.lineMap_apply_module]
+  apply (vsub_left_injective a)
+  simp only [AffineMap.lineMap_vsub, AffineMap.lineMap_apply_module]
   module
 
 /-- The circle parametrization runs over the whole boundary of the polygon. -/
@@ -599,10 +598,8 @@ theorem exists_mem_Ico_boundaryParam_eq {x : P} (hx : x ∈ poly.boundary ℝ) :
     ∃ t ∈ Ico (0 : ℝ) n, poly.boundaryParam t = x := by
   rw [← range_boundaryParam] at hx
   obtain ⟨u, rfl⟩ := hx
-  have hn : (0 : ℝ) < n := mod_cast NeZero.pos n
-  refine ⟨toIcoMod hn 0 u, by simpa using toIcoMod_mem_Ico hn 0 u, ?_⟩
-  rw [← sub_sub_cancel u (toIcoMod hn 0 u), self_sub_toIcoMod]
-  exact poly.periodic_boundaryParam.sub_zsmul_eq _
+  obtain ⟨t, ht, h⟩ := poly.periodic_boundaryParam.exists_mem_Ico₀ (mod_cast NeZero.pos n) u
+  exact ⟨t, ht, h.symm⟩
 
 /-- The circle parametrization of a simple polygon is injective. -/
 theorem IsSimple.boundaryParamCircle_injective (h : poly.IsSimple ℝ) :
@@ -732,6 +729,7 @@ theorem IsSimple.isJordanCurve_boundary [T2Space P] (h : poly.IsSimple ℝ) :
     h.boundaryParamCircle_injective.injOn
   rwa [image_univ, range_boundaryParamCircle] at himage
 
+omit [NeZero n] in
 /-- **Local structure of a simple polygon.** Near each of its points `z`, a simple polygon is the
 union of two segments from `z`, to points `a` and `b` other than `z`, which meet only at `z`. For a
 vertex `z` these run along the two edges at `z`; for a point inside an edge they run along that
@@ -816,6 +814,7 @@ structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrd
     [ZeroLEOneClass R] [AddCommGroup V] [Module R V] [AddTorsor V P] where
   /-- The number of vertices. -/
   numVertices : ℕ
+  /-- A simple polygon has at least one vertex. -/
   [neZero : NeZero numVertices]
   /-- The underlying polygon. -/
   toPolygon : Polygon P numVertices
@@ -837,10 +836,12 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGr
   toPolygon := p.toPolygon.rotate
   isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
 
+/-- Rotating a simple polygon does not change its number of vertices. -/
 @[simp]
 theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
   rfl
 
+/-- The underlying polygon of the rotation is the rotation of the underlying polygon. -/
 @[simp]
 theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
   rfl
@@ -853,12 +854,14 @@ when the result is simple. For `c` a point of edge `i`, this subdivides that edg
   toPolygon := p.toPolygon.insertVertex i c
   isSimple := hq
 
+/-- Inserting a vertex adds one to the number of vertices. -/
 @[simp]
 theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
     (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
   rfl
 
+/-- The underlying polygon after inserting a vertex is the polygon with the vertex inserted. -/
 @[simp]
 theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
@@ -912,11 +915,13 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
   toPolygon := t.toPolygon
   isSimple := t.toPolygon_isSimple
 
+/-- The simple polygon of a triangle has three vertices. -/
 @[simp]
 theorem toSimplePolygon_numVertices (t : Affine.Triangle R P) :
     t.toSimplePolygon.numVertices = 3 :=
   rfl
 
+/-- The underlying polygon of the simple polygon of a triangle is its polygon. -/
 @[simp]
 theorem toSimplePolygon_toPolygon (t : Affine.Triangle R P) :
     t.toSimplePolygon.toPolygon = t.toPolygon :=
