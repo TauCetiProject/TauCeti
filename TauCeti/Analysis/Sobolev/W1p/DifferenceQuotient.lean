@@ -9,6 +9,10 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Sobolev.W1p.Symmetry
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompactExhaustion
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
+import TauCeti.Analysis.Calculus.FDeriv.Remainder
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -34,6 +38,16 @@ the test functions. A general `u ∈ W^{1,p}(Ω)` is first multiplied by a smoot
 one near the segments and compactly supported in `Ω`, and then extended by zero to the whole
 space; neither operation changes `u` or its gradient near the segments.
 
+The difference quotients also converge: `t⁻¹ (u(· + t v) - u) → ⟪v, ∇u⟫` in `Lᵖ` as `t → 0`. On
+the whole space this follows from the uniform bound and the density of test functions, for which
+the error is `O(t)`. On a domain mapped into itself by every translation `x ↦ x + t v`, such as a
+half-space with `v` parallel to its boundary, it holds on all of `Ω`: on a compact set `u` agrees
+with a whole-space Sobolev function, and off a large compact set both the difference quotients and
+`⟪v, ∇u⟫` are small. If moreover every first derivative of `u` lies in `W^{1,p}(Ω)`, the difference
+quotients converge to `∂_v u` in `W^{1,p}(Ω)`, so a tangential derivative of a function with zero
+boundary values again has zero boundary values. This is the step of the regularity theory up to
+a flat boundary that differentiates the equation in tangential directions.
+
 ## Main declarations
 
 * `TauCeti.W1p.differenceQuotient`: the local Sobolev difference quotient, whose value and weak
@@ -51,12 +65,24 @@ space; neither operation changes `u` or its gradient near the segments.
   translation, difference quotients preserve `W^{1,p}_0(Ω)`, commute with extension by zero, and
   satisfy the whole-space bound.
 
-Translations parallel to the boundary of a half-space map it onto itself, so the last three
-statements are what a difference-quotient argument in tangential directions uses.
+* `TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_isOpen`: the difference-quotient
+  bound on an open set, with no compactness.
+* `TauCeti.W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_top` and
+  `TauCeti.W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner`: the difference
+  quotients converge in `Lᵖ`, on the whole space and on a translation-invariant domain.
+* `TauCeti.W1p.tendsto_differenceQuotient`: on a translation-invariant domain, the difference
+  quotients of a function with first derivatives in `W^{1,p}(Ω)` converge in `W^{1,p}(Ω)`.
+* `TauCeti.W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn`: a tangential derivative of such a
+  function in `W^{1,p}_0(Ω)` lies in `W^{1,p}_0(Ω)`.
+
+Translations parallel to the boundary of a half-space map it onto itself, so the statements on
+translation-invariant domains are what a difference-quotient argument in tangential directions
+uses.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, §5.8.2, Theorem 3 (i), and §6.3.2.
+* L. C. Evans, *Partial Differential Equations*, §5.8.2, Theorem 3 (i), and §6.3.2 (proof of
+  Theorem 5, where the tangential derivatives of the solution are shown to lie in `H¹₀`).
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Lemma 7.23.
 -/
@@ -422,5 +448,353 @@ theorem W1p0.norm_value_differenceQuotient_le (hp : p ≠ ∞) {w : E} {t : ℝ}
   rwa [← W1p0.extendByZeroL_eq_differenceQuotient (g := ⟨_,
       W1p.differenceQuotient_mem_w1p0Submodule hVO hΩ u.2⟩) hVO hΩ rfl,
     W1p0.norm_value_extendByZeroL, W1p0.norm_gradient_extendByZeroL] at h
+
+/-! ### Convergence of difference quotients -/
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A point outside `K + [-1, 1] • v` stays outside `K` after a translation by `r • v`,
+`|r| ≤ 1`. -/
+private theorem add_smul_notMem_of_notMem_image {K : Set E} {v x : E} {r : ℝ} (hr : |r| ≤ 1)
+    (hx : x ∉ (fun z : E × ℝ => z.1 + z.2 • v) '' (K ×ˢ Icc (-1 : ℝ) 1)) : x + r • v ∉ K :=
+  fun h => hx ⟨(x + r • v, -r), ⟨h, by constructor <;> linarith [abs_le.1 hr]⟩, by
+    simp [neg_smul]⟩
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- For a test function `φ` whose derivative is `L`-Lipschitz and `0 < |t| ≤ 1`, the error of the
+difference quotient is at most `L |t| ‖v‖²`, and it vanishes off `tsupport φ + [-1, 1] • v`. -/
+private theorem norm_inv_mul_comp_add_smul_sub_sub_fderiv_le (φ : 𝓓((⊤ : Opens E), ℝ))
+    {L : NNReal} (hL : LipschitzWith L (fderiv ℝ (φ : E → ℝ))) (v x : E) {t : ℝ} (ht0 : t ≠ 0)
+    (ht : |t| ≤ 1) :
+    ‖t⁻¹ * ((φ : E → ℝ) (x + t • v) - φ x) - fderiv ℝ (φ : E → ℝ) x v‖ ≤
+      ((fun z : E × ℝ => z.1 + z.2 • v) '' (tsupport (φ : E → ℝ) ×ˢ Icc (-1 : ℝ) 1)).indicator
+        (fun _ => (L : ℝ) * |t| * ‖v‖ ^ 2) x := by
+  by_cases hx : x ∈ (fun z : E × ℝ => z.1 + z.2 • v) '' (tsupport (φ : E → ℝ) ×ˢ Icc (-1 : ℝ) 1)
+  · rw [indicator_of_mem hx]
+    have h := norm_sub_sub_fderiv_le_of_lipschitzWith
+      (φ.contDiff.differentiable (by simp)) hL x (t • v)
+    simp only [map_smul, smul_eq_mul, norm_smul, Real.norm_eq_abs] at h
+    have hrw : t⁻¹ * ((φ : E → ℝ) (x + t • v) - φ x) - fderiv ℝ (φ : E → ℝ) x v =
+        t⁻¹ * ((φ : E → ℝ) (x + t • v) - φ x - t * fderiv ℝ (φ : E → ℝ) x v) := by
+      field_simp
+    rw [hrw, norm_mul, norm_inv, Real.norm_eq_abs, inv_mul_le_iff₀ (abs_pos.2 ht0)]
+    exact h.trans_eq (by ring)
+  · rw [indicator_of_notMem hx]
+    have h0 : x ∉ tsupport (φ : E → ℝ) := by
+      simpa using add_smul_notMem_of_notMem_image (r := 0) (by simp) hx
+    rw [image_eq_zero_of_notMem_tsupport (add_smul_notMem_of_notMem_image ht hx),
+      image_eq_zero_of_notMem_tsupport h0, fderiv_of_notMem_tsupport ℝ h0]
+    simp
+
+omit [FiniteDimensional ℝ E] in
+/-- **Difference quotients of a test function converge in `Lᵖ`.** For a test function `φ` on the
+whole space, a direction `v` and `p < ∞`, `‖t⁻¹ (φ(· + t v) - φ) - Dφ v‖_{Lᵖ} → 0` as `t → 0`. -/
+private theorem tendsto_eLpNorm_inv_mul_comp_add_smul_sub_sub_fderiv (hp : p ≠ ∞)
+    (φ : 𝓓((⊤ : Opens E), ℝ)) (v : E) :
+    Tendsto (fun t : ℝ => eLpNorm (fun x => t⁻¹ * ((φ : E → ℝ) (x + t • v) - φ x) -
+      fderiv ℝ (φ : E → ℝ) x v) p mu) (𝓝[≠] 0) (𝓝 0) := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  have hφ := φ.contDiff
+  have hφc : HasCompactSupport (φ : E → ℝ) := φ.hasCompactSupport
+  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport (hφc.fderiv ℝ)
+    (hφ.fderiv_right (m := 1) (by simp)) one_ne_zero
+  set S := (fun z : E × ℝ => z.1 + z.2 • v) '' (tsupport (φ : E → ℝ) ×ˢ Icc (-1 : ℝ) 1)
+  have hS : IsCompact S := (hφc.isCompact.prod isCompact_Icc).image (by fun_prop)
+  -- For `0 < |t| ≤ 1` the `Lᵖ` norm is at most `L |t| ‖v‖² μ(S)^(1/p)`.
+  have hbound : ∀ t : ℝ, t ≠ 0 → |t| ≤ 1 → eLpNorm (fun x =>
+      t⁻¹ * ((φ : E → ℝ) (x + t • v) - φ x) - fderiv ℝ (φ : E → ℝ) x v) p mu ≤
+        ENNReal.ofReal ((L : ℝ) * |t| * ‖v‖ ^ 2) * mu S ^ (1 / p.toReal) := fun t ht0 ht => by
+    have hc : Continuous fun x => t⁻¹ * ((φ : E → ℝ) (x + t • v) - φ x) -
+        fderiv ℝ (φ : E → ℝ) x v := by
+      have := φ.continuous
+      have := hφ.continuous_fderiv (by simp)
+      fun_prop
+    refine (eLpNorm_mono_real hc.aestronglyMeasurable fun x =>
+      norm_inv_mul_comp_add_smul_sub_sub_fderiv_le φ hL v x ht0 ht).trans ?_
+    rw [eLpNorm_indicator_const hS.isClosed.measurableSet.nullMeasurableSet hp0 hp, ← ofReal_norm,
+      Real.norm_of_nonneg (by positivity)]
+  have hlim : Tendsto (fun t : ℝ => ENNReal.ofReal ((L : ℝ) * |t| * ‖v‖ ^ 2) *
+      mu S ^ (1 / p.toReal)) (𝓝 0) (𝓝 0) := by
+    have hc : Continuous fun t : ℝ => (L : ℝ) * |t| * ‖v‖ ^ 2 := by fun_prop
+    have h := ENNReal.tendsto_ofReal (hc.tendsto (0 : ℝ))
+    simp only [abs_zero, mul_zero, zero_mul, ENNReal.ofReal_zero] at h
+    simpa using ENNReal.Tendsto.mul_const h (Or.inr (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+      hS.measure_lt_top.ne))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (hlim.mono_left nhdsWithin_le_nhds) (Eventually.of_forall fun _ => zero_le) ?_
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with t ht0 ht
+  exact hbound t ht0 (by simpa using ht)
+
+/-- **The difference-quotient bound on an open set.** Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, and let
+`A` be open. If every segment `[x, x + t v]` with `x ∈ A` lies in a set `T ⊆ Ω`, then
+
+`‖t⁻¹ (u(· + t v) - u)‖_{Lᵖ(A)} ≤ ‖⟪v, ∇u⟫‖_{Lᵖ(T)}`.
+
+This is `TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le` without compactness of `A`; on a
+domain mapped into itself by the translations `x ↦ x + s v` it applies to `A = T = Ω`. -/
+theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_isOpen (hp : p ≠ ∞)
+    (u : W1p mu Omega p) (v : E) (t : ℝ) {A T : Set E} (hA : IsOpen A) (hTO : T ⊆ Omega)
+    (hAT : ∀ x ∈ A, ∀ s ∈ Icc (0 : ℝ) 1, x + s • t • v ∈ T) :
+    eLpNorm (fun x ↦ t⁻¹ * (W1p.value u (x + t • v) - W1p.value u x)) p (mu.restrict A)
+      ≤ eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T) :=
+  eLpNorm_restrict_le_of_forall_isCompact hA fun _ hK hKA =>
+    W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le hp u v t hK hTO fun x hx => hAT x (hKA hx)
+
+/-- On the whole space the error `t⁻¹ (z(· + t v) - z) - ⟪v, ∇z⟫` of the difference quotient is
+at most `2 ‖v‖ ‖z‖` in `Lᵖ`, uniformly in `t`. -/
+private theorem eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_le_top (hp : p ≠ ∞)
+    (z : W1p mu ⊤ p) (v : E) (t : ℝ) :
+    eLpNorm (fun x => t⁻¹ * (W1p.value z (x + t • v) - W1p.value z x) -
+      ⟪v, W1p.gradient z x⟫_ℝ) p mu ≤ 2 * (‖v‖ₑ * ‖z‖ₑ) := by
+  have h1 : eLpNorm (fun x => t⁻¹ * (W1p.value z (x + t • v) - W1p.value z x)) p mu ≤
+      eLpNorm (fun x => ⟪v, W1p.gradient z x⟫_ℝ) p mu := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_isOpen hp z v t (T := univ) isOpen_univ
+        (by simp) fun _ _ _ _ => mem_univ _
+  have h2 : eLpNorm (fun x => ⟪v, W1p.gradient z x⟫_ℝ) p mu ≤ ‖v‖ₑ * ‖z‖ₑ := by
+    have hm := (Lp.aestronglyMeasurable (W1p.gradient z)).inner_const (𝕜 := ℝ) (c := v)
+    have hn := Lp.eNorm_def (W1p.gradient z)
+    simp only [Opens.coe_top, Measure.restrict_univ] at hm hn
+    calc eLpNorm (fun x => ⟪v, W1p.gradient z x⟫_ℝ) p mu
+        ≤ ‖v‖ₑ * eLpNorm (W1p.gradient z) p mu :=
+          eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p
+            (hm.congr (Eventually.of_forall fun _ => real_inner_comm _ _))
+            (Eventually.of_forall fun x => by
+              simpa only [← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)] using
+                ENNReal.ofReal_le_ofReal (norm_inner_le_norm v (W1p.gradient z x)))
+      _ ≤ ‖v‖ₑ * ‖z‖ₑ := by
+          gcongr
+          exact hn ▸ W1p.enorm_gradient_le z
+  calc _ ≤ eLpNorm (fun x => t⁻¹ * (W1p.value z (x + t • v) - W1p.value z x)) p mu +
+        eLpNorm (fun x => ⟪v, W1p.gradient z x⟫_ℝ) p mu := eLpNorm_sub_le Fact.out
+    _ ≤ ‖v‖ₑ * ‖z‖ₑ + ‖v‖ₑ * ‖z‖ₑ := add_le_add (h1.trans h2) h2
+    _ = 2 * (‖v‖ₑ * ‖z‖ₑ) := (two_mul _).symm
+
+omit [FiniteDimensional ℝ E] in
+/-- On the whole space the `Lᵖ` error of the difference quotient is subadditive in the
+function. -/
+private theorem eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_add_le_top (z₁ z₂ : W1p mu ⊤ p)
+    (v : E) (t : ℝ) :
+    eLpNorm (fun x => t⁻¹ * (W1p.value (z₁ + z₂) (x + t • v) - W1p.value (z₁ + z₂) x) -
+      ⟪v, W1p.gradient (z₁ + z₂) x⟫_ℝ) p mu ≤
+    eLpNorm (fun x => t⁻¹ * (W1p.value z₁ (x + t • v) - W1p.value z₁ x) -
+      ⟪v, W1p.gradient z₁ x⟫_ℝ) p mu +
+    eLpNorm (fun x => t⁻¹ * (W1p.value z₂ (x + t • v) - W1p.value z₂ x) -
+      ⟪v, W1p.gradient z₂ x⟫_ℝ) p mu := by
+  refine (eLpNorm_congr_ae ?_).trans_le (eLpNorm_add_le Fact.out)
+  have hv := W1p.value_add_ae z₁ z₂
+  have hg := Lp.coeFn_add (W1p.gradient z₁) (W1p.gradient z₂)
+  simp only [Opens.coe_top, Measure.restrict_univ] at hv hg
+  filter_upwards [hv, (measurePreserving_add_right mu (t • v)).quasiMeasurePreserving.tendsto_ae
+    |>.eventually hv, hg] with x h1 h2 h3
+  simp only [Pi.add_apply] at h1 h2 h3 ⊢
+  rw [h1, h2, W1p.gradient_add, h3, inner_add_right]
+  ring
+
+/-- **Difference quotients converge on the whole space.** For `w ∈ W^{1,p}(ℝⁿ)`, `1 ≤ p < ∞`, and
+a direction `v`,
+
+`‖t⁻¹ (w(· + t v) - w) - ⟪v, ∇w⟫‖_{Lᵖ} → 0` as `t → 0`.
+
+The difference quotients are bounded by `‖v‖ ‖∇w‖_p` uniformly in `t`, so the convergence passes
+from the dense subspace of test functions to all of `W^{1,p}(ℝⁿ)`. -/
+theorem W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_top (hp : p ≠ ∞)
+    (w : W1p mu ⊤ p) (v : E) :
+    Tendsto (fun t : ℝ => eLpNorm (fun x => t⁻¹ * (W1p.value w (x + t • v) - W1p.value w x) -
+      ⟪v, W1p.gradient w x⟫_ℝ) p mu) (𝓝[≠] 0) (𝓝 0) := by
+  -- For test functions the error tends to zero.
+  have hφ : ∀ φ : 𝓓((⊤ : Opens E), ℝ), Tendsto (fun t : ℝ => eLpNorm (fun x =>
+      t⁻¹ * (W1p.value (W1p.ofTestFunctionₗ mu ⊤ p φ) (x + t • v) -
+        W1p.value (W1p.ofTestFunctionₗ mu ⊤ p φ) x) -
+      ⟪v, W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p φ) x⟫_ℝ) p mu) (𝓝[≠] 0) (𝓝 0) := fun φ => by
+    refine (tendsto_eLpNorm_inv_mul_comp_add_smul_sub_sub_fderiv (mu := mu) hp φ v).congr'
+      (Eventually.of_forall fun t => eLpNorm_congr_ae ?_)
+    have hv := W1p.value_ofTestFunctionₗ_top_ae (mu := mu) (p := p) φ
+    filter_upwards [hv, (measurePreserving_add_right mu (t • v)).quasiMeasurePreserving.tendsto_ae
+      |>.eventually hv, W1p.gradient_ofTestFunctionₗ_top_ae (p := p) φ] with x h1 h2 h3
+    rw [h1, h2, h3, real_inner_comm, inner_gradient_left]
+  -- Approximate `w` by a test function `φ` with `2 ‖v‖ ‖w - φ‖ < ε / 2`.
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  have hlim : Tendsto (fun η : ℝ≥0∞ => 2 * (‖v‖ₑ * η)) (𝓝 0) (𝓝 0) := by
+    have h := ENNReal.Tendsto.const_mul (ENNReal.Tendsto.const_mul (tendsto_id (x := 𝓝 0))
+      (Or.inr (eNorm_ne_top (x := v)))) (Or.inr (ENNReal.ofNat_ne_top (n := 2)))
+    simpa only [id, mul_zero] using h
+  obtain ⟨δ, hδ, hδsub⟩ := ENNReal.nhds_zero_basis.eventually_iff.1
+    (hlim.eventually (gt_mem_nhds (ENNReal.half_pos hε.ne')))
+  obtain ⟨η, hη0, hηδ⟩ := exists_between hδ
+  have hw : w ∈ closure (range (W1p.ofTestFunctionₗ mu ⊤ p)) := by
+    rw [← coe_w1p0Submodule]
+    exact W1p.mem_w1p0Submodule_top hp w
+  obtain ⟨_, ⟨φ, rfl⟩, hwφ⟩ := EMetric.mem_closure_iff.1 hw η hη0
+  rw [eDist_eq_eNorm_sub] at hwφ
+  filter_upwards [(hφ φ).eventually (ENNReal.nhds_zero_basis.mem_of_mem
+    (ENNReal.half_pos hε.ne'))] with t ht
+  have hsplit := eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_add_le_top
+    (W1p.ofTestFunctionₗ mu ⊤ p φ) (w - W1p.ofTestFunctionₗ mu ⊤ p φ) v t
+  rw [add_sub_cancel] at hsplit
+  calc _ ≤ _ := hsplit
+    _ ≤ ε / 2 + ε / 2 := add_le_add ht.le
+        ((eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_le_top hp _ v t).trans
+          (hδsub (hwφ.trans hηδ)).le)
+    _ = ε := ENNReal.add_halves ε
+
+/-- Off `K₀ + [-1, 1] • v`, the `Lᵖ` error of a difference quotient with `|t| ≤ 1` on a
+translation-invariant domain is at most twice the `Lᵖ` norm of `⟪v, ∇u⟫` off `K₀`. -/
+private theorem eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_restrict_sdiff_le
+    (hp : p ≠ ∞) (u : W1p mu Omega p) {v : E} (hΩ : ∀ t : ℝ, MapsTo (· + t • v) Omega Omega)
+    {K₀ : Set E} (hK₀ : IsCompact K₀) {t : ℝ} (ht : |t| ≤ 1) :
+    eLpNorm (fun x => t⁻¹ * (W1p.value u (x + t • v) - W1p.value u x) - ⟪v, W1p.gradient u x⟫_ℝ)
+      p (mu.restrict (Omega \ (fun z : E × ℝ => z.1 + z.2 • v) '' (K₀ ×ˢ Icc (-1 : ℝ) 1))) ≤
+    eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict (Omega \ K₀)) +
+      eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict (Omega \ K₀)) := by
+  set K := (fun z : E × ℝ => z.1 + z.2 • v) '' (K₀ ×ˢ Icc (-1 : ℝ) 1)
+  have hK : IsCompact K := (hK₀.prod isCompact_Icc).image (by fun_prop)
+  have hK₀K : K₀ ⊆ K := fun y hy => ⟨(y, 0), ⟨hy, by norm_num, by norm_num⟩, by simp⟩
+  -- The segments of length `|t| ‖v‖` from points off `K` stay in `Ω` and miss `K₀`.
+  have h1 := W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_isOpen hp u v t
+    (A := Omega \ K) (T := Omega \ K₀) (Omega.isOpen.sdiff hK.isClosed) sdiff_subset
+    fun x hx s hs => ⟨by simpa [smul_smul] using hΩ (s * t) hx.1, by
+      rw [smul_smul]
+      refine add_smul_notMem_of_notMem_image ?_ hx.2
+      rw [abs_mul, abs_of_nonneg hs.1]
+      nlinarith [abs_nonneg t, hs.2]⟩
+  have h2 : eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict (Omega \ K)) ≤
+      eLpNorm (fun x => ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict (Omega \ K₀)) :=
+    eLpNorm_mono_measure _ (Measure.restrict_mono (sdiff_subset_sdiff_right hK₀K) le_rfl)
+  exact (eLpNorm_sub_le Fact.out).trans (add_le_add h1 h2)
+
+/-- **Difference quotients converge on a translation-invariant domain.** Let `Ω` be mapped into
+itself by every translation `x ↦ x + t v`, as a half-space is for `v` parallel to its boundary. For
+`u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`,
+
+`‖t⁻¹ (u(· + t v) - u) - ⟪v, ∇u⟫‖_{Lᵖ(Ω)} → 0` as `t → 0`.
+
+No regularity of `∂Ω` is needed. On a compact set the difference quotients are those of a
+whole-space Sobolev function, where they converge
+(`TauCeti.W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_top`); off a large compact
+set both the difference quotients and the directional derivative are small, by the bound
+`TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_isOpen`. -/
+theorem W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner (hp : p ≠ ∞)
+    (u : W1p mu Omega p) {v : E} (hΩ : ∀ t : ℝ, MapsTo (· + t • v) Omega Omega) :
+    Tendsto (fun t : ℝ => eLpNorm (fun x => t⁻¹ * (W1p.value u (x + t • v) - W1p.value u x) -
+      ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict Omega)) (𝓝[≠] 0) (𝓝 0) := by
+  set S : Set E → Set E := fun K => (fun z : E × ℝ => z.1 + z.2 • v) '' (K ×ˢ Icc (-1 : ℝ) 1)
+  have hS : ∀ K, IsCompact K → IsCompact (S K) := fun K hK =>
+    (hK.prod isCompact_Icc).image (by fun_prop)
+  have hSΩ : ∀ K, K ⊆ (Omega : Set E) → S K ⊆ Omega := by
+    rintro K hK _ ⟨⟨y, s⟩, ⟨hy, -⟩, rfl⟩
+    exact hΩ s (hK hy)
+  have hmemS : ∀ K, ∀ y ∈ K, ∀ s ∈ Icc (-1 : ℝ) 1, y + s • v ∈ S K :=
+    fun K y hy s hs => ⟨(y, s), ⟨hy, hs⟩, rfl⟩
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  -- Cut off the tail of `⟪v, ∇u⟫` off a compact `K₀`, and let `K = K₀ + [-1, 1] • v`.
+  obtain ⟨K₀, hK₀c, hK₀Ω, hK₀⟩ := exists_isCompact_eLpNorm_restrict_sdiff_le Omega.isOpen hp
+    ((Lp.memLp (W1p.gradient u)).const_inner (𝕜 := ℝ) v)
+    (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')
+  set K := S K₀
+  have hKc : IsCompact K := hS K₀ hK₀c
+  -- Near `K`, `u` is a whole-space Sobolev function `w`, so on `K` its error is that of `w`.
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_top_value_gradient_ae_eq_on_of_isCompact hp u (hS K hKc)
+    (hSΩ K (hSΩ K₀ hK₀Ω))
+  have hloc : ∀ t : ℝ, |t| ≤ 1 → eLpNorm (fun x => t⁻¹ * (W1p.value u (x + t • v) -
+      W1p.value u x) - ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict K) ≤ eLpNorm (fun x =>
+        t⁻¹ * (W1p.value w (x + t • v) - W1p.value w x) - ⟪v, W1p.gradient w x⟫_ℝ) p mu :=
+    fun t ht => by
+    refine le_of_eq_of_le (eLpNorm_congr_ae ?_) (eLpNorm_mono_measure _ Measure.restrict_le_self)
+    filter_upwards [ae_restrict_mem hKc.isClosed.measurableSet, ae_restrict_of_ae hwv,
+      ae_restrict_of_ae ((measurePreserving_add_right mu (t • v)).quasiMeasurePreserving
+        |>.tendsto_ae.eventually hwv), ae_restrict_of_ae hwg] with x hx h1 h2 h3
+    have hx0 : x ∈ S K := by simpa using hmemS K x hx 0 ⟨by norm_num, by norm_num⟩
+    simp only [h1 hx0, h2 (hmemS K x hx t (abs_le.1 ht)), h3 hx0]
+  filter_upwards [(W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_top hp w
+      v).eventually (ENNReal.nhds_zero_basis.mem_of_mem (ENNReal.half_pos hε.ne')),
+    nhdsWithin_le_nhds (Metric.closedBall_mem_nhds (0 : ℝ) one_pos)] with t ht1 ht2
+  have ht : |t| ≤ 1 := by simpa using ht2
+  calc _ ≤ _ := eLpNorm_restrict_le_add_restrict_sdiff Fact.out _ hKc.isClosed.measurableSet
+    _ ≤ ε / 2 + (ε / 2 / 2 + ε / 2 / 2) := add_le_add ((hloc t ht).trans ht1.le)
+        ((eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_restrict_sdiff_le hp u hΩ hK₀c
+          ht).trans (add_le_add hK₀ hK₀))
+    _ = ε := by rw [ENNReal.add_halves, ENNReal.add_halves]
+
+/-- **Difference quotients converge in `W^{1,p}(Ω)`.** Let `Ω` be mapped into itself by every
+translation `x ↦ x + t v`, let `1 ≤ p < ∞`, and let `u ∈ W^{1,p}(Ω)` have every first derivative
+`∂_y u` in `W^{1,p}(Ω)`. If `d ∈ W^{1,p}(Ω)` is the weak derivative of `u` in the direction `v`,
+then the difference quotients `t⁻¹ (u(· + t v) - u)` converge to `d` in `W^{1,p}(Ω)` as `t → 0`. -/
+theorem W1p.tendsto_differenceQuotient (hp : p ≠ ∞) {v : E}
+    (hΩ : ∀ t : ℝ, MapsTo (· + t • v) Omega Omega) {u d : W1p mu Omega p}
+    (hd : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value d) v)
+    (hD : ∀ y : E, ∃ D : W1p mu Omega p,
+      HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value D) y) :
+    Tendsto (fun t => W1p.differenceQuotient le_rfl v t (hΩ t) u) (𝓝[≠] 0) (𝓝 d) := by
+  -- `∂_y w = ⟪∇w, y⟫` for every `w ∈ W^{1,p}(Ω)`.
+  have hfd : ∀ (w : W1p mu Omega p) (y : E),
+      HasWeakLineDerivOn mu Omega (W1p.value w) (fun x => ⟪W1p.gradient w x, y⟫_ℝ) y :=
+    fun w y => by
+      simpa only [innerSL_apply_apply] using (W1p.hasWeakFDerivOn w).hasWeakLineDerivOn y
+  rw [W1p.tendsto_iff_value_gradient, Lp.tendsto_Lp_iff_tendsto_eLpNorm',
+    Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+  constructor
+  · -- The values: `d = ⟪∇u, v⟫`.
+    refine (W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner hp u hΩ).congr
+      fun t => eLpNorm_congr_ae ?_
+    filter_upwards [W1p.value_differenceQuotient_ae le_rfl v t (hΩ t) u, hd.ae_eq (hfd u v)]
+      with x h1 h2
+    rw [Pi.sub_apply, h1, h2, real_inner_comm]
+  · -- The gradients, coordinate by coordinate in an orthonormal basis `b`: the `i`-th coordinate
+    -- of the error is the error for the difference quotients of `∂_{b i} u`.
+    set b := stdOrthonormalBasis ℝ E
+    choose D hD using fun i => hD (b i)
+    have hcoord : ∀ i, Tendsto (fun t : ℝ => eLpNorm (fun x => b.toBasis.coord i ((⇑(W1p.gradient
+        (W1p.differenceQuotient le_rfl v t (hΩ t) u)) - ⇑(W1p.gradient d)) x)) p
+          (mu.restrict Omega)) (𝓝[≠] 0) (𝓝 0) := fun i => by
+      refine (W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner hp (D i) hΩ).congr
+        fun t => eLpNorm_congr_ae ?_
+      have hDi := (hD i).ae_eq (hfd u (b i))
+      -- The identification `D i = ⟪∇u, b i⟫` also holds at the translated points.
+      have hDit : ∀ᵐ x ∂mu.restrict Omega, W1p.value (D i) (x + t • v) =
+          ⟪W1p.gradient u (x + t • v), b i⟫_ℝ := by
+        have h := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hDi
+        rw [ae_restrict_iff' Omega.isOpen.measurableSet]
+        filter_upwards [(measurePreserving_add_right mu (t • v)).quasiMeasurePreserving.tendsto_ae
+          |>.eventually h] with x hx hxΩ
+        exact hx (hΩ t hxΩ)
+      -- `⟪∇d, b i⟫ = ∂_v ∂_{b i} u = ⟪∇(D i), v⟫` by the symmetry of second derivatives.
+      have hcomm := (W1p.hasWeakLineDerivOn_inner_gradient_comm ((hfd d (b i)).congr_ae
+        (hd.ae_eq (hfd u v)))).ae_eq ((hfd (D i) v).congr_ae hDi)
+      filter_upwards [W1p.gradient_differenceQuotient_ae le_rfl v t (hΩ t) u, hDi,
+        hDit, hcomm] with x h1 h2 h3 h4
+      simp only [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+        OrthonormalBasis.repr_apply_apply]
+      rw [Pi.sub_apply, h1, h2, h3, inner_sub_right, inner_smul_right, inner_sub_right,
+        real_inner_comm (W1p.gradient (D i) x) v, ← h4,
+        real_inner_comm (b i) (W1p.gradient u (x + t • v)),
+        real_inner_comm (b i) (W1p.gradient u x), real_inner_comm (b i) (W1p.gradient d x)]
+    have hsum := tendsto_finsetSum Finset.univ fun i (_ : i ∈ Finset.univ) =>
+      (ENNReal.Tendsto.const_mul (hcoord i) (Or.inr (eNorm_ne_top (x := b.toBasis i))))
+    simp only [mul_zero, Finset.sum_const_zero] at hsum
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum (fun _ => zero_le)
+      fun t => b.toBasis.eLpNorm_le_sum_enorm_mul_eLpNorm_coord
+        ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
+
+/-- **Tangential derivatives keep zero boundary values.** Let `Ω` be mapped into itself by every
+translation `x ↦ x + t v`, as a half-space is for `v` parallel to its boundary, and let
+`1 ≤ p < ∞`. If `u ∈ W^{1,p}_0(Ω)` has every first derivative in `W^{1,p}(Ω)`, then its derivative
+`d ∈ W^{1,p}(Ω)` in the direction `v` lies in `W^{1,p}_0(Ω)`.
+
+The difference quotients of `u` in the direction `v` lie in `W^{1,p}_0(Ω)`
+(`TauCeti.W1p.differenceQuotient_mem_w1p0Submodule`) and converge to `d` in `W^{1,p}(Ω)`
+(`TauCeti.W1p.tendsto_differenceQuotient`). -/
+theorem W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (hp : p ≠ ∞) {v : E}
+    (hΩ : ∀ t : ℝ, MapsTo (· + t • v) Omega Omega) {u d : W1p mu Omega p}
+    (hu : u ∈ w1p0Submodule mu Omega p)
+    (hd : HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value d) v)
+    (hD : ∀ y : E, ∃ D : W1p mu Omega p,
+      HasWeakLineDerivOn mu Omega (W1p.value u) (W1p.value D) y) :
+    d ∈ w1p0Submodule mu Omega p :=
+  (w1p0Submodule mu Omega p).isClosed.mem_of_tendsto (W1p.tendsto_differenceQuotient hp hΩ hd hD)
+    (Eventually.of_forall fun t => W1p.differenceQuotient_mem_w1p0Submodule (hΩ t)
+      (fun x hx => by simpa using hΩ (-t) hx) hu)
 
 end TauCeti
