@@ -179,6 +179,15 @@ theorem eq_conj_smul_iff_crossedProjection_eq {D' : Subgroup G} (h' : N.IsComple
 
 end IsComplement'
 
+omit [N.Normal] in
+/-- When a local complement `K` of `N` in `H` is contained in a global complement `D` of `N`, its
+left projection is the restriction of the crossed projection along `D`. -/
+theorem IsLocalComplement.leftProjection_eq_crossedProjection {K H D : Subgroup G}
+    [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H) (hD : N.IsComplement' D)
+    (hKD : K ≤ D) (x : H) :
+    h.leftProjection x = hD.crossedProjection x :=
+  ((hD.crossedProjection_eq_iff (x : G) _).mpr (hKD ((h.leftProjection_eq_iff x _).mp rfl))).symm
+
 /-- The left projection of a local complement `K` of `N` in `H` satisfies the crossed identity
 for the conjugation action of `H` on `N`. -/
 theorem IsLocalComplement.isMulCocycle₁_leftProjection [IsMulCommutative N] {K H : Subgroup G}

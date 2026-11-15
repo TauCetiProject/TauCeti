@@ -69,17 +69,6 @@ theorem finsum_fin_three {A : Type*} [AddCommMonoid A]
     refine ⟨?_, ?_, ?_⟩ <;> intro h <;>
       have _ := congrArg (fun H : Subgroup (Equiv.Perm (Fin 3)) ↦ Nat.card H) h <;>
       simp_all only [card_bot, card_top] <;> omega
-  have hstab : Function.Injective
-      (fun a : Fin 3 ↦ MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
-    intro a b hab
-    have h := congrArg (fun H : Subgroup (Equiv.Perm (Fin 3)) ↦
-      Equiv.swap (a + 1) (a + 2) ∈ H) hab
-    simp only [TauCeti.mem_stabilizer_perm_fin_three_iff] at h
-    have key : ∀ a b : Fin 3,
-        (Equiv.swap (a + 1) (a + 2) = 1 ∨
-          Equiv.swap (a + 1) (a + 2) = Equiv.swap (b + 1) (b + 2)) → a = b := by
-      decide
-    exact key a b (h.mp (Or.inr trivial))
   have hAlt : alternatingGroup (Fin 3) ≠ ⊥ ∧ alternatingGroup (Fin 3) ≠ ⊤ := by
     have ha := TauCeti.card_alternatingGroup_fin_three
     constructor <;> intro h <;>
@@ -92,6 +81,6 @@ theorem finsum_fin_three {A : Type*} [AddCommMonoid A]
     ext H
     simpa using fin_three_cases H
   rw [finsum_eq_sum_of_fintype, huniv]
-  simp_all [Finset.sum_insert, hstab.eq_iff, ne_comm, add_assoc]
+  simp_all [Finset.sum_insert, TauCeti.stabilizer_perm_fin_three_inj, ne_comm, add_assoc]
 
 end Subgroup

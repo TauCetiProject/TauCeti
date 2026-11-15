@@ -7,12 +7,12 @@ module
 
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.GroupTheory.Complement.Stabilizer
-public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.GroupTheory.Perm.FinThree.Subgroup
 import Mathlib.Data.Finite.Perm
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
-# Complements, quotient splittings, and the Sylow `3`-subgroup of `S₃`
+# Complements, quotient splittings, crossed projections, and the Sylow `3`-subgroup of `S₃`
 
 Inside `S₃ = Equiv.Perm (Fin 3)`, the alternating subgroup `A₃ = alternatingGroup (Fin 3)` has
 prime order `3` and acts regularly on `Fin 3`, with orbit equivalence
@@ -22,29 +22,35 @@ prime order `3` and acts regularly on `Fin 3`, with orbit equivalence
 The three point stabilizers `MulAction.stabilizer (Equiv.Perm (Fin 3)) a` (`a : Fin 3`) are
 pairwise distinct, self-normalizing `2`-subgroups of order `2`. Using `Subgroup.fin_three_cases`,
 they exhaust:
-* the subgroup complements of `A₃` in `S₃` (`TauCeti.alternatingGroupFinThreeComplementEquiv`), and
+* the subgroup complements of `A₃` in `S₃` (`TauCeti.alternatingGroupFinThreeComplementEquiv`),
 * the homomorphic splittings of the quotient extension `1 → A₃ → S₃ → S₃ ⧸ A₃ → 1`
-  (`TauCeti.alternatingGroupFinThreeSplittingEquiv`),
+  (`TauCeti.alternatingGroupFinThreeSplittingEquiv`), and
+* via their induced crossed projections `TauCeti.symmetricThreeCrossedProjection a` with closed
+  form `(c_a σ : Equiv.Perm (Fin 3)) = finRotate 3 ^ (σ a - a).val`, all normalized `1`-cocycles
+  `S₃ → A₃` (`TauCeti.isMulCocycle₁_and_forall_coe_eq_iff_exists_symmetricThreeCrossedProjection`,
+  `TauCeti.symmetricThreeCrossedProjectionEquiv`), transforming equivariantly under conjugation
+  (`TauCeti.symmetricThreeCrossedProjection_smul`) and differing pairwise by a unique `A₃`
+  coboundary (`TauCeti.forall_symmetricThreeCrossedProjection_eq_mul_smul_div_iff`).
 
-whereas `A₃` itself is the unique Sylow `3`-subgroup of `S₃`
-(`TauCeti.alternatingGroupSylowThree`), in which `A₃` has unique local complement `⊥`.
+Moreover, although `gcd(|stabilizer a|, |S₃|) = 2`, `stabilizer a` is the unique
+`stabilizer a`-normalized complement of `A₃` in `S₃`
+(`TauCeti.isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff`), whereas `A₃` itself is
+the unique Sylow `3`-subgroup of `S₃` (`TauCeti.alternatingGroupSylowThree`), in which `A₃` has
+unique local complement `⊥`.
+
+## References
+
+* B. Sambale, *On the converse of Gaschütz' complement theorem*, arXiv:2303.00254.
 -/
 
 public section
 
 open scoped IsMulCommutative Pointwise
+open groupCohomology
 
 namespace TauCeti
 
-/-- The alternating group `A₃` is commutative. -/
-instance instIsMulCommutativeAlternatingGroupFinThree :
-    IsMulCommutative (alternatingGroup (Fin 3)) :=
-  alternatingGroup.isMulCommutative_of_card_le_three (by simp)
-
-/-- The three-cycle `finRotate 3` is an even permutation. -/
-theorem finRotate_three_mem_alternatingGroup : finRotate 3 ∈ alternatingGroup (Fin 3) := by
-  rw [Equiv.Perm.mem_alternatingGroup]
-  decide
+attribute [local instance] Subgroup.conjugationAction
 
 /-! ### Regular action of `A₃` on `Fin 3` -/
 
@@ -53,11 +59,17 @@ noncomputable def alternatingGroupFinThreeOrbitEquiv (a : Fin 3) :
     alternatingGroup (Fin 3) ≃ Fin 3 :=
   (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).stabilizerOrbitEquiv
 
+/-- `alternatingGroupFinThreeOrbitEquiv a` is the point-stabilizer orbit equivalence at `a`. -/
+theorem alternatingGroupFinThreeOrbitEquiv_def (a : Fin 3) :
+    alternatingGroupFinThreeOrbitEquiv a =
+      (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).stabilizerOrbitEquiv :=
+  (rfl)
+
 /-- `alternatingGroupFinThreeOrbitEquiv a` evaluates an even permutation at `a`. -/
 @[simp]
 theorem alternatingGroupFinThreeOrbitEquiv_apply (a : Fin 3) (n : alternatingGroup (Fin 3)) :
     alternatingGroupFinThreeOrbitEquiv a n = (n : Equiv.Perm (Fin 3)) a := by
-  simpa only [alternatingGroupFinThreeOrbitEquiv, Equiv.Perm.smul_def] using
+  simpa only [alternatingGroupFinThreeOrbitEquiv_def, Equiv.Perm.smul_def] using
     (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).stabilizerOrbitEquiv_apply n
 
 /-- The unique element of `A₃` carrying `a` to `b` is `finRotate 3 ^ (b - a).val`. -/
@@ -72,35 +84,21 @@ theorem coe_alternatingGroupFinThreeOrbitEquiv_symm (a b : Fin 3) :
       Equiv.Perm.coe_pow, ← finCycle_eq_finRotate_iterate, finCycle_apply, add_sub_cancel]
   exact congrArg Subtype.val ((Equiv.symm_apply_eq _).mpr hr.symm)
 
-/-! ### Point stabilizers and their normalizers -/
-
-/-- Distinct points of `Fin 3` have distinct stabilizers in `S₃`. -/
-theorem stabilizer_perm_fin_three_injective :
-    Function.Injective
-      (MulAction.stabilizer (Equiv.Perm (Fin 3)) : Fin 3 → Subgroup (Equiv.Perm (Fin 3))) := by
-  intro a b hab
-  have hmem : Equiv.swap (a + 1) (a + 2) ∈ MulAction.stabilizer (Equiv.Perm (Fin 3)) b := by
-    rw [← hab, mem_stabilizer_perm_fin_three_iff]
-    exact Or.inr rfl
-  clear hab
-  rw [mem_stabilizer_perm_fin_three_iff] at hmem
-  revert hmem b a
-  decide
-
-/-- Two point stabilizers in `S₃` coincide if and only if their stabilized points coincide. -/
+/-- Evaluating an element `n ∈ A₃` at `a` and applying `(alternatingGroupFinThreeOrbitEquiv a).symm`
+recovers `n`. -/
 @[simp]
-theorem stabilizer_perm_fin_three_inj (a b : Fin 3) :
-    MulAction.stabilizer (Equiv.Perm (Fin 3)) a =
-      MulAction.stabilizer (Equiv.Perm (Fin 3)) b ↔ a = b :=
-  stabilizer_perm_fin_three_injective.eq_iff
+theorem alternatingGroupFinThreeOrbitEquiv_symm_coe_apply (a : Fin 3)
+    (n : alternatingGroup (Fin 3)) :
+    (alternatingGroupFinThreeOrbitEquiv a).symm ((n : Equiv.Perm (Fin 3)) a) = n := by
+  apply (alternatingGroupFinThreeOrbitEquiv a).injective
+  rw [Equiv.apply_symm_apply, alternatingGroupFinThreeOrbitEquiv_apply]
 
-/-- Every point stabilizer in `S₃` is self-normalizing. -/
+/-- The inverse of `alternatingGroupFinThreeOrbitEquiv a` maps the base point `a` to `1`. -/
 @[simp]
-theorem normalizer_stabilizer_perm_fin_three (a : Fin 3) :
-    Subgroup.normalizer
-      (MulAction.stabilizer (Equiv.Perm (Fin 3)) a : Set (Equiv.Perm (Fin 3))) =
-        MulAction.stabilizer (Equiv.Perm (Fin 3)) a :=
-  MulAction.normalizer_stabilizer_of_injective stabilizer_perm_fin_three_injective a
+theorem alternatingGroupFinThreeOrbitEquiv_symm_self (a : Fin 3) :
+    (alternatingGroupFinThreeOrbitEquiv a).symm a = 1 := by
+  rw [alternatingGroupFinThreeOrbitEquiv_def]
+  exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).stabilizerOrbitEquiv_symm_self
 
 /-! ### Classification of subgroup complements and quotient splittings -/
 
@@ -175,6 +173,14 @@ noncomputable def alternatingGroupFinThreeSplittingEquiv :
   alternatingGroupFinThreeComplementEquiv.trans
     (alternatingGroup (Fin 3)).quotientSplittingEquiv.symm
 
+/-- `alternatingGroupFinThreeSplittingEquiv` composes `alternatingGroupFinThreeComplementEquiv`
+with `Subgroup.quotientSplittingEquiv.symm`. -/
+theorem alternatingGroupFinThreeSplittingEquiv_def :
+    alternatingGroupFinThreeSplittingEquiv =
+      alternatingGroupFinThreeComplementEquiv.trans
+        (alternatingGroup (Fin 3)).quotientSplittingEquiv.symm :=
+  (rfl)
+
 /-- `alternatingGroupFinThreeSplittingEquiv a` is the quotient splitting induced by
 `stabilizer a`. -/
 @[simp]
@@ -183,8 +189,26 @@ theorem alternatingGroupFinThreeSplittingEquiv_apply (a : Fin 3) :
       (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting := by
   apply DFunLike.ext
   intro q
-  rw [alternatingGroupFinThreeSplittingEquiv, Equiv.trans_apply,
+  rw [alternatingGroupFinThreeSplittingEquiv_def, Equiv.trans_apply,
     alternatingGroupFinThreeComplementEquiv_apply, Subgroup.quotientSplittingEquiv_symm_apply]
+
+/-- `alternatingGroupFinThreeSplittingEquiv.symm` sends a splitting `s` to the stabilized point of
+its range complement. -/
+theorem alternatingGroupFinThreeSplittingEquiv_symm_apply
+    (s : (alternatingGroup (Fin 3)).quotientExtension.Splitting) :
+    alternatingGroupFinThreeSplittingEquiv.symm s =
+      alternatingGroupFinThreeComplementEquiv.symm
+        ((alternatingGroup (Fin 3)).quotientSplittingEquiv s) :=
+  (rfl)
+
+/-- The inverse of `alternatingGroupFinThreeSplittingEquiv` maps the quotient splitting of
+`stabilizer a` back to `a`. -/
+@[simp]
+theorem alternatingGroupFinThreeSplittingEquiv_symm_quotientSplitting (a : Fin 3) :
+    alternatingGroupFinThreeSplittingEquiv.symm
+      (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting = a := by
+  apply alternatingGroupFinThreeSplittingEquiv.injective
+  rw [Equiv.apply_symm_apply, alternatingGroupFinThreeSplittingEquiv_apply]
 
 /-- The range of the `a`-th quotient splitting of `S₃` over `A₃` is `stabilizer a`. -/
 theorem range_alternatingGroupFinThreeSplittingEquiv (a : Fin 3) :
@@ -192,6 +216,13 @@ theorem range_alternatingGroupFinThreeSplittingEquiv (a : Fin 3) :
       MulAction.stabilizer (Equiv.Perm (Fin 3)) a := by
   rw [alternatingGroupFinThreeSplittingEquiv_apply]
   exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).range_quotientSplitting
+
+/-- `alternatingGroupFinThreeSplittingEquiv a` is a coset section of `S₃ → S₃ ⧸ A₃`. -/
+theorem mk_alternatingGroupFinThreeSplittingEquiv (a : Fin 3)
+    (u : Equiv.Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) :
+    (QuotientGroup.mk (alternatingGroupFinThreeSplittingEquiv a u) :
+      Equiv.Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) = u :=
+  (alternatingGroupFinThreeSplittingEquiv a).mk_quotientExtension u
 
 /-- The `a`-th quotient splitting lifts the nontrivial coset of `S₃ ⧸ A₃` to
 `swap (a + 1) (a + 2)`. -/
@@ -202,6 +233,264 @@ theorem alternatingGroupFinThreeSplittingEquiv_mk_swap (a : Fin 3) :
   rw [alternatingGroupFinThreeSplittingEquiv_apply]
   exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting_mk
     ⟨Equiv.swap (a + 1) (a + 2), (mem_stabilizer_perm_fin_three_iff a _).mpr (Or.inr rfl)⟩
+
+/-- Every coset representative chosen by `alternatingGroupFinThreeSplittingEquiv a` fixes `a`. -/
+theorem alternatingGroupFinThreeSplittingEquiv_mem_stabilizer (a : Fin 3)
+    (u : Equiv.Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) :
+    alternatingGroupFinThreeSplittingEquiv a u ∈ MulAction.stabilizer (Equiv.Perm (Fin 3)) a := by
+  rw [← range_alternatingGroupFinThreeSplittingEquiv a]
+  exact ⟨u, rfl⟩
+
+/-! ### The three crossed projections `S₃ → A₃` -/
+
+/-- The normalized crossed projection `S₃ → A₃` along the `a`-stabilizer complement. -/
+noncomputable def symmetricThreeCrossedProjection (a : Fin 3) :
+    Equiv.Perm (Fin 3) → alternatingGroup (Fin 3) :=
+  (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).crossedProjection
+
+/-- `symmetricThreeCrossedProjection a` is the crossed projection of the `a`-stabilizer
+complement of `A₃`. -/
+theorem symmetricThreeCrossedProjection_def (a : Fin 3) :
+    symmetricThreeCrossedProjection a =
+      (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).crossedProjection :=
+  (rfl)
+
+/-- `symmetricThreeCrossedProjection a` maps `1` to `1`. -/
+@[simp]
+theorem symmetricThreeCrossedProjection_one (a : Fin 3) :
+    symmetricThreeCrossedProjection a 1 = 1 := by
+  rw [symmetricThreeCrossedProjection_def]
+  exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).crossedProjection_one
+
+/-- `symmetricThreeCrossedProjection a σ` agrees with `σ` at `a`. -/
+theorem coe_symmetricThreeCrossedProjection_apply_self (a : Fin 3) (σ : Equiv.Perm (Fin 3)) :
+    (symmetricThreeCrossedProjection a σ : Equiv.Perm (Fin 3)) a = σ a := by
+  rw [symmetricThreeCrossedProjection_def, ← Equiv.Perm.smul_def, ← Equiv.Perm.smul_def σ]
+  exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three
+    a).coe_crossedProjection_smul_of_stabilizer σ
+
+/-- `symmetricThreeCrossedProjection a σ = n` holds exactly when `n a = σ a`. -/
+theorem symmetricThreeCrossedProjection_eq_iff (a : Fin 3) (σ : Equiv.Perm (Fin 3))
+    (n : alternatingGroup (Fin 3)) :
+    symmetricThreeCrossedProjection a σ = n ↔ (n : Equiv.Perm (Fin 3)) a = σ a := by
+  let ha := isComplement'_alternatingGroup_stabilizer_perm_fin_three a
+  rw [symmetricThreeCrossedProjection_def, ha.crossedProjection_eq_iff_smul_eq,
+    Equiv.Perm.smul_def, Equiv.Perm.smul_def]
+
+/-- `symmetricThreeCrossedProjection a σ` is the inverse orbit element of `σ a` from `a`. -/
+theorem symmetricThreeCrossedProjection_eq_orbitEquiv_symm (a : Fin 3) (σ : Equiv.Perm (Fin 3)) :
+    symmetricThreeCrossedProjection a σ = (alternatingGroupFinThreeOrbitEquiv a).symm (σ a) := by
+  rw [symmetricThreeCrossedProjection_eq_iff, ← alternatingGroupFinThreeOrbitEquiv_apply,
+    Equiv.apply_symm_apply]
+
+/-- Closed-form formula for the `a`-crossed projection: `c_a σ = finRotate 3 ^ (σ a - a).val`. -/
+@[simp]
+theorem coe_symmetricThreeCrossedProjection (a : Fin 3) (σ : Equiv.Perm (Fin 3)) :
+    (symmetricThreeCrossedProjection a σ : Equiv.Perm (Fin 3)) =
+      finRotate 3 ^ (σ a - a).val := by
+  rw [symmetricThreeCrossedProjection_eq_orbitEquiv_symm,
+    coe_alternatingGroupFinThreeOrbitEquiv_symm]
+
+/-- `symmetricThreeCrossedProjection a` restricts to the identity on `A₃`. -/
+@[simp]
+theorem symmetricThreeCrossedProjection_coe (a : Fin 3) (n : alternatingGroup (Fin 3)) :
+    symmetricThreeCrossedProjection a n = n := by
+  rw [symmetricThreeCrossedProjection_def]
+  exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).crossedProjection_coe n
+
+/-- `symmetricThreeCrossedProjection a σ = 1` holds if and only if `σ` fixes `a`. -/
+@[simp]
+theorem symmetricThreeCrossedProjection_eq_one_iff (a : Fin 3) (σ : Equiv.Perm (Fin 3)) :
+    symmetricThreeCrossedProjection a σ = 1 ↔
+      σ ∈ MulAction.stabilizer (Equiv.Perm (Fin 3)) a := by
+  rw [symmetricThreeCrossedProjection_def]
+  exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).crossedProjection_eq_one_iff σ
+
+/-- `symmetricThreeCrossedProjection a` vanishes on `swap (a + 1) (a + 2)`. -/
+@[simp]
+theorem symmetricThreeCrossedProjection_swap_add_one_add_two (a : Fin 3) :
+    symmetricThreeCrossedProjection a (Equiv.swap (a + 1) (a + 2)) = 1 :=
+  (symmetricThreeCrossedProjection_eq_one_iff a _).mpr
+    ((mem_stabilizer_perm_fin_three_iff a _).mpr (Or.inr rfl))
+
+/-- Each `symmetricThreeCrossedProjection a` is a multiplicative `1`-cocycle for ambient
+conjugation on `A₃`. -/
+theorem isMulCocycle₁_symmetricThreeCrossedProjection (a : Fin 3) :
+    IsMulCocycle₁ (symmetricThreeCrossedProjection a) := by
+  rw [symmetricThreeCrossedProjection_def]
+  exact (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).isMulCocycle₁_crossedProjection
+
+/-- None of the three crossed projections is multiplicative: on `swap (a + 1) (a + 2)` and
+`finRotate 3`, `c_a (s * r) ≠ c_a s * c_a r`. -/
+theorem symmetricThreeCrossedProjection_swap_mul_finRotate_ne (a : Fin 3) :
+    symmetricThreeCrossedProjection a (Equiv.swap (a + 1) (a + 2) * finRotate 3) ≠
+      symmetricThreeCrossedProjection a (Equiv.swap (a + 1) (a + 2)) *
+        symmetricThreeCrossedProjection a (finRotate 3) := by
+  intro heq
+  have hval := congrArg (fun x : alternatingGroup (Fin 3) => (x : Equiv.Perm (Fin 3))) heq
+  clear heq
+  simp only [Subgroup.coe_mul, coe_symmetricThreeCrossedProjection] at hval
+  revert hval a
+  decide
+
+/-- No group homomorphism `S₃ →* A₃` agrees with any `symmetricThreeCrossedProjection a`. -/
+theorem not_exists_monoidHom_eq_symmetricThreeCrossedProjection (a : Fin 3) :
+    ¬ ∃ φ : Equiv.Perm (Fin 3) →* alternatingGroup (Fin 3),
+      ∀ σ, φ σ = symmetricThreeCrossedProjection a σ := by
+  rintro ⟨φ, hφ⟩
+  have hrot := hφ (finRotate 3)
+  rw [monoidHom_perm_alternatingGroup_fin_three_apply_eq_one, ← Subtype.coe_inj, Subgroup.coe_one,
+    coe_symmetricThreeCrossedProjection] at hrot
+  clear hφ φ
+  revert hrot a
+  decide
+
+/-! ### Equivariance, coboundary differences, and classification of normalized crossed maps -/
+
+/-- Conjugation equivariance among the three crossed projections of `S₃`. -/
+theorem symmetricThreeCrossedProjection_smul (a : Fin 3) (g σ : Equiv.Perm (Fin 3)) :
+    symmetricThreeCrossedProjection (g • a) σ =
+      g • symmetricThreeCrossedProjection a (g⁻¹ * σ * g) :=
+  (isComplement'_alternatingGroup_stabilizer_perm_fin_three
+    a).crossedProjection_eq_smul_of_stabilizer g
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three (g • a)) σ
+
+/-- An element `n ∈ A₃` conjugates `stabilizer a` to `stabilizer b` if and only if `n` is the
+unique element of `A₃` carrying `a` to `b`. -/
+theorem conj_coe_smul_stabilizer_perm_fin_three_eq_iff (a b : Fin 3)
+    (n : alternatingGroup (Fin 3)) :
+    MulAut.conj (n : Equiv.Perm (Fin 3)) • MulAction.stabilizer (Equiv.Perm (Fin 3)) a =
+      MulAction.stabilizer (Equiv.Perm (Fin 3)) b ↔
+        n = (alternatingGroupFinThreeOrbitEquiv a).symm b := by
+  rw [MulAction.conj_smul_stabilizer, stabilizer_perm_fin_three_inj, Equiv.Perm.smul_def,
+    ← alternatingGroupFinThreeOrbitEquiv_apply, (Equiv.eq_symm_apply _).symm]
+
+/-- Two crossed projections `c_a` and `c_b` differ by the `A₃` coboundary `σ ↦ σ • n / n` if and
+only if `n = (alternatingGroupFinThreeOrbitEquiv a).symm b`. -/
+theorem forall_symmetricThreeCrossedProjection_eq_mul_smul_div_iff (a b : Fin 3)
+    (n : alternatingGroup (Fin 3)) :
+    (∀ σ : Equiv.Perm (Fin 3),
+      symmetricThreeCrossedProjection b σ =
+        symmetricThreeCrossedProjection a σ * (σ • n / n)) ↔
+      n = (alternatingGroupFinThreeOrbitEquiv a).symm b := by
+  let ha := isComplement'_alternatingGroup_stabilizer_perm_fin_three a
+  let hb := isComplement'_alternatingGroup_stabilizer_perm_fin_three b
+  simp_rw [symmetricThreeCrossedProjection_def]
+  rw [← ha.eq_conj_smul_iff_crossedProjection_eq hb n, eq_comm,
+    conj_coe_smul_stabilizer_perm_fin_three_eq_iff]
+
+/-- Every pair of crossed projections `c_a, c_b` on `S₃` differs by `σ ↦ σ • n / n` for a unique
+`n ∈ A₃`. -/
+theorem existsUnique_forall_symmetricThreeCrossedProjection_eq_mul_smul_div (a b : Fin 3) :
+    ∃! n : alternatingGroup (Fin 3), ∀ σ : Equiv.Perm (Fin 3),
+      symmetricThreeCrossedProjection b σ =
+        symmetricThreeCrossedProjection a σ * (σ • n / n) :=
+  ⟨(alternatingGroupFinThreeOrbitEquiv a).symm b,
+    (forall_symmetricThreeCrossedProjection_eq_mul_smul_div_iff a b _).mpr rfl,
+    fun n hn => (forall_symmetricThreeCrossedProjection_eq_mul_smul_div_iff a b n).mp hn⟩
+
+/-- The three points of `Fin 3` parameterize all normalized additive `1`-cocycles
+`S₃ → A₃`. -/
+noncomputable def symmetricThreeCrossedProjectionEquiv :
+    Fin 3 ≃
+      {c : Equiv.Perm (Fin 3) → Additive (alternatingGroup (Fin 3)) //
+        IsCocycle₁ c ∧ ∀ n : alternatingGroup (Fin 3), c n = Additive.ofMul n} :=
+  alternatingGroupFinThreeComplementEquiv.trans (alternatingGroup (Fin 3)).crossedProjectionEquiv
+
+/-- `symmetricThreeCrossedProjectionEquiv` composes `alternatingGroupFinThreeComplementEquiv` with
+`Subgroup.crossedProjectionEquiv`. -/
+theorem symmetricThreeCrossedProjectionEquiv_def :
+    symmetricThreeCrossedProjectionEquiv =
+      alternatingGroupFinThreeComplementEquiv.trans
+        (alternatingGroup (Fin 3)).crossedProjectionEquiv :=
+  (rfl)
+
+/-- `symmetricThreeCrossedProjectionEquiv a` evaluates at `σ` to
+`Additive.ofMul (symmetricThreeCrossedProjection a σ)`. -/
+@[simp]
+theorem symmetricThreeCrossedProjectionEquiv_apply (a : Fin 3) (σ : Equiv.Perm (Fin 3)) :
+    (symmetricThreeCrossedProjectionEquiv a).val σ =
+      Additive.ofMul (symmetricThreeCrossedProjection a σ) := by
+  rw [symmetricThreeCrossedProjectionEquiv_def, Equiv.trans_apply,
+    alternatingGroupFinThreeComplementEquiv_apply, Subgroup.crossedProjectionEquiv_apply,
+    ← symmetricThreeCrossedProjection_def]
+
+/-- `symmetricThreeCrossedProjectionEquiv.symm` sends a normalized additive `1`-cocycle `c` to the
+stabilized point of its zero-locus complement. -/
+theorem symmetricThreeCrossedProjectionEquiv_symm_apply
+    (c : {c : Equiv.Perm (Fin 3) → Additive (alternatingGroup (Fin 3)) //
+      IsCocycle₁ c ∧ ∀ n : alternatingGroup (Fin 3), c n = Additive.ofMul n}) :
+    symmetricThreeCrossedProjectionEquiv.symm c =
+      alternatingGroupFinThreeComplementEquiv.symm
+        ((alternatingGroup (Fin 3)).crossedProjectionEquiv.symm c) :=
+  (rfl)
+
+/-- The inverse of `symmetricThreeCrossedProjectionEquiv` maps the additive form of
+`symmetricThreeCrossedProjection a` back to `a`. -/
+@[simp]
+theorem symmetricThreeCrossedProjectionEquiv_symm_ofMul (a : Fin 3)
+    (h : IsCocycle₁ (fun σ => Additive.ofMul (symmetricThreeCrossedProjection a σ)) ∧
+      ∀ n : alternatingGroup (Fin 3),
+        Additive.ofMul (symmetricThreeCrossedProjection a n) = Additive.ofMul n) :
+    symmetricThreeCrossedProjectionEquiv.symm
+      ⟨fun σ => Additive.ofMul (symmetricThreeCrossedProjection a σ), h⟩ = a := by
+  have heq :
+      (⟨fun σ => Additive.ofMul (symmetricThreeCrossedProjection a σ), h⟩ :
+        {c : Equiv.Perm (Fin 3) → Additive (alternatingGroup (Fin 3)) //
+          IsCocycle₁ c ∧ ∀ n : alternatingGroup (Fin 3), c n = Additive.ofMul n}) =
+      symmetricThreeCrossedProjectionEquiv a := by
+    ext σ
+    rw [symmetricThreeCrossedProjectionEquiv_apply]
+  rw [heq, Equiv.symm_apply_apply]
+
+/-- A map `c : S₃ → A₃` is a normalized multiplicative `1`-cocycle if and only if it is one of
+the three point-stabilizer crossed projections. -/
+theorem isMulCocycle₁_and_forall_coe_eq_iff_exists_symmetricThreeCrossedProjection
+    (c : Equiv.Perm (Fin 3) → alternatingGroup (Fin 3)) :
+    (IsMulCocycle₁ c ∧ ∀ n : alternatingGroup (Fin 3), c n = n) ↔
+      ∃ a : Fin 3, c = symmetricThreeCrossedProjection a := by
+  refine ⟨fun ⟨hc, hn⟩ => ?_, ?_⟩
+  · let ca : {f : Equiv.Perm (Fin 3) → Additive (alternatingGroup (Fin 3)) //
+        IsCocycle₁ f ∧ ∀ n : alternatingGroup (Fin 3), f n = Additive.ofMul n} :=
+      ⟨fun σ => Additive.ofMul (c σ), fun g k => congrArg Additive.ofMul (hc g k),
+        fun n => congrArg Additive.ofMul (hn n)⟩
+    refine ⟨symmetricThreeCrossedProjectionEquiv.symm ca, funext fun σ => ?_⟩
+    have h := congrFun
+      (congrArg Subtype.val (symmetricThreeCrossedProjectionEquiv.apply_symm_apply ca)) σ
+    rw [symmetricThreeCrossedProjectionEquiv_apply] at h
+    exact Additive.ofMul.injective h.symm
+  · rintro ⟨a, rfl⟩
+    exact ⟨isMulCocycle₁_symmetricThreeCrossedProjection a,
+      symmetricThreeCrossedProjection_coe a⟩
+
+/-! ### Subgroup-invariant complements in `S₃` -/
+
+/-- Among all subgroups of `S₃`, `stabilizer a` is the unique `stabilizer a`-normalized complement
+of `A₃`. -/
+@[simp]
+theorem isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff (a : Fin 3)
+    (D : Subgroup (Equiv.Perm (Fin 3))) :
+    ((alternatingGroup (Fin 3)).IsComplement' D ∧
+      MulAction.stabilizer (Equiv.Perm (Fin 3)) a ≤
+        Subgroup.normalizer (D : Set (Equiv.Perm (Fin 3)))) ↔
+      D = MulAction.stabilizer (Equiv.Perm (Fin 3)) a := by
+  refine ⟨fun ⟨hD, hnorm⟩ => ?_, ?_⟩
+  · obtain ⟨b, rfl⟩ := (isComplement'_alternatingGroup_fin_three_iff D).mp hD
+    rw [normalizer_stabilizer_perm_fin_three] at hnorm
+    exact (Subgroup.eq_of_le_of_card_ge hnorm
+      (by rw [card_stabilizer_perm_fin_three, card_stabilizer_perm_fin_three])).symm
+  · rintro rfl
+    exact ⟨isComplement'_alternatingGroup_stabilizer_perm_fin_three a, Subgroup.le_normalizer⟩
+
+/-- Existence and uniqueness of a `stabilizer a`-normalized complement of `A₃` in `S₃`. -/
+theorem existsUnique_invariant_complement_alternatingGroup_fin_three (a : Fin 3) :
+    ∃! D : Subgroup (Equiv.Perm (Fin 3)),
+      (alternatingGroup (Fin 3)).IsComplement' D ∧
+        MulAction.stabilizer (Equiv.Perm (Fin 3)) a ≤
+          Subgroup.normalizer (D : Set (Equiv.Perm (Fin 3))) :=
+  ⟨MulAction.stabilizer (Equiv.Perm (Fin 3)) a,
+    (isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff a _).mpr rfl,
+    fun D hD => (isComplement'_alternatingGroup_and_stabilizer_le_normalizer_iff a D).mp hD⟩
 
 /-! ### `p`-group properties and the Sylow `3`-subgroup of `S₃` -/
 
@@ -218,10 +507,8 @@ theorem isPGroup_two_stabilizer_perm_fin_three (a : Fin 3) :
 /-- The alternating subgroup `A₃` packaged as a Sylow `3`-subgroup of `S₃`. -/
 noncomputable def alternatingGroupSylowThree : Sylow 3 (Equiv.Perm (Fin 3)) :=
   isPGroup_three_alternatingGroup_fin_three.toSylow <| by
-    have hmul := Subgroup.card_mul_index (alternatingGroup (Fin 3))
-    simp only [card_alternatingGroup_fin_three, Nat.card_perm, Nat.card_fin,
-      Nat.factorial] at hmul
-    omega
+    rw [alternatingGroup.index_eq_two]
+    decide
 
 /-- The underlying subgroup of `alternatingGroupSylowThree` is `A₃`. -/
 theorem coe_alternatingGroupSylowThree :
@@ -247,6 +534,13 @@ theorem sylow_three_perm_fin_three_eq (P : Sylow 3 (Equiv.Perm (Fin 3))) :
 theorem coe_sylow_three_perm_fin_three (P : Sylow 3 (Equiv.Perm (Fin 3))) :
     (P : Subgroup (Equiv.Perm (Fin 3))) = alternatingGroup (Fin 3) := by
   rw [sylow_three_perm_fin_three_eq P, coe_alternatingGroupSylowThree]
+
+/-- Membership in any Sylow `3`-subgroup of `S₃` coincides with membership in `A₃`. -/
+@[simp]
+theorem mem_sylow_three_perm_fin_three (P : Sylow 3 (Equiv.Perm (Fin 3)))
+    {g : Equiv.Perm (Fin 3)} :
+    g ∈ P ↔ g ∈ alternatingGroup (Fin 3) :=
+  Iff.of_eq (congrArg (g ∈ ·) (coe_sylow_three_perm_fin_three P))
 
 /-- Because `A₃` is itself the unique Sylow `3`-subgroup of `S₃`, its only local complement in a
 Sylow `3`-subgroup is `⊥`. -/

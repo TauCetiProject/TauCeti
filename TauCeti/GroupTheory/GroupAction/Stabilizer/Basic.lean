@@ -74,8 +74,9 @@ normality of it is equivalent to freeness of the action of the image.
   surjectivity and kernel.
 
 * `MulAction.conj_smul_stabilizer`: pointwise conjugation of `stabilizer G a` by `g` equals
-  `stabilizer G (g • a)`, with `MulAction.normalizer_stabilizer_of_injective` the consequence
-  that point stabilizers are self-normalizing when `stabilizer G` is injective.
+  `stabilizer G (g • a)`, with `MulAction.mem_normalizer_stabilizer_iff` and
+  `MulAction.normalizer_stabilizer_eq_self_iff` characterizing the normalizer and self-normalizing
+  property of `stabilizer G a` pointwise along the orbit of `a`.
 * `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
   conjugate `g T g⁻¹` depends only on `g • a`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
@@ -250,13 +251,20 @@ theorem conj_smul_stabilizer (g : G) (a : α) :
     MulAut.conj g • stabilizer G a = stabilizer G (g • a) :=
   (TauCeti.map_conj_eq_conj_smul g _).symm.trans (stabilizer_smul_eq_stabilizer_map_conj g a).symm
 
-/-- When distinct points have distinct stabilizers, every point stabilizer is self-normalizing. -/
-theorem normalizer_stabilizer_of_injective
-    (h : Function.Injective (stabilizer G : α → Subgroup G)) (a : α) :
-    Subgroup.normalizer (stabilizer G a : Set G) = stabilizer G a := by
-  ext g
+/-- An element `g` normalizes the point stabilizer of `a` if and only if `g • a` and `a` have the
+same stabilizer. -/
+theorem mem_normalizer_stabilizer_iff (a : α) (g : G) :
+    g ∈ Subgroup.normalizer (stabilizer G a : Set G) ↔ stabilizer G (g • a) = stabilizer G a := by
   rw [Subgroup.mem_normalizer_iff_map_conj_eq, ← MulEquiv.toMonoidHom_eq_coe,
-    ← stabilizer_smul_eq_stabilizer_map_conj, h.eq_iff, mem_stabilizer_iff]
+    ← stabilizer_smul_eq_stabilizer_map_conj]
+
+/-- A point stabilizer `stabilizer G a` is self-normalizing if and only if no translate `g • a`
+distinct from `a` has the same stabilizer as `a`. -/
+theorem normalizer_stabilizer_eq_self_iff (a : α) :
+    Subgroup.normalizer (stabilizer G a : Set G) = stabilizer G a ↔
+      ∀ g : G, stabilizer G (g • a) = stabilizer G a → g • a = a := by
+  rw [le_antisymm_iff, and_iff_left Subgroup.le_normalizer, IsConcreteLE.le_iff]
+  simp only [mem_normalizer_stabilizer_iff, mem_stabilizer_iff]
 
 end MulAction
 

@@ -25,7 +25,9 @@ complement of `N` (`Subgroup.isComplement'_zeroLocus`). This zero locus is
 `Subgroup.IsLocalComplement.gaschutzComplement`; it is the zero locus of the crossed transfer
 itself. Changing the transversal multiplies the crossed transfer by a principal crossed map, so
 the complements obtained from two transversals are conjugate by an element of `N`
-(`Subgroup.IsLocalComplement.gaschutzComplement_changeTransversal`).
+(`Subgroup.IsLocalComplement.gaschutzComplement_changeTransversal`). When `K ≤ D` for a global
+complement `D` and the transversal takes values in `D`, `gaschutzComplement` recovers `D`
+(`Subgroup.IsLocalComplement.gaschutzComplement_eq_of_isComplement'`).
 
 The theorem fails for non-abelian `N`: in the central product of `SL(2, 3)` and a cyclic group
 of order `4`, the quaternion group `Q₈` has a complement in a Sylow `2`-subgroup, of index `3`,
@@ -132,6 +134,41 @@ theorem gaschutzComplement_changeTransversal (hcop : Nat.Coprime H.index (Nat.ca
     h.crossedProjection_gaschutzComplement t ht hcop,
     crossedTransfer_changeTransversal H t ht t' ht' h.isMulCocycle₁_leftProjection, mul_pow,
     div_pow, smul_pow']
+
+/-- When `K` is contained in a global complement `D` of `N` and the transversal `t` takes values in
+`D`, the crossed transfer of `h.leftProjection` equals the `H.index`-th power of
+`hD.crossedProjection`. -/
+theorem crossedTransfer_leftProjection_eq_crossedProjection_pow {D : Subgroup G}
+    (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u : G ⧸ H, t u ∈ D) (g : G) :
+    crossedTransfer H t ht h.leftProjection g = hD.crossedProjection g ^ H.index := by
+  have hres : h.leftProjection = fun x : H => hD.crossedProjection x :=
+    funext (h.leftProjection_eq_crossedProjection hD hKD)
+  have hprod : (∏ u : G ⧸ H, hD.crossedProjection (t u)) = 1 :=
+    Finset.prod_eq_one fun u _ => (hD.crossedProjection_eq_one_iff _).mpr (htD u)
+  rw [hres, crossedTransfer_restrict H t ht hD.isMulCocycle₁_crossedProjection g,
+    hprod, smul_one, div_one, mul_one]
+
+/-- When `[G : H]` is coprime to `|N|`, `K ≤ D` for a global complement `D` of `N`, and `t` takes
+values in `D`, normalizing the crossed transfer of `h.leftProjection` by the modular inverse of
+`[G : H]` recovers `hD.crossedProjection`. -/
+theorem crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection
+    (hcop : Nat.Coprime H.index (Nat.card N)) {D : Subgroup G}
+    (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u : G ⧸ H, t u ∈ D) (g : G) :
+    crossedTransfer H t ht h.leftProjection g ^ ((H.index : ZMod (Nat.card N))⁻¹).val =
+      hD.crossedProjection g := by
+  rw [h.crossedTransfer_leftProjection_eq_crossedProjection_pow t ht hD hKD htD,
+    pow_pow_zmod_val_inv hcop.symm]
+
+/-- When `[G : H]` is coprime to `|N|`, `K ≤ D` for a global complement `D` of `N`, and `t` takes
+values in `D`, the Gaschütz complement along `t` recovers `D`. -/
+theorem gaschutzComplement_eq_of_isComplement'
+    (hcop : Nat.Coprime H.index (Nat.card N)) {D : Subgroup G}
+    (hD : N.IsComplement' D) (hKD : K ≤ D) (htD : ∀ u : G ⧸ H, t u ∈ D) :
+    h.gaschutzComplement t ht = D := by
+  ext g
+  rw [h.mem_gaschutzComplement_iff_pow_eq_one,
+    h.crossedTransfer_leftProjection_pow_inv_index_eq_crossedProjection t ht hcop hD hKD htD,
+    hD.crossedProjection_eq_one_iff]
 
 end IsLocalComplement
 

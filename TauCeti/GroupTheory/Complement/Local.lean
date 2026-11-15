@@ -203,6 +203,10 @@ theorem isLocalComplement_self_left : H.IsLocalComplement K H ↔ K = ⊥ := by
   · rintro rfl
     exact ⟨inf_bot_eq _, sup_bot_eq _⟩
 
+/-- The trivial subgroup `⊥` is a local complement of any subgroup `H` inside `H` itself. -/
+theorem isLocalComplement_bot_self (H : Subgroup G) : H.IsLocalComplement ⊥ H :=
+  isLocalComplement_self_left.mpr rfl
+
 namespace IsLocalComplement
 
 variable [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H)
@@ -371,6 +375,13 @@ theorem leftProjection_restrict [(N.subgroupOf L).Normal] (hNL : N ≤ L) (hLH :
   exact L.mul_mem (L.inv_mem (hNL (h.leftProjection _).property)) x.property
 
 end IsLocalComplement
+
+/-- When the first subgroup is the ambient subgroup itself, the left projection of a local
+complement is the identity. -/
+@[simp]
+theorem IsLocalComplement.leftProjection_self [(H.subgroupOf H).Normal]
+    (h : H.IsLocalComplement K H) (x : H) : h.leftProjection x = x :=
+  h.leftProjection_left x
 
 section Conjugation
 

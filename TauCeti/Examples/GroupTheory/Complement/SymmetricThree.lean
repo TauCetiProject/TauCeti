@@ -8,32 +8,30 @@ module
 public import TauCeti.GroupTheory.Complement.Invariant.Internal
 public import TauCeti.GroupTheory.Complement.Sylow
 public import TauCeti.GroupTheory.Perm.FinThree.CrossedTransfer
-import Mathlib.Data.Finite.Perm
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+import TauCeti.GroupTheory.Perm.AlternatingCharacter
 
 /-!
 # Concrete complement, crossed-projection, and transfer calculations in `S₃`
 
-This file instantiates the complement, crossed-projection, crossed-transfer, Sylow-detection, and
+This file instantiates the complement, crossed-projection, crossed-transfer, Sylow-complement, and
 invariant-complement APIs on concrete permutations in `S₃ = Equiv.Perm (Fin 3)` over
 `A₃ = alternatingGroup (Fin 3)`:
 
-* The three transposition complements `⟨swap 0 1⟩` (`stabilizer 2`), `⟨swap 0 2⟩`
-  (`stabilizer 1`), and `⟨swap 1 2⟩` (`stabilizer 0`), explicit factorizations
+* The three transposition complements `⟨swap 1 2⟩` (`stabilizer 0`), `⟨swap 0 2⟩`
+  (`stabilizer 1`), and `⟨swap 0 1⟩` (`stabilizer 2`), explicit coset factorizations
   `finRotate 3 * swap 0 1 = swap 0 2` and `(finRotate 3)⁻¹ * swap 0 1 = swap 1 2`, and failure
   of `⊤` to complement `A₃`.
 * Explicit evaluations of `c₂ = symmetricThreeCrossedProjection 2` on all transpositions,
-  failure of the `1`-cocycle identity for a normalized map whose zero locus
-  `{1, swap 0 2, swap 1 2}` is not a subgroup, and the principal twist by `finRotate 3`
-  relating `c₂` to `c₀`.
-* Explicit evaluations of the unnormalized crossed transfers along the `{1, swap 0 1}` and
-  `{1, swap 1 2}` transversals, the change-of-transversal element
-  `symmetricThreeChangeTransversal 2 0 = (finRotate 3)⁻¹`, the separation between unnormalized
-  conjugation (`⟨swap 0 1⟩ ↦ ⟨swap 0 2⟩`) and inverse-exponent normalized conjugation
-  (`⟨swap 0 1⟩ ↦ ⟨swap 1 2⟩`), and representative-independent inversion of `finRotate 3` under
-  `quotientConjugationAction`.
-* Instantiations of `IsPGroup.exists_isComplement'_iff_sylow`,
-  `Subgroup.exists_invariant_complement`, and `Subgroup.exists_invariant_local_complement` for
-  `⟨swap 0 1⟩` acting on `S₃` with `p = 3`, `q = 2`.
+  failure of the `1`-cocycle identity for the normalized map `swapZeroOneFinRotateMap` whose zero
+  locus `{1, swap 0 2, swap 1 2}` is not a subgroup, and the coboundary relation by `finRotate 3`
+  linking `c₂` to `c₀`.
+* Explicit evaluations of the unnormalized crossed transfer along the `{1, swap 0 1}` transversal,
+  the change-of-transversal element `symmetricThreeChangeTransversal 2 0 = (finRotate 3)⁻¹`, and
+  the separation between unnormalized conjugation (`⟨swap 0 1⟩ ↦ ⟨swap 0 2⟩`) and inverse-exponent
+  normalized conjugation (`⟨swap 0 1⟩ ↦ ⟨swap 1 2⟩`).
+* Concrete existence of Sylow-local and global complements of `A₃`, a `stabilizer 2`-conjugation
+  invariant complement of `A₃`, and a `stabilizer 2`-normalized local complement of `A₃` in `⊤`.
 -/
 
 public section
@@ -62,237 +60,280 @@ theorem stabilizer_two_eq_zpowers :
     MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) = Subgroup.zpowers (swap 0 1) :=
   stabilizer_perm_fin_three_eq_zpowers 2
 
-/-- Along `⟨swap 0 1⟩ = stabilizer 2`, `swap 0 2` factors as `finRotate 3 * swap 0 1` and
-`swap 1 2` factors as `(finRotate 3)⁻¹ * swap 0 1`. -/
-theorem swap_factorizations_along_stabilizer_two :
-    finRotate 3 * swap (0 : Fin 3) 1 = swap 0 2 ∧
-      (finRotate 3)⁻¹ * swap (0 : Fin 3) 1 = swap 1 2 := by
+/-- Multiplying `swap 0 1` on the left by `finRotate 3` yields `swap 0 2`. -/
+theorem finRotate_three_mul_swap_zero_one :
+    finRotate 3 * swap (0 : Fin 3) 1 = swap 0 2 := by
   decide
 
-/-- The whole group `⊤` spans `S₃` with `A₃` (`A₃ ⊔ ⊤ = ⊤`) but fails `IsComplement'`
-because `A₃ ⊓ ⊤ = A₃ ≠ ⊥`. -/
+/-- Multiplying `swap 0 1` on the left by `(finRotate 3)⁻¹` yields `swap 1 2`. -/
+theorem finRotate_three_inv_mul_swap_zero_one :
+    (finRotate 3)⁻¹ * swap (0 : Fin 3) 1 = swap 1 2 := by
+  decide
+
+/-- The whole group `⊤` does not complement `A₃` in `S₃`. -/
 theorem not_isComplement'_alternatingGroup_top :
     ¬ (alternatingGroup (Fin 3)).IsComplement' ⊤ := by
-  intro htop
-  have hmul := htop.card_mul_card
-  simp only [card_alternatingGroup_fin_three, Subgroup.card_top, Nat.card_perm, Nat.card_fin,
-    Nat.factorial] at hmul
-  omega
+  rw [Subgroup.isComplement'_top_right, Subgroup.eq_bot_iff_card, card_alternatingGroup_fin_three]
+  decide
 
-/-- The three splittings of `1 → A₃ → S₃ → S₃ ⧸ A₃ → 1` have ranges `⟨swap 1 2⟩`,
-`⟨swap 0 2⟩`, and `⟨swap 0 1⟩`. -/
-theorem ranges_alternatingGroupFinThreeSplittingEquiv :
-    (alternatingGroupFinThreeSplittingEquiv 0).toMonoidHom.range = Subgroup.zpowers (swap 1 2) ∧
-      (alternatingGroupFinThreeSplittingEquiv 1).toMonoidHom.range = Subgroup.zpowers (swap 0 2) ∧
-      (alternatingGroupFinThreeSplittingEquiv 2).toMonoidHom.range = Subgroup.zpowers (swap 0 1) :=
-  ⟨by rw [range_alternatingGroupFinThreeSplittingEquiv, stabilizer_zero_eq_zpowers],
-    by rw [range_alternatingGroupFinThreeSplittingEquiv, stabilizer_one_eq_zpowers],
-    by rw [range_alternatingGroupFinThreeSplittingEquiv, stabilizer_two_eq_zpowers]⟩
-
-/-! ### Explicit crossed-projection values, non-cocycle witness, and principal twist -/
+/-! ### Explicit crossed-projection values, non-cocycle witness, and coboundary difference -/
 
 /-- Ambient conjugation by `swap 0 1` inverts the three-cycle `finRotate 3` in `A₃`. -/
-theorem swap_zero_one_smul_finRotate :
+theorem coe_swap_zero_one_smul_finRotate_three :
     ((swap (0 : Fin 3) 1 • ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ :
       alternatingGroup (Fin 3)) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
-  rw [Subgroup.coe_conjugationAction_smul]
+  have hs : swap (0 : Fin 3) 1 ∉ alternatingGroup (Fin 3) := by
+    rw [Perm.mem_alternatingGroup]
+    decide
+  have hconj : swap (0 : Fin 3) 1 •
+      (⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ : alternatingGroup (Fin 3)) =
+    MulAut.conjNormal (swap (0 : Fin 3) 1)
+      ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ :=
+    Subtype.ext (by rw [Subgroup.coe_conjugationAction_smul, MulAut.conjNormal_apply])
+  have hinv := (MonoidHom.id (alternatingGroup (Fin 3))).map_conjNormal_alternatingGroup_eq_inv hs
+    ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩
+  simp only [MonoidHom.id_apply] at hinv
+  rw [hconj, hinv, Subgroup.coe_inv]
+
+/-- `symmetricThreeCrossedProjection 2` sends `swap 0 1` to `1`. -/
+theorem symmetricThreeCrossedProjection_two_swap_zero_one :
+    symmetricThreeCrossedProjection 2 (swap 0 1) = 1 := by
+  simpa only [Fin.reduceAdd] using symmetricThreeCrossedProjection_swap_add_one_add_two 2
+
+/-- `symmetricThreeCrossedProjection 2` sends `swap 0 2` to `finRotate 3`. -/
+theorem coe_symmetricThreeCrossedProjection_two_swap_zero_two :
+    (symmetricThreeCrossedProjection 2 (swap 0 2) : Perm (Fin 3)) = finRotate 3 := by
+  rw [coe_symmetricThreeCrossedProjection]
   decide
 
-/-- Values of `symmetricThreeCrossedProjection 2` (for complement `⟨swap 0 1⟩`) on the three
-transpositions: `c₂ (swap 0 1) = 1`, `c₂ (swap 0 2) = finRotate 3`, and
-`c₂ (swap 1 2) = (finRotate 3)⁻¹`. -/
-theorem symmetricThreeCrossedProjection_two_on_transpositions :
-    (symmetricThreeCrossedProjection 2 (swap 0 1) : Perm (Fin 3)) = 1 ∧
-      (symmetricThreeCrossedProjection 2 (swap 0 2) : Perm (Fin 3)) = finRotate 3 ∧
-      (symmetricThreeCrossedProjection 2 (swap 1 2) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
-  simp only [coe_symmetricThreeCrossedProjection]
+/-- `symmetricThreeCrossedProjection 2` sends `swap 1 2` to `(finRotate 3)⁻¹`. -/
+theorem coe_symmetricThreeCrossedProjection_two_swap_one_two :
+    (symmetricThreeCrossedProjection 2 (swap 1 2) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
+  rw [coe_symmetricThreeCrossedProjection]
   decide
 
-/-- A normalized map `S₃ → A₃` which is the identity on `A₃`, sends `swap 0 1` to
-`finRotate 3`, and vanishes on `swap 0 2` and `swap 1 2` is *not* a `1`-cocycle, because its
-zero locus `{1, swap 0 2, swap 1 2}` is not closed under multiplication. -/
-theorem not_isMulCocycle₁_of_non_subgroup_zeroLocus :
-    ¬ IsMulCocycle₁ (fun σ : Perm (Fin 3) =>
+/-- Normalized candidate map `S₃ → A₃` that restricts to the identity on `A₃`, sends `swap 0 1`
+to `finRotate 3`, and sends `swap 0 2` and `swap 1 2` to `1`. -/
+def swapZeroOneFinRotateMap (σ : Perm (Fin 3)) : alternatingGroup (Fin 3) :=
+  if h : Perm.sign σ = 1 then
+    ⟨σ, Perm.mem_alternatingGroup.mpr h⟩
+  else if σ = swap 0 1 then
+    ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩
+  else
+    1
+
+/-- Unfolding formula for `swapZeroOneFinRotateMap`. -/
+theorem swapZeroOneFinRotateMap_def (σ : Perm (Fin 3)) :
+    swapZeroOneFinRotateMap σ =
       if h : Perm.sign σ = 1 then
-        (⟨σ, Perm.mem_alternatingGroup.mpr h⟩ : alternatingGroup (Fin 3))
-      else if σ = swap 0 1 then ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩
-      else 1) := by
+        ⟨σ, Perm.mem_alternatingGroup.mpr h⟩
+      else if σ = swap 0 1 then
+        ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩
+      else
+        1 :=
+  (rfl)
+
+/-- `swapZeroOneFinRotateMap` restricts to the identity on `A₃`. -/
+@[simp]
+theorem swapZeroOneFinRotateMap_coe (n : alternatingGroup (Fin 3)) :
+    swapZeroOneFinRotateMap n = n := by
+  simp only [swapZeroOneFinRotateMap_def, Perm.mem_alternatingGroup.mp n.property, ↓reduceDIte]
+
+/-- `swapZeroOneFinRotateMap` sends `swap 0 1` to `finRotate 3`. -/
+@[simp]
+theorem swapZeroOneFinRotateMap_swap_zero_one :
+    swapZeroOneFinRotateMap (swap 0 1) = ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ := by
+  rw [swapZeroOneFinRotateMap_def]
+  decide
+
+/-- `swapZeroOneFinRotateMap` sends `swap 0 2` to `1`. -/
+@[simp]
+theorem swapZeroOneFinRotateMap_swap_zero_two : swapZeroOneFinRotateMap (swap 0 2) = 1 := by
+  rw [swapZeroOneFinRotateMap_def]
+  decide
+
+/-- `swapZeroOneFinRotateMap` sends `swap 1 2` to `1`. -/
+@[simp]
+theorem swapZeroOneFinRotateMap_swap_one_two : swapZeroOneFinRotateMap (swap 1 2) = 1 := by
+  rw [swapZeroOneFinRotateMap_def]
+  decide
+
+/-- `swapZeroOneFinRotateMap` is not a multiplicative `1`-cocycle, because its zero locus
+`{1, swap 0 2, swap 1 2}` is not closed under multiplication. -/
+theorem not_isMulCocycle₁_swapZeroOneFinRotateMap : ¬ IsMulCocycle₁ swapZeroOneFinRotateMap := by
   intro hc
-  have hmul := congrArg Subtype.val (hc (swap 0 2) (swap 1 2))
-  simp only [Subgroup.coe_mul, Subgroup.coe_conjugationAction_smul] at hmul
+  have hmul := hc (swap 1 2) (swap 0 2)
+  have hprod : (swap (1 : Fin 3) 2 * swap 0 2 : Perm (Fin 3)) =
+      (⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ : alternatingGroup (Fin 3)) := by
+    decide
+  rw [hprod, swapZeroOneFinRotateMap_coe, swapZeroOneFinRotateMap_swap_one_two,
+    swapZeroOneFinRotateMap_swap_zero_two, smul_one, mul_one, ← Subtype.coe_inj, Subgroup.coe_mk,
+    Subgroup.coe_one] at hmul
   revert hmul
   decide
 
-/-- Conjugating `⟨swap 0 1⟩` (`stabilizer 2`) by `finRotate 3 ∈ A₃` gives `⟨swap 1 2⟩`
-(`stabilizer 0`), and `c₀` differs from `c₂` by the principal crossed map of `finRotate 3`. -/
-theorem conj_finRotate_stabilizer_two_and_principal_twist :
+/-- Conjugating `⟨swap 0 1⟩` (`stabilizer 2`) by `finRotate 3` gives `⟨swap 1 2⟩`
+(`stabilizer 0`). -/
+theorem conj_finRotate_three_smul_zpowers_swap_zero_one :
     MulAut.conj (finRotate 3) • Subgroup.zpowers (swap (0 : Fin 3) 1) =
-        Subgroup.zpowers (swap 1 2) ∧
-      ∀ σ : Perm (Fin 3),
-        symmetricThreeCrossedProjection 0 σ =
-          symmetricThreeCrossedProjection 2 σ *
-            (σ • (⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ :
-              alternatingGroup (Fin 3)) /
-              ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩) := by
+      Subgroup.zpowers (swap 1 2) := by
+  rw [← stabilizer_two_eq_zpowers, ← stabilizer_zero_eq_zpowers, MulAction.conj_smul_stabilizer,
+    stabilizer_perm_fin_three_inj]
+  decide
+
+/-- `symmetricThreeCrossedProjection 0` differs from `symmetricThreeCrossedProjection 2` by the
+coboundary of `finRotate 3 ∈ A₃`. -/
+theorem symmetricThreeCrossedProjection_zero_eq_mul_smul_div (σ : Perm (Fin 3)) :
+    symmetricThreeCrossedProjection 0 σ =
+      symmetricThreeCrossedProjection 2 σ *
+        (σ • (⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ : alternatingGroup (Fin 3)) /
+          ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩) := by
   have horb : (alternatingGroupFinThreeOrbitEquiv 2).symm 0 =
       ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ := by
     apply Subtype.ext
     rw [coe_alternatingGroupFinThreeOrbitEquiv_symm]
     decide
-  refine ⟨?_, (forall_symmetricThreeCrossedProjection_eq_mul_principal_iff 2 0 _).mpr horb.symm⟩
-  rw [← stabilizer_two_eq_zpowers, ← stabilizer_zero_eq_zpowers, MulAction.conj_smul_stabilizer]
-  congr 1
+  exact (forall_symmetricThreeCrossedProjection_eq_mul_smul_div_iff 2 0 _).mpr horb.symm σ
 
-/-! ### Explicit crossed-transfer values, change-of-transversal separation, and quotient action -/
+/-! ### Explicit crossed-transfer values and change-of-transversal separation -/
 
-/-- Values of the unnormalized crossed transfer along `symmetricThreeTransversal 2`
-(`{1, swap 0 1}`): it sends `swap 0 1` to `1`, `finRotate 3` to `(finRotate 3)⁻¹`, and
-`swap 0 1 * finRotate 3 = swap 1 2` to `finRotate 3`. -/
-theorem crossedTransfer_transversal_two_values :
-    ((crossedTransfer (alternatingGroup (Fin 3)) (symmetricThreeTransversal 2)
-        (symmetricThreeTransversal_mk 2)
-        isLocalComplement_bot_alternatingGroup_fin_three.leftProjection (swap 0 1) :
-      alternatingGroup (Fin 3)) : Perm (Fin 3)) = 1 ∧
-    ((crossedTransfer (alternatingGroup (Fin 3)) (symmetricThreeTransversal 2)
-        (symmetricThreeTransversal_mk 2)
-        isLocalComplement_bot_alternatingGroup_fin_three.leftProjection (finRotate 3) :
-      alternatingGroup (Fin 3)) : Perm (Fin 3)) = (finRotate 3)⁻¹ ∧
-    ((crossedTransfer (alternatingGroup (Fin 3)) (symmetricThreeTransversal 2)
-        (symmetricThreeTransversal_mk 2)
-        isLocalComplement_bot_alternatingGroup_fin_three.leftProjection (swap 0 1 * finRotate 3) :
-      alternatingGroup (Fin 3)) : Perm (Fin 3)) = finRotate 3 := by
-  simp only [crossedTransfer_leftProjection_alternatingGroup_fin_three, Subgroup.coe_pow,
+/-- Along `alternatingGroupFinThreeSplittingEquiv 2` (`{1, swap 0 1}`), the unnormalized crossed
+transfer sends `swap 0 1` to `1`. -/
+theorem crossedTransfer_leftProjection_two_swap_zero_one :
+    crossedTransfer (alternatingGroup (Fin 3)) (alternatingGroupFinThreeSplittingEquiv 2)
+      (mk_alternatingGroupFinThreeSplittingEquiv 2)
+      (alternatingGroup (Fin 3)).isLocalComplement_bot_self.leftProjection (swap 0 1) = 1 := by
+  rw [crossedTransfer_leftProjection_alternatingGroup_fin_three,
+    symmetricThreeCrossedProjection_two_swap_zero_one, one_pow]
+
+/-- Along `alternatingGroupFinThreeSplittingEquiv 2` (`{1, swap 0 1}`), the unnormalized crossed
+transfer sends `finRotate 3` to `(finRotate 3)⁻¹`. -/
+theorem coe_crossedTransfer_leftProjection_two_finRotate_three :
+    ((crossedTransfer (alternatingGroup (Fin 3)) (alternatingGroupFinThreeSplittingEquiv 2)
+        (mk_alternatingGroupFinThreeSplittingEquiv 2)
+        (alternatingGroup (Fin 3)).isLocalComplement_bot_self.leftProjection (finRotate 3) :
+      alternatingGroup (Fin 3)) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
+  rw [crossedTransfer_leftProjection_alternatingGroup_fin_three, Subgroup.coe_pow,
     coe_symmetricThreeCrossedProjection]
   decide
 
-/-- Switching from `{1, swap 0 1}` (`a = 2`) to `{1, swap 1 2}` (`b = 0`) produces the
-unnormalized change-of-transversal element `symmetricThreeChangeTransversal 2 0 = (finRotate 3)⁻¹`,
-which conjugates `⟨swap 0 1⟩` to `⟨swap 0 2⟩` rather than `⟨swap 1 2⟩`, whereas its `e = 2`
-power `finRotate 3` conjugates `⟨swap 0 1⟩` to `⟨swap 1 2⟩`. -/
-theorem changeTransversal_two_to_zero_separation :
-    let d := symmetricThreeChangeTransversal 2 0
-    (d : Perm (Fin 3)) = (finRotate 3)⁻¹ ∧
-      MulAut.conj (d : Perm (Fin 3)) • Subgroup.zpowers (swap (0 : Fin 3) 1) =
-        Subgroup.zpowers (swap (0 : Fin 3) 2) ∧
-      MulAut.conj (d : Perm (Fin 3)) • Subgroup.zpowers (swap (0 : Fin 3) 1) ≠
-        Subgroup.zpowers (swap (1 : Fin 3) 2) ∧
-      MulAut.conj ((d ^ 2 : alternatingGroup (Fin 3)) : Perm (Fin 3)) •
-        Subgroup.zpowers (swap (0 : Fin 3) 1) = Subgroup.zpowers (swap (1 : Fin 3) 2) := by
-  intro d
-  have hd : (d : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
-    dsimp only [d]
-    rw [symmetricThreeChangeTransversal_eq_orbitEquiv_symm_sq, Subgroup.coe_pow,
-      coe_alternatingGroupFinThreeOrbitEquiv_symm]
-    decide
-  have hunnorm : MulAut.conj (d : Perm (Fin 3)) • Subgroup.zpowers (swap (0 : Fin 3) 1) =
-      Subgroup.zpowers (swap (0 : Fin 3) 2) := by
-    rw [← stabilizer_two_eq_zpowers, ← stabilizer_one_eq_zpowers, hd,
-      MulAction.conj_smul_stabilizer, stabilizer_perm_fin_three_inj]
-    decide
-  have hne : Subgroup.zpowers (swap (0 : Fin 3) 2) ≠ Subgroup.zpowers (swap (1 : Fin 3) 2) := by
-    rw [← stabilizer_one_eq_zpowers, ← stabilizer_zero_eq_zpowers, ne_eq,
-      stabilizer_perm_fin_three_inj]
-    decide
-  refine ⟨hd, hunnorm, hunnorm.trans_ne hne, ?_⟩
-  rw [← stabilizer_two_eq_zpowers, ← stabilizer_zero_eq_zpowers, Subgroup.coe_pow, hd,
-    MulAction.conj_smul_stabilizer, stabilizer_perm_fin_three_inj]
+/-- Along `alternatingGroupFinThreeSplittingEquiv 2` (`{1, swap 0 1}`), the unnormalized crossed
+transfer sends `swap 0 1 * finRotate 3` to `finRotate 3`. -/
+theorem coe_crossedTransfer_leftProjection_two_swap_zero_one_mul_finRotate_three :
+    ((crossedTransfer (alternatingGroup (Fin 3)) (alternatingGroupFinThreeSplittingEquiv 2)
+        (mk_alternatingGroupFinThreeSplittingEquiv 2)
+        (alternatingGroup (Fin 3)).isLocalComplement_bot_self.leftProjection
+        (swap 0 1 * finRotate 3) :
+      alternatingGroup (Fin 3)) : Perm (Fin 3)) = finRotate 3 := by
+  rw [crossedTransfer_leftProjection_alternatingGroup_fin_three, Subgroup.coe_pow,
+    coe_symmetricThreeCrossedProjection]
   decide
 
-section QuotientAction
+/-- The unnormalized change-of-transversal element from `a = 2` to `b = 0` equals
+`(finRotate 3)⁻¹`. -/
+theorem coe_symmetricThreeChangeTransversal_two_zero :
+    (symmetricThreeChangeTransversal 2 0 : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
+  rw [coe_symmetricThreeChangeTransversal]
+  decide
 
-attribute [local instance] Subgroup.quotientConjugationAction
+/-- Conjugating `⟨swap 0 1⟩` by the unnormalized change-of-transversal element
+`symmetricThreeChangeTransversal 2 0` yields `⟨swap 0 2⟩`. -/
+theorem conj_symmetricThreeChangeTransversal_two_zero_smul_zpowers_swap_zero_one :
+    MulAut.conj (symmetricThreeChangeTransversal 2 0 : Perm (Fin 3)) •
+      Subgroup.zpowers (swap (0 : Fin 3) 1) =
+        Subgroup.zpowers (swap (0 : Fin 3) 2) := by
+  rw [← stabilizer_two_eq_zpowers, ← stabilizer_one_eq_zpowers]
+  exact (conj_symmetricThreeChangeTransversal_smul_stabilizer 2 0).trans
+    (congrArg (MulAction.stabilizer (Perm (Fin 3))) (by decide))
 
-/-- Both coset representatives `swap 0 1` and `swap 1 2` of the nontrivial coset in `S₃ ⧸ A₃`
-act on `finRotate 3 ∈ A₃` by inversion `(finRotate 3)⁻¹`. -/
-theorem quotient_mk_swap_smul_finRotate :
-    (((swap (0 : Fin 3) 1 : Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) •
-        ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ :
-      alternatingGroup (Fin 3)) : Perm (Fin 3)) = (finRotate 3)⁻¹ ∧
-    (((swap (1 : Fin 3) 2 : Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) •
-        ⟨finRotate 3, finRotate_three_mem_alternatingGroup⟩ :
-      alternatingGroup (Fin 3)) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
-  have h01 : (swap (0 : Fin 3) 1 : Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) ≠ 1 := by
-    rw [ne_eq, QuotientGroup.eq_one_iff, Perm.mem_alternatingGroup]
-    decide
-  have h12 : (swap (1 : Fin 3) 2 : Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) ≠ 1 := by
-    rw [ne_eq, QuotientGroup.eq_one_iff, Perm.mem_alternatingGroup]
-    decide
-  rw [quotientConjugationAction_alternatingGroup_smul_of_ne_one h01,
-    quotientConjugationAction_alternatingGroup_smul_of_ne_one h12, Subgroup.coe_inv,
-    Subgroup.coe_mk]
-  exact ⟨rfl, rfl⟩
+/-- Conjugating `⟨swap 0 1⟩` by the unnormalized change-of-transversal element
+`symmetricThreeChangeTransversal 2 0` does *not* yield `⟨swap 1 2⟩`. -/
+theorem conj_symmetricThreeChangeTransversal_two_zero_smul_zpowers_swap_zero_one_ne :
+    MulAut.conj (symmetricThreeChangeTransversal 2 0 : Perm (Fin 3)) •
+      Subgroup.zpowers (swap (0 : Fin 3) 1) ≠
+        Subgroup.zpowers (swap (1 : Fin 3) 2) := by
+  have hne := gaschutzComplement_ne_conj_symmetricThreeChangeTransversal_smul
+    (a := 2) (b := 0) (by decide)
+  rw [gaschutzComplement_alternatingGroup_fin_three,
+    gaschutzComplement_alternatingGroup_fin_three, stabilizer_zero_eq_zpowers,
+    stabilizer_two_eq_zpowers] at hne
+  exact hne.symm
 
-end QuotientAction
+/-- Conjugating `⟨swap 0 1⟩` by the inverse-exponent normalized power
+`symmetricThreeChangeTransversal 2 0 ^ 2` yields `⟨swap 1 2⟩`. -/
+theorem conj_symmetricThreeChangeTransversal_two_zero_sq_smul_zpowers_swap_zero_one :
+    MulAut.conj ((symmetricThreeChangeTransversal 2 0 ^ 2 : alternatingGroup (Fin 3)) :
+      Perm (Fin 3)) • Subgroup.zpowers (swap (0 : Fin 3) 1) =
+        Subgroup.zpowers (swap (1 : Fin 3) 2) := by
+  have hchg :=
+    (alternatingGroup (Fin 3)).isLocalComplement_bot_self.gaschutzComplement_changeTransversal
+      (alternatingGroupFinThreeSplittingEquiv 2) (mk_alternatingGroupFinThreeSplittingEquiv 2)
+      coprime_index_card_alternatingGroup_fin_three
+      (alternatingGroupFinThreeSplittingEquiv 0) (mk_alternatingGroupFinThreeSplittingEquiv 0)
+  rw [← symmetricThreeChangeTransversal_def, val_inv_index_alternatingGroup_fin_three,
+    gaschutzComplement_alternatingGroup_fin_three, gaschutzComplement_alternatingGroup_fin_three,
+    stabilizer_zero_eq_zpowers, stabilizer_two_eq_zpowers] at hchg
+  exact hchg.symm
 
-/-! ### Sylow detection and invariant complements for `⟨swap 0 1⟩` acting on `S₃` -/
+/-! ### Sylow-local and `stabilizer 2`-invariant complements of `A₃` -/
 
-/-- Direct instantiation of `IsPGroup.exists_isComplement'_iff_sylow` on `S₃` at `p = 3`. -/
-theorem sylow_three_detection_perm_fin_three :
-    (∃ D : Subgroup (Perm (Fin 3)), (alternatingGroup (Fin 3)).IsComplement' D) ∧
-      ∃ K : Subgroup (Perm (Fin 3)),
-        (alternatingGroup (Fin 3)).IsLocalComplement K alternatingGroupSylowThree := by
-  have : Fact (Nat.Prime 3) := ⟨by decide⟩
-  have hlocal : ∃ K : Subgroup (Perm (Fin 3)),
+/-- `A₃` admits a local complement inside its Sylow `3`-subgroup `alternatingGroupSylowThree`. -/
+theorem exists_isLocalComplement_alternatingGroupSylowThree :
+    ∃ K : Subgroup (Perm (Fin 3)),
       (alternatingGroup (Fin 3)).IsLocalComplement K alternatingGroupSylowThree :=
-    ⟨⊥, (isLocalComplement_alternatingGroup_sylow_three_iff _ _).mpr rfl⟩
-  exact ⟨(isPGroup_three_alternatingGroup_fin_three.exists_isComplement'_iff_sylow
-    alternatingGroupSylowThree).mpr hlocal, hlocal⟩
+  ⟨⊥, (isLocalComplement_alternatingGroup_sylow_three_iff _ _).mpr rfl⟩
 
-/-- Direct instantiation of `Subgroup.exists_invariant_complement` for
-`stabilizer 2 = ⟨swap 0 1⟩` (`q = 2`) acting by conjugation on `S₃` (`|S₃| = 6`, not coprime
-to `2`) and preserving `A₃` (`p = 3`). -/
-theorem exists_invariant_complement_under_swap_zero_one :
+/-- `A₃` admits a subgroup complement in `S₃`. -/
+theorem exists_isComplement'_alternatingGroup_fin_three :
+    ∃ D : Subgroup (Perm (Fin 3)), (alternatingGroup (Fin 3)).IsComplement' D :=
+  (isPGroup_three_alternatingGroup_fin_three.exists_isComplement'_iff_sylow
+    alternatingGroupSylowThree).mpr exists_isLocalComplement_alternatingGroupSylowThree
+
+/-- `A₃` admits a complement in `S₃` closed under conjugation by every element of
+`stabilizer 2`. -/
+theorem exists_isComplement'_and_stabilizer_two_conj_mem :
     ∃ D : Subgroup (Perm (Fin 3)),
       (alternatingGroup (Fin 3)).IsComplement' D ∧
         ∀ a ∈ MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3),
           ∀ d ∈ D, a * d * a⁻¹ ∈ D := by
-  have : Fact (Nat.Prime 3) := ⟨by decide⟩
-  have : Fact (Nat.Prime 2) := ⟨by decide⟩
   let S := MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3)
   let _ : MulDistribMulAction (ConjAct S) (Perm (Fin 3)) :=
     MulDistribMulAction.compHom (Perm (Fin 3))
       ((MulAut.conj : Perm (Fin 3) →* MulAut (Perm (Fin 3))).comp
-        (S.subtype.comp (ConjAct.ofConjAct (G := S))))
+        (S.subtype.comp (ConjAct.ofConjAct (G := S)).toMonoidHom))
+  have hsmul (a : ConjAct S) (x : Perm (Fin 3)) :
+      a • x = ((ConjAct.ofConjAct a : S) : Perm (Fin 3)) * x *
+        ((ConjAct.ofConjAct a : S) : Perm (Fin 3))⁻¹ := by
+    rw [MulAction.compHom_smul_def, MonoidHom.comp_apply, MonoidHom.comp_apply,
+      Subgroup.subtype_apply, MulEquiv.coe_toMonoidHom, MulAut.smul_def, MulAut.conj_apply]
   obtain ⟨D, hD, hinv⟩ :=
     Subgroup.exists_invariant_complement (A := ConjAct S) (p := 3) (q := 2)
       (alternatingGroup (Fin 3))
       isPGroup_three_alternatingGroup_fin_three
       ((isPGroup_two_stabilizer_perm_fin_three 2).of_equiv ConjAct.toConjAct)
       (by decide)
-      (fun a n hn => (inferInstance : (alternatingGroup (Fin 3)).Normal).conj_mem n hn
-        ((ConjAct.ofConjAct a : S) : Perm (Fin 3)))
+      (fun a n hn => by
+        rw [hsmul]
+        exact (inferInstance : (alternatingGroup (Fin 3)).Normal).conj_mem n hn _)
       alternatingGroupSylowThree
-      ⟨⊥, (isLocalComplement_alternatingGroup_sylow_three_iff _ _).mpr rfl⟩
-  exact ⟨D, hD, fun a ha d hd => hinv (ConjAct.toConjAct (⟨a, ha⟩ : S)) d hd⟩
+      exists_isLocalComplement_alternatingGroupSylowThree
+  refine ⟨D, hD, fun a ha d hd => ?_⟩
+  have hmem := hinv (ConjAct.toConjAct (⟨a, ha⟩ : S)) d hd
+  rwa [hsmul, ConjAct.ofConjAct_toConjAct] at hmem
 
-/-- Direct instantiation of `Subgroup.exists_invariant_local_complement` with `W = ⊤` and
-`A = stabilizer 2 = ⟨swap 0 1⟩` (`p = 3`, `q = 2`). -/
-theorem exists_invariant_local_complement_under_swap_zero_one :
+/-- `A₃` admits a local complement in `⊤` normalized by `stabilizer 2`. -/
+theorem exists_isLocalComplement_top_and_stabilizer_two_le_normalizer :
     ∃ D : Subgroup (Perm (Fin 3)),
       (alternatingGroup (Fin 3)).IsLocalComplement D ⊤ ∧
         MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) ≤
           Subgroup.normalizer (D : Set (Perm (Fin 3))) := by
-  have : Fact (Nat.Prime 3) := ⟨by decide⟩
-  have : Fact (Nat.Prime 2) := ⟨by decide⟩
-  let Ptop : Sylow 3 (⊤ : Subgroup (Perm (Fin 3))) :=
-    (isPGroup_three_alternatingGroup_fin_three.of_equiv
-      (Subgroup.subgroupOfEquivOfLe le_top).symm).toSylow <| by
-      have hmul := Subgroup.card_mul_index ((alternatingGroup (Fin 3)).subgroupOf ⊤)
-      have hcard : Nat.card ((alternatingGroup (Fin 3)).subgroupOf ⊤) = 3 := by
-        rw [Nat.card_congr (Subgroup.subgroupOfEquivOfLe (H := alternatingGroup (Fin 3))
-          le_top).toEquiv, card_alternatingGroup_fin_three]
-      simp only [hcard, Subgroup.card_top, Nat.card_perm, Nat.card_fin, Nat.factorial] at hmul
-      omega
   refine Subgroup.exists_invariant_local_complement (p := 3) (q := 2)
     (⊤ : Subgroup (Perm (Fin 3))) le_top
     (by rw [(⊤ : Subgroup (Perm (Fin 3))).normalizer_eq_top]; exact le_top)
     (by rw [(alternatingGroup (Fin 3)).normalizer_eq_top]; exact le_top)
     isPGroup_three_alternatingGroup_fin_three (isPGroup_two_stabilizer_perm_fin_three 2)
-    (by decide) Ptop ⟨⊥, ?_⟩
-  have hmap : Ptop.toSubgroup.map (⊤ : Subgroup (Perm (Fin 3))).subtype =
-      alternatingGroup (Fin 3) :=
-    Subgroup.map_subgroupOf_eq_of_le le_top
-  rw [hmap]
-  exact isLocalComplement_bot_alternatingGroup_fin_three
+    (by decide) (alternatingGroupSylowThree.subtype le_top) ⟨⊥, ?_⟩
+  rw [Sylow.coe_subtype, coe_alternatingGroupSylowThree, Subgroup.map_subgroupOf_eq_of_le le_top]
+  exact (alternatingGroup (Fin 3)).isLocalComplement_bot_self
 
 end TauCeti.Examples.SymmetricThreeComplement

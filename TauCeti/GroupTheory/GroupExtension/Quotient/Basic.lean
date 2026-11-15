@@ -83,6 +83,13 @@ theorem isComplement'_range_quotientExtension (s : N.quotientExtension.Splitting
     N.IsComplement' s.toMonoidHom.range := by
   simpa only [Subgroup.quotientExtension_inl, Subgroup.range_subtype] using s.isComplement'_range
 
+/-- Applying the quotient map after a splitting of `N.quotientExtension` is the identity. -/
+@[simp]
+theorem mk_quotientExtension (s : N.quotientExtension.Splitting) (q : G ⧸ N) :
+    (QuotientGroup.mk (s q) : G ⧸ N) = q := by
+  simpa only [Subgroup.quotientExtension_rightHom, QuotientGroup.mk'_apply] using
+    s.rightHom_splitting q
+
 /-- Recovering a splitting from its complementary range returns the original splitting. -/
 @[simp]
 theorem quotientSplitting_range (s : N.quotientExtension.Splitting) :
