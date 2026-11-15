@@ -46,6 +46,8 @@ assigns it the value `0`. Reiter's condition then yields Følner sets among the 
 * `TauCeti.Amenable.hasFoelnerSets`: an amenable discrete group has Følner sets.
 * `TauCeti.amenable_iff_hasFoelnerSets`: a discrete group is amenable exactly when it has Følner
   sets.
+* `TauCeti.amenable_iff_maxFoelner_neBot`: explicit counting-measure Følner filter characterization
+  of discrete amenability.
 * `TauCeti.amenable_iff_exists_finset`: the same characterization in terms of finite sets.
 
 ## References
@@ -163,6 +165,13 @@ theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSe
 /-- A discrete group is amenable exactly when it has Følner sets. -/
 theorem amenable_iff_hasFoelnerSets [DiscreteTopology G] : Amenable G ↔ HasFoelnerSets G :=
   ⟨fun _ ↦ Amenable.hasFoelnerSets, .of_hasFoelnerSets⟩
+
+/-- Explicit counting-measure Følner filter characterization of discrete group amenability. -/
+theorem amenable_iff_maxFoelner_neBot [DiscreteTopology G] :
+    Amenable G ↔
+      (letI : MeasurableSpace G := ⊤
+       (maxFoelner G (MeasureTheory.Measure.count : MeasureTheory.Measure G)).NeBot) :=
+  amenable_iff_hasFoelnerSets
 
 /-- A discrete group is amenable exactly when for every finite `K ⊆ G` and every `ε > 0` there is
 a finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
 public import TauCeti.MeasureTheory.Measure.AddContent.Basic
+import TauCeti.MeasureTheory.Group.Foelner.Basic
 
 /-!
 # The density-limit content of a Følner family
@@ -17,8 +18,9 @@ is the limit along `u` of the densities `μ (s ∩ F i) / μ (F i)`. It is the f
 probability behind `IsFoelner.amenable`, which only records its properties in an existential
 statement. This file bundles it as a content on all subsets of `X`
 (`IsFoelner.addContent`), so that it can be compared with other finitely additive probabilities,
-such as the content of a mean on a discrete group. The content has total mass one and is
-invariant under `G` when `μ` is.
+such as the content of a mean on a discrete group. The content has total mass one, is invariant
+under `G` when `μ` is, and is unchanged when `F` is perturbed by sets whose symmetric difference
+with `F i` has vanishing relative `μ`-measure.
 
 ## Main definitions
 
@@ -30,6 +32,8 @@ invariant under `G` when `μ` is.
 * `IsFoelner.tendsto_addContent`: the densities of `s` tend to the content of `s` along `u`.
 * `IsFoelner.addContent_univ`: the content has total mass one.
 * `IsFoelner.addContent_smul`: the content is invariant under the action of `G`.
+* `IsFoelner.addContent_eq_of_tendsto_meas_symmDiff_div`: asymptotically equivalent Følner families
+  induce the same density-limit content.
 
 ## References
 
@@ -42,12 +46,13 @@ noncomputable section
 
 open Filter Set Topology
 
-open scoped ENNReal Pointwise
+open scoped ENNReal Pointwise symmDiff
 
 namespace IsFoelner
 
 variable {G X ι : Type*} [Group G] [MulAction G X] [MeasurableSpace X]
-  [DiscreteMeasurableSpace X] {μ : MeasureTheory.Measure X} {u : Ultrafilter ι} {F : ι → Set X}
+  [DiscreteMeasurableSpace X] {μ : MeasureTheory.Measure X} {u : Ultrafilter ι}
+  {F F' : ι → Set X}
 
 /-- The density-limit content of a Følner family `F` along an ultrafilter `u`: the content of `s`
 is the limit along `u` of the densities `μ (s ∩ F i) / μ (F i)`. Every subset of `X` is measurable,
@@ -76,5 +81,20 @@ theorem addContent_univ (hF : IsFoelner G μ u F) : hF.addContent univ = 1 :=
 theorem addContent_smul [MeasureTheory.SMulInvariantMeasure G X μ] (hF : IsFoelner G μ u F)
     (g : G) (s : Set X) : hF.addContent (g • s) = hF.addContent s :=
   hF.mean_smul_eq_mean g s
+
+/-- Two Følner families along `u` with `μ (F i ∆ F' i) / μ (F i) → 0` induce the same
+density-limit content. -/
+theorem addContent_eq_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ u F)
+    (hF' : IsFoelner G μ u F')
+    (hdiff : Tendsto (fun i ↦ μ (F i ∆ F' i) / μ (F i)) u (𝓝 0)) :
+    hF.addContent = hF'.addContent :=
+  MeasureTheory.AddContent.ext fun s ↦ hF.mean_eq_of_tendsto_meas_symmDiff_div hF' hdiff s
+
+/-- Two Følner families along `u` that are eventually `μ`-almost-everywhere equal induce the same
+density-limit content. -/
+theorem addContent_eq_of_eventually_ae_eq (hF : IsFoelner G μ u F) (hF' : IsFoelner G μ u F')
+    (hae : ∀ᶠ i in (u : Filter ι), F i =ᵐ[μ] F' i) :
+    hF.addContent = hF'.addContent :=
+  MeasureTheory.AddContent.ext fun s ↦ hF.mean_eq_of_eventually_ae_eq hF' hae s
 
 end IsFoelner
