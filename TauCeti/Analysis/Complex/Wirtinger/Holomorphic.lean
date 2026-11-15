@@ -26,7 +26,11 @@ exactly when all its partial derivatives `∂g/∂(conj z_j)` vanish
 Adding a holomorphic function does not change the conjugate Wirtinger derivative, so a function
 that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same conjugate Wirtinger
 derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
-local solutions in exhaustion proofs of the `\bar∂`-lemma.
+local solutions in exhaustion proofs of the `\bar∂`-lemma. Post-composing with complex conjugation
+swaps `∂` and `\bar∂` up to conjugation (`TauCeti.wirtingerDeriv_conj_comp_apply`,
+`TauCeti.conjWirtingerDeriv_conj_comp_apply`), so `conj ∘ g` has vanishing complex-linear Wirtinger
+derivative whenever `g` is complex differentiable
+(`DifferentiableAt.wirtingerDeriv_conj_comp_eq_zero`).
 
 These statements connect the real differential and its type decomposition with holomorphy.
 
@@ -44,6 +48,37 @@ namespace TauCeti
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+/-- Post-composing `g : V → ℂ` with complex conjugation turns its conjugate Wirtinger derivative
+into the conjugate of the complex-linear Wirtinger derivative:
+`∂(conj ∘ g)(x) v = conj (\bar∂g(x) v)`. -/
+theorem wirtingerDeriv_conj_comp_apply (g : V → ℂ) (x v : V) :
+    wirtingerDeriv (fun y ↦ conj (g y)) x v = conj (conjWirtingerDeriv g x v) := by
+  have hcomp : (fun y ↦ conj (g y)) = (Complex.conjCLE : ℂ ≃L[ℝ] ℂ) ∘ g := rfl
+  rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply, hcomp, Complex.conjCLE.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
+    smul_eq_mul, map_mul, map_add, conj_I, map_inv₀, map_ofNat]
+  ring
+
+/-- Post-composing `g : V → ℂ` with complex conjugation turns its complex-linear Wirtinger
+derivative into the conjugate of the conjugate Wirtinger derivative:
+`\bar∂(conj ∘ g)(x) v = conj (∂g(x) v)`. -/
+theorem conjWirtingerDeriv_conj_comp_apply (g : V → ℂ) (x v : V) :
+    conjWirtingerDeriv (fun y ↦ conj (g y)) x v = conj (wirtingerDeriv g x v) := by
+  have hcomp : (fun y ↦ conj (g y)) = (Complex.conjCLE : ℂ ≃L[ℝ] ℂ) ∘ g := rfl
+  rw [conjWirtingerDeriv_apply, wirtingerDeriv_apply, hcomp, Complex.conjCLE.comp_fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
+    smul_eq_mul, map_mul, map_sub, conj_I, map_inv₀, map_ofNat]
+  ring
+
+/-- For complex differentiable `g : V → ℂ`, the conjugate map `y ↦ conj (g y)` is antiholomorphic:
+its complex-linear Wirtinger derivative vanishes. -/
+@[simp]
+theorem _root_.DifferentiableAt.wirtingerDeriv_conj_comp_eq_zero {g : V → ℂ} {x : V}
+    (hg : DifferentiableAt ℂ g x) : wirtingerDeriv (fun y ↦ conj (g y)) x = 0 := by
+  ext v
+  rw [wirtingerDeriv_conj_comp_apply, hg.conjWirtingerDeriv_eq_zero, zero_apply, map_zero,
+    zero_apply]
 
 /-- A real-differentiable map between complex normed spaces is complex differentiable
 exactly when its conjugate Wirtinger derivative vanishes. -/
