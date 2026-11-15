@@ -166,6 +166,13 @@ theorem lift_uniq (H : Set.range g.base ⊆ Set.range f.base) (l : Y ⟶ X) (hl 
     l = lift f g H := by
   rw [← cancel_mono f, hl, lift_fac]
 
+/-- The lift of an open immersion through an open immersion is an open immersion. -/
+instance isOpenImmersion_lift [IsOpenImmersion g]
+    (H : Set.range g.base ⊆ Set.range f.base) : IsOpenImmersion (lift f g H) := by
+  unfold IsOpenImmersion
+  rw [lift_toHom]
+  infer_instance
+
 end Lift
 
 section IsoOfRangeEq

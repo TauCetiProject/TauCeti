@@ -29,8 +29,10 @@ words `Spa(B, B⁺)` is the full preimage of `Spa(A, A⁺)` in `Spv B`. Combined
 points of valuation spectra along primes lying over their supports
 (`TauCeti.ValuationSpectrum.exists_supp_eq_comap_eq`), it follows that
 `Spa(B, B⁺) → Spa(A, A⁺)` hits every point whose support is the contraction of a prime of `B`. In
-particular, for a finite étale morphism of Huber pairs over a Tate ring, the image of `Spa(B, B⁺)`
-in `Spa(A, A⁺)` is cut out by the nonvanishing of an idempotent of `A` and is therefore clopen, and
+particular, for a finite étale morphism of Huber pairs over a Tate ring, combining
+`Module.exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage` with
+`PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap` shows that the image of `Spa(B, B⁺)` in
+`Spa(A, A⁺)` is cut out by the nonvanishing of an idempotent of `A` and is therefore clopen, and
 the map is surjective when `B` is faithfully flat over `A`, which is the surjectivity clause
 of the Huber pair of a finite étale algebra. Over a complete Hausdorff Tate ring every maximal
 ideal of `A` is the support of a point of `Spa(A, A⁺)`

@@ -247,6 +247,11 @@ theorem isAdic_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isAdic X) (f : Y 
     [IsOpenImmersion f] : isAdic Y :=
   ⟨isSheafy_of_isOpenImmersion hX.1 f, isLocallyAffinoid_of_isOpenImmersion hX.2 f⟩
 
+/-- **Every morphism of sheafy pre-adic spaces out of an empty space is an open immersion.** -/
+theorem isOpenImmersion_of_isEmpty {X Y : PreAdicSpace.{u}} (f : Y ⟶ X) [IsEmpty Y]
+    (hY : isSheafy Y) (hX : isSheafy X) : IsOpenImmersion f :=
+  AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isOpenImmersion_of_isEmpty f.toHom hY hX
+
 end PreAdicSpace
 
 /-- Wedhorn's category `(Adic)` of adic spaces: the full subcategory of `𝒱^pre` whose objects are
@@ -258,6 +263,11 @@ abbrev AdicSpace : Type (u + 1) :=
 pre-adic spaces. -/
 abbrev AdicSpace.toSheafyPreAdicSpace : AdicSpace.{u} ⥤ SheafyPreAdicSpace.{u} :=
   ObjectProperty.ιOfLE PreAdicSpace.isAdic_le_isSheafy
+
+/-- Every morphism in `AdicSpace` out of an empty adic space is an open immersion. -/
+instance (priority := 100) AdicSpace.isOpenImmersion_of_isEmpty {X Y : AdicSpace.{u}}
+    (f : Y ⟶ X) [IsEmpty Y.obj] : PreAdicSpace.IsOpenImmersion f.hom :=
+  PreAdicSpace.isOpenImmersion_of_isEmpty f.hom Y.property.isSheafy X.property.isSheafy
 
 namespace ValuationSpectrum
 
