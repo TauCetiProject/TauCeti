@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Complement.Invariant.Internal
 public import TauCeti.GroupTheory.Complement.Sylow
-public import TauCeti.GroupTheory.Complement.SymmetricThree
+public import TauCeti.GroupTheory.Perm.FinThree.CrossedTransfer
 import Mathlib.Data.Finite.Perm
 
 /-!
@@ -26,10 +26,11 @@ invariant-complement APIs on concrete permutations in `S₃ = Equiv.Perm (Fin 3)
   `{1, swap 0 2, swap 1 2}` is not a subgroup, and the principal twist by `finRotate 3`
   relating `c₂` to `c₀`.
 * Explicit evaluations of the unnormalized crossed transfers along the `{1, swap 0 1}` and
-  `{1, swap 1 2}` transversals, the change-of-transversal element `(finRotate 3)⁻¹`, the
-  separation between unnormalized conjugation (`⟨swap 0 1⟩ ↦ ⟨swap 0 2⟩`) and inverse-exponent
-  normalized conjugation (`⟨swap 0 1⟩ ↦ ⟨swap 1 2⟩`), and representative-independent inversion
-  of `finRotate 3` under `quotientConjugationAction`.
+  `{1, swap 1 2}` transversals, the change-of-transversal element
+  `symmetricThreeChangeTransversal 2 0 = (finRotate 3)⁻¹`, the separation between unnormalized
+  conjugation (`⟨swap 0 1⟩ ↦ ⟨swap 0 2⟩`) and inverse-exponent normalized conjugation
+  (`⟨swap 0 1⟩ ↦ ⟨swap 1 2⟩`), and representative-independent inversion of `finRotate 3` under
+  `quotientConjugationAction`.
 * Instantiations of `IsPGroup.exists_isComplement'_iff_sylow`,
   `Subgroup.exists_invariant_complement`, and `Subgroup.exists_invariant_local_complement` for
   `⟨swap 0 1⟩` acting on `S₃` with `p = 3`, `q = 2`.
@@ -165,19 +166,11 @@ theorem crossedTransfer_transversal_two_values :
   decide
 
 /-- Switching from `{1, swap 0 1}` (`a = 2`) to `{1, swap 1 2}` (`b = 0`) produces the
-unnormalized change-of-transversal element `(finRotate 3)⁻¹`, which conjugates `⟨swap 0 1⟩`
-to `⟨swap 0 2⟩` rather than `⟨swap 1 2⟩`, whereas its `e = 2` power `finRotate 3` conjugates
-`⟨swap 0 1⟩` to `⟨swap 1 2⟩`. -/
+unnormalized change-of-transversal element `symmetricThreeChangeTransversal 2 0 = (finRotate 3)⁻¹`,
+which conjugates `⟨swap 0 1⟩` to `⟨swap 0 2⟩` rather than `⟨swap 1 2⟩`, whereas its `e = 2`
+power `finRotate 3` conjugates `⟨swap 0 1⟩` to `⟨swap 1 2⟩`. -/
 theorem changeTransversal_two_to_zero_separation :
-    let d : alternatingGroup (Fin 3) :=
-      ∏ v : Perm (Fin 3) ⧸ alternatingGroup (Fin 3),
-        symmetricThreeTransversal 2 v •
-          isLocalComplement_bot_alternatingGroup_fin_three.leftProjection
-            ⟨transversalDiff (alternatingGroup (Fin 3))
-              (symmetricThreeTransversal 2) (symmetricThreeTransversal 0) v,
-              transversalDiff_mem (alternatingGroup (Fin 3))
-                (symmetricThreeTransversal 2) (symmetricThreeTransversal 0)
-                (symmetricThreeTransversal_mk 2) (symmetricThreeTransversal_mk 0) v⟩
+    let d := symmetricThreeChangeTransversal 2 0
     (d : Perm (Fin 3)) = (finRotate 3)⁻¹ ∧
       MulAut.conj (d : Perm (Fin 3)) • Subgroup.zpowers (swap (0 : Fin 3) 1) =
         Subgroup.zpowers (swap (0 : Fin 3) 2) ∧
@@ -188,7 +181,7 @@ theorem changeTransversal_two_to_zero_separation :
   intro d
   have hd : (d : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
     dsimp only [d]
-    rw [changeTransversal_element_alternatingGroup_fin_three, Subgroup.coe_pow,
+    rw [symmetricThreeChangeTransversal_eq_orbitEquiv_symm_sq, Subgroup.coe_pow,
       coe_alternatingGroupFinThreeOrbitEquiv_symm]
     decide
   have hunnorm : MulAut.conj (d : Perm (Fin 3)) • Subgroup.zpowers (swap (0 : Fin 3) 1) =
@@ -225,7 +218,8 @@ theorem quotient_mk_swap_smul_finRotate :
     rw [ne_eq, QuotientGroup.eq_one_iff, Perm.mem_alternatingGroup]
     decide
   rw [quotientConjugationAction_alternatingGroup_smul_of_ne_one h01,
-    quotientConjugationAction_alternatingGroup_smul_of_ne_one h12]
+    quotientConjugationAction_alternatingGroup_smul_of_ne_one h12, Subgroup.coe_inv,
+    Subgroup.coe_mk]
   exact ⟨rfl, rfl⟩
 
 end QuotientAction

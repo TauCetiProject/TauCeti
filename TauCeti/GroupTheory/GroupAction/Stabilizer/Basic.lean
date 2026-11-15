@@ -73,6 +73,9 @@ normality of it is equivalent to freeness of the action of the image.
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
 
+* `MulAction.conj_smul_stabilizer`: pointwise conjugation of `stabilizer G a` by `g` equals
+  `stabilizer G (g • a)`, with `MulAction.normalizer_stabilizer_of_injective` the consequence
+  that point stabilizers are self-normalizing when `stabilizer G` is injective.
 * `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
   conjugate `g T g⁻¹` depends only on `g • a`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
@@ -232,6 +235,34 @@ element of the stabilizer of `x₀`. -/
 theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
     a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
+
+end TauCeti
+
+namespace MulAction
+
+variable {G α : Type*} [Group G] [MulAction G α]
+
+open scoped Pointwise in
+/-- Pointwise conjugation of a point stabilizer moves the stabilized point by the conjugating
+element. -/
+@[simp]
+theorem conj_smul_stabilizer (g : G) (a : α) :
+    MulAut.conj g • stabilizer G a = stabilizer G (g • a) :=
+  (TauCeti.map_conj_eq_conj_smul g _).symm.trans (stabilizer_smul_eq_stabilizer_map_conj g a).symm
+
+/-- When distinct points have distinct stabilizers, every point stabilizer is self-normalizing. -/
+theorem normalizer_stabilizer_of_injective
+    (h : Function.Injective (stabilizer G : α → Subgroup G)) (a : α) :
+    Subgroup.normalizer (stabilizer G a : Set G) = stabilizer G a := by
+  ext g
+  rw [Subgroup.mem_normalizer_iff_map_conj_eq, ← MulEquiv.toMonoidHom_eq_coe,
+    ← stabilizer_smul_eq_stabilizer_map_conj, h.eq_iff, mem_stabilizer_iff]
+
+end MulAction
+
+namespace TauCeti
+
+variable {G α : Type*} [Group G] [MulAction G α]
 
 open scoped Pointwise in
 /-- If the stabilizer of `a` normalizes a subgroup `T`, then the conjugate `g T g⁻¹` depends only

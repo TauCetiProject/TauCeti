@@ -34,7 +34,9 @@ projections differ by that principal crossed map
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
 `groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
-The crossed projection is the first component of Mathlib's complement decomposition;
+The crossed projection is the first component of Mathlib's complement decomposition
+(hence sends `1` to `1`, commutes with left multiplication from `N`, ignores right
+multiplication from the complement, and satisfies `c g = n ↔ n⁻¹ * g ∈ D`);
 its quotient-splitting formula supplies the crossed identity.
 
 ## References
@@ -84,6 +86,25 @@ omit [N.Normal] in
 theorem crossedProjection_coe_right (d : D) : h.crossedProjection d = 1 :=
   h.equiv_fst_eq_one_of_mem_of_one_mem N.one_mem d.property
 
+omit [N.Normal] in
+/-- The crossed projection sends `1` to `1`. -/
+@[simp]
+theorem crossedProjection_one : h.crossedProjection 1 = 1 :=
+  congrArg Prod.fst (h.equiv_one N.one_mem D.one_mem)
+
+omit [N.Normal] in
+/-- Left multiplication by an element of `N` multiplies the crossed projection on the left. -/
+theorem crossedProjection_mul_left (n : N) (g : G) :
+    h.crossedProjection ((n : G) * g) = n * h.crossedProjection g :=
+  congrArg Prod.fst (h.equiv_mul_left n g)
+
+omit [N.Normal] in
+/-- Right multiplication by an element of the complement leaves the crossed projection
+unchanged. -/
+theorem crossedProjection_mul_right (g : G) (d : D) :
+    h.crossedProjection (g * d) = h.crossedProjection g :=
+  (Prod.ext_iff.mp (h.equiv_mul_right g d)).1
+
 theorem coe_crossedProjection (g : G) :
     (h.crossedProjection g : G) = g * (h.quotientSplitting (g : G ⧸ N))⁻¹ := by
   obtain ⟨⟨n, d⟩, rfl⟩ := h.surjective g
@@ -105,6 +126,13 @@ omit [N.Normal] in
 theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g ∈ D := by
   rw [← Subtype.coe_inj]
   exact h.coe_equiv_fst_eq_one_iff_mem N.one_mem
+
+omit [N.Normal] in
+/-- The crossed projection of `g` equals `n` if and only if `n⁻¹ * g` lies in the complement. -/
+theorem crossedProjection_eq_iff (g : G) (n : N) :
+    h.crossedProjection g = n ↔ (n : G)⁻¹ * g ∈ D := by
+  rw [eq_comm, ← inv_mul_eq_one, ← h.crossedProjection_mul_left n⁻¹ g, Subgroup.coe_inv,
+    h.crossedProjection_eq_one_iff]
 
 /-- **Equivariance of crossed projections.** The crossed projection along the conjugate
 complement `g D g⁻¹` is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the crossed projection along

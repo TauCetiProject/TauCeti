@@ -5,97 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.Complement.CrossedProjection
 
 /-!
-# Point-stabilizer conjugation and crossed projections
+# Crossed projections and orbit equivalences along point-stabilizer complements
 
-Pointwise conjugation `MulAut.conj g • MulAction.stabilizer G a` identifies the conjugate of a
-point stabilizer with `MulAction.stabilizer G (g • a)` (`MulAction.conj_smul_stabilizer`), so any
-point stabilizer is self-normalizing when distinct points have distinct stabilizers
-(`MulAction.normalizer_stabilizer_of_injective`).
+When a subgroup `N` of `G` is complemented by a point stabilizer `MulAction.stabilizer G a` (with
+no normality or commutativity assumption on `N`), the normal-factor projection
+`Subgroup.IsComplement'.crossedProjection` sends `g` to the unique element `n ∈ N` such that
+`n • a = g • a` (`Subgroup.IsComplement'.crossedProjection_stabilizer_smul`,
+`Subgroup.IsComplement'.crossedProjection_stabilizer_eq_iff`).
 
-For any subgroup `N` of `G` and complement `D` of `N` (with no normality or commutativity
-assumption), the normal-factor projection `Subgroup.IsComplement'.crossedProjection`
-satisfies `c (n * g) = n * c g` for `n ∈ N`, `c (g * d) = c g` for `d ∈ D`, and
-`c g = n ↔ n⁻¹ * g ∈ D`.
-
-When `D` is `MulAction.stabilizer G a`, `c g` is the unique element `n ∈ N` such that
-`n • a = g • a`. Evaluation at `a` therefore injects `N` into `α`, and when `G` acts
-transitively on `α` it defines an equivalence
-`Subgroup.IsComplement'.stabilizerOrbitEquiv : N ≃ α` whose inverse recovers the crossed
-projection on orbits: `e⁻¹ (g • a) = c g`.
+Evaluation at `a` therefore injects `N` into `α`
+(`Subgroup.IsComplement'.smul_stabilizer_injective`), and when `G` acts transitively on `α` it
+defines an equivalence `Subgroup.IsComplement'.stabilizerOrbitEquiv : N ≃ α` whose inverse
+recovers the crossed projection along orbits
+(`Subgroup.IsComplement'.stabilizerOrbitEquiv_symm_smul`).
 -/
 
 public section
 
-open scoped Pointwise
-
-namespace MulAction
-
-variable {G α : Type*} [Group G] [MulAction G α]
-
-/-- Pointwise conjugation of a point stabilizer moves the stabilized point by the conjugating
-element. -/
-@[simp]
-theorem conj_smul_stabilizer (g : G) (a : α) :
-    MulAut.conj g • stabilizer G a = stabilizer G (g • a) :=
-  (TauCeti.map_conj_eq_conj_smul g _).symm.trans (stabilizer_smul_eq_stabilizer_map_conj g a).symm
-
-/-- When distinct points have distinct stabilizers, every point stabilizer is self-normalizing. -/
-theorem normalizer_stabilizer_of_injective
-    (h : Function.Injective (stabilizer G : α → Subgroup G)) (a : α) :
-    Subgroup.normalizer (stabilizer G a : Set G) = stabilizer G a := by
-  ext g
-  rw [Subgroup.mem_normalizer_iff_map_conj_eq, ← MulEquiv.toMonoidHom_eq_coe,
-    ← stabilizer_smul_eq_stabilizer_map_conj, h.eq_iff, mem_stabilizer_iff]
-
-end MulAction
-
 namespace Subgroup.IsComplement'
 
-variable {G : Type*} [Group G] {N : Subgroup G}
-
-section General
-
-variable {D : Subgroup G} (h : N.IsComplement' D)
-
-/-- The crossed projection sends `1` to `1`. -/
-@[simp]
-theorem crossedProjection_one : h.crossedProjection 1 = 1 := by
-  simpa only [OneMemClass.coe_one] using h.crossedProjection_coe 1
-
-/-- Left multiplication by an element of `N` multiplies the crossed projection on the left. -/
-@[simp]
-theorem crossedProjection_mul_left (n : N) (g : G) :
-    h.crossedProjection ((n : G) * g) = n * h.crossedProjection g := by
-  obtain ⟨⟨m, d⟩, rfl⟩ := h.surjective g
-  have hmul : (n : G) * ((m : G) * d) = ((n * m : N) : G) * d := by
-    rw [Subgroup.coe_mul, mul_assoc]
-  rw [hmul, h.crossedProjection_mul, h.crossedProjection_mul]
-
-/-- Right multiplication by an element of the complement leaves the crossed projection
-unchanged. -/
-@[simp]
-theorem crossedProjection_mul_right (g : G) (d : D) :
-    h.crossedProjection (g * d) = h.crossedProjection g := by
-  obtain ⟨⟨n, d'⟩, rfl⟩ := h.surjective g
-  have hmul : (n : G) * d' * d = (n : G) * ((d' * d : D) : G) := by
-    rw [Subgroup.coe_mul, mul_assoc]
-  rw [hmul, h.crossedProjection_mul, h.crossedProjection_mul]
-
-/-- The crossed projection of `g` equals `n` if and only if `n⁻¹ * g` lies in the complement. -/
-theorem crossedProjection_eq_iff (g : G) (n : N) :
-    h.crossedProjection g = n ↔ (n : G)⁻¹ * g ∈ D := by
-  rw [eq_comm, ← inv_mul_eq_one, ← h.crossedProjection_mul_left n⁻¹ g, Subgroup.coe_inv,
-    h.crossedProjection_eq_one_iff]
-
-end General
-
-section Stabilizer
-
-variable {α : Type*} [MulAction G α] {a : α}
+variable {G α : Type*} [Group G] [MulAction G α] {N : Subgroup G} {a : α}
   (hs : N.IsComplement' (MulAction.stabilizer G a))
 
 /-- Along a point-stabilizer complement, the crossed projection of `g` acts on the base point in
@@ -146,7 +78,5 @@ theorem stabilizerOrbitEquiv_symm_smul [MulAction.IsPretransitive G α] (g : G) 
     hs.stabilizerOrbitEquiv.symm (g • a) = hs.crossedProjection g := by
   apply hs.stabilizerOrbitEquiv.injective
   rw [Equiv.apply_symm_apply, stabilizerOrbitEquiv_apply, hs.crossedProjection_stabilizer_smul]
-
-end Stabilizer
 
 end Subgroup.IsComplement'
