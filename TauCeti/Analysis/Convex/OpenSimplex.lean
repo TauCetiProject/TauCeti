@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Normed.Module.Basic
+public import TauCeti.Analysis.Convex.StdSimplex
 import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Normed.Affine.AddTorsor.Bases
 
@@ -20,7 +21,17 @@ identifies it with the set of affine combinations of `p` with all weights positi
 (`AffineIndependent.mem_intrinsicInterior_convexHull_iff`), and shows that a proper face misses
 it: a point of the open simplex lying in the convex hull of `p '' s` forces `s` to contain every
 index (`AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`). The centroid of the
-family lies in its open simplex (`AffineIndependent.centroid_mem_intrinsicInterior_convexHull`).
+family lies in its open simplex (`AffineIndependent.centroid_mem_intrinsicInterior_convexHull`),
+and its continuous affine barycentric coordinates assemble into a global affine map
+`E →ᵃ[ℝ] (ι → ℝ)` mapping the closed and open simplices into the closed and open standard simplices
+(`AffineIndependent.exists_affineMap_barycentricCoord`).
+
+For the standard simplex in `ι → ℝ`, this identifies the intrinsic interior of the face spanned by
+a set `t` of coordinate vertices `Pi.single i 1` with the points of that face whose coordinates in
+`t` are strictly positive (`TauCeti.intrinsicInterior_convexHull_pi_single`), and in particular
+identifies the intrinsic interior of the standard simplex and of each facet opposite a vertex in
+coordinates (`TauCeti.intrinsicInterior_range_stdSimplex_weights`,
+`TauCeti.intrinsicInterior_facet_stdSimplex_weights`).
 
 So the open simplices of the faces of a simplex partition it, which is what makes the open
 simplices of a geometric simplicial complex disjoint
@@ -40,6 +51,12 @@ space need not be finite-dimensional.
   in its intrinsic interior.
 * `AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull`: a proper face of a simplex
   misses its intrinsic interior.
+* `AffineIndependent.exists_affineMap_barycentricCoord`: global affine barycentric coordinate map
+  inverting `w ↦ ∑ i, w i • p i` on closed and open simplices.
+* `TauCeti.intrinsicInterior_convexHull_pi_single`,
+  `TauCeti.intrinsicInterior_range_stdSimplex_weights`,
+  `TauCeti.intrinsicInterior_facet_stdSimplex_weights`: coordinate descriptions of the intrinsic
+  interiors of coordinate faces, the standard simplex, and its facets.
 
 ## References
 
@@ -51,7 +68,7 @@ space need not be finite-dimensional.
 
 public section
 
-open Set Finset Filter Topology
+open Set Finset Filter Topology Convexity
 
 section AffineIndependent
 
@@ -125,4 +142,153 @@ theorem AffineIndependent.eq_univ_of_mem_intrinsicInterior_convexHull [Finite ι
       ((convex_singleton 0).affine_preimage (f i).toAffineMap)
   simpa [hf w hw₁ i] using hsub hs
 
+/-- **Global affine barycentric coordinates.** For any affinely independent finite family
+`p : ι → E` in a real normed space, there exists a global affine map `B : E →ᵃ[ℝ] (ι → ℝ)` which
+inverts `w ↦ ∑ i, w i • p i` on `{w | ∑ i, w i = 1}`, maps `convexHull ℝ (range p)` into the
+closed standard simplex as a right inverse to `w ↦ ∑ i, w i • p i`, and maps
+`intrinsicInterior ℝ (convexHull ℝ (range p))` into the open standard simplex. -/
+theorem AffineIndependent.exists_affineMap_barycentricCoord (hp : AffineIndependent ℝ p) :
+    ∃ B : E →ᵃ[ℝ] (ι → ℝ),
+      (∀ w : ι → ℝ, ∑ i, w i = 1 → B (∑ i, w i • p i) = w) ∧
+      (∀ x ∈ convexHull ℝ (range p),
+        B x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ∧ ∑ i, B x i • p i = x) ∧
+      (∀ x ∈ intrinsicInterior ℝ (convexHull ℝ (range p)),
+        B x ∈ {w ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ i, 0 < w i}) := by
+  classical
+  rcases isEmpty_or_nonempty ι with _ | _
+  · refine ⟨AffineMap.const ℝ E 0, fun w hw => by simp at hw, ?_, ?_⟩
+    · simp [range_eq_empty]
+    · rw [range_eq_empty]
+      simp
+  · obtain ⟨f, hf, -, -⟩ := hp.exists_continuousAffineMap_apply_affineCombination
+    let B : E →ᵃ[ℝ] (ι → ℝ) :=
+      { toFun := fun x i => f i x
+        linear := LinearMap.pi fun i => (f i).linear
+        map_vadd' := fun q v => funext fun i => (f i).toAffineMap.map_vadd q v }
+    have hleft (w : ι → ℝ) (hw : ∑ i, w i = 1) : B (∑ i, w i • p i) = w := by
+      ext i
+      have hcomb := Finset.univ.affineCombination_eq_linear_combination p w hw
+      simpa [B, hcomb] using hf w hw i
+    refine ⟨B, hleft, fun x hx => ?_, fun x hx => ?_⟩
+    · rw [convexHull_range_eq_exists_affineCombination] at hx
+      obtain ⟨s, w, hw₀, hw₁, rfl⟩ := hx
+      have hw1' : ∑ i, (s : Set ι).indicator w i = 1 := by
+        simpa [Finset.sum_indicator_subset _ s.subset_univ] using hw₁
+      have hnn (i : ι) : 0 ≤ (s : Set ι).indicator w i := by
+        by_cases hi : i ∈ s
+        · simpa [hi] using hw₀ i hi
+        · simp [hi]
+      rw [Finset.affineCombination_indicator_subset _ _ s.subset_univ,
+        Finset.affineCombination_eq_linear_combination _ _ _ hw1', hleft _ hw1']
+      exact ⟨StdSimplex.mem_range_toFun_comp_weights_iff.2 ⟨hnn, hw1'⟩, rfl⟩
+    · obtain ⟨w, hw₀, hw₁, rfl⟩ := hp.mem_intrinsicInterior_convexHull_iff.1 hx
+      rw [Finset.affineCombination_eq_linear_combination _ _ _ hw₁, hleft _ hw₁]
+      exact ⟨StdSimplex.mem_range_toFun_comp_weights_iff.2 ⟨fun i => (hw₀ i).le, hw₁⟩, hw₀⟩
+
 end AffineIndependent
+
+namespace TauCeti
+
+/-- The standard basis vectors `Pi.single i 1` are affinely independent on any subset of `ι`. -/
+theorem affineIndependent_pi_single {ι : Type*} [DecidableEq ι] (t : Set ι) :
+    AffineIndependent ℝ (fun j : t => (Pi.single (j : ι) 1 : ι → ℝ)) := by
+  refine (linearIndependent_iff'.2 fun s g hg j hjs => ?_).affineIndependent
+  have hval := congr_fun hg j.1
+  rw [Finset.sum_apply, Pi.zero_apply, Finset.sum_eq_single j] at hval
+  · simpa using hval
+  · intro k _ hkj
+    have hne : (k : ι) ≠ j.1 := fun h => hkj (Subtype.ext h)
+    simp [Pi.single_eq_of_ne' hne]
+  · exact fun hj => absurd hjs hj
+
+variable {ι : Type*} [Finite ι] [DecidableEq ι]
+
+/-- The convex hull of all standard basis vectors `Pi.single i 1` is the standard simplex. -/
+theorem convexHull_range_pi_single :
+    convexHull ℝ (range fun i : ι => (Pi.single i 1 : ι → ℝ)) =
+      range fun s : StdSimplex ℝ ι => ⇑s.weights := by
+  cases nonempty_fintype ι
+  rw [← image_univ]
+  ext x
+  rw [mem_convexHull_pi_single_iff, StdSimplex.mem_range_toFun_comp_weights_iff]
+  simp
+
+/-- The convex hull of the standard basis vectors other than `i` is the facet opposite `i`. -/
+theorem convexHull_pi_single_compl_singleton (i : ι) :
+    convexHull ℝ ((fun j : ι => (Pi.single j 1 : ι → ℝ)) '' {i}ᶜ) =
+      {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | y i = 0} := by
+  cases nonempty_fintype ι
+  ext y
+  rw [mem_convexHull_pi_single_iff, mem_sep_iff, StdSimplex.mem_range_toFun_comp_weights_iff]
+  simp [and_assoc]
+
+/-- **Open coordinate faces of the standard simplex.** The intrinsic interior of the face spanned
+by a set `t` of coordinate vertices `Pi.single i 1` consists of the points of that face whose
+coordinates in `t` are strictly positive. -/
+theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
+    intrinsicInterior ℝ (convexHull ℝ ((fun i : ι => (Pi.single i 1 : ι → ℝ)) '' t)) =
+      {x ∈ convexHull ℝ ((fun i : ι => (Pi.single i 1 : ι → ℝ)) '' t) | ∀ i ∈ t, 0 < x i} := by
+  classical
+  cases nonempty_fintype ι
+  have himg : (fun i : ι => (Pi.single i 1 : ι → ℝ)) '' t =
+      range (fun j : t => (Pi.single (j : ι) 1 : ι → ℝ)) := by
+    ext x
+    simp
+  ext x
+  refine ⟨fun hx => ⟨intrinsicInterior_subset hx, ?_⟩, fun ⟨hx, hpos⟩ => ?_⟩
+  · rw [himg, (affineIndependent_pi_single t).mem_intrinsicInterior_convexHull_iff] at hx
+    obtain ⟨w, hw0, hw1, rfl⟩ := hx
+    intro i hi
+    rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1, Finset.sum_apply,
+      Finset.sum_eq_single ⟨i, hi⟩]
+    · simpa using hw0 ⟨i, hi⟩
+    · intro j _ hji
+      have hne : (j : ι) ≠ i := fun h => hji (Subtype.ext h)
+      simp [Pi.single_eq_of_ne' hne]
+    · simp
+  · obtain ⟨_, hsum, hzero⟩ := mem_convexHull_pi_single_iff.1 hx
+    rw [himg, (affineIndependent_pi_single t).mem_intrinsicInterior_convexHull_iff]
+    have hw1 : ∑ j : t, x j.1 = 1 := by
+      have hsub : ∑ j : t, x j.1 = ∑ i ∈ univ.filter (· ∈ t), x i :=
+        (Finset.sum_subtype _ (fun _ => by simp) x).symm
+      rw [hsub, Finset.sum_filter_of_ne fun i _ hxi => by_contra fun hit => hxi (hzero i hit),
+        hsum]
+    refine ⟨fun j => x j.1, fun j => hpos j.1 j.2, hw1, ?_⟩
+    rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1]
+    ext k
+    rw [Finset.sum_apply]
+    by_cases hk : k ∈ t
+    · rw [Finset.sum_eq_single ⟨k, hk⟩]
+      · simp
+      · intro j _ hjk
+        have hne : (j : ι) ≠ k := fun h => hjk (Subtype.ext h)
+        simp [Pi.single_eq_of_ne' hne]
+      · simp
+    · have hterm : ∀ j : t, (x j.1 • (Pi.single (j : ι) 1 : ι → ℝ)) k = 0 := fun j => by
+        have hjk : (j : ι) ≠ k := fun h => hk (h ▸ j.2)
+        simp [Pi.single_eq_of_ne' hjk]
+      simp [hterm, hzero k hk]
+
+omit [DecidableEq ι] in
+/-- The intrinsic interior of the standard simplex consists of its weight vectors with all
+coordinates strictly positive. -/
+theorem intrinsicInterior_range_stdSimplex_weights :
+    intrinsicInterior ℝ (range fun s : StdSimplex ℝ ι => ⇑s.weights) =
+      {x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ i, 0 < x i} := by
+  classical
+  rw [← convexHull_range_pi_single, ← image_univ, intrinsicInterior_convexHull_pi_single]
+  simp [image_univ, convexHull_range_pi_single]
+
+omit [DecidableEq ι] in
+/-- The intrinsic interior of the facet of the standard simplex opposite `i` consists of the
+weight vectors with vanishing `i`-th coordinate and all other coordinates strictly positive. -/
+theorem intrinsicInterior_facet_stdSimplex_weights (i : ι) :
+    intrinsicInterior ℝ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | y i = 0} =
+      {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j} := by
+  classical
+  rw [← convexHull_pi_single_compl_singleton, intrinsicInterior_convexHull_pi_single,
+    convexHull_pi_single_compl_singleton]
+  ext y
+  simp [and_assoc]
+
+end TauCeti

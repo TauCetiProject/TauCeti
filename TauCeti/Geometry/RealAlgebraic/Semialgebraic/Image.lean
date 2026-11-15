@@ -35,7 +35,9 @@ gives the following consequences.
   coordinates.
 * Composing the pair of two semialgebraic functions with a polynomial map shows that pointwise
   sums, products, and differences of semialgebraic functions with finitely many output
-  coordinates are semialgebraic, and that the loci where two of them agree, or are ordered, are
+  coordinates are semialgebraic, and composing with the coordinatewise reciprocal map over a field
+  gives pointwise reciprocals and quotients (using `0⁻¹ = 0`, so no nonvanishing hypothesis is
+  needed). The loci where two semialgebraic functions agree, or are ordered, are likewise
   semialgebraic.
 
 ## Main results
@@ -62,8 +64,10 @@ All results assume projection closure, `[TauCeti.HasSemialgebraicProjections R]`
   `TauCeti.isSemialgebraicOn_sumElim_iff`: a pair is semialgebraic exactly when its components
   are, and `TauCeti.isSemialgebraicOn_pi_iff`: so is a function with finitely many output
   coordinates; `TauCeti.IsSemialgebraicOn.add`, `TauCeti.IsSemialgebraicOn.mul`,
-  `TauCeti.IsSemialgebraicOn.sub`: pointwise arithmetic.  Negation needs no projection and is
-  proved in `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function`.
+  `TauCeti.IsSemialgebraicOn.sub`, `Finset.isSemialgebraicOn_sum`, `Finset.isSemialgebraicOn_prod`,
+  `TauCeti.IsSemialgebraicOn.inv`, `TauCeti.IsSemialgebraicOn.div`: pointwise arithmetic.  Negation
+  and the coordinatewise reciprocal map itself need no projection and are proved in
+  `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function`.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq`,
   `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_le`: the loci where two semialgebraic
   functions agree, or where one is bounded above by the other, are semialgebraic.
@@ -343,6 +347,32 @@ theorem IsSemialgebraicMap.sub (hf : IsSemialgebraicMap f) (hg : IsSemialgebraic
     IsSemialgebraicMap (f - g) :=
   isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).sub (isSemialgebraicOn_univ.2 hg)
 
+/-- Given projection closure, a finite sum of semialgebraic functions on a semialgebraic domain is
+semialgebraic. -/
+theorem _root_.Finset.isSemialgebraicOn_sum {ι : Type*} {F : ι → (σ → R) → (τ → R)} (N : Finset ι)
+    (hs : IsSemialgebraic s) (hF : ∀ i ∈ N, IsSemialgebraicOn (F i) s) :
+    IsSemialgebraicOn (fun x => ∑ i ∈ N, F i x) s := by
+  classical
+  induction N using Finset.induction_on with
+  | empty => simpa using isSemialgebraicOn_const 0 hs
+  | @insert a N ha ih =>
+    have hadd := (hF a (Finset.mem_insert_self a N)).add
+      (ih fun i hi => hF i (Finset.mem_insert_of_mem hi))
+    exact hadd.congr fun x _ => by simp [ha]
+
+/-- Given projection closure, a finite product of semialgebraic functions on a semialgebraic domain
+is semialgebraic. -/
+theorem _root_.Finset.isSemialgebraicOn_prod {ι : Type*} {F : ι → (σ → R) → (τ → R)} (N : Finset ι)
+    (hs : IsSemialgebraic s) (hF : ∀ i ∈ N, IsSemialgebraicOn (F i) s) :
+    IsSemialgebraicOn (fun x => ∏ i ∈ N, F i x) s := by
+  classical
+  induction N using Finset.induction_on with
+  | empty => simpa using isSemialgebraicOn_const 1 hs
+  | @insert a N ha ih =>
+    have hmul := (hF a (Finset.mem_insert_self a N)).mul
+      (ih fun i hi => hF i (Finset.mem_insert_of_mem hi))
+    exact hmul.congr fun x _ => by simp [ha]
+
 /-- Given projection closure, the points of the common domain at which two semialgebraic
 functions agree form a semialgebraic set. -/
 theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq (hf : IsSemialgebraicOn f s)
@@ -363,5 +393,35 @@ theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_le [IsOrderedAddMonoid R]
   simp [Pi.le_def]
 
 end Operations
+
+section FieldOperations
+
+variable {K : Type*} [Field K] [LinearOrder K] [HasSemialgebraicProjections K] [Finite τ]
+  {f g : (σ → K) → (τ → K)} {s : Set (σ → K)}
+
+/-- Given projection closure over a linearly ordered field, the pointwise reciprocal of a
+semialgebraic function (with `0⁻¹ = 0`) is semialgebraic, with no nonvanishing hypothesis. -/
+theorem IsSemialgebraicOn.inv (hf : IsSemialgebraicOn f s) : IsSemialgebraicOn f⁻¹ s :=
+  (isSemialgebraicOn_inv isSemialgebraic_univ).comp hf (mapsTo_univ f s)
+
+/-- Given projection closure over a linearly ordered field, the pointwise quotient of
+semialgebraic functions (with division by zero equal to zero) is semialgebraic, with no
+nonvanishing hypothesis. -/
+theorem IsSemialgebraicOn.div (hf : IsSemialgebraicOn f s) (hg : IsSemialgebraicOn g s) :
+    IsSemialgebraicOn (f / g) s := by
+  simpa only [div_eq_mul_inv] using hf.mul hg.inv
+
+/-- Given projection closure over a linearly ordered field, the pointwise reciprocal of a
+semialgebraic map is semialgebraic. -/
+theorem IsSemialgebraicMap.inv (hf : IsSemialgebraicMap f) : IsSemialgebraicMap f⁻¹ :=
+  isSemialgebraicOn_univ.1 (isSemialgebraicOn_univ.2 hf).inv
+
+/-- Given projection closure over a linearly ordered field, the pointwise quotient of
+semialgebraic maps is semialgebraic. -/
+theorem IsSemialgebraicMap.div (hf : IsSemialgebraicMap f) (hg : IsSemialgebraicMap g) :
+    IsSemialgebraicMap (f / g) :=
+  isSemialgebraicOn_univ.1 <| (isSemialgebraicOn_univ.2 hf).div (isSemialgebraicOn_univ.2 hg)
+
+end FieldOperations
 
 end TauCeti
