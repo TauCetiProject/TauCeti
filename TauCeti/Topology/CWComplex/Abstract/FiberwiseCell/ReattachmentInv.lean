@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCellAttachment
-import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
+import TauCeti.Topology.MetricSpace.Isometry.Group
 
 /-!
 # The inverse of a fiberwise reattachment map
@@ -435,8 +435,8 @@ variable (α₀ α₁ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
 
 include h he in
 /-- The family `(p, w) ↦ (e i p)⁻¹ w` of inverse isometries of the disc. It is continuous because
-`p ↦ e i p v` is, being `p ↦ c • h i (p, c⁻¹ v)` for `c = ‖v‖ + 1`
-(`TauCeti.continuous_linearIsometryEquiv_symm_apply`). -/
+`p ↦ e i p v` is, being `p ↦ c • h i (p, c⁻¹ v)` for `c = ‖v‖ + 1`, and inversion of isometric
+equivalences is continuous for pointwise convergence (`IsometryEquiv.continuous_symm`). -/
 private def fiberwiseDiskInv (i : ι) : C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i)) where
   toFun x := (ULift.up ⟨(e i x.1).symm x.2.down.1, by
     rw [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map]
@@ -453,9 +453,11 @@ private def fiberwiseDiskInv (i : ι) : C(P × TopCat.disk.{u} (k i), TopCat.dis
           (continuous_id.prodMk continuous_const)))).congr fun p ↦ he i p (ULift.up ⟨_, hu⟩)
       exact (hcu.const_smul (‖v‖ + 1)).congr fun p ↦ by
         rw [Pi.smul_apply, ← map_smul, smul_inv_smul₀ hc.ne']
-    exact continuous_uliftUp.comp (((continuous_linearIsometryEquiv_symm_apply hcont).comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp
-        (continuous_uliftDown.comp continuous_snd)))).subtype_mk _)
+    have he' : Continuous fun p ↦ (e i p).toIsometryEquiv := IsometryEquiv.continuous_iff.2 hcont
+    have hsymm : Continuous fun x : P × EuclideanSpace ℝ (Fin (k i)) ↦ (e i x.1).symm x.2 :=
+      ((IsometryEquiv.continuous_symm.comp he').comp continuous_fst).eval continuous_snd
+    exact continuous_uliftUp.comp ((hsymm.comp (continuous_fst.prodMk (continuous_subtype_val.comp
+      (continuous_uliftDown.comp continuous_snd)))).subtype_mk _)
 
 private theorem coe_fiberwiseDiskInv_apply_down (i : ι) (x : P × TopCat.disk.{u} (k i)) :
     ((fiberwiseDiskInv h e he i x).down : EuclideanSpace ℝ (Fin (k i))) = (e i x.1).symm x.2.down :=
