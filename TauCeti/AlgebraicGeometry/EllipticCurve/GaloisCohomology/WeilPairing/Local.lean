@@ -129,6 +129,17 @@ theorem localTateKerWeilPairing_apply (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny
       h2MuEquivZMod K hn (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
 
+/-- The local Tate pairing of an isogeny, embedded in `ℚ/ℤ` by `k ↦ k/deg φ`, is the local Brauer
+invariant of the isogeny Weil cup product. The degree need only be invertible in the local field,
+not in its residue field. -/
+theorem toRatAddCircle_localTateKerWeilPairing
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    ZMod.toRatAddCircle φ.degree (φ.localTateKerWeilPairing hn a b) =
+      invMap K (φ.kerWeilBrauerPairing hn a b) := by
+  rw [φ.localTateKerWeilPairing_apply hn, φ.kerWeilBrauerPairing_apply hn]
+  exact toRatAddCircle_h2MuEquivZMod K hn _
+
 /-- The local Tate pairings are compatible with inclusion into degree-torsion and
 projection onto the dual kernel. No restriction on the residue characteristic is needed. -/
 theorem localTateKerWeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
