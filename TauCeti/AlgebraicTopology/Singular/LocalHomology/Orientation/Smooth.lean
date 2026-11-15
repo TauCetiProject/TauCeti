@@ -75,8 +75,8 @@ noncomputable section
 
 open CategoryTheory Limits Metric Module Set Topology
 open scoped Manifold
-open OpenPartialHomeomorph (mem_refl_source sourceRestrict sourceRestrict_apply
-  sourceRestrict_preimage)
+open OpenPartialHomeomorph (isOpenEmbedding_sourceRestrict mem_refl_source sourceRestrict
+  sourceRestrict_apply sourceRestrict_preimage)
 
 universe w v u
 
@@ -343,7 +343,7 @@ theorem _root_.OpenPartialHomeomorph.localOrientationTransport_localOrientationO
   -- Its pullback to `Hₙ₊₁(M, M ∖ φ.symm '' K)` through the source of `φ`.
   have : IsIso (localHomologyMap Z (sourceRestrict φ) (sourceRestrict_preimage_eq φ hKφ).subset
       (n + 1)) :=
-    isIso_localHomologyMap Z (sourceRestrict φ) φ.isOpenEmbedding_restrict
+    isIso_localHomologyMap Z (sourceRestrict φ) (isOpenEmbedding_sourceRestrict φ)
       (sourceRestrict_preimage_eq φ hKφ) hKc.isClosed
       (fun z hz ↦ ⟨⟨φ.symm z, φ.map_target (hKφ hz)⟩, φ.right_inv (hKφ hz)⟩) (n + 1)
   obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso (localHomologyMap Z (sourceRestrict φ)
@@ -418,7 +418,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
   set SW : Set W := ContinuousMap.subtypeVal W ⁻¹' {a}
   -- A class `w` on `W` which `φ` carries to the local orientation of the model at `φ a`.
   have hgφ : IsOpenEmbedding ((sourceRestrict φ).comp iφ) :=
-    φ.isOpenEmbedding_restrict.comp
+    (isOpenEmbedding_sourceRestrict φ).comp
       (IsOpenEmbedding.inclusion (inter_subset_left.trans inter_subset_right)
         (hWo.preimage continuous_subtype_val))
   have hgφS : (sourceRestrict φ).comp iφ ⁻¹' {φ a} = SW := by
