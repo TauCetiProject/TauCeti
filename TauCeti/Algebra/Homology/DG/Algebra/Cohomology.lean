@@ -57,10 +57,7 @@ cycles; its underlying ideal is two-sided, so the cohomology algebra uses Mathli
   algebra carrying the zero differential with its own cohomology matches the two gradings
   degreewise.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 1, item "DG algebras, categories,
-modules, and bimodules", specifically its first request for "cycles, boundaries, and the induced
-graded cohomology algebra".  The induced grading reuses
-`TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece` from
+The induced grading reuses `TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece` from
 `TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient`, whose construction follows Mathlib PR
 [#36501](https://github.com/leanprover-community/mathlib4/pull/36501) by Antoine Chambert-Loir.
 

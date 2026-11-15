@@ -83,10 +83,6 @@ open Finset
 
 variable {k l k' l' k'' l'' : ℕ}
 
--- Source: the names and the three-block shape of `MixedExponent`, the coordinate formula
--- `mixedMonomialMap`, the locus `mixedChartDomain` and the block-matrix composition law
--- follow the target signatures in `AnalyticToricGeometry/Suggested.lean` of the
--- TauCetiProject/TauCetiRoadmap repository.
 /-- Exponent data for a mixed monomial map `ℂ ^ k × (ℂ ^ *) ^ l → ℂ ^ k' × (ℂ ^ *) ^ l'`.
 
 The three blocks are the only admissible ones. A boundary coordinate of the source, which may

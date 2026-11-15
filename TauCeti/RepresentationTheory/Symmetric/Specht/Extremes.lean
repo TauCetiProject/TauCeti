@@ -73,8 +73,6 @@ either; it is not a line and needs the tabloid combinatorics of the two-row shap
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4.
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "the named small irreducibles", and Layer 6, the special values of the Specht character.
 -/
 
 public section

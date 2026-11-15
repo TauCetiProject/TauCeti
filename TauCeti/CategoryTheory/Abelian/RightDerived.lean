@@ -34,12 +34,12 @@ extends to one of `X` (`CategoryTheory.InjectiveResolution.ofShortExact`), which
 right derived functors by one degree:
 
 * `R^{n+2} G (X) ≅ R^{n+1} G (Q)` (`CategoryTheory.Functor.rightDerivedObjX₁IsoOfShortExact`), so
-  if `R^{n+2} G (X)` vanishes, so does `R^{n+1} G (Q)`
-  (`CategoryTheory.Functor.isZero_rightDerived_obj_X₃_of_isZero`);
+  `R^{n+1} G (Q)` vanishes if and only if `R^{n+2} G (X)` does
+  (`CategoryTheory.Functor.isZero_rightDerived_obj_X₃_iff`);
 * if `G` is left exact, then `G I ⟶ G Q` is an epimorphism if and only if `R¹ G (X)` vanishes
-  (`CategoryTheory.Functor.epi_map_g_iff_isZero_rightDerived_one`), so if `R¹ G (X)` vanishes,
-  then `0 ⟶ G X ⟶ G I ⟶ G Q ⟶ 0` is short exact
-  (`CategoryTheory.Functor.shortExact_map_of_isZero_rightDerived_one`).
+  (`CategoryTheory.Functor.epi_map_g_iff_isZero_rightDerived_one`), so
+  `0 ⟶ G X ⟶ G I ⟶ G Q ⟶ 0` is short exact if and only if `R¹ G (X)` vanishes
+  (`CategoryTheory.Functor.shortExact_map_iff_isZero_rightDerived_one`).
 
 These are the dimension-shifting steps of inductive arguments on vanishing derived functors,
 such as Leray's acyclicity theorem.
@@ -166,11 +166,10 @@ noncomputable def rightDerivedObjX₁IsoOfShortExact (n : ℕ) :
 
 include hS in
 /-- **Dimension shifting.** For a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I` injective,
-if `R^{n+2} G (X)` vanishes, so does `R^{n+1} G (Q)`. -/
-theorem isZero_rightDerived_obj_X₃_of_isZero (n : ℕ)
-    (h : IsZero ((G.rightDerived (n + 2)).obj S.X₁)) :
-    IsZero ((G.rightDerived (n + 1)).obj S.X₃) :=
-  h.of_iso (G.rightDerivedObjX₁IsoOfShortExact hS n).symm
+`R^{n+1} G (Q)` vanishes if and only if `R^{n+2} G (X)` does. -/
+theorem isZero_rightDerived_obj_X₃_iff (n : ℕ) :
+    IsZero ((G.rightDerived (n + 1)).obj S.X₃) ↔ IsZero ((G.rightDerived (n + 2)).obj S.X₁) :=
+  (G.rightDerivedObjX₁IsoOfShortExact hS n).isZero_iff.symm
 
 include hS in
 /-- **Dimension shifting in degree one.** For a left exact functor `G` and a short exact sequence
@@ -202,12 +201,13 @@ theorem epi_map_g_iff_isZero_rightDerived_one [PreservesFiniteLimits G] :
 
 include hS in
 /-- For a left exact functor `G` and a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I`
-injective, if `R¹ G (X)` vanishes, then `0 ⟶ G X ⟶ G I ⟶ G Q ⟶ 0` is short exact. -/
-theorem shortExact_map_of_isZero_rightDerived_one [PreservesFiniteLimits G]
-    (h : IsZero ((G.rightDerived 1).obj S.X₁)) : (S.map G).ShortExact :=
-  { exact := hS.exact.map_of_mono_of_preservesKernel G hS.mono_f inferInstance
-    mono_f := have := hS.mono_f; inferInstanceAs (Mono (G.map S.f))
-    epi_g := (G.epi_map_g_iff_isZero_rightDerived_one hS).2 h }
+injective, `0 ⟶ G X ⟶ G I ⟶ G Q ⟶ 0` is short exact if and only if `R¹ G (X)` vanishes. -/
+theorem shortExact_map_iff_isZero_rightDerived_one [PreservesFiniteLimits G] :
+    (S.map G).ShortExact ↔ IsZero ((G.rightDerived 1).obj S.X₁) :=
+  ⟨fun h ↦ (G.epi_map_g_iff_isZero_rightDerived_one hS).1 h.epi_g, fun h ↦
+    { exact := hS.exact.map_of_mono_of_preservesKernel G hS.mono_f inferInstance
+      mono_f := have := hS.mono_f; inferInstanceAs (Mono (G.map S.f))
+      epi_g := (G.epi_map_g_iff_isZero_rightDerived_one hS).2 h }⟩
 
 end Functor
 

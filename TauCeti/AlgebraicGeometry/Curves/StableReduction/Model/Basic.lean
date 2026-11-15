@@ -33,9 +33,6 @@ namespace TauCeti
 
 universe u
 
--- The categorical packaging below adapts the target signature in
--- `TauCetiRoadmap/StableReduction/Suggested.lean`.
-
 /-- A flat finitely presented model over a discrete valuation ring, together with an explicit
 identification of its generic fibre with a fixed scheme over the fraction field.
 

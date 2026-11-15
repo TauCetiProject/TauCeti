@@ -45,6 +45,8 @@ laws apply to rectangular maps.
 * `ContinuousLinearMap.singularValue_add_index_le`: `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_add_le_mul`: `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_comp_le`: `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`.
+* `ContinuousLinearMap.singularValue_comp_comp_le_of_norm_le_one`: `aₙ(A T B) ≤ aₙ(T)` for
+  contractions `A` and `B`.
 * `ContinuousLinearMap.singularValue_smul`: `aₙ(c T) = ‖c‖ aₙ(T)`.
 * `ContinuousLinearMap.lipschitzWith_singularValue`: `T ↦ aₙ(T)` is `1`-Lipschitz.
 * `ContinuousLinearMap.kyFanGauge`: the Ky Fan gauge `Kₖ(T) = ∑_{n<k} aₙ(T)`.
@@ -175,7 +177,7 @@ theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
       rw [Nat.cast_add]
       exact (LinearMap.rank_add_le _ _).trans (add_le_add R₁.2 R₂.2)).trans <| by
       rw [add_sub_add_comm]
-      exact nnnorm_add_le _ _
+      exact nnNorm_add_le _ _
 
 /-- **Perturbative triangle bound.** `aₙ(S + T) ≤ aₙ(S) + ‖T‖`. -/
 theorem singularValue_add_le (S T : E →L[𝕜] F) (n : ℕ) :
@@ -234,6 +236,17 @@ theorem singularValue_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B 
     gcongr
     exact T.singularValue_comp_le_right B n
 
+/-- **Compression by contractions.** `aₙ(A T B) ≤ aₙ(T)` when `‖A‖ ≤ 1` and `‖B‖ ≤ 1`. -/
+theorem singularValue_comp_comp_le_of_norm_le_one {A : G →L[𝕜] H} {B : E →L[𝕜] F}
+    (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (T : F →L[𝕜] G) (n : ℕ) :
+    (A.comp (T.comp B)).singularValue n ≤ T.singularValue n := by
+  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
+  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
+  calc (A.comp (T.comp B)).singularValue n ≤ ‖A‖₊ * T.singularValue n * ‖B‖₊ :=
+        A.singularValue_comp_comp_le T B n
+    _ ≤ 1 * T.singularValue n * 1 := by gcongr
+    _ = T.singularValue n := by simp
+
 /-- **Mixed-index product inequality.** `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`. -/
 theorem singularValue_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
     (S.comp T).singularValue (m + n) ≤ S.singularValue m * T.singularValue n := by
@@ -267,7 +280,7 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
     refine le_ciInf fun R ↦ ((c • T).singularValue_le_nnnorm_sub (R := c • R.1)
       ((Submodule.rank_mono (LinearMap.range_smul_le_range _ c)).trans R.2)).trans ?_
     rw [← smul_sub]
-    exact nnnorm_smul_le _ _
+    exact nnNorm_smul_le _ _
   refine (hle c T).antisymm ?_
   rcases eq_or_ne c 0 with rfl | hc
   · simp
@@ -275,7 +288,7 @@ theorem singularValue_smul (c : 𝕜) (T : E →L[𝕜] F) (n : ℕ) :
         rw [inv_smul_smul₀ hc]
     _ ≤ ‖c‖₊ * (‖c⁻¹‖₊ * (c • T).singularValue n) := by gcongr; exact hle _ _
     _ = (c • T).singularValue n := by
-        rw [← mul_assoc, nnnorm_inv, mul_inv_cancel₀ (nnnorm_ne_zero_iff.mpr hc), one_mul]
+        rw [← mul_assoc, nnNorm_inv, mul_inv_cancel₀ (nnNorm_ne_zero_iff.mpr hc), one_mul]
 
 /-! ### The Ky Fan gauge -/
 

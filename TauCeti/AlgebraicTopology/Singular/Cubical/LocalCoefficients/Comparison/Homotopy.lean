@@ -283,7 +283,7 @@ private lemma cubeCubicalPushforward_cubicalHomotopyGen_eq_zero {n : ℕ} {c : S
     have h0 := map_forgetCoordinate_cubicalHomotopyGen.{v} i
     -- Transport the generator along the projection `g` of the model.
     set g : cubeModel.{v} (m + 1) ⟶ cubeModel.{v} m := cubeToHom ((upCube.{v} m).comp
-      (SingularCube.forgetCoordinate i)) with hg
+      (SingularCube.forgetCoordinate i))
     have key := NormalizedTwistedCubicalChain.pushforward_map (L := L)
       (f := (cubeToHom s).hom) (z₀ := cubeModelOrigin m) (Z' := cubeModel.{v} (m + 1)) g.hom
       (cubeModelOrigin (m + 1)) (cubicalHomotopyGen (m + 1)) a

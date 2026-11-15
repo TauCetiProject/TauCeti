@@ -50,7 +50,8 @@ theorem withDensity_fst_compProd_eq_iff (ρ : Measure (α × β)) [SFinite ρ.fs
     (hg : Measurable g) (hpos : ∀ x, 0 < g x) :
     (ρ.withDensity (fun p ↦ (g p.1 : ℝ≥0∞))).fst ⊗ₘ κ =
         ρ.withDensity (fun p ↦ (g p.1 : ℝ≥0∞)) ↔ ρ.fst ⊗ₘ κ = ρ := by
-  rw [fst_withDensity ρ hg.coe_nnreal_ennreal, withDensity_compProd hg.coe_nnreal_ennreal]
+  rw [fst_withDensity ρ hg.coe_nnreal_ennreal.aemeasurable,
+    withDensity_compProd hg.coe_nnreal_ennreal]
   constructor
   · intro h
     have hinv (μ : Measure (α × β)) :
@@ -73,7 +74,7 @@ theorem exists_isMarkovKernel_compProd_eq (ρ : Measure (α × β)) [SigmaFinite
   obtain ⟨g, hpos, hg, hint⟩ := exists_pos_lintegral_lt_of_sigmaFinite ρ.fst one_ne_zero
   let σ := ρ.withDensity (fun p ↦ (g p.1 : ℝ≥0∞))
   have : IsFiniteMeasure σ :=
-    ρ.isFiniteMeasure_withDensity_fst hg.coe_nnreal_ennreal (hint.trans_le le_top)
+    ρ.isFiniteMeasure_withDensity_fst hg.coe_nnreal_ennreal.aemeasurable hint.ne_top
   exact ⟨σ.condKernel, inferInstance,
     (withDensity_fst_compProd_eq_iff ρ σ.condKernel hg hpos).1 (σ.disintegrate σ.condKernel)⟩
 
@@ -104,7 +105,7 @@ theorem eq_sigmaFiniteCondKernel_of_measure_eq_compProd
   obtain ⟨g, hpos, hg, hint⟩ := exists_pos_lintegral_lt_of_sigmaFinite ρ.fst one_ne_zero
   let σ := ρ.withDensity (fun p ↦ (g p.1 : ℝ≥0∞))
   have : IsFiniteMeasure σ :=
-    ρ.isFiniteMeasure_withDensity_fst hg.coe_nnreal_ennreal (hint.trans_le le_top)
+    ρ.isFiniteMeasure_withDensity_fst hg.coe_nnreal_ennreal.aemeasurable hint.ne_top
   have h₁ := ProbabilityTheory.eq_condKernel_of_measure_eq_compProd κ
     ((withDensity_fst_compProd_eq_iff ρ κ hg hpos).2 hκ).symm
   have h₂ := ProbabilityTheory.eq_condKernel_of_measure_eq_compProd ρ.sigmaFiniteCondKernel
@@ -112,7 +113,7 @@ theorem eq_sigmaFiniteCondKernel_of_measure_eq_compProd
       (compProd_fst_sigmaFiniteCondKernel ρ)).symm
   have heq : κ =ᵐ[σ.fst] ρ.sigmaFiniteCondKernel := by
     filter_upwards [h₁, h₂] with x hx₁ hx₂ using hx₁.trans hx₂.symm
-  rw [fst_withDensity ρ hg.coe_nnreal_ennreal, Filter.EventuallyEq,
+  rw [fst_withDensity ρ hg.coe_nnreal_ennreal.aemeasurable, Filter.EventuallyEq,
     ae_withDensity_iff hg.coe_nnreal_ennreal] at heq
   filter_upwards [heq] with x hx
   exact hx (by exact_mod_cast (hpos x).ne')

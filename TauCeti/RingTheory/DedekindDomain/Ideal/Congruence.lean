@@ -75,7 +75,7 @@ def congruenceSubgroup (m : Ideal R) (K : Type*) [Field K] [Algebra R K]
       WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ))
   exact {
     carrier := {x | P x}
-    one_mem' := by intro v hv; simp
+    one_mem' := by intro v _; simp
     mul_mem' := by
       intro x y hx hy v hv
       have hxy : ((x * y : Kˣ) : K) - 1 = (x : K) * ((y : K) - 1) + ((x : K) - 1) := by

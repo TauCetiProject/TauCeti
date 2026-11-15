@@ -233,7 +233,6 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
       C.polyads = univ ∧ H.TopRegularOverMostPolyads C δ ε (r C.complexity) := by
   have := Fintype.ofFinite κ
   set q : ℝ := (Nat.card κ : ℝ)
-  have hq : 0 ≤ q := Nat.cast_nonneg _
   set γ := ε * δ ^ 2 / (4 * (q + 1))
   have hγ : 0 < γ := by positivity
   obtain ⟨C, D, π, f, hCcard, -, hCV, hDV, hπ, hrev, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=

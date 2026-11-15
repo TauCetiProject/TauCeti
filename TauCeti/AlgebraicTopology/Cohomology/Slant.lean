@@ -38,6 +38,13 @@ by the class of a point of `X` is a class of degree two on `Y`, and the slant by
 class of degree one on `Y`; these are the point and loop classes of universal line bundles over
 moduli spaces.
 
+The slant product by the class `[x₀]` of a point is restriction to the slice `{x₀} × Y`:
+`φ / [x₀] = ι_{x₀}^* φ` for the inclusion `ι_{x₀} : y ↦ (x₀, y)`
+(`TopCat.singularSlant_singularHomology₀Section`). By naturality `φ / [x₀]` is the slant of the
+pullback of `φ` to `pt × Y` by the class of the point, and every class on `pt × Y` is pulled back
+from `Y`. So the point class `c₁(U) / [x₀]` of a line bundle `U` on `X × Y` is the restriction
+of `c₁(U)` to `{x₀} × Y`.
+
 On classes pulled back from one factor the slant product is computed by the cohomology of a point:
 
 * a class `pr₁^* a` pulled back from `X` has `pr₁^* a / x = 0` whenever `q ≠ 0`
@@ -102,6 +109,8 @@ cup product `pr₁^* a ⌣ pr₂^* c` are those of the cross product `a × c`
   pulled back from `Y` by the class of a point of `X`, restated for the point classes
   `TauCeti.singularHomology₀Section` in
   `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self`.
+* `TopCat.singularSlant_singularHomology₀Section`: the slant product by the class of a point is
+  restriction to the slice through the point.
 * `TopCat.singularSlant_eq_slant`: through Eilenberg–Zilber, the slant product is the slant
   product on the tensor product of singular chain complexes.
 * `TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne` and
@@ -257,11 +266,11 @@ theorem singularSlant_singularCohomologyMap_fst_eq_zero (X Y : TopCat.{w}) (u : 
       (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) n a) = 0 := by
   -- `pr₁ = pr₁ ∘ (𝟙 × g)` for the map `g` from `Y` to a point, and slant products of classes on
   -- `X × pt` lie in `H^q(pt) = 0`
-  let g : Y ⟶ TopCat.of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
-  rw [← CartesianMonoidalCategory.whiskerLeft_fst X g, TopCat.singularCohomologyMap_comp,
+  let g : Y ⟶ of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
+  rw [← CartesianMonoidalCategory.whiskerLeft_fst X g, singularCohomologyMap_comp,
     ConcreteCategory.comp_apply, ← id_tensorHom, singularSlant_naturality]
   have := ModuleCat.subsingleton_of_isZero
-    (TauCeti.isZero_singularCohomology_point S k M (TopCat.of PUnit.{w + 1}) hq)
+    (TauCeti.isZero_singularCohomology_point S k M (of PUnit.{w + 1}) hq)
   rw [Subsingleton.elim (singularSlant k M X _ u p q n h _ _) 0, map_zero]
 
 /-- **A class pulled back from the second factor has no slant products by classes of positive
@@ -275,12 +284,12 @@ theorem singularSlant_singularCohomologyMap_snd_eq_zero (X Y : TopCat.{w}) (u : 
     singularSlant k M X Y u p q n h x
       (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) n b) = 0 := by
   -- `pr₂ = pr₂ ∘ (f × 𝟙)` for the map `f` from `X` to a point, and `f_* x ∈ Hₚ(pt) = 0`
-  let f : X ⟶ TopCat.of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
-  rw [← CartesianMonoidalCategory.whiskerRight_snd f Y, TopCat.singularCohomologyMap_comp,
+  let f : X ⟶ of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
+  rw [← CartesianMonoidalCategory.whiskerRight_snd f Y, singularCohomologyMap_comp,
     ConcreteCategory.comp_apply, ← tensorHom_id, singularSlant_naturality]
   have := ModuleCat.subsingleton_of_isZero
     (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace (ModuleCat.{w} k) p R
-      (TopCat.of PUnit.{w + 1}) hp)
+      (of PUnit.{w + 1}) hp)
   rw [Subsingleton.elim (((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).map f x) 0,
     map_zero, LinearMap.zero_apply, map_zero]
 
@@ -341,7 +350,7 @@ theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_se
     singularSlant k M X Y u 0 q q (zero_add q) (TauCeti.singularHomology₀Section R x₀ r)
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b) = b := by
   let z := ((toSSet.obj X).chainComplex R).liftCycles
-    ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp) r
+    ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp) r
   have hx : TauCeti.singularHomology₀Section R x₀ r =
       ((toSSet.obj X).chainComplex R).homologyπ 0 z := by
     rw [TauCeti.singularHomology₀Section_def, SSet.ιHomology₀_def]
@@ -349,11 +358,52 @@ theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_se
     rfl
   rw [hx]
   exact singularSlant_homologyπ_singularCohomologyMap_snd_eq_self M X Y u q z
-    (TopCat.toSSetObj₀Equiv.symm x₀) r
+    (toSSetObj₀Equiv.symm x₀) r
     (ConcreteCategory.congr_hom (HomologicalComplex.liftCycles_i ((toSSet.obj X).chainComplex R)
-      ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) r)
+      ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) r)
     hu b
 
+/-- **The slant product by the class of a point is restriction to the slice**: for the class
+`[x₀] ∈ H₀(X; R)` of a point `x₀` with coefficient `r`, along a coefficient map `u : R ⊗ S ⟶ S`
+with `u (r ⊗ s) = s`, the slant product `φ / [x₀]` of `φ ∈ H^q(X × Y; S, M)` is the restriction
+of `φ` along the inclusion `y ↦ (x₀, y)` of the slice `{x₀} × Y`. For a line bundle `U` on
+`X × Y`, the point class `c₁(U) / [x₀]` is thus the restriction of `c₁(U)` to `{x₀} × Y`. -/
+theorem singularSlant_singularHomology₀Section (X Y : TopCat.{w}) (u : R ⊗ S ⟶ S) (q : ℕ)
+    (x₀ : X) (r : R) (hu : ∀ s, u (r ⊗ₜ s) = s) (φ : (X ⊗ Y).singularCohomology S k M q) :
+    singularSlant k M X Y u 0 q q (zero_add q) (TauCeti.singularHomology₀Section R x₀ r) φ =
+      TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y x₀)) (𝟙 Y)) q φ := by
+  -- `[x₀]` is the image of the point class of `pt` under `f : pt ⟶ X`, so by naturality `φ / [x₀]`
+  -- is the slant by `[pt]` of `(f × 𝟙)^* φ`. On `pt × Y` every class is pulled back from `Y`
+  -- along the projection, whose inverse is `s : Y ⟶ pt × Y`, and slanting a pulled-back class by
+  -- `[pt]` returns it.
+  let P := TopCat.of PUnit.{w + 1}
+  let f : P ⟶ X := ofHom (ContinuousMap.const P x₀)
+  let s : Y ⟶ P ⊗ Y :=
+    CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y PUnit.unit)) (𝟙 Y)
+  have hs : CartesianMonoidalCategory.snd P Y ≫ s = 𝟙 _ := by
+    -- the first components are maps into the point
+    refine CartesianMonoidalCategory.hom_ext _ _ ?_ (by simp [s])
+    ext
+  have hf : s ≫ (f ⊗ₘ 𝟙 Y) =
+      CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y x₀)) (𝟙 Y) := by
+    refine CartesianMonoidalCategory.hom_ext _ _ ?_ (by simp [s])
+    ext y
+    simp [s, f]
+  have hx : TauCeti.singularHomology₀Section R x₀ r =
+      ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj R).map f
+        (TauCeti.singularHomology₀Section R PUnit.unit r) :=
+    (ConcreteCategory.congr_hom (TauCeti.singularHomology₀Section_naturality R f PUnit.unit) r).symm
+  have hφ : TopCat.singularCohomologyMap (f ⊗ₘ 𝟙 Y) q φ =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd P Y) q
+        (TopCat.singularCohomologyMap s q (TopCat.singularCohomologyMap (f ⊗ₘ 𝟙 Y) q φ)) := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
+      TopCat.singularCohomologyMap_id, ModuleCat.id_apply]
+  have h := singularSlant_naturality M f (𝟙 Y) u 0 q q (zero_add q)
+    (TauCeti.singularHomology₀Section R PUnit.unit r) φ
+  rw [TopCat.singularCohomologyMap_id, ModuleCat.id_apply, ← hx, hφ,
+    singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self M P Y u q _ r hu] at h
+  rw [← h, ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hf]
 
 /-- **The slant product through Eilenberg–Zilber**: slanting a class `φ` of `X × Y` by `x` is
 slanting its image `shuffle^* φ` in the cohomology of `Hom(C(X; R) ⊗ C(Y; S), M)` by `x` along the
@@ -423,10 +473,7 @@ theorem singularSlant_singularCross_leftUnitor (X Y : TopCat.{w}) {N : ModuleCat
         exact (congrArg (ModuleCat.Hom.hom (λ_ N).hom)
           (TauCeti.ModuleCat.tensorMk_apply (N := N) r v)).trans
             (ModuleCat.MonoidalCategory.leftUnitor_hom_apply r v))
-    ext i (c : ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{w} k))).X i ⟶ _)
-    -- both sides send a cochain `c` to `r • c`
-    simp [hr]
-    rfl
+    rw [hr, ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id]
   -- `r • 𝟙` on cohomology is `r • id`
   rw [hmap, HomologicalComplex.homologyMap_smul, homologyMap_id]
   rfl

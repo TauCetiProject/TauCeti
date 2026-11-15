@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
+public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Group.Real
 import Mathlib.Data.Fintype.Powerset
 
 /-!
@@ -104,5 +106,13 @@ theorem coe_realizationHomeomorphRange_symm_apply (hfin : K.faces.Finite)
     (y : range fun x : Realization K => (x.1 : ι → ℝ)) :
     (((K.realizationHomeomorphRange hfin).symm y).1 : ι → ℝ) = y :=
   congrArg Subtype.val ((K.realizationHomeomorphRange hfin).apply_symm_apply y)
+
+/-- Distances in the coordinate image of `|K|` are distances of barycentric coordinates. -/
+theorem dist_eq_norm_realizationHomeomorphRange_symm [Fintype ι] (hfin : K.faces.Finite)
+    (p q : range fun x : Realization K => (x.1 : ι → ℝ)) :
+    dist p q = ‖(((K.realizationHomeomorphRange hfin).symm p).1 : ι → ℝ) -
+      ((K.realizationHomeomorphRange hfin).symm q).1‖ := by
+  rw [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_symm_apply,
+    coe_realizationHomeomorphRange_symm_apply]
 
 end AbstractSimplicialComplex

@@ -79,11 +79,7 @@ theorem locallyIntegrable_newtonianKernel (n : ℕ) :
   · rcases h with rfl | rfl
     · rw [newtonianKernel_zero_function]
       exact locallyIntegrable_zero
-    · have hzero : newtonianKernel 2 = 0 := by
-        funext x
-        rw [newtonianKernel_def]
-        norm_num
-      rw [hzero]
+    · rw [newtonianKernel_two]
       exact locallyIntegrable_zero
   · have hn : n = 1 ∨ 3 ≤ n := by omega
     rcases hn with rfl | hn
@@ -133,11 +129,7 @@ private lemma locallyIntegrable_fderiv_newtonianKernel_of_eq_zero_or_two (n : �
     simpa only [Pi.zero_apply] using
       (locallyIntegrable_const (μ := volume)
         (0 : EuclideanSpace ℝ (Fin 0) →L[ℝ] ℝ))
-  · have hzero : newtonianKernel 2 = 0 := by
-      funext x
-      rw [newtonianKernel_def]
-      norm_num
-    rw [hzero]
+  · rw [newtonianKernel_two]
     simp only [fderiv_zero]
     simpa only [Pi.zero_apply] using
       (locallyIntegrable_const (μ := volume)

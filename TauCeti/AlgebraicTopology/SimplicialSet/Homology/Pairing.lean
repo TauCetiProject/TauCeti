@@ -38,6 +38,7 @@ out of tensor products of simplicial chains, such as the shuffle map.
   identification `F(C(X; R)) ≅ C(X; F(R))` on the summand of a simplex.
 * `SSet.chainComplexPairing`: the chain map `M ⊗ C(X; S) ⟶ C(X; P)` induced by `μ`.
 * `SSet.whiskerLeft_ιChainComplex_chainComplexPairing_f`: its value on the summand of a simplex.
+* `SSet.isIso_chainComplexPairing`: an invertible pairing induces an isomorphism of chains.
 * `SSet.chainComplexPairing_leftUnitor_hom_f`: the tensor unit acts on chains by the left unitor.
 * `SSet.chainComplexPairing_naturality`: it is natural in the simplicial set.
 * `SSet.chainComplexPairing_comp_chainComplexFunctor_map_app`,
@@ -138,6 +139,12 @@ def chainComplexPairing (X : SSet.{w}) (μ : M ⊗ S ⟶ P) :
     ((tensorLeft M).mapHomologicalComplex _).obj (X.chainComplex S) ⟶ X.chainComplex P :=
   (chainComplexFunctorObjCompMapIso (tensorLeft M) S).hom.app X ≫
     ((chainComplexFunctor C).map μ).app X
+
+/-- The chain map induced by an invertible coefficient pairing is an isomorphism. -/
+instance isIso_chainComplexPairing (X : SSet.{w}) (μ : M ⊗ S ⟶ P) [IsIso μ] :
+    IsIso (X.chainComplexPairing μ) := by
+  rw [chainComplexPairing]
+  infer_instance
 
 /-- The chain map induced by a coefficient pairing `μ` sends the summand `M ⊗ S` of a simplex `x`
 to the summand `P` of `x` through `μ`. -/

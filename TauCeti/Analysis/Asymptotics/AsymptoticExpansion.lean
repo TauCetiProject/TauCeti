@@ -5,7 +5,6 @@ Authors: Bastiaan J Braams
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -159,10 +158,6 @@ theorem hasAsymptoticExpansion_zero_iff {f : α → E} :
     HasAsymptoticExpansion l φ 0 f ↔ ∀ N, f =O[l] φ N := by
   simp [hasAsymptoticExpansion_iff]
 
-/-- A scalar function times a constant vector is big-O of the scalar function. -/
-private theorem smul_const_isBigO (u : α → 𝕜) (c : E) : (fun x => u x • c) =O[l] u :=
-  IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => by rw [norm_smul, mul_comm])
-
 namespace HasAsymptoticExpansion
 
 variable {a b : ℕ → E} {f g : α → E}
@@ -266,7 +261,7 @@ theorem single_zero (c : E) :
     HasAsymptoticExpansion l φ (Pi.single 0 c) (fun x => φ 0 x • c) := by
   intro N
   rcases N with _ | N
-  · simpa using smul_const_isBigO (φ 0) c
+  · simpa using IsBigO.smul_const_self (φ 0) c
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq'] using isBigO_zero (φ (N + 1)) l
 
 /-- If, for every `N`, the remainder after `N + 1` terms is `o(φ N)`, then `f` has the
@@ -275,7 +270,7 @@ property. -/
 theorem of_isLittleO
     (h : ∀ N, (fun x => f x - ∑ n ∈ range (N + 1), φ n x • a n) =o[l] φ N) :
     HasAsymptoticExpansion l φ a f := fun N =>
-  ((h N).isBigO.add (smul_const_isBigO (φ N) (a N))).congr_left fun x => by
+  ((h N).isBigO.add (IsBigO.smul_const_self (φ N) (a N))).congr_left fun x => by
     rw [sum_range_succ]; abel
 
 /-- For an asymptotic scale, the remainder after `N + 1` terms is `o(φ N)`. -/
@@ -313,7 +308,7 @@ theorem IsAsymptoticScale.hasAsymptoticExpansion_single (hφ : IsAsymptoticScale
   by_cases hk : k < N
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq', hk] using isBigO_zero (φ N) l
   · simpa [Pi.single_apply, smul_ite, sum_ite_eq', hk] using
-      (smul_const_isBigO (φ k) c).trans (hφ.isBigO_of_le (not_lt.mp hk))
+      (IsBigO.smul_const_self (φ k) c).trans (hφ.isBigO_of_le (not_lt.mp hk))
 
 /-- For an asymptotic scale, an expansion is the same as `o(φ N)` remainders after `N + 1`
 terms. -/

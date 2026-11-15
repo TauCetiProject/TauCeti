@@ -25,8 +25,9 @@ transported without changing the topological quotient it defines.
 
 A closed subgroup `H` of `A × G` projecting onto `G`, that is with `∀ g, ∃ a, (a, g) ∈ H`, is a
 closed relation from `G` to `A` defined everywhere. When `A` is compact, the fibre
-`{a | (a, g) ∈ H}` over each `g` is compact, so along a chain of such subgroups the fibres of the
-intersection are nonempty, and Zorn's lemma supplies a minimal such subgroup below any given one.
+`{a | (a, g) ∈ H}` over each `g` is compact, so along a downward-directed family (in particular a
+chain) of such subgroups the fibres of the intersection are nonempty, and Zorn's lemma supplies a
+minimal such subgroup below any given one.
 
 ## Main definitions
 
@@ -38,8 +39,8 @@ intersection are nonempty, and Zorn's lemma supplies a minimal such subgroup bel
 
 ## Main results
 
-* `Subgroup.forall_exists_mem_sInf_of_isChain`: the intersection of a chain of closed subgroups
-  of `A × G` projecting onto `G` still projects onto `G`.
+* `Subgroup.forall_exists_mem_sInf_of_directedOn`: the intersection of a downward-directed
+  family of closed subgroups of `A × G` projecting onto `G` still projects onto `G`.
 * `Subgroup.exists_minimal_isClosed_le`: a closed subgroup of `A × G` projecting onto `G` contains
   a minimal closed subgroup projecting onto `G`.
 -/
@@ -153,11 +154,11 @@ isomorphism `G ⧸ N.toSubgroup ≃ₜ* H ⧸ (e.closedSubgroupOrderIso N).toSub
 def quotientCongr (e : G ≃ₜ* H) (N : Subgroup G) (M : Subgroup H)
     [N.Normal] [M.Normal] (he : N.map e.toMulEquiv.toMonoidHom = M) : G ⧸ N ≃ₜ* H ⧸ M :=
   ContinuousMulEquiv.mk (QuotientGroup.congr N M e.toMulEquiv he)
-    ((QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr <| by
-      exact (QuotientGroup.continuous_mk.comp e.continuous).congr fun g ↦
+    ((QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr <|
+      (QuotientGroup.continuous_mk.comp e.continuous).congr fun g ↦
         (QuotientGroup.congr_mk N M e.toMulEquiv he g).symm)
-    ((QuotientGroup.isQuotientMap_mk M).continuous_iff.mpr <| by
-      exact (QuotientGroup.continuous_mk.comp e.symm.continuous).congr fun h ↦
+    ((QuotientGroup.isQuotientMap_mk M).continuous_iff.mpr <|
+      (QuotientGroup.continuous_mk.comp e.symm.continuous).congr fun h ↦
         (QuotientGroup.congr_mk M N e.toMulEquiv.symm
           ((Subgroup.map_symm_eq_iff_map_eq _).mpr he) h).symm)
 
@@ -188,11 +189,11 @@ section CompactFactor
 variable {A : Type*} [Group A] [TopologicalSpace A] [CompactSpace A]
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- The intersection of a chain of closed subgroups of `A × G`, each projecting onto `G`,
-projects onto `G` when `A` is compact: the fibre over `g` is a directed intersection of nonempty
-compact sets. -/
-theorem forall_exists_mem_sInf_of_isChain {c : Set (Subgroup (A × G))}
-    (hchain : IsChain (· ≤ ·) c) (hclosed : ∀ K ∈ c, IsClosed (K : Set (A × G)))
+/-- The intersection of a downward-directed family (for instance a chain) of closed subgroups of
+`A × G`, each projecting onto `G`, projects onto `G` when `A` is compact: the fibre over `g` is a
+directed intersection of nonempty compact sets. -/
+theorem forall_exists_mem_sInf_of_directedOn {c : Set (Subgroup (A × G))}
+    (hdir : DirectedOn (· ≥ ·) c) (hclosed : ∀ K ∈ c, IsClosed (K : Set (A × G)))
     (hsurj : ∀ K ∈ c, ∀ g : G, ∃ a : A, (a, g) ∈ K) (g : G) : ∃ a : A, (a, g) ∈ sInf c := by
   rcases c.eq_empty_or_nonempty with rfl | hne
   · exact ⟨1, by simp⟩
@@ -200,12 +201,11 @@ theorem forall_exists_mem_sInf_of_isChain {c : Set (Subgroup (A × G))}
   have : Nonempty c := hne.to_subtype
   have hFclosed (K : c) : IsClosed (F K) :=
     (hclosed K K.2).preimage (continuous_id.prodMk continuous_const)
-  have hdir : Directed (· ⊇ ·) F := by
-    intro K L
-    rcases hchain.total K.2 L.2 with hKL | hLK
-    · exact ⟨K, Set.Subset.rfl, fun _ ha ↦ hKL ha⟩
-    · exact ⟨L, fun _ ha ↦ hLK ha, Set.Subset.rfl⟩
-  obtain ⟨a, ha⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed F hdir
+  have hFdir : Directed (· ⊇ ·) F := by
+    rintro ⟨K, hK⟩ ⟨L, hL⟩
+    obtain ⟨M, hM, hMK, hML⟩ := hdir K hK L hL
+    exact ⟨⟨M, hM⟩, fun _ ha ↦ hMK ha, fun _ ha ↦ hML ha⟩
+  obtain ⟨a, ha⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed F hFdir
     (fun K ↦ hsurj K K.2 g) (fun K ↦ (hFclosed K).isCompact) hFclosed
   exact ⟨a, Subgroup.mem_sInf.mpr fun K hK ↦ Set.mem_iInter.mp ha ⟨K, hK⟩⟩
 
@@ -224,7 +224,7 @@ theorem exists_minimal_isClosed_le (R : Subgroup (A × G))
   refine ⟨sInf c, ⟨(sInf_le hK).trans (hcs hK).1, ?_, ?_⟩, fun K hK ↦ sInf_le hK⟩
   · rw [Subgroup.coe_sInf]
     exact isClosed_biInter fun K hK ↦ (hcs hK).2.1
-  · exact Subgroup.forall_exists_mem_sInf_of_isChain hchain.symm
+  · exact Subgroup.forall_exists_mem_sInf_of_directedOn hchain.directedOn
       (fun K hK ↦ (hcs hK).2.1) fun K hK ↦ (hcs hK).2.2
 
 

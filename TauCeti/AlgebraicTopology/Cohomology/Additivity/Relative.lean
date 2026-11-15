@@ -46,7 +46,7 @@ namespace TauCeti
 namespace TopPair
 
 variable {ι : Type w} (P : ι → TopPair.{w})
-  (C : Type u) [Category.{v} C] [Small.{v} ι] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- **Additivity of relative singular cochains.** The relative cochains of a disjoint union
@@ -62,7 +62,7 @@ def isLimitFanSingularCochainComplex :
 /-- **Additivity of relative singular cohomology.** In every degree the relative cohomology
 of a disjoint union of pairs is the product of the relative cohomologies of the pairs. The
 projections are induced by the inclusions of the pairs. -/
-def isLimitFanSingularCohomology (n : ℕ) :
+def isLimitFanSingularCohomology [Small.{v} ι] (n : ℕ) :
     IsLimit (Fan.mk ((TopPair.sigma P).singularCohomology R k M n)
       (fun i ↦ TopPair.singularCohomologyMap (TopPair.sigmaι P i) n) :
       Fan fun i ↦ (P i).singularCohomology R k M n) := by

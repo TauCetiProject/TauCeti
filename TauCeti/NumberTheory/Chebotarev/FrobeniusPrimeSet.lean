@@ -85,11 +85,7 @@ and its Artin class is `C`.
 
 The unramifiedness proof is packaged existentially rather than assumed, because `artinSymbol`
 takes it as an argument and no value is assigned at a ramified prime. See
-`mem_frobeniusPrimeSet_iff_artinSymbol_eq` for the form used once such a proof is available.
-
-The carrier and this membership condition are taken from
-`TauCetiRoadmap/Chebotarev/Suggested.lean`, lines 64–76, described in the section
-`Frobenius prime sets and finite exceptional sets` of `TauCetiRoadmap/Chebotarev/README.md`. -/
+`mem_frobeniusPrimeSet_iff_artinSymbol_eq` for the form used once such a proof is available. -/
 def frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) : Set (HeightOneSpectrum (𝓞 K)) :=
   {𝔭 | ∃ hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal],
     Algebra.IsUnramifiedAt (𝓞 K) Q, artinSymbol 𝔭.asIdeal hur = C}

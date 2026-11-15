@@ -739,7 +739,7 @@ private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : Varia
     obtain ⟨r₁, -, -, -, -, -, -, -, -, hr₁, hs, ht, -⟩ := h.exists_stepSix_form hϖ h' hi
     exact ⟨⟨r₁, hr₁⟩, hs, ht⟩
   match i, h, h', ht, h7, h10 with
-  | 7, h, h', ht, _, _ =>
+  | 7, h, _, ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, ⟨x₃, hx₃⟩, -, -⟩ := h.2.2.1 (by norm_num)
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 le_rfl
@@ -747,7 +747,7 @@ private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : Varia
       ϖ * r₂ ^ 2 * (x₁ ^ 2 + 4 * y₂) + 4 * ϖ * r₂ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₂, b₄, b₂, hx₁, hx₃, hy₂, hy₄]
     ring
-  | 8, h, h', ht, _, _ =>
+  | 8, h, _, ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨-, ⟨s₁, hs₁⟩, -⟩ := hst (by norm_num)
     obtain ⟨t₃, ht₃⟩ := ht₃ le_rfl
@@ -758,7 +758,7 @@ private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : Varia
       3 * r₂ ^ 2 - 2 * s₁ * t₃) ?_).2 ht
     rw [variableChange_a₄, hr₂, hs₁, ht₃, hx₁, hy₂, hz₃]
     ring
-  | 9, h, h', ht, _, _ =>
+  | 9, h, _, ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨t₃, ht₃⟩ := ht₃ (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)

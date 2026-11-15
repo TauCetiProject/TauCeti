@@ -515,7 +515,7 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     ext ⟨c, z⟩
     simp only [mem_range, ContinuousMap.prod_eval, ContinuousMap.const_apply, Prod.mk.injEq,
       Finset.coe_singleton, mem_prod, mem_singleton_iff, mem_univ, and_true]
-    refine ⟨fun ⟨x, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
+    refine ⟨fun ⟨_, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
     exact circleHomeomorphBoundaryClosedBall.symm_apply_apply z
   map_ker_eq_top := by
     have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one

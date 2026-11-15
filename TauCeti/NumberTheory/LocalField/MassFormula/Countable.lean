@@ -52,8 +52,7 @@ theorem countable_totallyRamifiedOfDegree {n : ℕ} (hn : 0 < n) :
       (pow_ne_zero k (IsDiscreteValuationRing.not_a_field 𝒪[K]))
     infer_instance
   obtain ⟨s, hsS, hs, happrox⟩ :=
-    (𝓂[K]).exists_countable_polynomial_approximations
-      hquot S (fun f hf ↦ hf.2.2.le)
+    Ideal.exists_countable_polynomial_approximations (𝓂[K] ^ ·) hquot S
   have hcover : (⋃ f ∈ s, (fun x ↦ (K⟮x⟯ : IntermediateField K (SeparableClosure K))) ''
       (f.map (algebraMap 𝒪[K] K)).rootSet (SeparableClosure K)).Countable :=
     hs.biUnion fun f _ ↦

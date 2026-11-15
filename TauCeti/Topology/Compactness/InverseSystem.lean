@@ -160,8 +160,6 @@ theorem exists_forall_map_succ_eq_of_finite [∀ k, Finite (S k)] [∀ k, Nonemp
 variable {A B : ℕ → Type*} [∀ k, TopologicalSpace (A k)] [∀ k, CompactSpace (A k)]
   [∀ k, T2Space (A k)] [∀ k, TopologicalSpace (B k)] [∀ k, T1Space (B k)]
 
--- Adapted from `compactModule_limit_surjective` in
--- `TauCetiRoadmap/ProfiniteProPGroups/Suggested.lean` (`CompactModuleLimits`).
 /-- **Compatible families lift along a map of towers.** Let `α k : A (k + 1) → A k` be a tower of
 compact Hausdorff spaces with continuous maps, `β k : B (k + 1) → B k` a tower of `T1` spaces, and
 `g k : A k → B k` continuous maps commuting with the towers. Then a compatible family `b` in the

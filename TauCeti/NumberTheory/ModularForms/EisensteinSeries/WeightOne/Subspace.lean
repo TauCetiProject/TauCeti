@@ -120,8 +120,7 @@ change its weight-one series, `E₁^{φ,ψ,t} = E₁^{ψ,φ,t}`. -/
 @[simp]
 theorem weightOneForm_swap : a.swap.weightOneForm = a.weightOneForm := by
   rw [weightOneForm_def, weightOneForm_def]
-  exact (normalizedCharE1MFRaise_comm a.psi a.phi a.level_dvd a.parity_one a.psi_primitive
-    a.phi_primitive).symm
+  exact (normalizedCharE1MFRaise_comm a.psi a.phi a.level_dvd a.psi_primitive a.phi_primitive).symm
 
 /-- **Linear independence of the weight-one Eisenstein series**: the series `E₁^{ψ,φ,t}` of a set
 of indices containing no index together with its exchange `(φ, ψ, t)` are linearly

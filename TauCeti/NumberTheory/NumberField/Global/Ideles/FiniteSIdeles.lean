@@ -110,7 +110,7 @@ theorem mem_finiteSIdeles_iff {a : (FiniteAdeleRing (𝒪 L) L)ˣ} :
   simp only [mem_finiteSIdeles_iff_valued_eq_one, mem_semilocalIntegralUnits_iff,
     semilocalEquiv_finiteIdeleSemilocalHom]
   refine ⟨fun h v hv w ↦ h w.1 ?_, fun h w hw ↦ h _ hw ⟨w, inferInstance⟩⟩
-  rwa [under_eq_of_liesOver w.2]
+  rwa [under_eq_iff_liesOver.mpr w.2]
 
 omit [NumberField K] in
 /-- **An idele is an `S`-idele exactly when its finite part is a finite `S`-idele.** -/

@@ -427,7 +427,7 @@ theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :
   simp
 
 /-- The internal grading of the cycles by homogeneous cycles. -/
-noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles :=
+noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles ℤ :=
   𝒜.grading.submodule 𝒜.cycles 𝒜.isHomogeneous_cycles
 
 /-- A cycle has degree `p` exactly when its underlying element does. -/
@@ -455,7 +455,7 @@ theorem isHomogeneous_boundariesInCycles (𝒜 : AInfinityAlgebra R A) :
 
 /-- The internal grading of the cohomology: its degree-`p` piece consists of the classes of
 homogeneous cycles of degree `p`. -/
-noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology :=
+noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology ℤ :=
   𝒜.cyclesGrading.quotient 𝒜.boundariesInCycles 𝒜.isHomogeneous_boundariesInCycles
 
 /-- A cohomology class has degree `p` exactly when it is represented by a cycle of degree `p`. -/

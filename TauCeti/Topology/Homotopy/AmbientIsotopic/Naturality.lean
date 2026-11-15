@@ -11,8 +11,6 @@ public import TauCeti.Topology.Homotopy.AmbientIsotopyConj
 /-!
 # Naturality of ambient isotopy under coordinate changes
 
-The geometric-topology roadmap asks for isotopy and ambient isotopy to be defined once, in full
-generality, before specialising to locally flat embeddings, diffeotopies, knots, and concordance.
 `TauCeti.AmbientIsotopic` is the general point-set ambient-isotopy relation on continuous maps,
 and `TauCeti.AmbientIsotopy.transport` transports a witnessing ambient isotopy across a
 homeomorphism of ambient spaces. This file records the corresponding relation-level API.

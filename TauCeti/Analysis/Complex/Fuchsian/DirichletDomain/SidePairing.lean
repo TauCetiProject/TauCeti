@@ -103,7 +103,7 @@ private theorem smul_vertex_eq (hP : P.carrier = dirichletDomain Γ p)
         (h : PSL(2, ℝ)) • leftHalfPlane (P.sideGeodesic i) := by
       rw [hs, leftHalfPlane_mul_dilation, sideGeodesic_def, sideGeodesic_def, vertex_smul,
         vertex_smul, leftHalfPlane_geodesicFromTo_smul _ (P.vertex_ne_vertex_add_one i)]
-    refine notMem_leftHalfPlane_of_range_eq_perpBisector hhp.symm hbis
+    refine notMem_leftHalfPlane_of_range_eq_perpBisector hbis
       ((P.mem_interior_carrier_iff p).1 hpint j) ?_
     rw [hleft]
     exact smul_mem_smul_set ((P.mem_interior_carrier_iff p).1 hpint i)

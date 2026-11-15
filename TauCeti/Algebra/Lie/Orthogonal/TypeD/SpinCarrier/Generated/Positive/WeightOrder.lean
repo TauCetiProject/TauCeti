@@ -57,7 +57,7 @@ theorem single_mem_of_mem_posRootCone
       Pi.single (e s) (1 : R) ∈ N → Pi.single (e t) (1 : R) ∈ N := by
     induction h with
     | refl => exact id
-    | @tail t v h htv ih =>
+    | @tail t v _ htv ih =>
       obtain ⟨i, hi, rfl⟩ := (typeDSpinRaisingStep_iff _ _).mp htv
       intro hs
       have hweight : basisWeight n (e t) i = -1 := by

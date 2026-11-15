@@ -73,9 +73,8 @@ connected type-`Dₙ` datum.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * B. Conrad, *Reductive Group Schemes*, §1.
 
-This supplies a prerequisite for the base-change target in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, "Base change along `ℤ → k` for any commutative ring
-`k`, and the compatibility of the pinning with it": it transports the underlying type-`D`
+This supplies a prerequisite for base change of a pinned type-`D` group scheme along `ℤ → k` for
+any commutative ring `k`, compatibly with the pinning: it transports the underlying type-`D`
 carrier and its distinguished generator maps. It does not provide the pinning compatibility or
 a specialized pinned carrier. Those require the subsequent proofs that this carrier is
 reductive, that its torus is maximal with the simply connected type-`Dₙ` root datum, and that the
@@ -432,11 +431,11 @@ with the quotient map. -/
 theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap
     (k : Fin n ⊕ Fin n) :
     coordinateMap n hn A ≫ rootSubgroupToBaseChangeCoordinateMap n hn A k =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.D n))
         (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n hn)
-        (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) A k := by
+        k (isNilpotent_rep_rootGenerator n hn k) (latticeBasis n) A := by
   unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.D n))
@@ -677,22 +676,22 @@ noncomputable abbrev generatorCoordinateAlgebra :
 noncomputable def generatorCoordinateMap (j : Sum (Fin n ⊕ Fin n) Unit) :
     GeneralLinear.coordinateHopfAlgebra A (dimension n) ⟶ generatorCoordinateAlgebra n A j :=
   match j with
-  | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap
+  | .inl k => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
       (TauCeti.serreRootGenerator (CartanMatrix.D n))
       (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n hn)
-      (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) A k
+      k (isNilpotent_rep_rootGenerator n hn k) (latticeBasis n) A
   | .inr _ => GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A (basisWeight n)
 
 /-- The root branch of the generator family is the transported root-subgroup map. -/
 @[simp]
 theorem generatorCoordinateMap_inl (k : Fin n ⊕ Fin n) :
     generatorCoordinateMap n hn A (.inl k) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.D n))
         (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
         (rep_kostantForm_mem_lattice n hn)
-        (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) A k := by
+        k (isNilpotent_rep_rootGenerator n hn k) (latticeBasis n) A := by
   simp [generatorCoordinateMap]
 
 /-- The torus branch of the generator family is the transported weight-torus map. -/

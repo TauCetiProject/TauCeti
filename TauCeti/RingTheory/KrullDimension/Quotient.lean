@@ -379,7 +379,7 @@ theorem topologicalKrullDimAt_le_iSup_ringKrullDim_quotient [IsNoetherianRing R]
   have hU : IsOpen U := (hS.isClosed_biUnion fun _ _ ↦ isClosed_zeroLocus _).isOpen_compl
   have hpU : p ∈ U := by
     simp only [U, S, Set.mem_compl_iff, Set.mem_iUnion, mem_zeroLocus, SetLike.coe_subset_coe]
-    exact fun ⟨q, ⟨_, h⟩, h'⟩ ↦ h h'
+    exact fun ⟨_, ⟨_, h⟩, h'⟩ ↦ h h'
   let T := {q ∈ minimalPrimes R | q ≤ p.asIdeal}
   have : Finite T :=
     ((minimalPrimes.finite_of_isNoetherianRing R).subset (Set.sep_subset _ _)).to_subtype

@@ -131,7 +131,7 @@ private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : �
     (b : ⋀[R]^q N) :
     (fromKoszul φ ψ n).hom (wedgeTensor R M N p q n h (a ⊗ₜ b)) =
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
-  have key : ∀ (q' : ℕ) (hq' : q' = q) (h' : p + q' = n),
+  have key : ∀ (q' : ℕ) (_ : q' = q) (h' : p + q' = n),
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q' n h').hom
           (proj R M p a ⊗ₜ proj R N q' b) =
         (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by

@@ -411,8 +411,7 @@ theorem restrictNormal_mem_lowerRamificationGroup_one
 variable {K} in
 /-- **Wild inertia in canonical finite Galois coordinates.** An absolute Galois automorphism
 is wild exactly when its restriction to every finite Galois subextension belongs to `G₁`,
-using the local-field structures induced from the base field. This is the canonical finite-Galois
-criterion prescribed in `TauCetiRoadmap/LocalFieldsRamification`, Layer 4. -/
+using the local-field structures induced from the base field. -/
 theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerRamificationGroup
     {σ : Gal(AlgebraicClosure K/K)} :
     σ ∈ wildInertiaSubgroup K ↔

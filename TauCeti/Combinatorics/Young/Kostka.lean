@@ -61,8 +61,6 @@ highest-weight tableau `SemistandardYoungTableau.highestWeight μ` is `μ.rowLen
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 1.
 -/
 
 public section

@@ -23,7 +23,9 @@ By `HomologicalComplex.exists_homotopyEquiv_d_eq_zero`, `K` is therefore chain h
 to a complex with zero differentials, whose terms are the homology of `K`: over a division ring
 every complex is homotopy equivalent to its homology.  This reduces statements about the homology
 of complexes of vector spaces, such as the Künneth theorem over a field, to complexes with zero
-differential.
+differential.  For the same reason a quasi-isomorphism between two complexes of semisimple modules
+is a homotopy equivalence (`HomotopyEquiv.ofQuasiIso`,
+`HomologicalComplex.quasiIso_iff_homotopyEquivalences`).
 
 ## Main results
 

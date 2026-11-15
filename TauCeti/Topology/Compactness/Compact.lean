@@ -125,6 +125,22 @@ theorem isCompact_inter_preimage_comp_prodMk_left {Y Z : Type*} [TopologicalSpac
   exact ((hHp K hK hKU).inter_right (isClosed_singleton.preimage continuous_snd)).image
     continuous_fst
 
+/-- **Coincidences of two maps form a compact set.** For maps `f`, `g` into a Hausdorff space,
+continuous on compact sets `s` and `t`, the pairs `(x, y) ∈ s ×ˢ t` with `f x = g y` form a
+compact set. -/
+theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] [T2Space Z] {s : Set X} {t : Set Y} (hs : IsCompact s)
+    (ht : IsCompact t) {f : X → Z} {g : Y → Z} (hf : ContinuousOn f s) (hg : ContinuousOn g t) :
+    IsCompact (s ×ˢ t ∩ {z | f z.1 = g z.2}) := by
+  have : CompactSpace (s ×ˢ t) := isCompact_iff_compactSpace.1 (hs.prod ht)
+  have hf' : Continuous fun z : s ×ˢ t ↦ f z.1.1 :=
+    (hf.comp continuousOn_fst fun _ hz ↦ (mem_prod.1 hz).1).domRestrict
+  have hg' : Continuous fun z : s ×ˢ t ↦ g z.1.2 :=
+    (hg.comp continuousOn_snd fun _ hz ↦ (mem_prod.1 hz).2).domRestrict
+  convert (isClosed_eq hf' hg').isCompact.image continuous_subtype_val using 1
+  ext z
+  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
+
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
 theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}

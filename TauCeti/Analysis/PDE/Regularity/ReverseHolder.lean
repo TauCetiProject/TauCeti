@@ -180,14 +180,13 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   refine ⟨2 * √2 * c, by positivity, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp hr hrρ hball
   have hlam := h.pos
-  have h1p : 0 < 1 - p := by linarith
   set K := |p| * Lam / ((1 - p) * lam)
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (abs_nonneg p) h.upper_nonneg) (by positivity)
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`.
   set ρ' := (r + ρ) / 2
   have hrρ' : r < ρ' := by simp only [ρ']; linarith
   have hρ'ρ : ρ' < ρ := by simp only [ρ']; linarith
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
+  obtain ⟨ψ, hψ, _, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
   set G := c / (ρ' - r) with hG_def
   have hρ'B : Metric.closedBall x₀ ρ' ⊆ Metric.ball x₀ ρ :=
     Metric.closedBall_subset_ball hρ'ρ
@@ -269,7 +268,6 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
   obtain ⟨C, hC0, hstep⟩ := exists_eLpNorm_rpow_le_mul_eLpNorm_rpow (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hq hS hu hε hεu hp0 hp hr hrρ hball
-  have h1p : 0 < 1 - p := by linarith
   have hlam := h.pos
   have hstep' := hstep mu h ha hS hu hε hεu hp hr hrρ hball
   rw [abs_of_pos hp0] at hstep'
@@ -343,7 +341,6 @@ private theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset [Nonemp
   set n : ℝ := (Fintype.card ι : ℝ)
   have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 Fintype.card_pos
   have hn0 : (0 : ℝ) < n := by linarith
-  have hχ0 : 0 < χ := zero_lt_one.trans hχ
   set δ : ℝ := (χ - 1) / (2 * χ)
   have hδn : δ < n⁻¹ := by
     rw [div_lt_iff₀ (by positivity), inv_mul_eq_div, lt_div_iff₀ hn0]
@@ -401,7 +398,6 @@ private theorem half_le_sub_mul_div_and_sub_mul_div_le {R : ℝ} {M k : ℕ} (hR
     (hM : 0 < M) (hk : k ≤ M) :
     R / 2 ≤ R - k * (R / (2 * M)) ∧ R - k * (R / (2 * M)) ≤ R := by
   have hk' : (k : ℝ) ≤ M := by exact_mod_cast hk
-  have hM0 : (0 : ℝ) < M := Nat.cast_pos.2 hM
   have h0 : 0 ≤ (k : ℝ) * (R / (2 * M)) := by positivity
   have h1 : (k : ℝ) * (R / (2 * M)) ≤ R / 2 := by
     rw [mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
@@ -447,7 +443,6 @@ private theorem exists_eLpNorm_iterate_le [Nonempty ι] {χ : ℝ} (hχ : 1 < χ
   refine ⟨C, hC0, ?_⟩
   intro M pk hM hpk0 hpk1 hpk_succ Omega a u ε x₀ R h ha hu hε hεu hR hball
   have hlam := h.pos
-  have hM0 : (0 : ℝ) < M := Nat.cast_pos.2 hM
   set n : ℝ := (Fintype.card ι : ℝ)
   set δ : ℝ := (χ - 1) / (2 * χ)
   -- Multiplying an exponent `t` by `χ` lowers `n/t` by `2 n δ/t`.
@@ -526,7 +521,7 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
           eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) := by
   obtain ⟨χ, hχ, hsχ, hχn⟩ := exists_one_lt_lt_and_mul_lt hsn
   have hχ0 : 0 < χ := zero_lt_one.trans hχ
-  obtain ⟨C, hC0, hiter⟩ := exists_eLpNorm_iterate_le (mu := mu) (lam := lam) (Lam := Lam) hχ hχn
+  obtain ⟨C, _, hiter⟩ := exists_eLpNorm_iterate_le (mu := mu) (lam := lam) (Lam := Lam) hχ hχn
   set n : ℝ := (Fintype.card ι : ℝ)
   -- Choose the number `M ≥ 1` of steps so that `p₀ = s / χ^M ≤ p`, and the exponents
   -- `pₖ = p₀ χ^k`, which reach `p_M = s` and stay below `1` for `k < M`.
@@ -670,7 +665,6 @@ private theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv_
   -- Divide by `|B(x₀, R/2)|^{1/s}` and collect the powers of `R` and `V`.
   set As := (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹
   set Ap := (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹
-  have hB : 0 < ((R / 2) ^ n * V) ^ s⁻¹ := by positivity
   calc As = (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (((R / 2) ^ n * V) ^ s⁻¹ * As) := by field_simp
     _ ≤ (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (D * R ^ (n / s - n / p) * ((R ^ n * V) ^ p⁻¹ * Ap)) := by
         gcongr

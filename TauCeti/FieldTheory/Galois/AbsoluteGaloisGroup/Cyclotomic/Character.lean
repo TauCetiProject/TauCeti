@@ -94,7 +94,7 @@ theorem localCyclotomicCharacter_mapOfAlgebra (g : Field.absoluteGaloisGroup L) 
   rw [localCyclotomicCharacter_apply, localCyclotomicCharacter_apply]
   exact (cyclotomicCharacter_eq_of_injective p
     (algebraMap (AlgebraicClosure K) (AlgebraicClosure L)).injective
-    (fun x ↦ (absoluteGaloisGroup_mapOfAlgebra_commutes K L g x).symm)
+    (fun _ x _ ↦ (absoluteGaloisGroup_mapOfAlgebra_commutes K L g x).symm)
     fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 end Naturality

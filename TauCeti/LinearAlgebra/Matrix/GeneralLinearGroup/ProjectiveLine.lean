@@ -80,11 +80,8 @@ hold there too.
 
 ## References
 
-This supplies the fixed-point counts on the projective line that the character-value formulas of
-Layer 9 ("the representation theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` need. See also W. Fulton and
-J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2, and C. Bonnafé,
-*Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
+* W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
 
 public section
