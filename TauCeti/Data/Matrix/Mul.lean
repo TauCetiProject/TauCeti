@@ -9,7 +9,7 @@ public import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Matrix.Basis
 
 /-!
-# Matrix products: positivity of powers, nonvanishing of factors, and noncommutativity
+# Matrix products: positive powers, nonzero factors, outer products, and noncommutativity
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -18,8 +18,13 @@ strictly positive. This is the form in which positivity propagates along the pow
 matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
-zero. Over a nontrivial coefficient `NonAssocSemiring` and a nontrivial finite index type, square
-matrix multiplication is noncommutative.
+zero.
+
+A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
+out to the left without any commutativity, since the left factor has entries `0` and `1` only.
+
+Over a nontrivial coefficient `NonAssocSemiring` and a nontrivial finite index type, square matrix
+multiplication is noncommutative.
 
 ## Main results
 
@@ -28,6 +33,8 @@ matrix multiplication is noncommutative.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
+  (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.not_isMulCommutative`: `Matrix m m R` is not multiplicatively commutative when `m` and
   `R` are nontrivial.
 -/
@@ -84,6 +91,24 @@ theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : 
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
 end NonUnitalNonAssocSemiring
+
+section MulZeroOneClass
+
+variable {α R m p : Type*} [MulZeroOneClass α] [SMulZeroClass R α] [DecidableEq m]
+
+/-- A scalar on the right factor of an outer product with `Pi.single i 1` may be pulled out to the
+left. Unlike `Matrix.vecMulVec_smul`, this needs no `SMulCommClass R α α`, because the entries of
+`Pi.single i 1` are `0` and `1`; so it applies, for instance, to left multiplication in a
+noncommutative ring. -/
+@[simp]
+theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
+    vecMulVec (Pi.single i (1 : α)) (r • v) = r • vecMulVec (Pi.single i (1 : α)) v := by
+  ext a b
+  rcases eq_or_ne a i with rfl | h
+  · simp [vecMulVec_apply]
+  · simp [vecMulVec_apply, h]
+
+end MulZeroOneClass
 
 /-- A square matrix semiring `Matrix m m R` over a nontrivial `NonAssocSemiring` and a nontrivial
 finite index type is not multiplicatively commutative. -/
