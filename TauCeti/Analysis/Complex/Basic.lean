@@ -32,8 +32,13 @@ The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
-Two integers whose images in `ℂ` are at distance less than `1` are equal. A purely imaginary
-complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I` (`Complex.eq_im_mul_I_of_re_eq_zero`).
+Two integers whose images in `ℂ` are at distance less than `1` are equal.
+
+Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
+whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
+
+A purely imaginary complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I`
+(`Complex.eq_im_mul_I_of_re_eq_zero`).
 -/
 
 public section
@@ -156,6 +161,15 @@ theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
       rw [← map_sub, norm_conj]
       exact add_le_add le_rfl htail
     _ ≤ _ := by linarith
+
+/-- Dividing by a natural number does not increase the norm, so the point `(a z + b) / M` has
+norm at most `‖a‖ C + ‖b‖` when `‖z‖ ≤ C`. For `M = 0` the quotient is `0` by Lean's convention
+`x / 0 = 0`. -/
+theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (hz : ‖z‖ ≤ C) :
+    ‖(a * z + b) / M‖ ≤ ‖a‖ * C + ‖b‖ := by
+  rw [norm_div, Complex.norm_natCast]
+  exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
+    (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
 
 /-- A purely imaginary complex number `z` (`z.re = 0`) equals `(z.im : ℂ) * I`. -/
 theorem eq_im_mul_I_of_re_eq_zero {z : ℂ} (hz : z.re = 0) : z = (z.im : ℂ) * I := by
