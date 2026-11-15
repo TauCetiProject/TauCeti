@@ -293,6 +293,54 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
 
+/-- The diagonal measure at the zero vector is the zero measure. -/
+@[simp]
+theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 :=
+  Measure.measure_univ_eq_zero.mp (by simp)
+
+/-- Scaling the vector scales the diagonal measure by the squared norm of the scalar. -/
+theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
+    P.diag (c • ξ) = (‖c‖ₑ ^ 2) • P.diag ξ := by
+  refine Measure.ext fun B hB => ?_
+  have h1 : P.diag (c • ξ) B = ENNReal.ofReal (‖P.proj B hB (c • ξ)‖ ^ 2) := by
+    rw [P.norm_sq_proj_apply B hB (c • ξ), ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  have h2 : P.diag ξ B = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
+    rw [P.norm_sq_proj_apply B hB ξ, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  rw [h1, smul_apply, smul_eq_mul, h2, map_smul, norm_smul, mul_pow,
+    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (norm_nonneg c), ofReal_norm]
+
+/-- Parallelogram bound for diagonal measures: `P.diag (ξ + η) ≤ 2 • P.diag ξ + 2 • P.diag η`. -/
+theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
+    P.diag (ξ + η) ≤ 2 • P.diag ξ + 2 • P.diag η := by
+  refine Measure.le_iff.2 fun B hB => ?_
+  have hpara := parallelogram_law_with_norm ℂ (P.proj B hB ξ) (P.proj B hB η)
+  have hle : ‖P.proj B hB (ξ + η)‖ ^ 2 ≤
+      2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2 := by
+    rw [map_add]
+    nlinarith [hpara, sq_nonneg ‖P.proj B hB ξ - P.proj B hB η‖]
+  have hB_eq (v : H) : P.diag v B = ENNReal.ofReal (‖P.proj B hB v‖ ^ 2) := by
+    rw [P.norm_sq_proj_apply B hB v, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  simp only [add_apply, smul_apply, nsmul_eq_mul, Nat.cast_ofNat, hB_eq]
+  calc
+    ENNReal.ofReal (‖P.proj B hB (ξ + η)‖ ^ 2) ≤
+        ENNReal.ofReal (2 * ‖P.proj B hB ξ‖ ^ 2 + 2 * ‖P.proj B hB η‖ ^ 2) :=
+      ENNReal.ofReal_le_ofReal hle
+    _ = 2 * ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) +
+          2 * ENNReal.ofReal (‖P.proj B hB η‖ ^ 2) := by
+      rw [ENNReal.ofReal_add (by positivity) (by positivity),
+        ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
+
+/-- Projecting a vector onto a measurable set restricts its diagonal measure to that set. -/
+@[simp]
+theorem diag_proj (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) (ξ : H) :
+    P.diag (P.proj B hB ξ) = (P.diag ξ).restrict B := by
+  refine Measure.ext fun C hC => ?_
+  have h1 : P.diag (P.proj B hB ξ) C = ENNReal.ofReal (‖P.proj C hC (P.proj B hB ξ)‖ ^ 2) := by
+    rw [P.norm_sq_proj_apply C hC, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  have h2 : P.diag ξ (C ∩ B) = ENNReal.ofReal (‖P.proj (C ∩ B) (hC.inter hB) ξ‖ ^ 2) := by
+    rw [P.norm_sq_proj_apply (C ∩ B) (hC.inter hB), ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  rw [h1, Measure.restrict_apply hC, h2, ← mul_apply_eq_comp, P.proj_inter C B hC hB]
+
 /-- For every measurable set `B`, `P(B)` is a contraction on vectors. -/
 lemma norm_proj_apply_le (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)
     (ξ : H) :
@@ -466,6 +514,31 @@ theorem hasSum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ → S
   exact (hsum.hasSum_iff_tendsto_nat).2 (by
     simpa only [Nat.Iio_eq_range, sum_apply] using
       P.tendsto_sum_proj_of_pairwise_disjoint hf hdisj ξ)
+
+/-- Monotone strong continuity: for a monotone family of measurable sets indexed by a preorder
+with countably generated `atTop` filter, the projections `P(f i)` converge strongly to the
+projection of the union `⋃ i, f i`. -/
+theorem tendsto_proj_of_monotone (P : ProjValMeasure X H) {ι : Type*} [Preorder ι]
+    [(atTop : Filter ι).IsCountablyGenerated] {f : ι → Set X}
+    (hf : ∀ i, MeasurableSet (f i)) (hU : MeasurableSet (⋃ i, f i)) (hmono : Monotone f)
+    (ξ : H) :
+    Tendsto (fun i => P.proj (f i) (hf i) ξ) atTop (𝓝 (P.proj (⋃ i, f i) hU ξ)) := by
+  refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
+  have hmass : Tendsto (fun k => (P.diag ξ (⋃ i, f i)).toReal - (P.diag ξ (f k)).toReal)
+      atTop (𝓝 0) := by
+    simpa only [sub_self, Function.comp_apply] using
+      (tendsto_const_nhds (x := (P.diag ξ (⋃ i, f i)).toReal)).sub
+        ((ENNReal.tendsto_toReal (measure_ne_top _ _)).comp
+          (tendsto_measure_iUnion_atTop (μ := P.diag ξ) hmono))
+  have hsq : Tendsto (fun k =>
+      Real.sqrt ((P.diag ξ (⋃ i, f i)).toReal - (P.diag ξ (f k)).toReal)) atTop (𝓝 0) := by
+    simpa only [Real.sqrt_zero] using hmass.sqrt
+  refine hsq.congr fun k => ?_
+  rw [← P.norm_sq_proj_apply (⋃ i, f i) hU ξ, ← P.norm_sq_proj_apply (f k) (hf k) ξ,
+    ← ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption
+      (P.proj (f k) (hf k)) (P.proj (⋃ i, f i) hU) (P.isSelfAdjoint_proj _ (hf k))
+      (P.proj_idem _ (hf k)) (P.proj_mul_eq_left_of_subset (Set.subset_iUnion f k) (hf k) hU) ξ,
+    Real.sqrt_sq (norm_nonneg _)]
 
 /-! ## Extensionality
 

@@ -110,5 +110,59 @@ theorem integral_polarizedComplexMeasure_self (P : ProjValMeasure X H) (f : X �
       ∫ x, f x ∂(P.diag ξ) := by
   rw [polarizedComplexMeasure_self_eq_withDensityᵥ, VectorMeasure.integral_mul_withDensityᵥ_one]
 
+/-- Applying a bounded spectral integral `(∫ g dP)` in the right slot multiplies the polarized
+complex measure by the density `g`. -/
+theorem polarizedComplexMeasure_integral_right (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    P.polarizedComplexMeasure ψ (P.integral g ξ) =
+      (P.polarizedComplexMeasure ψ ξ).withDensity g (ContinuousLinearMap.mul ℝ ℂ) := by
+  ext B hB
+  have hmul : BoundedBorelFunction.indicator B hB 1 * g =
+      BoundedBorelFunction.indicator B hB g := by
+    ext x; by_cases hx : x ∈ B <;> simp [hx]
+  have hg : (P.polarizedComplexMeasure ψ ξ).Integrable g := g.integrable _
+  rw [P.polarizedComplexMeasure_apply _ _ B hB, ← P.integral_indicator hB, ← mul_apply_eq_comp,
+    ← map_mul, hmul, ← P.integral_polarizedComplexMeasure_eq_inner_integral,
+    VectorMeasure.withDensity_apply hg, ← VectorMeasure.integral_indicator hB]
+  congr 1
+  ext x; by_cases hx : x ∈ B <;> simp [hx]
+
+/-- Applying a bounded spectral integral `(∫ g dP)` in the left slot multiplies the polarized
+complex measure by the conjugate density `star g`. -/
+theorem polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    P.polarizedComplexMeasure (P.integral g ψ) ξ =
+      (P.polarizedComplexMeasure ψ ξ).withDensity (star g) (ContinuousLinearMap.mul ℝ ℂ) := by
+  ext B hB
+  have hcomm : P.integral (star g) (P.proj B hB ξ) = P.proj B hB (P.integral (star g) ξ) := by
+    rw [← P.integral_indicator hB, ← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul,
+      ← map_mul, mul_comm]
+  have hadj : ContinuousLinearMap.adjoint (P.integral g) = P.integral (star g) := by
+    rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star]
+  rw [← BoundedBorelFunction.coe_star, ← P.polarizedComplexMeasure_integral_right (star g) ψ ξ,
+    P.polarizedComplexMeasure_apply _ _ B hB, P.polarizedComplexMeasure_apply _ _ B hB,
+    ← ContinuousLinearMap.adjoint_inner_right, hadj, hcomm]
+
+/-- Integrating any `f : X → ℂ` against `P.polarizedComplexMeasure ψ (P.integral g ξ)` is
+integrating `f * g` against `P.polarizedComplexMeasure ψ ξ`. Both sides vanish when `f * g` is
+not integrable. -/
+theorem integral_polarizedComplexMeasure_integral_right (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (f : X → ℂ) (ψ ξ : H) :
+    ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ (P.integral g ξ)] =
+      ∫ᵛ x, f x * g x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ] := by
+  rw [P.polarizedComplexMeasure_integral_right g ψ ξ,
+    VectorMeasure.integral_withDensity_mul (g.integrable _) f]
+
+/-- Integrating any `f : X → ℂ` against `P.polarizedComplexMeasure (P.integral g ψ) ξ` is
+integrating `f * star g` against `P.polarizedComplexMeasure ψ ξ`. Both sides vanish when
+`f * star g` is not integrable. -/
+theorem integral_polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (f : X → ℂ) (ψ ξ : H) :
+    ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure (P.integral g ψ) ξ] =
+      ∫ᵛ x, f x * star (g x) ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ψ ξ] := by
+  rw [P.polarizedComplexMeasure_integral_left g ψ ξ, ← BoundedBorelFunction.coe_star,
+    VectorMeasure.integral_withDensity_mul ((star g).integrable _) f]
+  rfl
+
 end ProjValMeasure
 end TauCeti

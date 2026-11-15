@@ -105,4 +105,42 @@ theorem variation_polarizedComplexMeasure_self (P : ProjValMeasure X H) (ξ : H)
     Measure.variation_withDensityᵥ (integrable_const _)]
   simp
 
+/-- Setwise Cauchy-Schwarz bound on the variation of a polarized spectral measure: on every
+measurable set `B`, `|μ_(ψ,ξ)|(B) ≤ ‖P(B) ψ‖ₑ * ‖P(B) ξ‖ₑ`. -/
+theorem polarizedComplexMeasure_variation_apply_le (P : ProjValMeasure X H) (ψ ξ : H)
+    {B : Set X} (hB : MeasurableSet B) :
+    (P.polarizedComplexMeasure ψ ξ).variation B ≤ ‖P.proj B hB ψ‖ₑ * ‖P.proj B hB ξ‖ₑ := by
+  calc
+    (P.polarizedComplexMeasure ψ ξ).variation B =
+        ((P.polarizedComplexMeasure ψ ξ).variation.restrict B) Set.univ :=
+      (Measure.restrict_apply_univ B).symm
+    _ = ((P.polarizedComplexMeasure ψ ξ).restrict B).variation Set.univ := by
+      rw [VectorMeasure.variation_restrict hB]
+    _ = (P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ)).variation Set.univ := by
+      rw [P.polarizedComplexMeasure_proj_proj ψ ξ hB]
+    _ ≤ ENNReal.ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖) :=
+      P.polarizedComplexMeasure_variation_univ_le _ _
+    _ = ‖P.proj B hB ψ‖ₑ * ‖P.proj B hB ξ‖ₑ := by
+      rw [ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm]
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to
+the left diagonal measure `P.diag ψ`. -/
+theorem variation_polarizedComplexMeasure_absolutelyContinuous_left (P : ProjValMeasure X H)
+    (ψ ξ : H) : (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ψ := by
+  refine Measure.AbsolutelyContinuous.mk fun B hB h0 => ?_
+  have hzero : P.proj B hB ψ = 0 := norm_eq_zero.mp <| by
+    rw [← sq_eq_zero_iff, P.norm_sq_proj_apply B hB ψ, h0, ENNReal.toReal_zero]
+  exact nonpos_iff_eq_zero.mp <|
+    (P.polarizedComplexMeasure_variation_apply_le ψ ξ hB).trans (by simp [hzero])
+
+/-- The variation of `P.polarizedComplexMeasure ψ ξ` is absolutely continuous with respect to
+the right diagonal measure `P.diag ξ`. -/
+theorem variation_polarizedComplexMeasure_absolutelyContinuous_right (P : ProjValMeasure X H)
+    (ψ ξ : H) : (P.polarizedComplexMeasure ψ ξ).variation ≪ P.diag ξ := by
+  refine Measure.AbsolutelyContinuous.mk fun B hB h0 => ?_
+  have hzero : P.proj B hB ξ = 0 := norm_eq_zero.mp <| by
+    rw [← sq_eq_zero_iff, P.norm_sq_proj_apply B hB ξ, h0, ENNReal.toReal_zero]
+  exact nonpos_iff_eq_zero.mp <|
+    (P.polarizedComplexMeasure_variation_apply_le ψ ξ hB).trans (by simp [hzero])
+
 end TauCeti.ProjValMeasure

@@ -188,5 +188,35 @@ theorem norm_polarizedComplexMeasure_apply_le (P : ProjValMeasure X H) {ψ ξ : 
   rw [P.norm_sq_proj_apply B hB ψ, P.norm_sq_proj_apply B hB ξ] at hy
   exact hcs.trans hy
 
+/-- Projecting the right vector onto a measurable set restricts the polarized measure to that
+set. -/
+theorem polarizedComplexMeasure_proj_right (P : ProjValMeasure X H) (ψ ξ : H) {B : Set X}
+    (hB : MeasurableSet B) :
+    P.polarizedComplexMeasure ψ (P.proj B hB ξ) = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext C hC
+  rw [P.polarizedComplexMeasure_apply _ _ C hC, VectorMeasure.restrict_apply _ hB hC,
+    P.polarizedComplexMeasure_apply _ _ (C ∩ B) (hC.inter hB), ← mul_apply_eq_comp,
+    P.proj_inter C B hC hB]
+
+/-- Projecting the left vector onto a measurable set restricts the polarized measure to that
+set. -/
+theorem polarizedComplexMeasure_proj_left (P : ProjValMeasure X H) (ψ ξ : H) {B : Set X}
+    (hB : MeasurableSet B) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) ξ = (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  ext C hC
+  have hsym : ⟪P.proj B hB ψ, P.proj C hC ξ⟫_ℂ = ⟪ψ, P.proj B hB (P.proj C hC ξ)⟫_ℂ :=
+    (P.isSelfAdjoint_proj B hB).isSymmetric ψ (P.proj C hC ξ)
+  rw [P.polarizedComplexMeasure_apply _ _ C hC, VectorMeasure.restrict_apply _ hB hC,
+    P.polarizedComplexMeasure_apply _ _ (C ∩ B) (hC.inter hB), hsym, ← mul_apply_eq_comp,
+    P.proj_inter B C hB hC, P.proj_congr (Set.inter_comm B C) (hB.inter hC) (hC.inter hB)]
+
+/-- Projecting both vectors onto a measurable set restricts the polarized measure to that set. -/
+theorem polarizedComplexMeasure_proj_proj (P : ProjValMeasure X H) (ψ ξ : H) {B : Set X}
+    (hB : MeasurableSet B) :
+    P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ) =
+      (P.polarizedComplexMeasure ψ ξ).restrict B := by
+  rw [P.polarizedComplexMeasure_proj_right _ _ hB, P.polarizedComplexMeasure_proj_left _ _ hB,
+    (P.polarizedComplexMeasure ψ ξ).restrict_restrict hB hB, Set.inter_self]
+
 end ProjValMeasure
 end TauCeti

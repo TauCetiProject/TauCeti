@@ -342,5 +342,30 @@ theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFun
     integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
   simp [EventuallyEq]
 
+/-- The diagonal measure at `(∫ f dP) ξ` has density `‖f x‖ₑ ^ 2` with respect to `P.diag ξ`. -/
+theorem diag_integral (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
+    P.diag (P.integral f ξ) = (P.diag ξ).withDensity fun x => ‖f x‖ₑ ^ 2 := by
+  refine Measure.ext fun B hB => ?_
+  have hint : Integrable (fun x => ‖BoundedBorelFunction.indicator B hB f x‖ ^ 2) (P.diag ξ) :=
+    .of_bound
+      ((BoundedBorelFunction.indicator B hB f).measurable.norm.pow_const 2).aestronglyMeasurable
+      (‖BoundedBorelFunction.indicator B hB f‖ ^ 2)
+      (Eventually.of_forall fun x => by
+        rw [Real.norm_of_nonneg (by positivity)]
+        exact pow_le_pow_left₀ (norm_nonneg _)
+          ((BoundedBorelFunction.indicator B hB f).norm_coe_le_norm x) 2)
+  have hproj : P.proj B hB (P.integral f ξ) =
+      P.integral (BoundedBorelFunction.indicator B hB f) ξ := by
+    have hmul : BoundedBorelFunction.indicator B hB 1 * f =
+        BoundedBorelFunction.indicator B hB f := by
+      ext x; by_cases hx : x ∈ B <;> simp [hx]
+    rw [← P.integral_indicator hB, ← mul_apply_eq_comp, ← map_mul, hmul]
+  rw [← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (P.integral f ξ)) (s := B)),
+    ← P.norm_sq_proj_apply B hB, hproj, P.norm_sq_integral_apply,
+    ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ => sq_nonneg _),
+    withDensity_apply _ hB, ← lintegral_indicator hB]
+  congr with x
+  by_cases hx : x ∈ B <;> simp [hx, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
 end ProjValMeasure
 end TauCeti
