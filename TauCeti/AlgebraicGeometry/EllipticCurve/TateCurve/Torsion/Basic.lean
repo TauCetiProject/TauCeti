@@ -23,6 +23,8 @@ Here `ℤ/nℤ` and the power-class group use Mathlib's `QuotSMulTop`.
 The exponent map sends the point represented by `u`, with `u^n = q^a`, to the class of `a`.
 Its kernel is precisely the image of the roots of unity. It is surjective when `q` has an
 `n`-th root in `L`; no closure or characteristic hypothesis is needed for these statements.
+A chosen root gives a division point which, together with the roots of unity, generates all
+`n`-torsion, with the division-point coefficient prescribed by any exponent representative.
 The exponent map is compatible with continuous `K`-algebra maps between complete normed
 extensions, so continuous `K`-automorphisms of such extensions preserve exponent classes.
 This is the finite-level description used to compute the Tate-module action at multiplicative
@@ -222,6 +224,20 @@ theorem exact_tateRootsOfUnityHom_tateTorsionExponent :
 theorem tateTorsionExponent_tateRootsOfUnityHom (ζ : Additive (rootsOfUnity n L)) :
     tateTorsionExponent L q hq n (tateRootsOfUnityHom L q hq n ζ) = 0 :=
   (exact_tateRootsOfUnityHom_tateTorsionExponent L q hq n).apply_apply_eq_zero ζ
+
+open scoped AddSubgroup in
+/-- For any representative `a` of its exponent, a Tate torsion point is a root-of-unity
+point plus `a` times the chosen division point. -/
+theorem exists_tateRootsOfUnityHom_add_zsmul_tateDivisionPoint
+    (u : Lˣ) (hu : u ^ n = Units.map (algebraMap K L : K →* L) q)
+    (P : (((tateCurveAt q hq)⁄L).toAffine.Point)[(n : ℤ)])
+    (a : ℤ) (ha : tateTorsionExponent L q hq n P = (a : QuotSMulTop (n : ℤ) ℤ)) :
+    ∃ ζ : Additive (rootsOfUnity n L),
+      P = tateRootsOfUnityHom L q hq n ζ + a • tateDivisionPoint q hq n u hu := by
+  have hz : tateTorsionExponent L q hq n (P - a • tateDivisionPoint q hq n u hu) = 0 := by
+    simp [ha]
+  obtain ⟨ζ, hζ⟩ := (exact_tateRootsOfUnityHom_tateTorsionExponent L q hq n _).mp hz
+  exact ⟨ζ, sub_eq_iff_eq_add.mp hζ.symm⟩
 
 /-- Exponent classes arising from Tate torsion are exactly those whose period power is an
 `n`-th power. This retains the rational obstruction when the field lacks a root of `q`. -/

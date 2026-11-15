@@ -24,6 +24,12 @@ trivial character by the cyclotomic character, used in the inertia calculation a
 multiplicative reduction. They hold over complete ultrametric extensions, without assuming
 that every exponent class is represented or that all roots of unity are rational.
 
+When an `n`-th root of the parameter is chosen, two continuous coefficient maps into any
+complete ultrametric extension induce the same map on `n`-torsion exactly when they agree
+on the roots of unity and the chosen parameter root. In particular, this detects triviality
+of the entire torsion action. If roots of unity are fixed, every displacement is its exponent
+times the displacement of the chosen division point.
+
 ## References
 
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, V.3 and V.6.
@@ -111,6 +117,112 @@ theorem torsionByMap_tateDivisionPoint_eq_self_iff
       (tateRootsOfUnityHom_injective L q hq n hn).eq_iff, ofMul_eq_zero]
   rw [← sub_eq_zero, h, hzero]
   simp only [ζ, Subgroup.mk_eq_one, div_eq_one]
+
+section ChosenRoot
+
+variable (u : Lˣ) (hu : u ^ n = Units.map (algebraMap K L : K →* L) q)
+
+include hu in
+/-- Two continuous coefficient maps induce the same map on Tate `n`-torsion exactly when
+they agree on the `n`-th roots of unity and a chosen `n`-th root of the parameter. -/
+theorem torsionByMap_tateCurveAt_eq_iff
+    {M : Type*} [NormedField M] [NormedAlgebra K M] [CompleteSpace M]
+    [IsUltrametricDist M] [DecidableEq M]
+    (σ τ : L →ₐ[K] M) (hσ : Continuous σ) (hτ : Continuous τ) :
+    torsionByMap (n : ℤ) (Point.map (W' := (tateCurveAt q hq).toAffine) σ).toIntLinearMap =
+        torsionByMap (n : ℤ) (Point.map τ).toIntLinearMap ↔
+      (∀ ζ : rootsOfUnity n L, restrictRootsOfUnity σ n ζ = restrictRootsOfUnity τ n ζ) ∧
+        Units.map (σ : L →* M) u = Units.map (τ : L →* M) u := by
+  have hn : n ≠ 0 := by
+    intro hn
+    have hnorm := congrArg (fun v : Lˣ ↦ ‖(v : L)‖) hu
+    have hq1 : ‖(q : K)‖ = 1 := by simpa [hn] using hnorm.symm
+    exact hq.ne hq1
+  constructor
+  · intro h
+    refine ⟨fun ζ ↦ ?_, ?_⟩
+    · have he := LinearMap.congr_fun h (tateRootsOfUnityHom L q hq n (.ofMul ζ))
+      rw [torsionByMap_tateRootsOfUnityHom q hq n σ hσ,
+        torsionByMap_tateRootsOfUnityHom q hq n τ hτ] at he
+      exact Additive.ofMul.injective ((tateRootsOfUnityHom_injective M q hq n hn) he)
+    · -- The ratio of the two parameter roots is a root of unity with zero image.
+      have hpow (ι : L →ₐ[K] M) :
+          (Units.map (ι : L →* M) u) ^ n = Units.map (algebraMap K M : K →* M) q := by
+        rw [← map_pow, hu]
+        ext
+        exact ι.commutes (q : K)
+      let ζ : rootsOfUnity n M := ⟨Units.map (σ : L →* M) u / Units.map (τ : L →* M) u, by
+        rw [mem_rootsOfUnity, div_pow, hpow, hpow, div_self']⟩
+      have he := congrArg Subtype.val (LinearMap.congr_fun h (tateDivisionPoint q hq n u hu))
+      simp only [coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap,
+        coe_tateDivisionPoint, map_tateUnitHom q hq σ hσ, map_tateUnitHom q hq τ hτ] at he
+      have hz : tateRootsOfUnityHom M q hq n (.ofMul ζ) = 0 := by
+        apply Subtype.ext
+        simp only [coe_tateRootsOfUnityHom, toMul_ofMul, ζ, Subtype.coe_mk,
+          ofMul_div, map_sub, he, sub_self, ZeroMemClass.coe_zero]
+      have hζ := (tateRootsOfUnityHom_injective M q hq n hn)
+        (hz.trans (map_zero _).symm)
+      simpa only [ofMul_eq_zero, ζ, Subgroup.mk_eq_one, div_eq_one] using hζ
+  · rintro ⟨hζ, huστ⟩
+    -- The exact sequence expresses every point using these two kinds of generators.
+    apply LinearMap.ext
+    intro P
+    obtain ⟨a, ha⟩ := Submodule.Quotient.mk_surjective _ (tateTorsionExponent L q hq n P)
+    rw [Ideal.Quotient.mk_eq_mk, eq_intCast] at ha
+    obtain ⟨ζ, rfl⟩ :=
+      exists_tateRootsOfUnityHom_add_zsmul_tateDivisionPoint L q hq n u hu P a ha.symm
+    obtain ⟨ζ, rfl⟩ := Additive.ofMul.surjective ζ
+    simp only [map_add, map_zsmul, torsionByMap_tateRootsOfUnityHom q hq n σ hσ,
+      torsionByMap_tateRootsOfUnityHom q hq n τ hτ, hζ]
+    apply congrArg (fun Q ↦
+      tateRootsOfUnityHom M q hq n (.ofMul (restrictRootsOfUnity τ n ζ)) + a • Q)
+    apply Subtype.ext
+    simp only [coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap,
+      coe_tateDivisionPoint, map_tateUnitHom q hq σ hσ, map_tateUnitHom q hq τ hτ, huστ]
+
+/-- If roots of unity are fixed, the displacement of any torsion point with exponent `[a]`
+is `a` times the displacement of a chosen division point. -/
+theorem torsionByMap_tateCurveAt_sub_eq_zsmul
+    (σ : L →ₐ[K] L) (hσ : Continuous σ)
+    (hζ : ∀ ζ : rootsOfUnity n L, restrictRootsOfUnity σ n ζ = ζ)
+    (P : (((tateCurveAt q hq)⁄L).toAffine.Point)[(n : ℤ)])
+    (a : ℤ) (ha : tateTorsionExponent L q hq n P = (a : QuotSMulTop (n : ℤ) ℤ)) :
+    torsionByMap (n : ℤ) (Point.map σ).toIntLinearMap P - P =
+      a • (torsionByMap (n : ℤ) (Point.map σ).toIntLinearMap
+        (tateDivisionPoint q hq n u hu) - tateDivisionPoint q hq n u hu) := by
+  obtain ⟨ζ, rfl⟩ := exists_tateRootsOfUnityHom_add_zsmul_tateDivisionPoint L q hq n u hu P a ha
+  have hroot : torsionByMap (n : ℤ) (Point.map σ).toIntLinearMap
+      (tateRootsOfUnityHom L q hq n ζ) = tateRootsOfUnityHom L q hq n ζ := by
+    obtain ⟨ζ, rfl⟩ := Additive.ofMul.surjective ζ
+    rw [torsionByMap_tateRootsOfUnityHom q hq n σ hσ, hζ]
+  simp only [map_add, map_zsmul, hroot, smul_sub]
+  abel
+
+include hu in
+/-- A continuous coefficient endomorphism fixes all Tate `n`-torsion exactly when it fixes
+the roots of unity and a chosen `n`-th root of the parameter. This detects triviality of
+the entire action, not only of its action on the exponent quotient. -/
+theorem torsionByMap_tateCurveAt_eq_id_iff
+    (σ : L →ₐ[K] L) (hσ : Continuous σ) :
+    torsionByMap (n : ℤ) (Point.map (W' := (tateCurveAt q hq).toAffine) σ).toIntLinearMap =
+        LinearMap.id ↔
+      (∀ ζ : rootsOfUnity n L, restrictRootsOfUnity σ n ζ = ζ) ∧
+        Units.map (σ : L →* L) u = u := by
+  have hid : torsionByMap (n : ℤ)
+      (Point.map (W' := (tateCurveAt q hq).toAffine) (AlgHom.id K L)).toIntLinearMap =
+        LinearMap.id := by
+    ext P
+    simp only [coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap, LinearMap.id_apply]
+    rcases P with ⟨_ | _, _⟩ <;> rfl
+  have hidUnits (v : Lˣ) : Units.map (AlgHom.id K L : L →* L) v = v := by
+    ext
+    simp
+  have hidRoots (ζ : rootsOfUnity n L) : restrictRootsOfUnity (AlgHom.id K L) n ζ = ζ :=
+    Subtype.ext (hidUnits _)
+  simpa only [hid, hidUnits, hidRoots] using
+    torsionByMap_tateCurveAt_eq_iff q hq n u hu σ (AlgHom.id K L) hσ continuous_id
+
+end ChosenRoot
 
 /-- Fixing all `ℓ`-power roots of unity makes the action on the Tate module of a Tate curve
 unipotent of index at most two. No basis, discreteness of the valuation, or algebraicity of the
