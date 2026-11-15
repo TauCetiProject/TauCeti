@@ -868,6 +868,7 @@ lemma ModularForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
 
 /-- The underlying function of the level-raise of a cusp form is that of the level-raise of the
 cusp form read as a modular form. -/
+@[simp]
 lemma _root_.CuspForm.coe_levelRaise_eq_modularForm [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(CuspForm.levelRaise d hle f) = ⇑(ModularForm.levelRaise d hle (f : ModularForm 𝒢 k)) := by
