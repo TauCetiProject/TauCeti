@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Wenzl
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.GeomSum
@@ -25,9 +26,10 @@ with the removable value `a_d(1) = (d + 1) / (2 * d)`. In Wenzl's classification
 Markov traces on the type-A Hecke algebras, which is not proved here, the projection parameters at
 `Q = q ^ 2 > 0` form a closed interval together with the discrete values `a_d(Q)`, and at the
 roots of unity `Q = exp (± 2 π i / l)` they are the values `a_k(Q)`, `1 ≤ k ≤ l - 1`. This file
-develops the parameters themselves, and identifies `a_(r + 1)(q ^ 2)` as the projection parameter
-of the Ocneanu trace realized by the atomic model on `r + 1` positive letters with geometric
-weights.
+develops the parameters themselves, characterizes the closed and open real interval at `Q > -1` by
+the quadratic relation `a_(-2)(Q) ≤ η * (1 - η)`, and identifies `a_(r + 1)(q ^ 2)` and
+`a_(-(r + 1))(q ^ 2)` as the native and Wenzl projection parameters of the Ocneanu trace realized
+by the atomic model on `r + 1` positive letters with geometric weights.
 
 We define `a_d(Q)` (`TauCeti.wenzlParam`) without division by `1 - Q`: for `d = r ≥ 0` and for
 `d = -r`, with `[n]_Q = ∑ i < n, Q ^ i`,
@@ -43,24 +45,42 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
 
 ## Main results
 
-* `TauCeti.wenzlParam_eq_div`: the closed form `(1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))`.
+* `TauCeti.wenzlParam_eq_div` and `TauCeti.map_wenzlParam`: the closed form
+  `(1 - Q ^ (d + 1)) / ((1 + Q) * (1 - Q ^ d))`, and compatibility with field homomorphisms.
 * `TauCeti.wenzlParam_one` and `TauCeti.tendsto_one_sub_zpow_div_nhdsNE_one`: the value
   `(d + 1) / (2 * d)` at `Q = 1`, and the closed form tends to it as `Q → 1`.
 * `TauCeti.wenzlParam_add_wenzlParam_neg`: the complement identity `a_d + a_(-d) = 1`.
 * `TauCeti.wenzlParam_inv`: the inversion symmetry `a_d(Q⁻¹) = a_d(Q)`.
-* `TauCeti.wenzlParam_neg_two_sq`: the Jones value `a_(-2)(q ^ 2) = (q + q⁻¹)⁻²`.
+* `TauCeti.wenzlParam_neg_one`, `TauCeti.wenzlParam_one_left`, `TauCeti.wenzlParam_natCast_zero`,
+  `TauCeti.wenzlParam_neg_natCast_zero`, `TauCeti.wenzlParam_neg_two`, `TauCeti.wenzlParam_two`,
+  and `TauCeti.wenzlParam_neg_two_sq`: the scalar values `a_(-1) = 0`, `a_1 = 1`, the `Q = 0`
+  values, and the Jones values `a_(-2)(Q) = Q / (1 + Q) ^ 2 = (q + q⁻¹)⁻²` and `a_2(Q)`.
+* `TauCeti.wenzlParam_neg_two_eq_mul_one_sub_iff`,
+  `TauCeti.wenzlParam_neg_two_le_mul_one_sub_iff`, and
+  `TauCeti.wenzlParam_neg_two_lt_mul_one_sub_iff`: `a_(-2)(Q) = η * (1 - η)` characterizes the
+  endpoints `1 / (1 + Q)` and `Q / (1 + Q)`, and `≤` / `<` characterize the closed and open
+  intervals between them whenever `1 + Q ≠ 0`.
+* `TauCeti.wenzlParam_exp_two_mul`, `TauCeti.wenzlParam_exp_neg_two_mul`,
+  `TauCeti.wenzlParam_real_exp_two_mul`, `TauCeti.wenzlParam_real_exp_neg_two_mul`, and
+  `TauCeti.wenzlParam_neg_two_exp_neg_two_mul`:
+  `a_k(exp (± 2 θ)) = sinh ((k + 1) θ) / (2 cosh θ sinh (k θ))` and
+  `a_(-2)(exp (± 2 θ)) = (4 cosh² θ)⁻¹`.
 * `TauCeti.wenzlParam_exp_mul_I`: `a_k(exp (2 θ i)) = sin ((k + 1) θ) / (2 cos θ sin (k θ))`;
-  `TauCeti.wenzlParam_exp_two_pi_mul_I_div`, `TauCeti.wenzlParam_exp_neg_two_pi_mul_I_div` and
-  `TauCeti.wenzlParam_exp_two_pi_mul_I_div_two_mul` give the real values at the roots of unity
-  `exp (± 2 π i / l)` and the middle value `a_m = 1 / 2` for `l = 2 * m`.
+  `TauCeti.wenzlParam_exp_two_pi_mul_I_div`, `TauCeti.wenzlParam_neg_exp_two_pi_mul_I_div`,
+  `TauCeti.wenzlParam_sub_exp_two_pi_mul_I_div`,
+  `TauCeti.wenzlParam_exp_two_pi_mul_I_div_two_mul`, and
+  `TauCeti.exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div_iff` give the real values, complementary
+  pairs `a_(l - k) = a_(-k) = 1 - a_k`, middle value `a_m = 1 / 2`, and separation of the scalar
+  endpoints `k ∈ {1, l - 1}` (all of `l = 3`) from the `(0, 1)` interior cases `2 ≤ k ≤ l - 2` at
+  `exp (± 2 π i / l)`.
 * `TauCeti.wenzlParam_add_of_pow_eq_one`: `a_d` is periodic in `d` modulo the order of `Q`; in
   particular `a_(l - 2) = a_(-2)` when `Q ^ l = 1`.
 * `TauCeti.wenzlParam_neg_natCast_eq_sum`: for the normalized geometric weights
   `p_i = Q ^ i / [r]_Q`, `i < r`, the sum `∑ i < j, p_i * p_j` is `a_(-r)(Q)`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric`: the Ocneanu
-  trace realized by the atomic model on `r + 1` positive letters with geometric weights
-  (`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_eq`) has projection parameter
-  `a_(r + 1)(q ^ 2)`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_wenzlProjection_geometric`: the Ocneanu
+  trace realized by the atomic model on `r + 1` positive letters with geometric weights has native
+  projection parameter `a_(r + 1)(q ^ 2)` and Wenzl projection parameter `a_(-(r + 1))(q ^ 2)`.
 
 ## References
 
@@ -199,7 +219,38 @@ theorem wenzlParam_add_of_pow_eq_one {Q : K} (hQ₁ : Q ≠ 1) {l : ℕ} (hl : Q
   rw [wenzlParam_eq_div hQ₀ hQ₁, wenzlParam_eq_div hQ₀ hQ₁, add_right_comm d,
     zpow_add₀ hQ₀ (d + 1) l, zpow_add₀ hQ₀ d l, h, mul_one, mul_one]
 
-/-! ### The Jones parameter -/
+/-- `wenzlParam` commutes with every ring homomorphism between fields. -/
+theorem map_wenzlParam {L F : Type*} [Field L] [FunLike F K L] [RingHomClass F K L] (f : F)
+    (d : ℤ) (Q : K) : f (wenzlParam d Q) = wenzlParam d (f Q) := by
+  obtain ⟨r, rfl | rfl⟩ := Int.eq_nat_or_neg d
+  · simp [wenzlParam_natCast]
+  · simp [wenzlParam_neg_natCast]
+
+/-! ### Scalar values, the Jones parameter, and the interval boundary relation -/
+
+/-- The scalar endpoint value `a_(-1)(Q) = 0`. -/
+@[simp]
+theorem wenzlParam_neg_one (Q : K) : wenzlParam (-1) Q = 0 := by
+  simpa using wenzlParam_neg_natCast 1 Q
+
+/-- The scalar endpoint value `a_1(Q) = 1`, whenever `1 + Q ≠ 0`. -/
+theorem wenzlParam_one_left {Q : K} (hQ : 1 + Q ≠ 0) : wenzlParam 1 Q = 1 := by
+  have h := wenzlParam_natCast 1 Q
+  simp only [Nat.cast_one, sum_range_succ, sum_range_zero, zero_add, pow_zero, pow_one,
+    mul_one] at h
+  rw [h, div_self hQ]
+
+/-- At `Q = 0`, `a_r(0) = 1` for every positive natural `r`. -/
+@[simp]
+theorem wenzlParam_natCast_zero {r : ℕ} (hr : r ≠ 0) : wenzlParam (r : ℤ) (0 : K) = 1 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hr
+  rw [wenzlParam_natCast]
+  simp [sum_range_succ']
+
+/-- At `Q = 0`, `a_(-r)(0) = 0` for every natural `r`. -/
+@[simp]
+theorem wenzlParam_neg_natCast_zero (r : ℕ) : wenzlParam (-(r : ℤ)) (0 : K) = 0 := by
+  simp [wenzlParam_neg_natCast]
 
 /-- The parameter `a_(-2)(Q) = Q / (1 + Q) ^ 2`. -/
 theorem wenzlParam_neg_two (Q : K) : wenzlParam (-2) Q = Q / (1 + Q) ^ 2 := by
@@ -208,6 +259,14 @@ theorem wenzlParam_neg_two (Q : K) : wenzlParam (-2) Q = Q / (1 + Q) ^ 2 := by
   rw [h]
   simp [sum_range_succ, sq]
 
+/-- The complementary Jones parameter `a_2(Q) = (1 + Q + Q ^ 2) / (1 + Q) ^ 2`. -/
+theorem wenzlParam_two (Q : K) :
+    wenzlParam 2 Q = (1 + Q + Q ^ 2) / (1 + Q) ^ 2 := by
+  have h := wenzlParam_natCast 2 Q
+  push_cast at h
+  rw [h]
+  simp only [sum_range_succ, sum_range_zero, zero_add, pow_zero, pow_one, sq]
+
 /-- **The Jones parameter.** At `Q = q ^ 2`, `a_(-2)(Q) = (q + q⁻¹)⁻²`, the parameter `τ` of the
 Jones quotient. -/
 theorem wenzlParam_neg_two_sq (q : K) :
@@ -215,6 +274,60 @@ theorem wenzlParam_neg_two_sq (q : K) :
   rcases eq_or_ne q 0 with rfl | hq
   · simp [wenzlParam_neg_two]
   rw [wenzlParam_neg_two, show q + q⁻¹ = (1 + q ^ 2) / q by field_simp; ring, div_pow, inv_div]
+
+/-- **Factorization of the boundary defect `a_(-2)(Q) - η * (1 - η)`.** When `1 + Q ≠ 0`,
+`a_(-2)(Q) - η * (1 - η) = (η - 1 / (1 + Q)) * (η - Q / (1 + Q))`. -/
+theorem wenzlParam_neg_two_sub_mul_one_sub {Q : K} (hQ : 1 + Q ≠ 0) (η : K) :
+    wenzlParam (-2) Q - η * (1 - η) = (η - 1 / (1 + Q)) * (η - Q / (1 + Q)) := by
+  rw [wenzlParam_neg_two]
+  field_simp
+  ring
+
+/-- **Boundary characterization `τ = η * (1 - η)`.** When `1 + Q ≠ 0`, the Jones parameter
+`a_(-2)(Q)` equals `η * (1 - η)` if and only if `η = 1 / (1 + Q)` or `η = Q / (1 + Q)`. -/
+theorem wenzlParam_neg_two_eq_mul_one_sub_iff {Q η : K} (hQ : 1 + Q ≠ 0) :
+    wenzlParam (-2) Q = η * (1 - η) ↔ η = 1 / (1 + Q) ∨ η = Q / (1 + Q) := by
+  rw [← sub_eq_zero, wenzlParam_neg_two_sub_mul_one_sub hQ, mul_eq_zero, sub_eq_zero, sub_eq_zero]
+
+/-- **Closed-interval characterization `τ ≤ η * (1 - η)`.** Over a linear ordered field, when
+`1 + Q ≠ 0`, the inequality `a_(-2)(Q) ≤ η * (1 - η)` holds if and only if `η` lies in the closed
+interval between `1 / (1 + Q)` and `Q / (1 + Q)`. -/
+theorem wenzlParam_neg_two_le_mul_one_sub_iff [LinearOrder K] [IsStrictOrderedRing K] {Q η : K}
+    (hQ : 1 + Q ≠ 0) :
+    wenzlParam (-2) Q ≤ η * (1 - η) ↔
+      η ∈ Set.Icc (min (1 / (1 + Q)) (Q / (1 + Q))) (max (1 / (1 + Q)) (Q / (1 + Q))) := by
+  set a := min (1 / (1 + Q)) (Q / (1 + Q))
+  set b := max (1 / (1 + Q)) (Q / (1 + Q))
+  have hab : a ≤ b := min_le_max
+  have hprod : (η - 1 / (1 + Q)) * (η - Q / (1 + Q)) = (η - a) * (η - b) := by
+    rcases le_total (1 / (1 + Q)) (Q / (1 + Q)) with h | h
+    · simp [a, b, min_eq_left h, max_eq_right h]
+    · simp [a, b, min_eq_right h, max_eq_left h, mul_comm]
+  rw [← sub_nonpos, wenzlParam_neg_two_sub_mul_one_sub hQ, hprod, Set.mem_Icc]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨ha, hb⟩ ↦
+    mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 ha) (sub_nonpos.2 hb)⟩
+  · by_contra! hlt
+    exact not_lt_of_ge h (mul_pos_of_neg_of_neg (sub_neg.2 hlt) (sub_neg.2 (hlt.trans_le hab)))
+  · by_contra! hgt
+    exact not_lt_of_ge h (mul_pos (sub_pos.2 (hab.trans_lt hgt)) (sub_pos.2 hgt))
+
+/-- **Open-interval characterization `τ < η * (1 - η)`.** Over a linear ordered field, when
+`1 + Q ≠ 0`, the strict inequality `a_(-2)(Q) < η * (1 - η)` holds if and only if `η` lies in the
+open interval between `1 / (1 + Q)` and `Q / (1 + Q)`. -/
+theorem wenzlParam_neg_two_lt_mul_one_sub_iff [LinearOrder K] [IsStrictOrderedRing K] {Q η : K}
+    (hQ : 1 + Q ≠ 0) :
+    wenzlParam (-2) Q < η * (1 - η) ↔
+      η ∈ Set.Ioo (min (1 / (1 + Q)) (Q / (1 + Q))) (max (1 / (1 + Q)) (Q / (1 + Q))) := by
+  set a := min (1 / (1 + Q)) (Q / (1 + Q))
+  set b := max (1 / (1 + Q)) (Q / (1 + Q))
+  have hab : a ≤ b := min_le_max
+  have hprod : (η - 1 / (1 + Q)) * (η - Q / (1 + Q)) = (η - a) * (η - b) := by
+    rcases le_total (1 / (1 + Q)) (Q / (1 + Q)) with h | h
+    · simp [a, b, min_eq_left h, max_eq_right h]
+    · simp [a, b, min_eq_right h, max_eq_left h, mul_comm]
+  rw [← sub_neg, wenzlParam_neg_two_sub_mul_one_sub hQ, hprod, mul_neg_iff, sub_pos, sub_neg,
+    sub_neg, sub_pos, Set.mem_Ioo]
+  exact ⟨fun h ↦ h.elim id fun ⟨h1, h2⟩ ↦ absurd (h2.trans h1) (not_lt_of_ge hab), Or.inl⟩
 
 /-! ### Geometric weights -/
 
@@ -313,6 +426,104 @@ theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin
   rw [hexp]
   field_simp [exp_ne_zero, I_ne_zero]
 
+/-- **The hyperbolic form at `exp (2 θ)`.** At `Q = exp (2 * θ)`,
+`a_k(Q) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ))`, whenever `cosh θ ≠ 0` and
+`sinh (k * θ) ≠ 0`. -/
+theorem wenzlParam_exp_two_mul (k : ℤ) {θ : ℂ} (hθ : cosh θ ≠ 0) (hk : sinh (k * θ) ≠ 0) :
+    wenzlParam k (exp (2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ)) := by
+  have hcos : cos (-θ * I) ≠ 0 := by
+    simpa [show -θ * I = -(θ * I) by ring, cos_mul_I] using hθ
+  have hsin : sin (k * (-θ * I)) ≠ 0 := by
+    rw [show (k : ℂ) * (-θ * I) = -(k * θ) * I by ring, sin_mul_I]
+    simp [hk, I_ne_zero]
+  have h := wenzlParam_exp_mul_I k hcos hsin
+  rw [show 2 * (-θ * I) * I = 2 * θ by linear_combination -2 * θ * I_sq,
+    show -θ * I = -(θ * I) by ring, cos_neg, cos_mul_I,
+    show ((k : ℂ) + 1) * -(θ * I) = -(((k : ℂ) + 1) * θ) * I by ring,
+    show (k : ℂ) * -(θ * I) = -(k * θ) * I by ring,
+    sin_mul_I, sin_mul_I, sinh_neg, sinh_neg] at h
+  rw [h]
+  field_simp [I_ne_zero]
+
+/-- **The hyperbolic form at `exp (-2 θ)`.** At `Q = exp (-2 * θ)`,
+`a_k(Q) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ))`, whenever `cosh θ ≠ 0` and
+`sinh (k * θ) ≠ 0`. -/
+theorem wenzlParam_exp_neg_two_mul (k : ℤ) {θ : ℂ} (hθ : cosh θ ≠ 0) (hk : sinh (k * θ) ≠ 0) :
+    wenzlParam k (exp (-2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ)) := by
+  rw [show (-2 : ℂ) * θ = -(2 * θ) by ring, exp_neg, wenzlParam_inv, wenzlParam_exp_two_mul k hθ hk]
+
+/-- **The real hyperbolic form at `Real.exp (2 θ)`.** For `k ≠ 0` and real `θ ≠ 0`,
+`a_k(exp (2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ))`. -/
+theorem wenzlParam_real_exp_two_mul {k : ℤ} (hk : k ≠ 0) {θ : ℝ} (hθ : θ ≠ 0) :
+    wenzlParam k (Real.exp (2 * θ)) =
+      Real.sinh ((k + 1) * θ) / (2 * Real.cosh θ * Real.sinh (k * θ)) := by
+  apply Complex.ofReal_injective
+  have hc : cosh (θ : ℂ) ≠ 0 := by exact_mod_cast (Real.cosh_pos θ).ne'
+  have hs : sinh ((k : ℂ) * θ) ≠ 0 := by
+    have : Real.sinh ((k : ℝ) * θ) ≠ 0 :=
+      Real.sinh_ne_zero.2 (mul_ne_zero (Int.cast_ne_zero.2 hk) hθ)
+    exact_mod_cast this
+  have h := wenzlParam_exp_two_mul k hc hs
+  rw [← Complex.ofRealHom_eq_coe, map_wenzlParam]
+  simpa using h
+
+/-- **The real hyperbolic form at `Real.exp (-2 θ)`.** For `k ≠ 0` and real `θ ≠ 0`,
+`a_k(exp (-2 * θ)) = sinh ((k + 1) * θ) / (2 * cosh θ * sinh (k * θ))`. -/
+theorem wenzlParam_real_exp_neg_two_mul {k : ℤ} (hk : k ≠ 0) {θ : ℝ} (hθ : θ ≠ 0) :
+    wenzlParam k (Real.exp (-2 * θ)) =
+      Real.sinh ((k + 1) * θ) / (2 * Real.cosh θ * Real.sinh (k * θ)) := by
+  rw [show (-2 : ℝ) * θ = -(2 * θ) by ring, Real.exp_neg, wenzlParam_inv,
+    wenzlParam_real_exp_two_mul hk hθ]
+
+/-- **The Jones parameter on the unit circle.** At `Q = exp (2 θ i)`,
+`a_(-2)(Q) = (4 * cos θ ^ 2)⁻¹` for every `θ : ℂ`. -/
+theorem wenzlParam_neg_two_exp_mul_I (θ : ℂ) :
+    wenzlParam (-2) (exp (2 * θ * I)) = (4 * cos θ ^ 2)⁻¹ := by
+  have e₁ : exp (-θ * I) * exp (θ * I) = 1 := by rw [← exp_add]; simp
+  have e₂ : exp (θ * I) * exp (θ * I) = exp (2 * θ * I) := by rw [← exp_add]; ring_nf
+  have h1 : 1 + exp (2 * θ * I) = 2 * cos θ * exp (θ * I) := by
+    rw [two_cos]
+    linear_combination -e₁ - e₂
+  have hsq : (1 + exp (2 * θ * I)) ^ 2 = exp (2 * θ * I) * (4 * cos θ ^ 2) := by
+    rw [h1]
+    linear_combination 4 * cos θ ^ 2 * e₂
+  rw [wenzlParam_neg_two, hsq, div_mul_eq_div_div, div_self (exp_ne_zero _), one_div]
+
+/-- **The hyperbolic Jones parameter at `exp (2 θ)`.** For every `θ : ℂ`,
+`a_(-2)(exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
+theorem wenzlParam_neg_two_exp_two_mul (θ : ℂ) :
+    wenzlParam (-2) (exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹ := by
+  have e₁ : exp (-θ) * exp θ = 1 := by rw [← exp_add]; simp
+  have e₂ : exp θ * exp θ = exp (2 * θ) := by rw [← exp_add]; ring_nf
+  have h1 : 1 + exp (2 * θ) = 2 * cosh θ * exp θ := by
+    rw [two_cosh]
+    linear_combination -e₁ - e₂
+  have hsq : (1 + exp (2 * θ)) ^ 2 = exp (2 * θ) * (4 * cosh θ ^ 2) := by
+    rw [h1]
+    linear_combination 4 * cosh θ ^ 2 * e₂
+  rw [wenzlParam_neg_two, hsq, div_mul_eq_div_div, div_self (exp_ne_zero _), one_div]
+
+/-- **The hyperbolic Jones parameter at `exp (-2 θ)`.** For every `θ : ℂ`,
+`a_(-2)(exp (-2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
+theorem wenzlParam_neg_two_exp_neg_two_mul (θ : ℂ) :
+    wenzlParam (-2) (exp (-2 * θ)) = (4 * cosh θ ^ 2)⁻¹ := by
+  rw [show (-2 : ℂ) * θ = -(2 * θ) by ring, exp_neg, wenzlParam_inv, wenzlParam_neg_two_exp_two_mul]
+
+/-- **The real hyperbolic Jones parameter at `Real.exp (2 θ)`.** For every `θ : ℝ`,
+`a_(-2)(exp (2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
+theorem wenzlParam_neg_two_real_exp_two_mul (θ : ℝ) :
+    wenzlParam (-2) (Real.exp (2 * θ)) = (4 * Real.cosh θ ^ 2)⁻¹ := by
+  apply Complex.ofReal_injective
+  rw [← Complex.ofRealHom_eq_coe, map_wenzlParam]
+  simpa using wenzlParam_neg_two_exp_two_mul (θ : ℂ)
+
+/-- **The real hyperbolic Jones parameter at `Real.exp (-2 θ)`.** For every `θ : ℝ`,
+`a_(-2)(exp (-2 * θ)) = (4 * cosh θ ^ 2)⁻¹`. -/
+theorem wenzlParam_neg_two_real_exp_neg_two_mul (θ : ℝ) :
+    wenzlParam (-2) (Real.exp (-2 * θ)) = (4 * Real.cosh θ ^ 2)⁻¹ := by
+  rw [show (-2 : ℝ) * θ = -(2 * θ) by ring, Real.exp_neg, wenzlParam_inv,
+    wenzlParam_neg_two_real_exp_two_mul]
+
 /-- **The values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at `Q = exp (2 π i / l)`,
 `a_k(Q) = sin ((k + 1) π / l) / (2 * cos (π / l) * sin (k π / l))`, a real number. -/
 theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
@@ -338,6 +549,88 @@ theorem wenzlParam_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 
       ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
   rw [exp_neg, wenzlParam_inv, wenzlParam_exp_two_pi_mul_I_div hl hk₀ hkl]
 
+/-- **The negative-index values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at
+`Q = exp (2 π i / l)`, `a_(-k)(Q) = sin ((k - 1) π / l) / (2 * cos (π / l) * sin (k π / l))`. -/
+theorem wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
+    wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) =
+      ↑(Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
+  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
+  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
+  have hsin : 0 < Real.sin (k * π / l) := by
+    refine Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_
+    rw [div_lt_iff₀ hl₀, mul_comm π]
+    exact mul_lt_mul_of_pos_right (by exact_mod_cast hkl) Real.pi_pos
+  have h := wenzlParam_exp_mul_I (-(k : ℤ)) (θ := π / l) (by exact_mod_cast hcos.ne')
+    (by rw [Int.cast_neg, Int.cast_natCast, neg_mul, sin_neg, neg_ne_zero, ← mul_div_assoc]
+        exact_mod_cast hsin.ne')
+  rw [show 2 * (π / l : ℂ) * I = 2 * π * I / l by ring, Int.cast_neg, Int.cast_natCast,
+    show (-(k : ℂ) + 1) * (π / l) = -(((k : ℂ) - 1) * π / l) by ring,
+    show -(k : ℂ) * (π / l) = -(k * π / l) by ring, sin_neg, sin_neg] at h
+  rw [h]
+  push_cast
+  field_simp
+
+/-- The negative-index values at `Q = exp (-2 π i / l)` agree with those at `exp (2 π i / l)`. -/
+theorem wenzlParam_neg_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)
+    (hkl : k < l) :
+    wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) =
+      ↑(Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
+  rw [exp_neg, wenzlParam_inv, wenzlParam_neg_exp_two_pi_mul_I_div hl hk₀ hkl]
+
+/-- **Complement identity at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at
+`Q = exp (2 π i / l)`, `a_k(Q) + a_(-k)(Q) = 1`. -/
+theorem wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)
+    (hkl : k < l) :
+    wenzlParam (k : ℤ) (exp (2 * π * I / l)) + wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) = 1 := by
+  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
+  have hcos : Real.cos (π / l) ≠ 0 := (cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))).ne'
+  have hsin : Real.sin (k * π / l) ≠ 0 := by
+    refine (Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_).ne'
+    rw [div_lt_iff₀ hl₀, mul_comm π]
+    exact mul_lt_mul_of_pos_right (by exact_mod_cast hkl) Real.pi_pos
+  rw [wenzlParam_exp_two_pi_mul_I_div hl hk₀ hkl, wenzlParam_neg_exp_two_pi_mul_I_div hl hk₀ hkl,
+    ← ofReal_add, ← add_div]
+  have hsum : Real.sin ((k + 1) * π / l) + Real.sin ((k - 1) * π / l) =
+      2 * Real.cos (π / l) * Real.sin (k * π / l) := by
+    rw [show ((k : ℝ) + 1) * π / l = k * π / l + π / l by ring,
+      show ((k : ℝ) - 1) * π / l = k * π / l - π / l by ring, Real.sin_add, Real.sin_sub]
+    ring
+  rw [hsum, div_self (by positivity), ofReal_one]
+
+/-- **Complementary index `l - k` at the roots of unity.** For `l ≥ 3` and `k ≤ l`, at
+`Q = exp (2 π i / l)`, `a_(l - k)(Q) = a_(-k)(Q)`. -/
+theorem wenzlParam_sub_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hkl : k ≤ l) :
+    wenzlParam ((l - k : ℕ) : ℤ) (exp (2 * π * I / l)) =
+      wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) := by
+  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
+  have hQ₁ : exp (2 * π * I / l) ≠ 1 := by
+    have hsin : Real.sin (π / l) ≠ 0 := by
+      refine (Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_).ne'
+      rw [div_lt_iff₀ hl₀]
+      nlinarith [Real.pi_pos, (show (3 : ℝ) ≤ l by exact_mod_cast hl)]
+    have hsub : 1 - exp (2 * π * I / l) = -I * (2 * sin (π / l)) * exp (π * I / l) := by
+      have e₁ : exp (-(π / l) * I) * exp (π / l * I) = 1 := by rw [← exp_add]; simp
+      have e₂ : exp (π / l * I) * exp (π / l * I) = exp (2 * π * I / l) := by
+        rw [← exp_add]; ring_nf
+      rw [two_sin, show π * I / (l : ℂ) = π / l * I by ring]
+      linear_combination (-1) * e₁ + e₂ +
+        (exp (-(π / l) * I) - exp (π / l * I)) * exp (π / l * I) * I_sq
+    intro h1
+    rw [h1, sub_self] at hsub
+    have hsin' : sin (π / l : ℂ) ≠ 0 := by exact_mod_cast hsin
+    exact absurd hsub.symm (by simp [I_ne_zero, hsin', exp_ne_zero])
+  have hQl : exp (2 * π * I / l) ^ l = 1 := by
+    rw [← exp_nat_mul, show (l : ℂ) * (2 * π * I / l) = 2 * π * I by
+      field_simp [show (l : ℂ) ≠ 0 by exact_mod_cast (by omega : l ≠ 0)], exp_two_pi_mul_I]
+  rw [Nat.cast_sub hkl, show (l : ℤ) - k = -(k : ℤ) + l by omega]
+  exact wenzlParam_add_of_pow_eq_one hQ₁ hQl (-(k : ℤ))
+
+/-- At `Q = exp (-2 π i / l)`, `a_(l - k)(Q) = a_(-k)(Q)` for `l ≥ 3` and `k ≤ l`. -/
+theorem wenzlParam_sub_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hkl : k ≤ l) :
+    wenzlParam ((l - k : ℕ) : ℤ) (exp (-(2 * π * I / l))) =
+      wenzlParam (-(k : ℤ)) (exp (-(2 * π * I / l))) := by
+  rw [exp_neg, wenzlParam_inv, wenzlParam_inv, wenzlParam_sub_exp_two_pi_mul_I_div hl hkl]
+
 /-- **The middle value.** For `l = 2 * m ≥ 4`, at `Q = exp (2 π i / l)`, `a_m(Q) = 1 / 2`. -/
 theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
     wenzlParam (m : ℤ) (exp (2 * π * I / (2 * m))) = 1 / 2 := by
@@ -352,6 +645,105 @@ theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
   rw [h, h₁, h₂, Real.sin_add_pi_div_two, Real.sin_pi_div_two, mul_one,
     div_mul_cancel_right₀ hcos]
   norm_num
+
+/-- At `Q = exp (2 π i / l)` with `l ≥ 3`, the first positive parameter `a_1(Q)` is `1`. -/
+theorem wenzlParam_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
+    wenzlParam 1 (exp (2 * π * I / l)) = 1 := by
+  refine wenzlParam_one_left fun h0 ↦ ?_
+  have hcos : Real.cos (π / l) ≠ 0 := (cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))).ne'
+  have h := wenzlParam_neg_two_exp_mul_I (π / l)
+  rw [show 2 * (π / l : ℂ) * I = 2 * π * I / l by ring, wenzlParam_neg_two, h0] at h
+  have hc : cos (π / l : ℂ) ≠ 0 := by exact_mod_cast hcos
+  exact absurd h.symm (by simp [hc])
+
+/-- At `Q = exp (2 π i / l)` with `l ≥ 3`, the last parameter `a_(l - 1)(Q)` is `0`. -/
+theorem wenzlParam_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
+    wenzlParam ((l - 1 : ℕ) : ℤ) (exp (2 * π * I / l)) = 0 := by
+  rw [wenzlParam_sub_exp_two_pi_mul_I_div hl (by omega), Nat.cast_one, wenzlParam_neg_one]
+
+/-- At `Q = exp (2 π i / l)` with `l ≥ 3`, `a_(-(l - 1))(Q) = 1`. -/
+theorem wenzlParam_neg_sub_one_exp_two_pi_mul_I_div {l : ℕ} (hl : 3 ≤ l) :
+    wenzlParam (-((l - 1 : ℕ) : ℤ)) (exp (2 * π * I / l)) = 1 := by
+  have h := wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div (l := l) (k := l - 1) hl
+    (by omega) (by omega)
+  rwa [wenzlParam_sub_one_exp_two_pi_mul_I_div hl, zero_add] at h
+
+/-- **Strict `(0, 1)` interior values for `2 ≤ k ≤ l - 2` (`l ≥ 4`).** When `2 ≤ k` and
+`k + 2 ≤ l`, `a_k(exp (2 π i / l))` is a real number `η ∈ (0, 1)`, and `a_(-k)(exp (2 π i / l))` is
+`1 - η ∈ (0, 1)`. -/
+theorem exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hk : 2 ≤ k) (hkl : k + 2 ≤ l) :
+    ∃ η ∈ Set.Ioo (0 : ℝ) 1,
+      wenzlParam (k : ℤ) (exp (2 * π * I / l)) = η ∧
+        wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) = ↑(1 - η) := by
+  have hl : 3 ≤ l := by omega
+  have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
+  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
+  have hsin_k : 0 < Real.sin (k * π / l) := by
+    refine Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_
+    rw [div_lt_iff₀ hl₀, mul_comm π]
+    exact mul_lt_mul_of_pos_right (by exact_mod_cast (by omega : k < l)) Real.pi_pos
+  have hsin_add : 0 < Real.sin ((k + 1) * π / l) := by
+    refine Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_
+    rw [div_lt_iff₀ hl₀, mul_comm π]
+    exact mul_lt_mul_of_pos_right (by exact_mod_cast (by omega : k + 1 < l)) Real.pi_pos
+  have hk₁ : 0 < (k : ℝ) - 1 := by
+    have : (2 : ℝ) ≤ k := by exact_mod_cast hk
+    linarith
+  have hsin_sub : 0 < Real.sin ((k - 1) * π / l) := by
+    refine Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos hk₁ Real.pi_pos) hl₀) ?_
+    rw [div_lt_iff₀ hl₀, mul_comm π]
+    have : (k : ℝ) - 1 < l := by
+      have : (k : ℝ) < l := by exact_mod_cast (by omega : k < l)
+      linarith
+    exact mul_lt_mul_of_pos_right this Real.pi_pos
+  set r₁ := Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))
+  set r₂ := Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))
+  have hr₁ : 0 < r₁ := by positivity
+  have hr₂ : 0 < r₂ := by positivity
+  have hsum_c := wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div (l := l) (k := k) hl
+    (by omega) (by omega)
+  rw [wenzlParam_exp_two_pi_mul_I_div hl (by omega) (by omega),
+    wenzlParam_neg_exp_two_pi_mul_I_div hl (by omega) (by omega), ← ofReal_add, ← ofReal_one]
+      at hsum_c
+  have hsum : r₁ + r₂ = 1 := Complex.ofReal_injective hsum_c
+  refine ⟨r₁, ⟨hr₁, by linarith⟩, wenzlParam_exp_two_pi_mul_I_div hl (by omega) (by omega), ?_⟩
+  rw [wenzlParam_neg_exp_two_pi_mul_I_div hl (by omega) (by omega), show 1 - r₁ = r₂ by linarith]
+
+/-- **Characterization of nontrivial root-of-unity parameters.** For `l ≥ 3` and `0 < k < l`,
+`a_k(exp (2 π i / l))` lies strictly in `(0, 1)` if and only if `2 ≤ k` and `k + 2 ≤ l` (so in
+particular `l ≥ 4`). -/
+theorem exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div_iff {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)
+    (hkl : k < l) :
+    (∃ η ∈ Set.Ioo (0 : ℝ) 1, wenzlParam (k : ℤ) (exp (2 * π * I / l)) = η) ↔
+      2 ≤ k ∧ k + 2 ≤ l := by
+  refine ⟨fun ⟨η, hη, heq⟩ ↦ ?_, fun ⟨hk, hkl'⟩ ↦ ?_⟩
+  · by_contra h
+    rcases (show k = 1 ∨ k = l - 1 by omega) with rfl | rfl
+    · rw [Nat.cast_one, wenzlParam_one_exp_two_pi_mul_I_div hl, ← ofReal_one] at heq
+      exact hη.2.ne' (Complex.ofReal_injective heq)
+    · rw [wenzlParam_sub_one_exp_two_pi_mul_I_div hl, ← ofReal_zero] at heq
+      exact hη.1.ne (Complex.ofReal_injective heq)
+  · obtain ⟨η, hη, h1, _⟩ := exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div hk hkl'
+    exact ⟨η, hη, h1⟩
+
+/-- **Characterization of scalar root-of-unity parameters.** For `l ≥ 3` and `0 < k < l`,
+`a_k(exp (2 π i / l))` belongs to `{0, 1}` if and only if `k = 1` or `k + 1 = l`. In particular, for
+`l = 3` every `0 < k < 3` gives a scalar endpoint `{0, 1}`. -/
+theorem wenzlParam_exp_two_pi_mul_I_div_mem_pair_iff {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)
+    (hkl : k < l) :
+    wenzlParam (k : ℤ) (exp (2 * π * I / l)) ∈ ({0, 1} : Set ℂ) ↔ k = 1 ∨ k + 1 = l := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hnot
+    obtain ⟨η, hη, heq, _⟩ := exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div (l := l) (k := k)
+      (by omega) (by omega)
+    rw [heq, Set.mem_insert_iff, Set.mem_singleton_iff, ← ofReal_zero, ← ofReal_one] at h
+    rcases h with h | h
+    · exact hη.1.ne' (Complex.ofReal_injective h)
+    · exact hη.2.ne (Complex.ofReal_injective h)
+  · rcases h with rfl | h
+    · simp [wenzlParam_one_exp_two_pi_mul_I_div hl]
+    · obtain rfl : k = l - 1 := by omega
+      simp [wenzlParam_sub_one_exp_two_pi_mul_I_div hl]
 
 end RootOfUnity
 
@@ -384,6 +776,31 @@ theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q +
   rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
   field_simp
   linear_combination ((1 + (q : K) ^ 2) * (q : K) ^ (2 * r + 2)) * hc
+
+/-- **The Wenzl projection parameter of a geometric atomic model.** Let `Q = q ^ 2`, let
+`u = 1 + Q` be a unit, and `c * [r + 1]_Q = 1`. Appending Wenzl's projection
+`(1 + Q)⁻¹ • (Q - q • T n)` to an element of the stage on `n + 1` strands multiplies the Ocneanu
+trace with parameter `z = c * q ^ (2 * r + 1)` by `a_(-(r + 1))(Q) = 1 - a_(r + 1)(Q)`. -/
+theorem ocneanuTrace_mul_wenzlProjection_geometric (u : Kˣ) (hu : (u : K) = 1 + (q : K) ^ 2)
+    {r : ℕ} {c : K} (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra K q} (hx : x ∈ stage K q (n + 1)) :
+    ocneanuTrace K q (c * (q : K) ^ (2 * r + 1))
+        (x * (↑u⁻¹ : K) • (algebraMap K _ ((q : K) ^ 2) - (q : K) • T q n)) =
+      wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) *
+        ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x := by
+  have hs : ((q⁻¹ * u : Kˣ) : K) = q + ↑q⁻¹ := by
+    have hq : (↑q⁻¹ : K) * q = 1 := q.inv_mul
+    simp only [Units.val_mul, hu]
+    linear_combination (q : K) * hq
+  have hden : (1 + (q : K) ^ 2) * ∑ a ∈ range ((r + 1 : ℕ) : ℤ).natAbs, ((q : K) ^ 2) ^ a ≠ 0 := by
+    rw [Int.natAbs_natCast, ← hu]
+    exact mul_ne_zero u.ne_zero (right_ne_zero_of_mul_eq_one hc)
+  have hcomp : 1 - wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) =
+      wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) := by
+    linear_combination -(wenzlParam_add_wenzlParam_neg hden)
+  rw [wenzlProjection_eq_one_sub_eigenprojection u (q⁻¹ * u) hu hs, mul_sub, mul_one, map_sub,
+    ocneanuTrace_mul_eigenprojection_geometric (q⁻¹ * u) hs hc hx, ← hcomp]
+  ring
 
 end InfiniteTypeAHeckeAlgebra
 
