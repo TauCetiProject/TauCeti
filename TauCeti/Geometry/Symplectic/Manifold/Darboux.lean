@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Symplectic.Darboux.Basic
+import TauCeti.Geometry.Symplectic.Darboux.Momentum
 import TauCeti.Geometry.Symplectic.WittExtension
 
 /-!
@@ -39,6 +40,11 @@ standard Euclidean Darboux coordinates pulling `TauCeti.stdSymplecticForm` back 
 straightens any prescribed nonzero tangent vector at `x₀` to `(0, EuclideanSpace.single 0 1)` or
 `(EuclideanSpace.single 0 1, 0)`.
 
+The **Carathéodory–Jacobi–Lie theorem** for one function refines this: a smooth function `f` with
+nonzero differential at `x₀` is a momentum coordinate of a Darboux chart. Composing a Darboux chart
+with the flat normal form `TauCeti.SymplecticForm.exists_openPartialHomeomorph_eq_add_fderiv`
+makes `f` affine in the chart, and in standard Euclidean Darboux coordinates `f = f x₀ + p₁`.
+
 The proof reads `form` in the preferred extended chart at `x₀` on the interior of its target,
 applies the centred flat Moser–Darboux theorem
 `TauCeti.exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv`, composes its
@@ -61,12 +67,18 @@ continuous linear symplectomorphisms.
   `TauCeti.SmoothTwoForm.IsSymplectic.exists_standardDarbouxChart_fst_single`, and their
   `_of_isInteriorPoint` counterparts: standard Euclidean Darboux charts straightening a prescribed
   nonzero tangent vector at `x₀`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_eq_add`,
+  `TauCeti.SmoothTwoForm.IsSymplectic.exists_standardDarbouxChart_eq_add_snd`, and their
+  `_of_isInteriorPoint` counterparts: the Carathéodory–Jacobi–Lie normal form, a Darboux chart in
+  which a function with nonzero differential is affine, respectively is `f x₀ + p₁`.
 
 ## References
 
 * D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 3.2 (Moser's argument and Darboux's theorem).
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2013, Theorem 22.13.
+* P. Libermann and C.-M. Marle, *Symplectic Geometry and Analytical Mechanics*, Reidel, 1987,
+  Chapter III (the Carathéodory–Jacobi–Lie theorem).
 -/
 
 public section
@@ -134,6 +146,32 @@ private theorem mvfderiv_ne_zero_of_eval₂_eq {form : SmoothTwoForm I M}
   hv₀ (isNondegenerate_iff_separatingLeft.1 hnd x₀ v₀ fun w ↦ by
     rw [hchart₁ w, hu]
     exact LinearMap.map_zero₂ ω₁.toBilinForm _)
+
+omit [IsManifold I ∞ M] in
+/-- Composing a chart with a smooth open partial homeomorphism `κ` of the model space: the source,
+the values and the derivative of the composite. -/
+private theorem trans_ofOpenPartialHomeomorph {chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞}
+    {κ : OpenPartialHomeomorph E E} (hκ : ContDiffOn ℝ ∞ κ κ.source)
+    (hκs : ContDiffOn ℝ ∞ κ.symm κ.target) :
+    let chart' := chart.trans (PartialDiffeomorph.ofOpenPartialHomeomorph κ hκ hκs)
+    (∀ x, x ∈ chart'.source ↔ x ∈ chart.source ∧ chart x ∈ κ.source) ∧
+      (∀ x, chart' x = κ (chart x)) ∧ ∀ x ∈ chart'.source, ∀ v : TangentSpace I x,
+        mvfderiv I chart' x v = fderiv ℝ κ (chart x) (mvfderiv I chart x v) := by
+  intro chart'
+  have hsrc (x : M) : x ∈ chart'.source ↔ x ∈ chart.source ∧ chart x ∈ κ.source := by
+    simp [chart']
+  have hcoe (x : M) : chart' x = κ (chart x) := by
+    simp [chart']
+  refine ⟨hsrc, hcoe, fun x hx v ↦ ?_⟩
+  obtain ⟨hxc, hxκ⟩ := (hsrc x).1 hx
+  have hκd : DifferentiableAt ℝ κ (chart x) :=
+    (hκ.differentiableOn (by simp) _ hxκ).differentiableAt (κ.open_source.mem_nhds hxκ)
+  have hcd : MDifferentiableAt I 𝓘(ℝ, E) chart x :=
+    (chart.contMDiffOn_toFun.contMDiffAt (chart.open_source.mem_nhds hxc)).mdifferentiableAt
+      (by simp)
+  have heq : ⇑chart' = ⇑κ ∘ ⇑chart := funext hcoe
+  rw [heq]
+  exact mvfderiv_comp_apply_of_differentiableAt hκd hcd v
 
 end Helpers
 
@@ -296,6 +334,98 @@ theorem IsSymplectic.exists_standardDarbouxChart_fst_single_of_isInteriorPoint
   refine ⟨m, _, hx₀', h0', ?_, hpull⟩
   rw [hderiv x₀ hx₀', ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hLv₀]
 
+/-- **The Carathéodory–Jacobi–Lie normal form for one function at an interior point.** Let `f` be
+smooth near an interior point `x₀` of a finite-dimensional symplectic manifold `(M, form)`, with
+nonzero differential at `x₀`. Then some Darboux chart around `x₀`, pulling a constant symplectic
+form `form₀` on the model space back to `form`, makes `f` affine: `f = f x₀ + ℓ ∘ chart` for a
+nonzero linear functional `ℓ`. In linear Darboux coordinates for `form₀` whose first momentum
+coordinate is `ℓ`, the function `f - f x₀` is the momentum coordinate `p₁` of a Darboux chart
+(`IsSymplectic.exists_standardDarbouxChart_eq_add_snd_of_isInteriorPoint`). -/
+theorem IsSymplectic.exists_darbouxChart_eq_add_of_isInteriorPoint {form : SmoothTwoForm I M}
+    (hform : form.IsSymplectic) {f : M → ℝ} {U : Set M} {x₀ : M} (hx₀ : I.IsInteriorPoint x₀)
+    (hU : U ∈ 𝓝 x₀) (hf : ContMDiffOn I 𝓘(ℝ) ∞ f U) (hdf : mvfderiv I f x₀ ≠ 0) :
+    ∃ (chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞) (form₀ : SymplecticForm E) (ℓ : E →L[ℝ] ℝ),
+      ℓ ≠ 0 ∧ x₀ ∈ chart.source ∧ chart x₀ = 0 ∧ chart.source ⊆ U ∧
+      (∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w)) ∧
+      ∀ x ∈ chart.source, f x = f x₀ + ℓ (chart x) := by
+  obtain ⟨c, form₀, hx₀c, hc0, hc⟩ := hform.exists_darbouxChart_of_isInteriorPoint hx₀
+  -- Read `f` in the Darboux chart `c`, on an open neighbourhood `T` of `0 = c x₀`.
+  let g : E → ℝ := fun y ↦ f (c.toPartialEquiv.symm y)
+  set T := c.target ∩ c.toPartialEquiv.symm ⁻¹' interior U
+  have hTo : IsOpen T := c.toOpenPartialHomeomorph.continuousOn_symm.isOpen_inter_preimage
+    c.open_target isOpen_interior
+  have hlinv (x : M) (hx : x ∈ c.source) : c.toPartialEquiv.symm (c x) = x :=
+    c.toPartialEquiv.left_inv hx
+  have hcs0 : c.toPartialEquiv.symm 0 = x₀ := by rw [← hc0, hlinv x₀ hx₀c]
+  have h0T : (0 : E) ∈ T := by
+    refine ⟨hc0 ▸ c.toPartialEquiv.map_source hx₀c, ?_⟩
+    rw [mem_preimage, hcs0]
+    exact mem_interior_iff_mem_nhds.2 hU
+  have hg : ContDiffOn ℝ ∞ g T :=
+    contMDiffOn_iff_contDiffOn.1 ((hf.mono interior_subset).comp
+      (c.contMDiffOn_invFun.mono inter_subset_left) fun y hy ↦ hy.2)
+  -- `f = g ∘ c` near `x₀`, so `dg_0 ≠ 0`.
+  have hg0 : fderiv ℝ g 0 ≠ 0 := by
+    intro h
+    have hgd : DifferentiableAt ℝ g (c x₀) :=
+      hc0 ▸ (hg.differentiableOn (by simp) 0 h0T).differentiableAt (hTo.mem_nhds h0T)
+    have hcd : MDifferentiableAt I 𝓘(ℝ, E) c x₀ :=
+      (c.contMDiffOn_toFun.contMDiffAt (c.open_source.mem_nhds hx₀c)).mdifferentiableAt (by simp)
+    have hfg : f =ᶠ[𝓝 x₀] g ∘ c := by
+      filter_upwards [c.open_source.mem_nhds hx₀c] with x hx
+      simp [g, hlinv x hx]
+    refine hdf (ContinuousLinearMap.ext fun v ↦ ?_)
+    rw [hfg.mvfderiv_eq, mvfderiv_comp_apply_of_differentiableAt hgd hcd, hc0, h]
+    simp only [zero_apply]
+  obtain ⟨κ, h0κ, hκ0, hκT, hκc, hκs, hκσ, hκg⟩ :=
+    form₀.exists_openPartialHomeomorph_eq_add_fderiv (hTo.mem_nhds h0T) hg hg0
+  obtain ⟨hsrc, hcoe, hd⟩ := trans_ofOpenPartialHomeomorph (chart := c) hκc hκs
+  refine ⟨_, form₀, fderiv ℝ g 0, hg0, (hsrc x₀).2 ⟨hx₀c, hc0 ▸ h0κ⟩,
+    by rw [hcoe, hc0, hκ0], fun x hx ↦ ?_, fun x hx v w ↦ ?_, fun x hx ↦ ?_⟩
+  · obtain ⟨hxc, hxκ⟩ := (hsrc x).1 hx
+    rw [← hlinv x hxc]
+    exact interior_subset (hκT hxκ).2
+  · rw [hd x hx, hd x hx, hκσ _ ((hsrc x).1 hx).2, hc x ((hsrc x).1 hx).1]
+  · obtain ⟨hxc, hxκ⟩ := (hsrc x).1 hx
+    have h := hκg (c x) hxκ
+    simp only [g, hlinv x hxc, hcs0] at h
+    rw [h, hcoe]
+
+/-- **The Carathéodory–Jacobi–Lie normal form in standard Darboux coordinates at an interior
+point.** Let `f` be smooth near an interior point `x₀` of a finite-dimensional symplectic manifold
+`(M, form)`, with nonzero differential at `x₀`. Then there are standard Euclidean Darboux
+coordinates `(q, p)` around `x₀`, pulling `stdSymplecticForm` back to `form`, in which `f` is
+`f x₀` plus the first momentum coordinate: `f = f x₀ + p₁`. -/
+theorem IsSymplectic.exists_standardDarbouxChart_eq_add_snd_of_isInteriorPoint
+    {form : SmoothTwoForm I M} (hform : form.IsSymplectic) {f : M → ℝ} {U : Set M} {x₀ : M}
+    (hx₀ : I.IsInteriorPoint x₀) (hU : U ∈ 𝓝 x₀) (hf : ContMDiffOn I 𝓘(ℝ) ∞ f U)
+    (hdf : mvfderiv I f x₀ ≠ 0) :
+    ∃ (m : ℕ) (chart : PartialDiffeomorph I
+      𝓘(ℝ, EuclideanSpace ℝ (Fin (m + 1)) × EuclideanSpace ℝ (Fin (m + 1))) M
+      (EuclideanSpace ℝ (Fin (m + 1)) × EuclideanSpace ℝ (Fin (m + 1))) ∞),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧ chart.source ⊆ U ∧
+      (∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w = stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w)) ∧
+      ∀ x ∈ chart.source, f x = f x₀ + (chart x).2 0 := by
+  obtain ⟨c, form₀, ℓ, hℓ, hx₀c, hc0, hcU, hc, hfc⟩ :=
+    hform.exists_darbouxChart_eq_add_of_isInteriorPoint hx₀ hU hf hdf
+  -- A Darboux basis whose first `q`-vector is the Hamiltonian vector field `X_ℓ` of `ℓ`.
+  have hXℓ : form₀.hamiltonianVectorField ℓ 0 ≠ 0 := by
+    rwa [Ne, form₀.hamiltonianVectorField_eq_zero_iff, ℓ.fderiv]
+  obtain ⟨m, L, hL, hLX⟩ :=
+    form₀.exists_continuousLinearEquiv_stdSymplecticForm_apply_eq_fst_single hXℓ
+  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀c hc0 hc L hL
+  have hsrc : (c.trans L.toDiffeomorph.toPartialDiffeomorph).source = c.source := by simp
+  refine ⟨m, _, hx₀', h0', hsrc ▸ hcU, hpull, fun x hx ↦ ?_⟩
+  -- `ℓ = form₀ (X_ℓ, ·)`, which `L` carries to `stdSymplecticForm ((single 0 1, 0), ·)`.
+  have hℓL (z : E) : ℓ z = (L z).2 0 := by
+    rw [← ℓ.fderiv (x := 0), ← form₀.apply_hamiltonianVectorField, ← hL.apply,
+      ContinuousLinearEquiv.coe_toLinearEquiv, hLX]
+    simp [EuclideanSpace.inner_single_left]
+  rw [hfc x (hsrc ▸ hx), hℓL]
+  simp
+
 section Boundaryless
 
 variable [BoundarylessManifold I M]
@@ -384,6 +514,39 @@ theorem IsSymplectic.exists_standardDarbouxChart_fst_single
           stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) :=
   hform.exists_standardDarbouxChart_fst_single_of_isInteriorPoint
     BoundarylessManifold.isInteriorPoint hv₀
+
+/-- **The Carathéodory–Jacobi–Lie normal form for one function.** Let `f` be smooth near a point
+`x₀` of a finite-dimensional boundaryless symplectic manifold `(M, form)`, with nonzero
+differential at `x₀`. Then some Darboux chart around `x₀`, pulling a constant symplectic form
+`form₀` on the model space back to `form`, makes `f` affine: `f = f x₀ + ℓ ∘ chart` for a nonzero
+linear functional `ℓ`. -/
+theorem IsSymplectic.exists_darbouxChart_eq_add {form : SmoothTwoForm I M}
+    (hform : form.IsSymplectic) {f : M → ℝ} {U : Set M} {x₀ : M} (hU : U ∈ 𝓝 x₀)
+    (hf : ContMDiffOn I 𝓘(ℝ) ∞ f U) (hdf : mvfderiv I f x₀ ≠ 0) :
+    ∃ (chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞) (form₀ : SymplecticForm E) (ℓ : E →L[ℝ] ℝ),
+      ℓ ≠ 0 ∧ x₀ ∈ chart.source ∧ chart x₀ = 0 ∧ chart.source ⊆ U ∧
+      (∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w)) ∧
+      ∀ x ∈ chart.source, f x = f x₀ + ℓ (chart x) :=
+  hform.exists_darbouxChart_eq_add_of_isInteriorPoint BoundarylessManifold.isInteriorPoint hU hf
+    hdf
+
+/-- **The Carathéodory–Jacobi–Lie normal form in standard Darboux coordinates.** Let `f` be smooth
+near a point `x₀` of a finite-dimensional boundaryless symplectic manifold `(M, form)`, with
+nonzero differential at `x₀`. Then there are standard Euclidean Darboux coordinates `(q, p)` around
+`x₀` in which `f = f x₀ + p₁`. -/
+theorem IsSymplectic.exists_standardDarbouxChart_eq_add_snd
+    {form : SmoothTwoForm I M} (hform : form.IsSymplectic) {f : M → ℝ} {U : Set M} {x₀ : M}
+    (hU : U ∈ 𝓝 x₀) (hf : ContMDiffOn I 𝓘(ℝ) ∞ f U) (hdf : mvfderiv I f x₀ ≠ 0) :
+    ∃ (m : ℕ) (chart : PartialDiffeomorph I
+      𝓘(ℝ, EuclideanSpace ℝ (Fin (m + 1)) × EuclideanSpace ℝ (Fin (m + 1))) M
+      (EuclideanSpace ℝ (Fin (m + 1)) × EuclideanSpace ℝ (Fin (m + 1))) ∞),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧ chart.source ⊆ U ∧
+      (∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w = stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w)) ∧
+      ∀ x ∈ chart.source, f x = f x₀ + (chart x).2 0 :=
+  hform.exists_standardDarbouxChart_eq_add_snd_of_isInteriorPoint
+    BoundarylessManifold.isInteriorPoint hU hf hdf
 
 end Boundaryless
 

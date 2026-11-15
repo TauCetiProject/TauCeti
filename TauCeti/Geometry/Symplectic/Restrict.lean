@@ -31,9 +31,9 @@ A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant su
 * `TauCeti.SymplecticForm.disjoint_span_pair_orthogonal`: a pair with nonzero symplectic pairing
   spans a subspace disjoint from its symplectic complement.
 * `TauCeti.SymplecticForm.orthogonalSpanPairProj`,
-  `TauCeti.SymplecticForm.apply_eq_orthogonalSpanPairProj`: for `ω e' e = 1`, the projection
-  onto the symplectic complement of the plane of `e` and `e'` along that plane, and the splitting
-  of `ω` it induces.
+  `TauCeti.SymplecticForm.apply_eq_apply_orthogonalSpanPairProj_add`: for `ω e' e = 1`, the
+  projection onto the symplectic complement of the plane of `e` and `e'` along that plane, and the
+  splitting of `ω` it induces.
 * `TauCeti.SymplecticForm.isSymplectomorphism_prodEquivOfIsCompl`: the equivalence associated to
   `V = L ⊕ L^ω` is a symplectomorphism from the product of the restricted forms to `ω`.
 * `TauCeti.SymplecticForm.Compatible.restrict`: compatibility passes to these restrictions.
@@ -141,10 +141,17 @@ lemma apply_add_smul_add_smul (h : ω e' e = 1) {w w' : V}
   ring
 
 /-- The projection onto the symplectic complement of the plane of `e` and `e'` along that plane,
-where `ω e' e = 1`. It is `v ↦ v - ω(e', v) e + ω(e, v) e'` (`coe_orthogonalSpanPairProj`). -/
+where `ω e' e = 1`. It is `v ↦ v - ω(e', v) e + ω(e, v) e'` (`coe_orthogonalSpanPairProj_apply`).
+-/
 noncomputable def orthogonalSpanPairProj (h : ω e' e = 1) :
     V →ₗ[ℝ] ω.orthogonal (Submodule.span ℝ {e, e'}) :=
   Submodule.projectionOnto _ _ (ω.isAlt.isCompl_span_pair_orthogonal h).symm
+
+/-- The projection is Mathlib's projection onto the symplectic complement along the plane. -/
+lemma orthogonalSpanPairProj_def (h : ω e' e = 1) :
+    ω.orthogonalSpanPairProj h =
+      Submodule.projectionOnto _ _ (ω.isAlt.isCompl_span_pair_orthogonal h).symm :=
+  (rfl)
 
 /-- The projection is the identity on the symplectic complement of the plane. -/
 lemma orthogonalSpanPairProj_apply_of_mem (h : ω e' e = 1) {w : V}
@@ -152,14 +159,44 @@ lemma orthogonalSpanPairProj_apply_of_mem (h : ω e' e = 1) {w : V}
     ω.orthogonalSpanPairProj h w = ⟨w, hw⟩ :=
   Submodule.projectionOnto_apply_of_mem_left _ hw
 
+/-- The projection is the identity on the symplectic complement of the plane. -/
+@[simp]
+lemma orthogonalSpanPairProj_apply_coe (h : ω e' e = 1)
+    (w : ω.orthogonal (Submodule.span ℝ {e, e'})) :
+    ω.orthogonalSpanPairProj h w = w :=
+  Submodule.projectionOnto_apply_left _ w
+
 /-- The projection vanishes exactly on the plane of `e` and `e'`. -/
 @[simp]
 lemma orthogonalSpanPairProj_apply_eq_zero_iff (h : ω e' e = 1) {v : V} :
     ω.orthogonalSpanPairProj h v = 0 ↔ v ∈ Submodule.span ℝ {e, e'} :=
   Submodule.projectionOnto_apply_eq_zero_iff _
 
+/-- The projection kills the first vector of the plane. -/
 @[simp]
-lemma coe_orthogonalSpanPairProj (h : ω e' e = 1) (v : V) :
+lemma orthogonalSpanPairProj_apply_left (h : ω e' e = 1) : ω.orthogonalSpanPairProj h e = 0 :=
+  (ω.orthogonalSpanPairProj_apply_eq_zero_iff h).2 (Submodule.subset_span (by simp))
+
+/-- The projection kills the second vector of the plane. -/
+@[simp]
+lemma orthogonalSpanPairProj_apply_right (h : ω e' e = 1) : ω.orthogonalSpanPairProj h e' = 0 :=
+  (ω.orthogonalSpanPairProj_apply_eq_zero_iff h).2 (Submodule.subset_span (by simp))
+
+/-- The kernel of the projection is the plane of `e` and `e'`. -/
+@[simp]
+lemma ker_orthogonalSpanPairProj (h : ω e' e = 1) :
+    LinearMap.ker (ω.orthogonalSpanPairProj h) = Submodule.span ℝ {e, e'} :=
+  Submodule.ker_projectionOnto _
+
+/-- The projection is onto the symplectic complement. -/
+@[simp]
+lemma range_orthogonalSpanPairProj (h : ω e' e = 1) :
+    LinearMap.range (ω.orthogonalSpanPairProj h) = ⊤ :=
+  Submodule.range_projectionOnto _
+
+/-- The formula for the projection. -/
+@[simp]
+lemma coe_orthogonalSpanPairProj_apply (h : ω e' e = 1) (v : V) :
     (ω.orthogonalSpanPairProj h v : V) = v - ω e' v • e + ω e v • e' := by
   have hw := ω.isAlt.sub_smul_add_smul_mem_orthogonal_span_pair h v
   have hp : ω e' v • e + (-ω e v) • e' ∈ Submodule.span ℝ {e, e'} :=
@@ -169,12 +206,13 @@ lemma coe_orthogonalSpanPairProj (h : ω e' e = 1) (v : V) :
     (orthogonalSpanPairProj_apply_eq_zero_iff _ h).2 hp]
   simp
 
-/-- The splitting of `ω` along the plane of `e` and `e'` and its symplectic complement. -/
-lemma apply_eq_orthogonalSpanPairProj (h : ω e' e = 1) (u v : V) :
+/-- The splitting of `ω` along the plane of `e` and `e'` and its symplectic complement: `ω` is the
+form on the projections to the complement plus the area form of the plane. -/
+lemma apply_eq_apply_orthogonalSpanPairProj_add (h : ω e' e = 1) (u v : V) :
     ω u v = ω (ω.orthogonalSpanPairProj h u) (ω.orthogonalSpanPairProj h v) +
       (ω e' u * ω e v - ω e' v * ω e u) := by
   have hdec (x : V) : x = (ω.orthogonalSpanPairProj h x : V) + ω e' x • e + (-ω e x) • e' := by
-    rw [coe_orthogonalSpanPairProj]
+    rw [coe_orthogonalSpanPairProj_apply]
     module
   have key := ω.apply_add_smul_add_smul h (ω.orthogonalSpanPairProj h u).2
     (ω.orthogonalSpanPairProj h v).2 (ω e' u) (-ω e u) (ω e' v) (-ω e v)

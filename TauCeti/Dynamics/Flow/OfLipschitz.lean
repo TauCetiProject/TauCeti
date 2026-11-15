@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import TauCeti.Analysis.ODE.InitialCondition
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # The flow of a globally Lipschitz vector field
@@ -40,6 +41,9 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
   map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
 * `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
+* `TauCeti.apply_flowOfLipschitz_eq_add_mul`,
+  `TauCeti.exists_pos_eventually_apply_flowOfLipschitz_eq_add_mul`: a function whose derivative
+  along `v` is a constant `c` on a region grows at the rate `c` along the pieces of orbits in it.
 
 ## References
 
@@ -204,5 +208,46 @@ theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ
 theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
     flowOfLipschitz v hv t y = y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) := by
   simpa only [flowOfLipschitz_apply] using ODE.globalSolution_eq_integral v hv y t
+
+/-- **A first integral up to a constant rate.** If the derivative of `F` along `v` is the constant
+`c` at every point of `R`, and the orbit of `y` stays in `R` between the times `0` and `t`, then
+`F` grows at the rate `c` along it: `F (φ_t y) = F y + c t`. -/
+theorem apply_flowOfLipschitz_eq_add_mul {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    (hv : LipschitzWith K v) {F : E → F'} {R : Set E} {c : F'}
+    (hF : ∀ z ∈ R, DifferentiableAt ℝ F z) (hc : ∀ z ∈ R, fderiv ℝ F z (v z) = c) {y : E} {t : ℝ}
+    (hy : ∀ s ∈ uIcc 0 t, flowOfLipschitz v hv s y ∈ R) :
+    F (flowOfLipschitz v hv t y) = F y + t • c := by
+  have hd (s : ℝ) (hs : s ∈ uIcc 0 t) :
+      HasDerivAt (fun s ↦ F (flowOfLipschitz v hv s y) - s • c) 0 s := by
+    have h₁ : HasDerivAt (fun s ↦ F (flowOfLipschitz v hv s y)) c s := by
+      have h := (hF _ (hy s hs)).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_flowOfLipschitz hv y s)
+      rwa [hc _ (hy s hs)] at h
+    simpa using h₁.fun_sub ((hasDerivAt_id s).smul_const c)
+  have h := (convex_uIcc 0 t).norm_image_sub_le_of_norm_hasDerivWithin_le (C := 0)
+    (fun s hs ↦ (hd s hs).hasDerivWithinAt) (fun _ _ ↦ by simp) left_mem_uIcc right_mem_uIcc
+  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
+  simp only [zero_smul, sub_zero, Flow.map_zero_apply] at h
+  rw [← h]
+  abel
+
+/-- **A first integral up to a constant rate, near a point.** If the derivative of `F` along `v` is
+the constant `c` near `x₀`, then for some `δ > 0` and every point `z` near `x₀`,
+`F (φ_t z) = F z + c t` for `t ∈ (-δ, δ)`. -/
+theorem exists_pos_eventually_apply_flowOfLipschitz_eq_add_mul {F' : Type*}
+    [NormedAddCommGroup F'] [NormedSpace ℝ F'] (hv : LipschitzWith K v) {F : E → F'} {c : F'}
+    {x₀ : E} (hc : ∀ᶠ z in 𝓝 x₀, DifferentiableAt ℝ F z ∧ fderiv ℝ F z (v z) = c) :
+    ∃ δ > 0, ∀ᶠ z in 𝓝 x₀, ∀ t ∈ Ioo (-δ) δ, F (flowOfLipschitz v hv t z) = F z + t • c := by
+  obtain ⟨R, hRc, hRo, hx₀R⟩ := mem_nhds_iff.1 hc
+  have hpre : Function.uncurry (flowOfLipschitz v hv) ⁻¹' R ∈ 𝓝 ((0 : ℝ), x₀) := by
+    refine (flowOfLipschitz v hv).cont'.continuousAt.preimage_mem_nhds ?_
+    simpa [Function.uncurry, Flow.map_zero_apply] using hRo.mem_nhds hx₀R
+  obtain ⟨I, hI, N, hN, hIN⟩ := mem_nhds_prod_iff.1 hpre
+  obtain ⟨δ, hδ, hδI⟩ := Metric.mem_nhds_iff.1 hI
+  refine ⟨δ, hδ, ?_⟩
+  filter_upwards [hN] with z hz t ht
+  refine apply_flowOfLipschitz_eq_add_mul hv (fun z hz ↦ (hRc hz).1) (fun z hz ↦ (hRc hz).2)
+    fun s hs ↦ hIN (mk_mem_prod (hδI ?_) hz)
+  rw [Real.ball_eq_Ioo, zero_sub, zero_add]
+  exact ordConnected_Ioo.uIcc_subset ⟨by linarith [ht.1, ht.2], by linarith [ht.1, ht.2]⟩ ht hs
 
 end TauCeti
