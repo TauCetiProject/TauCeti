@@ -135,12 +135,6 @@ theorem restrictedReduction_weightedC (J : Ideal A) (hJ : IsOpen (J : Set A)) (a
       MvPolynomial.C (Ideal.Quotient.mk J a) := by
   simpa using restrictedReduction_weightedPolynomialHom J hJ (MvPolynomial.C a)
 
-/-- Reduction sends an `algebraMap` constant series to the corresponding constant polynomial. -/
-theorem restrictedReduction_algebraMap (J : Ideal A) (hJ : IsOpen (J : Set A)) (a : A) :
-    restrictedReduction (k := k) J hJ (algebraMap A _ a) =
-      MvPolynomial.C (Ideal.Quotient.mk J a) :=
-  restrictedReduction_weightedC J hJ a
-
 /-- Reduction preserves the coordinate variables. -/
 @[simp]
 theorem restrictedReduction_weightedX (J : Ideal A) (hJ : IsOpen (J : Set A)) (i : Fin k) :
