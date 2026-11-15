@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.UnitSphere
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.StereographicArea
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 import TauCeti.Analysis.InnerProductSpace.UnivBall
 
@@ -23,8 +23,9 @@ stretching of the disc onto the plane followed by inverse stereographic projecti
 pole (`TauCeti.stereoSphere`). With `r² = a / π`, the stretching is the inverse
 `x ↦ x / √(r² - ‖x‖²)` of Mathlib's radial homeomorphism `OpenPartialHomeomorph.univBall 0 r` of
 the plane onto the open disc of radius `r`. Its Jacobian determinant is `r² / (r² - ‖x‖²)²`
-(`OpenPartialHomeomorph.det_fderiv_univBall_zero_symm`), and inverse stereographic projection pulls
-`σ` back to `4 / (1 + ‖u‖²)² dx ∧ dy` (`TauCeti.sphereVolumeForm_mfderiv_stereoSphere_apply`).
+(`OpenPartialHomeomorph.fderiv_univBall_zero_symm_apply_mul_sub_mul`), and inverse stereographic
+projection pulls `σ` back to `4 / (1 + ‖u‖²)² dx ∧ dy`
+(`TauCeti.sphereVolumeForm_mfderiv_stereoSphere_apply`).
 Since `1 + ‖u‖² = r² / (r² - ‖x‖²)` at `u = x / √(r² - ‖x‖²)`, the two factors multiply to
 `4 / r² = 4π / a`, which `a / 4π` cancels (`TauCeti.eval₂_mfderiv_discToSphere`).
 
@@ -77,7 +78,7 @@ radius `√(a / π)` onto the plane, the inverse of `OpenPartialHomeomorph.univB
 followed by inverse stereographic projection from the south pole. It is a symplectic embedding of
 the disc onto the sphere minus the south pole for the form `(a / 4π) σ`
 (`TauCeti.eval₂_mfderiv_discToSphere`, `TauCeti.isEmbedding_discToSphere`,
-`TauCeti.image_discToSphere_ball`). Off the open disc its value is the north pole. -/
+`TauCeti.image_discToSphere_ball`). -/
 def discToSphere (a : ℝ) (z : ℂ) : S² :=
   stereoSphere ((OpenPartialHomeomorph.univBall (0 : ℝ²) √(a / π)).symm
     (orthonormalBasisOneI.repr z))
@@ -90,6 +91,13 @@ theorem discToSphere_apply (a : ℝ) (z : ℂ) :
 private theorem repr_mem_ball {a : ℝ} {z : ℂ} (hz : z ∈ ball (0 : ℂ) √(a / π)) :
     orthonormalBasisOneI.repr z ∈ ball (0 : ℝ²) √(a / π) := by
   rwa [mem_ball_zero_iff, LinearIsometryEquiv.norm_map, ← mem_ball_zero_iff]
+
+private theorem repr_symm_univBall_mem_ball {r : ℝ} (hr : 0 < r) (u : ℝ²) :
+    orthonormalBasisOneI.repr.symm (OpenPartialHomeomorph.univBall (0 : ℝ²) r u) ∈
+      ball (0 : ℂ) r := by
+  rw [mem_ball_zero_iff, LinearIsometryEquiv.norm_map, ← mem_ball_zero_iff,
+    ← OpenPartialHomeomorph.univBall_target 0 hr]
+  exact (OpenPartialHomeomorph.univBall (0 : ℝ²) r).map_source (by simp)
 
 /-- The equal-area embedding is smooth on the open disc of area `a`. -/
 theorem contMDiffAt_discToSphere {a : ℝ} {z : ℂ} (hz : z ∈ ball (0 : ℂ) √(a / π)) :
@@ -119,6 +127,9 @@ private theorem mfderiv_discToSphere_apply {a : ℝ} {z : ℂ} (hz : z ∈ ball 
     (hd.comp z orthonormalBasisOneI.repr.differentiableAt).mdifferentiableAt,
     mfderiv_eq_fderiv, fderiv_comp z hd orthonormalBasisOneI.repr.differentiableAt,
     LinearIsometryEquiv.fderiv]
+  -- The two sides differ only by applying composites of continuous linear maps and by the
+  -- identifications `NormedSpace.fromTangentSpace` of a tangent space of a normed space with the
+  -- space itself, which Mathlib defines as the identity; so they agree definitionally.
   rfl
 
 /-- **The equal-area embedding is symplectic**: it pulls the area form `(a / 4π) σ` of `S²(a)`
@@ -134,9 +145,7 @@ theorem eval₂_mfderiv_discToSphere {a : ℝ} {z : ℂ} (hz : z ∈ ball (0 : �
   have hr0 : 0 < r := (norm_nonneg x).trans_lt hx
   have ha : a / π = r ^ 2 := by
     rw [hr, Real.sq_sqrt (Real.sqrt_pos.1 (hr ▸ hr0)).le]
-  have hs : 0 < r ^ 2 - ‖x‖ ^ 2 := by
-    have := (sq_lt_sq₀ (norm_nonneg x) hr0.le).2 hx
-    linarith
+  have hs : 0 < r ^ 2 - ‖x‖ ^ 2 := sub_pos.2 (pow_lt_pow_left₀ hx (norm_nonneg x) two_ne_zero)
   have hnu : ‖(OpenPartialHomeomorph.univBall (0 : ℝ²) r).symm x‖ ^ 2 =
       ‖x‖ ^ 2 / (r ^ 2 - ‖x‖ ^ 2) := by
     rw [OpenPartialHomeomorph.univBall_zero_symm_apply hr0, norm_smul, mul_pow, norm_inv,
@@ -149,7 +158,7 @@ theorem eval₂_mfderiv_discToSphere {a : ℝ} {z : ℂ} (hz : z ∈ ball (0 : �
   rw [SmoothForm.eval₂_smul, smul_eq_mul, SmoothBundleForm.eval₂_apply,
     sphereAreaForm_eq_sphereVolumeForm, mfderiv_discToSphere_apply hz,
     mfderiv_discToSphere_apply hz, discToSphere_apply, sphereVolumeForm_mfderiv_stereoSphere_apply,
-    OpenPartialHomeomorph.det_fderiv_univBall_zero_symm hx, hu]
+    OpenPartialHomeomorph.fderiv_univBall_zero_symm_apply_mul_sub_mul hx, hu]
   simp only [orthonormalBasisOneI_repr_apply, inner, mul_im, Matrix.cons_val_zero,
     Matrix.cons_val_one, Complex.star_def, conj_re, conj_im]
   have ha' : a = r ^ 2 * π := by
@@ -170,10 +179,8 @@ theorem isEmbedding_discToSphere (a : ℝ) :
       infer_instance
     exact .of_subsingleton _
   set e := OpenPartialHomeomorph.univBall (0 : ℝ²) r
-  have hmem (u : ℝ²) : orthonormalBasisOneI.repr.symm (e u) ∈ ball (0 : ℂ) r := by
-    rw [mem_ball_zero_iff, LinearIsometryEquiv.norm_map, ← mem_ball_zero_iff,
-      ← OpenPartialHomeomorph.univBall_target 0 hr]
-    exact e.map_source (by simp [e])
+  have hmem (u : ℝ²) : orthonormalBasisOneI.repr.symm (e u) ∈ ball (0 : ℂ) r :=
+    repr_symm_univBall_mem_ball hr u
   -- The radial stretching restricted to the disc has the continuous left inverse `e`.
   have hf : Continuous fun z : ball (0 : ℂ) r ↦ e.symm (orthonormalBasisOneI.repr z) :=
     (OpenPartialHomeomorph.continuousOn_univBall_symm 0 r).comp_continuous
@@ -198,7 +205,7 @@ theorem injOn_discToSphere (a : ℝ) : Set.InjOn (discToSphere a) (ball (0 : ℂ
 /-- The equal-area embedding maps the open disc of area `a > 0` onto the sphere minus the south
 pole. -/
 theorem image_discToSphere_ball {a : ℝ} (ha : 0 < a) :
-    discToSphere a '' ball (0 : ℂ) √(a / π) = {southPole}ᶜ := by
+    discToSphere a '' ball (0 : ℂ) √(a / π) = {sphereSouthPole}ᶜ := by
   have hr : 0 < √(a / π) := Real.sqrt_pos.2 (by positivity)
   set e := OpenPartialHomeomorph.univBall (0 : ℝ²) √(a / π)
   rw [← range_stereoSphere]
@@ -208,9 +215,7 @@ theorem image_discToSphere_ball {a : ℝ} (ha : 0 < a) :
     exact ⟨_, rfl⟩
   · rintro ⟨u, rfl⟩
     refine ⟨orthonormalBasisOneI.repr.symm (e u), ?_, ?_⟩
-    · rw [mem_ball_zero_iff, LinearIsometryEquiv.norm_map, ← mem_ball_zero_iff,
-        ← OpenPartialHomeomorph.univBall_target 0 hr]
-      exact e.map_source (by simp [e])
+    · exact repr_symm_univBall_mem_ball hr u
     · rw [discToSphere_apply, LinearIsometryEquiv.apply_symm_apply, e.left_inv (by simp [e])]
 
 end TauCeti
