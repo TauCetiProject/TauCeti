@@ -110,23 +110,28 @@ private def tail (p : Path x y) (a : I) : Path (p a) y :=
 private theorem tail_apply (p : Path x y) (a u : I) : p.tail a u = p.subpath a 1 u :=
   (rfl)
 
-/-- **The contraction of the conjugated constant loop**: the path of loops at `y` whose value at
-`a` is `q_a⁻¹ ⬝ (refl ⬝ q_a)` for the tail `q_a` of `p` from time `a`. It starts at
-`p.conjLoop (Path.refl x)` and ends at the constant loop. -/
-def conjLoopContraction (p : Path x y) : Path (p.conjLoop (Path.refl x)) (Path.refl y) where
-  toFun a := (p.tail a).symm.trans ((Path.refl (p a)).trans (p.tail a))
+/-- The family of loops at `y` whose value at `a` is `q_a⁻¹ ⬝ (ℓ a ⬝ q_a)`, for a continuous
+family `ℓ` of loops along `p` and the tail `q_a` of `p` from time `a`. -/
+private def conjLoopFamily (p : Path x y) (ℓ : ∀ a, Ω X (p a)) (hℓ : Continuous ↿ℓ) :
+    C(I, Ω X y) where
+  toFun a := (p.tail a).symm.trans ((ℓ a).trans (p.tail a))
   continuous_toFun := by
     have ht : Continuous ↿p.tail := p.subpath_continuous_family.comp
       (continuous_fst.prodMk (continuous_const.prodMk continuous_snd))
     exact Path.continuous_uncurry_iff.1 <| Path.trans_continuous_family _
-      (Path.symm_continuous_family _ ht) _
-      (Path.trans_continuous_family _ (p.continuous.comp continuous_fst) _ ht)
+      (Path.symm_continuous_family _ ht) _ (Path.trans_continuous_family _ hℓ _ ht)
+
+/-- **The contraction of the conjugated constant loop**: the path of loops at `y` whose value at
+`a` is `q_a⁻¹ ⬝ (refl ⬝ q_a)` for the tail `q_a` of `p` from time `a`. It starts at
+`p.conjLoop (Path.refl x)` and ends at the constant loop. -/
+def conjLoopContraction (p : Path x y) : Path (p.conjLoop (Path.refl x)) (Path.refl y) where
+  toContinuousMap := p.conjLoopFamily (fun a => Path.refl (p a)) (p.continuous.comp continuous_fst)
   source' := by
     ext t
-    simp [tail, Path.trans_apply]
+    simp [conjLoopFamily, tail, Path.trans_apply]
   target' := by
     ext t
-    simp [tail_apply, Path.trans_apply]
+    simp [conjLoopFamily, tail_apply, Path.trans_apply]
 
 theorem conjLoopContraction_apply (p : Path x y) (a : I) :
     p.conjLoopContraction a =
@@ -411,11 +416,8 @@ variable {X : Type*} [TopologicalSpace X] {x y : X} {γ₀ : Ω X x} {γ₁ : Ω
 
 /-- The **base-point path** of a free homotopy of loops: the path `s ↦ F (s, 0)` traced by the
 base points of its loops, from the base point `x` of `γ₀` to the base point `y` of `γ₁`. -/
-def basepointPath : Path x y where
-  toFun s := F (s, 0)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simp
+def basepointPath : Path x y :=
+  (F.toHomotopy.evalAt 0).cast γ₀.source.symm γ₁.source.symm
 
 @[simp]
 theorem basepointPath_apply (s : I) : F.basepointPath s = F (s, 0) :=
@@ -435,19 +437,13 @@ theorem loopAt_apply (s t : I) : F.loopAt s t = F (s, t) :=
 /-- The path of loops at `y` obtained from a free homotopy of loops by conjugating its loop at
 time `a` by the tail of the base-point path from time `a`. -/
 private def conjLoopPath : Path (F.basepointPath.conjLoop γ₀) ((Path.refl y).conjLoop γ₁) where
-  toFun a := (F.basepointPath.tail a).symm.trans ((F.loopAt a).trans (F.basepointPath.tail a))
-  continuous_toFun := by
-    have ht : Continuous ↿F.basepointPath.tail := F.basepointPath.subpath_continuous_family.comp
-      (continuous_fst.prodMk (continuous_const.prodMk continuous_snd))
-    have hl : Continuous ↿F.loopAt := F.continuous
-    exact Path.continuous_uncurry_iff.1 <| Path.trans_continuous_family _
-      (Path.symm_continuous_family _ ht) _ (Path.trans_continuous_family _ hl _ ht)
+  toContinuousMap := F.basepointPath.conjLoopFamily F.loopAt F.continuous
   source' := by
     ext t
-    simp [Path.tail, Path.trans_apply]
+    simp [Path.conjLoopFamily, Path.tail, Path.trans_apply]
   target' := by
     ext t
-    simp [Path.tail_apply, Path.trans_apply]
+    simp [Path.conjLoopFamily, Path.tail_apply, Path.trans_apply]
 
 /-- The **based homotopy class of a free homotopy of loops**: the class, in the fundamental
 groupoid of the loop space `Ω X y`, of the path of loops from `F.basepointPath.conjLoop γ₀` to
@@ -498,7 +494,7 @@ theorem conjLoopHom_eq_eqToHom_comp (h : ∀ s, F (s, 0) = x) :
     rw [hc, ← Path.Homotopic.Quotient.mk_cast]
     refine congrArg (fun q => FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk q))
       (Path.ext (funext fun a => Path.ext (funext fun t => ?_)))
-    simp [conjLoopPath, Q, Path.tail_apply, Path.trans_apply, h]
+    simp [conjLoopPath, Path.conjLoopFamily, Q, Path.tail_apply, Path.trans_apply, h]
   have hR := Path.mk_conjLoopReflPath_comp_map (Path.Homotopic.Quotient.mk (F.loopPath h))
   rw [FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map] at hR
   rw [conjLoopHom, hA, Category.assoc]
