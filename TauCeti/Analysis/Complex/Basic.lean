@@ -114,6 +114,10 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
+theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
+  simpa [norm_mul] using abs_im_le_norm (conj u * e)
+
 /-- The norm of `1 - conj w * z` is symmetric in `z` and `w`: conjugation swaps the two
 expressions and preserves norms. -/
 theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - conj z * w‖ := by
