@@ -35,6 +35,8 @@ sets in which every color has nearly the same density on every large rectangle.
   points of a test set with a given color, under the product of a `PMF`.
 * `TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`: a coloring of `ι` whose color counts
   on every test set are within `a` of their means.
+* `TauCeti.two_mul_two_pow_mul_two_pow_add_mul_exp_lt`: numerical union-bound discharge for the
+  `2 ^ m * 2 ^ n + r` test events of an `m × n` rectangle recoloring across a nonempty palette `κ`.
 
 ## Implementation notes
 
@@ -213,5 +215,55 @@ theorem exists_forall_abs_card_filter_sub_mul_card_lt [Fintype κ] {p : κ → �
     · obtain ⟨he, hc⟩ := mem_filter.1 he
       exact ⟨⟨e, hU he⟩, mem_filter.2 ⟨mem_subtype.2 he, by simpa [hU he] using hc⟩, rfl⟩
   simpa [hcount, hcard] using hy i c
+
+omit [DecidableEq κ] in
+/-- **Rectangle union-bound inequality.** For `r ≥ 0` and a nonempty finite palette `κ`, once
+`card κ + 1 + r ≤ δ ^ 2 * m` and `card κ + 1 + r ≤ δ ^ 2 * n`, the Hoeffding union-bound quantity
+`2 * (2 ^ m * 2 ^ n + r) * card κ * exp (-2 * (δ * m * n) ^ 2 / (m * n))` is strictly less than
+`1`. Setting `r = 0` handles uncoupled rectangle recolorings, and setting `r = 1` handles coupled
+rectangle recolorings with one additional stay-put event per source color. -/
+theorem two_mul_two_pow_mul_two_pow_add_mul_exp_lt [Fintype κ] [Nonempty κ]
+    {m n : ℕ} {r δ : ℝ} (hr : 0 ≤ r)
+    (hm : Fintype.card κ + 1 + r ≤ δ ^ 2 * m) (hn : Fintype.card κ + 1 + r ≤ δ ^ 2 * n) :
+    2 * ((2 ^ m * 2 ^ n : ℕ) + r) * Fintype.card κ *
+      exp (-2 * (δ * m * n) ^ 2 / (m * n : ℕ)) < 1 := by
+  set K : ℝ := (Fintype.card κ : ℝ)
+  have hK : 1 ≤ K := Nat.one_le_cast.2 Fintype.card_pos
+  have hm0 : (0 : ℝ) < m := pos_of_mul_pos_right (lt_of_lt_of_le (by positivity) hm) (sq_nonneg δ)
+  have hn0 : (0 : ℝ) < n := pos_of_mul_pos_right (lt_of_lt_of_le (by positivity) hn) (sq_nonneg δ)
+  have hm1 : (1 : ℝ) ≤ m := Nat.one_le_cast.2 (Nat.cast_pos.1 hm0)
+  -- Bound `2`, `2 ^ m * 2 ^ n + r`, and `K` by exponentials via `x + 1 ≤ exp x`.
+  have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
+  have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
+    (pow_le_pow_left₀ (by norm_num) h2 k).trans_eq (by rw [← exp_nat_mul, mul_one])
+  have hrect : ((2 ^ m * 2 ^ n : ℕ) : ℝ) + r ≤ (exp m * exp n) * exp r := by
+    have hA1 : (1 : ℝ) ≤ ((2 ^ m * 2 ^ n : ℕ) : ℝ) := by
+      exact_mod_cast Nat.mul_pos (Nat.pow_pos two_pos) (Nat.pow_pos two_pos)
+    calc ((2 ^ m * 2 ^ n : ℕ) : ℝ) + r
+        ≤ ((2 ^ m * 2 ^ n : ℕ) : ℝ) * (r + 1) := by nlinarith
+      _ ≤ (exp m * exp n) * exp r := by
+          push_cast
+          gcongr
+          · exact hpow m
+          · exact hpow n
+          · exact add_one_le_exp r
+  have hKexp : K ≤ exp (K - 1) := by linarith [add_one_le_exp (K - 1)]
+  have hexp : -2 * (δ * m * n) ^ 2 / ((m * n : ℕ) : ℝ) = -2 * (δ ^ 2 * m) * n := by
+    push_cast
+    field_simp
+  calc 2 * (((2 ^ m * 2 ^ n : ℕ) : ℝ) + r) * K * exp (-2 * (δ * m * n) ^ 2 / (m * n : ℕ))
+      ≤ exp 1 * ((exp m * exp n) * exp r) * exp (K - 1) * exp (-2 * (δ ^ 2 * m) * n) := by
+        rw [hexp]
+        gcongr
+    _ = exp (m + n + K + r - 2 * (δ ^ 2 * m) * n) := by
+        simp only [← exp_add]
+        ring_nf
+    _ < 1 := by
+        rw [exp_lt_one_iff, sub_neg]
+        -- `2 δ² m n = (δ² m) n + m (δ² n) ≥ (K + 1 + r) (m + n) > m + n + K + r`.
+        have heq : 2 * (δ ^ 2 * m) * n = (δ ^ 2 * m) * n + m * (δ ^ 2 * n) := by ring
+        rw [heq]
+        nlinarith [hm1, mul_le_mul_of_nonneg_right hm hn0.le,
+          mul_le_mul_of_nonneg_left hn hm0.le]
 
 end TauCeti

@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Basic
 
 /-!
-# Cardinalities of set differences of finsets
+# Cardinalities of set differences and fiberwise filters of finsets
 
 * `Finset.card_sdiff_insert_add_one`: adding an element `a ∈ T \ S` to `S` lowers the number of
   elements of `T` outside `S` by one.
@@ -17,6 +18,8 @@ import Mathlib.Data.Finset.Basic
   `S ∪ {a}` to `S`. Mathlib's `Finset.induction_on'` is the upward analogue.
 * `Finset.card_sdiff_lt_of_card_eq_min`: if `F ⊆ U` has `min k #U` elements of a nonempty `U`
   and `T ⊆ U` has fewer than `k`, then fewer elements of `T` lie outside `F` than in `F`.
+* `Finset.card_filter_apply_eq_sum_card_filter`: counting elements `e ∈ s` satisfying `P (f e) e`
+  splits fiberwise along `f` over any `t` containing the relevant image values.
 -/
 
 public section
@@ -57,5 +60,18 @@ theorem card_sdiff_lt_of_card_eq_min {F T U : Finset ι} {k : ℕ}
   · exact (card_le_card sdiff_subset).trans_lt (by omega)
   · rw [eq_of_subset_of_card_le hFU (by omega), sdiff_eq_empty_iff_subset.2 hTU, card_empty]
     exact hU.card_pos
+
+omit [DecidableEq ι] in
+/-- Partitioning `s` along `f : ι → κ` splits the count of elements `e ∈ s` satisfying
+`P (f e) e` into a sum over any `t : Finset κ` containing `f e` on those elements. -/
+theorem card_filter_apply_eq_sum_card_filter {κ : Type*} [DecidableEq κ] {f : ι → κ}
+    {s : Finset ι} {t : Finset κ} (P : κ → ι → Prop) [∀ c e, Decidable (P c e)]
+    (h : ∀ e ∈ s, P (f e) e → f e ∈ t) :
+    #{e ∈ s | P (f e) e} = ∑ c ∈ t, #{e ∈ s | f e = c ∧ P c e} := by
+  rw [card_eq_sum_card_fiberwise (f := f) (t := t) fun e he ↦
+    h e (mem_filter.1 he).1 (mem_filter.1 he).2]
+  refine sum_congr rfl fun c _ ↦ congrArg card (ext fun e ↦ ?_)
+  simp only [mem_filter]
+  exact ⟨fun ⟨⟨he, hP⟩, hf⟩ ↦ ⟨he, hf, hf ▸ hP⟩, fun ⟨he, hf, hP⟩ ↦ ⟨⟨he, hf.symm ▸ hP⟩, hf⟩⟩
 
 end Finset

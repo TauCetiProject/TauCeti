@@ -43,6 +43,8 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
   `α`-fraction of the sizes form a `max (2ε) (ε / α)`-regular pair.
 * `TauCeti.PairColorSystem.IsRegularPair.abs_card_filter_colorOfPair_sub_le`: rectangle
   discrepancy of a regular pair of disjoint sets.
+* `TauCeti.PairColorSystem.isRegularPair_of_abs_card_filter_colorOfPair_sub_le`: converse
+  criterion deducing `IsRegularPair` and density proximity from small rectangle count discrepancy.
 * `TauCeti.PairColorSystem.IsRegularPair.abs_sum_sum_mul_sub_le`: the same bound for tests with
   values in `[0, 1]`.
 * `TauCeti.PairSkeleton3`: vertex cells together with a pair-color system.
@@ -214,6 +216,51 @@ theorem IsRegularPair.abs_sum_sum_mul_sub_le (h : S.IsRegularPair ε s t) (hst :
   rw [natCast_card_filter, sum_product]
   simp only [sum_sub_distrib, sum_const, nsmul_eq_mul]
   ring
+
+variable (S) in
+/-- Small rectangle count discrepancy on disjoint nonempty `(s, t)` around `p` implies both
+`|(pairColorDensity S c s t : ℝ) - p c| ≤ η` and `S.IsRegularPair θ s t` whenever
+`2 * η ≤ min 1 θ ^ 3` and `0 < θ`. -/
+theorem isRegularPair_of_abs_card_filter_colorOfPair_sub_le (hst : Disjoint s t) (hs : s.Nonempty)
+    (ht : t.Nonempty) {p : κ → ℝ} {η θ : ℝ} (hθ : 0 < θ) (hη : 2 * η ≤ min 1 θ ^ 3)
+    (hrect : ∀ c, ∀ s' ⊆ s, ∀ t' ⊆ t,
+      |(#{q ∈ s' ×ˢ t' | S.colorOfPair q.1 q.2 = some c} : ℝ) - p c * (#s' * #t')| ≤
+        η * (#s * #t)) :
+    S.IsRegularPair θ s t ∧ ∀ c, |(pairColorDensity S c s t : ℝ) - p c| ≤ η := by
+  classical
+  have hs0 : (0 : ℝ) < #s := Nat.cast_pos.2 hs.card_pos
+  have ht0 : (0 : ℝ) < #t := Nat.cast_pos.2 ht.card_pos
+  have hd_le {s' t' : Finset V} (hs' : s' ⊆ s) (ht' : t' ⊆ t) (c : κ) :
+      |(pairColorDensity S c s' t' : ℝ) - p c| * (#s' * #t') ≤ η * (#s * #t) := by
+    have hc : (#{q ∈ s' ×ˢ t' | S.colorOfPair q.1 q.2 = some c} : ℝ) =
+        pairColorDensity S c s' t' * (#s' * #t') :=
+      mod_cast (pairColorDensity_mul_card_of_disjoint S c (hst.mono hs' ht')).symm
+    have hr := hrect c s' hs' t' ht'
+    rwa [hc, ← sub_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ #s' * #t')] at hr
+  have hfull (c : κ) : |(pairColorDensity S c s t : ℝ) - p c| ≤ η :=
+    le_of_mul_le_mul_right (hd_le subset_rfl subset_rfl c) (mul_pos hs0 ht0)
+  refine ⟨?_, hfull⟩
+  obtain h1θ | hθ1 := le_or_gt 1 θ
+  · exact isRegularPair_of_one_le h1θ
+  rw [min_eq_right hθ1.le] at hη
+  rw [isRegularPair_iff]
+  intro c s' hs' t' ht' hs's ht't
+  have hpos : (0 : ℝ) < #s' * #t' := mul_pos ((mul_pos hθ hs0).trans_le hs's)
+    ((mul_pos hθ ht0).trans_le ht't)
+  have hsub : |(pairColorDensity S c s' t' : ℝ) - p c| ≤ θ / 2 := by
+    refine le_of_mul_le_mul_right ?_ hpos
+    calc |(pairColorDensity S c s' t' : ℝ) - p c| * (#s' * #t')
+        ≤ η * (#s * #t) := hd_le hs' ht' c
+      _ ≤ (θ ^ 3 / 2) * (#s * #t) := mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+      _ = (θ / 2) * ((θ * #s) * (θ * #t)) := by ring
+      _ ≤ (θ / 2) * (#s' * #t') := by gcongr
+  have hη_le : η ≤ θ / 2 := by
+    have : θ ^ 3 ≤ θ := by nlinarith [sq_nonneg θ]
+    linarith
+  calc |(pairColorDensity S c s' t' : ℝ) - pairColorDensity S c s t|
+      ≤ |(pairColorDensity S c s' t' : ℝ) - p c| + |p c - pairColorDensity S c s t| :=
+        abs_sub_le _ _ _
+    _ ≤ θ := by rw [abs_sub_comm (p c)]; linarith [hfull c]
 
 end Discrepancy
 

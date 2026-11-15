@@ -39,8 +39,6 @@ This controls how much a quantity defined part by part, such as an energy, can c
   `n ≤ #s` of parts.
 * `Finpartition.exists_equipartition_card_eq_card_filter_not_part_subset_le`: every partition is
   close, in this sense, to an equipartition with any number `n ≤ #s` of parts.
-* `Finpartition.IsEquipartition.sum_card_mul_sub_one_le`: the within-part ordered distinct pairs
-  of an equipartition total at most `#s * (#s / #P.parts)`.
 -/
 
 public section
@@ -168,16 +166,5 @@ theorem exists_equipartition_card_eq_card_filter_not_part_subset_le {n : ℕ} (h
   obtain ⟨a, b, h, hcard⟩ := P.exists_card_parts_equitabilise_eq hn hns
   exact ⟨P.equitabilise h, equitabilise_isEquipartition, hcard,
     card_filter_not_part_equitabilise_subset_part_le P h⟩
-
-/-- In an equipartition `P` of `s`, the within-part ordered distinct pairs total at most
-`#s * (#s / #P.parts)`: every part has size `#s / #P.parts` or `#s / #P.parts + 1`, so `#A - 1` is
-always at most `#s / #P.parts`. -/
-theorem IsEquipartition.sum_card_mul_sub_one_le (hP : P.IsEquipartition) :
-    ∑ A ∈ P.parts, #A * (#A - 1) ≤ #s * (#s / #P.parts) := by
-  calc ∑ A ∈ P.parts, #A * (#A - 1)
-      ≤ ∑ A ∈ P.parts, #A * (#s / #P.parts) :=
-        sum_le_sum fun A hA ↦ Nat.mul_le_mul_left _
-          (Nat.sub_le_iff_le_add.2 (hP.card_part_le_average_add_one hA))
-    _ = #s * (#s / #P.parts) := by rw [← sum_mul, P.sum_card_parts]
 
 end Finpartition
