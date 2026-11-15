@@ -345,7 +345,7 @@ theorem exists_nonzero_ordinary_jet_on_frobenius_graph {e : ℕ} (he : 0 < e)
     · have : Fact p.Prime := ⟨hp⟩
       exact (IsUnit.natCast_factorial_iff_of_charP p).mpr (hk.trans_lt hm)
   exact ⟨a, ha, k, hk,
-    (eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero hunit 0 _ F).not.mpr hne⟩
+    (eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero hunit 0 F _).not.mpr hne⟩
 
 end FrobeniusTest
 

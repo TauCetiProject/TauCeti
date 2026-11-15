@@ -291,6 +291,25 @@ theorem index_nonsingularReduction_dvd_two_of_isTateTerminal_III {ϖ : v.valuati
   AddSubgroup.index_dvd_two_of_add_mem fun _ _ ↦
     add_mem_nonsingularReduction_of_isTateTerminal_III v hϖ h
 
+/-- The point `(ϖ X, ϖ s X)` of a Weierstrass curve with `ϖ ∣ a₃`, `ϖ ∣ a₄` and `ϖ² ∣ a₆` is
+nonsingular when `X` is a root, with unit derivative, of the cubic obtained from the equation
+along the line `y = s x` by dividing by `ϖ²`. -/
+private theorem nonsingular_mul_mul_of_cubic_root {R : Type*} [CommRing R]
+    (W : WeierstrassCurve R) {ϖ s X α β γ : R} (hϖ0 : ϖ ≠ 0) (hα : W.a₃ = ϖ * α)
+    (hβ : W.a₄ = ϖ * β) (hγ : W.a₆ = ϖ ^ 2 * γ)
+    (hX : -ϖ * X ^ 3 + (s ^ 2 + W.a₁ * s - W.a₂) * X ^ 2 - (β - s * α) * X - γ = 0)
+    (hXd : IsUnit (-3 * ϖ * X ^ 2 + 2 * (s ^ 2 + W.a₁ * s - W.a₂) * X - (β - s * α))) :
+    W.toAffine.Nonsingular (ϖ * X) (ϖ * (s * X)) := by
+  rw [nonsingular_iff']
+  refine ⟨by
+    rw [equation_iff]
+    linear_combination ϖ ^ 2 * hX + ϖ * s * X * hα - ϖ * X * hβ - hγ, ?_⟩
+  by_contra! hn
+  obtain ⟨hx, hy⟩ := hn
+  -- `ϖ` times the derivative of the cubic is `∂/∂x + s ∂/∂y` of the Weierstrass equation
+  refine hϖ0 (hXd.mul_left_eq_zero.1 ?_)
+  linear_combination hx + s * hy + hβ - s * hα
+
 /-- **At the reduction symbol `III`, some point has singular reduction**, when the valuation ring
 is Henselian, for instance complete, and its residue field is perfect. Here `ϖ` generates the
 maximal ideal of the valuation ring, and Tate's algorithm, run on the integral model with
@@ -326,17 +345,8 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_III
     linear_combination ϖ * hd
   -- the Weierstrass equation at `(ϖ X, ϖ s X)`, divided by `ϖ²`, has a root `X`
   obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero ((mem_maximalIdeal_iff_dvd hϖ).2 dvd_rfl) he₂ he₁ γ
-  have hns : Wo.toAffine.Nonsingular (ϖ * X) (ϖ * (s * X)) := by
-    rw [nonsingular_iff']
-    refine ⟨by
-      rw [equation_iff]
-      linear_combination ϖ ^ 2 * hX + ϖ * s * X * hα - ϖ * X * hβ - hγ, ?_⟩
-    by_contra! hn
-    obtain ⟨hx, hy⟩ := hn
-    -- `ϖ` times the derivative of the cubic is `∂/∂x + s ∂/∂y` of the Weierstrass equation
-    refine hϖ0 (hXd.mul_left_eq_zero.1 ?_)
-    linear_combination hx + s * hy + hβ - s * hα
-  have hF := (nonsingular_integralModel_iff v).1 hns
+  have hF := (nonsingular_integralModel_iff v).1
+    (nonsingular_mul_mul_of_cubic_root Wo hϖ0 hα hβ hγ hX hXd)
   have hmem (z : v.valuationSubring) : v ((ϖ * z : v.valuationSubring) : F) < 1 :=
     (Valuation.mem_maximalIdeal_iff (v := v)).1
       ((mem_maximalIdeal_iff_dvd hϖ).2 (dvd_mul_right ϖ z))
@@ -378,6 +388,25 @@ private theorem prime_and_mem_maximalIdeal_of_isTateTerminal_IIIStar {ϖ : v.val
   simp only [hϖ, Ideal.mem_span_singleton]
   exact ⟨d₃, d₄, d₆⟩
 
+/-- The `ϖ`-adic valuation bound on `a₄` at the symbol `III*`: for three points on a chord of slope
+`ℓ` with `ϖ² ∣ xᵢ`, `ϖ³ ∣ y₁` and `ϖ ∣ ℓ`, the coefficient
+`a₄ = ∑ xᵢ xⱼ + a₃ ℓ + (2 ℓ + a₁) (y₁ − ℓ x₁)` is divisible by `ϖ⁴` when `ϖ ∣ a₁` and `ϖ³ ∣ a₃`. -/
+private theorem pow_four_dvd_a₄_of_chord {R : Type*} [CommRing R] {ϖ a₁ a₃ a₄ x₁ x₂ x₃ y₁ ℓ : R}
+    (hc : a₄ = x₁ * x₂ + x₁ * x₃ + x₂ * x₃ + a₃ * ℓ + (2 * ℓ + a₁) * (y₁ - ℓ * x₁))
+    (d₁ : ϖ ^ 2 ∣ x₁) (d₂ : ϖ ^ 2 ∣ x₂) (d₃ : ϖ ^ 2 ∣ x₃) (e₁ : ϖ ^ 3 ∣ y₁) (h₃ : ϖ ^ 3 ∣ a₃)
+    (h₁ : ϖ ∣ a₁) (hℓ : ϖ ∣ ℓ) : ϖ ^ 4 ∣ a₄ := by
+  rw [hc]
+  have e₂ : ϖ ^ 4 = ϖ ^ 2 * ϖ ^ 2 := by ring
+  have e₃ : ϖ ^ 4 = ϖ ^ 3 * ϖ := by ring
+  have e₁' : ϖ ^ 3 = ϖ * ϖ ^ 2 := by ring
+  refine dvd_add (dvd_add (dvd_add (dvd_add ?_ ?_) ?_) ?_) ?_
+  · exact e₂ ▸ mul_dvd_mul d₁ d₂
+  · exact e₂ ▸ mul_dvd_mul d₁ d₃
+  · exact e₂ ▸ mul_dvd_mul d₂ d₃
+  · exact e₃ ▸ mul_dvd_mul h₃ hℓ
+  · rw [show ϖ ^ 4 = ϖ * ϖ ^ 3 by ring]
+    exact mul_dvd_mul (dvd_add (hℓ.mul_left 2) h₁) (dvd_sub e₁ (e₁' ▸ mul_dvd_mul hℓ d₁))
+
 /-- **At the reduction symbol `III*`, the sum of two points with singular reduction has
 nonsingular reduction.** Here `ϖ` generates the maximal ideal of the valuation ring, and Tate's
 algorithm, run on the integral model with uniformiser `ϖ`, stops with the symbol `III*`:
@@ -410,21 +439,7 @@ theorem add_mem_nonsingularReduction_of_isTateTerminal_IIIStar {ϖ : v.valuation
     exact dvd_sub (dvd_add (dvd_add (dvd_add hx₁ hx₂) hx₃)
       ((dvd_pow_self ϖ two_ne_zero).trans h₂)) (h₁.mul_right ℓ)
   -- and then `ϖ⁴` divides every term of `a₄ = ∑ xᵢ xⱼ + a₃ ℓ + (2 ℓ + a₁) (y₁ − ℓ x₁)`
-  refine h₄' ?_
-  rw [show (integralModel v.valuationSubring W).a₄ = x₁ * x₂ + x₁ * x₃ + x₂ * x₃ +
-      (integralModel v.valuationSubring W).a₃ * ℓ +
-        (2 * ℓ + (integralModel v.valuationSubring W).a₁) * (y₁ - ℓ * x₁) by
-    linear_combination hc]
-  have e₂ : ϖ ^ 4 = ϖ ^ 2 * ϖ ^ 2 := by ring
-  have e₃ : ϖ ^ 4 = ϖ ^ 3 * ϖ := by ring
-  have e₁' : ϖ ^ 3 = ϖ * ϖ ^ 2 := by ring
-  refine dvd_add (dvd_add (dvd_add (dvd_add ?_ ?_) ?_) ?_) ?_
-  · exact e₂ ▸ mul_dvd_mul d₁ d₂
-  · exact e₂ ▸ mul_dvd_mul d₁ d₃
-  · exact e₂ ▸ mul_dvd_mul d₂ d₃
-  · exact e₃ ▸ mul_dvd_mul h₃ hℓ
-  · rw [show ϖ ^ 4 = ϖ * ϖ ^ 3 by ring]
-    exact mul_dvd_mul (dvd_add (hℓ.mul_left 2) h₁) (dvd_sub e₁ (e₁' ▸ mul_dvd_mul hℓ d₁))
+  exact h₄' (pow_four_dvd_a₄_of_chord (by linear_combination hc) d₁ d₂ d₃ e₁ h₃ h₁ hℓ)
 
 /-- **At the reduction symbol `III*`, `[E(F) : E₀(F)]` divides `2`.** Here `ϖ` generates the
 maximal ideal of the valuation ring, and Tate's algorithm, run on the integral model with

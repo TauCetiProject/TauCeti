@@ -40,10 +40,13 @@ morphism is the identity on the words of length less than `n`, so the composites
 gauge morphisms stabilise, and their limit (`TauCeti.AInfinityHom.limit`) is an `A∞` isomorphism
 from `ℋ` to the original structure.
 
-## Main results
+## Main definitions
 
 * `TauCeti.AInfinityAlgebra.HochschildVanishesAt`: the vanishing of the bigraded Hochschild
   cohomology `HH^{n, 2 - n}(H, H)`, stated on cochains.
+
+## Main results
+
 * `TauCeti.AInfinityAlgebra.IsMinimal.exists_isIso_of_forall_hochschildVanishesAt`: if
   `HH^{n, 2 - n}(H, H) = 0` for every `n ≥ 3`, every minimal `A∞` structure with the grading and the
   binary operation of `ℋ` is `A∞` isomorphic to `ℋ`.
@@ -76,7 +79,12 @@ variable (ℋ) in
 /-- The bigraded Hochschild cohomology `HH^{n, 2 - n}(H, H)` of `ℋ` vanishes: every Hochschild
 cocycle of `ℋ` of suspended degree one concentrated on the words of length `n` is the Hochschild
 differential of a cochain of suspended degree zero concentrated on the words of length `n - 1`.
-This is the obstruction group for killing the operation of arity `n`. -/
+This is the obstruction group for killing the operation of arity `n`.
+
+The reading as bigraded Hochschild cohomology presumes that `ℋ` is a graded algebra (minimal, with
+no operations above arity two): only then does the Hochschild differential raise the arity by
+exactly one, so that arity and internal degree bigrade the complex.  The definition itself makes
+sense for any `A∞` algebra. -/
 def HochschildVanishesAt (n : {n : ℕ // 1 < n}) : Prop :=
   ∀ F : ReducedTensorWords R A →ₗ[R] A,
     LinearMap.IsHomogeneous F (gradedPiece (ℋ.grading.shift 1)) (ℋ.grading.shift 1).piece 1 →
