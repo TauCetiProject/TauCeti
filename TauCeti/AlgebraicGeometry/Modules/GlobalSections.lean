@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
 # Global-functions actions on sheaves of modules
@@ -20,10 +21,12 @@ action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward mul
 action to the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
 presheaf, which on the whole scheme is the base-ring map to global functions
-(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). The sections of the structure
-sheaf over the whole scheme are identified base-linearly with global functions by
-`Scheme.Modules.structureSheafSectionsBaseLinearEquiv`. Pullback of local functions by a morphism
-over the base preserves these images
+(`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). Over a field, that base-ring map
+is finite on an integral universally closed scheme locally of finite type
+(`AlgebraicGeometry.Scheme.Modules.finite_baseRingToGlobalSections_of_universallyClosed`).
+The sections of the structure sheaf over the whole scheme are identified base-linearly with
+global functions by `Scheme.Modules.structureSheafSectionsBaseLinearEquiv`. Pullback of local
+functions by a morphism over the base preserves these images
 (`AlgebraicGeometry.Scheme.Modules.app_baseRingToStructurePresheaf`).
 
 In a commuting square
@@ -218,6 +221,17 @@ lemma baseRingToGlobalSections_apply (r : R) :
     baseRingToGlobalSections R X r =
       (X ↘ Spec (.of R)).appTop ((Scheme.ΓSpecIso (.of R)).inv r) :=
   (rfl)
+
+/-- On an integral scheme universally closed and locally of finite type over a field `k`, for
+instance an integral proper `k`-scheme, the global functions are finite over `k`. This is
+Mathlib's `AlgebraicGeometry.finite_appTop_of_universallyClosed`, transported along
+`Γ(Spec k, ⊤) ≅ k`. -/
+theorem finite_baseRingToGlobalSections_of_universallyClosed (k : Type u) [Field k]
+    (X : Scheme.{u}) [X.Over (Spec (.of k))] [IsIntegral X] [UniversallyClosed (X ↘ Spec (.of k))]
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] :
+    (baseRingToGlobalSections k X).Finite :=
+  (finite_appTop_of_universallyClosed k (X ↘ Spec (.of k))).comp
+    (.of_surjective _ (Scheme.ΓSpecIso (.of k)).commRingCatIsoToRingEquiv.symm.surjective)
 
 end AlgebraicGeometry.Scheme.Modules
 
