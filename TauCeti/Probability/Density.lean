@@ -37,7 +37,7 @@ family can import it without acquiring the others.
   against the reference measure;
 * `integral_withDensity_ofReal` — and its integral is the integral of the `f`-weighted integrand;
 * `measureReal_withDensity_ofReal` — the real mass of a measurable set on which the density `f` is
-  nonnegative and integrable is its integral over that set.
+  nonnegative and a.e. measurable is its integral over that set.
 
 The density bridges are stated for an arbitrary codomain and codomain measure, since neither proof
 uses anything about `ℝ` or `volume`, and both ask only for `AEMeasurable f μ`.
@@ -115,14 +115,14 @@ theorem integral_withDensity_ofReal (hρ : AEMeasurable ρ μ) (hnn : 0 ≤ᵐ[�
   filter_upwards [hnn] with x hx
   rw [ENNReal.toReal_ofReal hx]
 
-/-- Integrating a density that is nonnegative and integrable on `s` computes the real mass of `s`
-under the law presented by that density. The nonnegativity hypothesis is only local to `s`. -/
+/-- Integrating a density that is nonnegative and measurable on `s` computes the real mass of `s`
+under the law presented by that density. The nonnegativity and measurability hypotheses are only
+local to `s`, and no integrability is needed: when the integral is infinite both sides are `0`. -/
 theorem measureReal_withDensity_ofReal (hnn : 0 ≤ᵐ[μ.restrict s] ρ)
-    (hs : MeasurableSet s) (hint : IntegrableOn ρ s μ) :
+    (hs : MeasurableSet s) (hρ : AEMeasurable ρ (μ.restrict s)) :
     (μ.withDensity (fun x => ENNReal.ofReal (ρ x))).real s = ∫ x in s, ρ x ∂μ := by
   rw [measureReal_def, withDensity_apply _ hs,
-    ← ofReal_integral_eq_lintegral_ofReal hint hnn]
-  exact ENNReal.toReal_ofReal (integral_nonneg_of_ae hnn)
+    integral_eq_lintegral_of_nonneg_ae hnn hρ.aestronglyMeasurable]
 
 end RealDensity
 

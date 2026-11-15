@@ -230,10 +230,9 @@ namespace TauCeti.Manifold
 
 section VectorSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {ι : Type*} [Fintype ι] [DecidableEq ι] {G : E → E →L[ℝ] E →L[ℝ] ℝ} {z : E}
 
-omit [FiniteDimensional ℝ E] in
 /-- In a basis, the Christoffel symbols of the second kind of a field `G` of symmetric
 bilinear forms are the Christoffel symbols of its coordinate jet. If `G z` is degenerate, both
 sides vanish. -/
@@ -257,7 +256,6 @@ theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)
       Matrix.nonsing_inv_apply_not_isUnit _ hdet,
       ContinuousLinearMap.inverse_of_not_isInvertible hinv]
 
-omit [FiniteDimensional ℝ E] in
 /-- **The derivatives of the Christoffel symbols in a basis.** For a field `G` of bilinear forms
 that is `C²` at `z`, nondegenerate and symmetric at `z`, the `k`-th coordinate of
 `∂ₘ Γ(b i, b j)` is the derivative `christoffelDerivOfJet` of the Christoffel symbols of the
@@ -314,7 +312,6 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
     ← fderiv_clm_apply_const_apply₂ hGd]
   exact Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
 
-omit [FiniteDimensional ℝ E] in
 /-- **The derivatives of the coordinates of the Christoffel symbols.** For a field `G` of
 bilinear forms that is `C²` at `z`, nondegenerate and symmetric at `z`, the derivative
 along `b m` of the `k`-th coordinate of `Γ(b i, b j)` is `christoffelDerivOfJet` of the coordinate
