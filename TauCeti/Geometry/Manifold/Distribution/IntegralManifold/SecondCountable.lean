@@ -8,37 +8,36 @@ module
 public import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.WeakEmbeddedness
 
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import TauCeti.Topology.Bases
 
 /-!
 # Second countability of connected integral manifolds
 
-In a second-countable finite-dimensional real boundaryless manifold, every preconnected
-boundaryless integral manifold of an involutive constant-rank distribution with an injective
-parametrization is second countable. Consequently, every `C^m` map into the image of such an
-integral manifold factors as a `C^m` map through its intrinsic carrier without assuming second
-countability of the carrier in advance.
+In a second-countable boundaryless finite-dimensional real `C^r` manifold, every preconnected
+boundaryless `C^m` integral manifold (`m : ℕ∞`, `1 ≤ m`, `m + 1 ≤ r`) of an involutive `C^m`
+constant-rank distribution with an injective parametrization is second countable. Consequently,
+every `C^n` map (`n ≤ m`) into the image of such an integral manifold factors as a `C^n` map
+through its intrinsic carrier without assuming second countability of the carrier in advance.
 
-The proof covers the ambient manifold by countably many Frobenius coordinate domains. In each
-coordinate domain, the preimages of the affine slices are pairwise disjoint open plaques of the
-integral carrier, and each plaque embeds openly into the finite-dimensional direction subspace.
-A chain argument (`TauCeti.secondCountableTopology_of_isOpen_cover`) then shows that only
-countably many plaques are reachable in the preconnected carrier.
+Global leaves obtained by gluing all local integral plaques carry a fine intrinsic manifold topology
+rather than the subspace topology of the ambient manifold, so second countability is not immediate
+from their construction. Establishing second countability from preconnectedness and injectivity
+ensures that every connected leaf over a second-countable manifold is second countable and weakly
+embedded.
 
 ## Main results
 
 * `TauCeti.IsIntegralManifold.secondCountableTopology`: an injectively parametrized preconnected
-  boundaryless integral manifold over a second-countable boundaryless manifold is second countable.
+  boundaryless `C^m` integral manifold (`m : ℕ∞`, `1 ≤ m`) of an involutive `C^m` constant-rank
+  distribution on a second-countable boundaryless finite-dimensional real `C^r` manifold
+  (`m + 1 ≤ r`) is second countable.
 * `TauCeti.IsIntegralManifold.continuous_of_comp_eq_of_preconnectedSpace`: continuity of lifts
-  into an injectively parametrized preconnected integral manifold over a second-countable ambient
-  manifold.
-* `TauCeti.IsIntegralManifold.exists_contMDiff_factor_of_preconnectedSpace`: weak embeddedness
-  for injectively parametrized preconnected integral manifolds over a second-countable ambient
-  manifold.
+  into such an integral manifold from a locally connected space.
+* `TauCeti.IsIntegralManifold.exists_contMDiff_factor_of_preconnectedSpace`: `C^n` factorization
+  (`n ≤ m`) into such an integral manifold without a prior carrier second-countability hypothesis.
 * `TauCeti.IntegralManifold.secondCountableTopology` and
   `TauCeti.IntegralManifold.exists_contMDiff_factor_of_preconnectedSpace`: corresponding results
-  for packaged integral manifolds.
+  for `C^m` packaged integral manifolds.
 
 ## References
 
@@ -87,9 +86,9 @@ private theorem isOpen_plaqueSet (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m
 
 omit [FiniteDimensional ℝ E] [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace H'] [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J m N] in
-private theorem pairwiseDisjoint_plaqueSet (f : N → M) (Φ : PartialEquiv M E) (W : Submodule ℝ E) :
-    (univ : Set (E ⧸ W)).PairwiseDisjoint (plaqueSet f Φ W) :=
-  fun _ _ _ _ hne ↦ disjoint_left.mpr fun _ h₁ h₂ ↦ hne (h₁.2.symm.trans h₂.2)
+private theorem pairwise_disjoint_plaqueSet (f : N → M) (Φ : PartialEquiv M E) (W : Submodule ℝ E) :
+    Pairwise (Disjoint on plaqueSet f Φ W) :=
+  fun _ _ hne ↦ disjoint_left.mpr fun _ h₁ h₂ ↦ hne (h₁.2.symm.trans h₂.2)
 
 /-- On a boundaryless source manifold, an injective integral immersion maps each plaque of a
 Frobenius coordinate domain openly and injectively into the direction subspace, so the plaque is
@@ -155,9 +154,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [BoundarylessManifold J N] [PreconnectedSpace N]
   {D : ∀ x : M, Submodule ℝ (TangentSpace I x)} {f : N → M}
 
-/-- Every preconnected boundaryless integral manifold with injective parametrization of an
-involutive `C^m` constant-rank distribution on a second-countable boundaryless `C^r` manifold
-(`1 ≤ m`, `m + 1 ≤ r`) is second countable. -/
+/-- Every preconnected boundaryless `C^m` integral manifold (`m : ℕ∞`, `1 ≤ m`) with injective
+parametrization of an involutive `C^m` constant-rank distribution on a second-countable
+boundaryless finite-dimensional real `C^r` manifold (`m + 1 ≤ r`) is second countable. -/
 theorem IsIntegralManifold.secondCountableTopology
     (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r)
     (hinv : let _ : IsManifold I 1 M :=
@@ -172,37 +171,19 @@ theorem IsIntegralManifold.secondCountableTopology
   let _ : IsManifold I (m : ℕ∞ω) M := .of_le (le_self_add.trans hmr)
   choose Φ W hΦopen hxΦ _ hΦsmooth hflat hΦinj using fun x : M ↦
     hinv.exists_flatChart_extend hm hmr hD (BoundarylessManifold.isInteriorPoint (I := I) (x := x))
-  obtain ⟨T, hTc, hTcover⟩ := isOpen_iUnion_countable (fun x ↦ (Φ x).source) hΦopen
-  have := hTc.to_subtype
-  let V : (Σ x : T, E ⧸ W x.1) → Set N := fun a ↦ plaqueSet f (Φ a.1.1) (W a.1.1) a.2
-  have hVo (a) : IsOpen (V a) :=
-    isOpen_plaqueSet hf hm (Φ a.1.1) (hΦopen a.1.1) (hΦsmooth a.1.1) (W a.1.1) (hflat a.1.1) a.2
-  have hVsc (a) : SecondCountableTopology (V a) :=
-    secondCountableTopology_plaqueSet hf hm hinj (Φ a.1.1) (hΦopen a.1.1) (hΦsmooth a.1.1)
-      (W a.1.1) (hflat a.1.1) (hΦinj a.1.1) a.2
-  refine secondCountableTopology_of_isOpen_cover V hVo ?_ hVsc fun a ↦ ?_
-  · refine eq_univ_of_forall fun y ↦ ?_
-    have hy : f y ∈ ⋃ x ∈ T, (Φ x).source := hTcover ▸ mem_iUnion.mpr ⟨f y, hxΦ (f y)⟩
-    obtain ⟨x, hxT, hyx⟩ := mem_iUnion₂.mp hy
-    exact mem_iUnion.mpr ⟨⟨⟨x, hxT⟩, Submodule.Quotient.mk (Φ x (f y))⟩, hyx, rfl⟩
-  · have hsub : {b | (V a ∩ V b).Nonempty} ⊆
-        ⋃ x : T, Sigma.mk x '' {q | (V a ∩ plaqueSet f (Φ x.1) (W x.1) q).Nonempty} := by
-      rintro ⟨x, q⟩ hb
-      exact mem_iUnion.mpr ⟨x, q, hb, rfl⟩
-    refine Countable.mono hsub (countable_iUnion fun x ↦ Countable.image ?_ _)
-    have := (hVsc a).to_separableSpace
-    exact Set.PairwiseDisjoint.countable_of_isOpen
-      (s := fun q ↦ ((↑) : V a → N) ⁻¹' plaqueSet f (Φ x.1) (W x.1) q)
-      (a := {q | (V a ∩ plaqueSet f (Φ x.1) (W x.1) q).Nonempty})
-      (fun q₁ _ q₂ _ hne ↦
-        (pairwiseDisjoint_plaqueSet f (Φ x.1) (W x.1) (mem_univ q₁) (mem_univ q₂) hne).preimage _)
-      (fun q _ ↦ (isOpen_plaqueSet hf hm (Φ x.1) (hΦopen x.1) (hΦsmooth x.1) (W x.1)
-        (hflat x.1) q).preimage continuous_subtype_val)
-      (fun q ⟨y, hy, hy'⟩ ↦ ⟨⟨y, hy⟩, hy'⟩)
+  exact secondCountableTopology_of_preimage_isOpen_cover f (fun x ↦ (Φ x).source) hΦopen
+    (range_subset_iff.mpr fun y ↦ mem_iUnion.mpr ⟨f y, hxΦ (f y)⟩)
+    (fun x ↦ plaqueSet f (Φ x) (W x))
+    (fun x ↦ isOpen_plaqueSet hf hm (Φ x) (hΦopen x) (hΦsmooth x) (W x) (hflat x))
+    (fun x ↦ secondCountableTopology_plaqueSet hf hm hinj (Φ x) (hΦopen x) (hΦsmooth x)
+      (W x) (hflat x) (hΦinj x))
+    (fun x ↦ pairwise_disjoint_plaqueSet f (Φ x) (W x))
+    (fun x y hy ↦ mem_iUnion.mpr ⟨Submodule.Quotient.mk (Φ x (f y)), hy, rfl⟩)
 
 /-- A lift of a continuous map from a locally connected space into an injectively parametrized
-preconnected boundaryless integral manifold over a second-countable boundaryless manifold is
-continuous. -/
+preconnected boundaryless `C^m` integral manifold (`m : ℕ∞`, `1 ≤ m`) of an involutive `C^m`
+constant-rank distribution on a second-countable boundaryless finite-dimensional real `C^r`
+manifold (`m + 1 ≤ r`) is continuous. -/
 theorem IsIntegralManifold.continuous_of_comp_eq_of_preconnectedSpace
     (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m) (hinj : Injective f)
     (hmr : (m : ℕ∞ω) + 1 ≤ r)
@@ -217,9 +198,11 @@ theorem IsIntegralManifold.continuous_of_comp_eq_of_preconnectedSpace
   have := hf.secondCountableTopology hm hmr hinv hD hinj
   exact hf.continuous_of_comp_eq hm hinj hmr hinv hD hg hcomp
 
-/-- Every `C^m` map into the image of an injectively parametrized preconnected boundaryless
-integral manifold over a second-countable boundaryless manifold factors as a `C^m` map through its
-intrinsic carrier. -/
+/-- Every `C^n` map (`n ≤ m`) into the image of an injectively parametrized preconnected
+boundaryless `C^m` integral manifold (`m : ℕ∞`, `1 ≤ m`) of an involutive `C^m` constant-rank
+distribution on a second-countable boundaryless finite-dimensional real `C^r` manifold
+(`m + 1 ≤ r`) factors as a `C^n` map through its intrinsic carrier. The test source may use any
+real model with corners. -/
 theorem IsIntegralManifold.exists_contMDiff_factor_of_preconnectedSpace
     (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m) (hinj : Injective f)
     (hmr : (m : ℕ∞ω) + 1 ≤ r)
@@ -232,13 +215,15 @@ theorem IsIntegralManifold.exists_contMDiff_factor_of_preconnectedSpace
     {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     {A : Type*} [TopologicalSpace A] {K : ModelWithCorners ℝ V A}
     {P : Type*} [TopologicalSpace P] [ChartedSpace A P]
-    {g : P → M} (hg : ContMDiff K I m g) (hr : range g ⊆ range f) :
-    ∃ h : P → N, ContMDiff K J m h ∧ f ∘ h = g := by
+    {n : ℕ∞ω} (hnm : n ≤ m)
+    {g : P → M} (hg : ContMDiff K I n g) (hr : range g ⊆ range f) :
+    ∃ h : P → N, ContMDiff K J n h ∧ f ∘ h = g := by
   have := hf.secondCountableTopology hm hmr hinv hD hinj
-  exact hf.exists_contMDiff_factor hm hinj hmr hinv hD hg hr
+  exact hf.exists_contMDiff_factor hm hinj hmr hinv hD hnm hg hr
 
-/-- A preconnected packaged integral manifold with injective parametrization over a
-second-countable boundaryless manifold has a second-countable carrier. -/
+/-- A preconnected `C^m` packaged integral manifold (`m : ℕ∞`, `1 ≤ m`) with injective
+parametrization of an involutive `C^m` constant-rank distribution on a second-countable
+boundaryless finite-dimensional real `C^r` manifold (`m + 1 ≤ r`) has a second-countable carrier. -/
 theorem IntegralManifold.secondCountableTopology {k : ℕ}
     (L : IntegralManifold (I := I) m D k) [PreconnectedSpace L.carrier]
     (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r)
@@ -251,9 +236,10 @@ theorem IntegralManifold.secondCountableTopology {k : ℕ}
     (hinj : Injective L.map) : SecondCountableTopology L.carrier :=
   L.isIntegralManifold.secondCountableTopology hm hmr hinv hD hinj
 
-/-- Every `C^m` map into the image of an injectively parametrized preconnected packaged integral
-manifold over a second-countable boundaryless manifold factors as a `C^m` map through its
-carrier. -/
+/-- Every `C^n` map (`n ≤ m`) into the image of an injectively parametrized preconnected `C^m`
+packaged integral manifold (`m : ℕ∞`, `1 ≤ m`) of an involutive `C^m` constant-rank distribution on
+a second-countable boundaryless finite-dimensional real `C^r` manifold (`m + 1 ≤ r`) factors as a
+`C^n` map through its carrier. The test source may use any real model with corners. -/
 theorem IntegralManifold.exists_contMDiff_factor_of_preconnectedSpace {k : ℕ}
     (L : IntegralManifold (I := I) m D k) [PreconnectedSpace L.carrier]
     (hm : 1 ≤ m) (hinj : Injective L.map) (hmr : (m : ℕ∞ω) + 1 ≤ r)
@@ -266,9 +252,10 @@ theorem IntegralManifold.exists_contMDiff_factor_of_preconnectedSpace {k : ℕ}
     {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     {A : Type*} [TopologicalSpace A] {K : ModelWithCorners ℝ V A}
     {P : Type*} [TopologicalSpace P] [ChartedSpace A P]
-    {g : P → M} (hg : ContMDiff K I m g) (hr : range g ⊆ range L.map) :
-    ∃ h : P → L.carrier, ContMDiff K (𝓡 k) m h ∧ L.map ∘ h = g :=
-  L.isIntegralManifold.exists_contMDiff_factor_of_preconnectedSpace hm hinj hmr hinv hD hg hr
+    {n : ℕ∞ω} (hnm : n ≤ m)
+    {g : P → M} (hg : ContMDiff K I n g) (hr : range g ⊆ range L.map) :
+    ∃ h : P → L.carrier, ContMDiff K (𝓡 k) n h ∧ L.map ∘ h = g :=
+  L.isIntegralManifold.exists_contMDiff_factor_of_preconnectedSpace hm hinj hmr hinv hD hnm hg hr
 
 end Global
 

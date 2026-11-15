@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.LocalUniqueness
 
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.LocallyConstant.Lindelof
 import Mathlib.Analysis.Normed.Group.Quotient
@@ -16,13 +17,13 @@ import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 # Weak embeddedness of integral manifolds
 
 An injective integral immersion of an involutive constant-rank distribution with a
-second-countable intrinsic carrier is weakly embedded: every `C^m` map into its image has a
-`C^m` factorization through that carrier. The factor is continuous even for a continuous test
-map from a locally connected space.
+second-countable intrinsic carrier is weakly embedded: every `C^n` map (`n ≤ m`) into its image
+has a `C^n` factorization through that carrier. The factor is continuous even for a continuous
+test map from a locally connected space.
 
 The ambient normed model is finite dimensional and real. The integral immersion has regularity
-`m ≥ 1`, and the ambient manifold has regularity `r` with `m + 1 ≤ r`. Both manifolds are
-boundaryless, but their models may have boundary. The carrier retains its given topology.
+`m ≥ 1` (`m : ℕ∞`), and the ambient manifold has regularity `r` with `m + 1 ≤ r`. Both manifolds
+are boundaryless, but their models may have boundary. The carrier retains its given topology.
 
 ## Main results
 
@@ -181,10 +182,11 @@ theorem IsIntegralManifold.continuous_of_comp_eq
   exact continuousAt_factor_of_flatChart hf hm hinj Φ hΦopen hΦsmooth W hflatΦ
     hg hcomp hxΦ (hΦinj _ ((hpoint x).symm ▸ hxΦ))
 
-/-- A `C^m` map into the image of an injective integral immersion of an involutive constant-rank
-distribution has a `C^m` factorization through its intrinsic carrier when that carrier is second
-countable. The integral and ambient manifolds are boundaryless, with ambient regularity `r`
-satisfying `m + 1 ≤ r` and `1 ≤ m`. The test source may use any real model with corners. -/
+/-- A `C^n` map (`n ≤ m`) into the image of an injective `C^m` integral immersion (`m : ℕ∞`,
+`1 ≤ m`) of an involutive `C^m` constant-rank distribution on a finite-dimensional real `C^r`
+manifold (`m + 1 ≤ r`) has a `C^n` factorization through its intrinsic carrier when that carrier is
+second countable. Both the integral and ambient manifolds are boundaryless, and the test source may
+use any real model with corners. -/
 theorem IsIntegralManifold.exists_contMDiff_factor
     (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m) (hinj : Injective f)
     (hmr : (m : ℕ∞ω) + 1 ≤ r)
@@ -197,14 +199,17 @@ theorem IsIntegralManifold.exists_contMDiff_factor
     {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     {A : Type*} [TopologicalSpace A] {K : ModelWithCorners ℝ V A}
     {P : Type*} [TopologicalSpace P] [ChartedSpace A P]
-    {g : P → M} (hg : ContMDiff K I m g) (hr : range g ⊆ range f) :
-    ∃ h : P → N, ContMDiff K J m h ∧ f ∘ h = g := by
+    {n : ℕ∞ω} (hnm : n ≤ m)
+    {g : P → M} (hg : ContMDiff K I n g) (hr : range g ⊆ range f) :
+    ∃ h : P → N, ContMDiff K J n h ∧ f ∘ h = g := by
   classical
   let _ : LocallyPathConnectedSpace P := K.locallyPathConnectedSpace_of_chartedSpace P
+  let _ : IsManifold J n N := .of_le hnm
+  let _ : IsManifold I n M := .of_le (hnm.trans (le_self_add.trans hmr))
   choose h hpoint using fun x : P ↦ hr (mem_range_self x)
   have hcomp : f ∘ h = g := funext hpoint
   have hc : Continuous h := hf.continuous_of_comp_eq hm hinj hmr hinv hD hg.continuous hcomp
-  exact ⟨h, (ContMDiff.iff_comp_isImmersion hf.isImmersion).mpr
+  exact ⟨h, (ContMDiff.iff_comp_isImmersion (hf.isImmersion.of_le hnm)).mpr
     ⟨hc, hcomp.symm ▸ hg⟩, hcomp⟩
 
 end TauCeti

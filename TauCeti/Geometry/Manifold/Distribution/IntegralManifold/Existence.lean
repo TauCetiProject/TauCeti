@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Distribution.FlatChart
 public import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -195,39 +196,22 @@ theorem IsInvolutiveDistribution.exists_isIntegralManifold_euclidean {m : ℕ∞
   obtain ⟨W, Φ, U, u, f, hW, hxΦ, hΦflat, hfu, hsrc, hemb, hslice, hf⟩ :=
     hinv.exists_isIntegralManifold hm hmr hD x
   let A : EuclideanSpace ℝ (Fin k) ≃L[ℝ] W :=
-    (LinearEquiv.ofFinrankEq (EuclideanSpace ℝ (Fin k)) W
-      (finrank_euclideanSpace_fin.trans hW.symm)).toContinuousLinearEquiv
-  let d₀ : EuclideanSpace ℝ (Fin k) ≃ₘ^m⟮𝓡 k, 𝓘(ℝ, W)⟯ W :=
-    { toEquiv := A.toEquiv
-      contMDiff_toFun := A.contDiff.contMDiff
-      contMDiff_invFun := A.symm.contDiff.contMDiff }
+    ContinuousLinearEquiv.ofFinrankEq (finrank_euclideanSpace_fin.trans hW.symm)
+  let d₀ : EuclideanSpace ℝ (Fin k) ≃ₘ^m⟮𝓡 k, 𝓘(ℝ, W)⟯ W := A.toContDiffDiffeomorph m
   let V : TopologicalSpace.Opens (EuclideanSpace ℝ (Fin k)) :=
-    ⟨A ⁻¹' U, U.isOpen.preimage A.continuous⟩
+    ⟨d₀ ⁻¹' U, U.isOpen.preimage d₀.contMDiff.continuous⟩
   let d : V ≃ₘ^m⟮𝓡 k, 𝓘(ℝ, W)⟯ U := Diffeomorph.subtype d₀ fun _ ↦ Iff.rfl
   let v : V := d.symm u
   let g : V → M := f ∘ d
-  have hrange : range g = range f := by
-    rw [range_comp, (EquivLike.surjective d).range_eq, image_univ]
-  have hder (z : V) : mfderiv (𝓡 k) I g z =
-      (mfderiv 𝓘(ℝ, W) I f (d z)).comp
-        (d.mfderivToContinuousLinearEquiv hm0 z).toContinuousLinearMap := by
-    rw [mfderiv_comp z (hf.contMDiff.mdifferentiableAt hm0) (d.contMDiff.mdifferentiableAt hm0),
-      ← d.mfderivToContinuousLinearEquiv_coe hm0]
+  have hrange : range g = range f := EquivLike.range_comp f d
   refine ⟨W, Φ, V, v, g, hW, hxΦ, hΦflat, ?_, hrange ▸ hsrc,
     hemb.comp d.toHomeomorph.isEmbedding, hrange ▸ hslice, ?_⟩
   · simp only [g, v, Function.comp_apply, d.apply_symm_apply, hfu]
   · rw [isIntegralManifold_iff]
     refine ⟨⟨v⟩, (hf.contMDiff.comp d.contMDiff).isImmersion_of_injective_mfderiv hm1 fun z ↦ ?_,
-      fun z ↦ ?_⟩
-    · rw [hder z]
-      exact (hf.isImmersion.mfderiv_injective hm0 (d z)).comp
-        (d.mfderivToContinuousLinearEquiv hm0 z).injective
-    · ext w
-      rw [hder z, LinearMap.mem_range]
-      simp only [g, Function.comp_apply, ContinuousLinearMap.coe_coe,
-        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        ← hf.range_mfderiv (d z), LinearMap.mem_range]
-      exact ⟨fun ⟨y, hy⟩ ↦ ⟨_, hy⟩, fun ⟨y, hy⟩ ↦
-        ⟨(d.mfderivToContinuousLinearEquiv hm0 z).symm y, by simp [hy]⟩⟩
+      fun z ↦ (d.range_mfderiv_comp_diffeomorph hm0 f z).trans (hf.range_mfderiv (d z))⟩
+    rw [d.mfderiv_comp_diffeomorph hm0 f z]
+    exact (hf.isImmersion.mfderiv_injective hm0 (d z)).comp
+      (d.isInvertible_mfderiv hm0).injective
 
 end TauCeti

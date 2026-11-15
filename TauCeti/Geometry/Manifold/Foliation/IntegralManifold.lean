@@ -13,7 +13,6 @@ import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 import Mathlib.Topology.Connected.Clopen
 import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Existence
 import TauCeti.Geometry.Manifold.Foliation.Horizontal
-import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -25,43 +24,49 @@ points joined to `x` by a finite chain of `C¹` curves tangent to `F`, and the g
 of the involutive tangent distribution `F.distribution`, a connected injectively parametrized
 `k`-dimensional integral manifold with its own intrinsic manifold topology.
 
-This file proves that these two descriptions agree: for every `1 ≤ m` below the regularity of `F`,
-the ambient image of the `C^m` Frobenius leaf through `x` is equal to `F.leaf x`. In particular,
-for a `C^m` foliation `F : Foliation I m M k` (`m : ℕ∞`), `F.leafIntegralManifold x` equips
-`F.leaf x` with a canonical connected, injectively parametrized `C^m` `IntegralManifold` structure
-that inherits Hausdorffness and second countability from `M`, satisfies weak embeddedness over a
-second-countable `M`, and is unique up to `C^m` diffeomorphism over `M` among maximal connected
-injective `C^m` integral manifolds of `F.distribution`.
+This file proves that these two descriptions agree: for every `m : ℕ∞` with `1 ≤ m` at most the
+regularity of `F` (and more generally whenever `F.distribution` is `C^m` of constant rank on a
+`C^r` ambient manifold with `m + 1 ≤ r`), the ambient image of the `C^m` Frobenius leaf through `x`
+is equal to `F.leaf x`. In particular, for a `C^m` foliation `F : Foliation I m M k` (`m : ℕ∞`),
+`F.leafIntegralManifold x` equips `F.leaf x` with a canonical connected, injectively parametrized
+`C^m` `IntegralManifold` structure that inherits Hausdorffness and second countability as typeclass
+instances from `M`, admits unique `C^n` (`n ≤ m`) factorization for horizontal maps (`1 ≤ n`)
+without `SecondCountableTopology M` and for arbitrary maps when `M` is second countable, and is
+unique up to `C^m` diffeomorphism over `M` among maximal preconnected injective `C^m` integral
+manifolds of `F.distribution`.
 
 ## Main definitions
 
-* `TauCeti.Foliation.leafIntegralManifold`: the leaf of a `C^m` foliation (`m : ℕ∞`) through `x`,
-  packaged as a `k`-dimensional `C^m` `IntegralManifold` in the same universe as `M`.
+* `TauCeti.Foliation.leafIntegralManifold`: the leaf of a `C^m` foliation (`m : ℕ∞`) on a
+  finite-dimensional real `C^(m + 1)` manifold `M` with boundaryless model through `x`, packaged as
+  a `k`-dimensional `C^m` `IntegralManifold` in the same universe as `M`.
 
 ## Main results
 
 * `TauCeti.Foliation.range_leaf_distribution`: for any foliation `F : Foliation I n M k` and any
-  `m : ℕ∞` with `1 ≤ m` and `m ≤ n`, the ambient image of the `C^m` Frobenius leaf of
-  `F.distribution` through `x` equals `F.leaf x`.
-* `TauCeti.IsInvolutiveDistribution.range_leaf_eq_range_leaf`: the ambient point-set image of the
-  global Frobenius leaf through `x` is independent of the chosen regularity `1 ≤ m ≤ n`.
-* `TauCeti.Foliation.range_leafIntegralManifold`: the ambient image of `F.leafIntegralManifold x`
-  is `F.leaf x`.
+  valid leaf regularity `m : ℕ∞` (`1 ≤ m`) and ambient regularity `r` (`m + 1 ≤ r`), the ambient
+  image of the `C^m` Frobenius leaf of `F.distribution` through `x` equals `F.leaf x`.
+* `TauCeti.Foliation.leafIntegralManifold_def` and
+  `TauCeti.Foliation.range_leafIntegralManifold`: unfolding `F.leafIntegralManifold x` to
+  `IsInvolutiveDistribution.leaf` and identifying its ambient image with `F.leaf x`.
 * `TauCeti.Foliation.mem_range_leafIntegralManifold_iff` and
   `TauCeti.Foliation.mem_range_leafIntegralManifold_self`: membership in the image of
   `F.leafIntegralManifold x`.
 * `TauCeti.Foliation.connectedSpace_leafIntegralManifold`,
-  `TauCeti.Foliation.injective_leafIntegralManifold_map`,
+  `TauCeti.Foliation.map_leafIntegralManifold_injective`,
   `TauCeti.Foliation.t2Space_leafIntegralManifold`,
   `TauCeti.Foliation.secondCountableTopology_leafIntegralManifold`, and
-  `TauCeti.Foliation.range_subset_leafIntegralManifold`: topological and maximality properties of
-  `F.leafIntegralManifold x`.
-* `TauCeti.Foliation.exists_contMDiff_factor_leafIntegralManifold`: unique `C^m` factorization of
-  maps with image in `F.leaf x` through `(F.leafIntegralManifold x).carrier` when `M` is second
-  countable.
-* `TauCeti.Foliation.exists_diffeomorph_leafIntegralManifold_of_maximal`: any maximal preconnected
-  injective `C^m` integral manifold of `F.distribution` through `x` has ambient image `F.leaf x`
-  and is `C^m` diffeomorphic to `F.leafIntegralManifold x` over `M`.
+  `TauCeti.Foliation.range_subset_leafIntegralManifold`: topological instances, injectivity, and
+  maximality properties of `F.leafIntegralManifold x`.
+* `TauCeti.Foliation.existsUnique_contMDiff_factor_leafIntegralManifold_of_isHorizontalMap` and
+  `TauCeti.Foliation.existsUnique_contMDiff_factor_leafIntegralManifold`: unique `C^n` (`n ≤ m`)
+  factorization of maps with image in `F.leaf x` through `(F.leafIntegralManifold x).carrier` for
+  horizontal maps (`1 ≤ n`) without `SecondCountableTopology M`, and for all maps when `M` is
+  second countable.
+* `TauCeti.Foliation.range_eq_leaf_of_maximal` and
+  `TauCeti.Foliation.exists_diffeomorph_leafIntegralManifold_of_maximal`: any maximal preconnected
+  `C^m` integral manifold of `F.distribution` through `x` has ambient image `F.leaf x`, and when
+  injectively parametrized is `C^m` diffeomorphic to `F.leafIntegralManifold x` over `M`.
 
 ## References
 
@@ -147,10 +152,7 @@ private theorem exists_preconnected_ball_plaque {m : ℕ∞} (hm0 : (m : ℕ∞�
   have hvB : v ∈ (B : Set V) := Metric.mem_ball_self hε
   have : Nonempty B := ⟨⟨v, hvB⟩⟩
   obtain ⟨U_amb, hUopen, hfU⟩ := hemb.isInducing.isOpen_iff.mp B.isOpen
-  refine ⟨B, hBpre, U_amb, hUopen, hfU, hvB, isIntegralManifold_iff.mpr ⟨inferInstance,
-    isImmersion_comp_isLocalDiffeomorph isLocalDiffeomorph_subtype_val hf.isImmersion,
-    fun y ↦ ((isLocalDiffeomorph_subtype_val (I := 𝓡 k) (n := m) y).range_mfderiv_comp hm0).trans
-      (hf.range_mfderiv y.1)⟩⟩
+  exact ⟨B, hBpre, U_amb, hUopen, hfU, hvB, hf.comp_subtypeVal hm0⟩
 
 /-- Near any parameter `t₀ ∈ [0, 1]`, a `C¹` curve tangent to an involutive `C^m` distribution
 remains inside the image of a single preconnected `C^m` Euclidean integral plaque. -/
@@ -207,22 +209,23 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   {n : ℕ∞ω} {k : ℕ} [IsManifold I (n + 1) M]
 
-/-- For any foliation `F : Foliation I n M k` on a finite-dimensional real manifold with
-boundaryless model and any `m : ℕ∞` with `1 ≤ m` and `m ≤ n`, the ambient image of the `C^m`
+/-- For any foliation `F : Foliation I n M k` on a finite-dimensional real manifold `M` with
+boundaryless model, and any leaf regularity `m : ℕ∞` (`1 ≤ m`) and ambient regularity `r`
+(`m + 1 ≤ r`) for which `F.distribution` is `C^m` of constant rank, the ambient image of the `C^m`
 Frobenius leaf of `F.distribution` through `x` equals the tangent-curve leaf `F.leaf x`. -/
 theorem range_leaf_distribution (F : Foliation I n M k) {m : ℕ∞} (hm : 1 ≤ m)
-    (hmn : (m : ℕ∞ω) ≤ n) (x : M) :
+    {r : ℕ∞ω} [IsManifold I r M] (hmr : (m : ℕ∞ω) + 1 ≤ r) {k' : ℕ}
+    (hD : letI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
+      IsContMDiffDistribution I m k' F.distribution)
+    (x : M) :
     letI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
-    range (F.isInvolutiveDistribution.leaf hm (add_le_add_left hmn 1)
-      (F.isContMDiffDistribution.of_le hmn) x).map = F.leaf x := by
+    range (F.isInvolutiveDistribution.leaf hm hmr hD x).map = F.leaf x := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
-  have hmr : (m : ℕ∞ω) + 1 ≤ n + 1 := add_le_add_left hmn 1
-  have hD : IsContMDiffDistribution I m k F.distribution := F.isContMDiffDistribution.of_le hmn
   have hm1 : (1 : ℕ∞ω) ≤ m := WithTop.coe_le_coe.mpr hm
   refine Subset.antisymm ?_ ?_
   · obtain ⟨z₀, hz₀⟩ := F.isInvolutiveDistribution.mem_range_leaf_self hm hmr hD x
     let N := F.isInvolutiveDistribution.leaf hm hmr hD x
-    let _ : IsManifold (𝓡 k) 1 N.carrier := .of_le hm1
+    let _ : IsManifold (𝓡 k') 1 N.carrier := .of_le hm1
     exact (F.range_subset_leaf_of_isHorizontalMap
       (isHorizontalMap_iff_range_mfderiv_le.mpr fun z ↦ (N.range_mfderiv z).le)
       (N.contMDiff_map.of_le hm1) z₀).trans_eq (congrArg F.leaf hz₀)
@@ -245,19 +248,6 @@ theorem range_leaf_distribution (F : Foliation I n M k) {m : ℕ∞} (hm : 1 ≤
         ⟨γ t₀, ht₀g, F.isInvolutiveDistribution.mem_range_leaf_self hm hmr hD (γ t₀)⟩
     exact hfg.mono fun _ ht ↦ hsub ht
 
-/-- The ambient point-set image of the global Frobenius leaf of an involutive `C^n` distribution on
-a `C^(n + 1)` manifold is independent of the chosen regularity `1 ≤ m ≤ n`. -/
-theorem _root_.TauCeti.IsInvolutiveDistribution.range_leaf_eq_range_leaf
-    [IsManifold I 1 M] {D : ∀ x : M, Submodule ℝ (TangentSpace I x)}
-    (hinv : IsInvolutiveDistribution I D) (hD : IsContMDiffDistribution I n k D)
-    {m₁ m₂ : ℕ∞} (hm₁ : 1 ≤ m₁) (hm₁n : (m₁ : ℕ∞ω) ≤ n)
-    (hm₂ : 1 ≤ m₂) (hm₂n : (m₂ : ℕ∞ω) ≤ n) (x : M) :
-    range (hinv.leaf hm₁ (add_le_add_left hm₁n 1) (hD.of_le hm₁n) x).map =
-      range (hinv.leaf hm₂ (add_le_add_left hm₂n 1) (hD.of_le hm₂n) x).map := by
-  let F : Foliation I n M k :=
-    ⟨(WithTop.coe_le_coe.mpr hm₁).trans hm₁n, D, hD, hinv⟩
-  exact (F.range_leaf_distribution hm₁ hm₁n x).trans (F.range_leaf_distribution hm₂ hm₂n x).symm
-
 end GeneralRegularity
 
 section PackagedLeaf
@@ -267,21 +257,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   {m : ℕ∞} {k : ℕ} [IsManifold I ((m : ℕ∞ω) + 1) M]
 
-/-- The leaf of a `C^m` foliation `F` (`m : ℕ∞`) through `x`, packaged as a connected, injectively
-parametrized `k`-dimensional `C^m` `IntegralManifold` in the same universe as `M`. -/
+/-- The leaf of a `C^m` foliation `F` (`m : ℕ∞`) on a finite-dimensional real `C^(m + 1)` manifold
+`M` with boundaryless model through `x`, packaged as a connected, injectively parametrized
+`k`-dimensional `C^m` `IntegralManifold` in the same universe as `M`. -/
 def leafIntegralManifold (F : Foliation I m M k) (x : M) :
     IntegralManifold.{u, u} (I := I) m F.distribution k :=
   let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
   F.isInvolutiveDistribution.leaf (WithTop.coe_le_coe.mp F.one_le) le_rfl
     F.isContMDiffDistribution x
 
+/-- `F.leafIntegralManifold x` is the canonical global `C^m` Frobenius leaf of `F.distribution`
+through `x`. -/
+theorem leafIntegralManifold_def (F : Foliation I m M k) (x : M) :
+    letI : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
+    F.leafIntegralManifold x =
+      F.isInvolutiveDistribution.leaf (WithTop.coe_le_coe.mp F.one_le) le_rfl
+        F.isContMDiffDistribution x :=
+  (rfl)
+
 /-- The ambient image of `F.leafIntegralManifold x` is the curve-defined leaf `F.leaf x`. -/
 @[simp]
 theorem range_leafIntegralManifold (F : Foliation I m M k) (x : M) :
-    range (F.leafIntegralManifold x).map = F.leaf x := by
-  let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
-  simpa only [leafIntegralManifold, IsContMDiffDistribution.of_le] using
-    F.range_leaf_distribution (WithTop.coe_le_coe.mp F.one_le) le_rfl x
+    range (F.leafIntegralManifold x).map = F.leaf x :=
+  F.range_leaf_distribution (WithTop.coe_le_coe.mp F.one_le) le_rfl F.isContMDiffDistribution x
 
 /-- A point belongs to the ambient image of `F.leafIntegralManifold x` if and only if it lies on
 the same leaf of `F` as `x`. -/
@@ -302,15 +300,15 @@ instance connectedSpace_leafIntegralManifold (F : Foliation I m M k) (x : M) :
     F.isContMDiffDistribution x
 
 /-- The ambient parametrization of `F.leafIntegralManifold x` is injective. -/
-theorem injective_leafIntegralManifold_map (F : Foliation I m M k) (x : M) :
+theorem map_leafIntegralManifold_injective (F : Foliation I m M k) (x : M) :
     Injective (F.leafIntegralManifold x).map := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
-  exact F.isInvolutiveDistribution.injective_leaf_map (WithTop.coe_le_coe.mp F.one_le) le_rfl
+  exact F.isInvolutiveDistribution.map_leaf_injective (WithTop.coe_le_coe.mp F.one_le) le_rfl
     F.isContMDiffDistribution x
 
 /-- When the ambient manifold is Hausdorff, the intrinsic carrier of `F.leafIntegralManifold x` is
 Hausdorff. -/
-theorem t2Space_leafIntegralManifold [T2Space M] (F : Foliation I m M k) (x : M) :
+instance t2Space_leafIntegralManifold [T2Space M] (F : Foliation I m M k) (x : M) :
     T2Space (F.leafIntegralManifold x).carrier := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
   exact F.isInvolutiveDistribution.t2Space_leaf (WithTop.coe_le_coe.mp F.one_le) le_rfl
@@ -318,7 +316,7 @@ theorem t2Space_leafIntegralManifold [T2Space M] (F : Foliation I m M k) (x : M)
 
 /-- When the ambient manifold is second countable, the intrinsic carrier of
 `F.leafIntegralManifold x` is second countable. -/
-theorem secondCountableTopology_leafIntegralManifold [SecondCountableTopology M]
+instance secondCountableTopology_leafIntegralManifold [SecondCountableTopology M]
     (F : Foliation I m M k) (x : M) :
     SecondCountableTopology (F.leafIntegralManifold x).carrier := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
@@ -336,20 +334,41 @@ theorem range_subset_leafIntegralManifold (F : Foliation I m M k) {x : M}
   exact F.isInvolutiveDistribution.range_subset_leaf (WithTop.coe_le_coe.mp F.one_le) le_rfl
     F.isContMDiffDistribution hm' N' hmeet
 
-/-- Over a second-countable ambient manifold, every `C^m` map into `F.leaf x` factors uniquely as a
-`C^m` map through `(F.leafIntegralManifold x).carrier`. -/
-theorem exists_contMDiff_factor_leafIntegralManifold [SecondCountableTopology M]
+/-- For a `C^m` foliation `F` (`m : ℕ∞`) on a finite-dimensional real `C^(m + 1)` manifold `M` with
+boundaryless model, every horizontal `C^n` map (`1 ≤ n`, `n ≤ m`) from a `C¹` manifold into
+`F.leaf x` factors uniquely as a `C^n` map through `(F.leafIntegralManifold x).carrier`, without
+assuming second countability of `M`. -/
+theorem existsUnique_contMDiff_factor_leafIntegralManifold_of_isHorizontalMap
+    (F : Foliation I m M k) {x : M}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {A : Type*} [TopologicalSpace A] {K : ModelWithCorners ℝ V A}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace A P] [IsManifold K 1 P]
+    {n : ℕ∞ω} (hn : 1 ≤ n) (hnm : n ≤ m)
+    {g : P → M} (hg_hor : IsHorizontalMap K F.distribution g) (hg : ContMDiff K I n g)
+    (hr : range g ⊆ F.leaf x) :
+    ∃! h : P → (F.leafIntegralManifold x).carrier,
+      ContMDiff K (𝓡 k) n h ∧ (F.leafIntegralManifold x).map ∘ h = g := by
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
+  rw [← F.range_leafIntegralManifold x] at hr
+  exact F.isInvolutiveDistribution.existsUnique_contMDiff_factor_leaf_of_isHorizontalMap
+    (WithTop.coe_le_coe.mp F.one_le) le_rfl F.isContMDiffDistribution hn hnm hg_hor hg hr
+
+/-- Over a second-countable finite-dimensional real `C^(m + 1)` manifold `M` with boundaryless
+model, every `C^n` map (`n ≤ m`) into `F.leaf x` for a `C^m` foliation `F` (`m : ℕ∞`) factors
+uniquely as a `C^n` map through `(F.leafIntegralManifold x).carrier`. -/
+theorem existsUnique_contMDiff_factor_leafIntegralManifold [SecondCountableTopology M]
     (F : Foliation I m M k) {x : M}
     {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     {A : Type*} [TopologicalSpace A] {K : ModelWithCorners ℝ V A}
     {P : Type*} [TopologicalSpace P] [ChartedSpace A P]
-    {g : P → M} (hg : ContMDiff K I m g) (hr : range g ⊆ F.leaf x) :
+    {n : ℕ∞ω} (hnm : n ≤ m)
+    {g : P → M} (hg : ContMDiff K I n g) (hr : range g ⊆ F.leaf x) :
     ∃! h : P → (F.leafIntegralManifold x).carrier,
-      ContMDiff K (𝓡 k) m h ∧ (F.leafIntegralManifold x).map ∘ h = g := by
+      ContMDiff K (𝓡 k) n h ∧ (F.leafIntegralManifold x).map ∘ h = g := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
   rw [← F.range_leafIntegralManifold x] at hr
-  exact F.isInvolutiveDistribution.exists_contMDiff_factor_leaf (WithTop.coe_le_coe.mp F.one_le)
-    le_rfl F.isContMDiffDistribution hg hr
+  exact F.isInvolutiveDistribution.existsUnique_contMDiff_factor_leaf
+    (WithTop.coe_le_coe.mp F.one_le) le_rfl F.isContMDiffDistribution hnm hg hr
 
 /-- Whenever `y ∈ F.leaf x`, the intrinsic leaf carriers `(F.leafIntegralManifold y).carrier` and
 `(F.leafIntegralManifold x).carrier` are `C^m` diffeomorphic over `M`. -/
@@ -363,21 +382,35 @@ theorem exists_diffeomorph_leafIntegralManifold_of_mem_leaf (F : Foliation I m M
   exact F.isInvolutiveDistribution.exists_diffeomorph_leaf_of_mem (WithTop.coe_le_coe.mp F.one_le)
     le_rfl F.isContMDiffDistribution hy
 
-/-- Any preconnected injectively parametrized `C^m` integral manifold of `F.distribution` through
-`x` that contains the image of every connected `C^m` integral manifold meeting it has ambient image
-`F.leaf x` and is `C^m` diffeomorphic to `F.leafIntegralManifold x` over `M`. -/
+/-- For a `C^m` foliation `F` (`m : ℕ∞`) on a finite-dimensional real `C^(m + 1)` manifold `M` with
+boundaryless model, any preconnected `C^m` integral manifold of `F.distribution` through `x` that
+contains the image of every connected `C^m` integral manifold meeting it has ambient image
+`F.leaf x`. -/
+theorem range_eq_leaf_of_maximal (F : Foliation I m M k) {x : M}
+    (L : IntegralManifold (I := I) m F.distribution k) [PreconnectedSpace L.carrier]
+    (hx : x ∈ range L.map)
+    (hmax : ∀ N' : IntegralManifold.{u, u} (I := I) m F.distribution k, ConnectedSpace N'.carrier →
+      (range N'.map ∩ range L.map).Nonempty → range N'.map ⊆ range L.map) :
+    range L.map = F.leaf x := by
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
+  exact (F.isInvolutiveDistribution.range_eq_range_leaf_of_maximal
+    (WithTop.coe_le_coe.mp F.one_le) le_rfl F.isContMDiffDistribution L hx hmax).trans
+    (F.range_leafIntegralManifold x)
+
+/-- For a `C^m` foliation `F` (`m : ℕ∞`) on a finite-dimensional real `C^(m + 1)` manifold `M` with
+boundaryless model, any preconnected injectively parametrized `C^m` integral manifold of
+`F.distribution` through `x` that contains the image of every connected `C^m` integral manifold
+meeting it is `C^m` diffeomorphic over `M` to `F.leafIntegralManifold x`. -/
 theorem exists_diffeomorph_leafIntegralManifold_of_maximal (F : Foliation I m M k) {x : M}
     (L : IntegralManifold (I := I) m F.distribution k) [PreconnectedSpace L.carrier]
     (hinj : Injective L.map) (hx : x ∈ range L.map)
     (hmax : ∀ N' : IntegralManifold.{u, u} (I := I) m F.distribution k, ConnectedSpace N'.carrier →
       (range N'.map ∩ range L.map).Nonempty → range N'.map ⊆ range L.map) :
-    range L.map = F.leaf x ∧
-      ∃ e : Diffeomorph (𝓡 k) (𝓡 k) L.carrier (F.leafIntegralManifold x).carrier m,
-        ∀ z, (F.leafIntegralManifold x).map (e z) = L.map z := by
+    ∃ e : Diffeomorph (𝓡 k) (𝓡 k) L.carrier (F.leafIntegralManifold x).carrier m,
+      ∀ z, (F.leafIntegralManifold x).map (e z) = L.map z := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := (m : ℕ∞ω) + 1) le_add_self
-  obtain ⟨hrange, hdiff⟩ := F.isInvolutiveDistribution.exists_diffeomorph_leaf_of_maximal
+  exact F.isInvolutiveDistribution.exists_diffeomorph_leaf_of_maximal
     (WithTop.coe_le_coe.mp F.one_le) le_rfl F.isContMDiffDistribution L hinj hx hmax
-  exact ⟨hrange.trans (F.range_leafIntegralManifold x), hdiff⟩
 
 end PackagedLeaf
 
