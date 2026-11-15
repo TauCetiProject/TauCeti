@@ -17,17 +17,17 @@ reflexivity, transitivity, and equivalence-invariance API, from which anisotropy
 an isometry invariant.
 
 For scalar values, it defines the represented-unit value set, proves its elementary square-class
-invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
-equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
-coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
-form over a field with trivial radical pairs every nonzero isotropic vector with an isotropic
-partner of polar pairing one, so an isotropic form with trivial radical contains such a pair. If the
-orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero space is
-isotropic, the two summands therefore share a nonzero opposite value; for two nondegenerate
-summands, the first with some unit value and the second on a nonzero space, isotropy of the sum is
-equivalent to such a shared opposite unit value. These results provide the basic bridge from value
-questions to isotropy questions, following Lam, *Introduction to Quadratic Forms over Fields*,
-I.2.3 and I.3.5.
+and unit-scaling invariance, and gives the criterion that, for a form with trivial radical,
+representing a unit is equivalent to isotropy after adjoining the one-dimensional form with that
+unit as its negative coefficient. A nondegenerate form has trivial radical by Mathlib's
+`radical_eq_bot` theorem. A form over a field with trivial radical pairs every nonzero isotropic
+vector with an isotropic partner of polar pairing one, so an isotropic form with trivial radical
+contains such a pair. If the orthogonal sum of a form with trivial radical and an anisotropic form
+on a nonzero space is isotropic, the two summands therefore share a nonzero opposite value; for two
+nondegenerate summands, the first with some unit value and the second on a nonzero space, isotropy
+of the sum is equivalent to such a shared opposite unit value. These results provide the basic
+bridge from value questions to isotropy questions, following Lam, *Introduction to Quadratic Forms
+over Fields*, I.2.3 and I.3.5.
 
 A represented regular form splits off from a regular finite-dimensional ambient form as an
 orthogonal summand with regular complement.
@@ -261,6 +261,40 @@ theorem mem_unitValueSet_mul_sq_iff (Q : QuadraticMap R M R) (a b : Rˣ) :
     (a * b ^ 2) ∈ unitValueSet Q ↔ a ∈ unitValueSet Q := by
   simpa only [mem_unitValueSet, Units.val_mul, Units.val_pow_eq_pow_val] using
     (represents_mul_sq_iff Q (a : R) b)
+
+/-- Scaling a quadratic map and the target value by the same scalar preserves representation. -/
+theorem Represents.smul_map {S M N : Type*} [Monoid S] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [DistribMulAction S N] [SMulCommClass S R N]
+    {Q : QuadraticMap R M N} {a : N} (h : Represents Q a) (c : S) :
+    Represents (c • Q) (c • a) := by
+  obtain ⟨v, rfl⟩ := h
+  exact ⟨v, rfl⟩
+
+/-- Scaling a quadratic map and the target value by the same unit gives an equivalent
+representation condition. -/
+@[simp]
+theorem represents_smul_same_iff {S M N : Type*} [Monoid S] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [DistribMulAction S N] [SMulCommClass S R N]
+    {c : S} (hc : IsUnit c) (Q : QuadraticMap R M N) (a : N) :
+    Represents (c • Q) (c • a) ↔ Represents Q a := by
+  simp only [Represents, smul_apply, hc.smul_left_cancel]
+
+/-- Scaling a scalar-valued quadratic map by a unit `c` shifts its represented-unit value set by
+multiplication by `c`. -/
+theorem mem_unitValueSet_smul_iff (Q : QuadraticMap R M R) (c a : Rˣ) :
+    a ∈ unitValueSet ((c : R) • Q) ↔ c⁻¹ * a ∈ unitValueSet Q := by
+  have ha : (a : R) = (c : R) • ((c⁻¹ * a : Rˣ) : R) := by simp [smul_eq_mul]
+  rw [mem_unitValueSet, mem_unitValueSet, ha]
+  exact represents_smul_same_iff c.isUnit Q _
+
+/-- Over a semifield, scaling a quadratic form by a nonzero scalar `c` represents `a` if and only
+if the unscaled form represents `c⁻¹ * a`. -/
+theorem represents_smul_iff {K V : Type*} [Semifield K] [AddCommMonoid V]
+    [Module K V] {Q : QuadraticForm K V} {c : K} (hc : c ≠ 0) (a : K) :
+    Represents (c • Q) a ↔ Represents Q (c⁻¹ * a) := by
+  have ha : a = c • (c⁻¹ * a) := by simp [smul_eq_mul, mul_inv_cancel_left₀ hc]
+  conv_lhs => rw [ha]
+  exact represents_smul_same_iff hc.isUnit Q (c⁻¹ * a)
 
 /-- Over a semifield, a quadratic form representing a nonzero scalar `a` represents every `b` for
 which `b / a` is a square. -/

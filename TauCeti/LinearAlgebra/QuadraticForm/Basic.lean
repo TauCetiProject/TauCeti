@@ -15,6 +15,7 @@ This file records elementary consequences of the quadratic-map axioms.
 ## Main results
 
 * `QuadraticMap.Anisotropic.comp`: injective pullback preserves anisotropy.
+* `QuadraticMap.anisotropic_smul_iff`: scaling by a unit preserves anisotropy.
 * `QuadraticMap.nontrivial_of_ne_zero`: the source of a nonzero quadratic map is nontrivial.
 -/
 
@@ -38,5 +39,14 @@ theorem Anisotropic.comp {R M N P : Type*} [CommSemiring R]
   apply hf
   rw [map_zero]
   exact hQ _ hx
+
+/-- Scaling a quadratic map by a unit does not change its anisotropy. -/
+@[simp]
+theorem anisotropic_smul_iff {S R M N : Type*} [Monoid S] [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [DistribMulAction S N] [SMulCommClass S R N] {a : S} (ha : IsUnit a)
+    (Q : QuadraticMap R M N) :
+    (a • Q).Anisotropic ↔ Q.Anisotropic := by
+  simp only [Anisotropic, smul_apply, ha.smul_eq_zero]
 
 end QuadraticMap

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Operations
 
@@ -17,8 +18,9 @@ extensions of the global forms, so their witnesses compare actual localizations 
 independently chosen family of local quadratic spaces.
 
 Global witnesses base-change to local witnesses.  The resulting API also records invariance
-under global equivalence and the rank constraint imposed by local equivalence.  These are the
-common hypotheses used in local-to-global statements for quadratic forms.
+under global equivalence and nonzero scalar multiplication, as well as the rank constraint imposed
+by local equivalence.  These are the common hypotheses used in local-to-global statements for
+quadratic forms.
 
 Complex places do not occur in the definitions: over `ℂ`, isotropy is automatic in dimension
 at least two, representation of regular forms is controlled only by dimension, and regular forms
@@ -282,6 +284,28 @@ theorem QuadraticMap.Equivalent.locallyRepresentsScalar_iff
     (h : Q.Equivalent R) (a : K) :
     Q.LocallyRepresentsScalar a ↔ R.LocallyRepresentsScalar a :=
   (LocallyEquivalent.of_equivalent h).locallyRepresentsScalar_iff a
+
+/-- Scaling a quadratic form by a nonzero global scalar does not change local isotropy. -/
+theorem isLocallyIsotropic_smul_iff {c : K} (hc : c ≠ 0) (Q : _root_.QuadraticForm K V) :
+    (c • Q).IsLocallyIsotropic ↔ Q.IsLocallyIsotropic := by
+  rw [isLocallyIsotropic_iff, isLocallyIsotropic_iff]
+  refine and_congr (forall_congr' fun v => not_congr ?_) (forall_congr' fun w => not_congr ?_)
+  · rw [atFinitePlace_smul]
+    exact QuadraticMap.anisotropic_smul_iff (hc.isUnit.map _) _
+  · rw [atRealPlace_smul]
+    exact QuadraticMap.anisotropic_smul_iff (hc.isUnit.map _) _
+
+/-- Scaling a quadratic form by a nonzero global scalar `c` locally represents `a` if and only if
+the unscaled form locally represents `c⁻¹ * a`. -/
+theorem locallyRepresentsScalar_smul_iff {c : K} (hc : c ≠ 0)
+    (Q : _root_.QuadraticForm K V) (a : K) :
+    (c • Q).LocallyRepresentsScalar a ↔ Q.LocallyRepresentsScalar (c⁻¹ * a) := by
+  rw [locallyRepresentsScalar_iff, locallyRepresentsScalar_iff]
+  refine and_congr (forall_congr' fun v => ?_) (forall_congr' fun w => ?_)
+  · rw [atFinitePlace_smul,
+      QuadraticMap.represents_smul_iff ((map_ne_zero _).mpr hc), map_mul, map_inv₀]
+  · rw [atRealPlace_smul,
+      QuadraticMap.represents_smul_iff ((map_ne_zero _).mpr hc), map_mul, map_inv₀]
 
 /-- Replacing both global forms by equivalent forms preserves local representation. -/
 theorem QuadraticMap.Equivalent.locallyRepresents_congr
