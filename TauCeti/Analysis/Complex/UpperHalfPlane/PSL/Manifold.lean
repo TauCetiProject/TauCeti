@@ -15,12 +15,13 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 /-!
 # The holomorphic and smooth projective actions on the upper half-plane
 
-Every element of `PSL(2, ℝ)` acts on the upper half-plane by a biholomorphism, and more generally
-every element of `PSL(2, R)` (for any `ℝ`-algebra `R`) acts by a real-analytic map for the real
-manifold structure `𝓘(ℝ, ℂ)`. This file expresses both properties as `ContMDiffConstSMul`
-instances, so each transformation is packaged by the generic `Diffeomorph.constSmul` constructor.
-Subgroups inherit the same holomorphic or smooth action through `SetLike.contMDiffConstSMul`,
-which is the input needed to put complex or smooth charts on their free orbit quotients.
+Every element of `PSL(2, ℝ)` acts on the upper half-plane by a biholomorphism, and every element
+of `PSL(2, R)` (for any commutative ring `R` equipped with an algebra map to `ℝ`) acts by a
+real-analytic map for the real manifold structure `𝓘(ℝ, ℂ)`. This file expresses both properties
+as `ContMDiffConstSMul` instances, so each transformation is packaged by the generic
+`Diffeomorph.constSmul` constructor. Subgroups inherit the same holomorphic or smooth action
+through `SetLike.contMDiffConstSMul`, which is the input needed to put complex or smooth charts on
+their free orbit quotients.
 
 ## Main declarations
 
