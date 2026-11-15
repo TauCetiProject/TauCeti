@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.Meromorphic.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
@@ -16,9 +16,11 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
 The entire reciprocal of `Complex.Gamma` has a simple zero at each nonpositive integer,
 with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point, with
-residue `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`), and has order zero everywhere
-else. Deligne's factors inherit exactly the pole lattices
-`-2n` and `-n`. Their meromorphic orders are nonpositive: none has a zero as a meromorphic germ.
+leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
+`Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
+`Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. Deligne's
+factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
+nonpositive: none has a zero as a meromorphic germ.
 
 The total values at poles are zero by Mathlib's convention. The zero-order characterizations
 therefore use nonzero total values, while the negative-order characterizations identify the
@@ -97,6 +99,20 @@ theorem meromorphicOrderAt_Gamma_neg_nat (n : ℕ) :
   rw [← Pi.inv_def, meromorphicOrderAt_inv] at hq
   have h := congrArg Neg.neg hq
   simpa only [neg_neg] using h
+
+/-- The leading Laurent coefficient of `Complex.Gamma` at `-n` is `(-1)^n / n!`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gamma_neg_nat (n : ℕ) :
+    meromorphicTrailingCoeffAt Gamma (-(n : ℂ)) = (-1) ^ n / (n.factorial : ℂ) := by
+  refine tendsto_nhds_unique
+    ((Meromorphic.Gamma (-(n : ℂ))).tendsto_nhds_meromorphicTrailingCoeffAt.congr fun a ↦ ?_)
+    (tendsto_add_natCast_mul_Gamma n)
+  simp [meromorphicOrderAt_Gamma_neg_nat, Pi.smul_apply', sub_neg_eq_add, smul_eq_mul]
+
+/-- The leading Laurent coefficient of `Complex.Gamma` at `0` is `1`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma 0 = 1 := by
+  simpa using meromorphicTrailingCoeffAt_Gamma_neg_nat 0
 
 /-- Gamma is analytic away from the nonpositive integers. -/
 @[fun_prop]

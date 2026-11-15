@@ -22,10 +22,8 @@ formula `TauCeti.Contour.residue_eq_of_tendsto_sub_mul`. Multiplying by a weight
 * `Complex.residue_Gamma_mul_neg_nat`: `residue (fun s ↦ Γ(s) w(s)) (-n) = ((-1)^n / n!) w(-n)`
   for `w` analytic at `-n`.
 * `Complex.residue_Gamma_mul_zero`: `residue (fun s ↦ Γ(s) w(s)) 0 = w(0)` for `w` analytic at `0`.
-* `Complex.residue_Gamma_neg_nat`, `Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`:
-  `residue Γ (-n) = meromorphicTrailingCoeffAt Γ (-n) = (-1)^n / n!`.
-* `Complex.residue_Gamma_zero`, `Complex.meromorphicTrailingCoeffAt_Gamma_zero`:
-  `residue Γ 0 = meromorphicTrailingCoeffAt Γ 0 = 1`.
+* `Complex.residue_Gamma_neg_nat`: `residue Γ (-n) = (-1)^n / n!`.
+* `Complex.residue_Gamma_zero`: `residue Γ 0 = 1`.
 
 ## References
 
@@ -66,21 +64,9 @@ theorem residue_Gamma_neg_nat (n : ℕ) :
     TauCeti.Contour.residue Gamma (-(n : ℂ)) = (-1) ^ n / (n.factorial : ℂ) := by
   simpa only [mul_one] using residue_Gamma_mul_neg_nat n (analyticAt_const (v := 1))
 
-/-- The leading Laurent coefficient of `Complex.Gamma` at `-n` is `(-1)^n / n!`. -/
-@[simp]
-theorem meromorphicTrailingCoeffAt_Gamma_neg_nat (n : ℕ) :
-    meromorphicTrailingCoeffAt Gamma (-(n : ℂ)) = (-1) ^ n / (n.factorial : ℂ) := by
-  rw [← TauCeti.Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one
-    (meromorphicOrderAt_Gamma_neg_nat n), residue_Gamma_neg_nat]
-
 /-- The residue of `Complex.Gamma` at `0` is `1`. -/
 @[simp]
 theorem residue_Gamma_zero : TauCeti.Contour.residue Gamma 0 = 1 := by
   simpa using residue_Gamma_neg_nat 0
-
-/-- The leading Laurent coefficient of `Complex.Gamma` at `0` is `1`. -/
-@[simp]
-theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma 0 = 1 := by
-  simpa using meromorphicTrailingCoeffAt_Gamma_neg_nat 0
 
 end Complex
