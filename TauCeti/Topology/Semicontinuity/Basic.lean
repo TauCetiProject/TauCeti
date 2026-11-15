@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Lower semicontinuity of suprema over neighbourhoods
@@ -20,6 +21,11 @@ A lower semicontinuous subadditive function `A` with values in `ℝ≥0∞` and 
 lower semicontinuous extended seminorm, satisfies the triangle inequality for convergent series:
 `A (∑ f) ≤ ∑' b, A (f b)` (`LowerSemicontinuous.le_tsum_of_hasSum`). No continuity of `A` is needed,
 because the bound on the partial sums passes to their limit through the closed sublevel set.
+
+Two upper semicontinuous functions with values in `ℕ` whose sum is locally constant are each
+locally constant (`UpperSemicontinuous.isLocallyConstant_of_isLocallyConstant_add`): near a point
+neither can increase, so neither can decrease. This is how constancy of a sum of fibre dimensions
+forces constancy of each summand.
 -/
 
 public section
@@ -56,3 +62,19 @@ theorem le_tsum_of_hasSum (hA : LowerSemicontinuous A) (h0 : A 0 = 0)
     (Finset.le_sum_of_subadditive A h0.le hadd t f).trans (sum_le_tsum t)
 
 end LowerSemicontinuous
+
+namespace UpperSemicontinuous
+
+variable {X : Type*} [TopologicalSpace X] {u v : X → ℕ}
+
+/-- If two upper semicontinuous functions with values in `ℕ` have a locally constant sum, then the
+first is locally constant. -/
+theorem isLocallyConstant_of_isLocallyConstant_add (hu : UpperSemicontinuous u)
+    (hv : UpperSemicontinuous v) (h : IsLocallyConstant fun x ↦ u x + v x) :
+    IsLocallyConstant u := by
+  refine (IsLocallyConstant.iff_eventually_eq u).2 fun x ↦ ?_
+  filter_upwards [hu x _ (Nat.lt_succ_self _), hv x _ (Nat.lt_succ_self _), h.eventually_eq x]
+    with y hux hvx hx
+  omega
+
+end UpperSemicontinuous
