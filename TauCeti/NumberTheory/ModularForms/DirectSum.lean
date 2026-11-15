@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Basic
 
 import Mathlib.Algebra.Polynomial.Laurent.Roots
+import TauCeti.Algebra.Module.FunLike
 
 /-!
 # Pointwise evaluation and linear independence across weights
@@ -31,7 +32,6 @@ vanishing at the infinitely many units `-n m z + 1` (`m : ℕ`), which vanishes 
 
 * `SlashInvariantForm.evalDirectSum`: pointwise evaluation
   `(⨁ k : ℤ, SlashInvariantForm Γ k) →+ (ℍ → ℂ)`.
-* `ModularForm.coeLinearMap`, `CuspForm.coeLinearMap`: coercion to `ℍ → ℂ` as a `ℂ`-linear map.
 * `ModularForm.evalDirectSum`: pointwise evaluation as a ring homomorphism
   `(⨁ k : ℤ, ModularForm Γ k) →+* (ℍ → ℂ)`.
 * `ModularForm.evalDirectSumAlgHom`: pointwise evaluation as a `ℂ`-algebra homomorphism
@@ -39,8 +39,6 @@ vanishing at the infinitely many units `-n m z + 1` (`m : ℕ`), which vanishes 
 
 ## Main results
 
-* `ModularForm.linearIndependent_coe_iff`, `CuspForm.linearIndependent_coe_iff`: modular or cusp
-  forms of fixed weight are linearly independent iff their underlying functions on `ℍ` are.
 * `SlashInvariantForm.evalDirectSum_injective`: slash-invariant forms of distinct weights
   are linearly independent under `[Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]`.
 * `ModularForm.evalDirectSum_injective`,
@@ -146,29 +144,6 @@ end SlashInvariantForm
 
 namespace ModularForm
 
-/-- Coercion of a modular form of weight `k` to a function `ℍ → ℂ`, as a `ℂ`-linear map when
-`[Γ.HasDetOne]`. -/
-def coeLinearMap (Γ : Subgroup (GL (Fin 2) ℝ)) [Γ.HasDetOne] (k : ℤ) :
-    ModularForm Γ k →ₗ[ℂ] (ℍ → ℂ) where
-  toFun f := ⇑f
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem coeLinearMap_apply [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
-    coeLinearMap Γ k f = ⇑f :=
-  (rfl)
-
-theorem coeLinearMap_injective [Γ.HasDetOne] (k : ℤ) :
-    Function.Injective (coeLinearMap Γ k) :=
-  DFunLike.coe_injective
-
-/-- Modular forms of weight `k` are `ℂ`-linearly independent if and only if their underlying
-functions `ℍ → ℂ` are `ℂ`-linearly independent. -/
-theorem linearIndependent_coe_iff [Γ.HasDetOne] {ι : Type*} {k : ℤ} {v : ι → ModularForm Γ k} :
-    LinearIndependent ℂ (fun i ↦ (v i : ℍ → ℂ)) ↔ LinearIndependent ℂ v :=
-  (coeLinearMap Γ k).linearIndependent_iff_of_injOn (coeLinearMap_injective k).injOn
-
 /-- Pointwise evaluation of the graded ring `⨁ k : ℤ, ModularForm Γ k` as a ring homomorphism into
 `ℍ → ℂ`. -/
 def evalDirectSum [Γ.HasDetPlusMinusOne] :
@@ -185,18 +160,23 @@ theorem evalDirectSum_of [Γ.HasDetPlusMinusOne] (k : ℤ) (f : ModularForm Γ k
 homomorphism into `ℍ → ℂ`. -/
 def evalDirectSumAlgHom [Γ.HasDetOne] :
     (⨁ k : ℤ, ModularForm Γ k) →ₐ[ℂ] (ℍ → ℂ) :=
-  DirectSum.toAlgebra ℂ _ (coeLinearMap Γ) rfl (fun _ _ ↦ rfl)
+  DirectSum.toAlgebra ℂ _ (fun k ↦ FunLike.coeLinearMap ℂ (ModularForm Γ k) ℍ ℂ)
+    (by simp only [FunLike.coeLinearMap_apply]; rfl)
+    (fun _ _ ↦ by simp only [FunLike.coeLinearMap_apply]; rfl)
 
 @[simp]
 theorem evalDirectSumAlgHom_of [Γ.HasDetOne] (k : ℤ) (f : ModularForm Γ k) :
     evalDirectSumAlgHom (DirectSum.of _ k f) = ⇑f :=
-  DirectSum.toSemiring_of (fun k ↦ (coeLinearMap Γ k).toAddMonoidHom) rfl (fun _ _ ↦ rfl) k f
+  (DirectSum.toAlgebra_apply _ _ _ _ _ _).trans <|
+    (DirectSum.toSemiring_of _ _ _ k f).trans (FunLike.coeLinearMap_apply f)
 
 @[simp]
 theorem evalDirectSumAlgHom_toRingHom [Γ.HasDetOne] :
     (evalDirectSumAlgHom (Γ := Γ) : (⨁ k : ℤ, ModularForm Γ k) →+* (ℍ → ℂ)) =
-      evalDirectSum :=
-  (rfl)
+      evalDirectSum := by
+  apply RingHom.toAddMonoidHom_injective
+  ext k f : 2
+  simp
 
 private def toSlashInvariantFormAddMonoidHom (Γ : Subgroup (GL (Fin 2) ℝ)) (k : ℤ) :
     ModularForm Γ k →+ SlashInvariantForm Γ k where
@@ -224,8 +204,9 @@ theorem evalDirectSum_apply [Γ.HasDetPlusMinusOne]
 
 theorem evalDirectSumAlgHom_apply [Γ.HasDetOne]
     (x : ⨁ k : ℤ, ModularForm Γ k) (z : ℍ) :
-    evalDirectSumAlgHom x z = ∑ᶠ k : ℤ, x k z :=
-  evalDirectSum_apply x z
+    evalDirectSumAlgHom x z = ∑ᶠ k : ℤ, x k z := by
+  rw [← AlgHom.coe_toRingHom, evalDirectSumAlgHom_toRingHom]
+  exact evalDirectSum_apply x z
 
 /-- **Linear independence of modular forms across weights.** When `Γ` has finite-index intersection
 with `SL₂(ℤ)`, `ModularForm.evalDirectSum` is injective. -/
@@ -247,8 +228,9 @@ theorem evalDirectSum_inj [Γ.HasDetPlusMinusOne] [Subgroup.IsFiniteRelIndex Γ 
 
 /-- **Linear independence of modular forms across weights, as a `ℂ`-algebra map.** -/
 theorem evalDirectSumAlgHom_injective [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
-    Function.Injective (evalDirectSumAlgHom (Γ := Γ)) :=
-  evalDirectSum_injective
+    Function.Injective (evalDirectSumAlgHom (Γ := Γ)) := by
+  rw [← AlgHom.coe_toRingHom, evalDirectSumAlgHom_toRingHom]
+  exact evalDirectSum_injective
 
 @[simp]
 theorem evalDirectSumAlgHom_inj [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
@@ -257,32 +239,5 @@ theorem evalDirectSumAlgHom_inj [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ �
   evalDirectSumAlgHom_injective.eq_iff
 
 end ModularForm
-
-namespace CuspForm
-
-/-- Coercion of a cusp form of weight `k` to a function `ℍ → ℂ`, as a `ℂ`-linear map when
-`[Γ.HasDetOne]`. -/
-def coeLinearMap (Γ : Subgroup (GL (Fin 2) ℝ)) [Γ.HasDetOne] (k : ℤ) :
-    CuspForm Γ k →ₗ[ℂ] (ℍ → ℂ) where
-  toFun f := ⇑f
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-@[simp]
-theorem coeLinearMap_apply [Γ.HasDetOne] (k : ℤ) (f : CuspForm Γ k) :
-    coeLinearMap Γ k f = ⇑f :=
-  (rfl)
-
-theorem coeLinearMap_injective [Γ.HasDetOne] (k : ℤ) :
-    Function.Injective (coeLinearMap Γ k) :=
-  DFunLike.coe_injective
-
-/-- Cusp forms of weight `k` are `ℂ`-linearly independent if and only if their underlying functions
-`ℍ → ℂ` are `ℂ`-linearly independent. -/
-theorem linearIndependent_coe_iff [Γ.HasDetOne] {ι : Type*} {k : ℤ} {v : ι → CuspForm Γ k} :
-    LinearIndependent ℂ (fun i ↦ (v i : ℍ → ℂ)) ↔ LinearIndependent ℂ v :=
-  (coeLinearMap Γ k).linearIndependent_iff_of_injOn (coeLinearMap_injective k).injOn
-
-end CuspForm
 
 end

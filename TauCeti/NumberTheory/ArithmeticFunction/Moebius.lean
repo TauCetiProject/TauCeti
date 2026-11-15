@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 
-import Mathlib.Algebra.Module.BigOperators
 import TauCeti.NumberTheory.Divisors
 
 /-!
@@ -238,13 +237,13 @@ theorem eq_sum_divisors_filter_dvd_moebius_mul_moebius_smul [AddCommGroup R] {f 
   have hQ : 0 < Q := Nat.pos_of_ne_zero (right_ne_zero_of_mul hN.ne')
   have key := eq_sum_divisors_moebius_mul_moebius_smul (f := fun m ↦ f (c * m))
     (g := fun m ↦ g (c * m)) hQ fun m hmQ ↦ by
-      rw [h (c * m) (dvd_mul_right c m) (mul_dvd_mul_left c hmQ), Nat.filter_dvd_divisors_mul hc0,
-        Finset.sum_map]
+      rw [h (c * m) (dvd_mul_right c m) (mul_dvd_mul_left c hmQ),
+        Nat.sum_divisors_filter_dvd (dvd_mul_right c m), Nat.mul_div_cancel_left m hcpos]
       refine Finset.sum_congr rfl fun k _ ↦ ?_
-      simp [Nat.mul_div_mul_left m k hcpos]
-  rw [key, Nat.filter_dvd_divisors_mul hc0, Finset.sum_map]
+      rw [Nat.mul_div_mul_left m k hcpos]
+  rw [key, Nat.sum_divisors_filter_dvd (dvd_mul_right c Q), Nat.mul_div_cancel_left Q hcpos]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  simp [Nat.mul_div_mul_left Q m hcpos]
+  rw [Nat.mul_div_mul_left Q m hcpos]
 
 /-- **Single-level Möbius-square inversion restricted to multiples of `c ∣ N`, in a ring.** -/
 theorem eq_sum_divisors_filter_dvd_moebius_mul_moebius_mul [NonAssocRing R] {f g : ℕ → R}

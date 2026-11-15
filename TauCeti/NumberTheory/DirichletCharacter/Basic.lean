@@ -248,9 +248,9 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   rw [changeLevel_toUnitHom] at h
   simpa using h
 
-/-- **Pulling back the primitive character recovers the unit homomorphism.** Restricting the unit
-homomorphism of `primitiveCharacter (MulChar.ofUnitHom χ)` from `(ZMod N)ˣ` to the conductor level
-recovers `χ`. -/
+/-- **Pulling back the primitive character recovers the unit homomorphism.** Pulling back the unit
+homomorphism of `primitiveCharacter (MulChar.ofUnitHom χ)` from the conductor level to `(ZMod N)ˣ`
+along `ZMod.unitsMap` recovers `χ`. -/
 theorem primitiveCharacter_toUnitHom_comp_unitsMap {R : Type*} [CommMonoidWithZero R] {N : ℕ}
     (χ : (ZMod N)ˣ →* Rˣ) :
     (primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp

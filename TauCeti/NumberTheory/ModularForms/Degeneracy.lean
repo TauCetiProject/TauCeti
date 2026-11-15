@@ -17,8 +17,10 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic
 public import TauCeti.RingTheory.PowerSeries.Support
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.LinearAlgebra.LinearIndependent.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
-import TauCeti.NumberTheory.ModularForms.DirectSum
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # The level-raising degeneracy maps `V_d`
@@ -1277,7 +1279,8 @@ theorem ModularForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
       simp only [Function.comp_apply, PowerSeries.coeff_expand_mul, smul_eq_mul, pow_mul,
         ← qParam_scaleGL_smul]
   have hana := ModularForm.analyticAt_cuspFunction_levelRaise (by simpa using nsmul_mem h𝒢 d) hle f
-  exact PowerSeries.ext fun n ↦ (UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
+  exact PowerSeries.ext fun n ↦
+    (_root_.UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
 
 /-- **The `q`-expansion of a level-raise, on coefficients.** `aₙ(V_d f) = a_{n/d}(f)` when
 `d ∣ n`, and `0` otherwise. -/
@@ -1404,17 +1407,15 @@ theorem _root_.ModularForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
   have hle𝒯 : ∀ i, 𝒯 ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢 :=
     fun _ ↦ map_zpowers_T_le_conjAct_inv_scaleGL h𝒢
   have hli𝒯 : LinearIndependent ℂ (fun i ↦ ModularForm.levelRaise (d i) (hle𝒯 i) f) := by
-    let qExpₗ : ModularForm 𝒯 k →ₗ[ℂ] PowerSeries ℂ :=
-      (_root_.ModularForm.qExpansionAlgHom 1 one_pos h𝒯).toLinearMap.comp
-        (DirectSum.lof ℂ ℤ (ModularForm 𝒯 ·) k)
-    refine LinearIndependent.of_comp qExpₗ ?_
-    have hcomp : (qExpₗ ∘ fun i ↦ ModularForm.levelRaise (d i) (hle𝒯 i) f) =
+    refine LinearIndependent.of_comp (ModularForm.qExpansionLinearMap one_pos h𝒯 k) ?_
+    have hcomp : (ModularForm.qExpansionLinearMap one_pos h𝒯 k ∘
+        fun i ↦ ModularForm.levelRaise (d i) (hle𝒯 i) f) =
         fun i ↦ (qExpansion 1 f).expand (d i) (NeZero.ne (d i)) :=
-      funext fun i ↦ (_root_.ModularForm.qExpansionAlgHom_apply one_pos h𝒯 k _).trans
+      funext fun i ↦ (ModularForm.qExpansionLinearMap_apply one_pos h𝒯 _).trans
         (ModularForm.qExpansion_levelRaise h𝒢 (hle𝒯 i) f)
     rw [hcomp]
     exact PowerSeries.linearIndependent_expand hf (fun i ↦ NeZero.ne (d i)) hd
-  rw [← _root_.ModularForm.linearIndependent_coe_iff] at hli𝒯 ⊢
+  rw [← FunLike.linearIndependent_coe_iff] at hli𝒯 ⊢
   have hfun : (fun i ↦ (ModularForm.levelRaise (d i) (hle i) f : ℍ → ℂ)) =
       fun i ↦ (ModularForm.levelRaise (d i) (hle𝒯 i) f : ℍ → ℂ) := by
     ext i τ
@@ -1429,8 +1430,9 @@ theorem _root_.CuspForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
     {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Injective d)
     (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢) :
     LinearIndependent ℂ (fun i ↦ CuspForm.levelRaise (d i) (hle i) f) := by
-  have hf_mod : (f : ModularForm 𝒢 k) ≠ 0 := fun h0 ↦
-    hf (_root_.CuspForm.ext fun τ ↦ congr($h0 τ))
+  -- `CuspForm.toModularFormₗ` needs `[𝒢.HasDetOne]`, which is not assumed on the source group `𝒢`.
+  have hf_mod : (f : ModularForm 𝒢 k) ≠ 0 := by
+    rwa [ne_eq, ← FunLike.coe_zero_iff, ModularFormClass.coe_modularForm, FunLike.coe_zero_iff]
   have hq_ne : qExpansion 1 (f : ModularForm 𝒢 k) ≠ 0 :=
     (_root_.ModularForm.qExpansion_eq_zero_iff one_pos h𝒢 _).not.mpr hf_mod
   obtain ⟨n, hn_coeff⟩ : ∃ n, (qExpansion 1 (f : ModularForm 𝒢 k)).coeff n ≠ 0 := by
@@ -1438,17 +1440,16 @@ theorem _root_.CuspForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
     exact hq_ne (PowerSeries.ext fun n ↦ (h n).trans (map_zero _).symm)
   have hn0 : n ≠ 0 := by
     rintro rfl
+    rw [ModularFormClass.coe_modularForm] at hn_coeff
     exact hn_coeff (CuspFormClass.qExpansion_coeff_zero f one_pos h𝒢)
-  have hli := _root_.ModularForm.linearIndependent_levelRaise h𝒢 (f := (f : ModularForm 𝒢 k))
-    ⟨n, hn0, hn_coeff⟩ hd hle
-  rw [← _root_.ModularForm.linearIndependent_coe_iff] at hli
-  rw [← _root_.CuspForm.linearIndependent_coe_iff]
-  have hfun : (fun i ↦ (CuspForm.levelRaise (d i) (hle i) f : ℍ → ℂ)) =
-      fun i ↦ (ModularForm.levelRaise (d i) (hle i) (f : ModularForm 𝒢 k) : ℍ → ℂ) := by
-    ext i τ
-    rw [CuspForm.levelRaise_apply, ModularForm.levelRaise_apply]
-    rfl
-  rwa [hfun]
+  refine LinearIndependent.of_comp _root_.CuspForm.toModularFormₗ ?_
+  have hcomp : (_root_.CuspForm.toModularFormₗ ∘ fun i ↦ CuspForm.levelRaise (d i) (hle i) f) =
+      fun i ↦ ModularForm.levelRaise (d i) (hle i) (f : ModularForm 𝒢 k) :=
+    funext fun i ↦ _root_.ModularForm.ext fun τ ↦ by
+      rw [Function.comp_apply, _root_.CuspForm.toModularFormₗ_apply, CuspForm.levelRaise_apply,
+        ModularForm.levelRaise_apply, ModularFormClass.coe_modularForm]
+  rw [hcomp]
+  exact _root_.ModularForm.linearIndependent_levelRaise h𝒢 ⟨n, hn0, hn_coeff⟩ hd hle
 
 end QExpansion
 

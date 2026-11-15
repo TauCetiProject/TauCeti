@@ -85,16 +85,17 @@ theorem toUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
 under `MulChar.equivToUnitHom.symm`. -/
 @[simp]
 theorem equivToUnitHom_symm_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
-    equivToUnitHom.symm (1 : Rˣ →* R'ˣ) = 1 :=
-  map_one mulEquivToUnitHom.symm
+    equivToUnitHom.symm (1 : Rˣ →* R'ˣ) = 1 := by
+  simpa only [mulEquivToUnitHom_symm_apply, ofUnitHom_eq] using
+    map_one (mulEquivToUnitHom (R := R) (R' := R')).symm
 
 -- Not `@[simp]`: `MulChar.ofUnitHom_eq` simplifies the left-hand side to `equivToUnitHom.symm 1`,
 -- which `MulChar.equivToUnitHom_symm_one` then reduces to `1`.
 /-- Extending the trivial homomorphism of unit groups by zero on nonunits gives the trivial
 multiplicative character. -/
 theorem ofUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
-    ofUnitHom (1 : Rˣ →* R'ˣ) = 1 :=
-  equivToUnitHom_symm_one
+    ofUnitHom (1 : Rˣ →* R'ˣ) = 1 := by
+  rw [ofUnitHom_eq, equivToUnitHom_symm_one]
 
 /-- A multiplicative character takes a value at `-1` whose square is `1`. -/
 @[simp]

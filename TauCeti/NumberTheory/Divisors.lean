@@ -24,8 +24,8 @@ For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
 These lemmas evaluate the corresponding indicator sums over `N.divisors`.
 
-`Nat.filter_dvd_divisors_mul` and `Nat.sum_divisors_filter_dvd` reindex divisors divisible by a
-fixed `m ∣ n` as `m` times the divisors of `n / m`.
+`Nat.sum_divisors_filter_dvd` reindexes divisors divisible by a fixed `m ∣ n` as `m` times
+the divisors of `n / m`.
 
 `Nat.sum_divisorsAntidiagonal_ite_dvd` regroups a sum over the factor pairs `(a, b)` of `n`,
 restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
@@ -51,17 +51,6 @@ public section
 
 namespace Nat
 
-/-- The divisors of `c * m` that are multiples of `c ≠ 0` are `c` times the divisors of `m`. -/
-theorem filter_dvd_divisors_mul {c m : ℕ} (hc : c ≠ 0) :
-    {d ∈ (c * m).divisors | c ∣ d} = m.divisors.map ⟨(c * ·), mul_right_injective₀ hc⟩ := by
-  ext d
-  simp only [Finset.mem_filter, mem_divisors, Finset.mem_map, Function.Embedding.coeFn_mk]
-  constructor
-  · rintro ⟨⟨hdcm, hcm0⟩, k, rfl⟩
-    exact ⟨k, ⟨(mul_dvd_mul_iff_left hc).mp hdcm, right_ne_zero_of_mul hcm0⟩, rfl⟩
-  · rintro ⟨k, ⟨hkm, hm0⟩, rfl⟩
-    exact ⟨⟨mul_dvd_mul_left c hkm, mul_ne_zero hc hm0⟩, dvd_mul_right c k⟩
-
 /-- For `N ≠ 0`, the finset `N.divisors` is equivalent to `{M : ℕ // M ∣ N}`. -/
 def divisorsEquiv (N : ℕ) [NeZero N] : ↥N.divisors ≃ {M : ℕ // M ∣ N} where
   toFun M := ⟨M.1, dvd_of_mem_divisors M.2⟩
@@ -82,20 +71,10 @@ theorem coe_divisorsEquiv_symm_apply (N : ℕ) [NeZero N] (M : {M : ℕ // M ∣
 /-- For `M ∣ N` with `N ≠ 0`, natural numbers `d` with `d * M ∣ N` correspond to elements of
 `(N / M).divisors`. -/
 def mulDvdEquivDivDivisors {M N : ℕ} [NeZero N] (hM : M ∣ N) :
-    {d : ℕ // d * M ∣ N} ≃ ↥(N / M).divisors where
-  toFun d := ⟨d.1, mem_divisors.mpr
-    ⟨by
-      have hM0 : M ≠ 0 := by rintro rfl; exact NeZero.ne N (zero_dvd_iff.mp hM)
-      refine (mul_dvd_mul_iff_left hM0).mp ?_
-      rw [mul_comm, Nat.mul_div_cancel' hM]
-      exact d.2,
-      fun h0 ↦ NeZero.ne N
-        (by have := Nat.mul_div_cancel' hM; rw [h0, mul_zero] at this; exact this.symm)⟩⟩
-  invFun d := ⟨d.1,
-    (mul_comm d.1 M ▸ mul_dvd_mul_left M (dvd_of_mem_divisors d.2)).trans
-      (dvd_of_eq (Nat.mul_div_cancel' hM))⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+    {d : ℕ // d * M ∣ N} ≃ ↥(N / M).divisors :=
+  haveI : NeZero (N / M) := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) (Nat.div_dvd_of_dvd hM)⟩
+  (Equiv.subtypeEquivRight fun d ↦ by rw [mul_comm, ← Nat.dvd_div_iff_mul_dvd hM]).trans
+    (divisorsEquiv (N / M)).symm
 
 @[simp]
 theorem coe_mulDvdEquivDivDivisors_apply {M N : ℕ} [NeZero N] (hM : M ∣ N)

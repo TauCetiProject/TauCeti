@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.Order.SupIndep
+public import TauCeti.Algebra.Module.FunLike
 
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
@@ -18,6 +19,9 @@ exactly when `v ∘ f` is linearly independent on `s`. This is the linear counte
 `affineIndepOn_image_iff`, combining `LinearIndepOn.comp_of_image` and
 `LinearIndepOn.image_of_comp`.
 
+For a `FunLike` module carrying its operations pointwise, a family is linearly independent if and
+only if its underlying functions are (`FunLike.linearIndependent_coe_iff`).
+
 Over a ring, linearly independent families `f j` lying inside an `iSupIndep` family of submodules
 `W j` assemble into a single linearly independent sigma-indexed family.
 
@@ -26,6 +30,8 @@ Over a ring, linearly independent families `f j` lying inside an `iSupIndep` fam
 * `TauCeti.linearIndepOn_image_iff`: linear independence on `f '' s` versus of `v ∘ f` on `s`.
 * `TauCeti.linearIndependent_sigma_of_iSupIndep`: gluing linearly independent families along an
   independent family of submodules.
+* `FunLike.linearIndependent_coe_iff`: linear independence in a pointwise `FunLike` module versus in
+  `α → β`.
 -/
 
 public section
@@ -57,3 +63,16 @@ theorem linearIndependent_sigma_of_iSupIndep {R M η : Type*} [Ring R] [AddCommG
   · exact Submodule.span_le.mpr (Set.range_subset_iff.mpr (hfW j))
 
 end TauCeti
+
+namespace FunLike
+
+/-- Elements of a `FunLike` module carrying its operations pointwise are `R`-linearly independent
+if and only if their underlying functions are `R`-linearly independent. -/
+theorem linearIndependent_coe_iff {R F α β ι : Type*} [FunLike F α β] [Semiring R]
+    [AddCommMonoid F] [AddCommMonoid β] [Module R F] [Module R β] [IsAddApply F]
+    [IsSMulApply R F] {v : ι → F} :
+    LinearIndependent R (fun i ↦ (v i : α → β)) ↔ LinearIndependent R v := by
+  simpa only [Function.comp_def, coeLinearMap_apply] using
+    (coeLinearMap R F α β).linearIndependent_iff_of_injOn coeLinearMap_injective.injOn
+
+end FunLike
