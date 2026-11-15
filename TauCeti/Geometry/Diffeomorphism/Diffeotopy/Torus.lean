@@ -277,6 +277,7 @@ theorem torusDisplacement_zero (x : ∀ i, AddCircle (p i)) : Φ.torusDisplaceme
   funext fun i ↦ (AddCircle.isCoveringMap_coe (p i)).liftHomotopy_zero _ _ _ x
 
 /-- The displacement of a diffeotopy of the torus is continuous. -/
+@[fun_prop]
 theorem continuous_torusDisplacement : Continuous Φ.torusDisplacement :=
   continuous_pi fun i ↦ ContinuousMap.continuous
     ((AddCircle.isCoveringMap_coe (p i)).liftHomotopy _ (ContinuousMap.const _ 0) _)
@@ -339,19 +340,19 @@ theorem exists_torusDisplacement_one_eq (hΦ : Φ.final = Diffeomorph.refl _ _ n
     obtain ⟨c, hc, h⟩ := isPreconnected_univ.eqOn_const_of_mapsTo
       (isDiscrete_iff_discreteTopology.2
         (inferInstanceAs (DiscreteTopology (AddSubgroup.zmultiples (p i)))))
-      ((continuous_apply i).comp (Φ.continuous_torusDisplacement.comp
-        (Continuous.prodMk_right 1))).continuousOn hmaps ⟨0, zero_mem _⟩
+      (by fun_prop : Continuous fun x ↦ Φ.torusDisplacement (1, x) i).continuousOn hmaps
+      ⟨0, zero_mem _⟩
     exact ⟨c, hc, fun x ↦ h (Set.mem_univ x)⟩
   choose v hv hx using h
   exact ⟨v, hv, fun x ↦ funext fun i ↦ hx i x⟩
 
 /-- **A loop of the torus is homotopic to a translation loop.** Let `Φ` be a `C^n` diffeotopy of
 the torus whose final diffeomorphism is the identity. Then there is a vector `v` of the period
-lattice, the common displacement of all points at time `1`, and a `C^n` homotopy `G` from the
-motion of `Φ` to the motion of the translation loop along `v` which fixes both time ends:
-`G ((x, 0), s) = G ((x, 1), s) = x`. It is the straight-line homotopy
-`G ((x, t), s) = x + [(1 - s) D (t, x) + s t v]` between the displacements in the universal
-cover. -/
+lattice and a `C^n` homotopy `G` from the motion of `Φ` to the motion of the translation loop
+along `v` which fixes both time ends: `G ((x, 0), s) = G ((x, 1), s) = x`. The proof takes for `v`
+the common displacement of all points at time `1` (`exists_torusDisplacement_one_eq`) and for `G`
+the straight-line homotopy `G ((x, t), s) = x + [(1 - s) D (t, x) + s t v]` between the
+displacements in the universal cover. -/
 theorem exists_homotopy_cylinderMap_torusTranslationDiffeotopy
     (hΦ : Φ.final = Diffeomorph.refl _ _ n) :
     ∃ v : ι → ℝ, (∀ i, v i ∈ AddSubgroup.zmultiples (p i)) ∧
