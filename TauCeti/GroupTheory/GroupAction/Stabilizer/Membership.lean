@@ -95,7 +95,7 @@ theorem ncard_orbit_stabilizerChain_eq_length_of_sift
     (hsift : ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
       TauCeti.sift b T i (k - i) 1 (s * r) = true) {i : ℕ} (hi : i < k) :
     (orbit (H.stabilizerChain b i) (b i)).ncard = (T i).length := by
-  have := finite_of_sift hne hH hsift
+  have := finite_of_sift hH hsift
   have hcard := natCard_eq_prod_length_of_sift hT hne hnodup hH hsift
   have hle : ∀ j < k, (T j).length ≤ (orbit (H.stabilizerChain b j) (b j)).ncard :=
     fun j hj ↦ length_le_ncard_orbit (hT j hj) (hnodup j hj) (Finite.finite_mulAction_orbit _)
@@ -119,7 +119,7 @@ theorem orbit_stabilizerChain_eq_image_of_sift
     (hsift : ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
       TauCeti.sift b T i (k - i) 1 (s * r) = true) {i : ℕ} (hi : i < k) :
     orbit (H.stabilizerChain b i) (b i) = (· • b i) '' {r | r ∈ T i} := by
-  have := finite_of_sift hne hH hsift
+  have := finite_of_sift hH hsift
   have hlen := ncard_orbit_stabilizerChain_eq_length_of_sift hT hne hnodup hH hsift hi
   have hsub : (· • b i) '' {r | r ∈ T i} ⊆ orbit (H.stabilizerChain b i) (b i) := by
     rintro _ ⟨r, hr, rfl⟩
@@ -138,7 +138,7 @@ theorem orbit_stabilizerChain_eq_image_of_siftCheck {gens : List G}
     (hsift : ∀ i < k, TauCeti.siftCheck b T k i = true) {i : ℕ} (hi : i < k) :
     orbit (H.stabilizerChain b i) (b i) = (· • b i) '' {r | r ∈ T i} :=
   orbit_stabilizerChain_eq_image_of_sift
-    (fun _ hi _ hr ↦ mem_stabilizerChain_of_transversalCheck hT htrans hi hr)
+    (fun i hi r hr ↦ mem_stabilizerChain_of_transversalCheck (hT i hi r hr) htrans hi hr)
     (fun i hi ↦ (TauCeti.transversalCheck_eq_true_iff.1 htrans i hi).1)
     (fun i hi ↦ (TauCeti.transversalCheck_eq_true_iff.1 htrans i hi).2.2)
     (hH.trans (closure_le_closure_of_sift (List.all_eq_true.1 hgens)))
@@ -153,11 +153,8 @@ theorem ncard_orbit_stabilizerChain_eq_length_of_siftCheck {gens : List G}
     (orbit (H.stabilizerChain b i) (b i)).ncard = (T i).length := by
   rw [orbit_stabilizerChain_eq_image_of_siftCheck hT hH htrans hgens hsift hi]
   have hnodup := (TauCeti.transversalCheck_eq_true_iff.1 htrans i hi).2.2
-  have himage : (· • b i) '' {r | r ∈ T i} =
-      (((T i).map (· • b i)).toFinset : Set α) := by
-    ext x
-    simp
-  rw [himage, Set.ncard_coe_finset, List.toFinset_card_of_nodup hnodup, List.length_map]
+  simpa only [Set.image, Set.mem_ofPred_eq, List.mem_map, hnodup.dedup, List.length_map] using
+    (List.ncard_ofPred_mem (l := (T i).map (· • b i)))
 
 /-- The structured sifting hypotheses certify exact subgroup membership, without assuming
 completeness of the listed transversals or triviality of the terminal stabilizer in advance. -/
@@ -180,7 +177,7 @@ theorem sift_eq_true_iff_mem_of_siftCheck {gens : List G}
     (hsift : ∀ i < k, TauCeti.siftCheck b T k i = true) (g : G) :
     TauCeti.sift b T 0 k 1 g = true ↔ g ∈ H :=
   sift_eq_true_iff_mem (stabilizerChain_eq_bot_of_siftCheck hH htrans hgens hsift)
-    (fun _ hi _ hr ↦ mem_stabilizerChain_of_transversalCheck hT htrans hi hr)
+    (fun i hi r hr ↦ mem_stabilizerChain_of_transversalCheck (hT i hi r hr) htrans hi hr)
     (fun _ hi ↦ (orbit_stabilizerChain_eq_image_of_siftCheck hT hH htrans hgens hsift hi).subset) g
 
 end Subgroup
