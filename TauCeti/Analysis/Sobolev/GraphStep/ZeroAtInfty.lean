@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Paths in `W^{1,p}(ℝ, F)` are continuous and vanish at infinity
@@ -78,15 +79,10 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 
 /-! ### The weak derivative of the value -/
 
-/-- On the line, the restricted measure `volume.restrict ⊤` of the graph space is `volume`. -/
-private theorem volume_restrict_top :
-    (volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ) = volume := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-
 /-- Almost-everywhere statements for `volume.restrict ⊤` hold for `volume`. -/
 private theorem ae_le_ae_restrict_top :
     ae (volume : Measure ℝ) ≤ ae ((volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  ae_mono volume_restrict_top.ge
+  ae_mono (Measure.restrict_coe_opens_top _).ge
 
 /-- The value of a path has weak derivative `s ↦ u' s 1` on the whole line. -/
 private theorem hasWeakLineDerivOn_prev
@@ -102,7 +98,7 @@ private theorem memLp_weakFDeriv_apply_one
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     MemLp (fun s ↦ weakFDeriv _ u s 1) p volume := by
   simpa using ((Lp.memLp (weakFDeriv _ u)).continuousLinearMap_comp
-    (ContinuousLinearMap.apply ℝ F (1 : ℝ))).mono_measure volume_restrict_top.ge
+    (ContinuousLinearMap.apply ℝ F (1 : ℝ))).mono_measure (Measure.restrict_coe_opens_top _).ge
 
 /-- The `Lᵖ` norm of `s ↦ u' s 1` is at most that of the weak Fréchet derivative. -/
 private theorem eLpNorm_weakFDeriv_apply_one_le
@@ -110,9 +106,9 @@ private theorem eLpNorm_weakFDeriv_apply_one_le
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     eLpNorm (fun s ↦ weakFDeriv _ u s 1) p volume ≤ ‖weakFDeriv _ u‖ₑ := by
   rw [Lp.eNorm_def]
-  refine (eLpNorm_mono_measure _ volume_restrict_top.ge).trans (eLpNorm_mono
-    ((memLp_weakFDeriv_apply_one u).aestronglyMeasurable.mono_measure volume_restrict_top.le)
-    fun s ↦ ?_)
+  refine (eLpNorm_mono_measure _ (Measure.restrict_coe_opens_top _).ge).trans (eLpNorm_mono
+    ((memLp_weakFDeriv_apply_one u).aestronglyMeasurable.mono_measure
+      (Measure.restrict_coe_opens_top _).le) fun s ↦ ?_)
   simpa using (weakFDeriv _ u s).le_opNorm 1
 
 /-! ### The local bound -/
@@ -127,7 +123,7 @@ private theorem norm_le_eLpNorm_Ioo_of_ae_eq (hv : Continuous v)
     ‖v t‖ ≤ (eLpNorm ⇑(prev _ u) p (volume.restrict (Ioo t (t + 1)))).toReal +
       (eLpNorm (fun s ↦ weakFDeriv _ u s 1) p (volume.restrict (Ioo t (t + 1)))).toReal := by
   have hx : MemLp ⇑(prev _ u) p volume :=
-    (Lp.memLp (prev _ u)).mono_measure volume_restrict_top.ge
+    (Lp.memLp (prev _ u)).mono_measure (Measure.restrict_coe_opens_top _).ge
   have hd := memLp_weakFDeriv_apply_one u
   have hI : volume (Ioo t (t + 1)) ≤ 1 := by
     rw [Real.volume_Ioo, add_sub_cancel_left, ENNReal.ofReal_one]
@@ -152,7 +148,7 @@ private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[v
   · rw [Lp.norm_def]
     exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
-        (eLpNorm_mono_measure _ volume_restrict_top.ge)
+        (eLpNorm_mono_measure _ (Measure.restrict_coe_opens_top _).ge)
   · rw [← toReal_eNorm]
     exact ENNReal.toReal_mono eNorm_ne_top <|
       (eLpNorm_mono_measure _ Measure.restrict_le_self).trans
@@ -162,7 +158,7 @@ private theorem norm_le_of_ae_eq (hv : Continuous v) (hae : ⇑(prev _ u) =ᵐ[v
 private theorem tendsto_cocompact_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)
     (hae : ⇑(prev _ u) =ᵐ[volume] v) : Tendsto v (cocompact ℝ) (𝓝 0) := by
   have hx : MemLp ⇑(prev _ u) p volume :=
-    (Lp.memLp (prev _ u)).mono_measure volume_restrict_top.ge
+    (Lp.memLp (prev _ u)).mono_measure (Measure.restrict_coe_opens_top _).ge
   have hd := memLp_weakFDeriv_apply_one u
   rw [tendsto_zero_iff_norm_tendsto_zero]
   refine squeeze_zero (fun t ↦ norm_nonneg _) (norm_le_eLpNorm_Ioo_of_ae_eq hv hae) ?_
@@ -257,7 +253,8 @@ theorem toZeroAtInfty_injective (hp : p ≠ ∞) :
   intro u w huw
   apply ext
   apply Lp.ext
-  refine ((prev_ae_eq_toZeroAtInfty hp u).trans ?_).filter_mono (ae_mono volume_restrict_top.le)
+  refine ((prev_ae_eq_toZeroAtInfty hp u).trans ?_).filter_mono
+    (ae_mono (Measure.restrict_coe_opens_top _).le)
   rw [huw]
   exact (prev_ae_eq_toZeroAtInfty hp w).symm
 
