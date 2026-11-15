@@ -114,19 +114,10 @@ theorem BoundedFlow.exists_integerRounding {lo hi : Assignment Q ℤ} {s t : V}
     (q : ℤ) (hq : f.val = (q : R)) :
     ∃ g : BoundedFlow lo hi s t, g.val = q := by
   classical
-  let b : V → ℤ := fun x ↦ if x = s then -q else if x = t then q else 0
-  have hb : ∀ x, excessAt f.toFun x = (b x : R) := by
-    intro x
-    by_cases hxs : x = s
-    · subst x
-      rw [f.excessAt_source, hq]
-      simp [b]
-    · by_cases hxt : x = t
-      · subst x
-        rw [← BoundedFlow.val_def, hq]
-        simp [b, hxs]
-      · rw [f.conserve x hxs hxt]
-        simp [b, hxs, hxt]
+  let b : V → ℤ := Pi.single t q - Pi.single s q
+  have hb : ∀ x, excessAt f.toFun x = (b x : R) := fun x ↦ by
+    rw [f.excessAt_eq_single_sub_single, hq]
+    simp [b, Pi.single_apply]
   obtain ⟨g, hgmem, hgex⟩ :=
     exists_integerRounding_mem_Icc lo hi f.toFun b f.mem_Icc hb
   let g' : BoundedFlow lo hi s t :=
@@ -137,11 +128,10 @@ theorem BoundedFlow.exists_integerRounding {lo hi : Assignment Q ℤ} {s t : V}
   rw [BoundedFlow.val_def, hgex t]
   by_cases hts : t = s
   · subst s
-    simp only [b, ↓reduceIte]
     have hq0 : q = 0 := by
       apply Int.cast_injective (α := R)
       rw [Int.cast_zero, ← hq, f.val_eq_zero_of_eq rfl]
-    simp [hq0]
+    simp [b, hq0]
   · simp [b, hts]
 
 /-- A circulation over the ambient ordered ring can be rounded arrowwise to an integer
