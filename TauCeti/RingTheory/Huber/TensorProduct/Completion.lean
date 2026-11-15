@@ -161,6 +161,26 @@ theorem isAdicHom_inl : IsAdicHom (inl A B C) :=
 theorem isAdicHom_inr : IsAdicHom (inr A B C) :=
   (isAdicHom_toCompletion A B C).comp (isAdicHom_includeRight_tensorTopology A B C)
 
+section LeftAlgebra
+
+/-- The algebra structure on the completed tensor induced by its left coprojection.
+Use this as a local instance when extending scalars along the left factor. -/
+@[instance_reducible] noncomputable def leftAlgebra : Algebra B (CompletedTensor A B C) :=
+  (inl A B C).toAlgebra
+
+attribute [local instance] leftAlgebra
+
+/-- The structure map for the left algebra is the left coprojection. -/
+@[simp] theorem algebraMap_leftAlgebra :
+    algebraMap B (CompletedTensor A B C) = inl A B C := (rfl)
+
+/-- The left algebra structure map is adic. -/
+theorem isAdicHom_leftAlgebra : IsAdicHom (algebraMap B (CompletedTensor A B C)) := by
+  rw [algebraMap_leftAlgebra]
+  exact isAdicHom_inl A B C
+
+end LeftAlgebra
+
 section RightAlgebra
 
 /-- The algebra structure on the completed tensor induced by its right coprojection.
