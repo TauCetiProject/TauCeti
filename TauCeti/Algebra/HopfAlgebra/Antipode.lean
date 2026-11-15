@@ -34,6 +34,7 @@ endomorphism, representing inversion on a commutative affine group.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv_symm`: the antipode equivalence is its own inverse.
 * `TauCeti.HopfAlgebra.antipodeBialgHom`: inversion as a bialgebra endomorphism in the
   commutative and cocommutative case.
+* `Coalgebra.Repr.antipode`: swapping legs and applying the antipode represents `Δ (S c)`.
 
 ## Implementation notes
 
@@ -273,3 +274,34 @@ end
 end HopfAlgebra
 
 end TauCeti
+
+section Repr
+
+variable {R C ι : Type*} [CommSemiring R] [Semiring C] [HopfAlgebra R C] {c : C}
+  (𝓡 : Coalgebra.Repr R c ι)
+
+/-- Swapping the legs of a representation `Δ c = ∑ xᵢ ⊗ yᵢ` and applying the antipode to each leg
+gives the representation `Δ (S c) = ∑ S yᵢ ⊗ S xᵢ`. -/
+def Coalgebra.Repr.antipode : Coalgebra.Repr R (HopfAlgebra.antipode R c) ι where
+  index := 𝓡.index
+  left i := HopfAlgebra.antipode R (𝓡.right i)
+  right i := HopfAlgebra.antipode R (𝓡.left i)
+  eq := by
+    rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, ← 𝓡.eq, map_sum, map_sum]
+    simp
+
+/-- The index finset of `𝓡.antipode` is `𝓡.index`. -/
+@[simp]
+theorem Coalgebra.Repr.antipode_index : 𝓡.antipode.index = 𝓡.index := (rfl)
+
+/-- The `i`-th left leg of `𝓡.antipode` is the antipode of `𝓡.right i`. -/
+@[simp]
+theorem Coalgebra.Repr.antipode_left (i : ι) :
+    𝓡.antipode.left i = HopfAlgebra.antipode R (𝓡.right i) := (rfl)
+
+/-- The `i`-th right leg of `𝓡.antipode` is the antipode of `𝓡.left i`. -/
+@[simp]
+theorem Coalgebra.Repr.antipode_right (i : ι) :
+    𝓡.antipode.right i = HopfAlgebra.antipode R (𝓡.left i) := (rfl)
+
+end Repr

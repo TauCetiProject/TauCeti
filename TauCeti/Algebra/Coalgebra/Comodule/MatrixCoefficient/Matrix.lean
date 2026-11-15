@@ -35,8 +35,9 @@ character of the represented group: the determinant character of the comodule.
 * `Module.Basis.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem` and
   `Module.Basis.mem_matrixCoefficientSubmodule_iff_exists_matrix`: span and linear-combination
   characterizations of the matrix-coefficient submodule via entries of `coefficientMatrix`.
-* `TauCeti.Comodule.comul_coefficientMatrix_eq_sum` and
-  `TauCeti.Comodule.counit_coefficientMatrix`: the coalgebra identities.
+* `TauCeti.Comodule.comul_coefficientMatrix_eq_sum`, `Module.Basis.coefficientMatrixRepr`, and
+  `TauCeti.Comodule.counit_coefficientMatrix`: the coalgebra identities and `Coalgebra.Repr`
+  packaging.
 * `TauCeti.Comodule.coefficientMatrix_mul_map_antipode` and
   `TauCeti.Comodule.map_antipode_mul_coefficientMatrix`: the two inverse-matrix identities.
 * `TauCeti.Comodule.isUnit_det_coefficientMatrix`: the determinant is a unit.
@@ -165,20 +166,35 @@ theorem comul_coefficientMatrix_eq_sum (b : Basis ι R M) (i j : ι) :
       ∑ k, coefficientMatrix (C := C) b i k ⊗ₜ[R] coefficientMatrix (C := C) b k j :=
   comul_matrixCoefficient_eq_sum (C := C) b (b.coord i) (b j)
 
+/-- The finite-basis comultiplication expansion of `coefficientMatrix b i j`, packaged as a
+`Coalgebra.Repr`. -/
+def _root_.Module.Basis.coefficientMatrixRepr (b : Basis ι R M) (i j : ι) :
+    Coalgebra.Repr R (coefficientMatrix (C := C) b i j) ι where
+  index := Finset.univ
+  left k := coefficientMatrix (C := C) b i k
+  right k := coefficientMatrix (C := C) b k j
+  eq := (comul_coefficientMatrix_eq_sum (C := C) b i j).symm
+
+/-- The index finset of `b.coefficientMatrixRepr i j` is `Finset.univ`. -/
+@[simp]
+theorem _root_.Module.Basis.coefficientMatrixRepr_index (b : Basis ι R M) (i j : ι) :
+    (b.coefficientMatrixRepr (C := C) i j).index = Finset.univ := (rfl)
+
+/-- The `k`-th left leg of `b.coefficientMatrixRepr i j` is `coefficientMatrix b i k`. -/
+@[simp]
+theorem _root_.Module.Basis.coefficientMatrixRepr_left (b : Basis ι R M) (i j k : ι) :
+    (b.coefficientMatrixRepr (C := C) i j).left k = coefficientMatrix (C := C) b i k := (rfl)
+
+/-- The `k`-th right leg of `b.coefficientMatrixRepr i j` is `coefficientMatrix b k j`. -/
+@[simp]
+theorem _root_.Module.Basis.coefficientMatrixRepr_right (b : Basis ι R M) (i j k : ι) :
+    (b.coefficientMatrixRepr (C := C) i j).right k = coefficientMatrix (C := C) b k j := (rfl)
+
 end Coalgebra
 
 section HopfAlgebra
 
 variable [Semiring C] [HopfAlgebra R C] [Comodule R C M] [Fintype ι]
-
-/-- The basis expansion of the comultiplication of a matrix coefficient, packaged as a
-`Coalgebra.Repr` so that Mathlib's antipode sums apply to it. -/
-private def matrixCoefficientRepr (b : Basis ι R M) (p q : ι) :
-    Coalgebra.Repr R (matrixCoefficient (R := R) (C := C) (b.coord p) (b q)) ι where
-  index := Finset.univ
-  left := fun x ↦ matrixCoefficient (R := R) (C := C) (b.coord p) (b x)
-  right := fun x ↦ matrixCoefficient (R := R) (C := C) (b.coord x) (b q)
-  eq := (comul_matrixCoefficient_eq_sum (C := C) b (b.coord p) (b q)).symm
 
 /-- Multiplying the matrix of basis coefficients by its entrywise antipode transform gives the
 image under `algebraMap` of a single basis coordinate: taking `p` and `q` basis indices, the
@@ -188,8 +204,9 @@ theorem sum_matrixCoefficient_mul_antipode_eq_algebraMap (b : Basis ι R M) (p q
         HopfAlgebra.antipode R
           (matrixCoefficient (R := R) (C := C) (b.coord x) (b q))) =
       algebraMap R C (b.coord p (b q)) := by
-  rw [← counit_matrixCoefficient (R := R) (C := C) (b.coord p) (b q)]
-  exact HopfAlgebra.sum_mul_antipode_eq_algebraMap_counit (matrixCoefficientRepr (C := C) b p q)
+  simpa only [coefficientMatrix_apply, b.coefficientMatrixRepr_index, b.coefficientMatrixRepr_left,
+    b.coefficientMatrixRepr_right, counit_matrixCoefficient] using
+    HopfAlgebra.sum_mul_antipode_eq_algebraMap_counit (b.coefficientMatrixRepr (C := C) p q)
 
 /-- The opposite multiplication order of `sum_matrixCoefficient_mul_antipode_eq_algebraMap`: the
 entrywise antipode transform is also a left inverse of the matrix of basis coefficients. -/
@@ -198,8 +215,9 @@ theorem sum_antipode_mul_matrixCoefficient_eq_algebraMap (b : Basis ι R M) (p q
           (matrixCoefficient (R := R) (C := C) (b.coord p) (b x)) *
         matrixCoefficient (R := R) (C := C) (b.coord x) (b q)) =
       algebraMap R C (b.coord p (b q)) := by
-  rw [← counit_matrixCoefficient (R := R) (C := C) (b.coord p) (b q)]
-  exact HopfAlgebra.sum_antipode_mul_eq_algebraMap_counit (matrixCoefficientRepr (C := C) b p q)
+  simpa only [coefficientMatrix_apply, b.coefficientMatrixRepr_index, b.coefficientMatrixRepr_left,
+    b.coefficientMatrixRepr_right, counit_matrixCoefficient] using
+    HopfAlgebra.sum_antipode_mul_eq_algebraMap_counit (b.coefficientMatrixRepr (C := C) p q)
 
 variable [DecidableEq ι]
 

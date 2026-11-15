@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Decomposition
 public import TauCeti.Algebra.HopfAlgebra.Integral
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
-import TauCeti.Algebra.Coalgebra.Comodule.Schur
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Sweedler's invariant integral on cosemisimple bialgebras
@@ -111,41 +111,36 @@ private theorem linearMap_eq_of_sweedlerIntegral
     let _ := hM
     have : Module.Finite k M := finite_of_isSimpleOrder (C := A)
     let b := Module.finBasis k M
-    have hzero (p q) : sweedlerIntegral hspan (coefficientMatrix (C := A) b p q) = 0 := by
-      refine sweedlerIntegral_apply_of_mem_of_ne hspan
-        matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules hP1 ?_
-      rw [coefficientMatrix_apply]
-      exact matrixCoefficient_mem_submodule _ _
+    have hzero (p q) : sweedlerIntegral hspan (coefficientMatrix (C := A) b p q) = 0 :=
+      sweedlerIntegral_apply_of_mem_of_ne hspan
+        matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules hP1
+        (coefficientMatrix_apply (C := A) b p q ▸ matrixCoefficient_mem_submodule _ _)
     exact b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem fun i j ↦
       LinearMap.mem_eqLocus.mpr (hmat b hzero i j)
 
 /-- `sweedlerIntegral` is a left invariant integral. -/
 theorem isLeftInvariantIntegral_sweedlerIntegral
     (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤) :
-    (sweedlerIntegral hspan).IsLeftInvariantIntegral := by
-  rw [LinearMap.isLeftInvariantIntegral_iff]
-  intro a
-  have ha := linearMap_eq_of_sweedlerIntegral hspan
-    (F := (TensorProduct.rid k A).toLinearMap ∘ₗ (sweedlerIntegral hspan).lTensor A ∘ₗ
-      Coalgebra.comul)
-    (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
-    (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
-    (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
-  simpa [Algebra.algebraMap_eq_smul_one] using ha
+    (sweedlerIntegral hspan).IsLeftInvariantIntegral :=
+  LinearMap.isLeftInvariantIntegral_iff.mpr fun a ↦ by
+    simpa [Algebra.algebraMap_eq_smul_one] using linearMap_eq_of_sweedlerIntegral hspan
+      (F := (TensorProduct.rid k A).toLinearMap ∘ₗ (sweedlerIntegral hspan).lTensor A ∘ₗ
+        Coalgebra.comul)
+      (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
+      (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
+      (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
 
 /-- `sweedlerIntegral` is a right invariant integral. -/
 theorem isRightInvariantIntegral_sweedlerIntegral
     (hspan : sSup (simpleCoefficientSubmodules k A) = ⊤) :
-    (sweedlerIntegral hspan).IsRightInvariantIntegral := by
-  rw [LinearMap.isRightInvariantIntegral_iff]
-  intro a
-  have ha := linearMap_eq_of_sweedlerIntegral hspan
-    (F := (TensorProduct.lid k A).toLinearMap ∘ₗ (sweedlerIntegral hspan).rTensor A ∘ₗ
-      Coalgebra.comul)
-    (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
-    (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
-    (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
-  simpa [Algebra.algebraMap_eq_smul_one] using ha
+    (sweedlerIntegral hspan).IsRightInvariantIntegral :=
+  LinearMap.isRightInvariantIntegral_iff.mpr fun a ↦ by
+    simpa [Algebra.algebraMap_eq_smul_one] using linearMap_eq_of_sweedlerIntegral hspan
+      (F := (TensorProduct.lid k A).toLinearMap ∘ₗ (sweedlerIntegral hspan).rTensor A ∘ₗ
+        Coalgebra.comul)
+      (G := Algebra.linearMap k A ∘ₗ sweedlerIntegral hspan)
+      (by simp [Bialgebra.comul_one, Algebra.TensorProduct.one_def])
+      (fun b hzero i j ↦ by simp [comul_coefficientMatrix_eq_sum b i j, hzero]) a
 
 /-- On a Hopf algebra over a field, `sweedlerIntegral` is invariant under the antipode. -/
 @[simp]
@@ -166,10 +161,9 @@ theorem existsUnique_twoSidedInvariantIntegral {k : Type u} [Field k] {A : Type 
     [Bialgebra k A] (hLR : IsLinearlyReductive.{u, v, u} k A) :
     ∃! h : A →ₗ[k] k, h.IsLeftInvariantIntegral ∧ h.IsRightInvariantIntegral ∧ h 1 = 1 := by
   have hspan := hLR.sSup_simpleCoefficientSubmodules_eq_top
-  refine ⟨sweedlerIntegral hspan, ⟨isLeftInvariantIntegral_sweedlerIntegral hspan,
-    isRightInvariantIntegral_sweedlerIntegral hspan, sweedlerIntegral_one hspan⟩, ?_⟩
-  rintro h' ⟨hl', _, h1'⟩
-  exact hl'.eq_of_isRightInvariantIntegral
-    (isRightInvariantIntegral_sweedlerIntegral hspan) h1' (sweedlerIntegral_one hspan)
+  exact ⟨sweedlerIntegral hspan, ⟨isLeftInvariantIntegral_sweedlerIntegral hspan,
+    isRightInvariantIntegral_sweedlerIntegral hspan, sweedlerIntegral_one hspan⟩,
+    fun _ ⟨hl', _, h1'⟩ ↦ hl'.eq_of_isRightInvariantIntegral
+      (isRightInvariantIntegral_sweedlerIntegral hspan) h1' (sweedlerIntegral_one hspan)⟩
 
 end TauCeti.Coalgebra.IsLinearlyReductive

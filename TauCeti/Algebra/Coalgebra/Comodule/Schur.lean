@@ -28,10 +28,8 @@ multiple of the identity matrix (`Module.Basis.exists_eq_smul_one_of_commute_coe
 
 ## Main declarations
 
-* `TauCeti.Comodule.nontrivial_of_isSimpleOrder` and `Module.Basis.index_nonempty_of_isSimpleOrder`:
-  every simple comodule is nontrivial, so every basis of it has a nonempty index type.
-* `TauCeti.Comodule.finite_of_isSimpleOrder`: every simple comodule over a projective coalgebra is
-  finitely generated as a module.
+* `Module.Basis.index_nonempty_of_isSimpleOrder`: every basis of a simple comodule has a nonempty
+  index type.
 * `TauCeti.Comodule.Hom.injective_or_eq_zero`, `TauCeti.Comodule.Hom.surjective_or_eq_zero`, and
   `TauCeti.Comodule.Hom.bijective_of_ne_zero`: structural Schur's lemma for morphisms between
   simple comodules.
@@ -52,14 +50,6 @@ public section
 
 open Module TauCeti TauCeti.Comodule
 
-/-- Every simple right comodule is nontrivial. -/
-theorem TauCeti.Comodule.nontrivial_of_isSimpleOrder (R C M : Type*) [CommSemiring R]
-    [AddCommMonoid C] [Module R C] [Coalgebra R C]
-    [AddCommMonoid M] [Module R M] [Comodule R C M] [IsSimpleOrder (Subcomodule R C M)] :
-    Nontrivial M := by
-  obtain ⟨m, -, hm⟩ := Subcomodule.ne_bot_iff.mp (top_ne_bot (α := Subcomodule R C M))
-  exact nontrivial_of_ne m 0 hm
-
 /-- Any basis of a simple right comodule has a nonempty index type. -/
 theorem Module.Basis.index_nonempty_of_isSimpleOrder {R M ι : Type*} [CommSemiring R]
     [AddCommMonoid M] [Module R M] (b : Basis ι R M) (C : Type*)
@@ -67,17 +57,6 @@ theorem Module.Basis.index_nonempty_of_isSimpleOrder {R M ι : Type*} [CommSemir
     [IsSimpleOrder (Subcomodule R C M)] : Nonempty ι :=
   have := TauCeti.Comodule.nontrivial_of_isSimpleOrder R C M
   b.index_nonempty
-
-/-- If the coefficient coalgebra is projective over `R`, every simple right comodule is finitely
-generated over `R`. -/
-theorem TauCeti.Comodule.finite_of_isSimpleOrder {R C M : Type*} [CommSemiring R]
-    [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Projective R C]
-    [AddCommMonoid M] [Module R M] [Comodule R C M] [IsSimpleOrder (Subcomodule R C M)] :
-    Module.Finite R M := by
-  have hfin : Module.Finite R (⊤ : Subcomodule R C M).toSubmodule :=
-    Subcomodule.finite_of_isAtom (R := R) (C := C) isAtom_top
-  rw [Subcomodule.top_toSubmodule] at hfin
-  exact Module.Finite.equiv (Submodule.topEquiv (R := R) (M := M))
 
 namespace TauCeti.Comodule.Hom
 
@@ -117,10 +96,8 @@ theorem bijective_of_ne_zero [IsSimpleOrder (Subcomodule R C M)]
 /-- Every comodule morphism between simple comodules is either bijective or zero. -/
 theorem bijective_or_eq_zero [IsSimpleOrder (Subcomodule R C M)]
     [IsSimpleOrder (Subcomodule R C N)] (f : Hom R C M N) :
-    Function.Bijective f ∨ f = 0 := by
-  by_cases hf : f = 0
-  · exact .inr hf
-  · exact .inl (f.bijective_of_ne_zero hf)
+    Function.Bijective f ∨ f = 0 :=
+  or_iff_not_imp_right.mpr f.bijective_of_ne_zero
 
 end Ring
 
@@ -137,11 +114,8 @@ needed because every simple comodule over a field is finite dimensional. -/
 theorem exists_eq_smul_id [IsSimpleOrder (Subcomodule k C M)] (f : Hom k C M M) :
     ∃ c : k, f = c • Hom.id k C M := by
   have : Module.Finite k M := Comodule.finite_of_isSimpleOrder (C := C)
-  have hIrr : Representation.IsIrreducible
-      (convolutionAction (R := k) (C := C) (M := M)).toMonoidHom :=
-    isIrreducible_convolutionAction
-  obtain ⟨c, hc⟩ := hIrr.exists_forall_apply_eq_smul f.toLinearMap fun φ m ↦
-    f.map_convolutionAction φ m
+  obtain ⟨c, hc⟩ := isIrreducible_convolutionAction.exists_forall_apply_eq_smul f.toLinearMap
+    f.map_convolutionAction
   exact ⟨c, ext hc⟩
 
 /-- Over an algebraically closed field, any morphism between simple comodules is a scalar multiple
@@ -176,10 +150,8 @@ theorem exists_eq_smul_one_of_commute_coefficientMatrix (b : Basis ι k M) (T : 
     (hT : coefficientMatrix (C := A) b * T.map (algebraMap k A) =
       T.map (algebraMap k A) * coefficientMatrix (C := A) b) :
     ∃ c : k, T = c • (1 : Matrix ι ι k) := by
-  let φ : Hom k A M M :=
-    { toLinearMap := Matrix.toLin b b T
-      map_coact := (b.map_coact_iff_coefficientMatrix b (Matrix.toLin b b T)).mpr (by
-        simpa [LinearMap.toMatrix_toLin] using hT) }
+  let φ : Hom k A M M := ⟨Matrix.toLin b b T, (b.map_coact_iff_coefficientMatrix b _).mpr <| by
+    simpa [LinearMap.toMatrix_toLin] using hT⟩
   obtain ⟨c, hc⟩ := φ.exists_eq_smul_id
   refine ⟨c, ?_⟩
   calc T = LinearMap.toMatrix b b φ.toLinearMap := (LinearMap.toMatrix_toLin b b T).symm

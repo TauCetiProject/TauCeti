@@ -173,13 +173,6 @@ theorem IsLeftInvariantIntegral.strong_invariance (hh : h.IsLeftInvariantIntegra
   have := congrArg (fun u : WithConv (H →ₗ[R] H) ↦ u.ofConv b) hf
   simpa [f, g, rb.convMul_apply, Algebra.algebraMap_eq_smul_one] using this
 
-private theorem comul_antipode_eq_sum {a : H} {ι : Type*} (r : Coalgebra.Repr R a ι) :
-    Coalgebra.comul (R := R) (HopfAlgebra.antipode R a) =
-      ∑ i ∈ r.index,
-        HopfAlgebra.antipode R (r.right i) ⊗ₜ[R] HopfAlgebra.antipode R (r.left i) := by
-  rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, ← r.eq, map_sum, map_sum]
-  simp only [TensorProduct.comm_tmul, TensorProduct.map_tmul]
-
 private def scalarConv (φ : H →ₗ[R] R) : WithConv (H →ₗ[R] H) :=
   toConv (Algebra.linearMap R H ∘ₗ φ)
 
@@ -212,14 +205,10 @@ integral. -/
 theorem IsRightInvariantIntegral.comp_antipode (hh : h.IsRightInvariantIntegral) :
     (h ∘ₗ HopfAlgebra.antipode R).IsLeftInvariantIntegral := by
   let S : H →ₗ[R] H := HopfAlgebra.antipode R
-  have hS : toConv S * scalarConv (h ∘ₗ S) = scalarConv (h ∘ₗ S) := by
-    apply WithConv.ofConv_injective
-    ext a
-    let r := ℛ R a
-    have hhSa := isRightInvariantIntegral_iff.mp hh (S a)
-    rw [comul_antipode_eq_sum r, map_sum, map_sum] at hhSa
-    rw [r.convMul_apply]
-    simpa [scalarConv, S, ← Algebra.commutes, Algebra.smul_def] using hhSa
+  have hS : toConv S * scalarConv (h ∘ₗ S) = scalarConv (h ∘ₗ S) :=
+    WithConv.ofConv_injective <| LinearMap.ext fun a ↦ by
+      simpa [(ℛ R a).convMul_apply, scalarConv, S, ← Algebra.commutes, Algebra.smul_def] using
+        hh.sum_smul (ℛ R a).antipode
   rw [isLeftInvariantIntegral_iff_id_mul]
   calc toConv LinearMap.id * scalarConv (h ∘ₗ S)
       = (toConv LinearMap.id * toConv S) * scalarConv (h ∘ₗ S) := by rw [mul_assoc, hS]
@@ -230,14 +219,10 @@ integral. -/
 theorem IsLeftInvariantIntegral.comp_antipode (hh : h.IsLeftInvariantIntegral) :
     (h ∘ₗ HopfAlgebra.antipode R).IsRightInvariantIntegral := by
   let S : H →ₗ[R] H := HopfAlgebra.antipode R
-  have hS : scalarConv (h ∘ₗ S) * toConv S = scalarConv (h ∘ₗ S) := by
-    apply WithConv.ofConv_injective
-    ext a
-    let r := ℛ R a
-    have hhSa := isLeftInvariantIntegral_iff.mp hh (S a)
-    rw [comul_antipode_eq_sum r, map_sum, map_sum] at hhSa
-    rw [r.convMul_apply]
-    simpa [scalarConv, S, Algebra.smul_def] using hhSa
+  have hS : scalarConv (h ∘ₗ S) * toConv S = scalarConv (h ∘ₗ S) :=
+    WithConv.ofConv_injective <| LinearMap.ext fun a ↦ by
+      simpa [(ℛ R a).convMul_apply, scalarConv, S, Algebra.smul_def] using
+        hh.sum_smul (ℛ R a).antipode
   rw [isRightInvariantIntegral_iff_mul_id]
   calc scalarConv (h ∘ₗ S) * toConv LinearMap.id
       = scalarConv (h ∘ₗ S) * (toConv S * toConv LinearMap.id) := by rw [← mul_assoc, hS]
@@ -245,29 +230,24 @@ theorem IsLeftInvariantIntegral.comp_antipode (hh : h.IsLeftInvariantIntegral) :
 
 /-- A normalized right invariant integral on a Hopf algebra is invariant under the antipode. -/
 theorem IsRightInvariantIntegral.map_antipode (hr : h.IsRightInvariantIntegral) (h1 : h 1 = 1)
-    (a : H) : h (HopfAlgebra.antipode R a) = h a := by
-  have heq : h ∘ₗ HopfAlgebra.antipode R = h :=
-    hr.comp_antipode.eq_of_isRightInvariantIntegral hr (by simp [h1]) h1
-  exact LinearMap.congr_fun heq a
+    (a : H) : h (HopfAlgebra.antipode R a) = h a :=
+  LinearMap.congr_fun (hr.comp_antipode.eq_of_isRightInvariantIntegral hr (by simp [h1]) h1) a
 
 /-- A normalized left invariant integral on a Hopf algebra is invariant under the antipode. -/
 theorem IsLeftInvariantIntegral.map_antipode (hl : h.IsLeftInvariantIntegral) (h1 : h 1 = 1)
-    (a : H) : h (HopfAlgebra.antipode R a) = h a := by
-  have heq : h = h ∘ₗ HopfAlgebra.antipode R :=
-    hl.eq_of_isRightInvariantIntegral hl.comp_antipode h1 (by simp [h1])
-  exact (LinearMap.congr_fun heq a).symm
+    (a : H) : h (HopfAlgebra.antipode R a) = h a :=
+  (LinearMap.congr_fun
+    (hl.eq_of_isRightInvariantIntegral hl.comp_antipode h1 (by simp [h1])) a).symm
 
 /-- Every normalized right invariant integral on a Hopf algebra is also left invariant. -/
 theorem IsRightInvariantIntegral.isLeftInvariantIntegral (hr : h.IsRightInvariantIntegral)
-    (h1 : h 1 = 1) : h.IsLeftInvariantIntegral := by
-  have heq : h ∘ₗ HopfAlgebra.antipode R = h := LinearMap.ext (hr.map_antipode h1)
-  exact heq ▸ hr.comp_antipode
+    (h1 : h 1 = 1) : h.IsLeftInvariantIntegral :=
+  LinearMap.ext (f := h ∘ₗ HopfAlgebra.antipode R) (hr.map_antipode h1) ▸ hr.comp_antipode
 
 /-- Every normalized left invariant integral on a Hopf algebra is also right invariant. -/
 theorem IsLeftInvariantIntegral.isRightInvariantIntegral (hl : h.IsLeftInvariantIntegral)
-    (h1 : h 1 = 1) : h.IsRightInvariantIntegral := by
-  have heq : h ∘ₗ HopfAlgebra.antipode R = h := LinearMap.ext (hl.map_antipode h1)
-  exact heq ▸ hl.comp_antipode
+    (h1 : h 1 = 1) : h.IsRightInvariantIntegral :=
+  LinearMap.ext (f := h ∘ₗ HopfAlgebra.antipode R) (hl.map_antipode h1) ▸ hl.comp_antipode
 
 end Hopf
 

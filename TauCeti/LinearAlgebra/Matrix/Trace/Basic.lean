@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
-public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Tactic.Ring
@@ -17,9 +15,8 @@ import Mathlib.Tactic.Ring
 Fix a matrix `S`. This file expands the quadratic map `M ↦ trace (M * S * M * S)` at a sum, so
 that polarization recovers the symmetric bilinear map `(M, N) ↦ trace (M * S * N * S)` from it.
 It also computes the trace of `2 P - 1`, which vanishes for a trace-one `2 × 2` matrix `P` such as
-the orthogonal projector onto a line of `ℂ²`, records that reindexing rows and columns along
-one equivalence preserves the trace, and evaluates the contraction of a conjugation-invariant
-scalar matrix `H` (`Vᴴ * H * V = H`) against a row-orthogonal functional as `trace H * K`.
+the orthogonal projector onto a line of `ℂ²`, and records that reindexing rows and columns along
+one equivalence preserves the trace.
 
 ## Main results
 
@@ -28,9 +25,6 @@ scalar matrix `H` (`Vᴴ * H * V = H`) against a row-orthogonal functional as `t
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
-* `Matrix.trace_mul_eq_of_conjTranspose_mul_mul`: if `Vᴴ * H * V = H` over an `R`-algebra and a
-  normalized `R`-linear functional contracts `star (V p q) * V r s` to `δ_{p, r} K q s`, then
-  `H.trace * K q s = H q s`.
 -/
 
 public section
@@ -59,19 +53,5 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
-
-/-- If `V` preserves the scalar matrix `H` under `Vᴴ * H * V = H` over an `R`-algebra `A`, and a
-normalized `R`-linear functional `h` contracts `star (V p q) * V r s` to `δ_{p, r} K q s`, then
-`H.trace * K q s = H q s`. -/
-theorem trace_mul_eq_of_conjTranspose_mul_mul {A : Type*} [Semiring A] [Star A] [Algebra R A]
-    [DecidableEq m] {h : A →ₗ[R] R} (h1 : h 1 = 1) {V : Matrix m m A} {H K : Matrix m m R}
-    (hinv : Vᴴ * H.map (algebraMap R A) * V = H.map (algebraMap R A))
-    (horth : ∀ p q r s, h (star (V p q) * V r s) = if p = r then K q s else 0)
-    (q s : m) : H.trace * K q s = H q s := by
-  have hqs := congrArg h (congrFun (congrFun hinv q) s)
-  simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, Finset.sum_mul,
-    Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one,
-    map_sum, map_smul, smul_eq_mul, horth, h1] at hqs
-  simpa [Matrix.trace, Matrix.diag, Finset.sum_mul] using hqs
 
 end Matrix

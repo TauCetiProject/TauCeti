@@ -69,26 +69,22 @@ instance : LinearMapClass (AlgebraicHaar A) ℂ A ℂ where
 
 /-- Algebraic Haar functionals are determined by their values on elements. -/
 @[ext]
-theorem ext {h₁ h₂ : AlgebraicHaar A} (H : ∀ a, h₁ a = h₂ a) : h₁ = h₂ :=
-  DFunLike.ext h₁ h₂ H
+theorem ext {h₁ h₂ : AlgebraicHaar A} (H : ∀ a, h₁ a = h₂ a) : h₁ = h₂ := DFunLike.ext h₁ h₂ H
 
-/-- Applying the underlying linear map of an `AlgebraicHaar` functional agrees with function
-coercion. -/
+/-- Applying `toLinearMap` to an `AlgebraicHaar` functional agrees with function coercion. -/
 @[simp]
 theorem toLinearMap_apply (h : AlgebraicHaar A) (a : A) : h.toLinearMap a = h a := (rfl)
 
 /-- Applying a newly constructed `AlgebraicHaar` functional evaluates the underlying linear map. -/
 @[simp]
-theorem mk_apply (f : A →ₗ[ℂ] ℂ) (h1 hl hr hp) (a : A) :
-    (AlgebraicHaar.mk f h1 hl hr hp) a = f a := (rfl)
+theorem mk_apply (f : A →ₗ[ℂ] ℂ) (h1 hl hr hp) (a : A) : (mk f h1 hl hr hp) a = f a := (rfl)
 
 /-- An algebraic Haar functional is unique whenever it exists. -/
 instance : Subsingleton (AlgebraicHaar A) where
   allEq h₁ h₂ := ext <| LinearMap.congr_fun <|
     h₁.left_invariant'.eq_of_isRightInvariantIntegral h₂.right_invariant' h₁.map_one' h₂.map_one'
 
-/-- Forget invariance and normalization to view an `AlgebraicHaar` functional as a
-`StarPositiveFunctional`. -/
+/-- Forget invariance and normalization to obtain a `StarPositiveFunctional`. -/
 def toStarPositiveFunctional (h : AlgebraicHaar A) : StarPositiveFunctional A :=
   ⟨h.toLinearMap, h.map_star_mul_self_nonneg⟩
 

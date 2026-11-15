@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Unitary.Orthogonality
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.PositiveIntegral
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Transport
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.Algebra.HopfAlgebra.Integral.Sweedler
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
@@ -180,8 +181,7 @@ private theorem isAtom_matrixCoefficientSubmodule_mem_simpleUnitary
   have hWUnit : IsUnitary ℂ A W := W.isUnitary hH
   let _ := convolutionModule (R := ℂ) (C := A) (M := H)
   let _ := convolutionModule (R := ℂ) (C := A) (M := W)
-  have : IsSimpleModule (WithConv (A →ₗ[ℂ] ℂ)) W := W.isSimpleModule_convolution_iff_isAtom.mpr hW
-  have : IsSimpleOrder (Subcomodule ℂ A W) := isSimpleModule_convolution_iff.mp inferInstance
+  have := isSimpleModule_convolution_iff.mp (W.isSimpleModule_convolution_iff_isAtom.mpr hW)
   let m := Module.finrank ℂ W
   let bW : OrthonormalBasis (Fin m) ℂ W := stdOrthonormalBasis ℂ W
   let _ : Comodule ℂ A (Fin m → ℂ) := Transport bW.toBasis.equivFun
@@ -189,9 +189,8 @@ private theorem isAtom_matrixCoefficientSubmodule_mem_simpleUnitary
     (Subcomodule.transportOrderIso bW.toBasis.equivFun).symm.isSimpleOrder
   have hcoeff_eq := (matrixCoefficientSubmodule_transport (C := A) bW.toBasis.equivFun).symm
   refine ⟨hcoeff_eq ▸ finMatrix_mem_simpleCoefficientSubmodules, m, inferInstance, inferInstance,
-    ?_, hcoeff_eq⟩
-  rw [bW.toBasis.coefficientMatrix_basisFun_transport_equivFun]
-  exact hWUnit.coefficientMatrix_mem_unitary bW
+    by simpa [bW.toBasis.coefficientMatrix_basisFun_transport_equivFun] using
+      hWUnit.coefficientMatrix_mem_unitary bW, hcoeff_eq⟩
 
 omit [StarCoalgebra ℂ A] in
 private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
@@ -201,8 +200,7 @@ private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
   rintro a ⟨n, ρ, hU, i, j, rfl⟩
   let _ := ρ
   -- Transport the unitary matrix comodule on `Fin n → ℂ` to `EuclideanSpace ℂ (Fin n)`.
-  let bE : OrthonormalBasis (Fin n) ℂ (EuclideanSpace ℂ (Fin n)) :=
-    EuclideanSpace.basisFun (Fin n) ℂ
+  let bE := EuclideanSpace.basisFun (Fin n) ℂ
   let fE : (Fin n → ℂ) ≃ₗ[ℂ] EuclideanSpace ℂ (Fin n) := bE.toBasis.equivFun.symm
   let _ : Comodule ℂ A (EuclideanSpace ℂ (Fin n)) := Transport fE
   have hbE_map : (Pi.basisFun ℂ (Fin n)).map fE = bE.toBasis := DFunLike.ext _ _ fun k ↦
@@ -217,8 +215,7 @@ private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
     isCompletelyReducible_iff_sSup_atoms_eq_top.mp hUnit.isCompletelyReducible
   have hv : bE.toBasis j ∈
       ⨆ W : {W : Subcomodule ℂ A (EuclideanSpace ℂ (Fin n)) | IsAtom W}, W.1.toSubmodule := by
-    rw [← Subcomodule.sSup_toSubmodule, hatoms, Subcomodule.top_toSubmodule]
-    exact Submodule.mem_top
+    simp [← Subcomodule.sSup_toSubmodule, hatoms]
   have himg := Submodule.mem_map_of_mem
     (f := matrixCoefficientLinear (R := ℂ) (C := A) (bE.toBasis.coord i)) hv
   rw [Submodule.map_iSup] at himg

@@ -119,9 +119,8 @@ private theorem coactComponent_conjEquivFun (b : Basis ι R M) (f : WithConv (A 
   rw [coactComponent_apply, coactComponent_apply, b.conjugateMatrixComodule_coact,
     matrixCoact_apply_basisFun, coact_basis_eq_sum_coefficientMatrix b j, map_sum, map_sum, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.tensorComponent_tmul, LinearMap.tensorComponent_tmul, map_smulₛₗ,
-    b.conjEquivFun_self]
-  simp [LinearMap.intrinsicStar_apply, starRingEnd_apply]
+  simp [LinearMap.tensorComponent_tmul, map_smulₛₗ, b.conjEquivFun_self,
+    LinearMap.intrinsicStar_apply, starRingEnd_apply]
 
 private theorem map_conjEquivFun_coact_mem (b : Basis ι R M) (S : Subcomodule R A M) :
     letI : Comodule R A (ι → R) := b.conjugateMatrixComodule
@@ -130,8 +129,7 @@ private theorem map_conjEquivFun_coact_mem (b : Basis ι R M) (S : Subcomodule R
         (S.toSubmodule.map b.conjEquivFun.toLinearMap).subtype LinearMap.id) := by
   let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
   rintro _ ⟨m, hm, rfl⟩
-  rw [Submodule.tensor_mem_range_iff_forall_tensorComponent_mem]
-  intro f
+  refine (Submodule.tensor_mem_range_iff_forall_tensorComponent_mem _ _).mpr fun f ↦ ?_
   rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply, coactComponent_conjEquivFun b (toConv f)]
   exact ⟨_, by simpa [coactComponent_apply, LinearMap.tensorComponent_def] using
     S.rid_lTensor_coact_mem (star (toConv f)).ofConv hm, rfl⟩
@@ -144,8 +142,7 @@ private theorem map_conjEquivFun_symm_coact_mem (b : Basis ι R M) :
           (T.toSubmodule.map b.conjEquivFun.symm.toLinearMap).subtype LinearMap.id) := by
   let _ : Comodule R A (ι → R) := b.conjugateMatrixComodule
   rintro T _ ⟨y, hy, rfl⟩
-  rw [Submodule.tensor_mem_range_iff_forall_tensorComponent_mem]
-  intro f
+  refine (Submodule.tensor_mem_range_iff_forall_tensorComponent_mem _ _).mpr fun f ↦ ?_
   have hcomp : coactComponent (R := R) (C := A) (M := M) f (b.conjEquivFun.symm y) =
       b.conjEquivFun.symm
         (coactComponent (R := R) (C := A) (M := ι → R) (star (toConv f)).ofConv y) :=
