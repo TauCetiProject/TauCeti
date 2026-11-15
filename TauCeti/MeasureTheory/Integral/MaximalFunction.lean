@@ -148,6 +148,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
   **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with the explicit constant
   `TauCeti.maximalFunctionConst`.
+* `TauCeti.eLpNorm_maximalFunction_rpow_inv_le`: for `0 < q < p < ∞`, the function
+  `(M(‖f‖ₑ ^ q))^{1/q}` is bounded on `Lᵖ`.
 * `TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`: integrating a pointwise bound of `g²` by
   three maximal functions, as in the sharp function method.
 * `TauCeti.mul_setLIntegral_lt_maximalFunction_le`,
@@ -619,6 +621,41 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
     _ = maximalFunctionConst (finrank ℝ E) p.toReal ^ (1 / p.toReal) *
           (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
+    _ ≤ _ := by gcongr
+
+/-- **The maximal inequality for `(M(‖f‖ₑ ^ q))^{1/q}`.** For `0 < q < p < ∞`, the function
+`x ↦ (M(‖f‖ₑ ^ q) x)^{1/q}` is bounded on `Lᵖ`:
+
+`‖(M(‖f‖ₑ ^ q))^{1/q}‖_p ≤ C(n, p / q)^{1/p} ‖f‖_p`,
+
+with `C(n, p / q) = TauCeti.maximalFunctionConst n (p / q)` the constant of the strong type
+`(p / q, p / q)` maximal inequality applied to `‖f‖ₑ ^ q`. It is through these functions, for some
+`q > 1`, that sharp maximal function estimates such as those for commutators with functions of
+bounded mean oscillation are integrated. -/
+theorem eLpNorm_maximalFunction_rpow_inv_le [TopologicalSpace F] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {q p : ℝ}
+    (hq : 0 < q) (hqp : q < p) :
+    eLpNorm (fun x => maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹) (ENNReal.ofReal p) μ ≤
+      maximalFunctionConst (finrank ℝ E) (p / q) ^ p⁻¹ * eLpNorm f (ENNReal.ofReal p) μ := by
+  have hp : 0 < p := hq.trans hqp
+  have hp₀ : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
+  have hpR : (ENNReal.ofReal p).toReal = p := ENNReal.toReal_ofReal hp.le
+  -- `f` itself need not be a.e. strongly measurable; if it is not, its `Lᵖ` seminorm is `∞`.
+  have hfle : (∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ p⁻¹ ≤ eLpNorm f (ENNReal.ofReal p) μ := by
+    by_cases hfm : AEStronglyMeasurable f μ
+    · rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ ENNReal.ofReal_ne_top hfm, hpR, one_div]
+    · simp [eLpNorm_of_not_aestronglyMeasurable hfm]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ ENNReal.ofReal_ne_top
+    ((measurable_maximalFunction μ _).pow_const _).aestronglyMeasurable, hpR, one_div]
+  simp only [eNorm_eq_self, ← ENNReal.rpow_mul, inv_mul_eq_div]
+  calc (∫⁻ x, maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ (p / q) ∂μ) ^ p⁻¹
+      ≤ (maximalFunctionConst (finrank ℝ E) (p / q) * ∫⁻ x, (‖f x‖ₑ ^ q) ^ (p / q) ∂μ) ^ p⁻¹ := by
+        gcongr
+        simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ
+          (f := fun y => ‖f y‖ₑ ^ q) (hf.pow_const q) ((one_lt_div hq).2 hqp)
+    _ = maximalFunctionConst (finrank ℝ E) (p / q) ^ p⁻¹ * (∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ p⁻¹ := by
+        simp only [← ENNReal.rpow_mul, mul_div_cancel₀ p hq.ne']
+        exact ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
 
 /- The integration step below follows the corresponding helper of
