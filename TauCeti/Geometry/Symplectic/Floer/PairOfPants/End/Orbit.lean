@@ -111,7 +111,6 @@ variable [FiniteDimensional ℝ V]
 
 /-! ### Orbits and actions in positive end charts -/
 
-omit [FiniteDimensional ℝ V] in
 /-- At the time `±t` of the end, the Hamiltonian vector field of the positive end Hamiltonian
 `H'_q` is `±` that of `H_q` at the time `t`: `X_{H'_q(±t)} = ±X_{H_q(t)}`. -/
 theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ) :
