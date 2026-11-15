@@ -89,11 +89,8 @@ private theorem typeABoxMapOfHom_add_of_bound (N : TypeDStructure d ι X)
 theorem typeABoxMapOfHom_add_of_isBounded (N : TypeDStructure d ι X) (hN : N.IsBounded)
     (f g : UngradedAInfinityRightModuleHom Mm Mm') :
     N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g := by
-  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
-  exact typeABoxMapOfHom_add_of_bound N f g (K := K)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
+  obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
+  exact typeABoxMapOfHom_add_of_bound N f g (K := K) (hK _) (hK _) (hK _)
 
 /-- The operations of the matrix module of the mapping cone of a morphism vanish from the arity
 from which those of the modules and the components of the morphism do. -/
@@ -160,12 +157,13 @@ private theorem fst_typeABoxMapOfHom_toConeHom (N : TypeDStructure d ι X)
     (H : UngradedAInfinityRightModuleHom.Homotopy f g) {K : ℕ}
     (hK : ∀ n, K ≤ n → (H.toConeHom.cone.matrixAct X n fun _ => N.coeff) = 0) (φ : X → M)
     (z : X) : (N.typeABoxMapOfHom H.toConeHom φ z).1 = φ z := by
-  rw [typeABoxMapOfHom_apply_eq_sum (K := K + 1) _ _ fun n hn => hK n (by omega),
-    sum_range_succ', Prod.fst_add, Prod.fst_sum, sum_eq_zero fun n _ => ?_, zero_add,
-    Prod.fst_sum, ← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
-  · simp [Subsingleton.elim (fun _ : Fin 0 => _) ![], apply_ite Prod.fst]
-  · rw [Prod.fst_sum]
-    exact sum_eq_zero fun x _ => by split_ifs <;> simp
+  rw [typeABoxMapOfHom_apply_eq_sum (K := K + 1) _ _ fun n hn => hK n (by omega)]
+  simp only [Prod.fst_sum, apply_ite Prod.fst, Prod.fst_zero,
+    UngradedAInfinityRightModuleHom.Homotopy.toConeHom_map_apply]
+  -- Only the paths of length zero contribute, since `id_{n+1} = 0` for `n ≥ 1`.
+  rw [sum_eq_single 0 (fun n _ hn => by
+    simp [UngradedAInfinityRightModuleHom.id_map_eq_zero hn]) (by simp)]
+  simp [← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
 
 /-- The homotopy identity from the chain map identity of `(id, h)`, the additivity of the
 induced maps and the vanishing of the operations of the matrix modules of the cones. -/
@@ -198,10 +196,8 @@ theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded (N : TypeDStructure d
     N.typeABoxMapOfHom f φ + N.typeABoxMapOfHom g φ =
       N.typeABoxDifferential Mm' (N.typeABoxHomotopy H φ) +
         N.typeABoxHomotopy H (N.typeABoxDifferential Mm φ) := by
-  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
-  exact typeABoxMapOfHom_add_typeABoxMapOfHom_of_bound N H (K := K)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)
+  obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
+  exact typeABoxMapOfHom_add_typeABoxMapOfHom_of_bound N H (K := K) (hK _) (hK _)
     (N.typeABoxDifferential_typeABoxMapOfHom_of_isBounded H.toConeHom hN)
     (N.typeABoxMapOfHom_add_of_isBounded hN f g) φ
 

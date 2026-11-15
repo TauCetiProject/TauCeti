@@ -298,6 +298,16 @@ theorem matrixAct_eq_zero_of_iteratedCoeff_eq_zero (N : TypeDStructure d ι X)
   rw [hL, matrixAct_map_coeff_apply]
   simp [hn]
 
+/-- **The operations of a bounded type `D` structure vanish along `δ` from some arity on.** If `N`
+is bounded, there is a `K` such that `m_{n+1}(·, δ, …, δ)` of the matrix module of every `A∞`
+module vanishes for `n ≥ K`. -/
+theorem IsBounded.exists_matrixAct_eq_zero {N : TypeDStructure d ι X} (hN : N.IsBounded) :
+    ∃ K, ∀ {M : Type*} [AddCommGroup M] [Module R M] (Mm : UngradedAInfinityRightModule d M)
+      (n : ℕ), K ≤ n → (Mm.matrixAct X n fun _ => N.coeff) = 0 := by
+  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
+  exact ⟨K, fun Mm n hn =>
+    N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero Mm (hK n hn) fun _ => Or.inl rfl⟩
+
 /-- **The box tensor differential in terms of the iterates of `N`.** When the operations
 `m_{n+1}(·, δ, …, δ)` of the matrix module vanish for `n ≥ K`, the box tensor differential is
 `∂ (m ⊗ x) = ∑_{n < K} (m_{n+1} ⊗ 1) (m ⊗ δⁿ (x))`. -/
@@ -1175,9 +1185,8 @@ idempotents**, for a strictly unital module: `T_{id} φ` has `z`-component
 theorem typeABoxMap_idMorphism_apply_of_isBounded (hMm : Mm.IsStrictlyUnital ι)
     (hN : N.IsBounded) (φ : X → M) (z : X) :
     typeABoxMap N N Mm N.idMorphism φ z = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
-  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
-  exact typeABoxMap_idMorphism_apply hMm (K := K) (fun n hn =>
-    N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero Mm (hK n hn) fun _ => Or.inl rfl) φ z
+  obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
+  exact typeABoxMap_idMorphism_apply hMm (K := K) (hK Mm) φ z
 
 /-- **The identity morphism of a type `D` structure with heights induces the action of the
 idempotents**, for a strictly unital module: `T_{id} φ` has `z`-component
@@ -1363,9 +1372,8 @@ theorem typeABoxDifferential_typeABoxMapOfHom_of_isBounded [CharP R 2] (N : Type
     (f : UngradedAInfinityRightModuleHom Mm Mm') (hN : N.IsBounded) (φ : X → M) :
     N.typeABoxDifferential Mm' (N.typeABoxMapOfHom f φ) =
       N.typeABoxMapOfHom f (N.typeABoxDifferential Mm φ) := by
-  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
-  exact N.typeABoxDifferential_typeABoxMapOfHom_of_bound f (K := K)
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero f.cone (hK n hn) fun _ => Or.inl rfl)
+  obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
+  exact N.typeABoxDifferential_typeABoxMapOfHom_of_bound f (K := K) (hK f.cone)
     (N.typeABoxDifferential_typeABoxDifferential_of_isBounded f.cone hN) φ
 
 /-- **Morphisms induce chain maps, for a type `D` structure with a height.** Over a ring of
@@ -1408,10 +1416,10 @@ theorem typeABoxMapOfHom_apply_eq_map_zero (N : TypeDStructure d ι X)
 theorem typeABoxMapOfHom_id_of_isBounded [CharP R 2] (N : TypeDStructure d ι X)
     (hN : N.IsBounded) : N.typeABoxMapOfHom (UngradedAInfinityRightModuleHom.id Mm) =
       LinearMap.id := by
-  obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
+  obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
   refine LinearMap.ext fun φ => funext fun z => ?_
   rw [N.typeABoxMapOfHom_apply_eq_map_zero _ UngradedAInfinityRightModuleHom.id_map_add_one
-    (fun n hn => N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n hn) fun _ => Or.inl rfl)]
+    (hK _)]
   simp
 
 /-- **The map induced by a chain map of differential modules.** For an `A`-linear map `g` of

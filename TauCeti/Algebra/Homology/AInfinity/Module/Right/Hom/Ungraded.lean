@@ -207,6 +207,22 @@ private theorem strictMap_eq_zero (L : M →ₗ[R] M') {n : ℕ} (hn : n ≠ 0) 
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   rfl
 
+/-- Composing a family of maps after a strict morphism, in the composite terms of a relation,
+leaves only the map of full arity applied after `L`. -/
+private theorem sum_strictMap {N : Type*} [AddCommGroup N] [Module R N] (L : M →ₗ[R] M')
+    (φ : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M' →ₗ[R] N)) (n : ℕ)
+    (a : Fin n → A) (m : M) :
+    ∑ k : Fin (n + 1), φ (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+      (strictMap L k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) =
+        φ n a (L m) := by
+  rw [sum_eq_single 0 (fun k _ hk => by
+    rw [strictMap_eq_zero L (Fin.val_ne_zero_iff.mpr hk), zero_apply,
+      LinearMap.zero_apply, map_zero]) (by simp)]
+  rw [strictMap_apply_of_eq_zero L (Fin.val_zero (n + 1))]
+  simp only [Fin.val_zero, zero_add, Fin.eta]
+  -- The arity `n - 0` is `n` by definition.
+  rfl
+
 variable (Mm Mm') in
 /-- A **strict morphism**: over a ring of characteristic two, a linear map `L` commuting with all
 the operations, `L (m_{n+1}(m, a…)) = m'_{n+1}(L m, a…)`, is a morphism with `f₁ = L` and
@@ -224,16 +240,7 @@ noncomputable def ofLinearMap [CharP R 2] (L : M →ₗ[R] M')
         rw [strictMap_eq_zero L (by have := Fin.val_lt_last hk; omega), zero_apply,
           LinearMap.zero_apply]) (by simp), strictMap_apply_of_eq_zero L (by simp)]
       rfl
-    have h₂ : ∑ k : Fin (n + 1), Mm'.act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
-        (strictMap L k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) =
-          Mm'.act n a (L m) := by
-      rw [sum_eq_single 0 (fun k _ hk => by
-        rw [strictMap_eq_zero L (Fin.val_ne_zero_iff.mpr hk), zero_apply,
-          LinearMap.zero_apply, map_zero]) (by simp)]
-      rw [strictMap_apply_of_eq_zero L (Fin.val_zero (n + 1))]
-      simp only [Fin.val_zero, zero_add, Fin.eta]
-      -- The arity `n - 0` is `n` by definition.
-      rfl
+    have h₂ := sum_strictMap L Mm'.act n a m
     have hdiff : ungradedStasheffDiff (strictMap L) d n a m = 0 := by
       cases n with
       | zero => simp [ungradedStasheffDiff_def]
@@ -278,23 +285,6 @@ theorem id_map_eq_zero [CharP R 2] {n : ℕ} (hn : n ≠ 0) : (id Mm).map n = 0 
 
 /-! ### Sums of morphisms -/
 
-/-- The differential terms of a sum of families of components are the sums of their differential
-terms. -/
-private theorem stasheffDiff_add (φ ψ : (n : ℕ) → MultilinearMap (RingHom.id R)
-    (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffDiff (fun k => φ k + ψ k) d n a m =
-      ungradedStasheffDiff φ d n a m + ungradedStasheffDiff ψ d n a m := by
-  simp [ungradedStasheffDiff_def, sum_add_distrib]
-
-/-- The product terms of a sum of families of components are the sums of their product terms. -/
-private theorem stasheffMul_add (φ ψ : (n : ℕ) → MultilinearMap (RingHom.id R)
-    (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffMul (fun k => φ k + ψ k) n a m =
-      ungradedStasheffMul φ n a m + ungradedStasheffMul ψ n a m := by
-  cases n with
-  | zero => simp
-  | succ n => simp [ungradedStasheffMul_succ, sum_add_distrib]
-
 /-- The **sum** of two morphisms, componentwise: `(f + g)_{n+1} = f_{n+1} + g_{n+1}`. Every term
 of the relations is additive in the components, so the relations of `f + g` are the sums of
 those of `f` and `g`. -/
@@ -303,7 +293,7 @@ instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
     { map := fun n => f.map n + g.map n
       stasheff := fun n a m => by
         convert congrArg₂ (· + ·) (f.stasheff n a m) (g.stasheff n a m) using 1
-        · rw [stasheffDiff_add, stasheffMul_add]
+        · rw [ungradedStasheffDiff_add, ungradedStasheffMul_add]
           simp only [add_apply, LinearMap.add_apply, map_add, sum_add_distrib]
           abel
         · rw [add_zero] }
@@ -341,27 +331,6 @@ structure Homotopy (f g : UngradedAInfinityRightModuleHom Mm Mm') where
 namespace Homotopy
 
 variable [CharP R 2] {f g : UngradedAInfinityRightModuleHom Mm Mm'} (H : Homotopy f g)
-
-private theorem id_map_apply_of_eq_zero {k : ℕ} (hk : k = 0) (b : Fin k → A) (m : M) :
-    (id Mm).map k b m = m := by
-  subst hk
-  rfl
-
-/-- Composing a family of components after the identity morphism, in the composite terms of a
-relation, leaves only the component of full arity. -/
-private theorem sum_map_id_map {N : Type*} [AddCommGroup N] [Module R N]
-    (φ : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N)) (n : ℕ)
-    (a : Fin n → A) (m : M) :
-    ∑ k : Fin (n + 1), φ (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
-      ((id Mm).map k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) =
-        φ n a m := by
-  rw [sum_eq_single 0 (fun k _ hk => by
-    rw [id_map_eq_zero (Fin.val_ne_zero_iff.mpr hk), zero_apply,
-      LinearMap.zero_apply, map_zero]) (by simp),
-    id_map_apply_of_eq_zero (Fin.val_zero (n + 1))]
-  simp only [Fin.val_zero, zero_add, Fin.eta]
-  -- The arity `n - 0` is `n` by definition.
-  rfl
 
 /-- The components `(id_{n+1}, h_{n+1})` of the morphism
 `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.toConeHom`. -/
@@ -405,8 +374,8 @@ noncomputable def toConeHom : UngradedAInfinityRightModuleHom Mm (f + g).cone wh
     · simpa [coneHomMap_apply, Prod.fst_sum] using (id Mm).stasheff n a m
     · simp only [coneHomMap_apply, cone_act_apply, Prod.snd_add, Prod.snd_sum, Prod.snd_zero,
         sum_add_distrib]
-      rw [sum_map_id_map]
-      simp only [add_map, add_apply, LinearMap.add_apply]
+      rw [show (id Mm).map = strictMap LinearMap.id from rfl, sum_strictMap]
+      simp only [add_map, add_apply, LinearMap.add_apply, LinearMap.id_apply]
       have h := congrArg (· + (f.map n a m + g.map n a m)) (H.stasheff n a m)
       simp only [add_self_eq_zero_of_charTwo R] at h
       refine Eq.trans ?_ h
