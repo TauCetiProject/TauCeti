@@ -425,7 +425,7 @@ theorem reduce_mapPath_of_injective {Δ : SerreGraph} (f : Γ.Hom Δ)
     reduce Δ (f.toPrefunctor.mapPath p) = f.toPrefunctor.mapPath (reduce Γ p) := by
   rw [← reduce_mapPath_reduce]
   exact reduce_eq_self_of_isReduced Δ _
-    ((f.isReduced_mapPath_iff Γ hf _).mpr (isReduced_reduce Γ p))
+    (f.isReduced_mapPath (fun _ _ _ h => hf h) _ (isReduced_reduce Γ p))
 
 /-- Opposite directions of a rose petal remain distinct under path homotopy. -/
 theorem rose_not_homotopic_reverse {α : Type*} (a : α) :

@@ -93,7 +93,7 @@ theorem Hom.isCyclicallyReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
     (hf : Function.Injective f.mapE) {a : Γ.V} (p : Γ.Path a a) :
     Path.IsCyclicallyReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsCyclicallyReduced Γ p := by
   rw [Path.isCyclicallyReduced_iff, Path.isCyclicallyReduced_iff, ← Prefunctor.mapPath_comp,
-    Hom.isReduced_mapPath_iff Γ f hf]
+    Hom.isReduced_mapPath_iff Γ f fun _ _ _ h => hf h]
 
 /-- A cyclically reduced closed path can be restarted at any of its darts: the rotated path is
 cyclically reduced, begins with that dart, and traverses the same darts. -/

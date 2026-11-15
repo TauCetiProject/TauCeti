@@ -314,7 +314,7 @@ spanning tree `T'` sends the tree paths of `T` to the tree paths of `T'`. -/
 theorem mapPath_path_of_injective (hf : Function.Injective f.mapE) (a b : Γ.V) :
     f.toPrefunctor.mapPath (T.path a b) =
       T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b) :=
-  T'.eq_path ((f.isReduced_mapPath_iff Γ hf _).mpr (T.isReduced_path a b)) fun _ =>
+  T'.eq_path (f.isReduced_mapPath (fun _ _ _ h => hf h) _ (T.isReduced_path a b)) fun _ =>
     T.mem_of_mem_darts_mapPath_path f T' hT
 
 end Map

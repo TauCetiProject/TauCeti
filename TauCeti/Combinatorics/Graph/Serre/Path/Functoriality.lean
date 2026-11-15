@@ -159,7 +159,8 @@ theorem toPath_map_of_injective (f : Γ.Hom Δ) (hf : Function.Injective f.mapE)
   have h' : f.toPrefunctor.obj v = w := h
   subst h'
   rw [map_apply, toPath_ofPath, Quiver.Path.cast_rfl_rfl]
-  exact Path.reduce_eq_self_of_isReduced Δ _ ((f.isReduced_mapPath_iff Γ hf _).mpr g.isReduced)
+  exact Path.reduce_eq_self_of_isReduced Δ _
+    (f.isReduced_mapPath (fun _ _ _ h => hf h) _ g.isReduced)
 
 /-- A morphism of Serre graphs injective on darts induces an injective homomorphism of reduced
 path groups. -/
