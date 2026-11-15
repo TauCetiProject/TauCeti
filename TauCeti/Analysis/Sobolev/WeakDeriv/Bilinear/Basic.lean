@@ -79,24 +79,11 @@ private theorem hasLineDerivAt_bilin_self_convolution {B : V →L[ℝ] V →L[�
         ((ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) y))
       (2 * (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') x
         ((ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) x)) x v := by
-  set g := ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U with hg_def
+  have hkx := hind.convolution_eq_apply_fderiv_convolution hU hρ hρc hx
+  set g := ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U
   have hgd : HasFDerivAt g (fderiv ℝ g x) x :=
     ((hρc.contDiff_convolution_left _ (hρ.of_le (by simp)) hU :
       ContDiff ℝ 1 g).differentiable one_ne_zero x).hasFDerivAt
-  -- `B ∘ g` is the mollification of `B ∘ U`, so its derivative is the mollification of `U'`.
-  have hBg : (fun y ↦ B (g y)) =
-      (fun y ↦ B (U y)) ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] ρ := by
-    ext1 y
-    rw [convolution_flip, hg_def,
-      B.convolution_lsmul_comp_comm (hρc.convolutionExists_left _ hρ.continuous hU y)]
-  have h₁ : HasLineDerivAt ℝ (fun y ↦ B (g y))
-      ((U' ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] ρ) x) x v := by
-    rw [hBg]
-    exact hind.hasLineDerivAt_convolution_right
-      (fun y ↦ B.integrableAtFilter_comp (hU y)) ρ hρ hρc x hx
-  have hkx : (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') x = B (fderiv ℝ g x v) := by
-    rw [← convolution_flip]
-    exact h₁.unique ((B.hasFDerivAt.comp x hgd).hasLineDerivAt v)
   convert (B.hasFDerivAt_of_bilinear hgd hgd).hasLineDerivAt v using 1
   have hsymm : B (g x) (fderiv ℝ g x v) = B (fderiv ℝ g x v) (g x) := by
     rw [← ContinuousLinearMap.flip_apply B, hB]
@@ -138,8 +125,8 @@ theorem HasWeakLineDerivOn.bilin_self {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.
     HasWeakLineDerivOn μ Ω (fun x ↦ B (u x) (u x)) (fun x ↦ 2 * u' x (u x)) v := by
   have hΩm : NullMeasurableSet (Ω : Set E) μ := Ω.isOpen.measurableSet.nullMeasurableSet
   -- Extend `u` and `u'` by zero; the extensions are `L²` on the whole space.
-  set U : E → V := (Ω : Set E).indicator u with hU_def
-  set U' : E → StrongDual ℝ V := (Ω : Set E).indicator u' with hU'_def
+  set U : E → V := (Ω : Set E).indicator u
+  set U' : E → StrongDual ℝ V := (Ω : Set E).indicator u'
   have hU : MemLp U 2 μ := (memLp_indicator_iff_restrict (f := u) hΩm).2 hu
   have hU' : MemLp U' 2 μ := (memLp_indicator_iff_restrict (f := u') hΩm).2 hu'
   have hUloc : LocallyIntegrable U μ := hU.locallyIntegrable one_le_two

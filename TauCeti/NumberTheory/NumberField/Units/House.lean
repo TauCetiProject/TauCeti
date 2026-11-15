@@ -106,7 +106,7 @@ theorem exists_norm_embedding_le_house_rpow (u : (𝓞 K)ˣ) (hd : 2 ≤ finrank
   obtain ⟨σ₀, -, hσ₀⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty
     (fun σ : K →+* ℂ ↦ ‖σ (u : K)‖₊)
   have hσ₀H : ‖σ₀ u‖ = house (u : K) := by
-    rw [house_eq_sup', hσ₀, coe_nnnorm]
+    rw [house_eq_sup', hσ₀, coe_nnNorm]
   set H := house (u : K)
   have hH : 0 < H := zero_lt_one.trans_le (one_le_house u)
   by_contra! hlt

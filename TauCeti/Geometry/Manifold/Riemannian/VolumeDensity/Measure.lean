@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfCoordinates
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.OpenPos
@@ -46,6 +47,7 @@ Proposition 2.44.
 * `TauCeti.map_addHaar_eq_chartVolumeDensity_inv_smul_volume`: in coordinates which are
   orthonormal for the metric at the chart centre, the coordinate measure is the volume of
   Euclidean space divided by the chart density at the centre.
+* `TauCeti.exists_equiv_map_addHaar_eq_smul_volume`: such coordinates exist at every point.
 -/
 
 public section
@@ -429,5 +431,30 @@ theorem map_addHaar_eq_chartVolumeDensity_inv_smul_volume {F : Type*} [NormedAdd
   change ENNReal.ofReal |d|⁻¹ * ENNReal.ofReal |d| = 1
   rw [← ENNReal.ofReal_mul (by positivity)]
   simp [hd]
+
+omit [MeasurableSpace M] [BorelSpace M] in
+/-- Coordinates at `p` which are orthonormal for the metric at `p`: a continuous linear
+equivalence `L` of the model space with Euclidean space, matching the metric at `p` through an
+isometry `O` of the tangent space, and carrying the coordinate Haar measure to the Euclidean
+volume divided by the chart density at `p`. -/
+theorem exists_equiv_map_addHaar_eq_smul_volume (p : M) :
+    ∃ L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)),
+      (∃ O : TangentSpace I p ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)),
+        ∀ ξ : TangentSpace I p,
+          L ((trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p ξ) = O ξ) ∧
+      @Measure.map E _ _ (WithLp.measurableSpace 2 (Fin (Module.finrank ℝ E) → ℝ)) L
+          (Module.finBasis ℝ E).addHaar =
+        (chartVolumeDensity (I := I) p p)⁻¹.toNNReal • volume := by
+  set e := trivializationAt E (TangentSpace I) p
+  have hp : p ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' p
+  let O : TangentSpace I p ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
+    (stdOrthonormalBasis ℝ (TangentSpace I p)).repr
+  let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) :=
+    (e.continuousLinearEquivAt ℝ p hp).symm.trans O.toContinuousLinearEquiv
+  have hLapp (w : E) : L w = O (e.symmL ℝ p w) := by
+    simp [L, e.symm_continuousLinearEquivAt_eq hp]
+  refine ⟨L, ⟨O, fun ξ ↦ by rw [hLapp, e.symmL_continuousLinearMapAt hp]⟩, ?_⟩
+  exact map_addHaar_eq_chartVolumeDensity_inv_smul_volume p L fun v w ↦ by
+    rw [hLapp, hLapp, O.inner_map_map]
 
 end TauCeti

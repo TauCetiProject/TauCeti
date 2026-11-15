@@ -720,7 +720,7 @@ private theorem card_monodromyOrbit_add_orbitCount_le {m : ℕ} (R : PDCode m) (
 /-- **Resolving a crossing keeps a code planar.** Smoothing one crossing of a planar PD-code, by
 either of its two smoothings, gives a planar code. -/
 theorem IsPlanar.resolveCrossing (hD : D.IsPlanar) : (D.resolveCrossing c t).IsPlanar := by
-  obtain ⟨p, q, hpq, hcyc, hS⟩ := D.exists_localSmoothing_eq_swap_mul_finRotate c t
+  obtain ⟨p, q, _, hcyc, hS⟩ := D.exists_localSmoothing_eq_swap_mul_finRotate c t
   have hSS (k : Fin 4) : D.localSmoothing c t (D.localSmoothing c t k) = k :=
     D.localSmoothing_apply_apply c t k
   -- Smooth the vertex `c` of the underlying ribbon graph.

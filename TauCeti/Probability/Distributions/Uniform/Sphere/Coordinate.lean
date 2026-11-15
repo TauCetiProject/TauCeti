@@ -110,9 +110,8 @@ theorem quantile_map_eval_uniformSphereMeasure (i : ι) {u : ℝ} (hu : u ∈ Io
 theorem tendsto_quantile_map_eval_uniformSphereMeasure_nhdsGT_zero (i : ι) :
     Tendsto ((uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun x ↦ x.val i)).quantile
       (𝓝[>] 0) (𝓝 (-1)) := by
-  have ha : 0 < ((Fintype.card ι : ℝ) - 1) / 2 :=
-    div_pos (sub_pos.mpr (by exact_mod_cast Fintype.one_lt_card (α := ι))) two_pos
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ((Fintype.card ι - 1) / 2)
+    ((Fintype.card ι - 1) / 2)).const_mul 2).const_add (-1)
   simp only [mul_zero, add_zero] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
@@ -170,8 +169,6 @@ theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v :
     (uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫ ^ 2) =
       (betaMeasure (1 / 2) (((Module.finrank ℝ E : ℝ) - 1) / 2)).map
         (fun x ↦ ‖v‖ ^ 2 * x) := by
-  have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 :=
-    div_pos (sub_pos.mpr (by exact_mod_cast (lt_of_lt_of_le (by norm_num : 1 < 2) hd))) two_pos
   calc
     _ = ((uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫)).map
         (fun y ↦ y ^ 2) := by

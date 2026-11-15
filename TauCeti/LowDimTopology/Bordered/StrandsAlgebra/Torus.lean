@@ -26,6 +26,10 @@ otherwise: `ρ₁ ρ₂ = ρ₁₂` but `ρ₂ ρ₁ = 0`, since `ρ₂` ends at
 single strand has no crossing, so the differential vanishes on the torus algebra. These are
 checked below.
 
+As elements of the summand `matchedSummand R genusOne.pair 1`, the idempotents are
+`TauCeti.StrandsAlgebra.oneStrandIdem R genusOne.pair p` and the chords are
+`TauCeti.StrandsAlgebra.oneStrandChord R genusOne.pair h`.
+
 ## References
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.

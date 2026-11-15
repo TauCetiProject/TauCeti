@@ -45,21 +45,21 @@ theorem cofg_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] [Com
     (T K : E →L[𝕜] F) (hT : Function.Surjective T) (hK : IsCompactOperator K) :
     (T + K).range.CoFG := by
   let R := T.nonlinearRightInverseOfSurjective (LinearMap.range_eq_top.2 hT)
-  have hR : 0 < (R.nnnorm : ℝ) := by
-    exact_mod_cast T.nonlinearRightInverseOfSurjective_nnnorm_pos
+  have hR : 0 < (R.nnNorm : ℝ) := by
+    exact_mod_cast T.nonlinearRightInverseOfSurjective_nnNorm_pos
       (LinearMap.range_eq_top.2 hT)
-  let a : ℝ := ((R.nnnorm : ℝ) * 2)⁻¹
+  let a : ℝ := ((R.nnNorm : ℝ) * 2)⁻¹
   have ha : 0 < a := inv_pos.2 (mul_pos hR (by norm_num))
   obtain ⟨W, hW, hsmall⟩ := exists_finiteDimensional_quotient_norm_le K hK (half_pos ha)
   have : FiniteDimensional 𝕜 W := hW
-  have : IsClosed (W : Set F) := W.closed_of_finiteDimensional
+  have : IsClosed (W : Set F) := W.isClosed_of_finiteDimensional
   let A := W.mkQL.comp T
   let B := W.mkQL.comp (T + K)
   let Q : A.NonlinearRightInverse := R.comp W.quotientRightInverse
   have hd : B - A = W.mkQL.comp K := by
     ext x
     simp [A, B]
-  have hp : ‖B - A‖ < (Q.nnnorm : ℝ)⁻¹ := by
+  have hp : ‖B - A‖ < (Q.nnNorm : ℝ)⁻¹ := by
     rw [hd]
     simpa only [Q, NonlinearRightInverse.comp_nnnorm, Submodule.quotientRightInverse_nnnorm,
       NNReal.coe_mul, NNReal.coe_ofNat, a] using

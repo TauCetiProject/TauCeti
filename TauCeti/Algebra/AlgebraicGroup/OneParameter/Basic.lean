@@ -6,20 +6,22 @@ Authors: pi
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
-public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+import TauCeti.Algebra.Group.ForwardDiff
 
 /-!
 # Uniqueness of polynomial one-parameter subgroups
 
-Over a characteristic-zero domain, a polynomial one-parameter submonoid of an affine monoid
-is determined by its value at parameter one. Indeed, its values at positive natural-number
-parameters are powers of that point, and polynomial functions agreeing at these parameters agree
-identically. The conclusion is equality of coordinate maps, not just agreement on rational
-points, so it also identifies their evaluations in arbitrary, possibly nonreduced, algebras.
+Over a ring without additive torsion (for example a `ℚ`-algebra), a polynomial
+one-parameter submonoid of an affine monoid is determined by its value at parameter one.
+Indeed, its values at positive natural-number parameters are powers of that point, and polynomial
+functions agreeing at these parameters agree identically. The conclusion is equality of
+coordinate maps, not just agreement on rational points, so it also identifies their evaluations
+in arbitrary, possibly nonreduced, algebras.
 
 The additive parameter law is stated on base-valued points. No finite-type, smoothness or
-connectedness hypothesis on the affine monoid is needed. The characteristic-zero and domain
-hypotheses are essential for the polynomial identity argument.
+connectedness hypothesis on the affine monoid is needed. Absence of additive torsion is what
+makes the polynomial identity argument work.
 
 ## References
 
@@ -46,9 +48,9 @@ theorem aeval_natCast_add_one_comp_of_add (γ : H →ₐ[R] R[X])
   | succ n ih =>
     rw [Nat.cast_succ, hγ, ih, ← pow_succ]
 
-/-- Polynomial one-parameter submonoids of an affine monoid over a characteristic-zero domain
+/-- Polynomial one-parameter submonoids of an affine monoid over a ring without additive torsion
 are determined by their value at one. Equality here is equality of regular coordinate maps. -/
-theorem eq_of_aeval_one_comp_eq [IsDomain R] [CharZero R]
+theorem eq_of_aeval_one_comp_eq [HasUniqueDiv R]
     (γ δ : H →ₐ[R] R[X])
     (hγ : ∀ s t : R, toConv ((aeval (s + t)).comp γ) =
       toConv ((aeval s).comp γ) * toConv ((aeval t).comp γ))
@@ -57,15 +59,19 @@ theorem eq_of_aeval_one_comp_eq [IsDomain R] [CharZero R]
     (h : (aeval (1 : R)).comp γ = (aeval (1 : R)).comp δ) : γ = δ := by
   apply AlgHom.ext
   intro x
-  apply Polynomial.eq_of_infinite_eval_eq
-  apply (Set.infinite_range_of_injective
-    ((Nat.cast_injective (R := R)).comp Nat.succ_injective)).mono
-  rintro _ ⟨n, rfl⟩
-  have hn : (aeval ((n + 1 : ℕ) : R)).comp γ =
-      (aeval ((n + 1 : ℕ) : R)).comp δ := by
-    apply toConv_injective
-    rw [aeval_natCast_add_one_comp_of_add γ hγ,
-      aeval_natCast_add_one_comp_of_add δ hδ, h]
-  simpa using AlgHom.congr_fun hn x
+  have hp : (γ x - δ x).comp (X + 1) = 0 := by
+    refine Polynomial.eq_zero_of_eval_natCast_eq_zero _ fun m _ ↦ ?_
+    have hn : (aeval ((m + 1 : ℕ) : R)).comp γ = (aeval ((m + 1 : ℕ) : R)).comp δ := by
+      apply toConv_injective
+      rw [aeval_natCast_add_one_comp_of_add γ hγ,
+        aeval_natCast_add_one_comp_of_add δ hδ, h]
+    have := AlgHom.congr_fun hn x
+    simpa [eval_comp, aeval_def, sub_eq_zero] using this
+  rw [← sub_eq_zero]
+  generalize γ x - δ x = q at hp ⊢
+  have h0 : q = (q.comp (X + 1)).comp (X - 1) := by
+    rw [Polynomial.comp_assoc]; simp
+  rw [hp, zero_comp] at h0
+  exact h0
 
 end AlgHom

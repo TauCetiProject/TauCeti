@@ -204,7 +204,7 @@ theorem exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt
   obtain ⟨δ₂, hδ₂, K₂, k, hk, hk₀, hkpts, hkexh⟩ :=
     exists_splitQuadraticFlow_splitExitTime_eq_graph hχ hχ' hχ₀ hy₀ hε hV
   -- Choose the gluing radius inside both graph domains and below the contraction threshold.
-  set r₀ : ℝ := min 1 (min (min δ₁ δ₂ / ε) (1 / ((K₂ : ℝ) * K₁ + 1))) with hr₀def
+  set r₀ : ℝ := min 1 (min (min δ₁ δ₂ / ε) (1 / ((K₂ : ℝ) * K₁ + 1)))
   have hK₀ : (0 : ℝ) ≤ K₂ * K₁ := by positivity
   have hr₀ : 0 < r₀ := lt_min one_pos (lt_min (div_pos (lt_min hδ₁ hδ₂) hε) (by positivity))
   have hr₀₁ : r₀ ≤ 1 := min_le_left _ _

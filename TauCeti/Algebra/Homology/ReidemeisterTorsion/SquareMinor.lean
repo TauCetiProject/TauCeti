@@ -222,7 +222,7 @@ theorem reidemeisterTorsion_eq_finprod_det_torsionMinor (hfin : {i | n i ≠ 0}.
     · have : Fin.cast hn' (splitEquiv hn (j + 1) (.inr m)) =
           Fin.natAdd (q (j + 1)) (Fin.cast (hpq j) m) := Fin.ext (by simp [splitEquiv_inr])
       simp [this, minorFamily, minorLift]
-  rw [torsionBracket_eq_det_append c _ _ _ _ _ hn', hfam, ← Basis.det_reindex, det_minorFamily]
+  rw [torsionBracket_eq_det_append c _ _ _ _ _ _ _ hn', hfam, ← Basis.det_reindex, det_minorFamily]
   simp only [Int.negOnePow_succ, neg_neg]
 
 end HomologicalComplex

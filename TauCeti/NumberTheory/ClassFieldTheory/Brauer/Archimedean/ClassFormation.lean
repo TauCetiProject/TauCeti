@@ -553,7 +553,7 @@ theorem fieldAbsoluteGaloisGroup_apply_eq_inv
     refine (sq_eq_sq_iff_eq_or_eq_neg.mp h2).resolve_left fun h ↦ ?_
     obtain ⟨c, hc⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq w hσ h
     exact hnsq c (ι.injective (by rw [map_pow, hc, hi, map_neg, map_one]))
-  have hi0 : i ≠ 0 := by
+  have _ : i ≠ 0 := by
     rintro rfl
     norm_num at hi
   -- The real and imaginary parts of `z` are fixed by `σ`, so they lie in `K_w`.

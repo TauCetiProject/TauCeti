@@ -34,12 +34,13 @@ namespace TauCeti.Probability.IsMarkovChain
 
 variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
-  [IsFiniteMeasure μ] [IsMarkovKernel κ] {τ : Ω → WithTop ℕ}
+  [IsMarkovKernel κ] {τ : Ω → WithTop ℕ}
 
 private lemma integrable_comp_stoppedValue_add (h : IsMarkovChain ℱ X κ μ)
     (hτ : IsStoppingTime ℱ τ) (k : ℕ) {f : S → ℝ} (hf : Measurable f)
     (hb : ∃ C : ℝ, ∀ x, ‖f x‖ ≤ C) :
     Integrable (fun ω => f (stoppedValue (fun n => X (n + k)) τ ω)) μ := by
+  have := h.isFiniteMeasure
   obtain ⟨C, hC⟩ := hb
   exact ⟨(hf.comp (measurable_stoppedValue_of_countable
     (fun n => h.adapted.measurable) hτ.measurable')).aestronglyMeasurable,
@@ -53,6 +54,7 @@ theorem condExp_stoppedValue_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppi
         hτ.measurableSpace] =ᵐ[μ]
       {ω | τ ω ≠ ⊤}.indicator
         (fun ω => ∫ y, f y ∂(κ ^ k) (stoppedValue X τ ω)) := by
+  have := h.isFiniteMeasure
   obtain ⟨C, hC⟩ := hb
   let A := {ω | τ ω ≠ ⊤}
   let Z := fun ω => f (stoppedValue (fun n => X (n + k)) τ ω)
@@ -127,6 +129,7 @@ theorem setIntegral_stoppedValue_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsSt
     {A : Set Ω} (hA : MeasurableSet[hτ.measurableSpace] A) :
     ∫ ω in A ∩ {ω | τ ω ≠ ⊤}, f (stoppedValue (fun n => X (n + k)) τ ω) ∂μ =
       ∫ ω in A ∩ {ω | τ ω ≠ ⊤}, ∫ y, f y ∂(κ ^ k) (stoppedValue X τ ω) ∂μ := by
+  have := h.isFiniteMeasure
   have hfin : MeasurableSet {ω | τ ω ≠ ⊤} := hτ.measurableSet_eq_top.compl
   have hi := h.integrable_comp_stoppedValue_add hτ k hf hb
   rw [← setIntegral_indicator hfin, ← setIntegral_indicator hfin]

@@ -37,8 +37,9 @@ Morse index is the negative index of inertia of the critical Hessian.
 ## Main declarations
 
 * `TauCeti.criticalHessian`: the Hessian at a point, as a bilinear form on its tangent space.
-* `TauCeti.fderiv_fderiv_comp_chartAt_symm`: on a manifold modelled on a real normed space, the
-  second derivative in the preferred chart is the critical Hessian.
+* `TauCeti.criticalHessian_apply_eq_fderiv_fderiv` and `TauCeti.fderiv_fderiv_comp_chartAt_symm`:
+  the critical Hessian evaluated in the preferred chart via model-space casts (and on a manifold
+  modelled on a real normed space).
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
@@ -53,6 +54,7 @@ Morse index is the negative index of inertia of the critical Hessian.
   `C²` map between boundaryless manifolds.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
   second derivative of `q` on the second components.
+  Its kernel is described by `TauCeti.criticalHessian_comp_snd_apply_eq_zero_iff`.
 * `TauCeti.criticalHessian_mfderiv_eq_zero` and `TauCeti.range_mfderiv_le_radical_criticalHessian`:
   tangent vectors to a family of critical points lie in the kernel of the critical Hessian, which is
   the radical of its quadratic form (`TauCeti.radical_toQuadraticMap_toBilinForm_criticalHessian`).
@@ -114,17 +116,26 @@ theorem criticalHessian_def :
     criticalHessian I f x = fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x) :=
   (rfl)
 
+/-- Evaluating the critical Hessian on tangent vectors evaluates the second derivative of the
+preferred coordinate expression on their model-space casts. -/
+theorem criticalHessian_apply_eq_fderiv_fderiv (v w : TangentSpace I x) :
+    criticalHessian I f x v w =
+      fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
+        (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w) := by
+  rw [criticalHessian_def]
+  -- `tangentSpaceCastModel I x` is the identity on the model space `E`.
+  rfl
+
 /-- On a manifold modelled on a real normed space, the second derivative in the preferred chart is
 the critical Hessian. -/
 theorem fderiv_fderiv_comp_chartAt_symm {N : Type*} [TopologicalSpace N] [ChartedSpace E N]
     {u : N → ℝ} {y : N} (v w : E) :
     fderiv ℝ (fderiv ℝ (u ∘ (chartAt E y).symm)) (chartAt E y y) v w =
       criticalHessian 𝓘(ℝ, E) u y v w := by
-  have hext : ((extChartAt 𝓘(ℝ, E) y).symm : E → N) = (chartAt E y).symm := by ext; simp
-  have hext' : extChartAt 𝓘(ℝ, E) y y = chartAt E y y := by simp
   have h : fderiv ℝ (fderiv ℝ (u ∘ (chartAt E y).symm)) (chartAt E y y) =
       criticalHessian 𝓘(ℝ, E) u y := by
-    rw [criticalHessian_def, hext, hext']
+    rw [criticalHessian_def, TauCeti.extChartAt_model_symm_eq_chartAt_symm,
+      TauCeti.extChartAt_model_apply_eq_chartAt_apply]
   -- `criticalHessian` is a form on `TangentSpace 𝓘(ℝ, E) y`, which is `E` by definition.
   exact congr($h v w)
 
@@ -410,6 +421,16 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
   exact (congrArg (fderiv ℝ (fderiv ℝ q) y v.2 w.2 + ·) (map_zero (fderiv ℝ q y))).trans
     (add_zero _)
 
+/-- A tangent vector at `(x, y)` lies in the kernel of the critical Hessian of `q ∘ Prod.snd`
+exactly when its second component lies in the kernel of the second derivative of `q` at `y`. -/
+theorem criticalHessian_comp_snd_apply_eq_zero_iff {q : V → ℝ} {y : V} (hq : ContDiffAt ℝ 2 q y)
+    (x : M) (v : TangentSpace (I.prod 𝓘(ℝ, V)) (x, y)) :
+    criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, y) v = 0 ↔
+      fderiv ℝ (fderiv ℝ q) y v.2 = 0 := by
+  refine ⟨fun hv ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun hv ↦ ContinuousLinearMap.ext fun u ↦ ?_⟩
+  · exact (criticalHessian_comp_snd_apply hq x v ((0 : E), w)).symm.trans congr($hv (0, w))
+  · exact (criticalHessian_comp_snd_apply hq x v u).trans congr($hv u.2)
+
 end Prod
 
 /-! ### Boundaryless manifolds: symmetry and chart independence -/
@@ -520,19 +541,13 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   have hg : ContDiffAt ℝ 2 g (ψ x) := hf.contDiffAt_comp_extChartAt_symm
   have hDg : DifferentiableAt ℝ (fderiv ℝ g) (ψ x) :=
     (hg.fderiv_right (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
-  have hV : DifferentiableAt ℝ V (ψ x) := by
-    have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-      (hY.mdifferentiableWithinAt (s := univ))
-    have h' : DifferentiableWithinAt ℝ V univ (ψ x) := by
-      simpa only [V, preimage_univ, univ_inter,
-        ModelWithCorners.Boundaryless.range_eq_univ] using h
-    exact h'.differentiableAt univ_mem
+  have hV : DifferentiableAt ℝ V (ψ x) := hY.differentiableAt_mpullbackWithin_extChartAt_symm
   -- The first-order chain rule identifies the coordinate directional derivative with `df(Y)`.
   have heq : (fun z ↦ fderiv ℝ g z (V z)) =ᶠ[𝓝 (ψ x)]
       (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
     simpa only [g, V, ψ, ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ,
       fderivWithin_univ] using
-      eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
+      eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) (f := f)
   -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
   have hzero : fderiv ℝ g (ψ x) = 0 := by
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]

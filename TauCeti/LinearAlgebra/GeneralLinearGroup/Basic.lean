@@ -16,6 +16,8 @@ Supplements to `Mathlib.LinearAlgebra.GeneralLinearGroup.Basic`.
 
 * `LinearMap.GeneralLinearGroup.val_ofLinearEquiv`: the endomorphism underlying
   `ofLinearEquiv f` is `f`.
+* `LinearMap.GeneralLinearGroup.ofLinearEquiv_one`: `ofLinearEquiv` sends the identity equivalence
+  to the identity.
 -/
 
 public section
@@ -30,5 +32,10 @@ equivalence. Mathlib's `coe_ofLinearEquiv` records this only for the underlying 
 theorem val_ofLinearEquiv (f : M ≃ₗ[R] M) :
     ((ofLinearEquiv f : GeneralLinearGroup R M) : Module.End R M) = f.toLinearMap :=
   LinearMap.ext fun x ↦ congrFun (coe_ofLinearEquiv f) x
+
+/-- The general-linear-group element of the identity equivalence is the identity. -/
+@[simp]
+theorem ofLinearEquiv_one : ofLinearEquiv (1 : M ≃ₗ[R] M) = (1 : GeneralLinearGroup R M) :=
+  Units.ext (LinearMap.ext fun _ ↦ rfl)
 
 end LinearMap.GeneralLinearGroup

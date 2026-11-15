@@ -212,7 +212,7 @@ example (S : Finset V(oneLoop)) :
   classical
   refine (oneLoopOrientation.card_internalEdges_le_sum_indegree S).trans ?_
   apply Finset.sum_le_sum
-  intro v hv
+  intro v _
   have hvl : v = loopVertex := Subsingleton.elim _ _
   norm_num [hvl, excessiveLoopIndegree, oneLoopOrientation_indegree]
 

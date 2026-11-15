@@ -43,7 +43,7 @@ set of diameter `d` lies in the closed ball of radius `d / 2` about its center o
 (`MeasureTheory.Measure.exists_subset_closedBall_diam_div_two_of_addHaar_ge`), a containment
 that fails for general sets of diameter `d`, such as equilateral triangles.
 
-For a null-measurable bounded set, equality holds exactly when the set agrees a.e. with a
+For a null-measurable set, equality holds exactly when the set agrees a.e. with a
 closed ball of radius `diam s / 2`
 (`MeasureTheory.Measure.addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_ae_eq`). The
 radius is tied to the diameter of `s` itself: a null modification can enlarge the diameter
@@ -55,8 +55,7 @@ set is a closed ball of radius `diam s / 2`
 ## References
 
 * R. J. Gardner, *The Brunn–Minkowski inequality*, Bull. Amer. Math. Soc. **39** (2002),
-  355–405, for the Brunn–Minkowski inequality and the difference-body argument
-  deducing the isodiametric inequality from it.
+  355–405, for the Brunn–Minkowski inequality.
 * R. Schneider, *Convex Bodies: The Brunn–Minkowski Theory*, 2nd ed., Cambridge University
   Press, 2014, Theorem 7.1.1, for the equality case of Brunn–Minkowski for convex bodies.
 -/
@@ -89,9 +88,8 @@ theorem addHaar_le_addHaar_closedBall_diam_div_two {s : Set E} (hs : Bornology.I
   have hK : NullMeasurableSet (closure s) volume :=
     isClosed_closure.measurableSet.nullMeasurableSet
   have hp : 0 < (Module.finrank ℝ E : ℝ)⁻¹ := by positivity
-  have hBM := volume_rpow_add_volume_rpow_le hn hne.closure.smul_set
-    (Measure.NullMeasurableSet.const_smul hK (1 / 2 : ℝ)) hne.closure.smul_set
-    (Measure.NullMeasurableSet.const_smul hK (-(1 / 2) : ℝ))
+  have hBM := volume_rpow_add_volume_rpow_le hn (hne.closure.smul_set (a := (1 / 2 : ℝ)))
+    hne.closure.smul_set (Measure.NullMeasurableSet.const_smul hK (-(1 / 2) : ℝ))
   have hhalf : |(1 / 2 : ℝ)| + |-(1 / 2 : ℝ)| = 1 := by norm_num
   rw [volume_smul_rpow hn, volume_smul_rpow hn, ← add_mul,
     ← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _), hhalf, ENNReal.ofReal_one,
@@ -200,17 +198,23 @@ theorem exists_subset_closedBall_diam_div_two_of_addHaar_ge {s : Set E}
   -- Hence `H` is symmetric about `-(1 / 2) • v` and lies in the ball of radius `diam s / 2`.
   exact ⟨_, hsH.trans (hHd ▸ subset_closedBall_diam_div_two_of_neg_eq_vadd hHc.isBounded hv)⟩
 
-/-- **Equality in the isodiametric inequality, a.e. form.** A bounded null-measurable set `s`
-has the `μ`-measure of a closed ball of radius `diam s / 2`, for an additive Haar measure `μ`,
-exactly when it agrees a.e. with such a ball. -/
+/-- **Equality in the isodiametric inequality, a.e. form.** A null-measurable set `s` has the
+`μ`-measure of a closed ball of radius `diam s / 2`, for an additive Haar measure `μ`, exactly when
+it agrees a.e. with such a ball. For an unbounded set `diam s = 0`, and both sides say that `s` is
+`μ`-null. -/
 theorem addHaar_eq_addHaar_closedBall_diam_div_two_iff_exists_ae_eq {s : Set E}
-    (hs : Bornology.IsBounded s) (hsm : NullMeasurableSet s μ) (x : E) :
+    (hsm : NullMeasurableSet s μ) (x : E) :
     μ s = μ (closedBall x (diam s / 2)) ↔ ∃ c, s =ᵐ[μ] closedBall c (diam s / 2) := by
-  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_addHaar_ge μ hs h.ge
-    exact ⟨c, μ.ae_eq_closedBall_of_subset_of_measure_eq hsm hc h⟩
-  · rw [measure_congr hc, Measure.addHaar_closedBall_center μ c,
-      Measure.addHaar_closedBall_center μ x]
+  by_cases hs : Bornology.IsBounded s
+  · refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
+    · obtain ⟨c, hc⟩ := exists_subset_closedBall_diam_div_two_of_addHaar_ge μ hs h.ge
+      exact ⟨c, μ.ae_eq_closedBall_of_subset_of_measure_eq hsm hc h⟩
+    · rw [measure_congr hc, Measure.addHaar_closedBall_center μ c,
+        Measure.addHaar_closedBall_center μ x]
+  · have : Nontrivial E := not_subsingleton_iff_nontrivial.1 fun h ↦ hs (Bornology.IsBounded.all s)
+    simp_rw [diam_eq_zero_of_unbounded hs, zero_div, closedBall_zero, measure_singleton]
+    exact ⟨fun h0 ↦ ⟨x, (ae_eq_empty.2 h0).trans (ae_eq_empty.2 (measure_singleton x)).symm⟩,
+      fun ⟨c, hc⟩ ↦ by rw [measure_congr hc, measure_singleton]⟩
 
 /-- **Equality in the isodiametric inequality for closed sets.** A nonempty closed bounded set `s`,
 for instance a convex body, has the `μ`-measure of a closed ball of radius `diam s / 2`, for an

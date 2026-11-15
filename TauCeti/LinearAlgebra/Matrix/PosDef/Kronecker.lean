@@ -55,7 +55,7 @@ theorem finsupp_sum_one_kronecker [NonAssocSemiring R] [Star R] [DecidableEq m]
   rw [← Finsupp.uncurry_curry x]
   simp only [Finsupp.sum_uncurry_index, Finsupp.curry_uncurry]
   refine Finsupp.sum_congr fun i hi => ?_
-  refine Finsupp.sum_congr fun a ha => ?_
+  refine Finsupp.sum_congr fun a _ => ?_
   simp [Matrix.one_apply, mul_ite, ite_mul, Finsupp.sum, Finset.sum_ite_irrel,
     -Finsupp.support_curry, Finsupp.mem_support_iff.mp hi]
 

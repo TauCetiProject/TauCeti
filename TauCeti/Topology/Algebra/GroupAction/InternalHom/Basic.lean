@@ -120,10 +120,11 @@ which nothing here needs to be exposed. The parenthesized form elaborates the sa
 ordinary term, without that check.
 
 Continuity in the group variable (`continuous_homAction_apply`) needs only that `φ` itself be
-continuous, the two actions occurring in `g • φ (g⁻¹ • m)` being continuous by hypothesis, and
-`isOpen_setOfPred_homAction_eq_self` inherits that hypothesis; the discrete source of the intended
-setting enters only where it is discharged, in the `ContinuousSMul` instance, by
-`continuous_of_discreteTopology`.
+continuous, the two actions occurring in `g • φ (g⁻¹ • m)` being continuous by hypothesis, together
+with continuity of inversion. `isOpen_setOfPred_homAction_eq_self` does not need continuity of
+inversion, because `g` fixes `φ` exactly when `φ (g • m) = g • φ m` for every `m`; the discrete
+source of the intended setting enters only where `Continuous φ` is discharged, in the
+`ContinuousSMul` instance, by `continuous_of_discreteTopology`.
 
 `Representation.linHom` is the same conjugation construction for `k`-linear maps `V →ₗ[k] W` of
 bundled representations. It is not used as the definition here for two reasons. Its carrier is
@@ -136,18 +137,19 @@ the two constructions do agree, transported along `AddMonoidHom.toIntLinearMap`;
 not recorded here, because it would pull `Mathlib.RepresentationTheory.Basic` — and with it the
 tensor, matrix and dual stack — into a file the whole continuous-cohomology development imports.
 
-Mathlib puts no topology on `M →+ N`. Discreteness of the internal hom enters here through the
-discreteness of the ambient function space `M → N`, which is what
-`isOpen_setOfPred_homAction_eq_self` rests on. `InternalHom G M N` carries the discrete topology by
-definition, with no hypothesis on `M` or `N`: that is the intended topology in the discrete setting
-this file is written for, namely finite discrete `M` and discrete `N`, which is also the setting in
-which the action is proved continuous below. Those hypotheses are sufficient for that continuity,
-not necessary — if `G` acts trivially on both `M` and `N` then it acts trivially on `M →+ N`, so
-the action is continuous for an infinite `M` too — and it is sufficiency that is established here.
-(A trivial action on `M` alone does not suffice: the stabilizer of `φ` is then the intersection of
-the stabilizers of the values `φ m`, which for infinitely many `m` need not be open.) For infinite
-`M` the internal hom in the category of discrete `G`-modules is the sub-object of homomorphisms
-with open stabilizer, which is not `InternalHom G M N`; nothing here claims otherwise.
+Mathlib puts no topology on `M →+ N`. `InternalHom G M N` carries the discrete topology by
+definition, with no hypothesis on `M` or `N`; for finite `M` and discrete `N`, the stabilizer of
+each continuous `φ` is then open (`isOpen_setOfPred_homAction_eq_self`), a finite intersection of
+open sets, which gives continuity of the action. The discrete topology is the intended topology in
+the discrete setting this file is written for, namely finite discrete `M` and discrete `N`, which
+is also the setting in which the action is proved continuous below. Those hypotheses are
+sufficient for that continuity, not necessary — if `G` acts trivially on both `M` and `N` then it
+acts trivially on `M →+ N`, so the action is continuous for an infinite `M` too — and it is
+sufficiency that is established here. (A trivial action on `M` alone does not suffice: the
+stabilizer of `φ` is then the intersection of the stabilizers of the values `φ m`, which for
+infinitely many `m` need not be open.) For infinite `M` the internal hom in the category of
+discrete `G`-modules is the sub-object of homomorphisms with open stabilizer, which is not
+`InternalHom G M N`; nothing here claims otherwise.
 -/
 
 public section
@@ -281,19 +283,23 @@ theorem continuous_homAction_coe {φ : M →+ N} (hφ : Continuous φ) :
     Continuous fun g : G => ((homAction g φ : M →+ N) : M → N) :=
   continuous_pi fun m => continuous_homAction_apply hφ m
 
-/-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open.
-Discreteness enters through the ambient function space `M → N`; as for the two continuity lemmas
-above, the source only has to be discrete where `Continuous φ` is discharged. This is what the
+omit [ContinuousInv G] in
+/-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open,
+without any continuity of inversion on `G`. As for the two continuity lemmas above, the source only
+has to be discrete where `Continuous φ` is discharged. This is what the
 `ContinuousSMul G (InternalHom G M N)` instance below rests on, through
 `continuousSMul_iff_stabilizer_isOpen`. -/
 theorem isOpen_setOfPred_homAction_eq_self [Finite M] [DiscreteTopology N] {φ : M →+ N}
     (hφ : Continuous φ) : IsOpen {g : G | homAction g φ = φ} := by
-  have hset : {g : G | homAction g φ = φ}
-      = (fun g : G => ((homAction g φ : M →+ N) : M → N)) ⁻¹' {(φ : M → N)} := by
+  -- By `homAction_eq_self_iff` the set is the finite intersection of the sets where the continuous
+  -- maps `g ↦ φ (g • m)` and `g ↦ g • φ m` into the discrete `N` agree.
+  have hset : {g : G | homAction g φ = φ} = ⋂ m : M, {g : G | φ (g • m) = g • φ m} := by
     ext g
-    simp [DFunLike.coe_fn_eq]
+    simp [homAction_eq_self_iff]
   rw [hset]
-  exact (continuous_homAction_coe hφ).isOpen_preimage _ (isOpen_discrete _)
+  refine isOpen_iInter_of_finite fun m ↦ ?_
+  exact (isOpen_discrete {p : N × N | p.1 = p.2}).preimage
+    ((hφ.comp (continuous_id.smul continuous_const)).prodMk (continuous_id.smul continuous_const))
 
 end Topology
 

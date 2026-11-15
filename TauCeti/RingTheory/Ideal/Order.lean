@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Local order of an ideal
@@ -148,6 +149,17 @@ theorem localOrder_eq_top_iff_eq_bot [IsNoetherianRing R] (I : Ideal R) :
     Ideal.iInf_pow_eq_bot_of_isLocalRing _ (maximalIdeal.isMaximal R).ne_top, le_bot_iff]
 
 end Local
+
+/-- A ring equivalence between local rings preserves ideal order. -/
+@[simp]
+theorem localOrder_map_equiv {R S : Type*} [CommRing R] [CommRing S]
+    [IsLocalRing R] [IsLocalRing S] (I : Ideal R) (e : R ≃+* S) :
+    (I.map e).localOrder = I.localOrder := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  intro n
+  rw [natCast_le_localOrder_iff, natCast_le_localOrder_iff,
+    ← IsLocalRing.map_ringEquiv_maximalIdeal e, ← Ideal.map_pow,
+    Ideal.map_le_iff_le_comap, Ideal.comap_map_of_bijective _ e.bijective]
 
 section AtPrime
 
