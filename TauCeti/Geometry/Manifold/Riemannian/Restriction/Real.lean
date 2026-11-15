@@ -77,28 +77,25 @@ theorem hessian_restrictOpenTangentSpace_real_eq_mul_deriv_deriv
   let : RiemannianBundle (fun r : U ↦ TangentSpace 𝓘(ℝ) r) :=
     ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
   let e₁ : TangentSpace 𝓘(ℝ) x := (tangentSpaceCastModel 𝓘(ℝ) x).symm 1
-  have hu (u : TangentSpace 𝓘(ℝ) x) : u = tangentSpaceCastModel 𝓘(ℝ) x u • e₁ := by
-    apply (tangentSpaceCastModel 𝓘(ℝ) x).injective
-    simp [e₁]
+  have hu (u : TangentSpace 𝓘(ℝ) x) : u = tangentSpaceCastModel 𝓘(ℝ) x u • e₁ :=
+    (tangentSpaceCastModel 𝓘(ℝ) x).injective (by simp [e₁])
   have he₁ : inner ℝ e₁ e₁ = (1 : ℝ) := by
     change (g.restrictOpenTangentSpace U).inner x e₁ e₁ = 1
     rw [inner_restrictOpenTangentSpace_real]
     simp [e₁]
   let b := stdOrthonormalBasis ℝ (TangentSpace 𝓘(ℝ) x)
-  have hb (i) : tangentSpaceCastModel 𝓘(ℝ) x (b i) ^ 2 = 1 := by
-    have hi := b.inner_eq_one i
-    rw [hu (b i), real_inner_smul_left, real_inner_smul_right, he₁] at hi
-    nlinarith
-  have hlap := laplaceBeltrami_eq_sum_hessian 𝓘(ℝ) (fun r : U ↦ f r) x b
-  have hsum : (∑ i, hessian 𝓘(ℝ) (fun r : U ↦ f r) x (b i) (b i)) =
-      ∑ _i : Fin (Module.finrank ℝ (TangentSpace 𝓘(ℝ) x)),
-        hessian 𝓘(ℝ) (fun r : U ↦ f r) x e₁ e₁ :=
-    Finset.sum_congr rfl fun i _ ↦ by
-      rw [hu (b i), hessian_smul_left, hessian_smul_right, ← mul_assoc, ← sq, hb i, one_mul]
-  have hcard : Fintype.card (Fin (Module.finrank ℝ (TangentSpace 𝓘(ℝ) x))) = 1 := by
-    rw [Fintype.card_fin, (tangentSpaceCastModel 𝓘(ℝ) x).toLinearEquiv.finrank_eq,
-      Module.finrank_self]
   have h1 : hessian 𝓘(ℝ) (fun r : U ↦ f r) x e₁ e₁ = deriv (deriv f) x := by
+    have hlap := laplaceBeltrami_eq_sum_hessian 𝓘(ℝ) (fun r : U ↦ f r) x b
+    have hcard : Fintype.card (Fin (Module.finrank ℝ (TangentSpace 𝓘(ℝ) x))) = 1 := by
+      rw [Fintype.card_fin, (tangentSpaceCastModel 𝓘(ℝ) x).toLinearEquiv.finrank_eq,
+        Module.finrank_self]
+    have hsum : (∑ i, hessian 𝓘(ℝ) (fun r : U ↦ f r) x (b i) (b i)) =
+        ∑ _i : Fin (Module.finrank ℝ (TangentSpace 𝓘(ℝ) x)),
+          hessian 𝓘(ℝ) (fun r : U ↦ f r) x e₁ e₁ :=
+      Finset.sum_congr rfl fun i _ ↦ by
+        have hi := b.inner_eq_one i
+        rw [hu (b i), real_inner_smul_left, real_inner_smul_right, he₁, mul_one] at hi
+        rw [hu (b i), hessian_smul_left, hessian_smul_right, ← mul_assoc, hi, one_mul]
     rw [hsum, Finset.sum_const, Finset.card_univ, hcard, one_smul,
       laplaceBeltrami_restrictOpenTangentSpace_real_eq_deriv_deriv U hf] at hlap
     exact hlap.symm

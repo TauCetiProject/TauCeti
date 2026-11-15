@@ -10,11 +10,17 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.Analytic.ChangeOrigin
+import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
+import Mathlib.Analysis.Convex.Slope
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Analytic.OfScalars
 
 /-!
 # Profiles of the standard cap
@@ -32,15 +38,19 @@ conditions placed on `f`:
   curvature one.
 
 From these conditions we derive the remaining normalizations of the profile on `[0, ∞)`: `f(0) = 0`
-and `f'(0) = 1`, `0 ≤ f' ≤ 1`, `f'' ≤ 0`, monotonicity, positivity away from the tip and the upper
-bound `f ≤ √2`. The radial and tangential sectional curvatures of `dr² + f(r)² g_(S²)` are
-`-f'' / f` and `(1 - f'²) / f²`, which these inequalities make nonnegative; this is the source of
-the nonnegative curvature of the standard cap. Finally, the class of standard cap profiles is
-nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be chosen.
+and `f'(0) = 1`, `0 ≤ f' ≤ 1`, `f'' ≤ 0`, monotonicity, positivity away from the tip, the upper
+bound `f ≤ √2`, the secant bounds `0 < f(r) / r ≤ 1`, and smoothness in `s = r²` of the radial
+quotients `(f(r) / r)²` and `(1 - (f(r) / r)²) / r²` across the tip. The radial and tangential
+sectional curvatures of `dr² + f(r)² g_(S²)` are `-f'' / f` and `(1 - f'²) / f²`, which these
+inequalities make nonnegative; this is the source of the nonnegative curvature of the standard cap.
+Finally, the class of standard cap profiles is nonempty (`TauCeti.exists_isStandardCapProfile`), so
+the standard cap can be chosen.
 
 ## Main definitions
 
 * `TauCeti.IsStandardCapProfile`: the profile of a standard cap metric.
+* `TauCeti.capAngularQuot`, `TauCeti.capRadialQuot`: the smooth radial-square profile quotients
+  extending `(f(r) / r)²` and `(1 - (f(r) / r)²) / r²` across `s = r² = 0`.
 
 ## Main results
 
@@ -52,6 +62,13 @@ nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be cho
   `TauCeti.IsStandardCapProfile.deriv_deriv_nonpos`: `0 ≤ f' ≤ 1` and `f'' ≤ 0` on `[0, ∞)`.
 * `TauCeti.IsStandardCapProfile.apply_pos`, `TauCeti.IsStandardCapProfile.apply_le_sqrt_two`:
   `0 < f(r) ≤ √2` for `r > 0`.
+* `TauCeti.IsStandardCapProfile.apply_le_self`,
+  `TauCeti.IsStandardCapProfile.antitoneOn_div_self`,
+  `TauCeti.IsStandardCapProfile.div_self_pos`, `TauCeti.IsStandardCapProfile.div_self_le_one`:
+  secant bounds `0 < f(r) / r ≤ 1` and antitonicity of `r ↦ f(r) / r` on `(0, ∞)`.
+* `TauCeti.IsStandardCapProfile.contDiff_capAngularQuot`,
+  `TauCeti.IsStandardCapProfile.contDiff_capRadialQuot`: smoothness of `capAngularQuot f` and
+  `capRadialQuot f` on `ℝ`.
 * `TauCeti.exists_isStandardCapProfile`: standard cap profiles exist.
 
 ## Implementation notes
@@ -184,6 +201,186 @@ theorem apply_le_sqrt_two {r : ℝ} (hr : 0 ≤ r) : f r ≤ √2 := by
   calc f r ≤ f (max r R) :=
         hf.monotoneOn (mem_Ici.2 hr) (mem_Ici.2 (hr.trans (le_max_left r R))) (le_max_left r R)
     _ = √2 := hR _ (le_max_right r R)
+
+/-- Because `f(0) = 0` and `f' ≤ 1` on `[0, ∞)`, a standard cap profile satisfies `f(r) ≤ r` for
+`r ≥ 0`. -/
+theorem apply_le_self {r : ℝ} (hr : 0 ≤ r) : f r ≤ r := by
+  have hmono : MonotoneOn (id - f) (Ici 0) :=
+    monotoneOn_of_deriv_nonneg (convex_Ici 0)
+      (continuous_id.sub hf.contDiff.continuous).continuousOn
+      (differentiable_id.sub hf.differentiable).differentiableOn fun s hs ↦ by
+        rw [deriv_sub differentiableAt_id (hf.differentiable s), deriv_id]
+        linarith [hf.deriv_le_one (interior_subset hs)]
+  have h0 := hmono (mem_Ici.2 le_rfl) (mem_Ici.2 hr) hr
+  simp only [Pi.sub_apply, id_eq, hf.apply_zero, sub_self] at h0
+  linarith
+
+/-- Concavity of `f` on `[0, ∞)` and `f(0) = 0` make the secant ratio `r ↦ f(r) / r` antitone on
+`(0, ∞)`. -/
+theorem antitoneOn_div_self : AntitoneOn (fun r ↦ f r / r) (Ioi 0) := fun a ha b hb hab ↦ by
+  have hsec := hf.concaveOn.neg.secant_mono (a := 0) (x := a) (y := b) (mem_Ici.2 le_rfl)
+    (mem_Ici.2 ha.le) (mem_Ici.2 hb.le) ha.ne' hb.ne' hab
+  simp only [Pi.neg_apply, hf.apply_zero, neg_zero, sub_zero, neg_div] at hsec
+  linarith
+
+private theorem div_self_neg (r : ℝ) : f (-r) / -r = f r / r := by
+  rw [hf.odd r, neg_div_neg_eq]
+
+/-- Away from `0`, the secant ratio `f(r) / r` is positive. -/
+theorem div_self_pos {r : ℝ} (hr : r ≠ 0) : 0 < f r / r := by
+  rcases lt_or_gt_of_ne hr with hlt | hgt
+  · rw [← hf.div_self_neg]
+    exact div_pos (hf.apply_pos (neg_pos.2 hlt)) (neg_pos.2 hlt)
+  · exact div_pos (hf.apply_pos hgt) hgt
+
+/-- Everywhere on `ℝ`, the secant ratio `f(r) / r` is at most one. -/
+theorem div_self_le_one (r : ℝ) : f r / r ≤ 1 := by
+  rcases lt_trichotomy r 0 with hlt | rfl | hgt
+  · rw [← hf.div_self_neg]
+    exact (div_le_one (neg_pos.2 hlt)).2 (hf.apply_le_self (neg_pos.2 hlt).le)
+  · simp
+  · exact (div_le_one hgt).2 (hf.apply_le_self hgt.le)
+
+/-- Everywhere on `ℝ`, the squared secant ratio `(f(r) / r)²` is at most one. -/
+theorem sq_div_self_le_one (r : ℝ) : (f r / r) ^ 2 ≤ 1 := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
+  · nlinarith [hf.div_self_pos hr, hf.div_self_le_one r]
+
+end IsStandardCapProfile
+
+/-! ### Smooth radial-square profile quotients -/
+
+/-- The formal power series `∑ (-1)^k s^k / (2k)!`, whose sum at `r²` is `cos r`. -/
+private def evenCosSeries : FormalMultilinearSeries ℝ ℝ ℝ :=
+  FormalMultilinearSeries.ofScalars ℝ fun k ↦ (-1 : ℝ) ^ k / (2 * k).factorial
+
+private theorem evenCosSeries_radius : evenCosSeries.radius = ⊤ := by
+  refine evenCosSeries.radius_eq_top_of_summable_norm fun r ↦
+    (hasSum_cosh √(r : ℝ)).summable.congr fun k ↦ ?_
+  rw [evenCosSeries, FormalMultilinearSeries.ofScalars_norm, norm_div, norm_pow, norm_neg,
+    norm_one, one_pow, Real.norm_natCast, pow_mul, sq_sqrt r.coe_nonneg]
+  ring
+
+private theorem analyticOnNhd_evenCosSeries_sum : AnalyticOnNhd ℝ evenCosSeries.sum univ := by
+  simpa [evenCosSeries_radius] using evenCosSeries.analyticOnNhd
+
+private theorem evenCosSeries_sum_sq (r : ℝ) : evenCosSeries.sum (r ^ 2) = cos r := by
+  change FormalMultilinearSeries.ofScalarsSum _ (r ^ 2) = cos r
+  rw [FormalMultilinearSeries.ofScalars_sum_eq, cos_eq_tsum r]
+  exact tsum_congr fun k ↦ by rw [smul_eq_mul, ← pow_mul]; ring
+
+private def evenSinSqQuot : ℝ → ℝ :=
+  dslope (fun s : ℝ ↦ 2 * (1 - evenCosSeries.sum s)) 0
+
+private theorem analyticOnNhd_evenSinSqQuot : AnalyticOnNhd ℝ evenSinSqQuot univ :=
+  (analyticOnNhd_const.mul (analyticOnNhd_const.sub analyticOnNhd_evenCosSeries_sum)).dslope 0
+
+private theorem evenSinSqQuot_sq_of_ne_zero {r : ℝ} (hr : r ≠ 0) :
+    evenSinSqQuot (r ^ 2) = (2 * sin (r / 2) / r) ^ 2 := by
+  have h0 : evenCosSeries.sum 0 = 1 := by simpa using evenCosSeries_sum_sq 0
+  have htrig : 2 * (1 - cos r) = (2 * sin (r / 2)) ^ 2 := by
+    rw [show cos r = cos (2 * (r / 2)) by ring_nf, cos_two_mul', cos_sq']; ring
+  rw [evenSinSqQuot, dslope_of_ne _ (pow_ne_zero 2 hr), slope_def_field, h0, sub_self, mul_zero,
+    sub_zero, sub_zero, evenCosSeries_sum_sq, htrig, div_pow]
+
+private theorem evenSinSqQuot_zero : evenSinSqQuot 0 = 1 := by
+  have hd : deriv evenCosSeries.sum 0 = -(1 / 2) := by
+    have h := FormalMultilinearSeries.iteratedDeriv_ofScalarsSum_zero
+      (fun k ↦ (-1 : ℝ) ^ k / (2 * k).factorial)
+      (by rw [← evenCosSeries, evenCosSeries_radius]; exact ENNReal.zero_lt_top) 1
+    rw [iteratedDeriv_one] at h
+    change deriv evenCosSeries.sum 0 = _ at h
+    norm_num [Nat.factorial] at h
+    exact h
+  have hdiff := (analyticOnNhd_evenCosSeries_sum 0 trivial).differentiableAt
+  have h2 : HasDerivAt (fun s : ℝ ↦ 2 * (1 - evenCosSeries.sum s))
+      (2 * (0 - deriv evenCosSeries.sum 0)) 0 :=
+    ((hasDerivAt_const 0 (1 : ℝ)).sub hdiff.hasDerivAt).const_mul 2
+  rw [evenSinSqQuot, dslope_same, h2.deriv, hd]
+  ring
+
+private def evenRadialQuot : ℝ → ℝ :=
+  dslope (fun s : ℝ ↦ 1 - evenSinSqQuot s) 0
+
+private theorem analyticOnNhd_evenRadialQuot : AnalyticOnNhd ℝ evenRadialQuot univ :=
+  (analyticOnNhd_const.sub analyticOnNhd_evenSinSqQuot).dslope 0
+
+private theorem evenRadialQuot_sq_of_ne_zero {r : ℝ} (hr : r ≠ 0) :
+    evenRadialQuot (r ^ 2) = (1 - (2 * sin (r / 2) / r) ^ 2) / r ^ 2 := by
+  rw [evenRadialQuot, dslope_of_ne _ (pow_ne_zero 2 hr), slope_def_field, evenSinSqQuot_zero,
+    sub_self, sub_zero, sub_zero, evenSinSqQuot_sq_of_ne_zero hr]
+
+open Classical in
+/-- Radial-square angular quotient of a profile `f`: equals `1` at `s = 0` and `(f r / r)²` at
+`s = r²` (`r > 0`), and is smooth on `ℝ` when `f` is a standard cap profile. -/
+def capAngularQuot (f : ℝ → ℝ) (s : ℝ) : ℝ :=
+  if s ≤ 0 then evenSinSqQuot s else (f √s / √s) ^ 2
+
+open Classical in
+/-- Radial-square radial quotient of a profile `f`: equals `(1 - (f r / r)²) / r²` at `s = r²`
+(`r > 0`), and is smooth on `ℝ` when `f` is a standard cap profile. -/
+def capRadialQuot (f : ℝ → ℝ) (s : ℝ) : ℝ :=
+  if s ≤ 0 then evenRadialQuot s else (1 - (f √s / √s) ^ 2) / s
+
+@[simp]
+theorem capAngularQuot_zero (f : ℝ → ℝ) : capAngularQuot f 0 = 1 := by
+  simp [capAngularQuot, evenSinSqQuot_zero]
+
+theorem capAngularQuot_sq_of_pos (f : ℝ → ℝ) {r : ℝ} (hr : 0 < r) :
+    capAngularQuot f (r ^ 2) = (f r / r) ^ 2 := by
+  simp [capAngularQuot, not_le.2 (sq_pos_of_pos hr), sqrt_sq hr.le]
+
+theorem capRadialQuot_sq_of_pos (f : ℝ → ℝ) {r : ℝ} (hr : 0 < r) :
+    capRadialQuot f (r ^ 2) = (1 - (f r / r) ^ 2) / r ^ 2 := by
+  simp [capRadialQuot, not_le.2 (sq_pos_of_pos hr), sqrt_sq hr.le]
+
+namespace IsStandardCapProfile
+
+/-- For a standard cap profile `f`, `capAngularQuot f` is smooth on `ℝ`. -/
+theorem contDiff_capAngularQuot {f : ℝ → ℝ} (hf : IsStandardCapProfile f) :
+    ContDiff ℝ ∞ (capAngularQuot f) := by
+  rw [contDiff_iff_contDiffAt]
+  obtain ⟨r₀, hr₀, hsin⟩ := hf.exists_eq_two_mul_sin
+  intro s
+  rcases lt_or_ge s (r₀ ^ 2) with hs | hs
+  · refine (analyticOnNhd_evenSinSqQuot s trivial).contDiffAt.congr_of_eventuallyEq ?_
+    filter_upwards [Iio_mem_nhds hs] with t ht
+    rcases le_or_gt t 0 with ht0 | ht0
+    · simp [capAngularQuot, ht0]
+    · have hsqrt : √t < r₀ := (sqrt_lt_sqrt ht0.le ht).trans_eq (sqrt_sq hr₀.le)
+      simp only [capAngularQuot, not_le.2 ht0, ↓reduceIte]
+      rw [hsin √t ⟨sqrt_nonneg t, hsqrt⟩, ← evenSinSqQuot_sq_of_ne_zero (sqrt_ne_zero'.2 ht0),
+        sq_sqrt ht0.le]
+  · have hs0 : 0 < s := (sq_pos_of_pos hr₀).trans_le hs
+    have hev : capAngularQuot f =ᶠ[𝓝 s] fun t ↦ (f √t / √t) ^ 2 := by
+      filter_upwards [Ioi_mem_nhds hs0] with t ht using by simp [capAngularQuot, not_le.2 ht]
+    have hsq : ContDiffAt ℝ ∞ (√·) s := contDiffAt_sqrt hs0.ne'
+    exact (((hf.contDiff.contDiffAt.comp s hsq).div hsq (sqrt_ne_zero'.2 hs0)).pow
+      2).congr_of_eventuallyEq hev
+
+/-- For a standard cap profile `f`, `capRadialQuot f` is smooth on `ℝ`. -/
+theorem contDiff_capRadialQuot {f : ℝ → ℝ} (hf : IsStandardCapProfile f) :
+    ContDiff ℝ ∞ (capRadialQuot f) := by
+  rw [contDiff_iff_contDiffAt]
+  obtain ⟨r₀, hr₀, hsin⟩ := hf.exists_eq_two_mul_sin
+  intro s
+  rcases lt_or_ge s (r₀ ^ 2) with hs | hs
+  · refine (analyticOnNhd_evenRadialQuot s trivial).contDiffAt.congr_of_eventuallyEq ?_
+    filter_upwards [Iio_mem_nhds hs] with t ht
+    rcases le_or_gt t 0 with ht0 | ht0
+    · simp [capRadialQuot, ht0]
+    · have hsqrt : √t < r₀ := (sqrt_lt_sqrt ht0.le ht).trans_eq (sqrt_sq hr₀.le)
+      have hr := evenRadialQuot_sq_of_ne_zero (sqrt_ne_zero'.2 ht0)
+      rw [sq_sqrt ht0.le] at hr
+      simp only [capRadialQuot, not_le.2 ht0, ↓reduceIte]
+      rw [hsin √t ⟨sqrt_nonneg t, hsqrt⟩, hr]
+  · have hs0 : 0 < s := (sq_pos_of_pos hr₀).trans_le hs
+    have hev : capRadialQuot f =ᶠ[𝓝 s] fun t ↦ (1 - capAngularQuot f t) / t := by
+      filter_upwards [Ioi_mem_nhds hs0] with t ht
+      simp [capRadialQuot, capAngularQuot, not_le.2 ht]
+    exact ((contDiffAt_const.sub hf.contDiff_capAngularQuot.contDiffAt).div contDiffAt_id
+      hs0.ne').congr_of_eventuallyEq hev
 
 end IsStandardCapProfile
 
