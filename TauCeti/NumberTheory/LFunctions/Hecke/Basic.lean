@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Continuation
+public import TauCeti.Analysis.Meromorphic.Counting.Basic
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 
@@ -32,7 +34,7 @@ whole plane is claimed. The comparison holds whether or not a continuation to th
 because dividing by the correction factor turns a continuation of one series into a continuation of
 the other. Every presented series is in particular the series of the primitive character
 `PrimitiveRayClassCharacter.of χ` times the Euler factors at the primes dividing `𝔪` but not the
-conductor.
+conductor; for the trivial character of `Modulus.one K` it is `dedekindZetaC K`.
 
 ## Main definitions
 
@@ -47,6 +49,14 @@ conductor.
 * `TauCeti.LFunctions.heckeLFunctionC_eq_primitive` and
   `TauCeti.LFunctions.heckeLFunctionC_eventuallyEq_primitive`: the comparison with the primitive
   character.
+* `TauCeti.LFunctions.heckeLFunctionC_one_modulus_one` and
+  `TauCeti.LFunctions.heckeLFunctionC_one_eventuallyEq`: the trivial character at `Modulus.one K`
+  and at an arbitrary modulus `𝔪` compared with `dedekindZetaC K`.
+* `TauCeti.LFunctions.meromorphicOrderAt_heckeLFunctionC_induced`,
+  `TauCeti.LFunctions.divisor_heckeLFunctionC_induced`,
+  `TauCeti.LFunctions.zeroCount_heckeLFunctionC_induced`, and
+  `TauCeti.LFunctions.zeroCount_heckeLFunctionC_eq_primitive`: off the imaginary axis, changing
+  presentation modulus preserves meromorphic orders, divisors, and zero counts.
 
 ## References
 
@@ -142,5 +152,73 @@ theorem heckeLFunctionC_eventuallyEq_primitive (χ : RayClassCharacter 𝔪) (s 
         (PrimitiveRayClassCharacter.of χ).character.eulerCorrection 𝔪 z := by
   conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ]
   exact heckeLFunctionC_induced_eventuallyEq _ _ s
+
+/-- **At the trivial modulus `Modulus.one K`, the presented Hecke L-function of the trivial
+character is `dedekindZetaC K`.** -/
+@[simp]
+theorem heckeLFunctionC_one_modulus_one :
+    heckeLFunctionC (1 : RayClassCharacter (Modulus.one K)) = dedekindZetaC K := by
+  have hw : (1 : RayClassCharacter (Modulus.one K)).toUnitaryIdealWeight = 1 := by
+    apply Subtype.ext
+    ext I
+    rw [RayClassCharacter.val_toUnitaryIdealWeight,
+      RayClassCharacter.toMultiplicativeIdealWeight_one,
+      MultiplicativeIdealWeight.ofBadPrimes_apply, Modulus.support_one]
+    by_cases hI : I = ⊥
+    · simp [hI, Ideal.isPrimeTo_iff]
+    · simp [hI, Ideal.isPrimeTo_iff]
+  rw [heckeLFunctionC_def, hw, UnitaryIdealWeight.toIdealArithmeticFunction_one, dedekindZetaC_def]
+  exact meromorphicContinuation_congr fun s _ ↦ (dedekindZeta_eq_LSeries_normCoeff_one K s).symm
+
+/-- **As punctured germs everywhere, the presented Hecke L-function of the trivial character of `𝔪`
+is `dedekindZetaC K` times the finite Euler correction at the primes dividing `𝔪`.** -/
+theorem heckeLFunctionC_one_eventuallyEq (𝔪 : Modulus K) (s : ℂ) :
+    heckeLFunctionC (1 : RayClassCharacter 𝔪) =ᶠ[𝓝[≠] s] fun z ↦
+      dedekindZetaC K z * ∏ 𝔭 ∈ 𝔪.support, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-z)) := by
+  rw [← map_one (RayClassCharacter.induced (Modulus.one_dvd 𝔪))]
+  filter_upwards [heckeLFunctionC_induced_eventuallyEq (Modulus.one_dvd 𝔪) 1 s] with z hz
+  rw [hz, heckeLFunctionC_one_modulus_one, RayClassCharacter.eulerCorrection_one]
+
+/-- Off the imaginary axis, inducing a ray class character to a larger modulus does not change the
+meromorphic order of `heckeLFunctionC`, since the deleted Euler correction is entire and nonzero
+there. -/
+theorem meromorphicOrderAt_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
+    {s : ℂ} (hs : s.re ≠ 0) :
+    meromorphicOrderAt (heckeLFunctionC (χ.induced h)) s =
+      meromorphicOrderAt (heckeLFunctionC χ) s := by
+  have hev : heckeLFunctionC (χ.induced h) =ᶠ[𝓝[≠] s]
+      χ.eulerCorrection 𝔫 * heckeLFunctionC χ := by
+    filter_upwards [heckeLFunctionC_induced_eventuallyEq h χ s] with z hz
+    rw [hz, Pi.mul_apply, mul_comm]
+  rw [meromorphicOrderAt_congr hev,
+    meromorphicOrderAt_mul_of_ne_zero ((χ.differentiable_eulerCorrection 𝔫).analyticAt s)
+      (χ.eulerCorrection_ne_zero 𝔫 hs)]
+
+/-- Off the imaginary axis, inducing does not change the divisor of `heckeLFunctionC`. -/
+theorem divisor_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
+    {s : ℂ} (hs : s.re ≠ 0) :
+    MeromorphicOn.divisor (heckeLFunctionC (χ.induced h)) univ s =
+      MeromorphicOn.divisor (heckeLFunctionC χ) univ s := by
+  rw [(meromorphicNFOn_heckeLFunctionC _).meromorphicOn.divisor_apply (mem_univ s),
+    (meromorphicNFOn_heckeLFunctionC _).meromorphicOn.divisor_apply (mem_univ s),
+    meromorphicOrderAt_heckeLFunctionC_induced h χ hs]
+
+/-- On any region avoiding the imaginary axis, inducing does not change the zero count of
+`heckeLFunctionC`. -/
+theorem zeroCount_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
+    {R : Set ℂ} (hR : ∀ s ∈ R, s.re ≠ 0) :
+    zeroCount (heckeLFunctionC (χ.induced h)) univ R =
+      zeroCount (heckeLFunctionC χ) univ R :=
+  zeroCount_congr_divisor fun s hs ↦ by
+    rw [divisor_heckeLFunctionC_induced h χ (hR s hs)]
+
+/-- On any region avoiding the imaginary axis, a presented Hecke L-function has the same zero count
+as its underlying primitive character. -/
+theorem zeroCount_heckeLFunctionC_eq_primitive (χ : RayClassCharacter 𝔪)
+    {R : Set ℂ} (hR : ∀ s ∈ R, s.re ≠ 0) :
+    zeroCount (heckeLFunctionC χ) univ R =
+      zeroCount (heckeLFunctionC (PrimitiveRayClassCharacter.of χ).character) univ R := by
+  conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ]
+  exact zeroCount_heckeLFunctionC_induced _ _ hR
 
 end TauCeti.LFunctions

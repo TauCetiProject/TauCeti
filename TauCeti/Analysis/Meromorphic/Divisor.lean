@@ -39,6 +39,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
   subset of a compact set in the meromorphic domain.
 * `MeromorphicOn.divisor_finite_inter_support` — finite divisor support on a bounded region
   whose closure lies in the meromorphic domain.
+* `MeromorphicOn.divisor_congr_nhdsNE` — functions with equal punctured germs at every point of
+  `U` have the same divisor on `U`, without openness or meromorphy hypotheses.
 -/
 
 public section
@@ -149,7 +151,8 @@ theorem MeromorphicOn.zero_lt_divisor_iff_of_analyticAt {𝕜 E : Type*} [Nontri
   rw [hm.divisor_eq_analyticOrderNatAt hf hz, Nat.cast_pos, Nat.pos_iff_ne_zero,
     ← hf.analyticOrderAt_ne_zero, ← Nat.cast_analyticOrderNatAt h, Nat.cast_ne_zero]
 
-open Set
+open Filter Set
+open scoped Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -176,3 +179,20 @@ theorem MeromorphicOn.divisor_finite_inter_support [ProperSpace 𝕜]
     (hR : Bornology.IsBounded R) (hRU : closure R ⊆ U) :
     (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
   MeromorphicOn.divisor_finite_inter_support_of_isCompact hR.isCompact_closure hRU subset_closure
+
+/-- Two functions with the same punctured germ at every point of `U` have the same divisor on `U`.
+Neither openness of `U` nor meromorphy is required: punctured germs determine both `MeromorphicAt`
+and `meromorphicOrderAt` at each point of `U`. -/
+theorem MeromorphicOn.divisor_congr_nhdsNE {g : 𝕜 → E}
+    (h : ∀ z ∈ U, f =ᶠ[𝓝[≠] z] g) :
+    MeromorphicOn.divisor f U = MeromorphicOn.divisor g U := by
+  ext z
+  by_cases hf : MeromorphicOn f U
+  · have hg : MeromorphicOn g U := fun w hw ↦ (hf w hw).congr (h w hw)
+    by_cases hz : z ∈ U
+    · rw [hf.divisor_apply hz, hg.divisor_apply hz, meromorphicOrderAt_congr (h z hz)]
+    · simp [hz]
+  · have hg : ¬ MeromorphicOn g U :=
+      fun hg ↦ hf fun w hw ↦ (hg w hw).congr (h w hw).symm
+    rw [divisor_eq_zero_of_not_meromorphicOn hf, divisor_eq_zero_of_not_meromorphicOn hg]
+

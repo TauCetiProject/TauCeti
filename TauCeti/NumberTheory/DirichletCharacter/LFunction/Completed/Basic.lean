@@ -156,4 +156,28 @@ theorem rootNumber_inv : χ⁻¹.rootNumber = conj χ.rootNumber := by
   · have hneg : χ (-1) = -1 := by simpa only [map_one] using Odd.eval_neg χ 1 ho
     simp [even_inv_iff, ho.not_even, hneg]
 
+/-- The continued L-function is analytic except possibly at `1` for the principal character.
+No primitivity assumption is needed. -/
+theorem analyticAt_LFunction {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
+    AnalyticAt ℂ χ.LFunction s := by
+  rw [Complex.analyticAt_iff_eventually_differentiableAt]
+  have he : ∀ᶠ z in 𝓝 s, z ≠ 1 ∨ χ ≠ 1 := by
+    rcases hs with hs | hs
+    · filter_upwards [eventually_ne_nhds hs] with z hz using Or.inl hz
+    · exact Filter.Eventually.of_forall fun _ ↦ Or.inr hs
+  filter_upwards [he] with z hz
+  exact χ.differentiableAt_LFunction z hz
+
+/-- Every Dirichlet character has a meromorphic L-function on the whole plane. Away from `1` it is
+analytic (`analyticAt_LFunction`); near `1` it is `completedLFunction` times the entire reciprocal
+gamma factor. -/
+theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
+  intro z
+  rcases eq_or_ne z 1 with rfl | hz
+  · refine ((χ.meromorphic_completedLFunction 1).mul
+      (χ.differentiable_inv_gammaFactor.analyticAt 1).meromorphicAt).congr ?_
+    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+    rw [χ.LFunction_eq_completed_div_gammaFactor s (.inl hs), div_eq_mul_inv, Pi.mul_apply]
+  · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
+
 end DirichletCharacter
