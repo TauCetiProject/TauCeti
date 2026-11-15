@@ -43,7 +43,7 @@ theorem globalArtinMap_cyclotomic_prime (ι : E →ₐ[K] SeparableClosure K)
     {ζ : E} (hζ : ζ ^ m = 1) (v : HeightOneSpectrum (𝓞 K))
     (hm : (m : 𝓞 K) ∉ v.asIdeal) {σ : E ≃ₐ[K] E}
     (hσ : globalArtinMap K E ι (.ofMul (primeIdeleClass K v)) =
-      .ofMul (Abelianization.of σ)) :
+      .ofMul (Group.Abelianization.of σ)) :
     σ ζ = ζ ^ Ideal.absNorm v.asIdeal := by
   classical
   let _ := IsCyclotomicExtension.isAbelianGalois {m} K E
@@ -58,7 +58,7 @@ not dividing the level is the absolute norm of that prime modulo the level. -/
 theorem galEquivZMod_globalArtinMap_prime (ι : E →ₐ[ℚ] SeparableClosure ℚ)
     (v : HeightOneSpectrum (𝓞 ℚ)) (hm : (m : 𝓞 ℚ) ∉ v.asIdeal) {σ : E ≃ₐ[ℚ] E}
     (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
-      .ofMul (Abelianization.of σ)) :
+      .ofMul (Group.Abelianization.of σ)) :
     (Rat.galEquivZMod m E σ : ZMod m) = Ideal.absNorm v.asIdeal := by
   let _ := IsCyclotomicExtension.isAbelianGalois {m} ℚ E
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 E)))
@@ -73,7 +73,7 @@ theorem globalArtinMap_zeta5_two (E : Type) [Field E] [NumberField E]
     {ζ : E} (hζ : IsPrimitiveRoot ζ 5) (v : HeightOneSpectrum (𝓞 ℚ))
     (hv : Ideal.absNorm v.asIdeal = 2) {σ : E ≃ₐ[ℚ] E}
     (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
-      .ofMul (Abelianization.of σ)) :
+      .ofMul (Group.Abelianization.of σ)) :
     σ ζ = ζ ^ 2 ∧ σ ^ 4 = 1 ∧ σ ^ 2 ≠ 1 := by
   have hm : (5 : 𝓞 ℚ) ∉ v.asIdeal := by
     intro h

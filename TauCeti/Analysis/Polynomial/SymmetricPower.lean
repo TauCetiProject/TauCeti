@@ -58,8 +58,8 @@ Both halves are elementary, but neither is formal:
   polynomial to every point induces an analytic map in coefficient coordinates, including at
   tuples where points collide.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap opens with "`Sym^g(Σ)` geometry: smooth complex
-structure (elementary symmetric functions)", after Ozsváth--Szabó
+In Heegaard Floer theory the symmetric product `Sym^g(Σ)` of a surface carries the complex
+structure given by elementary symmetric functions, after Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1): a holomorphic coordinate on the
 surface identifies a neighbourhood in `Sym^g(Σ)` with an open subset of `Sym^g(ℂ)`, and the chart
 below is what makes that a chart on a topological manifold; the charted structure is assembled
@@ -197,9 +197,9 @@ theorem norm_le_norm_coeffEquiv_ofFn_add_one (f : Fin n → K) :
         ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ := by
       refine Finset.sup_le fun i hi => ?_
       rw [Finset.mem_range] at hi
-      have hcoord := nnnorm_le_pi_nnnorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
+      have hcoord := nnNorm_le_pi_nnNorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
       rwa [coeffEquiv_apply_eq_coeff] at hcoord
-    rw [cauchyBound, hmonic.leadingCoeff, nnnorm_one, div_one, natDegree_toMonic]
+    rw [cauchyBound, hmonic.leadingCoeff, nnNorm_one, div_one, natDegree_toMonic]
     exact add_le_add hsup le_rfl
   have : ‖f j‖₊ < ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := hcauchy.trans_le hbound
   simpa using (NNReal.coe_lt_coe.2 this).le

@@ -135,7 +135,7 @@ private theorem perimeter_inter_closedBall_le_add_mul_liminf (hs : NullMeasurabl
       t * liminf (fun h => μ (s ∩ (ball x₀ (r + h) \ ball x₀ r)) / ENNReal.ofReal h) (𝓝[>] 0) := by
   -- Cutoffs between `closedBall x₀ r` and `ball x₀ (r + h)` with Lipschitz constant `t / h`.
   choose! ψ hψs hψ01 hψ1 hψR hψK using fun h (hh : 0 < h) =>
-    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x₀ hr.le hh ht
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x₀ hh ht
   obtain ⟨δ, hδ, hδU⟩ := (isCompact_closedBall x₀ r).exists_cthickening_subset_open U.isOpen hU
   rw [cthickening_closedBall hδ.le hr.le] at hδU
   have hshell (h : ℝ) : MeasurableSet (ball x₀ (r + h) \ closedBall x₀ r) :=

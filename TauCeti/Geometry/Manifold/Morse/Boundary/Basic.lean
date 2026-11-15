@@ -93,10 +93,10 @@ theorem mem_morseTrajectorySlice {p q z : M} :
 
 /-- The middle-level slice of trajectories between distinct points is empty unless the value of
 `f` drops strictly from the source to the target. -/
-theorem value_lt_of_mem_morseTrajectorySlice (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p q z : M}
+theorem value_lt_of_mem_morseTrajectorySlice {p q z : M}
     (hpq : p ≠ q) (hz : z ∈ hX.morseTrajectorySlice p q) : f q < f p := by
   rw [mem_morseTrajectorySlice] at hz
-  have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq ⟨hz.1, hz.2.1⟩
+  have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq ⟨hz.1, hz.2.1⟩
   exact h.1.trans h.2
 
 /-- **Reversing the pseudo-gradient reverses the trajectories.** The middle-level slice of the
@@ -110,15 +110,15 @@ theorem neg_morseTrajectorySlice (hf : IsMorse 𝓘(ℝ, E) f) (p q : M) :
   exact ⟨fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
 
 /-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
-the stable set of a critical point `q` is covered by the orbits of points `y i`, where `y i` flows
-from a point `a i ≠ q` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
+the stable set of a point `q` is covered by the orbits of points `y i`, where `y i` flows
+from a point `a i` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
 Then the trajectories from a point `p ≠ q` to `q` are the crossings of the orbits starting at
 `p`. -/
-theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem morseTrajectorySlice_eq_image_of_stableSet_subset
     {ι : Type*} {p q : M} {a y : ι → M} {τ : ι → ℝ}
-    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) (hpq : p ≠ q)
+    (hpq : p ≠ q)
     (hW : hX.flow.stableSet q ⊆ insert q (⋃ i, hX.flow.orbit (y i)))
-    (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q) (haq : ∀ i, a i ≠ q)
+    (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q)
     (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f (a i) + f q) / 2) :
     hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | a i = p} := by
   ext w
@@ -129,7 +129,7 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hf : MDifferentiable 
     have hwq : w ≠ q := by
       rintro rfl
       exact Flow.disjoint_unstableSet hpq |>.ne_of_mem hwu
-        (Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hq)) rfl
+        (Flow.self_mem_unstableSet_iff.2 (Flow.fixed_of_mem_stableSet hws)) rfl
     obtain ⟨i, t, rfl⟩ : ∃ i t, hX.flow t (y i) = w := by
       simpa [hwq, Flow.mem_orbit_iff] using hW hws
     have hai : a i = p := by
@@ -138,7 +138,7 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hf : MDifferentiable 
         ((Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1) hwu rfl
     -- The orbit of `y i` crosses the middle level only once.
     obtain ⟨s, -, hs⟩ :=
-      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf (haq i) (hy i)
+      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet (hai ▸ hpq) (hy i)
     refine ⟨i, hai, ?_⟩
     rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
   · rintro ⟨i, rfl, rfl⟩
@@ -155,23 +155,35 @@ theorem IsMorseSmale.finite_morseTrajectorySlice {hX : IsAdaptedPseudoGradient f
     (hX.morseTrajectorySlice p q).Finite :=
   h.finite_unstableSet_inter_stableSet_inter_level hf hind _
 
-/-- **Counting unparametrized trajectories.** For distinct points `p` and `q`, the unparametrized
+/-- **Counting unparametrized trajectories.** For all points `p` and `q`, the unparametrized
 trajectories from `p` to `q` are as many as the points of the middle-level slice
 `TauCeti.IsAdaptedPseudoGradient.morseTrajectorySlice`. -/
-theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p q : M} (hpq : p ≠ q) :
+theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice {p q : M} :
     Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) =
       (hX.morseTrajectorySlice p q).ncard := by
   rw [morseTrajectorySlice]
+  by_cases hpq : p = q
+  · -- A trajectory from a point back to itself is constant, so there is at most one.
+    subst hpq
+    have hC : ∀ y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet p, y = p := fun y hy ↦
+      hX.eq_of_mem_unstableSet_inter_stableSet hy
+    have : Subsingleton ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet p) :=
+      ⟨fun a b ↦ Subtype.ext ((hC _ a.2).trans (hC _ b.2).symm)⟩
+    have hlevel : hX.flow.unstableSet p ∩ hX.flow.stableSet p ∩ {z | f z = (f p + f p) / 2} =
+        hX.flow.unstableSet p ∩ hX.flow.stableSet p :=
+      inter_eq_left.2 fun z hz ↦ by rw [mem_ofPred_eq, hC z hz]; ring
+    rw [hlevel, ← Nat.card_coe_set_eq]
+    exact (Nat.card_congr (Equiv.ofBijective (Quotient.mk (Flow.connectingOrbitSetoid hX.flow p p))
+      ⟨fun a b _ ↦ Subsingleton.elim a b, Quotient.mk_surjective⟩).symm)
   by_cases hlt : f q < f p
-  · obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hf hpq
+  · obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hpq
       (c := (f p + f q) / 2) ⟨by linarith, by linarith⟩
     exact (Nat.card_congr e.toEquiv).trans (Nat.card_coe_set_eq _)
   · -- Without a drop in value there are no trajectories at all.
     have hC : hX.flow.unstableSet p ∩ hX.flow.stableSet q = ∅ :=
       eq_empty_of_forall_notMem fun y hy ↦
-        hlt ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).1.trans
-          (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).2)
+        hlt ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hy).1.trans
+          (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hy).2)
     have : IsEmpty ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet q) := by
       rw [hC]
       infer_instance
@@ -205,10 +217,7 @@ theorem morseBoundaryCoeff_eq_natCard {p q : criticalPoints 𝓘(ℝ, E) f}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
     h.morseBoundaryCoeff hf p q =
       (Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) : ZMod 2) := by
-  have hpq : (p : M) ≠ q := fun hpq ↦ by simp [hpq] at hind
-  rw [h.morseBoundaryCoeff_eq_ncard hf hind,
-    hX.natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
-      (hf.contMDiff.mdifferentiable (by simp)) hpq]
+  rw [h.morseBoundaryCoeff_eq_ncard hf hind, hX.natCard_orbitQuotient_eq_ncard_morseTrajectorySlice]
 
 /-- The boundary coefficient vanishes between critical points whose indices do not differ by
 one. -/
@@ -235,7 +244,7 @@ theorem value_lt_of_morseBoundaryCoeff_ne_zero {p q : criticalPoints 𝓘(ℝ, E
   have hne : (p : M) ≠ q := fun he ↦ by
     rw [he] at hind
     omega
-  exact hX.value_lt_of_mem_morseTrajectorySlice (hf.contMDiff.mdifferentiable (by simp)) hne hz
+  exact hX.value_lt_of_mem_morseTrajectorySlice hne hz
 
 /-- The boundary coefficient vanishes unless the critical value drops. -/
 theorem morseBoundaryCoeff_eq_zero_of_value_le {p q : criticalPoints 𝓘(ℝ, E) f}

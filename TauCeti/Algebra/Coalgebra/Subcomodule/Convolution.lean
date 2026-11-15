@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -70,10 +71,14 @@ theorem isIrreducible_convolutionAction [IsSimpleOrder (Subcomodule k C M)] :
       congrArg Subcomodule.toSubmodule h
 
 /-- Over an algebraically closed field, the convolution dual acts as every endomorphism
-on a finite-dimensional simple comodule. -/
-theorem convolutionAction_surjective [IsAlgClosed k] [Module.Finite k M]
-    [IsSimpleOrder (Subcomodule k C M)] :
+on a simple comodule, which is automatically finite dimensional. -/
+theorem convolutionAction_surjective [IsAlgClosed k] [IsSimpleOrder (Subcomodule k C M)] :
     Function.Surjective (convolutionAction (R := k) (C := C) (M := M)) := by
+  have : Module.Finite k M := by
+    have hfin : Module.Finite k (⊤ : Subcomodule k C M).toSubmodule :=
+      Subcomodule.finite_of_isAtom isAtom_top
+    rw [Subcomodule.top_toSubmodule] at hfin
+    exact Module.Finite.equiv (Submodule.topEquiv (R := k) (M := M))
   let ρ : Representation k (WithConv (Module.Dual k C)) M :=
     (convolutionAction (R := k) (C := C) (M := M)).toMonoidHom
   intro T

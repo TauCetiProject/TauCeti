@@ -36,6 +36,10 @@ space to a manifold.
 * `TauCeti.Manifold.exists_contMDiff_comp_extChartAt_symm_eq`: a `C^n` function on the model
   space with compact support in the chart target is the coordinate expression of a compactly
   supported `C^n` function on the manifold.
+* `TauCeti.Manifold.exists_contMDiff_transplant`: a `C^n` nonnegative function on the model space
+  supported in a compact subset of a coordinate ball transplants to a `C^n` nonnegative compactly
+  supported function on the manifold supported in any prescribed set containing the chart
+  preimage of the ball.
 -/
 
 public section
@@ -134,5 +138,46 @@ theorem exists_contMDiff_comp_extChartAt_symm_eq {n : WithTop ℕ∞} [IsManifol
     ((isOpen_extChartAt_source c).mem_nhds hxs) fun z hz ↦ ite_eq_left hz)
   exact hw.contMDiff.contMDiffAt.comp _
     (contMDiffAt_extChartAt' (by rwa [extChartAt_source] at hxs))
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {n : WithTop ℕ∞} [IsManifold I n M]
+
+/-- A `C^n` nonnegative function on the model space supported in a compact subset `K` of a
+coordinate ball, transplanted to the manifold: it is a `C^n` nonnegative compactly supported
+function whose support lies in any `U` containing the chart preimage of the ball, and which agrees
+with `w` in the chart. -/
+theorem exists_contMDiff_transplant (p : M) {R : ℝ} {U : Set M}
+    (hballt : ball (extChartAt I p p) R ⊆ (extChartAt I p).target)
+    (hballU : ∀ y ∈ ball (extChartAt I p p) R, (extChartAt I p).symm y ∈ U) {K : Set E}
+    (hK : IsCompact K) (hKR : K ⊆ ball (extChartAt I p p) R) {w : E → ℝ}
+    (hw : ContDiff ℝ n w) (hw0 : ∀ y, 0 ≤ w y) (hwK : tsupport w ⊆ K) :
+    ∃ u : M → ℝ, ContMDiff I 𝓘(ℝ) n u ∧ HasCompactSupport u ∧ tsupport u ⊆ U ∧
+      (∀ x, 0 ≤ u x) ∧
+      (∀ x ∈ tsupport u, x ∈ (extChartAt I p).source ∧
+        extChartAt I p x ∈ ball (extChartAt I p p) R) ∧
+      ∀ y ∈ ball (extChartAt I p p) R, u ((extChartAt I p).symm y) = w y := by
+  set φ := extChartAt I p
+  obtain ⟨u, hu, huc, htsupp, hu_symm⟩ := exists_contMDiff_comp_extChartAt_symm_eq (c := p) hw
+    (HasCompactSupport.intro hK fun y hy ↦ image_eq_zero_of_notMem_tsupport fun h ↦
+      hy (hwK h)) (hwK.trans (hKR.trans hballt))
+  have hsup (x : M) (hx : x ∈ tsupport u) : x ∈ φ.source ∧ φ x ∈ ball (φ p) R := by
+    obtain ⟨y, hy, rfl⟩ := htsupp hx
+    have hyt := hballt (hKR (hwK hy))
+    exact ⟨φ.map_target hyt, by rw [φ.right_inv hyt]; exact hKR (hwK hy)⟩
+  refine ⟨u, hu, huc, fun x hx ↦ ?_, fun x ↦ ?_, hsup, fun y hy ↦ hu_symm y (hballt hy)⟩
+  · obtain ⟨hxs, hxb⟩ := hsup x hx
+    have h := hballU _ hxb
+    rwa [φ.left_inv hxs] at h
+  · by_cases hx : x ∈ tsupport u
+    · obtain ⟨y, hy, rfl⟩ := htsupp hx
+      rw [hu_symm y (hballt (hKR (hwK hy)))]
+      exact hw0 _
+    · rw [image_eq_zero_of_notMem_tsupport hx]
 
 end TauCeti.Manifold

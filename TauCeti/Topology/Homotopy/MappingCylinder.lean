@@ -270,63 +270,31 @@ lemma proj_comp_incl : (proj f).comp (incl f) = f := by
 cylinder lies in the image of the source. -/
 lemma mkCyl_mem_range_incl_iff {s : I} {x : X} :
     mkCyl f (s, x) ∈ Set.range (incl f) ↔ s = 0 := by
-  constructor
-  · rintro ⟨z, hz⟩
-    rw [incl_apply, mkCyl_eq_mkCyl_iff] at hz
-    obtain ⟨h, -⟩ | ⟨h, -⟩ := hz
-    · exact h.symm
-    · exact absurd h (zero_ne_one : (0 : I) ≠ 1)
-  · rintro rfl
-    exact ⟨x, incl_apply x⟩
+  simp [eq_comm]
 
 /-- No point of the base of the mapping cylinder comes from the source. -/
 lemma mkBase_notMem_range_incl (y : Y) : mkBase f y ∉ Set.range (incl f) := by
-  rintro ⟨x, hx⟩
-  rw [incl_apply, mkCyl_eq_mkBase_iff] at hx
-  exact (zero_ne_one : (0 : I) ≠ 1) hx.1
-
-/-- The preimage of the image of the source under the cylinder map is the bottom face. -/
-private lemma preimage_mkCyl_range_incl :
-    mkCyl f ⁻¹' Set.range (incl f) = (fun p : I × X => p.1) ⁻¹' {0} := by
-  ext ⟨s, x⟩
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, mkCyl_mem_range_incl_iff]
-
-/-- The image of the source of `f` in the mapping cylinder is closed. -/
-theorem isClosed_range_incl : IsClosed (Set.range (incl f)) := by
-  refine isClosed_of_preimages ?_ ?_
-  · rw [preimage_mkCyl_range_incl]
-    exact isClosed_singleton.preimage continuous_fst
-  · convert isClosed_empty using 1
-    ext y
-    simp only [Set.mem_preimage, Set.mem_empty_iff_false, iff_false]
-    exact mkBase_notMem_range_incl y
+  simp
 
 /-- **The source of `f` is a closed subspace of its mapping cylinder.** -/
 theorem isClosedEmbedding_incl : IsClosedEmbedding (incl f) := by
-  refine .of_continuous_injective_isClosedMap (incl f).continuous (fun x x' hx => ?_)
-    fun K hK => isClosed_of_preimages ?_ ?_
-  · rw [incl_apply, incl_apply, mkCyl_eq_mkCyl_iff] at hx
-    obtain ⟨-, h⟩ | ⟨h, -⟩ := hx
-    · exact h
-    · exact absurd h (zero_ne_one : (0 : I) ≠ 1)
-  · have hpre : mkCyl f ⁻¹' (incl f '' K) =
+  refine .of_continuous_injective_isClosedMap (incl f).continuous
+    (fun x x' hx => by simpa using hx) fun K hK => isClosed_of_preimages ?_ ?_
+  · -- The cylinder meets the image of `K` in the bottom face over `K`.
+    have hpre : mkCyl f ⁻¹' (incl f '' K) =
         (fun p : I × X => p.1) ⁻¹' {0} ∩ (fun p : I × X => p.2) ⁻¹' K := by
       ext ⟨s, x⟩
-      constructor
-      · rintro ⟨z, hz, hzx⟩
-        rw [incl_apply, mkCyl_eq_mkCyl_iff] at hzx
-        obtain ⟨h, rfl⟩ | ⟨h, -⟩ := hzx
-        · exact ⟨h.symm, hz⟩
-        · exact absurd h (zero_ne_one : (0 : I) ≠ 1)
-      · rintro ⟨rfl, hx⟩
-        exact ⟨x, hx, incl_apply x⟩
+      simp [eq_comm, and_comm]
     rw [hpre]
     exact (isClosed_singleton.preimage continuous_fst).inter (hK.preimage continuous_snd)
-  · convert isClosed_empty using 1
+  · -- The base does not meet the image of the source at all.
+    convert isClosed_empty using 1
     ext y
-    simp only [Set.mem_preimage, Set.mem_empty_iff_false, iff_false]
-    rintro ⟨x, -, hx⟩
-    exact mkBase_notMem_range_incl (f := f) y ⟨x, hx⟩
+    simp
+
+/-- The image of the source of `f` in the mapping cylinder is closed. -/
+theorem isClosed_range_incl : IsClosed (Set.range (incl f)) :=
+  isClosedEmbedding_incl.isClosed_range
 
 /-- The source of `f` is homeomorphic to the bottom face `range (incl f)` of its mapping
 cylinder. -/
@@ -344,9 +312,7 @@ lemma proj_comp_subtypeVal_comp_inclHomeomorph :
     (proj f).comp ((ContinuousMap.subtypeVal (Set.range (incl f))).comp
       (inclHomeomorph f : C(X, Set.range (incl f)))) = f := by
   ext x
-  rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, ContinuousMap.subtypeVal_apply,
-    ContinuousMap.coe_ofClass, inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f),
-    proj_comp_incl]
+  simp
 
 /-- **The target of `f` is a closed subspace of its mapping cylinder.** -/
 theorem isClosedEmbedding_mkBase : IsClosedEmbedding (mkBase f) := by
@@ -355,18 +321,11 @@ theorem isClosedEmbedding_mkBase : IsClosedEmbedding (mkBase f) := by
   · have hpre : mkCyl f ⁻¹' (mkBase f '' K) =
         (fun p : I × X => p.1) ⁻¹' {1} ∩ (fun p : I × X => f p.2) ⁻¹' K := by
       ext ⟨s, x⟩
-      constructor
-      · rintro ⟨y, hy, hyx⟩
-        obtain ⟨h1, rfl⟩ := mkCyl_eq_mkBase_iff.1 hyx.symm
-        exact ⟨h1, hy⟩
-      · rintro ⟨rfl, hx⟩
-        exact ⟨f x, hx, (mkCyl_eq_mkBase_iff.2 ⟨rfl, rfl⟩).symm⟩
+      simp [eq_comm (b := mkCyl f _), and_comm]
     rw [hpre]
     exact (isClosed_singleton.preimage continuous_fst).inter
       (hK.preimage (f.continuous.comp continuous_snd))
-  · convert hK using 1
-    ext y
-    simp
+  · rwa [mkBase_injective.preimage_image]
 
 section Deformation
 

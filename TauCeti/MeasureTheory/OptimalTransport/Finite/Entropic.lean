@@ -70,7 +70,7 @@ theorem ofReal_entropicTransportObjective_eq (A : TransportMatrix μ ν) (C : Ma
   have hR (i : ι) (j : κ) :
       (μ.toMeasure.prod ν.toMeasure).real {(i, j)} =
         (μ i).toReal * (ν j).toReal :=
-    μ.real_prod_toMeasure_singleton ν i j
+    μ.real_prod_toMeasure_singleton ν i j (.singleton i) (.singleton j)
   have hkl :
       klDiv A.toPMF.toMeasure (μ.toMeasure.prod ν.toMeasure) =
         ENNReal.ofReal (Matrix.relEntropy
@@ -187,7 +187,7 @@ theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ
   have hprod (i : ι) (j : κ) :
       (μ.toMeasure.prod ν.toMeasure).real {(i, j)} =
         (μ i).toReal * (ν j).toReal :=
-    μ.real_prod_toMeasure_singleton ν i j
+    μ.real_prod_toMeasure_singleton ν i j (.singleton i) (.singleton j)
   have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   have hmass : ∑ i, ∑ j, (μ i).toReal * (ν j).toReal = 1 := by
     simp_rw [← Finset.mul_sum]

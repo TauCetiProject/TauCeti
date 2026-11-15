@@ -39,6 +39,12 @@ is a cycle.
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
 * `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
   bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
+* `RowFiniteTwistingCocycle.d_m_eq_zero_of_eq_add_one` and
+  `RowFiniteTwistingCocycle.sum_subtype_m_mul_m_of_eq_add_two`: for a one-sided cocycle, the
+  entries between generators of adjacent indices are cycles of degree zero, and the twisting
+  equation at index difference two is a finite sum over the intermediate generators.
+* `RowFiniteTwistingCocycle.indexRowSupport`: the finite set of generators of a given index
+  occurring in the row of a generator.
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
@@ -95,6 +101,31 @@ def rowFiniteTotalGrading (n : ℤ) : Submodule R (P →₀ A) :=
 theorem mem_rowFiniteTotalGrading_iff {n : ℤ} {f : P →₀ A} :
     f ∈ rowFiniteTotalGrading 𝒜 ind n ↔ ∀ x, f x ∈ 𝒜 (n + ind x) :=
   (Iff.rfl)
+
+/-- Relabelling the generators along an injective map that preserves their indices preserves
+total degrees, and so does its inverse. -/
+theorem mapDomain_mem_rowFiniteTotalGrading_iff {P' : Type uP'} {ind' : P' → ℤ} {e : P → P'}
+    (he : Function.Injective e) (hind : ∀ x, ind' (e x) = ind x) {n : ℤ} {f : P →₀ A} :
+    Finsupp.mapDomain e f ∈ rowFiniteTotalGrading 𝒜 ind' n ↔
+      f ∈ rowFiniteTotalGrading 𝒜 ind n := by
+  simp only [mem_rowFiniteTotalGrading_iff]
+  refine ⟨fun h x ↦ by simpa [Finsupp.mapDomain_apply_of_injective he, hind] using h (e x),
+    fun h y ↦ ?_⟩
+  by_cases hy : y ∈ Set.range e
+  · obtain ⟨x, rfl⟩ := hy
+    simpa [Finsupp.mapDomain_apply_of_injective he, hind] using h x
+  · simp [Finsupp.mapDomain_of_notMem_range _ _ hy]
+
+/-- The generator `x`, with unit coefficient, has total degree `-ind x`. -/
+theorem single_one_mem_rowFiniteTotalGrading [One A] [SetLike.GradedOne 𝒜] (x : P) :
+    Finsupp.single x (1 : A) ∈ rowFiniteTotalGrading 𝒜 ind (-ind x) := by
+  classical
+  rw [mem_rowFiniteTotalGrading_iff]
+  intro y
+  by_cases hxy : x = y
+  · subst y
+    simpa using SetLike.one_mem_graded 𝒜
+  · simp [Finsupp.single_eq_of_ne (Ne.symm hxy)]
 
 /-- The actual finite direct-sum/function equivalence preserves total degrees. -/
 theorem mem_rowFiniteTotalGrading_iff_twistedTotalGrading [Finite P] (n : ℤ) (f : P →₀ A) :
@@ -223,6 +254,109 @@ theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
       dsimp only [InvImage]
       omega)
     (InvImage.wf _ wellFounded_lt)
+
+omit [GradedAlgebra 𝒜] in
+/-- The twisting equation evaluated at a generator `z`: the differential of the entry `m x z` is
+the signed sum, over the row of `x`, of the products `m x y * m y z`. -/
+theorem twisting_apply (m : RowFiniteTwistingCocycle 𝒜 d P ind) (x z : P) :
+    d (m.m x z) = (m.m x).sum fun y a ↦ (ind x - ind y).negOnePow • (a * m.m y z) := by
+  simpa [Finsupp.sum_apply] using DFunLike.congr_fun (m.twisting x) z
+
+omit [GradedAlgebra 𝒜] in
+/-- The entries between generators whose indices differ by one have degree zero. -/
+theorem m_mem_zero_of_eq_add_one (m : RowFiniteTwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 1) : m.m x y ∈ 𝒜 0 := by
+  have h := m.mem_graded x y
+  rwa [show ind y - ind x + 1 = 0 by omega] at h
+
+omit [GradedAlgebra 𝒜] in
+/-- The entries between generators whose indices differ by two have degree `-1`. -/
+theorem m_mem_neg_one_of_eq_add_two (m : RowFiniteTwistingCocycle 𝒜 d P ind) {x y : P}
+    (hxy : ind x = ind y + 2) : m.m x y ∈ 𝒜 (-1) := by
+  have h := m.mem_graded x y
+  rwa [show ind y - ind x + 1 = -1 by omega] at h
+
+omit [GradedAlgebra 𝒜] in
+/-- For a one-sided cocycle, a product of two consecutive entries vanishes unless the middle
+generator has strictly intermediate index. -/
+theorem m_mul_m_eq_zero_of_not_lt_lt (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {x y z : P}
+    (h : ¬(ind z < ind y ∧ ind y < ind x)) : m.m x y * m.m y z = 0 := by
+  rcases le_or_gt (ind x) (ind y) with hxy | hxy
+  · rw [hm x y hxy, zero_mul]
+  · rw [hm y z (by omega), mul_zero]
+
+omit [GradedAlgebra 𝒜] in
+/-- For a one-sided cocycle, the entries between generators whose indices differ by one are
+cycles: no generator has an index strictly between theirs. -/
+theorem d_m_eq_zero_of_eq_add_one (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {x y : P} (hxy : ind x = ind y + 1) :
+    d (m.m x y) = 0 := by
+  rw [m.twisting_apply]
+  exact Finset.sum_eq_zero fun z _ ↦ by
+    dsimp only
+    rw [m.m_mul_m_eq_zero_of_not_lt_lt hm (by omega), smul_zero]
+
+omit [GradedAlgebra 𝒜] in
+/-- `m_mem_zero_of_eq_add_one` for generators given as elements of the subtypes of index `q + 1`
+and `q`. -/
+theorem m_mem_zero_of_subtype (m : RowFiniteTwistingCocycle 𝒜 d P ind) {q : ℤ}
+    (x : {x : P // ind x = q + 1}) (y : {y : P // ind y = q}) : m.m x y ∈ 𝒜 0 :=
+  m.m_mem_zero_of_eq_add_one (by rw [x.2, y.2])
+
+omit [GradedAlgebra 𝒜] in
+/-- `d_m_eq_zero_of_eq_add_one` for generators given as elements of the subtypes of index `q + 1`
+and `q`. -/
+theorem d_m_eq_zero_of_subtype (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {q : ℤ} (x : {x : P // ind x = q + 1})
+    (y : {y : P // ind y = q}) : d (m.m x y) = 0 :=
+  m.d_m_eq_zero_of_eq_add_one hm (by rw [x.2, y.2])
+
+omit [GradedAlgebra 𝒜] in
+/-- **The twisting equation at index difference two**, for a one-sided cocycle: between
+generators `x` and `z` whose indices differ by two, the sum of the products `m x y * m y z` over
+any finite set of generators `y` of the intermediate index containing those occurring in the row
+of `x` is minus the differential of `m x z`. -/
+theorem sum_subtype_m_mul_m_of_eq_add_two (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {x z : P} (q : ℤ) (hx : ind x = q + 1 + 1)
+    (hz : ind z = q) (T : Finset {y : P // ind y = q + 1}) (hT : ∀ y ∉ T, m.m x y = 0) :
+    ∑ y ∈ T, m.m x y * m.m y z = -d (m.m x z) := by
+  classical
+  set S := (m.m x).support.filter fun y ↦ ind y = q + 1
+  -- Both sums are the sum over the generators of index `q + 1` occurring in the row of `x`.
+  have hTS : ∑ y ∈ T, m.m x y * m.m y z = ∑ y ∈ S, m.m x y * m.m y z := by
+    have hmap := Finset.sum_map T (Function.Embedding.subtype fun y : P ↦ ind y = q + 1)
+      fun y ↦ m.m x y * m.m y z
+    simp only [Function.Embedding.coe_subtype] at hmap
+    rw [← hmap]
+    refine (Finset.sum_subset Finset.subset_union_left ?_).trans
+      (Finset.sum_subset Finset.subset_union_right ?_).symm
+    · intro y hy hyT
+      have hyS : y ∈ S := by simpa [hyT] using hy
+      have hy' : ind y = q + 1 := (Finset.mem_filter.1 hyS).2
+      rw [hT ⟨y, hy'⟩ fun h ↦ hyT (Finset.mem_map_of_mem _ h), zero_mul]
+    · intro y hy hyS
+      obtain ⟨y', -, rfl⟩ := Finset.mem_map.1 ((Finset.mem_union.1 hy).resolve_right hyS)
+      have hy : (y' : P) ∉ (m.m x).support := fun h ↦ hyS (Finset.mem_filter.2 ⟨h, y'.2⟩)
+      simp only [Function.Embedding.coe_subtype]
+      rw [Finsupp.notMem_support_iff.1 hy, zero_mul]
+  rw [hTS, m.twisting_apply, Finsupp.sum, Finset.sum_filter, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  split_ifs with hy
+  · rw [show ind x - ind y = 1 by omega]
+    simp
+  · rw [m.m_mul_m_eq_zero_of_not_lt_lt hm (by omega), smul_zero, neg_zero]
+
+/-- The finite set of generators `y` of index `q` occurring in the row of a generator `x`. -/
+noncomputable def indexRowSupport (m : RowFiniteTwistingCocycle 𝒜 d P ind) (q : ℤ) (x : P) :
+    Finset {y : P // ind y = q} :=
+  ((m.m x).subtypeDomain fun y ↦ ind y = q).support
+
+omit [GradedAlgebra 𝒜] in
+@[simp]
+theorem mem_indexRowSupport_iff (m : RowFiniteTwistingCocycle 𝒜 d P ind) {q : ℤ} {x : P}
+    {y : {y : P // ind y = q}} : y ∈ m.indexRowSupport q x ↔ m.m x y ≠ 0 := by
+  simp [indexRowSupport]
 
 end RowFiniteTwistingCocycle
 

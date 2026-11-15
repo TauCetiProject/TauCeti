@@ -78,7 +78,7 @@ theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
   apply Measure.ext_of_charFun
   funext t
   have harg : ((‖b‖₊ * s : ℝ≥0) : ℝ) * t = |b| * (s * t) := by
-    simp only [NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs]
+    simp only [NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs]
     ring
   rw [charFun_map_affine, charFun_stableMeasure hα hβ, charFun_stableMeasure hα hβ',
     ← Complex.exp_add, mul_left_comm (s : ℝ) b t, stableCharacteristicExponent_mul, harg]

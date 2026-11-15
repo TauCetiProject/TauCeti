@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -58,6 +59,8 @@ forcing the integral and real ranks to agree.
   real-linear functional, additively in the character.
 * `TauCeti.Toric.IsIntegralLattice.exists_realCharacter_apply_eq`: every additive real-valued
   function on the integral characters is evaluation at a point of `V`.
+* `TauCeti.Toric.IsIntegralLattice.eq_of_isPrimitive_of_eq_smul`: two primitive lattice vectors
+  whose images point in the same direction are equal.
 * `TauCeti.Toric.IsIntegralLattice.prod`: products of integral lattices are integral lattices for
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
@@ -93,7 +96,6 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N �
 
 /-- An additive map `i : N →+ V` from a finite free `ℤ`-module into a real vector space is an
 *integral lattice* when it exhibits `V` as the extension of scalars of `N` from `ℤ` to `ℝ`. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure IsIntegralLattice (i : N →+ V) : Prop where
   /-- The module of integral vectors is free. -/
   free : Module.Free ℤ N
@@ -276,6 +278,21 @@ theorem IsIntegralLattice.realCharacter_injective (h : IsIntegralLattice i) :
   have hc : (m n : ℝ) = (m' n : ℝ) := by
     simpa using DFunLike.congr_fun hm (i n)
   exact Int.cast_injective hc
+
+/-- Two primitive lattice vectors whose images point in the same direction are equal: if
+`i w = a • i v` for some `a ≥ 0`, then `w = v`. -/
+theorem IsIntegralLattice.eq_of_isPrimitive_of_eq_smul (h : IsIntegralLattice i) {v w : N}
+    (hv : IsPrimitive v) (hw : IsPrimitive w) {a : ℝ} (ha : 0 ≤ a) (hvw : i w = a • i v) :
+    w = v := by
+  obtain ⟨f, hf⟩ := isPrimitive_def.1 hv
+  -- The real extension of an integral functional taking the value `1` at `v` shows that `a` is
+  -- the integer `f w`, so `w` is a natural multiple of `v`.
+  have haf : a = (f w : ℝ) := by
+    simpa [hf] using (congrArg (h.realCharacter f.toAddMonoidHom) hvw).symm
+  obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (Int.cast_nonneg_iff.1 (haf ▸ ha))
+  have hwv : w = m • v := h.injective <| by
+    rw [hvw, haf, hm, map_nsmul, Int.cast_natCast, Nat.cast_smul_eq_nsmul]
+  rw [hwv, hw.eq_one_of_eq_nsmul hwv, one_nsmul]
 
 /-- Every additive real-valued function on the integral characters is evaluation at a point of
 the ambient real space: the real extensions of the characters identify `V` with the real-valued

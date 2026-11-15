@@ -552,7 +552,7 @@ theorem X_pow_sub_C_irreducible_unramifiedExtension {π : Kˣ} (hπ : IsUniformi
   have e : algebraMap 𝒪[L] L (algebraMap 𝒪[K] 𝒪[L] ϖ) = algebraMap K L π := by
     rw [← hϖπ]
     -- `algebraMap 𝒪[L] L` is the inclusion of the ring of integers.
-    exact coe_algebraMap_integerRing ϖ
+    exact Valuation.HasExtension.val_algebraMap (vA := valuation L) ϖ
   rwa [e] at h
 
 end IsSepClosed
