@@ -144,6 +144,19 @@ theorem toProjectiveOrbitPoints_app_eq_iff (m : M) (hm : Module.IsUnimodular k m
   exact ⟨fun h ↦ congrArg (fun x ↦ (ULift.down x).left) h,
     fun h ↦ congrArg ULift.up (Over.OverMorphism.ext h)⟩
 
+/-- Two rational group points have the same orbit point exactly when their images under the
+projective orbit map coincide. -/
+theorem toProjectiveOrbitPoints_app_eq_iff_projectiveOrbitMap_kernelPoint_eq (m : M)
+    (hm : Module.IsUnimodular k m) (g h : WithConv (H →ₐ[k] k)) :
+    (toProjectiveOrbitPoints (H := H) m hm).app (op (op (CommAlgCat.of k k))) (ULift.up g) =
+        (toProjectiveOrbitPoints (H := H) m hm).app (op (op (CommAlgCat.of k k))) (ULift.up h) ↔
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv) =
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint h.ofConv) := by
+  rw [toProjectiveOrbitPoints_app_eq_iff, projectiveOrbitMap_kernelPoint_eq_iff_span_eq,
+    Submodule.span_singleton_eq_span_singleton]
+  simp_rw [← (Module.eval_apply_injective k (V := M)).eq_iff, LinearMap.ext_iff]
+  simp [apply_matrixCoefficient, Units.smul_def, eq_comm]
+
 /-- **Points of the orbit lift fppf locally to the group.** For a reduced group, the orbit map
 on points is locally surjective for the fppf topology. -/
 instance isLocallySurjective_toProjectiveOrbitPoints [_root_.IsReduced H] (m : M)
@@ -249,16 +262,10 @@ theorem projectiveOrbitMap_kernelPoint_eq_one_iff_mem_quotientPointsSubgroup
     (((sheafToPresheaf _ _).mapIso e).app X).toEquiv.injective
   have hproj := CommHopfAlgCat.fppfHomogeneousQuotientProjection_app_eq_iff H I 1 a
   rw [inv_one, one_mul] at hproj
-  rw [← hproj, ← hinj.eq_iff, happ, happ, toProjectiveOrbitPoints_app_eq_iff,
-    projectiveOrbitMap_kernelPoint_eq_one_iff, Submodule.map_span, Set.image_singleton, eq_comm,
-    Submodule.span_singleton_eq_span_singleton]
-  simp only [apply_matrixCoefficient, map_one, one_apply_eq_self]
-  constructor
-  · rintro ⟨c, hc⟩
-    exact ⟨c, fun φ ↦ by rw [← hc, Units.smul_def, map_smul, smul_eq_mul]⟩
-  · rintro ⟨c, hc⟩
-    refine ⟨c, sub_eq_zero.mp ((Module.forall_dual_apply_eq_zero_iff k _).mp fun φ ↦ ?_)⟩
-    rw [map_sub, hc, Units.smul_def, map_smul, smul_eq_mul, sub_self]
+  rw [← hproj, ← hinj.eq_iff, happ, happ,
+    toProjectiveOrbitPoints_app_eq_iff_projectiveOrbitMap_kernelPoint_eq, eq_comm]
+  -- The identity rational point is the counit by definition.
+  exact Iff.rfl
 
 end TauCeti.Comodule
 

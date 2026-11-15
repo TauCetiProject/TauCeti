@@ -17,10 +17,11 @@ import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 Let `G` be an affine group of finite type over an algebraically closed field `k` and let `N` be a
 closed subgroup. Realize the homogeneous quotient `G/N` as the projective orbit scheme of a line
 in a finite-dimensional representation of `G`, by an isomorphism of fppf sheaves compatible with
-the projections from `G`; every closed subgroup admits such a realization by
-`HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`. If this orbit scheme is
-proper over `k`, then `N` contains a conjugate of every Borel subgroup of `G`; if `N` is moreover
-smooth, it is parabolic. This is the implication from properness to parabolicity in the
+the projections from `G`. When `G` is reduced, every closed subgroup admits such a realization
+by `HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`; for non-reduced `G`
+the theorems apply whenever such a realization is supplied. If this orbit scheme is proper over
+`k`, then `N` contains a conjugate of every Borel subgroup of `G`; if `N` is moreover smooth, it
+is parabolic. This is the implication from properness to parabolicity in the
 characterization of parabolic subgroups by complete homogeneous quotients.
 
 Properness makes the orbit closed in projective space. A Borel subgroup `B` acts on this closed
@@ -29,9 +30,9 @@ orbit through the ambient group, and by the Borel fixed-point theorem it fixes a
 isomorphism identifies the rational stabilizer of `x` with `N(k)`, so `g⁻¹ B(k) g ⊆ N(k)`, and
 reducedness of `B` upgrades this to containment of closed subgroup schemes.
 
-No smoothness, reducedness or connectedness is imposed on `G`, and the containment statement
-imposes none on `N`. In characteristic zero, Cartier's theorem makes every closed subgroup
-smooth, so properness of the representing orbit alone makes `N` parabolic.
+The theorems themselves impose no smoothness, reducedness or connectedness on `G`, and the
+containment statement imposes none on `N`. In characteristic zero, Cartier's theorem makes every
+closed subgroup smooth, so properness of the representing orbit alone makes `N` parabolic.
 
 ## Main declarations
 
