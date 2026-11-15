@@ -166,8 +166,11 @@ theorem koszulDifferential_map {N : Type*} [AddCommGroup N] [Module R N]
       exteriorPower.map n g (koszulDifferential (ψ ∘ₗ g) n x) :=
   LinearMap.congr_fun (koszulDifferential_comp_map _ rfl n) x
 
-/-- The `⋀ M`-component of the Koszul differential of `K(φ, x)`: writing `z = a + e ∧ b`, it is
-`d a + x b`. -/
+/-- The `⋀ M`-component of the Koszul differential of the functional `(m, r) ↦ φ m + r x` on
+`M × R` (the Koszul complex `K(φ, x)` of `φ` with `x` adjoined). Write `e = (0, 1)` and
+`z = a + e ∧ b` with `a ∈ ⋀ᵏ⁺¹ M` and `b ∈ ⋀ᵏ M` embedded along `inl`; then `⋀ fst z = a` and
+`⋀ fst (d_snd z) = b`, where `d_snd` is the Koszul differential of `snd`. Applying `⋀ fst` to the
+differential of `z` gives `d a + x b`, which is the right-hand side below. -/
 theorem map_fst_koszulDifferential_coprod (x : R) (k : ℕ) (z : ⋀[R]^(k + 1) (M × R)) :
     exteriorPower.map k (LinearMap.fst R M R)
         (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) k z) =

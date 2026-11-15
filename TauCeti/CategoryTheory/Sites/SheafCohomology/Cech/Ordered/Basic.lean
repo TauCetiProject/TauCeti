@@ -103,10 +103,8 @@ private def toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
 `Subtype.val` (`isSplitEpi_piMap'`): a cochain on the strictly increasing tuples extends by zero. -/
 private lemma isSplitEpi_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     IsSplitEpi (toStrictMonoCechX U P n) :=
-  have : Mono (TypeCat.ofHom (Subtype.val : {a : Fin (n + 1) → ι // StrictMono a} → _)) :=
-    (mono_iff_injective _).2 Subtype.val_injective
-  isSplitEpi_piMap' (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))))
-    (TypeCat.ofHom Subtype.val)
+  isSplitEpi_piMap' (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) Subtype.val
+    Subtype.val_injective
 
 /-- The differential of the Čech complex, with source and target the products which define its
 terms. -/
