@@ -9,12 +9,12 @@ public import Mathlib.Algebra.Algebra.StrictPositivity
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import TauCeti.Analysis.CStarAlgebra.Quotient
-public import TauCeti.Analysis.CStarAlgebra.State.Extension
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 import TauCeti.Analysis.CStarAlgebra.GNS.Basic
+import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 
 /-!
 # Strictly positive elements and σ-unital C⋆-algebras
