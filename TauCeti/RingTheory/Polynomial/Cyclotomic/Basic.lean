@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
+import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 
 /-!
 # Basic identities for cyclotomic polynomials
@@ -30,7 +31,9 @@ needed to check that these polynomials annihilate an explicit matrix.
 Over any ring, `Polynomial.monic_cyclotomic_comp_X_add_one` and
 `Polynomial.natDegree_cyclotomic_comp_X_add_one` record that the shifted cyclotomic polynomial
 `Φ_n(X + 1)` is monic of degree `φ(n)`, and `Polynomial.cyclotomic_comp_X_add_one_dvd` shows that
-`Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. The first two are used for the shifted
+`Φ_m(X + 1)` divides `(1 + X) ^ n - 1` whenever `m ∣ n`. Over a commutative `ℚ`-algebra,
+`Polynomial.isCoprime_cyclotomic_comp_X_add_one` shows that `Φ_m(X + 1)` and `Φ_n(X + 1)` are
+coprime for `m ≠ n`. The first two are used for the shifted
 prime-power cyclotomic polynomials in `TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow`. For a
 prime `p`, `Polynomial.coeff_cyclotomic_prime_comp_X_add_one` gives the coefficients of
 `Φ_p(X + 1)` as the binomial coefficients `p choose (n + 1)`; this is the explicit form behind the
@@ -123,5 +126,13 @@ theorem cyclotomic_comp_X_add_one_dvd {m n : ℕ} (h : m ∣ n) :
   simpa [Polynomial.map_comp] using _root_.map_dvd (mapRingHom (Int.castRingHom R)) hZ
 
 end Ring
+
+/-- Over a commutative `ℚ`-algebra, the shifted cyclotomic polynomials `Φ_m(X + 1)` and
+`Φ_n(X + 1)` are coprime for `m ≠ n`. -/
+theorem isCoprime_cyclotomic_comp_X_add_one {R : Type*} [CommRing R] [Algebra ℚ R] {m n : ℕ}
+    (h : m ≠ n) : IsCoprime ((cyclotomic m R).comp (X + 1)) ((cyclotomic n R).comp (X + 1)) := by
+  have hR : IsCoprime (cyclotomic m R) (cyclotomic n R) := by
+    simpa using (cyclotomic.isCoprime_rat h).map (mapRingHom (algebraMap ℚ R))
+  simpa using hR.map (compRingHom (X + 1 : R[X]))
 
 end Polynomial

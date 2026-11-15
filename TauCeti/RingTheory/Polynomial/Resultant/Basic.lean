@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
@@ -19,7 +21,9 @@ companion for the *reversed* polynomial `C x - X`, which is the shape that arise
 
 The file also normalizes bounded resultants with a monic left argument. This makes the resultant
 independent of the chosen valid right degree bound, as needed when comparing resultant-based
-discriminant formulas that use different bounds.
+discriminant formulas that use different bounds, and makes `f.resultant` multiplicative in its
+right argument with no leading-coefficient assumption on the right factors. Over an integrally
+closed domain, vanishing of `f.resultant g` for a monic irreducible `f` is equivalent to `f ∣ g`.
 
 That absence is the point. `C x - X` is `C (-1) * (X - C x)`, which contributes `(-1) ^ m`, and
 `resultant_X_sub_C_right` contributes another `(-1) ^ m`, so the two cancel.
@@ -55,8 +59,12 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
-* `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
-  the valid degree bound supplied for the right argument.
+* `Polynomial.Monic.resultant_of_le`, `Polynomial.Monic.resultant_mul_right`,
+  `Polynomial.Monic.resultant_prod_right`: for a monic left argument, the resultant is independent
+  of the valid degree bound supplied for the right argument, and hence multiplicative in the right
+  argument.
+* `Polynomial.Monic.resultant_eq_zero_iff_dvd`: over an integrally closed domain, for a monic
+  irreducible `f`, `f.resultant g = 0` iff `f ∣ g`.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
@@ -277,6 +285,34 @@ end TauCeti
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
+
+/-- For monic `f`, `Res(f, g₁ * g₂) = Res(f, g₁) * Res(f, g₂)` at the actual degrees, with no
+hypothesis on the leading coefficients of `g₁` and `g₂`. -/
+protected theorem Monic.resultant_mul_right {f g₁ g₂ : R[X]} (hf : f.Monic) :
+    f.resultant (g₁ * g₂) = f.resultant g₁ * f.resultant g₂ := by
+  rw [← hf.resultant_of_le natDegree_mul_le, Polynomial.resultant_mul_right _ _ _ _ le_rfl]
+
+/-- For monic `f`, `Res(f, ∏ gᵢ) = ∏ Res(f, gᵢ)` at the actual degrees, with no hypothesis on the
+leading coefficients of the factors `gᵢ`. -/
+protected theorem Monic.resultant_prod_right {ι : Type*} (s : Finset ι) {f : R[X]} (hf : f.Monic)
+    (g : ι → R[X]) :
+    f.resultant (∏ i ∈ s, g i) = ∏ i ∈ s, f.resultant (g i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => rw [Finset.prod_cons, Finset.prod_cons, hf.resultant_mul_right, ih]
+
+/-- Over an integrally closed domain, the resultant of a monic irreducible polynomial `f` with `g`
+vanishes if and only if `f` divides `g`. -/
+protected theorem Monic.resultant_eq_zero_iff_dvd [IsDomain R] [IsIntegrallyClosed R] {f g : R[X]}
+    (hf : f.Monic) (hirr : Irreducible f) : f.resultant g = 0 ↔ f ∣ g := by
+  let φ := algebraMap R (FractionRing R)
+  have hφ : Function.Injective φ := IsFractionRing.injective R (FractionRing R)
+  have hirr' : Irreducible (f.map φ) := hf.irreducible_iff_irreducible_map_fraction_map.mp hirr
+  rw [← map_eq_zero_iff φ hφ,
+    ← resultant_map_of_natDegree_eq φ (natDegree_map_eq_of_injective hφ f)
+      (natDegree_map_eq_of_injective hφ g),
+    resultant_eq_zero_iff, and_iff_right (Or.inl (hf.map φ).ne_zero),
+    ← hirr'.dvd_iff_not_isCoprime, map_dvd_map φ hφ hf]
 
 /-- `X - C a` is coprime to every polynomial whose value at `a` is a unit, over any commutative
 ring: the resultant of the two is that value. -/
