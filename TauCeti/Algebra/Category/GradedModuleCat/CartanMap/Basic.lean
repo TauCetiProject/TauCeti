@@ -187,7 +187,7 @@ private structure GradedFGModuleRepr where
   /-- The small representative of the underlying finitely generated module. -/
   moduleRepr : FGModuleRepr A
   /-- The internal grading on the representative. -/
-  grading : InternalGrading k moduleRepr
+  grading : InternalGrading k moduleRepr ℤ
   /-- Multiplication by a homogeneous algebra element shifts the degree as prescribed. -/
   [gradedSMul : SetLike.GradedSMul 𝒜 grading.piece]
 
@@ -235,7 +235,7 @@ private noncomputable def moduleEquiv :
   FGModuleRepr.ofFiniteEquiv A M
 
 private noncomputable def smallGrading :
-    InternalGrading k (FGModuleRepr.ofFinite A M) :=
+    InternalGrading k (FGModuleRepr.ofFinite A M) ℤ :=
   M.grading.map ((moduleEquiv M).symm.restrictScalars k)
 
 private noncomputable instance smallGradedSMul :

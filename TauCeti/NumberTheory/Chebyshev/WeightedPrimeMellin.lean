@@ -272,7 +272,7 @@ theorem integrableOn_rpow_smul_weightedPrimeSum {a : ℕ → E} (ha : ∀ p, p.P
         setIntegral_mono_on (hfi n).norm (hg.mono_set Ioc_subset_Ioi_self) measurableSet_Ioc
           fun t ht ↦ hbound t ht.1
     _ ≤ ∫ t in Ioi 1, t ^ (-1 - η) * (1 + log t) ^ 2 := by
-        refine setIntegral_mono_set hg ?_ Ioc_subset_Ioi_self.eventuallyLE
+        refine setIntegral_mono_set hg ?_ Ioc_subset_Ioi_self.eventuallySubset
         refine (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun t ht ↦ ?_)
         exact mul_nonneg (rpow_nonneg (zero_le_one.trans (le_of_lt ht)) _) (sq_nonneg _)
 

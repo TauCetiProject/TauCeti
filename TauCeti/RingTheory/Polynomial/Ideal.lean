@@ -109,21 +109,21 @@ theorem comap_C_map_C_sup_span_C_mul_X_sub_one (I : Ideal R) (r : R) (S : Type*)
 /-- A polynomial over `R ⧸ (ϖ)` with a coefficient the residue of an element not divisible by `ϖ`
 is nonzero. -/
 theorem ne_zero_of_coeff_mk_of_not_dvd {ϖ u : R} (hu : ¬ ϖ ∣ u)
-    (p : (R ⧸ Ideal.span {ϖ})[X]) (n : ℕ) (h : p.coeff n = Ideal.Quotient.mk _ u) : p ≠ 0 :=
-  fun h0 ↦ hu ((Ideal.Quotient.eq_zero_iff_dvd _ _).1 (by rw [← h, h0, coeff_zero]))
+    (p : (R ⧸ span {ϖ})[X]) (n : ℕ) (h : p.coeff n = Quotient.mk _ u) : p ≠ 0 :=
+  fun h0 ↦ hu ((Quotient.eq_zero_iff_dvd _ _).1 (by rw [← h, h0, coeff_zero]))
 
 /-- Over an integral domain `R` with a nonzero nonunit `ϖ`, the residues `t` modulo `ϖ` for which
 `ϖ ^ 4` divides `(ϖ t)³ + a₂ (ϖ t)² + a₄ (ϖ t) + a₆` are among the roots of a nonzero polynomial of
 degree at most `3` over `R ⧸ (ϖ)`. -/
 theorem exists_poly_isRoot_mk_of_pow_four_dvd_cubic [IsDomain R] {ϖ : R} (hϖ0 : ϖ ≠ 0)
     (hϖ : ¬ IsUnit ϖ) (a₂ a₄ a₆ : R) :
-    ∃ p : (R ⧸ Ideal.span {ϖ})[X], p ≠ 0 ∧ p.natDegree ≤ 3 ∧ ∀ t : R,
+    ∃ p : (R ⧸ span {ϖ})[X], p ≠ 0 ∧ p.natDegree ≤ 3 ∧ ∀ t : R,
       ϖ ^ 4 ∣ (ϖ * t) ^ 3 + a₂ * (ϖ * t) ^ 2 + a₄ * (ϖ * t) + a₆ →
-        p.IsRoot (Ideal.Quotient.mk _ t) := by
-  have : Nontrivial (R ⧸ Ideal.span {ϖ}) :=
-    Ideal.Quotient.nontrivial_iff.2 (by rwa [Ne, Ideal.span_singleton_eq_top])
-  have hm (x : R) (hx : ϖ ∣ x) : Ideal.Quotient.mk (Ideal.span {ϖ}) x = 0 :=
-    (Ideal.Quotient.eq_zero_iff_dvd _ _).2 hx
+        p.IsRoot (Quotient.mk _ t) := by
+  have : Nontrivial (R ⧸ span {ϖ}) :=
+    Ideal.Quotient.nontrivial_iff.2 (by rwa [Ne, span_singleton_eq_top])
+  have hm (x : R) (hx : ϖ ∣ x) : Quotient.mk (span {ϖ}) x = 0 :=
+    (Quotient.eq_zero_iff_dvd _ _).2 hx
   have cancel (k n : ℕ) (x z : R) (h : ϖ ^ (k + n) ∣ z) (e : z = ϖ ^ k * x) : ϖ ^ n ∣ x := by
     rw [e, pow_add] at h
     exact (mul_dvd_mul_iff_left (pow_ne_zero _ hϖ0)).1 h
@@ -142,7 +142,7 @@ theorem exists_poly_isRoot_mk_of_pow_four_dvd_cubic [IsDomain R] {ϖ : R} (hϖ0 
   -- Stage 2: the coefficient `a₄` of the linear term modulo `ϖ`.
   by_cases h4 : ϖ ∣ a₄
   swap
-  · refine ⟨C (Ideal.Quotient.mk _ a₄) * X + C (Ideal.Quotient.mk _ b), ?_, by compute_degree!,
+  · refine ⟨C (Quotient.mk _ a₄) * X + C (Quotient.mk _ b), ?_, by compute_degree!,
       fun t h ↦ ?_⟩
     · exact ne_zero_of_coeff_mk_of_not_dvd h4 _ 1 (by simp)
     · simpa [IsRoot.def, map_add, map_mul, map_pow] using
@@ -162,8 +162,8 @@ theorem exists_poly_isRoot_mk_of_pow_four_dvd_cubic [IsDomain R] {ϖ : R} (hϖ0 
   -- Stage 4: cancel `ϖ²` and look at the coefficient `a₂` of the quadratic term.
   by_cases h2 : ϖ ∣ a₂
   swap
-  · refine ⟨C (Ideal.Quotient.mk _ a₂) * X ^ 2 + C (Ideal.Quotient.mk _ c) * X +
-      C (Ideal.Quotient.mk _ d), ?_, by compute_degree!, fun t h ↦ ?_⟩
+  · refine ⟨C (Quotient.mk _ a₂) * X ^ 2 + C (Quotient.mk _ c) * X +
+      C (Quotient.mk _ d), ?_, by compute_degree!, fun t h ↦ ?_⟩
     · exact ne_zero_of_coeff_mk_of_not_dvd h2 _ 2 (by simp)
     · have := hm _ (step (t ^ 3) (a₂ * t ^ 2 + c * t + d) _ (hH1 t h) (by ring))
       rw [map_add, map_add, map_mul, map_mul, map_pow] at this
@@ -172,7 +172,7 @@ theorem exists_poly_isRoot_mk_of_pow_four_dvd_cubic [IsDomain R] {ϖ : R} (hϖ0 
   -- Stage 5: with `a₂ = ϖ e`, the linear coefficient `c` modulo `ϖ`.
   by_cases hc : ϖ ∣ c
   swap
-  · refine ⟨C (Ideal.Quotient.mk _ c) * X + C (Ideal.Quotient.mk _ d), ?_, by compute_degree!,
+  · refine ⟨C (Quotient.mk _ c) * X + C (Quotient.mk _ d), ?_, by compute_degree!,
       fun t h ↦ ?_⟩
     · exact ne_zero_of_coeff_mk_of_not_dvd hc _ 1 (by simp)
     · simpa [IsRoot.def, map_add, map_mul, map_pow] using
@@ -184,9 +184,9 @@ theorem exists_poly_isRoot_mk_of_pow_four_dvd_cubic [IsDomain R] {ϖ : R} (hϖ0 
   · refine ⟨1, one_ne_zero, by simp, fun t h ↦ (hd ?_).elim⟩
     exact step (t ^ 3 + e * t ^ 2 + f * t) d _ (hH1 t h) (by ring)
   obtain ⟨g, rfl⟩ := hd
-  have hmon : (X ^ 3 + C (Ideal.Quotient.mk (Ideal.span {ϖ}) e) * X ^ 2 +
-      C (Ideal.Quotient.mk (Ideal.span {ϖ}) f) * X +
-      C (Ideal.Quotient.mk (Ideal.span {ϖ}) g)).Monic := by monicity!
+  have hmon : (X ^ 3 + C (Quotient.mk (span {ϖ}) e) * X ^ 2 +
+      C (Quotient.mk (span {ϖ}) f) * X +
+      C (Quotient.mk (span {ϖ}) g)).Monic := by monicity!
   refine ⟨_, hmon.ne_zero, by compute_degree!, fun t h ↦ ?_⟩
   have h1 : ϖ ∣ t ^ 3 + e * t ^ 2 + f * t + g := by
     simpa using cancel 1 1 (t ^ 3 + e * t ^ 2 + f * t + g)

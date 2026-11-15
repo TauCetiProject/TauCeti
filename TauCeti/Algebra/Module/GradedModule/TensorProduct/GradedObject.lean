@@ -36,8 +36,8 @@ universe u
 variable {R M N : Type u} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
-private noncomputable def tensorGradedObjectHom (G : InternalGrading R M)
-    (H : InternalGrading R N) (n : ℤ) :
+private noncomputable def tensorGradedObjectHom (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (n : ℤ) :
     tensorObj G.toGradedObject H.toGradedObject n ⟶ (G.tensorProduct H).toGradedObject n :=
   tensorObjDesc fun p q h ↦ ModuleCat.ofHom <|
     (TensorProduct.mapIncl (G.piece p) (H.piece q)).codRestrict
@@ -48,8 +48,8 @@ private noncomputable def tensorGradedObjectHom (G : InternalGrading R M)
             G.tmul_mem_tensorProduct H x.property y.property
         | add x y hx hy => simpa only [map_add] using Submodule.add_mem _ hx hy
 
-private theorem tensorGradedObjectHom_tmul (G : InternalGrading R M)
-    (H : InternalGrading R N) {p q n : ℤ} (h : p + q = n)
+private theorem tensorGradedObjectHom_tmul (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) {p q n : ℤ} (h : p + q = n)
     (x : G.piece p) (y : H.piece q) :
     (tensorGradedObjectHom G H n
       (ιTensorObj G.toGradedObject H.toGradedObject p q n h (x ⊗ₜ[R] y)) : M ⊗[R] N) =
@@ -57,23 +57,23 @@ private theorem tensorGradedObjectHom_tmul (G : InternalGrading R M)
   rw [← ModuleCat.comp_apply, tensorGradedObjectHom, ι_tensorObjDesc]
   rfl
 
-private noncomputable def tensorBidegreeEquiv (G : InternalGrading R M)
-    (H : InternalGrading R N) :
+private noncomputable def tensorBidegreeEquiv (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) :
     M ⊗[R] N ≃ₗ[R] ⨁ d : ℤ × ℤ, G.piece d.1 ⊗[R] H.piece d.2 :=
   TensorProduct.congr (DirectSum.decomposeLinearEquiv G.piece)
       (DirectSum.decomposeLinearEquiv H.piece) ≪≫ₗ
     TensorProduct.directSum R R (fun p ↦ G.piece p) (fun q ↦ H.piece q)
 
-private theorem tensorBidegreeEquiv_tmul (G : InternalGrading R M)
-    (H : InternalGrading R N) {p q : ℤ} (x : G.piece p) (y : H.piece q) :
+private theorem tensorBidegreeEquiv_tmul (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) {p q : ℤ} (x : G.piece p) (y : H.piece q) :
     tensorBidegreeEquiv G H ((x : M) ⊗ₜ[R] (y : N)) =
       DirectSum.lof R (ℤ × ℤ) (fun d ↦ G.piece d.1 ⊗[R] H.piece d.2) (p, q)
         (x ⊗ₜ[R] y) := by
   simp only [tensorBidegreeEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
     DirectSum.decomposeLinearEquiv_apply_coe, TensorProduct.directSum_lof_tmul_lof]
 
-private noncomputable def tensorGradedObjectRetraction (G : InternalGrading R M)
-    (H : InternalGrading R N) (n : ℤ) :
+private noncomputable def tensorGradedObjectRetraction (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (n : ℤ) :
     M ⊗[R] N →ₗ[R] (tensorObj G.toGradedObject H.toGradedObject n : ModuleCat R) :=
   (DirectSum.toModule R (ℤ × ℤ) _
     (M := fun d : ℤ × ℤ ↦ G.piece d.1 ⊗[R] H.piece d.2) fun d ↦
@@ -81,16 +81,16 @@ private noncomputable def tensorGradedObjectRetraction (G : InternalGrading R M)
       (ιTensorObj G.toGradedObject H.toGradedObject d.1 d.2 n h).hom else 0) ∘ₗ
     (tensorBidegreeEquiv G H).toLinearMap
 
-private theorem tensorGradedObjectRetraction_tmul (G : InternalGrading R M)
-    (H : InternalGrading R N) {p q n : ℤ} (h : p + q = n)
+private theorem tensorGradedObjectRetraction_tmul (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) {p q n : ℤ} (h : p + q = n)
     (x : G.piece p) (y : H.piece q) :
     tensorGradedObjectRetraction G H n ((x : M) ⊗ₜ[R] (y : N)) =
       ιTensorObj G.toGradedObject H.toGradedObject p q n h (x ⊗ₜ[R] y) := by
   simp only [tensorGradedObjectRetraction, LinearMap.comp_apply, LinearEquiv.coe_coe,
     tensorBidegreeEquiv_tmul, DirectSum.toModule_lof, dite_eq_left h]
 
-private theorem tensorGradedObjectHom_bijective (G : InternalGrading R M)
-    (H : InternalGrading R N) (n : ℤ) :
+private theorem tensorGradedObjectHom_bijective (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (n : ℤ) :
     Function.Bijective (tensorGradedObjectHom G H n) := by
   have hleft : tensorGradedObjectHom G H n ≫
       ModuleCat.ofHom ((tensorGradedObjectRetraction G H n).comp
@@ -124,8 +124,8 @@ private theorem tensorGradedObjectHom_bijective (G : InternalGrading R M)
 
 /-- The native graded tensor of the homogeneous pieces is the internal total-degree tensor
 grading. Its forward map forgets the two homogeneous membership proofs. -/
-noncomputable def tensorProductGradedObjectIso (G : InternalGrading R M)
-    (H : InternalGrading R N) :
+noncomputable def tensorProductGradedObjectIso (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) :
     tensorObj G.toGradedObject H.toGradedObject ≅ (G.tensorProduct H).toGradedObject :=
   GradedObject.isoMk _ _ fun n ↦
     (LinearEquiv.ofBijective (tensorGradedObjectHom G H n).hom
@@ -134,8 +134,8 @@ noncomputable def tensorProductGradedObjectIso (G : InternalGrading R M)
 /-- The comparison sends a native homogeneous pure tensor to the tensor of its underlying
 elements. -/
 @[simp↓]
-theorem tensorProductGradedObjectIso_hom_tmul (G : InternalGrading R M)
-    (H : InternalGrading R N) {p q n : ℤ} (h : p + q = n)
+theorem tensorProductGradedObjectIso_hom_tmul (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) {p q n : ℤ} (h : p + q = n)
     (x : G.piece p) (y : H.piece q) :
     ((G.tensorProductGradedObjectIso H).hom n
       (ιTensorObj G.toGradedObject H.toGradedObject p q n h (x ⊗ₜ[R] y)) : M ⊗[R] N) =
@@ -145,8 +145,8 @@ theorem tensorProductGradedObjectIso_hom_tmul (G : InternalGrading R M)
 /-- The inverse comparison puts a tensor of homogeneous elements in its native total-degree
 summand. -/
 -- The bidegrees cannot be recovered from the ambient tensor expression, so keep this rule named.
-theorem tensorProductGradedObjectIso_inv_tmul (G : InternalGrading R M)
-    (H : InternalGrading R N) {p q n : ℤ} (h : p + q = n)
+theorem tensorProductGradedObjectIso_inv_tmul (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) {p q n : ℤ} (h : p + q = n)
     (x : G.piece p) (y : H.piece q) :
     (G.tensorProductGradedObjectIso H).inv n
       ⟨(x : M) ⊗ₜ[R] (y : N), h ▸ G.tmul_mem_tensorProduct H x.property y.property⟩ =

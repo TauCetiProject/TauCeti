@@ -172,7 +172,7 @@ theorem steinerSymmetrization_smul (e : E) (he : ‖e‖ = 1) {c : ℝ} (hc : c 
     ext t
     simp only [mem_ofPred_eq, mem_preimage, mem_smul_set_iff_inv_smul_mem₀ hc, smul_add, smul_smul]
   rw [h, Real.volume_preimage_mul_left (inv_ne_zero hc), inv_inv, inner_smul_right]
-  simp only [Metric.mem_eball, edist_zero_right, Real.enorm_eq_ofReal_abs, abs_mul, abs_inv]
+  simp only [Metric.mem_eball, edist_zero_right, Real.eNorm_eq_ofReal_abs, abs_mul, abs_inv]
   rw [inv_mul_eq_div, ENNReal.ofReal_div_of_pos (abs_pos.2 hc),
     ENNReal.div_lt_iff (.inl (by simpa using hc)) (.inl ENNReal.ofReal_ne_top),
     mul_comm (_ / 2), ← mul_div_assoc]
@@ -202,14 +202,14 @@ theorem preimage_reflection_steinerSymmetrization (e : E) (he : ‖e‖ = 1) (s 
     ring
   rw [mem_preimage, hx, mem_steinerSymmetrization_iff, mem_steinerSymmetrization_iff,
     volume_lineSection_add_smul, hinner]
-  simp only [Metric.mem_eball, edist_zero_right, enorm_neg]
+  simp only [Metric.mem_eball, edist_zero_right, eNorm_neg]
 
 /-- Steiner symmetrization preserves convexity. -/
 theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : Convex ℝ s) : Convex ℝ (steinerSymmetrization e he s) := by
   refine convex_iff_forall_pos.2 fun x hx y hy a b ha hb hab ↦ ?_
   rw [mem_steinerSymmetrization_iff, Metric.mem_eball, edist_zero_right,
-    Real.enorm_eq_ofReal_abs] at hx hy ⊢
+    Real.eNorm_eq_ofReal_abs] at hx hy ⊢
   -- The weighted sum of the two sections lies in the section through the weighted point.
   have hsub : a • {t : ℝ | x + t • e ∈ s} + b • {t : ℝ | y + t • e ∈ s} ⊆
       {t : ℝ | a • x + b • y + t • e ∈ s} := by

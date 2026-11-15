@@ -199,7 +199,7 @@ theorem countdownStates_map_pred (ν : Measure ℕ) (hν : ν {0} = 0) :
     apply measure_congr
     filter_upwards [hpos] with n hn
     simp only [mem_preimage, mem_Ici, mem_Ioi, Nat.pred_eq_sub_one]
-    exact propext (by omega)
+    omega
   rw [heq]
   rfl
 

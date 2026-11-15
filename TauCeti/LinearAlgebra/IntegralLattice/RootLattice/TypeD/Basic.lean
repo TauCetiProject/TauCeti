@@ -413,9 +413,8 @@ theorem checkerboardSpinor_mem_dualCarrier :
   obtain ⟨-, m, hm⟩ := (mem_checkerboardLattice_carrier_iff x).mp hx
   refine Submodule.mem_one.mpr ⟨m, ?_⟩
   rw [(checkerboardLattice n).isSymm.eq, checkerboardLattice_form_apply]
-  simp only [checkerboardSpinor_apply, ← Finset.sum_mul, hm]
-  ring_nf
-  rfl
+  simp only [checkerboardSpinor_apply, ← Finset.sum_mul, hm, algebraMap_int_eq, eq_intCast]
+  ring
 
 /-- The cospinor representative lies in the dual lattice. -/
 theorem checkerboardCospinor_mem_dualCarrier [NeZero n] :
@@ -525,7 +524,8 @@ noncomputable def checkerboardCospinorClass [NeZero n] :
 variable {n}
 
 /-- A rational vector with integral coordinates of even sum is a checkerboard lattice vector. -/
-theorem mem_checkerboardCarrier_of {u : Fin n → ℚ} (w : Fin n → ℤ) (hw : ∀ i, u i = (w i : ℚ))
+theorem mem_checkerboardCarrier_of_even_sum {u : Fin n → ℚ} (w : Fin n → ℤ)
+    (hw : ∀ i, u i = (w i : ℚ))
     (hsum : Even (∑ i, w i)) : u ∈ checkerboardCarrier n := by
   obtain ⟨k, hk⟩ := hsum
   refine ⟨fun i ↦ ⟨w i, hw i⟩, k, ?_⟩
@@ -540,7 +540,7 @@ theorem mem_checkerboardCarrier_of {u : Fin n → ℚ} (w : Fin n → ℤ) (hw :
 the integer sum of `w` is even. -/
 theorem mem_checkerboardCarrier_iff_even_sum {u : Fin n → ℚ} (w : Fin n → ℤ)
     (hw : ∀ i, u i = (w i : ℚ)) : u ∈ checkerboardCarrier n ↔ Even (∑ i, w i) := by
-  refine ⟨fun h ↦ ?_, mem_checkerboardCarrier_of w hw⟩
+  refine ⟨fun h ↦ ?_, mem_checkerboardCarrier_of_even_sum w hw⟩
   obtain ⟨-, m, hm⟩ := (mem_checkerboardCarrier_iff u).mp h
   refine ⟨m, ?_⟩
   have hsum : ∑ i, u i = ((∑ i, w i : ℤ) : ℚ) := by
@@ -554,13 +554,14 @@ theorem mem_checkerboardCarrier_iff_even_sum {u : Fin n → ℚ} (w : Fin n → 
 
 /-- Two dual vectors define the same discriminant class as soon as their difference is an
 integer vector with even coordinate sum. -/
-theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboardLattice n).dualCarrier)
+theorem checkerboard_mk_eq_mk_of_even_sum {u v : Fin n → ℚ}
+    (hu : u ∈ (checkerboardLattice n).dualCarrier)
     (hv : v ∈ (checkerboardLattice n).dualCarrier) (w : Fin n → ℤ)
     (hw : ∀ i, u i - v i = (w i : ℚ)) (hsum : Even (∑ i, w i)) :
     (Submodule.Quotient.mk ⟨u, hu⟩ : (checkerboardLattice n).DiscriminantGroup) =
       Submodule.Quotient.mk ⟨v, hv⟩ := by
   rw [discriminantGroup_mk_eq_iff, checkerboardLattice_carrier]
-  exact mem_checkerboardCarrier_of w hw hsum
+  exact mem_checkerboardCarrier_of_even_sum w hw hsum
 
 /-- A dual vector lies in the vector class exactly when it differs from `v` by a lattice
 vector. -/
@@ -611,9 +612,9 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
       rcases Int.even_or_odd (∑ i, (d i + a)) with hS | hS
       · refine Or.inl ?_
         rw [discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
-        exact mem_checkerboardCarrier_of (fun i ↦ d i + a) hyi hS
+        exact mem_checkerboardCarrier_of_even_sum (fun i ↦ d i + a) hyi hS
       · refine Or.inr (Or.inl ?_)
-        refine checkerboard_mk_eq_mk_of y.2 checkerboardVector_mem_dualCarrier
+        refine checkerboard_mk_eq_mk_of_even_sum y.2 checkerboardVector_mem_dualCarrier
           (fun i ↦ d i + a - if i = ⊤ then 1 else 0) (fun i ↦ ?_) ?_
         · rw [hyi i, checkerboardVector_apply]
           push_cast
@@ -630,12 +631,12 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
         linarith [hd i, hlast]
       rcases Int.even_or_odd (∑ i, (d i + a)) with hS | hS
       · refine Or.inr (Or.inr (Or.inl ?_))
-        refine checkerboard_mk_eq_mk_of y.2 checkerboardSpinor_mem_dualCarrier
+        refine checkerboard_mk_eq_mk_of_even_sum y.2 checkerboardSpinor_mem_dualCarrier
           (fun i ↦ d i + a) (fun i ↦ ?_) hS
         rw [hyi i, checkerboardSpinor_apply]
         ring
       · refine Or.inr (Or.inr (Or.inr ?_))
-        refine checkerboard_mk_eq_mk_of y.2 checkerboardCospinor_mem_dualCarrier
+        refine checkerboard_mk_eq_mk_of_even_sum y.2 checkerboardCospinor_mem_dualCarrier
           (fun i ↦ d i + a + if i = ⊤ then 1 else 0) (fun i ↦ ?_) ?_
         · rw [hyi i, checkerboardCospinor_apply]
           push_cast
@@ -655,14 +656,6 @@ private theorem notMem_checkerboardCarrier_of_two_mul_odd {u : Fin n → ℚ} (i
   have hz2 : (2 * z : ℤ) = 2 * k + 1 := by exact_mod_cast h
   omega
 
-/-- A vector with odd coordinate sum is not a lattice vector. -/
-private theorem notMem_checkerboardCarrier_of_sum_odd {u : Fin n → ℚ} (k : ℤ)
-    (h : ∑ i, u i = ((2 * k + 1 : ℤ) : ℚ)) : u ∉ checkerboardCarrier n := by
-  rintro ⟨-, m, hm⟩
-  rw [hm] at h
-  have hm2 : (2 * m : ℤ) = 2 * k + 1 := by exact_mod_cast h
-  omega
-
 variable (n)
 
 section
@@ -671,7 +664,7 @@ variable [NeZero n]
 /-- The vector representative is not a lattice vector: its coordinate sum is odd. -/
 theorem checkerboardVector_notMem_checkerboardCarrier :
     checkerboardVector n ∉ checkerboardCarrier n :=
-  notMem_checkerboardCarrier_of_sum_odd 0 (by rw [sum_checkerboardVector]; norm_num)
+  single_one_notMem_checkerboardCarrier n ⊤
 
 /-- The spinor representative is not a lattice vector: its coordinates are half-integral. -/
 theorem checkerboardSpinor_notMem_checkerboardCarrier :
@@ -738,27 +731,16 @@ theorem checkerboardSpinorClass_ne_checkerboardCospinorClass :
 /-- **The checkerboard discriminant group has order four.** -/
 theorem natCard_discriminantGroup_checkerboardLattice :
     Nat.card (checkerboardLattice n).DiscriminantGroup = 4 := by
-  have huniv : (Set.univ : Set (checkerboardLattice n).DiscriminantGroup) =
-      {0, checkerboardVectorClass n, checkerboardSpinorClass n, checkerboardCospinorClass n} := by
-    ext g
-    simp only [Set.mem_univ, true_iff, Set.mem_insert_iff, Set.mem_singleton_iff]
-    exact
-      checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
-        g
-  have h2 : checkerboardVectorClass n ∉ ({checkerboardSpinorClass n, checkerboardCospinorClass n} :
-      Set (checkerboardLattice n).DiscriminantGroup) := by
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-    exact ⟨fun h ↦ checkerboardSpinorClass_ne_checkerboardVectorClass n h.symm,
-      fun h ↦ checkerboardCospinorClass_ne_checkerboardVectorClass n h.symm⟩
-  have h3 : (0 : (checkerboardLattice n).DiscriminantGroup) ∉
-      ({checkerboardVectorClass n, checkerboardSpinorClass n, checkerboardCospinorClass n} :
-        Set (checkerboardLattice n).DiscriminantGroup) := by
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-    exact ⟨fun h ↦ checkerboardVectorClass_ne_zero n h.symm,
-      fun h ↦ checkerboardSpinorClass_ne_zero n h.symm,
-      fun h ↦ checkerboardCospinorClass_ne_zero n h.symm⟩
-  rw [← Set.ncard_univ, huniv, Set.ncard_insert_of_notMem h3, Set.ncard_insert_of_notMem h2,
-    Set.ncard_pair (checkerboardSpinorClass_ne_checkerboardCospinorClass n)]
+  rw [← Set.ncard_univ, Set.ncard_eq_four]
+  refine ⟨0, checkerboardVectorClass n, checkerboardSpinorClass n, checkerboardCospinorClass n,
+    (checkerboardVectorClass_ne_zero n).symm, (checkerboardSpinorClass_ne_zero n).symm,
+    (checkerboardCospinorClass_ne_zero n).symm,
+    (checkerboardSpinorClass_ne_checkerboardVectorClass n).symm,
+    (checkerboardCospinorClass_ne_checkerboardVectorClass n).symm,
+    checkerboardSpinorClass_ne_checkerboardCospinorClass n, ?_⟩
+  ext g
+  simpa using
+    checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass g
 
 /-- **The discriminant of the checkerboard lattice is `4`**: the Gram determinant of any integral
 basis has absolute value `4`. -/
@@ -831,7 +813,7 @@ theorem two_zsmul_checkerboardSpinorClass_of_even (hn : Even n) :
   obtain ⟨k, hk⟩ := hn
   rw [checkerboardSpinorClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
     checkerboardLattice_carrier]
-  refine mem_checkerboardCarrier_of (fun _ ↦ (1 : ℤ)) (fun i ↦ ?_) ⟨k, ?_⟩
+  refine mem_checkerboardCarrier_of_even_sum (fun _ ↦ (1 : ℤ)) (fun i ↦ ?_) ⟨k, ?_⟩
   · simp only [Submodule.coe_smul, Pi.smul_apply, checkerboardSpinor_apply, zsmul_eq_mul]
     norm_num
   · simp [hk]
@@ -846,7 +828,7 @@ theorem addOrderOf_checkerboardSpinorClass_of_even [NeZero n] (hn : Even n) :
     (checkerboardSpinorClass_ne_zero n)
 
 /-- For even `n`, the multiples of the spinor class are exactly zero and the spinor class. -/
-theorem mem_zmultiples_checkerboardSpinorClass_iff (hn : Even n)
+theorem mem_zmultiples_checkerboardSpinorClass_iff_of_even (hn : Even n)
     (x : (checkerboardLattice n).DiscriminantGroup) :
     x ∈ AddSubgroup.zmultiples (checkerboardSpinorClass n) ↔
       x = 0 ∨ x = checkerboardSpinorClass n := by
@@ -863,7 +845,8 @@ theorem two_zsmul_checkerboardSpinorClass_of_odd (hn : Odd n) :
   obtain ⟨k, hk⟩ := hn
   rw [← sub_eq_zero, checkerboardSpinorClass, checkerboardVectorClass, ← Submodule.Quotient.mk_smul,
     ← Submodule.Quotient.mk_sub, discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
-  refine mem_checkerboardCarrier_of (fun i ↦ 1 - if i = ⊤ then 1 else 0) (fun i ↦ ?_) ⟨k, ?_⟩
+  refine mem_checkerboardCarrier_of_even_sum (fun i ↦ 1 - if i = ⊤ then 1 else 0) (fun i ↦ ?_)
+    ⟨k, ?_⟩
   · simp only [Submodule.coe_sub, Submodule.coe_smul, Pi.sub_apply, Pi.smul_apply,
       checkerboardSpinor_apply, checkerboardVector_apply]
     simp only [zsmul_eq_mul]
@@ -1011,8 +994,7 @@ theorem discriminantPairing_checkerboardVectorClass_self [NeZero n] :
       (checkerboardVectorClass n) = 0 := by
   rw [checkerboardVectorClass, discriminantPairing_mk,
     checkerboardLattice_form_checkerboardVector_self]
-  rw [AddCircle.coe_eq_zero_iff]
-  exact ⟨1, by norm_num⟩
+  exact AddCircle.coe_period (1 : ℚ)
 
 /-- **The spinor class has self-pairing `b(s, s) = n / 4`.** -/
 @[simp]
@@ -1086,10 +1068,7 @@ theorem checkerboardStandardQuadraticModule_quadratic_one_one (hn : Even n) :
   unfold checkerboardStandardQuadraticModule
   rw [FiniteQuadraticModule.kleinFour_quadratic,
     FiniteQuadraticModule.kleinFourMap_apply_one_one, add_right_comm, ← AddCircle.coe_add]
-  have hhalf :
-      ((((1 : ℚ) / 2 : ℚ) + (1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) = 0 :=
-    (AddCircle.coe_eq_zero_iff (p := (1 : ℚ))).mpr ⟨1, by norm_num⟩
-  rw [hhalf, zero_add]
+  norm_num [AddCircle.coe_period]
 
 /-- The two standard generators pair to `1 / 2`. -/
 @[simp]

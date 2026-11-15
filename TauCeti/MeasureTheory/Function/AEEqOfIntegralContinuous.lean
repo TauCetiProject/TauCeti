@@ -164,7 +164,7 @@ theorem Integrable.ae_eq_zero_of_forall_integral_hasCompactSupport_smul_eq_zero
           simp [hxs, hxU, hφU hxU]
     _ = ∫ x in U \ K, ‖f x‖ ∂μ := integral_indicator hUK
     _ ≤ 0 + ε := by
-        rw [zero_add, integral_norm_eq_lintegral_enorm hf.aestronglyMeasurable.restrict]
+        rw [zero_add, integral_norm_eq_lintegral_eNorm hf.aestronglyMeasurable.restrict]
         exact (ENNReal.toReal_lt_of_lt_ofReal (hδε _ hμUK)).le
 
 end LocallyCompact

@@ -53,7 +53,7 @@ theorem kMethodConst_mul_ofReal_rpow_kFunctional_le (ht : 0 < t) (u : C.SumSpace
     kMethodConst θ p * ENNReal.ofReal (t ^ (-θ) * C.kFunctional t u) =
         eLpNorm ((t ^ (-θ) * C.kFunctional t u) • fun s : ℝ => s ^ (-θ) * min 1 s)
           p multHaar := by
-      rw [eLpNorm_const_smul, Real.enorm_of_nonneg
+      rw [eLpNorm_const_smul, Real.eNorm_of_nonneg
         (mul_nonneg (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le)),
         mul_comm, kMethodConst_def]
     _ ≤ eLpNorm ((fun s => s ^ (-θ) * C.kFunctional s u) ∘ (t * ·)) p multHaar := by

@@ -74,7 +74,8 @@ variable {σ R : Type*} [CommRing R] [LinearOrder R]
 /-- The parameters at which a polynomial family specializes to zero form a semialgebraic set. -/
 theorem isSemialgebraic_setOf_map_eval_eq_zero (P : (MvPolynomial σ R)[X]) :
     IsSemialgebraic {x : σ → R | P.map (MvPolynomial.eval x) = 0} := by
-  simpa [Polynomial.ext_iff] using isSemialgebraic_setOf_forall_coeff_eq_zero P univ
+  simpa [AddMonoidAlgebra.ext_iff, Finsupp.ext_iff] using
+    isSemialgebraic_setOf_forall_coeff_eq_zero P univ
 
 /-- The parameters at which the specialization of a polynomial family has degree at most `d` form
 a semialgebraic set. -/

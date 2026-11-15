@@ -302,7 +302,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
         have hHt : DifferentiableAt ℝ (fun t ↦ H t (u (φ z))) z.2 :=
           ((hHs.comp (f := fun t : ℝ ↦ (t, u (φ z))) (contMDiff_id.prodMk contMDiff_const)
             ).contDiff.differentiable one_ne_zero) z.2
-        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.enorm_eq_ofReal_abs]
+        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.eNorm_eq_ofReal_abs]
         simpa [abs_mul, abs_of_nonneg (hψ _), ← ENNReal.ofReal_mul (hψ _)] using
           ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB z.2 (u (φ z))) (hψ _))
     _ = ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (p.endSign * s - 1)) *
@@ -333,8 +333,8 @@ theorem abs_integral_hamiltonianCurvature_pssPlanePerturbation_le (ω : SmoothTw
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)| ≤ B := by
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 (u 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH hHs hB u)
 
 /-! ### The energy identity on the discs of the plane -/
@@ -630,7 +630,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
   -- The band and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a, -1 / 2) : ℝ × ℝ) (b, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) (preimage_endSign_mul_ae_eq p)
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl (preimage_endSign_mul_ae_eq p)
   -- Integrability over the image transfers to the pulled-back densities on the rectangle.
   have hint {g g' : ℝ × ℝ → ℝ} (hg : IntegrableOn g (φ '' s))
       (hg' : ∀ w, g' w = (fderiv ℝ φ w).det * g (φ w)) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cayley
 public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
-public import TauCeti.GroupTheory.GTree.Basic
+public import TauCeti.GroupTheory.GTree.JSJ
 
 /-!
 # The Cayley tree of a free group
@@ -22,6 +22,12 @@ reduction, the least length of a conjugate (`GTree.cayley_translationLength`); f
 `a` and `b`, the element `a b` has translation length `2` and `a b a⁻¹` has translation length
 `1`. The Cayley tree is minimal, since the action is transitive on vertices.
 
+Since the action is free and minimal, the Cayley tree is a JSJ tree of the free group over every
+family of subgroups containing the trivial subgroup, relative to a family of trivial subgroups
+(`GTree.cayley_isJSJ`). Over such families the JSJ trees of a free group, among the trees whose
+vertices and darts lie in the universe of the basis, are exactly its minimal free actions
+(`GTree.isJSJ_iff_forall_stabilizer_eq_bot_freeGroup`).
+
 ## Main declarations
 
 * `TauCeti.GTree.cayley`: the Cayley tree of `FreeGroup α`, a tree for `FreeGroup α`.
@@ -30,11 +36,16 @@ reduction, the least length of a conjugate (`GTree.cayley_translationLength`); f
 * `TauCeti.GTree.cayley_isHyperbolic_iff`: the hyperbolic elements are the nontrivial ones.
 * `TauCeti.GTree.cayley_translationLength`: the translation length is the length of the cyclic
   reduction.
+* `TauCeti.GTree.cayley_isJSJ`: the Cayley tree is a JSJ tree of the free group, over a family
+  containing the trivial subgroup and relative to trivial subgroups.
+* `TauCeti.GTree.isJSJ_iff_forall_stabilizer_eq_bot_freeGroup`: over the same families, the JSJ
+  trees of a free group are its minimal free actions.
 
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §3.2 and §6.4.
-* V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.1.
+* V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.1 and
+  §3.1.
 -/
 
 public section
@@ -95,10 +106,11 @@ theorem cayley_stabilizer_dart (e : (cayley α).E) : stabilizer (FreeGroup α) e
 @[simp] theorem cayley_isHyperbolic_iff {g : FreeGroup α} : (cayley α).IsHyperbolic g ↔ g ≠ 1 :=
   (not_iff_comm.mp (not_isHyperbolic_iff.trans cayley_isElliptic_iff)).symm
 
-/-- The Cayley tree is relative to the trivial edge family and the trivial elliptic family. -/
-theorem cayley_isRelative : (cayley α).IsRelative {⊥} {⊥} :=
-  isRelative_iff.mpr ⟨fun e => cayley_stabilizer_dart e,
-    fun _ hH => hH ▸ isEllipticSubgroup_bot _⟩
+/-- The Cayley tree is relative to any family of subgroups containing the trivial subgroup and any
+family of trivial subgroups. -/
+theorem cayley_isRelative {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    (cayley α).IsRelative 𝒜 ℋ :=
+  isRelative_of_forall_stabilizer_eq_bot h𝒜 hℋ cayley_stabilizer_vertex
 
 /-- The Cayley tree of a free group is a minimal tree. -/
 theorem cayley_isMinimal : (cayley α).IsMinimal := by
@@ -149,6 +161,23 @@ theorem cayley_translationLength_of_mul_of (a b : α) :
 theorem cayley_translationLength_of_mul_of_mul_inv_of (a b : α) :
     (cayley α).translationLength (FreeGroup.of a * FreeGroup.of b * (FreeGroup.of a)⁻¹) = 1 := by
   rw [translationLength_conj, cayley_translationLength_of]
+
+/-! ### The Cayley tree is a JSJ tree -/
+
+/-- The Cayley tree of a free group is a JSJ tree, over any family of subgroups containing the
+trivial subgroup and relative to at most the trivial subgroup. -/
+theorem cayley_isJSJ {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    (cayley α).IsJSJ 𝒜 ℋ :=
+  .of_forall_stabilizer_eq_bot cayley_isMinimal (cayley_isRelative h𝒜 hℋ) cayley_stabilizer_vertex
+
+/-- Over a family of subgroups containing the trivial subgroup, relative to at most the trivial
+subgroup, a tree of a free group (with vertices and darts in the universe of the basis) is a JSJ
+tree exactly when it is minimal and its vertex stabilizers are trivial: the JSJ deformation space
+of a free group is the space of its minimal free actions. -/
+theorem isJSJ_iff_forall_stabilizer_eq_bot_freeGroup {T : GTree.{u, u} (FreeGroup α)}
+    {𝒜 ℋ : Set (Subgroup (FreeGroup α))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
+    T.IsJSJ 𝒜 ℋ ↔ T.IsMinimal ∧ ∀ x : T.V, stabilizer (FreeGroup α) x = ⊥ :=
+  (cayley_isJSJ h𝒜 hℋ).isJSJ_iff_forall_stabilizer_eq_bot cayley_stabilizer_vertex
 
 end GTree
 

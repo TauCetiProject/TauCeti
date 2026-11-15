@@ -448,7 +448,7 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
       (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
       (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const (hHbs q)) hHbs (by simp) hL
-      (mem_plumbedSphere_of_le_norm_sub_endCenter hq hw hge) x
+      (mem_plumbedSphere_of_le_norm_sub_endCenter hw hge) x
 
 section VectorSpace
 
@@ -768,8 +768,8 @@ theorem abs_integral_floerEnergyDensity_negativePlanePerturbation_closedBall_sub
   rw [hω.integral_floerEnergyDensity_negativePlanePerturbation_closedBall hH hHs hu hR, hsub,
     abs_neg]
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 (u 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le hH hHs hB u))
 
 /-- **The energy identity on annuli of the positive plane, for a manifold target.** Let `K` be the
@@ -910,8 +910,8 @@ theorem abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdi
   rw [hω.integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball hH hHs hu hR
     hρ, hsub, abs_neg]
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 (u 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le hH hHs hB u))
 
 end IsNondegenerate
