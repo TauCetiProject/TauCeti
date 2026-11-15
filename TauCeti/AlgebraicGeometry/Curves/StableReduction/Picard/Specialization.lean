@@ -104,7 +104,7 @@ def reducedSpecialFiberMultidegree :
     have := toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX hi 1
     have hw : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) =
         (toBase.specialFiberWeight hi : ℤ) := by
-      exact_mod_cast toBase.coe_specialFiberNumericalType_weight hX hπ hreg i
+      exact_mod_cast toBase.specialFiberNumericalType_weight hX hπ hreg i
     have hdvd : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) ∣
         LineBundleClass.intersectionNumber (ResidueField R)
           (subschemeToSpecialFiber hI).liftNilradicalSubscheme a.toMul :=
@@ -142,7 +142,7 @@ theorem weightScaling_reducedSpecialFiberMultidegree
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
   have hw : ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℤ) =
       (toBase.specialFiberWeight hi : ℤ) := by
-    exact_mod_cast toBase.coe_specialFiberNumericalType_weight hX hπ hreg i
+    exact_mod_cast toBase.specialFiberNumericalType_weight hX hπ hreg i
   rw [NumericalType.weightScaling_apply, reducedSpecialFiberMultidegree_apply, hw]
   exact Int.ediv_mul_cancel (toBase.specialFiberWeight_dvd_intersectionNumber hi _ a.toMul)
 
