@@ -218,10 +218,12 @@ along `src (rev e) = tgt e`. -/
 `e : a ⟶ b`, `φ_a (α_e c) = δ_e · α_[e] (φ_e c) · δ_e⁻¹`. -/
 theorem vertexHom_αArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
     Φ.vertexHom a (𝔸.αArrow e c) =
-      Φ.twistArrow e * 𝔹.αArrow (Φ.graph.mapArrow e) (Φ.edgeHom e.1 c) * (Φ.twistArrow e)⁻¹ := by
+      Φ.twistArrow e * 𝔹.αArrow (a := Φ.graph.mapV a) (b := Φ.graph.mapV b)
+        (Φ.graph.toPrefunctor.map e) (Φ.edgeHom e.1 c) * (Φ.twistArrow e)⁻¹ := by
   obtain ⟨e, rfl, rfl⟩ := e
   -- `αArrow_apply` at the image arrow, stated at the dart `[e]` itself.
-  have h : 𝔹.αArrow (Φ.graph.mapArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
+  have h : 𝔹.αArrow (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
+      (Φ.graph.toPrefunctor.map (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
       MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_src e)
         (𝔹.α (Φ.graph.mapE e) (Φ.edgeHom e c)) :=
     αArrow_apply ..
@@ -232,10 +234,12 @@ theorem vertexHom_αArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1))
 `e : a ⟶ b`, `φ_b (ω_e c) = δ_{rev e} · ω_[e] (φ_e c) · δ_{rev e}⁻¹`. -/
 theorem vertexHom_ωArrow (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
     Φ.vertexHom b (𝔸.ωArrow e c) = Φ.twistArrow (Quiver.reverse e) *
-      𝔹.ωArrow (Φ.graph.mapArrow e) (Φ.edgeHom e.1 c) * (Φ.twistArrow (Quiver.reverse e))⁻¹ := by
+      𝔹.ωArrow (a := Φ.graph.mapV a) (b := Φ.graph.mapV b) (Φ.graph.toPrefunctor.map e)
+        (Φ.edgeHom e.1 c) * (Φ.twistArrow (Quiver.reverse e))⁻¹ := by
   obtain ⟨e, rfl, rfl⟩ := e
   -- `ωArrow_apply` at the image arrow, stated at the dart `[e]` itself.
-  have h : 𝔹.ωArrow (Φ.graph.mapArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
+  have h : 𝔹.ωArrow (a := Φ.graph.mapV _) (b := Φ.graph.mapV _)
+      (Φ.graph.toPrefunctor.map (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e)) (Φ.edgeHom e c) =
       MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_tgt _ e)
         (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) :=
     ωArrow_apply ..
@@ -287,7 +291,8 @@ theorem id_graph_mapV (v : Γ.V) : (Hom.id 𝔸).graph.mapV v = v := rfl
 
 theorem id_graph_mapE (e : Γ.E) : (Hom.id 𝔸).graph.mapE e = e := rfl
 
-theorem id_graph_mapArrow {a b : Γ.V} (e : a ⟶ b) : (Hom.id 𝔸).graph.mapArrow e = e := rfl
+theorem id_graph_toPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
+    (Hom.id 𝔸).graph.toPrefunctor.map e = e := rfl
 
 /-- The graph morphism underlying the identity morphism is the identity. -/
 theorem id_graph : (Hom.id 𝔸).graph = SerreGraph.Hom.id Γ := by
@@ -314,8 +319,9 @@ theorem comp_graph_mapV (v : Γ.V) :
 theorem comp_graph_mapE (e : Γ.E) :
     (Ψ.comp Φ).graph.mapE e = Ψ.graph.mapE (Φ.graph.mapE e) := rfl
 
-theorem comp_graph_mapArrow {a b : Γ.V} (e : a ⟶ b) :
-    (Ψ.comp Φ).graph.mapArrow e = Ψ.graph.mapArrow (Φ.graph.mapArrow e) := rfl
+theorem comp_graph_toPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
+    (Ψ.comp Φ).graph.toPrefunctor.map e = Ψ.graph.toPrefunctor.map (Φ.graph.toPrefunctor.map e) :=
+  rfl
 
 /-- The graph morphism underlying a composite is the composite of the graph morphisms. -/
 theorem comp_graph : (Ψ.comp Φ).graph = Ψ.graph.comp Φ.graph := by
@@ -335,7 +341,8 @@ theorem comp_twist (e : Γ.E) :
 
 /-- The twisting element of a composite at an arrow `e : a ⟶ b`: `δ^{ΨΦ}_e = ψ(δ^Φ_e) · δ^Ψ_[e]`. -/
 @[simp] theorem comp_twistArrow {a b : Γ.V} (e : a ⟶ b) : (Ψ.comp Φ).twistArrow e =
-    Ψ.vertexHom _ (Φ.twistArrow e) * Ψ.twistArrow (Φ.graph.mapArrow e) := by
+    Ψ.vertexHom _ (Φ.twistArrow e) *
+      Ψ.twistArrow (a := Φ.graph.mapV a) (b := Φ.graph.mapV b) (Φ.graph.toPrefunctor.map e) := by
   -- For the arrow of a dart all transports are along `rfl`, and `Hom.comp` is reducible.
   obtain ⟨e, rfl, rfl⟩ := e
   rfl
