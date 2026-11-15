@@ -61,10 +61,10 @@ theorem finiteDimensional_and_isSeparable_of_aeval_derivative_ne_zero (hgen : K�
   have := IntermediateField.adjoin.finiteDimensional hsep.isIntegral
   exact ⟨e.toLinearEquiv.finiteDimensional, AlgEquiv.Algebra.isSeparable e⟩
 
-/-- **A separable generator with `2 z + u = 0` of a quadratic extension is trivial.** If `z`
-generates a separable extension `L / K`, satisfies `z² + u z - v = 0` and `2 z + u = 0`, then
+/-- **A separable generator with `2 z + u = 0` of a quadratic extension is trivial.** If `z` is
+separable over `K`, generates `L / K`, satisfies `z² + u z - v = 0` and `2 z + u = 0`, then
 `L = K`, that is, `Module.finrank K L = 1`. -/
-theorem finrank_eq_one_of_two_mul_add_eq_zero [Algebra.IsSeparable K L] {u v : K} {z : L}
+theorem finrank_eq_one_of_two_mul_add_eq_zero {u v : K} {z : L} (hsep : IsSeparable K z)
     (hgen : K⟮z⟯ = ⊤) (hz : z ^ 2 + algebraMap K L u * z - algebraMap K L v = 0)
     (hd : 2 * z + algebraMap K L u = 0) : Module.finrank K L = 1 := by
   obtain ⟨ψ, hψdef⟩ : ∃ ψ : K[X], ψ = X ^ 2 + C u * X - C v := ⟨_, rfl⟩
@@ -76,12 +76,11 @@ theorem finrank_eq_one_of_two_mul_add_eq_zero [Algebra.IsSeparable K L] {u v : K
       map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
     norm_num
   obtain ⟨g, hg⟩ := minpoly.dvd K z hψz
-  have hsep := Algebra.IsSeparable.isSeparable K z
   have hg0 : aeval z g = 0 := by
-    have h := congrArg (aeval z) (congrArg derivative hg)
-    rw [hderiv, derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero] at h
-    exact (mul_eq_zero.mp h.symm).resolve_left (fun h0 ↦ hsep.aeval_derivative_ne_zero
-      (minpoly.aeval K z) h0)
+    have h : aeval z (derivative (minpoly K z)) * aeval z g = 0 := by
+      simpa [hderiv, derivative_mul, minpoly.aeval] using
+        (congrArg (aeval z) (congrArg derivative hg)).symm
+    exact (mul_eq_zero.mp h).resolve_left (hsep.aeval_derivative_ne_zero (minpoly.aeval K z))
   have hmg : minpoly K z ∣ g := minpoly.dvd K z hg0
   have hdeg : (minpoly K z * minpoly K z).natDegree ≤ 2 := by
     have : (minpoly K z * minpoly K z) ∣ ψ := hg ▸ mul_dvd_mul_left _ hmg

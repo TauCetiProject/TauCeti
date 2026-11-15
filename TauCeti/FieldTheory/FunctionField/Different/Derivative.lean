@@ -201,7 +201,7 @@ theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u �
   by_cases hne : 2 * z + algebraMap F F' u = 0
   · rw [hne, P'.ord_zero]
     exact_mod_cast (differentExponent_eq_zero_of_finrank_eq_one k F P'
-      (finrank_eq_one_of_two_mul_add_eq_zero hgen hz hne)).le
+      (finrank_eq_one_of_two_mul_add_eq_zero (Algebra.IsSeparable.isSeparable F z) hgen hz hne)).le
   have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
   have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
       2 * z + algebraMap F F' u := by
