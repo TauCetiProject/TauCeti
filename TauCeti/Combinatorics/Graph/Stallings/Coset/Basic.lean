@@ -14,8 +14,9 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 
 The coset graph of a subgroup has a vertex for each left coset and one outgoing dart
 for each signed basis letter, so it is folded and complete. Its based core is a folded labelled
-graph accepting exactly that subgroup. This construction supplies the existence side of the
-Stallings correspondence, including for subgroups that are not finitely generated.
+graph accepting exactly that subgroup, and it has no darts exactly when the subgroup is trivial.
+This construction supplies the existence side of the Stallings correspondence, including for
+subgroups that are not finitely generated.
 
 ## References
 
@@ -225,5 +226,21 @@ theorem subgroupGraph_isCore :
 /-- The canonical subgroup graph is connected, including when the subgroup is trivial. -/
 theorem subgroupGraph_connected : (subgroupGraph H).graph.Connected := by
   exact (subgroupGraph_isCore H).connected
+
+/-- The canonical graph of a subgroup has no darts exactly when the subgroup is trivial. -/
+@[simp] theorem isEmpty_dart_subgroupGraph_iff : IsEmpty H.subgroupGraph.graph.E ↔ H = ⊥ := by
+  rw [H.subgroupGraph_isFolded.isEmpty_dart_iff_subgroup_eq_bot H.subgroupGraph_isCore,
+    subgroupGraph_subgroup]
+
+/-- The canonical graph of the trivial subgroup has no darts. -/
+instance subgroupGraph_bot_isEmpty_dart :
+    IsEmpty (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.E :=
+  (isEmpty_dart_subgroupGraph_iff ⊥).mpr rfl
+
+/-- The canonical graph of the trivial subgroup has only its base vertex. -/
+noncomputable instance : Unique (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
+  haveI : Subsingleton (⊥ : Subgroup (FreeGroup α)).subgroupGraph.graph.V :=
+    ((SerreGraph.connected_iff _).mp (subgroupGraph_connected ⊥)).2.subsingleton_of_isEmpty
+  uniqueOfSubsingleton (subgroupGraph _).base
 
 end Subgroup

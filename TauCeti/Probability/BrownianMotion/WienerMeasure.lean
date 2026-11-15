@@ -13,11 +13,11 @@ import Mathlib.Data.NNRat.Encodable
 import Mathlib.Data.NNRat.Floor
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
-import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
+import TauCeti.Probability.BrownianMotion.Countable
 import TauCeti.Probability.Distributions.Gaussian.Continuity
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 import TauCeti.Probability.HasLaw
+import TauCeti.Probability.Process.Kolmogorov
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -32,27 +32,29 @@ The construction proceeds in three stages:
 
 1. **Pre-Brownian moment bounds and regularization.** Every pre-Brownian motion satisfies the
    Kolmogorov moment condition of exponents `(2 m, m)` with constant `(2 m - 1)‼` for every
-   `m ≥ 1` (`ProbabilityTheory.IsPreBrownianReal.isAEKolmogorovProcess_two_mul`). Applying the
-   one-dimensional Kolmogorov–Chentsov theorem yields an all-paths continuous, coordinatewise
-   measurable modification (`ProbabilityTheory.IsPreBrownianReal.exists_continuous_modification`)
-   and local `< 1 / 2`-Hölder regularity for any `IsBrownianReal` process
+   `m ≥ 1` (`ProbabilityTheory.IsPreBrownianReal.isAEKolmogorovProcess_two_mul`), via
+   `ProbabilityTheory.isKolmogorovProcess_of_hasLaw_sub_gaussianReal`. Applying the one-dimensional
+   Kolmogorov–Chentsov theorem yields an all-paths continuous, coordinatewise measurable
+   modification (`ProbabilityTheory.IsPreBrownianReal.exists_continuous_modification`) and local
+   `< 1 / 2`-Hölder regularity for any `IsBrownianReal` process
    (`ProbabilityTheory.IsBrownianReal.ae_holderOnWith`).
-2. **Projective limit on rational times and dyadic extension.** Pulling back
-   `ProbabilityTheory.BrownianReal.projectiveFamily` to `ℚ≥0` and applying Kolmogorov's countable
-   extension theorem (`TauCeti.Measure.exists_isProjectiveLimit_of_countable`) produces a
-   probability law on `ℚ≥0 → ℝ`. Its fourth increment moments equal `3 * |r - s| ^ 2`, so
-   `TauCeti.exists_continuous_extension_of_nnrat` extends the rational coordinate process to an
-   all-paths continuous, coordinatewise measurable process on `ℝ≥0`. Passing to the dyadic limit via
-   weak continuity of multivariate Gaussian laws (`Continuous.multivariateGaussian`) shows that the
-   extended process satisfies `IsPreBrownianReal`.
+2. **Countable skeleton on rational times and dyadic extension.** Applying
+   `TauCeti.exists_measurePreserving_brownianRealProjectiveFamily_isKolmogorovProcess_of_countable`
+   to the countable set `range ((↑) : ℚ≥0 → ℝ≥0)` produces a Brownian Gaussian skeleton whose
+   coordinate process satisfies the `(4, 2)` Kolmogorov moment bound with constant `3`. Extending
+   from `ℚ≥0` via `TauCeti.exists_continuous_extension_of_nnrat` yields an all-paths continuous,
+   coordinatewise measurable process on `ℝ≥0`, and passing to the dyadic limit via weak continuity
+   of multivariate Gaussian laws (`Continuous.multivariateGaussian`) shows that the extended process
+   satisfies `IsPreBrownianReal`.
 3. **Pushforward to `C(ℝ≥0, ℝ)`, uniqueness, scaling invariance, and marginal checks.** Pushing
    forward along the measurable path map into `C(ℝ≥0, ℝ)` defines `TauCeti.wienerMeasure`,
    establishes `TauCeti.exists_wienerMeasure`, characterizes `wienerMeasure` uniquely via
-   evaluation-generated Borel uniqueness (`TauCeti.eq_wienerMeasure_iff_isBrownianReal`), proves
-   invariance under negation and diffusive Brownian rescaling `ω ↦ (t ↦ (√c)⁻¹ * ω (c * t))`, proves
-   single-path non-atomicity (`NullSingletonClass wienerMeasure`, so `wienerMeasure {f} = 0` for
-   every `f`), and records marginal/increment variances distinguishing Wiener measure from
-   degenerate and unnormalized laws.
+   `TauCeti.continuousMap_measure_ext_of_forall_finset_map_restrict_eq`
+   (`TauCeti.eq_wienerMeasure_iff_isBrownianReal`), proves invariance under negation, increment
+   shifts, and diffusive Brownian rescaling `ω ↦ (t ↦ (√c)⁻¹ * ω (c * t))`, proves single-path
+   non-atomicity (`NullSingletonClass wienerMeasure`, so `wienerMeasure {f} = 0` for every `f`), and
+   records marginal/increment variances distinguishing Wiener measure from degenerate and
+   unnormalized laws.
 
 ## Main definitions and results
 
@@ -113,23 +115,12 @@ theorem IsPreBrownianReal.isAEKolmogorovProcess_two_mul (hB : IsPreBrownianReal 
     {m : ℕ} (hm : 1 ≤ m) :
     IsAEKolmogorovProcess B P (2 * m) m (2 * m - 1)‼ := by
   let Y : ℝ≥0 → Ω → ℝ := fun t ↦ (hB.aemeasurable t).mk (B t)
-  have hY_meas (t : ℝ≥0) : Measurable (Y t) := (hB.aemeasurable t).measurable_mk
   have hY_ae (t : ℝ≥0) : B t =ᵐ[P] Y t := (hB.aemeasurable t).ae_eq_mk
-  have hY_pre : IsPreBrownianReal Y P := hB.congr hY_ae
-  have hpow (s t : ℝ≥0) (ω : Ω) :
-      dist (Y s ω) (Y t ω) ^ (2 * (m : ℝ)) = (Y s ω - Y t ω) ^ (2 * m) := by
-    have hcast : (2 * (m : ℝ)) = ((2 * m : ℕ) : ℝ) := by push_cast; rfl
-    rw [hcast, Real.rpow_natCast, Real.dist_eq, pow_mul, pow_mul, sq_abs]
-  refine ⟨Y, IsKolmogorovProcess.of_secondCountableTopology_integral_dist_rpow_le hY_meas
-    (fun s t ↦ ?_) (fun s t ↦ ?_) (by positivity) (by positivity), hY_ae⟩
-  · have hint : Integrable (fun ω ↦ (Y s ω - Y t ω) ^ (2 * m)) P := by
-      simpa only [Function.comp_def, Pi.sub_apply] using
-        (hY_pre.hasLaw_sub s t).integrable_comp
-          (TauCeti.integrable_pow_gaussianReal 0 (nndist (s : ℝ) (t : ℝ)) (2 * m))
-    exact hint.congr (ae_of_all _ fun ω ↦ (hpow s t ω).symm)
-  · simp_rw [hpow s t, hY_pre.integral_pow_two_mul_sub s t m, Real.rpow_natCast,
-      NNReal.coe_natCast]
-    exact le_rfl
+  have hkol := isKolmogorovProcess_of_hasLaw_sub_gaussianReal
+    (fun t ↦ (hB.aemeasurable t).measurable_mk)
+    (fun s t ↦ (hB.congr hY_ae).hasLaw_sub s t) (n := m) (by omega)
+  push_cast at hkol
+  exact ⟨Y, hkol, hY_ae⟩
 
 /-- Every pre-Brownian motion admits a coordinatewise measurable, all-paths continuous Brownian
 modification. -/
@@ -222,125 +213,67 @@ namespace TauCeti
 
 section Construction
 
-/-- Order-embedding of nonnegative rationals into `ℝ≥0`. -/
-private def nnratCastEmb : ℚ≥0 ↪ ℝ≥0 := ⟨(↑), NNRat.cast_injective⟩
+/-- The countable set of nonnegative rational times inside `ℝ≥0`. -/
+private abbrev nnratTimeSet : Set ℝ≥0 := range ((↑) : ℚ≥0 → ℝ≥0)
 
-/-- Continuous linear reindexing between a finite set in `ℚ≥0` and its cast image in `ℝ≥0`. -/
-private def nnratPiEquiv (J : Finset ℚ≥0) : (J.map nnratCastEmb → ℝ) ≃L[ℝ] (J → ℝ) where
-  toFun x j := x (J.equivMap nnratCastEmb j)
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  invFun y i := y ((J.equivMap nnratCastEmb).symm i)
-  left_inv x := funext fun i ↦ congrArg x ((J.equivMap nnratCastEmb).apply_symm_apply i)
-  right_inv y := funext fun j ↦ congrArg y ((J.equivMap nnratCastEmb).symm_apply_apply j)
-  continuous_toFun := continuous_pi fun _ ↦ continuous_apply _
-  continuous_invFun := continuous_pi fun _ ↦ continuous_apply _
+private instance : Countable nnratTimeSet :=
+  (countable_range ((↑) : ℚ≥0 → ℝ≥0)).to_subtype
+
+/-- Embedding of a nonnegative rational time into `nnratTimeSet`. -/
+private def nnratTime (r : ℚ≥0) : nnratTimeSet := ⟨r, ⟨r, rfl⟩⟩
 
 @[simp]
-private lemma nnratPiEquiv_apply (J : Finset ℚ≥0) (x : J.map nnratCastEmb → ℝ) (j : J) :
-    nnratPiEquiv J x j = x (J.equivMap nnratCastEmb j) := rfl
+private lemma coe_nnratTime (r : ℚ≥0) : (nnratTime r : ℝ≥0) = r := rfl
 
-/-- Finite-dimensional Brownian Gaussian marginals restricted to nonnegative rational times. -/
-private def nnratProjectiveFamily (J : Finset ℚ≥0) : Measure (J → ℝ) :=
-  (projectiveFamily (J.map nnratCastEmb)).map (nnratPiEquiv J)
+private theorem exists_nnratBrownianSkeleton :
+    ∃ P : Measure (nnratTimeSet → ℝ), IsProbabilityMeasure P ∧
+      (∀ (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ nnratTimeSet),
+        MeasurePreserving (fun (x : nnratTimeSet → ℝ) (i : I) ↦ x ⟨i.1, hI i.2⟩) P
+          (projectiveFamily I)) ∧
+      ∀ ⦃n : ℕ⦄, n ≠ 0 →
+        IsKolmogorovProcess (fun (t : nnratTimeSet) (x : nnratTimeSet → ℝ) ↦ x t) P
+          (2 * n : ℕ) n (2 * n - 1)‼ :=
+  exists_measurePreserving_brownianRealProjectiveFamily_isKolmogorovProcess_of_countable
+    nnratTimeSet
 
-private instance (J : Finset ℚ≥0) : IsProbabilityMeasure (nnratProjectiveFamily J) := by
-  rw [nnratProjectiveFamily]
-  infer_instance
-
-private lemma isProjectiveMeasureFamily_nnratProjectiveFamily :
-    IsProjectiveMeasureFamily (α := fun _ : ℚ≥0 ↦ ℝ) nnratProjectiveFamily := by
-  intro I J hJI
-  have hmap : J.map nnratCastEmb ⊆ I.map nnratCastEmb := Finset.map_subset_map.mpr hJI
-  rw [nnratProjectiveFamily, nnratProjectiveFamily,
-    isProjectiveMeasureFamily_projectiveFamily (I.map nnratCastEmb) (J.map nnratCastEmb) hmap,
-    Measure.map_map (nnratPiEquiv J).continuous.measurable
-      (Finset.measurable_restrict₂ (X := fun _ : ℝ≥0 ↦ ℝ) hmap)]
-  have hcomm :
-      (nnratPiEquiv J ∘ Finset.restrict₂ (π := fun _ : ℝ≥0 ↦ ℝ) hmap :
-        (I.map nnratCastEmb → ℝ) → (J → ℝ)) =
-      Finset.restrict₂ (π := fun _ : ℚ≥0 ↦ ℝ) hJI ∘ nnratPiEquiv I := by
-    funext x j
-    simp only [Function.comp_apply, Finset.restrict₂_def, nnratPiEquiv_apply]
-    congr 1
-  rw [hcomm]
-  exact (Measure.map_map (Finset.measurable_restrict₂ (X := fun _ : ℚ≥0 ↦ ℝ) hJI)
-    (nnratPiEquiv I).continuous.measurable).symm
-
-private theorem exists_nnratBrownianMeasure :
-    ∃ μ : Measure (ℚ≥0 → ℝ), IsProbabilityMeasure μ ∧ IsProjectiveLimit μ nnratProjectiveFamily :=
-  TauCeti.Measure.exists_isProjectiveLimit_of_countable (X := fun _ : ℚ≥0 ↦ ℝ)
-    nnratProjectiveFamily isProjectiveMeasureFamily_nnratProjectiveFamily
-
-/-- Projective-limit probability measure of Brownian marginals on `ℚ≥0 → ℝ`. -/
-private def nnratBrownianMeasure : Measure (ℚ≥0 → ℝ) :=
-  exists_nnratBrownianMeasure.choose
+/-- Canonical Brownian skeleton probability measure on `nnratTimeSet → ℝ`. -/
+private def nnratBrownianMeasure : Measure (nnratTimeSet → ℝ) :=
+  exists_nnratBrownianSkeleton.choose
 
 private instance : IsProbabilityMeasure nnratBrownianMeasure :=
-  exists_nnratBrownianMeasure.choose_spec.1
+  exists_nnratBrownianSkeleton.choose_spec.1
 
-private lemma isProjectiveLimit_nnratBrownianMeasure :
-    IsProjectiveLimit nnratBrownianMeasure nnratProjectiveFamily :=
-  exists_nnratBrownianMeasure.choose_spec.2
+private lemma hasLaw_finset_nnratBrownianMeasure (I : Finset ℝ≥0)
+    (hI : (I : Set ℝ≥0) ⊆ nnratTimeSet) :
+    HasLaw (fun (ω : nnratTimeSet → ℝ) (i : I) ↦ ω ⟨i.1, hI i.2⟩)
+      (projectiveFamily I) nnratBrownianMeasure :=
+  (exists_nnratBrownianSkeleton.choose_spec.2.1 I hI).hasLaw
 
-private lemma hasLaw_restrict_nnratBrownianMeasure (J : Finset ℚ≥0) :
-    HasLaw J.restrict (nnratProjectiveFamily J) nnratBrownianMeasure :=
-  ⟨(Finset.measurable_restrict J).aemeasurable, isProjectiveLimit_nnratBrownianMeasure J⟩
+private lemma isGaussianProcess_nnratBrownianMeasure :
+    IsGaussianProcess (fun (t : nnratTimeSet) (ω : nnratTimeSet → ℝ) ↦ ω t)
+      nnratBrownianMeasure :=
+  isGaussianProcess_of_hasLaw_brownianRealProjectiveFamily
+    (X := fun (t : nnratTimeSet) (ω : nnratTimeSet → ℝ) ↦ ω t)
+    hasLaw_finset_nnratBrownianMeasure
 
-private lemma hasLaw_comp_nnratPiEquiv (J : Finset ℚ≥0) :
-    HasLaw (nnratPiEquiv J) (nnratProjectiveFamily J)
-      (projectiveFamily (J.map nnratCastEmb)) :=
-  ⟨(nnratPiEquiv J).continuous.measurable.aemeasurable, rfl⟩
+private lemma hasLaw_eval_nnratBrownianMeasure (t : nnratTimeSet) :
+    HasLaw (fun ω : nnratTimeSet → ℝ ↦ ω t) (gaussianReal 0 t.1) nnratBrownianMeasure :=
+  hasLaw_gaussianReal_of_hasLaw_brownianRealProjectiveFamily
+    (X := fun (t : nnratTimeSet) (ω : nnratTimeSet → ℝ) ↦ ω t)
+    hasLaw_finset_nnratBrownianMeasure t
 
-private lemma hasGaussianLaw_restrict_nnratBrownianMeasure (J : Finset ℚ≥0) :
-    HasGaussianLaw J.restrict nnratBrownianMeasure := by
-  have hg : HasGaussianLaw (nnratPiEquiv J) (projectiveFamily (J.map nnratCastEmb)) :=
-    IsGaussian.hasGaussianLaw_id.map_equiv (nnratPiEquiv J)
-  have : IsGaussian (nnratProjectiveFamily J) := hg.isGaussian_map
-  exact (hasLaw_restrict_nnratBrownianMeasure J).hasGaussianLaw
+private lemma covariance_eval_nnratBrownianMeasure (s t : nnratTimeSet) :
+    cov[fun ω : nnratTimeSet → ℝ ↦ ω s, fun ω : nnratTimeSet → ℝ ↦ ω t; nnratBrownianMeasure] =
+      min (s.1 : ℝ) (t.1 : ℝ) :=
+  covariance_eq_min_of_hasLaw_brownianRealProjectiveFamily
+    (X := fun (t : nnratTimeSet) (ω : nnratTimeSet → ℝ) ↦ ω t)
+    hasLaw_finset_nnratBrownianMeasure s t
 
-private lemma hasLaw_eval_nnratBrownianMeasure (r : ℚ≥0) :
-    HasLaw (fun ω : ℚ≥0 → ℝ ↦ ω r) (gaussianReal 0 r) nnratBrownianMeasure := by
-  let J : Finset ℚ≥0 := {r}
-  let r' : J := ⟨r, Finset.mem_singleton_self r⟩
-  have h1 : HasLaw (fun y : J → ℝ ↦ y r') (gaussianReal 0 r) (nnratProjectiveFamily J) := by
-    refine ⟨(measurable_pi_apply r').aemeasurable, ?_⟩
-    rw [nnratProjectiveFamily,
-      Measure.map_map (measurable_pi_apply r') (nnratPiEquiv J).continuous.measurable]
-    exact (measurePreserving_eval_projectiveFamily (I := J.map nnratCastEmb)
-      (J.equivMap nnratCastEmb r')).map_eq
-  simpa [Function.comp_def, r'] using h1.comp (hasLaw_restrict_nnratBrownianMeasure J)
-
-private lemma hasLaw_sub_nnratBrownianMeasure (r s : ℚ≥0) :
-    HasLaw (fun ω : ℚ≥0 → ℝ ↦ ω r - ω s)
-      (gaussianReal 0 (nndist (r : ℝ≥0) (s : ℝ≥0))) nnratBrownianMeasure := by
-  let J : Finset ℚ≥0 := {r, s}
-  let r' : J := ⟨r, by simp [J]⟩
-  let s' : J := ⟨s, by simp [J]⟩
-  have hmeas : Measurable (fun y : J → ℝ ↦ y r' - y s') :=
-    (measurable_pi_apply r').sub (measurable_pi_apply s')
-  have h1 : HasLaw (fun y : J → ℝ ↦ y r' - y s')
-      (gaussianReal 0 (nndist (r : ℝ≥0) (s : ℝ≥0))) (nnratProjectiveFamily J) := by
-    refine ⟨hmeas.aemeasurable, ?_⟩
-    rw [nnratProjectiveFamily, Measure.map_map hmeas (nnratPiEquiv J).continuous.measurable]
-    exact (measurePreserving_eval_sub_eval_projectiveFamily (J.map nnratCastEmb)
-      (J.equivMap nnratCastEmb r') (J.equivMap nnratCastEmb s')).map_eq
-  simpa [Function.comp_def, r', s'] using h1.comp (hasLaw_restrict_nnratBrownianMeasure J)
-
-private lemma covariance_eval_nnratBrownianMeasure (r s : ℚ≥0) :
-    cov[fun ω : ℚ≥0 → ℝ ↦ ω r, fun ω : ℚ≥0 → ℝ ↦ ω s; nnratBrownianMeasure] =
-      min ((r : ℝ≥0) : ℝ) ((s : ℝ≥0) : ℝ) := by
-  let J : Finset ℚ≥0 := {r, s}
-  let r' : J := ⟨r, by simp [J]⟩
-  let s' : J := ⟨s, by simp [J]⟩
-  have h1 := (hasLaw_restrict_nnratBrownianMeasure J).covariance_fun_comp
-    (f := fun y : J → ℝ ↦ y r') (g := fun y : J → ℝ ↦ y s')
-    (measurable_pi_apply r').aemeasurable (measurable_pi_apply s').aemeasurable
-  have h2 := (hasLaw_comp_nnratPiEquiv J).covariance_fun_comp
-    (f := fun y : J → ℝ ↦ y r') (g := fun y : J → ℝ ↦ y s')
-    (measurable_pi_apply r').aemeasurable (measurable_pi_apply s').aemeasurable
-  exact h1.trans (h2.symm.trans (covariance_eval_projectiveFamily (J.map nnratCastEmb)
-    (J.equivMap nnratCastEmb r') (J.equivMap nnratCastEmb s')))
+private lemma isKolmogorovProcess_four_nnratBrownianMeasure :
+    IsKolmogorovProcess (fun (t : nnratTimeSet) (ω : nnratTimeSet → ℝ) ↦ ω t)
+      nnratBrownianMeasure 4 2 3 := by
+  simpa [nnratBrownianMeasure, Nat.doubleFactorial] using
+    exists_nnratBrownianSkeleton.choose_spec.2.2 (n := 2) two_ne_zero
 
 /-- For any finite tuple `u : ι → ℝ≥0`, the Brownian covariance matrix `min (u i) (u j)` is
 positive semidefinite. -/
@@ -353,24 +286,30 @@ private lemma posSemidef_matrix_min {ι : Type*} (u : ι → ℝ≥0) :
   exact posSemidef_matrix_measure_inter (fun _ ↦ measurableSet_Icc)
     (fun _ ↦ isCompact_Icc.measure_ne_top)
 
-/-- Any finite tuple of rational evaluations `(ω (v i))_{i : ι}` has the centered multivariate
-Gaussian law with covariance matrix `min (v i) (v j)`, even when `v` has repeated entries. -/
+/-- Any finite tuple of rational evaluations `(ω (nnratTime (v i)))_{i : ι}` has the centered
+multivariate Gaussian law with covariance matrix `min (v i) (v j)`, even when `v` has repeated
+entries. -/
 private lemma hasLaw_toLp_nnratBrownianMeasure {ι : Type*} [Fintype ι] [DecidableEq ι]
     (v : ι → ℚ≥0) :
-    HasLaw (fun ω : ℚ≥0 → ℝ ↦ toLp 2 (fun i : ι ↦ ω (v i)))
+    HasLaw (fun ω : nnratTimeSet → ℝ ↦ toLp 2 (fun i : ι ↦ ω (nnratTime (v i))))
       (multivariateGaussian 0
         (Matrix.of fun i j : ι ↦ min ((v i : ℝ≥0) : ℝ) ((v j : ℝ≥0) : ℝ)))
       nnratBrownianMeasure := by
-  let J : Finset ℚ≥0 := Finset.univ.image v
+  let J : Finset nnratTimeSet := Finset.univ.image fun i ↦ nnratTime (v i)
   let L : (J → ℝ) →L[ℝ] (ι → ℝ) :=
     ContinuousLinearMap.pi fun i ↦
-      ContinuousLinearMap.proj (R := ℝ) (⟨v i, Finset.mem_image_of_mem v (Finset.mem_univ i)⟩ : J)
-  have hgauss_pi : HasGaussianLaw (fun ω : ℚ≥0 → ℝ ↦ fun i : ι ↦ ω (v i))
-      nnratBrownianMeasure := (hasGaussianLaw_restrict_nnratBrownianMeasure J).map L
-  have hgauss : HasGaussianLaw (fun ω : ℚ≥0 → ℝ ↦ toLp 2 (fun i : ι ↦ ω (v i)))
-      nnratBrownianMeasure := hgauss_pi.toLp_pi 2
+      ContinuousLinearMap.proj (R := ℝ)
+        (⟨nnratTime (v i), Finset.mem_image_of_mem _ (Finset.mem_univ i)⟩ : J)
+  have hgauss_pi :
+      HasGaussianLaw (fun ω : nnratTimeSet → ℝ ↦ fun i : ι ↦ ω (nnratTime (v i)))
+        nnratBrownianMeasure :=
+    (isGaussianProcess_nnratBrownianMeasure.hasGaussianLaw J).map L
+  have hgauss :
+      HasGaussianLaw (fun ω : nnratTimeSet → ℝ ↦ toLp 2 (fun i : ι ↦ ω (nnratTime (v i))))
+        nnratBrownianMeasure :=
+    hgauss_pi.toLp_pi 2
   refine ⟨hgauss.aemeasurable, ?_⟩
-  have : IsGaussian (nnratBrownianMeasure.map fun ω ↦ toLp 2 (fun i : ι ↦ ω (v i))) :=
+  have : IsGaussian (nnratBrownianMeasure.map fun ω ↦ toLp 2 (fun i : ι ↦ ω (nnratTime (v i)))) :=
     hgauss.isGaussian_map
   have hPSD := posSemidef_matrix_min fun i : ι ↦ (v i : ℝ≥0)
   apply IsGaussian.ext
@@ -378,13 +317,14 @@ private lemma hasLaw_toLp_nnratBrownianMeasure {ι : Type*} [Fintype ι] [Decida
     simp only [id_eq, integral_id_multivariateGaussian]
     let e : EuclideanSpace ℝ ι ≃L[ℝ] (ι → ℝ) :=
       PiLp.continuousLinearEquiv 2 ℝ fun _ : ι ↦ ℝ
-    have heq_fn : (fun x : ℚ≥0 → ℝ ↦ toLp 2 fun i ↦ x (v i)) =
-        fun x : ℚ≥0 → ℝ ↦ e.symm (fun i : ι ↦ x (v i)) := rfl
+    have heq_fn : (fun x : nnratTimeSet → ℝ ↦ toLp 2 fun i ↦ x (nnratTime (v i))) =
+        fun x : nnratTimeSet → ℝ ↦ e.symm (fun i : ι ↦ x (nnratTime (v i))) := rfl
     rw [heq_fn, e.symm.integral_comp_comm, ← map_zero e.symm]
     congr 1
     ext i
     rw [eval_integral (fun j ↦ (hgauss_pi.eval j).integrable),
-      (hasLaw_eval_nnratBrownianMeasure (v i)).integral_eq, integral_id_gaussianReal, Pi.zero_apply]
+      (hasLaw_eval_nnratBrownianMeasure (nnratTime (v i))).integral_eq,
+      integral_id_gaussianReal, Pi.zero_apply]
   · rw [← ContinuousLinearMap.toBilinForm_inj]
     refine LinearMap.BilinForm.ext_basis (EuclideanSpace.basisFun ι ℝ).toBasis fun i j ↦ ?_
     rw [ContinuousLinearMap.toBilinForm_apply, ContinuousLinearMap.toBilinForm_apply,
@@ -393,8 +333,8 @@ private lemma hasLaw_toLp_nnratBrownianMeasure {ι : Type*} [Fintype ι] [Decida
     · have hproj (k : ι) :
           (fun u : EuclideanSpace ℝ ι ↦
             inner ℝ ((EuclideanSpace.basisFun ι ℝ).toBasis k) u) ∘
-            (fun ω : ℚ≥0 → ℝ ↦ toLp 2 (fun l : ι ↦ ω (v l))) =
-          fun ω : ℚ≥0 → ℝ ↦ ω (v k) := by
+            (fun ω : nnratTimeSet → ℝ ↦ toLp 2 (fun l : ι ↦ ω (nnratTime (v l)))) =
+          fun ω : nnratTimeSet → ℝ ↦ ω (nnratTime (v k)) := by
         ext ω; simp [PiLp.inner_apply]
       rw [hproj i, hproj j, covariance_eval_nnratBrownianMeasure]
       simp [EuclideanSpace.basisFun_apply]
@@ -403,63 +343,35 @@ private lemma hasLaw_toLp_nnratBrownianMeasure {ι : Type*} [Fintype ι] [Decida
     · exact hgauss.aemeasurable
     · exact IsGaussian.hasGaussianLaw_id.memLp_two
 
-/-- Fourth-moment Kolmogorov bound for the rational Brownian coordinate process. -/
-private lemma lintegral_edist_pow_four_nnratBrownianMeasure (r s : ℚ≥0) :
-    ∫⁻ ω, edist (ω r) (ω s) ^ (4 : ℝ) ∂nnratBrownianMeasure ≤
-      (3 : ℝ≥0) * edist (r : ℝ≥0) (s : ℝ≥0) ^ (2 : ℝ) := by
-  have hpow (ω : ℚ≥0 → ℝ) : dist (ω r) (ω s) ^ (4 : ℝ) = (ω r - ω s) ^ 4 := by
-    have h4 : (4 : ℝ) = ((4 : ℕ) : ℝ) := by norm_num
-    have h22 : (4 : ℕ) = 2 * 2 := rfl
-    rw [h4, Real.rpow_natCast, Real.dist_eq, h22, pow_mul, pow_mul, sq_abs]
-  have hint_pow : Integrable (fun ω : ℚ≥0 → ℝ ↦ (ω r - ω s) ^ 4) nnratBrownianMeasure := by
-    simpa only [Function.comp_def] using
-      (hasLaw_sub_nnratBrownianMeasure r s).integrable_comp
-        (TauCeti.integrable_pow_gaussianReal 0 (nndist ((r : ℝ≥0) : ℝ) ((s : ℝ≥0) : ℝ)) 4)
-  have heq (ω : ℚ≥0 → ℝ) :
-      edist (ω r) (ω s) ^ (4 : ℝ) = ENNReal.ofReal ((ω r - ω s) ^ 4) := by
-    rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg (by norm_num), hpow]
-  simp_rw [heq]
-  rw [← ofReal_integral_eq_lintegral_ofReal hint_pow (ae_of_all _ fun _ ↦ by positivity)]
-  have h := (hasLaw_sub_nnratBrownianMeasure r s).integral_comp
-    (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)
-  have hm := TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal
-    0 (nndist (r : ℝ≥0) (s : ℝ≥0)) 2
-  simp only [Function.comp_apply] at h
-  simp only [sub_zero, Nat.reduceMul, Nat.add_one_sub_one, coe_nndist] at hm
-  have h3 : ((3‼ : ℕ) : ℝ) = 3 := by norm_num [Nat.doubleFactorial]
-  rw [h, hm, h3, mul_comm, ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat,
-    edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg zero_le_two, Real.rpow_two,
-    ENNReal.coe_ofNat]
-
 private theorem exists_rawBrownian :
-    ∃ B₀ : ℝ≥0 → (ℚ≥0 → ℝ) → ℝ,
+    ∃ B₀ : ℝ≥0 → (nnratTimeSet → ℝ) → ℝ,
       (∀ t : ℝ≥0, Measurable (B₀ t)) ∧
-      (∀ ω : ℚ≥0 → ℝ, Continuous (B₀ · ω)) ∧
-      (∀ r : ℚ≥0, B₀ r =ᵐ[nnratBrownianMeasure] fun ω ↦ ω r) := by
+      (∀ ω : nnratTimeSet → ℝ, Continuous (B₀ · ω)) ∧
+      (∀ r : ℚ≥0, B₀ r =ᵐ[nnratBrownianMeasure] fun ω ↦ ω (nnratTime r)) := by
+  have hkol := isKolmogorovProcess_four_nnratBrownianMeasure
   obtain ⟨B₀, hmeas, hcont, hae, _⟩ :=
     exists_continuous_extension_of_nnrat (P := nnratBrownianMeasure)
-      (X := fun (r : ℚ≥0) (ω : ℚ≥0 → ℝ) ↦ ω r) (M := fun _ ↦ 3)
+      (X := fun (r : ℚ≥0) (ω : nnratTimeSet → ℝ) ↦ ω (nnratTime r)) (M := fun _ ↦ 3)
       (by norm_num : (0 : ℝ) < 4) one_lt_two
-      (fun r s ↦ by
-        rw [← Prod.borelSpace.measurable_eq]
-        exact (measurable_pi_apply r).prodMk (measurable_pi_apply s))
-      (fun _ r s _ _ ↦ lintegral_edist_pow_four_nnratBrownianMeasure r s)
+      (fun r s ↦ hkol.measurablePair (nnratTime r) (nnratTime s))
+      (fun _ r s _ _ ↦ hkol.kolmogorovCondition (nnratTime r) (nnratTime s))
   exact ⟨B₀, hmeas, hcont, hae⟩
 
-/-- Canonical all-paths continuous Brownian process on `ℚ≥0 → ℝ` constructed by dyadic extension. -/
-private def rawBrownian : ℝ≥0 → (ℚ≥0 → ℝ) → ℝ := exists_rawBrownian.choose
+/-- Canonical all-paths continuous Brownian process on `nnratTimeSet → ℝ` constructed by dyadic
+extension. -/
+private def rawBrownian : ℝ≥0 → (nnratTimeSet → ℝ) → ℝ := exists_rawBrownian.choose
 
 private lemma measurable_rawBrownian (t : ℝ≥0) : Measurable (rawBrownian t) :=
   exists_rawBrownian.choose_spec.1 t
 
-private lemma continuous_rawBrownian (ω : ℚ≥0 → ℝ) : Continuous (rawBrownian · ω) :=
+private lemma continuous_rawBrownian (ω : nnratTimeSet → ℝ) : Continuous (rawBrownian · ω) :=
   exists_rawBrownian.choose_spec.2.1 ω
 
 private lemma ae_eq_rawBrownian (r : ℚ≥0) :
-    rawBrownian r =ᵐ[nnratBrownianMeasure] fun ω ↦ ω r :=
+    rawBrownian r =ᵐ[nnratBrownianMeasure] fun ω ↦ ω (nnratTime r) :=
   exists_rawBrownian.choose_spec.2.2 r
 
-/-- The extended process `rawBrownian` has the finite-dimensional laws of Brownian motion. -/
+/-- Downward dyadic floor approximations converge to every `t : ℝ≥0`. -/
 private lemma tendsto_dyadicFloor (t : ℝ≥0) :
     Tendsto (fun n : ℕ ↦ ((((⌊(t : ℝ) * 2 ^ n⌋₊ : ℚ≥0) / 2 ^ n : ℚ≥0) : ℝ≥0))) atTop (𝓝 t) := by
   rw [tendsto_iff_dist_tendsto_zero]
@@ -476,15 +388,16 @@ private lemma tendsto_dyadicFloor (t : ℝ≥0) :
     NNReal.coe_div, NNReal.coe_natCast, NNReal.coe_pow, NNReal.coe_ofNat, inv_pow]
   linarith [add_div (⌊(t : ℝ) * 2 ^ n⌋₊ : ℝ) 1 ((2 : ℝ) ^ n), one_div ((2 : ℝ) ^ n)]
 
+/-- The extended process `rawBrownian` has the finite-dimensional laws of Brownian motion. -/
 private lemma isPreBrownianReal_rawBrownian :
     IsPreBrownianReal rawBrownian nnratBrownianMeasure where
   hasLaw I := by
     let v (n : ℕ) (i : I) : ℚ≥0 := (⌊(i.1 : ℝ) * 2 ^ n⌋₊ : ℚ≥0) / 2 ^ n
     have hv_tendsto (i : I) : Tendsto (fun n ↦ (v n i : ℝ≥0)) atTop (𝓝 i.1) :=
       tendsto_dyadicFloor i.1
-    let Z (n : ℕ) (ω : ℚ≥0 → ℝ) : EuclideanSpace ℝ I :=
+    let Z (n : ℕ) (ω : nnratTimeSet → ℝ) : EuclideanSpace ℝ I :=
       toLp 2 fun i : I ↦ rawBrownian (v n i) ω
-    let Zlim (ω : ℚ≥0 → ℝ) : EuclideanSpace ℝ I :=
+    let Zlim (ω : nnratTimeSet → ℝ) : EuclideanSpace ℝ I :=
       toLp 2 (I.restrict (rawBrownian · ω))
     have hZ_meas (n : ℕ) : Measurable (Z n) :=
       (MeasurableEquiv.toLp 2 (I → ℝ)).measurable.comp
@@ -492,7 +405,7 @@ private lemma isPreBrownianReal_rawBrownian :
     have hZlim_meas : Measurable Zlim :=
       (MeasurableEquiv.toLp 2 (I → ℝ)).measurable.comp
         (measurable_pi_iff.mpr fun i ↦ measurable_rawBrownian i.1)
-    have hZ_tendsto (ω : ℚ≥0 → ℝ) : Tendsto (fun n ↦ Z n ω) atTop (𝓝 (Zlim ω)) :=
+    have hZ_tendsto (ω : nnratTimeSet → ℝ) : Tendsto (fun n ↦ Z n ω) atTop (𝓝 (Zlim ω)) :=
       (PiLp.continuous_toLp 2 _).tendsto _ |>.comp
         (tendsto_pi_nhds.mpr fun i ↦ ((continuous_rawBrownian ω).tendsto i.1).comp (hv_tendsto i))
     let S (u : I → ℝ≥0) : Matrix I I ℝ := Matrix.of fun i j : I ↦ min (u i : ℝ) (u j : ℝ)
@@ -500,7 +413,8 @@ private lemma isPreBrownianReal_rawBrownian :
     have hZ_law (n : ℕ) :
         HasLaw (Z n) (multivariateGaussian 0 (S fun i ↦ (v n i : ℝ≥0))) nnratBrownianMeasure := by
       refine (hasLaw_toLp_nnratBrownianMeasure (v n)).congr ?_
-      have hall : ∀ᵐ ω ∂nnratBrownianMeasure, ∀ i : I, rawBrownian (v n i) ω = ω (v n i) :=
+      have hall :
+          ∀ᵐ ω ∂nnratBrownianMeasure, ∀ i : I, rawBrownian (v n i) ω = ω (nnratTime (v n i)) :=
         ae_all_iff.mpr fun i ↦ ae_eq_rawBrownian (v n i)
       filter_upwards [hall] with ω hω
       ext i
@@ -567,9 +481,8 @@ theorem exists_wienerMeasure :
 `IsPreBrownianReal` is equal to `wienerMeasure`. -/
 theorem eq_wienerMeasure_of_isPreBrownianReal {μ : Measure C(ℝ≥0, ℝ)}
     (hμ : IsPreBrownianReal (fun t (ω : C(ℝ≥0, ℝ)) ↦ ω t) μ) :
-    μ = wienerMeasure := by
-  have : IsProbabilityMeasure μ := (hμ.hasLaw_eval 0).isProbabilityMeasure
-  exact measure_continuousMap_eq_of_forall_finset_map_restrict_eq fun I ↦
+    μ = wienerMeasure :=
+  continuousMap_measure_ext_of_forall_finset_map_restrict_eq fun I ↦
     (hμ.hasLaw I).map_eq.trans (isPreBrownianReal_eval_wienerMeasure.hasLaw I).map_eq.symm
 
 /-- A measure on `C(ℝ≥0, ℝ)` equals `wienerMeasure` if and only if coordinate evaluation is
