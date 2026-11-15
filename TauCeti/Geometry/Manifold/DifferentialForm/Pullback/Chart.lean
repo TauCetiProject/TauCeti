@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 
+import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 
 /-!
@@ -25,6 +26,10 @@ manifold; conversely, evaluating a form `φ` on the chart source agrees with eva
 Near time `t`, the pullback along a family of maps which sends `y` into the chart at `y` at time `t`
 is the flat pullback along the family read in the chart at `y`
 (`TauCeti.RoughForm.eventuallyEq_mpullback_compContinuousLinearMap`).
+A form vanishing at a point with chart expression of zero derivative there, a zero first jet,
+pulls back along a `C¹` map to a form with zero first jet
+(`TauCeti.RoughForm.hasFDerivAt_inChartAt_mpullback_of_eq_zero`); in particular this property
+does not depend on the chart.
 -/
 
 public section
@@ -169,6 +174,55 @@ theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless] [IsManif
     I.range_eq_univ, fderivWithin_univ]
   -- The two coordinate expressions of `ψᵤ` differ only by unfolding `Function.comp`.
   rfl
+
+/-- **Zero first jets pull back.** Let a form `ω` vanish at `g x`, with coordinate expression in
+the preferred chart at `g x` of zero derivative there. Then its pullback along a map `g` which is
+`C¹` at `x` vanishes at `x`, and its coordinate expression in the preferred chart at `x` has zero
+derivative there too. -/
+theorem hasFDerivAt_inChartAt_mpullback_of_eq_zero [I.Boundaryless]
+    [IsManifold I' 1 M'] {g : M → M'} {x : M} (hg : ContMDiffAt I I' 1 g x)
+    {ω : RoughForm I' M' F k} (h₀ : ω (g x) = 0)
+    (hω : HasFDerivAt (ω.inChartAt (g x)) (0 : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I' (g x) (g x))) :
+    HasFDerivAt ((mpullback I I' g ω).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+      (extChartAt I x x) := by
+  set G : E → E' := extChartAt I' (g x) ∘ g ∘ (extChartAt I x).symm
+  have hG : ContDiffAt ℝ 1 G (extChartAt I x x) := by
+    have h := (contMDiffAt_iff.1 hg).2
+    rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
+  have hGx : G (extChartAt I x x) = extChartAt I' (g x) (g x) := by
+    simp only [G, Function.comp_apply, extChartAt_to_inv]
+  -- Near the chart point of `x`, the coordinate expression of the pullback is that of `ω`,
+  -- read along `G` and precomposed with the derivative of `G`.
+  have hev : ∀ᶠ z in 𝓝 (extChartAt I x x), z ∈ (extChartAt I x).target ∧
+      ContMDiffAt I I' 1 g ((extChartAt I x).symm z) ∧
+      g ((extChartAt I x).symm z) ∈ (extChartAt I' (g x)).source := by
+    have hx : ∀ᶠ y in 𝓝 ((extChartAt I x).symm (extChartAt I x x)),
+        ContMDiffAt I I' 1 g y ∧ g y ∈ (extChartAt I' (g x)).source := by
+      rw [extChartAt_to_inv]
+      filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hg,
+        hg.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (g x))]
+        with y hy hys
+      exact ⟨hy, hys⟩
+    filter_upwards [extChartAt_target_mem_nhds x,
+      (continuousAt_extChartAt_symm (I := I) x).eventually hx] with z hz hz'
+    exact ⟨hz, hz'⟩
+  have heq : (mpullback I I' g ω).inChartAt x =ᶠ[𝓝 (extChartAt I x x)]
+      fun z ↦ (ω.inChartAt (g x) (G z)).compContinuousLinearMap (fderiv ℝ G z) := by
+    filter_upwards [hev] with z ⟨hz, hgz, hgs⟩
+    rw [inChartAt_mpullback_eq_compContinuousLinearMap ω x (g x) hz
+      (hgz.mdifferentiableAt one_ne_zero) hgs, I.range_eq_univ, fderivWithin_univ]
+    -- The two coordinate expressions of `g` differ only by unfolding `Function.comp`.
+    rfl
+  refine HasFDerivAt.congr_of_eventuallyEq ?_ heq
+  refine HasFDerivAt.compContinuousLinearMap_of_eq_zero ?_ ?_
+    (hG.continuousAt_fderiv one_ne_zero)
+  · rw [← hGx] at hω
+    simpa [Function.comp_def] using
+      hω.comp (extChartAt I x x) (hG.differentiableAt one_ne_zero).hasFDerivAt
+  · rw [hGx, inChartAt_extChartAt_self, h₀]
+    -- The zero alternating maps on `TangentSpace I' (g x)` and on `E'` agree by definition.
+    rfl
 
 end TauCeti.RoughForm
 
