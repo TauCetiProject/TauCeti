@@ -46,7 +46,7 @@ theorem eq_of_dist_eq_dist_of_dist_eq_dist {p q r z w : ℍ}
         (Complex.ext_iff.mp heq).1
     have him : z.im * Real.cosh (dist p z) = w.im * Real.cosh (dist p w) := by
       simpa only [coe_im, center_im] using (Complex.ext_iff.mp heq).2
-    rw [hcosh, hcosh, hre, div_left_inj' (by positivity : (2 * p.im) ≠ 0)] at him
+    rw [hcosh, hcosh, hre, div_left_inj₀ (by positivity : (2 * p.im) ≠ 0)] at him
     have hsq : z.im ^ 2 = w.im ^ 2 := by linarith
     exact hzw (UpperHalfPlane.ext (Complex.ext hre
       ((sq_eq_sq₀ z.im_pos.le w.im_pos.le).mp hsq)))

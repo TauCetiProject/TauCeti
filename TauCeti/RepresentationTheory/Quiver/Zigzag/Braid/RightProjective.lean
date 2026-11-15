@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
 public import TauCeti.RingTheory.Idempotents.Projective

@@ -660,19 +660,20 @@ theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
 generators joined by an edge of the diagram are involutions whose product has order dividing
 three, so they coincide in any abelian quotient, and the diagram is connected. -/
 theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
-    Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
-      Abelianization.of (PresentedGroup.of 0) := by
+    Group.Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+      Group.Abelianization.of (PresentedGroup.of 0) := by
   have step : ∀ i j : Fin 12, fi24AutomorphismCoxeterMatrix i j = 3 →
-      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
-        Abelianization.of (PresentedGroup.of j) := by
+      Group.Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+        Group.Abelianization.of (PresentedGroup.of j) := by
     intro i j hij
     have hsquare (k : Fin 12) :
-        Abelianization.of (PresentedGroup.of k : Fi24AutomorphismGroup) ^ 2 = 1 := by
+        Group.Abelianization.of (PresentedGroup.of k : Fi24AutomorphismGroup) ^ 2 = 1 := by
       rw [← map_pow, sq, fi24AutomorphismGroup_of_mul_of_self, map_one]
-    have hprod := congrArg Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
+    have hprod := congrArg Group.Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
     rw [hij, map_pow, map_mul, map_one, mul_pow, pow_succ _ 2, pow_succ _ 2,
       hsquare, hsquare, one_mul, one_mul] at hprod
-    apply mul_right_cancel (b := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
+    apply mul_right_cancel (b := Group.Abelianization.of (PresentedGroup.of j :
+        Fi24AutomorphismGroup))
     simpa only [← sq, hsquare] using hprod
   -- Each node other than `a` has a diagram neighbour (Coxeter entry `3`) of smaller index.
   have hnb : ∀ i : Fin 12, i ≠ 0 → ∃ j < i, fi24AutomorphismCoxeterMatrix i j = 3 := by

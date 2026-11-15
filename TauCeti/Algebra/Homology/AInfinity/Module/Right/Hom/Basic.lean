@@ -165,7 +165,7 @@ theorem isHomogeneous_cofreeLift {r : ℤ}
       (AInfinityRightModule.barGrading AA MM.grading).piece
       (AInfinityRightModule.barGrading AA NN.grading).piece r := by
   let W := TensorWords.grading (AA.grading.shift 1)
-  have hG (G : InternalGrading R M) : AInfinityRightModule.barGrading AA G =
+  have hG (G : InternalGrading R M ℤ) : AInfinityRightModule.barGrading AA G =
       (G.shift 1).tensorProduct W := by
     ext p
     rw [AInfinityRightModule.barGrading_piece]

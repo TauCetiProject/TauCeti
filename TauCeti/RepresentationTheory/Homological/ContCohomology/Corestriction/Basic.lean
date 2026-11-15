@@ -543,7 +543,7 @@ theorem explicitCor1_explicitMap1_id {N : Type w} [AddCommGroup N] [DistribMulAc
   | _ c =>
     rw [explicitMap1_mk, explicitCor1_mk, explicitCor1_mk, explicitMap1_mk]
     refine congrArg (fun z : Z1 G N => (z : H1 G N)) (Subtype.ext (funext fun γ => ?_))
-    rw [coe_cocyclesCor1, cocyclesMap1_coe, cocyclesMap1_apply, coe_cocyclesCor1,
+    rw [coe_cocyclesCor1, coe_cocyclesMap1, cocyclesMap1_apply, coe_cocyclesCor1,
       map_cochainsCor1 G M U _ _ f hequiv]
     simp
 

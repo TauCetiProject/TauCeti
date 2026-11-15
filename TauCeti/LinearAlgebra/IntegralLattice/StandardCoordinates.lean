@@ -50,10 +50,6 @@ Cartan matrix computable from that matrix alone.
   `ℤ`, a vector is recovered from its pairings `w` with the coordinate vectors as `M w / d`, and
   `d` times its norm is the value of the integral quadratic form `M` on `w`. For a Cartan matrix
   this computes in the weight lattice with an integral multiple of the inverse Cartan matrix.
-
-## References
-
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5.
 -/
 
 public section

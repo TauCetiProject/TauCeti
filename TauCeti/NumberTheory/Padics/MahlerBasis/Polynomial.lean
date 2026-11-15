@@ -123,7 +123,7 @@ theorem nnnorm_toContinuousMap_eq_sup_stirlingSecond (P : ℤ_[p][X]) :
     · simp [hn]
     · simp [hn, mahlerEquiv_toContinuousMap_eq_zero_of_natDegree_lt P (by omega :
         P.natDegree < n)]
-  rw [← (PadicInt.mahlerEquiv ℤ_[p]).nnnorm_map P.toContinuousMap, hfinite,
+  rw [← (PadicInt.mahlerEquiv ℤ_[p]).nnNorm_map P.toContinuousMap, hfinite,
     nnnorm_sum_single]
   simp only [mahlerEquiv_toContinuousMap_apply]
 

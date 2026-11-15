@@ -67,13 +67,16 @@ theorem algebraicExtensionNormedFieldTopology_tower :
     exact h
   exact algebraicExtensionNormedFieldTopology_eq K M
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- With the valuative relation constructed directly over `K`, the top field of an algebraic
-tower is a valuative extension of the intermediate field as well. -/
+tower is a valuative extension of the intermediate field as well. No topology or local-field
+structure on the intermediate field is needed. -/
 theorem algebraicExtension_valuativeExtension_tower :
     let _ := algebraicExtensionValuativeRel K M
     ValuativeExtension L M := by
-  have := Algebra.IsAlgebraic.tower_top (K := K) (A := M) L
-  rw [algebraicExtensionValuativeRel_tower K L M]
-  exact algebraicExtension_valuativeExtension L M
+  have := Algebra.IsAlgebraic.tower_bot K L M
+  let _ := algebraicExtensionValuativeRel K M
+  have := algebraicExtension_valuativeExtension K M
+  exact ValuativeExtension.of_isScalarTower (K := K) (M := L) (N := M)
 
 end TauCeti
