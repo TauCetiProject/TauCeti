@@ -24,6 +24,8 @@ complex structure on a four-dimensional inner product space this is the unitary 
 
 * `TauCeti.AlmostComplexStructure.mem_unitaryGroup_iff`: a rotation lies in `U(V, J)` exactly when
   it commutes with `J`.
+* `TauCeti.AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup`: the elements of
+  `U(V, J)` are complex-linear maps of `(V, J)`.
 -/
 
 public section
@@ -47,5 +49,12 @@ theorem mem_unitaryGroup_iff {J : AlmostComplexStructure V} {Q : QuadraticForm �
   simp only [unitaryGroup, Subgroup.mem_comap, Subgroup.coe_subtype,
     Subgroup.mem_centralizer_singleton_iff, LinearEquiv.ext_iff, mul_apply_eq_comp,
     linearEquiv_apply]
+
+/-- The elements of `U(V, J)` are complex-linear maps of `(V, J)`. -/
+theorem isComplexLinearMap_of_mem_unitaryGroup {J : AlmostComplexStructure V}
+    {Q : QuadraticForm ℝ V} {A : QuadraticMap.specialOrthogonalGroup Q}
+    (hA : A ∈ J.unitaryGroup Q) :
+    IsComplexLinearMap J J ((A : V ≃ₗ[ℝ] V) : V →ₗ[ℝ] V) :=
+  (isComplexLinearMap_iff_apply J J _).2 (mem_unitaryGroup_iff.1 hA)
 
 end TauCeti.AlmostComplexStructure
