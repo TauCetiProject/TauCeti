@@ -20,7 +20,8 @@ of a nonzero functional. Since functionals separate points, a vector space whose
 algebra is finite-dimensional is itself finite-dimensional.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
-family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
+family of vectors. Finitely many linearly independent functionals take independent values on any
+vector space. Linearly independent functionals, as many as the dimension, span the dual space
 and so separate points.
 
 ## Main results
@@ -53,6 +54,8 @@ and so separate points.
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
   independent family of functionals has a biorthogonal family of vectors.
+* `LinearIndependent.pi_surjective`: finitely many linearly independent functionals assemble into
+  a surjective map `LinearMap.pi l`, on any vector space.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
@@ -316,6 +319,20 @@ theorem exists_forall_apply_eq_ite_of_dual [FiniteDimensional K V] {f : ι → D
   exact if_congr eq_comm rfl rfl
 
 end Biorthogonal
+
+/-- Finitely many linearly independent functionals assemble into a surjective map
+`LinearMap.pi l : V →ₗ[K] ι → K`: their values can be prescribed independently. No
+finite-dimensionality of `V` is needed. -/
+theorem pi_surjective {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
+    {l : ι → Module.Dual K V} (hl : LinearIndependent K l) :
+    Function.Surjective (LinearMap.pi l) := by
+  have hl' : LinearIndependent K fun i ↦ (l i : V → K) :=
+    hl.map' (LinearMap.ltoFun K V K K) (LinearMap.ker_eq_bot.mpr DFunLike.coe_injective)
+  -- The values of the family at a vector are the components of `LinearMap.pi l`.
+  have hspan := span_flip_eq_top_iff_linearIndependent.mpr hl'
+  rw [← LinearMap.range_eq_top, ← Submodule.span_eq (LinearMap.range (LinearMap.pi l)),
+    LinearMap.coe_range]
+  exact hspan
 
 section Separation
 
