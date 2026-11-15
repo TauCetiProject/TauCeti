@@ -44,6 +44,10 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `cocompact ℂ` restricted to the strip `Re s ∈ [a, b]`.
 * `TauCeti.isBigO_log_norm_Gamma_vertical_line_sub`: the same on a single vertical line, along
   `cocompact ℝ`.
+* `Complex.continuous_Gamma_add_mul_I`, `Complex.continuous_Gamma_sub_mul_I`,
+  `Complex.exists_norm_Gamma_add_mul_I_le_mul_exp`,
+  `Complex.exists_norm_Gamma_sub_mul_I_le_mul_exp`: continuity and `C exp (-c |t|)` bounds (for
+  every `c < π / 2`) of `t ↦ Γ(w ± i t)` on any vertical line avoiding `-ℕ`.
 -/
 
 public section
@@ -223,3 +227,120 @@ theorem isBigO_log_norm_Gamma_vertical_line_sub (σ : ℝ) :
     ((tendsto_principal.2 (Eventually.of_forall fun _ ↦ left_mem_Icc.2 le_rfl)).prodMk tendsto_id)
 
 end TauCeti
+
+namespace Complex
+
+/-- Along any vertical line avoiding `-ℕ`, `t ↦ Γ(w + i t)` is continuous. -/
+theorem continuous_Gamma_add_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun t : ℝ ↦ Gamma (w + t * I) := by
+  refine continuous_iff_continuousAt.mpr fun t ↦ ?_
+  refine (differentiableAt_Gamma _ fun m hm ↦ hw m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re hm
+
+/-- Along any vertical line avoiding `-ℕ`, `t ↦ Γ(w - i t)` is continuous. -/
+theorem continuous_Gamma_sub_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun t : ℝ ↦ Gamma (w - t * I) := by
+  have hsub : (fun t : ℝ ↦ Gamma (w - t * I)) = fun t : ℝ ↦ Gamma (w + ((-t : ℝ) : ℂ) * I) := by
+    ext t; simp [sub_eq_add_neg]
+  rw [hsub]
+  exact (continuous_Gamma_add_mul_I hw).comp continuous_neg
+
+/-- On a vertical line avoiding the poles of the Gamma function, `‖Γ(w + i t)‖` is bounded by a
+constant multiple of `exp (-c |t|)` for every exponent `c < π / 2`: Stirling's vertical-strip
+formula controls large `|Im (w + i t)|`, and continuity of `Γ` away from `-ℕ` controls the compact
+middle interval. -/
+theorem exists_norm_Gamma_add_mul_I_le_mul_exp {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n)
+    {c : ℝ} (hc : c < π / 2) :
+    ∃ C : ℝ, 0 < C ∧ ∀ t : ℝ, ‖Gamma (w + t * I)‖ ≤ C * Real.exp (-c * |t|) := by
+  obtain ⟨K, T₀, hSt⟩ := TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le w.re w.re
+  set T : ℝ := max T₀ 1
+  set ε : ℝ := π / 2 - c
+  have hε : 0 < ε := sub_pos.mpr hc
+  set A : ℝ := |w.re - 1 / 2| + 1
+  have hA : 0 < A := by positivity
+  set δ : ℝ := ε / A
+  have hδ : 0 < δ := div_pos hε hA
+  set B : ℝ := -(A * Real.log δ) + Real.log (2 * π) / 2 + |K| + |c| * |w.im|
+  -- Outside the compact interval `|w.im + t| ≤ T`, Stirling's bound absorbs
+  -- `(w.re - 1/2) log |s.im|` into `ε |s.im|` using `log (δ u) ≤ δ u - 1`.
+  have htail : ∀ t : ℝ, T ≤ |w.im + t| →
+      ‖Gamma (w + t * I)‖ ≤ Real.exp B * Real.exp (-c * |t|) := by
+    intro t ht
+    set s : ℂ := w + t * I
+    have hs_re : s.re = w.re := by simp [s]
+    have hs_im : s.im = w.im + t := by simp [s]
+    set u : ℝ := |s.im|
+    have hTu : T ≤ u := by simpa [u, hs_im] using ht
+    have hT₀u : T₀ ≤ u := (le_max_left T₀ 1).trans hTu
+    have hu1 : 1 ≤ u := (le_max_right T₀ 1).trans hTu
+    have hu0 : 0 < u := zero_lt_one.trans_le hu1
+    rcases (norm_nonneg (Gamma s)).eq_or_lt with h0 | hpos
+    · rw [← h0]
+      positivity
+    have hlogSt : Real.log ‖Gamma s‖ -
+        ((w.re - 1 / 2) * Real.log u - π * u / 2 + Real.log (2 * π) / 2) ≤ K / u := by
+      have h := (abs_le.mp (hSt s ⟨hs_re.ge, hs_re.le⟩ hT₀u)).2
+      rwa [hs_re] at h
+    have hKu : K / u ≤ |K| :=
+      (div_le_div_of_nonneg_right (le_abs_self K) hu0.le).trans (div_le_self (abs_nonneg K) hu1)
+    have hlog_u : Real.log u ≤ δ * u - Real.log δ := by
+      have h1 := Real.log_le_sub_one_of_pos (mul_pos hδ hu0)
+      rw [Real.log_mul hδ.ne' hu0.ne'] at h1
+      linarith
+    have hmod : (w.re - 1 / 2) * Real.log u ≤ ε * u - A * Real.log δ := by
+      calc (w.re - 1 / 2) * Real.log u
+          ≤ A * Real.log u :=
+            mul_le_mul_of_nonneg_right (by linarith [le_abs_self (w.re - 1 / 2)])
+              (Real.log_nonneg hu1)
+        _ ≤ A * (δ * u - Real.log δ) := mul_le_mul_of_nonneg_left hlog_u hA.le
+        _ = ε * u - A * Real.log δ := by
+            have hAδ : A * δ = ε := mul_div_cancel₀ ε hA.ne'
+            linear_combination u * hAδ
+    have hshift : -c * u ≤ -c * |t| + |c| * |w.im| := by
+      have habs : |(|t| - u)| ≤ |w.im| := by
+        have h := abs_abs_sub_abs_le t (w.im + t)
+        rwa [abs_sub_comm t (w.im + t), add_sub_cancel_right, ← hs_im] at h
+      have hc_diff : c * (|t| - u) ≤ |c| * |w.im| :=
+        (le_abs_self _).trans
+          ((abs_mul c (|t| - u)).le.trans (mul_le_mul_of_nonneg_left habs (abs_nonneg c)))
+      linarith
+    have hlog_le : Real.log ‖Gamma s‖ ≤ B + (-c * |t|) := by
+      have hεu : ε * u - π * u / 2 = -c * u := by dsimp [ε]; ring
+      dsimp only [B]
+      linarith
+    rw [← Real.exp_log hpos, ← Real.exp_add]
+    exact Real.exp_le_exp.mpr hlog_le
+  -- On the compact middle interval `|w.im + t| ≤ T`, `t ↦ ‖Γ(w + i t)‖ exp (c |t|)` is continuous.
+  set g : ℝ → ℝ := fun t ↦ ‖Gamma (w + t * I)‖ * Real.exp (c * |t|)
+  have hg_cont : Continuous g := (continuous_Gamma_add_mul_I hw).norm.mul (by fun_prop)
+  obtain ⟨C₁, hC₁⟩ :=
+    (isCompact_Icc (a := -w.im - T) (b := -w.im + T)).exists_bound_of_continuousOn
+      hg_cont.continuousOn
+  set C : ℝ := max (max C₁ 1) (Real.exp B)
+  have hC : 0 < C := lt_of_lt_of_le one_pos ((le_max_right C₁ 1).trans (le_max_left _ _))
+  refine ⟨C, hC, fun t ↦ ?_⟩
+  rcases le_or_gt T |w.im + t| with ht | ht
+  · exact (htail t ht).trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (Real.exp_pos _).le)
+  · have htJ : t ∈ Icc (-w.im - T) (-w.im + T) := by
+      obtain ⟨h1, h2⟩ := abs_lt.mp ht
+      exact ⟨by linarith, by linarith⟩
+    have hg_le : g t ≤ C :=
+      (le_abs_self (g t)).trans
+        ((Real.norm_eq_abs (g t) ▸ hC₁ t htJ).trans ((le_max_left C₁ 1).trans (le_max_left _ _)))
+    calc ‖Gamma (w + t * I)‖
+        = g t * Real.exp (-c * |t|) := by
+          simp [g, mul_assoc, ← Real.exp_add]
+      _ ≤ C * Real.exp (-c * |t|) :=
+          mul_le_mul_of_nonneg_right hg_le (Real.exp_pos _).le
+
+/-- On a vertical line avoiding the poles of the Gamma function, `‖Γ(w - i t)‖` is bounded by a
+constant multiple of `exp (-c |t|)` for every exponent `c < π / 2`. -/
+theorem exists_norm_Gamma_sub_mul_I_le_mul_exp {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n)
+    {c : ℝ} (hc : c < π / 2) :
+    ∃ C : ℝ, 0 < C ∧ ∀ t : ℝ, ‖Gamma (w - t * I)‖ ≤ C * Real.exp (-c * |t|) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_Gamma_add_mul_I_le_mul_exp hw hc
+  refine ⟨C, hC, fun t ↦ ?_⟩
+  have hsub : w - (t : ℂ) * I = w + ((-t : ℝ) : ℂ) * I := by push_cast; ring
+  simpa [hsub] using h (-t)
+
+end Complex

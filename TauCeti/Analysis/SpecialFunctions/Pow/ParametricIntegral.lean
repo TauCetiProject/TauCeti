@@ -13,7 +13,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Parametric differentiation and holomorphy of slit-plane power integrals
@@ -38,6 +40,13 @@ is holomorphic on `slitPlane` with derivative
 holomorphy and partial-derivative formulas for Carlson's symmetric elliptic integrals `R_C`, `R_J`,
 `R_D`, and `R_G`.
 
+In the dual Mellin–Barnes setting, the base `w` is raised to a vertical-line exponent `σ + i y`
+with `y ∈ ℝ`, where `‖w ^ (σ + i y)‖ ≤ ‖w‖ ^ σ * exp (|arg w| * |y|)`. Whenever a measurable weight
+`g : ℝ → ℂ` decays faster than `exp (-|arg z| * |y|)`, the vertical integral
+`∫ y : ℝ, g y * z ^ (σ + i y)` converges, and at `z ∈ slitPlane` it may be differentiated under the
+integral sign. When `g` satisfies `‖g y‖ ≤ C * exp (-c * |y|)` for every `c < π`, this makes
+`w ↦ ∫ y : ℝ, g y * w ^ (σ + i y)` holomorphic on the entire `slitPlane`.
+
 ## Main results
 
 * `TauCeti.integrableOn_norm_mul_one_add_rpow_of_le` — monotonicity of integrability of
@@ -52,6 +61,15 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
 * `TauCeti.differentiableOn_integral_mul_ofReal_add_cpow`,
   `TauCeti.analyticOnNhd_integral_mul_ofReal_add_cpow` — complex differentiability and holomorphy
   on `slitPlane`.
+* `TauCeti.norm_cpow_add_mul_I_le`, `TauCeti.aestronglyMeasurable_cpow_add_mul_I` — norm bound and
+  measurability of `y ↦ z ^ (σ + i y)` for an arbitrary complex base `z`.
+* `TauCeti.integrable_mul_cpow_add_mul_I_of_norm_le_exp`,
+  `TauCeti.hasDerivAt_integral_mul_cpow_add_mul_I_of_norm_le_exp` — integrability and
+  differentiation under the integral sign for `w ↦ ∫ y : ℝ, g y * w ^ (σ + i y)` under exponential
+  decay of `g`.
+* `TauCeti.differentiableOn_integral_mul_cpow_add_mul_I`,
+  `TauCeti.analyticOnNhd_integral_mul_cpow_add_mul_I` — slit-plane differentiability and holomorphy
+  when `g y = O(exp (-c |y|))` for every `c < π`.
 -/
 
 public section
@@ -215,6 +233,159 @@ theorem analyticOnNhd_integral_mul_ofReal_add_cpow {μ : Measure ℝ} {g : ℝ �
     (hg : IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z₀) ^ s) (Ioi 0) μ) :
     AnalyticOnNhd ℂ (fun w : ℂ => ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ) slitPlane :=
   (differentiableOn_integral_mul_ofReal_add_cpow hz₀ hg).analyticOnNhd isOpen_slitPlane
+
+/-- For any complex base `z` and vertical-line exponent `σ + i y`, the principal power
+`z ^ (σ + i y)` has norm at most `‖z‖ ^ σ * exp (|arg z| * |y|)`. -/
+theorem norm_cpow_add_mul_I_le (z : ℂ) (σ y : ℝ) :
+    ‖z ^ ((σ : ℂ) + y * I)‖ ≤ ‖z‖ ^ σ * Real.exp (|z.arg| * |y|) := by
+  have hre : ((σ : ℂ) + y * I).re = σ := by simp
+  have him : ((σ : ℂ) + y * I).im = y := by simp
+  calc ‖z ^ ((σ : ℂ) + y * I)‖
+      ≤ ‖z‖ ^ ((σ : ℂ) + y * I).re / Real.exp (z.arg * ((σ : ℂ) + y * I).im) :=
+        Complex.norm_cpow_le _ _
+    _ = ‖z‖ ^ σ * Real.exp (-(z.arg * y)) := by
+        rw [hre, him, div_eq_mul_inv, ← Real.exp_neg]
+    _ ≤ ‖z‖ ^ σ * Real.exp (|z.arg| * |y|) := by
+        refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_)
+          (Real.rpow_nonneg (norm_nonneg z) σ)
+        exact (neg_le_abs _).trans (abs_mul z.arg y).le
+
+/-- For any complex base `z` and real `σ`, `y ↦ z ^ (σ + i y)` is almost-everywhere strongly
+measurable with respect to Lebesgue measure on `ℝ` (vanishing off `y = 0` when `z = 0`). -/
+theorem aestronglyMeasurable_cpow_add_mul_I (z : ℂ) (σ : ℝ) :
+    AEStronglyMeasurable (fun y : ℝ => z ^ ((σ : ℂ) + y * I)) volume := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · refine (aestronglyMeasurable_const (b := (0 : ℂ))).congr ?_
+    filter_upwards [compl_mem_ae_iff.mpr (measure_singleton (0 : ℝ))] with y hy
+    have hne : (σ : ℂ) + y * I ≠ 0 := fun h => hy (by simpa using congrArg Complex.im h)
+    exact (Complex.zero_cpow hne).symm
+  · have heq : (fun y : ℝ => z ^ ((σ : ℂ) + y * I)) =
+        fun y : ℝ => Complex.exp (Complex.log z * ((σ : ℂ) + y * I)) :=
+      funext fun y => Complex.cpow_def_of_ne_zero hz _
+    rw [heq]
+    exact Continuous.aestronglyMeasurable (by fun_prop)
+
+/-- If `g : ℝ → ℂ` is almost-everywhere strongly measurable and satisfies
+`‖g y‖ ≤ C * exp (-c * |y|)` for an exponent `c > |arg z|`, then `y ↦ g y * z ^ (σ + i y)` is
+integrable on `ℝ`. This applies to any complex base `z` (including `0` and the negative real axis
+when `π < c`). -/
+theorem integrable_mul_cpow_add_mul_I_of_norm_le_exp {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g volume) {z : ℂ} {σ c C : ℝ}
+    (hc : |z.arg| < c) (hg : ∀ y : ℝ, ‖g y‖ ≤ C * Real.exp (-c * |y|)) :
+    Integrable (fun y : ℝ => g y * z ^ ((σ : ℂ) + y * I)) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg (g 0)).trans (hg 0)
+  have hrate : 0 < c - |z.arg| := sub_pos.mpr hc
+  refine ((integrable_exp_neg_mul_abs hrate).const_mul (C * ‖z‖ ^ σ)).mono'
+    (hg_meas.mul (aestronglyMeasurable_cpow_add_mul_I z σ)) (Eventually.of_forall fun y => ?_)
+  rw [norm_mul]
+  calc ‖g y‖ * ‖z ^ ((σ : ℂ) + y * I)‖
+      ≤ (C * Real.exp (-c * |y|)) * (‖z‖ ^ σ * Real.exp (|z.arg| * |y|)) :=
+        mul_le_mul (hg y) (norm_cpow_add_mul_I_le z σ y) (norm_nonneg _) (by positivity)
+    _ = C * ‖z‖ ^ σ * Real.exp (-((c - |z.arg|) * |y|)) := by
+        rw [mul_mul_mul_comm, ← Real.exp_add]
+        congr 2
+        ring
+
+/-- **Differentiation under a vertical-line power integral.** If `z ∈ slitPlane`, `g` is
+almost-everywhere strongly measurable, and `‖g y‖ ≤ C * exp (-c * |y|)` for some `c > |arg z|`,
+then `w ↦ ∫ y : ℝ, g y * w ^ (σ + i y)` has complex derivative
+`∫ y : ℝ, g y * ((σ + i y) * z ^ (σ + i y - 1))` at `z`. -/
+theorem hasDerivAt_integral_mul_cpow_add_mul_I_of_norm_le_exp {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g volume) {z : ℂ} (hz : z ∈ slitPlane)
+    {σ c C : ℝ} (hc : |z.arg| < c) (hg : ∀ y : ℝ, ‖g y‖ ≤ C * Real.exp (-c * |y|)) :
+    HasDerivAt (fun w : ℂ => ∫ y : ℝ, g y * w ^ ((σ : ℂ) + y * I))
+      (∫ y : ℝ, g y * (((σ : ℂ) + y * I) * z ^ ((σ : ℂ) + y * I - 1))) z := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg (g 0)).trans (hg 0)
+  have hz_norm : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
+  set θ : ℝ := (|z.arg| + c) / 2
+  set ε : ℝ := (c - θ) / 2
+  have hε : 0 < ε := by dsimp [ε, θ]; linarith
+  set M : ℝ := max ((‖z‖ / 2) ^ (σ - 1)) ((2 * ‖z‖) ^ (σ - 1))
+  have hM : 0 < M := lt_of_lt_of_le (Real.rpow_pos_of_pos (half_pos hz_norm) _) (le_max_left _ _)
+  set U : Set ℂ :=
+    slitPlane ∩ {w : ℂ | |w.arg| < θ} ∩ {w : ℂ | ‖z‖ / 2 < ‖w‖ ∧ ‖w‖ < 2 * ‖z‖}
+  have hU : U ∈ 𝓝 z := by
+    refine Filter.inter_mem (Filter.inter_mem (isOpen_slitPlane.mem_nhds hz) ?_) ?_
+    · exact (continuous_abs.continuousAt.comp (Complex.continuousAt_arg hz)).preimage_mem_nhds
+        (Iio_mem_nhds (by dsimp [θ]; linarith))
+    · exact continuous_norm.continuousAt.preimage_mem_nhds
+        (Ioo_mem_nhds (by linarith) (by linarith))
+  have hsub (y : ℝ) : (σ : ℂ) + y * I - 1 = ((σ - 1 : ℝ) : ℂ) + y * I := by
+    push_cast; ring
+  have hF_meas : ∀ᶠ w in 𝓝 z,
+      AEStronglyMeasurable (fun y : ℝ => g y * w ^ ((σ : ℂ) + y * I)) volume :=
+    Eventually.of_forall fun w => hg_meas.mul (aestronglyMeasurable_cpow_add_mul_I w σ)
+  have hF'_meas : AEStronglyMeasurable
+      (fun y : ℝ => g y * (((σ : ℂ) + y * I) * z ^ ((σ : ℂ) + y * I - 1))) volume := by
+    simp_rw [hsub]
+    exact hg_meas.mul
+      (((by fun_prop : Continuous fun y : ℝ => (σ : ℂ) + y * I).aestronglyMeasurable).mul
+        (aestronglyMeasurable_cpow_add_mul_I z (σ - 1)))
+  have hbound_int :
+      Integrable (fun y : ℝ => C * (|σ| + ε⁻¹) * M * Real.exp (-(ε * |y|))) :=
+    (integrable_exp_neg_mul_abs hε).const_mul (C * (|σ| + ε⁻¹) * M)
+  have hlin (y : ℝ) : ‖(σ : ℂ) + y * I‖ ≤ (|σ| + ε⁻¹) * Real.exp (ε * |y|) := by
+    have hnorm : ‖(σ : ℂ) + y * I‖ ≤ |σ| + |y| := by
+      simpa using Complex.norm_le_abs_re_add_abs_im ((σ : ℂ) + y * I)
+    have hexpy : |y| ≤ ε⁻¹ * Real.exp (ε * |y|) := by
+      have h1 : ε * |y| ≤ Real.exp (ε * |y|) := by linarith [Real.add_one_le_exp (ε * |y|)]
+      calc |y| = ε⁻¹ * (ε * |y|) := by field_simp
+        _ ≤ ε⁻¹ * Real.exp (ε * |y|) := mul_le_mul_of_nonneg_left h1 (inv_nonneg.mpr hε.le)
+    have hσexp : |σ| ≤ |σ| * Real.exp (ε * |y|) :=
+      le_mul_of_one_le_right (abs_nonneg σ) (Real.one_le_exp (by positivity))
+    linarith
+  exact (hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume)
+    (F := fun (w : ℂ) (y : ℝ) => g y * w ^ ((σ : ℂ) + y * I))
+    (F' := fun (w : ℂ) (y : ℝ) => g y * (((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)))
+    (bound := fun y : ℝ => C * (|σ| + ε⁻¹) * M * Real.exp (-(ε * |y|)))
+    hU hF_meas (integrable_mul_cpow_add_mul_I_of_norm_le_exp hg_meas hc hg) hF'_meas
+    (Eventually.of_forall fun y w hw => by
+      have hrpow : ‖w‖ ^ (σ - 1) ≤ M := by
+        rcases le_or_gt (σ - 1) 0 with hσ | hσ
+        · exact (Real.rpow_le_rpow_of_nonpos (half_pos hz_norm) hw.2.1.le hσ).trans
+            (le_max_left _ _)
+        · exact (Real.rpow_le_rpow (norm_nonneg w) hw.2.2.le hσ.le).trans (le_max_right _ _)
+      have hw_pow : ‖w ^ ((σ : ℂ) + y * I - 1)‖ ≤ M * Real.exp (θ * |y|) := by
+        rw [hsub]
+        refine (norm_cpow_add_mul_I_le w (σ - 1) y).trans ?_
+        exact mul_le_mul hrpow
+          (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right hw.1.2.le (abs_nonneg y)))
+          (Real.exp_pos _).le hM.le
+      rw [norm_mul, norm_mul]
+      calc ‖g y‖ * (‖(σ : ℂ) + y * I‖ * ‖w ^ ((σ : ℂ) + y * I - 1)‖)
+          ≤ (C * Real.exp (-c * |y|)) *
+              (((|σ| + ε⁻¹) * Real.exp (ε * |y|)) * (M * Real.exp (θ * |y|))) :=
+            mul_le_mul (hg y)
+              (mul_le_mul (hlin y) hw_pow (norm_nonneg _) (by positivity))
+              (by positivity) (by positivity)
+        _ = C * (|σ| + ε⁻¹) * M * Real.exp (-(ε * |y|)) := by
+            have hexp_sum : -c * |y| + (ε * |y| + θ * |y|) = -(ε * |y|) := by
+              dsimp [ε, θ]; ring
+            rw [← hexp_sum, Real.exp_add, Real.exp_add]
+            ring)
+    hbound_int
+    (Eventually.of_forall fun y w hw =>
+      (((hasDerivAt_id w).cpow_const hw.1.1).const_mul (g y)).congr_deriv (by simp))).2
+
+/-- If `g` is almost-everywhere strongly measurable and satisfies `‖g y‖ ≤ C * exp (-c * |y|)` for
+every `c < π`, then `w ↦ ∫ y : ℝ, g y * w ^ (σ + i y)` is complex differentiable on `slitPlane`. -/
+theorem differentiableOn_integral_mul_cpow_add_mul_I {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g volume) (σ : ℝ)
+    (hg : ∀ c < Real.pi, ∃ C : ℝ, ∀ y : ℝ, ‖g y‖ ≤ C * Real.exp (-c * |y|)) :
+    DifferentiableOn ℂ (fun w : ℂ => ∫ y : ℝ, g y * w ^ ((σ : ℂ) + y * I)) slitPlane := by
+  intro z hz
+  have harg : |z.arg| < Real.pi := Complex.abs_arg_lt_pi_of_mem_slitPlane hz
+  obtain ⟨C, hC⟩ := hg ((|z.arg| + Real.pi) / 2) (by linarith)
+  exact (hasDerivAt_integral_mul_cpow_add_mul_I_of_norm_le_exp hg_meas hz (by linarith)
+    hC).differentiableAt.differentiableWithinAt
+
+/-- If `g` is almost-everywhere strongly measurable and satisfies `‖g y‖ ≤ C * exp (-c * |y|)` for
+every `c < π`, then `w ↦ ∫ y : ℝ, g y * w ^ (σ + i y)` is holomorphic on `slitPlane`. -/
+theorem analyticOnNhd_integral_mul_cpow_add_mul_I {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g volume) (σ : ℝ)
+    (hg : ∀ c < Real.pi, ∃ C : ℝ, ∀ y : ℝ, ‖g y‖ ≤ C * Real.exp (-c * |y|)) :
+    AnalyticOnNhd ℂ (fun w : ℂ => ∫ y : ℝ, g y * w ^ ((σ : ℂ) + y * I)) slitPlane :=
+  (differentiableOn_integral_mul_cpow_add_mul_I hg_meas σ hg).analyticOnNhd isOpen_slitPlane
 
 end TauCeti
 
