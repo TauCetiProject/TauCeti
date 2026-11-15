@@ -20,8 +20,9 @@ sum of all preceding terms up to a factor `< 1`, so the norms of the partial sum
 
 In particular, this applies whenever `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently
 (for instance when `u m / u (m + 1) → 0` for a sequence of nonzero elements in a normed division
-ring). In continued-fraction theory, this is the criterion by which super-exponential growth of a
-recessive solution implies divergence of the reduction-of-order series in Pincherle's theorem.
+ring). In continued-fraction theory, this is the criterion by which super-exponential growth of the
+reduction-of-order summands implies divergence of the reduction-of-order series in Pincherle's
+theorem.
 
 ## Main results
 
