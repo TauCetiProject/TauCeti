@@ -137,6 +137,13 @@ theorem IsPathEigenvectorUpTo.of_forall {δ : K}
     IsPathEigenvectorUpTo G v₀ r δ n :=
   fun _ _ _ _ ↦ hδ _
 
+/-- Applying a ring homomorphism between fields preserves `IsPathEigenvectorUpTo`. -/
+theorem IsPathEigenvectorUpTo.map {L : Type*} [Field L] (f : K →+* L) {δ : K} {n : ℕ}
+    (hδ : IsPathEigenvectorUpTo G v₀ r δ n) :
+    IsPathEigenvectorUpTo G v₀ (f ∘ r) (f δ) n := by
+  intro m hm s hs
+  simpa [Function.comp_def, map_sum, map_pow, map_mul] using congrArg f (hδ hm hs)
+
 /-- At any position `a` strictly before the end of an `m`-step walk from `v₀`, the bounded
 eigenvector hypothesis up to `m` gives the neighbour-square sum at `s a`. -/
 theorem IsPathEigenvectorUpTo.apply_of_lt {δ : K} {m : ℕ}

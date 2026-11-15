@@ -42,8 +42,8 @@ file does not assert the existence of a Markov trace at every loop parameter.
   on the full tower.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_isMarkovTraceUpTo`: a global Markov trace agrees up
   to `N` strands with any Markov trace defined up to `N` strands.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.succ_eq_zero`: at loop parameter `0`, every Markov trace
-  vanishes on one or more strands.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.apply_succ_eq_zero`: at loop parameter `0`, every Markov
+  trace vanishes on one or more strands.
 
 ## References
 
@@ -190,7 +190,7 @@ theorem unique {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMa
 
 /-- At loop parameter `0`, every Markov trace vanishes on one or more strands: closing any diagram
 on at least one strand creates at least one loop. -/
-theorem succ_eq_zero {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
+theorem apply_succ_eq_zero {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
     (htr : IsMarkovTrace R 0 tr) (n : ℕ) : tr (n + 1) = 0 := by
   induction n with
   | zero =>

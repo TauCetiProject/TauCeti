@@ -17,12 +17,15 @@ positivity, and trace radicals across the boundary parameter regimes:
 
 * at `δ = 1 / 2` (`0 < δ < 1`), the first bad level is `2` and the two-strand Jones–Wenzl
   idempotent `1 - 2 • e 0` has trace `-3 / 4 < 0`;
-* at `δ = 0`, every complex Markov trace is positive semidefinite even though `0` is not in
-  `jonesLoopParameters`, whereas negative real parameters fail positivity on one strand and `-1`
-  witnesses why `0 < δ` is needed in the normalized pullback criterion;
+* at `δ = 0`, every Markov trace over a star-ordered commutative semiring (and in particular the
+  spin-model trace at `q = i`) is positive semidefinite even though `0` is not in
+  `jonesLoopParameters`, whereas negative real parameters fail positivity on one strand (while
+  remaining positive semidefinite on zero strands) and `-1` witnesses why `0 < δ` is needed in the
+  normalized pullback criterion;
 * in the open gap `1 < δ < √2`, positivity holds on `0`, `1`, and `2` strands and fails from `3`
   strands onward;
-* at `δ = √2` (`2 cos (π / 4)`), every level is positive semidefinite while the nonzero
+* at `δ = √2` (`2 cos (π / 4)`), `⌊π / arccos (√2 / 2)⌋ = 4`, every level is positive semidefinite,
+  the positive quotient trace unifies with `IsMarkovTrace.quotientStrandIncl`, and the nonzero
   three-strand Jones–Wenzl projection lies in the trace radical;
 * at `δ = 1` (`2 cos (π / 3)`), the two-strand Jones–Wenzl projection `1 - e 0` lies in the trace
   radical but not in the Jacobson radical;
@@ -80,10 +83,18 @@ example [Fact (IsSelfAdjoint ((1 / 2 : ℝ) : ℂ))]
   push_cast
   norm_num
 
-/-! ### Degenerate and negative parameters: `δ = 0` and `δ = -1` -/
+/-! ### Degenerate and negative parameters: `δ = 0` and `δ < 0` -/
 
--- At `δ = 0` (`q = i`), the spin-model trace is positive semidefinite on all strands despite
--- `0 ∉ jonesLoopParameters`.
+-- At `δ = 0`, every Markov trace over a star-ordered commutative semiring is nonnegative on
+-- elements `x⋆ * x`.
+example {R : Type*} [CommSemiring R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
+    [Fact (IsSelfAdjoint (0 : R))] {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
+    (htr : IsMarkovTrace R 0 tr) (n : ℕ) (x : TemperleyLieb R 0 n) :
+    0 ≤ tr n (star x * x) :=
+  htr.map_star_mul_self_nonneg_of_eq_zero rfl n x
+
+-- In particular, at `δ = 0` (`q = i`), the complex spin-model trace is positive semidefinite on
+-- all strands despite `0 ∉ jonesLoopParameters`.
 example :
     let _ : Fact (IsSelfAdjoint ((0 : ℝ) : ℂ)) := ⟨Complex.conj_ofReal 0⟩
     (0 : ℝ) ∉ jonesLoopParameters ∧
@@ -94,6 +105,23 @@ example :
   exact ⟨zero_notMem_jonesLoopParameters, fun n x ↦
     (isMarkovTrace_markovTrace qI (by simp [qI])).map_star_mul_self_nonneg_of_eq_zero
       Complex.ofReal_zero n x⟩
+
+-- Every negative real parameter `δ < 0` fails positivity on one strand (`tr 1 (1⋆ * 1) = δ < 0`),
+-- while on zero strands positivity still holds (witnessed for `-2 ≤ δ < 0` by
+-- `⌊π / arccos (δ / 2)⌋ = 1`).
+example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hlo : -2 ≤ δ) (hneg : δ < 0)
+    {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) :
+    ⌊π / arccos (δ / 2)⌋₊ = 1 ∧
+      (∀ x : TemperleyLieb ℂ (δ : ℂ) 0, 0 ≤ tr 0 (star x * x)) ∧
+      tr 1 (star (1 : TemperleyLieb ℂ (δ : ℂ) 1) * 1) < 0 := by
+  have hfl : ⌊π / arccos (δ / 2)⌋₊ = 1 :=
+    floor_pi_div_arccos_eq le_rfl
+      (by rw [Nat.cast_one, div_one, cos_pi]; linarith)
+      (by push_cast; norm_num [cos_pi_div_two]; linarith)
+  refine ⟨hfl, fun x ↦ htr.map_star_mul_self_nonneg_of_lt_floor (by omega) x, ?_⟩
+  rw [star_one, mul_one, htr.map_one, pow_one]
+  exact_mod_cast hneg
 
 -- At `δ = -1`, the unital star characters sending every generator to `-1` pull back the positive
 -- identity state on `ℂ` to the normalized Markov trace `(-1)⁻ⁿ tr n`, showing that `0 < δ` cannot
@@ -161,7 +189,7 @@ example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (h1 : 1 < δ) (h2 : δ < �
   have hJ : δ ∉ jonesLoopParameters :=
     notMem_jonesLoopParameters_of_two_mul_cos_lt (by omega) hlo hhi
   have hfl : ⌊π / arccos (δ / 2)⌋₊ = 3 :=
-    floor_pi_div_arccos_eq (by omega) hlo hhi
+    floor_pi_div_arccos_eq (by omega) hlo.le hhi
   refine ⟨hJ, ?_⟩
   rw [htr.forall_map_star_mul_self_nonneg_iff_lt_floor (by linarith) hJ, hfl]
 
@@ -200,14 +228,24 @@ example {δ : ℝ} (h1 : 1 < δ) (h2 : δ < √2)
 
 /-! ### Discrete admissible boundaries: `δ = √2` and `δ = 1` -/
 
--- At `δ = √2` (`m = 4`), all levels are positive semidefinite and `f₃` is a nonzero element of the
--- three-strand trace radical.
+-- At `δ = √2` (`m = 4`), `⌊π / arccos (√2 / 2)⌋ = 4`, all levels are positive semidefinite, and
+-- `f₃` is a nonzero element of the three-strand trace radical.
 example [Fact (IsSelfAdjoint (√2 : ℂ))]
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (√2 : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (√2 : ℂ) tr) :
-    (∀ (n : ℕ) (x : TemperleyLieb ℂ (√2 : ℂ) n), 0 ≤ tr n (star x * x)) ∧
+    ⌊π / arccos (√2 / 2)⌋₊ = 4 ∧
+      (∀ (n : ℕ) (x : TemperleyLieb ℂ (√2 : ℂ) n), 0 ≤ tr n (star x * x)) ∧
       jonesWenzl (√2 : ℂ) 3 ≠ 0 ∧
       jonesWenzl (√2 : ℂ) 3 ∈ (tr 3).traceRadical (htr.map_mul_comm 3) := by
+  have hfl : ⌊π / arccos (√2 / 2)⌋₊ = 4 := by
+    refine floor_pi_div_arccos_eq (by omega) ?_ ?_
+    · rw [Nat.cast_ofNat, cos_pi_div_four]
+      linarith
+    · have hlt : π / (5 : ℝ) < π / 4 := div_lt_div_of_pos_left pi_pos (by norm_num) (by norm_num)
+      have hcos := strictAntiOn_cos ⟨by positivity, by linarith [pi_pos]⟩
+        ⟨by positivity, by linarith [pi_pos]⟩ hlt
+      rw [cos_pi_div_four] at hcos
+      simpa using (mul_lt_mul_of_pos_left hcos zero_lt_two).trans_le' (by linarith)
   have hsq : (√2 : ℝ) ^ 2 = 2 := sq_sqrt zero_le_two
   have hq (j : ℕ) : qInt ℂ (√2 : ℂ) j = (qInt ℝ √2 j : ℂ) :=
     (Complex.ofRealHom.map_qInt √2 j).symm
@@ -226,9 +264,27 @@ example [Fact (IsSelfAdjoint (√2 : ℂ))]
     · simp
     · simp [sqrt_ne_zero'.2 zero_lt_two]
     · simp [hq3]
-  refine ⟨htr.map_star_mul_self_nonneg_of_mem_jonesLoopParameters sqrt_two_mem_jonesLoopParameters,
+  refine ⟨hfl,
+    htr.map_star_mul_self_nonneg_of_mem_jonesLoopParameters sqrt_two_mem_jonesLoopParameters,
     fun h0 ↦ zero_ne_one (α := ℂ) (by simpa [h0] using aug_jonesWenzl (δ := (√2 : ℂ)) 3), ?_⟩
   rw [htr.jonesWenzl_mem_traceRadical_iff hunit, hq, hq4, Complex.ofReal_zero]
+
+-- Because `IsMarkovTrace.starPositiveFunctional` is `@[expose]`d, its induced positive quotient
+-- trace unifies definitionally with `IsMarkovTrace.quotientStrandIncl` across module boundaries.
+example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ∈ jonesLoopParameters)
+    {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ)
+    (x : TemperleyLieb ℂ (δ : ℂ) (n + 1) ⧸
+      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
+    (htr.starPositiveFunctional hδ (n + 2)).quotientTrace (htr.map_mul_comm (n + 2))
+        (htr.quotientStrandIncl n x) =
+      (δ : ℂ) * (htr.starPositiveFunctional hδ (n + 1)).quotientTrace
+        (htr.map_mul_comm (n + 1)) x :=
+  (LinearMap.congr_fun
+      ((htr.starPositiveFunctional hδ (n + 2)).toLinearMap_quotientTrace _) _).trans <|
+    (htr.quotientTrace_quotientStrandIncl n x).trans <|
+      congrArg _ (LinearMap.congr_fun
+        ((htr.starPositiveFunctional hδ (n + 1)).toLinearMap_quotientTrace _) x).symm
 
 -- At `δ = 1` (`m = 3`), `f₂ = 1 - e 0` belongs to the trace radical on two strands, whereas it does
 -- not belong to the Jacobson radical because `1 - f₂ = e 0` is killed by the augmentation.
