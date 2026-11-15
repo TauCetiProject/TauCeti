@@ -575,6 +575,18 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
 
+omit [IsManifold I 1 M] in
+/-- If only finitely many critical points lie in `S`, then only finitely many pairs of an index `m`
+and a critical point of index `m` in `S` exist. -/
+theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
+  have := hS.to_subtype
+  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+    fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
+      cases Subtype.ext_iff.1 hxy
+      cases hx.2.symm.trans hy.2
+      rfl
+
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/
 theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
@@ -1113,6 +1125,20 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
   have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
+
+/-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
+`f` with values in `[a, b)` and complementary index `dim M - i`. -/
+theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
+    {x ∈ criticalPoints I (-f) ∩ (-f) ⁻¹' Ioc (-b) (-a) | manifoldMorseIndex I (-f) x = i} =
+      {x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b |
+        manifoldMorseIndex I f x + i = Module.finrank ℝ E} := by
+  ext x
+  simp only [criticalPoints_neg, mem_ofPred_eq, mem_inter_iff, mem_preimage, Pi.neg_apply,
+    mem_Ioc, mem_Ico, neg_lt_neg_iff, neg_le_neg_iff]
+  constructor <;> rintro ⟨⟨hx, h₁, h₂⟩, h₃⟩ <;>
+  · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
 
 /-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
 signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,

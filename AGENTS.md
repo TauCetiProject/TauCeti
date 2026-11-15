@@ -39,6 +39,15 @@ needs no fresh roadmap claim but should name the one roadmap chiefly motivating 
 Do not infer the association from a `TauCeti/` directory name; code organization and roadmap
 scope do not coincide.
 
+Every pull request description must also carry a completed quality pass: the `Quality pass:`
+block of [`.github/pull_request_template.md`](.github/pull_request_template.md), one line per
+check, after running the checks that the template explains over every declaration the PR adds or
+changes. GitHub fills the template in only for PRs opened in the browser or interactively;
+`gh pr create --body` and the API do not, so read it and copy the block into your description
+yourself. When later commits add or change declarations, for instance to answer review findings,
+run the checks again over those and update the block (`gh pr edit <number> --body-file <file>`).
+The `quality-pass` review angle checks it.
+
 ## The rules of the repo
 
 - `main` is always green. CI builds against pinned Mathlib and enforces: no `sorry`, no
