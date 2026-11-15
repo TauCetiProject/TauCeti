@@ -602,6 +602,14 @@ theorem kummerCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff K n) :
   Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
     simp [Subgroup.smul_def, -map_smul]
 
+/-- The coefficient maps of restriction commute with the inclusion `μₙ ↪ (Kˢ)ˣ` of the Kummer
+sequence. -/
+@[simp]
+theorem unitsCoeffMap_kummerCoeffIncl (x : KummerCoeff K n) :
+    unitsCoeffMap K L σ (kummerCoeffIncl K n x) =
+      kummerCoeffIncl L n (kummerCoeffMap K n L σ x) :=
+  Additive.toMul.injective <| Units.ext <| by simp
+
 /-- **Restriction on the Kummer `H¹` along a `K`-embedding `σ : L →ₐ[K] Kˢ`**,
 `H¹(G_K, μₙ) → H¹(G_L, μₙ)`: restriction to the subgroup `Gal(Kˢ/σ(L)) ≤ G_K` fixing `σ(L)`,
 followed by the pullback along `absoluteGaloisGroupEquivFixingSubgroup K L σ : G_L ≃ₜ* Gal(Kˢ/σ(L))`
@@ -902,7 +910,7 @@ theorem kummerCor_kummerMap (hn : IsUnit (n : L)) (b : Lˣ) :
       (kummerCoeffMapSymm K n L σ) (unitsCoeffMapSymm K L σ) (unitsCoeffMapSymm K L σ)
       (kummerCoeffMapSymm_smul K n L σ) (unitsCoeffMapSymm_smul K L σ) (by simp) (by simp)
       (baseUnitsEquivInvariants L (Additive.ofMul b)) (embeddedUnitsInvariants K L σ b)
-      (unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ b).symm,
+      (unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ (.ofMul b)).symm,
     explicitCor0_embeddedUnitsInvariants]
 
 /-- **The norm square of the Kummer isomorphism** (NSW, the display after (6.2.1)): for a

@@ -277,8 +277,9 @@ theorem subgroupInvMap_characterCarryCocycle_of_mk_eq_artinMap {L : Type} [Field
       (unitsCoeffMapSymm_smul K L σ)]
     congr 2
     · simp only [hχψ]
-    · exact Subtype.ext ((unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ b).symm.trans
-        (coe_explicitMap0 _ _ _ _ _ _).symm)
+    · exact Subtype.ext
+        ((unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ (.ofMul b)).symm.trans
+          (coe_explicitMap0 _ _ _ _ _ _).symm)
   rw [hcarry, subgroupInvMap_explicitMap2,
     invMap_characterCarryCocycle_of_mk_eq_artinMap χ hχ b ρ hρ]
   -- `χ` is `ψ` read along `T`.

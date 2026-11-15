@@ -25,9 +25,11 @@ along `L/K`; they involve no exponent, Kummer map or Hilbert 90, so they live he
 ## Main results
 
 * `TauCeti.unitsCoeffMapSymm_smul`, `TauCeti.unitsCoeffMap_smul`: both are equivariant along
-  `G_L ≃ₜ* Gal(Kˢ/σ(L))`.
+  `G_L ≃ₜ* Gal(Kˢ/σ(L))`; `TauCeti.unitsCoeffMap_coe_smul` is the second with `G_L` acting
+  through `G_K`.
 * `TauCeti.unitsCoeffMapSymm_unitsCoeffMap`, `TauCeti.unitsCoeffMap_unitsCoeffMapSymm`: they are
-  inverse to each other.
+  inverse to each other, also as additive maps (`TauCeti.unitsCoeffMapSymm_comp_unitsCoeffMap`,
+  `TauCeti.unitsCoeffMap_comp_unitsCoeffMapSymm`).
 * `TauCeti.unitsCoeffMapSymm_unitsCoeffPow`, `TauCeti.unitsCoeffMap_unitsCoeffPow`: both commute
   with the `n`th power map `TauCeti.unitsCoeffPow`.
 * `TauCeti.unitsCoeffMapSymm_coe_baseUnitsEquivInvariants`,
@@ -93,6 +95,16 @@ theorem unitsCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
     Additive.toMul_smul, toMul_unitsCoeffMap]
   exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_apply])
 
+/-- `TauCeti.unitsCoeffMap_smul` with `g` acting on `(Kˢ)ˣ` through its image in `G_K`, the form
+the compatible pair of `TauCeti.galoisResUnits` takes once the inclusion of the subgroup fixing
+`σ(L)` is unfolded. -/
+@[simp]
+theorem unitsCoeffMap_coe_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
+    unitsCoeffMap K L σ
+        ((absoluteGaloisGroupEquivFixingSubgroup K L σ g : AbsoluteGaloisGroup K) • x) =
+      g • unitsCoeffMap K L σ x :=
+  unitsCoeffMap_smul K L σ g x
+
 /-- The two coefficient identifications of the units are inverse to each other. -/
 @[simp]
 theorem unitsCoeffMapSymm_unitsCoeffMap (x : UnitsCoeff K) :
@@ -104,6 +116,18 @@ theorem unitsCoeffMapSymm_unitsCoeffMap (x : UnitsCoeff K) :
 theorem unitsCoeffMap_unitsCoeffMapSymm (y : UnitsCoeff L) :
     unitsCoeffMap K L σ (unitsCoeffMapSymm K L σ y) = y :=
   Additive.toMul.injective <| Units.ext <| by simp
+
+/-- `TauCeti.unitsCoeffMapSymm_unitsCoeffMap` as an equality of additive maps. -/
+@[simp]
+theorem unitsCoeffMapSymm_comp_unitsCoeffMap :
+    (unitsCoeffMapSymm K L σ).comp (unitsCoeffMap K L σ) = AddMonoidHom.id (UnitsCoeff K) :=
+  AddMonoidHom.ext (unitsCoeffMapSymm_unitsCoeffMap K L σ)
+
+/-- `TauCeti.unitsCoeffMap_unitsCoeffMapSymm` as an equality of additive maps. -/
+@[simp]
+theorem unitsCoeffMap_comp_unitsCoeffMapSymm :
+    (unitsCoeffMap K L σ).comp (unitsCoeffMapSymm K L σ) = AddMonoidHom.id (UnitsCoeff L) :=
+  AddMonoidHom.ext (unitsCoeffMap_unitsCoeffMapSymm K L σ)
 
 /-! ### Interaction with the coefficient operations -/
 
@@ -122,9 +146,9 @@ theorem unitsCoeffMap_unitsCoeffPow (n : ℕ) (x : UnitsCoeff K) :
 /-- `unitsCoeffMapSymm` carries the invariant of `G_L` attached to `b ∈ Lˣ` to the invariant of
 `Gal(Kˢ/σ(L))` attached to `b`. -/
 @[simp]
-theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
-    unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L (Additive.ofMul b)) =
-      embeddedUnitsInvariants K L σ b :=
+theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Additive Lˣ) :
+    unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L b) =
+      embeddedUnitsInvariants K L σ b.toMul :=
   Additive.toMul.injective <| Units.ext <| by simp [separableClosureRingEquiv_algebraMap]
 
 /-- `unitsCoeffMap` carries the invariant of `Gal(Kˢ/σ(L))` attached to `b ∈ Lˣ` to the invariant
@@ -132,15 +156,17 @@ of `G_L` attached to `b`, inverting `TauCeti.unitsCoeffMapSymm_coe_baseUnitsEqui
 @[simp]
 theorem unitsCoeffMap_coe_embeddedUnitsInvariants (b : Lˣ) :
     unitsCoeffMap K L σ (embeddedUnitsInvariants K L σ b) =
-      baseUnitsEquivInvariants L (Additive.ofMul b) := by
-  rw [← unitsCoeffMapSymm_coe_baseUnitsEquivInvariants, unitsCoeffMap_unitsCoeffMapSymm]
+      baseUnitsEquivInvariants L (Additive.ofMul b) :=
+  (congrArg (unitsCoeffMap K L σ)
+    (unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ (.ofMul b))).symm.trans
+    (unitsCoeffMap_unitsCoeffMapSymm K L σ _)
 
 /-- `unitsCoeffMap` carries the invariant of `G_K` attached to `a ∈ Kˣ` to the invariant of `G_L`
 attached to the image of `a` in `Lˣ`. -/
 @[simp]
-theorem unitsCoeffMap_coe_baseUnitsEquivInvariants (a : Kˣ) :
-    unitsCoeffMap K L σ (baseUnitsEquivInvariants K (Additive.ofMul a)) =
-      baseUnitsEquivInvariants L (Additive.ofMul (Units.map (algebraMap K L).toMonoidHom a)) :=
+theorem unitsCoeffMap_coe_baseUnitsEquivInvariants (a : Additive Kˣ) :
+    unitsCoeffMap K L σ (baseUnitsEquivInvariants K a) =
+      baseUnitsEquivInvariants L (Additive.ofMul (Units.map (algebraMap K L : K →* L) a.toMul)) :=
   Additive.toMul.injective <| Units.ext <| by
     simp [IsScalarTower.algebraMap_apply K L (SeparableClosure L)]
 
