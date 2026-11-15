@@ -106,15 +106,13 @@ theorem frameVelocityCoordinates_ne_zero (hs : IsLocalFrameOn I E n s u) (ht : �
 
 end Frame
 
-/-- Along a differentiable `a`-periodic curve, the frame coordinates of the velocity are
-`a`-periodic. -/
+/-- Along an `a`-periodic curve, the frame coordinates of the velocity are `a`-periodic. -/
 theorem periodic_frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace I x) {γ : ℝ → M}
-    {a : ℝ} (hp : Function.Periodic γ a) (hγ : MDifferentiable 𝓘(ℝ) I γ) :
+    {a : ℝ} (hp : Function.Periodic γ a) :
     Function.Periodic (frameVelocityCoordinates s γ) a := by
   intro t
-  have hv := hp.curveVelocity_add (hγ (t + a))
   unfold frameVelocityCoordinates
-  rw [hv, hp t]
+  rw [hp.curveVelocity_add (I := I), hp t]
 
 section Continuous
 
@@ -167,7 +165,7 @@ theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
   have hclosed : U 1 = U 0 := by
     have hper : z 1 = z 0 := by
       simpa only [zero_add] using
-        periodic_frameVelocityCoordinates s hp (hγ.mdifferentiable one_ne_zero) 0
+        periodic_frameVelocityCoordinates s hp 0
     exact Circle.ext (by simp only [U, hper])
   exact ⟨U 0, ⟨⟨fun t ↦ U t, hU.comp continuous_subtype_val⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
 
