@@ -81,7 +81,7 @@ pairs `(A, A⁺)` and `(B, B⁺)`, `Spa(B, B⁺)` having a sheaf as structure pr
 morphism `φ : (A, A⁺) → (B, B⁺)` of Huber pairs, and isomorphisms identifying `Y` restricted to
 `V` with `Spa(A, A⁺)` and `X` restricted to `f⁻¹(V)` with `Spa(B, B⁺)`, under which `f` becomes the
 morphism induced by `φ`. -/
-def IsFinite : MorphismProperty AdicSpace.{u} := fun X Y f ↦
+def IsFinite {X Y : AdicSpace.{u}} (f : X ⟶ Y) : Prop :=
   ∀ y : Y.obj, ∃ (V : Opens Y.obj) (_ : y ∈ V) (A : Type u) (_ : CommRing A)
     (_ : UniformSpace A) (_ : IsUniformAddGroup A) (_ : IsTopologicalRing A) (_ : CompleteSpace A)
     (_ : T2Space A) (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A)
@@ -360,7 +360,7 @@ private theorem IsFinite.comp_iso_hom {Y' : AdicSpace.{u}} (e : Y ≅ Y') {f : X
   simp [e', reassoc_of% hfac]
 
 /-- **Being finite is invariant under isomorphisms** of the source and of the target. -/
-instance IsFinite.respectsIso : IsFinite.{u}.RespectsIso :=
+instance IsFinite.respectsIso : MorphismProperty.RespectsIso @IsFinite.{u} :=
   MorphismProperty.RespectsIso.mk _ (fun e _ hf ↦ hf.iso_hom_comp e)
     (fun e _ hf ↦ hf.comp_iso_hom e)
 
@@ -368,7 +368,7 @@ instance IsFinite.respectsIso : IsFinite.{u}.RespectsIso :=
 with a complete model `Spa(A, A⁺)`, over which the identity is the morphism induced by the identity
 of `(A, A⁺)`, a finite morphism of Huber pairs. So isomorphisms are finite
 (`CategoryTheory.MorphismProperty.of_isIso`). -/
-instance IsFinite.containsIdentities : IsFinite.{u}.ContainsIdentities where
+instance IsFinite.containsIdentities : MorphismProperty.ContainsIdentities @IsFinite.{u} where
   id_mem X y := by
     obtain ⟨V, hV, hyV⟩ := X.property.isLocallyAffinoid y
     obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ :=
