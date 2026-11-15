@@ -41,6 +41,10 @@ Barnes's first lemma.
   `Re s = σ` with `0 < σ < Re a` is `Γ(a) (1 + u)^{-a}`.
 * `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: the same formula as the unnormalised
   vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}`.
+* `Complex.integrable_Gamma_add_mul_Gamma_sub` and
+  `Complex.integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub`: integrability of
+  `y ↦ Γ(b + i y) Γ(d - i y)` for pole-free real parts and the complex-shifted Mellin–Barnes
+  integral `∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}`.
 
 ## References
 
@@ -173,5 +177,34 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-- Along any vertical line avoiding the poles of both factors, `y ↦ Γ(b + i y) Γ(d - i y)` is
+integrable. -/
+theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : ∀ n : ℕ, b.re ≠ -n)
+    (hd : ∀ n : ℕ, d.re ≠ -n) :
+    Integrable fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow hd 0
+  have hcont_d : Continuous fun y : ℝ ↦ Gamma (d - y * I) := by
+    simpa [Function.comp_def, sub_eq_add_neg] using
+      (continuous_Gamma_add_mul_I hd).comp continuous_neg
+  exact (integrable_Gamma_add_mul_I hb).mul_bdd hcont_d.aestronglyMeasurable
+    (Eventually.of_forall fun y ↦ by simpa [sub_eq_add_neg] using hC (-y))
+
+/-- **The Mellin–Barnes integral of `(1 + u)^{-(b + d)}`** with complex shifts: for `Re b > 0`,
+`Re d > 0`, and `u > 0`,
+`∫ u^{-(b + i y)} Γ(b + i y) Γ(d - i y) dy = 2π Γ(b + d) (1 + u)^{-(b + d)}`. -/
+theorem integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : 0 < b.re) (hd : 0 < d.re)
+    {u : ℝ} (hu : 0 < u) :
+    ∫ y : ℝ, (u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I)) =
+      2 * π * (Gamma (b + d) * (1 + (u : ℂ)) ^ (-(b + d))) := by
+  rw [← integral_sub_right_eq_self
+    (fun y : ℝ ↦ (u : ℂ) ^ (-(b + y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) b.im]
+  have hb_eq (y : ℝ) : b + ((y - b.im : ℝ) : ℂ) * I = (b.re : ℂ) + (y : ℂ) * I := by
+    apply Complex.ext <;> simp
+  have hd_eq (y : ℝ) : d - ((y - b.im : ℝ) : ℂ) * I = b + d - ((b.re : ℂ) + (y : ℂ) * I) := by
+    apply Complex.ext <;> simp
+    ring
+  simp_rw [hb_eq, hd_eq]
+  exact integral_cpow_neg_mul_Gamma_mul_Gamma_sub hb (by simp [hd]) hu
 
 end Complex

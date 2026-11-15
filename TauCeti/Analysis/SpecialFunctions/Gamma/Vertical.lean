@@ -45,6 +45,10 @@ its coefficients.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
 * `Complex.integral_cpow_neg_mul_Gamma`: the same formula as the unnormalised vertical integral
   `∫ y^{-(σ + i t)} Γ(σ + i t) dt = 2π e⁻ʸ`.
+* `Complex.continuous_Gamma_add_mul_I`,
+  `Complex.exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow`,
+  `Complex.integrable_Gamma_add_mul_I`: continuity, rapid polynomial decay, and integrability of
+  `t ↦ Γ(a + i t)` for complex `a` with `Re a` not a nonpositive integer.
 
 ## References
 
@@ -170,5 +174,48 @@ theorem integral_cpow_neg_mul_Gamma {σ : ℝ} (hσ : 0 < σ) {y : ℝ} (hy : 0 
   simp only [smul_eq_mul] at h
   rw [← h, ← mul_assoc,
     show (2 * π : ℂ) * ((1 / (2 * π) : ℝ) : ℂ) = 1 by push_cast; field_simp, one_mul]
+
+/-- Along any vertical line `s = a + i t` avoiding the poles of the Gamma function,
+`t ↦ Γ(a + i t)` is continuous. -/
+theorem continuous_Gamma_add_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Continuous fun t : ℝ ↦ Gamma (a + t * I) := by
+  refine continuous_iff_continuousAt.mpr fun t ↦ ?_
+  refine (differentiableAt_Gamma _ fun m h ↦ ha m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re h
+
+/-- Along a vertical line `s = a + i t` avoiding the poles of the Gamma function, `Γ(a + i t)`
+decays faster than every power of `|t|`: for every `m`, `‖Γ(a + i t)‖` is bounded by a constant
+multiple of `(1 + t²)⁻ᵐ`. -/
+theorem exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n)
+    (m : ℕ) : ∃ C : ℝ, ∀ t : ℝ, ‖Gamma (a + t * I)‖ ≤ C * ((1 + t ^ 2) ^ m)⁻¹ := by
+  obtain ⟨C₀, hC₀⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow ha m
+  have hC₀_nonneg : 0 ≤ C₀ := by simpa using (norm_nonneg _).trans (hC₀ 0)
+  refine ⟨C₀ * (2 + 2 * a.im ^ 2) ^ m, fun t ↦ ?_⟩
+  have hsplit : a + t * I = (a.re : ℂ) + ((a.im + t : ℝ) : ℂ) * I := by
+    apply Complex.ext <;> simp
+  have hquad : 1 + t ^ 2 ≤ (2 + 2 * a.im ^ 2) * (1 + (a.im + t) ^ 2) := by
+    nlinarith [sq_nonneg (2 * a.im + t), mul_nonneg (sq_nonneg a.im) (sq_nonneg (a.im + t))]
+  have hpow : (1 + t ^ 2) ^ m ≤ (2 + 2 * a.im ^ 2) ^ m * (1 + (a.im + t) ^ 2) ^ m := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (by positivity) hquad m
+  have hinv : ((1 + (a.im + t) ^ 2) ^ m)⁻¹ ≤ (2 + 2 * a.im ^ 2) ^ m * ((1 + t ^ 2) ^ m)⁻¹ := by
+    rw [inv_eq_one_div, inv_eq_one_div, mul_one_div,
+      div_le_div_iff₀ (by positivity) (by positivity), one_mul]
+    exact hpow
+  calc ‖Gamma (a + t * I)‖
+      = ‖Gamma ((a.re : ℂ) + ((a.im + t : ℝ) : ℂ) * I)‖ := by rw [hsplit]
+    _ ≤ C₀ * ((1 + (a.im + t) ^ 2) ^ m)⁻¹ := hC₀ (a.im + t)
+    _ ≤ C₀ * ((2 + 2 * a.im ^ 2) ^ m * ((1 + t ^ 2) ^ m)⁻¹) :=
+        mul_le_mul_of_nonneg_left hinv hC₀_nonneg
+    _ = C₀ * (2 + 2 * a.im ^ 2) ^ m * ((1 + t ^ 2) ^ m)⁻¹ := (mul_assoc _ _ _).symm
+
+/-- Along every vertical line `s = a + i t` avoiding the poles of the Gamma function,
+`t ↦ Γ(a + i t)` is integrable. -/
+theorem integrable_Gamma_add_mul_I {a : ℂ} (ha : ∀ n : ℕ, a.re ≠ -n) :
+    Integrable fun t : ℝ ↦ Gamma (a + t * I) := by
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_add_mul_I_le_mul_inv_one_add_sq_pow ha 1
+  exact (integrable_inv_one_add_sq.const_mul C).mono'
+    (continuous_Gamma_add_mul_I ha).aestronglyMeasurable
+    (Eventually.of_forall fun t ↦ by simpa using hC t)
 
 end Complex
