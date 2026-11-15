@@ -177,7 +177,7 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
         (fun t _ ↦ by
           rw [kernel]
           simpa only [abs_div, abs_one, abs_abs, mul_one_div] using
-            Real.posLog_le_sqrt_two_mul (1 / |1 - t|))
+            Real.posLog_le_sqrt_two_mul_abs (1 / |1 - t|))
     _ ≤ majorantIntegral := by
       rw [majorantIntegral]
       exact intervalIntegral.integral_mono_interval hlo hA2A (by linarith only [hhi])

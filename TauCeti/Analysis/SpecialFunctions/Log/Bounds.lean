@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Real.Sqrt
 # Elementary bounds for the real logarithm
 
 `Real.neg_log_le_sqrt_two_div` bounds `-log x` by `sqrt (2 / x)` for every `x ≥ 0`,
-including the totalized value at zero. `Real.posLog_le_sqrt_two_mul` bounds
+including the totalized value at zero. `Real.posLog_le_sqrt_two_mul_abs` bounds
 `posLog x` by `sqrt (2 * |x|)` for every real `x`.
 
 Applied to reciprocal distances, these inequalities dominate logarithmic singularities by
@@ -43,7 +43,7 @@ theorem neg_log_le_sqrt_two_div {x : ℝ} (hx : 0 ≤ x) :
   · exact (lt_of_not_ge ht).le.trans (Real.sqrt_nonneg _)
 
 /-- The positive logarithm is bounded by a square-root majorant, including zero. -/
-theorem posLog_le_sqrt_two_mul (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * |x|) := by
+theorem posLog_le_sqrt_two_mul_abs (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * |x|) := by
   rw [Real.posLog_apply]
   refine max_le (Real.sqrt_nonneg _) ?_
   simpa only [Real.log_inv, neg_neg, div_inv_eq_mul, Real.log_abs] using
