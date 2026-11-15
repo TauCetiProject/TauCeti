@@ -319,6 +319,16 @@ def principalPartsTopEquiv :
   left_inv _ := rfl
   right_inv _ := rfl
 
+omit [IsManifold 𝓘(ℂ) 1 X] in
+@[simp]
+theorem principalPartsTopEquiv_apply (s : ∀ x : (⊤ : Opens X), boundedBy D E x.1) (x : X) :
+    principalPartsTopEquiv D E s x = s ⟨x, trivial⟩ := (rfl)
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+@[simp]
+theorem principalPartsTopEquiv_symm_apply (μ : ∀ x : X, boundedBy D E x) (x : (⊤ : Opens X)) :
+    (principalPartsTopEquiv D E).symm μ x = μ x.1 := (rfl)
+
 variable (D E) in
 /-- The principal parts relative to `D` of a global section of `𝒪_E`. -/
 def globalPrincipalParts : (divisorSheaf E).obj.obj (op ⊤) →ₗ[ℂ] ∀ x : X, boundedBy D E x :=
@@ -364,6 +374,17 @@ def principalPartsCechIso : ModuleCat.of ℂ (∀ x : X, boundedBy D E x) ≅
     (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 0).obj (principalPartsSheaf D E).obj :=
   (principalPartsTopEquiv D E).symm.toModuleIso ≪≫
     cechCohomologyZeroIso (principalPartsSheaf D E)
+
+/-- The identification of families of principal parts with degree-zero cohomology is the
+identification of global sections with degree-zero cohomology. -/
+theorem principalPartsCechIso_hom_apply (c : ∀ x : X, boundedBy D E x)
+    (s : (principalPartsSheaf D E).obj.obj (op ⊤))
+    (hs : ∀ x : X, principalPartsSheafSectionsEquiv D E ⊤ s ⟨x, trivial⟩ = c x) :
+    (principalPartsCechIso D E).hom.hom c =
+      (cechCohomologyZeroIso (principalPartsSheaf D E)).hom.hom s := by
+  obtain rfl : c = fun x ↦ principalPartsSheafSectionsEquiv D E ⊤ s ⟨x, trivial⟩ :=
+    funext fun x ↦ (hs x).symm
+  rfl
 
 variable [IsManifold 𝓘(ℂ) 1 X]
 
