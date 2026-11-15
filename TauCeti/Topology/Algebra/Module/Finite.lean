@@ -19,9 +19,11 @@ import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 Let `M` be a finite module over a topological ring `A`. Choosing a finite spanning family of `M`
 presents it as an open quotient of `Aⁿ`, by Mathlib's
-`IsModuleTopology.isOpenQuotientMap_of_surjective`, and so three properties of `A` descend to
-`moduleTopology A M`: first countability, nonarchimedeanness, and — for the canonical right
-uniformity, by `IsOpenQuotientMap.completeSpace` — completeness.
+`IsModuleTopology.isOpenQuotientMap_of_surjective`, and so four properties of `A` descend to
+`moduleTopology A M`: first countability, nonarchimedeanness, compactness, and — for the canonical
+right uniformity, by `IsOpenQuotientMap.completeSpace` — completeness. Over a compact topological
+ring `A`, compactness of `moduleTopology A M` further implies that *every* Hausdorff topological
+`A`-module topology on `M` coincides with `moduleTopology A M` (`IsModuleTopology.of_compactSpace`).
 
 Each theorem asks of `A` exactly what its proof consumes, and none of them needs `A` to be a
 Huber or a Tate ring. Separatedness is different: it is equivalent to closedness of the kernel of
@@ -48,6 +50,10 @@ topology on `M` from typeclass search.
   uniformity is complete.
 * `TauCeti.t2Space_moduleTopology_of_projective`: over a Hausdorff topological ring the module
   topology on a finite projective module is Hausdorff.
+* `TauCeti.compactSpace_moduleTopology`: over a compact topological ring the module topology on a
+  finite module is compact.
+* `IsModuleTopology.of_compactSpace`: any Hausdorff module topology on a finite module over a
+  compact topological ring coincides with the module topology.
 
 ## References
 
@@ -116,6 +122,29 @@ theorem t2Space_moduleTopology_of_projective [TopologicalSpace A] [IsTopological
   obtain ⟨n, -, g, -, hg, -⟩ := Module.Finite.exists_comp_eq_id_of_projective A M
   exact .of_injective_continuous hg (IsModuleTopology.continuous_of_linearMap g)
 
+/-- **The module topology on a finite module over a compact topological ring is compact.** -/
+theorem compactSpace_moduleTopology [TopologicalSpace A] [IsTopologicalRing A]
+    [CompactSpace A] : @CompactSpace M (moduleTopology A M) := by
+  let _ : TopologicalSpace M := moduleTopology A M
+  have _ : IsModuleTopology A M := inferInstance
+  let _ : ContinuousAdd M := IsModuleTopology.toContinuousAdd A M
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A M
+  exact hf.compactSpace (IsModuleTopology.continuous_of_linearMap f)
+
 end TauCeti
+
+/-- Any Hausdorff topological module structure on a finite module over a compact topological ring
+coincides with the module topology: the identity from the compact module topology is continuous,
+hence a homeomorphism onto the Hausdorff target. -/
+theorem IsModuleTopology.of_compactSpace (A M : Type*) [Ring A] [TopologicalSpace A]
+    [IsTopologicalRing A] [CompactSpace A] [AddCommGroup M] [Module A M] [Module.Finite A M]
+    [τM : TopologicalSpace M] [T2Space M] [ContinuousAdd M] [ContinuousSMul A M] :
+    IsModuleTopology A M :=
+  have hc : @CompactSpace M (moduleTopology A M) := TauCeti.compactSpace_moduleTopology
+  have hid : @Continuous M M (moduleTopology A M) τM id :=
+    @continuous_id_iff_le M (moduleTopology A M) τM |>.mpr (moduleTopology_le A M)
+  IsModuleTopology.of_continuous_id
+    (@Homeomorph.continuous_symm M M (moduleTopology A M) τM
+      (@Continuous.homeoOfEquivCompactToT2 M M (moduleTopology A M) τM hc _ (Equiv.refl M) hid))
 
 end
