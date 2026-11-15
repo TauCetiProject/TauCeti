@@ -19,7 +19,8 @@ import TauCeti.LinearAlgebra.RootSystem.SpecialNodePermutations
 # Matrix symmetries and orbit orthogonality for finite-type Cartan matrices
 
 A permutation `σ ∈ TauCeti.matrixSymmetryGroup A` preserving a square integer matrix `A` acts as a
-graph automorphism on its diagram `TauCeti.diagramGraph A`. For connected finite-type Cartan
+graph automorphism on its diagram `TauCeti.diagramGraph A`
+(`TauCeti.diagramGraphIsoOfMemMatrixSymmetryGroup`). For connected finite-type Cartan
 matrices, combining the Cartan-Killing classification with the tree and path-graph automorphism
 results in `TauCeti.Combinatorics.SimpleGraph.Automorphism` determines both when nontrivial matrix
 symmetries exist and when an orbit can contain an edge:
@@ -41,11 +42,6 @@ symmetries exist and when an orbit can contain an edge:
    otherwise every vertex has degree at most `2`, `A` reindexes to `Aₘ`, `σ` is the identity or
    `graphPermA m`, and odd chains still have independent reversal orbits while even chains `A₂ₙ`
    have `{n - 1, n}` as their unique adjacent reversal orbit.
-
-## Main definitions
-
-* `TauCeti.diagramGraphIsoOfMemMatrixSymmetryGroup`: the automorphism of `diagramGraph A` induced
-  by a permutation in `matrixSymmetryGroup A`.
 
 ## Main results
 
@@ -75,38 +71,6 @@ namespace TauCeti
 
 /-! ## Graph automorphisms from matrix symmetries -/
 
-/-- **A permutation in `matrixSymmetryGroup A` acts as an automorphism of `diagramGraph A`.** -/
-def diagramGraphIsoOfMemMatrixSymmetryGroup {B : Type*} {A : Matrix B B ℤ} {σ : Equiv.Perm B}
-    (hσ : σ ∈ matrixSymmetryGroup A) : diagramGraph A ≃g diagramGraph A where
-  toEquiv := σ
-  map_rel_iff' := fun {i j} ↦ by
-    have hij := congrFun₂ (mem_matrixSymmetryGroup_iff.mp hσ) i j
-    have hji := congrFun₂ (mem_matrixSymmetryGroup_iff.mp hσ) j i
-    simp only [Matrix.submatrix_apply] at hij hji
-    rw [diagramGraph_adj, diagramGraph_adj, σ.injective.ne_iff, hij, hji]
-
-/-- Applying `diagramGraphIsoOfMemMatrixSymmetryGroup hσ` evaluates the underlying permutation `σ`.
--/
-@[simp]
-theorem diagramGraphIsoOfMemMatrixSymmetryGroup_apply {B : Type*} {A : Matrix B B ℤ}
-    {σ : Equiv.Perm B} (hσ : σ ∈ matrixSymmetryGroup A) (i : B) :
-    diagramGraphIsoOfMemMatrixSymmetryGroup hσ i = σ i :=
-  (rfl)
-
-/-- Applying the inverse of `diagramGraphIsoOfMemMatrixSymmetryGroup hσ` evaluates `σ.symm`. -/
-@[simp]
-theorem diagramGraphIsoOfMemMatrixSymmetryGroup_symm_apply {B : Type*} {A : Matrix B B ℤ}
-    {σ : Equiv.Perm B} (hσ : σ ∈ matrixSymmetryGroup A) (i : B) :
-    (diagramGraphIsoOfMemMatrixSymmetryGroup hσ).symm i = σ.symm i :=
-  (rfl)
-
-/-- The underlying equivalence of `diagramGraphIsoOfMemMatrixSymmetryGroup hσ` is `σ`. -/
-@[simp]
-theorem diagramGraphIsoOfMemMatrixSymmetryGroup_toEquiv {B : Type*} {A : Matrix B B ℤ}
-    {σ : Equiv.Perm B} (hσ : σ ∈ matrixSymmetryGroup A) :
-    (diagramGraphIsoOfMemMatrixSymmetryGroup hσ).toEquiv = σ :=
-  (rfl)
-
 /-- If `diagramGraph A` is `SimpleGraph.pathGraph n`, any permutation preserving `A` is either the
 identity or `Fin.revPerm`. -/
 theorem eq_one_or_eq_revPerm_of_diagramGraph_eq_pathGraph {n : ℕ} {A : Matrix (Fin n) (Fin n) ℤ}
@@ -115,10 +79,9 @@ theorem eq_one_or_eq_revPerm_of_diagramGraph_eq_pathGraph {n : ℕ} {A : Matrix 
     σ = 1 ∨ σ = Fin.revPerm := by
   let f : _root_.SimpleGraph.pathGraph n ≃g _root_.SimpleGraph.pathGraph n :=
     { toEquiv := σ
-      map_rel_iff' := by
-        intro i j
-        rw [← hG]
-        exact (diagramGraphIsoOfMemMatrixSymmetryGroup hσ).map_rel_iff' }
+      map_rel_iff' := fun {i j} ↦ by
+        simpa only [← hG, diagramGraphIsoOfMemMatrixSymmetryGroup_apply] using
+          (diagramGraphIsoOfMemMatrixSymmetryGroup hσ).map_rel_iff }
   rcases f.eq_refl_or_eq_pathGraphRevIso with hrefl | hrev
   · exact Or.inl <| Equiv.ext fun i ↦
       congrArg (fun φ : _root_.SimpleGraph.pathGraph n ≃g _ ↦ φ i) hrefl
@@ -272,7 +235,8 @@ theorem orbit_apply_eq_zero_or_typeA_even (h : IsFiniteType A)
     intro i j hcyc hne
     have hnot_adj : ¬ (diagramGraph A).Adj i j :=
       htree.not_adj_of_sameCycle_of_degree_unique (f := f) (c := c)
-        (fun w hw ↦ h.eq_of_degree_eq_three hsl hconn (hw.trans hc3) hc3) hcyc
+        (fun w hw ↦ h.eq_of_degree_eq_three hsl hconn (hw.trans hc3) hc3)
+        ((diagramGraphIsoOfMemMatrixSymmetryGroup_toEquiv hσ).symm ▸ hcyc)
     exact Classical.byContradiction fun hnz ↦ hnot_adj (h.diagramGraph_adj_iff.mpr ⟨hne, hnz⟩)
   · -- Unbranched diagram (`Aₘ`): reindex onto `(DynkinType.A m).cartanMatrix`.
     have hdeg : ∀ v : B, (diagramGraph A).degree v ≤ 2 := fun v ↦ by

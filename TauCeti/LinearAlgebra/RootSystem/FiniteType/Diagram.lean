@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Acyclic
+public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
@@ -31,6 +32,8 @@ the root-system case is irreducibility, which Mathlib packages as
 
 * `TauCeti.diagramGraph`: the diagram of an integer matrix, a `SimpleGraph` on its index type,
   joining two distinct indices when the entries of the transposed pair are both nonzero.
+* `TauCeti.diagramGraphIsoOfMemMatrixSymmetryGroup`: the automorphism of `diagramGraph A` induced
+  by a permutation in `matrixSymmetryGroup A`.
 
 ## Main results
 
@@ -101,6 +104,36 @@ theorem diagramGraph_submatrix {C : Type*} {f : C → B} (hf : Function.Injectiv
   ext i j
   rw [diagramGraph_adj, SimpleGraph.comap_adj, diagramGraph_adj, Matrix.submatrix_apply,
     Matrix.submatrix_apply, hf.ne_iff]
+
+/-- **A permutation in `matrixSymmetryGroup A` acts as an automorphism of `diagramGraph A`.** -/
+def diagramGraphIsoOfMemMatrixSymmetryGroup {σ : Equiv.Perm B}
+    (hσ : σ ∈ matrixSymmetryGroup A) : diagramGraph A ≃g diagramGraph A where
+  toEquiv := σ
+  map_rel_iff' := fun {i j} ↦ by
+    rw [← SimpleGraph.comap_adj, ← diagramGraph_submatrix σ.injective,
+      mem_matrixSymmetryGroup_iff.mp hσ]
+
+/-- Applying `diagramGraphIsoOfMemMatrixSymmetryGroup hσ` evaluates the underlying permutation `σ`.
+-/
+@[simp]
+theorem diagramGraphIsoOfMemMatrixSymmetryGroup_apply {σ : Equiv.Perm B}
+    (hσ : σ ∈ matrixSymmetryGroup A) (i : B) :
+    diagramGraphIsoOfMemMatrixSymmetryGroup hσ i = σ i :=
+  (rfl)
+
+/-- Applying the inverse of `diagramGraphIsoOfMemMatrixSymmetryGroup hσ` evaluates `σ.symm`. -/
+@[simp]
+theorem diagramGraphIsoOfMemMatrixSymmetryGroup_symm_apply {σ : Equiv.Perm B}
+    (hσ : σ ∈ matrixSymmetryGroup A) (i : B) :
+    (diagramGraphIsoOfMemMatrixSymmetryGroup hσ).symm i = σ.symm i :=
+  (rfl)
+
+/-- The underlying equivalence of `diagramGraphIsoOfMemMatrixSymmetryGroup hσ` is `σ`. -/
+@[simp]
+theorem diagramGraphIsoOfMemMatrixSymmetryGroup_toEquiv {σ : Equiv.Perm B}
+    (hσ : σ ∈ matrixSymmetryGroup A) :
+    (diagramGraphIsoOfMemMatrixSymmetryGroup hσ).toEquiv = σ :=
+  (rfl)
 
 /-- Transposing a matrix does not change its unoriented diagram. -/
 @[simp]

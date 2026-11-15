@@ -188,14 +188,12 @@ theorem supportPerm_pow (b : P.Base) {σ : P.Aut}
     (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (n : ℕ)
     (hσn : ∀ i ∈ b.support, (σ ^ n).indexEquiv i ∈ b.support) :
     b.supportPerm hσn = b.supportPerm hσ ^ n := by
-  refine _root_.Equiv.ext fun i ↦ Subtype.ext ?_
-  rw [coe_supportPerm_apply, ← Equiv.indexHom_apply P, map_pow, Equiv.indexHom_apply]
-  clear hσn
-  induction n with
-  | zero => rfl
-  | succ k ih =>
-    rw [pow_succ', _root_.Equiv.Perm.mul_apply, pow_succ', _root_.Equiv.Perm.mul_apply,
-      coe_supportPerm_apply, ih]
+  rw [supportPerm]
+  suffices ∀ h, _root_.Equiv.Perm.subtypePerm (σ ^ n).indexEquiv h = b.supportPerm hσ ^ n from
+    this _
+  rw [← Equiv.indexHom_apply P, map_pow, Equiv.indexHom_apply, supportPerm,
+    _root_.Equiv.Perm.subtypePerm_pow]
+  exact fun _ ↦ rfl
 
 /-- Two simple roots lie in the same cycle of `b.supportPerm hσ` exactly when their ambient indices
 lie in the same cycle of `σ.indexEquiv`. -/
