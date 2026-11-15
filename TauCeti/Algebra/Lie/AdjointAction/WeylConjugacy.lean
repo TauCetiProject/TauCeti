@@ -79,7 +79,7 @@ theorem forall_mem_lieInvariants_lift_eval_eq_iff {x y : H} :
       ← LieSubalgebra.map_lieInvariants_lieCartanRestriction H]
     simp only [Subalgebra.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
     exact forall₂_congr fun p _ ↦
-      (lift_eval_killingSymmetricEquiv H x p).congr (lift_eval_killingSymmetricEquiv H y p)
+      (H.lift_eval_killingSymmetricEquiv x p).congr (H.lift_eval_killingSymmetricEquiv y p)
   rw [hinv, forall₂_congr fun _ _ ↦ eq_comm, forall_mem_linearInvariants_lift_eq_iff]
   refine exists_congr fun w ↦ ?_
   -- the Killing duality is Weyl-equivariant

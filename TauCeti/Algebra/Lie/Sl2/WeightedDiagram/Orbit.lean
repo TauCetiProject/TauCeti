@@ -40,14 +40,14 @@ addressed here.
 * `RootPairing.Base.eq_of_smul_eq_of_mem_dominantNeutralElements`: two dominant neutral elements
   conjugate under `Int(L)` are equal.
 * `RootPairing.Base.injOn_orbit_dominantNeutralElements` and
-  `TauCeti.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral elements
-  have distinct orbits, so there are exactly as many orbits of neutral elements as dominant
-  neutral elements.
+  `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral
+  elements have distinct orbits, so there are exactly as many orbits of neutral elements as
+  dominant neutral elements.
 * `RootPairing.Base.eq_of_isSl2Triple_of_e_mem_orbit_of_mem_dominantNeutralElements`: the
   dominant neutral element of a triple depends only on the `Int(L)`-orbit of its nilpositive
   element.
-* `TauCeti.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`: a nonzero `ad`-nilpotent
-  element has exactly one dominant neutral element.
+* `RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`: a nonzero
+  `ad`-nilpotent element has exactly one dominant neutral element.
 
 ## References
 
@@ -98,17 +98,9 @@ theorem eq_of_isSl2Triple_of_e_mem_orbit_of_mem_dominantNeutralElements {h h' : 
   obtain ⟨g, hg⟩ := t.h_mem_orbit_of_e_mem_orbit t' he
   exact b.eq_of_smul_eq_of_mem_dominantNeutralElements hh hh' g.2 hg
 
-end RootPairing.Base
-
-namespace TauCeti
-
-variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
-  [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
-  [H.IsCartanSubalgebra]
-
 /-- **Counting orbits of neutral elements exactly.** The `Int(L)`-orbits of neutral elements of
 `sl₂` triples are exactly as many as the dominant neutral elements for any base `b`. -/
-theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq (b : (rootSystem H).Base) :
+theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq :
     (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}).ncard =
       b.dominantNeutralElements.ncard := by
   rw [← b.image_orbit_dominantNeutralElements,
@@ -117,8 +109,8 @@ theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq (b : (rootSystem H).Base) 
 /-- **The dominant neutral element of a nilpotent element.** For any base `b`, a nonzero
 `ad`-nilpotent element `e` has exactly one dominant neutral element `h`: the neutral element of an
 `sl₂` triple whose nilpositive element is an `Int(L)`-conjugate of `e`. -/
-theorem existsUnique_mem_dominantNeutralElements_isSl2Triple_smul (b : (rootSystem H).Base)
-    {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
+theorem existsUnique_mem_dominantNeutralElements_isSl2Triple_smul {e : L}
+    (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
     ∃! h : H, h ∈ b.dominantNeutralElements ∧
       ∃ g ∈ intLieAlgebra K L, ∃ f : L, IsSl2Triple (h : L) (g • e) f := by
   obtain ⟨g, hg, h, hh, f, t⟩ :=
@@ -129,4 +121,4 @@ theorem existsUnique_mem_dominantNeutralElements_isSl2Triple_smul (b : (rootSyst
   dsimp only
   rw [Subgroup.mk_smul, mul_smul, inv_smul_smul]
 
-end TauCeti
+end RootPairing.Base

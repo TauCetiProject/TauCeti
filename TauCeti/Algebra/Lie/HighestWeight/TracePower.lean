@@ -203,7 +203,7 @@ theorem map_dualMap_tracePowerPolynomial (m : ℕ) :
   obtain ⟨h, rfl⟩ := (Module.evalEquiv K H).surjective f
   -- evaluating at `h` after either induced map is evaluating at a linear form on the source
   rw [Module.evalEquiv_apply, _root_.SymmetricAlgebra.lift_eval_map_dualMap,
-    LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, lift_eval_map_cartanEquivDual,
+    LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, H.lift_eval_map_cartanEquivDual,
     lift_eval_tracePowerPolynomial, lift_cartanEquivDual_tracePowerRestriction,
     LieSubalgebra.toEnd_eq]
 
