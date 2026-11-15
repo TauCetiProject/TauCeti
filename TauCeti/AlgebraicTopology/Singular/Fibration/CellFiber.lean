@@ -324,9 +324,7 @@ lemma cellDiskPullbackPairMap_def (n : ℕ) (j : cell C n) :
 @[simp]
 lemma coe_cellDiskPullbackPairMap_fst_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
-    (ConcreteCategory.hom (Y := _root_.TopCat.of
-      (p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)))
-      (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j)) x).1 = x.1.2 :=
+    (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x).1 = x.1.2 :=
   (coe_cellPullbackPairMap_fst_apply n _).trans (cellDiskPullbackPairι_fst_apply_snd n j x)
 
 include hp
@@ -522,12 +520,9 @@ lemma cellDiskPullbackPairMap_comp_preimageSkeletonPairMap (hf : f ≫ p' = p) (
   ext x
   simp only [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
   apply Subtype.ext
-  -- `coe_cellDiskPullbackPairMap_fst_apply` states its coercion with the target written as
-  -- `TopCat.of (p ⁻¹' _)` rather than `(preimageSkeletonPair p C n).fst`, so it is only matched
-  -- up to unfolding the abbreviation, by `erw`.
-  erw [coe_preimageSkeletonPairMap_fst_apply, coe_cellDiskPullbackPairMap_fst_apply,
-    coe_cellDiskPullbackPairMap_fst_apply, TopPair.ofSubsetMap_fst_apply,
-    coe_cellDiskPullbackMap_apply]
+  rw [coe_preimageSkeletonPairMap_fst_apply, coe_cellDiskPullbackPairMap_fst_apply,
+    coe_cellDiskPullbackPairMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+  exact (congrArg Prod.snd (coe_cellDiskPullbackMap_apply hf n j x)).symm
 
 variable (hp : serreFibrations p) (hp' : serreFibrations p') (R : Type u) [Ring R]
 
