@@ -143,16 +143,10 @@ def reducedSpecialFiberMultidegreeLinear :
         LineBundleClass.intersectionNumber (ResidueField R)
           (toBase.subschemeToReducedSpecialFiber ((Set.Finite.mem_toFinset _).mp j.2)) a.toMul /
           ((toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).weight j : ℤ)
-      map_zero' := by
-        funext j
-        have hj : toBase j.1 = closedPoint R := (Set.Finite.mem_toFinset _).mp j.2
-        let := subschemeOverResidueField
-          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hj)
-        simp
+      map_zero' := by ext j; simp
       map_add' a b := by
-        refine (toBase.specialFiberNumericalType
-          hX hη hπ hreg h₀ h₁ hconn).weightScaling_injective ?_
-        funext j
+        let T := toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn
+        refine T.weightScaling_injective (funext fun j ↦ ?_)
         have hj : toBase j.1 = closedPoint R := (Set.Finite.mem_toFinset _).mp j.2
         let := subschemeOverResidueField
           (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hj)
@@ -163,12 +157,10 @@ def reducedSpecialFiberMultidegreeLinear :
               Spec (.of (ResidueField R))) :=
           toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
             (fun h ↦ one_ne_zero (j.1.2.symm.trans (coheight_eq_zero.mpr h))) hj
-        have := h₀.apply j.1 hj
-        have := h₁.apply j.1 hj
-        have hdvd (c : LineBundleClass (reducedSpecialFiber R toBase)) :=
-          Int.ediv_mul_cancel
-            (toBase.specialFiberNumericalType_weight_dvd_intersectionNumber
-              hX hη hπ hreg h₀ h₁ hconn j (toBase.subschemeToReducedSpecialFiber hj) c)
+        have := h₀.apply j.1 hj; have := h₁.apply j.1 hj
+        have hdvd (c : LineBundleClass (reducedSpecialFiber R toBase)) := Int.ediv_mul_cancel
+          (toBase.specialFiberNumericalType_weight_dvd_intersectionNumber hX hη hπ hreg h₀ h₁
+            hconn j (toBase.subschemeToReducedSpecialFiber hj) c)
         dsimp only
         rw [NumericalType.weightScaling_apply, NumericalType.weightScaling_apply, Pi.add_apply,
           add_mul, toMul_add, hdvd (a.toMul * b.toMul), hdvd a.toMul, hdvd b.toMul,
@@ -226,8 +218,7 @@ lemma specialFiberMultidegreeLinear_comp_pullback :
 lemma reducedSpecialFiberMultidegreeLinear_comp_pullback_reducedSpecialFiberι :
     toBase.reducedSpecialFiberMultidegreeLinear hX hη hπ hreg h₀ h₁ hconn ∘ₗ
         LineBundleClass.pullbackLinearMap (reducedSpecialFiberι R toBase) =
-      toBase.multidegreeLinear hX hη hπ hreg h₀ h₁ hconn := by
-  rw [multidegreeLinear]
+      toBase.multidegreeLinear hX hη hπ hreg h₀ h₁ hconn := by rw [multidegreeLinear]
 
 /-- Coordinates of `specialFiberMultidegreeLinear`, expressed via the component embeddings into the
 scheme-theoretic special fibre `X_s`. -/
@@ -248,8 +239,7 @@ lemma specialFiberMultidegreeLinear_apply
   let := subschemeOverResidueField
     (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hj)
   rw [specialFiberMultidegreeLinear, LinearMap.comp_apply,
-    reducedSpecialFiberMultidegreeLinear_apply]
-  dsimp only
+    reducedSpecialFiberMultidegreeLinear_apply]; dsimp only
   rw [LineBundleClass.toMul_pullbackLinearMap_apply, LineBundleClass.intersectionNumber_pullback,
     toBase.subschemeToReducedSpecialFiber_toSpecialFiber hj]
 
@@ -288,9 +278,8 @@ lemma weightScaling_reducedSpecialFiberMultidegreeLinear_apply
   let := subschemeOverResidueField
     (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hj)
   rw [NumericalType.weightScaling_apply, reducedSpecialFiberMultidegreeLinear_apply]
-  exact Int.ediv_mul_cancel
-    (toBase.specialFiberNumericalType_weight_dvd_intersectionNumber
-      hX hη hπ hreg h₀ h₁ hconn j (toBase.subschemeToReducedSpecialFiber hj) a.toMul)
+  exact Int.ediv_mul_cancel (toBase.specialFiberNumericalType_weight_dvd_intersectionNumber
+    hX hη hπ hreg h₀ h₁ hconn j (toBase.subschemeToReducedSpecialFiber hj) a.toMul)
 
 /-- Weight-rescaling `specialFiberMultidegreeLinear` recovers the residue-field intersection
 numbers on `X_s`. -/
@@ -311,8 +300,7 @@ lemma weightScaling_specialFiberMultidegreeLinear_apply
   let := subschemeOverResidueField
     (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hj)
   rw [specialFiberMultidegreeLinear, LinearMap.comp_apply,
-    weightScaling_reducedSpecialFiberMultidegreeLinear_apply]
-  dsimp only
+    weightScaling_reducedSpecialFiberMultidegreeLinear_apply]; dsimp only
   rw [LineBundleClass.toMul_pullbackLinearMap_apply, LineBundleClass.intersectionNumber_pullback,
     toBase.subschemeToReducedSpecialFiber_toSpecialFiber hj]
 
@@ -331,8 +319,7 @@ lemma weightScaling_multidegreeLinear_apply (a : Additive (LineBundleClass X))
   let := subschemeOverResidueField
     (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hj)
   rw [multidegreeLinear, LinearMap.comp_apply,
-    weightScaling_reducedSpecialFiberMultidegreeLinear_apply]
-  dsimp only
+    weightScaling_reducedSpecialFiberMultidegreeLinear_apply]; dsimp only
   rw [LineBundleClass.toMul_pullbackLinearMap_apply, LineBundleClass.intersectionNumber_pullback,
     toBase.subschemeToReducedSpecialFiber_reducedSpecialFiberι hj]
 
@@ -368,8 +355,7 @@ theorem totalDegree_reducedSpecialFiberMultidegreeLinear
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hw :=
     toBase.weightScaling_reducedSpecialFiberMultidegreeLinear_apply hX hη hπ hreg h₀ h₁ hconn a j
-  rw [NumericalType.weightScaling_apply] at hw
-  rw [mul_left_comm, hw]
+  rw [NumericalType.weightScaling_apply] at hw; rw [mul_left_comm, hw]
 
 /-- The total degree of `multidegreeLinear a` is `∑ⱼ mⱼ (a · Cⱼ)`. -/
 theorem totalDegree_multidegreeLinear (a : Additive (LineBundleClass X)) :
@@ -385,8 +371,7 @@ theorem totalDegree_multidegreeLinear (a : Additive (LineBundleClass X)) :
   rw [NumericalType.totalDegree_apply]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hw := toBase.weightScaling_multidegreeLinear_apply hX hη hπ hreg h₀ h₁ hconn a j
-  rw [NumericalType.weightScaling_apply] at hw
-  rw [mul_left_comm, hw]
+  rw [NumericalType.weightScaling_apply] at hw; rw [mul_left_comm, hw]
 
 /-! ### Specialization to the numerical Picard group and its prime torsion -/
 
@@ -485,12 +470,8 @@ def reducedSpecialFiberNumericalPicTorsionMap (ℓ : ℕ) :
     AddSubgroup.torsionBy (Additive (LineBundleClass (reducedSpecialFiber R toBase))) (ℓ : ℤ) →ₗ[
       ZMod ℓ]
       (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).torsion ℓ :=
-  AddMonoidHom.toZModLinearMap ℓ
-    (M := AddSubgroup.torsionBy
-      (Additive (LineBundleClass (reducedSpecialFiber R toBase))) (ℓ : ℤ))
-    (M₁ := (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).torsion ℓ)
-    (TauCeti.torsionByMap (ℓ : ℤ)
-      (toBase.reducedSpecialFiberNumericalPicLinear hX hη hπ hreg h₀ h₁ hconn)).toAddMonoidHom
+  AddMonoidHom.toZModLinearMap ℓ (TauCeti.torsionByMap (ℓ : ℤ)
+    (toBase.reducedSpecialFiberNumericalPicLinear hX hη hπ hreg h₀ h₁ hconn)).toAddMonoidHom
 
 /-- **`ZMod ℓ`-linear torsion specialization on `X_s`.** Restricts `specialFiberNumericalPicLinear`
 to `ℓ`-torsion line-bundle classes. -/
@@ -498,23 +479,16 @@ def specialFiberNumericalPicTorsionMap (ℓ : ℕ) :
     AddSubgroup.torsionBy (Additive (LineBundleClass (specialFiber R toBase).left)) (ℓ : ℤ) →ₗ[
       ZMod ℓ]
       (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).torsion ℓ :=
-  AddMonoidHom.toZModLinearMap ℓ
-    (M := AddSubgroup.torsionBy
-      (Additive (LineBundleClass (specialFiber R toBase).left)) (ℓ : ℤ))
-    (M₁ := (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).torsion ℓ)
-    (TauCeti.torsionByMap (ℓ : ℤ)
-      (toBase.specialFiberNumericalPicLinear hX hη hπ hreg h₀ h₁ hconn)).toAddMonoidHom
+  AddMonoidHom.toZModLinearMap ℓ (TauCeti.torsionByMap (ℓ : ℤ)
+    (toBase.specialFiberNumericalPicLinear hX hη hπ hreg h₀ h₁ hconn)).toAddMonoidHom
 
 /-- **`ZMod ℓ`-linear torsion specialization on `X`.** Restricts `numericalPicLinear` to
 `ℓ`-torsion line-bundle classes. -/
 def numericalPicTorsionMap (ℓ : ℕ) :
     AddSubgroup.torsionBy (Additive (LineBundleClass X)) (ℓ : ℤ) →ₗ[ZMod ℓ]
       (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).torsion ℓ :=
-  AddMonoidHom.toZModLinearMap ℓ
-    (M := AddSubgroup.torsionBy (Additive (LineBundleClass X)) (ℓ : ℤ))
-    (M₁ := (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).torsion ℓ)
-    (TauCeti.torsionByMap (ℓ : ℤ)
-      (toBase.numericalPicLinear hX hη hπ hreg h₀ h₁ hconn)).toAddMonoidHom
+  AddMonoidHom.toZModLinearMap ℓ (TauCeti.torsionByMap (ℓ : ℤ)
+    (toBase.numericalPicLinear hX hη hπ hreg h₀ h₁ hconn)).toAddMonoidHom
 
 /-- Underlying `Pic` value of `reducedSpecialFiberNumericalPicTorsionMap`. -/
 @[simp]
@@ -550,9 +524,7 @@ lemma reducedSpecialFiberNumericalPicTorsionMap_comp_pullback (ℓ : ℕ) :
     toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hπ hreg h₀ h₁ hconn ℓ ∘ₗ
         LineBundleClass.pullbackTorsionLinearMap (reducedSpecialFiberToSpecialFiber R toBase) ℓ =
       toBase.specialFiberNumericalPicTorsionMap hX hη hπ hreg h₀ h₁ hconn ℓ := by
-  apply LinearMap.ext
-  intro a
-  apply Subtype.ext
+  ext a
   rw [LinearMap.comp_apply, coe_reducedSpecialFiberNumericalPicTorsionMap_apply,
     LineBundleClass.coe_pullbackTorsionLinearMap_apply,
     coe_specialFiberNumericalPicTorsionMap_apply, ← LinearMap.comp_apply,
@@ -564,13 +536,10 @@ lemma specialFiberNumericalPicTorsionMap_comp_pullback (ℓ : ℕ) :
     toBase.specialFiberNumericalPicTorsionMap hX hη hπ hreg h₀ h₁ hconn ℓ ∘ₗ
         LineBundleClass.pullbackTorsionLinearMap (specialFiberι R toBase) ℓ =
       toBase.numericalPicTorsionMap hX hη hπ hreg h₀ h₁ hconn ℓ := by
-  apply LinearMap.ext
-  intro a
-  apply Subtype.ext
+  ext a
   rw [LinearMap.comp_apply, coe_specialFiberNumericalPicTorsionMap_apply,
-    LineBundleClass.coe_pullbackTorsionLinearMap_apply,
-    coe_numericalPicTorsionMap_apply, ← LinearMap.comp_apply,
-    specialFiberNumericalPicLinear_comp_pullback]
+    LineBundleClass.coe_pullbackTorsionLinearMap_apply, coe_numericalPicTorsionMap_apply,
+    ← LinearMap.comp_apply, specialFiberNumericalPicLinear_comp_pullback]
 
 /-- When the scheme-theoretic special fibre `X_s` is reduced, `specialFiberNumericalPicTorsionMap`
 and `reducedSpecialFiberNumericalPicTorsionMap` differ on the source by the `ZMod ℓ`-linear
@@ -603,8 +572,7 @@ lemma componentLineBundleClass_def
     toBase.componentLineBundleClass hX hη hπ hreg h₀ h₁ hconn i =
       (LineBundleClass.mk
         (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-          hX i.1.2).toInvertibleSheaf)⁻¹ := by
-  rw [componentLineBundleClass]
+          hX i.1.2).toInvertibleSheaf)⁻¹ := by rw [componentLineBundleClass]
 
 /-- The residue-field intersection number `([𝒪_X(Cᵢ)] · Cⱼ)` equals `(Cᵢ · Cⱼ)` in
 `specialFiberNumericalType`. -/
@@ -653,13 +621,10 @@ theorem multidegreeLinear_comp_verticalLineBundleLinear :
         toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn =
       (toBase.specialFiberNumericalType
         hX hη hπ hreg h₀ h₁ hconn).weightedIntersection.vecMulLinear := by
-  refine LinearMap.ext fun v ↦
-    (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).weightScaling_injective ?_
-  have hw := LinearMap.congr_fun
-    (toBase.specialFiberNumericalType
-      hX hη hπ hreg h₀ h₁ hconn).weightScaling_comp_weightedIntersection v
-  rw [LinearMap.comp_apply] at hw ⊢
-  rw [hw]
+  let T := toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn
+  refine LinearMap.ext fun v ↦ T.weightScaling_injective ?_
+  have hw := LinearMap.congr_fun T.weightScaling_comp_weightedIntersection v
+  rw [LinearMap.comp_apply] at hw ⊢; rw [hw]
   funext j
   have hj : toBase j.1 = closedPoint R := (Set.Finite.mem_toFinset _).mp j.2
   let := subschemeOverResidueField
@@ -671,17 +636,14 @@ theorem multidegreeLinear_comp_verticalLineBundleLinear :
         Spec (.of (ResidueField R))) :=
     toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
       (fun h ↦ one_ne_zero (j.1.2.symm.trans (coheight_eq_zero.mpr h))) hj
-  have := h₀.apply j.1 hj
-  have := h₁.apply j.1 hj
+  have := h₀.apply j.1 hj; have := h₁.apply j.1 hj
   rw [toBase.weightScaling_multidegreeLinear_apply hX hη hπ hreg h₀ h₁ hconn _ j,
     toMul_verticalLineBundleLinear_apply, LineBundleClass.intersectionNumber_prod_of_isIntegral,
     Matrix.vecMulLinear_apply, Matrix.vecMul, dotProduct]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [LineBundleClass.intersectionNumber_zpow_of_isIntegral,
-    (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).intersection_comm i j,
-    specialFiberNumericalType_intersection, componentLineBundleClass]
-  congr 1
-  exact (toBase.specialFiberIntersectionMatrix_apply hX hη j i).symm
+    toBase.intersectionNumber_componentLineBundleClass hX hη hπ hreg h₀ h₁ hconn i j,
+    T.intersection_comm i j]
 
 /-- Pointwise form of `multidegreeLinear_comp_verticalLineBundleLinear`. -/
 @[simp]
@@ -699,9 +661,7 @@ theorem map_multidegreeLinear_range_verticalLineBundleLinear :
         (toBase.multidegreeLinear hX hη hπ hreg h₀ h₁ hconn) =
       (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).principalDivisors := by
   rw [← LinearMap.range_comp, multidegreeLinear_comp_verticalLineBundleLinear]
-  ext d
-  rw [LinearMap.mem_range, NumericalType.mem_principalDivisors_iff]
-  rfl
+  ext d; rw [LinearMap.mem_range, NumericalType.mem_principalDivisors_iff]; rfl
 
 /-- Every vertical combination of special-fibre components maps to `0` in `T.Pic`. -/
 @[simp]
@@ -710,8 +670,7 @@ theorem numericalPicLinear_comp_verticalLineBundleLinear :
         toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn = 0 := by
   rw [numericalPicLinear, LinearMap.comp_assoc, multidegreeLinear_comp_verticalLineBundleLinear,
     ← LinearMap.range_le_ker_iff, Submodule.ker_mkQ]
-  intro d hd
-  exact (toBase.specialFiberNumericalType
+  exact fun _ hd ↦ (toBase.specialFiberNumericalType
     hX hη hπ hreg h₀ h₁ hconn).mem_principalDivisors_iff.mpr hd
 
 /-- Pointwise form of `numericalPicLinear_comp_verticalLineBundleLinear`. -/
@@ -730,20 +689,16 @@ theorem ker_numericalPicLinear :
     LinearMap.ker (toBase.numericalPicLinear hX hη hπ hreg h₀ h₁ hconn) =
       LinearMap.ker (toBase.multidegreeLinear hX hη hπ hreg h₀ h₁ hconn) ⊔
         LinearMap.range (toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn) := by
-  refine le_antisymm ?_ (sup_le ?_ ?_)
-  · intro a ha
-    rw [LinearMap.mem_ker, numericalPicLinear_apply, Submodule.Quotient.mk_eq_zero,
+  refine le_antisymm (fun a ha ↦ ?_) (sup_le (fun a ha ↦ ?_)
+    (LinearMap.range_le_ker_iff.mpr
+      (toBase.numericalPicLinear_comp_verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)))
+  · rw [LinearMap.mem_ker, numericalPicLinear_apply, Submodule.Quotient.mk_eq_zero,
       NumericalType.mem_principalDivisors_iff] at ha
     obtain ⟨v, hv⟩ := ha
-    have hker : a - toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn v ∈
-        LinearMap.ker (toBase.multidegreeLinear hX hη hπ hreg h₀ h₁ hconn) := by
-      rw [LinearMap.mem_ker, map_sub, multidegreeLinear_verticalLineBundleLinear, hv, sub_self]
-    exact Submodule.mem_sup.mpr ⟨_, hker, _, ⟨v, rfl⟩, sub_add_cancel _ _⟩
-  · intro a ha
-    rw [LinearMap.mem_ker] at ha ⊢
+    refine Submodule.mem_sup.mpr ⟨_, ?_, _, ⟨v, rfl⟩, sub_add_cancel _ _⟩
+    rw [LinearMap.mem_ker, map_sub, multidegreeLinear_verticalLineBundleLinear, hv, sub_self]
+  · rw [LinearMap.mem_ker] at ha ⊢
     rw [numericalPicLinear_apply, ha, Submodule.Quotient.mk_zero]
-  · exact LinearMap.range_le_ker_iff.mpr
-      (toBase.numericalPicLinear_comp_verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)
 
 /-- **[Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).** A
 line-bundle class `a` on `X` maps to `0` in the numerical Picard group `T.Pic` if and only if there
@@ -760,20 +715,19 @@ theorem numericalPicLinear_ofMul_eq_zero_iff (a : LineBundleClass X) :
             (vanishingIdeal ⟨closure {(j.1 : X)}, isClosed_closure⟩).subschemeι
             (a * ∏ i, toBase.componentLineBundleClass hX hη hπ hreg h₀ h₁ hconn i ^ v i)) = 0 := by
   rw [← LinearMap.mem_ker, ker_numericalPicLinear, Submodule.mem_sup]
-  constructor
+  refine ⟨?_, ?_⟩
   · rintro ⟨b, hb, _, ⟨v, rfl⟩, hbv⟩
-    refine ⟨-v, ?_⟩
     have hb' : Additive.ofMul a + toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn (-v) =
-        b := by
-      rw [map_neg, ← hbv, add_neg_cancel_right]
+        b := by rw [map_neg, ← hbv, add_neg_cancel_right]
     rw [← hb', mem_ker_multidegreeLinear_iff] at hb
-    simpa only [toMul_add, toMul_ofMul, toMul_verticalLineBundleLinear_apply] using hb
+    exact ⟨-v, by
+      simpa only [toMul_add, toMul_ofMul, toMul_verticalLineBundleLinear_apply] using hb⟩
   · rintro ⟨v, hv⟩
     refine ⟨Additive.ofMul a + toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn v, ?_,
-      toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn (-v), ⟨-v, rfl⟩, ?_⟩
-    · rw [mem_ker_multidegreeLinear_iff]
-      simpa only [toMul_add, toMul_ofMul, toMul_verticalLineBundleLinear_apply] using hv
-    · rw [map_neg, add_neg_cancel_right]
+      toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn (-v), ⟨-v, rfl⟩,
+      by rw [map_neg, add_neg_cancel_right]⟩
+    rw [mem_ker_multidegreeLinear_iff]
+    simpa only [toMul_add, toMul_ofMul, toMul_verticalLineBundleLinear_apply] using hv
 
 /-! ### Kernel of the vertical Cartier homomorphism -/
 
@@ -785,23 +739,11 @@ theorem multiplicity_mem_ker_verticalLineBundleLinear :
   rw [LinearMap.mem_ker]
   refine Additive.toMul.injective ?_
   rw [toMul_verticalLineBundleLinear_apply, toMul_zero]
-  have hprod :
-      (∏ i : (toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).Component,
-        toBase.componentLineBundleClass hX hη hπ hreg h₀ h₁ hconn i ^
-          ((toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn).multiplicity i : ℤ)) =
-      ∏ i : (toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
-        (LineBundleClass.mk
-          (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-            hX i.1.2).toInvertibleSheaf)⁻¹ ^ toBase.specialFiberMultiplicity π i.1 := by
-    refine Finset.prod_congr rfl fun i _ ↦ ?_
-    rw [zpow_natCast, coe_specialFiberNumericalType_multiplicity, componentLineBundleClass]
-  rw [hprod]
-  exact (Finset.prod_coe_sort _ fun η ↦
-    (LineBundleClass.mk
-      (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-        hX η.2).toInvertibleSheaf)⁻¹ ^ toBase.specialFiberMultiplicity π η).trans
-    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hX hη hπ hreg)
+  refine (Finset.prod_congr rfl fun i _ ↦ ?_).trans ((Finset.prod_coe_sort _ fun η ↦
+    (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+      hX η.2).toInvertibleSheaf)⁻¹ ^ toBase.specialFiberMultiplicity π η).trans
+    (toBase.prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one hX hη hπ hreg))
+  rw [zpow_natCast, coe_specialFiberNumericalType_multiplicity, componentLineBundleClass]
 
 /-- Every vertical divisor linearly equivalent to zero on `X` lies in the kernel of the
 intersection matrix `T.intersection`. -/
@@ -835,25 +777,12 @@ theorem finrank_ker_verticalLineBundleLinear :
     Module.finrank ℤ
         (LinearMap.ker (toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)) = 1 := by
   let T := toBase.specialFiberNumericalType hX hη hπ hreg h₀ h₁ hconn
-  have hle : Module.finrank ℤ
-      (LinearMap.ker (toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)) ≤ 1 := by
-    calc
-      Module.finrank ℤ
-          (LinearMap.ker (toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)) ≤
-          Module.finrank ℤ (LinearMap.ker T.intersection.vecMulLinear) :=
-        LinearMap.finrank_le_finrank_of_injective (Submodule.inclusion_injective
-          (toBase.ker_verticalLineBundleLinear_le_ker_intersection hX hη hπ hreg h₀ h₁ hconn))
-      _ = 1 := T.finrank_ker_vecMulLinear_intersection
-  have hm_ne :
-      (⟨_, toBase.multiplicity_mem_ker_verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn⟩ :
-        LinearMap.ker (toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)) ≠ 0 := by
-    intro h
-    have := congrFun (congrArg Subtype.val h) (Classical.choice T.componentNonempty)
-    exact (Int.natCast_ne_zero.mpr (T.multiplicity _).ne_zero) this
-  have hpos : 0 < Module.finrank ℤ
-      (LinearMap.ker (toBase.verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn)) :=
-    Module.finrank_pos_iff_exists_ne_zero.mpr ⟨_, hm_ne⟩
-  omega
+  refine le_antisymm ((LinearMap.finrank_le_finrank_of_injective (Submodule.inclusion_injective
+      (toBase.ker_verticalLineBundleLinear_le_ker_intersection hX hη hπ hreg h₀ h₁ hconn))).trans_eq
+    T.finrank_ker_vecMulLinear_intersection) (Module.finrank_pos_iff_exists_ne_zero.mpr
+    ⟨⟨_, toBase.multiplicity_mem_ker_verticalLineBundleLinear hX hη hπ hreg h₀ h₁ hconn⟩,
+      fun h ↦ (Int.natCast_ne_zero.mpr (T.multiplicity (Classical.choice
+        T.componentNonempty)).ne_zero) (congrFun (congrArg Subtype.val h) _)⟩)
 
 /-- Whenever at least one component `C_{i₀}` of the special fibre has multiplicity `1`, the kernel
 of `verticalLineBundleLinear` is spanned over `ℤ` by the multiplicity vector `i ↦ mᵢ`. -/
@@ -888,8 +817,7 @@ theorem mem_ker_verticalLineBundleLinear_iff_of_isReduced
   let i₀ : T.Component := Classical.choice T.componentNonempty
   rw [toBase.ker_verticalLineBundleLinear_eq_span_of_multiplicity_eq_one hX hη hπ hreg h₀ h₁ hconn
       (hm i₀), Submodule.mem_span_singleton]
-  refine exists_congr fun c ↦ ?_
-  simp [hm, funext_iff, eq_comm]
+  exact exists_congr fun c ↦ by simp [hm, funext_iff, eq_comm]
 
 end SpecialFiberPicard
 
@@ -912,12 +840,7 @@ variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 @[expose]
 def multidegreeLinear :
     Additive (LineBundleClass M.total) →ₗ[ℤ] (M.numericalType h₀ h₁ hconn).Component → ℤ :=
-  M.toBase.multidegreeLinear
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn
+  M.toBase.multidegreeLinear _ _ _ _ h₀ h₁ hconn
 
 /-- **Numerical Picard specialization on `M_{s,red}`.** Uniformizer-free wrapper around
 `AlgebraicGeometry.Scheme.Hom.reducedSpecialFiberNumericalPicLinear`. -/
@@ -925,12 +848,7 @@ def multidegreeLinear :
 def reducedSpecialFiberNumericalPicLinear :
     Additive (LineBundleClass (reducedSpecialFiber R M.toBase)) →ₗ[ℤ]
       (M.numericalType h₀ h₁ hconn).Pic :=
-  M.toBase.reducedSpecialFiberNumericalPicLinear
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn
+  M.toBase.reducedSpecialFiberNumericalPicLinear _ _ _ _ h₀ h₁ hconn
 
 /-- **Numerical Picard specialization on `M_s`.** Uniformizer-free wrapper around
 `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalPicLinear`. -/
@@ -938,36 +856,21 @@ def reducedSpecialFiberNumericalPicLinear :
 def specialFiberNumericalPicLinear :
     Additive (LineBundleClass (specialFiber R M.toBase).left) →ₗ[ℤ]
       (M.numericalType h₀ h₁ hconn).Pic :=
-  M.toBase.specialFiberNumericalPicLinear
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn
+  M.toBase.specialFiberNumericalPicLinear _ _ _ _ h₀ h₁ hconn
 
 /-- **Numerical Picard specialization on the total space of `M`.** Uniformizer-free wrapper around
 `AlgebraicGeometry.Scheme.Hom.numericalPicLinear`. -/
 @[expose]
 def numericalPicLinear :
     Additive (LineBundleClass M.total) →ₗ[ℤ] (M.numericalType h₀ h₁ hconn).Pic :=
-  M.toBase.numericalPicLinear
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn
+  M.toBase.numericalPicLinear _ _ _ _ h₀ h₁ hconn
 
 /-- **Vertical Cartier homomorphism on `M`.** Uniformizer-free wrapper around
 `AlgebraicGeometry.Scheme.Hom.verticalLineBundleLinear`. -/
 @[expose]
 def verticalLineBundleLinear :
     ((M.numericalType h₀ h₁ hconn).Component → ℤ) →ₗ[ℤ] Additive (LineBundleClass M.total) :=
-  M.toBase.verticalLineBundleLinear
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn
+  M.toBase.verticalLineBundleLinear _ _ _ _ h₀ h₁ hconn
 
 /-- **`ZMod ℓ`-linear torsion specialization on `M_{s,red}`.** -/
 @[expose]
@@ -975,12 +878,7 @@ def reducedSpecialFiberNumericalPicTorsionMap (ℓ : ℕ) :
     AddSubgroup.torsionBy
         (Additive (LineBundleClass (reducedSpecialFiber R M.toBase))) (ℓ : ℤ) →ₗ[ZMod ℓ]
       (M.numericalType h₀ h₁ hconn).torsion ℓ :=
-  M.toBase.reducedSpecialFiberNumericalPicTorsionMap
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn ℓ
+  M.toBase.reducedSpecialFiberNumericalPicTorsionMap _ _ _ _ h₀ h₁ hconn ℓ
 
 /-- **`ZMod ℓ`-linear torsion specialization on `M_s`.** -/
 @[expose]
@@ -988,24 +886,14 @@ def specialFiberNumericalPicTorsionMap (ℓ : ℕ) :
     AddSubgroup.torsionBy
         (Additive (LineBundleClass (specialFiber R M.toBase).left)) (ℓ : ℤ) →ₗ[ZMod ℓ]
       (M.numericalType h₀ h₁ hconn).torsion ℓ :=
-  M.toBase.specialFiberNumericalPicTorsionMap
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn ℓ
+  M.toBase.specialFiberNumericalPicTorsionMap _ _ _ _ h₀ h₁ hconn ℓ
 
 /-- **`ZMod ℓ`-linear torsion specialization on `M.total`.** -/
 @[expose]
 def numericalPicTorsionMap (ℓ : ℕ) :
     AddSubgroup.torsionBy (Additive (LineBundleClass M.total)) (ℓ : ℤ) →ₗ[ZMod ℓ]
       (M.numericalType h₀ h₁ hconn).torsion ℓ :=
-  M.toBase.numericalPicTorsionMap
-    M.toBase.coheight_le_succ_of_relativeDimensionLE
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
-    h₀ h₁ hconn ℓ
+  M.toBase.numericalPicTorsionMap _ _ _ _ h₀ h₁ hconn ℓ
 
 /-- Composing `M.multidegreeLinear` with `M.verticalLineBundleLinear` recovers multiplication by
 the weighted intersection matrix of `M.numericalType`. -/
