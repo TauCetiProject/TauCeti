@@ -47,6 +47,9 @@ time.
   `M`, and its value at `x : M` is that polynomial evaluated at the coordinates of `x`.
 * `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
   linear forms, the evaluations of an element of `S(M)` are the values of a polynomial.
+* `SymmetricAlgebra.isPrime_ker_lift` and `SymmetricAlgebra.isMaximal_ker_lift`: over an integral
+  domain, respectively a field, the kernel of an evaluation `SymmetricAlgebra.lift f` at a linear
+  form is prime, respectively maximal.
 * `TauCeti.SymmetricAlgebra.eq_zero_of_forall_lift_eq_zero`: an element of `S(M)` vanishing at
   every linear form whose values on a basis lie in given infinite sets is zero.
 * `TauCeti.SymmetricAlgebra.eq_of_forall_lift_apply_eq`: two elements of `S(M)` on which every
@@ -86,6 +89,18 @@ theorem lift_eval_apply_eq_eval_equivMvPolynomial_dualBasis [Finite ι] [Decidab
 end Module.Basis
 
 namespace SymmetricAlgebra
+
+/-- Over an integral domain, the kernel of the evaluation `SymmetricAlgebra.lift f` at a linear
+form `f : M →ₗ[R] R` is a prime ideal. -/
+instance isPrime_ker_lift {R M : Type*} [CommSemiring R] [IsDomain R] [AddCommMonoid M]
+    [Module R M] (f : M →ₗ[R] R) : (RingHom.ker (SymmetricAlgebra.lift f)).IsPrime :=
+  RingHom.ker_isPrime _
+
+/-- Over a field, the kernel of the evaluation `SymmetricAlgebra.lift f` at a linear form
+`f : M →ₗ[K] K` is a maximal ideal: the evaluation is surjective onto `K`. -/
+instance isMaximal_ker_lift {K M : Type*} [Field K] [AddCommMonoid M] [Module K M]
+    (f : M →ₗ[K] K) : (RingHom.ker (SymmetricAlgebra.lift f)).IsMaximal :=
+  RingHom.ker_isMaximal_of_surjective _ fun c ↦ ⟨algebraMap K _ c, by simp⟩
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
