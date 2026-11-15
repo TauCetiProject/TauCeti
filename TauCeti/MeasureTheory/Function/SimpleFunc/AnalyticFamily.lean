@@ -52,6 +52,11 @@ namespace TauCeti.AnalyticFamily
 /-- `powSign w c = (c / |c|) |c| ^ w`, with `powSign w 0 = 0`. -/
 noncomputable def powSign (w c : ℂ) : ℂ := c / (‖c‖ : ℂ) * exp (w * (Real.log ‖c‖ : ℂ))
 
+/-- The defining formula of `powSign`. -/
+theorem powSign_def (w c : ℂ) :
+    powSign w c = c / (‖c‖ : ℂ) * exp (w * (Real.log ‖c‖ : ℂ)) :=
+  (rfl)
+
 /-- At `w = 1` the family gives back `c`. -/
 @[simp]
 theorem powSign_one_left (c : ℂ) : powSign 1 c = c := by
@@ -88,11 +93,21 @@ private theorem norm_powSign_le_exp (w c : ℂ) :
 /-- The slope `(a₁ - a₀) / a` of the exponent family, where `a = (1 - θ) a₀ + θ a₁`. -/
 noncomputable def exponentSlope (a₀ a₁ θ : ℝ) : ℝ := (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁)
 
+/-- The defining formula of `exponentSlope`. -/
+theorem exponentSlope_def (a₀ a₁ θ : ℝ) :
+    exponentSlope a₀ a₁ θ = (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁) :=
+  (rfl)
+
 /-- The exponent of the analytic family, `1 + (z - θ) (a₁ - a₀) / a` with
 `a = (1 - θ) a₀ + θ a₁`. It equals `1` at `z = θ`. If `a ≠ 0`, its real part is `a₀ / a` on the
 line `Re z = 0` and `a₁ / a` on the line `Re z = 1`. If `a = 0` (which for `a₀, a₁ ≥ 0` and
 `0 < θ < 1` forces `a₀ = a₁ = 0`), the slope is `0` and the exponent is constantly `1`. -/
 noncomputable def exponent (a₀ a₁ θ : ℝ) (z : ℂ) : ℂ := 1 + (z - θ) * (exponentSlope a₀ a₁ θ : ℂ)
+
+/-- The defining formula of `exponent`. -/
+theorem exponent_def (a₀ a₁ θ : ℝ) (z : ℂ) :
+    exponent a₀ a₁ θ z = 1 + (z - θ) * (exponentSlope a₀ a₁ θ : ℂ) :=
+  (rfl)
 
 /-- The real part of the exponent of the analytic family. -/
 theorem re_exponent (a₀ a₁ θ : ℝ) (z : ℂ) :

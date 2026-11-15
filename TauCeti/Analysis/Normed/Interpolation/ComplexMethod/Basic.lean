@@ -598,6 +598,10 @@ pointwise, and its modulus bound `exp (δ (|θ| + 1)²)` on the closed strip ten
 def stripGaussian (δ θ : ℝ) (z : ℂ) : ℂ :=
   exp (δ * (z - θ) ^ 2)
 
+/-- The defining formula of `stripGaussian`. -/
+theorem stripGaussian_def (δ θ : ℝ) (z : ℂ) : stripGaussian δ θ z = exp (δ * (z - θ) ^ 2) :=
+  (rfl)
+
 /-- The Gaussian factor is `1` at `z = θ`. -/
 @[simp]
 theorem stripGaussian_self (δ θ : ℝ) : stripGaussian δ θ θ = 1 := by
