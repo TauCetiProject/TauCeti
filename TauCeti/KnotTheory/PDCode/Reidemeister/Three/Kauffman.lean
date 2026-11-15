@@ -13,9 +13,12 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Invariance of the Kauffman bracket under the third Reidemeister move
 
-The eight local smoothings are reduced to the five matchings of the six boundary ports.
-The reduction inserts six internal vertices into the traversal, except for the middle
-smoothing, which leaves an additional circle. The surrounding diagram is arbitrary.
+The eight local smoothings are reduced to the five noncrossing matchings of the six boundary
+ports (six ports have fifteen perfect matchings; these five are the planar ones). The reduction
+inserts six internal vertices into the traversal, except for the middle smoothing, which leaves
+an additional circle. The middle smoothing is the raw over-pair choice `![false, true, false]` at
+the three crossings, whose reading as an `A`- or `B`-smoothing depends on the heights. The
+surrounding diagram is arbitrary.
 The crossing weights cancel for each of the six acyclic height orders;
 `kauffmanBracket_reidemeisterThree` states the resulting invariance.
 
@@ -115,15 +118,9 @@ private theorem localFactor_eq (side : Bool) (q : Fin 3 → Bool) :
   have hq : q = ![q 0, q 1, q 2] := by ext i; fin_cases i <;> simp
   rw [hq]
   generalize q 0 = x, q 1 = y, q 2 = z
-  have hf (p : Fin 3 × Fin 4) : reidemeisterThreeSlots p =
-      ![![(1, 0), (0, 2), (1, 2), (0, 0)],
-        ![(2, 0), (0, 1), (2, 2), (0, 3)],
-        ![(2, 3), (1, 1), (2, 1), (1, 3)]] p.1 p.2 :=
+  have hf (p : Fin 3 × Fin 4) : reidemeisterThreeSlots p = _ :=
     reidemeisterThreeSlots_apply p.1 p.2
-  have hi (p : Fin 3 × Fin 4) : reidemeisterThreeSlots⁻¹ p =
-      ![![(0, 3), (1, 1), (0, 1), (1, 3)],
-        ![(0, 0), (2, 1), (0, 2), (2, 3)],
-        ![(1, 0), (2, 2), (1, 2), (2, 0)]] p.1 p.2 :=
+  have hi (p : Fin 3 × Fin 4) : reidemeisterThreeSlots⁻¹ p = _ :=
     reidemeisterThreeSlots_symm_apply p.1 p.2
   cases side <;> cases x <;> cases y <;> cases z <;>
     apply Equiv.ext <;> intro p <;>
@@ -154,7 +151,6 @@ private theorem localPairing_internal (k : Fin 5) (p : Fin 3 × Fin 4)
     (hp : localInternal p) : localPairing k p = p := by
   revert k p
   decide
-
 
 private theorem smoothingTurn_split (u : Fin n → Bool) :
     D.smoothingTurn u = localLift D c (localSmoothing (u ∘ c)) *
@@ -250,13 +246,11 @@ private noncomputable def assembleState {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin
 private theorem assembleState_local {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (j : Fin 3) :
     assembleState c q r (c j) = q j := by
-  classical
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr]
 
 private theorem assembleState_outside {n : ℕ} (c : Fin 3 ↪ Fin n) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (i : {i : Fin n // i ∉ Set.range c}) :
     assembleState c q r i = r i := by
-  classical
   simp [assembleState, localStatesEquiv, Equiv.arrowCongr, i.property]
 
 private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
@@ -264,7 +258,6 @@ private theorem assembleState_prod {n : ℕ} {M : Type*} [CommMonoid M]
     (f : Fin n → Bool → M) :
     (∏ i, f i (assembleState c q r i)) =
       (∏ j, f (c j) (q j)) * ∏ i : {i : Fin n // i ∉ Set.range c}, f i (r i) := by
-  classical
   let : Fintype (Set.range c) := Subtype.fintype (fun i ↦ i ∈ Set.range c)
   rw [← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ i ∈ Set.range c)
     (fun i ↦ f i (assembleState c q r i))]
@@ -285,12 +278,9 @@ private theorem rawLoopCount_eq (D : PDCode n) (u : Fin n → Bool) :
   rw [stateLoopCount_def, statePerm_def, smoothingChoice_smoothingChoice]
   rfl
 
-include c in
-private theorem rawLoopCount_pos (u : Fin n → Bool) : 1 ≤ rawLoopCount D u := by
+private theorem rawLoopCount_pos (hn : n ≠ 0) (u : Fin n → Bool) : 1 ≤ rawLoopCount D u := by
   rw [rawLoopCount_eq]
-  apply D.one_le_stateLoopCount
-  have hn := (c 0).isLt
-  omega
+  exact D.one_le_stateLoopCount hn _
 
 private theorem exteriorSlots_assemble (q q' : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) :
@@ -351,7 +341,7 @@ private theorem pairingTraversal_loops_lower
   rw [hq, (pairingRepresentative_spec k).1, (pairingRepresentative_spec k).2,
     pairingTraversal_assemble] at hc
   simp only [Bool.false_eq_true, ↓reduceIte] at hc
-  have hp := rawLoopCount_pos D c (assembleState c (pairingRepresentative k) r)
+  have hp := rawLoopCount_pos D (c 0).pos.ne' (assembleState c (pairingRepresentative k) r)
   simp only [rawLoopCount] at hp
   omega
 
@@ -492,7 +482,6 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
             (jonesDelta a ^ pairingExponent D c r 0) (jonesDelta a ^ pairingExponent D c r 1)
             (jonesDelta a ^ pairingExponent D c r 2) (jonesDelta a ^ pairingExponent D c r 3)
             (jonesDelta a ^ pairingExponent D c r 4) (q 0) (q 1) (q 2)) := by
-  classical
   rw [kauffmanBracket_raw, ← (localStatesEquiv c).symm.sum_comp]
   simp only [Fintype.sum_prod_type, ← assembleState.eq_def]
   rw [Finset.sum_comm]
@@ -510,7 +499,6 @@ PD-code and all six acyclic strand height orders. -/
 @[simp] theorem kauffmanBracket_reidemeisterThree (ht : D.HasReidemeisterThreeTriangle c)
     {R : Type*} [CommRing R] (a : Rˣ) :
     (D.reidemeisterThree c).kauffmanBracket a = D.kauffmanBracket a := by
-  classical
   have hs0 := kauffmanBracket_split D c ht.arcs a false
   have hs1 := kauffmanBracket_split D c ht.arcs a true
   simp only [Bool.false_eq_true, ↓reduceIte] at hs0 hs1
