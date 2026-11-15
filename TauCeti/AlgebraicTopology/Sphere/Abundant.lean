@@ -70,9 +70,10 @@ private theorem isAbundantWithTwoSpheres_sphere_quaternion_one :
     have : Nontrivial (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)) :=
       (doubleLoopSpaceFirstHomologySphereAddEquiv ob 1).toEquiv.nontrivial
-    exact (singularHomologyComplFiberProdIso ℤ
-      (chartAt (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1))
-      (mem_chart_source (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1)) F 1 4
+    let c := chartAt (EuclideanSpace ℝ (Fin 3)) (1 : sphere (0 : ℍ) 1)
+    have hc : (1 : sphere (0 : ℍ) 1) ∈ c.source := mem_chart_source _ _
+    obtain ⟨ε, hε₀, hε⟩ := Metric.isOpen_iff.1 c.open_target (c 1) (c.map_source hc)
+    exact (singularHomologyComplFiberProdIso ℤ c hc hε hε₀ F 1 4
       (by simp)).toLinearEquiv.toEquiv.nontrivial
   have : ContractibleSpace ({1}ᶜ : Set (sphere (0 : ℍ) 1)) :=
     contractibleSpace_sphere_compl_singleton 1
