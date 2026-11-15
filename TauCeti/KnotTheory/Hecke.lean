@@ -20,8 +20,9 @@ After importing `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace`, the canonical 
 is obtained by taking `τ = ocneanuTrace R q z` and
 `hτ = isMarkovTrace_ocneanuTrace z`. In this case the invariant is the braid-closure invariant
 Jones constructs from the Ocneanu trace; its comparisons with the weighted Jimbo trace and the
-HOMFLY invariant are proved in `TauCeti.KnotTheory.Hecke.Jimbo`. The skein relation itself needs
-only linearity of `τ`.
+HOMFLY invariant are proved in `TauCeti.KnotTheory.Hecke.Jimbo`, and its regular extension across
+the zero-factor specializations is constructed in `TauCeti.KnotTheory.Hecke.Regular`. The skein
+relation itself needs only linearity of `τ`.
 
 ## Main results
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.RingTheory.Localization.Away.Basic
 import TauCeti.Algebra.MonoidAlgebra.Degree
 import Mathlib.Algebra.Ring.Regular
 
@@ -18,7 +19,9 @@ Mathlib's polynomial theorem for a unit leading coefficient gives a non-zero-div
 regularity extends to Laurent polynomials by clearing denominator monomials. The coefficient
 ring need not be commutative and can have zero divisors. The result survives any coefficient
 homomorphism, including a quotient map; in particular, the difference of any two distinct Laurent
-monomials is regular (`LaurentPolynomial.isRegular_T_sub_T`).
+monomials is regular (`LaurentPolynomial.isRegular_T_sub_T`), so over any commutative ring
+`LaurentPolynomial R` injects into the localization away from `T m - T n`
+(`LaurentPolynomial.algebraMap_localizationAway_T_sub_T_injective`).
 -/
 
 public section
@@ -92,5 +95,14 @@ theorem isRegular_T_sub_T [Ring R] {m n : ℤ} (h : m ≠ n) :
       rw [neg_one_mul, neg_sub]
     rw [← hneg]
     exact isUnit_one.neg.isRegular.mul (hlt hmn)
+
+/-- Over every commutative ring `R`, `LaurentPolynomial R` injects into the localization away from
+the difference of any two distinct Laurent monomials. -/
+theorem algebraMap_localizationAway_T_sub_T_injective [CommRing R] {m n : ℤ} (h : m ≠ n) :
+    Function.Injective
+      (algebraMap (LaurentPolynomial R)
+        (Localization.Away (T m - T n : LaurentPolynomial R))) :=
+  IsLocalization.injectiveₛ _ (M := Submonoid.powers (T m - T n : LaurentPolynomial R))
+    fun _ ⟨k, hk⟩ ↦ hk ▸ (isRegular_T_sub_T h).pow k
 
 end LaurentPolynomial

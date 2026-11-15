@@ -9,7 +9,6 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
 public import TauCeti.KnotTheory.Jimbo.StrandInclusion
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Turaev's weighted trace on the finite type-A Hecke algebra
@@ -327,21 +326,6 @@ theorem jimboWeightedTrace_strandIncl_mul_val_inv_unitT_last (N : ℕ) (q : Rˣ)
     jimboWeightedTrace_strandIncl_mul_T_last, jimboWeightedTrace_strandIncl, smul_eq_mul]
   have hs := KnotTheory.jimboWeight_sum (N := N) q
   linear_combination -jimboWeightedTrace N q (n + 1) x * hs
-
-/-- On two strands, the single positive Hecke generator has weighted trace `q ^ N` times the
-quantum dimension. -/
-@[simp]
-theorem jimboWeightedTrace_T_two (N : ℕ) (q : Rˣ) :
-    jimboWeightedTrace N q 2 (T q 0) = ↑(q ^ N) * ∑ a : Fin N, KnotTheory.jimboWeight q a := by
-  simpa using jimboWeightedTrace_braidHom N q 2 (BraidGroup.sigma (0 : Fin (2 - 1)))
-
-/-- On two strands, the inverse of the Hecke generator has weighted trace `(q⁻¹) ^ N` times the
-quantum dimension. -/
-theorem jimboWeightedTrace_val_inv_unitT_two (N : ℕ) (q : Rˣ) :
-    jimboWeightedTrace N q 2 ↑(unitT (n := 2) q 0)⁻¹ =
-      ↑((q⁻¹) ^ N) * ∑ a : Fin N, KnotTheory.jimboWeight q a := by
-  simpa [map_inv] using
-    jimboWeightedTrace_braidHom N q 2 ((BraidGroup.sigma (0 : Fin (2 - 1)))⁻¹)
 
 /-- **Comparison with the Ocneanu trace.** When `c` is an inverse to the quantum dimension
 `∑ a : Fin N, jimboWeight q a`, normalizing `jimboWeightedTrace N q n` by `c ^ n` yields the

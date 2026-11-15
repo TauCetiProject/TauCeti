@@ -184,12 +184,6 @@ theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n
   have h := τ.heckeTrace_skein_of_eq_zero C l i hrel b c
   simpa only [one_mul, neg_one_mul, neg_mul, ← sub_eq_add_neg, sub_eq_zero] using h
 
-/-- The two-strand identity braid closes to the two-component unlink and has normalized trace
-`C`. -/
-theorem heckeTrace_two_strand_one (h₁ : τ 1 = 1) (C : R) (l : Rˣ) :
-    heckeTrace ⟨1, 1⟩ τ C l = C := by
-  simpa using heckeTrace_one (n := 1) h₁ C l
-
 /-- On two strands, the single positive crossing has normalized trace `C * l * z` before imposing
 the stabilization relation. -/
 theorem heckeTrace_sigma_two (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :

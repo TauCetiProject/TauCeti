@@ -20,12 +20,11 @@ not exist in `R`.
 
 Adjoining a root of the monic quadratic polynomial `X ^ 2 - C (b * a⁻¹)` produces the universal
 commutative `R`-algebra `AdjoinRoot (X ^ 2 - C (b * a⁻¹))` carrying that unit root
-(`TauCeti.heckeRootUnit`). Over any commutative ring `R`, `R` embeds faithfully into this free
-rank-two `R`-algebra (`TauCeti.algebraMap_adjoinRoot_hecke_injective`), the Ocneanu trace of any
-braid lies in the image of `R`, and the normalized braid trace descends to unframed Markov
-equivalence (`TauCeti.heckeQuadraticBraidInvariant`). Any `R`-algebra carrying a chosen unit root
-receives this universal invariant by `AdjoinRoot.algHomEquiv`
-(`TauCeti.MarkovBraid.algHom_heckeQuadraticTrace`).
+(`TauCeti.heckeRootUnit`). Over any commutative ring `R`, the Ocneanu trace factor of any braid
+comes from the base ring `R` (`TauCeti.MarkovBraid.heckeQuadraticTrace_eq_mul_algebraMap`), and the
+normalized braid trace descends to unframed Markov equivalence
+(`TauCeti.heckeQuadraticBraidInvariant`). Any `R`-algebra carrying a chosen unit root receives this
+universal invariant by `AdjoinRoot.algHomEquiv` (`TauCeti.MarkovBraid.algHom_heckeQuadraticTrace`).
 
 ## Main definitions
 
@@ -37,8 +36,6 @@ receives this universal invariant by `AdjoinRoot.algHomEquiv`
 
 ## Main results
 
-* `TauCeti.algebraMap_adjoinRoot_hecke_injective`: `algebraMap R` into the quadratic extension is
-  injective over any commutative ring.
 * `TauCeti.MarkovBraid.heckeQuadraticTrace_eq_mul_algebraMap`: the Ocneanu trace factor comes from
   the base ring `R`, while only the writhe and strand-count prefactors lie in the extension.
 * `TauCeti.MarkovBraid.algHom_heckeQuadraticTrace`: specializing along any `R`-algebra choice of
@@ -78,18 +75,6 @@ theorem heckeRootUnit_sq (a b : Rˣ) :
       algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R))) ((b * a⁻¹ : Rˣ) : R) := by
   rw [coe_heckeRootUnit, AdjoinRoot.root_X_pow_sub_C_pow, AdjoinRoot.algebraMap_eq]
 
-/-- Over every commutative ring `R`, the base ring injects into the quadratic extension
-`AdjoinRoot (X ^ 2 - C (b * a⁻¹))`. -/
-theorem algebraMap_adjoinRoot_hecke_injective (a b : Rˣ) :
-    Function.Injective (algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · exact Function.injective_of_subsingleton _
-  · rw [AdjoinRoot.algebraMap_eq]
-    refine AdjoinRoot.of.injective_of_monic_of_degree_pos
-      (monic_X_pow_sub_C _ two_ne_zero) ?_
-    rw [degree_X_pow_sub_C zero_lt_two]
-    exact Nat.cast_pos.mpr zero_lt_two
-
 /-- When `a = z` and `b = z - (q - q⁻¹)`, `heckeRootUnit a b` satisfies the quadratic
 stabilization relation `l ^ 2 * z = z - (q - q⁻¹)` in `AdjoinRoot (X ^ 2 - C (b * a⁻¹))`. -/
 theorem heckeRootUnit_sq_mul (q a b : Rˣ) {z : R} (ha : (a : R) = z)
@@ -103,14 +88,17 @@ theorem heckeRootUnit_sq_mul (q a b : Rˣ) {z : R} (ha : (a : R) = z)
             (algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))).toMonoidHom q)⁻¹) := by
   have hba : ((b * a⁻¹ : Rˣ) : R) * z = z - ((q : R) - ↑q⁻¹) := by
     rw [← ha, Units.val_mul, mul_assoc, Units.inv_mul, mul_one, ha, hb]
+  have hq :
+      Units.val (Units.map
+          (algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))).toMonoidHom q) =
+        algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R))) q := by
+    rw [RingHom.toMonoidHom_eq_coe, Units.coe_map, MonoidHom.coe_ofClass]
   have hqinv :
       Units.val (Units.map
           (algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))).toMonoidHom q)⁻¹ =
         algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R))) ↑q⁻¹ := by
-    rw [← _root_.map_inv]
-    rfl
-  rw [heckeRootUnit_sq, ← map_mul, hba, map_sub, map_sub, hqinv]
-  rfl
+    rw [RingHom.toMonoidHom_eq_coe, Units.coe_map_inv, MonoidHom.coe_ofClass]
+  rw [heckeRootUnit_sq, ← map_mul, hba, map_sub, map_sub, hq, hqinv]
 
 namespace MarkovBraid
 
@@ -146,7 +134,11 @@ theorem heckeQuadraticTrace_eq_mul_algebraMap (β : MarkovBraid) (q a b : Rˣ) (
         Units.val (heckeRootUnit a b ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ β.braid)) *
           algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))
             (ocneanuTrace R q z (braidHom R q (β.predStrands + 1) β.braid)) := by
-  rw [heckeQuadraticTrace_def, heckeTrace_def, ocneanuTrace_braidHom_algebraMap rfl]
+  have hq : algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R))) q =
+      Units.val (Units.map
+        (algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))).toMonoidHom q) := by
+    rw [RingHom.toMonoidHom_eq_coe, Units.coe_map, MonoidHom.coe_ofClass]
+  rw [heckeQuadraticTrace_def, heckeTrace_def, ocneanuTrace_braidHom_algebraMap hq]
 
 /-- **Universal property of `heckeQuadraticTrace`.** Given any commutative `R`-algebra `S` and any
 unit `l : Sˣ` satisfying `l ^ 2 = algebraMap R S (b * a⁻¹)`, the induced `R`-algebra homomorphism
