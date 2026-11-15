@@ -57,8 +57,8 @@ theorem weightRatio_top (L : Ω → ι → Module.Dual K V) (c : Ω → ι → �
 /-- The zero subspace has weight ratio minus the total weight per ambient dimension. -/
 @[simp]
 theorem weightRatio_bot (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ) :
-    weightRatio L c (⊥ : Submodule K V) = -weight L c ⊤ / finrank K V := by
-  simp [weightRatio_def]
+    weightRatio L c (⊥ : Submodule K V) = -(weight L c ⊤ / finrank K V) := by
+  simp [weightRatio_def, neg_div]
 
 /-- Under zero total weight, the numerator of the ratio is just the subspace weight. -/
 theorem weightRatio_eq_of_weight_top_eq_zero {L : Ω → ι → Module.Dual K V}
@@ -320,7 +320,7 @@ theorem exceptionalSubspace_eq_bot_iff_of_weight_top_eq_zero
     (hc : HasFiniteSupport c) (htop : weight L c (⊤ : Submodule K V) = 0) :
     exceptionalSubspace L c = ⊥ ↔ ∀ U, U ≠ ⊤ → weight L c U ≤ 0 := by
   rw [exceptionalSubspace_eq_bot_iff hL hc]
-  simp only [weightRatio_bot, htop, neg_zero, zero_div]
+  simp only [weightRatio_bot, htop, zero_div, neg_zero]
   apply forall_congr'
   intro U
   apply imp_congr_right
@@ -343,8 +343,8 @@ theorem exceptionalSubspace_zero (L : Ω → ι → Module.Dual K V) :
   · exact (exceptionalSubspace_eq_bot_iff hL (by simp [HasFiniteSupport])).mpr (by simp)
   · exact exceptionalSubspace_eq_bot_of_not_forall_span_eq_top hL
 
-/-- Pulling forms back along a linear equivalence transports the exceptional subspace to its
-image, even for degenerate data. -/
+/-- Mapping along a linear equivalence `e` sends the exceptional subspace of the pulled-back forms
+`(L v i).comp e.toLinearMap` to `exceptionalSubspace L c`, even for degenerate data. -/
 theorem map_exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
     {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W] (e : W ≃ₗ[K] V) :
     (exceptionalSubspace (fun v i ↦ (L v i).comp e.toLinearMap) c).map e.toLinearMap =
@@ -362,11 +362,8 @@ theorem map_exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual 
           Submodule.map_comap_eq_of_surjective e.surjective U
         have hcomap_ne_top {U : Submodule K V} (hU : U ≠ ⊤) : U.comap e.toLinearMap ≠ ⊤ :=
           fun h ↦ hU (by rw [← hmap U, h, Submodule.map_top, e.range])
-        refine (eq_exceptionalSubspace_iff hL hc _).mpr ⟨?_, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩
-        · intro htop
-          apply hE
-          simpa [Submodule.comap_map_eq_of_injective e.injective] using
-            congrArg (Submodule.comap e.toLinearMap) htop
+        refine (eq_exceptionalSubspace_iff hL hc _).mpr
+          ⟨(Submodule.map_ne_top_iff (e := e)).mpr hE, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩
         · simpa only [L', weightRatio_comp_linearEquiv, hmap U] using hmax _ (hcomap_ne_top hU)
         · have heq' : weightRatio L' c (U.comap e.toLinearMap) =
               weightRatio L' c (exceptionalSubspace L' c) := by
@@ -396,34 +393,42 @@ theorem exceptionalSubspace_comp_linearEquiv (L : Ω → ι → Module.Dual K V)
 
 section FinTwo
 
-/-- For the two coordinate forms on `K²` with weights supported at one place `v₀` satisfying
-`c v₀ 0 < c v₀ 1`, the exceptional subspace is the second coordinate axis `K ∙ e₂`. -/
+/-- For the two coordinate forms on `K²` with finitely supported weights satisfying
+`∑ᶠ v, c v 0 < ∑ᶠ v, c v 1`, the exceptional subspace is the second coordinate axis `K ∙ e₂`. -/
 theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
-    {v₀ : Ω} {c : Ω → Fin 2 → ℝ} (hsupp : support c ⊆ {v₀}) (hc : c v₀ 0 < c v₀ 1) :
+    {c : Ω → Fin 2 → ℝ} (hc : HasFiniteSupport c) (hlt : ∑ᶠ v, c v 0 < ∑ᶠ v, c v 1) :
     exceptionalSubspace (fun (_ : Ω) (i : Fin 2) ↦
       (LinearMap.proj i : Module.Dual K (Fin 2 → K))) c =
       K ∙ Pi.single (1 : Fin 2) (1 : K) := by
   classical
   let L : Ω → Fin 2 → Module.Dual K (Fin 2 → K) := fun _ i ↦ LinearMap.proj i
+  let s : Finset Ω := hc.toFinset
   have hLi (v : Ω) : LinearIndependent K (L v) :=
     Fintype.linearIndependent_iff.mpr fun g hg i ↦ by
       have := LinearMap.congr_fun hg (Pi.single i 1)
       fin_cases i <;> simpa [L, Pi.single_apply] using this
   have hL (v : Ω) : span K (range (L v)) = ⊤ :=
     (hLi v).span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
-  have hwt (U : Submodule K (Fin 2 → K)) : weight L c U = localWeight (L v₀) (c v₀) U :=
-    (weight_eq_sum_of_support_subset L c U (by simpa using hsupp)).trans (Finset.sum_singleton _ _)
-  have htop : weight L c ⊤ = c v₀ 0 + c v₀ 1 := by
-    rw [hwt, localWeight_top (hLi v₀) (hL v₀), Fin.sum_univ_two]
+  have hcsum (i : Fin 2) : ∑ᶠ v, c v i = ∑ v ∈ s, c v i :=
+    finsum_eq_sum_of_support_subset _ fun v hv ↦
+      hc.mem_toFinset.mpr fun hcv ↦ hv (by simp [hcv])
+  have hwt (U : Submodule K (Fin 2 → K)) : weight L c U = ∑ v ∈ s, localWeight (L v) (c v) U :=
+    weight_eq_sum_of_support_subset L c U hc.coe_toFinset.ge
+  have htop : weight L c ⊤ = (∑ᶠ v, c v 0) + ∑ᶠ v, c v 1 := by
+    rw [hwt, hcsum 0, hcsum 1, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun v _ ↦ by rw [localWeight_top (hLi v) (hL v), Fin.sum_univ_two]
   let e₁ : Fin 2 → K := Pi.single 1 1
   have he₁ : e₁ ≠ 0 := Pi.single_eq_zero_iff.not.mpr one_ne_zero
   have hdimE : finrank K (K ∙ e₁) = 1 := finrank_span_singleton he₁
   have hE_ne_top : (K ∙ e₁) ≠ ⊤ := fun h ↦ by
     have := hdimE; rw [h, finrank_top, Module.finrank_fin_fun] at this; omega
-  have hratioE : weightRatio L c (K ∙ e₁) = -c v₀ 0 := by
-    have hset : {i : Fin 2 | L v₀ i e₁ ≠ 0} = {1} := by ext i; fin_cases i <;> simp [L, e₁]
-    rw [weightRatio_def, hwt, localWeight_span_singleton (L v₀) (c v₀) he₁, hset,
-      Set.image_singleton, csInf_singleton, htop, hdimE, Module.finrank_fin_fun]; ring
+  have hratioE : weightRatio L c (K ∙ e₁) = -∑ᶠ v, c v 0 := by
+    have hwtE : weight L c (K ∙ e₁) = ∑ᶠ v, c v 1 := by
+      rw [hwt, hcsum 1]
+      refine Finset.sum_congr rfl fun v _ ↦ ?_
+      have hset : {i : Fin 2 | L v i e₁ ≠ 0} = {1} := by ext i; fin_cases i <;> simp [L, e₁]
+      rw [localWeight_span_singleton (L v) (c v) he₁, hset, Set.image_singleton, csInf_singleton]
+    rw [weightRatio_def, hwtE, htop, hdimE, Module.finrank_fin_fun]; ring
   have hlt_of_ne (U : Submodule K (Fin 2 → K)) (hU : U ≠ ⊤) (hne : U ≠ K ∙ e₁) :
       weightRatio L c U < weightRatio L c (K ∙ e₁) := by
     by_cases hUbot : U = ⊥
@@ -439,11 +444,14 @@ theorem exceptionalSubspace_fin_two_proj_of_lt {K Ω : Type*} [Field K]
       have hUx : K ∙ x = U := Submodule.eq_of_le_of_finrank_eq
         ((Submodule.span_singleton_le_iff_mem x U).mpr hxU)
         ((finrank_span_singleton hx).trans hdimU.symm)
-      have h0mem : ({0} : Finset (Fin 2)) ∈ localWeightBases (L v₀) U := by
-        rw [← hUx, singleton_mem_localWeightBases_span_singleton (L v₀) hx 0]; exact hx0
-      have hwtU : weight L c U ≤ c v₀ 0 := by simpa [hwt] using localWeight_le_sum (c v₀) h0mem
+      have hwtU : weight L c U ≤ ∑ᶠ v, c v 0 := by
+        rw [hwt, hcsum 0]
+        refine Finset.sum_le_sum fun v _ ↦ ?_
+        have h0mem : ({0} : Finset (Fin 2)) ∈ localWeightBases (L v) U := by
+          rw [← hUx, singleton_mem_localWeightBases_span_singleton (L v) hx 0]; exact hx0
+        simpa using localWeight_le_sum (c v) h0mem
       rw [weightRatio_def, htop, hdimU, hratioE, Module.finrank_fin_fun]; linarith
-  refine ((eq_exceptionalSubspace_iff hL ((Set.finite_singleton v₀).subset hsupp) _).mpr
+  refine ((eq_exceptionalSubspace_iff hL hc _).mpr
     ⟨hE_ne_top, fun U hU ↦ ?_, fun U hU heq ↦ ?_⟩).symm
   · exact if h : U = K ∙ e₁ then h ▸ le_rfl else (hlt_of_ne U hU h).le
   · exact if h : U = K ∙ e₁ then h ▸ le_rfl else ((hlt_of_ne U hU h).ne heq).elim

@@ -67,7 +67,7 @@ theorem mem_extremePoints_iff_linearMap_mem_extremePoints
 /-- A point of `A` at which a linear functional takes a strict maximum on `A` is an extreme point
 of `convexHull 𝕜 A`, without any topological or finite-dimensional assumption. -/
 theorem mem_extremePoints_convexHull_of_strict_max
-    {𝕜 E : Type*} [Semiring 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
     [AddCommMonoid E] [Module 𝕜 E] {A : Set E} {p : E} (hp : p ∈ A)
     (f : E →ₗ[𝕜] 𝕜) (hf : ∀ q ∈ A, q ≠ p → f q < f p) :
     p ∈ (convexHull 𝕜 A).extremePoints 𝕜 := by

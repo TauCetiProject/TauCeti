@@ -315,15 +315,8 @@ theorem localWeightBases_comp_of_injective (L : ι → Module.Dual K V)
       e.dualMap.toLinearMap ∘ fun i : s ↦ (L i).comp (U.map f).subtype := by
     ext i x
     simp [e]
-  rw [hfun, Set.range_comp, ← LinearMap.map_span]
-  constructor
-  · rintro ⟨hli, hsp⟩
-    refine ⟨(LinearMap.linearIndependent_iff e.dualMap.toLinearMap e.dualMap.ker).mp hli, ?_⟩
-    simpa [Submodule.comap_map_eq_of_injective e.dualMap.injective] using
-      congrArg (Submodule.comap e.dualMap.toLinearMap) hsp
-  · rintro ⟨hli, hsp⟩
-    exact ⟨hli.map' e.dualMap.toLinearMap e.dualMap.ker,
-      by rw [hsp, Submodule.map_top, e.dualMap.range]⟩
+  rw [hfun, LinearMap.linearIndependent_iff _ e.dualMap.ker, Set.range_comp,
+    ← LinearMap.map_span, Submodule.map_eq_top_iff (e := e.dualMap)]
 
 /-- Restricting forms to a subspace `W` identifies local dual bases on `U ≤ W` with those of its
 ambient image `U.map W.subtype`. -/

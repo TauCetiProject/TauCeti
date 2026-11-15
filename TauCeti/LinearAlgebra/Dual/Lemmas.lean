@@ -226,9 +226,8 @@ theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module
     {L : ι → Dual K V} (hL : Submodule.span K (Set.range L) = ⊤) {f : W →ₗ[K] V}
     (hf : Function.Injective f) :
     Submodule.span K (Set.range fun i ↦ (L i).comp f) = ⊤ := by
-  have heq : (Set.range fun i ↦ (L i).comp f) = f.dualMap '' Set.range L :=
-    Set.range_comp f.dualMap L
-  rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
+  simp_rw [← LinearMap.dualMap_apply', Set.range_comp', ← Submodule.map_span, hL,
+    Submodule.map_top, LinearMap.range_eq_top]
   exact LinearMap.dualMap_surjective_of_injective hf
 
 end Field

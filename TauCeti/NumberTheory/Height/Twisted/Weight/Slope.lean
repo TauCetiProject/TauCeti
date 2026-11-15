@@ -36,8 +36,9 @@ the Harder--Narasimhan filtration `twistedFiltration`.
   `TauCeti.weightRatio_comp_subtype`: invariance under injective pullback and subspace restriction.
 * `TauCeti.weightSlope_mul_finrank_sub_finrank` and
   `TauCeti.weight_sub_weightSlope_mul_finrank_eq`: affine supporting-line identities for `U ≤ W`.
-* `TauCeti.weightSlope_le_iff`, `TauCeti.le_weightSlope_iff`, `TauCeti.lt_weightSlope_iff`:
-  equivalence between slope bounds and linear weight bounds when `U < W` is finite-dimensional.
+* `TauCeti.weightSlope_le_iff`, `TauCeti.le_weightSlope_iff`, `TauCeti.weightSlope_lt_iff`,
+  `TauCeti.lt_weightSlope_iff`: equivalence between slope bounds and linear weight bounds when
+  `U < W` is finite-dimensional.
 
 ## References
 
@@ -143,6 +144,7 @@ theorem weightSlope_comp_subtype (L : Ω → ι → Module.Dual K V) (c : Ω →
 
 /-- For forms restricted to `W`, the weight ratio of `A ≤ W` is minus the ambient weight slope
 between `A.map W.subtype` and `W`. -/
+@[simp]
 theorem weightRatio_comp_subtype (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
     (W : Submodule K V) (A : Submodule K W) :
     weightRatio (fun v i ↦ (L v i).comp W.subtype) c A =
@@ -195,6 +197,15 @@ theorem le_weightSlope_iff {L : Ω → ι → Module.Dual K V} {c : Ω → ι �
       a * ((finrank K W : ℝ) - finrank K U) ≤ weight L c W - weight L c U := by
   rw [weightSlope_def]
   exact le_div_iff₀ (sub_pos.mpr (by exact_mod_cast Submodule.finrank_lt_finrank_of_lt hUW))
+
+/-- A strict upper bound on `weightSlope L c U W` for `U < W` inside a finite-dimensional `W` is a
+strict linear bound on the weight difference. -/
+theorem weightSlope_lt_iff {L : Ω → ι → Module.Dual K V} {c : Ω → ι → ℝ}
+    {U W : Submodule K V} [FiniteDimensional K W] (hUW : U < W) {a : ℝ} :
+    weightSlope L c U W < a ↔
+      weight L c W - weight L c U < a * ((finrank K W : ℝ) - finrank K U) := by
+  rw [weightSlope_def]
+  exact div_lt_iff₀ (sub_pos.mpr (by exact_mod_cast Submodule.finrank_lt_finrank_of_lt hUW))
 
 /-- A strict lower bound on `weightSlope L c U W` for `U < W` inside a finite-dimensional `W` is a
 strict linear bound on the weight difference. -/
