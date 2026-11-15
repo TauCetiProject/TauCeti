@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
 public import TauCeti.RingTheory.Valuation.Continuous.Basic
 public import TauCeti.RingTheory.Valuation.RestrictToConvex
+import TauCeti.Algebra.Order.Hom.MonoidWithZero
 
 /-!
 # Restricting a valuation to `cΓ_v(I)`
@@ -83,12 +84,6 @@ open MonoidWithZeroHom TauCeti
 
 variable {A : Type*} [CommRing A] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
 
-/-- `OrderMonoidIso.unitsWithZero` and the unit coercion agree. They agree only up to defeq with
-`WithZero.unitsWithZeroEquiv`, so the bridge is stated once here. -/
-private theorem coe_unitsWithZero_apply {α : Type*} [Group α] [Preorder α] (u : (WithZero α)ˣ) :
-    ((OrderMonoidIso.unitsWithZero u : α) : WithZero α) = u :=
-  WithZero.coe_unitsWithZeroEquiv_eq_units_val _
-
 /-- The units identification takes the unit of a restricted value to the value-group element it
 names. This is the bridge between membership in a transported convex subgroup, which is phrased
 through `OrderMonoidIso.unitsWithZero`, and the introduction rules for `cΓ_v(I)`, which are
@@ -98,7 +93,7 @@ private theorem unitsWithZero_mk0_restrict (v : Valuation A Γ₀) {a : A}
     OrderMonoidIso.unitsWithZero (Units.mk0 (v.restrict a) ha) =
       valueGroup.mk (v : A →*₀ Γ₀) 1 a (by simp) h0 := by
   rw [← WithZero.coe_inj, ← v.restrict_eq_mk h0]
-  exact WithZero.coe_unitsWithZeroEquiv_eq_units_val _
+  exact OrderMonoidIso.coe_unitsWithZero_apply _
 
 /-- `cΓ_v(I)`, transported onto the units of the value monoid, absorbs every attained value
 `≥ 1`. This is exactly the hypothesis `Valuation.restrictToConvex` needs, and it holds because
@@ -329,12 +324,12 @@ private theorem characteristicSubgroup_restrictToIdeal_eq_top_of_meets (w : Valu
       Valuation.embedding_restrict, ← hu,
       inv_le_comm₀ (zero_lt_one.trans_le h1a) (pos_iff_ne_zero.mpr WithZero.coe_ne_zero),
       ← WithZero.coe_inv, coe_le_restrictToIdeal_iff, hga]
-    rw [← coe_unitsWithZero_apply, WithZero.coe_le_coe]
+    rw [← OrderMonoidIso.coe_unitsWithZero_apply, WithZero.coe_le_coe]
     simp only [InvMemClass.coe_inv]
     simpa using inv_le_inv_iff.mpr hginv
   · rw [← ValueGroup₀.embedding_strictMono.le_iff_le, Valuation.embedding_restrict, ← hu,
       coe_le_restrictToIdeal_iff, hga]
-    rw [← coe_unitsWithZero_apply, WithZero.coe_le_coe]
+    rw [← OrderMonoidIso.coe_unitsWithZero_apply, WithZero.coe_le_coe]
     exact hgle
 
 /-- The **not-meets** branch of `characteristicSubgroupOfIdeal_restrictToIdeal_eq_top`. When
@@ -364,7 +359,7 @@ private theorem cofinalValue_restrictToIdeal_of_not_meets (w : Valuation A Γ₀
   refine ⟨n, ?_⟩
   rw [← map_pow, Valuation.restrict_lt_iff_lt_embedding, ← hu,
     restrictToIdeal_lt_coe_iff, map_pow]
-  rwa [coe_unitsWithZero_apply] at hn
+  rwa [OrderMonoidIso.coe_unitsWithZero_apply] at hn
 
 /-- **Wedhorn §7.1.2: the restricted valuation has full characteristic subgroup for `I`.** This
 is the valuation-level content of the landing law — the restriction `v|cΓ_v(I)` satisfies the very
