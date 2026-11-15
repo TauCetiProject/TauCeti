@@ -6,7 +6,7 @@ Authors: Robert
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.GraphAutomorphism.Restriction
-public import TauCeti.Algebra.Lie.Subalgebra.Fixed
+public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 
 /-!
 # The type-D graph fixed algebra as native type B
