@@ -433,9 +433,9 @@ theorem Homeomorph.isWeakHomotopyEquivalence {X Y : Type*} [TopologicalSpace X]
   convert e.toHomotopyEquiv.isWeakHomotopyEquivalence using 1
   ext : 1; rfl
 
-/-- Conjugating a continuous map by homeomorphisms preserves and reflects weak homotopy
-equivalences. -/
-theorem Homeomorph.isWeakHomotopyEquivalence_conj_iff {X Y X' Y' : Type*}
+/-- Composing a continuous map on both sides with homeomorphisms preserves and reflects weak
+homotopy equivalences. -/
+theorem Homeomorph.isWeakHomotopyEquivalence_comp_comp_iff {X Y X' Y' : Type*}
     [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace X'] [TopologicalSpace Y']
     (eX : X' ≃ₜ X) (eY : Y ≃ₜ Y') (f : C(X, Y)) :
     ((eY : C(Y, Y')).comp (f.comp (eX : C(X', X)))).IsWeakHomotopyEquivalence ↔

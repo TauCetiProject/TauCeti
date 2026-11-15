@@ -38,8 +38,8 @@ strict pullback of the Hurewicz fibration `MappingPathSpace.endpoint f` along `g
   (`HomotopyPullback.sndFiberHomeomorph`), and symmetrically for `fst f g`;
 * when `p` is a Hurewicz fibration, the constant-path inclusion `ofPullback p g` from the strict
   pullback `p.Pullback g` to `HomotopyPullback p g` is a fibre homotopy equivalence over `C`
-  (`IsHurewiczFibration.pullbackHomotopyPullbackLeftEquiv`), and symmetrically when the right leg
-  is a Hurewicz fibration.
+  (`IsHurewiczFibration.pullbackHomotopyPullbackLeftFiberHomotopyEquiv`), and symmetrically when the
+  right leg is a Hurewicz fibration.
 
 Specializing `f` or `g` recovers `MappingPathSpace`, `MappingPathFiber`, `Path b₀ b₁`, and `Ω B b`
 up to canonical homeomorphism.
@@ -49,8 +49,8 @@ up to canonical homeomorphism.
 * `TauCeti.HomotopyPullback f g`: the homotopy pullback of `f : C(A, B)` and `g : C(C, B)`, with
   `fst`, `snd`, `pathMap`, `path`, and universal `homotopy`.
 * `TauCeti.HomotopyPullback.lift`, `TauCeti.HomotopyPullback.liftEquiv`,
-  `TauCeti.HomotopyPullback.ofPullback`: universal property and constant-path comparison from the
-  strict pullback.
+  `TauCeti.HomotopyPullback.liftStrict`, `TauCeti.HomotopyPullback.ofPullback`: universal property
+  and constant-path comparison from the strict pullback.
 * `TauCeti.HomotopyPullback.swapHomeomorph`: symmetry `HomotopyPullback f g ≃ₜ HomotopyPullback g f`
   reversing paths.
 * `TauCeti.HomotopyPullback.pullbackEndpointLeftHomeomorph`,
@@ -58,15 +58,17 @@ up to canonical homeomorphism.
   `TauCeti.HomotopyPullback.isHurewiczFibration_fst`,
   `TauCeti.HomotopyPullback.sndFiberHomeomorph`, `TauCeti.HomotopyPullback.fstFiberHomeomorph`:
   pullback-of-replacement factorization, Hurewicz fibration projections, and strict fibres.
-* `TauCeti.HomotopyPullback.idRightHomeomorph`, `TauCeti.HomotopyPullback.constRightProdHomeomorph`,
+* `TauCeti.HomotopyPullback.idRightHomeomorph`, `TauCeti.HomotopyPullback.idLeftHomeomorph`,
+  `TauCeti.HomotopyPullback.constRightProdHomeomorph`,
   `TauCeti.HomotopyPullback.constRightHomeomorphOfUnique`,
+  `TauCeti.HomotopyPullback.constLeftHomeomorphOfUnique`,
   `TauCeti.HomotopyPullback.constHomeomorphPath`,
   `TauCeti.HomotopyPullback.constHomeomorphLoopSpace`: canonical homeomorphisms for identity and
   constant legs.
 * `TauCeti.HomotopyPullback.map`: functoriality in strictly commuting morphisms of cospans.
-* `TauCeti.IsHurewiczFibration.pullbackHomotopyPullbackLeftEquiv`,
-  `TauCeti.IsHurewiczFibration.pullbackHomotopyPullbackRightEquiv`: `ofPullback` is a fibre
-  homotopy equivalence when one leg is a Hurewicz fibration.
+* `TauCeti.IsHurewiczFibration.pullbackHomotopyPullbackLeftFiberHomotopyEquiv`,
+  `TauCeti.IsHurewiczFibration.pullbackHomotopyPullbackRightFiberHomotopyEquiv`: `ofPullback` is a
+  fibre homotopy equivalence when one leg is a Hurewicz fibration.
 
 ## References
 
@@ -249,6 +251,18 @@ def liftEquiv (X : Type u') [TopologicalSpace X] (f : C(A, B)) (g : C(C, B)) :
   left_inv φ := (eq_lift φ).symm
   right_inv := liftEquiv_right_inv
 
+@[simp]
+theorem liftEquiv_apply (φ : C(X, HomotopyPullback f g)) :
+    liftEquiv X f g φ =
+      ⟨(fst f g).comp φ, (snd f g).comp φ, ((homotopy f g).compContinuousMap φ).cast rfl rfl⟩ :=
+  (rfl)
+
+@[simp]
+theorem liftEquiv_symm_apply
+    (t : Σ (α : C(X, A)) (β : C(X, C)), (f.comp α).Homotopy (g.comp β)) :
+    (liftEquiv X f g).symm t = lift t.1 t.2.1 t.2.2 :=
+  (rfl)
+
 /-- Lift a strictly commuting cone `f ∘ α = g ∘ β` to `HomotopyPullback f g` using constant
 paths. -/
 def liftStrict {α : C(X, A)} {β : C(X, C)} (h : f.comp α = g.comp β) :
@@ -269,6 +283,17 @@ theorem fst_comp_liftStrict {α : C(X, A)} {β : C(X, C)} (h : f.comp α = g.com
 theorem snd_comp_liftStrict {α : C(X, A)} {β : C(X, C)} (h : f.comp α = g.comp β) :
     (snd f g).comp (liftStrict h) = β :=
   snd_comp_lift _ _ _
+
+/-- Precomposing `liftStrict` with a cone morphism `φ` yields `liftStrict` on the pulled-back
+strictly commuting cone. -/
+theorem liftStrict_comp {Y : Type v'} [TopologicalSpace Y] {α : C(X, A)} {β : C(X, C)}
+    (h : f.comp α = g.comp β) {α' : C(Y, A)} {β' : C(Y, C)} (h' : f.comp α' = g.comp β')
+    (φ : C(Y, X)) (hα : α.comp φ = α') (hβ : β.comp φ = β') :
+    (liftStrict h).comp φ = liftStrict h' := by
+  ext y : 1
+  have hαy : α (φ y) = α' y := ContinuousMap.congr_fun hα y
+  have hβy : β (φ y) = β' y := ContinuousMap.congr_fun hβ y
+  exact ext (by simpa using hαy) (by simpa using hβy) fun _ ↦ by simpa using congrArg f hαy
 
 /-- The canonical comparison map from the strict pullback `f.Pullback g` to `HomotopyPullback f g`
 sending `(a, c)` with `f a = g c` to `(a, c, const I (f a))`. -/
@@ -295,8 +320,7 @@ theorem snd_comp_ofPullback (f : C(A, B)) (g : C(C, B)) :
 
 theorem pathMap_ofPullback_apply (f : C(A, B)) (g : C(C, B)) (x : (⇑f).Pullback ⇑g) (t : I) :
     pathMap f g (ofPullback f g x) t = f x.1.1 := by
-  change f (ContinuousMap.pullbackFst (⇑f) (⇑g) x) = f x.1.1
-  simp [Function.Pullback.fst]
+  simp
 
 end UniversalProperty
 
@@ -331,6 +355,16 @@ theorem fst_swap (f : C(A, B)) (g : C(C, B)) (p : HomotopyPullback f g) :
 theorem snd_swap (f : C(A, B)) (g : C(C, B)) (p : HomotopyPullback f g) :
     snd g f (swap f g p) = fst f g p :=
   (rfl)
+
+@[simp]
+theorem fst_comp_swap (f : C(A, B)) (g : C(C, B)) :
+    (fst g f).comp (swap f g) = snd f g := by
+  ext : 1; rfl
+
+@[simp]
+theorem snd_comp_swap (f : C(A, B)) (g : C(C, B)) :
+    (snd g f).comp (swap f g) = fst f g := by
+  ext : 1; rfl
 
 theorem pathMap_swap_apply (f : C(A, B)) (g : C(C, B)) (p : HomotopyPullback f g) (t : I) :
     pathMap g f (swap f g p) t = pathMap f g p (σ t) :=
@@ -372,6 +406,12 @@ theorem swapHomeomorph_apply (f : C(A, B)) (g : C(C, B)) (p : HomotopyPullback f
 theorem swapHomeomorph_symm (f : C(A, B)) (g : C(C, B)) :
     (swapHomeomorph f g).symm = swapHomeomorph g f :=
   (rfl)
+
+@[simp]
+theorem swapHomeomorph_trans_swapHomeomorph (f : C(A, B)) (g : C(C, B)) :
+    (swapHomeomorph f g).trans (swapHomeomorph g f) =
+      Homeomorph.refl (HomotopyPullback f g) := by
+  ext : 1; exact swap_swap f g _
 
 @[simp]
 theorem swap_comp_lift {X : Type u'} [TopologicalSpace X] {f : C(A, B)} {g : C(C, B)}
@@ -473,27 +513,18 @@ theorem sndFiberHomeomorph_val (f : C(A, B)) (g : C(C, B)) (c : C) (x : (snd f g
     (sndFiberHomeomorph f g c x).val = (fst f g x.1, pathMap f g x.1) :=
   (rfl)
 
+@[simp]
+theorem sndFiberHomeomorph_symm_val (f : C(A, B)) (g : C(C, B)) (c : C)
+    (p : MappingPathFiber f (g c)) :
+    (((sndFiberHomeomorph f g c).symm p).1 : HomotopyPullback f g).val =
+      (p.val.1, c, p.val.2) :=
+  (rfl)
+
 /-- The strict fibre of `fst f g` over `a : A` is canonically homeomorphic to
 `MappingPathFiber g (f a)` by reversing paths. -/
 def fstFiberHomeomorph (f : C(A, B)) (g : C(C, B)) (a : A) :
-    (fst f g) ⁻¹' {a} ≃ₜ MappingPathFiber g (f a) where
-  toFun x := sndFiberHomeomorph g f a ⟨swap f g x.1, x.2⟩
-  invFun p := ⟨swap g f ((sndFiberHomeomorph g f a).symm p).1, rfl⟩
-  left_inv x := Subtype.ext <|
-    (congrArg (swap g f) (congrArg Subtype.val
-      ((sndFiberHomeomorph g f a).left_inv ⟨swap f g x.1, x.2⟩))).trans (swap_swap f g x.1)
-  right_inv p := by
-    change sndFiberHomeomorph g f a ⟨swap f g (swap g f ((sndFiberHomeomorph g f a).symm p).1), rfl⟩
-      = p
-    have h : (⟨swap f g (swap g f ((sndFiberHomeomorph g f a).symm p).1), rfl⟩ :
-        (snd g f) ⁻¹' {a}) = (sndFiberHomeomorph g f a).symm p :=
-      Subtype.ext (swap_swap g f _)
-    rw [h]
-    exact (sndFiberHomeomorph g f a).right_inv p
-  continuous_toFun := (sndFiberHomeomorph g f a).continuous.comp
-    (((swap f g).continuous.comp continuous_subtype_val).subtype_mk _)
-  continuous_invFun := (((swap g f).continuous.comp
-    (continuous_subtype_val.comp (sndFiberHomeomorph g f a).symm.continuous)).subtype_mk _)
+    (fst f g) ⁻¹' {a} ≃ₜ MappingPathFiber g (f a) :=
+  ((swapHomeomorph f g).sets rfl).trans (sndFiberHomeomorph g f a)
 
 @[simp]
 theorem fstFiberHomeomorph_val_fst (f : C(A, B)) (g : C(C, B)) (a : A) (x : (fst f g) ⁻¹' {a}) :
@@ -504,6 +535,13 @@ theorem fstFiberHomeomorph_val_fst (f : C(A, B)) (g : C(C, B)) (a : A) (x : (fst
 theorem fstFiberHomeomorph_val_snd_apply (f : C(A, B)) (g : C(C, B)) (a : A)
     (x : (fst f g) ⁻¹' {a}) (t : I) :
     (fstFiberHomeomorph f g a x).val.2 t = pathMap f g x.1 (σ t) :=
+  (rfl)
+
+@[simp]
+theorem fstFiberHomeomorph_symm_val (f : C(A, B)) (g : C(C, B)) (a : A)
+    (p : MappingPathFiber g (f a)) :
+    (((fstFiberHomeomorph f g a).symm p).1 : HomotopyPullback f g).val =
+      (a, p.val.1, p.val.2.comp ⟨σ, continuous_symm⟩) :=
   (rfl)
 
 end Fibration
@@ -535,10 +573,28 @@ theorem idRightHomeomorph_val (f : C(A, B)) (p : HomotopyPullback f (.id B)) :
     (idRightHomeomorph f p).val = (fst f (.id B) p, pathMap f (.id B) p) :=
   (rfl)
 
+@[simp]
+theorem idRightHomeomorph_symm_val (f : C(A, B)) (q : MappingPathSpace f) :
+    ((idRightHomeomorph f).symm q).val =
+      (q.val.1, MappingPathSpace.endpoint f q, q.val.2) :=
+  (rfl)
+
 /-- `HomotopyPullback (.id B) g` is homeomorphic to `MappingPathSpace g` via path reversal. -/
 def idLeftHomeomorph (g : C(C, B)) :
     HomotopyPullback (.id B) g ≃ₜ MappingPathSpace g :=
   (swapHomeomorph (.id B) g).trans (idRightHomeomorph g)
+
+@[simp]
+theorem idLeftHomeomorph_val (g : C(C, B)) (p : HomotopyPullback (.id B) g) :
+    (idLeftHomeomorph g p).val =
+      (snd (.id B) g p, (pathMap (.id B) g p).comp ⟨σ, continuous_symm⟩) :=
+  (rfl)
+
+@[simp]
+theorem idLeftHomeomorph_symm_val (g : C(C, B)) (q : MappingPathSpace g) :
+    ((idLeftHomeomorph g).symm q).val =
+      (MappingPathSpace.endpoint g q, q.val.1, q.val.2.comp ⟨σ, continuous_symm⟩) :=
+  (rfl)
 
 /-- `HomotopyPullback f (.const C b)` splits as `MappingPathFiber f b × C`, since the path endpoint
 condition `γ 1 = b` is independent of `c : C`. -/
@@ -567,6 +623,12 @@ theorem constRightProdHomeomorph_snd (f : C(A, B)) (b : B)
     (constRightProdHomeomorph f b p).2 = snd f (.const C b) p :=
   (rfl)
 
+@[simp]
+theorem constRightProdHomeomorph_symm_val (f : C(A, B)) (b : B)
+    (q : MappingPathFiber f b × C) :
+    ((constRightProdHomeomorph f b).symm q).val = (q.1.val.1, q.2, q.1.val.2) :=
+  (rfl)
+
 /-- Over a one-point corner `C`, `HomotopyPullback f (.const C b)` is canonically homeomorphic to
 `MappingPathFiber f b`. -/
 def constRightHomeomorphOfUnique [Unique C] (f : C(A, B)) (b : B) :
@@ -579,11 +641,32 @@ theorem constRightHomeomorphOfUnique_val [Unique C] (f : C(A, B)) (b : B)
     (constRightHomeomorphOfUnique f b p).val = (fst f (.const C b) p, pathMap f (.const C b) p) :=
   (rfl)
 
+@[simp]
+theorem constRightHomeomorphOfUnique_symm_val [Unique C] (f : C(A, B)) (b : B)
+    (q : MappingPathFiber f b) :
+    ((constRightHomeomorphOfUnique (C := C) f b).symm q).val =
+      (q.val.1, default, q.val.2) :=
+  (rfl)
+
 /-- Over a one-point left corner `A`, `HomotopyPullback (.const A b) g` is canonically homeomorphic
 to `MappingPathFiber g b` via path reversal. -/
 def constLeftHomeomorphOfUnique [Unique A] (b : B) (g : C(C, B)) :
     HomotopyPullback (.const A b) g ≃ₜ MappingPathFiber g b :=
   (swapHomeomorph (.const A b) g).trans (constRightHomeomorphOfUnique g b)
+
+@[simp]
+theorem constLeftHomeomorphOfUnique_val [Unique A] (b : B) (g : C(C, B))
+    (p : HomotopyPullback (.const A b) g) :
+    (constLeftHomeomorphOfUnique (A := A) b g p).val =
+      (snd (.const A b) g p, (pathMap (.const A b) g p).comp ⟨σ, continuous_symm⟩) :=
+  (rfl)
+
+@[simp]
+theorem constLeftHomeomorphOfUnique_symm_val [Unique A] (b : B) (g : C(C, B))
+    (q : MappingPathFiber g b) :
+    ((constLeftHomeomorphOfUnique (A := A) b g).symm q).val =
+      (default, q.val.1, q.val.2.comp ⟨σ, continuous_symm⟩) :=
+  (rfl)
 
 /-- The homotopy pullback of two point inclusions `Unit → B` at `b₀` and `b₁` is homeomorphic to
 `Path b₀ b₁`. -/
@@ -600,11 +683,9 @@ theorem constHomeomorphPath_apply (b₀ b₁ : B)
 
 @[simp]
 theorem constHomeomorphPath_symm_apply (b₀ b₁ : B) (γ : Path b₀ b₁) :
-    (constHomeomorphPath b₀ b₁).symm γ = mk' () () γ := by
-  refine ext (Subsingleton.elim _ _) (Subsingleton.elim _ _) fun t ↦ ?_
-  change (((mappingPathFiberConstHomeomorphPath b₀ b₁).symm γ).val.2) t = γ t
-  rw [mappingPathFiberConstHomeomorphPath_symm_val]
-  rfl
+    (constHomeomorphPath b₀ b₁).symm γ = mk' () () γ :=
+  (constHomeomorphPath b₀ b₁).symm_apply_eq.mpr <|
+    Eq.symm <| (constHomeomorphPath_apply b₀ b₁ _).trans (Path.ext rfl)
 
 /-- The homotopy pullback of a point inclusion `Unit → B` at `b` with itself is homeomorphic to the
 based loop space `Ω B b`. -/
@@ -644,6 +725,18 @@ theorem map_val (a : C(A, A')) (b : C(B, B')) (c : C(C, C'))
   (rfl)
 
 @[simp]
+theorem fst_comp_map (a : C(A, A')) (b : C(B, B')) (c : C(C, C'))
+    (hf : b.comp f = f'.comp a) (hg : b.comp g = g'.comp c) :
+    (fst f' g').comp (map a b c hf hg) = a.comp (fst f g) := by
+  ext : 1; rfl
+
+@[simp]
+theorem snd_comp_map (a : C(A, A')) (b : C(B, B')) (c : C(C, C'))
+    (hf : b.comp f = f'.comp a) (hg : b.comp g = g'.comp c) :
+    (snd f' g').comp (map a b c hf hg) = c.comp (snd f g) := by
+  ext : 1; rfl
+
+@[simp]
 theorem map_id (f : C(A, B)) (g : C(C, B)) :
     map (.id A) (.id B) (.id C) ((ContinuousMap.id_comp f).trans (ContinuousMap.comp_id f).symm)
       ((ContinuousMap.id_comp g).trans (ContinuousMap.comp_id g).symm) =
@@ -678,26 +771,27 @@ namespace IsHurewiczFibration
 a Hurewicz fibration, the constant-path inclusion `HomotopyPullback.ofPullback p g` from the strict
 pullback `p.Pullback g` to `HomotopyPullback p g` is part of a fibre homotopy equivalence over `C`.
 -/
-noncomputable def pullbackHomotopyPullbackLeftEquiv {A : Type u} {B : Type v} {C : Type w}
+noncomputable def pullbackHomotopyPullbackLeftFiberHomotopyEquiv
+    {A : Type u} {B : Type v} {C : Type w}
     [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
     {p : C(A, B)} (hp : IsHurewiczFibration.{max u v} p) (g : C(C, B)) :
     FiberHomotopyEquiv (ContinuousMap.pullbackSnd ⇑p ⇑g) (HomotopyPullback.snd p g) :=
   let Λ := hp.nonempty_liftingFunction.some
-  have heDom : (ContinuousMap.pullbackFst ⇑g ⇑p).comp (Homeomorph.pullbackComm ⇑p ⇑g : C(_, _)) =
-      ContinuousMap.pullbackSnd ⇑p ⇑g := by
-    ext x : 1; simp [Function.Pullback.fst, Function.Pullback.snd]
-  (FiberHomotopyEquiv.ofHomeomorph (Homeomorph.pullbackComm ⇑p ⇑g) heDom).trans
+  (FiberHomotopyEquiv.ofHomeomorph (Homeomorph.pullbackComm ⇑p ⇑g)
+      (ContinuousMap.pullbackFst_comp_pullbackComm ⇑p ⇑g)).trans
     ((FiberHomotopyEquiv.pullback g Λ.mappingPathFiberHomotopyEquiv).trans
       (FiberHomotopyEquiv.ofHomeomorph
         (HomotopyPullback.pullbackEndpointLeftHomeomorph p g)
         (HomotopyPullback.pullbackFst_comp_pullbackEndpointLeftHomeomorph p g)).symm)
 
 @[simp]
-theorem pullbackHomotopyPullbackLeftEquiv_toFun {A : Type u} {B : Type v} {C : Type w}
+theorem pullbackHomotopyPullbackLeftFiberHomotopyEquiv_toFun
+    {A : Type u} {B : Type v} {C : Type w}
     [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
     {p : C(A, B)} (hp : IsHurewiczFibration.{max u v} p) (g : C(C, B)) :
-    (hp.pullbackHomotopyPullbackLeftEquiv g).toFun = HomotopyPullback.ofPullback p g := by
-  rw [pullbackHomotopyPullbackLeftEquiv, FiberHomotopyEquiv.trans_toFun,
+    (hp.pullbackHomotopyPullbackLeftFiberHomotopyEquiv g).toFun =
+      HomotopyPullback.ofPullback p g := by
+  rw [pullbackHomotopyPullbackLeftFiberHomotopyEquiv, FiberHomotopyEquiv.trans_toFun,
     FiberHomotopyEquiv.trans_toFun, FiberHomotopyEquiv.ofHomeomorph_toFun,
     FiberHomotopyEquiv.symm_toFun, FiberHomotopyEquiv.ofHomeomorph_invFun]
   ext x : 1
@@ -706,27 +800,28 @@ theorem pullbackHomotopyPullbackLeftEquiv_toFun {A : Type u} {B : Type v} {C : T
 /-- **Strict vs. homotopy pullback along a Hurewicz fibration (right leg).** When `q : C(C, B)` is
 a Hurewicz fibration, `HomotopyPullback.ofPullback f q` is part of a fibre homotopy equivalence
 from `f.Pullback q` to `HomotopyPullback f q` over `A`. -/
-noncomputable def pullbackHomotopyPullbackRightEquiv {A : Type u} {B : Type v} {C : Type w}
+noncomputable def pullbackHomotopyPullbackRightFiberHomotopyEquiv
+    {A : Type u} {B : Type v} {C : Type w}
     [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
     (f : C(A, B)) {q : C(C, B)} (hq : IsHurewiczFibration.{max w v} q) :
     FiberHomotopyEquiv (ContinuousMap.pullbackFst ⇑f ⇑q) (HomotopyPullback.fst f q) :=
-  have heDom : (ContinuousMap.pullbackSnd ⇑q ⇑f).comp (Homeomorph.pullbackComm ⇑f ⇑q : C(_, _)) =
-      ContinuousMap.pullbackFst ⇑f ⇑q := by
-    ext x : 1; simp [Function.Pullback.fst, Function.Pullback.snd]
-  (FiberHomotopyEquiv.ofHomeomorph (Homeomorph.pullbackComm ⇑f ⇑q) heDom).trans
-    ((hq.pullbackHomotopyPullbackLeftEquiv f).trans
+  (FiberHomotopyEquiv.ofHomeomorph (Homeomorph.pullbackComm ⇑f ⇑q)
+      (ContinuousMap.pullbackSnd_comp_pullbackComm ⇑f ⇑q)).trans
+    ((hq.pullbackHomotopyPullbackLeftFiberHomotopyEquiv f).trans
       (FiberHomotopyEquiv.ofHomeomorph (p := HomotopyPullback.fst f q)
         (HomotopyPullback.swapHomeomorph f q) (ContinuousMap.ext fun _ ↦ rfl)).symm)
 
 @[simp]
-theorem pullbackHomotopyPullbackRightEquiv_toFun {A : Type u} {B : Type v} {C : Type w}
+theorem pullbackHomotopyPullbackRightFiberHomotopyEquiv_toFun
+    {A : Type u} {B : Type v} {C : Type w}
     [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
     (f : C(A, B)) {q : C(C, B)} (hq : IsHurewiczFibration.{max w v} q) :
-    (hq.pullbackHomotopyPullbackRightEquiv f).toFun = HomotopyPullback.ofPullback f q := by
-  rw [pullbackHomotopyPullbackRightEquiv, FiberHomotopyEquiv.trans_toFun,
+    (hq.pullbackHomotopyPullbackRightFiberHomotopyEquiv f).toFun =
+      HomotopyPullback.ofPullback f q := by
+  rw [pullbackHomotopyPullbackRightFiberHomotopyEquiv, FiberHomotopyEquiv.trans_toFun,
     FiberHomotopyEquiv.trans_toFun, FiberHomotopyEquiv.ofHomeomorph_toFun,
     FiberHomotopyEquiv.symm_toFun, FiberHomotopyEquiv.ofHomeomorph_invFun,
-    hq.pullbackHomotopyPullbackLeftEquiv_toFun f]
+    hq.pullbackHomotopyPullbackLeftFiberHomotopyEquiv_toFun f]
   ext x : 1
   exact HomotopyPullback.ext (by simp) (by simp) fun _ ↦ by simp [x.2.symm]
 

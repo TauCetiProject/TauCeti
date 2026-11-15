@@ -288,15 +288,8 @@ theorem compBase_invFun {B' : Type*} [TopologicalSpace B'] {p : C(E, B)} {q : C(
 
 private theorem homotopicWith_pullback {A : Type*} [TopologicalSpace A] {p : C(E, B)}
     {q : C(E', B)} (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) :
-    ((⟨fun x : (⇑f).Pullback ⇑q ↦
-        ⟨(x.1.1, Φ.invFun x.1.2), x.2.trans (ContinuousMap.congr_fun Φ.comp_invFun x.1.2).symm⟩,
-        (continuous_subtype_val.fst.prodMk
-          (Φ.invFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩ :
-        C((⇑f).Pullback ⇑q, (⇑f).Pullback ⇑p)).comp
-      ⟨fun x : (⇑f).Pullback ⇑p ↦
-        ⟨(x.1.1, Φ.toFun x.1.2), x.2.trans (ContinuousMap.congr_fun Φ.comp_toFun x.1.2).symm⟩,
-        (continuous_subtype_val.fst.prodMk
-          (Φ.toFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩).HomotopicWith
+    ((f.mapPullbackSnd Φ.invFun Φ.comp_invFun).comp
+      (f.mapPullbackSnd Φ.toFun Φ.comp_toFun)).HomotopicWith
       (.id _)
       fun h ↦ (ContinuousMap.pullbackFst (⇑f) (⇑p)).comp h =
         ContinuousMap.pullbackFst (⇑f) (⇑p) :=
@@ -305,7 +298,7 @@ private theorem homotopicWith_pullback {A : Type*} [TopologicalSpace A] {p : C(E
         y.2.2.trans (apply_homotopyWith H y.1 y.2.1.2).symm⟩
       continuous_toFun := (continuous_snd.subtype_val.fst.prodMk
         (H.continuous.comp (continuous_fst.prodMk continuous_snd.subtype_val.snd))).subtype_mk _
-      map_zero_left x := Subtype.ext (Prod.ext rfl (H.apply_zero x.1.2))
+      map_zero_left x := Subtype.ext (by simp [H.apply_zero x.1.2])
       map_one_left x := Subtype.ext (Prod.ext rfl (H.apply_one x.1.2))
       prop' _ := ContinuousMap.ext fun _ ↦ by simp [Function.Pullback.fst] }
 
@@ -315,30 +308,24 @@ def pullback {A : Type*} [TopologicalSpace A] {p : C(E, B)} {q : C(E', B)}
     (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) :
     FiberHomotopyEquiv (ContinuousMap.pullbackFst (⇑f) (⇑p))
       (ContinuousMap.pullbackFst (⇑f) (⇑q)) where
-  toFun := ⟨fun x ↦ ⟨(x.1.1, Φ.toFun x.1.2),
-      x.2.trans (ContinuousMap.congr_fun Φ.comp_toFun x.1.2).symm⟩,
-    (continuous_subtype_val.fst.prodMk
-      (Φ.toFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩
-  invFun := ⟨fun x ↦ ⟨(x.1.1, Φ.invFun x.1.2),
-      x.2.trans (ContinuousMap.congr_fun Φ.comp_invFun x.1.2).symm⟩,
-    (continuous_subtype_val.fst.prodMk
-      (Φ.invFun.continuous.comp continuous_subtype_val.snd)).subtype_mk _⟩
-  comp_toFun := ContinuousMap.ext fun _ ↦ by simp [Function.Pullback.fst]
-  comp_invFun := ContinuousMap.ext fun _ ↦ by simp [Function.Pullback.fst]
+  toFun := f.mapPullbackSnd Φ.toFun Φ.comp_toFun
+  invFun := f.mapPullbackSnd Φ.invFun Φ.comp_invFun
+  comp_toFun := by simp
+  comp_invFun := by simp
   left_inv := homotopicWith_pullback f Φ
   right_inv := homotopicWith_pullback f Φ.symm
 
 @[simp]
 theorem coe_pullback_toFun_apply {A : Type*} [TopologicalSpace A] {p : C(E, B)} {q : C(E', B)}
     (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) (x : (⇑f).Pullback ⇑p) :
-    ((Φ.pullback f).toFun x).1 = (x.1.1, Φ.toFun x.1.2) :=
-  (rfl)
+    ((Φ.pullback f).toFun x).1 = (x.1.1, Φ.toFun x.1.2) := by
+  simp [pullback]
 
 @[simp]
 theorem coe_pullback_invFun_apply {A : Type*} [TopologicalSpace A] {p : C(E, B)} {q : C(E', B)}
     (f : C(A, B)) (Φ : FiberHomotopyEquiv p q) (x : (⇑f).Pullback ⇑q) :
-    ((Φ.pullback f).invFun x).1 = (x.1.1, Φ.invFun x.1.2) :=
-  (rfl)
+    ((Φ.pullback f).invFun x).1 = (x.1.1, Φ.invFun x.1.2) := by
+  simp [pullback]
 
 end FiberHomotopyEquiv
 
