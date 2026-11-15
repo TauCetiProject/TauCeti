@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
+public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
@@ -60,7 +61,8 @@ radii can be chosen so that the `j`-th term is at most `2^{-j}` at every positio
 (`TauCeti.Symbol.exists_isUniformAsymptoticSum`). This is the asymptotic summation of the calculus
 of symbols with estimates uniform on all of `ℝⁿ`, used to construct the uniform left and right
 parametrix symbols of a uniformly elliptic symbol
-(`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left_and_right`).
+(`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_left`,
+`TauCeti.Symbol.IsUniformlyEllipticAbove.exists_isUniformAsymptoticSum_sharpTerm_right`).
 Such sums are unique modulo uniformly smoothing symbols (`TauCeti.Symbol.IsUniformlySmoothing`).
 
 Applied to the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of a sequence of homogeneous symbols, asymptotic
@@ -770,13 +772,13 @@ private theorem IsUniform.exists_isUniform_cutoff_smul_sub {μ : ℝ} {a : Symbo
     (ha : a.IsUniform) (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) (μ' : ℝ) :
     ∃ E : Symbol n V W μ', E.IsUniform ∧
       E.coefficient = (fun p => χ (t⁻¹ • p.2) • a.coefficient p) - a.coefficient := by
-  obtain ⟨e, he, hec⟩ := isUniformlySmoothing_iff.1 (((isUniform_dilatedCutoff χ ht).sub
+  obtain ⟨E, hE, hEc⟩ := isUniformlySmoothing_iff.1 ((((isUniform_dilatedCutoff χ ht).sub
     (isUniform_const (ContinuousLinearMap.id ℂ W))).isUniformlySmoothing_of_coefficient_eq_zero
       (2 * t) fun x ξ hξ => by
-        simp [dilatedCutoff, χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]) (μ' - μ)
-  refine ⟨Symbol.inclusion (sub_add_cancel μ' μ).le (e.comp a), (he.comp ha).inclusion _, ?_⟩
+        simp [dilatedCutoff, χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]).comp_right ha) μ'
+  refine ⟨E, hE, ?_⟩
   funext p
-  simp [hec, dilatedCutoff]
+  simp [hEc, dilatedCutoff]
 
 /-- For large `t`, the cut-off term `χ(ξ / t) a(x, ξ)` of a uniform symbol `a` of order `μ` is at
 most `2^{-j}` in the estimates of order `μ + 1` for the derivatives of length at most `j`, at
@@ -883,12 +885,12 @@ theorem exists_isUniformAsymptoticSum {m : ℕ → ℝ} (hm : Antitone m)
   simp only [r, Finset.sum_range_zero, sub_zero]
 
 /-- **Asymptotic summation of successive uniform corrections.** Let `P N` be properties of symbols
-of order `μ` which the uniform symbol `b₀` has for `N = 0`, which are stable under changes by
-uniform symbols of order `μ - N`, and which can be improved from `N` to `N + 1` by such a change
-of a uniform symbol. Then one uniform symbol has all of them. -/
+of order `μ` which the uniform symbol `b₀` has for `N = 0`, which uniform symbols keep under
+changes by uniform symbols of order `μ - N`, and which can be improved from `N` to `N + 1` by such
+a change of a uniform symbol. Then one uniform symbol has all of them. -/
 theorem exists_isUniform_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
     {b₀ : Symbol n V W μ} (hb₀ : b₀.IsUniform) (h₀ : P 0 b₀)
-    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), d.IsUniform → P N b →
+    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), b.IsUniform → d.IsUniform → P N b →
       b'.coefficient = b.coefficient + d.coefficient → P N b')
     (hsucc : ∀ (N : ℕ) b, b.IsUniform → P N b →
       ∃ d : Symbol n V W (μ - N), d.IsUniform ∧ P (N + 1) (b + inclusion (by simp) d)) :
@@ -903,7 +905,7 @@ theorem exists_isUniform_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V
   refine ⟨b₀ + inclusion (by simp) B, hb₀.add (hB.isUniform.inclusion _), fun N ↦ ?_⟩
   obtain ⟨r, hr, hBr⟩ := hB N
   obtain ⟨b, hb, hbc⟩ := hc N
-  refine hcongr N b _ r hr hb.2 ?_
+  refine hcongr N b _ r hb.1 hr hb.2 ?_
   rw [coefficient_add, coefficient_inclusion, ← hBr, hbc]
   abel
 
