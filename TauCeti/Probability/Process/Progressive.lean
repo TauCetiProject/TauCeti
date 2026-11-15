@@ -9,9 +9,10 @@ public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Topology.Order.Cadlag
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
-# Progressive measurability of right-continuous adapted processes
+# Progressive measurability and time-product agreement
 
 A strongly adapted process in nonnegative real time with everywhere right-continuous paths is
 strongly progressive, on its original filtration. No completeness or right continuity of the
@@ -21,6 +22,9 @@ use of the progressive stopped-evaluation API.
 On each fixed horizon, right-endpoint samples are capped at that horizon. These approximations
 are measurable for the horizon's product sigma algebra; they need not be adapted at earlier
 times. Almost-sure path regularity alone does not give the literal conclusion for a raw version.
+
+For progressive processes, pathwise time-a.e. agreement lifts to product-a.e. agreement on
+each finite horizon under s-finite time and sample measures.
 
 ## References
 
@@ -87,3 +91,31 @@ theorem MeasureTheory.Adapted.isProgressive_of_isRightContinuous
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : Adapted ℱ u)
     (hc : ∀ ω, IsRightContinuous (fun t => u t ω)) : IsProgressive ℱ u :=
   ((stronglyAdapted_iff_adapted.mpr hu).isStronglyProgressive_of_isRightContinuous hc).isProgressive
+
+/-- Progressive processes that agree time-a.e. on almost every path agree product-a.e.
+on a finite horizon. Neither completeness nor usual conditions on the filtration are needed. -/
+theorem MeasureTheory.IsProgressive.ae_eq_prod_of_ae_eq
+    {Ω E : Type*} {m : MeasurableSpace Ω} [MeasurableSpace E] [MeasurableEq E]
+    {ℱ : Filtration ℝ≥0 m} {H K : ℝ≥0 → Ω → E}
+    (hH : IsProgressive ℱ H) (hK : IsProgressive ℱ K)
+    {μ : Measure ℝ≥0} {P : Measure Ω} {T : ℝ≥0}
+    [SFinite (μ.restrict (Iic T))] [SFinite P]
+    (heq : ∀ᵐ ω ∂P, (fun t ↦ H t ω) =ᵐ[μ.restrict (Iic T)] (fun t ↦ K t ω)) :
+    Function.uncurry H =ᵐ[(μ.restrict (Iic T)).prod P] Function.uncurry K := by
+  have hcap {X : ℝ≥0 → Ω → E} (hX : IsProgressive ℱ X) :
+      Measurable (fun p : ℝ≥0 × Ω ↦ X (min p.1 T) p.2) :=
+    ((hX T).mono (MeasurableSpace.prod_mono le_rfl (ℱ.le T)) le_rfl).comp
+      (((measurable_fst.min measurable_const).subtype_mk
+        (h := fun _ ↦ min_le_right _ _)).prodMk measurable_snd)
+  have hm := measurableSet_eq_fun (hcap hH) (hcap hK)
+  have hc : (fun p : ℝ≥0 × Ω ↦ H (min p.1 T) p.2) =ᵐ[(μ.restrict (Iic T)).prod P]
+      (fun p ↦ K (min p.1 T) p.2) := by
+    apply (Measure.ae_prod_iff_ae_ae hm).mpr
+    apply (Measure.ae_ae_comm hm).mpr
+    filter_upwards [heq] with ω hω
+    filter_upwards [hω, ae_restrict_mem measurableSet_Iic] with t ht htT
+    simpa only [min_eq_left (α := ℝ≥0) htT] using ht
+  have htime : ∀ᵐ p : ℝ≥0 × Ω ∂(μ.restrict (Iic T)).prod P, p.1 ≤ T :=
+    Measure.quasiMeasurePreserving_fst.ae (ae_restrict_mem measurableSet_Iic)
+  filter_upwards [hc, htime] with p hp ht
+  simpa only [Function.uncurry_def, min_eq_left (α := ℝ≥0) ht] using hp

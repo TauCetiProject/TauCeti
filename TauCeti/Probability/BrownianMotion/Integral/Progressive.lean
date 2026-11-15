@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Process.TimeAverage
+public import TauCeti.MeasureTheory.Measure.NNReal
+import TauCeti.Probability.Process.Progressive
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -27,6 +29,10 @@ right continuity, or even s-finiteness of the sample measure is required.
 The selection reuses
 `MeasureTheory.IsStronglyProgressive.exists_isStronglyPredictable_ae_time`; this file supplies
 the local square-energy domain, not a construction of the stochastic integral itself.
+Both the energy hypothesis and the pathwise agreement use nonnegative time with pullback
+Lebesgue measure. Under s-finiteness of the sample measure,
+`MeasureTheory.IsStronglyProgressive.exists_locallyBrownianIntegrable_ae_prod` also supplies
+finite-horizon product-a.e. agreement for the same locally integrable representative.
 
 ## References
 
@@ -52,39 +58,51 @@ theorem exists_locallyBrownianIntegrable_ae_time
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
     {P : Measure Ω} {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyProgressive ℱ H)
     (henergy : ∀ n : ℕ, ∀ᵐ ω ∂P,
-      (∫⁻ t in Ioc 0 (n : ℝ), ‖H t.toNNReal ω‖ₑ ^ 2) < ∞) :
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
+        ((↑) : ℝ≥0 → ℝ))) < ∞) :
     ∃ G : ℝ≥0 → Ω → ℝ, TauCeti.LocallyBrownianIntegrable ℱ P G ∧
-      ∀ ω, ∀ᵐ t ∂volume.restrict (Ioi (0 : ℝ)),
-        G t.toNNReal ω = H t.toNNReal ω := by
+      ∀ ω, (fun t ↦ G t ω) =ᵐ[TauCeti.nnvolume] (fun t ↦ H t ω) := by
   obtain ⟨G, hG, heq⟩ := hH.exists_isStronglyPredictable_ae_time
-  refine ⟨G, TauCeti.locallyBrownianIntegrable_iff_nat.2 ⟨hG, fun n ↦ ?_⟩, heq⟩
-  -- Inclusion of nonnegative time preserves the finite-horizon Lebesgue measure.
-  have hcoe : MeasurePreserving ((↑) : ℝ≥0 → ℝ)
-      ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
-      (volume.restrict (Ioc 0 (n : ℝ))) := by
-    refine ⟨measurable_coe_nnreal_real, ?_⟩
-    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap, NNReal.range_coe,
-      Measure.restrict_restrict measurableSet_Ici,
-      inter_eq_right.mpr (fun (t : ℝ) (ht : t ∈ Ioc (0 : ℝ) (n : ℝ)) ↦ ht.1.le)]
+  have heq' (ω : Ω) : (fun t ↦ G t ω) =ᵐ[TauCeti.nnvolume] (fun t ↦ H t ω) := by
+    have hcoe : MeasurePreserving ((↑) : ℝ≥0 → ℝ) TauCeti.nnvolume
+        (volume.restrict (Ici (0 : ℝ))) :=
+      ⟨measurable_coe_nnreal_real, TauCeti.map_coe_nnvolume⟩
+    have hω := ae_restrict_of_ae_eq_of_ae_restrict Ioi_ae_eq_Ici (heq ω)
+    filter_upwards [hcoe.quasiMeasurePreserving.ae hω] with t ht
+    simpa only [Real.toNNReal_coe] using ht
+  refine ⟨G, TauCeti.locallyBrownianIntegrable_iff_nat.2 ⟨hG, fun n ↦ ?_⟩, heq'⟩
+  have hm : StronglyMeasurable (Function.uncurry G) := hG.mono ℱ.predictable_le_prod
   filter_upwards [henergy n] with ω hω
-  -- Cap at n solely to make the real-time section literally measurable everywhere.
-  have hm : StronglyMeasurable (fun t : ℝ ↦ G (min t.toNNReal n) ω) :=
-    (hG.isStronglyProgressive n).comp_measurable
-      ((measurable_real_toNNReal.min measurable_const).subtype_mk
-        (h := fun _ ↦ min_le_right _ _) |>.prodMk measurable_const)
-  have hcap : (fun t : ℝ ↦ G (min t.toNNReal n) ω) =ᵐ[
-      volume.restrict (Ioc 0 (n : ℝ))] (fun t ↦ G t.toNNReal ω) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    rw [min_eq_left (by simpa using Real.toNNReal_le_toNNReal ht.2)]
-  have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ G t.toNNReal ω)
-      (volume.restrict (Ioc 0 (n : ℝ))) := hm.aestronglyMeasurable.congr hcap
-  have heq' : (fun t : ℝ ↦ G t.toNNReal ω) =ᵐ[
-      volume.restrict (Ioc 0 (n : ℝ))] (fun t ↦ H t.toNNReal ω) :=
-    (heq ω).filter_mono (ae_mono (Measure.restrict_mono_set volume Ioc_subset_Ioi_self))
-  have hfinite : (∫⁻ t in Ioc 0 (n : ℝ), ‖G t.toNNReal ω‖ₑ ^ 2) < ∞ := by
+  have heqn : (fun t ↦ G t ω) =ᵐ[((volume.restrict (Ioc 0 (n : ℝ))).comap
+      ((↑) : ℝ≥0 → ℝ))] (fun t ↦ H t ω) := by
+    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← TauCeti.nnvolume_def]
+    exact ae_restrict_of_ae (heq' ω)
+  have hfinite : (∫⁻ t, ‖G t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
+      ((↑) : ℝ≥0 → ℝ))) < ∞ := by
     simpa only [Function.comp_apply] using
-      (lintegral_congr_ae (heq'.fun_comp (fun x : ℝ ↦ ‖x‖ₑ ^ 2))).trans_lt hω
-  have hLp := hmeas.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hfinite
-  simpa only [Function.comp_def, Real.toNNReal_coe] using hLp.comp_measurePreserving hcoe
+      (lintegral_congr_ae (heqn.fun_comp (fun x : ℝ ↦ ‖x‖ₑ ^ 2))).trans_lt hω
+  exact (hm.of_uncurry_right (y := ω)).aestronglyMeasurable
+    |>.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hfinite
+
+/-- A progressive real process with finite pathwise square energy has one locally
+Brownian-integrable predictable representative agreeing product-a.e. on every finite
+horizon. S-finiteness is needed only for this product-measure conclusion. -/
+theorem exists_locallyBrownianIntegrable_ae_prod
+    {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+    {P : Measure Ω} [SFinite P] {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyProgressive ℱ H)
+    (henergy : ∀ n : ℕ, ∀ᵐ ω ∂P,
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
+        ((↑) : ℝ≥0 → ℝ))) < ∞) :
+    ∃ G : ℝ≥0 → Ω → ℝ, TauCeti.LocallyBrownianIntegrable ℱ P G ∧ ∀ T : ℝ≥0,
+      Function.uncurry G =ᵐ[((volume.restrict (Ioc 0 (T : ℝ))).comap
+        ((↑) : ℝ≥0 → ℝ)).prod P] Function.uncurry H := by
+  obtain ⟨G, hG, heq⟩ := hH.exists_locallyBrownianIntegrable_ae_time henergy
+  refine ⟨G, hG, fun T ↦ ?_⟩
+  rw [NNReal.comap_volume_restrict_Ioc]
+  have h := hG.isStronglyPredictable.isStronglyProgressive.isProgressive.ae_eq_prod_of_ae_eq
+    hH.isProgressive (μ := TauCeti.nnvolume.restrict (Ioc 0 T)) (P := P) (T := T)
+    (Eventually.of_forall fun ω ↦ ae_restrict_of_ae (ae_restrict_of_ae (heq ω)))
+  simpa only [TauCeti.nnvolume_def, Measure.restrict_restrict measurableSet_Iic,
+    Iic_inter_Ioc_of_le le_rfl] using h
 
 end MeasureTheory.IsStronglyProgressive
