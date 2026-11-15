@@ -45,7 +45,9 @@ point (for a vector space target, `M = V`).
   `TauCeti.Floer.compatible_continuationAlmostComplex`: tameness and compatibility.
 * `TauCeti.Floer.continuationAlmostComplex_of_nonpos`,
   `TauCeti.Floer.continuationAlmostComplex_of_one_le`: its two ends.
-* `TauCeti.Floer.contMDiff_continuationAlmostComplex`: joint smoothness.
+* `TauCeti.Floer.contMDiff_continuationAlmostComplex`,
+  `TauCeti.Floer.contDiff_continuationAlmostComplex`: joint smoothness, over a manifold and over a
+  normed space of external points.
 
 ## References
 
@@ -189,6 +191,20 @@ theorem contMDiff_continuationAlmostComplex (h₀ : ω.Compatible J₀)
   have h₂ := (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J₂ p.1 p.2)
     (fun p => hJ₂ p.1 p.2) hJ₂s).comp hst
   exact ((contMDiff_const.sub hβ).smul h₁).add (hβ.smul h₂)
+
+/-- **The continuation homotopy over a vector space is smooth.** For families `J₁ t x` and
+`J₂ t x` of `ω`-tame structures depending on a point `x` of a normed space `F`, which are `C^n`
+on `ℝ × F`, the continuation homotopy is `C^n` jointly in `z = (s, t)` and `x`. -/
+theorem contDiff_continuationAlmostComplex {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (h₀ : ω.Compatible J₀) {J₁ J₂ : ℝ → F → AlmostComplexStructure V}
+    {hJ₁ : ∀ t x, ω.Tames (J₁ t x)} {hJ₂ : ∀ t x, ω.Tames (J₂ t x)} {n : ℕ∞}
+    (hJ₁s : ContDiff ℝ n fun p : ℝ × F => (J₁ p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ₂s : ContDiff ℝ n fun p : ℝ × F => (J₂ p.1 p.2).toLinearMap.toContinuousLinearMap) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × F =>
+      LinearMap.toContinuousLinearMap
+        (continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ p.1 p.2).toLinearMap := by
+  rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at hJ₁s hJ₂s ⊢
+  exact contMDiff_continuationAlmostComplex h₀ hJ₁s hJ₂s
 
 end Smooth
 
