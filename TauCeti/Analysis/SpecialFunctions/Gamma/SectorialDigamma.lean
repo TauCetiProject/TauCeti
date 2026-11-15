@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Robby Sneiderman. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: OpenAI Codex
+Authors: OpenAI Codex, Robby Sneiderman
 -/
 module
 
@@ -33,6 +33,11 @@ the second-order bound
 `‖digamma s - log s + 1 / (2s)‖ ≤ 2 / ((1 - cos δ) ^ 3 ‖s‖ ^ 2)` on the same sector
 (`Complex.norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le`). This is the input to Stirling's
 formula on sectors, the leading terms of [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1).
+
+The positive-strip estimate `Complex.exists_norm_digamma_le_log` supplies the logarithmic
+growth needed in the archimedean term of explicit formulas. Its proof adapts Robby
+Sneiderman’s strip argument from
+[PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
 
 The finite summation identity is exposed separately for subsequent integral representations
 and gamma asymptotics. All integral endpoints use Mathlib's oriented interval integral.
@@ -528,5 +533,73 @@ theorem norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le {s : ℂ} {δ : �
   convert h using 1
   field_simp
   ring
+
+/-! ### Logarithmic growth on positive vertical strips -/
+
+/-- A principal-log estimate uniform in the real part on a positive vertical strip. -/
+private theorem norm_log_on_positive_strip_le {a b : ℝ} (ha : 0 < a) {s : ℂ}
+    (hs : s.re ∈ Icc a b) :
+    ‖Complex.log s‖ ≤ |Real.log a| + Real.log (|b| + 1) +
+      Real.log (|s.im| + 2) + Real.pi / 2 := by
+  have hre : 0 < s.re := ha.trans_le hs.1
+  have hnorm : a ≤ ‖s‖ := hs.1.trans (re_le_norm s)
+  have hnorm0 : 0 < ‖s‖ := ha.trans_le hnorm
+  have harg : |s.arg| ≤ Real.pi / 2 := abs_arg_le_pi_div_two_iff.mpr hre.le
+  have hnormhi : ‖s‖ ≤ (|b| + 1) * (|s.im| + 2) := by
+    have h := norm_le_abs_re_add_abs_im s
+    rw [abs_of_pos hre] at h
+    have hb : 0 ≤ |b| := abs_nonneg b
+    have hi : 0 ≤ |s.im| := abs_nonneg s.im
+    have hsb : s.re ≤ |b| := hs.2.trans (le_abs_self b)
+    nlinarith [mul_nonneg hb hi]
+  have hlo : Real.log a ≤ Real.log ‖s‖ := Real.log_le_log ha hnorm
+  have hhi : Real.log ‖s‖ ≤ Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    simpa only [Real.log_mul (by positivity : |b| + 1 ≠ 0)
+      (by positivity : |s.im| + 2 ≠ 0)] using Real.log_le_log hnorm0 hnormhi
+  have hlogabs : |Real.log ‖s‖| ≤
+      |Real.log a| + Real.log (|b| + 1) + Real.log (|s.im| + 2) := by
+    refine abs_le.mpr ⟨?_, ?_⟩
+    · have hba := Real.log_nonneg (by linarith [abs_nonneg b] : 1 ≤ |b| + 1)
+      have hi := Real.log_nonneg (by linarith [abs_nonneg s.im] : 1 ≤ |s.im| + 2)
+      linarith [neg_abs_le (Real.log a)]
+    · linarith [abs_nonneg (Real.log a)]
+  have h := norm_le_abs_re_add_abs_im (Complex.log s)
+  rw [Complex.log_re, Complex.log_im] at h
+  linarith
+
+/-- Digamma has logarithmic norm growth at every height on each positive vertical strip.
+
+The constant is uniform in the real part, and strips with `b < a` are allowed. This estimate
+controls the gamma logarithmic derivative in archimedean explicit-formula integrals. -/
+theorem exists_norm_digamma_le_log {a b : ℝ} (ha : 0 < a) :
+    ∃ C : ℝ, 0 < C ∧ ∀ s : ℂ, s.re ∈ Icc a b →
+      ‖digamma s‖ ≤ C * Real.log (|s.im| + 2) := by
+  let D := 5 / a + |Real.log a| + Real.log (|b| + 1) + Real.pi / 2
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  have hD : 0 ≤ D := by
+    have hb := Real.log_nonneg (by linarith [abs_nonneg b] : 1 ≤ |b| + 1)
+    dsimp [D]
+    positivity
+  refine ⟨D / Real.log 2 + 1, by positivity, fun s hs ↦ ?_⟩
+  have hre : 0 < s.re := ha.trans_le hs.1
+  have herr : ‖digamma s - Complex.log s‖ ≤ 5 / a := by
+    have h := norm_digamma_sub_log_le_of_abs_arg_le (s := s) (δ := Real.pi / 2)
+      (by positivity) (by linarith [Real.pi_pos])
+      (by linarith [abs_arg_le_pi_div_two_iff.mpr hre.le])
+    simp only [Real.cos_pi_div_two] at h
+    norm_num at h
+    exact h.trans (div_le_div_of_nonneg_left (by norm_num) ha (hs.1.trans (re_le_norm s)))
+  have hbound : ‖digamma s‖ ≤ D + Real.log (|s.im| + 2) := by
+    have h := norm_add_le (digamma s - Complex.log s) (Complex.log s)
+    rw [sub_add_cancel] at h
+    have hlog := norm_log_on_positive_strip_le ha hs
+    dsimp [D]
+    linarith
+  have hL : Real.log 2 ≤ Real.log (|s.im| + 2) :=
+    Real.log_le_log (by norm_num) (by linarith [abs_nonneg s.im])
+  have h := mul_le_mul_of_nonneg_left hL (div_nonneg hD hlog2.le)
+  have hcancel : D / Real.log 2 * Real.log 2 = D := by field_simp
+  rw [hcancel] at h
+  nlinarith
 
 end Complex
