@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Card
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.Topology.Order.DenselyOrdered
 import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Algebra.BigOperators.Fin
@@ -44,18 +47,26 @@ one-dimensional isoperimetric inequality and its rigidity:
   perimeter at least `4` (`TauCeti.Real.four_le_perimeter`);
 * a bounded open interval has perimeter `2` (`TauCeti.Real.perimeter_Ioo`), and a set of
   finite measure has perimeter `2` exactly when it agrees almost everywhere with a nonempty such
-  interval (`TauCeti.Real.perimeter_eq_two_iff`).
+  interval (`TauCeti.Real.perimeter_eq_two_iff`);
+* the essential boundary of a nonempty bounded open interval `(a, b)` consists of its two
+  endpoints (`TauCeti.Real.essentialBoundary_Ioo`), so every finite-measure set agreeing almost
+  everywhere with an interval has at most two points in its essential boundary
+  (`TauCeti.Real.encard_essentialBoundary_le_two_of_ae_eq_ordConnected`).
 
 These are the statements about almost every line section that slicing arguments for sets of
 finite perimeter in higher dimensions apply: a section of perimeter less than `4` is an interval
-up to a null set.
+up to a null set and therefore has at most two essential boundary points.
 
 ## Main results
 
 * `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue
   points in `Ω` is at most `|Du|(Ω)`.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
-  `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
+  `TauCeti.Real.perimeter_Ioo`, `TauCeti.Real.perimeter_eq_two_iff` and
+  `TauCeti.Real.perimeter_le_two_iff`.
+* `TauCeti.Real.essentialBoundary_Ioo`,
+  `TauCeti.Real.encard_essentialBoundary_le_two_of_ae_eq_ordConnected` and
+  `TauCeti.Real.encard_essentialBoundary_le_two_of_perimeter_le_two`.
 
 ## References
 
@@ -373,5 +384,90 @@ theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
     · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
         ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
       exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
+
+/-- A nonempty bounded open interval `(a, b)` has density `1 / 2` at its left endpoint `a`. -/
+theorem hasDensityAt_Ioo_left {a b : ℝ} (hab : a < b) :
+    HasDensityAt volume (Ioo a b) a (1 / 2) := by
+  rw [hasDensityAt_iff]
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with r hr
+  have hsub : Ioo a b ∩ closedBall a r = Ioc a (a + r) := by
+    ext x
+    rw [Real.closedBall_eq_Icc, mem_inter_iff, mem_Ioo, mem_Icc, mem_Ioc]
+    exact ⟨fun h => ⟨h.1.1, h.2.2⟩,
+      fun h => ⟨⟨h.1, by linarith [hr.2]⟩, by linarith [hr.1], h.2⟩⟩
+  have hden : volume (closedBall a r) = 2 * ENNReal.ofReal r := by
+    have hlen : a + r - (a - r) = 2 * r := by ring
+    rw [Real.closedBall_eq_Icc, Real.volume_Icc, hlen, ENNReal.ofReal_mul zero_le_two,
+      ENNReal.ofReal_ofNat]
+  calc (1 / 2 : ℝ≥0∞)
+      = 1 * ENNReal.ofReal r / (2 * ENNReal.ofReal r) :=
+        (ENNReal.mul_div_mul_right 1 2 (ENNReal.ofReal_pos.2 hr.1).ne'
+          ENNReal.ofReal_ne_top).symm
+    _ = volume (Ioo a b ∩ closedBall a r) / volume (closedBall a r) := by
+        rw [one_mul, hsub, Real.volume_Ioc, add_sub_cancel_left, hden]
+
+/-- A nonempty bounded open interval `(a, b)` has density `1 / 2` at its right endpoint `b`. -/
+theorem hasDensityAt_Ioo_right {a b : ℝ} (hab : a < b) :
+    HasDensityAt volume (Ioo a b) b (1 / 2) := by
+  rw [hasDensityAt_iff]
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with r hr
+  have hsub : Ioo a b ∩ closedBall b r = Ico (b - r) b := by
+    ext x
+    rw [Real.closedBall_eq_Icc, mem_inter_iff, mem_Ioo, mem_Icc, mem_Ico]
+    exact ⟨fun h => ⟨h.2.1, h.1.2⟩,
+      fun h => ⟨⟨by linarith [hr.2], h.2⟩, h.1, by linarith [hr.1]⟩⟩
+  have hden : volume (closedBall b r) = 2 * ENNReal.ofReal r := by
+    have hlen : b + r - (b - r) = 2 * r := by ring
+    rw [Real.closedBall_eq_Icc, Real.volume_Icc, hlen, ENNReal.ofReal_mul zero_le_two,
+      ENNReal.ofReal_ofNat]
+  calc (1 / 2 : ℝ≥0∞)
+      = 1 * ENNReal.ofReal r / (2 * ENNReal.ofReal r) :=
+        (ENNReal.mul_div_mul_right 1 2 (ENNReal.ofReal_pos.2 hr.1).ne'
+          ENNReal.ofReal_ne_top).symm
+    _ = volume (Ioo a b ∩ closedBall b r) / volume (closedBall b r) := by
+        rw [one_mul, hsub, Real.volume_Ico, sub_sub_cancel, hden]
+
+/-- The essential boundary of a nonempty bounded open interval `(a, b)` consists of its two
+endpoints. -/
+theorem essentialBoundary_Ioo {a b : ℝ} (hab : a < b) :
+    essentialBoundary volume (Ioo a b) = {a, b} := by
+  refine Subset.antisymm (essentialBoundary_subset_frontier.trans_eq (frontier_Ioo hab)) ?_
+  have h0 : (1 / 2 : ℝ≥0∞) ≠ 0 := ENNReal.div_ne_zero.2 ⟨one_ne_zero, ENNReal.ofNat_ne_top⟩
+  have h1 : (1 / 2 : ℝ≥0∞) ≠ 1 := fun h => by
+    have := congrArg (· * (2 : ℝ≥0∞)) h
+    rw [ENNReal.div_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul] at this
+    norm_num at this
+  rintro x (rfl | rfl)
+  · exact mem_essentialBoundary.2
+      ⟨fun h => h1 ((hasDensityAt_Ioo_left hab).unique (mem_essentialInterior.1 h)),
+        fun h => h0 ((hasDensityAt_Ioo_left hab).unique (mem_essentialExterior.1 h))⟩
+  · exact mem_essentialBoundary.2
+      ⟨fun h => h1 ((hasDensityAt_Ioo_right hab).unique (mem_essentialInterior.1 h)),
+        fun h => h0 ((hasDensityAt_Ioo_right hab).unique (mem_essentialExterior.1 h))⟩
+
+/-- Any set `s ⊆ ℝ` of finite measure that agrees almost everywhere with an interval has at most
+two points in its essential boundary. -/
+theorem encard_essentialBoundary_le_two_of_ae_eq_ordConnected {s : Set ℝ} (hfin : volume s ≠ ∞)
+    (h : ∃ I : Set ℝ, I.OrdConnected ∧ s =ᵐ[volume] I) :
+    (essentialBoundary volume s).encard ≤ 2 := by
+  obtain ⟨I, hI, hsI⟩ := h
+  by_cases h0 : volume s = 0
+  · rw [essentialBoundary_congr_ae (ae_eq_empty.2 h0),
+      subset_empty_iff.1 (essentialBoundary_subset_frontier.trans (by simp))]
+    simp
+  · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
+      ((measure_congr hsI).symm ▸ h0) ((measure_congr hsI).symm ▸ hfin)
+    rw [essentialBoundary_congr_ae (hsI.trans hIab), essentialBoundary_Ioo hab,
+      Set.encard_pair hab.ne]
+
+/-- A null-measurable set `s ⊆ ℝ` of finite length and perimeter at most two has at most two
+points in its essential boundary. -/
+theorem encard_essentialBoundary_le_two_of_perimeter_le_two {s : Set ℝ}
+    (hs : NullMeasurableSet s) (hfin : volume s ≠ ∞) (hP : perimeter volume ⊤ s ≤ 2) :
+    (essentialBoundary volume s).encard ≤ 2 :=
+  encard_essentialBoundary_le_two_of_ae_eq_ordConnected hfin
+    ((perimeter_le_two_iff hs hfin).1 hP)
 
 end TauCeti.Real

@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
+public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
+import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Measure.WithDensity
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
-import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
 # Lebesgue decomposition of the BV derivative
@@ -33,6 +36,14 @@ vector measure is imposed on an unbounded domain. The density is unique `ν`-alm
 among locally integrable densities in such a decomposition (`ae_eq_acDerivativeDensity`),
 including when the competing singular reference measure is not σ-finite.
 
+Convolving a locally integrable `u` with a compactly supported `C¹` kernel `ρ` separates the two
+parts pointwise (`fderiv_convolution_lsmul_apply_eq`): at any `y` with `y - tsupport ρ ⊆ Ω`,
+`fderiv (ρ ⋆ u) y` is the sum of the `ρ`-mollified absolutely continuous derivative and the
+`ρ`-mollified singular derivative. When `ρ` is nonnegative, the operator norm of `fderiv (ρ ⋆ u) y`
+is therefore bounded by `(ρ ⋆ ‖acDerivativeDensity‖) y` plus the integral of `ρ (y - ·)` against
+`|Du|.singularPart ν` (`norm_fderiv_convolution_lsmul_le`,
+`norm_fderiv_convolution_lsmul_top_le`).
+
 ## References
 
 * L. Ambrosio, N. Fusco, D. Pallara, *Functions of Bounded Variation and Free Discontinuity
@@ -46,7 +57,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace TestFunction Set
-open scoped ENNReal Distributions RealInnerProductSpace
+open scoped Convolution ENNReal Distributions RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω : Opens E} {u : E → ℝ}
@@ -233,5 +244,177 @@ theorem acDerivativeDensity_congr_ae {v : E → ℝ} (h : u =ᵐ[μ.restrict Ω]
   by_cases hzero : (variationMeasure μ Ω u).rnDeriv ν x = 0
   · simp [hzero]
   · rw [not_imp_comm.mp hx hzero]
+
+omit hu in
+/-- **Derivative of a mollification via the BV Lebesgue decomposition.** Let `u` be locally
+integrable on `E` with locally finite variation on `Ω`, and let `ρ : E → ℝ` be `C¹` with compact
+support. At any `y` with `y - tsupport ρ ⊆ Ω`, the directional derivative of `ρ ⋆ u` along `v`
+splits into the `ρ`-weighted integrals of `⟪v, acDerivativeDensity⟫` against `ν` and of
+`⟪v, polarDensity⟫` against the singular variation measure. -/
+theorem fderiv_convolution_lsmul_apply_eq [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+    [SigmaFinite ν] (hu_loc : LocallyIntegrable u μ) {ρ : E → ℝ} (hρ : ContDiff ℝ 1 ρ)
+    (hρc : HasCompactSupport ρ) {y : E} (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) (v : E) :
+    (fderiv ℝ (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] u) y) v =
+      (∫ x : Ω, ρ (y - x) * ⟪v, acDerivativeDensity μ Ω u ν x⟫ ∂ν) +
+        ∫ x : Ω, ρ (y - x) * ⟪v, polarDensity μ Ω u x⟫
+          ∂(variationMeasure μ Ω u).singularPart ν := by
+  have := Ω.isOpen.locallyCompactSpace
+  have huΩ : LocallyIntegrableOn u Ω μ := hu_loc.locallyIntegrableOn Ω
+  let L0 : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ
+  have hce := (hρc.fderiv ℝ).convolutionExists_left
+    (L0.precompL E :) (hρ.continuous_fderiv one_ne_zero) hu_loc y
+  have hconv : (fderiv ℝ (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] u) y) v =
+      ∫ z, fderiv ℝ ρ (y - z) v * u z ∂μ := by
+    rw [(hρc.hasFDerivAt_convolution_left L0 hρ hu_loc y).fderiv,
+      convolution_def, ContinuousLinearMap.integral_apply hce]
+    simp only [L0, ContinuousLinearMap.precompL_apply,
+      ContinuousLinearMap.lsmul_apply, smul_eq_mul]
+    rw [← integral_sub_left_eq_self _ μ y]
+    simp_rw [sub_sub_self]
+  -- Test the `C¹` polar decomposition against `z ↦ -ρ(y - z) • v` (divergence `Dρ(y - z) v`).
+  set K : Set E := (fun t => y - t) '' tsupport ρ
+  have hK : IsCompact K := hρc.isCompact.image (continuous_const.sub continuous_id)
+  have hKΩ : K ⊆ Ω := by rintro _ ⟨t, ht, rfl⟩; exact hy t ht
+  set Ψ : E → E := fun z => ρ (y - z) • v
+  have hΨ0 (z : E) (hz : z ∉ K) : Ψ z = 0 := by
+    have hzt : y - z ∉ tsupport ρ := fun h => hz ⟨y - z, h, sub_sub_cancel y z⟩
+    simp [Ψ, image_eq_zero_of_notMem_tsupport hzt]
+  have hΨc : HasCompactSupport Ψ := HasCompactSupport.intro hK hΨ0
+  have hΨΩ : tsupport Ψ ⊆ Ω :=
+    (closure_minimal (Function.support_subset_iff'.2 hΨ0) hK.isClosed).trans hKΩ
+  have hΨ1 : ContDiff ℝ 1 Ψ := (hρ.comp (contDiff_const.sub contDiff_id)).smul contDiff_const
+  have htr (z : E) : LinearMap.trace ℝ E (fderiv ℝ (-Ψ) z : E →ₗ[ℝ] E) =
+      fderiv ℝ ρ (y - z) v := by
+    set χ : E → ℝ := fun z => -ρ (y - z)
+    have hχd : HasFDerivAt χ (fderiv ℝ ρ (y - z)) z := by
+      have h1 : HasFDerivAt (fun z => y - z) (-ContinuousLinearMap.id ℝ E) z :=
+        (hasFDerivAt_id z).const_sub y
+      exact (((hρ.differentiable one_ne_zero) (y - z)).hasFDerivAt.comp z h1).neg.congr_fderiv
+        (by ext w; simp)
+    have hneg : (-Ψ) = fun z => χ z • v := by ext w; simp [Ψ, χ]
+    rw [hneg, trace_fderiv_smul_const hχd.differentiableAt v, hχd.fderiv]
+  have hibp : ∫ z, fderiv ℝ ρ (y - z) v * u z ∂μ =
+      ∫ x : Ω, ⟪Ψ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u := by
+    have h0 := integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity (φ := -Ψ) huΩ hfin
+      hΨ1.neg hΨc.neg (tsupport_neg Ψ ▸ hΨΩ)
+    simp_rw [htr] at h0
+    simp only [Pi.neg_apply, inner_neg_left, integral_neg, neg_neg] at h0
+    exact h0
+  -- Split `|Du|` into its `ν`-absolutely continuous part and its `ν`-singular part.
+  let lam := variationMeasure μ Ω u
+  have hint := integrable_inner_polarDensity (μ := μ) (Ω := Ω) (u := u) hΨ1.continuous hΨc hΨΩ
+  have hac := hint.mono_measure (Measure.withDensity_rnDeriv_le lam ν)
+  have hsing := hint.mono_measure (Measure.singularPart_le lam ν)
+  have hsplit := congrArg
+    (fun m : Measure Ω => ∫ x : Ω, ⟪Ψ x, polarDensity μ Ω u x⟫ ∂m)
+    (Measure.rnDeriv_add_singularPart lam ν)
+  rw [integral_add_measure hac hsing,
+    integral_withDensity_eq_integral_toReal_smul (Measure.measurable_rnDeriv _ _)
+      (Measure.rnDeriv_lt_top lam ν)] at hsplit
+  rw [hconv, hibp, ← hsplit]
+  simp only [Ψ, acDerivativeDensity_def, real_inner_smul_left, inner_smul_right, smul_eq_mul,
+    mul_left_comm, lam]
+
+omit hu in
+/-- **Pointwise gradient bound for a nonnegative mollification.** For a nonnegative compactly
+supported `C¹` kernel `ρ` and `y - tsupport ρ ⊆ Ω`, the norm of `fderiv (ρ ⋆ u) y` is bounded by
+the `ρ`-weighted integral of `‖acDerivativeDensity‖` against `ν` plus the integral of `ρ (y - ·)`
+against `|Du|.singularPart ν`. -/
+theorem norm_fderiv_convolution_lsmul_le [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+    [SigmaFinite ν] (hu_loc : LocallyIntegrable u μ) {ρ : E → ℝ} (hρ : ContDiff ℝ 1 ρ)
+    (hρc : HasCompactSupport ρ) (hρ0 : ∀ t, 0 ≤ ρ t) {y : E} (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) :
+    ‖fderiv ℝ (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] u) y‖ ≤
+      (∫ x : Ω, ρ (y - x) * ‖acDerivativeDensity μ Ω u ν x‖ ∂ν) +
+        ∫ x : Ω, ρ (y - x) ∂(variationMeasure μ Ω u).singularPart ν := by
+  have := Ω.isOpen.locallyCompactSpace
+  have huΩ : LocallyIntegrableOn u Ω μ := hu_loc.locallyIntegrableOn Ω
+  let ω := (variationMeasure μ Ω u).singularPart ν
+  have : IsFiniteMeasureOnCompacts ω :=
+    ⟨fun C hC => (Measure.singularPart_le _ _ C).trans_lt hC.measure_lt_top⟩
+  set K : Set E := (fun t => y - t) '' tsupport ρ
+  have hK : IsCompact K := hρc.isCompact.image (continuous_const.sub continuous_id)
+  have hKΩ : K ⊆ Ω := by rintro _ ⟨t, ht, rfl⟩; exact hy t ht
+  have hKsub : IsCompact (((↑) : Ω → E) ⁻¹' K) :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)
+  have hρsub : HasCompactSupport (fun x : Ω => ρ (y - x)) :=
+    HasCompactSupport.intro hKsub fun x hx =>
+      image_eq_zero_of_notMem_tsupport fun h => hx ⟨y - x, h, sub_sub_cancel y x⟩
+  have hρcont : Continuous (fun x : Ω => ρ (y - x)) :=
+    hρ.continuous.comp (continuous_const.sub continuous_subtype_val)
+  have hint_vec : Integrable (fun x : Ω => ρ (y - x) • acDerivativeDensity μ Ω u ν x) ν :=
+    (locallyIntegrable_acDerivativeDensity huΩ hfin ν).integrable_smul_left_of_hasCompactSupport
+      hρcont hρsub
+  have hint_ac : Integrable (fun x : Ω => ρ (y - x) * ‖acDerivativeDensity μ Ω u ν x‖) ν :=
+    hint_vec.norm.congr (.of_forall fun x => by simp [norm_smul, Real.norm_of_nonneg (hρ0 _)])
+  have hint_s : Integrable (fun x : Ω => ρ (y - x)) ω :=
+    hρcont.integrable_of_hasCompactSupport hρsub
+  refine ContinuousLinearMap.opNorm_le_bound _
+    (add_nonneg (integral_nonneg fun x => mul_nonneg (hρ0 _) (norm_nonneg _))
+      (integral_nonneg fun x => hρ0 _)) fun v => ?_
+  rw [fderiv_convolution_lsmul_apply_eq hfin ν hu_loc hρ hρc hy v]
+  have hb1 : ‖∫ x : Ω, ρ (y - x) * ⟪v, acDerivativeDensity μ Ω u ν x⟫ ∂ν‖ ≤
+      (∫ x : Ω, ρ (y - x) * ‖acDerivativeDensity μ Ω u ν x‖ ∂ν) * ‖v‖ := by
+    rw [← integral_mul_const]
+    refine norm_integral_le_of_norm_le (hint_ac.mul_const ‖v‖) (.of_forall fun x => ?_)
+    rw [norm_mul, Real.norm_of_nonneg (hρ0 _), mul_assoc]
+    exact mul_le_mul_of_nonneg_left
+      ((norm_inner_le_norm _ _).trans_eq (mul_comm _ _)) (hρ0 _)
+  have hb2 : ‖∫ x : Ω, ρ (y - x) * ⟪v, polarDensity μ Ω u x⟫ ∂ω‖ ≤
+      (∫ x : Ω, ρ (y - x) ∂ω) * ‖v‖ := by
+    rw [← integral_mul_const]
+    refine norm_integral_le_of_norm_le (hint_s.mul_const ‖v‖) ?_
+    filter_upwards [ae_mono (Measure.singularPart_le _ _) (ae_norm_polarDensity_eq_one huΩ hfin)]
+      with x hx
+    rw [norm_mul, Real.norm_of_nonneg (hρ0 _)]
+    exact mul_le_mul_of_nonneg_left
+      ((norm_inner_le_norm _ _).trans (by rw [hx, mul_one])) (hρ0 _)
+  calc ‖(∫ x : Ω, ρ (y - x) * ⟪v, acDerivativeDensity μ Ω u ν x⟫ ∂ν) +
+        ∫ x : Ω, ρ (y - x) * ⟪v, polarDensity μ Ω u x⟫ ∂ω‖
+      ≤ ‖∫ x : Ω, ρ (y - x) * ⟪v, acDerivativeDensity μ Ω u ν x⟫ ∂ν‖ +
+        ‖∫ x : Ω, ρ (y - x) * ⟪v, polarDensity μ Ω u x⟫ ∂ω‖ := norm_add_le _ _
+    _ ≤ (∫ x : Ω, ρ (y - x) * ‖acDerivativeDensity μ Ω u ν x‖ ∂ν) * ‖v‖ +
+        (∫ x : Ω, ρ (y - x) ∂ω) * ‖v‖ := add_le_add hb1 hb2
+    _ = ((∫ x : Ω, ρ (y - x) * ‖acDerivativeDensity μ Ω u ν x‖ ∂ν) +
+        ∫ x : Ω, ρ (y - x) ∂ω) * ‖v‖ := (add_mul _ _ _).symm
+
+omit hu hfin in
+/-- **Whole-space gradient bound for a nonnegative mollification.** When `u` has locally finite
+variation on `E`, `‖fderiv (ρ ⋆ u) y‖` is bounded by `(ρ ⋆ ‖g‖) y` plus the integral of
+`ρ (y - ·)` against the singular variation measure, where `g` is the `μ`-absolutely continuous
+derivative density of `u`. -/
+theorem norm_fderiv_convolution_lsmul_top_le [SigmaFinite μ] [μ.IsAddLeftInvariant]
+    [μ.IsNegInvariant] (hu_loc : LocallyIntegrable u μ)
+    (hfin_top : ∀ K : Set E, IsCompact K → K ⊆ (⊤ : Opens E) →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {ρ : E → ℝ} (hρ : ContDiff ℝ 1 ρ) (hρc : HasCompactSupport ρ) (hρ0 : ∀ t, 0 ≤ ρ t) (y : E) :
+    let ν : Measure (⊤ : Opens E) := μ.comap Subtype.val
+    ‖fderiv ℝ (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] u) y‖ ≤
+      (ρ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ]
+        fun z => ‖acDerivativeDensity μ ⊤ u ν ⟨z, Opens.mem_top z⟩‖) y +
+        ∫ x : (⊤ : Opens E), ρ (y - x) ∂(variationMeasure μ ⊤ u).singularPart ν := by
+  intro ν
+  let e : E ≃ᵐ (⊤ : Opens E) :=
+    { toFun := fun x => ⟨x, Opens.mem_top x⟩
+      invFun := Subtype.val
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl
+      measurable_toFun := measurable_id.subtype_mk
+      measurable_invFun := measurable_subtype_coe }
+  have hν : ν = μ.map e := MeasurableEquiv.comap_symm e
+  have : SigmaFinite ν := hν ▸ e.sigmaFinite_map
+  have hm : MeasurableEmbedding (Subtype.val : (⊤ : Opens E) → E) := e.symm.measurableEmbedding
+  have hmp : MeasurePreserving (Subtype.val : (⊤ : Opens E) → E) ν μ :=
+    ⟨measurable_subtype_coe,
+      by rw [hm.map_comap, Subtype.range_coe, Opens.coe_top, Measure.restrict_univ]⟩
+  refine (norm_fderiv_convolution_lsmul_le (Ω := ⊤) hfin_top ν hu_loc hρ hρc hρ0
+    fun _ _ => Opens.mem_top _).trans_eq ?_
+  congr 1
+  have hcomp := hmp.integral_comp hm
+    (fun z => ρ (y - z) * ‖acDerivativeDensity μ ⊤ u ν ⟨z, Opens.mem_top z⟩‖)
+  refine hcomp.trans ?_
+  rw [convolution_def]
+  simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul]
+  rw [← integral_sub_left_eq_self _ μ y]
+  simp_rw [sub_sub_self]
 
 end TauCeti
