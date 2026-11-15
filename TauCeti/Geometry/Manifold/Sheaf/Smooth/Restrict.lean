@@ -10,7 +10,7 @@ public import Mathlib.Geometry.RingedSpace.Stalks
 public import Mathlib.Topology.Sheaves.Over
 
 /-!
-# Restricting the sheaf of smooth ring-valued functions to an open subset
+# Restricting sheaves of smooth functions to an open subset
 
 Let `R` be a smooth ring, for instance `ℂ` with the model `𝓘(ℂ)`. Mathlib's
 `smoothSheafRing IM I M R` is the sheaf of rings, valued in `RingCat`, of smooth functions
@@ -26,11 +26,13 @@ complex analytic functions.
 
 An open subset `U` of `M` is a manifold in its own right, with the restricted charts. This file
 identifies its sheaf of smooth functions with the restriction `U.sheafRestrict` of the sheaf of
-smooth functions on `M` (`TauCeti.smoothSheafRing.restrictIso`). Over an open subset `V` of `U`,
-a section of the restricted sheaf is a smooth function on the image of `V` in `M`, and the
-isomorphism composes it with the identification of `V` with its image. Composing with Mathlib's
-`TopologicalSpace.Opens.overPullbackSheafEquivOver` gives the same identification for the
-restriction to the over site of `U` (`TauCeti.smoothSheafRing.overIso`), the carrier of
+smooth functions on `M` (`TauCeti.smoothSheafRing.restrictIso`), together with the analogous
+identifications for smooth functions valued in a commutative or additive commutative Lie group
+(`TauCeti.smoothSheafCommGroup.restrictIso`, `TauCeti.smoothSheafAddCommGroup.restrictIso`). Over an
+open subset `V` of `U`, a section of the restricted sheaf is a smooth function on the image of `V`
+in `M`, and the isomorphism composes it with the identification of `V` with its image. Composing
+with Mathlib's `TopologicalSpace.Opens.overPullbackSheafEquivOver` gives the same identification for
+the restriction to the over site of `U` (`TauCeti.smoothSheafRing.overIso`), the carrier of
 `TopologicalSpace.Opens.sheafOfModulesEquivOver`. The identification is compatible with germs:
 through it, the stalk of the sheaf of `U` at `x` is the stalk of the sheaf of `M` at `x`
 (`TauCeti.smoothSheafRing.stalkIso`, `TauCeti.smoothSheafRing.germ_stalkIso_hom`).
@@ -44,6 +46,8 @@ No manifold axioms are needed: only the charted space structures enter.
 * `TauCeti.smoothSheafRing.overIso`: the same for the restriction to the over site of `U`.
 * `TauCeti.smoothSheafRing.stalkIso`: the stalks of the sheaves of `U` and of `M` at a point of `U`
   agree, compatibly with germs.
+* `TauCeti.smoothSheafCommGroup.restrictIso`, `TauCeti.smoothSheafAddCommGroup.restrictIso`:
+  restriction of `smoothSheafCommGroup` and `smoothSheafAddCommGroup` to an open subset `U`.
 
 ## References
 
@@ -185,5 +189,88 @@ theorem germ_stalkIso_hom (U : Opens (TopCat.of M)) (V : Opens U) (x : U) (hx : 
   exact AlgebraicGeometry.PresheafedSpace.restrictStalkIso_hom_eq_germ
     (AlgebraicGeometry.PresheafedSpace.mk (TopCat.of M) (smoothSheafRing IM I M R).presheaf)
     U.isOpenEmbedding V x hx
+
+section CommGroup
+
+variable (A : Type u) [TopologicalSpace A] [ChartedSpace H A]
+
+/-- Smooth group-valued functions on the image in `M` of an open subset `V` of `U` identify with
+smooth group-valued functions on `V`. -/
+@[to_additive /-- Smooth additive-group-valued functions on the image in `M` of an open subset `V`
+of `U` identify with smooth additive-group-valued functions on `V`. -/]
+private def sectionsGroupEquiv [CommGroup A] [LieGroup I ∞ A]
+    {U : Opens (TopCat.of M)} (V : Opens U) :
+    C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯ ≃* C^∞⟮IM, V; I, A⟯ where
+  toFun f := ⟨f ∘ toImage, f.contMDiff.comp (contMDiff_toImage V)⟩
+  invFun g := ⟨g ∘ ofImage, g.contMDiff.comp (contMDiff_ofImage V)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+/-- Restricting the sheaf of smooth functions on `M` valued in an abelian Lie group `A` to an open
+subset `U` identifies with the sheaf of smooth `A`-valued functions on the open submanifold `U`. -/
+@[to_additive TauCeti.smoothSheafAddCommGroup.restrictIso
+  /-- Restricting the sheaf of smooth functions on `M` valued in an additive abelian Lie group `A`
+  to an open subset `U` identifies with the sheaf of smooth `A`-valued functions on the open
+  submanifold `U`. -/]
+def _root_.TauCeti.smoothSheafCommGroup.restrictIso [CommGroup A] [LieGroup I ∞ A]
+    (U : Opens (TopCat.of M)) :
+    U.sheafRestrict.obj (smoothSheafCommGroup IM I M A) ≅ smoothSheafCommGroup IM I U A :=
+  ObjectProperty.isoMk _ <| NatIso.ofComponents
+    (fun V ↦ MulEquiv.toCommGrpIso
+      (X := (U.sheafRestrict.obj (smoothSheafCommGroup IM I M A)).obj.obj V)
+      (Y := (smoothSheafCommGroup IM I U A).obj.obj V)
+      (sectionsGroupEquiv IM I A V.unop))
+    (fun _ ↦ by ext f; exact ContMDiffMap.ext fun _ ↦ rfl)
+
+/-- The restriction isomorphism for `smoothSheafCommGroup` evaluates a section at the corresponding
+point of `M`. -/
+@[simp]
+theorem _root_.TauCeti.smoothSheafCommGroup.restrictIso_hom_app_apply
+    [CommGroup A] [LieGroup I ∞ A] (U : Opens (TopCat.of M)) (V : Opens U)
+    (f : C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯) (x : V) :
+    @DFunLike.coe (no_index C^∞⟮IM, V; I, A⟯) (no_index ↥V) (fun _ ↦ A) _
+        (no_index ((TauCeti.smoothSheafCommGroup.restrictIso IM I A U).hom.hom.app (op V) f)) x =
+      f ⟨x.1.1, x.1, x.2, rfl⟩ :=
+  (rfl)
+
+/-- The inverse of the restriction isomorphism for `smoothSheafCommGroup` evaluates a section at the
+corresponding point of `V`. -/
+@[simp]
+theorem _root_.TauCeti.smoothSheafCommGroup.restrictIso_inv_app_apply
+    [CommGroup A] [LieGroup I ∞ A] (U : Opens (TopCat.of M)) (V : Opens U)
+    (g : C^∞⟮IM, V; I, A⟯) (x : V) :
+    @DFunLike.coe (no_index C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯)
+        (no_index ↥(U.isOpenEmbedding.isOpenMap.functor.obj V)) (fun _ ↦ A) _
+        (no_index ((TauCeti.smoothSheafCommGroup.restrictIso IM I A U).inv.hom.app (op V) g))
+        (no_index ⟨x.1.1, x.1, x.2, rfl⟩) =
+      g x :=
+  (rfl)
+
+/-- The restriction isomorphism for `smoothSheafAddCommGroup` evaluates a section at the
+corresponding point of `M`. -/
+@[simp]
+theorem _root_.TauCeti.smoothSheafAddCommGroup.restrictIso_hom_app_apply
+    [AddCommGroup A] [LieAddGroup I ∞ A] (U : Opens (TopCat.of M)) (V : Opens U)
+    (f : C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯) (x : V) :
+    @DFunLike.coe (no_index C^∞⟮IM, V; I, A⟯) (no_index ↥V) (fun _ ↦ A) _
+        (no_index ((TauCeti.smoothSheafAddCommGroup.restrictIso IM I A U).hom.hom.app (op V) f)) x =
+      f ⟨x.1.1, x.1, x.2, rfl⟩ :=
+  (rfl)
+
+/-- The inverse of the restriction isomorphism for `smoothSheafAddCommGroup` evaluates a section at
+the corresponding point of `V`. -/
+@[simp]
+theorem _root_.TauCeti.smoothSheafAddCommGroup.restrictIso_inv_app_apply
+    [AddCommGroup A] [LieAddGroup I ∞ A] (U : Opens (TopCat.of M)) (V : Opens U)
+    (g : C^∞⟮IM, V; I, A⟯) (x : V) :
+    @DFunLike.coe (no_index C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, A⟯)
+        (no_index ↥(U.isOpenEmbedding.isOpenMap.functor.obj V)) (fun _ ↦ A) _
+        (no_index ((TauCeti.smoothSheafAddCommGroup.restrictIso IM I A U).inv.hom.app (op V) g))
+        (no_index ⟨x.1.1, x.1, x.2, rfl⟩) =
+      g x :=
+  (rfl)
+
+end CommGroup
 
 end TauCeti.smoothSheafRing

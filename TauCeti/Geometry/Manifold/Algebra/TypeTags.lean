@@ -44,6 +44,30 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 instance isManifold [IsManifold I n M] : IsManifold I n (Multiplicative M) :=
   inferInstanceAs (IsManifold I n M)
 
+/-- `Multiplicative.ofAdd` is `C^n` because `Multiplicative M` retains the charts of `M`. -/
+theorem contMDiff_ofAdd : ContMDiff I I n (Multiplicative.ofAdd : M → Multiplicative M) :=
+  (contMDiff_id)
+
+/-- `Multiplicative.toAdd` is `C^n` because `Multiplicative M` retains the charts of `M`. -/
+theorem contMDiff_toAdd : ContMDiff I I n (Multiplicative.toAdd : Multiplicative M → M) :=
+  (contMDiff_id)
+
+/-- Postcomposing with `Multiplicative.ofAdd` preserves `ContMDiffAt` in both directions. -/
+@[simp]
+theorem contMDiffAt_ofAdd_comp_iff {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+    [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {f : N → M} {x : N} :
+    ContMDiffAt J I n (Multiplicative.ofAdd ∘ f) x ↔ ContMDiffAt J I n f x :=
+  (Iff.rfl)
+
+/-- Postcomposing with `Multiplicative.ofAdd` preserves `ContMDiff` in both directions. -/
+@[simp]
+theorem contMDiff_ofAdd_comp_iff {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+    [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {f : N → M} :
+    ContMDiff J I n (Multiplicative.ofAdd ∘ f) ↔ ContMDiff J I n f :=
+  (Iff.rfl)
+
 /-- Smooth addition is smooth multiplication on the multiplicative type tag. -/
 instance contMDiffMul [Add M] [ContMDiffAdd I n M] : ContMDiffMul I n (Multiplicative M) where
   contMDiff_mul := contMDiff_add (I := I) (n := n) (G := M)
@@ -69,6 +93,30 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- The type tag retains the original smooth structure at the same regularity. -/
 instance isManifold [IsManifold I n M] : IsManifold I n (Additive M) :=
   inferInstanceAs (IsManifold I n M)
+
+/-- `Additive.ofMul` is `C^n` because `Additive M` retains the charts of `M`. -/
+theorem contMDiff_ofMul : ContMDiff I I n (Additive.ofMul : M → Additive M) :=
+  (contMDiff_id)
+
+/-- `Additive.toMul` is `C^n` because `Additive M` retains the charts of `M`. -/
+theorem contMDiff_toMul : ContMDiff I I n (Additive.toMul : Additive M → M) :=
+  (contMDiff_id)
+
+/-- Postcomposing with `Additive.ofMul` preserves `ContMDiffAt` in both directions. -/
+@[simp]
+theorem contMDiffAt_ofMul_comp_iff {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+    [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {f : N → M} {x : N} :
+    ContMDiffAt J I n (Additive.ofMul ∘ f) x ↔ ContMDiffAt J I n f x :=
+  (Iff.rfl)
+
+/-- Postcomposing with `Additive.ofMul` preserves `ContMDiff` in both directions. -/
+@[simp]
+theorem contMDiff_ofMul_comp_iff {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
+    [TopologicalSpace HN] {J : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {f : N → M} :
+    ContMDiff J I n (Additive.ofMul ∘ f) ↔ ContMDiff J I n f :=
+  (Iff.rfl)
 
 /-- Smooth multiplication is smooth addition on the additive type tag. -/
 instance contMDiffAdd [Mul M] [ContMDiffMul I n M] : ContMDiffAdd I n (Additive M) where
