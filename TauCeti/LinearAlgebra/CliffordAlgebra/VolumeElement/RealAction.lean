@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
--- Private: the splitting of a space by an involution is used only inside a proof.
-import TauCeti.LinearAlgebra.Eigenspace.Separation
+-- Private: the chirality decomposition of a complex representation is used only inside a proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 
 /-!
 # The chirality operator of a real Clifford action
 
 Let `V` be an oriented real inner product space of dimension `n`, `Q` a quadratic form on `V`
 and `ρ : Cℓ(V, Q) → End_ℂ(S)` a real algebra map into the complex endomorphisms of a complex
-vector space `S`, with Clifford multiplication `c(v) = ρ (ι Q v)`. Its complex-linear extension
+vector space `S`, with Clifford multiplication `c(v) = ρ (ι Q v)`. (The formulas for `ρ_ℂ(Γ)` and
+its anticommutation with `c(v)` hold for real algebra maps into any complex algebra.) Its
+complex-linear extension
 `ρ_ℂ = CliffordAlgebra.liftBaseChange ℂ Q ρ` makes `S` a module over the complexified Clifford
 algebra `Cℓ(ℂ ⊗ V, Q_ℂ)`, on which the vector `1 ⊗ v` acts by `c(v)`
 (`CliffordAlgebra.liftBaseChange_ι_tmul`). The normalized complex volume element `Γ`
@@ -32,9 +33,11 @@ eigenspaces are the half-spinor spaces `S⁺` and `S⁻` of `S`, complementary a
 Clifford multiplication.
 
 On a complex inner product space, `ρ_ℂ` is a `*`-representation for the conjugate-linear Clifford
-involution `CliffordAlgebra.conjStar` exactly when the real generators act skew-Hermitianly, the
-second clause of the geometric convention `AlgHom.IsGeometricClifford`. Since `Γ` is fixed by
-`conjStar`, under the geometric convention `ρ_ℂ(Γ)` is self-adjoint and the half-spinor spaces are
+involution `CliffordAlgebra.conjStar` exactly when the real generators act skew-Hermitianly
+(`CliffordAlgebra.adjoint_liftBaseChange_eq_conjStar_iff`), the second clause of the geometric
+convention `AlgHom.IsGeometricClifford`
+(`AlgHom.IsGeometricClifford.inner_liftBaseChange_apply_left`). Since `Γ` is fixed by `conjStar`,
+under the geometric convention `ρ_ℂ(Γ)` is self-adjoint and the half-spinor spaces are
 orthogonal. These are the forms of `Γ` and `S^±` used for Clifford-module bundles, whose fibres
 carry real Clifford actions.
 
@@ -49,14 +52,9 @@ carry real Clifford actions.
   `μ`-eigenspace of `ρ_ℂ(Γ)` into its `-μ`-eigenspace.
 * `CliffordAlgebra.isCompl_eigenspace_liftBaseChange_complexVolume`: for `Q v = -‖v‖²`, the
   half-spinor spaces `S⁺` and `S⁻` are complementary.
-* `CliffordAlgebra.adjoint_liftBaseChange_eq_conjStar_iff`: on a finite-dimensional Hermitian
-  module, `ρ_ℂ` is a `*`-representation for `conjStar` exactly when every `c(v)` is
-  skew-adjoint.
-* `AlgHom.IsGeometricClifford.inner_liftBaseChange_apply_left`: under the geometric convention,
-  `⟪ρ_ℂ(a) s, t⟫ = ⟪s, ρ_ℂ(conjStar a) t⟫` on a module of any dimension;
-  `AlgHom.IsGeometricClifford.isSymmetric_liftBaseChange_complexVolume`: `ρ_ℂ(Γ)` is
-  self-adjoint; `AlgHom.IsGeometricClifford.isOrtho_eigenspace_liftBaseChange_complexVolume`:
-  `S⁺ ⟂ S⁻`.
+* `AlgHom.IsGeometricClifford.isSymmetric_liftBaseChange_complexVolume`: under the geometric
+  convention `ρ_ℂ(Γ)` is self-adjoint, and
+  `AlgHom.IsGeometricClifford.isOrtho_eigenspace_liftBaseChange_complexVolume`: `S⁺ ⟂ S⁻`.
 
 ## References
 
@@ -72,30 +70,13 @@ open scoped InnerProductSpace TensorProduct
 
 namespace CliffordAlgebra
 
-section Hermitian
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
-  {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S}
-
-/-- **`*`-representations of the complexified Clifford algebra**: on a finite-dimensional
-Hermitian module, the complex-linear extension `ρ_ℂ` of a real Clifford action satisfies
-`ρ_ℂ(a)* = ρ_ℂ(conjStar a)` for every `a` exactly when Clifford multiplication by every real
-vector is skew-adjoint. -/
-theorem adjoint_liftBaseChange_eq_conjStar_iff :
-    (∀ a, LinearMap.adjoint (liftBaseChange ℂ Q ρ a) = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
-      ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v) := by
-  simpa only [liftBaseChange_ι_tmul, one_smul] using
-    adjoint_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ)
-
-end Hermitian
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin n))
 
-section Module
+section Algebra
 
-variable {S : Type*} [AddCommGroup S] [Module ℂ S] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S)
+variable {B : Type*} [Ring B] [Algebra ℂ B] [Algebra ℝ B] [IsScalarTower ℝ ℂ B]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
 
 /-- **The chirality operator of a real Clifford action**: the complex-linear extension of `ρ` sends
 the normalized complex volume element `Γ` to `i ^ ⌊(n + 1) / 2⌋ ρ(vol)`, for the real volume
@@ -120,8 +101,14 @@ theorem liftBaseChange_complexVolume_eq (b : OrthonormalBasis (Fin n) ℝ V)
 theorem liftBaseChange_complexVolume_mul_map_ι (hn : Even n) (v : V) :
     liftBaseChange ℂ Q ρ (complexVolume Q o) * ρ (ι Q v) =
       -(ρ (ι Q v) * liftBaseChange ℂ Q ρ (complexVolume Q o)) := by
-  have h := congrArg (liftBaseChange ℂ Q ρ) (complexVolume_mul_ι_of_even o hn (1 ⊗ₜ v))
-  simpa only [map_mul, map_neg, liftBaseChange_ι_tmul, one_smul] using h
+  simpa only [liftBaseChange_ι_tmul, one_smul] using
+    map_complexVolume_mul_map_ι o hn (liftBaseChange ℂ Q ρ) (1 ⊗ₜ v)
+
+end Algebra
+
+section Module
+
+variable {S : Type*} [AddCommGroup S] [Module ℂ S] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S)
 
 /-- **Clifford multiplication exchanges the half-spinors**: in even dimension, `c(v)` maps the
 `μ`-eigenspace of `ρ_ℂ(Γ)` into its `-μ`-eigenspace. -/
@@ -136,9 +123,8 @@ theorem map_ι_apply_mem_eigenspace_liftBaseChange_complexVolume_neg (hn : Even 
 eigenspaces `S⁺` and `S⁻` of `ρ_ℂ(Γ)` for the eigenvalues `1` and `-1` are complementary. -/
 theorem isCompl_eigenspace_liftBaseChange_complexVolume (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
     IsCompl ((liftBaseChange ℂ Q ρ (complexVolume Q o)).eigenspace 1)
-      ((liftBaseChange ℂ Q ρ (complexVolume Q o)).eigenspace (-1)) := by
-  refine TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit fun ψ ↦ ?_
-  rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one, one_apply_eq_self]
+      ((liftBaseChange ℂ Q ρ (complexVolume Q o)).eigenspace (-1)) :=
+  (liftBaseChange ℂ Q ρ).isCompl_eigenspace_complexVolume o hQ
 
 end Module
 
@@ -151,18 +137,8 @@ open CliffordAlgebra
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   {S : Type*} [NormedAddCommGroup S] [InnerProductSpace ℂ S]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} (hρ : ρ.IsGeometricClifford)
+  [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o : Orientation ℝ V (Fin n))
 include hρ
-
-/-- **A geometric action is a `*`-representation**: under the geometric convention, the
-complex-linear extension `ρ_ℂ` satisfies `⟪ρ_ℂ(a) s, t⟫ = ⟪s, ρ_ℂ(conjStar a) t⟫`, on a module
-of any dimension. -/
-theorem inner_liftBaseChange_apply_left (a : CliffordAlgebra (Q.baseChange ℂ)) (s t : S) :
-    ⟪liftBaseChange ℂ Q ρ a s, t⟫_ℂ = ⟪s, liftBaseChange ℂ Q ρ (conjStar Q a) t⟫_ℂ := by
-  refine sesqForm_map_eq_map_conjStar (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ) (fun v x y ↦ ?_) a s t
-  simpa only [innerₛₗ_apply_apply, liftBaseChange_ι_tmul, one_smul] using
-    hρ.inner_map_ι_apply_left v x y
-
-variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o : Orientation ℝ V (Fin n))
 
 /-- **The chirality operator of a geometric action is self-adjoint**: `ρ_ℂ(Γ)` is symmetric,
 since `Γ` is fixed by `conjStar`. -/

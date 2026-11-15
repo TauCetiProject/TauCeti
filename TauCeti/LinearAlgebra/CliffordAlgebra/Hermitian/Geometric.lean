@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -24,7 +25,8 @@ consequences: the polarized Clifford relation `c(v) c(w) + c(w) c(v) = -2 ⟪v, 
 of a unit orthogonal pair `e₁, e₂` (`c(eᵢ)² = -1`, `c(e₁) c(e₂) = -c(e₂) c(e₁)` and
 `(c(e₁) c(e₂))² = -1`), the equivalent adjoint form `c(v)* = -c(v)` of the second clause on a
 finite-dimensional module, under which the existing Hermitian Clifford-module results such as
-`CliffordAlgebra.adjoint_map_eq_map_star` apply.
+`CliffordAlgebra.adjoint_map_eq_map_star` apply, and the `*`-representation property of the
+complex-linear extension of the action.
 
 The skew-Hermitian clause is stated through inner products, so it makes sense on modules of any
 dimension. The positive convention `c(v)² = +‖v‖²` is excluded by the first clause: for `V = ℝ`
@@ -43,6 +45,10 @@ squares to `+1` and is Hermitian.
   pair, `(c(e₁) c(e₂))² = -1`.
 * `AlgHom.isGeometricClifford_iff_adjoint`: on a finite-dimensional module the convention is
   `Q v = -‖v‖²` together with `c(v)* = -c(v)`.
+* `AlgHom.IsGeometricClifford.inner_liftBaseChange_apply_left`: the complex-linear extension
+  `ρ_ℂ = CliffordAlgebra.liftBaseChange ℂ Q ρ` of a geometric action satisfies
+  `⟪ρ_ℂ(a) s, t⟫ = ⟪s, ρ_ℂ(conjStar a) t⟫` for the conjugate-linear Clifford involution
+  `CliffordAlgebra.conjStar`, on a module of any dimension.
 
 ## References
 
@@ -111,6 +117,15 @@ theorem map_ι_mul_map_ι_mul_self_of_orthonormal {e₁ e₂ : V} (h₁ : ‖e�
     _ = -1 := by
       rw [hρ.map_ι_mul_self_of_norm_eq_one h₁, hρ.map_ι_mul_self_of_norm_eq_one h₂]
       simp
+
+/-- **A geometric action is a `*`-representation**: under the geometric convention, the
+complex-linear extension `ρ_ℂ` satisfies `⟪ρ_ℂ(a) s, t⟫ = ⟪s, ρ_ℂ(conjStar a) t⟫`, on a module
+of any dimension. -/
+theorem inner_liftBaseChange_apply_left (a : CliffordAlgebra (Q.baseChange ℂ)) (s t : S) :
+    ⟪liftBaseChange ℂ Q ρ a s, t⟫_ℂ = ⟪s, liftBaseChange ℂ Q ρ (conjStar Q a) t⟫_ℂ := by
+  refine sesqForm_map_eq_map_conjStar (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ) (fun v x y ↦ ?_) a s t
+  simpa only [innerₛₗ_apply_apply, liftBaseChange_ι_tmul, one_smul] using
+    hρ.inner_map_ι_apply_left v x y
 
 end IsGeometricClifford
 

@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+-- Private: the polar form of `Q v = -‖v‖²` is used only inside a proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Hermitian metric of the normalized Fock module
@@ -349,9 +351,7 @@ theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
     have h := hQJ v
     rw [hQ, hQ, neg_inj] at h
     exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp h
-  have hpolar (a c : V) : polar Q a c = -(2 * ⟪a, c⟫) := by
-    rw [polar, hQ, hQ, hQ, norm_add_sq_real]
-    ring
+  have hpolar := QuadraticMap.polar_eq_neg_two_inner hQ
   obtain ⟨u, hu⟩ := J.exists_adapted_orthonormalBasis hJ ℓ hdim
   have hinner (a c : Fin (2 * ℓ)) : ⟪u a, u c⟫ = if a = c then 1 else 0 :=
     orthonormal_iff_ite.mp u.orthonormal a c
