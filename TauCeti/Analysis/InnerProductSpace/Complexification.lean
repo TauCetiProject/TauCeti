@@ -36,12 +36,16 @@ self-adjoint operator, to operators on real Hilbert spaces.
 ## Main declarations
 
 * `WithLp.instComplexificationInnerProductSpace`: the complex inner product space
-  `WithLp 2 (Complexification X)`, with `WithLp.complexification_re_inner` and
-  `WithLp.complexification_im_inner` computing the inner product from real and imaginary parts.
+  `WithLp 2 (Complexification X)`, with `WithLp.complexification_re_inner`,
+  `WithLp.complexification_im_inner` and `WithLp.complexification_inner_toLp_ofReal` computing the
+  inner product.
 * `WithLp.complexification_norm_sq_eq`: `‖x + i y‖² = ‖x‖² + ‖y‖²`.
+* `WithLp.complexificationOfRealₗᵢ`: the canonical real-linear isometric inclusion `x ↦ x + i 0`.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
   `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
+* `Submodule.complexifyL2`: the `L²` complexification of a real subspace, with
+  `Submodule.span_complexificationOfRealₗᵢ_image` and `Submodule.complexifyL2_le_orthogonal_iff`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
@@ -137,6 +141,19 @@ instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
 
+variable (X) in
+/-- The canonical real-linear isometric inclusion `x ↦ x + i 0` of a real normed space into its
+`L²` complexification. -/
+def complexificationOfRealₗᵢ : X →ₗᵢ[ℝ] WithLp 2 (Complexification X) where
+  toFun x := toLp 2 (Complexification.ofReal x)
+  map_add' x y := by apply ofLp_injective 2; ext <;> simp
+  map_smul' r x := by apply ofLp_injective 2; ext <;> simp
+  norm_map' := complexification_norm_toLp_ofReal
+
+@[simp]
+theorem complexificationOfRealₗᵢ_apply (x : X) :
+    complexificationOfRealₗᵢ X x = toLp 2 (Complexification.ofReal x) := (rfl)
+
 end Norm
 
 section InnerProductSpace
@@ -183,6 +200,14 @@ theorem complexification_re_inner (z w : WithLp 2 (Complexification X)) :
 theorem complexification_im_inner (z w : WithLp 2 (Complexification X)) :
     (⟪z, w⟫_ℂ).im = ⟪z.ofLp.re, w.ofLp.im⟫_ℝ - ⟪z.ofLp.im, w.ofLp.re⟫_ℝ := (rfl)
 
+/-- The complex inner product on the `L²` complexification extends the real inner product along
+`x ↦ x + i 0`. -/
+@[simp]
+theorem complexification_inner_toLp_ofReal (x y : X) :
+    ⟪toLp 2 (Complexification.ofReal x), toLp 2 (Complexification.ofReal y)⟫_ℂ =
+      (⟪x, y⟫_ℝ : ℂ) := by
+  apply Complex.ext <;> simp
+
 end InnerProductSpace
 
 end WithLp
@@ -190,6 +215,8 @@ end WithLp
 namespace Submodule
 
 open WithLp
+
+section NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -205,6 +232,23 @@ def complexifyL2 (S : Submodule ℝ E) : Submodule ℂ (WithLp 2 (Complexificati
 @[simp]
 theorem mem_complexifyL2 (S : Submodule ℝ E) (z : WithLp 2 (Complexification E)) :
     z ∈ S.complexifyL2 ↔ z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S := Iff.rfl
+
+/-- The complexification `S.complexifyL2` is the complex linear span of the real image of `S`. -/
+theorem span_complexificationOfRealₗᵢ_image (S : Submodule ℝ E) :
+    Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) = S.complexifyL2 := by
+  refine le_antisymm (Submodule.span_le.2 ?_) fun z hz ↦ ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    simpa using hx
+  · have hre : toLp 2 (Complexification.ofReal z.ofLp.re) ∈
+        Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) :=
+      Submodule.subset_span ⟨z.ofLp.re, hz.1, rfl⟩
+    have him : toLp 2 (Complexification.ofReal z.ofLp.im) ∈
+        Submodule.span ℂ (complexificationOfRealₗᵢ E '' (S : Set E)) :=
+      Submodule.subset_span ⟨z.ofLp.im, hz.2, rfl⟩
+    have hz_eq : z = toLp 2 (Complexification.ofReal z.ofLp.re) +
+        Complex.I • toLp 2 (Complexification.ofReal z.ofLp.im) := by
+      rw [← toLp_smul, ← toLp_add, Complexification.re_add_I_smul_im, toLp_ofLp]
+    exact hz_eq ▸ add_mem hre (Submodule.smul_mem _ Complex.I him)
 
 /-- Complexifying a real subspace preserves and reflects density. -/
 @[simp]
@@ -226,6 +270,38 @@ theorem dense_complexifyL2_iff (S : Submodule ℝ E) :
   rw [← e.isDenseEmbedding.dense_image, he]
   exact ⟨fun h ↦ (Prod.fst_surjective : Function.Surjective (Prod.fst : E × E → E)).denseRange
     |>.dense_of_mapsTo continuous_fst h (fun _ hx ↦ hx.1), fun h ↦ h.prod h⟩
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {X : Type*} [NormedAddCommGroup X] [InnerProductSpace ℝ X]
+
+/-- Two real subspaces of a real inner product space are orthogonal if and only if their `L²`
+complexifications are orthogonal. -/
+theorem forall_inner_eq_zero_complexifyL2_iff {S T : Submodule ℝ X} :
+    (∀ z ∈ S.complexifyL2, ∀ w ∈ T.complexifyL2, ⟪z, w⟫_ℂ = 0) ↔
+      ∀ x ∈ S, ∀ y ∈ T, ⟪x, y⟫_ℝ = 0 := by
+  refine ⟨fun h x hx y hy ↦ Complex.ofReal_eq_zero.mp ?_, fun h z hz w hw ↦ ?_⟩
+  · rw [← complexification_inner_toLp_ofReal]
+    exact h _ (by simp [hx]) _ (by simp [hy])
+  · apply Complex.ext <;> simp [h _ hz.1 _ hw.1, h _ hz.2 _ hw.2, h _ hz.1 _ hw.2, h _ hz.2 _ hw.1]
+
+/-- Complexifying real subspaces preserves and reflects orthogonality (`S ≤ Tᗮ`). -/
+@[simp]
+theorem complexifyL2_le_orthogonal_iff {S T : Submodule ℝ X} :
+    S.complexifyL2 ≤ T.complexifyL2ᗮ ↔ S ≤ Tᗮ := by
+  constructor
+  · intro h x hx
+    exact (T.mem_orthogonal x).2 fun y hy ↦
+      forall_inner_eq_zero_complexifyL2_iff.1
+        (fun w hw z hz ↦ (T.complexifyL2.mem_orthogonal z).1 (h hz) w hw) y hy x hx
+  · intro h z hz
+    exact (T.complexifyL2.mem_orthogonal z).2 fun w hw ↦
+      forall_inner_eq_zero_complexifyL2_iff.2
+        (fun y hy x hx ↦ (T.mem_orthogonal x).1 (h hx) y hy) w hw z hz
+
+end InnerProductSpace
 
 end Submodule
 
