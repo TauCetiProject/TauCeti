@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Basic
-public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.CategoryTheory.CofilteredSystem
 public import Mathlib.RingTheory.Artinian.Module
+
+import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Mittag-Leffler towers of modules
@@ -47,13 +48,11 @@ transitions reduce a family in `∏ₙ Aₙ`, modulo the image of the shift, to 
 
 ## References
 
-* [Stacks: Algebra, Definition 10.86.1, Tag 0594](https://stacks.math.columbia.edu/tag/0594)
+* [Stacks: Algebra, Definition 10.86.1, Tag 0595](https://stacks.math.columbia.edu/tag/0595)
 * [Stacks: More on Algebra, Lemma 15.88.1, Tag 07KW](https://stacks.math.columbia.edu/tag/07KW)
 -/
 
 public section
-
-noncomputable section
 
 namespace TauCeti
 
