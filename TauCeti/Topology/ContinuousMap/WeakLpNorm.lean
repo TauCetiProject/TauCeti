@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.Weak
 public import Mathlib.Topology.ContinuousMap.Compact
+public import TauCeti.Topology.ContinuousMap.PiLp
 import TauCeti.Topology.ContinuousMap.Compact
 
 /-!
@@ -24,9 +25,9 @@ reverse inequality, so `TauCeti.weakLpNorm p f` equals the supremum over `x : K`
 
 ## Main declarations
 
-* `ContinuousMap.piLp`, `ContinuousMap.piLpEquiv`: bundle a family `∀ i, C(X, E i)` into
-  `C(X, PiLp p E)` and identify the two types.
 * `ContinuousMap.norm_toLp_apply_le_weakLpNorm`: pointwise `ℓᵖ` bound by `TauCeti.weakLpNorm`.
+* `ContinuousMap.norm_piLp_le_weakLpNorm`: uniform-norm bound
+  `‖ContinuousMap.piLp p f‖ ≤ TauCeti.weakLpNorm p f`.
 * `ContinuousMap.sum_norm_apply_sq_le_weakLpNorm_two`: pointwise square-function bound at `p = 2`.
 * `ContinuousMap.weakLpNorm_eq_norm_piLp`: over `RCLike` scalars, `TauCeti.weakLpNorm p f` equals
   `‖ContinuousMap.piLp p f‖`.
@@ -40,77 +41,6 @@ open scoped ENNReal
 
 namespace ContinuousMap
 
-section TopologicalSpace
-
-variable {X ι : Type*} [TopologicalSpace X] {E : ι → Type*} [∀ i, TopologicalSpace (E i)]
-
-/-- Bundle a family of continuous maps `∀ i, C(X, E i)` into a continuous map into `PiLp p E`. -/
-def piLp (p : ℝ≥0∞) (f : ∀ i, C(X, E i)) : C(X, PiLp p E) where
-  toFun x := WithLp.toLp p fun i ↦ f i x
-  continuous_toFun := (PiLp.continuous_toLp p E).comp (ContinuousMap.pi f).continuous
-
-/-- Evaluating `ContinuousMap.piLp` collects the pointwise values in `PiLp`. -/
-@[simp]
-theorem piLp_apply (p : ℝ≥0∞) (f : ∀ i, C(X, E i)) (x : X) :
-    piLp p f x = WithLp.toLp p fun i ↦ f i x :=
-  (rfl)
-
-/-- Bundling a family of continuous maps `∀ i, C(X, E i)` into `C(X, PiLp p E)` as an
-equivalence. -/
-def piLpEquiv (p : ℝ≥0∞) : (∀ i, C(X, E i)) ≃ C(X, PiLp p E) where
-  toFun := piLp p
-  invFun g i := ⟨fun x ↦ g x i, (PiLp.continuous_apply p E i).comp g.continuous⟩
-  left_inv _ := funext fun _ ↦ ContinuousMap.ext fun _ ↦ rfl
-  right_inv _ := ContinuousMap.ext fun _ ↦ PiLp.ext fun _ ↦ rfl
-
-/-- Applying `ContinuousMap.piLpEquiv` applies `ContinuousMap.piLp`. -/
-@[simp]
-theorem piLpEquiv_apply (p : ℝ≥0∞) (f : ∀ i, C(X, E i)) :
-    piLpEquiv p f = piLp p f :=
-  (rfl)
-
-/-- Evaluating `(ContinuousMap.piLpEquiv p).symm` projects onto the `i`-th coordinate. -/
-@[simp]
-theorem piLpEquiv_symm_apply (p : ℝ≥0∞) (g : C(X, PiLp p E)) (i : ι) (x : X) :
-    (piLpEquiv p).symm g i x = g x i :=
-  (rfl)
-
-/-- `ContinuousMap.piLp` sends the zero family to `0`. -/
-@[simp]
-theorem piLp_zero (p : ℝ≥0∞) [∀ i, AddCommGroup (E i)] :
-    piLp p (0 : ∀ i, C(X, E i)) = 0 :=
-  ContinuousMap.ext fun _ ↦ rfl
-
-/-- `ContinuousMap.piLp` preserves addition. -/
-@[simp]
-theorem piLp_add (p : ℝ≥0∞) [∀ i, AddCommGroup (E i)] [∀ i, ContinuousAdd (E i)]
-    [ContinuousAdd (PiLp p E)] (f g : ∀ i, C(X, E i)) :
-    piLp p (f + g) = piLp p f + piLp p g :=
-  ContinuousMap.ext fun _ ↦ rfl
-
-/-- `ContinuousMap.piLp` commutes with negation. -/
-@[simp]
-theorem piLp_neg (p : ℝ≥0∞) [∀ i, AddCommGroup (E i)] [∀ i, ContinuousNeg (E i)]
-    [ContinuousNeg (PiLp p E)] (f : ∀ i, C(X, E i)) :
-    piLp p (-f) = -piLp p f :=
-  ContinuousMap.ext fun _ ↦ rfl
-
-/-- `ContinuousMap.piLp` preserves subtraction. -/
-@[simp]
-theorem piLp_sub (p : ℝ≥0∞) [∀ i, AddCommGroup (E i)] [∀ i, ContinuousSub (E i)]
-    [ContinuousSub (PiLp p E)] (f g : ∀ i, C(X, E i)) :
-    piLp p (f - g) = piLp p f - piLp p g :=
-  ContinuousMap.ext fun _ ↦ rfl
-
-/-- `ContinuousMap.piLp` commutes with scalar multiplication. -/
-@[simp]
-theorem piLp_smul {R : Type*} (p : ℝ≥0∞) [∀ i, SMul R (E i)] [∀ i, ContinuousConstSMul R (E i)]
-    [ContinuousConstSMul R (PiLp p E)] (c : R) (f : ∀ i, C(X, E i)) :
-    piLp p (c • f) = c • piLp p f :=
-  ContinuousMap.ext fun _ ↦ rfl
-
-end TopologicalSpace
-
 section NontriviallyNormedField
 
 variable {K 𝕜 ι : Type*} [TopologicalSpace K] [CompactSpace K] [NontriviallyNormedField 𝕜]
@@ -121,7 +51,7 @@ theorem norm_toLp_apply_le_weakLpNorm (f : ι → C(K, 𝕜)) (x : K) :
     ‖WithLp.toLp p fun i ↦ f i x‖ ≤ TauCeti.weakLpNorm (𝕜 := 𝕜) p f := by
   calc
     ‖WithLp.toLp p fun i ↦ f i x‖ =
-        ‖WithLp.toLp p fun i ↦ evalCLM 𝕜 x (f i)‖ := rfl
+        ‖WithLp.toLp p fun i ↦ evalCLM 𝕜 x (f i)‖ := by simp only [evalCLM_apply]
     _ ≤ TauCeti.weakLpNorm (𝕜 := 𝕜) p f * ‖evalCLM 𝕜 (M := 𝕜) x‖ :=
         TauCeti.norm_eval_le_weakLpNorm p f (evalCLM 𝕜 x)
     _ ≤ TauCeti.weakLpNorm (𝕜 := 𝕜) p f * 1 :=
@@ -131,7 +61,8 @@ theorem norm_toLp_apply_le_weakLpNorm (f : ι → C(K, 𝕜)) (x : K) :
 /-- The uniform norm of `ContinuousMap.piLp p f` is bounded by `TauCeti.weakLpNorm p f`. -/
 theorem norm_piLp_le_weakLpNorm (f : ι → C(K, 𝕜)) :
     ‖piLp p f‖ ≤ TauCeti.weakLpNorm (𝕜 := 𝕜) p f :=
-  (ContinuousMap.norm_le _ (apply_nonneg _ _)).2 (norm_toLp_apply_le_weakLpNorm p f)
+  (ContinuousMap.norm_le _ (apply_nonneg _ _)).2 fun x ↦ by
+    simpa only [piLp_apply] using norm_toLp_apply_le_weakLpNorm p f x
 
 /-- For finite `p`, the pointwise `p`-th power sum `∑ i, ‖f i x‖ ^ p.toReal` is at most
 `TauCeti.weakLpNorm p f ^ p.toReal`. -/
@@ -139,7 +70,7 @@ theorem sum_norm_apply_rpow_le_weakLpNorm (hp : p ≠ ∞) (f : ι → C(K, 𝕜
     ∑ i, ‖f i x‖ ^ p.toReal ≤ TauCeti.weakLpNorm (𝕜 := 𝕜) p f ^ p.toReal := by
   have hw : 0 ≤ TauCeti.weakLpNorm (𝕜 := 𝕜) p f := apply_nonneg _ _
   calc
-    ∑ i, ‖f i x‖ ^ p.toReal = ∑ i, ‖evalCLM 𝕜 x (f i)‖ ^ p.toReal := rfl
+    ∑ i, ‖f i x‖ ^ p.toReal = ∑ i, ‖evalCLM 𝕜 x (f i)‖ ^ p.toReal := by simp only [evalCLM_apply]
     _ ≤ (TauCeti.weakLpNorm (𝕜 := 𝕜) p f * ‖evalCLM 𝕜 (M := 𝕜) x‖) ^ p.toReal :=
         TauCeti.sum_norm_eval_rpow_le_weakLpNorm p hp f (evalCLM 𝕜 x)
     _ ≤ (TauCeti.weakLpNorm (𝕜 := 𝕜) p f * 1) ^ p.toReal :=
