@@ -37,6 +37,9 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
   natural number `r` exceeds the rank of `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
   power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
+* `ZLattice.exists_one_add_norm_pow_mul_norm_le_of_forall_hasSum`: a family of series along `L`
+  whose terms are bounded by `(1 + ‖η‖) ^ (-N) D (1 + ‖ℓ‖) ^ (-r)`, with `r` above the rank of
+  `L`, has sums bounded by a constant times `(1 + ‖η‖) ^ (-N)`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 * `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-(card d + 1))`
   converges.
@@ -117,6 +120,23 @@ theorem summable_one_add_norm_pow_mul_norm_of_decay {F : Type*} [SeminormedAddCo
   have hpos : 0 < (1 + ‖(ℓ : E)‖) ^ r := by positivity
   rw [← div_eq_mul_inv, le_div_iff₀ hpos, mul_right_comm, ← pow_add]
   exact hC ℓ
+
+/-- A family of lattice series whose terms are bounded by `(1 + ‖η‖) ^ (-N) D (1 + ‖m‖) ^ (-r)`,
+with `r` above the rank of the lattice, has sums bounded by a constant times `(1 + ‖η‖) ^ (-N)`. -/
+theorem exists_one_add_norm_pow_mul_norm_le_of_forall_hasSum {E' F : Type*}
+    [SeminormedAddCommGroup E'] [NormedAddCommGroup F] [NormedSpace ℝ F] {Γ : Set E'}
+    {f : E' → L → F} {s : E' → F}
+    (hs : ∀ η ∈ Γ, HasSum (f η) (s η)) {N r : ℕ} (hr : Module.finrank ℤ L < r) {D : ℝ}
+    (hf : ∀ η ∈ Γ, ∀ m, (1 + ‖η‖) ^ N * ‖f η m‖ ≤ D * ((1 + ‖(m : E)‖) ^ r)⁻¹) :
+    ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖s η‖ ≤ C := by
+  have hsum := summable_one_add_norm_pow_inv L hr
+  refine ⟨D * ∑' m : L, ((1 + ‖(m : E)‖) ^ r)⁻¹, fun η hη ↦ ?_⟩
+  have hη0 : (0 : ℝ) ≤ (1 + ‖η‖) ^ N := by positivity
+  have h := ((hs η hη).const_smul ((1 + ‖η‖) ^ N)).norm_le_of_bounded
+    (hsum.hasSum.mul_left D) fun m ↦ ?_
+  · rwa [norm_smul, Real.norm_of_nonneg hη0] at h
+  · rw [norm_smul, Real.norm_of_nonneg hη0]
+    exact hf η hη m
 
 end ZLattice
 

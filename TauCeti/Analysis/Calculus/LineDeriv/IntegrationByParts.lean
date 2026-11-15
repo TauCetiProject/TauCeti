@@ -57,6 +57,8 @@ Lipschitz test function.
   derivative, and `TauCeti.setIntegral_fderiv_apply_sub_fderiv_apply_eq_zero` its form for a
   difference of two directional derivatives over a set containing both supports.
   `TauCeti.integrable_fderiv_apply_of_hasCompactSupport` records the integrability.
+* `TauCeti.integral_mul_fderiv_eq_neg_fderiv_mul_of_hasCompactSupport`: integration by parts
+  `∫ u ∂_v g = -∫ (∂_v u) g` for a compactly supported `C¹` function `u` and a `C¹` function `g`.
 * `TauCeti.integral_sum_neg_fderiv_fderiv_apply_mul_eq_integral_sum_sq`: the Dirichlet energy
   identity `∫ ⟨-∂_v² φ, φ⟩ = ∫ |∂_v φ|²` for a compactly supported `C²` map into finite coordinate
   vectors.
@@ -184,6 +186,21 @@ theorem integrable_fderiv_apply_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
     (hsupp : HasCompactSupport u) (v : E) : Integrable (fun x ↦ fderiv ℝ u x v) μ :=
   ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
     (hsupp.fderiv_apply (𝕜 := ℝ) v)
+
+/-- **Integration by parts against a compactly supported factor.** If `u` is a compactly supported
+`C¹` function and `g` is `C¹`, with values in a normed algebra over `ℝ`, then
+`∫ u ∂_v g = -∫ (∂_v u) g`. -/
+theorem integral_mul_fderiv_eq_neg_fderiv_mul_of_hasCompactSupport {𝕜 : Type*} [NormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] {u g : E → 𝕜} (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+    (hg : ContDiff ℝ 1 g) (v : E) :
+    ∫ x, u x * fderiv ℝ g x v ∂μ = -∫ x, fderiv ℝ u x v * g x ∂μ :=
+  integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
+    ((((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).mul
+      hg.continuous).integrable_of_hasCompactSupport (hsupp.fderiv_apply (𝕜 := ℝ) v).mul_right)
+    ((hu.continuous.mul ((hg.continuous_fderiv one_ne_zero).clm_apply
+      continuous_const)).integrable_of_hasCompactSupport hsupp.mul_right)
+    ((hu.continuous.mul hg.continuous).integrable_of_hasCompactSupport hsupp.mul_right)
+    (fun x _ ↦ hu.differentiable one_ne_zero x) (fun x _ ↦ hg.differentiable one_ne_zero x)
 
 /-- For compactly supported `C¹` maps `f` and `g` whose supports lie in a set `D`, the integral
 over `D` of the difference of directional derivatives `x ↦ f'(x) v - g'(x) w` vanishes. -/

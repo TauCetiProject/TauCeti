@@ -48,6 +48,9 @@ of the wave front set of a complex distribution onto the base is exactly its sin
 
 * `Distribution.exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt` and
   `Distribution.exists_contDiff_apply_eq_integral_of_forall_decay`: the two steps above.
+* `Distribution.hasSum_fourier_mul_localFourier`: the pairing of `T` with a complex test function
+  `φ` on whose support `χ = 1`, as the lattice Fourier series
+  `∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T (χ e_(-m))`.
 * `Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt`: `T` is smooth near a
   point of `Ω` exactly when it is microlocally smooth there in every nonzero direction.
 * `Distribution.fst_image_waveFrontSet`: the projection of the wave front set is the singular
@@ -109,26 +112,23 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
 
 /-- **The pairing with a test function as a lattice Fourier series.** Let `L` be a full lattice
 none of whose nonzero vectors translates `tsupport χ` into a set meeting it. If `χ = 1` on the
-support of a real test function `φ`, then
+support of a complex test function `φ`, then
 `T φ = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T (χ e_(-m))`: expand `φ` in its Fourier series along
 `L` in the modulated cutoffs `χ e_(-m)` and pair with `T`. -/
-private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ))
+theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ))
     (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
-    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℝ)}
+    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℂ)}
     (hφ : EqOn (χ : E → ℂ) 1 (support φ)) :
     HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ *
-      𝓕 (fun y ↦ (φ y : ℂ)) m * T.localFourier χ (-m)) (T φ) := by
+      𝓕 (φ : E → ℂ) m * T.localFourier χ (-m)) (T.complexPairing φ) := by
   -- The cutoff and the test function as smooth functions supported in `K = tsupport χ`.
   let K : Compacts E := ⟨tsupport χ, χ.hasCompactSupport⟩
   have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
   let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
   have hχK (y : E) : χK y = χ y := by simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hφK : support (fun y ↦ (φ y : ℂ)) ⊆ K := fun y hy ↦ by
-    have hy' : y ∈ support φ := by simpa using hy
-    exact subset_tsupport _ (by simp [hφ hy'])
-  have hφc : ContDiff ℝ ∞ fun y ↦ (φ y : ℂ) := ofRealCLM.contDiff.comp φ.contDiff
-  let φK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset hφc hφK
-  have hφK' : (φK : E → ℂ) = fun y ↦ (φ y : ℂ) := by
+  have hφK : support φ ⊆ K := fun y hy ↦ subset_tsupport _ (by simp [hφ hy])
+  let φK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset φ.contDiff hφK
+  have hφK' : (φK : E → ℂ) = φ := by
     ext y
     simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]
   have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L φK χK
@@ -137,12 +137,11 @@ private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(
       exact hφ (by simpa [hφK'] using hy)
   -- Pair the expansion with `T`.
   let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L ofSupportedInCLM ℂ hKΩ
-  have hΛφ : Λ φK = T φ := by
-    have h : ofSupportedIn hKΩ φK = postcompCLM (𝕜 := ℝ) ofRealCLM φ := by
+  have hΛφ : Λ φK = T.complexPairing φ := by
+    have h : ofSupportedIn hKΩ φK = φ := by
       ext y
       simp [hφK']
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM, h,
-      complexPairing_postcompCLM_ofRealCLM]
+    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM, h]
   have hΛχ (m : ZLattice.dual L) (b : ℂ) :
       Λ (b • χK.modulate m) = b * T.localFourier χ (-m) := by
     rw [map_smul, smul_eq_mul]
@@ -179,7 +178,14 @@ theorem exists_contDiff_apply_eq_integral_of_forall_decay {T : 𝓓'(Ω, ℂ)} {
   have hnorm (m : ZLattice.dual L) (y : E) : ‖a m y‖ = ‖c * G (-m)‖ := by
     simp only [a, norm_smul, TauCeti.norm_fourierAtom, mul_one]
   refine ⟨fun y ↦ ∑' m, a m y, TauCeti.contDiff_tsum_smul_fourierAtom hb, fun φ hφ ↦ ?_⟩
-  rw [← (hasSum_fourier_mul_localFourier T χ L hL hφ).tsum_eq]
+  -- Expand `T φ` as a lattice series, viewing `φ` as a complex test function.
+  have hsum := hasSum_fourier_mul_localFourier T χ L hL
+    (φ := postcompCLM (𝕜 := ℝ) ofRealCLM φ) fun y hy ↦ hφ (by simpa using hy)
+  have hφc : ((postcompCLM (𝕜 := ℝ) ofRealCLM φ : 𝓓(Ω, ℂ)) : E → ℂ) = fun y ↦ (φ y : ℂ) := by
+    ext y
+    simp
+  rw [hφc, complexPairing_postcompCLM_ofRealCLM] at hsum
+  rw [← hsum.tsum_eq]
   -- Exchange the sum over the lattice with the integral.
   have hint (m : ZLattice.dual L) : Integrable (fun y ↦ φ y • a m y) := by
     refine Continuous.integrable_of_hasCompactSupport ?_ φ.hasCompactSupport.smul_right

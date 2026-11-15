@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Operator.Basic
 
 /-!
 # Rapid decay in conic neighbourhoods
@@ -46,6 +47,11 @@ direction combine into one condition on the whole frequency space.
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
 * `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
   cone, finitely many of these cones cover the nonzero vectors.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_sum_le`: a finite sum of functions decaying at order
+  `N` on a set decays at order `N` there.
+* `TauCeti.exists_cone_forall_mem_of_continuousAt`: if `A x` is a family of continuous linear maps
+  continuous at `x₀` and `A x₀ η₀ ≠ 0` lies in an open cone `Γ₁`, then for `x` near `x₀` and `η`
+  in an open cone around `η₀`, `A x η` lies in `Γ₁` and is at least a fixed multiple of `‖η‖`.
 
 ## References
 
@@ -56,6 +62,7 @@ direction combine into one condition on the whole frequency space.
 public section
 
 open Metric Set
+open scoped Topology
 
 namespace IsOpen
 
@@ -239,5 +246,67 @@ theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [Proper
     simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
   exact mem_iUnion₂.2 ⟨ξ, hξt, by
     simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+
+/-- A finite sum of functions decaying like `(1 + ‖η‖) ^ (-N)` on `Γ` decays like it. -/
+theorem exists_one_add_norm_pow_mul_norm_sum_le {ι G : Type*} [SeminormedAddCommGroup G]
+    (s : Finset ι) {F : ι → E → G} {Γ : Set E} {N : ℕ}
+    (h : ∀ i ∈ s, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖F i η‖ ≤ C) :
+    ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖∑ i ∈ s, F i η‖ ≤ C := by
+  choose! C hC using h
+  refine ⟨∑ i ∈ s, C i, fun η hη ↦ ?_⟩
+  calc (1 + ‖η‖) ^ N * ‖∑ i ∈ s, F i η‖ ≤ ∑ i ∈ s, (1 + ‖η‖) ^ N * ‖F i η‖ := by
+        rw [← Finset.mul_sum]
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ ∑ i ∈ s, C i := Finset.sum_le_sum fun i hi ↦ hC i hi η hη
+
+/-- **Cones transported by a continuous family of linear maps.** Let `A x : F →L[ℝ] E` depend
+continuously on `x` at `x₀`, and let `Γ₁` be an open cone containing `A x₀ η₀ ≠ 0`. Then there are
+`a > 0`, a neighbourhood `U₁` of `x₀` and an open cone `Γ ∋ η₀` such that `A x η ∈ Γ₁` and
+`‖A x η‖ ≥ a ‖η‖` for `x ∈ U₁` and `η ∈ Γ`. -/
+theorem exists_cone_forall_mem_of_continuousAt {X F : Type*} [TopologicalSpace X]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {A : X → F →L[ℝ] E} {x₀ : X}
+    (hA : ContinuousAt A x₀) {η₀ : F} (hη₀ : A x₀ η₀ ≠ 0) {Γ₁ : Set E} (hΓ₁ : IsOpen Γ₁)
+    (hcone₁ : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ₁, t • ζ ∈ Γ₁) (hξ : A x₀ η₀ ∈ Γ₁) :
+    ∃ a > 0, ∃ U₁ ∈ 𝓝 x₀, ∃ Γ : Set F, IsOpen Γ ∧ η₀ ∈ Γ ∧
+      (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ x ∈ U₁, ∀ η ∈ Γ, A x η ∈ Γ₁ ∧ a * ‖η‖ ≤ ‖A x η‖ := by
+  obtain ⟨Γ₂, hΓ₂, hξΓ₂, hcone₂, c₂, hc₂, hΓ₂₁⟩ := hΓ₁.exists_cone_closedBall_subset hcone₁ hξ
+  have hη0 : 0 < ‖η₀‖ := norm_pos_iff.2 fun h0 ↦ hη₀ (by simp [h0])
+  have hξ0 : 0 < ‖A x₀ η₀‖ := norm_pos_iff.2 hη₀
+  -- On the cone `Γ` of covectors `η` with `A x₀ η ∈ Γ₂`, `A x₀ η` is at least `2 a ‖η‖`.
+  set a := ‖A x₀ η₀‖ / (4 * ‖η₀‖)
+  have ha : 0 < a := by positivity
+  set Γ : Set F := {η | A x₀ η ∈ Γ₂ ∧ ‖η‖ * ‖A x₀ η₀‖ < 2 * ‖η₀‖ * ‖A x₀ η‖}
+  have hΓa (η : F) (hη : η ∈ Γ) : 2 * a * ‖η‖ ≤ ‖A x₀ η‖ := by
+    have h2 := hη.2
+    rw [show 2 * a * ‖η‖ = ‖η‖ * ‖A x₀ η₀‖ / (2 * ‖η₀‖) by ring, div_le_iff₀ (by positivity)]
+    linarith
+  -- Near `x₀`, `A x` is within `ε ‖η‖` of `A x₀` on `η`.
+  set ε := min (c₂ * a) a
+  obtain ⟨U₁, hU₁, hAU₁⟩ : ∃ U₁ ∈ 𝓝 x₀, ∀ x ∈ U₁, ‖A x - A x₀‖ < ε :=
+    ⟨_, hA (Metric.ball_mem_nhds _ (lt_min (mul_pos hc₂ ha) ha)), fun x hx ↦ by
+      simpa only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm] using hx⟩
+  refine ⟨a, ha, U₁, hU₁, Γ, (hΓ₂.preimage (A x₀).continuous).inter
+    (isOpen_lt (f := fun η : F ↦ ‖η‖ * ‖A x₀ η₀‖) (g := fun η ↦ 2 * ‖η₀‖ * ‖A x₀ η‖)
+      (by fun_prop) (by fun_prop)), ⟨hξΓ₂, by nlinarith⟩, fun t ht η ⟨h1, h2⟩ ↦ ⟨?_, ?_⟩,
+    fun x hx η hη ↦ ?_⟩
+  · simpa using hcone₂ t ht _ h1
+  · simp only [map_smul, norm_smul, Real.norm_eq_abs, abs_of_pos ht] at h2 ⊢
+    nlinarith
+  have hd : ‖A x η - A x₀ η‖ ≤ ε * ‖η‖ := by
+    rw [← sub_apply]
+    exact ((A x - A x₀).le_opNorm η).trans (by gcongr; exact (hAU₁ x hx).le)
+  have h2 := hΓa η hη
+  have hn := norm_nonneg η
+  have hεc : ε ≤ c₂ * a := min_le_left _ _
+  have hεa : ε ≤ a := min_le_right _ _
+  refine ⟨hΓ₂₁ _ hη.1 ?_, ?_⟩
+  · rw [Metric.mem_closedBall, dist_eq_norm]
+    nlinarith [mul_le_mul_of_nonneg_right hεc hn, mul_le_mul_of_nonneg_left h2 hc₂.le,
+      mul_nonneg hc₂.le (norm_nonneg (A x₀ η))]
+  · have h3 := norm_sub_norm_le (A x₀ η) (A x η)
+    rw [norm_sub_rev] at h3
+    nlinarith [mul_le_mul_of_nonneg_right hεa hn]
 
 end TauCeti
