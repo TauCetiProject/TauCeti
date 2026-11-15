@@ -207,7 +207,7 @@ theorem recursiveIn_eval_diag :
 theorem rePred_mem_jump_empty : REPred (· ∈ (∅ : Set ℕ).jump) :=
   (Partrec.nat_iff.2 <| (∅ : Set ℕ).recursiveIn_eval_diag.partrec_of_oracle fun g hg => by
     rw [Set.mem_singleton_iff.1 hg, oracle_empty]
-    exact Partrec.nat_iff.1 (Partrec.const' _)).dom_re
+    exact Partrec.nat_iff.1 (Partrec.const' _)).dom_re.of_eq fun _ => mem_jump.symm
 
 variable {A B : Set ℕ}
 
