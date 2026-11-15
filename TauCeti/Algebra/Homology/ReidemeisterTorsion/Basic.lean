@@ -18,6 +18,7 @@ import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
 import TauCeti.LinearAlgebra.Basis.Semilinear
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -104,6 +105,8 @@ be compared componentwise along the field homomorphisms between them.
   complexes of any shape.
 * `HomologicalComplex.torsionBracket_eq_det_append`: the bracket is the determinant of the boundary
   basis followed by the lifts.
+* `HomologicalComplex.sq_torsionBracket_eq_sq_det`: the bracket, transported along a linear
+  equivalence, is up to sign the determinant of the transported family in any order.
 * `HomologicalComplex.reidemeisterTorsion`: the torsion of a based chain complex.
 * `HomologicalComplex.reidemeisterTorsion_eq_finprod`: for a bounded acyclic complex, the torsion
   is the alternating product of the brackets for any boundary bases and lifts.
@@ -262,6 +265,36 @@ theorem torsionBracket_eq_det_right (hq : n j = q) :
   rw [Function.comp_apply, Equiv.trans_apply, finCongr_apply, this,
     finSumFinEquiv_symm_apply_natAdd, bracketBasis, Basis.ofExactLift_inr]
   rfl
+
+/-- A bracket computed in another space: if a linear equivalence `φ` sends the basis `c j` to a
+basis `hb` up to reindexing, the boundary basis `b₁` to a family `u` up to reindexing, and the
+lifts `s` to a family `w`, then the bracket is, up to sign, the determinant of `u` followed by `w`
+with respect to `hb`, in any order. -/
+theorem sq_torsionBracket_eq_sq_det {H : Type*} [AddCommGroup H] [Module F H]
+    (φ : C.X j ≃ₗ[F] H) {m : ℕ} (hb : Basis (Fin m) F H) (σ : Fin (n j) ≃ Fin m)
+    (hσ : ∀ l, φ (c j l) = hb (σ l)) {κ : Type*} (u : κ → H) (w : Fin q → H) (e₁ : Fin p ≃ κ)
+    (hu : ∀ l, φ (b₁ l) = u (e₁ l)) (hw : ∀ l, φ (s l) = w l) (e : Fin m ≃ κ ⊕ Fin q) :
+    torsionBracket c hi hk h b₁ b₀ s hs ^ 2 = hb.det (Sum.elim u w ∘ e) ^ 2 := by
+  have hn := eq_add_of_exactAt c hi hk h b₁ b₀
+  -- Transport the determinant along `φ`, which sends the basis `c j` to `hb`.
+  have hcb : hb = ((c j).map φ).reindex σ :=
+    Basis.eq_of_apply_eq fun l ↦ by simpa using (hσ (σ.symm l)).symm
+  have hdet (v : Fin (n j) → C.X j) : (c j).det v = hb.det (φ ∘ v ∘ σ.symm) := by
+    rw [hcb, Basis.det_reindex, Basis.det_map]
+    congr 1
+    funext l
+    simp
+  rw [torsionBracket_eq_det_append c hi hk h b₁ b₀ s hs hn, hdet]
+  have hv : ⇑φ ∘ (Fin.append (fun l ↦ (b₁ l : C.X j)) s ∘ Fin.cast hn) ∘ σ.symm =
+      Sum.elim u w ∘ (σ.symm.trans
+        ((finCongr hn).trans (finSumFinEquiv.symm.trans (Equiv.sumCongr e₁ (.refl _))))) := by
+    funext l
+    simp only [Function.comp_apply, Equiv.trans_apply, finCongr_apply]
+    generalize Fin.cast hn (σ.symm l) = l'
+    induction l' using Fin.addCases with
+    | left l' => simp [hu]
+    | right l' => simp [hw]
+  rw [hv, hb.det_comp_equiv _ _ e, smul_pow, Int.units_sq, one_smul]
 
 end Bracket
 

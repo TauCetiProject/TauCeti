@@ -66,42 +66,6 @@ open CategoryTheory Module
 
 variable {F : Type*} [Field F]
 
-/-- A bracket of a based acyclic complex, computed in another space: if a linear equivalence `ι`
-sends the chain basis to a basis `hb`, the boundary basis to a family `u` up to reindexing, and the
-lifts to a family `w`, then the bracket is, up to sign, the determinant of `u` followed by `w`
-with respect to `hb`, in any order. -/
-private theorem HomologicalComplex.sq_torsionBracket_eq {C : ChainComplex (ModuleCat F) ℤ}
-    {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) {j : ℤ} (hC : C.ExactAt (j + 1))
-    {p q : ℕ} (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
-    (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom)) (s : Fin q → C.X (j + 1))
-    (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k) {H : Type*} [AddCommGroup H] [Module F H]
-    (ι : C.X (j + 1) ≃ₗ[F] H) {m : ℕ} (hb : Basis (Fin m) F H) (σ : Fin (n (j + 1)) ≃ Fin m)
-    (hσ : ∀ i, ι (c (j + 1) i) = hb (σ i)) {κ : Type*} (u : κ → H) (w : Fin q → H)
-    (e₁ : Fin p ≃ κ) (hu : ∀ i, ι (b₁ i) = u (e₁ i)) (hw : ∀ i, ι (s i) = w i)
-    (e : Fin m ≃ κ ⊕ Fin q) :
-    HomologicalComplex.torsionBracket c (by simp) (by simp) hC b₁ b₀ s hs ^ 2 =
-      hb.det (Sum.elim u w ∘ e) ^ 2 := by
-  have hn := HomologicalComplex.eq_add_of_exactAt c (by simp) (by simp) hC b₁ b₀
-  -- Transport the determinant along `ι`, which sends the basis `c (j + 1)` to `hb`.
-  have hcb : hb = ((c (j + 1)).map ι).reindex σ :=
-    Basis.eq_of_apply_eq fun i ↦ by simpa using (hσ (σ.symm i)).symm
-  have hdet (v : Fin (n (j + 1)) → C.X (j + 1)) : (c (j + 1)).det v = hb.det (ι ∘ v ∘ σ.symm) := by
-    rw [hcb, Basis.det_reindex, Basis.det_map]
-    congr 1
-    funext i
-    simp
-  rw [HomologicalComplex.torsionBracket_eq_det_append c _ _ hC b₁ b₀ s hs hn, hdet]
-  have hv : ⇑ι ∘ (Fin.append (fun k ↦ (b₁ k : C.X (j + 1))) s ∘ Fin.cast hn) ∘ σ.symm =
-      Sum.elim u w ∘ (σ.symm.trans
-        ((finCongr hn).trans (finSumFinEquiv.symm.trans (Equiv.sumCongr e₁ (.refl _))))) := by
-    funext i
-    simp only [Function.comp_apply, Equiv.trans_apply, finCongr_apply]
-    generalize Fin.cast hn (σ.symm i) = k
-    induction k using Fin.addCases with
-    | left k => simp [hu]
-    | right k => simp [hw]
-  rw [hv, hb.det_comp_equiv _ _ e, smul_pow, Int.units_sq, one_smul]
-
 /-- The regrouping of the eight families making up the brackets of the outer terms of a short
 exact sequence into the three blocks of the bracket of the middle term. -/
 private def regroupEquiv (A₁ R₁ Φ Q₁ A₃ Γ R₀ Q₃ : Type*) :
@@ -364,7 +328,7 @@ private theorem sq_lesBracket_one (k : ℤ) (e : hS.Idxρ k ⊕ hS.Idxφ k ≃ F
       (h₁ k).det ((hS.homologyBasis₁ h₁ h₂ h₃ k).reindex e) ^ 2 := by
   obtain ⟨e', he'⟩ := hS.exists_lesIso₁_lesBoundaryBasis h₁ h₂ h₃ k (3 * k + 1 + 1) (by ring)
   rw [Basis.coe_reindex, homologyBasis₁, Basis.coe_ofExactLift]
-  exact HomologicalComplex.sq_torsionBracket_eq _ _ _ _ _ _
+  exact HomologicalComplex.sq_torsionBracket_eq_sq_det _ _ _ _ _ _ _ _
     (hS.lesIso₁ (3 * k + 1 + 1) k (by ring)).toLinearEquiv (h₁ k)
     (finCongr (ChainComplex.interleave.rank_of_eq_three_mul_add_two (by ring)))
     (fun i ↦ (Iso.toLinearEquiv_apply _ _).trans
@@ -377,7 +341,7 @@ private theorem sq_lesBracket_two (k : ℤ) (e : hS.Idxφ k ⊕ hS.Idxγ k ≃ F
     hS.lesBracket h₁ h₂ h₃ (3 * k) ^ 2 =
       (h₂ k).det ((hS.homologyBasis₂ h₁ h₂ h₃ k).reindex e) ^ 2 := by
   rw [Basis.coe_reindex, homologyBasis₂, Basis.coe_ofExactLift]
-  exact HomologicalComplex.sq_torsionBracket_eq _ _ _ _ _ _
+  exact HomologicalComplex.sq_torsionBracket_eq_sq_det _ _ _ _ _ _ _ _
     (hS.lesIso₂ (3 * k + 1) k rfl).toLinearEquiv (h₂ k)
     (finCongr (ChainComplex.interleave.rank_of_eq_three_mul_add_one rfl))
     (fun i ↦ (Iso.toLinearEquiv_apply _ _).trans
@@ -395,7 +359,7 @@ private theorem sq_lesBracket_three (k : ℤ)
   obtain ⟨e', he'⟩ :=
     hS.exists_lesIso₃_lesBoundaryBasis h₁ h₂ h₃ (k + 1) (3 * k + 2 + 1) (by ring)
   rw [Basis.coe_reindex, homologyBasis₃, Basis.coe_ofExactLift]
-  exact HomologicalComplex.sq_torsionBracket_eq _ _ _ _ _ _
+  exact HomologicalComplex.sq_torsionBracket_eq_sq_det _ _ _ _ _ _ _ _
     (hS.lesIso₃ (3 * k + 2 + 1) (k + 1) (by ring)).toLinearEquiv
     (h₃ (k + 1)) (finCongr (ChainComplex.interleave.rank_of_eq_three_mul (by ring)))
     (fun i ↦ (Iso.toLinearEquiv_apply _ _).trans
@@ -740,8 +704,8 @@ private theorem sq_torsionBracketWithHomology {c₂ : ∀ i, Basis (Fin (n₁ i 
   rw [he₁, he₂, he₃] at core
   -- The determinants comparing the adapted homology bases with the given ones are the brackets
   -- of the based long exact sequence, up to sign.
-  rw [mul_pow, mul_pow, mul_pow, mul_pow, inv_pow,
-    hS.sq_lesBracket_one h₁ h₂ h₃ (j + 1)
+  simp only [mul_pow, inv_pow]
+  rw [hS.sq_lesBracket_one h₁ h₂ h₃ (j + 1)
       ((hS.homologyBasis₁ h₁ h₂ h₃ (j + 1)).indexEquiv (h₁ (j + 1))),
     hS.sq_lesBracket_two h₁ h₂ h₃ (j + 1)
       ((hS.homologyBasis₂ h₁ h₂ h₃ (j + 1)).indexEquiv (h₂ (j + 1))),
@@ -773,9 +737,35 @@ private theorem sq_zpow_negOnePow {b₁ b₂ b₃ k₁ k₂ k₃ : F} {j : ℤ}
     exact (Int.negOnePow_eq_iff _ _).2 ⟨j + 1, by ring⟩
   have e₃ : (3 * (j + 1) + 1).negOnePow = j.negOnePow :=
     (Int.negOnePow_eq_iff _ _).2 ⟨j + 2, by ring⟩
-  rw [sq, ← mul_zpow, ← sq, h, sq, mul_zpow, ← sq, e₁, e₂, e₃, Units.val_neg, zpow_neg, mul_zpow,
-    mul_zpow, mul_zpow, mul_zpow, inv_zpow]
+  have hsq (x : F) : (x ^ (j.negOnePow : ℤ)) ^ 2 = (x ^ 2) ^ (j.negOnePow : ℤ) := by
+    rw [sq, sq, mul_zpow]
+  rw [e₁, e₂, e₃, Units.val_neg, zpow_neg, hsq, h, ← hsq]
+  simp only [mul_zpow, inv_zpow]
   ring
+
+/-- Regroup a finitely supported product over `ℤ` by the residues modulo `3`, in the order in which
+the long exact homology sequence meets them: the degrees `3j + 2`, `3(j + 1)` and `3(j + 1) + 1`,
+at the homology of `C₃`, `C₂` and `C₁` respectively. -/
+private theorem finprod_eq_finprod_regroup {M : Type*} [CommMonoid M] {G : ℤ → M}
+    (hG : Function.HasFiniteMulSupport G) :
+    ∏ᶠ n, G n = ∏ᶠ j, G (3 * j + 2) * G (3 * (j + 1)) * G (3 * (j + 1) + 1) := by
+  rw [← finprod_comp_equiv (Equiv.addRight (2 : ℤ))]
+  simp only [Equiv.coe_addRight]
+  rw [TauCeti.finprod_eq_finprod_prod_mul_add 3 _
+    (hG.fun_comp_of_injective (g := fun n : ℤ ↦ n + 2) (add_left_injective 2))]
+  refine finprod_congr fun j ↦ ?_
+  simp only [Fin.prod_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two,
+    Nat.cast_ofNat, Nat.cast_zero, Nat.cast_one]
+  rw [show j * 3 + 0 + 2 = 3 * j + 2 by ring, show j * 3 + 1 + 2 = 3 * (j + 1) by ring,
+    show j * 3 + 2 + 2 = 3 * (j + 1) + 1 by ring]
+
+/-- The factors of the regrouping `finprod_eq_finprod_regroup` have finite support. -/
+private theorem hasFiniteMulSupport_regroup {M : Type*} [CommMonoid M] {G : ℤ → M}
+    (hG : Function.HasFiniteMulSupport G) :
+    Function.HasFiniteMulSupport fun j ↦ G (3 * j + 2) * G (3 * (j + 1)) * G (3 * (j + 1) + 1) :=
+  ((hG.fun_comp_of_injective (g := fun j : ℤ ↦ 3 * j + 2) fun _ _ h ↦ by simpa using h).fun_mul
+    (hG.fun_comp_of_injective (g := fun j : ℤ ↦ 3 * (j + 1)) fun _ _ h ↦ by simpa using h)).fun_mul
+    (hG.fun_comp_of_injective (g := fun j : ℤ ↦ 3 * (j + 1) + 1) fun _ _ h ↦ by simpa using h)
 
 /-- **Milnor's multiplicativity formula.** Let `0 → C₁ → C₂ → C₃ → 0` be a short exact sequence
 of chain complexes of vector spaces, with compatible bases: the basis `c₂ i` of `C₂ᵢ` is the image
@@ -824,16 +814,6 @@ theorem HomologicalComplex.reidemeisterTorsionWithHomology_eq_or_eq_neg_mul_of_s
   have hy₁ (i : ℤ) (k) : S.X₁.homologyπ i (y₁ i k) = h₁ i k := HomologicalComplex.chosenCycle_spec _
   have hy₂ (i : ℤ) (k) : S.X₂.homologyπ i (y₂ i k) = h₂ i k := HomologicalComplex.chosenCycle_spec _
   have hy₃ (i : ℤ) (k) : S.X₃.homologyπ i (y₃ i k) = h₃ i k := HomologicalComplex.chosenCycle_spec _
-  -- Regroup the alternating product over the long exact sequence by the residues modulo `3`.
-  have regroup (G : ℤ → F) (hG : Function.HasFiniteMulSupport G) :
-      ∏ᶠ n, G n = ∏ᶠ j, G (3 * j + 2) * G (3 * (j + 1)) * G (3 * (j + 1) + 1) := by
-    rw [← finprod_comp_equiv (Equiv.addRight (2 : ℤ))]
-    simp only [Equiv.coe_addRight]
-    rw [TauCeti.finprod_eq_finprod_prod_mul_add 3 (fun n ↦ G (n + 2))
-      (hG.fun_comp_of_injective (g := fun n : ℤ ↦ n + 2) (add_left_injective 2))]
-    refine finprod_congr fun j ↦ ?_
-    rw [Fin.prod_univ_three]
-    congr 2 <;> simp <;> ring_nf
   -- Expand the four torsions as alternating products of brackets.
   have hK := HomologicalComplex.hasFiniteMulSupport_torsionBracket
     (c := hS.lesBasis h₁ h₂ h₃) hnK hS.acyclic_homologySequenceComplex
@@ -853,7 +833,7 @@ theorem HomologicalComplex.reidemeisterTorsionWithHomology_eq_or_eq_neg_mul_of_s
     HomologicalComplex.reidemeisterTorsion_eq_finprod hnK hS.acyclic_homologySequenceComplex
       (hS.lesBoundaryBasis h₁ h₂ h₃) (hS.lesBoundaryLift h₁ h₂ h₃)
       (fun j ↦ HomologicalComplex.chosenBoundaryLift_spec _ _ (j + 1) j),
-    regroup _ hK]
+    finprod_eq_finprod_regroup hK]
   have hs₁ := HomologicalComplex.hasFiniteMulSupport_torsionBracketWithHomology (c := c₁)
     (h := h₁) hn₁ (ShortComplex.ShortExact.boundaryBasis₁ c₁) y₁ hy₁
     (ShortComplex.ShortExact.boundaryLift₁ c₁)
@@ -865,10 +845,7 @@ theorem HomologicalComplex.reidemeisterTorsionWithHomology_eq_or_eq_neg_mul_of_s
     (h := h₃) hn₃ (ShortComplex.ShortExact.boundaryBasis₃ c₃) y₃ hy₃
     (ShortComplex.ShortExact.boundaryLift₃ c₃)
     (fun j ↦ HomologicalComplex.chosenBoundaryLift_spec _ _ (j + 1) j)
-  have hsK := ((hK.fun_comp_of_injective (g := fun j : ℤ ↦ 3 * j + 2) fun a b h ↦ by
-      simpa using h).fun_mul (hK.fun_comp_of_injective (g := fun j : ℤ ↦ 3 * (j + 1))
-      fun a b h ↦ by simpa using h)).fun_mul
-    (hK.fun_comp_of_injective (g := fun j : ℤ ↦ 3 * (j + 1) + 1) fun a b h ↦ by simpa using h)
+  have hsK := hasFiniteMulSupport_regroup hK
   rw [← finprod_mul_distrib hs₁ hs₃, ← finprod_mul_distrib (hs₁.fun_mul hs₃) hsK,
     finprod_pow hs₂, finprod_pow ((hs₁.fun_mul hs₃).fun_mul hsK)]
   -- In each degree, the comparison of brackets raised to the power `(-1) ^ j`.
