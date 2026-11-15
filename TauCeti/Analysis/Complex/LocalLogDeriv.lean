@@ -139,8 +139,8 @@ private lemma norm_logDeriv_reflected_prod_le {S : Finset ℂ} {n : ℂ → ℤ}
   intro ρ hρ
   rw [norm_mul, Complex.norm_intCast, abs_of_nonneg (Int.cast_nonneg (hn ρ hρ))]
   apply mul_le_mul_of_nonneg_left _ (Int.cast_nonneg (hn ρ hρ))
-  simpa only [q, canonicalFactorNumerator_apply] using
-    norm_logDeriv_canonicalFactor_numerator_le hrR (hρnorm ρ hρ) hz
+  simpa only [q] using
+    norm_logDeriv_canonicalFactorNumerator_comp_sub_le hrR (hρnorm ρ hρ) hz
 
 -- Package the reflected product's analytic, boundary, central and logarithmic-derivative data.
 private lemma exists_reflected_prod {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
@@ -171,11 +171,11 @@ private lemma exists_reflected_prod {S : Finset ℂ} {n : ℂ → ℤ} {z : ℂ}
     apply Finset.prod_congr rfl
     intro ρ _hρ
     congr 1
-    have h := norm_canonicalFactor_numerator_eval_circle (a := ρ - z₀) hR.ne'
+    have h := norm_canonicalFactorNumerator_eval_circle (a := ρ - z₀) hR.ne'
       (by simpa [mem_sphere, dist_eq_norm] using hw)
     have heq : w - z₀ - (ρ - z₀) = w - ρ := by ring
     rw [heq] at h
-    simpa only [q, canonicalFactorNumerator_apply] using h
+    simpa only [q] using h
   · simp only [Q, norm_prod, norm_zpow]
     refine Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun ρ hρ ↦ ?_
     simp only [q, canonicalFactorNumerator_apply, sub_self, mul_zero, sub_zero, pow_two,

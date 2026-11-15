@@ -53,9 +53,10 @@ lemma sq_sub_mul_norm_pos {R r : ℝ} {t : ℂ} (hR : 0 < R) (hrR : r < R)
 
 /-- On a nonzero-radius circle, the normalized numerator of a canonical factor has the same
 norm as the ordinary zero factor, for every complex parameter. -/
-lemma norm_canonicalFactor_numerator_eval_circle {R : ℝ} {a w : ℂ}
+lemma norm_canonicalFactorNumerator_eval_circle {R : ℝ} {a w : ℂ}
     (hR : R ≠ 0) (hw : ‖w‖ = R) :
-    ‖((R : ℂ) ^ 2 - conj a * w) / (R : ℂ)‖ = ‖w - a‖ := by
+    ‖canonicalFactorNumerator R a w‖ = ‖w - a‖ := by
+  rw [canonicalFactorNumerator_apply]
   have he : (R : ℂ) ^ 2 - conj a * w = w * conj (w - a) := by
     rw [map_sub, mul_sub, mul_conj', hw]
     ring
@@ -63,9 +64,9 @@ lemma norm_canonicalFactor_numerator_eval_circle {R : ℝ} {a w : ℂ}
     abs_of_nonneg (norm_nonneg w)]
   exact mul_div_cancel_left₀ _ (by rwa [hw])
 
-/-- A lower bound for the norm of a canonical-factor numerator, uniform over parameters
-in the closed disc of radius `r`. -/
-lemma sub_mul_norm_le_norm_canonicalFactor_numerator {R r : ℝ} {a t : ℂ}
+/-- A lower bound for the norm of `R² - conj a * t`, uniform over parameters
+in the closed disc of radius `r`. No division by `R` is involved. -/
+lemma sq_sub_mul_norm_le_norm_sq_sub_conj_mul {R r : ℝ} {a t : ℂ}
     (ha : ‖a‖ ≤ r) :
     R ^ 2 - r * ‖t‖ ≤ ‖(R : ℂ) ^ 2 - conj a * t‖ := by
   have hprod := mul_le_mul_of_nonneg_right ha (norm_nonneg t)
@@ -74,27 +75,28 @@ lemma sub_mul_norm_le_norm_canonicalFactor_numerator {R r : ℝ} {a t : ℂ}
     norm_mul, norm_conj] at hsub
   linarith
 
-/-- The numerator of a canonical factor is nonzero throughout the outer closed disc when
+/-- The expression `R² - conj a * t` has positive norm throughout the outer closed disc when
 its parameter lies in the open outer disc. -/
-lemma norm_canonicalFactor_numerator_pos {R : ℝ} {a t : ℂ}
+lemma norm_sq_sub_conj_mul_pos {R : ℝ} {a t : ℂ}
     (ha : ‖a‖ < R) (ht : ‖t‖ ≤ R) :
     0 < ‖(R : ℂ) ^ 2 - conj a * t‖ := by
   exact (sq_sub_mul_norm_pos ((norm_nonneg a).trans_lt ha) ha ht).trans_le
-    (sub_mul_norm_le_norm_canonicalFactor_numerator le_rfl)
+    (sq_sub_mul_norm_le_norm_sq_sub_conj_mul le_rfl)
 
 /-- Interior parameters give a nonzero normalized numerator throughout the outer closed disc. -/
 lemma canonicalFactorNumerator_ne_zero {R : ℝ} {a t : ℂ}
     (ha : ‖a‖ < R) (ht : ‖t‖ ≤ R) : canonicalFactorNumerator R a t ≠ 0 := by
   have hR : 0 < R := (norm_nonneg a).trans_lt ha
-  exact div_ne_zero (norm_pos_iff.mp (norm_canonicalFactor_numerator_pos ha ht))
+  exact div_ne_zero (norm_pos_iff.mp (norm_sq_sub_conj_mul_pos ha ht))
     (Complex.ofReal_ne_zero.mpr hR.ne')
 
-/-- The logarithmic derivative of a translated canonical-factor numerator is bounded
+/-- The logarithmic derivative of a translated normalized canonical-factor numerator is bounded
 uniformly for parameters and evaluation points in a closed inner disc. -/
-lemma norm_logDeriv_canonicalFactor_numerator_le {R r : ℝ} {a z₀ z : ℂ} (hrR : r < R)
+lemma norm_logDeriv_canonicalFactorNumerator_comp_sub_le {R r : ℝ} {a z₀ z : ℂ} (hrR : r < R)
     (ha : ‖a‖ ≤ r) (hz : ‖z - z₀‖ ≤ r) :
-    ‖logDeriv (fun w : ℂ ↦ ((R : ℂ) ^ 2 - conj a * (w - z₀)) / (R : ℂ)) z‖ ≤
+    ‖logDeriv (fun w : ℂ ↦ canonicalFactorNumerator R a (w - z₀)) z‖ ≤
       r / (R ^ 2 - r * ‖z - z₀‖) := by
+  simp only [canonicalFactorNumerator_apply]
   have hr : 0 ≤ r := (norm_nonneg _).trans hz
   have hR : 0 < R := hr.trans_lt hrR
   have hder : HasDerivAt
@@ -103,7 +105,7 @@ lemma norm_logDeriv_canonicalFactor_numerator_le {R r : ℝ} {a z₀ z : ℂ} (h
     convert ((hasDerivAt_const z ((R : ℂ) ^ 2)).sub
       (((hasDerivAt_id z).sub_const z₀).const_mul (conj a))).div_const (R : ℂ) using 1 <;> simp
   have hden := sq_sub_mul_norm_pos hR hrR (hz.trans hrR.le)
-  have hbound := sub_mul_norm_le_norm_canonicalFactor_numerator (R := R) ha (t := z - z₀)
+  have hbound := sq_sub_mul_norm_le_norm_sq_sub_conj_mul (R := R) ha (t := z - z₀)
   rw [logDeriv_apply, hder.deriv, div_div_div_cancel_right₀ (Complex.ofReal_ne_zero.mpr hR.ne'),
     norm_div, norm_neg, norm_conj]
   exact (div_le_div_of_nonneg_right ha (norm_nonneg _)).trans
