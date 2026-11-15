@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.LopezEscobar
+public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
 public import TauCeti.SetTheory.Descriptive.Silver
 import TauCeti.Data.Set.Countable
 
@@ -13,10 +14,11 @@ import TauCeti.Data.Set.Countable
 # Sentence spectra, Borel observables, and thinness of configuration classes
 
 Given a countable sequence of infinitary sentences `θ : ℕ → L.SentenceInf ι`, each relational
-configuration `c` on a carrier `V` determines a Cantor-space point
-`sentenceTheory θ c : ℕ → Bool` recording which sentences `θ n` hold in `c.toStructure`. When the
-branching index `ι` and the carrier `V` are countable, `sentenceTheory θ` is Borel measurable and
-constant on isomorphism classes.
+configuration `c` on a carrier `V` determines its truth sequence
+`sentenceTheory θ c : ℕ → Bool` (`TauCeti.RelationalConfiguration.sentenceTheory`), recording which
+sentences `θ n` hold in `c.toStructure`. When the branching index `ι` and the carrier `V` are
+countable, `sentenceTheory θ` is Borel measurable (`measurable_sentenceTheory`) and constant on
+isomorphism classes (`sentenceTheory_eq_of_isoSetoid`).
 
 In a countable relational vocabulary on a countable carrier `V`, relative López–Escobar
 (`exists_modelsOf_preimage_eq`) upgrades this construction to a universal property for Borel
@@ -48,16 +50,11 @@ invariants:
   also thin, `C` meets only countably many isomorphism classes
   (`countable_quotient_comap_isoSetoid_of_isThinOn_of_isSmooth`).
 
-## Main definitions
-
-* `TauCeti.RelationalConfiguration.sentenceTheory`: the Boolean truth-value trace
-  `ℕ → Bool` of a countable sequence of sentences on a relational configuration.
-
 ## Main results
 
-* `TauCeti.RelationalConfiguration.measurable_sentenceTheory` and
-  `TauCeti.RelationalConfiguration.sentenceTheory_eq_of_isoSetoid`: measurability and isomorphism
-  invariance of `sentenceTheory`.
+* `TauCeti.RelationalConfiguration.measurableSet_setOf_sentenceTheory_eq`: agreement of
+  `sentenceTheory θ` defines a measurable equivalence graph on configurations over a countable
+  carrier.
 * `TauCeti.RelationalConfiguration.exists_sentenceTheory_comp_eq` and
   `TauCeti.RelationalConfiguration.exists_sentenceTheory_comp_eq_id`: Borel Cantor observables and
   Cantor recovery by `L_{ω₁ω}` sentence sequences.
@@ -98,68 +95,7 @@ namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
-/-! ### Sentence-spectrum maps into Cantor space -/
-
-/-- The **sentence theory** (or truth-value trace) of a configuration `c` along a sequence of
-infinitary sentences `θ : ℕ → L.SentenceInf ι`, viewed as a point of Cantor space `ℕ → Bool`. -/
-noncomputable def sentenceTheory (θ : ℕ → L.SentenceInf ι) (c : RelationalConfiguration L V) :
-    ℕ → Bool :=
-  open Classical in
-  fun n => decide (c ∈ modelsOf (θ n))
-
-/-- Coordinate `n` of `sentenceTheory θ c` is `true` iff `c` lies in `modelsOf (θ n)`. -/
-@[simp]
-theorem sentenceTheory_apply_eq_true_iff {θ : ℕ → L.SentenceInf ι}
-    {c : RelationalConfiguration L V} {n : ℕ} :
-    sentenceTheory θ c n = true ↔ c ∈ modelsOf (θ n) := by
-  classical
-  simp [sentenceTheory]
-
-/-- Coordinate `n` of `sentenceTheory θ c` is `false` iff `c` does not lie in `modelsOf (θ n)`. -/
-@[simp]
-theorem sentenceTheory_apply_eq_false_iff {θ : ℕ → L.SentenceInf ι}
-    {c : RelationalConfiguration L V} {n : ℕ} :
-    sentenceTheory θ c n = false ↔ c ∉ modelsOf (θ n) := by
-  classical
-  simp [sentenceTheory]
-
-/-- Two configurations have the same `sentenceTheory` along `θ` iff they satisfy the same sentences
-`θ n` for every `n`. -/
-theorem sentenceTheory_eq_iff {θ : ℕ → L.SentenceInf ι} {c d : RelationalConfiguration L V} :
-    sentenceTheory θ c = sentenceTheory θ d ↔ ∀ n, c ∈ modelsOf (θ n) ↔ d ∈ modelsOf (θ n) := by
-  rw [funext_iff]
-  refine forall_congr' fun n => ?_
-  rw [Bool.eq_iff_iff, sentenceTheory_apply_eq_true_iff, sentenceTheory_apply_eq_true_iff]
-
-/-- Configurations on possibly different carriers with isomorphic decoded structures have the same
-`sentenceTheory` along every sequence of sentences. -/
-theorem _root_.FirstOrder.Language.Equiv.sentenceTheory_eq {W : Type*}
-    {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
-    (e : @Language.Equiv L V W c.toStructure d.toStructure) (θ : ℕ → L.SentenceInf ι) :
-    sentenceTheory θ c = sentenceTheory θ d :=
-  funext fun n => Bool.eq_iff_iff.2 <| by
-    simp only [sentenceTheory_apply_eq_true_iff]
-    exact e.mem_modelsOf_iff (θ n)
-
-/-- Isomorphic configurations on `V` have the same `sentenceTheory`. -/
-theorem sentenceTheory_eq_of_isoSetoid {θ : ℕ → L.SentenceInf ι}
-    {c d : RelationalConfiguration L V} (h : isoSetoid L V c d) :
-    sentenceTheory θ c = sentenceTheory θ d := by
-  obtain ⟨e⟩ := isoSetoid_apply.1 h
-  exact e.sentenceTheory_eq θ
-
-/-- On a countable carrier, `sentenceTheory θ` is Borel measurable for any countable-branching
-sentence sequence `θ`. -/
-@[fun_prop]
-theorem measurable_sentenceTheory [Countable ι] [Countable V] (θ : ℕ → L.SentenceInf ι) :
-    Measurable (sentenceTheory (V := V) θ) := by
-  refine Measurable.of_eval fun n => measurable_to_countable' (Bool.forall_bool.2 ⟨?_, ?_⟩)
-  · convert (measurableSet_modelsOf (V := V) (θ n)).compl using 1
-    ext c
-    simp
-  · convert measurableSet_modelsOf (V := V) (θ n) using 1
-    ext c
-    simp
+/-! ### Borel Cantor observables and Cantor recovery -/
 
 /-- Agreement of `sentenceTheory θ` defines a measurable equivalence graph on configurations over a
 countable carrier. -/
@@ -171,8 +107,6 @@ theorem measurableSet_setOf_sentenceTheory_eq [Countable ι] [Countable V]
   measurableSet_eq_fun
     ((measurable_sentenceTheory θ).comp measurable_fst)
     ((measurable_sentenceTheory θ).comp measurable_snd)
-
-/-! ### Borel Cantor observables and Cantor recovery -/
 
 /-- **Borel Cantor observables are sentence spectra.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
@@ -192,7 +126,7 @@ theorem exists_sentenceTheory_comp_eq [∀ n, Countable (L.Relations n)] [Counta
       simpa [hinv hxy] using hx
   choose θ hθ using hcoord
   refine ⟨θ, fun x => funext fun n => Bool.eq_iff_iff.2 ?_⟩
-  rw [sentenceTheory_apply_eq_true_iff, ← mem_preimage, hθ n, mem_ofPred_eq]
+  rw [sentenceTheory_eq_true_iff, ← mem_preimage, hθ n, mem_ofPred_eq]
 
 /-- **Borel Cantor observables on a Borel set of configurations.** On a Borel subset `C` of
 configurations over a countable carrier in a countable relational vocabulary, any measurable
@@ -225,7 +159,7 @@ theorem exists_forall_mem_modelsOf_iff [∀ n, Countable (L.Relations n)] [Count
     ∃ θ : ℕ → L.Sentenceω, ∀ n x, f x ∈ modelsOf (θ n) ↔ x n = true := by
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_comp_eq_id hf hanti
   refine ⟨θ, fun n x => ?_⟩
-  rw [← sentenceTheory_apply_eq_true_iff, hθ x]
+  rw [← sentenceTheory_eq_true_iff, hθ x]
 
 /-! ### Sentence-spectrum characterization of thinness -/
 
@@ -264,7 +198,7 @@ theorem countable_image_sentenceTheory_of_isThinOn [∀ n, Countable (L.Relation
     measurableSet_eq_fun (hg.comp measurable_fst) (hg.comp measurable_snd)
   have hcountF : Countable (Quotient F) :=
     (Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hC (isoSetoid L V) F
-      (fun x y hxy => sentenceTheory_eq_of_isoSetoid hxy) hF).resolve_right
+      (fun x y hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF).resolve_right
       (Setoid.isThinOn_iff_not_hasCantorAntichainOn.1 hthin)
   let qmap : Quotient F → ℕ → Bool := Quotient.lift g fun _ _ h => h
   refine (countable_range qmap).mono ?_
