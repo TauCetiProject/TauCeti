@@ -110,10 +110,7 @@ theorem differentiable_weierstrassFactor (p : ℕ) :
 @[fun_prop]
 theorem analyticAt_weierstrassFactor (p : ℕ) (z : ℂ) :
     AnalyticAt ℂ (weierstrassFactor p) z := by
-  rw [show weierstrassFactor p = fun w : ℂ ↦
-      (1 - w) * exp (∑ k ∈ Finset.range p, w ^ (k + 1) / (k + 1)) from
-    funext (weierstrassFactor_eq_mul_exp_sum p)]
-  fun_prop
+  exact (differentiable_weierstrassFactor p).analyticAt z
 
 /-- The derivative of a primary factor. -/
 @[simp]
