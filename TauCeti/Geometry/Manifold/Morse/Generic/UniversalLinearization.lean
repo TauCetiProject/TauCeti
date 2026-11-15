@@ -47,9 +47,9 @@ transversality argument runs on.
   has the index of the Hessian. Its kernel is the kernel of the Hessian
   (`ContinuousLinearMap.kerEquivKerParameterProj`).
 
-The section `S` itself, its regularity as a map on a Banach space of `C^k` functions and the
-identification of its derivative with this map are not part of this file; the statements here
-concern the linear map alone.
+The statements here concern the linear map alone. The section `S` itself, its regularity as a map
+on a Banach space of `C^k` functions and the identification of its derivative with this map are in
+`TauCeti.Geometry.Manifold.Morse.Generic.UniversalDifferential`.
 
 ## References
 
