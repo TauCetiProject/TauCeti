@@ -41,8 +41,15 @@ back from the base generate the vertical motions:
   Hamiltonian vector field of every smooth pulled-back function is complete
   (`IsLagrangianFibration.isCompleteVectorField_hamiltonianVectorField_comp`).
 
+* for a proper `π`, the flow of `g ∘ π` moves a point `x` in a way that depends only on the
+  differential of `g` at `π x`
+  (`IsLagrangianFibration.flowOf_hamiltonianVectorField_comp_eq`), since along the fibre through
+  `x` its Hamiltonian vector field is determined by `d(g ∘ π) = dg_(π x) ∘ dπ`.
+
 These vertical Hamiltonian flows generate the fibrewise action of `T*B` from which the period
-lattice `Λ ⊆ T*B` of the fibration is built; that action is not constructed here.
+lattice `Λ ⊆ T*B` of the fibration is built; for a regular Lagrangian torus fibration the action of
+`T*_b B` on the fibre over `b` and its stabilizer, the period lattice `Λ_b`, are constructed in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.PeriodLattice`.
 
 ## References
 
@@ -172,6 +179,43 @@ theorem isCompleteVectorField_hamiltonianVectorField_comp [FiniteDimensional ℝ
     (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
       (by rw [one_add_one_eq_two]; exact hg.comp (h.contMDiff.of_le (by simp)))) hπ
     fun _ _ ht ↦ h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg ht
+
+/-- **Vertical Hamiltonian flows depend only on the differential at the base point.** Let `π` be
+proper. If two `C²` functions `g` and `g'` on the base have the same differential at `π x`, the
+Hamiltonian flows of `g ∘ π` and `g' ∘ π` move `x` alike: both flow lines stay in the fibre through
+`x`, along which `d(g ∘ π) = dg_(π x) ∘ dπ` and `d(g' ∘ π)` agree, so the two fields agree there. -/
+theorem flowOf_hamiltonianVectorField_comp_eq [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold J 1 B] (hπ : IsProperMap π) {g g' : B → ℝ}
+    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hg' : ContMDiff J 𝓘(ℝ) 2 g') {x : M}
+    (hgg' : mvfderiv J g (π x) = mvfderiv J g' (π x)) (t : ℝ) :
+    flowOf (σ.hamiltonianVectorField (g ∘ π)) t x =
+      flowOf (σ.hamiltonianVectorField (g' ∘ π)) t x := by
+  have hv (k : B → ℝ) (hk : ContMDiff J 𝓘(ℝ) 2 k) : ContMDiff I I.tangent 1
+      (fun y ↦ (⟨y, σ.hamiltonianVectorField (k ∘ π) y⟩ : TangentBundle I M)) :=
+    hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      (by rw [one_add_one_eq_two]; exact hk.comp (h.contMDiff.of_le (by simp)))
+  have hc := h.isCompleteVectorField_hamiltonianVectorField_comp hπ hg
+  set γ := maximalIntegralCurve (σ.hamiltonianVectorField (g ∘ π)) x
+  have hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ π)) :=
+    isMIntegralCurve_maximalIntegralCurve_of_eq_univ (hv g hg)
+      (hc.maximalIntegralCurveInterval_eq_univ x)
+  -- The flow line of `g ∘ π` through `x` is also an integral curve of `g' ∘ π`.
+  have hγ' : IsMIntegralCurve γ (σ.hamiltonianVectorField (g' ∘ π)) := by
+    intro s
+    have hπγ : π (γ s) = π x := h.apply_maximalIntegralCurve_hamiltonianVectorField_comp hg
+      (hc.mem_maximalIntegralCurveInterval x s)
+    have hd : mvfderiv J g (π (γ s)) = mvfderiv J g' (π (γ s)) := by rw [hπγ]; exact hgg'
+    have hX : σ.hamiltonianVectorField (g ∘ π) (γ s) =
+        σ.hamiltonianVectorField (g' ∘ π) (γ s) := by
+      rw [hamiltonianVectorField_def, hamiltonianVectorField_def,
+        mvfderiv_comp (γ s) ((hg _).mdifferentiableAt (by simp)) (h.mdifferentiableAt _),
+        mvfderiv_comp (γ s) ((hg' _).mdifferentiableAt (by simp)) (h.mdifferentiableAt _), hd]
+    rw [← hX]
+    exact hγ s
+  have h0 : γ 0 = x := maximalIntegralCurve_zero
+  have h1 := hγ'.maximalIntegralCurve_eq (hv g' hg') t
+  rw [h0] at h1
+  rw [flowOf_apply, flowOf_apply, h1]
 
 end IsLagrangianFibration
 
