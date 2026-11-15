@@ -21,7 +21,9 @@ categories. These structures let additive constructions and invariants apply to 
 It also shows that pushout and pullback squares in a product category are detected
 componentwise: a square in `C × D` is a pushout (resp. pullback) exactly when both of its
 projected squares are (`CategoryTheory.IsPushout.fst`, `CategoryTheory.IsPushout.snd`,
-`CategoryTheory.IsPushout.prod`, and their pullback counterparts).
+`CategoryTheory.IsPushout.prod`, and their pullback counterparts). Epimorphisms in `C × D` are
+likewise characterized componentwise (`CategoryTheory.Prod.epi_iff`), and the projections
+`Prod.fst C D` and `Prod.snd C D` preserve epimorphisms and limits of arbitrary shape.
 -/
 
 public section
@@ -140,5 +142,49 @@ theorem prod (h₁ : IsPullback f.1 g.1 g'.1 f'.1) (h₂ : IsPullback f.2 g.2 g'
       Prod.hom_ext (h₁.lift_snd _ _ _) (h₂.lift_snd _ _ _)⟩
 
 end IsPullback
+
+namespace Prod
+
+/-- A morphism in a Cartesian product of categories is an epimorphism if and only if both of its
+components are epimorphisms. -/
+theorem epi_iff {X Y : C × D} (f : X ⟶ Y) : Epi f ↔ Epi f.1 ∧ Epi f.2 := by
+  refine ⟨fun hf ↦ ⟨⟨fun g₁ g₂ h ↦ ?_⟩, ⟨fun g₁ g₂ h ↦ ?_⟩⟩,
+    fun ⟨h₁, h₂⟩ ↦ ⟨fun g₁ g₂ h ↦ Prod.hom_ext
+      ((cancel_epi f.1).1 (congrArg _root_.Prod.fst h))
+      ((cancel_epi f.2).1 (congrArg _root_.Prod.snd h))⟩⟩
+  · have h' : f ≫ (g₁ ×ₘ 𝟙 Y.2) = f ≫ (g₂ ×ₘ 𝟙 Y.2) := Prod.hom_ext h rfl
+    exact congrArg _root_.Prod.fst ((cancel_epi f).1 h')
+  · have h' : f ≫ (𝟙 Y.1 ×ₘ g₁) = f ≫ (𝟙 Y.1 ×ₘ g₂) := Prod.hom_ext rfl h
+    exact congrArg _root_.Prod.snd ((cancel_epi f).1 h')
+
+/-- The first projection `C × D ⥤ C` preserves epimorphisms. -/
+instance preservesEpimorphisms_fst : (Prod.fst C D).PreservesEpimorphisms where
+  preserves f _ := ((epi_iff f).1 ‹_›).1
+
+/-- The second projection `C × D ⥤ D` preserves epimorphisms. -/
+instance preservesEpimorphisms_snd : (Prod.snd C D).PreservesEpimorphisms where
+  preserves f _ := ((epi_iff f).1 ‹_›).2
+
+/-- The first projection `C × D ⥤ C` preserves limits of any shape. -/
+instance preservesLimitsOfShape_fst {J : Type*} [Category* J] :
+    Limits.PreservesLimitsOfShape J (Prod.fst C D) where
+  preservesLimit {F} := ⟨fun {c} hc ↦
+    let cone (s : Limits.Cone (F ⋙ Prod.fst C D)) : Limits.Cone F :=
+      { pt := (s.pt, c.pt.2)
+        π :=
+          { app k := s.π.app k ×ₘ (c.π.app k).2
+            naturality _ _ u :=
+              Prod.hom_ext (s.π.naturality u) (((Prod.snd C D).mapCone c).π.naturality u) } }
+    ⟨{ lift s := (hc.lift (cone s)).1
+       fac s k := congrArg _root_.Prod.fst (hc.fac (cone s) k)
+       uniq s m hm := congrArg _root_.Prod.fst <|
+         hc.uniq (cone s) (m ×ₘ 𝟙 c.pt.2) fun k ↦ Prod.hom_ext (hm k) (Category.id_comp _) }⟩⟩
+
+/-- The second projection `C × D ⥤ D` preserves limits of any shape. -/
+instance preservesLimitsOfShape_snd {J : Type*} [Category* J] :
+    Limits.PreservesLimitsOfShape J (Prod.snd C D) :=
+  inferInstanceAs (Limits.PreservesLimitsOfShape J (Prod.swap C D ⋙ Prod.fst D C))
+
+end Prod
 
 end CategoryTheory
