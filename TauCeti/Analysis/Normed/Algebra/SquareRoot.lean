@@ -21,9 +21,9 @@ This file packages it as `TauCeti.sqrtNearOne`. It is a square root on the whole
 about `1` (`TauCeti.mul_self_sqrtNearOne`), analytic there (`TauCeti.analyticOnNhd_sqrtNearOne`),
 and it fixes `1`. It is the *only* square root near `1`: two elements whose distances to `1` add up
 to less than `2` and which have the same square are equal
-(`TauCeti.eq_of_mul_self_eq_mul_self`), so near `1` it is a two-sided inverse of squaring. These
-two-sided statements are also phrased as `Filter.Eventually` assertions, since that is how they get
-used.
+(`TauCeti.eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two`), so near `1` it is
+a two-sided inverse of squaring. These two-sided statements are also phrased as
+`Filter.Eventually` assertions, since that is how they get used.
 
 Since it is given by a power series with scalar coefficients, the square root near the identity is
 natural: a continuous algebra homomorphism `φ` satisfies `φ (√x) = √(φ x)` whenever `‖x - 1‖ < 1`
@@ -46,7 +46,8 @@ square root near `1` in a bare Banach algebra, with smooth dependence on the ele
 * `TauCeti.sqrtNearOne`: the binomial-series square root near the identity.
 * `TauCeti.mul_self_sqrtNearOne`: it is a square root on the open unit ball about `1`.
 * `TauCeti.analyticOnNhd_sqrtNearOne`: it is analytic on the open unit ball about `1`.
-* `TauCeti.eq_of_mul_self_eq_mul_self`: uniqueness of square roots near `1`.
+* `TauCeti.eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two`: uniqueness of
+  square roots near `1`.
 * `TauCeti.eventually_mul_self_sqrtNearOne`, `TauCeti.eventually_sqrtNearOne_mul_self`: near `1`
   it is a right and a left inverse of squaring.
 * `TauCeti.eventually_sqrtNearOne_eq_of_tendsto`: the same uniqueness along an arbitrary filter,
@@ -94,8 +95,8 @@ theorem sqrtNearOne_one : sqrtNearOne A 1 = 1 := by
 
 /-- **Uniqueness of square roots near the identity.** Two elements of a normed algebra over `ℝ`
 whose distances to `1` add up to less than `2` and which have the same square are equal. -/
-theorem eq_of_mul_self_eq_mul_self {r s : A} (h : r * r = s * s)
-    (hrs : ‖r - 1‖ + ‖s - 1‖ < 2) : r = s := by
+theorem eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two {r s : A}
+    (h : r * r = s * s) (hrs : ‖r - 1‖ + ‖s - 1‖ < 2) : r = s := by
   -- With `r * r = s * s`, the difference `d = r - s` satisfies `2 d = (1 - r) d + d (1 - s)`,
   -- which is too short to hold for `d ≠ 0`.
   have hkey : (1 - r) * (r - s) + (r - s) * (1 - s) = (2 : ℝ) • (r - s) := by
@@ -173,7 +174,8 @@ theorem eventually_sqrtNearOne_mul_self :
     simpa only [Function.comp_def, sqrtNearOne_one] using continuousAt_sqrtNearOne.tendsto.comp hsq
   filter_upwards [eventually_norm_sub_one_lt hsq, eventually_norm_sub_one_lt hroot,
     eventually_norm_sub_one_lt (tendsto_id (x := 𝓝 (1 : A)))] with b hb hroot hb'
-  exact eq_of_mul_self_eq_mul_self (mul_self_sqrtNearOne hb) (by simp only [id] at hb'; linarith)
+  exact eq_of_mul_self_eq_mul_self_of_norm_sub_one_add_norm_sub_one_lt_two (mul_self_sqrtNearOne hb)
+    (by simp only [id] at hb'; linarith)
 
 /-- **Uniqueness of the square root near the identity, along a filter.** If `r` tends to `1` and
 eventually squares to `x`, then `TauCeti.sqrtNearOne` eventually recovers `r` from `x`. -/

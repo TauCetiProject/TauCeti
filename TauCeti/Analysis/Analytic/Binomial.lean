@@ -22,7 +22,8 @@ still at least `1`, since its coefficients are scalars, so it converges on the o
 `𝔸` is complete. On the open unit ball of a Banach algebra the sums of the series for `a` and `b`
 multiply to the sum of the series for `a + b`, by the Chu–Vandermonde identity, and in any normed
 algebra the series for a natural number `n` sums to `(1 + y) ^ n`. In particular the binomial series
-of `1 / 2` is a square root of `1 + y`, in any Banach algebra.
+of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra over `ℝ`
+(`TauCeti.mul_self_sqrtNearOne`).
 
 ## Main declarations
 

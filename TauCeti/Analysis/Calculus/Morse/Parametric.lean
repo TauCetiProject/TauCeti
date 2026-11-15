@@ -44,12 +44,13 @@ On a vector bundle `V` with fibre `F`, a function `g` on the total space read in
 canonical coordinates of `g` agree exactly over the intersection of their base sets, wherever the
 slice of `g` over the base point is `C²`
 (`Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord`), because the
-two families differ by the fibrewise linear coordinate change. So the canonical coordinate is a
-well-defined fibre-preserving map of the total space, `TauCeti.bundleMorseCoord g`, computed in
-any linear trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`). It is a single
-trivialization-independent fibre coordinate on the total space that vanishes on the zero section
-(`TauCeti.bundleMorseCoord_zeroSection`), the candidate for patching the local normal forms near
-the zero section.
+two families differ by the fibrewise linear coordinate change. This gives a fibre-preserving map
+of the total space, `TauCeti.bundleMorseCoord g`, defined in the trivialization at each base point.
+Over every base point where `g` is `C²` along the fibre, it can be computed in any linear
+trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so there it does not depend on the
+trivialization. It vanishes on the zero section (`TauCeti.bundleMorseCoord_zeroSection`) and is
+the candidate for patching the local normal forms near the zero section; its smoothness, and that
+it is a change of coordinates near the zero section, are not proved here.
 
 ## Main declarations
 
@@ -71,10 +72,11 @@ the zero section.
   resulting coordinate change and local chart on a product neighbourhood, given by the canonical
   coordinate.
 * `Bundle.Trivialization.symm_parametricMorseCoord_eq_symm_parametricMorseCoord`: the canonical
-  coordinates read in two trivializations of a vector bundle agree.
-* `TauCeti.bundleMorseCoord`: the canonical Morse coordinate on the total space of a vector
-  bundle, with `Bundle.Trivialization.bundleMorseCoord_eq` (it is computed in any linear
-  trivialization) and `TauCeti.bundleMorseCoord_zeroSection` (it vanishes on the zero section).
+  coordinates read in two trivializations of a vector bundle agree where the slice is `C²`.
+* `TauCeti.bundleMorseCoord`: the fibre-preserving map of the total space of a vector bundle
+  given by the canonical Morse coordinate, with `Bundle.Trivialization.bundleMorseCoord_eq` (where
+  the slice is `C²`, it is computed in any linear trivialization) and
+  `TauCeti.bundleMorseCoord_zeroSection` (it vanishes on the zero section).
 
 ## References
 
@@ -161,8 +163,8 @@ that of `f` read through `e z.1`:
 No continuity of `e`, nondegeneracy or smallness is needed, since the canonical congruence is
 natural exactly (`TauCeti.morseCongruence_bilinearComp`). Applied to the coordinate changes of a
 vector bundle, this says that the canonical coordinates of a function read in two trivializations
-agree wherever both are defined, so that they define a single fibre-preserving coordinate change
-on the total space. -/
+agree over the intersection of their base sets, at every base point where the slice is `C²`, so
+that there they define a single fibre-preserving map of the total space. -/
 theorem parametricMorseCoord_comp {e : P → E' ≃L[ℝ] E} {z : P × E'}
     (hf : ContDiff ℝ 2 fun v ↦ f (z.1, v)) :
     parametricMorseCoord (fun z ↦ f (z.1, e z.1 z.2)) z =
@@ -451,10 +453,11 @@ variable [∀ b, TopologicalSpace (V b)] [FiberBundle F V] [VectorBundle ℝ F V
 variable (F) in
 /-- The **canonical Morse coordinate** of a function `g` on the total space of a vector bundle: at
 a vector `v` over `b`, the canonical parametric Morse coordinate of `g` read in the trivialization
-at `b`, transported back to the fibre over `b`. Wherever `g` is `C²` along the fibre it does not
-depend on the trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so it is the
-fibre-preserving coordinate change obtained by patching the canonical coordinates of all
-trivializations. -/
+at `b`, transported back to the fibre over `b`. This is a fibre-preserving map of the total space.
+Over every base point where `g` is `C²` along the fibre it agrees with the canonical coordinate
+read in any linear trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so there it does
+not depend on the trivialization. Its smoothness, and that it is a change of coordinates near the
+zero section, are not proved here. -/
 noncomputable def bundleMorseCoord (g : TotalSpace F V → ℝ) (v : TotalSpace F V) : V v.proj :=
   (trivializationAt F V v.proj).symm v.proj
     (parametricMorseCoord (fun z ↦ g ⟨z.1, (trivializationAt F V v.proj).symm z.1 z.2⟩)
