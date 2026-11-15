@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Quotient
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Analysis.Normed.Module.Quotient
+import TauCeti.Analysis.Normed.Module.Dual.Submodule
 
 /-!
 # The dual of a quotient
@@ -15,7 +18,11 @@ Precomposition with the quotient projection identifies the continuous dual of `E
 isometrically with the annihilator of `S` in the continuous dual of `E`. The inverse descends
 an annihilating functional to the quotient. Evaluation formulas in both directions and
 naturality under commuting quotient squares make the identification usable without unfolding
-its construction.
+its construction. In particular, restricting the adjoint of an operator `T` to the annihilator
+of `S` and precomposing with the quotient-duality map gives the adjoint of `S.mkQL ∘L T`
+(`Submodule.precomp_comp_subtypeL_comp_quotientDualEquivAnnihilator`), and when `E ⧸ S` is
+finite-dimensional the annihilator has rank at most the codimension of `S`
+(`Submodule.rank_orthogonalBilin_topDualPairing_flip_le`).
 
 The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`, rather than a
 separate submodule construction. No completeness or closedness assumption is needed: a
@@ -29,7 +36,9 @@ public section
 
 namespace Submodule
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+universe u v w
+
+variable {𝕜 : Type u} {E : Type v} {F : Type w} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -95,5 +104,25 @@ theorem quotientDualEquivAnnihilator_naturality (S : Submodule 𝕜 E) (R : Subm
       (R.quotientDualEquivAnnihilator f : StrongDual 𝕜 F).comp T := by
   ext x
   simpa using congrArg (fun g : E →L[𝕜] F ⧸ R ↦ f (g x)) h
+
+/-- The annihilator of a submodule of finite codimension has rank at most that codimension. -/
+theorem rank_orthogonalBilin_topDualPairing_flip_le (S : Submodule 𝕜 E)
+    [FiniteDimensional 𝕜 (E ⧸ S)] :
+    Module.rank 𝕜 (S.orthogonalBilin (topDualPairing 𝕜 E).flip) ≤
+      Cardinal.lift.{u} (Module.rank 𝕜 (E ⧸ S)) :=
+  S.quotientDualEquivAnnihilator.toLinearEquiv.rank_eq.symm.trans_le StrongDual.rank_le
+
+/-- Restricting the adjoint of `T` to the annihilator of `S` and precomposing with the
+quotient-duality identification gives the adjoint of `S.mkQL ∘L T`. -/
+@[simp]
+theorem precomp_comp_subtypeL_comp_quotientDualEquivAnnihilator
+    (S : Submodule 𝕜 F) (T : E →L[𝕜] F) :
+    ((ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).comp
+        (S.orthogonalBilin (topDualPairing 𝕜 F).flip).subtypeL).comp
+      (S.quotientDualEquivAnnihilator :
+        StrongDual 𝕜 (F ⧸ S) →L[𝕜] S.orthogonalBilin (topDualPairing 𝕜 F).flip) =
+      ContinuousLinearMap.precomp 𝕜 (S.mkQL.comp T) := by
+  ext g x
+  rfl
 
 end Submodule

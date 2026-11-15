@@ -17,9 +17,11 @@ quotient projections by subspaces of dimension at most `n`. The quotient seminor
 even when the subspace is not closed. This definition works over every nontrivially normed
 field; its closed-unit-ball interpretation requires a densely normed field.
 
-We prove the norm, monotonicity, perturbation, ideal and rank laws. Over a complete scalar
-field, finite-dimensional subspaces are closed, and the Kolmogorov numbers form a strict
-s-number sequence. No completeness of the domain or codomain is needed.
+We prove the norm, monotonicity, perturbation, ideal and rank laws, together with invariance under
+postcomposition with surjective linear isometries (such as passing to the Hausdorff normed quotient
+modulo the closure of `0`). Over a complete scalar field, finite-dimensional subspaces are closed,
+and the Kolmogorov numbers form a strict s-number sequence. No completeness of the domain or
+codomain is needed.
 
 ## References
 
@@ -163,6 +165,51 @@ theorem kolmogorovNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G)
   rw [mul_assoc]
   gcongr
   exact T.kolmogorovNumber_comp_le_right A n
+
+/-- Postcomposing with a surjective linear isometry preserves Kolmogorov numbers. On seminormed
+spaces a surjective linear isometry need not be injective, for instance the quotient projection
+modulo the closure of `0`. -/
+theorem kolmogorovNumber_linearIsometry_comp_of_surjective (T : E →L[𝕜] F)
+    {J : F →ₗᵢ[𝕜] G} (hJ : Function.Surjective J) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).kolmogorovNumber n = T.kolmogorovNumber n := by
+  refine ((J.toContinuousLinearMap.kolmogorovNumber_comp_le_left T n).trans
+    (mul_le_of_le_one_left' (by exact_mod_cast J.norm_toContinuousLinearMap_le))).antisymm ?_
+  refine le_kolmogorovNumber_iff.mpr fun W hW ↦ ?_
+  let b := Module.Basis.ofVectorSpace 𝕜 W
+  choose lift hlift using fun i ↦ hJ (b i : G)
+  let s : W →ₗ[𝕜] F := b.constr 𝕜 lift
+  have hs : J.toLinearMap.comp s = W.subtype := b.ext fun i ↦ by simp [s, hlift]
+  let V : Submodule 𝕜 F := (⊤ : Submodule 𝕜 W).map s
+  have hV : Module.rank 𝕜 V ≤ n := by
+    have hr := (lift_rank_map_le s ⊤).trans
+      (Cardinal.lift_le.mpr ((rank_top 𝕜 W).trans_le hW))
+    simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using hr
+  refine (T.kolmogorovNumber_le hV).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
+  refine le_trans ?_ ((W.mkQL ∘L (J.toContinuousLinearMap ∘L T)).le_opNorm x)
+  refine (QuotientAddGroup.le_norm_iff (S := W.toAddSubgroup)).mpr fun g hg ↦ ?_
+  have hmem : g - J (T x) ∈ W := (Submodule.Quotient.eq W).mp hg
+  let u : F := T x + s ⟨g - J (T x), hmem⟩
+  have huJ : J u = g := by
+    have hsw : J (s ⟨g - J (T x), hmem⟩) = g - J (T x) :=
+      congrArg (fun f : W →ₗ[𝕜] G ↦ f ⟨g - J (T x), hmem⟩) hs
+    rw [map_add, hsw, add_sub_cancel]
+  have huV_mem : u - T x ∈ V :=
+    ⟨⟨g - J (T x), hmem⟩, Submodule.mem_top, (add_sub_cancel_left _ _).symm⟩
+  have huV : (Submodule.Quotient.mk u : F ⧸ V) = V.mkQL (T x) := by
+    simpa only [Submodule.coe_mkQL, Submodule.mkQ_apply, Submodule.Quotient.eq] using huV_mem
+  calc
+    ‖V.mkQL (T x)‖ = ‖(Submodule.Quotient.mk u : F ⧸ V)‖ := by rw [huV]
+    _ ≤ ‖u‖ := Submodule.Quotient.norm_mk_le V u
+    _ = ‖g‖ := by rw [← J.norm_map u, huJ]
+
+/-- Quotienting the codomain by the closure of `0` preserves Kolmogorov numbers. -/
+@[simp]
+theorem kolmogorovNumber_mkQL_topologicalClosure_bot_comp (T : E →L[𝕜] F) (n : ℕ) :
+    ((⊥ : Submodule 𝕜 F).topologicalClosure.mkQL ∘L T).kolmogorovNumber n =
+      T.kolmogorovNumber n := by
+  simpa only [Submodule.toContinuousLinearMap_mkQTopologicalClosureBotₗᵢ] using
+    T.kolmogorovNumber_linearIsometry_comp_of_surjective
+      Submodule.surjective_mkQTopologicalClosureBotₗᵢ n
 
 end ContinuousLinearMap
 

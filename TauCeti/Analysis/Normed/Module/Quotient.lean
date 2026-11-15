@@ -20,7 +20,10 @@ operator norm. Equivalently, precomposition with the quotient projection preserv
 norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
 part of the duality between a quotient and the annihilator of its defining submodule.
 The quotient projection is moreover a metric quotient map: it has norm at most one and lifts
-every vector of norm less than `r` to a vector of norm less than `r`. A closed-subspace quotient
+every vector of norm less than `r` to a vector of norm less than `r`. Quotienting a seminormed
+module by the closure of its zero submodule preserves every vector's norm
+(`Submodule.Quotient.norm_mk_topologicalClosure_bot`, `Submodule.mkQTopologicalClosureBotₗᵢ`),
+realizing its Hausdorff normed quotient by a surjective linear isometry. A closed-subspace quotient
 has a chosen bounded nonlinear right inverse with public bound constant two
 (`Submodule.quotientRightInverse`, `Submodule.quotientRightInverse_nnnorm`).
 
@@ -196,3 +199,47 @@ theorem quotientRightInverse_nnnorm (W : Submodule 𝕜 F) [IsClosed (W : Set F)
   simp only [quotientRightInverse]
 
 end Submodule
+
+section SeparationQuotient
+
+variable {R E : Type*} [Ring R] [SeminormedAddCommGroup E] [Module R E] [ContinuousConstSMul R E]
+
+/-- Quotienting a seminormed module by the closure of its zero submodule preserves norms. -/
+@[simp]
+theorem Submodule.Quotient.norm_mk_topologicalClosure_bot (x : E) :
+    ‖(Submodule.Quotient.mk x : E ⧸ (⊥ : Submodule R E).topologicalClosure)‖ = ‖x‖ := by
+  refine (QuotientAddGroup.norm_mk
+    (S := (⊥ : Submodule R E).topologicalClosure.toAddSubgroup) x).trans ?_
+  simp only [Submodule.coe_toAddSubgroup, Submodule.topologicalClosure_coe,
+    Metric.infDist_closure, Submodule.bot_coe, Metric.infDist_singleton, dist_zero_right]
+
+namespace Submodule
+
+variable (R E) in
+/-- The quotient map from a seminormed module onto its Hausdorff normed quotient modulo the
+closure of `0`, bundled as a linear isometry. -/
+def mkQTopologicalClosureBotₗᵢ :
+    E →ₗᵢ[R] E ⧸ (⊥ : Submodule R E).topologicalClosure where
+  toLinearMap := (⊥ : Submodule R E).topologicalClosure.mkQ
+  norm_map' := Submodule.Quotient.norm_mk_topologicalClosure_bot
+
+/-- Evaluating `mkQTopologicalClosureBotₗᵢ` forms the quotient class modulo the closure of `0`. -/
+@[simp]
+theorem mkQTopologicalClosureBotₗᵢ_apply (x : E) :
+    mkQTopologicalClosureBotₗᵢ R E x = Submodule.Quotient.mk x := (rfl)
+
+/-- The canonical linear isometry onto the quotient modulo the closure of `0` is surjective. -/
+theorem surjective_mkQTopologicalClosureBotₗᵢ :
+    Function.Surjective (mkQTopologicalClosureBotₗᵢ R E) :=
+  (⊥ : Submodule R E).topologicalClosure.mkQ_surjective
+
+/-- The continuous linear map underlying `mkQTopologicalClosureBotₗᵢ` is `mkQL`. -/
+@[simp]
+theorem toContinuousLinearMap_mkQTopologicalClosureBotₗᵢ {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 E] :
+    (mkQTopologicalClosureBotₗᵢ 𝕜 E).toContinuousLinearMap =
+      (⊥ : Submodule 𝕜 E).topologicalClosure.mkQL := (rfl)
+
+end Submodule
+
+end SeparationQuotient

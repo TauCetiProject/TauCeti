@@ -7,8 +7,12 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The dual of a submodule
@@ -18,8 +22,15 @@ inclusion `S.subtypeL`. Its kernel is the annihilator of `S`, and by the Hahn–
 surjective. Moreover, the quotient norm of a functional modulo the annihilator equals the norm of
 its restriction, since a norm-preserving extension of the restriction is a representative of the
 same class. Hence restriction descends to an isometric identification of the quotient of the
-continuous dual of `E` by the annihilator of `S` with the continuous dual of `S`. This is the
-counterpart of the identification of the dual of `E ⧸ S` with the annihilator of `S`.
+continuous dual of `E` by the annihilator of `S` with the continuous dual of `S`, intertwining
+postcomposition of an adjoint with the quotient projection and the adjoint of the restriction
+(`Submodule.quotientAnnihilatorEquivDual_comp_mkQL_comp_precomp`). This is the counterpart of the
+identification of the dual of `E ⧸ S` with the annihilator of `S`.
+
+Forgetting continuity embeds the continuous dual of a finite-dimensional topological vector space
+into its algebraic dual (`StrongDual.rank_le`, `StrongDual.finrank_le`), bounding the codimension of
+the annihilator of a finite-dimensional submodule by the rank of the submodule without Hahn–Banach
+(`Submodule.rank_quotient_orthogonalBilin_topDualPairing_flip_le`).
 
 The annihilator is Mathlib's `Submodule.orthogonalBilin` for `topDualPairing`, and the duals carry
 the topology of bounded convergence. The kernel computation holds over any normed field, for any
@@ -37,11 +48,37 @@ Theory*, §2.6. It is the continuous analogue of Mathlib's algebraic
 
 public section
 
+namespace StrongDual
+
+universe u v
+
+variable {𝕜 : Type u} {E : Type v} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+  [FiniteDimensional 𝕜 E]
+
+/-- On a finite-dimensional topological vector space, the continuous dual has rank at most that of
+the space, since forgetting continuity embeds it into the algebraic dual. -/
+theorem rank_le :
+    Module.rank 𝕜 (StrongDual 𝕜 E) ≤ Cardinal.lift.{u} (Module.rank 𝕜 E) :=
+  (LinearMap.rank_le_of_injective (ContinuousLinearMap.coeLM 𝕜)
+    ContinuousLinearMap.coe_injective).trans_eq Module.dual_rank_eq
+
+/-- On a finite-dimensional topological vector space, the continuous dual has `finrank` at most
+that of the space. -/
+theorem finrank_le : Module.finrank 𝕜 (StrongDual 𝕜 E) ≤ Module.finrank 𝕜 E :=
+  (LinearMap.finrank_le_finrank_of_injective (f := ContinuousLinearMap.coeLM 𝕜)
+    ContinuousLinearMap.coe_injective).trans_eq Subspace.dual_finrank_eq
+
+end StrongDual
+
 namespace Submodule
 
 section Topological
 
-variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+universe u v
+
+variable {𝕜 : Type u} {E : Type v} [NormedField 𝕜] [AddCommGroup E] [TopologicalSpace E]
+  [Module 𝕜 E]
 
 /-- Restriction to a submodule kills exactly the annihilator of that submodule. -/
 theorem ker_precomp_subtypeL (S : Submodule 𝕜 E) :
@@ -49,6 +86,17 @@ theorem ker_precomp_subtypeL (S : Submodule 𝕜 E) :
       S.orthogonalBilin (topDualPairing 𝕜 E).flip := by
   ext f
   simp [ContinuousLinearMap.ext_iff]
+
+/-- The annihilator of a finite-dimensional submodule has codimension in the continuous dual at
+most the rank of the submodule. -/
+theorem rank_quotient_orthogonalBilin_topDualPairing_flip_le (S : Submodule 𝕜 E)
+    [FiniteDimensional 𝕜 S] :
+    Module.rank 𝕜 (StrongDual 𝕜 E ⧸ S.orthogonalBilin (topDualPairing 𝕜 E).flip) ≤
+      Cardinal.lift.{u} (Module.rank 𝕜 S) := by
+  let f : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 S := ContinuousLinearMap.precomp 𝕜 S.subtypeL
+  let e := (quotEquivOfEq (S.orthogonalBilin (topDualPairing 𝕜 E).flip) f.ker
+    S.ker_precomp_subtypeL.symm).trans f.toLinearMap.quotKerEquivRange
+  exact (e.rank_eq.trans_le (Submodule.rank_le _)).trans StrongDual.rank_le
 
 end Topological
 
@@ -141,6 +189,17 @@ theorem quotientAnnihilatorEquivDual_naturality (S : Submodule 𝕜 E) (R : Subm
     (R.quotientAnnihilatorEquivDual (Submodule.Quotient.mk f)).comp Ts =
       S.quotientAnnihilatorEquivDual (Submodule.Quotient.mk (f.comp T)) := by
   simp only [quotientAnnihilatorEquivDual_mk, ContinuousLinearMap.comp_assoc, h]
+
+/-- Quotienting the adjoint of `T` by the annihilator of a submodule `S` and identifying the
+quotient with the dual of `S` gives the adjoint of the restriction `T|_S`. -/
+@[simp]
+theorem quotientAnnihilatorEquivDual_comp_mkQL_comp_precomp (S : Submodule 𝕜 E) (T : E →L[𝕜] F) :
+    S.quotientAnnihilatorEquivDual.toLinearIsometry.toContinuousLinearMap.comp
+        ((S.orthogonalBilin (topDualPairing 𝕜 E).flip).mkQL.comp
+          (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)) =
+      ContinuousLinearMap.precomp 𝕜 (T.comp S.subtypeL) := by
+  ext g x
+  rfl
 
 end HahnBanach
 

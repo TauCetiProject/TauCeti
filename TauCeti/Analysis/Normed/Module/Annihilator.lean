@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Analysis.Normed.Module.Dual.Quotient
+import TauCeti.Analysis.Normed.Module.Dual.Submodule
 
 /-!
 # Continuous annihilators and norm closure
@@ -25,7 +29,10 @@ not change an annihilator. Over the real or complex field, the preannihilator of
 annihilator is precisely the norm closure of the original subspace. Consequently continuous
 annihilators distinguish norm closures, and a subspace is dense exactly when its annihilator
 is zero. No completeness or closedness hypothesis is needed. Dually, a finite-dimensional
-subspace of the strong dual is the continuous annihilator of its preannihilator.
+subspace of the strong dual is the continuous annihilator of its preannihilator, and over an
+`IsRCLikeNormedField` its preannihilator has codimension equal to its dimension
+(`Submodule.lift_rank_quotient_orthogonalBilin_topDualPairing`,
+`Submodule.finrank_quotient_orthogonalBilin_topDualPairing`).
 
 The analytic input is `exists_dual_vector''`, the norming-functional form of Hahn–Banach,
 applied to the seminormed quotient. In particular, the results also apply to seminormed
@@ -184,5 +191,57 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
       Submodule.orthogonalBilin_bot]
 
 end RCLike
+
+section IsRCLikeNormedField
+
+universe u v
+
+variable {𝕜 : Type u} {E : Type v} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Over an `IsRCLikeNormedField`, the preannihilator of a finite-dimensional subspace `G` of the
+strong dual has quotient rank equal to `finrank 𝕜 G`. -/
+theorem rank_quotient_orthogonalBilin_topDualPairing
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    Module.rank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) = Module.finrank 𝕜 G := by
+  let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let M := G.orthogonalBilin (topDualPairing 𝕜 E)
+  have : IsClosed (M : Set E) := isClosed_orthogonalBilin_topDualPairing G
+  let e : StrongDual 𝕜 (E ⧸ M) ≃ₗ[𝕜] G :=
+    M.quotientDualEquivAnnihilator.toLinearEquiv.trans (LinearEquiv.ofEq _ _
+      (orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional G))
+  have : FiniteDimensional 𝕜 (StrongDual 𝕜 (E ⧸ M)) := Module.Finite.equiv e.symm
+  have hbidual : Module.rank 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 (E ⧸ M))) ≤ Module.finrank 𝕜 G := by
+    refine (StrongDual.rank_le (𝕜 := 𝕜) (E := StrongDual 𝕜 (E ⧸ M))).trans_eq ?_
+    rw [e.rank_eq, ← Module.finrank_eq_rank 𝕜 G, Cardinal.lift_natCast]
+  have hle : Module.rank 𝕜 (E ⧸ M) ≤ Module.finrank 𝕜 G := by
+    have hinj := (LinearMap.lift_rank_le_of_injective _
+      (NormedSpace.inclusionInDoubleDualLi 𝕜 (E := E ⧸ M)).injective).trans
+      (Cardinal.lift_le.mpr hbidual)
+    rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hinj
+  have : FiniteDimensional 𝕜 (E ⧸ M) :=
+    Module.rank_lt_aleph0_iff.mp (hle.trans_lt Cardinal.natCast_lt_aleph0)
+  refine hle.antisymm ?_
+  have hge := e.rank_eq.symm.trans_le (StrongDual.rank_le (𝕜 := 𝕜) (E := E ⧸ M))
+  rwa [← Module.finrank_eq_rank 𝕜 G, ← Cardinal.lift_natCast.{u, v}, Cardinal.lift_le] at hge
+
+/-- Over an `IsRCLikeNormedField`, the preannihilator of a finite-dimensional subspace of the
+strong dual has codimension equal to the subspace's rank. -/
+@[simp]
+theorem lift_rank_quotient_orthogonalBilin_topDualPairing
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    Cardinal.lift.{u} (Module.rank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E))) =
+      Module.rank 𝕜 G := by
+  rw [rank_quotient_orthogonalBilin_topDualPairing, Cardinal.lift_natCast, Module.finrank_eq_rank]
+
+/-- Over an `IsRCLikeNormedField`, the preannihilator of a finite-dimensional subspace of the
+strong dual has `finrank` codimension equal to the subspace's `finrank`. -/
+@[simp]
+theorem finrank_quotient_orthogonalBilin_topDualPairing
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    Module.finrank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E)) = Module.finrank 𝕜 G := by
+  simp [Module.finrank, rank_quotient_orthogonalBilin_topDualPairing]
+
+end IsRCLikeNormedField
 
 end Submodule
