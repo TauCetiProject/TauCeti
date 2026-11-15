@@ -499,12 +499,12 @@ to the cohomology class of the point chain of `γ`. -/
 theorem groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom (γ : MooreLoopSpace B b) :
     groupAlgebraToLoopChainCohomology B b R
         (MonoidAlgebra.of R _ (MooreLoopSpace.fundamentalGroupHom b γ)) =
-      Ideal.Quotient.mk _ ⟨cubicalChainLof (MooreLoopSpace B b) R 0
-          (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ)),
+      Ideal.Quotient.mk _ ⟨loopPointChain R γ,
         (loopChain_isDGAlgebra B b R).mem_cycles.mpr
-          (cubicalChainDifferential_lof_zero _ _ _)⟩ := by
-  rw [← groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra,
-    loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply, MonoidAlgebra.of_apply]
+          (cubicalChainDifferential_loopPointChain γ)⟩ := by
+  have h := groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra B b R
+    (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ))
+  rwa [loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply, ← MonoidAlgebra.of_apply] at h
 
 /-- `groupAlgebraToLoopChainCohomology` lands in degree zero: the group ring is `H₀(Ω_b B; R)`. -/
 theorem groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero

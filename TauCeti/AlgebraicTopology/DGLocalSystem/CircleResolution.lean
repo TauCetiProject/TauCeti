@@ -130,20 +130,15 @@ def loopCellCocycle (γ : MooreLoopSpace B b) :
   (0 : RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B b R)
       (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
       Unit (fun _ ↦ 0)).attach
-    (fun _ ↦ Finsupp.single () (cubicalChainLof (MooreLoopSpace B b) R 0
-      (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) - 1))
+    (fun _ ↦ Finsupp.single () (loopPointChain R γ - 1))
     (fun _ _ ↦ by
-      have hp : cubicalChainLof (MooreLoopSpace B b) R 0
-          (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) ∈
-            cubicalChainGrading (MooreLoopSpace B b) R 0 := by
-        simpa using cubicalChainLof_mem (MooreLoopSpace B b) R
-          (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ))
-      simpa using sub_mem hp (SetLike.one_mem_graded (cubicalChainGrading (MooreLoopSpace B b) R)))
+      simpa using sub_mem (loopPointChain_mem γ)
+        (SetLike.one_mem_graded (cubicalChainGrading (MooreLoopSpace B b) R)))
     (fun _ ↦ by
       rw [RowFiniteTwistingCocycle.zero_m, rowFiniteTwistedDifferential_zero,
         Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single, map_sub,
-        cubicalChainDifferential_lof_zero, (loopChain_isDGAlgebra B b R).map_one_eq_zero, sub_zero,
-        Finsupp.single_zero])
+        cubicalChainDifferential_loopPointChain, (loopChain_isDGAlgebra B b R).map_one_eq_zero,
+        sub_zero, Finsupp.single_zero])
 
 variable {R}
 
@@ -155,9 +150,8 @@ theorem loopCellCocycle_m_inl (γ : MooreLoopSpace B b) :
 /-- The row of `e₁` is `([γ] - [1]) e₀`. -/
 @[simp]
 theorem loopCellCocycle_m_inr (γ : MooreLoopSpace B b) :
-    (loopCellCocycle R γ).m (Sum.inr ()) = Finsupp.single (Sum.inl ())
-      (cubicalChainLof (MooreLoopSpace B b) R 0
-        (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) - 1) := by
+    (loopCellCocycle R γ).m (Sum.inr ()) =
+      Finsupp.single (Sum.inl ()) (loopPointChain R γ - 1) := by
   rw [loopCellCocycle, RowFiniteTwistingCocycle.attach_m_inr, Finsupp.mapDomain_single]
 
 /-- The cocycle is one-sided, so its free module is semi-free
@@ -180,8 +174,7 @@ theorem loopCellCocycle_differential_apply (γ : MooreLoopSpace B b)
           (cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inl ())) +
           (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
               1 (u (Sum.inr ())) *
-            (cubicalChainLof (MooreLoopSpace B b) R 0
-              (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) - 1)) +
+            (loopPointChain R γ - 1)) +
         Finsupp.single (Sum.inr ())
           (cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inr ()))) := by
   have hu : u = Finsupp.single (Sum.inl ()) (u (Sum.inl ())) +
@@ -206,8 +199,7 @@ theorem loopCellCocycle_differential_apply_inl (γ : MooreLoopSpace B b)
       cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inl ())) +
         (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
             1 (u (Sum.inr ())) *
-          (cubicalChainLof (MooreLoopSpace B b) R 0
-            (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) - 1) := by
+          (loopPointChain R γ - 1) := by
   simp [loopCellCocycle_differential_apply]
 
 /-- The coefficient of `e₁` in the differential of `u` is `d(u e₁)`. -/
@@ -243,8 +235,7 @@ theorem loopCellCocycle_differential_single_inr (γ : MooreLoopSpace B b)
       Finsupp.single (Sum.inl ())
           ((InternalGrading.ofDecomposition
               (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1 β *
-            (cubicalChainLof (MooreLoopSpace B b) R 0
-              (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ)) - 1)) +
+            (loopPointChain R γ - 1)) +
         Finsupp.single (Sum.inr ()) (cubicalChainDifferential (MooreLoopSpace B b) R β) := by
   simp [loopCellCocycle_differential_apply]
 
@@ -356,13 +347,11 @@ theorem exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
   set d := cubicalChainDifferential (MooreLoopSpace B b) R
   set T := loopChainToGroupAlgebra B b R
   set g := MooreLoopSpace.fundamentalGroupHom b γ
-  set p := cubicalChainLof (MooreLoopSpace B b) R 0
-    (NormalizedCubicalChain.ofCube _ R (SingularCube.point γ))
+  set p := loopPointChain R γ
   have hDsq (w) : D (D w) = 0 :=
     (loopCellCocycle R γ).differential_sq_zero (loopChain_isDGAlgebra B b R) w
   have hTp : T (p - 1) = MonoidAlgebra.single g 1 - 1 := by
-    rw [map_sub, map_one, loopChainToGroupAlgebra_lof_zero, loopZeroChainToGroupAlgebra_ofCube,
-      SingularCube.point_apply]
+    rw [map_sub, map_one, loopChainToGroupAlgebra_loopPointChain]
   -- A cycle `α e₀` whose coefficient has vanishing truncation is a boundary.
   have hbound (w : Unit ⊕ Unit →₀ loopChainAlgebra B b R) (hw1 : w (Sum.inr ()) = 0)
       (hDw : D w = 0) (hT : T (w (Sum.inl ())) = 0) : ∃ v, D v = w := by
@@ -559,7 +548,7 @@ theorem cubicalChainModuleDifferential_loopCellComparison (γ : MooreLoopSpace B
     _ (fun x ↦ ?_) f).symm
   rcases x with ⟨⟨⟩⟩ | ⟨⟨⟩⟩
   · simp
-  · rw [loopCellCocycle_m_inr, ← loopPointChain_def, Finsupp.linearCombination_single,
+  · rw [loopCellCocycle_m_inr, Finsupp.linearCombination_single,
       Sum.elim_inl, Sum.elim_inr, cubicalChainModuleDifferential_neg_cone]
 
 /-- **The comparison is compatible with the augmentations.** -/

@@ -103,9 +103,8 @@ theorem cohomologyRepresentation_fundamentalGroupHom_inv (γ : MooreLoopSpace B 
 theorem cohomologyRepresentation_fundamentalGroupHom_inv_apply (γ : MooreLoopSpace B b)
     (x : hM.Cohomology) :
     hM.cohomologyRepresentation (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ x =
-      op (⟨cubicalChainLof (MooreLoopSpace B b) R 0
-          (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ)),
-        (loopChain_isDGAlgebra B b R).mem_cycles.mpr (cubicalChainDifferential_lof_zero _ _ _)⟩ :
+      op (⟨loopPointChain R γ,
+        (loopChain_isDGAlgebra B b R).mem_cycles.mpr (cubicalChainDifferential_loopPointChain γ)⟩ :
           (loopChain_isDGAlgebra B b R).cycles) • x := by
   rw [cohomologyRepresentation_fundamentalGroupHom_inv,
     groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom, cohomologyAction_mk]
