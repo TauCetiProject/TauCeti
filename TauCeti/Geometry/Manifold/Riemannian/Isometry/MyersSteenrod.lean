@@ -145,10 +145,6 @@ private theorem norm_sub_riemannianLog_apply_riemannianExp_le_mul (hf : Isometry
       (hut : t • u ∈ Metric.ball 0 (min ρ₁ ρ₂)) : A (t • u) ∈ Metric.ball 0 ρ₂ := by
     rw [mem_ball_zero_iff, hnorm (hsmul_mem hu)]
     exact (mem_ball_zero_iff.1 hut).trans_le (min_le_right _ _)
-  have hscale (x y : TangentSpace J (f p)) : ‖t • x - t • y‖ = t * ‖x - y‖ := by
-    rw [← smul_sub, norm_smul, Real.norm_of_nonneg ht.1]
-  have hscale' (x y : TangentSpace I p) : ‖t • x - t • y‖ = t * ‖x - y‖ := by
-    rw [← smul_sub, norm_smul, Real.norm_of_nonneg ht.1]
   -- `f` identifies the distance of `exp_p (t • v)` and `exp_p (t • w)` with that of their images.
   have hd : dist (riemannianExp J N (f p) (A (t • v))) (riemannianExp J N (f p) (A (t • w))) =
       dist (riemannianExp I M p (t • v)) (riemannianExp I M p (t • w)) := by
@@ -156,8 +152,9 @@ private theorem norm_sub_riemannianLog_apply_riemannianExp_le_mul (hf : Isometry
   have hN := h₂ _ (hball₂ hv htv) _ (hball₂ hw htw)
   have hM := h₁ _ (Metric.ball_subset_ball (min_le_left _ _) htv) _
     (Metric.ball_subset_ball (min_le_left _ _) htw)
-  rw [hd, hsmul hv, hsmul hw, hscale] at hN
-  rw [hscale'] at hM
+  rw [hd, hsmul hv, hsmul hw] at hN
+  -- Rescaling by `t ≥ 0` multiplies both differences by `t`.
+  rw [← smul_sub, norm_smul, Real.norm_of_nonneg ht.1] at hN hM
   constructor
   · refine le_of_mul_le_mul_left ?_ ht0
     nlinarith [hN.1, hM.2]
