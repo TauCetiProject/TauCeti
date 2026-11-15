@@ -36,8 +36,9 @@ and topological generalized Poincaré statements:
   preconnected Hausdorff `n`-manifold is homotopy equivalent to `Sⁿ`
   (`TauCeti.isEmpty_homotopyEquiv_sphere_of_not_compactSpace`,
   `TauCeti.isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ`); see
-  `TauCeti.AlgebraicTopology.Sphere.Contractible` for the contractibility obstructions on normed and
-  Euclidean spaces.
+  `TauCeti.AlgebraicTopology.Sphere.Contractible` for the contractibility obstruction
+  (`TauCeti.isEmpty_homotopyEquiv_sphere_of_contractibleSpace`), which in particular applies to real
+  normed and Euclidean spaces.
 * **Reductions of the Poincaré conjecture.** Both the smooth statement
   `ContinuousMap.HomotopyEquiv.NonemptyDiffeomorphSphere M n` and its topological counterpart on a
   fixed `[ChartedSpace E M]` reduce for `1 ≤ n` to compact path-connected second-countable manifolds
