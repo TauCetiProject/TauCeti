@@ -259,9 +259,13 @@ private theorem associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one {p : ℕ}
     have := TauCeti.Ring.algebraMap_mem_jacobson (A := AdjoinRoot F) hpO
     rw [map_natCast] at this
     simpa [add_comm] using Ring.mem_jacobson_iff.1 this c
-  rw [show AdjoinRoot.mk F ((Polynomial.cyclotomic (p ^ (n + 1)) O).comp (Polynomial.X + 1)) =
-      algebraMap O _ p * (1 + p * c) by rw [hc, map_natCast]; ring,
-    map_mul, Algebra.norm_algebraMap, (AdjoinRoot.powerBasis' hF.monic).finrank,
+  -- Factor `ξ_{n+1}` as the scalar `p` times `1 + p c`, so that the norm splits as
+  -- `p ^ deg F` times the norm of a unit.
+  have hξ : AdjoinRoot.mk F ((Polynomial.cyclotomic (p ^ (n + 1)) O).comp (Polynomial.X + 1)) =
+      algebraMap O _ p * (1 + p * c) := by
+    rw [hc, map_natCast]
+    ring
+  rw [hξ, map_mul, Algebra.norm_algebraMap, (AdjoinRoot.powerBasis' hF.monic).finrank,
     AdjoinRoot.powerBasis'_dim]
   exact associated_mul_unit_left _ _ (hunit.map _)
 
