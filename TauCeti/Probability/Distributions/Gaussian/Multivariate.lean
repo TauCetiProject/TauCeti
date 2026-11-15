@@ -295,15 +295,8 @@ theorem _root_.ProbabilityTheory.HasLaw.covariance_inner_map_smul_stdGaussian
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     {Y : Ω → E} {c : ℝ} (hY : HasLaw Y ((stdGaussian E).map (fun x : E ↦ c • x)) P) (u v : E) :
     cov[fun ω ↦ ⟪u, Y ω⟫, fun ω ↦ ⟪v, Y ω⟫; P] = c ^ 2 * ⟪u, v⟫ := by
-  have := hY.isProbabilityMeasure
-  have h1 := (covariance_map (innerSL ℝ u).continuous.aestronglyMeasurable
-    (innerSL ℝ v).continuous.aestronglyMeasurable hY.aemeasurable).symm
-  have h2 := covariance_map (μ := stdGaussian E) (innerSL ℝ u).continuous.aestronglyMeasurable
-    (innerSL ℝ v).continuous.aestronglyMeasurable (measurable_id.const_smul c).aemeasurable
-  have hcov : cov[fun ω ↦ ⟪u, Y ω⟫, fun ω ↦ ⟪v, Y ω⟫; P] =
-      cov[fun x : E ↦ ⟪u, c • x⟫, fun x : E ↦ ⟪v, c • x⟫; stdGaussian E] := by
-    simpa [Function.comp_def, hY.map_eq] using h1.trans (hY.map_eq ▸ h2)
-  rw [hcov]
+  rw [hY.covariance_fun_comp (by fun_prop) (by fun_prop),
+    covariance_map_fun (by fun_prop) (by fun_prop) (by fun_prop)]
   simp_rw [real_inner_smul_right]
   rw [covariance_const_mul_left, covariance_const_mul_right, covariance_inner_stdGaussian,
     ← mul_assoc, ← sq]

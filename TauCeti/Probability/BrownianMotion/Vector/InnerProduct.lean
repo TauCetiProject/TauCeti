@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import TauCeti.Probability.BrownianMotion.Vector.Basic
 
 import Mathlib.Analysis.InnerProductSpace.PiL2
@@ -16,6 +17,7 @@ import Mathlib.Probability.Independence.Process.HasIndepIncrements.IsGaussianPro
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.IsGaussianProcess
 import TauCeti.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.Moments.Covariance
 
@@ -107,7 +109,7 @@ theorem congr (hW : IsPreBrownian W P) (h : ∀ t, W t =ᵐ[P] W' t) : IsPreBrow
       ((h t).symm.fun_comp (⟪v, ·⟫))).trans (hW.covariance_inner s t u v)⟩
 
 /-- Indistinguishable modifications preserve `IsPreBrownian`. -/
-theorem congr_indistinguishable (hW : IsPreBrownian W P) (h : W ≡ᵐ[P] W') : IsPreBrownian W' P :=
+theorem congr_indist (hW : IsPreBrownian W P) (h : W ≡ᵐ[P] W') : IsPreBrownian W' P :=
   hW.congr fun t ↦ h.mono fun _ hω ↦ hω t
 
 end IsPreBrownian
@@ -117,8 +119,8 @@ namespace IsBrownian
 variable {W W' : ℝ≥0 → Ω → E}
 
 /-- Indistinguishable modifications preserve `IsBrownian`. -/
-theorem congr_indistinguishable (hW : IsBrownian W P) (h : W ≡ᵐ[P] W') : IsBrownian W' P :=
-  ⟨hW.toIsPreBrownian.congr_indistinguishable h,
+theorem congr_indist (hW : IsBrownian W P) (h : W ≡ᵐ[P] W') : IsBrownian W' P :=
+  ⟨hW.toIsPreBrownian.congr_indist h,
     hW.ae_continuous.mp (h.mono fun _ hω hc ↦ by simpa [funext hω] using hc)⟩
 
 end IsBrownian
@@ -153,7 +155,6 @@ theorem memLp_two_inner_eval (hW : IsPreBrownian W P) (u : E) (t : ℝ≥0) :
     MemLp (fun ω ↦ ⟪u, W t ω⟫) 2 P := (hW.hasGaussianLaw_inner_eval u t).memLp_two
 
 /-- On a complete separable inner-product space, every `W t` has Bochner integral `0`. -/
-@[simp]
 theorem integral_eval [SecondCountableTopology E] [CompleteSpace E] (hW : IsPreBrownian W P)
     (t : ℝ≥0) : ∫ ω, W t ω ∂P = 0 :=
   ext_inner_left ℝ fun u ↦ by simpa [innerSL_apply_apply] using
@@ -164,6 +165,23 @@ theorem of_subsingleton [Subsingleton E] [IsProbabilityMeasure P] (W : ℝ≥0 �
     IsPreBrownian W P :=
   ⟨⟨fun _ ↦ .of_subsingleton⟩, fun _ _ ↦ by simp [Subsingleton.elim _ (0 : E)],
     fun _ _ u _ ↦ by simp [Subsingleton.elim u 0]⟩
+
+/-- Cross-covariance of directional increments `⟪u, W s₂ - W s₁⟫` and `⟪v, W t₂ - W t₁⟫`. -/
+theorem covariance_inner_sub (hW : IsPreBrownian W P) (s₁ s₂ t₁ t₂ : ℝ≥0) (u v : E) :
+    cov[fun ω ↦ ⟪u, W s₂ ω - W s₁ ω⟫, fun ω ↦ ⟪v, W t₂ ω - W t₁ ω⟫; P] =
+      (min (s₂ : ℝ) t₂ - min (s₂ : ℝ) t₁ - (min (s₁ : ℝ) t₂ - min (s₁ : ℝ) t₁)) * ⟪u, v⟫ := by
+  have := hW.isProbabilityMeasure
+  simp_rw [inner_sub_right]
+  rw [covariance_fun_sub_fun_sub (hW.memLp_two_inner_eval u s₂) (hW.memLp_two_inner_eval u s₁)
+    (hW.memLp_two_inner_eval v t₂) (hW.memLp_two_inner_eval v t₁)]
+  simp only [hW.covariance_inner]; ring
+
+/-- Cross-covariance of directional increments over the same interval `[s, t]` (`s ≤ t`) equals
+`((t : ℝ) - s) * ⟪u, v⟫`. -/
+theorem covariance_inner_sub_of_le (hW : IsPreBrownian W P) {s t : ℝ≥0} (hst : s ≤ t) (u v : E) :
+    cov[fun ω ↦ ⟪u, W t ω - W s ω⟫, fun ω ↦ ⟪v, W t ω - W s ω⟫; P] = ((t : ℝ) - s) * ⟪u, v⟫ := by
+  have h : (s : ℝ) ≤ t := NNReal.coe_le_coe.mpr hst
+  rw [hW.covariance_inner_sub, min_self, min_self, min_eq_right h, min_eq_left h]; ring
 
 /-- Variance of a directional projection `⟪u, W t⟫` equals `‖u‖ ^ 2 * t`. -/
 theorem variance_inner_eval (hW : IsPreBrownian W P) (u : E) (t : ℝ≥0) :
@@ -181,6 +199,22 @@ theorem hasLaw_inner_eval (hW : IsPreBrownian W P) (u : E) (t : ℝ≥0) :
     exact congrArg (gaussianReal 0) <| NNReal.coe_injective <| by
       simp [Real.coe_toNNReal _ (mul_nonneg (sq_nonneg _) t.coe_nonneg)]⟩
 
+/-- Completing the ambient probability measure preserves `IsPreBrownian`. -/
+theorem completion (hW : IsPreBrownian W P) :
+    @IsPreBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion where
+  isGaussianProcess := hW.isGaussianProcess.completion
+  integral_inner t u := by
+    have h := hW.hasLaw_inner_eval u t
+    exact h.completion.integral_eq.trans (h.integral_eq.symm.trans (hW.integral_inner t u))
+  covariance_inner s t u v := by
+    have h := hasLaw_map ((hW.hasGaussianLaw_inner_eval u s).aemeasurable.prodMk
+      (hW.hasGaussianLaw_inner_eval v t).aemeasurable)
+    have h₁ := h.completion.covariance_fun_comp measurable_fst.aemeasurable
+      measurable_snd.aemeasurable
+    have h₂ := h.covariance_fun_comp measurable_fst.aemeasurable measurable_snd.aemeasurable
+    exact (h₁.trans h₂.symm).trans (hW.covariance_inner s t u v)
+
 end IsPreBrownian
 
 /-- Constructor for `IsPreBrownian` from Bochner mean zero `∀ t, ∫ ω, W t ω ∂P = 0`. -/
@@ -194,7 +228,7 @@ theorem _root_.ProbabilityTheory.IsGaussianProcess.isPreBrownian_of_integral_eva
     hcov⟩
 
 /-- Characterization of `IsPreBrownian` on a complete separable space via Bochner mean zero. -/
-theorem isPreBrownian_iff_of_completeSpace [SecondCountableTopology E] [CompleteSpace E] :
+theorem isPreBrownian_iff_integral_eval [SecondCountableTopology E] [CompleteSpace E] :
     IsPreBrownian W P ↔ IsGaussianProcess W P ∧ (∀ t, ∫ ω, W t ω ∂P = 0) ∧ ∀ s t (u v : E),
       cov[fun ω ↦ ⟪u, W s ω⟫, fun ω ↦ ⟪v, W t ω⟫; P] = min (s : ℝ) t * ⟪u, v⟫ :=
   ⟨fun h ↦ ⟨h.isGaussianProcess, h.integral_eval, h.covariance_inner⟩,
@@ -204,6 +238,12 @@ theorem isPreBrownian_iff_of_completeSpace [SecondCountableTopology E] [Complete
 theorem IsBrownian.of_subsingleton [Subsingleton E] [IsProbabilityMeasure P] (W : ℝ≥0 → Ω → E) :
     IsBrownian W P :=
   ⟨.of_subsingleton W, ae_of_all _ fun ω ↦ Subsingleton.elim (W · ω) (fun _ ↦ 0) ▸ continuous_const⟩
+
+/-- Completing the ambient probability measure preserves `IsBrownian`. -/
+theorem IsBrownian.completion (hW : IsBrownian W P) :
+    @IsBrownian (NullMeasurableSpace Ω P) E inferInstance _ _ _
+      (fun t (ω : NullMeasurableSpace Ω P) ↦ W t ω) P.completion :=
+  ⟨hW.toIsPreBrownian.completion, hW.ae_continuous⟩
 
 /-- On `E = ℝ`, `IsPreBrownian` agrees with `ProbabilityTheory.IsPreBrownianReal`. -/
 @[simp]
@@ -283,16 +323,6 @@ theorem smul (hW : IsPreBrownian W P) {c : ℝ≥0} (hc : c ≠ 0) :
     have hsq : (√(c : ℝ))⁻¹ * ((√(c : ℝ))⁻¹ * ((c : ℝ) * min (s : ℝ) t * ⟪u, v⟫)) =
         ((√(c : ℝ)) ^ 2)⁻¹ * (c : ℝ) * (min (s : ℝ) t * ⟪u, v⟫) := by ring
     rw [hsq, Real.sq_sqrt hc_pos.le, inv_mul_cancel₀ hc_pos.ne', one_mul]
-
-omit [SecondCountableTopology E] in
-private theorem covariance_inner_sub (hW : IsPreBrownian W P) (s₁ s₂ t₁ t₂ : ℝ≥0) (u v : E) :
-    cov[fun ω ↦ ⟪u, W s₂ ω - W s₁ ω⟫, fun ω ↦ ⟪v, W t₂ ω - W t₁ ω⟫; P] =
-      (min (s₂ : ℝ) t₂ - min (s₂ : ℝ) t₁ - (min (s₁ : ℝ) t₂ - min (s₁ : ℝ) t₁)) * ⟪u, v⟫ := by
-  have := hW.isProbabilityMeasure
-  simp_rw [inner_sub_right]
-  rw [covariance_fun_sub_fun_sub (hW.memLp_two_inner_eval u s₂) (hW.memLp_two_inner_eval u s₁)
-    (hW.memLp_two_inner_eval v t₂) (hW.memLp_two_inner_eval v t₁)]
-  simp only [hW.covariance_inner]; ring
 
 /-- Deterministic time shift `W (t₀ + t) - W t₀` preserves `IsPreBrownian`. -/
 theorem shift (hW : IsPreBrownian W P) (t₀ : ℝ≥0) :
@@ -448,13 +478,13 @@ section OrthonormalBasis
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Projecting `IsPreBrownian` onto a finite orthonormal basis `b` yields `IsPreBrownianVector`. -/
-theorem IsPreBrownian.isPreBrownianVector_inner [Fintype ι] {W : ℝ≥0 → Ω → E}
+theorem IsPreBrownian.isPreBrownianVector_orthonormalBasis [Fintype ι] {W : ℝ≥0 → Ω → E}
     (hW : IsPreBrownian W P) (b : OrthonormalBasis ι ℝ E) :
     IsPreBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
   have := b.repr.symm.finiteDimensional; hW.isPreBrownianVector_of_orthonormal b.orthonormal
 
 /-- Projecting `IsBrownian` onto a finite orthonormal basis `b` yields `IsBrownianVector`. -/
-theorem IsBrownian.isBrownianVector_inner [Fintype ι] {W : ℝ≥0 → Ω → E}
+theorem IsBrownian.isBrownianVector_orthonormalBasis [Fintype ι] {W : ℝ≥0 → Ω → E}
     (hW : IsBrownian W P) (b : OrthonormalBasis ι ℝ E) :
     IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
   have := b.repr.symm.finiteDimensional; hW.isBrownianVector_of_orthonormal b.orthonormal
@@ -494,13 +524,13 @@ theorem IsBrownianVector.isBrownian_sum_smul [Fintype ι] {B : ι → ℝ≥0 �
 theorem isPreBrownian_iff_isPreBrownianVector [Fintype ι] {W : ℝ≥0 → Ω → E}
     (b : OrthonormalBasis ι ℝ E) :
     IsPreBrownian W P ↔ IsPreBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
-  ⟨fun hW ↦ hW.isPreBrownianVector_inner b,
+  ⟨fun hW ↦ hW.isPreBrownianVector_orthonormalBasis b,
     fun hB ↦ by simpa only [b.sum_repr'] using hB.isPreBrownian_sum_smul b⟩
 
 /-- `IsBrownian W P` iff its coordinates in a finite orthonormal basis are `IsBrownianVector`. -/
 theorem isBrownian_iff_isBrownianVector [Fintype ι] {W : ℝ≥0 → Ω → E}
     (b : OrthonormalBasis ι ℝ E) : IsBrownian W P ↔ IsBrownianVector (fun i t ω ↦ ⟪b i, W t ω⟫) P :=
-  ⟨fun hW ↦ hW.isBrownianVector_inner b,
+  ⟨fun hW ↦ hW.isBrownianVector_orthonormalBasis b,
     fun hB ↦ by simpa only [b.sum_repr'] using hB.isBrownian_sum_smul b⟩
 
 /-- Product construction of `IsPreBrownian` along a finite orthonormal basis `b`. -/
@@ -537,7 +567,7 @@ theorem hasLaw_sub_of_le (hW : IsPreBrownian W P) {s t : ℝ≥0} (hst : s ≤ t
   have hmeas : Measurable (fun (z : Fin (Module.finrank ℝ E) → ℝ) ↦ ∑ i, z i • b i) := by fun_prop
   rw [hsum]
   refine (HasLaw.mk hmeas.aemeasurable ?_).fun_comp
-    ((hW.isPreBrownianVector_inner b).hasLaw_sub_pi hst)
+    ((hW.isPreBrownianVector_orthonormalBasis b).hasLaw_sub_pi hst)
   rw [pi_gaussianReal_zero_eq_map_smul, Measure.map_map hmeas (by fun_prop),
     stdGaussian_eq_map_pi_orthonormalBasis b, Measure.map_map (by fun_prop) hmeas]
   congr 1; ext z; simp [smul_sum, smul_smul]
@@ -567,9 +597,9 @@ theorem _root_.ProbabilityTheory.HasIndepIncrements.isPreBrownian_of_hasLaw {X :
     (hincr : HasIndepIncrements X P) : IsPreBrownian X P := by
   have := (hlaw 0).isProbabilityMeasure
   have hgauss (t : ℝ≥0) : HasGaussianLaw (X t) P :=
-    ⟨(hlaw t).aemeasurable, (hlaw t).map_eq ▸
-      ((IsGaussian.hasGaussianLaw_id (μ := stdGaussian E)).map
-        (√(t : ℝ) • ContinuousLinearMap.id ℝ E)).isGaussian_map⟩
+    have : IsGaussian ((stdGaussian E).map (fun x : E ↦ √(t : ℝ) • x)) :=
+      isGaussian_map (√(t : ℝ) • ContinuousLinearMap.id ℝ E)
+    (hlaw t).hasGaussianLaw
   have h0 : ∀ᵐ ω ∂P, X 0 ω = 0 := HasLaw.ae_eq_of_dirac (by simpa using hlaw 0)
   have hG : IsGaussianProcess X P := hincr.isGaussianProcess hgauss h0
   refine hG.isPreBrownian_of_integral_eval

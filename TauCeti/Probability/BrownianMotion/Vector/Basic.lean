@@ -9,11 +9,13 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Process.Indistinguishable
+public import Mathlib.Probability.ProductMeasure
 public import TauCeti.Probability.BrownianMotion.ProjectiveLimit
 
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Independence
+import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Independence.Process.Basic
 import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.Probability.Distributions.Gaussian.Affine
@@ -44,8 +46,11 @@ multivariate Gaussian increment laws, and independence of future increments from
 * `TauCeti.Probability.IsPreBrownianVector.mulVec_of_mul_transpose_eq_one`,
   `IsPreBrownianVector.mulVec_of_mem_orthogonalGroup`, `IsPreBrownianVector.hasLaw_toLp_sub`,
   `IsPreBrownianVector.indepFun_sub_past`: matrix invariance, increment laws, and past independence.
-* `TauCeti.Probability.isPreBrownianVector_eval_pi_brownianProjectiveLimit`: canonical coordinate
-  vector pre-Brownian motion on `ι → ℝ≥0 → ℝ` for finite `ι`.
+* `TauCeti.Probability.isPreBrownianVector_infinitePi`,
+  `TauCeti.Probability.isPreBrownianVector_eval_infinitePi_brownianProjectiveLimit`,
+  `TauCeti.Probability.isPreBrownianVector_eval_pi_brownianProjectiveLimit`: product constructions
+  and canonical coordinate vector pre-Brownian motion on `ι → ℝ≥0 → ℝ` for arbitrary (and finite)
+  index types `ι`.
 
 ## References
 
@@ -129,7 +134,6 @@ theorem aemeasurable (hB : IsPreBrownianVector B P) (i : ι) (t : ℝ≥0) : AEM
   (hB.isPreBrownianReal i).aemeasurable t
 
 /-- Every coordinate time marginal of a vector pre-Brownian motion is centered. -/
-@[simp]
 theorem integral_eval (hB : IsPreBrownianVector B P) (i : ι) (t : ℝ≥0) : P[B i t] = 0 :=
   (hB.isPreBrownianReal i).integral_eval t
 
@@ -189,7 +193,7 @@ end IsPreBrownianVector
 namespace IsBrownianVector
 
 /-- Indistinguishable coordinatewise modifications preserve `IsBrownianVector`. -/
-theorem congr_indistinguishable (hB : IsBrownianVector B P) (h : ∀ i, B i ≡ᵐ[P] C i) :
+theorem congr_indist (hB : IsBrownianVector B P) (h : ∀ i, B i ≡ᵐ[P] C i) :
     IsBrownianVector C P :=
   ⟨hB.toIsPreBrownianVector.congr fun i t ↦ (h i).mono fun _ hω ↦ hω t,
     fun i ↦ (hB.ae_continuous i).mp ((h i).mono fun _ hω hc ↦ by simpa [funext hω] using hc)⟩
@@ -389,40 +393,65 @@ end IsBrownianVector
 
 section Constructions
 
+/-- Infinite-product construction of `IsPreBrownianVector` from scalar pre-Brownian motions on
+arbitrary factors. -/
+theorem isPreBrownianVector_infinitePi {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
+    {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
+    (hB₀ : ∀ i, IsPreBrownianReal (B₀ i) (P₀ i)) :
+    IsPreBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.infinitePi P₀) where
+  isPreBrownianReal i :=
+    have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
+    ⟨fun I ↦ ((hB₀ i).hasLaw I).comp (measurePreserving_eval_infinitePi P₀ i).hasLaw⟩
+  iIndepFun := by
+    have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
+    refine ProbabilityTheory.iIndepFun.iIndepFun_process₀
+      (fun i t ↦ ((hB₀ i).aemeasurable t).comp_quasiMeasurePreserving
+        (measurePreserving_eval_infinitePi P₀ i).quasiMeasurePreserving) fun I J ↦ ?_
+    have hm (i : I) : AEMeasurable (fun (x : Ω₀ i) (t : J i) ↦ B₀ i t x) (P₀ i) :=
+      .of_eval fun t ↦ (hB₀ i).aemeasurable t
+    exact (((iIndepFun_infinitePi (P := P₀) (X := fun _ ↦ id) fun _ ↦ measurable_id).precomp
+      Subtype.val_injective).comp (fun i ↦ (hm i).mk _) fun i ↦ (hm i).measurable_mk).congr
+      fun i ↦ (measurePreserving_eval_infinitePi P₀ i).quasiMeasurePreserving.ae
+        (hm i).ae_eq_mk.symm
+
+/-- Infinite-product construction of `IsBrownianVector` from scalar Brownian motions on arbitrary
+factors. -/
+theorem isBrownianVector_infinitePi {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
+    {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
+    (hB₀ : ∀ i, IsBrownianReal (B₀ i) (P₀ i)) :
+    IsBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.infinitePi P₀) :=
+  ⟨isPreBrownianVector_infinitePi fun i ↦ (hB₀ i).toIsPreBrownianReal, fun i ↦
+    have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
+    (measurePreserving_eval_infinitePi P₀ i).quasiMeasurePreserving.ae (hB₀ i).cont⟩
+
+/-- Canonical coordinate vector pre-Brownian motion on `ι → ℝ≥0 → ℝ` under `Measure.infinitePi`. -/
+theorem isPreBrownianVector_eval_infinitePi_brownianProjectiveLimit :
+    IsPreBrownianVector (fun i t (ω : ι → ℝ≥0 → ℝ) ↦ ω i t)
+      (Measure.infinitePi fun _ : ι ↦ brownianProjectiveLimit) :=
+  isPreBrownianVector_infinitePi fun _ ↦ isPreBrownianReal_eval_brownianProjectiveLimit
+
 /-- Product construction of `IsPreBrownianVector` from scalar pre-Brownian motions on factors. -/
 theorem isPreBrownianVector_pi [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
     {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
     (hB₀ : ∀ i, IsPreBrownianReal (B₀ i) (P₀ i)) :
-    IsPreBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.pi P₀) where
-  isPreBrownianReal i :=
-    have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
-    ⟨fun I ↦ ((hB₀ i).hasLaw I).comp (measurePreserving_eval P₀ i).hasLaw⟩
-  iIndepFun := by
-    classical
-    have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
-    refine ProbabilityTheory.iIndepFun.iIndepFun_process₀
-      (fun i t ↦ ((hB₀ i).aemeasurable t).comp_quasiMeasurePreserving
-        (measurePreserving_eval P₀ i).quasiMeasurePreserving) fun I J ↦ ?_
-    let K : Finset ℝ≥0 := I.attach.biUnion J
-    exact ((iIndepFun_pi fun j ↦ .of_eval fun t : K ↦ (hB₀ j).aemeasurable t).precomp
-      (Subtype.val_injective (p := (· ∈ I)))).comp
-      (fun i g (t : J i) ↦ g ⟨t.1, mem_biUnion.mpr ⟨i, mem_attach _ _, t.2⟩⟩)
-      fun _ ↦ .of_eval fun _ ↦ measurable_pi_apply _
+    IsPreBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.pi P₀) :=
+  have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
+  Measure.infinitePi_eq_pi (μ := P₀) ▸ isPreBrownianVector_infinitePi hB₀
 
 /-- Product construction of `IsBrownianVector` from scalar Brownian motions on factors. -/
 theorem isBrownianVector_pi [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
     {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
     (hB₀ : ∀ i, IsBrownianReal (B₀ i) (P₀ i)) :
     IsBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.pi P₀) :=
-  ⟨isPreBrownianVector_pi fun i ↦ (hB₀ i).toIsPreBrownianReal, fun i ↦
-    have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
-    (measurePreserving_eval P₀ i).quasiMeasurePreserving.ae (hB₀ i).cont⟩
+  have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
+  Measure.infinitePi_eq_pi (μ := P₀) ▸ isBrownianVector_infinitePi hB₀
 
 /-- Canonical coordinate vector pre-Brownian motion on `ι → ℝ≥0 → ℝ` under `Measure.pi`. -/
 theorem isPreBrownianVector_eval_pi_brownianProjectiveLimit [Fintype ι] :
     IsPreBrownianVector (fun i t (ω : ι → ℝ≥0 → ℝ) ↦ ω i t)
       (Measure.pi fun _ : ι ↦ brownianProjectiveLimit) :=
-  isPreBrownianVector_pi fun _ ↦ isPreBrownianReal_eval_brownianProjectiveLimit
+  Measure.infinitePi_eq_pi (μ := fun _ : ι ↦ brownianProjectiveLimit) ▸
+    isPreBrownianVector_eval_infinitePi_brownianProjectiveLimit
 
 end Constructions
 

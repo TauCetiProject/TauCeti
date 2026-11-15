@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Def
 public import Mathlib.Probability.Independence.Basic
 
@@ -12,6 +13,7 @@ import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Independence
+import TauCeti.Probability.HasLaw
 
 /-!
 # Joint Gaussianity of independent Gaussian processes
@@ -20,15 +22,17 @@ import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Independence
 Gaussian family of processes with zero cross-covariances is independent. Here we prove the converse:
 mutually independent Gaussian processes form a jointly Gaussian process on the sigma or product
 index type, and two independent Gaussian processes form a Gaussian process on `Sum`. We also show
-that finite pointwise continuous linear combinations preserve `IsGaussianProcess`.
+that finite pointwise continuous linear combinations and ambient measure completion preserve
+`IsGaussianProcess`.
 
 ## Main results
 
 * `ProbabilityTheory.iIndepFun.isGaussianProcess`, `iIndepFun.isGaussianProcess_prod`,
   `ProbabilityTheory.IndepFun.isGaussianProcess`: independent Gaussian processes are jointly
   Gaussian.
-* `ProbabilityTheory.IsGaussianProcess.sum_comp_left`, `IsGaussianProcess.sum_smul`: finite
-  pointwise continuous linear combinations remain Gaussian processes.
+* `ProbabilityTheory.IsGaussianProcess.sum_comp_left`, `IsGaussianProcess.sum_smul`,
+  `IsGaussianProcess.completion`: finite pointwise continuous linear combinations and ambient
+  measure completion remain Gaussian processes.
 * `ProbabilityTheory.IsGaussianProcess.iIndepFun_iff_covariance_strongDual`,
   `iIndepFun_iff_covariance_inner`, `iIndepFun_iff_covariance_eq_zero`,
   `indepFun_iff_covariance_strongDual`, `indepFun_iff_covariance_inner`,
@@ -46,6 +50,15 @@ open MeasureTheory Finset
 open scoped RealInnerProductSpace
 
 namespace ProbabilityTheory
+
+/-- Completing the ambient measure preserves `IsGaussianProcess`. -/
+theorem IsGaussianProcess.completion {T Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [TopologicalSpace E] [AddCommMonoid E] [Module ℝ E] [MeasurableSpace E]
+    {X : T → Ω → E} (hX : IsGaussianProcess X P) :
+    IsGaussianProcess (fun t (ω : NullMeasurableSpace Ω P) ↦ X t ω) P.completion where
+  hasGaussianLaw I :=
+    have := (hX.hasGaussianLaw I).isGaussian_map
+    (hasLaw_map (hX.hasGaussianLaw I).aemeasurable).completion.hasGaussianLaw
 
 variable {T Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
