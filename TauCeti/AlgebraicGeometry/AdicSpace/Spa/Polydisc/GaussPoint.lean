@@ -532,6 +532,7 @@ theorem closedDiscGaussValuationAbove_weightedX_add_weightedC (hr₀ : 0 < r) (h
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
   have heq := closedDiscGaussValuation_weightedX_add_weightedC hr₀ hr₁ hc
+  simp only [closedDiscGaussValuation, Valuation.comap_apply] at heq
   simp only [closedDiscGaussValuationAbove, Valuation.comap_apply]
   exact le_antisymm
     ((TauCeti.PowerSeries.gaussValuationAbove_le_iff hr₀ h₁ h₂).mpr (Or.inr ⟨heq, le_rfl⟩))
@@ -553,6 +554,7 @@ theorem closedDiscGaussValuationBelow_weightedX_add_weightedC (hr₀ : 0 < r) (h
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
   have heq := closedDiscGaussValuation_weightedX_add_weightedC hr₀ hr₁ hc.le
+  simp only [closedDiscGaussValuation, Valuation.comap_apply] at heq
   simp only [closedDiscGaussValuationBelow, Valuation.comap_apply]
   exact le_antisymm
     ((TauCeti.PowerSeries.gaussValuationBelow_le_iff hr₀ h₁ h₂).mpr (Or.inr ⟨heq, le_rfl⟩))
