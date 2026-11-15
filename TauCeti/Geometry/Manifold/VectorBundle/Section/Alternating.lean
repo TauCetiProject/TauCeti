@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import Mathlib.Topology.VectorBundle.FiniteDimensional
-public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
-public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
-public import TauCeti.Topology.Algebra.Module.Alternating.Curry
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
 import Mathlib.Geometry.Manifold.BumpFunction
+import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.LinearAlgebra.Alternating.RestrictScalars
+import TauCeti.Topology.Algebra.Module.Alternating.Curry
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -38,9 +37,9 @@ bundle `Bundle.Trivial M 𝕜`). This file provides the algebraic and calculus o
 * the smooth fibrewise wedge product `ContMDiffSection.wedge` of real scalar alternating sections,
   together with its graded commutativity, associativity, and interior-product antiderivation laws;
 * the tensoriality equivalence `ContMDiffSection.evalAlternatingEquiv` identifying smooth sections
-  of `fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ` on a finite-rank smooth real vector bundle over a
+  of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` on a finite-rank smooth real vector bundle over a
   finite-dimensional Hausdorff manifold with `C^∞(M)`-multilinear alternating maps
-  `Cₛ^∞⟮I; F, V⟯ [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯`.
+  `Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯`.
 
 The coordinate-smoothness proof for `ContMDiffSection.wedge` adapts the bundle-valued wedge
 regularity proof of `TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle` to sections on
@@ -57,8 +56,6 @@ sections.
 -/
 
 public section
-
-noncomputable section
 
 open Bundle Function
 open scoped Manifold ContDiff Topology
@@ -78,26 +75,33 @@ local notation "Ω[" ι "]" => Cₛ^n⟮I; F [⋀^ι]→L[𝕜] 𝕜, fun x ↦ 
 
 /-! ### Evaluation on sections -/
 
+private def evalSectionFun {ι : Type*} [Fintype ι] (φ : Ω[ι]) (s : ι → Cₛ^n⟮I; F, V⟯) :
+    C^n⟮I, M; 𝕜⟯ :=
+  ⟨fun x ↦ φ x (fun i ↦ s i x),
+    (Bundle.Trivial.contMDiff_mk_iff.1
+      (φ.contMDiff.continuousAlternatingMap_bundle_apply fun i ↦ (s i).contMDiff)).2⟩
+
+@[simp]
+private theorem evalSectionFun_apply {ι : Type*} [Fintype ι] (φ : Ω[ι])
+    (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) :
+    evalSectionFun φ s x = φ x (fun i ↦ s i x) := (rfl)
+
 /-- Evaluate a `C^n` section of the scalar alternating-map bundle `fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜` on
 tuples of `C^n` sections of `V`, as a `C^n(M)`-multilinear alternating map to `C^n` scalar
 functions. -/
 def evalAlternating {ι : Type*} [Fintype ι] (φ : Ω[ι]) :
     Cₛ^n⟮I; F, V⟯ [⋀^ι]→ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯ where
-  toFun s :=
-    ⟨fun x ↦ φ x (fun i ↦ s i x),
-      (Bundle.Trivial.contMDiff_mk_iff.1
-        (φ.contMDiff.continuousAlternatingMap_bundle_apply fun i ↦ (s i).contMDiff)).2⟩
+  toFun := evalSectionFun φ
   map_update_add' := fun [DecidableEq ι] s i u v ↦ by
     ext x
-    change φ x (fun j ↦ update s i (u + v) j x) =
-      φ x (fun j ↦ update s i u j x) + φ x (fun j ↦ update s i v j x)
-    simp only [apply_update (fun _ (w : Cₛ^n⟮I; F, V⟯) ↦ w x), coe_add, Pi.add_apply]
-    exact (φ x).map_update_add (fun j ↦ s j x) i (u x) (v x)
+    have hupd (t : Cₛ^n⟮I; F, V⟯) : (fun j ↦ update s i t j x) = update (fun j ↦ s j x) i (t x) :=
+      funext (apply_update (fun _ (w : Cₛ^n⟮I; F, V⟯) ↦ w x) s i t)
+    simp [hupd]
   map_update_smul' := fun [DecidableEq ι] s i f u ↦ by
     ext x
-    change φ x (fun j ↦ update s i (f • u) j x) = f x • φ x (fun j ↦ update s i u j x)
-    simp only [apply_update (fun _ (w : Cₛ^n⟮I; F, V⟯) ↦ w x), smul_apply]
-    exact (φ x).map_update_smul (fun j ↦ s j x) i (f x) (u x)
+    have hupd (t : Cₛ^n⟮I; F, V⟯) : (fun j ↦ update s i t j x) = update (fun j ↦ s j x) i (t x) :=
+      funext (apply_update (fun _ (w : Cₛ^n⟮I; F, V⟯) ↦ w x) s i t)
+    simp [hupd, smul_eq_mul]
   map_eq_zero_of_eq' s i j hij hne := by
     ext x
     exact (φ x).map_eq_zero_of_eq (fun r ↦ s r x) (i := i) (j := j) congr(($hij) x) hne
@@ -145,7 +149,7 @@ theorem evalAlternatingLinear_apply {ι : Type*} [Fintype ι] (φ : Ω[ι]) :
 
 /-! ### Degree zero -/
 
-section DegreeZero
+noncomputable section DegreeZero
 
 variable (I F n V)
 
@@ -217,7 +221,7 @@ end General
 
 /-! ### Interior product -/
 
-section InteriorProd
+noncomputable section InteriorProd
 
 variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
@@ -312,14 +316,22 @@ theorem interiorProd_const_smul_right {k : ℕ} (c : 𝕜) (φ : Ω₂[k + 1]) (
   ext x v; exact congr($((φ x).curryLeftTopological.map_smul c (a x)) v)
 
 @[simp]
+theorem interiorProd_neg_left {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (-φ).interiorProd a = -φ.interiorProd a := by ext x v; simp
+
+@[simp]
+theorem interiorProd_neg_right {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    φ.interiorProd (-a) = -φ.interiorProd a := by
+  ext x v; exact congr($((φ x).curryLeftTopological.map_neg (a x)) v)
+
+@[simp]
 theorem interiorProd_sub_left {k : ℕ} (φ ψ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
     (φ - ψ).interiorProd a = φ.interiorProd a - ψ.interiorProd a := by ext x v; simp
 
 @[simp]
 theorem interiorProd_sub_right {k : ℕ} (φ : Ω₂[k + 1]) (a b : Cₛ^n⟮I; F, V⟯) :
     φ.interiorProd (a - b) = φ.interiorProd a - φ.interiorProd b := by
-  rw [sub_eq_add_neg, interiorProd_add_right, ← neg_one_smul 𝕜 b, interiorProd_const_smul_right,
-    neg_one_smul, sub_eq_add_neg]
+  rw [sub_eq_add_neg, interiorProd_add_right, interiorProd_neg_right, sub_eq_add_neg]
 
 /-- Contracting twice with the same section gives zero. -/
 @[simp]
@@ -349,7 +361,7 @@ end InteriorProd
 
 /-! ### Fibrewise wedge product -/
 
-section Wedge
+noncomputable section Wedge
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -486,8 +498,8 @@ theorem wedge_apply_zero_left {l : ℕ} (φ : Ω[0]) (ψ : Ω[l]) (x : M) (v : F
 theorem wedge_apply_zero_right {k : ℕ} (φ : Ω[k]) (ψ : Ω[0]) :
     φ.wedge ψ = (constOfIsEmptyEquiv I F n V (Fin 0)).symm ψ • φ := by
   ext x v
-  rw [wedge_apply, ContinuousAlternatingMap.pairedWedge_apply_zero_right,
-    show (0 : Fin 0 → V x) = isEmptyElim from Subsingleton.elim _ _]
+  have h0 : (0 : Fin 0 → V x) = isEmptyElim := Subsingleton.elim _ _
+  rw [wedge_apply, ContinuousAlternatingMap.pairedWedge_apply_zero_right, h0]
   simp [smul_eq_mul, mul_comm]
 
 @[simp]
@@ -536,7 +548,7 @@ sections of positive degree:
 theorem interiorProd_wedge_succ [FiniteDimensional ℝ F] {k l : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) (w : Fin (k + 1 + l) → V x) :
     (φ.wedge ψ).interiorProd a x w =
-      (φ.interiorProd a).wedge ψ x (w ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+      (φ.interiorProd a).wedge ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
         (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interiorProd a) x w :=
   ContinuousAlternatingMap.curryLeftTopological_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) (a x) w
@@ -545,7 +557,7 @@ end Wedge
 
 /-! ### Tensoriality equivalence -/
 
-section Tensoriality
+noncomputable section Tensoriality
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -555,30 +567,32 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
 
-local notation "Ω[" k "]" => Cₛ^∞⟮I; F [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ⟯
-local notation "Alt[" k "]" => Cₛ^∞⟮I; F, V⟯ [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯
+local notation "Ω[" ι "]" => Cₛ^∞⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯
+local notation "Alt[" ι "]" => Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯
 
 /-- A `C^∞(M)`-multilinear alternating map on smooth sections of `V` is pointwise tensorial: its
 value at `x` depends only on the values of the input sections at `x`. -/
-theorem apply_eq_of_eval_eq {k : ℕ} (Φ : Alt[k]) {s s' : Fin k → Cₛ^∞⟮I; F, V⟯} {x : M}
+theorem apply_eq_of_eval_eq {ι : Type*} [Finite ι] (Φ : Alt[ι]) {s s' : ι → Cₛ^∞⟮I; F, V⟯} {x : M}
     (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x := by
-  -- Update the entries of `s` to those of `s'` over a growing subset `q : Finset (Fin k)`.
-  suffices ∀ q : Finset (Fin k), Φ (fun i ↦ if i ∈ q then s' i else s i) x = Φ s x by
+  classical
+  cases nonempty_fintype ι
+  -- Update the entries of `s` to those of `s'` over a growing subset `q : Finset ι`.
+  suffices ∀ q : Finset ι, Φ (fun i ↦ if i ∈ q then s' i else s i) x = Φ s x by
     simpa using (this Finset.univ).symm
   intro q
   induction q using Finset.induction_on with
   | empty => simp
   | @insert j q hj ih =>
-    let w : Fin k → Cₛ^∞⟮I; F, V⟯ := fun i ↦ if i ∈ q then s' i else s i
+    let w : ι → Cₛ^∞⟮I; F, V⟯ := fun i ↦ if i ∈ q then s' i else s i
     have hw : (fun i ↦ if i ∈ insert j q then s' i else s i) = update w j (s' j) := by
       ext i; by_cases hij : i = j <;> simp_all [w]
     have hself : update w j (s j) = w := by ext i; by_cases hij : i = j <;> simp_all [w]
     -- Apply single-slot tensoriality in slot `j` with the remaining slots fixed to `w`.
-    classical
     let Ψ : (Π y : M, V y) → ℝ := fun u ↦
       if hu : CMDiff ∞ (T% u) then Φ (update w j ⟨u, hu⟩) x else 0
     have hΨ_eq (t : Cₛ^∞⟮I; F, V⟯) : Ψ t = Φ (update w j t) x := by
-      simp [Ψ, t.contMDiff, show (⟨t, t.contMDiff⟩ : Cₛ^∞⟮I; F, V⟯) = t from ext fun _ ↦ rfl]
+      have ht : (⟨t, t.contMDiff⟩ : Cₛ^∞⟮I; F, V⟯) = t := ext fun _ ↦ rfl
+      simp [Ψ, t.contMDiff, ht]
     have hstep : Φ (update w j (s' j)) x = Φ (update w j (s j)) x := by
       rw [← hΨ_eq, ← hΨ_eq]
       refine TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V) Ψ x
@@ -621,7 +635,7 @@ private theorem liftModel_eventuallyEq (x : M) (u : F) :
     (FiberBundle.mem_baseSet_trivializationAt F V x)
   let hρ := (SmoothBumpFunction.nhds_basis_support (I := I) hx).mem_iff.mp hx
   filter_upwards [hρ.choose.eventuallyEq_one] with y hy
-  change (hρ.choose : M → ℝ) y • (FiberBundle.trivializationAt F V x).symmL ℝ y u = _
+  dsimp [liftModel]
   rw [hy, Pi.one_apply, one_smul]
 
 variable (I F V) in
@@ -630,18 +644,33 @@ private theorem liftModel_apply_self (x : M) (u : F) :
     liftModel I F V x u x = (FiberBundle.trivializationAt F V x).symmL ℝ x u :=
   (liftModel_eventuallyEq I F V x u).self_of_nhds
 
+omit [FiniteDimensional ℝ F] in
+/-- Two smooth alternating sections are equal whenever they agree on all tuples of global smooth
+sections. -/
+theorem eq_of_evalAlternating_eq {ι : Type*} [Fintype ι] {φ ψ : Ω[ι]}
+    (h : φ.evalAlternating = ψ.evalAlternating) : φ = ψ := by
+  ext x v
+  have hx := FiberBundle.mem_baseSet_trivializationAt F V x
+  let s : ι → Cₛ^∞⟮I; F, V⟯ := fun i ↦
+    liftModel I F V x ((FiberBundle.trivializationAt F V x).continuousLinearMapAt ℝ x (v i))
+  have hs : (fun i ↦ s i x) = v := funext fun i ↦
+    (liftModel_apply_self ..).trans
+      ((FiberBundle.trivializationAt F V x).symmL_continuousLinearMapAt (R := ℝ) hx (v i))
+  simpa only [evalAlternating_apply, hs] using congr($h s x)
+
 /-- The continuous alternating map on the fibre `V x` induced by a `C^∞(M)`-multilinear
 alternating map `Φ` on global smooth sections: read `Φ` on the model space `F` via `liftModel`
 (where continuity is automatic by finite-dimensionality of `F`), and pull back to `V x`. -/
-private def fibreAlternatingAt {k : ℕ} (Φ : Alt[k]) (x : M) : V x [⋀^Fin k]→L[ℝ] ℝ :=
-  let fModel : F [⋀^Fin k]→ₗ[ℝ] ℝ :=
+private def fibreAlternatingAt {ι : Type*} [Fintype ι] (Φ : Alt[ι]) (x : M) :
+    V x [⋀^ι]→L[ℝ] ℝ :=
+  let fModel : F [⋀^ι]→ₗ[ℝ] ℝ :=
     ((ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ).toLinearMap.compAlternatingMap
       (Φ.restrictScalars ℝ)).compLinearMap (liftModel I F V x)
   (AlternatingMap.toContinuousAlternatingMap fModel).compContinuousLinearMap
     ((FiberBundle.trivializationAt F V x).continuousLinearMapAt ℝ x)
 
-private theorem fibreAlternatingAt_apply_sections {k : ℕ} (Φ : Alt[k])
-    (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
+private theorem fibreAlternatingAt_apply_sections {ι : Type*} [Fintype ι] (Φ : Alt[ι])
+    (s : ι → Cₛ^∞⟮I; F, V⟯) (x : M) :
     fibreAlternatingAt Φ x (fun i ↦ s i x) = Φ s x := by
   have hx : x ∈ (FiberBundle.trivializationAt F V x).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt F V x
@@ -652,14 +681,14 @@ private theorem fibreAlternatingAt_apply_sections {k : ℕ} (Φ : Alt[k])
       exact (FiberBundle.trivializationAt F V x).symmL_continuousLinearMapAt hx (s i x)
   simpa [fibreAlternatingAt, Function.comp_def] using hsec
 
-/-- Reconstruct a smooth section of `fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ` from a `C^∞(M)`-multilinear
+/-- Reconstruct a smooth section of `fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` from a `C^∞(M)`-multilinear
 alternating map on smooth sections of `V`. -/
-def ofAlternating {k : ℕ} (Φ : Alt[k]) : Ω[k] where
+def ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) : Ω[ι] where
   toFun := fibreAlternatingAt Φ
   contMDiff_toFun x₀ := by
     rw [contMDiffAt_continuousAlternatingMap_bundle]
     refine ⟨contMDiffAt_id, TauCeti.contMDiffAt_continuousAlternatingMap_apply.2 fun w ↦ ?_⟩
-    let sw : Fin k → Cₛ^∞⟮I; F, V⟯ := fun i ↦ liftModel I F V x₀ (w i)
+    let sw : ι → Cₛ^∞⟮I; F, V⟯ := fun i ↦ liftModel I F V x₀ (w i)
     refine (Φ sw).contMDiff.contMDiffAt.congr_of_eventuallyEq ?_
     filter_upwards [Filter.eventually_all.2 fun i ↦ liftModel_eventuallyEq I F V x₀ (w i)] with
       y hsw
@@ -669,31 +698,27 @@ def ofAlternating {k : ℕ} (Φ : Alt[k]) : Ω[k] where
       fibreAlternatingAt_apply_sections]
 
 @[simp]
-theorem ofAlternating_apply_sections {k : ℕ} (Φ : Alt[k])
-    (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
+theorem ofAlternating_apply_sections {ι : Type*} [Fintype ι] (Φ : Alt[ι])
+    (s : ι → Cₛ^∞⟮I; F, V⟯) (x : M) :
     ofAlternating Φ x (fun i ↦ s i x) = Φ s x :=
   fibreAlternatingAt_apply_sections Φ s x
 
 @[simp]
-theorem evalAlternating_ofAlternating {k : ℕ} (Φ : Alt[k]) :
+theorem evalAlternating_ofAlternating {ι : Type*} [Fintype ι] (Φ : Alt[ι]) :
     (ofAlternating Φ).evalAlternating = Φ := by
   ext s x; exact ofAlternating_apply_sections Φ s x
 
 @[simp]
-theorem ofAlternating_evalAlternating {k : ℕ} (φ : Ω[k]) :
-    ofAlternating φ.evalAlternating = φ := by
-  ext x v
-  have hx := FiberBundle.mem_baseSet_trivializationAt F V x
-  change fibreAlternatingAt φ.evalAlternating x v = φ x v
-  simpa [fibreAlternatingAt, Function.comp_def, liftModel_apply_self] using congrArg (φ x)
-    (funext fun i ↦ (FiberBundle.trivializationAt F V x).symmL_continuousLinearMapAt hx (v i))
+theorem ofAlternating_evalAlternating {ι : Type*} [Fintype ι] (φ : Ω[ι]) :
+    ofAlternating φ.evalAlternating = φ :=
+  eq_of_evalAlternating_eq (evalAlternating_ofAlternating φ.evalAlternating)
 
 variable (I F V) in
 /-- **Tensoriality of alternating bundle cochains**: smooth sections of
-`fun x ↦ V x [⋀^Fin k]→L[ℝ] ℝ` on a finite-rank smooth real vector bundle over a
+`fun x ↦ V x [⋀^ι]→L[ℝ] ℝ` on a finite-rank smooth real vector bundle over a
 finite-dimensional Hausdorff manifold are `C^∞(M)`-linearly equivalent to `C^∞(M)`-multilinear
-alternating maps `Cₛ^∞⟮I; F, V⟯ [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯`. -/
-def evalAlternatingEquiv (k : ℕ) : Ω[k] ≃ₗ[C^∞⟮I, M; ℝ⟯] Alt[k] where
+alternating maps `Cₛ^∞⟮I; F, V⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯`. -/
+def evalAlternatingEquiv (ι : Type*) [Fintype ι] : Ω[ι] ≃ₗ[C^∞⟮I, M; ℝ⟯] Alt[ι] where
   toFun := evalAlternating
   invFun := ofAlternating
   map_add' := evalAlternating_add
@@ -702,21 +727,15 @@ def evalAlternatingEquiv (k : ℕ) : Ω[k] ≃ₗ[C^∞⟮I, M; ℝ⟯] Alt[k] w
   right_inv := evalAlternating_ofAlternating
 
 @[simp]
-theorem evalAlternatingEquiv_apply {k : ℕ} (φ : Ω[k]) :
-    evalAlternatingEquiv I F V k φ = φ.evalAlternating := (rfl)
+theorem evalAlternatingEquiv_apply {ι : Type*} [Fintype ι] (φ : Ω[ι]) :
+    evalAlternatingEquiv I F V ι φ = φ.evalAlternating := (rfl)
 
 @[simp]
-theorem evalAlternatingEquiv_symm_apply {k : ℕ} (Φ : Alt[k]) :
-    (evalAlternatingEquiv I F V k).symm Φ = ofAlternating Φ := (rfl)
-
-/-- Two smooth alternating sections are equal whenever they agree on all tuples of global smooth
-sections. -/
-theorem eq_of_evalAlternating_eq {k : ℕ} {φ ψ : Ω[k]}
-    (h : φ.evalAlternating = ψ.evalAlternating) : φ = ψ :=
-  (evalAlternatingEquiv I F V k).injective h
+theorem evalAlternatingEquiv_symm_apply {ι : Type*} [Fintype ι] (Φ : Alt[ι]) :
+    (evalAlternatingEquiv I F V ι).symm Φ = ofAlternating Φ := (rfl)
 
 @[simp]
-theorem interiorProd_ofAlternating {k : ℕ} (Φ : Alt[k + 1]) (a : Cₛ^∞⟮I; F, V⟯) :
+theorem interiorProd_ofAlternating {k : ℕ} (Φ : Alt[Fin (k + 1)]) (a : Cₛ^∞⟮I; F, V⟯) :
     (ofAlternating Φ).interiorProd a = ofAlternating (Φ.curryLeft a) :=
   eq_of_evalAlternating_eq (by simp)
 

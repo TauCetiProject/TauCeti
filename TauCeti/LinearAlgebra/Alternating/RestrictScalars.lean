@@ -27,6 +27,7 @@ public section
 
 namespace AlternatingMap
 
+/-- Pointwise `IsScalarTower` instance on `M [⋀^ι]→ₗ[R] N`. -/
 instance instIsScalarTower {R M N ι S T : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
     [Module R M] [Module R N] [Monoid S] [Monoid T] [DistribMulAction S N] [DistribMulAction T N]
     [SMulCommClass R S N] [SMulCommClass R T N] [SMul S T] [IsScalarTower S T N] :
