@@ -10,7 +10,6 @@ public import Mathlib.Data.Fintype.Fin
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Connected.PathConnected
-public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 
 /-!
