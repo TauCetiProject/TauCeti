@@ -64,7 +64,9 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
+nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
+nonnegative, strictly below `1`, monotone, subadditive, and zero only at `0`.
 
 ## Main results
 
@@ -106,6 +108,10 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
+  `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.div_one_add_eq_zero_iff`:
+  nonnegativity, unit bound, monotonicity, subadditivity, and zero characterization of the gauge
+  `t / (1 + t)` for `0 ≤ t`.
 -/
 
 public section
@@ -412,6 +418,48 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
+theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : 0 ≤ t / (1 + t) :=
+  div_nonneg ht (add_nonneg zero_le_one ht)
+
+/-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is strictly less than `1`. -/
+theorem div_one_add_lt_one {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : t / (1 + t) < 1 := by
+  rw [div_lt_one (add_pos_of_pos_of_nonneg zero_lt_one ht)]
+  exact lt_add_of_pos_left t zero_lt_one
+
+/-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is at most `1`. -/
+theorem div_one_add_le_one {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : t / (1 + t) ≤ 1 :=
+  (div_one_add_lt_one ht).le
+
+/-- The bounded-metric gauge `t ↦ t / (1 + t)` is monotone on `[0, ∞)`. -/
+theorem div_one_add_mono {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (ha : 0 ≤ a) (hab : a ≤ b) : a / (1 + a) ≤ b / (1 + b) := by
+  rw [div_le_div_iff₀ (add_pos_of_pos_of_nonneg zero_lt_one ha)
+    (add_pos_of_pos_of_nonneg zero_lt_one (ha.trans hab))]
+  rw [mul_add, mul_one, mul_add, mul_one, mul_comm b a]
+  gcongr
+
+/-- The bounded-metric gauge `t ↦ t / (1 + t)` is subadditive on `[0, ∞)`. -/
+theorem div_one_add_add_le {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (a + b) / (1 + (a + b)) ≤ a / (1 + a) + b / (1 + b) := by
+  have h1a : 0 < 1 + a := add_pos_of_pos_of_nonneg zero_lt_one ha
+  have h1b : 0 < 1 + b := add_pos_of_pos_of_nonneg zero_lt_one hb
+  calc (a + b) / (1 + (a + b))
+      = a / (1 + (a + b)) + b / (1 + (a + b)) := add_div a b _
+    _ ≤ a / (1 + a) + b / (1 + b) :=
+        add_le_add
+          (div_le_div_of_nonneg_left ha h1a (by rw [← add_assoc]; exact le_add_of_nonneg_right hb))
+          (div_le_div_of_nonneg_left hb h1b (by rw [add_left_comm]; exact le_add_of_nonneg_left ha))
+
+/-- For `0 ≤ t`, `t / (1 + t) = 0` if and only if `t = 0`. -/
+theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
+  div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
 
 end TauCeti
 

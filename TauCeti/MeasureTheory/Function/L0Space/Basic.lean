@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import Mathlib.Topology.MetricSpace.Cauchy
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # The space `L⁰(μ; E)` of measurable functions with the convergence-in-measure metric
@@ -20,7 +21,8 @@ For a measure `μ` on `α` and a topological target `E`, `TauCeti.L0 E μ` is th
 almost-everywhere equivalence classes of strongly measurable functions `α → E`. It wraps
 `α →ₘ[μ] E` (`MeasureTheory.AEEqFun`) as a distinct type so that `AEEqFun` itself stays free of a
 canonical topology (for instance, interpolation couples equip `AEEqFun` with the indiscrete
-topology, whereas the convergence-in-measure metric requires a finite measure).
+topology, whereas the convergence-in-measure metric requires a finite measure), while inheriting
+the almost-everywhere pointwise order and topological lattice operations from `AEEqFun`.
 
 When `E` is a (pseudo)metric space and `μ` is a finite measure, `L0 E μ` carries the bounded
 metric
@@ -44,11 +46,13 @@ produces an almost-everywhere limit in `E`, which is also the limit in measure.
 ## Main declarations
 
 * `TauCeti.L0 E μ`: almost-everywhere equivalence classes of strongly measurable functions `α → E`,
-  equipped on finite measure spaces with the convergence-in-measure metric.
+  equipped with the almost-everywhere pointwise order/lattice structure and, on finite measure
+  spaces, the convergence-in-measure metric.
 * `TauCeti.L0.mk`, `TauCeti.L0.const`, `TauCeti.L0.equivAEEqFun`: quotient constructor, constant
   classes, and equivalence with `α →ₘ[μ] E`.
-* `TauCeti.L0.instPseudoMetricSpace`, `TauCeti.L0.instMetricSpace`: (pseudo)metric space structure
-  on `L0 E μ` when `[IsFiniteMeasure μ]`.
+* `TauCeti.L0.instPseudoMetricSpace`, `TauCeti.L0.instMetricSpace`, `TauCeti.L0.dist_const_const`:
+  (pseudo)metric space structure on `L0 E μ` when `[IsFiniteMeasure μ]` and closed-form distance
+  between constant classes.
 * `TauCeti.L0.measureReal_ge_le_mul_dist`,
   `TauCeti.L0.dist_le_mul_measureReal_univ_add_measureReal_gt`: quantitative two-sided tail bounds.
 * `TauCeti.L0.tendsto_iff_tendstoInMeasure`: metric convergence in `L0 E μ` is equivalent to
@@ -114,6 +118,7 @@ def coeFn (f : L0 E μ) : α → E :=
 instance instCoeFun : CoeFun (L0 E μ) (fun _ ↦ α → E) :=
   ⟨coeFn⟩
 
+@[simp]
 theorem coeFn_toAEEqFun (f : L0 E μ) : ⇑f.toAEEqFun = ⇑f :=
   (rfl)
 
@@ -144,8 +149,15 @@ theorem measurable [TopologicalSpace.PseudoMetrizableSpace E] [MeasurableSpace E
 theorem ext {f g : L0 E μ} (h : f =ᵐ[μ] g) : f = g :=
   toAEEqFun_injective (AEEqFun.ext h)
 
+instance instInhabited [Inhabited E] : Inhabited (L0 E μ) :=
+  ⟨ofAEEqFun default⟩
+
 instance instSubsingleton [IsEmpty α] : Subsingleton (L0 E μ) :=
   ⟨fun _ _ ↦ ext (ae_of_all _ isEmptyElim)⟩
+
+/-- When `μ = 0`, `L0 E μ` is a subsingleton. -/
+theorem subsingleton_of_measure_zero (hμ : μ = 0) : Subsingleton (L0 E μ) :=
+  ⟨fun f g ↦ ext (by simp [EventuallyEq, hμ])⟩
 
 /-- Quotient class in `L0 E μ` of an almost-everywhere strongly measurable function `f : α → E`. -/
 def mk (f : α → E) (hf : AEStronglyMeasurable f μ) : L0 E μ :=
@@ -154,6 +166,11 @@ def mk (f : α → E) (hf : AEStronglyMeasurable f μ) : L0 E μ :=
 @[simp]
 theorem toAEEqFun_mk (f : α → E) (hf : AEStronglyMeasurable f μ) :
     (mk (μ := μ) f hf).toAEEqFun = AEEqFun.mk f hf := by
+  rfl
+
+@[simp]
+theorem ofAEEqFun_mk (f : α → E) (hf : AEStronglyMeasurable f μ) :
+    (ofAEEqFun (AEEqFun.mk f hf) : L0 E μ) = mk f hf := by
   rfl
 
 /-- The representative of `L0.mk f hf` agrees with `f` almost everywhere. -/
@@ -166,6 +183,7 @@ theorem mk_coeFn (f : L0 E μ) : mk (μ := μ) f f.aestronglyMeasurable = f :=
   toAEEqFun_injective (AEEqFun.mk_coeFn f.toAEEqFun)
 
 /-- Two classes `L0.mk f hf` and `L0.mk g hg` are equal iff `f =ᵐ[μ] g`. -/
+@[simp]
 theorem mk_eq_mk {f g : α → E} {hf : AEStronglyMeasurable f μ} {hg : AEStronglyMeasurable g μ} :
     mk (μ := μ) f hf = mk (μ := μ) g hg ↔ f =ᵐ[μ] g := by
   rw [← toAEEqFun_injective.eq_iff, toAEEqFun_mk, toAEEqFun_mk, AEEqFun.mk_eq_mk]
@@ -178,59 +196,129 @@ def const (α : Type*) {_ : MeasurableSpace α} {μ : Measure α} (c : E) : L0 E
 theorem toAEEqFun_const (c : E) : (const (μ := μ) α c).toAEEqFun = AEEqFun.const α c := by
   rfl
 
+@[simp]
+theorem ofAEEqFun_const (c : E) : (ofAEEqFun (AEEqFun.const α c) : L0 E μ) = const α c := by
+  rfl
+
 /-- The representative of `L0.const α c` agrees with `Function.const α c` almost everywhere. -/
-theorem coeFn_const (α : Type*) [MeasurableSpace α] {μ : Measure α} (c : E) :
+theorem coeFn_const (α : Type*) {_ : MeasurableSpace α} {μ : Measure α} (c : E) :
     (const (μ := μ) α c : α → E) =ᵐ[μ] Function.const α c :=
-  AEEqFun.coeFn_const α c
+  coeFn_mk _ _
 
 @[simp]
 theorem coeFn_const_eq [NeZero μ] (c : E) (x : α) : const (μ := μ) α c x = c :=
   AEEqFun.coeFn_const_eq α c x
 
 @[simp]
-theorem mk_const (c : E) : mk (μ := μ) (fun _ ↦ c) aestronglyMeasurable_const = const α c := by
-  rfl
+theorem mk_const (c : E) (hf : AEStronglyMeasurable (fun _ ↦ c) μ := aestronglyMeasurable_const) :
+    mk (μ := μ) (fun _ ↦ c) hf = const α c :=
+  mk_eq_mk.mpr Filter.EventuallyEq.rfl
 
 end Basic
 
-section Gauge
+section Order
 
-private theorem div_one_add_nonneg {t : ℝ} (ht : 0 ≤ t) : 0 ≤ t / (1 + t) :=
-  div_nonneg ht (by linarith)
+variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α} [TopologicalSpace E]
 
-private theorem div_one_add_lt_one {t : ℝ} (ht : 0 ≤ t) : t / (1 + t) < 1 := by
-  rw [div_lt_one (by linarith)]
-  linarith
+instance instPreorder [Preorder E] : Preorder (L0 E μ) :=
+  Preorder.lift toAEEqFun
 
-private theorem div_one_add_le_one {t : ℝ} (ht : 0 ≤ t) : t / (1 + t) ≤ 1 :=
-  (div_one_add_lt_one ht).le
+/-- Order on `L0 E μ` is the almost-everywhere pointwise order inherited from `α →ₘ[μ] E`. -/
+theorem le_def [Preorder E] {f g : L0 E μ} : f ≤ g ↔ f.toAEEqFun ≤ g.toAEEqFun :=
+  (Iff.rfl)
 
-private theorem div_one_add_mono {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) :
-    a / (1 + a) ≤ b / (1 + b) := by
-  rw [div_le_div_iff₀ (by linarith) (by linarith)]
-  nlinarith
+@[simp]
+theorem ofAEEqFun_le [Preorder E] {f g : α →ₘ[μ] E} :
+    (ofAEEqFun f : L0 E μ) ≤ ofAEEqFun g ↔ f ≤ g :=
+  (Iff.rfl)
 
-private theorem div_one_add_add_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    (a + b) / (1 + (a + b)) ≤ a / (1 + a) + b / (1 + b) := by
-  calc (a + b) / (1 + (a + b))
-      = a / (1 + (a + b)) + b / (1 + (a + b)) := add_div a b _
-    _ ≤ a / (1 + a) + b / (1 + b) := by gcongr <;> linarith
+@[simp]
+theorem mk_le_mk [Preorder E] {f g : α → E} {hf : AEStronglyMeasurable f μ}
+    {hg : AEStronglyMeasurable g μ} :
+    mk (μ := μ) f hf ≤ mk (μ := μ) g hg ↔ f ≤ᵐ[μ] g :=
+  AEEqFun.mk_le_mk hf hg
 
-private theorem div_one_add_eq_zero_iff {t : ℝ} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 := by
-  rw [div_eq_zero_iff]
-  exact ⟨fun h ↦ h.resolve_right (by linarith), Or.inl⟩
+@[simp]
+theorem coeFn_le [Preorder E] {f g : L0 E μ} : (f : α → E) ≤ᵐ[μ] g ↔ f ≤ g := by
+  rw [← coeFn_toAEEqFun, ← coeFn_toAEEqFun, AEEqFun.coeFn_le, le_def]
 
-end Gauge
+instance instPartialOrder [PartialOrder E] : PartialOrder (L0 E μ) :=
+  PartialOrder.lift toAEEqFun toAEEqFun_injective
 
-section Metric
+instance instSup [SemilatticeSup E] [ContinuousSup E] : Max (L0 E μ) :=
+  ⟨fun f g ↦ ofAEEqFun (f.toAEEqFun ⊔ g.toAEEqFun)⟩
 
-variable {α ι E : Type*} {mα : MeasurableSpace α} {μ : Measure α}
+@[simp]
+theorem toAEEqFun_sup [SemilatticeSup E] [ContinuousSup E] (f g : L0 E μ) :
+    (f ⊔ g).toAEEqFun = f.toAEEqFun ⊔ g.toAEEqFun := by
+  rfl
+
+@[simp]
+theorem ofAEEqFun_sup [SemilatticeSup E] [ContinuousSup E] (f g : α →ₘ[μ] E) :
+    (ofAEEqFun (f ⊔ g) : L0 E μ) = ofAEEqFun f ⊔ ofAEEqFun g := by
+  rfl
+
+/-- Representative of `f ⊔ g` in `L0 E μ` agrees with `fun x ↦ f x ⊔ g x` almost everywhere. -/
+theorem coeFn_sup [SemilatticeSup E] [ContinuousSup E] (f g : L0 E μ) :
+    ⇑(f ⊔ g) =ᵐ[μ] fun x ↦ f x ⊔ g x := by
+  simp_rw [← coeFn_toAEEqFun]
+  exact AEEqFun.coeFn_sup f.toAEEqFun g.toAEEqFun
+
+@[simp]
+theorem mk_sup_mk [SemilatticeSup E] [ContinuousSup E] (f g : α → E)
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    mk (μ := μ) f hf ⊔ mk (μ := μ) g hg = mk (f ⊔ g) (hf.sup hg) := by
+  refine ext ((coeFn_sup _ _).trans ?_)
+  filter_upwards [coeFn_mk f hf, coeFn_mk g hg, coeFn_mk (f ⊔ g) (hf.sup hg)] with x hfx hgx hfgx
+  rw [hfx, hgx, hfgx, Pi.sup_apply]
+
+instance instInf [SemilatticeInf E] [ContinuousInf E] : Min (L0 E μ) :=
+  ⟨fun f g ↦ ofAEEqFun (f.toAEEqFun ⊓ g.toAEEqFun)⟩
+
+@[simp]
+theorem toAEEqFun_inf [SemilatticeInf E] [ContinuousInf E] (f g : L0 E μ) :
+    (f ⊓ g).toAEEqFun = f.toAEEqFun ⊓ g.toAEEqFun := by
+  rfl
+
+@[simp]
+theorem ofAEEqFun_inf [SemilatticeInf E] [ContinuousInf E] (f g : α →ₘ[μ] E) :
+    (ofAEEqFun (f ⊓ g) : L0 E μ) = ofAEEqFun f ⊓ ofAEEqFun g := by
+  rfl
+
+/-- Representative of `f ⊓ g` in `L0 E μ` agrees with `fun x ↦ f x ⊓ g x` almost everywhere. -/
+theorem coeFn_inf [SemilatticeInf E] [ContinuousInf E] (f g : L0 E μ) :
+    ⇑(f ⊓ g) =ᵐ[μ] fun x ↦ f x ⊓ g x := by
+  simp_rw [← coeFn_toAEEqFun]
+  exact AEEqFun.coeFn_inf f.toAEEqFun g.toAEEqFun
+
+@[simp]
+theorem mk_inf_mk [SemilatticeInf E] [ContinuousInf E] (f g : α → E)
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    mk (μ := μ) f hf ⊓ mk (μ := μ) g hg = mk (f ⊓ g) (hf.inf hg) := by
+  refine ext ((coeFn_inf _ _).trans ?_)
+  filter_upwards [coeFn_mk f hf, coeFn_mk g hg, coeFn_mk (f ⊓ g) (hf.inf hg)] with x hfx hgx hfgx
+  rw [hfx, hgx, hfgx, Pi.inf_apply]
+
+instance instLattice [Lattice E] [TopologicalLattice E] : Lattice (L0 E μ) where
+  __ := instPartialOrder
+  sup := max
+  le_sup_left f g := AEEqFun.le_sup_left f.toAEEqFun g.toAEEqFun
+  le_sup_right f g := AEEqFun.le_sup_right f.toAEEqFun g.toAEEqFun
+  sup_le f g h := AEEqFun.sup_le f.toAEEqFun g.toAEEqFun h.toAEEqFun
+  inf := min
+  inf_le_left f g := AEEqFun.inf_le_left f.toAEEqFun g.toAEEqFun
+  inf_le_right f g := AEEqFun.inf_le_right f.toAEEqFun g.toAEEqFun
+  le_inf f g h := AEEqFun.le_inf f.toAEEqFun g.toAEEqFun h.toAEEqFun
+
+end Order
+
+end L0
 
 /-- On a finite measure space, the bounded distance integrand `dist (f x) (g x) / (1 + dist ...)`
 is integrable for any two almost-everywhere strongly measurable functions `f` and `g`. -/
-theorem integrable_dist_div_one_add_of_aestronglyMeasurable [PseudoMetricSpace E]
-    [IsFiniteMeasure μ] {f g : α → E} (hf : AEStronglyMeasurable f μ)
-    (hg : AEStronglyMeasurable g μ) :
+theorem integrable_dist_div_one_add_of_aestronglyMeasurable {α E : Type*} {mα : MeasurableSpace α}
+    {μ : Measure α} [PseudoMetricSpace E] [IsFiniteMeasure μ] {f g : α → E}
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
     Integrable (fun x ↦ dist (f x) (g x) / (1 + dist (f x) (g x))) μ := by
   have hcont : Continuous fun t : ℝ ↦ t / (1 + |t|) :=
     continuous_id.div (continuous_const.add continuous_abs) fun t ↦ by positivity
@@ -240,6 +328,12 @@ theorem integrable_dist_div_one_add_of_aestronglyMeasurable [PseudoMetricSpace E
   refine Integrable.mono' (integrable_const (1 : ℝ)) hmeas (ae_of_all _ fun x ↦ ?_)
   rw [Real.norm_of_nonneg (div_one_add_nonneg dist_nonneg)]
   exact div_one_add_le_one dist_nonneg
+
+namespace L0
+
+section Metric
+
+variable {α ι E : Type*} {mα : MeasurableSpace α} {μ : Measure α}
 
 /-- On a finite measure space, the integrand defining `dist f g` on `L0 E μ` is integrable. -/
 theorem integrable_dist_div_one_add [PseudoMetricSpace E] [IsFiniteMeasure μ] (f g : L0 E μ) :
@@ -285,6 +379,35 @@ theorem dist_mk_mk [PseudoMetricSpace E] [IsFiniteMeasure μ] {f g : α → E}
   filter_upwards [coeFn_mk (μ := μ) f hf, coeFn_mk (μ := μ) g hg] with x hfx hgx
   rw [hfx, hgx]
 
+/-- On the zero measure, every `L⁰` distance is `0`. -/
+theorem dist_eq_zero_of_measure_zero [PseudoMetricSpace E] [IsFiniteMeasure μ] (hμ : μ = 0)
+    (f g : L0 E μ) : dist f g = 0 := by
+  have := subsingleton_of_measure_zero (E := E) hμ
+  rw [Subsingleton.elim f g, dist_self]
+
+/-- Closed-form `L⁰` distance between two constant classes on a finite measure space:
+`dist (const α a) (const α b) = μ.real Set.univ * (dist a b / (1 + dist a b))`. -/
+theorem dist_const_const [PseudoMetricSpace E] [IsFiniteMeasure μ] (a b : E) :
+    dist (const (μ := μ) α a) (const (μ := μ) α b) =
+      μ.real Set.univ * (dist a b / (1 + dist a b)) := by
+  rw [dist_def]
+  have hcongr : (fun x ↦ dist (const (μ := μ) α a x) (const (μ := μ) α b x) /
+      (1 + dist (const (μ := μ) α a x) (const (μ := μ) α b x))) =ᵐ[μ]
+      fun _ : α ↦ dist a b / (1 + dist a b) := by
+    filter_upwards [coeFn_const (μ := μ) α a, coeFn_const (μ := μ) α b] with x ha hb
+    rw [ha, hb]
+    rfl
+  rw [integral_congr_ae hcongr, integral_const, smul_eq_mul]
+
+/-- Embedding a constant value into `L0 E μ` is continuous on a finite measure space. -/
+@[fun_prop]
+theorem continuous_const [PseudoMetricSpace E] [IsFiniteMeasure μ] :
+    Continuous (const (μ := μ) α : E → L0 E μ) := by
+  refine (LipschitzWith.of_dist_le' (K := μ.real Set.univ) fun a b ↦ ?_).continuous
+  rw [dist_const_const]
+  exact mul_le_mul_of_nonneg_left
+    (div_le_self dist_nonneg (le_add_of_nonneg_right dist_nonneg)) measureReal_nonneg
+
 instance instMetricSpace [MetricSpace E] [IsFiniteMeasure μ] : MetricSpace (L0 E μ) where
   eq_of_dist_eq_zero {f g} h := by
     rw [dist_def, integral_eq_zero_iff_of_nonneg (fun _ ↦ div_one_add_nonneg dist_nonneg)
@@ -323,22 +446,17 @@ where `dist (f x) (g x) ≥ ε` is bounded by `((1 + ε) / ε) * dist f g`. -/
 theorem measureReal_ge_le_mul_dist [PseudoMetricSpace E] [IsFiniteMeasure μ]
     {f g : L0 E μ} {ε : ℝ} (hε : 0 < ε) :
     μ.real {x | ε ≤ dist (f x) (g x)} ≤ (1 + ε) / ε * dist f g := by
-  let s : Set α := {x | ε ≤ dist (f x) (g x)}
-  have hs : MeasurableSet s :=
-    measurableSet_le measurable_const (f.stronglyMeasurable.dist g.stronglyMeasurable).measurable
   have h1ε : 0 < 1 + ε := by linarith
-  have hstep : ε / (1 + ε) * μ.real s ≤ dist f g := by
-    calc ε / (1 + ε) * μ.real s
-        = ∫ _ in s, ε / (1 + ε) ∂μ := by simp [mul_comm]
-      _ ≤ ∫ x in s, dist (f x) (g x) / (1 + dist (f x) (g x)) ∂μ := by
-          refine setIntegral_mono_on (integrable_const _)
-            (integrable_dist_div_one_add f g).integrableOn hs fun x hx ↦ ?_
-          rw [Set.mem_ofPred_eq] at hx
-          exact div_one_add_mono hε.le hx
-      _ ≤ dist f g := setIntegral_le_integral (integrable_dist_div_one_add f g)
-          (ae_of_all _ fun _ ↦ div_one_add_nonneg dist_nonneg)
-  calc μ.real s
-      = (1 + ε) / ε * (ε / (1 + ε) * μ.real s) := by field_simp [hε.ne', h1ε.ne']
+  have hstep : ε / (1 + ε) * μ.real {x | ε ≤ dist (f x) (g x)} ≤ dist f g :=
+    (mul_le_mul_of_nonneg_left
+      (measureReal_mono (fun _ hx ↦ div_one_add_mono hε.le hx) (measure_ne_top μ _))
+      (div_one_add_nonneg hε.le)).trans
+      (mul_meas_ge_le_integral_of_nonneg
+        (ae_of_all _ fun _ ↦ div_one_add_nonneg dist_nonneg)
+        (integrable_dist_div_one_add f g) (ε / (1 + ε)))
+  calc μ.real {x | ε ≤ dist (f x) (g x)}
+      = (1 + ε) / ε * (ε / (1 + ε) * μ.real {x | ε ≤ dist (f x) (g x)}) := by
+          field_simp [hε.ne', h1ε.ne']
     _ ≤ (1 + ε) / ε * dist f g :=
         mul_le_mul_of_nonneg_left hstep (div_nonneg h1ε.le hε.le)
 
@@ -449,7 +567,7 @@ theorem tendsto_of_tendsto_ae [PseudoMetricSpace E] [IsFiniteMeasure μ]
 
 /-- Every sequence converging in `L0 E μ` admits a subsequence whose representatives converge
 almost everywhere. -/
-theorem exists_seq_tendsto_ae [PseudoMetricSpace E] [IsFiniteMeasure μ]
+theorem exists_seq_tendsto_ae_of_tendsto [PseudoMetricSpace E] [IsFiniteMeasure μ]
     {u : ℕ → L0 E μ} {f : L0 E μ} (hu : Tendsto u atTop (𝓝 f)) :
     ∃ ns : ℕ → ℕ, StrictMono ns ∧ ∀ᵐ x ∂μ, Tendsto (fun k ↦ u (ns k) x) atTop (𝓝 (f x)) :=
   (tendsto_iff_tendstoInMeasure.mp hu).exists_seq_tendsto_ae

@@ -32,7 +32,7 @@ This file also develops the algebraic stability of `MeasureTheory.TendstoInMeasu
   without measurability hypotheses.
 * On a finite measure space, almost-everywhere strongly measurable functions are tight in
   distance (`MeasureTheory.tendsto_measure_dist_ge_atTop`), so bounded scalar multiplication
-  (`TendstoInMeasure.smul`, `Filter.Tendsto.smul_tendstoInMeasure`) and ring multiplication
+  (`TendstoInMeasure.smul`, `Filter.Tendsto.smul_tendstoInMeasure`) and bounded multiplication
   (`TendstoInMeasure.mul`) preserve convergence in measure along an arbitrary filter when the
   limits are almost-everywhere strongly measurable.
 
@@ -268,38 +268,6 @@ theorem tendsto_measure_dist_ge_atTop [PseudoMetricSpace E] [IsFiniteMeasure μ]
   filter_upwards [hg.ae_eq_mk] with x hx
   simp [g', hx]
 
-private theorem dist_smul_lt_of_bounds [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜]
-    [PseudoMetricSpace E] [SMul 𝕜 E] [IsBoundedSMul 𝕜 E]
-    {c₁ c₀ : 𝕜} {y₁ y₀ : E} {ε M : ℝ} (hε : 0 < ε) (hM : 0 < M)
-    (hc₀ : dist c₀ 0 < M) (hy₀ : dist y₀ 0 < M)
-    (hc_sqrt : dist c₁ c₀ < Real.sqrt (ε / 3)) (hy_sqrt : dist y₁ y₀ < Real.sqrt (ε / 3))
-    (hc_div : dist c₁ c₀ < ε / (3 * M)) (hy_div : dist y₁ y₀ < ε / (3 * M)) :
-    dist (c₁ • y₁) (c₀ • y₀) < ε := by
-  have hprod₁ : dist c₁ c₀ * dist y₁ y₀ < ε / 3 := by
-    calc dist c₁ c₀ * dist y₁ y₀
-        < Real.sqrt (ε / 3) * Real.sqrt (ε / 3) :=
-          mul_lt_mul'' hc_sqrt hy_sqrt dist_nonneg dist_nonneg
-      _ = ε / 3 := Real.mul_self_sqrt (by positivity)
-  have hprod₂ : dist c₀ 0 * dist y₁ y₀ < ε / 3 := by
-    calc dist c₀ 0 * dist y₁ y₀
-        < M * (ε / (3 * M)) := mul_lt_mul'' hc₀ hy_div dist_nonneg dist_nonneg
-      _ = ε / 3 := by field_simp [hM.ne']
-  have hprod₃ : dist c₁ c₀ * dist y₀ 0 < ε / 3 := by
-    calc dist c₁ c₀ * dist y₀ 0
-        < (ε / (3 * M)) * M := mul_lt_mul'' hc_div hy₀ dist_nonneg dist_nonneg
-      _ = ε / 3 := by field_simp [hM.ne']
-  have htri : dist (c₁ • y₁) (c₀ • y₀) ≤
-      dist c₁ c₀ * dist y₁ y₀ + dist c₀ 0 * dist y₁ y₀ + dist c₁ c₀ * dist y₀ 0 := by
-    calc dist (c₁ • y₁) (c₀ • y₀)
-        ≤ dist (c₁ • y₁) (c₁ • y₀) + dist (c₁ • y₀) (c₀ • y₀) := dist_triangle _ _ _
-      _ ≤ dist c₁ 0 * dist y₁ y₀ + dist c₁ c₀ * dist y₀ 0 :=
-          add_le_add (dist_smul_pair _ _ _) (dist_pair_smul _ _ _)
-      _ ≤ (dist c₁ c₀ + dist c₀ 0) * dist y₁ y₀ + dist c₁ c₀ * dist y₀ 0 := by
-          gcongr
-          exact dist_triangle _ _ _
-      _ = _ := by ring
-  linarith
-
 /-- On a finite measure space, bounded scalar multiplication preserves convergence in measure
 jointly in the scalar and vector families along any filter, provided both limit functions are
 almost-everywhere strongly measurable. -/
@@ -319,14 +287,13 @@ theorem TendstoInMeasure.smul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [Pse
     (tendsto_measure_dist_ge_atTop hc₀ 0) (η / 2 / 2) hη4
   obtain ⟨N₂, hN₂⟩ := ENNReal.tendsto_atTop_zero.mp
     (tendsto_measure_dist_ge_atTop hg 0) (η / 2 / 2) hη4
-  let M : ℕ := max 1 (max N₁ N₂)
-  have hM_pos : (0 : ℝ) < M := by exact_mod_cast lt_of_lt_of_le zero_lt_one (le_max_left _ _)
-  have hMc₀ : μ {x | (M : ℝ) ≤ dist (c₀ x) 0} ≤ η / 2 / 2 :=
-    hN₁ M ((le_max_left _ _).trans (le_max_right _ _))
-  have hMg : μ {x | (M : ℝ) ≤ dist (g x) 0} ≤ η / 2 / 2 :=
-    hN₂ M ((le_max_right _ _).trans (le_max_right _ _))
-  let δ : ℝ := min (Real.sqrt (ε / 3)) (ε / (3 * M))
-  have hδ : 0 < δ := lt_min (Real.sqrt_pos.mpr (by positivity)) (by positivity)
+  let M : ℕ := max N₁ N₂
+  have hMc₀ : μ {x | (M : ℝ) ≤ dist (c₀ x) 0} ≤ η / 2 / 2 := hN₁ M (le_max_left _ _)
+  have hMg : μ {x | (M : ℝ) ≤ dist (g x) 0} ≤ η / 2 / 2 := hN₂ M (le_max_right _ _)
+  obtain ⟨δ₀, hδ₀, huc⟩ := Metric.uniformContinuousOn_iff.mp
+    (Metric.isBounded_ball (x := (0 : 𝕜 × E)) (r := (M : ℝ) + 1)).uniformContinuousOn_smul ε hε
+  let δ : ℝ := min δ₀ 1
+  have hδ : 0 < δ := lt_min hδ₀ zero_lt_one
   filter_upwards [(ENNReal.tendsto_nhds_zero.mp (hc δ hδ)) (η / 2 / 2) hη4,
     (ENNReal.tendsto_nhds_zero.mp (hf δ hδ)) (η / 2 / 2) hη4] with i hic hif
   have hsub : {x | ε ≤ dist (c i x • f i x) (c₀ x • g x)} ⊆
@@ -337,9 +304,18 @@ theorem TendstoInMeasure.smul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [Pse
     by_contra hnot
     simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
     rcases hnot with ⟨⟨hc₀_lt, hg_lt⟩, ⟨hc_lt, hf_lt⟩⟩
-    exact hx.not_gt (dist_smul_lt_of_bounds hε hM_pos hc₀_lt hg_lt
-      (hc_lt.trans_le (min_le_left _ _)) (hf_lt.trans_le (min_le_left _ _))
-      (hc_lt.trans_le (min_le_right _ _)) (hf_lt.trans_le (min_le_right _ _)))
+    have hp₁ : (c i x, f i x) ∈ Metric.ball (0 : 𝕜 × E) ((M : ℝ) + 1) := by
+      simp only [Metric.mem_ball, Prod.dist_eq, Prod.fst_zero, Prod.snd_zero, max_lt_iff]
+      exact ⟨(dist_triangle (c i x) (c₀ x) 0).trans_lt
+        (by linarith [hc_lt.trans_le (min_le_right δ₀ 1)]),
+        (dist_triangle (f i x) (g x) 0).trans_lt
+        (by linarith [hf_lt.trans_le (min_le_right δ₀ 1)])⟩
+    have hp₀ : (c₀ x, g x) ∈ Metric.ball (0 : 𝕜 × E) ((M : ℝ) + 1) := by
+      simp only [Metric.mem_ball, Prod.dist_eq, Prod.fst_zero, Prod.snd_zero, max_lt_iff]
+      exact ⟨by linarith, by linarith⟩
+    have hp_dist : dist (c i x, f i x) (c₀ x, g x) < δ₀ :=
+      (max_lt hc_lt hf_lt).trans_le (min_le_left δ₀ 1)
+    exact hx.not_gt (huc (c i x, f i x) hp₁ (c₀ x, g x) hp₀ hp_dist)
   calc μ {x | ε ≤ dist (c i x • f i x) (c₀ x • g x)}
       ≤ (μ {x | (M : ℝ) ≤ dist (c₀ x) 0} + μ {x | (M : ℝ) ≤ dist (g x) 0}) +
           (μ {x | δ ≤ dist (c i x) (c₀ x)} + μ {x | δ ≤ dist (f i x) (g x)}) :=
@@ -360,11 +336,10 @@ theorem _root_.Filter.Tendsto.smul_tendstoInMeasure [Zero 𝕜] [Zero E] [Pseudo
     TendstoInMeasure μ (fun i x ↦ c i • f i x) l (fun x ↦ c₀ • g x) :=
   hc.tendstoInMeasure_const.smul aestronglyMeasurable_const hg hf
 
-/-- On a finite measure space, pointwise multiplication in a non-unital seminormed ring
-preserves convergence in measure along any filter when both limit functions are
-almost-everywhere strongly measurable. -/
-theorem TendstoInMeasure.mul [NonUnitalSeminormedRing R] [IsFiniteMeasure μ]
-    {f₁ f₂ : ι → α → R} {g₁ g₂ : α → R}
+/-- On a finite measure space, bounded pointwise multiplication preserves convergence in measure
+along any filter when both limit functions are almost-everywhere strongly measurable. -/
+theorem TendstoInMeasure.mul [Zero R] [Mul R] [PseudoMetricSpace R] [IsBoundedSMul R R]
+    [IsFiniteMeasure μ] {f₁ f₂ : ι → α → R} {g₁ g₂ : α → R}
     (hg₁ : AEStronglyMeasurable g₁ μ) (hg₂ : AEStronglyMeasurable g₂ μ)
     (hf₁ : TendstoInMeasure μ f₁ l g₁) (hf₂ : TendstoInMeasure μ f₂ l g₂) :
     TendstoInMeasure μ (fun i x ↦ f₁ i x * f₂ i x) l (fun x ↦ g₁ x * g₂ x) :=

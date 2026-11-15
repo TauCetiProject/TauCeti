@@ -123,8 +123,8 @@ theorem constRingHom_apply [Semiring R] [IsTopologicalSemiring R] (r : R) :
     (constRingHom r : α →ₘ[μ] R) = const α r := by
   rfl
 
-instance instAlgebra [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R]
-    [ContinuousConstSMul 𝕜 R] : Algebra 𝕜 (α →ₘ[μ] R) where
+instance instAlgebra [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R] :
+    Algebra 𝕜 (α →ₘ[μ] R) where
   algebraMap := constRingHom.comp (algebraMap 𝕜 R)
   commutes' c f := ext <| by
     filter_upwards [coeFn_mul (const α (algebraMap 𝕜 R c)) f,
@@ -138,14 +138,14 @@ instance instAlgebra [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] 
 
 @[simp]
 theorem algebraMap_apply [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R]
-    [ContinuousConstSMul 𝕜 R] (c : 𝕜) :
+    (c : 𝕜) :
     algebraMap 𝕜 (α →ₘ[μ] R) c = const α (algebraMap 𝕜 R c) := by
   rfl
 
 /-- Representative of `algebraMap 𝕜 (α →ₘ[μ] R) c` agrees with the constant `algebraMap 𝕜 R c`
 almost everywhere. -/
 theorem coeFn_algebraMap [CommSemiring 𝕜] [Semiring R] [IsTopologicalSemiring R] [Algebra 𝕜 R]
-    [ContinuousConstSMul 𝕜 R] (c : 𝕜) :
+    (c : 𝕜) :
     ⇑(algebraMap 𝕜 (α →ₘ[μ] R) c) =ᵐ[μ] Function.const α (algebraMap 𝕜 R c) :=
   coeFn_const (μ := μ) α (algebraMap 𝕜 R c)
 
