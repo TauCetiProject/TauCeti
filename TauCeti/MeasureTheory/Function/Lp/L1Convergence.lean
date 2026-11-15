@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # `Lᵖ` convergence implies `L¹` convergence on a finite measure space
@@ -39,16 +40,13 @@ theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableS
     (h : Tendsto f l (𝓝 g)) :
     Tendsto (fun i => ∫⁻ x, ‖f i x - g x‖ₑ ∂ν) l (𝓝 0) := by
   have hL1 : Tendsto
-      (fun i => Measure.LpToL1CLM (𝕜 := ℝ) ν q (f i)) l
-      (𝓝 (Measure.LpToL1CLM (𝕜 := ℝ) ν q g)) :=
-    ((Measure.LpToL1CLM (𝕜 := ℝ) ν q).continuous.tendsto g).comp h
+      (fun i => Lp.ofExponentLEL ℝ G (Fact.out : 1 ≤ q) (f i)) l
+      (𝓝 (Lp.ofExponentLEL ℝ G (Fact.out : 1 ≤ q) g)) :=
+    ((Lp.ofExponentLEL ℝ G Fact.out).continuous.tendsto g).comp h
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hL1
   refine hL1.congr fun i => ?_
-  rw [eLpNorm_one_eq_lintegral_eNorm
+  rw [Lp.coeFn_ofExponentLEL, Lp.coeFn_ofExponentLEL, eLpNorm_one_eq_lintegral_eNorm
     ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))]
-  apply lintegral_congr_ae
-  filter_upwards [Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q (f i),
-    Measure.LpToL1CLM_coeFn (𝕜 := ℝ) ν q g] with x hfi hg
-  rw [Pi.sub_apply, hfi, hg]
+  simp only [Pi.sub_apply]
 
 end TauCeti

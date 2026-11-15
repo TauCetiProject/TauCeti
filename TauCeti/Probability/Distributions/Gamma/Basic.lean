@@ -81,7 +81,6 @@ The cumulative distribution function is computed in
 
 ## References
 
-* Tau Ceti roadmap, `StandardDistributions`, Layer 1, "Gamma".
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley, 1994, ch. 17.
 -/

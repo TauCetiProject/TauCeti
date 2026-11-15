@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.LineDeriv.Measurable
 import Mathlib.Analysis.Calculus.Rademacher
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
@@ -22,9 +21,9 @@ centred at `0`. The derivative in a direction `v` of the mollification `ρ.norme
 mollification of the directional derivative `∂_v ψ`, which exists almost everywhere by
 Rademacher's theorem and is the weak derivative of `ψ`. Hence these derivatives are bounded by
 `K ‖v‖`. When the radii shrink to zero with a bounded ratio of outer to inner radius, they converge
-to `∂_v ψ` almost everywhere, by the Lebesgue differentiation theorem. By dominated convergence,
-integrals against the mollifications and against their directional derivatives then converge to
-the integrals against `ψ` and `∂_v ψ`.
+to `∂_v ψ` almost everywhere, by the Lebesgue differentiation theorem. Integrals against the
+directional derivatives of the mollifications converge to the integral against `∂_v ψ` by
+dominated convergence along countably generated filters.
 
 These are the estimates that pass an identity proved for smooth factors to Lipschitz ones by
 dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul`.
@@ -37,9 +36,8 @@ dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipsch
   `K ‖v‖`.
 * `LipschitzWith.ae_tendsto_fderiv_normed_convolution_apply`: they converge almost everywhere to
   the directional derivative as the bumps shrink.
-* `LipschitzWith.tendsto_integral_normed_convolution_smul` and
-  `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`: integrals against the
-  mollifications and against their directional derivatives converge as the bumps shrink.
+* `LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`: integrals against the
+  directional derivatives of the mollifications converge as the bumps shrink.
 
 ## References
 
@@ -99,32 +97,6 @@ theorem ae_tendsto_fderiv_normed_convolution_apply (hψ : LipschitzWith K ψ) {�
   simpa only [hψ.fderiv_normed_convolution_apply] using hx
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-/-- As normalized bumps shrink to `0`, integrals against the mollifications of a Lipschitz
-function `ψ` converge to the integral against `ψ`: `∫ (ρᵢ ⋆ ψ) w → ∫ ψ w` whenever `w` and `ψ w`
-are integrable. -/
-theorem tendsto_integral_normed_convolution_smul (hψ : LipschitzWith K ψ) {ι : Type*}
-    {l : Filter ι} [l.IsCountablyGenerated] {ρ : ι → ContDiffBump (0 : E)}
-    (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) {w : E → G} (hw : Integrable w μ)
-    (hψw : Integrable (fun x => ψ x • w x) μ) :
-    Tendsto (fun i => ∫ x, ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x • w x ∂μ) l
-      (𝓝 (∫ x, ψ x • w x ∂μ)) := by
-  have hunif := ContDiffBump.tendstoUniformly_normed_convolution (μ := μ) hρ hψ.uniformContinuous
-  -- Once the mollifications are uniformly within `1` of `ψ`, `‖ψ w‖ + ‖w‖` dominates.
-  refine tendsto_integral_filter_of_dominated_convergence (fun x => ‖ψ x • w x‖ + ‖w x‖)
-    (Eventually.of_forall fun i =>
-      ((ρ i).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) (ρ i).contDiff_normed
-        hψ.continuous.locallyIntegrable (n := ⊤)).continuous.aestronglyMeasurable.smul hw.1)
-    ?_ (hψw.norm.add hw.norm)
-    (Eventually.of_forall fun x => (hunif.tendsto_at x).smul_const (w x))
-  filter_upwards [tendstoUniformly_iff.1 hunif 1 one_pos] with i hi
-  refine Eventually.of_forall fun x => ?_
-  have hx : ‖((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x‖ ≤ ‖ψ x‖ + 1 := by
-    have := hi x
-    rw [dist_comm, dist_eq_norm] at this
-    linarith [norm_le_norm_add_norm_sub' (((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x) (ψ x)]
-  rw [norm_smul, norm_smul]
-  nlinarith [norm_nonneg (w x)]
 
 /-- As normalized bumps shrink to `0` with a bounded ratio of outer to inner radius, integrals
 against the directional derivatives of the mollifications of a Lipschitz function `ψ` converge to

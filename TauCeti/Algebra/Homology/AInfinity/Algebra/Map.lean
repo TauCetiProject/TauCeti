@@ -91,7 +91,7 @@ end Map
 
 section Comap
 
-variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A) (f : A →ₗ[R] B)
+variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A ℤ) (f : A →ₗ[R] B)
   (hf : Function.Injective f) (hG : ∀ (p : ℤ) (a : A), f a ∈ ℬ.grading.piece p ↔ a ∈ G.piece p)
   (hm : ∀ n, 0 < n → ∀ x : Fin n → A, ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f)
 

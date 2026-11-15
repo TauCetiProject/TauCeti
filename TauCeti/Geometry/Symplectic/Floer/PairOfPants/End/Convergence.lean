@@ -42,8 +42,9 @@ every half-cylinder `s ≥ b` with `b > max T₀ 0`
 (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_comp_positiveEndChart_le`): in the positive end
 chart the structure is `J'_q(t, x) = J_q(±t, x)`, and bubbling cannot occur along a finite-energy
 cylindrical end (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`). The structures
-are then also uniformly tame on the end, so neither a derivative bound nor taming constants have
-to be assumed for the convergence
+are then also uniformly tame on the end
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_comp_positiveEndChart_le_and_tame`), so neither
+a derivative bound nor taming constants have to be assumed for the convergence
 (`exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer_of_cylindrical`).
 
 **The energy identity.** Consequently the orbits in the energy identity
@@ -320,6 +321,53 @@ theorem exists_forall_norm_fderiv_comp_positiveEndChart_le
     (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
       (hu.differentiableOn (by norm_num)) q (le_max_right _ _) (le_max_left _ _))) hb
 
+/-- **Bounds on a cylindrical end of a finite-energy Floer pair of pants.** Let `K` be equal to
+`H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians `H_q`, and let `u` be
+`C³` on `S`, with image in a compact set `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on
+`S` with finite energy. Fix an end `q`, and suppose that on it beyond `T₀` the almost complex
+structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for a `1`-periodic family
+`J_q(t, x)` which is `C²` on an open set `W ⊇ ℝ × B` and tamed by `ω` on `ℝ × B`. Then on some
+half-cylinder `s > b` of the positive end chart `φ'_q` the derivative of `u ∘ φ'_q` is bounded and
+the almost complex structures are uniformly tame, `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖`. -/
+theorem exists_forall_norm_fderiv_comp_positiveEndChart_le_and_tame
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 3 (uncurry (H q)))
+    (hu : ContDiffOn ℝ 3 u thricePuncturedSphereReal) (hB : IsCompact B)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    (q : Puncture) (hW : IsOpen W)
+    (hJq : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJqper : Periodic Jq 1) (hBW : univ ×ˢ B ⊆ W) (hJqt : ∀ t, ∀ x ∈ B, ω.Tames (Jq t x))
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t)))) :
+    ∃ b C c, 0 < c ∧ ∃ M,
+      (∀ z : ℝ × ℝ, b < z.1 → ‖fderiv ℝ (u ∘ positiveEndChart q) z‖ ≤ C) ∧
+      (∀ z : ℝ × ℝ, b < z.1 → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (positiveEndChart q z) v)) ∧
+      ∀ z : ℝ × ℝ, b < z.1 → ∀ v, ‖J (positiveEndChart q z) v‖ ≤ M * ‖v‖ := by
+  set b := max T₀ 0 + 1
+  obtain ⟨C, hC⟩ := exists_forall_norm_fderiv_comp_positiveEndChart_le hKH hH hHs hu hB huB
+    hfloer hE q hW hJq hJqper hBW hJqt hJ (lt_add_one _)
+  -- The end structures `J_q` have uniform taming constants on `ℝ × B`.
+  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hB
+    (hJq.continuousOn.mono hBW) hJqper hJqt
+  have hbT (z : ℝ × ℝ) (hz : b < z.1) : T₀ ≤ z.1 :=
+    (le_max_left _ _).trans ((lt_add_one _).trans hz).le
+  have huB' (z : ℝ × ℝ) (hz : b < z.1) : (u ∘ positiveEndChart q) z ∈ B :=
+    huB _ (positiveEndChart_mem_thricePuncturedSphereReal
+      ((le_max_right _ _).trans_lt ((lt_add_one _).trans hz)))
+  refine ⟨b, C, c, hc, M, fun z hz ↦ hC z hz.le, fun z hz v ↦ ?_, fun z hz v ↦ ?_⟩
+  · rw [eq_comp_positiveEndChart hJ (hbT z hz)]
+    exact (hcM _ _ (huB' z hz) v).1
+  · rw [eq_comp_positiveEndChart hJ (hbT z hz)]
+    exact (hcM _ _ (huB' z hz) v).2
+
 /-- **The ends of a Floer pair of pants with cylindrical ends converge to nondegenerate orbits.**
 Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians
 `H_q`, and let `u` be `C³` on `S`, with image in a compact set `B`, solving the Floer equation
@@ -354,27 +402,12 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer_of_c
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (y 0)) :
     ∃ y : ℝ → V, Periodic y 1 ∧ (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) ∧
       TendstoUniformly (fun s t ↦ u (endChart q (q.endSign * s, t))) y atTop := by
-  set b := max T₀ 0 + 1
-  have hb : max T₀ 0 < b := lt_add_one _
-  obtain ⟨C, hC⟩ := exists_forall_norm_fderiv_comp_positiveEndChart_le hKH hH hHs hu hB huB
-    hfloer hE q hW hJq hJqper hBW hJqt hJ hb
-  -- The end structures `J_q` have uniform taming constants on `ℝ × B`.
-  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hB
-    (hJq.continuousOn.mono hBW) hJqper hJqt
-  have hbT (z : ℝ × ℝ) (hz : b < z.1) : T₀ ≤ z.1 :=
-    (le_max_left _ _).trans ((lt_add_one _).trans hz).le
-  have huB' (z : ℝ × ℝ) (hz : b < z.1) : (u ∘ positiveEndChart q) z ∈ B :=
-    huB _ (positiveEndChart_mem_thricePuncturedSphereReal
-      ((le_max_right _ _).trans_lt ((lt_add_one _).trans hz)))
+  obtain ⟨b, C, c, hc, M, hC, hJc, hJM⟩ :=
+    exists_forall_norm_fderiv_comp_positiveEndChart_le_and_tame hKH hH hHs hu hB huB hfloer hE q
+      hW hJq hJqper hBW hJqt hJ
   exact exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer hKH hH
-    (fun q ↦ (hHs q).of_le (by norm_num)) (hu.of_le (by norm_num)) hB huB hfloer hE q hL hnd
-    (fun z hz ↦ hC z hz.le) hc
-    (fun z hz v ↦ by
-      rw [eq_comp_positiveEndChart hJ (hbT z hz)]
-      exact (hcM _ _ (huB' z hz) v).1)
-    fun z hz v ↦ by
-      rw [eq_comp_positiveEndChart hJ (hbT z hz)]
-      exact (hcM _ _ (huB' z hz) v).2
+    (fun q ↦ (hHs q).of_le (by norm_num)) (hu.of_le (by norm_num)) hB huB hfloer hE q hL hnd hC
+    hc hJc hJM
 
 end InnerProductSpace
 

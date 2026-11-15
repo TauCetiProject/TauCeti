@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Lie
 public import Mathlib.Data.Sym.Sym2
+import Mathlib.Data.Sym.Card
+import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # Matrix root coordinates for the symplectic Lie algebra
@@ -22,6 +24,8 @@ A repeated unordered pair contributes one matrix entry, not twice that entry.
 These coordinates give an integral matrix basis for symplectic realizations of folded Lie
 algebras. They work over every commutative ring, including characteristic two, and do not
 assert that distinct integral roots remain distinct as Lie algebra weights in that characteristic.
+Counting these coordinates gives `finrank_sp`, the dimension `n(2n + 1)`, without excluding
+characteristic two.
 
 The construction uses `Sym2.lift` for symmetric entries and `Module.Basis.ofEquivFun` for the
 basis, together with `Matrix.mem_symplecticLieAlgebra_iff` for the block equations.
@@ -92,6 +96,20 @@ def rootEntryEquiv : sp l R ≃ₗ[R] (RootEntryIndex l → R) where
     · rfl
     · induction p using Sym2.inductionOn with | _ i j => rfl
     · induction p using Sym2.inductionOn with | _ i j => rfl
+
+/-- The symplectic Lie algebra on `2n` coordinates has rank `n(2n + 1)` over every
+nontrivial commutative ring, including characteristic two. -/
+@[simp]
+theorem finrank_sp (K : Type*) [CommRing K] [Nontrivial K] :
+    Module.finrank K (sp l K) = Fintype.card l * (2 * Fintype.card l + 1) := by
+  classical
+  rw [(rootEntryEquiv l K).finrank_eq, Module.finrank_pi]
+  simp only [RootEntryIndex, Fintype.card_sum, Fintype.card_prod, Sym2.card]
+  have h : 2 * (Fintype.card l + 1).choose 2 =
+      (Fintype.card l + 1) * Fintype.card l := by
+    rw [Nat.choose_two_right, Nat.mul_div_cancel'
+      (Nat.even_mul_pred_self (Fintype.card l + 1)).two_dvd, Nat.add_sub_cancel]
+  nlinarith
 
 /-- The first family of coordinates consists of the upper-left entries. -/
 @[simp]

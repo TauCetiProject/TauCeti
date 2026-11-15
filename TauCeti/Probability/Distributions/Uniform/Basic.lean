@@ -82,8 +82,6 @@ side condition.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 0, item 3 — the uniform family:
-  its measure, density, cdf, moments, and transforms — together with the uniform case of item 4.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed.,
   Wiley (1995), ch. 26.
 -/
@@ -183,9 +181,9 @@ theorem isUniform_of_hasLaw_uniformMeasure {Ω : Type*} [MeasurableSpace Ω] {P 
 /-! ### The probability density function
 
 Mathlib already supplies the `ℝ≥0∞`-valued density of a uniform law as
-`MeasureTheory.pdf.uniformPDF s x μ = s.indicator ((μ s)⁻¹ • 1) x`, so none is introduced here —
-the roadmap is explicit that no second pdf abstraction should enter the library. What is missing is
-the real-valued form and the interval-specific identifications, which is what this section adds. -/
+`MeasureTheory.pdf.uniformPDF s x μ = s.indicator ((μ s)⁻¹ • 1) x`, so none is introduced here.
+What is missing is the real-valued form and the interval-specific identifications, which is what
+this section adds. -/
 
 /-- The real-valued density of the uniform distribution on `Set.Ioc a b`.
 

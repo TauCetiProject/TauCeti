@@ -18,6 +18,10 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses
 -- Non-public: `FDRep.nonempty_iso_of_character_eq` recovers an isomorphism from a character
 -- identity.
 import TauCeti.RepresentationTheory.CharacterTable.Determined
+-- Non-public: `AddChar.IsPrimitive.ne_one`, the canonical additive character is nontrivial.
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
+-- Non-public: maps with the same fibres have images of equal cardinality.
+import TauCeti.Data.Set.Card
 -- Non-public: the character group of a finite commutative group is a `Fintype`.
 import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 -- Non-public: `ℂ`, being algebraically closed, has enough roots of unity of every order, so the
@@ -93,10 +97,10 @@ universe u
 
 /-! ### The four families are pairwise disjoint
 
-Three of the six comparisons are made at the unipotent Jordan block `!![1, 1; 0, 1]`, where the
-linear characters take the value `1`, the Steinberg twists `0` and the cuspidal characters `-1`;
-the other three, those involving the principal series, are made at the identity, where the degrees
-`1`, `q`, `q + 1` and `q - 1` differ. -/
+The linear-versus-Steinberg and linear-versus-cuspidal comparisons are made at the unipotent
+Jordan block `!![1, 1; 0, 1]`, where the linear characters take the value `1`, the Steinberg twists
+`0` and the cuspidal characters `-1`; the other four, including Steinberg-versus-cuspidal, are made
+at the identity, where the degrees `1`, `q`, `q + 1` and `q - 1` differ. -/
 
 section Distinct
 
@@ -143,16 +147,15 @@ theorem character_GL2Linear_ne_GL2CuspidalVirtualCharacter (α : Fˣ →* ℂˣ)
     GL2CuspidalVirtualCharacter_apply_jordanGL θ hψ 1 one_ne_zero] at this
   norm_num at this
 
-/-- A Steinberg twist is not a cuspidal character: at the Jordan block they take the values `0`
-and `-1`. -/
+/-- A Steinberg twist is not a cuspidal character: their degrees are `q` and `q - 1`. -/
 theorem character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter (α : Fˣ →* ℂˣ)
-    (θ : Eˣ →* ℂˣ) {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
+    (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     (GL2SteinbergTwist F α).character ≠ (GL2CuspidalVirtualCharacter F E θ ψ).1 := by
   intro h
-  have := congrFun h (jordanGL (1 : Fˣ) (1 : F))
-  rw [character_GL2SteinbergTwist_jordanGL α 1 one_ne_zero,
-    GL2CuspidalVirtualCharacter_apply_jordanGL θ hψ 1 one_ne_zero] at this
-  norm_num at this
+  have := congrFun h 1
+  rw [FDRep.char_one, finrank_GL2SteinbergTwist, GL2CuspidalVirtualCharacter_apply_one] at this
+  have h1 : (1 : ℂ) = 0 := by linear_combination this
+  norm_num at h1
 
 /-- A principal-series character is not a cuspidal character: their degrees are `q + 1` and
 `q - 1`. -/
@@ -382,7 +385,7 @@ private theorem ncard_union_eq_add {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
     rw [Set.disjoint_left]
     rintro f ((⟨α, rfl⟩ | ⟨α, rfl⟩) | ⟨p, -, rfl⟩) ⟨θ, -, hθ⟩
     · exact character_GL2Linear_ne_GL2CuspidalVirtualCharacter α θ hψ hθ.symm
-    · exact character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α θ hψ hθ.symm
+    · exact character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α θ ψ hθ.symm
     · exact character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter p.1 p.2 θ ψ hθ.symm
   rw [Set.ncard_union_eq hABPC, Set.ncard_union_eq hABP, Set.ncard_union_eq hAB]
 
@@ -422,11 +425,12 @@ theorem irreducibleCharacters_GL2_eq_union {ψ : AddChar F ℂ} (hψ : ψ ≠ 1)
     have := count_arith (Fintype.one_lt_card (α := F))
     omega
 
-/-- **There are `½ q (q - 1)` cuspidal characters of `GL₂(F)`**, one for each orbit `{θ, θ^q}` of
-the characters `θ` of `Eˣ` with `θ^q ≠ θ`: the other three families account for
-`2 (q - 1) + ½ (q - 1) (q - 2)` of the `q² - 1` irreducible characters. -/
-@[simp]
-theorem ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar F ℂ} (hψ : ψ ≠ 1) :
+/-- **There are `½ q (q - 1)` cuspidal characters of `GL₂(F)`** for a nontrivial additive
+character `ψ`, one for each orbit `{θ, θ^q}` of the characters `θ` of `Eˣ` with `θ^q ≠ θ`: the
+other three families account for `2 (q - 1) + ½ (q - 1) (q - 2)` of the `q² - 1` irreducible
+characters. -/
+private theorem ncard_image_GL2CuspidalVirtualCharacter_of_ne_one {ψ : AddChar F ℂ}
+    (hψ : ψ ≠ 1) :
     ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
       {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}).ncard =
       Fintype.card F * (Fintype.card F - 1) / 2 := by
@@ -437,6 +441,22 @@ theorem ncard_image_GL2CuspidalVirtualCharacter {ψ : AddChar F ℂ} (hψ : ψ �
   -- the arithmetic: `q² - 1 - 2 (q - 1) - ½ (q - 1) (q - 2) = ½ q (q - 1)`
   have := (count_arith (Fintype.one_lt_card (α := F))).1
   omega
+
+/-- **Counting the cuspidal virtual characters.** For every additive character `ψ`, the virtual
+characters `χ_θ` with `θ^q ≠ θ` take `½ q (q - 1)` distinct values, one for each orbit
+`{θ, θ^q}` of characters of `Eˣ`; for nontrivial `ψ` these are the cuspidal characters of
+`GL₂(F)`. -/
+@[simp]
+theorem ncard_image_GL2CuspidalVirtualCharacter (ψ : AddChar F ℂ) :
+    ((fun θ : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E θ ψ).1) ''
+      {θ | θ.comp (powMonoidHom (Fintype.card F)) ≠ θ}).ncard =
+      Fintype.card F * (Fintype.card F - 1) / 2 := by
+  have hψ₀ := (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one
+  refine Eq.trans ?_ (ncard_image_GL2CuspidalVirtualCharacter_of_ne_one F E hψ₀)
+  simp only [Set.ncard_def]
+  apply congrArg ENat.toNat
+  exact Set.encard_image_eq_encard_image_of_eq_iff
+    (fun θ θ' => coe_GL2CuspidalVirtualCharacter_eq_coe_iff_of_addChar θ θ' _ _) _
 
 end Classification
 

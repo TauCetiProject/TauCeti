@@ -65,6 +65,8 @@ off the invariant differential.
   `[n]_F(F(X, Y)) = F([n]_F(X), [n]_F(Y))`.
 * `FormalGroup.nsmulSeries_𝔾ₐ` and `FormalGroup.nsmulSeries_𝔾ₘ`: `[n](T) = n T` on the additive
   formal group law and `[n](T) = (1 + T) ^ n - 1` on the multiplicative one.
+* `FormalGroup.nsmulSeries_𝔾ₐ_eq_zero`: `[n](T) = 0` on the additive formal group law when
+  `n = 0` in `R`.
 * `FormalGroup.subst_nsmulSeries_invariantDifferential_mul_derivative`:
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
@@ -231,6 +233,10 @@ theorem nsmulSeries_𝔾ₐ (n : ℕ) :
     have ha := (𝔾ₐ (R := R)).hasSubst_nsmulSeries_X n
     rw [nsmulSeries_succ, 𝔾ₐ_toPowerSeries, subst_add ha, subst_X ha, subst_X ha]
     simp [ih, add_mul]
+
+/-- Multiplication by `n` on the additive formal group law vanishes when `n = 0` in `R`. -/
+theorem nsmulSeries_𝔾ₐ_eq_zero {n : ℕ} (hn : (n : R) = 0) : (𝔾ₐ (R := R)).nsmulSeries n = 0 := by
+  rw [nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hn, map_zero, zero_mul]
 
 /-- Multiplication by `n` on the multiplicative formal group law `X + Y + X Y` is
 `[n](T) = (1 + T) ^ n - 1`. -/

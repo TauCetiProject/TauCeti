@@ -34,11 +34,15 @@ Weibel's Complete Convergence Theorem 5.5.10 for complete exhaustive filtrations
 sequence is degreewise bounded:
 
 * the filtration of the abutment `H^n(K)` vanishes from some stage on
-  (`CochainComplex.isZero_filtrationAbutmentFiltration_of_isCompleteFiltration`);
+  (`CochainComplex.isZero_filtrationAbutmentFiltration_of_isCompleteFiltration`), and for a
+  complete first-quadrant decreasing filtration `F^p H^n = 0` for `n < p`
+  (`CochainComplex.isZero_filtrationAbutmentFiltration_of_antitone_of_firstQuadrant`);
 * the objects on late enough pages are the graded pieces of the filtration of the abutment
   (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfComplete`, and
   `CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfComplete` in the classical
-  cohomological indexing of a decreasing filtration);
+  cohomological indexing of a decreasing filtration), in particular for a complete first-quadrant
+  decreasing filtration on every page `r` with `p < r` and `q + 1 < r`
+  (`CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfFirstQuadrant`);
 * a morphism of complete exhaustive filtered complexes which is an isomorphism on some page
   induces an isomorphism in cohomology
   (`CochainComplex.isIso_homologyMap_of_isIso_spectralSequence_page_of_complete`, Weibel's
@@ -274,6 +278,73 @@ noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfComplete (
   decreasingFiltrationSpectralSequencePageXIsoGradedOfExhaustive F hF r hr p q hex
     (isZero_homology_of_antitone_of_isCompleteFiltration F hF (by rwa [add_sub_cancel_right]) hs
       h₀) h₃
+
+/-- In a complete first-quadrant decreasing filtration, `H^n(F^a) = 0` for `n < a`. -/
+private lemma isZero_homology_of_antitone_of_firstQuadrant (hF₀ : F 0 = ⊤)
+    (hc : ∀ n, TauCeti.IsCompleteFiltration fun k : ℕ ↦ LinearMap.range ((F k).arrow.f n).hom)
+    (hq : ∀ j, 0 ≤ j → ∀ n, n < j →
+      IsZero ((cokernel (Subobject.ofLE (F (j + 1)) (F j) (hF (by lia)))).homology n))
+    {a n : ℤ} (hn : n < a) :
+    IsZero ((F a : CochainComplex (ModuleCat R) ℤ).homology n) := by
+  -- Below the filtration index `0` the stages are all `F^0 = K`, so pass to `a⁺ = max a 0`.
+  have e : F a = F a.toNat := by
+    rcases le_or_gt 0 a with ha | ha
+    · rw [Int.toNat_of_nonneg ha]
+    · rw [Int.toNat_eq_zero.2 ha.le, Nat.cast_zero, hF₀]
+      exact top_unique (hF₀ ▸ hF ha.le)
+  rw [e]
+  exact isZero_homology_of_antitone_of_isCompleteFiltration F hF
+    (by
+      convert (hc (n - 1)).comp_add_right a.toNat using 2 with k
+      exact congrArg (fun j ↦ LinearMap.range ((F j).arrow.f (n - 1)).hom) (by lia))
+    (fun x hx ↦ (hc n).eq_zero_of_forall_mem x fun k ↦ hx k)
+    fun j hj ↦ hq j (by lia) n (by lia)
+
+/-- **The filtration of the abutment of a complete first-quadrant decreasing filtration is
+finite.** Let `F` be a decreasing filtration of a complex of modules with `F^0 = K`, degreewise
+complete and separated, such that `H^n(F^j/F^{j+1}) = 0` whenever `0 ≤ j` and `n < j`. Then the
+piece `F^p H^n` of the induced filtration of `H^n(K)` vanishes for `n < p`. At the other end,
+`F^p H^n = H^n(K)` for `p ≤ 0` by `CochainComplex.isIso_filtrationAbutmentFiltrationι`. -/
+theorem isZero_filtrationAbutmentFiltration_of_antitone_of_firstQuadrant (hF₀ : F 0 = ⊤)
+    (hc : ∀ n, TauCeti.IsCompleteFiltration fun k : ℕ ↦ LinearMap.range ((F k).arrow.f n).hom)
+    (hq : ∀ j, 0 ≤ j → ∀ n, n < j →
+      IsZero ((cokernel (Subobject.ofLE (F (j + 1)) (F j) (hF (by lia)))).homology n))
+    {p n : ℤ} (hn : n < p) :
+    IsZero (Abelian.SpectralObject.abutmentFiltration
+      (spectralObject (filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h))) (-p) n) :=
+  Abelian.SpectralObject.isZero_abutmentFiltration _ (isZero_spectralObject_H_bot (F ∘ Neg.neg) _
+    (-p) n (by simpa using isZero_homology_of_antitone_of_firstQuadrant F hF hF₀ hc hq hn))
+
+/-- **Strong convergence for a complete first-quadrant decreasing filtration.** Let `F` be a
+decreasing filtration of a complex of modules with `F^0 = K`, degreewise complete and separated,
+whose first page vanishes below the horizontal axis: `E₁^{j,n-j} = H^n(F^j/F^{j+1}) = 0` whenever
+`0 ≤ j` and `n < j`. Then on every page `r ≥ 1` with `p < r` and `q + 1 < r`, the object at
+`(p, q)` is the graded piece `F^p H^{p+q} / F^{p+1} H^{p+q}` of the induced filtration of
+`H^{p+q}(K)`. This filtration is finite in each degree
+(`CochainComplex.isZero_filtrationAbutmentFiltration_of_antitone_of_firstQuadrant`). No stage
+`F^j` need vanish in any degree, as for the filtration of singular cochains by vanishing on the
+preimages of the skeleta of a CW base. -/
+noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfFirstQuadrant
+    (hF₀ : F 0 = ⊤)
+    (hc : ∀ n, TauCeti.IsCompleteFiltration fun k : ℕ ↦ LinearMap.range ((F k).arrow.f n).hom)
+    (hq : ∀ j, 0 ≤ j → ∀ n, n < j →
+      IsZero ((cokernel (Subobject.ofLE (F (j + 1)) (F j) (hF (by lia)))).homology n))
+    (r : ℤ) (hr : 1 ≤ r) (p q : ℤ) (hp : p < r) (hqr : q + 1 < r) :
+    ((decreasingFiltrationSpectralSequence F hF).page r).X (p, q) ≅
+      cokernel (Abelian.SpectralObject.abutmentFiltrationMap
+        (spectralObject (filtrationFunctor _ (hF.comp fun _ _ h ↦ neg_le_neg h))) (-p - 1)
+        (p + q)) :=
+  have hF_top (j : ℤ) (hj : j ≤ 0) : F j = ⊤ := top_unique (hF₀ ▸ hF hj)
+  decreasingFiltrationSpectralSequencePageXIsoGradedOfExhaustive F hF r hr p q
+    (fun x ↦ ⟨0, (ModuleCat.epi_iff_surjective _).1 (by rw [hF₀]; infer_instance) x⟩)
+    (isZero_homology_of_antitone_of_firstQuadrant F hF hF₀ hc hq (by lia)) fun j hj ↦ by
+      -- Below the filtration index `0` the graded pieces are `K/K = 0`.
+      refine IsZero.of_iso ?_ ((HomologicalComplex.homologyFunctor _ _ _).mapIso
+        (Subobject.cokernelOfLEIsoOfEq (hF_top (j + 1) (by lia)) (hF_top j (by lia)) _ le_rfl))
+      have : IsIso (Subobject.ofLE (⊤ : Subobject K) ⊤ le_rfl) := by
+        rw [Subobject.ofLE_refl]
+        infer_instance
+      exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) _).isZero_homology
 
 end Decreasing
 

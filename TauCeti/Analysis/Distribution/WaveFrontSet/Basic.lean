@@ -140,6 +140,16 @@ theorem localFourier_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (�
 theorem localFourier_zero (φ : 𝓓(Ω, ℂ)) (η : E) : (0 : 𝓓'(Ω, ℂ)).localFourier φ η = 0 := by
   rw [← zero_smul ℂ (0 : 𝓓'(Ω, ℂ)), localFourier_smul, zero_mul]
 
+/-- The localized Fourier transform of a finite sum of distributions is the sum of their localized
+Fourier transforms. -/
+@[simp]
+theorem localFourier_sum {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (∑ i ∈ s, T i).localFourier φ η = ∑ i ∈ s, (T i).localFourier φ η := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+
 /-- The localized Fourier transform is additive in the cutoff. -/
 @[simp]
 theorem localFourier_add_cutoff (T : 𝓓'(Ω, ℂ)) (φ ψ : 𝓓(Ω, ℂ)) (η : E) :
@@ -160,6 +170,13 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 @[simp]
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
+
+/-- The localized Fourier transform is additive in the cutoff over finite sums. -/
+@[simp]
+theorem localFourier_sum_cutoff {ι : Type*} (T : 𝓓'(Ω, ℂ)) (s : Finset ι) (φ : ι → 𝓓(Ω, ℂ))
+    (η : E) : T.localFourier (∑ i ∈ s, φ i) η = ∑ i ∈ s, T.localFourier (φ i) η :=
+  map_sum (AddMonoidHom.mk' (fun ψ ↦ T.localFourier ψ η)
+    fun ψ ψ' ↦ localFourier_add_cutoff T ψ ψ' η) φ s
 
 /-- At the zero frequency the localized Fourier transform is the pairing `T φ` with the cutoff. -/
 @[simp]
@@ -370,6 +387,17 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
+/-- The localized Fourier transform vanishes for a cutoff whose support is disjoint from the
+support of the distribution. -/
+theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
+    (h : Disjoint (tsupport φ) (dsupport T)) (η : E) : T.localFourier φ η = 0 := by
+  rw [localFourier, ← map_zero T.complexPairing]
+  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
+  refine complexPairing_eq_of_eventuallyEq T ?_
+  refine eventuallyEq_of_mem ((isClosed_tsupport φ).isOpen_compl.mem_nhdsSet.2
+    h.subset_compl_left) fun y hy => ?_
+  simp [image_eq_zero_of_notMem_tsupport hy]
+
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/
 theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω)
@@ -379,14 +407,8 @@ theorem isMicrolocallySmoothAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (
     inter_subset_right (1 : ℂ)
   refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => ?_⟩) ξ
-  -- The cut-off test function vanishes on the open neighbourhood `(tsupport φ)ᶜ` of the support.
-  have hzero : T.localFourier φ η = 0 := by
-    rw [localFourier, ← map_zero T.complexPairing]
-    refine complexPairing_eq_of_eventuallyEq T ?_
-    refine (eventuallyEq_of_mem ((isOpen_compl_iff.2 (isClosed_tsupport φ)).mem_nhdsSet.2
-      fun y hy hyφ => (hφ hyφ).1 hy) fun y hy => ?_)
-    simp [image_eq_zero_of_notMem_tsupport hy]
-  simp [hzero]
+  simp [localFourier_eq_zero_of_disjoint_dsupport
+    (disjoint_left.2 fun _ hy => (hφ hy).1 : Disjoint (tsupport φ) (dsupport T)) η]
 
 /-- The wave front set lies over the support of the distribution. -/
 theorem waveFrontSet_subset_dsupport (T : 𝓓'(Ω, ℂ)) :
@@ -445,10 +467,10 @@ theorem waveFrontSet_delta {x₀ : E} (hx₀ : x₀ ∈ Ω) :
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- If `T` coincides on an open set `U` with a locally integrable function `f`, in the sense that
+/-- If `T` coincides on a set `U` with a locally integrable function `f`, in the sense that
 `T φ = ∫ φ • f` for every real test function `φ` supported in `U`, then for a cutoff `φ` supported
 in `U` the localized Fourier transform of `T` is the Fourier transform of `φ f`. -/
-theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U) {f : E → ℂ}
+theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} {f : E → ℂ}
     (hf : MeasureTheory.LocallyIntegrableOn f U)
     (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {φ : 𝓓(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) (η : E) : T.localFourier φ η = 𝓕 (fun y => φ y * f y) η := by
@@ -456,7 +478,7 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
       (TauCeti.contDiff_fourierAtom η) φ) ⊆ U := by
     rw [bilinLeftCLM_apply]
     exact (tsupport_mul_subset_left (f := φ)).trans hφ
-  rw [localFourier, complexPairing_eq_integral hU hf hT hψ, Real.fourier_eq]
+  rw [localFourier, complexPairing_eq_integral hf hT hψ, Real.fourier_eq]
   simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', Circle.smul_def, smul_eq_mul,
     TauCeti.fourierAtom_eq_fourierChar]
   exact MeasureTheory.integral_congr_ae (Eventually.of_forall fun y => by ring)
@@ -466,7 +488,7 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
 theorem localFourier_ofFun {f : E → ℂ} (hf : MeasureTheory.LocallyIntegrableOn f Ω)
     (φ : 𝓓(Ω, ℂ)) (η : E) :
     (ofFun Ω f MeasureTheory.volume ⊤).localFourier φ η = 𝓕 (fun x => φ x * f x) η :=
-  localFourier_eq_fourier Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset η
+  localFourier_eq_fourier hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset η
 
 /-- **Microlocal smoothness over the smooth part.** If `T` coincides on an open set `U` with a
 function `f` smooth on `U`, in the sense that `T φ = ∫ φ • f` for every real test function `φ`
@@ -487,7 +509,7 @@ theorem isMicrolocallySmoothAt_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Se
       filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hy (hφU h)] with z hz
       simp [hz]
   refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx]) (fun N => ?_) ξ
-  simpa only [localFourier_eq_fourier hU (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT
+  simpa only [localFourier_eq_fourier (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT
     hφU] using TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le hg
       φ.hasCompactSupport.mul_right N
 

@@ -8,10 +8,11 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+import TauCeti.Analysis.Complex.HorizontalStrip
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The curvature and the energy identity of the perturbation on a PSS plane
@@ -120,12 +121,52 @@ discs into the energy of a whole PSS plane.
 public section
 
 open Set Real Function MeasureTheory Filter Manifold
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply realChart_mk contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti
 
 namespace Floer.PSSPlane
+
+/-! ### The end lift in real coordinates -/
+
+/-- The pullback of the perturbation along the end lift in real coordinates, evaluated on a
+tangent vector `v`, is its component `TauCeti.Floer.PSSPlane.endComponent` along `v` in the end
+coordinates. -/
+theorem perturbationPullback_realChart_cylindricalEndLift {X : Type*} (p : PSSPlane)
+    (H : ℝ → X → ℝ) (v : ℝ × ℝ) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      p.endComponent H (Complex.equivRealProdCLM.symm v) := by
+  funext z x
+  have hz : Complex.equivRealProdCLM.symm z = ⟨z.1, z.2⟩ := Complex.ext (by simp) (by simp)
+  rw [perturbationPullback_realChart _
+    (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, endComponent_def, hz]
+
+/-- The pullback of the perturbation along the end lift in real coordinates has vanishing `ds`
+component. -/
+theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal {X : Type*}
+    (p : PSSPlane) (H : ℝ → X → ℝ) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineReal =
+      fun _ _ ↦ 0 := by
+  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
+    endComponent_one]
+
+/-- The pullback of the perturbation along the end lift in real coordinates has `dt` component
+`β(ε s - 1) H(t)`. -/
+theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X : Type*}
+    (p : PSSPlane) {H : ℝ → X → ℝ} (hH : Periodic H 1) :
+    perturbationPullback (realChart p.cylindricalEndLift)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        stdComplexLineImag =
+      fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
+  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
+    endComponent_I hH]
 
 /-- **A perturbation that is `H(t) dt` far out on the end, in real coordinates.** Let `K` be
 `H(t) dt` on the part `ε s ≥ T₀` of the end, for a period-one `H`. At a point `ζ = (s, t)` with
@@ -146,6 +187,20 @@ theorem perturbationPullback_realChart_cylindricalEndLift_of_le {X : Type*} (p :
     hKH _ x (by simpa using hζ), smul_apply, ← deriv_cylindricalEndLift,
     endAngularForm_cylindricalEndLift, hk]
   simp [hp, mul_comm]
+
+/-- The end lift in real coordinates is `1`-periodic in the angular coordinate. -/
+@[simp]
+theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
+    realChart p.cylindricalEndLift (s, t + 1) = realChart p.cylindricalEndLift (s, t) := by
+  rw [realChart_mk, realChart_mk]
+  exact congrArg Complex.equivRealProdCLM (p.periodic_cylindricalEndLift s t)
+
+/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
+positive. -/
+theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
+    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
+  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
+  simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
 end Floer.PSSPlane
 
@@ -201,54 +256,23 @@ end lift maps it bijectively onto `ℂ ∖ {0}`. -/
 private noncomputable def endStrip (p : PSSPlane) : Set (ℝ × ℝ) :=
   univ ×ˢ ((p.endSign * ·) ⁻¹' Ioc (-1 / 2) (1 / 2))
 
-/-- The pullback of the perturbation along the end lift in real coordinates, evaluated on a
-tangent vector `v`, is its component `TauCeti.Floer.PSSPlane.endComponent` along `v` in the end
-coordinates. -/
-private theorem perturbationPullback_realChart_cylindricalEndLift {X : Type*} (p : PSSPlane)
-    (H : ℝ → X → ℝ) (v : ℝ × ℝ) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      p.endComponent H (Complex.equivRealProdCLM.symm v) := by
-  funext z x
-  have hz : Complex.equivRealProdCLM.symm z = ⟨z.1, z.2⟩ := Complex.ext (by simp) (by simp)
-  rw [perturbationPullback_realChart _
-    (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, endComponent_def, hz]
-
-/-- The pullback of the perturbation along the end lift in real coordinates has vanishing `ds`
-component. -/
-private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineReal {X : Type*}
-    (p : PSSPlane) (H : ℝ → X → ℝ) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal =
-      fun _ _ ↦ 0 := by
-  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
-    endComponent_one]
-
-/-- The pullback of the perturbation along the end lift in real coordinates has `dt` component
-`β(ε s - 1) H(t)`. -/
-private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLineImag {X : Type*}
-    (p : PSSPlane) {H : ℝ → X → ℝ} (hH : Periodic H 1) :
-    perturbationPullback (realChart p.cylindricalEndLift)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineImag =
-      fun z x ↦ smoothTransition (p.endSign * z.1 - 1) * H z.2 x := by
-  rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
-    endComponent_I hH]
-
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
 private theorem injOn_realChart (p : PSSPlane) :
-    InjOn (realChart p.cylindricalEndLift) (endStrip p) :=
-  p.injOn_realChart_cylindricalEndLift fun a ha b hb ↦ by
-    replace ha : -1 / 2 < p.endSign * a.2 ∧ p.endSign * a.2 ≤ 1 / 2 := ha.2
-    replace hb : -1 / 2 < p.endSign * b.2 ∧ p.endSign * b.2 ≤ 1 / 2 := hb.2
-    have h : |p.endSign * a.2 - p.endSign * b.2| < 1 :=
-      abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
-    rwa [← mul_sub, abs_mul, abs_endSign, one_mul] at h
+    InjOn (realChart p.cylindricalEndLift) (endStrip p) := by
+  intro a ha b hb hab
+  rw [realChart_apply, realChart_apply] at hab
+  refine Complex.equivRealProdCLM.symm.injective <|
+    TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I
+      (s := Complex.equivRealProdCLM.symm '' endStrip p)
+      (fun z _ ↦ p.exists_endCoord_cylindricalEndLift z) ?_ ⟨a, ha, rfl⟩ ⟨b, hb, rfl⟩
+      (Complex.equivRealProdCLM.injective hab)
+  -- The angular coordinates `ε t` of the band lie in an interval of length one.
+  rintro _ ⟨a, ⟨-, ha⟩, rfl⟩ _ ⟨b, ⟨-, hb⟩, rfl⟩
+  simp only [mem_preimage, mem_Ioc] at ha hb
+  simp only [Complex.equivRealProdCLM_symm_apply_im, mem_Ioo]
+  cases p <;> simp only [endSign_positive, endSign_negative] at ha hb <;>
+    exact ⟨by linarith, by linarith⟩
 
 /-- Every point of the plane other than the pole is the image of a point of the band. -/
 private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
@@ -439,10 +463,8 @@ private theorem intervalIntegral_realChart {X : Type*} {H : ℝ → X → ℝ} (
   have hper : Periodic (fun t : ℝ ↦ H t (u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑c + ↑t * Complex.I))))) 1 := fun t ↦ by
     simp only [p.periodic_cylindricalEndLift c t, hH t]
-  have h := hper.intervalIntegral_add_eq (-1 / 2) 0
-  norm_num at h
   simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
-  convert h using 1 <;> norm_num
+  exact hper.intervalIntegral_neg_div_two_eq
 
 /-- In end coordinates, the curvature of the perturbation along `u`, times the Jacobian of the end
 lift, is `ε β'(ε s - 1) H(t)`. -/

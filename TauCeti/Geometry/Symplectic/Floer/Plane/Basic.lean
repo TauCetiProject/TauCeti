@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
-public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+import TauCeti.Analysis.Complex.HorizontalStrip
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -30,11 +30,7 @@ two planes (`TauCeti.Floer.PSSPlane`):
 
 Writing `ε = ±1` for the sign of the end, the end lift is `φ(z) = exp (2π ε z)`
 (`TauCeti.Floer.PSSPlane.cylindricalEndLift`), which is holomorphic and preserves the orientation
-`ds ∧ dt`. In the real coordinates `ℝ × ℝ ≃ ℂ` it is `1`-periodic in `t`
-(`TauCeti.Floer.PSSPlane.realChart_cylindricalEndLift_add_one`), injective on every set whose
-angular coordinates differ by less than one
-(`TauCeti.Floer.PSSPlane.injOn_realChart_cylindricalEndLift`), and has positive Jacobian
-determinant (`TauCeti.Floer.PSSPlane.det_fderiv_realChart_cylindricalEndLift_pos`).
+`ds ∧ dt`.
 It is inverted on `ℂ ∖ {0}` by the end coordinate `ζ(w) = ε log w / (2π)`
 (`TauCeti.Floer.PSSPlane.endCoord`), up to an integer shift of the angular coordinate `t`. The
 signed longitudinal coordinate is `ε s = log ‖w‖ / (2π)` for both planes
@@ -61,6 +57,12 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   it is `H(t) dt`, so it agrees there with the Floer datum of the end;
 * `TauCeti.Floer.PSSPlane.endComponent_one` and `TauCeti.Floer.PSSPlane.endComponent_I`: its
   components in end coordinates are `K_s = 0` and `K_t = β(ε s - 1) H(t)`.
+* `TauCeti.Floer.PSSPlane.perturbation_negative`: the perturbation of the negative plane given
+  by `H` is that of the positive plane given by the reversed Hamiltonian `-H(-t)`; correspondingly
+  the end lift of the negative plane is that of the positive plane composed with `z ↦ -z`
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of the negative plane are
+  those of the positive plane traversed backwards
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`).
 
 The angular coordinate is defined only modulo `1`, which is why `H` is required to have period
 one. Smoothness across the ray where it jumps reuses the corresponding statement for the end at
@@ -156,6 +158,27 @@ theorem periodic_cylindricalEndLift (p : PSSPlane) (s : ℝ) :
   simp only [cylindricalEndLift_def, h, Complex.exp_add]
   cases p <;> simp [Complex.exp_neg]
 
+/-- The two end lifts are related by the reflection `z ↦ -z` of the cylinder: the negative plane
+reads its end through the coordinates `(-s, -t)` of the positive plane. -/
+theorem cylindricalEndLift_negative (z : ℂ) :
+    negative.cylindricalEndLift z = positive.cylindricalEndLift (-z) := by
+  simp only [cylindricalEndLift_def, endSign_negative, endSign_positive]
+  congr 1
+  push_cast
+  ring
+
+/-- The loops of the negative plane along its end are those of the positive plane traversed
+backwards: the point at angle `t` on the circle `s = -R` of the negative plane is the point at
+angle `-t` on the circle `s = R` of the positive plane. -/
+theorem cylindricalEndLift_negative_endSign_mul (R t : ℝ) :
+    negative.cylindricalEndLift (↑(negative.endSign * R) + ↑t * Complex.I) =
+      positive.cylindricalEndLift (↑(positive.endSign * R) + ↑(-t) * Complex.I) := by
+  rw [cylindricalEndLift_negative]
+  congr 1
+  simp only [endSign_negative, endSign_positive]
+  push_cast
+  ring
+
 /-- The end lift sends the circle `s = ε R` of the end to the circle of radius `exp (2πR)`,
 run through with angle `2π ε t`. -/
 theorem cylindricalEndLift_eq_circleMap (p : PSSPlane) (R t : ℝ) :
@@ -227,6 +250,15 @@ theorem exists_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
     field_simp
     ring
 
+/-- The end lift is injective on every band `t₀ ≤ t < t₀ + 1` of angular width one: two points
+with the same image differ by an integer multiple of `i`. -/
+theorem injOn_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
+    InjOn p.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} :=
+  TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I
+    (fun z _ ↦ p.exists_endCoord_cylindricalEndLift z) fun _ ha _ hb ↦ by
+      simp only [mem_ofPred_eq, mem_Ico] at ha hb
+      exact ⟨by linarith, by linarith⟩
+
 /-- The longitudinal coordinate of the image of a cylinder point is its real part. -/
 @[simp]
 theorem re_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
@@ -254,50 +286,6 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
     Complex.arg_mul_real]
   ring
-
-/-! ### The end lift in real coordinates -/
-
-open TauCeti.Complex (realChart realChart_mk) in
-/-- The end lift in real coordinates is `1`-periodic in the angular coordinate. -/
-@[simp]
-theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
-    realChart p.cylindricalEndLift (s, t + 1) = realChart p.cylindricalEndLift (s, t) := by
-  rw [realChart_mk, realChart_mk]
-  exact congrArg Complex.equivRealProdCLM (p.periodic_cylindricalEndLift s t)
-
-open TauCeti.Complex (realChart) in
-/-- The end lift in real coordinates is injective on every set whose angular coordinates differ
-by less than one, such as a band `ℝ × [t₀, t₀ + 1)`: two points with the same image differ by an
-integer multiple of `i`. -/
-theorem injOn_realChart_cylindricalEndLift (p : PSSPlane) {s : Set (ℝ × ℝ)}
-    (hs : ∀ a ∈ s, ∀ b ∈ s, |a.2 - b.2| < 1) : InjOn (realChart p.cylindricalEndLift) s := by
-  intro a ha b hb hab
-  have hab' := congrArg Complex.equivRealProdCLM.symm hab
-  simp only [TauCeti.Complex.equivRealProdCLM_symm_realChart] at hab'
-  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm a)
-  obtain ⟨l, hl⟩ := p.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm b)
-  rw [hab', hl] at hk
-  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
-  have hre := congrArg Complex.re hk
-  have him := congrArg Complex.im hk
-  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
-    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im,
-    Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im] at hre him
-  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
-    have h := hs a ha b hb
-    push_cast
-    rwa [show a.2 - b.2 = l - k by linarith] at h
-  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
-  subst hlt
-  exact Prod.ext (by linarith) (by linarith)
-
-open TauCeti.Complex (realChart) in
-/-- The end lift preserves orientation in real coordinates: its Jacobian determinant is
-positive. -/
-theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
-    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
-  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
-  simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
 section Periodic
 
@@ -385,6 +373,26 @@ theorem perturbation_def (p : PSSPlane) (H : ℝ → M → ℝ) (w : ℂ) (x : M
       (smoothTransition (p.endSign * (p.endCoord w).re - 1) * H (p.endCoord w).im x) •
         p.endAngularForm w :=
   (rfl)
+
+/-- **The negative plane is the positive plane for the reversed Hamiltonian.** The perturbation
+of the negative plane given by `H` is the perturbation of the positive plane given by the
+Hamiltonian `-H(-t)`: the two planes have the same signed longitudinal coordinate, while their
+angular coordinates, and their angular forms, differ by sign. -/
+theorem perturbation_negative (H : ℝ → M → ℝ) :
+    negative.perturbation H = positive.perturbation (fun t x ↦ -H (-t) x) := by
+  funext w x
+  have him : (negative.endCoord w).im = -(positive.endCoord w).im := by
+    simp only [im_endCoord, endSign_negative, endSign_positive]
+    ring
+  have hre : negative.endSign * (negative.endCoord w).re =
+      positive.endSign * (positive.endCoord w).re := by
+    rw [endSign_mul_re_endCoord, endSign_mul_re_endCoord]
+  have hform : negative.endAngularForm w = -positive.endAngularForm w := by
+    ext v
+    simp [endAngularForm_apply]
+  rw [perturbation_def, perturbation_def, hre, him, hform, smul_neg, ← neg_smul]
+  congr 1
+  ring
 
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 
@@ -546,6 +554,18 @@ theorem mdifferentiableAt_perturbation_target (hH : Function.Periodic H 1)
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ p.perturbation H w y v) x :=
   ((((contMDiff_perturbation hH hHs).comp (contMDiff_const.prodMk contMDiff_id)).clm_apply
     contMDiff_const) x).mdifferentiableAt one_ne_zero
+
+/-- The component of the perturbation of a PSS plane along a tangent vector `v` is differentiable
+in the target point of a normed space, for a period-one `C¹` Hamiltonian. -/
+theorem differentiableAt_perturbation_target {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} (hH : Function.Periodic H 1) (hHs : ContDiff ℝ 1 (Function.uncurry H))
+    (w : ℂ) (x : V) (v : ℂ) :
+    DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x := by
+  have h := ((contDiff_uncurry_perturbation (p := p) hH hHs v).comp
+    ((contDiff_const (c := Complex.equivRealProdCLM w)).prodMk contDiff_id)).differentiable
+      one_ne_zero x
+  simpa only [Function.comp_def, Function.uncurry_apply_pair,
+    ContinuousLinearEquiv.symm_apply_apply, id_eq] using h
 
 end PSSPlane
 

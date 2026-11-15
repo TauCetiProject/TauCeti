@@ -8,10 +8,10 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-public import Mathlib.MeasureTheory.Function.LpOrder
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+public import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
@@ -25,15 +25,19 @@ bounds.
 
 ## Main declarations
 
-* `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
+* `MeasureTheory.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
 * `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
   into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
   its integral.
+* `MeasureTheory.Lp.integral_norm_rpow_eq_norm_rpow`: for `0 < p < ∞`, the integral of the `p`-th
+  power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
+* `MeasureTheory.MemLp.eLpNorm_two_eq_ofReal_sqrt_integral`: the `L²` seminorm of a
+  square-integrable function is the square root of the integral of its squared norm.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
   convergence of the integral of the squared norm.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
@@ -45,6 +49,9 @@ bounds.
 * `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
   function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
   norm, for any measure.
+* `MeasureTheory.Lp.norm_le_norm_top_of_ae_eq_of_continuousAt`: when the measure is positive on
+  open sets, a representative of an `L∞` class is bounded by its norm at every point where it is
+  continuous.
 * `MeasureTheory.Lp.ae_eq_max_min_norm_top`: a representative of a real `L∞` class agrees almost
   everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
@@ -71,6 +78,8 @@ bounds.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
+* `MeasureTheory.Lp.norm_le_mul_norm_of_ae_eq_smul`: multiplying an `Lᵖ` class by a function
+  bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 -/
@@ -81,34 +90,6 @@ namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal NNReal
-
-/-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
-`Lᵖ` functions obeys the same bound in norm. -/
-theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H] {m : Measure alpha}
-    {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp F q m} {g : Lp G q m} {h : Lp H q m} {a b : ℝ}
-    (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
-    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
-  obtain ⟨A, hAnorm, hAcoe⟩ : ∃ A : Lp ℝ q m, ‖A‖ = ‖g‖ ∧ ∀ᵐ z ∂m, A z = ‖g z‖ :=
-    ⟨(Lp.memLp g).norm.toLp _,
-      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable g), ← Lp.norm_def],
-      (Lp.memLp g).norm.coeFn_toLp⟩
-  obtain ⟨B, hBnorm, hBcoe⟩ : ∃ B : Lp ℝ q m, ‖B‖ = ‖h‖ ∧ ∀ᵐ z ∂m, B z = ‖h z‖ :=
-    ⟨(Lp.memLp h).norm.toLp _,
-      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable h), ← Lp.norm_def],
-      (Lp.memLp h).norm.coeFn_toLp⟩
-  calc ‖f‖ ≤ ‖a • A + b • B‖ := by
-        refine Lp.norm_le_norm_of_ae_le ?_
-        filter_upwards [hle, hAcoe, hBcoe, Lp.coeFn_add (a • A) (b • B), Lp.coeFn_smul a A,
-          Lp.coeFn_smul b B] with z hz hA hB hadd hsA hsB
-        rw [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, Pi.smul_apply, hA, hB, smul_eq_mul,
-          smul_eq_mul, Real.norm_of_nonneg (add_nonneg (mul_nonneg ha (norm_nonneg _))
-            (mul_nonneg hb (norm_nonneg _)))]
-        exact hz
-    _ ≤ ‖a • A‖ + ‖b • B‖ := norm_add_le _ _
-    _ = a * ‖g‖ + b * ‖h‖ := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
 
 /-- **Lower exponents on a finite measure space.** If a bounded linear map `S : X → L^{p⋆}(μ)`
 represents `v`, that is `S u = v u` almost everywhere, and `μ` is finite, then
@@ -123,13 +104,8 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
   · refine ⟨0, fun u => ?_⟩
     rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
     exact zero_le
-  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
-    rw [sub_nonneg]
-    rcases eq_or_ne pstar ∞ with h | h
-    · simp only [h, ENNReal.toReal_top, div_zero]
-      positivity
-    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
-        (ENNReal.toReal_mono h hq)
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq
   have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg hexp hm
   refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
@@ -171,6 +147,34 @@ namespace MeasureTheory
 open Filter
 open scoped ENNReal Topology
 
+/-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
+`Lᵖ` functions obeys the same bound in norm. -/
+theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H] {m : Measure alpha}
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp F q m} {g : Lp G q m} {h : Lp H q m} {a b : ℝ}
+    (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
+    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
+  obtain ⟨A, hAnorm, hAcoe⟩ : ∃ A : Lp ℝ q m, ‖A‖ = ‖g‖ ∧ ∀ᵐ z ∂m, A z = ‖g z‖ :=
+    ⟨(Lp.memLp g).norm.toLp _,
+      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable g), ← Lp.norm_def],
+      (Lp.memLp g).norm.coeFn_toLp⟩
+  obtain ⟨B, hBnorm, hBcoe⟩ : ∃ B : Lp ℝ q m, ‖B‖ = ‖h‖ ∧ ∀ᵐ z ∂m, B z = ‖h z‖ :=
+    ⟨(Lp.memLp h).norm.toLp _,
+      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable h), ← Lp.norm_def],
+      (Lp.memLp h).norm.coeFn_toLp⟩
+  calc ‖f‖ ≤ ‖a • A + b • B‖ := by
+        refine Lp.norm_le_norm_of_ae_le ?_
+        filter_upwards [hle, hAcoe, hBcoe, Lp.coeFn_add (a • A) (b • B), Lp.coeFn_smul a A,
+          Lp.coeFn_smul b B] with z hz hA hB hadd hsA hsB
+        rw [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, Pi.smul_apply, hA, hB, smul_eq_mul,
+          smul_eq_mul, Real.norm_of_nonneg (add_nonneg (mul_nonneg ha (norm_nonneg _))
+            (mul_nonneg hb (norm_nonneg _)))]
+        exact hz
+    _ ≤ ‖a • A‖ + ‖b • B‖ := norm_add_le _ _
+    _ = a * ‖g‖ + b * ‖h‖ := by
+        rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
+
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
     {ν : Measure alpha} {p : ℝ≥0∞} {f g : alpha → F} (h : f =ᵐ[ν] g) :
@@ -195,6 +199,20 @@ theorem lpNorm_le_norm_of_ae_eq_of_le {alpha F : Type*} [MeasurableSpace alpha]
 theorem Lp.ae_norm_le_norm_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
     {m : Measure alpha} (f : Lp F ∞ m) : ∀ᵐ x ∂m, ‖f x‖ ≤ ‖f‖ := by
   simpa [Lp.norm_def, toReal_eLpNorm] using ae_le_lpNorm_exponent_top (Lp.memLp f)
+
+/-- If the measure is positive on nonempty open sets, a representative of an `L∞` class is
+bounded by its norm at every point where it is continuous. -/
+theorem Lp.norm_le_norm_top_of_ae_eq_of_continuousAt {alpha F : Type*} [TopologicalSpace alpha]
+    [MeasurableSpace alpha] [NormedAddCommGroup F] {m : Measure alpha} [m.IsOpenPosMeasure]
+    {f : Lp F ∞ m} {g : alpha → F} (hfg : f =ᵐ[m] g) {x : alpha} (hg : ContinuousAt g x) :
+    ‖g x‖ ≤ ‖f‖ := by
+  by_contra! h
+  -- The points near `x` where `‖g‖` exceeds `‖f‖` form a set of positive but null measure.
+  have hae : ∀ᵐ y ∂m, ¬‖f‖ < ‖g y‖ := by
+    filter_upwards [hfg, Lp.ae_norm_le_norm_top f] with y hy h
+    exact not_lt_of_ge (hy ▸ h)
+  exact (m.measure_pos_of_mem_nhds (hg.norm.eventually (lt_mem_nhds h))).ne'
+    (measure_eq_zero_iff_ae_notMem.2 hae)
 
 /-- An almost everywhere bound on an `L∞` function bounds its norm, whatever the measure. Compare
 `MeasureTheory.Lp.norm_le_of_ae_bound`, which needs a finite measure. -/
@@ -247,6 +265,14 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- The `L²` seminorm of a square-integrable function is the square root of the integral of its
+squared pointwise norm. -/
+theorem MemLp.eLpNorm_two_eq_ofReal_sqrt_integral {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : MemLp f 2 m) :
+    eLpNorm f 2 m = ENNReal.ofReal √(∫ x, ‖f x‖ ^ 2 ∂m) := by
+  rw [hf.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two, Real.sqrt_eq_rpow, one_div]
 
 /-- The squared `L²` norm of the class of a square-integrable function is the integral of its
 squared pointwise norm. -/
@@ -404,6 +430,23 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
+
+section Smul
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+
+/-- **Multiplication by a bounded function.** If `‖ψ‖ ≤ C` almost everywhere and `v = ψ • u`
+almost everywhere for `u, v ∈ Lᵖ`, then `‖v‖ ≤ C ‖u‖`. -/
+theorem Lp.norm_le_mul_norm_of_ae_eq_smul {𝕜 : Type*} [SeminormedAddGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {p : ℝ≥0∞} {ψ : X → 𝕜} {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ C)
+    {u v : Lp F p μ} (hv : v =ᵐ[μ] fun x ↦ ψ x • u x) :
+    ‖v‖ ≤ C * ‖u‖ := by
+  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+  filter_upwards [hv, hC] with x hx hCx
+  rw [hx]
+  exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hCx (norm_nonneg _))
+
+end Smul
 
 section IntegralRpow
 

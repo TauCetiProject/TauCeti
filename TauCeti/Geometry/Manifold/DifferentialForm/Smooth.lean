@@ -346,6 +346,16 @@ theorem eval₂_neg_right (φ : SmoothBundleForm I F V 2) (x : M) (v w : Tangent
     ContinuousAlternatingMap.coe_toAlternatingMap] using
     (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
 
+/-- Ordered-pair evaluation is subtractive in its first tangent argument. -/
+theorem eval₂_sub_left (φ : SmoothBundleForm I F V 2) (x : M) (v v' w : TangentSpace I x) :
+    φ.eval₂ x (v - v') w = φ.eval₂ x v w - φ.eval₂ x v' w := by
+  rw [sub_eq_add_neg, eval₂_add_left, eval₂_neg_left, ← sub_eq_add_neg]
+
+/-- Ordered-pair evaluation is subtractive in its second tangent argument. -/
+theorem eval₂_sub_right (φ : SmoothBundleForm I F V 2) (x : M) (v w w' : TangentSpace I x) :
+    φ.eval₂ x v (w - w') = φ.eval₂ x v w - φ.eval₂ x v w' := by
+  rw [sub_eq_add_neg, eval₂_add_right, eval₂_neg_right, ← sub_eq_add_neg]
+
 /-- Two smooth bundle-valued two-forms have the same value at a point when their ordered-pair
 evaluations there agree. -/
 theorem apply_eq_of_eval₂_eq {φ ψ : SmoothBundleForm I F V 2} {x : M}

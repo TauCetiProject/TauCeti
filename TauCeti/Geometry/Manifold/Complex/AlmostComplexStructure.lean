@@ -42,6 +42,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
   `TauCeti.SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold`: it acts on each tangent
   space as multiplication by `i`.
+* `TauCeti.SmoothAlmostComplexStructure.inTangentCoordinates_ofComplexManifold`: it is
+  multiplication by `i` in the tangent coordinates of any chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: on a complex normed
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
@@ -94,6 +96,15 @@ theorem toEndomorphism_ofComplexManifold (x : M) :
       (Complex.I • ContinuousLinearMap.id ℝ E :
         TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) x) :=
   ContinuousLinearMap.ext fun v ↦ ofComplexManifold_apply (E := E) x v
+
+/-- In the tangent coordinates of the chart at any point `x₀`, the almost complex structure of a
+complex manifold is multiplication by `i` on the whole chart domain. -/
+theorem inTangentCoordinates_ofComplexManifold {x₀ x : M} (hx : x ∈ (chartAt E x₀).source) :
+    inTangentCoordinates 𝓘(ℝ, E) 𝓘(ℝ, E) id id
+        (fun x ↦ (ofComplexManifold E M).toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E :=
+  inTangentCoordinates_ofTangentCoordChangeISMul
+    (fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v) hx
 
 /-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
 constant smooth almost complex structure given by multiplication by `i`. -/

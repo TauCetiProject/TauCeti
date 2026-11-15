@@ -15,9 +15,18 @@ its full multiplicity gives a smaller number. Removing the `p`-part erases `p` f
 factors. These facts support induction by successively removing prime-power blocks. For a
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
-of roots of unity acts on their `p`-primary parts. The product of any set of prime factors of
-`n` divides `n`, and monomial products of an injective family of primes (or fixed positive powers
-of their casts in characteristic zero) are injective on finitely supported exponent tuples.
+of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
+same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
+factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
+factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
+primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
+supported exponent tuples.
+
+## Provenance
+
+`Nat.coprime_prod_primeFactors_right_iff` restates `coprime_prod_primeFactors_iff_coprime` of
+AINTLIB's `LeanModularForms` project (Chris Birkbeck, <https://github.com/CBirkbeck/AINTLIB>,
+Apache-2.0, commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`, file `StrongMultiplicityOne.lean`).
 -/
 
 public section
@@ -32,6 +41,21 @@ theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFac
 theorem prod_dvd_of_subset_primeFactors {n : ℕ} {s : Finset ℕ} (h : s ⊆ n.primeFactors) :
     ∏ p ∈ s, p ∣ n :=
   (Finset.prod_dvd_prod_of_subset _ _ id h).trans (prod_primeFactors_dvd n)
+
+/-- **Coprimality only sees the prime factors.** For nonzero `L`, a number is coprime to the
+product of the prime factors of `L` exactly when it is coprime to `L`. -/
+@[simp]
+theorem coprime_prod_primeFactors_right_iff {n L : ℕ} (hL : L ≠ 0) :
+    Coprime n (∏ p ∈ L.primeFactors, p) ↔ Coprime n L :=
+  ⟨fun h ↦ (h.pow_right L).coprime_dvd_right (dvd_prod_primeFactors_pow_self hL),
+    fun h ↦ h.coprime_dvd_right (prod_primeFactors_dvd L)⟩
+
+/-- **Coprimality only sees the prime factors.** For nonzero `L`, the product of the prime factors
+of `L` is coprime to a number exactly when `L` is. -/
+@[simp]
+theorem coprime_prod_primeFactors_left_iff {n L : ℕ} (hL : L ≠ 0) :
+    Coprime (∏ p ∈ L.primeFactors, p) n ↔ Coprime L n := by
+  rw [coprime_comm, coprime_prod_primeFactors_right_iff hL, coprime_comm]
 
 /-- Peeling the block at the least prime factor makes `n` strictly smaller. -/
 theorem ordCompl_minFac_lt {n : ℕ} (hn : 1 < n) : ordCompl[n.minFac] n < n :=
@@ -57,6 +81,28 @@ theorem div_mul_ordCompl_of_dvd {m n : ℕ} (p : ℕ) (h : n ∣ m) :
   refine Nat.eq_of_mul_eq_mul_right (ordProj_pos n p) ?_
   rw [mul_assoc, mul_comm (ordCompl[p] n), ordProj_mul_ordCompl_eq_self, Nat.div_mul_cancel h,
     mul_assoc, ← pow_add, Nat.sub_add_cancel hle, mul_comm, ordProj_mul_ordCompl_eq_self]
+
+/-- For a prime `p`, a divisor `d` of `p * k` with the same `p`-free part as `k` that does not
+divide `k` is `p * k`. -/
+theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.Prime)
+    (hd : d ∣ p * k) (hdk : ¬d ∣ k) (h : ordCompl[p] d = ordCompl[p] k) : d = p * k := by
+  have hk : k ≠ 0 := by
+    rintro rfl
+    exact hdk (dvd_zero d)
+  have hd0 : d ≠ 0 := ne_zero_of_dvd_ne_zero (mul_ne_zero hp.ne_zero hk) hd
+  have hpk : (p * k).factorization p = k.factorization p + 1 := by
+    simp [factorization_mul hp.ne_zero hk, hp.factorization_self, add_comm]
+  have hle : d.factorization p ≤ k.factorization p + 1 :=
+    hpk ▸ (factorization_le_iff_dvd hd0 (mul_ne_zero hp.ne_zero hk)).2 hd p
+  -- If the `p`-part of `d` were at most that of `k`, then `d` would divide `k`.
+  have hlt : k.factorization p < d.factorization p := by
+    by_contra hge
+    refine hdk ?_
+    rw [← ordProj_mul_ordCompl_eq_self d p, ← ordProj_mul_ordCompl_eq_self k p, h]
+    exact mul_dvd_mul_right (Nat.pow_dvd_pow p (not_lt.1 hge)) _
+  rw [← ordProj_mul_ordCompl_eq_self d p, h, ← ordProj_mul_ordCompl_eq_self (p * k) p,
+    ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
+  simp [hp.factorization_self, Nat.div_self hp.pos]
 
 end Nat
 

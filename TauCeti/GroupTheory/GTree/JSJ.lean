@@ -29,8 +29,9 @@ An `(𝒜, ℋ)`-tree all of whose vertices are rigid is a JSJ tree
 (`GTree.IsJSJ.of_forall_isRigidVertex`), and its elliptic subgroups are exactly the universally
 elliptic subgroups. In particular an `(𝒜, ℋ)`-tree with trivial vertex stabilizers is a JSJ tree
 (`GTree.IsJSJ.of_forall_stabilizer_eq_bot`); when there is one, the trivial subgroup is the only
-universally elliptic subgroup and the JSJ trees are exactly the `(𝒜, ℋ)`-trees with trivial
-vertex stabilizers, so for a nontrivial group no tree with one vertex is a JSJ tree. For
+universally elliptic subgroup and the JSJ trees are exactly the minimal trees with trivial vertex
+stabilizers, which are then automatically `(𝒜, ℋ)`-trees, so for a nontrivial group no tree with
+one vertex is a JSJ tree. For
 instance, when `𝒜` contains the trivial subgroup and every member of `ℋ` is trivial, a minimal
 free action of a free group on a tree is a JSJ tree. For the infinite cyclic group, under the
 same two hypotheses on `𝒜` and `ℋ`, the line is a JSJ tree and the one-vertex tree is not, and
@@ -376,19 +377,28 @@ theorem isUniversallyEllipticSubgroup_iff_eq_bot (hm : T.IsMinimal) (hr : T.IsRe
     (h : ∀ x : T.V, stabilizer G x = ⊥) :
     IsUniversallyEllipticSubgroup.{u, v} 𝒜 ℋ H ↔ H = ⊥ := by
   rw [isUniversallyEllipticSubgroup_iff_isEllipticSubgroup hm hr
-    fun x => isRigidVertex_of_stabilizer_eq_bot 𝒜 ℋ (h x)]
-  simp only [isEllipticSubgroup_iff, h, le_bot_iff, exists_const]
+    fun x => isRigidVertex_of_stabilizer_eq_bot 𝒜 ℋ (h x), isEllipticSubgroup_iff_eq_bot h]
 
-/-- If some JSJ tree has trivial vertex stabilizers, the JSJ trees are exactly the minimal
-relative trees with trivial vertex stabilizers. -/
+/-- If some JSJ tree has trivial vertex stabilizers, the JSJ trees are exactly the minimal trees
+with trivial vertex stabilizers. -/
 theorem IsJSJ.isJSJ_iff_forall_stabilizer_eq_bot (hT : T.IsJSJ 𝒜 ℋ)
     (h : ∀ x : T.V, stabilizer G x = ⊥) :
-    T'.IsJSJ 𝒜 ℋ ↔ T'.IsMinimal ∧ T'.IsRelative 𝒜 ℋ ∧ ∀ x : T'.V, stabilizer G x = ⊥ := by
-  refine ⟨fun hT' => ⟨hT'.isMinimal, hT'.isRelative, fun x => ?_⟩,
-    fun ⟨hm, hr, h'⟩ => .of_forall_stabilizer_eq_bot hm hr h'⟩
-  obtain ⟨y, hy⟩ := GTree.isEllipticSubgroup_iff.mp
-    ((hT'.isEllipticSubgroup_iff hT).mp (T'.isEllipticSubgroup_stabilizer x))
-  exact le_bot_iff.mp (h y ▸ hy)
+    T'.IsJSJ 𝒜 ℋ ↔ T'.IsMinimal ∧ ∀ x : T'.V, stabilizer G x = ⊥ := by
+  refine ⟨fun hT' => ⟨hT'.isMinimal, fun x => (isEllipticSubgroup_iff_eq_bot h).mp
+    ((hT'.isEllipticSubgroup_iff hT).mp (T'.isEllipticSubgroup_stabilizer x))⟩,
+    fun ⟨hm, h'⟩ => .of_forall_stabilizer_eq_bot hm ?_ h'⟩
+  rcases isEmpty_or_nonempty T.E with _ | ⟨⟨e⟩⟩
+  · -- `T` has one vertex, so `G` is trivial and the minimal tree `T'` has one vertex too.
+    have := T.subsingleton_of_isEmpty_dart
+    have := hm.subsingleton ((isEllipticSubgroup_iff_eq_bot h').mpr
+      ((stabilizer_eq_top_of_subsingleton _).symm.trans (h (Classical.arbitrary T.V))))
+    exact T'.isRelative_of_subsingleton 𝒜 ℋ
+  · -- The stabilizer of a dart of `T` is trivial and lies in `𝒜`; the members of `ℋ` are elliptic
+    -- in `T`, hence trivial.
+    exact isRelative_of_forall_stabilizer_eq_bot
+      ((isEllipticSubgroup_iff_eq_bot h).mp (T.isEllipticSubgroup_stabilizer_dart e) ▸
+        hT.isRelative.stabilizer_mem e)
+      (fun _ hH => (isEllipticSubgroup_iff_eq_bot h).mp (hT.isRelative.isEllipticSubgroup hH)) h'
 
 /-! ### Trees with one vertex -/
 
@@ -431,7 +441,7 @@ theorem IsJSJ.isJSJ_iff_subsingleton [Subsingleton T.V] (hT : T.IsJSJ 𝒜 ℋ) 
 vertex is a JSJ tree. -/
 theorem IsJSJ.not_isJSJ_of_subsingleton [Nontrivial G] [Subsingleton T'.V] (hT : T.IsJSJ 𝒜 ℋ)
     (h : ∀ x : T.V, stabilizer G x = ⊥) : ¬T'.IsJSJ 𝒜 ℋ := fun hT' => by
-  have hx := ((hT.isJSJ_iff_forall_stabilizer_eq_bot h).mp hT').2.2 (Classical.arbitrary T'.V)
+  have hx := ((hT.isJSJ_iff_forall_stabilizer_eq_bot h).mp hT').2 (Classical.arbitrary T'.V)
   rw [stabilizer_eq_top_of_subsingleton] at hx
   exact top_ne_bot hx
 
@@ -487,8 +497,7 @@ theorem isJSJ_iff_subsingleton [Subsingleton G] {T : GTree.{u, v} G} :
 subgroup and relative to at most the trivial subgroup. -/
 theorem line_isJSJ {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))} (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) :
     line.IsJSJ 𝒜 ℋ :=
-  .of_forall_stabilizer_eq_bot line_isMinimal
-    (line_isRelative.mono (Set.singleton_subset_iff.mpr h𝒜) hℋ) line_stabilizer_vertex
+  .of_forall_stabilizer_eq_bot line_isMinimal (line_isRelative h𝒜 hℋ) line_stabilizer_vertex
 
 /-- The trivial subgroup is the only universally elliptic subgroup of the infinite cyclic group,
 over a family containing the trivial subgroup and relative to at most the trivial subgroup: the
@@ -496,7 +505,7 @@ integers act freely on the line. -/
 theorem isUniversallyEllipticSubgroup_iff_eq_bot_int {𝒜 ℋ : Set (Subgroup (Multiplicative ℤ))}
     (h𝒜 : ⊥ ∈ 𝒜) (hℋ : ℋ ⊆ {⊥}) {H : Subgroup (Multiplicative ℤ)} :
     IsUniversallyEllipticSubgroup.{0, 0} 𝒜 ℋ H ↔ H = ⊥ :=
-  isUniversallyEllipticSubgroup_iff_eq_bot line_isMinimal (line_isJSJ h𝒜 hℋ).isRelative
+  isUniversallyEllipticSubgroup_iff_eq_bot line_isMinimal (line_isRelative h𝒜 hℋ)
     line_stabilizer_vertex
 
 /-- The infinite cyclic group is not universally elliptic over a family containing the trivial
