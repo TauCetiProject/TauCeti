@@ -16,7 +16,8 @@ so have finite measure under a measure finite on compact sets, the same holds fo
 measure `μ.real`, and likewise for closed balls. For a locally finite measure, closed balls of
 small positive radius around a point have positive finite measure, so proportions of sets in
 shrinking balls are well behaved. Since a property holding almost everywhere holds on a dense
-set, an almost everywhere inequality between continuous functions holds everywhere.
+set, an almost everywhere inequality between continuous functions holds everywhere, and one on an
+open set between functions continuous on that set holds at every point of the set.
 
 An almost-everywhere inclusion of an open set in another set implies inclusion in its closure.
 In particular, two almost-everywhere equal open sets have the same closure. Taking interiors
@@ -42,6 +43,8 @@ almost everywhere means everywhere.
 * `MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le`: a closed ball of positive radius
   in which a set has positive density charges the restriction of the measure to that set.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
+* `IsOpen.le_of_ae_restrict_le`: an almost everywhere inequality on an open set between functions
+  continuous on it holds at every point of the set.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
 -/
@@ -153,6 +156,25 @@ theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [Measu
   -- The closed set where `f ≤ g` is dense, hence everything.
   ⟨fun h x => (μ.dense_of_ae h).induction (fun _ => id) (isClosed_le hf hg) x,
     Eventually.of_forall⟩
+
+/-- Under a measure positive on nonempty open sets, an inequality holding almost everywhere on an
+open set `U` between functions continuous on `U`, with values in an order-closed space, holds at
+every point of `U`. -/
+theorem _root_.IsOpen.le_of_ae_restrict_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] [Preorder Y]
+    [OrderClosedTopology Y] {U : Set X} (hU : IsOpen U) {f g : X → Y} (hf : ContinuousOn f U)
+    (hg : ContinuousOn g U) (h : f ≤ᵐ[μ.restrict U] g) : ∀ x ∈ U, f x ≤ g x := by
+  -- The points of `U` where `f ≤ g` fails form an open null set, which is empty.
+  set V := U ∩ (fun x ↦ (f x, g x)) ⁻¹' {p : Y × Y | p.1 ≤ p.2}ᶜ
+  have hV : IsOpen V :=
+    (hf.prodMk hg).isOpen_inter_preimage hU (isClosed_le continuous_fst continuous_snd).isOpen_compl
+  have hsub : V ⊆ {x | ¬(x ∈ U → f x ≤ g x)} := fun x hx hfg ↦ hx.2 (hfg hx.1)
+  have hV0 : μ V = 0 := measure_mono_null hsub (ae_iff.1 (ae_imp_of_ae_restrict h))
+  intro x hx
+  by_contra hfx
+  have hxV : x ∈ V := ⟨hx, hfx⟩
+  rw [hV.eq_empty_of_measure_zero hV0] at hxV
+  exact hxV
 
 /-- On a discrete space, a measure positive on nonempty open sets charges every point, so
 almost everywhere means everywhere. -/

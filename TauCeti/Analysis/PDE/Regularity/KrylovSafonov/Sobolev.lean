@@ -7,11 +7,16 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
+import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.Holder
+import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
+import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
-# Power decay for strong supersolutions
+# Krylov–Safonov estimates for strong solutions
 
 The Krylov–Safonov power decay `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`
 is proved for classical supersolutions: functions `C²` in a ball satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` at
@@ -33,6 +38,14 @@ ellipticity constants `λ ≤ Λ ≤ κ λ` and with `C`, `ε` and `ε₀` depen
 the step from the measure estimate to the weak Harnack inequality and to the interior Hölder
 estimate of Krylov and Safonov for strong solutions.
 
+The interior Hölder estimate holds for strong solutions in the same form as for classical ones:
+if `B(x₀, 2 r) ⊆ Ω`, `a` is uniformly elliptic on `B(x₀, 2 r)` with `λ ≤ Λ ≤ κ λ`, and
+`u ∈ W^{2,n}(Ω)` satisfies `|u| ≤ M` and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost everywhere in
+`B(x₀, 2 r)`, with `f ∈ Lⁿ(B(x₀, 2 r))`, then the precise representative of `u` is `α`-Hölder on
+`B(x₀, r)` with constant `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`
+(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`),
+where `0 < α ≤ 1` and `C` depend only on `n` and `κ`.
+
 ## The argument
 
 Given `ζ > 0`, take a smooth `w` with `ū / (1 + 3 ζ) ≤ w ≤ (ū + 2 ζ) / (1 + 3 ζ)` on
@@ -41,15 +54,28 @@ power decay. It is nonnegative on the closed ball and at most `1` where `ū ≤ 
 `Q₀ ⊆ closedBall c R`, `w ≥ ū / (1 + 3 ζ)`, so `{ū ≥ t} ∩ Q₀` lies in the superlevel set of `w` at
 `t / (1 + 3 ζ)`. Letting `ζ → 0` gives the bound at `t`.
 
+For the Hölder estimate, `W^{2,n}` functions have a continuous precise representative `ū`
+(`TauCeti.Wkp.continuousOn_preciseRepresentative`). Given `x, y ∈ B(x₀, r)` and a small `t > 0`,
+take a smooth `v` with `|v - ū| ≤ t` on `closedBall x₀ (2 (r - t))` and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv| ≤ g` on
+`B(x₀, 2 (r - t))`, with `‖g‖_{Lⁿ} ≤ ‖f‖_{Lⁿ} + t`
+(`TauCeti.PDE.exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp`). The classical
+estimate `TauCeti.PDE.exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le` for `v` on
+`B(x₀, r - t)` bounds `|ū x - ū y|` up to an error `2 t`, and letting `t → 0` gives the bound.
+
 ## Main declarations
 
 * `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp`: the power decay
   `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for strong supersolutions.
+* `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`:
+  **the interior Hölder estimate of Krylov and Safonov** for `u ∈ W^{2,n}` with
+  `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f`.
+* `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_sum_mul_iteratedGradient_eq`: the
+  same estimate for strong solutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f`.
 
 ## References
 
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 9.7 (the Krylov–Safonov estimates for `W^{2,n}` solutions).
+  Section 9.7 (the Krylov–Safonov estimates for `W^{2,n}` solutions), Corollary 9.24.
 * L. A. Caffarelli and X. Cabré, *Fully Nonlinear Elliptic Equations*, AMS Colloquium
   Publications **43** (1995), Lemma 4.6.
 -/
@@ -59,7 +85,7 @@ public section
 noncomputable section
 
 open Filter Metric MeasureTheory Set TopologicalSpace Topology
-open scoped ENNReal Gradient
+open scoped ENNReal Gradient NNReal
 
 namespace TauCeti
 
@@ -164,6 +190,158 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
   -- On the cube, `w ≥ ū / σ`.
   rintro y ⟨hy1, hy2⟩
   exact ⟨(div_le_div_of_nonneg_right hy1 hσ.le).trans (hwū y (hQ hy2)).1, hy2⟩
+
+/-- **Letting the approximation parameter tend to zero.** If
+`d ≤ 2 t + C (r - t)^(-α) (M + t + (r - t) (F + t) / λ) D` for every `0 < t < δ`, with `r > 0` and
+`δ > 0`, then `d ≤ C r^(-α) (M + r F / λ) D`. -/
+private theorem le_of_forall_le_add_mul_rpow_sub_mul {d C α r M F lam D δ : ℝ} (hr : 0 < r)
+    (hδ : 0 < δ) (h : ∀ t ∈ Ioo 0 δ,
+      d ≤ 2 * t + C * (r - t) ^ (-α) * (M + t + (r - t) * (F + t) / lam) * D) :
+    d ≤ C * r ^ (-α) * (M + r * F / lam) * D := by
+  set Φ : ℝ → ℝ := fun t ↦ 2 * t + C * (r - t) ^ (-α) * (M + t + (r - t) * (F + t) / lam) * D
+  have hΦ : ContinuousAt Φ 0 := by
+    refine (continuousAt_const.mul continuousAt_id).add (ContinuousAt.mul (ContinuousAt.mul
+      (continuousAt_const.mul ((continuousAt_const.sub continuousAt_id).rpow_const
+        (Or.inl (by simp [hr.ne'])))) (by fun_prop)) continuousAt_const)
+  have hΦ0 : Φ 0 = C * r ^ (-α) * (M + r * F / lam) * D := by simp [Φ]
+  rw [← hΦ0]
+  exact ge_of_tendsto (hΦ.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi 0)))
+    (eventually_of_mem (Ioo_mem_nhdsGT hδ) h)
+
+/-- **The interior Hölder estimate for a continuous representative.** The estimate of
+`exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`, for any
+representative `ū` of `u` continuous on `Ω` and bounded by `M` on `B(x₀, 2 r)`. -/
+private theorem exists_holderOnWith_of_abs_sum_mul_iteratedGradient_le_of_continuousOn
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃ū f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), 0 < r → ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        ContinuousOn ū Ω → (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] ū →
+        (∀ x ∈ ball x₀ (2 * r), |ū x| ≤ M) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α ū (ball x₀ r) := by
+  have : Nonempty ι := Fintype.card_pos_iff.1 (by
+    have h : (1 : ℝ≥0∞) ≤ Fintype.card ι := Fact.out
+    exact_mod_cast h)
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ := exists_holderOnWith_of_abs_sum_mul_fderiv_fderiv_le (ι := ι) hκ
+  refine ⟨α, C, hα0, hα1, hC, ?_⟩
+  intro lam Lam r M x₀ Ω a ū f u hr hΩ ha hLam hcont hū hM heq hf
+  set n := Fintype.card ι
+  have hlam : 0 < lam := ha.pos
+  have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM x₀ (mem_ball_self (by linarith)))
+  set F := (eLpNorm f n (volume.restrict (ball x₀ (2 * r)))).toReal
+  have hF : 0 ≤ F := ENNReal.toReal_nonneg
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
+  refine le_trans ?_ (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity))
+  rw [mem_ball] at hx hy
+  -- For `0 < t < r - max (dist x x₀) (dist y x₀)`, compare `ū` with a smooth approximation
+  -- within `t` on the closed ball of radius `2 (r - t)`, then let `t → 0`.
+  refine le_of_forall_le_add_mul_rpow_sub_mul hr (sub_pos.2 (max_lt hx hy)) fun t ⟨ht, htr⟩ ↦ ?_
+  obtain ⟨hxr, hyr⟩ := max_le_iff.1 (le_refl (max (dist x x₀) (dist y x₀)))
+  set r' := r - t
+  have hr'0 : 0 < r' := by linarith [dist_nonneg (x := x) (y := x₀)]
+  have hBsub : ball x₀ (2 * r') ⊆ ball x₀ (2 * r) := ball_subset_ball (by linarith)
+  have hKΩ : closedBall x₀ (2 * r') ⊆ Ω := (closedBall_subset_ball (by linarith)).trans hΩ
+  obtain ⟨v, g, hv, hvū, hvg, hg, hgf⟩ :=
+    exists_contDiff_abs_sub_le_and_abs_sum_mul_fderiv_fderiv_le_of_wkp
+      (ENNReal.natCast_ne_top n) u hcont hū (isCompact_closedBall x₀ (2 * r')) hKΩ
+      ball_subset_closedBall
+      ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ ha.abs_apply_le (hBsub hz))
+      (hf.mono_measure (Measure.restrict_mono hBsub le_rfl))
+      (ae_restrict_of_ae_restrict_of_subset hBsub heq) ht
+  -- `|v| ≤ M + t` on the smaller ball, and `‖g‖_{Lⁿ} ≤ F + t`.
+  have hvM (z : EuclideanSpace ℝ ι) (hz : z ∈ ball x₀ (2 * r')) : |v z| ≤ M + t := by
+    have h₁ := hvū z (ball_subset_closedBall hz)
+    have h₂ := hM z (hBsub hz)
+    linarith [abs_sub_abs_le_abs_sub (v z) (ū z)]
+  have hG : (eLpNorm g n (volume.restrict (ball x₀ (2 * r')))).toReal ≤ F + t := by
+    refine ENNReal.toReal_le_of_le_ofReal (by positivity) (hgf.trans ?_)
+    rw [ENNReal.ofReal_add hF ht.le, ENNReal.ofReal_toReal hf.ne]
+    gcongr
+  have hvH := H hr'0 (ha.mono_set hBsub) hLam (contDiff_infty.1 hv 2).contDiffOn hvM hvg hg
+  have hvxy := hvH.dist_le (x := x) (y := y) (mem_ball.2 (by linarith)) (mem_ball.2 (by linarith))
+  rw [Real.coe_toNNReal _ (by positivity)] at hvxy
+  have hvxy' : dist (v x) (v y) ≤
+      C * r' ^ (-(α : ℝ)) * (M + t + r' * (F + t) / lam) * dist x y ^ (α : ℝ) :=
+    hvxy.trans (by gcongr)
+  have h₁ : dist (v x) (ū x) ≤ t := by
+    simpa [Real.dist_eq] using hvū x (mem_closedBall.2 (by linarith))
+  have h₂ : dist (v y) (ū y) ≤ t := by
+    simpa [Real.dist_eq] using hvū y (mem_closedBall.2 (by linarith))
+  linarith [dist_triangle4 (ū x) (v x) (v y) (ū y), dist_comm (ū x) (v x)]
+
+/-- **The interior Hölder estimate of Krylov and Safonov for strong solutions**
+(Gilbarg–Trudinger, Corollary 9.24; Caffarelli–Cabré, Proposition 4.10). Let `κ > 0`. There are
+`0 < α ≤ 1` and `C > 0`, depending only on the dimension `n ≥ 1` and on `κ`, with the following
+property. Let `a` be uniformly elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, let
+`B(x₀, 2 r) ⊆ Ω`, and let `u ∈ W^{2,n}(Ω)` satisfy `|u| ≤ M` and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu| ≤ f` almost
+everywhere in `B(x₀, 2 r)`, for the weak Hessian and some `f ∈ Lⁿ(B(x₀, 2 r))`. Then the precise
+representative of `u`, which is continuous on `Ω`, is `α`-Hölder on `B(x₀, r)` with constant
+`C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), 0 < r → ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
+          (MeasureTheory.preciseRepresentative volume (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ))
+          (ball x₀ r) := by
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ :=
+    exists_holderOnWith_of_abs_sum_mul_iteratedGradient_le_of_continuousOn (ι := ι) hκ
+  refine ⟨α, C, hα0, hα1, hC, fun lam Lam r M x₀ Ω a f u hr hΩ ha hLam hM heq hf ↦ ?_⟩
+  have hcont := Wkp.continuousOn_preciseRepresentative
+    (by rw [finrank_euclideanSpace]) u
+  have hū := Wkp.ae_eq_preciseRepresentative 2 u
+  -- The bound `|u| ≤ M` passes from almost every point to every point of the ball.
+  refine H u hr hΩ ha hLam hcont hū
+    (isOpen_ball.le_of_ae_restrict_le (μ := volume) (hcont.mono hΩ).abs continuousOn_const ?_)
+    heq hf
+  filter_upwards [hM, ae_restrict_of_ae_restrict_of_subset hΩ hū] with x hx hxū
+  rwa [← hxū]
+
+/-- **The interior Hölder estimate of Krylov and Safonov for strong solutions**
+(Gilbarg–Trudinger, Corollary 9.24). Let `κ > 0`. There are `0 < α ≤ 1` and `C > 0`, depending
+only on the dimension `n ≥ 1` and on `κ`, with the following property. Let `a` be uniformly
+elliptic on `B(x₀, 2 r)` with constants `λ ≤ Λ ≤ κ λ`, let `B(x₀, 2 r) ⊆ Ω`, and let
+`u ∈ W^{2,n}(Ω)` be a strong solution of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` in `B(x₀, 2 r)`, with
+`f ∈ Lⁿ(B(x₀, 2 r))` and `|u| ≤ M` almost everywhere there. Then the precise representative of `u`
+is `α`-Hölder on `B(x₀, r)` with constant `C r^(-α) (M + r ‖f‖_{Lⁿ(B(x₀, 2 r))} / λ)`.
+
+The coefficients need no regularity, not even measurability, and need not be symmetric. -/
+theorem exists_holderOnWith_preciseRepresentative_of_sum_mul_iteratedGradient_eq
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ : ℝ} (hκ : 0 < κ) :
+    ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧
+      ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), 0 < r → ball x₀ (2 * r) ⊆ Ω →
+        UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)), |Wkp.value 2 u x| ≤ M) →
+        (∀ᵐ x ∂volume.restrict (ball x₀ (2 * r)),
+          ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i = f x) →
+        MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
+        HolderOnWith (C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
+          (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α
+          (MeasureTheory.preciseRepresentative volume (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ))
+          (ball x₀ r) := by
+  obtain ⟨α, C, hα0, hα1, hC, H⟩ :=
+    exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le (ι := ι) hκ
+  refine ⟨α, C, hα0, hα1, hC, fun lam Lam r M x₀ Ω a f u hr hΩ ha hLam hM heq hf ↦ ?_⟩
+  rw [← eLpNorm_norm f hf.aestronglyMeasurable]
+  exact H u hr hΩ ha hLam hM (heq.mono fun x hx ↦ hx.symm ▸ (Real.norm_eq_abs _).ge) hf.norm
 
 end PDE
 
