@@ -39,7 +39,9 @@ atom while vanishing on every singleton.
   mass;
 * `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an injective measurable map
   into a space whose singletons are measurable preserves the property that singletons have
-  measure zero.
+  measure zero;
+* `MeasureTheory.Measure.not_isAtom` — a `σ`-finite measure on a countably separated measurable
+  space with null singletons has no measurable atoms.
 -/
 
 public section
@@ -164,6 +166,39 @@ theorem _root_.MeasureTheory.Measure.nullSingletonClass_map_of_injective
     simp only [mem_preimage, mem_singleton_iff] at ha hb
     exact hInj (ha.trans hb.symm)
   exact hsub.measure_zero μ
+
+/-- A `σ`-finite measure with null singletons on a countably separated measurable space has no
+atoms. -/
+theorem _root_.MeasureTheory.Measure.not_isAtom {Z : Type*} [MeasurableSpace Z]
+    [MeasurableSpace.CountablySeparated Z] (μ : Measure Z) [SigmaFinite μ]
+    [NullSingletonClass μ] (A : Set Z) :
+    ¬ μ.IsAtom A := by
+  intro hA
+  have hAfin : μ A ≠ ⊤ := by
+    by_contra htop
+    have hzero : ∀ n, μ (A ∩ spanningSets μ n) = 0 := fun n ↦
+      (hA.2.2 (hA.1.inter (measurableSet_spanningSets μ n)) Set.inter_subset_left).resolve_right
+        fun h ↦ ((measure_mono Set.inter_subset_right).trans_lt
+          (measure_spanningSets_lt_top μ n)).ne (h.trans htop)
+    have hAu : A = ⋃ n, A ∩ spanningSets μ n := by
+      rw [← Set.inter_iUnion, iUnion_spanningSets, Set.inter_univ]
+    exact hA.2.1.ne' (hAu ▸ measure_iUnion_null hzero)
+  obtain ⟨f, hf_meas, hf_inj⟩ :=
+    MeasurableSpace.measurable_injection_nat_bool_of_countablySeparated Z
+  obtain ⟨y, hy⟩ := hf_meas.aemeasurable.exists_ae_eq_const_restrict_of_atom hAfin hA
+  have hdiff : μ ({z | f z ≠ y} ∩ A) = 0 := by
+    rw [← Measure.restrict_apply' hA.1]
+    exact ae_iff.mp hy
+  have hpre : μ (f ⁻¹' {y}) = 0 :=
+    Set.Subsingleton.measure_zero (s := f ⁻¹' {y}) (fun a ha b hb ↦ by
+      simp only [mem_preimage, mem_singleton_iff] at ha hb
+      exact hf_inj (ha.trans hb.symm)) μ
+  have hsub : A ⊆ {z | f z ≠ y} ∩ A ∪ f ⁻¹' {y} := fun z hz ↦ by
+    by_cases hzy : f z = y
+    · exact Or.inr hzy
+    · exact Or.inl ⟨hzy, hz⟩
+  exact hA.2.1.ne' <| nonpos_iff_eq_zero.mp <|
+    (measure_mono hsub).trans ((measure_union_le _ _).trans (by simp [hdiff, hpre]))
 
 end MeasureTheory
 
