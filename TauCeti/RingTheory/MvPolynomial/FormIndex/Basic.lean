@@ -253,12 +253,16 @@ theorem mem_formIdeal_of_lt_formIndex (ht : t < formIndex d M P) : P ∈ formIde
 theorem coeff_eq_zero_of_mem_formIdeal (hP : P ∈ formIdeal t d M) {e : κ × ι →₀ ℕ}
     (he : ∑ h, (∑ i, e (h, i) : ℝ≥0∞) / d h < t) : P.coeff e = 0 := by
   classical
-  rw [formIdeal_def] at hP
-  induction hP using Submodule.span_induction generalizing e with
-  | mem g hg =>
+  let s : Set (κ × ι →₀ ℕ) := {e | t ≤ ∑ h, (∑ i, e (h, i) : ℝ≥0∞) / d h}
+  have hs : IsUpperSet s := fun a b hab ha ↦
+    ha.trans (Finset.sum_le_sum fun h _ ↦ ENNReal.div_le_div_right
+      (Finset.sum_le_sum fun i _ ↦ Nat.cast_le.mpr (hab (h, i))) _)
+  have hle : formIdeal t d M ≤ restrictSupportIdeal R s hs := by
+    rw [formIdeal_def, Ideal.span_le]
+    rintro _ ⟨j, hj, rfl⟩
+    rw [SetLike.mem_coe, ← Submodule.restrictScalars_mem R,
+      restrictScalars_restrictSupportIdeal R s hs, mem_restrictSupport_iff]
     -- Each generator is multihomogeneous of multidegree `j` with `t ≤ ∑ h, j h / d h`.
-    obtain ⟨j, hj, rfl⟩ := hg
-    by_contra hne
     have hhom : IsMultiHomogeneous j (∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h) := by
       have hhom' : IsMultiHomogeneous (∑ h : κ, j h • Pi.single h 1)
           (∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h) :=
@@ -268,22 +272,16 @@ theorem coeff_eq_zero_of_mem_formIdeal (hP : P ∈ formIdeal t d M) {e : κ × �
         ext h'
         simp [Pi.single_apply]
       rwa [hj_eq] at hhom'
-    have hej : ∀ h, ∑ i, e (h, i) = j h := isMultiHomogeneous_iff.mp hhom e hne
-    refine he.not_ge (hj.trans_eq (Finset.sum_congr rfl fun h _ ↦ ?_))
-    rw [← Nat.cast_sum, hej h]
-  | zero => simp
-  | add f g _ _ hf hg => simp [hf he, hg he]
-  | smul r f _ hf =>
-    -- Multiplying by `r` can only increase exponents coordinatewise, keeping `x.2 ≤ e`.
-    rw [smul_eq_mul, coeff_mul]
-    refine Finset.sum_eq_zero fun x hx ↦ ?_
-    have hxle (h : κ) (i : ι) : x.2 (h, i) ≤ e (h, i) := by
-      rw [← Finset.mem_antidiagonal.mp hx, Finsupp.add_apply]
-      exact Nat.le_add_left _ _
-    have hxlt : ∑ h, (∑ i, x.2 (h, i) : ℝ≥0∞) / d h < t :=
-      (Finset.sum_le_sum fun h _ ↦ ENNReal.div_le_div_right
-        (Finset.sum_le_sum fun i _ ↦ Nat.cast_le.mpr (hxle h i)) _).trans_lt he
-    rw [hf hxlt, mul_zero]
+    intro u hu
+    have huj : ∀ h, ∑ i, u (h, i) = j h :=
+      isMultiHomogeneous_iff.mp hhom u (mem_support_iff.mp hu)
+    refine Set.mem_ofPred_eq.mpr ((Set.mem_ofPred_eq.mp hj).trans_eq ?_)
+    exact Finset.sum_congr rfl fun h _ ↦ by rw [← Nat.cast_sum, huj h]
+  have hPs : P ∈ restrictSupport R s := by
+    rw [← restrictScalars_restrictSupportIdeal R s hs, Submodule.restrictScalars_mem]
+    exact hle hP
+  by_contra hne
+  exact he.not_ge ((mem_restrictSupport_iff (R := R)).mp hPs (mem_support_iff.mpr hne))
 
 @[simp]
 theorem formIndex_zero : formIndex d M 0 = ⊤ :=
@@ -348,22 +346,11 @@ theorem map_mem_formIdeal {S τ : Type*} [CommSemiring S] [Fintype τ]
     (hf : ∀ h, f (∑ i, C (M h i) * X (h, i)) = ∑ a, C (M' h a) * X (h, a))
     {P : MvPolynomial (κ × ι) R} (hP : P ∈ formIdeal t d M) :
     f P ∈ formIdeal t d M' := by
-  rw [formIdeal_def] at hP
-  induction hP using Submodule.span_induction with
-  | mem g hg =>
-    obtain ⟨j, hj, rfl⟩ := hg
-    rw [map_prod]
-    simp only [map_pow, hf]
-    exact prod_pow_mem_formIdeal hj
-  | zero =>
-    rw [map_zero]
-    exact Ideal.zero_mem _
-  | add p q _ _ hp hq =>
-    rw [map_add]
-    exact Ideal.add_mem _ hp hq
-  | smul r p _ hp =>
-    rw [smul_eq_mul, map_mul]
-    exact Ideal.mul_mem_left _ (f r) hp
+  have hle : formIdeal t d M ≤ (formIdeal t d M').comap (f : _ →+* _) := by
+    rw [formIdeal_def, Ideal.span_le]
+    rintro _ ⟨j, hj, rfl⟩
+    simpa [SetLike.mem_coe, Ideal.mem_comap, map_prod, map_pow, hf] using prod_pow_mem_formIdeal hj
+  exact hle hP
 
 /-- Any ring homomorphism mapping each block's linear form `∑ i, C (M h i) * X (h, i)` to
 `∑ a, C (M' h a) * X (h, a)` does not decrease `formIndex`. -/

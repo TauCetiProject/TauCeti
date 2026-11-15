@@ -19,7 +19,8 @@ the height of a quotient by the sum of the heights of its numerator and denomina
 normalizing at any nonzero coordinate `x i₀ ≠ 0` bounds `mulHeight x` by the product of
 `mulHeight₁ (x i / x i₀)` over `i ≠ i₀` (`Height.mulHeight_le_prod_mulHeight₁_div`), so on a
 nontrivial index type at least one ratio has logarithmic height at least `h(x) / (card ι - 1)`
-(`Height.exists_logHeight_le_mul_logHeight₁_div`). If
+(`Height.exists_ne_logHeight_le_mul_logHeight₁_div`,
+`Height.exists_logHeight_le_mul_logHeight₁_div`). If
 `t (x - θ₂ y) = x - θ₀ y`, the formula `x / y = (θ₀ - t θ₂) / (1 - t)` bounds the height of
 `x / y` by those of `t`, `θ₀` and `θ₂`; this recovers a Thue solution from a unit equation.
 These bounds control the affine coordinates of a projective point after normalization.
@@ -112,18 +113,17 @@ lemma logHeight_le_sum_logHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι �
   rw [Real.log_prod fun i _ ↦ (mulHeight₁_pos _).ne']
   exact Finset.sum_congr rfl fun i _ ↦ (logHeight₁_eq_log_mulHeight₁ _).symm
 
-/-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
-with `x i₀ ≠ 0` such that `mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1)`. -/
-lemma exists_mulHeight_le_pow_mulHeight₁_div [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
-    ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
-      mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+/-- For any nonzero coordinate `x i₀ ≠ 0` of a tuple on a nontrivial finite index type `ι`, there
+exists `i₁ ≠ i₀` such that `mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1)`. -/
+lemma exists_ne_mulHeight_le_mulHeight₁_div_pow [Nontrivial ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    ∃ i₁ ≠ i₀, mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
   classical
   cases nonempty_fintype ι
-  obtain ⟨i₀, hx₀⟩ := Function.ne_iff.mp hx
   obtain ⟨j, hj⟩ := exists_ne i₀
   have hs : (Finset.univ.erase i₀).Nonempty := ⟨j, Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩⟩
   obtain ⟨i₁, hi₁, hmax⟩ := Finset.exists_max_image _ (fun i ↦ mulHeight₁ (x i / x i₀)) hs
-  refine ⟨i₀, i₁, (Finset.ne_of_mem_erase hi₁).symm, hx₀, ?_⟩
+  refine ⟨i₁, Finset.ne_of_mem_erase hi₁, ?_⟩
   calc mulHeight x
       ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) :=
         mulHeight_le_prod_mulHeight₁_div hx₀
@@ -135,16 +135,34 @@ lemma exists_mulHeight_le_pow_mulHeight₁_div [Nontrivial ι] {x : ι → K} (h
           Nat.card_eq_fintype_card]
 
 /-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
+with `x i₀ ≠ 0` such that `mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1)`. -/
+lemma exists_mulHeight_le_mulHeight₁_div_pow [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
+    ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
+      mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+  obtain ⟨i₀, hx₀⟩ := Function.ne_iff.mp hx
+  obtain ⟨i₁, hi₁, hle⟩ := exists_ne_mulHeight_le_mulHeight₁_div_pow hx₀
+  exact ⟨i₀, i₁, hi₁.symm, hx₀, hle⟩
+
+/-- For any nonzero coordinate `x i₀ ≠ 0` of a tuple on a nontrivial finite index type `ι`, there
+exists `i₁ ≠ i₀` such that `logHeight x ≤ (Nat.card ι - 1) * logHeight₁ (x i₁ / x i₀)`. -/
+lemma exists_ne_logHeight_le_mul_logHeight₁_div [Nontrivial ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    ∃ i₁ ≠ i₀, logHeight x ≤ (Nat.card ι - 1 : ℝ) * logHeight₁ (x i₁ / x i₀) := by
+  obtain ⟨i₁, hi₁, hle⟩ := exists_ne_mulHeight_le_mulHeight₁_div_pow hx₀
+  refine ⟨i₁, hi₁, ?_⟩
+  have hcard : 1 ≤ Nat.card ι := Nat.one_le_iff_ne_zero.mpr Nat.card_pos.ne'
+  rw [logHeight_eq_log_mulHeight]
+  refine (Real.log_le_log (mulHeight_pos x) hle).trans_eq ?_
+  rw [Real.log_pow, Nat.cast_sub hcard, Nat.cast_one, logHeight₁_eq_log_mulHeight₁]
+
+/-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
 with `x i₀ ≠ 0` such that `logHeight x ≤ (Nat.card ι - 1) * logHeight₁ (x i₁ / x i₀)`. -/
 lemma exists_logHeight_le_mul_logHeight₁_div [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
     ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
       logHeight x ≤ (Nat.card ι - 1 : ℝ) * logHeight₁ (x i₁ / x i₀) := by
-  obtain ⟨i₀, i₁, hne, hx₀, hle⟩ := exists_mulHeight_le_pow_mulHeight₁_div hx
-  refine ⟨i₀, i₁, hne, hx₀, ?_⟩
-  have hcard : 1 ≤ Nat.card ι := Nat.one_le_iff_ne_zero.mpr (Nat.card_pos.ne')
-  rw [logHeight_eq_log_mulHeight]
-  refine (Real.log_le_log (mulHeight_pos x) hle).trans_eq ?_
-  rw [Real.log_pow, Nat.cast_sub hcard, Nat.cast_one, logHeight₁_eq_log_mulHeight₁]
+  obtain ⟨i₀, hx₀⟩ := Function.ne_iff.mp hx
+  obtain ⟨i₁, hi₁, hle⟩ := exists_ne_logHeight_le_mul_logHeight₁_div hx₀
+  exact ⟨i₀, i₁, hi₁.symm, hx₀, hle⟩
 
 /-- The logarithmic height of a quotient is at most the sum of the logarithmic heights. -/
 lemma logHeight₁_div_le (x y : K) : logHeight₁ (x / y) ≤ logHeight₁ x + logHeight₁ y := by

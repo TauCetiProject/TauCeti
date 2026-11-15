@@ -29,10 +29,11 @@ for every block `h : Fin m` (on a nontrivial index type `ι`), the index satisfi
 `formIndex d M P ≤ 2 m σ ^ (1 / 2 ^ (m - 1))`.
 
 In Schmidt's proof of the Subspace Theorem, `P` is the multihomogeneous auxiliary polynomial built
-by Siegel's lemma, and `M h` is the normal form of the hyperplane `V(Q_h)` at `m` widely spaced
-levels `Q_0, …, Q_{m-1}` sharing the same subspace direction; the small-index bound produced here,
-combined with `MvPolynomial.exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero`, yields a
-low-order Hasse derivative of `P` that does not vanish identically on `∏ h, V(Q_h)`.
+by Siegel's lemma, and `M h` is the normal form of the hyperplane `V(Q_h)` spanned by the
+approximation domain at `m` widely spaced levels `Q_0, …, Q_{m-1}` of growing height; the
+small-index bound produced here, combined with
+`MvPolynomial.exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero`, yields a low-order Hasse
+derivative of `P` that does not vanish identically on `∏ h, V(Q_h)`.
 
 ## Proof outline
 
@@ -41,11 +42,11 @@ low-order Hasse derivative of `P` that does not vanish identically on `∏ h, V(
 2. By `Height.exists_logHeight_le_mul_logHeight₁_div`, each block `h` admits two distinct
    coordinates `i₀ h ≠ i₁ h` with `M h (i₀ h) ≠ 0` such that
    `h(M h) ≤ (card ι - 1) h₁(M h (i₁ h) / M h (i₀ h))`.
-3. Sequential minimal-exponent slicing (`MvPolynomial.exists_elimination`) eliminates all variables
-   outside `{i₀ h, i₁ h}`, producing a nonzero multihomogeneous polynomial `Q` on `Fin m × Fin 2` of
-   multidegree `e' ≤ e ≤ d` whose nonzero coefficients all occur among those of `P` (so
-   `h(Q) ≤ h(P)`) and whose index along `![-α h, 1]` at `α h = - (M h (i₁ h) / M h (i₀ h))` is at
-   least `formIndex d M P`.
+3. Sequential minimal-exponent slicing (`MvPolynomial.exists_isMultiHomogeneous_formIndex_le`)
+   eliminates all variables outside `{i₀ h, i₁ h}`, producing a nonzero multihomogeneous polynomial
+   `Q` on `Fin m × Fin 2` of multidegree `e' ≤ e ≤ d` whose nonzero coefficients all occur among
+   those of `P` (so `h(Q) ≤ h(P)`) and whose index along `![-α h, 1]` at
+   `α h = - (M h (i₁ h) / M h (i₀ h))` is at least `formIndex d M P`.
 4. Dehomogenizing `Q` via `MvPolynomial.blockDehomogenize` preserves nonvanishing and height
    (`MvPolynomial.IsMultiHomogeneous.logHeight_blockDehomogenize`) and equates the form index with
    the affine weighted index `weightedIndex d α (blockDehomogenize Q)`
@@ -102,7 +103,7 @@ theorem formIndex_le_of_degree_ratio {m : ℕ} [NeZero m] {ι : Type*} [Fintype 
     linarith
   choose i₀ i₁ hne hi₀ hdiv using fun h ↦ exists_logHeight_le_mul_logHeight₁_div (hMne h)
   obtain ⟨Q, e', hQne, he', hQhom, hQcoeff, hidx⟩ :=
-    exists_elimination (d := d) hne hi₀ hP hPhom
+    exists_isMultiHomogeneous_formIndex_le (d := d) hne hi₀ hP hPhom
   set α : Fin m → K := fun h ↦ - (M h (i₁ h) / M h (i₀ h))
   set F : MvPolynomial (Fin m) K := blockDehomogenize Q
   have hFne : F ≠ 0 := (IsMultiHomogeneous.blockDehomogenize_eq_zero hQhom).not.mpr hQne

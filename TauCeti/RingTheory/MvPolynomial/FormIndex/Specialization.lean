@@ -31,7 +31,7 @@ sliced (for instance, `X (0, 1) + X (0, 2)` has minimal exponent `0` in both `(0
 so simultaneous specialization vanishes while sequential slicing yields `1`), variables outside
 `{i₀ h, i₁ h}` must be eliminated one at a time. Pulling the resulting polynomial back along the
 two-coordinate embedding `(h, 0) ↦ (h, i₁ h), (h, 1) ↦ (h, i₀ h)` and normalizing each two-variable
-form by `(M h (i₀ h))⁻¹` yields `MvPolynomial.exists_elimination`.
+form by `(M h (i₀ h))⁻¹` yields `MvPolynomial.exists_isMultiHomogeneous_formIndex_le`.
 
 ## References
 
@@ -253,40 +253,27 @@ private theorem twoCoord_injective {i₀ i₁ : κ → ι} (hne : ∀ h, i₀ h 
 omit [DecidableEq κ] in
 /-- Pulling `formIndex` back along the injective two-coordinate embedding
 `emb (h, 0) = (h, i₁ h), emb (h, 1) = (h, i₀ h)` when all outside coefficients of `M'` vanish. -/
-private theorem formIndex_rename_twoCoord {d : κ → ℕ} {i₀ i₁ : κ → ι} (hne : ∀ h, i₀ h ≠ i₁ h)
-    {M' : κ → ι → K} (hM' : ∀ h, M' h (i₀ h) ≠ 0)
-    (hzero : ∀ h i, i ≠ i₀ h → i ≠ i₁ h → M' h i = 0) (Q : MvPolynomial (κ × Fin 2) K) :
+private theorem formIndex_rename_twoCoord [CommSemiring R] {d : κ → ℕ} {i₀ i₁ : κ → ι}
+    (hne : ∀ h, i₀ h ≠ i₁ h) {M' : κ → ι → R}
+    (hzero : ∀ h i, i ≠ i₀ h → i ≠ i₁ h → M' h i = 0) (Q : MvPolynomial (κ × Fin 2) R) :
     formIndex d M' (rename (fun p : κ × Fin 2 ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)) Q) =
       formIndex d (fun h ↦ ![M' h (i₁ h), M' h (i₀ h)]) Q := by
   classical
   have hemb := twoCoord_injective hne
   set emb : κ × Fin 2 → κ × ι := fun p ↦ (p.1, ![i₁ p.1, i₀ p.1] p.2)
-  set N : κ → Fin 2 → K := fun h ↦ ![M' h (i₁ h), M' h (i₀ h)]
-  have hsub : substFormInv M' i₀ (rename emb Q) = rename emb (substFormInv N (fun _ ↦ 1) Q) := by
-    suffices (substFormInv M' i₀).comp (rename emb) =
-        (rename emb).comp (substFormInv N (fun _ ↦ 1)) from AlgHom.congr_fun this Q
-    ext ⟨h, c⟩ : 1
-    fin_cases c
-    · simp [emb, (hne h).symm]
-    · have herase2 : (univ : Finset (Fin 2)).erase 1 = {0} := by decide
-      simp only [AlgHom.comp_apply, Fin.mk_one, rename_X, emb, Matrix.cons_val_one,
-        Matrix.cons_val_fin_one]
-      rw [substFormInv_X_self, substFormInv_X_self]
-      simp only [map_mul, algHom_C, map_sub, rename_X, N, herase2,
-        Finset.sum_singleton, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-      congr 2
-      rw [Finset.sum_eq_single (i₁ h)]
-      · rfl
-      · intro i hi hii₁
-        rw [hzero h i (ne_of_mem_erase hi) hii₁, map_zero, zero_mul]
-      · intro hnot
-        exact (hnot (mem_erase.mpr ⟨(hne h).symm, mem_univ _⟩)).elim
-  have hN : ∀ h, N h 1 ≠ 0 := fun h ↦ hM' h
-  rw [formIndex_eq_iInf hM', formIndex_eq_iInf hN, hsub, support_rename_of_injective hemb,
-    Finset.iInf_finset_image]
-  refine iInf_congr fun u ↦ iInf_congr fun _ ↦ Finset.sum_congr rfl fun h _ ↦ ?_
-  have h1 : emb (h, 1) = (h, i₀ h) := by simp [emb]
-  rw [← h1, Finsupp.mapDomain_apply_of_injective hemb]
+  set N : κ → Fin 2 → R := fun h ↦ ![M' h (i₁ h), M' h (i₀ h)]
+  have hform (h : κ) :
+      rename emb (∑ c : Fin 2, C (N h c) * X (h, c)) = ∑ i, C (M' h i) * X (h, i) := by
+    rw [map_sum, Fin.sum_univ_two]
+    simp only [map_mul, rename_C, rename_X, emb, N, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one]
+    rw [← Finset.sum_pair (f := fun i ↦ C (M' h i) * X (h, i)) (hne h).symm]
+    refine Finset.sum_subset (Finset.subset_univ _) fun i _ hi ↦ ?_
+    simp only [mem_insert, mem_singleton, not_or] at hi
+    rw [hzero h i hi.2 hi.1, map_zero, zero_mul]
+  refine le_antisymm ?_ (formIndex_le_formIndex_map (rename emb) hform Q)
+  simpa [killCompl_rename_app] using formIndex_le_formIndex_map (killCompl hemb)
+    (fun h ↦ by rw [← hform h, killCompl_rename_app]) (rename emb Q)
 
 /-- **Variable elimination to two coordinates per block.** Given a nonzero multihomogeneous
 polynomial `P` of multidegree `e` and two distinct coordinates `i₀ h ≠ i₁ h` per block with
@@ -294,7 +281,7 @@ polynomial `P` of multidegree `e` and two distinct coordinates `i₀ h ≠ i₁ 
 `Q` on `κ × Fin 2` of multidegree `e' ≤ e` whose nonzero coefficients all occur in `P` and whose
 index along the affine-chart forms `![M h (i₁ h) / M h (i₀ h), 1]` is at least
 `formIndex d M P`. -/
-theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ : κ → ι}
+theorem exists_isMultiHomogeneous_formIndex_le {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ : κ → ι}
     (hne : ∀ h, i₀ h ≠ i₁ h) (hM : ∀ h, M h (i₀ h) ≠ 0) {P : MvPolynomial (κ × ι) K}
     (hP : P ≠ 0) (hPhom : IsMultiHomogeneous e P) :
     ∃ (Q : MvPolynomial (κ × Fin 2) K) (e' : κ → ℕ),
@@ -335,14 +322,14 @@ theorem exists_elimination {d e : κ → ℕ} {M : κ → ι → K} {i₀ i₁ :
     fin_cases c <;> simp [hM'0, hM'1, div_eq_inv_mul, hM h]
   refine ⟨Q, e', hQne, he', (isMultiHomogeneous_rename_iff hf).mp (hQeq.symm ▸ hP₁hom),
     hQcoeff, hidx.trans_eq ?_⟩
-  rw [← hQeq, formIndex_rename_twoCoord hne (fun h ↦ (hM'0 h).symm ▸ hM h) hM'z,
+  rw [← hQeq, formIndex_rename_twoCoord hne hM'z,
     ← formIndex_smul_form (c := fun h ↦ (M h (i₀ h))⁻¹)
       (fun h ↦ isUnit_iff_ne_zero.mpr (inv_ne_zero (hM h))), hscale]
 
 /-- Simultaneous specialization at componentwise-minimum exponents can annihilate a nonzero
-multihomogeneous polynomial, whereas `exists_elimination` (which slices sequentially) preserves
-nonvanishing: `P = X (0, 1) + X (0, 2)` has minimal exponent `0` in both `(0, 1)` and `(0, 2)`, so
-setting both to `0` at once yields `0`. -/
+multihomogeneous polynomial, whereas `exists_isMultiHomogeneous_formIndex_le` (which slices
+sequentially) preserves nonvanishing: `P = X (0, 1) + X (0, 2)` has minimal exponent `0` in both
+`(0, 1)` and `(0, 2)`, so setting both to `0` at once yields `0`. -/
 example :
     let P : MvPolynomial (Fin 1 × Fin 3) ℚ := X (0, 1) + X (0, 2)
     P ≠ 0 ∧ IsMultiHomogeneous (Pi.single 0 1) P ∧

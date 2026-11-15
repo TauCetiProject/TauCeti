@@ -19,8 +19,8 @@ import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
 Over a field `K`, Bombieri and Gubler define `formIndex d M P` ideal-theoretically via powers of the
 linear forms `M h (X h) = ∑ i, M h i • X (h, i)` (`TauCeti.RingTheory.MvPolynomial.FormIndex.Basic`)
 and immediately note that it coincides with the smallest `(1 / d h)`-weighted order of a Hasse
-derivative `hasseDeriv I P` that does not vanish identically on the common kernel
-`⋂ h, ker (M h)`. This file proves both directions of that characterization in arbitrary
+derivative `hasseDeriv I P` that does not vanish identically on the product of kernels
+`∏ h, ker (M h)`. This file proves both directions of that characterization in arbitrary
 characteristic (using Hasse derivatives rather than naive partial derivatives) and connects
 `substForm` and `substFormInv` with `MvPolynomial.blockLinearForm` and `MvPolynomial.linearSubst`:
 
@@ -38,11 +38,11 @@ characteristic (using Hasse derivatives rather than naive partial derivatives) a
   `MvPolynomial.exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero`, and
   `MvPolynomial.le_formIndex_iff_forall_eval_hasseDeriv_eq_zero`: over an infinite field `K`, for
   nonzero linear forms `M` (`∀ h, M h ≠ 0`), `formIndex d M P ≠ ⊤` (in particular `P ≠ 0` with
-  `∀ h, d h ≠ 0`) yields a point `x : κ × ι → K` in the common kernel at which `hasseDeriv I P` is
-  nonzero, and characterizes `t ≤ formIndex d M P` by pointwise vanishing of low-order Hasse
-  derivatives on the common kernel. Over a finite field, even a nonzero homogeneous polynomial of
-  `formIndex` zero can vanish at every rational point of the kernel (see the `ZMod 2` example at
-  the end of the file).
+  `∀ h, d h ≠ 0`) yields a point `x : κ × ι → K` in the product of kernels `∏ h, ker (M h)` at which
+  `hasseDeriv I P` is nonzero, and characterizes `t ≤ formIndex d M P` by pointwise vanishing of
+  low-order Hasse derivatives on the product of kernels `∏ h, ker (M h)`. Over a finite field, even
+  a nonzero homogeneous polynomial of `formIndex` zero can vanish at every rational point of the
+  product of kernels (see the `ZMod 2` example at the end of the file).
 
 ## References
 
@@ -137,8 +137,8 @@ theorem taylor_map_mem_formIdeal {A : Type*} [CommSemiring A] [Algebra R A]
     Finset.sum_add_distrib]
   simp only [← C_mul, ← map_sum, hy', C_0, add_zero]
 
-/-- **Vanishing of low-order Hasse derivatives on the common kernel.** For any `R`-algebra `A` and
-any tuple `y : κ × ι → A` annihilated by every linear form `M h`, every Hasse derivative
+/-- **Vanishing of low-order Hasse derivatives on the product of kernels.** For any `R`-algebra `A`
+and any tuple `y : κ × ι → A` annihilated by every linear form `M h`, every Hasse derivative
 `hasseDeriv I P` of `(1 / d h)`-weighted order strictly below `formIndex d M P` vanishes at `y`. -/
 theorem aeval_hasseDeriv_eq_zero_of_lt_formIndex {A : Type*} [CommSemiring A] [Algebra R A]
     {d : κ → ℕ} {M : κ → ι → R} {P : MvPolynomial (κ × ι) R}
@@ -151,8 +151,8 @@ theorem aeval_hasseDeriv_eq_zero_of_lt_formIndex {A : Type*} [CommSemiring A] [A
   rw [aeval_def, eval₂_eq_eval_map, ← hasseDeriv_map, ← coeff_taylor]
   exact coeff_eq_zero_of_mem_formIdeal (taylor_map_mem_formIdeal hPs hy) hIs
 
-/-- Pointwise vanishing on the common kernel of Hasse derivatives of weighted order strictly below
-`formIndex d M P`. -/
+/-- Pointwise vanishing on the product of kernels `∏ h, ker (M h)` of Hasse derivatives of weighted
+order strictly below `formIndex d M P`. -/
 theorem eval_hasseDeriv_eq_zero_of_lt_formIndex {d : κ → ℕ} {M : κ → ι → R}
     {P : MvPolynomial (κ × ι) R} {I : κ × ι →₀ ℕ}
     (hI : ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h < formIndex d M P)
@@ -297,8 +297,8 @@ private theorem exists_aeval_kerForm_hasseDeriv_ne_zero [DecidableEq ι]
     simp [k]
   rw [← Nat.cast_sum, hdeg, hksum]
 
-/-- **Nonvanishing Hasse derivative on a parameterized common kernel.** Over a field `K`, if every
-linear form `M h` is nonzero (`∀ h, M h ≠ 0`), `formIndex d M P ≠ ⊤`, and the columns of
+/-- **Nonvanishing Hasse derivative on a parameterized product of kernels.** Over a field `K`, if
+every linear form `M h` is nonzero (`∀ h, M h ≠ 0`), `formIndex d M P ≠ ⊤`, and the columns of
 `B h : ι → τ → K` span `ker (M h)` in each block `h`, then there exists a multi-index `I` of exact
 weighted order `formIndex d M P` such that `hasseDeriv I P` does not vanish under
 `aeval (blockLinearForm B)`. -/
@@ -356,10 +356,10 @@ theorem exists_aeval_blockLinearForm_hasseDeriv_ne_zero_of_formIndex_ne_top [Fin
       simp [hi, hj']]
     simp [kerForm, hi]
 
-/-- **Pointwise nonvanishing Hasse derivative on the common kernel.** Over an infinite field `K`,
-if every linear form `M h` is nonzero (`∀ h, M h ≠ 0`) and `formIndex d M P ≠ ⊤`, then there exist
-a multi-index `I` of exact weighted order `formIndex d M P` and a point `x : κ × ι → K` in the
-common kernel `⋂ h, ker (M h)` such that `eval x (hasseDeriv I P) ≠ 0`. -/
+/-- **Pointwise nonvanishing Hasse derivative on the product of kernels.** Over an infinite field
+`K`, if every linear form `M h` is nonzero (`∀ h, M h ≠ 0`) and `formIndex d M P ≠ ⊤`, then there
+exist a multi-index `I` of exact weighted order `formIndex d M P` and a point `x : κ × ι → K` in
+the product of kernels `∏ h, ker (M h)` such that `eval x (hasseDeriv I P) ≠ 0`. -/
 theorem exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top [Infinite K]
     {d : κ → ℕ} {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K}
     (htop : formIndex d M P ≠ ⊤) :
@@ -380,8 +380,8 @@ theorem exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top [Infinite K]
 
 /-- Over an infinite field `K`, for nonzero linear forms `M` (`∀ h, M h ≠ 0`), positive degree
 weights `d` (`∀ h, d h ≠ 0`), and a nonzero polynomial `P`, there exist a multi-index `I` of exact
-weighted order `formIndex d M P` and a point `x : κ × ι → K` in the common kernel at which
-`hasseDeriv I P` does not vanish. -/
+weighted order `formIndex d M P` and a point `x : κ × ι → K` in the product of kernels
+`∏ h, ker (M h)` at which `hasseDeriv I P` does not vanish. -/
 theorem exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero [Infinite K] {d : κ → ℕ}
     {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) (hd : ∀ h, d h ≠ 0) {P : MvPolynomial (κ × ι) K}
     (hP : P ≠ 0) :
@@ -395,7 +395,7 @@ theorem exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero [Infinite K] {d 
 /-- **Pointwise Hasse-derivative characterization of `formIndex`.** Over an infinite field `K`, for
 nonzero linear forms `M` (`∀ h, M h ≠ 0`), `t ≤ formIndex d M P` if and only if every Hasse
 derivative of `(1 / d h)`-weighted order strictly below `t` vanishes at every `K`-rational point of
-the common kernel `⋂ h, ker (M h)`. -/
+the product of kernels `∏ h, ker (M h)`. -/
 theorem le_formIndex_iff_forall_eval_hasseDeriv_eq_zero [Infinite K] {t : ℝ≥0∞} {d : κ → ℕ}
     {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K} :
     t ≤ formIndex d M P ↔

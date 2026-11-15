@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.MvPolynomial
-public import TauCeti.RingTheory.MvPolynomial.BlockDehomogenize
+public import TauCeti.RingTheory.MvPolynomial.Block.Dehomogenize
 
 /-!
 # Projective coefficient heights of block dehomogenizations

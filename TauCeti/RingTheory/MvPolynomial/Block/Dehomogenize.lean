@@ -96,12 +96,11 @@ theorem eval_blockDehomogenize (a : κ → R) (P : MvPolynomial (κ × Fin 2) R)
 theorem map_blockDehomogenize {S : Type*} [CommSemiring S] (f : R →+* S)
     (P : MvPolynomial (κ × Fin 2) R) :
     map f (blockDehomogenize P) = blockDehomogenize (map f P) := by
-  induction P using MvPolynomial.induction_on with
-  | C r => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p q hp =>
-    rcases q with ⟨h, i⟩
-    fin_cases i <;> simp [hp]
+  simp only [blockDehomogenize_def, aeval_def, algebraMap_eq]
+  rw [map_eval₂]
+  congr 1
+  ext ⟨h, i⟩
+  fin_cases i <;> simp
 
 /-- Embedding `MvPolynomial κ R` into the coordinate-`1` variables and applying `blockDehomogenize`
 is the identity. -/
