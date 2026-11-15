@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Galois.Decomposition
 public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
 public import TauCeti.CategoryTheory.Galois.Topology
+public import TauCeti.CategoryTheory.Galois.Transport
 
 /-!
 # Surjectivity and injectivity of homomorphisms of fundamental groups
@@ -41,8 +42,6 @@ stabiliser of a point `y` of the fibre of some `P.obj Y`. The connected componen
 
 ## Main results
 
-* `CategoryTheory.PreGaloisCategory.FiberFunctor.of_iso`: a functor isomorphic to a fibre functor
-  is a fibre functor.
 * `CategoryTheory.PreGaloisCategory.FiberFunctor.isConnected_of_isPretransitive`: an object whose
   fibre is nonempty, with `Aut F` acting transitively on it, is connected.
 * `CategoryTheory.PreGaloisCategory.mapAut_whiskeringLeft_surjective_iff`: the homomorphism
@@ -68,16 +67,6 @@ namespace PreGaloisCategory
 open Limits
 
 variable {C : Type u₁} [Category.{u₂} C] {D : Type u₃} [Category.{u₄} D]
-
-/-- A functor naturally isomorphic to a fibre functor is a fibre functor. -/
-theorem FiberFunctor.of_iso [PreGaloisCategory C] {F G : C ⥤ FintypeCat.{w}} (e : F ≅ G)
-    [FiberFunctor F] : FiberFunctor G where
-  preservesTerminalObjects := preservesLimitsOfShape_of_natIso e
-  preservesPullbacks := preservesLimitsOfShape_of_natIso e
-  preservesFiniteCoproducts := ⟨fun _ ↦ preservesColimitsOfShape_of_natIso e⟩
-  preservesEpis := Functor.PreservesEpimorphisms.of_iso e
-  preservesQuotientsByFiniteGroups _ _ _ := preservesColimitsOfShape_of_natIso e
-  reflectsIsos := reflectsIsomorphisms_of_iso e
 
 /-- An object whose fibre under a fibre functor `F` is nonempty, and on which `Aut F` acts
 transitively, is connected. Mathlib's `FiberFunctor.isPretransitive_of_isConnected` is the

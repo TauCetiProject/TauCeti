@@ -35,8 +35,6 @@ right says that base change to `X` of a finite separable field extension of `k` 
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.mapAutFiber_eq_conjAut`: `mapAutFiber f h` is precomposition with base
-  change, conjugated by `pullbackCompFiberIso`.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_surjective_iff`: `mapAutFiber f h` is surjective if and
   only if base change along `f` preserves connectedness.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_injective_iff`: `mapAutFiber f h` is injective if and
@@ -63,19 +61,6 @@ variable {S T : Scheme.{u}} {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 instance [PreconnectedSpace S] (f : T ⟶ S) (x : Spec (.of Ω) ⟶ T) :
     FiberFunctor (pullback f ⋙ fiber x) :=
   FiberFunctor.of_iso (pullbackCompFiberIso f x).symm
-
-/-- The homomorphism of étale fundamental groups induced by `f : T ⟶ S` is precomposition with
-base change along `f`, conjugated by the identification of base change followed by the fibre at
-`x` with the fibre at `y`. -/
-theorem mapAutFiber_eq_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spec (.of Ω) ⟶ S}
-    (h : x ≫ f = y) (σ : Aut (fiber x)) :
-    mapAutFiber f h σ = (pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).conjAut
-      (((Functor.whiskeringLeft _ _ _).obj (pullback f)).mapAut (fiber x) σ) := by
-  subst h
-  ext1
-  rw [Iso.conjAut_apply, Functor.mapAut_apply_asIso, mapAutFiber_apply_asIso]
-  ext X : 3
-  simp [-pullbackCompFiberIso_hom_app, -pullbackCompFiberIso_inv_app]
 
 variable [ConnectedSpace S] [ConnectedSpace T]
 
