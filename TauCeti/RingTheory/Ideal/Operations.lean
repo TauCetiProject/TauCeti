@@ -62,6 +62,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `IsSMulRegular.span_singleton_mul_right_mono` and
   `IsSMulRegular.span_singleton_mul_right_inj`: multiplication by the principal ideal of a regular
   element preserves and reflects inclusion and equality of ideals.
+* `Ideal.span_singleton_inf_span_singleton_eq_span_singleton_mul_of_isRelPrime`: in a
+  decomposition monoid, such as a unique factorization domain, relatively prime elements generate
+  principal ideals intersecting in the principal ideal of their product.
 * `Ideal.span_singleton_pow_inf_span_singleton_pow_eq_span_singleton_mul` propagates principal
   product intersections to arbitrary powers over a commutative ring without zero divisors,
   including the zero ring. Its `of_isSMulRegular` form applies to regular scalars in any
@@ -599,6 +602,16 @@ theorem toSubmodule_sup_pow_restrictScalars_eq_top {T : Subalgebra R S} {I : Ide
 end Subalgebra
 
 namespace Ideal
+
+/-- In a commutative decomposition monoid, such as a unique factorization domain, the principal
+ideals of two relatively prime elements intersect in the principal ideal of their product. -/
+theorem span_singleton_inf_span_singleton_eq_span_singleton_mul_of_isRelPrime {R : Type*}
+    [CommSemiring R] [DecompositionMonoid R] {p q : R} (h : IsRelPrime p q) :
+    span {p} ⊓ span {q} = span {p * q} := by
+  ext x
+  simp only [Submodule.mem_inf, mem_span_singleton]
+  exact ⟨fun hx ↦ h.mul_dvd hx.1 hx.2,
+    fun hx ↦ ⟨(dvd_mul_right p q).trans hx, (dvd_mul_left q p).trans hx⟩⟩
 
 variable {A : Type*} [CommRing A] {p q : A}
 
