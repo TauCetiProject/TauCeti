@@ -85,6 +85,12 @@ def degreeAtRegularValue (o : Manifold.Orientation I M ι) (o' : Manifold.Orient
     (f : M → N) (y : N) : ℤ :=
   ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x
 
+/-- Equation lemma unfolding `TauCeti.degreeAtRegularValue`. -/
+theorem degreeAtRegularValue_def (o : Manifold.Orientation I M ι)
+    (o' : Manifold.Orientation J N ι) (f : M → N) (y : N) :
+    degreeAtRegularValue o o' f y = ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x :=
+  (rfl)
+
 /-- The degree is the sum of the orientation signs over any finset enumerating the fibre. -/
 theorem degreeAtRegularValue_eq_sum {s : Finset M} (hs : ∀ x, x ∈ s ↔ f x = y) :
     degreeAtRegularValue o o' f y = ∑ x ∈ s, orientationSign o o' f x := by
@@ -177,6 +183,11 @@ def degree (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι) 
 theorem degree_eq_degreeAtRegularValue_choose (h : ∃ y, IsRegularValue I J f y) :
     degree o o' f = degreeAtRegularValue o o' f h.choose :=
   dite_eq_left h
+
+/-- If `f` has no regular value, its degree is `0`. -/
+theorem degree_of_not_exists (h : ¬∃ y, IsRegularValue I J f y) :
+    degree o o' f = 0 :=
+  dite_eq_right h
 
 /-- Reversing the orientation of the source negates the degree. -/
 @[simp]

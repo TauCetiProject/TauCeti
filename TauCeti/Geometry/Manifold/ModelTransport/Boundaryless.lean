@@ -21,7 +21,8 @@ normal forms and implicit-function constructions can retain their actual coordin
 
 `OpenPartialHomeomorph.symm_trans_mem_contDiffGroupoid_iff_of_extend` compares coordinate changes
 for any pair of extended charts, independently of model-boundarylessness.
-The carrier also inherits monoid, additive monoid, group and additive group operations.
+The carrier also inherits `T2Space`, `CompactSpace`, `PreconnectedSpace`, and `ConnectedSpace`
+instances, as well as monoid, additive monoid, group, and additive group operations.
 `homeomorph_one`, `homeomorph_mul`, `homeomorph_inv` and their `symm` forms give the algebraic
 transport laws; `homeomorph_zero`, `homeomorph_add`, `homeomorph_neg` and their `symm` forms
 are their additive counterparts.
@@ -109,6 +110,20 @@ variable (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
 
 /-- The model copy inherits the topology of the original manifold. -/
 instance : TopologicalSpace (BoundarylessModel I M) := inferInstanceAs (TopologicalSpace M)
+
+/-- The model copy inherits the `T2Space` property of the original manifold. -/
+instance [T2Space M] : T2Space (BoundarylessModel I M) := inferInstanceAs (T2Space M)
+
+/-- The model copy inherits compactness of the original manifold. -/
+instance [CompactSpace M] : CompactSpace (BoundarylessModel I M) := inferInstanceAs (CompactSpace M)
+
+/-- The model copy inherits preconnectedness of the original manifold. -/
+instance [PreconnectedSpace M] : PreconnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (PreconnectedSpace M)
+
+/-- The model copy inherits connectedness of the original manifold. -/
+instance [ConnectedSpace M] : ConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (ConnectedSpace M)
 
 /-- The identity homeomorphism to the copy with vector-space-valued charts. -/
 def homeomorph : M ≃ₜ BoundarylessModel I M where
