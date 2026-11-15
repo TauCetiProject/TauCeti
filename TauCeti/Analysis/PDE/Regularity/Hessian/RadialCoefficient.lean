@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.NormRpow
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!

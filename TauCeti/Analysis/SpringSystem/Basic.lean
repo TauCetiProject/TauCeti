@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 
 /-!
 # The exact force and potential of a linear spring

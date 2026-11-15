@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.InnerProductSpace.NormPow.Regularized
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization

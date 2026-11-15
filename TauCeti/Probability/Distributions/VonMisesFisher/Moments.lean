@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.VonMisesFisher.Normalizer
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Moments
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import Mathlib.Probability.Moments.MGFAnalytic
 
 /-!

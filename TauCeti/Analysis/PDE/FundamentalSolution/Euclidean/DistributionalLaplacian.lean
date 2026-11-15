@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution

@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 
@@ -233,9 +233,9 @@ theorem regularizedNormRpowHessian_apply (s t : ℝ) (x v : E) :
 theorem regularizedNormRpowHessian_zero_right_apply (s : ℝ) (x v : E) :
     regularizedNormRpowHessian s 0 x v = (s * ‖x‖ ^ (s - 2)) • v +
       (s * (s - 2) * ‖x‖ ^ (s - 4) * ⟪x, v⟫) • x := by
-  rw [regularizedNormRpowHessian_apply, add_zero, show s / 2 - 1 = (s - 2) / 2 by ring,
-    show s / 2 - 2 = (s - 4) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x),
-    Real.sq_rpow_div_two (norm_nonneg x)]
+  rw [regularizedNormRpowHessian_zero_right]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, smul_smul]
 
 /-- Where `‖x‖ ^ 2 + t ≠ 0`, the regularized gradient `TauCeti.regularizedNormRpowGradient s t`
 has derivative `TauCeti.regularizedNormRpowHessian s t x`. -/
@@ -293,16 +293,19 @@ theorem norm_regularizedNormRpowHessian_le (hs : s ≤ 2) {t : ℝ} (ht : 0 ≤ 
           (by linarith)).trans_eq ?_
         rw [add_zero, show s / 2 - 1 = (s - 2) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
 
+/-- The rank-one field `x ↦ ⟪x, ·⟫ x` is continuous. -/
+private theorem continuous_innerSL_smulRight_self :
+    Continuous fun x : E => (innerSL ℝ x).smulRight x :=
+  (ContinuousLinearMap.smulRightL ℝ E E).continuous₂.comp
+    ((innerSL ℝ).continuous.prodMk continuous_id)
+
 /-- For `t > 0` the regularized Hessian `TauCeti.regularizedNormRpowHessian s t` is
 continuous. -/
 theorem continuous_regularizedNormRpowHessian {t : ℝ} (ht : 0 < t) :
     Continuous (regularizedNormRpowHessian (E := E) s t) := by
   have h := continuous_norm_sq_add_rpow (E := E) ht
-  have hK : Continuous fun x : E => (innerSL ℝ x).smulRight x :=
-    (ContinuousLinearMap.smulRightL ℝ E E).continuous₂.comp
-      ((innerSL ℝ).continuous.prodMk continuous_id)
   exact ((continuous_const.mul (h _)).smul continuous_const).add
-    ((continuous_const.mul (h _)).smul hK)
+    ((continuous_const.mul (h _)).smul continuous_innerSL_smulRight_self)
 
 /-- In a second-countable space, the field `TauCeti.regularizedNormRpowHessian s t` is
 measurable. -/
@@ -310,14 +313,11 @@ measurable. -/
 theorem measurable_regularizedNormRpowHessian [MeasurableSpace E] [BorelSpace E]
     [SecondCountableTopology E] (s t : ℝ) :
     Measurable (regularizedNormRpowHessian (E := E) s t) := by
-  have hK : Continuous fun x : E => (innerSL ℝ x).smulRight x :=
-    (ContinuousLinearMap.smulRightL ℝ E E).continuous₂.comp
-      ((innerSL ℝ).continuous.prodMk continuous_id)
   have hc (c e : ℝ) : MeasureTheory.StronglyMeasurable fun x : E => c * (‖x‖ ^ 2 + t) ^ e :=
     Measurable.stronglyMeasurable (by fun_prop)
   simp only [funext (regularizedNormRpowHessian_def (E := E) s t)]
   exact (((hc _ _).smul MeasureTheory.stronglyMeasurable_const).add
-    ((hc _ _).smul hK.stronglyMeasurable)).measurable
+    ((hc _ _).smul continuous_innerSL_smulRight_self.stronglyMeasurable)).measurable
 
 /-- Away from the origin, the regularized Hessian `TauCeti.regularizedNormRpowHessian s t x`
 depends continuously on the regularization parameter `t` at `t = 0`. -/

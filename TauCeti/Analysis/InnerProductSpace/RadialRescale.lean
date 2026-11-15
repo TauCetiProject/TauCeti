@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.LinearAlgebra.Determinant.RankOne
 
 /-!

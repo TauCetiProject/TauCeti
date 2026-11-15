@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
 

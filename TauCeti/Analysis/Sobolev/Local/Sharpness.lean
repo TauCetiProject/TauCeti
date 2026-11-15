@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
 

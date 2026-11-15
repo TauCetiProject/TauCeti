@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.IteratedGradient.Measurable
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Classical

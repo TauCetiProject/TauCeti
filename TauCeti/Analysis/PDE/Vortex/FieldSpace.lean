@@ -13,7 +13,7 @@ public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 public import TauCeti.Analysis.Distribution.Sobolev
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 

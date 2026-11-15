@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.InnerProductSpace.NormPow.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
