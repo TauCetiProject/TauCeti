@@ -83,14 +83,8 @@ private local instance :
 private theorem unitScale_symm_torsionProd (ζ : Units.torsion K)
     (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
     unitScale ((unitsMulEquivTorsionProdMultiplicative K).symm (ζ, g)) y = g • y := by
-  have hpair : (ζ, g) = (ζ, 1) * (1, g) := by simp
-  have hmul : (unitsMulEquivTorsionProdMultiplicative K).symm (ζ, g) =
-      (ζ : (𝓞 K)ˣ) * freeUnitHom g := by
-    rw [hpair, map_mul]
-    congr 1
-    rw [unitsMulEquivTorsionProdMultiplicative_symm_apply]
-    simp
-  rw [hmul, ← unitScale_unitScale, unitScale_eq_self_of_mem_torsion ζ.2, freeUnits_smul_def]
+  rw [unitsMulEquivTorsionProdMultiplicative_symm_apply, ← freeUnitHom_apply, ← unitScale_unitScale,
+    unitScale_eq_self_of_mem_torsion ζ.2, freeUnits_smul_def]
 
 /-- The cone over a unit fundamental domain is a fundamental domain for the free part of `(𝓞 K)ˣ`
 with respect to `archHaar K`. -/
@@ -183,6 +177,22 @@ theorem torsionOrder_smul_integral_archHaar_eq_tsum_unitCone {E : Type*} [Normed
       ∑' u : (𝓞 K)ˣ, ∫ y in unitCone D, f (unitScale u y) ∂archHaar K :=
   (hasSum_setIntegral_unitCone hD hf).tsum_eq.symm
 
+open scoped Classical in
+private theorem indicator_posOrthant_smul_eq {M : Type*} [Zero M] {f : realSpace K → M}
+    (hf : ∀ u : (𝓞 K)ˣ, ∀ ⦃y⦄, (∀ w, 0 < y w) → f (unitScale u y) = f y)
+    (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
+    {y : realSpace K | ∀ w, 0 < y w}.indicator f (g • y) =
+      {y : realSpace K | ∀ w, 0 < y w}.indicator f y := by
+  rw [freeUnits_smul_def]
+  by_cases hy : y ∈ {y : realSpace K | ∀ w, 0 < y w}
+  · rw [indicator_of_mem (fun w ↦ unitScale_pos (hy w) _), indicator_of_mem hy]
+    exact hf _ hy
+  · have huy : unitScale (freeUnitHom g) y ∉ {y : realSpace K | ∀ w, 0 < y w} := fun h ↦
+      hy fun w ↦ by
+        have hpos := unitScale_pos (h w) (freeUnitHom g)⁻¹
+        rwa [unitScale_unitScale, inv_mul_cancel, unitScale_one] at hpos
+    rw [indicator_of_notMem huy, indicator_of_notMem hy]
+
 /-- Lebesgue integrals over `unitCone D` of functions invariant under `unitScale` on the positive
 orthant are independent of the unit fundamental domain `D`. -/
 theorem setLIntegral_unitCone_eq {D₁ D₂ : Set (realSpace K)}
@@ -191,22 +201,13 @@ theorem setLIntegral_unitCone_eq {D₁ D₂ : Set (realSpace K)}
     ∫⁻ y in unitCone D₁, f y ∂archHaar K = ∫⁻ y in unitCone D₂, f y ∂archHaar K := by
   classical
   let P : Set (realSpace K) := {y | ∀ w, 0 < y w}
-  have hinv (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
-      P.indicator f (g • y) = P.indicator f y := by
-    rw [freeUnits_smul_def]
-    by_cases hy : y ∈ P
-    · rw [indicator_of_mem (fun w ↦ unitScale_pos (hy w) _), indicator_of_mem hy]
-      exact hf _ hy
-    · have huy : unitScale (freeUnitHom g) y ∉ P := fun h ↦
-        hy fun w ↦ by simpa [unitScale_unitScale] using unitScale_pos (h w) (freeUnitHom g)⁻¹
-      rw [indicator_of_notMem huy, indicator_of_notMem hy]
   calc ∫⁻ y in unitCone D₁, f y ∂archHaar K
       = ∫⁻ y in unitCone D₁, P.indicator f y ∂archHaar K :=
         setLIntegral_congr_fun (measurableSet_unitCone hD₁.measurableSet) fun y hy ↦
           (indicator_of_mem (mem_unitCone.mp hy).1 _).symm
     _ = ∫⁻ y in unitCone D₂, P.indicator f y ∂archHaar K :=
         (isFundamentalDomain_unitCone hD₁).setLIntegral_eq (isFundamentalDomain_unitCone hD₂)
-          (P.indicator f) hinv
+          (P.indicator f) (indicator_posOrthant_smul_eq hf)
     _ = ∫⁻ y in unitCone D₂, f y ∂archHaar K :=
         setLIntegral_congr_fun (measurableSet_unitCone hD₂.measurableSet) fun y hy ↦
           indicator_of_mem (mem_unitCone.mp hy).1 _
@@ -220,21 +221,13 @@ theorem setIntegral_unitCone_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace 
     ∫ y in unitCone D₁, f y ∂archHaar K = ∫ y in unitCone D₂, f y ∂archHaar K := by
   classical
   let P : Set (realSpace K) := {y | ∀ w, 0 < y w}
-  have hinv (g : Multiplicative (Fin (Units.rank K) → ℤ)) (y : realSpace K) :
-      P.indicator f (g • y) = P.indicator f y := by
-    rw [freeUnits_smul_def]
-    by_cases hy : y ∈ P
-    · rw [indicator_of_mem (fun w ↦ unitScale_pos (hy w) _), indicator_of_mem hy]
-      exact hf _ hy
-    · have huy : unitScale (freeUnitHom g) y ∉ P := fun h ↦
-        hy fun w ↦ by simpa [unitScale_unitScale] using unitScale_pos (h w) (freeUnitHom g)⁻¹
-      rw [indicator_of_notMem huy, indicator_of_notMem hy]
   calc ∫ y in unitCone D₁, f y ∂archHaar K
       = ∫ y in unitCone D₁, P.indicator f y ∂archHaar K :=
         setIntegral_congr_fun (measurableSet_unitCone hD₁.measurableSet) fun y hy ↦
           (indicator_of_mem (mem_unitCone.mp hy).1 _).symm
     _ = ∫ y in unitCone D₂, P.indicator f y ∂archHaar K :=
-        (isFundamentalDomain_unitCone hD₁).setIntegral_eq (isFundamentalDomain_unitCone hD₂) hinv
+        (isFundamentalDomain_unitCone hD₁).setIntegral_eq (isFundamentalDomain_unitCone hD₂)
+          (indicator_posOrthant_smul_eq hf)
     _ = ∫ y in unitCone D₂, f y ∂archHaar K :=
         setIntegral_congr_fun (measurableSet_unitCone hD₂.measurableSet) fun y hy ↦
           indicator_of_mem (mem_unitCone.mp hy).1 _

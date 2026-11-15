@@ -245,9 +245,9 @@ theorem summable_integral_unitCone {D : Set (realSpace K)} (hD : IsUnitFundament
     refine (summable_setIntegral_norm_unitCone hD
       (integrable_archGaussian_mul_archNorm_cpow hx hσ0)).congr fun u ↦ ?_
     refine setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y hy ↦ ?_
-    rw [coe_idealLatticeNeZeroEquiv, archGaussian_unit_smul, ← archNorm_unitScale u y]
-    simpa only [mul_comm (archGaussian (unitScale u y) _), ofReal_re] using
-      norm_archNorm_cpow_mul_archGaussian (fun w ↦ unitScale_pos ((mem_unitCone.mp hy).1 w) u) _ σ
+    rw [coe_idealLatticeNeZeroEquiv, archGaussian_unit_smul, ← archNorm_unitScale u y, norm_mul,
+      norm_archNorm_cpow (fun w ↦ unitScale_pos ((mem_unitCone.mp hy).1 w) u), div_ofNat_re,
+      ofReal_re]
   · refine (((TauCeti.summable_absNorm_rpow_ideal_iff (K := K)).mpr hσ).subtype _
       |>.mul_left _).congr fun 𝔟 ↦ (tsum_unit_setIntegral_norm_archGaussian hD I 𝔟 hσ_pos).symm
 
@@ -269,8 +269,8 @@ private theorem summable_setIntegral_norm_archNorm_cpow_mul_archGaussian {D : Se
       ∫ y in unitCone D, ‖(archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)‖
         ∂archHaar K :=
   (summable_integral_unitCone hD I hs).congr fun _ ↦
-    setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun _ hy ↦
-      (norm_archNorm_cpow_mul_archGaussian (mem_unitCone.mp hy).1 _ s).symm
+    setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun _ hy ↦ by
+      rw [norm_mul, norm_archNorm_cpow (mem_unitCone.mp hy).1, div_ofNat_re, mul_comm]
 
 /-- **Integrability of the norm-weighted reduced theta series on `unitCone D`** for `Re s > 1`. -/
 theorem integrableOn_archNorm_cpow_mul_latticeTheta_sub_one {D : Set (realSpace K)}
@@ -568,19 +568,8 @@ theorem completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one (I : (FractionalId
         Gammaℂ s ^ nrComplexPlaces K *
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K)
           (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹))) s := by
-  obtain ⟨J, hJ⟩ := ClassGroup.mk0_surjective (ClassGroup.mk K I)
-  have hJc : idealClass (Modulus.one K) (integralIdealsPrimeToOneEquiv.symm J) =
-      (oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)⁻¹ :=
-    oneEquivClassGroup.injective (by simp [hJ])
-  rw [completedPartialZeta_eq_tsum I hs, LSeries_rayClassCoeff_one_eq_tsum J hJc hs]
-  congr 1
-  have hiff (𝔟 : (Ideal (𝓞 K))⁰) :
-      ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹ ↔
-        IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
-    rw [← Submonoid.coe_mul, ← ClassGroup.mk0_eq_one_iff (𝔟 * J).2, Subtype.coe_eta, map_mul, hJ,
-      mul_eq_one_iff_eq_inv]
-  exact (Equiv.subtypeEquivRight hiff).tsum_eq
-    fun 𝔟 ↦ (Ideal.absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)
+  rw [completedPartialZeta_eq_tsum I hs,
+    LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup _ hs, MulEquiv.apply_symm_apply]
 
 open scoped Classical in
 /-- **Cone-integral representation on `Re s > 1`**, Neukirch VII (5.5): over any unit fundamental
@@ -628,13 +617,12 @@ theorem analyticAt_completedPartialZeta (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) 
     (h0 : s ≠ 0) (h1 : s ≠ 1) :
     AnalyticAt ℂ (completedPartialZeta I) s := by
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
-  have hopen : IsOpen ({0, 1}ᶜ : Set ℂ) :=
-    ((Set.finite_singleton (1 : ℂ)).insert 0).isClosed.isOpen_compl
-  have hs : s ∈ ({0, 1}ᶜ : Set ℂ) := by simp [h0, h1]
-  refine (analyticAt_mellinKernelFEPair_Λ_div_two hD I h0 h1).congr ?_
-  filter_upwards [hopen.mem_nhds hs] with z hz
-  simp only [mem_compl_iff, mem_insert_iff, mem_singleton_iff, not_or] at hz
-  exact (completedPartialZeta_eq_mellinKernelFEPair_Λ hD I hz.1 hz.2).symm
+  rw [completedPartialZeta_eq_toMeromorphicNFOn hD I,
+    ← (meromorphicNFOn_toMeromorphicNFOn _ univ
+      (mem_univ s)).meromorphicOrderAt_nonneg_iff_analyticAt,
+    meromorphicOrderAt_toMeromorphicNFOn
+      (meromorphic_mellinKernelFEPair_Λ_div_two hD I).meromorphicOn (mem_univ s)]
+  exact (analyticAt_mellinKernelFEPair_Λ_div_two hD I h0 h1).meromorphicOrderAt_nonneg
 
 /-- **Residue of `completedPartialZeta I` at `s = 1`**, Neukirch VII (5.9):
 `lim_{s → 1} (s - 1) Z(I, s) = 2 a₀ = 2 ^ r R / w`. -/
@@ -711,23 +699,19 @@ theorem analyticAt_completedPartialZeta_iff (I : (FractionalIdeal (𝓞 K)⁰ K)
 pole `s = 0`. -/
 @[simp]
 theorem completedPartialZeta_zero (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    completedPartialZeta I 0 = 0 := by
-  have hnf := meromorphicNFOn_completedPartialZeta I (mem_univ (0 : ℂ))
-  rw [meromorphicNFAt_iff_analyticAt_or] at hnf
-  rcases hnf with han | ⟨_, _, h0⟩
-  · exact absurd han (by simp)
-  · exact h0
+    completedPartialZeta I 0 = 0 :=
+  not_not.mp <| (meromorphicNFOn_completedPartialZeta I (mem_univ 0))
+    |>.meromorphicOrderAt_eq_zero_iff.not.mp
+    (by simp [meromorphicOrderAt_completedPartialZeta_zero])
 
 /-- As a meromorphic normal form, `completedPartialZeta I` takes the canonical value `0` at its
 pole `s = 1`. -/
 @[simp]
 theorem completedPartialZeta_one (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    completedPartialZeta I 1 = 0 := by
-  have hnf := meromorphicNFOn_completedPartialZeta I (mem_univ (1 : ℂ))
-  rw [meromorphicNFAt_iff_analyticAt_or] at hnf
-  rcases hnf with han | ⟨_, _, h1⟩
-  · exact absurd han (by simp)
-  · exact h1
+    completedPartialZeta I 1 = 0 :=
+  not_not.mp <| (meromorphicNFOn_completedPartialZeta I (mem_univ 1))
+    |>.meromorphicOrderAt_eq_zero_iff.not.mp
+    (by simp [meromorphicOrderAt_completedPartialZeta_one])
 
 /-! ### Functional equation -/
 

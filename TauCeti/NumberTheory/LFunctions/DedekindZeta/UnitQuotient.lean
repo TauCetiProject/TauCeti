@@ -52,8 +52,9 @@ parameter, therefore cannot produce a partial zeta function once the unit rank i
   nonzero integral ideals `𝔟` of class `[I]⁻¹`.
 * `TauCeti.LFunctions.hasSum_norm_cpow_idealSet`: the integral-ideal specialization over
   `idealSet K J`.
-* `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum`: the Dirichlet series of an ideal class
-  is that sum over ideals.
+* `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup` and
+  `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum`: the Dirichlet series of a trivial-modulus
+  ray class as a sum over ideals in its class.
 * `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum_idealSet`: Neukirch's (5.3)–(5.4), the
   Dirichlet series of the class of `J⁻¹` as a sum over the points of `J` in the fundamental cone.
 
@@ -139,20 +140,18 @@ theorem tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone
 
 /-! ### The ideals of the class of `J⁻¹` -/
 
-private theorem mk0_eq_inv_mk_mk0_iff (J 𝔟 : (Ideal (𝓞 K))⁰) :
-    ClassGroup.mk0 𝔟 = (ClassGroup.mk K (FractionalIdeal.mk0 K J))⁻¹ ↔
+private theorem mk0_eq_inv_mk0_iff (J 𝔟 : (Ideal (𝓞 K))⁰) :
+    ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹ ↔
       IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
-  rw [ClassGroup.mk_mk0, eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2,
-    Submonoid.coe_mul]
+  rw [eq_inv_iff_mul_eq_one, ← map_mul, ClassGroup.mk0_eq_one_iff (𝔟 * J).2, Submonoid.coe_mul]
 
-private theorem tsum_mk0_eq_inv_mk_mk0 (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
-    (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ //
-        ClassGroup.mk0 𝔟 = (ClassGroup.mk K (FractionalIdeal.mk0 K J))⁻¹},
+private theorem tsum_mk0_eq_inv_mk0 (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
+    (∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk0 J)⁻¹},
         (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
       ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
-        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  rw [← (Equiv.subtypeEquivRight (mk0_eq_inv_mk_mk0_iff J)).tsum_eq]
-  exact tsum_congr fun _ ↦ by simp
+        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) :=
+  (Equiv.subtypeEquivRight (mk0_eq_inv_mk0_iff J)).tsum_eq
+    fun 𝔟 ↦ (absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s)
 
 /-- **Multiplying by `J` matches the ideals of the class of `J⁻¹` with the principal multiples of
 `J`.** The sum of `N(I)^(-s)` over the principal ideals `I` divisible by `J` is `N(J)^(-s)` times
@@ -190,10 +189,40 @@ theorem hasSum_norm_cpow_idealSet (J : (Ideal (𝓞 K))⁰) {s : ℂ} (hs : 1 < 
   have h := (idealSetEquivIdealLatticeFundamentalCone K J).hasSum_iff.mpr
     (hasSum_norm_cpow_idealLattice_fundamentalCone (FractionalIdeal.mk0 K J) hs)
   rw [FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast,
-    tsum_mk0_eq_inv_mk_mk0 J s] at h
+    ClassGroup.mk_mk0, tsum_mk0_eq_inv_mk0 J s] at h
   exact h.congr_fun fun a ↦ by simp
 
 /-! ### The Dirichlet series of an ideal class -/
+
+/-- **The Dirichlet series of a trivial-modulus ray class as a sum over its ideal class.** For
+`Re s > 1`, the Dirichlet series of a class `c` of the trivial modulus is the sum of `N(𝔟)^(-s)`
+over the nonzero integral ideals `𝔟` with `ClassGroup.mk0 𝔟 = oneEquivClassGroup c`. -/
+theorem LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup (c : RayClassGroup (Modulus.one K))
+    {s : ℂ} (hs : 1 < s.re) :
+    LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s =
+      ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = oneEquivClassGroup c},
+        (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
+  classical
+  rw [LSeries_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re
+    (norm_rayClassCoeff_le_one (Modulus.one K) c) hs)]
+  refine Eq.symm ((tsum_subtype {𝔟 : (Ideal (𝓞 K))⁰ |
+    ClassGroup.mk0 𝔟 = oneEquivClassGroup c}
+      fun 𝔟 ↦ (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)).trans (tsum_congr fun 𝔟 ↦ ?_))
+  have hcop : (Modulus.one K).IsCoprimeTo (𝔟 : Ideal (𝓞 K)) :=
+    Modulus.mem_integralIdealsPrimeTo.mp <| by
+      rw [← integralIdealsPrimeToOneEquiv_symm_apply_coe 𝔟]
+      exact (integralIdealsPrimeToOneEquiv.symm 𝔟).2
+  have hclass : idealClass (Modulus.one K) ⟨𝔟, Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩ = c ↔
+      ClassGroup.mk0 𝔟 = oneEquivClassGroup c := by
+    rw [← oneEquivClassGroup.apply_eq_iff_eq, oneEquivClassGroup_idealClass]
+    have heq : (⟨𝔟, Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩ :
+        integralIdealsPrimeTo (Modulus.one K)) = integralIdealsPrimeToOneEquiv.symm 𝔟 :=
+      Subtype.ext (integralIdealsPrimeToOneEquiv_symm_apply_coe 𝔟).symm
+    rw [heq, Equiv.apply_symm_apply]
+  rw [idealTerm_def, rayClassCoeff_apply_of_isCoprimeTo c hcop, Set.indicator_apply]
+  by_cases h : ClassGroup.mk0 𝔟 = oneEquivClassGroup c
+  · simp [hclass.mpr h, h, Complex.cpow_neg]
+  · simp [mt hclass.mp h, h]
 
 /-- **The Dirichlet series of an ideal class as a sum over ideals.** For `Re s > 1`, the
 Dirichlet series of the class `c` of the trivial modulus, the ideal class of `J⁻¹`, is the sum of
@@ -204,25 +233,9 @@ theorem LSeries_rayClassCoeff_one_eq_tsum {c : RayClassGroup (Modulus.one K)}
     LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s =
       ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
         (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  classical
-  rw [LSeries_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re
-    (norm_rayClassCoeff_le_one (Modulus.one K) c) hs)]
-  refine Eq.symm ((tsum_subtype {𝔟 : (Ideal (𝓞 K))⁰ |
-    IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))}
-      fun 𝔟 ↦ (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)).trans (tsum_congr fun 𝔟 ↦ ?_))
-  -- At the trivial modulus every nonzero ideal is prime to the modulus, and `𝔟` has class `c`
-  -- exactly when `𝔟 J` has trivial class, that is, is principal.
-  have hcop : (Modulus.one K).IsCoprimeTo (𝔟 : Ideal (𝓞 K)) :=
-    Modulus.mem_integralIdealsPrimeTo.mp <| by
-      simpa using (integralIdealsPrimeToOneEquiv.symm 𝔟).2
-  have hclass : idealClass (Modulus.one K) ⟨𝔟, Modulus.mem_integralIdealsPrimeTo.mpr hcop⟩ = c ↔
-      IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K))) := by
-    rw [← mul_inv_eq_one, ← hJ, ← idealClass_mul, idealClass_one_eq_one_iff_isPrincipal,
-      Submonoid.coe_mul, integralIdealsPrimeToOneEquiv_symm_apply_coe]
-  rw [idealTerm_def, rayClassCoeff_apply_of_isCoprimeTo c hcop, Set.indicator_apply]
-  by_cases h : IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))
-  · simp [hclass.mpr h, h, Complex.cpow_neg]
-  · simp [mt hclass.mp h, h]
+  have hc : oneEquivClassGroup c = (ClassGroup.mk0 J)⁻¹ := by
+    rw [← inv_inv c, map_inv, ← hJ, oneEquivClassGroup_idealClass, Equiv.apply_symm_apply]
+  rw [LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup c hs, hc, tsum_mk0_eq_inv_mk0 J s]
 
 /-- **The Dirichlet series of an ideal class as a sum over the fundamental cone**, Neukirch (5.3)
 and (5.4). For a nonzero integral ideal `J` whose class is the inverse of the class `c` of the
@@ -238,7 +251,8 @@ theorem LSeries_rayClassCoeff_one_eq_tsum_idealSet {c : RayClassGroup (Modulus.o
     LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s =
       (absNorm (J : Ideal (𝓞 K)) : ℂ) ^ s / torsionOrder K *
         ∑' a : idealSet K J, ((mixedEmbedding.norm (a : mixedSpace K) : ℝ) : ℂ) ^ (-s) := by
-  rw [LSeries_rayClassCoeff_one_eq_tsum J hJ hs, ← tsum_mk0_eq_inv_mk_mk0 J s,
+  rw [LSeries_rayClassCoeff_one_eq_tsum J hJ hs, ← tsum_mk0_eq_inv_mk0 J s,
+    ← ClassGroup.mk_mk0 K J,
     tsum_absNorm_cpow_eq_mul_tsum_idealLattice_fundamentalCone (FractionalIdeal.mk0 K J) hs,
     FractionalIdeal.coe_mk0, FractionalIdeal.coeIdeal_absNorm, Rat.cast_natCast,
     ← (idealSetEquivIdealLatticeFundamentalCone K J).tsum_eq]
