@@ -148,12 +148,13 @@ section TensorProduct
 
 open scoped TensorProduct
 
-variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B]
 
-/-- The differential `d ⊗ 1 + 1 ⊗ d'` on the tensor product `A ⊗[R] B` of two algebras with
-differentials `d` and `d'`, with no Koszul sign. It satisfies the Leibniz rule
-(`TauCeti.ungradedTensorDifferential_mul`), and in characteristic two it is an ungraded
-differential (`TauCeti.IsUngradedDGAlgebra.tensorProduct`). -/
+/-- The map `d ⊗ 1 + 1 ⊗ d'` on the tensor product `A ⊗[R] B` of two modules with linear
+endomorphisms `d` and `d'`, with no Koszul sign. For algebras with differentials it satisfies the
+Leibniz rule (`TauCeti.ungradedTensorDifferential_mul`), and in characteristic two it is an
+ungraded differential (`TauCeti.IsUngradedDGAlgebra.tensorProduct`). -/
 noncomputable def ungradedTensorDifferential (d : A →ₗ[R] A) (d' : B →ₗ[R] B) :
     A ⊗[R] B →ₗ[R] A ⊗[R] B :=
   TensorProduct.map d LinearMap.id + TensorProduct.map LinearMap.id d'
@@ -162,6 +163,14 @@ noncomputable def ungradedTensorDifferential (d : A →ₗ[R] A) (d' : B →ₗ[
 theorem ungradedTensorDifferential_tmul (d : A →ₗ[R] A) (d' : B →ₗ[R] B) (a : A) (b : B) :
     ungradedTensorDifferential d d' (a ⊗ₜ b) = d a ⊗ₜ b + a ⊗ₜ d' b := by
   simp [ungradedTensorDifferential]
+
+end TensorProduct
+
+section TensorProductAlgebra
+
+open scoped TensorProduct
+
+variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
 
 /-- **The Leibniz rule on a tensor product.** If `d` and `d'` satisfy the ungraded Leibniz rule,
 then so does `d ⊗ 1 + 1 ⊗ d'`; no hypothesis on the characteristic is needed. -/
@@ -199,7 +208,7 @@ theorem IsUngradedDGAlgebra.tensorProduct [CharP R 2] {d : A →ₗ[R] A} {d' : 
         TensorProduct.zero_tmul, TensorProduct.tmul_zero, zero_add, add_zero]
       exact add_self_eq_zero_of_charTwo R _
 
-end TensorProduct
+end TensorProductAlgebra
 
 end TauCeti
 
@@ -207,7 +216,8 @@ namespace Matrix
 
 open scoped Kronecker TensorProduct
 
-variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B]
 
 /-- **The Leibniz rule for Kronecker products.** The entrywise differential `d ⊗ 1 + 1 ⊗ d'` of
 the Kronecker product `F ⊗ₖₜ G` of matrices over `A` and over `B` is `d F ⊗ₖₜ G + F ⊗ₖₜ d' G`. -/
