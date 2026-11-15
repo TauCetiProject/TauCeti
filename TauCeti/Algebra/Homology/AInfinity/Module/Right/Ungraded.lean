@@ -90,6 +90,9 @@ Two constructions are developed for modules, together with strict units.
   two the homomorphisms of `A∞` modules are the families with `∂f = 0`, and `∂h = f + g` is a
   homotopy between `f` and `g`; the identity is a homomorphism
   (`TauCeti.UngradedAInfinityRightModule.morphismDifferential_ungradedFamilyId`). The differential
+  is linear (`TauCeti.UngradedAInfinityRightModule.morphismDifferential_add` and
+  `TauCeti.UngradedAInfinityRightModule.morphismDifferential_smul`), so homomorphisms are closed
+  under linear combinations and homotopies add. The differential
   commutes with matrix families
   (`TauCeti.UngradedAInfinityRightModule.morphismDifferential_ungradedMatrixFamily`), and along a
   Maurer–Cartan element `β` the twists satisfy `∂'^β ∘ f^β + f^β ∘ ∂^β = (∂f)^β`
@@ -1308,6 +1311,36 @@ theorem morphismDifferential_apply
     · simp [Function.update_of_ne ht]
   cases n <;>
     simp [morphismDifferential, ungradedStasheffDiff, ungradedStasheffMul_succ, hupd]
+
+/-- The differential of the zero family is zero. -/
+@[simp]
+theorem morphismDifferential_zero : Mm.morphismDifferential Mm' 0 = 0 := by
+  funext n
+  refine MultilinearMap.ext fun a => LinearMap.ext fun m => ?_
+  cases n <;> simp [morphismDifferential_apply, ungradedFamilyComp_apply, ungradedStasheffDiff,
+    ungradedStasheffMul_succ]
+
+/-- **The differential of morphisms is additive**, so homomorphisms are closed under sums and
+homotopies add. -/
+@[simp]
+theorem morphismDifferential_add
+    (f g : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) :
+    Mm.morphismDifferential Mm' (f + g) =
+      Mm.morphismDifferential Mm' f + Mm.morphismDifferential Mm' g := by
+  funext n
+  refine MultilinearMap.ext fun a => LinearMap.ext fun m => ?_
+  cases n <;> simp [morphismDifferential_apply, ungradedFamilyComp_apply, ungradedStasheffDiff,
+    ungradedStasheffMul_succ, sum_add_distrib] <;> abel
+
+/-- The differential of morphisms commutes with scalar multiplication. -/
+@[simp]
+theorem morphismDifferential_smul (c : R)
+    (f : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) :
+    Mm.morphismDifferential Mm' (c • f) = c • Mm.morphismDifferential Mm' f := by
+  funext n
+  refine MultilinearMap.ext fun a => LinearMap.ext fun m => ?_
+  cases n <;> simp [morphismDifferential_apply, ungradedFamilyComp_apply, ungradedStasheffDiff,
+    ungradedStasheffMul_succ, smul_add, smul_sum]
 
 /-- **The identity is a homomorphism**, over a ring of characteristic two. -/
 @[simp]
