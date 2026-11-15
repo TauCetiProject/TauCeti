@@ -85,8 +85,9 @@ theorem C_mem_jetStage {r : ℕ} (a : A) : (C a : JetPolynomial ι α A) ∈ jet
 
 /-- The jet variable `u^a_I` lies in every stage `r ≥ |I|`. -/
 theorem X_mem_jetStage {r : ℕ} {a : α} {I : ι → ℕ} (h : ∑ μ, I μ ≤ r) :
-    (X (a, I) : JetPolynomial ι α A) ∈ jetStage ι α A r :=
-  Algebra.subset_adjoin ⟨(a, I), h, rfl⟩
+    (X (a, I) : JetPolynomial ι α A) ∈ jetStage ι α A r := by
+  rw [jetStage_def, supported_eq_adjoin_X]
+  exact Algebra.subset_adjoin ⟨(a, I), h, rfl⟩
 
 /-- The jet variable `u^a_I` lies in stage `r` if and only if its order is at most `r`. -/
 @[simp, grind =]
