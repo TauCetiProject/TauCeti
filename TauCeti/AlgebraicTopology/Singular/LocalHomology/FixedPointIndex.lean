@@ -266,7 +266,7 @@ theorem fixedPointIndex_eq_of_homotopy {f₀ f₁ : C(U, E)} (H : f₀.Homotopy 
     ext p
     exact sub_eq_zero.trans eq_comm
   rw [fixedPointIndex_eq_localDegree o rfl, fixedPointIndex_eq_localDegree o rfl]
-  exact localDegree_eq_of_homotopy _ _ _ rfl G (hG ▸ hH)
+  exact localDegree_eq_of_homotopy_of_isCompact _ _ _ rfl G (hG ▸ hH)
 
 /-- The fixed-point index of the restriction of `f` to an open subset `V ⊆ U`, as the local degree
 of `x ↦ x - f x` composed with the inclusion, for the orientation of `U` pulled back to

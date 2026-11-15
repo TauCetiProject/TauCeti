@@ -53,7 +53,7 @@ theorem hasCentralRadical_lieAlgebra (hH : reductiveCommHopfAlgProperty k H) :
     LieAlgebra.HasCentralRadical k
       (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let _ : ConnectedSpace (PrimeSpectrum H) :=
-    hH.geometricallyConnected.connectedSpace k H.obj
+    hH.geometricallyConnected.connectedSpace
   apply LieAlgebra.hasCentralRadical_of_radical_le
   rw [← FiniteTypeCommHopfAlgCat.lieIdeal_solvableRadicalDefiningIdeal_eq_radical H]
   intro d hd
