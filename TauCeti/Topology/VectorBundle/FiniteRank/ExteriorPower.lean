@@ -21,8 +21,7 @@ continuous coordinate functor `TauCeti.CoordinateFunctor.exteriorPower 𝕜 j`, 
 
 acting on bundle maps by taking compound matrices of their fibre maps. It sends trivial cores to
 trivial cores (`TauCeti.CoordinateFunctor.mapCoreTrivialIso`) and commutes strictly with
-pullback (`pullback_exteriorPower_obj`, `pullbackMap_exteriorPower_map`,
-`exteriorPower_comp_pullbackFunctor`).
+pullback (`TauCeti.CoordinateFunctor.functor_comp_pullbackFunctor`).
 
 In low degrees the exterior powers are identified explicitly:
 
@@ -265,22 +264,6 @@ transitions of the core. -/
 section Pullback
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- Pulling back commutes strictly with exterior powers of cores. -/
-@[simp] theorem pullback_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    ((exteriorPower 𝕜 Y j).obj A).pullback f = (exteriorPower 𝕜 X j).obj (A.pullback f) := (rfl)
-
-/-- Pulling back commutes strictly with exterior powers of bundle maps. -/
-@[simp] theorem pullbackMap_exteriorPower_map (j : ℕ) {A D : FiniteRankBundleCore 𝕜 Y}
-    (a : A ⟶ D) (f : C(X, Y)) :
-    pullbackMap ((exteriorPower 𝕜 Y j).map a) f =
-      (exteriorPower 𝕜 X j).map (pullbackMap a f) :=
-  ((CoordinateFunctor.exteriorPower 𝕜 j).mapHom_pullbackMap a f).symm
-
-/-- Exterior powers commute strictly with pullback as functors. -/
-theorem exteriorPower_comp_pullbackFunctor (j : ℕ) (f : C(X, Y)) :
-    exteriorPower 𝕜 Y j ⋙ pullbackFunctor f = pullbackFunctor f ⋙ exteriorPower 𝕜 X j :=
-  (CoordinateFunctor.exteriorPower 𝕜 j).functor_comp_pullbackFunctor f
 
 /-- Pulling back commutes strictly with taking the determinant line bundle. -/
 @[simp] theorem pullback_det (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :

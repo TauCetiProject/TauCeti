@@ -213,18 +213,9 @@ section Pullback
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-/-- Pulling back commutes strictly with the monoidal tensor product of cores. -/
-@[simp] theorem pullback_tensorObj (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    (A ⊗ D).pullback f = A.pullback f ⊗ D.pullback f := (rfl)
-
 /-- Pulling back the monoidal unit gives the monoidal unit over the new base. -/
 @[simp] theorem pullback_tensorUnit (f : C(X, Y)) :
     (𝟙_ (FiniteRankBundleCore 𝕜 Y)).pullback f = 𝟙_ (FiniteRankBundleCore 𝕜 X) := (rfl)
-
-@[simp] theorem pullbackMap_tensorHom_monoidal {A₁ A₂ D₁ D₂ : FiniteRankBundleCore 𝕜 Y}
-    (a : A₁ ⟶ A₂) (b : D₁ ⟶ D₂) (f : C(X, Y)) :
-    pullbackMap (a ⊗ₘ b) f = pullbackMap a f ⊗ₘ pullbackMap b f :=
-  pullbackMap_tensorHom a b f
 
 @[simp] theorem pullbackMap_whiskerLeft (A : FiniteRankBundleCore 𝕜 Y)
     {D₁ D₂ : FiniteRankBundleCore 𝕜 Y} (b : D₁ ⟶ D₂) (f : C(X, Y)) :

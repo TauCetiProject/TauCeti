@@ -24,10 +24,8 @@ from continuous coordinate functors (`TauCeti.CoordinateFunctor.realify`,
 * `FiniteRankBundleCore.complexify B : FiniteRankBundleCore ℝ B ⥤ FiniteRankBundleCore ℂ B`,
 
 acting on bundle maps by realifying or complexifying their fibre maps. Both functors are additive,
-hence preserve Whitney sums, send trivial cores to trivial cores
-(`TauCeti.CoordinateFunctor.mapCoreTrivialIso`), and commute strictly with pullback
-(`pullback_realify_obj`, `pullbackMap_realify_map`, `realify_comp_pullbackFunctor`,
-`pullback_complexify_obj`, `pullbackMap_complexify_map`, `complexify_comp_pullbackFunctor`).
+hence preserve Whitney sums, and they send trivial cores to trivial cores
+(`TauCeti.CoordinateFunctor.mapCoreTrivialIso`).
 
 `FiniteRankBundleCore.realifyComplexifyIso` identifies the realification of the complexification
 of a real core `A` with the Whitney sum `A ⊕ A`, by the identity on coordinates; it is natural in
@@ -196,42 +194,6 @@ theorem realifyComplexifyIso_naturality_snd {A D : FiniteRankBundleCore ℝ B} (
   -- At each coordinate vector, both sides are the second block of the doubled transition.
   exact ContinuousLinearMap.ext fun v => congrArg Prod.snd
     (ContinuousLinearMap.splitCoords_realifyCoords_complexifyCoords (f.fiberMap x) v)
-
-section Pullback
-
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- Pulling back commutes strictly with realification of complex cores. -/
-@[simp] theorem pullback_realify_obj (A : FiniteRankBundleCore ℂ Y) (f : C(X, Y)) :
-    ((realify Y).obj A).pullback f = (realify X).obj (A.pullback f) := (rfl)
-
-/-- Pulling back commutes strictly with realification of complex bundle maps. -/
-@[simp] theorem pullbackMap_realify_map {A D : FiniteRankBundleCore ℂ Y} (a : A ⟶ D)
-    (f : C(X, Y)) :
-    pullbackMap ((realify Y).map a) f = (realify X).map (pullbackMap a f) :=
-  (CoordinateFunctor.realify.mapHom_pullbackMap a f).symm
-
-/-- Realification commutes strictly with pullback as functors. -/
-theorem realify_comp_pullbackFunctor (f : C(X, Y)) :
-    realify Y ⋙ pullbackFunctor f = pullbackFunctor f ⋙ realify X :=
-  CoordinateFunctor.realify.functor_comp_pullbackFunctor f
-
-/-- Pulling back commutes strictly with complexification of real cores. -/
-@[simp] theorem pullback_complexify_obj (A : FiniteRankBundleCore ℝ Y) (f : C(X, Y)) :
-    ((complexify Y).obj A).pullback f = (complexify X).obj (A.pullback f) := (rfl)
-
-/-- Pulling back commutes strictly with complexification of real bundle maps. -/
-@[simp] theorem pullbackMap_complexify_map {A D : FiniteRankBundleCore ℝ Y} (a : A ⟶ D)
-    (f : C(X, Y)) :
-    pullbackMap ((complexify Y).map a) f = (complexify X).map (pullbackMap a f) :=
-  (CoordinateFunctor.complexify.mapHom_pullbackMap a f).symm
-
-/-- Complexification commutes strictly with pullback as functors. -/
-theorem complexify_comp_pullbackFunctor (f : C(X, Y)) :
-    complexify Y ⋙ pullbackFunctor f = pullbackFunctor f ⋙ complexify X :=
-  CoordinateFunctor.complexify.functor_comp_pullbackFunctor f
-
-end Pullback
 
 end FiniteRankBundleCore
 end TauCeti
