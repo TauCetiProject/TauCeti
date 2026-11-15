@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.StrandCount
 
 /-!
 # The occupancy summands of the strands algebra and of the matched subalgebra
@@ -27,8 +28,15 @@ homology for a connected boundary. The idempotent `I(s)` of a set `s` of pairs h
 and the unit of the summand with `k` strands is the sum of the `I(s)` over the sets of `k` pairs
 (`TauCeti.StrandsAlgebra.matchedSummandOne`). With this unit each summand is an `R`-algebra, and
 over a ring of characteristic two the restricted differential makes it an ungraded differential
-algebra. As an `R`-algebra the matched subalgebra is the product of its summands, compatibly with
-the differentials.
+algebra. On the summands with at most one strand the differential vanishes. As an `R`-algebra the
+matched subalgebra is the product of its summands, compatibly with the differentials.
+
+The summand with one strand contains the idempotents `I({p})` of the matched pairs `p`
+(`TauCeti.StrandsAlgebra.oneStrandIdem`), which are orthogonal and add up to its unit, and the
+single strands of the chords `i < j` (`TauCeti.StrandsAlgebra.oneStrandChord`). A chord starts at
+the idempotent of the pair of `i` and ends at that of the pair of `j`, and two chords multiply to
+their concatenation when the first ends where the second starts, and to zero otherwise. For the
+genus-one pointed matched circle this summand is the torus algebra.
 
 ## Main definitions
 
@@ -41,6 +49,9 @@ the differentials.
   `s` of `k` pairs.
 * `TauCeti.StrandsAlgebra.matchedSummandDifferential R M k`: the differential restricted to the
   matched summand.
+* `TauCeti.StrandsAlgebra.oneStrandIdem R M p`, `TauCeti.StrandsAlgebra.oneStrandChord R M h`: the
+  idempotent `I({p})` of a matched pair `p` and the single strand of a chord `i < j`, as elements
+  of the matched summand with one strand.
 * `TauCeti.StrandsAlgebra.matchedSummandAlgEquiv R M`: as an `R`-algebra, the matched subalgebra
   is the product of its summands.
 
@@ -57,6 +68,15 @@ the differentials.
   of its summands.
 * `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_matchedSummandDifferential`: over a ring of
   characteristic two, each matched summand is an ungraded differential algebra.
+* `TauCeti.StrandsAlgebra.matchedSummandDifferential_apply_of_le_one`: the differential vanishes
+  on the matched summands with at most one strand.
+* `TauCeti.StrandsAlgebra.oneStrandIdem_mul_oneStrandIdem`,
+  `TauCeti.StrandsAlgebra.sum_oneStrandIdem`: the idempotents `I({p})` are orthogonal and add up
+  to the unit of the matched summand with one strand.
+* `TauCeti.StrandsAlgebra.oneStrandIdem_mul_oneStrandChord`,
+  `TauCeti.StrandsAlgebra.oneStrandChord_mul_oneStrandIdem`,
+  `TauCeti.StrandsAlgebra.oneStrandChord_mul_oneStrandChord`: the products of chords with the
+  idempotents and with each other.
 * `TauCeti.StrandsAlgebra.matchedSummandAlgEquiv_matchedDifferential`: the decomposition of the
   matched subalgebra into its summands intertwines the differentials.
 
@@ -506,7 +526,120 @@ theorem isUngradedDGAlgebra_matchedSummandDifferential [DecidableEq β] {R : Typ
   map_mul a b := Subtype.ext (by simp [differential_mul])
   map_map a := Subtype.ext (by simp [differential_differential])
 
+/-- The differential vanishes on the matched summands with at most one strand, whose diagrams have
+no crossing to resolve. -/
+@[simp]
+theorem matchedSummandDifferential_apply_of_le_one {k : ℕ} (hk : k ≤ 1)
+    (x : matchedSummand R M k) : matchedSummandDifferential R M k x = 0 :=
+  Subtype.ext <| differential_eq_zero_of_mem_strandCountPart hk <|
+    mem_strandCountPart.2 fun φ hφ ↦ x.2.2 φ (Finsupp.mem_support_iff.1 hφ)
+
 end Differential
+
+/-! ### The idempotents and chords of the matched summand with one strand -/
+
+section OneStrand
+
+variable (M : α → β)
+
+variable (R) in
+/-- The chord from `i` to `j`, a single strand from `i` to `j` for `i < j`, as an element of the
+matched summand with one strand. -/
+def oneStrandChord {i j : α} (h : i < j) : matchedSummand R M 1 :=
+  ⟨of (single i j h.le), mem_matchedSummand.2
+    ⟨by classical simpa using oneStrandFamily_mem_matchedSubalgebra (R := R) M (.inr ⟨(i, j), h⟩),
+      of_mem_strandSummand (by rw [source_single, card_singleton])⟩⟩
+
+@[simp]
+theorem coe_oneStrandChord {i j : α} (h : i < j) :
+    (oneStrandChord R M h : StrandsAlgebra R α) = of (single i j h.le) :=
+  (rfl)
+
+/-- Two chords multiply to their concatenation when the first ends where the second starts. -/
+@[simp]
+theorem oneStrandChord_mul_oneStrandChord {i j k : α} (hij : i < j) (hjk : j < k) :
+    oneStrandChord R M hij * oneStrandChord R M hjk = oneStrandChord R M (hij.trans hjk) :=
+  Subtype.ext (of_single_mul_of_single _ _)
+
+/-- Two chords multiply to zero when the first ends where the second does not start. -/
+theorem oneStrandChord_mul_oneStrandChord_of_ne {i j j' k : α} (hij : i < j) (hjk : j' < k)
+    (hj : j ≠ j') : oneStrandChord R M hij * oneStrandChord R M hjk = 0 :=
+  Subtype.ext (of_single_mul_of_single_of_ne _ _ hj)
+
+/-- Over a nontrivial ring the chords are nonzero. -/
+@[simp]
+theorem oneStrandChord_ne_zero [Nontrivial R] {i j : α} (h : i < j) : oneStrandChord R M h ≠ 0 :=
+  fun h' ↦ by
+    classical
+    exact (linearIndependent_oneStrandFamily (R := R) M).ne_zero (.inr ⟨(i, j), h⟩)
+      (by simpa using congrArg Subtype.val h')
+
+variable [DecidableEq β]
+
+variable (R) in
+/-- The idempotent `I({p})` of a matched pair `p` of `M`, as an element of the matched summand with
+one strand. For a pair `p = {a, b}` it is `I({a}) + I({b})`. -/
+def oneStrandIdem (p : Set.range M) : matchedSummand R M 1 :=
+  ⟨matchedIdem R M {p.1}, by simpa using matchedIdem_mem_matchedSummand (R := R) M {p.1}⟩
+
+@[simp]
+theorem coe_oneStrandIdem (p : Set.range M) :
+    (oneStrandIdem R M p : StrandsAlgebra R α) = matchedIdem R M {p.1} :=
+  (rfl)
+
+/-- The idempotents `I({p})` are orthogonal: `I({p}) I({q})` is `I({p})` when `p = q` and zero
+otherwise. -/
+@[simp]
+theorem oneStrandIdem_mul_oneStrandIdem (p q : Set.range M) :
+    oneStrandIdem R M p * oneStrandIdem R M q = if p = q then oneStrandIdem R M p else 0 := by
+  refine Subtype.ext ?_
+  rw [MulMemClass.coe_mul, coe_oneStrandIdem, coe_oneStrandIdem, matchedIdem_mul_matchedIdem,
+    apply_ite Subtype.val, coe_oneStrandIdem, ZeroMemClass.coe_zero]
+  exact if_congr (by rw [singleton_inj, Subtype.ext_iff]) rfl rfl
+
+theorem isIdempotentElem_oneStrandIdem (p : Set.range M) :
+    IsIdempotentElem (oneStrandIdem R M p) :=
+  (oneStrandIdem_mul_oneStrandIdem M p p).trans (ite_eq_left rfl)
+
+/-- The idempotents `I({p})` of the matched pairs add up to the unit of the matched summand with one
+strand. -/
+theorem sum_oneStrandIdem : ∑ p, oneStrandIdem R M p = 1 := by
+  refine Subtype.ext ?_
+  rw [coe_matchedSummand_one, matchedSummandOne_def, ← powersetCard_eq_filter, powersetCard_one,
+    sum_map, AddSubmonoidClass.coe_finsetSum]
+  exact (sum_subtype _ (by simp) fun b ↦ matchedIdem R M {b}).symm
+
+/-- Over a nontrivial ring the idempotents `I({p})` are nonzero. -/
+@[simp]
+theorem oneStrandIdem_ne_zero [Nontrivial R] (p : Set.range M) : oneStrandIdem R M p ≠ 0 :=
+  fun h ↦ (linearIndependent_oneStrandFamily (R := R) M).ne_zero (.inl p)
+    (by simpa using congrArg Subtype.val h)
+
+/-- A chord from `i` starts at the idempotent of the pair of `i`: `I({p})` times the chord is the
+chord when `p` is the pair of `i`, and zero otherwise. -/
+@[simp]
+theorem oneStrandIdem_mul_oneStrandChord (p : Set.range M) {i j : α} (h : i < j) :
+    oneStrandIdem R M p * oneStrandChord R M h = if p.1 = M i then oneStrandChord R M h else 0 := by
+  refine Subtype.ext ?_
+  rw [MulMemClass.coe_mul, apply_ite Subtype.val, ZeroMemClass.coe_zero, coe_oneStrandIdem,
+    coe_oneStrandChord, ← horizontalCompletion_empty (M := M),
+    matchedIdem_mul_horizontalCompletion _ (isMatchedGenerator_single_empty M h)]
+  refine if_congr ?_ rfl rfl
+  rw [source_single, image_singleton, union_empty, singleton_inj]
+
+/-- A chord to `j` ends at the idempotent of the pair of `j`: the chord times `I({p})` is the chord
+when `p` is the pair of `j`, and zero otherwise. -/
+@[simp]
+theorem oneStrandChord_mul_oneStrandIdem (p : Set.range M) {i j : α} (h : i < j) :
+    oneStrandChord R M h * oneStrandIdem R M p = if p.1 = M j then oneStrandChord R M h else 0 := by
+  refine Subtype.ext ?_
+  rw [MulMemClass.coe_mul, apply_ite Subtype.val, ZeroMemClass.coe_zero, coe_oneStrandIdem,
+    coe_oneStrandChord, ← horizontalCompletion_empty (M := M),
+    horizontalCompletion_mul_matchedIdem (isMatchedGenerator_single_empty M h)]
+  refine if_congr ?_ rfl rfl
+  rw [target_single, image_singleton, union_empty, singleton_inj, eq_comm]
+
+end OneStrand
 
 /-! ### The occupancy decomposition of the matched subalgebra -/
 
