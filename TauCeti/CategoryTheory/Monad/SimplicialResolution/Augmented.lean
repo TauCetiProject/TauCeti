@@ -156,6 +156,18 @@ lemma augmentedSimplicialResolution_map_left {X Y : C} (f : X ⟶ Y) :
 lemma augmentedSimplicialResolution_map_right {X Y : C} (f : X ⟶ Y) :
     (G.augmentedSimplicialResolution.map f).right = f := (rfl)
 
+-- Not `simp`: `augmentedSimplicialResolution_obj_left` already normalizes these left sides.
+
+/-- Faces of the augmented resolution are the iterated counits. -/
+lemma augmentedSimplicialResolution_obj_left_δ (X : C) {n : ℕ} (i : Fin (n + 2)) :
+    (G.augmentedSimplicialResolution.obj X).left.δ i = (G.resolutionFace (n + 1) i).app X :=
+  G.simplicialResolution_δ X i
+
+/-- Degeneracies of the augmented resolution are the iterated comultiplications. -/
+lemma augmentedSimplicialResolution_obj_left_σ (X : C) {n : ℕ} (i : Fin (n + 1)) :
+    (G.augmentedSimplicialResolution.obj X).left.σ i = (G.resolutionDegeneracy n i).app X :=
+  G.simplicialResolution_σ X i
+
 end CategoryTheory.Comonad
 
 namespace CategoryTheory.Adjunction
