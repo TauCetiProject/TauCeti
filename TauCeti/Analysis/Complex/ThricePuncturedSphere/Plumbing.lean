@@ -83,8 +83,9 @@ maps on the plumbed sphere is computed.
   `TauCeti.ThricePuncturedSphere.Puncture.measurableSet_preimage_plumbedTruncation`: in the real
   coordinates, the truncation `Σ_R` is compact and measurable.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_mono`,
-  `TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`: the truncations `Σ_R`
-  increase with `R` and exhaust the four-punctured sphere.
+  `TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`,
+  `TauCeti.ThricePuncturedSphere.Puncture.iUnion_preimage_plumbedTruncation`: the truncations
+  `Σ_R` increase with `R` and exhaust the four-punctured sphere, also in the real coordinates.
 * `TauCeti.ThricePuncturedSphere.Puncture.cylindricalEndLift_mem_plumbedTruncation`,
   `Puncture.plumbingMap_cylindricalEndLift_mem_plumbedTruncation`: the four outer boundary circles
   at height `R > 0` lie in the truncation `Σ_R`.
@@ -715,6 +716,14 @@ theorem iUnion_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL :
     exact ⟨R, mem_plumbedTruncation_iff.2 (Or.inl ⟨hR, hre⟩)⟩
   · obtain ⟨R, hR⟩ := mem_iUnion.1 (iUnion_truncation.symm ▸ hS : w' ∈ ⋃ R, truncation R)
     exact ⟨R, mem_plumbedTruncation_iff.2 (Or.inr ⟨w', hR, hre, rfl⟩)⟩
+
+/-- The truncations `Σ_R`, in the real coordinates, exhaust the plumbed four-punctured sphere
+`ℂ ∖ {0, 1, ψ(1)}`. -/
+theorem iUnion_preimage_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) :
+    ⋃ R, Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R =
+      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  rw [← preimage_iUnion, iUnion_plumbedTruncation hq hL, preimage_ofPred_eq]
 
 /-- For `R > 0`, the boundary circle `±s = R` of an end `r ≠ q` of the receiving thrice-punctured
 sphere lies in the truncated plumbed sphere `Σ_R`. -/

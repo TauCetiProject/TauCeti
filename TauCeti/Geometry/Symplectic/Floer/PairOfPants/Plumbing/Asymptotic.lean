@@ -52,6 +52,8 @@ aspherical. Rewriting it through caps of the four asymptotic orbits is not done 
 
 * `TauCeti.Floer.tendsto_setIntegral_plumbedTruncation`: integrals over `Σ` are the limits of the
   integrals over the truncations `Σ_R`.
+* `SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`: the curvature of the
+  plumbed perturbation of bounded Hamiltonians is integrable over the whole plumbed sphere.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`: the energy
   identity on the whole plumbed four-punctured sphere.
 * `SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`: the
@@ -90,12 +92,7 @@ theorem tendsto_setIntegral_plumbedTruncation (hq : q ≠ inf) (hL : 0 < L) {f :
       atTop (𝓝 (∫ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, f z)) := by
-  have hS : ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R =
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    rw [← preimage_iUnion, iUnion_plumbedTruncation hq hL]
-    rfl
-  rw [← hS] at hf ⊢
+  rw [← iUnion_preimage_plumbedTruncation hq hL] at hf ⊢
   exact tendsto_setIntegral_of_monotone (measurableSet_preimage_plumbedTruncation q L)
     (fun _ _ h ↦ preimage_mono (plumbedTruncation_mono q L h)) hf
 
@@ -113,7 +110,7 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 perturbation of bounded Hamiltonians is integrable over the whole plumbed sphere: it is integrable
 over each truncation `Σ_n`, which exhaust the sphere, and its absolute integral over the plane is
 finite. -/
-private theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
+theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
@@ -132,13 +129,9 @@ private theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : Smoo
   have hS : ⋃ n : ℕ, Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L (n + L / 2) =
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    refine subset_antisymm (iUnion_subset fun n ↦ preimage_mono
-      (plumbedTruncation_subset hq (by linarith) _)) fun z hz ↦ ?_
-    obtain ⟨R, hR⟩ := mem_iUnion.1
-      ((iUnion_plumbedTruncation hq (by linarith : (0 : ℝ) < L)).symm ▸ hz :
-        Complex.equivRealProdCLM.symm z ∈ ⋃ R, q.plumbedTruncation L R)
-    obtain ⟨n, hn⟩ := exists_nat_ge R
-    exact mem_iUnion.2 ⟨n, plumbedTruncation_mono q L (by linarith) hR⟩
+    rw [← iUnion_preimage_plumbedTruncation hq (by linarith : (0 : ℝ) < L)]
+    exact (monotone_preimage.comp (plumbedTruncation_mono q L)).iUnion_comp_tendsto_atTop
+      (tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop)
   refine ⟨?_, ?_⟩
   · rw [← hS, aestronglyMeasurable_iUnion_iff]
     exact fun n ↦ (ω.integrableOn_hamiltonianCurvature_plumbedTruncation hq hHa hHb hHas hHbs hab
@@ -164,7 +157,8 @@ loops `xb r`. Then
   - ∫_Σ R_K(u)`,
 
 with the sign `+` on the input ends and `-` on the output end `∞` of the receiving pair of pants.
-The curvature is integrable over `Σ`. -/
+The curvature is integrable over `Σ`
+(`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`). -/
 theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1)

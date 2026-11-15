@@ -96,7 +96,8 @@ inserted half are transported along `ψ` by the change of variables formula
 `TauCeti.SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`), and the two halves meet in
 the null circle `s_q = L/2`
 (`TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_inter_image`). Along a map
-continuous on the four-punctured sphere the curvature is integrable over each `Σ_R`
+continuous on the four-punctured sphere the curvature is integrable over each `Σ_R` with
+`R ≥ L/2`
 (`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`). For a manifold target, the
 limit of the identity as `R → ∞`, over the whole four-punctured sphere, is taken in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Asymptotic`.
