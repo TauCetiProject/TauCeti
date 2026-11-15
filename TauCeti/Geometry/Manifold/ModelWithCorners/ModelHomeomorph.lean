@@ -15,7 +15,9 @@ Two models with corners `I : ModelWithCorners 𝕜 E H` and `I₁ : ModelWithCor
 different model spaces may be related by a continuous linear equivalence `A : E ≃L[𝕜] E₁`
 carrying the range of `I` onto the range of `I₁`. Then `h ↦ I₁.symm (A (I h))` is a
 homeomorphism `ContinuousLinearEquiv.modelHomeomorph A hA : H ≃ₜ H₁`, which reads as `A` through
-the two models and is smooth in both directions at every regularity. The basic example is the
+the two models and is smooth in both directions at every regularity.
+`ContinuousLinearEquiv.modelDiffeomorph` packages it as a diffeomorphism, with forward, inverse
+and underlying-homeomorphism computation rules. The basic example is the
 product of a boundaryless model with the half-line, which is linearly the half-space model one
 dimension up.
 
@@ -108,6 +110,35 @@ theorem contMDiff_modelHomeomorph_symm {n : ℕ∞ω} (A : E ≃L[𝕜] E₁)
     fun h ↦ hA' ▸ mem_image_of_mem A.symm (mem_range_self h)
   exact (I.contMDiffOn_symm.comp_contMDiff (A.symm.contDiff.contMDiff.comp I₁.contMDiff)
     hrange).congr fun _ ↦ rfl
+
+/-- The diffeomorphism of model spaces induced by a continuous linear equivalence carrying one
+model range onto the other, at any regularity. Its underlying homeomorphism is `modelHomeomorph`. -/
+def modelDiffeomorph {n : ℕ∞ω} (A : E ≃L[𝕜] E₁) (hA : A '' range I = range I₁) :
+    H ≃ₘ^n⟮I, I₁⟯ H₁ where
+  toEquiv := (A.modelHomeomorph hA).toEquiv
+  contMDiff_toFun := A.contMDiff_modelHomeomorph hA
+  contMDiff_invFun := A.contMDiff_modelHomeomorph_symm hA
+
+/-- The underlying homeomorphism of the induced model diffeomorphism. -/
+@[simp]
+theorem toHomeomorph_modelDiffeomorph {n : ℕ∞ω} (A : E ≃L[𝕜] E₁)
+    (hA : A '' range I = range I₁) :
+    (A.modelDiffeomorph (n := n) hA).toHomeomorph = A.modelHomeomorph hA := by
+  rfl
+
+/-- The induced model diffeomorphism sends `h` to `I₁.symm (A (I h))`. -/
+@[simp]
+theorem modelDiffeomorph_apply {n : ℕ∞ω} (A : E ≃L[𝕜] E₁)
+    (hA : A '' range I = range I₁) (h : H) :
+    A.modelDiffeomorph (n := n) hA h = I₁.symm (A (I h)) := by
+  rfl
+
+/-- The inverse induced model diffeomorphism sends `h` to `I.symm (A.symm (I₁ h))`. -/
+@[simp]
+theorem modelDiffeomorph_symm_apply {n : ℕ∞ω} (A : E ≃L[𝕜] E₁)
+    (hA : A '' range I = range I₁) (h : H₁) :
+    (A.modelDiffeomorph (n := n) hA).symm h = I.symm (A.symm (I₁ h)) := by
+  rfl
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {M₁ : Type*} [TopologicalSpace M₁] [ChartedSpace H₁ M₁] {n m : ℕ∞ω}

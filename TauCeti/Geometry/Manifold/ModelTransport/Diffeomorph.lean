@@ -15,15 +15,22 @@ Let `Φ : H ≃ₘ^n⟮I, I'⟯ H'` be a `C^n` diffeomorphism between two model 
 `C^n` chart change of `H` by `Φ` gives a `C^n` chart change of `H'`
 (`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Consequently, a `C^n` manifold modelled on
 `I` is a `C^n` manifold modelled on `I'` for the composite charts `ChartedSpace.comp H' H M`, where
-`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`).
+`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`). The identity on the
+original carrier is a diffeomorphism to this composite atlas (`Diffeomorph.chartedSpaceComp`).
 
 For instance, a model with corners described as a subset of `ℂ` can be compared with Mathlib's
 native half-spaces in this way.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Springer GTM 218 (2013),
+  Chapter 1, Proposition 1.17, pp.13–14 (compatible smooth structures).
 -/
 
 public section
 
-open Set
+open Set ChartedSpace IsManifold
+open scoped Topology
 open scoped Manifold ContDiff
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -77,5 +84,68 @@ theorem isManifold_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) 
   rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
     ← OpenPartialHomeomorph.trans_assoc c.symm]
   exact Φ.symm_trans_trans_mem_contDiffGroupoid (HasGroupoid.compatible hc hc')
+
+private theorem contMDiff_id_of_chartAt_eq (Φ : H ≃ₘ^n⟮I, I'⟯ H') (N : Type*)
+    [TopologicalSpace N] [ChartedSpace H N] [ChartedSpace H' N]
+    [IsManifold I n N] [IsManifold I' n N]
+    (hc : ∀ x : N, chartAt H' x =
+      (chartAt H x).trans Φ.toHomeomorph.toOpenPartialHomeomorph) :
+    ContMDiff I I' n (id : N → N) := by
+  have hchart (x y : N) : (chartAt H' x) y = Φ ((chartAt H x) y) := by
+    rw [hc]
+    rfl
+  intro x
+  have ht : Φ ((chartAt H x) x) ∈ (chartAt H' x).target :=
+    hchart x x ▸ mem_chart_target H' x
+  have hf := (contMDiffAt_symm_of_mem_maximalAtlas
+    (chart_mem_maximalAtlas (I := I') x) ht).comp x
+      (Φ.contMDiffAt.comp x (contMDiffAt_of_mem_maximalAtlas
+        (chart_mem_maximalAtlas (I := I) x) (mem_chart_source H x)))
+  apply hf.congr_of_eventuallyEq
+  filter_upwards [(chartAt H' x).open_source.mem_nhds (mem_chart_source H' x)] with y hy
+  simp only [id_eq, Function.comp_apply, ← hchart, (chartAt H' x).left_inv hy]
+
+/-- The identity diffeomorphism to the atlas obtained by composing charts with the
+model diffeomorphism `Φ`. The underlying carrier and topology are unchanged. -/
+noncomputable def chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (N : Type*) [TopologicalSpace N]
+    [ChartedSpace H N] [IsManifold I n N] :
+    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+    letI := ChartedSpace.comp H' H N
+    Diffeomorph I I' N N n := by
+  letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+  letI := ChartedSpace.comp H' H N
+  letI := Φ.isManifold_chartedSpaceComp N
+  have hc (x : N) : chartAt H' x =
+      (chartAt H x).trans Φ.toHomeomorph.toOpenPartialHomeomorph := by
+    rw [chartAt_comp, OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq]
+  refine
+    { toEquiv := Equiv.refl N
+      contMDiff_toFun := contMDiff_id_of_chartAt_eq Φ N hc
+      contMDiff_invFun := contMDiff_id_of_chartAt_eq Φ.symm N ?_ }
+  intro x
+  rw [hc, OpenPartialHomeomorph.trans_assoc, Diffeomorph.symm_toHomeomorph,
+    Homeomorph.symm_toOpenPartialHomeomorph, Homeomorph.toOpenPartialHomeomorph_trans_symm_self,
+    OpenPartialHomeomorph.trans_refl]
+
+variable (Φ : H ≃ₘ^n⟮I, I'⟯ H') (N : Type*) [TopologicalSpace N]
+  [ChartedSpace H N] [IsManifold I n N]
+
+/-- The chart-model comparison fixes every point. -/
+@[simp]
+theorem chartedSpaceComp_apply (x : N) :
+    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+    letI := ChartedSpace.comp H' H N
+    Φ.chartedSpaceComp N x = x := by
+  simp only [chartedSpaceComp]
+  rfl
+
+/-- The inverse chart-model comparison fixes every point. -/
+@[simp]
+theorem chartedSpaceComp_symm_apply (x : N) :
+    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+    letI := ChartedSpace.comp H' H N
+    (Φ.chartedSpaceComp N).symm x = x := by
+  simp only [chartedSpaceComp, Diffeomorph.symm]
+  rfl
 
 end Diffeomorph
