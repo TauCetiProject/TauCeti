@@ -5,10 +5,14 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
 public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 public import TauCeti.RingTheory.SimpleModule.Isotypic
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Transport
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trivial
+import TauCeti.Algebra.Coalgebra.Subcomodule.Transport
 
 /-!
 # Simple coefficient spaces are isotypic components
@@ -38,6 +42,8 @@ coefficient spaces label the isomorphism classes of simple comodules.
 * `matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over the ground ring,
   have the same coefficient space exactly when there is a nonzero morphism between them.
 * `sSupIndep_simpleCoefficientSubmodules`: independence of the distinct simple blocks.
+* `span_singleton_one_mem_simpleCoefficientSubmodules`: over a bialgebra over a field, the line
+  `k · 1` is a simple coefficient space.
 
 ## References
 
@@ -248,6 +254,35 @@ theorem sSupIndep_simpleCoefficientSubmodules :
   let := hM
   exact ⟨⟨_, isotypicComponent_convolution_mem_isotypicComponents (C := C) (M := M)⟩,
     matrixCoefficientSubmodule_eq_isotypicComponent.symm⟩
+
+/-- Over any bialgebra `A` over a field `k`, the line `Submodule.span k {1}` belongs to
+`simpleCoefficientSubmodules k A` as the coefficient space of the trivial rank-one comodule. -/
+theorem span_singleton_one_mem_simpleCoefficientSubmodules
+    {A : Type v} [Ring A] [Bialgebra k A] :
+    Submodule.span k ({1} : Set A) ∈ simpleCoefficientSubmodules k A := by
+  let _ : Comodule k A k := Comodule.trivial
+  have : Nontrivial (Subcomodule k A k) :=
+    ⟨⟨⊥, ⊤, fun h ↦ one_ne_zero (Subcomodule.mem_bot.mp (h.symm ▸ Subcomodule.mem_top (1 : k)))⟩⟩
+  have : IsSimpleOrder (Subcomodule k A k) :=
+    ⟨fun S ↦ (eq_bot_or_eq_top S.toSubmodule).imp
+      Subcomodule.toSubmodule_eq_bot.mp Subcomodule.toSubmodule_eq_top.mp⟩
+  let L : Submodule k A := Submodule.span k ({1} : Set A)
+  let e : k ≃ₗ[k] L :=
+    { toFun c := ⟨c • 1, Submodule.smul_mem _ c (Submodule.subset_span (Set.mem_singleton 1))⟩
+      invFun x := Coalgebra.counit (R := k) x.1
+      left_inv c := by simp
+      right_inv x := Subtype.ext <| by
+        obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp x.2
+        simp [← hc]
+      map_add' x y := Subtype.ext (add_smul x y 1)
+      map_smul' r x := Subtype.ext (mul_smul r x 1) }
+  let _ : Comodule k A L := Comodule.Transport e
+  have : IsSimpleOrder (Subcomodule k A L) :=
+    (Subcomodule.transportOrderIso e).symm.isSimpleOrder
+  have hL : matrixCoefficientSubmodule (R := k) (C := A) (M := L) = L := by
+    rw [matrixCoefficientSubmodule_transport e,
+      trivial_rankOne_matrixCoefficientSubmodule_eq_span_singleton_one]
+  exact mem_simpleCoefficientSubmodules.mpr ⟨ComoduleCat.of k A L, inferInstance, hL.symm⟩
 
 end Field
 

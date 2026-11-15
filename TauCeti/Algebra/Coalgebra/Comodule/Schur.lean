@@ -28,6 +28,8 @@ multiple of the identity matrix (`Module.Basis.exists_eq_smul_one_of_commute_coe
 
 ## Main declarations
 
+* `TauCeti.Comodule.nontrivial_of_isSimpleOrder` and `Module.Basis.index_nonempty_of_isSimpleOrder`:
+  every simple comodule is nontrivial, so every basis of it has a nonempty index type.
 * `TauCeti.Comodule.finite_of_isSimpleOrder`: every simple comodule over a projective coalgebra is
   finitely generated as a module.
 * `TauCeti.Comodule.Hom.injective_or_eq_zero`, `TauCeti.Comodule.Hom.surjective_or_eq_zero`, and
@@ -49,6 +51,22 @@ multiple of the identity matrix (`Module.Basis.exists_eq_smul_one_of_commute_coe
 public section
 
 open Module TauCeti TauCeti.Comodule
+
+/-- Every simple right comodule is nontrivial. -/
+theorem TauCeti.Comodule.nontrivial_of_isSimpleOrder (R C M : Type*) [CommSemiring R]
+    [AddCommMonoid C] [Module R C] [Coalgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M] [IsSimpleOrder (Subcomodule R C M)] :
+    Nontrivial M := by
+  obtain ⟨m, -, hm⟩ := Subcomodule.ne_bot_iff.mp (top_ne_bot (α := Subcomodule R C M))
+  exact nontrivial_of_ne m 0 hm
+
+/-- Any basis of a simple right comodule has a nonempty index type. -/
+theorem Module.Basis.index_nonempty_of_isSimpleOrder {R M ι : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (b : Basis ι R M) (C : Type*)
+    [AddCommMonoid C] [Module R C] [Coalgebra R C] [Comodule R C M]
+    [IsSimpleOrder (Subcomodule R C M)] : Nonempty ι :=
+  have := TauCeti.Comodule.nontrivial_of_isSimpleOrder R C M
+  b.index_nonempty
 
 /-- If the coefficient coalgebra is projective over `R`, every simple right comodule is finitely
 generated over `R`. -/

@@ -31,6 +31,17 @@ coefficient-block decomposition of the algebraic regular representation.
 
 public noncomputable section
 
+/-- A coalgebra over a field that is spanned by its distinct simple coefficient spaces is their
+internal direct sum. -/
+theorem TauCeti.Comodule.isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    {k C : Type*} [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+    (hspan : sSup (TauCeti.Comodule.simpleCoefficientSubmodules k C) = ⊤) :
+    DirectSum.IsInternal
+      (fun P : TauCeti.Comodule.simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) := by
+  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+  · exact (sSupIndep_iff _).mp TauCeti.Comodule.sSupIndep_simpleCoefficientSubmodules
+  · rwa [← sSup_eq_iSup']
+
 namespace TauCeti.Coalgebra.IsLinearlyReductive
 
 universe u v
@@ -55,9 +66,8 @@ theorem sSup_simpleCoefficientSubmodules_eq_top (hC : IsLinearlyReductive.{u, v,
 of a linearly reductive coalgebra, over an arbitrary field. -/
 theorem isInternal_simpleCoefficientSubmodules (hC : IsLinearlyReductive.{u, v, u} k C) :
     DirectSum.IsInternal
-      (fun P : Comodule.simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) := by
-  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-  · exact (sSupIndep_iff _).mp Comodule.sSupIndep_simpleCoefficientSubmodules
-  · rw [← sSup_eq_iSup', hC.sSup_simpleCoefficientSubmodules_eq_top]
+      (fun P : Comodule.simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) :=
+  Comodule.isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    hC.sSup_simpleCoefficientSubmodules_eq_top
 
 end TauCeti.Coalgebra.IsLinearlyReductive

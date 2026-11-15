@@ -32,8 +32,9 @@ character of the represented group: the determinant character of the comodule.
   along the coalgebra morphism.
 * `TauCeti.Comodule.coact_basis_eq_sum_coefficientMatrix`: the coaction of a basis vector is the
   corresponding column of the coefficient matrix.
-* `TauCeti.Comodule.mem_matrixCoefficientSubmodule_iff_exists_matrix`: membership in the
-  matrix-coefficient submodule as a linear combination of entries of `coefficientMatrix`.
+* `TauCeti.Comodule.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem` and
+  `TauCeti.Comodule.mem_matrixCoefficientSubmodule_iff_exists_matrix`: span and linear-combination
+  characterizations of the matrix-coefficient submodule via entries of `coefficientMatrix`.
 * `TauCeti.Comodule.comul_coefficientMatrix_eq_sum` and
   `TauCeti.Comodule.counit_coefficientMatrix`: the coalgebra identities.
 * `TauCeti.Comodule.coefficientMatrix_mul_map_antipode` and
@@ -107,6 +108,25 @@ theorem counit_coefficientMatrix [DecidableEq ι] (b : Basis ι R M) (i j : ι) 
   rw [coefficientMatrix_apply, counit_matrixCoefficient]
   simpa only [Basis.coord_apply, eq_comm] using b.repr_self_apply j i
 
+/-- A submodule containing every entry of `coefficientMatrix b` contains the entire
+matrix-coefficient submodule. -/
+theorem matrixCoefficientSubmodule_le_of_coefficientMatrix_mem [Finite ι] (b : Basis ι R M)
+    {P : Submodule R C} (h : ∀ i j, coefficientMatrix (C := C) b i j ∈ P) :
+    matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ P := by
+  cases nonempty_fintype ι
+  refine matrixCoefficientSubmodule_le fun φ m ↦ ?_
+  have hexp : matrixCoefficient (R := R) (C := C) φ m =
+      ∑ j, ∑ i, (φ (b i) * b.repr m j) • coefficientMatrix (C := C) b i j := by
+    conv_lhs => rw [← b.sum_repr m, ← matrixCoefficientLinear_apply]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [LinearMap.map_smul, matrixCoefficientLinear_apply, matrixCoefficient_def,
+      coact_eq_sum_basis_matrixCoefficient (C := C) b (b j), map_sum, map_sum, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by
+      simp [coefficientMatrix_apply, mul_comm (φ (b i)), mul_smul]
+  rw [hexp]
+  exact Submodule.sum_mem _ fun j _ ↦ Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (h i j)
+
 variable [Fintype ι]
 
 /-- The coaction of a basis vector is its column in the coefficient matrix. -/
@@ -120,26 +140,17 @@ theorem coact_basis_eq_sum_coefficientMatrix (b : Basis ι R M) (j : ι) :
 theorem mem_matrixCoefficientSubmodule_iff_exists_matrix (b : Basis ι R M) {x : C} :
     x ∈ matrixCoefficientSubmodule (R := R) (C := C) (M := M) ↔
       ∃ X : Matrix ι ι R, x = ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j := by
+  classical
   let L : Matrix ι ι R →ₗ[R] C :=
     { toFun X := ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j
-      map_add' X Y := by
-        simp only [Matrix.add_apply, add_smul, Finset.sum_add_distrib]
+      map_add' X Y := by simp only [Matrix.add_apply, add_smul, Finset.sum_add_distrib]
       map_smul' r X := by
         simp only [Matrix.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply, Finset.smul_sum] }
-  have hle : matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ LinearMap.range L := by
-    refine matrixCoefficientSubmodule_le fun φ m ↦
-      ⟨Matrix.of fun i j ↦ φ (b i) * b.repr m j, ?_⟩
-    dsimp only [L, LinearMap.coe_mk, AddHom.coe_mk, Matrix.of_apply]
-    conv_rhs => rw [← b.sum_repr m, ← matrixCoefficientLinear_apply]
-    rw [map_sum, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [LinearMap.map_smul, matrixCoefficientLinear_apply, matrixCoefficient_def,
-      coact_basis_eq_sum_coefficientMatrix b j, map_sum, map_sum, Finset.smul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp [coefficientMatrix_apply, mul_comm (φ (b i)), mul_smul]
   constructor
   · intro hx
-    obtain ⟨X, rfl⟩ := hle hx
+    obtain ⟨X, rfl⟩ := matrixCoefficientSubmodule_le_of_coefficientMatrix_mem b
+      (P := LinearMap.range L)
+      (fun i j ↦ ⟨Matrix.of fun p q ↦ if p = i ∧ q = j then 1 else 0, by simp [L, ite_and]⟩) hx
     exact ⟨X, rfl⟩
   · rintro ⟨X, rfl⟩
     refine Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦ ?_
