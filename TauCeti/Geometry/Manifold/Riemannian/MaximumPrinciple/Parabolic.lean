@@ -39,7 +39,7 @@ and one with `φ' ≤ F(t, φ)` is a subsolution. Hence a subsolution starting b
 the parabolic equation are controlled by the ODE `φ' = F(t, φ)`. For instance, along Ricci flow the
 scalar curvature of an `n`-manifold satisfies `∂ₜ Scal ≥ Δ Scal + (2/n) Scal²`, and comparison
 with the Riccati equation `φ' = (2/n) φ²` gives `Scal ≥ s₀ / (1 - 2 s₀ t / n)` whenever
-`Scal ≥ s₀` at time `0`.
+`Scal ≥ s₀` at time `0`, as long as `1 - 2 s₀ t / n > 0`.
 
 ## Main results
 
@@ -52,7 +52,8 @@ with the Riccati equation `φ' = (2/n) φ²` gives `Scal ≥ s₀ / (1 - 2 s₀ 
 * `TauCeti.Manifold.ge_of_laplaceBeltrami_add_mvfderiv_add_le_deriv_of_deriv_le`: a supersolution
   stays above a subsolution of the ODE `φ' = F(t, φ)`.
 * `TauCeti.Manifold.div_one_sub_mul_le_of_laplaceBeltrami_add_mvfderiv_add_mul_sq_le_deriv`: the
-  Riccati lower bound `u ≥ s₀ / (1 - c s₀ t)` for supersolutions of `∂ₜu = Δu + b·∇u + c u²`.
+  Riccati lower bound `u ≥ s₀ / (1 - c s₀ t)` for supersolutions of `∂ₜu = Δu + b·∇u + c u²`,
+  as long as `1 - c s₀ t > 0`.
 
 ## References
 
@@ -126,8 +127,7 @@ theorem le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_le (hn : 1 ≤ n)
     rwa [mvfderiv_sub (((hucd hs).mdifferentiable (by norm_num)) y)
       (((hvcd hs).mdifferentiable (by norm_num)) y), sub_eq_zero] at h
   simp only [Pi.zero_apply, sub_pos, sub_zero] at hpos ⊢
-  rw [deriv_fun_sub (hudiff hs y) (hvdiff hs y),
-    show deriv (0 : ℝ → ℝ) s = 0 from deriv_const s 0]
+  rw [deriv_fun_sub (hudiff hs y) (hvdiff hs y), deriv_zero, Pi.zero_apply]
   have h1 := hL hs y
   rw [hd] at h1
   linarith [hF hs y hpos]
