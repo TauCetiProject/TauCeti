@@ -149,11 +149,8 @@ theorem norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth (hb : Continuou
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp E p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖prev _ u‖ ≤ 2 * K / α * ‖trajectoryOperator AL u‖ := by
-  have hK0 : 0 ≤ 2 * K / α := by
-    have h := hK 0 0 le_rfl
-    rw [sub_self, mul_zero, Real.exp_zero, mul_one] at h
-    exact div_nonneg (mul_nonneg zero_le_two
-      (zero_le_one.trans ((le_mul_iff_one_le_left (hpos 0)).1 h))) hα.le
+  have hK0 : 0 ≤ 2 * K / α :=
+    div_nonneg (mul_nonneg zero_le_two (zero_le_one.trans (one_le_of_scalarGrowth hpos hK))) hα.le
   have hgc : Continuous g := continuous_iff_continuousAt.2 fun s ↦ (hg s).continuousAt
   -- On smooth compactly supported paths this is the `Lᵖ` bound for the Green integral.
   refine norm_prev_le_mul_norm_trajectoryOperator_of_forall_contDiff hp hAL hK0

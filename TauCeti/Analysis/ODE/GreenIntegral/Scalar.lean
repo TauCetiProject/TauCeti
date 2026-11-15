@@ -177,8 +177,9 @@ private theorem inv_le_mul_exp_mul_inv (hpos : ∀ s, 0 < g s)
       mul_le_mul_of_nonneg_right ((div_le_iff₀ (hpos t)).2 (hK s t hst))
         (inv_nonneg.2 (hpos s).le)
 
-/-- The growth constant is at least `1`, by the growth bound at `s = t`. -/
-private theorem one_le_of_growth (hpos : ∀ s, 0 < g s)
+/-- For a positive `g` with the growth bound `g s ≤ K exp (-α (t - s)) g t` for `s ≤ t`, the
+growth constant `K` is at least `1`, by the bound at `s = t`. -/
+theorem one_le_of_scalarGrowth (hpos : ∀ s, 0 < g s)
     (hK : ∀ s t, s ≤ t → g s ≤ K * Real.exp (-α * (t - s)) * g t) : 1 ≤ K := by
   have h := hK 0 0 le_rfl
   rw [sub_self, mul_zero, Real.exp_zero, mul_one] at h
@@ -210,7 +211,7 @@ private theorem memLp_exp_neg_mul_Ioi (hα : 0 < α) (c : ℝ) (q : ℝ≥0∞) 
 private theorem memLp_inv_Ioi (hg : AEMeasurable g) (hpos : ∀ s, 0 < g s)
     (hK : ∀ s t, s ≤ t → g s ≤ K * Real.exp (-α * (t - s)) * g t) (hα : 0 < α) (c : ℝ)
     (q : ℝ≥0∞) : MemLp (fun t ↦ (g t)⁻¹) q (volume.restrict (Ioi c)) := by
-  have hK0 : 0 ≤ K := zero_le_one.trans (one_le_of_growth hpos hK)
+  have hK0 : 0 ≤ K := zero_le_one.trans (one_le_of_scalarGrowth hpos hK)
   refine ((memLp_exp_neg_mul_Ioi hα c q).const_mul (K * Real.exp (α * c) * (g c)⁻¹)).of_le
     hg.inv.aestronglyMeasurable.restrict ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
