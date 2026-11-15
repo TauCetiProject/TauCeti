@@ -64,8 +64,6 @@ Over `ℚ` (`D = 1`, `r₂ = 0`, `discr ℚ = 1`), the sup-height bound speciali
   `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`, and
   `Submodule.exists_basis_integerPoints_prod_height2_le`: `K`-linearly independent integral tuples
   and `K`-bases of `W` of bounded sup height and Euclidean height.
-* `Matrix.subspaceHeight_ker_mulVecLin`: the absolute Euclidean height of
-  `LinearMap.ker A.mulVecLin` equals that of the row space `span K (range A.row)`.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absoluteProjectiveTupleHeight_le`,
   `Matrix.exists_basis_ker_mulVecLin_prod_absoluteProjectiveTupleHeight_le`,
   `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`, and
@@ -91,31 +89,46 @@ namespace Submodule
 
 section Extraction
 
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*} (W : Submodule K (ι → K))
+variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] (W : Submodule K (ι → K))
 
-/-- Injective `ℝ`-linear coordinate map from `W.euclideanSpan` into `ι → mixedSpace K`, used to
-transport `ℝ`-linear independence from `W.euclideanSpan` to `mixedEmbedding` images. -/
-private def spanToMixedPi : W.euclideanSpan →ₗ[ℝ] (ι → mixedSpace K) :=
-  (LinearMap.pi fun i ↦
-    (euclidean.toMixed K).toLinearMap.comp
-      ((LinearMap.proj i).comp
-        (WithLp.linearEquiv 2 ℝ (∀ _ : ι, euclidean.mixedSpace K)).toLinearMap)).comp
-    W.euclideanSpan.subtype
+private abbrev spanFinOrderIso :
+    Fin (finrank ℚ K * finrank K W) ≃o Fin (finrank ℝ W.euclideanSpan) :=
+  Fin.castOrderIso W.finrank_euclideanSpan.symm
 
-private theorem injective_spanToMixedPi : Function.Injective (spanToMixedPi W) :=
-  fun _ _ h ↦ Subtype.ext <| WithLp.ofLp_injective 2 <| funext fun i ↦
-    (euclidean.toMixed K).injective (congrFun h i)
-
-private theorem spanToMixedPi_eq_mixedEmbedding [Finite ι] {a : W.euclideanSpan}
-    (ha : a ∈ W.integerLattice) :
-    spanToMixedPi W a =
-      (LinearMap.piMap fun _ : ι ↦ (mixedEmbedding K).toRatAlgHom.toLinearMap) fun i ↦
-        (((W.integerPointsEquivIntegerLattice.symm ⟨a, ha⟩ :
-          W.integerPoints) : ι → 𝓞 K) i : K) := by
-  ext1 i
-  exact (mixedEmbedding_integerPointsEquivIntegerLattice_symm_apply W ⟨a, ha⟩ i).symm
-
-variable [Fintype ι]
+open Classical in
+/-- Reindexes a successive-minima family of `W.integerLattice` for any convex body `S` with
+`0 ∈ interior S` along `W.spanFinOrderIso`, transporting `ℝ`-linear independence to
+`(mixedEmbedding K)^ι` coordinates. -/
+private theorem exists_integerLattice_gauge_eq_successiveMin
+    {S : ConvexBody W.euclideanSpan} (h0 : (0 : W.euclideanSpan) ∈ interior (S : Set _)) :
+    ∃ (a : Fin (finrank ℚ K * finrank K W) → W.euclideanSpan)
+      (ha : ∀ l, a l ∈ W.integerLattice),
+      LinearIndependent ℝ
+        (fun l ↦ (LinearMap.piMap fun _ : ι ↦ (mixedEmbedding K).toRatAlgHom.toLinearMap)
+          fun i ↦ (((W.integerPointsEquivIntegerLattice.symm ⟨a l, ha l⟩ :
+            W.integerPoints) : ι → 𝓞 K) i : K)) ∧
+      Monotone (fun l ↦ ZLattice.successiveMin W.integerLattice S (W.spanFinOrderIso l)) ∧
+      (∀ l, gauge (S : Set W.euclideanSpan) (a l) =
+        ZLattice.successiveMin W.integerLattice S (W.spanFinOrderIso l)) ∧
+      (∏ l, ZLattice.successiveMin W.integerLattice S (W.spanFinOrderIso l)) =
+        ∏ i, ZLattice.successiveMin W.integerLattice S i := by
+  obtain ⟨b, hb_li, hbL⟩ :=
+    ZLattice.exists_linearIndependent_gauge_eq_successiveMin W.integerLattice h0
+  refine ⟨fun l ↦ b (W.spanFinOrderIso l), fun l ↦ (hbL (W.spanFinOrderIso l)).1, ?_,
+    (ZLattice.monotone_successiveMin W.integerLattice h0).comp W.spanFinOrderIso.monotone,
+    fun l ↦ (hbL (W.spanFinOrderIso l)).2,
+    W.spanFinOrderIso.toEquiv.prod_comp fun i ↦ ZLattice.successiveMin W.integerLattice S i⟩
+  have hfu :
+      (fun l ↦ (LinearMap.piMap fun _ : ι ↦ (mixedEmbedding K).toRatAlgHom.toLinearMap)
+          fun i ↦ (((W.integerPointsEquivIntegerLattice.symm
+            ⟨b (W.spanFinOrderIso l), (hbL (W.spanFinOrderIso l)).1⟩ :
+              W.integerPoints) : ι → 𝓞 K) i : K)) =
+        fun l ↦ W.mixedCoords (b (W.spanFinOrderIso l)) := by
+    ext1 l
+    exact (W.mixedCoords_eq_piMap_mixedEmbedding (hbL (W.spanFinOrderIso l)).1).symm
+  rw [hfu]
+  exact (hb_li.comp _ W.spanFinOrderIso.injective).map' W.mixedCoords
+    (LinearMap.ker_eq_bot.2 W.mixedCoords_injective)
 
 open Classical in
 /-- **Basis extraction from successive minima, sup height.** From the `[K : ℚ] * finrank K W`
@@ -133,34 +146,16 @@ theorem exists_linearIndependent_integerPoints_le_successiveMin_supSlice :
         w (x j i : K) ≤ ZLattice.successiveMin W.integerLattice W.supSlice (s j)) ∧
       ∏ j, absoluteProjectiveTupleHeight (fun i ↦ (x j i : K)) ≤
         (∏ i, ZLattice.successiveMin W.integerLattice W.supSlice i) ^ (finrank ℚ K : ℝ)⁻¹ := by
-  have h0 := W.zero_mem_interior_supSlice
-  obtain ⟨a, ha, haL⟩ :=
-    ZLattice.exists_linearIndependent_gauge_eq_successiveMin W.integerLattice h0
-  let e : Fin (finrank ℚ K * finrank K W) ≃o Fin (finrank ℝ W.euclideanSpan) :=
-    Fin.castOrderIso W.finrank_euclideanSpan.symm
+  obtain ⟨a, ha, hu_li, hc_mono, hgauge, hprod⟩ :=
+    exists_integerLattice_gauge_eq_successiveMin W W.zero_mem_interior_supSlice
   let u : Fin (finrank ℚ K * finrank K W) → ι → 𝓞 K :=
-    fun l ↦ (W.integerPointsEquivIntegerLattice.symm ⟨a (e l), (haL (e l)).1⟩ : W.integerPoints)
-  let c : Fin (finrank ℚ K * finrank K W) → ℝ :=
-    fun l ↦ ZLattice.successiveMin W.integerLattice W.supSlice (e l)
-  let f : (ι → K) →ₗ[ℚ] (ι → mixedSpace K) :=
-    LinearMap.piMap fun _ ↦ (mixedEmbedding K).toRatAlgHom.toLinearMap
-  have hfu : (fun l ↦ f fun i ↦ (u l i : K)) = fun l ↦ spanToMixedPi W (a (e l)) := by
-    ext1 l
-    exact (spanToMixedPi_eq_mixedEmbedding W (haL (e l)).1).symm
-  have hu_li : LinearIndependent ℝ fun l ↦ f fun i ↦ (u l i : K) := by
-    rw [hfu]
-    exact (ha.comp _ e.injective).map' (spanToMixedPi W)
-      (LinearMap.ker_eq_bot.2 (injective_spanToMixedPi W))
-  have hc_mono : Monotone c := (ZLattice.monotone_successiveMin W.integerLattice h0).comp e.monotone
+    fun l ↦ (W.integerPointsEquivIntegerLattice.symm ⟨a l, ha l⟩ : W.integerPoints)
   have hle (l : Fin (finrank ℚ K * finrank K W)) (i : ι) (w : InfinitePlace K) :
-      w (u l i : K) ≤ c l := by
-    simpa only [u, c, ← (haL (e l)).2] using
-      W.apply_le_gauge_supSlice_of_mem_integerLattice (haL (e l)).1 i w
+      w (u l i : K) ≤ ZLattice.successiveMin W.integerLattice W.supSlice (W.spanFinOrderIso l) :=
+    (W.apply_le_gauge_supSlice_of_mem_integerLattice (ha l) i w).trans_eq (hgauge l)
   obtain ⟨s, hs_li, hs_idx, hs_prod⟩ :=
     exists_linearIndependent_prod_absoluteProjectiveTupleHeight_le hu_li hc_mono hle
-  have hprod : ∏ l, c l = ∏ i, ZLattice.successiveMin W.integerLattice W.supSlice i :=
-    e.toEquiv.prod_comp fun i ↦ ZLattice.successiveMin W.integerLattice W.supSlice i
-  exact ⟨fun j ↦ u (s j), fun j ↦ e (s j), hs_li,
+  exact ⟨fun j ↦ u (s j), fun j ↦ W.spanFinOrderIso (s j), hs_li,
     fun j ↦ (W.integerPointsEquivIntegerLattice.symm _).2,
     fun j ↦ hs_idx j, fun j i w ↦ hle (s j) i w, hprod ▸ hs_prod⟩
 
@@ -183,34 +178,16 @@ theorem exists_linearIndependent_integerPoints_le_successiveMin_euclideanBallSli
       ∏ j, height2 (fun i ↦ (x j i : K)) ≤
         (∏ i, ZLattice.successiveMin W.integerLattice W.euclideanBallSlice i) ^
           (finrank ℚ K : ℝ)⁻¹ := by
-  have h0 := W.zero_mem_interior_euclideanBallSlice
-  obtain ⟨a, ha, haL⟩ :=
-    ZLattice.exists_linearIndependent_gauge_eq_successiveMin W.integerLattice h0
-  let e : Fin (finrank ℚ K * finrank K W) ≃o Fin (finrank ℝ W.euclideanSpan) :=
-    Fin.castOrderIso W.finrank_euclideanSpan.symm
+  obtain ⟨a, ha, hu_li, hc_mono, hgauge, hprod⟩ :=
+    exists_integerLattice_gauge_eq_successiveMin W W.zero_mem_interior_euclideanBallSlice
   let u : Fin (finrank ℚ K * finrank K W) → ι → 𝓞 K :=
-    fun l ↦ (W.integerPointsEquivIntegerLattice.symm ⟨a (e l), (haL (e l)).1⟩ : W.integerPoints)
-  let c : Fin (finrank ℚ K * finrank K W) → ℝ :=
-    fun l ↦ ZLattice.successiveMin W.integerLattice W.euclideanBallSlice (e l)
-  let f : (ι → K) →ₗ[ℚ] (ι → mixedSpace K) :=
-    LinearMap.piMap fun _ ↦ (mixedEmbedding K).toRatAlgHom.toLinearMap
-  have hfu : (fun l ↦ f fun i ↦ (u l i : K)) = fun l ↦ spanToMixedPi W (a (e l)) := by
-    ext1 l
-    exact (spanToMixedPi_eq_mixedEmbedding W (haL (e l)).1).symm
-  have hu_li : LinearIndependent ℝ fun l ↦ f fun i ↦ (u l i : K) := by
-    rw [hfu]
-    exact (ha.comp _ e.injective).map' (spanToMixedPi W)
-      (LinearMap.ker_eq_bot.2 (injective_spanToMixedPi W))
-  have hc_mono : Monotone c := (ZLattice.monotone_successiveMin W.integerLattice h0).comp e.monotone
+    fun l ↦ (W.integerPointsEquivIntegerLattice.symm ⟨a l, ha l⟩ : W.integerPoints)
   have hle (l : Fin (finrank ℚ K * finrank K W)) (w : InfinitePlace K) :
-      √(∑ i, ‖w.embedding (u l i : K)‖ ^ 2) ≤ c l := by
-    simpa only [u, c, ← (haL (e l)).2] using
-      W.sqrt_sum_norm_embedding_sq_le_gauge_euclideanBallSlice (haL (e l)).1 w
+      √(∑ i, ‖w.embedding (u l i : K)‖ ^ 2) ≤
+        ZLattice.successiveMin W.integerLattice W.euclideanBallSlice (W.spanFinOrderIso l) :=
+    (W.sqrt_sum_norm_embedding_sq_le_gauge_euclideanBallSlice (ha l) w).trans_eq (hgauge l)
   obtain ⟨s, hs_li, hs_idx, hs_prod⟩ := exists_linearIndependent_prod_height2_le hu_li hc_mono hle
-  have hprod :
-      ∏ l, c l = ∏ i, ZLattice.successiveMin W.integerLattice W.euclideanBallSlice i :=
-    e.toEquiv.prod_comp fun i ↦ ZLattice.successiveMin W.integerLattice W.euclideanBallSlice i
-  exact ⟨fun j ↦ u (s j), fun j ↦ e (s j), hs_li,
+  exact ⟨fun j ↦ u (s j), fun j ↦ W.spanFinOrderIso (s j), hs_li,
     fun j ↦ (W.integerPointsEquivIntegerLattice.symm _).2,
     fun j ↦ hs_idx j, fun j w ↦ hle (s j) w, hprod ▸ hs_prod⟩
 
@@ -233,6 +210,22 @@ private theorem two_pow_mul_two_inv_pow (k : ℕ) :
   rw [hdeg, pow_add, pow_add, ← pow_mul, mul_comm (nrComplexPlaces K) k, mul_assoc,
     ← mul_pow, mul_inv_cancel₀ two_ne_zero, one_pow, mul_one]
 
+/-- Regroups `2 ^ ([K : ℚ] * k)` with the covolume expression
+`((2⁻¹) ^ r₂ * √|discr K|) ^ k * H ^ [K : ℚ]` into real-place and complex-place factors. -/
+private theorem two_pow_mul_covolume_factor (k : ℕ) (H : ℝ) :
+    (2 : ℝ) ^ (finrank ℚ K * k) *
+        (((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ k * H ^ finrank ℚ K) =
+      (2 : ℝ) ^ (k * nrRealPlaces K) * (2 : ℝ) ^ (k * nrComplexPlaces K) *
+        √|(discr K : ℝ)| ^ k * H ^ finrank ℚ K := by
+  calc (2 : ℝ) ^ (finrank ℚ K * k) *
+          (((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ k * H ^ finrank ℚ K)
+      = ((2 : ℝ) ^ (finrank ℚ K * k) * ((2⁻¹ : ℝ) ^ nrComplexPlaces K) ^ k) *
+          √|(discr K : ℝ)| ^ k * H ^ finrank ℚ K := by
+        rw [mul_pow]; ring
+    _ = (2 : ℝ) ^ (k * nrRealPlaces K) * (2 : ℝ) ^ (k * nrComplexPlaces K) *
+          √|(discr K : ℝ)| ^ k * H ^ finrank ℚ K := by
+        rw [two_pow_mul_two_inv_pow]
+
 private theorem rpow_sqrt_abs_discr (k : ℕ) :
     (√|(discr K : ℝ)| ^ k) ^ (finrank ℚ K : ℝ)⁻¹ =
       |(discr K : ℝ)| ^ ((k : ℝ) / (2 * finrank ℚ K)) := by
@@ -244,6 +237,14 @@ private theorem rpow_sqrt_abs_discr (k : ℕ) :
 private theorem pow_rpow_inv_nat {a : ℝ} (ha : 0 ≤ a) (n D : ℕ) :
     (a ^ n) ^ (D : ℝ)⁻¹ = a ^ ((n : ℝ) / D) := by
   rw [← Real.rpow_natCast a n, ← Real.rpow_mul ha, div_eq_mul_inv]
+
+/-- Distributes the `[K : ℚ]`-th root across `A * √|discr K| ^ k * H ^ [K : ℚ]`. -/
+private theorem mul_sqrt_discr_pow_mul_pow_rpow_inv {A H : ℝ} (hA : 0 ≤ A) (hH : 0 ≤ H) (k : ℕ) :
+    (A * √|(discr K : ℝ)| ^ k * H ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ =
+      A ^ (finrank ℚ K : ℝ)⁻¹ * |(discr K : ℝ)| ^ ((k : ℝ) / (2 * finrank ℚ K)) * H := by
+  rw [Real.mul_rpow (mul_nonneg hA (by positivity)) (pow_nonneg hH _),
+    Real.mul_rpow hA (by positivity), rpow_sqrt_abs_discr,
+    Real.pow_rpow_inv_natCast hH finrank_pos.ne']
 
 end Helpers
 
@@ -290,19 +291,8 @@ theorem prod_successiveMin_integerLattice_supSlice_le :
             √|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K) *
           ((2 : ℝ) ^ (finrank K W * nrRealPlaces K) *
             Real.pi ^ (finrank K W * nrComplexPlaces K)) := by
-    calc (2 : ℝ) ^ (finrank ℚ K * finrank K W) *
-            (((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ finrank K W *
-              W.subspaceHeight ^ finrank ℚ K)
-        = ((2 : ℝ) ^ (finrank ℚ K * finrank K W) *
-            ((2⁻¹ : ℝ) ^ nrComplexPlaces K) ^ finrank K W) *
-            (√|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K) := by
-          rw [mul_pow]; ring
-      _ = (2 : ℝ) ^ (finrank K W * nrRealPlaces K) *
-            ((2 / Real.pi) ^ (finrank K W * nrComplexPlaces K) *
-              Real.pi ^ (finrank K W * nrComplexPlaces K)) *
-            (√|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K) := by
-          rw [two_pow_mul_two_inv_pow, hpi]
-      _ = _ := by ring
+    rw [two_pow_mul_covolume_factor, ← hpi]
+    ring
   exact le_of_mul_le_mul_right (hle.trans_eq hrhs) hvol_pos
 
 open Classical in
@@ -351,21 +341,32 @@ theorem prod_successiveMin_integerLattice_euclideanBallSlice_le :
             (2 ^ finrank K W / ω₂) ^ nrComplexPlaces K *
             √|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K) *
           (ω₁ ^ nrRealPlaces K * ω₂ ^ nrComplexPlaces K) := by
-    calc (2 : ℝ) ^ (finrank ℚ K * finrank K W) *
-            (((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|(discr K : ℝ)|) ^ finrank K W *
-              W.subspaceHeight ^ finrank ℚ K)
-        = ((2 : ℝ) ^ (finrank ℚ K * finrank K W) *
-            ((2⁻¹ : ℝ) ^ nrComplexPlaces K) ^ finrank K W) *
-            (√|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K) := by
-          rw [mul_pow]; ring
-      _ = ((2 ^ finrank K W / ω₁) ^ nrRealPlaces K * ω₁ ^ nrRealPlaces K) *
-            ((2 ^ finrank K W / ω₂) ^ nrComplexPlaces K * ω₂ ^ nrComplexPlaces K) *
-            (√|(discr K : ℝ)| ^ finrank K W * W.subspaceHeight ^ finrank ℚ K) := by
-          rw [two_pow_mul_two_inv_pow, hc₁, hc₂]
-      _ = _ := by ring
+    rw [two_pow_mul_covolume_factor, ← hc₁, ← hc₂]
+    ring
   exact le_of_mul_le_mul_right (hmink.trans_eq hrhs) (by positivity)
 
 end SuccessiveMinBounds
+
+/-- Packages a `K`-linearly independent family `x : Fin n → ι → 𝓞 K` in `W.integerPoints` with
+`finrank K W = n` into a `K`-basis `b` of `W` having the same ambient coordinates, so every
+coordinate lies in `range (algebraMap (𝓞 K) K)` and any coordinatewise product agrees. -/
+private theorem exists_basis_of_linearIndependent_integerPoints
+    {K : Type*} [Field K] {ι : Type*} [Finite ι] {W : Submodule K (ι → K)}
+    {n : ℕ} (hn : finrank K W = n) {x : Fin n → ι → 𝓞 K}
+    (hx_li : LinearIndependent K (fun j i ↦ (x j i : K)))
+    (hx_mem : ∀ j, x j ∈ W.integerPoints) :
+    ∃ b : Basis (Fin n) K W,
+      (∀ j, (b j : ι → K) = fun i ↦ (x j i : K)) ∧
+      ∀ j i, (b j : ι → K) i ∈ range (algebraMap (𝓞 K) K) := by
+  cases nonempty_fintype ι
+  let v : Fin n → W := fun j ↦ ⟨fun i ↦ (x j i : K), mem_integerPoints.mp (hx_mem j)⟩
+  have hv_li : LinearIndependent K v := LinearIndependent.of_comp W.subtype hx_li
+  let b : Basis (Fin n) K W :=
+    basisOfLinearIndependentOfCardEqFinrank' v hv_li ((Fintype.card_fin n).trans hn.symm)
+  have hb (j : Fin n) : (b j : ι → K) = fun i ↦ (x j i : K) := by
+    rw [coe_basisOfLinearIndependentOfCardEqFinrank']
+  refine ⟨b, hb, fun j i ↦ ⟨x j i, ?_⟩⟩
+  rw [hb, ← RingOfIntegers.coe_eq_algebraMap]
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Finite ι] [LinearOrder ι]
   (W : Submodule K (ι → K))
@@ -399,10 +400,8 @@ theorem exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeigh
     _ = (2 / Real.pi) ^ ((finrank K W * nrComplexPlaces K : ℝ) / finrank ℚ K) *
           |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) *
           W.subspaceHeight := by
-        rw [Real.mul_rpow (by positivity) (pow_nonneg hH_nn _),
-          Real.mul_rpow (by positivity) (by positivity),
-          pow_rpow_inv_nat (by positivity), Nat.cast_mul, rpow_sqrt_abs_discr,
-          Real.pow_rpow_inv_natCast hH_nn finrank_pos.ne']
+        rw [mul_sqrt_discr_pow_mul_pow_rpow_inv (by positivity) hH_nn,
+          pow_rpow_inv_nat (by positivity), Nat.cast_mul]
 
 /-- `Basis` packaging of
 `Submodule.exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeight_le`: `W` admits
@@ -414,17 +413,10 @@ theorem exists_basis_integerPoints_prod_absoluteProjectiveTupleHeight_le :
         (2 / Real.pi) ^ ((finrank K W * nrComplexPlaces K : ℝ) / finrank ℚ K) *
           |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) *
           W.subspaceHeight := by
-  cases nonempty_fintype ι
   obtain ⟨x, hx_li, hx_mem, hx_le⟩ :=
     W.exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeight_le
-  let v : Fin (finrank K W) → W := fun j ↦ ⟨fun i ↦ (x j i : K), mem_integerPoints.mp (hx_mem j)⟩
-  have hv_li : LinearIndependent K v := LinearIndependent.of_comp W.subtype hx_li
-  let b : Basis (Fin (finrank K W)) K W :=
-    basisOfLinearIndependentOfCardEqFinrank' v hv_li (Fintype.card_fin _)
-  have hb (j : Fin (finrank K W)) : (b j : ι → K) = fun i ↦ (x j i : K) := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank']
-  exact ⟨b, fun j i ↦ ⟨x j i, (hb j ▸ rfl : (x j i : K) = (b j : ι → K) i)⟩,
-    by simpa only [hb] using hx_le⟩
+  obtain ⟨b, hb, hb_int⟩ := exists_basis_of_linearIndependent_integerPoints rfl hx_li hx_mem
+  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
 
 /-- **Basis form of Siegel's lemma for a subspace, Euclidean height** (Bombieri–Vaaler,
 Bombieri–Gubler). Any `K`-subspace `W` of `ι → K` of dimension `k` contains `k` `K`-linearly
@@ -465,11 +457,9 @@ theorem exists_linearIndependent_integerPoints_prod_height2_le :
           (2 ^ finrank K W / ω₂) ^ ((nrComplexPlaces K : ℝ) / finrank ℚ K) *
           |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) *
           W.subspaceHeight := by
-        rw [Real.mul_rpow (by positivity) (pow_nonneg hH_nn _),
+        rw [mul_sqrt_discr_pow_mul_pow_rpow_inv (by positivity) hH_nn,
           Real.mul_rpow (by positivity) (by positivity),
-          Real.mul_rpow (by positivity) (by positivity),
-          pow_rpow_inv_nat (by positivity), pow_rpow_inv_nat (by positivity),
-          rpow_sqrt_abs_discr, Real.pow_rpow_inv_natCast hH_nn finrank_pos.ne']
+          pow_rpow_inv_nat (by positivity), pow_rpow_inv_nat (by positivity)]
 
 /-- `Basis` packaging of `Submodule.exists_linearIndependent_integerPoints_prod_height2_le`: `W`
 admits a `K`-basis `b` with coordinates in `𝓞 K` satisfying the Euclidean-height product bound. -/
@@ -485,16 +475,9 @@ theorem exists_basis_integerPoints_prod_height2_le :
           ((nrComplexPlaces K : ℝ) / finrank ℚ K) *
         |(discr K : ℝ)| ^ ((finrank K W : ℝ) / (2 * finrank ℚ K)) *
         W.subspaceHeight := by
-  cases nonempty_fintype ι
   obtain ⟨x, hx_li, hx_mem, hx_le⟩ := W.exists_linearIndependent_integerPoints_prod_height2_le
-  let v : Fin (finrank K W) → W := fun j ↦ ⟨fun i ↦ (x j i : K), mem_integerPoints.mp (hx_mem j)⟩
-  have hv_li : LinearIndependent K v := LinearIndependent.of_comp W.subtype hx_li
-  let b : Basis (Fin (finrank K W)) K W :=
-    basisOfLinearIndependentOfCardEqFinrank' v hv_li (Fintype.card_fin _)
-  have hb (j : Fin (finrank K W)) : (b j : ι → K) = fun i ↦ (x j i : K) := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank']
-  exact ⟨b, fun j i ↦ ⟨x j i, (hb j ▸ rfl : (x j i : K) = (b j : ι → K) i)⟩,
-    by simpa only [hb] using hx_le⟩
+  obtain ⟨b, hb, hb_int⟩ := exists_basis_of_linearIndependent_integerPoints rfl hx_li hx_mem
+  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
 
 end SubspaceBounds
 
@@ -504,20 +487,29 @@ namespace Matrix
 
 open Submodule
 
-variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Fintype ι]
-  [LinearOrder ι] (A : Matrix m ι K)
+variable {K : Type*} [Field K] {m ι : Type*} [Fintype ι]
 
-/-- By Hodge duality of Arakelov heights, the absolute Euclidean height of the kernel of a matrix
-`A` equals the absolute Euclidean height of its row space `span K (range A.row)`, without any
-rank, row-independence, or row-finiteness assumption on `A`. -/
-theorem subspaceHeight_ker_mulVecLin :
-    (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (range A.row)).subspaceHeight := by
-  have hker : LinearMap.ker A.mulVecLin = (span K (range A.row)).euclideanDual := by
-    ext x
-    rw [LinearMap.mem_ker, mulVecLin_apply, mem_euclideanDual_span]
-    simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
-    simp only [funext_iff, mulVec_apply, Pi.zero_apply]
-  rw [hker, subspaceHeight_euclideanDual]
+/-- Transfers a `K`-linearly independent integral family in `LinearMap.ker A.mulVecLin` with a
+product bound on `f` to `Fin (#ι - A.rank)` via `A.finrank_ker_mulVecLin`. -/
+private theorem exists_linearIndependent_mulVec_eq_zero_of_ker {A : Matrix m ι K}
+    {f : (ι → K) → ℝ} {B₀ B : ℝ}
+    (h : ∃ z : Fin (finrank K (LinearMap.ker A.mulVecLin)) → ι → 𝓞 K,
+      LinearIndependent K (fun l i ↦ (z l i : K)) ∧
+      (∀ l, z l ∈ (LinearMap.ker A.mulVecLin).integerPoints) ∧
+      ∏ l, f (fun i ↦ (z l i : K)) ≤ B₀)
+    (hB : B₀ = B) :
+    ∃ x : Fin (Fintype.card ι - A.rank) → ι → 𝓞 K,
+      LinearIndependent K (fun j i ↦ (x j i : K)) ∧
+      (∀ j, A *ᵥ (fun i ↦ (x j i : K)) = 0) ∧
+      ∏ j, f (fun i ↦ (x j i : K)) ≤ B := by
+  obtain ⟨z, hz_li, hz_mem, hz_le⟩ := h
+  set e := finCongr A.finrank_ker_mulVecLin
+  refine ⟨fun j ↦ z (e.symm j), hz_li.comp _ e.symm.injective,
+    fun j ↦ LinearMap.mem_ker.mp (mem_integerPoints.mp (hz_mem (e.symm j))), ?_⟩
+  rw [e.symm.prod_comp fun l ↦ f fun i ↦ (z l i : K)]
+  exact hz_le.trans_eq hB
+
+variable [NumberField K] [LinearOrder ι] (A : Matrix m ι K)
 
 /-- **Kernel-basis Siegel lemma over number fields, sup height** (Bombieri–Vaaler,
 Bombieri–Gubler). For any `m × ι` matrix `A` over `K` (without assuming row independence), the
@@ -533,14 +525,11 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_absoluteProjectiveTupleHeig
           (((Fintype.card ι - A.rank : ℕ) * nrComplexPlaces K : ℝ) / finrank ℚ K) *
         |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
         (span K (range A.row)).subspaceHeight := by
-  set W := LinearMap.ker A.mulVecLin
-  obtain ⟨z, hz_li, hz_mem, hz_le⟩ :=
-    W.exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeight_le
-  set e := finCongr A.finrank_ker_mulVecLin
-  refine ⟨fun j ↦ z (e.symm j), hz_li.comp _ e.symm.injective, fun j ↦ ?_, ?_⟩
-  · exact LinearMap.mem_ker.mp (mem_integerPoints.mp (hz_mem (e.symm j)))
-  · rw [e.symm.prod_comp fun l ↦ absoluteProjectiveTupleHeight fun i ↦ (z l i : K)]
-    simpa only [W, A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin] using hz_le
+  let W := LinearMap.ker A.mulVecLin
+  refine exists_linearIndependent_mulVec_eq_zero_of_ker
+    W.exists_linearIndependent_integerPoints_prod_absoluteProjectiveTupleHeight_le ?_
+  dsimp only [W]
+  rw [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin]
 
 /-- `Basis` packaging of
 `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_absoluteProjectiveTupleHeight_le`: the kernel
@@ -554,15 +543,11 @@ theorem exists_basis_ker_mulVecLin_prod_absoluteProjectiveTupleHeight_le :
           (((Fintype.card ι - A.rank : ℕ) * nrComplexPlaces K : ℝ) / finrank ℚ K) *
         |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
         (span K (range A.row)).subspaceHeight := by
-  obtain ⟨b, hb_int, hb_le⟩ :=
-    (LinearMap.ker A.mulVecLin).exists_basis_integerPoints_prod_absoluteProjectiveTupleHeight_le
-  set e := finCongr A.finrank_ker_mulVecLin
-  refine ⟨b.reindex e, fun j i ↦ by simpa only [Basis.reindex_apply] using hb_int (e.symm j) i, ?_⟩
-  rw [show (∏ j, absoluteProjectiveTupleHeight ((b.reindex e j : LinearMap.ker A.mulVecLin) :
-      ι → K)) = ∏ l, absoluteProjectiveTupleHeight (b l : ι → K) by
-    simpa only [Basis.reindex_apply] using
-      e.symm.prod_comp fun l ↦ absoluteProjectiveTupleHeight (b l : ι → K)]
-  simpa only [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin] using hb_le
+  obtain ⟨x, hx_li, hx_ker, hx_le⟩ :=
+    A.exists_linearIndependent_mulVec_eq_zero_prod_absoluteProjectiveTupleHeight_le
+  obtain ⟨b, hb, hb_int⟩ := Submodule.exists_basis_of_linearIndependent_integerPoints
+    A.finrank_ker_mulVecLin hx_li fun j ↦ mem_integerPoints.mpr (LinearMap.mem_ker.mpr (hx_ker j))
+  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
 
 /-- **Kernel-basis Siegel lemma over number fields, Euclidean height** (Bombieri–Vaaler,
 Bombieri–Gubler). For any `m × ι` matrix `A` over `K` (without assuming row independence), the
@@ -582,15 +567,11 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_height2_le :
           ((nrComplexPlaces K : ℝ) / finrank ℚ K) *
         |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
         (span K (range A.row)).subspaceHeight := by
-  set W := LinearMap.ker A.mulVecLin
-  obtain ⟨z, hz_li, hz_mem, hz_le⟩ := W.exists_linearIndependent_integerPoints_prod_height2_le
-  set e := finCongr A.finrank_ker_mulVecLin
-  refine ⟨fun j ↦ z (e.symm j), hz_li.comp _ e.symm.injective, fun j ↦ ?_, ?_⟩
-  · exact LinearMap.mem_ker.mp (mem_integerPoints.mp (hz_mem (e.symm j)))
-  · rw [e.symm.prod_comp fun l ↦ height2 fun i ↦ (z l i : K)]
-    refine hz_le.trans_eq ?_
-    dsimp only [W]
-    rw [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin]
+  let W := LinearMap.ker A.mulVecLin
+  refine exists_linearIndependent_mulVec_eq_zero_of_ker
+    W.exists_linearIndependent_integerPoints_prod_height2_le ?_
+  dsimp only [W]
+  rw [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin]
 
 /-- `Basis` packaging of `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_height2_le`: the
 kernel `LinearMap.ker A.mulVecLin` admits a `K`-basis `b` indexed by `Fin (#ι - A.rank)` with
@@ -607,16 +588,10 @@ theorem exists_basis_ker_mulVecLin_prod_height2_le :
           ((nrComplexPlaces K : ℝ) / finrank ℚ K) *
         |(discr K : ℝ)| ^ (((Fintype.card ι - A.rank : ℕ) : ℝ) / (2 * finrank ℚ K)) *
         (span K (range A.row)).subspaceHeight := by
-  obtain ⟨b, hb_int, hb_le⟩ :=
-    (LinearMap.ker A.mulVecLin).exists_basis_integerPoints_prod_height2_le
-  set e := finCongr A.finrank_ker_mulVecLin
-  refine ⟨b.reindex e, fun j i ↦ by simpa only [Basis.reindex_apply] using hb_int (e.symm j) i, ?_⟩
-  rw [show (∏ j, height2 ((b.reindex e j : LinearMap.ker A.mulVecLin) : ι → K)) =
-      ∏ l, height2 (b l : ι → K) by
-    simpa only [Basis.reindex_apply] using
-      e.symm.prod_comp fun l ↦ height2 (b l : ι → K)]
-  refine hb_le.trans_eq ?_
-  rw [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin]
+  obtain ⟨x, hx_li, hx_ker, hx_le⟩ := A.exists_linearIndependent_mulVec_eq_zero_prod_height2_le
+  obtain ⟨b, hb, hb_int⟩ := Submodule.exists_basis_of_linearIndependent_integerPoints
+    A.finrank_ker_mulVecLin hx_li fun j ↦ mem_integerPoints.mpr (LinearMap.mem_ker.mpr (hx_ker j))
+  exact ⟨b, hb_int, by simpa only [hb] using hx_le⟩
 
 end Matrix
 

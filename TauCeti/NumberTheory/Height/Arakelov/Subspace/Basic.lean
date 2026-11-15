@@ -59,7 +59,9 @@ the plane in `ℚ³` orthogonal to `(1, 2, 2)` has absolute height `3`, the Eucl
   the absolute sup height, with their logarithmic forms.
 * `Submodule.relativeSubspaceArakelovHeight_euclideanDual` and
   `Submodule.subspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot product
-  has the height of `U`, with their logarithmic forms.
+  has the height of `U`, with their logarithmic forms; in particular,
+  `Matrix.subspaceHeight_ker_mulVecLin` equates the height of `LinearMap.ker A.mulVecLin` with that
+  of the row space of `A`.
 * `Submodule.finite_subspaceHeight_le`, `Submodule.instNorthcottSubspaceHeight` and
   `Submodule.instNorthcottSubspaceLogHeight`: Northcott's theorem for the absolute height.
 
@@ -458,6 +460,25 @@ instance instNorthcottSubspaceLogHeight : Northcott (subspaceLogHeight (ι := ι
     bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
 end Submodule
+
+namespace Matrix
+
+open Set Submodule
+
+/-- By Hodge duality of Arakelov heights, the absolute Euclidean height of the kernel of a matrix
+`A` equals the absolute Euclidean height of its row space `span K (range A.row)`, without any rank,
+row-independence, or row-finiteness assumption on `A`. -/
+theorem subspaceHeight_ker_mulVecLin {K m ι : Type*} [Field K] [NumberField K] [Fintype ι]
+    [LinearOrder ι] (A : Matrix m ι K) :
+    (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (range A.row)).subspaceHeight := by
+  have hker : LinearMap.ker A.mulVecLin = (span K (range A.row)).euclideanDual := by
+    ext x
+    rw [LinearMap.mem_ker, mulVecLin_apply, mem_euclideanDual_span]
+    simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+    simp only [funext_iff, mulVec_apply, Pi.zero_apply]
+  rw [hker, subspaceHeight_euclideanDual]
+
+end Matrix
 
 /-! Over `ℚ` there are finitely many subspaces of bounded relative logarithmic Arakelov height. -/
 

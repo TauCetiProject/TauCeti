@@ -176,11 +176,9 @@ theorem exists_ne_zero_mem_integerPoints_height2_le {W : Submodule K (ι → K)}
   congr 2
   · congr 1
     · congr 1
-      rw [div_eq_mul_inv, mul_assoc, ← mul_inv]
-      rfl
+      field_simp
     · congr 1
-      rw [div_eq_mul_inv, mul_assoc, ← mul_inv]
-      rfl
+      field_simp
   · congr 1
     field_simp
 
@@ -230,12 +228,9 @@ theorem exists_ne_zero_mulVec_eq_zero_absoluteProjectiveTupleHeight_le [LinearOr
         (2 / Real.pi) ^ ((nrComplexPlaces K : ℝ) / finrank ℚ K) *
           |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
           (span K (range A.row)).subspaceHeight ^ ((Fintype.card ι : ℝ) - A.rank)⁻¹ := by
-  have hker : LinearMap.ker A.mulVecLin ≠ ⊥ := fun h0 ↦ by
-    have hdim := A.finrank_ker_mulVecLin
-    rw [h0, finrank_bot] at hdim
-    omega
   obtain ⟨x, hx_mem, hx0, hx_le⟩ :=
-    exists_ne_zero_mem_integerPoints_absoluteProjectiveTupleHeight_le hker
+    exists_ne_zero_mem_integerPoints_absoluteProjectiveTupleHeight_le
+      (A.ker_mulVecLin_ne_bot_of_rank_lt hA)
   refine ⟨x, hx0, LinearMap.mem_ker.mp (mem_integerPoints.mp hx_mem), ?_⟩
   simpa only [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin, Nat.cast_sub hA.le] using
     hx_le
@@ -256,13 +251,31 @@ theorem exists_ne_zero_mulVec_eq_zero_height2_le [LinearOrder ι] {A : Matrix m 
           ((nrComplexPlaces K : ℝ) / (finrank ℚ K * ((Fintype.card ι : ℝ) - A.rank))) *
         |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
         (span K (range A.row)).subspaceHeight ^ ((Fintype.card ι : ℝ) - A.rank)⁻¹ := by
-  have hker : LinearMap.ker A.mulVecLin ≠ ⊥ := fun h0 ↦ by
-    have hdim := A.finrank_ker_mulVecLin
-    rw [h0, finrank_bot] at hdim
-    omega
-  obtain ⟨x, hx_mem, hx0, hx_le⟩ := exists_ne_zero_mem_integerPoints_height2_le hker
+  obtain ⟨x, hx_mem, hx0, hx_le⟩ :=
+    exists_ne_zero_mem_integerPoints_height2_le (A.ker_mulVecLin_ne_bot_of_rank_lt hA)
   refine ⟨x, hx0, LinearMap.mem_ker.mp (mem_integerPoints.mp hx_mem), hx_le.trans_eq ?_⟩
   rw [A.finrank_ker_mulVecLin, A.subspaceHeight_ker_mulVecLin, Nat.cast_sub hA.le]
+
+/-- Hadamard's inequality combined with `A.rank ≤ #m` bounds the `(#ι - A.rank)`-th root of the
+row-space height by the `(#ι - #m)`-th root of `∏ i, height2 (A.row i)` when every row is
+nonzero. -/
+private theorem subspaceHeight_span_row_rpow_inv_le [LinearOrder ι] [Fintype m]
+    {A : Matrix m ι K}
+    (hcard : Fintype.card m < Fintype.card ι) (hrow : ∀ i, A.row i ≠ 0) :
+    (span K (range A.row)).subspaceHeight ^ ((Fintype.card ι : ℝ) - A.rank)⁻¹ ≤
+      (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
+  have hrank_le : A.rank ≤ Fintype.card m := A.rank_le_card_height
+  have hA : A.rank < Fintype.card ι := hrank_le.trans_lt hcard
+  have hprod_ge : 1 ≤ ∏ i, height2 (A.row i) :=
+    Finset.one_le_prod₀ fun i _ ↦ one_le_height2_of_ne_zero (hrow i)
+  have hexp_le :
+      ((Fintype.card ι : ℝ) - A.rank)⁻¹ ≤ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ :=
+    inv_anti₀ (sub_pos.mpr (Nat.cast_lt.mpr hcard))
+      (sub_le_sub_left (Nat.cast_le.mpr hrank_le) _)
+  exact (Real.rpow_le_rpow (Submodule.subspaceHeight_pos _).le
+    (Submodule.subspaceHeight_span_range_le_prod_of_ne_zero hrow)
+    (inv_nonneg.mpr (sub_pos.mpr (Nat.cast_lt.mpr hA)).le)).trans
+    (Real.rpow_le_rpow_of_exponent_le hprod_ge hexp_le)
 
 /-- **Fixed-field Siegel's lemma for a matrix with nonzero rows** (Evertse–Ferretti, Lemma 13.1).
 For any `m × ι` matrix `A` over `K` with `#m < #ι` and all rows nonzero (without assuming linear
@@ -275,41 +288,22 @@ theorem exists_ne_zero_mulVec_eq_zero_height2_le_of_row_ne_zero [Fintype m] {A :
         √(Fintype.card ι) * |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
           (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
   classical
+  -- Equip `ι` with an arbitrary linear order to apply the sup-height Siegel lemma.
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hrank_le : A.rank ≤ Fintype.card m := A.rank_le_card_height
-  have hA : A.rank < Fintype.card ι := hrank_le.trans_lt hcard
+  have hA : A.rank < Fintype.card ι := A.rank_le_card_height.trans_lt hcard
   obtain ⟨x, hx0, hxker, hxle⟩ := exists_ne_zero_mulVec_eq_zero_absoluteProjectiveTupleHeight_le hA
+  -- Drop `(2 / π) ^ (r₂ / [K : ℚ]) ≤ 1` and bound the row-space height via Hadamard's inequality.
   have hpi_le : (2 / Real.pi) ^ ((nrComplexPlaces K : ℝ) / finrank ℚ K) ≤ 1 :=
     Real.rpow_le_one (by positivity) (div_le_one_of_le₀ Real.two_le_pi Real.pi_pos.le)
       (by positivity)
-  have hprod_ge : 1 ≤ ∏ i, height2 (A.row i) :=
-    Finset.one_le_prod₀ fun i _ ↦ one_le_height2_of_ne_zero (hrow i)
-  have hsub_le : (span K (range A.row)).subspaceHeight ≤ ∏ i, height2 (A.row i) :=
-    Submodule.subspaceHeight_span_range_le_prod_of_ne_zero hrow
-  have hexp_le :
-      ((Fintype.card ι : ℝ) - A.rank)⁻¹ ≤ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ :=
-    inv_anti₀ (sub_pos.mpr (Nat.cast_lt.mpr hcard))
-      (sub_le_sub_left (Nat.cast_le.mpr hrank_le) _)
-  have hH_pow :
-      (span K (range A.row)).subspaceHeight ^ ((Fintype.card ι : ℝ) - A.rank)⁻¹ ≤
-        (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ :=
-    (Real.rpow_le_rpow (Submodule.subspaceHeight_pos _).le hsub_le
-      (inv_nonneg.mpr (sub_pos.mpr (Nat.cast_lt.mpr hA)).le)).trans
-      (Real.rpow_le_rpow_of_exponent_le hprod_ge hexp_le)
-  have hH_nn : 0 ≤ (span K (range A.row)).subspaceHeight ^ ((Fintype.card ι : ℝ) - A.rank)⁻¹ :=
-    Real.rpow_nonneg (Submodule.subspaceHeight_pos _).le _
   have hsup :
       absoluteProjectiveTupleHeight (fun j ↦ (x j : K)) ≤
         |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
-          (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
-    refine hxle.trans ?_
-    calc (2 / Real.pi) ^ ((nrComplexPlaces K : ℝ) / finrank ℚ K) *
-            |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
-            (span K (range A.row)).subspaceHeight ^ ((Fintype.card ι : ℝ) - A.rank)⁻¹
-        ≤ 1 * |(discr K : ℝ)| ^ ((1 : ℝ) / (2 * finrank ℚ K)) *
-            (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
-          gcongr
-      _ = _ := by rw [one_mul]
+          (∏ i, height2 (A.row i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ :=
+    hxle.trans <| mul_le_mul (mul_le_of_le_one_left (by positivity) hpi_le)
+      (subspaceHeight_span_row_rpow_inv_le hcard hrow)
+      (Real.rpow_nonneg (Submodule.subspaceHeight_pos _).le _) (by positivity)
+  -- Convert from sup height to Euclidean height at the cost of a factor `√#ι`.
   refine ⟨x, hx0, hxker, ?_⟩
   calc height2 (fun j ↦ (x j : K))
       ≤ √(Nat.card ι) * absoluteProjectiveTupleHeight (fun j ↦ (x j : K)) :=
