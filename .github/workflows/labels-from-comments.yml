@@ -1,6 +1,7 @@
 # Adapted from Mathlib's comment-label workflow:
 # https://github.com/leanprover-community/mathlib4/blob/master/.github/workflows/labels_from_comment.yml
 # Any contributor may add/remove an allowlisted label with a standalone LABEL/-LABEL line.
+# self-tested commands are restricted to the PR author and the commented head.
 # Only newly posted conversation comments count; editing/deleting a comment does not undo it.
 # The last matching line for each label wins. Labels and matching are case-sensitive.
 name: Labels from comments
@@ -23,7 +24,10 @@ jobs:
         contains(github.event.comment.body, 'mathlib-overlap') ||
         contains(github.event.comment.body, 'documentation') ||
         contains(github.event.comment.body, 'enhancement') ||
-        contains(github.event.comment.body, 'help wanted')
+        contains(github.event.comment.body, 'help wanted') ||
+        (contains(github.event.comment.body, 'self-tested') &&
+         github.event.issue.pull_request != null &&
+         github.event.comment.user.id == github.event.issue.user.id)
       )
     # Keep comment commands responsive when GitHub-hosted runners are backlogged.
     runs-on: ubuntu-24.04
@@ -43,6 +47,7 @@ jobs:
               'documentation',
               'enhancement',
               'help wanted',
+              'self-tested',
             ]);
             const commands = new Map();
             for (const raw of context.payload.comment.body.split(/\r?\n/)) {
@@ -66,6 +71,7 @@ jobs:
           repositories: TauCeti
           permission-issues: write
           permission-pull-requests: write
+          permission-contents: read
 
       - name: Apply label commands
         if: steps.commands.outputs.labels != '[]'
@@ -76,7 +82,56 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const { owner, repo, number: issue_number } = context.issue;
+            const comment = context.payload.comment;
+            async function commentBindsHead(head) {
+              // Timeline order, rather than commit timestamps, also detects an
+              // old commit pushed after the comment. Match the immutable comment ID.
+              let before = null;
+              let foundComment = false;
+              do {
+                const data = await github.graphql(`
+                  query($owner: String!, $repo: String!, $number: Int!, $before: String) {
+                    repository(owner: $owner, name: $repo) { pullRequest(number: $number) {
+                      headRefOid
+                      timelineItems(last: 100, before: $before,
+                        itemTypes: [ISSUE_COMMENT, PULL_REQUEST_COMMIT, HEAD_REF_FORCE_PUSHED_EVENT]) {
+                        nodes { __typename
+                          ... on IssueComment { id }
+                          ... on PullRequestCommit { commit { oid } }
+                          ... on HeadRefForcePushedEvent { afterCommit { oid } }
+                        }
+                        pageInfo { hasPreviousPage startCursor }
+                      }
+                    }}
+                  }`, { owner, repo, number: issue_number, before });
+                const pull = data.repository.pullRequest;
+                if (!pull || pull.headRefOid !== head) return false;
+                for (const event of [...pull.timelineItems.nodes].reverse()) {
+                  if (event.__typename === 'IssueComment' && event.id === comment.node_id) foundComment = true;
+                  if (event.__typename === 'HeadRefForcePushedEvent' ||
+                      (event.__typename === 'PullRequestCommit' && event.commit.oid === head)) {
+                    return foundComment;
+                  }
+                }
+                const page = pull.timelineItems.pageInfo;
+                if (!page.hasPreviousPage) return false;
+                before = page.startCursor;
+              } while (before);
+              return false;
+            }
             for (const [label, add] of JSON.parse(process.env.LABEL_COMMANDS)) {
+              if (label === 'self-tested') {
+                if (!context.payload.issue.pull_request) continue;
+                const { data: pull } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                if (comment.user.id !== pull.user.id) continue;
+                if (add && (pull.state !== 'open' || !await commentBindsHead(pull.head.sha))) {
+                  core.info('self-tested ignored: the comment does not attest the current open PR head');
+                  continue;
+                }
+                const { data: fresh } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                if (fresh.user.id !== comment.user.id ||
+                    (add && (fresh.state !== 'open' || fresh.head.sha !== pull.head.sha))) continue;
+              }
               if (add) {
                 await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
               } else {
