@@ -58,7 +58,7 @@ namespace TauCeti.LSPath
 open RootPairing
 
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
-  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
 /-- **Reflecting a rising window of a linked list.** Let `[k₀, j₁]` be a window of entries of a
 linked list along which the heights `⟨τ λ, αᵢ^∨⟩` of the directions are positive, with
@@ -124,7 +124,6 @@ private noncomputable def lowerList (i : b.support) (l : List (P.weylGroup × �
       (fun p ↦ ((weylCoxeterSystem P b).simple i * p.1, p.2)) ++
     (τ, (1 - θ) * d) :: l.drop (j₁ + 1)
 
-omit [P.flip.IsReduced] in
 private theorem nonneg_of_mem_lowerList (i : b.support) {l : List (P.weylGroup × ℚ)}
     (hl : ∀ p ∈ l, 0 ≤ p.2) {k₀ j₁ : ℕ} {τ : P.weylGroup} {d θ : ℚ} (hd : 0 ≤ d) (hθ₀ : 0 ≤ θ)
     (hθ₁ : θ ≤ 1) {p : P.weylGroup × ℚ} (hp : p ∈ lowerList b i l k₀ j₁ τ d θ) : 0 ≤ p.2 := by
@@ -137,7 +136,6 @@ private theorem nonneg_of_mem_lowerList (i : b.support) {l : List (P.weylGroup �
   · exact mul_nonneg (by linarith) hd
   · exact hl p (List.mem_of_mem_drop hp)
 
-omit [P.flip.IsReduced] in
 private theorem sum_map_snd_lowerList (i : b.support) {l : List (P.weylGroup × ℚ)} {k₀ j₁ : ℕ}
     (hj₁ : j₁ < l.length) (hk₀j₁ : k₀ ≤ j₁) (θ : ℚ) :
     ((lowerList b i l k₀ j₁ l[j₁].1 l[j₁].2 θ).map Prod.snd).sum = (l.map Prod.snd).sum := by
@@ -264,7 +262,7 @@ private theorem linked_lowerList (hlam : lam ∈ dominantChamber P b)
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V]
 
-omit [P.flip.IsReduced] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 /-- The reflection `s = Module.preReflection (f αᵢ) F`, for a form `F` inducing `⟨-, αᵢ^∨⟩`,
 sends the segment `d • f (τ λ)` to `d • f ((sᵢ τ) λ)`. -/
 private theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)

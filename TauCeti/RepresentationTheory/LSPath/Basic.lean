@@ -364,8 +364,6 @@ end Examples
 
 section Finite
 
-variable [P.flip.IsReduced]
-
 /-- The bond gcd of the chain witnessing an internal break of a Lakshmibai–Seshadri path is a
 positive multiple of the denominator of the break, and divides a bond `b_λ(x, y)`. -/
 private theorem exists_den_le_natAbs_reflectionBond (hlam : lam ∈ dominantChamber P b)
@@ -430,8 +428,6 @@ theorem finite (hlam : lam ∈ dominantChamber P b) : Finite (LSPath P b lam) :=
 end Finite
 
 section Chains
-
-variable [P.flip.IsReduced]
 
 /-- **Every saturated chain at an internal break of a Lakshmibai–Seshadri path is an `a`-chain.**
 For dominant `λ`, every saturated chain of `W / W_λ` from `τ_j` down to `τ_{j+1}` is an

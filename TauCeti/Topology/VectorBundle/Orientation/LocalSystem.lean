@@ -100,8 +100,6 @@ theorem signLocalSystemObjEquiv_map_apply {x y : FundamentalGroupoid (TopCat.of 
         ((isCoveringMap_proj hι).monodromy (inv γ) e) :=
   (isCoveringMap_proj hι).signLocalSystemObjEquiv_map_apply _ proj_comp_deck γ f e
 
-variable [FiniteDimensional ℝ F]
-
 /-- Evaluation at an orientation `o` of the fibre `E_b` identifies the fibre of the orientation
 local system over `b` with `R`. -/
 def signLocalSystemFiberEquiv {b : B} (o : Orientation ℝ (E b) ι) :
@@ -126,6 +124,8 @@ theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     signLocalSystemFiberEquiv hι (-o) f = -signLocalSystemFiberEquiv hι o f := by
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← fiberMap_deck_mk o]
   exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).2 _
+
+variable [FiniteDimensional ℝ F]
 
 section Tensor
 
@@ -185,7 +185,7 @@ end VectorBundleOrientationCover
 
 namespace VectorBundleOrientation
 
-variable [FiniteDimensional ℝ F] [Fintype ι] {R : Type u} [Ring R]
+variable [Fintype ι] {R : Type u} [Ring R]
   (hι : Fintype.card ι = finrank ℝ F)
 
 /-- An orientation `o` of the bundle trivializes the orientation local system: over `b`, the

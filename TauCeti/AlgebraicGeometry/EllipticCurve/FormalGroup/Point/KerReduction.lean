@@ -59,12 +59,6 @@ local notation "R_u" =>
 -- structure on `O_u` also supplies the valuation-ring instance used by reduction.
 private local instance : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
 
-local instance : IsLinearTopology O_u O_u :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
-
-local instance : Fact (IsAdic m_u) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
-
 variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
 
 variable [(C.baseChange (u.adicCompletion F)).IsElliptic]

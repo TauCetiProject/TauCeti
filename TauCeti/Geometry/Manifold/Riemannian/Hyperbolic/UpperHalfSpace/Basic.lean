@@ -222,19 +222,11 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
         (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
-  -- The map `f` is differentiable, since its composite with the inclusion is.
-  have hf : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x := by
-    have hcoe : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ))
-        (coe ∘ f) x := by
-      rw [hcomp]
-      exact hA.differentiableAt.mdifferentiableAt.comp x
-        ((contMDiff_coe (E := E)).mdifferentiableAt (by simp))
-    exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff (U := upperHalfSpaceOpens E) f
-      Set.univ x).1 hcoe
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hf hcomp v
+    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
+    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
   -- Both the open-subset identification and `tangentSpaceCastModel` are the identity of the model.
   have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
