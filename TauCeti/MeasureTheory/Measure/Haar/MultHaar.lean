@@ -28,8 +28,10 @@ on `ℝ`, Mathlib's `MeasureTheory.Measure.isAddLeftInvariant_eq_smul`. It is th
 radial coordinate is split off a multiplicative Haar measure, as in the decomposition
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
 
-Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
-(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
+Weighting `dt / t` by `t` recovers Lebesgue measure on `(0, ∞)` (`TauCeti.withDensity_multHaar`),
+so the two measures have the same null sets (`TauCeti.ae_multHaar`). Integrating against `dt / t`
+is integrating `t⁻¹ f(t)` over `(0, ∞)` (`TauCeti.lintegral_multHaar`,
+`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
 Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
 `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
 integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`).
@@ -113,13 +115,55 @@ theorem multHaar_Iic_zero : multHaar (Iic 0) = 0 := by
 theorem ae_pos_multHaar : ∀ᵐ t ∂multHaar, 0 < t :=
   ae_iff.2 (by simp only [not_lt]; exact multHaar_Iic_zero)
 
+/-- Restricting `dt / t` to `(0, ∞)` does not change it. -/
+@[simp]
+theorem restrict_Ioi_zero_multHaar : multHaar.restrict (Ioi 0) = multHaar :=
+  restrict_eq_self_of_ae_mem ae_pos_multHaar
+
+/-- Weighting `dt / t` by `t` recovers Lebesgue measure on `(0, ∞)`. -/
+@[simp]
+theorem withDensity_multHaar :
+    multHaar.withDensity (fun t ↦ ENNReal.ofReal t) = volume.restrict (Ioi 0) := by
+  rw [multHaar_def, ← withDensity_mul _ measurable_inv.ennreal_ofReal ENNReal.measurable_ofReal]
+  refine (withDensity_congr_ae ?_).trans withDensity_one
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
+  rw [Pi.mul_apply, ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le), inv_mul_cancel₀ ht.ne',
+    ENNReal.ofReal_one, Pi.one_apply]
+
+/-- `dt / t` is absolutely continuous with respect to Lebesgue measure on `(0, ∞)`. -/
+theorem multHaar_absolutelyContinuous : multHaar ≪ volume.restrict (Ioi 0) :=
+  withDensity_absolutelyContinuous _ _
+
+/-- Lebesgue measure on `(0, ∞)` is absolutely continuous with respect to `dt / t`. -/
+theorem absolutelyContinuous_multHaar : volume.restrict (Ioi 0) ≪ multHaar :=
+  withDensity_multHaar ▸ withDensity_absolutelyContinuous _ _
+
+/-- `dt / t` and Lebesgue measure on `(0, ∞)` have the same almost-everywhere filter. -/
+theorem ae_multHaar : ae multHaar = ae (volume.restrict (Ioi 0)) :=
+  le_antisymm multHaar_absolutelyContinuous.ae_le absolutelyContinuous_multHaar.ae_le
+
+@[simp]
+theorem aemeasurable_multHaar_iff {β : Type*} [MeasurableSpace β] {f : ℝ → β} :
+    AEMeasurable f multHaar ↔ AEMeasurable f (volume.restrict (Ioi 0)) :=
+  ⟨fun h ↦ h.mono_ac absolutelyContinuous_multHaar,
+    fun h ↦ h.mono_ac multHaar_absolutelyContinuous⟩
+
+@[simp]
+theorem aestronglyMeasurable_multHaar_iff {β : Type*} [TopologicalSpace β] {f : ℝ → β} :
+    AEStronglyMeasurable f multHaar ↔ AEStronglyMeasurable f (volume.restrict (Ioi 0)) :=
+  ⟨fun h ↦ h.mono_ac absolutelyContinuous_multHaar,
+    fun h ↦ h.mono_ac multHaar_absolutelyContinuous⟩
+
+@[simp]
+theorem essSup_multHaar {β : Type*} [ConditionallyCompleteLinearOrder β] (f : ℝ → β) :
+    essSup f multHaar = essSup f (volume.restrict (Ioi 0)) := by
+  rw [essSup, essSup, ae_multHaar]
+
 /-- A function continuous on `(0, ∞)` is almost everywhere strongly measurable for `dt / t`. -/
 theorem _root_.ContinuousOn.aestronglyMeasurable_multHaar {β : Type*} [TopologicalSpace β]
     [TopologicalSpace.PseudoMetrizableSpace β] {f : ℝ → β} (hf : ContinuousOn f (Ioi 0)) :
-    AEStronglyMeasurable f multHaar := by
-  rw [multHaar_def]
-  exact (hf.aestronglyMeasurable measurableSet_Ioi).mono_ac
-    (withDensity_absolutelyContinuous _ _)
+    AEStronglyMeasurable f multHaar :=
+  aestronglyMeasurable_multHaar_iff.2 (hf.aestronglyMeasurable measurableSet_Ioi)
 
 /-- `dt / t` is invariant under the dilations `t ↦ c t`, `c > 0`. -/
 theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = multHaar := by
@@ -276,6 +320,27 @@ end GeometricIntervals
 /-! ### Integrals against `dt / t` -/
 
 section Integral
+
+/-- The lower integral against `dt / t` is the lower integral of `t⁻¹ * f t` over `(0, ∞)`,
+without any measurability assumption on `f`. -/
+theorem lintegral_multHaar (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t, f t ∂multHaar = ∫⁻ t in Ioi 0, ENNReal.ofReal t⁻¹ * f t :=
+  lintegral_withDensity_eq_lintegral_mul_non_measurable _ measurable_inv.ennreal_ofReal
+    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) f
+
+/-- On any subset `s` of `(0, ∞)`, the lower integral with respect to Lebesgue measure is the lower
+integral of `t * f t` against `dt / t`, without measurability assumptions on `f` or `s`. -/
+theorem setLIntegral_eq_setLIntegral_multHaar (f : ℝ → ℝ≥0∞) {s : Set ℝ} (hs : s ⊆ Ioi 0) :
+    ∫⁻ t in s, f t = ∫⁻ t in s, ENNReal.ofReal t * f t ∂multHaar := by
+  rw [← restrict_restrict_of_subset hs, ← withDensity_multHaar,
+    setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀' multHaar s
+      ENNReal.measurable_ofReal.aemeasurable f (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  rfl
+
+/-- The lower integral over `(0, ∞)` is the lower integral of `t * f t` against `dt / t`. -/
+theorem setLIntegral_Ioi_eq_lintegral_multHaar (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t in Ioi 0, f t = ∫⁻ t, ENNReal.ofReal t * f t ∂multHaar := by
+  rw [setLIntegral_eq_setLIntegral_multHaar f Subset.rfl, restrict_Ioi_zero_multHaar]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
