@@ -57,13 +57,11 @@ namespace FiniteHolomorphicMap
 variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
-  [FiniteCWType X] [FiniteCWType Y]
-  (f : FiniteHolomorphicMap X Y) [FiniteCWType ↥f.branchValuesᶜ]
+  [CompactSpace X] [CompactSpace Y] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
+  (f : FiniteHolomorphicMap X Y)
 
-/-- **Riemann–Hurwitz in genus form**, for surfaces whose Euler numbers are `2 - 2 · genus`: if
-`X`, `Y` and the complement of the branch values have finite CW type, and
-`χ(X) = 2 - 2 · genus X` and `χ(Y) = 2 - 2 · genus Y`, then
+/-- **Riemann--Hurwitz in genus form**, for compact Riemann surfaces whose Euler numbers are
+`2 - 2 · genus`: if `χ(X) = 2 - 2 · genus X` and `χ(Y) = 2 - 2 · genus Y`, then
 `2 genus X - 2 = deg f · (2 genus Y - 2) + R(f)`, where `R(f)` is the ramification degree. The
 two Euler-number hypotheses hold for every compact connected Riemann surface; they are explicit
 here because they need Poincaré duality. -/
