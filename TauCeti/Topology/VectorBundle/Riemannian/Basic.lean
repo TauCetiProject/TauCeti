@@ -29,6 +29,8 @@ vectors converge too.
 
 ## Main results
 
+* `ContinuousOn.bilin_bundle_self`: diagonal evaluation of a bilinear field is continuous over
+  its domain, with `Bundle.ContinuousRiemannianMetric.continuous_inner_self` the metric case.
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
@@ -47,7 +49,38 @@ open scoped Topology
 variable
   {B : Type*} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+
+section Evaluation
+
+variable [∀ x, TopologicalSpace (E x)] [∀ x, AddCommGroup (E x)]
+  [∀ x, Module ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- Diagonal evaluation of a continuous bilinear field is continuous over its domain in the
+base. No fibre norm instances are required. -/
+theorem ContinuousOn.bilin_bundle_self {K : Set B}
+    {b : ∀ x, E x →L[ℝ] E x →L[ℝ] ℝ}
+    (hb : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (b x)) K) :
+    ContinuousOn (fun z : TotalSpace F E ↦ b z.proj z.2 z.2) (TotalSpace.proj ⁻¹' K) := by
+  have h : ContinuousOn (fun z : TotalSpace F E ↦
+      TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) z.proj (b z.proj z.2 z.2))
+      (TotalSpace.proj ⁻¹' K) :=
+    (hb.comp (FiberBundle.continuous_proj F E).continuousOn (fun _ hz ↦ hz)).clm_bundle_apply₂
+      continuousOn_id continuousOn_id
+  exact continuous_snd.comp_continuousOn
+    ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp_continuousOn h)
+
+/-- The diagonal value of a continuous metric is continuous on the total space, without
+requiring fibre norm or `RiemannianBundle` instances. -/
+theorem Bundle.ContinuousRiemannianMetric.continuous_inner_self
+    (g : ContinuousRiemannianMetric F E) :
+    Continuous (fun z : TotalSpace F E ↦ g.inner z.proj z.2 z.2) := by
+  simpa only [preimage_univ, continuousOn_univ] using
+    (g.continuous.continuousOn (s := univ)).bilin_bundle_self
+
+end Evaluation
+
+variable [∀ x, NormedAddCommGroup (E x)]
 
 section Norm
 

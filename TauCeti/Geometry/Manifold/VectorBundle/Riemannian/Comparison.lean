@@ -11,7 +11,7 @@ import TauCeti.Topology.VectorBundle.Riemannian.Comparison
 /-!
 # Uniform comparison of differentiable metrics
 
-Two differentiable metrics on a finite-rank real vector bundle have uniform positive two-sided
+Two differentiable metrics on a real vector bundle have uniform positive two-sided
 comparison constants on a compact set. In particular every metric on a compact manifold is
 uniformly comparable to a chosen reference metric. These bounds allow one to use a fixed metric
 for estimates while varying another metric. The statements use the preexisting fibre topology,
@@ -32,10 +32,9 @@ variable
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {m n : ℕ∞ω}
   {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ x, TopologicalSpace (E x)] [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)]
-  [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
   [FiberBundle F E] [VectorBundle ℝ F E]
 
 /-- Two differentiable metrics are uniformly comparable on a compact subset, with strictly
