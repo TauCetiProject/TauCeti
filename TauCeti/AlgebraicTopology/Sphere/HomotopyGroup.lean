@@ -88,7 +88,7 @@ public section
 noncomputable section
 
 open Metric Set Module CategoryTheory Limits Topology.RelCWComplex
-open scoped Topology
+open scoped Topology Topology.Homotopy
 
 universe u
 
