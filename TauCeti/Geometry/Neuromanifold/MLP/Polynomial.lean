@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Neuromanifold.MLP.Parameters
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Chain
+import TauCeti.Geometry.Neuromanifold.MLP.Composition
 
 /-!
 # MLPs with polynomial activations are jointly polynomial models
@@ -18,13 +19,14 @@ equivalences `MLPSpec.parameterEquiv` and `MLPSpec.weightEquiv` of
 
 When every hidden activation of `A` is a polynomial function `t ↦ (q j).eval t`, the prefix
 evaluations of `A` are polynomial jointly in the parameter coordinates and the input:
-`MLPSpec.polynomialPrefix A q` follows the prefix recursion `h₀ = x`,
-`hᵢ₊₁ = σᵢ₊₁ (Wᵢ₊₁ hᵢ + bᵢ₊₁)` with polynomials in place of functions, where the activation
-polynomial of each layer is `MLPSpec.layerPolynomial q`: `q` on hidden layers and `X` on the
-affine output layer. Equivalently, `MLPSpec.polynomialPrefix_eq_polynomialChainPrefix` and
-`MLPSpec.polynomialRealize_eq_polynomialChain` identify `MLPSpec.polynomialPrefix A q` and its
-output layer `MLPSpec.polynomialRealize A q` with `polynomialChainPrefix` and `polynomialChain`
-applied to the dense layers `o ↦ aeval (polynomialDense o) (layerPolynomial q i)`. Evaluating
+`MLPSpec.polynomialPrefix A q` instantiates `polynomialChainPrefix` on the dense layers
+`o ↦ aeval (polynomialDense o) (layerPolynomial q i)`
+(`MLPSpec.polynomialPrefix_eq_polynomialChainPrefix`), where `MLPSpec.layerPolynomial q` is `q` on
+hidden layers and `X` on the affine output layer, so it satisfies the prefix recursion `h₀ = x`,
+`hᵢ₊₁ = σᵢ₊₁ (Wᵢ₊₁ hᵢ + bᵢ₊₁)` with polynomials in place of functions
+(`MLPSpec.polynomialPrefix_zero`, `MLPSpec.polynomialPrefix_succ`), and its output layer
+`MLPSpec.polynomialRealize A q` is the
+corresponding `polynomialChain` (`MLPSpec.polynomialRealize_eq_polynomialChain`). Evaluating
 `MLPSpec.polynomialRealize A q` realizes `A.realize` after `A.parameterEquiv`, and substituting
 zero for every bias variable gives `MLPSpec.polynomialRealizeWeights A q` — equivalently
 `polynomialChain` of the bias-free layers `o ↦ aeval (polynomialLinear o) (layerPolynomial q i)`
@@ -104,18 +106,26 @@ theorem layerActivation_eq_eval_layerPolynomial (A : MLPSpec K L)
       layerPolynomial_of_val_add_one_eq q i (by omega)]
 
 /-- The prefix polynomials of `A` with hidden activation polynomials `q`, in the affine parameter
-coordinates and the input variables: `h₀ = x` and `hᵢ₊₁ = pᵢ (Wᵢ₊₁ hᵢ + bᵢ₊₁)`
-coordinatewise, where `pᵢ` is `layerPolynomial q i`. -/
+coordinates and the input variables: `polynomialChainPrefix` applied to the dense layers followed
+coordinatewise by `layerPolynomial q i`, so `h₀ = x` and `hᵢ₊₁ = pᵢ (Wᵢ₊₁ hᵢ + bᵢ₊₁)`
+coordinatewise where `pᵢ` is `layerPolynomial q i`. -/
 def polynomialPrefix (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
     (i : Fin (L + 1)) → Fin (A.width i) → MvPolynomial (A.ParameterIndex ⊕ Fin (A.width 0)) K :=
-  Fin.induction (fun j => X (.inr j)) fun i h o =>
-    Polynomial.aeval (∑ j, X (.inl ⟨i, .inl (o, j)⟩) * h j + X (.inl ⟨i, .inr o⟩))
-      (layerPolynomial q i)
+  polynomialChainPrefix (I := fun j => Fin (A.width j))
+    (fun i o => Polynomial.aeval (polynomialDense o) (layerPolynomial q i))
+
+/-- Every polynomial prefix of `A` is the corresponding prefix of `polynomialChainPrefix` applied
+to the dense layers followed coordinatewise by `layerPolynomial q i`. -/
+theorem polynomialPrefix_eq_polynomialChainPrefix (A : MLPSpec K L)
+    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
+    A.polynomialPrefix q k =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun i o => Polynomial.aeval (polynomialDense o) (layerPolynomial q i)) k := (rfl)
 
 /-- The zeroth prefix polynomials are the input variables. -/
 @[simp] theorem polynomialPrefix_zero (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
     A.polynomialPrefix q 0 = fun j => X (.inr j) :=
-  Fin.induction_zero ..
+  polynomialChainPrefix_zero _
 
 /-- The prefix recursion of the polynomial prefixes. -/
 @[simp] theorem polynomialPrefix_succ (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K)
@@ -124,23 +134,11 @@ def polynomialPrefix (A : MLPSpec K L) (q : Fin (L - 1) → Polynomial K) :
       Polynomial.aeval
         (∑ j, X (.inl ⟨i, .inl (o, j)⟩) * A.polynomialPrefix q i.castSucc j +
           X (.inl ⟨i, .inr o⟩))
-        (layerPolynomial q i) :=
-  Fin.induction_succ ..
-
-/-- Every polynomial prefix of `A` is the corresponding prefix of `polynomialChainPrefix` applied
-to the dense layers followed coordinatewise by `layerPolynomial q i`. -/
-theorem polynomialPrefix_eq_polynomialChainPrefix (A : MLPSpec K L)
-    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
-    A.polynomialPrefix q k =
-      polynomialChainPrefix (I := fun j => Fin (A.width j))
-        (fun i o => Polynomial.aeval (polynomialDense o) (layerPolynomial q i)) k := by
-  induction k using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    funext o
-    rw [polynomialPrefix_succ, polynomialChainPrefix_succ, ← ih,
-      ← Polynomial.aeval_algHom_apply (bind₁ _)]
-    simp [polynomialDense_apply]
+        (layerPolynomial q i) := by
+  funext o
+  rw [polynomialPrefix_eq_polynomialChainPrefix, polynomialChainPrefix_succ,
+    ← Polynomial.aeval_algHom_apply (bind₁ _), ← polynomialPrefix_eq_polynomialChainPrefix]
+  simp [polynomialDense_apply]
 
 /-- If the hidden activations of `A` evaluate the polynomials `q`, then evaluating the prefix
 polynomials at parameter coordinates `v` and input `x` gives the prefix evaluation of `A` at the
@@ -149,10 +147,25 @@ theorem eval_polynomialPrefix (A : MLPSpec K L) {q : Fin (L - 1) → Polynomial 
     (hq : ∀ j t, A.activation j t = (q j).eval t) (v : A.ParameterIndex → K)
     (x : Fin (A.width 0) → K) (i : Fin (L + 1)) (o : Fin (A.width i)) :
     eval (Sum.elim v x) (A.polynomialPrefix q i o) = A.evalPrefix (A.parameterEquiv v) x i o := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    simp [A.layerActivation_eq_eval_layerPolynomial hq, ih, Matrix.mulVec, dotProduct]
+  have hstep (k : Fin L) :
+      polynomialRealization
+          (fun a : Fin (A.width k.succ) =>
+            Polynomial.aeval (polynomialDense (ι := Fin (A.width k.castSucc)) a)
+              (layerPolynomial q k))
+          (fun w => v ⟨k, w⟩) =
+        Neuromanifold.activation (A.layerActivation k) () ∘ dense (A.parameterEquiv v k) := by
+    have hparam :
+        denseParameterEquiv K (Fin (A.width k.succ)) (Fin (A.width k.castSucc))
+          (fun w => v ⟨k, w⟩) = A.parameterEquiv v k := by
+      ext <;> simp
+    rw [polynomialRealization_aeval, polynomialRealization_polynomialDense]
+    funext y a
+    simp [A.layerActivation_eq_eval_layerPolynomial hq, hparam]
+  rw [← polynomialRealization_apply, polynomialPrefix_eq_polynomialChainPrefix,
+    polynomialRealization_polynomialChainPrefix_eq_dfoldl, A.evalPrefix_eq_dfoldl]
+  exact congrFun (congrArg
+    (fun g => Fin.dfoldl i.val (fun j => Fin (A.width (Fin.castLE i.isLt j)) → K) g x)
+    (funext fun j => hstep (Fin.castLE (Nat.le_of_lt_succ i.isLt) j))) o
 
 /-- The jointly polynomial tuple of `A` with hidden activation polynomials `q`: the output-layer
 prefix polynomials, in the affine parameter coordinates and the input variables. -/

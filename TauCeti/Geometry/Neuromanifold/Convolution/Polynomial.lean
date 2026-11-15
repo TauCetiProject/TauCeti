@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Neuromanifold.Convolution.Chain
 public import TauCeti.Geometry.Neuromanifold.MLP.Polynomial
+import TauCeti.Geometry.Neuromanifold.Convolution.Composition
 
 /-!
 # Jointly polynomial convolutional networks
@@ -14,10 +15,12 @@ public import TauCeti.Geometry.Neuromanifold.MLP.Polynomial
 A fixed `ConvolutionSpec` with polynomial hidden activations has a jointly polynomial
 realization in its filters, shared biases, and inputs. `ConvolutionSpec.parameterEquiv`
 flattens precisely these parameters, not the entries of the associated dense matrices.
-`ConvolutionSpec.polynomialRealize` supplies the polynomial tuple, whose evaluation agrees
-with convolutional realization, and `ConvolutionSpec.polynomialRealize_eq_polynomialChain`
-identifies it with `polynomialChain` applied to the affine convolution layers
-`a ↦ aeval (polynomialAffineConvolution (A.length_eq i) a) (MLPSpec.layerPolynomial q i)`.
+`ConvolutionSpec.polynomialPrefix` instantiates `polynomialChainPrefix` on the affine convolution
+layers `a ↦ aeval (polynomialAffineConvolution (A.length_eq i) a) (MLPSpec.layerPolynomial q i)`
+(`ConvolutionSpec.polynomialPrefix_eq_polynomialChainPrefix`), so its final prefix
+`ConvolutionSpec.polynomialRealize` is the corresponding `polynomialChain`
+(`ConvolutionSpec.polynomialRealize_eq_polynomialChain`) and its evaluation agrees with
+convolutional realization.
 The bias-free tuple substitutes zero for every bias and retains only filter coordinates,
 agreeing by `ConvolutionSpec.polynomialRealizeWeights_eq_polynomialChain` with `polynomialChain`
 of the bias-free convolution layers
@@ -52,21 +55,31 @@ variable {K : Type*} {L : ℕ}
 
 variable [CommSemiring K]
 
-/-- Joint polynomials for each prefix. Hidden layers substitute their activation polynomial;
-the output layer uses its affine convolution without an activation. -/
+/-- Joint polynomials for each prefix: `polynomialChainPrefix` applied to the affine convolution
+layers followed coordinatewise by `MLPSpec.layerPolynomial q i`, so hidden layers substitute their
+activation polynomial and the output layer uses its affine convolution without an activation. -/
 def polynomialPrefix (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial K) :
     (i : Fin (L + 1)) → Fin (A.width i) →
       MvPolynomial (A.ParameterIndex ⊕ Fin (A.width 0)) K :=
-  Fin.induction (fun a => X (Sum.inr a)) fun i prev a =>
-    let z := (∑ j, X (Sum.inl ⟨i, Sum.inl j⟩) *
-      prev (convolutionIndex (A.length_eq i) a j)) + X (Sum.inl ⟨i, Sum.inr ()⟩)
-    if h : i.val + 1 < L then Polynomial.aeval z (q ⟨i.val, by omega⟩) else z
+  polynomialChainPrefix (I := fun j => Fin (A.width j))
+    (fun i a => Polynomial.aeval (polynomialAffineConvolution (A.length_eq i) a)
+      (MLPSpec.layerPolynomial q i))
+
+/-- Every convolutional polynomial prefix is the corresponding prefix of `polynomialChainPrefix`
+applied to the affine convolution layers followed coordinatewise by
+`MLPSpec.layerPolynomial q i`. -/
+theorem polynomialPrefix_eq_polynomialChainPrefix (A : ConvolutionSpec K L)
+    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
+    A.polynomialPrefix q k =
+      polynomialChainPrefix (I := fun j => Fin (A.width j))
+        (fun i a => Polynomial.aeval (polynomialAffineConvolution (A.length_eq i) a)
+          (MLPSpec.layerPolynomial q i)) k := (rfl)
 
 /-- The empty polynomial prefix is the tuple of input variables. -/
 @[simp] theorem polynomialPrefix_zero (A : ConvolutionSpec K L)
     (q : Fin (L - 1) → Polynomial K) :
     A.polynomialPrefix q 0 = fun a => X (Sum.inr a) :=
-  Fin.induction_zero ..
+  polynomialChainPrefix_zero _
 
 /-- A polynomial prefix applies its filter sum and shared bias, and substitutes the hidden
 activation polynomial except at the affine output head. -/
@@ -77,29 +90,14 @@ activation polynomial except at the affine output head. -/
         A.polynomialPrefix q i.castSucc (convolutionIndex (A.length_eq i) a j)) +
           X (Sum.inl ⟨i, Sum.inr ()⟩)
       if h : i.val + 1 < L then Polynomial.aeval z (q ⟨i.val, by omega⟩) else z := by
-  simp only [polynomialPrefix, Fin.induction_succ]
-
-/-- Every convolutional polynomial prefix is the corresponding prefix of `polynomialChainPrefix`
-applied to the affine convolution layers followed coordinatewise by
-`MLPSpec.layerPolynomial q i`. -/
-theorem polynomialPrefix_eq_polynomialChainPrefix (A : ConvolutionSpec K L)
-    (q : Fin (L - 1) → Polynomial K) (k : Fin (L + 1)) :
-    A.polynomialPrefix q k =
-      polynomialChainPrefix (I := fun j => Fin (A.width j))
-        (fun i a => Polynomial.aeval (polynomialAffineConvolution (A.length_eq i) a)
-          (MLPSpec.layerPolynomial q i)) k := by
-  induction k using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    funext a
-    rw [polynomialPrefix_succ, polynomialChainPrefix_succ, ← ih,
-      ← Polynomial.aeval_algHom_apply (bind₁ _)]
-    dsimp only
-    split_ifs with h
-    · rw [MLPSpec.layerPolynomial_of_lt q i h]
-      simp [polynomialAffineConvolution_apply]
-    · rw [MLPSpec.layerPolynomial_of_val_add_one_eq q i (by omega)]
-      simp [polynomialAffineConvolution_apply]
+  rw [polynomialPrefix_eq_polynomialChainPrefix, polynomialChainPrefix_succ,
+    ← Polynomial.aeval_algHom_apply (bind₁ _), ← polynomialPrefix_eq_polynomialChainPrefix]
+  dsimp only
+  split_ifs with h
+  · rw [MLPSpec.layerPolynomial_of_lt q i h]
+    simp [polynomialAffineConvolution_apply]
+  · rw [MLPSpec.layerPolynomial_of_val_add_one_eq q i (by omega)]
+    simp [polynomialAffineConvolution_apply]
 
 /-- Evaluating the joint polynomials recovers every convolutional prefix. -/
 theorem eval_polynomialPrefix (A : ConvolutionSpec K L)
@@ -109,18 +107,25 @@ theorem eval_polynomialPrefix (A : ConvolutionSpec K L)
     (a : Fin (A.width i)) :
     eval (Sum.elim p x) (A.polynomialPrefix q i a) =
       A.evalPrefix (A.parameterEquiv p) x i a := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    rw [polynomialPrefix_succ, evalPrefix_succ]
-    dsimp only
-    split_ifs with h
-    · rw [A.toMLPSpec.layerActivation_of_lt i h, hq]
-      rw [← aeval_eq_eval, ← Polynomial.aeval_algHom_apply,
-        Polynomial.coe_aeval_eq_eval]
-      simp [aeval_eq_eval, ih]
-    · rw [A.toMLPSpec.layerActivation_of_val_add_one_eq i (by omega)]
-      simp [ih]
+  have hstep (k : Fin L) :
+      polynomialRealization
+          (fun b => Polynomial.aeval (polynomialAffineConvolution (K := K) (A.length_eq k) b)
+            (MLPSpec.layerPolynomial q k))
+          (fun w => p ⟨k, w⟩) =
+        Neuromanifold.activation (A.toMLPSpec.layerActivation k) () ∘
+          affineConvolution (A.length_eq k) (A.parameterEquiv p k) := by
+    have hparam :
+        affineConvolutionParameterEquiv K (A.filterLength k) (fun w => p ⟨k, w⟩) =
+          A.parameterEquiv p k := by
+      ext <;> simp
+    rw [polynomialRealization_aeval, polynomialRealization_polynomialAffineConvolution]
+    funext y b
+    simp [A.toMLPSpec.layerActivation_eq_eval_layerPolynomial hq, hparam]
+  rw [← polynomialRealization_apply, polynomialPrefix_eq_polynomialChainPrefix,
+    polynomialRealization_polynomialChainPrefix_eq_dfoldl, A.evalPrefix_eq_dfoldl]
+  exact congrFun (congrArg
+    (fun g => Fin.dfoldl i.val (fun j => Fin (A.width (Fin.castLE i.isLt j)) → K) g x)
+    (funext fun j => hstep (Fin.castLE (Nat.le_of_lt_succ i.isLt) j))) a
 
 /-- Joint polynomials for the full affine convolutional realization. -/
 def polynomialRealize (A : ConvolutionSpec K L) (q : Fin (L - 1) → Polynomial K) :
@@ -179,15 +184,10 @@ theorem polynomialPrefix_zeroBias_eq_polynomialChainPrefix (A : ConvolutionSpec 
       polynomialChainPrefix (I := fun j => Fin (A.width j))
         (fun i a => Polynomial.aeval (polynomialConvolution (A.length_eq i) a)
           (MLPSpec.layerPolynomial q i)) k := by
-  rw [A.polynomialPrefix_eq_polynomialChainPrefix]
-  refine (congrArg (fun R => polynomialReparametrize R _)
-    (a₂ := fun p => rename (Sigma.mk p.1)
-      (Sum.elim X (0 : Unit → MvPolynomial (Fin (A.filterLength p.1)) K) p.2)) ?_).trans ?_
-  · funext ⟨i, j⟩
-    cases j <;> simp
-  · rw [polynomialChainPrefix_polynomialReparametrize
+  rw [A.polynomialPrefix_eq_polynomialChainPrefix, sumElim_X_zero_eq_rename,
+    polynomialChainPrefix_polynomialReparametrize
       (fun i => Sum.elim X (0 : Unit → MvPolynomial (Fin (A.filterLength i)) K))]
-    simp
+  simp
 
 /-- Joint polynomials for bias-free realization, substituting filter variables for filters
 and zero for biases. There are no artificial bias coordinates in the domain. -/

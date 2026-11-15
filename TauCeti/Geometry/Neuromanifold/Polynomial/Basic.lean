@@ -164,19 +164,32 @@ theorem inputPolynomial_coeff_eq_zero_of_degree_lt
   apply coeff_eq_zero_of_totalDegree_lt
   exact lt_of_le_of_lt (totalDegree_inputPolynomial_le P j) ha
 
-/-- Specializing parameters cannot increase the uniform input-degree bound. -/
-theorem totalDegree_map_inputPolynomial_le (P : J → MvPolynomial (W ⊕ X) K)
-    (w : W → K) (j : J) :
-    (map (eval w) (inputPolynomial P j)).totalDegree ≤ polynomialInputDegree P := by
-  have hs := support_map_subset (eval w) (inputPolynomial P j)
-  exact (Finset.sup_mono hs).trans (totalDegree_inputPolynomial_le P j)
+/-- Mapping the parameter-polynomial coefficients along a ring homomorphism cannot increase an
+output's input degree beyond the uniform input-degree bound. -/
+theorem totalDegree_map_inputPolynomial_le {R : Type*} [CommSemiring R]
+    (P : J → MvPolynomial (W ⊕ X) K) (f : MvPolynomial W K →+* R) (j : J) :
+    (map f (inputPolynomial P j)).totalDegree ≤ polynomialInputDegree P :=
+  (Finset.sup_mono (support_map_subset f (inputPolynomial P j))).trans
+    (totalDegree_inputPolynomial_le P j)
+
+/-- If every collected input polynomial of `Q` is obtained from that of `P` by mapping its
+parameter-polynomial coefficients along a ring homomorphism, then the uniform input-degree bound of
+`Q` is at most that of `P`. -/
+theorem polynomialInputDegree_le_of_inputPolynomial_eq_map {L V : Type*} [CommSemiring L]
+    {P : J → MvPolynomial (W ⊕ X) K} {Q : J → MvPolynomial (V ⊕ X) L}
+    {f : MvPolynomial W K →+* MvPolynomial V L}
+    (h : ∀ j, inputPolynomial Q j = map f (inputPolynomial P j)) :
+    polynomialInputDegree Q ≤ polynomialInputDegree P :=
+  (polynomialInputDegree_le_iff Q).2 fun j => by
+    rw [h j]
+    exact totalDegree_map_inputPolynomial_le P f j
 
 /-- The polynomial coefficient presentation takes values in a fixed product of
 bounded-degree spaces, even when specialization cancels some monomials. -/
 def polynomialCoefficientMap (P : J → MvPolynomial (W ⊕ X) K) (w : W → K) :
     J → restrictTotalDegree X K (polynomialInputDegree P) :=
   fun j => ⟨map (eval w) (inputPolynomial P j),
-    (mem_restrictTotalDegree _ _ _).mpr (totalDegree_map_inputPolynomial_le P w j)⟩
+    (mem_restrictTotalDegree _ _ _).mpr (totalDegree_map_inputPolynomial_le P (eval w) j)⟩
 
 /-- Forgetting the degree bound gives coefficientwise parameter evaluation. -/
 @[simp] theorem polynomialCoefficientMap_coe (P : J → MvPolynomial (W ⊕ X) K)

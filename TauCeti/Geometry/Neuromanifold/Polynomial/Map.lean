@@ -87,11 +87,8 @@ theorem map_eval_inputPolynomial_map (P : J → MvPolynomial (W ⊕ I) K) (w : W
 
 /-- Transporting a model cannot increase its uniform input-degree bound. -/
 theorem polynomialInputDegree_map_le [Fintype J] (P : J → MvPolynomial (W ⊕ I) K) :
-    polynomialInputDegree (map φ ∘ P) ≤ polynomialInputDegree P := by
-  refine (polynomialInputDegree_le_iff _).2 fun j => ?_
-  refine le_trans ?_ (totalDegree_inputPolynomial_le P j)
-  rw [inputPolynomial_map, totalDegree_eq, totalDegree_eq]
-  exact Finset.sup_mono (support_map_subset _ _)
+    polynomialInputDegree (map φ ∘ P) ≤ polynomialInputDegree P :=
+  polynomialInputDegree_le_of_inputPolynomial_eq_map (inputPolynomial_map φ P)
 
 /-- Transport along an injective ring homomorphism preserves the uniform input-degree bound. -/
 theorem polynomialInputDegree_map [Fintype J] {φ : K →+* L} (hφ : Function.Injective φ)

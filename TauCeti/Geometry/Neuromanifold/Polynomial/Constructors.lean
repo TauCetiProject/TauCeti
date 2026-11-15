@@ -163,11 +163,8 @@ polynomial parameters. -/
 /-- Reparametrizing a polynomial model cannot increase its uniform input-degree bound. -/
 theorem polynomialInputDegree_polynomialReparametrize_le [Fintype J] (R : W → MvPolynomial W' K)
     (P : J → MvPolynomial (W ⊕ I) K) :
-    polynomialInputDegree (polynomialReparametrize R P) ≤ polynomialInputDegree P := by
-  refine (polynomialInputDegree_le_iff _).2 fun j => ?_
-  refine le_trans ?_ (totalDegree_inputPolynomial_le P j)
-  rw [inputPolynomial_polynomialReparametrize, totalDegree_eq, totalDegree_eq]
-  exact Finset.sup_mono (support_map_subset _ _)
+    polynomialInputDegree (polynomialReparametrize R P) ≤ polynomialInputDegree P :=
+  polynomialInputDegree_le_of_inputPolynomial_eq_map (inputPolynomial_polynomialReparametrize R P)
 
 /-- Renaming the parameter variables is reparametrization by the renamed variables. -/
 @[simp] theorem polynomialReparametrize_X (f : W → W') (P : J → MvPolynomial (W ⊕ I) K) :
@@ -244,13 +241,6 @@ theorem polynomialInputDegree_polynomialCompose_le [Fintype J] [Fintype L]
     polynomialInputDegree (polynomialCompose P Q) ≤
       polynomialInputDegree P * polynomialInputDegree Q := by
   refine (polynomialInputDegree_le_iff _).2 fun l => ?_
-  have hP (j : J) :
-      ((map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
-        (inputPolynomial P j) : MvPolynomial I (MvPolynomial (W ⊕ V) K))).totalDegree ≤
-        polynomialInputDegree P := by
-    rw [← inputPolynomial_rename_sumMap]
-    exact (totalDegree_inputPolynomial_le _ j).trans
-      (polynomialInputDegree_rename_sumMap_le Sum.inl P)
   rw [inputPolynomial_polynomialCompose, eval₂_eq]
   refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs => ?_)
   refine (totalDegree_mul _ _).trans ?_
@@ -258,10 +248,10 @@ theorem polynomialInputDegree_polynomialCompose_le [Fintype J] [Fintype L]
   calc
     _ ≤ ∑ j ∈ s.support, s j * polynomialInputDegree P :=
         (totalDegree_finsetProd _ _).trans <| Finset.sum_le_sum fun j _ =>
-          (totalDegree_pow _ _).trans (Nat.mul_le_mul_left _ (hP j))
+          (totalDegree_pow _ _).trans
+            (Nat.mul_le_mul_left _ (totalDegree_map_inputPolynomial_le P _ j))
     _ = polynomialInputDegree P * (s.sum fun _ e => e) := by
-        rw [← Finset.sum_mul, mul_comm]
-        rfl
+        rw [Finsupp.sum, ← Finset.sum_mul, mul_comm]
     _ ≤ polynomialInputDegree P * polynomialInputDegree Q :=
         Nat.mul_le_mul_left _ ((le_totalDegree hs).trans (totalDegree_inputPolynomial_le Q l))
 

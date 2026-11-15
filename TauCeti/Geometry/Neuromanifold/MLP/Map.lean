@@ -281,14 +281,18 @@ unchanged polynomial `X` of the output head. -/
     map φ ((polynomial d q).polynomialPrefix q i o) =
       (polynomial d (fun j => (q j).map φ)).polynomialPrefix
         (fun j => (q j).map φ) i o := by
-  -- Both specifications have widths `d`; normalize these also in polynomial instances.
-  dsimp +instances only [polynomial, ParameterIndex] at *
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    rw [polynomialPrefix_succ, polynomialPrefix_succ,
-      Polynomial.map_aeval_eq_aeval_map (map_comp_C φ).symm, map_layerPolynomial]
-    simp [ih]
+  refine (congrArg (map φ) (congrFun ((polynomial d q).polynomialPrefix_eq_polynomialChainPrefix
+    q i) o)).trans ?_
+  refine (map_polynomialChainPrefix φ (I := fun j => Fin (d j))
+    (fun k a => Polynomial.aeval (polynomialDense a) (layerPolynomial q k)) i o).trans ?_
+  refine (congrArg (fun P => polynomialChainPrefix (I := fun j => Fin (d j)) P i o)
+    (funext fun k => funext fun a => ?_)).trans
+    (congrFun ((polynomial d (fun j => (q j).map φ)).polynomialPrefix_eq_polynomialChainPrefix
+      (fun j => (q j).map φ) i) o).symm
+  rw [Function.comp_apply, Polynomial.map_aeval_eq_aeval_map (map_comp_C φ).symm,
+    map_layerPolynomial, map_polynomialDense]
+  -- Both `polynomial` specifications have width `d` by definition.
+  rfl
 
 /-- The joint polynomial tuple of the transported affine MLP is the coefficientwise image
 of the original tuple. -/
