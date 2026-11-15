@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 import Mathlib.Tactic.NormNum.LegendreSymbol
+import TauCeti.Algebra.Group.Even
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
@@ -67,11 +68,7 @@ theorem isSquare_fundamentalDiscriminant_zmod_iff (d : ℤ) {n : ℕ} (hn : Odd 
     · rw [← Nat.cast_two, Int.cast_natCast]
       exact (ZMod.isUnit_iff_coprime 2 n).mpr hn.coprime_two_left
   rw [← hcd, Int.cast_mul, Int.cast_pow]
-  refine ⟨fun h ↦ ?_, (IsSquare.sq (c : ZMod n)).mul⟩
-  have hinv : ((hu.unit⁻¹ : Units (ZMod n)) : ZMod n) ^ 2 *
-      ((c : ZMod n) ^ 2 * (d : ZMod n)) = (d : ZMod n) := by
-    rw [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul]
-  exact hinv ▸ (IsSquare.sq ((hu.unit⁻¹ : Units (ZMod n)) : ZMod n)).mul h
+  exact hu.isSquare_sq_mul_iff
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/

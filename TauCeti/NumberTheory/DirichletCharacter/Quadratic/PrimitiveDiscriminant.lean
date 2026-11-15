@@ -37,14 +37,13 @@ certifies that `D` (hence `d`) is not a square modulo `n`.
 
 * `MulChar.IsQuadratic.existsUnique_isFundamentalDiscr_apply_eq`: existence and uniqueness of the
   primitive fundamental discriminant `D` of a quadratic character `χ` at any nonzero level `N`.
-* `DirichletCharacter.eq_conductor_ite_of_forall_isCoprime`,
-  `MulChar.IsQuadratic.isFundamentalDiscr_conductor_ite`,
+* `MulChar.IsQuadratic.isFundamentalDiscr_conductor_ite`,
   `MulChar.IsQuadratic.apply_eq_fundamentalDiscriminantCharCast_conductor_ite`,
   `MulChar.IsQuadratic.apply_eq_fundamentalDiscriminantCharCast_of_eq`: explicit formula
   `if χ (-1) = 1 then χ.conductor else -χ.conductor` for `D`, valid over any commutative ring.
-* `DirichletCharacter.conductor_eq_natAbs_of_forall_isCoprime`: in characteristic zero, coprime
-  agreement with `fundamentalDiscriminantCharCast R D hD` at a nonzero level `N` forces
-  `χ.conductor = |D|`.
+* `DirichletCharacter.conductor_eq_natAbs_of_forall_isCoprime`: whenever `2 ≠ 0` in the
+  coefficient ring, coprime agreement with `fundamentalDiscriminantCharCast R D hD` at a nonzero
+  level `N` forces `χ.conductor = |D|`.
 * `DirichletCharacter.changeLevel_apply_eq_fundamentalDiscriminantCharCast`,
   `DirichletCharacter.natAbs_eq_conductor_changeLevel_and_forall_isCoprime_iff`: naturality of the
   primitive discriminant under `changeLevel`.
@@ -72,42 +71,6 @@ section CommRing
 variable {R : Type*} [CommRing R]
 
 /-! ### Existence, uniqueness, and explicit formula -/
-
-/-- Any fundamental discriminant `D` with `|D| = χ.conductor` whose character agrees with `χ` at
-every integer prime to the level `N` equals `if χ (-1) = 1 then χ.conductor else -χ.conductor`.
-Neither `N ≠ 0` nor `χ.IsQuadratic` is assumed: `D ≠ 0` forces `N ≠ 0`, and agreement on the units
-modulo `N` makes `χ` quadratic. -/
-theorem eq_conductor_ite_of_forall_isCoprime {N : ℕ}
-    {χ : DirichletCharacter R N} [Decidable (χ (-1) = 1)] {D : ℤ} {hD : Int.IsFundamentalDiscr D}
-    (habs : D.natAbs = χ.conductor)
-    (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n) :
-    D = if χ (-1) = 1 then (χ.conductor : ℤ) else -(χ.conductor : ℤ) := by
-  have : NeZero N := ⟨fun h0 ↦ Int.natAbs_ne_zero.mpr hD.ne_zero
-    (habs.trans (conductor_eq_zero_iff_level_eq_zero.mpr h0))⟩
-  by_cases h2 : (2 : R) = 0
-  · have hq : χ.IsQuadratic := fun a ↦ by
-      obtain ⟨n, rfl⟩ := ZMod.intCast_surjective a
-      by_cases ha : IsUnit (n : ZMod N)
-      · rw [hval n (isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime n N).mp ha))]
-        exact fundamentalDiscriminantCharCast_isQuadratic hD n
-      · exact Or.inl (χ.map_nonunit ha)
-    have hχ1 : χ = 1 := hq.eq_one_of_two_eq_zero h2
-    have hc1 : χ.conductor = 1 := hχ1 ▸ conductor_one
-    have hD1 : D = 1 := hD.natAbs_eq_one_iff.mp (habs.trans hc1)
-    have hneg1 : χ (-1) = 1 := by
-      rw [hχ1]
-      exact MulChar.one_apply isUnit_one.neg
-    rw [hD1, ite_eq_left hneg1, hc1, Nat.cast_one]
-  · have hsign : χ (-1) = D.sign := by
-      simpa [fundamentalDiscriminantChar_neg_one] using hval (-1) isCoprime_one_left.neg_left
-    split_ifs with h1 <;> rw [hsign] at h1 <;> rcases hD.ne_zero.lt_or_gt with h | h
-    · rw [Int.sign_eq_neg_one_of_neg h, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero,
-        one_add_one_eq_two] at h1
-      exact absurd h1 h2
-    · omega
-    · omega
-    · rw [Int.sign_eq_one_of_pos h, Int.cast_one] at h1
-      exact absurd rfl h1
 
 /-- **The primitive discriminant of a quadratic Dirichlet character.** Every quadratic Dirichlet
 character `χ` of nonzero level `N` over a commutative ring `R` agrees at the integers prime to `N`
@@ -165,10 +128,10 @@ theorem _root_.MulChar.IsQuadratic.apply_eq_fundamentalDiscriminantCharCast_of_e
   subst hD_eq
   exact hχ.apply_eq_fundamentalDiscriminantCharCast_conductor_ite hn
 
-/-- In characteristic zero, agreement of a Dirichlet character `χ` of nonzero level `N` on the
-integers prime to `N` with the character of a fundamental discriminant `D` already forces
-`χ.conductor = |D|`. -/
-theorem conductor_eq_natAbs_of_forall_isCoprime [CharZero R] {N : ℕ} [NeZero N]
+/-- Whenever `2 ≠ 0` in the coefficient ring, agreement of a Dirichlet character `χ` of nonzero
+level `N` on the integers prime to `N` with the character of a fundamental discriminant `D`
+already forces `χ.conductor = |D|`. -/
+theorem conductor_eq_natAbs_of_forall_isCoprime [NeZero (2 : R)] {N : ℕ} [NeZero N]
     {χ : DirichletCharacter R N} {D : ℤ} {hD : Int.IsFundamentalDiscr D}
     (hval : ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n) :
     χ.conductor = D.natAbs := by
@@ -209,24 +172,19 @@ theorem natAbs_eq_conductor_changeLevel_and_forall_isCoprime_iff {N M : ℕ} [Ne
         changeLevel hNM χ n = fundamentalDiscriminantCharCast R D hD n) ↔
       D.natAbs = χ.conductor ∧
         ∀ n : ℤ, IsCoprime n N → χ n = fundamentalDiscriminantCharCast R D hD n := by
-  have : NeZero N := ⟨fun hN ↦ NeZero.ne M (Nat.eq_zero_of_zero_dvd (hN ▸ hNM))⟩
   rw [conductor_changeLevel]
-  refine ⟨fun ⟨habs, hvalM⟩ ↦ ⟨habs, fun n hnN ↦ ?_⟩,
+  refine ⟨fun ⟨habs, hvalM⟩ ↦ ⟨habs, ?_⟩,
     fun ⟨habs, hvalN⟩ ↦ ⟨habs, fun n hnM ↦
       changeLevel_apply_eq_fundamentalDiscriminantCharCast hNM hvalN hnM⟩⟩
-  obtain ⟨v, hv⟩ := ZMod.unitsMap_surjective hNM (ZMod.unitOfIsCoprime n hnN)
-  set m : ℤ := ((v : ZMod M).val : ℤ)
-  have hm_cast : (m : ZMod M) = (v : ZMod M) := by
-    simp [m]
-  have hmM : IsCoprime m M :=
-    isCoprime_comm.mp ((ZMod.isUnit_intCast_iff_isCoprime m M).mp (hm_cast ▸ v.isUnit))
-  have hmN_eq : (m : ZMod N) = (n : ZMod N) := by
-    rw [← ZMod.cast_intCast hNM m, hm_cast, ← ZMod.unitsMap_val hNM v, hv,
-      ZMod.coe_unitOfIsCoprime]
   have hDN : D.natAbs ∣ N := habs.symm ▸ χ.conductor_dvd_level
-  have hmD_eq : (m : ZMod D.natAbs) = (n : ZMod D.natAbs) := by
-    simpa only [map_intCast] using congrArg (ZMod.castHom hDN (ZMod D.natAbs)) hmN_eq
-  rw [← hmN_eq, ← changeLevel_eq_cast_of_dvd' χ hNM hmM, hvalM m hmM, ← hmD_eq]
+  have hχ : χ = changeLevel hDN (fundamentalDiscriminantCharCast R D hD) := by
+    apply changeLevel_injective hNM
+    rw [← changeLevel_trans]
+    refine MulChar.ext' fun x ↦ ?_
+    obtain ⟨m, rfl⟩ := ZMod.intCast_surjective x
+    exact apply_intCast_eq_of_forall_isCoprime rfl (fun k hk ↦ by
+      rw [hvalM k hk, changeLevel_eq_cast_of_dvd' _ _ hk]) m
+  exact fun n hnN ↦ by rw [hχ, changeLevel_eq_cast_of_dvd' _ hDN hnN]
 
 /-! ### Squarefree radicand parameterization and odd-prime dictionary -/
 
@@ -285,24 +243,16 @@ theorem not_isSquare_of_apply_natCast_eq_neg_one [NeZero (2 : R)] {N : ℕ}
     (hval : ∀ m : ℤ, IsCoprime m N → χ m = fundamentalDiscriminantCharCast R D hD m)
     {n : ℕ} (hn : _root_.Odd n) (hχn : χ n = -1) :
     ¬ IsSquare (D : ZMod n) := by
-  have h01 : (0 : R) ≠ -1 := fun h ↦ by
-    have h10 : (1 : R) = 0 := neg_eq_zero.mp h.symm
-    have h20 : (2 : R) = 0 := by
-      rw [← one_add_one_eq_two, h10, add_zero]
-    exact two_ne_zero h20
-  have hcop : n.Coprime N := by
-    by_contra hnc
-    have hnu : ¬ IsUnit (n : ZMod N) := mt (ZMod.isUnit_iff_coprime n N).mp hnc
-    exact h01 ((χ.map_nonunit hnu).symm.trans hχn)
-  have hjac : (jacobiSym D n : R) = -1 := by
-    rw [← apply_natCast_eq_jacobiSym_of_forall_isCoprime hval hn hcop, hχn]
-  refine ZMod.nonsquare_of_jacobiSym_eq_neg_one ?_
-  rcases jacobiSym.trichotomy D n with h | h | h
-  · rw [h, Int.cast_zero] at hjac
-    exact absurd hjac h01
-  · rw [h, Int.cast_one] at hjac
-    exact absurd (one_add_one_eq_two.symm.trans (eq_neg_iff_add_eq_zero.mp hjac)) two_ne_zero
-  · exact h
+  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
+  have hR : ringChar R ≠ 2 := fun h ↦
+    two_ne_zero (Nat.cast_two (R := R) ▸ (ringChar.spec R 2).mpr h.dvd)
+  have hcop : n.Coprime N := Nat.isCoprime_iff_coprime.mp <|
+    (χ.apply_ne_zero_iff n).mp (by rw [Int.cast_natCast, hχn]; exact neg_ne_zero.mpr one_ne_zero)
+  have hjac : (jacobiSym D n : R) = ((-1 : ℤ) : R) := by
+    rw [← apply_natCast_eq_jacobiSym_of_forall_isCoprime hval hn hcop, hχn, Int.cast_neg,
+      Int.cast_one]
+  exact ZMod.nonsquare_of_jacobiSym_eq_neg_one
+    (Int.cast_injOn_of_ringChar_ne_two hR (jacobiSym.trichotomy D n) (Or.inr (Or.inr rfl)) hjac)
 
 end CommRing
 
