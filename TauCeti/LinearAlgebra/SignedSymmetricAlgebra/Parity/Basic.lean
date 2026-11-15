@@ -97,6 +97,12 @@ theorem induction {P : ParitySignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
+/-- The image of the generating module generates the parity presentation as an `R`-algebra. -/
+@[simp]
+theorem adjoin_range_generator : Algebra.adjoin R (Set.range (generator G)) = ⊤ :=
+  top_unique fun a _ => induction G (Subalgebra.algebraMap_mem _)
+    (fun x => Algebra.subset_adjoin ⟨x, rfl⟩) (fun _ _ => mul_mem) (fun _ _ => add_mem) a
+
 /-- Algebra maps from the parity presentation are determined on generators. -/
 @[ext 1200]
 theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : ParitySignedSym G →ₐ[R] A}

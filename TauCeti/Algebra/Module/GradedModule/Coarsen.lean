@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.IntUnitsPower
+public import TauCeti.Algebra.DirectSum.Component
 public import TauCeti.Algebra.Module.GradedModule.Internal
 import TauCeti.Algebra.DirectSum.Internal
 
@@ -20,7 +21,10 @@ family indexed by `κ`: its degree-`k` piece is the sum of the pieces `ℳ i` wi
 The main example is the parity grading of an integer grading, obtained by reducing degrees
 modulo two: its even piece is the sum of the pieces of degree `2 * k`, and its odd piece is the
 sum of the pieces of degree `2 * k + 1`.  This is how an integer-graded object is regarded as a
-super (parity-graded) object, for example when Koszul signs only depend on parities.
+super (parity-graded) object, for example when Koszul signs only depend on parities.  Conversely,
+every internal `ZMod 2`-grading lifts to an internal `ℤ`-grading concentrated in degrees `0` and
+`1` (`TauCeti.InternalGrading.ofParity`), providing a right inverse to parity reduction, and carries
+an involutive parity sign endomorphism (`TauCeti.InternalGrading.parityTwist`).
 
 ## Main definitions
 
@@ -28,6 +32,10 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `TauCeti.parityGrading ℳ`: the parity grading of an integer-indexed family of submodules.
 * `TauCeti.InternalGrading.coarsen` and `TauCeti.InternalGrading.parity`: the same constructions
   for bundled internal gradings.
+* `TauCeti.InternalGrading.ofParity`: the canonical integer lift of an internal `ZMod 2`-grading,
+  concentrated in degrees `0` and `1`.
+* `TauCeti.InternalGrading.parityTwist`: the parity involution fixing the even piece and negating
+  the odd piece.
 
 ## Main results
 
@@ -40,6 +48,11 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading`: a homogeneous linear map of degree `q` is
   homogeneous of degree `f q` for gradings coarsened along an additive homomorphism `f`.
 * `TauCeti.parityGrading_zero` and `TauCeti.parityGrading_one`: the even and odd pieces.
+* `TauCeti.InternalGrading.parity_ofParity`: `ofParity` is a right inverse to `parity`.
+* `TauCeti.InternalGrading.parityTwist_apply_of_mem`,
+  `TauCeti.InternalGrading.isHomogeneous_parityTwist`, and
+  `TauCeti.InternalGrading.parityTwist_ofDecomposition_mul`: action, degree preservation, and
+  multiplicativity of the parity involution.
 -/
 
 public section
@@ -234,6 +247,167 @@ noncomputable def parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZM
 
 @[simp]
 theorem parity_piece (G : InternalGrading R M ℤ) : G.parity.piece = parityGrading G.piece := (rfl)
+
+/-- The canonical integer lift of an internal `ZMod 2`-grading, placing `G.piece 0` in degree `0`,
+`G.piece 1` in degree `1`, and `⊥` in all other degrees. It is a right inverse to
+`InternalGrading.parity` (`parity_ofParity`). -/
+noncomputable def ofParity (G : InternalGrading R M (ZMod 2)) : InternalGrading R M ℤ :=
+  G.coarsen fun i ↦ (i.val : ℤ)
+
+/-- The pieces of `G.ofParity` are `G.piece 0` in degree `0`, `G.piece 1` in degree `1`, and `⊥`
+elsewhere. -/
+@[simp]
+theorem ofParity_piece (G : InternalGrading R M (ZMod 2)) (p : ℤ) :
+    G.ofParity.piece p = if p = 0 then G.piece 0 else if p = 1 then G.piece 1 else ⊥ := by
+  rw [ofParity, coarsen_piece, coarsenGrading_apply]
+  refine le_antisymm (iSup₂_le fun i hi ↦ ?_) ?_
+  · match i with
+    | 0 => subst hi; simp
+    | 1 => subst hi; simp [ZMod.val_one]
+  · by_cases h0 : p = 0
+    · subst h0
+      exact le_iSup₂_of_le (0 : ZMod 2) (by decide) (by simp)
+    · by_cases h1 : p = 1
+      · subst h1
+        exact le_iSup₂_of_le (1 : ZMod 2) (by decide) (by simp)
+      · simp [h0, h1]
+
+/-- The degree-`0` piece of `G.ofParity` is the even piece `G.piece 0`. -/
+theorem ofParity_piece_zero (G : InternalGrading R M (ZMod 2)) :
+    G.ofParity.piece 0 = G.piece 0 := by
+  simp
+
+/-- The degree-`1` piece of `G.ofParity` is the odd piece `G.piece 1`. -/
+theorem ofParity_piece_one (G : InternalGrading R M (ZMod 2)) :
+    G.ofParity.piece 1 = G.piece 1 := by
+  simp
+
+/-- Outside degrees `0` and `1`, the pieces of `G.ofParity` are trivial. -/
+theorem ofParity_piece_of_ne (G : InternalGrading R M (ZMod 2)) {p : ℤ}
+    (h0 : p ≠ 0) (h1 : p ≠ 1) : G.ofParity.piece p = ⊥ := by
+  simp [h0, h1]
+
+/-- Lifting an internal `ZMod 2`-grading to `ℤ` in degrees `0` and `1` and reducing modulo two
+recovers the original grading. -/
+@[simp]
+theorem parity_ofParity (G : InternalGrading R M (ZMod 2)) : G.ofParity.parity = G := by
+  apply InternalGrading.ext
+  have hcomp : (Int.castAddHom (ZMod 2) ∘ fun i : ZMod 2 ↦ (i.val : ℤ)) = id := by
+    funext i
+    simp
+  have hpiece : G.ofParity.parity.piece = G.piece := by
+    rw [parity_piece, ofParity, coarsen_piece, parityGrading, coarsenGrading_coarsenGrading,
+      hcomp, coarsenGrading_id]
+  exact congrFun hpiece
+
+section ParityTwist
+
+variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- The parity involution on an internally `ZMod 2`-graded module, fixing the even piece and
+negating the odd piece (`parityTwist_apply_of_mem`). This is the `ZMod 2`-graded counterpart of
+`InternalGrading.koszulTwist G 1`. -/
+noncomputable def parityTwist (G : InternalGrading R M (ZMod 2)) : M →ₗ[R] M :=
+  homogeneousComponent G.piece 0 - homogeneousComponent G.piece 1
+
+/-- `parityTwist` is the difference of the even and odd homogeneous projections. -/
+theorem parityTwist_apply (G : InternalGrading R M (ZMod 2)) (x : M) :
+    G.parityTwist x = homogeneousComponent G.piece 0 x - homogeneousComponent G.piece 1 x :=
+  (rfl)
+
+/-- On an element of parity `i`, `parityTwist` acts as multiplication by `(-1) ^ i`. -/
+theorem parityTwist_apply_of_mem (G : InternalGrading R M (ZMod 2)) {i : ZMod 2} {x : M}
+    (hx : x ∈ G.piece i) : G.parityTwist x = ((-1 : ℤˣ) ^ i) • x := by
+  rw [parityTwist_apply]
+  match i with
+  | 0 =>
+    rw [homogeneousComponent_apply_of_mem G.piece hx,
+      homogeneousComponent_apply_of_mem_ne G.piece hx (by decide : (0 : ZMod 2) ≠ 1)]
+    simp
+  | 1 =>
+    rw [homogeneousComponent_apply_of_mem_ne G.piece hx (by decide : (1 : ZMod 2) ≠ 0),
+      homogeneousComponent_apply_of_mem G.piece hx]
+    simp
+
+/-- The parity involution preserves both parity pieces. -/
+theorem parityTwist_mem_piece (G : InternalGrading R M (ZMod 2)) {i : ZMod 2} {x : M}
+    (hx : x ∈ G.piece i) : G.parityTwist x ∈ G.piece i := by
+  -- Direct summands of an `AddCommGroup` are closed under negation even over a `Semiring`.
+  have hneg : -x ∈ G.piece i := by
+    have h : -x = homogeneousComponent G.piece i (-x) := by
+      rw [map_neg, homogeneousComponent_apply_of_mem G.piece hx]
+    exact h ▸ homogeneousComponent_mem G.piece i (-x)
+  rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ i) with h | h <;>
+    simp [G.parityTwist_apply_of_mem hx, h, hx, hneg]
+
+/-- The parity involution is homogeneous of parity `0`. -/
+theorem isHomogeneous_parityTwist (G : InternalGrading R M (ZMod 2)) :
+    LinearMap.IsHomogeneous G.parityTwist G.piece G.piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+    simpa only [add_zero] using G.parityTwist_mem_piece hx
+
+/-- The parity involution squares to the identity. -/
+@[simp]
+theorem parityTwist_comp_self (G : InternalGrading R M (ZMod 2)) :
+    G.parityTwist ∘ₗ G.parityTwist = LinearMap.id := by
+  refine G.linearMap_ext fun i x hx ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.id_apply]
+  rw [G.parityTwist_apply_of_mem (G.parityTwist_mem_piece hx), G.parityTwist_apply_of_mem hx,
+    smul_smul, ← uzpow_add, CharTwo.add_self_eq_zero, uzpow_zero, one_smul]
+
+/-- The parity involution is involutive pointwise. -/
+@[simp]
+theorem parityTwist_parityTwist (G : InternalGrading R M (ZMod 2)) (x : M) :
+    G.parityTwist (G.parityTwist x) = x :=
+  LinearMap.congr_fun G.parityTwist_comp_self x
+
+/-- On an element of parity `i` of a decomposition `ℳ`, `parityTwist` acts as `(-1) ^ i`. -/
+theorem parityTwist_ofDecomposition_apply_of_mem (ℳ : ZMod 2 → Submodule R M)
+    [DirectSum.Decomposition ℳ] {i : ZMod 2} {x : M} (hx : x ∈ ℳ i) :
+    (ofDecomposition ℳ).parityTwist x = ((-1 : ℤˣ) ^ i) • x :=
+  parityTwist_apply_of_mem _ (by rwa [ofDecomposition_piece])
+
+/-- **The parity involution of a `ZMod 2`-graded ring is multiplicative.** -/
+theorem parityTwist_ofDecomposition_mul {A : Type*} [NonUnitalNonAssocRing A] [Module R A]
+    {𝒜 : ZMod 2 → Submodule R A} [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜] (a b : A) :
+    (ofDecomposition 𝒜).parityTwist (a * b) =
+      (ofDecomposition 𝒜).parityTwist a * (ofDecomposition 𝒜).parityTwist b := by
+  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | add a a' ha ha' => rw [add_mul, map_add, ha, ha', map_add, add_mul]
+  | @homogeneous i a =>
+    obtain ⟨a, hai⟩ := a
+    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | add b b' hb hb' => rw [mul_add, map_add, hb, hb', map_add, mul_add]
+    | @homogeneous j b =>
+      obtain ⟨b, hbj⟩ := b
+      rw [parityTwist_ofDecomposition_apply_of_mem 𝒜 (SetLike.GradedMul.mul_mem hai hbj),
+        parityTwist_ofDecomposition_apply_of_mem 𝒜 hai,
+        parityTwist_ofDecomposition_apply_of_mem 𝒜 hbj]
+      match i, j with
+      | 0, 0 => simp
+      | 0, 1 => simp
+      | 1, 0 => simp
+      | 1, 1 => simp [(by decide : (1 : ZMod 2) + 1 = 0)]
+
+/-- The parity involution of a `ZMod 2`-graded ring fixes the unit. -/
+@[simp]
+theorem parityTwist_ofDecomposition_one {A : Type*} [Ring A] [Module R A]
+    {𝒜 : ZMod 2 → Submodule R A} [SetLike.GradedOne 𝒜] [DirectSum.Decomposition 𝒜] :
+    (ofDecomposition 𝒜).parityTwist 1 = 1 := by
+  simpa using parityTwist_ofDecomposition_apply_of_mem 𝒜 (SetLike.GradedOne.one_mem (A := 𝒜))
+
+/-- On the parity reduction of an integer grading, `parityTwist` agrees with `koszulTwist` at
+parameter `1`. -/
+theorem parityTwist_parity {R : Type uR} {M : Type uM} [Ring R] [AddCommGroup M] [Module R M]
+    (G : InternalGrading R M ℤ) : G.parity.parityTwist = G.koszulTwist 1 := by
+  refine G.linearMap_ext fun p x hx ↦ ?_
+  have hxp : x ∈ G.parity.piece (p : ZMod 2) := mem_parityGrading_of_mem hx
+  rw [G.parity.parityTwist_apply_of_mem hxp, G.koszulTwist_one_apply_of_mem hx,
+    uzpow_intCast, ← Int.negOnePow_def, Units.smul_def, Int.cast_smul_eq_zsmul]
+
+end ParityTwist
 
 end InternalGrading
 

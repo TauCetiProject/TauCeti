@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Grading
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
+import TauCeti.Algebra.Group.Action.SemiconjBy
 
 /-!
 # Supercommutativity of the parity-presented signed symmetric algebra
@@ -15,8 +16,8 @@ import TauCeti.Algebra.CharP.Invertible
 Homogeneous elements of `TauCeti.ParitySignedSym G`, not just its generators, satisfy the parity
 Koszul commutation rule `a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a)` for `a` of parity `i` and `b`
 of parity `j`. Even homogeneous elements commute with the entire algebra, hence lie in its center,
-while every odd homogeneous element squares to its own negative and vanishes when `2` is invertible
-in the coefficient ring.
+while every odd homogeneous element squares to its own negative, so its square vanishes when `2` is
+invertible in the coefficient ring.
 
 The results parallel `TauCeti.SignedSym.mul_eq_negOnePow_smul_mul` in
 `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity` and require no integer lift of
@@ -47,17 +48,6 @@ variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 variable (G : InternalGrading R V (ZMod 2))
 
-private theorem mul_mul_eq_smul {A : Type*} [Ring A] {x b c : A} {s t : ℤˣ}
-    (hb : x * b = s • (b * x)) (hc : x * c = t • (c * x)) :
-    x * (b * c) = (s * t) • ((b * c) * x) := by
-  simp only [Units.smul_def, Units.val_mul] at hb hc ⊢
-  calc
-    x * (b * c) = (x * b) * c := (mul_assoc _ _ _).symm
-    _ = (s : ℤ) • (b * (x * c)) := by rw [hb]; simp only [smul_mul_assoc, mul_assoc]
-    _ = ((s : ℤ) * (t : ℤ)) • ((b * c) * x) := by
-      rw [hc]
-      simp only [mul_smul_comm, smul_smul, mul_assoc]
-
 private theorem generator_mul_of_mem {i j : ZMod 2} {x : V} {b : ParitySignedSym G}
     (hx : x ∈ G.piece i) (hb : b ∈ paritySignedSymPiece G j) :
     generator G x * b = ((-1 : ℤˣ) ^ (i * j)) • (b * generator G x) := by
@@ -65,7 +55,8 @@ private theorem generator_mul_of_mem {i j : ZMod 2} {x : V} {b : ParitySignedSym
     generator G x * b = ((-1 : ℤˣ) ^ (i * j)) • (b * generator G x))
     (by simp)
     (fun j y hy => generator_mul_generator G hx hy)
-    (fun j k b c hb hc => by simpa only [mul_add, uzpow_add] using mul_mul_eq_smul hb hc)
+    (fun j k b c hb hc => by
+      simpa only [mul_add, uzpow_add] using mul_mul_eq_smul_of_mul_eq_smul_right hb hc)
     (by simp [Units.smul_def])
     (fun j b c hb hc => by simp only [mul_add, add_mul, hb, hc, Units.smul_def, zsmul_add])
     (fun j r b hb => by
@@ -83,16 +74,8 @@ theorem mul_eq_uzpow_smul_mul {i j : ZMod 2} {a b : ParitySignedSym G}
   · simp
   · exact fun i x hx => generator_mul_of_mem G hx hb
   · intro i k a c ha hc
-    simpa only [MulOpposite.unop_mul, MulOpposite.unop_smul, MulOpposite.unop_op,
-      add_mul, uzpow_add, mul_comm ((-1 : ℤˣ) ^ (i * j))] using
-      congrArg MulOpposite.unop
-        (mul_mul_eq_smul (x := MulOpposite.op b)
-          (b := MulOpposite.op c) (c := MulOpposite.op a)
-          (s := (-1 : ℤˣ) ^ (k * j)) (t := (-1 : ℤˣ) ^ (i * j))
-          (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
-            congrArg MulOpposite.op hc)
-          (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
-            congrArg MulOpposite.op ha))
+    rw [add_mul, add_comm (i * j), uzpow_add]
+    exact mul_mul_eq_smul_of_mul_eq_smul_left ha hc
   · simp [Units.smul_def]
   · intro i a c ha hc
     simp only [add_mul, mul_add, ha, hc, Units.smul_def, zsmul_add]

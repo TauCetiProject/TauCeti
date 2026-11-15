@@ -279,82 +279,6 @@ end SignedSym
 
 section Internality
 
-private def intLiftPiece (G : InternalGrading R V (ZMod 2)) (p : ℤ) : Submodule R V :=
-  if p = 0 then G.piece 0 else if p = 1 then G.piece 1 else ⊥
-
-private theorem intLiftPiece_eq_zero_of_sum_eq_zero (G : InternalGrading R V (ZMod 2))
-    {s : Finset ℤ} {x : ℤ → V}
-    (hsum : ∑ p ∈ s, x p = 0) {q q' : ℤ} {i i' : ZMod 2} (hq : q ∈ s)
-    (hqi : x q ∈ G.piece i) (hqq' : ∀ p ∈ s, p ≠ q → p ≠ q' → x p = 0)
-    (hq'i' : q' ∈ s → x q' ∈ G.piece i') (hii' : i' ≠ i) : x q = 0 := by
-  let π : V →ₗ[R] V :=
-    (G.piece i).subtype ∘ₗ DirectSum.component R (ZMod 2) (fun j => G.piece j) i ∘ₗ
-      (DirectSum.decomposeLinearEquiv G.piece).toLinearMap
-  have hπ (v : V) : π v = (DirectSum.decompose G.piece v i : V) := rfl
-  have h := congrArg π hsum
-  rw [map_sum, map_zero, Finset.sum_eq_single q] at h
-  · rwa [hπ, DirectSum.decompose_of_mem_same _ hqi] at h
-  · intro p hp hpq
-    by_cases hpq' : p = q'
-    · subst hpq'
-      rw [hπ]
-      exact DirectSum.decompose_of_mem_ne _ (hq'i' hp) hii'
-    · simp [hqq' p hp hpq hpq']
-  · exact fun hnot => (hnot hq).elim
-
-private theorem isInternal_intLiftPiece (G : InternalGrading R V (ZMod 2)) :
-    DirectSum.IsInternal (intLiftPiece G) := by
-  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
-  · rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
-    intro s x hx hsum q hq
-    have hbot : ∀ p ∈ s, p ≠ 0 → p ≠ 1 → x p = 0 := fun p hp h0 h1 => by
-      simpa [intLiftPiece, h0, h1] using hx p hp
-    by_cases hq0 : q = 0
-    · subst hq0
-      exact intLiftPiece_eq_zero_of_sum_eq_zero G hsum hq
-        (by simpa [intLiftPiece] using hx 0 hq) hbot
-        (fun hp => by simpa [intLiftPiece] using hx 1 hp) (by decide : (1 : ZMod 2) ≠ 0)
-    · by_cases hq1 : q = 1
-      · subst hq1
-        exact intLiftPiece_eq_zero_of_sum_eq_zero G hsum hq
-          (by simpa [intLiftPiece] using hx 1 hq)
-          (fun p hp hp1 hp0 => hbot p hp hp0 hp1)
-          (fun hp => by simpa [intLiftPiece] using hx 0 hp) (by decide : (0 : ZMod 2) ≠ 1)
-      · exact hbot q hq hq0 hq1
-  · refine top_unique ?_
-    rw [← G.isInternal.submodule_iSup_eq_top]
-    refine iSup_le fun i => ?_
-    match i with
-    | 0 => exact le_iSup_of_le (0 : ℤ) (by simp [intLiftPiece])
-    | 1 => exact le_iSup_of_le (1 : ℤ) (by simp [intLiftPiece])
-
-private noncomputable def intLift (G : InternalGrading R V (ZMod 2)) : InternalGrading R V ℤ where
-  piece := intLiftPiece G
-  isInternal := isInternal_intLiftPiece G
-
-private theorem intLift_parity (G : InternalGrading R V (ZMod 2)) : (intLift G).parity = G := by
-  ext i x
-  rw [InternalGrading.parity_piece]
-  match i with
-  | 0 =>
-    refine ⟨fun hx => ?_, fun hx => ?_⟩
-    · refine parityGrading_le_iff.2 (fun n hn => ?_) hx
-      have hn1 : n ≠ 1 := by rintro rfl; exact (by decide : ((1 : ℤ) : ZMod 2) ≠ 0) hn
-      by_cases hn0 : n = 0
-      · subst hn0; simp [intLift, intLiftPiece]
-      · simp [intLift, intLiftPiece, hn0, hn1]
-    · have hx0 : x ∈ (intLift G).piece 0 := by simpa [intLift, intLiftPiece] using hx
-      exact mem_parityGrading_of_mem hx0
-  | 1 =>
-    refine ⟨fun hx => ?_, fun hx => ?_⟩
-    · refine parityGrading_le_iff.2 (fun n hn => ?_) hx
-      have hn0 : n ≠ 0 := by rintro rfl; exact (by decide : ((0 : ℤ) : ZMod 2) ≠ 1) hn
-      by_cases hn1 : n = 1
-      · subst hn1; simp [intLift, intLiftPiece]
-      · simp [intLift, intLiftPiece, hn0, hn1]
-    · have hx1 : x ∈ (intLift G).piece 1 := by simpa [intLift, intLiftPiece] using hx
-      exact mem_parityGrading_of_mem hx1
-
 private theorem map_congr_refl_paritySignedSymPiece {G H : InternalGrading R V (ZMod 2)}
     (hGH : G = H) (i : ZMod 2) :
     (paritySignedSymPiece G i).map
@@ -368,20 +292,19 @@ private theorem map_congr_refl_paritySignedSymPiece {G H : InternalGrading R V (
 /-- The parity pieces of `ParitySignedSym G` form an internal direct sum. -/
 theorem isInternal_paritySignedSymPiece (G : InternalGrading R V (ZMod 2)) :
     DirectSum.IsInternal (paritySignedSymPiece G) := by
-  let H := intLift G
+  let H := G.ofParity
   let c : ParitySignedSym H.parity ≃ₐ[R] ParitySignedSym G :=
     ParitySignedSym.congr H.parity G (LinearEquiv.refl R V)
-      (intLift_parity G ▸ LinearMap.isHomogeneous_id H.parity.piece)
+      (G.parity_ofParity ▸ LinearMap.isHomogeneous_id H.parity.piece)
   let e : SignedSym H ≃ₐ[R] ParitySignedSym G := (SignedSym.parityEquiv H).trans c
   have hpiece :
       ((InternalGrading.ofDecomposition (parityGrading (signedSymPiece H))).map
         e.toLinearEquiv).piece = paritySignedSymPiece G := by
     funext i
-    rw [InternalGrading.map_piece, InternalGrading.ofDecomposition_piece]
-    have he : e.toLinearEquiv.toLinearMap =
-        c.toLinearMap ∘ₗ (SignedSym.parityEquiv H).toLinearMap := rfl
-    rw [he, Submodule.map_comp, SignedSym.map_parityEquiv_parityGrading H i]
-    exact map_congr_refl_paritySignedSymPiece (intLift_parity G) i
+    rw [InternalGrading.map_piece, InternalGrading.ofDecomposition_piece,
+      e.toLinearEquiv_toLinearMap, AlgEquiv.trans_toLinearMap, Submodule.map_comp,
+      SignedSym.map_parityEquiv_parityGrading H i]
+    exact map_congr_refl_paritySignedSymPiece G.parity_ofParity i
   rw [← hpiece]
   exact ((InternalGrading.ofDecomposition (parityGrading (signedSymPiece H))).map
     e.toLinearEquiv).isInternal
