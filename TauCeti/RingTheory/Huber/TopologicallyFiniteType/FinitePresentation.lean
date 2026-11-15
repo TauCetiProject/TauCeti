@@ -59,9 +59,9 @@ presentation (`TauCeti.Huber.isAdmissibleAlgebra_iff_flat`).
   map (`TauCeti.Huber.isOpenQuotientMap_of_surjective_restrictedMvPowerSeriesCompletion`), so `A`
   is strictly topologically of finite type over `O`.
 * `TauCeti.Huber.IsTopologicallyFinitePresentation.finitePresentation_quotient`: for a finitely
-  generated ideal of definition `I` of a complete adic ring `O`, the reduction `A ⧸ I·A` is a
-  finitely presented `O ⧸ I`-algebra; in particular every `A ⧸ ϖᵐA` is finitely presented over
-  `O ⧸ ϖᵐ` (`TauCeti.Huber.IsTopologicallyFinitePresentation.finitePresentation_quotient_pow`).
+  generated ideal of definition `I` of `O`, the reduction `A ⧸ I·A` is a finitely presented
+  `O ⧸ I`-algebra; in particular every `A ⧸ ϖᵐA` is finitely presented over `O ⧸ ϖᵐ`
+  (`TauCeti.Huber.IsTopologicallyFinitePresentation.finitePresentation_quotient_pow`).
 * `TauCeti.Huber.isAdmissibleAlgebra_iff_flat`: over a `ϖ`-adically separated valuation ring, an
   algebra is admissible exactly when it is topologically of finite presentation and flat.
 * `TauCeti.Huber.isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion`: over a complete adic
@@ -180,24 +180,23 @@ theorem IsTopologicallyFinitePresentation.isStrictlyTopologicallyFiniteType [Top
 
 section Reduction
 
-variable [IsAdicRing O]
-
 /-- **Reductions of algebras topologically of finite presentation are finitely presented.** If
-`O` is an adic ring of finite ideal type, `I` is a finitely generated ideal of definition of `O`
-and `A` is topologically of finite presentation over `O`, then `A ⧸ I·A` is a finitely presented
+`O` is a nonarchimedean ring, `I` is a finitely generated ideal of definition of `O` and `A` is
+topologically of finite presentation over `O`, then `A ⧸ I·A` is a finitely presented
 `O ⧸ I`-algebra: a presentation `O⟨ξ⟩ ⧸ 𝔞 ≅ A` reduces to an isomorphism of `A ⧸ I·A` with the
 quotient of `(O ⧸ I)[ξ]` by the image of `𝔞` (Bosch–Lütkebohmert I, §1). -/
 theorem IsTopologicallyFinitePresentation.finitePresentation_quotient
     (h : IsTopologicallyFinitePresentation O A) {I : Ideal O} (hI : IsAdic I) (hfg : I.FG) :
     Algebra.FinitePresentation (O ⧸ I) (A ⧸ I.map (algebraMap O A)) := by
   obtain ⟨n, π, hπ, hπker⟩ := h
-  let _ : UniformSpace O := IsTopologicalAddGroup.rightUniformSpace O
-  have : IsUniformAddGroup O := isUniformAddGroup_of_addCommGroup
   set P := restrictedMvPowerSeriesCompletion n O
   set IP := I.map (algebraMap O P)
   set IA := I.map (algebraMap O A)
   -- `O⟨ξ⟩ ⧸ I·O⟨ξ⟩` is the polynomial algebra `(O ⧸ I)[ξ]`
-  let e := quotientRestrictedCompletionEquivMvPolynomialQuotient (k := n) hI hfg
+  let e : (P ⧸ IP) ≃ₐ[O] MvPolynomial (Fin n) (O ⧸ I) :=
+    (Ideal.quotientEquivAlgOfEq O (pow_one IP).symm).trans
+      ((quotientPowRestrictedCompletionEquivMvPolynomialQuotient (k := n) hI hfg 1).trans
+        (MvPolynomial.mapAlgEquiv (Fin n) (Ideal.quotientEquivAlgOfEq O (pow_one I))))
   -- the reduction `O⟨ξ⟩ → A ⧸ I·A` of the presentation has kernel `I·O⟨ξ⟩ + ker π`
   let π' : P →+* A := π
   let g : P →+* A ⧸ IA := (Ideal.Quotient.mk IA).comp π'
@@ -227,10 +226,10 @@ theorem IsTopologicallyFinitePresentation.finitePresentation_quotient
       ((Ideal.Quotient.liftₐ IP gₐ hle).comp e.symm.toAlgHom)
   exact Algebra.FinitePresentation.of_surjective (f := ψₐ) hψ hψker
 
-/-- **Reductions modulo powers of a principal ideal of definition.** If `O` is an adic ring of
-finite ideal type whose topology is the `ϖ`-adic one, for instance a complete rank-one valuation
-base with pseudouniformiser `ϖ`, and `A` is topologically of finite presentation over `O`, then
-each `A ⧸ ϖᵐA` is a finitely presented `O ⧸ ϖᵐ`-algebra (Bosch–Lütkebohmert I, §1). -/
+/-- **Reductions modulo powers of a principal ideal of definition.** If `O` is a nonarchimedean
+ring whose topology is the `ϖ`-adic one, for instance a complete rank-one valuation base with
+pseudouniformiser `ϖ`, and `A` is topologically of finite presentation over `O`, then each
+`A ⧸ ϖᵐA` is a finitely presented `O ⧸ ϖᵐ`-algebra (Bosch–Lütkebohmert I, §1). -/
 theorem IsTopologicallyFinitePresentation.finitePresentation_quotient_pow
     (h : IsTopologicallyFinitePresentation O A) {ϖ : O} (hϖ : IsAdic (Ideal.span {ϖ})) (m : ℕ) :
     Algebra.FinitePresentation (O ⧸ Ideal.span {ϖ ^ m})

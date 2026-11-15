@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.AdicCompletion.Limit
 public import TauCeti.RingTheory.Huber.Restricted.Reduction.Basic
 
+import TauCeti.RingTheory.MvPolynomial.Quotient
+
 /-!
 # Adic restricted power series as inverse limits of polynomial rings
 
@@ -140,31 +142,6 @@ public section
 
 namespace TauCeti.Huber
 
-/-- One-step compatibility along `polynomialQuotientPowSuccDiagram` implies compatibility across
-arbitrary indices `m ≤ n`. -/
-private theorem polynomialQuotientPowSucc_compat {A : Type u} [CommRing A] {k : ℕ} {I : Ideal A}
-    {p : ∀ n : ℕ, MvPolynomial (Fin k) (A ⧸ I ^ (n + 1))}
-    (hp : ∀ n : ℕ, MvPolynomial.map
-      (Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.le_succ (n + 1)))) (p (n + 1)) = p n)
-    {m n : ℕ} (hmn : m ≤ n) :
-    MvPolynomial.map (Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.succ_le_succ hmn)))
-      (p n) = p m := by
-  induction n, hmn using Nat.le_induction with
-  | base =>
-      have hid : Ideal.Quotient.factor
-          (Ideal.pow_le_pow_right (I := I) (Nat.succ_le_succ (le_refl m))) = RingHom.id _ := by
-        ext
-        rfl
-      rw [hid, MvPolynomial.map_id]
-  | succ n hmn ih =>
-      have hcomp : Ideal.Quotient.factor
-            (Ideal.pow_le_pow_right (I := I) (Nat.succ_le_succ (Nat.le_succ_of_le hmn))) =
-          (Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.succ_le_succ hmn))).comp
-            (Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.le_succ (n + 1)))) := by
-        ext
-        rfl
-      rw [hcomp, ← MvPolynomial.map_map, hp n, ih]
-
 section CompletionLimit
 
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
@@ -252,13 +229,14 @@ theorem existsUnique_restrictedCompletionReduction_pow_succ_eq (hI : IsAdic I)
       ∀ n : ℕ, (I ^ (n + 1)).restrictedCompletionReduction (hI.isOpen_pow (n + 1)) x = p n := by
   choose y hy using fun n ↦
     (I ^ (n + 1)).restrictedCompletionReduction_surjective (k := k) (hI.isOpen_pow (n + 1)) (p n)
+  have hanti : Antitone fun n : ℕ ↦ I ^ (n + 1) :=
+    fun _ _ h ↦ Ideal.pow_le_pow_right (Nat.succ_le_succ h)
   have hdiff {j m : ℕ} (hjm : j ≤ m) :
       y m - y j ∈ RingHom.ker
         ((I ^ (j + 1)).restrictedCompletionReduction (k := k) (hI.isOpen_pow (j + 1))) := by
     rw [RingHom.mem_ker, map_sub, hy j, ← map_restrictedCompletionReduction
-      (hI.isOpen_pow (m + 1)) (hI.isOpen_pow (j + 1))
-      (Ideal.pow_le_pow_right (Nat.succ_le_succ hjm)), hy m,
-      polynomialQuotientPowSucc_compat hp hjm, sub_self]
+      (hI.isOpen_pow (m + 1)) (hI.isOpen_pow (j + 1)) (hanti hjm), hy m,
+      TauCeti.MvPolynomial.map_factor_eq_of_map_factor_succ_eq hanti hp hjm, sub_self]
   have hcauchy : CauchySeq y := by
     refine (hasBasis_nhds_zero_ker_restrictedCompletionReduction (k := k)
       hI).uniformity_of_nhds_zero.cauchySeq_iff.mpr fun j _ ↦ ⟨j, fun m hm n hn ↦ ?_⟩
@@ -275,8 +253,7 @@ theorem existsUnique_restrictedCompletionReduction_pow_succ_eq (hI : IsAdic I)
         =ᶠ[Filter.atTop] fun _ ↦ p n := by
       filter_upwards [Filter.eventually_ge_atTop n] with m hm
       rw [← map_restrictedCompletionReduction (hI.isOpen_pow (m + 1)) (hI.isOpen_pow (n + 1))
-        (Ideal.pow_le_pow_right (Nat.succ_le_succ hm)), hy m,
-        polynomialQuotientPowSucc_compat hp hm]
+        (hanti hm), hy m, TauCeti.MvPolynomial.map_factor_eq_of_map_factor_succ_eq hanti hp hm]
     exact tendsto_nhds_unique hlim (tendsto_const_nhds.congr' hev.symm)
   exact ⟨x, hx_red, fun z hz ↦
     restrictedMvPowerSeriesCompletion_ext_of_isAdic hI fun n ↦ (hz n).trans (hx_red n).symm⟩

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
+import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
 # The universal property of Gauss-normed Tate algebras at power-bounded arguments
@@ -25,7 +26,8 @@ identity comparison `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv` between th
 the Gauss-normed model, which is continuous in both directions. Unlike
 `MvPowerSeries.restrictedEval₂`, neither `‖φ r‖ ≤ ‖r‖` nor `‖bᵢ‖ ≤ 1` is assumed. Power-boundedness
 is `TauCeti.Huber.IsPowerBounded` for the topology of `S`: for a normed `S` the powers of `bᵢ`
-stay bounded, while `bᵢ` itself may have norm larger than one.
+stay bounded, while `bᵢ` itself may have norm larger than one. When `S` is linearly topologised,
+every element is power-bounded, so arbitrary points induce a unique continuous extension.
 
 ## Main definitions
 
@@ -41,8 +43,10 @@ stay bounded, while `bᵢ` itself may have norm larger than one.
   homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
 * `TauCeti.MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous
   extension.
-* `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
-  property.
+* `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring` and
+  `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology`:
+  the universal property at power-bounded arguments, and at arbitrary arguments in a complete
+  separated linearly topologised target ring.
 * `TauCeti.MvPowerSeries.restrictedRename_id`, `TauCeti.MvPowerSeries.restrictedRename_comp`:
   renaming along the identity is the identity, and successive renamings compose.
 
@@ -189,5 +193,24 @@ theorem restrictedRename_restrictedRename {n : ℕ} (g : Fin k → Fin n) (f : F
   congr($(restrictedRename_comp g f) x)
 
 end Rename
+
+section LinearTopology
+
+/-- **Universal property of `R⟨X₁, …, Xₖ⟩` into a complete separated linearly topologised ring.**
+Because every subset of a linearly topologised ring `B` is bounded, every element `b i` is
+power-bounded, so arbitrary points `b : Fin k → B` determine a unique continuous ring homomorphism
+`R⟨X₁, …, Xₖ⟩ →+* B` extending a continuous `φ : R →+* B`. -/
+theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology {B : Type*}
+    [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsLinearTopology B B] [CompleteSpace B]
+    [T0Space B] {φ : R →+* B} (hφ : Continuous φ) (b : Fin k → B) :
+    ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* B,
+      Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
+        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
+  have := IsLinearTopology.isTopologicalRing (R := B)
+  have := IsLinearTopology.nonarchimedeanRing B
+  exact existsUnique_continuous_ringHom_isRestricted_subring hφ
+    fun i ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+
+end LinearTopology
 
 end TauCeti.MvPowerSeries

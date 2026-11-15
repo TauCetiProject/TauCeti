@@ -17,7 +17,7 @@ import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
-# Polynomial reductions and linear-target maps of adic restricted power series
+# Polynomial reductions of adic restricted power series
 
 Reduction of restricted power series modulo an open ideal `J` of `A` lands in the polynomial ring
 `MvPolynomial (Fin k) (A ⧸ J)`, because only finitely many coefficients lie outside `J`. Because
@@ -32,28 +32,18 @@ carrier `restrictedMvPowerSeriesCompletion k A`. At `m = 0` both sides are the z
 `0 < m`, `I ^ m` is again a finitely generated ideal of definition.
 
 Reduction is natural under continuous coefficient maps `φ : A →+* B` carrying `J` into `K` and
-commutes with topological evaluation `weightedEvalHom` and `weightedEvalHomCompletion` modulo an
-open ideal of the target. When the target `B` is a complete separated linearly topologised
-`A`-algebra with continuous structure map, ideal neighbourhoods of zero make every element of `B`
-power-bounded (`isWeightBounded_of_isLinearTopology`), so arbitrary choices `b : Fin k → B` of the
-variables determine a unique continuous `A`-algebra homomorphism `A⟨X₁, …, Xₖ⟩ →ₐ[A] B`—in
-contrast to general nonarchimedean or normed targets, where power-boundedness or norm bounds on
-the evaluation point are essential.
+commutes with topological evaluation `weightedEvalHom`, `weightedEvalHomCompletion`, and
+linear-target algebra evaluation `restrictedLinearEvalAlgHom` modulo an open ideal of the target.
 
 ## Main definitions
 
 * `Ideal.restrictedReduction`: open-ideal polynomial reduction on `weightedRestrictedSubring`.
 * `Ideal.restrictedCompletionReduction`: open-ideal polynomial reduction on
   `restrictedMvPowerSeriesCompletion k A`.
-* `TauCeti.Huber.quotientRestrictedEquivMvPolynomialQuotient` and
-  `TauCeti.Huber.quotientPowRestrictedEquivMvPolynomialQuotient`: quotient comparisons modulo `I`
-  and `I ^ m` on `weightedRestrictedSubring`.
-* `TauCeti.Huber.quotientRestrictedCompletionEquivMvPolynomialQuotient` and
-  `TauCeti.Huber.quotientPowRestrictedCompletionEquivMvPolynomialQuotient`: quotient comparisons
-  modulo `I` and `I ^ m` on `restrictedMvPowerSeriesCompletion`.
-* `TauCeti.Huber.restrictedLinearEvalAlgHom`: continuous `A`-algebra evaluation out of
-  `restrictedMvPowerSeriesCompletion k A` into a complete separated linearly topologised
-  `A`-algebra at arbitrary points.
+* `TauCeti.Huber.quotientPowRestrictedEquivMvPolynomialQuotient`: quotient comparison modulo
+  `(I · A⟨X⟩) ^ m` on `weightedRestrictedSubring`.
+* `TauCeti.Huber.quotientPowRestrictedCompletionEquivMvPolynomialQuotient`: quotient comparison
+  modulo `(I · A⟨X⟩) ^ m` on `restrictedMvPowerSeriesCompletion`.
 
 ## Main results
 
@@ -65,11 +55,10 @@ the evaluation point are essential.
 * `TauCeti.Huber.mem_pow_map_weightedC_iff_of_isAdic`,
   `TauCeti.Huber.ker_restrictedReduction_pow`, and
   `TauCeti.Huber.ker_restrictedCompletionReduction_pow`: kernels of reduction modulo `I ^ m`.
-* `TauCeti.Huber.quotientMk_weightedEvalHom` and
-  `TauCeti.Huber.quotientMk_weightedEvalHomCompletion`: evaluation commutes with polynomial
+* `TauCeti.Huber.quotientMk_weightedEvalHom`,
+  `TauCeti.Huber.quotientMk_weightedEvalHomCompletion`, and
+  `TauCeti.Huber.quotientMk_restrictedLinearEvalAlgHom`: evaluation commutes with polynomial
   reduction modulo open ideals.
-* `existsUnique_continuous_algHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology`:
-  `A`-algebra form of the linear-target universal property of `A⟨X₁, …, Xₖ⟩`.
 
 ## References
 
@@ -380,32 +369,6 @@ theorem ker_restrictedReduction_pow (hI : IsAdic I) (hfg : I.FG) (m : ℕ) :
   ext f
   rw [Ideal.mem_ker_restrictedReduction, mem_pow_map_weightedC_iff_of_isAdic hI hfg m]
 
-/-- The infinitesimal reduction of restricted power series is a polynomial algebra. -/
-noncomputable def quotientRestrictedEquivMvPolynomialQuotient (hI : IsAdic I) (hfg : I.FG) :
-    (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight ⧸
-      I.map (weightedC _ isWeightFamily_one_weight)) ≃ₐ[A]
-      MvPolynomial (Fin k) (A ⧸ I) := by
-  let e := (Ideal.quotEquivOfEq (ker_restrictedReduction (k := k) hI hfg).symm).trans
-    ((restrictedReduction I (by simpa using hI.isOpen_pow 1)).quotientKerEquivOfSurjective
-      (restrictedReduction_surjective I (by simpa only [pow_one] using hI.isOpen_pow 1)))
-  refine AlgEquiv.ofRingEquiv (f := e) fun a ↦ ?_
-  have he : e (algebraMap A _ a) =
-      restrictedReduction I (by simpa only [pow_one] using hI.isOpen_pow 1) (algebraMap A _ a) := by
-    rw [← Ideal.Quotient.mk_algebraMap]
-    simp only [e, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
-      RingHom.quotientKerEquivOfSurjective_apply_mk]
-  rw [he]
-  simp [algebraMap_weightedRestrictedSubring]
-
-/-- On a represented series the quotient comparison computes its polynomial reduction. -/
-@[simp]
-theorem quotientRestrictedEquivMvPolynomialQuotient_mk (hI : IsAdic I) (hfg : I.FG)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
-      isWeightFamily_one_weight) :
-    quotientRestrictedEquivMvPolynomialQuotient hI hfg (Ideal.Quotient.mk _ f) =
-      restrictedReduction I (by simpa only [pow_one] using hI.isOpen_pow 1) f := by
-  simp [quotientRestrictedEquivMvPolynomialQuotient]
-
 /-- Reduction of restricted power series modulo any power `(I · A⟨T⟩) ^ m` of a finitely generated
 ideal of definition is the polynomial algebra `(A ⧸ I ^ m)[T]`. -/
 noncomputable def quotientPowRestrictedEquivMvPolynomialQuotient (hI : IsAdic I) (hfg : I.FG)
@@ -534,37 +497,6 @@ theorem quotientPowRestrictedCompletionEquivMvPolynomialQuotient_mk
 
 end QuotientComparison
 
-section Completion
-
-variable {k : ℕ} {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
-  [NonarchimedeanRing R] [T2Space R] [CompleteSpace R] {J : Ideal R}
-
-/-- The reduction modulo a finitely generated ideal of definition of the completed
-restricted-series algebra is the polynomial algebra over the quotient of the coefficients. -/
-noncomputable def quotientRestrictedCompletionEquivMvPolynomialQuotient
-    (hJ : IsAdic J) (hfg : J.FG) :
-    (restrictedMvPowerSeriesCompletion k R ⧸
-      J.map (algebraMap R (restrictedMvPowerSeriesCompletion k R))) ≃ₐ[R]
-      MvPolynomial (Fin k) (R ⧸ J) :=
-  (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesCompletionAlgEquiv k R) (by
-    rw [Ideal.map_map]
-    congr 1
-    rw [← algebraMap_weightedRestrictedSubring]
-    exact (restrictedMvPowerSeriesCompletionAlgEquiv k R).toAlgHom.comp_algebraMap.symm)).trans
-      (quotientRestrictedEquivMvPolynomialQuotient hJ hfg)
-
-/-- On an arbitrary completion element, the quotient comparison reduces its associated
-restricted series coefficientwise. -/
-@[simp]
-theorem quotientRestrictedCompletionEquivMvPolynomialQuotient_mk
-    (hJ : IsAdic J) (hfg : J.FG) (x : restrictedMvPowerSeriesCompletion k R) :
-    quotientRestrictedCompletionEquivMvPolynomialQuotient hJ hfg (Ideal.Quotient.mk _ x) =
-      restrictedReduction J (by simpa only [pow_one] using hJ.isOpen_pow 1)
-        (restrictedMvPowerSeriesCompletionAlgEquiv k R x) := by
-  simp [quotientRestrictedCompletionEquivMvPolynomialQuotient]
-
-end Completion
-
 section Evaluation
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] {k : ℕ}
@@ -633,52 +565,6 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsLinearTopology B B]
   [CompleteSpace B] [T0Space B] [Algebra A B] {k : ℕ}
 
-/-- **Evaluation of `A⟨X₁, …, Xₖ⟩` in a complete separated linearly topologised `A`-algebra.**
-Because `B` has a neighbourhood basis of ideals, every element of `B` is power-bounded, so
-arbitrary values `b : Fin k → B` define a continuous `A`-algebra homomorphism out of
-`restrictedMvPowerSeriesCompletion k A`. -/
-noncomputable def restrictedLinearEvalAlgHom (hA : Continuous (algebraMap A B)) (b : Fin k → B) :
-    restrictedMvPowerSeriesCompletion k A →ₐ[A] B :=
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  { weightedEvalHomCompletion isWeightFamily_one_weight hA.continuousAt
-      (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b) with
-    commutes' a := by
-      change weightedEvalHomCompletion _ _ _ _ = _
-      rw [algebraMap_completion_weightedRestrictedSubring_apply, weightedEvalHomCompletion_coe,
-        weightedEvalHom_weightedC] }
-
-/-- `restrictedLinearEvalAlgHom` agrees with `weightedEvalHomCompletion` on elements. -/
-theorem restrictedLinearEvalAlgHom_apply (hA : Continuous (algebraMap A B)) (b : Fin k → B)
-    (x : restrictedMvPowerSeriesCompletion k A) :
-    restrictedLinearEvalAlgHom hA b x =
-      (have := IsLinearTopology.isTopologicalRing (R := B)
-       have := IsLinearTopology.nonarchimedeanRing B
-       weightedEvalHomCompletion isWeightFamily_one_weight hA.continuousAt
-         (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b) x) := by
-  rfl
-
-/-- `restrictedLinearEvalAlgHom` is continuous. -/
-theorem continuous_restrictedLinearEvalAlgHom (hA : Continuous (algebraMap A B)) (b : Fin k → B) :
-    Continuous (restrictedLinearEvalAlgHom hA b) := by
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  exact continuous_weightedEvalHomCompletion isWeightFamily_one_weight hA.continuousAt
-    (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b)
-
-/-- `restrictedLinearEvalAlgHom` sends each coordinate variable `Xᵢ` to `bᵢ`. -/
-@[simp]
-theorem restrictedLinearEvalAlgHom_weightedX (hA : Continuous (algebraMap A B)) (b : Fin k → B)
-    (i : Fin k) :
-    restrictedLinearEvalAlgHom hA b
-        ((weightedX _ isWeightFamily_one_weight i :
-          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-            restrictedMvPowerSeriesCompletion k A) =
-      b i := by
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  simp [restrictedLinearEvalAlgHom]
-
 /-- Reducing `restrictedLinearEvalAlgHom` modulo an open ideal `K` of `B` agrees with polynomial
 evaluation of the completed reduction modulo an open ideal `J ≤ K.comap (algebraMap A B)`. -/
 theorem quotientMk_restrictedLinearEvalAlgHom (hA : Continuous (algebraMap A B)) (b : Fin k → B)
@@ -689,32 +575,9 @@ theorem quotientMk_restrictedLinearEvalAlgHom (hA : Continuous (algebraMap A B))
         (Ideal.Quotient.mk K ∘ b) := by
   have := IsLinearTopology.isTopologicalRing (R := B)
   have := IsLinearTopology.nonarchimedeanRing B
+  rw [restrictedLinearEvalAlgHom_apply]
   exact quotientMk_weightedEvalHomCompletion hA.continuousAt
     (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b) hJ hK hJK x
-
-/-- **Universal property of `A⟨X₁, …, Xₖ⟩` for linearly topologised `A`-algebras.** For a complete
-separated linearly topologised commutative `A`-algebra `B` with continuous structure map, arbitrary
-choices `b : Fin k → B` of the variables determine a unique continuous `A`-algebra homomorphism
-`A⟨X₁, …, Xₖ⟩ →ₐ[A] B`; compare
-`existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology` for the
-underlying ring-homomorphism form. -/
-theorem existsUnique_continuous_algHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology
-    (hA : Continuous (algebraMap A B)) (b : Fin k → B) :
-    ∃! ψ : restrictedMvPowerSeriesCompletion k A →ₐ[A] B, Continuous ψ ∧
-      ∀ i, ψ ((weightedX _ isWeightFamily_one_weight i :
-        weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-          restrictedMvPowerSeriesCompletion k A) = b i := by
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  refine ⟨restrictedLinearEvalAlgHom hA b,
-    ⟨continuous_restrictedLinearEvalAlgHom hA b, restrictedLinearEvalAlgHom_weightedX hA b⟩,
-    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective ?_⟩
-  exact completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
-    hψ (continuous_restrictedLinearEvalAlgHom hA b)
-    (fun a ↦ by
-      rw [RingHom.coe_coe, RingHom.coe_coe, ← algebraMap_completion_weightedRestrictedSubring_apply,
-        ψ.commutes, (restrictedLinearEvalAlgHom hA b).commutes])
-    (fun i ↦ (hX i).trans (restrictedLinearEvalAlgHom_weightedX hA b i).symm)
 
 end LinearAlgebra
 

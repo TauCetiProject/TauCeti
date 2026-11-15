@@ -44,6 +44,9 @@ on the values.
 ## Main definitions
 
 * `weightedEvalHomCompletion`: the evaluation homomorphism of 5.50, extended to the completion.
+* `restrictedLinearEvalAlgHom`: continuous `A`-algebra evaluation out of
+  `restrictedMvPowerSeriesCompletion k A` into a complete separated linearly topologised
+  `A`-algebra at arbitrary points.
 
 ## Main results
 
@@ -52,9 +55,10 @@ on the values.
 * existsUnique_continuous_ringHom_completion_weightedRestrictedSubring_of_isWeightedVarPowerBounded
   — the same under `IsWeightedVarPowerBounded`, the coordinatewise condition Proposition 5.50
   states. This is the one to cite as 5.50.
-* `existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology`: the
-  universal property of `A⟨X₁, …, Xₖ⟩` into a complete Hausdorff linearly topologised ring, with
-  no condition on the values of the variables.
+* `existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology` and
+  `existsUnique_continuous_algHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology`: the
+  ring-homomorphism and `A`-algebra universal properties of `A⟨X₁, …, Xₖ⟩` into a complete
+  Hausdorff linearly topologised target, with no condition on the values of the variables.
 * `completion_weightedRestrictedSubring_ringHom_ext_of_continuous`: the uniqueness half on its own,
   which asks of the target only a semiring structure and a Hausdorff topology.
 * `weightedEvalHomCompletion_coe`: the value of the extension on the image of `A⟨X⟩_T`. The body of
@@ -226,6 +230,83 @@ theorem existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isL
       hφ.continuousAt (isWeightBounded_of_isLinearTopology φ _ b)
 
 end LinearTopology
+
+section LinearAlgebra
+
+variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsLinearTopology B B]
+  [CompleteSpace B] [T0Space B] [Algebra A B]
+
+/-- **Evaluation of `A⟨X₁, …, Xₖ⟩` in a complete separated linearly topologised `A`-algebra.**
+Because `B` has a neighbourhood basis of ideals, every element of `B` is power-bounded, so
+arbitrary values `b : Fin k → B` define a continuous `A`-algebra homomorphism out of
+`restrictedMvPowerSeriesCompletion k A`. -/
+noncomputable def restrictedLinearEvalAlgHom (hA : Continuous (algebraMap A B)) (b : Fin k → B) :
+    restrictedMvPowerSeriesCompletion k A →ₐ[A] B :=
+  have := IsLinearTopology.isTopologicalRing (R := B)
+  have := IsLinearTopology.nonarchimedeanRing B
+  { toRingHom := weightedEvalHomCompletion isWeightFamily_one_weight hA.continuousAt
+      (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b)
+    commutes' a := by
+      rw [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
+        MonoidHom.coe_ofClass, algebraMap_completion_weightedRestrictedSubring_apply,
+        weightedEvalHomCompletion_coe, weightedEvalHom_weightedC] }
+
+/-- `restrictedLinearEvalAlgHom` agrees with `weightedEvalHomCompletion` on elements. -/
+theorem restrictedLinearEvalAlgHom_apply (hA : Continuous (algebraMap A B)) (b : Fin k → B)
+    (x : restrictedMvPowerSeriesCompletion k A) :
+    restrictedLinearEvalAlgHom hA b x =
+      (have := IsLinearTopology.isTopologicalRing (R := B)
+       have := IsLinearTopology.nonarchimedeanRing B
+       weightedEvalHomCompletion isWeightFamily_one_weight hA.continuousAt
+         (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b) x) := by
+  rfl
+
+/-- `restrictedLinearEvalAlgHom` is continuous. -/
+theorem continuous_restrictedLinearEvalAlgHom (hA : Continuous (algebraMap A B)) (b : Fin k → B) :
+    Continuous (restrictedLinearEvalAlgHom hA b) := by
+  have := IsLinearTopology.isTopologicalRing (R := B)
+  have := IsLinearTopology.nonarchimedeanRing B
+  exact continuous_weightedEvalHomCompletion isWeightFamily_one_weight hA.continuousAt
+    (isWeightBounded_of_isLinearTopology (algebraMap A B) _ b)
+
+/-- `restrictedLinearEvalAlgHom` sends each coordinate variable `Xᵢ` to `bᵢ`. -/
+@[simp]
+theorem restrictedLinearEvalAlgHom_weightedX (hA : Continuous (algebraMap A B)) (b : Fin k → B)
+    (i : Fin k) :
+    restrictedLinearEvalAlgHom hA b
+        ((weightedX _ isWeightFamily_one_weight i :
+          weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+            restrictedMvPowerSeriesCompletion k A) =
+      b i := by
+  have := IsLinearTopology.isTopologicalRing (R := B)
+  have := IsLinearTopology.nonarchimedeanRing B
+  simp [restrictedLinearEvalAlgHom]
+
+/-- **Universal property of `A⟨X₁, …, Xₖ⟩` for linearly topologised `A`-algebras.** For a complete
+separated linearly topologised commutative `A`-algebra `B` with continuous structure map, arbitrary
+choices `b : Fin k → B` of the variables determine a unique continuous `A`-algebra homomorphism
+`A⟨X₁, …, Xₖ⟩ →ₐ[A] B`; compare
+`existsUnique_continuous_ringHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology` for the
+underlying ring-homomorphism form. -/
+theorem existsUnique_continuous_algHom_restrictedMvPowerSeriesCompletion_of_isLinearTopology
+    (hA : Continuous (algebraMap A B)) (b : Fin k → B) :
+    ∃! ψ : restrictedMvPowerSeriesCompletion k A →ₐ[A] B, Continuous ψ ∧
+      ∀ i, ψ ((weightedX _ isWeightFamily_one_weight i :
+        weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          restrictedMvPowerSeriesCompletion k A) = b i := by
+  have := IsLinearTopology.isTopologicalRing (R := B)
+  have := IsLinearTopology.nonarchimedeanRing B
+  refine ⟨restrictedLinearEvalAlgHom hA b,
+    ⟨continuous_restrictedLinearEvalAlgHom hA b, restrictedLinearEvalAlgHom_weightedX hA b⟩,
+    fun ψ ⟨hψ, hX⟩ ↦ AlgHom.toRingHom_injective ?_⟩
+  exact completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
+    hψ (continuous_restrictedLinearEvalAlgHom hA b)
+    (fun a ↦ by
+      rw [RingHom.coe_coe, RingHom.coe_coe, ← algebraMap_completion_weightedRestrictedSubring_apply,
+        ψ.commutes, (restrictedLinearEvalAlgHom hA b).commutes])
+    (fun i ↦ (hX i).trans (restrictedLinearEvalAlgHom_weightedX hA b i).symm)
+
+end LinearAlgebra
 
 end TauCeti.Huber
 

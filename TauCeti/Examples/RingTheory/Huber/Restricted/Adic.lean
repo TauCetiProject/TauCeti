@@ -95,14 +95,14 @@ example :
       g ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ (1 : ℝ)) := by
   intro g
   have hg : g ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ (1 : ℝ)) := by
+    rw [MvPowerSeries.IsRestricted.mem_subring, MvPowerSeries.IsRestricted]
     intro hmem
     have hinj : Function.Injective (fun n : ℕ ↦ Finsupp.single (0 : Fin 1) n) :=
       Finsupp.single_injective 0
     have hlim : Tendsto (fun _ : ℕ ↦ (1 : ℝ)) atTop (𝓝 0) :=
       Nat.cofinite_eq_atTop ▸ (hmem.comp hinj.tendsto_cofinite).congr fun n ↦ by
-        simp only [Function.comp_apply]
-        change ‖(1 : ℤ_[p])‖ * _ = 1
-        simp
+        rw [Function.comp_apply, MvPowerSeries.coeff_apply]
+        simp [g]
     exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds hlim)
   exact ⟨fun hmem ↦ hg
     (weightedRestrictedSubring_eq_isRestricted_subring (n := 1) (R := ℤ_[p]) ▸ hmem), hg⟩
@@ -234,9 +234,8 @@ example (p : ℕ) [Fact p.Prime] :
     intro n _
     refine Filter.mem_of_superset (hI.hasBasis_nhds_zero.mem_of_mem (i := n) trivial) ?_
     intro x hx
-    change ι x ∈ ((IsLocalRing.maximalIdeal ℤ_[p] ^ n : Ideal ℤ_[p]) : Set ℤ_[p])
-    rw [SetLike.mem_coe, _root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow,
-      Ideal.mem_span_singleton]
+    rw [Set.mem_ofPred_eq, SetLike.mem_coe, _root_.PadicInt.maximalIdeal_eq_span_p,
+      Ideal.span_singleton_pow, Ideal.mem_span_singleton]
     rw [Ideal.span_singleton_pow, SetLike.mem_coe, Ideal.mem_span_singleton] at hx
     obtain ⟨k, hk⟩ := hx
     exact ⟨(k : ℤ_[p]), by simpa [ι] using congrArg ι hk⟩

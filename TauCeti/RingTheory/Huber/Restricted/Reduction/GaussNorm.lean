@@ -15,7 +15,7 @@ import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
-# Polynomial reduction, adic structure, and universal properties under the Gauss norm
+# Polynomial reduction and adic structure under the Gauss norm
 
 For an ultrametric normed commutative ring `R`, the unit-radius Gauss-normed restricted-series
 subring `MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)` is topologically
@@ -24,7 +24,7 @@ and when `R` is complete to the completed Huber algebra `restrictedMvPowerSeries
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv`.
 
 This file transports open-ideal polynomial reduction, adic quotient and inverse-limit
-descriptions, adic Noetherianity, and the comparison between topological and normed evaluation
+descriptions, adic Noetherianity, and reduction compatibility of topological and normed evaluation
 across that equivalence:
 
 * `Ideal.isRestrictedSubringReduction` reduces a unit-radius restricted series modulo any open
@@ -46,14 +46,9 @@ across that equivalence:
   (`TauCeti.MvPowerSeries.isLimitIsRestrictedSubringReductionPowSuccCone`,
   `TauCeti.MvPowerSeries.existsUnique_isRestrictedSubringReduction_pow_succ_eq`).
 * Both topological power-bounded evaluation (`TauCeti.MvPowerSeries.restrictedLift`) and bounded
-  normed evaluation (`RingHom.restrictedEval₂OfBound`) commute with open-ideal reduction. Because
-  `‖φ r‖ ≤ C * ‖r‖` implies continuity of `φ` and `‖a i‖ ≤ 1` implies `IsPowerBounded (a i)`
-  (`IsPowerBounded.of_norm_le_one`), `RingHom.restrictedEval₂OfBound` is a special case of
-  `TauCeti.MvPowerSeries.restrictedLift` and agrees with it whenever the normed hypotheses hold
-  (`TauCeti.MvPowerSeries.restrictedLift_eq_restrictedEval₂OfBound`); into a complete separated
-  linearly topologised target ring every element is power-bounded (`isBounded_of_isLinearTopology`),
-  so neither norm bounds nor separate power-boundedness hypotheses are needed (see
-  `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology`).
+  normed evaluation (`RingHom.restrictedEval₂OfBound`) commute with open-ideal reduction
+  (`TauCeti.MvPowerSeries.quotientMk_restrictedLift` and
+  `RingHom.quotientMk_restrictedEval₂OfBound`).
 
 ## References
 
@@ -307,17 +302,7 @@ theorem isAdic_map_algebraMap_isRestrictedSubring {I : Ideal R} (hI : IsAdic I) 
       (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight))).comap
         e.symm =
       I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) := by
-    have hcomap : (I.map (algebraMap R
-        (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-          isWeightFamily_one_weight))).comap e.symm =
-        Ideal.map e.toRingHom (I.map (algebraMap R
-          (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-            isWeightFamily_one_weight))) := by
-      ext f
-      rw [Ideal.mem_comap, Ideal.mem_map_iff_of_surjective e.toRingHom e.surjective]
-      exact ⟨fun hf ↦ ⟨e.symm f, hf, by simp [e]⟩,
-        by rintro ⟨g, hg, rfl⟩; simpa [e] using hg⟩
-    rw [hcomap, Ideal.map_map]
+    rw [Ideal.comap_symm e, ← Ideal.map_coe, Ideal.map_map]
     refine congrArg (I.map ·) (RingHom.ext fun r ↦ ?_)
     simp [e, algebraMap_weightedRestrictedSubring]
   exact heq ▸ hadic
@@ -328,17 +313,17 @@ theorem ker_isRestrictedSubringReduction_pow {I : Ideal R} (hI : IsAdic I) (hfg 
     RingHom.ker ((I ^ m).isRestrictedSubringReduction (k := k) (hI.isOpen_pow m)) =
       I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) ^ m := by
   let e := restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)
-  have hmap : Ideal.map e.toRingHom
+  have hmap : Ideal.map e
       (I.map (weightedC (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight) ^ m) =
       I.map (algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1))) ^ m := by
-    rw [Ideal.map_pow, Ideal.map_map]
+    rw [← Ideal.map_coe, Ideal.map_pow, Ideal.map_map]
     exact congrArg (· ^ m) (congrArg (I.map ·)
       (RingHom.ext fun r ↦ restrictedMvPowerSeriesGaussEquiv_weightedC r))
   ext f
   rw [← hmap, Ideal.isRestrictedSubringReduction, RingHom.mem_ker, RingHom.comp_apply,
-    ← RingHom.mem_ker, ker_restrictedReduction_pow hI hfg m]
-  exact ⟨fun hf ↦ by simpa [e] using Ideal.mem_map_of_mem e.toRingHom hf, fun hf ↦ by
-    simpa [e] using Ideal.mem_map_of_mem e.symm.toRingHom hf⟩
+    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, ← RingHom.mem_ker,
+    ker_restrictedReduction_pow hI hfg m]
+  exact Ideal.symm_apply_mem_of_equiv_iff
 
 /-- **Adic quotient of Gauss-normed restricted power series.** Modulo `(I · R⟨X⟩) ^ m` for a
 finitely generated ideal of definition `I`, unit-radius restricted series reduce to the polynomial
@@ -468,35 +453,6 @@ theorem quotientMk_restrictedLift {S : Type*} [CommRing S] [UniformSpace S] [IsU
   have heq := isRestricted_subring_ringHom_ext_of_continuous hcont₁ hcont₂
     (fun r ↦ by simp [rhs]) (fun i ↦ by simp [rhs])
   exact congr($heq f)
-
-/-- **Topological power-bounded evaluation agrees with bounded normed evaluation whenever the
-normed hypotheses hold.** Because `‖φ r‖ ≤ C * ‖r‖` implies continuity of `φ` and `‖a i‖ ≤ 1`
-implies `IsPowerBounded (a i)` (`IsPowerBounded.of_norm_le_one`), `RingHom.restrictedEval₂OfBound`
-is a special case of `restrictedLift` (whereas `restrictedLift` also applies at power-bounded
-elements of norm greater than `1`), and both define the same homomorphism `R⟨X₁, …, Xₖ⟩ →+* S`. -/
-theorem restrictedLift_eq_restrictedEval₂OfBound {S : Type*} [NormedCommRing S]
-    [IsUltrametricDist S] [CompleteSpace S] {φ : R →+* S} (hφc : Continuous φ) {a : Fin k → S}
-    (hb : ∀ i, IsPowerBounded (a i)) {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (ha : ∀ i, ‖a i‖ ≤ 1) :
-    restrictedLift hφc hb = φ.restrictedEval₂OfBound a hφ ha := by
-  have : ∀ _ : Fin k, Fact ((0 : ℝ) < 1) := fun _ ↦ ⟨zero_lt_one⟩
-  exact (restrictedLift_unique hφc hb (φ.continuous_restrictedEval₂OfBound a hφ ha)
-    (φ.restrictedEval₂OfBound_algebraMap a hφ ha)
-    (φ.restrictedEval₂OfBound_X a hφ ha)).symm
-
-/-- **Universal property of `R⟨X₁, …, Xₖ⟩` into a complete separated linearly topologised ring.**
-Because every subset of a linearly topologised ring `B` is bounded, every element `b i` is
-power-bounded, so arbitrary points `b : Fin k → B` determine a unique continuous ring homomorphism
-`R⟨X₁, …, Xₖ⟩ →+* B` extending a continuous `φ : R →+* B`. -/
-theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology {B : Type*}
-    [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsLinearTopology B B] [CompleteSpace B]
-    [T0Space B] {φ : R →+* B} (hφ : Continuous φ) (b : Fin k → B) :
-    ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* B,
-      Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
-        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
-  have := IsLinearTopology.isTopologicalRing (R := B)
-  have := IsLinearTopology.nonarchimedeanRing B
-  exact existsUnique_continuous_ringHom_isRestricted_subring hφ
-    fun i ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
 
 end EvaluationComparison
 

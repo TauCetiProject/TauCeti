@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
 /-!
 # Coefficient maps and evaluation under the Gauss comparison
@@ -27,7 +28,9 @@ only for comparisons involving the source completion.
 
 * `restrictedMvPowerSeriesGaussEquiv_weightedMap` and
   `restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion`: coefficient-map naturality.
-* `weightedEvalHom_eq_restrictedEval₂OfBound`: topological evaluation is normed evaluation.
+* `weightedEvalHom_eq_restrictedEval₂OfBound` and
+  `TauCeti.MvPowerSeries.restrictedLift_eq_restrictedEval₂OfBound`: topological evaluation agrees
+  with bounded normed evaluation.
 * `weightedEvalHomCompletion_eq_restrictedEval₂OfBound`: the same comparison after completion.
 * `norm_weightedEvalHomCompletion_le`: the bound on completed evaluation.
 
@@ -148,3 +151,24 @@ theorem norm_weightedEvalHomCompletion_le (f : restrictedMvPowerSeriesCompletion
 end Evaluation
 
 end TauCeti.Huber
+
+namespace TauCeti.MvPowerSeries
+
+open TauCeti.Huber
+
+/-- **Topological power-bounded evaluation agrees with bounded normed evaluation whenever the
+normed hypotheses hold.** Because `‖φ r‖ ≤ C * ‖r‖` implies continuity of `φ` and `‖a i‖ ≤ 1`
+implies `IsPowerBounded (a i)` (`IsPowerBounded.of_norm_le_one`), `RingHom.restrictedEval₂OfBound`
+is a special case of `restrictedLift` (whereas `restrictedLift` also applies at power-bounded
+elements of norm greater than `1`), and both define the same homomorphism `R⟨X₁, …, Xₖ⟩ →+* S`. -/
+theorem restrictedLift_eq_restrictedEval₂OfBound {k : ℕ} {R S : Type*} [NormedCommRing R]
+    [IsUltrametricDist R] [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
+    {φ : R →+* S} (hφc : Continuous φ) {a : Fin k → S} (hb : ∀ i, IsPowerBounded (a i))
+    {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (ha : ∀ i, ‖a i‖ ≤ 1) :
+    restrictedLift hφc hb = φ.restrictedEval₂OfBound a hφ ha := by
+  have : ∀ _ : Fin k, Fact ((0 : ℝ) < 1) := fun _ ↦ ⟨zero_lt_one⟩
+  exact (restrictedLift_unique hφc hb (φ.continuous_restrictedEval₂OfBound a hφ ha)
+    (φ.restrictedEval₂OfBound_algebraMap a hφ ha)
+    (φ.restrictedEval₂OfBound_X a hφ ha)).symm
+
+end TauCeti.MvPowerSeries
