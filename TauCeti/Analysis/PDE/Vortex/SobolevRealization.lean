@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
-import TauCeti.Analysis.Distribution.TestFunction.Inner
 
 /-!
 # The gauge-fixed vortex operator on the Sobolev scale
@@ -14,13 +13,12 @@ import TauCeti.Analysis.Distribution.TestFunction.Inner
 At a field `x`, the gauge-fixed vortex operator `L_x = d₀* ⊕ d₁` (`gaugeFixedOperator`) is a
 first-order operator on fields `ℂ → ℝ⁴` with formal adjoint `L_x*` (`gaugeFixedAdjoint`). A
 square-integrable field `y` is a weak solution of `L_x y = f` if `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for
-every smooth compactly supported test field `η`. This file compares weak and classical solutions
-and shows that, at a plane vortex lying in the affine field space `A_m^k` for every `k`, the
-operator `L_x` maps `H^(k+1)` onto `H^k` in the weak sense for every `k`, with a right inverse
-that is bounded on `L²` and orthogonal to the weak kernel.
+every smooth compactly supported test field `η`; for `C¹` fields this is the same as a classical
+solution (`forall_integral_inner_gaugeFixedAdjoint_eq_iff`). This file compares weak and classical
+`L²` solutions and shows that, at a plane vortex lying in the affine field space `A_m^k` for every
+`k`, the operator `L_x` maps `H^(k+1)` onto `H^k` in the weak sense for every `k`, with a right
+inverse that is bounded on `L²` and orthogonal to the weak kernel.
 
-* `forall_integral_inner_gaugeFixedAdjoint_eq_iff`: a `C¹` field is a weak solution of
-  `L_x y = f`, for continuous `f`, exactly when it is a classical solution.
 * `exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`: at a smooth field `x` whose
   coordinates have bounded derivatives of every order, a weak `L²` solution of `L_x y = f`, with
   `f` continuous and in every `H^k`, agrees almost everywhere with a smooth classical solution
@@ -57,34 +55,7 @@ open scoped RealInnerProductSpace ContDiff
 
 variable {x y f : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-! ### Weak and classical solutions -/
-
-/-- **Weak solutions in `C¹` are classical.** Let `x` be a continuous field, `y` a `C¹` field
-and `f` a continuous field. Then `y` is a weak solution of `L_x y = f`,
-`∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every smooth compactly supported `η`, exactly when
-`L_x y = f` everywhere. -/
-theorem forall_integral_inner_gaugeFixedAdjoint_eq_iff {μ : Measure ℂ} [μ.IsAddHaarMeasure]
-    (hx : Continuous x) (hy : ContDiff ℝ 1 y) (hf : Continuous f) :
-    (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ↔
-      ∀ z, gaugeFixedOperator x y z = f z := by
-  -- Integration by parts moves `L_x*` from the compactly supported test field onto `y`.
-  have hparts (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η)
-      (hηc : HasCompactSupport η) :
-      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪gaugeFixedOperator x y z, η z⟫ ∂μ :=
-    (integral_inner_gaugeFixedOperator hx hy (hη.of_le (by exact_mod_cast le_top))
-      (.inr hηc)).symm
-  refine ⟨fun hweak ↦ ?_, fun heq η hη hηc ↦ by simp_rw [hparts η hη hηc, heq]⟩
-  -- Both sides are continuous and pair equally with every test field, so they agree.
-  have hL := continuous_gaugeFixedOperator hx hy
-  have hae : gaugeFixedOperator x y =ᵐ[μ] f := by
-    simpa using ae_eq_of_forall_integral_inner_eq (Ω := ⊤)
-      (hL.locallyIntegrable.locallyIntegrableOn _) (hf.locallyIntegrable.locallyIntegrableOn _)
-      fun φ ↦ by
-        have h := hweak φ φ.contDiff φ.hasCompactSupport
-        rw [hparts φ φ.contDiff φ.hasCompactSupport] at h
-        simpa only [real_inner_comm] using h
-  exact congrFun ((hL.ae_eq_iff_eq μ hf).1 hae)
+/-! ### Regularity of weak and classical solutions -/
 
 /-- A square-integrable weak solution of `L_x y = f`, with `f` in every `H^k`, lies in every
 `H^k` when `x` is smooth with bounded derivatives: the elliptic bootstrap at every order. -/
