@@ -6,9 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.Barrelled
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
-# Separately continuous bilinear maps on barrelled spaces
+# Equicontinuity and separately continuous bilinear maps on barrelled spaces
+
+On a barrelled space `E`, every von Neumann bounded set of continuous semilinear maps into a
+polynormable space `F` is uniformly equicontinuous (`Bornology.IsVonNBounded.uniformEquicontinuous`)
+and hence equicontinuous (`Bornology.IsVonNBounded.equicontinuous`): evaluation at any vector maps a
+bounded set of operators to a bounded subset of `F`, so the Banach–Steinhaus theorem
+(`PolynormableSpace.banach_steinhaus`) applies.
 
 A bilinear map `B : E × F → G` that is continuous in each variable separately need not be jointly
 continuous. It is when `E` is barrelled and both `E` and `F` are first countable, for instance
@@ -24,13 +31,16 @@ hence finite-order bounds for it.
 
 ## Main results
 
+* `Bornology.IsVonNBounded.uniformEquicontinuous`, `Bornology.IsVonNBounded.equicontinuous`: von
+  Neumann bounded families of continuous semilinear maps out of a barrelled space into a
+  polynormable space are uniformly equicontinuous and equicontinuous.
 * `LinearMap.continuous_uncurry_of_barrelledSpace`: a separately continuous bilinear map on the
   product of a first countable barrelled space and a first countable space is continuous.
 
 ## References
 
-* N. Bourbaki, *Topological Vector Spaces*, Chapter III, §5, no. 3, Proposition 6 and
-  Corollary 1.
+* N. Bourbaki, *Topological Vector Spaces*, Chapter III, §4, no. 2, and §5, no. 3, Proposition 6
+  and Corollary 1.
 * F. Trèves, *Topological Vector Spaces, Distributions and Kernels*, Theorem 34.1 and
   Corollary 1.
 -/
@@ -38,6 +48,48 @@ hence finite-order bounds for it.
 public section
 
 open Filter Topology Uniformity
+
+namespace Bornology
+
+section Uniform
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ₁₂]
+  [AddCommGroup E] [Module 𝕜₁ E] [UniformSpace E] [IsUniformAddGroup E] [ContinuousSMul 𝕜₁ E]
+  [BarrelledSpace 𝕜₁ E]
+  [AddCommGroup F] [Module 𝕜₂ F] [UniformSpace F] [IsUniformAddGroup F] [PolynormableSpace 𝕜₂ F]
+
+/-- Every von Neumann bounded set of continuous semilinear maps from a barrelled space into a
+polynormable space is uniformly equicontinuous: evaluation at each point sends a bounded set of
+operators to a bounded subset of the codomain, so the Banach–Steinhaus theorem applies. -/
+protected theorem IsVonNBounded.uniformEquicontinuous {S : Set (E →SL[σ₁₂] F)}
+    (hS : IsVonNBounded 𝕜₂ S) : UniformEquicontinuous fun f : S ↦ (f.1 : E → F) := by
+  refine PolynormableSpace.banach_steinhaus (𝓕 := fun f : S ↦ f.1) fun x ↦ ?_
+  refine (ContinuousLinearMap.isVonNBounded_image2_apply hS (isVonNBounded_singleton x)).subset ?_
+  rintro _ ⟨f, rfl⟩
+  exact ⟨f.1, f.2, x, Set.mem_singleton x, rfl⟩
+
+end Uniform
+
+section Topological
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ₁₂]
+  [AddCommGroup E] [Module 𝕜₁ E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [ContinuousSMul 𝕜₁ E] [BarrelledSpace 𝕜₁ E]
+  [AddCommGroup F] [Module 𝕜₂ F] [UniformSpace F] [IsUniformAddGroup F] [PolynormableSpace 𝕜₂ F]
+
+/-- Every von Neumann bounded set of continuous semilinear maps from a barrelled topological
+vector space into a uniformly topologized polynormable space is equicontinuous. -/
+protected theorem IsVonNBounded.equicontinuous {S : Set (E →SL[σ₁₂] F)}
+    (hS : IsVonNBounded 𝕜₂ S) : Equicontinuous fun f : S ↦ (f.1 : E → F) := by
+  let _ : UniformSpace E := IsTopologicalAddGroup.rightUniformSpace E
+  have _ : IsUniformAddGroup E := isUniformAddGroup_of_addCommGroup
+  exact hS.uniformEquicontinuous.equicontinuous
+
+end Topological
+
+end Bornology
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [UniformSpace E] [IsUniformAddGroup E] [ContinuousSMul 𝕜 E]

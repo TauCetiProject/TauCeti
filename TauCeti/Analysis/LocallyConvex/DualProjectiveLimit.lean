@@ -315,32 +315,32 @@ theorem exists_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
 /-- When the bonding maps are weakly compact, canonical evaluation from `dualProjectiveLimit T`
 into its strong bidual is surjective: composing a strong-bidual element with the stage evaluation
 maps `eval T n` produces the representing compatible family. -/
-theorem surjective_applyₗ (hT : ∀ n, (T n).IsWeaklyCompact) :
+theorem applyₗ_id_surjective (hT : ∀ n, (T n).IsWeaklyCompact) :
     Function.Surjective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
       dualProjectiveLimit T → StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T))) := by
   intro Ψ
   refine ⟨⟨fun n ↦ Ψ.comp (eval T n), mem_dualProjectiveLimit.2 fun n ↦ by
     rw [comp_assoc, eval_comp]⟩, ContinuousLinearMap.ext fun φ ↦ ?_⟩
   obtain ⟨j, x, rfl⟩ := exists_eval_eq hT φ
-  rfl
+  simp
 
 /-- **Strong reflexivity of the dual projective limit.** When the bonding maps are weakly compact,
 in particular when they are compact, canonical evaluation is a topological linear isomorphism from
 `dualProjectiveLimit T` onto its strong bidual. -/
 def bidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
     dualProjectiveLimit T ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 (dualProjectiveLimit T)) :=
-  strongBidualEquivOfBarrelled (surjective_applyₗ hT)
+  strongBidualEquivOfBarrelled (applyₗ_id_surjective hT)
 
 @[simp]
 theorem bidualEquiv_apply_apply (hT : ∀ n, (T n).IsWeaklyCompact)
     (f : dualProjectiveLimit T) (φ : StrongDual 𝕜 (dualProjectiveLimit T)) :
     bidualEquiv hT f φ = φ f :=
-  strongBidualEquivOfBarrelled_apply_apply (surjective_applyₗ hT) f φ
+  strongBidualEquivOfBarrelled_apply_apply (applyₗ_id_surjective hT) f φ
 
 @[simp]
 theorem toLinearMap_bidualEquiv (hT : ∀ n, (T n).IsWeaklyCompact) :
     (bidualEquiv hT).toLinearMap = ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :=
-  toLinearMap_strongBidualEquivOfBarrelled (surjective_applyₗ hT)
+  toLinearMap_strongBidualEquivOfBarrelled (applyₗ_id_surjective hT)
 
 @[simp]
 theorem bidualEquiv_symm_coord_apply (hT : ∀ n, (T n).IsWeaklyCompact)
@@ -488,9 +488,7 @@ theorem evalInductive_apply_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n
 theorem evalInductive_injective [SeparatingDual 𝕜 L] (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) :
     Function.Injective (evalInductive hι hinj hcover) :=
-  (injective_iff_map_eq_zero _).2 fun x hx ↦
-    SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun φ ↦ by
-      rw [← evalInductive_apply_precomp hι hinj hcover x φ, hx, zero_apply]
+  injective_of_forall_apply_eq (evalInductive_apply_precomp hι hinj hcover)
 
 /-- When the bonding maps are weakly compact, in particular when they are compact, the glued
 evaluation map `evalInductive` is surjective onto `StrongDual 𝕜 (dualProjectiveLimit T)`. -/
