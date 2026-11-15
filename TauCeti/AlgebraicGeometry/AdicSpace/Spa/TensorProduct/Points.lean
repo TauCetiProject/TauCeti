@@ -84,7 +84,6 @@ private lemma exists_amalgam_lt_one_mem_nhds (S : Pair B) (T : Pair C)
         simpa only [map_one] using (valuation_le_iff v _ _).mpr hc')
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   have hϖB := hϖ.map (φ := algebraMap A B) (IsAdicHom.continuous inferInstance)
-  have hϖC := hϖ.map (φ := algebraMap A C) (IsAdicHom.continuous inferInstance)
   let t := includeLeftRingHom (R := A) (B := C) (algebraMap A B ϖ)
   have ht : IsUnit t := (hϖB.isUnit.map includeLeftRingHom)
   have htlt : v.valuation t < 1 := hcy.lt_one_of_isTopologicallyNilpotent

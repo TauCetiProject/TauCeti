@@ -343,7 +343,7 @@ theorem toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero
   -- Restrict to the single row `i` and the single column `k`.
   have h22' : (S.submatrix (Sum.map (fun _ : Unit => i) fun _ : Unit => k)
       (Sum.map (fun _ : Unit => i) fun _ : Unit => k)).toBlocks₂₂ = 0 := by
-    ext a b
+    ext _ _
     exact congrFun₂ h22 k k
   have h := (hS.submatrix (Sum.map (fun _ : Unit => i) fun _ : Unit => k)).toBlocks₁₂_mulVec_eq_zero
     (x := fun _ => 1) (by rw [h22', zero_mulVec])

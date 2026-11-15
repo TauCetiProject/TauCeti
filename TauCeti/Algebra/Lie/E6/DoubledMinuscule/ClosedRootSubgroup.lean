@@ -53,13 +53,11 @@ a pinned Chevalley--Demazure group scheme, or that the `E₆` diagram symmetry a
   `TauCeti/Algebra/Lie/E6/Minuscule/ClosedRootSubgroup.lean`, the same argument on the
   `27`-dimensional minuscule carrier.
 
-## Roadmap
+## Applications
 
 This supplies the closed-root-subgroup component of a pinning for the explicit full-weight
-doubled type-`E₆` carrier, in the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That carrier is the one the graph-twisted family
-`²E₆(q)` of milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` needs, the `E₆` diagram
-symmetry not acting on the `27`-dimensional one.
+doubled type-`E₆` carrier. That carrier is the one the graph-twisted family `²E₆(q)` needs, the
+`E₆` diagram symmetry not acting on the `27`-dimensional one.
 -/
 
 public section

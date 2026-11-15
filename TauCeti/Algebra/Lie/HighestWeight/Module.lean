@@ -380,8 +380,7 @@ theorem genWeightSpace_eq_span_singleton_of_isHighestWeightVector_of_lieSpan_eq_
   -- the `lam`-weight space meets those strictly lower weight spaces trivially
   have hdisj : Disjoint (genWeightSpace M ((lam : Dual K H) : H → K))
       (genWeightSpaceSpan H M (strictLowerSet b lam)) :=
-    (iSupIndep_genWeightSpace K H M ((lam : Dual K H) : H → K)).mono_right
-      (genWeightSpaceSpan_le_iff.mpr fun chi hchi => le_iSup₂_of_le chi hchi.2 le_rfl)
+    disjoint_genWeightSpace_genWeightSpaceSpan H M fun h => h.2 rfl
   have hdisj' : (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M) ⊓
       (genWeightSpaceSpan H M (strictLowerSet b lam) : Submodule K M) = ⊥ := by
     rw [← LieSubmodule.inf_toSubmodule, disjoint_iff.mp hdisj, LieSubmodule.bot_toSubmodule]

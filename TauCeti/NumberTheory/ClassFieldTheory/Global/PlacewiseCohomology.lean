@@ -241,7 +241,7 @@ private theorem exists_map_sIdelesToIdeles_eq (n : ℤ) (x : tateCohomology (ide
   have hcover (s : Finset (idelesRep K L)) : ∃ S : {S : Finset (HeightOneSpectrum (𝓞 K)) //
       NumberField.ramifiedSupport K L ⊆ S},
         ∀ x ∈ s, x ∈ Set.range (sIdelesToIdeles (K := K) L S.1).hom := by
-    choose S hRS hS using fun x : idelesRep K L ↦ exists_finset_mem_sIdeles
+    choose S _ hS using fun x : idelesRep K L ↦ exists_finset_mem_sIdeles
       (NumberField.ramifiedSupport K L) (Additive.toMul x : IdeleGroup (𝓞 L) L)
     let T := NumberField.ramifiedSupport K L ∪ s.sup S
     refine ⟨⟨T, Finset.subset_union_left⟩, fun x hx ↦

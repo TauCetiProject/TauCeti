@@ -92,10 +92,10 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq {x : κ
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
   let : Nonempty (ι → κ) := ⟨e⟩
   apply le_antisymm
-  · refine iSup₂_le fun A hA => ?_
+  · refine iSup₂_le fun A _ => ?_
     simpa only [uniformOn_not_injective_apply_eq] using tsub_le_iff_left.mpr
       (sampleWithoutReplacement_le_sampleWithReplacement_add_collision
-        (ρ := Measure.dirac x) hA)
+        (ρ := Measure.dirac x) A)
   · simpa only [sampleWithoutReplacement_dirac_injective_apply_eq_one hx e hI,
       sampleWithReplacement_dirac_injective_apply_eq hx hI] using
       (le_iSup₂ (f := fun (A : Set (ι → α)) (_ : MeasurableSet A) =>

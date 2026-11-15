@@ -49,15 +49,13 @@ Mathlib's API for it stays reachable.
 * `DirectSum.isNilpotent_toEnd_iff`: an element acts nilpotently on a finite external direct sum
   exactly when it acts nilpotently on every summand.
 
-## Roadmap
+## Applications
 
-This is infrastructure for the decomposition toolkit of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: additivity of the morphism space
-is the ingredient that `TauCeti/Algebra/Lie/Schur.lean` names as missing from its dimension form of
-Schur's lemma, and with which `TauCeti/Algebra/Lie/Multiplicity.lean` reads a multiplicity off
-`dim_K (S →ₗ⁅K,L⁆ M)`. The transport definitions are what regroup a decomposition of a module into
-irreducibles by isomorphism type, in
-`TauCeti/Algebra/Lie/Submodule/DirectSum.lean`.
+Additivity of the morphism space is the ingredient that `TauCeti/Algebra/Lie/Schur.lean` names as
+missing from its dimension form of Schur's lemma, and with which
+`TauCeti/Algebra/Lie/Multiplicity.lean` reads a multiplicity off `dim_K (S →ₗ⁅K,L⁆ M)`. The
+transport definitions are what regroup a decomposition of a module into irreducibles by isomorphism
+type, in `TauCeti/Algebra/Lie/Submodule/DirectSum.lean`.
 -/
 
 public section

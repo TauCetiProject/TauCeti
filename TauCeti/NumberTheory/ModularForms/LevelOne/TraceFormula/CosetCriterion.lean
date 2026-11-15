@@ -403,7 +403,6 @@ private theorem exists_one_sub_T_apply_eq_of_mapDomain_orbitRel_mk_coeff_eq_neg_
   set υ' : Module.End k k[ℳ n] := ρR (.op ((T : PSL(2, ℤ)) * S))
   set τ : Module.End k k[ℳ n] := ρL T
   have hσ' : σ' ^ 2 = 1 := ofMulAction_op_S_sq
-  have hυ' : υ' ^ 3 = 1 := by simp [υ']
   have hτ (f : Module.End k k[ℳ n]) (hf : Commute τ f) : Commute (1 - τ) f :=
     (Commute.one_left f).sub_left hf
   have hcσ' : Commute (1 - τ) (1 + σ') := hτ _ (commute_ofMulAction_one_add T S)

@@ -152,18 +152,38 @@ theorem contDiff_uncurry_linearHomotopy [NormedAddCommGroup V] [NormedSpace ℝ 
   exact (hH₀.comp hp).add ((hβ.comp (contDiff_fst.comp contDiff_fst)).mul
     ((hH₁.comp hp).sub (hH₀.comp hp)))
 
+/-- Where the linear homotopy is differentiable, its `s`-derivative, its derivative along the
+direction `1` of the domain, is `β'(s) (H₁ - H₀)(t)`. -/
+theorem fderiv_linearHomotopy_stdComplexLineReal_of_differentiableAt {β : ℝ → ℝ} {z : ℝ × ℝ}
+    {x : V} (hF : DifferentiableAt ℝ (fun w ↦ linearHomotopy β H₀ H₁ w x) z) :
+    fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w x) z stdComplexLineReal =
+      deriv β z.1 * (H₁ z.2 x - H₀ z.2 x) := by
+  rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero hF]
+  simp only [linearHomotopy_def]
+  by_cases hc : H₁ z.2 x - H₀ z.2 x = 0
+  · simp [hc]
+  have hline := (hasDerivAt_slice_left (s := z.1) (b := z.2) hF).differentiableAt
+  have hβ : DifferentiableAt ℝ β z.1 := by
+    convert (hline.sub_const (H₀ z.2 x)).mul_const (H₁ z.2 x - H₀ z.2 x)⁻¹ using 1
+    ext s
+    simp only [linearHomotopy_def, add_sub_cancel_left]
+    field_simp
+  rw [deriv_const_add, deriv_mul_const hβ]
+
 /-- The `s`-derivative of the linear homotopy `H₀ + β(s) (H₁ - H₀)` with profile `β`, its
 derivative along the direction `1` of the domain, is `β'(s) (H₁ - H₀)(t)`. -/
 theorem fderiv_linearHomotopy_stdComplexLineReal {β : ℝ → ℝ} {z : ℝ × ℝ} {x : V}
-    (hβ : DifferentiableAt ℝ β z.1) (hH₀ : DifferentiableAt ℝ (fun t ↦ H₀ t x) z.2)
+    (hH₀ : DifferentiableAt ℝ (fun t ↦ H₀ t x) z.2)
     (hH₁ : DifferentiableAt ℝ (fun t ↦ H₁ t x) z.2) :
     fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w x) z stdComplexLineReal =
       deriv β z.1 * (H₁ z.2 x - H₀ z.2 x) := by
-  rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ linearHomotopy β H₀ H₁ w x)
-    ((hH₀.comp z differentiableAt_snd).add ((hβ.comp z differentiableAt_fst).mul
-      ((hH₁.comp z differentiableAt_snd).sub (hH₀.comp z differentiableAt_snd))))]
-  simp only [linearHomotopy_def]
-  rw [deriv_const_add, deriv_mul_const hβ]
+  by_cases hF : DifferentiableAt ℝ (fun w ↦ linearHomotopy β H₀ H₁ w x) z
+  · exact fderiv_linearHomotopy_stdComplexLineReal_of_differentiableAt hF
+  rw [fderiv_zero_of_not_differentiableAt hF, zero_apply]
+  by_cases hβ : DifferentiableAt ℝ β z.1
+  · exact absurd ((hH₀.comp z differentiableAt_snd).add ((hβ.comp z differentiableAt_fst).mul
+      ((hH₁.comp z differentiableAt_snd).sub (hH₀.comp z differentiableAt_snd)))) hF
+  · rw [deriv_zero_of_not_differentiableAt hβ, zero_mul]
 
 /-- The **continuation homotopy** `H_{(s, t)} = H₀(t) + β(s) (H₁(t) - H₀(t))` from `H₀` to `H₁`,
 the linear homotopy whose profile `β = Real.smoothTransition` increases from `0` on `s ≤ 0` to `1`
@@ -228,8 +248,7 @@ theorem fderiv_continuationHomotopy_stdComplexLineReal {z : ℝ × ℝ} {x : V}
     fderiv ℝ (fun w ↦ continuationHomotopy H₀ H₁ w x) z stdComplexLineReal =
       deriv smoothTransition z.1 * (H₁ z.2 x - H₀ z.2 x) := by
   rw [continuationHomotopy_eq_linearHomotopy]
-  exact fderiv_linearHomotopy_stdComplexLineReal
-    ((smoothTransition.contDiff (n := 1)).differentiable one_ne_zero z.1) hH₀ hH₁
+  exact fderiv_linearHomotopy_stdComplexLineReal hH₀ hH₁
 
 end Floer
 
@@ -255,8 +274,7 @@ theorem hamiltonianCurvature_continuationHomotopy (ω : SymplecticForm V) {z : �
 `[c, d]`, uniformly on the target. Over any rectangle `[a, b] × [c, d]`, the integrated curvature of
 the continuation homotopy along any map `u` is at most `∫_c^d h`, independently of `a` and `b`. -/
 theorem integral_abs_hamiltonianCurvature_continuationHomotopy_le (ω : SymplecticForm V)
-    {c d : ℝ} (hH₀ : ∀ t ∈ Icc c d, ∀ x, DifferentiableAt ℝ (fun t ↦ H₀ t x) t)
-    (hH₁ : ∀ t ∈ Icc c d, ∀ x, DifferentiableAt ℝ (fun t ↦ H₁ t x) t) (u : ℝ × ℝ → V)
+    {c d : ℝ} (u : ℝ × ℝ → V)
     {h : ℝ → ℝ} (hh : ∀ t ∈ Icc c d, ∀ x, |H₁ t x - H₀ t x| ≤ h t)
     (hhi : IntegrableOn h (Icc c d)) :
     ∫ z in Icc a b ×ˢ Icc c d,
@@ -274,9 +292,13 @@ theorem integral_abs_hamiltonianCurvature_continuationHomotopy_le (ω : Symplect
   -- The pointwise bound `|R_K(z, u z)| ≤ β'(s) h(t)`.
   have hfg (z : ℝ × ℝ) (hz : z ∈ Icc a b ×ˢ Icc c d) :
       f z ≤ deriv smoothTransition z.1 * h z.2 := by
-    simp only [f, ω.hamiltonianCurvature_continuationHomotopy (hH₀ z.2 hz.2 _) (hH₁ z.2 hz.2 _),
-      abs_mul, abs_of_nonneg (hβ'0 z.1)]
-    exact mul_le_mul_of_nonneg_left (hh z.2 hz.2 (u z)) (hβ'0 z.1)
+    simp only [f, hamiltonianCurvature_zero_left, continuationHomotopy_eq_linearHomotopy]
+    by_cases hF : DifferentiableAt ℝ (fun w ↦ linearHomotopy smoothTransition H₀ H₁ w (u z)) z
+    · rw [fderiv_linearHomotopy_stdComplexLineReal_of_differentiableAt hF, abs_mul,
+        abs_of_nonneg (hβ'0 z.1)]
+      exact mul_le_mul_of_nonneg_left (hh z.2 hz.2 (u z)) (hβ'0 z.1)
+    · rw [fderiv_zero_of_not_differentiableAt hF, zero_apply, abs_zero]
+      exact mul_nonneg (hβ'0 z.1) ((abs_nonneg _).trans (hh z.2 hz.2 0))
   -- The bound integrates to `(∫ β') (∫ h) ≤ ∫ h` over the rectangle.
   have hvol : (volume : Measure (ℝ × ℝ)) = volume.prod volume := Measure.volume_eq_prod ℝ ℝ
   have hgi : IntegrableOn (fun z : ℝ × ℝ ↦ deriv smoothTransition z.1 * h z.2)
@@ -317,8 +339,7 @@ theorem integral_floerEnergyDensity_linearHomotopy_le (ω : SymplecticForm V)
     (hG.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero t
   have hcurv (z : ℝ × ℝ) : fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z stdComplexLineReal =
       deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) :=
-    fderiv_linearHomotopy_stdComplexLineReal (hβ.differentiable one_ne_zero z.1) (hd hH₀ _ _)
-      (hd hH₁ _ _)
+    fderiv_linearHomotopy_stdComplexLineReal (hd hH₀ _ _) (hd hH₁ _ _)
   simp only [hcurv]
   have hp : ContinuousOn (fun z : ℝ × ℝ ↦ (z.2, u z)) U :=
     continuous_snd.continuousOn.prodMk hu.continuousOn

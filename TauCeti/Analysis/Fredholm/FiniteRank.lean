@@ -42,23 +42,23 @@ variable {T K : E →L[𝕜] F}
 /-- Finite-rank perturbations of Fredholm operators between Hausdorff topological vector spaces
 over a complete nontrivially normed field preserve the index. -/
 theorem index_add_of_hasFiniteRange
-    (hT : ContinuousLinearMap.IsFredholm T)
+    (hT : IsFredholm T)
     (hK : LinearMap.HasFiniteRange (K : E →ₗ[𝕜] F)) :
-    ContinuousLinearMap.index (T + K) = ContinuousLinearMap.index T := by
+    index (T + K) = index T := by
   set ι := (LinearMap.ker (K : E →ₗ[𝕜] F)).subtypeL with hι
   have := hK.cofg_ker
-  have hιF : ContinuousLinearMap.IsFredholm ι := K.ker.isFredholm_subtypeL K.isClosed_ker
+  have hιF : IsFredholm ι := K.ker.isFredholm_subtypeL K.isClosed_ker
   have hcomp : (T + K).comp ι = T.comp ι := by
     ext x
     have hx : K (x : E) = 0 := LinearMap.mem_ker.mp x.2
     simp [hι, hx]
-  have h₁ : ContinuousLinearMap.index ((T + K).comp ι) =
-      ContinuousLinearMap.index (T + K) + ContinuousLinearMap.index ι := by
-    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+  have h₁ : index ((T + K).comp ι) =
+      index (T + K) + index ι := by
+    simpa only [index_def, toLinearMap_comp] using
       (hT.add_hasFiniteRange hK).index_comp hιF
-  have h₂ : ContinuousLinearMap.index (T.comp ι) =
-      ContinuousLinearMap.index T + ContinuousLinearMap.index ι := by
-    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+  have h₂ : index (T.comp ι) =
+      index T + index ι := by
+    simpa only [index_def, toLinearMap_comp] using
       hT.index_comp hιF
   rw [hcomp, h₂] at h₁
   omega

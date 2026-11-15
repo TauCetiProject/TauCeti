@@ -307,30 +307,35 @@ end Field
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/
-theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R]
-    [IsUltrametricDist R] {a b : R} {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε)
-    (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε := by
-  have hnorm : ‖a‖ ≤ 1 := by
-    simpa [ha.le.trans hε] using IsUltrametricDist.norm_add_one_le_max_norm_one (a - 1)
-  calc ‖a * b - 1‖ = ‖a * (b - 1) + (a - 1)‖ := by
-        rw [mul_sub, mul_one, sub_add_sub_cancel]
-    _ ≤ max ‖a * (b - 1)‖ ‖a - 1‖ := IsUltrametricDist.norm_add_le_max _ _
-    _ < ε := max_lt ((norm_mul_le _ _).trans_lt
-      ((mul_le_of_le_one_left (norm_nonneg _) hnorm).trans_lt hb)) ha
+theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {a b : R}
+    {ε : ℝ} (hε : ε ≤ 1) (ha : ‖a - 1‖ < ε) (hb : ‖b - 1‖ < ε) : ‖a * b - 1‖ < ε := by
+  calc ‖a * b - 1‖ = ‖(a - 1) * (b - 1) + (a - 1) + (b - 1)‖ := by
+        congr 1
+        simp only [mul_sub, sub_mul, mul_one, one_mul]
+        abel
+    _ ≤ max (max ‖(a - 1) * (b - 1)‖ ‖a - 1‖) ‖b - 1‖ :=
+      (IsUltrametricDist.norm_add_le_max _ _).trans
+        (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
+    _ < ε := max_lt (max_lt ((norm_mul_le _ _).trans_lt
+      ((mul_le_of_le_one_right (norm_nonneg _) (hb.le.trans hε)).trans_lt ha)) ha) hb
 
-/-- In an ultrametric seminormed ring with `‖1‖ = 1`, a power of an element `x` of norm at most
+/-- In an ultrametric seminormed ring, a power of an element `x` of norm at most
 one is no farther from `1` than `x` is: `‖x ^ n - 1‖ ≤ ‖x - 1‖`. -/
-theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [NormOneClass R]
-    [IsUltrametricDist R] {x : R} (hx : ‖x‖ ≤ 1) (n : ℕ) : ‖x ^ n - 1‖ ≤ ‖x - 1‖ := by
-  rw [← geom_sum_mul]
-  refine (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) ?_)
-  exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦
-    (norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg x) hx)
+theorem norm_pow_sub_one_le_norm_sub_one {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+    {x : R} (hx : ‖x‖ ≤ 1) (n : ℕ) : ‖x ^ n - 1‖ ≤ ‖x - 1‖ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    calc ‖x ^ (n + 1) - 1‖ = ‖x * (x ^ n - 1) + (x - 1)‖ := by
+          rw [mul_sub, mul_one, pow_succ', sub_add_sub_cancel]
+      _ ≤ max ‖x * (x ^ n - 1)‖ ‖x - 1‖ := IsUltrametricDist.norm_add_le_max _ _
+      _ ≤ ‖x - 1‖ := max_le ((norm_mul_le _ _).trans
+        ((mul_le_of_le_one_left (norm_nonneg _) hx).trans ih)) le_rfl
 
 /-- In an ultrametric normed commutative ring, a finite product of elements each within
 `ε ≤ 1` of `1` is again within `ε` of `1` (for `0 < ε`). -/
-theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
-    [IsUltrametricDist R] (s : Finset ι) (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
+theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    (s : Finset ι) (f : ι → R) {ε : ℝ} (hε0 : 0 < ε) (hε : ε ≤ 1)
     (hf : ∀ i ∈ s, ‖f i - 1‖ < ε) : ‖∏ i ∈ s, f i - 1‖ < ε := by
   classical
   induction s using Finset.induction_on with
@@ -343,8 +348,8 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [NormOneClass
 /-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
 their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,
 so the statement includes the empty product and `M = 0`. -/
-theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
-    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hM : 0 ≤ M) (hε : 0 ≤ ε)
+theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hε : 0 ≤ ε)
     (hf : ∀ i ∈ s, ‖f i‖ ≤ M) (hg : ∀ i ∈ s, ‖g i‖ ≤ M)
     (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ ε) :
     ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ ε * M ^ (s.card - 1) := by
@@ -355,7 +360,7 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClas
     rcases s.eq_empty_or_nonempty with rfl | hs
     · simpa using hfg a (by simp)
     have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
-      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le_prod_norm s f
+      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := TauCeti.norm_prod_le_prod_norm_of_nonempty hs f
         _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
           fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
         _ = M ^ s.card := Finset.prod_const _
@@ -374,7 +379,8 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClas
           (max_le_max (norm_mul_le _ _) (norm_mul_le _ _))
       _ ≤ max (ε * M ^ s.card) (M * (ε * M ^ (s.card - 1))) :=
         max_le_max (mul_le_mul (hfg a (by simp)) hprod (norm_nonneg _) hε)
-          (mul_le_mul (hg a (by simp)) htail (norm_nonneg _) hM)
+          (mul_le_mul (hg a (by simp)) htail (norm_nonneg _)
+            ((norm_nonneg _).trans (hg a (by simp))))
       _ = ε * M ^ s.card := by
         have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
         rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]

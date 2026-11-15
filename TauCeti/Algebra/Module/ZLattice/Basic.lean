@@ -22,7 +22,8 @@ It also records basic facts about lattices: a full lattice is the `ℤ`-span of 
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
 the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
-equivalence.
+equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
+and fullness of its range. A discrete subgroup containing a full lattice is a full lattice.
 
 ## Main results
 
@@ -36,16 +37,22 @@ equivalence.
 * `Module.Basis.mem_span_basisFun_iff`: a point of `ℝ^ι` lies in the standard lattice `ℤ^ι`
   exactly when it is the coordinate vector of an element of `Λ` in a `ℤ`-basis of `Λ`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
+* `ZLattice.module_free_and_finite_of_injective`: the source of an injective linear map whose
+  range is a full lattice is a free `ℤ`-module of finite rank.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
+* `ZLattice.instDiscreteTopologyRangeCompEquiv`, `ZLattice.instIsZLatticeRangeCompEquiv`:
+  precomposing a linear map with a linear equivalence preserves discreteness and fullness of its
+  range.
 * `ZLattice.finiteDimensional_of_isZLattice`: a finitely generated full lattice in a normed
   space over a normed field forces the space to be finite-dimensional.
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
+* `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -186,6 +193,25 @@ instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
 
 end LinearIsometryEquiv
 
+/-- Precomposing a linear map with a linear equivalence leaves its range unchanged, hence preserves
+discreteness of the range. -/
+instance instDiscreteTopologyRangeCompEquiv {R Λ Λ' E : Type*} [Semiring R]
+    [AddCommMonoid Λ] [AddCommMonoid Λ'] [AddCommMonoid E]
+    [Module R Λ] [Module R Λ'] [Module R E] [TopologicalSpace E]
+    (f : Λ →ₗ[R] E) (α : Λ' ≃ₗ[R] Λ) [DiscreteTopology (LinearMap.range f)] :
+    DiscreteTopology (LinearMap.range (f.comp α.toLinearMap)) :=
+  α.range_comp f ▸ inferInstance
+
+/-- Precomposing a `ℤ`-linear map with a `ℤ`-linear equivalence leaves its range unchanged, hence
+preserves `IsZLattice`. -/
+instance instIsZLatticeRangeCompEquiv {K Λ Λ' E : Type*} [NormedField K]
+    [AddCommMonoid Λ] [AddCommMonoid Λ'] [Module ℤ Λ] [Module ℤ Λ']
+    [NormedAddCommGroup E] [NormedSpace K E]
+    (f : Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ) [DiscreteTopology (LinearMap.range f)]
+    [IsZLattice K (LinearMap.range f)] :
+    IsZLattice K (LinearMap.range (f.comp α.toLinearMap)) where
+  span_top := by rw [α.range_comp f]; exact IsZLattice.span_top
+
 /-- A finitely generated full lattice in a normed space over a normed field `K` forces the space
 to be finite-dimensional over `K`: finitely many generators span it. -/
 theorem finiteDimensional_of_isZLattice {K : Type*} [NormedField K] {E : Type*}
@@ -210,6 +236,12 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
   have h1 : c ≤ ‖(y : E)‖ ^ 2 := by nlinarith
   exact (Real.sqrt_le_iff.2 ⟨hy0.le, h1⟩).trans_eq (Submodule.norm_coe y).symm
 
+/-- A discrete subgroup containing a full lattice is a full lattice. -/
+theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
+    [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
+  ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
+
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
   [ProperSpace E]
@@ -223,5 +255,15 @@ theorem exists_basis_span_eq (L : Submodule ℤ E) [DiscreteTopology L] [IsZLatt
   have := module_free K L
   ⟨_, inferInstance, Classical.decEq _, (Free.chooseBasis ℤ L).ofZLatticeBasis K L,
     (Free.chooseBasis ℤ L).ofZLatticeBasis_span K L⟩
+
+/-- An injective `ℤ`-linear map into a real vector space whose range is a full lattice makes its
+source a free `ℤ`-module of finite rank: the source is isomorphic to a lattice. -/
+theorem module_free_and_finite_of_injective {Λ : Type*} [AddCommGroup Λ] (f : Λ →ₗ[ℤ] E)
+    (hf : Function.Injective f) [DiscreteTopology (LinearMap.range f)]
+    [IsZLattice K (LinearMap.range f)] : Module.Free ℤ Λ ∧ Module.Finite ℤ Λ :=
+  have := module_free K (LinearMap.range f)
+  have := module_finite K (LinearMap.range f)
+  ⟨Module.Free.of_equiv (LinearEquiv.ofInjective f hf).symm,
+    Module.Finite.equiv (LinearEquiv.ofInjective f hf).symm⟩
 
 end ZLattice

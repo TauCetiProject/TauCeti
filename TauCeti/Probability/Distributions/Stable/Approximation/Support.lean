@@ -201,7 +201,7 @@ theorem support_stableCompensatedPoissonMeasure_one {α ε : ℝ} (hα : α ∈ 
   let s : Set ℝ := {x | ε < |x|}
   let c := ∫ y in s, sin y ∂ν
   have hr : (ν s).toNNReal ≠ 0 := ENNReal.toNNReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num) hε).ne',
+    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num)).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
   -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
@@ -228,7 +228,7 @@ theorem support_stableCompensatedPoissonMeasure_neg_one {α ε : ℝ} (hα : α 
   let s : Set ℝ := {x | ε < |x|}
   let c := ∫ y in s, sin y ∂ν
   have hr : (ν s).toNNReal ≠ 0 := ENNReal.toNNReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num) hε).ne',
+    ⟨(stableLevyMeasure_abs_gt_pos hα (by norm_num)).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
   -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.
@@ -252,7 +252,7 @@ theorem support_stableCompensatedPoissonMeasure_of_abs_lt_one {α β ε : ℝ}
   let s : Set ℝ := {x | ε < |x|}
   let c := ∫ y in s, sin y ∂ν
   have hr : (ν s).toNNReal ≠ 0 := ENNReal.toNNReal_ne_zero.mpr
-    ⟨(stableLevyMeasure_abs_gt_pos hα hβ.le hε).ne',
+    ⟨(stableLevyMeasure_abs_gt_pos hα hβ.le).ne',
       stableLevyMeasure_abs_gt_ne_top hε⟩
   rw [stableCompensatedPoissonMeasure_def]
   -- The defining equation expands `ν`, `s`, and `c`; fold them back to the local names.

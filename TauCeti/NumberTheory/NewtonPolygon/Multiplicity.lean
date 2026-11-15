@@ -187,7 +187,7 @@ theorem newtonSlopeMultiplicity_X_sub_C_pow (hv : ∀ x, v x = ⊤ → x = 0) {x
       (((Multiset.replicate h x).map (Polynomial.X - Polynomial.C ·)).prod : Polynomial R) := by
     simp [Multiset.map_replicate, Multiset.prod_replicate]
   rw [hpoly, Polynomial.newtonSlopeMultiplicity_coe,
-    Polynomial.newtonSlopes_multiset_prod_X_sub_C hv,
+    Polynomial.newtonSlopes_multiset_prod_X_sub_C _ (fun α _ hα ↦ mt (hv α) hα),
     Multiset.filter_eq_self.mpr fun y hy ↦ (Multiset.eq_of_mem_replicate hy).symm ▸ hx0,
     Multiset.map_replicate, hx, WithTop.untop₀_coe, neg_neg, Multiset.count_replicate_self]
 

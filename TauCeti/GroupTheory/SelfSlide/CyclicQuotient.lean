@@ -179,7 +179,6 @@ theorem exists_coprime_lt_map_nsmul {H : Type*} [AddCommGroup H] (N : H →+ ℝ
   · rw [map_nsmul, nsmul_eq_mul]
     have hCm : C / N h < m := lt_of_le_of_lt (le_max_right _ _) hm
     have hd' : (1 : ℝ) ≤ d := by exact_mod_cast hd
-    have hm' : (0 : ℝ) ≤ m := Nat.cast_nonneg m
     push_cast
     apply (div_lt_iff₀ hh).1
     nlinarith

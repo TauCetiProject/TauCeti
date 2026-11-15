@@ -349,7 +349,7 @@ theorem dgRepresentableHomEquiv_dgDifferential {n : ℤ}
       (z.v 0 (n + 1) (zero_add _)).hom (dgId R X))
         ((DGFunctor.dgApp_dgDifferential R η (op X)).trans
           (dgDifferential_linearHomComplex R n (DGFunctor.dgApp R n (op X) η)))).trans
-      (δ_v_apply_of_d_eq_zero rfl (DGFunctor.dgApp R n (op X) η) (zero_add n) (zero_add _)
+      (δ_v_apply_of_d_eq_zero (DGFunctor.dgApp R n (op X) η) (zero_add n) (zero_add _)
         (dgDifferential_dgId R X))).trans
       (congrArg ((F.obj (op X)).d n (n + 1)).hom (dgRepresentableHomEquiv_apply R X F η).symm)
 

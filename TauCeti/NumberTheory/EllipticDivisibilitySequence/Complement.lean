@@ -18,8 +18,7 @@ uses this form in its residue cases.
 ## Provenance
 
 Adapted from D. K. Angdinata's `LutzNagell/EllipticDivisibilitySequence.lean` in AINTLIB
-(`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at `dev/modular-curves @ 9fec8eba7652`,
-the revision pinned for the NagellLutz project in `TauCetiRoadmap/EllipticCurves/README.md`.
+(`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at `dev/modular-curves @ 9fec8eba7652`.
 The source declaration is `normEDS_mul_complEDS_div`; the upstream file credits David
 Kurniadi Angdinata as its author.
 -/

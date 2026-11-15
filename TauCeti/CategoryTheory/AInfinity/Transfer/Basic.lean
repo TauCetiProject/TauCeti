@@ -116,7 +116,7 @@ it is a sum of words obtained by applying a Koszul twist, the homotopy or `i p` 
 theorem reducedTensorWordsHomotopy_mem_composableWords (s : ℤ) {U V : C}
     {w : ReducedTensorWords R (TotalHom R C)} (hw : w ∈ composableWords R U V) :
     c.reducedTensorWordsHomotopy ((totalGrading R C).shift s) w ∈ composableWords R U V := by
-  refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_)
     (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
     (fun r x hx ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hx) hw
   subst ha hb

@@ -19,6 +19,9 @@ A subcomodule of a finite-dimensional unitary Hopf comodule inherits unitarity, 
 orthogonal complement is again a subcomodule. Consequently finite unitary comodules are
 completely reducible. These are the splitting results used to decompose finite unitary
 coefficient spaces into irreducibles, without any norm on the coefficient Hopf algebra.
+`Module.Basis.isCompletelyReducible_of_coefficientMatrix_mem_unitary` also gives complete
+reducibility from a unitary coefficient matrix in an algebraic basis, without requiring a
+preassigned norm or inner product on the comodule.
 
 The Hopf hypothesis is important: an isometric coefficient matrix has a two-sided inverse
 provided by the antipode, so it is unitary even over a noncommutative coefficient algebra.
@@ -144,3 +147,33 @@ theorem IsUnitary.isCompletelyReducible (hM : IsUnitary 𝕜 A M) :
     ⟨W.unitaryOrthogonal hM, W.isCompl_unitaryOrthogonal hM⟩
 
 end TauCeti.Comodule
+
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+variable {𝕜 A M ι : Type*} [RCLike 𝕜] [Ring A] [StarRing A]
+  [HopfAlgebra 𝕜 A] [StarModule 𝕜 A] [AddCommGroup M] [Module 𝕜 M]
+  [Comodule 𝕜 A M] [Fintype ι] [DecidableEq ι]
+
+/-- A finite comodule with a unitary coefficient matrix is completely reducible, without any
+chosen norm or inner product on its underlying vector space. -/
+theorem isCompletelyReducible_of_coefficientMatrix_mem_unitary (b : Basis ι 𝕜 M)
+    (hb : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) :
+    IsCompletelyReducible 𝕜 A M := by
+  let e : M ≃ₗ[𝕜] EuclideanSpace 𝕜 ι :=
+    b.equivFun.trans (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).symm
+  let : NormedAddCommGroup M := NormedAddCommGroup.induced M _ e e.injective
+  let : InnerProductSpace 𝕜 M := InnerProductSpace.induced e
+  have horth : Orthonormal 𝕜 b := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    rw [inner_induced_eq _ _ e.toLinearMap]
+    simp [e, EuclideanSpace.inner_toLp_toLp, dotProduct, Finsupp.single_apply, eq_comm]
+  have : FiniteDimensional 𝕜 M := Module.Finite.of_basis b
+  apply IsUnitary.isCompletelyReducible
+  rw [(b.toOrthonormalBasis horth).isUnitary_comodule_iff,
+    b.toBasis_toOrthonormalBasis horth]
+  exact hb
+
+end Module.Basis

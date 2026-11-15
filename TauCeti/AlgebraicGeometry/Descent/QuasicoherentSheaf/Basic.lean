@@ -251,6 +251,24 @@ lemma qcohPseudofunctor_mapComp'_inv_toNatTrans_app_hom {X Y Z : Scheme.{u}} (a 
   -- As above, the identity is formed in `SheafOfModules`.
   exact (Category.comp_id _).symm
 
+/-- The pullback `pullHom φ g gf₁ gf₂` of a morphism of quasi-coherent modules, the restriction
+map of Mathlib's presheaves of morphisms `Pseudofunctor.presheafHom` for `qcohPseudofunctor`, is
+the pullback of the underlying morphism of modules for `modulesPseudofunctor`. -/
+lemma qcohPseudofunctor_pullHom_hom {X₁ X₂ Y Y' : Scheme.{u}}
+    {M₁ : qcohPseudofunctor.obj (.mk (op X₁))} {M₂ : qcohPseudofunctor.obj (.mk (op X₂))}
+    {f₁ : Y ⟶ X₁} {f₂ : Y ⟶ X₂}
+    (φ : (qcohPseudofunctor.map f₁.op.toLoc).toFunctor.obj M₁ ⟶
+      (qcohPseudofunctor.map f₂.op.toLoc).toFunctor.obj M₂)
+    (g : Y' ⟶ Y) (gf₁ : Y' ⟶ X₁) (gf₂ : Y' ⟶ X₂) (hgf₁ : g ≫ f₁ = gf₁) (hgf₂ : g ≫ f₂ = gf₂) :
+    (Pseudofunctor.LocallyDiscreteOpToCat.pullHom φ g gf₁ gf₂ hgf₁ hgf₂).hom =
+      Pseudofunctor.LocallyDiscreteOpToCat.pullHom (F := modulesPseudofunctor)
+        (M₁ := (M₁ : QuasicoherentSheaf X₁).obj) (M₂ := (M₂ : QuasicoherentSheaf X₂).obj) φ.hom g
+        gf₁ gf₂ hgf₁ hgf₂ := by
+  subst hgf₁ hgf₂
+  -- The coherence isomorphisms of `qcohPseudofunctor` are those of `modulesPseudofunctor` on
+  -- underlying modules by definition (`Pseudofunctor.ObjectProperty.mapComp_hom_app`).
+  rfl
+
 /-- On a nonempty scheme the quasi-coherent modules do not form a groupoid: the zero
 endomorphism of the structure sheaf is not an isomorphism, since `Γ(T, ⊤)` is a nonzero ring.
 So `qcohPseudofunctor` is not a pseudofunctor to groupoids, and its descent is not that of a

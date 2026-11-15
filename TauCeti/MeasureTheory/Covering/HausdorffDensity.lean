@@ -187,7 +187,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd
   · simp [hUtop]
   refine le_trans ?_ (ENNReal.mul_div_le (a := c) (b := μ U))
   gcongr
-  refine TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover hd fun δ hδ ε hε => ?_
+  refine TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover fun δ hδ ε hε => ?_
   -- The admissible balls: centred in `A`, of radius at most `δ / 3`, inside `U`, and large for `μ`.
   set T : Set (X × ℝ) := {p | p.1 ∈ A ∧ 0 < p.2 ∧ p.2 ≤ δ / 3 ∧ closedBall p.1 p.2 ⊆ U ∧
     c * ENNReal.ofReal (2 * p.2) ^ d ≤ μ (closedBall p.1 p.2)}
@@ -313,7 +313,7 @@ theorem ae_tendsto_hausdorffMeasure_inter_closedBall_div {d : ℝ} (hd : 0 ≤ d
       ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 0) := by
   obtain ⟨A₀, hA₀A, hA₀, hA₀ae⟩ := hA.exists_measurable_subset_ae_eq
   have hball (x : X) (r : ℝ) : μH[d] (A ∩ closedBall x r) = μH[d] (A₀ ∩ closedBall x r) :=
-    measure_congr (hA₀ae.symm.inter (ae_eq_refl _))
+    measure_congr (hA₀ae.symm.inter Filter.EventuallyEqSet.rfl)
   have hnull := fun n : ℕ => hausdorffMeasure_setOf_frequently_le_eq_zero hd hA₀
     (ne_top_of_le_ne_top hAfin (measure_mono hA₀A)) (c := (n : ℝ≥0∞)⁻¹) (by simp)
   filter_upwards [ae_all_iff.2 fun n => measure_eq_zero_iff_ae_notMem.1 (hnull n)]

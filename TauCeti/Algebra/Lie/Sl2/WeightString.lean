@@ -86,9 +86,6 @@ Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.lie_e_pow_succ_toEnd_f`.
 
 ## References
 
-This is Layer 0 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose
-`sl2_finrank_of_hasPrimitiveVector` is `TauCeti.finrank_eq_of_hasPrimitiveVectorWith`.
-
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §7.2.
 -/

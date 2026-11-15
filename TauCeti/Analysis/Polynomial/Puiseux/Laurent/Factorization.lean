@@ -153,7 +153,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent
   -- Globalize each branch's Laurent unit germs using nonvanishing off the hyperplane.
   have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
   have hglobal (i : Fin d) := TauCeti.exists_analyticOnNhd_eq_zpow_mul
-    hU hUc isOpen_ball (mem_ball_self hR') (hra i) (hr0 i) (fun x hx ↦ by
+    hU hUc isOpen_ball (hra i) (hr0 i) (fun x hx ↦ by
       obtain ⟨e, -, w, hw⟩ := hlocal i x hx
       exact ⟨e, w, hw⟩)
   choose e w hw hw0 hform using hglobal

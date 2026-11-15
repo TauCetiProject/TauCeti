@@ -86,11 +86,8 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
 
 ## References
 
-This is the linearization step of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-"projective representations, factor sets, and the Schur multiplier": it is the mechanism behind the
-representation group, through which every projective representation of `G` lifts to an ordinary
-linear representation of a central extension.
+The linearization is the mechanism behind the representation group, through which every projective
+representation of `G` lifts to an ordinary linear representation of a central extension.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.

@@ -66,15 +66,6 @@ representations. Outside the finite semisimple regime — for a monoid, or in mo
   elementwise form.
 * `TauCeti.repRingCharacter_mem_classFunction`: for a group `G`, every value of the character
   homomorphism is a class function, elementwise `TauCeti.repRingCharacter_conj`.
-
-## References
-
-This builds the objects pinned as `repRing`, `repRingCharacter`,
-`repRingCharacter_mem_classFunction` in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md` ("the representation ring and
-tensor decomposition"), which is also the first bullet of Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("the representation ring and
-its character map").
 -/
 
 public section

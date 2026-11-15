@@ -28,6 +28,8 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
   trace and normalized trace bounds.
+* `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
+  its `ℓ²` operator norm.
 -/
 
 public section
@@ -84,5 +86,14 @@ protected noncomputable abbrev l2OpNormedAlgebraReal : NormedAlgebra ℝ (Matrix
   norm_smul_le r A := by
     rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) r A]
     exact (norm_smul_le _ _).trans_eq (by rw [RCLike.norm_ofReal, Real.norm_eq_abs])
+
+/-- Removing the diagonal of a square matrix increases its `ℓ²` operator norm by at most a factor
+of `2`. -/
+theorem l2_opNorm_sub_diagonal_diag_le (A : Matrix n n 𝕜) :
+    ‖A - diagonal A.diag‖ ≤ 2 * ‖A‖ := by
+  have hdiag : ‖(diagonal A.diag : Matrix n n 𝕜)‖ ≤ ‖A‖ := by
+    rw [l2_opNorm_diagonal]
+    exact (pi_norm_le_iff_of_nonneg (norm_nonneg A)).mpr fun i ↦ A.norm_apply_le_l2_opNorm i i
+  linarith [norm_sub_le A (diagonal A.diag)]
 
 end Matrix

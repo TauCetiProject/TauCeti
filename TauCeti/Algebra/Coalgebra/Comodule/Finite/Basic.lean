@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Zero
 
 This file packages finitely generated right comodules over a coalgebra as a full subcategory
 of `ComoduleCat`. An object of `FGComoduleCat R C` is a right `C`-comodule whose underlying
-`R`-module is finitely generated; over a field this is the finite-dimensional comodule
-category requested by the reductive-groups roadmap.
+`R`-module is finitely generated; over a field this is the category of finite-dimensional
+comodules.
 
 Morphisms inherit their additive monoid and `R`-module structures from the ambient comodule
 category through the full-subcategory hom equivalence. The resulting `homLinearEquiv` exposes

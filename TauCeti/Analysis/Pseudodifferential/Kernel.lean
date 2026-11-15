@@ -61,6 +61,8 @@ the diagonal.
 * `TauCeti.contDiff_quantizationKernel_of_bound` and `TauCeti.Symbol.contDiff_quantizationKernel`:
   **smoothness**, the kernel of a coefficient of order `m` is `C^k` when `m + k < -n`; each
   derivative of the integrand in `(x, y)` costs one power of the frequency.
+* `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
+  `C^∞`.
 * `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
   `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
   frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
@@ -270,7 +272,7 @@ private theorem norm_iteratedFDeriv_kernelIntegrand_le {a : E × E → V →L[�
         ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
       ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
         (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
-        gcongr with j hj
+        gcongr with j _
         · exact he_le j
         · exact hg_le (i - j) (Nat.sub_le i j)
     _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -328,7 +330,7 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
       @PseudoEMetricSpace.pseudoMetrizableSpace
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
-    simp only [ftaylorSeries, _root_.ContDiff.iteratedFDeriv_prod_left hΦ i (mod_cast hi')]
+    simp only [ftaylorSeries, hΦ.contDiffAt.iteratedFDeriv_prod_left i (mod_cast hi')]
     exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
       ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
         (continuous_const.prodMk continuous_id))).aestronglyMeasurable
@@ -534,6 +536,15 @@ theorem contDiff_quantizationKernel (b : Symbol n V W m) (k : ℕ) (hk : m + k <
         gcongr
         exact Finset.single_le_sum (f := fun i ↦ ∑ r : Fin i → Fin n, C (List.ofFn r))
           (fun i _ ↦ Finset.sum_nonneg fun r _ ↦ hC0 _) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
+
+/-- **The kernel of a smoothing symbol is smooth.** A smoothing symbol has a coefficient of every
+order, so its kernel is `C^k` for every `k` by `TauCeti.Symbol.contDiff_quantizationKernel`. -/
+theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsSmoothing) :
+    ContDiff ℝ ∞ (Function.uncurry (quantizationKernel a.coefficient)) :=
+  contDiff_infty.2 fun k ↦ by
+    obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - k - 1)
+    rw [← hb]
+    exact b.contDiff_quantizationKernel k (by linarith)
 
 /-! ### The frequency Laplacian and multiplication by `‖x - y‖²` -/
 

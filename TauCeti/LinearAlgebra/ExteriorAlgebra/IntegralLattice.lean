@@ -39,12 +39,6 @@ the simply connected type-`B` and type-`D` Chevalley carriers.
 * `TauCeti.ExteriorAlgebra.involute_mem_integralLattice`: the grade involution preserves the
   lattice.
 
-## Roadmap
-
-This is the integral-lattice input for the full-weight spin carriers required by Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Those type-`B` and type-`D` carriers are in turn
-consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
-
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.

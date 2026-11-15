@@ -170,6 +170,14 @@ theorem closedSubdisc_zero_right (a : K) : closedSubdisc a 0 = ∅ := by
   ext v
   simp
 
+/-- A disc `D(a, |c|)` with `c` a unit is cut out by its defining inequality
+`v(T - a) ≤ v(c)` alone: the nonvanishing condition `v(c) ≠ 0` is automatic. -/
+theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : IsUnit c) :
+    closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
+  ext v
+  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp]
+  exact fun _ ↦ @TauCeti.ValuativeRel.not_vle_zero_of_isUnit _ _ v.1.toValuativeRel _ (hc.map C)
+
 end TopologicalRing
 
 /-! ### Discs over a normed field -/
@@ -177,15 +185,6 @@ end TopologicalRing
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-
-/-- A disc `D(a, |c|)` of nonzero radius is cut out by its defining inequality
-`v(T - a) ≤ v(c)` alone: the nonvanishing condition `v(c) ≠ 0` is automatic. -/
-theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : c ≠ 0) :
-    closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
-  ext v
-  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp, ← map_zero C,
-    closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff]
-  exact fun _ ↦ hc
 
 /-- **Nested discs**: `D(a, |c|) ⊆ D(b, |d|)` whenever `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`. -/
 theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ ‖d‖)
@@ -340,7 +339,7 @@ theorem gaussPoint_mem_closedSubdisc_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a c 
     gaussPoint hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖a‖ ≤ ‖c‖ ∧ r ≤ ‖c‖ := by
   rw [mem_closedSubdisc, gaussPoint_vle_iff, gaussPoint_vle_zero_iff, ← NNReal.coe_le_coe,
     coe_closedDiscGaussValuation_weightedX_sub_weightedC, closedDiscGaussValuation_weightedC,
-    coe_nnnorm, max_le_iff, map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
+    coe_nnNorm, max_le_iff, map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   exact ⟨fun h ↦ ⟨h.1.2, h.1.1⟩, fun h ↦
     ⟨⟨h.2, h.1⟩, fun hc ↦ hr₀.not_ge (h.2.trans (by rw [hc, norm_zero]))⟩⟩
 
@@ -357,10 +356,10 @@ theorem gaussPointBelow_mem_closedSubdisc_zero_iff (hr₀ : 0 < r) (hr₁ : r �
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, fun hc ↦ hr₀.not_ge (h.trans (by rw [hc, norm_zero]))⟩⟩
   · by_contra! hlt
     refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).not_ge h.1
-    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
   · rcases h.lt_or_eq with hlt | heq
     · refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).le
-      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
     · exact le_of_not_ge (not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ heq.symm)
 
 /-- **`η_{r⁺}` lies in `D(0, |c|)` exactly when `r < ‖c‖`.** At `‖c‖ = r` the variable `T` is
@@ -378,10 +377,10 @@ theorem gaussPointAbove_mem_closedSubdisc_zero_iff (hr₀ : 0 < r) (hr₁ : r < 
   · by_contra! hle
     rcases hle.lt_or_eq with hlt | heq
     · refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).not_ge h.1
-      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+      rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
     · exact not_closedDiscGaussValuationAbove_weightedX_le hr₀ hr₁.le heq h.1
   · refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).le
-    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnnorm]
+    rwa [← NNReal.coe_lt_coe, hT, hC, coe_nnNorm]
 
 variable [CompleteSpace K]
 
@@ -392,7 +391,7 @@ theorem discPoint_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀ : 0 
     (a c : K) : discPoint b hb hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖b - a‖ ≤ ‖c‖ ∧ r ≤ ‖c‖ := by
   rw [mem_closedSubdisc, discPoint_vle_iff, discPoint_vle_zero_iff, taylorHom_weightedC,
     ← NNReal.coe_le_coe, coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC hb,
-    closedDiscGaussValuation_weightedC, coe_nnnorm, max_le_iff, norm_sub_rev,
+    closedDiscGaussValuation_weightedC, coe_nnNorm, max_le_iff, norm_sub_rev,
     map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   exact ⟨fun h ↦ ⟨h.1.2, h.1.1⟩, fun h ↦
     ⟨⟨h.2, h.1⟩, fun hc ↦ hr₀.not_ge (h.2.trans (by rw [hc, norm_zero]))⟩⟩
@@ -408,13 +407,17 @@ theorem closedSubdisc_subset_closedSubdisc_iff {a c : K} (ha : ‖a‖ ≤ 1) (h
   exact (discPoint_mem_closedSubdisc_iff a ha hc hc₁ b d).mp
     (h ((discPoint_mem_closedSubdisc_iff a ha hc hc₁ a c).mpr (by simp)))
 
-/-- **Equality of discs**: for centres in the closed unit disc and radius parameters of norm in
-`(0, 1]`, `D(a, |c|) = D(b, |d|)` exactly when `‖c‖ = ‖d‖` and `‖a - b‖ ≤ ‖c‖`. -/
+/-- **Equality of discs**: for centres in the closed unit disc, a radius parameter `c` of norm in
+`(0, 1]` and a radius parameter `d` of norm at most `1`, `D(a, |c|) = D(b, |d|)` exactly when
+`‖c‖ = ‖d‖` and `‖a - b‖ ≤ ‖c‖`. -/
 theorem closedSubdisc_eq_closedSubdisc_iff {a b c d : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1)
-    (hc₀ : c ≠ 0) (hc₁ : ‖c‖ ≤ 1) (hd₀ : d ≠ 0) (hd₁ : ‖d‖ ≤ 1) :
+    (hc₀ : c ≠ 0) (hc₁ : ‖c‖ ≤ 1) (hd₁ : ‖d‖ ≤ 1) :
     closedSubdisc a c = closedSubdisc b d ↔ ‖c‖ = ‖d‖ ∧ ‖a - b‖ ≤ ‖c‖ := by
-  rw [Set.Subset.antisymm_iff, closedSubdisc_subset_closedSubdisc_iff ha hc₀ hc₁,
-    closedSubdisc_subset_closedSubdisc_iff hb hd₀ hd₁, norm_sub_rev b a]
+  rw [Set.Subset.antisymm_iff, closedSubdisc_subset_closedSubdisc_iff ha hc₀ hc₁]
+  by_cases hd₀ : d = 0
+  · subst hd₀
+    simp only [norm_zero, norm_le_zero_iff, norm_eq_zero, hc₀, and_false, false_and]
+  rw [closedSubdisc_subset_closedSubdisc_iff hb hd₀ hd₁, norm_sub_rev b a]
   constructor
   · rintro ⟨⟨-, hcd⟩, hba, hdc⟩
     exact ⟨le_antisymm hcd hdc, hba⟩

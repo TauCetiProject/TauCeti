@@ -13,7 +13,8 @@ public import Mathlib.ModelTheory.Syntax
 Mathlib's `FirstOrder.Language.Term.varFinsetLeft` collects the variables of a term over `α ⊕ β`
 that come from the left summand `α`. This file characterizes it through the full variable set
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
-language map commutes with relabelling the variables of a term. Constructor equations for
+language map commutes with relabelling the variables of a term, and a language map that is
+injective on function symbols acts injectively on terms. Constructor equations for
 `BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
 
 ## Main results
@@ -28,6 +29,9 @@ language map commutes with relabelling the variables of a term. Constructor equa
   over `α ⊕ β` with `α` empty is a variable `Sum.inr b`.
 * `FirstOrder.Language.LHom.onTerm_relabel`: a language map commutes with relabelling the
   variables of a term.
+* `FirstOrder.Language.LHom.onTerm_injective`: a language map that is injective on function
+  symbols acts injectively on terms; `FirstOrder.Language.LHom.Injective.onTerm_injective`
+  specializes it to injective language maps.
 -/
 
 public section
@@ -100,6 +104,31 @@ theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.
   induction t with
   | var => rfl
   | func f ts ih => simp [Term.relabel, ih]
+
+/-- A language map that is injective on function symbols acts injectively on terms; terms
+mention no relation symbols, so nothing is assumed about those. -/
+theorem onTerm_injective {g : L →ᴸ L'}
+    (hg : ∀ {n}, Function.Injective fun f : L.Functions n => g.onFunction f) {β : Type*} :
+    Function.Injective (g.onTerm : L.Term β → L'.Term β) := by
+  intro t₁ t₂ h
+  induction t₁ generalizing t₂ with
+  | var a =>
+    cases t₂ with
+    | var b => simpa [onTerm] using h
+    | func f ts => simp [onTerm] at h
+  | func f ts ih =>
+    cases t₂ with
+    | var b => simp [onTerm] at h
+    | func f' ts' =>
+      simp only [onTerm, Term.func.injEq] at h
+      obtain ⟨rfl, hf, hts⟩ := h
+      rw [hg (eq_of_heq hf)]
+      exact congrArg _ (funext fun i => ih i (congrFun (eq_of_heq hts) i))
+
+/-- An injective language map acts injectively on terms. -/
+theorem Injective.onTerm_injective {g : L →ᴸ L'} (hg : g.Injective) {β : Type*} :
+    Function.Injective (g.onTerm : L.Term β → L'.Term β) :=
+  LHom.onTerm_injective fun {_} => hg.onFunction
 
 end LHom
 

@@ -37,6 +37,7 @@ differentiation commutes with this extension.
   `C^n` section within a set is a `C^n` function within that set.
 * `TauCeti.RoughForm.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt`: on a `C^(n+1)`
   manifold, `C^n` regularity of chart expressions transfers between overlapping charts;
+  `TauCeti.RoughForm.contDiffOn_inChartAt_of_contMDiffOn` (for forms `C^n` on an open set),
   `TauCeti.IsSmoothForm.contDiffOn_inChartAt_interior_target` and
   `TauCeti.IsSmoothForm.inChartAt_mextDeriv_eq_extDeriv` deduce `ContDiffOn` and ordinary flat
   `extDeriv` on the interior of any preferred chart target.
@@ -140,7 +141,7 @@ theorem contDiffWithinAt_inChartAt [IsManifold I 1 M] {n : WithTop ℕ∞}
     ContDiffWithinAt ℝ n (φ.inChartAt x) ((extChartAt I x).symm ⁻¹' s ∩ range I)
       (extChartAt I x x) := by
   have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
-  rw [contMDiffWithinAt_section, contMDiffWithinAt_iff_source,
+  rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt] at hφ
   exact hφ.congr_of_eventuallyEq (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
     (heq.self_of_nhdsWithin (extChartAt_target_subset_range x (mem_extChartAt_target x))).symm
@@ -202,10 +203,10 @@ theorem contMDiffOn_mextDerivWithin [IsManifold I 2 M] (φ : RoughForm I M F k) 
   have ht : ContDiffWithinAt ℝ n (extDerivWithin (φ.inChartAt x) t) t (extChartAt I x x) := by
     rw [contDiffWithinAt_congr_set hta]
     refine ha.congr_of_eventuallyEq_of_mem ?_ ⟨hxs, mem_extChartAt_target x⟩
-    filter_upwards [nhdsWithin_le_nhds hta.eventuallyEq_nhds] with z hz
+    filter_upwards [nhdsWithin_le_nhds (Filter.Eventually.eventually_nhds hta)] with z hz
     exact extDerivWithin_congr_set hz
   -- Read the section in the bundle chart at `x`; there it is the coordinate expression above.
-  rw [contMDiffWithinAt_section, contMDiffWithinAt_iff_source,
+  rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   refine ht.congr_of_eventuallyEq_of_mem ?_ ⟨hxs, mem_range_self _⟩
   filter_upwards [φ.inChartAt_mextDerivWithin_eventuallyEq (hφ.of_le le_add_self) hs hsc x,
@@ -330,20 +331,32 @@ theorem IsSmoothForm.inChartAt_mextDeriv_eq [IsManifold I 2 M]
   φ.inChartAt_mextDeriv hz
     ((hφ.contDiffWithinAt_inChartAt_self _).differentiableWithinAt one_ne_zero)
 
+/-- On a `C^(n+1)` manifold, a form which is `C^n` on an open set `U` has `C^n` coordinate
+expression in any preferred chart on the interior points of the chart target lying over `U`. -/
+theorem RoughForm.contDiffOn_inChartAt_of_contMDiffOn {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold I (n + 1) M] (φ : RoughForm I M F k) {U : Set M} (hU : IsOpen U)
+    (hφ : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) U) (α : M) :
+    ContDiffOn ℝ n (φ.inChartAt α)
+      (interior (extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' U) := by
+  intro z hz
+  have hrange : ContDiffWithinAt ℝ n (φ.inChartAt α) (range I) z :=
+    φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt (interior_subset hz.1)
+      (mem_extChartAt_source _) (φ.contDiffWithinAt_range_inChartAt_of_contMDiffAt
+        ((hφ _ hz.2).contMDiffAt (hU.mem_nhds hz.2)))
+  have hnhds : range I ∈ 𝓝 z :=
+    mem_of_superset (isOpen_interior.mem_nhds hz.1)
+      (interior_subset.trans (extChartAt_target_subset_range α))
+  exact (hrange.contDiffAt hnhds).contDiffWithinAt
+
 /-- On a `C^(n+1)` manifold, a `C^n` form has `C^n` coordinate expression in any preferred chart on
 the interior of the chart target. -/
 theorem IsSmoothForm.contDiffOn_inChartAt_interior_target {n : WithTop ℕ∞} [IsManifold I 1 M]
     [IsManifold I (n + 1) M] {φ : RoughForm I M F k}
     (hφ : IsSmoothForm I n φ) (α : M) :
     ContDiffOn ℝ n (φ.inChartAt α) (interior (extChartAt I α).target) := by
-  intro z hz
-  have hrange : ContDiffWithinAt ℝ n (φ.inChartAt α) (range I) z :=
-    φ.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt (interior_subset hz)
-      (mem_extChartAt_source _) (hφ.contDiffWithinAt_inChartAt_self _)
-  have hnhds : range I ∈ 𝓝 z :=
-    mem_of_superset (isOpen_interior.mem_nhds hz)
-      (interior_subset.trans (extChartAt_target_subset_range α))
-  exact (hrange.contDiffAt hnhds).contDiffWithinAt
+  simpa only [preimage_univ, inter_univ] using
+    φ.contDiffOn_inChartAt_of_contMDiffOn isOpen_univ hφ.contMDiff.contMDiffOn α
 
 /-- On the interior of a preferred chart target on a `C²` manifold, the manifold exterior derivative
 of a `C¹` form read in that chart is the ordinary flat exterior derivative `extDeriv`. -/
@@ -364,7 +377,7 @@ theorem contMDiffAt_form_of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
     (hφ : ContDiffWithinAt ℝ r (φ.inChartAt x) (range I) (extChartAt I x x)) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) r
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x := by
-  rw [contMDiffAt_section x, contMDiffAt_iff_source,
+  rw [contMDiffAt_section_iff x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have heq := φ.trivializationAt_snd_eventuallyEq_inChartAt x
   exact hφ.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin
@@ -507,7 +520,7 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     IsSmoothForm 𝓘(ℝ, E) n φ := by
   rw [isSmoothForm_def]
   intro x
-  rw [Bundle.contMDiffAt_section x, contMDiffAt_iff_source,
+  rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   have hflat (f : E →
       E [⋀^Fin k]→L[ℝ] F)
@@ -629,7 +642,7 @@ theorem RoughForm.contDiffOn_indicator_inChartAt {r : WithTop ℕ∞}
     (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
     ContDiffOn ℝ r ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I) := by
   classical
-  intro z hz
+  intro z _
   by_cases ht : z ∈ (extChartAt I α).target
   · exact (hφ z ht).congr_of_eventuallyEq (φ.indicator_inChartAt_eventuallyEq α ht)
       (indicator_of_mem ht _)

@@ -42,8 +42,9 @@ points, the group law of the base change is that of `Spec H`
 
 The scheme-level statements use Mathlib's `hopfSpec`, which requires the base ring and the Hopf
 algebra to lie in the same universe. The construction is over the Grassmannian of `H` over an
-affine base `Spec R`; compatibility of the universal subgroup with base change and the relative
-version over a non-affine base are not treated here.
+affine base `Spec R`. The fibre comparison preserving its closed-subgroup inclusion is proved in
+`TauCeti.AlgebraicGeometry.Grassmannian.Fiber`; the relative construction over a non-affine base
+is not treated here.
 
 ## Main definitions
 

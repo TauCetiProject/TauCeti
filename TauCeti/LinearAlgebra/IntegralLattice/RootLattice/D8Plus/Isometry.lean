@@ -142,7 +142,7 @@ vector. -/
 private theorem e8GlueShift_mem_checkerboardLattice (i : Fin 8) :
     (fun j ↦ ((e8GlueShift i j : ℤ) : ℚ)) ∈ (checkerboardLattice 8).carrier := by
   rw [checkerboardLattice_carrier]
-  exact mem_checkerboardCarrier_of (e8GlueShift i) (fun _ ↦ rfl)
+  exact mem_checkerboardCarrier_of_even_sum (e8GlueShift i) (fun _ ↦ rfl)
     (DynkinType.e8DoubledSimpleRoot_shift_half_sum_even i)
 
 /-- The first glue root differs from the spinor vector by a checkerboard vector. -/

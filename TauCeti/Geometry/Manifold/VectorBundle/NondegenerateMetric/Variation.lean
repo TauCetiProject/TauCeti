@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Family
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
 
 /-!
 # The first variation of a smooth family of nondegenerate metrics
@@ -21,6 +24,12 @@ symmetric bilinear forms on `M`.
 Along a parameter curve `c : ℝ → P`, the parameter derivative `∂ₜ g_{c t}` of the restricted
 family is the variation of `g` at `c t` in the direction of the velocity `c'(t)`. This is the
 symmetric field `h = ∂ₜ g_t` entering the first variation formula of the Levi-Civita connection.
+
+The inverse metric varies by `∂ₜ g⁻¹ = -g⁻¹ h g⁻¹`. Here `g⁻¹` at `y` is the inverse of the flat
+map `T_y M → T_y^* M`, which is the sharp musical isomorphism
+(`TauCeti.Manifold.ContMDiffNondegenerateMetric.inverse_apply`). Paired with two covectors this is
+the index formula `∂ₜ g^{ij} = -g^{ik} h_{kl} g^{lj}`. It only needs the metrics at the single
+point `y` to be differentiable in the parameter, and holds for every signature.
 
 ## Main definitions and results
 
@@ -37,16 +46,30 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
   of `s ↦ g (c s, y) (v, w)` is `δ_{c'(t)} g (v, w)`.
 * `variation_comp` and `variation_const`: the variation of a restricted family is given by the
   chain rule, and the variation of a constant family vanishes.
+* `hasDerivAt_inverse_comp`, `hasDerivAt_inverse_apply_comp` and
+  `hasDerivAt_apply_inverse_apply_comp`: along a differentiable parameter curve, the inverse
+  metric has derivative `-g⁻¹ h g⁻¹`, with `h = δ_{c'(t)} g`.
+
+In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`, for a one-parameter family `g_s`
+of nondegenerate metrics whose pairings at `y` have parameter derivative `h` at `t`:
+
+* `hasDerivAt_inverse`: the inverse metric at `y` has derivative `-g⁻¹ h g⁻¹`.
+* `hasDerivAt_inverse_apply`: its value on a covector `φ` has derivative `-g⁻¹ (h (g⁻¹ φ))`.
+* `hasDerivAt_apply_inverse_apply`: the dual pairing `φ (g⁻¹ ψ)` has derivative
+  `-h (g⁻¹ φ, g⁻¹ ψ)`.
 
 ## References
 
 * A. L. Besse, *Einstein Manifolds*, Springer (1987), Section 1.K: variations of metrics.
+* P. Topping, *Lectures on the Ricci Flow*, LMS Lecture Note Series 325, Cambridge University
+  Press (2006), Proposition 2.3.1: the variation of the inverse metric.
 -/
 
 public section
 
 noncomputable section
 
+open Filter
 open scoped ContDiff Manifold
 
 namespace TauCeti.Manifold
@@ -57,6 +80,65 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
   {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
+
+/-! ### The inverse of a one-parameter family of metrics -/
+
+namespace ContMDiffNondegenerateMetric
+
+variable [FiniteDimensional ℝ E] {g : ℝ → ContMDiffNondegenerateMetric (I := I) (M := M)} {y : M}
+  {h : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ} {t : ℝ}
+
+/-- **The variation of the inverse metric.** If the pairings of a one-parameter family `g_s` of
+nondegenerate metrics at `y` have parameter derivative `h` at `t`, then the inverses
+`g_s⁻¹ : T_y^* M → T_y M` of the flat maps have derivative `-g_t⁻¹ ∘ h ∘ g_t⁻¹` at `t`. -/
+theorem hasDerivAt_inverse (hh : ∀ v w, HasDerivAt (fun s ↦ g s y v w) (h v w) t) :
+    HasDerivAt (fun s ↦ ((g s y).inverse : (E →L[ℝ] ℝ) →L[ℝ] E))
+      (-((g t y).inverse ∘L (h ∘L (g t y).inverse))) t := by
+  -- The metrics at `y`, as a curve of bilinear forms on the model space.
+  set G : ℝ → E →L[ℝ] E →L[ℝ] ℝ := fun s ↦ g s y
+  have hG : HasDerivAt G h t := hasDerivAt_clm_apply₂.mpr hh
+  exact hG.clm_inverse_of_completeSpace ((g t).isInvertible y)
+
+/-- **The variation of the sharp of a covector.** If the pairings of a one-parameter family `g_s`
+of nondegenerate metrics at `y` have parameter derivative `h` at `t`, then for every covector `φ`
+the vectors `g_s⁻¹ φ` have derivative `-g_t⁻¹ (h (g_t⁻¹ φ, ·))` at `t`. -/
+theorem hasDerivAt_inverse_apply (hh : ∀ v w, HasDerivAt (fun s ↦ g s y v w) (h v w) t)
+    (φ : TangentSpace I y →L[ℝ] ℝ) :
+    HasDerivAt (fun s ↦ ((g s y).inverse φ : E)) (-(g t y).inverse (h ((g t y).inverse φ))) t := by
+  -- The covector `φ` and the inverse metrics, read on the model space.
+  set G : ℝ → E →L[ℝ] E →L[ℝ] ℝ := fun s ↦ g s y
+  let φ' : E →L[ℝ] ℝ := φ
+  have hd : HasDerivAt (fun s ↦ (G s).inverse) (-((G t).inverse ∘L (h ∘L (G t).inverse))) t :=
+    hasDerivAt_inverse hh
+  have := hd.clm_apply (hasDerivAt_const t φ')
+  simp only [map_zero, add_zero, neg_apply, ContinuousLinearMap.comp_apply] at this
+  exact this
+
+/-- **The variation of the inverse metric on covectors.** If the pairings of a one-parameter family
+`g_s` of nondegenerate metrics at `y` have parameter derivative `h` at `t`, then for all covectors
+`φ, ψ` the pairings `g_s⁻¹(φ, ψ) = φ (g_s⁻¹ ψ)` have derivative `-h (g_t⁻¹ φ, g_t⁻¹ ψ)` at `t`.
+In index notation, `∂ₜ g^{ij} = -g^{ik} h_{kl} g^{lj}`. -/
+theorem hasDerivAt_apply_inverse_apply (hh : ∀ v w, HasDerivAt (fun s ↦ g s y v w) (h v w) t)
+    (φ ψ : TangentSpace I y →L[ℝ] ℝ) :
+    HasDerivAt (fun s ↦ φ ((g s y).inverse ψ)) (-h ((g t y).inverse φ) ((g t y).inverse ψ)) t := by
+  let φ' : E →L[ℝ] ℝ := φ
+  refine (φ'.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_inverse_apply hh ψ)).congr_deriv ?_
+  have hinv := (g t).isInvertible y
+  -- `φ (g⁻¹ ξ) = ξ (g⁻¹ φ)` by symmetry of `g_t`.
+  have hdual (ξ : TangentSpace I y →L[ℝ] ℝ) : φ ((g t y).inverse ξ) = ξ ((g t y).inverse φ) := by
+    conv_lhs => rw [← hinv.self_apply_inverse φ]
+    rw [(g t).apply_comm, hinv.self_apply_inverse]
+  -- `h` is symmetric, as a derivative of symmetric forms.
+  have hsymm (v w : TangentSpace I y) : h v w = h w v :=
+    (hh v w).unique ((hh w v).congr_of_eventuallyEq
+      (Eventually.of_forall fun s ↦ (g s).apply_comm y v w))
+  have e : φ (-(g t y).inverse (h ((g t y).inverse ψ))) =
+      -h ((g t y).inverse φ) ((g t y).inverse ψ) := by
+    rw [map_neg, hdual, hsymm]
+  -- The derivative is computed on the model space, where `φ'` is `φ`.
+  exact e
+
+end ContMDiffNondegenerateMetric
 
 namespace ContMDiffNondegenerateMetricFamily
 
@@ -77,7 +159,7 @@ private theorem contMDiff_atPoint (y : M) :
     (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) y
   have hy : y ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ y
   have h : ContMDiffAt IP 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞ (fun p' ↦ (e ⟨y, g (p', y)⟩).2) p :=
-    (Bundle.contMDiffAt_totalSpace.mp
+    (Bundle.contMDiffAt_totalSpace_iff.mp
       ((g.contMDiff (p, y)).comp p (contMDiffAt_id.prodMk contMDiffAt_const))).2
   let L : (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ :=
     Bundle.Trivialization.symmL ℝ (F := E →L[ℝ] E →L[ℝ] ℝ)
@@ -182,13 +264,13 @@ theorem contMDiff_variation [IsManifold IP 1 P] (p : P) (u : TangentSpace IP p) 
         (E := fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] ℝ)
         y (g.variation p u y)) := by
   intro x
-  rw [Bundle.contMDiffAt_section]
+  rw [Bundle.contMDiffAt_section_iff]
   let e := trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
     (fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] ℝ) x
   let f : M → P → E →L[ℝ] E →L[ℝ] ℝ := fun y p' ↦ (e ⟨y, g (p', y)⟩).2
   have hf : ContMDiffAt (I.prod IP) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞
       (Function.uncurry f) (x, p) :=
-    (Bundle.contMDiffAt_totalSpace.mp
+    (Bundle.contMDiffAt_totalSpace_iff.mp
       ((g.contMDiff (p, x)).comp (x, p) (contMDiffAt_snd.prodMk contMDiffAt_fst))).2
   have hderiv := hf.mfderiv f (fun _ ↦ p) (m := ∞) contMDiffAt_const (by simp)
   -- The source parameter is fixed, and the target is a normed space, so both tangent
@@ -288,6 +370,51 @@ theorem variation_const (g₀ : ContMDiffNondegenerateMetric (I := I) (M := M)) 
   have h := hasMFDerivAt_const (I := IP) (I' := 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) a p
   rw [← hfun] at h
   exact congr($(h.mfderiv) u)
+
+section Inverse
+
+variable [FiniteDimensional ℝ E] {c : ℝ → P} {t : ℝ}
+
+/-- **The variation of the inverse metric along a parameter curve.** Along a parameter curve `c`
+differentiable at `t`, the inverses `g_{c s}⁻¹ : T_y^* M → T_y M` of the flat maps have derivative
+`-g⁻¹ ∘ h ∘ g⁻¹` at `t`, where `g = g_{c t}` and `h = δ_{c'(t)} g` is the first variation of the
+family in the direction of the velocity of `c`. -/
+theorem hasDerivAt_inverse_comp (hc : MDifferentiableAt 𝓘(ℝ) IP c t) (y : M) :
+    HasDerivAt (fun s ↦ ((g (c s, y)).inverse : (E →L[ℝ] ℝ) →L[ℝ] E))
+      (-((g (c t, y)).inverse ∘L
+        (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y ∘L (g (c t, y)).inverse))) t := by
+  simpa only [metric_apply] using ContMDiffNondegenerateMetric.hasDerivAt_inverse
+    (g := fun s ↦ g.metric (c s)) (fun v w ↦ by
+      simpa only [metric_apply] using g.hasDerivAt_apply_apply_comp hc y v w)
+
+/-- **The variation of the sharp of a covector along a parameter curve.** Along a parameter curve
+`c` differentiable at `t`, the vectors `g_{c s}⁻¹ φ` have derivative `-g⁻¹ (h (g⁻¹ φ, ·))` at `t`,
+where `g = g_{c t}` and `h = δ_{c'(t)} g`. -/
+theorem hasDerivAt_inverse_apply_comp (hc : MDifferentiableAt 𝓘(ℝ) IP c t) (y : M)
+    (φ : TangentSpace I y →L[ℝ] ℝ) :
+    HasDerivAt (fun s ↦ ((g (c s, y)).inverse φ : E))
+      (-(g (c t, y)).inverse
+        (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y ((g (c t, y)).inverse φ))) t := by
+  have h := ContMDiffNondegenerateMetric.hasDerivAt_inverse_apply
+    (g := fun s ↦ g.metric (c s)) (fun v w ↦ by
+      simpa only [metric_apply] using g.hasDerivAt_apply_apply_comp hc y v w) φ
+  simp only [metric_apply] at h
+  -- Elaborated with the goal's model-space codomain `E`.
+  exact h
+
+/-- **The variation of the inverse metric on covectors along a parameter curve.** Along a
+parameter curve `c` differentiable at `t`, the pairings `φ (g_{c s}⁻¹ ψ)` have derivative
+`-h (g⁻¹ φ, g⁻¹ ψ)` at `t`, where `g = g_{c t}` and `h = δ_{c'(t)} g`. -/
+theorem hasDerivAt_apply_inverse_apply_comp (hc : MDifferentiableAt 𝓘(ℝ) IP c t) (y : M)
+    (φ ψ : TangentSpace I y →L[ℝ] ℝ) :
+    HasDerivAt (fun s ↦ φ ((g (c s, y)).inverse ψ))
+      (-g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) y ((g (c t, y)).inverse φ)
+        ((g (c t, y)).inverse ψ)) t := by
+  simpa only [metric_apply] using ContMDiffNondegenerateMetric.hasDerivAt_apply_inverse_apply
+    (g := fun s ↦ g.metric (c s)) (fun v w ↦ by
+      simpa only [metric_apply] using g.hasDerivAt_apply_apply_comp hc y v w) φ ψ
+
+end Inverse
 
 end ContMDiffNondegenerateMetricFamily
 

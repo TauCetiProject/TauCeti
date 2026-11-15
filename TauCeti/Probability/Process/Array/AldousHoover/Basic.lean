@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Data.Sym.Sym2
+public import TauCeti.Data.Sym.Sym2
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Probability.Independence.InfinitePi
 
@@ -185,19 +185,11 @@ theorem separateVertexPerm_column (rowPerm colPerm : Equiv.Perm ℕ) :
     separateVertexPerm rowPerm colPerm .column = colPerm :=
   by simp [separateVertexPerm]
 
-/-- The action on cell-noise coordinates associated to two axis permutations. -/
-def separateCellPerm (rowPerm colPerm : Equiv.Perm ℕ) : ℕ × ℕ ≃ ℕ × ℕ :=
-  rowPerm.prodCongr colPerm
-
-@[simp]
-theorem separateCellPerm_apply (rowPerm colPerm : Equiv.Perm ℕ) (p : ℕ × ℕ) :
-    separateCellPerm rowPerm colPerm p = (rowPerm p.1, colPerm p.2) :=
-  by simp [separateCellPerm, Prod.map]
-
-/-- The measurable equivalence reindexing the separate-coding noise by two axis permutations. -/
+/-- The measurable equivalence reindexing the separate-coding noise by two axis permutations,
+acting on the cell indices through `Equiv.prodCongr`. -/
 def separateNoiseCongr (rowPerm colPerm : Equiv.Perm ℕ) :
     (NoiseIndex Axis (ℕ × ℕ) → I) ≃ᵐ (NoiseIndex Axis (ℕ × ℕ) → I) :=
-  noiseCongr (separateVertexPerm rowPerm colPerm) (separateCellPerm rowPerm colPerm)
+  noiseCongr (separateVertexPerm rowPerm colPerm) (rowPerm.prodCongr colPerm)
 
 @[simp]
 theorem separateNoiseCongr_apply_global (rowPerm colPerm : Equiv.Perm ℕ)
@@ -216,7 +208,7 @@ theorem separateNoiseCongr_apply_vertex (rowPerm colPerm : Equiv.Perm ℕ)
 theorem separateNoiseCongr_apply_cell (rowPerm colPerm : Equiv.Perm ℕ)
     (u : NoiseIndex Axis (ℕ × ℕ) → I) (p : ℕ × ℕ) :
     separateNoiseCongr rowPerm colPerm u (.cell p) =
-      u (.cell (separateCellPerm rowPerm colPerm p)) := by
+      u (.cell (rowPerm.prodCongr colPerm p)) := by
   simp [separateNoiseCongr]
 
 /-- The separate noise reindexing preserves the canonical independent-uniform noise law. -/
@@ -226,22 +218,11 @@ theorem map_separateNoiseCongr_noiseMeasure (rowPerm colPerm : Equiv.Perm ℕ) :
       noiseMeasure Axis (ℕ × ℕ) :=
   map_noiseCongr_noiseMeasure _ _
 
-/-- The action on unordered-pair cell indices associated to a permutation of the vertex indices. -/
-def jointCellPerm (perm : Equiv.Perm ℕ) : Sym2 ℕ ≃ Sym2 ℕ where
-  toFun := Sym2.map perm
-  invFun := Sym2.map perm.symm
-  left_inv p := by simp [Sym2.map_map]
-  right_inv p := by simp [Sym2.map_map]
-
-@[simp]
-theorem jointCellPerm_apply (perm : Equiv.Perm ℕ) (p : Sym2 ℕ) :
-    jointCellPerm perm p = Sym2.map perm p :=
-  by simp [jointCellPerm]
-
-/-- The measurable equivalence reindexing the joint-coding noise by one vertex permutation. -/
+/-- The measurable equivalence reindexing the joint-coding noise by one vertex permutation, acting
+on the unordered-pair cell indices through `Sym2.equivCongr`. -/
 def jointNoiseCongr (perm : Equiv.Perm ℕ) :
     (NoiseIndex Unit (Sym2 ℕ) → I) ≃ᵐ (NoiseIndex Unit (Sym2 ℕ) → I) :=
-  noiseCongr (fun _ : Unit => perm) (jointCellPerm perm)
+  noiseCongr (fun _ : Unit => perm) (Sym2.equivCongr perm)
 
 @[simp]
 theorem jointNoiseCongr_apply_global (perm : Equiv.Perm ℕ)
@@ -258,7 +239,7 @@ theorem jointNoiseCongr_apply_vertex (perm : Equiv.Perm ℕ)
 @[simp]
 theorem jointNoiseCongr_apply_cell (perm : Equiv.Perm ℕ)
     (u : NoiseIndex Unit (Sym2 ℕ) → I) (p : Sym2 ℕ) :
-    jointNoiseCongr perm u (.cell p) = u (.cell (jointCellPerm perm p)) := by
+    jointNoiseCongr perm u (.cell p) = u (.cell (Sym2.equivCongr perm p)) := by
   simp [jointNoiseCongr]
 
 /-- The joint noise reindexing preserves the canonical independent-uniform noise law. -/
@@ -292,7 +273,7 @@ theorem separateArray_reindex (f : I × I × I × I → α)
       separateArray f p (separateNoiseCongr rowPerm colPerm u) := by
   simp only [separateArray_apply, separateNoiseCongr_apply_global,
     separateNoiseCongr_apply_vertex, separateNoiseCongr_apply_cell, separateVertexPerm_row,
-    separateVertexPerm_column, separateCellPerm_apply]
+    separateVertexPerm_column, Equiv.prodCongr_apply, Prod.map_apply']
 
 /-- A measurable separate Aldous--Hoover coding is measurable as an array-valued random
 variable. -/
@@ -324,7 +305,7 @@ theorem jointArray_reindex (f : I × I × I × I → α)
     jointArray f (perm p.1, perm p.2) u =
       jointArray f p (jointNoiseCongr perm u) := by
   simp only [jointArray_apply, jointNoiseCongr_apply_global, jointNoiseCongr_apply_vertex,
-    jointNoiseCongr_apply_cell, jointCellPerm_apply, Sym2.map_mk]
+    jointNoiseCongr_apply_cell, Sym2.equivCongr_apply, Sym2.map_mk]
 
 /-- Swapping the two indices of a joint coding only swaps its two vertex-noise arguments.  The
 cell-noise argument is unchanged because it is indexed by the unordered pair `Sym2.mk i j`. -/

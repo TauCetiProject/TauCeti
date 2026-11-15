@@ -78,7 +78,7 @@ theorem cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv (g : Field.absolute
   -- (`IntermediateField.algebraMap_apply`), so restriction intertwines the two automorphisms.
   exact (cyclotomicCharacter_eq_of_injective p
     (algebraMap (SeparableClosure K) (AlgebraicClosure K)).injective
-    (fun x ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
+    (fun _ x _ ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
     fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
@@ -93,7 +93,7 @@ theorem localCyclotomicCharacter_absoluteGaloisGroupExtend (τ : Field.absoluteG
     ← cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv]
   exact cyclotomicCharacter_eq_of_injective p
     (f := (separableClosureRingEquiv K L σ).toRingHom) (separableClosureRingEquiv K L σ).injective
-    (absoluteGaloisGroupExtend_apply_separableClosureRingEquiv K L σ τ)
+    (fun _ x _ ↦ absoluteGaloisGroupExtend_apply_separableClosureRingEquiv K L σ τ x)
     fun H i ↦ let ⟨ζ, hζ⟩ := H i
       ⟨_, hζ.map_of_injective (separableClosureRingEquiv K L σ).symm.injective⟩
 

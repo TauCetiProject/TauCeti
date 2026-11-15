@@ -108,7 +108,7 @@ theorem exists_finset_norm_eq (P : Submodule R C₀(I, R))
       (hS f hf).trans_lt (by nlinarith [norm_pos_iff.2 hf0])
     exact (IsUltrametricDist.norm_eq_of_norm_sub_lt_left
       (by simpa only [norm_sub_rev] using hlt)).symm
-  rw [← heq, indicatorCLM_finset_apply, ← coe_nnnorm, nnnorm_sum_single]
+  rw [← heq, indicatorCLM_finset_apply, ← coe_nnNorm, nnnorm_sum_single]
 
 /-- A complete finite submodule has a finite-coordinate bound with a positive constant.
 The stronger theorem `exists_finset_norm_eq` shows that the constant can be taken to be one. -/

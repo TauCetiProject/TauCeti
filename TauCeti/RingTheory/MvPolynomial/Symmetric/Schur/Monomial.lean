@@ -78,8 +78,6 @@ type.  It is the shape of the sorting argument in this file and has no other con
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 2.2, where `s_λ = ∑_μ K_{λμ} m_μ` is read off
   the tableau definition.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "the `msymm`-to-`schurPoly` change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section
@@ -293,8 +291,19 @@ theorem degree_partWeight (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.ca
 exponents of `TauCeti.partWeight σ ν` is `ν` itself.  Together with `TauCeti.coeff_msymm` this
 says that the monomial symmetric polynomials take the value `1` at their own sorted monomial and
 `0` at every other one. -/
-theorem weightPartition_partWeight (ν : n.Partition) (hν : ν.parts.card ≤ Fintype.card σ)
+theorem weightPartition_partWeight (ν : n.Partition)
     (h : (partWeight σ ν).degree = n) : weightPartition (partWeight σ ν) h = ν := by
+  -- The degree of `partWeight σ ν` is `n` only if no part is truncated.
+  have hν : ν.parts.card ≤ Fintype.card σ := by
+    by_contra hlt
+    have hlt' := degree_rowLenWeight_lt (N := Fintype.card σ) (μ := YoungDiagram.ofPartition ν)
+      (by rwa [YoungDiagram.colLen_zero_ofPartition, ← not_le])
+    have hdeg : (partWeight σ ν).degree = (rowLenWeight (Fintype.card σ)
+        (YoungDiagram.ofPartition ν)).degree := by
+      simpa only [partWeight_eq_mapDomain] using Finsupp.degree_mapDomain (Fintype.equivFin σ).symm
+        (rowLenWeight (Fintype.card σ) (YoungDiagram.ofPartition ν))
+    rw [YoungDiagram.card_ofPartition, ← hdeg] at hlt'
+    exact hlt'.ne h
   refine Nat.Partition.ext ?_
   rw [weightPartition_parts]
   have hkey := (map_univ_val (partWeight σ ν)).symm.trans (map_univ_val_partWeight ν hν)
@@ -317,7 +326,7 @@ monomials, and the reason they are linearly independent. -/
 @[simp]
 theorem coeff_msymm_partWeight (ν ξ : n.Partition) (hξ : ξ.parts.card ≤ Fintype.card σ) :
     (msymm σ R ν).coeff (partWeight σ ξ) = if ξ = ν then 1 else 0 := by
-  rw [coeff_msymm R ν (degree_partWeight ξ hξ), weightPartition_partWeight ξ hξ]
+  rw [coeff_msymm R ν (degree_partWeight ξ hξ), weightPartition_partWeight ξ]
 
 /-! ### The monomial expansion -/
 

@@ -269,7 +269,7 @@ private theorem iIsOrtho.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq {N : T
     h1 _ (PadicInt.isUnit_iff_toZModPow_three_mul_self.mp hP), one_mul]
   -- The oddity: characteristic vectors have the same self-pairing modulo `8`.
   have : Module.Free ℤ_[2] N := .of_basis c
-  have : B.IsPerfPair := c.isPerfPair_of_isUnit_det B (hc.isUnit_det_toMatrix hcu)
+  have : B.IsPerfPair := c.isPerfPair_of_isUnit_det c B (hc.isUnit_det_toMatrix hcu)
   have h8 := hw.eight_dvd_apply_self_sub_apply_self hc.isSymm
     (hc.isCharacteristic_sum PadicInt.two_dvd_sq_sub_self)
   rw [(PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mp h8).symm]

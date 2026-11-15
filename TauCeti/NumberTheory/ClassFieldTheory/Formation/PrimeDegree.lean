@@ -26,7 +26,7 @@ is the Galois group of the layer cut out by the preimages of `N` and `H`, and it
 invariants `(A^V)^N` is the coefficient module of that layer.
 
 For a cyclic layer the two statements are equivalent to numerical ones. If the Herbrand quotient
-`h(A^V)` of a cyclic layer is its degree `n`, then its norm quotient `A^U / N(A^V)` has at least
+`h(A^V)` of a layer is its degree `n`, then its norm quotient `A^U / N(A^V)` has at least
 `n` elements (`NormalLayer.degree_le_natCard_normQuotient_of_herbrandQuotient_eq`); if moreover the
 order of the norm quotient divides `n`, then `H¹` vanishes and `H²` has exactly `n` elements
 (`NormalLayer.subsingleton_h1_of_herbrandQuotient_eq_of_natCard_normQuotient_dvd`,
@@ -46,7 +46,7 @@ cohomological form `#H²(Gal(L/K), C_L) ∣ [L : K]` for every finite Galois ext
 * `TauCeti.ClassFieldTheory.NormalLayer.subsingleton_h1_of_prime_degree` and
   `natCard_H2_dvd_degree_of_prime_degree`: the reduction to layers of prime degree.
 * `TauCeti.ClassFieldTheory.NormalLayer.degree_le_natCard_normQuotient_of_herbrandQuotient_eq`:
-  the first inequality for a cyclic layer from its Herbrand quotient.
+  the first inequality for a layer from its Herbrand quotient.
 * `TauCeti.ClassFieldTheory.NormalLayer.subsingleton_h1_of_herbrandQuotient_of_prime_degree` and
   `natCard_H2_dvd_degree_of_herbrandQuotient_of_prime_degree`: the reduction in the numerical form
   of the two inequalities.
@@ -284,15 +284,24 @@ private theorem natCard_H2_eq_degree_mul_of_herbrandQuotient_eq
   rw [div_eq_iff (Nat.cast_ne_zero.2 h1)] at h'
   exact ⟨by exact_mod_cast h', h1⟩
 
+omit [IsCyclic L.Gal] in
 /-- **The first inequality from the Herbrand quotient.** If the Herbrand quotient `h(A^V)` of a
-cyclic layer is its degree, then its norm quotient `A^U / N(A^V)` has at least `[U : V]` elements.
+layer is its degree, then its norm quotient `A^U / N(A^V)` has at least `[U : V]` elements.
 -/
 theorem degree_le_natCard_normQuotient_of_herbrandQuotient_eq
     (h : TateCohomology.herbrandQuotient (L.rep F) = L.degree) :
     L.degree ≤ Nat.card (L.NormQuotient F) := by
-  obtain ⟨h2, h1⟩ := L.natCard_H2_eq_degree_mul_of_herbrandQuotient_eq F h
-  rw [L.natCard_normQuotient_eq_natCard_H2 F, h2]
-  exact Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero h1)
+  rw [TateCohomology.herbrandQuotient_def] at h
+  have h1 : Nat.card (L.TateH F (-1)) ≠ 0 := by
+    intro h0
+    rw [h0, Nat.cast_zero, div_zero] at h
+    exact L.degree_pos.ne' (by exact_mod_cast h.symm)
+  rw [div_eq_iff (Nat.cast_ne_zero.2 h1)] at h
+  rw [← Nat.card_congr (L.tateHZeroEquivNormQuotient F).toEquiv]
+  have h0 : Nat.card (L.TateH F 0) =
+      L.degree * Nat.card (L.TateH F (-1)) := by
+    exact_mod_cast h
+  exact h0 ▸ Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero h1)
 
 /-- **`H¹` of a cyclic layer from the two inequalities.** If the Herbrand quotient of a cyclic layer
 is its degree and the order of its norm quotient divides its degree, then `H¹(U/V, A^V) = 0`. -/

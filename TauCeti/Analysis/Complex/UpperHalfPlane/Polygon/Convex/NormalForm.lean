@@ -316,8 +316,7 @@ theorem interiorAngle_eq_add_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) {i : 
   | inl A =>
     rw [hv, toComplex_inl] at hA₁ hA₂
     rw [hv, toComplex_inl, coe_re] at hpA hAq
-    exact vertexAngle_eq_add_of_mem_circles (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi₁)
-      (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi') hA₁ hp₁ hA₂ hq₂ hpA hAq
+    exact vertexAngle_eq_add_of_mem_circles hA₁ hp₁ hA₂ hq₂ hpA hAq
       (sub_neg.1 (neg_of_mul_neg_right hp₂ hκ₂.le))
 
 /-! ### Moving an ideal vertex to `∞` -/

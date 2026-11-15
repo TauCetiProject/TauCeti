@@ -136,7 +136,7 @@ theorem signlessPreprojectiveDForkTopWord_eq (hn : 3 ≤ n) :
   have hxe_pow (t : ℕ) : x * (x + y) ^ t * e = x * (x + y) ^ t := by
     induction t with
     | zero => simpa only [pow_zero, mul_one] using hxe
-    | succ t ih =>
+    | succ t _ =>
       simp only [pow_succ, mul_assoc, hse]
   -- The two corner idempotents in the unfolded fork word act as the identity on its factors.
   change e * (x * (x + y) ^ c) * e = x * (x + y) ^ c
@@ -257,8 +257,7 @@ theorem signlessPreprojectiveMk_ofArrow_mul_DForkTopWord_eq_zero (hn : 3 ≤ n)
   · omega
   · have h' : j.val = c - 1 := by omega
     simpa only [h'] using armArrow_mul_topWord k hn (by omega)
-  · have hjn := j.isLt
-    have hjn' : j.val < n := by simpa only [DynkinType.rank_D] using hjn
+  · have _ := j.isLt
     obtain h' | h' : j.val = c + 1 ∨ j.val = c + 2 := by omega
     · simpa only [h', ite_true] using leafArrow_mul_topWord k hn true
     · simpa only [h', Bool.false_eq_true, ite_false] using leafArrow_mul_topWord k hn false

@@ -28,8 +28,8 @@ on short roots and `2` on long roots. Applying the data twice multiplies both la
 the two exponents along each orbit multiply to `2`.
 
 These equations are the explicit `B₂` input for the root-datum special-isogeny construction. They
-do not yet construct a group-scheme morphism; Layer 9 of the reductive-groups roadmap requires that
-later lift, together with its action on root subgroups, before the Suzuki--Ree lane can use it.
+do not construct a group-scheme morphism: that is a lift of these data, together with its action
+on root subgroups.
 
 ## Main definitions
 

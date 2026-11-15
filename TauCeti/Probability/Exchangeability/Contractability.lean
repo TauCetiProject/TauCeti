@@ -28,7 +28,7 @@ coordinates is contractable. The file also provides
 path law is invariant under strictly monotone time-reindexing, in particular the shift), plus the
 converse characterization `contractable_iff_forall_map_reindex_pathLaw`.
 
-These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
+These declarations are adapted from the `cameronfreer/exchangeability` sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
 combinatorial core, `StrictMono.exists_strictMono_nat_extending_fin`, now lives in
 `TauCeti.Data.Fin.StrictMono`. `Contractable.pairLaw_eq` is adapted

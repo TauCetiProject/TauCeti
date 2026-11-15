@@ -147,10 +147,10 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTo
   [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W]
 
 local instance instCompleteSpaceCharacterDomain : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 local instance instCompleteSpaceCharacterCodomain : CompleteSpace W :=
-  FiniteDimensional.complete 𝕜 W
+  FiniteDimensional.completeSpace 𝕜 W
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 

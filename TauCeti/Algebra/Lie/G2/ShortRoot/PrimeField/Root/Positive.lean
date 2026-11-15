@@ -166,7 +166,6 @@ theorem height_pos_of_isPositiveRoot (α : ULift.{0} (Fin 2) →₀ ℤ)
   simp only [SplitTorus.toAdd_weightCharacter, toAdd_ofAdd] at hzero hone
   have hw (a : Fin 7) : 3 * weight a 0 + 5 * weight a 1 = 3 - (a : ℤ) := by
     fin_cases a <;> decide
-  have hlt : (i : ℤ) < j := by exact_mod_cast hijlt
   have hwi := hw i
   have hwj := hw j
   omega

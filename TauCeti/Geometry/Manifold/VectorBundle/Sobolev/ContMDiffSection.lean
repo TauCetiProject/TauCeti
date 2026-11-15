@@ -26,9 +26,8 @@ the open set of points whose preimage lies in the base set of the bundle chart
 (`TauCeti.FiniteBundleAtlas.contDiffOn_coord`). This open set contains the compact set
 `chart i '' closure (dom i)`, so the derivatives of the components of `A.coord i s` through order
 `k` are bounded on `A.image i`, and the components lie in `W^{k,p}(A.image i)`
-(`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact`). The chart data of the resulting
-tuple are `A.coord i s` (`TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae`), so the tuple
-consists of the components of `s`.
+(`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact`). The resulting tuple consists of
+the components of `s` (`TauCeti.SectionChartData.ofComponents`).
 
 ## Main definitions
 
@@ -37,9 +36,8 @@ consists of the components of `s`.
 
 ## Main results
 
-* `TauCeti.SobolevSection.value_ofContMDiffSection_ae`,
-  `TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae`: the components and the chart data of
-  the Sobolev section of `s` are those of `s`.
+* `TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae`: the chart data are the chart
+  coordinates of the section.
 * `TauCeti.SobolevSection.norm_ofContMDiffSection_le`: the Sobolev norm is bounded by the `Lᵖ`
   norms of the classical derivatives of the chart components.
 * `TauCeti.SobolevSection.ofContMDiffSection_injective`: distinct `Cᵏ` sections give distinct
@@ -81,66 +79,31 @@ variable [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)
 private theorem exists_value_ae_eq_coord (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n)
     (j : Fin (finrank ℝ F)) :
     ∃ w : Wkp μ (A.image i) p k, (Wkp.value k w : E → ℝ) =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ (finBasis ℝ F).coord j (A.coord i s y) :=
-  Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact k
+      fun y ↦ (finBasis ℝ F).coord j (A.sectionChartData.coord i s y) := by
+  obtain ⟨w, hw⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact k
     ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet)
     ((LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)).contDiff.comp_contDiffOn
       (A.contDiffOn_coord s.contMDiff i))
     (A.isCompact_chart_image_closure_dom i) (A.image_subset_chart_image_closure_dom i)
-    (A.chart_image_closure_dom_subset i)
-
-/-- The tuple of chartwise `W^{k,p}` components of a `Cᵏ` section. -/
-private def toSobolevData (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) : SobolevData A μ p k :=
-  fun i j ↦ (exists_value_ae_eq_coord A μ p k s i j).choose
-
-private theorem value_toSobolevData_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n)
-    (j : Fin (finrank ℝ F)) :
-    (Wkp.value k (toSobolevData A μ p k s i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ (finBasis ℝ F).coord j (A.coord i s y) :=
-  (exists_value_ae_eq_coord A μ p k s i j).choose_spec
-
-private theorem chartValueL_toSobolevData_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
-    A.chartValueL μ p k i (toSobolevData A μ p k s) =ᵐ[μ.restrict (A.image i)] A.coord i s :=
-  chartValueL_ae_eq_coord_of_value_ae_eq fun j ↦ by
-    simpa only [Basis.coord_apply] using value_toSobolevData_ae A μ p k s i j
+    (A.chart_image_closure_dom_subset i) (mu := μ) (p := p)
+  exact ⟨w, hw.trans ((A.sectionChartData_coord_ae_eq μ i s).fun_comp _).symm⟩
 
 /-- **`Cᵏ` sections are Sobolev sections.** The linear map sending a `Cᵏ` section `s` of `V` to the
 element of `W^{k,p}(V)` whose components in chart `i` are the components of `A.coord i s` in the
 basis `Module.finBasis ℝ F`. -/
-def ofContMDiffSection : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ →ₗ[ℝ] SobolevSection A μ p k where
-  toFun s := ⟨toSobolevData A μ p k s,
-    (mem_sobolevSections_iff A μ p k).2 ⟨s, chartValueL_toSobolevData_ae A μ p k s⟩⟩
-  map_add' s t := ext A μ p k fun i j ↦ Lp.ext <| by
-    filter_upwards [value_toSobolevData_ae A μ p k (s + t) i j,
-      value_toSobolevData_ae A μ p k s i j, value_toSobolevData_ae A μ p k t i j,
-      Wkp.value_add k (toSobolevData A μ p k s i j) (toSobolevData A μ p k t i j) ▸
-        Lp.coeFn_add _ _, ae_restrict_mem (A.image i).isOpen.measurableSet]
-      with y h h₁ h₂ hadd hy
-    simp only [Submodule.coe_add, Pi.add_apply] at hadd ⊢
-    rw [h, hadd, h₁, h₂, ContMDiffSection.coe_add, A.coord_add i s t hy, map_add]
-  map_smul' c s := ext A μ p k fun i j ↦ Lp.ext <| by
-    filter_upwards [value_toSobolevData_ae A μ p k (c • s) i j,
-      value_toSobolevData_ae A μ p k s i j,
-      Wkp.value_smul k c (toSobolevData A μ p k s i j) ▸ Lp.coeFn_smul _ _,
-      ae_restrict_mem (A.image i).isOpen.measurableSet] with y h h₁ hsmul hy
-    simp only [Submodule.coe_smul, Pi.smul_apply, RingHom.id_apply] at hsmul ⊢
-    rw [h, hsmul, h₁, ContMDiffSection.coe_smul, A.coord_smul i c s hy, map_smul,
-      smul_eq_mul]
+def ofContMDiffSection : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ →ₗ[ℝ] SobolevSection A μ p k :=
+  A.sectionChartData.ofComponents μ p k
+    { toFun := fun s ↦ s, map_add' := ContMDiffSection.coe_add,
+      map_smul' := ContMDiffSection.coe_smul }
+    (exists_value_ae_eq_coord A μ p k)
 
-/-- The components in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the components
-of `A.coord i s` in the basis `Module.finBasis ℝ F`, almost everywhere on the image of the chart. -/
-theorem value_ofContMDiffSection_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n)
-    (j : Fin (finrank ℝ F)) :
-    (Wkp.value k ((ofContMDiffSection A μ p k s : SobolevData A μ p k) i j) : E → ℝ)
-      =ᵐ[μ.restrict (A.image i)] fun y ↦ (finBasis ℝ F).coord j (A.coord i s y) :=
-  value_toSobolevData_ae A μ p k s i j
-
-/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the coordinates
-`A.coord i s`, almost everywhere on the image of the chart. -/
+/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
+coordinates `A.coord i s`, almost everywhere on the image of the chart. -/
 theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
-    A.chartValueL μ p k i (ofContMDiffSection A μ p k s) =ᵐ[μ.restrict (A.image i)]
-      A.coord i s :=
-  chartValueL_toSobolevData_ae A μ p k s i
+    A.sectionChartData.chartValueL μ p k i (ofContMDiffSection A μ p k s)
+      =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  (A.sectionChartData.chartValueL_ofComponents_ae μ p k _ _ s i).trans
+    (A.sectionChartData_coord_ae_eq μ i s)
 
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.image i` of the classical derivatives
@@ -148,28 +111,14 @@ of orders `0` through `k` of the components of `A.coord i s`. -/
 theorem norm_ofContMDiffSection_le (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
     ‖ofContMDiffSection A μ p k s‖ ≤ ∑ i, ∑ j, ∑ l ∈ Finset.range (k + 1),
       lpNorm (iteratedFDeriv ℝ l fun y ↦ (finBasis ℝ F).coord j (A.coord i s y)) p
-        (μ.restrict (A.image i)) := by
-  have hcomp (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-      ‖(ofContMDiffSection A μ p k s : SobolevData A μ p k) i j‖ ≤
-        ∑ l ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ l
-          fun y ↦ (finBasis ℝ F).coord j (A.coord i s y)) p (μ.restrict (A.image i)) :=
+        (μ.restrict (A.image i)) :=
+  A.sectionChartData.norm_le_sum_of_norm_le μ p k fun i j ↦
     Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k _
       (((LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)).contDiff.comp_contDiffOn
         (A.contDiffOn_coord s.contMDiff i)).mono
           ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)))
-      (value_ofContMDiffSection_ae A μ p k s i j)
-  have hnonneg (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-      0 ≤ ∑ l ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ l
-        fun y ↦ (finBasis ℝ F).coord j (A.coord i s y)) p (μ.restrict (A.image i)) :=
-    Finset.sum_nonneg fun _ _ ↦ lpNorm_nonneg
-  -- The norm of a tuple is the maximum of the component norms, bounded by their sum.
-  refine (pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun i _ ↦
-    Finset.sum_nonneg fun j _ ↦ hnonneg i j)).2 fun i ↦ ?_
-  refine ((pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun j _ ↦ hnonneg i j)).2 fun j ↦
-    (hcomp i j).trans (Finset.single_le_sum (fun j _ ↦ hnonneg i j) (Finset.mem_univ j))).trans
-      (Finset.single_le_sum (f := fun i ↦ ∑ j, ∑ l ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv
-        ℝ l fun y ↦ (finBasis ℝ F).coord j (A.coord i s y)) p (μ.restrict (A.image i)))
-        (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hnonneg i j) (Finset.mem_univ i))
+      ((A.sectionChartData.value_ofComponents_ae μ p k _ _ s i j).trans
+        ((A.sectionChartData_coord_ae_eq μ i s).fun_comp _))
 
 /-- **Injectivity.** A `Cᵏ` section whose Sobolev section vanishes is zero: its chart coordinates
 are continuous and vanish almost everywhere on the open chart images, hence everywhere there. -/
@@ -180,13 +129,9 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
   have hcont : ContinuousOn (A.coord i s) (A.image i) :=
     ((A.contDiffOn_coord s.contMDiff i).continuousOn).mono
       ((A.image_subset_chart_image_closure_dom i).trans hO)
-  -- The chart data of the zero tuple vanish, so `A.coord i s` vanishes almost everywhere.
-  have h0 : A.chartValueL μ p k i (ofContMDiffSection A μ p k s : SobolevData A μ p k) = 0 := by
-    rw [hs, ZeroMemClass.coe_zero, map_zero]
-  have hz := Lp.coeFn_zero F p (μ.restrict (A.image i))
-  rw [← h0] at hz
-  have hae : A.coord i s =ᵐ[μ.restrict (A.image i)] fun _ ↦ 0 :=
-    (chartValueL_ofContMDiffSection_ae A μ p k s i).symm.trans hz
+  have hae : A.coord i s =ᵐ[μ.restrict (A.image i)] 0 :=
+    (A.sectionChartData_coord_ae_eq μ i s).symm.trans
+      (A.sectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero μ p k _ _ hs i)
   have hzero := Measure.eqOn_open_of_ae_eq hae (A.image i).isOpen hcont continuousOn_const
     (A.mem_image.2 ⟨x, hx, rfl⟩)
   rw [A.coord_chart s hx] at hzero

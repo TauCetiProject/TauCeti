@@ -153,7 +153,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     fun _ hw => im_neg_inv_pos.mpr hw
   -- the value `(p - q) / b` at `0` is not taken elsewhere
   have hnotp : ∀ w : ℂ, 0 ≤ w.im → (p - q) / b ≠ (f (-w⁻¹) - q) / b := fun w hw h => by
-    rw [div_left_inj' hb, sub_left_inj] at h
+    rw [div_left_inj₀ hb, sub_left_inj] at h
     exact hpf ⟨-w⁻¹, im_neg_inv_nonneg.mpr hw, h.symm⟩
   refine ⟨r, hr, update (fun w => (f (-w⁻¹) - q) / b) 0 ((p - q) / b),
     fun w hw => update_of_ne (hne w hw.2) _ _, ?_, fun w hw hw0 => ?_, fun w hw => ?_,
@@ -175,7 +175,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
   · rw [update_of_ne (hne w hw.2)]
     exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2))).mp
       (hfU ▸ mem_image_of_mem f (hmem w hw.2))
-  · rw [div_left_inj' hb, sub_left_inj] at h
+  · rw [div_left_inj₀ hb, sub_left_inj] at h
     simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) h
   · exact hnotp w hw.2 h.symm
 
@@ -376,11 +376,11 @@ private theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_doma
     exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,
       hupper⟩
   · -- the prevertex `a i` is carried to the vertex `v i`
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+    obtain ⟨ρ, hρ, b, -, hU⟩ := hcorner i
     rw [← hfv i] at hU
     obtain ⟨r, hr, hupper, hreal⟩ :=
       exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hU
-    exact ⟨r, hr, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
+    exact ⟨r, hr, b, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
 
 /-- The turning exponents of a polygonal domain sum to the limit `L` of `z * f''(z) / f'(z)` at
 infinity, for a conformal map `f` onto it. -/

@@ -189,7 +189,6 @@ theorem noncentralChiPDFReal_eq_besselI (hk : 0 ≤ k) (hδ : 0 < δ) (hs : 0 < 
     noncentralChiPDFReal k δ s x =
       x / s ^ 2 * exp (-((x / s) ^ 2 + δ ^ 2) / 2) * (x / (s * δ)) ^ (k / 2 - 1) *
         besselI (k / 2 - 1) (δ * x / s) := by
-  have hδ' : (0 : ℝ) < δ := hδ
   have hsqrt : √(((δ ^ 2 : ℝ≥0) : ℝ) * (x / s) ^ 2) = δ * x / s := by
     rw [NNReal.coe_pow, ← mul_pow, sqrt_sq (by positivity), mul_div_assoc]
   have hpow : ((x / s) ^ 2 / ((δ ^ 2 : ℝ≥0) : ℝ)) ^ (k / 4 - 1 / 2) =
@@ -273,7 +272,7 @@ private theorem map_withDensity_noncentralChiSquaredPDF (hs : 0 < s) :
       fun hy ↦ ⟨s * √y, mul_pos hs (sqrt_pos.mpr hy), ?_⟩⟩
     simp [φ, hs.ne', sq_sqrt (mem_Ioi.mp hy).le]
   have hinj : InjOn φ (Ioi 0) := fun a ha b hb hab ↦
-    (div_left_inj' hs.ne').1 ((sq_eq_sq₀ (div_pos ha hs).le (div_pos hb hs).le).1 hab)
+    (div_left_inj₀ hs.ne').1 ((sq_eq_sq₀ (div_pos ha hs).le (div_pos hb hs).le).1 hab)
   have hderiv (t : ℝ) : HasDerivAt φ (2 * t / s ^ 2) t := by
     refine (((hasDerivAt_id t).div_const s).fun_pow 2).congr_deriv ?_
     simp only [id, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]

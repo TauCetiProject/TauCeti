@@ -60,9 +60,13 @@ It also gives the localization axiom of Robbin and Salamon for diagonal symmetri
 graph `{x + i A x}` of `A t` has the frame `diag (e^{i arctan (a_j t)})`, and the index of the path
 of graphs is `∑ j, (sign (a_j 1) - sign (a_j 0)) / 2`, half the change of the signature of `A`.
 
+The index is natural under the real orthogonal group, which preserves `ℝⁿ`: moving a path of
+frames by a fixed real orthogonal matrix does not change it
+(`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). The localization axiom for nondiagonal `A` is
+deduced from the diagonal case in `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`.
 The zero axiom of Robbin and Salamon, that the index vanishes on a path along which the dimension
-of `U t ℝⁿ ∩ ℝⁿ` is constant, and the localization axiom for nondiagonal `A` are not proved here,
-nor is the comparison with the definition of the index by crossing forms.
+of `U t ℝⁿ ∩ ℝⁿ` is constant, is not proved here, nor is the comparison with the definition of
+the index by crossing forms.
 
 ## Main declarations
 
@@ -122,6 +126,14 @@ theorem spectralAngleSum_fromBlocks_zero₂₁ (A : Matrix n n ℂ) (B : Matrix 
     roots_mul (mul_ne_zero (charpoly_monic A).ne_zero (charpoly_monic D).ne_zero),
     Multiset.map_add, Multiset.sum_add, spectralAngleSum, spectralAngleSum]
 
+/-- The spectral angle sum is invariant under conjugation by an invertible matrix `P` with
+inverse `Q`. -/
+theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
+    (W : Matrix n n ℂ) : spectralAngleSum (P * W * Q) = spectralAngleSum W := by
+  have h := charpoly_units_conj (⟨P, Q, hPQ, hQP⟩ : (Matrix n n ℂ)ˣ) W
+  rw [Units.val_mk, inv_eq_left_inv hQP] at h
+  rw [spectralAngleSum, spectralAngleSum, h]
+
 namespace UnitaryGroup
 
 variable {α : Type*} [CommRing α] [StarRing α]
@@ -149,6 +161,11 @@ theorem souriau_mul_of_mul_transpose_eq_one (U O : unitaryGroup n α)
   refine Subtype.ext ?_
   simp only [coe_souriau, Submonoid.coe_mul, transpose_mul]
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc (O : Matrix n n α), hO, Matrix.one_mul]
+
+/-- Moving a frame by `O` conjugates its Souriau map: `(O U) (O U)ᵀ = O (U Uᵀ) Oᵀ`. -/
+theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
+    (souriau (O * U) : Matrix n n α) = (O : Matrix n n α) * souriau U * (O : Matrix n n α)ᵀ := by
+  simp [Matrix.mul_assoc, transpose_mul]
 
 /-- The Souriau map of a block-diagonal sum is the block-diagonal sum of the Souriau maps. -/
 @[simp]
@@ -187,6 +204,12 @@ path of Lagrangians `γ t ℝⁿ`, with `W` the Souriau map and `s` the spectral
 noncomputable def maslovIndex {U V : unitaryGroup n ℂ} (γ : Path U V) : ℝ :=
   Circle.angleChange (detSouriauPath γ) / (2 * Real.pi) -
     (spectralAngleSum (souriau V : Matrix n n ℂ) - spectralAngleSum (souriau U : Matrix n n ℂ))
+
+/-- Souriau's spectral formula for the Maslov index of a path of frames. -/
+theorem maslovIndex_def {U V : unitaryGroup n ℂ} (γ : Path U V) :
+    maslovIndex γ = Circle.angleChange (detSouriauPath γ) / (2 * Real.pi) -
+      (spectralAngleSum (souriau V : Matrix n n ℂ) - spectralAngleSum (souriau U : Matrix n n ℂ)) :=
+  (rfl)
 
 /-- **Independence of the frames.** Two paths of frames with the same Souriau maps, that is,
 framing the same path of Lagrangians, have the same Maslov index. -/
@@ -243,6 +266,24 @@ theorem maslovIndex_sum {U V : unitaryGroup n ℂ} {U' V' : unitaryGroup m ℂ} 
   rw [maslovIndex, hpath, Circle.angleChange_mul, maslovIndex, maslovIndex]
   simp only [souriau_sum, coe_sum, spectralAngleSum_fromBlocks_zero₂₁]
   ring
+
+/-- **Naturality under the real orthogonal group.** Moving a path of frames by a fixed unitary
+matrix `O` with `O Oᵀ = 1`, that is, a real orthogonal matrix, which preserves `ℝⁿ`, does not
+change its Maslov index: the Souriau maps are conjugated by `O`, which preserves their
+determinants and spectra. -/
+theorem maslovIndex_map_mul_left {U V : unitaryGroup n ℂ} (O : unitaryGroup n ℂ)
+    (hO : (O : Matrix n n ℂ) * (O : Matrix n n ℂ)ᵀ = 1) (γ : Path U V) :
+    maslovIndex (γ.map (continuous_const_mul O)) = maslovIndex γ := by
+  have hO' : (O : Matrix n n ℂ)ᵀ * O = 1 := mul_eq_one_comm.1 hO
+  have hdet (W : unitaryGroup n ℂ) : detCircle (souriau (O * W)) = detCircle (souriau W) := by
+    refine Circle.ext ?_
+    rw [coe_detCircle, coe_detCircle, coe_souriau_mul_left, det_mul, det_mul, mul_right_comm,
+      ← det_mul, hO, det_one, one_mul]
+  have hs (W : unitaryGroup n ℂ) : spectralAngleSum (souriau (O * W) : Matrix n n ℂ) =
+      spectralAngleSum (souriau W : Matrix n n ℂ) := by
+    rw [coe_souriau_mul_left, spectralAngleSum_conj hO hO']
+  rw [maslovIndex, maslovIndex, Circle.angleChange_congr (detSouriauPath (γ.map _))
+    (detSouriauPath γ) fun t => by simp [hdet], hs, hs]
 
 /-- **The loop case.** If the path of Lagrangians closes up, that is, the frames at the endpoints
 have the same Souriau map, the Maslov index is the degree of the loop of determinants

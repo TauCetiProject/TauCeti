@@ -48,11 +48,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient
     (hug : W1p.value u =ᵐ[mu.restrict Omega] g) (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
       -∫ x in Omega, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
-  have hweak := (W1p.hasWeakFDerivOn u).congr_ae hug
-  have hderiv := hweak.ae_eq (hasWeakFDerivOn_gradient_of_contDiffOn
-    (μ := mu) (hg.of_le one_le_two))
-  have hgrad : W1p.gradient u =ᵐ[mu.restrict Omega] ∇ g := hderiv.mono fun x hx =>
-    innerSL_inj.mp hx
+  have hgrad := W1p.gradient_ae_eq_of_contDiffOn u (hg.of_le one_le_two) hug
   rw [energyFormH1_zero_zero_eq_setIntegral]
   calc
     ∫ x in Omega, matrixBilinearForm A
@@ -130,11 +126,10 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_and_divMatrixGradient_eq_zer
     refine ⟨Omega, hx, fun k => ⟨0, ?_⟩⟩
     rw [← Wkp.valueL_apply, map_zero]
     exact Lp.coeFn_zero _ _ _
-  obtain ⟨g, hg, hug⟩ := UniformlyEllipticOn.exists_contDiffOn_ae_eq hlam hA hf
+  obtain ⟨g, hg, hug⟩ := UniformlyEllipticOn.exists_contDiffOn_ae_eq hlam hA (b := 0) (c := 0)
+    contDiffOn_const contDiffOn_const hf
     (fun v => by simpa using hu v)
-  have hderiv := ((W1p.hasWeakFDerivOn u).congr_ae hug).ae_eq
-    (hasWeakFDerivOn_gradient_of_contDiffOn (μ := volume) (hg.of_le (by simp)))
-  refine ⟨g, hg, hug, hderiv.mono (fun x hx => innerSL_inj.mp hx), ?_⟩
+  refine ⟨g, hg, hug, W1p.gradient_ae_eq_of_contDiffOn u (hg.of_le (by simp)) hug, ?_⟩
   have hp := divMatrixGradient_eq_neg_of_forall_energyFormH1_eq
     (hg.of_le (by simp)) (f := 0) continuousOn_const hug fun φ => by
       simpa using hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩

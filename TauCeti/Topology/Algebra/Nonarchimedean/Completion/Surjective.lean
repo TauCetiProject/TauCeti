@@ -138,7 +138,7 @@ theorem ker_completion [NonarchimedeanAddGroup G] (f : G →+ H) (hf : Continuou
     -- the image of `ker f` is contained in the closed kernel, so only the other inclusion has
     -- content: `x + W` meets the image of `ker f` for every open subgroup `W`
     obtain ⟨W, hW⟩ := NonarchimedeanAddGroup.is_nonarchimedean _ hN0
-    set V : AddSubgroup G := (W : AddSubgroup (Completion G)).comap toCompl with hV
+    set V : AddSubgroup G := (W : AddSubgroup (Completion G)).comap toCompl
     have hVopen : IsOpen (V : Set G) := W.isOpen.preimage (continuous_coe G)
     -- a point of `G` whose image lies in `x + W`
     obtain ⟨_, hgW, g, rfl⟩ := (denseRange_coe (α := G)).inter_open_nonempty

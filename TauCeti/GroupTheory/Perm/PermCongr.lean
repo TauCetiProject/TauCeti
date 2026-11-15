@@ -52,14 +52,14 @@ variable {α β : Type*}
 /-- Conjugation by a permutation is the transport automorphism induced by that permutation. -/
 theorem conj_eq_permCongrHom (τ : Perm α) : MulAut.conj τ = τ.permCongrHom := by
   ext σ x
-  simp [MulAut.conj_apply, Equiv.permCongrHom_coe]
+  simp [MulAut.conj_apply, permCongrHom_coe]
 
 /-- The equivalence `e`, read as an equivariant map from the permutation representation of `G`
 to that of its transport. -/
 private def permCongrHomMulActionHom (e : α ≃ β) (G : Subgroup (Perm α)) :
     α →ₑ[e.permCongrHom.subgroupMap G] β where
   toFun := e
-  map_smul' g x := by simp [Subgroup.smul_def, Equiv.permCongrHom_coe]
+  map_smul' g x := by simp [Subgroup.smul_def, permCongrHom_coe]
 
 /-- Transport along an equivalence preserves transitivity. -/
 theorem isPretransitive_map_permCongrHom_iff (e : α ≃ β) (G : Subgroup (Perm α)) :
@@ -82,7 +82,7 @@ theorem map_permCongrHom_eq_map_conj (e e' : α ≃ β) (G : Subgroup (Perm α))
   rw [Subgroup.map_map]
   congr 1
   ext σ x
-  simp [Equiv.permCongrHom_coe]
+  simp [permCongrHom_coe]
 
 variable [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β]
 
@@ -134,8 +134,8 @@ theorem isPretransitive_inf_alternatingGroup_map_permCongrHom_iff (e : α ≃ β
 preserves the sign of every permutation. -/
 theorem map_permCongrHom_le_alternatingGroup_iff (e : α ≃ β) (G : Subgroup (Perm α)) :
     G.map e.permCongrHom.toMonoidHom ≤ alternatingGroup β ↔ G ≤ alternatingGroup α := by
-  simp [IsConcreteLE.le_iff, Equiv.Perm.mem_alternatingGroup,
-    Equiv.permCongrHom_coe, Equiv.Perm.sign_permCongr]
+  simp [IsConcreteLE.le_iff, Perm.mem_alternatingGroup,
+    permCongrHom_coe, Perm.sign_permCongr]
 
 end Equiv
 

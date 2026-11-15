@@ -36,8 +36,8 @@ variable {Δ Γ : Subgroup PSL(2, ℝ)}
 width for the larger group. The integer is the exponent of the smaller cusp generator in the
 larger cusp stabilizer. -/
 theorem exists_width_eq_nat_mul (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) :
-    ∃ n : ℕ, 0 < n ∧ D.width = n * E.width := by
+    (hσ : D.scaling = E.scaling) : ∃ n : ℕ, 0 < n ∧ D.width = n * E.width := by
+  have hc := D.cusp_eq_of_scaling_eq E hσ
   let g : Γ := ⟨D.generator, h D.generator.property⟩
   have hg : g ∈ stabilizer Γ E.cusp := by
     apply MulAction.mem_stabilizer_iff.mpr

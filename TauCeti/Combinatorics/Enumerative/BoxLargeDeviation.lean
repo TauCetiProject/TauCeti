@@ -95,13 +95,12 @@ theorem sum_range_exp_mul_div_sub_half_le {r : ℕ} (hr : r ≠ 0) (t : ℝ) :
     ring
   have hsq : ∀ k ∈ range (r + 1), f k ^ 2 / 2 ≤ t ^ 2 / 8 := by
     intro k hk
-    have hk : (k : ℝ) ≤ r := by exact_mod_cast Nat.lt_succ_iff.mp (mem_range.mp hk)
     have h0 : 0 ≤ (k : ℝ) / r := by positivity
-    have h1 : (k : ℝ) / r ≤ 1 := div_le_one_of_le₀ hk (Nat.cast_nonneg r)
-    have hc : ((k : ℝ) / r - 1 / 2) ^ 2 ≤ 1 / 4 := by nlinarith
-    have := mul_le_mul_of_nonneg_left hc (sq_nonneg t)
+    have h1 : (k : ℝ) / r ≤ 1 :=
+      div_le_one_of_le₀ (mod_cast Nat.lt_succ_iff.mp (mem_range.mp hk)) r.cast_nonneg
+    -- `(x - 1 / 2) ^ 2 = 1 / 4 - x (1 - x)` for `x = k / r ∈ [0, 1]`.
     rw [hf]
-    linarith [mul_pow t ((k : ℝ) / r - 1 / 2) 2]
+    linarith [mul_nonneg (sq_nonneg t) (mul_nonneg h0 (sub_nonneg.mpr h1))]
   calc ∑ k ∈ range (r + 1), exp (f k)
       = ∑ k ∈ range (r + 1), cosh (f k) := by
         simp_rw [cosh_eq]
@@ -148,8 +147,8 @@ theorem card_filter_sum_div_le_mul_one_sub_le {ι : Type*} [Fintype ι] [Decidab
         gcongr with i
         exact sum_range_exp_mul_div_sub_half_le (hr i) _
     _ = (∏ i, ((r i : ℝ) + 1)) * exp (-(ε ^ 2 * n / 2)) := by
-        rw [prod_mul_distrib, prod_const, card_univ, ← exp_nat_mul, ← hn, mul_left_comm,
-          ← exp_add]
+        simp only [prod_mul_distrib, prod_const, card_univ, ← exp_nat_mul, ← hn]
+        rw [mul_left_comm, ← exp_add]
         congr 2
         ring
 
@@ -163,21 +162,12 @@ theorem two_mul_mul_card_filter_le {ι : Type*} [Fintype ι] [DecidableEq ι] {r
         ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)}) ≤
       #(Fintype.piFinset fun i ↦ range (r i + 1)) := by
   have hcount := card_filter_sum_div_le_mul_one_sub_le hr hε
-  have hN : (#(Fintype.piFinset fun i ↦ range (r i + 1)) : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
-    exact_mod_cast card_piFinset_range r
-  rw [← Nat.cast_le (α := ℝ), hN]
+  rw [exp_neg, ← div_eq_mul_inv, le_div_iff₀ (exp_pos _)] at hcount
+  rw [← Nat.cast_le (α := ℝ), card_piFinset_range]
   push_cast
-  calc 2 * ((D : ℝ) * #{d ∈ Fintype.piFinset fun i ↦ range (r i + 1) |
-        ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)})
-      ≤ 2 * D * ((∏ i, ((r i : ℝ) + 1)) * exp (-(ε ^ 2 * Fintype.card ι / 2))) := by
-        rw [← mul_assoc]
-        gcongr
-    _ = (∏ i, ((r i : ℝ) + 1)) * (2 * D / exp (ε ^ 2 * Fintype.card ι / 2)) := by
-        rw [exp_neg]
-        ring
-    _ ≤ ∏ i, ((r i : ℝ) + 1) := by
-        refine mul_le_of_le_one_right (by positivity) ?_
-        rwa [div_le_one (exp_pos _)]
+  refine le_trans ?_ hcount
+  rw [← mul_assoc, mul_comm _ (exp _)]
+  gcongr
 
 /-- If the number `n` of variables satisfies `2 D ≤ exp (ε² n / 2)` for some `D > 0`, then `n` is
 positive, so the total degree `∑ᵢ rᵢ` is at least one when every `rᵢ` is nonzero. -/
