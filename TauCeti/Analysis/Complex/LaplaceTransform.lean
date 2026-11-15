@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.LaplaceTransform
 
 /-!
 # Truncated Laplace transforms of bounded functions
@@ -41,23 +42,6 @@ namespace TauCeti
 
 variable {f : ℝ → ℂ} {M T : ℝ}
 
-/-- Multiplying by the exponential kernel `cexp (-z t)` does not change interval integrability. -/
-theorem intervalIntegrable_mul_cexp_neg_mul_iff {a b : ℝ} (z : ℂ) :
-    IntervalIntegrable (fun t : ℝ ↦ f t * cexp (-z * t)) volume a b ↔
-      IntervalIntegrable f volume a b := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mul_continuousOn (g := fun t : ℝ ↦ cexp (-z * t)) (by fun_prop)⟩
-  have := h.mul_continuousOn (g := fun t : ℝ ↦ cexp (z * t)) (by fun_prop)
-  simpa [mul_assoc, ← Complex.exp_add] using this
-
-/-- Multiplying by the exponential kernel `cexp (-z t)` does not change almost-everywhere strong
-measurability. -/
-theorem aestronglyMeasurable_mul_cexp_neg_mul_iff {μ : Measure ℝ} (z : ℂ) :
-    AEStronglyMeasurable (fun t : ℝ ↦ f t * cexp (-z * t)) μ ↔ AEStronglyMeasurable f μ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mul (g := fun t : ℝ ↦ cexp (-z * t))
-    (by fun_prop : Continuous _).aestronglyMeasurable⟩
-  have := h.mul (g := fun t : ℝ ↦ cexp (z * t)) (by fun_prop : Continuous _).aestronglyMeasurable
-  simpa [Pi.mul_def, mul_assoc, ← Complex.exp_add] using this
-
 /-- **Truncated Laplace transforms are entire.** The function
 `z ↦ ∫ t in a..b, f t * exp (-z t)` is complex differentiable everywhere. If `f` is not
 interval integrable on `[a, b]`, it is identically `0`. -/
@@ -66,8 +50,8 @@ theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ} :
   by_cases hf : IntervalIntegrable f volume a b
   swap
   · have : (fun z : ℂ ↦ ∫ t in a..b, f t * cexp (-z * t)) = fun _ ↦ 0 :=
-      funext fun z ↦ intervalIntegral.integral_undef
-        ((intervalIntegrable_mul_cexp_neg_mul_iff z).not.mpr hf)
+      funext fun z ↦ intervalIntegral.integral_undef <| by
+        simpa [mul_comm] using (intervalIntegrable_cexp_neg_mul_smul_iff z).not.mpr hf
     rw [this]
     exact differentiable_const _
   intro z₀
@@ -196,7 +180,8 @@ theorem differentiableOn_integral_mul_cexp_neg_mul
   swap
   · have : (fun z : ℂ ↦ ∫ t in Ici (0 : ℝ), f t * cexp (-z * t)) = fun _ ↦ 0 :=
       funext fun z ↦ integral_undef fun h ↦
-        hf ((aestronglyMeasurable_mul_cexp_neg_mul_iff z).1 h.aestronglyMeasurable)
+        hf ((aestronglyMeasurable_cexp_neg_mul_smul_iff z).1
+          (by simpa [mul_comm] using h.aestronglyMeasurable))
     rw [this]
     exact differentiableOn_const _
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (mem_Ici.mpr le_rfl))

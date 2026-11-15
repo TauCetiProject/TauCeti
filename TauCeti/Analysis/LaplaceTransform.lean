@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.ExpDecay
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The one-sided Laplace transform
@@ -31,30 +33,35 @@ predicate and transform as `(0, ∞)` (`laplaceConvergent_restrict_Ici_iff`, `la
 * Algebraic and geometric calculus: uniqueness (`HasLaplace.unique`), almost-everywhere and
   `(0, ∞)` congruence (`HasLaplace.congr_ae`, `hasLaplace_congr`), linearity (`hasLaplace_zero`,
   `HasLaplace.add`, `HasLaplace.neg`, `HasLaplace.sub`, `HasLaplace.const_smul`), frequency
-  translation (`hasLaplace_cexp_smul`, `hasLaplace_exp_smul`), and positive time dilation
-  (`HasLaplace.comp_mul_left`).
+  translation (`hasLaplace_cexp_smul`, `laplaceConvergent_exp_smul`, `laplace_exp_smul`,
+  `hasLaplace_exp_smul`), and positive time dilation (`HasLaplace.comp_mul_left`).
 * Half-plane convergence and parameter differentiation: convergence at `s₀` propagates to every `s`
   with `s₀.re ≤ s.re` (`LaplaceConvergent.of_re_le_re`), exponential growth `O(exp (a * t))` gives
-  convergence on `a < s.re` (`laplaceConvergent_of_isBigO_exp`), and on the open half-plane
+  convergence on `a < s.re` (`laplaceConvergent_of_isBigO_exp`), on the open half-plane
   `s₀.re < s.re` the transform is complex-differentiable with derivative equal to the transform of
   `t ↦ -(t : ℂ) • f t` (`LaplaceConvergent.hasDerivAt_laplace`,
-  `LaplaceConvergent.differentiableOn_laplace`, `HasLaplace.hasLaplace_neg_smul_deriv`).
+  `LaplaceConvergent.differentiableOn_laplace`), and locally around any `s` where `F` represents
+  the Laplace transform of `f`, `t ↦ -(t : ℂ) • f t` has Laplace transform `deriv F s`
+  (`hasLaplace_neg_smul_deriv`).
 * Transform of a derivative (`hasLaplace_deriv_of_primitive`, `hasLaplace_deriv`): in a complex
   Banach space, if `f` is a primitive of `g` on `[0, ∞)` (or right-continuous at `0` with derivative
   `f'` on `(0, ∞)`), `HasLaplace f s z`, and `t ↦ exp (-s * t) • g t` is integrable on `(0, ∞)`,
   then `HasLaplace g s (s • z - f 0)` with no restriction on `s.re` and no auxiliary growth bound;
   vanishing of the boundary term `exp (-s * T) • f T` at `+∞` is derived from integrability
   (`tendsto_cexp_neg_mul_smul_atTop_zero_of_primitive`).
-* Explicit transforms: constants (`hasLaplace_const`, `hasLaplace_one`, and non-convergence on
-  `s.re ≤ 0` via `not_hasLaplace_const_of_re_le_zero`), exponentials (`hasLaplace_cexp`), and
-  monomials and exponentially weighted monomials (`hasLaplace_pow`, `hasLaplace_cexp_mul_pow`,
-  `hasLaplace_exp_mul_pow`).
+* Explicit transforms: constants (`laplaceConvergent_const_iff`, `hasLaplace_const`,
+  `hasLaplace_one`, and non-convergence on `s.re ≤ 0` via `not_hasLaplace_const_of_re_nonpos`),
+  exponentials (`hasLaplace_cexp`), and monomials and exponentially weighted monomials
+  (`hasLaplace_pow`, `hasLaplace_cexp_mul_pow`, `hasLaplace_exp_mul_pow`).
 
 ## References
 
-* D. Osele, *The Laplace transform* (2026), declarations `LaplaceConvergent`, `laplace`, and
-  `HasLaplace` at commit `90482cd37e85e423459de2ed103cea2f4d98cb20`, for the argument order,
-  default measure, and scalar-action hypotheses of the transform predicate.
+* D. Osele, `Mathlib/Analysis/LaplaceTransform.lean` in
+  [dennj/mathlib4](https://github.com/dennj/mathlib4/blob/90482cd37e85e423459de2ed103cea2f4d98cb20/Mathlib/Analysis/LaplaceTransform.lean)
+  ([mathlib4#40582](https://github.com/leanprover-community/mathlib4/pull/40582)) at commit
+  `90482cd37e85e423459de2ed103cea2f4d98cb20`, declarations `LaplaceConvergent`, `laplace`, and
+  `HasLaplace`, for the argument order, default measure, and scalar-action hypotheses of the
+  transform predicate.
 * H. Delange, *Généralisation du théorème de Ikehara*, Ann. Sci. École Norm. Sup. (3) **71**
   (1954), 213–242, p. 213 and §3.3.1, pp. 221–222, for the ordinary one-sided Laplace integral
   formulation.
@@ -78,7 +85,9 @@ section Defs
 
 /-- `LaplaceConvergent f s μ`: the Laplace integrand `t ↦ exp (-s * t) • f t` is Bochner integrable
 with respect to `μ`. With the default measure `volume.restrict (Ioi 0)`, this asserts absolute
-convergence of the one-sided Laplace integral `∫₀^∞ exp (-s * t) • f t dt`. -/
+convergence of the one-sided Laplace integral `∫₀^∞ exp (-s * t) • f t dt`, following D. Osele,
+`Mathlib/Analysis/LaplaceTransform.lean` in `dennj/mathlib4` (`mathlib4#40582`),
+`LaplaceConvergent`. -/
 def LaplaceConvergent {E : Type*} [NormedAddCommGroup E] [SMul ℂ E]
     (f : ℝ → E) (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) : Prop :=
   Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) μ
@@ -97,8 +106,9 @@ theorem LaplaceConvergent.integrable {E : Type*} [NormedAddCommGroup E] [SMul �
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMul ℂ E]
 
-/-- The Laplace transform `∫ t, exp (-s * t) • f t ∂μ`, defaulting to `μ = volume.restrict (Ioi 0)`.
-Following Dennj Osele, *The Laplace transform*, `laplace`. -/
+/-- The Laplace transform `∫ t, exp (-s * t) • f t ∂μ`, defaulting to `μ = volume.restrict (Ioi 0)`,
+following D. Osele, `Mathlib/Analysis/LaplaceTransform.lean` in `dennj/mathlib4`
+(`mathlib4#40582`), `laplace`. -/
 def laplace (f : ℝ → E) (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) : E :=
   ∫ t : ℝ, Complex.exp (-s * t) • f t ∂μ
 
@@ -108,14 +118,15 @@ theorem laplace_def (f : ℝ → E) (s : ℂ) (μ : Measure ℝ := volume.restri
   (rfl)
 
 /-- When `f` is not Laplace-convergent at `s`, the totalised `laplace` integral vanishes. -/
+@[grind →]
 theorem laplace_of_not_laplaceConvergent {f : ℝ → E} {s : ℂ} {μ : Measure ℝ}
     (h : ¬ LaplaceConvergent f s μ) : laplace f s μ = 0 :=
   integral_undef h
 
 /-- `HasLaplace f s z μ`: the integrand `t ↦ exp (-s * t) • f t` is integrable for `μ` and its
 Bochner integral equals `z`. With the default measure `volume.restrict (Ioi 0)` this is the
-ordinary one-sided Laplace transform of `f` at `s : ℂ`, following Dennj Osele,
-*The Laplace transform*, `HasLaplace`. -/
+ordinary one-sided Laplace transform of `f` at `s : ℂ`, following D. Osele,
+`Mathlib/Analysis/LaplaceTransform.lean` in `dennj/mathlib4` (`mathlib4#40582`), `HasLaplace`. -/
 def HasLaplace (f : ℝ → E) (s : ℂ) (z : E) (μ : Measure ℝ := volume.restrict (Ioi 0)) : Prop :=
   Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) μ ∧
     ∫ t : ℝ, Complex.exp (-s * t) • f t ∂μ = z
@@ -128,6 +139,7 @@ theorem hasLaplace_def {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ} :
   Iff.rfl
 
 /-- Characterization of `HasLaplace` in terms of `LaplaceConvergent` and `laplace`. -/
+@[grind =]
 theorem hasLaplace_iff {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ} :
     HasLaplace f s z μ ↔ LaplaceConvergent f s μ ∧ laplace f s μ = z :=
   Iff.rfl
@@ -188,7 +200,7 @@ theorem laplaceConvergent_congr {E : Type*} [NormedAddCommGroup E] [SMul ℂ E]
 
 /-- Because `{0}` is null for Lebesgue measure, restricting to `[0, ∞)` gives the same
 `LaplaceConvergent` predicate as restricting to `(0, ∞)`. -/
-@[simp]
+@[simp, grind =]
 theorem laplaceConvergent_restrict_Ici_iff {E : Type*} [NormedAddCommGroup E] [SMul ℂ E]
     {f : ℝ → E} {s : ℂ} :
     LaplaceConvergent f s (volume.restrict (Ici 0)) ↔ LaplaceConvergent f s :=
@@ -207,7 +219,7 @@ theorem laplace_congr {f g : ℝ → E} (hfg : EqOn f g (Ioi 0)) (s : ℂ) :
   laplace_congr_ae (ae_restrict_of_forall_mem measurableSet_Ioi hfg)
 
 /-- Restricting Lebesgue measure to `[0, ∞)` gives the same `laplace` value as `(0, ∞)`. -/
-@[simp]
+@[simp, grind =]
 theorem laplace_restrict_Ici (f : ℝ → E) (s : ℂ) :
     laplace f s (volume.restrict (Ici 0)) = laplace f s :=
   integral_Ici_eq_integral_Ioi
@@ -228,7 +240,7 @@ theorem hasLaplace_congr {f g : ℝ → E} (hfg : EqOn f g (Ioi 0)) {s : ℂ} {z
   hasLaplace_congr_ae (ae_restrict_of_forall_mem measurableSet_Ioi hfg)
 
 /-- Restricting Lebesgue measure to `[0, ∞)` gives the same `HasLaplace` predicate as `(0, ∞)`. -/
-@[simp]
+@[simp, grind =]
 theorem hasLaplace_restrict_Ici_iff {f : ℝ → E} {s : ℂ} {z : E} :
     HasLaplace f s z (volume.restrict (Ici 0)) ↔ HasLaplace f s z := by
   rw [hasLaplace_iff, hasLaplace_iff, laplaceConvergent_restrict_Ici_iff, laplace_restrict_Ici]
@@ -240,14 +252,14 @@ end Congr
 section Zero
 
 /-- When the `ℂ`-action preserves zero, the zero function is Laplace-convergent everywhere. -/
-@[simp]
+@[to_fun (attr := simp, grind .) laplaceConvergent_fun_zero]
 theorem laplaceConvergent_zero {E : Type*} [NormedAddCommGroup E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     LaplaceConvergent (0 : ℝ → E) s μ := by
   simp [LaplaceConvergent]
 
 /-- When the `ℂ`-action preserves zero, the Laplace integral of `0` is `0`. -/
-@[simp]
+@[to_fun (attr := simp, grind =) laplace_fun_zero]
 theorem laplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     laplace (0 : ℝ → E) s μ = 0 := by
@@ -255,6 +267,7 @@ theorem laplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMu
 
 /-- When the `ℂ`-action preserves zero, the zero function has Laplace transform `0` at every `s`
 and for every measure `μ`. -/
+@[to_fun (attr := simp, grind .) hasLaplace_fun_zero]
 theorem hasLaplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     HasLaplace (0 : ℝ → E) s 0 μ :=
@@ -265,6 +278,7 @@ end Zero
 section Add
 
 /-- Sum of two Laplace-convergent functions. -/
+@[to_fun]
 theorem LaplaceConvergent.add {E : Type*} [NormedAddCommGroup E] [DistribSMul ℂ E]
     {f g : ℝ → E} {s : ℂ} {μ : Measure ℝ}
     (hf : LaplaceConvergent f s μ) (hg : LaplaceConvergent g s μ) :
@@ -272,19 +286,23 @@ theorem LaplaceConvergent.add {E : Type*} [NormedAddCommGroup E] [DistribSMul �
   simpa only [LaplaceConvergent, Pi.add_apply, smul_add] using hf.integrable.fun_add hg.integrable
 
 /-- Negation of a Laplace-convergent function. -/
+@[to_fun]
 theorem LaplaceConvergent.neg {E : Type*} [NormedAddCommGroup E] [DistribSMul ℂ E]
     {f : ℝ → E} {s : ℂ} {μ : Measure ℝ} (hf : LaplaceConvergent f s μ) :
     LaplaceConvergent (-f) s μ := by
   simpa only [LaplaceConvergent, Pi.neg_apply, smul_neg] using hf.integrable.fun_neg
 
 /-- Negating a function preserves `LaplaceConvergent`. -/
-@[simp]
+-- `@[grind =]` applies only to the point-free `-f` form; Lean's `grind` rejects lambda patterns
+-- binding `f` under `fun t ↦ -f t`.
+@[grind =, to_fun (attr := simp) laplaceConvergent_fun_neg_iff]
 theorem laplaceConvergent_neg_iff {E : Type*} [NormedAddCommGroup E] [DistribSMul ℂ E]
     {f : ℝ → E} {s : ℂ} {μ : Measure ℝ} :
     LaplaceConvergent (-f) s μ ↔ LaplaceConvergent f s μ :=
   ⟨fun h ↦ by simpa only [neg_neg] using h.neg, LaplaceConvergent.neg⟩
 
 /-- Difference of two Laplace-convergent functions. -/
+@[to_fun]
 theorem LaplaceConvergent.sub {E : Type*} [NormedAddCommGroup E] [DistribSMul ℂ E]
     {f g : ℝ → E} {s : ℂ} {μ : Measure ℝ}
     (hf : LaplaceConvergent f s μ) (hg : LaplaceConvergent g s μ) :
@@ -294,24 +312,27 @@ theorem LaplaceConvergent.sub {E : Type*} [NormedAddCommGroup E] [DistribSMul �
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [DistribSMul ℂ E]
 
 /-- Additivity of `laplace` on Laplace-convergent functions. -/
+@[to_fun laplace_fun_add]
 theorem laplace_add {f g : ℝ → E} {s : ℂ} {μ : Measure ℝ}
     (hf : LaplaceConvergent f s μ) (hg : LaplaceConvergent g s μ) :
     laplace (f + g) s μ = laplace f s μ + laplace g s μ := by
   simpa only [laplace, Pi.add_apply, smul_add] using integral_add hf.integrable hg.integrable
 
 /-- Negation commutes with `laplace`. -/
-@[simp]
+@[grind =, to_fun (attr := simp) laplace_fun_neg]
 theorem laplace_neg (f : ℝ → E) (s : ℂ) {μ : Measure ℝ} :
     laplace (-f) s μ = -laplace f s μ := by
   simp only [laplace, Pi.neg_apply, smul_neg, integral_neg]
 
 /-- Subtraction of `laplace` on Laplace-convergent functions. -/
+@[to_fun laplace_fun_sub]
 theorem laplace_sub {f g : ℝ → E} {s : ℂ} {μ : Measure ℝ}
     (hf : LaplaceConvergent f s μ) (hg : LaplaceConvergent g s μ) :
     laplace (f - g) s μ = laplace f s μ - laplace g s μ := by
   simpa only [laplace, Pi.sub_apply, smul_sub] using integral_sub hf.integrable hg.integrable
 
 /-- Additivity of `HasLaplace` under `DistribSMul ℂ E`. -/
+@[to_fun]
 theorem HasLaplace.add {f g : ℝ → E} {s : ℂ} {z w : E} {μ : Measure ℝ}
     (hf : HasLaplace f s z μ) (hg : HasLaplace g s w μ) :
     HasLaplace (f + g) s (z + w) μ := by
@@ -320,12 +341,14 @@ theorem HasLaplace.add {f g : ℝ → E} {s : ℂ} {z w : E} {μ : Measure ℝ}
     by rw [laplace_add hf.laplaceConvergent hg.laplaceConvergent, hf.laplace_eq, hg.laplace_eq]⟩
 
 /-- Negation of `HasLaplace` under `DistribSMul ℂ E`. -/
+@[to_fun]
 theorem HasLaplace.neg {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ}
     (hf : HasLaplace f s z μ) : HasLaplace (-f) s (-z) μ := by
   rw [hasLaplace_iff]
   exact ⟨hf.laplaceConvergent.neg, by rw [laplace_neg, hf.laplace_eq]⟩
 
 /-- Subtraction of `HasLaplace` under `DistribSMul ℂ E`. -/
+@[to_fun]
 theorem HasLaplace.sub {f g : ℝ → E} {s : ℂ} {z w : E} {μ : Measure ℝ}
     (hf : HasLaplace f s z μ) (hg : HasLaplace g s w μ) :
     HasLaplace (f - g) s (z - w) μ := by
@@ -337,48 +360,34 @@ end Add
 
 section SMulAndShift
 
-/-- Scalar multiplication by `c : ℂ` preserves `LaplaceConvergent`. -/
-theorem LaplaceConvergent.const_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f : ℝ → E} {s : ℂ} {μ : Measure ℝ} (hf : LaplaceConvergent f s μ) (c : ℂ) :
-    LaplaceConvergent (fun t ↦ c • f t) s μ := by
-  simpa only [LaplaceConvergent, smul_comm _ c] using hf.integrable.fun_smul c
+/-- Scalar multiplication by a constant `c : 𝕜` commuting with the `ℂ`-action preserves
+`LaplaceConvergent`. -/
+@[to_fun]
+theorem LaplaceConvergent.const_smul {E 𝕜 : Type*} [NormedAddCommGroup E] [SMul ℂ E]
+    [NormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass 𝕜 ℂ E]
+    {f : ℝ → E} {s : ℂ} {μ : Measure ℝ} (hf : LaplaceConvergent f s μ) (c : 𝕜) :
+    LaplaceConvergent (c • f) s μ := by
+  simpa only [LaplaceConvergent, Pi.smul_apply, smul_comm c] using hf.integrable.fun_smul c
 
-/-- Scalar multiplication by `c : ℂ` commutes with `laplace`. -/
-theorem laplace_const_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ E]
-    [IsScalarTower ℝ ℂ E] (f : ℝ → E) (s : ℂ) (c : ℂ) {μ : Measure ℝ} :
-    laplace (fun t ↦ c • f t) s μ = c • laplace f s μ := by
-  have : SMulCommClass ℝ ℂ E := ⟨fun r z x ↦ by
-    rw [← smul_one_smul ℂ r (z • x), ← smul_one_smul ℂ r x, smul_smul, smul_smul, mul_comm]⟩
-  simp only [laplace, smul_comm _ c, integral_smul]
+/-- Scalar multiplication by a constant `c : 𝕜` commuting with `ℝ` and `ℂ` commutes with
+`laplace`. -/
+@[to_fun laplace_fun_const_smul]
+theorem laplace_const_smul {E 𝕜 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMul ℂ E]
+    [NormedDivisionRing 𝕜] [Module 𝕜 E] [NormSMulClass 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+    [SMulCommClass 𝕜 ℂ E] (f : ℝ → E) (s : ℂ) (c : 𝕜) {μ : Measure ℝ} :
+    laplace (c • f) s μ = c • laplace f s μ := by
+  simp only [laplace, Pi.smul_apply, ← smul_comm c, integral_smul]
 
-/-- Scalar multiplication by `c : ℂ` scales `HasLaplace` by `c`. -/
-theorem HasLaplace.const_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ}
-    (hf : HasLaplace f s z μ) (c : ℂ) :
-    HasLaplace (fun t ↦ c • f t) s (c • z) μ := by
-  rw [hasLaplace_iff]
-  exact ⟨hf.laplaceConvergent.const_smul c, by rw [laplace_const_smul, hf.laplace_eq]⟩
-
-/-- Scalar multiplication by a real constant `c : ℝ` preserves `LaplaceConvergent`. -/
-theorem LaplaceConvergent.const_smul_real {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [SMul ℂ E] [SMulCommClass ℝ ℂ E] {f : ℝ → E} {s : ℂ} {μ : Measure ℝ}
-    (hf : LaplaceConvergent f s μ) (c : ℝ) :
-    LaplaceConvergent (fun t ↦ c • f t) s μ := by
-  simpa only [LaplaceConvergent, smul_comm c] using hf.integrable.fun_smul c
-
-/-- Scalar multiplication by a real constant `c : ℝ` commutes with `laplace`. -/
-theorem laplace_const_smul_real {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [SMul ℂ E] [SMulCommClass ℝ ℂ E] (f : ℝ → E) (s : ℂ) (c : ℝ) {μ : Measure ℝ} :
-    laplace (fun t ↦ c • f t) s μ = c • laplace f s μ := by
-  simp only [laplace, ← smul_comm c, integral_smul]
-
-/-- Scalar multiplication by a real constant `c : ℝ` scales `HasLaplace` by `c`. -/
-theorem HasLaplace.const_smul_real {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [SMul ℂ E] [SMulCommClass ℝ ℂ E] {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ}
-    (hf : HasLaplace f s z μ) (c : ℝ) :
-    HasLaplace (fun t ↦ c • f t) s (c • z) μ := by
-  rw [hasLaplace_iff]
-  exact ⟨hf.laplaceConvergent.const_smul_real c, by rw [laplace_const_smul_real, hf.laplace_eq]⟩
+/-- Scalar multiplication by a constant `c : 𝕜` commuting with `ℝ` and `ℂ` scales `HasLaplace`
+by `c`. -/
+@[to_fun]
+theorem HasLaplace.const_smul {E 𝕜 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMul ℂ E]
+    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+    [SMulCommClass 𝕜 ℂ E] {f : ℝ → E} {s : ℂ} {z : E} {μ : Measure ℝ}
+    (hf : HasLaplace f s z μ) (c : 𝕜) :
+    HasLaplace (c • f) s (c • z) μ := by
+  refine ⟨hf.laplaceConvergent.const_smul c, ?_⟩
+  simpa only [Pi.smul_apply, ← smul_comm c, hf.integral_eq] using hf.integrable.integral_smul c
 
 /-- Multiplying `f` by `t ↦ exp (w * t)` shifts the Laplace parameter from `s` to `s - w`. -/
 theorem laplaceConvergent_cexp_smul {E : Type*} [NormedAddCommGroup E] [MulAction ℂ E]
@@ -407,16 +416,35 @@ theorem hasLaplace_cexp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
     HasLaplace (fun t : ℝ ↦ Complex.exp (w * t) • f t) s z μ ↔ HasLaplace f (s - w) z μ := by
   rw [hasLaplace_iff, hasLaplace_iff, laplaceConvergent_cexp_smul, laplace_cexp_smul]
 
+/-- Multiplying `f` by a real exponential `t ↦ Real.exp (a * t)` shifts `LaplaceConvergent` from
+`s` to `s - a`. -/
+theorem laplaceConvergent_exp_smul {E : Type*} [NormedAddCommGroup E] [SMul ℝ E] [MulAction ℂ E]
+    [IsScalarTower ℝ ℂ E] {f : ℝ → E} (a : ℝ) {s : ℂ} {μ : Measure ℝ} :
+    LaplaceConvergent (fun t : ℝ ↦ Real.exp (a * t) • f t) s μ ↔
+      LaplaceConvergent f (s - a) μ := by
+  rw [← laplaceConvergent_cexp_smul (a : ℂ)]
+  refine laplaceConvergent_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [← smul_one_smul ℂ (Real.exp (a * t)) (f t), Complex.real_smul, mul_one,
+    Complex.ofReal_exp, Complex.ofReal_mul]
+
+/-- Multiplying `f` by a real exponential `t ↦ Real.exp (a * t)` shifts `laplace` from `s` to
+`s - a`. -/
+theorem laplace_exp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MulAction ℂ E]
+    [IsScalarTower ℝ ℂ E] (f : ℝ → E) (a : ℝ) (s : ℂ) {μ : Measure ℝ} :
+    laplace (fun t : ℝ ↦ Real.exp (a * t) • f t) s μ = laplace f (s - a) μ := by
+  rw [← laplace_cexp_smul f (a : ℂ) s]
+  refine laplace_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [← smul_one_smul ℂ (Real.exp (a * t)) (f t), Complex.real_smul, mul_one,
+    Complex.ofReal_exp, Complex.ofReal_mul]
+
 /-- Multiplying `f` by a real exponential `t ↦ Real.exp (a * t)` shifts `HasLaplace` from `s` to
 `s - a`. -/
 theorem hasLaplace_exp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MulAction ℂ E]
     [IsScalarTower ℝ ℂ E] {f : ℝ → E} (a : ℝ) {s : ℂ} {z : E} {μ : Measure ℝ} :
     HasLaplace (fun t : ℝ ↦ Real.exp (a * t) • f t) s z μ ↔ HasLaplace f (s - a) z μ := by
-  rw [← hasLaplace_cexp_smul (a : ℂ)]
-  refine hasLaplace_congr_ae (.of_forall fun t ↦ ?_)
-  dsimp only
-  rw [← smul_one_smul ℂ (Real.exp (a * t)) (f t), Complex.real_smul, mul_one,
-    Complex.ofReal_exp, Complex.ofReal_mul]
+  rw [hasLaplace_iff, hasLaplace_iff, laplaceConvergent_exp_smul, laplace_exp_smul]
 
 /-- Positive time dilation `t ↦ f (c * t)` preserves `LaplaceConvergent` with rescaled parameter
 `s / c`. -/
@@ -469,18 +497,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 /-- Multiplying by `t ↦ exp (-s * t)` preserves almost-everywhere strong measurability. -/
 theorem aestronglyMeasurable_cexp_neg_mul_smul_iff {f : ℝ → E} {μ : Measure ℝ} (s : ℂ) :
     AEStronglyMeasurable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) μ ↔
-      AEStronglyMeasurable f μ := by
-  refine ⟨fun h ↦ ?_, fun h ↦
-    (by fun_prop : Continuous fun t : ℝ ↦ Complex.exp (-s * t)).aestronglyMeasurable.smul h⟩
-  have h' :=
-    (by fun_prop : Continuous fun t : ℝ ↦ Complex.exp (s * t)).aestronglyMeasurable.smul h
-  refine h'.congr (.of_forall fun t ↦ ?_)
-  simp [smul_smul, ← Complex.exp_add]
+      AEStronglyMeasurable f μ :=
+  aestronglyMeasurable_fun_smul_iff₀
+    (by fun_prop : Continuous fun t : ℝ ↦ Complex.exp (-s * t)).aestronglyMeasurable
+    (ae_of_all _ fun _ ↦ Complex.exp_ne_zero _)
 
 /-- Multiplying by `t ↦ exp (-s * t)` preserves interval integrability on every finite interval. -/
-theorem intervalIntegrable_cexp_neg_mul_smul_iff {f : ℝ → E} {a b : ℝ} (s : ℂ) :
-    IntervalIntegrable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) volume a b ↔
-      IntervalIntegrable f volume a b := by
+theorem intervalIntegrable_cexp_neg_mul_smul_iff {f : ℝ → E} {μ : Measure ℝ} {a b : ℝ} (s : ℂ) :
+    IntervalIntegrable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) μ a b ↔
+      IntervalIntegrable f μ a b := by
   refine ⟨fun h ↦ ?_, fun h ↦
     h.continuousOn_smul (by fun_prop : Continuous fun t : ℝ ↦ Complex.exp (-s * t)).continuousOn⟩
   have h' :=
@@ -578,17 +603,19 @@ theorem LaplaceConvergent.differentiableOn_laplace {f : ℝ → E} {s₀ : ℂ}
     DifferentiableOn ℂ (fun z ↦ laplace f z) {z : ℂ | s₀.re < z.re} :=
   fun _ hz ↦ (hf.hasDerivAt_laplace hz).2.differentiableAt.differentiableWithinAt
 
-/-- If `F` represents the Laplace transform of `f` on `s₀.re < z.re` and `f` is Laplace-convergent
-at `s₀`, then `t ↦ -(t : ℂ) • f t` has Laplace transform `deriv F s` at every `s` with
-`s₀.re < s.re`. -/
-theorem HasLaplace.hasLaplace_neg_smul_deriv {f : ℝ → E} {F : ℂ → E} {s₀ s : ℂ}
-    (hf₀ : LaplaceConvergent f s₀) (hF : ∀ z : ℂ, s₀.re < z.re → HasLaplace f z (F z))
-    (hs : s₀.re < s.re) :
+/-- If `F` represents the Laplace transform of `f` on a neighborhood of `s`, then
+`t ↦ -(t : ℂ) • f t` has Laplace transform `deriv F s` at `s`. -/
+theorem hasLaplace_neg_smul_deriv {f : ℝ → E} {F : ℂ → E} {s : ℂ}
+    (hF : ∀ᶠ z in 𝓝 s, HasLaplace f z (F z)) :
     HasLaplace (fun t : ℝ ↦ -(t : ℂ) • f t) s (deriv F s) := by
-  obtain ⟨hconv, hderiv⟩ := hf₀.hasDerivAt_laplace hs
-  have heq : F =ᶠ[𝓝 s] fun z ↦ laplace f z := by
-    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs] with z hz
-    exact (hF z hz).laplace_eq.symm
+  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.mp hF
+  let s₀ : ℂ := s - ((ε / 2 : ℝ) : ℂ)
+  have hs₀_mem : s₀ ∈ ball s ε := by
+    simp [s₀, abs_of_pos hε, hε]
+  have hs₀_lt : s₀.re < s.re := by
+    simp [s₀, half_pos hε]
+  obtain ⟨hconv, hderiv⟩ := (hball s₀ hs₀_mem).laplaceConvergent.hasDerivAt_laplace hs₀_lt
+  have heq : F =ᶠ[𝓝 s] fun z ↦ laplace f z := hF.mono fun z hz ↦ hz.laplace_eq.symm
   exact ⟨hconv, (hderiv.congr_of_eventuallyEq heq).deriv.symm⟩
 
 end HalfPlane
@@ -599,15 +626,6 @@ section LaplaceDeriv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
-private lemma intervalIntegral_mul_cexp_neg_mul (s : ℂ) (a b : ℝ) :
-    ∫ r in a..b, s * Complex.exp (-s * r) = Complex.exp (-s * a) - Complex.exp (-s * b) := by
-  have hd : ∀ r ∈ uIcc a b,
-      HasDerivAt (fun x : ℝ ↦ -Complex.exp (-s * x)) (s * Complex.exp (-s * r)) r := fun r _ ↦
-    ((((hasDerivAt_id' r).ofReal_comp.const_mul (-s)).cexp).fun_neg).congr_deriv (by simp; ring)
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd
-    ((by fun_prop : Continuous fun r : ℝ ↦ s * Complex.exp (-s * r)).intervalIntegrable a b),
-    sub_neg_eq_add, add_comm, sub_eq_add_neg]
-
 /-- Finite-interval integration-by-parts identity for a primitive: if `f t = f 0 + ∫ u in 0..t, g u`
 on `[0, T]` with `g` interval-integrable on `[0, T]`, then
 `∫ t in 0..T, exp (-s * t) • g t = exp (-s * T) • f T - f 0 + s • ∫ t in 0..T, exp (-s * t) • f t`
@@ -617,57 +635,61 @@ theorem intervalIntegral_cexp_neg_mul_smul_of_primitive {f g : ℝ → E} (s : �
     (hfg : ∀ t ∈ Icc 0 T, f t = f 0 + ∫ u in (0 : ℝ)..t, g u) :
     ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t =
       Complex.exp (-s * T) • f T - f 0 + s • ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t := by
-  let μT : Measure ℝ := volume.restrict (Ioc 0 T)
-  let u : ℝ → ℂ := fun r ↦ s * Complex.exp (-s * r)
-  have hu : Integrable u μT := (by fun_prop : Continuous u).integrableOn_Ioc
-  let P : ℝ × ℝ → E := Set.indicator {z : ℝ × ℝ | z.2 ≤ z.1} (fun z ↦ u z.1 • g z.2)
-  have hP : Integrable P (μT.prod μT) :=
-    (hu.smul_prod hg.1).indicator (measurableSet_le measurable_snd measurable_fst)
-  have hswap : ∫ r, ∫ t, P (r, t) ∂μT ∂μT = ∫ t, ∫ r, P (r, t) ∂μT ∂μT :=
-    (integral_prod P hP).symm.trans (integral_prod_symm P hP)
-  have hLHS : ∫ r, ∫ t, P (r, t) ∂μT ∂μT =
-      s • (∫ r in (0 : ℝ)..T, Complex.exp (-s * r) • f r) -
-        (1 - Complex.exp (-s * T)) • f 0 := by
-    have hinner : ∀ r ∈ Ioc (0 : ℝ) T, ∫ t, P (r, t) ∂μT =
-        s • (Complex.exp (-s * r) • f r) - u r • f 0 := fun r hr ↦ by
-      have hset : Iic r ∩ Ioc 0 T = Ioc 0 r := by
-        ext t; simp only [mem_inter_iff, mem_Iic, mem_Ioc]
-        exact ⟨fun h ↦ ⟨h.2.1, h.1⟩, fun h ↦ ⟨h.2, h.1, h.2.trans hr.2⟩⟩
-      change ∫ t, (Iic r).indicator (fun t ↦ u r • g t) t ∂μT = _
-      rw [integral_indicator measurableSet_Iic]
-      simp only [μT, Measure.restrict_restrict measurableSet_Iic, hset]
-      rw [← intervalIntegral.integral_of_le hr.1.le, intervalIntegral.integral_smul,
-        hfg r ⟨hr.1.le, hr.2⟩, ← mul_smul, smul_add, add_sub_cancel_left]
-    have hsf : Integrable (fun r : ℝ ↦ s • (Complex.exp (-s * r) • f r)) μT := by
-      have h1 := hP.integral_prod_left.congr (ae_restrict_of_forall_mem measurableSet_Ioc hinner)
-      simpa only [sub_add_cancel] using h1.fun_add (hu.smul_const (f 0))
-    rw [setIntegral_congr_fun measurableSet_Ioc hinner, integral_sub hsf (hu.smul_const (f 0)),
-      integral_smul, ← intervalIntegral.integral_of_le hT, integral_smul_const,
-      ← intervalIntegral.integral_of_le hT, intervalIntegral_mul_cexp_neg_mul,
-      Complex.ofReal_zero, mul_zero, Complex.exp_zero]
-  have hRHS : ∫ t, ∫ r, P (r, t) ∂μT ∂μT =
-      (∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t) -
-        Complex.exp (-s * T) • (f T - f 0) := by
-    have hinner₂ : ∀ t ∈ Ioc (0 : ℝ) T, ∫ r, P (r, t) ∂μT =
-        Complex.exp (-s * t) • g t - Complex.exp (-s * T) • g t := fun t ht ↦ by
-      have hset : Ici t ∩ Ioc 0 T = Icc t T := by
-        ext r; simp only [mem_inter_iff, mem_Ici, mem_Ioc, mem_Icc]
-        exact ⟨fun h ↦ ⟨h.1, h.2.2⟩, fun h ↦ ⟨h.1, ht.1.trans_le h.1, h.2⟩⟩
-      change ∫ r, (Ici t).indicator (fun r ↦ u r • g t) r ∂μT = _
-      rw [integral_indicator measurableSet_Ici]
-      simp only [μT, Measure.restrict_restrict measurableSet_Ici, hset]
-      rw [integral_smul_const, integral_Icc_eq_integral_Ioc,
-        ← intervalIntegral.integral_of_le ht.2, intervalIntegral_mul_cexp_neg_mul, sub_smul]
-    have hg₁ : Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • g t) μT :=
-      ((intervalIntegrable_cexp_neg_mul_smul_iff s).mpr hg).1
-    rw [setIntegral_congr_fun measurableSet_Ioc hinner₂,
-      integral_sub hg₁ (hg.1.fun_smul (Complex.exp (-s * T))), integral_smul,
-      ← intervalIntegral.integral_of_le hT, ← intervalIntegral.integral_of_le hT,
-      hfg T ⟨hT, le_rfl⟩, add_sub_cancel_left]
-  rw [hLHS, hRHS] at hswap
-  have hswap' := congrArg (· + Complex.exp (-s * T) • (f T - f 0)) hswap
-  simp only [sub_add_cancel] at hswap'
-  rw [← hswap', sub_smul, one_smul, smul_sub]
+  let φ : ℝ → ℂ := fun t ↦ Complex.exp (-s * t)
+  have hφ : ContDiff ℝ 1 φ :=
+    Complex.contDiff_exp.comp (contDiff_const.mul Complex.ofRealCLM.contDiff)
+  have hφ' (t : ℝ) : deriv φ t = -s * φ t :=
+    ((((hasDerivAt_id' t).ofReal_comp.const_mul (-s)).cexp).congr_deriv
+      (by simp [φ, mul_comm])).deriv
+  have hibp := TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hT hφ hg
+  have hprim : EqOn (fun t ↦ deriv φ t • ∫ u in (0 : ℝ)..t, g u)
+      (fun t ↦ (-s) • (φ t • f t) - deriv φ t • f 0) (uIcc 0 T) := fun t ht ↦ by
+    rw [uIcc_of_le hT] at ht
+    dsimp only
+    rw [show ∫ u in (0 : ℝ)..t, g u = f t - f 0 from eq_sub_of_add_eq' (hfg t ht).symm,
+      smul_sub, hφ' t, mul_smul]
+  have hfint : IntervalIntegrable (fun t ↦ (-s) • (φ t • f t)) volume 0 T := by
+    have hfcont : ContinuousOn f (uIcc 0 T) := by
+      rw [uIcc_of_le hT]
+      have hP : ContinuousOn (fun t ↦ f 0 + ∫ u in (0 : ℝ)..t, g u) (Icc 0 T) :=
+        continuousOn_const.add
+          ((intervalIntegral.continuousOn_primitive_interval' hg left_mem_uIcc).mono
+            (by rw [uIcc_of_le hT]))
+      exact hP.congr hfg
+    exact (hφ.continuous.continuousOn.smul hfcont).intervalIntegrable.smul (-s)
+  have h0int : IntervalIntegrable (fun t ↦ deriv φ t • f 0) volume 0 T :=
+    ((hφ.continuous_deriv le_rfl).smul continuous_const).intervalIntegrable 0 T
+  rw [intervalIntegral.integral_congr hprim, intervalIntegral.integral_sub hfint h0int,
+    intervalIntegral.integral_smul, intervalIntegral.integral_smul_const,
+    intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ hφ.differentiable one_ne_zero x)
+      ((hφ.continuous_deriv le_rfl).intervalIntegrable 0 T),
+    show ∫ u in (0 : ℝ)..T, g u = f T - f 0 from eq_sub_of_add_eq' (hfg T ⟨hT, le_rfl⟩).symm]
+    at hibp
+  simp only [φ, Complex.ofReal_zero, mul_zero, Complex.exp_zero, neg_smul, sub_smul, one_smul,
+    smul_sub] at hibp
+  calc ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t
+      = Complex.exp (-s * T) • f T - Complex.exp (-s * T) • f 0 -
+          (Complex.exp (-s * T) • f T - Complex.exp (-s * T) • f 0 -
+            ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • g t) := by abel
+    _ = Complex.exp (-s * T) • f T - Complex.exp (-s * T) • f 0 -
+          (-(s • ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t) -
+            (Complex.exp (-s * T) • f 0 - f 0)) := by rw [← hibp]
+    _ = Complex.exp (-s * T) • f T - f 0 +
+          s • ∫ t in (0 : ℝ)..T, Complex.exp (-s * t) • f t := by abel
+
+private lemma tendsto_cexp_neg_mul_smul_atTop_of_primitive {f g : ℝ → E} {s : ℂ}
+    (hfg : ∀ t ∈ Ici (0 : ℝ), f t = f 0 + ∫ u in (0 : ℝ)..t, g u)
+    (hf : LaplaceConvergent f s) (hg : LaplaceConvergent g s) :
+    Tendsto (fun T : ℝ ↦ Complex.exp (-s * T) • f T) atTop
+      (𝓝 (laplace g s + f 0 - s • laplace f s)) := by
+  have h1 := intervalIntegral_tendsto_integral_Ioi 0 hg.integrable tendsto_id
+  have h2 := intervalIntegral_tendsto_integral_Ioi 0 hf.integrable tendsto_id
+  refine ((h1.add tendsto_const_nhds).sub (h2.const_smul s)).congr' ?_
+  filter_upwards [Ici_mem_atTop (0 : ℝ)] with T (hT : 0 ≤ T)
+  have hid := intervalIntegral_cexp_neg_mul_smul_of_primitive s hT
+    (hg.intervalIntegrable le_rfl hT) (fun t ht ↦ hfg t ht.1)
+  simp only [id_eq]
+  rw [hid]
   abel
 
 /-- If `f` is a primitive of `g` on `[0, ∞)` and both `f` and `g` are Laplace-convergent at `s`,
@@ -676,18 +698,8 @@ theorem tendsto_cexp_neg_mul_smul_atTop_zero_of_primitive {f g : ℝ → E} {s :
     (hfg : ∀ t ∈ Ici (0 : ℝ), f t = f 0 + ∫ u in (0 : ℝ)..t, g u)
     (hf : LaplaceConvergent f s) (hg : LaplaceConvergent g s) :
     Tendsto (fun t : ℝ ↦ Complex.exp (-s * t) • f t) atTop (𝓝 0) := by
-  set L : E := laplace g s + f 0 - s • laplace f s
-  have hlim : Tendsto (fun T : ℝ ↦ Complex.exp (-s * T) • f T) atTop (𝓝 L) := by
-    have h1 := intervalIntegral_tendsto_integral_Ioi 0 hg.integrable tendsto_id
-    have h2 := intervalIntegral_tendsto_integral_Ioi 0 hf.integrable tendsto_id
-    refine ((h1.add tendsto_const_nhds).sub (h2.const_smul s)).congr' ?_
-    filter_upwards [Ici_mem_atTop (0 : ℝ)] with T (hT : 0 ≤ T)
-    have hid := intervalIntegral_cexp_neg_mul_smul_of_primitive s hT
-      (hg.intervalIntegrable le_rfl hT) (fun t ht ↦ hfg t ht.1)
-    simp only [id_eq]
-    rw [hid]
-    abel
-  have hL : L = 0 := by
+  have hlim := tendsto_cexp_neg_mul_smul_atTop_of_primitive hfg hf hg
+  have hL : laplace g s + f 0 - s • laplace f s = 0 := by
     have hint : IntegrableAtFilter (fun t : ℝ ↦ Complex.exp (-s * t) • f t) atTop :=
       ⟨Ioi 0, Ioi_mem_atTop 0, hf.integrable⟩
     refine hint.eq_zero_of_tendsto (fun U hU ↦ ?_) hlim
@@ -706,16 +718,11 @@ theorem hasLaplace_deriv_of_primitive {f g : ℝ → E} {s : ℂ} {z : E}
     (hg : Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • g t) (volume.restrict (Ioi 0))) :
     HasLaplace g s (s • z - f 0) := by
   refine ⟨hg, ?_⟩
-  have h1 := intervalIntegral_tendsto_integral_Ioi 0 hg tendsto_id
-  have h2 := intervalIntegral_tendsto_integral_Ioi 0 hf.integrable tendsto_id
-  have h0 := tendsto_cexp_neg_mul_smul_atTop_zero_of_primitive hfg hf.laplaceConvergent hg
-  have h3 := (h0.sub (tendsto_const_nhds (x := f 0))).add (h2.const_smul s)
-  rw [hf.integral_eq, zero_sub, neg_add_eq_sub] at h3
-  refine tendsto_nhds_unique h1 (h3.congr' ?_)
-  filter_upwards [Ici_mem_atTop (0 : ℝ)] with T (hT : 0 ≤ T)
-  simp only [id_eq]
-  exact (intervalIntegral_cexp_neg_mul_smul_of_primitive s hT
-    (LaplaceConvergent.intervalIntegrable hg le_rfl hT) (fun t ht ↦ hfg t ht.1)).symm
+  have hL := tendsto_nhds_unique
+    (tendsto_cexp_neg_mul_smul_atTop_of_primitive hfg hf.laplaceConvergent hg)
+    (tendsto_cexp_neg_mul_smul_atTop_zero_of_primitive hfg hf.laplaceConvergent hg)
+  rw [← hf.laplace_eq]
+  exact eq_sub_of_add_eq (sub_eq_zero.mp hL)
 
 /-- The transform of a derivative: for `f` continuous at `0` from the right and differentiable on
 `(0, ∞)`, if `f` has Laplace transform `z` at `s` and `t ↦ exp (-s * t) • f' t` is integrable on
@@ -746,95 +753,74 @@ end LaplaceDeriv
 
 section Examples
 
+/-- A constant function `t ↦ x` is Laplace-convergent at `s` iff `x = 0` or `0 < s.re`. -/
+-- Not `@[grind =]`: Lean's `grind` rejects patterns binding `x` inside a lambda `fun _ ↦ x`.
+@[simp]
+theorem laplaceConvergent_const_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {x : E} {s : ℂ} :
+    LaplaceConvergent (fun _ : ℝ ↦ x) s ↔ x = 0 ∨ 0 < s.re := by
+  by_cases hx : x = 0
+  · simp [hx]
+  · simp only [hx, false_or, LaplaceConvergent, integrable_smul_const hx,
+      ← integrable_norm_iff
+        (by fun_prop : Continuous fun t : ℝ ↦ Complex.exp (-s * t)).aestronglyMeasurable,
+      Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re]
+    exact integrableOn_exp_mul_Ioi_iff.trans neg_lt_zero
+
 /-- For `0 < s.re`, a constant function `t ↦ x` in a complex Banach space has Laplace transform
 `s⁻¹ • x`. -/
 theorem hasLaplace_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
     {s : ℂ} (hs : 0 < s.re) (x : E) :
     HasLaplace (fun _ : ℝ ↦ x) s (s⁻¹ • x) := by
   have hneg : (-s).re < 0 := by simpa using hs
-  refine ⟨(integrableOn_exp_mul_complex_Ioi hneg 0).smul_const x, ?_⟩
+  refine ⟨laplaceConvergent_const_iff.mpr (Or.inr hs), ?_⟩
   rw [integral_smul_const, integral_exp_mul_complex_Ioi hneg 0, Complex.ofReal_zero, mul_zero,
     Complex.exp_zero, neg_div_neg_eq, one_div]
 
 /-- For `0 < s.re`, the constant function `1 : ℝ → ℂ` has Laplace transform `1 / s`. -/
+@[to_fun hasLaplace_fun_one]
 theorem hasLaplace_one {s : ℂ} (hs : 0 < s.re) :
-    HasLaplace (fun _ : ℝ ↦ (1 : ℂ)) s (1 / s) := by
-  simpa [one_div] using hasLaplace_const hs (1 : ℂ)
-
-/-- A nonzero constant function is not Laplace-convergent at any `s` with `s.re ≤ 0`. -/
-theorem not_laplaceConvergent_const_of_re_le_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {x : E} (hx : x ≠ 0) {s : ℂ} (hs : s.re ≤ 0) :
-    ¬ LaplaceConvergent (fun _ : ℝ ↦ x) s := by
-  intro h
-  have hconst : IntegrableOn (fun _ : ℝ ↦ ‖x‖) (Ioi (0 : ℝ)) volume := by
-    refine h.integrable.norm.mono measurable_const.aestronglyMeasurable
-      (ae_restrict_of_forall_mem measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_)
-    simp only [Real.norm_eq_abs, abs_norm, norm_smul, Complex.norm_exp,
-      Complex.re_mul_ofReal, Complex.neg_re, abs_mul, abs_of_pos (Real.exp_pos _)]
-    exact le_mul_of_one_le_left (norm_nonneg x)
-      (Real.one_le_exp (mul_nonneg (neg_nonneg.mpr hs) ht.le))
-  rcases (integrableOn_const_iff (C := ‖x‖)).mp hconst with h0 | hfin
-  · exact hx (norm_eq_zero.mp (eNorm_eq_zero.mp h0))
-  · exact lt_irrefl ⊤ (Real.volume_Ioi ▸ hfin)
+    HasLaplace (1 : ℝ → ℂ) s (1 / s) := by
+  simpa [Pi.one_def, one_div] using hasLaplace_const hs (1 : ℂ)
 
 /-- A nonzero constant function has no Laplace transform at any `s` with `s.re ≤ 0`; in particular
 `¬ HasLaplace (fun _ ↦ (1 : ℂ)) 0 0`. -/
-theorem not_hasLaplace_const_of_re_le_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem not_hasLaplace_const_of_re_nonpos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedSpace ℂ E] {x : E} (hx : x ≠ 0) {s : ℂ} (hs : s.re ≤ 0) (z : E) :
     ¬ HasLaplace (fun _ : ℝ ↦ x) s z :=
-  fun h ↦ not_laplaceConvergent_const_of_re_le_zero hx hs h.laplaceConvergent
+  fun h ↦ ((laplaceConvergent_const_iff.mp h.laplaceConvergent).resolve_left hx).not_ge hs
 
 /-- For `w.re < s.re`, the exponential `t ↦ exp (w * t)` has Laplace transform `1 / (s - w)`. -/
 theorem hasLaplace_cexp {w s : ℂ} (hws : w.re < s.re) :
     HasLaplace (fun t : ℝ ↦ Complex.exp (w * t)) s (1 / (s - w)) := by
   have h := (hasLaplace_cexp_smul w (f := fun _ : ℝ ↦ (1 : ℂ))).mpr
-    (hasLaplace_one (by simpa using sub_pos.mpr hws))
+    (hasLaplace_fun_one (by simpa using sub_pos.mpr hws))
   simpa using h
 
 /-- For every `k : ℕ` and `0 < s.re`, the monomial `t ↦ (t : ℂ) ^ k` is Laplace-convergent at `s`.
 -/
 theorem laplaceConvergent_pow (k : ℕ) {s : ℂ} (hs : 0 < s.re) :
     LaplaceConvergent (fun t : ℝ ↦ (t : ℂ) ^ k) s := by
-  induction k generalizing s with
-  | zero => simpa using (hasLaplace_one hs).laplaceConvergent
-  | succ k ih =>
-    have hs₀ : 0 < ((s.re / 2 : ℝ) : ℂ).re := by simpa using half_pos hs
-    have hs₁ : ((s.re / 2 : ℝ) : ℂ).re < s.re := by simpa using half_lt_self hs
-    refine (((ih hs₀).hasDerivAt_laplace hs₁).1.neg).congr_ae (.of_forall fun t ↦ ?_)
-    simp [pow_succ']
+  have hk : 0 < ((k : ℂ) + 1).re := by
+    rw [Complex.add_re, Complex.natCast_re, Complex.one_re]; positivity
+  refine (Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi hk hs).congr_fun
+    (fun t _ ↦ ?_) measurableSet_Ioi
+  simp [add_sub_cancel_right, Complex.cpow_natCast, mul_comm]
 
 /-- For every `k : ℕ` and `0 < s.re`, the monomial `t ↦ (t : ℂ) ^ k` has Laplace transform
 `k! / s ^ (k + 1)`. -/
 theorem hasLaplace_pow (k : ℕ) {s : ℂ} (hs : 0 < s.re) :
     HasLaplace (fun t : ℝ ↦ (t : ℂ) ^ k) s ((k.factorial : ℂ) / s ^ (k + 1)) := by
-  induction k with
-  | zero => simpa using hasLaplace_one hs
-  | succ k ih =>
-    have hf : HasLaplace (fun t : ℝ ↦ (t : ℂ) ^ (k + 1)) s
-        (laplace (fun t : ℝ ↦ (t : ℂ) ^ (k + 1)) s) :=
-      (laplaceConvergent_pow (k + 1) hs).hasLaplace
-    have hf' : HasLaplace (fun t : ℝ ↦ ((k + 1 : ℕ) : ℂ) * (t : ℂ) ^ k) s
-        (((k + 1 : ℕ) : ℂ) * ((k.factorial : ℂ) / s ^ (k + 1))) :=
-      ih.const_smul ((k + 1 : ℕ) : ℂ)
-    have hderiv : ∀ t ∈ Ioi (0 : ℝ),
-        HasDerivAt (fun u : ℝ ↦ (u : ℂ) ^ (k + 1)) (((k + 1 : ℕ) : ℂ) * (t : ℂ) ^ k) t :=
-      fun t _ ↦ by
-        simpa only [Nat.add_sub_cancel] using (hasDerivAt_pow (k + 1) (t : ℂ)).comp_ofReal
-    have hstep := hasLaplace_deriv
-      (by fun_prop : Continuous fun u : ℝ ↦ (u : ℂ) ^ (k + 1)).continuousWithinAt
-      hderiv hf hf'.integrable
-    have heq := hstep.unique hf'
-    simp only [Complex.ofReal_zero, zero_pow (Nat.succ_ne_zero k), sub_zero, smul_eq_mul] at heq
-    have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
-    rw [hasLaplace_iff]
-    refine ⟨hf.laplaceConvergent, ?_⟩
-    rw [Nat.factorial_succ, Nat.cast_mul]
-    calc laplace (fun t : ℝ ↦ (t : ℂ) ^ (k + 1)) s
-        = (s * laplace (fun t : ℝ ↦ (t : ℂ) ^ (k + 1)) s) / s :=
-          (mul_div_cancel_left₀ _ hs₀).symm
-      _ = (((k + 1 : ℕ) : ℂ) * ((k.factorial : ℂ) / s ^ (k + 1))) / s := by rw [heq]
-      _ = ((k + 1 : ℕ) : ℂ) * (k.factorial : ℂ) / s ^ (k + 2) := by
-          rw [mul_div_assoc', div_div, ← pow_succ]
+  refine ⟨laplaceConvergent_pow k hs, ?_⟩
+  have hk : 0 < ((k : ℂ) + 1).re := by
+    rw [Complex.add_re, Complex.natCast_re, Complex.one_re]; positivity
+  have hval := Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hk hs
+  have hcongr : ∫ t in Ioi (0 : ℝ), Complex.exp (-s * t) • (t : ℂ) ^ k =
+      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ ((k : ℂ) + 1 - 1) * Complex.exp (-(s * t)) :=
+    setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ by
+      simp [add_sub_cancel_right, Complex.cpow_natCast, mul_comm]
+  rw [hcongr, hval, Complex.Gamma_nat_eq_factorial, Complex.cpow_neg,
+    show (k : ℂ) + 1 = ((k + 1 : ℕ) : ℂ) by push_cast; ring, Complex.cpow_natCast, div_eq_mul_inv]
 
 /-- For every `k : ℕ` and `w.re < s.re`, `t ↦ exp (w * t) * (t : ℂ) ^ k` has Laplace transform
 `k! / (s - w) ^ (k + 1)`. -/
