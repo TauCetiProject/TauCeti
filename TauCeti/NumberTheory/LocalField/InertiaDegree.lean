@@ -42,7 +42,9 @@ side, and conversely.
 * `TauCeti.inertiaDegree_eq_of_algEquiv`, `TauCeti.ramificationIndex_eq_of_algEquiv`,
   `TauCeti.wildRamificationExponent_eq_of_algEquiv`, and
   `TauCeti.tameRamificationIndex_eq_of_algEquiv`: residue degree, ramification index, wild
-  ramification exponent, and tame index are invariant under `K`-algebra equivalence.
+  ramification exponent, and tame index are invariant under `K`-algebra equivalence;
+  `TauCeti.inertiaDegree_eq_of_vle_iff` and `TauCeti.ramificationIndex_eq_of_vle_iff` extend this
+  invariance to ring equivalences over a valuation-preserving base isomorphism.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
@@ -53,7 +55,8 @@ side, and conversely.
 * `TauCeti.isTotallyRamified_iff_surjective_algebraMap_residueField`: total ramification is
   equivalent to surjectivity of the residue-field map.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
-* `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
+* `TauCeti.natCard_residueField` and `TauCeti.natCard_residueField_eq_of_vle_iff`:
+  `#𝓀[L] = #𝓀[K] ^ f(L/K)`, and valuation-preserving ring equivalences preserve `#𝓀[F]`.
 * `TauCeti.pow_natCard_residueField_pow_eq_self`: a root of `X^{q^g} − X` is a root of
   `X^{(q^f)^g} − X`, where `q = #𝓀[K]` and `f = f(L/K)`.
 
@@ -103,6 +106,36 @@ theorem inertiaDegree_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
   rw [inertiaDegree_def, inertiaDegree_def]
   exact (IsLocalRing.ResidueField.mapAlgEquiv' e.integerRingEquiv).toLinearEquiv.finrank_eq
 
+/-- A valuation-preserving ring isomorphism of valued fields identifies their residue-field
+cardinalities. -/
+theorem natCard_residueField_eq_of_vle_iff {F F' : Type*}
+    [Field F] [ValuativeRel F] [Field F'] [ValuativeRel F']
+    (e : F ≃+* F') (he : ∀ a b : F, e a ≤ᵥ e b ↔ a ≤ᵥ b) :
+    Nat.card 𝓀[F] = Nat.card 𝓀[F'] := by
+  have hmem (a : F) : a ∈ 𝒪[F] ↔ e a ∈ 𝒪[F'] := by
+    rw [Valuation.mem_integer_iff, Valuation.mem_integer_iff, ← map_one (valuation F),
+      ← map_one (valuation F'), ← (valuation F).vle_iff_le, ← (valuation F').vle_iff_le,
+      ← map_one e, he]
+  exact Nat.card_congr (ResidueField.mapEquiv (e.restrict 𝒪[F] 𝒪[F'] hmem)).toEquiv
+
+/-- **Transport of the residue degree along a valuation-preserving ring isomorphism.** Given ring
+equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap` such that `e` preserves
+`≤ᵥ`, the extensions `L/K` and `L'/K'` have the same residue degree. -/
+theorem inertiaDegree_eq_of_vle_iff {K' L' : Type*}
+    [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+    [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+    [Algebra K' L'] [ValuativeExtension K' L']
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) :
+    inertiaDegree K L = inertiaDegree K' L' := by
+  have := finite_of_valuativeExtension K L
+  have hvle (x y : L) : eL x ≤ᵥ eL y ↔ x ≤ᵥ y :=
+    eL.toRingHom.map_vle_map_iff_of_vle_iff e.toRingHom he heL x y
+  refine Nat.pow_right_injective (Finite.one_lt_card (α := 𝓀[K])) ?_
+  dsimp only
+  rw [← natCard_residueField K L, natCard_residueField_eq_of_vle_iff eL hvle,
+    natCard_residueField K' L', ← natCard_residueField_eq_of_vle_iff e he]
+
 /-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
 cardinalities of the residue fields of `K` and `L`. -/
 theorem pow_natCard_residueField_pow_eq_self {R : Type*} [Monoid R] {z : R} {g : ℕ}
@@ -147,6 +180,21 @@ theorem ramificationIndex_eq_of_algEquiv (M : Type*) [Field M] [ValuativeRel M]
   rw [ramificationIndex_mul_inertiaDegree K L, inertiaDegree_eq_of_algEquiv K L M e,
     ramificationIndex_mul_inertiaDegree K M]
   exact e.toLinearEquiv.finrank_eq
+
+/-- **Transport of the ramification index along a valuation-preserving ring isomorphism.** Given
+ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap` such that `e`
+preserves `≤ᵥ`, the extensions `L/K` and `L'/K'` have the same ramification index. -/
+theorem ramificationIndex_eq_of_vle_iff {K' L' : Type*}
+    [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+    [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+    [Algebra K' L'] [ValuativeExtension K' L']
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) :
+    ramificationIndex K L = ramificationIndex K' L' := by
+  apply Nat.eq_of_mul_eq_mul_right (inertiaDegree_pos (K := K) (L := L))
+  rw [ramificationIndex_mul_inertiaDegree K L, inertiaDegree_eq_of_vle_iff e he eL heL,
+    ramificationIndex_mul_inertiaDegree K' L']
+  exact Algebra.finrank_eq_of_equiv_equiv e eL (RingHom.ext fun c ↦ (heL c).symm)
 
 variable (K L) in
 /-- The wild ramification exponent is an invariant of the extension up to algebra equivalence. -/
