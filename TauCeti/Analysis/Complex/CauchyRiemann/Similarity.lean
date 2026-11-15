@@ -56,6 +56,9 @@ Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
   order.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn`: a solution that is not identically
   zero on a connected open set has isolated zeros.
+* `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_le`: the same for a scalar `C¹` function `f`
+  satisfying only the differential inequality `‖∂ₛf + i ∂ₜf‖ ≤ K ‖f‖` with `K` continuous, such as
+  a product of solutions of linear Cauchy–Riemann equations.
 
 ## References
 
@@ -399,5 +402,64 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn (hΩ : IsOpen Ω)
   have := FiniteDimensional.completeSpace ℂ V
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc hξ.continuousOn
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hne
+
+/-- **Isolated zeros from a differential inequality.** Let `f : ℂ → ℂ` be of class `C¹` on an open
+connected set `Ω`, and suppose that `‖∂ₛf + i ∂ₜf‖ ≤ K ‖f‖` at the points of `Ω` where `f` does
+not vanish, for a function `K` continuous on `Ω`. If `f` is not identically zero on `Ω`, its zeros
+in `Ω` are isolated.
+
+The inequality then holds at the zeros of `f` as well, so `f` solves `∂ₛf + i ∂ₜf + c f = 0` for
+the measurable coefficient `c = -(∂ₛf + i ∂ₜf) / f`, which is locally bounded by `|K|`. Products of
+solutions of linear Cauchy–Riemann equations satisfy such an inequality without solving a linear
+equation themselves. -/
+theorem setOf_ne_zero_mem_codiscreteWithin_of_norm_le {f : ℂ → ℂ} {K : ℂ → ℝ} (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω) (hf : ContDiffOn ℝ 1 f Ω) (hK : ContinuousOn K Ω)
+    (hfK : ∀ z ∈ Ω, f z ≠ 0 → ‖fderiv ℝ f z 1 + I • fderiv ℝ f z I‖ ≤ K z * ‖f z‖)
+    (hne : ∃ z ∈ Ω, f z ≠ 0) : {z | f z ≠ 0} ∈ codiscreteWithin Ω := by
+  set g : ℂ → ℂ := fun z ↦ fderiv ℝ f z 1 + I • fderiv ℝ f z I with hg
+  have hgc : ContinuousOn g Ω := by
+    have hd := hf.continuousOn_fderiv_of_isOpen hΩ le_rfl
+    exact (hd.clm_apply continuousOn_const).add ((hd.clm_apply continuousOn_const).const_smul I)
+  -- The inequality extends to the zeros of `f`: near a zero where it failed, `f` would vanish
+  -- identically, and then so would `g`.
+  have hall : ∀ z ∈ Ω, ‖g z‖ ≤ K z * ‖f z‖ := by
+    intro z hz
+    by_cases hfz : f z = 0
+    · by_contra hlt
+      have hφ : ContinuousAt (fun w ↦ ‖g w‖ - K w * ‖f w‖) z :=
+        ((hgc.continuousAt (hΩ.mem_nhds hz)).norm).sub ((hK.continuousAt (hΩ.mem_nhds hz)).mul
+          (hf.continuousOn.continuousAt (hΩ.mem_nhds hz)).norm)
+      have hzero : f =ᶠ[𝓝 z] fun _ ↦ 0 := by
+        filter_upwards [hφ.eventually (lt_mem_nhds (sub_pos.2 (not_le.1 hlt))), hΩ.mem_nhds hz]
+          with w hw hwΩ
+        by_contra hfw
+        linarith [hfK w hwΩ hfw]
+      simp [hg, hzero.fderiv_eq, hfz] at hlt
+    · exact hfK z hz hfz
+  -- So `f` solves a linear equation with a measurable, locally bounded coefficient.
+  set c : ℂ → ℂ := fun z ↦ -g z / f z with hc
+  have hcK : ∀ z ∈ Ω, ‖c z‖ ≤ |K z| := fun z hz ↦ by
+    by_cases hfz : f z = 0
+    · simp [hc, hfz]
+    · rw [hc, norm_div, norm_neg, div_le_iff₀ (norm_pos_iff.2 hfz)]
+      exact (hall z hz).trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))
+  have hcm : AEStronglyMeasurable c (volume.restrict Ω) :=
+    ((hgc.neg.aestronglyMeasurable hΩ.measurableSet).aemeasurable.div
+      (hf.continuousOn.aestronglyMeasurable hΩ.measurableSet).aemeasurable).aestronglyMeasurable
+  refine setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn
+    (C := fun z ↦ ContinuousLinearMap.mul ℝ ℂ (c z)) hΩ hΩc hf
+    ((ContinuousLinearMap.mul ℝ ℂ).continuous.comp_aestronglyMeasurable hcm)
+    (fun z hz ↦ ⟨|K z| + 1, ?_⟩) (fun z hz ↦ ?_) hne
+  · filter_upwards [(hK.continuousAt (hΩ.mem_nhds hz)).abs.eventually
+      (gt_mem_nhds (lt_add_one |K z|)), hΩ.mem_nhds hz] with w hw hwΩ
+    linarith [ContinuousLinearMap.opNorm_mul_apply_le ℝ ℂ (c w), hcK w hwΩ]
+  · have hgz : fderiv ℝ f z 1 + I • fderiv ℝ f z I = g z := rfl
+    rw [ContinuousLinearMap.mul_apply', hgz]
+    by_cases hfz : f z = 0
+    · have h0 : g z = 0 := by simpa [hfz] using hall z hz
+      simp [h0, hfz]
+    · rw [hc]
+      field_simp
+      ring
 
 end TauCeti
