@@ -35,7 +35,7 @@ continuous extension of `f - g` is continuous up to that circle. On a circle of 
   on `[0, 2π]`.
 * `TauCeti.tendsto_zpow_smul_circleLaurentCoeff`: `R ^ n • circleLaurentCoeff f c R n → 0` as
   `n → ±∞`, for every function `f` and radius `R`.
-* `TauCeti.tendsto_circleLaurentCoeff_sub`: Darboux's comparison theorem (DLMF 2.10.29).
+* `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_sub`: Darboux's comparison theorem (DLMF 2.10.29).
 
 ## References
 
@@ -91,7 +91,7 @@ theorem tendsto_zpow_smul_circleLaurentCoeff (f : ℂ → E) (c : ℂ) (R : ℝ)
 `0 < |z - c| < r`, and let `f - g` agree there with a function `h` continuous on the closed
 punctured disc `0 < |z - c| ≤ r`. Then the Laurent coefficients, extracted on any circle of radius
 `ρ ∈ (0, r)`, satisfy `f_n = g_n + o(r ^ (-n))` as `n → ±∞`. -/
-theorem tendsto_circleLaurentCoeff_sub {f g h : ℂ → E} {c : ℂ} {r ρ : ℝ} (hρ : 0 < ρ)
+theorem tendsto_zpow_smul_circleLaurentCoeff_sub {f g h : ℂ → E} {c : ℂ} {r ρ : ℝ} (hρ : 0 < ρ)
     (hρr : ρ < r) (hf : DifferentiableOn ℂ f (ball c r \ {c}))
     (hg : DifferentiableOn ℂ g (ball c r \ {c})) (hh : ContinuousOn h (closedBall c r \ {c}))
     (hfgh : EqOn (f - g) h (ball c r \ {c})) :
@@ -137,7 +137,7 @@ example {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     exact (ha.trans_lt hz.1).false
   have hdiff : ∀ a : ℂ, 1 ≤ ‖a‖ → DifferentiableOn ℂ (fun z : ℂ ↦ (a - z)⁻¹) (ball 0 1 \ {0}) :=
     fun a ha ↦ ((differentiableOn_const a).sub differentiableOn_id).inv (hball a ha)
-  refine ⟨fun n ↦ ?_, tendsto_circleLaurentCoeff_sub (h := fun z ↦ (2 - z)⁻¹) hρ hρ1
+  refine ⟨fun n ↦ ?_, tendsto_zpow_smul_circleLaurentCoeff_sub (h := fun z ↦ (2 - z)⁻¹) hρ hρ1
     ((hdiff 1 (by simp)).add (hdiff 2 (by simp))) (hdiff 1 (by simp)) ?_ fun z _ ↦ ?_⟩
   · have hsph : ∀ a : ℂ, 1 ≤ ‖a‖ → CircleIntegrable (fun z : ℂ ↦ (a - z)⁻¹) 0 ρ := fun a ha ↦
       ((hdiff a ha).continuousOn.mono fun z hz ↦
