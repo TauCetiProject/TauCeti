@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
+public import TauCeti.RingTheory.Dagger.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.AnalyticSubst
 
 /-!
@@ -42,19 +42,29 @@ substitution is defined the two substitutions agree.
 
 * `TauCeti.Dagger.coe_restrictedAnalyticSubst_mem_washnitzerAlgebra`: analytic substitution of
   overconvergent series of unit Gauss norm at most `1` preserves overconvergence.
-* `TauCeti.Dagger.washnitzerAlgebra.toTate_analyticSubst`: compatibility with analytic
-  substitution of the Tate algebras.
+* `TauCeti.Dagger.washnitzerAlgebra.toTate_analyticSubst`,
+  `TauCeti.Dagger.washnitzerAlgebra.analyticSubst_ofRestricted`, and
+  `TauCeti.Dagger.washnitzerAlgebra.exists_ofRestricted_restrictedAnalyticSubst`: compatibility
+  with Tate-algebra and polyradius substitutions and explicit common-radius factorization.
 * `TauCeti.Dagger.washnitzerAlgebra.coeff_analyticSubst`: the coefficient formula.
 * `TauCeti.Dagger.washnitzerAlgebra.analyticSubst_X` and
   `TauCeti.Dagger.washnitzerAlgebra.analyticSubst_ofMvPolynomial`: the values on variables and on
   polynomials.
+* `TauCeti.Dagger.washnitzerAlgebra.norm_analyticSubst_le`,
+  `TauCeti.Dagger.washnitzerAlgebra.continuous_analyticSubst`, and
+  `TauCeti.Dagger.washnitzerAlgebra.eq_analyticSubst`: contractivity, continuity, and uniqueness
+  among continuous algebra homomorphisms.
+* `TauCeti.Dagger.washnitzerAlgebra.map_analyticSubst` and
+  `TauCeti.Dagger.washnitzerAlgebra.eval₂_analyticSubst`: compatibility with bounded coefficient
+  maps and evaluation on the closed unit polydisc.
 * `TauCeti.Dagger.washnitzerAlgebra.analyticSubst_self` and
   `TauCeti.Dagger.washnitzerAlgebra.analyticSubst_comp`: the identity and composition laws.
 * `TauCeti.Dagger.washnitzerAlgebra.coe_analyticSubst_eq_subst`: agreement with Mathlib's formal
   substitution whenever the latter is defined.
-* `TauCeti.Dagger.washnitzerAlgebra.toTate_translate` and
-  `TauCeti.Dagger.washnitzerAlgebra.norm_toTate_translate`: translation is the restriction of
-  translation of the Tate algebra, and preserves the unit Gauss norm.
+* `TauCeti.Dagger.washnitzerAlgebra.toTate_translate`,
+  `TauCeti.Dagger.washnitzerAlgebra.translate_ofRestricted`, and
+  `TauCeti.Dagger.washnitzerAlgebra.norm_translate`: translation restricts Tate-algebra and
+  polyradius translations and preserves the unit Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.translate_zero` and
   `TauCeti.Dagger.washnitzerAlgebra.translate_comp`: translations compose additively.
 
@@ -170,8 +180,7 @@ theorem coe_analyticSubst_eq_subst (hsub : HasSubst fun i ↦ (g i : MvPowerSeri
 
 /-- **Substituting the variables themselves is the identity.** -/
 theorem analyticSubst_self [NormOneClass R] :
-    analyticSubst (X (Fin k) R) (fun i ↦ by
-      rw [toTate_X, norm_X]) = AlgHom.id R _ :=
+    analyticSubst (X (Fin k) R) (fun _ ↦ by simp) = AlgHom.id R _ :=
   AlgHom.ext fun f ↦ toTate_injective <| by
     rw [toTate_analyticSubst, AlgHom.id_apply]
     simp only [toTate_X]
@@ -188,6 +197,98 @@ theorem analyticSubst_comp (g : Fin k → washnitzerAlgebra (Fin m) R)
   AlgHom.ext fun f ↦ toTate_injective <| by
     simp only [AlgHom.comp_apply, toTate_analyticSubst,
       TauCeti.MvPowerSeries.restrictedAnalyticSubst_restrictedAnalyticSubst]
+
+/-- **Analytic substitution is contractive** for the unit Gauss norm on `W`. -/
+theorem norm_analyticSubst_le (f : washnitzerAlgebra (Fin k) R) :
+    ‖analyticSubst g hg f‖ ≤ ‖f‖ :=
+  norm_toTate_analyticSubst_le g hg f
+
+/-- Analytic substitution is continuous for the unit Gauss norm topology on `W`. -/
+@[continuity]
+theorem continuous_analyticSubst : Continuous (analyticSubst g hg) :=
+  AddMonoidHomClass.continuous_of_bound (analyticSubst g hg) 1 fun f ↦ by
+    simpa using norm_analyticSubst_le g hg f
+
+/-- **Uniqueness of analytic substitution on `W`.** A continuous `R`-algebra homomorphism
+`R⟨X⟩† →ₐ[R] R⟨Y⟩†` sending each `Xᵢ` to `gᵢ` equals `analyticSubst g hg`. -/
+theorem eq_analyticSubst (ψ : washnitzerAlgebra (Fin k) R →ₐ[R] washnitzerAlgebra τ R)
+    (hψ : Continuous ψ) (hX : ∀ i, ψ (X (Fin k) R i) = g i) :
+    ψ = analyticSubst g hg := by
+  have hp : ψ.comp (ofMvPolynomial (Fin k) R) =
+      (analyticSubst g hg).comp (ofMvPolynomial (Fin k) R) :=
+    MvPolynomial.algHom_ext fun i ↦ by simp [hX]
+  exact DFunLike.coe_injective (denseRange_ofMvPolynomial.equalizer hψ
+    (continuous_analyticSubst g hg) (funext (DFunLike.congr_fun hp)))
+
+/-- Analytic substitution on `W` agrees via `ofRestricted` with `restrictedAnalyticSubst` between
+any finite polyradii `r, s > 1` on which `‖g₀ i‖_s ≤ r i` and `‖g₀ i‖₁ ≤ 1`. -/
+theorem analyticSubst_ofRestricted {r : Fin k → ℝ} {s : τ → ℝ} [∀ j, Fact (0 < s j)]
+    {ρr ρs : ℝ} (hρr : 1 < ρr) (hr : ∀ i, ρr ≤ r i) (hρs : 1 < ρs) (hs : ∀ j, ρs ≤ s j)
+    (g₀ : Fin k → IsRestricted.subring (R := R) s) (hg₀ : ∀ i, ‖g₀ i‖ ≤ r i)
+    (hg₁ : ∀ i, ‖toTate τ R (ofRestricted hρs hs (g₀ i))‖ ≤ 1)
+    (f : IsRestricted.subring (R := R) r) :
+    analyticSubst (fun i ↦ ofRestricted hρs hs (g₀ i)) hg₁ (ofRestricted hρr hr f) =
+      ofRestricted hρs hs (restrictedAnalyticSubst g₀ hg₀ f) := by
+  refine Subtype.ext <| MvPowerSeries.ext fun e ↦ ?_
+  rw [coe_ofRestricted, coeff_analyticSubst, coeff_restrictedAnalyticSubst]
+  simp
+
+/-- **Common-radius factorization of analytic substitution.** Given `f ∈ R⟨X₁, …, X_k⟩†` and
+`g₁, …, g_k ∈ R⟨Y⟩†` with `‖gᵢ‖₁ ≤ 1`, there exist radii `ρf > 1` and `ρ > 1` such that `f` is
+restricted at `ρf`, every `gᵢ` is restricted at `ρ` with `ρ`-Gauss norm at most `ρf`, and
+`analyticSubst g hg f` comes via `ofRestricted` from `restrictedAnalyticSubst` at those radii. -/
+theorem exists_ofRestricted_restrictedAnalyticSubst (f : washnitzerAlgebra (Fin k) R) :
+    ∃ (ρf ρ : ℝ) (hρf : 1 < ρf) (hρ : 1 < ρ)
+      (hf : IsRestricted (fun _ : Fin k ↦ ρf) (f : MvPowerSeries (Fin k) R))
+      (hgρ : ∀ i, IsRestricted (fun _ : τ ↦ ρ) (g i : MvPowerSeries τ R)),
+      letI : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
+      ∃ hg' : ∀ i,
+          ‖(⟨(g i : MvPowerSeries τ R), hgρ i⟩ : IsRestricted.subring (R := R) (fun _ ↦ ρ))‖ ≤ ρf,
+        analyticSubst g hg f =
+          ofRestricted hρ (fun _ ↦ le_rfl)
+            (restrictedAnalyticSubst (fun i ↦ ⟨(g i : MvPowerSeries τ R), hgρ i⟩) hg'
+              ⟨(f : MvPowerSeries (Fin k) R), hf⟩) := by
+  obtain ⟨ρf, hρf, hf⟩ := mem_washnitzerAlgebra.mp f.2
+  have hcoeff (i : Fin k) (t : τ →₀ ℕ) : ‖coeff t (g i : MvPowerSeries τ R)‖ < ρf := by
+    simpa using ((norm_coeff_le_norm (toTate τ R (g i)) t).trans (hg i)).trans_lt hρf
+  obtain ⟨ρ, hρg, hρ⟩ := ((eventually_all.2 fun i ↦
+    eventually_isRestricted_forall_norm_coeff_mul_pow_lt (g i).2 (hcoeff i)).and
+      self_mem_nhdsWithin).exists
+  have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
+  have hg' (i : Fin k) :
+      ‖(⟨(g i : MvPowerSeries τ R), (hρg i).1⟩ :
+          IsRestricted.subring (R := R) (fun _ : τ ↦ ρ))‖ ≤ ρf :=
+    MvPowerSeries.norm_le_iff.2 fun t ↦ by
+      simpa [Finsupp.prod_pow_eq_pow_degree] using ((hρg i).2 t).le
+  refine ⟨ρf, ρ, hρf, hρ, hf, fun i ↦ (hρg i).1, hg', ?_⟩
+  refine Subtype.ext <| MvPowerSeries.ext fun e ↦ ?_
+  rw [coe_ofRestricted, coeff_analyticSubst, coeff_restrictedAnalyticSubst]
+
+/-- **Bounded coefficient maps commute with analytic substitution on `W`.** -/
+theorem map_analyticSubst {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    [CompleteSpace S] (φ : R →+* S) {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
+    (hφg : ∀ i, ‖toTate τ S (map φ hφ (g i))‖ ≤ 1) (f : washnitzerAlgebra (Fin k) R) :
+    map φ hφ (analyticSubst g hg f) =
+      analyticSubst (fun i ↦ map φ hφ (g i)) hφg (map φ hφ f) := by
+  apply toTate_injective
+  simpa only [toTate_map, toTate_analyticSubst] using
+    TauCeti.MvPowerSeries.restrictedMap_restrictedAnalyticSubst
+      (fun i ↦ toTate τ R (g i)) hg φ hφ (by simpa only [toTate_map] using hφg)
+      (toTate (Fin k) R f)
+
+/-- **Evaluation of an analytic substitution**: evaluating `f(g)` at `b` in the closed unit
+polydisc of `S` agrees with evaluating `f` at the values `gᵢ(b)`. -/
+theorem eval₂_analyticSubst {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    [CompleteSpace S] (φ : R →+* S) (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    (b : Fin m → S) (hb : ∀ j, ‖b j‖ ≤ 1)
+    (g' : Fin k → washnitzerAlgebra (Fin m) R)
+    (hg' : ∀ i, ‖toTate (Fin m) R (g' i)‖ ≤ 1) (f : washnitzerAlgebra (Fin k) R) :
+    eval₂ φ b hφ hb (analyticSubst g' hg' f) =
+      eval₂ φ (fun i ↦ eval₂ φ b hφ hb (g' i)) hφ
+        (fun i ↦ (norm_eval₂_le φ b hφ hb (g' i)).trans (hg' i)) f := by
+  simpa only [eval₂_eq_restrictedEval₂_toTate, toTate_analyticSubst] using
+    TauCeti.MvPowerSeries.restrictedEval₂_restrictedAnalyticSubst φ hφ b hb
+      (fun i ↦ toTate (Fin m) R (g' i)) hg' (toTate (Fin k) R f)
 
 end AnalyticSubst
 
@@ -238,6 +339,21 @@ theorem toTate_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
   simp only [translate_def, toTate_analyticSubst, toTate_X_add_algebraMap,
     TauCeti.MvPowerSeries.restrictedTranslate_def]
 
+/-- Translation on `W` agrees via `ofRestricted` with `restrictedTranslate` on any polyradius
+`r` bounded below by some `ρ > 1`. -/
+@[simp]
+theorem translate_ofRestricted {r : Fin k → ℝ} [∀ i, Fact (0 < r i)] {ρ : ℝ}
+    (hρ : 1 < ρ) (hr : ∀ i, ρ ≤ r i) (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
+    (f : IsRestricted.subring (R := R) r) :
+    translate a ha (ofRestricted hρ hr f) =
+      ofRestricted hρ hr
+        (TauCeti.MvPowerSeries.restrictedTranslate a
+          (fun i ↦ (ha i).trans (hρ.le.trans (hr i))) f) := by
+  refine Subtype.ext <| MvPowerSeries.ext fun e ↦ ?_
+  rw [coe_ofRestricted, translate_def, coeff_analyticSubst,
+    TauCeti.MvPowerSeries.restrictedTranslate_def, coeff_restrictedAnalyticSubst]
+  simp [_root_.MvPowerSeries.algebraMap_apply]
+
 /-- Translation by `0` is the identity. -/
 @[simp]
 theorem translate_zero : translate (k := k) (R := R) 0 (fun _ ↦ by simp) = AlgHom.id R _ :=
@@ -280,6 +396,42 @@ theorem norm_toTate_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
     (f : washnitzerAlgebra (Fin k) R) :
     ‖toTate (Fin k) R (translate a ha f)‖ = ‖toTate (Fin k) R f‖ := by
   rw [toTate_translate, TauCeti.MvPowerSeries.norm_restrictedTranslate]
+
+/-- Translation preserves the Gauss norm on `W`. -/
+@[simp]
+theorem norm_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
+    (f : washnitzerAlgebra (Fin k) R) :
+    ‖translate a ha f‖ = ‖f‖ :=
+  norm_toTate_translate a ha f
+
+/-- Translation is an isometry for the Gauss norm on `W`. -/
+theorem isometry_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1) :
+    Isometry (translate a ha) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_translate a ha)
+
+/-- Translation is continuous for the Gauss norm topology on `W`. -/
+@[continuity]
+theorem continuous_translate (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1) :
+    Continuous (translate a ha) :=
+  (isometry_translate a ha).continuous
+
+/-- Evaluating a translated series `f(X + a)` at `b` in the closed unit polydisc equals evaluating
+`f` at `b + φ(a)`. -/
+theorem eval₂_translate {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
+    [CompleteSpace S] (φ : R →+* S) (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    (b : Fin k → S) (hb : ∀ i, ‖b i‖ ≤ 1) (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ 1)
+    (f : washnitzerAlgebra (Fin k) R) :
+    eval₂ φ b hφ hb (translate a ha f) =
+      eval₂ φ (fun i ↦ b i + φ (a i)) hφ
+        (fun i ↦ (IsUltrametricDist.norm_add_le_max _ _).trans
+          (max_le (hb i) ((hφ (a i)).trans (ha i)))) f := by
+  have hval : (fun i ↦ eval₂ φ b hφ hb (X (Fin k) R i + algebraMap R _ (a i))) =
+      fun i ↦ b i + φ (a i) := funext fun i ↦ by simp
+  have h := eval₂_analyticSubst φ hφ b hb
+    (fun i ↦ X (Fin k) R i + algebraMap R _ (a i))
+    (fun i ↦ norm_toTate_X_add_algebraMap_le (ha i) i) f
+  rw [← translate_def a ha] at h
+  rw [h, eval₂_apply, eval₂_apply, hval]
 
 end Translate
 
