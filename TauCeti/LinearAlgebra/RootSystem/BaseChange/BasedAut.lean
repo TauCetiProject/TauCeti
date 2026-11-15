@@ -15,45 +15,34 @@ import TauCeti.LinearAlgebra.RootSystem.Reduced
 /-!
 # Bases, based automorphisms, central directions, and dual isogeny lattices
 
-This file connects the based automorphism theory of `TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut`
-with scalar extension (`RootPairing.baseChange`) and restriction to dual isogeny lattices
-(`RootPairing.IsDualLatticePair.restrict`):
+This file connects `TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut` with scalar extension
+(`RootPairing.baseChange`) and dual-lattice restriction (`RootPairing.IsDualLatticePair.restrict`):
 
-1. **Scalar extension and lattice restriction of bases.** Extending a base `b : P.Base` along a
-   faithful flat algebra `S` gives `b.baseChange S : (P.baseChange S).Base` with the same simple
-   indices and Cartan matrix. Conversely, restricting a base of `P` to a dual `R`-lattice pair
-   `(X₀, Y₀)` gives `hXY.restrictBase b : hXY.restrict.Base`, identifying the based automorphisms
-   of `hXY.restrict` with `↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)` when `X₀` and `Y₀` are base-change
-   lattices (`IsDualLatticePair.basedAutMulEquiv`). On the unit-tensor lattices `1 ⊗ X` and
-   `1 ⊗ Y`, extending and restricting recovers `b` along `unitTmulRootPairingEquiv`.
-2. **Restricted semidirect product for dual isogeny lattices.** Because `P.weylGroup` stabilizes
-   every dual lattice pair (`IsDualLatticePair.weylGroup_le_latticeAut`), the ambient semidirect
-   decomposition `W ⋊ b.basedAut ≃* P.Aut` restricts to
+1. **Scalar extension and lattice restriction of bases.** Extending `b : P.Base` along a faithful
+   flat algebra `S` gives `b.baseChange S : (P.baseChange S).Base` with the same support and Cartan
+   matrix. Restricting `b : P.Base` to a dual `R`-lattice pair `(X₀, Y₀)` gives
+   `hXY.restrictBase b : hXY.restrict.Base`, identifying `(hXY.restrictBase b).basedAut` with
+   `↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)` (`IsDualLatticePair.basedAutMulEquiv`).
+2. **Restricted semidirect product for dual isogeny lattices.** Since `P.weylGroup` stabilizes every
+   dual lattice pair, `W ⋊ b.basedAut ≃* P.Aut` restricts to
    `P.weylGroup ⋊ ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀`
-   (`Base.latticeAutSemidirectProductMulEquiv`). For a spanning ambient pairing, Cartan-matrix
-   symmetries lift to `↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)` precisely when their unique ambient
-   extension preserves `(X₀, Y₀)`.
-3. **Common coroot kernel and the cylinder chamber.** For a balanced root pairing `P`, the root
-   span `P.rootSpan R` and the common coroot kernel `⨅ i, LinearMap.ker (P.coroot' i)` are
-   complementary (`isCompl_rootSpan_iInf_ker_coroot'`), yielding the projection `P.rootSpanProj`.
-   Over an ordered field `K`, the preimage under `P.rootSpanProj` of the open dominant chamber of
-   `P.restrictScalars' K` in `P.rootSpan K` is the **open cylinder chamber**
-   `b.openCylinderChamber`; for a finite reduced crystallographic pairing `D` with finite free
-   coweights, its scalar-extended cylinder chamber in `K ⊗[R] X` is preserved by
-   `D.autBaseChangeHom K g` if and only if `g ∈ b.basedAut`
+   (`Base.latticeAutSemidirectProductMulEquiv`), with a Cartan-matrix lift criterion for spanning
+   ambient pairings (`Base.exists_mem_basedAut_inf_latticeAut_iff`).
+3. **Common coroot kernel and the cylinder chamber.** For balanced `P`, `P.rootSpan R` and
+   `⨅ i, LinearMap.ker (P.coroot' i)` are complementary (`isCompl_rootSpan_iInf_ker_coroot'`),
+   giving `P.rootSpanProj` and the cylinder chambers `b.cylinderChamber` and
+   `b.openCylinderChamber`, characterizing `b.basedAut` on full root data
    (`Base.mem_basedAut_iff_smul_openCylinderChamber`).
-4. **Central automorphisms and root-free data.** Every base stabilizer contains the kernel
-   `(Equiv.indexHom P).ker` of compatible central automorphisms (`Equiv.ofFixRootCoroot`). When
-   `ι` is empty, `P.weylGroup = ⊥`, `b.basedAut = ⊤`, and `P.Aut ≃* (M ≃ₗ[R] M)`
-   (`autMulEquivOfIsEmpty`); on the rank-2 root-free integral datum
-   `RootPairing.empty ℤ (Fin 2 → ℤ)` the unipotent shear makes `basedAut` infinite
-   (`infinite_basedAut_empty_fin_two`).
+4. **Central automorphisms and root-free data.** Every base stabilizer contains
+   `(Equiv.indexHom P).ker` (`Equiv.ofFixRootCoroot`). When `ι` is empty, `P.weylGroup = ⊥`,
+   `b.basedAut = ⊤`, and `P.Aut ≃* (M ≃ₗ[R] M)` (`autMulEquivOfIsEmpty`), making `basedAut`
+   infinite on `RootPairing.empty ℤ (Fin 2 → ℤ)` (`infinite_basedAut_empty_fin_two`).
 
 ## Main definitions
 
 * `RootPairing.Base.baseChange`: scalar extension of a base along a faithful flat algebra.
 * `RootPairing.IsDualLatticePair.restrictBase` and `RootPairing.IsDualLatticePair.basedAutMulEquiv`:
-  restriction of a base to dual lattices and the isomorphism
+  restriction of a base to dual lattices and
   `(hXY.restrictBase b).basedAut ≃* ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)`.
 * `RootPairing.Base.latticeAutSemidirectProductMulEquiv`: the restricted semidirect product
   `P.weylGroup ⋊ ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀`.
@@ -106,35 +95,23 @@ the additive monoid closures of `1 ⊗ αᵢ` and `1 ⊗ αᵢ∨` are the image
 noncomputable def baseChange : (P.baseChange S).Base where
   support := b.support
   linearIndepOn_root := by
-    have h : (fun x : (b.support : Set ι) ↦ (P.baseChange S).root x) =
-        fun x : (b.support : Set ι) ↦ (1 : S) ⊗ₜ[R] P.root x :=
-      funext fun x ↦ P.baseChange_root S x
-    rw [LinearIndepOn, h]
-    exact Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_root
+    simpa only [LinearIndepOn, Function.comp_def, P.baseChange_root S] using
+      Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_root
   linearIndepOn_coroot := by
-    have h : (fun x : (b.support : Set ι) ↦ (P.baseChange S).coroot x) =
-        fun x : (b.support : Set ι) ↦ (1 : S) ⊗ₜ[R] P.coroot x :=
-      funext fun x ↦ P.baseChange_coroot S x
-    rw [LinearIndepOn, h]
-    exact Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_coroot
+    simpa only [LinearIndepOn, Function.comp_def, P.baseChange_coroot S] using
+      Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_coroot
   root_mem_or_neg_mem i := by
-    let f := (TensorProduct.mk R S M 1).toAddMonoidHom
-    have himg : (P.baseChange S).root '' (b.support : Set ι) = f '' (P.root '' b.support) := by
-      rw [← image_comp]
-      exact congrArg (· '' _) (funext (P.baseChange_root S))
+    have himg : (P.baseChange S).root '' (b.support : Set ι) =
+        (TensorProduct.mk R S M 1).toAddMonoidHom '' (P.root '' b.support) := by
+      rw [← image_comp]; exact congrArg (· '' _) (funext (P.baseChange_root S))
     rw [himg, ← AddMonoidHom.map_mclosure, P.baseChange_root S i]
-    rcases b.root_mem_or_neg_mem i with h | h
-    · exact .inl ⟨P.root i, h, rfl⟩
-    · exact .inr ⟨-P.root i, h, map_neg f (P.root i)⟩
+    exact (b.root_mem_or_neg_mem i).imp (fun h ↦ ⟨_, h, rfl⟩) fun h ↦ ⟨_, h, tmul_neg _ _⟩
   coroot_mem_or_neg_mem i := by
-    let f := (TensorProduct.mk R S N 1).toAddMonoidHom
-    have himg : (P.baseChange S).coroot '' (b.support : Set ι) = f '' (P.coroot '' b.support) := by
-      rw [← image_comp]
-      exact congrArg (· '' _) (funext (P.baseChange_coroot S))
+    have himg : (P.baseChange S).coroot '' (b.support : Set ι) =
+        (TensorProduct.mk R S N 1).toAddMonoidHom '' (P.coroot '' b.support) := by
+      rw [← image_comp]; exact congrArg (· '' _) (funext (P.baseChange_coroot S))
     rw [himg, ← AddMonoidHom.map_mclosure, P.baseChange_coroot S i]
-    rcases b.coroot_mem_or_neg_mem i with h | h
-    · exact .inl ⟨P.coroot i, h, rfl⟩
-    · exact .inr ⟨-P.coroot i, h, map_neg f (P.coroot i)⟩
+    exact (b.coroot_mem_or_neg_mem i).imp (fun h ↦ ⟨_, h, rfl⟩) fun h ↦ ⟨_, h, tmul_neg _ _⟩
 
 /-- Scalar extension of a base leaves `support` unchanged. -/
 @[simp]
@@ -146,8 +123,7 @@ theorem support_baseChange : (b.baseChange S).support = b.support :=
 @[simp]
 theorem map_autBaseChangeHom (g : P.Aut) :
     (b.baseChange S).map (P.autBaseChangeHom S g) = (b.map g).baseChange S := by
-  classical
-  exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
+  classical exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
 
 /-- Scalar extension preserves and reflects membership in `basedAut`. -/
 theorem autBaseChangeHom_mem_basedAut_iff {g : P.Aut} :
@@ -194,12 +170,10 @@ on `s`. -/
 theorem linearIndepOn_of_comp_eq {s : Set ι} {v₀ : ι → M₀} {v : ι → M}
     (hv : LinearIndepOn S v s) (f : M₀ →ₗ[R] M) (hcomp_eq : ∀ i, f (v₀ i) = v i) :
     LinearIndepOn R v₀ s := by
-  have hcomp : (f ∘ v₀ ∘ ((↑) : s → ι)) = (v ∘ ((↑) : s → ι)) := funext fun x ↦ hcomp_eq x
   have hli : LinearIndependent R (f ∘ v₀ ∘ ((↑) : s → ι)) := by
-    rw [hcomp]
+    rw [show (f ∘ v₀ ∘ ((↑) : s → ι)) = v ∘ ((↑) : s → ι) from funext fun x ↦ hcomp_eq x]
     exact hv.linearIndependent.restrict_scalars <| by
-      simp_rw [← Algebra.algebraMap_eq_smul_one]
-      exact FaithfulSMul.algebraMap_injective R S
+      simpa only [← Algebra.algebraMap_eq_smul_one] using FaithfulSMul.algebraMap_injective R S
   exact hli.of_comp
 
 /-- If `f : M₀ →+ M` is an injective additive homomorphism sending `v₀` to `v`, then
@@ -209,19 +183,11 @@ theorem mem_closure_or_neg_mem_of_injective {s : Set ι} {v₀ : ι → M₀} {v
     (hv : v i ∈ AddSubmonoid.closure (v '' s) ∨ -v i ∈ AddSubmonoid.closure (v '' s))
     (f : M₀ →+ M) (hf : Injective f) (hcomp_eq : ∀ j, f (v₀ j) = v j) :
     v₀ i ∈ AddSubmonoid.closure (v₀ '' s) ∨ -v₀ i ∈ AddSubmonoid.closure (v₀ '' s) := by
-  have himg : f '' (v₀ '' s) = v '' s := by
-    rw [← image_comp]
-    exact congrArg (· '' s) (funext hcomp_eq)
-  rcases hv with h | h
-  · rw [← himg, ← AddMonoidHom.map_mclosure] at h
-    obtain ⟨z, hz, hzeq⟩ := h
-    exact .inl (hf (hzeq.trans (hcomp_eq i).symm) ▸ hz)
-  · rw [← himg, ← AddMonoidHom.map_mclosure] at h
-    obtain ⟨z, hz, hzeq⟩ := h
-    have hzeq' : f z = f (-v₀ i) := by
-      rw [map_neg, hcomp_eq i]
-      exact hzeq
-    exact .inr (hf hzeq' ▸ hz)
+  have himg : v '' s = f '' (v₀ '' s) := by
+    rw [← image_comp]; exact congrArg (· '' s) (funext hcomp_eq).symm
+  rw [himg, ← AddMonoidHom.map_mclosure] at hv
+  exact hv.imp (fun ⟨z, hz, hzeq⟩ ↦ hf (hzeq.trans (hcomp_eq i).symm) ▸ hz)
+    fun ⟨z, hz, hzeq⟩ ↦ hf (hzeq.trans <| (hcomp_eq i).symm ▸ (map_neg f _).symm) ▸ hz
 
 /-- **Pullback of a base `b : P.Base`** along injective `R`-linear maps `fM : M₀ →ₗ[R] M` and
 `fN : N₀ →ₗ[R] N` over a faithful `R`-algebra `S` compatible with roots and coroots. -/
@@ -274,8 +240,7 @@ theorem support_restrictBase (b : P.Base) : (hXY.restrictBase b).support = b.sup
 @[simp]
 theorem map_restrictAutHom (b : P.Base) (g : P.latticeAut X₀ Y₀) :
     (hXY.restrictBase b).map (hXY.restrictAutHom g) = hXY.restrictBase (b.map (g : P.Aut)) := by
-  classical
-  exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
+  classical exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
 
 /-- A restricted automorphism fixes `hXY.restrictBase b` if and only if the ambient automorphism
 fixes `b`. -/
@@ -314,12 +279,10 @@ noncomputable def basedAutMulEquiv (b : P.Base) :
   invFun g := ⟨hXY.restrictAutHom ⟨g.1, g.2.2⟩,
     (hXY.restrictAutHom_mem_basedAut_iff b).mpr g.2.1⟩
   left_inv u := Subtype.ext (hXY.restrictAutHom_extendAutHom hX hY u)
-  right_inv g := Subtype.ext <| by
-    have h := hXY.extendAutHom_restrictAutHom hX hY ⟨g.1, g.2.2⟩
-    exact congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut)) h
-  map_mul' u v := Subtype.ext <| by
-    have h := map_mul (hXY.extendAutHom hX hY) (u : hXY.restrict.Aut) (v : hXY.restrict.Aut)
-    exact congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut)) h
+  right_inv g := Subtype.ext <| congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
+    (hXY.extendAutHom_restrictAutHom hX hY ⟨g.1, g.2.2⟩)
+  map_mul' u v := Subtype.ext <| congrArg (fun x : P.latticeAut X₀ Y₀ ↦ (x : P.Aut))
+    (map_mul (hXY.extendAutHom hX hY) u.1 v.1)
 
 /-- Coercing `hXY.basedAutMulEquiv hX hY b u` to `P.Aut` applies `hXY.extendAutHom hX hY`. -/
 @[simp]
@@ -348,8 +311,7 @@ theorem restrictBase_baseChange {X Y : Type*} [AddCommGroup X] [Module R X]
     [Free R Y] [Module.Finite R Y] (b : D.Base) :
     (D.isDualLatticePair_range_mk_one S).restrictBase (b.baseChange S) =
       b.map (D.unitTmulRootPairingEquiv S) := by
-  classical
-  exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
+  classical exact Base.ext_iff.mpr (by simp [Base.support_map_eq])
 
 end LatticeBase
 
@@ -390,17 +352,16 @@ theorem isComplement'_weylGroup_basedAut_subgroupOf (b : P.Base)
     {X₀ : Submodule R M} {Y₀ : Submodule R N} (hXY : P.IsDualLatticePair X₀ Y₀) :
     (P.weylGroup.subgroupOf (P.latticeAut X₀ Y₀)).IsComplement'
       (b.basedAut.subgroupOf (P.latticeAut X₀ Y₀)) := by
-  refine Subgroup.isComplement'_of_disjoint_and_mul_eq_univ ?_ ?_
-  · refine Subgroup.disjoint_def.mpr fun {g} hw hb ↦ Subtype.ext ?_
-    exact Subgroup.disjoint_def.mp b.isComplement'_weylGroup_basedAut.disjoint hw hb
-  · refine Set.eq_univ_of_forall fun g ↦ ?_
-    let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
-    have hW : (s.left : P.Aut) ∈ P.latticeAut X₀ Y₀ := hXY.weylGroup_le_latticeAut s.left.2
-    have hδ : (s.right : P.Aut) ∈ P.latticeAut X₀ Y₀ := by
-      rw [b.coe_semidirectProductMulEquiv_symm_right]
-      exact mul_mem (inv_mem hW) g.2
-    refine Set.mem_mul.mpr ⟨⟨s.left, hW⟩, s.left.2, ⟨s.right, hδ⟩, s.right.2, ?_⟩
-    exact Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))
+  refine Subgroup.isComplement'_of_disjoint_and_mul_eq_univ
+    (Subgroup.disjoint_def.mpr fun hw hb ↦ Subtype.ext <|
+      Subgroup.disjoint_def.mp b.isComplement'_weylGroup_basedAut.disjoint hw hb) ?_
+  refine Set.eq_univ_of_forall fun g ↦ ?_
+  let s := b.semidirectProductMulEquiv.symm (g : P.Aut)
+  have hW : (s.left : P.Aut) ∈ P.latticeAut X₀ Y₀ := hXY.weylGroup_le_latticeAut s.left.2
+  have hδ : (s.right : P.Aut) ∈ P.latticeAut X₀ Y₀ := by
+    rw [b.coe_semidirectProductMulEquiv_symm_right]; exact mul_mem (inv_mem hW) g.2
+  exact Set.mem_mul.mpr ⟨⟨s.left, hW⟩, s.left.2, ⟨s.right, hδ⟩, s.right.2,
+    Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))⟩
 
 /-- **Restricted semidirect product decomposition of `P.latticeAut X₀ Y₀`**: for a finite reduced
 crystallographic pairing over a characteristic-zero domain and any dual lattice pair `(X₀, Y₀)`,
@@ -421,8 +382,7 @@ noncomputable def latticeAutSemidirectProductMulEquiv (b : P.Base)
   left_inv x := by
     have h := b.semidirectProductMulEquiv_symm_mul x.left ⟨x.right, x.right.2.1⟩
     have hl := congrArg (fun z ↦ z.left) h
-    have hr := congrArg (fun z ↦ (z.right : P.Aut)) h
-    exact SemidirectProduct.ext hl (Subtype.ext hr)
+    exact SemidirectProduct.ext hl (Subtype.ext <| congrArg (fun z ↦ (z.right : P.Aut)) h)
   right_inv g := Subtype.ext (b.semidirectProductMulEquiv_symm_left_mul_right (g : P.Aut))
   map_mul' x y := Subtype.ext <| by
     simp only [SemidirectProduct.mul_left, SemidirectProduct.mul_right, Subgroup.coe_mul,
@@ -464,16 +424,13 @@ theorem exists_mem_basedAut_inf_latticeAut_iff [P.IsRootSystem] (b : P.Base)
     (∃ g : ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀), ∀ i : b.support, (g : P.Aut).indexEquiv i = σ i) ↔
       b.equivOfCartanMatrixEq b σ hσ ∈ P.latticeAut X₀ Y₀ := by
   obtain ⟨δ₀, hδ₀, huniq⟩ := b.existsUnique_basedAut_of_cartanMatrix σ hσ
-  have heq : (δ₀ : P.Aut) = b.equivOfCartanMatrixEq b σ hσ := by
-    have hmem : b.equivOfCartanMatrixEq b σ hσ ∈ b.basedAut :=
-      mem_basedAut_iff_map_eq.mpr (TauCeti.map_equivOfCartanMatrixEq b b σ hσ)
-    exact congrArg (fun x : b.basedAut ↦ (x : P.Aut))
+  have hmem : b.equivOfCartanMatrixEq b σ hσ ∈ b.basedAut :=
+    mem_basedAut_iff_map_eq.mpr (TauCeti.map_equivOfCartanMatrixEq b b σ hσ)
+  have heq : (δ₀ : P.Aut) = b.equivOfCartanMatrixEq b σ hσ :=
+    congrArg Subtype.val
       (huniq ⟨_, hmem⟩ (TauCeti.equivOfCartanMatrixEq_indexEquiv_apply b b σ hσ)).symm
-  refine ⟨?_, fun hlat ↦ ⟨⟨δ₀, δ₀.2, heq ▸ hlat⟩, hδ₀⟩⟩
-  rintro ⟨g, hg⟩
-  have hgδ : (⟨g.1, g.2.1⟩ : b.basedAut) = δ₀ := huniq ⟨g.1, g.2.1⟩ hg
-  have hval : (g : P.Aut) = (δ₀ : P.Aut) := congrArg (fun x : b.basedAut ↦ (x : P.Aut)) hgδ
-  exact heq ▸ hval ▸ g.2.2
+  exact ⟨fun ⟨g, hg⟩ ↦ heq ▸ congrArg Subtype.val (huniq ⟨g.1, g.2.1⟩ hg) ▸ g.2.2,
+    fun hlat ↦ ⟨⟨δ₀, δ₀.2, heq ▸ hlat⟩, hδ₀⟩⟩
 
 /-- When `b.equivOfCartanMatrixEq b σ hσ` preserves `(X₀, Y₀)`, there is a unique based
 lattice-preserving automorphism inducing `σ` on the simple roots. -/
@@ -485,9 +442,8 @@ theorem existsUnique_mem_basedAut_inf_latticeAut_of_cartanMatrix [P.IsRootSystem
       ∀ i : b.support, (g : P.Aut).indexEquiv i = σ i := by
   obtain ⟨g, hg⟩ := (b.exists_mem_basedAut_inf_latticeAut_iff X₀ Y₀ σ hσ).mpr hlat
   obtain ⟨_, -, huniq⟩ := b.existsUnique_basedAut_of_cartanMatrix σ hσ
-  refine ⟨g, hg, fun g' hg' ↦ Subtype.ext ?_⟩
-  exact congrArg (fun x : b.basedAut ↦ (x : P.Aut))
-    ((huniq ⟨g'.1, g'.2.1⟩ hg').trans (huniq ⟨g.1, g.2.1⟩ hg).symm)
+  exact ⟨g, hg, fun g' hg' ↦ Subtype.ext <| congrArg (fun x : b.basedAut ↦ (x : P.Aut)) <|
+    (huniq ⟨g'.1, g'.2.1⟩ hg').trans (huniq ⟨g.1, g.2.1⟩ hg).symm⟩
 
 end Base
 
@@ -516,35 +472,29 @@ noncomputable def rootSpanProj : M →ₗ[R] P.rootSpan R :=
 
 /-- `P.rootSpanProj` acts as the identity on `P.rootSpan R`. -/
 @[simp]
-theorem rootSpanProj_apply_of_mem (x : P.rootSpan R) :
-    P.rootSpanProj x = x :=
+theorem rootSpanProj_apply_of_mem (x : P.rootSpan R) : P.rootSpanProj x = x :=
   Submodule.projectionOnto_apply_left _ x
 
 /-- The kernel of `P.rootSpanProj` is the common coroot kernel
 `⨅ i, LinearMap.ker (P.coroot' i)`. -/
 @[simp]
-theorem ker_rootSpanProj :
-    LinearMap.ker P.rootSpanProj = ⨅ i, LinearMap.ker (P.coroot' i) :=
+theorem ker_rootSpanProj : LinearMap.ker P.rootSpanProj = ⨅ i, LinearMap.ker (P.coroot' i) :=
   Submodule.ker_projectionOnto _
 
 /-- `P.rootSpanProj x = 0` if and only if every coroot functional vanishes on `x`. -/
 @[simp]
-theorem rootSpanProj_eq_zero_iff {x : M} :
-    P.rootSpanProj x = 0 ↔ ∀ i, P.coroot' i x = 0 := by
-  rw [rootSpanProj, Submodule.projectionOnto_apply_eq_zero_iff, Submodule.mem_iInf]
-  rfl
+theorem rootSpanProj_eq_zero_iff {x : M} : P.rootSpanProj x = 0 ↔ ∀ i, P.coroot' i x = 0 := by
+  rw [rootSpanProj, Submodule.projectionOnto_apply_eq_zero_iff, Submodule.mem_iInf]; rfl
 
 /-- Projecting to `P.rootSpan R` along the common coroot kernel preserves pairing with every
 coroot. -/
 @[simp]
 theorem toLinearMap_coe_rootSpanProj_coroot (x : M) (i : ι) :
     P.toLinearMap (P.rootSpanProj x : M) (P.coroot i) = P.toLinearMap x (P.coroot i) := by
-  have hmem : x - (P.rootSpanProj x : M) ∈ ⨅ j, LinearMap.ker (P.coroot' j) :=
-    Submodule.sub_projection_mem P.isCompl_rootSpan_iInf_ker_coroot' x
+  have hmem := Submodule.sub_projection_mem P.isCompl_rootSpan_iInf_ker_coroot' x
   have hi : P.coroot' i (x - (P.rootSpanProj x : M)) = 0 :=
     LinearMap.mem_ker.mp ((Submodule.mem_iInf _).mp hmem i)
-  rw [map_sub, sub_eq_zero] at hi
-  exact hi.symm
+  rwa [map_sub, sub_eq_zero, eq_comm] at hi
 
 -- Not `@[simp]`: `coroot'` is an `abbrev` for `toLinearMap.flip (coroot i)`, so
 -- `toLinearMap_coe_rootSpanProj_coroot` is the `simp`-normal form.
@@ -557,25 +507,19 @@ theorem coroot'_coe_rootSpanProj (i : ι) (x : M) :
 /-- `P.rootSpanProj` is equivariant for the weight action of `P.Aut`. -/
 theorem coe_rootSpanProj_smul (g : P.Aut) (x : M) :
     (P.rootSpanProj (g • x) : M) = g • (P.rootSpanProj x : M) := by
-  have hrootSpan : g • (P.rootSpanProj x : M) ∈ P.rootSpan R := by
-    refine Submodule.span_induction ?_ (by simp)
-      (fun u v _ _ hu hv ↦ by rw [smul_add]; exact add_mem hu hv)
-      (fun r u _ hu ↦ by
-        -- `g • (r • u)` is `g.weightEquiv (r • u) = r • g.weightEquiv u`.
-        change g.weightEquiv (r • u) ∈ P.rootSpan R
-        rw [map_smul]
-        exact Submodule.smul_mem _ r hu) (P.rootSpanProj x).2
-    rintro _ ⟨j, rfl⟩
-    rw [← Equiv.root_indexEquiv_eq_smul]
-    exact Submodule.subset_span (mem_range_self (g.indexEquiv j))
+  have hle : P.rootSpan R ≤ (P.rootSpan R).comap g.weightEquiv.toLinearMap :=
+    Submodule.span_le.mpr <| range_subset_iff.mpr fun j ↦ by
+      -- `Submodule.comap` evaluates `g.weightEquiv`, which is the `Aut` SMul on `M`.
+      change g • P.root j ∈ P.rootSpan R
+      rw [← Equiv.root_indexEquiv_eq_smul]
+      exact Submodule.subset_span (mem_range_self _)
   have hsub_span : (P.rootSpanProj (g • x) : M) - g • (P.rootSpanProj x : M) ∈ P.rootSpan R :=
-    sub_mem (P.rootSpanProj (g • x)).2 hrootSpan
-  have hsub_ker :
-      (P.rootSpanProj (g • x) : M) - g • (P.rootSpanProj x : M) ∈
-        ⨅ i, LinearMap.ker (P.coroot' i) := by
-    refine (Submodule.mem_iInf _).mpr fun i ↦ LinearMap.mem_ker.mpr ?_
-    rw [map_sub, P.coroot'_coe_rootSpanProj, coroot'_smul, coroot'_smul,
-      P.coroot'_coe_rootSpanProj, sub_self]
+    sub_mem (P.rootSpanProj (g • x)).2 (hle (P.rootSpanProj x).2)
+  have hsub_ker : (P.rootSpanProj (g • x) : M) - g • (P.rootSpanProj x : M) ∈
+      ⨅ i, LinearMap.ker (P.coroot' i) :=
+    (Submodule.mem_iInf _).mpr fun i ↦ LinearMap.mem_ker.mpr <| by
+      rw [map_sub, P.coroot'_coe_rootSpanProj, coroot'_smul, coroot'_smul,
+        P.coroot'_coe_rootSpanProj, sub_self]
   exact sub_eq_zero.mp <|
     Submodule.disjoint_def.mp P.isCompl_rootSpan_iInf_ker_coroot'.disjoint _ hsub_span hsub_ker
 
@@ -599,8 +543,7 @@ noncomputable def Base.restrictScalars' (b : P.Base) (K : Type*) [Field K] [Alge
 @[simp]
 theorem Base.support_restrictScalars' (b : P.Base) (K : Type*) [Field K] [Algebra K L]
     [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
-    [P.IsBalanced] [P.IsValuedIn K] :
-    (b.restrictScalars' K).support = b.support :=
+    [P.IsBalanced] [P.IsValuedIn K] : (b.restrictScalars' K).support = b.support :=
   (rfl)
 
 end RestrictScalarsBase
@@ -636,10 +579,8 @@ noncomputable def openCylinderChamber : Set M :=
   P.rootSpanProj ⁻¹' openDominantChamber (P.restrictScalars' K) (b.restrictScalars' K)
 
 /-- The closed cylinder chamber coincides with `dominantChamber P b`. -/
-theorem cylinderChamber_eq_dominantChamber :
-    b.cylinderChamber = dominantChamber P b := by
-  ext x
-  simp only [cylinderChamber, mem_preimage, mem_dominantChamber, Base.support_restrictScalars']
+theorem cylinderChamber_eq_dominantChamber : b.cylinderChamber = dominantChamber P b := by
+  ext x; simp only [cylinderChamber, mem_preimage, mem_dominantChamber, support_restrictScalars']
   exact forall₂_congr fun i _ ↦ by rw [restrictScalars'_coroot'_rootSpanProj]
 
 /-- The open cylinder chamber coincides with `openDominantChamber P b`. -/
@@ -664,8 +605,7 @@ variable {ι R X Y : Type*} [CommRing R] [AddCommGroup X] [Module R X]
 balanced (`rootSpan` and `corootSpan` are perfectly complementary). -/
 theorem isBalanced_baseChange_of_field (K : Type*) [Field K] [CharZero K]
     [Algebra R K] [FaithfulSMul R K] : (D.baseChange K).IsBalanced := by
-  cases nonempty_fintype ι
-  infer_instance
+  cases nonempty_fintype ι; infer_instance
 
 /-- **An automorphism of a finite reduced crystallographic root datum is based if and only if its
 scalar extension to an ordered field `K` (such as `ℚ` or `ℝ`) preserves the open cylinder chamber**
@@ -724,9 +664,7 @@ noncomputable def Equiv.ofFixRootCoroot (e : M ≃ₗ[R] M)
   { weightMap := e.toLinearMap
     coweightMap := eN.toLinearMap
     indexEquiv := _root_.Equiv.refl ι
-    weight_coweight_transpose := by
-      ext y x
-      simp [eN]
+    weight_coweight_transpose := by ext y x; simp [eN]
     root_weightMap := funext hroot
     coroot_coweightMap := funext fun i ↦ P.flip.toPerfPair.injective <| LinearMap.ext fun x ↦ by
       simpa [eN, coroot'] using hcoroot i x
@@ -771,11 +709,11 @@ theorem map_weightHom_ker_indexHom :
         (∀ i, e (P.root i) = P.root i) ∧ ∀ i x, P.coroot' i (e x) = P.coroot' i x} := by
   ext e
   simp only [Subgroup.coe_map, mem_image, SetLike.mem_coe, Set.mem_ofPred_eq]
-  refine ⟨?_, fun ⟨hr, hc⟩ ↦ ⟨Equiv.ofFixRootCoroot P e hr hc,
-    Equiv.ofFixRootCoroot_mem_ker_indexHom P e hr hc,
-    Equiv.ofFixRootCoroot_weightEquiv P e hr hc⟩⟩
-  rintro ⟨g, hg, rfl⟩
-  exact ⟨(P.mem_ker_indexHom_iff.mp hg), P.coroot'_smul_of_mem_ker_indexHom hg⟩
+  exact ⟨by rintro ⟨g, hg, rfl⟩; exact ⟨P.mem_ker_indexHom_iff.mp hg,
+      P.coroot'_smul_of_mem_ker_indexHom hg⟩,
+    fun ⟨hr, hc⟩ ↦ ⟨Equiv.ofFixRootCoroot P e hr hc,
+      Equiv.ofFixRootCoroot_mem_ker_indexHom P e hr hc,
+      Equiv.ofFixRootCoroot_weightEquiv P e hr hc⟩⟩
 
 section IsEmpty
 
@@ -815,8 +753,7 @@ noncomputable def autMulEquivOfIsEmpty : P.Aut ≃* (M ≃ₗ[R] M) where
 
 /-- `autMulEquivOfIsEmpty` acts via `Equiv.weightHom`. -/
 @[simp]
-theorem autMulEquivOfIsEmpty_apply (g : P.Aut) :
-    P.autMulEquivOfIsEmpty g = g.weightEquiv :=
+theorem autMulEquivOfIsEmpty_apply (g : P.Aut) : P.autMulEquivOfIsEmpty g = g.weightEquiv :=
   (rfl)
 
 /-- Every root-free pairing is vacuously reduced. -/
@@ -868,16 +805,12 @@ theorem infinite_basedAut_empty_fin_two :
   have hpow (n : ℕ) : (shear ^ n) ![0, 1] = ![(n : ℤ), 1] := by
     induction n with
     | zero => rfl
-    | succ n ih =>
-      rw [pow_succ', mul_apply_eq_comp, ih]
-      ext i
-      fin_cases i <;> simp [shear]
-  let f : ℕ → (Base.ofIsEmpty P₀).basedAut := fun n ↦
-    ⟨P₀.autMulEquivOfIsEmpty.symm (shear ^ n), by simp⟩
-  refine Infinite.of_injective f fun m n hmn ↦ ?_
-  have heq : shear ^ m = shear ^ n :=
+    | succ n ih => rw [pow_succ', mul_apply_eq_comp, ih]; ext i; fin_cases i <;> simp [shear]
+  refine Infinite.of_injective
+    (fun n : ℕ ↦ (⟨P₀.autMulEquivOfIsEmpty.symm (shear ^ n), by simp⟩ :
+      (Base.ofIsEmpty P₀).basedAut)) fun m n hmn ↦ ?_
+  have h0 := congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e ![0, 1] 0) <|
     P₀.autMulEquivOfIsEmpty.symm.injective (congrArg Subtype.val hmn)
-  have h0 := congrArg (fun e : (Fin 2 → ℤ) ≃ₗ[ℤ] (Fin 2 → ℤ) ↦ e ![0, 1] 0) heq
   rw [hpow m, hpow n] at h0
   exact Int.ofNat.inj h0
 
