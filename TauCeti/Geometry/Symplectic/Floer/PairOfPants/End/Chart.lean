@@ -48,6 +48,8 @@ apply to all three ends.
   `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
   truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
   end.
+* `TauCeti.Floer.subset_preimage_truncation_of_isOpen`: an open set on which every signed
+  longitudinal coordinate is at most `R` lies in `S_R`.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`,
@@ -165,6 +167,16 @@ theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
     Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
   fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1,
     (mem_truncation.1 hz).2.1⟩
+
+/-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R`
+lies in the truncation `S_R`, in real coordinates. -/
+theorem subset_preimage_truncation_of_isOpen {U : Set (ℝ × ℝ)} (hU : IsOpen U) {R : ℝ}
+    (h : ∀ z ∈ U, ∀ q : Puncture,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R) :
+    U ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
+  have hV := subset_truncation_of_isOpen (hU.preimage Complex.equivRealProdCLM.continuous)
+    fun w hw q ↦ by simpa only [ContinuousLinearEquiv.symm_apply_apply] using h _ hw q
+  exact fun z hz ↦ hV (by simpa using hz)
 
 /-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
 theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
