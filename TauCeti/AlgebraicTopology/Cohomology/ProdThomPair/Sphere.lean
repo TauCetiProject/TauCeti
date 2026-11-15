@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
-public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 
 /-!
@@ -46,7 +46,8 @@ alone, for every rank, `TauCeti.prodThomPairSingularCohomologyEquiv` identifies
 `TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Basic`. The homology counterpart for every rank
 is `TauCeti.prodThomPairSingularHomologyIso` in degrees `n + r`, with
 `TauCeti.isZero_singularHomology_prodThomPair` below `r`. The ranks `0` and `1`, where `F ∖ {0}`
-is empty or has two contractible components, are not treated here.
+is empty or has two contractible components, are not treated here; rank `1` is
+`TauCeti.prodThomPairSingularCohomologyLineEquiv`.
 
 ## Main definitions and results
 
@@ -212,37 +213,6 @@ theorem prodThomPairPuncturedSingularCohomologyEquiv_apply
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) n bc.2) :=
   puncturedMap_apply M e n m h bc
 
-omit [Module ℝ F] in
-/-- Every class of `Hᵐ(B × F; M)` is pulled back from the base, since `F` is contractible. -/
-private theorem exists_singularCohomologyMap_prodThomPairProj_eq [ContractibleSpace F] (m : ℕ)
-    (y : (prodThomPair B F).fst.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
-    ∃ b, TopCat.singularCohomologyMap (prodThomPairProj B F) m b = y := by
-  have := (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap
-    (𝟙_ (ModuleCat.{w} k)) k M m
-  rw [ContinuousMap.HomotopyEquiv.prodContractible_toFun] at this
-  have hproj : TopCat.ofHom ContinuousMap.fst = prodThomPairProj B F :=
-    TopCat.ext fun p ↦ (prodThomPairProj_apply F p).symm
-  have : IsIso (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k) (M := M)
-    (prodThomPairProj B F) m) := hproj ▸ this
-  refine ⟨inv (TopCat.singularCohomologyMap (prodThomPairProj B F) m) y, ?_⟩
-  rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
-
-/-- Pulling back along the projection `B × (F ∖ {0}) → B` is injective, since the projection has
-the section `b ↦ (b, e⁻¹ v)` for a unit vector `v`. -/
-private theorem injective_singularCohomologyMap_prodThomPairPuncturedProj
-    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) (m : ℕ) :
-    Function.Injective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-      (M := M) (prodThomPairPuncturedProj B F) m) := by
-  let v : F := e.symm (EuclideanSpace.single 0 1)
-  have hv : v ≠ 0 := by simp [v]
-  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
-    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
-  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
-    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
-  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
-    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
-
 /-- The classes `π^* b` of the decomposition `TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`
 are the restrictions of the classes of `B × F` pulled back from `B`. -/
 private theorem prodThomPairPuncturedSingularCohomologyEquiv_apply_zero
@@ -306,8 +276,9 @@ private theorem surjective_sphereDeltaMap (e : F ≃L[ℝ] EuclideanSpace ℝ (F
       (P.singularCohomologyπ_comp_singularCohomologyMap (𝟙_ (ModuleCat.{w} k)) k M m) z
     rw [ConcreteCategory.comp_apply, ← hb, ← ConcreteCategory.comp_apply,
       ← TopCat.singularCohomologyMap_comp, map_comp_prodThomPairProj] at h0
-    rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj M e _
-      (h0.trans (map_zero _).symm), map_zero]
+    rw [← hb, injective_singularCohomologyMap_prodThomPairPuncturedProj M
+      (v := e.symm (EuclideanSpace.single 0 1)) (by simp) _ (h0.trans (map_zero _).symm),
+      map_zero]
   obtain ⟨x, rfl⟩ : ∃ x, (P.singularCohomologyδ (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m) x = z :=
     (ShortComplex.moduleCat_exact_iff _).1
       (P.singularCohomology_exact_relative (𝟙_ (ModuleCat.{w} k)) k M (d + 1 + n) m) z hπ

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
+import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 
 /-!
 # Relative cohomology of the Thom pair of a product bundle
@@ -37,6 +38,15 @@ Mayer–Vietoris over unions of trivializing open sets: the vanishing below the 
 restriction to the two pieces injective in degree `r`, and the determination by fibres makes local
 Thom classes agree on overlaps.
 
+In every degree, the absolute cohomology of `B × F` is pulled back from `B` when `F` is
+contractible (`TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`), and pulling back from
+`B` to `B × (F ∖ {0})` is injective when `F` is nonzero
+(`TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`). These two facts locate the
+image of the restriction `Hᵐ(B × F) ⟶ Hᵐ(B × (F ∖ {0}))` in the long exact sequence of the pair,
+from which the relative cohomology of the pair in degrees above the rank is computed
+(`TauCeti.prodThomPairSingularCohomologySphereEquiv`,
+`TauCeti.prodThomPairSingularCohomologyLineEquiv`).
+
 ## Main definitions and results
 
 * `TauCeti.isZero_singularCohomology_prodThomPair`: `Hⁿ(B × F, B × (F ∖ {0})) = 0` for
@@ -46,6 +56,9 @@ Thom classes agree on overlaps.
   `TauCeti.prodThomPairSingularCohomologyEquiv_naturality`.
 * `TauCeti.singularCohomology_prodThomPair_ext`: classes in degree `dim F` agreeing on every fibre
   are equal.
+* `TauCeti.exists_singularCohomologyMap_prodThomPairProj_eq`,
+  `TauCeti.injective_singularCohomologyMap_prodThomPairPuncturedProj`: the absolute cohomology of
+  `B × F` and of `B × (F ∖ {0})` compared with that of `B`.
 
 ## References
 
@@ -145,5 +158,41 @@ theorem singularCohomology_prodThomPair_ext [Linear k (ModuleCat.{w} k)]
   refine (singularKronecker_prodThomPair_bijective R M B F le_rfl).1
     (singularHomology_prodThomPair_hom_ext fun b ↦ ?_)
   rw [← TopPair.singularKronecker_naturality, ← TopPair.singularKronecker_naturality, h b]
+
+section Projection
+
+variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
+  {B : Type w} [TopologicalSpace B] {F : Type w} [TopologicalSpace F] [Zero F]
+
+open MonoidalCategory
+
+/-- Every class of `Hᵐ(B × F; M)` is pulled back from the base when `F` is contractible. -/
+theorem exists_singularCohomologyMap_prodThomPairProj_eq [ContractibleSpace F] (m : ℕ)
+    (y : (prodThomPair B F).fst.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M m) :
+    ∃ b, TopCat.singularCohomologyMap (prodThomPairProj B F) m b = y := by
+  have := (ContinuousMap.HomotopyEquiv.prodContractible B F).isIso_singularCohomologyMap
+    (𝟙_ (ModuleCat.{w} k)) k M m
+  rw [ContinuousMap.HomotopyEquiv.prodContractible_toFun] at this
+  have hproj : TopCat.ofHom ContinuousMap.fst = prodThomPairProj B F :=
+    TopCat.ext fun p ↦ (prodThomPairProj_apply F p).symm
+  have : IsIso (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k) (M := M)
+    (prodThomPairProj B F) m) := hproj ▸ this
+  refine ⟨inv (TopCat.singularCohomologyMap (prodThomPairProj B F) m) y, ?_⟩
+  rw [← ConcreteCategory.comp_apply, IsIso.inv_hom_id, ConcreteCategory.id_apply]
+
+/-- Pulling back along the projection `B × (F ∖ {0}) → B` is injective when `F` has a nonzero
+vector `v`, since the projection then has the section `b ↦ (b, v)`. -/
+theorem injective_singularCohomologyMap_prodThomPairPuncturedProj {v : F} (hv : v ≠ 0) (m : ℕ) :
+    Function.Injective (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+      (M := M) (prodThomPairPuncturedProj B F) m) := by
+  let s : TopCat.of B ⟶ (prodThomPair B F).snd :=
+    TopCat.ofHom ⟨fun b ↦ ⟨(b, v), hv⟩, by fun_prop⟩
+  have hs : s ≫ prodThomPairPuncturedProj B F = 𝟙 _ :=
+    TopCat.ext fun b ↦ prodThomPairPuncturedProj_apply F (s b)
+  refine Function.LeftInverse.injective (g := TopCat.singularCohomologyMap s m) fun b ↦ ?_
+  rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hs,
+    TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+
+end Projection
 
 end TauCeti
