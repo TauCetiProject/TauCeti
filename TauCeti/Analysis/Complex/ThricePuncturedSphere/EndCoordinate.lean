@@ -47,10 +47,11 @@ longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punc
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
 (`TauCeti.ThricePuncturedSphere.isCompact_truncation`) inside `S`
 (`TauCeti.ThricePuncturedSphere.truncation_subset`) over which integrals of data on `S` are
-taken. Bounding them by separate heights `R q` gives the truncation at these heights
-(`TauCeti.ThricePuncturedSphere.truncationAt`), also compact
-(`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end it is
-`S_R` cut short along a circle of that end
+taken; an open set on which all three are at most `R` already lies in `S_R`
+(`TauCeti.ThricePuncturedSphere.subset_truncation_of_isOpen`). Bounding them by separate heights
+`R q` gives the truncation at these heights (`TauCeti.ThricePuncturedSphere.truncationAt`), also
+compact (`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end
+it is `S_R` cut short along a circle of that end
 (`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). In the real coordinates
 `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
 (`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
@@ -834,6 +835,14 @@ theorem eventually_notMem_truncation {c : ℂ} (hc : c = 0 ∨ c = 1) (R₀ : �
       (notMem_truncation_of_eq_zero_or_eq_one hc _))
   filter_upwards [hR, hw] with p hpR hpw h
   exact hpw (truncation_mono hpR.le h)
+
+/-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R` lies
+in the truncation `S_R`: it avoids the poles `0` and `1`, near which some `±s` exceeds `R`. -/
+theorem subset_truncation_of_isOpen {U : Set ℂ} (hU : IsOpen U) {R : ℝ}
+    (h : ∀ w ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R) : U ⊆ truncation R :=
+  (((dense_compl_singleton (0 : ℂ)).sdiff_singleton 1).open_subset_closure_inter hU).trans <|
+    closure_minimal (fun w ⟨hwU, hw₀, hw₁⟩ ↦ mem_truncation.2 ⟨hw₀, hw₁, h w hwU⟩)
+      (isCompact_truncation R).isClosed
 
 /-- The truncations exhaust the thrice-punctured sphere `S = ℂ ∖ {0, 1}`. -/
 theorem iUnion_truncation : ⋃ R, truncation R = {w : ℂ | w ≠ 0 ∧ w ≠ 1} := by
