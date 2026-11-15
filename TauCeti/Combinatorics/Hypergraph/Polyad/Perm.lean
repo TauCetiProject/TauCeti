@@ -5,22 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Defs
+public import Mathlib.Algebra.Group.Opposite
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Coarsening
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
 
+import Mathlib.Algebra.Group.Action.Basic
 import Mathlib.Tactic.FinCases
-import TauCeti.Data.Fintype.EmbeddingFiber
 
 /-!
 # Permuting the roles of a triadic polyad
 
-An unordered triple of vertices has up to six injective orderings `Fin 3 → V`, related by
-precomposition with permutations `σ : Equiv.Perm (Fin 3)`. When those orderings are classified by
-polyads over a lower skeleton `S`, precomposing a triple `x` with `σ` permutes the three vertex
-cells of `Polyad3.ofTriple S x` and re-orients its three pair colors using the palette reversal
+An unordered triple of vertices has six injective orderings `Fin 3 → V`, related by precomposition
+with permutations `σ : Equiv.Perm (Fin 3)`. When those orderings are classified by polyads over a
+lower skeleton `S`, precomposing a triple `x` with `σ` permutes the three vertex cells of
+`Polyad3.ofTriple S x` and re-orients its three pair colors using the palette reversal
 `S.pairColors.rev` whenever `σ` reverses a canonically oriented role pair.
 
-This file packages that right action as `Polyad3.perm P σ`, mediated by the role-indexed accessors
+This file packages that right action as `Polyad3.perm P σ` (together with the induced left
+`MulAction (Equiv.Perm (Fin 3))ᵐᵒᵖ (Polyad3 S)` instance), mediated by the role-indexed accessors
 `Polyad3.cell` and `Polyad3.colorAt`. These identities let random recolorings of unordered triples
 be chosen once per `Equiv.Perm (Fin 3)`-orbit of fine polyads while simultaneously controlling
 subpolyad counts on all six role orientations.
@@ -39,6 +42,9 @@ subpolyad counts on all six role orientations.
 * `TauCeti.Polyad3.card_support_perm`: role permutation preserves `#P.support`.
 * `TauCeti.Polyad3.map_perm`, `TauCeti.Polyad3.coarsen_perm`: role permutation commutes with
   reversal-compatible polyad maps and coarsenings.
+* `TauCeti.Polyad3.coarsen_perm_of_support_nonempty`: on any fine polyad with nonempty support,
+  role permutation commutes with coarsening along any pair-color projection recovering the coarse
+  pair coloring.
 * `TauCeti.Colored3Graph.relativeDensity_perm`: role permutation preserves `H.relativeDensity c P`.
 -/
 
@@ -206,24 +212,33 @@ theorem perm_one (P : Polyad3 S) : P.perm 1 = P :=
   ext_cell_colorAt (fun i ↦ by simp) (fun i j hij ↦ by simp)
 
 /-- Role permutation is a right action of `Equiv.Perm (Fin 3)` on `Polyad3 S`. -/
-theorem perm_mul (P : Polyad3 S) (σ τ : Equiv.Perm (Fin 3)) :
+theorem perm_perm (P : Polyad3 S) (σ τ : Equiv.Perm (Fin 3)) :
     (P.perm σ).perm τ = P.perm (σ * τ) :=
   ext_cell_colorAt (fun i ↦ by simp) (fun i j hij ↦ by simp)
 
+/-- The right role-permutation action packaged as a left action of `(Equiv.Perm (Fin 3))ᵐᵒᵖ`. -/
+instance : MulAction (Equiv.Perm (Fin 3))ᵐᵒᵖ (Polyad3 S) where
+  smul g P := P.perm g.unop
+  one_smul P := P.perm_one
+  mul_smul g h P := (P.perm_perm h.unop g.unop).symm
+
+/-- Scalar multiplication by `MulOpposite.op σ` is role permutation by `σ`. -/
 @[simp]
-theorem perm_inv_self (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) : (P.perm σ).perm σ⁻¹ = P := by
-  rw [perm_mul, mul_inv_cancel, perm_one]
+theorem op_smul_eq_perm (σ : Equiv.Perm (Fin 3)) (P : Polyad3 S) :
+    MulOpposite.op σ • P = P.perm σ :=
+  (rfl)
 
 @[simp]
-theorem perm_self_inv (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) : (P.perm σ⁻¹).perm σ = P := by
-  rw [perm_mul, inv_mul_cancel, perm_one]
+theorem perm_perm_inv (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) : (P.perm σ).perm σ⁻¹ = P := by
+  simpa [← MulOpposite.op_inv] using inv_smul_smul (MulOpposite.op σ) P
+
+@[simp]
+theorem perm_inv_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) : (P.perm σ⁻¹).perm σ = P := by
+  simpa [← MulOpposite.op_inv] using smul_inv_smul (MulOpposite.op σ) P
 
 /-- Permuting the three roles by `σ` is an equivalence on `Polyad3 S`. -/
-def permEquiv (σ : Equiv.Perm (Fin 3)) : Polyad3 S ≃ Polyad3 S where
-  toFun P := P.perm σ
-  invFun P := P.perm σ⁻¹
-  left_inv P := P.perm_inv_self σ
-  right_inv P := P.perm_self_inv σ
+def permEquiv (σ : Equiv.Perm (Fin 3)) : Polyad3 S ≃ Polyad3 S :=
+  MulAction.toPerm (MulOpposite.op σ)
 
 @[simp]
 theorem permEquiv_apply (σ : Equiv.Perm (Fin 3)) (P : Polyad3 S) :
@@ -233,12 +248,12 @@ theorem permEquiv_apply (σ : Equiv.Perm (Fin 3)) (P : Polyad3 S) :
 @[simp]
 theorem permEquiv_symm (σ : Equiv.Perm (Fin 3)) :
     (permEquiv (S := S) σ).symm = permEquiv σ⁻¹ :=
-  (rfl)
+  Equiv.ext fun P ↦ by simp [permEquiv, ← MulOpposite.op_inv]
 
 /-- Role permutation by a fixed `σ` is injective on polyads. -/
 theorem perm_injective (σ : Equiv.Perm (Fin 3)) :
     Function.Injective fun P : Polyad3 S ↦ P.perm σ :=
-  (permEquiv σ).injective
+  MulAction.injective (MulOpposite.op σ)
 
 /-- Precomposing an injective triple with `σ` permutes its polyad by `σ`. -/
 theorem ofTriple_comp_perm (x : {x : Fin 3 → V // Function.Injective x})
@@ -265,16 +280,47 @@ theorem mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
     Subtype.ext (funext fun i ↦ by simp)
   simpa only [hx] using P.comp_mem_support_perm σ ⟨x.1 ∘ ⇑σ⁻¹, x.2.comp σ⁻¹.injective⟩
 
+end Polyad3
+
+private def permTripleEquiv {V : Type*} (σ : Equiv.Perm (Fin 3)) :
+    {x : Fin 3 → V // Function.Injective x} ≃ {x : Fin 3 → V // Function.Injective x} :=
+  (Equiv.subtypeInjectiveEquivEmbedding (Fin 3) V).trans
+    ((Equiv.embeddingCongr σ.symm (Equiv.refl V)).trans
+      (Equiv.subtypeInjectiveEquivEmbedding (Fin 3) V).symm)
+
+private theorem permTripleEquiv_apply {V : Type*} (σ : Equiv.Perm (Fin 3))
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    permTripleEquiv σ x = ⟨x.1 ∘ σ, x.2.comp σ.injective⟩ :=
+  Subtype.ext rfl
+
+private theorem permTripleEquiv_symm_apply {V : Type*} (σ : Equiv.Perm (Fin 3))
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    (permTripleEquiv σ).symm x = ⟨x.1 ∘ ⇑σ⁻¹, x.2.comp σ⁻¹.injective⟩ :=
+  Subtype.ext rfl
+
+private theorem ofFinEmb_permTripleEquiv {V : Type*} (σ : Equiv.Perm (Fin 3))
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    Set.powersetCard.ofFinEmb 3 V ⟨(permTripleEquiv σ x).1, (permTripleEquiv σ x).2⟩ =
+      Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ := by
+  have htr : (⟨(permTripleEquiv σ x).1, (permTripleEquiv σ x).2⟩ : Fin 3 ↪ V) =
+      σ.toEmbedding.trans ⟨x.1, x.2⟩ :=
+    Function.Embedding.ext fun i ↦ congrFun (congrArg Subtype.val (permTripleEquiv_apply σ x)) i
+  rw [htr, Set.powersetCard.ofFinEmb_trans_perm]
+
+namespace Polyad3
+
+variable {κ V : Type*} [Fintype V] [DecidableEq V] {S : PairSkeleton3 κ V}
+
+private theorem support_perm_eq_map (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
+    (P.perm σ).support = P.support.map (permTripleEquiv σ).toEmbedding := by
+  ext y
+  rw [mem_map_equiv, permTripleEquiv_symm_apply, mem_support_perm]
+
 /-- Role permutation preserves the support size of a polyad. -/
 @[simp]
 theorem card_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
     #(P.perm σ).support = #P.support := by
-  refine (card_bij (fun x _ ↦ ⟨x.1 ∘ σ, x.2.comp σ.injective⟩)
-    (fun x hx ↦ (P.comp_mem_support_perm σ x).2 hx)
-    (fun x _ y _ h ↦ Subtype.ext <| funext fun i ↦ ?_)
-    (fun y hy ↦ ⟨⟨y.1 ∘ ⇑σ⁻¹, y.2.comp σ⁻¹.injective⟩, (P.mem_support_perm σ y).1 hy,
-      Subtype.ext <| funext fun i ↦ by simp⟩)).symm
-  simpa using congrFun (congrArg Subtype.val h) (σ⁻¹ i)
+  rw [support_perm_eq_map, card_map]
 
 @[simp]
 theorem map_cell {κ' : Type*} {T : PairSkeleton3 κ' V} (P : Polyad3 S)
@@ -304,7 +350,7 @@ theorem coarsen_cell {κ' : Type*} {T : PairSkeleton3 κ' V} (P : Polyad3 T)
     (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) (i : Fin 3) :
     (P.coarsen hV f).cell i =
       (Finpartition.refinementParent hV ⟨P.cell i, P.cell_mem_parts i⟩).val := by
-  fin_cases i <;> simp
+  rw [coarsen_def, map_cell]
 
 /-- Coarsening a polyad along a reversal-compatible color projection applies `f` to `colorAt` on
 every directed role pair. -/
@@ -312,16 +358,28 @@ theorem coarsen_colorAt {κ' : Type*} {T : PairSkeleton3 κ' V} (P : Polyad3 T)
     (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
     (hrev : ∀ c, f (T.pairColors.rev c) = S.pairColors.rev (f c)) {i j : Fin 3} (hij : i ≠ j) :
     (P.coarsen hV f).colorAt i j hij = f (P.colorAt i j hij) := by
-  fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
-    first | exact absurd rfl hij | simp [hrev]
+  rw [coarsen_def, map_colorAt _ _ _ hrev]
 
 /-- Taking the coarse parent commutes with role permutation whenever the color projection
 intertwines palette reversal. -/
 theorem coarsen_perm {κ' : Type*} {T : PairSkeleton3 κ' V} (P : Polyad3 T) (σ : Equiv.Perm (Fin 3))
     (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
     (hrev : ∀ c, f (T.pairColors.rev c) = S.pairColors.rev (f c)) :
-    (P.perm σ).coarsen hV f = (P.coarsen hV f).perm σ :=
-  ext_cell_colorAt (fun i ↦ by simp) (fun i j hij ↦ by simp [coarsen_colorAt _ _ _ hrev])
+    (P.perm σ).coarsen hV f = (P.coarsen hV f).perm σ := by
+  rw [coarsen_def, coarsen_def, map_perm _ _ _ _ hrev]
+
+/-- On a fine polyad with nonempty support, coarsening along any pair-color projection `f`
+recovering the coarse pair coloring commutes with role permutation without assuming reversal
+compatibility on unused colors. -/
+theorem coarsen_perm_of_support_nonempty {κ' : Type*} {T : PairSkeleton3 κ' V}
+    (P : Polyad3 T) (hP : P.support.Nonempty) (σ : Equiv.Perm (Fin 3))
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p)) :
+    (P.perm σ).coarsen hV f = (P.coarsen hV f).perm σ := by
+  obtain ⟨x, hx⟩ := hP
+  have hPx : P = ofTriple T x := mem_support_iff_eq_ofTriple.1 hx
+  rw [hPx, ← ofTriple_comp_perm, coarsen_ofTriple hV f hf, coarsen_ofTriple hV f hf,
+    ofTriple_comp_perm]
 
 end Polyad3
 
@@ -336,25 +394,8 @@ theorem relativeDensity_perm {κ κ₂ V : Type*} [DecidableEq κ] [Fintype V] [
     (σ : Equiv.Perm (Fin 3)) :
     H.relativeDensity c (P.perm σ) = H.relativeDensity c P := by
   rw [H.relativeDensity_def, H.relativeDensity_def, relDensityOn_def, relDensityOn_def,
-    P.card_support_perm σ]
-  congr 2
-  refine (card_bij (fun x _ ↦ ⟨x.1 ∘ σ, x.2.comp σ.injective⟩) (fun x hx ↦ ?_)
-    (fun x _ y _ h ↦ Subtype.ext <| funext fun i ↦ ?_) (fun y hy ↦ ?_)).symm
-  · obtain ⟨hxP, hxc⟩ := mem_filter.1 hx
-    refine mem_filter.2 ⟨(P.comp_mem_support_perm σ x).2 hxP, ?_⟩
-    have htr : (⟨x.1 ∘ σ, x.2.comp σ.injective⟩ : Fin 3 ↪ V) = σ.toEmbedding.trans ⟨x.1, x.2⟩ :=
-      Function.Embedding.ext fun _ ↦ rfl
-    rw [htr, Set.powersetCard.ofFinEmb_trans_perm]
-    exact hxc
-  · simpa using congrFun (congrArg Subtype.val h) (σ⁻¹ i)
-  · obtain ⟨hyP, hyc⟩ := mem_filter.1 hy
-    refine ⟨⟨y.1 ∘ ⇑σ⁻¹, y.2.comp σ⁻¹.injective⟩,
-      mem_filter.2 ⟨(P.mem_support_perm σ y).1 hyP, ?_⟩, Subtype.ext <| funext fun i ↦ by simp⟩
-    have htr : (⟨y.1 ∘ ⇑σ⁻¹, y.2.comp σ⁻¹.injective⟩ : Fin 3 ↪ V) =
-        (σ⁻¹).toEmbedding.trans ⟨y.1, y.2⟩ :=
-      Function.Embedding.ext fun _ ↦ rfl
-    rw [htr, Set.powersetCard.ofFinEmb_trans_perm]
-    exact hyc
+    P.card_support_perm σ, Polyad3.support_perm_eq_map, filter_map, card_map]
+  simp only [Function.comp_def, Equiv.coe_toEmbedding, ofFinEmb_permTripleEquiv]
 
 end Colored3Graph
 

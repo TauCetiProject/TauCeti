@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Set.PowersetCard
-import Mathlib.Data.Fintype.EquivFin
+import TauCeti.Data.Set.PowersetCard
 
 /-!
 # Embeddings with a prescribed image of a finite subset
@@ -17,87 +17,13 @@ Fix two subsets of cardinality `r` in finite types. There are at most
 This separates the choices on a prescribed subset from the unconstrained remaining vertices,
 as needed when bounding the number of copies affected by a hyperedge edit.
 
-When the source is `Fin r` itself, the embeddings `Fin r ↪ β` whose unordered image
-`Set.powersetCard.ofFinEmb r β` equals a prescribed `r`-element subset `t` correspond to the
-embeddings `Fin r ↪ t.val`, so there are `r!` of them without any finiteness assumption on `β`,
-and two embeddings `Fin r ↪ β` have the same unordered image precisely when they differ by a
-permutation of `Fin r`.
+When the source is `Fin r` itself, `TauCeti.card_filter_ofFinEmb_eq` counts the `r!` injective
+`r`-tuples in a finite type with a prescribed unordered image `t`, and
+`TauCeti.card_filter_ofFinEmb_eq_sum_factorial` decomposes any unordered predicate count on a finite
+set of injective `r`-tuples by fiber multiplicity in `{1, …, r!}`.
 -/
 
 public section
-
-namespace Set.powersetCard
-
-variable {β : Type*} {r : ℕ}
-
-/-- The embeddings `Fin r ↪ β` with unordered image `t` correspond to the embeddings of `Fin r`
-into `t`. -/
-def ofFinEmbFiberEquiv (t : Set.powersetCard β r) :
-    {f : Fin r ↪ β // ofFinEmb r β f = t} ≃ (Fin r ↪ t.val) where
-  toFun f :=
-    ⟨fun i ↦ ⟨f.1 i, by
-        have h := congrArg Subtype.val f.2
-        rw [val_ofFinEmb] at h
-        exact h ▸ Finset.mem_map_of_mem f.1 (Finset.mem_univ i)⟩,
-      fun _ _ h ↦ f.1.injective (congrArg Subtype.val h)⟩
-  invFun g :=
-    ⟨g.trans (Function.Embedding.subtype _), Subtype.ext <| by
-      rw [val_ofFinEmb]
-      refine Finset.eq_of_subset_of_card_le (fun b hb ↦ ?_) (by simp [card_eq])
-      obtain ⟨i, -, rfl⟩ := Finset.mem_map.1 hb
-      exact (g i).2⟩
-  left_inv _ := Subtype.ext (Function.Embedding.ext fun _ ↦ rfl)
-  right_inv _ := Function.Embedding.ext fun _ ↦ Subtype.ext rfl
-
-@[simp]
-theorem ofFinEmbFiberEquiv_apply_coe (t : Set.powersetCard β r)
-    (f : {f : Fin r ↪ β // ofFinEmb r β f = t}) (i : Fin r) :
-    (ofFinEmbFiberEquiv t f i : β) = f.1 i :=
-  (rfl)
-
-@[simp]
-theorem ofFinEmbFiberEquiv_symm_apply_coe (t : Set.powersetCard β r)
-    (g : Fin r ↪ t.val) (i : Fin r) :
-    ((ofFinEmbFiberEquiv t).symm g).1 i = (g i : β) :=
-  (rfl)
-
-/-- Exactly `r!` embeddings `Fin r ↪ β` have a prescribed `r`-element subset `t` as unordered
-image. -/
-theorem natCard_ofFinEmb_eq (t : Set.powersetCard β r) :
-    Nat.card {f : Fin r ↪ β // ofFinEmb r β f = t} = r.factorial := by
-  rw [Nat.card_congr (ofFinEmbFiberEquiv t), Nat.card_eq_fintype_card,
-    Fintype.card_embedding_eq, Fintype.card_fin, Fintype.card_coe, card_eq,
-    Nat.descFactorial_self]
-
-/-- Precomposing an embedding `Fin r ↪ β` with a permutation of `Fin r` leaves its unordered
-image unchanged. -/
-@[simp]
-theorem ofFinEmb_trans_perm (σ : Equiv.Perm (Fin r)) (f : Fin r ↪ β) :
-    ofFinEmb r β (σ.toEmbedding.trans f) = ofFinEmb r β f :=
-  SetLike.coe_injective <| by
-    simp only [coe_ofFinEmb, Function.Embedding.coe_trans, Equiv.coe_toEmbedding]
-    exact σ.surjective.range_comp f
-
-/-- Two embeddings `Fin r ↪ β` have the same unordered image if and only if they differ by a
-permutation of `Fin r`. -/
-theorem ofFinEmb_eq_iff_exists_perm (f g : Fin r ↪ β) :
-    ofFinEmb r β f = ofFinEmb r β g ↔ ∃ σ : Equiv.Perm (Fin r), ⇑f = ⇑g ∘ σ := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · set t := ofFinEmb r β g
-    let f' := ofFinEmbFiberEquiv t ⟨f, h⟩
-    let g' := ofFinEmbFiberEquiv t ⟨g, rfl⟩
-    have hcard : Fintype.card (Fin r) = Fintype.card t.val := by simp [card_eq]
-    let ef := Equiv.ofBijective f' ((Fintype.bijective_iff_injective_and_card f').2
-      ⟨f'.injective, hcard⟩)
-    let eg := Equiv.ofBijective g' ((Fintype.bijective_iff_injective_and_card g').2
-      ⟨g'.injective, hcard⟩)
-    refine ⟨ef.trans eg.symm, funext fun i ↦ ?_⟩
-    exact (congrArg Subtype.val (eg.apply_symm_apply (ef i))).symm
-  · rintro ⟨σ, hfg⟩
-    have htr : f = σ.toEmbedding.trans g := Function.Embedding.ext (congrFun hfg)
-    rw [htr, ofFinEmb_trans_perm]
-
-end Set.powersetCard
 
 namespace TauCeti
 
@@ -138,5 +64,62 @@ theorem card_filter_ofFinEmb_eq {β : Type*} [Fintype β] [DecidableEq β] {r : 
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, ← Set.powersetCard.natCard_ofFinEmb_eq t]
   exact Nat.card_congr ((Equiv.subtypeInjectiveEquivEmbedding (Fin r) β).subtypeEquiv fun _ ↦
     Iff.rfl)
+
+/-- Partitioning a finite set `W` of injective `r`-tuples by unordered `r`-subset `ofFinEmb`
+expresses the count of tuples in `W` satisfying an unordered predicate `P` as a weighted sum over
+the `r!` possible positive fiber multiplicities `1, …, r!`. -/
+theorem card_filter_ofFinEmb_eq_sum_factorial {β : Type*} [Fintype β] [DecidableEq β] {r : ℕ}
+    (W : Finset {x : Fin r → β // Function.Injective x})
+    (P : Set.powersetCard β r → Prop) [DecidablePred P] :
+    Finset.card (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩)) =
+      ∑ k : Fin r.factorial, (k.1 + 1) *
+        Finset.card (Finset.univ.filter fun s : Set.powersetCard β r ↦
+          P s ∧ Finset.card (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s) =
+            k.1 + 1) := by
+  classical
+  have hlhs : Finset.card (W.filter fun x ↦ P (Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩)) =
+      ∑ s : Set.powersetCard β r,
+        if P s then Finset.card (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s)
+        else 0 := by
+    rw [← Finset.sum_filter, Finset.card_eq_sum_card_fiberwise
+      (f := fun x : {x : Fin r → β // Function.Injective x} ↦
+        Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩)
+      (t := Finset.univ.filter P) (fun x hx ↦ Finset.mem_filter.2 ⟨Finset.mem_univ _,
+        (Finset.mem_filter.1 hx).2⟩)]
+    refine Finset.sum_congr rfl fun s hs ↦ congrArg Finset.card (Finset.ext fun x ↦ ?_)
+    simp only [Finset.mem_filter]
+    exact ⟨fun hx ↦ ⟨hx.1.1, hx.2⟩,
+      fun hx ↦ ⟨⟨hx.1, hx.2 ▸ (Finset.mem_filter.1 hs).2⟩, hx.2⟩⟩
+  have hrhs (k : Fin r.factorial) :
+      (k.1 + 1) * Finset.card (Finset.univ.filter fun s : Set.powersetCard β r ↦
+          P s ∧ Finset.card (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s) =
+            k.1 + 1) =
+        ∑ s : Set.powersetCard β r,
+          if P s ∧ Finset.card (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s) =
+            k.1 + 1 then k.1 + 1 else 0 := by
+    rw [← Finset.sum_filter, Finset.sum_const, Nat.nsmul_eq_mul, mul_comm]
+  rw [hlhs]
+  simp_rw [hrhs]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  set ms := Finset.card (W.filter fun x ↦ Set.powersetCard.ofFinEmb r β ⟨x.1, x.2⟩ = s)
+  have hms_le : ms ≤ r.factorial :=
+    (Finset.card_le_card (Finset.filter_subset_filter _ (Finset.subset_univ W))).trans_eq
+      (card_filter_ofFinEmb_eq s)
+  by_cases hPs : P s
+  · rcases ms.eq_zero_or_pos with hm0 | hmpos
+    · simp [hPs, hm0]
+    · have hklt : ms - 1 < r.factorial := by omega
+      let k₀ : Fin r.factorial := ⟨ms - 1, hklt⟩
+      simp only [hPs, ↓reduceIte, true_and]
+      rw [Finset.sum_eq_single k₀]
+      · simp [k₀, Nat.sub_add_cancel hmpos]
+      · intro k _ hkne
+        simp only [ite_eq_right_iff]
+        intro hmk
+        exact absurd (Fin.ext (by dsimp [k₀]; omega)) hkne
+      · intro hk
+        exact absurd (Finset.mem_univ k₀) hk
+  · simp [hPs]
 
 end TauCeti
