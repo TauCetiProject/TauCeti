@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.KyFan
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Trace.Projection
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
@@ -22,7 +23,7 @@ nonnegative real part (`LinearMap.isKNonneg_iff_forall_re_trace_nonneg`). The co
 interpolates between positivity and nonnegativity of the trace: by Ky Fan's minimum principle a
 symmetric `T` on an `n`-dimensional space is `k`-nonnegative, for `k ≤ n`, exactly when the sum of
 its `k` smallest eigenvalues is nonnegative
-(`LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_nonneg`).
+(`LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_rev_nonneg`).
 
 The case `k = 2` is the curvature condition of Böhm and Wilking: a curvature operator on the
 bivectors `Λ²V` of a space `V` of dimension at least `3` is `2`-nonnegative when the sum of its two
@@ -40,14 +41,14 @@ and `k`-nonnegativity implies `m`-nonnegativity for `1 ≤ k ≤ m`
   `1`-positivity as conditions on the quadratic form.
 * `LinearMap.isPositive_iff_isSymmetric_and_isKNonneg_one`: positivity is `1`-nonnegativity of
   a symmetric operator.
-* `LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_nonneg`,
-  `LinearMap.IsSymmetric.isKPos_iff_sum_eigenvalues_pos`: the eigenvalue characterizations, and
-  `LinearMap.IsSymmetric.isKNonneg_two_iff`, `LinearMap.IsSymmetric.isKPos_two_iff`: their form
-  for the two smallest eigenvalues.
-* `LinearMap.trace_orthogonalProjectionOnto_comp_comp_subtype`: the trace of the compression of
-  an operator to a finite-dimensional subspace is its diagonal sum along an orthonormal basis.
+* `LinearMap.IsSymmetric.isKNonneg_iff_sum_eigenvalues_rev_nonneg`,
+  `LinearMap.IsSymmetric.isKPos_iff_sum_eigenvalues_rev_pos`: the eigenvalue characterizations.
+* `LinearMap.IsSymmetric.isKNonneg_two_iff_eigenvalues_add_eigenvalues_nonneg`,
+  `LinearMap.IsSymmetric.isKPos_two_iff_eigenvalues_add_eigenvalues_pos`: their form for the two
+  smallest eigenvalues.
 * `LinearMap.isKNonneg_iff_forall_re_trace_nonneg`,
-  `LinearMap.isKPos_iff_forall_re_trace_pos`: the characterizations by traces of compressions.
+  `LinearMap.isKPos_iff_forall_re_trace_pos`: the characterizations by traces of compressions,
+  computed by `LinearMap.re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner`.
 * `LinearMap.isKNonneg_conj_iff`, `LinearMap.isKPos_conj_iff`: invariance under conjugation by
   linear isometries.
 * `ContinuousLinearMap.isClosed_setOf_isKNonneg`: the `k`-nonnegative bounded operators form a
@@ -255,27 +256,6 @@ theorem isKPos_conj_iff (U : E ≃ₗᵢ[𝕜] F) :
 
 /-! ### Traces of compressions -/
 
-/-- Along an orthonormal basis `b` of a finite-dimensional subspace `W`, the trace of the
-compression `P_W ∘ T ∘ ι_W` of `T` to `W` is the sum of the diagonal entries `⟪bᵢ, T bᵢ⟫` of `T`
-along `b`. -/
-theorem trace_orthogonalProjectionOnto_comp_comp_subtype (T : E →ₗ[𝕜] E) (W : Submodule 𝕜 E)
-    [FiniteDimensional 𝕜 W] {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι 𝕜 W) :
-    trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype) =
-      ∑ i, ⟪(b i : E), T (b i)⟫ := by
-  rw [trace_eq_sum_inner _ b]
-  refine sum_congr rfl fun i _ ↦ ?_
-  simp only [coe_comp, Function.comp_apply, Submodule.coe_subtype, ContinuousLinearMap.coe_coe,
-    Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left]
-
-/-- Along an orthonormal basis `b` of a finite-dimensional subspace `W`, the real part of the trace
-of the compression of `T` to `W` is the sum of the real diagonal entries of `T` along `b`. -/
-private theorem re_trace_compression_eq_sum (W : Submodule 𝕜 E) [FiniteDimensional 𝕜 W]
-    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι 𝕜 W) :
-    RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype)) =
-      ∑ i, RCLike.re ⟪T (b i), b i⟫ := by
-  rw [trace_orthogonalProjectionOnto_comp_comp_subtype T W b, map_sum]
-  exact sum_congr rfl fun i _ ↦ inner_re_symm _ _
-
 /-- A condition on the diagonal sums of `T` along all orthonormal families of `k` vectors is the
 same condition on the traces of the compressions of `T` to all `k`-dimensional subspaces. -/
 private theorem forall_orthonormal_iff_forall_re_trace (P : ℝ → Prop) :
@@ -284,7 +264,7 @@ private theorem forall_orthonormal_iff_forall_re_trace (P : ℝ → Prop) :
         P (RCLike.re (trace 𝕜 W ((W.orthogonalProjectionOnto : E →ₗ[𝕜] W) ∘ₗ T ∘ₗ W.subtype))) := by
   refine ⟨fun h W _ hW ↦ ?_, fun h w hw ↦ ?_⟩
   · let b := (stdOrthonormalBasis 𝕜 W).reindex (finCongr hW)
-    rw [re_trace_compression_eq_sum W b]
+    rw [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b]
     exact h _ (b.orthonormal.comp_linearIsometry W.subtypeₗᵢ)
   · -- Test the hypothesis on the span of `w`, with the orthonormal basis given by `w`.
     set W := Submodule.span 𝕜 (Set.range w)
@@ -295,7 +275,8 @@ private theorem forall_orthonormal_iff_forall_re_trace (P : ℝ → Prop) :
       simp [Basis.span_apply])
     have hb (i : Fin k) : (b i : E) = w i := by simp [b, Basis.span_apply]
     have := h W ((finrank_span_eq_card hli).trans (Fintype.card_fin k))
-    simpa [re_trace_compression_eq_sum W b, hb] using this
+    simpa [re_trace_orthogonalProjectionOnto_comp_comp_subtype_eq_sum_re_inner T W b, hb]
+      using this
 
 /-- `T` is `k`-nonnegative exactly when its compression to every `k`-dimensional subspace has
 trace with nonnegative real part. -/
@@ -319,7 +300,7 @@ variable [FiniteDimensional 𝕜 E] {n : ℕ}
 
 /-- A symmetric operator on an `n`-dimensional space is `k`-nonnegative, for `k ≤ n`, exactly
 when the sum `λₙ₋₁ + ⋯ + λₙ₋ₖ` of its `k` smallest eigenvalues is nonnegative. -/
-theorem isKNonneg_iff_sum_eigenvalues_nonneg (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n)
+theorem isKNonneg_iff_sum_eigenvalues_rev_nonneg (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n)
     (hk : k ≤ n) :
     T.IsKNonneg k ↔
       0 ≤ ∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, hT.eigenvalues hn j.rev := by
@@ -328,7 +309,7 @@ theorem isKNonneg_iff_sum_eigenvalues_nonneg (hT : T.IsSymmetric) (hn : finrank 
 
 /-- A symmetric operator on an `n`-dimensional space is `k`-positive, for `k ≤ n`, exactly when
 the sum `λₙ₋₁ + ⋯ + λₙ₋ₖ` of its `k` smallest eigenvalues is positive. -/
-theorem isKPos_iff_sum_eigenvalues_pos (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n)
+theorem isKPos_iff_sum_eigenvalues_rev_pos (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n)
     (hk : k ≤ n) :
     T.IsKPos k ↔
       0 < ∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, hT.eigenvalues hn j.rev := by
@@ -337,19 +318,21 @@ theorem isKPos_iff_sum_eigenvalues_pos (hT : T.IsSymmetric) (hn : finrank 𝕜 E
 
 /-- A symmetric operator on a space of dimension `n ≥ 2` is `2`-nonnegative exactly when the sum
 `λₙ₋₁ + λₙ₋₂` of its two smallest eigenvalues is nonnegative. -/
-theorem isKNonneg_two_iff (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
+theorem isKNonneg_two_iff_eigenvalues_add_eigenvalues_nonneg (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
     T.IsKNonneg 2 ↔
       0 ≤ hT.eigenvalues hn ⟨n - 1, by omega⟩ + hT.eigenvalues hn ⟨n - 2, by omega⟩ := by
-  rw [hT.isKNonneg_iff_sum_eigenvalues_nonneg hn h2, ← TauCeti.prefixSum_def,
+  rw [hT.isKNonneg_iff_sum_eigenvalues_rev_nonneg hn h2, ← TauCeti.prefixSum_def,
     TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two]
   rfl
 
 /-- A symmetric operator on a space of dimension `n ≥ 2` is `2`-positive exactly when the sum
 `λₙ₋₁ + λₙ₋₂` of its two smallest eigenvalues is positive. -/
-theorem isKPos_two_iff (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
+theorem isKPos_two_iff_eigenvalues_add_eigenvalues_pos (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (h2 : 2 ≤ n) :
     T.IsKPos 2 ↔
       0 < hT.eigenvalues hn ⟨n - 1, by omega⟩ + hT.eigenvalues hn ⟨n - 2, by omega⟩ := by
-  rw [hT.isKPos_iff_sum_eigenvalues_pos hn h2, ← TauCeti.prefixSum_def,
+  rw [hT.isKPos_iff_sum_eigenvalues_rev_pos hn h2, ← TauCeti.prefixSum_def,
     TauCeti.prefixSum_eq_sum_castLE h2, Fin.sum_univ_two]
   rfl
 
