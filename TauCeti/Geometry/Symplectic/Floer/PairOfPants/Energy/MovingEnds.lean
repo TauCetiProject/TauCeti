@@ -934,8 +934,9 @@ theorem integral_floerEnergyDensity_puncturedSpherePerturbation_truncation
               Complex.I) z (u z) := by
   simpa only [floerEnergyDensity_constSmooth, hamiltonianCurvature_constSmooth,
     eval₂_constSmooth_mfderiv_stdComplexLine] using
-    (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_puncturedSpherePerturbation_truncation
-      hH (fun i ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
+    (isNondegenerate_constSmooth
+      ω).integral_floerEnergyDensity_puncturedSpherePerturbation_truncation hH
+      (fun i ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
       (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) ha hsep hout hU hTU
       (contMDiffOn_iff_contDiffOn.mpr hu) hR
 
