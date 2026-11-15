@@ -118,7 +118,7 @@ theorem kolmogorovNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
       (S + T).kolmogorovNumber n ≤ ‖V.1.mkQL ∘L S‖₊ + ‖T‖₊ := by
     refine ((S + T).kolmogorovNumber_le V.2).trans ?_
     rw [comp_add]
-    refine (nnnorm_add_le _ _).trans ?_
+    refine (nnNorm_add_le _ _).trans ?_
     gcongr
     exact V.1.nnnorm_mkQL_comp_le T
   simpa only [kolmogorovNumber_def, ciInf_const] using
@@ -182,7 +182,7 @@ theorem kolmogorovNumber_eq_iInf_sSup_infNndist
   rw [kolmogorovNumber_def]
   congr 1
   funext V
-  rw [← (V.1.mkQL ∘L T).sSup_unitClosedBall_eq_nnnorm]
+  rw [← (V.1.mkQL ∘L T).sSup_unitClosedBall_eq_nnNorm]
   congr 2
   funext x
   apply NNReal.coe_injective
@@ -217,7 +217,7 @@ theorem kolmogorovNumber_id (n : ℕ) :
         intro h
         apply hproper
         apply SetLike.coe_injective
-        exact V.closed_of_finiteDimensional.closure_eq.symm.trans h.closure_eq
+        exact V.isClosed_of_finiteDimensional.closure_eq.symm.trans h.closure_eq
       rw [comp_id]
       exact_mod_cast (V.norm_mkQL hnot).ge
   · exact kolmogorovNumber_eq_zero_of_rank_le

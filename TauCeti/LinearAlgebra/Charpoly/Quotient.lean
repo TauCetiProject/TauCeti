@@ -25,9 +25,16 @@ in every characteristic.
 
 ## Main results
 
+* `LinearMap.charpoly_dvd_of_injective_of_comp_eq_comp`: the characteristic polynomial of an
+  endomorphism divides that of any endomorphism containing it through an injective intertwiner.
+
 * `LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ`: the characteristic polynomial of
   `f` is the product of those of its restriction to `W` and of the endomorphism it induces on
   `V ⧸ W`.
+## References
+
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, first edition (1996), Chapter I, §5,
+  p.21, for the characteristic-polynomial product on an invariant subspace and its quotient.
 -/
 
 public section
@@ -72,5 +79,34 @@ theorem charpoly_eq_charpoly_restrict_mul_charpoly_mapQ (f : V →ₗ[R] V) (hf 
     | inr l =>
       simp only [toMatrix_apply, sumQuot_repr_inr, Matrix.fromBlocks_apply₂₂, b]
       rw [← sumQuot_inr bW bQ l, W.mapQ_apply, Submodule.mkQ_apply]
+
+end LinearMap
+
+namespace LinearMap
+
+variable {K V U : Type*} [Field K]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup U] [Module K U] [FiniteDimensional K U]
+
+/-- If an injective linear map `j` satisfies `j.comp f = g.comp j`, the characteristic polynomial
+of `f` divides that of `g`. -/
+theorem charpoly_dvd_of_injective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U →ₗ[K] U)
+    (j : V →ₗ[K] U) (hj : Function.Injective j) (h : j.comp f = g.comp j) :
+    f.charpoly ∣ g.charpoly := by
+  let W := j.range
+  have hW : W ≤ W.comap g := by
+    rintro y ⟨x, rfl⟩
+    exact ⟨f x, DFunLike.congr_fun h x⟩
+  let e : V ≃ₗ[K] W := LinearEquiv.ofInjective j hj
+  have he : e.conj f = g.restrict hW := by
+    apply LinearMap.ext
+    intro x
+    apply Subtype.ext
+    dsimp only [e]
+    simp only [LinearEquiv.conj_apply_apply, LinearMap.restrict_apply]
+    exact (DFunLike.congr_fun h (e.symm x)).trans
+      (congrArg g (LinearEquiv.ofInjective_symm_apply j x))
+  refine ⟨(W.mapQ W g hW).charpoly, ?_⟩
+  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W g hW, ← he, e.charpoly_conj]
 
 end LinearMap

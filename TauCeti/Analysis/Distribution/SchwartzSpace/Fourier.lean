@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -56,6 +57,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.support_fourier_lineDerivOp_subset`,
   `SchwartzMap.support_fourier_iteratedLineDerivOp_subset`: differentiation does not enlarge the
   support of the Fourier transform.
+* `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
+  translation multiplies the Fourier transform by a phase and keeps its support.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -90,6 +93,25 @@ namespace SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
+
+section NotCompleteSpace
+
+variable [NormedSpace ℂ F]
+
+/-- Into a space which is not complete, the Fourier transform of a Schwartz function is `0`: the
+Bochner integral defining it is `0`. -/
+theorem fourier_eq_zero_of_not_completeSpace (hF : ¬CompleteSpace F) (f : 𝓢(E, F)) : 𝓕 f = 0 := by
+  ext ξ
+  simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF]
+
+/-- Into a space which is not complete, the inverse Fourier transform of a Schwartz function is
+`0`. -/
+theorem fourierInv_eq_zero_of_not_completeSpace (hF : ¬CompleteSpace F) (f : 𝓢(E, F)) :
+    𝓕⁻ f = 0 := by
+  ext ξ
+  simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hF]
+
+end NotCompleteSpace
 
 section FourierMultiplier
 
@@ -126,21 +148,34 @@ theorem fourier_smulLeftCLM_fourierInv_eq {g : E → ℂ} (hg : g.HasTemperateGr
 
 variable [CompleteSpace F]
 
-/-- Fourier multipliers commute with the Laplacian. -/
-theorem fourierMultiplierCLM_laplacian {g : E → 𝕜} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) :
+omit [CompleteSpace F] in
+/-- Fourier multipliers commute with the Laplacian. Without completeness of the target or temperate
+growth of the symbol the multiplier is zero. -/
+theorem fourierMultiplierCLM_laplacian (g : E → 𝕜) (f : 𝓢(E, F)) :
     fourierMultiplierCLM F g (Δ f) = Δ (fourierMultiplierCLM F g f) := by
-  have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
-  -- Commute the two symbols before transporting the identity through the Laplacian formula.
-  have hcomm : fourierMultiplierCLM F g
-      (fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) f) =
-      fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) (fourierMultiplierCLM F g f) := by
-    have hn𝕜 : (fun ξ : E ↦ RCLike.ofReal (K := 𝕜) (‖ξ‖ ^ 2)).HasTemperateGrowth := by
-      fun_prop
-    simp only [← fourierMultiplierCLM_ofReal 𝕜 hn]
-    simp only [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hn𝕜,
-      fourierMultiplierCLM_fourierMultiplierCLM_apply hn𝕜 hg, mul_comm g]
-  simpa only [laplacian_eq_fourierMultiplierCLM, ContinuousLinearMap.map_smul_of_tower]
-    using congrArg (fun q ↦ -((2 * π) ^ 2) • q) hcomm
+  by_cases hmain : CompleteSpace F ∧ g.HasTemperateGrowth
+  · obtain ⟨hF, hg⟩ := hmain
+    have hn : (fun ξ : E ↦ ‖ξ‖ ^ 2).HasTemperateGrowth := by fun_prop
+    -- Commute the two symbols before transporting the identity through the Laplacian formula.
+    have hcomm : fourierMultiplierCLM F g
+        (fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) f) =
+        fourierMultiplierCLM F (fun ξ : E ↦ ‖ξ‖ ^ 2) (fourierMultiplierCLM F g f) := by
+      have hn𝕜 : (fun ξ : E ↦ RCLike.ofReal (K := 𝕜) (‖ξ‖ ^ 2)).HasTemperateGrowth := by
+        fun_prop
+      simp only [← fourierMultiplierCLM_ofReal 𝕜 hn]
+      simp only [fourierMultiplierCLM_fourierMultiplierCLM_apply hg hn𝕜,
+        fourierMultiplierCLM_fourierMultiplierCLM_apply hn𝕜 hg, mul_comm g]
+    simpa only [laplacian_eq_fourierMultiplierCLM, ContinuousLinearMap.map_smul_of_tower]
+      using congrArg (fun q ↦ -((2 * π) ^ 2) • q) hcomm
+  · -- Without completeness or temperate growth, the Fourier multiplier is zero.
+    have h : fourierMultiplierCLM F g = 0 := by
+      ext1 φ
+      by_cases hF : CompleteSpace F
+      · have hg := fun hg ↦ hmain ⟨hF, hg⟩
+        simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
+      · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF]
+    simp only [h, zero_apply]
+    exact (map_zero _).symm
 
 /-- The transpose of a Fourier multiplier for a bilinear pairing of Schwartz functions has the
 reflected symbol: `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`, where `T_g = 𝓕⁻ (g • 𝓕 ·)`. In
@@ -202,6 +237,20 @@ theorem support_fourier_iteratedLineDerivOp_subset (u : 𝓢(E, F)) {n : ℕ} (m
   | succ n ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left]
     exact (support_fourier_lineDerivOp_subset _ _).trans (ih _)
+
+/-- The Fourier transform turns translation into modulation:
+`𝓕 (u (· - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 u ξ`. -/
+theorem fourier_compSubConstCLM_apply (u : 𝓢(E, F)) (a ξ : E) :
+    𝓕 (u.compSubConstCLM ℂ a) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 u ξ := by
+  rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
+    TauCeti.fourier_comp_sub_const]
+
+/-- Translating a Schwartz function does not change the support of its Fourier transform. -/
+theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
+    Function.support ⇑(𝓕 (u.compSubConstCLM ℂ a) : 𝓢(E, F)) =
+      Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
+  rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
+    TauCeti.support_fourier_comp_sub_const]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

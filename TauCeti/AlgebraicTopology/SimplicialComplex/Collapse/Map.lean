@@ -14,9 +14,9 @@ Simplicial collapse is intrinsic to a complex and must not depend on its ambient
 This file proves that an injective relabeling preserves and reflects free pairs, elementary
 collapses, finite collapse sequences, and collapsibility.
 
-This is functorial infrastructure for the collapse track in layer 11 of the geometric-topology
-roadmap. It lets later subdivision and product constructions replace a complex by an isomorphic
-copy before forming collapse sequences. The definitions of free pairs and collapse follow
+This is functorial infrastructure for collapse arguments. It lets constructions that change vertex
+names, such as subdivisions and products, replace a complex by an isomorphic copy before forming
+collapse sequences. The definitions of free pairs and collapse follow
 Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3; the results here are
 the standard invariance of those definitions under a change of vertex labels.
 

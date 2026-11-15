@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom.Basic
 public import TauCeti.AlgebraicGeometry.GroupScheme.Torsion.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section

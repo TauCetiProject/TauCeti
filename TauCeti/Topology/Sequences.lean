@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Topology.Sequences
-import Mathlib.Data.Finset.Lattice.Fold
+import Mathlib.Order.PartialSups
 
 /-!
 # Blow-up of a sequence of functions on a compact set
@@ -54,14 +54,12 @@ theorem IsCompact.exists_strictMono_tendsto_atTop
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ z : ℕ → X, (∀ n, z n ∈ C) ∧ ∃ z₀ ∈ C,
       Tendsto z atTop (𝓝 z₀) ∧ Tendsto (fun n ↦ g (φ n) (z n)) atTop atTop := by
   choose M hM using hg
-  let u (n : ℕ) := (Finset.range (n + 1)).sup' (by simp) M
-  have hMu (k n : ℕ) (hkn : k ≤ n) : M k ≤ u n :=
-    Finset.le_sup' M (Finset.mem_range.2 (Nat.lt_succ_of_le hkn))
+  let u := partialSups M
   have hu : Tendsto u atTop atTop := by
     refine tendsto_atTop.2 fun a ↦ ?_
     obtain ⟨k, y, hy, hk⟩ := hunb a
     exact eventually_atTop.2 ⟨k, fun n hkn ↦
-      hk.le.trans ((hM k (mem_image_of_mem _ hy)).trans (hMu k n hkn))⟩
+      hk.le.trans ((hM k (mem_image_of_mem _ hy)).trans (le_partialSups_of_le M hkn))⟩
   -- A finite initial family has a common bound, so values above each threshold
   -- occur at arbitrarily large indices.
   have hfreq : ∀ j : ℕ, ∃ᶠ k in atTop, ∃ y ∈ C, u j ≤ g k y := by
@@ -71,7 +69,7 @@ theorem IsCompact.exists_strictMono_tendsto_atTop
     refine ⟨k, ?_, y, hy, ((le_max_left _ _).trans_lt hk).le⟩
     by_contra hkN
     exact ((hM k (mem_image_of_mem _ hy)).trans
-      (hMu k N (not_lt.mp hkN))).not_gt ((le_max_right _ _).trans_lt hk)
+      (le_partialSups_of_le M (not_lt.mp hkN))).not_gt ((le_max_right _ _).trans_lt hk)
   obtain ⟨ψ, hψ, hψC⟩ := extraction_forall_of_frequently hfreq
   choose y hyC hy using hψC
   obtain ⟨z₀, hz₀, χ, hχ, hlim⟩ := hC.tendsto_subseq hyC

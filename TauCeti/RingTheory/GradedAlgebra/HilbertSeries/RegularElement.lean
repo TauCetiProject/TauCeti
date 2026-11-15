@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Quotient
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -30,6 +30,11 @@ of a quotient by a homogeneous regular sequence, in particular a coinvariant alg
 presented by homogeneous basic invariants. The quotient pieces are the images of the
 original graded pieces under the quotient map.
 
+Homogeneity of `f` alone gives exactness: in each degree `d + n` the kernel of the quotient
+map is the set of multiples of `f` from degree `n` (below degree `d` the quotient map is
+bijective). Regularity of `f` is what makes multiplication by `f` injective, so that this exact
+sequence becomes a short exact sequence and yields the dimension identity.
+
 ## Main results
 
 * `finrank_quotientPiece_span_singleton_add`: the dimension identity in degrees at least `d`.
@@ -40,10 +45,6 @@ original graded pieces under the quotient map.
 
 * R. P. Stanley, *Invariants of finite groups and their applications to combinatorics*,
   Bull. Amer. Math. Soc. (N.S.) **1** (1979), §3.
-
-The proof uses the homogeneous cancellation theorem
-  `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular` and the short-exact-sequence
-  dimension formula `Function.Exact.finrank_eq_add`.
 -/
 
 public section
@@ -58,9 +59,8 @@ variable [CommSemiring k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAl
   {f : A} {d : ℕ}
 
 /-- The degree-`d + n` quotient map has kernel the multiples of `f` from degree `n`,
-when `f` is homogeneous and regular. -/
-theorem exact_mulLeft_submoduleMap_span_singleton (hf : f ∈ 𝒜 d)
-    (hreg : IsLeftRegular f) (n : ℕ) :
+when `f` is homogeneous. -/
+theorem exact_mulLeft_submoduleMap_span_singleton (hf : f ∈ 𝒜 d) (n : ℕ) :
     Function.Exact
       (((LinearMap.mulLeft k f).domRestrict (𝒜 n)).codRestrict (𝒜 (d + n))
         (fun x ↦ SetLike.mul_mem_graded hf x.2))
@@ -71,9 +71,11 @@ theorem exact_mulLeft_submoduleMap_span_singleton (hf : f ∈ 𝒜 d)
     have hxI : (x : A) ∈ Ideal.span {f} :=
       Ideal.Quotient.eq_zero_iff_mem.1 (congrArg Subtype.val hx)
     obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxI
-    have ha𝒜 : a ∈ 𝒜 n :=
-      mem_of_mul_mem_add_of_isLeftRegular 𝒜 hf hreg (ha ▸ x.2)
-    exact ⟨⟨a, ha𝒜⟩, Subtype.ext ha.symm⟩
+    refine ⟨⟨DirectSum.decompose 𝒜 a n, SetLike.coe_mem _⟩, Subtype.ext ?_⟩
+    have h := DirectSum.coe_decompose_mul_of_left_mem_of_le 𝒜 hf (b := a) (n := d + n)
+      (Nat.le_add_right d n)
+    rw [Nat.add_sub_cancel_left, ← ha, DirectSum.decompose_of_mem_same 𝒜 x.2] at h
+    exact h.symm
   · rintro ⟨a, rfl⟩
     apply Subtype.ext
     exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨a, rfl⟩)
@@ -101,7 +103,7 @@ theorem finrank_quotientPiece_span_singleton_add (hf : f ∈ 𝒜 d)
   have hμ : Function.Injective μ := fun x y h ↦
     Subtype.ext (hreg (congrArg Subtype.val h))
   have hq : Function.Surjective q := LinearMap.submoduleMap_surjective _ _
-  have hex : Function.Exact μ q := exact_mulLeft_submoduleMap_span_singleton 𝒜 hf hreg n
+  have hex : Function.Exact μ q := exact_mulLeft_submoduleMap_span_singleton 𝒜 hf n
   simpa only [add_comm] using (hex.finrank_eq_add hμ hq).symm
 
 end Field

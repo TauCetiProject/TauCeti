@@ -378,7 +378,7 @@ theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb
   refine Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw hw0 =>
     div_ne_zero hb (hne w hw.1 hw.2 hw0)
   have h' := congrArg (·⁻¹) h
-  simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
+  simp only [inv_div, div_left_inj₀ hb, sub_left_inj] at h'
   simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) h'
 
 end TauCeti

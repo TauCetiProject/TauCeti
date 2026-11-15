@@ -106,13 +106,7 @@ theorem map_span_singleton_injective_of_isLocalizedModule (hr : IsSMulRegular M 
   -- `reduceModIdeal` and `Ideal.mapQSMulTop` induce the same map on these quotients.
   have h := congrArg DFunLike.coe (QuotSMulTop.map_comp_quotEquivOfEq (r ^ n) f)
   rw [LinearMap.coe_comp, LinearMap.coe_comp] at h
-  have hmap : ⇑(((Ideal.span {r ^ n}).mapQSMulTop f).restrictScalars R) =
-      ⇑(f.reduceModIdeal (Ideal.span {r ^ n})) := by
-    funext q
-    induction q using Submodule.Quotient.induction_on with | H m =>
-      simp only [LinearMap.restrictScalars_apply, Ideal.mapQSMulTop_mk,
-        LinearMap.reduceModIdeal_apply]
-  rw [hmap] at h
+  rw [Ideal.mapQSMulTop_eq_reduceModIdeal, LinearMap.coe_restrictScalars] at h
   exact (h ▸ hinj.comp (LinearEquiv.injective _)).of_comp
 
 /-- Principal-adic completion is exact at the localized module when the

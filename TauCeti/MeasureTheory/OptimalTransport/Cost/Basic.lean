@@ -77,9 +77,9 @@ here; the graph plan that witnesses it and the change of variables it uses come 
 inequality half needs no measurability of the cost at all, since only one half of the change of
 variables, `MeasureTheory.lintegral_map_le`, is used.
 
-This supplies the nonnegative-cost interface from Layer 1, item 1 of the optimal-transport
-roadmap. The parallel signed `EReal` interface for costs bounded below by an integrable split
-function is a separate definition family and is not part of this module.
+This is the nonnegative-cost interface. The parallel signed `EReal` interface for costs bounded
+below by an integrable split function is a separate definition family, in
+`TauCeti.MeasureTheory.OptimalTransport.Cost.BoundedBelow`.
 
 ## References
 

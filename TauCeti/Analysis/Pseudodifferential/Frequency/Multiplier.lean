@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -26,7 +27,11 @@ correction (`TauCeti.quantizeSchwartzValue_quantizeFrequencyCLM`). In particular
 quantization with Mathlib's Bessel potential `J^s`, the Fourier multiplier
 `(1 + ‖ζ‖²) ^ (s / 2)` in Mathlib's frequency `ζ`, multiplies its symbol by the Bessel weight
 `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ = 2πζ`. Composition on the left is not
-exact and needs the full composition calculus.
+exact: for a symbol `a` with compact spatial support, `b(D) ∘ Op(a)` is the quantization of the
+composition symbol `b # a` (`TauCeti.Symbol.sharp`). That symbol need not have compact spatial
+support, but its estimates hold uniformly in the position (`TauCeti.Symbol.IsUniform.sharp`). So
+composing such a quantization on either side with the Bessel potential `J^s` stays in the calculus
+of uniform symbols.
 
 On `ℝⁿ`, a smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order
 `m` with estimates uniform in the position (`TauCeti.Symbol.ofFrequency`), and its quantization
@@ -50,6 +55,9 @@ Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`, the Schwartz-space form of
   quantizes to Mathlib's Bessel multiplier and Bessel potential.
 * `TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`: the frequency-only symbol
   `TauCeti.Symbol.ofFrequency` quantizes to `b(D)`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofFrequency_sharp`,
+  `TauCeti.Symbol.quantizeSchwartzValue_besselPotential_sharp`: `c(D) ∘ Op(a) = Op(c # a)` and
+  `J^s ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ s # a)` for a symbol `a` with compact spatial support.
 * `TauCeti.Symbol.quantizeSchwartzValue_besselPotential` and
   `TauCeti.Symbol.quantizeSchwartzValue_ofInner`: the quantizations of the example symbols.
 
@@ -205,6 +213,22 @@ theorem quantizeSchwartzValue_ofFrequency [CompleteSpace W] (u : 𝓢(Coordinate
   exact quantizeSchwartzValue_comp_snd
     (Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hb hbound) u x
 
+/-- **Composition with a frequency multiplier on the left.** For a symbol `a` with compact spatial
+support, `c(D) ∘ Op(a) = Op(c # a)`: the Fourier multiplier `c(D)` applied to the test function
+`Op(a) u` is the quantization of the composition symbol of the frequency-only symbol `c` with `a`.
+This symbol is uniform (`TauCeti.Symbol.IsUniform.sharp`, `TauCeti.Symbol.isUniform_ofFrequency`)
+but in general has no compact spatial support. -/
+theorem quantizeSchwartzValue_ofFrequency_sharp {U : Type*} [NormedAddCommGroup U]
+    [NormedSpace ℂ U] [CompleteSpace U] [CompleteSpace W] {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {m' : ℝ} {c : CoordinateSpace n → W →L[ℂ] U}
+    (hc : ContDiff ℝ ∞ c)
+    (hcbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k c ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2))
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((ofFrequency c hc hcbound).sharp a ha).coefficient u x =
+      quantizeFrequencyCLM c ((ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+        (a.contDiff_quantizeSchwartzValue u)) x := by
+  rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue, quantizeSchwartzValue_ofFrequency]
+
 end Frequency
 
 section Examples
@@ -220,6 +244,20 @@ theorem quantizeSchwartzValue_besselPotential (s : ℝ) (u : 𝓢(CoordinateSpac
     quantizeSchwartzValue_eq_fourierMultiplierCLM
       (g := fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop)]
   simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
+
+/-- **Composition with the Bessel potential on the left.** For a symbol `a` with compact spatial
+support, Mathlib's Bessel multiplier `(1 + ‖ζ‖²) ^ (s / 2)` applied to the test function `Op(a) u`
+is the quantization of the composition symbol `⟨ξ / 2π⟩ ^ s # a`, a uniform symbol of order `s + m`
+(`TauCeti.Symbol.IsUniform.sharp`, `TauCeti.Symbol.isUniform_besselPotential`). -/
+theorem quantizeSchwartzValue_besselPotential_sharp [CompleteSpace W] {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((besselPotential s : Symbol n W W s).sharp a ha).coefficient u x =
+      SchwartzMap.fourierMultiplierCLM W
+        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+        ((ha.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (a.contDiff_quantizeSchwartzValue u)) x := by
+  rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue, quantizeSchwartzValue_besselPotential]
 
 /-- The symbol `⟪ξ, v⟫` quantizes to `D_v = -i ∂_v`. -/
 theorem quantizeSchwartzValue_ofInner [CompleteSpace V] (v : CoordinateSpace n)

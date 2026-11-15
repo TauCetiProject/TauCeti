@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Data.Finsupp.Defs
 public import Mathlib.Data.Set.Card
+import Mathlib.Order.Interval.Set.Infinite
 
 /-!
 # Antitone finitely supported sequences
 
-A finitely supported sequence `f : ℕ →₀ α` that is antitone takes only nonnegative values, and
-it is determined by how many times it takes each nonzero value: it lists its nonzero values in
+An antitone finitely supported function on an order with no maximal element, such as a sequence
+`f : ℕ →₀ α`, takes only nonnegative values. An antitone finitely supported sequence is moreover
+determined by how many times it takes each nonzero value: it lists its nonzero values in
 nonincreasing order, followed by zeros. Sorted, zero-padded sequences of this kind are how
 Mathlib records singular values (`LinearMap.singularValues`), so this is the uniqueness
 principle used to identify two such sequences from their multiplicities.
@@ -20,7 +22,8 @@ Nonnegativity holds in any preorder, and uniqueness requires only a partial orde
 
 ## Main declarations
 
-* `Finsupp.nonneg_of_antitone`: an antitone finitely supported sequence is nonnegative.
+* `Finsupp.nonneg_of_antitone`: an antitone finitely supported function on an order with no
+  maximal element is nonnegative.
 * `Finsupp.eq_of_antitone_of_ncard_eq`: two antitone finitely supported sequences that take
   every nonzero value equally often are equal.
 -/
@@ -31,13 +34,12 @@ namespace Finsupp
 
 variable {α : Type*} [Zero α]
 
-/-- An antitone finitely supported sequence takes only nonnegative values. -/
-theorem nonneg_of_antitone [Preorder α] {f : ℕ →₀ α} (hf : Antitone f) (i : ℕ) :
-    0 ≤ f i := by
-  obtain ⟨n, hn⟩ := f.support.exists_nat_subset_range
-  have hfn : f (max i n) = 0 :=
-    notMem_support_iff.mp fun h ↦ (Finset.mem_range.mp (hn h)).not_ge (le_max_right i n)
-  exact hfn ▸ hf (le_max_left i n)
+/-- An antitone finitely supported function on an order with no maximal element takes only
+nonnegative values. -/
+theorem nonneg_of_antitone {ι : Type*} [Preorder ι] [NoMaxOrder ι] [Preorder α] {f : ι →₀ α}
+    (hf : Antitone f) (i : ι) : 0 ≤ f i := by
+  obtain ⟨j, hij, hj⟩ := (Set.Ici_infinite i).exists_notMem_finset f.support
+  exact notMem_support_iff.mp hj ▸ hf hij
 
 /-- If two sequences agree below `i` and take each nonzero value equally often, the `i`-th
 entry of the first lies below that of the second whenever the second is antitone. -/

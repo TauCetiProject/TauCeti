@@ -96,7 +96,7 @@ theorem weightPolynomial_sumElim (hC : C.Finite) (hD : D.Finite) :
 theorem weightDistribution_sumElim (hC : C.Finite) (hD : D.Finite) (w : ℕ) :
     ((fun p : (ι → A) × (κ → A) ↦ Sum.elim p.1 p.2) '' (C ×ˢ D)).weightDistribution w =
       ∑ p ∈ Finset.antidiagonal w, C.weightDistribution p.1 * D.weightDistribution p.2 := by
-  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_sumElim hC hD)
+  have h := congrArg (AddMonoidAlgebra.coeff · w) (weightPolynomial_sumElim hC hD)
   simp only [coeff_weightPolynomial, Polynomial.coeff_mul] at h
   exact_mod_cast h
 
@@ -131,7 +131,7 @@ theorem weightDistribution_directSum (C : Submodule R (ι → R)) (D : Submodule
     (directSum C D : Set (ι ⊕ κ → R)).weightDistribution w =
       ∑ p ∈ Finset.antidiagonal w,
         (C : Set (ι → R)).weightDistribution p.1 * (D : Set (κ → R)).weightDistribution p.2 := by
-  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_directSum C D)
+  have h := congrArg (AddMonoidAlgebra.coeff · w) (weightPolynomial_directSum C D)
   simp only [Set.coeff_weightPolynomial, Polynomial.coeff_mul] at h
   exact_mod_cast h
 
@@ -166,7 +166,7 @@ theorem weightDistribution_directSum (C : AddSubgroup (ι → A)) (D : AddSubgro
     (C.directSum D : Set (ι ⊕ κ → A)).weightDistribution w =
       ∑ p ∈ Finset.antidiagonal w,
         (C : Set (ι → A)).weightDistribution p.1 * (D : Set (κ → A)).weightDistribution p.2 := by
-  have h := congrArg (Polynomial.coeff · w) (weightPolynomial_directSum C D)
+  have h := congrArg (AddMonoidAlgebra.coeff · w) (weightPolynomial_directSum C D)
   simp only [Set.coeff_weightPolynomial, Polynomial.coeff_mul] at h
   exact_mod_cast h
 

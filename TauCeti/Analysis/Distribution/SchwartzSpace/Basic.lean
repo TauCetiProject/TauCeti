@@ -31,6 +31,9 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
+  envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
+  the integral.
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
@@ -186,6 +189,32 @@ theorem integrable_norm_iteratedFDeriv (f : 𝓢(E, F)) (k : ℕ) :
     Integrable (fun x ↦ ‖iteratedFDeriv ℝ k f x‖) μ := by
   simpa only [pow_zero, one_mul] using f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 k
 
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The derivatives of a Schwartz function have integrable envelopes on unit translates: for every
+order `n` there is an integrable `ψ` with `‖D^n f (z + h)‖ ≤ ψ z` whenever `‖h‖ ≤ 1`. This is the
+domination hypothesis under which a convolution with `f` is differentiated under the integral
+(`MeasureTheory.iteratedFDeriv_convolution_left_of_dominated`). -/
+theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) :
+    ∃ ψ : E → ℝ, Integrable ψ μ ∧
+      ∀ z h, ‖h‖ ≤ 1 → ‖iteratedFDeriv ℝ n f (z + h)‖ ≤ ψ z := by
+  set p := μ.integrablePower
+  set S := (Finset.Iic (p, n)).sup (fun m ↦ SchwartzMap.seminorm ℝ m.1 m.2) f
+  refine ⟨fun z ↦ 2 ^ p * (2 ^ p * S) * (1 + ‖z‖) ^ (-(p : ℝ)),
+    (Measure.integrable_pow_neg_integrablePower μ).const_mul _, fun z h hh ↦ ?_⟩
+  have hz : 0 < 1 + ‖z‖ := by positivity
+  -- Decay at `z + h`, and `1 + ‖z‖ ≤ 2 (1 + ‖z + h‖)` since `‖h‖ ≤ 1`.
+  have hdecay := f.one_add_le_sup_seminorm_apply (𝕜 := ℝ) (m := (p, n)) le_rfl le_rfl (z + h)
+  have hcomp : 1 + ‖z‖ ≤ 2 * (1 + ‖z + h‖) := by
+    have := norm_sub_le (z + h) h
+    rw [add_sub_cancel_right] at this
+    linarith [norm_nonneg (z + h)]
+  dsimp only
+  rw [Real.rpow_neg hz.le, Real.rpow_natCast, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+  calc ‖iteratedFDeriv ℝ n f (z + h)‖ * (1 + ‖z‖) ^ p
+      ≤ ‖iteratedFDeriv ℝ n f (z + h)‖ * (2 * (1 + ‖z + h‖)) ^ p := by gcongr
+    _ = 2 ^ p * ((1 + ‖z + h‖) ^ p * ‖iteratedFDeriv ℝ n f (z + h)‖) := by rw [mul_pow]; ring
+    _ ≤ 2 ^ p * (2 ^ p * S) := by gcongr
+
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- For a Schwartz function `f` and a continuous linear map `L`, the derivatives of `L ∘ f` are
@@ -206,6 +235,19 @@ theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(
   exact integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
     ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖)
     (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
+
+section Smul
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- Multiplication by a function which is not of temperate growth is the zero map: Mathlib's
+`smulLeftCLM` is defined to be `0` there. -/
+theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemperateGrowth) :
+    smulLeftCLM F g = 0 := by
+  simp [smulLeftCLM, hg]
+
+end Smul
 
 end SchwartzMap
 

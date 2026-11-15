@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.AlgebraicTopology.SerreClass.Torsion
-public import TauCeti.CategoryTheory.ObjectProperty.Homology
+public import TauCeti.CategoryTheory.Abelian.LeftDerived
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 
 /-!

@@ -61,9 +61,9 @@ def normalBundleDiffeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
   let h := f.normalBundleHomeomorphOrthogonal (F := F) hn
   refine { h.toEquiv with contMDiff_toFun := ?_, contMDiff_invFun := ?_ }
   · intro p
-    obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace.mp
+    obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace_iff.mp
       (contMDiffAt_id (I := I.prod 𝓘(ℝ, F)) (n := m) (x := p))
-    apply Bundle.contMDiffAt_totalSpace.mpr
+    apply Bundle.contMDiffAt_totalSpace_iff.mpr
     refine ⟨?_, ?_⟩
     · simpa only [id_eq, h, Homeomorph.coe_toEquiv, normalBundleHomeomorphOrthogonal_apply] using hb
     · simpa only [id_eq, h, orthogonalNormalSpaceFiberBundle_trivializationAt,
@@ -71,9 +71,9 @@ def normalBundleDiffeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
         Homeomorph.coe_toEquiv,
         normalBundleHomeomorphOrthogonal_apply] using hv
   · intro p
-    obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace.mp
+    obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace_iff.mp
       (contMDiffAt_id (I := I.prod 𝓘(ℝ, F)) (n := m) (x := p))
-    apply Bundle.contMDiffAt_totalSpace.mpr
+    apply Bundle.contMDiffAt_totalSpace_iff.mpr
     refine ⟨?_, ?_⟩
     · simpa only [id_eq, h, Homeomorph.coe_symm_toEquiv,
         normalBundleHomeomorphOrthogonal_symm_apply] using hb

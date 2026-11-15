@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 public import TauCeti.Combinatorics.Hypergraph.Colored.Counting
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
-public import TauCeti.Data.Fintype.CardEmbedding
+public import TauCeti.Data.Fintype.Card.Embedding
 import TauCeti.Order.Partition.Pi
 import Mathlib.Data.Rat.BigOperators
 import Mathlib.Data.Rat.Cast.Order

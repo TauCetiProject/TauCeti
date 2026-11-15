@@ -20,15 +20,12 @@ no singleton requirement) and for `AbstractSimplicialComplex`.
 Following the convention Mathlib uses for `Order.krullDim`, the dimension takes values in
 `WithBot ℕ∞`: the empty complex `⊥` has dimension `⊥` (the "`-1`" of the void complex), a complex
 whose faces have unbounded cardinality has dimension `⊤`, and a finite-dimensional nonempty complex
-has an honest natural-number dimension. This is the primitive the layer-11 combinatorial-manifold
-recursion is indexed against: a combinatorial `n`-sphere or `n`-ball is an `n`-dimensional complex,
-and the boundary of the standard `(n + 1)`-simplex — computed here to have dimension `n` — is the
-base model of that recursion.
+has an honest natural-number dimension. Combinatorial manifolds are indexed by this dimension: a
+combinatorial `n`-sphere or `n`-ball is an `n`-dimensional complex, and the boundary of the
+standard `(n + 1)`-simplex — computed here to have dimension `n` — is the model combinatorial
+`n`-sphere.
 
 The definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2.
-This supplements the basic API (faces, the star and link of a simplex) that the geometric-topology
-roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 11) asks for on top of Mathlib's
-`AbstractSimplicialComplex`.
 
 ## Main definitions
 

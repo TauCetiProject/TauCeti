@@ -269,8 +269,7 @@ variable {k G : Type u} [CommRing k] [Group G]
 
 /-- The free tensor-coinvariant identification is natural in the coefficient representation. -/
 @[reassoc]
-theorem coinvariantsTensorFreeLEquiv_naturality (f : A ⟶ B) (α : Type u)
-    [DecidableEq α] :
+theorem coinvariantsTensorFreeLEquiv_naturality (f : A ⟶ B) (α : Type u) :
     ((coinvariantsTensor k G).map f).app (free k G α) ≫
         (coinvariantsTensorFreeLEquiv B α).toModuleIso.hom =
       (coinvariantsTensorFreeLEquiv A α).toModuleIso.hom ≫

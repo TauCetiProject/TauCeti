@@ -14,7 +14,7 @@ The spin^c structures of a plumbed three-manifold are encoded by characteristic 
 plumbing lattice, and spin^c **conjugation** acts by negating the covector. The involution itself,
 `PlumbingGraph.conjugate`, lives at the characteristic-covector layer in `Characteristic.lean`;
 this file proves its compatibility with the characteristic weight function `χ_k(x)` from
-`Weight.lean`: conjugating the covector while negating the lattice point leaves the weight
+`Weight/Basic.lean`: conjugating the covector while negating the lattice point leaves the weight
 unchanged,
 
 `χ_{-k}(-x) = χ_k(x)`,
