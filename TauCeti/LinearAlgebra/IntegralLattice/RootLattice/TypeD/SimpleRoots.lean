@@ -117,10 +117,7 @@ theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n
 /-! ## The Gram matrix -/
 
 /-- **The Gram matrix of the Bourbaki simple roots in the checkerboard lattice is the Cartan
-matrix of type `Dₙ`.**
-
-Not a `simp` lemma: `checkerboardLattice_form_apply` is `@[simp]`, so `simp` rewrites the
-left-hand side to a coordinate sum before this equation can fire. -/
+matrix of type `Dₙ`.** -/
 theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
     (hn : 4 ≤ n) (i j : Fin n) :
     (checkerboardLattice n).form (checkerboardSimpleRoot n hn i) (checkerboardSimpleRoot n hn j) =
