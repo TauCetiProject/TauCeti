@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.KaehlerDifferential.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Residue
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Substitution
 
 /-!
 # Pullback of continuous Puiseux differentials
@@ -22,6 +22,12 @@ Pullback is continuous and functorial. A bicontinuous algebra automorphism induc
 equivalence of one-forms, with inverse the pullback along its inverse. The comparison with forms
 on a ramified level intertwines any compatible Laurent substitution with Puiseux pullback.
 Residues are multiplied by the order of `ρ(t)`, so order-one changes preserve them.
+
+In particular, for any `K`-algebra lift of a Laurent-series substitution `LaurentSeries.substAlgHom`
+(automatic continuity via `continuousAlgHomOfSubstAlgHom`), pullback intertwines every ramified
+level `n` with a Laurent substitution on one-forms and multiplies residues by `φ.order.toNat`; for
+a lift of a formal-coordinate automorphism `LaurentSeries.substAlgEquiv`, `pullbackEquiv` preserves
+residues.
 -/
 
 public section
@@ -188,5 +194,77 @@ theorem residue_equivPuiseuxField_pullback_of_order_eq_one
     residue K (equivPuiseuxField K (pullback ρ ω)) = residue K (equivPuiseuxField K ω) := by
   rw [equivPuiseuxField_pullback]
   exact residue_map_mul_derivation ρ.toAlgHom ρ.continuous h _
+
+/-- On level one (`K⸨X⸩`), pullback along any `K`-algebra lift of `LaurentSeries.substAlgHom`
+agrees with substitution on continuous Laurent one-forms. -/
+theorem pullback_continuousAlgHomOfSubstAlgHom_levelMap_one
+    (ρ : puiseuxField K →ₐ[K] puiseuxField K)
+    {φ : K⟦X⟧} (hφ : PowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0)
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) =
+      algebraMap K⸨X⸩ (puiseuxField K) (LaurentSeries.substAlgHom hφ hφ₀ f))
+    (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    pullback (continuousAlgHomOfSubstAlgHom ρ hφ hφ₀ hρ) (levelMap K 1 ω) =
+      levelMap K 1 (TauCeti.ContinuousKaehlerDifferential.subst hφ hφ₀ ω) :=
+  pullback_levelMap_subst (continuousAlgHomOfSubstAlgHom ρ hφ hφ₀ hρ) 1 1 hφ hφ₀
+    (fun f ↦ by
+      rw [continuousAlgHomOfSubstAlgHom_apply, ← algebraMap_laurentSeries_apply,
+        ← algebraMap_laurentSeries_apply]
+      exact hρ f) ω
+
+/-- On every ramified level `n`, pullback along any `K`-algebra lift of
+`LaurentSeries.substAlgHom hφ hφ₀` intertwines `levelMap K n` with substitution on continuous
+Laurent one-forms by a power series `ψ` satisfying `ψ ^ n = φ.expand n`. -/
+theorem exists_pullback_continuousAlgHomOfSubstAlgHom_levelMap
+    (ρ : puiseuxField K →ₐ[K] puiseuxField K)
+    {φ : K⟦X⟧} (hφ : PowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0)
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) =
+      algebraMap K⸨X⸩ (puiseuxField K) (LaurentSeries.substAlgHom hφ hφ₀ f))
+    (n : ℕ+) :
+    ∃ (ψ : K⟦X⟧) (hψ : PowerSeries.constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0),
+      ψ ^ (n : ℕ) = φ.expand n n.ne_zero ∧
+        ∀ ω : TauCeti.ContinuousKaehlerDifferential K,
+          pullback (continuousAlgHomOfSubstAlgHom ρ hφ hφ₀ hρ) (levelMap K n ω) =
+            levelMap K n (TauCeti.ContinuousKaehlerDifferential.subst hψ hψ₀ ω) := by
+  obtain ⟨ψ, hψ, hψ₀, hψ_pow, hψ_level⟩ :=
+    exists_substAlgHom_apply_levelEmbedding hφ hφ₀ hρ n
+  exact ⟨ψ, hψ, hψ₀, hψ_pow, pullback_levelMap_subst
+    (continuousAlgHomOfSubstAlgHom ρ hφ hφ₀ hρ) n n hψ hψ₀
+    (fun f ↦ by rw [continuousAlgHomOfSubstAlgHom_apply]; exact hψ_level f)⟩
+
+/-- Pullback along any `K`-algebra lift of `LaurentSeries.substAlgHom hφ hφ₀` multiplies the
+residue of a continuous Puiseux one-form by `φ.order.toNat`. -/
+theorem residue_equivPuiseuxField_pullback_continuousAlgHomOfSubstAlgHom
+    (ρ : puiseuxField K →ₐ[K] puiseuxField K)
+    {φ : K⟦X⟧} (hφ : PowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0)
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) =
+      algebraMap K⸨X⸩ (puiseuxField K) (LaurentSeries.substAlgHom hφ hφ₀ f))
+    (ω : ContinuousKaehlerDifferential K) :
+    residue K (equivPuiseuxField K
+        (pullback (continuousAlgHomOfSubstAlgHom ρ hφ hφ₀ hρ) ω)) =
+      (φ.order.toNat : K) * residue K (equivPuiseuxField K ω) := by
+  have hord : (ρ (single K 1 1) : HahnSeries ℚ K).order = φ.order.toNat :=
+    order_single_one_of_apply_algebraMap_substAlgHom (ρ := ρ.toRingHom) hφ hφ₀ hρ
+  rw [residue_equivPuiseuxField_pullback, continuousAlgHomOfSubstAlgHom_apply, hord,
+    Rat.cast_natCast]
+
+/-- Pullback along any `K`-algebra automorphism lifting a formal-coordinate substitution
+`LaurentSeries.substAlgEquiv φ` preserves the residue of every continuous Puiseux one-form. -/
+theorem residue_equivPuiseuxField_pullbackEquiv_continuousAlgEquivOfSubstAlgEquiv
+    (ρ : puiseuxField K ≃ₐ[K] puiseuxField K) (φ : FormalCoordinate K)
+    (hρ : ∀ f, ρ (algebraMap K⸨X⸩ (puiseuxField K) f) =
+      algebraMap K⸨X⸩ (puiseuxField K) (LaurentSeries.substAlgEquiv φ f))
+    (ω : ContinuousKaehlerDifferential K) :
+    residue K (equivPuiseuxField K
+        (pullbackEquiv (continuousAlgEquivOfSubstAlgEquiv ρ φ hρ) ω)) =
+      residue K (equivPuiseuxField K ω) := by
+  rw [pullbackEquiv_apply]
+  refine residue_equivPuiseuxField_pullback_of_order_eq_one _ ?_ ω
+  have hρ' : ∀ f, ρ.toRingEquiv.toRingHom (algebraMap K⸨X⸩ (puiseuxField K) f) =
+      algebraMap K⸨X⸩ (puiseuxField K)
+        (LaurentSeries.substAlgHom φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero f) :=
+    fun f ↦ by rw [← LaurentSeries.coe_substAlgEquiv]; exact hρ f
+  simpa [φ.order_toPowerSeries] using
+    order_single_one_of_apply_algebraMap_substAlgHom
+      φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero hρ'
 
 end TauCeti.puiseuxField.ContinuousKaehlerDifferential
