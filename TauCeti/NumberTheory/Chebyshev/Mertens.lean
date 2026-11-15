@@ -22,7 +22,7 @@ This file proves Mertens's first theorem with an absolute constant, valid at eve
 
 and its standard consequence for the prime divisors of an integer,
 
-* `∑_{p ∣ N} log p / p ≤ log log N + O(1)` for every natural number `N ≥ 3`, with the same
+* `∑_{p ∣ N} log p / p ≤ log log N + O(1)` for every natural number `N`, with the same
   explicit constant plus one.
 
 The proof is Chebyshev's. By `Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`,
@@ -106,21 +106,40 @@ theorem abs_sum_primesLE_log_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
   rw [abs_le]
   constructor <;> linarith [hM.1, hM.2]
 
-/-- The sum of `log p` over the prime divisors of a nonzero `N` is at most `log N`, since their
-product divides `N`. -/
-theorem sum_primeFactors_log_le_log {N : ℕ} (hN : N ≠ 0) :
+/-- The sum of `log p` over the prime divisors of `N` is at most `log N`, since their product
+divides `N`. -/
+theorem sum_primeFactors_log_le_log (N : ℕ) :
     ∑ p ∈ N.primeFactors, log p ≤ log N := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simp
   rw [← log_prod (fun p hp ↦ by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero),
     ← Nat.cast_prod]
   exact log_le_log (by exact_mod_cast prod_pos fun p hp ↦ Nat.pos_of_mem_primeFactors hp)
     (by exact_mod_cast Nat.le_of_dvd (by lia) (Nat.prod_primeFactors_dvd N))
 
 /-- The sum of `log p / p` over the prime divisors of `N` is `O(log log N)`: for every natural
-number `N ≥ 3`, `∑_{p ∣ N} log p / p ≤ log log N + log 4 + 5 + ∑_{n not prime} Λ(n) / n`. -/
-theorem sum_primeFactors_log_div_le_log_log_add {N : ℕ} (hN : 3 ≤ N) :
+number `N`, `∑_{p ∣ N} log p / p ≤ log log N + log 4 + 5 + ∑_{n not prime} Λ(n) / n`. -/
+theorem sum_primeFactors_log_div_le_log_log_add (N : ℕ) :
     ∑ p ∈ N.primeFactors, log p / p ≤
       log (log N) + (log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n + 1) := by
   set C := log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n
+  have hC : 4 ≤ C := by
+    have hB : 0 ≤ ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n :=
+      tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
+    linarith [log_nonneg (show (1 : ℝ) ≤ 4 by norm_num)]
+  obtain hN | hN := lt_or_ge N 3
+  · -- For `N ≤ 2` the bound is numerical: `log 2 / 2 < 1` and `log log 2 ≥ 1 - (log 2)⁻¹ ≥ -1`.
+    interval_cases N
+    · simp only [Nat.primeFactors_zero, sum_empty, Nat.cast_zero, log_zero]
+      linarith
+    · simp only [Nat.primeFactors_one, sum_empty, Nat.cast_one, log_one, log_zero]
+      linarith
+    · rw [Nat.prime_two.primeFactors, sum_singleton]
+      have hinv : (log 2)⁻¹ ≤ 2 :=
+        inv_le_of_inv_le₀ two_pos (by linarith [log_two_gt_d9])
+      have := one_sub_inv_le_log_of_pos (log_pos one_lt_two)
+      push_cast
+      linarith [log_two_lt_d9]
   have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast hN
   have hN0 : (0 : ℝ) < N := by linarith
   set y := log N
@@ -150,7 +169,7 @@ theorem sum_primeFactors_log_div_le_log_log_add {N : ℕ} (hN : 3 ≤ N) :
             div_nonneg (hlogp p hp) hy0.le
       _ ≤ 1 := by
           rw [← sum_div, div_le_one hy0]
-          exact sum_primeFactors_log_le_log (by lia)
+          exact sum_primeFactors_log_le_log N
   exact (add_le_add hsmall hlarge).trans_eq (by ring)
 
 end TauCeti
