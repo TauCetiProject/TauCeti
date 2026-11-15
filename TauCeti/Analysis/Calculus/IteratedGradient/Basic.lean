@@ -39,6 +39,8 @@ normed, complete structures are recovered by unfolding the recursion rather than
   `Cᵐ` when `m + j + 1 ≤ n`.
 * `TauCeti.hasCompactSupport_iteratedGradientChain`: every field of a compactly supported
   function is compactly supported.
+* `LinearIsometryEquiv.iteratedGradientCongr`: the push-forward of iterated gradients along a
+  linear isometry.
 -/
 
 public section
@@ -155,3 +157,58 @@ theorem hasCompactSupport_iteratedGradientChain {f : F → ℝ} (hf : HasCompact
 end IteratedGradientChain
 
 end TauCeti
+
+/-! ### Iterated gradients along a linear isometry -/
+
+section IteratedGradientCongr
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
+  [NormedSpace ℝ E']
+
+/-- The push-forward of iterated gradients along a linear isometry `e`: the identity of
+`TauCeti.IteratedGradient E 0 = E` with `E'` is `e`, and a field with one more derivative slot
+`A : E →L[ℝ] IteratedGradient E j` is sent to `A' ∘ e⁻¹` with `A'` the push-forward of the values
+of `A`. -/
+def LinearIsometryEquiv.iteratedGradientCongr (e : E ≃ₗᵢ[ℝ] E') :
+    (j : ℕ) → TauCeti.IteratedGradient E j ≃ₗᵢ[ℝ] TauCeti.IteratedGradient E' j
+  | 0 => e
+  | j + 1 =>
+    { toLinearEquiv := (e.toContinuousLinearEquiv.arrowCongr
+        (LinearIsometryEquiv.iteratedGradientCongr e j).toContinuousLinearEquiv).toLinearEquiv
+      norm_map' := fun A => by
+        -- `arrowCongr` sends `A` to `eⱼ ∘ A ∘ e⁻¹` by definition; there is no bundled
+        -- application lemma at the level of `→L[ℝ]`, so state that composition to apply the
+        -- operator-norm invariance lemmas.
+        change ‖((LinearIsometryEquiv.iteratedGradientCongr e j :
+            TauCeti.IteratedGradient E j →L[ℝ] TauCeti.IteratedGradient E' j).comp
+          (A.comp (e.symm : E' →L[ℝ] E)))‖ = ‖A‖
+        rw [ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+          ContinuousLinearMap.opNorm_comp_linearIsometryEquiv] }
+
+namespace LinearIsometryEquiv
+
+variable (e : E ≃ₗᵢ[ℝ] E')
+
+@[simp]
+theorem iteratedGradientCongr_zero : e.iteratedGradientCongr 0 = e :=
+  (rfl)
+
+/-- The push-forward of an iterated gradient with `j + 1` derivative slots. -/
+theorem iteratedGradientCongr_succ_apply (j : ℕ) (A : TauCeti.IteratedGradient E (j + 1)) :
+    e.iteratedGradientCongr (j + 1) A =
+      ((e.iteratedGradientCongr j : TauCeti.IteratedGradient E j →L[ℝ] _).comp
+        (A.comp (e.symm : E' →L[ℝ] E)) : E' →L[ℝ] TauCeti.IteratedGradient E' j) :=
+  (rfl)
+
+/-- The pullback of an iterated gradient with `j + 1` derivative slots: `A ↦ A' ∘ e`, with `A'`
+the pullback of the values of `A`. -/
+theorem iteratedGradientCongr_symm_succ_apply (j : ℕ)
+    (A : TauCeti.IteratedGradient E' (j + 1)) :
+    (e.iteratedGradientCongr (j + 1)).symm A =
+      (((e.iteratedGradientCongr j).symm : TauCeti.IteratedGradient E' j →L[ℝ] _).comp
+        (A.comp (e : E →L[ℝ] E')) : E →L[ℝ] TauCeti.IteratedGradient E j) :=
+  (rfl)
+
+end LinearIsometryEquiv
+
+end IteratedGradientCongr

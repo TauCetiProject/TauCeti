@@ -155,7 +155,7 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
     ContinuousMap.exists_restrict_eq (Y := ℂ) hK ⟨K.domRestrict h, hcont.domRestrict⟩
   have hHK : ∀ z ∈ K, H z = h z := fun z hz => by
     simpa using DFunLike.congr_fun hH ⟨z, hz⟩
-  set G : ℂ → ℂ := fun z => Complex.exp (H z) with hGdef
+  set G : ℂ → ℂ := fun z => Complex.exp (H z)
   have hGK : ∀ z ∈ K, G z = (z - a) / (z - b) := fun z hz =>
     (congrArg Complex.exp (hHK z hz)).trans (heq z hz)
   -- the two sides of `closure V` glue into a zero-free continuous function

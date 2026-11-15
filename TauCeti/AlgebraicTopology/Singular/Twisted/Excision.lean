@@ -27,7 +27,8 @@ As for constant coefficients (`TauCeti.AlgebraicTopology.Singular.Excision`), th
 the inclusion of pairs `(A, A ∩ B) ⟶ (X, B)` when the interiors of `A` and `B` cover `X`
 (`TopPair.isIso_twistedHomologyMap_excisionMap`), to excising a set whose closure lies in the
 interior of the subspace (`TopPair.isIso_twistedHomologyMap_excisionMap_compl`), and to computing
-homology modulo the complement of a closed set `K` in an open neighbourhood `U` of `K`
+homology modulo the complement of a set `K` in an open neighbourhood `U` of its closure
+(`TopPair.isIso_twistedHomologyMap_excisionMap_of_closure_subset`), in particular of a closed set
 (`TopPair.isIso_twistedHomologyMap_excisionMap_of_isClosed_subset`), each with a chain-level
 `quasiIso_twistedChainComplexMap_` counterpart. The last form is what
 compares relative groups `H_*(U, U ∖ K; L)` of an open subset with those of the ambient space, as
@@ -250,23 +251,40 @@ theorem isIso_twistedHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z �
   have := quasiIso_twistedChainComplexMap_excisionMap_compl B L Z h
   infer_instance
 
+/-- **Excision with local coefficients onto a neighbourhood of the closure.** If `U` is open and
+contains the closure of `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces a
+quasi-isomorphism of relative twisted chain complexes. -/
+theorem quasiIso_twistedChainComplexMap_excisionMap_of_closure_subset {U K : Set X}
+    (hU : IsOpen U) (hKU : closure K ⊆ U) :
+    QuasiIso (twistedChainComplexMap (excisionMap U Kᶜ) L) := by
+  refine quasiIso_twistedChainComplexMap_excisionMap U Kᶜ L ?_
+  rw [Set.union_comm, TauCeti.interior_compl_union_interior_eq_univ_iff, hU.interior_eq]
+  exact hKU
+
+/-- **Excision with local coefficients onto a neighbourhood of the closure.** If `U` is open and
+contains the closure of `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces
+isomorphisms on relative twisted homology. -/
+theorem isIso_twistedHomologyMap_excisionMap_of_closure_subset {U K : Set X} (hU : IsOpen U)
+    (hKU : closure K ⊆ U) (n : ℕ) :
+    IsIso (twistedHomologyMap (excisionMap U Kᶜ) L n) := by
+  have := quasiIso_twistedChainComplexMap_excisionMap_of_closure_subset L hU hKU
+  infer_instance
+
 /-- **Excision with local coefficients onto a neighbourhood.** If `U` is open and contains the
 closed set `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces a quasi-isomorphism of
 relative twisted chain complexes. -/
 theorem quasiIso_twistedChainComplexMap_excisionMap_of_isClosed_subset {U K : Set X}
     (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) :
-    QuasiIso (twistedChainComplexMap (excisionMap U Kᶜ) L) := by
-  exact quasiIso_twistedChainComplexMap_excisionMap U Kᶜ L
-    (TauCeti.interior_union_interior_compl_eq_univ hU hK hKU)
+    QuasiIso (twistedChainComplexMap (excisionMap U Kᶜ) L) :=
+  quasiIso_twistedChainComplexMap_excisionMap_of_closure_subset L hU (hK.closure_eq.symm ▸ hKU)
 
 /-- **Excision with local coefficients onto a neighbourhood.** If `U` is open and contains the
 closed set `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative
 twisted homology. -/
 theorem isIso_twistedHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
-    IsIso (twistedHomologyMap (excisionMap U Kᶜ) L n) := by
-  have := quasiIso_twistedChainComplexMap_excisionMap_of_isClosed_subset L hU hK hKU
-  infer_instance
+    IsIso (twistedHomologyMap (excisionMap U Kᶜ) L n) :=
+  isIso_twistedHomologyMap_excisionMap_of_closure_subset L hU (hK.closure_eq.symm ▸ hKU) n
 
 end Subsets
 

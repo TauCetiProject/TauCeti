@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Idempotents

@@ -301,7 +301,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable �
     (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
   have hae : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 =ᵐ[volume] (univ : Set ℝ) ×ˢ Icc 0 1 := by
     rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc
   rwa [← setLIntegral_congr hae]
 
 /-- **Translations act freely on nonstationary finite-energy Floer cylinders.** Under the

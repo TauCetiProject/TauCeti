@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the first Janko group
 
-This file carries the `J₁` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the ATLAS version 3 presentation on the
-standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with the source,
-generator convention, transcription notes, and expected counts.
+This file carries the `J₁` row of the sporadic presentation data. It records the ATLAS version 3
+presentation on the standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with
+the source, generator convention, transcription notes, and expected counts.
 
 The presentation displayed by the ATLAS is
 
@@ -55,7 +54,7 @@ They agree in every letter, inverse, exponent, and source-order position with
 `j1Presentation_transcribed`: `repeatedWord` is `xyxy⁻¹`, `fifthPowerBase` is the fourth source
 base, and `squareBase` is the fifth. No constructor entry is commented out or marked redundant.
 This comparison was performed from the pinned source bytes independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -80,7 +79,7 @@ therefore has order `175560` and is the pinned subgroup.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `8ce03dd9c719b08567f80eb6289a08146479a83653c57c6213226aead66c8b0e`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

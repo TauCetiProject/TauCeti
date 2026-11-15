@@ -73,12 +73,10 @@ place the ordered hypotheses appear. Those hypotheses already supply `IsDomain R
 
 ## References
 
-This builds the `weylNumerator` target of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, Layer 6 ("the character,
-dimension, and Kostant formulas"), whose `Suggested.lean` pins it on `Module.Dual K H` for the root
-system of a Cartan subalgebra. As with `TauCeti.weylVector` and `TauCeti.dotAction`, the
-combinatorics lives at the level of an abstract root pairing, so the Lie-algebra target is a
-specialization rather than a rebuild.
+For a semisimple Lie algebra the Weyl numerator lives on `Module.Dual K H`, for the root system of
+a Cartan subalgebra `H`. As with `TauCeti.weylVector` and `TauCeti.dotAction`, the combinatorics
+lives at the level of an abstract root pairing, so the Lie-algebra version is a specialization
+rather than a rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII.

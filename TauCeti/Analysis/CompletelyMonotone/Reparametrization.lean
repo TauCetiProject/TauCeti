@@ -14,8 +14,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Shift
 This file extends the closure API of `TauCeti.IsCompletelyMonotone` (sums, nonnegative scalar
 multiples, products and differentiation, in `TauCeti.Analysis.CompletelyMonotone.Basic` and
 `TauCeti.Analysis.CompletelyMonotone.Closure`) with closure under **reparametrizing the
-argument by a nonnegative affine map** `t ↦ c · t + a` (`c, a ≥ 0`), as called for by the
-`OneParameterSemigroups` roadmap's completely-monotone closure programme.
+argument by a nonnegative affine map** `t ↦ c · t + a` (`c, a ≥ 0`).
 
 Both nonnegativity conditions are essential and are exactly what keeps the reparametrized
 argument inside `[0, ∞)`, where the sign-alternation of `f` lives: scaling `t ↦ c · t` needs

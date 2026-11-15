@@ -53,6 +53,7 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
@@ -192,7 +193,7 @@ omit [CompleteSpace F] in
 space. -/
 theorem morseIndex_stereographicHeight_zero [FiniteDimensional ℝ F] :
     morseIndex stereographicHeight (0 : F) = finrank ℝ F := by
-  have := FiniteDimensional.complete ℝ F
+  have := FiniteDimensional.completeSpace ℝ F
   rw [← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   intro w hw
   rw [neg_apply, hessianQuadraticForm_stereographicHeight_zero, neg_neg]
@@ -391,6 +392,16 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- **Every level of the height except the poles is regular.** The only critical points of the
+height function are the poles, where its values are `1` and `-1`. -/
+theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
+    IsRegularValue (𝓡 n) 𝓘(ℝ) (sphereHeight v) c := by
+  refine isRegularValue_iff.2 fun x hx ↦ ?_
+  rw [isRegularPoint_iff_mvfderiv_ne_zero, Ne, mvfderiv_sphereHeight_eq_zero_iff]
+  rintro (rfl | rfl)
+  · exact hc₁ (hx.symm.trans (sphereHeight_self x))
+  · exact hc₂ (hx.symm.trans (sphereHeight_neg_self v))
 
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- **The equator of the circle has two points.** In a two-dimensional real inner product space,

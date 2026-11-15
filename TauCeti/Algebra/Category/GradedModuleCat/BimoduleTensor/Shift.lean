@@ -34,7 +34,7 @@ universe vM vN uk uA uB uC
 variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC}
   [CommRing k] [Ring A] [Ring B] [Ring C]
   [Algebra k A] [Algebra k B] [Algebra k C]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B) (Θ : InternalGrading k C)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ) (Θ : InternalGrading k C ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] [GradedAlgebra Θ.piece]
   (M : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece)
   (N : GradedModuleCat.{vN} (Δ.tensorProduct Θ.opposite).piece)

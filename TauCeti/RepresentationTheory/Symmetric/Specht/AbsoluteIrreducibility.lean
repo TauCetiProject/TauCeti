@@ -34,8 +34,6 @@ equivariant endomorphism therefore maps `e_t` to a scalar multiple of itself.  S
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Section 2.4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "Absolute irreducibility".
 -/
 
 public section

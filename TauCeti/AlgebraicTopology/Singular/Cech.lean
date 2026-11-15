@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.OrderedCech
-public import TauCeti.Algebra.Homology.TotalComplex
+public import TauCeti.Algebra.Homology.TotalComplex.Basic
 
 /-!
 # The Čech double complex of singular chains of an open cover

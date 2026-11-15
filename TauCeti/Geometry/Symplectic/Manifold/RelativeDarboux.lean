@@ -131,7 +131,7 @@ theorem exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint
   have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   -- The preferred charts `φ` at `i p` and `ψ` at `p`, and `i` read in them.
   set φ := extChartAt I (i p) with hφ
-  set ψ := extChartAt J p with hψ
+  set ψ := extChartAt J p
   let g : E' → E := φ ∘ i ∘ ψ.symm
   have hgψ (q : Q) (hq : q ∈ ψ.source) : g (ψ q) = φ (i q) := by
     simp only [g, Function.comp_apply, ψ.left_inv hq]

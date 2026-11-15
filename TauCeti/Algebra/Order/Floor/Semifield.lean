@@ -108,18 +108,12 @@ theorem card_biUnion_Ico_ceil_div_le [Sub K] [OrderedSub K] (hτ : 0 ≤ τ)
 when `n = 0` or `B < 1`. -/
 theorem lt_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) := by
-  have h1 : (n : K) / B < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) := by
-    simpa using Nat.lt_floor_add_one ((n : K) / B)
-  have h2 : B < ((⌊B⌋₊ + 1 : ℕ) : K) := by
-    simpa using Nat.lt_floor_add_one B
-  refine Nat.cast_lt (α := K).1 ?_
-  calc (n : K)
-      = (n : K) / B * B := (div_mul_cancel₀ (n : K) hB.ne').symm
-    _ < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) * B := mul_lt_mul_of_pos_right h1 hB
-    _ < ((⌊(n : K) / B⌋₊ + 1 : ℕ) : K) * ((⌊B⌋₊ + 1 : ℕ) : K) :=
-        mul_lt_mul_of_pos_left h2 (Nat.cast_pos.2 (Nat.succ_pos _))
-    _ = (((⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) : ℕ) : K) := by
-        rw [← Nat.cast_mul, Nat.mul_comm]
+  -- Multiply `n / B < ⌊n / B⌋₊ + 1` by `B < ⌊B⌋₊ + 1`; the left side is `n / B * B = n`.
+  have h := mul_lt_mul'' (Nat.lt_floor_add_one ((n : K) / B)) (Nat.lt_floor_add_one B)
+    (div_nonneg n.cast_nonneg hB.le) hB.le
+  rw [div_mul_cancel₀ (n : K) hB.ne'] at h
+  rw [Nat.mul_comm]
+  exact_mod_cast h
 
 /-- For `B > 0` and any `n : ℕ`, `(2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` strictly exceeds `n`: an
 integer interval `[-⌊B⌋₊, ⌊B⌋₊]` with derivative orders up to `⌊n / B⌋₊` has more than `n`

@@ -196,8 +196,9 @@ automorphisms, which become trivial on abelianizations. -/
 theorem abelianizationCongr_layerGalEquiv (ι ι' : L →ₐ[K] SeparableClosure K) :
     (layerGalEquiv ι).abelianizationCongr = (layerGalEquiv ι').abelianizationCongr := by
   obtain ⟨τ, rfl⟩ := ι.exists_comp_eq_of_normal ι'
-  refine MulEquiv.toMonoidHom_injective (Abelianization.hom_ext _ _ (MonoidHom.ext fun γ => ?_))
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, abelianizationCongr_of,
+  refine MulEquiv.toMonoidHom_injective (Group.Abelianization.hom_ext _ _ (MonoidHom.ext fun γ =>
+      ?_))
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Group.abelianizationCongr_of,
     layerGalEquiv_comp, map_mul, map_inv]
   rw [mul_comm, ← mul_assoc, mul_inv_cancel, one_mul]
 

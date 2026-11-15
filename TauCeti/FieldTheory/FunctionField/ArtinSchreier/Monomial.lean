@@ -215,7 +215,7 @@ field. -/
 theorem isWild_of_restrict_eq_infty (hP : P.restrict k (RatFunc k) = Place.infty k) :
     Place.IsWild k (RatFunc k) P :=
   Place.isWild_of_exists_reduced_artinSchreier_pole k (RatFunc k) p
-    (adjoin_genY_eq_top k p m) (genY_pow_sub_genY k p m)
+    (genY_pow_sub_genY k p m)
     (by rw [hP]; exact ⟨0, reduced_pole k p hm.out⟩)
 
 /-- **The different exponent at infinity is `(p - 1) (m + 1)`**, the conductor computation for a

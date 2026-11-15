@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Module
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Flasque sheaves of modules are acyclic, also with supports
@@ -48,6 +49,10 @@ and in higher degrees because `Extⁿ⁺¹(R_U, F)` and `Extⁿ⁺²(R_V, F)` va
   `F₂`, and `F₃` is flasque when `F₂` is;
 * `CategoryTheory.ShortComplex.ShortExact.map_Γ_of_isFlasque`: global sections `Γ` keep such a
   short exact sequence short exact;
+* `CategoryTheory.ShortComplex.Exact.surjective_cokernel_π_app_of_isFlasque` and
+  `CategoryTheory.ShortComplex.Exact.exact_cokernel_π_app_of_isFlasque`: if `0 ⟶ A ⟶ B ⟶ C` is
+  exact with `A` flasque, the sections over `U` of the cokernel of `B ⟶ C` are the cokernel of
+  `B(U) ⟶ C(U)`, the surjectivity also using that `B` is flasque;
 * `CategoryTheory.Sheaf.subsingleton_ext_freeModuleYonedaSheaf_succ_of_isFlasque`:
   `Extⁿ⁺¹(R_U, F) = 0` for flasque `F`;
 * `CategoryTheory.Sheaf.subsingleton_ext_relativeFreeModuleYonedaSheaf_succ_of_isFlasque`:
@@ -123,6 +128,43 @@ theorem map_Γ_of_isFlasque
   infer_instance
 
 end CategoryTheory.ShortComplex.ShortExact
+
+namespace CategoryTheory.ShortComplex.Exact
+
+variable {X : TopCat.{u}} {R : Type u} [Ring R]
+  {E : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))} (hE : E.Exact)
+include hE
+
+/-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of `R`-modules with `A` and `B` flasque,
+then every section of the cokernel of `B ⟶ C` lifts to a section of `C`. -/
+theorem surjective_cokernel_π_app_of_isFlasque [Mono E.f] [TopCat.Presheaf.IsFlasque E.X₁.obj]
+    [TopCat.Presheaf.IsFlasque E.X₂.obj] (U : (Opens X)ᵒᵖ) :
+    Function.Surjective ((cokernel.π E.g).hom.app U) :=
+  -- the image of `B ⟶ C` is flasque, as a quotient of `B` by the flasque sheaf `A`
+  have := hE.shortExact_factorThruImage.isFlasque_X₃_of_isFlasque
+  (shortExact_image_ι_cokernel_π E.g).surjective_app_of_isFlasque U
+
+/-- If `0 ⟶ A ⟶ B ⟶ C` is an exact sequence of sheaves of `R`-modules with `A` flasque, then a
+section of `C` maps to zero in the cokernel of `B ⟶ C` exactly when it comes from a section of
+`B`. -/
+theorem exact_cokernel_π_app_of_isFlasque [Mono E.f] [TopCat.Presheaf.IsFlasque E.X₁.obj]
+    (U : (Opens X)ᵒᵖ) :
+    Function.Exact (E.g.hom.app U) ((cokernel.π E.g).hom.app U) := by
+  intro c
+  refine ⟨fun hc ↦ ?_, ?_⟩
+  · -- `c` is a section of the image sheaf, since sections preserve kernels
+    have h₂ := (shortExact_image_ι_cokernel_π E.g).exact.map_of_mono_of_preservesKernel
+      (sheafToPresheaf _ _ ⋙ (evaluation _ _).obj U) inferInstance inferInstance
+    obtain ⟨i, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1 h₂ c hc
+    -- and sections of the image lift to `B`, because the kernel `A` is flasque
+    obtain ⟨b, rfl⟩ := hE.shortExact_factorThruImage.surjective_app_of_isFlasque U i
+    exact ⟨b, by simp [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
+      ← ObjectProperty.FullSubcategory.comp_hom]⟩
+  · rintro ⟨b, rfl⟩
+    simp [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
+      ← ObjectProperty.FullSubcategory.comp_hom]
+
+end CategoryTheory.ShortComplex.Exact
 
 namespace CategoryTheory.Sheaf
 

@@ -22,7 +22,7 @@ The resulting `54`-dimensional block matrices satisfy the type-`E₆` Serre rela
 weights `TauCeti.DynkinType.e6DoubledMinusculeWeight`.
 
 This is the representation input for the graph-stable full-weight type-`E₆`
-Chevalley--Demazure carrier required by Layer 9 of the ReductiveGroups roadmap.
+Chevalley--Demazure carrier.
 
 ## Main declarations
 

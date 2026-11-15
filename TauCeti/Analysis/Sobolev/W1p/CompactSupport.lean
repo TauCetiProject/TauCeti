@@ -175,7 +175,7 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     rw [hwdef, W1p.value_mk]
     exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
-  obtain ⟨chi, M, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts, hM0, hchiM_all,
+  obtain ⟨chi, M, hchi, -, hchi_one_nhds, _, hchi_ts, hM0, hchiM_all,
     hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
   have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => by
     have hx' : x ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset (hchi_one_nhds hx)

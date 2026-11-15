@@ -75,7 +75,7 @@ theorem norm_formDualEquiv_kahlerForm :
     simp only [smul_apply, sum_apply,
       formDualEquiv_ιMulti_apply, norm_smul, Real.norm_of_nonneg (by positivity : 0 ≤ (2⁻¹ : ℝ))]
     calc (2⁻¹ : ℝ) * ‖∑ i, ω ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)]‖
-        ≤ (2⁻¹ : ℝ) * ∑ i : Fin (finrank ℝ V), ‖ω‖ := by
+        ≤ (2⁻¹ : ℝ) * ∑ _ : Fin (finrank ℝ V), ‖ω‖ := by
           gcongr
           exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ hterm i)
       _ = (finrank ℝ V : ℝ) / 2 * ‖ω‖ := by simp [div_eq_inv_mul, mul_assoc]

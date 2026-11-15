@@ -330,8 +330,8 @@ private theorem cutDist_comap_tendsto_inProbability_of_countablyGenerated
     have hmeas : AEStronglyMeasurable
         ((fun z : Ω × Ω => U z.1 z.2) - fun z : Ω × Ω => W z.1 z.2) (μ.prod μ) :=
       (U.measurable.sub W.measurable).aestronglyMeasurable
-    rw [eLpNorm_one_eq_lintegral_enorm hmeas,
-      ← integral_norm_eq_lintegral_enorm hmeas] at h
+    rw [eLpNorm_one_eq_lintegral_eNorm hmeas,
+      ← integral_norm_eq_lintegral_eNorm hmeas] at h
     simpa only [Pi.sub_apply, Real.norm_eq_abs] using h
   -- It factors through the part index of its partition.
   set P := Finpartition.countablePartition Ω k

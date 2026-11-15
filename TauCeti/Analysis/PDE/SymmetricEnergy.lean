@@ -15,11 +15,10 @@ matrix gives a symmetric pointwise jet bilinear form `energyIntegrand A 0 c`.  T
 records that finite-dimensional bookkeeping before the energy form is integrated over a
 Sobolev space.
 
-The main use is Lane D of the PDE roadmap: the weak formulation and the Dirichlet spectrum
-need the integrated form coming from symmetric coefficients to be a symmetric coercive
-bilinear form.  The already-existing `coefficientSymmetricPart` replaces a possibly
-nonsymmetric coefficient matrix by `(A + Aᵀ) / 2`; here we prove the corresponding facts for
-the full zero-drift jet integrand.
+The weak formulation and the Dirichlet spectrum need the integrated form coming from symmetric
+coefficients to be a symmetric coercive bilinear form.  The already-existing
+`coefficientSymmetricPart` replaces a possibly nonsymmetric coefficient matrix by
+`(A + Aᵀ) / 2`; here we prove the corresponding facts for the full zero-drift jet integrand.
 
 The quantitative diagonal lower bounds are supplied separately by
 `TauCeti.Analysis.PDE.EnergyLowerBounds` and its `UniformlyEllipticOn` wrappers.  In the

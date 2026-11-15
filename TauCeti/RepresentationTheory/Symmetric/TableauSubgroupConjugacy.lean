@@ -20,8 +20,6 @@ the tableau's row group.
 ## References
 
 * [G. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 3.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 1.
 -/
 
 public section

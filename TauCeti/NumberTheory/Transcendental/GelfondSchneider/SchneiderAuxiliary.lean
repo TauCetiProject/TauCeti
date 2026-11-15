@@ -213,9 +213,10 @@ private theorem house_pow_le_of_le {x : K} {X : ℝ} (hx : house x ≤ X) (n : �
 most `H` and `y` has house at most `L H`, then for `i ≤ D` and `i + s + t ≤ n` the entry
 `x ^ (n - (i + s + t)) y ^ i z ^ s w ^ t` has house at most `L ^ D H ^ n`. -/
 theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x ≤ H)
-    (hy : house y ≤ L * H) (hz : house z ≤ H) (hw : house w ≤ H) (hL : 1 ≤ L) (hH : 0 ≤ H)
+    (hy : house y ≤ L * H) (hz : house z ≤ H) (hw : house w ≤ H) (hL : 1 ≤ L)
     {i s t n D : ℕ} (hi : i ≤ D) (hn : i + s + t ≤ n) :
     house (x ^ (n - (i + s + t)) * y ^ i * (z ^ s * w ^ t)) ≤ L ^ D * H ^ n := by
+  have hH : 0 ≤ H := (house_nonneg x).trans hx
   have h := house_mul_le_of_le (house_mul_le_of_le (house_pow_le_of_le hx (n - (i + s + t)))
       (house_pow_le_of_le hy i)) (house_mul_le_of_le (house_pow_le_of_le hz s)
       (house_pow_le_of_le hw t))
@@ -269,7 +270,7 @@ theorem exists_intCast_pow_mul_schneider_term (α β γ : K) :
   have hαH : house ((c₀ : K) * α) ≤ H := by linarith
   have hγH : house ((c₀ : K) * γ) ≤ H := by linarith
   have h := house_schneider_entry_le (s := u * j) (t := v * j) (n := N) hc₀H' hwH hαH hγH
-    (by exact_mod_cast hB) (by linarith) (le_refl k) hN
+    (by exact_mod_cast hB) (le_refl k) hN
   refine le_of_eq_of_le ?_ h
   obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hN
   rw [Nat.add_sub_cancel_left]
@@ -369,7 +370,7 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
       rw [← Int.cast_one, house_intCast]
       simpa using hH
     have he := house_schneider_entry_le h1 hw hα hγ
-      (by exact_mod_cast (by omega : 1 ≤ 2 * B)) (by linarith) i.is_lt.le hk
+      (by exact_mod_cast (by omega : 1 ≤ 2 * B)) i.is_lt.le hk
     rw [one_pow, one_mul] at he
     rw [mul_assoc]
     exact house_mul_le_of_le (by rw [house_intCast, Int.cast_abs]; exact ha i j) he

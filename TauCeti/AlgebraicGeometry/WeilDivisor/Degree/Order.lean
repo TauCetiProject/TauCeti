@@ -40,12 +40,7 @@ not decrease weighted degree. -/
 lemma weightedDegree_le_of_le_of_nonneg_on_support {w : X → ℤ} {D E : WeilDivisor X}
     (hDE : D ≤ E) (hw : ∀ x ∈ (E - D).support, 0 ≤ w x) :
     weightedDegree w D ≤ weightedDegree w E := by
-  have hdiff : 0 ≤ E - D := sub_nonneg.mpr hDE
-  have hnonneg : 0 ≤ weightedDegree w (E - D) := by
-    rw [weightedDegree_apply]
-    exact Finsupp.sum_nonneg fun x hx => mul_nonneg (coeff_nonneg hdiff x) (hw x hx)
-  rw [map_sub] at hnonneg
-  exact sub_nonneg.mp hnonneg
+  simpa only [map_sub, sub_nonneg] using weightedDegree_nonneg hw (sub_nonneg.mpr hDE)
 
 /-- With nonnegative weights, weighted degree is monotone for the coefficientwise divisor
 order. -/
@@ -57,28 +52,15 @@ lemma weightedDegree_le_of_le {w : X → ℤ} (hw : ∀ x, 0 ≤ w x) {D E : Wei
 lemma monotone_weightedDegree {w : X → ℤ} (hw : ∀ x, 0 ≤ w x) :
     Monotone (weightedDegree w : WeilDivisor X → ℤ) :=
   (monotone_iff_map_nonneg (weightedDegree w)).2 fun _ hD =>
-    weightedDegree_nonneg hw hD
+    weightedDegree_nonneg (fun x _ => hw x) hD
 
 /-- With positive weights on the support of the difference, a proper coefficientwise increase
 strictly increases weighted degree. -/
 lemma weightedDegree_lt_of_le_of_ne_of_pos_on_support {w : X → ℤ} {D E : WeilDivisor X}
     (hDE : D ≤ E) (hne : D ≠ E) (hw : ∀ x ∈ (E - D).support, 0 < w x) :
     weightedDegree w D < weightedDegree w E := by
-  have hdiff : 0 ≤ E - D := sub_nonneg.mpr hDE
-  have hdiff_ne : E - D ≠ 0 := by
-    intro hzero
-    apply hne
-    exact (sub_eq_zero.mp hzero).symm
-  have hnonneg : 0 ≤ weightedDegree w (E - D) := by
-    rw [weightedDegree_apply]
-    exact Finsupp.sum_nonneg fun x hx =>
-      mul_nonneg (coeff_nonneg hdiff x) (le_of_lt (hw x hx))
-  have hpos : 0 < weightedDegree w (E - D) := by
-    refine lt_of_le_of_ne hnonneg ?_
-    intro hzero
-    exact hdiff_ne ((weightedDegree_eq_zero_iff_of_pos_on_support hdiff hw).mp hzero.symm)
-  rw [map_sub] at hpos
-  exact sub_pos.mp hpos
+  simpa only [map_sub, sub_pos] using
+    weightedDegree_pos_of_pos hw (sub_nonneg.mpr hDE) (sub_ne_zero.mpr hne.symm)
 
 /-- With everywhere-positive weights, a proper coefficientwise increase strictly increases
 weighted degree. -/
@@ -119,14 +101,8 @@ lemma exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} {D : WeilDiviso
     simp at hdeg
   obtain ⟨x, hx⟩ := exists_pos_coeff_of_ne_zero hD hD0
   have hxmem : x ∈ D.support := mem_support_iff.mpr (by omega)
-  have hle : ofPoint x ≤ D := by
-    rw [le_iff]
-    intro y
-    rcases eq_or_ne y x with rfl | hy
-    · rw [coeff_ofPoint_self]
-      omega
-    · rw [coeff_ofPoint_of_ne hy]
-      exact coeff_nonneg hD y
+  have hle : ofPoint x ≤ D :=
+    zero_add (ofPoint x) ▸ add_ofPoint_le_of_coeff_lt hD (by rwa [coeff_zero])
   -- the support of the difference `D - [x]` is contained in the support of `D`
   have hwsub : ∀ y ∈ (D - ofPoint x).support, 0 < w y := by
     intro y hy

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 -- Proof-only: supplies integral-closure constructions and integrality transitivity.
 -- The statements only need the public imports above.
+import Mathlib.RingTheory.Adjoin.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.Polynomial.ScaleRoots
 import Mathlib.Tactic.ComputeDegree
@@ -26,6 +28,8 @@ without either being an algebra over the other.
 * `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
   is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
   `P` after multiplication by a power of `r`.
+* `AlgHom.finite_of_adjoin_eq_top`: an `R`-algebra morphism `f : B →ₐ[R] A` is module-finite when
+  `A` is generated as an `R`-algebra by a finite set of elements integral over `B` via `f`.
 * `TauCeti.isIntegral_trans_common`: if every element of `P` becomes integral over `R` once
   mapped into `L`, then an element of `L` integral over `P` is integral over `R`.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
@@ -95,6 +99,22 @@ theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral
   exact ⟨N, isIntegral_trans _ this⟩
 
 end
+
+/-- If a finite set `s ⊆ A` generates `A` as an `R`-algebra and every element of `s` is integral
+over `B` along `f : B →ₐ[R] A`, then `f` is module-finite. -/
+theorem AlgHom.finite_of_adjoin_eq_top {R B A : Type*} [CommRing R] [CommRing B] [CommRing A]
+    [Algebra R B] [Algebra R A] (f : B →ₐ[R] A) {s : Set A} (hs : s.Finite)
+    (hx : Algebra.adjoin R s = ⊤) (hint : ∀ a ∈ s, f.toRingHom.IsIntegralElem a) :
+    f.Finite := by
+  let := f.toRingHom.toAlgebra
+  have := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
+  have htop : Algebra.adjoin B s = ⊤ :=
+    Subalgebra.restrictScalars_injective R (by simp [Algebra.Subalgebra.restrictScalars_adjoin, hx])
+  have hfg : (⊤ : Subalgebra B A).toSubmodule.FG := by
+    rw [← htop]
+    exact fg_adjoin_of_finite hs hint
+  rw [Algebra.top_toSubmodule] at hfg
+  exact Module.finite_def.mpr hfg
 
 namespace TauCeti
 

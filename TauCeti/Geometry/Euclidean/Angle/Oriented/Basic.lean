@@ -22,12 +22,24 @@ have the same nonzero sign — Mathlib's `Orientation.oangle_sub_left` gives
 real angle of `y` from `x` is smaller than that of `z`
 (`Orientation.oangle_sign_eq_one_iff_toReal_lt_of_sign_eq`).
 
-Reversing the middle vector adds a half-turn: the real angles from `u` to `w` and from `-w` to `v`
-add up to the real angle from `u` to `v` plus `π` whenever their sum is positive
-(`Orientation.oangle_toReal_add_oangle_neg_left_toReal`). These are the signed exterior angles at
-a point where the common boundary arc of two adjacent plane domains meets their outer boundary:
-the two domains traverse the common arc in opposite directions, their interior angles add, and the
-two exterior angles sum to the exterior angle of the union plus `π`.
+Reversing the middle vector adds a half-turn: modulo `2π`, the angles from `u` to `w` and from
+`-w` to `v` add up to the angle from `u` to `v` plus `π` (`Orientation.oangle_add_oangle_neg_left`).
+The sum of the real representatives of the first two angles is therefore the real representative
+of the third one plus `π` or minus `π`
+(`Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_or_eq_sub_pi`): plus `π` exactly
+when this sum is positive (`Orientation.oangle_toReal_add_oangle_neg_left_toReal`,
+`Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_iff`), and minus `π` exactly when
+it is nonpositive (`Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_sub_pi_iff`). These
+are the general facts `Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi`,
+`Real.Angle.toReal_add_toReal_eq_add_pi_iff` and `Real.Angle.toReal_add_toReal_eq_sub_pi_iff` about
+angles `θ₁ + θ₂ = θ + π`, applied to the half-turn law.
+
+These are the signed exterior angles at a point where the common boundary arc of two adjacent
+plane domains meets their outer boundary: the two domains traverse the common arc in opposite
+directions, and the interior angle at a corner is `π` minus the exterior angle. In the first case
+the interior angles of the two domains add up to the interior angle of the union, so that the two
+exterior angles sum to the exterior angle of the union plus `π`. In the second case the interior
+angles of the two domains add up to at least `2π`.
 
 On `ℂ` with its standard orientation, the oriented angle from `w` to `z` is the argument of the
 quotient `z / w` (`Complex.oangle_eq_arg_div`), and `arg (z / w)` is its real representative in
@@ -87,6 +99,12 @@ theorem oangle_sign_eq_one_iff_toReal_lt_of_sign_eq {x y z : V}
     (o.right_ne_zero_of_oangle_sign_ne_zero h0) (o.right_ne_zero_of_oangle_sign_ne_zero (hs ▸ h0))]
   exact Real.Angle.sign_sub_pos_iff_toReal_lt_of_sign_eq hs h0
 
+/-- Reversing the middle vector adds a half-turn: for nonzero `u`, `w`, `v`, the oriented angles
+from `u` to `w` and from `-w` to `v` add up to the oriented angle from `u` to `v` plus `π`. -/
+theorem oangle_add_oangle_neg_left {u w v : V} (hu : u ≠ 0) (hw : w ≠ 0) (hv : v ≠ 0) :
+    o.oangle u w + o.oangle (-w) v = o.oangle u v + π := by
+  rw [o.oangle_neg_left hw hv, ← add_assoc, o.oangle_add hu hw hv]
+
 /-- **Exterior angles across a reversed edge.** For nonzero `u`, `w`, `v`, the real oriented
 angles `α₁` from `u` to `w` and `α₂` from `-w` to `v` satisfy `α₁ + α₂ = α + π`, where `α` is the
 real oriented angle from `u` to `v`, provided `0 < α₁ + α₂`. For the exterior angles of two
@@ -94,17 +112,36 @@ adjacent domains at an endpoint of their common boundary arc, this hypothesis sa
 interior angle `(π - α₁) + (π - α₂)` is less than `2π`. -/
 theorem oangle_toReal_add_oangle_neg_left_toReal {u w v : V} (hu : u ≠ 0) (hw : w ≠ 0)
     (hv : v ≠ 0) (hpos : 0 < (o.oangle u w).toReal + (o.oangle (-w) v).toReal) :
-    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π := by
-  set a := (o.oangle u w).toReal + (o.oangle (-w) v).toReal - π with ha
-  have hangle : (a : Real.Angle) = o.oangle u v := by
-    rw [ha, Real.Angle.coe_sub, Real.Angle.coe_add, Real.Angle.coe_toReal, Real.Angle.coe_toReal,
-      o.oangle_neg_left hw hv, ← add_assoc, o.oangle_add hu hw hv, add_sub_cancel_right]
-  have hmem : -π < a ∧ a ≤ π := by
-    have h₁ := Real.Angle.toReal_le_pi (o.oangle u w)
-    have h₂ := Real.Angle.toReal_le_pi (o.oangle (-w) v)
-    constructor <;> linarith
-  rw [← hangle, Real.Angle.toReal_coe_eq_self_iff.mpr hmem, ha]
-  ring
+    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π :=
+  (Real.Angle.toReal_add_toReal_eq_add_pi_iff (o.oangle_add_oangle_neg_left hu hw hv)).2 hpos
+
+/-- For nonzero `u`, `w`, `v`, the real oriented angles `α₁` from `u` to `w` and `α₂` from `-w` to
+`v` satisfy `α₁ + α₂ = α + π`, where `α` is the real oriented angle from `u` to `v`, if and only if
+`0 < α₁ + α₂`. -/
+theorem oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_iff {u w v : V} (hu : u ≠ 0)
+    (hw : w ≠ 0) (hv : v ≠ 0) :
+    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π ↔
+      0 < (o.oangle u w).toReal + (o.oangle (-w) v).toReal :=
+  Real.Angle.toReal_add_toReal_eq_add_pi_iff (o.oangle_add_oangle_neg_left hu hw hv)
+
+/-- For nonzero `u`, `w`, `v`, the real oriented angles `α₁` from `u` to `w` and `α₂` from `-w` to
+`v` satisfy `α₁ + α₂ = α - π`, where `α` is the real oriented angle from `u` to `v`, if and only if
+`α₁ + α₂ ≤ 0`. For the exterior angles of two adjacent domains at an endpoint of their common
+boundary arc, this condition says that the joined interior angle `(π - α₁) + (π - α₂)` is at least
+`2π`. -/
+theorem oangle_toReal_add_oangle_neg_left_toReal_eq_sub_pi_iff {u w v : V} (hu : u ≠ 0)
+    (hw : w ≠ 0) (hv : v ≠ 0) :
+    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal - π ↔
+      (o.oangle u w).toReal + (o.oangle (-w) v).toReal ≤ 0 :=
+  Real.Angle.toReal_add_toReal_eq_sub_pi_iff (o.oangle_add_oangle_neg_left hu hw hv)
+
+/-- For nonzero `u`, `w`, `v`, the sum of the real oriented angles from `u` to `w` and from `-w` to
+`v` is the real oriented angle from `u` to `v` plus `π` or minus `π`. -/
+theorem oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_or_eq_sub_pi {u w v : V} (hu : u ≠ 0)
+    (hw : w ≠ 0) (hv : v ≠ 0) :
+    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π ∨
+      (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal - π :=
+  Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi (o.oangle_add_oangle_neg_left hu hw hv)
 
 /-- The identification of an oriented plane with `ℂ` given by a positively oriented orthonormal
 basis `b` preserves oriented angles: the oriented angle from `x₀ b₀ + y₀ b₁` to `x₁ b₀ + y₁ b₁` is

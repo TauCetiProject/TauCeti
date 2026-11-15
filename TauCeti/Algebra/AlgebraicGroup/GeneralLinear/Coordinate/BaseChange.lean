@@ -31,7 +31,7 @@ algebras. In particular, this is an identification of the chosen coordinate Hopf
 only an abstract algebra isomorphism.
 
 This is the general-linear compatibility needed by the base-change part of the explicit
-Chevalley--Demazure construction in Layer 9 of the ReductiveGroups roadmap.
+Chevalley--Demazure construction.
 
 ## Main declarations
 

@@ -104,7 +104,7 @@ private theorem exists_dense_eqOn_map_eval_lintegral_curveAction_le (hp1 : 1 < p
     exists_map_IccExtend_eq_lintegral_curveAction_le hp hab hμ (N := 2 ^ n) (by positivity)
   set ηs : ℕ → ProbabilityMeasure C(Icc a b, E) := fun n ↦ ⟨η n, hηP n⟩
   set D := {t : Icc a b | ∃ n k : ℕ, k ≤ 2 ^ n ∧ (t : ℝ) = a + k * ((b - a) / 2 ^ n)}
-  have hDd : Dense D := dense_setOfPred_eq_add_mul_div_two_pow hab
+  have hDd : Dense D := dense_setOfPred_eq_add_mul_div_two_pow hab.le
   -- At a dyadic time, the time marginals of the polygonal laws are eventually the value of `μ`.
   have hD (t : Icc a b) (ht : t ∈ D) : ∃ m, ∀ n ≥ m,
       (η n).map (fun γ : C(Icc a b, E) ↦ γ t) = ((μ t : ProbabilityMeasure E) : Measure E) := by

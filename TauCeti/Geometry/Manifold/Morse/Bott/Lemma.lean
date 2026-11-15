@@ -242,7 +242,7 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
             (ψ z).2 (ψ z).2 := by
   set φ := h.domChart.extend J with hφ
   set ξ := h.codChart.extend I with hξ
-  set L := h.equiv with hL
+  set L := h.equiv
   set g := f ∘ ξ.symm ∘ L with hg
   set a := φ s with ha
   have hk2 : (2 : ℕ∞ω) ≤ k + 2 := le_add_self
@@ -325,7 +325,7 @@ theorem exists_normalized_morseBott_chart (hi : i.IsNondegenerateCriticalSubmani
         (if j.val < manifoldMorseIndex I f (i s) then -1 else 1) * (ψ z).2 j ^ 2 := by
   set φ := h.domChart.extend J with hφ
   set ξ := h.codChart.extend I with hξ
-  set L := h.equiv with hL
+  set L := h.equiv
   set g := f ∘ ξ.symm ∘ L with hg
   set a := φ s with ha
   obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUφ, hUVξ, hsec, hψfst, hψ0, hψsymm, hψ, hψinv,
@@ -394,9 +394,9 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
     i.isImmersion.isImmersionOfComplement_complement s
   set φ := h.domChart.extend J with hφ
   set ξ := h.codChart.extend I with hξ
-  set L := h.equiv with hL
+  set L := h.equiv
   set g := f ∘ ξ.symm ∘ L with hg
-  set a := φ s with ha
+  set a := φ s
   have he1 : h.codChart ∈ IsManifold.maximalAtlas I 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by norm_num) (IsManifold.maximalAtlas_subset_of_le hn
       h.codChart_mem_maximalAtlas)

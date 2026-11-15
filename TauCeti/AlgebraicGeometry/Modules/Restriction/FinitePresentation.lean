@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
@@ -41,6 +41,15 @@ instance isFinitePresentation_restrict
   (SheafOfModules.isFinitePresentation U.ringCatSheaf).prop_of_iso
     ((Scheme.Modules.restrictFunctorIsoPullback j).app M).symm
     (Scheme.Modules.isFinitePresentation_pullback j M)
+
+/-- Restriction along an isomorphism preserves and reflects finite presentation. -/
+@[simp]
+theorem isFinitePresentation_restrict_iff_of_isIso {X Y : Scheme.{u}} (M : X.Modules)
+    (f : Y ⟶ X) [IsIso f] : (M.restrict f).IsFinitePresentation ↔ M.IsFinitePresentation := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+    ((restrictFunctorInvCompHomIso (asIso f).symm).app M)
+    (inferInstanceAs ((M.restrict f).restrict (inv f)).IsFinitePresentation)
 
 /-- Finite presentation can be checked on restrictions to an open cover. -/
 theorem isFinitePresentation_of_isFinitePresentation_restrict {X : Scheme.{u}} {ι : Type*}
@@ -109,5 +118,15 @@ instance isFinitePresentation_cokernel {X : Scheme.{u}} {M N : X.Modules} (f : M
     (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app _).symm ≪≫
       (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app _)
     (isFinitePresentation_restrict hU.isoSpec.hom ((cokernel f).restrict hU.fromSpec))
+
+/-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
+instance isClosedUnderCokernels_isFinitePresentation (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
+  cokernels_le := by
+    rintro _ ⟨f, c, hc, hM, hN⟩
+    have := hM
+    have := hN
+    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+      (colimit.isoColimitCocone ⟨c, hc⟩) (isFinitePresentation_cokernel f)
 
 end AlgebraicGeometry.Scheme.Modules

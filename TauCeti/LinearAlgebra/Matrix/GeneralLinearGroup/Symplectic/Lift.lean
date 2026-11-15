@@ -20,6 +20,9 @@ matrix with entries in the ideal. Solving the linearized symplectic equation for
 therefore works in characteristic two. The quadratic correction terms vanish because the ideal
 is square-zero.
 
+This is the infinitesimal lifting input for the smoothness of the symplectic group scheme
+(`TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth`).
+
 ## Main declaration
 
 * `TauCeti.GLSymplectic.map_quotient_mk_surjective_of_sq_eq_bot`: entrywise reduction modulo a
@@ -29,9 +32,6 @@ is square-zero.
 
 * The Stacks Project, Tag 00TH, for the infinitesimal lifting criterion for formal smoothness.
 * SGA 3, Exposé XXII, for the smooth split symplectic group scheme over `ℤ`.
-
-This is the infinitesimal lifting input for the smoothness of the symplectic group scheme, a
-prerequisite for the `Sp_{2n}` reductivity example in Layer 6 of the ReductiveGroups roadmap.
 -/
 
 public section
