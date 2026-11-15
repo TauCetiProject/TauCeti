@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Ergodic.Action.Basic
-public import Mathlib.MeasureTheory.Group.Arithmetic
+public import Mathlib.MeasureTheory.Group.Pointwise
 public import Mathlib.Order.Filter.CountableInter
 
 /-!
@@ -21,8 +21,8 @@ of path space — instead collect the **exactly** invariant events, those with
 For a **countable** group the two formulations agree up to null sets: the saturation
 `⋃ g, g • s` is exactly invariant and, being a countable union of sets each almost equal to `s`,
 almost equal to `s`.  This file records that saturation
-(`exists_smul_invariant_ae_eq`) and the resulting criterion
-(`ergodicSMul_of_forall_smul_invariant`): to prove a countable action ergodic it suffices to
+(`exists_smul_invariant_ae_eq`) and the resulting characterization
+(`ergodicSMul_iff_forall_smul_invariant`): to prove a countable action ergodic it suffices to
 handle exactly invariant events.
 
 Countability is essential and is not a technical convenience: the saturation of an almost
@@ -49,33 +49,29 @@ variable {G X : Type*} [Group G] [Countable G] [MeasurableSpace X] [MulAction G 
 /-- **An almost invariant event of a countable group action is almost equal to an exactly
 invariant one.**  The witness is the saturation `⋃ g, g • s`.
 
-This needs no invariance hypothesis on `μ`: each `g • s` is already almost equal to `s`, because
-`g • s` is the preimage of `s` under `(g⁻¹ • ·)`. -/
+No invariance hypothesis on `μ` is needed. -/
 theorem exists_smul_invariant_ae_eq {s : Set X} (hs : MeasurableSet s)
     (hinv : ∀ g : G, (fun x => g • x) ⁻¹' s =ᵐ[μ] s) :
     ∃ t : Set X, MeasurableSet t ∧ (∀ g : G, (fun x => g • x) ⁻¹' t = t) ∧ t =ᵐ[μ] s := by
-  have hsmul : ∀ g : G, g • s = (fun x => g⁻¹ • x) ⁻¹' s := fun g =>
-    (Set.preimage_smul_inv g s).symm
-  refine ⟨⋃ g : G, g • s, MeasurableSet.iUnion fun g => ?_, fun g => ?_, ?_⟩
-  · exact hsmul g ▸ (measurable_const_smul (g⁻¹ : G)) hs
-  · rw [Set.preimage_smul, Set.smul_set_iUnion]
-    simp_rw [smul_smul]
-    exact (Equiv.mulLeft (g⁻¹ : G)).surjective.iUnion_comp fun h : G => h • s
-  · have hae : ∀ g : G, g • s =ᵐ[μ] s := fun g => (hsmul g) ▸ hinv g⁻¹
-    have hunion := Filter.EventuallyEqSet.countable_iUnion (l := ae μ) hae
-    rwa [Set.iUnion_const] at hunion
+  refine ⟨⋃ g : G, g • s, .iUnion fun g => hs.const_smul g, fun g => ?_, ?_⟩
+  · simp only [preimage_smul, smul_set_iUnion, smul_smul]
+    exact (Equiv.mulLeft g⁻¹).surjective.iUnion_comp (· • s)
+  · refine (EventuallyEqSet.countable_iUnion fun g : G => ?_).trans (iUnion_const s).eventuallyEqSet
+    simpa only [preimage_smul, inv_inv] using hinv g⁻¹
 
-/-- **Ergodicity of a countable group action can be tested on exactly invariant events.**
+/-- **Ergodicity of a countable group action can be tested on exactly invariant events**: for an
+invariant measure, the action is ergodic if and only if every measurable, exactly invariant event
+is null or conull.
 
-Together with `MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq` this reduces ergodicity of a
-countable action to a zero-one law for the σ-algebra of exactly invariant events. -/
-theorem ergodicSMul_of_forall_smul_invariant [SMulInvariantMeasure G X μ]
-    (h : ∀ t : Set X, MeasurableSet t → (∀ g : G, (fun x => g • x) ⁻¹' t = t) →
-      EventuallyEmptyOrUniv t (ae μ)) :
-    ErgodicSMul G X μ :=
-  ⟨fun hs hinv => by
-    obtain ⟨t, ht, ht_inv, hts⟩ := exists_smul_invariant_ae_eq hs hinv
-    exact (h t ht ht_inv).congr hts⟩
+The reverse direction is the useful one: it reduces ergodicity of a countable action to a
+zero-one law for the σ-algebra of exactly invariant events. -/
+theorem ergodicSMul_iff_forall_smul_invariant [SMulInvariantMeasure G X μ] :
+    ErgodicSMul G X μ ↔ ∀ t : Set X, MeasurableSet t →
+      (∀ g : G, (fun x => g • x) ⁻¹' t = t) → EventuallyEmptyOrUniv t (ae μ) := by
+  refine ⟨fun _ t ht ht_inv => aeconst_of_forall_preimage_smul_ae_eq G ht.nullMeasurableSet
+    fun g => .of_eq (ht_inv g), fun h => ⟨fun hs hinv => ?_⟩⟩
+  obtain ⟨t, ht, ht_inv, hts⟩ := exists_smul_invariant_ae_eq hs hinv
+  exact (h t ht ht_inv).congr hts
 
 end MeasureTheory
 

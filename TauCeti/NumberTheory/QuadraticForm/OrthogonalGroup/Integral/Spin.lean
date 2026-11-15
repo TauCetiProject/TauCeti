@@ -62,9 +62,6 @@ variable {p : ℕ} [Fact p.Prime] {V ι : Type*}
   [AddCommGroup V] [Module ℚ_[p] V] [Fintype ι] [DecidableEq ι]
   (Q : QuadraticForm ℚ_[p] V) (b : Basis ι ℚ_[p] V)
 
-private noncomputable instance invertibleTwoPadic : Invertible (2 : ℚ_[p]) :=
-  invertibleOfNonzero two_ne_zero
-
 /-- Spin points whose orthogonal actions and inverse actions are integral in the basis `b`.
 This is the full preimage of the integral orthogonal subgroup under the Spin projection. -/
 def integralSpinSubgroup : Subgroup (spinGroup Q) :=
@@ -117,9 +114,6 @@ theorem integralSpinSubgroup_eq_top [Subsingleton V] : integralSpinSubgroup Q b 
 
 section Rational
 
-private noncomputable instance invertibleTwoRat : Invertible (2 : ℚ) :=
-  invertibleOfNonzero two_ne_zero
-
 variable {W : Type*} [AddCommGroup W] [Module ℚ W]
   (Q₀ : QuadraticForm ℚ W) (b₀ : Basis ι ℚ W)
 
@@ -133,12 +127,7 @@ theorem eventually_mem_integralSpinSubgroup (s : spinGroup Q₀) :
   filter_upwards [eventually_mem_integralOrthogonalSubgroup Q₀ b₀ (spinToOrthogonal Q₀ s)]
     with p hp
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
-  have h := spinToOrthogonal_baseChange (A := ℚ_[p]) Q₀ s
-  -- Identify the scalar-extended inverse of two with the local p-adic instance.
-  rw [Subsingleton.elim
-    ((Invertible.map (algebraMap ℚ ℚ_[p]) 2).copy 2 (map_ofNat _ _).symm)
-    (inferInstance : Invertible (2 : ℚ_[p]))] at h
-  simpa only [mem_integralSpinSubgroup_iff, h] using hp
+  simpa only [mem_integralSpinSubgroup_iff, spinToOrthogonal_baseChange] using hp
 
 end Rational
 end

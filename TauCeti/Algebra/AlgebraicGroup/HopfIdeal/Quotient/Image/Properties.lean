@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Basic
-import Mathlib.RingTheory.Flat.Basic
+import TauCeti.RingTheory.Flat.TensorProduct
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric properties of affine group images
@@ -38,10 +39,9 @@ a group homomorphism.
 * J. S. Milne, *Algebraic Groups* (2017), §5.a and §6.a.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
 
-This is image infrastructure for Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. The maximality construction needs the scheme-theoretic image of the multiplication
-homomorphism from an appropriate semidirect product of normal subgroups; the results here supply
-the connectedness and reducedness descent step once that semidirect product is constructed.
+This is image infrastructure for the unipotent radical. The maximality construction needs the
+scheme-theoretic image of the multiplication homomorphism from an appropriate semidirect product of
+normal subgroups; the results here supply the connectedness and reducedness descent step.
 -/
 
 public section
@@ -64,13 +64,9 @@ algebra into the source coordinate algebra remains injective. -/
 private theorem image_baseChange_injective (f : H ⟶ K)
     (L : Type u) [Field L] [Algebra k L] :
     Function.Injective
-      (Algebra.TensorProduct.map (imageι f).hom.toAlgHom (AlgHom.id k L)) := by
-  have h := TensorProduct.map_injective_of_flat_flat
-    (imageι f).hom.toAlgHom.toLinearMap (AlgHom.id k L).toLinearMap
-      (imageι_injective f) Function.injective_id
-  rw [← TensorProduct.AlgebraTensorModule.map_eq,
-    ← Algebra.TensorProduct.toLinearMap_map] at h
-  exact h
+      (Algebra.TensorProduct.map (imageι f).hom.toAlgHom (AlgHom.id k L)) :=
+  Algebra.TensorProduct.map_injective_of_flat_flat
+    (imageι f).hom.toAlgHom (AlgHom.id k L) (imageι_injective f) Function.injective_id
 
 end CommHopfAlgCat
 
@@ -87,7 +83,7 @@ theorem image (f : H ⟶ K) (hK : geometricallyConnectedCommHopfAlgProperty k K)
     geometricallyConnectedCommHopfAlgProperty k (CommHopfAlgCat.image f) := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff] at hK ⊢
   intro L _ _
-  exact connectedSpace_primeSpectrum_of_injective
+  exact RingHom.connectedSpace_primeSpectrum_of_injective
     (Algebra.TensorProduct.map
       (CommHopfAlgCat.imageι f).hom.toAlgHom (AlgHom.id k L)).toRingHom
     (CommHopfAlgCat.image_baseChange_injective f L)

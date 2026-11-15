@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Tensor products of submodules as intersections
@@ -18,14 +19,16 @@ images satisfy
 P ⊗ Q = (M ⊗ Q) ∩ (P ⊗ N),
 ```
 
-and the same holds over any commutative ring as soon as `M ⧸ P` is flat. This is the step that
-upgrades a submodule of a coalgebra whose comultiplication lands in both one-sided tensor
-products to a subcoalgebra.
+and the same holds over any commutative ring as soon as `M ⧸ P` is flat, or more generally
+whenever `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N` is injective. This is the step that upgrades a
+submodule of a coalgebra whose comultiplication lands in both one-sided tensor products to a
+subcoalgebra.
 
 ## Main results
 
 * `Submodule.range_map_subtype_subtype`: the image of `P ⊗[R] Q` in `M ⊗[R] N` is the
-  intersection of the images of `M ⊗[R] Q` and `P ⊗[R] N`, when `M ⧸ P` is flat.
+  intersection of the images of `M ⊗[R] Q` and `P ⊗[R] N`, when `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N`
+  is injective, for instance when `M ⧸ P` is flat.
 
 ## References
 
@@ -44,10 +47,12 @@ universe u v w
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
-/-- If `M ⧸ P` is flat, the image of `P ⊗[R] Q` in `M ⊗[R] N` is the intersection of the images
-of `M ⊗[R] Q` and `P ⊗[R] N`. Over a field this holds for all submodules `P` and `Q`. -/
+/-- If `(M ⧸ P) ⊗[R] Q → (M ⧸ P) ⊗[R] N` is injective, the image of `P ⊗[R] Q` in `M ⊗[R] N` is
+the intersection of the images of `M ⊗[R] Q` and `P ⊗[R] N`. The injectivity holds for instance
+when `M ⧸ P` is flat (so for all submodules over a field), or when `Q` is a direct summand of `N`.
+-/
 theorem range_map_subtype_subtype (P : Submodule R M) (Q : Submodule R N)
-    [Module.Flat R (M ⧸ P)] :
+    (hPQ : Function.Injective (Q.subtype.lTensor (M ⧸ P))) :
     range (TensorProduct.map P.subtype Q.subtype) =
       range (Q.subtype.lTensor M) ⊓ range (P.subtype.rTensor N) := by
   refine le_antisymm (le_inf ?_ ?_) ?_
@@ -55,23 +60,14 @@ theorem range_map_subtype_subtype (P : Submodule R M) (Q : Submodule R N)
     exact range_comp_le_range _ _
   · rw [← rTensor_comp_lTensor]
     exact range_comp_le_range _ _
-  rintro x ⟨⟨y, rfl⟩, hx⟩
-  -- `x` dies in `(M ⧸ P) ⊗ N`, hence so does the image of `y` in `(M ⧸ P) ⊗ Q`; by flatness
-  -- the latter image already vanishes, so `y` comes from `P ⊗ Q`.
-  have hPN : Function.Exact (P.subtype.rTensor N) (P.mkQ.rTensor N) :=
-    rTensor_exact N (exact_subtype_mkQ P) P.mkQ_surjective
-  have hPQ : Function.Exact (P.subtype.rTensor Q) (P.mkQ.rTensor Q) :=
-    rTensor_exact Q (exact_subtype_mkQ P) P.mkQ_surjective
+  rintro _ ⟨⟨y, rfl⟩, hy⟩
+  -- The image of `y` dies in `(M ⧸ P) ⊗ N`, hence by injectivity already in `(M ⧸ P) ⊗ Q`, so
+  -- `y` comes from `P ⊗ Q` by right exactness.
   have hzero : Q.subtype.lTensor (M ⧸ P) (P.mkQ.rTensor Q y) = 0 := by
-    have hcomm := LinearMap.congr_fun
-      ((lTensor_comp_rTensor (f := P.mkQ) (g := Q.subtype)).trans
-        (rTensor_comp_lTensor (f := P.mkQ) (g := Q.subtype)).symm) y
-    rw [comp_apply, comp_apply] at hcomm
-    rw [hcomm]
-    exact (hPN _).mpr (mem_range.mp hx)
-  obtain ⟨z, rfl⟩ := (hPQ y).mp
-    (Module.Flat.lTensor_preserves_injective_linearMap Q.subtype Q.injective_subtype
-      (hzero.trans (map_zero _).symm))
+    rw [LinearMap.lTensor_rTensor_comm]
+    exact (rTensor_exact N (exact_subtype_mkQ P) P.mkQ_surjective _).mpr hy
+  obtain ⟨z, rfl⟩ := (rTensor_exact Q (exact_subtype_mkQ P) P.mkQ_surjective y).mp
+    ((map_eq_zero_iff _ hPQ).mp hzero)
   exact ⟨z, by rw [← lTensor_comp_rTensor, comp_apply]⟩
 
 end Submodule

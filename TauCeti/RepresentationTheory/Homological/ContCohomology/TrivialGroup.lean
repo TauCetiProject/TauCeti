@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 
 /-!
 # Continuous cohomology of a trivial group vanishes in positive degrees

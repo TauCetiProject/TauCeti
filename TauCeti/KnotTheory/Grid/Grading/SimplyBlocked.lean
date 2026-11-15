@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Chain.Complex
 
 /-!
@@ -106,6 +106,37 @@ theorem mem_bigradedChainHatPiece_iff_exists {R : Type*} [CommSemiring R]
     exact ⟨liftHat R i c, hc, specialization_liftHat R i c⟩
   · rintro ⟨b, hb, rfl⟩
     exact G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i hb
+
+/-- Coefficient specialization at `V_i = 0` between homogeneous chain modules. -/
+noncomputable def gradedSimplyBlockedSpecialization (R : Type*) [CommSemiring R]
+    (i : Fin n) (g : ℤ × ℤ) :
+    G.bigradedChainMinusPiece R g →ₗ[R] G.bigradedChainHatPiece R i g where
+  toFun c := ⟨simplyBlockedSpecialization R i c,
+    G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i c.2⟩
+  map_add' c d := Subtype.ext (map_add _ _ _)
+  map_smul' r c := by
+    apply Subtype.ext
+    apply Finsupp.ext
+    intro x
+    simp only [simplyBlockedSpecialization_apply, Submodule.coe_smul, Finsupp.smul_apply,
+      RingHom.id_apply]
+    exact (MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective).toLinearMap.map_smul r _
+
+/-- The graded specialization agrees with coefficientwise specialization after inclusion. -/
+@[simp]
+theorem coe_gradedSimplyBlockedSpecialization (R : Type*) [CommSemiring R]
+    (i : Fin n) (g : ℤ × ℤ)
+    (c : G.bigradedChainMinusPiece R g) :
+    (G.gradedSimplyBlockedSpecialization R i g c : GridChainHat R n i) =
+      simplyBlockedSpecialization R i c := (rfl)
+
+/-- Every homogeneous simply blocked chain lifts with its bidegree preserved. -/
+theorem gradedSimplyBlockedSpecialization_surjective (R : Type*) [CommSemiring R]
+    (i : Fin n) (g : ℤ × ℤ) :
+    Function.Surjective (G.gradedSimplyBlockedSpecialization R i g) := by
+  intro c
+  obtain ⟨b, hb, hbc⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp c.2
+  exact ⟨⟨b, hb⟩, Subtype.ext hbc⟩
 
 /-- A monomial multiple of a state is homogeneous of its expected bidegree. -/
 theorem single_monomial_mem_bigradedChainHatPiece (R : Type*) [CommSemiring R]

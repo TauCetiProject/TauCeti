@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Line
 public import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
+public import TauCeti.Analysis.Complex.Conformal.Reflection.Primitive
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Principle
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Arc
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Corner

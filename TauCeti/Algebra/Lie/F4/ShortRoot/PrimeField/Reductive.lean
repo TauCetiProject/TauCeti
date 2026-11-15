@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Reductive.Over
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Connected
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Irreducible
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Smooth
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # Reductivity of the short-root F₄ carrier over `𝔽₂`
@@ -29,6 +31,13 @@ standard representation shows that the carrier is a reductive group over `𝔽�
 geometrically connected, and its geometric unipotent radical is trivial because a normal smooth
 unipotent subgroup acts trivially on the faithful simple standard representation.
 
+The same argument applies to the scalar extension of the carrier to any field `k` of
+characteristic two, whose geometric fibre is the scalar extension of the carrier to an algebraic
+closure of `k`. Hence every scalar extension of the carrier to a field is reductive, and the
+carrier is a reductive group scheme over `𝔽₂` in the sense of
+`TauCeti.reductiveCommHopfAlgPropertyOver`: smooth, with every geometric fibre reductive. That is
+the reductivity datum a pinning of the carrier over `𝔽₂` records.
+
 The carrier is not identified here with the pinned simply connected group scheme of type `F₄`;
 constructions on it transfer to that group only along such an identification.
 
@@ -36,9 +45,16 @@ constructions on it transfer to that group only along such an identification.
 
 In the namespace `TauCeti.F4ShortRoot.PrimeField`:
 
+* `eq_augmentation_of_isNormal_of_smoothUnipotent`: over an algebraically closed field of
+  characteristic two, every normal smooth unipotent closed subgroup of the scalar-extended carrier
+  is trivial.
 * `unipotentRadicalDefiningIdeal_baseChange_eq_augmentation`: over an algebraically closed field
   of characteristic two, the unipotent radical of the scalar-extended carrier is trivial.
 * `reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`: the carrier is reductive.
+* `reductiveCommHopfAlgProperty_baseChange_finiteTypeCoordinateHopfAlgebra`: its scalar extension
+  to every field of characteristic two is reductive.
+* `reductiveCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra`: the carrier is a reductive
+  group scheme over `𝔽₂`.
 
 ## References
 
@@ -66,6 +82,22 @@ variable (k : Type u) [Field k] [Algebra (ZMod 2) k] [IsAlgClosed k]
 
 attribute [local instance] standardComodule
 
+/-- **Every normal smooth unipotent closed subgroup of the scalar-extended short-root type-`F₄`
+carrier is trivial**, over every algebraically closed field of characteristic two.
+
+The conclusion is stated contravariantly: the subgroup's defining Hopf ideal is the augmentation
+ideal of the carrier's coordinate algebra. -/
+theorem eq_augmentation_of_isNormal_of_smoothUnipotent
+    (I : HopfIdeal k (coordinateHopfAlgebra k)) (hI : I.IsNormal)
+    (hU : smoothUnipotentCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient
+        (FiniteTypeCommHopfAlgCat.baseChange (K := k) finiteTypeCoordinateHopfAlgebra) I)) :
+    I = HopfIdeal.augmentation k (coordinateHopfAlgebra k) :=
+  have : IsReduced (coordinateHopfAlgebra k) := isReduced_of_smooth k _
+  HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful k
+    (FiniteTypeCommHopfAlgCat.baseChange (K := k) finiteTypeCoordinateHopfAlgebra) (Fin 26 → k)
+    Comodule.isCompletelyReducible_of_isSimpleOrder (isFaithful_standardComodule k) I hI hU
+
 /-- **The unipotent radical of the scalar-extended short-root type-`F₄` carrier is trivial**,
 over every algebraically closed field of characteristic two. -/
 theorem unipotentRadicalDefiningIdeal_baseChange_eq_augmentation :
@@ -73,10 +105,7 @@ theorem unipotentRadicalDefiningIdeal_baseChange_eq_augmentation :
         (FiniteTypeCommHopfAlgCat.baseChange (K := k) finiteTypeCoordinateHopfAlgebra) =
       HopfIdeal.augmentation k
         (FiniteTypeCommHopfAlgCat.baseChange (K := k) finiteTypeCoordinateHopfAlgebra) :=
-  have : IsReduced (coordinateHopfAlgebra k) :=
-    have := isReduced_generatedCoordinateHopfAlgebra k
-    isReduced_of_injective (coordinateHopfAlgebraGeneratedIso k).hom.hom.toAlgHom.toRingHom
-      (ConcreteCategory.bijective_of_isIso (coordinateHopfAlgebraGeneratedIso k).hom).1
+  have : IsReduced (coordinateHopfAlgebra k) := isReduced_of_smooth k _
   FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_eq_augmentation_of_isFaithful k
     (FiniteTypeCommHopfAlgCat.baseChange (K := k) finiteTypeCoordinateHopfAlgebra) (Fin 26 → k)
     Comodule.isCompletelyReducible_of_isSimpleOrder (isFaithful_standardComodule k)
@@ -90,6 +119,36 @@ theorem reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra :
   (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation _ _).2
     ⟨algebraSmooth_quotient, geometricallyConnectedCommHopfAlgProperty_quotient_definingIdeal,
       unipotentRadicalDefiningIdeal_baseChange_eq_augmentation _⟩
+
+/-- **The scalar extension of the short-root type-`F₄` carrier to any field of characteristic two
+is reductive.** Its geometric fibre is the scalar extension of the carrier to an algebraic closure
+of `k`, where the faithful simple standard representation eliminates every normal smooth
+unipotent closed subgroup. -/
+theorem reductiveCommHopfAlgProperty_baseChange_finiteTypeCoordinateHopfAlgebra
+    (k : Type u) [Field k] [Algebra (ZMod 2) k] :
+    reductiveCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.baseChange (K := k) finiteTypeCoordinateHopfAlgebra) := by
+  let K := AlgebraicClosure k
+  -- Extending first to `k` and then to `K` is extending from `𝔽₂` to `K` in one step.
+  let e : CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k) ≅
+      coordinateHopfAlgebra K :=
+    _root_.CommHopfAlgCat.isoMk
+      (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv (ZMod 2) k _ K)
+  exact reductiveCommHopfAlgProperty_of_geometricFiber_iso k _
+    (FiniteTypeCommHopfAlgCat.baseChange (K := K) finiteTypeCoordinateHopfAlgebra) inferInstance
+    (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K _
+      ((geometricallyConnectedCommHopfAlgProperty K).prop_of_iso
+        (e ≪≫ coordinateHopfAlgebraGeneratedIso K).symm
+        (geometricallyConnectedCommHopfAlgProperty_generatedCoordinateHopfAlgebra K)))
+    (ObjectProperty.isoMk _ e)
+    (eq_augmentation_of_isNormal_of_smoothUnipotent K)
+
+/-- **The short-root type-`F₄` carrier is a reductive group scheme over `𝔽₂`**: it is smooth, and
+its geometric fibre over every algebraically closed field of characteristic two is reductive. -/
+theorem reductiveCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra :
+    reductiveCommHopfAlgPropertyOver (ZMod 2) finiteTypeCoordinateHopfAlgebra :=
+  (reductiveCommHopfAlgPropertyOver_iff _ _).2 ⟨algebraSmooth_quotient, fun k _ _ _ ↦
+    reductiveCommHopfAlgProperty_baseChange_finiteTypeCoordinateHopfAlgebra k⟩
 
 end
 

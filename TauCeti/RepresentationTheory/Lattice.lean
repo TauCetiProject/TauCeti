@@ -48,9 +48,9 @@ embedding forces their classes in the Grothendieck group of `𝔽_ℓ[G]` to agr
 
 public section
 
-namespace TauCeti
+namespace Representation.Equiv
 
-open TensorProduct
+open _root_.TensorProduct
 
 section Localization
 
@@ -63,7 +63,7 @@ variable {R : Type*} [CommSemiring R] {A : Type*} [CommSemiring A] [Algebra R A]
 scalar extensions to the localization `A` of `R` at `S` are equivalent, are equivalent up to a
 scalar of `S`: there are intertwining maps `f : V → W` and `f' : W → V` and `s ∈ S` with
 `f' ∘ f = s • id` and `f ∘ f' = s • id`. -/
-theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
+theorem exists_intertwiningMap_comp_eq_smul
     (e : (Representation.baseChange A ρ).Equiv (Representation.baseChange A σ))
     (S : Submonoid R) [IsLocalization S A] [Module.Finite R V] [Module.Finite R W]
     (hV : ∀ s : S, IsSMulRegular V (s : R)) (hW : ∀ s : S, IsSMulRegular W (s : R)) :
@@ -117,7 +117,7 @@ section Int
 /-- Two representations of `G` on finitely generated torsion-free `ℤ`-modules whose
 rationalizations `ℚ ⊗[ℤ] V` and `ℚ ⊗[ℤ] W` are equivalent admit an injective intertwining map
 `V → W` with finite cokernel. -/
-theorem _root_.Representation.Equiv.exists_injective_finite_quotient_range {G : Type*} [Monoid G]
+theorem exists_injective_finite_quotient_range {G : Type*} [Monoid G]
     {V W : Type*} [AddCommGroup V] [Module ℤ V] [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V]
     [AddCommGroup W] [Module ℤ W] [Module.Finite ℤ W] [Module.IsTorsionFree ℤ W]
     {ρ : Representation ℤ G V} {σ : Representation ℤ G W}
@@ -140,4 +140,4 @@ theorem _root_.Representation.Equiv.exists_injective_finite_quotient_range {G : 
 
 end Int
 
-end TauCeti
+end Representation.Equiv

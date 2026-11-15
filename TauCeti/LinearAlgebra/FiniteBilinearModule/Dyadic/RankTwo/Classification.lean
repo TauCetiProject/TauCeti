@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -136,18 +136,15 @@ private theorem nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup
     { toLinearMap := (Ψ.codRestrict H hmem).toIntLinearMap
       map_app' := fun p ↦ (restrict_quadratic A H _).trans
         ((congrArg A.quadratic (hΨ p)).trans (hval p.1 p.2)) }
-  have hinj : Function.Injective g := fun a b h ↦
-    FiniteBilinearModule.Hom.injective (Hom.toFiniteBilinearModule (A := ofQuadraticMap P) g) hP
-      ((Hom.toFiniteBilinearModule_apply (A := ofQuadraticMap P) g a).trans
-        (h.trans (Hom.toFiniteBilinearModule_apply (A := ofQuadraticMap P) g b).symm))
+  have hinj : Function.Injective g := Hom.injective (A := ofQuadraticMap P) g hP
   -- `H` is the image of `(m, n) ↦ mx + ny`, so it has at most `2^{2(k+1)}` elements.
   let Φ := (zmodHom hx).coprod (zmodHom hy)
   have hH : H ≤ Φ.range := sup_le (zmultiples_le.2 ⟨(1, 0), by simp [Φ, zmodHom_one]⟩)
     (zmultiples_le.2 ⟨(0, 1), by simp [Φ, zmodHom_one]⟩)
   have hcard : Nat.card H ≤ Nat.card (ZMod (2 ^ (k + 1)) × ZMod (2 ^ (k + 1))) :=
     (card_le_of_le hH).trans (Nat.card_le_card_of_surjective _ Φ.rangeRestrict_surjective)
-  exact ⟨Hom.toIsometry (A := ofQuadraticMap P) g ((Nat.bijective_iff_injective_and_card g).2
-    ⟨hinj, le_antisymm (Nat.card_le_card_of_injective g hinj) hcard⟩)⟩
+  exact ⟨Hom.toIsometryOfNondegenerate (A := ofQuadraticMap P) g hP
+    (le_antisymm (Nat.card_le_card_of_injective g hinj) hcard)⟩
 
 /-! ## The classification -/
 

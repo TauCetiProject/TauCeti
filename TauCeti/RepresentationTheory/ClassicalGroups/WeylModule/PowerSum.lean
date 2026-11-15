@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Basic
 import TauCeti.LinearAlgebra.Trace.Exchange
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import TauCeti.RepresentationTheory.ClassicalGroups.Weight.TensorPower
@@ -41,7 +41,7 @@ the dimension `f^μ`, and the cycle types. So the classical statement that this 
 Schur polynomial `s_μ` becomes an identity about the symmetric group alone, between the Young
 symmetrizer and the power-sum expansion of `s_μ`. That identity is Frobenius's, and the
 conclusion is drawn in `TauCeti/RepresentationTheory/ClassicalGroups/WeylModule/Character.lean`
-(`TauCeti.char_weylRepOfShape_diagramOf_diagonal`).
+(`TauCeti.char_weylRepOfShape_ofPartition_diagonal`).
 
 ## Main results
 
@@ -95,7 +95,7 @@ theorem trace_permTensorAction_mul_tensorPowerRep_diagGL (σ : Equiv.Perm (Fin d
     have hσ : (fun j => f (σ.symm j)) = f ↔ f ∘ σ = f := by
       rw [funext_iff, funext_iff, ← σ.forall_congr_right]
       simp [eq_comm]
-    rw [Module.End.mul_apply, tensorPowerRep_diagGL_apply_basis, map_smul,
+    rw [mul_apply_eq_comp, tensorPowerRep_diagGL_apply_basis, map_smul,
       permTensorAction_tensorPowerBasis]
     simp [-tensorPowerBasis_apply, Finsupp.single_apply, ← hσ]
   rw [LinearMap.trace_eq_matrix_trace k (tensorPowerBasis k n d), Matrix.trace,

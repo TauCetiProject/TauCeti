@@ -41,6 +41,8 @@ class of `a`, carried from `G_L` to `galoisSubgroup K L σ` by `TauCeti.galoisF2
 * `TauCeti.continuous_rootSign`, `TauCeti.continuous_kummerCharacter`,
   `TauCeti.continuous_galoisKummerCharacter`: the characters are continuous.
 * `TauCeti.kummerClass_eq_homClass`: the Kummer class of `b` is the class of its Kummer character.
+* `TauCeti.toAdd_indexTwoCharacter_galoisSubgroup_eq_rootSign`: for a quadratic extension `L/K`,
+  the character of `G_K` with kernel `G_L` is the sign of any generator of `L`.
 * `TauCeti.galoisF2Iso_inv_kummerClass`: the Kummer class of `a ∈ Lˣ`, carried to
   `galoisSubgroup K L σ`, is the class of its Kummer character there.
 
@@ -103,6 +105,13 @@ theorem rootSign_eq_one_iff {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
 @[simp]
 theorem rootSign_one (r : SeparableClosure K) : rootSign r 1 = 0 :=
   rootSign_of_apply_eq rfl
+
+/-- An element sending `r` to `±r` acts on `r` by the sign `(-1) ^ rootSign r g`. -/
+theorem apply_eq_neg_one_pow_rootSign_mul {r : SeparableClosure K} {g : AbsoluteGaloisGroup K}
+    (hg : g r = r ∨ g r = -r) : g r = (-1) ^ (rootSign r g).val * r := by
+  by_cases h : g r = r
+  · simp [h]
+  · rw [rootSign_of_apply_ne h, ZMod.val_one, pow_one, neg_one_mul, hg.resolve_left h]
 
 /-- **The sign of a root is additive** on the elements that send `r` to `±r`. -/
 theorem rootSign_mul {r : SeparableClosure K} {g h : AbsoluteGaloisGroup K}
@@ -204,6 +213,30 @@ theorem apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup (σ : L →ₐ[K] SeparableCl
   sq_eq_sq_iff_eq_or_eq_neg.1 <| by
     rw [← map_pow, hr]
     exact (mem_galoisSubgroup_iff K L σ).1 γ.2 a
+
+/-- An element of `G_L = galoisSubgroup K L σ` acts on the Kummer coordinate `σ(y) r` through the
+sign of `r`, for a square root `r` of `σ a`. -/
+theorem apply_mul_eq_neg_one_pow_rootSign_mul (σ : L →ₐ[K] SeparableClosure K) {a : L}
+    {r : SeparableClosure K} (hr : r ^ 2 = σ a) (y : L) {q : AbsoluteGaloisGroup K}
+    (hq : q ∈ galoisSubgroup K L σ) :
+    q (σ y * r) = (-1) ^ (rootSign r q).val * (σ y * r) := by
+  rw [map_mul, (mem_galoisSubgroup_iff K L σ).1 hq y,
+    apply_eq_neg_one_pow_rootSign_mul (apply_eq_or_eq_neg_of_sq_eq_galoisSubgroup σ hr ⟨q, hq⟩)]
+  ring
+
+/-- **The quadratic character is the sign of a generator.** If `L/K` is quadratic, so that
+`G_L = galoisSubgroup K L σ` has index two, then for any `x ∈ L ∖ K` the character of `G_K` with
+kernel `G_L` is `g ↦ rootSign (σ x) g`: `g` fixes `σ(L)` exactly when it fixes `σ x`. -/
+theorem toAdd_indexTwoCharacter_galoisSubgroup_eq_rootSign (σ : L →ₐ[K] SeparableClosure K)
+    (hU : (galoisSubgroup K L σ).toSubgroup.index = 2) {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) (g : AbsoluteGaloisGroup K) :
+    Multiplicative.toAdd ((galoisSubgroup K L σ).toSubgroup.indexTwoCharacter hU g) =
+      rootSign (σ x) g := by
+  have hG := mem_galoisSubgroup_iff_apply_eq_of_finrank_eq_two K L σ
+    ((galoisSubgroup_index K L σ).symm.trans hU) hx (g := g)
+  by_cases hg : g ∈ galoisSubgroup K L σ
+  · rw [Subgroup.toAdd_indexTwoCharacter_of_mem _ hg, rootSign_of_apply_eq (hG.1 hg)]
+  · rw [Subgroup.toAdd_indexTwoCharacter_of_notMem _ hg, rootSign_of_apply_ne (mt hG.2 hg)]
 
 /-- **The Kummer character of `a ∈ Lˣ` on `G_L = galoisSubgroup K L σ`**, `γ ↦ rootSign r γ` for a
 square root `r` of `σ a`: every `γ` in `G_L` fixes `σ L`, hence `r²`, so `γ r = ±r`. -/

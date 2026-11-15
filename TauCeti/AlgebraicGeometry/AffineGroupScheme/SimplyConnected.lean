@@ -46,9 +46,7 @@ monomorphism of schemes is an isomorphism. This gives the kernel-free characteri
 * J. S. Milne, *Algebraic Groups* (2017), §21.4.
 * T. A. Springer, *Linear Algebraic Groups*, §9.6.
 
-This is the simply-connected-form target in Layer 6, "Reductive and semisimple groups", of the
-ReductiveGroups roadmap. Central isogenies and semisimple affine group schemes are already
-available; construction and classification of simply connected covers remain downstream.
+The construction and classification of simply connected covers are not treated here.
 -/
 
 public section
@@ -222,8 +220,8 @@ noncomputable def
 namespace
   simplyConnectedSemisimpleCommHopfAlgCatOpEquivSimplyConnectedSemisimpleAffineGroupSchemeCat
 
-/-- After forgetting simple connectivity, the restricted anti-equivalence is the existing
-semisimple Hopf/group-scheme anti-equivalence. -/
+/-- After forgetting simple connectivity, the restricted anti-equivalence is the semisimple
+Hopf/group-scheme anti-equivalence. -/
 noncomputable def functorCompιIso
     (k : Type u) [Field k] :
     (simplyConnectedSemisimpleCommHopfAlgCatOpEquivSimplyConnectedSemisimpleAffineGroupSchemeCat

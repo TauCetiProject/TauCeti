@@ -23,6 +23,11 @@ only the derivative of an informal matrix formula.
 
 The calculation supplies the root vector attached to the standard pinning of `GLₙ`.
 
+More generally, `tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix` shows that a
+coordinate morphism `O(GLₙ) → O(𝔾ₐ)` sending the generic matrix to `1 + tX`, for the coordinate
+`t` of `𝔾ₐ` and an integral matrix `X`, has differential `c ↦ cX`. This is the shared entrywise
+calculation for one-parameter subgroups of explicit matrix carriers.
+
 ## Reference
 
 J. S. Milne, *Algebraic Groups* (2017), §21.
@@ -38,6 +43,24 @@ universe u v
 
 variable {R : Type u} [CommRing R] {B : Type v} [CommRing B] [Algebra R B]
 variable {n : ℕ} {i j : Fin n}
+
+/-- A one-parameter subgroup whose matrix at the universal additive point is `1 + tX`
+sends the generic matrix to `1 + tX` in the additive coordinate algebra. -/
+theorem map_genericMatrix_eq_of_pointToGeneralLinear
+    (φ : coordinateHopfAlgebra R n →ₐc[R] AdditiveGroup.coordinateHopfAlgebra R)
+    (X : Matrix (Fin n) (Fin n) ℤ)
+    (hφ : (pointToGeneralLinear n (φ.mapDomain
+        (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))) :
+        Matrix (Fin n) (Fin n) (AdditiveGroup.coordinateHopfAlgebra R)) =
+      1 + (AdditiveGroup.gaPointsMulEquiv (R := R)
+        (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))).toAdd •
+          X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R)) :
+    (genericMatrix R n).map φ.toAlgHom =
+      1 + SymmetricAlgebra.ι R R 1 •
+        X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R) := by
+  rw [← map_genericMatrix_eq_coe_pointToGeneralLinear, BialgHom.mapDomain_apply] at hφ
+  simpa only [WithConv.ofConv_toConv, AlgHom.id_comp,
+    AdditiveGroup.toAdd_gaPointsMulEquiv, AlgHom.id_apply] using hφ
 
 /-- The differential of the matrix root subgroup sends an additive tangent vector `c` to
 `c Eᵢⱼ`. This holds over every commutative base ring and coefficient algebra. -/
@@ -73,9 +96,66 @@ theorem tangentMatrix_derivationComp_rootSubgroup (hij : i ≠ j)
   · simp [Matrix.single, h]
     rfl
 
-section Field
+/-- **The differential of a one-parameter subgroup with matrix `1 + tX`.** If a coordinate
+morphism `O(GLₙ) → O(𝔾ₐ)` sends the generic matrix to `1 + tX` for the coordinate `t` of `𝔾ₐ`
+and an integral matrix `X`, its differential sends an additive tangent vector `c` to `cX`. This
+holds over every commutative base ring and coefficient algebra. -/
+theorem tangentMatrix_derivationComp_eq_smul_of_map_genericMatrix
+    (φ : coordinateHopfAlgebra R n →ₐc[R] AdditiveGroup.coordinateHopfAlgebra R)
+    (X : Matrix (Fin n) (Fin n) ℤ)
+    (hφ : (genericMatrix R n).map φ.toAlgHom =
+      1 + SymmetricAlgebra.ι R R 1 •
+        X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R))
+    (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
+      (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
+    tangentMatrix n (derivationComp (B := B) φ d) =
+      AdditiveGroup.gaTangentLinearEquiv d • X.map (Int.cast : ℤ → B) := by
+  ext a b
+  rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
+  have hentry := congrFun (congrFun hφ a) b
+  rw [Matrix.map_apply] at hentry
+  rw [hentry]
+  have hone : d ((1 : Matrix (Fin n) (Fin n)
+      (AdditiveGroup.coordinateHopfAlgebra R)) a b) = 0 := by
+    classical
+    by_cases hab : a = b <;> simp [Matrix.one_apply, hab]
+  simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, smul_eq_mul,
+    map_add, Derivation.leibniz, Derivation.map_intCast, smul_zero, zero_add, hone,
+    AdditiveGroup.gaTangentLinearEquiv_apply, Int.cast_smul_eq_zsmul, zsmul_eq_mul,
+    map_mul, map_intCast]
+  ring
 
-variable {k : Type u} [Field k] {n : ℕ} {i j : Fin n}
+/-- Multiplying a matrix-valued coordinate morphism on either side by constant base-ring
+matrices multiplies its differential by the same matrices after coefficient change. Neither
+invertibility of the constant matrices nor linearity of the original morphism is needed. -/
+theorem tangentMatrix_derivationComp_eq_mul_mul_of_map_genericMatrix
+    {H : Type*} [CommRing H] [Bialgebra R H]
+    (φ ψ : coordinateHopfAlgebra R n →ₐc[R] H)
+    (M N : Matrix (Fin n) (Fin n) R)
+    (hφ : (genericMatrix R n).map φ.toAlgHom =
+      M.map (algebraMap R H) * (genericMatrix R n).map ψ.toAlgHom *
+        N.map (algebraMap R H))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    tangentMatrix n (derivationComp (B := B) φ d) =
+      M.map (algebraMap R B) * tangentMatrix n (derivationComp (B := B) ψ d) *
+        N.map (algebraMap R B) := by
+  ext a b
+  rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
+  have hentry := congrFun (congrFun hφ a) b
+  rw [Matrix.map_apply] at hentry
+  rw [hentry]
+  simp only [Matrix.mul_apply, Matrix.map_apply, map_sum,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply_mul,
+    Derivation.map_algebraMap, map_zero, mul_zero, add_zero, zero_add,
+    Bialgebra.counit_algebraMap, tangentMatrix_apply,
+    algEquivSelf_derivationComp_apply, ← genericMatrix_apply]
+  apply Finset.sum_congr rfl
+  intro c _
+  exact mul_comm _ _
+
+section Cotangent
+
+variable {k : Type u} [CommRing k] {n : ℕ} {i j : Fin n}
 
 /-- The unit tangent vector of `𝔾ₐ` maps to the matrix unit `Eᵢⱼ` in the fixed cotangent-dual
 model of the Lie algebra of `GLₙ`. -/
@@ -104,6 +184,6 @@ theorem cotangentDual_rootSubgroup_unit_mem_adjointWeightSpace (hij : i ≠ j) :
   rw [cotangentDual_rootSubgroup_unit hij]
   exact matrixUnitTangent_mem_adjointWeightSpace i j
 
-end Field
+end Cotangent
 
 end TauCeti.GeneralLinear

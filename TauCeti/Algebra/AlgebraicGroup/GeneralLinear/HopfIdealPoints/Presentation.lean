@@ -75,7 +75,7 @@ def map (P : IntegralPointsPresentation n I A) (Q : IntegralPointsPresentation n
   mapHopfIdealPointsSubgroupCongr n I P.property Q.property f.toIntAlgHom
 
 /-- The map of presented points is the entrywise matrix map. -/
-@[simp]
+@[simp↓]
 theorem coe_map (P : IntegralPointsPresentation n I A) (Q : IntegralPointsPresentation n I B)
     (f : A →+* B) (g : P.val) :
     (P.map Q f g : Matrix.GeneralLinearGroup (Fin n) B) =
@@ -134,7 +134,7 @@ def mulEquiv (P : IntegralPointsPresentation n I A) :
     (MulEquiv.subgroupCongr P.subgroup_eq_bundled).symm
 
 /-- A quotient point is its underlying general-linear point read as a matrix. -/
-@[simp]
+@[simp↓]
 theorem coe_mulEquiv_apply (P : IntegralPointsPresentation n I A)
     (q : HopfAlgebra.points
       (R := ℤ) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra ℤ n) I) A) :
@@ -144,7 +144,7 @@ theorem coe_mulEquiv_apply (P : IntegralPointsPresentation n I A)
   exact coe_hopfIdealPointsSubgroupMulEquiv_apply n I A q
 
 /-- The inverse representing equivalence recovers the ambient point of the underlying matrix. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_mulEquiv_symm (P : IntegralPointsPresentation n I A)
     (g : P.val) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra ℤ n) I A (P.mulEquiv.symm g) =
@@ -207,7 +207,7 @@ def natIso :
       exact (P A).mulEquiv_mapPoints (P B) f q)
 
 /-- The forward component of the representing isomorphism is the pointwise equivalence. -/
-@[simp]
+@[simp↓]
 theorem natIso_hom_app_apply (A : CommAlgCat.{v} ℤ)
     (q : HopfAlgebra.points
       (R := ℤ) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra ℤ n) I) A) :
@@ -215,7 +215,7 @@ theorem natIso_hom_app_apply (A : CommAlgCat.{v} ℤ)
   (rfl)
 
 /-- The inverse component of the representing isomorphism is the inverse pointwise equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even as a pre-lemma; use `rw`.
 theorem natIso_inv_app_apply (A : CommAlgCat.{v} ℤ) (g : (P A).val) :
     (natIso P).inv.app A (eqToHom (functor_obj P A).symm g) = (P A).mulEquiv.symm g :=
   (rfl)

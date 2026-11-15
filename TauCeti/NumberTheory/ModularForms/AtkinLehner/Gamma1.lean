@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalizer
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Operator
 public import TauCeti.NumberTheory.ModularForms.Fricke.Operator
 import Mathlib.LinearAlgebra.Matrix.Integer
@@ -50,6 +51,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
 
 * `TauCeti.Gamma1_map_inv_conjAct_atkinLehnerGL_eq`: `W` normalizes the image of `Γ₁(N)` in
   `GL (Fin 2) ℝ`.
+* `TauCeti.atkinLehnerOperatorGamma1_injective`,
+  `TauCeti.atkinLehnerOperatorGamma1Cusp_injective`: `W_Q` is injective, slashing by `W⁻¹` being
+  its inverse on functions.
 * `TauCeti.atkinLehnerOperatorGamma1_diamondOp`,
   `TauCeti.atkinLehnerOperatorGamma1Cusp_diamondOpCusp`: the diamond shift
   `W_Q ∘ ⟨d⟩ = ⟨ι_Q d⟩ ∘ W_Q`.
@@ -70,6 +74,9 @@ up to a scalar there. At `Q = N` the Fricke matrix gives the Fricke operator of
   `TauCeti.atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace`:
   for `W₁₁ ≡ 1` modulo `N / Q`, the square on `M_k(N, χ_Q χ_{N/Q})` is the constant
   `Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹` of Atkin and Li.
+* `atkinLehnerNormalizer_sq_smul_atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1` and its
+  cusp-form counterpart: after normalizing by `(√Q) ^ (2 - k)`, that square on a nebentypus
+  space is the constant `χ_Q(-1) χ_{N/Q}(Q)⁻¹`.
 
 ## References
 
@@ -96,7 +103,7 @@ theorem exists_mapGL_mul_atkinLehnerGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
         atkinLehnerGL hQ h * mapGL ℝ (g' : SL(2, ℤ)) ∧
       (Gamma0Map N).toHomUnits g' =
         (h.isExactDivisor hQ.ne' hQN).unitsInvPart ((Gamma0Map N).toHomUnits g) := by
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQ.ne' hQN g.2
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN g.2
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, h.toHomUnits_gamma0Map_of_mul_eq_mul hQ.ne' hQN g.2 hδ hmul⟩
   simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -112,7 +119,7 @@ theorem exists_atkinLehnerGL_mul_mapGL_eq (hQ : 0 < Q) (hQN : Q ∣ N)
         (h.isExactDivisor hQ.ne' hQN).unitsInvPart ((Gamma0Map N).toHomUnits g) := by
   -- `W g = g' W` is the relation `g' W = W g` of `toHomUnits_gamma0Map_of_mul_eq_mul` read
   -- backwards, which gives the label of `g` from that of `g'`; the shift is an involution.
-  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ.ne' hQN g.2
+  obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN g.2
   refine ⟨⟨δ, hδ⟩, Units.ext ?_, ?_⟩
   · simp only [Matrix.GeneralLinearGroup.coe_mul, coe_atkinLehnerGL, mapGL_coe_matrix,
       Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
@@ -204,6 +211,26 @@ theorem atkinLehnerOperatorGamma1_coe_cuspForm (hQ : 0 < Q) (hQN : Q ∣ N)
   DFunLike.coe_injective <| by
     rw [coe_atkinLehnerOperatorGamma1, ModularFormClass.coe_modularForm,
       ModularFormClass.coe_modularForm, coe_atkinLehnerOperatorGamma1Cusp]
+
+/-- **The Atkin–Lehner operator on `M_k(Γ₁(N))` is injective**: slashing by `W⁻¹` undoes it. -/
+theorem atkinLehnerOperatorGamma1_injective (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Function.Injective (atkinLehnerOperatorGamma1 hQ hQN h k) := fun f g hfg ↦
+  DFunLike.coe_injective <| by
+    simpa only [coe_atkinLehnerOperatorGamma1, ← SlashAction.slash_mul, mul_inv_cancel,
+      SlashAction.slash_one] using
+      congrArg (fun F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k ↦
+        ⇑F ∣[k] (atkinLehnerGL hQ h)⁻¹) hfg
+
+/-- **The Atkin–Lehner operator on `S_k(Γ₁(N))` is injective**: slashing by `W⁻¹` undoes it. -/
+theorem atkinLehnerOperatorGamma1Cusp_injective (hQ : 0 < Q) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) (k : ℤ) :
+    Function.Injective (atkinLehnerOperatorGamma1Cusp hQ hQN h k) := fun f g hfg ↦
+  DFunLike.coe_injective <| by
+    simpa only [coe_atkinLehnerOperatorGamma1Cusp, ← SlashAction.slash_mul, mul_inv_cancel,
+      SlashAction.slash_one] using
+      congrArg (fun F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k ↦
+        ⇑F ∣[k] (atkinLehnerGL hQ h)⁻¹) hfg
 
 /-- **The diamond shift** `W_Q ∘ ⟨d⟩ = ⟨ι_Q d⟩ ∘ W_Q` on `M_k(Γ₁(N))`, where `ι_Q` inverts the
 residue of `d` modulo `Q` and keeps its residue modulo `N / Q`. -/
@@ -399,7 +426,7 @@ theorem atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1 (hQ : 0 < Q) (hQN : 
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     atkinLehnerOperatorGamma1 hQ hQN h k (atkinLehnerOperatorGamma1 hQ hQN h k f) =
       (Q : ℂ) ^ (k - 2) • diamondOp k u f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperatorGamma1, coe_atkinLehnerOperatorGamma1,
     slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq hQ h hsq, FunLike.coe_smul,
@@ -413,7 +440,7 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp (hQ : 0 < Q)
     (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     atkinLehnerOperatorGamma1Cusp hQ hQN h k (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
       (Q : ℂ) ^ (k - 2) • diamondOpCusp k u f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   refine DFunLike.coe_injective ?_
   rw [coe_atkinLehnerOperatorGamma1Cusp, coe_atkinLehnerOperatorGamma1Cusp,
     slash_atkinLehnerGL_slash_atkinLehnerGL_of_mul_self_eq hQ h hsq, FunLike.coe_smul,
@@ -431,7 +458,7 @@ theorem atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSp
     atkinLehnerOperatorGamma1 hQ hQN h k (atkinLehnerOperatorGamma1 hQ hQN h k f) =
       ((Q : ℂ) ^ (k - 2) *
         ↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹)) • f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   rw [atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1 hQ hQN h
       (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq)
       (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,
@@ -449,11 +476,46 @@ theorem atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspF
     atkinLehnerOperatorGamma1Cusp hQ hQN h k (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
       ((Q : ℂ) ^ (k - 2) *
         ↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹)) • f := by
-  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self hQ.ne' hQN
+  obtain ⟨γ, hγ, hsq⟩ := h.exists_mem_Gamma0_mul_self
   rw [atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp hQ hQN h
       (h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hγ hsq)
       (h.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq hγ hsq) f,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k _ _ hf, smul_smul,
     h.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ.ne' hQN hM ψ φ hγ hsq]
+
+/-- **Atkin and Li's square of the normalized `𝒲_Q` on a nebentypus space**: under the hypotheses
+of `atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace`, the square of
+`𝒲_Q = (√Q) ^ (2 - k) • W_Q` is the constant `χ_Q(-1) χ_{N/Q}(Q)⁻¹`, the square of the normalizer
+cancelling the factor `Q ^ (k - 2)`. -/
+theorem atkinLehnerNormalizer_sq_smul_atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1
+    (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* ℂˣ) (φ : (ZMod (N / Q))ˣ →* ℂˣ)
+    {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ modFormCharSpace k
+      (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))) :
+    atkinLehnerNormalizer Q k ^ 2 •
+        atkinLehnerOperatorGamma1 hQ hQN h k (atkinLehnerOperatorGamma1 hQ hQN h k f) =
+      (↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹) : ℂ) •
+        f := by
+  rw [atkinLehnerOperatorGamma1_atkinLehnerOperatorGamma1_of_mem_modFormCharSpace hQ hQN h hM ψ φ
+    hf, smul_smul, ← mul_assoc, atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
+
+/-- **Atkin and Li's square of the normalized `𝒲_Q` on a nebentypus space of cusp forms**: under
+the hypotheses of
+`atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace`, the square
+of `𝒲_Q = (√Q) ^ (2 - k) • W_Q` is the constant `χ_Q(-1) χ_{N/Q}(Q)⁻¹`, the square of the
+normalizer cancelling the factor `Q ^ (k - 2)`. -/
+theorem atkinLehnerNormalizer_sq_smul_atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp
+    (hQ : 0 < Q) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* ℂˣ) (φ : (ZMod (N / Q))ˣ →* ℂˣ)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k
+      (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))) :
+    atkinLehnerNormalizer Q k ^ 2 •
+        atkinLehnerOperatorGamma1Cusp hQ hQN h k (atkinLehnerOperatorGamma1Cusp hQ hQN h k f) =
+      (↑(ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ.ne' hQN).coprime))⁻¹) : ℂ) •
+        f := by
+  rw [atkinLehnerOperatorGamma1Cusp_atkinLehnerOperatorGamma1Cusp_of_mem_cuspFormCharSpace hQ hQN
+    h hM ψ φ hf, smul_smul, ← mul_assoc, atkinLehnerNormalizer_sq_mul hQ.ne', one_mul]
 
 end TauCeti

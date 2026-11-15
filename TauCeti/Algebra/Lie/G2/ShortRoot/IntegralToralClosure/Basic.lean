@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.G2.ShortRoot.AdmissibleLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.CubeZeroMatrix
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 import TauCeti.Algebra.Lie.Matrix.IntegralCast
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
@@ -143,6 +144,26 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin 2 ⊕ Fin 2) (j : Fin 2) :
           simp only [Int.cast_neg, neg_smul, Int.cast_smul_eq_zsmul]
         _ = ((rootWeight (.inr i) j : ℤ) : ℚ) • rootGen (.inr i) :=
           congrArg (fun z : ℤ => ((z : ℚ) • rootGen (.inr i))) hweight.symm
+
+/-- The positive simple-root generator has the character of the named Bourbaki simple root. -/
+theorem lie_cartanGenerator_rootGenerator_inl_eq_root_simpleIndex (i j : Fin 2) :
+    ⁅cartanGen j, rootGen (.inl i)⁆ =
+      (((G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j : ℤ) : ℚ) •
+        rootGen (.inl i) := by
+  rw [← G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i]
+  exact lie_cartanGenerator_rootGenerator (.inl i) j
+
+/-- The negative simple-root generator has the negative of the named simple-root character. -/
+theorem lie_cartanGenerator_rootGenerator_inr_eq_neg_root_simpleIndex (i j : Fin 2) :
+    ⁅cartanGen j, rootGen (.inr i)⁆ =
+      -((((G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j : ℤ) : ℚ) •
+        rootGen (.inr i)) := by
+  have h := lie_cartanGenerator_rootGenerator (.inr i) j
+  have hweight := G2.rootGeneratorWeight_inr_eq_neg_root_simpleIndex valid_G2 i
+  -- Normalize the character's rank-indexed domain to the represented generators' `Fin 2`.
+  dsimp (config := { instances := true }) only [DynkinType.rank] at h hweight ⊢
+  rw [hweight, Pi.neg_apply, Int.cast_neg, neg_smul] at h
+  exact h
 
 /-- The coordinate on which a numbered simple root generator makes its distinguished unit step:
 the raising generators step from the second and third weights, the lowering ones from the first
@@ -378,7 +399,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a point of the integral toral closure exactly when its associated convolution
 point kills the defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
     g ∈ points A ↔ ∀ x ∈ definingIdeal,
@@ -404,6 +425,24 @@ theorem coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix (k : Fin 2 ⊕ Fin 2
         (isNilpotent_rep_serreRootGenerator k) latticeBasis
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u) :=
   TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints _ _ _ _ _ _ _ _ k A u
+
+/-- The rank-one word `x_{-αⱼ}(1) x_{αⱼ}(-1) x_{-αⱼ}(1)` in the integral toral closure. -/
+noncomputable def rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] : points A :=
+  rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
+    rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
+      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
+
+/-- The rank-one word is the generic Kostant toral Weyl representative in the weight basis. -/
+theorem coe_rankOneWordPoints (j : Fin 2) (A : Type v) [CommRing A] :
+    (rankOneWordPoints j A : Matrix.GeneralLinearGroup (Fin 7) A) =
+      (UniversalEnvelopingAlgebra.kostantToralWeylPoint
+        (serreRootGenerator CartanMatrix.G₂)
+        (serreH ℚ CartanMatrix.G₂) rep lattice.toAddSubgroup
+        rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis weight
+        (.inr j) (.inl j) A : Matrix.GeneralLinearGroup (Fin 7) A) := by
+  simp only [rankOneWordPoints, UniversalEnvelopingAlgebra.kostantToralWeylPoint_def,
+    Subgroup.coe_mul, coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
 
 private theorem nilpotencyClass_rep_rootGenerator_le_three (k : Fin 2 ⊕ Fin 2) :
     nilpotencyClass (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))) ≤ 3 := by
@@ -553,7 +592,7 @@ instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.l
 
 /-- The scheme-level pinning equation: conjugation by the weight torus acts on each numbered
 simple root subgroup through the corresponding type-`G₂` root character. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 2 ⊕ Fin 2)
     (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶

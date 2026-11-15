@@ -55,7 +55,7 @@ theorem isArithFrobAt_apply_sqrt_primeDiscriminantRadicand_eq_self_iff
   · -- `P` is odd, so it is its own radicand and is congruent to `1` modulo `4`.
     obtain ⟨p, hpp, hp, rfl⟩ := (isPrimeDiscriminant_iff.mp hP).resolve_left (by
       rintro (rfl | rfl | rfl) <;> norm_num at hq)
-    have hmod := oddPrimeDiscriminant_mod_four_eq_one hp
+    have hmod := oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hp
     rw [primeDiscriminantRadicand_oddPrimeDiscriminant hp] at hx
     have : Q.LiesOver (span {(2 : ℤ)}) := by simpa using ‹Q.LiesOver (span {((2 : ℕ) : ℤ)})›
     rw [isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight hx hmod Q hσ, Nat.cast_ofNat,

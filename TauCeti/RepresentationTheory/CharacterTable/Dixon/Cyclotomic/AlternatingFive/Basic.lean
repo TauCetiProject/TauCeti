@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Alternating.Five
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
+public import TauCeti.RingTheory.Cyclotomic.Power
 
 /-!
 # Exact cyclotomic candidate-table data for the alternating group of degree five
@@ -70,35 +71,20 @@ abbrev alternatingGroupFiveGolden : Cyclotomic 5 :=
 abbrev alternatingGroupFiveGoldenGaloisConjugate : Cyclotomic 5 :=
   Cyclotomic.ofCoeffList 5 [1, 1, 0, 1]
 
-private theorem alternatingGroupFive_isRoot_zeta_pow {k : ℕ} (hk : k.Coprime 5) :
-    (Polynomial.cyclotomic 5 ℤ).eval₂ (Int.castRingHom (Cyclotomic 5))
-      (Cyclotomic.zeta 5 ^ k) = 0 := by
-  apply Cyclotomic.complexEmbedding_injective
-  rw [map_zero, Polynomial.hom_eval₂]
-  have hprimitive : IsPrimitiveRoot (Cyclotomic.complexRoot 5 ^ k) 5 :=
-    Cyclotomic.isPrimitiveRoot_complexRoot.pow_of_coprime k hk
-  rw [RingHom.ext_int
-    (Cyclotomic.complexEmbedding.comp (Int.castRingHom (Cyclotomic 5)))
-    (Int.castRingHom ℂ), map_pow, Cyclotomic.complexEmbedding_zeta,
-    ← Polynomial.eval_map, Polynomial.map_cyclotomic]
-  exact (hprimitive.isRoot_cyclotomic (by norm_num)).eq_zero
-
 /-- The cyclotomic Galois automorphism `ζ ↦ ζ²` of `TauCeti.Cyclotomic 5`. -/
 noncomputable def alternatingGroupFiveGaloisEquiv : Cyclotomic 5 ≃+* Cyclotomic 5 := by
-  let σ2 : Cyclotomic 5 →+* Cyclotomic 5 := Cyclotomic.evalRingHom
-    (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 2)
-      (alternatingGroupFive_isRoot_zeta_pow (by decide))
-  let σ3 : Cyclotomic 5 →+* Cyclotomic 5 := Cyclotomic.evalRingHom
-    (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 3)
-      (alternatingGroupFive_isRoot_zeta_pow (by decide))
+  let σ2 : Cyclotomic 5 →+* Cyclotomic 5 :=
+    Cyclotomic.powRingHom (e := 5) (n := 2) (by decide)
+  let σ3 : Cyclotomic 5 →+* Cyclotomic 5 :=
+    Cyclotomic.powRingHom (e := 5) (n := 3) (by decide)
   have hleft : σ3.comp σ2 = RingHom.id (Cyclotomic 5) := by
     ext1
-    simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.evalRingHom_zeta, map_pow,
+    simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.powRingHom_zeta, map_pow,
       RingHom.id_apply]
     decide
   have hright : σ2.comp σ3 = RingHom.id (Cyclotomic 5) := by
     ext1
-    simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.evalRingHom_zeta, map_pow,
+    simp only [RingHom.comp_apply, σ2, σ3, Cyclotomic.powRingHom_zeta, map_pow,
       RingHom.id_apply]
     decide
   exact
@@ -110,24 +96,25 @@ noncomputable def alternatingGroupFiveGaloisEquiv : Cyclotomic 5 ≃+* Cyclotomi
       map_add' := σ2.map_add }
 
 private theorem alternatingGroupFiveGaloisEquiv_apply (x : Cyclotomic 5) :
-    alternatingGroupFiveGaloisEquiv x = Cyclotomic.evalRingHom
-      (Int.castRingHom (Cyclotomic 5)) (Cyclotomic.zeta 5 ^ 2)
-        (alternatingGroupFive_isRoot_zeta_pow (by decide)) x := by
+    alternatingGroupFiveGaloisEquiv x =
+      Cyclotomic.powRingHom (e := 5) (n := 2) (by decide) x := by
   rfl
 
 /-- The Galois automorphism sends the distinguished fifth root of unity to its square. -/
 @[simp]
 theorem alternatingGroupFiveGaloisEquiv_zeta :
     alternatingGroupFiveGaloisEquiv (Cyclotomic.zeta 5) = Cyclotomic.zeta 5 ^ 2 := by
-  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.evalRingHom_zeta]
+  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_zeta]
 
 /-- The Galois automorphism `ζ ↦ ζ²` exchanges the two golden-ratio values. -/
 @[simp]
 theorem alternatingGroupFiveGaloisEquiv_golden :
     alternatingGroupFiveGaloisEquiv alternatingGroupFiveGolden =
       alternatingGroupFiveGoldenGaloisConjugate := by
-  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.evalRingHom_ofCoeffList]
-  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_apply,
+    ← Cyclotomic.evalRingHom_eq_evalCoeffs _ _
+      (Cyclotomic.eval₂_cyclotomic_zeta_pow (by decide)), Cyclotomic.evalRingHom_ofCoeffList]
+  norm_num [Polynomial.ofCoeffList_cons]
   decide
 
 /-- The Galois automorphism `ζ ↦ ζ²` sends the conjugate golden-ratio value back to the
@@ -136,8 +123,10 @@ positive one. -/
 theorem alternatingGroupFiveGaloisEquiv_galoisConjugate :
     alternatingGroupFiveGaloisEquiv alternatingGroupFiveGoldenGaloisConjugate =
       alternatingGroupFiveGolden := by
-  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.evalRingHom_ofCoeffList]
-  norm_num [TauCeti.Polynomial.ofCoeffList_cons]
+  rw [alternatingGroupFiveGaloisEquiv_apply, Cyclotomic.powRingHom_apply,
+    ← Cyclotomic.evalRingHom_eq_evalCoeffs _ _
+      (Cyclotomic.eval₂_cyclotomic_zeta_pow (by decide)), Cyclotomic.evalRingHom_ofCoeffList]
+  norm_num [Polynomial.ofCoeffList_cons]
   decide
 
 /-- The two golden-ratio character values sum to one. -/
@@ -360,10 +349,9 @@ private theorem alternatingGroupFive_candidateCharacterTable_orthogonal_reindex
     norm_num [Fin.sum_univ_succ, card_classFinset_alternatingGroupFiveClassData,
       alternatingGroupFiveCandidateCharacterTable_apply]
   all_goals
-    try rw [hgolden]
+    rw [hgolden]
     ring_nf
-    try rw [hsq]
-    try ring
+  all_goals rw [hsq]; ring
 
 /-- The candidate ordinary-character rows satisfy Hermitian row orthogonality. -/
 theorem alternatingGroupFive_candidateCharacterTable_orthogonal

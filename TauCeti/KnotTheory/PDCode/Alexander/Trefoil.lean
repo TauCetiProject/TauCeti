@@ -86,9 +86,9 @@ private theorem alexanderGenerator_rightHandedTrefoilPDCode (p : Fin 3 × Fin 4)
   have harc (p : Fin 3 × Fin 4) : gen (rightHandedTrefoilArcPair.val p) = gen p := by
     have := rightHandedTrefoilPDCode.alexanderGenerator_edgePair (PDCode.crossingSlotEquiv 3 p)
     rwa [rightHandedTrefoilPDCode_edgePair_apply] at this
-  have h02 := hover 0
-  have h12 := hover 1
-  have h22 := hover 2
+  have _ := hover 0
+  have _ := hover 1
+  have _ := hover 2
   have h11 := harc (0, 2)
   have h23 := harc (0, 0)
   have h03 := harc (1, 0)

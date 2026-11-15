@@ -45,9 +45,7 @@ by the ambient category rather than baked into a monolithic notion of algebraic 
 * The categorical restriction and smoothness transport follow the formal pattern in
   `TauCeti.AlgebraicGeometry.AffineGroupScheme.Unipotent`.
 
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap. It is
-the scheme-side form of the geometric definition and supplies the model needed for the radical,
-centre, derived group, central isogenies, and simply connected and adjoint forms.
+This is the scheme-side form of the geometric definition of reductivity.
 -/
 
 public section

@@ -335,7 +335,6 @@ private theorem rpow_neg_mul_rpow_inv_neg {d s E K G : ℝ} (hd : 0 < d) (hs : 0
     (hG : 0 < G) (n q : ℝ) :
     d ^ (-(q + 1)) * (s ^ (n / 2) * d⁻¹ ^ (-((n + q + 1) / 2)) * E / (K * G)) =
       d ^ ((n - q - 1) / 2) * E / (K * s⁻¹ ^ (n / 2) * G) := by
-  have hsn : (0 : ℝ) < s ^ (n / 2) := Real.rpow_pos_of_pos hs _
   rw [Real.inv_rpow hd.le, ← Real.rpow_neg hd.le, neg_neg, Real.inv_rpow hs.le,
     show d ^ (-(q + 1)) * (s ^ (n / 2) * d ^ ((n + q + 1) / 2) * E / (K * G)) =
       d ^ (-(q + 1)) * d ^ ((n + q + 1) / 2) * (s ^ (n / 2) * E) / (K * G) by ring,

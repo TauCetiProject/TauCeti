@@ -32,17 +32,13 @@ about an arbitrary Dedekind domain.
 * `WeierstrassCurve.Affine.finiteIndex_range_nsmulAddMonoidHom_two`: **the weak Mordell–Weil
   theorem.**
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil), lines 790–838: Step 7 of the
-weak Mordell–Weil theorem. It is the input to the descent argument in the Mordell–Weil theorem
+The weak Mordell–Weil theorem is the input to the descent argument in the Mordell–Weil theorem
 proper.
 
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeakMordellWeil.lean`, the criterion at `:799` and section `Step7`. The source is
 written against Lean `v4.32.0`; this is a forward port.
 
@@ -94,8 +90,12 @@ This is the input to the descent argument in the Mordell–Weil theorem proper. 
 theorem finiteIndex_range_nsmulAddMonoidHom_two :
     (nsmulAddMonoidHom (α := W.Point) 2).range.FiniteIndex := by
   rw [W.finiteIndex_range_nsmulAddMonoidHom_two_iff]
-  have := W.finite_selmerGroupA R
-  exact ((W.selmerGroupA R : Set W.M).toFinite.subset (W.range_μ_le_selmerGroupA R)).to_subtype
+  have := W.finite_selmerGroupA R (W.finite_badPrimes R)
+  exact ((W.selmerGroupA R (W.badPrimes R) : Set W.M).toFinite.subset
+    (W.range_μ_le_selmerGroupA R (fun _ ↦ W.valuation_a₂_le_one_of_notMem_badPrimes R)
+      (fun _ ↦ W.valuation_a₄_le_one_of_notMem_badPrimes R)
+      (fun _ ↦ W.valuation_a₆_le_one_of_notMem_badPrimes R)
+      (fun _ ↦ W.valuation_discr_f_eq_one_of_notMem_badPrimes R))).to_subtype
 
 end WeierstrassCurve.Affine
 

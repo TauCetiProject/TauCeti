@@ -5,26 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Span
 
 /-!
-# Integers and an ideal lying over `(a)`
+# Ideals lying over a principal ideal, and towers of residue rings
 
-For an ideal `Q` of a `ℤ`-algebra lying over the integer ideal `(a)` (`Ideal.LiesOver`), two
-translations recur. An integer `m` maps into `Q` exactly when `a ∣ m`, which unfolds
-`Ideal.mem_of_liesOver` through `Ideal.mem_span_singleton` once; and the base residue ring
-`ℤ ⧸ Q ∩ ℤ` is `ℤ ⧸ (a)`, so for `a` a natural prime `p` it has exactly `p` elements.
+For an ideal `Q` of an `R`-algebra lying over the principal ideal `(a)` of a commutative semiring
+`R` (`Ideal.LiesOver`), an element `m : R` maps into `Q` exactly when `a ∣ m`; this unfolds
+`Ideal.mem_of_liesOver` through `Ideal.mem_span_singleton` once. Over `R = ℤ`, the base residue
+ring `ℤ ⧸ Q ∩ ℤ` of an ideal lying over `(n)` is `ℤ ⧸ (n)`, so its `Nat.card` is `n`: for `n ≠ 0`
+it has exactly `n` elements, while for `n = 0` it is the infinite ring `ℤ`, whose `Nat.card` is
+`0` by convention.
 
 Together they let arithmetic arguments move between divisibility in `ℤ` and membership in `Q`,
 and pin the residue cardinality that `AlgHom.IsArithFrobAt` exponentiates by, without repeating
-the translation at each use site.
+the translation at each use site. If moreover `Q` is maximal and the ring is integral over `ℤ`,
+then `Q ∩ ℤ = (n)` is a maximal ideal of `ℤ`, so `n` is a prime.
+
+For a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C`, the residue rings
+`A ⧸ p`, `B ⧸ Q` and `C ⧸ P` form a tower of algebras for the `Ideal.LiesOver` algebra structures.
 
 ## Main results
 
-* `Ideal.algebraMap_int_mem_iff_dvd_of_liesOver`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`.
-* `Ideal.natCard_quotient_under_of_liesOver`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = p` for `Q` over `(p)`.
+* `Ideal.algebraMap_mem_iff_dvd_of_liesOver`: `algebraMap R S m ∈ Q ↔ a ∣ m`.
+* `Ideal.finite_quotient_of_liesOver`: if `B ⧸ P` is finite for `P` over `p`, so is `R ⧸ p`.
+* `Ideal.natCard_quotient_under_of_liesOver`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`.
+* `Ideal.prime_of_isMaximal_of_liesOver`: a maximal ideal over `(p)` of a ring integral over `ℤ`
+  forces `p` to be prime.
+* `Ideal.Quotient.isScalarTower_quotient_of_liesOver`: `A ⧸ p → B ⧸ Q → C ⧸ P` is a tower of
+  algebras.
 -/
 
 public section
@@ -33,23 +45,55 @@ open Ideal
 
 namespace Ideal
 
-/-- An ideal of a `ℤ`-algebra lying over the integer ideal `(a)` meets `ℤ` exactly in the
-multiples of `a`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`. -/
-theorem algebraMap_int_mem_iff_dvd_of_liesOver {S : Type*} [Ring S] {a : ℤ}
-    (Q : Ideal S) [Q.LiesOver (span {a})] (m : ℤ) :
-    algebraMap ℤ S m ∈ Q ↔ a ∣ m :=
-  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
+/-- An ideal of an `R`-algebra lying over the principal ideal `(a)` meets `R` exactly in the
+multiples of `a`: `algebraMap R S m ∈ Q ↔ a ∣ m`. -/
+theorem algebraMap_mem_iff_dvd_of_liesOver {R S : Type*} [CommSemiring R] [Semiring S]
+    [Algebra R S] {a : R} (Q : Ideal S) [Q.LiesOver (span {a})] (m : R) :
+    algebraMap R S m ∈ Q ↔ a ∣ m :=
+  (mem_of_liesOver Q (span {a}) m).symm.trans mem_span_singleton
 
-/-- The base residue ring of an ideal lying over a rational prime has `p` elements:
-`Nat.card (ℤ ⧸ Q ∩ ℤ) = p` for `Q` over `(p)`.
+/-- If a prime `P` of `B` lies over `p` and `B ⧸ P` is finite, then `R ⧸ p` is finite: the induced
+map `R ⧸ p → B ⧸ P` is injective. -/
+theorem finite_quotient_of_liesOver {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
+    (p : Ideal R) (P : Ideal B) [P.LiesOver p] [Finite (B ⧸ P)] : Finite (R ⧸ p) :=
+  .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := p) (P := P)).le)
+    (quotientMap_injective' (LiesOver.over (p := p) (P := P)).ge)
 
-This is the cardinality that `AlgHom.IsArithFrobAt` raises to over the base `ℤ`, so it is what
-turns an abstract Frobenius congruence into the congruence `φ y ≡ y ^ p`. -/
-theorem natCard_quotient_under_of_liesOver {S : Type*} [Ring S] {p : ℕ}
-    (Q : Ideal S) [Q.LiesOver (span {(p : ℤ)})] :
-    Nat.card (ℤ ⧸ Q.under ℤ) = p := by
-  rw [← Ideal.LiesOver.over (P := Q) (p := span {(p : ℤ)})]
-  exact Int.card_ideal_quot p
+/-- The base residue ring of an ideal lying over the integer ideal `(n)` has `Nat.card` equal
+to `n`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`. For `n ≠ 0` this says the residue ring has
+exactly `n` elements; for `n = 0` the residue ring is `ℤ`, which is infinite, so both sides are
+`0` by the `Nat.card` convention.
+
+This is the cardinality that `AlgHom.IsArithFrobAt` raises to over the base `ℤ`, so for `n` a
+rational prime `p` it is what turns an abstract Frobenius congruence into the congruence
+`φ y ≡ y ^ p`. -/
+theorem natCard_quotient_under_of_liesOver {S : Type*} [Ring S] {n : ℕ}
+    (Q : Ideal S) [Q.LiesOver (span {(n : ℤ)})] :
+    Nat.card (ℤ ⧸ Q.under ℤ) = n := by
+  rw [← over_def Q (span {(n : ℤ)}), Int.card_ideal_quot]
+
+/-- **A maximal ideal over `(p)` forces `p` to be prime.** In a ring integral over `ℤ`, a maximal
+ideal lying over `span {p}` contracts to a maximal ideal of `ℤ`, so `span {p}` is a nonzero prime
+ideal and `p` is a prime. -/
+theorem prime_of_isMaximal_of_liesOver {R : Type*} [CommRing R] [Algebra.IsIntegral ℤ R] {p : ℕ}
+    (𝔭 : Ideal R) [𝔭.IsMaximal] [𝔭.LiesOver (span {(p : ℤ)})] : p.Prime := by
+  have hmax : (span {(p : ℤ)}).IsMaximal := by
+    rw [𝔭.over_def (span {(p : ℤ)})]
+    infer_instance
+  have hp0 : (p : ℤ) ≠ 0 := by
+    rw [Ne, ← span_singleton_eq_bot]
+    exact Ring.ne_bot_of_isMaximal_of_not_isField hmax Int.not_isField
+  exact Nat.prime_iff_prime_int.2 ((span_singleton_prime hp0).1 hmax.isPrime)
+
+/-- The residue rings of a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C` form
+a tower of algebras. -/
+theorem Quotient.isScalarTower_quotient_of_liesOver {A B C : Type*} [CommRing A] [CommRing B]
+    [CommRing C] [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C] (p : Ideal A)
+    (Q : Ideal B) (P : Ideal C) [Q.LiesOver p] [P.LiesOver Q] [P.LiesOver p] :
+    IsScalarTower (A ⧸ p) (B ⧸ Q) (C ⧸ P) :=
+  .of_algebraMap_eq <| by
+    rintro ⟨x⟩
+    exact congrArg (Ideal.Quotient.mk P) (IsScalarTower.algebraMap_apply A B C x)
 
 end Ideal
 

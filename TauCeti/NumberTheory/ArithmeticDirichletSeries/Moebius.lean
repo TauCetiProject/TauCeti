@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Moebius
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 -- Non-public: the alternating sum over a powerset,
 -- `Finset.sum_powerset_neg_one_pow_card_of_nonempty`, is used only inside the proof of the
@@ -65,12 +65,6 @@ The ideal Möbius function is *not* completely multiplicative, so it is not a
 `TauCeti.MultiplicativeIdealWeight`; the two rejection theorems record this rather than leaving it
 to the reader, following
 `TauCeti.MultiplicativeIdealWeight.not_exists_toIdealArithmeticFunction_eq_one`.
-
-## Roadmap role
-
-This is Layer **2.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, built on the Layer
-**2.1** convolution of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution.lean`. Its
-consumers are the von Mangoldt transform of Layer 2.3 and the local factors of Layer 3.
 
 ## References
 

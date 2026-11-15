@@ -17,7 +17,8 @@ is by the common kernel of their coordinate maps.
 
 This file names that ideal and the resulting coordinate Hopf algebra. Every coordinate morphism
 killing the ideal factors uniquely through the quotient, including each generator. The quotient
-lies inside the base change of the integral carrier.
+lies inside the base change of the integral carrier. Formation of this generated subgroup
+commutes with free base change, including field extensions.
 
 Equality of the generated subgroup with the base change of the integral carrier is not asserted:
 extra equations can appear after specialization to a non-flat base. Nor is the generated subgroup
@@ -43,11 +44,20 @@ identified with a pinned simply connected group scheme of type `Dₙ`.
 * `TauCeti.TypeDSpinCarrier.generatedCoordinateLift` and
   `TauCeti.TypeDSpinCarrier.generatedCoordinateLift_unique`: each generator factors uniquely
   through the generated subgroup.
+* `TauCeti.TypeDSpinCarrier.map_baseChangeHopfIdeal_generatedDefiningIdeal` and
+  `TauCeti.TypeDSpinCarrier.generatedCoordinateHopfAlgebraBaseChangeIso`: free base change
+  preserves the generated subgroup and its defining ideal.
+* `baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom`:
+  the base-change isomorphism respects the embedding in the general linear group.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
+
+The free base-change proof follows the type-`B` spin generated subgroup in
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic`. Compatibility with the
+factored generator maps follows `TauCeti.Algebra.Lie.E7.Minuscule.Generated.RelativeBaseChange`.
 -/
 
 public section
@@ -56,7 +66,7 @@ namespace TauCeti.TypeDSpinCarrier
 
 open CategoryTheory
 
-universe v
+universe v w
 
 variable (n : ℕ) (hn : 4 ≤ n) (A : Type v) [CommRing A]
 
@@ -113,6 +123,14 @@ noncomputable def generatedCoordinateMap :
       generatedCoordinateHopfAlgebra n hn A :=
   CommHopfAlgCat.mkQuotient _ _
 
+/-- Transporting the named generated coordinate algebra to its quotient presentation carries
+its coordinate map to the quotient projection. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_eqToHom :
+    generatedCoordinateMap n hn A ≫ eqToHom (generatedCoordinateHopfAlgebra_def n hn A) =
+      CommHopfAlgCat.mkQuotient _ (generatedDefiningIdeal n hn A) :=
+  (rfl)
+
 /-- The generated subgroup's coordinate map is surjective. -/
 theorem generatedCoordinateMap_surjective :
     Function.Surjective (generatedCoordinateMap n hn A).hom :=
@@ -163,6 +181,20 @@ theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin n ⊕ 
   generatedCoordinateMap_comp_generatedCoordinateDesc n hn A (generatorCoordinateMap n hn A j)
     ((le_generatedDefiningIdeal_iff n hn A _).mp le_rfl j)
 
+/-- The numbered root-subgroup coordinate maps of the generated spin group are surjective.
+Thus the numbered root subgroups are closed subgroups of the generated group. -/
+theorem generatedCoordinateLift_inl_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (generatedCoordinateLift n hn A (.inl k)).hom := by
+  have h : Function.Surjective
+      (generatedCoordinateMap n hn A ≫ generatedCoordinateLift n hn A (.inl k)).hom := by
+    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
+      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n hn A k).comp
+      (coordinateMap_surjective n hn A)
+  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact Function.Surjective.of_comp h
+
 /-- The generator lift is the unique factorization through the generated subgroup. -/
 theorem generatedCoordinateLift_unique (j : Sum (Fin n ⊕ Fin n) Unit)
     (g : generatedCoordinateHopfAlgebra n hn A ⟶ generatorCoordinateAlgebra n A j)
@@ -175,5 +207,107 @@ theorem generatedCoordinateLift_unique (j : Sum (Fin n ⊕ Fin n) Unit)
 instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra n hn A) := by
   rw [generatedCoordinateHopfAlgebra_def]
   infer_instance
+
+section BaseChange
+
+variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
+
+/-- The generator coordinate algebras over `K` are the scalar extensions of those over `k`. -/
+noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+    ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra n k j) ≅
+      generatorCoordinateAlgebra n K j
+  | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
+  | .inr _ => _root_.CommHopfAlgCat.isoMk
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
+        (G := SplitTorus.characterGroup (Fin n)))
+
+/-- Each generator coordinate map over `K` is the scalar extension of the map over `k`. -/
+theorem generatorCoordinateMap_baseChange
+    (j : (Fin n ⊕ Fin n) ⊕ Unit) :
+    ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).inv ≫
+        CommHopfAlgCat.baseChangeMap (generatorCoordinateMap n hn k j)) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
+      generatorCoordinateMap n hn K j := by
+  rcases j with j | _
+  · rw [Category.assoc, generatorCoordinateMap_inl, generatorCoordinateMap_inl]
+    exact
+      UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_baseChange
+        _ _ _ _ _ j _ _ k K
+  · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
+    exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
+
+/-- Under free base change the defining ideal of the generated type-`Dₙ` spin subgroup becomes
+the defining ideal of the subgroup generated over the extension ring. -/
+theorem map_baseChangeHopfIdeal_generatedDefiningIdeal [Module.Free k K] :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (generatedDefiningIdeal n hn k)).map
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom.hom =
+      generatedDefiningIdeal n hn K := by
+  rw [generatedDefiningIdeal_def, generatedDefiningIdeal_def,
+    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
+    CommHopfAlgCat.map_commonKernelHopfIdeal,
+    ← funext (generatorCoordinateMap_baseChange n hn k K),
+    CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
+      (ConcreteCategory.bijective_of_isIso
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom).1]
+
+-- Within this module the generated coordinate algebra and its coordinate map unfold to their
+-- quotient definitions, so the generic quotient base-change isomorphism applies directly.
+/-- Scalar extension of the generated type-`Dₙ` spin subgroup along a free ring extension
+agrees with the subgroup generated over the extension ring. -/
+noncomputable def generatedCoordinateHopfAlgebraBaseChangeIso [Module.Free k K] :
+    CommHopfAlgCat.baseChange (K := K) (generatedCoordinateHopfAlgebra n hn k) ≅
+      generatedCoordinateHopfAlgebra n hn K :=
+  CommHopfAlgCat.quotientBaseChangeIsoOfMapEq (generatedDefiningIdeal n hn k)
+    (generatedDefiningIdeal n hn K)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
+    (map_baseChangeHopfIdeal_generatedDefiningIdeal n hn k K)
+
+/-- The base-change isomorphism respects the closed immersions into the corresponding general
+linear groups. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+    [Module.Free k K] :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap n hn k) ≫
+        (generatedCoordinateHopfAlgebraBaseChangeIso n hn k K).hom =
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom ≫
+        generatedCoordinateMap n hn K :=
+  CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
+    (map_baseChangeHopfIdeal_generatedDefiningIdeal n hn k K)
+
+/-- Free scalar extension respects every factored root and torus coordinate map. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : (Fin n ⊕ Fin n) ⊕ Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift n hn k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso n hn k K).hom ≫
+        generatedCoordinateLift n hn K j := by
+  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
+  have := ConcreteCategory.epi_of_surjective _
+    (CommHopfAlgCat.baseChangeMap_surjective (K := K) _
+      (generatedCoordinateMap_surjective n hn k))
+  rw [← CommHopfAlgCat.baseChangeFunctor_map] at this ⊢
+  apply (cancel_epi (F.map (generatedCoordinateMap n hn k))).mp
+  have hquot :=
+    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom_assoc
+      n hn k K (generatedCoordinateLift n hn K j)
+  calc
+    _ = F.map (generatorCoordinateMap n hn k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom := by
+      rw [← Category.assoc, ← Functor.map_comp,
+        generatedCoordinateMap_comp_generatedCoordinateLift]
+    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom ≫
+        generatorCoordinateMap n hn K j := by
+      rw [CommHopfAlgCat.baseChangeFunctor_map]
+      exact (Iso.inv_comp_eq
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))).mp
+        (generatorCoordinateMap_baseChange n hn k K j)
+    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom ≫
+        generatedCoordinateMap n hn K ≫ generatedCoordinateLift n hn K j := by
+      rw [generatedCoordinateMap_comp_generatedCoordinateLift]
+    _ = _ := by
+      simpa only [CommHopfAlgCat.baseChangeFunctor_map] using hquot.symm
+
+end BaseChange
 
 end TauCeti.TypeDSpinCarrier

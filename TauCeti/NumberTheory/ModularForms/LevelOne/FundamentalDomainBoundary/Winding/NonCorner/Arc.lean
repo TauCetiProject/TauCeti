@@ -158,9 +158,9 @@ private lemma lt_norm_sub_arc_of_far (ht : t ∈ Icc (1 : ℝ) 3) (ht₀ : t₀ 
 
 /-- Near the crossing along the arc, the chord distance is at most the excision chord. -/
 private lemma norm_sub_arc_le_of_near (ht : t ∈ Icc (1 : ℝ) 3) (ht₀ : t₀ ∈ Icc (1 : ℝ) 3)
-    (hδ2 : δ ≤ 2) (hnear : |t - t₀| ≤ δ) :
+    (_ : δ ≤ 2) (hnear : |t - t₀| ≤ δ) :
     ‖fdBoundary H t - fdBoundary H t₀‖ ≤ 2 * Real.sin (δ * (Real.pi / 12)) := by
-  have hδ0 : 0 ≤ δ := (abs_nonneg _).trans hnear
+  have : 0 ≤ δ := (abs_nonneg _).trans hnear
   rw [norm_fdBoundary_sub_fdBoundary_arc ht ht₀,
     Real.abs_sin_eq_sin_abs_of_abs_le_pi (by
       rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < Real.pi / 12)]
@@ -239,7 +239,6 @@ private lemma log_sub_log_arc (ht₀ : t₀ ∈ Icc (1 : ℝ) 3) (hδ : 0 < δ) 
       Complex.log ((fdBoundary H (t₀ + δ) - fdBoundary H t₀) * (fdBoundary H t₀)⁻¹) =
       -((Real.pi + δ * (Real.pi / 6) : ℝ) : ℂ) * Complex.I := by
   have hπ := Real.pi_pos
-  have hδ2 : δ ≤ 2 := by linarith [ht₀.1, ht₀.2]
   have hsin : 0 < Real.sin (δ * (Real.pi / 12)) :=
     Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith)
   rw [fdBoundary_sub_mul_inv_sub_eq ht₀ hδ hδ1, fdBoundary_sub_mul_inv_add_eq ht₀ hδ hδ3,
@@ -278,14 +277,14 @@ private lemma fdBoundary_ne_arc (hH : 1 < H) (hre : |w.re| < 1 / 2)
 /-- For an arc point, the branch rotated by `w⁻¹` is slit-plane-valued wherever the contour
 misses `w`: the cut ray `{r·w : r ≤ 1}` meets the contour only at `w` itself. -/
 private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im)
-    (ht : t ∈ Icc (0 : ℝ) 5) (hne : fdBoundary H t ≠ w) :
+    (hne : fdBoundary H t ≠ w) :
     (fdBoundary H t - w) * w⁻¹ ∈ Complex.slitPlane := by
   have hw0 : w ≠ 0 := fun h ↦ by rw [h, norm_zero] at hnorm; norm_num at hnorm
   by_contra hmem
   rw [Complex.mem_slitPlane_iff] at hmem
   push Not at hmem
   obtain ⟨hre0, him0⟩ := hmem
-  set x := ((fdBoundary H t - w) * w⁻¹).re with hx
+  set x := ((fdBoundary H t - w) * w⁻¹).re
   have hxeq : (fdBoundary H t - w) * w⁻¹ = (x : ℂ) := Complex.ext rfl (by simpa using him0)
   have hγ : fdBoundary H t = (1 + (x : ℂ)) * w := by
     have h1 := congrArg (· * w) hxeq
@@ -295,7 +294,7 @@ private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im
   · have hn := congrArg norm hγ
     rw [norm_mul, hnorm, mul_one, show (1 + (x : ℂ)) = ((1 + x : ℝ) : ℂ) by push_cast; ring,
       Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hpos] at hn
-    have h1 := one_le_norm_fdBoundary hH.le ht
+    have h1 := one_le_norm_fdBoundary (t := t) hH.le
     have hx0 : x = 0 := le_antisymm hre0 (by rw [hn] at h1; linarith)
     refine hne ?_
     rw [hγ, hx0]
@@ -305,8 +304,8 @@ private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im
     rw [show (1 + (x : ℂ)) * w = ((1 + x : ℝ) : ℂ) * w by push_cast; ring] at hi
     simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
       add_zero] at hi
-    have him2 := sqrt_three_div_two_le_im_fdBoundary
-      (le_of_lt (sqrt_three_div_two_lt_one.trans hH)) ht
+    have him2 := sqrt_three_div_two_le_im_fdBoundary (t := t)
+      (le_of_lt (sqrt_three_div_two_lt_one.trans hH))
     nlinarith [Real.sqrt_nonneg 3, mul_neg_of_neg_of_pos hneg him]
 
 /-- **The chord-matched half-width fits the window**: for an excision radius `ε` below both
@@ -406,10 +405,9 @@ private lemma truncated_integral_spec_arc (hH : 1 < H) (hnorm : ‖w‖ = 1)
       -(Real.pi : ℂ) * Complex.I - ((2 * Real.arcsin (ε / 2) : ℝ) : ℂ) * Complex.I := by
   obtain ⟨hδ0, hδl, hδr, h2sin⟩ := arcExcisionHalfWidth_spec ht₀ hε hεl hεr
   set δ := fdBoundaryArcExcisionHalfWidth ε with hδ_def
-  have hw0 : w ≠ 0 := fun h ↦ by rw [h, norm_zero] at hnorm; norm_num at hnorm
   obtain ⟨hint, hval⟩ := truncated_integral_spec_of_slit_branch (c := w⁻¹)
-    (inv_ne_zero hw0) (by linarith [ht₀.1]) hδ0 (by linarith [ht₀.2])
-    (fun t ht htw ↦ slit_branch_arc hH hnorm him ht (fdBoundary_ne_arc hH hre ht₀ hw
+    (by linarith [ht₀.1]) hδ0 (by linarith [ht₀.2])
+    (fun t _ htw ↦ slit_branch_arc hH hnorm him (fdBoundary_ne_arc hH hre ht₀ hw
       fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     (fun s hs ↦ lt_norm_sub_arc_of_far_left ht₀ hw hδ0 h2sin hε₁ hs)
     (fun s hs ↦ lt_norm_sub_arc_of_far_right ht₀ hw hδ0 h2sin hε₂ hεc hs)
@@ -465,7 +463,7 @@ theorem hasCauchyPVAt_fdBoundary_arc (hH : 1 < H) (hnorm : ‖w‖ = 1)
   obtain ⟨t₀, ht₀, hw⟩ := exists_arc_param (H := H) hnorm hre him
   set b := min (min (2 * Real.sin ((t₀ - 1) * (Real.pi / 12)))
       (2 * Real.sin ((3 - t₀) * (Real.pi / 12))))
-    (min (1 / 2 - w.re) (min (w.re + 1 / 2) (H - 1))) with hb_def
+    (min (1 / 2 - w.re) (min (w.re + 1 / 2) (H - 1)))
   have hb : 0 < b := arc_min_radius_pos hH hre ht₀
   have hIoo : Ioo (0 : ℝ) b ∈ 𝓝[>] (0 : ℝ) := Ioo_mem_nhdsGT hb
   have hspec : ∀ ε ∈ Ioo (0 : ℝ) b,

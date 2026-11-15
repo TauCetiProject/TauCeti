@@ -123,15 +123,15 @@ theorem rootSubgroupPoints_mulVec_mem
   have hu : u = AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q := by
     rw [hq, MulEquiv.apply_symm_apply]
   have hmat : (GeneralLinear.pointToGeneralLinear 7
-      (AlgHom.mapDomain (generatedCoordinateMap k).hom
+      (BialgHom.mapDomain (generatedCoordinateMap k).hom
         (toConv (P.comp (baseChangeGeneratorLift k (.inl j)).hom.toAlgHom))) :
         Matrix (Fin 7) (Fin 7) k) =
       ((rootSubgroupPoints j k u : Matrix.GeneralLinearGroup (Fin 7) k) :
         Matrix (Fin 7) (Fin 7) k) := by
-    have hid := CommHopfAlgCat.mapPointsFunctor_app_apply (generator (.inl j))
+    have hid := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (generator (.inl j))
       (CommAlgCat.of (ZMod 3) k) q
     rw [hu, coe_rootSubgroupPoints_gaPointsMulEquiv, hid, GeneralLinear.pointsMulEquiv_apply,
-      ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, AlgHom.mapDomain_apply,
+      ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, BialgHom.mapDomain_apply,
       ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
     ext a b
     have hgen := congrArg (fun φ ↦ φ.hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv k 7
@@ -201,21 +201,13 @@ private theorem coe_rootSubgroupPoints_one : ∀ j : Fin 2 ⊕ Fin 2,
     rw [coe_rootSubgroupPoints_inr_one]
     simp [unitRootMatrix, Matrix.map_add]
 
-private theorem weightCharacter_weight_injective :
-    Function.Injective fun a : Fin 7 ↦ SplitTorus.weightCharacter (weight a) := by
-  intro a b h
-  apply weight_injective
-  funext i
-  simpa only [SplitTorus.toAdd_weightCharacter] using
-    congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
-
 /-- The torus separates the weight lines, so a subcomodule contains the coordinate vector at every
 index where one of its vectors is nonzero. -/
 private theorem single_mem_of_apply_ne_zero
     (N : Subcomodule k (generatedCoordinateHopfAlgebra k) (Fin 7 → k))
     {v : Fin 7 → k} (hv : v ∈ N) {b : Fin 7} (hb : v b ≠ 0) : Pi.single b (1 : k) ∈ N := by
   have hbmem := Subcomodule.single_smul_mem_of_corestrict_eq_ofWeights
-    (generatedWeightTorusCoordinateMap k).hom.toCoalgHom _ weightCharacter_weight_injective
+    (generatedWeightTorusCoordinateMap k).hom.toCoalgHom _ weightCharacter_injective
     (generatedTorusCorestrict_eq_ofWeights k) N hv b
   have hscaled := N.toSubmodule.smul_mem (v b)⁻¹ hbmem
   rw [← Subcomodule.mem_toSubmodule]
@@ -287,7 +279,7 @@ field of characteristic three.** -/
 instance instIsSimpleOrderGeneratedSubcomodule :
     IsSimpleOrder (Subcomodule k (generatedCoordinateHopfAlgebra k) (Fin 7 → k)) :=
   Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights
-    (generatedWeightTorusCoordinateMap k).hom.toCoalgHom _ weightCharacter_weight_injective
+    (generatedWeightTorusCoordinateMap k).hom.toCoalgHom _ weightCharacter_injective
     (generatedTorusCorestrict_eq_ofWeights k) (fun e a ↦ stringSwap e a)
     (fun _ ↦ Equiv.swap_apply_self _ _) (fun N a e ha ↦ single_stringSwap_mem k N a e ha) 0
     exists_foldl_stringSwap_eq

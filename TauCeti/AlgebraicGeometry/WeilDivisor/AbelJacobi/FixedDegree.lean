@@ -21,14 +21,12 @@ At the constant weight `1` this specializes to `D ↦ [D - deg(D) • [x₀]] �
 ordinary degree-`d` divisors therefore models the divisor-class shadow of the Abel map on
 symmetric powers `Symᵈ X → Pic⁰ X`, `D ↦ 𝒪_X(D - d·x₀)`.
 
-The file does not introduce a parallel fixed-degree Abel-map API.  It states the required
-fixed-degree and `Sym.append` facts directly in terms of the existing divisor-level
-homomorphism `weightedAbelJacobiDivisorClass`.
+The file does not introduce a parallel fixed-degree Abel-map API. It states the required
+fixed-degree and `Sym.append` facts directly in terms of the divisor-level homomorphism
+`weightedAbelJacobiDivisorClass`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer C/D, "Relative effective
-Cartier divisors and symmetric powers `Symᵈ X`" and the Abel-map lane
-`D ↦ 𝒪_X(D - d·x₀)`, using the existing abstract `Pic⁰` quotient before the Picard scheme
-exists.  No external mathematics is vendored.
+This file uses the abstract `Pic⁰` quotient rather than a Picard scheme. No external mathematics is
+vendored.
 -/
 
 public section

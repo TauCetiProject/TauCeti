@@ -11,11 +11,15 @@ public import Mathlib.Data.ZMod.Defs
 /-!
 # The trivial action of a monoid on `ZMod n`
 
-The trivial action `g • m = m` of a monoid `F` on `ZMod n`, as a `DistribMulAction`. It is the
-coefficient action that a statement about the cohomology of trivial `ZMod n`-coefficients installs
-locally when no action of `F` appears in its conclusion; the statements of
-`TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank` that carry an action of `F` on
-`ZMod n` as an instance together with the hypothesis that it is trivial then apply to it.
+The trivial action `g • m = m` of a monoid `F` on `ZMod n`, as a `DistribMulAction`. Statements
+about cohomology with trivial `ZMod n`-coefficients (for instance `H¹(G, 𝔽_p)` and `H²(G, 𝔽_p)`
+of a profinite group `G`) need an action of `F` on `ZMod n` to form the coefficient module;
+when no action of `F` appears in the conclusion, they install this one locally, either by
+`let := trivialZModAction n F` or by `attribute [local instance] trivialZModAction`.
+
+Since the action is trivial by definition, its triviality hypothesis `∀ g m, g • m = m` is
+`fun _ _ ↦ rfl`, and for a topological monoid `F` the continuity of the action is
+`⟨continuous_snd⟩`. For `n = 0` it is the trivial action on the integers.
 
 ## Main definitions
 
@@ -26,12 +30,8 @@ public section
 
 namespace TauCeti
 
--- The action is trivial by definition, so its triviality hypothesis is `fun _ _ ↦ rfl` and, for a
--- topological monoid `F`, the continuity of the action is `⟨continuous_snd⟩`; a statement whose
--- conclusion mentions no action of `F` installs it locally by `let := trivialZModAction n F`.
-/-- The trivial action `g • m = m` of a monoid `F` on `ZMod n`. It is the coefficient action of a
-statement about the cohomology of trivial `ZMod n`-coefficients whose conclusion mentions no action
-of `F`. -/
+/-- The trivial action `g • m = m` of a monoid `F` on `ZMod n`: the coefficient action for
+cohomology with trivial `ZMod n`-coefficients. -/
 abbrev trivialZModAction (n : ℕ) (F : Type*) [Monoid F] : DistribMulAction F (ZMod n) where
   smul _ m := m
   one_smul _ := rfl

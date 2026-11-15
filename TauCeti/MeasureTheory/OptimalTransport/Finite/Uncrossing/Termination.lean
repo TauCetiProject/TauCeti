@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Data.Prod.Lex
+import Mathlib.Order.Prod.Lex.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Monotone
 
 /-!
@@ -44,69 +44,43 @@ private def arms (A : TransportMatrix μ ν) (q : ι × κ) : Finset (ι × κ) 
   Finset.univ.filter fun p ↦
     (p.1 = q.1 ∧ q.2 < p.2 ∨ q.1 < p.1 ∧ p.2 = q.2) ∧ 0 < A.toRealFun p
 
-private theorem exists_pivot_step (A : TransportMatrix μ ν) (q : ι × κ)
-    (h : ¬ Settled A q) :
-    ∃ B : TransportMatrix μ ν, A.UncrossStep B ∧
-      (arms B q).card < (arms A q).card ∧
-      ∀ p, toLex p < toLex q → Settled A p → Settled B p := by
-  classical
-  rcases q with ⟨a, b⟩
-  obtain ⟨i, j, hi, hj, hrow, hcol⟩ :
-      ∃ i j, a < i ∧ b < j ∧
-        0 < A.toRealFun (a, j) ∧ 0 < A.toRealFun (i, b) := by
-    obtain ⟨i, j, hi, hj, hr, hc⟩ := by
-      simpa only [Settled, not_forall, not_imp, not_or] using h
-    exact ⟨i, j, hi, hj, lt_of_le_of_ne (A.toRealFun_nonneg _) (Ne.symm hr),
-      lt_of_le_of_ne (A.toRealFun_nonneg _) (Ne.symm hc)⟩
-  obtain ⟨B, δ, hδ0, hδ, hB, -, -, hz, -⟩ :=
-    A.exists_uncross_cost_le (fun _ ↦ 0) hi.ne hj.ne (by simp)
-  have hδpos : 0 < δ := hδ ▸ lt_min hrow hcol
-  have hstep : A.UncrossStep B := by
-    rw [uncrossStep_iff]
-    exact ⟨a, i, b, j, δ, hi, hj, hδpos, hδ, hB⟩
-  -- The two arms acquire no new positive entries, and at least one source is emptied.
-  have harm (p : ι × κ)
-      (hp : p.1 = a ∧ b < p.2 ∨ a < p.1 ∧ p.2 = b) :
-      B.toRealFun p ≤ A.toRealFun p := by
-    rw [hB]
-    rcases p with ⟨r, s⟩
-    dsimp only at hp
-    rcases hp with ⟨hr, hs⟩ | ⟨hr, hs⟩
-    · subst r
-      by_cases hsj : s = j
-      · subst s
-        simp [Prod.mk.injEq, hi.ne, hj.ne.symm]
-        linarith
-      · simp [Prod.mk.injEq, hi.ne, hs.ne.symm, hsj]
-    · subst s
-      by_cases hri : r = i
-      · subst r
-        simp [Prod.mk.injEq, hi.ne.symm, hj.ne]
-        linarith
-      · simp [Prod.mk.injEq, hr.ne.symm, hri, hj.ne]
-  have hsub : arms B (a, b) ⊆ arms A (a, b) := by
-    intro p hp
-    obtain ⟨hp, hpos⟩ := (Finset.mem_filter.mp hp).2
-    exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, hp, hpos.trans_le (harm p hp)⟩
-  have hcard : (arms B (a, b)).card < (arms A (a, b)).card := by
-    apply Finset.card_lt_card
-    apply Finset.ssubset_iff_subset_ne.mpr
-    refine ⟨hsub, ?_⟩
-    intro heq
-    rcases hz with hz | hz
-    · have hmem : (a, j) ∈ arms A (a, b) := by
-        exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, Or.inl ⟨rfl, hj⟩, hrow⟩
-      rw [← heq] at hmem
-      have := (Finset.mem_filter.mp hmem).2.2
-      rw [hz] at this
-      exact lt_irrefl _ this
-    · have hmem : (i, b) ∈ arms A (a, b) := by
-        exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, Or.inr ⟨hi, rfl⟩, hcol⟩
-      rw [← heq] at hmem
-      have := (Finset.mem_filter.mp hmem).2.2
-      rw [hz] at this
-      exact lt_irrefl _ this
-  refine ⟨B, hstep, hcard, ?_⟩
+/-- If the arms of `B` lie among the arms of `A`, and one of the two positive entries `(a, j)`,
+`(i, b)` of `A` is zero in `B`, then `B` has strictly fewer positive arm entries at `(a, b)`. -/
+private theorem arms_card_lt_of_subset {A B : TransportMatrix μ ν} {a i : ι} {b j : κ}
+    (hrow : 0 < A.toRealFun (a, j)) (hcol : 0 < A.toRealFun (i, b))
+    (hi : a < i) (hj : b < j)
+    (hz : B.toRealFun (a, j) = 0 ∨ B.toRealFun (i, b) = 0)
+    (hsub : arms B (a, b) ⊆ arms A (a, b)) :
+    (arms B (a, b)).card < (arms A (a, b)).card := by
+  apply Finset.card_lt_card
+  apply Finset.ssubset_iff_subset_ne.mpr
+  refine ⟨hsub, ?_⟩
+  intro heq
+  rcases hz with hz | hz
+  · have hmem : (a, j) ∈ arms A (a, b) := by
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, Or.inl ⟨rfl, hj⟩, hrow⟩
+    rw [← heq] at hmem
+    have := (Finset.mem_filter.mp hmem).2.2
+    rw [hz] at this
+    exact lt_irrefl _ this
+  · have hmem : (i, b) ∈ arms A (a, b) := by
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, Or.inr ⟨hi, rfl⟩, hcol⟩
+    rw [← heq] at hmem
+    have := (Finset.mem_filter.mp hmem).2.2
+    rw [hz] at this
+    exact lt_irrefl _ this
+
+/-- A transfer at the corner `(a, b)` preserves every settled corner that precedes it in
+row-major order. -/
+private theorem settled_of_uncross_of_toLex_lt {A B : TransportMatrix μ ν} {a i : ι} {b j : κ}
+    {δ : ℝ} {_ : DecidableEq (ι × κ)} (hi : a < i) (hj : b < j)
+    (hrow : 0 < A.toRealFun (a, j)) (hcol : 0 < A.toRealFun (i, b))
+    (hB : ∀ q, B.toRealFun q = A.toRealFun q +
+      δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, b) (1 : ℝ) q +
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i, j) (1 : ℝ) q -
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (a, j) (1 : ℝ) q -
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i, b) (1 : ℝ) q)) :
+    ∀ p, toLex p < toLex (a, b) → Settled A p → Settled B p := by
   -- Earlier rows retain their lower-column zeros; earlier columns of this row stay fixed.
   intro p hp hsettled r s hpr hps
   rcases Prod.Lex.toLex_lt_toLex.mp hp with hp | ⟨hp, hpj⟩
@@ -139,13 +113,61 @@ private theorem exists_pivot_step (A : TransportMatrix μ ν) (q : ι × κ)
     rw [hB, hzero]
     simp [Prod.mk.injEq, hpj.ne, (hpj.trans hj).ne]
 
+private theorem exists_pivot_step (A : TransportMatrix μ ν) (q : ι × κ)
+    (h : ¬ Settled A q) :
+    ∃ B : TransportMatrix μ ν, A.UncrossStep B ∧
+      (arms B q).card < (arms A q).card ∧
+      ∀ p, toLex p < toLex q → Settled A p → Settled B p := by
+  classical
+  rcases q with ⟨a, b⟩
+  obtain ⟨i, j, hi, hj, hrow, hcol⟩ :
+      ∃ i j, a < i ∧ b < j ∧
+        0 < A.toRealFun (a, j) ∧ 0 < A.toRealFun (i, b) := by
+    obtain ⟨i, j, hi, hj, hr, hc⟩ := by
+      simpa only [Settled, not_forall, not_imp, not_or] using h
+    exact ⟨i, j, hi, hj, lt_of_le_of_ne (A.toRealFun_nonneg _) (Ne.symm hr),
+      lt_of_le_of_ne (A.toRealFun_nonneg _) (Ne.symm hc)⟩
+  obtain ⟨B, δ, _, hδ, hB, -, -, hz, -⟩ :=
+    A.exists_uncross_cost_le (fun _ ↦ 0) hi.ne hj.ne (by simp)
+  have hδpos : 0 < δ := hδ ▸ lt_min hrow hcol
+  have hstep : A.UncrossStep B := by
+    rw [uncrossStep_iff]
+    exact ⟨a, i, b, j, δ, hi, hj, hδpos, hδ, hB⟩
+  -- The two arms acquire no new positive entries, and at least one source is emptied.
+  have harm (p : ι × κ)
+      (hp : p.1 = a ∧ b < p.2 ∨ a < p.1 ∧ p.2 = b) :
+      B.toRealFun p ≤ A.toRealFun p := by
+    rw [hB]
+    rcases p with ⟨r, s⟩
+    dsimp only at hp
+    rcases hp with ⟨hr, hs⟩ | ⟨hr, hs⟩
+    · subst r
+      by_cases hsj : s = j
+      · subst s
+        simp [Prod.mk.injEq, hi.ne, hj.ne.symm]
+        linarith
+      · simp [Prod.mk.injEq, hi.ne, hs.ne.symm, hsj]
+    · subst s
+      by_cases hri : r = i
+      · subst r
+        simp [Prod.mk.injEq, hi.ne.symm, hj.ne]
+        linarith
+      · simp [Prod.mk.injEq, hr.ne.symm, hri, hj.ne]
+  have hsub : arms B (a, b) ⊆ arms A (a, b) := by
+    intro p hp
+    obtain ⟨hp, hpos⟩ := (Finset.mem_filter.mp hp).2
+    exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, hp, hpos.trans_le (harm p hp)⟩
+  refine ⟨B, hstep, arms_card_lt_of_subset hrow hcol hi hj hz hsub,
+    settled_of_uncross_of_toLex_lt hi hj hrow hcol hB⟩
+
+
 private theorem exists_settled (A : TransportMatrix μ ν) (q : ι × κ) :
     ∃ B : TransportMatrix μ ν, Relation.ReflTransGen UncrossStep A B ∧ Settled B q ∧
       ∀ p, toLex p < toLex q → Settled A p → Settled B p := by
   classical
   generalize hn : (arms A q).card = n
   induction n using Nat.strong_induction_on generalizing A with
-  | h n ih =>
+  | ind n ih =>
     by_cases h : Settled A q
     · exact ⟨A, .refl, h, fun _ _ hp ↦ hp⟩
     · obtain ⟨B, hstep, hcard, hpres⟩ := exists_pivot_step A q h
@@ -162,7 +184,7 @@ private theorem exists_uncrossSteps_settled (A : TransportMatrix μ ν) :
   classical
   generalize hn : (unsettledPrefix A).card = n
   induction n using Nat.strong_induction_on generalizing A with
-  | h n ih =>
+  | ind n ih =>
     by_cases h : ∀ q, Settled A q
     · exact ⟨A, .refl, h⟩
     · let s : Finset (ι ×ₗ κ) := Finset.univ.filter fun p ↦ ¬ Settled A (ofLex p)

@@ -11,6 +11,10 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration.GradedCoderivatio
 /-!
 # Unary and higher parts of the A-infinity bar differential
 
+The bar differential does not increase tensor length, and on the words of length at most `n` it
+only depends on the Taylor map on those words
+(`TauCeti.AInfinityAlgebra.barDifferential_apply_eq_of_mem_filtration`).
+
 The bar differential splits into a unary part acting on each letter and a higher part that
 strictly lowers tensor length. The corresponding Taylor maps agree with the original Taylor map
 on words of their respective arities. The higher part supplies the finite filtration step used
@@ -29,6 +33,23 @@ universe uR uA
 namespace TauCeti.AInfinityAlgebra
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
+
+/-- The bar differential does not increase tensor length. -/
+theorem barDifferential_mem_filtration (𝒜 : AInfinityAlgebra R A) {n : ℕ}
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    𝒜.barDifferential z ∈ ReducedTensorWords.filtration R A n := by
+  rw [barDifferential_def]
+  exact ReducedTensorWords.gradedCoderiv_mem_filtration _ _ 1 hz
+
+/-- The bar differentials of two `A∞` structures with the same grading agree on the words of
+length at most `n` when their Taylor maps do. -/
+theorem barDifferential_apply_eq_of_mem_filtration {𝒜 𝒜' : AInfinityAlgebra R A}
+    (hG : 𝒜.grading = 𝒜'.grading) {n : ℕ}
+    (h : ∀ z ∈ ReducedTensorWords.filtration R A n, 𝒜.taylor z = 𝒜'.taylor z)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A n) :
+    𝒜.barDifferential z = 𝒜'.barDifferential z := by
+  rw [barDifferential_def, barDifferential_def, hG]
+  exact ReducedTensorWords.gradedCoderiv_apply_eq_of_mem_filtration _ 1 h hz
 
 /-- The Taylor map of the higher bar operations, obtained by removing the unary component. -/
 noncomputable def higherTaylor (𝒜 : AInfinityAlgebra R A) :

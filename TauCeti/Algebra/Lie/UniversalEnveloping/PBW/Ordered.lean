@@ -27,9 +27,8 @@ absorbs this error into shorter ordered monomials.
 For an arbitrary Lie homomorphism, the induced enveloping-algebra map sends the ordered monomials
 in a family, and their span, exactly onto those for the image family.
 
-This is the spanning half of the ordered-monomial basis target in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. Linear independence, and hence the
-full PBW basis, still requires the symmetric-algebra comparison.
+This is the spanning half of the PBW basis theorem; linear independence of the ordered monomials is
+not proved here.
 
 ## Main definitions and results
 
@@ -148,6 +147,44 @@ section Spanning
 
 variable {ι : Type w} [LinearOrder ι] (e : ι → L)
 
+/-- **Sorting step of the PBW spanning argument.** If the ordered monomials of length at most `k`
+span filtration degree `k`, then every monomial in `k + 1` or fewer family elements lies in the
+span of the ordered monomials of length at most `k + 1`: it differs from its sorted rearrangement
+by an element of lower filtration degree. -/
+theorem pbwMonomial_mem_span_orderedPBWMonomials_succ {k : ℕ}
+    (ih : pbwFiltration R L k ≤ Submodule.span R (orderedPBWMonomials R L e k))
+    (word : List ι) (hword : word.length ≤ k + 1) :
+    pbwMonomial R L e word ∈ Submodule.span R (orderedPBWMonomials R L e (k + 1)) := by
+  let sorted := word.insertionSort (· ≤ ·)
+  have hsorted : sorted.Pairwise (· ≤ ·) := List.pairwise_insertionSort _ _
+  have hlength : sorted.length ≤ k + 1 := by
+    simpa [sorted] using hword
+  have hsorted_mem : pbwMonomial R L e sorted ∈
+      Submodule.span R (orderedPBWMonomials R L e (k + 1)) :=
+    Submodule.subset_span
+      (pbwMonomial_mem_orderedPBWMonomials R L e hsorted hlength)
+  cases word with
+  | nil =>
+      simpa [sorted] using hsorted_mem
+  | cons head tail =>
+      have htail : tail.length ≤ k := by simpa using hword
+      have hdiff :
+          pbwMonomial R L e (head :: tail) - pbwMonomial R L e sorted ∈
+            pbwFiltration R L tail.length := by
+        have h := pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious
+          R L (· ≤ ·) e (head :: tail)
+        rw [List.length_cons, pbwFiltrationPrevious_succ] at h
+        exact h
+      have hdiff' :
+          pbwMonomial R L e (head :: tail) - pbwMonomial R L e sorted ∈
+            Submodule.span R (orderedPBWMonomials R L e (k + 1)) := by
+        have hdiffk := pbwFiltration_mono R L htail hdiff
+        exact Submodule.span_mono (orderedPBWMonomials_mono R L e (Nat.le_succ k))
+          (ih hdiffk)
+      rw [← sub_add_cancel (pbwMonomial R L e (head :: tail))
+        (pbwMonomial R L e sorted)]
+      exact Submodule.add_mem _ hdiff' hsorted_mem
+
 /-- **Ordered PBW monomials span the PBW filtration.** For a linearly ordered spanning family `e`
 in `L`, the monomials in nondecreasing family elements of length at most `k` span precisely
 filtration degree `k` of `UniversalEnvelopingAlgebra R L`.
@@ -180,35 +217,7 @@ theorem span_orderedPBWMonomials_eq_pbwFiltration
         rw [pbwMonomial_def]
         simp only [List.map_map, Function.comp_def, LieHom.coe_toLinearMap]
       rw [hp]
-      let sorted := word.insertionSort (· ≤ ·)
-      have hsorted : sorted.Pairwise (· ≤ ·) := List.pairwise_insertionSort _ _
-      have hlength : sorted.length ≤ k + 1 := by
-        simpa [sorted] using hword
-      have hsorted_mem : pbwMonomial R L e sorted ∈
-          Submodule.span R (orderedPBWMonomials R L e (k + 1)) :=
-        Submodule.subset_span
-          (pbwMonomial_mem_orderedPBWMonomials R L e hsorted hlength)
-      cases word with
-      | nil =>
-          simpa [sorted] using hsorted_mem
-      | cons head tail =>
-          have htail : tail.length ≤ k := by simpa using hword
-          have hdiff :
-              pbwMonomial R L e (head :: tail) - pbwMonomial R L e sorted ∈
-                pbwFiltration R L tail.length := by
-            have h := pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious
-              R L (· ≤ ·) e (head :: tail)
-            rw [List.length_cons, pbwFiltrationPrevious_succ] at h
-            exact h
-          have hdiff' :
-              pbwMonomial R L e (head :: tail) - pbwMonomial R L e sorted ∈
-                Submodule.span R (orderedPBWMonomials R L e (k + 1)) := by
-            have hdiffk := pbwFiltration_mono R L htail hdiff
-            exact Submodule.span_mono (orderedPBWMonomials_mono R L e (Nat.le_succ k))
-              (ih hdiffk)
-          rw [← sub_add_cancel (pbwMonomial R L e (head :: tail))
-            (pbwMonomial R L e sorted)]
-          exact Submodule.add_mem _ hdiff' hsorted_mem
+      exact pbwMonomial_mem_span_orderedPBWMonomials_succ R L e ih word hword
 
 /-- The ordered PBW monomials in a linearly ordered spanning family span the whole universal
 enveloping algebra. -/

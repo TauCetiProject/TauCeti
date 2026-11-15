@@ -15,12 +15,9 @@ model when `2` is invertible. This file proves that the equivalence respects the
 then transports the zero-form calculation of each successive quotient to an arbitrary quadratic
 form.
 
-This is the degree-quotient part of the Layer 0 `filtrationGradedEquiv` target in the
-[spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Suggested.lean#L62-L68).
-It also identifies that equivalence with the leading-term map built in
-`TauCeti.LinearAlgebra.CliffordAlgebra.Filtration`, which reaches the same target by a different
-route, completing the bridge that file describes itself as having proved only half of. It does not
-construct the total associated-graded algebra or prove multiplication compatibility.
+It also identifies the resulting quotient equivalences with the leading-term map built in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Filtration`, which reaches them by a different route. It does
+not construct the total associated-graded algebra or prove multiplication compatibility.
 
 ## Main definitions
 
@@ -40,8 +37,6 @@ construct the total associated-graded algebra or prove multiplication compatibil
   `CliffordAlgebra.filtrationLeadingTerm_eq_filtrationGradedEquiv_symm` the map-level form.
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 0, "The degree filtration".
 * The identification of the associated graded of the Clifford filtration with the exterior algebra
   is the Clifford-algebra analogue of the Poincaré-Birkhoff-Witt theorem; see C. Chevalley, *The
   Algebraic Theory of Spinors* (1954), Chapter II, and H. B. Lawson and M.-L. Michelsohn, *Spin

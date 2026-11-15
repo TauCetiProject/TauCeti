@@ -60,7 +60,7 @@ private theorem cup_cor_zero_right (M N : Rep k G) (H : Subgroup G) (p : ℤ)
   | h y =>
     rw [H0π_comp_H0Res_apply, cupH0_H0π, cupH0_H0π]
     have hnat := cor_natural (Rep.tensorInvariant M y) H p
-    rw [Rep.resMap_tensorInvariant M N H y] at hnat
+    rw [Rep.resMap_tensorInvariant M N H.subtype y] at hnat
     exact ConcreteCategory.congr_hom hnat x
 
 /-- The upward dimension-shifting step for the projection formula. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Localization.Module
+public import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
 # Derivations of a localization
@@ -31,6 +32,8 @@ scheme on its basic open subsets.
   the image of `A` are equal;
 * `Derivation.extendOfIsLocalization`: the extension of a derivation of `A` to `T`, with
   `Derivation.extendOfIsLocalization_algebraMap` stating that it extends.
+* `Derivation.algebraMap_notMem_maximalIdeal_sq`: if `D f ∉ Q` for a prime `Q` of `A`, then the
+  image of `f` in `A_Q` does not lie in the square of its maximal ideal.
 -/
 
 public section
@@ -80,5 +83,18 @@ theorem extendOfIsLocalization_algebraMap (S : Submonoid A) [IsLocalization S T]
   rw [← KaehlerDifferential.map_D R R A T]
   -- Keep the differential in the image of `map` so the localization lift simplifies.
   simp [-KaehlerDifferential.map_D]
+
+/-- If a derivation `D` of `A` maps `f` outside the prime ideal `Q`, then the image of `f` in the
+local ring `A_Q` does not lie in the square of its maximal ideal. -/
+theorem algebraMap_notMem_maximalIdeal_sq (D : Derivation R A A) {Q : Ideal A} [Q.IsPrime]
+    {f : A} (hf : D f ∉ Q) :
+    algebraMap A (Localization.AtPrime Q) f ∉
+      IsLocalRing.maximalIdeal (Localization.AtPrime Q) ^ 2 := by
+  -- the extension of `D` to `A_Q` maps the square of the maximal ideal into the maximal ideal
+  intro h
+  have h' := (((Algebra.linearMap A (Localization.AtPrime Q)).compDer D).extendOfIsLocalization
+    Q.primeCompl).apply_mem_smul_top_of_mem_sq h
+  rw [extendOfIsLocalization_algebraMap, smul_eq_mul, Ideal.mul_top] at h'
+  exact hf ((IsLocalization.AtPrime.to_map_mem_maximal_iff _ Q _).mp h')
 
 end Derivation

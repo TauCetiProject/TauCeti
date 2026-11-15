@@ -22,8 +22,8 @@ This file proves the weight-level statement underlying that isomorphism: shiftin
 
 `χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)`.
 
-The proof combines the covector-shift formula `characteristicWeight_add_two_mul` (`Weight.lean`)
-with the polarization identity `characteristicWeight_add` (`WeightPolarization.lean`): both sides
+The proof combines the covector-shift formula `characteristicWeight_add_two_mul` (`Weight/Basic`)
+with the polarization identity `characteristicWeight_add` (`Weight/Polarization`): both sides
 reduce to `χ_k(x) - A(x, l)`. Reading the identity through the weight grading, the sublevel sets of
 the two representatives correspond under the `l`-translation with a constant grading shift, which is
 exactly the degree-preserving bijection of cubical generators that the spin^c invariance of lattice
@@ -41,11 +41,8 @@ homology uses.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose weight functions are built from the covectors and the plumbing intersection form and whose
-spin^c structures are the characteristic covectors modulo `2 · A(V)`. The equivariance
-`χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)` is the weight-level form of the translation isomorphism
-between representatives of a spin^c structure; see Némethi,
+The equivariance `χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)` is the weight-level form of the
+translation isomorphism between representatives of a spin^c structure; see Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

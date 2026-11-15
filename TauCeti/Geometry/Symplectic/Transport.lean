@@ -17,12 +17,11 @@ one on `W` by conjugation, `w ↦ e (J (e.symm w))`. This file records that tran
 functoriality, and packages the statement that `e` itself is then a complex-linear isomorphism
 between `(V, J)` and `(W, J.transport e)`.
 
-This is the pointwise linear algebra that the smooth layer of the analytic Heegaard Floer
-roadmap needs before stating the corresponding bundle-level and `J`-holomorphic naturality:
-an almost complex structure on a vector bundle is given fiberwise, and a change of
+This is the pointwise linear algebra behind the corresponding bundle-level and `J`-holomorphic
+naturality: an almost complex structure on a vector bundle is given fiberwise, and a change of
 trivialization acts on each fiber by exactly this conjugation. The capstone
-`isComplexLinearMap_arrowCongr_iff` says that complex-linearity of a linear map is preserved
-and reflected when both source and target are transported.
+`isComplexLinearMap_arrowCongr_iff` says that complex-linearity of a linear map is preserved and
+reflected when both source and target are transported.
 
 ## Main declarations
 
@@ -34,6 +33,8 @@ and reflected when both source and target are transported.
   complex-linear from `J` to `J.transport e`.
 * `TauCeti.IsComplexLinearMap.arrowCongr`: complex-linearity transports along a pair of linear
   equivalences applied to the source and target.
+* `LinearEquiv.isComplexLinearMap_transport_symm_iff`: complex-linearity of `e ∘ F` is
+  complex-linearity of `F` for the structure carried back along `e`.
 
 The conjugation `LinearEquiv.conj` and `LinearEquiv.arrowCongr` are reused from Mathlib; the
 almost complex structure layer is `TauCeti.AlmostComplexStructure`.
@@ -149,3 +150,22 @@ lemma IsComplexLinearMap.arrowCongr {J : AlmostComplexStructure V₁}
 end Naturality
 
 end TauCeti
+
+namespace LinearEquiv
+
+open TauCeti
+
+variable {V₁ W₁ W₂ : Type*}
+variable [AddCommGroup V₁] [Module ℝ V₁] [AddCommGroup W₁] [Module ℝ W₁]
+variable [AddCommGroup W₂] [Module ℝ W₂]
+
+/-- A map `F` is complex-linear for the structure `J'.transport e.symm`, carried back along a
+linear equivalence `e`, exactly when `e ∘ F` is complex-linear for `J'`. -/
+lemma isComplexLinearMap_transport_symm_iff {J : AlmostComplexStructure V₁}
+    {J' : AlmostComplexStructure W₂} {F : V₁ →ₗ[ℝ] W₁} (e : W₁ ≃ₗ[ℝ] W₂) :
+    IsComplexLinearMap J (J'.transport e.symm) F ↔
+      IsComplexLinearMap J J' (e.toLinearMap ∘ₗ F) := by
+  simp only [isComplexLinearMap_iff_apply, AlmostComplexStructure.transport_apply,
+    symm_symm, LinearMap.comp_apply, coe_coe, eq_symm_apply]
+
+end LinearEquiv

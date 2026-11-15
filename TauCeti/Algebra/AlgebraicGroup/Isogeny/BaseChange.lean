@@ -37,9 +37,9 @@ pullback with the spectrum of the scalar-extended coordinate morphism.
 * The coordinate proof structure, including its use of `MorphismProperty.overPullbackMap`, is
   adapted from `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.BaseChange`.
 
-This supplies scalar-extension stability for the central-isogeny interface in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap. It is used when comparing
-simply connected and adjoint forms after passage to an algebraic closure.
+This stability is used after passage to an algebraic closure, for instance in
+`TauCeti.Algebra.AlgebraicGroup.Semisimple.Isogeny.Basic` to show that the target of a central
+isogeny from a semisimple group, such as its adjoint quotient, is semisimple.
 -/
 
 public section
@@ -74,7 +74,7 @@ private theorem groupSchemeProperty_hopfSpec_baseChange
 theorem IsIsogeny.baseChange {f : H ⟶ K} (hf : IsIsogeny f) :
     IsIsogeny (baseChangeMap (K := L) f) := by
   apply (isIsogeny_iff_isIsogeny_hopfSpec_map _).2
-  apply groupSchemeProperty_hopfSpec_baseChange (GroupScheme.isogenies L) f
+  apply groupSchemeProperty_hopfSpec_baseChange (GroupScheme.isogenies (Spec (CommRingCat.of L))) f
   exact GroupScheme.IsIsogeny.baseChange
     (Spec.map (CommRingCat.ofHom (algebraMap k L)))
     ((isIsogeny_iff_isIsogeny_hopfSpec_map f).1 hf)

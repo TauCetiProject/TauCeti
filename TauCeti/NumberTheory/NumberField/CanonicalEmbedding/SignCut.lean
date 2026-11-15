@@ -18,8 +18,9 @@ coordinate of `S` vanishes.
 Cutting `A` down to the points that are positive at every place of `S` therefore divides its
 volume by `2 ^ S.card`, the real coordinates outside `S` staying free.  A set whose membership
 depends on the real coordinates only through their absolute values is invariant at every real
-place, and for `S` all of the real places the statement is then Mathlib's
-`NumberField.mixedEmbedding.volume_eq_two_pow_mul_volume_plusPart`.
+place, and for `S` all of the real places the statement recovers Mathlib's
+`NumberField.mixedEmbedding.volume_eq_two_pow_mul_volume_plusPart`, here without its
+measurability hypothesis on `A`.
 
 ## Main results
 
@@ -43,32 +44,27 @@ open scoped Classical in
 part where that coordinate is positive. -/
 private theorem volume_eq_two_mul_volume_inter_pos_at {B : Set (mixedSpace K)}
     {w : {w : InfinitePlace K // w.IsReal}}
-    (hB : ∀ x : mixedSpace K, negAt ({w} : Set _) x ∈ B ↔ x ∈ B) (hm : MeasurableSet B) :
+    (hB : ∀ x : mixedSpace K, negAt ({w} : Set _) x ∈ B ↔ x ∈ B) :
     volume B = 2 * volume (B ∩ {x | 0 < x.1 w}) := by
-  have hmP : MeasurableSet (B ∩ {x : mixedSpace K | 0 < x.1 w}) :=
-    hm.inter (measurableSet_lt measurable_const (by fun_prop))
-  have hmN : MeasurableSet (B ∩ {x : mixedSpace K | x.1 w < 0}) :=
-    hm.inter (measurableSet_lt (by fun_prop) measurable_const)
+  have hP : MeasurableSet {x : mixedSpace K | 0 < x.1 w} :=
+    measurableSet_lt measurable_const (by fun_prop)
+  -- off the part of `B` positive at `w`, `B` is its negative part plus a slice where the
+  -- coordinate vanishes
+  have hdiff : B \ {x : mixedSpace K | 0 < x.1 w}
+      = B ∩ {x | x.1 w < 0} ∪ B ∩ {x | x.1 w = 0} := by
+    ext x
+    simp [le_iff_lt_or_eq, and_or_left]
   -- reflecting at `w` carries the part of `B` negative at `w` onto the part positive at `w`
   have hNP : B ∩ {x : mixedSpace K | x.1 w < 0}
       = negAt ({w} : Set _) ⁻¹' (B ∩ {x : mixedSpace K | 0 < x.1 w}) := by
     ext x
     simp [hB]
-  have hcover : (B ∩ {x : mixedSpace K | 0 < x.1 w} ∪ B ∩ {x : mixedSpace K | x.1 w < 0})
-      ∪ B ∩ {x : mixedSpace K | x.1 w = 0} = B := by
-    ext x
-    grind
-  have hdisj : Disjoint (B ∩ {x : mixedSpace K | 0 < x.1 w})
-      (B ∩ {x : mixedSpace K | x.1 w < 0}) := by
-    grind
   -- the slice where the coordinate vanishes is null, so it does not change the volume
-  have hvolB : volume B = volume (B ∩ {x : mixedSpace K | 0 < x.1 w}
-      ∪ B ∩ {x : mixedSpace K | x.1 w < 0}) := by
-    nth_rewrite 1 [← hcover]
-    exact measure_congr <| union_ae_eq_left_of_ae_eq_empty <| ae_eq_empty.mpr <|
-      measure_mono_null Set.inter_subset_right (volume_eq_zero w)
-  rw [hvolB, measure_union hdisj hmN, hNP,
-    volume_preserving_negAt.measure_preimage hmP.nullMeasurableSet, two_mul]
+  rw [← measure_inter_add_sdiff B hP, hdiff,
+    measure_congr <| union_ae_eq_left_of_ae_eq_empty <| ae_eq_empty.mpr <|
+      measure_inter_null_of_null_right B (volume_eq_zero w), hNP,
+    volume_preserving_negAt.measure_preimage_emb (negAt _).toHomeomorph.measurableEmbedding,
+    two_mul]
 
 omit [NumberField K] in
 /-- The points positive at every place of `S` form an open set: it is a finite intersection of
@@ -84,8 +80,8 @@ any one place of `S` preserves `A`, then prescribing a positive sign at each pla
 the volume of `A` by `2 ^ S.card`. -/
 theorem volume_eq_two_pow_mul_volume_inter_pos (S : Finset {w : InfinitePlace K // w.IsReal})
     {A : Set (mixedSpace K)}
-    (hA : ∀ w ∈ S, ∀ x : mixedSpace K, negAt ({w} : Set _) x ∈ A ↔ x ∈ A)
-    (hm : MeasurableSet A) : volume A = 2 ^ S.card * volume (A ∩ {x | ∀ w ∈ S, 0 < x.1 w}) := by
+    (hA : ∀ w ∈ S, ∀ x : mixedSpace K, negAt ({w} : Set _) x ∈ A ↔ x ∈ A) :
+    volume A = 2 ^ S.card * volume (A ∩ {x | ∀ w ∈ S, 0 < x.1 w}) := by
   induction S using Finset.induction_on with
   | empty => simp
   | @insert w S hw ih =>
@@ -97,7 +93,6 @@ theorem volume_eq_two_pow_mul_volume_inter_pos (S : Finset {w : InfinitePlace K 
     rw [Finset.card_insert_of_notMem hw, pow_succ,
       ih fun v hv ↦ hA v (Finset.mem_insert_of_mem hv),
       Set.inter_comm {x : mixedSpace K | 0 < x.1 w}, ← Set.inter_assoc,
-      volume_eq_two_mul_volume_inter_pos_at hstable
-        (hm.inter (isOpen_setOfPred_forall_mem_pos S).measurableSet), mul_assoc]
+      volume_eq_two_mul_volume_inter_pos_at hstable, mul_assoc]
 
 end TauCeti.NumberField.mixedEmbedding

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 
@@ -40,6 +41,8 @@ Coxeter number `h = n + 1` of `Aₙ`; that paths of length `n - 1` survive is no
 
 ## Main results
 
+* `TauCeti.signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one`: the backtrack at the end vertex
+  `0` vanishes.
 * `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound`: the finer vanishing
   bound depending on the two endpoints.
 * `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley`: length-preserving
@@ -68,12 +71,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
-noncomputable local instance finiteNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs whose edges join consecutive vertices -/
 
@@ -209,8 +209,9 @@ end PathGraph
 
 /-! ### The `Aₙ` diagram -/
 
-/-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. -/
-private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
+/-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. Its colour
+classes compare the signless algebra of `Aₙ` with the preprojective algebra of each orientation. -/
+def diagramGraphAColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
   simpa only [DynkinType.rank_A, DynkinType.cartanMatrix_A] using
     (SimpleGraph.pathGraph.bicoloring n).comp
       (SimpleGraph.Hom.ofLE (DynkinType.diagramGraph_cartanMatrix_A n).le)
@@ -228,6 +229,15 @@ theorem signlessArrow_A_relation (v : ℕ) :
       signlessArrow k AG (v - 1) v * signlessArrow k AG v (v - 1) = 0 :=
   signlessArrow_relation_of_consecutive k
     (fun i j hij => (diagramGraph_A_adj n i j).mp hij) v
+
+/-- The relation at the end vertex `0` of `Aₙ`: its single backtrack vanishes. -/
+theorem signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one :
+    signlessArrow k AG 1 0 * signlessArrow k AG 0 1 = 0 := by
+  have hzero : signlessArrow k AG 0 0 = 0 :=
+    signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
+      (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
+  simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
+    signlessArrow_A_relation k (n := n) 0
 
 /-- A path from `a` to `b` in the signless algebra of `Aₙ` vanishes when its length exceeds
 `min (a + b) (2(n - 1) - a - b)`. -/
@@ -254,11 +264,7 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
     (u := fun w => signlessArrow k AG w (w + 1))
     (d := fun w => signlessArrow k AG (w + 1) w) ?_ ?_ ?_ p
   · simpa only [vertexEquiv_symm_vertex, vertexIdempotent_eq_ofPath] using h
-  · have hzero : signlessArrow k AG 0 0 = 0 :=
-      signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
-        (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
-    simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
-      signlessArrow_A_relation k (n := n) 0
+  · exact signlessArrow_A_one_zero_mul_signlessArrow_A_zero_one k
   · intro w
     simpa [add_comm] using signlessArrow_A_relation k (n := n) (w + 1)
   · intro i j hij
@@ -267,7 +273,8 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
     · exact .inr ⟨h.symm, by rw [← h]⟩
 
 /-- **Every path of length at least `n` vanishes in the signless algebra of `Aₙ`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix)))
     (hx : n ≤ x.2.2.length) :
@@ -284,7 +291,8 @@ variable (o : Orientation (diagramGraph (DynkinType.A n).cartanMatrix))
 
 /-- **Every path of length at least `n` vanishes in the preprojective algebra of `Aₙ`**, for every
 orientation of the `Aₙ` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o)))
@@ -293,9 +301,9 @@ theorem preprojectiveMk_A_ofPath_eq_zero_of_le
       (ofPath x) = 0 := by
   -- Every orientation of the bipartite `Aₙ` graph is compared with the signless algebra.
   have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o⦄, (i ⟶ j) →
-      aColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        aColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => (aColoring n).valid a.1
+      diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
+        diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
+    fun _ _ a => (diagramGraphAColoring n).valid a.1
   apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
   exact signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k _
     (by rwa [Prefunctor.length_mapTotalPath])
@@ -332,7 +340,8 @@ instance instFiniteDimensionalSignlessPreprojectiveAlgebraA :
     FiniteDimensional k
       (signlessPreprojectiveAlgebra k
         (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix))) :=
-  ((aColoring n).sourceSinkSignlessPreprojectiveAlgebraEquiv k).symm.toLinearEquiv.finiteDimensional
+  ((diagramGraphAColoring n).sourceSinkSignlessPreprojectiveAlgebraEquiv k).symm.toLinearEquiv
+    |>.finiteDimensional
 
 end Field
 

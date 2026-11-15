@@ -5,10 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Quotient
+public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Image
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Smooth
 
 /-!
 # Unipotent radicals and reductive quotients
@@ -60,42 +58,10 @@ unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_unipotentRadicalDefiningIdea
     (f : D.obj ⟶ H.obj) (hf_injective : Function.Injective f.hom)
     (hf : HopfIdeal.IsUnipotentRadicalCandidate H
       (CommHopfAlgCat.kernelHopfIdeal f)) :
-    unipotentRadicalDefiningIdeal H = CommHopfAlgCat.kernelHopfIdeal f := by
-  apply unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_quotient_image_eq_augmentation
-    H D.obj f hf
-  let J := unipotentRadicalDefiningIdeal H
-  let Q := quotient H J
-  let q : H.obj ⟶ Q.obj := CommHopfAlgCat.mkQuotient H.obj J
-  let g : D.obj ⟶ Q.obj := f ≫ q
-  have hker : HopfIdeal.ker g.hom = J.comap f.hom := by
-    rw [CommHopfAlgCat.hom_comp, HopfIdeal.ker_comp]
-    dsimp only [q]
-    ext x
-    rw [← HopfIdeal.mem_toIdeal, ← HopfIdeal.mem_toIdeal,
-      HopfIdeal.comap_toIdeal, HopfIdeal.comap_toIdeal,
-      CommHopfAlgCat.hom_mkQuotient, HopfIdeal.ker_mkBialgHom]
-  have himageNormal : (HopfIdeal.ker g.hom).IsNormal := by
-    rw [hker]
-    exact (isNormal_unipotentRadicalDefiningIdeal H).comap_of_injective
-      f.hom hf_injective
-  have himageConnected : geometricallyConnectedCommHopfAlgProperty k
-      (CommHopfAlgCat.image g) :=
-    geometricallyConnectedCommHopfAlgProperty.image g
-      (geometricallyConnected_unipotentRadical H)
-  have himageProperties := smoothUnipotent_image_quotient_unipotentRadical H f
-  have himageSmooth : smoothCommHopfAlgProperty k (CommHopfAlgCat.image g) :=
-    himageProperties.1
-  have himageUnipotent : geometricallyUnipotentPointsCommHopfAlgProperty k
-      (CommHopfAlgCat.image g) :=
-    himageProperties.2
-  have himageCandidate : HopfIdeal.IsUnipotentRadicalCandidate D
-      (HopfIdeal.ker g.hom) := by
-    refine HopfIdeal.IsUnipotentRadicalCandidate.mk himageNormal himageConnected ?_
-    rw [smoothUnipotentCommHopfAlgProperty_iff]
-    refine ⟨(smoothCommHopfAlgProperty_iff _).mp himageSmooth, ?_⟩
-    rw [← geometricallyUnipotentPointsCommHopfAlgProperty_iff]
-    exact himageUnipotent
-  exact (unipotentRadicalDefiningIdeal_eq_augmentation_iff D).mp hD _ himageCandidate
+    unipotentRadicalDefiningIdeal H = CommHopfAlgCat.kernelHopfIdeal f :=
+  le_antisymm (unipotentRadicalDefiningIdeal_le H _ hf)
+    (kernelHopfIdeal_le_unipotentRadicalDefiningIdeal_of_eq_augmentation
+      H D hD f hf_injective)
 
 /-- A connected normal smooth unipotent kernel of a quotient homomorphism to a reductive group is
 the unipotent radical. -/

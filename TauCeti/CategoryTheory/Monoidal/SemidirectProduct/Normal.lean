@@ -33,10 +33,6 @@ binary-product map used in the maximal-dimension construction of the unipotent r
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §6.a.
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4.
-
-This advances Layer 5, "The unipotent radical", of the ReductiveGroups roadmap. It supplies the
-group-scheme multiplication homomorphism whose scheme-theoretic image is the product of two
-normal connected smooth unipotent closed subgroups.
 -/
 
 public section
@@ -157,7 +153,6 @@ noncomputable def normalSemidirectMul
     (i : N ⟶ G) [IsMonHom.Normal i] (j : H ⟶ G) [IsMonHom j] :
     let A := normalConjugation i j
     A.semidirectProduct ⟶ Grp.mk G := by
-  let A := normalConjugation i j
   exact yonedaGrpFullyFaithful.preimage (normalSemidirectMulNatTrans i j)
 
 /-- Normal semidirect multiplication sends a generalized point to the product of its two

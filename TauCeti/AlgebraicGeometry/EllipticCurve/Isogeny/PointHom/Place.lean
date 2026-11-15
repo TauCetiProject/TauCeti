@@ -40,11 +40,6 @@ variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
-local instance : IsIntegrallyClosed W₁.CoordinateRing := W₁.isIntegrallyClosed_coordinateRing
-local instance : IsIntegrallyClosed W₂.CoordinateRing := W₂.isIntegrallyClosed_coordinateRing
-local instance : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- The class-group point map sends a point to the point under its place. -/
 private theorem toPointHom_eq_of_isEquiv_comap_valuation (P : W₁.Point) (Q : W₂.Point)
     (h : (((pointEquivDegreeOnePlace W₁ P).1.valuation).comap

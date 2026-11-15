@@ -55,7 +55,7 @@ theorem eval_comp_pullback :
   simp [eval_apply]
 
 /-- Pullback intertwines the right-translation actions along the ambient homomorphism. -/
-theorem pullback_smul [ContinuousMul G] [ContinuousMul H]
+theorem pullback_smul [SeparatelyContinuousMul G] [SeparatelyContinuousMul H]
     (h : H) (a : DiscreteCoind G U A) :
     pullback φ ψ hcomm f hf (φ h • a) = h • pullback φ ψ hcomm f hf a := by
   ext x

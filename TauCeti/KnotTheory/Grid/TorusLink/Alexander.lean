@@ -60,31 +60,6 @@ namespace GridDiagram
 
 variable (p q : ℕ)
 
-/-! ### The rows of the `X`-markings -/
-
-/-- The row of the `X`-marking of a torus link grid in a column `c`, as a natural number: the
-column index shifted by `q + 1` modulo the grid number. -/
-theorem torusLink_X_val (c : Fin (p + 1 + (q + 1))) :
-    ((torusLink p q).X c : ℕ) = (c + (q + 1)) % (p + 1 + (q + 1)) := by
-  rw [torusLink_X_apply, Fin.coe_finRotate_pow]
-
-/-- In the first `p + 1` columns of a torus link grid the `X`-marking sits `q + 1` rows above the
-diagonal. -/
-theorem torusLink_X_val_of_le {c : Fin (p + 1 + (q + 1))} (hc : (c : ℕ) ≤ p) :
-    ((torusLink p q).X c : ℕ) = c + (q + 1) := by
-  rw [torusLink_X_val, Nat.mod_eq_of_lt]
-  omega
-
-/-- In the last `q + 1` columns of a torus link grid the `X`-marking sits `p + 1` rows below the
-diagonal. -/
-theorem torusLink_X_val_of_lt {c : Fin (p + 1 + (q + 1))} (hc : p < c) :
-    ((torusLink p q).X c : ℕ) = c - (p + 1) := by
-  rw [torusLink_X_val]
-  have h : (c : ℕ) + (q + 1) = (c - (p + 1)) + (p + 1 + (q + 1)) := by omega
-  rw [h, Nat.add_mod_right, Nat.mod_eq_of_lt]
-  have := c.isLt
-  omega
-
 /-! ### Southwest counts at the `X`-corners -/
 
 /-- At an `X`-corner `(c, 𝕏 c)` of a torus link grid, the `X`-markings strictly southwest are

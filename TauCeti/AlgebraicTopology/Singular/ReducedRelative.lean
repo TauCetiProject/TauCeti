@@ -15,9 +15,14 @@ For every topological pair `(X, A)`, the connecting morphism `Hₖ₊₁(X, A) �
 exact sequence lands in the reduced homology of `A`. In degree zero, this follows because the
 connecting morphism is killed by the map to `H₀(X)`, which commutes with augmentation.
 The resulting morphism `TopPair.reducedSingularHomologyδ` is natural in maps of pairs and is an
-isomorphism when the reduced homology of `X` vanishes in degrees `k` and `k + 1`.
+isomorphism when the reduced homology of `X` vanishes in degrees `k` and `k + 1`.  Dually, the
+quotient map `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism when the reduced homology of `A` vanishes in
+degrees `k` and `k + 1` (`TopPair.isIso_singularHomologyπ`). In degree zero, the class of a point
+of the subspace vanishes in relative homology
+(`TopPair.singularHomology₀Section_comp_singularHomologyπ`).
 
-Coefficients are an object of an abelian category with coproducts.
+Coefficients are an object of an abelian category with coproducts; the vanishing of the class of
+a point of the subspace only needs a preadditive category with coproducts and homology.
 
 The construction follows Hatcher, *Algebraic Topology*, Section 2.1, on the reduced long exact
 sequence of a pair.
@@ -34,6 +39,24 @@ universe w v u
 namespace TopPair
 
 open TauCeti
+
+section
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
+  [CategoryWithHomology C] (P : TopPair.{w}) (R : C)
+
+/-- The class of a point of the subspace vanishes in relative homology, since it comes from
+zeroth homology of the subspace. -/
+@[simp, reassoc]
+lemma singularHomology₀Section_comp_singularHomologyπ (y : P.snd) :
+    singularHomology₀Section R (P.map y) ≫ P.singularHomologyπ R 0 = 0 := by
+  -- The two presentations of ambient homology agree only up to unfolding, so the composites
+  -- are reassociated by terms.
+  have h := singularHomology₀Section_naturality R P.map y =≫ P.singularHomologyπ R 0
+  exact h.symm.trans ((Category.assoc _ _ _).trans ((singularHomology₀Section R y ≫=
+    P.homologyMap_comp_singularHomologyπ R 0).trans comp_zero))
+
+end
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (P : TopPair.{w}) (R : A)
 
@@ -112,5 +135,44 @@ theorem isIso_reducedSingularHomologyδ {k : ℕ}
   · rw [← cancel_mono ((reducedSingularHomologyι R k).app P.snd), Category.assoc,
       reducedSingularHomologyδ_comp_ι]
     exact hm.trans (Category.id_comp _).symm
+
+/-- **Degree-zero relative homology of a path-connected space vanishes** relative to a nonempty
+subspace: every point of `X` is homologous to a point of `A`, so `H₀(A) ⟶ H₀(X)` is onto. -/
+theorem isZero_singularHomology_zero [PathConnectedSpace P.fst] [Nonempty P.snd] :
+    IsZero (P.singularHomology R 0) := by
+  -- Through the augmentation `H₀(X) ≅ R`, the map `H₀(A) ⟶ H₀(X)` becomes the augmentation of
+  -- `A`, which the class of a point of `A` splits.
+  have hε : Epi ((AlgebraicTopology.singularHomologyFunctor A 0 |>.obj R).map P.map ≫
+      P.fst.singularHomology₀ε R) := by
+    rw [singularHomologyMap_singularHomology₀ε]
+    exact (IsSplitEpi.mk' ⟨_, singularHomology₀Section_singularHomology₀ε R
+      (Classical.arbitrary P.snd)⟩).epi
+  have : Epi ((AlgebraicTopology.singularHomologyFunctor A 0 |>.obj R).map P.map) :=
+    (epi_comp_iff_of_isIso _ _).mp hε
+  have h0 : P.singularHomologyπ R 0 = 0 := (P.singularHomology_exact_space R 0).epi_f_iff.1 this
+  have hπ : Epi (P.singularHomologyπ R 0) := inferInstance
+  rw [h0] at hπ
+  exact IsZero.of_epi_zero ((toSSetPair.obj P).right.homology R 0) _
+
+/-- **The quotient map to relative homology is an isomorphism when the subspace is acyclic in the
+adjacent degrees**: if the reduced homology of `A` vanishes in degrees `k` and `k + 1`, then
+`Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism.  This applies when `A` is contractible, for instance a
+point. -/
+theorem isIso_singularHomologyπ {k : ℕ}
+    (h₁ : IsZero ((reducedSingularHomologyFunctor R (k + 1)).obj P.snd))
+    (h₀ : IsZero ((reducedSingularHomologyFunctor R k).obj P.snd)) :
+    IsIso (P.singularHomologyπ R (k + 1)) := by
+  -- In the long exact sequence `Hₖ₊₁(A) ⟶ Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A) ⟶ Hₖ(A) ⟶ Hₖ(X)`, the first
+  -- object vanishes and the last map is a monomorphism, so the connecting morphism vanishes.
+  have hA : IsZero ((toSSetPair.obj P).left.homology R (k + 1)) :=
+    h₁.of_iso ((reducedSingularHomologySuccIso R k).app P.snd).symm
+  have : Mono (P.singularHomologyπ R (k + 1)) :=
+    (P.singularHomology_exact_space R (k + 1)).mono_g (hA.eq_of_src _ _)
+  have hδ : P.singularHomologyδ R (k + 1) k = 0 :=
+    (P.map.mono_singularHomologyMap_of_isZero R h₀).right_cancellation _ _
+      ((P.singularHomologyδ_comp R (k + 1) k).trans zero_comp.symm)
+  have : Epi (P.singularHomologyπ R (k + 1)) :=
+    (P.singularHomology_exact_relative R (k + 1) k).epi_f hδ
+  exact isIso_of_mono_of_epi _
 
 end TopPair

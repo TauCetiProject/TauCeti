@@ -88,9 +88,9 @@ theorem IsFrechetBarycenter.dist_eq_zero {μ : Measure X} [NeZero μ] {x y : X}
     (hx : IsFrechetBarycenter 2 μ x) (hy : IsFrechetBarycenter 2 μ y) : dist x y = 0 := by
   have hm (z : X) : AEMeasurable (fun w => edist z w) μ :=
     (continuous_const.edist continuous_id).measurable.aemeasurable
-  rw [isFrechetBarycenter_iff_forall_frechetPower_le two_ne_zero ENNReal.ofNat_ne_top (hm x) hm]
+  rw [isFrechetBarycenter_iff_forall_frechetPower_le two_ne_zero ENNReal.ofNat_ne_top hm]
     at hx
-  rw [isFrechetBarycenter_iff_forall_frechetPower_le two_ne_zero ENNReal.ofNat_ne_top (hm y) hm]
+  rw [isFrechetBarycenter_iff_forall_frechetPower_le two_ne_zero ENNReal.ofNat_ne_top hm]
     at hy
   have hxtop : frechetPower 2 μ x ≠ ⊤ := by
     rw [← frechetRadius_rpow_eq_frechetPower two_ne_zero ENNReal.ofNat_ne_top (hm x)]

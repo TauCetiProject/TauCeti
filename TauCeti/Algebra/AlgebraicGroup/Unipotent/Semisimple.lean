@@ -10,12 +10,13 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Semisimple
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+public import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 public import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
 # Semisimple unipotent affine groups are trivial
 
-Over a perfect field, a point that is both semisimple and unipotent is the identity. This file
+A point that is both semisimple and unipotent is the identity. This file
 turns that pointwise fact into a scheme-theoretic rigidity statement: if a reduced finite-type
 commutative Hopf algebra has only semisimple and unipotent geometric points, then its counit is an
 isomorphism with the base field. Reducedness is essential because geometric points do not detect
@@ -24,8 +25,7 @@ infinitesimal group schemes such as `μₚ` and `αₚ` in characteristic `p`.
 The main application is to diagonalizable groups. Every point of a diagonalizable group is
 semisimple, and semisimplicity is reflected by a closed immersion. It follows that every reduced
 finite-type closed subgroup of a diagonalizable group whose geometric points are unipotent is the
-trivial group. This is the rigidity input for the reductive-groups roadmap: once the unipotent
-radical is constructed, it proves that the unipotent radical of a torus is trivial.
+trivial group.
 
 ## Main declarations
 
@@ -40,10 +40,6 @@ radical is constructed, it proves that the unipotent radical of a torus is trivi
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 12.40.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap. It
-supplies the trivial-unipotent-subgroup argument needed to prove that tori are reductive, using
-the geometric unipotence and diagonalizable-group semisimplicity developed in Layers 4 and 5.
 -/
 
 public section
@@ -58,15 +54,17 @@ namespace HopfAlgebra
 
 variable {k H L : Type u} [Field k]
 variable [CommRing H] [_root_.HopfAlgebra k H]
-variable [Field L] [Algebra k L] [PerfectField L]
+variable [Field L] [Algebra k L]
 
 /-- A point that is both semisimple and unipotent is the identity. -/
 theorem IsSemisimplePoint.eq_one_of_isUnipotent {g : WithConv (H →ₐ[k] L)}
     (hsemisimple : IsSemisimplePoint g) (hunipotent : IsUnipotentPoint g) :
     g = 1 := by
-  rw [isSemisimplePoint_iff_unipotentPart_eq_one] at hsemisimple
-  rw [Point.isUnipotentPoint_iff_unipotentPart_eq_self] at hunipotent
-  exact hunipotent.symm.trans hsemisimple
+  apply Tannaka.fgPoint_ext_of_forall_ofLinearEquiv_pointsAction k H L
+  intro M
+  rw [map_one, LinearMap.GeneralLinearGroup.ofLinearEquiv_one]
+  exact ((isSemisimplePoint_def g).mp hsemisimple M).eq_one_of_isUnipotent
+    ((isUnipotentPoint_def g).mp hunipotent M)
 
 end HopfAlgebra
 
@@ -158,7 +156,6 @@ theorem eq_augmentation_of_geometricallySemisimple_of_geometricallyUnipotent
   constructor
   · exact I.counit_eq_zero
   · intro hx
-    rw [← HopfIdeal.mem_toIdeal]
     apply (mkQuotient_eq_zero_iff H I x).mp
     let e := counitBialgEquivOfGeometricallySemisimpleUnipotent
       (quotient H I) hsemisimple hunipotent

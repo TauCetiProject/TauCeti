@@ -49,9 +49,9 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         self.assertFalse(group.speculative or group.landing_sentinel)
         self.assertLessEqual({
             "DoubleCoset.doubleCoset_eq_iUnion_leftCosets",
-            "DoubleCoset.conjAct_smul_mul_right_of_mem_normalizer",
-            "DoubleCoset.subgroupOf_conjAct_smul_mul_right_of_mem_normalizer",
-            "DoubleCoset.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer",
+            "DoubleCoset.mul_mem_doubleCoset_iff",
+            "DoubleCoset.inv_mul_mem_doubleCoset_iff_of_mem",
+            "DoubleCoset.mem_doubleCoset_of_quotient_eq",
         }, check.source_declarations(root / source))
 
     def test_new_self_declaration_requires_registry_entry(self):
@@ -294,10 +294,10 @@ class ExpiredMathlibShimTests(unittest.TestCase):
         with mock.patch.object(check, "load_registry", side_effect=OSError("bad bytes")):
             self.assertEqual(check.main([]), 2)
 
-    def test_workflow_uses_merge_base_and_scopes_feature_probes(self):
+    def test_workflow_uses_integration_base_and_scopes_feature_probes(self):
         workflow = (SCRIPT.parent.parent / ".github/workflows/pr-build.yml").read_text()
-        self.assertIn("cp mergebase/TauCeti/mathlib-shims.json", workflow)
-        self.assertNotIn("cp base/TauCeti/mathlib-shims.json", workflow)
+        self.assertIn("cp base/TauCeti/mathlib-shims.json", workflow)
+        self.assertNotIn("cp mergebase/TauCeti/mathlib-shims.json", workflow)
         self.assertIn('[ "${BUMP:-0}" = "1" ] || args+=(--only-new)', workflow)
         self.assertIn('--base-root "$BASE_SHIM_ROOT"', workflow)
         self.assertIn("env.SHIM_CHECK == '1'", workflow)

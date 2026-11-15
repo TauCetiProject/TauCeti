@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.RepresentationTheory.Continuous.MatrixCoefficient
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.Analysis.InnerProductSpace.Trace
@@ -50,7 +50,7 @@ elements — are restatements of `Representation.char_one`, `Representation.char
 Continuity of the trace is not automatic from continuity of `π` alone: it is continuity of the
 functional `T ↦ trace T` on `V →L[𝕜] V`, which holds because that space is finite-dimensional over
 the complete field `𝕜`. That functional is `TauCeti.traceCLM` of
-`TauCeti/Analysis/Normed/Module/Trace.lean`, shared with
+`TauCeti/Topology/Algebra/Module/Trace.lean`, shared with
 `TauCeti/RepresentationTheory/Compact/Intertwiner/Basic.lean`, which uses it to average a trace.
 
 Only the trace is at stake in the sections without an inner product, so they ask no more of the
@@ -214,12 +214,15 @@ end GroupInner
 /-! ### The character along the squaring map -/
 
 variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Monoid G]
-  [TopologicalSpace G] [ContinuousMul G] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [TopologicalSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 /-- The character read along the squaring map `g ↦ g * g` is continuous. -/
 theorem continuous_character_mul_self (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    Continuous fun g : G ↦ character π hπ (g * g) :=
-  (character π hπ).continuous.comp (continuous_id.mul continuous_id)
+    Continuous fun g : G ↦ character π hπ (g * g) := by
+  have h : (fun g : G ↦ character π hπ (g * g)) = fun g ↦ traceCLM 𝕜 V (π g * π g) := by
+    funext g
+    rw [character_apply, traceCLM_apply, ← map_mul π g g]
+  rw [h]
+  exact (traceCLM 𝕜 V).continuous.comp (hπ.mul hπ)
 
 end ContRepresentation

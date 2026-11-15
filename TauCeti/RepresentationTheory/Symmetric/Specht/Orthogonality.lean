@@ -56,6 +56,8 @@ its conjugate coincide.
   `TauCeti.sum_symmetricCharacterTable_mul_div_zPart` its rational form `∑_ν χ^μ(ν) χ^μ'(ν)/z_ν`.
 * `TauCeti.sum_finrank_spechtModule_sq`: **`∑_{μ ⊢ n} (f^μ)² = n !`**, column orthogonality at the
   identity class.
+* `TauCeti.sum_perm_spechtChar_mul_spechtChar`: row orthogonality summed over the permutations,
+  `∑_σ χ^μ(σ) χ^ν(σ) = n !` when `μ = ν` and `0` otherwise.
 * `TauCeti.sum_spechtChar_mul_spechtChar`: column orthogonality read at two permutations.
 * `TauCeti.eq_sum_spechtChar`: **every rational class function of `Sₙ` is
   `∑_μ ⟨f, χ^μ⟩ χ^μ`**, so the Specht characters span the class functions.
@@ -287,7 +289,7 @@ theorem sum_symmetricCharacterTable_mul_div_zPart (μ μ' : n.Partition) :
 the regular representation of `Sₙ` into the Specht characters, each with multiplicity its
 degree. -/
 theorem sum_finrank_spechtModule_mul_spechtChar (σ : Equiv.Perm (Fin n)) :
-    ∑ μ : n.Partition, (finrank ℚ (spechtModule μ) : ℤ) * spechtChar μ σ =
+    ∑ μ : n.Partition, (finrank ℚ (spechtModule (R := ℚ) μ) : ℤ) * spechtChar μ σ =
       if σ = 1 then (n ! : ℤ) else 0 := by
   have hcol := symmetricCharacterTable_column_orthogonality
     ((partitionEquivConjClasses n).symm (ConjClasses.mk 1))
@@ -303,7 +305,7 @@ the class of the identity, whose weight `z` is the order of `Sₙ` and whose col
 degrees `f^μ = dim_ℚ S^μ`: the value at `σ = 1` of
 `TauCeti.sum_finrank_spechtModule_mul_spechtChar`. -/
 theorem sum_finrank_spechtModule_sq (n : ℕ) :
-    ∑ μ : n.Partition, finrank ℚ (spechtModule μ) ^ 2 = n ! := by
+    ∑ μ : n.Partition, finrank ℚ (spechtModule (R := ℚ) μ) ^ 2 = n ! := by
   have h := sum_finrank_spechtModule_mul_spechtChar (n := n) 1
   simp only [spechtChar_one, ite_true] at h
   exact_mod_cast (Finset.sum_congr rfl fun μ _ ↦ sq _).trans h
@@ -324,6 +326,23 @@ theorem sum_spechtChar_mul_spechtChar (σ τ : Equiv.Perm (Fin n)) :
   exact Finset.sum_congr rfl fun μ _ ↦ by
     rw [spechtChar_eq_value, spechtChar_eq_value, symmetricCharacterTable_apply,
       symmetricCharacterTable_apply]
+
+/-- **First (row) orthogonality for `Sₙ`, summed over the permutations**: `∑_σ χ^μ(σ) χ^ν(σ)` is
+`n !` when `μ = ν` and `0` otherwise. No complex conjugation or inverse appears, because the
+values are integers and `σ⁻¹` is conjugate to `σ`. -/
+theorem sum_perm_spechtChar_mul_spechtChar (μ ν : n.Partition) :
+    ∑ σ : Equiv.Perm (Fin n), spechtChar μ σ * spechtChar ν σ =
+      if μ = ν then (n ! : ℤ) else 0 := by
+  have h := FDRep.char_orthonormal (spechtModuleℂ μ) (spechtModuleℂ ν)
+  have hinv (σ : Equiv.Perm (Fin n)) : spechtChar ν σ⁻¹ = spechtChar ν σ :=
+    spechtChar_eq_of_isConj ν (Equiv.Perm.isConj_iff_cycleType_eq.mpr (Equiv.Perm.cycleType_inv σ))
+  simp only [character_spechtModuleℂ_intCast, hinv, spechtModuleℂ_iso_iff, Nat.card_perm,
+    Nat.card_fin] at h
+  rw [inv_mul_eq_iff_eq_mul₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)] at h
+  refine Int.cast_injective (α := ℂ) ?_
+  push_cast
+  rw [h]
+  split_ifs <;> simp
 
 /-- **The Specht characters span the rational class functions of `Sₙ`**: a class function `f` is
 `∑_μ ⟨f, χ^μ⟩ χ^μ`, the coefficient of `χ^μ` being the character pairing

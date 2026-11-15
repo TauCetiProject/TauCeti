@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Localization
 public import TauCeti.RingTheory.Huber.StableUniform
 
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.RationalSubset
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Transport
+
 /-!
 # Stable uniformity and the structure presheaf
 
@@ -15,7 +18,7 @@ Buzzard and Verberkmoes call a Tate pair `(A, A⁺)` stably uniform when `𝒪_X
 every rational subset `U` of `X = Spa(A, A⁺)`. This file identifies that condition, for the
 presentation-indexed limit `presentationLimit`, with `TauCeti.Huber.IsStablyUniform`, the
 uniformity of every rational localization `A⟨T/s⟩`. It deduces that stable uniformity passes to
-rational localizations.
+rational localizations and that it is invariant under completion.
 
 ## Main results
 
@@ -24,14 +27,17 @@ rational localizations.
   for every rational open `V` of `Spa(A, A⁺)`.
 * `TauCeti.Huber.PairOfDefinition.isStablyUniform_completion_locTopology`: a rational
   localization `A⟨T/s⟩` of a stably uniform Tate ring is stably uniform.
+* `TauCeti.Huber.isStablyUniform_completion_iff`: the completion `Â` of a Tate ring `A` is stably
+  uniform exactly when `A` is; `TauCeti.Huber.IsStablyUniform.completion` is the forward direction
+  as an instance.
 
 ## References
 
 * K. Buzzard, A. Verberkmoes, *Stably uniform affinoids are sheafy*, J. reine angew. Math. 740
   (2018), 25–39, §3 and the proof of Theorem 7.
 * D. Hansen, K. S. Kedlaya, *Sheafiness criteria for Huber rings*, Definition 3.13.
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition 8.2 (2) and
-  Remark 8.4.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition 7.48,
+  Proposition 8.2 (2) and Remark 8.4.
 -/
 
 public section
@@ -94,5 +100,53 @@ theorem PairOfDefinition.isStablyUniform_completion_locTopology [IsStablyUniform
   exact (Iso.isUniform_iff <| TopCommRingCat.isCompleteSeparated.ι.mapIso <|
     presentationLimitLocIso P _ T s S hden hAplus hT V hV hVT).mp <|
     (isStablyUniform_iff_forall_isUniform_presentationLimit P hAplus).mp ‹_› V hV
+
+/-- **Stable uniformity is invariant under completion**: the completion `Â` of a Tate ring `A` is
+stably uniform exactly when `A` is. The homeomorphism `Spa(Â, Â⁺) ≃ Spa(A, A⁺)` of Wedhorn's
+Proposition 7.48 matches the rational opens on the two sides
+(`spaCompletionHomeomorph_preimage_mem_spaRationalFamily_iff`), and over matching rational opens
+the presentation limits are isomorphic (`presentationLimitPresheafCompletionIso`). -/
+@[simp]
+theorem isStablyUniform_completion_iff {A : Type v} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] :
+    IsStablyUniform (UniformSpace.Completion A) ↔ IsStablyUniform A := by
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  obtain ⟨P'⟩ := IsHuberRing.nonempty_pairOfDefinition (A := UniformSpace.Completion A)
+  -- compare the rational opens of `Spa(A, A°)` with those of `Spa(Â, Â⁺)`, `Â⁺` the closure of `A°`
+  have hAplus ⦃a : A⦄ : a ∈ powerBoundedSubring A → IsPowerBounded a := mem_powerBoundedSubring.mp
+  have hAplus' ⦃a⦄ (ha : a ∈ completionPlus (powerBoundedSubring A)) : IsPowerBounded a :=
+    mem_powerBoundedSubring.mp (topologicalClosure_map_coeRingHom_le_powerBoundedSubring le_rfl
+      (completionPlus_def (powerBoundedSubring A) ▸ ha))
+  rw [isStablyUniform_iff_forall_isUniform_presentationLimit P' hAplus',
+    isStablyUniform_iff_forall_isUniform_presentationLimit P hAplus]
+  -- the open `V` of `Spa(A, A°)` and its preimage have isomorphic presentation limits
+  have hiso (V : Opens ↥(spa (powerBoundedSubring A))) :
+      IsUniform (presentationLimit (P := P) (powerBoundedSubring A) V) ↔
+        IsUniform (presentationLimit (P := P') (completionPlus (powerBoundedSubring A))
+          ((Opens.map (spaCompletionTopHom (powerBoundedSubring A))).obj V)) := by
+    have h := Iso.isUniform_iff <| TopCommRingCat.isCompleteSeparated.ι.mapIso <|
+      (presentationLimitPresheafCompletionIso P P' hAplus).app (Opposite.op V)
+    rwa [TopCat.Presheaf.pushforward_obj_obj, presentationLimitPresheaf_obj,
+      presentationLimitPresheaf_obj] at h
+  have hrat (V : Opens ↥(spa (powerBoundedSubring A))) :
+      (Opens.map (spaCompletionTopHom (powerBoundedSubring A))).obj V ∈
+        spaRationalOpens (completionPlus (powerBoundedSubring A)) ↔
+      V ∈ spaRationalOpens (powerBoundedSubring A) := by
+    rw [mem_spaRationalOpens, mem_spaRationalOpens]
+    exact spaCompletionHomeomorph_preimage_mem_spaRationalFamily_iff _
+  refine ⟨fun h V hV ↦ (hiso V).mpr (h _ ((hrat V).mpr hV)), fun h W hW ↦ ?_⟩
+  -- every open `W` of `Spa(Â, Â⁺)` is the preimage of its image `V`
+  let V : Opens ↥(spa (powerBoundedSubring A)) :=
+    ⟨spaCompletionHomeomorph _ '' W, (spaCompletionHomeomorph _).isOpenMap _ W.isOpen⟩
+  have hVW : (Opens.map (spaCompletionTopHom (powerBoundedSubring A))).obj V = W :=
+    Opens.ext <| (spaCompletionHomeomorph _).preimage_image _
+  rw [← hVW] at hW ⊢
+  exact (hiso V).mp (h V ((hrat V).mp hW))
+
+/-- The completion of a stably uniform Tate ring is stably uniform. -/
+instance IsStablyUniform.completion {A : Type v} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStablyUniform A] :
+    IsStablyUniform (UniformSpace.Completion A) :=
+  isStablyUniform_completion_iff.mpr ‹_›
 
 end TauCeti.Huber

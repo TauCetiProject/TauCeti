@@ -10,12 +10,12 @@ public import TauCeti.LinearAlgebra.TotallyReal.Complex
 /-!
 # The Maslov phase of maximal totally real subspaces
 
-Let `E` be a complex vector space of dimension `n`, and call a real subspace `L` of `E`
-*maximal totally real* when it is complementary to `i L` (`TauCeti.IsMaximalTotallyReal` for the
-real-linear map `J = i •`). Such an `L` is a real form of `E`: a real basis of `L` is a complex
-basis of `E`. Consequently the complex-linear automorphisms of `E` act transitively on maximal
-totally real subspaces, and a complex-linear automorphism `C` preserving `L` is the
-complexification of its restriction to `L`, so that `det C` is real.
+Let `E` be a complex vector space (of finite dimension `n` unless stated otherwise), and call a real
+subspace `L` of `E` *maximal totally real* when it is complementary to `i L`
+(`TauCeti.IsMaximalTotallyReal` for the real-linear map `J = i •`). Such an `L` is a real form of
+`E`: a real basis of `L` is a complex basis of `E`. Consequently the complex-linear automorphisms of
+`E` act transitively on maximal totally real subspaces, and a complex-linear automorphism `C`
+preserving `L` is the complexification of its restriction to `L`, so that `det C` is real.
 
 These two facts make the *Maslov phase*
 ```
@@ -41,6 +41,8 @@ complex-linear changes of coordinates (`TauCeti.IsMaximalTotallyReal.maslovPhase
 * `TauCeti.IsMaximalTotallyReal.norm_maslovPhase`: the Maslov phase has modulus one.
 * `TauCeti.IsMaximalTotallyReal.maslovPhase_map_lsmul`: rotating by `z` has phase
   `(z / conj z) ^ n`, so `e^{iθ} L₀` has phase `e^{2inθ}`.
+* `TauCeti.IsMaximalTotallyReal.maslovPhase_of_not_finite`: in an infinite-dimensional module
+  every determinant is `1`, so the Maslov phase is the constant `1`.
 
 ## References
 
@@ -59,7 +61,7 @@ open scoped ComplexConjugate
 namespace TauCeti
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
-  [FiniteDimensional ℂ E] {L : Submodule ℝ E}
+  {L : Submodule ℝ E}
 
 namespace IsMaximalTotallyReal
 
@@ -103,16 +105,25 @@ namespace TauCeti
 namespace IsMaximalTotallyReal
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
-  [FiniteDimensional ℂ E] {L : Submodule ℝ E}
+  {L : Submodule ℝ E}
   (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L)
 include hL
 
 /-- The **Maslov phase** `ρ(L₀, L)` of two maximal totally real subspaces of a complex module.
-For `L = A L₀` it is `det A / conj (det A)`; the value is independent of the choice of `A`. -/
+For `L = A L₀` it is `det A / conj (det A)`; the value is independent of the choice of `A`. In an
+infinite-dimensional module every determinant is `1` (`LinearMap.det_eq_one_of_not_module_finite`),
+so there the phase is the junk value `1`. -/
 noncomputable def maslovPhase {L' : Submodule ℝ E}
     (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L') : ℂ :=
   let A := (hL.exists_linearEquiv_map_eq hL').choose
   LinearMap.det (A : E →ₗ[ℂ] E) / conj (LinearMap.det (A : E →ₗ[ℂ] E))
+
+/-- In an infinite-dimensional module every Maslov phase is `1`. -/
+@[simp]
+theorem maslovPhase_of_not_finite (h : ¬ Module.Finite ℂ E) {L' : Submodule ℝ E}
+    (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L') :
+    hL.maslovPhase hL' = 1 := by
+  simp [maslovPhase, LinearMap.det_eq_one_of_not_module_finite h]
 
 /-- The Maslov phase has modulus one. -/
 @[simp]
@@ -139,6 +150,14 @@ theorem maslovPhase_congr {L₁ L₂ : Submodule ℝ E}
     (hL₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₂)
     (h : L₁ = L₂) : hL.maslovPhase hL₁ = hL.maslovPhase hL₂ := by
   subst L₂
+  rfl
+
+/-- Rewrites the first subspace of a Maslov phase along an equality of subspaces. -/
+theorem maslovPhase_congr_left {L₁ L' : Submodule ℝ E}
+    (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
+    (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L')
+    (h : L = L₁) : hL.maslovPhase hL' = hL₁.maslovPhase hL' := by
+  subst L₁
   rfl
 
 /-- The Maslov phase of `A L` relative to a maximal totally real `L` is the determinant phase
@@ -171,6 +190,14 @@ theorem maslovPhase_mul_maslovPhase {L₁ L₂ : Submodule ℝ E}
     hL.maslovPhase_congr hL₂ (hL.map_linearEquiv (A.trans B)) hAB,
     hL.maslovPhase_map, LinearEquiv.coe_trans, LinearMap.det_comp, map_mul,
     mul_div_mul_comm, mul_comm]
+
+/-- The Maslov phase of two subspaces is the quotient of their phases relative to a common
+reference: `ρ(L, L₂) / ρ(L, L₁) = ρ(L₁, L₂)`. -/
+theorem maslovPhase_div_maslovPhase {L₁ L₂ : Submodule ℝ E}
+    (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
+    (hL₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₂) :
+    hL.maslovPhase hL₂ / hL.maslovPhase hL₁ = hL₁.maslovPhase hL₂ := by
+  rw [← hL.maslovPhase_mul_maslovPhase hL₁ hL₂, mul_div_cancel_left₀ _ (hL.maslovPhase_ne_zero hL₁)]
 
 /-- Exchanging the two subspaces inverts the Maslov phase. -/
 theorem maslovPhase_symm {L₁ : Submodule ℝ E}

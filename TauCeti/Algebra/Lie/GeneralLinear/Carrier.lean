@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.Existence
 public import TauCeti.Algebra.Lie.GeneralLinear.Restriction
 public import TauCeti.Algebra.Lie.GeneralLinear.Twist
 public import TauCeti.Algebra.Lie.GeneralLinear.Uniqueness
@@ -43,8 +44,8 @@ both are made with `Classical.choice`, and nothing is claimed about which. The c
 characterized not by its construction but by
 `TauCeti.nonempty_lieModuleEquiv_glIrreducible`, which identifies it with *any* irreducible module
 carrying a highest weight vector of weight `mu`. Off the dominant weights the carrier is junk —
-still a finite-dimensional `gl N K`-module, but with no claim about it — as with the other
-total-by-convention constructions of the roadmap.
+still a finite-dimensional `gl N K`-module, but with no claim about it — as is usual for
+total-by-convention constructions.
 
 ## Main definitions
 
@@ -73,18 +74,14 @@ are marked `@[no_expose]`, which is what lets their bodies name those private co
   `mu`**: every irreducible `gl N K`-module carrying a highest weight vector of weight `mu` is
   isomorphic to it, and `TauCeti.finrank_glIrreducible_le` bounds its dimension by that of any
   finite-dimensional module carrying such a vector.
+* `TauCeti.nonempty_lieModuleEquiv_glIrreducible_iff`: **the highest weight determines `L(mu)`**:
+  the carriers of distinct dominant integral weights are not isomorphic.
 * `TauCeti.isIrreducible_glIrreducible_restrict_sl`: **`L(mu)` stays irreducible on restriction to
   `sl N K`**, over any characteristic-zero field: by
   `TauCeti.one_lie_glIrreducible_eq_smul` the identity matrix acts by the explicit scalar
   `∑ i, mu i`, so no algebraic closedness is needed to know that the centre acts by scalars.
 
 ## References
-
-This is the named carrier `glIrreducible` of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, with the structural pins
-`isIrreducible_glIrreducible`, `finiteDimensional_glIrreducible`,
-`exists_isGlHighestWeightVector_glIrreducible` and `isIrreducible_glIrreducible_restrict_sl` of its
-`Suggested.lean`.
 
 * R. Goodman, N. R. Wallach, *Symmetry, Representations, and Invariants*, GTM 255, §5.5.
 -/
@@ -284,7 +281,7 @@ theorem weightSpace_glIrreducible_eq_span_singleton (hmu : IsGlDominantIntegral 
     (lieSpan_glIrreducibleGenerator_eq_top hmu)
 
 /-- **`L(mu)` carries a highest weight vector of weight `mu`**, the existential form of
-`TauCeti.isGlHighestWeightVector_glIrreducibleGenerator` pinned by the roadmap. -/
+`TauCeti.isGlHighestWeightVector_glIrreducibleGenerator`. -/
 theorem exists_isGlHighestWeightVector_glIrreducible (hmu : IsGlDominantIntegral mu) :
     ∃ v : glIrreducible N mu, IsGlHighestWeightVector mu v :=
   ⟨_, isGlHighestWeightVector_glIrreducibleGenerator hmu⟩
@@ -305,12 +302,24 @@ theorem nonempty_lieModuleEquiv_glIrreducible
   nonempty_lieModuleEquiv_of_isGlHighestWeightVector hv
     (isGlHighestWeightVector_glIrreducibleGenerator hmu)
 
+/-- **The highest weight determines the carrier**: for dominant integral `mu` and `nu`, the
+carriers `L(mu)` and `L(nu)` are isomorphic exactly when `mu = nu`. -/
+theorem nonempty_lieModuleEquiv_glIrreducible_iff {nu : Fin N → K}
+    (hmu : IsGlDominantIntegral mu) (hnu : IsGlDominantIntegral nu) :
+    Nonempty (glIrreducible N mu ≃ₗ⁅K, Matrix (Fin N) (Fin N) K⁆ glIrreducible N nu) ↔
+      mu = nu := by
+  refine ⟨fun ⟨e⟩ => ?_, fun h => h ▸ ⟨LieModuleEquiv.refl⟩⟩
+  have := isIrreducible_glIrreducible (K := K) hnu
+  exact (isGlHighestWeightVector_glIrreducibleGenerator hnu).weight_eq_of_isIrreducible
+    ((isGlHighestWeightVector_glIrreducibleGenerator hmu).congr e)
+
 /-- **`L(mu)` has the smallest dimension of the modules of highest weight `mu`**: any
 finite-dimensional `gl N K`-module carrying a highest weight vector of weight `mu` has at least the
 dimension of the carrier. -/
 theorem finrank_glIrreducible_le [FiniteDimensional K M] {v : M}
-    (hmu : IsGlDominantIntegral mu) (hv : IsGlHighestWeightVector mu v) :
+    (hv : IsGlHighestWeightVector mu v) :
     finrank K (glIrreducible N mu) ≤ finrank K M :=
+  have hmu := hv.isGlDominantIntegral
   have := isIrreducible_glIrreducible (K := K) hmu
   finrank_le_of_isGlHighestWeightVector (isGlHighestWeightVector_glIrreducibleGenerator hmu) hv
 

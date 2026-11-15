@@ -77,7 +77,8 @@ theorem logDeriv_comp_ofComplex_fdBoundary_arc_add_four_sub_eq_neg
   have him := im_fdBoundary_arc_pos H ⟨ht.1.le, ht.2.le⟩
   have h0 : fdBoundary H t ≠ 0 := fun h ↦ absurd him (by simp [h])
   rw [fdBoundary_four_sub_arc H ⟨ht.1.le, ht.2.le⟩, deriv_fdBoundary_four_sub_arc H ht,
-    smul_eq_mul, smul_eq_mul, logDeriv_comp_ofComplex_S_transform f hS him hd hne,
+    smul_eq_mul, smul_eq_mul,
+    logDeriv_comp_ofComplex_S_transform (Γ := Γ) f (Subgroup.mem_map_of_mem _ hS) him hd hne,
     logDeriv_apply (fdBoundary H) t]
   field_simp
   ring
@@ -199,7 +200,6 @@ private theorem excised_fdBoundary_arc_reflection_iff {H : ℝ} {S : Finset ℂ}
   constructor
   · rintro ⟨s, hs, hle⟩
     refine ⟨-1 / s, hinv s hs, ?_⟩
-    have hs0 : s ≠ 0 := norm_ne_zero_iff.mp (by rw [hnorm s hs]; norm_num)
     rwa [← hkey (-1 / s) (by rw [norm_div, norm_neg, norm_one, hnorm s hs, div_one]),
       neg_one_div_neg_one_div]
   · rintro ⟨s, hs, hle⟩
@@ -361,7 +361,7 @@ theorem two_mul_intervalIntegral_excised_deriv_smul_logDeriv_comp_ofComplex_fdBo
       -(k : ℂ) * ∫ t in (1 : ℝ)..3, (if ∃ s ∈ S, ‖fdBoundary H t - s‖ ≤ ε then 0
         else logDeriv (fdBoundary H) t) := by
   set G : ℝ → ℂ := fun t => if ∃ s ∈ S, ‖fdBoundary H t - s‖ ≤ ε then 0
-    else deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t) with hG
+    else deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t)
   -- The reflection maps `[1, 3]` to itself, so the reflected integral is the same integral.
   have h43 : (4 : ℝ) - 3 = 1 := by norm_num
   have h41 : (4 : ℝ) - 1 = 3 := by norm_num

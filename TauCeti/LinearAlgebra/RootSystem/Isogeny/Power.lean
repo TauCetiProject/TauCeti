@@ -84,12 +84,6 @@ come from.
   endomorphism monoid API adapted here.
 * Schémas en groupes (SGA 3), Exposé XXI, 6.8.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
-
-The odd powers of the special isogeny are what milestone L2 of
-`TauCetiRoadmap/CFSGStatement/README.md` asks for, "`steinberg(m) = τ_X ^ (2m + 1)`,
-`steinberg(m) ^ 2 = Frob_(p ^ (2m + 1))`", once the special isogeny itself has been lifted from
-root data to the pinned group schemes of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -110,8 +104,8 @@ instance : Monoid (RootPairingIsogeny P P) where
   one := id P
   mul f g := comp f g
   mul_assoc := comp_assoc
-  one_mul := comp_id
-  mul_one := id_comp
+  one_mul := id_comp
+  mul_one := comp_id
 
 theorem mul_def (f g : RootPairingIsogeny P P) : f * g = comp f g := (rfl)
 

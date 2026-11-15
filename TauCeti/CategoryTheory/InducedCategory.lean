@@ -68,14 +68,12 @@ the identity of the induced category. -/
 theorem inducedFunctor_comp_retraction (hr : ∀ s, r (F s) = s)
     (he : ∀ s, (e (F s)).hom = eqToHom (congrArg F (hr s)).symm) :
     inducedFunctor F ⋙ retraction F r e = 𝟭 _ := by
-  have hinv (s : S) : (e (F s)).inv = eqToHom (congrArg F (hr s)) := by
-    rw [← cancel_mono (e (F s)).hom, Iso.inv_hom_id, he, eqToHom_trans, eqToHom_refl]
+  have hinv (s : S) : (e (F s)).inv = eqToHom (congrArg F (hr s)) := Iso.inv_ext (by simp [he])
   -- `hr` restated as an equality of objects of the induced category, not of `S`.
   have hobj (s : InducedCategory C F) : (inducedFunctor F ⋙ retraction F r e).obj s = s := hr s
   refine Functor.ext hobj fun s t f ↦ ?_
   ext
-  simp only [Functor.comp_map, inducedFunctor_map, retraction_map_hom, Functor.id_map,
-    InducedCategory.comp_hom, InducedCategory.eqToHom_hom, inducedFunctor_obj, hinv, he]
+  simp [hinv, he]
   -- The two sides differ only in how the endpoints of the `eqToHom`s are written.
   rfl
 

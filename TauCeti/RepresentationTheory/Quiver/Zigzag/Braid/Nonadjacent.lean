@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Corner
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 
 /-!
 # The middle tensor factor at nonadjacent zigzag vertices
@@ -43,8 +43,7 @@ theorem subsingleton_balancedTensorProduct_zigzagAlgebra_of_ne_of_not_adj {i j :
     Subsingleton (BalancedTensorProduct k Z (Ideal.span {op (e i)} : Ideal Zᵐᵒᵖ)
       (Ideal.span {e j} : Ideal Z)) := by
   exact (subsingleton_spanSingleton_balancedTensorProduct_iff_cornerSubmodule_eq_bot k
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G j)).2
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)).2
     (cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj k G hij hadj)
 
 end TauCeti

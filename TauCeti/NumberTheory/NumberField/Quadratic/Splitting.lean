@@ -52,6 +52,7 @@ its conductor exponent. No squarefreeness of `d` is needed.
 
 ## Main results
 
+* `NumberField.ncard_primesOver_eq_one_or_eq_two`: one or two primes lie above each rational prime.
 * `NumberField.ncard_primesOver_quadratic_iff`: the quadratic splitting law at an odd prime.
 * `NumberField.exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one`: an odd prime `p` with
   `legendreSym p d = 1` is the absolute norm of a prime ideal of `𝓞 K`.
@@ -73,7 +74,7 @@ its conductor exponent. No squarefreeness of `d` is needed.
 
 public section
 
-open Polynomial NumberField Ideal Module RingOfIntegers UniqueFactorizationMonoid
+open Polynomial NumberField Ideal Module NumberField.RingOfIntegers UniqueFactorizationMonoid
 
 namespace NumberField
 
@@ -166,7 +167,7 @@ private theorem card_monicFactorsMod_quadratic_iff {θ : 𝓞 K} {d : ℤ}
   · intro hcard
     by_contra hns
     have hirr : Irreducible (X ^ 2 - C (d : ZMod p)) :=
-      (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+      (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr
         (fun b hb => hns ⟨b, by rw [← hb]; ring⟩)
     rw [normalizedFactors_irreducible hirr] at hcard
     simp at hcard
@@ -187,6 +188,17 @@ private theorem card_monicFactorsMod_quadratic_iff {θ : 𝓞 K} {d : ℤ}
         rw [Ne, sub_right_inj, C_inj]; exact hane))]
     simp
 
+/-- **One or two primes lie above a rational prime in a quadratic field.** Their number divides
+`[K : ℚ] = 2`, by the fundamental identity for the Galois extension `K / ℚ`. -/
+theorem ncard_primesOver_eq_one_or_eq_two (hK : finrank ℚ K = 2) (p : ℕ) [Fact p.Prime] :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 1 ∨
+      (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 := by
+  let _ : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  have h := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn (span {(p : ℤ)}) (𝓞 K)
+    (K ≃ₐ[ℚ] K)
+  rw [IsGalois.card_aut_eq_finrank, hK] at h
+  exact (Nat.dvd_prime Nat.prime_two).mp (Dvd.intro _ h)
+
 /-- **The quadratic splitting law.** For `K = ℚ(√d)` (`θ` a square root of the integer `d`
 generating `K`) and an odd prime `p ∤ d`, `p` splits completely in `K` iff `d` is a quadratic
 residue mod `p`. This is the `n = 1` case of the multiquadratic prime-splitting law. -/
@@ -195,7 +207,8 @@ theorem ncard_primesOver_quadratic_iff {θ : 𝓞 K} {d : ℤ}
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ¬ (p : ℤ) ∣ d) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ legendreSym p d = 1 := by
   have hp := not_dvd_exponent_of_minpoly_quadratic hmin hgen hodd hcop
-  rw [ncard_primesOver_eq_card_monicFactorsMod θ hp, finrank_rat_eq_two hmin hgen]
+  rw [_root_.RingOfIntegers.ncard_primesOver_eq_card_monicFactorsMod θ hp,
+    finrank_rat_eq_two hmin hgen]
   exact card_monicFactorsMod_quadratic_iff hmin hodd hcop
 
 /-- **A split prime is an ideal norm.** For `K = ℚ(√d)` and an odd prime `p` for which `d` is a
@@ -220,7 +233,7 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
   -- `h𝔮` and `hlo` are the prime and lies-over hypotheses of the norm computation; pass them
   -- explicitly rather than installing them as anonymous local instances.
   exact ⟨𝔮, h𝔮, hlo,
-    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p _ 𝔮 h𝔮 hlo hsplit⟩
+    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p 𝔮 h𝔮 hlo hsplit⟩
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
 

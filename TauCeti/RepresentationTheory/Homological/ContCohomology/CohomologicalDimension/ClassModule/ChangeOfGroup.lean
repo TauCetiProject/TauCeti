@@ -19,7 +19,7 @@ Let `V ≤ W` be subgroups of a topological group `G`, with `V` open and normal 
 `u_{W/V}(p)`. This file identifies these with the restriction of the data of the pair `V ◁ G` to the
 subgroup `W.map (mk' V)` of `G ⧸ V`:
 
-* the groups are identified by `TauCeti.quotientSubgroupOfEquivMap`,
+* the groups are identified by `Subgroup.quotientSubgroupOfEquivMap`,
   `W ⧸ V.subgroupOf W ≃ₜ* W.map (mk' V)`;
 * the coefficients are identified by `TauCeti.abelianizationProPSubgroupOfEquiv`,
   `(V.subgroupOf W)^ab(p) ≃ₜ* V^ab(p)`, which intertwines the two conjugation actions
@@ -45,6 +45,8 @@ are read off from statements about the pair `V ◁ G`, and conversely.
 -/
 
 public section
+
+open Subgroup (quotientSubgroupOfEquivMap coe_quotientSubgroupOfEquivMap_mk)
 
 namespace TauCeti
 
@@ -91,7 +93,7 @@ variable [V.Normal] (hV : IsOpen (V : Set G))
 
 /-- `abelianizationProPSubgroupOfEquiv` intertwines the action of `W ⧸ V.subgroupOf W` on
 `(V.subgroupOf W)^ab(p)` with the action of its image in `G ⧸ V` on `V^ab(p)`, the two quotients
-being identified by `quotientSubgroupOfEquivMap`. -/
+being identified by `Subgroup.quotientSubgroupOfEquivMap`. -/
 theorem abelianizationProPSubgroupOfEquiv_smul (q : W ⧸ V.subgroupOf W)
     (x : abelianizationProP p W (V.subgroupOf W)) :
     abelianizationProPSubgroupOfEquiv p hVW (q • x) =

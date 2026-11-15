@@ -81,8 +81,8 @@ theorem homflySpecialization_injective_of_infinite {s : Set ℕ} (hs : s.Infinit
     Function.Injective (fun p : LaurentPolynomial (LaurentPolynomial K) ↦
       fun N : s ↦ homflySpecialization K N p) := by
   simp only [homflySpecialization_def]
-  apply laurent_eval₂_family_injective _
-    (laurent_eval₂_injective_of_transcendental _ (transcendental_ratFunc_X_sub_inv K))
+  apply RingHom.laurent_eval₂_family_injective _
+    (Units.laurent_eval₂_injective_of_transcendental _ (transcendental_ratFunc_X_sub_inv K))
   have hinj : Function.Injective
       (fun N : ℕ ↦ (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) ^ N) := by
     intro m n h

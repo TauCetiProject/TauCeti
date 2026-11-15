@@ -48,6 +48,16 @@ theorem upperJump_iff (u : RamificationIndexDomain) :
     UpperJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
       upperRamificationGroup K L v < upperRamificationGroup K L u := Iff.rfl
 
+/-- An upper break requires a nontrivial Galois group. -/
+theorem UpperJump.nontrivial {u : RamificationIndexDomain} (hu : UpperJump K L u) :
+    Nontrivial (L ≃ₐ[K] L) := by
+  rcases subsingleton_or_nontrivial (L ≃ₐ[K] L) with h | h
+  · have hdrop := (upperJump_iff K L u).1 hu
+      ⟨(u : ℝ) + 1, u.property.trans (by linarith)⟩
+      (Subtype.mk_lt_mk.2 (by linarith))
+    exact absurd (Subsingleton.elim _ _) hdrop.ne
+  · exact h
+
 /-- The Herbrand function takes lower breaks precisely to upper breaks. -/
 @[simp]
 theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.HopfAlgebra.GroupLike
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 public import TauCeti.Algebra.MonoidAlgebra.Torsion
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Torsion in groups of group-like elements
@@ -54,12 +55,12 @@ theorem isMulTorsionFree_groupLike_of_isReduced_of_connectedSpace
   -- Group-like elements over a field are linearly independent, so evaluation embeds the group
   -- algebra on them into `H`, and both hypotheses are inherited by a subring.
   have hf : Function.Injective
-      ((GroupLike.evaluationBialgHom k H).toAlgHom.toRingHom :
+      ((MonoidAlgebra.liftGroupLikeBialgHom (R := k) (A := H)).toAlgHom.toRingHom :
         MonoidAlgebra k (GroupLike k H) →+* H) :=
-    GroupLike.evaluationBialgHom_injective k H
+    GroupLike.liftGroupLikeBialgHom_injective k H
   have _ : IsReduced (MonoidAlgebra k (GroupLike k H)) := isReduced_of_injective _ hf
   have _ : ConnectedSpace (PrimeSpectrum (MonoidAlgebra k (GroupLike k H))) :=
-    connectedSpace_primeSpectrum_of_injective _ hf
+    RingHom.connectedSpace_primeSpectrum_of_injective _ hf
   exact isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace k (GroupLike k H)
 
 variable {k H}

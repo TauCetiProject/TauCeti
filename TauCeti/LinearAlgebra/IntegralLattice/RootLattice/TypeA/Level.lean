@@ -16,7 +16,7 @@ The level of `Aₙ` is `2 (n + 1) / gcd(n, 2)`: it is `n + 1` for even `n` and
 These are levels of the even bilinear lattices, so they annihilate the half-norm
 discriminant quadratic form, not merely its polar pairing.
 
-The calculation uses `IntegralLattice.IsEven.level_eq_addOrderOf` and the first
+The calculation uses `IntegralLattice.IsEven.level_eq_den` and the first
 fundamental weight's quadratic value computed in `TypeA.Basic`.
 
 ## References
@@ -33,13 +33,8 @@ namespace IntegralLattice
 @[simp]
 theorem level_typeARootLattice (n : ℕ) :
     (typeARootLattice n).level = 2 * (n + 1) / n.gcd 2 := by
-  rw [(isEven_typeARootLattice n).level_eq_addOrderOf _
-    (zmultiples_typeAFundamentalWeightClass n),
-    discriminantQuadraticMap_typeAFundamentalWeightClass]
-  suffices hden : ((n : ℚ) / (2 * ((n : ℚ) + 1))).den = 2 * (n + 1) / n.gcd 2 by
-    simpa only [Rat.cast_id, mul_one] using
-      (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ))
-        (q := n / (2 * ((n : ℚ) + 1)))).trans hden
+  rw [(isEven_typeARootLattice n).level_eq_den _ (zmultiples_typeAFundamentalWeightClass n)
+    (discriminantQuadraticMap_typeAFundamentalWeightClass n)]
   have hgcd : n.gcd (2 * (n + 1)) = n.gcd 2 := by
     rw [Nat.mul_add, Nat.mul_one, Nat.add_comm (2 * n) 2, Nat.gcd_comm n (2 + 2 * n),
       Nat.gcd_add_mul_right_left, Nat.gcd_comm 2 n]

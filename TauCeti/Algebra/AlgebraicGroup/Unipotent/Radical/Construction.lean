@@ -45,9 +45,6 @@ geometric fibre gives the geometric unipotent radical.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §§6.45--6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
-
-This completes the construction target in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap.
 -/
 
 public section

@@ -140,9 +140,9 @@ so does the operator of the product, so the degenerate branches agree too. -/
 @[simp]
 theorem heckeTScalarGamma0_mul (m n : ℕ) :
     heckeTScalarGamma0 N m * heckeTScalarGamma0 N n = heckeTScalarGamma0 N (m * n) := by
-  rcases Nat.eq_zero_or_pos m with rfl | hm
+  rcases Nat.eq_zero_or_pos m with rfl | _
   · simp
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp
   by_cases hmN : Nat.Coprime m N
   · by_cases hnN : Nat.Coprime n N

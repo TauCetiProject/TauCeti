@@ -28,11 +28,11 @@ vanishes**, and let `W ≠ 0` be an invariant subspace.  Then:
   one for each tensor factor, hence nonzero: the highest weight is indexed by a *constant*
   unordered tuple, and only the constant ordered tuple orders it, so the coordinate is the single
   product `∏ⱼ u₀,ₖⱼ` with no cancellation
-  (`SymmetricPower.repr_basis_symmetricPower_tprod_ofFn_const`).  Torus-stability then puts the
+  (`Module.Basis.symmetricPower_repr_tprod_apply_ofFn_const`).  Torus-stability then puts the
   highest weight vector `e₀^d` into `W`.
 * `u · e₀^d` is the **pure power** `(u e₀)^d`, and a pure power of a vector with nonzero
   coordinates has *every* coordinate nonzero
-  (`SymmetricPower.repr_basis_symmetricPower_tprod_const_ne_zero`); the terms of the coordinate sum
+  (`Module.Basis.symmetricPower_repr_tprod_const_apply_ne_zero`); the terms of the coordinate sum
   all coincide, so again nothing cancels.  Torus-stability now puts **every** weight vector into
   `W`, so `W` is everything.
 
@@ -52,10 +52,8 @@ Exhaustion -- that every finite-dimensional irreducible representation of `SU(2)
 
 ## References
 
-This is the "the `su2Irrep n` are irreducible, pairwise inequivalent" half of the classification
-asked for by the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, which insists that the
-classification be proved by the weight/highest-weight argument rather than read off Peter-Weyl.
+Irreducibility is proved by the weight/highest-weight argument above rather than read off from
+Peter-Weyl.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
@@ -117,9 +115,9 @@ private theorem weightBasis_eq_reindex :
 /-- The index of the highest weight is the constant unordered tuple `(0, …, 0)`: the monomial that
 is the `d`-th power of the first standard basis vector. -/
 private theorem symFinTwoEquiv_symm_last :
-    (symFinTwoEquiv d).symm (Fin.last d) = TauCeti.Sym.ofFn fun _ : Fin d => (0 : Fin 2) := by
+    (symFinTwoEquiv d).symm (Fin.last d) = Sym.ofFn fun _ : Fin d => (0 : Fin 2) := by
   refine Sym.coe_injective ?_
-  rw [coe_symFinTwoEquiv_symm_apply, TauCeti.Sym.coe_ofFn, List.ofFn_const, Multiset.coe_replicate]
+  rw [coe_symFinTwoEquiv_symm_apply, Sym.coe_ofFn, List.ofFn_const, Multiset.coe_replicate]
   simp
 
 /-! ### The rotated weight vectors have nonzero coordinates -/
@@ -132,7 +130,7 @@ private theorem repr_symPower_mixElement_weightBasis_last_ne_zero (i : Fin (d + 
     (weightBasis d).repr (symPower d mixElement (weightBasis d i)) (Fin.last d) ≠ 0 := by
   obtain ⟨f, hf⟩ := exists_weightBasis_eq_tprod d i
   rw [hf, weightBasis_eq_reindex, Basis.repr_reindex_apply, symFinTwoEquiv_symm_last,
-    symPower_apply_tprod, coe_mixElement, SymmetricPower.repr_basis_symmetricPower_tprod_ofFn_const]
+    symPower_apply_tprod, coe_mixElement, Module.Basis.symmetricPower_repr_tprod_apply_ofFn_const]
   exact Finset.prod_ne_zero_iff.2 fun j _ => by
     rw [repr_mulVec_basisFun]; exact mixMatrix_apply_ne_zero 0 (f j)
 
@@ -146,8 +144,8 @@ private theorem repr_symPower_mixElement_weightBasis_last_ne_zero' (i : Fin (d +
     rw [weightBasis_apply, symFinTwoEquiv_symm_last, Basis.symmetricPower_apply,
       SymmetricPower.tprodOfSym_ofFn]
   rw [hf, weightBasis_eq_reindex, Basis.repr_reindex_apply, symPower_apply_tprod, coe_mixElement]
-  exact SymmetricPower.repr_basis_symmetricPower_tprod_const_ne_zero _
-    (fun l => by rw [repr_mulVec_basisFun]; exact mixMatrix_apply_ne_zero l 0) _
+  exact Module.Basis.symmetricPower_repr_tprod_const_apply_ne_zero _ _
+    (fun l _ => by rw [repr_mulVec_basisFun]; exact mixMatrix_apply_ne_zero l 0)
 
 /-! ### Irreducibility -/
 

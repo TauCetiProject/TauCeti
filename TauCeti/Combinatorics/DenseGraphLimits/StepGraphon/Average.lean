@@ -40,13 +40,14 @@ contribution.
   integral on every partition rectangle;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_idem` says block averaging is strictly idempotent;
 * `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphon_apply` verifies that a non-null constant
-  block is recovered exactly.
+  block is recovered exactly, and `TauCeti.DenseGraphLimits.stepGraphonAvg_stepGraphon` that a
+  step graphon on a partition without null parts is its own block average;
+* `TauCeti.DenseGraphLimits.stepGraphonAvg_ofFibers_comap` says that the pullback of a graphon on
+  a finite carrier along a map with non-null fibres is its own block average over those fibres.
 
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — `stepGraphonAvg` and the
-  null-cell validation gate preceding graphon partition energy.
 * The null-cell convention and its compatibility with Mathlib set averages follow
   `Graphon/RegularityFinpartition.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
   `dfd7ecc9b197d8211842935204bcec6051d57863`.
@@ -153,10 +154,11 @@ theorem stepGraphonAvg_apply (P : Finpartition (Set.univ : Set Ω))
 This is not a simp lemma because the partition parts cannot be inferred from its left-hand side. -/
 theorem stepGraphonAvg_apply_of_measure_eq_zero_left
     (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p)
-    (W : Graphon Ω μ) {p q : P.parts} {x y : Ω} (hp : μ (p : Set Ω) = 0)
-    (hx : x ∈ (p : Set Ω)) (hy : y ∈ (q : Set Ω)) :
+    (W : Graphon Ω μ) {p : P.parts} {x y : Ω} (hp : μ (p : Set Ω) = 0)
+    (hx : x ∈ (p : Set Ω)) :
     stepGraphonAvg (μ := μ) P hP W x y = 0 := by
-  rw [stepGraphonAvg_apply P hP W hx hy, setAverage_eq, measureReal_prod_prod]
+  rw [stepGraphonAvg_apply P hP W hx (P.indexedPartition.mem_index y), setAverage_eq,
+    measureReal_prod_prod]
   simp [hp]
 
 /-- On a partition rectangle whose right side is null, the block-average step graphon is zero.
@@ -164,10 +166,11 @@ theorem stepGraphonAvg_apply_of_measure_eq_zero_left
 This is not a simp lemma because the partition parts cannot be inferred from its left-hand side. -/
 theorem stepGraphonAvg_apply_of_measure_eq_zero_right
     (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p)
-    (W : Graphon Ω μ) {p q : P.parts} {x y : Ω} (hq : μ (q : Set Ω) = 0)
-    (hx : x ∈ (p : Set Ω)) (hy : y ∈ (q : Set Ω)) :
+    (W : Graphon Ω μ) {q : P.parts} {x y : Ω} (hq : μ (q : Set Ω) = 0)
+    (hy : y ∈ (q : Set Ω)) :
     stepGraphonAvg (μ := μ) P hP W x y = 0 := by
-  rw [stepGraphonAvg_apply P hP W hx hy, setAverage_eq, measureReal_prod_prod]
+  rw [stepGraphonAvg_apply P hP W (P.indexedPartition.mem_index x) hy, setAverage_eq,
+    measureReal_prod_prod]
   simp [hq]
 
 /-- Block averaging preserves the integral over each rectangle of the partition.  This includes
@@ -229,6 +232,37 @@ theorem stepGraphonAvg_stepGraphon_apply (P : Finpartition (Set.univ : Set Ω))
       apply setAverage_const
       · simpa [Measure.prod_prod] using mul_ne_zero hp hq
       · exact measure_ne_top _ _
+
+/-- **A step graphon is its own block average** over a partition without null parts.  The
+non-null hypothesis is necessary: the null-cell convention replaces the value on a null rectangle by
+zero. -/
+@[simp]
+theorem stepGraphonAvg_stepGraphon (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p)
+    (val : P.parts → P.parts → Set.Icc (0 : ℝ) 1) (hsymm : ∀ p q, val p q = val q p)
+    (hnull : ∀ p ∈ P.parts, μ p ≠ 0) :
+    stepGraphonAvg (μ := μ) P hP (stepGraphon (μ := μ) P hP val hsymm) =
+      stepGraphon (μ := μ) P hP val hsymm := by
+  ext x y
+  have hx := P.indexedPartition.mem_index x
+  have hy := P.indexedPartition.mem_index y
+  rw [stepGraphonAvg_stepGraphon_apply P hP val hsymm (hnull _ (Subtype.property _))
+    (hnull _ (Subtype.property _)) hx hy, stepGraphon_apply P hP val hsymm hx hy]
+
+/-- **The pullback of a graphon on a finite carrier is its own block average** over the fibres of
+the pulling-back map, provided every fibre has positive measure. -/
+@[simp]
+theorem stepGraphonAvg_ofFibers_comap {κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] {ν : Measure κ} [IsProbabilityMeasure ν] (W : Graphon κ ν)
+    {g : Ω → κ} (hg : Measurable g) (hnull : ∀ x, μ (g ⁻¹' {g x}) ≠ 0) :
+    stepGraphonAvg (μ := μ) (Finpartition.ofFibers g)
+        (fun _ hp => Finpartition.measurableSet_of_mem_ofFibers hg hp) (W.comap g hg μ) =
+      W.comap g hg μ := by
+  obtain ⟨val, hsymm, hval⟩ := exists_stepGraphon_ofFibers_eq_comap (μ := μ) W hg
+  rw [← hval]
+  refine stepGraphonAvg_stepGraphon _ _ val hsymm fun p hp => ?_
+  obtain ⟨x, rfl⟩ := Finpartition.mem_ofFibers_parts.1 hp
+  exact hnull x
 
 end DenseGraphLimits
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 
 /-!
@@ -25,6 +26,8 @@ The finite-group properties of the projection are developed in
 * `quotient`: the spectrum of the fixed subring.
 * `projection`: the invariant-spectrum projection.
 * `specComap`: the contravariant spectrum map of an action element.
+* `specAction`: for a group action, the induced action on `Spec A` by automorphisms.
+* `actionMap`: the action graphs mapped into the kernel pair of the quotient projection.
 * `desc`: descent of an invariant morphism to an affine target.
 
 ## Main results
@@ -40,7 +43,7 @@ The finite-group properties of the projection are developed in
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 open scoped Pointwise
 
 namespace TauCeti.AffineInvariantQuotient
@@ -95,32 +98,60 @@ theorem preimage_specComap (g : G) :
       CommRingCat.ofHom (MulSemiringAction.toRingHom G A g) := by
   rw [specComap_def, Spec.preimage_map]
 
+/-- The identity element pulls back to the identity morphism of the spectrum. -/
 @[simp]
 theorem specComap_one : specComap A G 1 = 𝟙 _ := by
-  rw [specComap_def]
-  convert Spec.map_id (CommRingCat.of A) using 1
-  congr 1
-  ext a
-  exact one_smul G a
+  rw [specComap_def, ← Spec.map_id]
+  exact congrArg Spec.map (by ext a; exact one_smul G a)
 
 /-- Pullback reverses composition: these morphisms form a right action on the spectrum. -/
 @[simp]
 theorem specComap_mul (g h : G) :
     specComap A G (g * h) = specComap A G g ≫ specComap A G h := by
-  rw [specComap_def, specComap_def, specComap_def, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp]
-  congr 1
-  ext a
-  exact mul_smul g h a
+  rw [specComap_def, specComap_def, specComap_def, ← Spec.map_comp]
+  exact congrArg Spec.map (by ext a; exact mul_smul g h a)
 
 /-- The quotient projection is invariant under every element of the acting monoid. -/
 @[reassoc (attr := simp)]
 theorem specComap_projection (g : G) :
     specComap A G g ≫ projection A G = projection A G := by
   rw [specComap_def, projection_def, ← Spec.map_comp]
-  congr 1
-  ext a
-  exact a.property g
+  exact congrArg Spec.map (by ext a; exact a.property g)
+
+section ActionMap
+
+variable [Small.{u} G]
+
+/-- The action graphs over the invariant quotient. On the component indexed by `g`, the two
+projections are the identity and `specComap A G g`, respectively. The latter is the right action
+on spectra, induced contravariantly by `a ↦ g • a`. The assumption `Small.{u} G` ensures that
+the coproduct exists in `Scheme.{u}`; it is automatic for finite `G`. -/
+noncomputable def actionMap : (∐ fun _ : G ↦ Spec (CommRingCat.of A)) ⟶
+    pullback (projection A G) (projection A G) :=
+  Sigma.desc fun g ↦ pullback.lift (𝟙 _) (specComap A G g) (by simp)
+
+/-- The restriction of the action map to one component is the graph of its action element. -/
+@[reassoc (attr := simp)]
+theorem ι_actionMap (g : G) :
+    Sigma.ι (fun _ : G ↦ Spec (CommRingCat.of A)) g ≫ actionMap A G =
+      pullback.lift (𝟙 _) (specComap A G g) (by simp) := by
+  simp [actionMap]
+
+/-- The first projection of the action relation forgets the group element. -/
+@[reassoc (attr := simp)]
+theorem actionMap_fst : actionMap A G ≫ pullback.fst _ _ =
+    Sigma.desc (fun _ : G ↦ 𝟙 (Spec (CommRingCat.of A))) := by
+  ext g
+  simp
+
+/-- The second projection of the action relation applies the action element. -/
+@[reassoc (attr := simp)]
+theorem actionMap_snd : actionMap A G ≫ pullback.snd _ _ =
+    Sigma.desc (fun g : G ↦ specComap A G g) := by
+  ext g
+  simp
+
+end ActionMap
 
 variable {A G}
 
@@ -167,7 +198,7 @@ theorem hom_ext {Y : Scheme.{u}} [IsAffine Y] {f h : quotient A G ⟶ Y}
     (hfh : projection A G ≫ f = projection A G ≫ h) : f = h := by
   apply eq_of_SpecMap_comp_eq_of_isAffineOpen
     (CommRingCat.ofHom (FixedPoints.subring A G).subtype)
-    (Subtype.val_injective) ⊤ (isAffineOpen_top Y) (by simp) (by simp)
+    Subtype.val_injective ⊤ (isAffineOpen_top Y) (by simp) (by simp)
   exact hfh
 
 /-- The affine-target universal property: every invariant morphism factors uniquely through
@@ -175,16 +206,14 @@ the invariant quotient. -/
 theorem existsUnique_desc {Y : Scheme.{u}} [IsAffine Y]
     (f : Spec (CommRingCat.of A) ⟶ Y)
     (hf : ∀ g : G, specComap A G g ≫ f = f) :
-    ∃! h : quotient A G ⟶ Y, projection A G ≫ h = f := by
-  exact ⟨desc f hf, projection_desc f hf, fun h hh =>
-    hom_ext (hh.trans (projection_desc f hf).symm)⟩
+    ∃! h : quotient A G ⟶ Y, projection A G ≫ h = f :=
+  ⟨desc f hf, projection_desc f hf, fun _ hh ↦ hom_ext (hh.trans (projection_desc f hf).symm)⟩
 
 /-- Descending the pullback of an affine-target morphism recovers that morphism. -/
 @[simp]
 theorem desc_projection {Y : Scheme.{u}} [IsAffine Y] (f : quotient A G ⟶ Y) :
-    desc (projection A G ≫ f) (fun g => by simp) = f := by
-  apply hom_ext
-  exact projection_desc _ _
+    desc (projection A G ≫ f) (fun g => by simp) = f :=
+  hom_ext (projection_desc _ _)
 
 end Monoid
 
@@ -204,12 +233,24 @@ theorem specComap_base_apply (g : G) (x : PrimeSpectrum A) :
   rw [specComap_def]
   refine (Spec.map_apply (CommRingCat.ofHom (MulSemiringAction.toRingHom G A g)) x).trans ?_
   apply PrimeSpectrum.ext
-  rw [PrimeSpectrum.comap_asIdeal, PrimeSpectrum.asIdeal_smul,
-    Ideal.pointwise_smul_eq_comap]
   ext a
-  simp only [Ideal.mem_comap, CommRingCat.hom_ofHom, MulSemiringAction.toRingHom_apply,
-    MulSemiringAction.toRingAut, MonoidHom.coe_mk, OneHom.coe_mk,
-    MulSemiringAction.toRingEquiv_apply_symm_apply, inv_inv]
+  simp [Ideal.mem_inv_pointwise_smul_iff]
+
+/-- A group acting on `A` acts on `Spec A` by automorphisms: `g` acts by the spectrum map of
+`g⁻¹`, so that it sends a prime ideal `𝔭` to `g • 𝔭` (`specAction_apply`). -/
+noncomputable def specAction : G →* Aut (Spec (CommRingCat.of A)) where
+  toFun g := .of (asIso (specComap A G g⁻¹))
+  map_one' := by ext1; ext1; simp
+  map_mul' g h := by ext1; ext1; simp
+
+@[simp]
+theorem specAction_asIso_hom (g : G) : (specAction A G g).asIso.hom = specComap A G g⁻¹ :=
+  (rfl)
+
+/-- The automorphism `specAction A G g` sends a prime ideal `𝔭` to `g • 𝔭`. -/
+theorem specAction_apply (g : G) (x : PrimeSpectrum A) :
+    (specAction A G g).asIso.hom x = g • x := by
+  rw [specAction_asIso_hom, specComap_base_apply, inv_inv]
 
 end Group
 

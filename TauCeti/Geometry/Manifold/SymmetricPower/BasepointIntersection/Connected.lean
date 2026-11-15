@@ -71,7 +71,7 @@ theorem mapsTo_basepointDivisor_of_isPreconnected_of_eventually_mem (z : α)
     MapsTo f U (Sym.basepointDivisor z) := by
   -- the parameters near which `f` is contained in the divisor form an open set `S`; it suffices to
   -- show that `S` is relatively closed in `U`, since `U` is preconnected and meets `S` at `w`
-  set S : Set ℂ := {t | ∀ᶠ s in 𝓝 t, f s ∈ Sym.basepointDivisor z} with hS
+  set S : Set ℂ := {t | ∀ᶠ s in 𝓝 t, f s ∈ Sym.basepointDivisor z}
   have hSD : S ⊆ f ⁻¹' Sym.basepointDivisor z := fun s hs => hs.self_of_nhds
   suffices hsub : U ⊆ S from fun t ht => hSD (hsub ht)
   refine hU.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds ⟨w, hw, hev⟩ ?_
@@ -139,10 +139,10 @@ theorem basepointIntersectionOrder_ne_top_of_isPreconnected {z : α} {w : ℂ}
   obtain ⟨t, htU, htD⟩ := houtside
   exact htD (mapsTo_basepointDivisor_of_isPreconnected_of_eventually_mem z hU hf ha hw hev htU)
 
-omit [ChartedSpace ℂ α] in
+omit [T2Space α] [ChartedSpace ℂ α] in
 /-- A curve continuous on the closure of a nonempty bounded set `U ⊆ ℂ`, sending its frontier off
 the basepoint divisor, leaves the divisor at some parameter of `U`. -/
-theorem exists_mem_notMem_basepointDivisor_of_frontier {z : α} (hU₀ : U.Nonempty)
+theorem exists_mem_notMem_basepointDivisor_of_frontier [T1Space α] {z : α} (hU₀ : U.Nonempty)
     (hUc : IsCompact (closure U)) (hf : ContinuousOn f (closure U))
     (hfr : ∀ w ∈ frontier U, f w ∉ Sym.basepointDivisor z) :
     ∃ t ∈ U, f t ∉ Sym.basepointDivisor z := by

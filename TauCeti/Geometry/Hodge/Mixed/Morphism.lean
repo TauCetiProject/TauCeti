@@ -46,9 +46,7 @@ theory feeds Deligne's bigrading and the strictness theorem.
 
 ## References
 
-Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3. The
-morphism convention — a single rational map with the complex action derived — is the one
-specified for Layer L2 of the Hodge structures roadmap.
+Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3.
 -/
 
 public section
@@ -456,7 +454,7 @@ theorem zero_comp (f : Hom source target) : (0 : Hom target third).comp f = 0 :=
 /-- Composing with a zero morphism on the right gives zero. -/
 @[simp]
 theorem comp_zero (g : Hom target third) : g.comp (0 : Hom source target) = 0 := by
-  ext x
+  ext _
   exact g.toRatLinearMap.map_zero
 
 section Graded

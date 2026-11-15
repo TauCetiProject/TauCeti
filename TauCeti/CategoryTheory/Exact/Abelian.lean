@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
+public import TauCeti.CategoryTheory.Exact.BaseChange
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Abelian.Monomorphisms
 
@@ -224,6 +225,17 @@ theorem abelian_conflation_unop_iff (S : ShortComplex Cᵒᵖ) :
   (ShortComplex.shortExact_iff_unop S).symm
 
 end ExactStructure
+
+variable {C} in
+/-- Cobase change of a short exact sequence in an abelian category is short exact,
+with the same final term. -/
+theorem shortExact_cobaseChange {S : ShortComplex C} (hS : S.ShortExact) {X' Q : C}
+    {u : S.X₁ ⟶ X'} {v : S.X₂ ⟶ Q} {w : X' ⟶ Q} (sq : IsPushout S.f u v w) :
+    (ShortComplex.mk w (cobaseChangeπ S sq) (by simp)).ShortExact := by
+  have hT := (ExactStructure.abelian_conflation _).mp
+    ((ExactStructure.abelian C).conflation_cobaseChange
+      ((ExactStructure.abelian_conflation S).mpr hS) sq)
+  simpa only [cobaseChange_def] using hT
 
 end Abelian
 

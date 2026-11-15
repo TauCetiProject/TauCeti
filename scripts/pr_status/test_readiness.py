@@ -82,8 +82,8 @@ class GateContract(unittest.TestCase):
         self.check("awaiting-review", comments=[board(mode="init")])
         self.check("awaiting-review", comments=[])
 
-    def test_live_review_delays_enqueue_even_after_green_review(self):
-        self.check("review-in-progress", comments=[board(), marker()])
+    def test_old_markers_do_not_delay_enqueue(self):
+        self.check("ready-to-merge", comments=[board(), marker()])
         self.check("ready-to-merge", comments=[board(), marker(expires=NOW)])
         self.check("ready-to-merge", comments=[board(), marker(head="old")])
 

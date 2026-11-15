@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.IsSepClosed
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The absolute Galois group of an embedded extension as a fixing subgroup
@@ -37,12 +39,17 @@ cohomological operations along `L/K` are indexed by.
 * `TauCeti.separableClosureRingEquiv K L σ`: a chosen ring isomorphism `Lˢ ≃+* Kˢ` extending `σ`.
 * `TauCeti.absoluteGaloisGroupEquivFixingSubgroup K L σ`: the isomorphism of topological groups
   `G_L ≃ₜ* σ.fieldRange.fixingSubgroup` obtained by transport along that identification.
+* `TauCeti.separableClosureAlgEquiv K L σ`: the inverse identification, as a `K`-algebra
+  isomorphism `Kˢ ≃ₐ[K] Lˢ`.
 
 ## Main results
 
 * `TauCeti.absoluteGaloisGroupEquivFixingSubgroup_apply`: the isomorphism conjugates by
   `separableClosureRingEquiv K L σ`, so it intertwines the actions of `G_L` on `Lˢ` and of `G_K`
   on `Kˢ`.
+* `TauCeti.absoluteGaloisGroupMap_separableClosureAlgEquiv`: along the embedding
+  `separableClosureAlgEquiv K L σ`, the map `G_L → G_K` of `TauCeti.absoluteGaloisGroupMap` is the
+  isomorphism onto `σ.fieldRange.fixingSubgroup` followed by the inclusion.
 
 ## References
 
@@ -167,7 +174,7 @@ private theorem continuous_fixingSubgroupMulEquiv : Continuous (fixingSubgroupMu
         (separableClosureRingEquiv K L σ).symm y :=
       (IntermediateField.mem_fixingSubgroup_iff _ _).mp hg _ (subset_adjoin L _ ⟨y, hy, rfl⟩)
     rw [fixingSubgroupMulEquiv_apply, hgy, RingEquiv.apply_symm_apply]
-  refine (le_iff_le (K := adjoin K t)
+  refine (le_fixedField_iff_le_fixingSubgroup (K := adjoin K t)
     (H := fixingSubgroup (AbsoluteGaloisGroup K) t)).mp ?_ fun y ↦ ?_
   · exact adjoin_le_iff.mpr fun y hy ↦ (mem_fixedField_iff
       (H := fixingSubgroup (AbsoluteGaloisGroup K) t) y).mpr fun f hf ↦ hf ⟨y, hy⟩
@@ -207,5 +214,31 @@ theorem absoluteGaloisGroupEquivFixingSubgroup_symm_apply (h : ↥σ.fieldRange.
   conv_rhs => rw [← (absoluteGaloisGroupEquivFixingSubgroup K L σ).apply_symm_apply h]
   rw [absoluteGaloisGroupEquivFixingSubgroup_apply, RingEquiv.symm_apply_apply,
     RingEquiv.symm_apply_apply]
+
+/-! ### The induced map of absolute Galois groups -/
+
+/-- **The inverse identification `Kˢ ≃ₐ[K] Lˢ`**: the inverse of
+`separableClosureRingEquiv K L σ`, which is `K`-linear. Along it, the map `G_L → G_K` of
+`absoluteGaloisGroupMap` realizes `G_L` as the subgroup of `G_K` fixing `σ(L)`
+(`absoluteGaloisGroupMap_separableClosureAlgEquiv`). -/
+def separableClosureAlgEquiv : SeparableClosure K ≃ₐ[K] SeparableClosure L :=
+  AlgEquiv.ofRingEquiv (f := (separableClosureRingEquiv K L σ).symm)
+    (separableClosureRingEquiv_symm_algebraMap_base K L σ)
+
+/-- `separableClosureAlgEquiv K L σ` is the inverse of `separableClosureRingEquiv K L σ`. -/
+@[simp]
+theorem separableClosureAlgEquiv_apply (y : SeparableClosure K) :
+    separableClosureAlgEquiv K L σ y = (separableClosureRingEquiv K L σ).symm y :=
+  (rfl)
+
+/-- **Along `separableClosureAlgEquiv K L σ`, the map `G_L → G_K` is the identification of `G_L`
+with the subgroup fixing `σ(L)`**, followed by the inclusion of that subgroup. -/
+theorem absoluteGaloisGroupMap_separableClosureAlgEquiv :
+    absoluteGaloisGroupMap
+        (separableClosureAlgEquiv K L σ : SeparableClosure K →ₐ[K] SeparableClosure L) =
+      (ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) :=
+  ContinuousMonoidHom.ext fun g ↦ (absoluteGaloisGroupMap_eq_iff _).2 fun y ↦ by simp
 
 end TauCeti

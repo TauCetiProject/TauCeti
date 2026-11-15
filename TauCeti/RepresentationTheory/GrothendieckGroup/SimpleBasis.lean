@@ -35,6 +35,8 @@ the projective/simple coordinates used to express the Cartan map as a matrix.
 
 * `TauCeti.jordanHolderCoordinate_of`: the coordinate of an object class is its
   Jordan--Hölder multiplicity.
+* `TauCeti.jordanHolderCoordinate_eq_zero_of_not_isSimpleModule`: the coordinate of a module
+  that is not simple vanishes.
 * `TauCeti.linearIndependent_exactK0OfFamily`: pairwise nonisomorphic simple classes are
   linearly independent.
 * `TauCeti.span_range_exactK0OfFamily_eq_top`: an exhaustive family of simple classes spans.
@@ -99,6 +101,14 @@ theorem jordanHolderCoordinate_congr
   refine ExactK0.hom_ext fun M ↦ ?_
   simp only [jordanHolderCoordinate_of]
   exact congrArg Int.ofNat (jordanHolderMultiplicity_congr e)
+
+/-- The Jordan--Hölder coordinate of a module that is not simple is zero. -/
+@[simp]
+theorem jordanHolderCoordinate_eq_zero_of_not_isSimpleModule (hS : ¬ IsSimpleModule R S) :
+    jordanHolderCoordinate R S = 0 := by
+  refine ExactK0.hom_ext fun M ↦ ?_
+  rw [jordanHolderCoordinate_of, jordanHolderMultiplicity_eq_zero_of_not_isSimpleModule _ hS,
+    Nat.cast_zero, AddMonoidHom.zero_apply]
 
 end Coordinate
 
@@ -235,21 +245,7 @@ private theorem exactK0_of_type_mem_span_range_simple
       rw [ExactK0.of_congr e.toFGModuleCatIso]
       exact Submodule.subset_span (Set.mem_range_self i)
     have hNmem : ExactK0.of (FGModuleCat.of R N) ∈ G := ih inferInstance
-    let T : ShortComplex (FGModuleCat R) :=
-      ShortComplex.mk (FGModuleCat.ofHom N.subtype) (FGModuleCat.ofHom N.mkQ) (by
-        apply FGModuleCat.hom_ext
-        exact (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero)
-    have hconf : (finiteModulesExactStructure R).Conflation T :=
-      (finiteModulesExactStructure_conflation_iff R T).mpr <| by
-        apply ModuleCat.shortComplex_shortExact
-        · exact LinearMap.exact_subtype_mkQ N
-        · exact N.injective_subtype
-        · exact N.mkQ_surjective
-    have hrel :
-        (ExactK0.of (FGModuleCat.of R M) : ExactK0 (finiteModulesExactStructure R)) =
-          ExactK0.of (FGModuleCat.of R N) + ExactK0.of (FGModuleCat.of R Q) := by
-      simpa only [T, Q] using ExactK0.of_conflation hconf
-    rw [hrel]
+    rw [exactK0_of_eq_submodule_add_quotient R N]
     exact G.add_mem hNmem hQ
 
 omit hS in

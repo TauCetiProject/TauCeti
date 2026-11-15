@@ -5,16 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.AlgebraicGeometry.Limits
+public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Base change of a section of a scheme morphism
 
-A section of `f : X ⟶ S` induces a section on each base change `T ×_S X`. The projection
-formulas and naturality in `T` follow from pullback of split epimorphisms and symmetry of
-pullbacks.
+A `T`-point `x : T ⟶ X` of `X` over `S` has a graph `T ⟶ T ×_S X`, a section of the
+projection `T ×_S X ⟶ T` (`graphSection`). Graphs commute with base change along morphisms
+`T' ⟶ T` over `S`, and form pullback squares with the induced morphisms
+`T' ×_S X ⟶ T ×_S X` (`isPullback_graphSection`). A section `x₀` of `f` induces a section
+`baseChangeSection` on each base change `T ×_S X`: the graph of the `T`-point `T ⟶ S ⟶ X`
+(`basePoint`), so its projection formulas and naturality in `T` follow from those of graphs.
+For a base change `X' = S' ×_S X` along `g : S' ⟶ S`, the base-changed sections of `x₀` and of
+its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
+(`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
+
+Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
+giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`).
 -/
 
 public section
@@ -30,25 +39,82 @@ universe u
 
 noncomputable section
 
-variable {S X : Scheme.{u}} (f : X ⟶ S) (x₀ : S ⟶ X) (hx₀ : x₀ ≫ f = 𝟙 S)
+variable {S X : Scheme.{u}} {f : X ⟶ S} {x₀ : S ⟶ X} (hx₀ : x₀ ≫ f = 𝟙 S)
+
+/-- The **graph** `T ⟶ T ×_S X` of a `T`-point `x : T ⟶ X` of `X` over `S`: the section of the
+projection `T ×_S X ⟶ T` whose second component is `x`. -/
+def graphSection {T : Over S} (x : T ⟶ Over.mk f) : T.left ⟶ pullback T.hom f :=
+  pullback.lift (𝟙 T.left) x.left (by simpa using (Over.w x).symm)
+
+/-- The graph of a `T`-point is a section of the projection `T ×_S X ⟶ T`. -/
+@[reassoc (attr := simp)]
+lemma graphSection_fst {T : Over S} (x : T ⟶ Over.mk f) :
+    graphSection x ≫ pullback.fst T.hom f = 𝟙 T.left :=
+  pullback.lift_fst _ _ _
+
+/-- The second component of the graph of a `T`-point `x` is `x` itself. -/
+@[reassoc (attr := simp)]
+lemma graphSection_snd {T : Over S} (x : T ⟶ Over.mk f) :
+    graphSection x ≫ pullback.snd T.hom f = x.left :=
+  pullback.lift_snd _ _ _
+
+/-- Graphs commute with base change: the graph of `φ ≫ x` followed by the induced morphism
+`T' ×_S X ⟶ T ×_S X` is `φ` followed by the graph of `x`. -/
+@[reassoc]
+lemma graphSection_comp_pullback_map {T' T : Over S} (φ : T' ⟶ T) (x : T ⟶ Over.mk f) :
+    graphSection (φ ≫ x) ≫ ((Over.pullback f).map φ).left = φ.left ≫ graphSection x := by
+  apply pullback.hom_ext <;> simp
+
+/-- The graph of a `T`-point `x` and the graph of its base change `φ ≫ x` along `φ : T' ⟶ T` form
+a pullback square with the induced morphism `T' ×_S X ⟶ T ×_S X`. -/
+lemma isPullback_graphSection {T' T : Over S} (φ : T' ⟶ T) (x : T ⟶ Over.mk f) :
+    IsPullback (graphSection (φ ≫ x)) φ.left ((Over.pullback f).map φ).left
+      (graphSection x) := by
+  -- The square formed by `T' ×_S X ⟶ T ×_S X` and the two projections is a pullback square;
+  -- pasting with it gives a square whose horizontal composites are identities.
+  refine IsPullback.of_right ?_ (graphSection_comp_pullback_map φ x)
+    (Over.isPullback_pullback_map_left f φ).flip
+  rw [graphSection_fst, graphSection_fst]
+  exact IsPullback.id_horiz φ.left
+
+/-- The `T`-point `T ⟶ S ⟶ X` of `X` over `S` given by a section `x₀` of `f`. -/
+def basePoint (T : Over S) : T ⟶ Over.mk f :=
+  Over.homMk (T.hom ≫ x₀) (by simp [hx₀])
+
+/-- The underlying morphism of the base point is `T ⟶ S ⟶ X`. -/
+@[simp]
+lemma basePoint_left (T : Over S) : (basePoint hx₀ T).left = T.hom ≫ x₀ :=
+  (rfl)
+
+/-- The base points are compatible with morphisms over `S`. -/
+@[reassoc (attr := simp)]
+lemma comp_basePoint {T' T : Over S} (φ : T' ⟶ T) : φ ≫ basePoint hx₀ T = basePoint hx₀ T' := by
+  ext
+  simp [Over.w_assoc φ]
+
+variable (f x₀)
 
 /-- The base change `x₀_T : T ⟶ T ×_S X` of a section `x₀` of `f : X ⟶ S` to a scheme `T` over
-`S`. -/
+`S`: the graph of the `T`-point `T ⟶ S ⟶ X`. -/
 def baseChangeSection (T : Over S) : T.left ⟶ pullback T.hom f :=
-  ((⟨x₀, hx₀⟩ : SplitEpi f).pullback T.hom).section_ ≫
-    (pullbackSymmetry f T.hom).hom
+  graphSection (basePoint hx₀ T)
+
+/-- The graph of the base point `T ⟶ S ⟶ X` is the base-changed section. -/
+lemma graphSection_basePoint (T : Over S) :
+    graphSection (basePoint hx₀ T) = baseChangeSection f x₀ hx₀ T :=
+  (rfl)
 
 /-- The base-changed section is a section of the projection `T ×_S X ⟶ T`. -/
 @[reassoc (attr := simp)]
 lemma baseChangeSection_fst (T : Over S) :
     baseChangeSection f x₀ hx₀ T ≫ pullback.fst T.hom f = 𝟙 T.left :=
-  by simp [baseChangeSection, Category.assoc]
+  graphSection_fst _
 
 /-- The base-changed section followed by the projection to `X` is `T ⟶ S ⟶ X`. -/
 @[reassoc (attr := simp)]
 lemma baseChangeSection_snd (T : Over S) :
     baseChangeSection f x₀ hx₀ T ≫ pullback.snd T.hom f = T.hom ≫ x₀ :=
-  by simp [baseChangeSection, Category.assoc]
+  graphSection_snd _
 
 /-- The base-changed sections are compatible with the morphisms `T' ×_S X ⟶ T ×_S X` induced by
 morphisms `T' ⟶ T` over `S`. -/
@@ -57,29 +123,76 @@ lemma baseChangeSection_comp_pullback_map {T' T : Over S} (φ : T' ⟶ T) :
     baseChangeSection f x₀ hx₀ T' ≫
         ((Over.pullback f).map φ).left =
       φ.left ≫ baseChangeSection f x₀ hx₀ T := by
-  let h : SplitEpi f := ⟨x₀, hx₀⟩
-  have hcomm : (pullbackSymmetry f T'.hom).hom ≫ ((Over.pullback f).map φ).left =
-      pullback.map f T'.hom f T.hom (𝟙 X) φ.left (𝟙 S) (by simp)
-        (by simp [Over.w φ]) ≫ (pullbackSymmetry f T.hom).hom := by
-    apply pullback.hom_ext
-    · simp only [Over.pullback_map_left]
-      rw [pullback.map]
-      simp only [Category.assoc, pullback.lift_fst, pullback.lift_snd,
-        pullbackSymmetry_hom_comp_fst]
-      rw [← Category.assoc, pullbackSymmetry_hom_comp_fst]
-    · simp only [Over.pullback_map_left]
-      rw [pullback.map]
-      simp only [Category.assoc, pullback.lift_fst, pullback.lift_snd,
-        pullbackSymmetry_hom_comp_snd]
-      simp
-  have hsection : (h.pullback T'.hom).section_ ≫
-      pullback.map f T'.hom f T.hom (𝟙 X) φ.left (𝟙 S) (by simp)
-        (by simp [Over.w φ]) = φ.left ≫ (h.pullback T.hom).section_ := by
-    exact h.pullback_section_map_of_eq T.hom T'.hom φ.left (Over.w φ)
-  simp only [baseChangeSection, hcomm, Category.assoc]
-  exact congrArg (· ≫ (pullbackSymmetry f T.hom).hom) hsection
+  rw [baseChangeSection, baseChangeSection, ← comp_basePoint hx₀ φ]
+  exact graphSection_comp_pullback_map φ (basePoint hx₀ T)
+
+/-- The base-changed section over `T'` is the pullback of the base-changed section over `T`
+along a morphism `T' ⟶ T` of schemes over `S`. -/
+lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
+    IsPullback (baseChangeSection f x₀ hx₀ T') φ.left
+      ((Over.pullback f).map φ).left (baseChangeSection f x₀ hx₀ T) :=
+  IsPullback.of_right
+    (by simpa only [baseChangeSection_fst] using IsPullback.id_horiz φ.left)
+    (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) (Over.isPullback_pullback_map_left f φ).flip
+
+variable {S' : Scheme.{u}} (g : S' ⟶ S)
+
+/-- The base-changed sections are compatible with `T ×_S X ≅ T ×_{S'} (S' ×_S X)`. -/
+@[reassoc]
+lemma baseChangeSection_comp_pullbackRightPullbackFstIso_inv (T : Over S') :
+    baseChangeSection f x₀ hx₀ ((Over.map g).obj T) ≫ (pullbackRightPullbackFstIso g f T.hom).inv =
+      𝟙 T.left ≫ baseChangeSection (pullback.fst g f) (baseChangeSection f x₀ hx₀ (Over.mk g))
+        (baseChangeSection_fst f x₀ hx₀ (Over.mk g)) T := by
+  -- The lemmas for the base-changed sections are stated for `T.hom`, which `simp` does not match
+  -- against `((Over.map g).obj T).hom = T.hom ≫ g` and `(Over.mk g).hom = g`.
+  have h₁ := baseChangeSection_fst f x₀ hx₀ ((Over.map g).obj T)
+  have h₂ := baseChangeSection_snd f x₀ hx₀ ((Over.map g).obj T)
+  have h₃ := baseChangeSection_fst f x₀ hx₀ (Over.mk g)
+  have h₄ := baseChangeSection_snd f x₀ hx₀ (Over.mk g)
+  simp only [Over.map_obj_hom, Over.mk_hom] at h₁ h₂ h₃ h₄
+  apply pullback.hom_ext
+  · simpa using h₁
+  · apply pullback.hom_ext
+    · simp [reassoc_of% h₁, h₃]
+    · simp [h₂, h₄]
 
 end
+
+section SectionAlgHom
+
+variable {Z S : Scheme.{u}} (g : Z ⟶ S) {σ : S ⟶ Z} (hσ : σ ≫ g = 𝟙 S)
+
+include hσ in
+/-- A section `σ` of `g` pulls `g⁻¹ U` back to `U`. -/
+theorem preimage_preimage_of_comp_eq_id (U : S.Opens) : σ ⁻¹ᵁ g ⁻¹ᵁ U = U := by
+  rw [← Scheme.Hom.comp_preimage, hσ, Scheme.Hom.id_preimage]
+
+/-- The ring map `Γ(S, U) → Γ(Z, g⁻¹ U) → Γ(S, U)` of a section is the identity. -/
+theorem app_comp_appLE_of_comp_eq_id (U : S.Opens) :
+    g.app U ≫ σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge = 𝟙 _ := by
+  rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
+  have key : ∀ (f : S ⟶ S) (_ : f = 𝟙 S) (e : U ≤ f ⁻¹ᵁ U), f.appLE U U e = 𝟙 _ := by
+    rintro _ rfl e
+    simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
+    exact S.presheaf.map_id _
+  exact key _ hσ _
+
+/-- The `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` of a section `σ` of `g`, over an open
+`U` of `S`. -/
+noncomputable def sectionAlgHom (U : S.Opens) :
+    letI := (g.app U).hom.toAlgebra
+    Γ(Z, g ⁻¹ᵁ U) →ₐ[Γ(S, U)] Γ(S, U) :=
+  letI := (g.app U).hom.toAlgebra
+  { (σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge).hom with
+    commutes' a := congr($(app_comp_appLE_of_comp_eq_id g hσ U).hom a) }
+
+/-- The algebra map `σ^*` of a section evaluates the restriction along `σ`. -/
+@[simp]
+theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
+    sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
+  (rfl)
+
+end SectionAlgHom
 
 end AlgebraicGeometry
 end TauCeti

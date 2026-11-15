@@ -100,15 +100,13 @@ theorem prod_map_eq (f : B → G)
     {word word' : List B} (h : IsBraidMove M word word') :
     (word.map f).prod = (word'.map f).prod := by
   cases h with
-  | mk pre suf i j =>
-      simp only [List.map_append, List.prod_append]
-      rw [hbraid i j]
+  | mk pre suf i j => simp only [List.map_append, List.prod_append, hbraid i j]
 
 /-- A braid move preserves the element represented by a word in a Coxeter system. -/
 theorem wordProd_eq (cs : CoxeterSystem M W) {word word' : List B}
     (h : IsBraidMove M word word') : cs.wordProd word = cs.wordProd word' := by
-  apply h.prod_map_eq cs.simple
-  exact cs.wordProd_braidWord_eq
+  cases h with
+  | mk pre suf i j => simp only [wordProd_append, cs.wordProd_braidWord_eq i j]
 
 end IsBraidMove
 
@@ -151,21 +149,13 @@ protected theorem induction_on {P : List B → List B → Prop} {word word' : Li
 /-- Adding a common prefix preserves braid equivalence. -/
 theorem append_left (pre : List B) {word word' : List B}
     (h : BraidEquivalent M word word') :
-    BraidEquivalent M (pre ++ word) (pre ++ word') := by
-  induction h with
-  | rel word word' h => exact of_isBraidMove (h.append_left pre)
-  | refl word => exact .refl _
-  | symm word word' _ ih => exact ih.symm
-  | trans word word' word'' _ _ ih ih' => exact ih.trans ih'
+    BraidEquivalent M (pre ++ word) (pre ++ word') :=
+  h.induction_on (fun h => of_isBraidMove (h.append_left pre)) (fun _ => .refl _) .symm .trans
 
 /-- Adding a common suffix preserves braid equivalence. -/
 theorem append_right {word word' : List B} (h : BraidEquivalent M word word')
-    (suf : List B) : BraidEquivalent M (word ++ suf) (word' ++ suf) := by
-  induction h with
-  | rel word word' h => exact of_isBraidMove (h.append_right suf)
-  | refl word => exact .refl _
-  | symm word word' _ ih => exact ih.symm
-  | trans word word' word'' _ _ ih ih' => exact ih.trans ih'
+    (suf : List B) : BraidEquivalent M (word ++ suf) (word' ++ suf) :=
+  h.induction_on (fun h => of_isBraidMove (h.append_right suf)) (fun _ => .refl _) .symm .trans
 
 /-- Appending braid-equivalent words gives braid-equivalent words. -/
 theorem append {word₁ word₁' word₂ word₂' : List B}
@@ -175,30 +165,21 @@ theorem append {word₁ word₁' word₂ word₂' : List B}
 
 /-- Braid-equivalent words have the same length. -/
 theorem length_eq {word word' : List B} (h : BraidEquivalent M word word') :
-    word.length = word'.length := by
-  induction h with
-  | rel word word' h => exact h.length_eq
-  | refl word => rfl
-  | symm word word' _ ih => exact ih.symm
-  | trans word word' word'' _ _ ih ih' => exact ih.trans ih'
+    word.length = word'.length :=
+  h.induction_on IsBraidMove.length_eq (fun _ => rfl) Eq.symm Eq.trans
 
 /-- Braid equivalence preserves evaluation in any monoid whose chosen generators satisfy the
 braid relations. -/
 theorem prod_map_eq (f : B → G)
     (hbraid : ∀ i j, ((braidWord M i j).map f).prod = ((braidWord M j i).map f).prod)
     {word word' : List B} (h : BraidEquivalent M word word') :
-    (word.map f).prod = (word'.map f).prod := by
-  induction h with
-  | rel word word' h => exact h.prod_map_eq f hbraid
-  | refl word => rfl
-  | symm word word' _ ih => exact ih.symm
-  | trans word word' word'' _ _ ih ih' => exact ih.trans ih'
+    (word.map f).prod = (word'.map f).prod :=
+  h.induction_on (IsBraidMove.prod_map_eq f hbraid) (fun _ => rfl) Eq.symm Eq.trans
 
 /-- Braid-equivalent words represent the same element of a Coxeter system. -/
 theorem wordProd_eq (cs : CoxeterSystem M W) {word word' : List B}
-    (h : BraidEquivalent M word word') : cs.wordProd word = cs.wordProd word' := by
-  apply h.prod_map_eq cs.simple
-  exact cs.wordProd_braidWord_eq
+    (h : BraidEquivalent M word word') : cs.wordProd word = cs.wordProd word' :=
+  h.induction_on (IsBraidMove.wordProd_eq cs) (fun _ => rfl) Eq.symm Eq.trans
 
 /-- Braid equivalence preserves reducedness in a Coxeter system. -/
 theorem isReduced_iff (cs : CoxeterSystem M W) {word word' : List B}
@@ -208,7 +189,8 @@ theorem isReduced_iff (cs : CoxeterSystem M W) {word word' : List B}
 /-- The two braid words for a pair of indices are braid equivalent. -/
 theorem braidWord (i j : B) :
     BraidEquivalent M (CoxeterSystem.braidWord M i j) (CoxeterSystem.braidWord M j i) := by
-  simpa using of_isBraidMove (IsBraidMove.mk (M := M) [] [] i j)
+  simpa only [List.nil_append, List.append_nil] using
+    of_isBraidMove (IsBraidMove.mk (M := M) [] [] i j)
 
 end BraidEquivalent
 

@@ -9,6 +9,10 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.Fourier.Inversion
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Analysis.Fourier.Convolution
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The heat kernel on a Euclidean space
@@ -35,14 +39,25 @@ a heat kernel assumes `0 < t`.
 
 * `TauCeti.heatKernel`: the heat kernel `K_t(x)`.
 * `TauCeti.heatKernel_pos`: `K_t > 0` for `t > 0`.
+* `TauCeti.heatKernel_le`: the pointwise bound by `(4πt)^(-n/2)`.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
+* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two positive times,
+  `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
+* `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
+* `TauCeti.memLp_heatKernel`: `K_t` belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
+* `TauCeti.fourierInv_exp_neg_mul_norm_sq`: the inverse Fourier transform of `exp(-4π² t ‖ξ‖²)`
+  is `K_t`.
+* `TauCeti.fourier_heatKernel_convolution`: `𝓕 (K_t ⋆ f)(ξ) = exp(-4π² t ‖ξ‖²) • 𝓕 f(ξ)` for
+  integrable `f`.
+* `TauCeti.heatKernel_convolution_eq_intervalIntegral`: on `ℝ`, the heat kernel smoothing of a
+  function supported in `[a, b]` is an integral over `[a, b]` against a Gaussian.
 
 ## References
 
@@ -58,7 +73,7 @@ noncomputable section
 namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory Real
-open scoped RealInnerProductSpace Convolution FourierTransform ContDiff
+open scoped RealInnerProductSpace Convolution FourierTransform ContDiff ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -78,6 +93,14 @@ theorem heatKernel_pos {t : ℝ} (ht : 0 < t) (x : E) : 0 < heatKernel t x := by
   rw [heatKernel_apply]
   positivity
 
+/-- The heat kernel is bounded by its value at the origin. -/
+theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
+    heatKernel t x ≤ (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+  rw [heatKernel_apply]
+  exact mul_le_of_le_one_right (by positivity)
+    (exp_le_one_iff.mpr (div_nonpos_of_nonpos_of_nonneg
+      (neg_nonpos.mpr (sq_nonneg _)) (by positivity)))
+
 /-- The heat kernel is radial; in particular it is even. -/
 @[simp]
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
@@ -88,14 +111,20 @@ of `K_1` by the factor `(√t)⁻¹`: `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ 
 theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
     heatKernel t x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel 1 ((√t)⁻¹ • x) := by
   have hst : 0 < √t := sqrt_pos.2 ht
-  have hpow : (√t)⁻¹ ^ Module.finrank ℝ E = t ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_natCast, inv_rpow (by positivity), ← rpow_mul ht.le, ← rpow_neg ht.le]
-    ring_nf
   have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
     rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
     ring
-  rw [heatKernel_apply, heatKernel_apply, hnorm, hpow, mul_one, mul_rpow (by positivity) ht.le]
+  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht.le, mul_one,
+    mul_rpow (by positivity) ht.le]
   field_simp
+
+/-- **Parabolic scaling of the heat kernel between two times.** For `t, s > 0`,
+`K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` with `n = dim E`. -/
+theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x : E) :
+    heatKernel (t * s) x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel s ((√t)⁻¹ • x) := by
+  rw [heatKernel_eq_mul_heatKernel_one_smul (mul_pos ht hs),
+    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv, mul_pow]
+  ring_nf
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
@@ -172,11 +201,65 @@ theorem integral_heatKernel {t : ℝ} (ht : 0 < t) : ∫ x : E, heatKernel t x =
 theorem integrable_heatKernel {t : ℝ} (ht : 0 < t) : Integrable (heatKernel t : E → ℝ) :=
   Integrable.of_integral_ne_zero (by simp [integral_heatKernel ht])
 
+/-- The heat kernel has finite `Lᵠ` norm for every `1 ≤ q ≤ ∞`, with the explicit bound
+`‖K_t‖_q ≤ (4πt)^(-(n/2)(1 - 1/q))`. -/
+theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 ≤ q) :
+    eLpNorm (heatKernel t : E → ℝ) q volume ≤
+      ENNReal.ofReal ((4 * π * t) ^
+        (-(Module.finrank ℝ E : ℝ) / 2 * (1 - 1 / q.toReal))) := by
+  have hm : AEStronglyMeasurable (heatKernel t : E → ℝ) volume :=
+    (contDiff_heatKernel (k := ⊤) t).continuous.aestronglyMeasurable
+  set c : ℝ := (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2)
+  have hc : 0 < c := by positivity
+  have hbound : ∀ x : E, ‖heatKernel t x‖ ≤ c := fun x => by
+    rw [norm_of_nonneg (heatKernel_pos ht x).le]
+    exact heatKernel_le ht x
+  by_cases hqt : q = (∞ : ℝ≥0∞)
+  · subst q
+    rw [eLpNorm_exponent_top hm]
+    simpa [c] using eLpNormEssSup_le_of_ae_bound (Filter.Eventually.of_forall hbound)
+  have hq0 : q ≠ 0 := ne_of_gt (zero_lt_one.trans_le hq)
+  have hqr : 1 ≤ q.toReal := by
+    exact_mod_cast ENNReal.toReal_mono hqt hq
+  have hpow (x : E) : ‖heatKernel t x‖ₑ ^ q.toReal ≤
+      ENNReal.ofReal (c ^ (q.toReal - 1)) * ENNReal.ofReal (heatKernel t x) := by
+    rw [Real.eNorm_eq_ofReal (heatKernel_pos ht x).le, ENNReal.ofReal_rpow_of_nonneg
+      (heatKernel_pos ht x).le (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+    apply ENNReal.ofReal_le_ofReal
+    calc (heatKernel t x) ^ q.toReal =
+        (heatKernel t x) ^ (q.toReal - 1) * heatKernel t x := by
+          rw [← rpow_add_one (heatKernel_pos ht x).ne', sub_add_cancel]
+      _ ≤ c ^ (q.toReal - 1) * heatKernel t x :=
+          mul_le_mul_of_nonneg_right
+            (rpow_le_rpow (heatKernel_pos ht x).le (heatKernel_le ht x) (by linarith))
+            (heatKernel_pos ht x).le
+  have hint : ∫⁻ x : E, ‖heatKernel t x‖ₑ ^ q.toReal ≤
+      ENNReal.ofReal (c ^ (q.toReal - 1)) := by
+    calc (∫⁻ x : E, ‖heatKernel t x‖ₑ ^ q.toReal) ≤
+        ∫⁻ x : E, ENNReal.ofReal (c ^ (q.toReal - 1)) * ENNReal.ofReal (heatKernel t x) :=
+          lintegral_mono hpow
+      _ = ENNReal.ofReal (c ^ (q.toReal - 1)) := by
+          rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+            ← ofReal_integral_eq_lintegral_ofReal (integrable_heatKernel ht)
+              (Filter.Eventually.of_forall fun x => (heatKernel_pos ht x).le),
+            integral_heatKernel ht, ENNReal.ofReal_one, mul_one]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqt hm]
+  refine (ENNReal.rpow_le_rpow hint (by positivity)).trans_eq ?_
+  rw [ENNReal.ofReal_rpow_of_pos (by positivity), ← rpow_mul hc.le]
+  have he : (q.toReal - 1) * (1 / q.toReal) = 1 - 1 / q.toReal := by
+    field_simp
+  rw [he]
+  simp only [c, ← rpow_mul (by positivity : 0 ≤ 4 * π * t)]
+
+/-- The heat kernel belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`. -/
+theorem memLp_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 ≤ q) :
+    MemLp (heatKernel t : E → ℝ) q volume :=
+  (eLpNorm_heatKernel_le ht hq).trans_lt ENNReal.ofReal_lt_top
+
 /-- **The semigroup property of the heat kernel** (Chapman–Kolmogorov):
 `K_t ⋆ K_s = K_{t+s}` for `t, s > 0`. -/
 theorem heatKernel_convolution_heatKernel {t s : ℝ} (ht : 0 < t) (hs : 0 < s) :
     heatKernel t ⋆ heatKernel s = (heatKernel (t + s) : E → ℝ) := by
-  have hts : 0 < t + s := by positivity
   set p : ℝ := (Module.finrank ℝ E : ℝ) / 2
   set b : ℝ := (t + s) / (4 * t * s)
   have hb : 0 < b := by positivity
@@ -243,5 +326,50 @@ theorem fourier_heatKernel {t : ℝ} (ht : 0 < t) (ξ : E) :
     simp only [c, neg_div]
     rw [rpow_neg (by positivity), inv_mul_cancel₀ (by positivity)]
   rw [hpow, hexp, ← mul_assoc, ← Complex.ofReal_mul, hc, Complex.ofReal_one, one_mul]
+
+/-- **The heat kernel is the inverse Fourier transform of the heat symbol.** For `t > 0`,
+`𝓕⁻ (ξ ↦ exp(-4π² t ‖ξ‖²)) = K_t`. This is Fourier inversion applied to
+`TauCeti.fourier_heatKernel`. -/
+theorem fourierInv_exp_neg_mul_norm_sq {t : ℝ} (ht : 0 < t) :
+    𝓕⁻ (fun ξ : E ↦ ((exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
+      fun x ↦ (heatKernel t x : ℂ) := by
+  have hb : 0 < ((4 * π ^ 2 * t : ℝ) : ℂ).re := by
+    rw [Complex.ofReal_re]
+    positivity
+  -- The symbol is the Fourier transform of `K_t`, and also the Schwartz Gaussian at `4π² t`.
+  have hsym : (fun ξ : E ↦ ((exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
+      𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) :=
+    funext fun ξ ↦ (fourier_heatKernel ht ξ).symm
+  have hF : 𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) =
+      ⇑(SchwartzMap.gaussian (V := E) hb) := by
+    rw [SchwartzMap.coe_gaussian_ofReal, hsym]
+  rw [hsym]
+  exact (Complex.continuous_ofReal.comp
+    (contDiff_heatKernel (k := 0) t).continuous).fourierInv_fourier_eq
+      (integrable_heatKernel ht).ofReal (hF ▸ (SchwartzMap.gaussian hb).integrable)
+
+/-- **The Fourier transform of a heat convolution.** For integrable `f` and `t > 0`, the Fourier
+integral of `K_t ⋆ f` is `exp(-4π² t ‖ξ‖²) • 𝓕 f ξ`. -/
+theorem fourier_heatKernel_convolution {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [CompleteSpace F] {t : ℝ} (ht : 0 < t) {f : E → F} (hf : Integrable f) (ξ : E) :
+    𝓕 (heatKernel t ⋆ f) ξ = exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) • 𝓕 f ξ := by
+  rw [fourier_convolution_eq (integrable_heatKernel ht) hf, fourier_heatKernel ht,
+    Complex.coe_smul]
+
+/-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
+transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/
+theorem heatKernel_convolution_eq_intervalIntegral {t a b : ℝ} {g : ℝ → ℝ}
+    (hgs : Function.support g ⊆ Set.Icc a b) (hab : a ≤ b) (x : ℝ) :
+    (heatKernel t ⋆ g) x =
+      ∫ y in a..b, (4 * π * t) ^ (-(1 : ℝ) / 2) * g y * Real.exp (-(4 * t)⁻¹ * (x - y) ^ 2) := by
+  rw [convolution_lsmul_swap, intervalIntegral.integral_of_le hab,
+    ← integral_Icc_eq_integral_Ioc, setIntegral_eq_integral_of_forall_compl_eq_zero]
+  · congr 1
+    funext y
+    rw [heatKernel_apply, Module.finrank_self, Real.norm_eq_abs, sq_abs, smul_eq_mul,
+      show -(x - y) ^ 2 / (4 * t) = -(4 * t)⁻¹ * (x - y) ^ 2 by ring, Nat.cast_one]
+    ring
+  · intro y hy
+    rw [Function.notMem_support.1 fun h ↦ hy (hgs h), mul_zero, zero_mul]
 
 end TauCeti

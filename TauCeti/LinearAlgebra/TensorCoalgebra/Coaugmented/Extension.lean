@@ -15,7 +15,9 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.GradedCoderivati
 the words of positive length by `TauCeti.TensorWords.reducedInclusion`, with retraction
 `TauCeti.TensorWords.reducedProjection`.  Any endomorphism of the reduced words therefore has a
 canonical extension to all tensor words, the one that is zero on the empty word:
-`TauCeti.TensorWords.extendReduced`.
+`TauCeti.TensorWords.extendReduced`. Conversely, `TauCeti.TensorWords.restrictReduced`
+compresses an endomorphism to the positive-length words. Restriction retracts extension,
+and recovers an endomorphism whose values have zero counit and which annihilates the empty word.
 
 The extension is what carries the coderivation theory of the reduced coalgebra over to the
 coaugmented one, whose coproduct admits the two degenerate cuts at the ends of a word.  The
@@ -29,6 +31,7 @@ coderivation over `b`: the square-zero law
 
 * `TauCeti.TensorWords.extendReduced`: extend an endomorphism of the reduced words by zero on the
   empty word.
+* `TauCeti.TensorWords.restrictReduced`: restrict an endomorphism by inclusion and projection.
 
 ## Main results
 
@@ -120,6 +123,47 @@ theorem extendReduced_sq (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWord
       reducedProjection_reducedInclusion]
   rw [h, hf, LinearMap.zero_comp, LinearMap.comp_zero]
 
+/-- Restrict an endomorphism to positive-length words by inclusion and projection. -/
+noncomputable def restrictReduced (b : TensorWords R M →ₗ[R] TensorWords R M) :
+    ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M :=
+  reducedProjection R M ∘ₗ b ∘ₗ reducedInclusion R M
+
+/-- The restricted endomorphism is computed by inclusion, application, and projection. -/
+@[simp]
+theorem restrictReduced_apply (b : TensorWords R M →ₗ[R] TensorWords R M)
+    (w : ReducedTensorWords R M) :
+    restrictReduced b w = reducedProjection R M (b (reducedInclusion R M w)) :=
+  (rfl)
+
+/-- Restriction retracts extension of reduced endomorphisms. -/
+@[simp]
+theorem restrictReduced_extendReduced
+    (f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :
+    restrictReduced (extendReduced f) = f := by
+  apply LinearMap.ext
+  intro w
+  simp
+
+/-- An endomorphism with counit-zero values that annihilates the empty word is recovered
+from its restriction to positive-length words. -/
+theorem extendReduced_restrictReduced
+    (b : TensorWords R M →ₗ[R] TensorWords R M)
+    (hε : counit R M ∘ₗ b = 0) (h₁ : b 1 = 0) :
+    extendReduced (restrictReduced b) = b := by
+  apply LinearMap.ext
+  intro w
+  have hc (z : TensorWords R M) : counit R M (b z) = 0 :=
+    LinearMap.congr_fun hε z
+  have hout (z : TensorWords R M) :
+      reducedInclusion R M (reducedProjection R M (b z)) = b z := by
+    simpa only [hc, map_zero, add_zero] using
+      reducedInclusion_reducedProjection_add_algebraMap_counit R M (b z)
+  have hin : b (reducedInclusion R M (reducedProjection R M w)) = b w := by
+    have h := congrArg b (reducedInclusion_reducedProjection_add_algebraMap_counit R M w)
+    simpa only [map_add, Algebra.algebraMap_eq_smul_one, map_smul,
+      h₁, smul_zero, add_zero] using h
+  rw [extendReduced_apply, restrictReduced_apply, hout, hin]
+
 end Extension
 
 section GradedExtension
@@ -128,7 +172,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The extension of a homogeneous endomorphism of the reduced words is homogeneous of the same
 degree in the total letter degree of the coaugmented words. -/
-theorem isHomogeneous_extendReduced {G : InternalGrading R M} {r : ℤ}
+theorem isHomogeneous_extendReduced {G : InternalGrading R M ℤ} {r : ℤ}
     {f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hf : LinearMap.IsHomogeneous f (ReducedTensorWords.gradedPiece G)
       (ReducedTensorWords.gradedPiece G) r) :
@@ -180,7 +224,7 @@ private theorem lTensor_comp_extend_map (f : ReducedTensorWords R M →ₗ[R] Re
 
 /-- Twisting the left factor of an included tensor and then including it is the inclusion of the
 twisted tensor, as a map. -/
-private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M) (q : ℤ) :
+private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M ℤ) (q : ℤ) :
     LinearMap.rTensor (TensorWords R M) (map (InternalGrading.koszulTwist G q)) ∘ₗ
         TensorProduct.map (reducedInclusion R M) (reducedInclusion R M)
       = TensorProduct.map (reducedInclusion R M) (reducedInclusion R M) ∘ₗ
@@ -197,7 +241,7 @@ private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M) 
 
 /-- The extension of a `q`-twisted graded coderivation of the reduced tensor words is a `q`-twisted
 graded coderivation of the coaugmented ones. -/
-theorem isGradedCoderivation_extendReduced {G : InternalGrading R M} {q : ℤ}
+theorem isGradedCoderivation_extendReduced {G : InternalGrading R M ℤ} {q : ℤ}
     {f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hf : ReducedTensorWords.IsGradedCoderivation G q f) :
     IsGradedCoderivation G q (extendReduced f) := by

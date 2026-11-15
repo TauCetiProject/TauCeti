@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Exactness
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 
 /-!
@@ -20,12 +20,12 @@ public section
 
 namespace TauCeti.MonoidAlgebra
 
-/-- The counit of a monoid algebra over its coefficient ring is its coefficient-sum
+/-- The counit of a monoid algebra over its coefficient semiring is its coefficient-sum
 augmentation. -/
 @[simp]
-theorem counitAlgHom_toRingHom (R M : Type*) [CommRing R] [Monoid M] :
+theorem counitAlgHom_toRingHom (R M : Type*) [CommSemiring R] [Monoid M] :
     (Bialgebra.counitAlgHom R (MonoidAlgebra R M) : MonoidAlgebra R M →+* R) =
-      augmentation R M := by
+      MonoidAlgebra.augmentation R M := by
   apply MonoidAlgebra.ringHom_ext <;> intro <;> simp
 
 /-- The bialgebra map of monoid algebras induced by a monoid homomorphism is, as a ring

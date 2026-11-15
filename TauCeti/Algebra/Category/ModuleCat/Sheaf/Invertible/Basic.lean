@@ -30,9 +30,7 @@ The predicate implies Mathlib's local freeness (and hence quasi-coherence). Ever
 indexing type is nonempty and a subsingleton is invertible.
 
 The scheme-level packaging, where such a sheaf is an invertible sheaf on a scheme, is in
-`TauCeti/AlgebraicGeometry/LineBundle/Basic.lean`. This advances
-`TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a scheme; the
-Picard group `Pic X` under `⊗`". No formalization is vendored. The construction reuses Mathlib's
+`TauCeti/AlgebraicGeometry/LineBundle/Basic.lean`. The construction reuses Mathlib's
 `SheafOfModules.LocalGeneratorsData`, `IsLocallyFreeData`, and `IsLocallyFree` API from
 `Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree`.
 -/
@@ -79,7 +77,7 @@ class IsInvertible : Prop where
 instance IsInvertible.isLocallyFree (M : SheafOfModules.{u} R) [h : IsInvertible M] :
     M.IsLocallyFree := by
   obtain ⟨q, hq⟩ := h.exists_isInvertible
-  let := hq.isLocallyFreeData
+  have := hq.isLocallyFreeData
   exact q.isLocallyFree
 
 /-- Transport local generator data along an isomorphism of sheaves of modules: the same cover, with
@@ -108,14 +106,11 @@ theorem _root_.SheafOfModules.LocalGeneratorsData.IsInvertible.ofIso
         intro i
         rw [SheafOfModules.GeneratingSections.ofEpi_π]
         exact IsIso.comp_isIso' (hq.isLocallyFreeData.isIso i) inferInstance }
-  -- the index type of the transported presentation is the untouched `(q.generators i).I`, but the
-  -- goal presents it through `ofEpi`; `change` names it directly, there being no lemma for it.
-  basisNonempty i := by
-    change Nonempty (q.generators i).I
-    exact hq.basisNonempty i
-  basisSubsingleton i := by
-    change Subsingleton (q.generators i).I
-    exact hq.basisSubsingleton i
+  -- `ofIso` keeps the cover and `ofEpi` keeps each index type, so the transported basis types
+  -- are definitionally the original ones. The simp lemmas `ofIso_generators` and `ofEpi_I` cannot
+  -- be rewritten with here, since the index `i` lives in the dependent type `(ofIso q e).I`.
+  basisNonempty := hq.basisNonempty
+  basisSubsingleton := hq.basisSubsingleton
 
 /-- Invertibility transports along an isomorphism of sheaves of modules. -/
 theorem IsInvertible.of_iso (e : M ≅ N) [h : IsInvertible M] : IsInvertible N := by
@@ -124,9 +119,8 @@ theorem IsInvertible.of_iso (e : M ≅ N) [h : IsInvertible M] : IsInvertible N 
 
 section
 
-variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+variable [J.WEqualsLocallyBijective AddCommGrpCat.{u}] [HasSheafify J AddCommGrpCat.{u}]
   [∀ Y : C, HasSheafify (J.over Y) AddCommGrpCat.{u}] [Limits.HasBinaryProducts C]
-  [HasSheafify J AddCommGrpCat]
 
 /-- A free sheaf whose indexing type has exactly one element is an invertible sheaf. -/
 instance free_isInvertible (I : Type u) [Nonempty I] [Subsingleton I] :
@@ -134,14 +128,10 @@ instance free_isInvertible (I : Type u) [Nonempty I] [Subsingleton I] :
   exists_isInvertible :=
     ⟨(SheafOfModules.free.generatingSections (R := R) I).localGeneratorsData,
       { isLocallyFreeData := inferInstance
-        -- the index type of `free.generatingSections I` is `I` itself, so the two goals are the
-        -- ambient instances; `change` names `I` so instance search can see them.
-        basisNonempty := fun _ => by
-          change Nonempty I
-          infer_instance
-        basisSubsingleton := fun _ => by
-          change Subsingleton I
-          infer_instance }⟩
+        -- the index type of each generating family of `free.generatingSections I` is
+        -- definitionally `I` itself, so the two goals are the ambient instances.
+        basisNonempty _ := inferInstanceAs (Nonempty I)
+        basisSubsingleton _ := inferInstanceAs (Subsingleton I) }⟩
 
 end
 

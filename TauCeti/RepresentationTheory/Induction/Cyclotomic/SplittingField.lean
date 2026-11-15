@@ -115,6 +115,7 @@ theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_of_isPrimitiveRoot
   exact W.exists_simple_nonempty_iso_baseChange_of_character_eq
     (finrank_endomorphism_simple_eq_one L W) hf hχ.symm
 
+omit [CharZero K] in
 /-- **The exponent cyclotomic field is a splitting field for `G`.** Every irreducible
 representation over an algebraically closed extension is the scalar extension of an absolutely
 irreducible representation over the cyclotomic field. -/
@@ -123,6 +124,7 @@ theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_of_isCyclotomicExtens
     (W : FDRep L G) [Simple W] :
     ∃ V : FDRep K G, Simple V ∧ Module.finrank K (V ⟶ V) = 1 ∧
       Nonempty (FDRep.of (Representation.baseChange L V.ρ) ≅ W) :=
+  have : CharZero K := algebraRat.charZero K
   W.exists_simple_nonempty_iso_baseChange_of_isPrimitiveRoot
     (IsCyclotomicExtension.zeta_spec (Monoid.exponent G) ℚ K) (dvd_refl _)
 

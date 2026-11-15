@@ -84,10 +84,11 @@ private theorem mapValue_rootPath
   rw [rootPath, AlgHom.mapValue_baseChangePointsMulEquiv,
     mapValue_rootSubgroupPoints, AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply]
   apply (baseChangeSymplecticPointsMulEquiv (k := k) (K := K) m K).injective
-  simp [baseChangeSymplecticPointsMulEquiv]
-  simpa using pointsMulEquiv_rootSubgroupPoints (R := k) (A := K) (m := m) root
-    ((AdditiveGroup.gaPointsMulEquiv (R := k) (A := K)).symm
-      (Multiplicative.ofAdd c))
+  simp only [baseChangeSymplecticPointsMulEquiv, Polynomial.aevalTower_id, toAdd_ofAdd,
+    AlgHom.coe_restrictScalars', Polynomial.aeval_X, MulEquiv.trans_apply,
+    MulEquiv.symm_apply_apply, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
+    MulEquiv.apply_symm_apply]
+  rw [pointsMulEquiv_rootSubgroupPoints, MulEquiv.apply_symm_apply]
 
 private theorem rightTranslationAlgHom_eq_self_of_root
     (m : ℕ) [IsAlgClosed K] (e : K ⊗[k] coordinateHopfAlgebra k m)

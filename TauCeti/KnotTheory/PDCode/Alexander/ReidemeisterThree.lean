@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Alexander.Basic
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three.Basic
 import TauCeti.Algebra.Module.Basic
 
 /-!

@@ -29,9 +29,8 @@ read in the associated graded; it is turned into surjectivity, degree by degree,
 `TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous`.
 
 Under the standard hypotheses ensuring PBW over a commutative ring, such as projectivity of `L` as
-an `R`-module, injectivity of this map is the remaining PBW theorem. Once established in the
-roadmap's general-field setting, the resulting associated-graded isomorphism feeds the triangular
-decomposition and the construction of Verma modules.
+an `R`-module, the PBW theorem asserts that this map is also injective; injectivity is not proved
+here.
 
 ## Main definitions and results
 
@@ -47,14 +46,14 @@ decomposition and the construction of Verma modules.
   classes is the class of the corresponding word.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_prod_map_ι`: the canonical map sends
   a product of symmetric generators to the class of the corresponding word.
+* `TauCeti.UniversalEnvelopingAlgebra.mul_sub_mul_mem_pbwFiltrationPrevious` and
+  `TauCeti.UniversalEnvelopingAlgebra.lie_ι_mem_pbwFiltrationPrevious`: commutators lower the PBW
+  degree, so bracketing with a Lie generator preserves each filtration step.
 
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter I, §2.7.
-
-This is the associated-graded-map stage of Layer 3, “PBW, a substantial sub-project”, in the
-[highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md).
 -/
 
 public section
@@ -163,6 +162,19 @@ theorem mul_sub_mul_mem_pbwFiltrationPrevious {i j : ℕ} {x y : U}
   simpa only [left, q, Submodule.mem_comap, LinearMap.sub_apply,
     LinearMap.mulLeft_apply, LinearMap.mulRight_apply] using hleft hx
 
+/-- **Bracketing with a Lie generator preserves the PBW filtration.** If `u` has PBW degree
+strictly below `k`, then so does the commutator `⁅ι x, u⁆`: commutators lower the sum of the
+degrees, and `ι x` has degree one. -/
+theorem lie_ι_mem_pbwFiltrationPrevious (x : L) {k : ℕ} {u : U}
+    (hu : u ∈ pbwFiltrationPrevious R L k) :
+    ⁅_root_.UniversalEnvelopingAlgebra.ι R x, u⁆ ∈ pbwFiltrationPrevious R L k := by
+  cases k with
+  | zero => simp_all
+  | succ k =>
+      rw [pbwFiltrationPrevious_succ] at hu
+      have h := mul_sub_mul_mem_pbwFiltrationPrevious R L (ι_mem_pbwFiltration_one R L x) hu
+      rwa [add_comm, ← LieRing.of_associative_ring_bracket] at h
+
 /-- Multiplication of PBW homogeneous pieces is commutative after reindexing the degree. -/
 theorem pbwGradedMul_comm (i j : ℕ) (x : PBWGradedPiece R L i)
     (y : PBWGradedPiece R L j) :
@@ -185,7 +197,7 @@ theorem pbwGradedMul_comm (i j : ℕ) (x : PBWGradedPiece R L i)
           all_goals try exact Nat.add_comm i j
           apply (Submodule.Quotient.eq _).mpr
           rw [mem_previousRestricted_iff, Submodule.coe_sub,
-            wordFiltration_coe_cast _ (Nat.add_comm i j),
+            wordFiltration.coe_cast _ (Nat.add_comm i j),
             ← pbwFiltrationPrevious_def R L]
           simpa only [Nat.add_comm i j, Submodule.coe_mk] using
             mul_sub_mul_mem_pbwFiltrationPrevious R L hx hy
@@ -250,7 +262,7 @@ theorem prod_map_pbwGradedGenerator (l : List L) :
       rw [gradedPiece_cast_mk]
       all_goals try exact h
       apply (Submodule.Quotient.eq _).mpr
-      rw [mem_previousRestricted_iff, Submodule.coe_sub, wordFiltration_coe_cast _ h]
+      rw [mem_previousRestricted_iff, Submodule.coe_sub, wordFiltration.coe_cast _ h]
       simp only [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
         sub_self]
       exact Submodule.zero_mem _

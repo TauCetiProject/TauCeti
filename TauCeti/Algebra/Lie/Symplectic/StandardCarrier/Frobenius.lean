@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.PointsFunctor
+public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 
 /-!
 # Frobenius on the full-weight type-C carrier
@@ -46,6 +47,8 @@ that any fixed-point group is finite or simple.
   iterated Frobenius endomorphism of the value ring.
 * `TauCeti.SpStd.frobenius_rootSubgroupPoints` and `TauCeti.SpStd.frobenius_weightTorusPoints`: the
   equations on the pinned generating root subgroups and split torus.
+* `TauCeti.SpStd.isCharacterMap_frobenius`: character pullback is multiplication by `p ^ k`
+  in fundamental-weight coordinates.
 * `TauCeti.SpStd.frobenius_zero`, `TauCeti.SpStd.frobenius_add` and
   `TauCeti.SpStd.frobenius_pow`: the iteration laws.
 * `TauCeti.SpStd.map_subtype_fixedSubgroup_frobenius_eq`: the Frobenius-fixed points are the points
@@ -120,6 +123,16 @@ theorem frobenius_rootSubgroupPoints (i : Fin (n + 1) ⊕ Fin (n + 1)) (u : Mult
 theorem frobenius_weightTorusPoints (s : Fin (n + 1) → Aˣ) :
     frobenius n p k A (weightTorusPoints n A s) = weightTorusPoints n A (s ^ p ^ k) := by
   rw [frobenius, map_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
+
+/-- **Frobenius pulls characters back by multiplication by `p ^ k`**, on the full-weight torus
+of the standard symplectic carrier. The statement holds over every commutative value ring of
+exponential characteristic `p`, including the zeroth iterate. -/
+theorem isCharacterMap_frobenius :
+    IsCharacterMap (weightTorusPoints n A) (frobenius n p k A) ((p ^ k : ℕ) • 1) := by
+  rw [isCharacterMap_iff]
+  intro s
+  rw [frobenius_weightTorusPoints, torusPointMap_nsmul, torusPointMap_one,
+    MonoidHom.pow_apply, MonoidHom.id_apply]
 
 /-- The zeroth Frobenius iterate is the identity on the type-`C_(n+1)` point group. -/
 @[simp]

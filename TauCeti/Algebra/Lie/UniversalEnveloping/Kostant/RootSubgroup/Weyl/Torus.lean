@@ -15,14 +15,14 @@ import TauCeti.Algebra.Lie.Sl2.Basic
 
 Let `U_ℤ = kostantForm e h` act on a rational vector space `V` through `ρ` and preserve an additive
 subgroup `M ≤ V`, presented in a weight basis, and let `eᵢ`, `eⱼ` be distinguished root vectors
-whose images span, together with the distinguished Cartan vector `h c`, an `sl₂` triple. The two
-halves of the pinning built so far are the split torus `t(s)` of
+whose images span, together with the distinguished Cartan vector `h c`, an `sl₂` triple. Two parts
+of the pinning data are the split torus `t(s)` of
 `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Torus/Basic.lean`, which acts on a
 weight vector of weight `μ` by the character value `μ(s)`, and the Weyl element
 `n = x_i(1) x_j(-1) x_i(1)` of
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Weyl/Basic.lean`, which
-interchanges the root subgroups of `α` and `-α`. This file proves the remaining pinning relation
-between them: `n` normalises the torus, and conjugation by it is the reflection `s_α`.
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Weyl/Basic.lean`, which interchanges
+the root subgroups of `α` and `-α`. This file proves the pinning relation between them: `n`
+normalises the torus, and conjugation by it is the reflection `s_α`.
 
 The mechanism is the coreflection formula for the Weyl element,
 `TauCeti.inv_weylUnit_conj_of_lie_eq_smul`, which says that an operator acting on the raising and
@@ -63,12 +63,6 @@ conjugation statement upgrades from an inclusion to the equality of subgroups
   point by the Weyl element gives the reflected torus point.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusPoints_range_conj_kostantWeylGL`: the Weyl
   element normalises the split torus.
-
-## Roadmap
-
-This completes the normaliser-of-the-torus relation of the pinning data in Layer 9, "pinned
-Chevalley--Demazure group schemes over `ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`, and is
-consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 
 ## References
 
@@ -140,10 +134,10 @@ private theorem IsCartanWeightVector.unit_of_conj {μ : κ → ℤ} {v : V}
   intro j'
   have hcancel : ∀ z : V, (n : Module.End ℚ V)
       (((n⁻¹ : (Module.End ℚ V)ˣ) : Module.End ℚ V) z) = z := fun z => by
-    rw [← Module.End.mul_apply, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← Units.val_mul, mul_inv_cancel, Units.val_one,
+      one_apply_eq_self]
   have happ := congrArg (fun f : Module.End ℚ V => f v) (hconj j')
-  simp only [Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply] at happ
+  simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply] at happ
   have hv' := (isCartanWeightVector_iff (h := h) (ρ := ρ)).1 hv
   rw [hv' j', hv' c] at happ
   have hgoal : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j'))
@@ -256,14 +250,14 @@ theorem kostantWeylPoints_conj_kostantTorusPoints
       ((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ]
         ((_root_.TauCeti.UniversalEnvelopingAlgebra.kostantWeylRestrict
           e h ρ M hM hi hj).symm (b x)) :=
-    kostantTorusPoints_tmul_of_isCartanWeightVector e h ρ M hM b wt hwt hrefl s 1
+    kostantTorusPoints_tmul_of_isCartanWeightVector h ρ M b wt hwt hrefl s 1
   have h3 : (kostantWeylPoints e h ρ M hM hi hj A).toLinearMap
       (((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ]
         ((_root_.TauCeti.UniversalEnvelopingAlgebra.kostantWeylRestrict
           e h ρ M hM hi hj).symm (b x))) =
       ((torusCharacter s (wt x - wt x c • α) : A) * 1) ⊗ₜ[ℤ] (b x : M) := by
     rw [LinearEquiv.coe_coe, kostantWeylPoints_apply_tmul, LinearEquiv.apply_symm_apply]
-  rw [Module.Basis.baseChange_apply, Module.End.mul_apply, Module.End.mul_apply, h1, h2, h3,
+  rw [Module.Basis.baseChange_apply, mul_apply_eq_comp, mul_apply_eq_comp, h1, h2, h3,
     kostantTorusPoints_tmul_basis, torusCharacter_weylReflectTorusPoint]
 
 include hM hT hα hαneg in

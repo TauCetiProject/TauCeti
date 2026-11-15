@@ -24,11 +24,10 @@ mixed-i.i.d. witness after integrating out the directing coordinate.
 `MixedIID.existsUnique_mixingLaw` then packages the witness's law intrinsically: the injectivity of
 the infinite-product mixture makes `π` independent of the chosen directing measure.
 
-This is the `deFinetti_mixture` target from
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 6, “directing measures and de Finetti
-representation.” It is the mixture-of-product-measures form with the unique law of the directing
-measure. Unlike the sample-space-specific `deFinettiMeasure`, the statement needs a standard Borel
-structure only on the state space `α`; the sample space `Ω` remains an arbitrary measurable space.
+`deFinetti_mixture` is the mixture-of-product-measures form of de Finetti's theorem, with the unique
+law of the directing measure. Unlike the sample-space-specific `deFinettiMeasure`, the statement
+needs a standard Borel structure only on the state space `α`; the sample space `Ω` remains an
+arbitrary measurable space.
 
 The mathematical statement follows Kallenberg, *Probabilistic Symmetries and Invariance
 Principles* (2005), Theorem 1.1. The proof is an assembly of Tau Ceti's conditional de Finetti

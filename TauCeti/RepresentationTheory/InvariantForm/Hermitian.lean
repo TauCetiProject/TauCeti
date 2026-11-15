@@ -66,9 +66,6 @@ positivity results over `RCLike` would fix the wrong one of the two for the `ℂ
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7: the "compatible Hermitian form" that the realizability target
-  `frobeniusSchurIndicatorRep_eq_one_realizable` is built from.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 -/
 
@@ -202,7 +199,7 @@ theorem isInvariantSesqForm_sumOfConjugatesSesqForm (ρ : Representation R G V)
   intro h x y
   simp only [sumOfConjugatesSesqForm_apply]
   refine Fintype.sum_equiv (Equiv.mulRight h) _ _ fun g => ?_
-  simp [map_mul, Module.End.mul_apply]
+  simp [map_mul, mul_apply_eq_comp]
 
 end Group
 
@@ -260,7 +257,7 @@ theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Represe
       IsInvariantSesqForm ρ H ∧ H.IsPosSemidef ∧ ∀ x : V, x ≠ 0 → H x x ≠ 0 := by
   classical
   have : Fintype G := Fintype.ofFinite G
-  set b := Module.finBasis ℂ V with hb
+  set b := Module.finBasis ℂ V with _
   set H₀ : V →ₗ⋆[ℂ] V →ₗ[ℂ] ℂ := Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) b b 1 with hH₀
   have hH₀apply : ∀ x y : V, H₀ x y = ∑ i, (starRingEnd ℂ) (b.repr x i) * b.repr y i := by
     intro x y

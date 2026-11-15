@@ -51,7 +51,7 @@ noncomputable instance TorusCommHopfAlgCat.characterLatticeFunctor_essSurj :
     let M : GaloisLatticeCat k := ⟨Rep.of r, hM⟩
     let _ : Module.Free ℤ M.obj := GaloisLatticeCat.instModuleFree k M
     let _ : Module.Finite ℤ M.obj := GaloisLatticeCat.instModuleFinite k M
-    let _ : IsAddTorsionFree M.obj := IsAddTorsionFree.of_isTorsionFree ℤ M.obj
+    let _ : HasUniqueDiv M.obj := .of_isTorsionFree ℤ M.obj
     let L := GaloisLatticeCat.separableActionField M
     let ρ : Representation ℤ (L ≃ₐ[k] L) M.obj :=
       GaloisLatticeCat.separableActionFieldRepresentation M
