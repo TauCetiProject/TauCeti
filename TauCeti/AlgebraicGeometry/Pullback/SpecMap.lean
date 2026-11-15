@@ -107,32 +107,23 @@ theorem exists_isOpenImmersion_spec_tensorProduct_of_isPullback
   have : IsOpenImmersion m := Scheme.pullback_map_isOpenImmersion ..
   let ι : Spec (.of (S ⊗[R] A)) ⟶ X' := (pullbackSpecIso R S A).inv ≫ m ≫ H.flip.isoPullback.inv
   have h₁ : ι ≫ f' =
-      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iY' := by
-    simp [ι, m]
+      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iY' := by simp [ι, m]
   have h₂ : ι ≫ gX = Spec.map (CommRingCat.ofHom
-      (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) ≫ iX := by
-    simp [ι, m]
-  refine ⟨ι, inferInstance, h₁, h₂, ?_⟩
-  ext z
-  refine ⟨?_, fun ⟨hy', hx⟩ ↦ ?_⟩
+      (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) ≫ iX := by simp [ι, m]
+  refine ⟨ι, inferInstance, h₁, h₂, Set.ext fun z ↦ ⟨?_, fun ⟨hy', hx⟩ ↦ ?_⟩⟩
   · rintro ⟨q, rfl⟩
-    refine ⟨?_, ?_⟩
-    · rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, h₁, Scheme.Hom.comp_apply]
-      exact ⟨_, rfl⟩
-    · rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, h₂, Scheme.Hom.comp_apply]
-      exact ⟨_, rfl⟩
+    exact ⟨by rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, h₁]; exact ⟨_, rfl⟩,
+      by rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, h₂]; exact ⟨_, rfl⟩⟩
   · have hw : H.flip.isoPullback.hom z ∈
-        pullback.fst gY f ⁻¹' Set.range iY' ∩ pullback.snd gY f ⁻¹' Set.range iX := by
-      refine ⟨?_, ?_⟩
-      · simpa only [Set.mem_preimage, ← Scheme.Hom.comp_apply, IsPullback.isoPullback_hom_fst]
-          using hy'
-      · simpa only [Set.mem_preimage, ← Scheme.Hom.comp_apply, IsPullback.isoPullback_hom_snd]
-          using hx
+        pullback.fst gY f ⁻¹' Set.range iY' ∩ pullback.snd gY f ⁻¹' Set.range iX :=
+      ⟨by simpa only [Set.mem_preimage, ← Scheme.Hom.comp_apply, IsPullback.isoPullback_hom_fst]
+        using hy',
+       by simpa only [Set.mem_preimage, ← Scheme.Hom.comp_apply, IsPullback.isoPullback_hom_snd]
+        using hx⟩
     rw [← Scheme.Pullback.range_map (f := Spec.map (CommRingCat.ofHom (algebraMap R S)))
       (g := Spec.map (CommRingCat.ofHom (algebraMap R A))) gY f iY' iX iY eY' eX] at hw
     obtain ⟨p, hp⟩ := hw
-    refine ⟨(pullbackSpecIso R S A).hom p, ?_⟩
-    simp [ι, m, hp]
+    exact ⟨(pullbackSpecIso R S A).hom p, by simp [ι, m, hp]⟩
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/
