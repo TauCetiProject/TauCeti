@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient.Basic
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 
 /-!
@@ -51,7 +51,7 @@ the vertex coefficients, and the augmentation induces `Π⁺(Dₙ) / [Π⁺(Dₙ
 Through the bipartite sign rescaling, the same vanishing holds for the additive preprojective
 algebra of every orientation of `Dₙ`.
 These consequences, and the case of a path between distinct vertices, do not depend on the graph;
-they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient`.
+they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient.Basic`.
 
 ## Main results
 
