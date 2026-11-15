@@ -262,8 +262,20 @@ theorem a24ZeroSumEquiv_glueDigitsVector_apply {l : List ℕ} (hl : l.getD 0 0 �
   have harg :
       (fun k : Fin 24 ↦
         RootfulNiemeierType.a24.glueDigitsVector l ⟨0, by decide⟩ (Fin.cast (by decide) k)) =
-      (A 24).glueLabelVector (l.getD 0 0) := rfl
-  rw [a24ZeroSumEquiv_apply, harg, typeAIsometryZeroSumLattice_glueLabelVector_apply 24 hl j]
+      typeACosetRepresentative 24 (l.getD 0 0) := by
+    funext k
+    exact ((RootfulNiemeierType.a24.componentType default).rootLatticeIsometryOfEq_apply
+        (RootfulNiemeierType.a24.isSimplyLaced_componentType default) componentType_a24
+        (isSimplyLaced_A 24)
+        (RootfulNiemeierType.a24.glueDigitsVector l default) k).symm.trans <|
+      (congrFun (congrArg _ (glueDigitsVector_apply RootfulNiemeierType.a24.componentType l
+        default)) k).trans <|
+      (congrFun (rootLatticeIsometryOfEq_glueLabelVector
+        (RootfulNiemeierType.a24.isSimplyLaced_componentType default) componentType_a24
+        (isSimplyLaced_A 24) (l.getD 0 0)) k).trans
+        (congrFun (glueLabelVector_A 24 (l.getD 0 0)) k)
+  rw [a24ZeroSumEquiv_apply, harg,
+    typeAIsometryZeroSumLattice_typeACosetRepresentative_apply 24 hl j]
   norm_num
 
 /-- **Classical coordinates of the glue generator `[5]` of `A₂₄`**: `4/5` in the first five
@@ -272,7 +284,7 @@ positions and `-1/5` in the remaining twenty. -/
 theorem a24ZeroSumEquiv_glueWordVector_a24GlueWord_apply (j : Fin 25) :
     (a24ZeroSumEquiv (RootfulNiemeierType.a24.glueWordVector a24GlueWord) : Fin 25 → ℚ) j =
       if j.val < 5 then 4 / 5 else -1 / 5 := by
-  rw [← RootfulNiemeierType.glueDigitsVector_encodeGlueWord,
+  rw [RootfulNiemeierType.glueWordVector, ← glueDigitsVector_encodeGlueWord,
     RootfulNiemeierType.encodeGlueWord_a24GlueWord,
     a24ZeroSumEquiv_glueDigitsVector_apply (by decide) j]
   by_cases hj : j.val < 5 <;> simp [hj] <;> norm_num

@@ -55,8 +55,8 @@ transfers the explicit shortest glue generator `(ω₁, s, ϖ₁)` to the table 
   `TauCeti.a11d7e6Lattice`, with `a11d7e6LatticeIsometry_apply`,
   `a11d7e6LatticeIsometry_symm_apply`, `a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff`,
   `a11d7e6LatticeIsometry_glueDigitsVector`, and `a11d7e6LatticeIsometry_glueWordVector`.
-* `TauCeti.RootfulNiemeierType.nsmul_glueDigitsVector_a11d7e6_mem_rootLattice_iff`,
-  `TauCeti.RootfulNiemeierType.zsmul_glueDigitsVector_a11d7e6_mem_rootLattice_iff`,
+* `TauCeti.RootfulNiemeierType.nsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff`,
+  `TauCeti.RootfulNiemeierType.zsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff`,
   `TauCeti.RootfulNiemeierType.mem_a11d7e6_lattice_carrier_iff_exists_sub_mem`: order-`12`
   divisibility and `12`-coset decomposition via `a11d7e6.glueDigitsVector [1, 1, 1]`.
 
@@ -214,9 +214,12 @@ theorem a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff
 theorem a11d7e6LatticeIsometry_glueDigitsVector (l : List ℕ) :
     a11d7e6LatticeIsometry (a11d7e6.glueDigitsVector l) =
       TauCeti.glueDigitsVector TauCeti.a11d7e6 l := by
-  funext k j
-  rw [a11d7e6LatticeIsometry_apply]
-  fin_cases k <;> rfl
+  rw [a11d7e6LatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
+    Isometry.ofEq_apply]
+  exact gluedLatticeIsometryOfEq_glueDigitsVector a11d7e6.componentType
+    a11d7e6.isSimplyLaced_componentType a11d7e6.valid_componentType _ valid_a11d7e6 _
+    (rfl : 3 = a11d7e6.components.length) (fun i ↦ componentType_a11d7e6 i)
+    piGlueAlphabetCongr_mem_a11d7e6GlueSubgroup_iff l
 
 /-- `a11d7e6LatticeIsometry` intertwines `a11d7e6.glueWordVector` and `DynkinType.glueWordVector`
 along `a11d7e6GlueModuleIsometry`. -/
@@ -225,10 +228,12 @@ theorem a11d7e6LatticeIsometry_glueWordVector (w : a11d7e6.glueModule) :
     a11d7e6LatticeIsometry (a11d7e6.glueWordVector w) =
       DynkinType.glueWordVector TauCeti.a11d7e6 isSimplyLaced_a11d7e6
         (a11d7e6GlueModuleIsometry w) := by
-  rw [← a11d7e6.glueDigitsVector_encodeGlueWord, a11d7e6LatticeIsometry_glueDigitsVector,
-    ← TauCeti.glueDigitsVector_encodeGlueWord]
-  exact congrArg (TauCeti.glueDigitsVector TauCeti.a11d7e6)
-    (encodeGlueWord_glueModuleIsometry _ _ _ _ w).symm
+  rw [a11d7e6LatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
+    Isometry.ofEq_apply, ← piGlueAlphabetCongr_eq_a11d7e6GlueModuleIsometry]
+  exact gluedLatticeIsometryOfEq_glueWordVector a11d7e6.componentType
+    a11d7e6.isSimplyLaced_componentType a11d7e6.valid_componentType _ _ valid_a11d7e6 _
+    (finCongr (rfl : 3 = a11d7e6.components.length)) (fun i ↦ componentType_a11d7e6 i)
+    piGlueAlphabetCongr_mem_a11d7e6GlueSubgroup_iff w
 
 private theorem a11d7e6LatticeIsometry_glueDigitsVector_one :
     a11d7e6LatticeIsometry (a11d7e6.glueDigitsVector [1, 1, 1]) =
@@ -238,7 +243,7 @@ private theorem a11d7e6LatticeIsometry_glueDigitsVector_one :
 
 /-- A multiple `k • a11d7e6.glueDigitsVector [1, 1, 1]` lies in `a11d7e6.rootLattice` exactly when
 `12` divides `k`. -/
-theorem nsmul_glueDigitsVector_a11d7e6_mem_rootLattice_iff (k : ℕ) :
+theorem nsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff (k : ℕ) :
     k • a11d7e6.glueDigitsVector [1, 1, 1] ∈ a11d7e6.rootLattice.carrier ↔ 12 ∣ k := by
   rw [← a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff, map_nsmul,
     a11d7e6LatticeIsometry_glueDigitsVector_one,
@@ -246,7 +251,7 @@ theorem nsmul_glueDigitsVector_a11d7e6_mem_rootLattice_iff (k : ℕ) :
 
 /-- An integer multiple `k • a11d7e6.glueDigitsVector [1, 1, 1]` lies in `a11d7e6.rootLattice`
 exactly when `12` divides `k`. -/
-theorem zsmul_glueDigitsVector_a11d7e6_mem_rootLattice_iff (k : ℤ) :
+theorem zsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff (k : ℤ) :
     k • a11d7e6.glueDigitsVector [1, 1, 1] ∈ a11d7e6.rootLattice.carrier ↔ (12 : ℤ) ∣ k := by
   rw [← a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff, map_zsmul,
     a11d7e6LatticeIsometry_glueDigitsVector_one,

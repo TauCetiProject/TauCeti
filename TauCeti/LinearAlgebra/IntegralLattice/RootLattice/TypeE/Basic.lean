@@ -202,14 +202,14 @@ theorem natCard_discriminantGroup_typeE₆RootLattice :
 private def typeE₆WeightCoeff : Fin 6 → ℤ := ![4, 3, 5, 6, 4, 2]
 
 /-- The minuscule fundamental weight `ϖ₁` of type `E₆`, in simple-root coordinates. -/
-def typeE₆MinusculeWeight : Fin 6 → ℚ :=
-  fun j ↦ (typeE₆WeightCoeff j : ℚ) / 3
+@[expose] def typeE₆MinusculeWeight : Fin 6 → ℚ :=
+  fun j ↦ ((![4, 3, 5, 6, 4, 2] : Fin 6 → ℤ) j : ℚ) / 3
 
 @[simp]
 theorem typeE₆MinusculeWeight_apply (j : Fin 6) :
     typeE₆MinusculeWeight j =
-      ((![4, 3, 5, 6, 4, 2] : Fin 6 → ℤ) j : ℚ) / 3 := by
-  rw [typeE₆MinusculeWeight, typeE₆WeightCoeff]
+      ((![4, 3, 5, 6, 4, 2] : Fin 6 → ℤ) j : ℚ) / 3 :=
+  (rfl)
 
 /-- The row combinations of `CartanMatrix.E 6` against the coordinates of `3ϖ₁`. -/
 private theorem sum_cartanMatrixE₆_mul_weightCoeff :
@@ -220,7 +220,7 @@ private theorem sum_cartanMatrixE₆_mul_weightCoeff :
 private theorem typeE₆MinusculeWeight_eq_div :
     typeE₆MinusculeWeight = fun j ↦ (typeE₆WeightCoeff j : ℚ) / ((3 : ℤ) : ℚ) := by
   funext j
-  simp [typeE₆MinusculeWeight]
+  simp [typeE₆MinusculeWeight, typeE₆WeightCoeff]
 
 /-- The row combinations of `CartanMatrix.E 6` against `ϖ₁` are `δ_{i, 0}`. -/
 private theorem sum_cartanMatrixE₆_mul_minusculeWeight :
@@ -290,7 +290,7 @@ theorem zsmul_typeE₆MinusculeWeightClass_eq_zero_iff (k : ℤ) :
     obtain ⟨z, hz⟩ := h 0
     simp only [typeE₆MinusculeWeightDual, SetLike.val_smul, Pi.smul_apply,
       typeE₆MinusculeWeight, zsmul_eq_mul] at hz
-    have hcoeff : typeE₆WeightCoeff 0 = 4 := by decide
+    have hcoeff : (![4, 3, 5, 6, 4, 2] : Fin 6 → ℤ) 0 = 4 := by decide
     rw [hcoeff] at hz
     push_cast at hz
     have hq : (3 : ℚ) * (z : ℚ) = 4 * (k : ℚ) := by
@@ -301,7 +301,7 @@ theorem zsmul_typeE₆MinusculeWeightClass_eq_zero_iff (k : ℤ) :
   · rintro ⟨m, rfl⟩ i
     refine ⟨m * typeE₆WeightCoeff i, ?_⟩
     simp only [typeE₆MinusculeWeightDual, SetLike.val_smul, Pi.smul_apply,
-      typeE₆MinusculeWeight, zsmul_eq_mul]
+      typeE₆MinusculeWeight, typeE₆WeightCoeff, zsmul_eq_mul]
     push_cast
     ring
 
@@ -483,14 +483,14 @@ theorem natCard_discriminantGroup_typeE₇RootLattice :
 private def typeE₇WeightCoeff : Fin 7 → ℤ := ![2, 3, 4, 6, 5, 4, 3]
 
 /-- The minuscule fundamental weight `ϖ₇` of type `E₇`, in simple-root coordinates. -/
-def typeE₇MinusculeWeight : Fin 7 → ℚ :=
-  fun j ↦ (typeE₇WeightCoeff j : ℚ) / 2
+@[expose] def typeE₇MinusculeWeight : Fin 7 → ℚ :=
+  fun j ↦ ((![2, 3, 4, 6, 5, 4, 3] : Fin 7 → ℤ) j : ℚ) / 2
 
 @[simp]
 theorem typeE₇MinusculeWeight_apply (j : Fin 7) :
     typeE₇MinusculeWeight j =
-      ((![2, 3, 4, 6, 5, 4, 3] : Fin 7 → ℤ) j : ℚ) / 2 := by
-  rw [typeE₇MinusculeWeight, typeE₇WeightCoeff]
+      ((![2, 3, 4, 6, 5, 4, 3] : Fin 7 → ℤ) j : ℚ) / 2 :=
+  (rfl)
 
 /-- The row combinations of `CartanMatrix.E 7` against the coordinates of `2ϖ₇`. -/
 private theorem sum_cartanMatrixE₇_mul_weightCoeff :
@@ -501,7 +501,7 @@ private theorem sum_cartanMatrixE₇_mul_weightCoeff :
 private theorem typeE₇MinusculeWeight_eq_div :
     typeE₇MinusculeWeight = fun j ↦ (typeE₇WeightCoeff j : ℚ) / ((2 : ℤ) : ℚ) := by
   funext j
-  simp [typeE₇MinusculeWeight]
+  simp [typeE₇MinusculeWeight, typeE₇WeightCoeff]
 
 /-- The row combinations of `CartanMatrix.E 7` against `ϖ₇` are `δ_{i, 6}`. -/
 private theorem sum_cartanMatrixE₇_mul_minusculeWeight :
@@ -571,7 +571,7 @@ theorem zsmul_typeE₇MinusculeWeightClass_eq_zero_iff (k : ℤ) :
     obtain ⟨z, hz⟩ := h 1
     simp only [typeE₇MinusculeWeightDual, SetLike.val_smul, Pi.smul_apply,
       typeE₇MinusculeWeight, zsmul_eq_mul] at hz
-    have hcoeff : typeE₇WeightCoeff 1 = 3 := by decide
+    have hcoeff : (![2, 3, 4, 6, 5, 4, 3] : Fin 7 → ℤ) 1 = 3 := by decide
     rw [hcoeff] at hz
     push_cast at hz
     have hq : (2 : ℚ) * (z : ℚ) = 3 * (k : ℚ) := by
@@ -582,7 +582,7 @@ theorem zsmul_typeE₇MinusculeWeightClass_eq_zero_iff (k : ℤ) :
   · rintro ⟨m, rfl⟩ i
     refine ⟨m * typeE₇WeightCoeff i, ?_⟩
     simp only [typeE₇MinusculeWeightDual, SetLike.val_smul, Pi.smul_apply,
-      typeE₇MinusculeWeight, zsmul_eq_mul]
+      typeE₇MinusculeWeight, typeE₇WeightCoeff, zsmul_eq_mul]
     push_cast
     ring
 

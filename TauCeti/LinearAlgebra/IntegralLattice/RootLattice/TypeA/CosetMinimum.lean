@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ZeroSum
 import TauCeti.Data.Int.MulPred
-import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Dual
 
 /-!
 # Shortest vectors in the discriminant cosets of `Aₙ`
@@ -163,6 +162,7 @@ theorem typeACosetRepresentative_one (n : ℕ) :
   ring
 
 /-- At `k = n + 1`, `typeACosetRepresentative n (n + 1)` evaluates to the zero vector. -/
+@[simp]
 theorem typeACosetRepresentative_add_one_self (n : ℕ) :
     typeACosetRepresentative n (n + 1) = 0 := by
   funext j
@@ -213,28 +213,38 @@ theorem typeAIsometryZeroSumLattice_typeACosetRepresentative_apply (n : ℕ) {k 
     field_simp
   exact congrFun key j
 
-/-- For `0 ≤ k ≤ n + 1`, `typeACosetRepresentative n k` lies in the dual of `typeARootLattice n`. -/
-theorem typeACosetRepresentative_mem_dualCarrier (n : ℕ) {k : ℕ} (hk : k ≤ n + 1) :
-    typeACosetRepresentative n k ∈ (typeARootLattice n).dualCarrier := by
-  refine (mem_dualCarrier_typeARootLattice_iff (typeACosetRepresentative n k)).mpr fun i j ↦ ?_
-  refine ⟨(if (i : ℕ) < k then 1 else 0) - if (j : ℕ) < k then 1 else 0, ?_⟩
-  simp only [typeAIsometryZeroSumLattice_typeACosetRepresentative_apply n hk, Int.cast_sub,
-    Int.cast_ite, Int.cast_one, Int.cast_zero]
+private theorem typeACosetRepresentative_sub_zsmul_mem_carrier (n k : ℕ) :
+    typeACosetRepresentative n k - (k : ℤ) • typeAFundamentalWeight n ∈
+      (typeARootLattice n).carrier := by
+  rw [mem_typeARootLattice_carrier_iff]
+  intro j
+  refine ⟨(min (j.val + 1) k : ℤ) - k, ?_⟩
+  have hn : ((n : ℚ) + 1) ≠ 0 := by positivity
+  rw [Pi.sub_apply, Pi.smul_apply, typeACosetRepresentative_apply,
+    typeAFundamentalWeight_apply, zsmul_eq_mul]
+  push_cast
+  field_simp
   ring
 
-/-- For `0 ≤ k ≤ n + 1`, `typeACosetRepresentative n k` projects to `k • ω₁` in the discriminant
-group of `typeARootLattice n`. -/
+/-- `typeACosetRepresentative n k` lies in the dual of `typeARootLattice n` for every `k : ℕ`. -/
+theorem typeACosetRepresentative_mem_dualCarrier (n k : ℕ) :
+    typeACosetRepresentative n k ∈ (typeARootLattice n).dualCarrier := by
+  have hdiff := (typeARootLattice n).le_dualCarrier
+    (typeACosetRepresentative_sub_zsmul_mem_carrier n k)
+  have hmul := (typeARootLattice n).dualCarrier.smul_mem (k : ℤ)
+    (typeAFundamentalWeight_mem_dualCarrier n)
+  simpa only [sub_add_cancel] using add_mem hdiff hmul
+
+/-- `typeACosetRepresentative n k` projects to `k • ω₁` in the discriminant group of
+`typeARootLattice n` for every `k : ℕ`. -/
 @[simp]
-theorem mk_typeACosetRepresentative (n : ℕ) {k : ℕ} (hk : k ≤ n + 1)
+theorem mk_typeACosetRepresentative (n k : ℕ)
     (hx : typeACosetRepresentative n k ∈ (typeARootLattice n).dualCarrier) :
     (Submodule.Quotient.mk ⟨typeACosetRepresentative n k, hx⟩ :
         (typeARootLattice n).DiscriminantGroup) =
       k • typeAFundamentalWeightClass n := by
-  rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff_forall_exists_intCast_sub]
-  intro j
-  refine ⟨if (j : ℕ) < k then 1 else 0, ?_⟩
-  simp only [typeAIsometryZeroSumLattice_typeACosetRepresentative_apply n hk j, Int.cast_ite,
-    Int.cast_one, Int.cast_zero, Int.cast_natCast]
+  rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff]
+  exact typeACosetRepresentative_sub_zsmul_mem_carrier n k
 
 /-- For `0 ≤ k ≤ n + 1`, `typeACosetRepresentative n k` has squared norm `k (n + 1 - k) / (n + 1)`
 in `typeARootLattice n`. -/
@@ -259,8 +269,8 @@ theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k �
     IsLeast {q : ℚ | ∃ x : (typeARootLattice n).dualCarrier,
       Submodule.Quotient.mk x = k • typeAFundamentalWeightClass n ∧
         (typeARootLattice n).form x x = q} ((k : ℚ) * (n + 1 - k) / (n + 1)) := by
-  refine ⟨⟨⟨typeACosetRepresentative n k, typeACosetRepresentative_mem_dualCarrier n hk⟩,
-    mk_typeACosetRepresentative n hk _, form_typeACosetRepresentative_self n hk⟩, ?_⟩
+  refine ⟨⟨⟨typeACosetRepresentative n k, typeACosetRepresentative_mem_dualCarrier n k⟩,
+    mk_typeACosetRepresentative n k _, form_typeACosetRepresentative_self n hk⟩, ?_⟩
   rintro q ⟨x, hx, rfl⟩
   rw [← natCast_zsmul] at hx
   rw [typeARootLattice_form_self_eq_dotProduct]

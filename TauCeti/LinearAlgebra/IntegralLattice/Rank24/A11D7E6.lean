@@ -384,7 +384,7 @@ theorem span_vectorsOfNorm_two_a11d7e6Lattice :
 theorem glueWordVector_a11d7e6GlueWord_zero :
     glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 0 = typeAFundamentalWeight 11 := by
   rw [← glueDigitsVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord]
-  exact glueLabelVector_A_one 11
+  exact typeACosetRepresentative_one 11
 
 /-- In checkerboard coordinates, the `D₇` component of `glueWordVector` on `[111]` is the spinor
 vector `checkerboardSpinor 7`. -/
@@ -401,27 +401,12 @@ theorem glueWordVector_a11d7e6GlueWord_two :
   rw [← glueDigitsVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord]
   exact glueLabelVector_E6_one
 
-/-- The discriminant class of `(k : ℤ) • glueWordDualVector ... a11d7e6GlueWord` corresponds to
-`k • [111]`. -/
-private theorem mk_nsmul_glueWordDualVector_a11d7e6GlueWord (k : ℕ) :
-    (Submodule.Quotient.mk
-        ((k : ℤ) • glueWordDualVector a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6
-          a11d7e6GlueWord) :
-        a11d7e6RootLattice.DiscriminantGroup) =
-      glueWordIsometry a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6 (k • a11d7e6GlueWord) := by
-  rw [Submodule.Quotient.mk_smul, natCast_zsmul, mk_glueWordDualVector]
-  exact (map_nsmul (glueWordIsometry a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6) k
-    a11d7e6GlueWord).symm
-
 /-- A multiple `k • glueWordVector ... a11d7e6GlueWord` lies in `A₁₁ ⊥ D₇ ⊥ E₆` exactly when `12`
 divides `k`. -/
 theorem nsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff (k : ℕ) :
     k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
-      a11d7e6RootLattice.carrier ↔ 12 ∣ k := by
-  rw [← natCast_zsmul, ← coe_glueWordDualVector _ _ valid_a11d7e6, ← Submodule.coe_smul,
-    ← a11d7e6RootLattice.discriminantGroup_mk_eq_zero_iff,
-    mk_nsmul_glueWordDualVector_a11d7e6GlueWord]
-  exact (map_eq_zero_iff _ (EquivLike.injective _)).trans
+      a11d7e6RootLattice.carrier ↔ 12 ∣ k :=
+  (nsmul_glueWordVector_mem_pi_rootLattice_carrier_iff _ _ valid_a11d7e6 k a11d7e6GlueWord).trans
     (nsmul_a11d7e6GlueWord_eq_zero_iff k)
 
 /-- An integer multiple `k • glueWordVector ... a11d7e6GlueWord` lies in `A₁₁ ⊥ D₇ ⊥ E₆` exactly
@@ -429,12 +414,9 @@ when `12` divides `k`. -/
 theorem zsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff (k : ℤ) :
     k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
       a11d7e6RootLattice.carrier ↔ (12 : ℤ) ∣ k := by
-  rcases k.eq_nat_or_neg with ⟨n, rfl | rfl⟩
-  · rw [natCast_zsmul, nsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff]
-    exact_mod_cast Iff.rfl
-  · rw [neg_smul, Submodule.neg_mem_iff, natCast_zsmul,
-      nsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff, dvd_neg]
-    exact_mod_cast Iff.rfl
+  rw [zsmul_glueWordVector_mem_pi_rootLattice_carrier_iff _ _ valid_a11d7e6,
+    ← addOrderOf_dvd_iff_zsmul_eq_zero, addOrderOf_a11d7e6GlueWord]
+  norm_num
 
 /-- **Coset decomposition of `A₁₁ D₇ E₆`**: a vector lies in the glued lattice exactly when it
 differs from one of the twelve multiples `k • glueWordVector ... a11d7e6GlueWord` (`k < 12`) by a
@@ -445,31 +427,8 @@ theorem mem_a11d7e6Lattice_carrier_iff_exists_sub_mem
       ∃ k < 12,
         x - k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
           a11d7e6RootLattice.carrier := by
-  constructor
-  · intro hx
-    obtain ⟨hxDual, hw⟩ := (mem_a11d7e6Lattice_carrier_iff x).mp hx
-    obtain ⟨k, hk, hkw⟩ := mem_a11d7e6GlueSubgroup_iff.mp hw
-    refine ⟨k, hk, ?_⟩
-    have hmk : (Submodule.Quotient.mk ⟨x, hxDual⟩ : a11d7e6RootLattice.DiscriminantGroup) =
-        Submodule.Quotient.mk
-          ((k : ℤ) • glueWordDualVector a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6
-            a11d7e6GlueWord) := by
-      rw [(AddEquiv.symm_apply_eq _).mp hkw.symm]
-      exact (mk_nsmul_glueWordDualVector_a11d7e6GlueWord k).symm
-    have hdiff := (a11d7e6RootLattice.discriminantGroup_mk_eq_iff ⟨x, hxDual⟩
-      ((k : ℤ) • glueWordDualVector a11d7e6 isSimplyLaced_a11d7e6 valid_a11d7e6
-        a11d7e6GlueWord)).mp hmk
-    rwa [Submodule.coe_sub, Submodule.coe_smul, coe_glueWordDualVector, natCast_zsmul] at hdiff
-  · rintro ⟨k, -, hmem⟩
-    have hgen_mem :
-        glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈ a11d7e6Lattice.carrier := by
-      rw [a11d7e6Lattice_def, glueWordVector_mem_gluedLattice_carrier_iff, a11d7e6GlueSubgroup_def]
-      exact AddSubgroup.mem_zmultiples a11d7e6GlueWord
-    have hk_mem :
-        k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
-          a11d7e6Lattice.carrier :=
-      a11d7e6Lattice.carrier.nsmul_mem hgen_mem k
-    simpa only [sub_add_cancel] using a11d7e6Lattice.carrier.add_mem
-      (a11d7e6RootLattice_carrier_le_a11d7e6Lattice_carrier hmem) hk_mem
+  rw [a11d7e6Lattice_def]
+  exact mem_gluedLattice_carrier_iff_exists_nsmul _ _ valid_a11d7e6 _ _
+    a11d7e6GlueSubgroup_def (by decide) ((nsmul_a11d7e6GlueWord_eq_zero_iff 12).mpr dvd_rfl) x
 
 end TauCeti

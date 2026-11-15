@@ -48,14 +48,12 @@ for every glued lattice `TauCeti.DynkinType.gluedLattice`.
 ## Main declarations
 
 * `TauCeti.DynkinType.glueLabelVector`: the computable simple-root coordinate vector of a printed
-  Conway--Sloane label `a : ℕ`.
-* `TauCeti.DynkinType.typeAIsometryZeroSumLattice_glueLabelVector_apply`,
-  `TauCeti.DynkinType.typeARootLattice_form_glueLabelVector_self`,
-  `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_glueLabelVector_one`,
+  Conway--Sloane label `a : ℕ`, with `glueLabelVector_A`, `glueLabelVector_E6_one`,
+  `glueLabelVector_E6_two`, `glueLabelVector_E7_one`, and the `Dₙ` coordinate formulas.
+* `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_glueLabelVector_one`,
   `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_glueLabelVector_two`,
-  `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_glueLabelVector_three`: images and
-  self-pairing of the `Aₙ` and `Dₙ` label representatives in the classical zero-sum and checkerboard
-  models.
+  `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_glueLabelVector_three`: images of the `Dₙ`
+  label representatives in the classical checkerboard model.
 * `TauCeti.DynkinType.glueVector`, `TauCeti.DynkinType.glueDualVector`: the representative of an
   element of `t.glueAlphabet ht` in the ambient space and in `(t.rootLattice ht).dualCarrier`.
 * `TauCeti.DynkinType.mk_glueVector`, `TauCeti.DynkinType.mk_glueDualVector`,
@@ -65,12 +63,16 @@ for every glued lattice `TauCeti.DynkinType.gluedLattice`.
 * `TauCeti.DynkinType.glueWordVector`, `TauCeti.DynkinType.glueWordDualVector`: the coordinatewise
   representative of a glue word across a family of simply-laced components.
 * `TauCeti.DynkinType.mk_glueWordVector`, `TauCeti.DynkinType.mk_glueWordDualVector`,
+  `TauCeti.DynkinType.zsmul_glueWordVector_mem_pi_rootLattice_carrier_iff`,
+  `TauCeti.DynkinType.nsmul_glueWordVector_mem_pi_rootLattice_carrier_iff`,
   `TauCeti.DynkinType.pi_rootLattice_form_glueWordVector_self`,
-  `TauCeti.DynkinType.pairing_pi_glueAlphabet_eq_form_glueWordVector`: coset class, norm attainment,
-  and polar pairing for glue words.
-* `TauCeti.DynkinType.mem_gluedLattice_carrier_iff_exists`,
-  `TauCeti.DynkinType.gluedLattice_carrier_eq_sup_span_glueWordVector`: explicit coset decomposition
-  and generator span of `gluedLattice`.
+  `TauCeti.DynkinType.pairing_pi_glueAlphabet_eq_form_glueWordVector`: coset class, scalar-multiple
+  root-lattice membership, norm attainment, and polar pairing for glue words.
+* `TauCeti.DynkinType.gluedLatticeIsometryOfEq_glueWordVector`,
+  `TauCeti.DynkinType.mem_gluedLattice_carrier_iff_exists`,
+  `TauCeti.DynkinType.mem_gluedLattice_carrier_iff_exists_nsmul`,
+  `TauCeti.DynkinType.gluedLattice_carrier_eq_sup_span_glueWordVector`: naturality, explicit coset
+  decompositions, and generator span of `gluedLattice`.
 
 ## References
 
@@ -108,18 +110,15 @@ out-of-range labels of `D` and `E`, and non-simply-laced types evaluate to `0`. 
       if j.val + 2 < n then ((j.val + 1 : ℕ) : ℚ) / 2
       else if j.val + 2 = n then (n : ℚ) / 4
       else ((n : ℚ) - 2) / 4
-  | E6, 1 => fun j ↦ match j.val with
-      | 0 => 4 / 3 | 1 => 1 | 2 => 5 / 3 | 3 => 2 | 4 => 4 / 3 | _ => 2 / 3
-  | E6, 2 => fun j ↦ match j.val with
-      | 0 => -(4 / 3) | 1 => -1 | 2 => -(5 / 3) | 3 => -2 | 4 => -(4 / 3) | _ => -(2 / 3)
-  | E7, 1 => fun j ↦ match j.val with
-      | 0 => 1 | 1 => 3 / 2 | 2 => 2 | 3 => 3 | 4 => 5 / 2 | 5 => 2 | _ => 3 / 2
+  | E6, 1 => typeE₆MinusculeWeight
+  | E6, 2 => -typeE₆MinusculeWeight
+  | E7, 1 => typeE₇MinusculeWeight
   | _, _ => 0
 
-/-- The `j`-th simple-root coordinate of label `a` of `Aₙ`. -/
-@[simp] theorem glueLabelVector_A_apply (n a : ℕ) (j : Fin n) :
-    (A n).glueLabelVector a j =
-      ((min (j.val + 1) a : ℕ) : ℚ) - ((j.val + 1 : ℕ) * a : ℚ) / (n + 1) := (rfl)
+/-- Label `a` of `Aₙ` is `typeACosetRepresentative n a`. -/
+@[simp] theorem glueLabelVector_A (n a : ℕ) :
+    (A n).glueLabelVector a = typeACosetRepresentative n a :=
+  (rfl)
 
 /-- The `j`-th simple-root coordinate of the spinor label `1` of `Dₙ`. -/
 @[simp] theorem glueLabelVector_D_one_apply (n : ℕ) (j : Fin n) :
@@ -138,33 +137,14 @@ out-of-range labels of `D` and `E`, and non-simply-laced types evaluate to `0`. 
       if j.val + 2 < n then ((j.val + 1 : ℕ) : ℚ) / 2
       else if j.val + 2 = n then (n : ℚ) / 4 else ((n : ℚ) - 2) / 4 := (rfl)
 
-/-- The `j`-th simple-root coordinate of label `1` (`ϖ₁`) of `E₆`. -/
-@[simp] theorem glueLabelVector_E6_one_apply (j : Fin 6) :
-    E6.glueLabelVector 1 j = ((![4, 3, 5, 6, 4, 2] : Fin 6 → ℤ) j : ℚ) / 3 := by
-  fin_cases j <;> norm_num <;> rfl
-
-/-- The `j`-th simple-root coordinate of label `2` (`-ϖ₁`) of `E₆`. -/
-@[simp] theorem glueLabelVector_E6_two_apply (j : Fin 6) :
-    E6.glueLabelVector 2 j = -(((![4, 3, 5, 6, 4, 2] : Fin 6 → ℤ) j : ℚ) / 3) := by
-  fin_cases j <;> norm_num <;> rfl
-
-/-- The `j`-th simple-root coordinate of label `1` (`ϖ₇`) of `E₇`. -/
-@[simp] theorem glueLabelVector_E7_one_apply (j : Fin 7) :
-    E7.glueLabelVector 1 j = ((![2, 3, 4, 6, 5, 4, 3] : Fin 7 → ℤ) j : ℚ) / 2 := by
-  fin_cases j <;> norm_num <;> rfl
-
 /-- Label `1` of `E₆` is the minuscule weight `ϖ₁`. -/
-theorem glueLabelVector_E6_one : (E6.glueLabelVector 1 : Fin 6 → ℚ) = typeE₆MinusculeWeight :=
-  funext fun j ↦ (glueLabelVector_E6_one_apply j).trans (typeE₆MinusculeWeight_apply j).symm
+@[simp] theorem glueLabelVector_E6_one : E6.glueLabelVector 1 = typeE₆MinusculeWeight := (rfl)
 
 /-- Label `2` of `E₆` is `-ϖ₁`. -/
-theorem glueLabelVector_E6_two : (E6.glueLabelVector 2 : Fin 6 → ℚ) = -typeE₆MinusculeWeight :=
-  funext fun j ↦ (glueLabelVector_E6_two_apply j).trans
-    (congrArg Neg.neg (typeE₆MinusculeWeight_apply j).symm)
+@[simp] theorem glueLabelVector_E6_two : E6.glueLabelVector 2 = -typeE₆MinusculeWeight := (rfl)
 
 /-- Label `1` of `E₇` is the minuscule weight `ϖ₇`. -/
-theorem glueLabelVector_E7_one : (E7.glueLabelVector 1 : Fin 7 → ℚ) = typeE₇MinusculeWeight :=
-  funext fun j ↦ (glueLabelVector_E7_one_apply j).trans (typeE₇MinusculeWeight_apply j).symm
+@[simp] theorem glueLabelVector_E7_one : E7.glueLabelVector 1 = typeE₇MinusculeWeight := (rfl)
 
 /-- Out-of-range labels `4 ≤ a` of `Dₙ` evaluate to `0`. -/
 @[simp] theorem glueLabelVector_D_of_ge (n : ℕ) {a : ℕ} (ha : 4 ≤ a) :
@@ -200,32 +180,16 @@ theorem glueLabelVector_E7_one : (E7.glueLabelVector 1 : Fin 7 → ℚ) = typeE�
   | A n => exact typeACosetRepresentative_zero n
   | D _ | E6 | E7 | E8 | B _ | C _ | F4 | G2 => rfl
 
-/-- Label `1` of `Aₙ` is the first fundamental weight `ω₁`. -/
-theorem glueLabelVector_A_one (n : ℕ) :
-    ((A n).glueLabelVector 1 : Fin n → ℚ) = typeAFundamentalWeight n :=
-  typeACosetRepresentative_one n
-
-/-- Label `n + 1` of `Aₙ` evaluates to the zero vector. -/
-theorem glueLabelVector_A_succ (n : ℕ) : ((A n).glueLabelVector (n + 1) : Fin n → ℚ) = 0 :=
-  typeACosetRepresentative_add_one_self n
-
 /-- In type `Dₙ`, the cospinor representative is the spinor representative minus the vector
 representative at every rank. -/
 theorem glueLabelVector_D_three_eq_sub (n : ℕ) :
     (D n).glueLabelVector 3 = (D n).glueLabelVector 1 - (D n).glueLabelVector 2 := by
-  refine funext fun (j : Fin n) ↦ ?_
+  funext j
+  rw [Pi.sub_apply]
+  dsimp only [rank] at j
   have hj : j.val < n := j.isLt
-  have hsub : ((D n).glueLabelVector 1 - (D n).glueLabelVector 2) j =
-      (D n).glueLabelVector 1 j - (D n).glueLabelVector 2 j := rfl
-  rw [hsub, glueLabelVector_D_three_apply, glueLabelVector_D_one_apply, glueLabelVector_D_two_apply]
-  by_cases h2 : j.val + 2 < n
-  · rw [ite_eq_left h2, ite_eq_left h2, ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
-  · by_cases heq2 : j.val + 2 = n
-    · rw [ite_eq_right h2, ite_eq_left heq2, ite_eq_right h2, ite_eq_left heq2, ite_eq_left heq2]
-      ring
-    · rw [ite_eq_right h2, ite_eq_right heq2, ite_eq_right h2, ite_eq_right heq2,
-        ite_eq_right heq2, ite_eq_left (by omega)]
-      ring
+  rw [glueLabelVector_D_three_apply, glueLabelVector_D_one_apply, glueLabelVector_D_two_apply]
+  split_ifs <;> first | omega | ring
 
 /-- Transporting along an equality of simply-laced Dynkin types preserves `glueLabelVector`. -/
 theorem rootLatticeIsometryOfEq_glueLabelVector {t s : DynkinType} (ht : t.IsSimplyLaced)
@@ -233,28 +197,7 @@ theorem rootLatticeIsometryOfEq_glueLabelVector {t s : DynkinType} (ht : t.IsSim
     t.rootLatticeIsometryOfEq ht h hs (t.glueLabelVector a) = s.glueLabelVector a := by
   subst h; rw [rootLatticeIsometryOfEq_rfl, Isometry.refl_apply]
 
-/-! ## Classical coordinate images for `Aₙ` and `Dₙ` -/
-
-/-- **Classical zero-sum coordinates of the `Aₙ` label representative**: for `0 ≤ a ≤ n + 1`,
-`typeAIsometryZeroSumLattice` carries `(A n).glueLabelVector a` to the vector in `ℚ^{n+1}` with
-`1 - a / (n + 1)` in the first `a` positions and `-a / (n + 1)` in the remaining positions. -/
-theorem typeAIsometryZeroSumLattice_glueLabelVector_apply (n : ℕ) {a : ℕ} (ha : a ≤ n + 1)
-    (r : Fin (n + 1)) :
-    (typeAIsometryZeroSumLattice n ((A n).glueLabelVector a) : Fin (n + 1) → ℚ) r =
-      (if r.val < a then 1 else 0) - (a : ℚ) / (n + 1) :=
-  typeAIsometryZeroSumLattice_typeACosetRepresentative_apply n ha r
-
-/-- For `0 ≤ a ≤ n + 1`, the `Aₙ` representative lies in the dual of `typeARootLattice n`. -/
-theorem glueLabelVector_A_mem_dualCarrier (n : ℕ) {a : ℕ} (ha : a ≤ n + 1) :
-    ((A n).glueLabelVector a : Fin n → ℚ) ∈ (typeARootLattice n).dualCarrier :=
-  typeACosetRepresentative_mem_dualCarrier n ha
-
-/-- For `0 ≤ a ≤ n + 1`, the `Aₙ` representative has squared norm `a (n + 1 - a) / (n + 1)` in
-`typeARootLattice n`. -/
-theorem typeARootLattice_form_glueLabelVector_self (n : ℕ) {a : ℕ} (ha : a ≤ n + 1) :
-    (typeARootLattice n).form ((A n).glueLabelVector a) ((A n).glueLabelVector a) =
-      (a : ℚ) * (n + 1 - a) / (n + 1) :=
-  form_typeACosetRepresentative_self n ha
+/-! ## Classical checkerboard images for `Dₙ` -/
 
 /-- **In type `Dₙ` (`4 ≤ n`), label `1` maps to the Conway--Sloane checkerboard spinor
 representative `s = (1/2, …, 1/2)`.** -/
@@ -263,21 +206,16 @@ theorem rootLatticeIsometryCheckerboard_glueLabelVector_one (n : ℕ) (hn : 4 �
     rootLatticeIsometryCheckerboard n hn ht ((D n).glueLabelVector 1) =
       checkerboardSpinor n := by
   refine rootLatticeIsometryCheckerboard_eq_of_repr n hn ht fun k ↦ ?_
+  have hk : k.val < n := k.isLt
   rw [glueLabelVector_D_one_apply, typeDSimpleRootBasis_repr_apply]
-  by_cases hk2 : k.val + 2 < n
-  · rw [ite_eq_left hk2, ite_eq_left hk2]
-    simp only [checkerboardSpinor_apply, sum_const, Fin.card_Iic, nsmul_eq_mul]
+  split_ifs <;> try omega
+  · simp only [checkerboardSpinor_apply, sum_const, Fin.card_Iic, nsmul_eq_mul]
     push_cast
     ring
-  · by_cases hk1 : k.val + 1 < n
-    · have heq2 : k.val + 2 = n := by omega
-      rw [ite_eq_right hk2, ite_eq_left heq2, ite_eq_right hk2, ite_eq_left hk1,
-        sum_checkerboardSpinor, checkerboardSpinor_apply, invOf_eq_inv]
-      ring
-    · have hne2 : k.val + 2 ≠ n := by omega
-      rw [ite_eq_right hk2, ite_eq_right hne2, ite_eq_right hk2, ite_eq_right hk1,
-        sum_checkerboardSpinor, invOf_eq_inv]
-      ring
+  · rw [sum_checkerboardSpinor, checkerboardSpinor_apply, invOf_eq_inv]
+    ring
+  · rw [sum_checkerboardSpinor, invOf_eq_inv]
+    ring
 
 /-- **In type `Dₙ` (`4 ≤ n`), label `2` maps to the Conway--Sloane checkerboard vector
 representative `v = eₙ`.** -/
@@ -286,13 +224,15 @@ theorem rootLatticeIsometryCheckerboard_glueLabelVector_two (n : ℕ) [NeZero n]
     rootLatticeIsometryCheckerboard n hn ht ((D n).glueLabelVector 2) =
       checkerboardVector n := by
   refine rootLatticeIsometryCheckerboard_eq_of_repr n hn ht fun k ↦ ?_
+  have hk : k.val < n := k.isLt
   have hlast : (⟨n - 1, by omega⟩ : Fin n) = ⊤ := Fin.ext (Fin.val_top n).symm
   rw [glueLabelVector_D_two_apply, typeDSimpleRootBasis_repr_apply]
-  by_cases hk2 : k.val + 2 < n
-  · have hne2 : k.val + 2 ≠ n := by omega
-    have hne1 : k.val + 1 ≠ n := by omega
-    rw [ite_eq_right hne2, ite_eq_right hne1, ite_eq_left hk2]
-    symm
+  split_ifs <;> try omega
+  · rw [sum_checkerboardVector, hlast, checkerboardVector_top, invOf_eq_inv]
+    norm_num
+  · rw [sum_checkerboardVector, invOf_eq_inv]
+    norm_num
+  · symm
     refine sum_eq_zero fun j hj ↦ ?_
     rw [mem_Iic] at hj
     have hjtop : j ≠ ⊤ := by
@@ -301,16 +241,6 @@ theorem rootLatticeIsometryCheckerboard_glueLabelVector_two (n : ℕ) [NeZero n]
       have : j.val ≤ k.val := hj
       omega
     simp [checkerboardVector_apply, hjtop]
-  · by_cases hk1 : k.val + 1 < n
-    · have heq2 : k.val + 2 = n := by omega
-      rw [ite_eq_left heq2, ite_eq_right hk2, ite_eq_left hk1, sum_checkerboardVector, hlast,
-        checkerboardVector_top, invOf_eq_inv]
-      norm_num
-    · have hne2 : k.val + 2 ≠ n := by omega
-      have heq1 : k.val + 1 = n := by omega
-      rw [ite_eq_right hne2, ite_eq_left heq1, ite_eq_right hk2, ite_eq_right hk1,
-        sum_checkerboardVector, invOf_eq_inv]
-      norm_num
 
 /-- **In type `Dₙ` (`4 ≤ n`), label `3` maps to the Conway--Sloane checkerboard cospinor
 representative `c = s - eₙ`.** -/
@@ -359,46 +289,67 @@ theorem rootLatticeIsometryOfEq_glueVector {t s : DynkinType} (ht : t.IsSimplyLa
 
 /-! ## Dual-lattice membership, discriminant classes, norms, and polar pairing -/
 
-/-- **Every valid Conway--Sloane label representative lies in the dual of the root lattice.** -/
+/-- **Every Conway--Sloane label representative `t.glueLabelVector a` lies in the dual of the root
+lattice.** -/
 theorem glueLabelVector_mem_dualCarrier (t : DynkinType) (hv : t.Valid) (ht : t.IsSimplyLaced)
-    {a : ℕ} (ha : a < t.glueLabelCount) :
+    (a : ℕ) :
     t.glueLabelVector a ∈ (t.rootLattice ht).dualCarrier := by
-  rcases Nat.eq_zero_or_pos a with rfl | hapos
-  · rw [glueLabelVector_zero]
-    exact zero_mem _
   cases t with
   | A n =>
-    have ha' : a ≤ n + 1 := by simp only [glueLabelCount] at ha; omega
     exact (congrArg IntegralLattice.dualCarrier (rootLattice_A n ht)).symm ▸
-      glueLabelVector_A_mem_dualCarrier n ha'
+      typeACosetRepresentative_mem_dualCarrier n a
   | D n =>
     have hn4 : 4 ≤ n := valid_D.mp hv
     have : NeZero n := ⟨by omega⟩
     rw [← (rootLatticeIsometryCheckerboard n hn4 ht).apply_mem_dualCarrier_iff]
-    simp only [glueLabelCount] at ha
-    interval_cases a
-    · rw [rootLatticeIsometryCheckerboard_glueLabelVector_one n hn4 ht]
+    match a with
+    | 0 =>
+      rw [glueLabelVector_zero, map_zero]
+      exact zero_mem _
+    | 1 =>
+      rw [rootLatticeIsometryCheckerboard_glueLabelVector_one n hn4 ht]
       exact checkerboardSpinor_mem_dualCarrier
-    · rw [rootLatticeIsometryCheckerboard_glueLabelVector_two n hn4 ht]
+    | 2 =>
+      rw [rootLatticeIsometryCheckerboard_glueLabelVector_two n hn4 ht]
       exact checkerboardVector_mem_dualCarrier
-    · rw [rootLatticeIsometryCheckerboard_glueLabelVector_three n hn4 ht]
+    | 3 =>
+      rw [rootLatticeIsometryCheckerboard_glueLabelVector_three n hn4 ht]
       exact checkerboardCospinor_mem_dualCarrier
+    | _ + 4 =>
+      rw [glueLabelVector_D_of_ge n (by omega), map_zero]
+      exact zero_mem _
   | E6 =>
     have hmem : (E6.glueLabelVector a : Fin 6 → ℚ) ∈ typeE₆RootLattice.dualCarrier := by
-      simp only [glueLabelCount] at ha
-      interval_cases a
-      · rw [glueLabelVector_E6_one]
+      match a with
+      | 0 =>
+        rw [glueLabelVector_zero]
+        exact zero_mem _
+      | 1 =>
+        rw [glueLabelVector_E6_one]
         exact typeE₆MinusculeWeight_mem_dualCarrier
-      · rw [glueLabelVector_E6_two]
+      | 2 =>
+        rw [glueLabelVector_E6_two]
         exact neg_mem typeE₆MinusculeWeight_mem_dualCarrier
+      | _ + 3 =>
+        rw [glueLabelVector_E6_of_ge (by omega)]
+        exact zero_mem _
     exact (congrArg IntegralLattice.dualCarrier (rootLattice_E6 ht)).symm ▸ hmem
   | E7 =>
-    obtain rfl : a = 1 := by simp only [glueLabelCount] at ha; omega
-    have hmem : (E7.glueLabelVector 1 : Fin 7 → ℚ) ∈ typeE₇RootLattice.dualCarrier := by
-      rw [glueLabelVector_E7_one]
-      exact typeE₇MinusculeWeight_mem_dualCarrier
+    have hmem : (E7.glueLabelVector a : Fin 7 → ℚ) ∈ typeE₇RootLattice.dualCarrier := by
+      match a with
+      | 0 =>
+        rw [glueLabelVector_zero]
+        exact zero_mem _
+      | 1 =>
+        rw [glueLabelVector_E7_one]
+        exact typeE₇MinusculeWeight_mem_dualCarrier
+      | _ + 2 =>
+        rw [glueLabelVector_E7_of_ge (by omega)]
+        exact zero_mem _
     exact (congrArg IntegralLattice.dualCarrier (rootLattice_E7 ht)).symm ▸ hmem
-  | E8 => simp only [glueLabelCount] at ha; omega
+  | E8 =>
+    rw [glueLabelVector_E8]
+    exact zero_mem _
   | B n => exact absurd ht (not_isSimplyLaced_B n)
   | C n => exact absurd ht (not_isSimplyLaced_C n)
   | F4 => exact absurd ht not_isSimplyLaced_F4
@@ -409,7 +360,7 @@ theorem glueVector_mem_dualCarrier (t : DynkinType) (hv : t.Valid) (ht : t.IsSim
     (x : t.glueAlphabet ht) :
     t.glueVector ht x ∈ (t.rootLattice ht).dualCarrier := by
   rw [glueVector_def]
-  exact t.glueLabelVector_mem_dualCarrier hv ht ((t.glueLabelEquiv ht).symm x).isLt
+  exact t.glueLabelVector_mem_dualCarrier hv ht ((t.glueLabelEquiv ht).symm x).val
 
 /-- **The canonical dual-lattice representative of a glue-alphabet class**, bundling `glueVector`
 into `(t.rootLattice ht).dualCarrier`. -/
@@ -431,10 +382,10 @@ noncomputable def glueDualVector (t : DynkinType) (hv : t.Valid) (ht : t.IsSimpl
 /-- Regardless of parity, `rootLatticeIsometryCheckerboard` maps the class of label `1` of `Dₙ` to
 `checkerboardSpinorClass n`. -/
 private theorem discriminantGroupEquiv_mk_glueLabelVector_D_one (n : ℕ) (hv : (D n).Valid)
-    (ht : (D n).IsSimplyLaced) (h1 : 1 < (D n).glueLabelCount) :
+    (ht : (D n).IsSimplyLaced) :
     (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv
         (Submodule.Quotient.mk ⟨(D n).glueLabelVector 1,
-          (D n).glueLabelVector_mem_dualCarrier hv ht h1⟩) =
+          (D n).glueLabelVector_mem_dualCarrier hv ht 1⟩) =
       checkerboardSpinorClass n := by
   rw [Isometry.discriminantGroupEquiv_mk, mk_eq_checkerboardSpinorClass_iff,
     Isometry.coe_dualCarrierEquiv_apply,
@@ -444,10 +395,10 @@ private theorem discriminantGroupEquiv_mk_glueLabelVector_D_one (n : ℕ) (hv : 
 /-- Regardless of parity, `rootLatticeIsometryCheckerboard` maps the class of label `2` of `Dₙ` to
 `checkerboardVectorClass n`. -/
 private theorem discriminantGroupEquiv_mk_glueLabelVector_D_two (n : ℕ) [NeZero n]
-    (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) (h2 : 2 < (D n).glueLabelCount) :
+    (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) :
     (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv
         (Submodule.Quotient.mk ⟨(D n).glueLabelVector 2,
-          (D n).glueLabelVector_mem_dualCarrier hv ht h2⟩) =
+          (D n).glueLabelVector_mem_dualCarrier hv ht 2⟩) =
       checkerboardVectorClass n := by
   rw [Isometry.discriminantGroupEquiv_mk, mk_eq_checkerboardVectorClass_iff,
     Isometry.coe_dualCarrierEquiv_apply,
@@ -457,10 +408,10 @@ private theorem discriminantGroupEquiv_mk_glueLabelVector_D_two (n : ℕ) [NeZer
 /-- Regardless of parity, `rootLatticeIsometryCheckerboard` maps the class of label `3` of `Dₙ` to
 `checkerboardCospinorClass n`. -/
 private theorem discriminantGroupEquiv_mk_glueLabelVector_D_three (n : ℕ) [NeZero n]
-    (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) (h3 : 3 < (D n).glueLabelCount) :
+    (hv : (D n).Valid) (ht : (D n).IsSimplyLaced) :
     (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv
         (Submodule.Quotient.mk ⟨(D n).glueLabelVector 3,
-          (D n).glueLabelVector_mem_dualCarrier hv ht h3⟩) =
+          (D n).glueLabelVector_mem_dualCarrier hv ht 3⟩) =
       checkerboardCospinorClass n := by
   rw [Isometry.discriminantGroupEquiv_mk, mk_eq_checkerboardCospinorClass_iff,
     Isometry.coe_dualCarrierEquiv_apply,
@@ -472,7 +423,7 @@ private theorem discriminantGroupEquiv_mk_glueLabelVector_D_three (n : ℕ) [NeZ
 private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).IsSimplyLaced)
     (a : Fin 4) (hapos : 0 < a.val) :
     Submodule.Quotient.mk ⟨(D n).glueLabelVector a.val,
-        (D n).glueLabelVector_mem_dualCarrier hv ht a.isLt⟩ =
+        (D n).glueLabelVector_mem_dualCarrier hv ht a.val⟩ =
       (D n).glueAlphabetIsometry hv ht ((D n).glueLabelEquiv ht a) := by
   have hn4 : 4 ≤ n := valid_D.mp hv
   have : NeZero n := ⟨by omega⟩
@@ -484,24 +435,24 @@ private theorem mk_glueLabelVector_D (n : ℕ) (hv : (D n).Valid) (ht : (D n).Is
       LinearEquiv.apply_symm_apply, glueLabelEquiv_D_of_even n ht hpar]
     dsimp only
     interval_cases k
-    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_one n hv ht hk).trans <|
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_one n hv ht).trans <|
         (zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one n hpar).symm.trans
           (congrArg _ (by decide))
-    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_two n hv ht hk).trans <|
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_two n hv ht).trans <|
         (zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero n hpar).symm.trans
           (congrArg _ (by decide))
-    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_three n hv ht hk).trans <|
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_three n hv ht).trans <|
         (zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one n hpar).symm.trans
           (congrArg _ (by decide))
   · rw [glueAlphabetIsometry_D_apply_of_odd n hv ht hpar, Isometry.discriminantGroupEquiv_symm,
       LinearEquiv.apply_symm_apply, glueLabelEquiv_D_of_odd n ht hpar]
     dsimp only
     interval_cases k
-    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_one n hv ht hk).trans
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_one n hv ht).trans
         (zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one n hpar).symm
-    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_two n hv ht hk).trans
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_two n hv ht).trans
         (zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two n hpar).symm
-    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_three n hv ht hk).trans
+    · exact (discriminantGroupEquiv_mk_glueLabelVector_D_three n hv ht).trans
         (zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three n hpar).symm
 
 /-- **The representative of a bounded printed label projects to the discriminant class named by
@@ -512,7 +463,7 @@ that label.** -/
     Submodule.Quotient.mk ⟨t.glueLabelVector a, hx⟩ =
       t.glueAlphabetIsometry hv ht (t.glueLabelEquiv ht ⟨a, ha⟩) := by
   have hsub : (⟨t.glueLabelVector a, hx⟩ : (t.rootLattice ht).dualCarrier) =
-      ⟨t.glueLabelVector a, t.glueLabelVector_mem_dualCarrier hv ht ha⟩ :=
+      ⟨t.glueLabelVector a, t.glueLabelVector_mem_dualCarrier hv ht a⟩ :=
     Subtype.ext rfl
   rw [hsub]
   rcases Nat.eq_zero_or_pos a with rfl | hapos
@@ -523,15 +474,14 @@ that label.** -/
   | A n =>
     refine Eq.trans ?_ (glueAlphabetIsometry_A_apply n hv ht ((A n).glueLabelEquiv ht ⟨a, ha⟩)).symm
     rw [glueLabelEquiv_A, typeADiscriminantGroupEquiv_apply, ZMod.val_natCast_of_lt ha,
-      ← mk_typeACosetRepresentative n ha.le (typeACosetRepresentative_mem_dualCarrier n ha.le)]
+      ← mk_typeACosetRepresentative n a (typeACosetRepresentative_mem_dualCarrier n a)]
     exact Isometry.mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_A n ht).symm _ _ rfl
   | D n => exact mk_glueLabelVector_D n hv ht ⟨a, ha⟩ hapos
   | E6 =>
     have ha3 : a < 3 := ha
     interval_cases a
     · refine Eq.trans ?_ (glueAlphabetIsometry_E6_apply hv ht (E6.glueLabelEquiv ht ⟨1, ha⟩)).symm
-      have hd : ((1 : ℕ) : ZMod 3) = 1 := rfl
-      rw [glueLabelEquiv_E6, hd, typeE₆DiscriminantGroupEquiv_apply_one,
+      rw [glueLabelEquiv_E6, Nat.cast_one, typeE₆DiscriminantGroupEquiv_apply_one,
         ← mk_typeE₆MinusculeWeightDual]
       exact Isometry.mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_E6 ht).symm _ _
         (glueLabelVector_E6_one.trans coe_typeE₆MinusculeWeightDual.symm)
@@ -546,8 +496,7 @@ that label.** -/
   | E7 =>
     obtain rfl : a = 1 := by simp only [glueLabelCount] at ha; omega
     refine Eq.trans ?_ (glueAlphabetIsometry_E7_apply hv ht (E7.glueLabelEquiv ht ⟨1, ha⟩)).symm
-    have hd : ((1 : ℕ) : ZMod 2) = 1 := rfl
-    rw [glueLabelEquiv_E7, hd, typeE₇DiscriminantGroupEquiv_apply_one,
+    rw [glueLabelEquiv_E7, Nat.cast_one, typeE₇DiscriminantGroupEquiv_apply_one,
       ← mk_typeE₇MinusculeWeightDual]
     exact Isometry.mk_eq_discriminantGroupEquiv_ofEq_mk (rootLattice_E7 ht).symm _ _
       (glueLabelVector_E7_one.trans coe_typeE₇MinusculeWeightDual.symm)
@@ -574,13 +523,6 @@ that label.** -/
   (congrArg Submodule.Quotient.mk
     (Subtype.ext (t.coe_glueDualVector hv ht x).symm)).trans (t.mk_glueDualVector hv ht x)
 
-/-- Reading the glue label of `glueDualVector` back through `glueAlphabetIsometry.symm` recovers
-the label. -/
-theorem glueAlphabetIsometry_symm_mk_glueDualVector (t : DynkinType) (hv : t.Valid)
-    (ht : t.IsSimplyLaced) (x : t.glueAlphabet ht) :
-    (t.glueAlphabetIsometry hv ht).symm (Submodule.Quotient.mk (t.glueDualVector hv ht x)) = x := by
-  rw [mk_glueDualVector, QuadraticMap.IsometryEquiv.symm_apply_apply]
-
 /-- A dual vector `y` lies in the discriminant coset named by `x` if and only if `y - glueVector x`
 lies in the root lattice. -/
 theorem sub_glueVector_mem_rootLattice_carrier_iff (t : DynkinType) (hv : t.Valid)
@@ -590,7 +532,7 @@ theorem sub_glueVector_mem_rootLattice_carrier_iff (t : DynkinType) (hv : t.Vali
   rw [← t.mk_glueDualVector hv ht x, discriminantGroup_mk_eq_iff, Submodule.coe_sub,
     coe_glueDualVector]
 
-/-- Representatives add up to a vector of the root lattice: `glueVector (x + y)` differs from
+/-- Representatives are additive modulo the root lattice: `glueVector (x + y)` differs from
 `glueVector x + glueVector y` by an element of `t.rootLattice ht`. -/
 theorem glueVector_add_sub_mem_rootLattice_carrier (t : DynkinType) (hv : t.Valid)
     (ht : t.IsSimplyLaced) (x y : t.glueAlphabet ht) :
@@ -619,7 +561,7 @@ theorem glueVector_add_sub_mem_rootLattice_carrier (t : DynkinType) (hv : t.Vali
     have ha' : a ≤ n + 1 := by simp only [glueLabelCount] at ha; omega
     refine (congrArg (fun L : IntegralLattice (Fin n → ℚ) ↦
       L.form ((A n).glueLabelVector a) ((A n).glueLabelVector a)) (rootLattice_A n ht)).trans ?_
-    rw [typeARootLattice_form_glueLabelVector_self n ha', glueLabelMinimum_A]
+    rw [glueLabelVector_A, form_typeACosetRepresentative_self n ha', glueLabelMinimum_A]
   | D n =>
     have hn4 : 4 ≤ n := valid_D.mp hv
     have : NeZero n := ⟨by omega⟩
@@ -817,13 +759,6 @@ theorem glueWordDualVector_injective (hv : ∀ i, (t i).Valid) :
     (Subtype.ext (coe_glueWordDualVector t ht hv w).symm)).trans
       (mk_glueWordDualVector t ht hv w)
 
-/-- Reading the glue word of `glueWordDualVector` back through `glueWordIsometry.symm` recovers
-the word. -/
-theorem glueWordIsometry_symm_mk_glueWordDualVector (hv : ∀ i, (t i).Valid)
-    (w : ∀ i, (t i).glueAlphabet (ht i)) :
-    (glueWordIsometry t ht hv).symm (Submodule.Quotient.mk (glueWordDualVector t ht hv w)) = w := by
-  rw [mk_glueWordDualVector, QuadraticMap.IsometryEquiv.symm_apply_apply]
-
 /-- A dual vector `x` of the orthogonal sum of root lattices lies in the coset named by the glue
 word `w` if and only if `x - glueWordVector w` lies in the orthogonal sum of root lattices. -/
 theorem sub_glueWordVector_mem_pi_rootLattice_carrier_iff (hv : ∀ i, (t i).Valid)
@@ -835,7 +770,9 @@ theorem sub_glueWordVector_mem_pi_rootLattice_carrier_iff (hv : ∀ i, (t i).Val
   rw [← mk_glueWordDualVector t ht hv w, discriminantGroup_mk_eq_iff, Submodule.coe_sub,
     coe_glueWordDualVector]
 
-/-- Glue-word representatives add up to a vector of the orthogonal sum of root lattices. -/
+/-- Glue-word representatives are additive modulo the orthogonal sum of root lattices:
+`glueWordVector t ht (v + w)` differs from `glueWordVector t ht v + glueWordVector t ht w` by a
+vector of the orthogonal sum of root lattices. -/
 theorem glueWordVector_add_sub_mem_pi_rootLattice_carrier (hv : ∀ i, (t i).Valid)
     (v w : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordVector t ht (v + w) - (glueWordVector t ht v + glueWordVector t ht w) ∈
@@ -844,6 +781,28 @@ theorem glueWordVector_add_sub_mem_pi_rootLattice_carrier (hv : ∀ i, (t i).Val
   intro i
   simp only [Pi.sub_apply, Pi.add_apply, glueWordVector_apply]
   exact (t i).glueVector_add_sub_mem_rootLattice_carrier (hv i) (ht i) (v i) (w i)
+
+/-- An integer multiple `k • glueWordVector t ht w` lies in the orthogonal sum of root lattices if
+and only if `k • w = 0`. -/
+theorem zsmul_glueWordVector_mem_pi_rootLattice_carrier_iff (hv : ∀ i, (t i).Valid)
+    (k : ℤ) (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    k • glueWordVector t ht w ∈ (pi fun i ↦ (t i).rootLattice (ht i)).carrier ↔ k • w = 0 := by
+  have hmk :
+      (Submodule.Quotient.mk (k • glueWordDualVector t ht hv w) :
+          (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
+        glueWordIsometry t ht hv (k • w) := by
+    rw [Submodule.Quotient.mk_smul, mk_glueWordDualVector]
+    exact (map_zsmul (glueWordIsometry t ht hv) k w).symm
+  rw [← coe_glueWordDualVector t ht hv w, ← Submodule.coe_smul,
+    ← discriminantGroup_mk_eq_zero_iff, hmk]
+  exact map_eq_zero_iff (glueWordIsometry t ht hv) (EquivLike.injective _)
+
+/-- A natural multiple `k • glueWordVector t ht w` lies in the orthogonal sum of root lattices if
+and only if `k • w = 0`. -/
+theorem nsmul_glueWordVector_mem_pi_rootLattice_carrier_iff (hv : ∀ i, (t i).Valid)
+    (k : ℕ) (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    k • glueWordVector t ht w ∈ (pi fun i ↦ (t i).rootLattice (ht i)).carrier ↔ k • w = 0 := by
+  rw [← natCast_zsmul, zsmul_glueWordVector_mem_pi_rootLattice_carrier_iff t ht hv, natCast_zsmul]
 
 /-- **Every glue-word representative attains the coset minimum norm `∑ i, μ_(t i)(w_i)`.** -/
 theorem pi_rootLattice_form_glueWordVector_self (hv : ∀ i, (t i).Valid)
@@ -875,6 +834,22 @@ variable (hv : ∀ i, (t i).Valid)
   (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
   (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
 
+/-- **Naturality of `glueWordVector` under `gluedLatticeIsometryOfEq`**: the coordinate-preserving
+isometry between glued lattices of equal families of components maps `glueWordVector t ht w` to
+`glueWordVector s hs (piGlueAlphabetCongr t ht σ h w)`. -/
+@[simp] theorem gluedLatticeIsometryOfEq_glueWordVector {κ : Type*} [Fintype κ]
+    {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced} (hvs : ∀ k, (s k).Valid)
+    {H' : AddSubgroup (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k))}
+    (hH' : (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k)).IsIsotropic H')
+    (σ : κ ≃ ι) (h : ∀ k, t (σ k) = s k)
+    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    gluedLatticeIsometryOfEq t ht hv H hH hvs hH' σ h hHH' (glueWordVector t ht w) =
+      glueWordVector s hs (piGlueAlphabetCongr t ht σ h w) := by
+  funext k j
+  rw [gluedLatticeIsometryOfEq_apply, glueWordVector_piGlueAlphabetCongr,
+    rootLatticeIsometryOfEq_apply]
+
 /-- **The canonical representative of a glue word `w` lies in the glued lattice if and only if
 `w ∈ H`.** -/
 @[simp] theorem glueWordVector_mem_gluedLattice_carrier_iff
@@ -904,6 +879,56 @@ theorem mem_gluedLattice_carrier_iff_exists (x : ∀ i, Fin (t i).rank → ℚ) 
     exact sub_add_cancel x (glueWordVector t ht w) ▸
       add_mem (carrier_le_gluedLattice_carrier t ht hv H hH hsub)
         ((glueWordVector_mem_gluedLattice_carrier_iff t ht hv H hH w).mpr hw)
+
+/-- **Coset decomposition of a cyclic glued lattice**: if the glue subgroup `H` is generated by a
+single glue word `w` with `m • w = 0` (`0 < m`), then a vector `x` lies in `gluedLattice` if and
+only if `x - k • glueWordVector t ht w` lies in the orthogonal sum of root lattices for some
+`k < m`. -/
+theorem mem_gluedLattice_carrier_iff_exists_nsmul
+    {w : ∀ i, (t i).glueAlphabet (ht i)} (hHw : H = AddSubgroup.zmultiples w)
+    {m : ℕ} (hm : 0 < m) (hmw : m • w = 0) (x : ∀ i, Fin (t i).rank → ℚ) :
+    x ∈ (gluedLattice t ht hv H hH).carrier ↔
+      ∃ k < m, x - k • glueWordVector t ht w ∈ (pi fun i ↦ (t i).rootLattice (ht i)).carrier := by
+  constructor
+  · intro hx
+    obtain ⟨hxDual, hw⟩ := (mem_gluedLattice_carrier_iff t ht hv H hH x).mp hx
+    rw [hHw, AddSubgroup.mem_zmultiples_iff] at hw
+    obtain ⟨c, hc⟩ := hw
+    have hm0 : (0 : ℤ) < m := Int.natCast_pos.mpr hm
+    have hmod_nonneg : 0 ≤ c % (m : ℤ) := Int.emod_nonneg c hm0.ne'
+    have hmod_lt : c % (m : ℤ) < m := Int.emod_lt_of_pos c hm0
+    refine ⟨(c % (m : ℤ)).toNat, by omega, ?_⟩
+    have hcm : (c % (m : ℤ)).toNat • w = c • w := by
+      have hm_z : (m : ℤ) • w = 0 := by rwa [natCast_zsmul]
+      rw [← natCast_zsmul, Int.toNat_of_nonneg hmod_nonneg]
+      calc (c % (m : ℤ)) • w
+          = (c / (m : ℤ)) • ((m : ℤ) • w) + (c % (m : ℤ)) • w := by rw [hm_z, smul_zero, zero_add]
+        _ = ((m : ℤ) * (c / (m : ℤ)) + c % (m : ℤ)) • w := by
+            rw [← mul_zsmul, mul_comm (c / (m : ℤ)), add_zsmul]
+        _ = c • w := by rw [Int.mul_ediv_add_emod]
+    have hmk_smul :
+        (Submodule.Quotient.mk
+            (((c % (m : ℤ)).toNat : ℤ) • glueWordDualVector t ht hv w) :
+            (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
+          glueWordIsometry t ht hv (((c % (m : ℤ)).toNat : ℤ) • w) := by
+      rw [Submodule.Quotient.mk_smul, mk_glueWordDualVector]
+      exact (map_zsmul (glueWordIsometry t ht hv) _ w).symm
+    have hmk :
+        (Submodule.Quotient.mk ⟨x, hxDual⟩ :
+            (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
+          Submodule.Quotient.mk
+            (((c % (m : ℤ)).toNat : ℤ) • glueWordDualVector t ht hv w) := by
+      rw [hmk_smul, natCast_zsmul, hcm]
+      exact (AddEquiv.symm_apply_eq _).mp hc.symm
+    have hdiff := (discriminantGroup_mk_eq_iff _ _ _).mp hmk
+    rwa [Submodule.coe_sub, Submodule.coe_smul, coe_glueWordDualVector, natCast_zsmul] at hdiff
+  · rintro ⟨k, -, hmem⟩
+    have hw : glueWordVector t ht w ∈ (gluedLattice t ht hv H hH).carrier :=
+      (glueWordVector_mem_gluedLattice_carrier_iff t ht hv H hH w).mpr
+        (hHw ▸ AddSubgroup.mem_zmultiples w)
+    exact sub_add_cancel x (k • glueWordVector t ht w) ▸
+      add_mem (carrier_le_gluedLattice_carrier t ht hv H hH hmem)
+        ((gluedLattice t ht hv H hH).carrier.nsmul_mem hw k)
 
 /-- **Constructive generator theorem for a glued lattice**: if `G` generates the glue subgroup `H`,
 then `gluedLattice` is spanned over `ℤ` by the orthogonal sum of root lattices together with the
