@@ -26,6 +26,18 @@ surjective for `F` of finite rank, and hold over any nontrivially normed field.
 The native `ContinuousLinearMap.IsFredholm` conclusion includes strictness, closed range,
 finite-dimensional kernel and cokernel, and a continuous complement to the kernel.
 
+## Main results
+
+* `ContinuousLinearMap.IsCompletelyContinuous.isFredholm_one_sub`: `1 - u` is Fredholm.
+* `ContinuousLinearMap.IsCompletelyContinuous.index_one_sub_eq_zero`: its index is zero.
+* `ContinuousLinearMap.IsCompletelyContinuous.injective_one_sub_iff_surjective`: `1 - u` is
+  injective if and only if it is surjective.
+* `ContinuousLinearMap.IsCompletelyContinuous.isUnit_one_sub_iff_injective`,
+  `ContinuousLinearMap.IsCompletelyContinuous.isUnit_one_sub_iff_surjective`: `1 - u` is
+  invertible if and only if it is injective, respectively surjective.
+* `ContinuousLinearMap.IsCompletelyContinuous.hasEigenvalue_iff_mem_spectrum`: a nonzero spectral
+  value is an eigenvalue.
+
 ## References
 
 * J.-P. Serre, *Endomorphismes complètement continus des espaces de Banach p-adiques*,
