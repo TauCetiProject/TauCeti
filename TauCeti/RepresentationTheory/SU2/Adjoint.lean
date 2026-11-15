@@ -248,20 +248,6 @@ theorem pauliRotation_mulVec_single_two :
 
 /-! ### The kernel -/
 
-/-- A `2 × 2` matrix commuting with `σ₃ = diag(1, -1)` is diagonal. -/
-theorem isDiag_of_commute_pauli_single_two {A : Matrix (Fin 2) (Fin 2) ℂ}
-    (h : A * pauli (Pi.single 2 1) = pauli (Pi.single 2 1) * A) : A.IsDiag := by
-  have h01 : -A 0 1 = A 0 1 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h 0 1
-  have h10 : A 1 0 = -A 1 0 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, pauli_apply] using Matrix.ext_iff.mpr h 1 0
-  intro i j hij
-  fin_cases i <;> fin_cases j
-  · exact absurd rfl hij
-  · exact CharZero.neg_eq_self_iff.mp h01
-  · exact CharZero.eq_neg_self_iff.mp h10
-  · exact absurd rfl hij
-
 /-- A `2 × 2` matrix commuting with `σ₃` and `σ₁` is scalar. -/
 private theorem eq_smul_one_of_commute_pauli {A : Matrix (Fin 2) (Fin 2) ℂ}
     (h3 : A * pauli (Pi.single 2 1) = pauli (Pi.single 2 1) * A)

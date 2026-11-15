@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import Mathlib.Basic.Real.Star
-public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Orbit
 
 /-!
 # Special orthogonal group of the standard sum-of-squares form
@@ -24,8 +23,6 @@ form with the matrix special orthogonal group in the same coordinates.
   sum-of-squares form.
 * `TauCeti.QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff`
   characterizes the resulting subgroup of the general linear group in matrix coordinates.
-* `TauCeti.exists_specialOrthogonalGroup_mulVec_eq`: in dimension at least two, special orthogonal
-  matrices act transitively on the spheres `x ⬝ᵥ x = r` of the dot product.
 -/
 
 public section
@@ -149,32 +146,3 @@ theorem mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff
 end
 
 end TauCeti.QuadraticMap
-
-namespace TauCeti
-
-/-- **Rotations act transitively on spheres.** In dimension at least two, two real vectors with the
-same dot-product length `x ⬝ᵥ x = y ⬝ᵥ y` are related by a special orthogonal matrix. This is the
-matrix form of `QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate` for the standard
-sum-of-squares form; the zero vector is its own orbit. -/
-theorem exists_specialOrthogonalGroup_mulVec_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (hι : 2 ≤ Fintype.card ι) {x y : ι → ℝ} (hxy : x ⬝ᵥ x = y ⬝ᵥ y) :
-    ∃ A : Matrix.specialOrthogonalGroup ι ℝ, (A : Matrix ι ι ℝ) *ᵥ x = y := by
-  by_cases hy : y ⬝ᵥ y = 0
-  · obtain rfl := dotProduct_self_eq_zero.mp hy
-    obtain rfl := dotProduct_self_eq_zero.mp (hxy.trans hy)
-    exact ⟨1, Matrix.mulVec_zero _⟩
-  set Q := _root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)
-  have hQ (v : ι → ℝ) : Q v = v ⬝ᵥ v := by
-    simp [Q, _root_.QuadraticMap.weightedSumSquares_apply, dotProduct]
-  have hQn : Q.Nondegenerate := _root_.QuadraticMap.Anisotropic.nondegenerate fun v hv ↦
-    dotProduct_self_eq_zero.mp ((hQ v).symm.trans hv)
-  obtain ⟨g, hg⟩ := _root_.QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate Q hQn
-    (x := x) (y := y) (by rwa [Module.finrank_fintype_fun_eq_card])
-    (by rw [hQ, hQ, hxy]) (by rwa [hQ])
-  refine ⟨(QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm g, ?_⟩
-  have h := QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne_apply ι
-    ((QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm g) x
-  rw [MulEquiv.apply_symm_apply, Matrix.toLin'_apply] at h
-  rw [← h, hg]
-
-end TauCeti

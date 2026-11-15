@@ -9,7 +9,8 @@ public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.SU2.LieAlgebra
 public import TauCeti.RepresentationTheory.SU2.StandardBasis
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
+import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Orbit
 
 /-!
 # The coadjoint orbits of `SU(2)`
@@ -42,8 +43,8 @@ the coadjoint action:
   (`TauCeti.SU2.exists_stabilizer_coadjointRepresentation_eq_map_torus`), and the stabilizer of
   `0` is all of `SU(2)` (`Representation.stabilizer_zero`).
 
-The center `{±1}` of `SU(2)` acts trivially
-(`TauCeti.SU2.coadjointRepresentation_eq_one_of_mem_center`), so the coadjoint action factors
+The kernel of the coadjoint action is exactly the center `{±1}` of `SU(2)`
+(`TauCeti.SU2.coadjointRepresentation_eq_one_iff`), so the coadjoint action factors faithfully
 through `SO(3) = SU(2) / {±1}` and has the same orbits as the rotation action of `SO(3)` on `ℝ³`.
 The two groups differ instead in the periods of their maximal tori: in
 `SU(2)` the generator `-iσ₃/2` of `T` has period `4π`, its image in `SO(3)` period `2π`
@@ -90,8 +91,11 @@ def coadjointRepresentation : Representation ℝ SU2 (Dual ℝ lieAlgebra) :=
 
 @[simp]
 theorem coadjointRepresentation_apply (g : SU2) (ν : Dual ℝ lieAlgebra) (X : lieAlgebra) :
-    coadjointRepresentation g ν X = ν (adjointRepresentation g⁻¹ X) :=
-  (rfl)
+    coadjointRepresentation g ν X = ν (adjointRepresentation g⁻¹ X) := by
+  rw [coadjointRepresentation, Representation.dual_apply, Module.Dual.transpose_apply,
+    LinearMap.comp_apply]
+  -- `ContRepresentation.toRepresentation ρ g` is `ρ g` viewed as a linear map, by definition.
+  rfl
 
 /-- **The coadjoint action in coordinates**: `Ad*_g ν_n = ν_(R n)`, where `R = toSO3 g` is the
 rotation induced by `g` and `ν_n = n ⬝ᵥ ·` in the basis `-iσₐ/2`. -/
@@ -103,8 +107,8 @@ theorem coadjointRepresentation_suTwoDualEquiv (g : SU2) (n : Fin 3 → ℝ) :
   obtain ⟨x, rfl⟩ := suTwoEquiv.surjective X
   rw [coadjointRepresentation_apply, adjointRepresentation_suTwoEquiv,
     suTwoDualEquiv_apply_suTwoEquiv, suTwoDualEquiv_apply_suTwoEquiv,
-    ← mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).2.1 n, mulVec_mulVec,
-    ← Submonoid.coe_mul, ← map_mul, mul_inv_cancel, map_one, OneMemClass.coe_one, one_mulVec]
+    ← mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).2.1 n, mulVec_mulVec]
+  simp [← Submonoid.coe_mul, -coe_toSO3]
 
 /-! ### Orbits -/
 
@@ -129,15 +133,24 @@ theorem range_coadjointRepresentation_suTwoDualEquiv (n : Fin 3 → ℝ) :
     suTwoDualEquiv.injective.eq_iff, suTwoDualEquiv.injective.mem_set_image]
   exact exists_toSO3_mulVec_eq_iff
 
-/-- The center `{±1}` of `SU(2)` acts trivially on `𝔰𝔲(2)*`: the coadjoint action factors
-through the double cover `SU(2) → SO(3)`. -/
-theorem coadjointRepresentation_eq_one_of_mem_center {g : SU2} (hg : g ∈ Subgroup.center SU2) :
-    coadjointRepresentation g = 1 := by
-  have h : toSO3 g = 1 := by rwa [← ker_toSO3, MonoidHom.mem_ker] at hg
-  refine LinearMap.ext fun ν ↦ ?_
-  obtain ⟨n, rfl⟩ := suTwoDualEquiv.surjective ν
-  rw [coadjointRepresentation_suTwoDualEquiv, h, OneMemClass.coe_one, one_mulVec,
-    one_apply_eq_self]
+/-- **The kernel of the coadjoint action is the center** `{±1}` of `SU(2)`: the coadjoint action
+factors through the double cover `SU(2) → SO(3)`, and the action of `SO(3)` it induces on
+`𝔰𝔲(2)*` is faithful. -/
+theorem coadjointRepresentation_eq_one_iff {g : SU2} :
+    coadjointRepresentation g = 1 ↔ g ∈ Subgroup.center SU2 := by
+  rw [← ker_toSO3, MonoidHom.mem_ker]
+  constructor
+  · intro h
+    refine Subtype.ext <| Matrix.toLin'.injective <| LinearMap.ext fun n ↦ ?_
+    have hn := LinearMap.congr_fun h (suTwoDualEquiv n)
+    rw [coadjointRepresentation_suTwoDualEquiv, one_apply_eq_self,
+      suTwoDualEquiv.injective.eq_iff] at hn
+    simpa using hn
+  · intro h
+    refine LinearMap.ext fun ν ↦ ?_
+    obtain ⟨n, rfl⟩ := suTwoDualEquiv.surjective ν
+    rw [coadjointRepresentation_suTwoDualEquiv, h, OneMemClass.coe_one, one_mulVec,
+      one_apply_eq_self]
 
 /-! ### Stabilizers -/
 
@@ -181,7 +194,7 @@ theorem exists_stabilizer_coadjointRepresentation_eq_map_torus {ν : Dual ℝ li
   obtain ⟨n, rfl⟩ := suTwoDualEquiv.surjective ν
   have hn : n ≠ 0 := by rintro rfl; exact hν (map_zero _)
   -- Rotate `n` onto the positive `e₃`-axis, at the same distance from the origin.
-  have h0 : 0 ≤ n ⬝ᵥ n := Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (n i)
+  have h0 := dotProduct_self_nonneg n
   set c := √(n ⬝ᵥ n)
   have hc : c ≠ 0 := Real.sqrt_ne_zero'.mpr
     (lt_of_le_of_ne h0 (Ne.symm (dotProduct_self_eq_zero.not.mpr hn)))
