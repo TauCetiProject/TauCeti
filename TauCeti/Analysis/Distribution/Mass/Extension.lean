@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Mass.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Distribution.Mass.Restriction
 import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
@@ -28,8 +29,9 @@ In particular, for a measurable set `A ⊆ Ω` the **Borel restriction**
 finite mass (`Distribution.massRestrict`). For `T` of locally finite mass, its mass measure is
 exactly `‖T‖` restricted to `A`, and its total mass is `‖T‖ A`, even when this value is infinite.
 Thus a Borel restriction of a finite-mass current has finite mass. It vanishes exactly when
-`‖T‖ A = 0`, is additive on disjoint sets, and is `T` itself for `A = Ω`. Its boundary need not
-have locally finite mass.
+`‖T‖ A = 0`, is additive on disjoint sets, is linear in `T` on currents of locally finite mass,
+satisfies `(T ⌞ A) ⌞ B = T ⌞ (A ∩ B)`, commutes with open restriction, and is `T` itself for
+`A = Ω`. Its boundary need not have locally finite mass.
 
 ## Main declarations
 
@@ -49,6 +51,10 @@ have locally finite mass.
 * `Distribution.dsupport_massRestrict_subset`: `T ⌞ A` is supported in the support of `T`.
 * `Distribution.tendsto_apply_smulLeftCLM_massRestrict`: smooth multiples `T (fᵢ φ)` converge to
   `(T ⌞ A) φ` when the bounded smooth functions `fᵢ` converge pointwise on `Ω` to `1_A`.
+* `Distribution.massRestrict_add`, `Distribution.massRestrict_smul`,
+  `Distribution.massRestrict_neg`, `Distribution.massRestrict_sub`: linearity in the current.
+* `Distribution.massRestrict_massRestrict`: iterated Borel restriction `(T ⌞ A) ⌞ B = T ⌞ (A ∩ B)`.
+* `Distribution.massRestrict_comp_monoCLM`: Borel restriction commutes with open restriction.
 
 ## References
 
@@ -63,7 +69,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter
-open scoped ENNReal Distributions Topology
+open scoped BoundedContinuousFunction ENNReal Distributions Topology
 
 namespace Distribution
 
@@ -339,5 +345,317 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   · have h := ENNReal.Tendsto.mul_const ((hlim x).sub_const (A.indicator 1 x)).eNorm
       (Or.inr eNorm_ne_top) (b := ‖φ x‖ₑ)
     simpa [sub_self, eNorm_smul] using h
+
+/-! ### Linearity, iterated restriction, and open restriction -/
+
+/-- For any locally finite Borel measure `μ` on `Ω`, a measurable set `A ⊆ Ω`, and a compact set
+`K ⊆ Ω`, the indicator `1_{A ∩ K}` can be approximated in `L¹(μ; ℝ)` by scalar test functions on
+`Ω`. -/
+theorem exists_testFunction_tendsto_lintegral_indicator (μ : Measure Ω)
+    [IsFiniteMeasureOnCompacts μ] (hA : MeasurableSet A) {K : Set Ω} (hK : IsCompact K) :
+    ∃ χ : ℕ → 𝓓(Ω, ℝ),
+      Tendsto (fun m => ∫⁻ x : Ω, ‖χ m x - (A ∩ K).indicator (1 : Ω → ℝ) x‖ₑ ∂μ) atTop (𝓝 0) := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  have hAK : MeasurableSet (A ∩ K) := hA.inter hK.isClosed.measurableSet
+  have hmem : MemLp ((A ∩ K).indicator (1 : Ω → ℝ)) 1 μ := by
+    refine memLp_indicator_const 1 hAK.nullMeasurableSet (1 : ℝ) (Or.inr ?_)
+    exact ((measure_mono inter_subset_right).trans_lt hK.measure_lt_top).ne
+  have hd := TestFunction.denseRange_toLp (Ω := Ω) (n := ⊤) (F := ℝ) (μ := μ) ENNReal.one_ne_top
+    (hmem.toLp _)
+  have step (m : ℕ) : ∃ χ : 𝓓(Ω, ℝ),
+      ∫⁻ x : Ω, ‖χ x - (A ∩ K).indicator (1 : Ω → ℝ) x‖ₑ ∂μ ≤ ((m + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
+    have hpos : (0 : ℝ≥0∞) < ((m + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
+      ENNReal.inv_pos.2 (by simp)
+    obtain ⟨_, ⟨χ, rfl⟩, hχ⟩ := (mem_closure_iff_nhds_basis Metric.nhds_basis_closedEBall).1 hd
+      _ hpos
+    refine ⟨χ, ?_⟩
+    rw [Metric.mem_closedEBall, TestFunction.toLp_apply, Lp.edist_toLp_toLp,
+      eLpNorm_one_eq_lintegral_eNorm
+        ((TestFunction.memLp_subtype χ).sub hmem).aestronglyMeasurable] at hχ
+    simpa [Pi.sub_apply] using hχ
+  choose χ hχ using step
+  refine ⟨χ, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
+    (fun _ => bot_le) hχ⟩
+  exact ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Smoothness cast from `𝓓(Ω, ℝ)` (`∞`-smooth) to `ContDiff ℝ n`. -/
+theorem contDiff_of_testFunction (χ : 𝓓(Ω, ℝ)) : ContDiff ℝ n χ :=
+  χ.contDiff.of_le (WithTop.coe_le_coe.2 le_top)
+
+/-- If scalar test functions `χ m` approximate `1_{A ∩ K}` in `L¹(μ; ℝ)` on
+`K = (↑) ⁻¹' tsupport φ`, then `S (χ m • φ) → (S ⌞ A) φ` for every functional `S` of locally
+finite mass with `‖S‖ ≤ μ`. -/
+theorem tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator {μ : Measure Ω}
+    (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) {χ : ℕ → 𝓓(Ω, ℝ)}
+    (hχ : Tendsto (fun m => ∫⁻ x : Ω,
+      ‖χ m x - (A ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω → ℝ) x‖ₑ ∂μ) atTop (𝓝 0))
+    (hT : HasLocallyFiniteMass T) (hμ : massMeasure T ≤ μ) :
+    Tendsto (fun m => T (TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ)) atTop
+      (𝓝 (massRestrict T hA φ)) := by
+  simp_rw [massRestrict_apply, ← extendL1_toLp hT]
+  refine ((extendL1 T).continuous.tendsto _).comp ?_
+  rw [tendsto_iff_eNorm_sub_tendsto_zero]
+  have hle (m : ℕ) :
+      ‖TestFunction.toLp 1 (massMeasure T)
+          (TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ) -
+          TestFunction.indicatorToLp 1 (massMeasure T) hA φ‖ₑ ≤
+        (∫⁻ x : Ω, ‖χ m x - (A ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω → ℝ) x‖ₑ ∂μ) *
+          ‖(φ : E →ᵇ F)‖ₑ := by
+    rw [TestFunction.toLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
+      Lp.eNorm_toLp, eLpNorm_one_eq_lintegral_eNorm
+        (((TestFunction.memLp_subtype (p := 1) _).sub
+          ((TestFunction.memLp_subtype φ).indicator hA.nullMeasurableSet)).aestronglyMeasurable),
+      ← lintegral_mul_const' _ _ eNorm_ne_top]
+    refine (lintegral_mono fun x => ?_).trans (lintegral_mono' hμ le_rfl)
+    by_cases hxK : (x : E) ∈ tsupport φ
+    · have hxK' : x ∈ (↑) ⁻¹' tsupport φ := hxK
+      have heq : (A ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω → ℝ) x = A.indicator 1 x := by
+        by_cases hxA : x ∈ A <;> simp [hxA, hxK']
+      have hpoint : (TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ x -
+          A.indicator (fun y : Ω => φ y) x) = (χ m x - A.indicator (1 : Ω → ℝ) x) • φ x := by
+        by_cases hxA : x ∈ A <;> simp [hxA, sub_smul]
+      rw [Pi.sub_apply, hpoint, eNorm_smul, heq]
+      gcongr
+      rw [← ofReal_norm, ← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x)
+    · have hφ0 : φ x = 0 := image_eq_zero_of_notMem_tsupport hxK
+      have hA0 : A.indicator (fun y : Ω => φ y) x = 0 := by
+        by_cases hxA : x ∈ A <;> simp [hxA, hφ0]
+      simp [hφ0, hA0]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => bot_le) hle
+  simpa only [zero_mul] using ENNReal.Tendsto.mul_const hχ (Or.inr eNorm_ne_top)
+
+/-- Borel restriction is additive in the current on currents of locally finite mass. -/
+theorem massRestrict_add {T S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (hT : HasLocallyFiniteMass T)
+    (hS : HasLocallyFiniteMass S) (hA : MeasurableSet A) :
+    massRestrict (T + S) hA = massRestrict T hA + massRestrict S hA := by
+  ext φ
+  have hK : IsCompact ((↑) ⁻¹' tsupport φ : Set Ω) :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
+      (by simpa using φ.tsupport_subset)
+  let μ := massMeasure (T + S) + massMeasure T + massMeasure S
+  have : IsFiniteMeasureOnCompacts μ :=
+    ⟨fun _ hC => ENNReal.add_lt_top.2
+      ⟨ENNReal.add_lt_top.2 ⟨hC.measure_lt_top, hC.measure_lt_top⟩, hC.measure_lt_top⟩⟩
+  obtain ⟨χ, hχ⟩ := exists_testFunction_tendsto_lintegral_indicator μ hA hK
+  have hTS : HasLocallyFiniteMass (T + S) := by simpa using hT.add hS
+  have hlimTS := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hA φ hχ hTS
+    (fun s => by simp [μ, add_assoc])
+  have hlimT := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hA φ hχ hT
+    (fun s => by simp [μ, add_assoc, add_left_comm])
+  have hlimS := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hA φ hχ hS
+    (fun s => by simp [μ])
+  exact tendsto_nhds_unique hlimTS (hlimT.add hlimS)
+
+/-- Borel restriction commutes with scalar multiplication. -/
+@[simp]
+theorem massRestrict_smul (a : ℝ) (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) (hA : MeasurableSet A) :
+    massRestrict (a • T) hA = a • massRestrict T hA := by
+  by_cases ha : a = 0
+  · simp [ha]
+  by_cases hT : HasLocallyFiniteMass T
+  · ext φ
+    have hK : IsCompact ((↑) ⁻¹' tsupport φ : Set Ω) :=
+      Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
+        (by simpa using φ.tsupport_subset)
+    let μ := massMeasure (a • T) + massMeasure T
+    have : IsFiniteMeasureOnCompacts μ :=
+      ⟨fun _ hC => ENNReal.add_lt_top.2 ⟨hC.measure_lt_top, hC.measure_lt_top⟩⟩
+    obtain ⟨χ, hχ⟩ := exists_testFunction_tendsto_lintegral_indicator μ hA hK
+    have haT : HasLocallyFiniteMass (a • T) := by simpa using hT.smul a
+    have hlimaT := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hA φ hχ haT
+      (fun s => by simp [μ])
+    have hlimT := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hA φ hχ hT
+      (fun s => by simp [μ])
+    exact tendsto_nhds_unique hlimaT (hlimT.const_smul a)
+  · have haT : ¬HasLocallyFiniteMass (a • T) := fun h => hT <| by
+      have h' : HasLocallyFiniteMass (a⁻¹ • (a • T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ)) := by
+        simpa using h.smul a⁻¹
+      simpa [smul_smul, inv_mul_cancel₀ ha] using h'
+    have h0T : massRestrict T hA = 0 :=
+      massRestrict_eq_zero hA (by simp [massMeasure_of_not_hasLocallyFiniteMass hT])
+    have h0aT : massRestrict (a • T) hA = 0 :=
+      massRestrict_eq_zero hA (by simp [massMeasure_of_not_hasLocallyFiniteMass haT])
+    simp [h0T, h0aT]
+
+/-- Borel restriction commutes with negation. -/
+@[simp]
+theorem massRestrict_neg (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) (hA : MeasurableSet A) :
+    massRestrict (-T) hA = -massRestrict T hA := by
+  have h1 : (-1 : ℝ) • T = -T := by ext φ; simp
+  have h2 : (-1 : ℝ) • massRestrict T hA = -massRestrict T hA := by ext φ; simp
+  rw [← h1, massRestrict_smul, h2]
+
+/-- Borel restriction commutes with subtraction on currents of locally finite mass. -/
+theorem massRestrict_sub {T S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ} (hT : HasLocallyFiniteMass T)
+    (hS : HasLocallyFiniteMass S) (hA : MeasurableSet A) :
+    massRestrict (T - S) hA = massRestrict T hA - massRestrict S hA := by
+  have hS' : HasLocallyFiniteMass (-S) := by simpa using hS.neg
+  rw [sub_eq_add_neg, massRestrict_add hT hS' hA, massRestrict_neg, sub_eq_add_neg]
+
+/-- **Iterated Borel restriction.** Restricting `T ⌞ A` to `B` is restricting `T` to `A ∩ B`. -/
+@[simp]
+theorem massRestrict_massRestrict (hA : MeasurableSet A) (hB : MeasurableSet B) :
+    massRestrict (massRestrict T hA) hB = massRestrict T (hA.inter hB) := by
+  by_cases hT : HasLocallyFiniteMass T
+  · ext φ
+    have hK : IsCompact ((↑) ⁻¹' tsupport φ : Set Ω) :=
+      Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
+        (by simpa using φ.tsupport_subset)
+    obtain ⟨χ, hχ⟩ := exists_testFunction_tendsto_lintegral_indicator (massMeasure T) hB hK
+    have hlimL := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hB φ hχ
+      (hasLocallyFiniteMass_massRestrict hA)
+      ((massMeasure_massRestrict_le hA).trans Measure.restrict_le_self)
+    refine tendsto_nhds_unique hlimL ?_
+    simp_rw [massRestrict_apply]
+    refine ((extendL1 T).continuous.tendsto _).comp ?_
+    rw [tendsto_iff_eNorm_sub_tendsto_zero]
+    have hle (m : ℕ) :
+        ‖TestFunction.indicatorToLp 1 (massMeasure T) hA
+            (TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ) -
+            TestFunction.indicatorToLp 1 (massMeasure T) (hA.inter hB) φ‖ₑ ≤
+          (∫⁻ x : Ω, ‖χ m x - (B ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω → ℝ) x‖ₑ ∂massMeasure T) *
+            ‖(φ : E →ᵇ F)‖ₑ := by
+      rw [TestFunction.indicatorToLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
+        Lp.eNorm_toLp, eLpNorm_one_eq_lintegral_eNorm
+          ((((TestFunction.memLp_subtype (p := 1) _).indicator hA.nullMeasurableSet).sub
+            ((TestFunction.memLp_subtype φ).indicator
+              (hA.inter hB).nullMeasurableSet)).aestronglyMeasurable),
+        ← lintegral_mul_const' _ _ eNorm_ne_top]
+      refine lintegral_mono fun x => ?_
+      by_cases hxA : x ∈ A
+      · by_cases hxK : (x : E) ∈ tsupport φ
+        · have hxK' : x ∈ (↑) ⁻¹' tsupport φ := hxK
+          have heq : (B ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω → ℝ) x = B.indicator 1 x := by
+            by_cases hxB : x ∈ B <;> simp [hxB, hxK']
+          have hpoint : (A.indicator (fun y : Ω =>
+                TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ y) x -
+              (A ∩ B).indicator (fun y : Ω => φ y) x) =
+              (χ m x - B.indicator (1 : Ω → ℝ) x) • φ x := by
+            by_cases hxB : x ∈ B <;> simp [hxA, hxB, sub_smul]
+          rw [Pi.sub_apply, hpoint, eNorm_smul, heq]
+          gcongr
+          rw [← ofReal_norm, ← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x)
+        · have hφ0 : φ x = 0 := image_eq_zero_of_notMem_tsupport hxK
+          have hAB0 : (A ∩ B).indicator (fun y : Ω => φ y) x = 0 := by
+            by_cases hxB : x ∈ B <;> simp [hxA, hxB, hφ0]
+          simp [hxA, hφ0, hAB0]
+      · simp [hxA]
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => bot_le) hle
+    simpa only [zero_mul] using ENNReal.Tendsto.mul_const hχ (Or.inr eNorm_ne_top)
+  · have h0A : massRestrict T hA = 0 :=
+      massRestrict_eq_zero hA (by simp [massMeasure_of_not_hasLocallyFiniteMass hT])
+    have h0AB : massRestrict T (hA.inter hB) = 0 :=
+      massRestrict_eq_zero (hA.inter hB) (by simp [massMeasure_of_not_hasLocallyFiniteMass hT])
+    rw [h0A, massRestrict_zero, h0AB]
+
+omit [CompleteSpace F] in
+private theorem massMeasure_coe_linearMap (hT : HasLocallyFiniteMass T) :
+    massMeasure (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) = massMeasure T := by
+  apply Measure.OuterRegular.ext_isOpen
+  intro U hU
+  obtain ⟨W, hW, rfl⟩ := isOpen_induced_iff.1 hU
+  rw [massMeasure_preimage_coe (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT hW,
+    massMeasure_preimage_coe hT hW]
+  rfl
+
+/-- **Borel restriction commutes with open restriction.** For `Ω' ≤ Ω` and `T` of locally finite
+mass on `Ω`, restricting `T ⌞ A` to tests on `Ω'` is restricting `T|_{Ω'}` to `A ∩ Ω'`. -/
+theorem massRestrict_comp_monoCLM {Ω' : Opens E} {T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
+    (hT : HasLocallyFiniteMass T) (h : Ω' ≤ Ω) (hA : MeasurableSet A) :
+    massRestrict T hA ∘L (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F)) =
+      massRestrict (T ∘L TestFunction.monoCLM ℝ)
+        (hA.preimage (continuous_inclusion h).measurable) := by
+  let A' : Set Ω' := Set.inclusion h ⁻¹' A
+  have hA' : MeasurableSet A' := hA.preimage (continuous_inclusion h).measurable
+  let T' : 𝓓^{n}(Ω', F) →L[ℝ] ℝ := T ∘L TestFunction.monoCLM ℝ
+  have hT' : HasLocallyFiniteMass T' := hT.comp_monoCLM
+  ext φ
+  let φΩ : 𝓓^{n}(Ω, F) := TestFunction.monoCLM ℝ φ
+  have hK' : IsCompact ((↑) ⁻¹' tsupport φ : Set Ω') :=
+    Ω'.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
+      (by simpa using φ.tsupport_subset)
+  obtain ⟨χ, hχ⟩ := exists_testFunction_tendsto_lintegral_indicator (massMeasure T') hA' hK'
+  have hlimR := tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hA' φ hχ hT' le_rfl
+  refine tendsto_nhds_unique ?_ hlimR
+  let χΩ (m : ℕ) : 𝓓(Ω, ℝ) := TestFunction.monoCLM ℝ (χ m)
+  have heval (m : ℕ) :
+      T' (TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ) =
+        extendL1 T (TestFunction.toLp 1 (massMeasure T)
+          (TestFunction.smulLeftCLM (contDiff_of_testFunction (χΩ m)) φΩ)) := by
+    rw [extendL1_toLp hT]
+    change T (TestFunction.monoCLM ℝ (TestFunction.smulLeftCLM (contDiff_of_testFunction (χ m)) φ))
+      = T (TestFunction.smulLeftCLM (contDiff_of_testFunction (χΩ m)) φΩ)
+    congr 1
+    ext x
+    simp [φΩ, χΩ, TestFunction.monoCLM_apply, h]
+  change Tendsto _ atTop (𝓝 ((massRestrict T hA) φΩ))
+  rw [massRestrict_apply]
+  refine (tendsto_congr heval).2 (((extendL1 T).continuous.tendsto _).comp ?_)
+  rw [tendsto_iff_eNorm_sub_tendsto_zero]
+  have hi := Opens.isOpenEmbedding_of_le h
+  have hle (m : ℕ) :
+      ‖TestFunction.toLp 1 (massMeasure T)
+          (TestFunction.smulLeftCLM (contDiff_of_testFunction (χΩ m)) φΩ) -
+          TestFunction.indicatorToLp 1 (massMeasure T) hA φΩ‖ₑ ≤
+        (∫⁻ y : Ω', ‖χ m y - (A' ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω' → ℝ) y‖ₑ
+          ∂massMeasure T') * ‖(φ : E →ᵇ F)‖ₑ := by
+    rw [TestFunction.toLp_apply, TestFunction.indicatorToLp_apply, ← MemLp.toLp_sub,
+      Lp.eNorm_toLp, eLpNorm_one_eq_lintegral_eNorm
+        (((TestFunction.memLp_subtype (p := 1) _).sub
+          ((TestFunction.memLp_subtype φΩ).indicator hA.nullMeasurableSet)).aestronglyMeasurable),
+      ← lintegral_mul_const' _ _ eNorm_ne_top]
+    have hvanish : ∫⁻ x : Ω, ‖TestFunction.smulLeftCLM
+          (contDiff_of_testFunction (χΩ m)) φΩ x -
+        A.indicator (fun z : Ω => φΩ z) x‖ₑ ∂massMeasure T =
+        ∫⁻ x in (↑) ⁻¹' (Ω' : Set E), ‖TestFunction.smulLeftCLM
+          (contDiff_of_testFunction (χΩ m)) φΩ x -
+        A.indicator (fun z : Ω => φΩ z) x‖ₑ ∂massMeasure T := by
+      symm
+      refine setLIntegral_eq_of_support_subset fun x hx => ?_
+      by_contra hxΩ'
+      have hφ0 : φΩ x = 0 :=
+        image_eq_zero_of_notMem_tsupport fun hts => hxΩ' (by
+          have hts' : (x : E) ∈ tsupport φ := by
+            simpa [φΩ, TestFunction.monoCLM_apply, h] using hts
+          exact φ.tsupport_subset hts')
+      have hA0 : A.indicator (fun z : Ω => φΩ z) x = 0 := by
+        by_cases hxA : x ∈ A <;> simp [hxA, hφ0]
+      exact hx (by simp [hφ0, hA0])
+    have hmap : (massMeasure T').map (Set.inclusion h) =
+        (massMeasure T).restrict ((↑) ⁻¹' (Ω' : Set E)) := by
+      rw [← massMeasure_coe_linearMap hT', ← massMeasure_coe_linearMap hT]
+      exact map_massMeasure_comp_monoCLM (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT h
+    simp_rw [Pi.sub_apply]
+    rw [hvanish, ← hmap]
+    refine (hi.measurableEmbedding.lintegral_map (f := _)).trans_le
+      (lintegral_mono fun (y : Ω') => ?_)
+    have hmono_φ (z : E) : φΩ z = φ z := by
+      simp [φΩ, TestFunction.monoCLM_apply, h]
+    have hmono_χ (z : E) : χΩ m z = χ m z := by
+      simp [χΩ, TestFunction.monoCLM_apply, h]
+    by_cases hyK : (y : E) ∈ tsupport φ
+    · have hyK' : y ∈ (↑) ⁻¹' tsupport φ := hyK
+      have heq : (A' ∩ (↑) ⁻¹' tsupport φ).indicator (1 : Ω' → ℝ) y = A'.indicator 1 y := by
+        by_cases hyA : y ∈ A' <;> simp [hyA, hyK']
+      have hpoint :
+          (TestFunction.smulLeftCLM (contDiff_of_testFunction (χΩ m)) φΩ (Set.inclusion h y) -
+            A.indicator (fun z : Ω => φΩ z) (Set.inclusion h y)) =
+          (χ m y - A'.indicator (1 : Ω' → ℝ) y) • φ y := by
+        by_cases hyA : y ∈ A'
+        · have hyAΩ : Set.inclusion h y ∈ A := hyA
+          simp [A', hyA, hyAΩ, hmono_φ, hmono_χ, sub_smul]
+        · have hyAΩ : Set.inclusion h y ∉ A := hyA
+          simp [A', hyA, hyAΩ, hmono_φ, hmono_χ]
+      rw [hpoint, eNorm_smul, heq]
+      gcongr
+      rw [← ofReal_norm, ← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) y)
+    · have hφ0 : φ y = 0 := image_eq_zero_of_notMem_tsupport hyK
+      by_cases hyA : Set.inclusion h y ∈ A <;> simp [hyA, hmono_φ, hφ0]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => bot_le) hle
+  simpa only [zero_mul] using ENNReal.Tendsto.mul_const hχ (Or.inr eNorm_ne_top)
 
 end Distribution

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.InnerProductSpace.Comass
+import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Alternating forms on orthonormal frames
@@ -18,7 +20,11 @@ empty set, its real supremum is zero, and every alternating form vanishes.
 
 The bound criterion works for maps into any real normed space. Restriction to the span of
 an independent frame reduces it to the top-degree norm formula in an orthonormal basis;
-dependent frames give zero. No additional norm on alternating forms is introduced.
+dependent frames give zero. Rotating an orthonormal basis of that span so that its first vector
+represents a given covector `α` eliminates all but the first term of the alternatization
+`α ∧ ω = alternatizeUncurryFin (α.smulRight ω)`, giving the sharp comass inequality
+`‖α ∧ ω‖ ≤ ‖α‖ * ‖ω‖` without the `(k + 1)` factor of general normed spaces.
+No additional norm on alternating forms is introduced.
 
 ## References
 
@@ -29,6 +35,7 @@ dependent frames give zero. No additional norm on alternating forms is introduce
 public section
 
 open Module Set
+open scoped ENNReal RealInnerProductSpace
 
 namespace ContinuousAlternatingMap
 
@@ -93,5 +100,71 @@ the supremum of its absolute values on orthonormal frames, in every degree. -/
 theorem norm_eq_sSup_abs_orthonormal (ω : E [⋀^Fin k]→L[ℝ] ℝ) :
     ‖ω‖ = sSup {r | ∃ v : Fin k → E, Orthonormal ℝ v ∧ r = |ω v|} := by
   simpa only [Real.norm_eq_abs] using ω.norm_eq_sSup_norm_orthonormal
+
+/-- **Sharp comass bound for wedging with a one-form.** On a real inner product space,
+`‖α ∧ ω‖ ≤ ‖α‖ * ‖ω‖` without a degree factor `(k + 1)`. -/
+theorem norm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [⋀^Fin k]→L[ℝ] F) :
+    ‖alternatizeUncurryFin (α.smulRight ω)‖ ≤ ‖α‖ * ‖ω‖ := by
+  refine (opNorm_le_iff_le_orthonormal (by positivity)).2 fun v hv ↦ ?_
+  let W := Submodule.span ℝ (range v)
+  have : FiniteDimensional ℝ W := FiniteDimensional.span_of_finite ℝ (finite_range v)
+  let w : Fin (k + 1) → W := fun i ↦ ⟨v i, Submodule.subset_span (mem_range_self i)⟩
+  let αW : W →L[ℝ] ℝ := α.comp W.subtypeL
+  by_cases hαW : αW = 0
+  · have hv0 (i : Fin (k + 1)) : α (v i) = 0 := by
+      simpa [αW, w] using DFunLike.congr_fun hαW (w i)
+    have hzero : alternatizeUncurryFin (α.smulRight ω) v = 0 := by
+      rw [alternatizeUncurryFin_apply]
+      simp [hv0]
+    rw [hzero, norm_zero]
+    positivity
+  · let u : W := (InnerProductSpace.toDual ℝ W).symm αW
+    have hu0 : u ≠ 0 := by simpa [u] using hαW
+    have hu_norm : ‖(u : E)‖ ≠ 0 := by simpa using hu0
+    let u₀ : W := ‖u‖⁻¹ • u
+    have hu₀_norm : ‖u₀‖ = 1 := by simp [u₀, norm_smul, inv_mul_cancel₀ hu_norm]
+    have hcard : finrank ℝ W = Fintype.card (Fin (k + 1)) := by
+      simpa using finrank_span_eq_card hv.linearIndependent
+    have horth : Orthonormal ℝ (({0} : Set (Fin (k + 1))).domRestrict fun _ ↦ u₀) :=
+      ⟨fun _ ↦ hu₀_norm, fun i j hij ↦ False.elim (hij (Subsingleton.elim i j))⟩
+    obtain ⟨b, hb0⟩ := horth.exists_orthonormalBasis_extension_of_card_eq hcard
+    have hb0' : b 0 = u₀ := hb0 0 (mem_singleton 0)
+    have hb_succ (j : Fin k) : α (b j.succ : E) = 0 := by
+      have hinner : ⟪u, b j.succ⟫ = 0 := by
+        have h0 : ⟪u₀, b j.succ⟫ = 0 := by
+          rw [← hb0']
+          exact b.orthonormal.2 (Fin.succ_ne_zero j).symm
+        calc ⟪u, b j.succ⟫ = ‖(u : E)‖ * ⟪u₀, b j.succ⟫ := by
+              simp [u₀, real_inner_smul_left, ← mul_assoc, mul_inv_cancel₀ hu_norm]
+          _ = 0 := by simp [h0]
+      simpa [u, αW] using (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (E := W)).symm.trans hinner
+    let ψ := (alternatizeUncurryFin (α.smulRight ω)).compContinuousLinearMap W.subtypeL
+    have hw_norm (i : Fin (k + 1)) : ‖w i‖ = 1 := hv.norm_eq_one i
+    have hle : ‖alternatizeUncurryFin (α.smulRight ω) v‖ ≤ ‖ψ‖ := by
+      simpa [ψ, w, Function.comp_def, hw_norm] using ψ.le_opNorm w
+    refine hle.trans ?_
+    rw [ψ.norm_eq_norm_apply_orthonormalBasis b]
+    have hbE (i : Fin (k + 1)) : ‖(b i : E)‖ = 1 := b.orthonormal.norm_eq_one i
+    have hremove : Fin.removeNth 0 (fun i : Fin (k + 1) ↦ (b i : E)) =
+        fun j : Fin k ↦ (b j.succ : E) := by
+      ext j
+      simp [Fin.removeNth]
+    have hψb : ψ b = α (b 0 : E) • ω (fun j ↦ (b j.succ : E)) := by
+      change alternatizeUncurryFin (α.smulRight ω) (fun i ↦ (b i : E)) = _
+      rw [alternatizeUncurryFin_apply, Fin.sum_univ_succ]
+      simp [hb_succ, hremove]
+    rw [hψb, norm_smul, Real.norm_eq_abs]
+    calc |α (b 0 : E)| * ‖ω (fun j ↦ (b j.succ : E))‖
+        ≤ (‖α‖ * ‖(b 0 : E)‖) * (‖ω‖ * ∏ j : Fin k, ‖(b j.succ : E)‖) := by
+          gcongr
+          · exact α.le_opNorm (b 0 : E)
+          · exact ω.le_opNorm _
+      _ = ‖α‖ * ‖ω‖ := by simp [hbE]
+
+/-- Extended-norm form of `ContinuousAlternatingMap.norm_alternatizeUncurryFin_smulRight_le`. -/
+theorem enorm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [⋀^Fin k]→L[ℝ] F) :
+    ‖alternatizeUncurryFin (α.smulRight ω)‖ₑ ≤ ‖α‖ₑ * ‖ω‖ₑ := by
+  simp only [eNorm_eq_nnNorm]
+  exact_mod_cast norm_alternatizeUncurryFin_smulRight_le α ω
 
 end ContinuousAlternatingMap
