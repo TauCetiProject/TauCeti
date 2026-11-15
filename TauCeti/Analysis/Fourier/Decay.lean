@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 
 import Mathlib.Analysis.PSeries
+import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 
@@ -45,6 +46,10 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
   support `tsupport f` is contained in a measurable set `S` of finite volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
+* `TauCeti.exists_forall_tsum_one_add_norm_pow_mul_norm_fourier_le`: for a family of smooth
+  functions supported in a common set of finite volume, with derivatives of each order bounded
+  uniformly over the family, the sums `∑ ℓ : L, (1 + ‖ℓ‖) ^ j ‖𝓕 (g i) ℓ‖` over a discrete subgroup
+  `L` are bounded uniformly over the family.
 * `TauCeti.fourier_fderiv_apply`: the Fourier transform of the directional derivative `∂_v f` of an
   integrable differentiable function with integrable derivative is `2πi ⟪w, v⟫ 𝓕 f w`.
 * `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
@@ -165,6 +170,36 @@ theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : 
           gcongr
           nlinarith [two_le_pi]
       _ ≤ 2 ^ N * (C * volume.real S) := by gcongr
+
+open MeasureTheory in
+/-- **Uniform rapid decay of Fourier transforms along a lattice.** If smooth functions `g i` are
+supported in a measurable set `S` of finite volume and their derivatives of each order are bounded
+uniformly for `i ∈ I`, then for every `j` the sums `∑ ℓ : L, (1 + ‖ℓ‖) ^ j ‖𝓕 (g i) ℓ‖` over a
+discrete subgroup `L` converge and are bounded uniformly for `i ∈ I`. -/
+theorem exists_forall_tsum_one_add_norm_pow_mul_norm_fourier_le (L : Submodule ℤ V)
+    [DiscreteTopology L] {ι : Type*} {I : Set ι} {g : ι → V → E} (hg : ∀ i, ContDiff ℝ ∞ (g i))
+    {S : Set V} (hS : MeasurableSet S) (hS' : volume S ≠ ⊤) (hgS : ∀ i, tsupport (g i) ⊆ S)
+    (hB : ∀ n : ℕ, ∃ B, ∀ i ∈ I, ∀ x, ‖iteratedFDeriv ℝ n (g i) x‖ ≤ B) (j : ℕ) :
+    ∃ A, ∀ i ∈ I, Summable (fun ℓ : L ↦ (1 + ‖(ℓ : V)‖) ^ j * ‖𝓕 (g i) ℓ‖) ∧
+      ∑' ℓ : L, (1 + ‖(ℓ : V)‖) ^ j * ‖𝓕 (g i) ℓ‖ ≤ A := by
+  obtain ⟨r, hr⟩ : ∃ r, Module.finrank ℤ L < r := ⟨_, Nat.lt_succ_self _⟩
+  -- Decay of order `j + r`, uniform in `i`, with the sum of the derivative bounds of order at most
+  -- `j + r` as common bound.
+  obtain ⟨C, hC⟩ : ∃ C, ∀ i ∈ I, ∀ w, (1 + ‖w‖) ^ (j + r) * ‖𝓕 (g i) w‖ ≤ C := by
+    choose B hB using hB
+    refine ⟨_, fun i hi w ↦ one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset
+      ((hg i).of_le (by simp)) hS hS' (hgS i) (C := ∑ n ∈ Finset.range (j + r + 1), |B n|)
+      (fun n hn x ↦ ?_) w⟩
+    exact (hB n i hi x).trans ((le_abs_self _).trans (Finset.single_le_sum
+      (f := fun n ↦ |B n|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hn))))
+  have hdec (i : ι) (hi : i ∈ I) (ℓ : L) :
+      (1 + ‖(ℓ : V)‖) ^ j * ‖𝓕 (g i) ℓ‖ ≤ C * ((1 + ‖(ℓ : V)‖) ^ r)⁻¹ := by
+    rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_right_comm, ← pow_add]
+    exact hC i hi ℓ
+  have hsum := (ZLattice.summable_one_add_norm_pow_inv L hr).mul_left C
+  refine ⟨∑' ℓ : L, C * ((1 + ‖(ℓ : V)‖) ^ r)⁻¹, fun i hi ↦ ?_⟩
+  have hs := hsum.of_nonneg_of_le (fun ℓ ↦ by positivity) (hdec i hi)
+  exact ⟨hs, hs.tsum_le_tsum (hdec i hi) hsum⟩
 
 open MeasureTheory Real in
 open scoped RealInnerProductSpace in
