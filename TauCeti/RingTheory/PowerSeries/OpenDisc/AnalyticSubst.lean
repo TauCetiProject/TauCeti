@@ -314,6 +314,12 @@ theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
 
 end AnalyticSubst
 
+private theorem mul_lt_of_mul_le_of_nonneg_left {x s S₀ R₀ : ℝ} (h : x * S₀ ≤ R₀) (hs : s < S₀)
+    (hx : 0 ≤ x) (hR₀ : 0 < R₀) : x * s < R₀ := by
+  obtain rfl | hx := hx.eq_or_lt
+  · simpa only [zero_mul] using hR₀
+  · exact (mul_lt_mul_of_pos_left hs hx).trans_le h
+
 section PolynomialBounds
 
 variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {R₀ S₀ : ℝ}
@@ -336,32 +342,21 @@ theorem norm_restrict_C_add_C_mul_X_le (a u : R) (s : Set.Ioo (0 : ℝ) S₀) :
     rw [h0, norm_zero, zero_mul]
     positivity
 
-/-- The monomial `uX` maps smaller closed discs strictly inside the source open disc when
-`0 < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
-theorem norm_restrict_C_mul_X_lt [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
-    (s : Set.Ioo (0 : ℝ) S₀) :
-    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X))‖ < R₀ := by
-  have hs : 0 < (s : ℝ) := s.2.1
-  have hus_lt : ‖u‖ * (s : ℝ) < R₀ := by
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · simp [← hu0, (Fact.out : 0 < R₀)]
-    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
-  have hle := norm_restrict_C_add_C_mul_X_le 0 u s
-  rw [map_zero, zero_add, norm_zero, max_eq_right (by positivity)] at hle
-  exact hle.trans_lt hus_lt
-
 /-- The linear polynomial `a + uX` maps smaller closed discs strictly inside the source open disc
 whenever `‖a‖ < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
 theorem norm_restrict_C_add_C_mul_X_lt {a u : R} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀)
     (s : Set.Ioo (0 : ℝ) S₀) :
     ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C a + Polynomial.C u * Polynomial.X))‖ <
-      R₀ := by
-  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
-  have hus_lt : ‖u‖ * (s : ℝ) < R₀ := by
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · simp [← hu0, hR₀]
-    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
-  exact (norm_restrict_C_add_C_mul_X_le a u s).trans_lt (max_lt ha hus_lt)
+      R₀ :=
+  (norm_restrict_C_add_C_mul_X_le a u s).trans_lt <| max_lt ha <|
+    mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) ((norm_nonneg a).trans_lt ha)
+
+/-- The monomial `uX` maps smaller closed discs strictly inside the source open disc when
+`0 < R₀` and `‖u‖ * S₀ ≤ R₀`. -/
+theorem norm_restrict_C_mul_X_lt [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
+    (s : Set.Ioo (0 : ℝ) S₀) :
+    ‖restrict s (OnOpenDisc.polynomialHom (Polynomial.C u * Polynomial.X))‖ < R₀ := by
+  simpa using norm_restrict_C_add_C_mul_X_lt (a := 0) (by simpa using (Fact.out : 0 < R₀)) hu s
 
 /-- The translated variable `X + a` maps smaller closed discs strictly inside the open disc when
 `‖a‖ < R₀` and `‖(1 : R)‖ = 1`. -/
@@ -458,22 +453,13 @@ theorem norm_restrict_rescaleHom_le {u : R} (hu : ‖u‖ * S₀ ≤ R₀)
 /-- Rescaling is uniformly continuous for the open-disc Gauss uniformities when the source radius
 is positive. -/
 theorem uniformContinuous_rescaleHom [Fact (0 < R₀)] {u : R} (hu : ‖u‖ * S₀ ≤ R₀) :
-    UniformContinuous (rescaleHom hu) := by
-  refine uniformContinuous_iff.mpr fun s ↦ ?_
-  have hs : 0 < (s : ℝ) := s.2.1
-  have hus_lt : ‖u‖ * (s : ℝ) < R₀ := by
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · simp [← hu0, (Fact.out : 0 < R₀)]
-    · exact (mul_lt_mul_of_pos_left s.2.2 hu0).trans_le hu
-  obtain ⟨r, hr1, hr2⟩ := exists_between hus_lt
-  let r' : Set.Ioo (0 : ℝ) R₀ := ⟨r, (by positivity : 0 ≤ ‖u‖ * (s : ℝ)).trans_lt hr1, hr2⟩
-  let φ := ((restrict (R := R) s).comp (rescaleHom hu)).toAddMonoidHom
-  refine uniformContinuous_of_continuousAt_zero φ ?_
-  rw [ContinuousAt, map_zero]
-  let : Fact (0 < (r' : ℝ)) := ⟨r'.2.1⟩
-  have h := (uniformContinuous_restrict (R := R) r').continuous.tendsto 0
-  refine squeeze_zero_norm (fun f ↦ norm_restrict_rescaleHom_le hu s r' hr1.le f) ?_
-  simpa only [map_zero, norm_zero] using h.norm
+    UniformContinuous (rescaleHom hu) :=
+  uniformContinuous_of_norm_restrict_le _ fun s ↦ by
+    have hus_lt : ‖u‖ * (s : ℝ) < R₀ :=
+      mul_lt_of_mul_le_of_nonneg_left hu s.2.2 (norm_nonneg u) Fact.out
+    obtain ⟨r, hr1, hr2⟩ := exists_between hus_lt
+    exact ⟨⟨r, (mul_nonneg (norm_nonneg u) s.2.1.le).trans_lt hr1, hr2⟩, 1, fun f ↦ by
+      simpa only [one_mul] using norm_restrict_rescaleHom_le hu s _ hr1.le f⟩
 
 /-- Rescaling is continuous for the open-disc Gauss topologies when the source radius is
 positive. -/
@@ -495,25 +481,6 @@ end Ultrametric
 end Rescale
 
 section Affine
-
-/-- In an ultrametric normed algebra with norm-one identity, an affine map `b ↦ u • b + a` sends
-points of the open disc of radius `S₀` into the open disc of radius `R₀` whenever `‖a‖ < R₀` and
-`‖u‖ * S₀ ≤ R₀`. -/
-theorem norm_smul_add_algebraMap_lt {R A : Type*} [SeminormedCommRing R] [SeminormedRing A]
-    [Algebra R A] [IsBoundedSMul R A] [IsUltrametricDist A] [NormOneClass A] {R₀ S₀ : ℝ}
-    {a u : R} {b : A} (ha : ‖a‖ < R₀) (hu : ‖u‖ * S₀ ≤ R₀) (hb : ‖b‖ < S₀) :
-    ‖u • b + algebraMap R A a‖ < R₀ := by
-  have hR₀ : 0 < R₀ := (norm_nonneg a).trans_lt ha
-  have hub : ‖u • b‖ < R₀ := by
-    refine (norm_smul_le u b).trans_lt ?_
-    rcases (norm_nonneg u).eq_or_lt with hu0 | hu0
-    · simp [← hu0, hR₀]
-    · exact (mul_lt_mul_of_pos_left hb hu0).trans_le hu
-  have haA : ‖algebraMap R A a‖ < R₀ := by
-    have h : ‖algebraMap R A a‖ ≤ ‖a‖ := by
-      simpa only [Algebra.algebraMap_eq_smul_one, norm_one, mul_one] using norm_smul_le a (1 : A)
-    exact h.trans_lt ha
-  exact (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt hub haA)
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] {R₀ S₀ : ℝ}
 

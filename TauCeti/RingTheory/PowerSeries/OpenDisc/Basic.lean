@@ -494,12 +494,6 @@ theorem polynomialHom_C_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s
       algebraMap S (OnOpenDisc.subring R R₀) s :=
   Subtype.ext (by simp)
 
-/-- Constant polynomials embed into the open-disc algebra through the scalar map. -/
-theorem polynomialHom_C_eq_algebraMap {R : Type*} [NormedCommRing R] (a : R) :
-    OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C a) =
-      algebraMap R (OnOpenDisc.subring R R₀) a :=
-  Subtype.ext (by simp)
-
 -- Verify that `instModuleSubring` and `instAlgebraSubring` introduce no diamond with `ℕ`, `ℤ`, or
 -- `Algebra.toModule`.
 example :

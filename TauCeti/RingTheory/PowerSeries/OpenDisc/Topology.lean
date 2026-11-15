@@ -21,8 +21,10 @@ image consists of the families with the same formal coefficients at every radius
 description proves completeness without choosing a sequence of radii or a single norm.
 Convergence may also be tested along any family of radii tending to the boundary, so a
 cofinal sequence yields the same topology. Polynomial truncations converge in this topology,
-and coefficient maps are uniformly continuous. These are specializations of the Gauss topology
-of a family of radii in `TauCeti.RingTheory.PowerSeries.GaussFamily`.
+coefficient maps are uniformly continuous, and additive maps bounded between smaller-radius Gauss
+norms are uniformly continuous. The topology, completeness, and polynomial density are
+specializations of the Gauss topology of a family of radii in
+`TauCeti.RingTheory.PowerSeries.GaussFamily`.
 
 ## References
 
@@ -139,6 +141,24 @@ theorem uniformContinuous_iff {X : Type*} [UniformSpace X]
 
 instance : IsUniformAddGroup (OnOpenDisc.subring R R₀) :=
   GaussFamily.isUniformAddGroup isUniformInducing_restrictFamily
+
+/-- An additive homomorphism between open-disc subrings is uniformly continuous when each target
+smaller-radius Gauss norm is bounded by a multiple of some source smaller-radius Gauss norm. -/
+theorem uniformContinuous_of_norm_restrict_le {S F : Type*} [NormedRing S] [IsUltrametricDist S]
+    {S₀ : ℝ} [FunLike F (OnOpenDisc.subring R R₀) (OnOpenDisc.subring S S₀)]
+    [AddMonoidHomClass F (OnOpenDisc.subring R R₀) (OnOpenDisc.subring S S₀)] (φ : F)
+    (hφ : ∀ s : Set.Ioo (0 : ℝ) S₀, ∃ (r : Set.Ioo (0 : ℝ) R₀) (C : ℝ),
+      ∀ f, ‖restrict s (φ f)‖ ≤ C * ‖restrict r f‖) :
+    UniformContinuous φ := by
+  refine uniformContinuous_iff.mpr fun s ↦ ?_
+  obtain ⟨r, C, hC⟩ := hφ s
+  let ψ : OnOpenDisc.subring R R₀ →+ IsRestricted.subring (R := S) (s : ℝ) :=
+    (restrict s).toAddMonoidHom.comp (AddMonoidHom.ofClass φ)
+  refine uniformContinuous_of_continuousAt_zero ψ ?_
+  rw [ContinuousAt, map_zero]
+  have h := (uniformContinuous_restrict (R := R) r).continuous.tendsto 0
+  refine squeeze_zero_norm (fun f ↦ hC f) ?_
+  simpa using h.norm.const_mul C
 
 instance : IsTopologicalRing (OnOpenDisc.subring R R₀) :=
   GaussFamily.isTopologicalRing isUniformInducing_restrictFamily

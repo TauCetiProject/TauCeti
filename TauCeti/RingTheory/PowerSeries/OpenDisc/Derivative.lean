@@ -164,15 +164,9 @@ theorem norm_restrict_hasseDeriv_le (k : ℕ) (r : Set.Ioo (0 : ℝ) R₀)
 
 /-- Every Hasse derivative is uniformly continuous for the open-disc Gauss uniformity. -/
 theorem uniformContinuous_hasseDeriv (k : ℕ) :
-    UniformContinuous (hasseDeriv (R := R) (R₀ := R₀) k) := by
-  refine uniformContinuous_iff.mpr fun r ↦ ?_
-  let φ : OnOpenDisc.subring R R₀ →+ IsRestricted.subring (R := R) (r : ℝ) :=
-    (restrict r).toAddMonoidHom.comp (hasseDeriv k).toAddMonoidHom
-  refine uniformContinuous_of_continuousAt_zero φ ?_
-  rw [ContinuousAt, map_zero]
-  have h := (uniformContinuous_restrict (R := R) r).continuous.tendsto 0
-  refine squeeze_zero_norm (fun f ↦ norm_restrict_hasseDeriv_le k r f) ?_
-  simpa using h.norm.const_mul ((r : ℝ)⁻¹ ^ k)
+    UniformContinuous (hasseDeriv (R := R) (R₀ := R₀) k) :=
+  uniformContinuous_of_norm_restrict_le _ fun r ↦
+    ⟨r, (r : ℝ)⁻¹ ^ k, norm_restrict_hasseDeriv_le k r⟩
 
 /-- Every Hasse derivative is continuous for the open-disc Gauss topology. -/
 @[continuity]

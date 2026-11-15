@@ -31,9 +31,8 @@ rescaling, Taylor translation, affine coordinate changes, and analytic substitut
 
 ## Main results
 
-* `PowerSeries.OnOpenDisc.evalAt_map` and `TauCeti.PowerSeries.OnOpenDisc.evalAt_mapHom`: point
-  evaluation on an open disc commutes with continuous (in particular bounded) coefficient
-  homomorphisms.
+* `TauCeti.PowerSeries.OnOpenDisc.evalAt_mapHom`: point evaluation on an open disc commutes with
+  bounded coefficient homomorphisms.
 * `TauCeti.PowerSeries.OnOpenDisc.restrict_mapHom`,
   `TauCeti.PowerSeries.OnOpenDisc.norm_restrict_mapHom_le`, and
   `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_mapHom`: comparison with `restrictedMap` on
@@ -57,25 +56,6 @@ public section
 
 open Filter PowerSeries
 open scoped Topology
-
-namespace PowerSeries
-
-section EvalAtMap
-
-variable {R S : Type*} [NormedCommRing R] [CompleteSpace R] [CommSemiring S]
-  [TopologicalSpace S] [T2Space S] {R₀ : ℝ} {f : R⟦X⟧}
-
-/-- Evaluation of series on an open disc commutes with continuous coefficient homomorphisms:
-`(φ f)(φ b) = φ (f(b))`. -/
-theorem OnOpenDisc.evalAt_map (hf : f.OnOpenDisc R₀) (φ : R →+* S) (hφ : Continuous φ) {b : R}
-    (hb : ‖b‖ < R₀) :
-    (PowerSeries.map φ f).evalAt (φ b) = φ (f.evalAt b) := by
-  rw [← ((hf.hasSum_evalAt hb).map φ hφ).tsum_eq, evalAt_def]
-  simp [map_pow]
-
-end EvalAtMap
-
-end PowerSeries
 
 namespace TauCeti.PowerSeries.OnOpenDisc
 
@@ -138,11 +118,14 @@ theorem exists_mapHom_eq_and_norm_coeff_le {C' : ℝ}
     ∃ f : OnOpenDisc.subring R R₀, mapHom φ hφ f = g ∧
       ∀ n, ‖coeff n (f : R⟦X⟧)‖ ≤ C' * ‖coeff n (g : S⟦X⟧)‖ := by
   choose l hl hln using hlift
-  let f₀ : R⟦X⟧ := fun t ↦ l (MvPowerSeries.coeff t (g : S⟦X⟧))
-  have hcoeff (n : ℕ) : coeff n f₀ = l (coeff n (g : S⟦X⟧)) := (rfl)
-  have hf₀ : f₀.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦
-    MvPowerSeries.isRestricted_map _ l hln
+  let f₀ : R⟦X⟧ := PowerSeries.mk fun n ↦ l (coeff n (g : S⟦X⟧))
+  have hcoeff (n : ℕ) : coeff n f₀ = l (coeff n (g : S⟦X⟧)) := coeff_mk n _
+  have hf₀ : f₀.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦ by
+    have hg := (isRestricted_iff' r (g : S⟦X⟧)).mp
       (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.2) r hr hrR)
+    refine (isRestricted_iff' r f₀).mpr <| squeeze_zero (fun _ ↦ by positivity) (fun n ↦ ?_)
+      (by simpa only [mul_zero] using hg.const_mul C')
+    simpa only [hcoeff, mul_assoc] using mul_le_mul_of_nonneg_right (hln _) (pow_nonneg hr.le n)
   refine ⟨⟨f₀, OnOpenDisc.mem_subring.mpr hf₀⟩, Subtype.ext ?_,
     fun n ↦ by simpa only [hcoeff] using hln _⟩
   ext n
@@ -171,6 +154,7 @@ theorem mapHom_comp {T : Type*} [NormedRing T] (φ : R →+* S) {C₁ : ℝ}
   RingHom.ext fun _ ↦ Subtype.ext <| PowerSeries.ext fun _ ↦ by simp
 
 /-- Applying two induced coefficient maps in turn applies the map induced by their composite. -/
+@[simp]
 theorem mapHom_mapHom {T : Type*} [NormedRing T] (φ : R →+* S) {C₁ : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C₁ * ‖x‖) (ψ : S →+* T) {C₂ : ℝ} (hψ : ∀ y, ‖ψ y‖ ≤ C₂ * ‖y‖)
     (f : OnOpenDisc.subring R R₀) :
@@ -232,15 +216,6 @@ theorem continuous_mapHom : Continuous (mapHom (R₀ := R₀) φ hφ) :=
   (uniformContinuous_mapHom φ hφ).continuous
 
 end FixedUltrametricHom
-
-/-- Along a contractive ring homomorphism (`‖φ x‖ ≤ 1 * ‖x‖`), any strict closed-disc radius bound
-is preserved by `mapHom`. -/
-theorem norm_restrict_mapHom_lt_of_norm_le {S₀ : ℝ} (φ : R →+* S) (hφ1 : ∀ x, ‖φ x‖ ≤ 1 * ‖x‖)
-    {g : OnOpenDisc.subring R S₀} {s : Set.Ioo (0 : ℝ) S₀} (hg : ‖restrict s g‖ < R₀) :
-    ‖restrict s (mapHom φ hφ1 g)‖ < R₀ := by
-  have hle := norm_restrict_mapHom_le φ hφ1 s g
-  rw [one_mul] at hle
-  exact hle.trans_lt hg
 
 end Ultrametric
 
