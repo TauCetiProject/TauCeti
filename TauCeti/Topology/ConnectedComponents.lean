@@ -216,6 +216,7 @@ theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : 
 
 /-- The distinct nonempty components meeting `U`, viewed as sets, are exactly the components
 of points in `s ∩ U`. -/
+@[simp]
 theorem image_val_setOf_connectedComponentIn_inter_nonempty (s U : Set X) :
     Subtype.val '' {C : connectedComponentIn s '' s | ((C : Set X) ∩ U).Nonempty} =
       connectedComponentIn s '' (s ∩ U) := by

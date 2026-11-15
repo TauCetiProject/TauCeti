@@ -35,29 +35,6 @@ open Filter Set Topology
 
 namespace TauCeti
 
-private theorem real_sign_cell {a x b : ℝ} (hx : x ∈ Ioo a b) (ε : SignType) :
-    IsPreconnected (Ioo a b ∩ {y | SignType.sign (y - x) = ε}) ∧
-      IsSemianalytic (Ioo a b ∩ {y | SignType.sign (y - x) = ε}) := by
-  rcases ε with _ | _ | _
-  · have heq : Ioo a b ∩ {y | SignType.sign (y - x) = 0} = {x} := by
-      ext y
-      simp only [mem_inter_iff, mem_ofPred_eq, sign_eq_zero_iff, sub_eq_zero, mem_singleton_iff]
-      exact ⟨And.right, fun h => h.symm ▸ ⟨hx, rfl⟩⟩
-    rw [SignType.zero_eq_zero, heq]
-    exact ⟨isPreconnected_singleton, isSemianalytic_singleton x⟩
-  · have heq : Ioo a b ∩ {y | SignType.sign (y - x) = -1} = Ioo a x := by
-      ext y
-      simp only [mem_inter_iff, mem_ofPred_eq, sign_eq_neg_one_iff, sub_neg, mem_Ioo]
-      grind
-    rw [SignType.neg_eq_neg_one, heq]
-    exact ⟨isPreconnected_Ioo, isSemianalytic_Ioo a x⟩
-  · have heq : Ioo a b ∩ {y | SignType.sign (y - x) = 1} = Ioo x b := by
-      ext y
-      simp only [mem_inter_iff, mem_ofPred_eq, sign_eq_one_iff, sub_pos, mem_Ioo]
-      grind
-    rw [SignType.pos_eq_one, heq]
-    exact ⟨isPreconnected_Ioo, isSemianalytic_Ioo x b⟩
-
 /-- Near an ambient point where a subset of the real line is semianalytic, its restriction
 has a finite cover by preconnected semianalytic sets. The interval can be chosen in any
 prescribed neighborhood. Empty sets and centers outside the set are allowed. -/
@@ -69,7 +46,11 @@ theorem SemianalyticAt.exists_Ioo_finite_isPreconnected_cover {s V : Set ℝ} {x
   let cell : SignType → Set ℝ := fun ε => Ioo a b ∩ {y | SignType.sign (y - x) = ε}
   refine ⟨a, b, hx, hV, cell '' C, C.toFinite.image cell, ?_, ?_⟩
   · rintro t ⟨ε, _, rfl⟩
-    exact real_sign_cell hx ε
+    have hp : IsPreconnected (cell ε) :=
+      (ordConnected_Ioo.inter (ordConnected_singleton.preimage_mono
+        (f := fun y => SignType.sign (y - x))
+        fun _ _ h => SignType.sign.mono (sub_le_sub_right h x))).isPreconnected
+    exact ⟨hp, hp.isSemianalytic⟩
   · ext y
     simp only [mem_sUnion, mem_image, exists_exists_and_eq_and, cell, mem_inter_iff,
       mem_ofPred_eq]
@@ -90,6 +71,7 @@ theorem SemianalyticAt.exists_Ioo_finite_image_connectedComponentIn {s V : Set �
 
 /-- Every connected component of any subset of the real line is semianalytic. A point outside
 the set gives the empty component. -/
+@[simp]
 theorem isSemianalytic_connectedComponentIn_real (s : Set ℝ) (y : ℝ) :
     IsSemianalytic (_root_.connectedComponentIn s y) :=
   isPreconnected_connectedComponentIn.isSemianalytic
