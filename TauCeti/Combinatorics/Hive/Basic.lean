@@ -346,11 +346,11 @@ variable (n R) in
 @[simp] theorem affine_zero : affine n (0 : R) 0 = 0 := by
   ext p; simp
 
-/-- `Hive.affine` is additive in both slope parameters. -/
-@[simp] theorem affine_add (β₁ γ₁ β₂ γ₂ : R) :
-    affine n (β₁ + β₂) (γ₁ + γ₂) = affine n β₁ γ₁ + affine n β₂ γ₂ := by
+/-- Adding two affine hives adds their slope parameters. -/
+@[simp] theorem affine_add_affine (β₁ γ₁ β₂ γ₂ : R) :
+    affine n β₁ γ₁ + affine n β₂ γ₂ = affine n (β₁ + β₂) (γ₁ + γ₂) := by
   ext p
-  simp only [affine_apply, add_apply, smul_add]
+  simp only [add_apply, affine_apply, smul_add]
   abel
 
 @[simp] theorem rhombusSlack_affine (β γ : R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
@@ -712,49 +712,6 @@ end Boundary
 
 section ProductChart
 
-private theorem long_diag_cases {n : ℕ} {b d : Vertex n} (hlong : b.sqDist d = 6) :
-    (((b.x : ℤ) - d.x = 1 ∧ (b.y : ℤ) - d.y = -2 ∧ (b.z : ℤ) - d.z = 1) ∨
-      ((b.x : ℤ) - d.x = -1 ∧ (b.y : ℤ) - d.y = 2 ∧ (b.z : ℤ) - d.z = -1) ∨
-      ((b.x : ℤ) - d.x = 2 ∧ (b.y : ℤ) - d.y = -1 ∧ (b.z : ℤ) - d.z = -1) ∨
-      ((b.x : ℤ) - d.x = -2 ∧ (b.y : ℤ) - d.y = 1 ∧ (b.z : ℤ) - d.z = 1) ∨
-      ((b.x : ℤ) - d.x = 1 ∧ (b.y : ℤ) - d.y = 1 ∧ (b.z : ℤ) - d.z = -2) ∨
-      ((b.x : ℤ) - d.x = -1 ∧ (b.y : ℤ) - d.y = -1 ∧ (b.z : ℤ) - d.z = 2)) := by
-  have bnd : ∀ a : ℤ, a ^ 2 ≤ 6 → -2 ≤ a ∧ a ≤ 2 := fun a ha => by
-    refine ⟨?_, ?_⟩
-    · by_contra! h'; have : a ≤ -3 := by omega
-      nlinarith
-    · by_contra! h'; have : 3 ≤ a := by omega
-      nlinarith
-  have hbsum := b.sum_eq; have hdsum := d.sum_eq
-  rw [Vertex.sqDist_def] at hlong
-  set dx : ℤ := (b.x : ℤ) - d.x
-  set dy : ℤ := (b.y : ℤ) - d.y
-  set dz : ℤ := (b.z : ℤ) - d.z
-  have hdx := bnd dx (by linarith [sq_nonneg dy, sq_nonneg dz])
-  have hdy := bnd dy (by linarith [sq_nonneg dx, sq_nonneg dz])
-  have hdz : dz = -dx - dy := by omega
-  rw [hdz] at hlong ⊢
-  rcases (by omega : dx = -2 ∨ dx = -1 ∨ dx = 0 ∨ dx = 1 ∨ dx = 2) with
-    h1 | h1 | h1 | h1 | h1 <;>
-  rcases (by omega : dy = -2 ∨ dy = -1 ∨ dy = 0 ∨ dy = 1 ∨ dy = 2) with
-    h2 | h2 | h2 | h2 | h2 <;>
-  rw [h1, h2] at hlong ⊢ <;> revert hlong <;> decide
-
-private theorem short_diag_bounds {n : ℕ} {a c : Vertex n} (hshort : a.sqDist c = 2) :
-    (-1 ≤ (a.x : ℤ) - c.x ∧ (a.x : ℤ) - c.x ≤ 1) ∧
-      (-1 ≤ (a.y : ℤ) - c.y ∧ (a.y : ℤ) - c.y ≤ 1) ∧
-      (-1 ≤ (a.z : ℤ) - c.z ∧ (a.z : ℤ) - c.z ≤ 1) := by
-  have bnd : ∀ u : ℤ, u ^ 2 ≤ 2 → -1 ≤ u ∧ u ≤ 1 := fun u hu => by
-    refine ⟨?_, ?_⟩
-    · by_contra! h'; have : u ≤ -2 := by omega
-      nlinarith
-    · by_contra! h'; have : 2 ≤ u := by omega
-      nlinarith
-  rw [Vertex.sqDist_def] at hshort
-  exact ⟨bnd _ (by linarith [sq_nonneg ((a.y : ℤ) - c.y), sq_nonneg ((a.z : ℤ) - c.z)]),
-    bnd _ (by linarith [sq_nonneg ((a.x : ℤ) - c.x), sq_nonneg ((a.z : ℤ) - c.z)]),
-    bnd _ (by linarith [sq_nonneg ((a.x : ℤ) - c.x), sq_nonneg ((a.y : ℤ) - c.y)])⟩
-
 private theorem apply_eq_productVertex {n : ℕ} {R : Type*} (f : Vertex n → R) (p : Vertex n)
     (i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) (hz : p.z = i) (hyz : p.y + p.z = j) :
     f p = f (Vertex.productVertex n i j hij hj) :=
@@ -793,7 +750,8 @@ private theorem productVertex_rhombus_le {n : ℕ} {R : Type*} [AddCommGroup R] 
   intro u v hruv huv
   have hu := u.sum_eq; have hv := v.sum_eq; have hb := b.sum_eq; have hd := d.sum_eq
   have hmx := hruv.midpoint_x; have hmy := hruv.midpoint_y
-  obtain ⟨hux, huy, huz⟩ := short_diag_bounds hruv.short
+  obtain ⟨-, hux, huy, huz⟩ := (Vertex.sqDist_eq_two_iff u v).mp hruv.short
+  rw [abs_le] at hux huy huz
   rcases hor with ⟨hdx, hdy, -⟩ | ⟨hdx, hdy, -⟩ | ⟨hdx, hdy, -⟩
   · rw [apply_eq_productVertex f b (d.z + 1) (b.y + 1 + d.z) (by omega) (by omega)
         (by omega) (by omega),
@@ -844,7 +802,7 @@ theorem isRhombusConcave_iff_productVertex {n : ℕ} {R : Type*} [AddCommGroup R
       fun i j hij hj => hf (isRhombus_productVertex_col hij hj),
       fun i j hij hj => hf (isRhombus_productVertex_ballot hij hj)⟩, ?_⟩
   rintro ⟨hmix, hcol, hbal⟩ a b c d hr
-  rcases long_diag_cases hr.long with h1 | h1 | h2 | h2 | h3 | h3
+  rcases (Vertex.sqDist_eq_six_iff b d).mp hr.long with h1 | h1 | h2 | h2 | h3 | h3
   · exact productVertex_rhombus_le hmix hcol hbal hr (Or.inl h1)
   · rw [add_comm (f b)]
     exact productVertex_rhombus_le hmix hcol hbal hr.reverse (Or.inl (by omega))
@@ -855,6 +813,39 @@ theorem isRhombusConcave_iff_productVertex {n : ℕ} {R : Type*} [AddCommGroup R
   · rw [add_comm (f b)]
     exact productVertex_rhombus_le hmix hcol hbal hr.reverse (Or.inr (Or.inr (by omega)))
 
+/-- A unit step along side `i = 0` in the product chart evaluates `h.boundary 0`. -/
+theorem apply_productVertex_zero_left_succ_sub {n r : ℕ} {R : Type*}
+    [AddCommGroup R] [PartialOrder R] (h : Hive n R) (hr : r < n) :
+    h (Vertex.productVertex n 0 (r + 1) (Nat.zero_le _) hr) -
+      h (Vertex.productVertex n 0 r (Nat.zero_le _) hr.le) =
+      h.boundary 0 ⟨r, hr⟩ := by
+  rw [Vertex.productVertex_zero_left, Vertex.productVertex_zero_left, boundary_apply]
+  rfl
+
+/-- A unit step along side `j = n` in the product chart evaluates `h.boundary 1`. -/
+theorem apply_productVertex_self_right_succ_sub {n k : ℕ} {R : Type*}
+    [AddCommGroup R] [PartialOrder R] (h : Hive n R) (hk : k < n) :
+    h (Vertex.productVertex n (k + 1) n hk le_rfl) -
+      h (Vertex.productVertex n k n hk.le le_rfl) =
+      h.boundary 1 ⟨k, hk⟩ := by
+  rw [Vertex.productVertex_self_right, Vertex.productVertex_self_right, boundary_apply]
+  rfl
+
+/-- A unit step along the diagonal `i = j` in the product chart evaluates `-h.boundary 2` at the
+reversed index. -/
+theorem apply_productVertex_diag_succ_sub {n r : ℕ} {R : Type*}
+    [AddCommGroup R] [PartialOrder R] (h : Hive n R) (hr : r < n) :
+    h (Vertex.productVertex n (r + 1) (r + 1) le_rfl hr) -
+      h (Vertex.productVertex n r r le_rfl hr.le) =
+      -h.boundary 2 (⟨r, hr⟩ : Fin n).rev := by
+  rw [Vertex.productVertex_diag, Vertex.productVertex_diag, boundary_apply]
+  have h1 : (⟨n - r, by omega⟩ : Fin (n + 1)) = (⟨r, hr⟩ : Fin n).rev.succ := by
+    ext; simp [Fin.val_rev]; omega
+  have h2 : (⟨n - (r + 1), by omega⟩ : Fin (n + 1)) = (⟨r, hr⟩ : Fin n).rev.castSucc := by
+    ext; simp [Fin.val_rev]
+  rw [h1, h2]
+  abel
+
 /-- Boundary evaluation along `i = 0` for a hive with boundary `productBoundary lam μ γ`. -/
 theorem apply_productVertex_zero_left_of_productBoundary {n j : ℕ} {lam μ γ : DominantWeight n}
     {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (hj : j ≤ n) :
@@ -862,11 +853,11 @@ theorem apply_productVertex_zero_left_of_productBoundary {n j : ℕ} {lam μ γ 
   rw [Vertex.productVertex_zero_left, apply_edgePoint_zero, hb, productBoundary_zero]
 
 /-- Boundary evaluation along `j = n` for a hive with boundary `productBoundary lam μ γ`. -/
-theorem apply_productVertex_right_self_of_productBoundary {n i : ℕ} {lam μ γ : DominantWeight n}
+theorem apply_productVertex_self_right_of_productBoundary {n i : ℕ} {lam μ γ : DominantWeight n}
     {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (hi : i ≤ n) :
     h (Vertex.productVertex n i n hi le_rfl) =
       (∑ r : Fin n, lam.1 r) + ∑ k : Fin n with k.val < i, μ.1 k := by
-  rw [Vertex.productVertex_right_self, apply_edgePoint_one, hb, productBoundary_zero,
+  rw [Vertex.productVertex_self_right, apply_edgePoint_one, hb, productBoundary_zero,
     productBoundary_one]
 
 /-- Boundary evaluation along the diagonal `i = j` for a hive with boundary

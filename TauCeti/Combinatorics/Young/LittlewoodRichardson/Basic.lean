@@ -195,6 +195,41 @@ theorem congr_symm {inner' outer' μ' : YoungDiagram}
     (congr hinner houter hμ).symm = congr hinner.symm houter.symm hμ.symm := by
   subst hinner; subst houter; subst hμ; rfl
 
+/-- Transporting a Littlewood–Richardson tableau along reflexive equalities is the identity. -/
+@[simp]
+theorem congr_rfl :
+    congr (rfl : inner = inner) (rfl : outer = outer) (rfl : μ = μ) = Equiv.refl _ :=
+  Equiv.ext fun _ => rfl
+
+/-- Composing two transports of Littlewood–Richardson tableaux composes the equalities. -/
+@[simp]
+theorem congr_trans {inner' outer' μ' inner'' outer'' μ'' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
+    (hinner' : inner' = inner'') (houter' : outer' = outer'') (hμ' : μ' = μ'') :
+    (congr hinner houter hμ).trans (congr hinner' houter' hμ') =
+      congr (hinner.trans hinner') (houter.trans houter') (hμ.trans hμ') := by
+  subst hinner; subst houter; subst hμ; subst hinner'; subst houter'; subst hμ'; rfl
+
+/-- Applying two transports of Littlewood–Richardson tableaux successively composes the
+equalities. -/
+@[simp]
+theorem congr_congr {inner' outer' μ' inner'' outer'' μ'' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
+    (hinner' : inner' = inner'') (houter' : outer' = outer'') (hμ' : μ' = μ'')
+    (T : LRTableau inner outer μ) :
+    congr hinner' houter' hμ' (congr hinner houter hμ T) =
+      congr (hinner.trans hinner') (houter.trans houter') (hμ.trans hμ') T := by
+  subst hinner; subst houter; subst hμ; subst hinner'; subst houter'; subst hμ'; rfl
+
+/-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
+reading word. -/
+@[simp]
+theorem readingWord_congr {inner' outer' μ' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
+    (T : LRTableau inner outer μ) :
+    (congr hinner houter hμ T).1.readingWord = T.1.readingWord := by
+  subst hinner; subst houter; subst hμ; rfl
+
 /-- **The sizes of the shapes of a Littlewood–Richardson tableau add up**: a tableau of shape
 `ν / λ` and content `μ` forces `|ν| = |λ| + |μ|`. -/
 theorem card_eq (T : LRTableau inner outer μ) : outer.card = inner.card + μ.card := by

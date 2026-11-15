@@ -81,7 +81,7 @@ theorem hiveCount_productBoundary_eq_natCard_lrTableau {n : ℕ} {lam μ γ : Do
     (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) :
     hiveCount (productBoundary lam μ γ) =
       Nat.card (LRTableau lam.shape γ.shape μ.shape) := by
-  rw [← card_fixedIntegerHive, ← Nat.card_eq_fintype_card]
+  rw [← natCard_fixedIntegerHive]
   exact Nat.card_congr (fixedIntegerHiveEquivLRTableau hlam hμ hγ)
 
 /-- For Young diagrams `λ, μ, ν` with at most `n` rows, the hive count on `weightOfShape n` equals
@@ -90,7 +90,7 @@ theorem hiveCount_weightOfShape_eq_natCard_lrTableau {n : ℕ} {lam μ ν : Youn
     (hlam : lam.colLen 0 ≤ n) (hμ : μ.colLen 0 ≤ n) (hν : ν.colLen 0 ≤ n) :
     hiveCount (productBoundary (weightOfShape n lam) (weightOfShape n μ) (weightOfShape n ν)) =
       Nat.card (LRTableau lam ν μ) := by
-  rw [← card_fixedIntegerHive, ← Nat.card_eq_fintype_card]
+  rw [← natCard_fixedIntegerHive]
   exact Nat.card_congr (fixedIntegerHiveWeightOfShapeEquivLRTableau hlam hμ hν)
 
 /-- **Rank stability of hive counts**: for Young diagrams `λ, μ, ν` fitting in both `n` and `m`
@@ -114,7 +114,7 @@ theorem hiveCount_productBoundary_eq_ite_detShift {n : ℕ} (lam μ γ : Dominan
           (γ.shift (-(lam.detShift + μ.detShift))).shape μ.detShiftShape)
       else 0 := by
   split_ifs with hdet
-  · rw [← card_fixedIntegerHive, ← Nat.card_eq_fintype_card]
+  · rw [← natCard_fixedIntegerHive]
     exact Nat.card_congr (fixedIntegerHiveSignedEquivLRTableau hdet)
   · exact hiveCount_productBoundary_eq_zero_of_detShift_lt (lt_of_not_ge hdet)
 
@@ -155,7 +155,7 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
     have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 := by
       intro h0
       exact hγ_supp (by simp [f, h0])
-    obtain ⟨h⟩ := not_isEmpty_iff.mp (mt hiveCount_eq_zero_iff.mpr hcnt)
+    obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
     have hγ_poly : γ.IsPolynomial := isPolynomial_of_productBoundary h.2 hlam hμ
     rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ hγ_poly] at hcnt
     have hcard : γ.shape.card = lam.shape.card + μ.shape.card := by
@@ -190,7 +190,7 @@ private theorem finsum_hiveCount_one_eq_smul :
   have hsupp : Function.support f ⊆ ({γ₁} : Finset (DominantWeight 1)) := by
     intro γ hγ_supp
     have hcnt : hiveCount (productBoundary lam lam γ) ≠ 0 := fun h0 => hγ_supp (by simp [f, h0])
-    obtain ⟨h⟩ := not_isEmpty_iff.mp (mt hiveCount_eq_zero_iff.mpr hcnt)
+    obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
     have hsum := sum_eq_of_productBoundary h.2
     simp only [Fin.sum_univ_one, lam, Matrix.cons_val_zero] at hsum
     refine Finset.mem_coe.mpr (Finset.mem_singleton.mpr ?_)
@@ -202,19 +202,20 @@ private theorem natCard_lrTableau_std_one_det_two :
     let γ₂ : DominantWeight 2 := ⟨![1, 1], by decide⟩
     Nat.card (LRTableau lam.shape γ₂.shape lam.shape) = 1 := by
   intro lam γ₂
-  let lam₂ : DominantWeight 2 := ⟨![1, 0], by decide⟩
-  have hlam₂ : lam₂.IsPolynomial := by
+  have hlam : lam.IsPolynomial := by
     rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
   have hγ₂ : γ₂.IsPolynomial := by
     rw [DominantWeight.isPolynomial_iff_zero_le_detShift, DominantWeight.detShift_succ]; decide
-  have hshape_lam : lam.shape = lam₂.shape := by
-    refine YoungDiagram.rowLen_injective (funext fun i => ?_)
-    rcases i with _ | _ | i
-    · exact (lam.rowLen_shape 0).trans (lam₂.rowLen_shape 0).symm
-    · exact (DominantWeight.rowLen_shape_eq_zero_of_le lam le_rfl).trans (lam₂.rowLen_shape 1).symm
-    · rw [DominantWeight.rowLen_shape_eq_zero_of_le lam (by omega),
-        DominantWeight.rowLen_shape_eq_zero_of_le lam₂ (by omega)]
-  rw [hshape_lam, ← hiveCount_productBoundary_eq_natCard_lrTableau hlam₂ hlam₂ hγ₂]
+  have hlam_col : lam.shape.colLen 0 ≤ 2 :=
+    (DominantWeight.colLen_zero_shape_le lam).trans (by decide)
+  have hw_lam : weightOfShape 2 lam.shape = (⟨![1, 0], by decide⟩ : DominantWeight 2) := by
+    ext i
+    fin_cases i
+    · simpa [lam] using DominantWeight.natCast_rowLen_shape hlam 0
+    · simp [lam]
+  rw [← hiveCount_weightOfShape_eq_natCard_lrTableau hlam_col hlam_col
+      (DominantWeight.colLen_zero_shape_le γ₂),
+    hw_lam, weightOfShape_shape hγ₂]
   exact hiveCount_two_std_std_det
 
 /-- **Sharpness of the `n`-variable restriction in

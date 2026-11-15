@@ -334,23 +334,11 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
 
 /-- **Symmetry of the Littlewood–Richardson coefficients**: `c^ν_{λ μ} = c^ν_{μ λ}` for all Young
-diagrams `λ`, `ν`, and `μ`, deduced from commutativity of Schur polynomial multiplication and
-`ℤ`-linear independence of the Schur basis in `|λ| + |μ|` variables. -/
+diagrams `λ`, `ν`, and `μ`. -/
 theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
     Nat.card (LRTableau lam outer μ) = Nat.card (LRTableau μ outer lam) := by
   by_cases hcard : outer.card = lam.card + μ.card
   · set d := lam.card + μ.card
-    let e : (μ.card + lam.card).Partition ≃ d.Partition :=
-      { toFun p := (ofPartition p).toPartition
-          ((YoungDiagram.card_ofPartition p).trans (add_comm μ.card lam.card))
-        invFun p := (ofPartition p).toPartition
-          ((YoungDiagram.card_ofPartition p).trans (add_comm lam.card μ.card))
-        left_inv p := by
-          simp [YoungDiagram.ofPartition_toPartition, YoungDiagram.toPartition_ofPartition]
-        right_inv p := by
-          simp [YoungDiagram.ofPartition_toPartition, YoungDiagram.toPartition_ofPartition] }
-    have he (p : (μ.card + lam.card).Partition) : ofPartition (e p) = ofPartition p := by
-      simp [e, YoungDiagram.ofPartition_toPartition]
     have heq_diag :
         ∑ ν : d.Partition,
           Nat.card (LRTableau lam (ofPartition ν) μ) • diagramSchurPoly d ℤ (ofPartition ν) =
@@ -358,9 +346,9 @@ theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
           Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν) := by
       rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau, mul_comm,
         diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau]
-      exact (Finset.sum_congr rfl fun p _ => by simp only [he]).trans
-        (Equiv.sum_comp e fun ν =>
-          Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν))
+      exact congrArg (fun m => ∑ ν : m.Partition,
+        Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν))
+        (add_comm μ.card lam.card)
     simpa only [YoungDiagram.ofPartition_toPartition] using
       congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq le_rfl heq_diag) (outer.toPartition hcard)
   · have hcard' : outer.card ≠ μ.card + lam.card := by omega

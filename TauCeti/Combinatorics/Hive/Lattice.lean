@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Fin.Rev
 public import Mathlib.Data.Fin.Tuple.NatAntidiagonal
+import Mathlib.Data.Int.Order.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -180,6 +181,68 @@ theorem sqDist_comm (p q : Vertex n) : sqDist p q = sqDist q p := by
   simp only [sqDist, add_x, add_y, add_z, Nat.cast_add]
   ring
 
+/-- Two lattice vertices have barycentric squared distance `2` iff they are distinct and all three
+barycentric coordinate differences have absolute value at most `1`. -/
+theorem sqDist_eq_two_iff (p q : Vertex n) :
+    p.sqDist q = 2 ↔
+      p ≠ q ∧ |(p.x : ℤ) - q.x| ≤ 1 ∧ |(p.y : ℤ) - q.y| ≤ 1 ∧ |(p.z : ℤ) - q.z| ≤ 1 := by
+  have bnd : ∀ u : ℤ, u ^ 2 ≤ 2 → |u| ≤ 1 := fun u hu => by
+    simpa using (Int.abs_le_sqrt_iff_sq_le (b := 2) (by decide)).mpr hu
+  constructor
+  · intro h
+    rw [sqDist_def] at h
+    exact ⟨fun hpq => by simp [hpq] at h,
+      bnd _ (by linarith [sq_nonneg ((p.y : ℤ) - q.y), sq_nonneg ((p.z : ℤ) - q.z)]),
+      bnd _ (by linarith [sq_nonneg ((p.x : ℤ) - q.x), sq_nonneg ((p.z : ℤ) - q.z)]),
+      bnd _ (by linarith [sq_nonneg ((p.x : ℤ) - q.x), sq_nonneg ((p.y : ℤ) - q.y)])⟩
+  · rintro ⟨hne, hx, hy, hz⟩
+    rw [abs_le] at hx hy hz
+    have hp := p.sum_eq; have hq := q.sum_eq
+    have hne' : (p.x : ℤ) - q.x ≠ 0 ∨ (p.y : ℤ) - q.y ≠ 0 ∨ (p.z : ℤ) - q.z ≠ 0 := by
+      by_contra h
+      push Not at h
+      exact hne (Vertex.ext (by omega) (by omega) (by omega))
+    rw [sqDist_def]
+    set dx : ℤ := (p.x : ℤ) - q.x
+    set dy : ℤ := (p.y : ℤ) - q.y
+    have hdz : (p.z : ℤ) - q.z = -dx - dy := by omega
+    rw [hdz] at hne' hz ⊢
+    rcases (by omega : dx = -1 ∨ dx = 0 ∨ dx = 1) with h1 | h1 | h1 <;>
+    rcases (by omega : dy = -1 ∨ dy = 0 ∨ dy = 1) with h2 | h2 | h2 <;>
+    simp [h1, h2] at hne' hz ⊢
+
+/-- Two lattice vertices have barycentric squared distance `6` iff their coordinate difference is
+one of the six permutations of `±(2, -1, -1)`. -/
+theorem sqDist_eq_six_iff (p q : Vertex n) :
+    p.sqDist q = 6 ↔
+      (((p.x : ℤ) - q.x = 1 ∧ (p.y : ℤ) - q.y = -2 ∧ (p.z : ℤ) - q.z = 1) ∨
+        ((p.x : ℤ) - q.x = -1 ∧ (p.y : ℤ) - q.y = 2 ∧ (p.z : ℤ) - q.z = -1) ∨
+        ((p.x : ℤ) - q.x = 2 ∧ (p.y : ℤ) - q.y = -1 ∧ (p.z : ℤ) - q.z = -1) ∨
+        ((p.x : ℤ) - q.x = -2 ∧ (p.y : ℤ) - q.y = 1 ∧ (p.z : ℤ) - q.z = 1) ∨
+        ((p.x : ℤ) - q.x = 1 ∧ (p.y : ℤ) - q.y = 1 ∧ (p.z : ℤ) - q.z = -2) ∨
+        ((p.x : ℤ) - q.x = -1 ∧ (p.y : ℤ) - q.y = -1 ∧ (p.z : ℤ) - q.z = 2)) := by
+  constructor
+  · intro h
+    have bnd : ∀ a : ℤ, a ^ 2 ≤ 6 → -2 ≤ a ∧ a ≤ 2 := fun a ha => by
+      have h6 : Nat.sqrt 6 = 2 := Nat.sqrt_add_eq 2 (a := 2) (by decide)
+      simpa [abs_le, h6] using (Int.abs_le_sqrt_iff_sq_le (b := 6) (by decide)).mpr ha
+    have hp := p.sum_eq; have hq := q.sum_eq
+    rw [sqDist_def] at h
+    set dx : ℤ := (p.x : ℤ) - q.x
+    set dy : ℤ := (p.y : ℤ) - q.y
+    set dz : ℤ := (p.z : ℤ) - q.z
+    have hdx := bnd dx (by linarith [sq_nonneg dy, sq_nonneg dz])
+    have hdy := bnd dy (by linarith [sq_nonneg dx, sq_nonneg dz])
+    have hdz : dz = -dx - dy := by omega
+    rw [hdz] at h ⊢
+    rcases (by omega : dx = -2 ∨ dx = -1 ∨ dx = 0 ∨ dx = 1 ∨ dx = 2) with
+      h1 | h1 | h1 | h1 | h1 <;>
+    rcases (by omega : dy = -2 ∨ dy = -1 ∨ dy = 0 ∨ dy = 1 ∨ dy = 2) with
+      h2 | h2 | h2 | h2 | h2 <;>
+    rw [h1, h2] at h ⊢ <;> revert h <;> decide
+  · rintro (⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ |
+        ⟨h1, h2, h3⟩) <;> rw [sqDist_def, h1, h2, h3] <;> decide
+
 /-- The equilateral planar realization of the triangular lattice. -/
 noncomputable def plane (p : Vertex n) : EuclideanSpace ℝ (Fin 2) :=
   !₂[(p.z : ℝ) + p.y / 2, Real.sqrt 3 * p.y / 2]
@@ -327,7 +390,7 @@ theorem productVertex_zero_left (n j : ℕ) (hj : j ≤ n) :
   ext <;> simp
 
 /-- Setting `j = n` gives the `i`-th vertex along side `B → C` (`s = 1`). -/
-theorem productVertex_right_self (n i : ℕ) (hi : i ≤ n) :
+theorem productVertex_self_right (n i : ℕ) (hi : i ≤ n) :
     productVertex n i n hi le_rfl = edgePoint n 1 ⟨i, by omega⟩ := by
   ext <;> simp
 
@@ -525,19 +588,10 @@ theorem isRhombus_productVertex_mixed {n i j : ℕ} (hij : i < j) (hj : j + 1 �
       (Vertex.productVertex n (i + 1) j (by omega) (by omega))
       (Vertex.productVertex n (i + 1) (j + 1) (by omega) hj)
       (Vertex.productVertex n i (j + 1) (by omega) hj) := by
-  have hx0 : ((n - j : ℕ) : ℤ) = (n : ℤ) - j := by omega
-  have hx1 : ((n - (j + 1) : ℕ) : ℤ) = (n : ℤ) - j - 1 := by omega
-  have hy00 : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy10 : ((j - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i - 1 := by omega
-  have hy11 : ((j + 1 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy01 : ((j + 1 - i : ℕ) : ℤ) = (j : ℤ) - i + 1 := by omega
-  refine ⟨by simp only [Vertex.productVertex_x], by simp only [Vertex.productVertex_y]; omega,
-    by simp only [Vertex.productVertex_z]; omega, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.productVertex_x, Vertex.productVertex_y, Vertex.productVertex_z,
-      hx0, hx1, hy00, hy10, hy11, hy01, Nat.cast_add, Nat.cast_one]
-    ring
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  let p : Vertex m := ⟨m + 1 - j, j - 1 - i, i, by omega⟩
+  convert isRhombus_at_cornerA.rotate.swap_opposite.add p using 1 <;>
+    ext <;> simp [p] <;> omega
 
 /-- Second unit-rhombus family in the product chart (`0 ≤ i ≤ j` and `j + 2 ≤ n`): obtuse corners
 `(i, j + 1)` and `(i + 1, j + 1)`, acute corners `(i, j)` and `(i + 1, j + 2)`. -/
@@ -547,21 +601,8 @@ theorem isRhombus_productVertex_col {n i j : ℕ} (hij : i ≤ j) (hj : j + 2 �
       (Vertex.productVertex n i j hij (by omega))
       (Vertex.productVertex n (i + 1) (j + 1) (by omega) (by omega))
       (Vertex.productVertex n (i + 1) (j + 2) (by omega) hj) := by
-  have hx0 : ((n - j : ℕ) : ℤ) = (n : ℤ) - j := by omega
-  have hx1 : ((n - (j + 1) : ℕ) : ℤ) = (n : ℤ) - j - 1 := by omega
-  have hx2 : ((n - (j + 2) : ℕ) : ℤ) = (n : ℤ) - j - 2 := by omega
-  have hy00 : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy01 : ((j + 1 - i : ℕ) : ℤ) = (j : ℤ) - i + 1 := by omega
-  have hy11 : ((j + 1 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy12 : ((j + 2 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i + 1 := by omega
-  refine ⟨by simp only [Vertex.productVertex_x]; omega,
-    by simp only [Vertex.productVertex_y]; omega,
-    by simp only [Vertex.productVertex_z], ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.productVertex_x, Vertex.productVertex_y, Vertex.productVertex_z,
-      hx0, hx1, hx2, hy00, hy01, hy11, hy12, Nat.cast_add, Nat.cast_one]
-    ring
+  convert isRhombus_ofYZ_step (n := n) (y := j - i) (z := i) (by omega) using 1 <;>
+    ext <;> simp <;> omega
 
 /-- Third unit-rhombus family in the product chart (`0 ≤ i < j < n`): obtuse corners `(i + 1, j)`
 and `(i + 1, j + 1)`, acute corners `(i, j)` and `(i + 2, j + 1)`. -/
@@ -571,19 +612,10 @@ theorem isRhombus_productVertex_ballot {n i j : ℕ} (hij : i < j) (hj : j + 1 �
       (Vertex.productVertex n i j (by omega) (by omega))
       (Vertex.productVertex n (i + 1) (j + 1) (by omega) hj)
       (Vertex.productVertex n (i + 2) (j + 1) (by omega) hj) := by
-  have hx0 : ((n - j : ℕ) : ℤ) = (n : ℤ) - j := by omega
-  have hx1 : ((n - (j + 1) : ℕ) : ℤ) = (n : ℤ) - j - 1 := by omega
-  have hy00 : ((j - i : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy10 : ((j - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i - 1 := by omega
-  have hy11 : ((j + 1 - (i + 1) : ℕ) : ℤ) = (j : ℤ) - i := by omega
-  have hy21 : ((j + 1 - (i + 2) : ℕ) : ℤ) = (j : ℤ) - i - 1 := by omega
-  refine ⟨by simp only [Vertex.productVertex_x], by simp only [Vertex.productVertex_y]; omega,
-    by simp only [Vertex.productVertex_z]; omega, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals
-    rw [Vertex.sqDist_def]
-    simp only [Vertex.productVertex_x, Vertex.productVertex_y, Vertex.productVertex_z,
-      hx0, hx1, hy00, hy10, hy11, hy21, Nat.cast_add, Nat.cast_one, Nat.cast_ofNat]
-    ring
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  let p : Vertex m := ⟨m + 1 - j, j - 1 - i, i, by omega⟩
+  convert isRhombus_at_cornerA.rotate.rotate.reverse.add p using 1 <;>
+    ext <;> simp [p] <;> omega
 
 /-- A vector `v : Fin 3 → ℤ` is a **unit lattice edge step** if `∑ vᵢ = 0` and `∑ vᵢ² = 2`. -/
 def IsUnitStep (v : Fin 3 → ℤ) : Prop := (∑ i, v i) = 0 ∧ (∑ i, v i ^ 2) = 2

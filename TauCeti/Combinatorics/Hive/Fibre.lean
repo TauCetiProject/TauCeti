@@ -664,8 +664,8 @@ theorem finite_support_hiveCount_productBoundary {n : ℕ} (lam μ : DominantWei
 
 /-- Adding `Hive.affine n a (a + b)` shifts `productBoundary lam μ γ` to
 `productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))`. -/
-theorem boundary_add_affine_shift {n : ℕ} {lam μ γ : DominantWeight n} {h : IntegerHive n}
-    (hb : h.boundary = productBoundary lam μ γ) (a b : ℤ) :
+theorem boundary_add_affine_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (a b : ℤ) :
     (h + affine n a (a + b)).boundary =
       productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)) := by
   ext s i
@@ -685,11 +685,11 @@ bijection between `FixedIntegerHive (productBoundary lam μ γ)` and
 def fixedIntegerHiveShiftEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) where
-  toFun h := ⟨h.1 + affine n a (a + b), boundary_add_affine_shift h.2 a b⟩
+  toFun h := ⟨h.1 + affine n a (a + b), boundary_add_affine_of_productBoundary h.2 a b⟩
   invFun h :=
     ⟨h.1 + affine n (-a) (-a + -b), by
       have hab : a + b + (-a + -b) = 0 := by ring
-      rw [boundary_add_affine_shift h.2 (-a) (-b), DominantWeight.shift_shift,
+      rw [boundary_add_affine_of_productBoundary h.2 (-a) (-b), DominantWeight.shift_shift,
         DominantWeight.shift_shift, DominantWeight.shift_shift]
       simp [hab]⟩
   left_inv h := by
@@ -832,7 +832,7 @@ private theorem apply_interior_three_bounds {lam μ γ : DominantWeight 3}
     apply_productVertex_diag_of_productBoundary h.2 (by decide), ← hp12] at hlo
   rw [apply_productVertex_zero_left_of_productBoundary h.2 (by decide),
     apply_productVertex_zero_left_of_productBoundary h.2 (by decide),
-    apply_productVertex_right_self_of_productBoundary h.2 (by decide), ← hp12] at hhi
+    apply_productVertex_self_right_of_productBoundary h.2 (by decide), ← hp12] at hhi
   simp only [Finset.sum_filter, Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two]
     at hlo hhi
   omega
@@ -863,29 +863,29 @@ private instance (lam μ γ : Fin 3 → ℤ) (v : ℤ) : Decidable (threeInterio
 private def mkThreeHive (lam μ γ : DominantWeight 3) (v : ℤ)
     (htr : lam.1 0 + lam.1 1 + lam.1 2 + μ.1 0 + μ.1 1 + μ.1 2 = γ.1 0 + γ.1 1 + γ.1 2)
     (hvalid : threeInteriorValid lam.1 μ.1 γ.1 v) :
-    FixedIntegerHive (productBoundary lam μ γ) := by
-  let f := threeFun lam.1 μ.1 γ.1 v
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hvalid
-  have hf : IsRhombusConcave f := by
-    refine (isRhombusConcave_iff_productVertex f).mpr ⟨?_, ?_, ?_⟩
-    · intro i j hij hj
-      rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
-        ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [f, threeFun] <;> omega
-    · intro i j hij hj
-      rcases (by omega : i = 0 ∧ j = 0 ∨ i = 0 ∧ j = 1 ∨ i = 1 ∧ j = 1) with
-        ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [f, threeFun] <;> omega
-    · intro i j hij hj
-      rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
-        ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [f, threeFun] <;> omega
-  refine ⟨⟨f, by simp [f, threeFun], fun hr => (isRhombusConcave_def f).mp hf hr⟩, ?_⟩
-  ext s m; fin_cases s <;> fin_cases m <;> simp [boundary_apply, f, threeFun, Fin.rev]; omega
+    FixedIntegerHive (productBoundary lam μ γ) :=
+  ⟨⟨threeFun lam.1 μ.1 γ.1 v, by simp [threeFun], fun hr => by
+      obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hvalid
+      refine (isRhombusConcave_def _).mp
+        ((isRhombusConcave_iff_productVertex (threeFun lam.1 μ.1 γ.1 v)).mpr ⟨?_, ?_, ?_⟩) hr
+      · intro i j hij hj
+        rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
+          ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega
+      · intro i j hij hj
+        rcases (by omega : i = 0 ∧ j = 0 ∨ i = 0 ∧ j = 1 ∨ i = 1 ∧ j = 1) with
+          ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega
+      · intro i j hij hj
+        rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
+          ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega⟩, by
+    ext s m; fin_cases s <;> fin_cases m <;> simp [boundary_apply, threeFun, Fin.rev]; omega⟩
 
 @[simp] private theorem mkThreeHive_interior (lam μ γ : DominantWeight 3) (v : ℤ)
     (htr : lam.1 0 + lam.1 1 + lam.1 2 + μ.1 0 + μ.1 1 + μ.1 2 = γ.1 0 + γ.1 1 + γ.1 2)
     (hvalid : threeInteriorValid lam.1 μ.1 γ.1 v) :
     (mkThreeHive lam μ γ v htr hvalid).1 ⟨1, 1, 1, rfl⟩ = v := (rfl)
 
-/-- **Rank-`3` check `c^{(2, 0, 0)}_{(1, 0, 0), (1, 0, 0)} = 1`**. -/
+/-- **Rank-`3` check**: `hiveCount = 1` for `((1, 0, 0), (1, 0, 0), (2, 0, 0))`, witnessed by the
+unique interior value `h ⟨1, 1, 1, rfl⟩ = 2`. -/
 theorem hiveCount_three_one_one_two :
     hiveCount
       (productBoundary ⟨![1, 0, 0], by decide⟩ ⟨![1, 0, 0], by decide⟩
@@ -900,9 +900,8 @@ theorem hiveCount_three_one_one_two :
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, h₀, mkThreeHive_interior] at hb ⊢
   omega
 
-/-- **Rank-`3` ballot check `c^{(3, 2, 1)}_{(2, 1, 0), (2, 1, 0)} = 2`**: the two hives correspond
-to interior values `h(1, 2) = 4` (reading word `010`) and `h(1, 2) = 5` (reading word `001`), while
-`100` is excluded by the ballot condition. -/
+/-- **Rank-`3` check**: `hiveCount = 2` for `((2, 1, 0), (2, 1, 0), (3, 2, 1))`, witnessed by the
+two interior values `h ⟨1, 1, 1, rfl⟩ = 4` and `5`. -/
 theorem hiveCount_three_two_one_two_one_three_two_one :
     hiveCount
       (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
