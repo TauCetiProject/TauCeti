@@ -73,10 +73,12 @@ theorem positionLabel_castAdd (w : List (Fin r × Bool)) (k : Fin r) :
 @[simp]
 theorem positionLabel_natAdd (w : List (Fin r × Bool)) (k : Fin w.length) :
     positionLabel w (k.natAdd r) = (k : ℤ) + 1 := by
-  simp [positionLabel, show ¬ r + (k : ℕ) < r by omega]
+  have hword : ¬ r + (k : ℕ) < r := by omega
+  simp [positionLabel, hword]
   omega
 
 /-- Actual word positions are exactly those with positive BFZ labels. -/
+@[simp]
 theorem positionLabel_pos_iff (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
     0 < positionLabel w k ↔ r ≤ (k : ℕ) := by
   unfold positionLabel
@@ -89,6 +91,7 @@ theorem positionLabel_strictMono (w : List (Fin r × Bool)) : StrictMono (positi
   split_ifs <;> omega
 
 /-- No storage position denotes the omitted position zero. -/
+@[simp]
 theorem positionLabel_ne_zero (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
     positionLabel w k ≠ 0 := by
   unfold positionLabel
@@ -100,7 +103,7 @@ def successor (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
   (Finset.univ.filter fun l ↦ k < l ∧ (letter w l).1 = (letter w k).1).min
 
 /-- A genuine successor has the same absolute index and occurs strictly later. -/
-theorem lt_and_letter_eq_of_successor_eq (w : List (Fin r × Bool))
+theorem lt_and_letter_fst_eq_of_successor_eq (w : List (Fin r × Bool))
     {k l : Fin (r + w.length)} (h : successor w k = l) :
     k < l ∧ (letter w l).1 = (letter w k).1 := by
   simpa [successor] using Finset.mem_of_min h
@@ -117,7 +120,7 @@ theorem successor_eq_iff (w : List (Fin r × Bool)) (k l : Fin (r + w.length)) :
       ∀ j, k < j → (letter w j).1 = (letter w k).1 → l ≤ j := by
   constructor
   · intro h
-    obtain ⟨hkl, hletter⟩ := lt_and_letter_eq_of_successor_eq w h
+    obtain ⟨hkl, hletter⟩ := lt_and_letter_fst_eq_of_successor_eq w h
     refine ⟨hkl, hletter, fun j hkj hj ↦ ?_⟩
     exact WithTop.coe_le_coe.mp (h ▸ successor_le w hkj hj)
   · rintro ⟨hkl, hletter, hmin⟩
@@ -128,14 +131,14 @@ theorem successor_eq_iff (w : List (Fin r × Bool)) (k l : Fin (r + w.length)) :
     exact WithTop.coe_le_coe.mpr (hmin j hj'.1 hj'.2)
 
 /-- No occurrence of the same absolute index lies strictly between a position and its successor. -/
-theorem letter_ne_of_lt_of_lt_successor (w : List (Fin r × Bool))
+theorem letter_fst_ne_of_successor_eq_of_lt_of_lt (w : List (Fin r × Bool))
     {k l j : Fin (r + w.length)} (h : successor w k = l) (hkj : k < j) (hjl : j < l) :
     (letter w j).1 ≠ (letter w k).1 := by
   intro hj
   exact (not_le_of_gt hjl) (((successor_eq_iff w k l).mp h).2.2 j hkj hj)
 
 /-- A genuine occurrence has at most one immediate predecessor of the same absolute index. -/
-theorem eq_of_successor_eq (w : List (Fin r × Bool))
+theorem eq_of_successor_eq_coe (w : List (Fin r × Bool))
     {k l j : Fin (r + w.length)} (hk : successor w k = j) (hl : successor w l = j) : k = l := by
   obtain ⟨hkj, hjk, hkmin⟩ := (successor_eq_iff w k j).mp hk
   obtain ⟨hlj, hjl, hlmin⟩ := (successor_eq_iff w l j).mp hl
@@ -155,17 +158,18 @@ theorem successor_eq_top_iff (w : List (Fin r × Bool)) (k : Fin (r + w.length))
 def IsExchangeable (w : List (Fin r × Bool)) (k : Fin (r + w.length)) : Prop :=
   r ≤ (k : ℕ) ∧ successor w k ≠ ⊤
 
+/-- Decide exchangeability, in particular for filtering the finite set of mutable positions. -/
 instance (w : List (Fin r × Bool)) (k : Fin (r + w.length)) : Decidable (IsExchangeable w k) :=
   inferInstanceAs (Decidable (r ≤ (k : ℕ) ∧ successor w k ≠ ⊤))
 
 /-- Exchangeability means being an actual word position with a later equal absolute index. -/
+@[simp]
 theorem isExchangeable_iff (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
     IsExchangeable w k ↔ r ≤ (k : ℕ) ∧
       ∃ l, k < l ∧ (letter w l).1 = (letter w k).1 := by
   simp [IsExchangeable, successor_eq_top_iff, not_forall]
 
 /-- Negative prefix positions are always frozen. -/
-@[simp]
 theorem not_isExchangeable_castAdd (w : List (Fin r × Bool)) (k : Fin r) :
     ¬ IsExchangeable w (k.castAdd w.length) := by
   intro h
@@ -180,6 +184,7 @@ theorem not_isExchangeable_of_successor_eq_top (w : List (Fin r × Bool))
 def exchangeablePositions (w : List (Fin r × Bool)) : Finset (Fin (r + w.length)) :=
   Finset.univ.filter (IsExchangeable w)
 
+/-- Membership in the mutable-position finset is exactly exchangeability. -/
 @[simp]
 theorem mem_exchangeablePositions (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
     k ∈ exchangeablePositions w ↔ IsExchangeable w k := by
