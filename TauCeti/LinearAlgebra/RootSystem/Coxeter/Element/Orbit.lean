@@ -12,10 +12,11 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Algebra.Order.Floor.Ring
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
+import TauCeti.Data.List.Pairwise
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Conj
+import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.FixedPoints
@@ -26,19 +27,20 @@ import TauCeti.LinearAlgebra.RootSystem.LongestElement
 /-!
 # Steinberg's Coxeter orbits on roots and the root-count formula `|Φ| = r · h`
 
-For a finite, reduced, crystallographic root pairing `P` with base `b` of rank `r = b.support.card`
-and any Coxeter element `c = wordProd P b l` of order `h = orderOf c`, this file proves Steinberg's
-root-orbit theorem and Bourbaki's uniform root-count formula without assuming root spanning:
-1. **Inversions** (`TauCeti.ncard_inversions_wordProd_eq_card_support`): `c` has `r` inversions.
+For an irreducible, finite, reduced, crystallographic root pairing `P` with base `b` of rank
+`r = b.support.card` (or when `b.cartanMatrix` is of finite type with preconnected Dynkin diagram)
+and any Coxeter element `c = wordProd P b l` of order `h = orderOf c`, we prove Steinberg's
+root-orbit theorem and Bourbaki's root-count formula without assuming root spanning:
+1. **Inversions** (`TauCeti.ncard_inversions_wordProd_eq_card_support`): `c` has `r` inversions
+   (valid without irreducibility).
 2. **Free cyclic orbits** (`RootPairing.Base.weylGroupToPerm_wordProd_pow_apply_eq_self_iff`,
    `RootPairing.Base.minimalPeriod_weylGroupToPerm_wordProd`): every `⟨c⟩`-orbit on `ι` has minimal
    period and cardinality `h`.
 3. **Unique inversion per orbit and `|Φ| = r · h`**
    (`RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
    `RootPairing.Base.existsUnique_sameCycle_mem_inversions_wordProd`,
-   `RootPairing.Base.existsUnique_pow_mem_inversions_wordProd`): invariance under
-   `TauCeti.longestElement` forces a sign change on every orbit, and sinusoidal variation on
-   Coleman's Coxeter plane makes this crossing unique, giving `r` orbits of size `h`.
+   `RootPairing.Base.existsUnique_pow_mem_inversions_wordProd`): `TauCeti.longestElement` forces a
+   sign change on each orbit, made unique by sinusoidal variation on Coleman's Coxeter plane.
 4. **Exceptional root counts** (`RootPairing.natCard_eq_of_hasCartanType_E8`,
    `RootPairing.ncard_posRoots_of_hasCartanType_E8`, and `E₆`, `E₇`, `F₄`, `G₂`): `240` (`120`),
    `126` (`63`), `72` (`36`), `48` (`24`), and `12` (`6`) roots (positive roots).
@@ -92,71 +94,6 @@ end TauCeti
 
 namespace RootPairing.Base
 
-section TrigonometricSignChange
-
-private lemma exists_shift_mem_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
-    (hδ0 : 0 < δ) (hδpi : δ ≤ Real.pi) (hcos : 0 < Real.cos α) (hcos_add : Real.cos (α + δ) ≤ 0) :
-    ∃ m : ℤ, Real.pi / 2 - δ ≤ α - m * (2 * Real.pi) ∧ α - m * (2 * Real.pi) < Real.pi / 2 := by
-  have h2pi : 0 < 2 * Real.pi := by linarith [Real.pi_pos]
-  let m : ℤ := ⌊(α + Real.pi) / (2 * Real.pi)⌋
-  set β : ℝ := α - m * (2 * Real.pi)
-  have hlo : -Real.pi ≤ β := by
-    linarith [(le_div_iff₀ h2pi).mp (Int.floor_le ((α + Real.pi) / (2 * Real.pi)))]
-  have hhi : β < Real.pi := by
-    linarith [(div_lt_iff₀ h2pi).mp (Int.lt_floor_add_one ((α + Real.pi) / (2 * Real.pi)))]
-  have hcosβ : 0 < Real.cos β := by rwa [Real.cos_sub_int_mul_two_pi]
-  have hβ_gt : -(Real.pi / 2) < β := by
-    by_contra! hle
-    have hnp := Real.cos_nonpos_of_pi_div_two_le_of_le (x := -β) (by linarith) (by linarith)
-    rw [Real.cos_neg] at hnp; linarith
-  have hβ_lt : β < Real.pi / 2 := by
-    by_contra! hge
-    linarith [Real.cos_nonpos_of_pi_div_two_le_of_le (x := β) hge (by linarith [Real.pi_pos])]
-  have hβ_ge : Real.pi / 2 - δ ≤ β := by
-    by_contra! hlt
-    have hpos := Real.cos_pos_of_mem_Ioo (x := β + δ) ⟨by linarith, by linarith⟩
-    have hca : Real.cos (β + δ) = Real.cos (α + δ) := by
-      rw [show β + δ = α + δ - m * (2 * Real.pi) by ring, Real.cos_sub_int_mul_two_pi]
-    linarith
-  exact ⟨m, hβ_ge, hβ_lt⟩
-
-private lemma eq_of_cos_sign_change_fin {h : ℕ} (hh : 2 ≤ h) (α₀ : ℝ) {k₁ k₂ : Fin h}
-    (hpos₁ : 0 < Real.cos (α₀ + 2 * Real.pi * (k₁ : ℝ) / h))
-    (hneg₁ : Real.cos (α₀ + 2 * Real.pi * ((k₁ : ℝ) + 1) / h) ≤ 0)
-    (hpos₂ : 0 < Real.cos (α₀ + 2 * Real.pi * (k₂ : ℝ) / h))
-    (hneg₂ : Real.cos (α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h) ≤ 0) :
-    k₁ = k₂ := by
-  have hh_pos : (0 : ℝ) < h := by positivity
-  set δ : ℝ := 2 * Real.pi / h
-  have hδ0 : 0 < δ := div_pos (by linarith [Real.pi_pos]) hh_pos
-  have hδpi : δ ≤ Real.pi := (div_le_iff₀ hh_pos).mpr (by
-    have : (2 : ℝ) ≤ h := by exact_mod_cast hh
-    nlinarith [Real.pi_pos])
-  have h2pi : 2 * Real.pi = (h : ℝ) * δ := by simp [δ, mul_div_cancel₀ _ hh_pos.ne']
-  have hk (k : ℝ) : 2 * Real.pi * k / h = k * δ := by simp only [δ]; ring
-  obtain ⟨m₁, hlo₁, hhi₁⟩ := exists_shift_mem_of_cos_pos_of_cos_add_nonpos hδ0 hδpi hpos₁
-    (by rwa [show α₀ + 2 * Real.pi * (k₁ : ℝ) / h + δ =
-      α₀ + 2 * Real.pi * ((k₁ : ℝ) + 1) / h by simp only [δ]; ring])
-  obtain ⟨m₂, hlo₂, hhi₂⟩ := exists_shift_mem_of_cos_pos_of_cos_add_nonpos hδ0 hδpi hpos₂
-    (by rwa [show α₀ + 2 * Real.pi * (k₂ : ℝ) / h + δ =
-      α₀ + 2 * Real.pi * ((k₂ : ℝ) + 1) / h by simp only [δ]; ring])
-  set n : ℤ := (k₂ : ℤ) - (k₁ : ℤ) - (m₂ - m₁) * (h : ℤ)
-  have hdiff : (n : ℝ) * δ = (α₀ + 2 * Real.pi * (k₂ : ℝ) / h - m₂ * (2 * Real.pi)) -
-      (α₀ + 2 * Real.pi * (k₁ : ℝ) / h - m₁ * (2 * Real.pi)) := by
-    push_cast [n]; rw [hk, hk, h2pi]; ring
-  have hn_gt : (-1 : ℤ) < n := by
-    have : ((-1 : ℤ) : ℝ) * δ < (n : ℝ) * δ := by push_cast; linarith
-    exact_mod_cast lt_of_mul_lt_mul_right this hδ0.le
-  have hn_lt : n < (1 : ℤ) := by
-    have : (n : ℝ) * δ < ((1 : ℤ) : ℝ) * δ := by push_cast; linarith
-    exact_mod_cast lt_of_mul_lt_mul_right this hδ0.le
-  have hdvd : (h : ℤ) ∣ ((k₂ : ℤ) - (k₁ : ℤ)) := ⟨m₂ - m₁, by rw [mul_comm]; omega⟩
-  have hnat_zero : ((k₂ : ℤ) - (k₁ : ℤ)).natAbs = 0 :=
-    Nat.eq_zero_of_dvd_of_lt (by simpa using Int.natAbs_dvd_natAbs.mpr hdvd) (by omega)
-  exact Fin.ext (by omega)
-
-end TrigonometricSignChange
-
 section Orbits
 
 variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
@@ -183,9 +120,8 @@ theorem weylGroupToPerm_wordProd_pow_apply_eq_self_iff_of_isFiniteType (b : P.Ba
       induction m with
       | zero => simp
       | succ m ih => rw [pow_succ', ← mulVec_mulVec, ih, mulVec_smul, hz_eig, smul_smul, ← pow_succ]
-    have hfix_inv : P.weylGroupToPerm (c ^ k)⁻¹ j = j :=
-      (P.weylGroupToPerm (c ^ k)).injective (by
-        rw [← Equiv.Perm.mul_apply, ← map_mul, mul_inv_cancel, map_one, Equiv.Perm.one_apply, hfix])
+    have hfix_inv : P.weylGroupToPerm (c ^ k)⁻¹ j = j := by
+      rw [map_inv, Equiv.Perm.inv_eq_iff_eq]; exact hfix.symm
     have heval := b.corootEval_weylGroupToPerm_inv (hW.pow k) ℂ j z
     rw [hfix_inv, Matrix.map_pow, hWpow k, map_smul, smul_eq_mul] at heval
     exact hz_prim.dvd_of_pow_eq_one k (mul_right_cancel₀ (hz_reg j) (by linear_combination -heval))
@@ -208,8 +144,7 @@ theorem minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     Function.minimalPeriod (P.weylGroupToPerm (wordProd P b l)) j = orderOf (wordProd P b l) := by
   have := P.finite_weylGroup_of_base b
-  set c := wordProd P b l
-  set σ := P.weylGroupToPerm c
+  set c := wordProd P b l; set σ := P.weylGroupToPerm c
   have hper : Function.IsPeriodicPt σ (orderOf c) j := by
     rw [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow, ← map_pow,
       pow_orderOf_eq_one, map_one, Equiv.Perm.one_apply]
@@ -237,16 +172,13 @@ theorem ncard_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType (b : P.Base)
   rw [Equiv.Perm.ncard_setOf_sameCycle (P.weylGroupToPerm (wordProd P b l)) j,
     b.minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall j]
 
-/-- Every `⟨wordProd P b l⟩`-orbit on the root indices has cardinality `orderOf (wordProd P b l)`.
--/
+/-- Every `⟨wordProd P b l⟩`-orbit of a root index has cardinality `orderOf (wordProd P b l)`. -/
 theorem ncard_sameCycle_weylGroupToPerm_wordProd [P.IsIrreducible] (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k}.ncard =
       orderOf (wordProd P b l) := by
   rw [Equiv.Perm.ncard_setOf_sameCycle, b.minimalPeriod_weylGroupToPerm_wordProd hnd hall j]
 
-/-- A nonempty subset of roots whose sum is fixed by `longestElement P b` contains both a positive
-root and a negative root (requiring no spanning hypothesis on `P`). -/
 private theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self (b : P.Base)
     {O : Finset ι} (hOne : O.Nonempty)
     (hw₀ : longestElement P b • ∑ y ∈ O, P.root y = ∑ y ∈ O, P.root y) :
@@ -256,14 +188,13 @@ private theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self (b
       (hS : w₀ • ∑ y ∈ S, P.root y = ∑ y ∈ S, P.root y) : ∃ y ∈ S, ¬ b.IsPos y := by
     by_contra! hall_pos
     set s : M := ∑ y ∈ S, P.root y
-    have hneg_root (z : ι) : -P.root z = P.root (P.reflectionPerm z z) := by
-      rw [P.root_reflectionPerm, P.reflection_apply_self]
     have hs_cone : s ∈ posRootCone P b := AddSubmonoid.sum_mem _ fun y hy ↦
       root_mem_posRootCone_of_mem_posRoots P b ((mem_posRoots P b y).mpr (hall_pos y hy))
     have hns_cone : -s ∈ posRootCone P b := by
       rw [← hS, show -(w₀ • s) = ∑ y ∈ S, P.root
           (P.reflectionPerm (P.weylGroupToPerm w₀ y) (P.weylGroupToPerm w₀ y)) by
-        simp only [s, Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib, hneg_root]]
+        simp only [s, Finset.smul_sum, P.weylGroup_apply_root, ← Finset.sum_neg_distrib,
+          P.root_reflectionPerm, P.reflection_apply_self]]
       exact AddSubmonoid.sum_mem _ fun y hy ↦ root_mem_posRootCone_of_mem_posRoots P b
         ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b _).mpr
           (mapsTo_posRoots_negRoots_longestElement P b ((mem_posRoots P b y).mpr (hall_pos y hy))))
@@ -276,20 +207,15 @@ private theorem exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self (b
     simpa only [Equiv.coe_toEmbedding, Finset.smul_sum, P.weylGroup_apply_root] using hw₀
   obtain ⟨_, hz, hnot_pos⟩ := hnot_all_pos hOne.map (by rwa [himg_sum])
   obtain ⟨y, hyO, rfl⟩ := Finset.mem_map.mp hz
-  dsimp only [Equiv.coe_toEmbedding] at hnot_pos
-  refine ⟨y, hyO, ?_⟩
-  by_contra hy_neg
-  exact hnot_pos ((mem_posRoots P b _).mp
-    (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr hy_neg)))
+  refine ⟨y, hyO, by_contra fun hy_neg ↦ hnot_pos ((mem_posRoots P b _).mp
+    (mapsTo_negRoots_posRoots_longestElement P b ((mem_negRoots P b y).mpr hy_neg)))⟩
 
 private theorem exists_sameCycle_mem_inversions_wordProd (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     ∃ k : ι, Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k ∧
       k ∈ inversions P b (wordProd P b l) := by
-  let := Fintype.ofFinite ι
-  classical
-  set c := wordProd P b l
-  set σ := P.weylGroupToPerm c
+  let := Fintype.ofFinite ι; classical
+  set c := wordProd P b l; set σ := P.weylGroupToPerm c
   let O : Finset ι := Finset.univ.filter fun y ↦ Equiv.Perm.SameCycle σ y j
   have hOne : O.Nonempty := ⟨j, Finset.mem_filter.mpr ⟨Finset.mem_univ _, Equiv.Perm.SameCycle.rfl⟩⟩
   have hcs : c • ∑ y ∈ O, P.root y = ∑ y ∈ O, P.root y := by
@@ -300,10 +226,9 @@ private theorem exists_sameCycle_mem_inversions_wordProd (b : P.Base)
   obtain ⟨⟨y₁, hy₁O, hy₁_pos⟩, ⟨y₂, hy₂O, hy₂_neg⟩⟩ :=
     exists_isPos_and_not_isPos_of_longestElement_smul_sum_eq_self b hOne hw₀
   have hsc₁ : Equiv.Perm.SameCycle σ j y₁ := ((Finset.mem_filter.mp hy₁O).2).symm
-  have hsc₁₂ : Equiv.Perm.SameCycle σ y₁ y₂ :=
-    ((Finset.mem_filter.mp hy₁O).2).trans ((Finset.mem_filter.mp hy₂O).2).symm
-  obtain ⟨n, hn⟩ := hsc₁₂.exists_nat_pow_eq
-  clear hsc₁₂ hy₂O
+  obtain ⟨n, hn⟩ := (((Finset.mem_filter.mp hy₁O).2).trans
+    ((Finset.mem_filter.mp hy₂O).2).symm).exists_nat_pow_eq
+  clear hy₂O
   induction n generalizing y₂ with
   | zero => exact (hy₂_neg (hn ▸ hy₁_pos)).elim
   | succ n ih =>
@@ -318,25 +243,12 @@ private theorem natCard_eq_card_quotient_mul_orderOf_wordProd (b : P.Base)
     Nat.card ι =
       Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l)))) *
         orderOf (wordProd P b l) := by
-  let := Fintype.ofFinite ι
-  classical
-  set c := wordProd P b l
-  set σ := P.weylGroupToPerm c
-  let π : ι → Quotient (Equiv.Perm.SameCycle.setoid σ) :=
-    Quotient.mk (Equiv.Perm.SameCycle.setoid σ)
-  have hfib (q : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
-      (Finset.univ.filter fun y ↦ π y = q).card = orderOf c := by
-    have hset : (Finset.univ.filter fun y ↦ π y = q) =
-        (Finset.univ.filter fun y ↦ Equiv.Perm.SameCycle σ q.out y) := by
-      ext y; simp only [Finset.mem_filter, Finset.mem_univ, true_and, π]
-      exact ⟨fun hy ↦ (Quotient.exact (hy.trans q.out_eq.symm)).symm,
-        fun hy ↦ (Quotient.sound hy.symm).trans q.out_eq⟩
-    rw [hset, ← b.ncard_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall q.out,
-      ← Set.ncard_coe_finset]
-    congr 1; ext y; exact Finset.mem_filter.trans (and_iff_right (Finset.mem_univ y))
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, ← Finset.card_univ,
-    Finset.card_eq_sum_card_fiberwise (f := π) (t := Finset.univ) (fun x _ ↦ Finset.mem_univ _)]
-  simp only [hfib, Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  let := Fintype.ofFinite ι; classical
+  let σ : Equiv.Perm ι := P.weylGroupToPerm (wordProd P b l)
+  have hsum := σ.sum_quotient_sameCycle_sum_range fun _ ↦ (1 : ℕ)
+  simp only [σ, b.minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall,
+    Finset.sum_const, Finset.card_range, Finset.card_univ, smul_eq_mul, mul_one] at hsum
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]; exact hsum.symm
 
 private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b : P.Base)
     [Nontrivial b.support] (hft : IsFiniteType b.cartanMatrix)
@@ -350,27 +262,21 @@ private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b
     m₁ = m₂ := by
   classical
   have := P.finite_weylGroup_of_base b
-  let c₀ := (weylCoxeterSystem P b).bipartiteCoxeterElement col
-  let h := orderOf c₀
+  let c₀ := (weylCoxeterSystem P b).bipartiteCoxeterElement col; let h := orderOf c₀
   obtain ⟨e₁, e₂, -, -, -, hWinv_pow, hsector⟩ :=
     b.exists_coxeterPlane_bipartiteCoxeterElement_of_isFiniteType hft hconn col
-  have hh_ge_two : 2 ≤ h := by
-    have := orderOf_pos c₀
-    have hne1 : h ≠ 1 := fun h1 ↦
-      (weylCoxeterSystem P b).bipartiteCoxeterElement_ne_one col (orderOf_eq_one_iff.mp h1)
-    omega
+  have hh_ge_two : 2 ≤ h := (weylCoxeterSystem P b).one_lt_orderOf_bipartiteCoxeterElement col
   have hh_pos : (0 : ℝ) < h := by positivity
   set φ₀ : ℝ := Real.pi / (2 * h)
-  have hφ₀_lt : φ₀ < Real.pi / h := by
-    rw [div_lt_div_iff₀ (by positivity) hh_pos]; nlinarith [Real.pi_pos]
   have hy₀ : ∀ k : b.support, 0 < b.corootEval ℝ (k : ι) (Real.cos φ₀ • e₁ + Real.sin φ₀ • e₂) :=
-    hsector φ₀ (div_pos Real.pi_pos (by positivity)) hφ₀_lt
+    hsector φ₀ (div_pos Real.pi_pos (by positivity))
+      ((div_lt_div_iff₀ (by positivity) hh_pos).mpr (by nlinarith [Real.pi_pos]))
   set z : ℂ := ⟨b.corootEval ℝ j e₁, b.corootEval ℝ j e₂⟩
   have hcos_formula (φ : ℝ) :
       b.corootEval ℝ j (Real.cos φ • e₁ + Real.sin φ • e₂) = ‖z‖ * Real.cos (φ - z.arg) := by
-    have hre : b.corootEval ℝ j e₁ = ‖z‖ * Real.cos z.arg := (Complex.norm_mul_cos_arg z).symm
-    have him : b.corootEval ℝ j e₂ = ‖z‖ * Real.sin z.arg := (Complex.norm_mul_sin_arg z).symm
-    simp only [map_add, map_smul, smul_eq_mul, hre, him, Real.cos_sub]; ring
+    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, Real.cos_sub]
+    change Real.cos φ * z.re + Real.sin φ * z.im = _
+    rw [← Complex.norm_mul_cos_arg z, ← Complex.norm_mul_sin_arg z]; ring
   have hnorm_pos : 0 < ‖z‖ := (norm_nonneg z).lt_of_ne' fun h0 ↦
     b.corootEval_ne_zero_of_forall_pos hy₀ j (by rw [hcos_formula φ₀, h0, zero_mul])
   have hisPos_iff (k : ℕ) : b.IsPos (P.weylGroupToPerm (c₀ ^ k) j) ↔
@@ -388,7 +294,7 @@ private theorem subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType (b
     rw [← Equiv.Perm.mul_apply, ← map_mul, ← pow_succ'] at hn
     rw [hisPos_iff] at hp hn
     exact ⟨hp, not_lt.mp (by push_cast at hn; exact hn)⟩
-  exact eq_of_cos_sign_change_fin hh_ge_two (φ₀ - z.arg)
+  exact eq_of_cos_sign_change_fin hh_ge_two
     (hstep m₁ hm₁).1 (hstep m₁ hm₁).2 (hstep m₂ hm₂).1 (hstep m₂ hm₂).2
 
 private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton (b : P.Base)
@@ -399,34 +305,28 @@ private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton (b : P
   let := Fintype.ofFinite ι
   by_cases hne : Nonempty b.support
   · obtain ⟨i₀⟩ := hne
-    have hcard_supp : b.support.card = 1 := by
-      rw [← Fintype.card_coe]
-      exact Fintype.card_eq_one_iff.mpr ⟨i₀, fun j ↦ Subsingleton.elim j i₀⟩
-    have hl_eq : l = [i₀] := by
-      obtain ⟨a, tail, rfl⟩ := List.exists_cons_of_ne_nil (List.ne_nil_of_mem (hall i₀))
-      rw [List.nodup_cons] at hnd
-      rw [List.eq_nil_iff_forall_not_mem.mpr fun x hx ↦ hnd.1 (Subsingleton.elim x a ▸ hx),
-        Subsingleton.elim a i₀]
-    set c := wordProd P b l
+    have hcard_supp : b.support.card = 1 :=
+      Fintype.card_coe b.support ▸ Fintype.card_eq_one_iff.mpr ⟨i₀, fun j ↦ Subsingleton.elim j i₀⟩
+    have hl_eq : l = [i₀] := hnd.eq_singleton_of_mem (hall i₀)
+    set c := wordProd P b l with hc
     have hword_pow (lw : List b.support) : wordProd P b lw = c ^ lw.length := by
       induction lw with
       | nil => simp
       | cons a lw ih =>
-        have hc_eq : c = weylGroup.ofIdx P (a : ι) := by
-          rw [show c = wordProd P b l from rfl, hl_eq, wordProd_cons, wordProd_nil, mul_one,
-            Subsingleton.elim i₀ a]
-        rw [wordProd_cons, ih, ← hc_eq, List.length_cons, pow_succ']
-    have huniv : {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm c) (i₀ : ι) k} = Set.univ := by
-      refine Set.eq_univ_of_forall fun j ↦ ?_
-      obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
-      have hi_eq : i = (i₀ : ι) := congrArg Subtype.val (Subsingleton.elim (⟨i, hi⟩ : b.support) i₀)
-      obtain ⟨lw, -, hw⟩ := (weylCoxeterSystem P b).exists_isReduced w
-      rw [weylCoxeterSystem_wordProd, hword_pow] at hw
-      exact ⟨lw.length, by rw [zpow_natCast, ← map_pow, hw, hi_eq]⟩
+        rw [wordProd_cons, ih, ← show c = weylGroup.ofIdx P (a : ι) by
+          rw [hc, hl_eq, wordProd_cons, wordProd_nil, mul_one, Subsingleton.elim i₀ a],
+          List.length_cons, pow_succ']
+    have huniv : {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm c) (i₀ : ι) k} = Set.univ :=
+      Set.eq_univ_of_forall fun j ↦ by
+        obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
+        obtain ⟨lw, -, hw⟩ := (weylCoxeterSystem P b).exists_isReduced w
+        rw [weylCoxeterSystem_wordProd, hword_pow] at hw
+        exact ⟨lw.length, by
+          rw [zpow_natCast, ← map_pow, hw,
+            show i = (i₀ : ι) from congrArg Subtype.val (Subsingleton.elim ⟨i, hi⟩ i₀)]⟩
     have hncard :=
       b.ncard_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall (i₀ : ι)
-    rw [huniv, Set.ncard_univ] at hncard
-    rw [hcard_supp, one_mul, hncard]
+    rw [huniv, Set.ncard_univ] at hncard; rw [hcard_supp, one_mul, hncard]
   · rw [not_nonempty_iff] at hne
     have : IsEmpty ι := ⟨fun j ↦ by
       obtain ⟨i, hi, -, -⟩ := exists_mem_support_weylGroupToPerm_eq b j; exact hne.false ⟨i, hi⟩⟩
@@ -440,16 +340,14 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType (b : P.Base)
     Nat.card (Quotient (Equiv.Perm.SameCycle.setoid
       (P.weylGroupToPerm ((weylCoxeterSystem P b).bipartiteCoxeterElement col)))) =
       b.support.card := by
-  let := Fintype.ofFinite ι
-  classical
+  let := Fintype.ofFinite ι; classical
   have := P.finite_weylGroup_of_base b
   obtain ⟨l₁, l₂, -, -, hnd₀, hall₀, hword₀⟩ :=
     (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement col
   rw [weylCoxeterSystem_wordProd] at hword₀
   let c₀ := (weylCoxeterSystem P b).bipartiteCoxeterElement col
   let σ₀ := P.weylGroupToPerm c₀
-  let π₀ : ι → Quotient (Equiv.Perm.SameCycle.setoid σ₀) :=
-    Quotient.mk (Equiv.Perm.SameCycle.setoid σ₀)
+  let π₀ := Quotient.mk (Equiv.Perm.SameCycle.setoid σ₀)
   have hfib_inv (q : Quotient (Equiv.Perm.SameCycle.setoid σ₀)) :
       ((inversionsFinset P b c₀).filter fun y ↦ π₀ y = q).card = 1 := by
     rw [Finset.card_eq_one]
@@ -466,8 +364,7 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType (b : P.Base)
       q.out (m₁ := ⟨n₁ % orderOf c₀, Nat.mod_lt n₁ (orderOf_pos c₀)⟩)
       (m₂ := ⟨n₂ % orderOf c₀, Nat.mod_lt n₂ (orderOf_pos c₀)⟩)
       (hmod n₁ ▸ (mem_inversionsFinset P b c₀ _).mp hy_inv) (hmod n₂ ▸ hinv)
-    have hrem : n₁ % orderOf c₀ = n₂ % orderOf c₀ := congrArg Fin.val hm_eq
-    rw [hmod n₁, hmod n₂, hrem]
+    rw [hmod n₁, hmod n₂, show n₁ % orderOf c₀ = n₂ % orderOf c₀ from congrArg Fin.val hm_eq]
   rw [Nat.card_eq_fintype_card]
   have hsum := Finset.card_eq_sum_card_fiberwise (f := π₀) (s := inversionsFinset P b c₀)
     (t := Finset.univ) (fun x _ ↦ Finset.mem_univ _)
@@ -486,28 +383,23 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType (b : P.Base
   by_cases hsub : Subsingleton b.support
   · exact b.natCard_eq_card_support_mul_orderOf_wordProd_subsingleton hft hconn hnd hall
   · have : Nontrivial b.support := not_subsingleton_iff_nontrivial.mp hsub
-    have hacyc : (coxeterMatrixOfBase P b).graph.IsAcyclic := by
-      rw [graph_coxeterMatrixOfBase]; exact hft.isAcyclic_diagramGraph
-    obtain ⟨col⟩ : Nonempty ((coxeterMatrixOfBase P b).graph.Coloring Bool) :=
-      Nonempty.map ((coxeterMatrixOfBase P b).graph.recolorOfEquiv finTwoEquiv) hacyc.isBipartite
+    obtain ⟨col⟩ := nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType P b hft
     obtain ⟨l₁, l₂, -, -, hnd₀, hall₀, hword₀⟩ :=
       (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement col
     rw [weylCoxeterSystem_wordProd] at hword₀
     let c₀ := (weylCoxeterSystem P b).bipartiteCoxeterElement col
-    let σ₀ := P.weylGroupToPerm c₀
-    have hcard_Q₀ : Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ₀)) = b.support.card :=
-      b.card_quotient_sameCycle_bipartite_of_isFiniteType hft hconn col
     obtain ⟨u, hu⟩ : IsConj (wordProd P b l) c₀ := by
       rw [← weylCoxeterSystem_wordProd]
-      exact (weylCoxeterSystem P b).isConj_wordProd_bipartiteCoxeterElement hacyc col hnd hall
+      exact (weylCoxeterSystem P b).isConj_wordProd_bipartiteCoxeterElement
+        (isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType P b hft) col hnd hall
     calc Nat.card ι
         = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid
             (P.weylGroupToPerm (wordProd P b (l₁ ++ l₂))))) *
             orderOf (wordProd P b (l₁ ++ l₂)) :=
           b.natCard_eq_card_quotient_mul_orderOf_wordProd hft hconn hnd₀ hall₀
-      _ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ₀)) * orderOf c₀ := by
-          dsimp only [σ₀, c₀]; rw [hword₀]
-      _ = b.support.card * orderOf (wordProd P b l) := by rw [hcard_Q₀, hu.orderOf_eq]
+      _ = b.support.card * orderOf (wordProd P b l) := by
+          rw [hword₀, b.card_quotient_sameCycle_bipartite_of_isFiniteType hft hconn col,
+            hu.orderOf_eq]
 
 /-- **Bourbaki's root-count formula `|Φ| = r · h`.** In a finite, reduced, irreducible,
 crystallographic root pairing with base `b`, the total number of roots equals the rank
@@ -544,11 +436,9 @@ theorem card_quotient_sameCycle_weylGroupToPerm_wordProd [P.IsIrreducible] (b : 
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm (wordProd P b l)))) =
       b.support.card := by
-  let := Fintype.ofFinite ι
-  classical
+  let := Fintype.ofFinite ι; classical
   by_cases hne : Nonempty ι
-  · have : NeZero (2 : R) := ⟨by norm_num⟩
-    have := P.finite_weylGroup_of_base b
+  · have : NeZero (2 : R) := ⟨by norm_num⟩; have := P.finite_weylGroup_of_base b
     have h1 := b.natCard_eq_card_quotient_mul_orderOf_wordProd
       (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
     rw [b.natCard_eq_card_support_mul_orderOf_wordProd hnd hall] at h1
@@ -566,12 +456,9 @@ theorem existsUnique_sameCycle_mem_inversions_wordProd [P.IsIrreducible] (b : P.
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (j : ι) :
     ∃! k : ι, Equiv.Perm.SameCycle (P.weylGroupToPerm (wordProd P b l)) j k ∧
       k ∈ inversions P b (wordProd P b l) := by
-  let := Fintype.ofFinite ι
-  classical
-  set c := wordProd P b l
-  set σ := P.weylGroupToPerm c
-  let π : ι → Quotient (Equiv.Perm.SameCycle.setoid σ) :=
-    Quotient.mk (Equiv.Perm.SameCycle.setoid σ)
+  let := Fintype.ofFinite ι; classical
+  set c := wordProd P b l; set σ := P.weylGroupToPerm c
+  let π := Quotient.mk (Equiv.Perm.SameCycle.setoid σ)
   have hcard_Q : Fintype.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) = b.support.card := by
     rw [← Nat.card_eq_fintype_card]
     exact b.card_quotient_sameCycle_weylGroupToPerm_wordProd hnd hall
@@ -587,15 +474,12 @@ theorem existsUnique_sameCycle_mem_inversions_wordProd [P.IsIrreducible] (b : P.
       (t := Finset.univ) (fun x _ ↦ Finset.mem_univ _),
       card_inversionsFinset, ncard_inversions_wordProd_eq_card_support P b hnd hall,
       Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_one, hcard_Q]
-  have hfib_j := (Finset.sum_eq_sum_iff_of_le fun q _ ↦ hle q).mp hsum.symm (π j)
-    (Finset.mem_univ _)
-  obtain ⟨k, hk⟩ := Finset.card_eq_one.mp hfib_j.symm
-  refine ⟨k, ?_, fun y ⟨hy_sc, hy_inv⟩ ↦ ?_⟩
-  · obtain ⟨hk_inv, hk_q⟩ := Finset.mem_filter.mp (hk ▸ Finset.mem_singleton_self k)
-    exact ⟨(Quotient.exact hk_q).symm, (mem_inversionsFinset P b c k).mp hk_inv⟩
-  · have hmem : y ∈ (inversionsFinset P b c).filter fun z ↦ π z = π j :=
-      Finset.mem_filter.mpr ⟨(mem_inversionsFinset P b c y).mpr hy_inv, Quotient.sound hy_sc.symm⟩
-    exact Finset.mem_singleton.mp (hk ▸ hmem)
+  obtain ⟨k, hk⟩ := Finset.card_eq_one.mp
+    (((Finset.sum_eq_sum_iff_of_le fun q _ ↦ hle q).mp hsum.symm (π j) (Finset.mem_univ _)).symm)
+  refine ⟨k, ?_, fun y ⟨hy_sc, hy_inv⟩ ↦ Finset.mem_singleton.mp (hk ▸ Finset.mem_filter.mpr
+    ⟨(mem_inversionsFinset P b c y).mpr hy_inv, Quotient.sound hy_sc.symm⟩)⟩
+  obtain ⟨hk_inv, hk_q⟩ := Finset.mem_filter.mp (hk ▸ Finset.mem_singleton_self k)
+  exact ⟨(Quotient.exact hk_q).symm, (mem_inversionsFinset P b c k).mp hk_inv⟩
 
 /-- Along the `Fin (orderOf c)`-parametrized `⟨c⟩`-orbit of `j`, a unique exponent `m` places
 `c ^ m • α_j` in `inversions P b c`. -/
@@ -614,19 +498,10 @@ theorem existsUnique_pow_mem_inversions_wordProd [P.IsIrreducible] (b : P.Base)
   refine ⟨m₀, by dsimp only; rwa [hm₀_eq], fun m hm ↦ ?_⟩
   have heq : P.weylGroupToPerm (c ^ (m : ℕ)) j = P.weylGroupToPerm (c ^ (m₀ : ℕ)) j :=
     (hk_uniq _ ⟨⟨(m : ℤ), by rw [zpow_natCast, map_pow]⟩, hm⟩).trans hm₀_eq.symm
-  suffices ∀ a b' : Fin (orderOf c), (a : ℕ) ≤ (b' : ℕ) →
-      P.weylGroupToPerm (c ^ (a : ℕ)) j = P.weylGroupToPerm (c ^ (b' : ℕ)) j → a = b' by
-    rcases le_total m m₀ with hle | hle
-    · exact this m m₀ hle heq
-    · exact (this m₀ m hle heq.symm).symm
-  intro a b' hle hab
-  have hfix : P.weylGroupToPerm (c ^ ((b' : ℕ) - (a : ℕ))) j = j :=
-    (P.weylGroupToPerm (c ^ (a : ℕ))).injective (by
-      rw [← Equiv.Perm.mul_apply, ← map_mul, ← pow_add, Nat.add_sub_of_le hle, hab])
-  have hdvd := (b.weylGroupToPerm_wordProd_pow_apply_eq_self_iff hnd hall j _).mp hfix
-  have hlt : (b' : ℕ) < orderOf (wordProd P b l) := b'.isLt
-  have h0 := Nat.eq_zero_of_dvd_of_lt hdvd (by omega)
-  exact Fin.ext (by omega)
+  rw [map_pow, map_pow, Equiv.Perm.coe_pow, Equiv.Perm.coe_pow] at heq
+  have hper := (b.minimalPeriod_weylGroupToPerm_wordProd hnd hall j).symm
+  exact Fin.ext ((Function.iterate_eq_iterate_iff_of_lt_minimalPeriod
+    (lt_of_lt_of_eq m.isLt hper) (lt_of_lt_of_eq m₀.isLt hper)).mp heq)
 
 end Orbits
 
@@ -647,15 +522,15 @@ private theorem natCard_eq_of_hasCartanType_aux {t : DynkinType} {h₀ n : ℕ}
     (hord : ∀ {l : List b.support}, l.Nodup → (∀ i, i ∈ l) → orderOf (wordProd P b l) = h₀)
     (hn : t.rank * h₀ = n) : Nat.card ι = n := by
   classical
-  let l : List b.support := Finset.univ.toList
-  have hnd : l.Nodup := Finset.nodup_toList _
-  have hall : ∀ i, i ∈ l := fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
   have hft_b : IsFiniteType b.cartanMatrix := (Matrix.ext he) ▸ hft.submatrix e.injective
-  have hconn_b : (diagramGraph b.cartanMatrix).Preconnected := by
-    let iso : diagramGraph b.cartanMatrix ≃g diagramGraph t.cartanMatrix :=
-      ⟨e, fun {i j} ↦ by simp only [diagramGraph_adj, he, ne_eq, e.injective.eq_iff]⟩
-    exact (iso.connected_iff.mpr (DynkinType.connected_diagramGraph_cartanMatrix ht)).preconnected
+  let iso : diagramGraph b.cartanMatrix ≃g diagramGraph t.cartanMatrix :=
+    ⟨e, fun {i j} ↦ by simp only [diagramGraph_adj, he, ne_eq, e.injective.eq_iff]⟩
+  have hconn_b :=
+    (iso.connected_iff.mpr (DynkinType.connected_diagramGraph_cartanMatrix ht)).preconnected
+  have hnd : (Finset.univ : Finset b.support).toList.Nodup := Finset.nodup_toList _
+  have hall : ∀ i, i ∈ (Finset.univ : Finset b.support).toList :=
+    fun i ↦ Finset.mem_toList.mpr (Finset.mem_univ i)
   rw [b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType hft_b hconn_b hnd hall,
     h.card_support, hord hnd hall, hn]
 

@@ -29,9 +29,11 @@ two colourings are mutually inverse and conjugate
 ## Main results
 
 * `RootPairing.graph_coxeterMatrixOfBase`: the Coxeter graph of a base is its Dynkin diagram.
-* `RootPairing.isAcyclic_graph_coxeterMatrixOfBase` and
-  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase`: for a root system it is a forest, and
-  so has a two-colouring.
+* `RootPairing.isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType`,
+  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType`,
+  `RootPairing.isAcyclic_graph_coxeterMatrixOfBase`, and
+  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase`: when the Cartan matrix is of finite
+  type (in particular, for a root system), the Coxeter graph is a forest and has a two-colouring.
 * `RootPairing.preconnected_graph_coxeterMatrixOfBase`: for an irreducible reduced root pairing it
   is connected.
 
@@ -58,18 +60,30 @@ theorem graph_coxeterMatrixOfBase :
   simp only [CoxeterMatrix.graph_adj, diagramGraph_adj, ne_eq, coxeterMatrixOfBase_eq_two_iff,
     ← cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal, mul_eq_zero, not_or]
 
-/-- **The Coxeter graph of a base of a root system is a forest.** -/
-theorem isAcyclic_graph_coxeterMatrixOfBase [P.IsRootSystem] :
+/-- **The Coxeter graph of a base with finite-type Cartan matrix is a forest.** -/
+theorem isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType (hft : IsFiniteType b.cartanMatrix) :
     (coxeterMatrixOfBase P b).graph.IsAcyclic := by
   rw [graph_coxeterMatrixOfBase]
-  exact (isFiniteType_cartanMatrix b).isAcyclic_diagramGraph
+  exact hft.isAcyclic_diagramGraph
+
+/-- **The Coxeter graph of a base with finite-type Cartan matrix has a two-colouring**: its simple
+roots can be coloured by `Bool` so that simple roots of the same colour are orthogonal. -/
+theorem nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType
+    (hft : IsFiniteType b.cartanMatrix) :
+    Nonempty ((coxeterMatrixOfBase P b).graph.Coloring Bool) :=
+  Nonempty.map ((coxeterMatrixOfBase P b).graph.recolorOfEquiv finTwoEquiv)
+    (isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType P b hft).isBipartite
+
+/-- **The Coxeter graph of a base of a root system is a forest.** -/
+theorem isAcyclic_graph_coxeterMatrixOfBase [P.IsRootSystem] :
+    (coxeterMatrixOfBase P b).graph.IsAcyclic :=
+  isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType P b (isFiniteType_cartanMatrix b)
 
 /-- **The Dynkin diagram of a root system has a two-colouring**: its simple roots can be coloured
 by `Bool` so that simple roots of the same colour are orthogonal. -/
 theorem nonempty_coloring_graph_coxeterMatrixOfBase [P.IsRootSystem] :
     Nonempty ((coxeterMatrixOfBase P b).graph.Coloring Bool) :=
-  Nonempty.map ((coxeterMatrixOfBase P b).graph.recolorOfEquiv finTwoEquiv)
-    (isAcyclic_graph_coxeterMatrixOfBase P b).isBipartite
+  nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType P b (isFiniteType_cartanMatrix b)
 
 /-- **The Coxeter graph of a base of an irreducible reduced root pairing is connected**, so its
 two-colourings agree up to exchanging the colours. -/
