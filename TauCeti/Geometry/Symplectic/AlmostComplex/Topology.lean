@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+public import TauCeti.Geometry.Symplectic.Transport
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.Geometry.Symplectic.Duality
@@ -31,6 +33,10 @@ equivalent, it does not depend on the choice of the norm of `V`.
   complex structure squares to `-1`.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
+* `TauCeti.AlmostComplexStructure.toContinuousLinearMap_transport`: transport along a continuous
+  linear equivalence `A` is conjugation by `A` in the operator-norm algebra.
+* `TauCeti.AlmostComplexStructure.contMDiffAt_toContinuousLinearMap_transport`: transport along a
+  fixed `A` preserves the regularity of families of structures in the operator norm.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
@@ -43,6 +49,7 @@ equivalent, it does not depend on the choice of the norm of `V`.
 public noncomputable section
 
 open Filter Topology
+open scoped Manifold
 
 namespace TauCeti
 
@@ -88,6 +95,30 @@ theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B
     ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hB])
   rw [← hA', ← hB', cayley_eq_cayleyFormula]
   exact map_cayleyFormula (Module.End.toContinuousLinearMap V) J₀.toLinearMap J₁.toLinearMap
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+
+/-- In the operator-norm algebra, transporting a structure along a continuous linear equivalence
+`A` is conjugation by `A`. -/
+theorem toContinuousLinearMap_transport (J : AlmostComplexStructure V) (A : V ≃L[ℝ] W) :
+    LinearMap.toContinuousLinearMap (J.transport A.toLinearEquiv).toLinearMap =
+      A.conjContinuousAlgEquiv (LinearMap.toContinuousLinearMap J.toLinearMap) := by
+  ext w
+  simp [LinearEquiv.conj_apply]
+
+/-- Transporting a family of structures along a fixed continuous linear equivalence `A` preserves
+its regularity in the operator norm. -/
+theorem contMDiffAt_toContinuousLinearMap_transport {E G N : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace N]
+    [ChartedSpace G N] {n : WithTop ℕ∞} {p : N} {J : N → AlmostComplexStructure V}
+    (A : V ≃L[ℝ] W)
+    (hJ : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y ↦ LinearMap.toContinuousLinearMap (J y).toLinearMap) p) :
+    ContMDiffAt I 𝓘(ℝ, W →L[ℝ] W) n
+      (fun y ↦ LinearMap.toContinuousLinearMap ((J y).transport A.toLinearEquiv).toLinearMap)
+      p := by
+  simp_rw [toContinuousLinearMap_transport]
+  exact A.conjContinuousAlgEquiv.toContinuousLinearEquiv.contDiff.contDiffAt.comp_contMDiffAt hJ
 
 end AlmostComplexStructure
 

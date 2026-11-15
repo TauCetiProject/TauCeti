@@ -24,16 +24,16 @@ that is small in the Hölder norm. The coefficient of `J` is reduced to this cas
 following McDuff–Salamon, Appendix E.
 
 * *Normalization.* A real-linear map `A` carries `J c` to the standard structure
-  (`TauCeti.Beltrami.exists_transport_eq_std_and_contDiffAt`), so the coefficient `μ₁` of the
-  structure `J` read through `w ↦ A (w - c)` vanishes at `0`.
+  (`TauCeti.Beltrami.exists_transport_eq_std`), so the coefficient `μ₁` of the structure `J` read
+  through `w ↦ A (w - c)` vanishes at `0`, and it is still `C¹` there
+  (`TauCeti.AlmostComplexStructure.contMDiffAt_toContinuousLinearMap_transport`).
 * *Rescaling and cutoff.* Rescaling by `ε` does not change the structures, and with a fixed cutoff
   `χ`, equal to `1` on the unit disc and vanishing off the disc of radius `2`, the coefficient
   `ν(z) = χ(z) μ₁(ε z)` is small in Hölder norm for `ε` small, because `μ₁` is Lipschitz near `0`
   and vanishes there (`TauCeti.eventually_exists_holderSpace_cutoff_rescale`).
 
 Restricting the chart of `ν` to the unit disc, where `ν` is the coefficient of the rescaled
-structure, and composing it with `w ↦ ε⁻¹ A (w - c)` gives the chart of `J`
-(`OpenPartialHomeomorph.isComplexLinear_chart_comp_affine`).
+structure, and composing it with `w ↦ ε⁻¹ A (w - c)` gives the chart of `J`.
 
 ## Main results
 
@@ -64,15 +64,24 @@ assumed. -/
 theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ}
     (hJs : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap) c) :
     ∃ e : OpenPartialHomeomorph ℂ ℂ, c ∈ e.source ∧ e c = 0 ∧
-      (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧ (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
+      ContDiffOn ℝ 1 e e.source ∧ ContDiffOn ℝ 1 e.symm e.target ∧
       ∀ z ∈ e.source, IsComplexLinear (J z).toLinearMap
         (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e z).toLinearMap := by
   set J₀ := AlmostComplexStructure.ofComplexModule ℂ
   /- Step 1: normalize at `c`. Read `J` through `w ↦ A (w - c)`, where `A` carries `J c` to the
   standard structure; the coefficient `μ₁` of the new field `J₁` vanishes at `0`. -/
-  obtain ⟨A, hA, hJ₁s⟩ := exists_transport_eq_std_and_contDiffAt hJs
+  obtain ⟨A, hA⟩ := exists_transport_eq_std (J c)
   let J₁ : ℂ → AlmostComplexStructure ℂ := fun w ↦
     (J (c + A.symm w)).transport A.toLinearEquiv
+  have hJ₁s : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℂ) 1
+      (fun w ↦ LinearMap.toContinuousLinearMap (J₁ w).toLinearMap) 0 := by
+    have hJs' : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap)
+        (c + A.symm 0) := by
+      simpa using hJs
+    exact AlmostComplexStructure.contMDiffAt_toContinuousLinearMap_transport A
+      (contMDiffAt_iff_contDiffAt.2 (ContDiffAt.comp
+        (g := fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap)
+        (f := fun w ↦ c + A.symm w) (0 : ℂ) hJs' (contDiffAt_const.add A.symm.contDiff.contDiffAt)))
   have hJ₁ : ∀ w v, J₁ w (A v) = A (J (c + A.symm w) v) := fun w v ↦ by
     simp [J₁, AlmostComplexStructure.transport_toLinearMap, LinearEquiv.conj_apply]
   have hJ₁0 : J₁ 0 = J₀ := by
@@ -82,8 +91,7 @@ theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStr
   let μ₁ : ℂ → ℂ := fun w ↦ J₀.cayley (J₁ w) 1
   have hμ₁0 : μ₁ 0 = 0 := by simp [μ₁, hJ₁0]
   have hμ₁s : ContDiffAt ℝ 1 μ₁ 0 := by
-    have h := stdComplexSymplecticForm_tames.contMDiffAt_cayley (I := 𝓘(ℝ, ℂ)) htame₀
-      (contMDiffAt_iff_contDiffAt.2 hJ₁s)
+    have h := stdComplexSymplecticForm_tames.contMDiffAt_cayley htame₀ hJ₁s
     exact contMDiffAt_iff_contDiffAt.1 (h.clm_apply contMDiffAt_const)
   /- Step 2: near `0`, `μ₁` is Lipschitz and bounded, hence `½`-Hölder, and `J₁` is tame. -/
   obtain ⟨Kμ, t, ht, hKμ⟩ := hμ₁s.exists_lipschitzOnWith
@@ -150,12 +158,31 @@ theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStr
       have hzc : c + A.symm (A (z - c)) = z := by
         rw [ContinuousLinearEquiv.symm_apply_apply, add_sub_cancel]
       rw [hJ''J₁ _ ((he₁s _).1 hz).2, hεS, hB, hB, map_smul, hJ₁, hzc]
-  obtain ⟨he'C, he'sC, he'lin⟩ :=
-    e₁.isComplexLinear_chart_comp_affine B c (fun z hz ↦ heC z ((he₁s z).1 hz).1)
-      (fun z hz ↦ (hesC z hz.1).contDiffAt (e.open_target.mem_nhds hz.1))
-      (fun z hz ↦ helin z ((he₁s z).1 hz).1) hBJ
-  refine ⟨_, ?_, ?_, he'C, he'sC, he'lin⟩
-  · simpa [he₁s] using hce
-  · simp [e₁, he]
+  -- The composite `w ↦ e₁ (B (w - c))` has inverse `y ↦ B⁻¹ (e₁⁻¹ y) + c`; both stay `C¹`, and
+  -- by the chain rule its differential carries `J` to `i`.
+  let e' := ((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e₁
+  have he' : ⇑e' = fun w ↦ e₁ (B (w - c)) := by
+    funext w
+    simp [e']
+  have he's : ⇑e'.symm = fun y ↦ B.symm (e₁.symm y) + c := by
+    funext y
+    simp [e']
+  have hsrc : ∀ z, z ∈ e'.source ↔ B (z - c) ∈ e₁.source := fun z ↦ by
+    simp [e']
+  refine ⟨e', ?_, ?_, fun z hz ↦ ?_, ?_, fun z hz ↦ ?_⟩
+  · simpa [hsrc, he₁s] using hce
+  · simp [e', e₁, he]
+  · rw [he']
+    exact ((heC _ ((he₁s _).1 ((hsrc z).1 hz)).1).comp z
+      (B.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffAt).contDiffWithinAt
+  · rw [he's]
+    exact (B.symm.contDiff.add contDiff_const).comp_contDiffOn
+      (hesC.mono fun y hy ↦ (show y ∈ e₁.target from hy).1)
+  · -- `fderiv_comp_sub` differentiates a function written as `w ↦ g (w - c)`.
+    have hd : fderiv ℝ e' z = (fderiv ℝ e₁ (B (z - c))).comp (B : ℂ →L[ℝ] ℂ) := by
+      rw [show ⇑e' = fun w ↦ (e₁ ∘ B) (w - c) from he', fderiv_comp_sub, B.comp_right_fderiv]
+    have hz' := (hsrc z).1 hz
+    rw [hd]
+    exact (helin _ ((he₁s _).1 hz').1).comp (isComplexLinear_of_apply (hBJ z hz'))
 
 end TauCeti.Beltrami

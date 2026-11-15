@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
@@ -37,9 +36,6 @@ The pointwise statements are `TauCeti.Beltrami.isComplexLinear_iff_conjWirtinger
 * `TauCeti.Beltrami.exists_isComplexLinear_chart`: the normalized Beltrami solution is a
   `C¹` local chart at `c` with `C¹` inverse, `J`-holomorphic on its source, with value `0` and
   holomorphic derivative `1` at `c`.
-* `OpenPartialHomeomorph.isComplexLinear_chart_comp_affine`: precomposing a `Cⁿ` chart with `Cⁿ`
-  inverse, whose differential carries `J'` to `K`, with an affine equivalence carrying `J` to `J'`
-  gives such a chart for `J`.
 * `TauCeti.Beltrami.cauchySolution_zero`, `TauCeti.Beltrami.normalizedChart_id`: for `μ = 0` the
   source `h = 0` gives `ψ = z`, and its normalized chart at `0` is the identity.
 
@@ -219,67 +215,9 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
       have hLM : ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) :=
         ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]
       rw [hLM]
-      exact (hL.hasFDerivAt.sub_const (ψ c)).const_smul a⁻¹
+      exact hasFDerivAt_normalizedChart hL.hasFDerivAt
     exact TauCeti.ContDiffOn.exists_openPartialHomeomorph
       (hφC1.mono (ball_subset_ball (by linarith))) isOpen_ball (mem_ball_self hr) le_rfl
       hφd.fderiv.symm
 
 end TauCeti.Beltrami
-
-namespace OpenPartialHomeomorph
-
-open TauCeti
-
-variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **Precomposing a chart with an affine equivalence.** Let `e` be an open partial homeomorphism
-from `E'` to `F`, of class `Cⁿ` on its source with `Cⁿ` inverse on its target, whose real
-differential carries `J' z` to `K` at every point `z` of its source. If the real-linear
-equivalence `B` carries `J z` to `J' (B (z - c))` whenever `B (z - c)` lies in the source of `e`,
-then the precomposition `z ↦ e (B (z - c))`, with inverse `y ↦ B⁻¹ (e⁻¹ y) + c` on the target of
-`e`, has the same properties for `J`. -/
-theorem isComplexLinear_chart_comp_affine {n : WithTop ℕ∞}
-    {J : E → AlmostComplexStructure E} {J' : E' → AlmostComplexStructure E'}
-    {K : AlmostComplexStructure F} (e : OpenPartialHomeomorph E' F) (B : E ≃L[ℝ] E') (c : E)
-    (he : ∀ z ∈ e.source, ContDiffAt ℝ n e z) (hes : ∀ z ∈ e.target, ContDiffAt ℝ n e.symm z)
-    (hJ' : ∀ z ∈ e.source, IsComplexLinear (J' z).toLinearMap K.toLinearMap
-      (fderiv ℝ e z).toLinearMap)
-    (hB : ∀ z, B (z - c) ∈ e.source → ∀ v, B (J z v) = J' (B (z - c)) (B v)) :
-    (∀ z ∈ (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e).source,
-      ContDiffAt ℝ n
-        (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e) z) ∧
-    (∀ z ∈ e.target, ContDiffAt ℝ n
-      (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e).symm z) ∧
-    ∀ z ∈ (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e).source,
-      IsComplexLinear (J z).toLinearMap K.toLinearMap
-        (fderiv ℝ (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e)
-          z).toLinearMap := by
-  set e' := ((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e
-  have he' : ⇑e' = fun w ↦ e (B (w - c)) := by
-    funext w
-    simp [e']
-  have he's : ⇑e'.symm = fun y ↦ B.symm (e.symm y) + c := by
-    funext y
-    simp [e']
-  have hsrc : ∀ z, z ∈ e'.source ↔ B (z - c) ∈ e.source := fun z ↦ by
-    simp [e']
-  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [he']
-    exact (he _ ((hsrc z).1 hz)).comp z
-      (B.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffAt
-  · rw [he's]
-    exact (B.symm.contDiff.add contDiff_const).contDiffAt.comp z (hes z hz)
-  · -- `fderiv_comp_sub` differentiates a function written as `w ↦ g (w - c)`.
-    have hcomp : ⇑e' = fun w ↦ (e ∘ B) (w - c) := he'
-    have hd : fderiv ℝ e' z = (fderiv ℝ e (B (z - c))).comp (B : E →L[ℝ] E') := by
-      rw [hcomp, fderiv_comp_sub, B.comp_right_fderiv]
-    rw [hd]
-    refine isComplexLinear_of_apply fun v ↦ ?_
-    have := (hJ' _ ((hsrc z).1 hz)).apply (B v)
-    simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe] at this ⊢
-    rw [hB z ((hsrc z).1 hz)]
-    exact this
-
-end OpenPartialHomeomorph
