@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # Hamiltonian vector fields and gradients for compatible metrics
@@ -25,7 +27,9 @@ gradient of `f` for `g` are related by
 (`TauCeti.SmoothTwoForm.IsNondegenerate.apply_hamiltonianVectorField_eq_mgradient`,
 `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_eq_neg_apply_mgradient`). Indeed
 `g(J X_f, v) = g(v, J X_f) = σ(v, J J X_f) = σ(X_f, v) = df(v)`. Only the relation at the single
-point `x` is used, and neither closedness of `σ` nor smoothness of `J` is needed.
+point `x` is used, and neither closedness of `σ` nor smoothness of `J` is needed. On a symplectic
+vector space `(V, ω)` whose inner product is `ω(·, J ·)` the same identity reads `J X_H = ∇H`
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`).
 
 This is the identity behind the comparison of Floer theory for a small autonomous Hamiltonian with
 Morse theory: the Floer equation `∂_s u + J (∂_t u - X_H(u)) = 0` for maps independent of `t`
@@ -41,8 +45,25 @@ becomes the gradient equation `∂_s u = ∇H(u)` for the metric `g_J`.
 
 public section
 
+open scoped Gradient RealInnerProductSpace
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- **`J X_H` is the gradient of `H` on a vector space.** If the inner product of `V` is the
+metric `ω(·, J ·)`, then `J X_H(x)` is the gradient of `H` at `x`. -/
+theorem apply_hamiltonianVectorField_eq_gradient (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (H : V → ℝ)
+    (x : V) : J (ω.hamiltonianVectorField H x) = ∇ H x :=
+  ext_inner_right ℝ fun w ↦ by
+    rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, apply_hamiltonianVectorField,
+      inner_gradient_left]
+
+end TauCeti.SymplecticForm
+
 open Bundle
-open scoped ContDiff Manifold RealInnerProductSpace
+open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
