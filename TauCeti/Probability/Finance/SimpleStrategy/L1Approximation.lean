@@ -119,7 +119,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral
     (ν : Measure ℝ≥0) [IsFiniteMeasure ν] (hν : ν {0} = 0)
     (P : Measure Ω) [IsFiniteMeasure P]
     {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
-    (hH₁ : MemLp (Function.uncurry H) 1 (ν.prod P)) :
+    (hH₁ : Integrable (Function.uncurry H) (ν.prod P)) :
     ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ),
       (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
       (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
@@ -131,8 +131,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral
         ‖simpleHolding (τ m) (n m) (a m) t ω - H t ω‖ₑ ∂ν) atTop (𝓝 0) := by
   obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hb, hlim⟩ :=
     ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable (ν.prod P)
-      (by simp only [Measure.prod_prod, hν, zero_mul]) hH
-      (memLp_one_iff_integrable.mp hH₁)
+      (by simp only [Measure.prod_prod, hν, zero_mul]) hH hH₁
   have hmeas m : StronglyMeasurable[ℱ.predictable]
       (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) :=
     (isStronglyPredictable_simpleHolding (ha m)).sub hH
