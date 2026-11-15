@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
-public import TauCeti.LinearAlgebra.BilinearForm.Complexification
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.SesquilinearForm
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 
@@ -17,7 +17,7 @@ Let `V` be a finite-dimensional real inner product space. Mathlib puts a Gram-de
 product on each homogeneous exterior power `⋀[ℝ]^k V`. On the full exterior algebra
 `ExteriorAlgebra ℝ V`, the bilinear form `ExteriorAlgebra.gramForm V` makes the increasing wedge
 basis `e.toBasis.ExteriorAlgebra` orthonormal for every orthonormal basis `e` of `V`
-(`ExteriorAlgebra.gramForm_eq_toBilin`, `ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). It does not
+(`ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). It does not
 depend on `e`, makes distinct exterior powers orthogonal
 (`ExteriorAlgebra.gramForm_eq_zero_of_mem_exteriorPower`), evaluates on decomposable wedges by the
 Gram determinant (`ExteriorAlgebra.gramForm_ιMulti_ιMulti`), and restricts on each `⋀[ℝ]^k V` to
@@ -43,10 +43,7 @@ under `ExteriorAlgebra.baseChangeEquiv`
 
 ## Main results
 
-* `OrthonormalBasis.toLinearMapₛₗ₂_real` and `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex`:
-  an orthonormal basis of `V` is orthonormal for `innerₗ V` and its complexified basis is
-  orthonormal for `(innerₗ V).sesqComplexification`.
-* `ExteriorAlgebra.gramForm_eq_toBilin` and `ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`:
+* `ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`:
   characterization of `gramForm V` in the wedge basis of any orthonormal basis of `V`.
 * `ExteriorAlgebra.gramForm_ι_mul_left`, `ExteriorAlgebra.gramForm_eq_zero_of_mem_exteriorPower`,
   `ExteriorAlgebra.gramForm_ιMulti_ιMulti`, and `ExteriorAlgebra.gramForm_coe_exteriorPower`:
@@ -71,34 +68,6 @@ open Matrix Module TauCeti.ExteriorAlgebra
 open scoped ComplexOrder RealInnerProductSpace TensorProduct
 
 namespace OrthonormalBasis
-
-section DecidableEq
-
-variable {V I : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [Fintype I] [DecidableEq I] (e : OrthonormalBasis I ℝ V)
-
-/-- **A real orthonormal basis is orthonormal for `innerₗ V`.** -/
-theorem toLinearMapₛₗ₂_real :
-    Matrix.toLinearMapₛₗ₂ (starRingEnd ℝ) e.toBasis e.toBasis (1 : Matrix I I ℝ) = innerₗ V := by
-  refine LinearMap.ext_basis e.toBasis e.toBasis fun i j ↦ ?_
-  rw [Matrix.toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, innerₗ_apply_apply,
-    OrthonormalBasis.coe_toBasis, e.inner_eq_ite]
-
-/-- **A complexified real orthonormal basis is orthonormal for
-`(innerₗ V).sesqComplexification`.** -/
-theorem toLinearMapₛₗ₂_baseChange_complex :
-    Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ) (e.toBasis.baseChange ℂ) (e.toBasis.baseChange ℂ)
-        (1 : Matrix I I ℂ) =
-      LinearMap.BilinForm.sesqComplexification (innerₗ V) := by
-  refine LinearMap.ext_basis (e.toBasis.baseChange ℂ) (e.toBasis.baseChange ℂ) fun i j ↦ ?_
-  rw [Matrix.toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, Module.Basis.baseChange_apply,
-    Module.Basis.baseChange_apply, LinearMap.BilinForm.sesqComplexification_tmul_tmul,
-    map_one, one_mul, one_mul, innerₗ_apply_apply, OrthonormalBasis.coe_toBasis, e.inner_eq_ite]
-  split_ifs <;> simp
-
-end DecidableEq
-
-section LinearOrder
 
 variable {V I : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [Fintype I] [LinearOrder I] (e : OrthonormalBasis I ℝ V)
@@ -129,8 +98,6 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_ιMulti_ιMulti (k : ℕ
         LinearMap.BilinForm.sesqComplexification (innerₗ V) (u i) (v j)).det := by
   rw [ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti, e.toLinearMapₛₗ₂_baseChange_complex]
 
-end LinearOrder
-
 end OrthonormalBasis
 
 namespace ExteriorAlgebra
@@ -140,8 +107,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 variable (V) in
 /-- **The Gram bilinear form on the exterior algebra** of a finite-dimensional real inner product
 space `V`: the symmetric positive definite bilinear form for which the increasing wedge basis of
-every orthonormal basis of `V` is orthonormal (`ExteriorAlgebra.gramForm_eq_toBilin`). On each
-homogeneous exterior power `⋀[ℝ]^k V` it agrees with Mathlib's Gram-determinant inner product
+every orthonormal basis of `V` is orthonormal (`ExteriorAlgebra.gramForm_eq_toLinearMapₛₗ₂`). On
+each homogeneous exterior power `⋀[ℝ]^k V` it agrees with Mathlib's Gram-determinant inner product
 (`ExteriorAlgebra.gramForm_coe_exteriorPower`), and distinct exterior powers are orthogonal. -/
 def gramForm : LinearMap.BilinForm ℝ (ExteriorAlgebra ℝ V) :=
   let b := (stdOrthonormalBasis ℝ V).toBasis.ExteriorAlgebra
@@ -156,13 +123,6 @@ theorem gramForm_eq_toLinearMapₛₗ₂ {I : Type*} [Fintype I] [LinearOrder I]
         (1 : Matrix (Finset I) (Finset I) ℝ) :=
   toLinearMapₛₗ₂_eq_of_toLinearMapₛₗ₂_eq (stdOrthonormalBasis ℝ V).toBasis e.toBasis
     ((stdOrthonormalBasis ℝ V).toLinearMapₛₗ₂_real.trans e.toLinearMapₛₗ₂_real.symm)
-
-/-- **In any orthonormal frame, `gramForm V` is `Matrix.toBilin e.toBasis.ExteriorAlgebra 1`.** -/
-theorem gramForm_eq_toBilin {I : Type*} [Fintype I] [LinearOrder I]
-    (e : OrthonormalBasis I ℝ V) :
-    gramForm V =
-      Matrix.toBilin e.toBasis.ExteriorAlgebra (1 : Matrix (Finset I) (Finset I) ℝ) :=
-  gramForm_eq_toLinearMapₛₗ₂ e
 
 /-- Increasing wedge-basis elements of an orthonormal basis are orthonormal for `gramForm V`. -/
 @[simp]
@@ -298,30 +258,25 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
       (e.toBasis.baseChange ℂ).exteriorAlgebra_eq_prod_map_sort,
       ← Algebra.TensorProduct.includeRight_apply (R := ℝ) (A := ℂ), map_list_prod, map_list_prod]
     simp [List.map_map, Function.comp_def, ExteriorAlgebra.baseChangeEquiv_apply]
+  have htmul (c : ℂ) (u : ExteriorAlgebra ℝ V) :
+      ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (c ⊗ₜ[ℝ] u) =
+        c • ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ[ℝ] u) := by
+    have hc : c ⊗ₜ[ℝ] u = c • ((1 : ℂ) ⊗ₜ[ℝ] u) := by
+      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    rw [hc, map_smul]
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ => simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
   | tmul z u =>
     induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂]
     | tmul w v =>
-      rw [LinearMap.BilinForm.sesqComplexification_tmul_tmul]
-      have hzu : ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (z ⊗ₜ[ℝ] u) =
-          z • ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ[ℝ] u) := by
-        rw [show z ⊗ₜ[ℝ] u = z • ((1 : ℂ) ⊗ₜ[ℝ] u) by simp [TensorProduct.smul_tmul'], map_smul]
-      have hwv : ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (w ⊗ₜ[ℝ] v) =
-          w • ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ[ℝ] v) := by
-        rw [show w ⊗ₜ[ℝ] v = w • ((1 : ℂ) ⊗ₜ[ℝ] v) by simp [TensorProduct.smul_tmul'], map_smul]
-      rw [hzu, hwv, H.map_smulₛₗ, LinearMap.smul_apply, map_smul, smul_eq_mul, smul_eq_mul,
-        ← mul_assoc]
+      rw [LinearMap.BilinForm.sesqComplexification_tmul_tmul, htmul z u, htmul w v, H.map_smulₛₗ,
+        LinearMap.smul_apply, map_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc]
       congr 1
       have hbasis' (r : ℝ) (s : Finset I) :
           ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ[ℝ] (r • e.toBasis.ExteriorAlgebra s)) =
             (r : ℂ) • (e.toBasis.baseChange ℂ).ExteriorAlgebra s := by
-        rw [← TensorProduct.smul_tmul, Complex.real_smul, mul_one,
-          show (r : ℂ) ⊗ₜ[ℝ] e.toBasis.ExteriorAlgebra s =
-              (r : ℂ) • ((1 : ℂ) ⊗ₜ[ℝ] e.toBasis.ExteriorAlgebra s) by
-            simp [TensorProduct.smul_tmul'],
-          map_smul, hbasis]
+        rw [← TensorProduct.smul_tmul, Complex.real_smul, mul_one, htmul, hbasis]
       -- Both sides are ℝ-bilinear in `(u, v)`; compare them on the wedge basis of `e`.
       conv_lhs =>
         rw [← e.toBasis.ExteriorAlgebra.sum_repr u, ← e.toBasis.ExteriorAlgebra.sum_repr v]
