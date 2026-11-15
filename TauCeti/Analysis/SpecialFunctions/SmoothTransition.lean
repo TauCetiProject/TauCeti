@@ -43,15 +43,8 @@ nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, 
 plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]` and vanishes outside
 `(a, b)`; integrating it gives such a step with slope at most `τ` whenever
 `v < τ (b - a)`, which is the best possible bound, since the mean slope of the step is
-`v / (b - a)`.
-
-For `R ≥ 0`, translates of the smooth transition split the constant function `1` into three
-smooth pieces `βm + β₀ + βp = 1` with values in `[0, 1]`. The positive piece
-`βp(s) = ψ(s - R)` vanishes on `(-∞, R]` and equals one on `[R + 1, ∞)`, its reflection
-`βm(s) = βp(-s)` does the same on the negative side, and the middle piece `β₀ = 1 - βm - βp`
-equals one on `[-R, R]` and vanishes outside `(-(R + 1), R + 1)`. Their derivatives are bounded
-by a common constant and vanish outside `[-(R + 1), R + 1]`. This is the decomposition that
-patches estimates on the two ends of a cylinder `ℝ × S¹` with an estimate on a compact core.
+`v / (b - a)`. Translating and reflecting the smooth transition also gives three cutoffs summing to
+one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives.
 
 ## Main declarations
 
@@ -102,9 +95,9 @@ patches estimates on the two ends of a cylinder `ℝ × S¹` with an estimate on
   `(a, b)` and equal to `1` on `[a + δ, b - δ]`.
 * `TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`: such a step whose slope is at most `τ`,
   for every `v < τ (b - a)`.
-* `TauCeti.exists_contDiff_partitionOfUnity_three`: the three-piece partition of unity
-  `βm + β₀ + βp = 1`, whose pieces vanish on `[-R, ∞)`, outside `(-(R + 1), R + 1)` and on
-  `(-∞, R]`.
+* `TauCeti.exists_cutoffs_add_add_eq_one`: three `C²` cutoffs summing to one, vanishing for
+  `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
+  constant and supported in `[-(R + 1), R + 1]`.
 -/
 
 public section
@@ -674,69 +667,75 @@ theorem exists_contDiff_antitone_cutoff_abs_deriv_le {a b v τ : ℝ} (hab : a <
     exact (mul_le_of_le_one_right hc0 (hψle r)).trans hcτ
   · simp only [hderiv, hψ0 r hr, mul_zero, neg_zero]
 
-/-- **A three-piece smooth partition of unity of the line.** For `R ≥ 0` there are smooth
-functions `βm`, `β₀`, `βp` with `βm + β₀ + βp = 1`, each with values in `[0, 1]`, with
-derivatives bounded by a common constant `L` and vanishing outside `[-(R + 1), R + 1]`, such that
-`βm` vanishes on `[-R, ∞)`, `β₀` outside `(-(R + 1), R + 1)` and `βp` on `(-∞, R]`. -/
-theorem exists_contDiff_partitionOfUnity_three {R : ℝ} (hR : 0 ≤ R) :
-    ∃ L, ∃ βm β₀ βp : ℝ → ℝ, ContDiff ℝ ∞ βm ∧ ContDiff ℝ ∞ β₀ ∧ ContDiff ℝ ∞ βp ∧
-      (∀ s, βm s + β₀ s + βp s = 1) ∧
-      (∀ s, βm s ∈ Icc 0 1 ∧ β₀ s ∈ Icc 0 1 ∧ βp s ∈ Icc 0 1) ∧
-      (∀ s, |deriv βm s| ≤ L ∧ |deriv β₀ s| ≤ L ∧ |deriv βp s| ≤ L) ∧
-      (∀ s ∉ Icc (-(R + 1)) (R + 1), deriv βm s = 0 ∧ deriv β₀ s = 0 ∧ deriv βp s = 0) ∧
-      (∀ s, -R ≤ s → βm s = 0) ∧ (∀ s ∉ Ioo (-(R + 1)) (R + 1), β₀ s = 0) ∧
-      ∀ s ≤ R, βp s = 0 := by
-  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
-  -- The positive piece `βp(s) = ψ(s - R)`; the negative piece is its reflection.
-  set βp : ℝ → ℝ := fun s ↦ Real.smoothTransition (s - R)
-  have hβpc : ContDiff ℝ ∞ βp :=
-    Real.smoothTransition.contDiff.comp (contDiff_id.sub contDiff_const)
-  have hβmc : ContDiff ℝ ∞ fun s ↦ βp (-s) := hβpc.comp contDiff_neg
-  have hdp (s : ℝ) : deriv βp s = deriv Real.smoothTransition (s - R) := by
-    simpa using (((hasDerivAt_id s).sub_const R).smoothTransition).deriv
-  have hdm (s : ℝ) : deriv (fun s ↦ βp (-s)) s = -deriv βp (-s) := deriv_comp_neg ..
-  have hd₀ (s : ℝ) : deriv (fun s ↦ 1 - βp (-s) - βp s) s = deriv βp (-s) - deriv βp s := by
-    rw [(((hasDerivAt_const s (1 : ℝ)).fun_sub (hβmc.differentiable (by simp) s).hasDerivAt).fun_sub
-      (hβpc.differentiable (by simp) s).hasDerivAt).deriv, hdm]
-    ring
-  have hpL (s : ℝ) : |deriv βp s| ≤ L := by rw [hdp, ← Real.norm_eq_abs]; exact hL _
-  have hpz (s : ℝ) (hs : s ∉ Icc (-(R + 1)) (R + 1)) : deriv βp s = 0 := by
-    rw [hdp]
-    rcases not_and_or.1 hs with hs | hs
-    · exact Real.smoothTransition.deriv_of_neg (by linarith [not_le.1 hs])
-    · exact Real.smoothTransition.deriv_of_one_lt (by linarith [not_le.1 hs])
-  have hneg {s : ℝ} (hs : s ∉ Icc (-(R + 1)) (R + 1)) : -s ∉ Icc (-(R + 1)) (R + 1) :=
-    fun h ↦ hs ⟨by linarith [h.2], by linarith [h.1]⟩
-  have hp0 {s : ℝ} (hs : s ≤ R) : βp s = 0 := Real.smoothTransition.zero_of_nonpos (by linarith)
-  have hp1 {s : ℝ} (hs : R + 1 ≤ s) : βp s = 1 :=
-    Real.smoothTransition.one_of_one_le (by linarith)
-  have hpI (s : ℝ) : βp s ∈ Icc 0 1 :=
-    ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-  refine ⟨2 * L, fun s ↦ βp (-s), fun s ↦ 1 - βp (-s) - βp s, βp, hβmc,
-    (contDiff_const.sub hβmc).sub hβpc, hβpc, fun s ↦ by ring,
-    fun s ↦ ⟨hpI (-s), ?_, hpI s⟩,
-    fun s ↦ ⟨?_, ?_, ?_⟩, fun s hs ↦ ⟨?_, ?_, hpz s hs⟩, fun s hs ↦ hp0 (by linarith),
-    fun s hs ↦ ?_, fun s hs ↦ hp0 hs⟩
-  · -- At most one of `βp (-s)` and `βp s` is nonzero.
-    rcases le_or_gt s 0 with h | h
-    · have := hp0 (h.trans hR)
-      constructor <;> linarith [(hpI (-s)).1, (hpI (-s)).2, (hpI s).1, (hpI s).2]
-    · have := hp0 (show -s ≤ R by linarith)
-      constructor <;> linarith [(hpI (-s)).1, (hpI (-s)).2, (hpI s).1, (hpI s).2]
-  · rw [hdm, abs_neg]
-    linarith [hpL (-s), abs_nonneg (deriv βp (-s))]
-  · rw [hd₀, abs_le]
-    have h₁ := abs_le.1 (hpL (-s))
-    have h₂ := abs_le.1 (hpL s)
-    constructor <;> linarith [h₁.1, h₁.2, h₂.1, h₂.2]
-  · linarith [hpL s, abs_nonneg (deriv βp s)]
-  · rw [hdm, hpz _ (hneg hs), neg_zero]
-  · rw [hd₀, hpz _ (hneg hs), hpz s hs, sub_zero]
-  · rcases not_and_or.1 hs with hs | hs
-    · simp only [hp1 (show R + 1 ≤ -s by linarith [not_lt.1 hs]),
-        hp0 (show s ≤ R by linarith [not_lt.1 hs])]
+/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are `C²` cutoffs `βp`, `βm`, `β₀`
+summing to one, with `βp` vanishing for `s ≤ R`, `βm` vanishing for `s ≥ -R` and `β₀` vanishing
+outside `(-(R + 1), R + 1)`. Each satisfies `|β| ≤ 1`, and their derivatives are bounded by a common
+constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-s - R)` and
+`1 - ψ(s - R) - ψ(-s - R)` for the smooth transition `ψ`. -/
+theorem exists_cutoffs_add_add_eq_one {R : ℝ} (hR : 0 ≤ R) :
+    ∃ M, ∃ βp βm β₀ : ℝ → ℝ, (∀ s, βp s + βm s + β₀ s = 1) ∧ (∀ s, s ≤ R → βp s = 0) ∧
+      (∀ s, -R ≤ s → βm s = 0) ∧ (∀ s, s ∉ Ioo (-(R + 1)) (R + 1) → β₀ s = 0) ∧
+      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ 2 β ∧ (∀ s, |β s| ≤ 1) ∧
+        (∀ s, |deriv β s| ≤ M) ∧ ∀ s, s < -(R + 1) ∨ R + 1 < s → deriv β s = 0 := by
+  obtain ⟨M, hM⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  set ψ := Real.smoothTransition
+  have hψc : ContDiff ℝ 2 ψ := Real.smoothTransition.contDiff
+  have hψd (x : ℝ) : HasDerivAt ψ (deriv ψ x) x :=
+    (hψc.differentiable two_ne_zero x).hasDerivAt
+  have hψ0 (x : ℝ) (hx : x ≤ 0) : ψ x = 0 := Real.smoothTransition.zero_of_nonpos hx
+  have hψ1 (x : ℝ) (hx : 1 ≤ x) : ψ x = 1 := Real.smoothTransition.one_of_one_le hx
+  have hψ'M (x : ℝ) : |deriv ψ x| ≤ M := by simpa using hM x
+  have hψ'0 (x : ℝ) (hx : x < 0 ∨ 1 < x) : deriv ψ x = 0 :=
+    hx.elim Real.smoothTransition.deriv_of_neg Real.smoothTransition.deriv_of_one_lt
+  have hp (s : ℝ) : HasDerivAt (fun s ↦ ψ (s - R)) (deriv ψ (s - R)) s :=
+    (hψd (s - R)).comp_sub_const s R
+  have hm (s : ℝ) : HasDerivAt (fun s ↦ ψ (-s - R)) (-deriv ψ (-s - R)) s := by
+    simpa [Function.comp_def] using (hψd (-s - R)).comp s ((hasDerivAt_neg s).sub_const R)
+  have h₀ (s : ℝ) : HasDerivAt (fun s ↦ 1 - ψ (s - R) - ψ (-s - R))
+      (0 - deriv ψ (s - R) - -deriv ψ (-s - R)) s :=
+    ((hasDerivAt_const s (1 : ℝ)).sub (hp s)).sub (hm s)
+  refine ⟨2 * M, fun s ↦ ψ (s - R), fun s ↦ ψ (-s - R), fun s ↦ 1 - ψ (s - R) - ψ (-s - R),
+    fun s ↦ by ring, fun s hs ↦ hψ0 _ (by linarith), fun s hs ↦ hψ0 _ (by linarith),
+    fun s hs ↦ ?_, ?_⟩
+  · rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
+    beta_reduce
+    rcases hs with hs | hs
+    · rw [hψ0 (s - R) (by linarith), hψ1 (-s - R) (by linarith)]
       ring
-    · simp only [hp0 (show -s ≤ R by linarith [not_lt.1 hs]), hp1 (not_lt.1 hs)]
+    · rw [hψ0 (-s - R) (by linarith), hψ1 (s - R) (by linarith)]
+      ring
+  simp only [mem_insert_iff, mem_singleton_iff]
+  rintro β (rfl | rfl | rfl)
+  · refine ⟨hψc.comp (contDiff_id.sub contDiff_const), fun s ↦ Real.smoothTransition.abs_le_one _,
+      fun s ↦ ?_, fun s hs ↦ ?_⟩
+    · rw [(hp s).deriv]
+      exact (hψ'M _).trans (by linarith [(abs_nonneg _).trans (hψ'M 0)])
+    · rw [(hp s).deriv]
+      exact hψ'0 _ (by rcases hs with hs | hs <;> [left; right] <;> linarith)
+  · refine ⟨hψc.comp (contDiff_neg.sub contDiff_const), fun s ↦ Real.smoothTransition.abs_le_one _,
+      fun s ↦ ?_, fun s hs ↦ ?_⟩
+    · rw [(hm s).deriv, abs_neg]
+      exact (hψ'M _).trans (by linarith [(abs_nonneg _).trans (hψ'M 0)])
+    · rw [(hm s).deriv, neg_eq_zero]
+      exact hψ'0 _ (by rcases hs with hs | hs <;> [right; left] <;> linarith)
+  · refine ⟨(contDiff_const.sub (hψc.comp (contDiff_id.sub contDiff_const))).sub
+      (hψc.comp (contDiff_neg.sub contDiff_const)), fun s ↦ ?_, fun s ↦ ?_, fun s hs ↦ ?_⟩
+    · have h₁ := Real.smoothTransition.nonneg (s - R)
+      have h₂ := Real.smoothTransition.le_one (s - R)
+      have h₃ := Real.smoothTransition.nonneg (-s - R)
+      have h₄ := Real.smoothTransition.le_one (-s - R)
+      beta_reduce
+      rcases le_total 0 s with hs | hs
+      · rw [hψ0 (-s - R) (by linarith), abs_le]
+        constructor <;> linarith
+      · rw [hψ0 (s - R) (by linarith), abs_le]
+        constructor <;> linarith
+    · have h₁ := abs_le.1 (hψ'M (s - R))
+      have h₂ := abs_le.1 (hψ'M (-s - R))
+      rw [(h₀ s).deriv, abs_le]
+      constructor <;> linarith [h₁.1, h₁.2, h₂.1, h₂.2]
+    · rw [(h₀ s).deriv, hψ'0 (s - R) (by rcases hs with hs | hs <;> [left; right] <;> linarith),
+        hψ'0 (-s - R) (by rcases hs with hs | hs <;> [right; left] <;> linarith)]
       ring
 
 end TauCeti
