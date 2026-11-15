@@ -74,13 +74,13 @@ noncomputable def realCliffordTwoTwoVectorEquivMatrix :
     (A 1 1 - A 0 0) / 2, -(A 0 1 + A 1 0) / 2]
   map_add' v w := by
     ext i j
-    all_goals fin_cases i
+    fin_cases i
     all_goals fin_cases j
     all_goals simp
     all_goals ring
   map_smul' r v := by
     ext i j
-    all_goals fin_cases i
+    fin_cases i
     all_goals fin_cases j
     all_goals simp
     all_goals ring
@@ -89,7 +89,7 @@ noncomputable def realCliffordTwoTwoVectorEquivMatrix :
     fin_cases i <;> simp
   right_inv A := by
     ext i j
-    all_goals fin_cases i
+    fin_cases i
     all_goals fin_cases j
     all_goals simp
     all_goals ring
@@ -292,7 +292,8 @@ theorem realCliffordTwoTwoEvenEquivMatrixProd_reverseEven
 
 /-- In the split matrix model of `Cl⁺(2,2)`, the reverse norm-one equation is determinant one in
 both matrix factors. -/
-@[simp]
+-- Compute the matrix norm condition before generic one-sided-inverse rewrites.
+@[simp 1100]
 theorem realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
     (x : CliffordAlgebra.even (realCliffordForm 2 2)) :
     CliffordAlgebra.reverseEven (realCliffordForm 2 2) x * x = 1 ↔

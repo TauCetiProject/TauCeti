@@ -28,9 +28,11 @@ stable and unstable sets.
 
 ## Main results
 
-* `IsNondegenerateCriticalPoint.exists_localStableSet_chart`: a `C¹` ambient chart whose
-  stable-set slice is exactly the stable Hessian subspace.
-* `IsNondegenerateCriticalPoint.exists_localUnstableSet_chart`: the backward-time counterpart.
+* `IsNondegenerateCriticalPoint.exists_localStableSet_chart_of_contDiffAt`: when `f` is `C^(n+1)`
+  at the critical point, a `C^n` ambient chart whose stable-set slice is exactly the stable
+  Hessian subspace.
+* `IsNondegenerateCriticalPoint.exists_localUnstableSet_chart_of_contDiffAt`: the backward-time
+  counterpart.
 
 ## References
 
@@ -49,25 +51,27 @@ namespace IsNondegenerateCriticalPoint
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] {f : E → ℝ} {x : E}
 
-/-- The interior of a local stable disk admits a `C¹` ambient straightening chart. The chart
-and its inverse are defined on the open cylinder over a positive-radius disk in the stable
-spectral subspace; the chart fixes zero and has identity derivative there. The confinement
-radius `r` is small enough that every forward trajectory confined to `closedBall 0 r` tends to
-the critical point, so the disk consists of points of the stable set. -/
-theorem exists_localStableSet_chart (h : IsNondegenerateCriticalPoint f x) :
+/-- If `f` is `C^(n+1)` at `x`, the interior of a local stable disk admits a `C^n` ambient
+straightening chart. The chart and its inverse are defined on the open cylinder over a
+positive-radius disk in the stable spectral subspace; the chart fixes zero and has identity
+derivative there. The confinement radius `r` is small enough that every forward trajectory
+confined to `closedBall 0 r` tends to the critical point, so the disk consists of points of the
+stable set. -/
+theorem exists_localStableSet_chart_of_contDiffAt (h : IsNondegenerateCriticalPoint f x)
+    {n : ℕ} (hf : ContDiffAt ℝ (n + 1) f x) :
     ∃ r > 0, ∃ ρ > 0, ∃ q : OpenPartialHomeomorph E E,
       q.source = h.stableProjection ⁻¹' ball 0 ρ ∧
       q.target = h.stableProjection ⁻¹' ball 0 ρ ∧
       q 0 = 0 ∧ HasFDerivAt q (ContinuousLinearMap.id ℝ E) 0 ∧
-      (∀ z ∈ q.source, ContDiffAt ℝ 1 q z) ∧
-      (∀ z ∈ q.target, ContDiffAt ℝ 1 q.symm z) ∧
+      (∀ z ∈ q.source, ContDiffAt ℝ n q z) ∧
+      (∀ z ∈ q.target, ContDiffAt ℝ n q.symm z) ∧
       (∀ z ∈ q.source, z ∈ h.localStableSet r ρ ↔
         q z ∈ h.contDiffAt.stableLinearSubspace) ∧
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
   obtain ⟨r, hr, ρ, hρ, g, hg, hg0, hgd, hgs, hPg, _, hset, hconv⟩ :=
-    h.exists_localStableSet_eq_lipschitzGraph 1 one_pos
+    h.exists_localStableSet_eq_lipschitzGraph_of_contDiffAt hf 1 one_pos
   let q := h.stableProjection.projectionGraphChart g (U := ball 0 ρ)
     isOpen_ball hg.continuous.continuousOn
     (fun v _ ↦ hPg v)
@@ -98,24 +102,25 @@ theorem exists_localStableSet_chart (h : IsNondegenerateCriticalPoint f x) :
       hg.continuous.continuousOn (fun v _ ↦ hPg v) h.isIdempotentElem_stableProjection
       ball_subset_closedBall (fun v _ ↦ hPg v) hz).symm
 
-/-- The interior of a local unstable disk admits a `C¹` ambient straightening chart onto the
-unstable Hessian subspace, fixing zero with identity derivative. Its parameter dimension is
-the Morse index. Every backward trajectory confined to `closedBall 0 r` tends to the critical
-point in backward time. -/
-theorem exists_localUnstableSet_chart (h : IsNondegenerateCriticalPoint f x) :
+/-- If `f` is `C^(n+1)` at `x`, the interior of a local unstable disk admits a `C^n` ambient
+straightening chart onto the unstable Hessian subspace, fixing zero with identity derivative. Its
+parameter dimension is the Morse index. Every backward trajectory confined to `closedBall 0 r`
+tends to the critical point in backward time. -/
+theorem exists_localUnstableSet_chart_of_contDiffAt (h : IsNondegenerateCriticalPoint f x)
+    {n : ℕ} (hf : ContDiffAt ℝ (n + 1) f x) :
     ∃ r > 0, ∃ ρ > 0, ∃ q : OpenPartialHomeomorph E E,
       q.source = h.unstableProjection ⁻¹' ball 0 ρ ∧
       q.target = h.unstableProjection ⁻¹' ball 0 ρ ∧
       q 0 = 0 ∧ HasFDerivAt q (ContinuousLinearMap.id ℝ E) 0 ∧
-      (∀ z ∈ q.source, ContDiffAt ℝ 1 q z) ∧
-      (∀ z ∈ q.target, ContDiffAt ℝ 1 q.symm z) ∧
+      (∀ z ∈ q.source, ContDiffAt ℝ n q z) ∧
+      (∀ z ∈ q.target, ContDiffAt ℝ n q.symm z) ∧
       (∀ z ∈ q.source, z ∈ h.localUnstableSet r ρ ↔
         q z ∈ h.contDiffAt.unstableLinearSubspace) ∧
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) →
         MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (𝓝 0)) := by
   obtain ⟨r, hr, ρ, hρ, g, hg, hg0, hgd, hgs, hPg, _, hset, hconv⟩ :=
-    h.exists_localUnstableSet_eq_lipschitzGraph 1 one_pos
+    h.exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt hf 1 one_pos
   let q := h.unstableProjection.projectionGraphChart g (U := ball 0 ρ)
     isOpen_ball hg.continuous.continuousOn
     (fun v _ ↦ hPg v)

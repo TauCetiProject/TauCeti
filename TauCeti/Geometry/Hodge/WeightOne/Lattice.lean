@@ -95,10 +95,8 @@ theorem latticeComplexification_realificationComplexEquiv_one_tmul
 theorem latticeComplexification_comp_self
     (J : AlmostComplexStructure (Hodge.Realification V)) (hℂ : IsBaseChange ℂ ιℂ) :
     J.latticeComplexification hℂ ∘ₗ J.latticeComplexification hℂ = -LinearMap.id := by
-  have hbase : J.toLinearMap.baseChange ℂ ∘ₗ J.toLinearMap.baseChange ℂ = -LinearMap.id := by
-    simpa only [LinearMap.baseChange_comp, LinearMap.baseChange_neg, LinearMap.baseChange_id]
-      using congrArg (LinearMap.baseChange ℂ) J.square_neg
-  rw [latticeComplexification, ← LinearEquiv.conj_comp, hbase, map_neg, LinearEquiv.conj_id]
+  rw [latticeComplexification, ← LinearEquiv.conj_comp, J.baseChange_comp_self,
+    map_neg, LinearEquiv.conj_id]
 
 /-- The eigenspaces of the transported endomorphism are the transports of the eigenspaces of the
 literal scalar extension. -/

@@ -25,11 +25,9 @@ field. After additional geometric input identifying the zero-principal-divisor f
 constants, this quotient specializes to rational functions modulo constants, embedded as
 principal divisors before taking the divisor class quotient.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, specifically the
-"principal divisors" and "`Cl(X) ≅ Pic X`" prerequisite lane: the class group is the quotient by
-principal divisors, and this file packages the source-side quotient that maps onto that
-subgroup. It reuses Tau Ceti's `OrderSystem.principalHom` API and Mathlib's first isomorphism
-theorem for quotient groups; no external mathematics is vendored.
+The class group is the quotient by principal divisors, and this file packages the source-side
+quotient that maps onto that subgroup. It reuses Tau Ceti's `OrderSystem.principalHom` API and
+Mathlib's first isomorphism theorem for quotient groups; no external mathematics is vendored.
 -/
 
 public section

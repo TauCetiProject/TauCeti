@@ -10,10 +10,12 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 /-!
 # Chord identities on a Weierstrass curve
 
-For two points `(x₁, y₁)` and `(x₂, y₂)` on a Weierstrass curve `W`, subtracting the two equations
-of `W` factors `y₁ - y₂` against `x₁ - x₂`. This file records the two resulting identities, one
-for each choice of the second factor of `y₁ - y₂`. They say how fast `y₁ - y₂` vanishes as
-`x₁ - x₂` does, which is what the slope of the chord through the two points measures.
+For two points `(x₁, y₁)` and `(x₂, y₂)` on a Weierstrass curve `W` over a commutative ring,
+subtracting the two equations of `W` factors `y₁ - y₂` against `x₁ - x₂`. This file records the
+resulting identity in two forms, which differ by swapping the two points: the second factor of
+`y₁ - y₂` is `y₁ + y₂ + a₁ x₁ + a₃` in one and `y₁ - negY x₂ y₂ = y₁ + y₂ + a₁ x₂ + a₃` in the
+other. They say how fast `y₁ - y₂` vanishes as `x₁ - x₂` does, which is what the slope of the
+chord through the two points measures.
 
 ## Main results
 
@@ -31,20 +33,21 @@ namespace WeierstrassCurve.Affine
 
 variable {R : Type*} [CommRing R] {W : Affine R} {x₁ y₁ x₂ y₂ : R}
 
-/-- The chord identity with second factor `y₁ + y₂ + a₁ x₁ + a₃`. -/
+/-- The chord identity for two points `(x₁, y₁)` and `(x₂, y₂)` on `W`, with second factor
+`y₁ + y₂ + a₁ x₁ + a₃`. -/
 theorem Y_sub_Y_mul_Y_add_Y_eq (h₁ : W.Equation x₁ y₁) (h₂ : W.Equation x₂ y₂) :
     (y₁ - y₂) * (y₁ + y₂ + W.a₁ * x₁ + W.a₃) =
       (x₁ - x₂) * (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₂) := by
   rw [equation_iff] at h₁ h₂
   linear_combination h₁ - h₂
 
-/-- The chord identity with second factor `y₁ - negY x₂ y₂`. Over a field, its case `x₁ = x₂` says
-that the only points over `x₂` are `(x₂, y₂)` and `-(x₂, y₂)`. -/
+/-- The chord identity with second factor `y₁ - negY x₂ y₂`: this is
+`Y_sub_Y_mul_Y_add_Y_eq` with the two points swapped. Over a field, its case `x₁ = x₂` says that
+the only points over `x₂` are `(x₂, y₂)` and `-(x₂, y₂)`. -/
 theorem Y_sub_Y_mul_Y_sub_negY_eq (h₁ : W.Equation x₁ y₁) (h₂ : W.Equation x₂ y₂) :
     (y₁ - y₂) * (y₁ - W.negY x₂ y₂) =
       (x₁ - x₂) * (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) := by
-  rw [equation_iff] at h₁ h₂
   rw [negY]
-  linear_combination h₁ - h₂
+  linear_combination -Y_sub_Y_mul_Y_add_Y_eq h₂ h₁
 
 end WeierstrassCurve.Affine

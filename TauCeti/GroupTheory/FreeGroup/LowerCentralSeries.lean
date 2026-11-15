@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.Nilpotent
 import Mathlib.GroupTheory.SpecificGroups.Dihedral
 
 /-!
-# Free groups of rank at least two are not nilpotent
+# A free group is nilpotent exactly in rank at most one
 
 Let `x` and `y` be two distinct generators of the free group `FreeGroup X`. The left-normed
 commutators
@@ -19,7 +19,8 @@ commutators
 
 satisfy `w_n ∈ γ_n`, the `n`-th term of the lower central series, and none of them is trivial.
 Hence no term of the lower central series of a free group of rank at least two is trivial, and such
-a free group is not nilpotent.
+a free group is not nilpotent. Conversely, a free group of rank at most one is cyclic, hence
+nilpotent.
 
 The nontriviality is detected in the infinite dihedral group `DihedralGroup 0`, the group of
 isometries `t ↦ ±t + m` of `ℤ`. Send `x` to the translation `r 1 : t ↦ t + 1` and every other
@@ -33,7 +34,8 @@ not the identity.
   `⁅⋯⁅⁅x, y⁆, y⁆, ⋯, y⁆` of two distinct generators is nontrivial.
 * `FreeGroup.lowerCentralSeries_ne_bot`: no term of the lower central series of a free group of
   rank at least two is trivial.
-* `FreeGroup.not_isNilpotent`: a free group of rank at least two is not nilpotent.
+* `FreeGroup.isNilpotent_iff_subsingleton`: a free group is nilpotent if and only if it has at
+  most one generator.
 
 ## References
 
@@ -64,11 +66,7 @@ theorem iterate_commutatorElement_ne_one {i j : X} (hij : i ≠ j) (n : ℕ) :
     | zero => simp [f]
     | succ m ih =>
       rw [Function.iterate_succ_apply', map_commutatorElement, ih, commutatorElement_def]
-      simp only [f, lift_apply_of, hij.symm, ↓reduceIte, DihedralGroup.inv_r,
-        DihedralGroup.inv_sr, DihedralGroup.r_mul_sr, DihedralGroup.sr_mul_r,
-        DihedralGroup.sr_mul_sr]
-      congr 1
-      ring
+      simp [f, hij.symm, pow_succ, mul_two]
   intro h
   have h2 := hf n
   rw [h, _root_.map_one, DihedralGroup.one_def, DihedralGroup.r.injEq] at h2
@@ -86,15 +84,16 @@ theorem lowerCentralSeries_ne_bot [Nontrivial X] (n : ℕ) :
     induction m with
     | zero => simp
     | succ m ih =>
-      rw [Function.iterate_succ_apply', Subgroup.lowerCentralSeries_succ]
+      rw [Function.iterate_succ_apply', lowerCentralSeries_succ]
       exact commutator_mem_commutator ih (mem_top _)
-  exact (ne_bot_iff_exists_ne_one).2
+  exact ne_bot_iff_exists_ne_one.2
     ⟨⟨_, hmem n⟩, fun h ↦ iterate_commutatorElement_ne_one hij n (congrArg Subtype.val h)⟩
 
-/-- **Free groups of rank at least two are not nilpotent.** -/
-theorem not_isNilpotent [Nontrivial X] : ¬ Group.IsNilpotent (FreeGroup X) := by
-  rw [Subgroup.nilpotent_iff_lowerCentralSeries]
-  rintro ⟨n, hn⟩
+/-- **A free group is nilpotent if and only if it has at most one generator.** -/
+@[simp]
+theorem isNilpotent_iff_subsingleton : Group.IsNilpotent (FreeGroup X) ↔ Subsingleton X := by
+  refine ⟨fun h ↦ not_nontrivial_iff_subsingleton.1 fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  obtain ⟨n, hn⟩ := nilpotent_iff_lowerCentralSeries.1 h
   exact lowerCentralSeries_ne_bot n hn
 
 end FreeGroup

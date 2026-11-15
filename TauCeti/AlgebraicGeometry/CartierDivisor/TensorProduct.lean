@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Tensor products of Cartier divisor line bundles
@@ -17,8 +17,9 @@ Multiplication of rational functions sends sections of `𝒪_X(D)` and `𝒪_X(E
 additive. A local equation of `E` trivializes the multiplication map: multiplication by the
 equation and its inverse give its local inverse.
 
-The multiplication isomorphism supplies the tensor law needed to construct the Picard group
-in `CartierDivisor/Picard.lean`.
+`CartierDivisor/Picard.lean` uses the isomorphism to prove that this class map is additive
+(`Scheme.CartierDivisor.toLineBundleClass_add`). The group structure on line-bundle classes is
+defined in `LineBundle/Class.lean`.
 
 ## Main declarations
 
@@ -163,10 +164,8 @@ lemma inv_localEquation_mem_sections :
 /-- An equation of `E` is a section of `𝒪_X(-E)` on its domain. -/
 lemma localEquation_mem_sections_neg :
     (Scheme.rationalFunctionsEquiv V).symm (g : X.functionField) ∈ (-E).sections V := by
-  have hneg : Scheme.rationalUnitClass X V (Additive.ofMul g⁻¹) = (-E) |_ V := by
-    rw [ofMul_inv, map_neg, hg]
-    simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_neg]
-  refine (mem_sections_iff_of_rationalUnitClass_eq le_rfl hneg).mpr ⟨1, ?_⟩
+  refine (mem_sections_iff_of_rationalUnitClass_eq le_rfl
+    (rationalUnitClass_inv_eq_neg_of_eq hg)).mpr ⟨1, ?_⟩
   simp
 
 variable (D : CartierDivisor X)
@@ -207,25 +206,14 @@ private def sectionsMulRetraction :
 /-- Multiplication by the local equation `g` retracts section multiplication. -/
 private theorem sectionsMulRetraction_sectionsMul (a : Γ(D.sheaf, V)) (b : Γ(E.sheaf, V)) :
     sectionsMulRetraction hg D (sectionsMul D E V a b) = a ⊗ₜ b := by
-  obtain ⟨r, hr⟩ : ∃ r : Γ(X, V), Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) V r =
+  -- `b` times the equation `g` of `E` is a regular function `r`
+  obtain ⟨r, hr⟩ := (mem_sections_iff_of_rationalUnitClass_eq le_rfl hg).mp (sheafι_app_mem E V b)
+  replace hr : Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) V r =
       Scheme.rationalFunctionsMulBilin X V (Scheme.Modules.Hom.app (sheafι E) V b)
-        ((Scheme.rationalFunctionsEquiv V).symm (g : X.functionField)) := by
-    have hzero : Scheme.rationalUnitClass X V (Additive.ofMul (1 : X.functionFieldˣ)) =
-        (0 : CartierDivisor X) |_ V := by
-      simp only [ofMul_one, map_zero, TopCat.Presheaf.restrictOpen,
-        TopCat.Presheaf.restrict]
-    have hmem : Scheme.rationalFunctionsMulBilin X V
-        (Scheme.Modules.Hom.app (sheafι E) V b)
-        ((Scheme.rationalFunctionsEquiv V).symm (g : X.functionField)) ∈
-        (0 : CartierDivisor X).sections V := by
-      simpa only [add_neg_cancel] using
-        rationalFunctionsMulBilin_mem_sections (sheafι_app_mem E V b)
-          (localEquation_mem_sections_neg hg)
-    obtain ⟨r, hr⟩ :=
-      (mem_sections_iff_of_rationalUnitClass_eq le_rfl hzero).mp hmem
-    simp only [Units.val_one, one_mul] at hr
-    exact ⟨r, (Scheme.rationalFunctionsEquiv V).injective
-      (by rw [Scheme.rationalFunctionsEquiv_toRationalFunctions_app]; exact hr)⟩
+        ((Scheme.rationalFunctionsEquiv V).symm (g : X.functionField)) :=
+    (Scheme.rationalFunctionsEquiv V).injective (by
+      rw [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, hr,
+        Scheme.rationalFunctionsEquiv_mulBilin, LinearEquiv.apply_symm_apply, mul_comm])
   have h1 : sectionMk _ (mul_localEquation_mem_sections hg D (sectionsMul D E V a b)) =
       r • a := by
     refine sheafι_app_injective D V ?_

@@ -69,7 +69,7 @@ private lemma correctedE2_slash (γ : SL(2, ℤ)) (hγ : γ ∈ Gamma0 t) :
   obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp hγ
   have H := _root_.EisensteinSeries.E2_slash_action γ
   have H' := _root_.EisensteinSeries.E2_slash_action (conjScale t γ c hc)
-  rw [SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at H H'
+  rw [SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at H H'
   rw [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash, H,
     slash_scaleGL_slash_mapGL _ γ hc, H']
   simp only [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash, ModularForm.smul_slash,
@@ -89,9 +89,9 @@ def correctedE2 : ModularForm ((Gamma0 t).map (mapGL ℝ)) 2 where
     have hle : (Gamma0 t).map (mapGL ℝ) ≤ 𝒮ℒ := by
       simpa [MonoidHom.range_eq_map] using Subgroup.map_mono (f := mapGL ℝ) (le_top (a := Gamma0 t))
     have hE := isBoundedAt_E2 (hc.mono hle)
-    have hscale := OnePoint.isBoundedAt_rat_slash (Γ := 𝒮ℒ) 2 (scaleGLRat t)
-      (fun _ hc ↦ isBoundedAt_E2 hc) (hc.mono hle)
-    rw [ModularForm.rat_slash, map_ratCast_scaleGLRat] at hscale
+    have hscale := OnePoint.isBoundedAt_rat_slash (Γ := 𝒮ℒ) 2
+      (HeckeRing.GLn.natDiagGL 2 ![t, 1]) (fun _ hc ↦ isBoundedAt_E2 hc) (hc.mono hle)
+    rw [ModularForm.rat_slash, map_natDiagGL_d_one_eq_scaleGL] at hscale
     exact fun g hg ↦ by
       simpa only [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash]
         using! (hE g hg).sub (hscale g hg)
@@ -134,7 +134,7 @@ theorem hasSum_correctedE2 (z : ℍ) :
       refine hE'.congr_fun fun n ↦ ?_
       simp only [Function.comp_apply, b, dvd_mul_right, ite_true,
         Nat.mul_div_right _ (Nat.pos_of_ne_zero (NeZero.ne t)), pow_mul,
-        qParam_one_scaleGL_smul]
+        qParam_scaleGL_smul]
   rw [correctedE2_apply]
   convert hE.sub (hscale.const_smul (t : ℂ)) using 1
   ext n
@@ -159,7 +159,7 @@ theorem qExpansion_coeff_correctedE2 (n : ℕ) :
       if n = 0 then 1 - (t : ℂ) else
         -24 * ((σ 1 n : ℂ) - if t ∣ n then t * (σ 1 (n / t) : ℂ) else 0) := by
   exact (ModularFormClass.qExpansion_coeff_unique one_pos
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma0]) (hasSum_correctedE2 t) n).symm
+    (one_mem_strictPeriods_Gamma0_map t) (hasSum_correctedE2 t) n).symm
 
 /-- At level one the correction vanishes. -/
 @[simp]
@@ -187,7 +187,7 @@ theorem correctedE2_mem_cuspFormSubmodule_iff :
   constructor
   · rintro ⟨f, hf⟩
     have H := CuspFormClass.qExpansion_coeff_zero f one_pos
-      (by simp [CongruenceSubgroup.strictPeriods_Gamma0])
+      (one_mem_strictPeriods_Gamma0_map t)
     have heq : (f : ℍ → ℂ) = ⇑(correctedE2 t) := by
       rw [← hf, CuspForm.toModularFormₗ_eq_coe, ModularFormClass.coe_modularForm]
     rw [heq] at H

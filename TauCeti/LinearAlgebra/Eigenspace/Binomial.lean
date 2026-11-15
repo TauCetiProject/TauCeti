@@ -60,7 +60,7 @@ private theorem pow_apply_of_apply_eq_smul {f : Module.End ℚ V} {v : V} {μ : 
     (h : f v = μ • v) : ∀ k : ℕ, (f ^ k) v = μ ^ k • v
   | 0 => by simp
   | k + 1 => by
-    rw [pow_succ, Module.End.mul_apply, h, map_smul, pow_apply_of_apply_eq_smul h k, smul_smul,
+    rw [pow_succ, mul_apply_eq_comp, h, map_smul, pow_apply_of_apply_eq_smul h k, smul_smul,
       ← pow_succ']
 
 private theorem smeval_apply_of_apply_eq_smul {f : Module.End ℚ V} {v : V} {μ : ℚ}
@@ -78,7 +78,7 @@ Both sides are `n !`-th multiples of the descending Pochhammer expression, which
 with integer coefficients and hence is evaluated on `v` by evaluating it at `μ`. -/
 theorem ringChoose_end_apply_of_apply_eq_smul {f : Module.End ℚ V} {v : V} {μ : ℚ}
     (h : f v = μ • v) (n : ℕ) : (Ring.choose f n) v = Ring.choose μ n • v := by
-  have : IsAddTorsionFree V := .of_module_rat V
+  have : HasUniqueDiv V := .of_module_rat V
   refine (nsmul_right_inj (Nat.factorial_ne_zero n)).mp ?_
   have hf : ((descPochhammer ℤ n).smeval f) v =
       n.factorial • ((Ring.choose f n : Module.End ℚ V) v) := by

@@ -133,4 +133,21 @@ theorem weight_two_mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTransla
     exact weight_two_constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne f c h
   · exact h c' hc'
 
+/-- **No weight-two form has the same nonzero constant term at every cusp.** If the constant
+terms of a weight-two form at all cusps agree, they vanish. -/
+theorem weight_two_eq_zero_of_forall_constantTermAt_eq {f : ModularForm 𝒢 2} {c : ℂ}
+    (h : ∀ γ : SL(2, ℤ), constantTermAt γ f = c) : c = 0 := by
+  classical
+  have hsum :=
+    weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero f
+  have hc (o : CuspTranslationOrbit 𝒢) :
+      TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f o = c := by
+    induction o using CuspTranslationOrbit.induction_on with
+    | h γ => rw [constantTermAtCuspTranslationOrbit_mk_mapGL, h]
+  simp only [hc, ← Finset.sum_mul] at hsum
+  refine (mul_eq_zero.mp hsum).resolve_left ?_
+  have o : CuspTranslationOrbit 𝒢 := ⟦QuotientGroup.mk 1⟧
+  exact_mod_cast (Finset.sum_pos (fun o _ ↦ NeZero.pos (cuspTranslationOrbitWidth o))
+    ⟨o, Finset.mem_univ _⟩).ne'
+
 end TauCeti.ModularForm

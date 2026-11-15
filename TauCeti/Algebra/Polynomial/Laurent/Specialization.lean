@@ -155,6 +155,20 @@ theorem map_comp (g : M →ₗ[R[T;T⁻¹]] P) (f : N →ₗ[R[T;T⁻¹]] M) :
   intro x
   simp
 
+/-- Specializing a bijective Laurent-linear map gives a bijective map: the specialization of its
+inverse is inverse to it. -/
+theorem map_bijective {f : N →ₗ[R[T;T⁻¹]] M} (hf : Function.Bijective f) :
+    Function.Bijective (map ε f) := by
+  let e := LinearEquiv.ofBijective f hf
+  have hl : (map ε e.symm.toLinearMap).comp (map ε f) = LinearMap.id := by
+    rw [← map_comp, show e.symm.toLinearMap.comp f = LinearMap.id from
+      LinearMap.ext e.symm_apply_apply, map_id]
+  have hr : (map ε f).comp (map ε e.symm.toLinearMap) = LinearMap.id := by
+    rw [← map_comp, show f.comp e.symm.toLinearMap = LinearMap.id from
+      LinearMap.ext e.apply_symm_apply, map_id]
+  exact Function.bijective_iff_has_inverse.2
+    ⟨map ε e.symm.toLinearMap, LinearMap.congr_fun hl, LinearMap.congr_fun hr⟩
+
 section Basis
 
 open scoped TensorProduct

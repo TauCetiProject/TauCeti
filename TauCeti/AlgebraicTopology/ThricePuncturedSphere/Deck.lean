@@ -48,6 +48,9 @@ deck group of every connected cover does (`TauCeti.Deck.fiber_stabilizer_eq_bot`
 * `TauCeti.ConnectedFiberNumberedCover.deckMulEquiv`: **the deck group of a numbered cover of `U`
   is the automorphism group of its triple**, with `coe_deckMulEquiv_apply` and
   `deckMulEquiv_symm_smul` recording which permutation corresponds to which deck transformation.
+* `IsCoveringMap.deckMulEquivAutomorphismGroup`: the same identification for a cover given by a
+  covering map with connected total space, in any universe, and a numbering of its fibre, against
+  its monodromy triple.
 * `TauCeti.ConnectedFiberNumberedCover.range_deckPerm_of_connectedTriple_eq_cyclicTriple`,
   `TauCeti.ConnectedFiberNumberedCover.range_deckPerm_of_connectedTriple_eq_torusTriple`: the deck
   actions of the two examples, with their cyclicity, their orders and their transitivity on the
@@ -194,5 +197,99 @@ theorem isPretransitive_deck_of_connectedTriple_eq_torusTriple :
 end Torus
 
 end ConnectedFiberNumberedCover
+
+/-! ### Covers given by a covering map
+
+The same identification for a cover given by an unbundled covering map `p : E → ℂ ∖ {0, 1}` with
+connected total space and a numbering `ν` of its fibre over `1/2`, stated against the monodromy
+triple `IsCoveringMap.monodromyTriple`. This is the form in which the covers attached to
+topological branched covers and to Belyi maps arise. The total space may live in any universe:
+monodromy along paths identifies every fibre with `Fin n`, so `E` is small, and the numbered
+cover is built on a homeomorphic copy of `E` in `Type`. -/
+
+section CoveringMap
+
+variable {E : Type*} [TopologicalSpace E] [ConnectedSpace E] {p : E → ThricePuncturedSphere}
+  (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n)
+
+omit [ConnectedSpace E] in
+include hp ν in
+/-- The total space of a cover of `ℂ ∖ {0, 1}` with finite fibre over `1/2` is small, since
+monodromy along a path identifies each fibre with the fibre over `1/2`. -/
+private theorem small_of_isCoveringMap : Small.{0} E := by
+  have (z : ThricePuncturedSphere) : Small.{0} {e // p e = z} :=
+    small_of_injective (f := fun e : {e // p e = z} ↦
+      ν (hp.monodromy (.mk (PathConnectedSpace.somePath z basePt)) ⟨e.1, e.2⟩))
+      fun e e' h ↦ Subtype.ext <| congrArg Subtype.val
+        ((hp.monodromy_bijective _).1 (ν.injective h))
+  exact small_of_surjective (Equiv.sigmaFiberEquiv p).surjective
+
+/-- A copy in `Type` of the total space of a cover. -/
+private noncomputable def model : TopCat.{0} :=
+  haveI := small_of_isCoveringMap hp ν
+  @TopCat.of (Shrink.{0} E) (.induced (equivShrink E).symm ‹_›)
+
+/-- The copy in `Type` of the total space of a cover is homeomorphic to it. -/
+private noncomputable def modelHomeomorph : model hp ν ≃ₜ E :=
+  haveI := small_of_isCoveringMap hp ν
+  @Equiv.toHomeomorphOfIsInducing (model hp ν) E _ _ (equivShrink E).symm ⟨rfl⟩
+
+/-- The numbered cover `(p, ν)`, on the copy in `Type` of the total space. -/
+private noncomputable def numberedCover :
+    ConnectedFiberNumberedCover (X := TopCat.of ThricePuncturedSphere) basePt n :=
+  haveI : ConnectedSpace (model hp ν) :=
+    (modelHomeomorph hp ν).symm.surjective.connectedSpace (modelHomeomorph hp ν).symm.continuous
+  ⟨ConnectedCoveringSpace.mk (TopCat.ofHom ⟨p ∘ modelHomeomorph hp ν,
+      hp.continuous.comp (modelHomeomorph hp ν).continuous⟩)
+      (hp.comp_homeomorph (modelHomeomorph hp ν)),
+    (Deck.fiberMap (modelHomeomorph hp ν) (fun _ ↦ rfl) basePt).toEquiv.trans ν⟩
+
+/-- The numbered cover on the copy in `Type` of the total space has the monodromy triple of
+`(p, ν)`. -/
+private theorem monodromyTriple_numberedCover :
+    (numberedCover hp ν).cover.isCoveringMap_proj.monodromyTriple (numberedCover hp ν).ν =
+      hp.monodromyTriple ν :=
+  ((numberedCover hp ν).cover.isCoveringMap_proj.monodromyTriple_eq_of_comp_eq
+    (numberedCover hp ν).ν hp ν ⟨modelHomeomorph hp ν, (modelHomeomorph hp ν).continuous⟩ rfl
+      fun e ↦ congrArg ν <| Subtype.ext <|
+        Function.fiberMap_apply_coe (modelHomeomorph hp ν) rfl basePt e).symm
+
+/-- **The deck group of a connected cover of `ℂ ∖ {0, 1}` is the automorphism group of its
+monodromy triple**, for a cover given by a covering map `p` with connected total space and a
+numbering `ν` of its fibre over `1/2`. A deck transformation goes to the permutation it induces on
+the labels (`IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply`). -/
+noncomputable def _root_.IsCoveringMap.deckMulEquivAutomorphismGroup :
+    deck p ≃* (hp.monodromyTriple ν).automorphismGroup :=
+  (Deck.conjMulEquiv (modelHomeomorph hp ν).symm fun e ↦
+      congrArg p ((modelHomeomorph hp ν).apply_symm_apply e)).trans <|
+    (numberedCover hp ν).deckMulEquiv.trans <| MulEquiv.subgroupCongr <|
+      congrArg automorphismGroup <|
+        (numberedCover hp ν).coe_connectedTriple.trans (monodromyTriple_numberedCover hp ν)
+
+/-- The automorphism of the monodromy triple attached to a deck transformation sends the label `i`
+to the label of the image of the point labelled `i`. -/
+@[simp]
+theorem _root_.IsCoveringMap.coe_deckMulEquivAutomorphismGroup_apply (φ : deck p) (i : Fin n) :
+    (hp.deckMulEquivAutomorphismGroup ν φ : Perm (Fin n)) i = ν (φ • ν.symm i) := by
+  refine ((numberedCover hp ν).deckPerm_apply _ i).trans (congrArg ν (Subtype.ext ?_))
+  -- The deck transformation acts on the copy in `Type` by conjugation, and the goal is not
+  -- type-correct at the transparency `rw` and `simp` use, so the steps are chained.
+  exact (Deck.fiberMap_apply_coe _ _ _).trans <|
+    (congrArg (modelHomeomorph hp ν) ((deck.fiber_smul_coe _ _).trans
+      (Deck.conjMulEquiv_apply_coe _ _ φ _))).trans <|
+    ((modelHomeomorph hp ν).apply_symm_apply _).trans <|
+    (congrArg (φ : E ≃ₜ E) ((modelHomeomorph hp ν).apply_symm_apply _)).trans
+      (deck.fiber_smul_coe φ _).symm
+
+/-- The deck transformation attached to an automorphism `τ` of the monodromy triple sends the
+point labelled `i` to the point labelled `τ i`. -/
+@[simp]
+theorem _root_.IsCoveringMap.deckMulEquivAutomorphismGroup_symm_smul
+    (τ : (hp.monodromyTriple ν).automorphismGroup) (i : Fin n) :
+    (hp.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i = ν.symm ((τ : Perm (Fin n)) i) := by
+  rw [← ν.symm_apply_apply ((hp.deckMulEquivAutomorphismGroup ν).symm τ • ν.symm i),
+    ← hp.coe_deckMulEquivAutomorphismGroup_apply, MulEquiv.apply_symm_apply]
+
+end CoveringMap
 
 end TauCeti

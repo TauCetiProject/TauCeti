@@ -1,0 +1,355 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+public import TauCeti.LinearAlgebra.BilinearForm.Modular
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+public import Mathlib.RingTheory.LocalRing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.LinearAlgebra.Submodule.Compl
+
+/-!
+# Bilinear forms over local rings
+
+This file records consequences of a unit Gram determinant or a perfect pairing over a local ring.
+A nonunit diagonal
+entry forces a unit off-diagonal entry in the same row. A symmetric perfect pairing splits off a
+binary perfect summand whenever a vector with nonunit self-pairing is taken to one by a functional.
+In rank at least two every symmetric perfect pairing splits off such a summand: either a basis
+vector has nonunit self-pairing, or two orthogonal vectors with unit self-pairings span one.
+
+## Main results
+
+* `LinearMap.BilinForm.exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det` finds
+  a unit off-diagonal entry from a nonunit diagonal entry.
+* `LinearMap.BilinForm.IsSymm.exists_mem_maximalIdeal_of_mem_span_pair`: a vector of the span of
+  a pair with unit mutual pairing and one self-pairing in `𝔪`, pairing into `𝔪` with the pair, has
+  coordinates in `𝔪`.
+* `LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one`
+  splits a binary perfect summand from a perfect pairing, given a vector with nonunit self-pairing
+  and a functional taking it to one.
+* `LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal` splits a perfect binary
+  summand from a symmetric perfect pairing of rank at least two.
+* `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal` splits off the span of a family with unit
+  Gram determinant, with a basis of the complement and the resulting factorization of the Gram
+  determinant.
+* `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det`: in particular,
+  the orthogonal complement of a vector with unit self-pairing in a unimodular form is unimodular.
+* `LinearMap.BilinForm.IsSymm.equivalent_of_equivalent_restrict_orthogonal` recombines two such
+  splittings with the same Gram matrix into an isometry.
+* `LinearMap.BilinForm.IsSymm.exists_orthogonal_isUnit_det_of_isModular`: in a modular form, a
+  block whose Gram matrix has unit determinant up to the modularity factor has an orthogonal
+  complementary family of the same kind.
+-/
+
+public section
+
+namespace LinearMap.BilinForm
+
+open LinearMap (BilinForm)
+open Module
+
+section Blocks
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {B : BilinForm R M} {C : BilinForm R N}
+
+/-- **Recombining blocks.** If families `v` in `M` and `v'` in `N` have the same Gram matrix `G` of
+unit determinant, and the restrictions of `B` and `C` to the orthogonal complements of their
+spans are isometric, then `B` and `C` are isometric. -/
+theorem IsSymm.equivalent_of_equivalent_restrict_orthogonal {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (hB : B.IsSymm) (hC : C.IsSymm) {v : ι → M} {v' : ι → N}
+    {G : Matrix ι ι R} (hG : ∀ i j, B (v i) (v j) = G i j) (hG' : ∀ i j, C (v' i) (v' j) = G i j)
+    (hdet : IsUnit G.det)
+    (hc : IsCompl (Submodule.span R (Set.range v))
+      (B.orthogonal (Submodule.span R (Set.range v))))
+    (hc' : IsCompl (Submodule.span R (Set.range v'))
+      (C.orthogonal (Submodule.span R (Set.range v'))))
+    (h : (B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).Equivalent
+      (C.restrict (C.orthogonal (Submodule.span R (Set.range v'))))) :
+    B.Equivalent C := by
+  set S := Submodule.span R (Set.range v)
+  set S' := Submodule.span R (Set.range v')
+  have hli := linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem
+    (fun i j ↦ by rw [one_mul, hG]) hdet
+  have hli' := linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem
+    (fun i j ↦ by rw [one_mul, hG']) hdet
+  -- The blocks spanned by `v` and `v'` are isometric, matching the two bases.
+  let φ : S ≃ₗ[R] S' := (Basis.span hli).equiv (Basis.span hli') (Equiv.refl _)
+  have hφ : (C.restrict S').compl₁₂ φ.toLinearMap φ.toLinearMap = B.restrict S :=
+    ext_basis (Basis.span hli) fun i j ↦ by
+      simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, φ, Basis.equiv_apply,
+        Equiv.refl_apply, restrict_apply]
+      simp [Basis.span_apply hli, Basis.span_apply hli', hG, hG']
+  have hS : (B.restrict S).Equivalent (C.restrict S') :=
+    ⟨{ toLinearEquiv := φ, map_app' := fun x y ↦ LinearMap.congr_fun₂ hφ x y }⟩
+  let P : Fin 2 → Submodule R M := ![S, B.orthogonal S]
+  let P' : Fin 2 → Submodule R N := ![S', C.orthogonal S']
+  have huniv : (Set.univ : Set (Fin 2)) = {0, 1} := by
+    ext i
+    fin_cases i <;> simp
+  refine equivalent_of_isInternal (N := P) (N' := P')
+    ((DirectSum.isInternal_submodule_iff_isCompl P zero_ne_one huniv).mpr hc)
+    ((DirectSum.isInternal_submodule_iff_isCompl P' zero_ne_one huniv).mpr hc') ?_ ?_ ?_
+  · intro i j hij x hx y hy
+    fin_cases i <;> fin_cases j
+    · exact absurd rfl hij
+    · exact hy x hx
+    · rw [hB.eq]
+      exact hx y hy
+    · exact absurd rfl hij
+  · intro i j hij x hx y hy
+    fin_cases i <;> fin_cases j
+    · exact absurd rfl hij
+    · exact hy x hx
+    · rw [hC.eq]
+      exact hx y hy
+    · exact absurd rfl hij
+  · intro i
+    fin_cases i
+    · exact hS
+    · exact h
+
+variable [IsLocalRing R]
+
+/-- **Splitting off a block.** If the Gram matrix `G` of a family `v` of `k` vectors has unit
+determinant, the span `S` of `v` is complementary to its orthogonal complement `T`. If `M` has a
+basis of size `m + k`, then `T` has a basis `t` of size `m`, and the Gram determinant of `B` is
+`w ^ 2 * det G * det (B|_T)` for a unit `w`. -/
+theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m k : ℕ}
+    (b : Basis (Fin (m + k)) R M) {v : Fin k → M} {G : Matrix (Fin k) (Fin k) R}
+    (hG : ∀ i j, B (v i) (v j) = G i j) (hdet : IsUnit G.det) :
+    IsCompl (Submodule.span R (Set.range v)) (B.orthogonal (Submodule.span R (Set.range v))) ∧
+      ∃ t : Basis (Fin m) R (B.orthogonal (Submodule.span R (Set.range v))), ∃ w : R,
+        IsUnit w ∧ (B.toMatrix b).det =
+          w ^ 2 * (G.det * ((B.restrict (B.orthogonal (Submodule.span R (Set.range v)))).toMatrix
+            t).det) := by
+  classical
+  set S := Submodule.span R (Set.range v)
+  set T := B.orthogonal S
+  have hG₁ : ∀ i j, B (v i) (v j) = 1 * G i j := fun i j ↦ by rw [one_mul, hG]
+  have hc : IsCompl S T := (isModular_restrict_span_range (nonZeroDivisors R).one_mem hG₁
+    hdet).isCompl_orthogonal (nonZeroDivisors R).one_mem fun _ _ ↦ one_dvd _
+  refine ⟨hc, ?_⟩
+  have hli : LinearIndependent R v :=
+    linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem hG₁ hdet
+  let s : Basis (Fin k) R S := Basis.span hli
+  have : Module.Free R M := .of_basis b
+  have : Module.Finite R M := .of_basis b
+  have : Module.Free R S := .of_basis s
+  have : Module.Finite R S := .of_basis s
+  obtain ⟨hTfin, hTfree⟩ := T.finite_free_of_isCompl hc.symm
+  have hT : finrank R T = m := by
+    have hrank := (S.prodEquivOfIsCompl T hc).finrank_eq
+    rw [Module.finrank_prod, finrank_eq_card_basis s, finrank_eq_card_basis b] at hrank
+    simp only [Fintype.card_fin] at hrank
+    omega
+  let t : Basis (Fin m) R T := Module.finBasisOfFinrankEq R T hT
+  refine ⟨t, ?_⟩
+  -- The basis adapted to `M = S ⊕ T` has a block-diagonal Gram matrix.
+  let c : Basis (Fin k ⊕ Fin m) R M := (s.prod t).map (S.prodEquivOfIsCompl T hc)
+  have hcl (i : Fin k) : c (Sum.inl i) = v i := by simp [c, s, Basis.span_apply hli i]
+  have hcr (j : Fin m) : c (Sum.inr j) = t j := by simp [c]
+  have hvT (i : Fin k) (j : Fin m) : B (v i) (t j) = 0 :=
+    (t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)
+  have hTv (j : Fin m) (i : Fin k) : B (t j) (v i) = 0 := by rw [← hB.eq, hvT]
+  have hblock : B.toMatrix c =
+      Matrix.fromBlocks G 0 0 ((B.restrict T).toMatrix t) := by
+    ext (i | i) (j | j) <;> simp [toMatrix_apply, hcl, hcr, hG, hvT, hTv]
+  let e : Fin k ⊕ Fin m ≃ Fin (m + k) := finSumFinEquiv.trans (finCongr (by omega))
+  let := c.invertibleToMatrix (b.reindex e.symm)
+  refine ⟨(c.toMatrix (b.reindex e.symm)).det, Matrix.isUnit_det_of_invertible _, ?_⟩
+  rw [← det_toMatrix_reindex b e.symm, det_toMatrix_eq_det_sq_mul_det c, hblock,
+    Matrix.det_fromBlocks_zero₂₁]
+
+/-- The orthogonal complement of a vector `x` with unit self-pairing, for a symmetric form whose
+Gram determinant in a basis of size `n + 1` is a unit, has a basis of size `n` in which the Gram
+determinant of the restricted form is a unit. -/
+theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B.IsSymm) {n : ℕ}
+    (b : Basis (Fin (n + 1)) R M) (hdet : IsUnit (B.toMatrix b).det) {x : M}
+    (hx : IsUnit (B x x)) :
+    ∃ t : Basis (Fin n) R (B.orthogonal (R ∙ x)),
+      IsUnit ((B.restrict (B.orthogonal (R ∙ x))).toMatrix t).det := by
+  let v : Fin 1 → M := fun _ ↦ x
+  let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
+  have hGdet : IsUnit G.det := by
+    rw [Matrix.det_fin_one]
+    exact hx
+  obtain ⟨_, t, _w, _hw, hdetT⟩ :=
+    hB.exists_basis_orthogonal (m := n) b (v := v) (fun _ _ ↦ rfl) hGdet
+  rw [hdetT] at hdet
+  have hTdet := isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
+  have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
+  exact hvspan ▸ ⟨t, hTdet⟩
+
+/-- **The complement of a block in a modular form.** Let `B` be an `a`-modular symmetric form on a
+finite free module over a local ring, with `a` a non-zero-divisor, and let `v` be a family whose
+Gram matrix is `a * A` with `A` of unit determinant. Then `v` together with a family `t` orthogonal
+to it spans the module, and the Gram matrix of `t` is `a * G` with `G` of unit determinant. -/
+theorem IsSymm.exists_orthogonal_isUnit_det_of_isModular [Module.Free R M] [Module.Finite R M]
+    (hB : B.IsSymm) {a : R} (ha : a ∈ nonZeroDivisors R) (hmod : B.IsModular a) {k : ℕ}
+    {v : Fin k → M} {A : Matrix (Fin k) (Fin k) R} (hA : ∀ i j, B (v i) (v j) = a * A i j)
+    (hdet : IsUnit A.det) :
+    ∃ (m : ℕ) (t : Fin m → M) (G : Matrix (Fin m) (Fin m) R),
+      (∀ i j, B (t i) (t j) = a * G i j) ∧ IsUnit G.det ∧ (∀ i j, B (v i) (t j) = 0) ∧
+        Submodule.span R (Set.range v) ⊔ Submodule.span R (Set.range t) = ⊤ := by
+  obtain ⟨C, rfl, hC⟩ := isModular_def.mp hmod
+  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
+  have hCs : C.IsSymm := ⟨fun x y ↦ hcan _ _ (by simpa using hB.eq x y)⟩
+  have hCA (i j : Fin k) : C (v i) (v j) = A i j := hcan _ _ (by simpa using hA i j)
+  -- Split off the span of `v` for the unimodular rescaling `C`, in a basis of size `m + k`.
+  have hk : k ≤ finrank R M := by
+    simpa using (linearIndependent_of_isUnit_det ha hA hdet).fintype_card_le_finrank
+  let b : Basis (Fin (finrank R M - k + k)) R M := Module.finBasisOfFinrankEq R M (by omega)
+  set S := Submodule.span R (Set.range v)
+  set T := C.orthogonal S
+  obtain ⟨hc, t, w, -, hdetb⟩ := hCs.exists_basis_orthogonal b hCA hdet
+  refine ⟨_, T.subtype ∘ t, (C.restrict T).toMatrix t, fun i j ↦ ?_, ?_, fun i j ↦ ?_, ?_⟩
+  · simp [toMatrix_apply]
+  · have hb : IsUnit (C.toMatrix b).det := b.isUnit_det_of_isPerfPair b C hC
+    rw [hdetb] at hb
+    exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hb)
+  · simp [(t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)]
+  · rw [Set.range_comp, ← Submodule.map_span, t.span_eq, Submodule.map_top, Submodule.range_subtype]
+    exact hc.sup_eq_top
+
+end Blocks
+
+variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
+  (B : BilinForm R M)
+
+/-- In a positive-rank unimodular form over a local ring, if the first basis vector has
+nonunit self-pairing, it pairs to a unit with a different basis vector. -/
+theorem exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det
+    {n : ℕ} (b : Basis (Fin (n + 1)) R M)
+    (hdiag : ¬ IsUnit (B (b 0) (b 0)))
+    (hdet : IsUnit (B.toMatrix b).det) :
+    ∃ i : Fin (n + 1), i.val ≠ 0 ∧
+      IsUnit (B (b 0) (b i)) := by
+  obtain ⟨j, _, hj⟩ := IsLocalRing.exists_of_isUnit_sum
+    (Matrix.det_succ_row_zero (B.toMatrix b) ▸ hdet)
+  have hu : IsUnit (B (b 0) (b j)) := by
+    simpa only [toMatrix_apply] using
+      isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_left hj)
+  have hj0 : j.val ≠ 0 := by
+    intro hj0
+    have hj0' : j = 0 := Fin.ext hj0
+    subst j
+    exact hdiag hu
+  exact ⟨j, hj0, hu⟩
+
+/-- In a symmetric form over a local ring where `2` is not a unit, two vectors have a unit Gram
+determinant if their mutual pairing is a unit and one self-pairing is divisible by `2`. -/
+theorem IsSymm.isUnit_pairGramDet_of_dvd_apply_self (hB : B.IsSymm) {x y : M}
+    (hxx2 : (2 : R) ∣ B x x) (h2 : ¬ IsUnit (2 : R))
+    (hxy : IsUnit (B x y)) :
+    IsUnit (!![B x x, B x y; B y x, B y y] : Matrix (Fin 2) (Fin 2) R).det := by
+  have hxx : B x x ∈ nonunits R := by
+    rw [mem_nonunits_iff]
+    exact fun h ↦ h2 (isUnit_of_dvd_unit hxx2 h)
+  have hdiag : B x x * B y y ∈ nonunits R := mul_mem_nonunits_left hxx
+  have hoff : IsUnit (B x y * B y x) := hxy.mul (hB.eq x y ▸ hxy)
+  have hunit : IsUnit (B x x * B y y - B x y * B y x) := by
+    by_contra hdet
+    have hneg : -(B x x * B y y - B x y * B y x) ∈ nonunits R := by
+      simpa only [mem_nonunits_iff, IsUnit.neg_iff] using hdet
+    have hnonunit := IsLocalRing.nonunits_add hdiag hneg
+    have hcancel : B x x * B y y + -(B x x * B y y - B x y * B y x) =
+        B x y * B y x := by
+      ring
+    rw [hcancel] at hnonunit
+    exact hnonunit hoff
+  simpa [Matrix.det_fin_two] using hunit
+
+variable {B} in
+/-- In a symmetric form over a local ring, let `e, f` have unit mutual pairing and `f` a
+self-pairing in the maximal ideal. A vector `s` of their span pairing into the maximal ideal with
+both `e` and `f` has both coordinates in the maximal ideal. -/
+theorem IsSymm.exists_mem_maximalIdeal_of_mem_span_pair (hB : B.IsSymm) {e f : M}
+    (h₁ : IsUnit (B e f)) (hf : B f f ∈ IsLocalRing.maximalIdeal R) {s : M}
+    (hs : s ∈ Submodule.span R {e, f}) (hse : B s e ∈ IsLocalRing.maximalIdeal R)
+    (hsf : B s f ∈ IsLocalRing.maximalIdeal R) :
+    ∃ α ∈ IsLocalRing.maximalIdeal R, ∃ β ∈ IsLocalRing.maximalIdeal R, s = α • e + β • f := by
+  set 𝔪 := IsLocalRing.maximalIdeal R
+  obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hs
+  have hfe : B f e = B e f := (hB.eq e f).symm
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hfe] at hse hsf
+  have hα : α ∈ 𝔪 := by
+    rw [← Ideal.mul_unit_mem_iff_mem 𝔪 h₁, show α * B e f = α * B e f + β * B f f - β * B f f by
+      ring]
+    exact 𝔪.sub_mem hsf (𝔪.mul_mem_left β hf)
+  have hβ : β ∈ 𝔪 := by
+    rw [← Ideal.mul_unit_mem_iff_mem 𝔪 h₁, show β * B e f = α * B e e + β * B e f - α * B e e by
+      ring]
+    exact 𝔪.sub_mem hse (𝔪.mul_mem_right _ hα)
+  exact ⟨α, hα, β, hβ, rfl⟩
+
+/-- A symmetric perfect pairing splits off a binary perfect pairing if some vector with nonunit
+self-pairing is taken to one by a linear functional. The summand is supplied with a basis and is
+complementary to its orthogonal complement. -/
+theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one
+    [B.IsPerfPair] (hB : B.IsSymm)
+    (x : M) (hx : ¬ IsUnit (B x x)) (f : Module.Dual R M) (hfx : f x = 1) :
+    ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
+      (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
+  classical
+  obtain ⟨w, hw⟩ := (LinearMap.IsPerfPair.bijective_left B).surjective f
+  have hxw : B x w = 1 := by rw [hB.eq, hw, hfx]
+  obtain ⟨hli, hmod⟩ := hB.linearIndependent_and_isModular_restrict_span_pair (one_mem _)
+    hxw (one_mul (B x x)).symm (one_mul (B w w)).symm
+    (fun h ↦ hx (isUnit_of_mul_isUnit_left h))
+  have hp := isModular_one_iff.mp hmod
+  exact ⟨_, ⟨Basis.span hli⟩, hp,
+    B.isCompl_orthogonal_of_restrict_bijective _ (hB.restrict _)
+      (LinearMap.IsPerfPair.bijective_left _)⟩
+
+/-- **Symmetric perfect pairings split off a perfect binary summand.** Over a local ring, a
+symmetric perfect pairing on a finite free module of rank at least two has a rank-two submodule
+which carries a perfect restriction of the form and is complementary to its orthogonal
+complement. Neither evenness nor any condition on `2` is needed. -/
+theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal [Module.Free R M] [Module.Finite R M]
+    [B.IsPerfPair] (hB : B.IsSymm) (hrank : 2 ≤ finrank R M) :
+    ∃ S : Submodule R M,
+      finrank R S = 2 ∧ (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
+  classical
+  suffices h : ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
+      (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) by
+    obtain ⟨S, ⟨c⟩, hS, hc⟩ := h
+    exact ⟨S, by simpa using Module.finrank_eq_card_basis c, hS, hc⟩
+  let b := Module.finBasisOfFinrankEq R M (Nat.sub_add_cancel hrank).symm
+  -- A basis vector with nonunit self-pairing lies in a binary summand.
+  by_cases h0 : IsUnit (B (b 0) (b 0))
+  swap
+  · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B (b 0) h0
+      (b.coord 0) (by simp)
+  -- Otherwise project `b 1` orthogonally to `b 0`; the projection has `b 1`-coordinate one.
+  obtain ⟨u, hu⟩ := h0
+  set x := b 1 - (↑u⁻¹ * B (b 0) (b 1)) • b 0
+  by_cases hx : IsUnit (B x x)
+  swap
+  · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B x hx
+      (b.coord 1) (by simp [x])
+  -- Both `b 0` and its orthogonal vector `x` have unit self-pairing: they span the summand.
+  have h0x : B (b 0) x = 0 := by
+    simp only [x, map_sub, map_smul, smul_eq_mul, ← hu]
+    rw [mul_right_comm, Units.inv_mul, one_mul, sub_self]
+  let v : Fin 2 → M := ![b 0, x]
+  let G : Matrix (Fin 2) (Fin 2) R := !![(u : R), 0; 0, B x x]
+  have hG (i j : Fin 2) : B (v i) (v j) = 1 * G i j := by
+    fin_cases i <;> fin_cases j <;> simp [v, G, hu, h0x, hB.eq x (b 0)]
+  have hdet : IsUnit G.det := by simpa [G, Matrix.det_fin_two] using u.isUnit.mul hx
+  have hmod := isModular_restrict_span_range (nonZeroDivisors R).one_mem hG hdet
+  exact ⟨_, ⟨Basis.span (linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem hG hdet)⟩,
+    isModular_one_iff.mp hmod,
+    hmod.isCompl_orthogonal (nonZeroDivisors R).one_mem fun _ _ ↦ one_dvd _⟩
+
+end LinearMap.BilinForm
+
+end

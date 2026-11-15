@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.RingEquiv
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
+public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
 # Restriction of scalars on `G₀(mod R)` along a finite ring homomorphism
@@ -21,9 +22,10 @@ therefore induces a homomorphism of exact Grothendieck groups
 f^* : G₀(mod S) →+ G₀(mod R),   [M] ↦ [M with scalars restricted along f],
 ```
 
-contravariantly functorial in `f`. Along a ring isomorphism it is the isomorphism
-`RingEquiv.finiteModulesK0Equiv`. The motivating instance is restriction of representations
-along a group homomorphism `H →* G` with `G` finite, where `k[G]` is finite over `k[H]`.
+contravariantly functorial in `f`. Along a ring isomorphism `e` it is the isomorphism
+`(ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).finiteModulesK0Equiv`. The motivating instance
+is restriction of representations along a group homomorphism `H →* G` with `G` finite, where `k[G]`
+is finite over `k[H]`.
 
 The finiteness hypothesis is stated as the finite generation of `S` itself over `R` through `f`.
 It is also necessary: restriction of scalars sends the finitely generated `S`-module `S` to a
@@ -49,7 +51,7 @@ The functor on finitely generated modules, `RingHom.finiteModulesRestrictScalars
   homomorphisms are functorial, with `RingHom.finiteModulesK0Restrict_id` and
   `RingHom.finiteModulesK0Restrict_comp` their forms for the literal identity and composite.
 * `RingEquiv.finiteModulesK0Restrict_toRingHom`: along a ring isomorphism the induced
-  homomorphism is `RingEquiv.finiteModulesK0Equiv`.
+  homomorphism is the isomorphism of the restriction-of-scalars equivalence.
 
 ## References
 
@@ -98,9 +100,10 @@ theorem finiteModulesK0Restrict_of (M : FGModuleCat.{u} S) :
 
 /-! ### Functoriality in the ring homomorphism
 
-As for `RingEquiv.finiteModulesK0Equiv`, functoriality is proved from the isomorphisms
-`ModuleCat.restrictScalarsId'App` and `ModuleCat.restrictScalarsComp'App` between restricted
-modules: isomorphic objects have the same class. The primed forms take an equation of ring
+As for ring isomorphisms (`TauCeti/Algebra/Category/ModuleCat/CartanMap/RingEquiv.lean`),
+functoriality is proved from the isomorphisms `ModuleCat.restrictScalarsId'App` and
+`ModuleCat.restrictScalarsComp'App` between restricted modules: isomorphic objects have the same
+class. The primed forms take an equation of ring
 homomorphisms, so they apply to ring homomorphisms that are only propositionally an identity or a
 composite, such as the maps of monoid algebras induced by an identity or a composite of monoid
 homomorphisms. -/
@@ -155,14 +158,15 @@ namespace RingEquiv
 
 variable {R S : Type u} [Ring R] [Ring S] (e : R ≃+* S)
 
-/-- Along a ring isomorphism, restriction of scalars on `G₀(mod S)` is the isomorphism
-`RingEquiv.finiteModulesK0Equiv`. -/
+/-- Along a ring isomorphism, restriction of scalars on `G₀(mod S)` is the isomorphism induced by
+the restriction-of-scalars equivalence `ModuleCat.restrictScalarsEquivalenceOfRingEquiv e`. -/
 theorem finiteModulesK0Restrict_toRingHom
     (hf : letI := e.toRingHom.toModule; Module.Finite R S) :
-    e.toRingHom.finiteModulesK0Restrict hf = e.finiteModulesK0Equiv.toAddMonoidHom :=
+    e.toRingHom.finiteModulesK0Restrict hf =
+      (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).finiteModulesK0Equiv.toAddMonoidHom :=
   ExactK0.hom_ext fun M ↦ by
     simp only [RingHom.finiteModulesK0Restrict_of, AddEquiv.coe_toAddMonoidHom,
-      finiteModulesK0Equiv_of]
+      Equivalence.finiteModulesK0Equiv_of]
     exact congrArg ExactK0.of (FullSubcategory.ext (by simp))
 
 end RingEquiv

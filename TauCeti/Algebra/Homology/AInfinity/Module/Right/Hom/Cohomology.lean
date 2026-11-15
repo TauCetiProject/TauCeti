@@ -26,6 +26,11 @@ This is the invariant inverted in the derived category of `A∞` modules.
 * `TauCeti.AInfinityRightModuleHom.IsQuasiIso.cohomologyLinearEquiv`: the resulting linear
   equivalence on cohomology.
 
+## Main results
+
+* `TauCeti.AInfinityRightModuleHom.isQuasiIso_iff`: the quasi-isomorphism condition in terms of
+  cycles, boundaries and the linear part.
+
 ## References
 
 * B. Keller, *Introduction to A-infinity algebras and modules*, Sections 4.1--4.2.
@@ -135,6 +140,38 @@ def IsQuasiIso (f : AInfinityRightModuleHom MM NN) : Prop :=
 bijective. -/
 theorem isQuasiIso_def (f : AInfinityRightModuleHom MM NN) :
     f.IsQuasiIso ↔ Function.Bijective f.cohomologyMap := Iff.rfl
+
+/-- A module morphism is a quasi-isomorphism exactly when its linear part detects boundaries on
+cycles (a cycle whose image is a boundary is itself a boundary), and every cycle of the target
+differs from the image of a cycle by a boundary.  This criterion only involves the differentials
+and the linear part. -/
+theorem isQuasiIso_iff (f : AInfinityRightModuleHom MM NN) :
+    f.IsQuasiIso ↔
+      (∀ x ∈ MM.cycles, f.linearPart x ∈ NN.boundaries → x ∈ MM.boundaries) ∧
+        ∀ y ∈ NN.cycles, ∃ x ∈ MM.cycles, y - f.linearPart x ∈ NN.boundaries := by
+  rw [isQuasiIso_def, Function.Bijective]
+  refine ⟨fun ⟨hi, hs⟩ ↦ ⟨fun x hx hfx ↦ ?_, fun y hy ↦ ?_⟩, fun ⟨hi, hs⟩ ↦ ⟨fun c c' h ↦ ?_,
+    fun c ↦ ?_⟩⟩
+  · rw [← MM.cohomologyClass_eq_zero_iff hx, ← MM.cohomologyClass_zero]
+    apply hi
+    rw [cohomologyMap_cohomologyClass, MM.cohomologyClass_zero, map_zero,
+      NN.cohomologyClass_eq_zero_iff]
+    exact hfx
+  · obtain ⟨c, hc⟩ := hs (NN.cohomologyClass hy)
+    obtain ⟨x, hx, rfl⟩ := MM.exists_cohomologyClass_eq c
+    rw [cohomologyMap_cohomologyClass, NN.cohomologyClass_eq_iff] at hc
+    exact ⟨x, hx, by simpa using NN.boundaries.neg_mem hc⟩
+  · obtain ⟨x, hx, rfl⟩ := MM.exists_cohomologyClass_eq c
+    obtain ⟨x', hx', rfl⟩ := MM.exists_cohomologyClass_eq c'
+    rw [cohomologyMap_cohomologyClass, cohomologyMap_cohomologyClass, NN.cohomologyClass_eq_iff,
+      ← map_sub] at h
+    rw [MM.cohomologyClass_eq_iff]
+    exact hi _ (MM.cycles.sub_mem hx hx') h
+  · obtain ⟨y, hy, rfl⟩ := NN.exists_cohomologyClass_eq c
+    obtain ⟨x, hx, hxy⟩ := hs y hy
+    refine ⟨MM.cohomologyClass hx, ?_⟩
+    rw [cohomologyMap_cohomologyClass, NN.cohomologyClass_eq_iff]
+    simpa using NN.boundaries.neg_mem hxy
 
 /-- The identity morphism of a right `A∞` module is a quasi-isomorphism. -/
 @[simp]

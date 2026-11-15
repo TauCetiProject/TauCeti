@@ -21,10 +21,9 @@ packaged as an integral Lie algebra automorphism. The characteristic equations s
 restriction and its inverse are the original ambient automorphism and its inverse on underlying
 vectors.
 
-This is the integral descent step used by the graph-automorphism lane of the pinned
-Chevalley--Demazure construction. The signs are essential: graph automorphisms need not carry every
-non-simple root vector with sign `+1`, while both signs are units over `ℤ` and hence preserve the
-lattice.
+This is the integral descent step for the graph automorphisms of the Chevalley--Demazure
+construction. The signs are essential: graph automorphisms need not carry every non-simple root
+vector with sign `+1`, while both signs are units over `ℤ` and hence preserve the lattice.
 
 ## Main declarations
 
@@ -38,11 +37,6 @@ lattice.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§25--27.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.1 and 12.2.
-
-This advances the pinning and pinned-isomorphism targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Those targets are consumed by milestones L0 and L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which require the explicit pinned ambient groups and their
-graph automorphisms.
 -/
 
 public section

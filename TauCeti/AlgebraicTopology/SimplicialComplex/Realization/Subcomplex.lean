@@ -177,7 +177,7 @@ theorem isClosedEmbedding_realizationMap (h : K ≤ L) :
     (realizationMap_injective h) ?_
   intro s hs
   apply isClosed_of_faceInclusion (P := K.toPreAbstractSimplicialComplex) h
-  · rintro x ⟨y, hy, rfl⟩
+  · rintro x ⟨y, _, rfl⟩
     simpa only [realizationMap_val, mem_toPreAbstractSimplicialComplex] using support_mem K y
   · intro σ hσ
     rw [← realizationMap_comp_faceInclusion h ⟨σ, hσ⟩, preimage_comp,

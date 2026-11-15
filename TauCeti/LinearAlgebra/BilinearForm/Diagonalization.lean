@@ -6,27 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import Mathlib.LinearAlgebra.Basis.SMul
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.RingTheory.LocalRing.Module
-import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Diagonalization of symmetric bilinear forms in every characteristic
 
-Over a commutative ring, an orthogonal basis reduces divisibility of all pairings to divisibility
-of its diagonal values. The hyperbolic plane can therefore have an orthogonal basis only when
-`2` is a unit. Over a local ring with `2` invertible, a pairing dividing every value can be
-replaced by a self-pairing with the same property.
+Over a commutative ring, an orthogonal basis gives a diagonal Gram matrix and reduces divisibility
+of all pairings to divisibility of its diagonal values. For a symmetric form with `2` invertible,
+it also identifies the associated quadratic form with the weighted sum of squares of its
+self-pairings. The hyperbolic plane can therefore have an orthogonal basis only when `2` is a
+unit. Over a local ring with `2` invertible, a pairing dividing every value can be replaced by a
+self-pairing with the same property. This is what gives a symmetric form with unit Gram
+determinant over such a ring an orthogonal basis with unit self-pairings
+(`LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det` in
+`TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing`).
 
 Over a field in which `2` is invertible, every symmetric bilinear form on a finite-dimensional
-space has an orthogonal basis (`LinearMap.BilinForm.exists_orthogonal_basis`). In characteristic
-two this fails: a nonzero alternating form is symmetric, and an orthogonal basis for it would make
-every basis pairing vanish, hence the whole form. This file shows that the alternating forms are
+space has an orthogonal basis (`LinearMap.BilinForm.exists_orthogonal_basis`); in matrix terms,
+every symmetric matrix is congruent to a diagonal one. In characteristic two this fails: a nonzero
+alternating form is symmetric, and an orthogonal basis for it would make every basis pairing
+vanish, hence the whole form. This file shows that the alternating forms are
 the only obstruction, in every characteristic: a symmetric form has an orthogonal basis if and
 only if it is zero or not alternating (`LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_iff`).
 
@@ -44,12 +50,39 @@ orthonormal basis when it is not
 where every form that is alternating is symmetric, this classifies the nondegenerate symmetric
 bilinear forms, which is the input to the normal forms of one-relator pro-`2` groups.
 
+Gram determinants transform by the square of the coordinate-map determinant. Consequently, the
+Gram determinants of equivalent bilinear forms differ by the square of a unit, and their product
+is a square, without symmetry or nondegeneracy assumptions. A linear map that carries one
+symmetric form to another only modulo `π ^ (j + 1)`, with `2 ∣ π`, still changes the Gram
+determinant by a square times a factor in `1 + 2πR`, provided the source form has a Gram matrix
+with a symmetric partner `H` satisfying `G * H = π ^ j • 1` and a parity condition holds. When
+`2` is invertible, symmetric bilinear forms are equivalent exactly when their associated quadratic
+forms are equivalent.
+
 ## Main results
 
-* `LinearMap.BilinForm.dvd_apply_of_forall_dvd_basis`,
-  `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from Gram entries or diagonal values.
+* `LinearMap.BilinForm.iIsOrtho.toMatrix_eq_diagonal`: the Gram matrix in an orthogonal basis
+  is the diagonal matrix of its self-pairings.
+* `LinearMap.BilinForm.iIsOrtho.equivalent_weightedSumSquares`: an orthogonal basis
+  identifies the associated quadratic form with a weighted sum of squares.
+* `LinearMap.BilinForm.det_toMatrix_comp`, `LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det`:
+  the Gram determinant under a linear map and under a change of basis.
+* `LinearMap.BilinForm.toMatrix_reindex`, `LinearMap.BilinForm.det_toMatrix_reindex`: reindexing
+  a basis reindexes the Gram matrix and keeps its determinant.
+* `LinearMap.BilinForm.Equivalent.exists_det_eq_unit_sq_mul_det`: equivalent forms have Gram
+  determinants differing by a unit square, in any finite bases with the same index type.
+* `LinearMap.BilinForm.Equivalent.isSquare_det_mul_det`: hence the product of their Gram
+  determinants is a square.
+* `LinearMap.BilinForm.IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub`: Gram determinants under
+  an approximate isometry agree up to a square and a factor in `1 + 2πR`.
+* `LinearMap.BilinForm.IsSymm.equivalent_iff_toQuadraticMap_equivalent`: when `2` is invertible,
+  equivalence of symmetric bilinear forms is equivalent to equivalence of their quadratic forms.
+* `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from diagonal values.
 * `LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`: an orthogonal basis of the
   hyperbolic plane forces `2` to be a unit.
+* `LinearMap.BilinForm.equivalent_toBilin'_diagonal_fin_two`: an orthogonal basis of a binary
+  diagonal form `⟨a, c⟩` identifies it with the diagonal form of its self-pairings, in every
+  characteristic.
 * `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with
   `2` a unit, a minimal pairing yields a minimal self-pairing.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero`: a symmetric form
@@ -62,30 +95,197 @@ bilinear forms, which is the input to the normal forms of one-relator pro-`2` gr
   form on `Fin n → K`, so any two of them of the same dimension are equivalent.
 * `LinearMap.BilinForm.Nondegenerate.exists_basis_toMatrix_eq_J_or_toMatrix_eq_one`: the
   symplectic-or-orthonormal dichotomy.
+* `Matrix.IsSymm.exists_isUnit_transpose_mul_mul_eq_diagonal`: when `2` is invertible in a field,
+  every symmetric matrix over it is congruent to a diagonal matrix.
 
 ## References
 
 * A. A. Albert, *Symmetric and alternate matrices in an arbitrary field, I*, Trans. Amer. Math.
   Soc. 43 (1938), 386–436.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, 92:1.
+* J. W. S. Cassels, *Rational Quadratic Forms*, Chapter 8.
 -/
 
 public section
 
 namespace LinearMap.BilinForm
 
+/-- The Gram matrix in an orthogonal basis is the diagonal matrix of the self-pairings. -/
+theorem iIsOrtho.toMatrix_eq_diagonal {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M}
+    {b : Module.Basis ι R M} (hb : B.iIsOrtho b) :
+    B.toMatrix b = Matrix.diagonal (fun i ↦ B (b i) (b i)) := by
+  ext i j
+  obtain rfl | hij := eq_or_ne i j
+  · simp [toMatrix_apply]
+  · simp [toMatrix_apply, iIsOrtho_def.mp hb i j hij, hij]
+
+/-- Along an orthogonal basis, a basis vector pairs with `x` through the coordinate of `x`. -/
+theorem iIsOrtho.apply_basis_left {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M} (hb : B.iIsOrtho b)
+    (i : ι) (x : M) : B (b i) x = b.repr x i * B (b i) (b i) := by
+  conv_lhs => rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply, Finsupp.sum,
+    map_sum]
+  simp_rw [map_smul, smul_eq_mul]
+  rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [iIsOrtho_def.mp hb i j hji.symm, mul_zero])
+    fun hi ↦ by rw [Finsupp.notMem_support_iff.mp hi, zero_mul]]
+
+/-- The Gram determinant in an orthogonal basis is the product of the self-pairings. -/
+theorem iIsOrtho.det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
+    (hb : B.iIsOrtho b) : (B.toMatrix b).det = ∏ i, B (b i) (b i) := by
+  rw [hb.toMatrix_eq_diagonal, Matrix.det_diagonal]
+
+/-- The Gram determinant in an orthogonal basis with unit self-pairings is a unit. -/
+theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] [DecidableEq ι] {B : LinearMap.BilinForm R M}
+    {b : Module.Basis ι R M} (hb : B.iIsOrtho b) (hbu : ∀ i, IsUnit (B (b i) (b i))) :
+    IsUnit (B.toMatrix b).det :=
+  hb.det_toMatrix ▸ IsUnit.prod_univ_iff.mpr hbu
+
+/-- The quadratic form of a bilinear form in an orthogonal basis is isometric to the diagonal
+form of its self-pairings. -/
+theorem iIsOrtho.equivalent_weightedSumSquares
+    {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
+    (hb : B.iIsOrtho b) :
+    B.toQuadraticMap.Equivalent
+      (QuadraticMap.weightedSumSquares R (fun i ↦ B (b i) (b i))) := by
+  refine ⟨{ b.equivFun with map_app' := fun x ↦ ?_ }⟩
+  have hx : B x x = ∑ i, b.repr x i * (b.repr x i * B (b i) (b i)) := by
+    calc B x x = B (∑ i, b.repr x i • b i) x := by rw [b.sum_repr]
+      _ = _ := by
+        rw [map_sum, LinearMap.sum_apply]
+        exact Finset.sum_congr rfl fun i _ ↦ by
+          rw [map_smul, LinearMap.smul_apply, hb.apply_basis_left, smul_eq_mul]
+  simp only [QuadraticMap.weightedSumSquares_apply, BilinMap.toQuadraticMap_apply, hx]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
+      smul_eq_mul]
+    ring
+
 open LinearMap (BilinForm)
 open Module
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
-/-- A common divisor of the Gram entries of a bilinear form in a basis divides every value of the
-form. -/
-theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
-    (hd : ∀ i j, d ∣ B (b i) (b j)) (x y : M) : d ∣ B x y := by
-  rw [← B.sum_repr_mul_repr_mul b x y]
-  refine Finset.dvd_sum fun i _ ↦ Finset.dvd_sum fun j _ ↦ ?_
-  simp only [smul_eq_mul]
-  exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
+/-- Pulling back a bilinear form along a linear map multiplies its Gram determinant by the
+square of the coordinate-map determinant. The source and target bases use the same arbitrary
+finite index type; no symmetry or nondegeneracy is required. -/
+theorem det_toMatrix_comp {N ι : Type*} [AddCommGroup N] [Module R N]
+    [Fintype ι] [DecidableEq ι] (b : Basis ι R M) (c : Basis ι R N)
+    (C : BilinForm R N) (f : M →ₗ[R] N) :
+    ((C.comp f f).toMatrix b).det =
+      (LinearMap.toMatrix b c f).det ^ 2 * (C.toMatrix c).det := by
+  rw [toMatrix_comp c b, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
+  ring
+
+/-- A change of basis multiplies the Gram determinant by the square of the basis-change
+matrix determinant. -/
+theorem det_toMatrix_eq_det_sq_mul_det {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b c : Basis ι R M) (B : BilinForm R M) :
+    (B.toMatrix c).det = (b.toMatrix c).det ^ 2 * (B.toMatrix b).det := by
+  simpa only [comp_id_id, LinearMap.toMatrix_id_eq_basis_toMatrix] using
+    det_toMatrix_comp c b B LinearMap.id
+
+/-- Reindexing a basis reindexes the Gram matrix along the same equivalence. -/
+theorem toMatrix_reindex {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+    (b : Basis ι R M) (e : ι ≃ κ) (B : BilinForm R M) :
+    B.toMatrix (b.reindex e) = Matrix.reindex e e (B.toMatrix b) := by
+  ext i j
+  simp [toMatrix_apply]
+
+/-- The Gram determinants of equivalent bilinear forms differ by the square of a unit. This
+holds over any commutative ring, including for singular and nonsymmetric forms, in any
+caller-provided finite bases with the same index type. -/
+theorem Equivalent.exists_det_eq_unit_sq_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
+    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
+    (b : Basis ι R M) (c : Basis ι R N) :
+    ∃ u : Rˣ, (B.toMatrix b).det = (u : R) ^ 2 * (C.toMatrix c).det := by
+  obtain ⟨e⟩ := h
+  have hform : B = C.comp e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap := by
+    ext x y
+    exact (e.map_app y x).symm
+  refine ⟨(e.toLinearEquiv.isUnit_det b c).unit, ?_⟩
+  conv_lhs => rw [hform]
+  rw [det_toMatrix_comp b c, IsUnit.unit_spec]
+
+/-- The product of Gram determinants of equivalent bilinear forms is a square. This holds over
+any commutative ring, including for singular and nonsymmetric forms, in any caller-provided
+finite bases with the same index type. -/
+theorem Equivalent.isSquare_det_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
+    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
+    (b : Basis ι R M) (c : Basis ι R N) :
+    IsSquare ((B.toMatrix b).det * (C.toMatrix c).det) := by
+  obtain ⟨u, hu⟩ := h.exists_det_eq_unit_sq_mul_det b c
+  exact ⟨u * (C.toMatrix c).det, by rw [hu]; ring⟩
+
+/-- Reindexing a basis does not change the Gram determinant. -/
+theorem det_toMatrix_reindex {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι']
+    [DecidableEq ι'] (b : Basis ι R M) (e : ι ≃ ι') (B : BilinForm R M) :
+    (B.toMatrix (b.reindex e)).det = (B.toMatrix b).det := by
+  rw [← Matrix.det_reindex_self e]
+  congr 1
+  ext
+  simp [toMatrix_apply]
+
+/-- **Gram determinants under approximate isometries.** Let `B` and `C` be symmetric, and let `b₀`
+be a finite basis of the domain of `C` whose Gram matrix times a symmetric matrix `H` is
+`π ^ j • 1`, where `π` is a non-zero-divisor with `2 ∣ π`. Let `φ` carry `C` to `B` modulo
+`π ^ (j + 1)`, and suppose that `H` has even diagonal or that `φ` also carries the self-pairings
+modulo `2 * π ^ (j + 1)`. Then in any bases of the same size, the Gram determinants `d` of `B` and
+`d'` of `C` satisfy `c ^ 2 * d = (1 + 2 π t) * d'` for some `c` and `t`. -/
+theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub {N : Type*}
+    [AddCommGroup N] [Module R N] {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
+    {π : R} (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {ι₀ : Type*} [Fintype ι₀] [DecidableEq ι₀]
+    (b₀ : Basis ι₀ R N) {j : ℕ} {H : Matrix ι₀ ι₀ R} (hH : C.toMatrix b₀ * H = π ^ j • 1)
+    (hHs : H.IsSymm) (φ : N →ₗ[R] M) (h₁ : ∀ x y, π ^ (j + 1) ∣ C x y - B (φ x) (φ y))
+    (hd : (∀ k, 2 ∣ H k k) ∨ ∀ x, 2 * π ^ (j + 1) ∣ C x x - B (φ x) (φ x))
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι R M) (b' : Basis ι R N) :
+    ∃ c t : R, c ^ 2 * (B.toMatrix b).det = (1 + 2 * π * t) * (C.toMatrix b').det := by
+  cases subsingleton_or_nontrivial R
+  · exact ⟨0, 0, Subsingleton.elim _ _⟩
+  have hπj : π ^ (j + 1) ∈ nonZeroDivisors R := pow_mem hπ (j + 1)
+  -- The pullback of `B` along `φ` is `G' - π ^ (j + 1) • E` for a symmetric matrix `E`.
+  choose E hE using fun k l ↦ h₁ (b₀ k) (b₀ l)
+  have hEs : (Matrix.of E).IsSymm := Matrix.IsSymm.ext fun k l ↦
+    (mul_cancel_left_mem_nonZeroDivisors hπj).mp <| by
+      rw [Matrix.of_apply, Matrix.of_apply, ← hE, ← hE, hB.eq (φ (b₀ k)), hC.eq (b₀ k)]
+  have hcomp : (B.comp φ φ).toMatrix b₀ = C.toMatrix b₀ - (π ^ j * π) • Matrix.of E := by
+    ext k l
+    rw [Matrix.sub_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← pow_succ, ← hE,
+      toMatrix_apply, toMatrix_apply, comp_apply, sub_sub_cancel]
+  -- `H` or `E` has even diagonal.
+  have hd' : (∀ k, 2 ∣ H k k) ∨ ∀ k, 2 ∣ Matrix.of E k k := by
+    refine hd.imp_right fun h₂ k ↦ ?_
+    obtain ⟨m, hm⟩ := hE k k ▸ h₂ (b₀ k)
+    exact ⟨m, (mul_cancel_left_mem_nonZeroDivisors hπj).mp <| by
+      rw [Matrix.of_apply, hm]
+      ring⟩
+  obtain ⟨t, ht⟩ := hHs.exists_det_sub_smul_eq_mul_det hEs hH (pow_mem hπ j) hd' h2
+  -- Compare with the given bases, reindexed along `ι ≃ ι₀`.
+  let e : ι ≃ ι₀ := b'.indexEquiv b₀
+  rw [← hcomp, det_toMatrix_comp b₀ (b.reindex e), det_toMatrix_reindex] at ht
+  refine ⟨(LinearMap.toMatrix b₀ (b.reindex e) φ).det * (b₀.toMatrix (b'.reindex e)).det, t, ?_⟩
+  rw [← det_toMatrix_reindex b' e, det_toMatrix_eq_det_sq_mul_det b₀ (b'.reindex e)]
+  linear_combination (b₀.toMatrix (b'.reindex e)).det ^ 2 * ht
+
+/-- When `2` is invertible, symmetric bilinear forms are equivalent exactly when their
+associated quadratic forms are equivalent. The underlying modules need not be finite or free. -/
+theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
+    {N : Type*} [AddCommGroup N] [Module R N] [Invertible (2 : R)]
+    {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm) :
+    B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
+  refine ⟨Equivalent.toQuadraticMap, ?_⟩
+  rintro ⟨f⟩
+  have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
+    ext x
+    exact (f.map_app x).symm
+  have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
+  rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
+    QuadraticMap.associated_left_inverse R hC.eq] at hassoc
+  exact ⟨{ toLinearEquiv := f.toLinearEquiv
+           map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
 /-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
 every value of the form. -/
@@ -108,9 +308,33 @@ theorem isUnit_two_of_iIsOrtho_toBilin'_hyperbolic {ι : Type*} {b : Basis ι R 
   simpa [Matrix.toBilin'_apply'] using
     hb.dvd_apply (fun i ↦ hd (b i)) (Pi.single 0 1) (Pi.single 1 1)
 
+/-- **Changing the orthogonal basis of a binary diagonal form.** If the vectors `(x, y)` and
+`(z, t)` are orthogonal for the diagonal form `⟨a, c⟩` on `R²` and form a basis, that is
+`x * t - y * z` is a unit, then `⟨a, c⟩` is isometric to the diagonal form of their self-pairings
+`a x² + c y²` and `a z² + c t²`.
+
+Over a ring in which `2` is not invertible, such as `ℤ_[2]`, this is the bilinear counterpart of
+the quadratic changes of variables `TauCeti.isometryEquivBinaryNormalForm` and
+`QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares`. -/
+theorem equivalent_toBilin'_diagonal_fin_two {a c a' c' x y z t : R}
+    (hdet : IsUnit (x * t - y * z)) (horth : a * x * z + c * y * t = 0)
+    (ha' : a * x ^ 2 + c * y ^ 2 = a') (hc' : a * z ^ 2 + c * t ^ 2 = c') :
+    (Matrix.toBilin' (Matrix.diagonal ![a, c])).Equivalent
+      (Matrix.toBilin' (Matrix.diagonal ![a', c'])) := by
+  let P : Matrix (Fin 2) (Fin 2) R := !![x, z; y, t]
+  have hP : IsUnit P.det := by rwa [Matrix.det_fin_two_of, mul_comm z y]
+  -- The coordinate change `v ↦ P v` carries `⟨a', c'⟩` to `⟨a, c⟩`.
+  refine Equivalent.symm ⟨⟨Matrix.toLinearEquiv' P (P.invertibleOfIsUnitDet hP), fun u v ↦ ?_⟩⟩
+  subst ha' hc'
+  simp only [Matrix.toLinearEquiv'_apply, AddHom.toFun_eq_coe, coe_toAddHom, Matrix.toLin'_apply,
+    Matrix.cons_mulVec, dotProduct, Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.empty_mulVec, Matrix.toBilin'_apply',
+    Matrix.mulVec, Matrix.diagonal_apply_eq, ne_eq, zero_ne_one, not_false_eq_true,
+    Matrix.diagonal_apply_ne, zero_mul, add_zero, one_ne_zero, zero_add, P]
+  linear_combination (u 0 * v 1 + u 1 * v 0) * horth
+
 /-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
-divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
-`B (u + w) (u + w)`. -/
+divides every value of the form, then so does some self-pairing `B x x`. -/
 theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
     (hB : B.IsSymm) (h2 : IsUnit (2 : R)) {u w : M} (h : ∀ y z, B u w ∣ B y z) :
     ∃ x, ∀ y z, B x x ∣ B y z := by
@@ -121,14 +345,9 @@ theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
   by_cases htu : IsUnit t
   · exact ⟨w, fun y z ↦ (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl).trans (h y z)⟩
   -- Both `s` and `t` lie in the maximal ideal, so `s + t + 2` is a unit.
-  have hunit : IsUnit (s + t + 2) := by
-    by_contra hn
-    refine (mem_nonunits_iff.mp ?_) h2
-    have := IsLocalRing.nonunits_add (IsLocalRing.nonunits_add hn
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff s).not.mpr hsu)))
-      (mem_nonunits_iff.mpr ((IsUnit.neg_iff t).not.mpr htu))
-    have hsum : s + t + 2 + -s + -t = (2 : R) := by ring
-    rwa [hsum] at this
+  have hunit : IsUnit (s + t + 2) := add_comm 2 (s + t) ▸ TauCeti.isUnit_add_of_isUnit_of_not_isUnit
+    h2 (mem_nonunits_iff.mp
+      (IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hsu) (mem_nonunits_iff.mpr htu)))
   have huw : B (u + w) (u + w) = B u w * (s + t + 2) := by
     simp only [map_add, LinearMap.add_apply, hs, ht, hB.eq w u]
     ring
@@ -150,8 +369,8 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   obtain ⟨u, w, huw⟩ : ∃ u w : B.orthogonal (K ∙ x), B u w ≠ 0 := by
     by_contra! h
     exact hne (LinearMap.ext fun u => LinearMap.ext fun w => by simpa using h u w)
-  have hxu : B x u = 0 := (mem_orthogonal_span_singleton_iff B).1 u.2
-  have hxw : B x w = 0 := (mem_orthogonal_span_singleton_iff B).1 w.2
+  have hxu : B x u = 0 := by simpa [orthogonal] using u.2
+  have hxw : B x w = 0 := by simpa [orthogonal] using w.2
   have huu : B u u = 0 := by simpa using halt u
   have hww : B w w = 0 := by simpa using halt w
   set z := x + u with hz
@@ -159,8 +378,7 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   have hzw : B z w = B u w := by simp [hz, hxw]
   refine ⟨z, hzz ▸ hx, fun halt' => huw ?_⟩
   obtain ⟨c, hc⟩ : ∃ c, c * B z z = B z w := ⟨B z w / B z z, div_mul_cancel₀ _ (hzz ▸ hx)⟩
-  have hw' : w - c • z ∈ B.orthogonal (K ∙ z) :=
-    (mem_orthogonal_span_singleton_iff B).2 (by simp [hc])
+  have hw' : w - c • z ∈ B.orthogonal (K ∙ z) := by simp [orthogonal, hc]
   have h0 : B w w - c * B z w - c * (B z w - c * B z z) = 0 := by
     simpa [hB.eq w z] using halt' ⟨w - c • z, hw'⟩
   have hcb : c * B z w = 0 := by linear_combination -h0 + c * hc + hww
@@ -202,12 +420,12 @@ theorem IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero (hB : B.IsSymm)
       hB.exists_apply_self_ne_zero_and_restrict_orthogonal_isAlt_imp_eq_zero
         fun halt => hB₀ (h halt)
     have hd' : finrank K (B.orthogonal (K ∙ x)) = d := by
-      rw [← Submodule.finrank_add_eq_of_isCompl (isCompl_span_singleton_orthogonal hx).symm,
-        finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx)] at hd
+      have hdim := B.finrank_orthogonal_span_singleton_add_one hx
       omega
     obtain ⟨v, hv⟩ := ih (hB.restrict _) hW hd'
-    exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    obtain ⟨b, hb, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
       (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ (Ne.isUnit hx).dvd) hv
+    exact ⟨b, hb⟩
 
 /-- **A symmetric bilinear form has an orthogonal basis if and only if it is zero or not
 alternating.** The forward direction is the observation that an orthogonal basis of an alternating
@@ -274,3 +492,22 @@ theorem Nondegenerate.exists_basis_toMatrix_eq_J_or_toMatrix_eq_one (hsq : ∀ a
 end Field
 
 end LinearMap.BilinForm
+
+open scoped Matrix in
+/-- **A symmetric matrix over a field in which `2` is invertible is congruent to a diagonal
+matrix**: `Pᵀ * A * P` is diagonal for some invertible `P`. This is the matrix form of
+`LinearMap.BilinForm.exists_orthogonal_basis`. -/
+theorem Matrix.IsSymm.exists_isUnit_transpose_mul_mul_eq_diagonal {K n : Type*} [Field K]
+    [Invertible (2 : K)] [Fintype n] [DecidableEq n] {A : Matrix n n K} (hA : A.IsSymm) :
+    ∃ (P : Matrix n n K) (d : n → K), IsUnit P ∧ Pᵀ * A * P = Matrix.diagonal d := by
+  obtain ⟨v, hv⟩ := LinearMap.BilinForm.exists_orthogonal_basis
+    (LinearMap.BilinForm.isSymm_iff.mp (Matrix.isSymm_toBilin'_iff_isSymm.mpr hA))
+  -- Index the orthogonal basis by `n`, so that its coordinate matrix is square.
+  let w := v.reindex (v.indexEquiv (Pi.basisFun K n))
+  have hw : A.toBilin'.iIsOrtho w := fun i j hij ↦ by
+    simpa only [Function.onFun, w, Module.Basis.reindex_apply] using
+      hv ((v.indexEquiv (Pi.basisFun K n)).symm.injective.ne hij)
+  have key := LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (Pi.basisFun K n) w A.toBilin'
+  rw [LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin',
+    hw.toMatrix_eq_diagonal] at key
+  exact ⟨_, _, @isUnit_of_invertible _ _ _ ((Pi.basisFun K n).invertibleToMatrix w), key⟩

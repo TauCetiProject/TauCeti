@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Algebra.Group.Conj
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.RingTheory.MvPolynomial.Finrank
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
 import Mathlib.Algebra.Group.Units.Opposite
 import Mathlib.RingTheory.Localization.FractionRing
@@ -24,6 +25,8 @@ has trace `dickson 2 (det M) w` evaluated at `trace M`, over any commutative rin
 The formula includes matrices with a repeated eigenvalue and does not require diagonalizability.
 Traces of substitution also commute with changes of coefficient ring, allowing this calculation
 to descend to fields over which the eigenvalues do not lie.
+The coefficient formula, compatibility with coefficient changes, and conjugacy invariance
+hold over any commutative semiring.
 
 These are the weight polynomials in the elliptic and hyperbolic terms of the
 Eichler--Selberg trace formula.
@@ -44,16 +47,12 @@ universe u
 
 /-- The trace of substitution is the sum of the coefficients of each degree-`w` monomial in
 its own image. -/
-theorem trace_linearSubstRep_eq_sum {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommRing R]
+theorem trace_linearSubstRep_eq_sum {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring R]
     (w : ℕ) (M : Matrix σ σ R) :
     LinearMap.trace R (homogeneousSubmodule σ R w) (linearSubstRep σ R w (op M)) =
       ∑ s ∈ (Finset.univ : Finset σ).finsuppAntidiag w,
         (linearSubst M (monomial s 1)).coeff s := by
   classical
-  have : Fintype {s : σ →₀ ℕ // s.degree = w} :=
-    Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = w})
-      ((Finset.univ : Finset σ).finsuppAntidiag w) (fun s ↦ by
-        simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
   rw [LinearMap.trace_eq_matrix_trace R (homogeneousMonomialBasis (R := R) w), Matrix.trace]
   simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, homogeneousMonomialBasis_repr_apply,
     coe_linearSubstRep_apply, unop_op, coe_homogeneousMonomialBasis]
@@ -61,9 +60,9 @@ theorem trace_linearSubstRep_eq_sum {σ R : Type*} [Fintype σ] [DecidableEq σ]
     (by simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
     (fun s ↦ (linearSubst M (monomial s 1)).coeff s)).symm
 
-/-- Changing the coefficient ring commutes with the trace of homogeneous substitution. -/
+/-- Changing coefficients commutes with the trace of homogeneous substitution. -/
 theorem map_trace_linearSubstRep {σ R S : Type*} [Fintype σ] [DecidableEq σ]
-    [CommRing R] [CommRing S] (w : ℕ) (f : R →+* S) (M : Matrix σ σ R) :
+    [CommSemiring R] [CommSemiring S] (w : ℕ) (f : R →+* S) (M : Matrix σ σ R) :
     f (LinearMap.trace R (homogeneousSubmodule σ R w) (linearSubstRep σ R w (op M))) =
       LinearMap.trace S (homogeneousSubmodule σ S w)
         (linearSubstRep σ S w (op (M.map f))) := by
@@ -71,10 +70,7 @@ theorem map_trace_linearSubstRep {σ R S : Type*} [Fintype σ] [DecidableEq σ]
   apply Finset.sum_congr rfl
   intro s _
   rw [← MvPolynomial.coeff_map]
-  simp only [linearSubst_eq_aeval, aeval_def, algebraMap_eq, map_eval₂, map_monomial, map_one]
-  congr 3
-  funext i
-  simp
+  simp only [map_linearSubst, map_monomial, map_one]
 
 /-- Substitution on binary forms by an upper-triangular matrix has Dickson trace,
 independently of its upper-right entry. -/
@@ -99,7 +95,7 @@ theorem trace_linearSubstRep_upperTriangular {R : Type*} [CommRing R]
 
 /-- The trace of homogeneous substitution is unchanged by conjugating the matrix. -/
 theorem trace_linearSubstRep_eq_of_isConj {σ R : Type*} [Fintype σ] [DecidableEq σ]
-    [CommRing R] (w : ℕ) {M N : Matrix σ σ R} (h : IsConj M N) :
+    [CommSemiring R] (w : ℕ) {M N : Matrix σ σ R} (h : IsConj M N) :
     LinearMap.trace R (homogeneousSubmodule σ R w) (linearSubstRep σ R w (op M)) =
       LinearMap.trace R (homogeneousSubmodule σ R w) (linearSubstRep σ R w (op N)) := by
   obtain ⟨P, hP⟩ := h

@@ -29,8 +29,9 @@ same local description to be used for translated polygon tiles.
 At a finite vertex `z` the sector is an angular sector: measuring oriented angles at `z` from the
 ray towards the next vertex, the ray towards the previous vertex sits at the interior angle, and a
 point `w ≠ z` lies in the sector exactly when its oriented angle lies between `0` and the interior
-angle. The interior angle at a finite vertex is therefore strictly between `0` and `π`. This
-angular description is what lets sectors around a vertex be added up in Poincaré's polygon
+angle, and in its interior exactly when the oriented angle lies strictly between them. The
+interior angle at a finite vertex is therefore strictly between `0` and `π`. This angular
+description is what lets sectors around a vertex be added up in Poincaré's polygon
 theorem.
 
 ## Main results
@@ -39,12 +40,18 @@ theorem.
   with its vertex sector.
 * `ConvexPolygon.orientedAngle_rayToward_vertex_eq_interiorAngle`: the oriented angle at a finite
   vertex from the outgoing to the incoming ray is the interior angle.
-* `ConvexPolygon.mem_vertexSector_iff_toReal_orientedAngle_mem_Icc`: the sector at a finite
-  vertex in angular coordinates.
-* `ConvexPolygon.mem_vertexSector_iff_of_vertex_eq_inr_infty`: the sector at a vertex at `∞` is
-  a vertical strip.
+* `ConvexPolygon.mem_vertexSector_iff_toReal_orientedAngle_mem_Icc`,
+  `ConvexPolygon.mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo`: the sector at a
+  finite vertex and its interior in angular coordinates.
+* `ConvexPolygon.mem_vertexSector_iff_of_vertex_eq_inr_infty`,
+  `ConvexPolygon.mem_interior_vertexSector_iff_of_vertex_eq_inr_infty`: the sector at a vertex
+  at `∞` is a closed vertical strip, and its interior is the open strip.
 * `ConvexPolygon.eventuallyEq_carrier_vertexSector_atImInfty`: near a vertex at `∞`, the polygon
   is that strip.
+* `ConvexPolygon.eventually_forall_mem_side_atImInfty`: near a vertex at `∞`, the only sides are
+  the two incident to it.
+* `ConvexPolygon.not_isCompact_carrier_of_vertex_eq_inr`: a polygon with an ideal vertex is not
+  compact.
 
 ## References
 
@@ -63,7 +70,7 @@ variable {n : ℕ} [NeZero n] (P : ConvexPolygon n)
 
 /-- The closed sector bounded by the incoming and outgoing supporting geodesics at vertex `j`.
 At a finite vertex this is the local polygon piece. -/
-def vertexSector (j : Fin n) : Set ℍ :=
+noncomputable def vertexSector (j : Fin n) : Set ℍ :=
   closure (leftHalfPlane (P.sideGeodesic (j - 1))) ∩
     closure (leftHalfPlane (P.sideGeodesic j))
 
@@ -97,6 +104,14 @@ theorem mem_interior_vertexSector_iff (j : Fin n) (z : ℍ) :
     z ∈ interior (P.vertexSector j) ↔ z ∈ leftHalfPlane (P.sideGeodesic (j - 1)) ∧
       z ∈ leftHalfPlane (P.sideGeodesic j) := by
   rw [interior_vertexSector, mem_inter_iff]
+
+/-- A finite vertex lies on the boundary of its sector: it is on the outgoing side, so it is not
+strictly to the left of that side. -/
+theorem notMem_interior_vertexSector {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z) :
+    z ∉ interior (P.vertexSector j) := fun h ↦
+  (disjoint_leftHalfPlane_range_geodesicLine (P.sideGeodesic j)).notMem_of_mem_left
+    ((P.mem_interior_vertexSector_iff j z).1 h).2
+    (P.side_subset_range_sideGeodesic j (P.mem_side_of_vertex_eq_inl hz))
 
 /-- The polygon is contained in each of its vertex sectors. -/
 theorem carrier_subset_vertexSector (j : Fin n) : P.carrier ⊆ P.vertexSector j :=
@@ -161,9 +176,25 @@ theorem mem_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n} (hj : P.vertex j
   rw [hj] at hnext
   rw [mem_vertexSector_iff, mem_closure_leftHalfPlane_iff_sideForm_nonpos,
     mem_closure_leftHalfPlane_iff_sideForm_nonpos,
-    hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
-    hnext.sideForm_eq_of_inr_infty_left (hj ▸ P.vertex_ne_vertex_add_one j).symm, coe_re,
+    hprev.sideForm_eq_of_inr_infty_right,
+    hnext.sideForm_eq_of_inr_infty_left, coe_re,
     sub_nonpos, sub_nonpos, and_comm]
+
+/-- At a vertex at `∞`, the interior of the sector is the open vertical strip between the
+verticals through the next and the previous vertex. -/
+theorem mem_interior_vertexSector_iff_of_vertex_eq_inr_infty {j : Fin n}
+    (hj : P.vertex j = .inr ∞) (z : ℍ) :
+    z ∈ interior (P.vertexSector j) ↔ (toComplex (P.vertex (j + 1))).re < z.re ∧
+      z.re < (toComplex (P.vertex (j - 1))).re := by
+  have hprev := P.isGeodesicFromTo_sideGeodesic (j - 1)
+  have hnext := P.isGeodesicFromTo_sideGeodesic j
+  rw [sub_add_cancel, hj] at hprev
+  rw [hj] at hnext
+  rw [mem_interior_vertexSector_iff, mem_leftHalfPlane_iff_sideForm_neg,
+    mem_leftHalfPlane_iff_sideForm_neg,
+    hprev.sideForm_eq_of_inr_infty_right,
+    hnext.sideForm_eq_of_inr_infty_left, coe_re,
+    sub_neg, sub_neg, and_comm]
 
 /-- At a vertex at `∞`, the vertical through the next vertex lies strictly to the left of the
 vertical through the previous vertex, so the sector there is a strip of positive width. -/
@@ -176,7 +207,7 @@ theorem re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty {j : Fin n}
     (hj ▸ (P.vertex_ne_vertex_add_one j).symm)
     (fun h ↦ add_one_add_one_ne_self P.three_le j (by rw [h, sub_add_cancel]))
     (fun h ↦ P.vertex_ne_vertex_add_one j (by rw [sub_add_cancel] at h; rw [h]))
-  rwa [hprev.sideForm_eq_of_inr_infty_right (hj ▸ P.vertex_ne_vertex_sub_one j).symm,
+  rwa [hprev.sideForm_eq_of_inr_infty_right,
     sub_neg] at h
 
 /-- Near an ideal vertex at `∞`, the polygon agrees with the vertical strip of its vertex sector:
@@ -186,6 +217,63 @@ theorem eventuallyEq_carrier_vertexSector_atImInfty {j : Fin n} (hj : P.vertex j
   refine P.eventuallyEq_carrier_vertexSector_of_eventually fun i hi ↦ ?_
   rw [hj, inr_mem_extLeftHalfPlane_iff] at hi
   exact eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hi
+
+/-- The interior of a polygon with a vertex at infinity meets every horodisc at infinity. -/
+theorem exists_mem_interior_carrier_im_gt_of_vertex_eq_inr_infty {j : Fin n}
+    (hj : P.vertex j = .inr ∞) (A : ℝ) :
+    ∃ z ∈ interior P.carrier, A < z.im := by
+  obtain ⟨B, hB⟩ := (atImInfty_mem _).1
+    (P.eventuallyEq_carrier_vertexSector_atImInfty hj).mem_iff
+  let t : ℝ := max (max A B) 0 + 1
+  have ht : 0 < t := by dsimp [t]; linarith [le_max_right (max A B) 0]
+  let w : ℍ := ⟨(toComplex (P.vertex (j + 1))).re + t * Complex.I, by simpa using ht⟩
+  have hwim : w.im = t := by simp [w]
+  have hwA : A < w.im := by
+    rw [hwim]
+    dsimp [t]
+    linarith [le_max_left A B, le_max_left (max A B) 0]
+  have hwB : B ≤ w.im := by
+    rw [hwim]
+    dsimp [t]
+    linarith [le_max_right A B, le_max_left (max A B) 0]
+  have hwP : w ∈ P.carrier := (hB w hwB).2
+    ((P.mem_vertexSector_iff_of_vertex_eq_inr_infty hj w).2
+      ⟨by simp [w], by simpa [w] using
+        (P.re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty hj).le⟩)
+  -- The closed strip gives a point of the tile; the open horodisc also meets its interior.
+  rw [← P.closure_interior_carrier] at hwP
+  obtain ⟨z, hzA, hzP⟩ := mem_closure_iff.1 hwP {z : ℍ | A < z.im}
+    (isOpen_lt continuous_const UpperHalfPlane.continuous_im) hwA
+  exact ⟨z, hzP, hzA⟩
+
+/-- Near an ideal vertex at `∞`, the only sides of the polygon are the two incident to it: above
+some height, a point of side `i` has `i = j - 1` or `i = j`. -/
+theorem eventually_forall_mem_side_atImInfty {j : Fin n} (hj : P.vertex j = .inr ∞) :
+    ∀ᶠ w in atImInfty, ∀ i, w ∈ P.side i → i = j - 1 ∨ i = j := by
+  refine Filter.eventually_all.2 fun i ↦ ?_
+  by_cases hi : i = j - 1 ∨ i = j
+  · exact .of_forall fun _ _ ↦ hi
+  -- a nonincident side lies on a semicircle with `∞` strictly on its left
+  have hv := P.vertex_mem_extLeftHalfPlane_sideGeodesic (Ne.symm (not_or.mp hi).2)
+    fun h ↦ (not_or.mp hi).1 (by rw [h]; simp)
+  rw [hj, inr_mem_extLeftHalfPlane_iff] at hv
+  filter_upwards [eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hv] with w hw hwi
+  exact (disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _) hw
+    (P.side_subset_range_sideGeodesic i hwi)).elim
+
+/-- A convex polygon with an ideal vertex is not compact. -/
+theorem not_isCompact_carrier_of_vertex_eq_inr {j : Fin n} {ξ : OnePoint ℝ}
+    (hj : P.vertex j = .inr ξ) : ¬IsCompact P.carrier := by
+  intro hc
+  -- move the ideal vertex to `∞`, where the interior reaches arbitrarily high
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) ξ (∞ : OnePoint ℝ)
+  have hQ : (g • P).vertex j = .inr ∞ := by rw [vertex_smul, hj, Sum.smul_inr, hg]
+  have hc' : IsCompact (g • P).carrier := by
+    rw [carrier_smul]
+    exact hc.smul g
+  obtain ⟨B, hB⟩ := (hc'.image UpperHalfPlane.continuous_im).bddAbove
+  obtain ⟨z, hz, hBz⟩ := (g • P).exists_mem_interior_carrier_im_gt_of_vertex_eq_inr_infty hQ B
+  exact (hBz.trans_le (hB (mem_image_of_mem _ (interior_subset hz)))).false
 
 /-! ### The sector in angular coordinates -/
 
@@ -231,6 +319,23 @@ private theorem mem_vertexSector_iff_sign_orientedAngle {j : Fin n} {z w : ℍ}
   rw [← rayToward_eq_geodesicBetween z (P.vertex (j - 1))] at hright
   rw [← rayToward_eq_geodesicBetween z (P.vertex (j + 1))] at hleft
   rw [mem_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
+    leftHalfPlane_sideGeodesic_eq_rayToward hz, hright, hleft]
+
+/-- At a finite vertex `z`, a point `w ≠ z` lies in the interior of the sector exactly when it is
+strictly counterclockwise of the ray towards the next vertex and strictly clockwise of the ray
+towards the previous vertex. -/
+private theorem mem_interior_vertexSector_iff_sign_orientedAngle {j : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : z ≠ w) :
+    w ∈ interior (P.vertexSector j) ↔
+      (orientedAngle z (geodesicLine (rayToward z (P.vertex (j - 1))) 1) w).sign = -1 ∧
+        (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).sign = 1 := by
+  have hright := orientedAngle_sign_eq_neg_one_iff
+    (B := geodesicLine (rayToward z (P.vertex (j - 1))) 1) hw
+  have hleft := orientedAngle_sign_eq_one_iff
+    (B := geodesicLine (rayToward z (P.vertex (j + 1))) 1) hw
+  rw [← rayToward_eq_geodesicBetween z (P.vertex (j - 1))] at hright
+  rw [← rayToward_eq_geodesicBetween z (P.vertex (j + 1))] at hleft
+  rw [mem_interior_vertexSector_iff, leftHalfPlane_sideGeodesic_sub_one_eq_rayToward hz,
     leftHalfPlane_sideGeodesic_eq_rayToward hz, hright, hleft]
 
 /-- At a finite vertex, the ray towards the previous vertex contains a point strictly to the left
@@ -295,8 +400,8 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
   -- `φ - α`, a real number in `(-π, π)` once `0 ≤ φ`
   obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
   obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
-  have hφ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
-  have hφ' := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have _ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have _ := Real.Angle.toReal_le_pi (orientedAngle z D w)
   have hEw : orientedAngle z E w =
       (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
     rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
@@ -305,11 +410,41 @@ theorem mem_vertexSector_iff_toReal_orientedAngle_mem_Icc {j : Fin n} {z w : ℍ
   rw [mem_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw, Ne, Ne,
     ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, not_lt,
     Set.mem_Icc]
-  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₀⟩⟩
+  refine ⟨fun ⟨h₁, h₀⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, _⟩ ↦ ⟨?_, h₀⟩⟩
   · by_contra hlt
     rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
     exact h₁ ⟨by linarith, by linarith⟩
   · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]
     exact fun h ↦ h.1.not_ge (by linarith)
+
+/-- **The interior of the vertex sector in angular coordinates.** At a finite vertex `z`, a point
+`w ≠ z` lies in the interior of the sector exactly when the oriented angle at `z` from the ray
+towards the next vertex to `w` lies strictly between `0` and the interior angle. The ray is
+represented by its point at parameter `1`. -/
+theorem mem_interior_vertexSector_iff_toReal_orientedAngle_mem_Ioo {j : Fin n} {z w : ℍ}
+    (hz : P.vertex j = .inl z) (hw : z ≠ w) :
+    w ∈ interior (P.vertexSector j) ↔
+      (orientedAngle z (geodesicLine (rayToward z (P.vertex (j + 1))) 1) w).toReal ∈
+        Set.Ioo 0 (P.interiorAngle j) := by
+  have hα := P.interiorAngle_lt_pi j
+  have hα₀ := P.interiorAngle_nonneg j
+  -- as for the closed sector, the oriented angle from the incoming ray `E` is `φ - α`
+  obtain ⟨D, hD⟩ : ∃ D, D = geodesicLine (rayToward z (P.vertex (j + 1))) 1 := ⟨_, rfl⟩
+  obtain ⟨E, hE⟩ : ∃ E, E = geodesicLine (rayToward z (P.vertex (j - 1))) 1 := ⟨_, rfl⟩
+  have _ := Real.Angle.neg_pi_lt_toReal (orientedAngle z D w)
+  have _ := Real.Angle.toReal_le_pi (orientedAngle z D w)
+  have hEw : orientedAngle z E w =
+      (((orientedAngle z D w).toReal - P.interiorAngle j : ℝ) : Real.Angle) := by
+    rw [← orientedAngle_add z E D w, orientedAngle_rev, hD, hE,
+      P.orientedAngle_rayToward_vertex_eq_interiorAngle hz, Real.Angle.coe_sub,
+      Real.Angle.coe_toReal, neg_add_eq_sub]
+  rw [mem_interior_vertexSector_iff_sign_orientedAngle hz hw, ← hD, ← hE, hEw,
+    ← Real.Angle.toReal_neg_iff_sign_neg, ← Real.Angle.toReal_mem_Ioo_iff_sign_pos, Set.mem_Ioo,
+    Set.mem_Ioo]
+  refine ⟨fun ⟨h₁, h₀, _⟩ ↦ ⟨h₀, ?_⟩, fun ⟨h₀, _⟩ ↦ ⟨?_, h₀, by linarith⟩⟩
+  · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩] at h₁
+    linarith
+  · rw [Real.Angle.toReal_coe_eq_self_iff.2 ⟨by linarith, by linarith⟩]
+    linarith
 
 end TauCeti.UpperHalfPlane.ConvexPolygon

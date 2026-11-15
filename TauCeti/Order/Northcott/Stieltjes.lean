@@ -65,7 +65,7 @@ theorem measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
   rw [StieltjesFunction.measure_Ioc, summatoryStieltjes_apply, summatoryStieltjes_apply,
     summatory_sub_summatory_eq_sum_filter N w hab.le,
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hw i, Measure.sum_apply _ measurableSet_Ioc]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ measurableSet_Ioc, smul_eq_mul]
+  simp only [_root_.smul_apply, Measure.dirac_apply' _ measurableSet_Ioc, smul_eq_mul]
   have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
     simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
   rw [tsum_eq_sum (s := {j ∈ normLE N b | a < N j}) fun i hi ↦ ?_]
@@ -80,8 +80,8 @@ theorem restrict_Ioc_measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 
       ∑ i ∈ {j ∈ normLE N b | a < N j}, ENNReal.ofReal (w i) • Measure.dirac (N i : ℝ) := by
   ext s hs
   rw [Measure.restrict_apply hs, measure_summatoryStieltjes,
-    Measure.sum_apply _ (hs.inter measurableSet_Ioc), Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ (hs.inter measurableSet_Ioc),
+    Measure.sum_apply _ (hs.inter measurableSet_Ioc), _root_.sum_apply]
+  simp only [_root_.smul_apply, Measure.dirac_apply' _ (hs.inter measurableSet_Ioc),
     Measure.dirac_apply' _ hs, smul_eq_mul]
   have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
     simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
@@ -89,8 +89,8 @@ theorem restrict_Ioc_measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 
   · refine Finset.sum_congr rfl fun i hi ↦ ?_
     by_cases his : (N i : ℝ) ∈ s
     · rw [indicator_of_mem (mem_inter his ((hmem i).mp hi)), indicator_of_mem his]
-    · rw [indicator_of_notMem (fun h ↦ his h.1), indicator_of_notMem his]
-  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr h.2)), mul_zero]
+    · rw [indicator_of_notMem (fun h ↦ his (mem_of_mem_inter_left h)), indicator_of_notMem his]
+  · rw [indicator_of_notMem (fun h ↦ hi ((hmem i).mpr (mem_of_mem_inter_right h))), mul_zero]
 
 /-! ### Integrals against the Stieltjes measure -/
 
@@ -105,7 +105,7 @@ theorem setIntegral_Ioc_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w
       summatory N (fun i ↦ w i • g (N i)) b - summatory N (fun i ↦ w i • g (N i)) a := by
   rw [restrict_Ioc_measure_summatoryStieltjes, summatory_sub_summatory_eq_sum_filter N _ hab,
     integral_finsetSum_measure fun i _ ↦
-      (integrable_dirac enorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
+      (integrable_dirac eNorm_lt_top).smul_measure ENNReal.ofReal_ne_top]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [integral_smul_measure, integral_dirac, ENNReal.toReal_ofReal (hw i)]
 

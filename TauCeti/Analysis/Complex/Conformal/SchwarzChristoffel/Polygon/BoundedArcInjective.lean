@@ -51,7 +51,7 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersection
   let B := schwarzChristoffelBoundary a e z₀
   have hfree (i : Fin n) :
       ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
-    fun k _ ↦ not_mem_Ioo_castSucc_succ a ha i k
+    fun k _ ↦ notMem_Ioo_castSucc_succ a ha i k
   have hinterval (i : Fin n) :
       InjOn B (Icc (a i.castSucc) (a i.succ)) :=
     schwarzChristoffelBoundary_injOn_Icc a e z₀ (hfree i) (hfinite _) (hfinite _)
@@ -82,8 +82,8 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersection
   · subst n
     simpa only [Fin.last_zero, Icc_self] using (injOn_singleton B (a 0))
   intro x hx y hy hxy
-  obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a ha hn hx
-  obtain ⟨j, hj⟩ := exists_mem_Icc_castSucc_succ a ha hn hy
+  obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a hn hx
+  obtain ⟨j, hj⟩ := exists_mem_Icc_castSucc_succ a hn hy
   rcases le_total i j with hij | hji
   · exact hpair i j hij hi hj hxy
   · exact (hpair j i hji hj hi hxy.symm).symm

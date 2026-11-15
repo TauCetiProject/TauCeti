@@ -34,7 +34,7 @@ public section
 
 open MeasureTheory WeakDual
 
-namespace TauCeti
+namespace ContRepresentation
 
 variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [MeasurableSpace G] [BorelSpace G]
@@ -45,7 +45,7 @@ variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGr
 /-- A nonvanishing character of an algebra containing the integrated form of a strongly
 continuous unitary representation detects a unique continuous group character. Its value is
 the multiplier on every integrated operator, independently of the witnessing weight. -/
-theorem _root_.ContRepresentation.existsUnique_pontryaginDual_of_integratedOperatorL1
+theorem existsUnique_pontryaginDual_of_integratedOperatorL1
     (π : ContRepresentation ℂ (Multiplicative G) H)
     {hcont : ∀ v, Continuous fun g : G => π (.ofAdd g) v}
     (hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C)
@@ -93,4 +93,4 @@ theorem _root_.ContRepresentation.existsUnique_pontryaginDual_of_integratedOpera
   apply Circle.ext
   exact mul_right_cancel₀ hf₀ ((hψ g.toAdd f₀).symm.trans (hχ' g.toAdd f₀))
 
-end TauCeti
+end ContRepresentation

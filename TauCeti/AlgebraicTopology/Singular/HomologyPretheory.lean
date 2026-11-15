@@ -90,7 +90,7 @@ homology of the pair is the map induced by the quotient from ambient to relative
 lemma singularHomologyPretheory_hFstToHₚ (n : ℕ) (P : TopPair.{w}) :
     (singularHomologyPretheory.{w} R).hFstToHₚ n P =
       P.singularHomologyπ R n ≫ eqToHom (singularHomologyFunctor_obj P R n).symm := by
-  rw [HomologyPretheory.hFstToHₚ_def]
+  rw [HomologyPretheory.hFstToHₚ]
   dsimp only [singularHomologyPretheory]
   rw [singularHomologyInclIso_hom_app, singularHomologyFunctor_map]
   -- The transports come from the comparison of `(X, ∅)` with `X`; the ones between definitionally
@@ -115,7 +115,7 @@ instance : (singularHomologyPretheory.{w} R).IsHomotopyInvariant where
 category: the singular homology of a disjoint union is the coproduct of the singular homologies
 of the summands. -/
 instance [AB4OfSize.{w} A] : (singularHomologyPretheory.{w} R).IsAdditive where
-  preservesColimitsOfShape_discrete J n := by
+  preserves_coproducts J n := by
     rw [singularHomologyPretheory_H]
     infer_instance
 
@@ -172,13 +172,13 @@ instance : (singularHomologyPretheory.{w} R).HasPairSequence where
         rw [eqToHom_refl, Category.comp_id]
         infer_instance
       exact key _
-    rw [HomologyPretheory.hFstToHₚ_def] at this
+    rw [HomologyPretheory.hFstToHₚ] at this
     exact epi_of_epi (((singularHomologyPretheory.{w} R).iso 0).hom.app P.fst) _
 
 /-- Singular homology satisfies the dimension axiom: the singular homology of a point vanishes in
 positive degrees. -/
 instance : (singularHomologyPretheory.{w} R).HasDimensionAxiom where
-  isZero_PUnit_of_gt_zero n hn :=
+  isZero_pUnit_of_gt_zero n hn :=
     AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace A n R _ hn
 
 end TopPair

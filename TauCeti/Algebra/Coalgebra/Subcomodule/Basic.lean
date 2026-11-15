@@ -20,15 +20,23 @@ lightweight predicate-style API: over a general commutative semiring, the map
 not registered here.
 
 Finite generation of a subcomodule is expressed by `Module.Finite R N.toSubmodule`;
-images under comodule morphisms preserve this property.
+images under comodule morphisms preserve this property. Over a commutative ring, subcomodules of
+a comodule with additive inverses are closed under negation, so their subtypes are additive
+groups.
 
 ## Main definitions
 
 * `TauCeti.Subcomodule`: a submodule stable under the coaction.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
 * `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
+* `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
+* `TauCeti.Subcomodule.ext` and `TauCeti.Subcomodule.coact_mem`: subcomodules are determined by
+  their elements, and the coaction of an element lies in the tensor product of the subcomodule
+  with the coalgebra.
 * `TauCeti.Subcomodule.rid_lTensor_coact_mem`: a subcomodule is stable under contracting the
   coaction against a linear functional on the coalgebra.
+* `TauCeti.Subcomodule.ofSubmodule`: build a subcomodule from a submodule and the tensor-product
+  stability condition.
 * `⊤` and `⊥`: the full and zero subcomodules, which bound the order of subcomodules.
 * `TauCeti.Subcomodule.toSubmodule_eq_top` and `TauCeti.Subcomodule.toSubmodule_eq_bot`: the
   underlying submodule detects the extreme subcomodules.
@@ -37,10 +45,18 @@ images under comodule morphisms preserve this property.
 * `TauCeti.Subcomodule.isSimpleOrder_of_transitive`: a family of maps that preserves every
   subcomodule and acts transitively on nonzero vectors makes the subcomodule lattice simple.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
+* `TauCeti.Subcomodule.mem_map`, `TauCeti.Subcomodule.map_le_iff`, `TauCeti.Subcomodule.map_mono`,
+  `TauCeti.Subcomodule.map_bot`, `TauCeti.Subcomodule.map_id` and `TauCeti.Subcomodule.map_map`:
+  membership in an image, and the order and functoriality properties of `map`.
 * `TauCeti.Subcomodule.map_finite`: images preserve finite generation of the underlying
   submodule.
 * `TauCeti.Comodule.Hom.range`: the image subcomodule of a comodule morphism.
+* `TauCeti.Comodule.Hom.range_toSubmodule`, `TauCeti.Comodule.Hom.mem_range` and
+  `TauCeti.Comodule.Hom.range_le_iff`: the underlying submodule, membership and order
+  characterisation of the range.
 * `TauCeti.Comodule.Hom.range_finite`: ranges of morphisms out of finite modules are finite.
+* The instance `AddSubgroupClass (Subcomodule R C M) M` over a commutative ring and an additive
+  group `M`: the subtype of a subcomodule is an additive group.
 
 ## References
 
@@ -119,6 +135,12 @@ theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier 
 theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
     Module.Finite R N.toSubmodule := by
   infer_instance
+
+/-- The subtype of a subcomodule of a noetherian module is finitely generated as an `R`-module.
+This is the form needed to treat a subcomodule of a finite-dimensional comodule over a field as a
+finite-dimensional comodule in its own right. -/
+instance instModuleFinite (N : Subcomodule R C M) [IsNoetherian R M] : Module.Finite R N :=
+  Module.Finite.of_injective (SMulMemClass.subtype N) Subtype.val_injective
 
 theorem le_def {N P : Subcomodule R C M} : N ≤ P ↔ ∀ ⦃m : M⦄, m ∈ N → m ∈ P :=
   Iff.rfl
@@ -335,14 +357,7 @@ theorem map_bot (f : Comodule.Hom R C M N) : (⊥ : Subcomodule R C M).map f = �
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
-/-- The image of the top subcomodule is the range of the comodule morphism as a submodule. -/
-@[simp]
-theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
-    ((⊤ : Subcomodule R C M).map f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
-
 /-- The identity comodule morphism leaves a subcomodule unchanged. -/
-@[simp]
 theorem map_id (A : Subcomodule R C M) : A.map (Comodule.Hom.id R C M) = A := by
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.id_toLinearMap,
@@ -374,7 +389,7 @@ def range (f : Hom R C M N) : Subcomodule R C N :=
 @[simp]
 theorem range_toSubmodule (f : Hom R C M N) :
     (range (R := R) (C := C) f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [range, Subcomodule.map_top_toSubmodule]
+  rw [range, Subcomodule.map_toSubmodule, Subcomodule.top_toSubmodule, Submodule.map_top]
 
 /-- The range of a comodule morphism out of a finitely generated module is finitely generated
 as an `R`-module. -/
@@ -406,5 +421,16 @@ theorem range_le_iff {f : Hom R C M N} {P : Subcomodule R C N} :
 end Hom
 
 end Comodule
+
+namespace Subcomodule
+
+/-- Over a commutative ring, a subcomodule of a comodule with additive inverses is closed under
+negation, so its subtype is an additive group. -/
+instance {R : Type u} {C : Type v} {M : Type w} [CommRing R] [AddCommMonoid C] [Module R C]
+    [Coalgebra R C] [AddCommGroup M] [Module R M] [Comodule R C M] :
+    AddSubgroupClass (Subcomodule R C M) M where
+  neg_mem {N} := N.carrier.neg_mem
+
+end Subcomodule
 
 end TauCeti

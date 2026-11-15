@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Riemannian volume density in a chart
@@ -20,8 +21,9 @@ on manifolds with boundary.
 The frame is `Riemannian.Tensor.chartLocalFrame`, based on `Module.finBasis ℝ E`.
 Accordingly the coordinate measure to be weighted by this density is the Haar measure
 normalized by that basis. No orthonormality of the model-space basis is assumed.
-This file supplies the local density and its transition rule; it does not assemble a
-measure on the manifold.
+This file supplies the local density, its transition rule, and its derivative
+`dρ = ρ trace P` for a metric-compatible connection, where `P` is the matrix of the
+connection form in the chart frame; it does not assemble a measure on the manifold.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Propositions 2.41 and 2.44.
@@ -98,5 +100,41 @@ theorem chartVolumeDensity_changeFrame (α β : M) {x : M}
     ring
   rw [chartVolumeDensity_def, hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs,
     chartVolumeDensity_def]
+
+section Derivative
+
+variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The derivative of the volume density.** For a connection `∇` compatible with the metric,
+the derivative along `v` of the chart volume density `ρ = √det G` at `α` is `ρ` times the trace
+`∑ₖ (∇ᵥ eₖ)ᵏ` of the connection form in the chart frame; that is, `d log ρ` is this trace. -/
+theorem mvfderiv_chartVolumeDensity
+    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (α : M) {y : M} (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (v : TangentSpace I y) :
+    mvfderiv I (chartVolumeDensity (I := I) α) y v =
+      chartVolumeDensity (I := I) α y *
+        ∑ k, (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
+          (cov (chartLocalFrame (I := I) α k) y v) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hdet : MDifferentiableAt I 𝓘(ℝ) (fun z ↦ (chartGramMatrix (I := I) α z).det) y :=
+    ((contMDiffOn_chartGramMatrix_det (n := 1) α).contMDiffAt
+      ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy)).mdifferentiableAt
+        one_ne_zero
+  have hsqrt := Real.hasDerivAt_sqrt (chartGramMatrix_det_pos α hy).ne'
+  -- Differentiate `ρ = √det G` by the chain rule.
+  have hcomp := mvfderiv_comp_apply_of_differentiableAt (φ := Real.sqrt)
+    (g := fun z ↦ (chartGramMatrix (I := I) α z).det) hsqrt.differentiableAt hdet v
+  rw [Function.comp_def, hsqrt.hasFDerivAt.fderiv, mvfderiv_det_chartGramMatrix hcov α hy v,
+    ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul,
+    show (fun z ↦ √(chartGramMatrix (I := I) α z).det) = chartVolumeDensity (I := I) α from
+      funext fun z ↦ (chartVolumeDensity_def α z).symm, ← chartVolumeDensity_def,
+    ← chartVolumeDensity_sq] at hcomp
+  rw [hcomp]
+  have hρ := (chartVolumeDensity_pos (I := I) α hy).ne'
+  field_simp
+
+end Derivative
 
 end TauCeti

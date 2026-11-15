@@ -91,11 +91,11 @@ noncomputable def recutRightEqRightFirst
       D.pentagon.right) :
     GridPentagonRectangleDecomposition a s x z :=
   { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-    pentagon := GridPentagonBetween.ofRightEq
+    first := GridPentagonBetween.ofRightEq
       (D.recutOfIsEmpty hone hrectangle hpentagon).first
       (hfirst.trans D.pentagon.right_eq)
       (D.turn_mem_recut_first_of_right_eq_right hcommon hone hrectangle hpentagon hfirst)
-    rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second }
+    second := (D.recutOfIsEmpty hone hrectangle hpentagon).second }
 
 /-- Unfolding of `recutRightEqRightFirst`. This is the private `rfl` core of the
 characterization lemmas below: since the definition is not `@[expose]`d, an exported proof
@@ -110,12 +110,12 @@ private theorem recutRightEqRightFirst_unfold
       D.pentagon.right) :
     D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst =
       { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-        pentagon := GridPentagonBetween.ofRightEq
+        first := GridPentagonBetween.ofRightEq
           (D.recutOfIsEmpty hone hrectangle hpentagon).first
           (hfirst.trans D.pentagon.right_eq)
           (D.turn_mem_recut_first_of_right_eq_right hcommon hone hrectangle hpentagon
             hfirst)
-        rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
+        second := (D.recutOfIsEmpty hone hrectangle hpentagon).second } := rfl
 
 /-- The middle grid state of the first promotion is the middle grid state of the underlying
 recut. -/
@@ -279,8 +279,8 @@ noncomputable def recutRightEqRightSecond
       D.pentagon.right) :
     GridRectanglePentagonDecomposition a s x z :=
   { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-    rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).first
-    pentagon := GridPentagonBetween.ofRightEq
+    first := (D.recutOfIsEmpty hone hrectangle hpentagon).first
+    second := GridPentagonBetween.ofRightEq
       (D.recutOfIsEmpty hone hrectangle hpentagon).second
       (hsecond.trans D.pentagon.right_eq)
       (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon hsecond) }
@@ -298,8 +298,8 @@ private theorem recutRightEqRightSecond_unfold
       D.pentagon.right) :
     D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond =
       { middle := (D.recutOfIsEmpty hone hrectangle hpentagon).middle
-        rectangle := (D.recutOfIsEmpty hone hrectangle hpentagon).first
-        pentagon := GridPentagonBetween.ofRightEq
+        first := (D.recutOfIsEmpty hone hrectangle hpentagon).first
+        second := GridPentagonBetween.ofRightEq
           (D.recutOfIsEmpty hone hrectangle hpentagon).second
           (hsecond.trans D.pentagon.right_eq)
           (D.turn_mem_recut_second_of_right_eq_right hcommon hone hrectangle hpentagon
@@ -462,7 +462,6 @@ theorem recutRightEqRightFirst_toRectangleDecomposition
       recutRightEqRightFirst_pentagon_right] using
       (hfirst.trans D.pentagon.right_eq).symm
   · simp
-  · simp
 
 /-- The promoted first-branch decomposition is a genuine recut of the original two rectangles. -/
 theorem isRecut_recutRightEqRightFirst
@@ -477,6 +476,34 @@ theorem isRecut_recutRightEqRightFirst
         hrectangle hpentagon hfirst).toRectangleDecomposition := by
   rw [D.recutRightEqRightFirst_toRectangleDecomposition hcommon hone hrectangle hpentagon hfirst]
   exact D.isRecut_recutOfIsEmpty hone hrectangle hpentagon
+
+/-- Any pentagon--rectangle recut of an empty common-terminal-side rectangle--pentagon domain
+is its first promotion. In particular, the first underlying recut rectangle inherits the
+pentagon's terminal side. -/
+theorem exists_recutRightEqRightFirst_eq_of_isRecut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (E : GridPentagonRectangleDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hr : D.rectangle.IsEmpty) (hp : D.pentagon.IsEmpty)
+    (hrecut : D.toRectangleDecomposition.IsRecut E.toRectangleDecomposition) :
+    ∃ hfirst : (D.recutOfIsEmpty hone hr hp).first.right = D.pentagon.right,
+      D.recutRightEqRightFirst hcommon hone hr hp hfirst = E := by
+  have hf : D.toRectangleDecomposition.first.IsEmpty := by
+    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_first_toGridRectangle] using hr
+  have hs : D.toRectangleDecomposition.second.IsEmpty := by
+    simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+      D.toRectangleDecomposition_middle, D.toRectangleDecomposition_second_toGridRectangle] using hp
+  have heq := (D.toRectangleDecomposition.existsUnique_isRecut hone hf hs).unique
+    (D.isRecut_recutOfIsEmpty hone hr hp) hrecut
+  have hfirst : (D.recutOfIsEmpty hone hr hp).first.right = D.pentagon.right := by
+    rw [heq]
+    simp [E.pentagon.right_eq, D.pentagon.right_eq]
+  refine ⟨hfirst, ?_⟩
+  apply GridPentagonRectangleDecomposition.toRectangleDecomposition_injective
+  exact (D.toRectangleDecomposition.existsUnique_isRecut hone hf hs).unique
+    (D.isRecut_recutRightEqRightFirst _ _ _ _ _) hrecut
 
 /-- The pentagon promoted from the first recut rectangle remains empty. -/
 @[simp]
@@ -570,9 +597,6 @@ theorem recutRightEqRightSecond_toRectangleDecomposition
   · simp
   · simp
   · simp
-  · simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
-      recutRightEqRightSecond_pentagon_right] using
-      (hsecond.trans D.pentagon.right_eq).symm
 
 /-- The promoted second-branch decomposition is a genuine recut of the original rectangles. -/
 theorem isRecut_recutRightEqRightSecond
@@ -626,10 +650,9 @@ theorem recutRightEqRightSecond_inj
       simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle]
         using hpentagonE
-    have hbackD := hD.symm honeD hfirstD hlastD
-    have hbackE := hE.symm honeE hfirstE hlastE
+    have hbackD := hD.symm hfirstD hlastD
+    have hbackE := hE.symm hfirstE hlastE
     have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-      (D.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
     apply toRectangleDecomposition_injective
     exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
       hD.isEmpty_first hD.isEmpty_second).unique hbackD hbackE
@@ -712,6 +735,53 @@ theorem OMonomial_mul_OMonomial_recutRightEqRightSecond
       hrectangle hpentagon hsecond).OMonomial_mul_OMonomial_of_isRepartition D
       h.isRepartition G R
 
+/-- Columns of an initial subrectangle of the rectangle in a rectangle--pentagon decomposition whose
+terminal side is common: if the pentagon's initial column splits the rectangle, the initial piece
+covers a subset of the rectangle's columns and avoids the commuted column `a`, which the rectangle
+itself covers. -/
+private lemma coveredColumns_initial_piece_rectangle
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hcol : D.pentagon.left ∈ Grid.cIoo D.rectangle.left D.rectangle.right)
+    {u v : GridState n} (E : GridRectangleBetween u v)
+    (hEleft : E.left = D.rectangle.left) (hEright : E.right = D.pentagon.left) :
+    E.toGridRectangle.coveredColumns ⊆ D.rectangle.toGridRectangle.coveredColumns ∧
+    a ∉ E.toGridRectangle.coveredColumns ∧
+    a ∈ D.rectangle.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ E.toGridRectangle.coveredColumns := by
+  have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
+    simpa only [hcommon, D.pentagon.right_eq] using hcol
+  obtain ⟨hsub, haNot, hbNot⟩ :=
+    E.coveredColumns_subset_and_notMem_of_right_mem_cIoo (a := a)
+      (by rwa [hEleft, hEright])
+  rw [hEleft] at hsub
+  refine ⟨fun c hc => ?_, haNot, ?_, hbNot⟩
+  · rw [GridRectangleBetween.mem_coveredColumns, hcommon, D.pentagon.right_eq]
+    exact hsub hc
+  · rw [GridRectangleBetween.mem_coveredColumns, hcommon, D.pentagon.right_eq]
+    exact Grid.self_mem_cIco_finRotate (by
+      intro h
+      exact D.rectangle.left_ne_right ((h.trans D.pentagon.right_eq.symm).trans hcommon.symm))
+
+/-- Columns of an initial subrectangle of the pentagon in a rectangle--pentagon decomposition whose
+terminal side is common: if the rectangle's initial column splits the pentagon's columns, the
+initial piece covers a subset of the pentagon's columns and avoids both commuted columns. -/
+private lemma coveredColumns_initial_piece_pentagon
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcol' : D.rectangle.left ∈ Grid.cIoo D.pentagon.left (finRotate n a))
+    {u v : GridState n} (E : GridRectangleBetween u v)
+    (hEleft : E.left = D.pentagon.left) (hEright : E.right = D.rectangle.left) :
+    E.toGridRectangle.coveredColumns ⊆ D.pentagon.toGridRectangle.coveredColumns ∧
+    a ∉ E.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ E.toGridRectangle.coveredColumns := by
+  obtain ⟨hsub, haNot, hbNot⟩ :=
+    E.coveredColumns_subset_and_notMem_of_right_mem_cIoo (a := a)
+      (by rwa [hEleft, hEright])
+  rw [hEleft] at hsub
+  refine ⟨fun c hc => ?_, haNot, hbNot⟩
+  rw [GridRectangleBetween.mem_coveredColumns, D.pentagon.right_eq]
+  exact hsub hc
+
 /-- Geometry of the rectangle left after the first terminal-side recut: it keeps the
 original rectangle's rows and occupies its initial column subinterval. -/
 theorem recutRightEqRightFirst_rectangle_geometry
@@ -729,7 +799,8 @@ theorem recutRightEqRightFirst_rectangle_geometry
     E.rectangle.toGridRectangle.coveredColumns ⊆
       D.rectangle.toGridRectangle.coveredColumns ∧
     a ∉ E.rectangle.toGridRectangle.coveredColumns ∧
-    a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+    a ∈ D.rectangle.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ E.rectangle.toGridRectangle.coveredColumns := by
   let E := D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
   obtain ⟨hcol, _, _⟩ :=
     D.first_recut_branch_data_of_right_eq_right hcommon hone hrectangle hpentagon hfirst
@@ -772,32 +843,9 @@ theorem recutRightEqRightFirst_rectangle_geometry
       D.recutRightEqRightFirst_middle hcommon hone hrectangle hpentagon hfirst,
       hbranch.1, GridState.swapColumns_apply, Equiv.swap_apply_left,
       ← GridRectangleBetween.top_def]
-  have ha : a ∈ D.rectangle.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hcommon, D.pentagon.right_eq]
-    exact Grid.self_mem_cIco_finRotate (by
-      intro h
-      exact D.rectangle.left_ne_right ((h.trans D.pentagon.right_eq.symm).trans hcommon.symm))
-  have haNot : a ∉ E.rectangle.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
-    intro haE
-    have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
-      simpa only [hcommon, D.pentagon.right_eq] using hcol
-    have htail : a ∈ Grid.cIco D.pentagon.left (finRotate n a) :=
-      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol')
-    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) haE htail
-  -- The new column interval is the initial piece of the old interval.
-  have hCols : E.rectangle.toGridRectangle.coveredColumns ⊆
-      D.rectangle.toGridRectangle.coveredColumns := by
-    intro c hc
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright] at hc
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right]
-    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol]
-    exact Finset.mem_union.mpr (Or.inl hc)
-  exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, ha⟩
+  obtain ⟨hCols, haNot, ha, hbNot⟩ :=
+    coveredColumns_initial_piece_rectangle D hcommon hcol E.rectangle hEleft hEright
+  exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, ha, hbNot⟩
 
 /-- Geometry of the rectangle left after the second terminal-side recut: it occupies
 an initial subinterval of the original pentagon's columns, away from the swapped columns. -/
@@ -854,29 +902,8 @@ theorem recutRightEqRightSecond_rectangle_geometry
     rw [GridRectangleBetween.top_def, hEright, ← hPtop]
   have hcol' : D.rectangle.left ∈ Grid.cIoo D.pentagon.left (finRotate n a) := by
     simpa only [hcommon, D.pentagon.right_eq] using hcol
-  have haNot : a ∉ E.rectangle.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
-    intro haE
-    have htail : a ∈ Grid.cIco D.rectangle.left (finRotate n a) :=
-      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol')
-    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) haE htail
-  have hbNot : finRotate n a ∉ E.rectangle.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
-    intro hb
-    exact Grid.right_notMem_cIco D.pentagon.left (finRotate n a)
-      (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hb hcol')
-  -- Both swapped columns lie beyond this initial piece of the pentagon's interval.
-  have hCols : E.rectangle.toGridRectangle.coveredColumns ⊆
-      D.pentagon.toGridRectangle.coveredColumns := by
-    intro c hc
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright] at hc
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, D.pentagon.right_eq]
-    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol']
-    exact Finset.mem_union.mpr (Or.inl hc)
+  obtain ⟨hCols, haNot, hbNot⟩ :=
+    coveredColumns_initial_piece_pentagon D hcol' E.rectangle hEleft hEright
   exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, hbNot⟩
 
 end GridRectanglePentagonDecomposition

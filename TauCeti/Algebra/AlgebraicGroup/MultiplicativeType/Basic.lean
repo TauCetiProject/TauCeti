@@ -38,11 +38,6 @@ finitely generated commutative group `M`. In particular, every coordinate ring a
 
 * J. S. Milne, *Algebraic Groups* (2017), Definition 12.14.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This is the coordinate-algebra foundation for Layer 4, "Diagonalizable groups and groups of
-multiplicative type", of the ReductiveGroups roadmap. Non-split tori will add smoothness and
-geometric connectedness to this property and equip the resulting character lattice with its
-Galois action.
 -/
 
 public section

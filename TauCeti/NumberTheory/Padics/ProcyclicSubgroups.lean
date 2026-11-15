@@ -44,15 +44,15 @@ theorem exists_topologicalClosure_zpowers_eq_iff_of_isClosed
         intro h
         exact PadicInt.units_neg_one_ne_one (Subgroup.mem_bot.mp (h ▸ hneg))
       rcases closedSubgroup_units_two_classification hA hA' with
-        ⟨f, hf, h⟩ | ⟨f, hf, h⟩ | h | ⟨f, v, hf, hv, h⟩
+        ⟨f, hf, h⟩ | ⟨f, -, h⟩ | h | ⟨f, v, hf, hv, h⟩
       · rw [h] at hneg
         have hle := neg_one_mem_unitsPrincipal_two_iff.mp hneg
         omega
-      · exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus hf ⟨u, hu.trans h⟩
+      · exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus ⟨u, hu.trans h⟩
       · exact hbot (by rw [h, inf_comm]; exact
           (disjoint_unitsPrincipal_zpowers_neg_one (by omega : 2 ≤ 2)).eq_bot)
       · rw [h] at hneg
-        exact neg_one_notMem_topologicalClosure_zpowers_two hf
+        exact neg_one_notMem_topologicalClosure_zpowers_two
           (neg_mem_unitsPrincipal_two_of_val_eq hv)
           (neg_notMem_unitsPrincipal_two_succ_of_val_eq hv) hneg
     · exact Or.inl hneg

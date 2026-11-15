@@ -5,19 +5,18 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Piecewise `C¹` immersions on an interval
 
-The on-cycle Layer 4 targets of the contour-integration roadmap — the Hungerbühler–Wasem
-generalized residue theorem and its half-residue specialisation — are stated for a **piecewise
-`C¹` immersion**: a piecewise-`C¹` curve whose within-piece derivative is non-vanishing on every
-closed piece, one-sided at the piece endpoints. This file introduces that regularity as the
-predicate `Contour.IsPwC1ImmersionOn γ a b` on the raw function `γ` — the roadmap's pinned
-definition, verbatim — together with its basic API.
+The on-cycle results of the contour-integration theory — the Hungerbühler–Wasem generalized residue
+theorem and its half-residue specialisation — are stated for a **piecewise `C¹` immersion**: a
+piecewise-`C¹` curve whose within-piece derivative is non-vanishing on every closed piece, one-sided
+at the piece endpoints. This file introduces that regularity as the predicate
+`Contour.IsPwC1ImmersionOn γ a b` on the raw function `γ`, together with its basic API.
 
 The non-vanishing tangent is what the on-cycle theory needs and the plain `IsPiecewiseC1On`
 cannot supply: Hungerbühler–Wasem represent each on-cycle singularity by model sectors of a
@@ -65,8 +64,7 @@ The raw-function mirror of the `ClosedPwC1Immersion` structure of the AINTLIB `L
 development (`PaperPwC1Immersion.lean`): the pieces clause matches its `contDiffOn_pieces` and
 `derivWithin_ne_zero_pieces` fields — Hungerbühler–Wasem's `Λ̇|_{[aₖ,aₖ₊₁]} ≠ 0` (arXiv:1808.00997,
 p. 3) — whose closed partition includes the interval endpoints, so the seam of a closed curve is
-constrained too. Closedness itself (`γ a = γ b`) stays a separate hypothesis of the theorems. The
-definition is pinned in the roadmap (`TauCetiRoadmap/ContourIntegration/Suggested.lean`).
+constrained too. Closedness itself (`γ a = γ b`) stays a separate hypothesis of the theorems.
 -/
 
 public section
@@ -230,7 +228,7 @@ private theorem derivWithin_Icc_left_endpoint_congr {γ : ℝ → ℂ} {t d d' :
       simp only [mem_Icc]
       exact ⟨fun ⟨h1, _⟩ => ⟨h1, by linarith [min_le_right d d']⟩,
         fun ⟨h1, _⟩ => ⟨h1, by linarith [min_le_left d d']⟩⟩
-    exact propext h_iff)
+    exact h_iff)
 
 /-- **The mirror of `derivWithin_Icc_left_endpoint_congr`, at a shared right endpoint.** -/
 private theorem derivWithin_Icc_right_endpoint_congr {γ : ℝ → ℂ} {c c' t : ℝ} (hc : c < t)
@@ -242,7 +240,7 @@ private theorem derivWithin_Icc_right_endpoint_congr {γ : ℝ → ℂ} {c c' t 
       simp only [mem_Icc]
       exact ⟨fun ⟨_, h2⟩ => ⟨by linarith [le_max_right c c'], h2⟩,
         fun ⟨_, h2⟩ => ⟨by linarith [le_max_left c c'], h2⟩⟩
-    exact propext h_iff)
+    exact h_iff)
 
 /-- **A crossing's one-sided velocity is non-zero, from the immersion alone.** No need to assume
 this alongside a `C^{1,1}` window at a crossing: `IsPwC1ImmersionOn` already forces a non-zero
@@ -253,7 +251,7 @@ with the same `HasDerivWithinAt` witness on their common initial segment. -/
 theorem IsPwC1ImmersionOn.derivWithin_ne_zero_right (h : IsPwC1ImmersionOn γ a b) {t d : ℝ}
     (ht₀ : t ∈ Ico (min a b) (max a b)) (htd : t < d) :
     derivWithin γ (Icc t d) t ≠ 0 := by
-  obtain ⟨d', hlt', -, hC1', hne'⟩ := h.exists_Icc_piece_right ht₀
+  obtain ⟨d', hlt', -, _, hne'⟩ := h.exists_Icc_piece_right ht₀
   rw [derivWithin_Icc_left_endpoint_congr htd hlt']
   exact hne' t (left_mem_Icc.mpr hlt'.le)
 
@@ -262,7 +260,7 @@ mirror of `IsPwC1ImmersionOn.derivWithin_ne_zero_right` above. -/
 theorem IsPwC1ImmersionOn.derivWithin_ne_zero_left (h : IsPwC1ImmersionOn γ a b) {c t : ℝ}
     (ht₀ : t ∈ Ioc (min a b) (max a b)) (hct : c < t) :
     derivWithin γ (Icc c t) t ≠ 0 := by
-  obtain ⟨c', hlt', -, hC1', hne'⟩ := h.exists_Icc_piece_left ht₀
+  obtain ⟨c', hlt', -, _, hne'⟩ := h.exists_Icc_piece_left ht₀
   rw [derivWithin_Icc_right_endpoint_congr hct hlt']
   exact hne' t (right_mem_Icc.mpr hlt'.le)
 
@@ -351,7 +349,7 @@ theorem IsPwC1ImmersionOn.exists_deriv_slope_right_limit (h : IsPwC1ImmersionOn 
     (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
     ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L) ∧
       Tendsto (slope γ t₀) (𝓝[>] t₀) (𝓝 L) := by
-  obtain ⟨d, hlt, hsub, hC1, hne⟩ := h.exists_Icc_piece_right ht₀
+  obtain ⟨d, hlt, _, hC1, hne⟩ := h.exists_Icc_piece_right ht₀
   refine ⟨derivWithin γ (Icc t₀ d) t₀, hne t₀ (left_mem_Icc.mpr hlt.le), ?_, ?_⟩
   · have h1 : Tendsto (derivWithin γ (Icc t₀ d)) (𝓝[Ioo t₀ d] t₀)
         (𝓝 (derivWithin γ (Icc t₀ d) t₀)) :=
@@ -380,7 +378,7 @@ theorem IsPwC1ImmersionOn.exists_deriv_slope_left_limit (h : IsPwC1ImmersionOn �
     (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
     ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L) ∧
       Tendsto (slope γ t₀) (𝓝[<] t₀) (𝓝 L) := by
-  obtain ⟨c, hlt, hsub, hC1, hne⟩ := h.exists_Icc_piece_left ht₀
+  obtain ⟨c, hlt, _, hC1, hne⟩ := h.exists_Icc_piece_left ht₀
   refine ⟨derivWithin γ (Icc c t₀) t₀, hne t₀ (right_mem_Icc.mpr hlt.le), ?_, ?_⟩
   · have h1 : Tendsto (derivWithin γ (Icc c t₀)) (𝓝[Ioo c t₀] t₀)
         (𝓝 (derivWithin γ (Icc c t₀) t₀)) :=

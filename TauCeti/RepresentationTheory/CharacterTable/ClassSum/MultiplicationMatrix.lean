@@ -38,15 +38,7 @@ row vector `v` is a common **left** eigenvector of the family `{Mᵢ}`, acting f
 action recorded below in `TauCeti.classMultMatrix_mulVec` is a different statement — that `Mᵢ`
 carries class-sum coordinates to the coordinates of the product, which is exactly what makes `Mᵢ` a
 matrix of left multiplication — and not an eigenvector relation. The eigenvector theorem itself
-needs central characters, so it is deferred to the layer that constructs them.
-
-## References
-
-This implements the object `classMultMatrix` and the milestone `classMultMatrix_commute` of Layer 5
-of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean).
+needs central characters and is not proved here.
 -/
 
 public section

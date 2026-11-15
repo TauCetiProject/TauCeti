@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Geometry
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.IntegralMatrix
 
 /-!
@@ -82,6 +81,7 @@ theorem weightLeviDefiningHopfIdeal_le_definingIdeal :
   refine ⟨fun k ↦ ?_, ?_⟩
   · apply GeneralLinear.weightLeviDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have hne : a ≠ b := fun h ↦ hab (congrArg (basisParity n) h)
     have hX : rootIntMatrix n hn k a b = 0 :=
       rootIntMatrix_eq_zero_of_card_ne n hn k fun h ↦
@@ -96,6 +96,7 @@ theorem weightLeviDefiningHopfIdeal_le_definingIdeal :
     simpa [GeneralLinear.genericMatrix_apply, Matrix.one_apply_ne hne, hX] using hmat
   · apply GeneralLinear.weightLeviDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have hne : a ≠ b := fun h ↦ hab (congrArg (basisParity n) h)
     simpa only [hne, ↓reduceIte, BialgHom.coe_toAlgHom] using
       GeneralLinear.weightTorusCoordinateMap_X (R := ℤ) (basisWeight n) a b

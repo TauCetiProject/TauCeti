@@ -73,7 +73,7 @@ the abelianization, which has order two by `TauCeti.card_abelianization_perm_fin
 finite commutative group with enough roots of unity in `M` has as many characters as elements. -/
 @[simp]
 theorem card_monoidHom_perm_fin_three : Nat.card (Perm (Fin 3) →* Mˣ) = 2 := by
-  have : HasEnoughRootsOfUnity M (Monoid.exponent (Abelianization (Perm (Fin 3)))) := by
+  have : HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization (Perm (Fin 3)))) := by
     rw [exponent_abelianization_perm_fin_three]
     infer_instance
   rw [card_monoidHom_eq_card_abelianization, card_abelianization_perm_fin_three]
@@ -105,7 +105,7 @@ theorem sum_inv_mul_monoidHom_apply_finRotate_three_ne_ite :
       if finRotate 3 = (1 : Perm (Fin 3)) then (Nat.card (Perm (Fin 3)) : M) else 0 := by
   -- a domain with a primitive square root of unity does not have characteristic two
   have h2 : (2 : M) ≠ 0 := by
-    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot M 2
+    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M 2
     exact_mod_cast hζ.neZero'.out
   rw [ite_eq_right (by decide)]
   simpa only [map_one, inv_one, Units.val_one, one_mul, sum_monoidHom_apply_finRotate_three]

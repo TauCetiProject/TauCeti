@@ -150,15 +150,24 @@ noncomputable def skewZigzagGradedAlgebra : GradedAlgebra (skewZigzagGrade k G c
 
 /-! ### The graded pieces -/
 
+/-- The degree-`n` piece is spanned by the classes of paths of length `n`. -/
+theorem skewZigzagGrade_eq_span_range (n : ℕ) :
+    skewZigzagGrade k G c n = Submodule.span k
+      (Set.range fun p : {p : Quiver.TotalPath (DoubledQuiver G) // p.2.2.length = n} =>
+        skewZigzagMk k G c (ofPath p.1)) := by
+  rw [skewZigzagGrade, TauCeti.GradedAlgebra.quotientPiece_eq_span_image _ _
+    (PathAlgebra.grade_eq_span_range k (DoubledQuiver G) n), ← Set.range_comp']
+  simp only [← skewZigzagMk_apply]
+
 /-- **Degree zero is spanned by the vertex idempotent classes.** -/
 theorem skewZigzagGrade_zero_eq_span_range_vertexIdempotent :
     skewZigzagGrade k G c 0 =
       Submodule.span k
         (Set.range fun i : V => skewZigzagMk k G c (vertexIdempotent k (vertex G i))) := by
   refine le_antisymm (fun w hw => ?_) ?_
-  · refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+  · refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (skewZigzagIdeal k G c).asIdeal (i := 0)
-      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G)) ?_ hw
+      (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (DoubledQuiver G))).2 ?_ hw
     rintro z ⟨v, rfl⟩
     rw [← skewZigzagMk_apply k G c]
     exact Submodule.subset_span ⟨(vertexEquiv G).symm v, by simp⟩
@@ -172,9 +181,9 @@ theorem skewZigzagGrade_one_eq_span_range_ofArrow :
       Submodule.span k (Set.range fun d : G.Dart =>
         skewZigzagMk k G c (ofArrow (arrow G d.adj))) := by
   refine le_antisymm (fun w hw => ?_) ?_
-  · refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+  · refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (skewZigzagIdeal k G c).asIdeal (i := 1)
-      PathAlgebra.grade_one_eq_span_range_ofArrow ?_ hw
+      PathAlgebra.grade_one_eq_span_range_ofArrow).2 ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
     rw [← skewZigzagMk_apply k G c]
     obtain ⟨i, rfl⟩ : ∃ i, a = vertex G i := ⟨_, (vertexEquiv_symm_apply G a).symm⟩
@@ -195,9 +204,9 @@ theorem skewZigzagGrade_two_eq_span_range_backtrackElem :
       Submodule.span k (Set.range fun d : G.Dart =>
         skewZigzagMk k G c (backtrackElem G k d.adj)) := by
   refine le_antisymm (fun w hw => ?_) ?_
-  · refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
+  · refine (TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span
       (grade k (DoubledQuiver G)) (skewZigzagIdeal k G c).asIdeal (i := 2)
-      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2) ?_ hw
+      (PathAlgebra.grade_eq_span_image_basis k (DoubledQuiver G) 2)).2 ?_ hw
     rintro z ⟨⟨a, b, p⟩, hp, rfl⟩
     rw [← skewZigzagMk_apply k G c, coe_pathAlgebraBasis]
     obtain ⟨i, rfl⟩ : ∃ i, a = vertex G i := ⟨_, (vertexEquiv_symm_apply G a).symm⟩
@@ -212,8 +221,8 @@ theorem skewZigzagGrade_two_eq_span_range_backtrackElem :
 
 /-- Every piece of degree at least three vanishes: all long paths are relations. -/
 theorem skewZigzagGrade_eq_bot_of_three_le {n : ℕ} (hn : 3 ≤ n) : skewZigzagGrade k G c n = ⊥ := by
-  refine TauCeti.GradedAlgebra.quotientPiece_eq_bot_of_le (grade k (DoubledQuiver G))
-    (skewZigzagIdeal k G c).asIdeal fun y hy => ?_
+  refine (TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff (grade k (DoubledQuiver G))
+    (skewZigzagIdeal k G c).asIdeal).2 fun y hy => ?_
   rw [← Ideal.Quotient.eq_zero_iff_mem, ← skewZigzagMk_apply, skewZigzagMk_eq_zero_iff]
   rw [PathAlgebra.grade_eq_span_image_basis] at hy
   refine (Submodule.span_le (p := (skewZigzagIdeal k G c).asIdeal.restrictScalars k)).2 ?_ hy

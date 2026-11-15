@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.LinearAlgebra.AffineSpace.Centroid
+public import TauCeti.LinearAlgebra.AffineSpace.Centroid
 
 /-!
 # Distances to the centroid of finitely many points
@@ -47,25 +47,18 @@ variable {V P : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V] [PseudoMet
 /-- Distance to the centroid is at most the average distance to the points. -/
 theorem dist_centroid_le_sum_dist (hs : s.Nonempty) (q : P) :
     dist (s.centroid ℝ p) q ≤ (#s : ℝ)⁻¹ * ∑ i ∈ s, dist (p i) q := by
-  rw [dist_eq_norm_vsub V, centroid_def,
-    ← s.sum_smul_vsub_const_eq_affineCombination_vsub _ _ _
-      (s.sum_centroidWeights_eq_one_of_nonempty ℝ hs)]
-  calc
-    _ ≤ ∑ i ∈ s, ‖s.centroidWeights ℝ i • (p i -ᵥ q)‖ := norm_sum_le _ _
-    _ = (#s : ℝ)⁻¹ * ∑ i ∈ s, dist (p i) q := by
-      simp [norm_smul, dist_eq_norm_vsub V, ← mul_sum]
+  rw [dist_eq_norm_vsub V, centroid_vsub_eq_smul_sum_vsub ℝ hs, norm_smul,
+    Real.norm_of_nonneg (by positivity)]
+  gcongr
+  exact (norm_sum_le _ _).trans_eq (by simp [dist_eq_norm_vsub V])
 
 /-- The centroid of a nonempty family of points lies in every closed ball containing all of
 them. -/
 theorem dist_centroid_le (hs : s.Nonempty) {q : P} {r : ℝ} (h : ∀ i ∈ s, dist (p i) q ≤ r) :
     dist (s.centroid ℝ p) q ≤ r := by
   refine (dist_centroid_le_sum_dist hs q).trans ?_
-  calc
-    _ ≤ (#s : ℝ)⁻¹ * (#s * r) := by
-      gcongr
-      simpa using sum_le_card_nsmul s (fun i => dist (p i) q) r h
-    _ = r := by
-      rw [← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hs.card_pos.ne'), one_mul]
+  rw [inv_mul_le_iff₀ (by simpa using hs.card_pos)]
+  simpa using sum_le_card_nsmul s _ r h
 
 /-- If the distances from points outside a nonempty subfamily to points inside it are at most `d`,
 the centroids are at distance at most `(1 - #t / #s) * d`. In particular, the bound is zero when
@@ -73,35 +66,24 @@ the two index sets agree. -/
 theorem dist_centroid_centroid_le_of_subset [DecidableEq ι] {d : ℝ}
     (hd : ∀ i ∈ s \ t, ∀ j ∈ t, dist (p i) (p j) ≤ d) (hts : t ⊆ s) (ht : t.Nonempty) :
     dist (t.centroid ℝ p) (s.centroid ℝ p) ≤ (1 - (#t : ℝ) / #s) * d := by
-  classical
   have hs := ht.mono hts
-  have hcard : (#s : ℝ) ≠ 0 := by exact_mod_cast hs.card_pos.ne'
+  have hcard : (#s : ℝ) ≠ 0 := by simpa using hs.ne_empty
   -- The displacements within the smaller family sum to zero at its own centroid.
   have htzero : ∑ i ∈ t, (p i -ᵥ t.centroid ℝ p) = 0 := by
-    have h := t.sum_smul_vsub_const_eq_affineCombination_vsub
-      (t.centroidWeights ℝ) p (t.centroid ℝ p)
-      (t.sum_centroidWeights_eq_one_of_nonempty ℝ ht)
-    rw [← centroid_def, vsub_self] at h
-    simp only [centroidWeights_apply, ← smul_sum] at h
-    exact (smul_eq_zero.mp h).resolve_left (inv_ne_zero (by exact_mod_cast ht.card_pos.ne'))
-  have hdist : ∀ i ∈ s \ t, dist (p i) (t.centroid ℝ p) ≤ d := fun i hi => by
-    rw [dist_comm]
-    exact dist_centroid_le ht fun j hj => by simpa [dist_comm] using hd i hi j hj
+    simpa [eq_comm (a := (0 : V)), ht.ne_empty] using
+      centroid_vsub_eq_smul_sum_vsub ℝ (p := p) ht (t.centroid ℝ p)
   calc
     dist (t.centroid ℝ p) (s.centroid ℝ p)
         = ‖(#s : ℝ)⁻¹ • ∑ i ∈ s \ t, (p i -ᵥ t.centroid ℝ p)‖ := by
-      rw [dist_comm, dist_eq_norm_vsub V, centroid_def,
-        ← s.sum_smul_vsub_const_eq_affineCombination_vsub _ _ _
-          (s.sum_centroidWeights_eq_one_of_nonempty ℝ hs)]
-      simp only [centroidWeights_apply, ← smul_sum, ← sum_sdiff hts, htzero, smul_zero, add_zero]
-    _ ≤ (#s : ℝ)⁻¹ * ∑ i ∈ s \ t, dist (p i) (t.centroid ℝ p) := by
-      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-      simp_rw [dist_eq_norm_vsub V]
-      exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
+      rw [dist_comm, dist_eq_norm_vsub V, centroid_vsub_eq_smul_sum_vsub ℝ hs, ← sum_sdiff hts,
+        htzero, add_zero]
     _ ≤ (#s : ℝ)⁻¹ * (#(s \ t) * d) := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
       gcongr
-      simpa using sum_le_card_nsmul (s \ t) (fun i => dist (p i) (t.centroid ℝ p)) d
-        hdist
+      have hle (i) (hi : i ∈ s \ t) : ‖p i -ᵥ t.centroid ℝ p‖ ≤ d := by
+        rw [← dist_eq_norm_vsub V, dist_comm]
+        exact dist_centroid_le ht fun j hj => by simpa [dist_comm] using hd i hi j hj
+      simpa using norm_sum_le_of_le _ hle
     _ = (1 - (#t : ℝ) / #s) * d := by
       rw [card_sdiff_of_subset hts, Nat.cast_sub (card_le_card hts)]
       field_simp
@@ -113,8 +95,7 @@ theorem dist_centroid_apply_le [DecidableEq ι] {d : ℝ} {j : ι}
     (hj : j ∈ s) : dist (s.centroid ℝ p) (p j) ≤ (1 - (#s : ℝ)⁻¹) * d := by
   have h := dist_centroid_centroid_le_of_subset (t := {j})
     (fun i hi k hk => by
-      have hi' : i ∈ s.erase j := by simpa only [sdiff_singleton_eq_erase] using hi
-      simpa only [mem_singleton.mp hk] using hd i hi')
+      simpa [mem_singleton.mp hk] using hd i (by rwa [← sdiff_singleton_eq_erase]))
     (singleton_subset_iff.mpr hj) (singleton_nonempty j)
   simpa [dist_comm] using h
 

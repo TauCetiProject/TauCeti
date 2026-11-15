@@ -267,7 +267,7 @@ end GridInitialPentagonRectangleDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 /-- An exact characterization of the counted vertical rectangle--initial-side pentagon terms.
 Thinness implies emptiness of both domains, leaving just the two `X`-marking tests. -/

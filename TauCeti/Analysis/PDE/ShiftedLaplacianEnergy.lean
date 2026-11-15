@@ -15,10 +15,10 @@ The shifted Laplacian `-Δ + m` is a model for divergence-form energy estimates.
 `energyIntegrand 1 0 m U U` has lower bound `min 1 m * ‖U‖²` for arbitrary real mass `m`.
 This file integrates that estimate for raw value-gradient jet fields.
 
-These are still below the weak-derivative Sobolev-space layer: the inputs are arbitrary jet
-fields `U : X → ℝ × EuclideanSpace ℝ n`, and the statements carry the Bochner-integrability
-hypotheses needed to compare scalar integrals.  Once `H¹`/`W^{1,2}` jets are available, these
-lemmas become the concrete coercive lower bounds for the shifted Dirichlet form.
+The inputs are arbitrary jet fields `U : X → ℝ × EuclideanSpace ℝ n` rather than Sobolev
+functions, and the statements carry the Bochner-integrability hypotheses needed to compare scalar
+integrals. For the jet field of an `H¹` function they bound the shifted Dirichlet form from
+below; for a positive constant mass the bound is coercive.
 
 ## Main declarations
 
@@ -64,7 +64,7 @@ lemma integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
   refine integral_min_lam_mass_mul_norm_sq_le_energyFormIntegral_zero_drift_self
     (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) zero_le_one ?_
     hlower henergy
-  filter_upwards with x
+  filter_upwards with _
   intro ξ
   rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   simp
@@ -74,7 +74,7 @@ lemma energyFormIntegral_one_zero_mass_self_nonneg (hm : ∀ᵐ x ∂μ, 0 ≤ m
     0 ≤ energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U := by
   refine energyFormIntegral_zero_drift_self_nonneg
     (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) ?_ hm
-  filter_upwards with x
+  filter_upwards with _
   intro ξ
   rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   exact sq_nonneg ‖ξ‖

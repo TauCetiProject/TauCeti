@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 public import TauCeti.Topology.Covering.Monodromy.Transitive
@@ -45,7 +45,8 @@ types. Full faithfulness is again the lifting criterion, already packaged in
 `TauCeti.Topology.Covering.Monodromy.Basic` and `…Monodromy.Full`, and essential surjectivity is
 again reconstruction at `x₀` followed by transport, but the cover reconstructed from an arbitrary
 `π₁(X, x₀)`-set is the balanced product of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover` rather than a quotient of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`
+rather than a quotient of
 the universal cover by a stabiliser: the latter is connected, so it can only realise a transitive
 action, while the former realises the disjoint union of one such quotient per orbit in one step.
 
@@ -64,15 +65,13 @@ action, while the former realises the disjoint union of one such quotient per or
 
 ## References
 
-This completes the alternative monodromy-functor lens on Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks for the classification of connected covers
-by transitive `π₁(X)`-sets and of covers in general by functors out of the fundamental groupoid;
-see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path universal cover
-adapted from Kim Morrison's
-[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the balanced-product
-cover of `TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover`.
+This is the monodromy-functor classification of covering spaces, with connected covers corresponding
+to transitive actions; see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path
+universal cover adapted from Kim Morrison's
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the
+balanced-product cover of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
 -/
 
 public section
@@ -93,18 +92,18 @@ vertex group of the fundamental groupoid at `x₀`. -/
 @[instance_reducible]
 def basepointMulAction (F : FundamentalGroupoid X ⥤ Type u) (x₀ : X) :
     MulAction (FundamentalGroup X x₀) (F.obj (FundamentalGroupoid.mk x₀)) where
-  smul g a := F.map g a
+  smul g a := F.map g.asHom a
   one_smul a := by
     have h : F.map (𝟙 (FundamentalGroupoid.mk x₀)) a = a := by
       rw [F.map_id, types_id_apply]
     exact h
-  mul_smul g h a := F.map_comp_apply h g a
+  mul_smul g h a := F.map_comp_apply h.asHom g.asHom a
 
 @[simp]
 theorem basepointMulAction_smul (F : FundamentalGroupoid X ⥤ Type u) (x₀ : X)
     (g : FundamentalGroup X x₀) (a : F.obj (FundamentalGroupoid.mk x₀)) :
     letI := basepointMulAction F x₀
-    g • a = F.map g a :=
+    g • a = F.map g.asHom a :=
   (rfl)
 
 end FundamentalGroupoidAction
@@ -127,7 +126,9 @@ theorem exists_monodromyFunctor_iso (F : FundamentalGroupoid X ⥤ Type u)
   let _ := FundamentalGroupoidAction.basepointMulAction F x₀
   have : MulAction.IsPretransitive (FundamentalGroup X x₀)
       (F.obj (FundamentalGroupoid.mk x₀)) :=
-    ⟨fun a b => hpre (FundamentalGroupoid.mk x₀) a b⟩
+    ⟨fun a b =>
+      let ⟨γ, hγ⟩ := hpre (FundamentalGroupoid.mk x₀) a b
+      ⟨.of γ, hγ⟩⟩
   obtain ⟨a⟩ :=
     FundamentalGroupoidAction.nonempty_of_isFiberwiseTransitive hF (FundamentalGroupoid.mk x₀)
   refine ⟨UniversalCover.stabilizerCover x₀ a, ⟨?_⟩⟩
@@ -137,7 +138,7 @@ theorem exists_monodromyFunctor_iso (F : FundamentalGroupoid X ⥤ Type u)
       (UniversalCover.transitiveActionFiberEquiv x₀ a).toIso (fun g => ?_)
   refine ConcreteCategory.hom_ext _ _ fun z => ?_
   simp only [types_comp_apply]
-  exact UniversalCover.transitiveActionFiberEquiv_apply_monodromy x₀ a g z
+  exact UniversalCover.transitiveActionFiberEquiv_apply_monodromy x₀ a (.of g) z
 
 /-- Transitive connected-cover monodromy is essentially surjective. -/
 instance transitiveMonodromyFunctor_essSurj :
@@ -189,7 +190,7 @@ theorem exists_monodromyFunctor_iso (F : FundamentalGroupoid X ⥤ Type u) :
   refine ConcreteCategory.hom_ext _ _ fun z => ?_
   simp only [types_comp_apply]
   exact UniversalCover.actionCoveringSpaceFiberEquiv_apply_monodromy x₀
-    (F.obj (FundamentalGroupoid.mk x₀)) g z
+    (F.obj (FundamentalGroupoid.mk x₀)) (.of g) z
 
 /-- Covering-space monodromy is essentially surjective. -/
 instance monodromyFunctor_essSurj : (monodromyFunctor X).EssSurj where

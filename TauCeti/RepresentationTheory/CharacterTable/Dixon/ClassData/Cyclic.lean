@@ -12,13 +12,15 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 # Class data for finite cyclic groups
 
 For `n ≠ 0`, this file gives the cyclic group `Multiplicative (ZMod n)` the executable
-conjugacy-class numbering used by the Dixon--Schneider algorithm.  It uses the standard enumeration
+conjugacy-class numbering used by the Dixon--Schneider algorithm. It uses the standard enumeration
 `0, 1, ..., n - 1`, transported from the additive group `ZMod n`; since the group is commutative,
-each conjugacy class is a singleton.
+each conjugacy class is a singleton. The definition follows the executable pattern of
+`TauCeti.dihedralClassData`.
 
-The order produced by `TauCeti.ClassData.ofList` is the order of the retained representatives in
-the input enumeration.  For `n = 2` the resulting representatives are `0, 1`, which in
-multiplicative notation are the identity and the nontrivial element.
+The order produced by `TauCeti.ClassData.ofList` is the order of the retained representatives in the
+input enumeration. For `n = 2` the resulting representatives are `0, 1`, which in multiplicative
+notation are the identity and the nontrivial element; this is the class order of the `C₂` example in
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.CyclicTwo`.
 
 ## Main definitions
 
@@ -29,15 +31,6 @@ multiplicative notation are the identity and the nontrivial element.
 * `TauCeti.numClasses_cyclicClassData`: a cyclic group of order `n` has `n` numbered classes.
 * `TauCeti.classFinset_cyclicClassData`: every numbered cyclic class is a singleton.
 * `TauCeti.structureConstant_cyclicClassData`: the structure constants are cyclic convolution.
-
-## References
-
-This supplies the executable class data for the cyclic `C₂` example in Layer 6, “Rational tables
-(first executable milestone),” of the [character theory roadmap][roadmap].
-
-The definition follows the executable pattern of `TauCeti.dihedralClassData`.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md
 -/
 
 public section

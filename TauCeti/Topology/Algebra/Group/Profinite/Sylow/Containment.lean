@@ -94,8 +94,6 @@ theorem IsProP.exists_le_map_conj (hQ : IsProP p Q) (hP : IsProPSylow p P) :
     exact Subgroup.map_mono hg
   have ht_directed : Directed (· ⊇ ·) t := fun U V ↦
     ⟨U ⊓ V, ht_mono inf_le_left, ht_mono inf_le_right⟩
-  let _ : Nonempty (OpenNormalSubgroup G) :=
-    ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
   obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
     ht_directed ht_nonempty (fun U ↦ (ht_closed U).isCompact) ht_closed
   -- A conjugate of a Sylow pro-`p` subgroup is closed, so it is the infimum of its joins with
@@ -133,7 +131,7 @@ theorem IsProPSylow.eq_of_le (hP : IsProPSylow p P) (hQ : IsProP p Q) (hPQ : P �
         Q.map (QuotientGroup.mk' U.toSubgroup) := by
       rw [hP.toSylow_coe]
       exact Subgroup.map_mono hPQ
-    have hmax := (hP.toSylow U).is_maximal' (hQ.isPGroup_map_mk' U) hle
+    have hmax := (hP.toSylow U).maximal_isPGroup.eq_of_ge (hQ.isPGroup_map_mk' U) hle
     rwa [hP.toSylow_coe] at hmax
   calc Q ≤ (Q.map (QuotientGroup.mk' U.toSubgroup)).comap (QuotientGroup.mk' U.toSubgroup) :=
         Subgroup.le_comap_map _ _

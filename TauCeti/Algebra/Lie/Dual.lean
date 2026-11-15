@@ -10,12 +10,16 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Lie.Schur
 
 /-!
-# The dual of a finite-dimensional irreducible Lie module
+# The dual of a Lie module and invariant bilinear forms
 
 The dual `M* = Module.Dual R M` of a Lie module carries the contragredient action
-`⁅x, f⁆ m = - f ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file records the two
-facts about it that a self-duality statement needs. Nothing here mentions weights, so both are
-stated for an arbitrary Lie algebra acting on an arbitrary module.
+`⁅x, f⁆ m = - f ⁅x, m⁆` (Mathlib's `Module.Dual.instLieRingModule`). This file records three
+facts about it that self-duality statements need: irreducibility of the dual, the dictionary
+between invariant bilinear forms and morphisms `M → M*`, and the equivalence `M ≃ M*` induced by a
+nondegenerate invariant form. All three are stated for an arbitrary Lie algebra acting on an
+arbitrary module. It also records that an integer eigenspace decomposition for one element passes
+to the dual, which is how polynomial functions on a module inherit a grading from such an
+element.
 
 The first is that irreducibility passes to the dual in finite dimensions. If `N ≤ M*` is stable
 under the action then so is the set of vectors every functional in `N` kills, because `⁅x, f⁆`
@@ -27,9 +31,14 @@ dictionary is already Mathlib's: a bilinear form on `M` *is* a linear map `M →
 `LinearMap.BilinForm` and `Module.Dual` being abbreviations; `LinearMap.BilinForm.lieInvariant_iff`
 says that invariance is exactly membership of the maximal trivial submodule; and
 `LieModule.maxTrivLinearMapEquivLieModuleHom` is the `R`-linear equivalence between that submodule
-and the morphism space. Only the consequence for nonvanishing is recorded here. For an irreducible
-`M` Schur's lemma then upgrades a nonzero morphism to an equivalence, so carrying a nonzero
-invariant form and being self-dual are the same condition.
+and the morphism space. From this dictionary only the consequence for nonvanishing is recorded
+here. For an irreducible `M` Schur's lemma then upgrades a nonzero morphism to an equivalence, so
+carrying a nonzero invariant form and being self-dual are the same condition.
+
+The third is that, without irreducibility, a nondegenerate invariant form on a finite-dimensional
+module is itself such an equivalence: the linear equivalence `LinearMap.BilinForm.toDual` commutes
+with the actions. For the Killing form of a semisimple Lie algebra this identifies the adjoint and
+coadjoint modules.
 
 ## Main results
 
@@ -39,11 +48,16 @@ invariant form and being self-dual are the same condition.
   invariant.
 * `TauCeti.LieModule.exists_ne_zero_lieInvariant_iff_exists_ne_zero_lieModuleHom`: a nonzero
   invariant bilinear form on `M` is a nonzero morphism `M → M*`, over any commutative ring.
+* `LinearMap.BilinForm.lieModuleEquivDual`: a nondegenerate invariant bilinear form on a
+  finite-dimensional Lie module `M` is an equivalence of Lie modules `M ≃ M*`.
 * `TauCeti.LieModule.isIrreducible_dual`: **the dual of a finite-dimensional irreducible Lie module
   is irreducible.**
 * `TauCeti.LieModule.exists_ne_zero_lieInvariant_iff_nonempty_lieModuleEquiv_dual`: **a
   finite-dimensional irreducible Lie module carries a nonzero invariant bilinear form exactly when
   it is equivalent to its dual.**
+* `TauCeti.LieModule.iSup_eigenspace_toEnd_dual_eq_top`: if a finite-dimensional Lie module is
+  the direct sum of the integer eigenspaces of `x`, then the integer eigenspaces of `x` acting on
+  the dual span the dual.
 
 ## References
 
@@ -120,6 +134,45 @@ theorem lieInvariant_coe (f : M →ₗ⁅R,L⁆ Dual R M) :
 
 end LieModuleHom
 
+namespace LinearMap.BilinForm
+
+variable {K : Type u} {L : Type v} {M : Type w}
+variable [Field K] [LieRing L] [LieAlgebra K L]
+variable [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+
+/-- **A nondegenerate invariant bilinear form identifies a Lie module with its dual.** For a
+nondegenerate bilinear form `B` on a finite-dimensional Lie module `M`, invariant under `L`, the
+linear equivalence `m ↦ B m` of `M` with `M*` (`LinearMap.BilinForm.toDual`) is an equivalence of
+Lie modules. -/
+noncomputable def lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) : M ≃ₗ⁅K,L⁆ Dual K M where
+  __ := B.toDual hB
+  map_lie' {x m} := LinearMap.ext fun n ↦ by simp [toDual_def, hBL x m n]
+
+/-- The Lie module equivalence `M ≃ M*` of a nondegenerate invariant form `B` sends `m` to the
+linear form `n ↦ B m n`. -/
+@[simp]
+theorem lieModuleEquivDual_apply (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) (m n : M) : B.lieModuleEquivDual hB hBL m n = B m n :=
+  (rfl)
+
+/-- The inverse of the Lie module equivalence `M ≃ M*` of a nondegenerate invariant form `B` sends
+a linear form `f` to the element `m` with `B m n = f n` for all `n`. -/
+@[simp]
+theorem apply_lieModuleEquivDual_symm_apply (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) (f : Dual K M) (n : M) :
+    B ((B.lieModuleEquivDual hB hBL).symm f) n = f n :=
+  B.apply_toDual_symm_apply (hB := hB) f n
+
+/-- The linear equivalence underlying `LinearMap.BilinForm.lieModuleEquivDual` is
+`LinearMap.BilinForm.toDual`. -/
+@[simp]
+theorem toLinearEquiv_lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
+    (hBL : B.lieInvariant L) : (B.lieModuleEquivDual hB hBL : M ≃ₗ[K] Dual K M) = B.toDual hB :=
+  (rfl)
+
+end LinearMap.BilinForm
+
 namespace TauCeti.LieModule
 
 section CommRing
@@ -190,5 +243,37 @@ theorem exists_ne_zero_lieInvariant_iff_nonempty_lieModuleEquiv_dual :
     ← nonempty_lieModuleEquiv_iff_exists_ne_zero]
 
 end Field
+
+/-! ### Integer eigenspaces of the dual -/
+
+section Eigenspace
+
+variable {K : Type u} {L : Type v} {M : Type w}
+variable [Field K] [LieRing L] [LieAlgebra K L]
+variable [AddCommGroup M] [Module K M] [LieRingModule L M] [_root_.LieModule K L M]
+variable [FiniteDimensional K M]
+
+/-- **Integer weight decompositions pass to the dual.** If a finite-dimensional Lie module `M` is
+the internal direct sum of the eigenspaces of `x` at the integers, then the eigenspaces of `x` at
+the integers span the dual `M*`. The dual basis of a basis of eigenvectors of weights `jᵢ` consists
+of eigenvectors of weights `-jᵢ`, because `⁅x, φ⁆ m = -φ ⁅x, m⁆`. -/
+theorem iSup_eigenspace_toEnd_dual_eq_top {x : L}
+    (hx : DirectSum.IsInternal fun j : ℤ ↦ (_root_.LieModule.toEnd K L M x).eigenspace (j : K)) :
+    ⨆ j : ℤ, (_root_.LieModule.toEnd K L (Dual K M) x).eigenspace (j : K) = ⊤ := by
+  classical
+  let b := hx.collectedBasis fun j : ℤ ↦
+    Module.Basis.ofVectorSpace K ((_root_.LieModule.toEnd K L M x).eigenspace (j : K))
+  have := Module.Finite.finite_basis b
+  rw [eq_top_iff, ← b.dualBasis.span_eq, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  refine Submodule.mem_iSup_of_mem (-i.1) (Module.End.mem_eigenspace_iff.2 (b.ext fun k ↦ ?_))
+  have hk : _root_.LieModule.toEnd K L M x (b k) = (k.1 : K) • b k :=
+    Module.End.mem_eigenspace_iff.1 (hx.collectedBasis_mem _ k)
+  rw [_root_.LieModule.toEnd_apply_apply] at hk
+  rw [_root_.LieModule.toEnd_apply_apply, Module.Dual.lie_apply, hk, LinearMap.smul_apply,
+    map_smul, b.dualBasis_apply_self]
+  split_ifs with h <;> simp [h]
+
+end Eigenspace
 
 end TauCeti.LieModule

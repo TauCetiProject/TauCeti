@@ -25,7 +25,7 @@ on `[[φ a, φ b]]`: `φ` is not assumed monotone, and `intermediate_value_uIcc`
 
 Only the off-curve case is treated: when `z₀` lies on the curve the winding number is a Cauchy
 principal value, whose symmetric excision windows are themselves reparametrized, and transporting
-them is a separate argument. This is the case that the roadmap's cycle bookkeeping consumes.
+them is a separate argument.
 
 ## Main results
 
@@ -35,14 +35,13 @@ them is a separate argument. This is the case that the roadmap's cycle bookkeepi
 * `TauCeti.Contour.IsNullHomologous.comp_reparam` — null-homology transports along a `C¹`
   reparametrization of a curve lying in the ambient set.
 
-This is Layer 0 of the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3): the
-reparametrization-invariance API that the cycle layer needs in order to treat a closed curve
-independently of its parametrization.
+It is the reparametrization-invariance API needed to treat a closed curve independently of its
+parametrization, as in the Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3).
 
 ## Provenance
 
-This is routine API around the Hungerbühler--Wasem generalized winding number from the contour
-integration roadmap; no formal source is vendored.
+This is routine API around the Hungerbühler--Wasem generalized winding number; no formal source is
+vendored.
 
 ## References
 

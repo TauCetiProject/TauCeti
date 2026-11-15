@@ -13,12 +13,10 @@ public import TauCeti.Analysis.Complex.UnitDisc.Basic
 /-!
 # The isometries of the Poincaré disc are the disc automorphisms and their conjugates
 
-The two objects layer **L2** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) asks for — "the **hyperbolic / Poincaré metric** on
-`𝔻`" and "the disc automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`" — are already on `main`,
-and `Conformal/Poincare/MetricSpace.lean` records the one implication relating them: every
-standard automorphism is a Poincaré isometry. This file proves the converse, which is what makes
-`Aut(𝔻)` the *right* group for that metric:
+For the hyperbolic (Poincaré) metric on `𝔻` and the disc automorphism group
+`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`, `Conformal/Poincare/MetricSpace.lean` records the one implication
+relating them: every standard automorphism is a Poincaré isometry. This file proves the converse,
+which is what makes `Aut(𝔻)` the *right* group for that metric:
 
 > a map of the open unit disc into itself that preserves the hyperbolic distance is
 > `z ↦ u * (z - b) / (1 - conj b * z)` or `z ↦ u * (conj z - b) / (1 - conj b * conj z)`,
@@ -80,16 +78,6 @@ Mathlib's own, `ℂ` carrying the `InnerProductSpace ℝ ℂ` instance with `⟪
   `TauCeti.bijOn_ball_of_hyperbolicDist_map_eq` and
   `TauCeti.PoincareDisc.bijective_of_isometry` — an isometric self-embedding of the Poincaré disc
   is a bijection.
-
-## Coordination with upstream Mathlib
-
-Mathlib has no Poincaré metric on the disc at all — its hyperbolic material lives on
-`UpperHalfPlane` — so it has no classification of the isometries of one, and this file is new Lean
-formalization rather than a temporary shim. The in-progress human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), together with the
-preceding `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`, stops
-at the mapping theorem and contains nothing of this; should a human-curated Poincaré metric and
-its isometry group land upstream, this file is to be refactored onto it.
 
 ## References
 
@@ -213,27 +201,18 @@ theorem exists_eqOn_ball_unitDiscStandardAutomorphismFormula_or_conj_of_pseudoHy
   refine ⟨u, -g 0 * conj u, hu, ?_, ?_⟩
   · rw [norm_mul, norm_neg, Complex.norm_conj, hu, mul_one]; exact ha
   · -- Undo the normalisation, using that the Moebius factor at `-g 0` inverts it.
-    rcases hcase with hcase | hcase
-    · left
-      intro z hz
-      have hz1 : (g z - g 0) / (1 - conj (g 0) * g z) = u * z := hcase hz
+    have key (z t : ℂ) (hz : z ∈ ball (0 : ℂ) 1)
+        (ht : (g z - g 0) / (1 - conj (g 0) * g z) = u * t) :
+        g z = u * ((t - -g 0 * conj u) / (1 - conj (-g 0 * conj u) * t)) := by
       have hinv := leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha (hmaps hz)
-      -- Beta-reduce the scalar Moebius formulas so that `hz1` rewrites `hinv`.
+      -- Beta-reduce the scalar Moebius formulas so that `ht` rewrites `hinv`.
       dsimp only at hinv
-      rw [hz1] at hinv
+      rw [ht] at hinv
       simp only [map_neg, neg_mul, sub_neg_eq_add] at hinv
       rw [← hinv]
-      exact const_mul_add_div_eq_unitDiscStandardAutomorphismFormula hu z
-    · right
-      intro z hz
-      have hz1 : (g z - g 0) / (1 - conj (g 0) * g z) = u * conj z := hcase hz
-      have hinv := leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha (hmaps hz)
-      -- Beta-reduce the scalar Moebius formulas so that `hz1` rewrites `hinv`.
-      dsimp only at hinv
-      rw [hz1] at hinv
-      simp only [map_neg, neg_mul, sub_neg_eq_add] at hinv
-      rw [← hinv]
-      exact const_mul_add_div_eq_unitDiscStandardAutomorphismFormula hu (conj z)
+      exact const_mul_add_div_eq_unitDiscStandardAutomorphismFormula hu t
+    exact hcase.imp (fun hcase z hz => key z z hz (hcase hz))
+      fun hcase z hz => key z (conj z) hz (hcase hz)
 
 /-- **The isometries of the Poincaré disc.** A self-map of the open unit disc preserving the
 hyperbolic distance is a standard disc automorphism `z ↦ u * (z - b) / (1 - conj b * z)` or the
@@ -278,7 +257,7 @@ theorem bijOn_ball_of_forall_pseudoHyperbolicExpr_map_eq
   have hinj : InjOn g (ball (0 : ℂ) 1) := by
     intro z hz w hw hzw
     have hd := hg z hz w hw
-    rw [hzw, pseudoHyperbolicExpr_eq_zero_of_eq rfl] at hd
+    rw [hzw, pseudoHyperbolicExpr_self] at hd
     exact (pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball hz hw).mp hd.symm
   obtain ⟨u, b, hu, hb, hcase⟩ :=
     exists_eqOn_ball_unitDiscStandardAutomorphismFormula_or_conj_of_pseudoHyperbolicExpr_map_eq

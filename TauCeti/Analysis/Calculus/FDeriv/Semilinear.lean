@@ -16,8 +16,9 @@ both the argument and value of a complex differentiable function.
 
 `HasFDerivWithinAt.comp_semilinear` extends Mathlib's `HasFDerivAt.comp_semilinear` to
 arbitrary source and target sets. The local `comp_semilinear_of_tendsto` form only requires
-that `R` approaches the target set near the point under consideration. The corresponding
-`DifferentiableWithinAt` lemmas transport differentiability without specifying a derivative.
+that `R` maps the points of the source set near the base point into the target set. The
+corresponding `DifferentiableWithinAt` lemmas transport differentiability without specifying a
+derivative.
 -/
 
 public section
@@ -43,11 +44,8 @@ lemma HasFDerivWithinAt.comp_semilinear_of_tendsto
     HasFDerivWithinAt (L ∘ f ∘ R) (L.comp (f'.comp R)) s x := by
   have : RingHomIsometric σ' := .inv σ
   rw [hasFDerivWithinAt_iff_isLittleO] at ⊢ hf
-  have hsmall := hf.comp_tendsto hR
-  have hRsub : ((fun y => y - R x) ∘ R) =O[𝓝[s] x] fun y => y - x := by
-    simpa [Function.comp_def, map_sub] using R.isBigO_sub (𝓝[s] x) x
-  simpa [Function.comp_def, map_sub] using
-    ((L.isBigO_comp _ _).trans_isLittleO hsmall).trans_isBigO hRsub
+  simpa [comp_def] using ((L.isBigO_comp _ _).trans_isLittleO (hf.comp_tendsto hR)).trans_isBigO
+    ((R.isBigO_sub _ x).congr_left fun y ↦ map_sub R y x)
 
 /-- If `L` and `R` are continuous semilinear maps with inverse scalar homomorphisms, and `R`
 maps `s` into `t`, then a derivative of `f` within `t` at `R x` transports to a derivative of
@@ -56,7 +54,7 @@ lemma HasFDerivWithinAt.comp_semilinear
     (hf : HasFDerivWithinAt f f' t (R x)) (hR : MapsTo R s t) :
     HasFDerivWithinAt (L ∘ f ∘ R) (L.comp (f'.comp R)) s x :=
   hf.comp_semilinear_of_tendsto L R
-    (R.continuous.continuousAt.continuousWithinAt.tendsto_nhdsWithin hR)
+    (R.continuous.continuousWithinAt.tendsto_nhdsWithin hR)
 
 /-- Composing on both sides by continuous semilinear maps with inverse scalar homomorphisms
 preserves differentiability within sets, provided the inner map tends to the target point

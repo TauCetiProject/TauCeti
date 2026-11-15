@@ -37,7 +37,7 @@ variable [Module.Finite R M] [Module.Projective R M]
 @[simp]
 theorem projectiveOrbitMap_units_smul (m : M) (c : Rˣ)
     (hm : Module.IsUnimodular R m) :
-    projectiveOrbitMap (H := H) (c • m) (Module.isUnimodular_units_smul c hm) =
+    projectiveOrbitMap (H := H) (c • m) (c.isUnimodular_smul_iff.mpr hm) =
       projectiveOrbitMap (H := H) m hm := by
   rw [projectiveOrbitMap_def, projectiveOrbitMap_def]
   apply TauCeti.ProjectiveSpectrum.fromOfGlobalSections_eq_of_unit_rescaling

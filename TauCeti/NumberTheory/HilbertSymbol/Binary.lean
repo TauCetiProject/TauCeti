@@ -55,7 +55,7 @@ theorem hilbertSymbol_eq_of_equivalent_binary [Invertible (2 : K)] {a b c d : K�
       (weightedSumSquares K ![(c : K), d])) :
     hilbertSymbol a b = hilbertSymbol c d :=
   hilbertSymbol_eq_of_nonempty_algEquiv
-    (QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary (a : K) b c d h)
+    (QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary h)
 
 /-- **Scaling the norm form.** The binary forms `⟨1, -b⟩` and `⟨a, -ab⟩ = a⟨1, -b⟩` are isometric
 exactly when the Hilbert symbol `(b, a)` is `1`, that is, when `a` is a value of `⟨1, -b⟩`. The

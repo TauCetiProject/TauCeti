@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -14,14 +14,21 @@ public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 The canonical trivialization of the tangent bundle at `x₀` is read off the chart at `x₀`, so the
 local frame it induces from a basis `b` of the model space is the classical coordinate frame of
 that chart.  This file identifies that frame with the pullback of constant model-space vector
-fields and proves that its vector fields commute.
+fields, shows that the chart derivative reads it back as the basis, and proves that its vector
+fields commute.
 
 ## Main results
 
-* `TauCeti.Manifold.eqOn_localFrame_trivializationAt_mpullbackWithin`: over the chart source, the
-  local frame of the canonical trivialization at `x₀` is the pullback along the extended chart of
-  a constant model-space vector field.
-* `TauCeti.Manifold.mlieBracket_localFrame_trivializationAt`: the coordinate frame commutes.
+* `TauCeti.Manifold.eqOn_symm_trivializationAt_mpullbackWithin` and
+  `TauCeti.Manifold.eqOn_localFrame_trivializationAt_mpullbackWithin`: over the chart source, a
+  vector field with constant coordinates in the canonical trivialization at `x₀`, in particular a
+  member of its local frame, is the pullback along the extended chart of a constant model-space
+  vector field.
+* `TauCeti.Manifold.mfderiv_extChartAt_localFrame_trivializationAt`: the derivative of the chart
+  sends the coordinate frame to the basis of the model space it is built from.
+* `TauCeti.Manifold.mlieBracket_symm_trivializationAt` and
+  `TauCeti.Manifold.mlieBracket_localFrame_trivializationAt`: vector fields with constant
+  coordinates commute, and so does the coordinate frame.
 -/
 
 public section
@@ -44,6 +51,25 @@ section Frame
 
 variable [IsManifold I 1 M]
 
+/-- **Vector fields with constant coordinates are coordinate vector fields.**  Over the source of
+the chart at `x₀`, the vector field whose coordinates in the canonical trivialization at `x₀` are
+the constant `v` is the pullback, along the extended chart, of the constant model-space vector
+field with value `v`. -/
+theorem eqOn_symm_trivializationAt_mpullbackWithin (x₀ : M) (v : E) :
+    EqOn (fun y ↦ (trivializationAt E (TangentSpace I) x₀).symm y v)
+      (mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
+        (fun _ ↦ v : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source)
+      (extChartAt I x₀).source := by
+  intro y hy
+  -- No rewrite reaches the pullback here: `TangentSpace 𝓘(𝕜, E) z` is only definitionally the
+  -- model space, so the constant field makes the goal ill-typed at `implicit` transparency.
+  have hpull : mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
+      (fun _ ↦ v : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source y =
+      (mfderiv[(extChartAt I x₀).source] (extChartAt I x₀) y).inverse v := rfl
+  rw [hpull, mfderivWithin_of_isOpen (isOpen_extChartAt_source x₀) hy,
+    inverse_mfderiv_extChartAt x₀ hy]
+  exact (Bundle.Trivialization.symmL_apply _ (by simpa using hy) v).symm
+
 /-- **The local frame of the canonical trivialization is the coordinate frame of the chart.**  Over
 the source of the chart at `x₀`, the `i`-th section of the local frame induced by a basis `b` is
 the pullback, along the extended chart, of the constant model-space vector field with value
@@ -52,34 +78,42 @@ theorem eqOn_localFrame_trivializationAt_mpullbackWithin (b : Basis ι 𝕜 E) (
     EqOn ((trivializationAt E (TangentSpace I) x₀).localFrame b i)
       (mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
         (fun _ ↦ b i : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source)
-      (extChartAt I x₀).source := by
-  intro y hy
-  -- No rewrite reaches the pullback here: `TangentSpace 𝓘(𝕜, E) z` is only definitionally the
-  -- model space, so the constant field makes the goal ill-typed at `implicit` transparency.
-  have hpull : mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
-      (fun _ ↦ b i : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source y =
-      (mfderiv[(extChartAt I x₀).source] (extChartAt I x₀) y).inverse (b i) := rfl
-  rw [hpull, mfderivWithin_of_isOpen (isOpen_extChartAt_source x₀) hy,
-    inverse_mfderiv_extChartAt x₀ hy]
-  exact (symmL_basis_eq_localFrame b (by simpa using hy) i).symm
+      (extChartAt I x₀).source := fun y hy ↦ by
+  rw [← eqOn_symm_trivializationAt_mpullbackWithin x₀ (b i) hy,
+    ← symmL_basis_eq_localFrame b (by simpa using hy) i,
+    Bundle.Trivialization.symmL_apply _ (by simpa using hy)]
+
+/-- **The chart reads the coordinate frame as the basis.**  At a point of the source of the chart
+at `x₀`, the derivative of the extended chart sends the `i`-th vector of the local frame induced by
+a basis `b` to `b i`. -/
+theorem mfderiv_extChartAt_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x₀ : M)
+    (hx : x ∈ (extChartAt I x₀).source) (i : ι) :
+    mfderiv I 𝓘(𝕜, E) (extChartAt I x₀) x
+        ((trivializationAt E (TangentSpace I) x₀).localFrame b i x) = b i := by
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt (by simpa using hx)]
+  exact continuousLinearMapAt_localFrame b (by simpa using hx) i
 
 end Frame
 
 variable [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M]
 
-/-- **The coordinate frame of a chart commutes.**  The local frame that a basis of the model space
-induces through the canonical tangent-bundle trivialization at `x₀` has vanishing Lie brackets on
-the source of the chart at `x₀`. -/
-theorem mlieBracket_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x₀ : M)
-    (hx : x ∈ (extChartAt I x₀).source) (i j : ι) :
-    mlieBracket I ((trivializationAt E (TangentSpace I) x₀).localFrame b i)
-      ((trivializationAt E (TangentSpace I) x₀).localFrame b j) x = 0 := by
+/-- Two vector fields which agree on the chart source at `x₀` with the pullbacks of constant
+model-space vector fields commute on that source. -/
+private theorem mlieBracket_eq_zero_of_eqOn_mpullbackWithin (x₀ : M)
+    (hx : x ∈ (extChartAt I x₀).source) {X Y : Π y : M, TangentSpace I y} (v w : E)
+    (hX : EqOn X (mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
+      (fun _ ↦ v : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source)
+      (extChartAt I x₀).source)
+    (hY : EqOn Y (mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
+      (fun _ ↦ w : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source)
+      (extChartAt I x₀).source) :
+    mlieBracket I X Y x = 0 := by
   have hsopen : IsOpen (extChartAt I x₀).source := isOpen_extChartAt_source x₀
   -- Naturality of the manifold Lie bracket under the pullback along the chart at `x₀`.
   have key := mpullbackWithin_mlieBracketWithin (I := I) (I' := 𝓘(𝕜, E))
     (f := (extChartAt I x₀ : M → E))
-    (V := (fun _ ↦ b i : Π z : E, TangentSpace 𝓘(𝕜, E) z))
-    (W := (fun _ ↦ b j : Π z : E, TangentSpace 𝓘(𝕜, E) z))
+    (V := (fun _ ↦ v : Π z : E, TangentSpace 𝓘(𝕜, E) z))
+    (W := (fun _ ↦ w : Π z : E, TangentSpace 𝓘(𝕜, E) z))
     (s := (extChartAt I x₀).source) (t := univ) (x₀ := x) (n := minSmoothness 𝕜 2)
     (hV := ((contMDiffWithinAt_vectorSpace_iff_contDiffWithinAt (n := 1)).2
       contDiffWithinAt_const).mdifferentiableWithinAt one_ne_zero)
@@ -91,23 +125,43 @@ theorem mlieBracket_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x₀ : M)
     (h'x₀ := by rw [hsopen.interior_eq]; exact subset_closure hx)
   -- Constant vector fields on the model space commute.
   have hconst : mlieBracketWithin 𝓘(𝕜, E)
-      (fun _ ↦ b i : Π z : E, TangentSpace 𝓘(𝕜, E) z)
-      (fun _ ↦ b j : Π z : E, TangentSpace 𝓘(𝕜, E) z) univ =
+      (fun _ ↦ v : Π z : E, TangentSpace 𝓘(𝕜, E) z)
+      (fun _ ↦ w : Π z : E, TangentSpace 𝓘(𝕜, E) z) univ =
       (0 : Π z : E, TangentSpace 𝓘(𝕜, E) z) := by
     refine (mlieBracketWithin_univ (I := 𝓘(𝕜, E))
-      (V := (fun _ ↦ b i : Π z : E, TangentSpace 𝓘(𝕜, E) z))
-      (W := (fun _ ↦ b j : Π z : E, TangentSpace 𝓘(𝕜, E) z))).trans ?_
+      (V := (fun _ ↦ v : Π z : E, TangentSpace 𝓘(𝕜, E) z))
+      (W := (fun _ ↦ w : Π z : E, TangentSpace 𝓘(𝕜, E) z))).trans ?_
     funext z
-    exact mlieBracket_const_model_space (𝕜 := 𝕜) (F := E) (b i) (b j) z
+    exact mlieBracket_const_model_space (𝕜 := 𝕜) (F := E) v w z
   rw [hconst] at key
   -- As above, the pullback of the zero field is reached definitionally rather than by rewriting.
   have hpull : mpullbackWithin I 𝓘(𝕜, E) (extChartAt I x₀)
       (0 : Π z : E, TangentSpace 𝓘(𝕜, E) z) (extChartAt I x₀).source x =
       (mfderiv[(extChartAt I x₀).source] (extChartAt I x₀) x).inverse 0 := rfl
   rw [hpull, map_zero] at key
-  rw [← mlieBracketWithin_of_isOpen (I := I) hsopen hx,
-    mlieBracketWithin_congr' (eqOn_localFrame_trivializationAt_mpullbackWithin b x₀ i)
-      (eqOn_localFrame_trivializationAt_mpullbackWithin b x₀ j) hx]
+  rw [← mlieBracketWithin_of_isOpen (I := I) hsopen hx, mlieBracketWithin_congr' hX hY hx]
   exact key.symm
+
+/-- **Vector fields with constant coordinates commute.**  Two vector fields whose coordinates in
+the canonical tangent-bundle trivialization at `x₀` are constant have vanishing Lie bracket on the
+source of the chart at `x₀`. -/
+theorem mlieBracket_symm_trivializationAt (x₀ : M) (hx : x ∈ (extChartAt I x₀).source)
+    (v w : E) :
+    mlieBracket I (fun y ↦ (trivializationAt E (TangentSpace I) x₀).symm y v)
+      (fun y ↦ (trivializationAt E (TangentSpace I) x₀).symm y w) x = 0 :=
+  mlieBracket_eq_zero_of_eqOn_mpullbackWithin x₀ hx v w
+    (eqOn_symm_trivializationAt_mpullbackWithin x₀ v)
+    (eqOn_symm_trivializationAt_mpullbackWithin x₀ w)
+
+/-- **The coordinate frame of a chart commutes.**  The local frame that a basis of the model space
+induces through the canonical tangent-bundle trivialization at `x₀` has vanishing Lie brackets on
+the source of the chart at `x₀`. -/
+theorem mlieBracket_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x₀ : M)
+    (hx : x ∈ (extChartAt I x₀).source) (i j : ι) :
+    mlieBracket I ((trivializationAt E (TangentSpace I) x₀).localFrame b i)
+      ((trivializationAt E (TangentSpace I) x₀).localFrame b j) x = 0 :=
+  mlieBracket_eq_zero_of_eqOn_mpullbackWithin x₀ hx (b i) (b j)
+    (eqOn_localFrame_trivializationAt_mpullbackWithin b x₀ i)
+    (eqOn_localFrame_trivializationAt_mpullbackWithin b x₀ j)
 
 end TauCeti.Manifold

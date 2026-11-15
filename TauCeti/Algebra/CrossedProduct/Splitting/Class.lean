@@ -126,7 +126,7 @@ private noncomputable def rowCrossedAction :
     CrossedProduct (cocycleOfSplitting φ) →ₐ[K] Module.End K (n → L) :=
   CrossedProduct.lift (Algebra.lsmul K K (n → L)) (rowGenerator φ)
     (fun σ x ↦ LinearMap.ext fun w ↦ by
-      simp only [Module.End.mul_apply, rowGenerator_apply, Algebra.lsmul_coe, ← smul_vecMul]
+      simp only [mul_apply_eq_comp, rowGenerator_apply, Algebra.lsmul_coe, ← smul_vecMul]
       congr 1
       ext i
       simp)
@@ -138,7 +138,7 @@ private noncomputable def rowCrossedAction :
       have hσ (v : n → L) (M : Matrix n n L) :
           (fun i ↦ σ ((v ᵥ* M) i)) = (fun i ↦ σ (v i)) ᵥ* M.map σ :=
         funext (RingHom.map_vecMul (σ : L →+* L) M v)
-      simp only [Module.End.mul_apply, rowGenerator_apply, Algebra.lsmul_coe, hσ,
+      simp only [mul_apply_eq_comp, rowGenerator_apply, Algebra.lsmul_coe, hσ,
         vecMul_vecMul, hmap]
       rw [← Units.val_mul, map_inv_mul_inv, Units.val_mul, coe_scalar, scalar_apply,
         ← smul_eq_diagonal_mul, vecMul_smul]
@@ -158,7 +158,7 @@ private theorem commute_rowCrossedAction_rowAction (b : CrossedProduct (cocycleO
     · have hσ (v : n → L) (M : Matrix n n L) :
           (fun i ↦ σ ((v ᵥ* M) i)) = (fun i ↦ σ (v i)) ᵥ* M.map σ :=
         funext (RingHom.map_vecMul (σ : L →+* L) M v)
-      simp only [Module.End.mul_apply, rowAction_apply, rowGenerator_apply, hσ,
+      simp only [mul_apply_eq_comp, rowAction_apply, rowGenerator_apply, hσ,
         vecMul_vecMul, map_mul_inv_eq]
 
 /-- The action of `CrossedProduct c ⊗[K] Aᵐᵒᵖ` on the row vectors `Lⁿ`. -/

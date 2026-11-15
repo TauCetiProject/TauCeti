@@ -1,0 +1,125 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Normed.Group.Ultra
+public import Mathlib.Topology.Bases
+
+/-!
+# The ultrametric inequality for quotients and differences
+
+In an ultrametric seminormed group, `‖x / y‖ ≤ max ‖x‖ ‖y‖`; additively,
+`‖x - y‖ ≤ max ‖x‖ ‖y‖`, and likewise for `‖·‖₊`. These are the companions of Mathlib's
+`IsUltrametricDist.norm_mul_le_max` and `IsUltrametricDist.norm_add_le_max`. Measured from a
+common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. If
+`‖x - y‖ < ‖x‖` then `‖x‖ = ‖y‖`: an element and a strictly smaller perturbation of it have the
+same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`. Consequently a dense
+subset attains every nonzero norm (`IsUltrametricDist.exists_norm_eq_of_denseRange'`, additively
+`IsUltrametricDist.exists_norm_eq_of_denseRange`): passing to a completion adds no new nonzero
+norms.
+
+A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
+bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
+`‖cₙ‖` with empty intersection (`IsUltrametricDist.exists_antitone_closedBall_iInter_eq_empty`).
+Enumerate a dense sequence `xₙ` and choose the `(n + 1)`-st ball to avoid `xₙ`, keeping the centre
+when it is already far from `xₙ` and moving it by `cₙ` otherwise. A common point `b` of the balls
+would have all of them containing the ball of radius `inf ‖cₙ‖ > 0` about `b`, hence some `xₙ`.
+For `ℂ_p` this is the classical construction of a decreasing sequence of discs without a common
+point; see A. M. Robert, *A Course in p-adic Analysis*, Graduate Texts in Mathematics 198,
+Springer, 2000, Chapter 3.
+-/
+
+public section
+
+namespace IsUltrametricDist
+
+variable {S : Type*} [SeminormedGroup S] [IsUltrametricDist S]
+
+/-- The ultrametric inequality for a quotient: `‖x / y‖ ≤ max ‖x‖ ‖y‖`. -/
+@[to_additive /-- The ultrametric inequality for a difference: `‖x - y‖ ≤ max ‖x‖ ‖y‖`. -/]
+theorem norm_div_le_max (x y : S) : ‖x / y‖ ≤ max ‖x‖ ‖y‖ := by
+  simpa [div_eq_mul_inv] using norm_mul_le_max x y⁻¹
+
+/-- The ultrametric inequality for a quotient: `‖x / y‖₊ ≤ max ‖x‖₊ ‖y‖₊`. -/
+@[to_additive /-- The ultrametric inequality for a difference: `‖x - y‖₊ ≤ max ‖x‖₊ ‖y‖₊`. -/]
+theorem nnnorm_div_le_max (x y : S) : ‖x / y‖₊ ≤ max ‖x‖₊ ‖y‖₊ := by
+  simpa [div_eq_mul_inv] using nnNorm_mul_le_max x y⁻¹
+
+/-- In an ultrametric group, if `‖x / y‖ < ‖x‖` then `x` and `y` have the same norm. -/
+@[to_additive /-- In an ultrametric additive group, if `‖x - y‖ < ‖x‖` then `x` and `y` have the
+same norm. -/]
+theorem norm_eq_of_norm_div_lt_left {x y : S} (h : ‖x / y‖ < ‖x‖) : ‖x‖ = ‖y‖ := by
+  have h' := norm_eq_of_mul_norm_lt_max (x := x) (y := y⁻¹)
+    ((div_eq_mul_inv x y ▸ h).trans_le (le_max_left _ _))
+  rwa [norm_inv'] at h'
+
+/-- In an ultrametric group, if `x` and the quotient `y / x` both have norm at most `C`, so
+does `y`. -/
+@[to_additive /-- In an ultrametric additive group, if `x` and the difference `y - x` both have
+norm at most `C`, so does `y`. -/]
+theorem norm_le_of_norm_div_le {x y : S} {C : ℝ} (hx : ‖x‖ ≤ C) (h : ‖y / x‖ ≤ C) : ‖y‖ ≤ C := by
+  rw [← div_mul_cancel y x]
+  exact (norm_mul_le_max _ _).trans (max_le h hx)
+
+/-- The ultrametric triangle inequality for quotients, measured from a common point `y`:
+`‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖`. -/
+@[to_additive /-- The ultrametric triangle inequality for differences, measured from a common
+point `y`: `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. -/]
+theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖ := by
+  rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
+  exact norm_mul_le_max _ _
+
+/-- **A dense subset attains every nonzero norm** of an ultrametric group: if `f` has dense range
+and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some `a`. -/
+@[to_additive exists_norm_eq_of_denseRange /-- **A dense subset attains every nonzero norm** of an
+ultrametric additive group: if `f` has dense range and `‖y‖ ≠ 0`, then `‖f a‖ = ‖y‖` for some
+`a`. -/]
+theorem exists_norm_eq_of_denseRange' {α : Type*} {f : α → S} (hf : DenseRange f) {y : S}
+    (hy : ‖y‖ ≠ 0) : ∃ a, ‖f a‖ = ‖y‖ := by
+  obtain ⟨a, ha⟩ := hf.exists_dist_lt y ((norm_nonneg' y).lt_of_ne' hy)
+  rw [dist_eq_norm_inv_mul] at ha
+  refine ⟨a, ?_⟩
+  rw [← mul_inv_cancel_left y (f a), norm_mul_eq_max_of_norm_ne_norm ha.ne', max_eq_left ha.le]
+
+section SphericalCompleteness
+
+open Metric
+
+variable {E : Type*} [SeminormedAddGroup E] [IsUltrametricDist E]
+
+/-- **A separable ultrametric group is not spherically complete** once its norms take a strictly
+decreasing sequence of values `‖cₙ‖` bounded below by some `ρ > 0`: there are decreasing closed
+balls of radii `‖cₙ‖`, starting at any centre `a₀`, with empty intersection. -/
+theorem exists_antitone_closedBall_iInter_eq_empty [TopologicalSpace.SeparableSpace E]
+    {c : ℕ → E} (hc : StrictAnti fun n ↦ ‖c n‖) {ρ : ℝ} (hρ : 0 < ρ) (hcρ : ∀ n, ρ ≤ ‖c n‖)
+    (a₀ : E) :
+    ∃ a : ℕ → E, a 0 = a₀ ∧ Antitone (fun n ↦ closedBall (a n) ‖c n‖) ∧
+      ⋂ n, closedBall (a n) ‖c n‖ = ∅ := by
+  obtain ⟨x, hx⟩ := TopologicalSpace.exists_dense_seq E
+  -- the next centre stays at `b` if `b` is far from `xₙ`, and moves by `cₙ` otherwise
+  let step (n : ℕ) (b : E) : E := if ‖c (n + 1)‖ < dist (x n) b then b else b + c n
+  have hstep (n : ℕ) (b : E) :
+      dist b (step n b) ≤ ‖c n‖ ∧ ‖c (n + 1)‖ < dist (x n) (step n b) := by
+    by_cases h : ‖c (n + 1)‖ < dist (x n) b
+    · simp [step, h]
+    · rw [dist_eq_norm_neg_add] at h
+      have hlt : ‖-x n + b‖ < ‖c n‖ := (not_lt.mp h).trans_lt (hc n.lt_succ_self)
+      simpa [step, h, dist_eq_norm_neg_add, ← add_assoc, norm_add_eq_max_of_norm_ne_norm hlt.ne,
+        hlt.le] using hc n.lt_succ_self
+  let a (n : ℕ) : E := Nat.rec a₀ step n
+  refine ⟨a, rfl, antitone_nat_of_succ_le fun n ↦ ?_, Set.eq_empty_of_forall_notMem fun b hb ↦ ?_⟩
+  · -- the `(n + 1)`-st centre lies in the `n`-th ball, which it therefore also centres
+    rw [closedBall_eq_of_mem (mem_closedBall'.mpr (hstep n (a n)).1)]
+    exact closedBall_subset_closedBall (hc n.lt_succ_self).le
+  · -- a common point `b` is close to some `xₘ`, which then lies in the `(m + 1)`-st ball
+    rw [Set.mem_iInter] at hb
+    obtain ⟨m, hm⟩ := Metric.denseRange_iff.mp hx b ρ hρ
+    exact (hstep m (a m)).2.not_ge <| (dist_triangle_max _ b _).trans <|
+      max_le (by rw [dist_comm]; exact hm.le.trans (hcρ _)) (mem_closedBall.mp (hb (m + 1)))
+
+end SphericalCompleteness
+
+end IsUltrametricDist

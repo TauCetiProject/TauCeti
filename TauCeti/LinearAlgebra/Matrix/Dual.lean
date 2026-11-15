@@ -68,24 +68,25 @@ theorem isSymm_dotProductBilin {R ι : Type*} [CommSemiring R] [Fintype ι] :
 
 /-- **A family paired diagonally by a second family is linearly independent.** If `v i ⬝ᵥ w j`
 vanishes whenever `i ≠ j` and right multiplication by `v i ⬝ᵥ w i` is injective, the `v i` are
-linearly independent. Over a ring without zero divisors, nonzero diagonal entries suffice; in
-particular, this applies over `ℤ` with diagonal `2`. The ring may have zero divisors away from
-the chosen diagonal entries.
+linearly independent. If right multiplication by every nonzero element is injective
+(`IsRightCancelMulZero R`, as over a ring without zero divisors or over `ℕ`), nonzero diagonal
+entries suffice; in particular, this applies over `ℤ` with diagonal `2`. Absence of zero divisors
+alone does not suffice over a semiring. The semiring may have zero divisors away from the chosen
+diagonal entries.
 The family index `κ` is arbitrary — neither finite nor decidable — and unrelated to the coordinate
-index `ι`; the scalars need not commute. -/
+index `ι`; the scalars need neither commute nor have additive inverses. -/
 theorem linearIndependent_of_dotProduct_diagonal {κ ι R : Type*}
-    [Fintype ι] [Ring R] {v w : κ → ι → R} {c : κ → R}
+    [Fintype ι] [Semiring R] {v w : κ → ι → R} {c : κ → R}
     (hc : ∀ i, IsRightRegular (c i)) (hdiag : ∀ i, v i ⬝ᵥ w i = c i)
     (hoff : ∀ i j, i ≠ j → v i ⬝ᵥ w j = 0) :
     LinearIndependent R v := by
-  rw [linearIndependent_iff']
-  intro s g hg j hj
-  -- pairing the relation with `w j` kills every term but the `j`-th, leaving `g j * c j = 0`
-  have hpair := congrArg (· ⬝ᵥ w j) hg
-  simp only [sum_dotProduct, smul_dotProduct, smul_eq_mul, zero_dotProduct] at hpair
-  rw [Finset.sum_eq_single j (fun i _ hij => by rw [hoff i j hij, mul_zero])
-      (fun hns => absurd hj hns), hdiag] at hpair
-  exact (hc j) (hpair.trans (zero_mul _).symm)
+  rw [linearIndependent_iff'ₛ]
+  intro s f g hfg j hj
+  -- pairing a combination with `w j` kills every term but the `j`-th
+  have hpair (f : κ → R) : (∑ i ∈ s, f i • v i) ⬝ᵥ w j = f j * c j := by
+    simp only [sum_dotProduct, smul_dotProduct, smul_eq_mul]
+    rw [Finset.sum_eq_single_of_mem j hj fun i _ hij ↦ by rw [hoff i j hij, mul_zero], hdiag]
+  exact hc j (by simpa only [hpair] using congrArg (· ⬝ᵥ w j) hfg)
 
 end TauCeti
 

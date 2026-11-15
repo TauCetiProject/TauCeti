@@ -12,8 +12,6 @@ public import Mathlib.Probability.Kernel.Basic
 -- Non-public: `map_infinitePi_infinitePi_of_inj` is used inside the prefix-marginal and
 -- block-selection proofs.
 import Mathlib.Probability.Independence.InfinitePi
--- Non-public: `map_bind` is used only inside the mixture prefix-rectangle proof.
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Product probability-measure kernels
@@ -60,6 +58,9 @@ Measurability:
   `x ↦ (Q, x ∘ k)` is `δ_Q ⊗ Q^{⊗ Fin m}`. This generalizes the prefix marginal above from `Fin.val`
   to any injective `k`, and pairs it with the Dirac factor, which is the form a disintegration
   against a directing measure consumes.
+* `map_infinitePi_comp_injective` — reading the coordinates of `Q^{⊗ι}` along an injective map and
+  applying a measurable `h` to each gives `(Q.map h)^{⊗κ}`, the form an equivariance argument for
+  i.i.d. mixtures consumes.
 
 Bind-evaluation of the mixture `μ.bind fun ω ↦ (ProbabilityMeasure.pi fun i ↦ ν i ω).toMeasure`:
 * `bind_probabilityMeasure_pi_apply` — evaluation on a measurable set as the integral of the product
@@ -232,6 +233,19 @@ theorem measurable_infinitePi_const {α : Type*} [MeasurableSpace α] :
       Measure.infinitePi (fun _ : ℕ ↦ (p : Measure α)) :=
   measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
 
+/-- The mixture `∫ P^{⊗ι} dπ(P)` of the powers of `P` indexed by an arbitrary type `ι` has the same
+total mass as the mixing measure `π`, since every infinite product of probability measures is itself
+a probability measure. -/
+@[simp]
+theorem _root_.MeasureTheory.Measure.bind_infinitePi_univ {α ι : Type*} [MeasurableSpace α]
+    (π : Measure (ProbabilityMeasure α)) :
+    (π.bind fun P => Measure.infinitePi fun _ : ι => (P : Measure α)) Set.univ = π Set.univ := by
+  have hm : Measurable fun P : ProbabilityMeasure α ↦
+      Measure.infinitePi fun _ : ι ↦ (P : Measure α) :=
+    measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
+  rw [Measure.bind_apply MeasurableSet.univ hm.aemeasurable]
+  simp
+
 /-- **Parameter-tagged product kernel.** For a measurable family of probability measures
 `P : T → ProbabilityMeasure α`, the random measure `t ↦ δ_t ⊗ (P t)^{⊗ι}` on `T × (ι → α)` is
 measurable, over an arbitrary index type `ι`.
@@ -301,6 +315,22 @@ theorem map_infinitePi_pair_block {T α : Type*} [MeasurableSpace T] [Measurable
     _ = (Measure.dirac t).prod (ProbabilityMeasure.pi fun _ : Fin m ↦ Q).toMeasure := by
         rw [ProbabilityMeasure.toMeasure_pi, Measure.dirac_prod]
 
+/-- **Reindexing and transforming the coordinates of an i.i.d. power.** Reading the coordinates of
+`Q^{⊗ι}` along an injective `k : κ → ι` and applying a measurable `h` to each of them gives the
+power `(Q.map h)^{⊗κ}`. -/
+theorem map_infinitePi_comp_injective {ι κ α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (Q : ProbabilityMeasure α) {k : κ → ι} (hk : Function.Injective k) {h : α → β}
+    (hh : Measurable h) :
+    (Measure.infinitePi fun _ : ι ↦ (Q : Measure α)).map (fun x i ↦ h (x (k i)))
+      = Measure.infinitePi fun _ : κ ↦ (Q.map h : Measure β) := by
+  have hr : Measurable fun (x : ι → α) (i : κ) ↦ x (k i) :=
+    Measurable.of_eval fun i ↦ measurable_pi_apply (k i)
+  have hc : Measurable fun (x : κ → α) (i : κ) ↦ h (x i) :=
+    Measurable.of_eval fun i ↦ hh.comp (measurable_pi_apply i)
+  refine (Measure.map_map hc hr).symm.trans ?_
+  rw [Measure.map_infinitePi_infinitePi_of_inj hk, Measure.infinitePi_map_pi _ fun _ ↦ hh,
+    ProbabilityMeasure.toMeasure_map]
+
 /-- **Bind-evaluation.** Evaluating the mixture
 `μ.bind fun ω ↦ (ProbabilityMeasure.pi fun i ↦ ν i ω).toMeasure` on a measurable set `s` gives
 `∫⁻ ω, … s ∂μ`, requiring only a.e.-measurability of each coordinate kernel `ν i`. -/
@@ -356,7 +386,7 @@ theorem map_prefixProj_bind_infinitePi_pi {α : Type*} [MeasurableSpace α]
       (Measure.infinitePi fun _ : ℕ ↦ (P : Measure α)).map
         fun x : ℕ → α ↦ fun i : Fin n ↦ x i) π :=
     ((Measure.measurable_map _ hproj).comp measurable_infinitePi_const).aemeasurable
-  rw [map_bind measurable_infinitePi_const.aemeasurable hproj,
+  rw [Measure.map_bind measurable_infinitePi_const.aemeasurable hproj.aemeasurable,
     Measure.bind_apply (MeasurableSet.univ_pi hB) hmeas]
   refine lintegral_congr fun P ↦ ?_
   rw [map_prefixProj_infinitePi_const, Measure.pi_pi]

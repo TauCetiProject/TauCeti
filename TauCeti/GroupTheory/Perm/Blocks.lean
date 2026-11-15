@@ -33,6 +33,10 @@ along which a transitive group is built from primitive pieces.
 
 ## Main results
 
+* `TauCeti.blockMemOrderIsoCongr`: an equivariant equivalence transports the lattice of blocks
+  containing a point, without requiring transitivity.
+* `TauCeti.blockMem_stabilizer_injective_iff_isPretransitive`: the block–stabilizer map is
+  injective exactly for transitive actions, so the correspondence needs transitivity.
 * `MulAction.IsBlock.isAtom_iff_stabilizer_covBy`: atomicity of a block is equivalent to its
   stabilizer covering the point stabilizer.
 * `MulAction.IsBlock.isPreprimitive_stabilizer_of_isAtom`: the stabilizer of an atomic block acts
@@ -63,6 +67,65 @@ namespace TauCeti
 open scoped Pointwise
 
 open MulAction
+
+section Transport
+
+variable (G : Type*) {X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
+
+/-- An equivariant equivalence transports blocks containing a point by taking their images.
+Its inverse takes preimages, and no transitivity assumption is needed. -/
+def blockMemOrderIsoCongr (e : X ≃ Y) (he : ∀ (g : G) (x : X), e (g • x) = g • e x)
+    (a : X) : BlockMem G a ≃o BlockMem G (e a) :=
+  let f : X →[G] Y := { toFun := e, map_smul' := he }
+  { toFun := fun B ↦ ⟨e '' (B : Set X),
+      ⟨⟨a, B.2.1, rfl⟩, B.2.2.image f Function.surjective_id e.injective⟩⟩
+    invFun := fun B ↦ ⟨e ⁻¹' (B : Set Y), ⟨B.2.1, B.2.2.preimage f⟩⟩
+    left_inv := fun _ ↦ Subtype.ext (Set.preimage_image_eq _ e.injective)
+    right_inv := fun _ ↦ Subtype.ext (Set.image_preimage_eq _ e.surjective)
+    map_rel_iff' := Set.image_subset_image_iff e.injective }
+
+/-- Transporting a block along an equivariant equivalence takes its image. -/
+@[simp]
+theorem coe_blockMemOrderIsoCongr_apply (e : X ≃ Y)
+    (he : ∀ (g : G) (x : X), e (g • x) = g • e x) (a : X) (B : BlockMem G a) :
+    (blockMemOrderIsoCongr G e he a B : Set Y) = e '' (B : Set X) := by
+  unfold blockMemOrderIsoCongr
+  rfl
+
+/-- Transporting a block back along an equivariant equivalence takes its preimage. -/
+@[simp]
+theorem coe_blockMemOrderIsoCongr_symm_apply (e : X ≃ Y)
+    (he : ∀ (g : G) (x : X), e (g • x) = g • e x) (a : X) (B : BlockMem G (e a)) :
+    ((blockMemOrderIsoCongr G e he a).symm B : Set X) = e ⁻¹' (B : Set Y) := by
+  unfold blockMemOrderIsoCongr
+  rfl
+
+end Transport
+
+section Injective
+
+variable (G : Type*) {X : Type*} [Group G] [MulAction G X]
+
+/-- Sending a block containing `a` to its setwise stabilizer is injective exactly when the action
+is transitive. Without transitivity the orbit of `a` and the whole space are distinct blocks
+containing `a`, and both are stabilized by every element; for instance, the trivial group acting
+on a two-point set. -/
+theorem blockMem_stabilizer_injective_iff_isPretransitive (a : X) :
+    Function.Injective (fun B : BlockMem G a ↦ stabilizer G (B : Set X)) ↔
+      IsPretransitive G X := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ ?_⟩
+  · rw [isPretransitive_iff_orbit_eq_univ a]
+    have hstab : stabilizer G (orbit G a) = stabilizer G ((⊤ : BlockMem G a) : Set X) := by
+      rw [BlockMem.coe_top, stabilizer_univ, eq_top_iff]
+      exact fun g _ ↦ smul_orbit g a
+    simpa only [BlockMem.coe_top] using
+      congrArg Subtype.val (@h ⟨orbit G a, mem_orbit_self a, .orbit a⟩ ⊤ hstab)
+  · intro B₁ B₂ hB
+    apply (block_stabilizerOrderIso G a).injective
+    -- Mathlib's block correspondence sends a block to its setwise stabilizer, by definition.
+    exact Subtype.ext hB
+
+end Injective
 
 variable {G X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
   {B : Set X} {a : X}

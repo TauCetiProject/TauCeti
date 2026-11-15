@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
+public import Mathlib.Topology.LocallyClosed
 import Mathlib.Topology.Algebra.Group.Basic
 import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 
@@ -54,14 +55,20 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
   `TauCeti.AnalyticOnSubmanifold.prod`, `TauCeti.AnalyticOnSubmanifold.comp`: ambient analytic
   functions, compositions and pairs.
 * `TauCeti.IsAnalyticSubmanifold.inter`, `TauCeti.AnalyticOnSubmanifold.inter`,
+  `TauCeti.isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold`,
+  `TauCeti.isAnalyticSubmanifold_iff_exists_isOpen`,
   `TauCeti.analyticOnSubmanifold_of_locally_analyticOnSubmanifold`: restriction to relatively
   open subsets (nonempty ones, for submanifolds), and locality.
 * `TauCeti.AnalyticOnSubmanifold.exists_analyticAt_eqOn`,
   `TauCeti.AnalyticOnSubmanifold.exists_analyticOnNhd_eqOn`: local ambient analytic extensions.
 * `TauCeti.AnalyticOnSubmanifold.continuousOn`: intrinsic analytic functions are continuous.
+* `TauCeti.AnalyticOnSubmanifold.analyticOnNhd_of_isOpen`, `IsOpen.analyticOnSubmanifold_iff`: on
+  open sets, analyticity in charts is ambient analyticity.
 * `TauCeti.IsAnalyticSubmanifold.of_isOpen_preimage_val`: nonempty relatively open subsets.
+* `TauCeti.IsAnalyticSubmanifold.isLocallyClosed`: analytic submanifolds are locally closed.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
+* `TauCeti.isConnected_coordSubspace`: coordinate subspaces are connected over a connected field.
 
 ## References
 
@@ -249,6 +256,16 @@ theorem isAnalyticSubmanifold_coordSubspace (h : d ≤ n) :
   refine ⟨⟨0, fun _ _ ↦ rfl⟩, h, fun x _ ↦ ⟨OpenPartialHomeomorph.refl _, mem_univ x, ?_⟩⟩
   exact ⟨analyticOnNhd_id, analyticOnNhd_id, fun x _ ↦ Iff.rfl⟩
 
+/-- Over a connected field, the subspace of the first `d` coordinates of `𝕜ⁿ` is connected: it is
+the range of `firstCoords 𝕜 d n`. -/
+theorem isConnected_coordSubspace [ConnectedSpace 𝕜] :
+    IsConnected {y : Fin n → 𝕜 | ∀ i : Fin n, d ≤ i.val → y i = 0} := by
+  convert isConnected_range (firstCoords 𝕜 d n).continuous using 1
+  ext x
+  refine ⟨fun hx ↦ ⟨firstCoords 𝕜 n d x, firstCoords_firstCoords_of_forall hx⟩, ?_⟩
+  rintro ⟨u, rfl⟩ i hi
+  exact firstCoords_apply_of_le u hi
+
 /-- A nonempty open subset of `𝕜ⁿ` is an `n`-dimensional analytic submanifold. -/
 theorem _root_.IsOpen.isAnalyticSubmanifold (hU : IsOpen U) (hne : U.Nonempty) :
     IsAnalyticSubmanifold n U := by
@@ -286,6 +303,42 @@ theorem IsAnalyticSubmanifold.of_isOpen_preimage_val (hS : IsAnalyticSubmanifold
     · intro hxT
       exact ⟨hTS hxT, (Set.ext_iff.mp hUT ⟨x, hTS hxT⟩).mpr hxT⟩
   simpa only [h] using hS.inter hU (h.symm ▸ hne)
+
+/-- An analytic submanifold is locally closed in its ambient coordinate space. -/
+theorem IsAnalyticSubmanifold.isLocallyClosed (hS : IsAnalyticSubmanifold d S) :
+    IsLocallyClosed S := by
+  rw [isLocallyClosed_iff_isLocallyClosedAt]
+  intro x hx
+  obtain ⟨c, hxc, hc⟩ := hS.exists_isAnalyticChart x hx
+  refine isLocallyClosedAt_iff_exists_isClosed_preimage_val.2
+    ⟨c.source, c.open_source.mem_nhds hxc, ?_⟩
+  have hclosed : IsClosed {y : Fin n → 𝕜 | ∀ i : Fin n, d ≤ i.val → y i = 0} := by
+    simp_rw [ofPred_forall]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun _ ↦
+      isClosed_eq (continuous_apply i) continuous_const
+  convert hclosed.preimage c.continuousOn.domRestrict using 1
+  ext y
+  exact hc.mem_iff y.property
+
+/-- **Locality.** A nonempty set that is locally a `d`-dimensional analytic submanifold around each
+of its points is a `d`-dimensional analytic submanifold. -/
+theorem isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold (hne : S.Nonempty)
+    (h : ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U)) :
+    IsAnalyticSubmanifold d S := by
+  rcases hne with ⟨x₀, hx₀⟩
+  obtain ⟨_, _, _, h₀⟩ := h x₀ hx₀
+  refine ⟨⟨x₀, hx₀⟩, h₀.le, fun x hx ↦ ?_⟩
+  obtain ⟨U, hU, hxU, hSU⟩ := h x hx
+  obtain ⟨e, hxe, he⟩ := hSU.exists_isAnalyticChart x ⟨hx, hxU⟩
+  exact ⟨e.restrOpen U hU, ⟨hxe, hxU⟩, (he.restrOpen hU).of_inter inter_subset_right⟩
+
+/-- A set is a `d`-dimensional analytic submanifold if and only if it is nonempty and locally a
+`d`-dimensional analytic submanifold around each of its points. -/
+theorem isAnalyticSubmanifold_iff_exists_isOpen :
+    IsAnalyticSubmanifold d S ↔
+      S.Nonempty ∧ ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U) :=
+  ⟨fun hS ↦ ⟨hS.nonempty, fun x _ ↦ ⟨univ, isOpen_univ, mem_univ x, by simpa using hS⟩⟩,
+    fun ⟨hne, h⟩ ↦ isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold hne h⟩
 
 /-! ### Analytic functions on analytic submanifolds -/
 
@@ -399,6 +452,21 @@ theorem inter (hf : AnalyticOnSubmanifold d f S) (hU : IsOpen U) :
   obtain ⟨e, hxe, he, hf'⟩ := hf x hx.1
   exact ⟨e.restrOpen U hU, ⟨hxe, hx.2⟩, he.restrOpen_inter hU, by simpa using hf'⟩
 
+/-- Restricting an analytic function to an analytic submanifold is analytic, even when its
+dimension is smaller. The smaller submanifold has the same ambient coordinate space. -/
+theorem mono (hf : AnalyticOnSubmanifold d f S) (hTS : T ⊆ S)
+    (hT : IsAnalyticSubmanifold d' T) : AnalyticOnSubmanifold d' f T := by
+  intro x hx
+  obtain ⟨U, hU, hxU, g, hg, hfg⟩ := hf.exists_analyticAt_eqOn (hTS hx)
+  obtain ⟨e, hxe, he⟩ := hT.exists_isAnalyticChart x hx
+  refine ⟨e, hxe, he, ?_⟩
+  have hparam := he.analyticAt_symm_firstCoords hxe hx
+  have hbase := he.symm_firstCoords_firstCoords_apply hxe hx
+  refine (hg.comp_of_eq hparam hbase).congr ?_
+  filter_upwards [he.eventually_symm_firstCoords_mem hxe hx,
+    hparam.continuousAt.preimage_mem_nhds (hbase ▸ hU.mem_nhds hxU)] with u hu huU
+  exact (hfg ⟨hTS hu.2, huU⟩).symm
+
 /-- A pair of analytic functions on `S` is analytic on `S`. -/
 theorem prod {g : (Fin n → 𝕜) → F} (hf : AnalyticOnSubmanifold d f S)
     (hg : AnalyticOnSubmanifold d g S) : AnalyticOnSubmanifold d (fun x ↦ (f x, g x)) S := by
@@ -456,6 +524,22 @@ theorem _root_.AnalyticOnNhd.analyticOnSubmanifold (hf : AnalyticOnNhd 𝕜 f S)
   obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx
   exact ⟨e, hxe, he, (hf x hx).comp_of_eq (he.analyticAt_symm_firstCoords hxe hx)
     (he.symm_firstCoords_firstCoords_apply hxe hx)⟩
+
+/-- A function analytic in the charts of an open set is analytic there as a function on `𝕜ⁿ`. -/
+theorem AnalyticOnSubmanifold.analyticOnNhd_of_isOpen (hf : AnalyticOnSubmanifold d f U)
+    (hU : IsOpen U) : AnalyticOnNhd 𝕜 f U := by
+  intro x hx
+  obtain ⟨V, hV, hxV, g, hg, hfg⟩ := hf.exists_analyticAt_eqOn hx
+  exact hg.congr (eventuallyEq_of_mem ((hU.inter hV).mem_nhds ⟨hx, hxV⟩) hfg.symm)
+
+/-- On an open subset of `𝕜ⁿ`, analyticity in `n`-dimensional submanifold charts is ambient
+analyticity. -/
+theorem _root_.IsOpen.analyticOnSubmanifold_iff (hU : IsOpen U) :
+    AnalyticOnSubmanifold n f U ↔ AnalyticOnNhd 𝕜 f U := by
+  refine ⟨fun hf ↦ hf.analyticOnNhd_of_isOpen hU, fun hf ↦ ?_⟩
+  rcases U.eq_empty_or_nonempty with rfl | hne
+  · rintro _ ⟨⟩
+  · exact hf.analyticOnSubmanifold (hU.isAnalyticSubmanifold hne)
 
 /-- The composition of an analytic function on `S` with a function analytic on a set containing
 its values on `S` is analytic on `S`. -/

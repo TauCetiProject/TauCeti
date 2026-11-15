@@ -39,8 +39,8 @@ identification.
 * M. F. Atiyah and I. G. Macdonald, *Introduction to Commutative Algebra*, Proposition 7.8
   (Artin--Tate).
 
-This advances Layer 4, "Tori: split and non-split", of the ReductiveGroups roadmap. It supplies
-the finite-type part of the inverse Galois-descent construction from an integral Galois lattice.
+This supplies the finite-type part of the inverse Galois-descent construction from an integral
+Galois lattice.
 -/
 
 public section

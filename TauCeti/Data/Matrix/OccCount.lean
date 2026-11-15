@@ -11,8 +11,8 @@ public import Mathlib.Data.Matrix.Mul
 /-! # Moment equations for finite occurrence counts
 
 For a finite family of observations, injective candidate columns which cover
-all observations satisfy the weighted moment equations. A left inverse then
-recovers the occurrence counts cast into the coefficient semiring.
+all observations satisfy the weighted moment equations over a nonassociative semiring.
+Over a semiring, a left inverse recovers the occurrence counts from these moments.
 Coverage is an independent hypothesis.
 -/
 
@@ -22,12 +22,11 @@ open scoped Matrix
 
 namespace Function
 
-variable {X S C I : Type*} [Fintype X] [Fintype C] [Fintype I]
-    [DecidableEq C]
+variable {X S C I : Type*} [Fintype X] [Fintype C]
 
-omit [Fintype I] [DecidableEq C] in
-/-- Injective candidate columns covering every observation satisfy the moment equations. -/
-theorem mulVec_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C → S)
+/-- Injective candidate columns covering every observation satisfy the moment equations
+over a nonassociative semiring. -/
+theorem mulVec_occCount {K : Type*} [NonAssocSemiring K] (obs : X → S) (columns : C → S)
     (hinj : Function.Injective columns) (cover : ∀ x, ∃ c, columns c = obs x)
     (weight : I → S → K) :
     (Matrix.of fun i c => weight i (columns c)) *ᵥ (fun c => (occCount obs (columns c) : K)) =
@@ -42,18 +41,27 @@ theorem mulVec_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C �
   rw [Finset.sum_image hinj.injOn] at h
   simpa only [nsmul_eq_mul, Nat.cast_comm] using h
 
-/-- A left inverse gives uniqueness for injective candidate columns covering every
-observation. Coverage is a separate premise, not a consequence of the matrix identity. -/
-theorem eq_occCount {K : Type*} [Semiring K] (obs : X → S) (columns : C → S)
-    (hinj : Function.Injective columns) (cover : ∀ x, ∃ c, columns c = obs x)
+/-- A left inverse gives uniqueness for candidate columns covering every observation.
+Coverage is a separate premise, not a consequence of the matrix identity. -/
+theorem eq_occCount [Fintype I] [DecidableEq C] {K : Type*} [Semiring K]
+    (obs : X → S) (columns : C → S)
+    (cover : ∀ x, ∃ c, columns c = obs x)
     (weight : I → S → K) (A : Matrix C I K)
     (hA : (A * (Matrix.of fun i c => weight i (columns c)) : Matrix C C K) = 1) (proposed : C → K)
     (hsolve : (Matrix.of fun i c => weight i (columns c)) *ᵥ proposed =
       fun i => ∑ x, weight i (obs x)) :
     proposed = fun c => (occCount obs (columns c) : K) := by
+  classical
+  nontriviality K
+  have hinj : Function.Injective columns := by
+    intro c d hcd
+    by_contra hne
+    have h : (1 : Matrix C C K) c c = (1 : Matrix C C K) c d := by
+      rw [← hA]
+      simp only [Matrix.mul_apply, Matrix.of_apply, hcd]
+    simp [hne] at h
   have hm := mulVec_occCount obs columns hinj cover weight
   have he := congrArg (fun v => A *ᵥ v) (hsolve.trans hm.symm)
   simpa only [Matrix.mulVec_mulVec, hA, Matrix.one_mulVec] using he
-
 
 end Function

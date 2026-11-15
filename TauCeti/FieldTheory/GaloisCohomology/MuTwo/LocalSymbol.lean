@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.ZMod.IntUnitsPower
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.CupNorm
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
 
 /-!
@@ -22,6 +23,11 @@ additive identification of its degree-two cohomology with `ZMod 2`, vanishes exa
 norm equation `b = x² - a y²` is solvable. Translating `0, 1 : ZMod 2` to `+1, -1`
 upgrades this vanishing criterion to equality with the norm-equation Hilbert symbol. The cup
 comparison itself requires no local-field hypothesis and no choice of a degree-two invariant.
+
+The same criterion holds after the coefficient inclusion into the Brauer group, which is
+injective because `2` is invertible: the Kummer-cup Brauer class of `a` and `b` vanishes exactly
+when `(a, b) = 1`. So any injective additive map from the Brauer group to `ZMod 2`, such as the
+real invariant `Br ℝ ≃ ZMod 2`, reads the Hilbert symbol off that class as a sign.
 
 ## References
 
@@ -161,7 +167,7 @@ theorem localSymbol_eq_zero_iff_cup {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
 /-- The roots-of-unity local symbol vanishes exactly when the norm-equation Hilbert symbol
 is `1`. This criterion applies to any additive identification of degree-two cohomology. -/
 theorem localSymbol_eq_zero_iff_hilbertSymbol_eq_one
-    {F : Type} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    {F : Type u} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
     (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 F) ≃+ ZMod 2) (a b : Fˣ) :
     ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
         (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
@@ -172,7 +178,7 @@ theorem localSymbol_eq_zero_iff_hilbertSymbol_eq_one
 
 /-- The cohomological mod-two local symbol detects solvability of the quadratic norm equation. -/
 theorem localSymbol_eq_zero_iff
-    {F : Type} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    {F : Type u} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
     (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 F) ≃+ ZMod 2) (a b : Fˣ) :
     ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
         (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
@@ -183,27 +189,33 @@ theorem localSymbol_eq_zero_iff
 /-- The norm-equation Hilbert symbol agrees with the cohomological mod-two local symbol after
 translating its additive invariant to a sign. -/
 theorem hilbertSymbol_eq_cohomological
-    {F : Type} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    {F : Type u} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
     (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 F) ≃+ ZMod 2) (a b : Fˣ) :
     hilbertSymbol a b =
       hilbertSign (ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
         (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
-        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b)) := by
-  let s := ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
-    (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
-    (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b)
-  have hs : s = 0 ↔ hilbertSymbol a b = 1 :=
-    localSymbol_eq_zero_iff_hilbertSymbol_eq_one hζ tr a b
-  have hs_def : ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
-      (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
-      (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b) = s := rfl
-  rw [hs_def]
-  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) s with hzero | hone
-  · rw [hzero, hilbertSign_zero]
-    exact hs.mp hzero
-  · rw [hone, hilbertSign_one]
-    rcases Int.units_eq_one_or (hilbertSymbol a b) with h | h
-    · exact (one_ne_zero (hone.symm.trans (hs.mpr h))).elim
-    · exact h
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b)) :=
+  (eq_hilbertSign_iff _ _).mpr (localSymbol_eq_zero_iff_hilbertSymbol_eq_one hζ tr a b).symm
+
+/-- **The Kummer-cup Brauer class detects the Hilbert symbol.** The Brauer class of the cup of the
+Kummer classes of `a` and `b` vanishes exactly when the norm-equation Hilbert symbol `(a, b)` is
+`1`. The coefficient inclusion into the Brauer group is injective because `2` is invertible. -/
+theorem kummerBrauerClass_eq_zero_iff_hilbertSymbol_eq_one
+    {F : Type u} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2) (a b : Fˣ) :
+    ClassFieldTheory.kummerBrauerClass ζ hζ a b = 0 ↔ hilbertSymbol a b = 1 := by
+  rw [ClassFieldTheory.kummerBrauerClass_def,
+    map_eq_zero_iff _ (ClassFieldTheory.h2MuToBr_injective 2 F (isUnit_of_invertible _))]
+  exact (cup_muNRep_kummerClass_eq_zero_iff hζ a b).trans
+    (cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one a b)
+
+/-- The norm-equation Hilbert symbol is the sign of the Kummer-cup Brauer class, read in `ZMod 2`
+through any injective additive map on the Brauer group. -/
+theorem hilbertSymbol_eq_hilbertSign_kummerBrauerClass
+    {F : Type u} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    {f : ClassFieldTheory.Br F →+ ZMod 2} (hf : Function.Injective f) (a b : Fˣ) :
+    hilbertSymbol a b = hilbertSign (f (ClassFieldTheory.kummerBrauerClass ζ hζ a b)) :=
+  (eq_hilbertSign_iff _ _).mpr
+    ((kummerBrauerClass_eq_zero_iff_hilbertSymbol_eq_one hζ a b).symm.trans
+      (map_eq_zero_iff f hf).symm)
 
 end TauCeti

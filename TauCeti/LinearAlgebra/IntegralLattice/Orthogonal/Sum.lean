@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
-public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
-public import TauCeti.LinearAlgebra.Submodule.Prod
-import Mathlib.LinearAlgebra.Basis.Prod
 
 /-!
 # Orthogonal sums of integral lattices
 
-The orthogonal sum has product carrier and block-diagonal form. This file constructs the lattice,
+The orthogonal sum has product carrier and block-diagonal form, the product
+`LinearMap.BilinForm.prod` of the two ambient forms. This file constructs the lattice,
 its canonical carrier maps and product bases, and proves several invariant laws: rank is additive,
 Gram matrices are block diagonal, determinant and discriminant are multiplicative, and evenness
 and nondegeneracy are componentwise. Orthogonal sums are functorial under lattice isometries and
@@ -27,20 +26,33 @@ radicals, and the signature is componentwise additive.
 
 ## Main definitions
 
-* `TauCeti.IntegralLattice.orthogonalSumForm`: the block-diagonal ambient form.
 * `TauCeti.IntegralLattice.orthogonalSum`: the orthogonal sum lattice.
 * `TauCeti.IntegralLattice.orthogonalSumCarrierEquiv`: the carrier-product equivalence.
+* `TauCeti.IntegralLattice.orthogonalSumInl`, `TauCeti.IntegralLattice.orthogonalSumInr`: the
+  canonical inclusions of the summands.
+* `TauCeti.IntegralLattice.orthogonalSumFst`, `TauCeti.IntegralLattice.orthogonalSumSnd`: the
+  canonical projections onto the summands.
 * `TauCeti.IntegralLattice.orthogonalSumBasis`: the product of two carrier bases.
-* `TauCeti.IntegralLattice.signature_orthogonalSum`: signature is additive componentwise.
+* `TauCeti.IntegralLattice.orthogonalSumCarrierIsometry`: the carrier-product equivalence as an
+  isometry of integral forms.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSum`: the product of two lattice isometries.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumComm`: the canonical commutativity isometry.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumAssoc`: the canonical associativity isometry.
 * `TauCeti.IntegralLattice.Isometry.orthogonalSumHom`: the embedding `O(L) × O(M) →* O(L ⊕ M)`.
 
+## Main statements
+
+* `TauCeti.IntegralLattice.isEven_orthogonalSum_iff`,
+  `TauCeti.IntegralLattice.nondegenerate_orthogonalSum_iff`: evenness and nondegeneracy of an
+  orthogonal sum are componentwise.
+* `TauCeti.IntegralLattice.radical_orthogonalSum`: the radical is the product of the radicals.
+* `TauCeti.IntegralLattice.signature_orthogonalSum`: signature is additive componentwise.
+* `TauCeti.IntegralLattice.Isometry.orthogonalSumHom_injective`: `O(L) × O(M)` embeds in
+  `O(L ⊕ M)`.
+
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1.
 * The isometry constructions follow Mathlib's `QuadraticMap.IsometryEquiv.prod` and `prodComm` in
   `Mathlib/LinearAlgebra/QuadraticForm/Prod.lean`.
 -/
@@ -56,60 +68,31 @@ universe u v w x y z
 variable {V : Type u} {W : Type v}
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-/-- The block-diagonal bilinear form on a product, with the two factors orthogonal. -/
-def orthogonalSumForm (L : IntegralLattice V) (M : IntegralLattice W) :
-    LinearMap.BilinForm ℚ (V × W) :=
-  L.form.comp (LinearMap.fst ℚ V W) (LinearMap.fst ℚ V W) +
-    M.form.comp (LinearMap.snd ℚ V W) (LinearMap.snd ℚ V W)
-
-/-- Evaluation of the block-diagonal form is the sum of the component pairings. -/
-@[simp]
-theorem orthogonalSumForm_apply (L : IntegralLattice V) (M : IntegralLattice W)
-    (p q : V × W) :
-    orthogonalSumForm L M p q = L.form p.1 q.1 + M.form p.2 q.2 :=
-  (rfl)
-
-/-- The product of two full integral carriers is a full integral carrier. -/
-private theorem isLattice_prod (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.carrier.prod M.carrier).IsLattice ℚ := by
-  constructor
-  · rw [← Module.Finite.iff_fg]
-    exact Module.Finite.equiv (Submodule.prodEquiv L.carrier M.carrier).symm
-  · rw [Submodule.prod_coe,
-      Submodule.span_prod_eq (R := ℚ) L.carrier.zero_mem M.carrier.zero_mem,
-      Submodule.IsLattice.span_eq_top, Submodule.IsLattice.span_eq_top,
-      Submodule.prod_top]
-
-/-- The orthogonal sum of two integral lattices. -/
+/-- The orthogonal sum of two integral lattices: the product carrier with the block-diagonal
+product form. -/
 def orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) : IntegralLattice (V × W) where
   carrier := L.carrier.prod M.carrier
-  form := orthogonalSumForm L M
-  isLattice := isLattice_prod L M
-  isSymm := ⟨fun p q ↦ by simp only [orthogonalSumForm_apply, L.isSymm.eq, M.isSymm.eq]⟩
+  form := L.form.prod M.form
+  isLattice := inferInstance
+  isSymm := LinearMap.BilinForm.isSymm_prod_iff.mpr ⟨L.isSymm, M.isSymm⟩
   le_dual := by
     intro p hp
     rw [LinearMap.BilinForm.mem_dualSubmodule]
     intro q hq
-    rw [orthogonalSumForm_apply]
+    rw [LinearMap.BilinForm.prod_apply]
     exact Submodule.add_mem _ (L.le_dual hp.1 q.1 hq.1) (M.le_dual hp.2 q.2 hq.2)
 
+/-- The carrier of an orthogonal sum is the product of the carriers. -/
 @[simp]
 theorem orthogonalSum_carrier (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).carrier = L.carrier.prod M.carrier :=
   (rfl)
 
+/-- The form of an orthogonal sum is the product of the two forms. -/
 @[simp]
 theorem orthogonalSum_form (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.orthogonalSum M).form = orthogonalSumForm L M :=
+    (L.orthogonalSum M).form = L.form.prod M.form :=
   (rfl)
-
-/-- The quadratic map of the block-diagonal form is the product of the component quadratic maps. -/
-@[simp]
-theorem orthogonalSumForm_toQuadraticMap (L : IntegralLattice V) (M : IntegralLattice W) :
-    (orthogonalSumForm L M).toQuadraticMap =
-      L.form.toQuadraticMap.prod M.form.toQuadraticMap := by
-  ext p
-  rfl
 
 /-- The carrier of an orthogonal sum is canonically the product of the carrier types. -/
 def orthogonalSumCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W) :
@@ -141,27 +124,33 @@ def orthogonalSumSnd (L : IntegralLattice V) (M : IntegralLattice W) :
     L.orthogonalSum M →ₗ[ℤ] M :=
   (LinearMap.snd ℤ L M).comp (orthogonalSumCarrierEquiv L M).toLinearMap
 
+/-- The first inclusion is `a ↦ (a, 0)` on ambient vectors. -/
 @[simp] theorem orthogonalSumInl_apply (L : IntegralLattice V) (M : IntegralLattice W) (a : L) :
     (orthogonalSumInl L M a : V × W) = ((a : V), 0) := by
   rfl
 
+/-- The second inclusion is `b ↦ (0, b)` on ambient vectors. -/
 @[simp] theorem orthogonalSumInr_apply (L : IntegralLattice V) (M : IntegralLattice W) (b : M) :
     (orthogonalSumInr L M b : V × W) = (0, (b : W)) := by
   rfl
 
+/-- The first projection is the first component of the carrier-product equivalence. -/
 @[simp] theorem orthogonalSumFst_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (p : L.orthogonalSum M) :
     orthogonalSumFst L M p = (orthogonalSumCarrierEquiv L M p).1 := (rfl)
 
+/-- The second projection is the second component of the carrier-product equivalence. -/
 @[simp] theorem orthogonalSumSnd_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (p : L.orthogonalSum M) :
     orthogonalSumSnd L M p = (orthogonalSumCarrierEquiv L M p).2 := (rfl)
 
+/-- The carrier-product equivalence sends the first inclusion of `a` to `(a, 0)`. -/
 @[simp]
 theorem orthogonalSumCarrierEquiv_inl (L : IntegralLattice V) (M : IntegralLattice W) (a : L) :
     orthogonalSumCarrierEquiv L M (orthogonalSumInl L M a) = (a, 0) := by
   apply Prod.ext <;> apply Subtype.ext <;> simp [orthogonalSumCarrierEquiv]
 
+/-- The carrier-product equivalence sends the second inclusion of `b` to `(0, b)`. -/
 @[simp]
 theorem orthogonalSumCarrierEquiv_inr (L : IntegralLattice V) (M : IntegralLattice W) (b : M) :
     orthogonalSumCarrierEquiv L M (orthogonalSumInr L M b) = (0, b) := by
@@ -187,15 +176,30 @@ theorem orthogonalSumSnd_inr (L : IntegralLattice V) (M : IntegralLattice W) (b 
     orthogonalSumSnd L M (orthogonalSumInr L M b) = b := by
   simp
 
+/-- The first component of the carrier-product equivalence, read in the ambient space, is the first
+coordinate. -/
 @[simp]
 theorem coe_orthogonalSumCarrierEquiv_fst (L : IntegralLattice V) (M : IntegralLattice W)
     (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).1 : V) = p.1.1 := by
   simp [orthogonalSumCarrierEquiv]
 
+/-- The second component of the carrier-product equivalence, read in the ambient space, is the
+second coordinate. -/
 @[simp]
 theorem coe_orthogonalSumCarrierEquiv_snd (L : IntegralLattice V) (M : IntegralLattice W)
     (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).2 : W) = p.1.2 := by
   simp [orthogonalSumCarrierEquiv]
+
+/-- The inverse of the carrier-product equivalence, read in the ambient space. -/
+@[simp]
+theorem coe_orthogonalSumCarrierEquiv_symm_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (a : L) (b : M) :
+    ((orthogonalSumCarrierEquiv L M).symm (a, b) : V × W) = ((a : V), (b : W)) := by
+  apply Prod.ext
+  · rw [← coe_orthogonalSumCarrierEquiv_fst]
+    simp
+  · rw [← coe_orthogonalSumCarrierEquiv_snd]
+    simp
 
 /-- A vector in an orthogonal sum is the sum of the inclusions of its two projections. -/
 theorem orthogonalSumInl_fst_add_inr_snd_eq (L : IntegralLattice V) (M : IntegralLattice W)
@@ -211,6 +215,7 @@ noncomputable def orthogonalSumBasis {I : Type w} {J : Type x} (L : IntegralLatt
     Basis (I ⊕ J) ℤ (L.orthogonalSum M) :=
   (e.prod f).map (orthogonalSumCarrierEquiv L M).symm
 
+/-- The product basis at a left index is the first inclusion of the corresponding basis vector. -/
 @[simp]
 theorem orthogonalSumBasis_apply_inl {I : Type w} {J : Type x} (L : IntegralLattice V)
     (M : IntegralLattice W) (e : Basis I ℤ L) (f : Basis J ℤ M) (i : I) :
@@ -218,6 +223,7 @@ theorem orthogonalSumBasis_apply_inl {I : Type w} {J : Type x} (L : IntegralLatt
   apply (orthogonalSumCarrierEquiv L M).injective
   simp [orthogonalSumBasis]
 
+/-- The product basis at a right index is the second inclusion of the corresponding basis vector. -/
 @[simp]
 theorem orthogonalSumBasis_apply_inr {I : Type w} {J : Type x} (L : IntegralLattice V)
     (M : IntegralLattice W) (e : Basis I ℤ L) (f : Basis J ℤ M) (j : J) :
@@ -233,9 +239,36 @@ theorem integralForm_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
       L.integralForm (orthogonalSumFst L M p) (orthogonalSumFst L M q) +
         M.integralForm (orthogonalSumSnd L M p) (orthogonalSumSnd L M q) := by
   apply Int.cast_injective (α := ℚ)
-  simp only [Int.cast_add, integralForm_cast, orthogonalSum_form, orthogonalSumForm_apply,
+  simp only [Int.cast_add, integralForm_cast, orthogonalSum_form, LinearMap.BilinForm.prod_apply,
     orthogonalSumFst_apply, orthogonalSumSnd_apply, coe_orthogonalSumCarrierEquiv_fst,
     coe_orthogonalSumCarrierEquiv_snd]
+
+/-- The carrier-product equivalence preserves the integral forms of an orthogonal sum. -/
+def orthogonalSumCarrierIsometry (L : IntegralLattice V) (M : IntegralLattice W) :
+    (L.orthogonalSum M).integralForm.IsometryEquiv (L.integralForm.prod M.integralForm) where
+  toLinearEquiv := L.orthogonalSumCarrierEquiv M
+  map_app' x y := by
+    simpa only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+      LinearMap.BilinForm.prod_apply, orthogonalSumFst_apply,
+      orthogonalSumSnd_apply] using (L.integralForm_orthogonalSum M x y).symm
+
+/-- The integral carrier isometry acts by the carrier-product equivalence. -/
+@[simp]
+theorem orthogonalSumCarrierIsometry_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (x : L.orthogonalSum M) :
+    L.orthogonalSumCarrierIsometry M x = L.orthogonalSumCarrierEquiv M x :=
+  (rfl)
+
+/-- The inverse integral carrier isometry adds the two canonical inclusions. -/
+@[simp]
+theorem orthogonalSumCarrierIsometry_symm_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (x : L) (y : M) :
+    (L.orthogonalSumCarrierIsometry M).symm (x, y) =
+      L.orthogonalSumInl M x + L.orthogonalSumInr M y := by
+  apply (L.orthogonalSumCarrierIsometry M).toLinearEquiv.symm_apply_eq.mpr
+  simp only [LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv,
+    orthogonalSumCarrierIsometry_apply, map_add, orthogonalSumCarrierEquiv_inl,
+    orthogonalSumCarrierEquiv_inr, Prod.mk_add_mk, add_zero, zero_add]
 
 /-- The integral norm of an orthogonal-sum vector is the sum of its component norms. -/
 @[simp]
@@ -244,10 +277,7 @@ theorem integralNorm_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice 
     (L.orthogonalSum M).integralNorm p =
       L.integralNorm (orthogonalSumFst L M p) +
         M.integralNorm (orthogonalSumSnd L M p) := by
-  apply Int.cast_injective (α := ℚ)
-  simp only [Int.cast_add, integralNorm_cast, norm_apply, orthogonalSum_form,
-    orthogonalSumForm_apply, orthogonalSumFst_apply, orthogonalSumSnd_apply,
-    coe_orthogonalSumCarrierEquiv_fst, coe_orthogonalSumCarrierEquiv_snd]
+  simpa only [integralNorm_apply] using integralForm_orthogonalSum L M p p
 
 /-- The rank of an orthogonal sum is the sum of the ranks. -/
 @[simp]
@@ -311,42 +341,25 @@ theorem isEven_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W)
     · simpa using (isEven_iff_basis L e).mp hL i
     · simpa using (isEven_iff_basis M f).mp hM j
 
-/-- The block-diagonal form is nondegenerate exactly when both component forms are
-nondegenerate. -/
-@[simp]
-theorem nondegenerate_orthogonalSumForm_iff (L : IntegralLattice V) (M : IntegralLattice W) :
-    (orthogonalSumForm L M).Nondegenerate ↔ L.form.Nondegenerate ∧ M.form.Nondegenerate := by
-  constructor
-  · rintro ⟨hleft, hright⟩
-    constructor
-    · exact ⟨
-        fun a ha ↦ congrArg Prod.fst (hleft (a, 0) fun p ↦ by simpa using ha p.1),
-        fun b hb ↦ congrArg Prod.fst (hright (b, 0) fun p ↦ by simpa using hb p.1)⟩
-    · exact ⟨
-        fun a ha ↦ congrArg Prod.snd (hleft (0, a) fun p ↦ by simpa using ha p.2),
-        fun b hb ↦ congrArg Prod.snd (hright (0, b) fun p ↦ by simpa using hb p.2)⟩
-  · rintro ⟨hL, hM⟩
-    constructor
-    · intro p hp
-      apply Prod.ext
-      · exact hL.1 p.1 fun a ↦ by simpa using hp (a, 0)
-      · exact hM.1 p.2 fun b ↦ by simpa using hp (0, b)
-    · intro q hq
-      apply Prod.ext
-      · exact hL.2 q.1 fun a ↦ by simpa using hq (a, 0)
-      · exact hM.2 q.2 fun b ↦ by simpa using hq (0, b)
-
 /-- The ambient form of an orthogonal sum is nondegenerate exactly when both summand forms are. -/
 theorem nondegenerate_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).form.Nondegenerate ↔
       L.form.Nondegenerate ∧ M.form.Nondegenerate := by
-  rw [orthogonalSum_form, nondegenerate_orthogonalSumForm_iff]
+  rw [orthogonalSum_form, LinearMap.BilinForm.nondegenerate_prod_iff]
 
 /-- The orthogonal sum of two nondegenerate integral lattices is nondegenerate. -/
 instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralLattice W)
     [L.IsNondegenerate] [M.IsNondegenerate] : (L.orthogonalSum M).IsNondegenerate :=
   ⟨(L.nondegenerate_orthogonalSum_iff M).mpr
     ⟨L.form_nondegenerate, M.form_nondegenerate⟩⟩
+
+/-- An orthogonal sum of integral lattices is nondegenerate exactly when both summands are. -/
+@[simp]
+theorem isNondegenerate_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
+    (L.orthogonalSum M).IsNondegenerate ↔ L.IsNondegenerate ∧ M.IsNondegenerate := by
+  refine ⟨fun h ↦ ?_, fun ⟨hL, hM⟩ ↦ inferInstance⟩
+  obtain ⟨hL, hM⟩ := (L.nondegenerate_orthogonalSum_iff M).mp h.nondegenerate
+  exact ⟨⟨hL⟩, ⟨hM⟩⟩
 
 /-! ## Radical and signature -/
 
@@ -355,8 +368,8 @@ instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralL
 theorem radical_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).radical = L.radical.prod M.radical := by
   rw [← (L.orthogonalSum M).radical_toQuadraticMap, orthogonalSum_form,
-    orthogonalSumForm_toQuadraticMap, QuadraticMap.radical_prod, L.radical_toQuadraticMap,
-    M.radical_toQuadraticMap]
+    LinearMap.BilinForm.toQuadraticMap_prod,
+    QuadraticMap.radical_prod, L.radical_toQuadraticMap, M.radical_toQuadraticMap]
 
 /-- The positive index of an orthogonal sum is the sum of the positive indices. -/
 @[simp]
@@ -364,7 +377,8 @@ theorem sigPos_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigPos = L.sigPos + M.sigPos := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  rw [sigPos, orthogonalSum_form, orthogonalSumForm_toQuadraticMap,
+  rw [sigPos, orthogonalSum_form,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticForm.sigPos_prod]
 
 /-- The negative index of an orthogonal sum is the sum of the negative indices. -/
@@ -373,7 +387,8 @@ theorem sigNeg_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigNeg = L.sigNeg + M.sigNeg := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  rw [sigNeg, orthogonalSum_form, orthogonalSumForm_toQuadraticMap,
+  rw [sigNeg, orthogonalSum_form,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticForm.sigNeg_prod]
 
 /-- The null index of an orthogonal sum is the sum of the null indices. -/
@@ -382,11 +397,7 @@ theorem sigNull_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigNull = L.sigNull + M.sigNull := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  have hsum := (L.orthogonalSum M).signature_sum_eq_finrank
-  have hsumL := L.signature_sum_eq_finrank
-  have hsumM := M.signature_sum_eq_finrank
-  rw [sigPos_orthogonalSum, sigNeg_orthogonalSum, Module.finrank_prod] at hsum
-  omega
+  rw [sigNull, radical_orthogonalSum, (Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod]
 
 /-- The signature of an orthogonal sum is the componentwise sum of the two signatures. -/
 @[simp]
@@ -415,6 +426,7 @@ def orthogonalSum (f : Isometry L L') (g : Isometry M M') :
     { toLinearEquiv := (f : V ≃ₗ[ℚ] X).prodCongr (g : W ≃ₗ[ℚ] Y)
       map_app' := by
         intro p q
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
         exact congrArg₂ (· + ·) (f.map_app p.1 q.1) (g.map_app p.2 q.2) }
   map_carrier := by
     -- Expose the restricted product linear map to reuse `LinearMap.prodMap_map_prod`.
@@ -428,60 +440,55 @@ def orthogonalSum (f : Isometry L L') (g : Isometry M M') :
 @[simp]
 theorem orthogonalSum_apply (f : Isometry L L') (g : Isometry M M') (p : V × W) :
     f.orthogonalSum g p = (f p.1, g p.2) :=
-  by rw [orthogonalSum]; rfl
+  (rfl)
 
 /-- Product isometries commute with the first canonical carrier inclusion. -/
 @[simp]
 theorem orthogonalSum_carrierEquiv_inl (f : Isometry L L') (g : Isometry M M') (a : L) :
     (f.orthogonalSum g).carrierEquiv (orthogonalSumInl L M a) =
-      orthogonalSumInl L' M' (f.carrierEquiv a) :=
-  by
-    apply Subtype.ext
-    simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInl_apply,
-      orthogonalSum_apply, map_zero]
+      orthogonalSumInl L' M' (f.carrierEquiv a) := by
+  apply Subtype.ext
+  simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInl_apply,
+    orthogonalSum_apply, map_zero]
 
 /-- Product isometries commute with the second canonical carrier inclusion. -/
 @[simp]
 theorem orthogonalSum_carrierEquiv_inr (f : Isometry L L') (g : Isometry M M') (b : M) :
     (f.orthogonalSum g).carrierEquiv (orthogonalSumInr L M b) =
-      orthogonalSumInr L' M' (g.carrierEquiv b) :=
-  by
-    apply Subtype.ext
-    simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInr_apply,
-      orthogonalSum_apply, map_zero]
+      orthogonalSumInr L' M' (g.carrierEquiv b) := by
+  apply Subtype.ext
+  simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInr_apply,
+    orthogonalSum_apply, map_zero]
 
 /-- Product isometries commute with the canonical carrier-product equivalence. -/
 @[simp]
 theorem orthogonalSumCarrierEquiv_carrierEquiv (f : Isometry L L') (g : Isometry M M')
     (p : L.orthogonalSum M) :
     orthogonalSumCarrierEquiv L' M' ((f.orthogonalSum g).carrierEquiv p) =
-      (f.carrierEquiv (orthogonalSumFst L M p), g.carrierEquiv (orthogonalSumSnd L M p)) :=
-  by
-    apply Prod.ext
-    · apply Subtype.ext
-      simp only [coe_orthogonalSumCarrierEquiv_fst, Isometry.coe_carrierEquiv_apply,
-        orthogonalSum_apply, orthogonalSumFst_apply]
-    · apply Subtype.ext
-      simp only [coe_orthogonalSumCarrierEquiv_snd, Isometry.coe_carrierEquiv_apply,
-        orthogonalSum_apply, orthogonalSumSnd_apply]
+      (f.carrierEquiv (orthogonalSumFst L M p), g.carrierEquiv (orthogonalSumSnd L M p)) := by
+  apply Prod.ext
+  · apply Subtype.ext
+    simp only [coe_orthogonalSumCarrierEquiv_fst, Isometry.coe_carrierEquiv_apply,
+      orthogonalSum_apply, orthogonalSumFst_apply]
+  · apply Subtype.ext
+    simp only [coe_orthogonalSumCarrierEquiv_snd, Isometry.coe_carrierEquiv_apply,
+      orthogonalSum_apply, orthogonalSumSnd_apply]
 
 /-- Product isometries commute with the first canonical carrier projection. -/
 theorem orthogonalSumFst_carrierEquiv (f : Isometry L L') (g : Isometry M M')
     (p : L.orthogonalSum M) :
     orthogonalSumFst L' M' ((f.orthogonalSum g).carrierEquiv p) =
-      f.carrierEquiv (orthogonalSumFst L M p) :=
-  by
-    simpa only [orthogonalSumFst_apply] using
-      congrArg Prod.fst (orthogonalSumCarrierEquiv_carrierEquiv f g p)
+      f.carrierEquiv (orthogonalSumFst L M p) := by
+  simpa only [orthogonalSumFst_apply] using
+    congrArg Prod.fst (orthogonalSumCarrierEquiv_carrierEquiv f g p)
 
 /-- Product isometries commute with the second canonical carrier projection. -/
 theorem orthogonalSumSnd_carrierEquiv (f : Isometry L L') (g : Isometry M M')
     (p : L.orthogonalSum M) :
     orthogonalSumSnd L' M' ((f.orthogonalSum g).carrierEquiv p) =
-      g.carrierEquiv (orthogonalSumSnd L M p) :=
-  by
-    simpa only [orthogonalSumSnd_apply] using
-      congrArg Prod.snd (orthogonalSumCarrierEquiv_carrierEquiv f g p)
+      g.carrierEquiv (orthogonalSumSnd L M p) := by
+  simpa only [orthogonalSumSnd_apply] using
+    congrArg Prod.snd (orthogonalSumCarrierEquiv_carrierEquiv f g p)
 
 /-- The product of identity isometries is the identity of the orthogonal sum. -/
 @[simp]
@@ -520,6 +527,7 @@ def orthogonalSumComm (L : IntegralLattice V) (M : IntegralLattice W) :
     { toLinearEquiv := LinearEquiv.prodComm ℚ V W
       map_app' := by
         intro p q
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
         exact add_comm _ _ }
   map_carrier := by
     ext p
@@ -533,29 +541,27 @@ def orthogonalSumComm (L : IntegralLattice V) (M : IntegralLattice W) :
 @[simp]
 theorem orthogonalSumComm_apply (L : IntegralLattice V) (M : IntegralLattice W) (p : V × W) :
     orthogonalSumComm L M p = (p.2, p.1) :=
-  by rw [orthogonalSumComm]; rfl
+  (rfl)
 
 /-- The commutativity isometry exchanges the canonical carrier inclusions. -/
 @[simp]
 theorem orthogonalSumComm_carrierEquiv_inl (L : IntegralLattice V) (M : IntegralLattice W)
     (a : L) :
     (orthogonalSumComm L M).carrierEquiv (orthogonalSumInl L M a) =
-      orthogonalSumInr M L a :=
-  by
-    apply Subtype.ext
-    simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInl_apply,
-      orthogonalSumInr_apply, orthogonalSumComm_apply]
+      orthogonalSumInr M L a := by
+  apply Subtype.ext
+  simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInl_apply,
+    orthogonalSumInr_apply, orthogonalSumComm_apply]
 
 /-- The commutativity isometry exchanges the canonical carrier inclusions. -/
 @[simp]
 theorem orthogonalSumComm_carrierEquiv_inr (L : IntegralLattice V) (M : IntegralLattice W)
     (b : M) :
     (orthogonalSumComm L M).carrierEquiv (orthogonalSumInr L M b) =
-      orthogonalSumInl M L b :=
-  by
-    apply Subtype.ext
-    simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInr_apply,
-      orthogonalSumInl_apply, orthogonalSumComm_apply]
+      orthogonalSumInl M L b := by
+  apply Subtype.ext
+  simp only [Isometry.coe_carrierEquiv_apply, orthogonalSumInr_apply,
+    orthogonalSumInl_apply, orthogonalSumComm_apply]
 
 /-- The inverse commutativity isometry swaps the factors in the opposite order. -/
 @[simp]
@@ -587,6 +593,7 @@ def orthogonalSumAssoc (L : IntegralLattice V) (M : IntegralLattice W)
     { toLinearEquiv := LinearEquiv.prodAssoc ℚ V W U
       map_app' := by
         intro p q
+        simp only [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
         exact (add_assoc _ _ _).symm }
   map_carrier := by
     ext p
@@ -601,17 +608,16 @@ def orthogonalSumAssoc (L : IntegralLattice V) (M : IntegralLattice W)
 theorem orthogonalSumAssoc_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (N : IntegralLattice U) (p : (V × W) × U) :
     orthogonalSumAssoc L M N p = (p.1.1, (p.1.2, p.2)) :=
-  by rw [orthogonalSumAssoc]; rfl
+  (rfl)
 
 /-- The inverse associativity isometry restores left-associated products. -/
 @[simp]
 theorem orthogonalSumAssoc_symm_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (N : IntegralLattice U) (p : V × (W × U)) :
-    (orthogonalSumAssoc L M N).symm p = ((p.1, p.2.1), p.2.2) :=
-  by
-    rw [Isometry.coe_symm]
-    apply (LinearEquiv.symm_apply_eq _).2
-    exact (orthogonalSumAssoc_apply L M N ((p.1, p.2.1), p.2.2)).symm
+    (orthogonalSumAssoc L M N).symm p = ((p.1, p.2.1), p.2.2) := by
+  rw [Isometry.coe_symm]
+  apply (LinearEquiv.symm_apply_eq _).2
+  exact (orthogonalSumAssoc_apply L M N ((p.1, p.2.1), p.2.2)).symm
 
 /-- The associativity isometry is natural with respect to isometries of all three factors. -/
 theorem orthogonalSumAssoc_naturality {L : IntegralLattice V} {M : IntegralLattice W}
@@ -638,6 +644,7 @@ def orthogonalSumHom (L : IntegralLattice V) (M : IntegralLattice W) :
     intro p
     simp only [Prod.fst_mul, Prod.snd_mul, orthogonalSum_apply, Isometry.mul_apply]
 
+/-- The embedding `O(L) × O(M) →* O(L ⊕ M)` sends a pair of isometries to their orthogonal sum. -/
 @[simp]
 theorem orthogonalSumHom_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (p : Isometry L L × Isometry M M) :
@@ -657,7 +664,7 @@ theorem orthogonalSumHom_injective (L : IntegralLattice V) (M : IntegralLattice 
 /-- The obstruction to `O(L) × O(L) = O(L ⊕ L)`: when the ambient space `V` is nonzero (in
 particular when `L` itself is nonzero), the factor swap is a self-isometry of `L ⊕ L` preserving
 neither summand, so it is not in the image of `O(L) × O(L)`. -/
-theorem orthogonalSumComm_not_mem_range_orthogonalSumHom (L : IntegralLattice V) [Nontrivial V] :
+theorem orthogonalSumComm_notMem_range_orthogonalSumHom (L : IntegralLattice V) [Nontrivial V] :
     orthogonalSumComm L L ∉ (orthogonalSumHom L L).range := by
   rintro ⟨p, hp⟩
   obtain ⟨x, hx⟩ := exists_ne (0 : V)

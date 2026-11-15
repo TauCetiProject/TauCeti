@@ -9,27 +9,90 @@ public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.Normed.Ring.Lemmas
 
 /-!
-# Uniformly continuous scalar actions on rings with an absolute value
+# Metric and uniform properties of rings with an absolute value
 
-The algebra action of a commutative semiring on `WithAbs v` is uniformly continuous for every
-fixed scalar. This lets the scalar action extend to the completion without requiring the scalar
-semiring to be a ring.
+A scalar action on a ring `A` that commutes with right multiplication,
+`m • (x * y) = (m • x) * y` (`IsScalarTower M A A`), such as the algebra action of a commutative
+semiring, induces a uniformly continuous action on `WithAbs v` for every fixed scalar. This lets
+the scalar action extend to the completion; Mathlib's corresponding instance covers only algebra
+actions of a commutative ring on a field.
+
+In addition, a ring isomorphism `σ : R ≃+* T` that intertwines real absolute values `v` on `R` and
+`w` on `T` (`w (σ x) = v x`) induces an isometry `WithAbs.congr v w σ : WithAbs v ≃+* WithAbs w`
+(`WithAbs.isometry_congr`), bundled as `WithAbs.isometryEquivCongr : WithAbs v ≃ᵢ WithAbs w`.
 -/
 
 public section
 
 namespace WithAbs
 
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+section SMul
 
-/-- The algebra action on a ring with an absolute value is uniformly continuous in its argument. -/
+variable {M A : Type*} [Ring A] [SMul M A] [IsScalarTower M A A]
+
+/-- A scalar action on a ring with an absolute value that commutes with right multiplication, such
+as an algebra action, is uniformly continuous in its argument. -/
 instance (priority := 100) uniformContinuousConstSMul (v : AbsoluteValue A ℝ) :
-    UniformContinuousConstSMul R (WithAbs v) where
-  -- The proof follows the scalar-continuity instance for a commutative ring base in
-  -- `Mathlib.Analysis.Normed.Field.WithAbs`, using `Ring.uniformContinuousConstSMul`
-  -- on the normed ring `WithAbs v`.
-  uniformContinuous_const_smul r := by
-    simp_rw [Algebra.smul_def]
-    exact (Ring.uniformContinuousConstSMul _).uniformContinuous_const_smul _
+    UniformContinuousConstSMul M (WithAbs v) where
+  -- An action commuting with right multiplication is left multiplication by `m • 1`.
+  uniformContinuous_const_smul m := by
+    simpa only [smul_eq_mul, smul_one_mul] using
+      uniformContinuous_const_smul (X := WithAbs v) (m • 1 : WithAbs v)
+
+end SMul
+
+section Congr
+
+variable {R T U : Type*} [Ring R] [Ring T] [Ring U]
+  {v : AbsoluteValue R ℝ} {w : AbsoluteValue T ℝ} {u : AbsoluteValue U ℝ}
+
+/-- A ring isomorphism carrying the real absolute value `v` to `w` is an isometry from `WithAbs v`
+to `WithAbs w`. -/
+theorem isometry_congr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
+    Isometry (WithAbs.congr v w σ) :=
+  AddMonoidHomClass.isometry_of_norm _ fun x ↦ by
+    rw [norm_eq_apply_ofAbs, norm_eq_apply_ofAbs, congr_apply, ofAbs_toAbs, hσ]
+
+/-- A ring isomorphism carrying the real absolute value `v` to `w`, bundled as an isometric
+equivalence `WithAbs v ≃ᵢ WithAbs w`. -/
+noncomputable def isometryEquivCongr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
+    WithAbs v ≃ᵢ WithAbs w where
+  toEquiv := (WithAbs.congr v w σ).toEquiv
+  isometry_toFun := isometry_congr σ hσ
+
+/-- The underlying map of `isometryEquivCongr σ hσ` is `WithAbs.congr v w σ`. -/
+@[simp]
+theorem coe_isometryEquivCongr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
+    ⇑(isometryEquivCongr σ hσ) = WithAbs.congr v w σ :=
+  (rfl)
+
+/-- The bijection underlying `isometryEquivCongr σ hσ` is `(WithAbs.congr v w σ).toEquiv`. -/
+@[simp]
+theorem toEquiv_isometryEquivCongr (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
+    (isometryEquivCongr σ hσ).toEquiv = (WithAbs.congr v w σ).toEquiv :=
+  (rfl)
+
+/-- `WithAbs.isometryEquivCongr` of the identity is the identity. -/
+@[simp]
+theorem isometryEquivCongr_refl (h : ∀ x, v (RingEquiv.refl R x) = v x := fun _ ↦ rfl) :
+    isometryEquivCongr (RingEquiv.refl R) h = IsometryEquiv.refl (WithAbs v) :=
+  IsometryEquiv.ext fun _ ↦ rfl
+
+/-- `WithAbs.isometryEquivCongr` is compatible with composition of ring isomorphisms. -/
+@[simp]
+theorem isometryEquivCongr_trans (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x)
+    (τ : T ≃+* U) (hτ : ∀ y, u (τ y) = w y) :
+    (isometryEquivCongr σ hσ).trans (isometryEquivCongr τ hτ) =
+      isometryEquivCongr (σ.trans τ) (fun x ↦ by rw [RingEquiv.trans_apply, hτ, hσ]) :=
+  IsometryEquiv.ext fun _ ↦ rfl
+
+/-- The inverse of `isometryEquivCongr σ hσ` is `isometryEquivCongr` of `σ.symm`. -/
+@[simp]
+theorem isometryEquivCongr_symm (σ : R ≃+* T) (hσ : ∀ x, w (σ x) = v x) :
+    (isometryEquivCongr σ hσ).symm =
+      isometryEquivCongr σ.symm (fun y ↦ by rw [← hσ, σ.apply_symm_apply]) :=
+  IsometryEquiv.ext fun _ ↦ rfl
+
+end Congr
 
 end WithAbs

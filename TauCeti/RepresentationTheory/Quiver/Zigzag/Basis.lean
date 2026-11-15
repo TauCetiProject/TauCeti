@@ -26,9 +26,9 @@ Sandwiching a relator between two basis paths either produces a path of length a
 when both outer paths are trivial, the relator itself, so this map kills the relation ideal. It
 therefore separates the candidate basis classes, which it sends to distinct basis paths.
 
-The hypothesis is that every vertex has a neighbour: an isolated vertex carries no backtrack, so
-its volume class does not exist. For a preconnected graph with at least two vertices the hypothesis
-is automatic, which is the form the roadmap's dimension count takes.
+The hypothesis is that every vertex has a neighbour: an isolated vertex carries no backtrack, so its
+volume class does not exist. For a preconnected graph with at least two vertices the hypothesis is
+automatic.
 
 ## Main definitions
 
@@ -50,11 +50,8 @@ is automatic, which is the form the roadmap's dimension count takes.
 
 ## References
 
-This is the first two clauses of Layer 2 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, whose
-target signatures `zigzagBasis` and `finrank_zigzagAlgebra` appear in
-`TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`. See Huerfano--Khovanov, *A category for the
-adjoint representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag
-algebras*, Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section
@@ -483,21 +480,38 @@ theorem zigzagVolume_ne_zero [Nontrivial k] {i j : V} (h : G.Adj i j) :
     (length_backtrackPath G h), vertexEquiv_symm_vertex] at hproj
   exact hne hproj
 
-/-- Scalar multiplication of a volume class at a nonisolated vertex is injective. -/
-theorem zigzagVolume_smul_left_injective {i j : V} (h : G.Adj i j) :
-  Function.Injective fun r : k ↦ r • zigzagVolume k G i := by
+/-- Scalar multiplication of a class `zigzagMk x` is injective when the coordinate map sends `x` to
+a single path. -/
+private theorem zigzagMk_smul_left_injective_of_shortProj_eq_ofPath
+    {x : pathAlgebra k (DoubledQuiver G)} {p : Quiver.TotalPath (DoubledQuiver G)}
+    (hp : shortProj k G x = ofPath p) :
+    Function.Injective fun r : k ↦ r • zigzagMk k G x := by
   intro r s hrs
   beta_reduce at hrs
-  rw [zigzagVolume_eq_zigzagMk_backtrackElem k G h, ← map_smul, ← map_smul] at hrs
-  have hmem : r • backtrackElem G k h - s • backtrackElem G k h ∈ zigzagIdeal k G :=
+  rw [← map_smul, ← map_smul] at hrs
+  have hmem : r • x - s • x ∈ zigzagIdeal k G :=
     (zigzagMk_eq_zero_iff k G).mp (by rw [map_sub, hrs, sub_self])
   have hproj := shortProj_eq_zero_of_mem_zigzagIdeal k G hmem
-  rw [map_sub, map_smul, map_smul, backtrackElem_eq_ofPath,
-    shortProj_ofPath_of_loop k G (backtrackPath G h) (length_backtrackPath G h),
-    vertexEquiv_symm_vertex, sub_eq_zero] at hproj
-  apply (pathAlgebraBasis k (DoubledQuiver G)).linearIndependent.smul_left_injective
-    (volumePath G i)
+  rw [map_sub, map_smul, map_smul, hp, sub_eq_zero] at hproj
+  apply (pathAlgebraBasis k (DoubledQuiver G)).linearIndependent.smul_left_injective p
   simpa only [coe_pathAlgebraBasis] using hproj
+
+/-- Scalar multiplication of a volume class at a nonisolated vertex is injective. -/
+theorem zigzagVolume_smul_left_injective {i j : V} (h : G.Adj i j) :
+    Function.Injective fun r : k ↦ r • zigzagVolume k G i := by
+  rw [zigzagVolume_eq_zigzagMk_backtrackElem k G h]
+  refine zigzagMk_smul_left_injective_of_shortProj_eq_ofPath k G (p := volumePath G i) ?_
+  rw [backtrackElem_eq_ofPath,
+    shortProj_ofPath_of_loop k G (backtrackPath G h) (length_backtrackPath G h),
+    vertexEquiv_symm_vertex]
+
+/-- Scalar multiplication of an arrow class is injective, even when the graph has isolated
+vertices. -/
+theorem zigzagMk_ofArrow_smul_left_injective (d : G.Dart) :
+    Function.Injective fun r : k ↦ r • zigzagMk k G (ofArrow (arrow G d.adj)) := by
+  refine zigzagMk_smul_left_injective_of_shortProj_eq_ofPath k G
+    (p := ⟨vertex G d.fst, vertex G d.snd, arrowPath G d.adj⟩) ?_
+  rw [ofArrow_eq_ofPath_arrowPath, shortProj_ofPath_of_length_le_one k G _ (by simp)]
 
 /-! ### The dimension -/
 

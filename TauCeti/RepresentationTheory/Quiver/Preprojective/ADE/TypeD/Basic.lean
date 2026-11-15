@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Algebra.Algebra.SquareZeroPair
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
@@ -60,7 +61,7 @@ relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every fie
 
 * W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
   problem*, Section 1, for the preprojective algebra and its local relations.
-* S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 3, for the
+* S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 6.1, for the
   signless relation and its comparison with the preprojective relation of a bipartite graph.
 * C. M. Ringel, *The preprojective algebra of a quiver*, for the finite-Dynkin Frobenius property.
 -/
@@ -71,12 +72,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
-noncomputable local instance forkNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs with a long arm and two leaves at its end -/
 
@@ -108,15 +106,16 @@ private noncomputable def forkEntry (i : ℕ)
   if i ≤ c then ladderValley (forkUp k G c) (forkDown k G c) 0 (c - i) 0 * E
   else signlessArrow k G i c * E
 
-/-- The **normal forms of a path** from the vertex `i₀` to the vertex `j`, of length `L`, whose
-source idempotent is `E`:
+/-- An invariant bounding the length `L` of a path from the vertex `i₀` to the vertex `j` whose
+source idempotent is `E`: the element `z` is one of
 
-* a valley word on the long arm, with rungs counted from the branch node, which stays at least
-  one rung away from it;
-* a climb from the branch node to `j` on the long arm, after a product `w` of `t` backtracks into
-  the leaves and an integer multiple `D` of the direct path into the branch node, of length at most
-  `c + 1`;
-* the arrow from the branch node to the leaf `j`, after such `w` and `D`;
+* an integer multiple of a valley word on the long arm, with rungs counted from the branch node,
+  which stays at least one rung away from it;
+* a climb from the branch node to `j` on the long arm, after an element `w` of
+  `forkSpan k G c ^ t` and an integer multiple `D` of the direct path into the branch node, where
+  `L` is `2 * t` plus the length of the climb plus at most `c + 1`;
+* the arrow from the branch node to the leaf `j`, after such `w` and `D`, where `L` is
+  `2 * t + 1` plus at most `c + 1`;
 * the empty path at a leaf. -/
 private def ForkNormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
     Prop :=
@@ -131,7 +130,7 @@ private def ForkNormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra 
 
 variable {G} {c}
 variable (hn : n = c + 3)
-  (hG : ∀ i j : Fin n, G.Adj i j ↔ (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ c ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ c ∨
+  (hG : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ c ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ c ∨
     (i : ℕ) = c ∧ c < j ∨ (j : ℕ) = c ∧ c < i)
 include hn hG
 
@@ -145,7 +144,7 @@ private theorem sum_fork_relation (v : ℕ) (hv : v < n) (S : Finset ℕ) (hS : 
   rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
   rw [← h]
   refine Finset.sum_subset (fun w hw => Finset.mem_range.2 (hS w hw)) fun w hw hwS => ?_
-  rw [signlessArrow_eq_zero k fun _ _ hvw => hnbr w (Finset.mem_range.1 hw) hwS ((hG _ _).1 hvw),
+  rw [signlessArrow_eq_zero k fun _ _ hvw => hnbr w (Finset.mem_range.1 hw) hwS (hG _ _ hvw),
     mul_zero]
 
 omit hn in
@@ -153,7 +152,13 @@ omit hn in
 private theorem signlessArrow_fork_eq_zero {i j : ℕ}
     (h : ¬(i + 1 = j ∧ j ≤ c ∨ j + 1 = i ∧ i ≤ c ∨ i = c ∧ c < j ∨ j = c ∧ c < i)) :
     signlessArrow k G i j = 0 :=
-  signlessArrow_eq_zero k fun _ _ hij => h ((hG _ _).1 hij)
+  signlessArrow_eq_zero k fun _ _ hij => h (hG _ _ hij)
+
+omit hn in
+/-- The long arm has no step away from the branch node beyond its far end. -/
+private theorem forkUp_self_eq_zero : forkUp k G c c = 0 := by
+  simp only [forkUp, Nat.sub_self, Nat.zero_sub]
+  exact signlessArrow_fork_eq_zero k hG (by omega)
 
 /-- **The ladder relations of the long arm.** At every vertex of the long arm other than the
 branch node, the backtrack away from the branch node cancels the backtrack towards it. -/
@@ -176,6 +181,7 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
     have hprev : c - w = 0 := by omega
     simp only [forkUp, forkDown, hrung, hprev, h0, mul_zero, add_zero]
 
+omit hn in
 /-- **The relation at a leaf**: the backtrack from a leaf `l` vanishes. -/
 private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln : l < n) :
     signlessArrow k G c l * signlessArrow k G l c = 0 := by
@@ -192,11 +198,12 @@ private theorem forkDown_mul_forkUp_add_forkTurn :
     (fun u hu hu' => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu'; omega)
   rwa [Finset.sum_insert (by simp; omega), Finset.sum_pair (by omega)] at h
 
+omit hn in
 /-- The backtracks into the leaves square to zero. -/
 private theorem forkTurn_mul_self {l : ℕ} (hl : c < l) (hln : l < n) :
     forkTurn k G c l * forkTurn k G c l = 0 := by
   rw [forkTurn, mul_assoc, ← mul_assoc (signlessArrow k G c l),
-    signlessArrow_mul_signlessArrow_leaf k hn hG hl hln, zero_mul, mul_zero]
+    signlessArrow_mul_signlessArrow_leaf k hG hl hln, zero_mul, mul_zero]
 
 /-- The backtrack into the long arm is minus the sum of the backtracks into the leaves; in
 particular it lies in their span. -/
@@ -205,21 +212,41 @@ private theorem forkDown_mul_forkUp_mem_forkSpan :
   rw [eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG)]
   exact neg_mem (add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp)))
 
+/-- The two leaf backtracks sum to minus the backtrack into the long arm. -/
+private theorem forkTurn_add_eq_neg_forkDown_mul_forkUp :
+    forkTurn k G c (c + 1) + forkTurn k G c (c + 2) =
+      -(forkDown k G c 0 * forkUp k G c 0) :=
+  eq_neg_of_add_eq_zero_right (forkDown_mul_forkUp_add_forkTurn k hn hG)
+
 /-- The sum of the two leaf backtracks has vanishing `(c + 1)`-st power. -/
 private theorem forkTurn_add_pow_eq_zero :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (c + 1) = 0 := by
   -- The backtrack into the long arm is nilpotent, since the long arm has `c` rungs.
-  have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 := by
-    refine pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) ?_
-    exact signlessArrow_fork_eq_zero k hG (by omega)
-  rw [← neg_eq_of_add_eq_zero_right (forkDown_mul_forkUp_add_forkTurn k hn hG), neg_pow, hq,
-    mul_zero]
+  have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 :=
+    pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG)
+  rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow, hq, mul_zero]
+
+/-- The first long-arm arrow kills the `c`-th power of the sum of the leaf backtracks. -/
+private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
+    forkUp k G c 0 * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ c = 0 := by
+  have hrel (r : ℕ) := forkDown_mul_forkUp_add k hn hG r
+  have hshift : (forkDown k G c 1 * forkUp k G c 1) ^ c = 0 := by
+    have h := pow_d_mul_u_eq_zero
+      (u := fun r => forkUp k G c (r + 1)) (d := fun r => forkDown k G c (r + 1))
+      (fun r => hrel (r + 1)) (N := c - 1)
+      (by simpa only [Nat.sub_add_cancel hc] using forkUp_self_eq_zero k hG)
+    simpa only [zero_add, Nat.sub_add_cancel hc] using h
+  have hu : forkUp k G c 0 * (forkDown k G c 0 * forkUp k G c 0) ^ c = 0 := by
+    rw [← mul_pow_mul, eq_neg_of_add_eq_zero_right (hrel 0), neg_pow, hshift,
+      mul_zero, zero_mul]
+  rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow, ← mul_assoc,
+    ((Commute.neg_one_right (forkUp k G c 0)).pow_right c).eq, mul_assoc, hu, mul_zero]
 
 /-- **Every product of `c + 2` backtracks into the leaves vanishes.** -/
 private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G c ^ t = ⊥ := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le ht
-  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hn hG (by omega) (by omega))
-    (forkTurn_mul_self k hn hG (by omega) (by omega))
+  rw [pow_add, forkSpan, span_pair_pow_succ_eq_bot (forkTurn_mul_self k hG (by omega) (by omega))
+    (forkTurn_mul_self k hG (by omega) (by omega))
     (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
 
 /-! ### Normal forms of paths -/
@@ -379,7 +406,7 @@ private theorem forkNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
-    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).2 ((hG _ _).1 e.down) ih
+    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).2 (hG _ _ e.down) ih
 
 /-- **Every path of length at least `4 n` vanishes** in the signless algebra of a graph on
 `Fin (c + 3)` made of a long arm `0, …, c` and two leaves `c + 1`, `c + 2` attached to `c`. -/
@@ -388,7 +415,6 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_fork
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
-  have hb := ((vertexEquiv G).symm b).2
   -- A valley word on the long arm, or the empty path, is too short; otherwise the word in the
   -- backtracks into the leaves is long enough to vanish.
   rcases forkNormalForm_ofPath k hn hG p with ⟨m, s, r, ε, hm, hL, hs, hr, -⟩ |
@@ -405,26 +431,6 @@ end ForkGraph
 
 /-! ### The `Dₙ` diagram -/
 
-/-- From rank three on, two nodes of the `Dₙ` diagram are joined exactly when they are consecutive
-on the long arm `0, …, n - 3`, or one is the branch node `n - 3` and the other a leaf. -/
-private theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
-    (diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ n - 3 ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ n - 3 ∨
-        (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
-  have := i.2
-  have := j.2
-  split_ifs <;> simp <;> omega
-
-/-- Below rank three the `Dₙ` diagram has no edges. -/
-private theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
-    ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  rintro ⟨hij, h, -⟩
-  have hn' : n ≤ 2 := by omega
-  simp [CartanMatrix.D, hn', hij] at h
-
 /-- The two-colouring of `Dₙ`: the parity along the long arm, with both leaves coloured like the
 node `n - 2`. -/
 private def dColoring (n : ℕ) : (diagramGraph (DynkinType.D n).cartanMatrix).Coloring Bool :=
@@ -440,14 +446,15 @@ section CommRing
 variable (k : Type*) [CommRing k] {n : ℕ}
 
 /-- **Every path of length at least `4 n` vanishes in the signless algebra of `Dₙ`.** -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem signlessPreprojectiveMk_D_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.D n).cartanMatrix)))
     (hx : 4 * n ≤ x.2.2.length) :
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   by_cases hn : 3 ≤ n
   · exact signlessPreprojectiveMk_ofPath_eq_zero_of_fork k (n := n) (c := n - 3) (by omega)
-      (diagramGraph_D_adj hn) x hx
+      (fun i j => (diagramGraph_D_adj hn i j).1) x hx
   · -- Below rank three there are no arrows, and the only empty paths are over no vertices.
     obtain ⟨a, b, p⟩ := x
     cases p with
@@ -461,7 +468,8 @@ variable (o : Orientation (diagramGraph (DynkinType.D n).cartanMatrix))
 
 /-- **Every path of length at least `4 n` vanishes in the preprojective algebra of `Dₙ`**, for
 every orientation of the `Dₙ` graph. -/
-@[simp]
+-- Not `@[simp]`: plain `simp` first rewrites the diagram's rank inside the left-hand side's
+-- types, after which the lemma no longer matches; use it with `exact`.
 theorem preprojectiveMk_D_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath
       (Symmetrify (OrientedQuiver (diagramGraph (DynkinType.D n).cartanMatrix) o)))

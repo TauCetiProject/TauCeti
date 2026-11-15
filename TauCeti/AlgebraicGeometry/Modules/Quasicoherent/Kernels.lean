@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
-public import TauCeti.AlgebraicGeometry.Modules.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 
 /-!
@@ -51,26 +51,33 @@ private theorem isQuasicoherent_kernel_affine {X : Scheme.{u}} [IsAffine X]
     {M N : X.Modules} (f : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent] :
     (kernel f).IsQuasicoherent := by
   let F := Scheme.Modules.restrictFunctor X.isoSpec.inv
-  let G := Scheme.Modules.restrictFunctor X.isoSpec.hom
   have : (F.obj (kernel f)).IsQuasicoherent :=
     (SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf).prop_of_iso
       (PreservesKernel.iso F f).symm (isQuasicoherent_kernel_spec (F.map f))
-  have : (G.obj (F.obj (kernel f))).IsQuasicoherent :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor X.isoSpec.hom _
-  let e : G.obj (F.obj (kernel f)) ≅ kernel f :=
-    (Scheme.Modules.restrictFunctorComp X.isoSpec.hom X.isoSpec.inv).symm.app _ ≪≫
-      (Scheme.Modules.restrictFunctorCongr X.isoSpec.hom_inv_id).app _ ≪≫
-      Scheme.Modules.restrictFunctorId.app _
-  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso e inferInstance
+  exact (Scheme.Modules.isQuasicoherent_restrict_iff_of_isIso _ X.isoSpec.inv).1 this
 
 /-- The ambient kernel of a morphism of quasicoherent sheaves on any scheme is quasicoherent. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_kernel
     {X : Scheme.{u}} {M N : X.Modules} (f : M ⟶ N)
     [M.IsQuasicoherent] [N.IsQuasicoherent] : (kernel f).IsQuasicoherent := by
-  refine isQuasicoherent_of_isQuasicoherent_restrict_affineOpens (kernel f) fun U ↦ ?_
+  refine (Scheme.Modules.isQuasicoherent_iff_forall_affineOpens (kernel f)).2 fun U ↦ ?_
   let F := Scheme.Modules.restrictFunctor U.1.ι
   exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
     (PreservesKernel.iso F f).symm (isQuasicoherent_kernel_affine (F.map f))
+
+/-- Kernels of quasicoherent modules on the slice site of an open subscheme are
+quasicoherent. This is the open-subscheme kernel criterion transported by `overEquiv`. -/
+instance isQuasicoherent_kernel_over {X : Scheme.{u}} (U : X.Opens)
+    {M N : SheafOfModules.{u} (X.ringCatSheaf.over U)} (f : M ⟶ N)
+    [M.IsQuasicoherent] [N.IsQuasicoherent] : (kernel f).IsQuasicoherent := by
+  let e := Scheme.Modules.overEquiv U
+  have : (e.functor.obj (kernel f)).IsQuasicoherent :=
+    (SheafOfModules.isQuasicoherent U.toScheme.ringCatSheaf).prop_of_iso
+      (PreservesKernel.iso e.functor f).symm
+      (Scheme.Modules.isQuasicoherent_kernel (e.functor.map f))
+  have h := isQuasicoherent_overEquiv_inverse U (e.functor.obj (kernel f))
+  exact (SheafOfModules.isQuasicoherent (X.ringCatSheaf.over U)).prop_of_iso
+    (e.unitIso.app (kernel f)).symm h
 
 /-- Quasicoherence is closed under ambient kernels. The generic full-subcategory construction
 therefore supplies kernels in `QuasicoherentSheaf X`. -/

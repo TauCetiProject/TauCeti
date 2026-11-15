@@ -14,7 +14,8 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.Automorphism
 # Labute's normal form for the dyadic Demushkin groups of even rank
 
 Let `F = freeProP 2 (Fin n)` be the free pro-`2` group on an even number `n` of generators and let
-`r ∈ Φ(F)` be a relator presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`.
+`r` be a relator presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`; such a
+relator automatically lies in `Φ(F)`.
 Labute's Theorem 3 says that a continuous automorphism of `F` carries `r` to one of the words
 
   `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, `2 ≤ f < ∞`, or
@@ -54,8 +55,8 @@ how the classification pins them, and this file proves only the existence of the
   `q' = 2^f` for some `f ≥ 2`.
 * `exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`, in the
   namespace `TauCeti.IsDemushkin`: **Labute's Theorem 3 for `q = 2` and even rank**, the previous
-  statement for a relator in `Φ(F)` presenting a Demushkin group with `q = 2` on an even number of
-  generators.
+  statement for a relator presenting a Demushkin group with `q = 2` on an even number of
+  generators (such a relator automatically lies in `Φ(F)`).
 * `exists_continuousMulEquiv_presentedProP_padicPow_mul_labuteComm_mul_demushkinWordNeTwo`, in the
   namespace `TauCeti.IsDemushkin`: a Demushkin group at `p = 2` of even rank `n` with `q = 2` is
   topologically isomorphic to
@@ -113,55 +114,24 @@ private theorem demushkinWordNeTwo_mul_prod_tail_eq (a : Fin (k + 2) → ℤ_[2]
     map_succ_map_succ_freeProPGen, map_succ_padicPow, List.finRange_succ, List.map_cons,
     List.drop_succ_cons, List.drop_zero]
 
-/-- **The exact form of the dyadic relators of even rank.** Let `n ≥ 2` be even and let
-`r ∈ λ_1(F)` be a relator of the free pro-`2` group `F` on `n` generators with the class of
-`x₁² (x₁, x₂) (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1(F)`. Then a continuous automorphism of `F` carries
-`r` to `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, where `α ∈ ℤ₂` is divisible by `4` and
-`q = 0`, Labute's level `f = ∞`, or `q = 2^f` for some `f ≥ 2`. The last factor is the `q ≠ 2` word
-`x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n - 2` letters, read on the generators shifted by two. The
-theorem assumes only the degree-one class of `r`, not that `r` is the relator of a Demushkin
-group. -/
-theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo {n : ℕ}
-    (hn : Even n) (hn0 : 0 < n) (r : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
-    (h : gradedMk 2 (freeProP 2 (Fin n)) 1 r = gradedMk 2 (freeProP 2 (Fin n)) 1
-      ⟨demushkinWordNeTwo 2 n (freeProPGen 2 n),
-        demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩) :
-    ∃ (e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n)) (α : ℤ_[2]) (q : ℕ),
-      (4 : ℤ_[2]) ∣ α ∧ (q = 0 ∨ ∃ f, 2 ≤ f ∧ q = 2 ^ f) ∧
-        e r = (isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α) *
-          labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
-          demushkinWordNeTwo q (n - 2) fun i ↦ freeProPGen 2 n (i + 2) := by
+/-- **Extending the tail normalisation to the first two generators.** Let `e'` be an automorphism
+of the free pro-`2` group on `k` generators carrying the tail relator `w₀ · T` to `w_q`. Then an
+automorphism `E` of the free pro-`2` group on `k + 2` generators fixes the head
+`x₁^{2+α} (x₁, x₂)` and carries the embedded tail relator to `x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`,
+so it carries their product to the product of the head with that word. -/
+private theorem exists_continuousMulEquiv_apply_head_mul_map_succ_succ (α : ℤ_[2])
+    (T : freeProP 2 (Fin k)) (q : ℕ) (e' : freeProP 2 (Fin k) ≃ₜ* freeProP 2 (Fin k))
+    (he' : e' (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T) =
+      demushkinWordNeTwo q k (freeProPGen 2 k)) :
+    ∃ E : freeProP 2 (Fin (k + 2)) ≃ₜ* freeProP 2 (Fin (k + 2)),
+      E ((isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
+        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) *
+        map (Fin.succ : Fin (k + 1) → Fin (k + 2)) (map (Fin.succ : Fin k → Fin (k + 1))
+          (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T))) =
+      (isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
+        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) *
+        demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hn2 : 2 ≤ n := by
-    obtain ⟨m, hm⟩ := hn
-    omega
-  -- The intermediate form: `e₁ r = x₁^{2+α} (x₁, x₂) · ((x₃, x₄) ⋯ (x_{n-1}, x_n) t₃ ⋯ t_n)`, with
-  -- each tail `t_i = x_i^{a_i}` a `2`-adic power of `x_i` whose exponent is divisible by `4`.
-  obtain ⟨e₁, α, a, hα, ha, he₁⟩ :=
-    exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul hn hn0 r h
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
-  have hk : Even k := by
-    obtain ⟨m, hm⟩ := hn
-    exact ⟨m - 1, by omega⟩
-  simp only [Nat.add_sub_cancel] at he₁ ⊢
-  rcases Nat.eq_zero_or_pos k with rfl | hkpos
-  · -- Rank two: there is no tail relator, and the relator is already `x₁^{2+α} (x₁, x₂)`.
-    refine ⟨e₁, α, 0, hα, Or.inl rfl, ?_⟩
-    rw [he₁]
-    simp [demushkinWordNeTwo_def, List.finRange_succ]
-  -- The tail relator, read on `x₃, …, x_n`, is normalised by the case `q ≠ 2`.
-  set T : freeProP 2 (Fin k) := ((List.finRange k).map fun j ↦
-    (isProP_freeProP 2 (Fin k)).padicPow (of j) (a j.succ.succ)).prod with hT_def
-  have h4 : ((2 : ℕ) : ℤ_[2]) ^ 2 = 4 := by norm_num
-  have hT : T ∈ pLowerCentralSeries 2 (freeProP 2 (Fin k)) 2 :=
-    (pLowerCentralSeries 2 (freeProP 2 (Fin k)) 2).list_prod_mem fun x hx ↦ by
-      obtain ⟨j, -, rfl⟩ := List.mem_map.1 hx
-      exact (padicPow_mem_pLowerCentralSeries_iff j _ 2).2 (h4 ▸ ha _)
-  obtain ⟨e', q, hq', he'⟩ :=
-    exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq hk hkpos.ne' hT
-  -- The extension `E` of its normalising automorphism by `x₁ ↦ x₁` and `x₂ ↦ x₂` fixes the head
-  -- `x₁^{2+α} (x₁, x₂)` and carries the embedded tail relator to
-  -- `x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`.
   set E : freeProP 2 (Fin (k + 2)) ≃ₜ* freeProP 2 (Fin (k + 2)) :=
     finSuccExtend (finSuccExtend e') with hE_def
   have hE0 : E (freeProPGen 2 (k + 2) 0) = freeProPGen 2 (k + 2) 0 :=
@@ -184,27 +154,75 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
       demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
     rw [hE_def, finSuccExtend_map_succ, finSuccExtend_map_succ, he']
     simp only [map_demushkinWordNeTwo, Function.comp_def, map_succ_map_succ_freeProPGen]
-  have he : E (e₁ r) =
-      (isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
-        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) *
-        demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
-    rw [he₁, demushkinWordNeTwo_mul_prod_tail_eq a, map_mul, hEhead, hEtail]
+  exact ⟨E, by rw [map_mul, hEhead, hEtail]⟩
+
+/-- **The exact form of the dyadic relators of even rank.** Let `n` be even and let
+`r ∈ λ_1(F)` be a relator of the free pro-`2` group `F` on `n` generators with the class of
+`x₁² (x₁, x₂) (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1(F)`. Then a continuous automorphism of `F` carries
+`r` to `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, where `α ∈ ℤ₂` is divisible by `4` and
+`q = 0`, Labute's level `f = ∞`, or `q = 2^f` for some `f ≥ 2`. The last factor is the `q ≠ 2` word
+`x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n - 2` letters, read on the generators shifted by two. The
+theorem assumes only the degree-one class of `r`, not that `r` is the relator of a Demushkin
+group. -/
+theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo {n : ℕ}
+    (hn : Even n) (r : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
+    (h : gradedMk 2 (freeProP 2 (Fin n)) 1 r = gradedMk 2 (freeProP 2 (Fin n)) 1
+      ⟨demushkinWordNeTwo 2 n (freeProPGen 2 n),
+        demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩) :
+    ∃ (e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n)) (α : ℤ_[2]) (q : ℕ),
+      (4 : ℤ_[2]) ∣ α ∧ (q = 0 ∨ ∃ f, 2 ≤ f ∧ q = 2 ^ f) ∧
+        e r = (isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α) *
+          labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
+          demushkinWordNeTwo q (n - 2) fun i ↦ freeProPGen 2 n (i + 2) := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  · -- Rank zero: the free pro-`2` group on no generators is trivial.
+    exact ⟨ContinuousMulEquiv.refl _, 0, 0, dvd_zero _, Or.inl rfl, Subsingleton.elim _ _⟩
+  have hn2 : 2 ≤ n := by
+    obtain ⟨m, hm⟩ := hn
+    omega
+  -- The intermediate form: `e₁ r = x₁^{2+α} (x₁, x₂) · ((x₃, x₄) ⋯ (x_{n-1}, x_n) t₃ ⋯ t_n)`, with
+  -- each tail `t_i = x_i^{a_i}` a `2`-adic power of `x_i` whose exponent is divisible by `4`.
+  obtain ⟨e₁, α, a, hα, ha, he₁⟩ :=
+    exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul hn hn0 r h
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
+  have hk : Even k := by
+    obtain ⟨m, hm⟩ := hn
+    exact ⟨m - 1, by omega⟩
+  simp only [Nat.add_sub_cancel] at he₁ ⊢
+  rcases Nat.eq_zero_or_pos k with rfl | hkpos
+  · -- Rank two: there is no tail relator, and the relator is already `x₁^{2+α} (x₁, x₂)`.
+    refine ⟨e₁, α, 0, hα, Or.inl rfl, ?_⟩
+    rw [he₁]
+    simp [demushkinWordNeTwo_def, List.finRange_succ]
+  -- The tail relator, read on `x₃, …, x_n`, is normalised by the case `q ≠ 2`.
+  set T : freeProP 2 (Fin k) := ((List.finRange k).map fun j ↦
+    (isProP_freeProP 2 (Fin k)).padicPow (of j) (a j.succ.succ)).prod
+  have h4 : ((2 : ℕ) : ℤ_[2]) ^ 2 = 4 := by norm_num
+  have hT : T ∈ pLowerCentralSeries 2 (freeProP 2 (Fin k)) 2 :=
+    (pLowerCentralSeries 2 (freeProP 2 (Fin k)) 2).list_prod_mem fun x hx ↦ by
+      obtain ⟨j, -, rfl⟩ := List.mem_map.1 hx
+      exact (padicPow_mem_pLowerCentralSeries_iff j _ 2).2 (h4 ▸ ha _)
+  obtain ⟨e', q, hq', he'⟩ :=
+    exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq hk hkpos.ne' hT
+  obtain ⟨E, hE⟩ := exists_continuousMulEquiv_apply_head_mul_map_succ_succ α T q e' he'
   refine ⟨e₁.trans E, α, q, hα, hq', ?_⟩
-  rw [ContinuousMulEquiv.trans_apply, he]
+  rw [ContinuousMulEquiv.trans_apply, he₁, demushkinWordNeTwo_mul_prod_tail_eq a]
+  exact hE
 
 end freeProP
 
 namespace IsDemushkin
 
 /-- **Labute's normal form for `q = 2` and even rank** (Labute, Theorem 3, case (3)). Let
-`r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n` of generators presenting a
+`r` be a relator of the free pro-`2` group on an even number `n` of generators presenting a
 Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q(G) = 2`. Then a continuous automorphism of `F`
 carries `r` to `x₁^{2+α} (x₁, x₂) x₃^{q'} (x₃, x₄) ⋯ (x_{n-1}, x_n)`, where `α ∈ ℤ₂` is divisible
 by `4` and `q' = 0`, Labute's level `f = ∞`, or `q' = 2^f` for some `f ≥ 2`. The last factor is the
 `q ≠ 2` word `x₃^{q'} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on `n - 2` letters, read on the generators shifted
 by two. -/
 theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo {n : ℕ}
-    (hn : Even n) {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hn : Even n) {r : freeProP 2 (Fin n)}
     (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hq : demushkinQ hG = 2) :
     ∃ (e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n)) (α : ℤ_[2]) (q : ℕ),
       (4 : ℤ_[2]) ∣ α ∧ (q = 0 ∨ ∃ f, 2 ≤ f ∧ q = 2 ^ f) ∧
@@ -212,6 +230,7 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
           labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
           demushkinWordNeTwo q (n - 2) fun i ↦ freeProPGen 2 n (i + 2) := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
   -- A Demushkin group has positive rank, so `n ≥ 2`.
   have hn0 : 0 < n := by
     have := hG.demushkinRank_pos
@@ -242,7 +261,7 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
   -- The exact form of a relator with that class.
   obtain ⟨e, α, q, hα, hq', he⟩ :=
     freeProP.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn
-      hn0 ⟨e₀ r, hmem⟩ h
+      ⟨e₀ r, hmem⟩ h
   exact ⟨e₀.trans e, α, q, hα, hq', by rw [ContinuousMulEquiv.trans_apply]; exact he⟩
 
 /-- **Labute's normal form for a Demushkin group of even rank with `q = 2`, intrinsic form**
@@ -268,7 +287,7 @@ theorem exists_continuousMulEquiv_presentedProP_padicPow_mul_labuteComm_mul_demu
       (hG.nondegenerate_degreeOneForm hr e)
   have hq' : demushkinQ hG' = 2 := (demushkinQ_congr hG' hG e).trans hq
   obtain ⟨e', α, q, hα, hq'', he'⟩ :=
-    exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn hr hG' hq'
+    exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn hG' hq'
   exact ⟨α, q, hα, hq'', ⟨e.symm.trans (presentedProP.congrSingleton e' he')⟩⟩
 
 end IsDemushkin

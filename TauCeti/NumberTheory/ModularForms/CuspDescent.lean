@@ -24,8 +24,9 @@ with all three conditions in hand, `f` itself bundles into a `CuspForm` of the l
 
 Everything rests on the fact that `diag(d, 1)⁻¹ · A` carries `∞` to a cusp, for any
 `A ∈ SL(2, ℤ)`. That is *not* a computation: the matrix is rational, and rational matrices carry
-cusps to cusps — `IsCusp.smul_map_ratCast`, already in `Cusps/Rat/Basic.lean`. `Degeneracy.lean`
-supplies `scaleGLRat d`, the matrix `diag(d, 1)` over `ℚ`, and its pushforward to `scaleGL d`.
+cusps to cusps — `IsCusp.smul_map_ratCast`, already in `Cusps/Rat/Basic.lean`. The matrix
+`diag(d, 1)` over `ℚ` is `HeckeRing.GLn.natDiagGL 2 ![d, 1]`, and `Degeneracy.lean` supplies its
+pushforward to `scaleGL d` (`map_natDiagGL_d_one_eq_scaleGL`).
 
 ## Main results
 
@@ -106,8 +107,9 @@ lemma isCusp_inv_scaleGL_mul_mapGL_smul_infty (d : ℕ) [NeZero d] (A : SL(2, �
       (∞ : OnePoint ℝ)) Γ := by
   have hinfty : IsCusp (∞ : OnePoint ℝ) Γ :=
     (Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z Γ).mpr (isCusp_SL2Z_iff'.mpr ⟨1, by simp⟩)
-  have := hinfty.smul_map_ratCast ((scaleGLRat d)⁻¹ * (mapGL ℚ A : GL (Fin 2) ℚ))
-  rwa [map_mul, map_inv, map_ratCast_scaleGLRat, A.map_mapGL] at this
+  have := hinfty.smul_map_ratCast
+    ((HeckeRing.GLn.natDiagGL 2 ![d, 1])⁻¹ * (mapGL ℚ A : GL (Fin 2) ℚ))
+  rwa [map_mul, map_inv, map_natDiagGL_d_one_eq_scaleGL, A.map_mapGL] at this
 
 variable {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
 
@@ -212,7 +214,7 @@ lemma coe_cuspFormOfSmulSlashScaleGL (l N : ℕ) [NeZero l] [NeZero N] (hlN : l 
     ⇑(cuspFormOfSmulSlashScaleGL l N hlN k χ hχ f g hgχ hg hT) = f :=
   -- deliberately `(rfl)` rather than `rfl`: `cuspFormOfSmulSlashScaleGL` is not `@[expose]`, so
   -- the parentheses opt out of exporting the definitional equality, which this lemma itself
-  -- replaces downstream. Same convention as `ModularForm.coe_ofLe` in `Basic.lean`.
+  -- replaces downstream. Same convention as `ModularForm.coe_ofSlashInvariant` in `Basic.lean`.
   (rfl)
 
 end TauCeti

@@ -18,11 +18,10 @@ direct sum is the sum of the factor symmetrized forms, the symmetric metric of a
 the sum of the factor symmetric metrics, and the compatible metric of a compatible direct sum is the
 sum of the factor compatible metrics.
 
-These are pointwise linear-algebra facts for the analytic Heegaard Floer roadmap. Product
-compatible triples are the local models used before passing to product manifolds and, later,
-symmetric-product geometry; the lemmas here let downstream energy and metric estimates reduce a
-direct-sum target to its two factors without unfolding the product symplectic form or either
-inner-product core.
+These are pointwise linear-algebra facts. Product compatible triples are the local models for
+product manifolds and symmetric-product geometry; the lemmas here let energy and metric estimates
+reduce a direct-sum target to its two factors without unfolding the product symplectic form or
+either inner-product core.
 
 ## Main declarations
 

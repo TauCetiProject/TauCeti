@@ -20,8 +20,8 @@ affine Hopf/group-scheme anti-equivalence makes this an intrinsic, isomorphism-i
 of the represented group scheme.
 
 The resulting full subcategories remain anti-equivalent. The compatibility isomorphism with
-`hopfSpec` is provided so later comparison theorems can compute on coordinate rings without
-unfolding either restricted equivalence.
+`hopfSpec` is provided so comparison theorems can compute on coordinate rings without unfolding
+either restricted equivalence.
 
 ## Main declarations
 
@@ -39,7 +39,7 @@ unfolding either restricted equivalence.
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.12.
 
 This synchronizes the coordinate-ring and group-scheme views for the complete-reducibility
-characterization in Layer 6 of the ReductiveGroups roadmap.
+characterization.
 
 The organization follows `TauCeti/AlgebraicGeometry/AffineGroupScheme/Unipotent.lean`.
 -/

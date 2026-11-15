@@ -6,19 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+import Mathlib.Algebra.Ring.Hom.InjSurj
 
 /-!
-# The difference of two variables is a non-zero-divisor
+# Non-zero-divisors of multivariate power series
 
 Mathlib shows that a *single* variable is a non-zero-divisor over an arbitrary semiring
 (`MvPowerSeries.X_mem_nonZeroDivisors`), and that `MvPowerSeries σ R` inherits `NoZeroDivisors`
 from `R`. Between those lies a gap: over a ring that *has* zero divisors, is `X i - X j` still
-regular? It is, and this file proves it.
+regular? It is, and this file proves it. It also records that power series over a domain form a
+domain, the multivariate analogue of Mathlib's instance for `PowerSeries`; subrings of power
+series, such as Tate algebras, then inherit `IsDomain` from Mathlib's subring instance.
 
 ## Main results
 
 * `MvPowerSeries.X_sub_X_mem_nonZeroDivisors`: for `i ≠ j`, the difference `X i - X j` is a
   non-zero-divisor of `MvPowerSeries σ R` over an arbitrary commutative ring.
+* `MvPowerSeries.isDomain_of_isDomain`: a semiring whose power series ring is a domain is
+  a domain.
 
 ## Implementation notes
 
@@ -35,7 +40,19 @@ namespace MvPowerSeries
 
 open Finsupp nonZeroDivisors
 
-variable {σ R : Type*} [CommRing R]
+variable {σ R : Type*}
+
+/-- Power series in any set of variables over a domain form a domain. -/
+instance [Ring R] [IsDomain R] : IsDomain (MvPowerSeries σ R) :=
+  NoZeroDivisors.to_isDomain _
+
+variable (σ) in
+/-- A semiring `R` is a domain as soon as its power series ring is: the constant-coefficient
+embedding `C` is injective. This is the converse of the `IsDomain (MvPowerSeries σ R)` instance. -/
+theorem isDomain_of_isDomain [Semiring R] [IsDomain (MvPowerSeries σ R)] : IsDomain R :=
+  Function.Injective.isDomain (C (σ := σ) (R := R)) C_injective
+
+variable [CommRing R]
 
 /-- **The difference of two distinct variables is a non-zero-divisor**, over an arbitrary
 commutative ring: `f * (X i - X j) = 0` forces `f = 0`, with no hypothesis on `R`.

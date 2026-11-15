@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
 /-!
@@ -12,7 +13,8 @@ public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
 This file records the two marginals of a probability mass function on an arbitrary product as the
 infinite row and column sums of its matrix of point masses, together with the resulting
-characterizations of a prescribed marginal.
+characterizations of a prescribed marginal. It also computes the real singleton mass under the
+product of two PMF measures.
 
 ## Main results
 
@@ -20,12 +22,15 @@ characterizations of a prescribed marginal.
   and column sums.
 * `PMF.map_fst_eq_iff`, `PMF.map_snd_eq_iff`: characterizations of prescribed marginals by those
   sums.
+* `PMF.real_prod_toMeasure_singleton`: the real mass of a singleton with measurable factors under a
+  product of PMF measures.
 -/
 
 public section
 
 noncomputable section
 
+open MeasureTheory Set
 open scoped ENNReal
 
 universe u v
@@ -34,11 +39,21 @@ namespace PMF
 
 variable {ι : Type u} {κ : Type v} (π : PMF (ι × κ))
 
+/-- The real mass of a singleton `{(i, j)}` under the product of two PMF measures is the product
+of the point masses at `i` and `j`, provided `{i}` and `{j}` are measurable. -/
+@[simp]
+theorem real_prod_toMeasure_singleton [MeasurableSpace ι] [MeasurableSpace κ]
+    (μ : PMF ι) (ν : PMF κ) (i : ι) (j : κ) (hi : MeasurableSet ({i} : Set ι))
+    (hj : MeasurableSet ({j} : Set κ)) :
+    (μ.toMeasure.prod ν.toMeasure).real {(i, j)} = (μ i).toReal * (ν j).toReal := by
+  rw [← Set.singleton_prod_singleton, measureReal_prod_prod, Measure.real,
+    PMF.toMeasure_apply_singleton _ _ hi, Measure.real, PMF.toMeasure_apply_singleton _ _ hj]
+
 /-- The first marginal of a product PMF is obtained by summing each row of its matrix of point
 masses. -/
 theorem map_fst_apply (i : ι) : π.map Prod.fst i = ∑' j, π (i, j) := by
   classical
-  rw [PMF.map_apply, ENNReal.tsum_prod']
+  rw [PMF.map_apply, _root_.tsum_prod']
   rw [tsum_eq_single i]
   · simp
   · intro i' hi
@@ -54,7 +69,7 @@ theorem map_fst_eq_iff (μ : PMF ι) :
 masses. -/
 theorem map_snd_apply (j : κ) : π.map Prod.snd j = ∑' i, π (i, j) := by
   classical
-  rw [PMF.map_apply, ENNReal.tsum_prod']
+  rw [PMF.map_apply, _root_.tsum_prod']
   simp
 
 /-- A product PMF has second marginal `ν` exactly when its infinite column sums are `ν`. -/

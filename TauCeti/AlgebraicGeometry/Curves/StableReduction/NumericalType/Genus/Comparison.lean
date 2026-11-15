@@ -251,14 +251,8 @@ theorem sum_genusDefect :
   rw [Finset.sum_congr rfl fun i _ ↦ T.genusDefect_def i,
     Finset.sum_sub_distrib, T.sum_normalizedTerm_eq_sum_genusContribution,
     T.arithmeticGenus_eq_one_add_sum_genusContribution]
-  have hdegree := T.intersectionGraph.sum_degrees_eq_twice_card_edges
-  have hedge : #T.intersectionGraph.edgeFinset = T.intersectionGraph.edgeSet.ncard := by
-    rw [SimpleGraph.edgeFinset_card, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
-  have hdegree' : ∑ v, T.intersectionGraph.degree v =
-      2 * T.intersectionGraph.edgeSet.ncard := by
-    rw [hdegree, hedge]
   have hdegreeQ : (∑ v, (T.intersectionGraph.degree v : ℚ)) =
-      2 * T.intersectionGraph.edgeSet.ncard := by exact_mod_cast hdegree'
+      2 * T.intersectionGraph.edgeSet.ncard := by exact_mod_cast T.sum_degrees_eq_twice_ncard_edges
   have hhalf : ∑ v, (T.intersectionGraph.degree v : ℚ) / 2 =
       (T.intersectionGraph.edgeSet.ncard : ℚ) := by
     rw [← Finset.sum_div]
@@ -279,7 +273,6 @@ theorem genusDefect_nonneg_of_genus_pos_or_two_le_valence_or_mul_eq_one (i : T.C
     0 ≤ T.genusDefect i := by
   rw [T.genusDefect_def]
   have hs := T.valence_le_normalizedValence i
-  have hs0 := T.normalizedValence_nonneg i
   have hq : (1 : ℚ) ≤ (T.multiplicity i : ℚ) * (T.weight i : ℚ) := by
     have hm : (1 : ℚ) ≤ T.multiplicity i := by exact_mod_cast (T.multiplicity i).pos
     have hw : (1 : ℚ) ≤ T.weight i := by exact_mod_cast (T.weight i).pos
@@ -295,7 +288,6 @@ theorem genusDefect_nonneg_of_genus_pos_or_two_le_valence_or_mul_eq_one (i : T.C
     linarith
   · have hdq : (2 : ℚ) ≤ (T.intersectionGraph.neighborSet i).ncard := by exact_mod_cast hd
     have hbase : 0 ≤ -1 + (T.genus i : ℚ) + T.normalizedValence i / 2 := by
-      have hg0 : (0 : ℚ) ≤ T.genus i := by positivity
       linarith
     have hmul : -1 + (T.genus i : ℚ) + T.normalizedValence i / 2 ≤
         (T.multiplicity i : ℚ) * T.weight i *
@@ -305,7 +297,6 @@ theorem genusDefect_nonneg_of_genus_pos_or_two_le_valence_or_mul_eq_one (i : T.C
   · have hq1' : (T.multiplicity i : ℚ) * (T.weight i : ℚ) = 1 := by
       exact_mod_cast hq1
     rw [hq1']
-    have hg0 : (0 : ℚ) ≤ T.genus i := by positivity
     linarith
 
 /-- If every component has positive genus, at least two neighbours, or unit weighted
@@ -440,7 +431,6 @@ private lemma excess_nonneg_of_two_le_valenceIn {S : Finset T.Component}
   have hv : (2 : ℚ) ≤ T.valenceIn S i := by exact_mod_cast hS i hi
   have hq : 1 ≤ q i := one_le_mul_of_one_le_of_one_le
     (by exact_mod_cast (T.multiplicity i).pos) (by exact_mod_cast (T.weight i).pos)
-  have hg : (0 : ℚ) ≤ T.genus i := by positivity
   have hbase : (0 : ℚ) ≤ T.genus i - 1 + T.valenceIn S i / 2 := by linarith
   nlinarith [mul_nonneg (sub_nonneg.mpr hq) hbase]
 

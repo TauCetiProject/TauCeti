@@ -18,8 +18,9 @@ isomorphism of path algebras, it matches the two relation families, and it there
 isomorphism of the two `TauCeti.nonisolatedZigzagQuotient`s.
 
 That quotient is, as its own docstring records, the intended zigzag algebra only for a graph
-without an isolated vertex; the componentwise public algebra remains to be built, and its
-invariance is not established here.
+without an isolated vertex. The componentwise public algebra `TauCeti.zigzagAlgebra`, and its
+invariance `TauCeti.zigzagAlgebraEquiv` under graph isomorphism, are in
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic`.
 
 Nothing here is specific to the *uniform* relation family beyond the fact that it is described by
 path lengths and by the endpoints of paths, both of which a relabelling preserves. That is exactly
@@ -50,12 +51,9 @@ what the transport lemmas below say, one constructor at a time.
 
 ## References
 
-This discharges the "functoriality under graph/quiver isomorphism" clause of Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. It covers the "invariance under graph isomorphism"
-clause of Layer 1 only in part: the uniform relation quotient is transported, while the
-skew-parameter statements of that clause — extension along a field homomorphism, the resulting
-scalar-extension comparison, and injectivity on units — are untouched. See Huerfano--Khovanov,
-*A category for the adjoint representation*, Section 3.
+For the skew-zigzag algebras, extension along a field homomorphism, the resulting scalar-extension
+comparison, and injectivity on units are not treated here. See Huerfano--Khovanov, *A category for
+the adjoint representation*, Section 3.
 -/
 
 public section
@@ -218,8 +216,8 @@ private theorem nonisolatedZigzagQuotientHom_zigzagMk (e : G ≃g H)
 /-- **The nonisolated zigzag quotient is an invariant of the graph**: an isomorphism of simple
 graphs induces an isomorphism of the uniform relation quotients of their doubled path algebras.
 This is invariance of `TauCeti.nonisolatedZigzagQuotient`, which is the intended zigzag algebra
-only for a graph without an isolated vertex; the componentwise public algebra is not treated
-here. -/
+only for a graph without an isolated vertex; for the componentwise public algebra see
+`TauCeti.zigzagAlgebraEquiv`. -/
 noncomputable def nonisolatedZigzagQuotientEquiv (e : G ≃g H) :
     nonisolatedZigzagQuotient k G ≃ₐ[k] nonisolatedZigzagQuotient k H :=
   AlgEquiv.ofAlgHom (nonisolatedZigzagQuotientHom k e) (nonisolatedZigzagQuotientHom k e.symm)

@@ -66,10 +66,6 @@ open AlgebraicGeometry
 /-- `3 = 1` is a unit in `𝔽₂`, so Mathlib's model `y² + y = x³` of `j = 0` is an elliptic curve. -/
 instance : Fact (IsUnit (3 : ZMod 2)) := ⟨IsUnit.of_mul_eq_one 1 (by decide)⟩
 
-local instance : IsDedekindDomain (ofJ0 (ZMod 2)).toAffine.CoordinateRing :=
-  have := Affine.isIntegrallyClosed_coordinateRing (ofJ0 (ZMod 2)).toAffine
-  (ofJ0 (ZMod 2)).toAffine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- The function field `𝔽₂(x, y)` has characteristic `2`, which is what makes the derivative
 `2y + 1` of the defining equation equal to `1`. -/
 instance : CharP (ofJ0 (ZMod 2)).toAffine.FunctionField 2 :=

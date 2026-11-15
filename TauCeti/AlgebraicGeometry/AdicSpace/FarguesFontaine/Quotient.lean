@@ -18,9 +18,12 @@ coefficient ring is perfect of characteristic `p` and the Witt vectors carry the
 `(p, [ϖ])`-adic topology. Its cyclic subgroup acts continuously on `𝒴`. The orbit space
 `spaX` carries the quotient topology, and its projection is open.
 
-The wandering Frobenius windows embed openly into this orbit space. The images of `U₀` and
-`V₀` cover it, so it is quasi-compact and `T0`. These topological charts are the inputs for
-constructing the quotient sheaf and identifying its affinoid charts.
+The preimage of the image of a set of `𝒴` is the union of its integer Frobenius translates, and
+these are pairwise disjoint when the set wanders, as the Frobenius windows do. Every point of `𝒴`
+lies in a window, hence in a wandering open. The wandering Frobenius windows embed openly into this
+orbit space. The images of `U₀` and `V₀` cover it, so it is quasi-compact and `T0`. These
+topological charts are the inputs for constructing the quotient sheaf and identifying its affinoid
+charts.
 
 The adic curve additionally requires a sheaf of complete separated topological rings on this
 orbit space and identifications of its window charts with affinoid adic spaces.
@@ -116,45 +119,88 @@ theorem quotientMap_zpow
     (v : spaY p ϖ) : quotientMap hI ((frobeniusHomeomorph hI ^ n) v) = quotientMap hI v :=
   (quotientMap_eq_iff hI _ _).mpr ⟨n, rfl⟩
 
-private theorem injOn_quotientMap_of_disjoint_iterates
-    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
-    (S : Set (Spv (WittVector p R)))
-    (hS : ∀ k : ℕ, k ≠ 0 → Disjoint ((comap frobenius)^[k] '' S) S) :
-    Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' S) := by
-  intro v hv w hw heq
-  obtain ⟨n, hn⟩ := (quotientMap_eq_iff hI v w).mp heq
-  obtain ⟨k, rfl | rfl⟩ := n.eq_nat_or_neg
-  · rw [zpow_natCast] at hn
-    by_cases hk : k = 0
-    · simpa [hk] using hn.symm
-    · exact ((hS k hk).notMem_of_mem_left
-        ⟨w.val, hw, (frobeniusHomeomorph_pow_apply_val hI k w).symm.trans
-          (congrArg Subtype.val hn)⟩ hv).elim
-  · rw [zpow_neg, zpow_natCast] at hn
-    have hn' : (frobeniusHomeomorph hI ^ k) v = w := by
-      rw [← hn]
-      exact (frobeniusHomeomorph hI ^ k).apply_symm_apply w
-    by_cases hk : k = 0
-    · simpa [hk] using hn'
-    · exact ((hS k hk).notMem_of_mem_left
-        ⟨v.val, hv, (frobeniusHomeomorph_pow_apply_val hI k v).symm.trans
-          (congrArg Subtype.val hn')⟩ hw).elim
+/-- **The preimage in `𝒴` of the image of a set in `𝒳`** is the union of its integer Frobenius
+translates: a point of `𝒴` lies over the image of `V` exactly when one of its integer Frobenius
+translates lies in `V`. -/
+theorem quotientMap_preimage_image
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (V : Set (spaY p ϖ)) :
+    quotientMap hI ⁻¹' (quotientMap hI '' V) =
+      ⋃ k : ℤ, ⇑(frobeniusHomeomorph hI ^ k) ⁻¹' V := by
+  ext v
+  simp only [Set.mem_preimage, Set.mem_image, Set.mem_iUnion]
+  constructor
+  · rintro ⟨w, hw, hwv⟩
+    obtain ⟨k, rfl⟩ := (quotientMap_eq_iff hI w v).mp hwv
+    exact ⟨k, hw⟩
+  · rintro ⟨k, hk⟩
+    exact ⟨_, hk, quotientMap_zpow hI k v⟩
+
+open Function in
+/-- **The Frobenius translates of a wandering set are pairwise disjoint.** If `V` meets none of its
+nontrivial integer Frobenius translates, then no two distinct translates meet, so the preimage of
+its image in `𝒳` (`quotientMap_preimage_image`) is a disjoint union. -/
+theorem pairwise_disjoint_preimage_zpow
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) {V : Set (spaY p ϖ)}
+    (hV : ∀ k : ℤ, k ≠ 0 → Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' V) V) :
+    Pairwise (Disjoint on fun k : ℤ ↦ ⇑(frobeniusHomeomorph hI ^ k) ⁻¹' V) := by
+  intro k l hkl
+  refine Set.disjoint_left.mpr fun v hk hl ↦
+    (hV (k - l) (sub_ne_zero.mpr hkl)).notMem_of_mem_left (a := (frobeniusHomeomorph hI ^ l) v)
+      ?_ hl
+  -- the translate by `k - l` of `φ^l v` is `φ^k v`
+  simpa [Set.mem_preimage, ← Homeomorph.mul_apply, ← zpow_add] using hk
+
+/-- **The `U` windows wander**: no nontrivial integer Frobenius translate of `U_n` meets `U_n`. -/
+theorem disjoint_preimage_zpow_windowU
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) {k : ℤ}
+    (hk : k ≠ 0) :
+    Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (Subtype.val ⁻¹' windowU p ϖ n))
+      (Subtype.val ⁻¹' windowU p ϖ n) := by
+  -- a point whose `φ^k`-translate lies in `U_n` lies in `U_(n - k)`, a window disjoint from `U_n`
+  have hnk : n - k ≠ n := by omega
+  exact Set.disjoint_left.mpr fun v hv hv' ↦
+    (disjoint_windowU hI hnk).notMem_of_mem_left
+      ((frobeniusHomeomorph_zpow_mem_windowU_iff hI k (n - k) v).mp (by simpa using hv)) hv'
+
+/-- **The `V` windows wander**: no nontrivial integer Frobenius translate of `V_n` meets `V_n`. -/
+theorem disjoint_preimage_zpow_windowV
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) {k : ℤ}
+    (hk : k ≠ 0) :
+    Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (Subtype.val ⁻¹' windowV p ϖ n))
+      (Subtype.val ⁻¹' windowV p ϖ n) := by
+  -- a point whose `φ^k`-translate lies in `V_n` lies in `V_(n - k)`, a window disjoint from `V_n`
+  have hnk : n - k ≠ n := by omega
+  exact Set.disjoint_left.mpr fun v hv hv' ↦
+    (disjoint_windowV hI hnk).notMem_of_mem_left
+      ((frobeniusHomeomorph_zpow_mem_windowV_iff hI k (n - k) v).mp (by simpa using hv)) hv'
+
+/-- **The orbit projection is injective on a wandering set**: on a set meeting none of its
+nontrivial integer Frobenius translates, no two points lie in one orbit. -/
+theorem injOn_quotientMap_of_disjoint_preimage_zpow
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) {V : Set (spaY p ϖ)}
+    (hV : ∀ k : ℤ, k ≠ 0 → Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' V) V) :
+    Set.InjOn (quotientMap hI) V := by
+  intro v hv w hw hvw
+  obtain ⟨n, hn⟩ := (quotientMap_eq_iff hI v w).mp hvw
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simpa using hn.symm
+  · exact ((hV n hn0).notMem_of_mem_left (by simpa [Set.mem_preimage, hn] using hv) hw).elim
 
 /-- The orbit projection is injective on every `U` window. -/
 theorem injOn_quotientMap_windowU
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
     Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' windowU p ϖ n) :=
-  injOn_quotientMap_of_disjoint_iterates hI _ fun _ hk ↦
-    disjoint_image_iterate_comap_frobenius_windowU hI n hk
+  injOn_quotientMap_of_disjoint_preimage_zpow hI fun _ hk ↦ disjoint_preimage_zpow_windowU hI n hk
 
 /-- The orbit projection is injective on every `V` window. -/
 theorem injOn_quotientMap_windowV
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
     Set.InjOn (quotientMap hI) (Subtype.val ⁻¹' windowV p ϖ n) :=
-  injOn_quotientMap_of_disjoint_iterates hI _ fun _ hk ↦
-    disjoint_image_iterate_comap_frobenius_windowV hI n hk
+  injOn_quotientMap_of_disjoint_preimage_zpow hI fun _ hk ↦ disjoint_preimage_zpow_windowV hI n hk
 
-private theorem isOpenEmbedding_quotientMap_restrict
+/-- The restriction of the orbit projection to an open set on which it is injective is an open
+embedding. -/
+theorem isOpenEmbedding_quotientMap_restrict
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
     (S : Set (spaY p ϖ)) (hS : IsOpen S) (hinj : Set.InjOn (quotientMap hI) S) :
     IsOpenEmbedding (fun v : S ↦ quotientMap hI v.val) := by
@@ -177,6 +223,19 @@ theorem isOpenEmbedding_quotientMap_windowV
       quotientMap hI v.val) :=
   isOpenEmbedding_quotientMap_restrict hI _ (isOpen_val_preimage_windowV hI n)
     (injOn_quotientMap_windowV hI n)
+
+/-- **Every point of `𝒴` lies in a wandering open**, namely a Frobenius window: an open meeting
+none of its nontrivial integer Frobenius translates. -/
+theorem exists_wandering_open_mem
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (y : spaY p ϖ) :
+    ∃ V : TopologicalSpace.Opens (spaY p ϖ), (∀ k : ℤ, k ≠ 0 →
+      Disjoint (⇑(frobeniusHomeomorph hI ^ k) ⁻¹' (V : Set (spaY p ϖ))) V) ∧ y ∈ V := by
+  obtain ⟨n, hn | hn⟩ := Set.mem_iUnion.mp
+    ((Set.ext_iff.mp (iUnion_windowU_union_windowV hI) y.val).mpr y.property)
+  · exact ⟨⟨_, isOpen_val_preimage_windowU hI n⟩,
+      fun k hk ↦ disjoint_preimage_zpow_windowU hI n hk, hn⟩
+  · exact ⟨⟨_, isOpen_val_preimage_windowV hI n⟩,
+      fun k hk ↦ disjoint_preimage_zpow_windowV hI n hk, hn⟩
 
 /-- The images of the two windows of index zero cover the Frobenius orbit space. -/
 theorem image_windowU_zero_union_image_windowV_zero

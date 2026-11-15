@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 import Mathlib.LinearAlgebra.Contraction
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Evaluation after scalar extension
@@ -14,6 +15,8 @@ import Mathlib.LinearAlgebra.Contraction
 This file defines the canonical pairing between the scalar extensions of a module and its linear
 dual. It sends an `R`-linear functional extended to `A` to the corresponding `A`-linear functional
 on the scalar extension of its domain. For a finite projective module, this map is an equivalence.
+For an arbitrary base-change map, a nonzero functional remains nonzero when the scalar extension
+is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 
 ## Main declarations
 
@@ -28,7 +31,7 @@ on the scalar extension of its domain. For a finite projective module, this map 
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
-  separate vectors when the original module is free.
+  separate vectors when the original module is projective.
 
 ## References
 
@@ -142,16 +145,40 @@ theorem baseChange_coord {ι : Type*} (b : Module.Basis ι R M) (i : ι) (z : A 
         _ = Module.Dual.baseChange A (b.coord i) (a ⊗ₜ[R] m) := by
           simp [Module.Basis.coord_apply, Algebra.smul_def, mul_comm]
 
-/-- If `M` is free, the base changes of its `R`-linear functionals jointly separate vectors
-in `A ⊗[R] M`. -/
-theorem eq_of_baseChange_eq [Module.Free R M] {x y : A ⊗[R] M}
+/-- If `M` is projective, the base changes of its `R`-linear functionals jointly separate vectors
+in `A ⊗[R] M`.
+
+Since contracting against `φ` is the base change of `φ`, this is the case of
+`TensorProduct.tensor_eq_of_forall_tensorComponent_eq` with left factor `A`. -/
+theorem eq_of_baseChange_eq [Module.Projective R M] {x y : A ⊗[R] M}
     (h : ∀ φ : Module.Dual R M,
       Module.Dual.baseChange A φ x = Module.Dual.baseChange A φ y) : x = y := by
-  let b := Module.Free.chooseBasis R M
-  let bA := (TensorProduct.isBaseChange R M A).basis b
-  apply bA.ext_elem
-  intro i
-  rw [baseChange_coord b i x, baseChange_coord b i y]
-  exact h (b.coord i)
+  -- Contracting against `φ` is the base change of `φ`, viewed as an `R`-linear map.
+  have hcomponent (φ : Module.Dual R M) :
+      LinearMap.tensorComponent (M := A) φ = (Module.Dual.baseChange A φ).restrictScalars R :=
+    TensorProduct.ext' fun a m ↦ by
+      rw [LinearMap.tensorComponent_tmul, LinearMap.restrictScalars_apply,
+        Module.Dual.baseChange_apply_tmul]
+  refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ ↦ ?_
+  rw [hcomponent, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply]
+  exact h φ
 
 end TauCeti.Module.Dual
+
+namespace IsBaseChange
+
+variable {R A V W : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W] [Module A W]
+  [IsScalarTower R A W] [FaithfulSMul R A] {j : V →ₗ[R] W}
+
+/-- A nonzero dual element remains nonzero under a faithful extension of scalars. -/
+theorem toDual_ne_zero (h : IsBaseChange A j) (s : Module.Dual R V) (hs : s ≠ 0) :
+    h.toDual s ≠ 0 := by
+  intro hz
+  apply hs
+  ext v
+  apply FaithfulSMul.algebraMap_injective R A
+  have hv := DFunLike.congr_fun hz (j v)
+  simpa only [toDual_comp_apply, LinearMap.zero_apply, map_zero] using hv
+
+end IsBaseChange

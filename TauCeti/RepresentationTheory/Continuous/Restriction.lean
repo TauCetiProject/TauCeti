@@ -15,27 +15,59 @@ along monoid homomorphisms.
 
 ## Main results
 
-* `TauCeti.res_trivial`: restriction of a trivial representation is trivial on the nose.
+* `ContRepresentation.restrict_trivial`: restriction of a trivial representation is trivial on
+  the nose.
+* `TopRep.full_res`: restriction along a surjective monoid homomorphism is full; it is always
+  faithful and additive.
 -/
 
 public section
 
-namespace TauCeti
+universe u v w t
 
-universe u v w
+namespace ContRepresentation
 
-variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
-  (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [ContinuousSMul R M]
+variable (R : Type u) [Ring R] (G : Type v) [Monoid G] (V : Type w) [AddCommGroup V] [Module R V]
+  [TopologicalSpace V] [IsTopologicalAddGroup V]
 
-/-- Restriction of a trivial representation along a monoid homomorphism is the corresponding
-trivial representation of the source monoid, on the nose.
+/-- Restriction of a trivial continuous representation along a monoid homomorphism is the trivial
+continuous representation of the source monoid, on the nose.
 
-For groups, `TopRep.res` is a reducible abbreviation for the left-hand side, so this lemma also
-proves the corresponding equality stated with `TopRep.res` verbatim. -/
+Since `TopRep.res φ (TopRep.of ρ)` is reducibly `TopRep.of (ρ.restrict φ)`, applying `TopRep.of`
+to this equality gives the corresponding equality of objects of `TopRep`. -/
 @[simp]
-lemma res_trivial {H : Type*} [Monoid H] (f : H →* G) :
-    TopRep.of ((ContRepresentation.trivial R G M).restrict f) =
-      TopRep.of (ContRepresentation.trivial R H M) := (rfl)
+lemma restrict_trivial {H : Type*} [Monoid H] (f : H →* G) :
+    (trivial R G V).restrict f = trivial R H V := (rfl)
 
-end TauCeti
+end ContRepresentation
+
+namespace TopRep
+
+open CategoryTheory
+
+variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G] {H : Type t} [Monoid H]
+
+/-- Restriction along a monoid homomorphism is faithful: it leaves the underlying continuous
+linear maps unchanged. -/
+instance (φ : H →* G) : (resFunctor.{u, v, t, w} (k := k) φ).Faithful where
+  map_injective {_ _} f g h := by
+    ext a
+    exact congr(($h).hom a)
+
+/-- Restriction along a monoid homomorphism is additive: it leaves the underlying continuous
+linear maps unchanged. In particular it maps cochain complexes to cochain complexes. -/
+instance (φ : H →* G) : (resFunctor.{u, v, t, w} (k := k) φ).Additive where
+  map_add {_ _} _ _ := rfl
+
+/-- Restriction along a surjective monoid homomorphism is full: a continuous linear map
+intertwining the restricted actions intertwines the original ones. This is the continuous form of
+`Rep.full_res`. -/
+lemma full_res {φ : H →* G} (hφ : Function.Surjective φ) :
+    (resFunctor.{u, v, t, w} (k := k) φ).Full where
+  map_surjective {A B} f := by
+    refine ⟨ConcreteCategory.ofHom (C := TopRep k G) ⟨f.hom.toContinuousLinearMap, fun g ↦ ?_⟩,
+      by ext a; rfl⟩
+    obtain ⟨h, rfl⟩ := hφ g
+    exact f.hom.2 h
+
+end TopRep

@@ -48,10 +48,9 @@ the explicit smoothness hypothesis used by `smoothUnipotentCommHopfAlgProperty`.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This supplies the extension-closure step in Layer 5, "Unipotent groups", of the ReductiveGroups
-roadmap. Together with closed-subgroup and product closure, it is part of the subgroup calculus
-needed to construct and compare connected normal unipotent closed subgroups in the unipotent
-radical.
+This supplies the extension-closure step for the unipotent radical. Together with closed-subgroup
+and product closure, it is part of the subgroup calculus needed to construct and compare connected
+normal unipotent closed subgroups in the unipotent radical.
 -/
 
 public section
@@ -77,13 +76,13 @@ precomposition along `f` is the identity `H`-point. The object-level results bel
 condition with points of the quotient by `CommHopfAlgCat.kernelHopfIdeal`. -/
 theorem IsUnipotentPoint.of_mapDomain_of_kernel
     (f : H →ₐc[k] K) (g : WithConv (K →ₐ[k] L))
-    (himage : IsUnipotentPoint (AlgHom.mapDomain f g))
+    (himage : IsUnipotentPoint (BialgHom.mapDomain f g))
     (hkernel : ∀ s : WithConv (K →ₐ[k] L),
-      AlgHom.mapDomain f s = 1 → IsUnipotentPoint s) :
+      BialgHom.mapDomain f s = 1 → IsUnipotentPoint s) :
     IsUnipotentPoint g := by
   rw [Point.isUnipotentPoint_iff_semisimplePart_eq_one] at himage ⊢
   let s := Point.semisimplePart k K L g
-  have hs_map : AlgHom.mapDomain f s = 1 := by
+  have hs_map : BialgHom.mapDomain f s = 1 := by
     rw [← Point.semisimplePart_mapDomain]
     exact himage
   have hs_unipotent : IsUnipotentPoint s := hkernel s hs_map
@@ -117,7 +116,7 @@ theorem geometricallyUnipotentPointsCommHopfAlgProperty_of_kernel
         (CommHopfAlgCat.kernelHopfIdeal f) (CommAlgCat.of k (AlgebraicClosure k)) := by
     apply (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff f
       (CommAlgCat.of k (AlgebraicClosure k)) s).mp
-    simpa only [AlgHom.mapDomain_apply] using hs
+    simpa only [BialgHom.mapDomain_apply] using hs
   -- The subgroup is the range of the quotient-points inclusion, but the exposed definition does
   -- not reduce during pattern matching; identify the carrier before extracting its preimage.
   change s ∈ Set.range
@@ -126,7 +125,7 @@ theorem geometricallyUnipotentPointsCommHopfAlgProperty_of_kernel
   obtain ⟨q, hq⟩ := hs_mem
   have hq_unipotent := (hkernel q).mapDomain
     (CommHopfAlgCat.mkQuotient K (CommHopfAlgCat.kernelHopfIdeal f)).hom
-  rw [AlgHom.mapDomain_apply,
+  rw [BialgHom.mapDomain_apply,
     ← CommHopfAlgCat.quotientPointsHom_apply] at hq_unipotent
   rwa [hq] at hq_unipotent
 

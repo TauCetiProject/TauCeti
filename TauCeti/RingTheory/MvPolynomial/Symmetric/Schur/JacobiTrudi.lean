@@ -163,8 +163,6 @@ private theorem det_hsymmInt_staircase :
   rw [Matrix.det_of_isLowerTriangular _ fun l j (h : l < j) => ?_]
   · exact prod_eq_one fun l _ => by simp
   · rw [Matrix.of_apply, hsymmInt_of_neg]
-    have hl := l.isLt
-    have hj := j.isLt
     have : (l : ℕ) < j := h
     omega
 
@@ -269,7 +267,7 @@ theorem diagramSchurPoly_eq_det_hsymmInt (N : ℕ) (μ : YoungDiagram) {r : ℕ}
   induction d generalizing N with
   | zero => exact diagramSchurPoly_eq_det_of_colLen_le μ hd
   | succ d ih =>
-    rcases le_or_gt (μ.colLen 0) N with hN | hN
+    rcases le_or_gt (μ.colLen 0) N with hN | _
     · exact diagramSchurPoly_eq_det_of_colLen_le μ hN
     · rw [← aeval_snoc_zero_diagramSchurPoly, ih (N := N + 1) (by omega), AlgHom.map_det]
       congr 1
@@ -284,9 +282,10 @@ theorem schurPoly_eq_det_hsymmInt {σ : Type*} [Fintype σ] [DecidableEq σ] {n 
     (μ : n.Partition) {r : ℕ} (hr : μ.parts.card ≤ r) :
     schurPoly σ R μ =
       (Matrix.of fun i j : Fin r =>
-        hsymmInt σ R (((diagramOf μ).rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).det := by
+        hsymmInt σ R (((YoungDiagram.ofPartition μ).rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).det := by
   rw [schurPoly_eq_rename,
-    diagramSchurPoly_eq_det_hsymmInt _ _ ((colLen_zero_diagramOf μ).trans_le hr), AlgHom.map_det]
+    diagramSchurPoly_eq_det_hsymmInt _ _ ((YoungDiagram.colLen_zero_ofPartition μ).trans_le hr),
+    AlgHom.map_det]
   congr 1
   ext i j : 1
   simp only [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply]

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Separation.Connected
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
 public import TauCeti.Topology.Algebra.GroupExtension.FactorSet
 
@@ -33,9 +34,16 @@ to equivalence of extensions.
 
 The continuous section is the only step that uses the topology of `E` in an essential way. It comes
 from the continuous section of a profinite group over the quotient by a closed subgroup, applied to
-the kernel, which is closed because it is compact and `E`, being profinite, is Hausdorff. Nothing
-asks the kernel to be *open*: an open kernel would force `G` to be discrete, whereas the extensions
-this dictionary is used on have infinite `G`.
+the kernel, which is closed as the preimage of `1` under the continuous projection onto the
+Hausdorff base `G`. When the extension is decomposed as a twisted product, compactness of `M`
+enters only to turn the continuity of the inclusion into an embedding, in order to apply
+`TauCeti.GroupExtension.continuous_factorSet` in
+`TauCeti.GroupExtension.exists_continuous_factorSet`, and to make the twisted product compact in
+`TauCeti.GroupExtension.factorSetContinuousMulEquiv`
+(alongside `TauCeti.GroupExtension.isClosed_ker_rightHom` and
+`TauCeti.ProfiniteGroupExtension.ofFactorSet`). Nothing asks the kernel to be *open*: an
+open kernel would force `G` to be discrete, whereas the extensions this dictionary is used on have
+infinite `G`.
 
 Bundling the data, `TauCeti.ProfiniteGroupExtension G M` is an extension of `G` by `M` with
 profinite total group, continuous inclusion and projection, inducing the given action of `G` on
@@ -50,6 +58,11 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
   continuous inclusion and projection, inducing the given action, bundled with its total group, and
   `TauCeti.ProfiniteGroupExtension.ofFactorSet`, the twisted product of a continuous factor set
   when `G` and `M` are profinite.
+* `TauCeti.ProfiniteGroupExtension.continuousSection`: a continuous normalized section of a
+  profinite extension over a Hausdorff group, chosen once and for all.
+* `TauCeti.ProfiniteGroupExtension.relabelQuotient` and `TauCeti.ProfiniteGroupExtension.relabel`:
+  the same profinite total group, with its quotient, or both its kernel and quotient, replaced by
+  continuously isomorphic groups whose actions correspond.
 * `TauCeti.GroupExtension.continuousMulEquivOfEquiv`: an equivalence of extensions with compact
   total group is a homeomorphism as soon as it is continuous, hence a `ContinuousMulEquiv`, and
   `TauCeti.GroupExtension.continuousMulEquivOfMonoidHom` is its form for a bare morphism. Neither
@@ -63,8 +76,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
 
 * `TauCeti.GroupExtension.isClosed_ker_rightHom`: a compact kernel is a closed subgroup of a
   Hausdorff extension.
-* `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension with
-  compact kernel has a continuous normalized section.
+* `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension to a
+  Hausdorff group has a continuous normalized section.
 * `TauCeti.GroupExtension.continuous_factorSet`: the factor set of a continuous normalized section
   is continuous whenever the inclusion of the kernel is an embedding, as a compact kernel of a
   Hausdorff extension is.
@@ -74,8 +87,11 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I, §2.
+  §VII.4, (7.4.1), for the relabelling of an extension along isomorphisms of its kernel and quotient
+  (`TauCeti.ProfiniteGroupExtension.relabel`).
 * L. Ribes, P. Zalesskii, *Profinite Groups*, 2nd ed., Prop. 2.2.2 for the continuous section over
-  an arbitrary closed subgroup, of which the compact-kernel case used here is a special case.
+  an arbitrary closed subgroup, applied here to the closed kernel of the continuous projection onto
+  a Hausdorff group.
 -/
 
 public section
@@ -152,31 +168,26 @@ end ClosedKernel
 section Profinite
 
 variable [IsTopologicalGroup E] [CompactSpace E] [TotallyDisconnectedSpace E]
-  [Group M] [TopologicalSpace M] [CompactSpace M] {S : GroupExtension M E G}
+  [Group M] {S : GroupExtension M E G}
 
-/-- **The projection of a profinite extension with compact kernel has a continuous normalized
-set-theoretic section.** The kernel is compact, hence closed, so the continuous section of a
-profinite group over the quotient by a closed subgroup applies; the base is identified with that
-quotient because the projection is a continuous bijection out of a compact space. -/
-theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) : ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
+/-- **The projection of a profinite extension to a Hausdorff group has a continuous normalized
+section.** The hypotheses are a profinite total group `E`, a Hausdorff base `G` and a continuous
+projection `S.rightHom`; no topology on the kernel `M` and no continuity of `S.inl` is needed. -/
+theorem exists_continuous_section [T2Space G] (hrh : Continuous S.rightHom) :
+    ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
   -- identify `G` with the quotient of `E` by the kernel of the projection
-  set N := S.rightHom.ker
-  let q : E ⧸ N ≃ G :=
-    (QuotientGroup.quotientKerEquivOfSurjective S.rightHom S.rightHom_surjective).toEquiv
-  -- `quotientKerEquivOfSurjective` is `QuotientGroup.kerLift` up to the identification of the
-  -- range with `G`, so on a class it is the projection by definition
-  have hq : ∀ x : E, q (QuotientGroup.mk x) = S.rightHom x := fun _ => rfl
-  have hqc : Continuous q :=
-    (QuotientGroup.isQuotientMap_mk N).continuous_iff.2 <| by
-      simpa only [Function.comp_def, hq] using hrh
-  let e : (E ⧸ N) ≃ₜ G := Continuous.homeoOfEquivCompactToT2 (f := q) hqc
-  have he : ∀ x : E, e (QuotientGroup.mk x) = S.rightHom x := hq
+  let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
+  set N := f.toMonoidHom.ker
+  -- Bundling continuity leaves the projection's values unchanged.
+  have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
+  let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
   -- pull the continuous section of `E → E ⧸ N` back along that identification
-  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_ker_rightHom hinl)
-  have hone : e.symm 1 = QuotientGroup.mk 1 := e.symm_apply_eq.2 (by rw [he, map_one])
+  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N f.isClosed_ker
+  have hone : e.symm 1 = QuotientGroup.mk 1 := by
+    rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
   have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
-    rw [← he, hsec, Homeomorph.apply_symm_apply]
+    rw [← hf, ← f.quotientKerEquivOfSurjective_apply_mk S.rightHom_surjective, hsec,
+      ContinuousMulEquiv.apply_symm_apply]
   have hone' : s (e.symm 1) = 1 := by rw [hone]; exact hs₁
   -- the coercion of a `GroupExtension.Section` is its underlying function, so `hone'` is the
   -- normalization of the section just built
@@ -239,8 +250,8 @@ theorem continuous_factorSetToGroupExtensionEquiv_symm [ContinuousMul E] [Contin
   have hleft : ∀ y : E, S.inl ((factorSetToGroupExtensionEquiv σ hσ hact).symm y).left =
       y * (σ (S.rightHom y))⁻¹ := fun y => by
     have hy : factorSetToGroupExtensionEquiv σ hσ hact
-        ((factorSetToGroupExtensionEquiv σ hσ hact).symm y) = y := by
-      simpa using (factorSetToGroupExtensionEquiv σ hσ hact).toMulEquiv.apply_symm_apply y
+        ((factorSetToGroupExtensionEquiv σ hσ hact).symm y) = y :=
+      (factorSetToGroupExtensionEquiv σ hσ hact).apply_symm_apply y
     rw [factorSetToGroupExtensionEquiv_apply, hright] at hy
     exact eq_mul_inv_of_mul_eq hy
   refine FactorSet.Extension.isInducing_leftRight.continuous_iff.2 ?_
@@ -292,7 +303,7 @@ theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
     [ContinuousMul G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,
     continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact,
     factorSetToGroupExtensionEquiv σ hσ hact,
@@ -343,6 +354,30 @@ namespace ProfiniteGroupExtension
 attribute [instance] instGroup instTopologicalSpace instIsTopologicalGroup instCompactSpace
   instTotallyDisconnectedSpace
 
+/-! ### The chosen section -/
+
+section Section
+
+variable [T2Space G] (X : ProfiniteGroupExtension G M)
+
+/-- **A continuous normalized section of a profinite extension over a Hausdorff group**, chosen
+once and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
+`TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
+factor set of this section. -/
+noncomputable def continuousSection : X.toGroupExtension.Section :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose
+
+theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.1
+
+@[simp]
+theorem continuousSection_one : X.continuousSection 1 = 1 :=
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.2
+
+end Section
+
+section OfFactorSet
+
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
   [IsTopologicalGroup M] [ContinuousSMul G M] [CompactSpace M] [TotallyDisconnectedSpace M]
   (α : FactorSet G M) (hα : Continuous ⇑α)
@@ -369,6 +404,88 @@ abbrev ofFactorSet : ProfiniteGroupExtension G M where
 @[simp]
 theorem ofFactorSet_toGroupExtension : (ofFactorSet α hα).toGroupExtension = α.groupExtension :=
   rfl
+
+end OfFactorSet
+
+/-! ### Relabelling the quotient
+
+A continuous multiplicative equivalence transports an extension between different models of
+the same quotient group, provided the prescribed actions on the kernel agree. The total group
+and kernel remain unchanged.
+-/
+
+section RelabelQuotient
+
+variable {H : Type u} [Group H] [TopologicalSpace H] [MulDistribMulAction H M]
+  (X : ProfiniteGroupExtension G M) (e : G ≃ₜ* H)
+  (hsmul : ∀ (g : G) (m : M), e g • m = g • m)
+
+/-- Relabel the quotient of a profinite extension, retaining its total group and kernel.
+The prescribed actions on the kernel must agree through the quotient equivalence. -/
+abbrev relabelQuotient : ProfiniteGroupExtension H M where
+  E := X.E
+  toGroupExtension := X.toGroupExtension.relabelQuotient e.toMulEquiv
+  continuous_inl := by simpa using X.continuous_inl
+  continuous_rightHom := by
+    simpa using e.continuous.comp X.continuous_rightHom
+  inducesAction := X.inducesAction.relabelQuotient e.toMulEquiv hsmul
+
+/-- The underlying exact sequence is obtained by relabelling the quotient. -/
+@[simp]
+theorem relabelQuotient_toGroupExtension :
+    (X.relabelQuotient e hsmul).toGroupExtension =
+      X.toGroupExtension.relabelQuotient e.toMulEquiv :=
+  (rfl)
+
+/-- The relabelled projection applies the quotient equivalence after the original projection. -/
+theorem relabelQuotient_rightHom_apply (x : X.E) :
+    (X.relabelQuotient e hsmul).toGroupExtension.rightHom x =
+      e (X.toGroupExtension.rightHom x) := by
+  simp
+
+end RelabelQuotient
+
+/-! ### Relabelling the kernel and quotient
+
+Continuous multiplicative equivalences transport an extension between different models of both its
+kernel and its quotient, provided the prescribed actions correspond. The total group remains
+unchanged. This is used to compare a presentation extension with an arithmetic one whose kernel
+and quotient are only continuously isomorphic to the desired models.
+-/
+
+section Relabel
+
+/-- Relabel the kernel and quotient of a profinite extension along continuous multiplicative
+equivalences which identify the prescribed actions, retaining its total group. -/
+abbrev relabel (X : ProfiniteGroupExtension G M)
+    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
+    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
+    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
+    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    ProfiniteGroupExtension G' M' where
+  E := X.E
+  toGroupExtension := _root_.GroupExtension.relabel X.toGroupExtension
+    eM.toMulEquiv eG.toMulEquiv
+  continuous_inl := by
+    rw [GroupExtension.relabel_inl]
+    exact X.continuous_inl.comp eM.continuous
+  continuous_rightHom := by
+    rw [GroupExtension.relabel_rightHom]
+    exact eG.continuous.comp X.continuous_rightHom
+  inducesAction := X.inducesAction.relabel eM.toMulEquiv eG.toMulEquiv hsmul
+
+/-- The underlying exact sequence is obtained by relabelling both terms of the original one. -/
+@[simp]
+theorem relabel_toGroupExtension (X : ProfiniteGroupExtension G M)
+    {G' : Type u} {M' : Type v} [Group G'] [TopologicalSpace G']
+    [CommGroup M'] [TopologicalSpace M'] [MulDistribMulAction G' M']
+    (eG : G ≃ₜ* G') (eM : M' ≃ₜ* M)
+    (hsmul : ∀ (g : G) (m : M'), eM (eG g • m) = g • eM m) :
+    (X.relabel eG eM hsmul).toGroupExtension =
+      X.toGroupExtension.relabel eM.toMulEquiv eG.toMulEquiv :=
+  (rfl)
+
+end Relabel
 
 end ProfiniteGroupExtension
 

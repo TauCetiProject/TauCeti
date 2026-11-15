@@ -5,11 +5,14 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Convolution
+public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
+public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 
 /-!
 # Differentiating a comodule representation
@@ -18,6 +21,7 @@ A right comodule over a commutative bialgebra carries a representation of its ta
 Lie algebra at the identity. A counit-valued derivation acts by contraction of the coaction.
 This is the infinitesimal part of the existing action on dual-number points, and comodule
 morphisms intertwine the differentiated actions, and subcomodules are stable under them.
+Restriction along a group morphism commutes with differentiation.
 Pairing the differentiated action with a functional recovers the tangent vector applied to the
 corresponding matrix coefficient.
 
@@ -83,6 +87,34 @@ theorem differential_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) 
       (coact (R := R) (C := H) m) := by
   simp [differential]
 
+variable (M) in
+/-- Differentiating a representation restricted along a bialgebra morphism agrees with
+precomposing its differentiated representation with the tangent map. -/
+theorem differential_corestrict {K : Type*} [CommRing K] [Bialgebra R K]
+    (f : H →ₐc[R] K) (d : Derivation R K (Bialgebra.CounitAlgebra R K R)) (m : M) :
+    letI : Comodule R K M := Corestrict f.toCoalgHom
+    differential (R := R) (H := K) (M := M) d m =
+      differential (R := R) (H := H) (M := M) (derivationComp f d) m := by
+  let _ : Comodule R K M := Corestrict f.toCoalgHom
+  have hcomp :
+      (((Bialgebra.CounitAlgebra.algEquivSelf R K R).toLinearMap ∘ₗ d.toLinearMap).comp
+        f.toCoalgHom.toLinearMap) =
+      (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
+        (derivationComp f d).toLinearMap := by
+    ext h
+    exact (algEquivSelf_derivationComp_apply f d h).symm
+  simp only [differential_apply, corestrict_coact_apply, LinearMap.tensorComponent_map,
+    LinearMap.id_apply, hcomp]
+
+/-- A rationally fixed vector is killed by the differentiated representation over any
+commutative base ring. -/
+theorem differential_eq_zero_of_coact_eq_tmul_one {m : M}
+    (hm : coact (R := R) (C := H) m = m ⊗ₜ[R] (1 : H))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
+    differential (R := R) (H := H) d m = 0 := by
+  simp only [differential_apply, hm, LinearMap.tensorComponent_tmul, LinearMap.comp_apply,
+    Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero, zero_smul]
+
 /-- Every comodule morphism intertwines the differentiated representations. -/
 @[simp↓]
 theorem Hom.map_differential (f : Hom R H M N)
@@ -96,14 +128,14 @@ theorem Hom.map_differential (f : Hom R H M N)
 /-- The coefficient of `ε` in the action of a tangent dual-number point on `1 ⊗ m`
 is the differentiated action on `m`. The counit coefficient algebra is identified with `R`
 by its canonical algebra equivalence. -/
-theorem snd_endOfPoint_derivationToDualNumberEquivLift
+theorem snd_endOfPoint_derivationToTrivSqZeroExtEquivLift
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (m : M) :
     TensorProduct.lid R M
       (LinearMap.rTensor M
         ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
           (TrivSqZeroExt.sndHom (Bialgebra.CounitAlgebra R H R)
             (Bialgebra.CounitAlgebra R H R)).restrictScalars R)
-        (endOfPoint M (derivationToDualNumberEquivLift R H
+        (endOfPoint M (derivationToTrivSqZeroExtEquivLift R H
           (Bialgebra.CounitAlgebra R H R) d).val (1 ⊗ₜ[R] m))) =
       differential (R := R) (H := H) (M := M) d m := by
   rw [endOfPoint_tmul, differential_apply]
@@ -113,7 +145,7 @@ theorem snd_endOfPoint_derivationToDualNumberEquivLift
     simp only [LinearMap.lTensor_tmul, TensorProduct.comm_tmul, TensorProduct.smul_tmul',
       smul_eq_mul, one_mul, LinearMap.rTensor_tmul, LinearMap.comp_apply,
       LinearMap.restrictScalars_apply, TrivSqZeroExt.sndHom_apply,
-      AlgHom.toLinearMap_apply, derivationToDualNumberEquivLift_apply_snd,
+      AlgHom.toLinearMap_apply, derivationToTrivSqZeroExtEquivLift_apply_snd,
       Derivation.coeFn_coe, LinearEquiv.coe_coe,
       TensorProduct.lid_tmul, LinearMap.tensorComponent_tmul]
 
@@ -133,17 +165,10 @@ theorem apply_matrixCoefficient (d : Derivation R H (Bialgebra.CounitAlgebra R H
     Bialgebra.CounitAlgebra.algEquivSelf R H R
         (d (Comodule.matrixCoefficient (R := R) (C := H) φ m)) =
       φ (Comodule.differential (R := R) (H := H) (M := M) d m) := by
-  rw [Comodule.differential_apply, Comodule.matrixCoefficient_def]
-  induction Comodule.coact (R := R) (C := H) (M := M) m with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul n h =>
-    simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.lid_tmul, map_smul,
-      LinearMap.tensorComponent_tmul, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-      Derivation.coeFn_coe]
-    rw [LinearMap.map_smul_of_tower φ, smul_eq_mul, mul_comm]
-    -- The scalar action on the counit synonym is that of `R` on itself; the coefficient
-    -- identification is `R`-linear for it.
-    exact (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearEquiv.map_smul (φ n) (d h)
+  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+    Derivation.coeFn_coe, Comodule.coactComponent_apply, Comodule.differential_apply] using
+    LinearMap.apply_matrixCoefficient
+      ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) φ m
 
 end Derivation
 
@@ -160,3 +185,31 @@ theorem differential_mem (N : Subcomodule R H M)
   exact N.rid_lTensor_coact_mem _ hm
 
 end TauCeti.Subcomodule
+
+namespace LinearMap
+
+open TauCeti
+
+/-- The graph of a linear map intertwining differentiated actions is stable under
+those actions, over any commutative base ring. -/
+theorem differential_mem_graph
+    {R : Type*} [CommRing R] {H : Type*} [CommRing H] [Bialgebra R H]
+    {M : Type*} [AddCommGroup M] [Module R M] [Comodule R H M]
+    {N : Type*} [AddCommGroup N] [Module R N] [Comodule R H N]
+    (f : M →ₗ[R] N)
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (hf : ∀ m : M, f (Comodule.differential (R := R) (H := H) d m) =
+      Comodule.differential (R := R) (H := H) d (f m))
+    {z : M × N}
+    (hz : z ∈ f.graph) :
+    let : Comodule R H (M × N) := Comodule.Prod
+    Comodule.differential (R := R) (H := H) d z ∈ f.graph := by
+  let : Comodule R H (M × N) := Comodule.Prod
+  have hfst := (Comodule.prodFst (R := R) (C := H) (M := M) (N := N)).map_differential d z
+  have hsnd := (Comodule.prodSnd (R := R) (C := H) (M := M) (N := N)).map_differential d z
+  simp only [Comodule.prodFst_apply] at hfst
+  simp only [Comodule.prodSnd_apply] at hsnd
+  rw [mem_graph_iff] at hz ⊢
+  rw [hsnd, hfst, hz, hf]
+
+end LinearMap

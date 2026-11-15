@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
-public import TauCeti.Algebra.BigOperators.Finset.Pairs
-public import Mathlib.Algebra.Polynomial.OfFn
+public import TauCeti.Algebra.Polynomial.OfFn
 
 /-!
 # Truncated uniformizer expansions at rational places
@@ -19,6 +18,9 @@ characterizes them by the order of the remainder. The coefficients depend only o
 function modulo the same filtration, and successive truncations agree. Constants have only
 a constant coefficient, the chosen uniformizer has only a degree-one coefficient, and
 multiplication of integral functions gives coefficient convolution.
+
+Peeling off leading terms one at a time also shows that a `k`-linear map on `F` is determined
+by its values on a step of the order filtration and on the powers of the uniformizer below it.
 
 These are finite truncations: no completeness assumption or infinite series is used. They
 provide the finite approximation and uniqueness statements for the power-series construction
@@ -265,6 +267,15 @@ theorem truncatedExpansion_uniformizer (hP : P.degree = 1) (ht : P.ord t = 1) (n
     | zero => simpa [Fin.sum_univ_succ, ht] using P.mem_filtration_ord t
     | succ n => simp [Fin.sum_univ_succ]
 
+/-- The value at a uniformizer `t` of a polynomial over the coefficient field is integral. -/
+private theorem eval₂_ofFn_mem_filtration_zero [DecidableEq k] (ht : P.ord t = 1) {n : ℕ}
+    (c : Fin n → k) :
+    (Polynomial.ofFn n c).eval₂ (algebraMap k F) t ∈ P.filtration 0 := by
+  have htint : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
+  have h := (Polynomial.aeval (⟨t, htint⟩ : P.integers) (Polynomial.ofFn n c)).property
+  rw [P.coe_aeval_integers] at h
+  exact P.mem_filtration_zero_iff.mpr (by simpa [Polynomial.aeval_def] using h)
+
 /-- The coefficient of a product is the convolution of the coefficients of its factors.
 The sum ranges over bounded pairs of indices whose degrees add to the requested degree;
 terms of degree at least `n` vanish modulo the `n`-th order filtration. -/
@@ -281,21 +292,7 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
   let polynomial := Polynomial.ofFn (R := k) n
   let u := (polynomial a).eval₂ (algebraMap k F) t
   let v := (polynomial b).eval₂ (algebraMap k F) t
-  have heval (c : Fin n → k) :
-      (polynomial c).eval₂ (algebraMap k F) t =
-        ∑ j, algebraMap k F (c j) * t ^ (j : ℕ) := by
-    simp only [polynomial, Polynomial.ofFn_eq_sum_monomial,
-      Polynomial.eval₂_finsetSum, Polynomial.eval₂_monomial]
-  have hcoeff (c : Fin n → k) (j : Fin n) : (polynomial c).coeff j = c j := by
-    exact Polynomial.ofFn_coeff_eq_val_of_lt c j.isLt
-  have hu : u ∈ P.filtration 0 := by
-    dsimp only [u]
-    rw [heval]
-    apply Submodule.sum_mem
-    intro j _
-    exact P.mem_filtration_zero_iff.mpr
-      (mul_mem (P.algebraMap_mem_integers _) (pow_mem
-        (P.mem_integers_iff_ord_nonneg.mpr (by omega : 0 ≤ P.ord t)) _))
+  have hu : u ∈ P.filtration 0 := P.eval₂_ofFn_mem_filtration_zero ht a
   -- Replacing either integral factor by its finite expansion preserves the product modulo
   -- the filtration, since multiplying a remainder by an integral function preserves its order.
   have hrem : (x : F) * (y : F) - u * v ∈ P.filtration n := by
@@ -304,20 +301,14 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
       (P.mem_filtration_zero_iff.mpr y.2)
     have hy := P.mul_mem_filtration hu
       (P.sub_sum_truncatedExpansion_mem_filtration hP ht n y)
-    rw [← heval a, add_zero] at hx
-    rw [← heval b, zero_add] at hy
+    rw [← Polynomial.eval₂_ofFn, add_zero] at hx
+    rw [← Polynomial.eval₂_ofFn, zero_add] at hy
     convert (P.filtration n).add_mem hx hy using 1
     ring
   let q := polynomial a * polynomial b
-  -- Mathlib supplies both multiplication of evaluations and coefficient convolution.
-  -- Reindex its antidiagonal only to retain the bounded-pair public formula.
   have hconvolution (j : Fin n) : q.coeff j =
-      ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2 := by
-    rw [Polynomial.coeff_mul]
-    symm
-    apply sum_fin_product_eq_sum_antidiagonal j.isLt
-    intro l _
-    simp only [hcoeff]
+      ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2 :=
+    Polynomial.coeff_ofFn_mul_ofFn a b j
   -- Evaluate the product polynomial and discard only terms of degree at least `n`.
   -- Include missing low degrees as zero terms so the truncation ranges over all `Fin n`.
   let s := q.support ∪ Finset.range n
@@ -331,17 +322,9 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
     ext d
     simp only [Finset.mem_filter, Finset.mem_union, Finset.mem_range, s]
     tauto
-  have hhigh : (∑ d ∈ s with ¬d < n, f d) ∈ P.filtration n := by
-    apply Submodule.sum_mem
-    intro d hd
-    have hdegree : (n : ℤ) ≤ (d : ℤ) := by
-      exact_mod_cast Nat.le_of_not_lt (Finset.mem_filter.mp hd).2
-    have hpow := P.mem_filtration_ord (t ^ d)
-    simp only [P.ord_pow, ht, mul_one] at hpow
-    apply P.filtration_antitone hdegree
-    have hm := P.mul_mem_filtration
-      (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (q.coeff d))) hpow
-    simpa only [zero_add] using hm
+  have hhigh : (∑ d ∈ s with ¬d < n, f d) ∈ P.filtration n :=
+    P.sum_algebraMap_mul_pow_mem_filtration ht q.coeff _
+      fun _ hd ↦ Nat.le_of_not_lt (Finset.mem_filter.mp hd).2
   have heq := (P.truncatedExpansion_eq_iff hP ht n (x * y)
     (fun j ↦ q.coeff j)).mpr (by
       have hsplit := Finset.sum_filter_add_sum_filter_not s (fun d ↦ d < n) f
@@ -410,5 +393,48 @@ theorem truncatedExpansion_eq_iff_sub_mem_filtration (hP : P.degree = 1)
     apply (P.truncatedExpansion_eq_iff hP ht n x _).mpr
     convert (P.filtration n).add_mem h hy using 1
     ring
+
+/-! ### Linear maps determined on powers of a uniformizer -/
+
+/-- At a rational place, two `k`-linear maps on `F` that agree on the step `𝔪_P^m` of the order
+filtration and on every power `t ^ j`, `j < m`, of a uniformizer `t` are equal: subtracting
+the leading term `c * t ^ j` of a function of order `j < m` raises its order. -/
+theorem linearMap_ext_zpow {M : Type*} [AddCommGroup M] [Module k M] (hP : P.degree = 1)
+    (ht : P.ord t = 1) {m : ℤ} {f g : F →ₗ[k] M}
+    (hfg : ∀ z ∈ P.filtration m, f z = g z) (h : ∀ j < m, f (t ^ j) = g (t ^ j)) : f = g := by
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    simp at ht
+  have htj (j : ℤ) : t ^ j ∈ P.filtration j := by
+    simpa [P.ord_zpow, ht] using P.mem_filtration_ord (t ^ j)
+  -- Induction on how far below `m` the order of the function may lie.
+  have key (d : ℕ) : ∀ z ∈ P.filtration (m - d), f z = g z := by
+    induction d with
+    | zero =>
+      intro z hz
+      rw [Nat.cast_zero, sub_zero] at hz
+      exact hfg z hz
+    | succ d ih =>
+      intro z hz
+      generalize hj' : m - ((d + 1 : ℕ) : ℤ) = j at hz
+      have hj : j < m := by omega
+      have hint := P.mul_mem_filtration (htj (-j)) hz
+      rw [neg_add_cancel, mem_filtration_zero_iff] at hint
+      obtain ⟨c, hc, -⟩ := P.existsUnique_sub_sum_mem_filtration hP ht 1 _ hint
+      -- `z - c 0 • t ^ j = t ^ j * (t ^ (-j) * z - c 0)` has order at least `j + 1`.
+      have heq : t ^ j * (t ^ (-j) * z - ∑ i : Fin 1, algebraMap k F (c i) * t ^ (i : ℕ)) =
+          z - c 0 • t ^ j := by
+        rw [Fin.sum_univ_one, Algebra.smul_def, mul_sub, ← mul_assoc, ← zpow_add₀ ht0]
+        simp [mul_comm]
+      have hrem : z - c 0 • t ^ j ∈ P.filtration (m - d) := by
+        rw [← heq, show m - d = j + ((1 : ℕ) : ℤ) by omega]
+        exact P.mul_mem_filtration (htj j) hc
+      calc f z = f (z - c 0 • t ^ j) + c 0 • f (t ^ j) := by
+            rw [← map_smul, ← map_add, sub_add_cancel]
+        _ = g z := by
+            rw [ih _ hrem, h _ hj, ← map_smul, ← map_add, sub_add_cancel]
+  ext z
+  exact key _ z (P.filtration_antitone (show m - ((m - P.ord z).toNat : ℕ) ≤ P.ord z by omega)
+    (P.mem_filtration_ord z))
 
 end TauCeti.Place

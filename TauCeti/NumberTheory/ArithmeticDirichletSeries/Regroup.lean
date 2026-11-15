@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.NumberTheory.LSeries.Convergence
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
+public import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # Regrouping an ideal-indexed Dirichlet series by absolute norm
@@ -56,13 +57,9 @@ fails under cancellation, as the rejection test
 `TauCeti.exists_forall_normCoeff_nonneg_not_forall_nonneg` records. That test is a statement about
 `TauCeti.normCoeff` alone, so it lives with that definition rather than here.
 
-## Roadmap role
-
-This is Layer **1.2** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`; the required worked
-example 9 accompanies it in `TauCeti/NumberTheory/ArithmeticDirichletSeries/NormCoeff.lean`. The
-exact value of the abscissa for the trivial weight is deliberately not proved here: its divergence
-input is the Layer 5 ideal count of
-`TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean`.
+The exact value of the abscissa for the trivial weight is not proved here: its divergence input is
+the linear ideal count of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean`, where
+it is `TauCeti.abscissaOfAbsConv_normCoeff_one`.
 
 ## References
 
@@ -106,7 +103,7 @@ theorem norm_idealTerm_le_of_re_le_re (f : IdealArithmeticFunction K) {s s' : �
     ‖idealTerm K f s' I‖ ≤ ‖idealTerm K f s I‖ := by
   have h₁ : (1 : ℝ) ≤ (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by
     exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors I
-  have h₀ : (0 : ℝ) < (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re :=
+  have _ : (0 : ℝ) < (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ^ s.re :=
     Real.rpow_pos_of_pos (by linarith) _
   simp only [norm_idealTerm]
   gcongr
@@ -205,6 +202,23 @@ theorem LSeries_normCoeff {f : IdealArithmeticFunction K} {s : ℂ}
     (h : Summable (idealTerm K f s)) :
     LSeries (normCoeff K f) s = ∑' I, idealTerm K f s I :=
   LSeriesHasSum.LSeries_eq (regroupByNorm K h.hasSum)
+
+/-- Conjugation reflects the norm-regrouped Dirichlet series of any ideal arithmetic function.
+The equality also holds at nonsummable arguments. -/
+@[simp]
+theorem LSeries_normCoeff_star (f : IdealArithmeticFunction K) (s : ℂ) :
+    LSeries (normCoeff K (star f)) ((starRingEnd ℂ) s) = star (LSeries (normCoeff K f) s) := by
+  rw [← LSeries.LSeries_star]
+  exact LSeries_congr (fun _ ↦ normCoeff_star_apply K f _) _
+
+/-- Conjugation preserves absolute convergence of the norm-regrouped Dirichlet series after
+reflection of the argument. -/
+@[simp]
+theorem LSeriesSummable_normCoeff_star_iff (f : IdealArithmeticFunction K) (s : ℂ) :
+    LSeriesSummable (normCoeff K (star f)) ((starRingEnd ℂ) s) ↔
+      LSeriesSummable (normCoeff K f) s := by
+  rw [LSeriesSummable_congr ((starRingEnd ℂ) s) (fun _ ↦ normCoeff_star_apply K f _)]
+  exact LSeries.LSeriesSummable_star_iff _ _
 
 /-! ### The ideal-indexed abscissa of absolute convergence -/
 

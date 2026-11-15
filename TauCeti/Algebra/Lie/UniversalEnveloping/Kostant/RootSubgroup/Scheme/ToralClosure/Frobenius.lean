@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Group.End
 
 /-!
 # The Frobenius endomorphism of the points of a Kostant toral closure
@@ -55,6 +56,10 @@ algebraic closedness or field hypothesis is used.
   bundled root-subgroup and torus points.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_zero` and
   `TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_add`: the iteration laws.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_pow`: powers multiply the iteration
+  index.
+* `TauCeti.UniversalEnvelopingAlgebra.map_kostantToralFrobenius`: scalar extension commutes with
+  Frobenius, including between value rings in different universes.
 * `TauCeti.UniversalEnvelopingAlgebra.map_subtype_fixedSubgroup_kostantToralFrobenius_eq`: the
   points fixed by the Frobenius are the points valued in the Frobenius-fixed subring.
 
@@ -62,14 +67,6 @@ algebraic closedness or field hypothesis is used.
 
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This supplies the `q`-power Frobenius half of the target "points over an algebraically closed field
-as a group, functorially in the field, so that a field endomorphism induces a group endomorphism of
-the points" in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, for the toral carrier that
-Layer 9's Chevalley--Demazure construction assembles. Its consumer is milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose untwisted Steinberg map is `Frob_q` on the points of
-a pinned Chevalley--Demazure group and whose completion evidence is the simple-root-subgroup
-equations, together with milestone L3, which takes the fixed subgroup of that map.
 -/
 
 public section
@@ -78,7 +75,7 @@ open WithConv
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v w
+universe u v v' w
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
@@ -223,6 +220,33 @@ theorem kostantToralFrobenius_add (m : ℕ) :
   refine MonoidHom.ext fun g => Subtype.ext (Matrix.GeneralLinearGroup.ext fun r c => ?_)
   rw [coe_kostantToralFrobenius_apply, MonoidHom.comp_apply, coe_kostantToralFrobenius_apply,
     coe_kostantToralFrobenius_apply, ← pow_mul, ← pow_add, Nat.add_comm k m]
+
+/-- Powers of Frobenius multiply its iteration index on the points of a toral closure. -/
+-- `Monoid.End` selects composition, rather than pointwise multiplication, for the power.
+theorem kostantToralFrobenius_pow (m : ℕ) :
+    (show Monoid.End _ from kostantToralFrobenius e h ρ M hM hnil b wt p k A) ^ m =
+      kostantToralFrobenius e h ρ M hM hnil b wt p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp
+    (fun j => kostantToralFrobenius e h ρ M hM hnil b wt p j A)
+    (kostantToralFrobenius_zero e h ρ M hM hnil b wt p A)
+    (fun a b' => kostantToralFrobenius_add e h ρ M hM hnil b wt p a A b') k m
+
+/-- Scalar extension commutes with Frobenius on toral-closure points, even between value rings
+in different universes. -/
+theorem map_kostantToralFrobenius [Fintype κ] {B : Type v'} [CommRing B] [ExpChar B p]
+    (f : A →+* B)
+    (g : kostantToralPointsSubgroup e h ρ M hM hnil b wt A) :
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
+        (kostantToralFrobenius e h ρ M hM hnil b wt p k A g) =
+      kostantToralFrobenius e h ρ M hM hnil b wt p k B
+        ((kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+          (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f g) := by
+  refine Subtype.ext (Matrix.GeneralLinearGroup.ext fun i j => ?_)
+  simp only [GeneralLinear.IntegralPointsPresentation.coe_map
+      (kostantToralPointsPresentation e h ρ M hM hnil b wt A)
+      (kostantToralPointsPresentation e h ρ M hM hnil b wt B),
+    coe_kostantToralFrobenius, Matrix.GeneralLinearGroup.map_apply, iterateFrobenius_def, map_pow]
 
 /-- A point of a toral closure is fixed by the Frobenius endomorphism exactly when every one of
 its entries lies in the Frobenius-fixed subring. -/

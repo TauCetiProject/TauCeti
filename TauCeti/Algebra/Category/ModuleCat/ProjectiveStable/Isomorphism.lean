@@ -44,11 +44,11 @@ local notation "S" =>
 private theorem isIso_of_projectiveStableFunctor_map_eq_id (M : ModuleCat.{v} A)
     (hM : IsFiniteLength A M)
     (hP : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
-    (f : End M) (hf : (S).map f = 𝟙 ((S).obj M)) : IsIso f := by
+    (f : End M) (hf : (S).map f.asHom = 𝟙 ((S).obj M)) : IsIso f.asHom := by
   obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hM
   obtain ⟨n, hn⟩ := Filter.eventually_atTop.mp
-    (LinearMap.eventually_isCompl_ker_pow_range_pow f.hom)
-  let K := LinearMap.ker (f.hom ^ (n + 1))
+    (LinearMap.eventually_isCompl_ker_pow_range_pow f.asHom.hom)
+  let K := LinearMap.ker (f.asHom.hom ^ (n + 1))
   have hc := hn (n + 1) (Nat.le_succ n)
   let r : Retract (ModuleCat.of A K) M :=
     { i := ofHom K.subtype
@@ -56,13 +56,13 @@ private theorem isIso_of_projectiveStableFunctor_map_eq_id (M : ModuleCat.{v} A)
       retract := by
         ext x
         exact congrArg Subtype.val (Submodule.projectionOnto_apply_left hc x) }
-  have hpow : (S).map (f ^ (n + 1)) = 𝟙 ((S).obj M) := by
-    have hfe : (S).mapEnd M f = 1 := hf
+  have hpow : (S).map (f ^ (n + 1)).asHom = 𝟙 ((S).obj M) := by
+    have hfe : (S).mapEnd M f = 1 := End.ext hf
     have he : (S).mapEnd M (f ^ (n + 1)) = 1 := by rw [map_pow, hfe, one_pow]
-    exact he
-  have hhom : (f ^ (n + 1)).hom = f.hom ^ (n + 1) :=
+    exact congrArg End.asHom he
+  have hhom : (f ^ (n + 1)).asHom.hom = f.asHom.hom ^ (n + 1) :=
     map_pow M.endRingEquiv f (n + 1)
-  have hkill : r.i ≫ f ^ (n + 1) = 0 := by
+  have hkill : r.i ≫ (f ^ (n + 1)).asHom = 0 := by
     ext x
     simp [r, hhom]
   have hi : (S).map r.i = 0 := by
@@ -76,7 +76,7 @@ private theorem isIso_of_projectiveStableFunctor_map_eq_id (M : ModuleCat.{v} A)
       ((ExactStructure.isZero_projectiveStableFunctor_obj_iff _ _).mp hzero))
   have hk : K = ⊥ := Submodule.subsingleton_iff_eq_bot.mp
     (ModuleCat.isZero_iff_subsingleton.mp hK)
-  have hu : IsUnit (f.hom ^ (n + 1)) := (Module.End.isUnit_iff _).mpr
+  have hu : IsUnit (f.asHom.hom ^ (n + 1)) := (Module.End.isUnit_iff _).mpr
     (IsArtinian.bijective_of_injective_endomorphism _ (LinearMap.ker_eq_bot.mp hk))
   exact (isUnit_iff_isIso f).mp
     ((isUnit_pow_succ_iff (n := n)).mp hu |>.map M.endRingEquiv.symm)
@@ -93,9 +93,11 @@ theorem isIso_projectiveStableFunctor_map_iff_of_isZero_projective_retract
   · intro hf
     let := hf
     obtain ⟨g, hg⟩ := (S).map_surjective (CategoryTheory.inv ((S).map f))
-    have hfg : IsIso (f ≫ g) := isIso_of_projectiveStableFunctor_map_eq_id M hM hPM _ (by
+    have hfg : IsIso (f ≫ g) := isIso_of_projectiveStableFunctor_map_eq_id M hM hPM
+      (End.of (f ≫ g)) (by
       simp [Functor.map_comp, hg])
-    have hgf : IsIso (g ≫ f) := isIso_of_projectiveStableFunctor_map_eq_id N hN hPN _ (by
+    have hgf : IsIso (g ≫ f) := isIso_of_projectiveStableFunctor_map_eq_id N hN hPN
+      (End.of (g ≫ f)) (by
       simp [Functor.map_comp, hg])
     let := hfg
     let := hgf

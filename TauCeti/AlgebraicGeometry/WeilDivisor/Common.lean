@@ -15,12 +15,8 @@ common effective part.  If `D` and `E` are effective divisors, `D ⊓ E` is the 
 lying below both.  Removing it from `D` and from `E` gives two residual effective divisors with
 disjoint support.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
-lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
-symmetric powers `Symᵈ X`").  The later Abel-map and linear-system arguments need to split
-unordered effective divisors into their common sub-divisor and the two remaining parts; this file
-supplies that operation at the existing formal Weil-divisor level, before scheme-level symmetric
-powers or relative Cartier divisors are available.
+This file splits unordered effective divisors into their common sub-divisor and the two remaining
+parts, at the level of formal Weil divisors.
 -/
 
 public section
@@ -42,8 +38,8 @@ noncomputable section
 private lemma exists_inf (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     ∃ F : EffectiveDivisorOfDegree X (degree ((D : WeilDivisor X) ⊓ E)).toNat,
       (F : WeilDivisor X) = (D : WeilDivisor X) ⊓ E :=
-  ⟨⟨(D : WeilDivisor X) ⊓ E, D.isEffective.inf E.isEffective,
-    (Int.toNat_of_nonneg (D.isEffective.inf E.isEffective).degree_nonneg).symm⟩, rfl⟩
+  ⟨⟨(D : WeilDivisor X) ⊓ E, le_inf D.coe_nonneg E.coe_nonneg,
+    (Int.toNat_of_nonneg (degree_nonneg (le_inf D.coe_nonneg E.coe_nonneg))).symm⟩, rfl⟩
 
 /-- The common effective part of two fixed-degree effective divisors.
 
@@ -72,8 +68,8 @@ lemma multiplicityFinsupp_inf (D : EffectiveDivisorOfDegree X d)
   ext x
   rw [multiplicityFinsupp_apply, coeff_inf, Finsupp.inf_apply, multiplicityFinsupp_apply,
     multiplicityFinsupp_apply]
-  have hD := (isEffective_iff (D : WeilDivisor X)).mp D.isEffective x
-  have hE := (isEffective_iff (E : WeilDivisor X)).mp E.isEffective x
+  have hD := coeff_nonneg D.coe_nonneg x
+  have hE := coeff_nonneg E.coe_nonneg x
   omega
 
 /-- The symmetric-power representative of the common part is the pointwise minimum of

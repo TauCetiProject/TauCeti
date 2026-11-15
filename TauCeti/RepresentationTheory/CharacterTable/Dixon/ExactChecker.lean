@@ -36,9 +36,6 @@ same proof serves both the integer-valued stage and the exact cyclotomic stage.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.map_central_injective`: central rows remain
   distinct under maps to rings without zero divisors in which the group order is nonzero.
 
-This is the checker bridge required by Layer 6, “The assembled solver”, of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-
 The certificate follows J. D. Dixon, *High speed computation of group characters*, Numer. Math.
 10 (1967), 446--450, and G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic
 Comput. 9 (1990), 601--606.

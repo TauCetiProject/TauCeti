@@ -10,11 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Harada--Norton group
 
-This file carries the `HN` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the corrected five-generator presentation of
-the Harada--Norton group given by Bray and Curtis as a `TauCeti.GroupPresentation`, together with
-its source, generator convention, transcription notes, characteristic equations, and decidable
-checks on the compiled and freely reduced relator words.
+This file carries the `HN` row of the sporadic presentation data. It records the corrected
+five-generator presentation of the Harada--Norton group given by Bray and Curtis as a
+`TauCeti.GroupPresentation`, together with its source, generator convention, transcription notes,
+characteristic equations, and decidable checks on the compiled and freely reduced relator words.
 
 The nineteen relators are
 
@@ -68,7 +67,7 @@ only changed entry is the fifth, replaced there by `[a,b³]³`; the row explicit
 first presentation and therefore correctly retains `a⁻²(abab³)³`. There are no commented or
 optional entries inside that first constructor. This checks every source relator, inverse,
 exponent, conjugation boundary, and constructor boundary independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Main definitions and results
 
@@ -121,24 +120,28 @@ generators.
 The paper proves that this is a presentation of the abstract group, rather than a
 semi-presentation used only to recognize generators inside an existing group. No structural
 property of the presented group is asserted here: this definition records only the cited
-generators and relators. -/
+generators and relators.
+
+Generator order (starting at index zero): `a`, `b`, `c`, `d`, `t`.
+
+Source: J. N. Bray and R. T. Curtis, Monomial modular representations and symmetric generation of
+the Harada--Norton group, J. Algebra 268 (2003), 723--743.
+
+Source locator: Sections 4--5, especially p. 735; corrected Magma file HNpb.m at
+https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HNpb.m
+
+Generator convention: The generators a, b, c, d and t of Bray--Curtis HNpb.m, in that order, so
+indices 0 through 4 have those names. Products are read left to right, negative exponents denote
+inverses, [r,s] denotes r^-1 s^-1 r s, and r^s denotes s^-1 r s.
+
+Transcription notes: The nineteen words in the first presentation of the corrected HNpb.m file are
+stored as nineteen relators equal to the identity. They agree in order and spelling with the
+five-generator presentation displayed in Section 5 of the corrected paper. The corrected source
+uses `(a*d)^2` as its twelfth relator; the authors' known-errors record notes that the preprint's
+[a,d] at this position was wrong. An independent source-to-Lean read-through of the corrected
+HNpb.m file confirms all nineteen stored expressions and their order. -/
 def hnPresentation : GroupPresentation where
-  generatorNames := ["a", "b", "c", "d", "t"]
-  source := "J. N. Bray and R. T. Curtis, Monomial modular representations and symmetric \
-    generation of the Harada--Norton group, J. Algebra 268 (2003), 723--743"
-  sourceLocator := "Sections 4--5, especially p. 735; corrected Magma file HNpb.m at \
-    https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HNpb.m"
-  generatorConvention := "The generators a, b, c, d and t of Bray--Curtis HNpb.m, in that order, \
-    so indices 0 through 4 have those names. Products are read left to right, negative exponents \
-    denote inverses, [r,s] denotes r^-1 s^-1 r s, and r^s denotes s^-1 r s."
-  transcriptionNotes := "The nineteen words in the first presentation of the corrected HNpb.m \
-    file are stored as nineteen relators equal to the identity. They agree in order and spelling \
-    with the five-generator presentation displayed in Section 5 of the corrected paper. The \
-    corrected source uses (a*d)^2 as its twelfth relator; the authors' known-errors record notes \
-    that the preprint's [a,d] at this position was wrong. An independent source-to-Lean \
-    read-through of the corrected HNpb.m file confirms all nineteen stored expressions and their \
-    order."
-  expectedGeneratorCount := 5
+  generatorCount := 5
   expectedRelatorCount := 19
   transcribed :=
     [ .pow a 4,
@@ -161,52 +164,12 @@ def hnPresentation : GroupPresentation where
       Relator.commInvInv t b,
       .pow (d ⬝ t) 3 ]
 
-/-- The generator names recorded for `HN`. The row's body is sealed, so this equation is what shows
+/-- The number of generators in the presentation of `HN`. The row's body is sealed, so this
+equation is what shows
 a consumer that the transcription is on five generators, and it supplies the index bounds in
 `TauCeti.Sporadic.hnPresentation_transcribed`. -/
 @[simp]
-theorem hnPresentation_generatorNames :
-    hnPresentation.generatorNames = ["a", "b", "c", "d", "t"] := by
-  simp [hnPresentation]
-
-/-- The bibliographic source recorded for `HN`. -/
-@[simp]
-theorem hnPresentation_source :
-    hnPresentation.source = "J. N. Bray and R. T. Curtis, Monomial modular representations and \
-      symmetric generation of the Harada--Norton group, J. Algebra 268 (2003), 723--743" := by
-  simp [hnPresentation]
-
-/-- The locator recorded for `HN`, including the corrected machine-readable presentation. -/
-@[simp]
-theorem hnPresentation_sourceLocator :
-    hnPresentation.sourceLocator = "Sections 4--5, especially p. 735; corrected Magma file HNpb.m \
-      at https://webspace.maths.qmul.ac.uk/j.n.bray/Papers/HN/HNpb.m" := by
-  simp [hnPresentation]
-
-/-- The generator and word conventions recorded for `HN`. -/
-@[simp]
-theorem hnPresentation_generatorConvention :
-    hnPresentation.generatorConvention = "The generators a, b, c, d and t of Bray--Curtis \
-      HNpb.m, in that order, so indices 0 through 4 have those names. Products are read left to \
-      right, negative exponents denote inverses, [r,s] denotes r^-1 s^-1 r s, and r^s denotes \
-      s^-1 r s." := by
-  simp [hnPresentation]
-
-/-- The transcription notes recorded for `HN`, including the corrected twelfth relator. -/
-@[simp]
-theorem hnPresentation_transcriptionNotes :
-    hnPresentation.transcriptionNotes = "The nineteen words in the first presentation of the \
-      corrected HNpb.m file are stored as nineteen relators equal to the identity. They agree in \
-      order and spelling with the five-generator presentation displayed in Section 5 of the \
-      corrected paper. The corrected source uses (a*d)^2 as its twelfth relator; the authors' \
-      known-errors record notes that the preprint's [a,d] at this position was wrong. An \
-      independent source-to-Lean read-through of the corrected HNpb.m file confirms all nineteen \
-      stored expressions and their order." := by
-  simp [hnPresentation]
-
-/-- The generator count stated by the `HN` source. -/
-@[simp]
-theorem hnPresentation_expectedGeneratorCount : hnPresentation.expectedGeneratorCount = 5 := by
+theorem hnPresentation_generatorCount : hnPresentation.generatorCount = 5 := by
   simp [hnPresentation]
 
 /-- The relator count stated by the `HN` source. -/
@@ -221,7 +184,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer auditing the transcription never has to unfold the
 row. Indices `0` through `4` are the generators `a`, `b`, `c`, `d` and `t`, and their bounds come
-from `TauCeti.Sporadic.hnPresentation_generatorNames`. -/
+from `TauCeti.Sporadic.hnPresentation_generatorCount`. -/
 @[simp]
 theorem hnPresentation_transcribed :
     hnPresentation.transcribed =
@@ -276,7 +239,7 @@ theorem hnPresentation_transcribed :
         .pow (.gen ⟨3, by simp⟩ ⬝ .gen ⟨4, by simp⟩) 3 ] := by
   simp [hnPresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `HN` agree with the transcribed data. -/
+/-- The relator count recorded for `HN` agrees with the transcribed data. -/
 theorem hnPresentation_matchesMetadata : hnPresentation.matchesMetadata := by decide
 
 /-- The lengths of the nineteen compiled relator words for `HN`, in source order.

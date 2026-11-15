@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.Connected
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.InvariantSubmodule
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 
 /-!
 # Irreducibility from a connected Dynkin diagram
@@ -60,7 +61,7 @@ private theorem pathGraph_le_of_adj_succ {n : ℕ} {G : SimpleGraph (Fin n)}
 /-- A graph containing the path graph on the same nonempty vertex set is connected. -/
 private theorem connected_of_pathGraph_le {n : ℕ} {G : SimpleGraph (Fin n)}
     [Nonempty (Fin n)] (h : _root_.SimpleGraph.pathGraph n ≤ G) : G.Connected :=
-  ⟨(_root_.SimpleGraph.pathGraph_preconnected n).mono h⟩
+  ⟨(_root_.SimpleGraph.preconnected_pathGraph n).mono h⟩
 
 end SimpleGraph
 
@@ -86,131 +87,54 @@ private theorem adj_fork_D {n : ℕ} (hn : 4 ≤ n) (i : Fin n)
 confines each family to its canonical rank range, which is nonempty and is what the proof uses. -/
 theorem connected_diagramGraph_cartanMatrix {t : DynkinType} (ht : t.Valid) :
     (diagramGraph t.cartanMatrix).Connected := by
+  -- The `A`, `B` and `C` diagrams contain every successor edge, hence the path graph.
+  have path {n : ℕ} (hn : 0 < n) {G : _root_.SimpleGraph (Fin n)}
+      (h : ∀ (i : Fin n) (hi : (i : ℕ) + 1 < n), G.Adj i ⟨(i : ℕ) + 1, hi⟩) : G.Connected :=
+    have : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+    SimpleGraph.connected_of_pathGraph_le (SimpleGraph.pathGraph_le_of_adj_succ h)
+  -- In `E₆`, `E₇`, `E₈` node `1` hangs off the branch node `3`, so not every node has a smaller
+  -- neighbour; their connectivity is decided by reachability from node `3`.
   cases t with
   | A n =>
-      have hn := valid_A.mp ht
-      let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-      have hconn : (diagramGraph (CartanMatrix.A n)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        rw [diagramGraph_adj]
-        simp [CartanMatrix.A]
-        simp only [Fin.ext_iff]
-        omega
-      simpa only [rank_A, cartanMatrix_A] using hconn
+      simpa only [rank_A, cartanMatrix_A] using path (valid_A.mp ht) fun i hi ↦ by
+        rw [diagramGraph_adj]; simp [CartanMatrix.A]; simp only [Fin.ext_iff]; omega
   | B n =>
-      have hn : 0 < n := by have := valid_B.mp ht; omega
-      let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-      have hconn : (diagramGraph (CartanMatrix.B n)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        rw [diagramGraph_adj]
-        simp [CartanMatrix.B]
-        simp only [Fin.ext_iff]
-        omega
-      simpa only [rank_B, cartanMatrix_B] using hconn
+      simpa only [rank_B, cartanMatrix_B] using path (by have := valid_B.mp ht; omega) fun i hi ↦ by
+        rw [diagramGraph_adj]; simp [CartanMatrix.B]; simp only [Fin.ext_iff]; omega
   | C n =>
-      have hn : 0 < n := by have := valid_C.mp ht; omega
-      let _ : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
-      have hconn : (diagramGraph (CartanMatrix.C n)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        rw [diagramGraph_adj]
-        simp [CartanMatrix.C]
-        simp only [Fin.ext_iff]
-        omega
-      simpa only [rank_C, cartanMatrix_C] using hconn
+      simpa only [rank_C, cartanMatrix_C] using path (by have := valid_C.mp ht; omega) fun i hi ↦ by
+        rw [diagramGraph_adj]; simp [CartanMatrix.C]; simp only [Fin.ext_iff]; omega
   | D n =>
       have hn := valid_D.mp ht
       have hconn : (diagramGraph (CartanMatrix.D n)).Connected := by
-        refine SimpleGraph.connected_fin_of_exists_adj_lt (by omega) fun i hi ↦ ?_
+        refine SimpleGraph.connected_of_exists_adj_lt ⟨0, by omega⟩ fun i hi ↦ ?_
+        replace hi : (i : ℕ) ≠ 0 := fun h ↦ hi (Fin.ext h)
         by_cases hlast : (i : ℕ) = n - 1
         · let j : Fin n := ⟨n - 3, by omega⟩
           have hji : j = ⟨n - 3, by omega⟩ := rfl
-          refine ⟨j, ?_, hji ▸ adj_fork_D hn i hlast⟩
-          simp only [j]
-          omega
+          exact ⟨j, Fin.mk_lt_of_lt_val (by omega), hji ▸ adj_fork_D hn i hlast⟩
         · let j : Fin n := ⟨(i : ℕ) - 1, by omega⟩
           have hji : (⟨(j : ℕ) + 1, by simp [j]; omega⟩ : Fin n) = i := by
             apply Fin.ext
             simp [j]
             omega
-          exact ⟨j, by simp [j]; omega, hji ▸ adj_succ_D hn j (by simp [j]; omega)⟩
+          exact ⟨j, Fin.mk_lt_of_lt_val (by omega), hji ▸ adj_succ_D hn j (by simp [j]; omega)⟩
       simpa only [rank_D, cartanMatrix_D] using hconn
-  | E6 =>
-      have hconn : (diagramGraph (CartanMatrix.E 6)).Connected := by
-        rw [SimpleGraph.connected_iff_exists_forall_reachable]
-        refine ⟨(3 : Fin 6), fun i ↦ ?_⟩
-        have h32 : (diagramGraph (CartanMatrix.E 6)).Adj 3 2 := by decide
-        have h20 : (diagramGraph (CartanMatrix.E 6)).Adj 2 0 := by decide
-        have h31 : (diagramGraph (CartanMatrix.E 6)).Adj 3 1 := by decide
-        have h34 : (diagramGraph (CartanMatrix.E 6)).Adj 3 4 := by decide
-        have h45 : (diagramGraph (CartanMatrix.E 6)).Adj 4 5 := by decide
-        fin_cases i
-        · exact h32.reachable.trans h20.reachable
-        · exact h31.reachable
-        · exact h32.reachable
-        · exact .rfl
-        · exact h34.reachable
-        · exact h34.reachable.trans h45.reachable
-      simpa only [rank_E6, cartanMatrix_E6] using hconn
-  | E7 =>
-      have hconn : (diagramGraph (CartanMatrix.E 7)).Connected := by
-        rw [SimpleGraph.connected_iff_exists_forall_reachable]
-        refine ⟨(3 : Fin 7), fun i ↦ ?_⟩
-        have h32 : (diagramGraph (CartanMatrix.E 7)).Adj 3 2 := by decide
-        have h20 : (diagramGraph (CartanMatrix.E 7)).Adj 2 0 := by decide
-        have h31 : (diagramGraph (CartanMatrix.E 7)).Adj 3 1 := by decide
-        have h34 : (diagramGraph (CartanMatrix.E 7)).Adj 3 4 := by decide
-        have h45 : (diagramGraph (CartanMatrix.E 7)).Adj 4 5 := by decide
-        have h56 : (diagramGraph (CartanMatrix.E 7)).Adj 5 6 := by decide
-        fin_cases i
-        · exact h32.reachable.trans h20.reachable
-        · exact h31.reachable
-        · exact h32.reachable
-        · exact .rfl
-        · exact h34.reachable
-        · exact h34.reachable.trans h45.reachable
-        · exact (h34.reachable.trans h45.reachable).trans h56.reachable
-      simpa only [rank_E7, cartanMatrix_E7] using hconn
-  | E8 =>
-      have hconn : (diagramGraph (CartanMatrix.E 8)).Connected := by
-        rw [SimpleGraph.connected_iff_exists_forall_reachable]
-        refine ⟨(3 : Fin 8), fun i ↦ ?_⟩
-        have h32 : (diagramGraph (CartanMatrix.E 8)).Adj 3 2 := by decide
-        have h20 : (diagramGraph (CartanMatrix.E 8)).Adj 2 0 := by decide
-        have h31 : (diagramGraph (CartanMatrix.E 8)).Adj 3 1 := by decide
-        have h34 : (diagramGraph (CartanMatrix.E 8)).Adj 3 4 := by decide
-        have h45 : (diagramGraph (CartanMatrix.E 8)).Adj 4 5 := by decide
-        have h56 : (diagramGraph (CartanMatrix.E 8)).Adj 5 6 := by decide
-        have h67 : (diagramGraph (CartanMatrix.E 8)).Adj 6 7 := by decide
-        fin_cases i
-        · exact h32.reachable.trans h20.reachable
-        · exact h31.reachable
-        · exact h32.reachable
-        · exact .rfl
-        · exact h34.reachable
-        · exact h34.reachable.trans h45.reachable
-        · exact (h34.reachable.trans h45.reachable).trans h56.reachable
-        · exact ((h34.reachable.trans h45.reachable).trans h56.reachable).trans h67.reachable
-      simpa only [rank_E8, cartanMatrix_E8] using hconn
-  | F4 =>
-      have hconn : (diagramGraph CartanMatrix.F₄).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        fin_cases i <;> decide +kernel +revert
-      simpa only [rank_F4, cartanMatrix_F4] using hconn
-  | G2 =>
-      have hconn : (diagramGraph (CartanMatrix.G₂.transpose)).Connected := by
-        apply SimpleGraph.connected_of_pathGraph_le
-        apply SimpleGraph.pathGraph_le_of_adj_succ
-        intro i hi
-        fin_cases i <;> decide +kernel +revert
-      simpa only [rank_G2, cartanMatrix_G2] using hconn
+  | E6 => simpa only [rank_E6, cartanMatrix_E6] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 6))).2 ⟨3, by decide⟩
+  | E7 => simpa only [rank_E7, cartanMatrix_E7] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 7))).2 ⟨3, by decide⟩
+  | E8 => simpa only [rank_E8, cartanMatrix_E8] using
+      (SimpleGraph.connected_iff_exists_forall_reachable
+        (diagramGraph (CartanMatrix.E 8))).2 ⟨3, by decide⟩
+  | F4 => simpa only [rank_F4, cartanMatrix_F4] using
+      (SimpleGraph.connected_of_exists_adj_lt 0 (by decide) :
+        (diagramGraph CartanMatrix.F₄).Connected)
+  | G2 => simpa only [rank_G2, cartanMatrix_G2] using
+      (SimpleGraph.connected_of_exists_adj_lt 0 (by decide) :
+        (diagramGraph CartanMatrix.G₂.transpose).Connected)
 
 end DynkinType
 
@@ -219,14 +143,14 @@ section
 variable {K M N ι : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic]
 
-omit [P.IsCrystallographic] in
+omit [P.IsCrystallographic] [CharZero K] in
 /-- **A submodule invariant under the simple reflections and containing no simple root is
 trivial.** If `q` is invariant under the reflection at each element of the base's support and
 misses the root there, then `q = ⊥`.
 
 Invariance is asked at the support only, not under every reflection of `P`. -/
 theorem _root_.RootPairing.eq_bot_of_forall_root_not_mem
-    [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
+    [NeZero (2 : K)] [P.IsRootSystem] {b : P.Base} {q : Submodule K M}
     (hinv : ∀ i : b.support, q ∈ Module.End.invtSubmodule (P.reflection i))
     (h : ∀ i : b.support, P.root i ∉ q) : q = ⊥ := by
   -- Missing every simple root puts `q` inside all the simple coroot kernels; the coweight basis
@@ -266,8 +190,8 @@ theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
   -- adjacency in the diagram is exactly nonvanishing of the Cartan entry, hence of the pairing
   have propagate {u v : b.support} (hadj : (diagramGraph b.cartanMatrix).Adj u v)
       (hu : P.root u ∈ q) : P.root v ∈ q :=
-    RootPairing.root_mem_of_pairing_ne_zero (hinv v)
-      (fun hp ↦ (diagramGraph_adj.mp hadj).2.1
+    RootPairing.root_mem_of_isUnit_pairing (hinv v)
+      (Ne.isUnit fun hp ↦ (diagramGraph_adj.mp hadj).2.1
         (b.cartanMatrix_apply_eq_zero_iff_pairing.mpr hp)) hu
   have hall : ∀ j : b.support, P.root j ∈ q := by
     intro j

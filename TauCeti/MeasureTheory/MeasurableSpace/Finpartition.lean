@@ -12,7 +12,8 @@ import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 /-!
 # Measurable finite partitions
 
-This file records elementary ways to construct measurable finite partitions and shows that
+This file records elementary ways to construct measurable finite partitions (bipartitions, common
+refinements, and the fibres of a measurable map to a finite type) and shows that
 measurability passes from a finer finite partition to a coarser one. It also makes the canonical
 map from a point to its finite-partition index measurable and packages the canonical finite
 partitions of a countably generated measurable space as `Finpartition`s.
@@ -70,15 +71,15 @@ that set-valued partition is discarded, as required by `Finpartition`. -/
 noncomputable def countablePartition (Ω : Type*) [MeasurableSpace Ω]
     [MeasurableSpace.CountablyGenerated Ω]
     (n : ℕ) : Finpartition (Set.univ : Set Ω) :=
-  (Finpartition.ofPairwiseDisjoint
-    (MeasurableSpace.finite_countablePartition Ω n).toFinset (by
+  Finpartition.ofErase (MeasurableSpace.finite_countablePartition Ω n).toFinset
+    (Set.PairwiseDisjoint.supIndep (by
       intro s hs t ht hst
       exact MeasurableSpace.disjoint_countablePartition
         ((MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mp hs)
-        ((MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mp ht) hst)).copy (by
-          rw [Finset.sup_id_set_eq_sUnion,
-            MeasurableSpace.finite_countablePartition Ω n |>.coe_toFinset,
-            MeasurableSpace.sUnion_countablePartition])
+        ((MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mp ht) hst)) (by
+      rw [Finset.sup_id_set_eq_sUnion,
+        MeasurableSpace.finite_countablePartition Ω n |>.coe_toFinset,
+        MeasurableSpace.sUnion_countablePartition])
 
 /-- The parts of the canonical `Finpartition` are the nonempty members of Mathlib's canonical
 finite set-valued partition. -/
@@ -141,6 +142,14 @@ theorem comap_countablePartition_index_top (Ω : Type*) [MeasurableSpace Ω]
         (Finset.mem_erase.mpr ⟨hsempty,
           (MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mpr hs⟩)
 
+/-- Every part of the partition into the fibres of a measurable map to a finite type is
+measurable. -/
+theorem measurableSet_of_mem_ofFibers {κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] {g : Ω → κ} (hg : Measurable g) {s : Set Ω}
+    (hs : s ∈ (ofFibers g).parts) : MeasurableSet s := by
+  obtain ⟨x, rfl⟩ := mem_ofFibers_parts.1 hs
+  exact hg (measurableSet_singleton _)
+
 /-- Every part of a bipartition along a measurable set is measurable. -/
 theorem measurableSet_of_mem_bipartition {s p : Set Ω} (hs : MeasurableSet s)
     (hp : p ∈ (bipartition s).parts) : MeasurableSet p := by
@@ -157,6 +166,32 @@ theorem measurableSet_of_mem_inf {u : Set Ω} {P Q : Finpartition u}
   obtain ⟨_, pq, hpq, rfl⟩ := hr
   rw [Finset.mem_product] at hpq
   exact (hP pq.1 hpq.1).inter (hQ pq.2 hpq.2)
+
+/-- Refining a measurable finite partition along two measurable sets produces a measurable
+common refinement of the partition and of both bipartitions, with at most four times as many
+parts. -/
+theorem exists_measurable_le_bipartition_card_le (P : Finpartition (Set.univ : Set Ω))
+    (hP : ∀ p ∈ P.parts, MeasurableSet p) {S T : Set Ω} (hS : MeasurableSet S)
+    (hT : MeasurableSet T) :
+    ∃ (Q : Finpartition (Set.univ : Set Ω)) (_ : ∀ q ∈ Q.parts, MeasurableSet q),
+      Q ≤ P ∧ Q ≤ bipartition S ∧ Q ≤ bipartition T ∧ Q.parts.card ≤ 4 * P.parts.card := by
+  have hPS : ∀ p ∈ (bipartition S).parts, MeasurableSet p := fun _ hp =>
+    measurableSet_of_mem_bipartition hS hp
+  have hPT : ∀ p ∈ (bipartition T).parts, MeasurableSet p := fun _ hp =>
+    measurableSet_of_mem_bipartition hT hp
+  have hPPS : ∀ q ∈ (P ⊓ bipartition S).parts, MeasurableSet q := fun _ hq =>
+    measurableSet_of_mem_inf hP hPS hq
+  refine ⟨(P ⊓ bipartition S) ⊓ bipartition T, fun _ hq => measurableSet_of_mem_inf hPPS hPT hq,
+    le_trans inf_le_left inf_le_left, le_trans inf_le_left inf_le_right, inf_le_right, ?_⟩
+  calc
+    ((P ⊓ bipartition S) ⊓ bipartition T).parts.card
+        ≤ (P ⊓ bipartition S).parts.card * (bipartition T).parts.card :=
+      card_parts_inf_le_mul _ _
+    _ ≤ (P.parts.card * (bipartition S).parts.card) * (bipartition T).parts.card :=
+      Nat.mul_le_mul_right _ (card_parts_inf_le_mul P _)
+    _ ≤ (P.parts.card * 2) * 2 := Nat.mul_le_mul
+      (Nat.mul_le_mul_left _ (card_parts_bipartition_le S)) (card_parts_bipartition_le T)
+    _ = 4 * P.parts.card := by omega
 
 /-- A part of a finite partition is measurable when it is a union of parts of a measurable
 refinement. -/

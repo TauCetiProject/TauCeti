@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.GeometricArtinMap
 public import TauCeti.Topology.Algebra.Group.Profinite.Completion
 import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.Existence
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
@@ -27,7 +28,8 @@ subgroup, and this file draws its two consequences for the absolute local Artin 
   topological groups `profiniteCompletionArtinEquiv K : (Kˣ)^ ≃ₜ* G_K^ab`.
 * **Injectivity** (`injective_artinMap`). Since `Kˣ` is residually finite
   (`TauCeti.residuallyFinite_units`), it embeds in `(Kˣ)^`, so `artinMap K` is injective as the
-  restriction of the injective `profiniteCompletionArtinMap K`.
+  restriction of the injective `profiniteCompletionArtinMap K`; so is its geometric normalization
+  (`injective_geometricArtinMap`).
 
 Neither statement is claimed in characteristic `p`: existence is only proved there for subgroups
 of index prime to `p`, all of which contain the pro-`p` group of principal units.
@@ -43,6 +45,8 @@ of index prime to `p`, all of which contain the pro-`p` group of principal units
 
 * `TauCeti.ClassFieldTheory.injective_artinMap`: in characteristic zero the absolute local Artin
   map is injective.
+* `TauCeti.ClassFieldTheory.injective_geometricArtinMap`: in characteristic zero the geometric
+  local Artin map is injective.
 * `TauCeti.ClassFieldTheory.surjective_profiniteCompletionArtinMap` and
   `TauCeti.ClassFieldTheory.injective_profiniteCompletionArtinMap`: the extension to the profinite
   completion is surjective, and in characteristic zero injective.
@@ -112,6 +116,11 @@ theorem injective_artinMap [CharZero K] : Function.Injective (artinMap K) := by
   intro x y hxy
   rw [← profiniteCompletionArtinMap_etaFn, ← profiniteCompletionArtinMap_etaFn] at hxy
   exact hη (injective_profiniteCompletionArtinMap K hxy)
+
+/-- The geometric local Artin map is injective in characteristic zero, in particular for a finite
+extension of `ℚ_p`. -/
+theorem injective_geometricArtinMap [CharZero K] : Function.Injective (geometricArtinMap K) :=
+  fun x y h ↦ injective_artinMap K <| by simpa using h
 
 /-- **The profinite completion of `Kˣ` is `G_K^ab`.** In characteristic zero, in particular for a
 finite extension of `ℚ_p`, the absolute local Artin map extends to an isomorphism of topological

@@ -58,9 +58,8 @@ the existing dynamic statement that the weight parabolic normalizes its unipoten
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic Levi-decomposition milestone in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap by supplying both represented factors inside the weight parabolic. The
-relative Levi is the acting factor required by the scheme-level semidirect-product decomposition.
+This supplies both represented factors inside the weight parabolic. The relative Levi is the acting
+factor required by the scheme-level semidirect-product decomposition.
 -/
 
 public section
@@ -111,16 +110,9 @@ theorem weightLeviInParabolicHopfIdeal_comapOfSurjective (w : Fin N → ℤ) :
         (weightParabolicCoordinateMap R w).hom
         (weightParabolicCoordinateMap_surjective R w) =
       weightLeviDefiningHopfIdeal R w := by
-  have hker :
-      HopfIdeal.kerOfSurjective (weightParabolicCoordinateMap R w).hom
-          (weightParabolicCoordinateMap_surjective R w) =
-        weightParabolicDefiningHopfIdeal R w := by
-    ext x
-    rw [HopfIdeal.mem_kerOfSurjective, weightParabolicCoordinateMap_apply,
-      Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, HopfIdeal.mem_toIdeal]
-  rw [weightLeviInParabolicHopfIdeal,
-    HopfIdeal.comapOfSurjective_map, hker, sup_eq_left]
-  exact weightParabolicDefiningHopfIdeal_le_weightLevi R w
+  simpa only [weightLeviInParabolicHopfIdeal, weightParabolicCoordinateMap_def,
+    CommHopfAlgCat.hom_mkQuotient] using
+    HopfIdeal.comapOfSurjective_map_mkBialgHom (weightParabolicDefiningHopfIdeal_le_weightLevi R w)
 
 /-- The Hopf ideal in the weight-parabolic coordinate algebra which cuts out the
 weight-unipotent subgroup. -/
@@ -136,16 +128,10 @@ theorem weightUnipotentInParabolicHopfIdeal_comapOfSurjective (w : Fin N → ℤ
         (weightParabolicCoordinateMap R w).hom
         (weightParabolicCoordinateMap_surjective R w) =
       weightUnipotentDefiningHopfIdeal R w := by
-  have hker :
-      HopfIdeal.kerOfSurjective (weightParabolicCoordinateMap R w).hom
-          (weightParabolicCoordinateMap_surjective R w) =
-        weightParabolicDefiningHopfIdeal R w := by
-    ext x
-    rw [HopfIdeal.mem_kerOfSurjective, weightParabolicCoordinateMap_apply,
-      Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, HopfIdeal.mem_toIdeal]
-  rw [weightUnipotentInParabolicHopfIdeal,
-    HopfIdeal.comapOfSurjective_map, hker, sup_eq_left]
-  exact weightParabolicDefiningHopfIdeal_le_weightUnipotent R w
+  simpa only [weightUnipotentInParabolicHopfIdeal, weightParabolicCoordinateMap_def,
+    CommHopfAlgCat.hom_mkQuotient] using
+    HopfIdeal.comapOfSurjective_map_mkBialgHom
+      (weightParabolicDefiningHopfIdeal_le_weightUnipotent R w)
 
 section Points
 
@@ -153,7 +139,7 @@ variable {A : Type v} [CommRing A] [Algebra R A]
 
 /-- A parabolic point belongs to the subgroup cut out by the relative Levi Hopf ideal exactly
 when its ambient general linear point belongs to the weight-Levi subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :
@@ -164,29 +150,13 @@ theorem mem_weightLeviInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
           (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) f ∈
         CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
           (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  constructor
-  · intro hf x hx
-    have hqx := hf ((weightParabolicCoordinateMap R w).hom x)
-      (HopfIdeal.mem_map_of_mem (weightParabolicCoordinateMap R w).hom hx)
-    rw [weightParabolicCoordinateMap_apply] at hqx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
-    exact hqx
-  · intro hf y hy
-    rw [weightLeviInParabolicHopfIdeal] at hy
-    obtain ⟨x, hx, hxy⟩ :=
-      (HopfIdeal.mem_map_iff_of_surjective
-        (weightParabolicCoordinateMap_surjective R w)).mp hy
-    subst y
-    have hx0 := hf x hx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply] at hx0
-    rw [weightParabolicCoordinateMap_apply]
-    exact hx0
+  rw [weightLeviInParabolicHopfIdeal]
+  exact CommHopfAlgCat.Hom.mem_quotientPointsSubgroup_map_iff_of_eq_mkQuotient _
+    (weightParabolicCoordinateMap_def R w) _ _ f
 
 /-- A parabolic point belongs to the subgroup cut out by the relative unipotent Hopf ideal
 exactly when its ambient general linear point belongs to the weight-unipotent subgroup. -/
-@[simp]
+@[simp↓]
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
     (f : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w)
       (CommAlgCat.of R A)) :
@@ -197,25 +167,9 @@ theorem mem_weightUnipotentInParabolicPointsSubgroup_iff (w : Fin N → ℤ)
           (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) f ∈
         CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
           (weightUnipotentDefiningHopfIdeal R w) (CommAlgCat.of R A) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  constructor
-  · intro hf x hx
-    have hqx := hf ((weightParabolicCoordinateMap R w).hom x)
-      (HopfIdeal.mem_map_of_mem (weightParabolicCoordinateMap R w).hom hx)
-    rw [weightParabolicCoordinateMap_apply] at hqx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
-    exact hqx
-  · intro hf y hy
-    rw [weightUnipotentInParabolicHopfIdeal] at hy
-    obtain ⟨x, hx, hxy⟩ :=
-      (HopfIdeal.mem_map_iff_of_surjective
-        (weightParabolicCoordinateMap_surjective R w)).mp hy
-    subst y
-    have hx0 := hf x hx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply] at hx0
-    rw [weightParabolicCoordinateMap_apply]
-    exact hx0
+  rw [weightUnipotentInParabolicHopfIdeal]
+  exact CommHopfAlgCat.Hom.mem_quotientPointsSubgroup_map_iff_of_eq_mkQuotient _
+    (weightParabolicCoordinateMap_def R w) _ _ f
 
 end Points
 
@@ -243,26 +197,14 @@ theorem isNormal_weightUnipotentInParabolicHopfIdeal (w : Fin N → ℤ) :
   apply (mem_weightUnipotentDefiningPointsSubgroup_iff R w _).mpr
   simpa only [map_mul, map_inv] using hconj
 
-private theorem mkQuotient_comp_eqToIso {H : _root_.CommHopfAlgCat.{u} R}
-    {I J : HopfIdeal R H} (hIJ : I = J) :
-    CommHopfAlgCat.mkQuotient H I ≫
-        (eqToIso (congrArg (CommHopfAlgCat.quotient H) hIJ)).hom =
-      CommHopfAlgCat.mkQuotient H J := by
-  subst J
-  simp
-
 /-- The quotient-coordinate isomorphism underlying the identification of the relative
 weight-Levi quotient spectrum. -/
 noncomputable def weightLeviInParabolicCoordinateIso (w : Fin N → ℤ) :
     weightLeviCoordinateHopfAlgebra R w ≅
       CommHopfAlgCat.quotient (weightParabolicCoordinateHopfAlgebra R w)
         (weightLeviInParabolicHopfIdeal R w) :=
-  eqToIso (congrArg (CommHopfAlgCat.quotient (coordinateHopfAlgebra R N))
-      (weightLeviInParabolicHopfIdeal_comapOfSurjective R w).symm) ≪≫
-    CommHopfAlgCat.quotientIsoOfSurjective
-      (weightParabolicCoordinateMap R w)
-      (weightParabolicCoordinateMap_surjective R w)
-      (weightLeviInParabolicHopfIdeal R w)
+  (weightParabolicCoordinateMap R w).quotientIsoQuotientQuotient
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightLevi R w)
 
 /-- The relative Levi coordinate identification commutes with the two inclusions into the
 ambient general linear coordinate algebra. -/
@@ -274,11 +216,9 @@ theorem mkQuotient_weightLevi_comp_weightLeviInParabolicCoordinateIso_hom
         (weightLeviInParabolicCoordinateIso R w).hom =
       weightParabolicCoordinateMap R w ≫
         CommHopfAlgCat.mkQuotient (weightParabolicCoordinateHopfAlgebra R w)
-          (weightLeviInParabolicHopfIdeal R w) := by
-  rw [weightLeviInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
-    mkQuotient_comp_eqToIso (R := R)
-      (weightLeviInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom]
+          (weightLeviInParabolicHopfIdeal R w) :=
+  CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom _
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightLevi R w)
 
 /-- The relative quotient spectrum cut out inside the weight parabolic is canonically
 isomorphic to the weight-Levi group scheme. -/
@@ -286,8 +226,20 @@ noncomputable def weightLeviInParabolicGroupSchemeIso (w : Fin N → ℤ) :
     CommHopfAlgCat.quotientSpec (weightParabolicCoordinateHopfAlgebra R w)
         (weightLeviInParabolicHopfIdeal R w) ≅
       weightLeviGroupScheme R w :=
-  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
-    (weightLeviInParabolicCoordinateIso R w).op
+  (weightParabolicCoordinateMap R w).quotientSpecQuotientIsoQuotientSpec
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightLevi R w)
+
+/-- `weightLeviInParabolicGroupSchemeIso` is the image under `hopfSpec` of the opposite of the
+coordinate isomorphism `weightLeviInParabolicCoordinateIso`. -/
+theorem weightLeviInParabolicGroupSchemeIso_def (w : Fin N → ℤ) :
+    weightLeviInParabolicGroupSchemeIso R w =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+        (weightLeviInParabolicCoordinateIso R w).op := by
+  rw [weightLeviInParabolicGroupSchemeIso,
+    CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_def, weightLeviInParabolicCoordinateIso]
+  -- The two sides differ only in how the implicit objects are written: the relative Hopf ideal
+  -- `weightLeviInParabolicHopfIdeal R w` is by definition the image of the ambient one.
+  rfl
 
 /-- The coordinate morphism representing the inclusion `L(w) → P(w)`. It is the canonical
 map between the two quotient coordinate Hopf algebras induced by containment of their defining
@@ -310,7 +262,7 @@ dynamic Levi inclusion transported through the representing isomorphisms. -/
 theorem mapPointsFunctor_weightLeviToParabolicCoordinateMap_app (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R)
     (z : HopfAlgebra.points (R := R) (H := weightLeviCoordinateHopfAlgebra R w) A) :
-    (CommHopfAlgCat.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w)).app A z =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (weightLeviToParabolicCoordinateMap R w)).app A z =
       (weightParabolicPointsIso R w).inv.app A
         (Cocharacter.leviToParabolic A (weightCocharacter (R := R) w)
           ((weightLeviPointsIso R w).hom.app A z)) := by
@@ -376,27 +328,9 @@ theorem weightLeviInParabolicGroupSchemeIso_hom_comp_weightLeviToParabolic
     (w : Fin N → ℤ) :
     (weightLeviInParabolicGroupSchemeIso R w).hom ≫ weightLeviToParabolic R w =
       CommHopfAlgCat.quotientSpecι (weightParabolicCoordinateHopfAlgebra R w)
-        (weightLeviInParabolicHopfIdeal R w) := by
-  rw [weightLeviInParabolicGroupSchemeIso, weightLeviToParabolic,
-    CommHopfAlgCat.quotientSpecMapOfLe_def, CommHopfAlgCat.quotientSpecι_def,
-    Functor.mapIso_hom, Iso.op_hom,
-    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp, ← op_comp]
-  congr 2
-  let q := weightParabolicCoordinateMap R w
-  let hq := weightParabolicCoordinateMap_surjective R w
-  let _ : Epi q := ConcreteCategory.epi_of_surjective q hq
-  rw [← cancel_epi q]
-  have hq_def : weightParabolicCoordinateMap R w =
-      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-        (weightParabolicDefiningHopfIdeal R w) := by
-    ext x
-    rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
-  dsimp only [q]
-  rw [hq_def, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
-  rw [weightLeviInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
-    mkQuotient_comp_eqToIso (R := R)
-      (weightLeviInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, hq_def]
+        (weightLeviInParabolicHopfIdeal R w) :=
+  CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_hom_comp_quotientSpecMapOfLe _
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightLevi R w)
 
 /-- The quotient-coordinate isomorphism underlying the identification of the relative
 weight-unipotent quotient spectrum. -/
@@ -404,12 +338,8 @@ noncomputable def weightUnipotentInParabolicCoordinateIso (w : Fin N → ℤ) :
     weightUnipotentCoordinateHopfAlgebra R w ≅
       CommHopfAlgCat.quotient (weightParabolicCoordinateHopfAlgebra R w)
         (weightUnipotentInParabolicHopfIdeal R w) :=
-  eqToIso (congrArg (CommHopfAlgCat.quotient (coordinateHopfAlgebra R N))
-      (weightUnipotentInParabolicHopfIdeal_comapOfSurjective R w).symm) ≪≫
-    CommHopfAlgCat.quotientIsoOfSurjective
-      (weightParabolicCoordinateMap R w)
-      (weightParabolicCoordinateMap_surjective R w)
-      (weightUnipotentInParabolicHopfIdeal R w)
+  (weightParabolicCoordinateMap R w).quotientIsoQuotientQuotient
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightUnipotent R w)
 
 /-- The relative unipotent coordinate identification commutes with the two inclusions into the
 ambient general linear coordinate algebra. -/
@@ -421,11 +351,9 @@ theorem mkQuotient_weightUnipotent_comp_weightUnipotentInParabolicCoordinateIso_
         (weightUnipotentInParabolicCoordinateIso R w).hom =
       weightParabolicCoordinateMap R w ≫
         CommHopfAlgCat.mkQuotient (weightParabolicCoordinateHopfAlgebra R w)
-          (weightUnipotentInParabolicHopfIdeal R w) := by
-  rw [weightUnipotentInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
-    mkQuotient_comp_eqToIso (R := R)
-      (weightUnipotentInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom]
+          (weightUnipotentInParabolicHopfIdeal R w) :=
+  CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom _
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightUnipotent R w)
 
 /-- The relative quotient spectrum cut out inside the weight parabolic is canonically
 isomorphic to the weight-unipotent group scheme. -/
@@ -433,8 +361,21 @@ noncomputable def weightUnipotentInParabolicGroupSchemeIso (w : Fin N → ℤ) :
     CommHopfAlgCat.quotientSpec (weightParabolicCoordinateHopfAlgebra R w)
         (weightUnipotentInParabolicHopfIdeal R w) ≅
       weightUnipotentGroupScheme R w :=
-  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
-    (weightUnipotentInParabolicCoordinateIso R w).op
+  (weightParabolicCoordinateMap R w).quotientSpecQuotientIsoQuotientSpec
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightUnipotent R w)
+
+/-- `weightUnipotentInParabolicGroupSchemeIso` is the image under `hopfSpec` of the opposite of the
+coordinate isomorphism `weightUnipotentInParabolicCoordinateIso`. -/
+theorem weightUnipotentInParabolicGroupSchemeIso_def (w : Fin N → ℤ) :
+    weightUnipotentInParabolicGroupSchemeIso R w =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso
+        (weightUnipotentInParabolicCoordinateIso R w).op := by
+  rw [weightUnipotentInParabolicGroupSchemeIso,
+    CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_def,
+    weightUnipotentInParabolicCoordinateIso]
+  -- The two sides differ only in how the implicit objects are written: the relative Hopf ideal
+  -- `weightUnipotentInParabolicHopfIdeal R w` is by definition the image of the ambient one.
+  rfl
 
 /-- The closed immersion of the weight-unipotent group scheme into the weight-parabolic group
 scheme induced by inclusion of their defining Hopf ideals. -/
@@ -467,26 +408,8 @@ theorem weightUnipotentInParabolicGroupSchemeIso_hom_comp_weightUnipotentToParab
     (weightUnipotentInParabolicGroupSchemeIso R w).hom ≫
         weightUnipotentToParabolic R w =
       CommHopfAlgCat.quotientSpecι (weightParabolicCoordinateHopfAlgebra R w)
-        (weightUnipotentInParabolicHopfIdeal R w) := by
-  rw [weightUnipotentInParabolicGroupSchemeIso, weightUnipotentToParabolic,
-    CommHopfAlgCat.quotientSpecMapOfLe_def, CommHopfAlgCat.quotientSpecι_def,
-    Functor.mapIso_hom, Iso.op_hom,
-    ← (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_comp, ← op_comp]
-  congr 2
-  let q := weightParabolicCoordinateMap R w
-  let hq := weightParabolicCoordinateMap_surjective R w
-  let _ : Epi q := ConcreteCategory.epi_of_surjective q hq
-  rw [← cancel_epi q]
-  have hq_def : weightParabolicCoordinateMap R w =
-      CommHopfAlgCat.mkQuotient (coordinateHopfAlgebra R N)
-        (weightParabolicDefiningHopfIdeal R w) := by
-    ext x
-    rw [weightParabolicCoordinateMap_apply, CommHopfAlgCat.mkQuotient_apply]
-  dsimp only [q]
-  rw [hq_def, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
-  rw [weightUnipotentInParabolicCoordinateIso, Iso.trans_hom, ← Category.assoc,
-    mkQuotient_comp_eqToIso (R := R)
-      (weightUnipotentInParabolicHopfIdeal_comapOfSurjective R w).symm,
-    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfSurjective_hom, hq_def]
+        (weightUnipotentInParabolicHopfIdeal R w) :=
+  CommHopfAlgCat.Hom.quotientSpecQuotientIsoQuotientSpec_hom_comp_quotientSpecMapOfLe _
+    (weightParabolicCoordinateMap_def R w) (weightParabolicDefiningHopfIdeal_le_weightUnipotent R w)
 
 end TauCeti.GeneralLinear.Dynamic

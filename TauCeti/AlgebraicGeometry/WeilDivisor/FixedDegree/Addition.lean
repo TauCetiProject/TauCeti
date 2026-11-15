@@ -16,11 +16,8 @@ degree.  Adding an effective divisor of degree `d` to one of degree `e` gives an
 divisor of degree `d + e`; under the equivalence with Mathlib's symmetric powers, this is
 exactly `Sym.append`.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
-lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
-symmetric powers `Symᵈ X`").  It supplies the additive compatibility between unordered
-collections of points and the effective-divisor model used by Abel-map statements.  No external
-mathematics is vendored.
+This file supplies the additive compatibility between unordered collections of points and the
+effective-divisor model. No external mathematics is vendored.
 -/
 
 public section
@@ -40,7 +37,7 @@ noncomputable section
 /-- Add fixed-degree effective divisors.  The degree index records additivity of degree. -/
 abbrev add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     EffectiveDivisorOfDegree X (d + e) :=
-  ⟨(D : WeilDivisor X) + E, D.isEffective.add E.isEffective, by
+  ⟨(D : WeilDivisor X) + E, add_nonneg D.coe_nonneg E.coe_nonneg, by
     simp [degree_add, D.degree_eq, E.degree_eq]⟩
 
 /-- The underlying Weil divisor of a fixed-degree sum is the sum of the underlying divisors. -/

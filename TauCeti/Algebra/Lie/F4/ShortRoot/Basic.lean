@@ -297,8 +297,8 @@ private theorem raisingMatrix_lie_E_lie_E (i j : Fin 4) :
   rw [toNat_neg_cartan]
   fin_cases i <;> fin_cases j <;>
     simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val, pow_zero, pow_succ, Module.End.mul_apply,
-      Module.End.one_apply, ad_apply, Ring.lie_def, raisingMatrix, mul_sub, sub_mul,
+      Matrix.cons_val_one, Matrix.cons_val, pow_zero, pow_succ, mul_apply_eq_comp,
+      one_apply_eq_self, ad_apply, Ring.lie_def, raisingMatrix, mul_sub, sub_mul,
       stepMatrix_mul_stepMatrix, ← mul_assoc] <;>
     ext a b <;>
     simp only [Matrix.sub_apply, stepMatrix_apply, Matrix.zero_apply, Function.comp_apply] <;>
@@ -311,8 +311,8 @@ private theorem loweringMatrix_lie_F_lie_F (i j : Fin 4) :
   rw [toNat_neg_cartan]
   fin_cases i <;> fin_cases j <;>
     simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val, pow_zero, pow_succ, Module.End.mul_apply,
-      Module.End.one_apply, ad_apply, Ring.lie_def, loweringMatrix, mul_sub, sub_mul,
+      Matrix.cons_val_one, Matrix.cons_val, pow_zero, pow_succ, mul_apply_eq_comp,
+      one_apply_eq_self, ad_apply, Ring.lie_def, loweringMatrix, mul_sub, sub_mul,
       stepMatrix_mul_stepMatrix, ← mul_assoc] <;>
     ext a b <;>
     simp only [Matrix.sub_apply, stepMatrix_apply, Matrix.zero_apply, Function.comp_apply] <;>

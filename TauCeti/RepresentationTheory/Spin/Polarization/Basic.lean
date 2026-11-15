@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # Polarization data for quadratic spaces
@@ -71,7 +72,7 @@ public section
 
 namespace TauCeti
 
-universe u v
+universe u v v₁ v₂ w
 
 /-- A **polarization** of a quadratic space `(V, Q)`: a decomposition `V = W ⊕ W' ⊕ line` into two
 isotropic submodules, paired by the polar form so that `W'` is identified with the dual of `W` and
@@ -252,6 +253,52 @@ theorem isOrtho_basis_dualVector {i j : ι} (hij : i ≠ j) :
 
 end Isotropic
 
+/-! ### Transport along an isometric embedding -/
+
+section Transport
+
+variable {K : Type u} [CommRing K] {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
+  {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
+  {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
+  (P₁ : SpinPolarizationData Q₁) (P₂ : SpinPolarizationData Q₂)
+  {ι : Type w} (b₁ : Module.Basis ι K P₁.W) (b₂ : Module.Basis ι K P₂.W)
+  {f : Q₁ →qᵢ Q₂}
+
+/-- An isometry matching the bases of the first isotropic summands acts on that summand through
+the induced linear equivalence. -/
+theorem apply_coe_eq_basisEquiv (hb : ∀ i, f (b₁ i) = b₂ i) (w : P₁.W) :
+    f w = (b₁.equiv b₂ (Equiv.refl ι) w : V₂) := by
+  have h : f.toLinearMap ∘ₗ P₁.W.subtype =
+      P₂.W.subtype ∘ₗ (b₁.equiv b₂ (Equiv.refl ι)).toLinearMap :=
+    b₁.ext fun i => by simp [hb]
+  exact LinearMap.congr_fun h w
+
+/-- An isometry matching the bases of the first isotropic summands and carrying the second
+isotropic summand into the second one matches their dual vectors. -/
+theorem apply_dualVector (hb : ∀ i, f (b₁ i) = b₂ i)
+    (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (i : ι) :
+    f (P₁.dualVector b₁ i) = P₂.dualVector b₂ i := by
+  classical
+  have h : (⟨f (P₁.dualVector b₁ i), hW' _⟩ : P₂.W') = P₂.dualVector b₂ i := by
+    apply P₂.pairingEquiv.injective
+    refine b₂.ext fun j => ?_
+    rw [pairingEquiv_dualVector, P₂.pairingEquiv_apply, ← hb,
+      QuadraticMap.Isometry.polar_apply]
+    simp [Module.Basis.coord_apply, Finsupp.single_apply]
+  exact congrArg Subtype.val h
+
+/-- The remainder vector is orthogonal to the image of the embedding. -/
+theorem polar_apply_line (z : P₂.line) (hline : P₁.line = ⊥) (hb : ∀ i, f (b₁ i) = b₂ i)
+    (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (v : V₁) :
+    QuadraticMap.polar Q₂ (f v) (z : V₂) = 0 := by
+  obtain ⟨⟨⟨w, y⟩, l⟩, rfl⟩ := P₁.decompositionEquiv.surjective v
+  have hl : (l : V₁) = 0 := by simpa [hline] using l.property
+  rw [QuadraticMap.polar_comm, P₁.decompositionEquiv_apply]
+  simp [hl, QuadraticMap.polar_add_right, apply_coe_eq_basisEquiv P₁ P₂ b₁ b₂ hb,
+    P₂.line_orthogonal_W' z ⟨f y, hW' y⟩]
+
+end Transport
+
 /-- **A vector orthogonal to the whole space lies in the orthogonal remainder.** -/
 private theorem mem_line_of_polarBilin_eq_zero {K : Type u} [CommRing K] {V : Type v}
     [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
@@ -368,38 +415,64 @@ theorem line_eq_bot_of_even_finrank (h : Even (finrank K V)) : P.line = ⊥ := b
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   exact Submodule.finrank_eq_zero.1 (by omega)
 
-/-- **A polarization with no remainder has even dimension.** This is the converse of
-`SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can be stated
-with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module needs. -/
+omit [FiniteDimensional K V] in
+/-- **A polarization with no remainder has even dimension.** For finite-dimensional `V` this is the
+converse of `SpinPolarizationData.line_eq_bot_of_even_finrank`, so the even-dimensional theory can
+be stated with the single hypothesis `P.line = ⊥` that the parity splitting of the spinor module
+needs. No finiteness hypothesis is required: an infinite-dimensional `V` has `finrank K V = 0`,
+which is even, so in that case the conclusion carries no information about an even finite
+dimension. -/
 theorem even_finrank_of_line_eq_bot (hline : P.line = ⊥) : Even (finrank K V) := by
+  by_cases hV : FiniteDimensional K V
+  swap
+  · rw [finrank_of_not_finite hV]
+    exact ⟨0, rfl⟩
   have h := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   rw [hline, finrank_bot] at h
   exact ⟨finrank K P.W, by omega⟩
 
+omit [FiniteDimensional K V] in
 /-- **In even dimension the isotropic summand has half the dimension.** The isotropic summand `W`
-of a polarization of a `2l`-dimensional space has dimension `l`. This is the type `Dₗ` case, where
-the spinor module `⋀·W` has dimension `2ˡ`. -/
+of a polarization of a `2l`-dimensional space has dimension `l`. For finite-dimensional `V` this
+is the type `Dₗ` case, where the spinor module `⋀·W` has dimension `2ˡ`. No finiteness hypothesis
+is required: an infinite-dimensional `V` has `finrank K V = 0`, forcing `l = 0`, and then `W` is
+infinite-dimensional too, so `finrank K P.W = 0`; this degenerate case says nothing about the
+spinor module. -/
 theorem finrank_W_eq_of_finrank_eq_two_mul {l : ℕ} (hV : finrank K V = 2 * l) :
     finrank K P.W = l := by
+  by_cases hfd : FiniteDimensional K V
+  swap
+  · -- Infinite-dimensional `V` forces `l = 0`, and then `W` is infinite-dimensional too.
+    rw [finrank_of_not_finite hfd] at hV
+    have hW : ¬ Module.Finite K P.W := fun hW ↦ hfd <| by
+      have : Module.Finite K P.W' := .equiv P.pairingEquiv.symm
+      have : Module.Finite K P.line := .of_injective P.lineCoordinate P.lineCoordinate_injective
+      exact .equiv P.decompositionEquiv
+    rw [finrank_of_not_finite hW]
+    omega
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
 
+omit [FiniteDimensional K V] in
 /-- **In odd dimension the isotropic summand again has half the dimension, rounded down.** The
 isotropic summand `W` of a polarization of a `2l + 1`-dimensional space has dimension `l`, the odd
 dimension being taken up by the remainder. This is the type `Bₗ` case, where the spinor module
 `⋀·W` again has dimension `2ˡ` but the parity splitting is not one of representations. -/
 theorem finrank_W_eq_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
     finrank K P.W = l := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
 
+omit [FiniteDimensional K V] in
 /-- **In odd dimension the remainder is exactly a line.** It is spanned by an anisotropic vector,
 whose action mixes the two exterior parities of the spinor module, which is why they are not
 subrepresentations in the type `Bₗ` case. -/
 theorem finrank_line_eq_one_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finrank K V = 2 * l + 1) :
     finrank K P.line = 1 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega

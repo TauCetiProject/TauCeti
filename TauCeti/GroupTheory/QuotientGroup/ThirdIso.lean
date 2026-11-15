@@ -27,6 +27,8 @@ themselves, so it cannot reindex a family.
 
 * `QuotientGroup.quotientQuotientEquivQuotientSup`: the bijection
   `(G ⧸ N) ⧸ H.map (mk' N) ≃ G ⧸ (H ⊔ N)`, sending the class of `g` to the class of `g`.
+* `QuotientGroup.quotientEquivQuotientMapOfLE`: for `N ≤ H`, the bijection
+  `G ⧸ H ≃ (G ⧸ N) ⧸ H.map (mk' N)` in the direction of the quotient map `G → G ⧸ N`.
 -/
 
 public section
@@ -37,15 +39,14 @@ variable {G : Type*} [Group G]
 
 /-- The relation defining `(G ⧸ N) ⧸ H.map (mk' N)`, read on representatives: two classes modulo
 `N` are congruent modulo the image of `H` exactly when their representatives are congruent modulo
-`H ⊔ N`. Both halves of `quotientQuotientEquivQuotientSup` are this statement, in opposite
-directions, so it is stated once here rather than rewritten twice. -/
+`H ⊔ N`. -/
 @[to_additive /-- The relation defining `(G ⧸ N) ⧸ H.map (mk' N)`, read on representatives: two
 classes modulo `N` are congruent modulo the image of `H` exactly when their representatives are
 congruent modulo `H ⊔ N`. -/]
 private theorem mk_inv_mul_mk_mem_map_iff (H N : Subgroup G) [N.Normal] (x y : G) :
     ((x : G ⧸ N))⁻¹ * (y : G ⧸ N) ∈ H.map (QuotientGroup.mk' N) ↔ x⁻¹ * y ∈ H ⊔ N := by
-  rw [← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul, ← QuotientGroup.mk'_apply,
-    ← Subgroup.mem_comap, QuotientGroup.comap_map_mk', sup_comm]
+  rw [sup_comm, ← QuotientGroup.comap_map_mk', Subgroup.mem_comap]
+  simp
 
 /-- **The third isomorphism theorem for coset spaces.** For a normal `N` and an *arbitrary*
 subgroup `H`, the cosets of the image of `H` in `G ⧸ N` are the cosets of `H ⊔ N` in `G`, both
@@ -72,16 +73,41 @@ def quotientQuotientEquivQuotientSup (H N : Subgroup G) [N.Normal] :
 
 /-- The equivalence sends the nested class of `g` to the class of `g`. -/
 @[to_additive (attr := simp) /-- The equivalence sends the nested class of `g` to the class of
-`g`. -/, simp]
+`g`. -/]
 theorem quotientQuotientEquivQuotientSup_mk_mk (H N : Subgroup G) [N.Normal] (g : G) :
     quotientQuotientEquivQuotientSup H N
       ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) = (g : G ⧸ (H ⊔ N)) := (rfl)
 
 /-- The inverse equivalence sends the class of `g` to the nested class of `g`. -/
 @[to_additive (attr := simp) /-- The inverse equivalence sends the class of `g` to the nested
-class of `g`. -/, simp]
+class of `g`. -/]
 theorem quotientQuotientEquivQuotientSup_symm_mk (H N : Subgroup G) [N.Normal] (g : G) :
     (quotientQuotientEquivQuotientSup H N).symm (g : G ⧸ (H ⊔ N)) =
       ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) := (rfl)
+
+/-- For a normal subgroup `N` contained in `H`, the cosets of `H` in `G` are the cosets of the image
+of `H` in `G ⧸ N`, the class of `g` going to the nested class of `g`. This is the inverse of
+`quotientQuotientEquivQuotientSup` with `H ⊔ N` rewritten to `H`, oriented along the quotient map
+`G → G ⧸ N`. -/
+@[to_additive /-- For a normal subgroup `N` contained in `H`, the cosets of `H` in `G` are the
+cosets of the image of `H` in `G ⧸ N`, the class of `g` going to the nested class of `g`. -/]
+def quotientEquivQuotientMapOfLE {H N : Subgroup G} [N.Normal] (h : N ≤ H) :
+    G ⧸ H ≃ (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N) :=
+  (Subgroup.quotientEquivOfEq (sup_eq_left.mpr h)).symm.trans
+    (quotientQuotientEquivQuotientSup H N).symm
+
+/-- The equivalence sends the class of `g` to the nested class of `g`. -/
+@[to_additive (attr := simp) /-- The equivalence sends the class of `g` to the nested class of
+`g`. -/]
+theorem quotientEquivQuotientMapOfLE_mk {H N : Subgroup G} [N.Normal] (h : N ≤ H) (g : G) :
+    quotientEquivQuotientMapOfLE h (g : G ⧸ H) =
+      ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) := (rfl)
+
+/-- The inverse equivalence sends the nested class of `g` to the class of `g`. -/
+@[to_additive (attr := simp) /-- The inverse equivalence sends the nested class of `g` to the
+class of `g`. -/]
+theorem quotientEquivQuotientMapOfLE_symm_mk {H N : Subgroup G} [N.Normal] (h : N ≤ H) (g : G) :
+    (quotientEquivQuotientMapOfLE h).symm
+        ((g : G ⧸ N) : (G ⧸ N) ⧸ H.map (QuotientGroup.mk' N)) = (g : G ⧸ H) := (rfl)
 
 end QuotientGroup

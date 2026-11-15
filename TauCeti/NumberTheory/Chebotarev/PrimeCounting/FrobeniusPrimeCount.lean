@@ -100,7 +100,7 @@ private theorem _root_.TauCeti.NumberField.Chebotarev.tendsto_primeCount_univ :
     Tendsto (fun x : ℝ ↦ primeCount K Set.univ x / (x / Real.log x)) atTop (𝓝 1) := by
   simpa only [natCast_frobeniusPrimeCount, TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self,
     ConjClasses.one_eq_mk_one,
-    TauCeti.ConjClasses.card_carrier_mk_one, Nat.card_unique, Nat.cast_one, div_one] using
+    ConjClasses.card_carrier_mk_one, Nat.card_unique, Nat.cast_one, div_one] using
     tendsto_frobeniusPrimeCount K K 1
 
 /-- Natural-density Chebotarev: among the primes of `K`, the primes with arithmetic Frobenius

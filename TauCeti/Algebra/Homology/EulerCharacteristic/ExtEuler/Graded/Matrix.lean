@@ -141,4 +141,30 @@ theorem gradedExtEulerMatrix_basis_change
   exact LinearMap.toMatrix₂Aux_mul_map_basis_toMatrixₛₗ
     (gradedExtEulerSesquilinear hP hQ hPshift hQshift h) bP bQ cP cQ
 
+/-- **Specialization of the graded Ext--Euler matrix.** If `ε⁻¹ = ε`, the matrix obtained by
+evaluating every entry at `q = ε` is the matrix of the specialized pairing on the specialized
+classes of the original basis vectors. In particular this applies at `q = 1` and `q = -1` over
+`ℤ`, and lets matrix calculations commute with the algebraic specialization of the form. -/
+theorem gradedExtEulerMatrix_laurentSpecialize
+    (hP : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed P)
+    (hQ : (GradedExactStructure.abelian C e).toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage (GradedExactStructure.abelian C e).shift.functor = P)
+    (hQshift : Q.inverseImage (GradedExactStructure.abelian C e).shift.functor = Q)
+    (h : IsGradedEulerAdmissibleOn.{w} (k := k) (e := e) P Q)
+    {I J : Type*}
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0 ((GradedExactStructure.abelian C e).fullSubcategory P hP hPshift)))
+    (bQ : Module.Basis J (LaurentPolynomial ℤ)
+      (LaurentK0 ((GradedExactStructure.abelian C e).fullSubcategory Q hQ hQshift)))
+    (ε : ℤˣ) (hε : ε⁻¹ = ε) :
+    (gradedExtEulerMatrix e P Q hP hQ hPshift hQshift h bP bQ).map (laurentEval ε) =
+      LinearMap.toMatrix₂Aux ℤ
+        (fun i => LaurentSpecialization.mk ε (bP i))
+        (fun j => LaurentSpecialization.mk ε (bQ j))
+        ((gradedExtEulerSesquilinear hP hQ hPshift hQshift h).laurentSpecialize
+          (ε₁ := ε) (ε₂ := ε) hε) := by
+  ext i j
+  simp [gradedExtEulerMatrix_apply, LinearMap.toMatrix₂Aux_apply,
+    LinearMap.laurentSpecialize_mk_mk]
+
 end TauCeti

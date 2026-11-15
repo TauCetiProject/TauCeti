@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
@@ -34,22 +35,29 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
   membership form, `valuation_integers_adicCompletionIntegers` packages it as
   `Valuation.Integers`, and `mem_maximalIdeal_integer_pow_iff` reads the powers of its maximal
-  ideal as valuation bounds.
+  ideal as valuation bounds. `isUnit_natCast_integer_adicCompletion_iff` says a natural number is
+  a unit of that ring exactly when it lies outside `v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
-* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: when `R` is
-  infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
+* `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletion_dvd_iff`: the residue
+  characteristic of `K_v` divides `n` exactly when `n ∈ v`.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: that
+  residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
 * `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
-  zero-preserving normalized valuation of such a completion is the inverse of its adic valuation.
+  zero-preserving normalized valuation of such a completion is the inverse of its adic valuation;
+  consequently a unit of `K_v` is a uniformizer exactly when its adic valuation is `exp (-1)`
+  (`isUniformizer_iff_valued_eq_exp_neg_one`).
 * `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
   of an adic completion carrying a nonarchimedean local-field structure is compact.
 * `IsDedekindDomain.HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff`: the unit filtration
   `U(K_v, n)` consists of the units `u` of `𝒪_v` with `Valued.v (u - 1) ≤ exp (-n)`; its
   depth-zero step is `Valued.v u = 1` (`mem_unitFiltration_zero_adicCompletion_iff`), which
   `unitsMap_algebraMap_mem_unitFiltration_zero_iff` reads on the units of `K`.
+* `IsDedekindDomain.HeightOneSpectrum.coe_normalizedValuation_unitsMap_algebraMap`: on the units
+  of `K`, the normalized valuation of `K_v` is the inverse of the `v`-adic valuation.
 
 ## Implementation notes
 
@@ -74,8 +82,6 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R)
 
--- The declaration sequence and construction follow the human-authored specification in
--- `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`.
 /-- The valuative relation on an adic completion induced by its canonical adic valuation. -/
 noncomputable instance instValuativeRelAdicCompletion : ValuativeRel (v.adicCompletion K) :=
   .ofValuation Valued.v
@@ -165,6 +171,17 @@ theorem algebraMap_mem_integer_adicCompletion (a : R) :
   rw [integer_eq_adicCompletionIntegers, ValuationSubring.mem_toSubring]
   exact coe_mem_adicCompletionIntegers v a
 
+/-- A natural number is a unit in the ring of integers of `K_v` exactly when it lies outside `v`. -/
+theorem isUnit_natCast_integer_adicCompletion_iff (n : ℕ) :
+    IsUnit (n : 𝒪[v.adicCompletion K]) ↔ (n : R) ∉ v.asIdeal := by
+  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
+  rw [(Valuation.integer.integers _).isUnit_iff_valuation_eq_one, hequiv.eq_one_iff_eq_one]
+  push_cast
+  rw [← map_natCast (algebraMap K (v.adicCompletion K)) n, algebraMap_adicCompletion,
+    Function.comp_apply, valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply,
+    ← map_natCast (algebraMap R K), valuation_of_algebraMap, intValuation_eq_one_iff]
+
 /-- The residue field of the valuative relation on `K_v` is the residue field `R ⧸ v` of `v`. -/
 noncomputable def residueFieldEquivAdicCompletion :
     (R ⧸ v.asIdeal) ≃+* 𝓀[v.adicCompletion K] :=
@@ -204,10 +221,19 @@ theorem residueFieldEquivAdicCompletion_apply_mk (a : R) :
     _ = _ := IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
       (v.adicCompletion K) a
 
-/-- If `R` is infinite, the residue field of `K_v` has cardinality the absolute norm of `v`. -/
-theorem natCard_residueField_adicCompletion_eq_absNorm [Infinite R] :
+/-- **The residue characteristic of `K_v`.** The characteristic of the residue field of `K_v`
+divides `n` exactly when `n` lies in `v`. -/
+theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
+    ringChar 𝓀[v.adicCompletion K] ∣ n ↔ (n : R) ∈ v.asIdeal := by
+  rw [← ringChar.spec 𝓀[v.adicCompletion K],
+    ← map_natCast (v.residueFieldEquivAdicCompletion (K := K)),
+    map_eq_zero_iff _ (RingEquiv.injective _), ← map_natCast (Ideal.Quotient.mk v.asIdeal),
+    Ideal.Quotient.eq_zero_iff_mem]
+
+/-- The residue field of `K_v` has cardinality the absolute norm of `v`. -/
+theorem natCard_residueField_adicCompletion_eq_absNorm :
     Nat.card 𝓀[v.adicCompletion K] = Ideal.absNorm v.asIdeal := by
-  rw [Ideal.absNorm_apply, Submodule.cardQuot_apply]
+  rw [Ideal.absNorm_of_ne_bot v.ne_bot, Submodule.cardQuot_apply]
   exact (Nat.card_congr (residueFieldEquivAdicCompletion v).toEquiv).symm
 
 /-- An adic completion with finite residue field is a nonarchimedean local field. -/
@@ -242,6 +268,20 @@ theorem normalizedValuationWithZero_adicCompletion [Finite (R ⧸ v.asIdeal)]
     TauCeti.normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
   Valuation.normalizedValuationWithZero_eq_inv_of_surjective _
     (v.valuedAdicCompletion_surjective K) x
+
+/-- A unit of the completion `K_v` is a uniformizer exactly when its adic valuation `Valued.v` is
+`exp (-1)`. -/
+theorem isUniformizer_iff_valued_eq_exp_neg_one [Finite (R ⧸ v.asIdeal)]
+    {π : (v.adicCompletion K)ˣ} :
+    TauCeti.IsUniformizer (v.adicCompletion K) π ↔
+      Valued.v (π : v.adicCompletion K) = WithZero.exp (-1) := by
+  -- The normalized valuation of `π` is the inverse of its adic valuation.
+  have hπ : (TauCeti.normalizedValuation (v.adicCompletion K) π : ℤᵐ⁰) =
+      (Valued.v (π : v.adicCompletion K))⁻¹ := by
+    rw [← TauCeti.normalizedValuationWithZero_coe, normalizedValuationWithZero_adicCompletion]
+  -- What remains is a normalization of `ℤᵐ⁰` values.
+  rw [TauCeti.isUniformizer_def, ← WithZero.coe_inj, hπ]
+  simp [inv_eq_iff_eq_inv, ← WithZero.exp_eq_coe_ofAdd]
 
 /-- The ring of integers in an adic completion that is a nonarchimedean local field is compact. -/
 instance compactSpace_adicCompletionIntegers
@@ -302,6 +342,16 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
     algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     Algebra.algebraMap_self_apply]
 
+/-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
+image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/
+theorem coe_normalizedValuation_unitsMap_algebraMap [Finite (R ⧸ v.asIdeal)] (a : Kˣ) :
+    (TauCeti.normalizedValuation (v.adicCompletion K)
+        (Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a) : ℤᵐ⁰) =
+      (v.valuation K a)⁻¹ := by
+  rw [← TauCeti.normalizedValuationWithZero_coe, normalizedValuationWithZero_adicCompletion,
+    Units.coe_map, MonoidHom.coe_ofClass, algebraMap_adicCompletion, Function.comp_apply,
+    valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+
 /-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
 
 The hypothesis `v.valuation K a = WithZero.exp n` with `¬ Even n` says that the valuation exponent
@@ -339,5 +389,26 @@ theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
   exact hn ⟨WithZero.log (Valued.v y), hlog⟩
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace TauCeti
+
+/-- An integral lift of a global field element to an adic completion is a unit exactly when
+the global element has valuation one. -/
+theorem isUnit_integer_adicCompletion_iff_valuation_eq_one
+    (R : Type*) [CommRing R] [IsDedekindDomain R]
+    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+    (v : IsDedekindDomain.HeightOneSpectrum R)
+    {x : K} {y : 𝒪[v.adicCompletion K]}
+    (hy : algebraMap 𝒪[v.adicCompletion K] (v.adicCompletion K) y =
+      algebraMap K (v.adicCompletion K) x) :
+    IsUnit y ↔ v.valuation K x = 1 := by
+  rw [(Valuation.integer.integers _).isUnit_iff_valuation_eq_one,
+    (ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+      (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)).eq_one_iff_eq_one, hy]
+  simp only [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion,
+    Function.comp_apply, Algebra.algebraMap_self_apply,
+    IsDedekindDomain.HeightOneSpectrum.valuedAdicCompletion_eq_valuation']
+
+end TauCeti
 
 end

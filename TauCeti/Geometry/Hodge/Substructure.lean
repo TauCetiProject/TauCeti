@@ -42,12 +42,11 @@ unbundled morphism predicate `TauCeti.Hodge.HodgeStructureOn.IsMorphism`. The bu
 morphisms of `TauCeti.Hodge.HodgeStructure.Hom` satisfy that predicate, so every result
 specialises to them.
 
-These are the subobject companions of Layers L0 and L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`: the kernel and image of a Hodge morphism are the
-subobjects a categorical reading of the semisimplicity of polarizable rational Hodge structures
-quantifies over, and strictness for a pure structure is the graded shadow of Deligne's strictness
-theorem for mixed Hodge structures. Following Peters–Steenbrink, *Mixed Hodge Structures*, §2.1,
-and Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2.
+The kernel and image of a Hodge morphism are the subobjects a categorical reading of the
+semisimplicity of polarizable rational Hodge structures quantifies over, and strictness for a pure
+structure is the graded shadow of Deligne's strictness theorem for mixed Hodge structures. The
+treatment follows Peters–Steenbrink, *Mixed Hodge Structures*, §2.1, and Voisin, *Hodge Theory and
+Complex Algebraic Geometry I*, §7.1.2.
 
 ## Main declarations
 
@@ -156,8 +155,9 @@ noncomputable def hodgeStructure (h : hs.IsSubstructure U) :
     exact ⟨p, by rw [hp, Submodule.comap_top]⟩
   opposed p := by
     rw [conjugation, Conjugation.map_restrict_comap_subtype, ← hs.conjF_def]
-    exact TauCeti.Submodule.isCompl_comap_subtype (hs.isCompl_F_conjF p).disjoint
-      (h.le_inf_F_sup_inf_conjF p)
+    exact Submodule.isCompl_comap_subtype_iff.2
+      ⟨(hs.isCompl_F_conjF p).disjoint.mono inf_le_right inf_le_right,
+        h.le_inf_F_sup_inf_conjF p⟩
 
 /-- The induced Hodge filtration is the ambient filtration intersected with the subspace. -/
 @[simp]
@@ -328,7 +328,7 @@ namespace IsMorphism
 /-- **A morphism of pure Hodge structures is graded**: it intertwines the Hodge projections of the
 source and of the target. -/
 theorem proj_comp (h : IsMorphism hs hs' g) (p : ℤ) : hs'.proj p ∘ₗ g = g ∘ₗ hs.proj p := by
-  refine hs.linearMap_ext_of_piece fun q x hx ↦ ?_
+  refine hs.addHom_ext_of_piece fun q x hx ↦ ?_
   have hgx : g x ∈ hs'.piece q := h.map_piece_le q ⟨x, hx, rfl⟩
   simp only [LinearMap.coe_comp, Function.comp_apply]
   rcases eq_or_ne q p with rfl | hqp

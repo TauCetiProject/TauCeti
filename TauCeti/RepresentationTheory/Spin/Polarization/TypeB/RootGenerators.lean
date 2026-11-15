@@ -76,19 +76,6 @@ introduced: the statements are about the Clifford elements and their action on t
 * The five `mem_integralSpinActionSubring` statements, one for each numbered root vector and
   coroot: every generator preserves the coordinate integral lattice.
 
-## Roadmap
-
-This is the evaluation half of the "evaluate the comparison on the numbered root vectors and prove
-their divided powers preserve the integral spinor lattice" step of the full-weight type-`B`
-Chevalley carrier in Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: the comparison is evaluated on the numbered
-generators, and those generators themselves are shown to preserve the lattice. The divided powers
-are trivial as a consequence of the square-zero lemmas above, but no divided-power structure is
-formalized here; that remains the next step. That carrier is consumed by milestone L0, "pinned
-ambient groups", of
-`TauCetiRoadmap/CFSGStatement/README.md`, whose `Bₙ(q)` branch needs the simply connected form and
-so the spinor lattice rather than the adjoint one.
-
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II.
@@ -157,7 +144,8 @@ theorem typeBQuadraticEquiv_typeBDifferenceRootGenerator (i j : ι) (hij : i ≠
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   -- Each matrix unit picks out one basis index, and so does each polar coordinate.
-  rw [coe_typeBDifferenceRootGenerator, toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis]
+  rw [coe_typeBDifferenceRootGenerator,
+    Module.Basis.toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-- **The short root vector `e_{εᵢ}` is the Clifford bivector of the `i`-th basis vector and the
@@ -170,7 +158,7 @@ theorem typeBQuadraticEquiv_typeBShortRootGenerator (i : ι) :
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   -- The polar self-pairing `2` of the remainder vector matches the matrix coefficient `2`.
-  rw [coe_typeBShortRootGenerator, toLinAlgEquiv_typeBShortRootMatrix_apply_basis]
+  rw [coe_typeBShortRootGenerator, Module.Basis.toLinAlgEquiv_typeBShortRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-- **The negative short root vector `f_{εᵢ}` is the Clifford bivector of the remainder vector and
@@ -182,7 +170,7 @@ theorem typeBQuadraticEquiv_typeBShortNegativeRootGenerator (i : ι) :
   apply P.typeBQuadraticEquiv_coe_eq_bivector b z hz
   intro c
   rw [coe_typeBShortNegativeRootGenerator,
-    toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis]
+    Module.Basis.toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis]
   simp [eq_comm]
 
 /-! ### The Cartan generators -/

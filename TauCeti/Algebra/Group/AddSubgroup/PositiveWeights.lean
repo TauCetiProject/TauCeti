@@ -22,9 +22,13 @@ condition below. The weights give positive target areas for the regions, with ze
 for every periodic domain. Applying the result to diagrams requires a separate construction of
 their periodic-domain subgroup.
 
-## Main result
+## Main results
 
 * `AddSubgroup.exists_pos_dotProduct_eq_zero_iff`.
+* `AddSubgroup.exists_pos_sum_mul_intCast_eq_zero_iff`: the same with weights in an ordered
+  field.
+* `TauCeti.sum_mul_intCast_eq_of_sub_mem`: weights orthogonal to a subgroup of `ι → ℤ` pair
+  equally with all vectors of a coset.
 
 ## Reference
 
@@ -51,20 +55,16 @@ theorem _root_.AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : A
   · rintro ⟨c, hc, hP⟩ p hp hp0
     exact (dotProduct_eq_zero_iff_of_pos hc hp0).1 (hP p hp)
   · intro h
-    set S := Submodule.span ℚ ((fun p : ι → ℤ => ((↑) : ℤ → ℚ) ∘ p) '' P)
+    set f : (ι → ℤ) →+ ι → ℚ := (Int.castAddHom ℚ).compLeft ι
+    set S := Submodule.span ℚ (P.map f : Set (ι → ℚ))
     -- The rational span of `P` has no nonzero nonnegative vector either.
     have hS : ∀ x ∈ S, 0 ≤ x → x = 0 := by
       intro x hx hx0
-      obtain ⟨N, hN, p, hp, hpx⟩ := AddSubgroup.exists_nat_mul_eq_intCast_of_mem_span hx
-      have hp0 : p = 0 := h p hp fun i => by
-        have : (0 : ℚ) ≤ p i := by
-          rw [hpx]
-          exact mul_nonneg (Nat.cast_nonneg N) (hx0 i)
-        exact_mod_cast this
-      funext i
-      have := hpx i
-      rw [hp0, Pi.zero_apply, Int.cast_zero, eq_comm, mul_eq_zero] at this
-      exact this.resolve_left (Nat.cast_ne_zero.2 hN.ne')
+      obtain ⟨N, hN, p, hp, hpx⟩ := (P.map f).mem_rat_span_iff_exists_nsmul_mem.1 hx
+      have hfp : 0 ≤ f p := hpx ▸ nsmul_nonneg hx0 N
+      have hp0 : p = 0 := h p hp fun i => by simpa [f] using hfp i
+      rw [hp0, map_zero, eq_comm, smul_eq_zero] at hpx
+      exact hpx.resolve_left hN.ne'
     obtain ⟨c, hc, hcS⟩ := S.exists_pos_dotProduct_eq_zero_iff.2 hS
     -- Clear the denominators of the rational weights.
     set N : ℕ := ∏ i, (c i).den
@@ -82,11 +82,33 @@ theorem _root_.AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : A
         rw [he]
         exact mul_pos (Nat.cast_pos.2 hN) (hc i)
       exact_mod_cast this
-    · have hcp := hcS _ (Submodule.subset_span ⟨p, hp, rfl⟩)
-      have : ((e ⬝ᵥ p : ℤ) : ℚ) = N * (c ⬝ᵥ (((↑) : ℤ → ℚ) ∘ p)) := by
-        simp only [dotProduct, Int.cast_sum, Int.cast_mul, he, Finset.mul_sum,
-          Function.comp_apply, mul_assoc]
+    · have hcp := hcS _ (Submodule.subset_span (P.mem_map_of_mem f hp))
+      have : ((e ⬝ᵥ p : ℤ) : ℚ) = N * (c ⬝ᵥ f p) := by
+        simp only [dotProduct, Int.cast_sum, Int.cast_mul, he, Finset.mul_sum, f,
+          AddMonoidHom.compLeft_apply, Function.comp_apply, Int.coe_castAddHom, mul_assoc]
       rw [hcp, mul_zero] at this
       exact_mod_cast this
+
+/-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when some vector of
+strictly positive weights in an ordered field `K` is orthogonal to all of `P`. -/
+theorem _root_.AddSubgroup.exists_pos_sum_mul_intCast_eq_zero_iff [Fintype ι] {K : Type*}
+    [Field K] [LinearOrder K] [IsStrictOrderedRing K] (P : AddSubgroup (ι → ℤ)) :
+    (∃ w : ι → K, (∀ i, 0 < w i) ∧ ∀ p ∈ P, ∑ i, w i * p i = 0) ↔
+      ∀ p ∈ P, 0 ≤ p → p = 0 := by
+  refine ⟨fun ⟨w, hw, hwP⟩ p hp hp₀ => ?_, fun h => ?_⟩
+  · have hp₀' : (0 : ι → K) ≤ fun i => (p i : K) := fun i => Int.cast_nonneg (hp₀ i)
+    have := (dotProduct_eq_zero_iff_of_pos hw hp₀').1 (hwP p hp)
+    exact funext fun i => by simpa using congrFun this i
+  · -- Integer weights are weights in `K`.
+    obtain ⟨c, hc, hcP⟩ := P.exists_pos_dotProduct_eq_zero_iff.2 h
+    refine ⟨fun i => c i, fun i => Int.cast_pos.2 (hc i), fun p hp => ?_⟩
+    simpa [dotProduct] using congrArg (Int.cast : ℤ → K) (hcP p hp)
+
+/-- Weights `w` orthogonal to every element of a subgroup `P` of `ι → ℤ` pair equally with any two
+vectors that differ by an element of `P`. -/
+theorem sum_mul_intCast_eq_of_sub_mem [Fintype ι] {R : Type*} [CommRing R]
+    {P : AddSubgroup (ι → ℤ)} {w : ι → R} (hw : ∀ p ∈ P, ∑ i, w i * p i = 0) {v v' : ι → ℤ}
+    (h : v' - v ∈ P) : ∑ i, w i * v' i = ∑ i, w i * v i := by
+  simpa [mul_sub, Finset.sum_sub_distrib, sub_eq_zero] using hw _ h
 
 end TauCeti

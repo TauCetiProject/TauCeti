@@ -52,7 +52,7 @@ corresponding filtration step of the quotient enveloping algebra. -/
 theorem map_mkQ_pbwFiltration (k : ℕ) :
     (pbwFiltration R L k).map (map R I.mkQ).toLinearMap =
       pbwFiltration R (L ⧸ I) k :=
-  map_pbwFiltration_eq_of_surjective R I.mkQ I.mkQ_surjective k
+  map_pbwFiltration_eq_of_surjective R I.mkQ I.surjective_mkQ k
 
 /-- The enveloping-algebra map induced by a Lie quotient maps the step immediately preceding each
 PBW filtration degree onto the corresponding preceding step of the quotient enveloping algebra. -/
@@ -60,12 +60,12 @@ PBW filtration degree onto the corresponding preceding step of the quotient enve
 theorem map_mkQ_pbwFiltrationPrevious (k : ℕ) :
     (pbwFiltrationPrevious R L k).map (map R I.mkQ).toLinearMap =
       pbwFiltrationPrevious R (L ⧸ I) k :=
-  map_pbwFiltrationPrevious_eq_of_surjective R I.mkQ I.mkQ_surjective k
+  map_pbwFiltrationPrevious_eq_of_surjective R I.mkQ I.surjective_mkQ k
 
 /-- The linear map on each PBW filtration step induced by a Lie quotient is surjective. -/
 theorem mapFiltration_mkQ_surjective (k : ℕ) :
     Function.Surjective (mapFiltration R I.mkQ k) :=
-  mapFiltration_surjective_of_surjective R I.mkQ I.mkQ_surjective k
+  mapFiltration_surjective_of_surjective R I.mkQ I.surjective_mkQ k
 
 end Quotient
 

@@ -63,13 +63,6 @@ variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
-local instance isIntegrallyClosed_coordinateRing_source : IsIntegrallyClosed W₁.CoordinateRing :=
-  W₁.isIntegrallyClosed_coordinateRing
-local instance isIntegrallyClosed_coordinateRing_target : IsIntegrallyClosed W₂.CoordinateRing :=
-  W₂.isIntegrallyClosed_coordinateRing
-local instance isDedekindDomain_coordinateRing_target : IsDedekindDomain W₂.CoordinateRing :=
-  W₂.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- Translation commutes with the pullback of a function regular at all affine points of `W₂`:
 at a point `Q` with `φ(Q)` and `φ(Q + P)` affine, both `τ_P^* φ^* z` and `φ^* τ_{φ(P)}^* z` take
 the value of `z` at `φ(Q + P) = φ(Q) + φ(P)`, so their difference has infinitely many zeros. -/

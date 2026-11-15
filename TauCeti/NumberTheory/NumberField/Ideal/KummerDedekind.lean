@@ -17,8 +17,10 @@ Mathlib's number-field Kummer–Dedekind theorem
 (`NumberField.Ideal.primesOverSpanEquivMonicFactorsMod`) is a bijection between the primes of
 `𝓞 K` above a rational prime `p` and the monic irreducible factors of `minpoly ℤ θ` modulo `p`,
 valid whenever `p` does not divide the conductor exponent of the algebraic integer `θ`. This file
-records both its cardinality form and its residue-degree form: the number of primes above `p` is
-the number of distinct factors, and their residue degrees are the factors' degrees. When the
+records both its cardinality form and its residue-degree multiset form: the number of primes above
+`p` is the number of distinct factors, and their residue degrees are the factors' degrees, using
+Mathlib's pointwise statement
+`NumberField.Ideal.inertiaDeg_primesOverSpanEquivMonicFactorsMod_apply`. When the
 reduction is squarefree, its factor-degree multiset gives the splitting type directly. These
 forms are used to read splitting laws from a generator, for instance the quadratic laws of
 `TauCeti.NumberTheory.NumberField.Quadratic.Splitting`.
@@ -38,8 +40,6 @@ generator is automatically odd, since `X² + X + c` is separable over `𝔽₂`.
   residue degrees is the multiset of degrees of those distinct factors.
 * `RingOfIntegers.map_inertiaDeg_primesOver_eq_factorDegrees`: when the reduction is squarefree,
   the same multiset is the factor-degree multiset with multiplicity.
-* `TauCeti.NumberField.inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod`: the
-  Kummer–Dedekind bijection preserves residue degree pointwise.
 * `NumberField.card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add`: the reduction mod `2` of
   `X² - X + c` has `if 2 ∣ c then 2 else 1` monic irreducible factors.
 * `NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`: for a generator with minimal
@@ -58,22 +58,6 @@ public section
 open Ideal Polynomial RingOfIntegers UniqueFactorizationMonoid
 open scoped NumberField
 
-namespace TauCeti.NumberField
-
-variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
-
-/-- **The Kummer–Dedekind bijection preserves degree.** The residue degree of a prime above
-`p` equals the degree of its corresponding monic irreducible factor modulo `p`. -/
-theorem inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod {θ : 𝓞 K}
-    (hp : ¬ p ∣ exponent θ) (Q : (span {(p : ℤ)}).primesOver (𝓞 K)) :
-    (Q : Ideal (𝓞 K)).inertiaDeg ℤ =
-      (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp Q : (ZMod p)[X]).natDegree := by
-  have h := NumberField.Ideal.inertiaDeg_primesOverSpanEquivMonicFactorsMod_symm_apply' hp
-    (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp Q).2
-  rwa [Subtype.coe_eta, Equiv.symm_apply_apply] at h
-
-end TauCeti.NumberField
-
 namespace RingOfIntegers
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -81,8 +65,9 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- **The Kummer–Dedekind count.** When `p` does not divide the conductor exponent of `θ`, the
 primes of `𝓞 K` above `p` are counted by the monic irreducible factors of `minpoly ℤ θ` mod `p`. -/
 theorem ncard_primesOver_eq_card_monicFactorsMod (θ : 𝓞 K) {p : ℕ} [Fact p.Prime]
-    (hp : ¬ p ∣ exponent θ) :
-    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = (monicFactorsMod θ p).card := by
+    (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ) :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = (NumberField.RingOfIntegers.monicFactorsMod θ
+        p).card := by
   rw [← Nat.card_coe_set_eq,
     Nat.card_congr (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp)]
   exact Nat.card_eq_finsetCard _
@@ -90,10 +75,10 @@ theorem ncard_primesOver_eq_card_monicFactorsMod (θ : 𝓞 K) {p : ℕ} [Fact p
 /-- The residue degrees of the primes above `p` are the degrees of the distinct monic
 irreducible factors of the minimal polynomial modulo `p`, when Kummer–Dedekind applies. -/
 theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
-    {p : ℕ} [Fact p.Prime] (hp : ¬ p ∣ exponent θ) :
+    {p : ℕ} [Fact p.Prime] (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) =
-      (monicFactorsMod θ p).val.map natDegree := by
+      (NumberField.RingOfIntegers.monicFactorsMod θ p).val.map natDegree := by
   classical
   let e := NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hp
   refine Multiset.map_eq_map_of_bij_of_nodup _ _ Finset.univ.nodup (Finset.nodup _)
@@ -103,19 +88,19 @@ theorem map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod (θ : 𝓞 K)
   · intro q hq
     exact ⟨e.symm ⟨q, hq⟩, Finset.mem_univ _, by rw [e.apply_symm_apply]⟩
   · intro Q _
-    exact TauCeti.NumberField.inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod hp Q
+    exact NumberField.Ideal.inertiaDeg_primesOverSpanEquivMonicFactorsMod_apply hp Q
 
 /-- At a prime where the reduction of `minpoly ℤ θ` is squarefree, the splitting type is its
 multiset of factor degrees. The conductor-exponent hypothesis permits the Kummer–Dedekind
 correspondence. -/
 theorem map_inertiaDeg_primesOver_eq_factorDegrees (θ : 𝓞 K) {p : ℕ} [Fact p.Prime]
-    (hp : ¬ p ∣ exponent θ)
+    (hp : ¬ p ∣ NumberField.RingOfIntegers.exponent θ)
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
     (Finset.univ : Finset ((span {(p : ℤ)}).primesOver (𝓞 K))).val.map
         (fun Q => Q.1.inertiaDeg ℤ) = (minpoly ℤ θ).factorDegrees p := by
   classical
   rw [map_inertiaDeg_primesOver_eq_map_natDegree_monicFactorsMod θ hp,
-    factorDegrees_def, monicFactorsMod, Multiset.toFinset_val]
+    factorDegrees_def, Multiset.toFinset_val]
   exact congrArg (Multiset.map natDegree) <|
     (UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors
       ((minpoly.monic θ.isIntegral).map _).ne_zero).mp hsq |>.dedup
@@ -133,12 +118,12 @@ factors when `c` is even, since `X² + X = X (X + 1)` over `𝔽₂`, and one wh
 `X² + X + 1` has no root in `𝔽₂`. -/
 theorem card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
     (hmin : minpoly ℤ ω = X ^ 2 - X + C c) :
-    (monicFactorsMod ω 2).card = if 2 ∣ c then 2 else 1 := by
+    (NumberField.RingOfIntegers.monicFactorsMod ω 2).card = if 2 ∣ c then 2 else 1 := by
   classical
   have hmap : (minpoly ℤ ω).map (Int.castRingHom (ZMod 2)) = X ^ 2 + X + C (c : ZMod 2) := by
     rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
       Polynomial.map_C, eq_intCast, sub_eq_add_neg, CharTwo.neg_eq]
-  simp only [monicFactorsMod, hmap]
+  simp only [NumberField.RingOfIntegers.monicFactorsMod, hmap]
   by_cases hc : 2 ∣ c
   · -- `c` is even: `X² + X = (X - 0)(X - 1)`, two distinct linear factors.
     have hc0 : (c : ZMod 2) = 0 := by
@@ -183,7 +168,7 @@ theorem card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c :
 its minimal polynomial is separable modulo `2`. -/
 theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
     (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hgen : Algebra.adjoin ℚ {(ω : K)} = ⊤) :
-    ¬ 2 ∣ exponent ω := by
+    ¬ 2 ∣ NumberField.RingOfIntegers.exponent ω := by
   have hsq : Squarefree ((minpoly ℤ ω).map (Int.castRingHom (ZMod 2))) := by
     rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, map_X, map_C]
     refine Separable.squarefree ((separable_def _).mpr ?_)
@@ -202,7 +187,7 @@ theorem not_two_dvd_exponent_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ
 `ℤ`, and suppose `2` does not divide the conductor exponent of `ω`. Then there are two primes of
 `𝓞 K` above `2` when `c` is even and one when `c` is odd. -/
 theorem ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
-    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hexp : ¬ 2 ∣ exponent ω) :
+    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hexp : ¬ 2 ∣ NumberField.RingOfIntegers.exponent ω) :
     (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = if 2 ∣ c then 2 else 1 := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have h := ncard_primesOver_eq_card_monicFactorsMod ω hexp

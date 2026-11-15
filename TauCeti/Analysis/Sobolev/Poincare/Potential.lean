@@ -13,10 +13,14 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import TauCeti.Analysis.Calculus.SegmentIncrement
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Dilation
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
-# The potential estimate behind the Poincaré–Wirtinger inequality
+# Potential estimates for `C¹` functions
 
 This file proves the pointwise estimate that controls the oscillation of a `C¹` function about
 its mean by a Riesz potential of its derivative. Let `Ω` be an open subset of a finite-dimensional
@@ -33,6 +37,12 @@ For a bounded convex open `Ω` and `x ∈ Ω` one may take `D = diam Ω`; this i
 Gilbarg–Trudinger, Lemma 7.16. Integrating the right-hand side in `x` and bounding the Riesz
 potential `y ↦ ‖x - y‖ ^ (1 - n)` in `Lᵖ` yields the Poincaré–Wirtinger inequality.
 
+For a `C¹` function `u` with compact support, restricting the integrated oscillation bound on
+`ball x D` to a shell `ρ < ‖y - x‖ < D` outside the support, where `u` vanishes, and letting
+`D → ∞` gives the pointwise bound `‖u x‖ ≤ (n ω)⁻¹ ∫ ‖Du y‖ ‖x - y‖ ^ (1 - n) dy` with
+`ω = μ(B(0, 1))`, which is Gilbarg–Trudinger, Lemma 7.14. Combined with the `Lᵖ` bounds for
+Riesz potentials, it yields Sobolev inequalities for compactly supported functions.
+
 The statements use lower Lebesgue integrals, so no integrability of the derivative or of the
 kernel is assumed.
 
@@ -45,11 +55,13 @@ kernel is assumed.
 * `TauCeti.enorm_sub_setAverage_le_of_starConvex`: the bound on the deviation from the mean over
   any subset of positive measure.
 * `TauCeti.enorm_sub_setAverage_le_of_convex`: the form for convex sets with `D = diam Ω`.
+* `TauCeti.enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow`: the pointwise potential bound for
+  compactly supported functions.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Lemma 7.16.
+  Lemmas 7.14 and 7.16.
 -/
 
 public section
@@ -58,7 +70,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Metric Set Module
+open Filter MeasureTheory Metric Set Module Topology
 open scoped ENNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -97,7 +109,8 @@ theorem lintegral_comp_add_smul_sub_mul_ite (μ : Measure E) [μ.IsAddHaarMeasur
   calc
     _ = ∫⁻ y, ENNReal.ofReal t⁻¹ * f (AffineMap.homothety x t y) ∂μ := lintegral_congr hKf
     _ = ENNReal.ofReal t⁻¹ * (ENNReal.ofReal |(t ^ finrank ℝ E)⁻¹| * ∫⁻ w, f w ∂μ) := by
-      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_comp_homothety μ f x ht.ne']
+      rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+        Measure.lintegral_comp_homothety μ f x ht.ne']
     _ = _ := by
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
         ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le)]
@@ -116,7 +129,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ w, g w * ‖x - w‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have hzero : ∀ y : E, ‖x - y‖ₑ = 0 := fun y => by
-      rw [Subsingleton.elim x y, sub_self, enorm_zero]
+      rw [Subsingleton.elim x y, sub_self, eNorm_zero]
     simp [hzero]
   set n := finrank ℝ E
   have hn : 0 < n := finrank_pos
@@ -144,7 +157,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ t in Ioc (0 : ℝ) 1, K t y := by
     intro y
     by_cases hy : y ∈ closedBall x D
-    · rw [indicator_of_mem hy, ← lintegral_mul_const' _ _ enorm_ne_top]
+    · rw [indicator_of_mem hy, ← lintegral_mul_const' _ _ eNorm_ne_top]
       simp only [K, ite_eq_left (mem_closedBall_iff_norm'.1 hy), ofReal_norm]
     · rw [indicator_of_notMem hy]
       simp [K, ite_eq_right (mt mem_closedBall_iff_norm'.2 hy)]
@@ -161,8 +174,9 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
       (lintegral_lintegral_swap hLmeas.aemeasurable).symm
     _ ≤ ∫⁻ w, ENNReal.ofReal (D ^ n / n) * (g w * ‖x - w‖ₑ ^ (1 - (n : ℝ))) ∂μ :=
       lintegral_mono fun w => by
-        simpa only [hL_def, ofReal_norm] using
-          setLIntegral_Ioc_rpow_mul_ite_le hn (g w) (norm_nonneg (x - w)) D
+        simpa only [hL_def, ofReal_norm, Real.rpow_natCast] using
+          (lintegral_mono_set Ioc_subset_Ioi_self).trans <| setLIntegral_Ioi_rpow_mul_ite_le
+            (Nat.cast_pos.2 hn) (g w) (norm_nonneg (x - w)) D
     _ = _ := lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
 /-- **The integrated oscillation bound.** If `u` is `C¹` on an open set `Ω` which is star-convex
@@ -180,7 +194,7 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
   have hcont := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have hg : Measurable g := by
     rw [hg_def, ← piecewise_eq_indicator]
-    exact hcont.enorm.measurable_piecewise continuousOn_const hΩ.measurableSet
+    exact hcont.eNorm.measurable_piecewise continuousOn_const hΩ.measurableSet
   -- The segment estimate for `u` between `x` and a point `y` of `Ω`.
   have hseg : ∀ y ∈ Ω,
       ‖u x - u y‖ₑ ≤ (∫⁻ t in Ioc (0 : ℝ) 1, g (x + t • (y - x))) * ‖x - y‖ₑ := by
@@ -190,12 +204,10 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
     have h := enorm_sub_le_lintegral_enorm_fderiv_apply (u := u) x (y - x)
       (fun t ht => (hu.differentiableOn one_ne_zero _ (hmem t ht)).differentiableAt
         (hΩ.mem_nhds (hmem t ht)))
-      ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
-        hmem).clm_apply continuousOn_const)
-    rw [add_sub_cancel, enorm_sub_rev] at h
-    rw [← lintegral_mul_const' _ _ enorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
+    rw [add_sub_cancel, eNorm_sub_rev] at h
+    rw [← lintegral_mul_const' _ _ eNorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
-    simp only [g, indicator_of_mem (hmem t ht), enorm_sub_rev x y]
+    simp only [g, indicator_of_mem (hmem t ht), eNorm_sub_rev x y]
     exact ContinuousLinearMap.le_opENorm _ _
   calc
     ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ ≤
@@ -222,31 +234,14 @@ theorem enorm_sub_setAverage_le_of_starConvex [CompleteSpace F] (hΩ : IsOpen Ω
   have hS_top : μ S ≠ ∞ := ((measure_mono (hS.trans hD)).trans_lt measure_closedBall_lt_top).ne
   have hcore := setLIntegral_enorm_sub_le_of_starConvex (μ := μ) hΩ hu hx hD
   rw [ENNReal.div_eq_inv_mul, mul_assoc]
-  have hmeas : AEStronglyMeasurable (fun y => u x - u y) (μ.restrict S) :=
-    (aestronglyMeasurable_const.sub ((hu.continuousOn.aestronglyMeasurable
-      hΩ.measurableSet).mono_measure (Measure.restrict_mono hS le_rfl)))
-  by_cases hint : ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ = ∞
-  · have htop : ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ = ∞ := top_le_iff.1 (hint ▸ lintegral_mono_set hS)
-    rw [htop, top_le_iff] at hcore
-    rw [hcore, ENNReal.mul_top (ENNReal.inv_ne_zero.2 hS_top)]
-    exact le_top
-  have hdiff : IntegrableOn (fun y => u x - u y) S μ := ⟨hmeas, Ne.lt_top hint⟩
-  have hu_int : IntegrableOn u S μ := by
-    refine ((integrableOn_const (C := u x) hS_top).sub hdiff).congr (ae_of_all _ fun y => ?_)
-    simp
-  have hmean : u x - ⨍ y in S, u y ∂μ = ⨍ y in S, (u x - u y) ∂μ := by
-    rw [setAverage_fun_sub (integrableOn_const (C := u x) hS_top) hu_int,
-      setAverage_const hS₀ hS_top]
+  have hSm : AEStronglyMeasurable u (μ.restrict S) :=
+    (hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).mono_measure
+      (Measure.restrict_mono hS le_rfl)
   calc
-    ‖u x - ⨍ y in S, u y ∂μ‖ₑ = ‖(μ.real S)⁻¹ • ∫ y in S, (u x - u y) ∂μ‖ₑ := by
-      rw [hmean, setAverage_eq]
-    _ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
-      rw [enorm_smul]
-      gcongr
-      · rw [Real.enorm_of_nonneg (inv_nonneg.2 measureReal_nonneg), ENNReal.ofReal_inv_of_pos
-          (by rw [measureReal_def]; exact ENNReal.toReal_pos hS₀ hS_top),
-        ofReal_measureReal hS_top]
-      · exact enorm_integral_le_lintegral_enorm _
+    ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
+      rw [eNorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
+      refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans_eq ?_
+      exact congrArg (laverage _) (funext fun y => eNorm_sub_rev _ _)
     _ ≤ (μ S)⁻¹ * ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ := by gcongr
     _ ≤ _ := by gcongr
 
@@ -262,5 +257,62 @@ theorem enorm_sub_setAverage_le_of_convex [CompleteSpace F] (hΩ : IsOpen Ω) (h
         ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ :=
   enorm_sub_setAverage_le_of_starConvex hΩ hu (hΩc.starConvex hx)
     (fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)) hS hS₀
+
+/-- **The potential estimate for compactly supported functions** (Gilbarg–Trudinger,
+Lemma 7.14). If `u` is `C¹` with compact support, then at every point `x`,
+
+`‖u x‖ ≤ (n ω)⁻¹ ∫ ‖Du y‖ ‖x - y‖ ^ (1 - n) dy`,
+
+where `n ≥ 1` is the dimension of the space and `ω = μ(B(0, 1))`. -/
+theorem enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow [Nontrivial E] (hu : ContDiff ℝ 1 u)
+    (h2u : HasCompactSupport u) (x : E) :
+    ‖u x‖ₑ ≤ ENNReal.ofReal ((finrank ℝ E * μ.real (ball 0 1))⁻¹) *
+      ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ := by
+  set n := finrank ℝ E
+  set ω := μ.real (ball (0 : E) 1)
+  set P := ∫⁻ y, ‖fderiv ℝ u y‖ₑ * ‖x - y‖ₑ ^ (1 - (n : ℝ)) ∂μ
+  have hn0 : n ≠ 0 := finrank_pos.ne'
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
+  obtain ⟨ρ₀, hρ₀⟩ := h2u.isBounded.subset_closedBall x
+  set ρ := max ρ₀ 0
+  have hρ : 0 ≤ ρ := le_max_right _ _
+  have hsupp : tsupport u ⊆ closedBall x ρ :=
+    hρ₀.trans (closedBall_subset_closedBall (le_max_left _ _))
+  -- For `D > ρ`, compare `u x` with the values of `u` on the shell `ρ < ‖y - x‖ < D`, which
+  -- vanish, using the potential estimate on the ball `B(x, D)`.
+  have hbound : ∀ D, ρ < D → ‖u x‖ₑ ≤ ENNReal.ofReal (D ^ n / (n * ω * (D ^ n - ρ ^ n))) * P := by
+    intro D hD
+    have hD0 : 0 < D := hρ.trans_lt hD
+    have hDρ : 0 < D ^ n - ρ ^ n := sub_pos.2 (pow_lt_pow_left₀ hD hρ hn0)
+    set S := ball x D \ closedBall x ρ
+    have hS : μ S = ENNReal.ofReal (ω * (D ^ n - ρ ^ n)) := by
+      rw [measure_sdiff (closedBall_subset_ball hD) measurableSet_closedBall.nullMeasurableSet
+          measure_closedBall_lt_top.ne, Measure.addHaar_ball μ x hD0.le,
+        Measure.addHaar_closedBall μ x hρ, ← ENNReal.sub_mul (fun _ _ => measure_ball_lt_top.ne),
+        ← ENNReal.ofReal_sub _ (by positivity), ← ofReal_measureReal measure_ball_lt_top.ne,
+        ← ENNReal.ofReal_mul hDρ.le, mul_comm]
+    have hshell : ‖u x‖ₑ * μ S ≤ ∫⁻ y in ball x D, ‖u x - u y‖ₑ ∂μ :=
+      calc
+        ‖u x‖ₑ * μ S = ∫⁻ _ in S, ‖u x‖ₑ ∂μ := (setLIntegral_const _ _).symm
+        _ = ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ :=
+          setLIntegral_congr_fun (measurableSet_ball.diff measurableSet_closedBall)
+            fun y hy => by
+              rw [image_eq_zero_of_notMem_tsupport fun h => hy.2 (hsupp h), sub_zero]
+        _ ≤ _ := lintegral_mono_set sdiff_subset
+    have hstar := setLIntegral_enorm_sub_le_of_starConvex (μ := μ) isOpen_ball hu.contDiffOn
+      ((convex_ball x D).starConvex (mem_ball_self hD0)) ball_subset_closedBall
+    have h₁ : ‖u x‖ₑ * ENNReal.ofReal (ω * (D ^ n - ρ ^ n)) ≤ ENNReal.ofReal (D ^ n / n) * P := by
+      rw [← hS]
+      exact hshell.trans (hstar.trans (by gcongr; exact setLIntegral_le_lintegral _ _))
+    rw [← ENNReal.le_div_iff_mul_le (Or.inl (by positivity)) (Or.inl ENNReal.ofReal_ne_top),
+      ENNReal.mul_div_right_comm, ← ENNReal.ofReal_div_of_pos (by positivity)] at h₁
+    refine h₁.trans_eq ?_
+    congr 2
+    field_simp
+  -- Let `D → ∞`.
+  have hlim := Real.tendsto_pow_div_mul_sub_pow_atTop (ω := ω) hn0 ρ
+  exact ge_of_tendsto (ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal hlim)
+    (Or.inl (ENNReal.ofReal_pos.2 (by positivity)).ne'))
+    ((eventually_gt_atTop ρ).mono hbound)
 
 end TauCeti

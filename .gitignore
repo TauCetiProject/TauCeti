@@ -20,3 +20,8 @@ web/examples/lean-toolchain
 
 # Pinned read-only merge policy used by status tooling and CI
 .tauceti-review/
+
+# Pinned shared tooling checkouts
+.tauceti-tools/
+.tauceti-project/
+.tauceti-rubrics/
