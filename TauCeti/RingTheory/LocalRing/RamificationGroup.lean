@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
@@ -16,7 +17,9 @@ public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
+import Mathlib.Algebra.Polynomial.Identities
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # The ramification filtration of a group acting on a local ring
@@ -71,6 +74,9 @@ integer indexing that Herbrand theory uses.
   base ring `R` whose elements `G` fixes by a set `s`, membership in `G_i` is decided on `s`
   alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
   monogenic case, where a single generator decides it.
+* `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem_of_maximalIdeal_eq_span`:
+  over a local base `R` with separable residue extension, membership of an inertia element in `G_n`
+  is decided at any single generator of the maximal ideal, without module-finiteness.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
   defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`;
   `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_lowerIndex` reads it as `i + 1 ≤ i_G(σ)`.
@@ -210,6 +216,88 @@ theorem mem_ramificationGroup_iff_of_adjoin_singleton_eq_top {ξ : S}
   rw [ramificationGroup_def, TauCeti.Ideal.mem_inertia_iff_of_adjoin_singleton_eq_top hξ]
 
 end Adjoin
+
+section SeparableResidue
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+
+/-- **Membership in the ramification filtration is decided at a generator of the maximal ideal**,
+when `S` is an algebra over a local ring `R` whose elements `G` fixes and the residue extension is
+separable: an element `σ` of the inertia group `G_0` lies in `G_n` (`n : ℕ`) if and only if
+`σ • ϖ - ϖ ∈ 𝔪 ^ (n + 1)`. Neither finiteness of `S` over `R` nor finiteness of the residue field
+is needed: lifting the minimal polynomial of the residue of `x` over `ResidueField R` to `g : R[X]`
+gives `g(x) ∈ 𝔪 = (ϖ)` and a unit `g'(x)`, so Taylor expansion propagates congruence modulo `𝔪 ^ m`
+one step at a time. -/
+theorem mem_ramificationGroup_natCast_iff_smul_sub_mem_of_maximalIdeal_eq_span
+    (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)]
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] [SMulCommClass G R S]
+    {ϖ : S} (hϖ : maximalIdeal S = Ideal.span {ϖ}) {σ : G}
+    (hσ : σ ∈ ramificationGroup G S 0) {n : ℕ} :
+    σ ∈ ramificationGroup G S (n : ℤ) ↔ σ • ϖ - ϖ ∈ maximalIdeal S ^ (n + 1) := by
+  rw [mem_ramificationGroup_natCast_iff]
+  refine ⟨fun h ↦ h ϖ, fun h ↦ ?_⟩
+  have hϖmem : ϖ ∈ maximalIdeal S := hϖ ▸ Ideal.mem_span_singleton_self ϖ
+  have hσϖ : σ • ϖ ∈ maximalIdeal S := by
+    simpa using add_mem (mem_ramificationGroup_zero_iff.mp hσ ϖ) hϖmem
+  have hcomp : (MulSemiringAction.toRingHom G S σ).comp (algebraMap R S) = algebraMap R S := by
+    ext r
+    rw [RingHom.comp_apply, MulSemiringAction.toRingHom_apply, Algebra.algebraMap_eq_smul_one,
+      smul_comm, MulSemiringAction.smul_one]
+  suffices ∀ m ≤ n + 1, ∀ x : S, σ • x - x ∈ maximalIdeal S ^ m from this (n + 1) le_rfl
+  intro m
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    intro hm x
+    rcases m.eq_zero_or_pos with rfl | _
+    · simpa only [zero_add, pow_one] using mem_ramificationGroup_zero_iff.mp hσ x
+    -- Lift the minimal polynomial of `residue S x` over `ResidueField R` to `R[X]`.
+    obtain ⟨g, hg⟩ := Polynomial.map_surjective (residue R) residue_surjective
+      (minpoly (ResidueField R) (residue S x))
+    set gS : Polynomial S := g.map (algebraMap R S)
+    have hval : gS.eval x ∈ maximalIdeal S := by
+      rw [Polynomial.eval_map, ← Polynomial.aeval_def, ← residue_eq_zero_iff,
+        Polynomial.map_aeval_eq_aeval_map residue_comp_algebraMap, hg]
+      exact minpoly.aeval _ _
+    have hder : IsUnit ((Polynomial.derivative gS).eval x) := by
+      rw [Polynomial.derivative_map, Polynomial.eval_map, ← Polynomial.aeval_def,
+        ← residue_ne_zero_iff_isUnit, Polynomial.map_aeval_eq_aeval_map residue_comp_algebraMap,
+        ← Polynomial.derivative_map, hg]
+      exact (Algebra.IsSeparable.isSeparable _ _).aeval_derivative_ne_zero (minpoly.aeval _ _)
+    have hsmul_eval : σ • gS.eval x = gS.eval (σ • x) := by
+      rw [Polynomial.eval_map, Polynomial.eval_map]
+      have hev := Polynomial.hom_eval₂ g (algebraMap R S) (MulSemiringAction.toRingHom G S σ) x
+      rwa [hcomp] at hev
+    -- Since `gS.eval x ∈ 𝔪 = (ϖ)`, `σ` moves `gS.eval x` into `𝔪 ^ (m + 1)`.
+    obtain ⟨y, hy⟩ : ∃ y : S, gS.eval x = ϖ * y := Ideal.mem_span_singleton.mp (hϖ ▸ hval)
+    have hmove_eval : gS.eval (σ • x) - gS.eval x ∈ maximalIdeal S ^ (m + 1) := by
+      rw [← hsmul_eval, hy]
+      have hsplit : σ • (ϖ * y) - ϖ * y = σ • ϖ * (σ • y - y) + (σ • ϖ - ϖ) * y := by
+        rw [smul_mul']
+        ring
+      rw [hsplit]
+      refine add_mem ?_ (Ideal.mul_mem_right y _ (Ideal.pow_le_pow_right hm h))
+      rw [pow_succ']
+      exact Ideal.mul_mem_mul hσϖ (ih (Nat.le_of_succ_le hm) y)
+    -- Taylor expansion writes `gS(σ x) - gS(x) = (σ x - x) * u` with `u` a unit of `S`.
+    set d : S := σ • x - x
+    obtain ⟨k, hk⟩ := Polynomial.binomExpansion gS x d
+    rw [add_sub_cancel] at hk
+    set u : S := (Polynomial.derivative gS).eval x + k * d
+    have hfac : gS.eval (σ • x) - gS.eval x = d * u := by
+      rw [hk]
+      ring
+    have hu : IsUnit u := by
+      refine notMem_maximalIdeal.mp fun hmem ↦ notMem_maximalIdeal.mpr hder ?_
+      simpa [u, d] using
+        sub_mem hmem (Ideal.mul_mem_left _ k (mem_ramificationGroup_zero_iff.mp hσ x))
+    obtain ⟨u', hu'⟩ := hu.exists_right_inv
+    have hd_cancel : d = (d * u) * u' := by
+      rw [mul_assoc, hu', mul_one]
+    rw [hd_cancel, ← hfac]
+    exact Ideal.mul_mem_right u' _ hmove_eval
+
+end SeparableResidue
 
 section Normal
 
