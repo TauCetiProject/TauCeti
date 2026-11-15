@@ -8,11 +8,11 @@ module
 public import Mathlib.Analysis.Asymptotics.Theta
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Algebra.Field.GeomSum
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.NumberTheory.Harmonic.Bounds
+import Mathlib.Topology.Instances.RealVectorSpace
+import TauCeti.Algebra.Field.GeomSum
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.ForwardDiff
 
@@ -30,10 +30,10 @@ growing regime and eliminates the logarithmic divergence at `α = -1`:
    `∑_{j=1}^{n-1} j^α` has exact order `Θ(1)` iff `α < -1`, `Θ(log n)` iff `α = -1`, and
    `Θ(n^{α+1})` iff `-1 < α` (with the explicit upper bound `∑_{j=1}^{n-1} j^α ≤ n^{α+1} / (α + 1)`
    for every `n : ℕ` when `-1 < α`), and is `O(n^{α+1} + 1)` iff `α ≠ -1`.
-2. **Exact summation by parts against a geometric sequence.** For any ring `R` acting as scalars on
-   a division ring `𝕜`, `z : 𝕜` with `z ≠ 1`, and `m ≤ n`:
-   `∑_{j=m}^{n-1} f(j) • z^j = f(n) • z^n / (z - 1) - f(m) • z^m / (z - 1)
-     + ∑_{j=m}^{n-1} (f(j) - f(j + 1)) • z^{j+1} / (z - 1)`.
+2. **Exact summation by parts for oscillatory real-power sums.** Specializing
+   `TauCeti.sum_Ico_smul_geom_eq` to `z = e^{iβ} ≠ 1` and `1 ≤ n` gives
+   `∑_{j=1}^{n-1} e^{ijβ} j^α = (e^{iβ} / (e^{iβ} - 1)) *
+     (e^{i(n-1)β} n^α - 1 + ∑_{j=1}^{n-1} e^{ijβ} (j^α - (j + 1)^α))`.
 3. **Asymptotic reduction, uniform order bound, and leading-term approximation.** In any real
    normed division ring `𝕜` (covering real alternating sums `z = -1`, complex oscillatory sums
    `z = e^{iβ}`, and unit quaternions), for every `z ≠ 1` with `‖z‖ ≤ 1` and every real `α`:
@@ -59,8 +59,7 @@ the oscillatory approximation
   `TauCeti.isBigO_sum_Ico_rpow_rpow_add_one_add_one_iff`.
 * `TauCeti.norm_sum_Ico_rpow_smul_le` and `TauCeti.norm_sum_Ico_cexp_mul_rpow_le`: triangle
   inequality bounds for bounded-norm and oscillatory weights.
-* `TauCeti.sum_Icc_cexp_natCast_mul`, `TauCeti.sum_Ico_smul_geom_eq`, and
-  `TauCeti.sum_Ico_cexp_mul_rpow_eq`: geometric partial sum and exact summation by parts.
+* `TauCeti.sum_Ico_cexp_mul_rpow_eq`: exact summation by parts for oscillatory real-power sums.
 * `TauCeti.isBigO_sum_Ico_rpow_smul_geom_sub_step`, `TauCeti.isBigO_sum_Ico_rpow_smul_geom`,
   `TauCeti.isBigO_sum_Ico_rpow_smul_geom_sub`,
   `TauCeti.isBigO_sum_Ico_rpow_smul_geom_sub_of_one_le`, and
@@ -71,7 +70,8 @@ the oscillatory approximation
 
 ## References
 
-* NIST *Digital Library of Mathematical Functions*, §2.10(ii), formulas 2.10.9–2.10.18.
+* NIST *Digital Library of Mathematical Functions*, §2.10(ii), formulas 2.10.9–2.10.12,
+  2.10.14, and 2.10.16–2.10.18.
 * F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 8, §4.
 -/
 
@@ -82,53 +82,6 @@ open Asymptotics Filter Finset Topology
 namespace TauCeti
 
 /-! ### Growth of uncancelled real-power partial sums -/
-
-/-- For `-1 < α ≤ 0` and `1 ≤ j`, `(j : ℝ) ^ α` is bounded above by the backward difference of
-`k ↦ k ^ (α + 1) / (α + 1)`. -/
-private theorem rpow_le_rpow_sub_pred_rpow_div {α : ℝ} (hα : -1 < α) (hα₀ : α ≤ 0) {j : ℕ}
-    (hj : 1 ≤ j) :
-    (j : ℝ) ^ α ≤ ((j : ℝ) ^ (α + 1) - ((j - 1 : ℕ) : ℝ) ^ (α + 1)) / (α + 1) := by
-  have hα₁ : 0 < α + 1 := by linarith
-  have hj₁ : (1 : ℝ) ≤ j := Nat.one_le_cast.mpr hj
-  have hj₀ : (0 : ℝ) < j := zero_lt_one.trans_le hj₁
-  have hbern := rpow_one_add_le_one_add_mul_self (s := -(j : ℝ)⁻¹)
-    (by rw [neg_le, neg_neg, inv_le_one₀ hj₀]; exact hj₁) hα₁.le (by linarith)
-  have hmul := mul_le_mul_of_nonneg_left hbern (Real.rpow_nonneg hj₀.le (α + 1))
-  have hprod : (j : ℝ) ^ (α + 1) * (1 + -(j : ℝ)⁻¹) ^ (α + 1) =
-      ((j - 1 : ℕ) : ℝ) ^ (α + 1) := by
-    rw [← Real.mul_rpow hj₀.le (by rw [← sub_eq_add_neg]; linarith [inv_le_one_of_one_le₀ hj₁]),
-      mul_add, mul_neg, mul_inv_cancel₀ hj₀.ne', mul_one, ← sub_eq_add_neg,
-      Nat.cast_sub hj, Nat.cast_one]
-  have hrhs : (j : ℝ) ^ (α + 1) * (1 + (α + 1) * -(j : ℝ)⁻¹) =
-      (j : ℝ) ^ (α + 1) - (α + 1) * (j : ℝ) ^ α := by
-    rw [Real.rpow_add_one hj₀.ne']
-    field_simp
-    ring
-  rw [hprod, hrhs] at hmul
-  rw [le_div_iff₀ hα₁]
-  linarith
-
-/-- For `-1 < α ≤ 0` and `1 ≤ j`, `(j : ℝ) ^ α` is bounded below by the forward difference of
-`k ↦ k ^ (α + 1) / (α + 1)`. -/
-private theorem succ_rpow_sub_rpow_div_le_rpow {α : ℝ} (hα : -1 < α) (hα₀ : α ≤ 0) {j : ℕ}
-    (hj : 1 ≤ j) :
-    (((j + 1 : ℕ) : ℝ) ^ (α + 1) - (j : ℝ) ^ (α + 1)) / (α + 1) ≤ (j : ℝ) ^ α := by
-  have hα₁ : 0 < α + 1 := by linarith
-  have hj₀ : (0 : ℝ) < j := Nat.cast_pos.mpr hj
-  have hbern := rpow_one_add_le_one_add_mul_self (s := (j : ℝ)⁻¹)
-    (by linarith [inv_nonneg.mpr hj₀.le]) hα₁.le (by linarith)
-  have hmul := mul_le_mul_of_nonneg_left hbern (Real.rpow_nonneg hj₀.le (α + 1))
-  have hprod : (j : ℝ) ^ (α + 1) * (1 + (j : ℝ)⁻¹) ^ (α + 1) =
-      ((j + 1 : ℕ) : ℝ) ^ (α + 1) := by
-    rw [← Real.mul_rpow hj₀.le (by positivity), mul_add, mul_one, mul_inv_cancel₀ hj₀.ne',
-      Nat.cast_add, Nat.cast_one]
-  have hrhs : (j : ℝ) ^ (α + 1) * (1 + (α + 1) * (j : ℝ)⁻¹) =
-      (j : ℝ) ^ (α + 1) + (α + 1) * (j : ℝ) ^ α := by
-    rw [Real.rpow_add_one hj₀.ne']
-    field_simp
-  rw [hprod, hrhs] at hmul
-  rw [div_le_iff₀ hα₁]
-  linarith
 
 /-- **Explicit upper bound on partial sums of real powers.** For `-1 < α` and every natural number
 `n`, `∑ j ∈ Ico 1 n, (j : ℝ) ^ α ≤ (n : ℝ) ^ (α + 1) / (α + 1)`. -/
@@ -157,7 +110,10 @@ theorem sum_Ico_rpow_le {α : ℝ} (hα : -1 < α) (n : ℕ) :
           exact div_le_div_of_nonneg_right (by linarith) hα₁.le
   · calc ∑ j ∈ Ico 1 n, (j : ℝ) ^ α
         ≤ ∑ j ∈ Ico 1 n, ((j : ℝ) ^ (α + 1) - ((j - 1 : ℕ) : ℝ) ^ (α + 1)) / (α + 1) :=
-          sum_le_sum fun j hj ↦ rpow_le_rpow_sub_pred_rpow_div hα hα₀ (mem_Ico.mp hj).1
+          sum_le_sum fun j hj ↦ by
+            rw [Nat.cast_sub (mem_Ico.mp hj).1, Nat.cast_one]
+            exact Real.rpow_le_rpow_sub_sub_one_rpow_div hα hα₀
+              (Nat.one_le_cast.mpr (mem_Ico.mp hj).1)
       _ = (((n - 1 : ℕ) : ℝ) ^ (α + 1) - (0 : ℝ) ^ (α + 1)) / (α + 1) := by
           have htel : ∑ j ∈ Ico 1 n, ((j : ℝ) ^ (α + 1) - ((j - 1 : ℕ) : ℝ) ^ (α + 1)) =
               ((n - 1 : ℕ) : ℝ) ^ (α + 1) - (0 : ℝ) ^ (α + 1) := by
@@ -211,8 +167,9 @@ private theorem isBigO_rpow_add_one_sum_Ico_rpow {α : ℝ} (hα : -1 < α) :
       (tendsto_rpow_atTop hα₁).comp tendsto_natCast_atTop_atTop
     filter_upwards [eventually_ge_atTop 1, htend.eventually_ge_atTop 2] with n hn hn₂
     have htel : ((n : ℝ) ^ (α + 1) - 1) / (α + 1) ≤ ∑ j ∈ Ico 1 n, (j : ℝ) ^ α := by
-      have hs := sum_le_sum (s := Ico 1 n) fun j hj ↦
-        succ_rpow_sub_rpow_div_le_rpow hα hα₀ (mem_Ico.mp hj).1
+      have hs := sum_le_sum (s := Ico 1 n) fun j hj ↦ by
+        simpa only [← Nat.cast_add_one] using
+          Real.add_one_rpow_sub_rpow_div_le_rpow hα₀ (Nat.cast_pos.mpr (mem_Ico.mp hj).1)
       rwa [← sum_div, sum_Ico_sub (fun k : ℕ ↦ (k : ℝ) ^ (α + 1)) hn, Nat.cast_one,
         Real.one_rpow] at hs
     rw [Real.norm_of_nonneg (by positivity),
@@ -407,42 +364,7 @@ theorem norm_sum_Ico_cexp_mul_rpow_le (α β : ℝ) (n : ℕ) :
     have : (j : ℂ) * (β : ℂ) * Complex.I = ((j * β : ℝ) : ℂ) * Complex.I := by push_cast; rfl
     rw [this, Complex.norm_exp_ofReal_mul_I]
 
-/-! ### Geometric partial sums and exact summation by parts -/
-
-/-- **Geometric partial sum of complex exponentials (DLMF 2.10.13).** For `w : ℂ` with
-`e^w ≠ 1` and every `j : ℕ`, `∑_{k=1}^j e^{kw} = e^w (e^{jw} - 1) / (e^w - 1)`. -/
-theorem sum_Icc_cexp_natCast_mul {w : ℂ} (hw : Complex.exp w ≠ 1) (j : ℕ) :
-    ∑ k ∈ Icc 1 j, Complex.exp (k * w) =
-      Complex.exp w * (Complex.exp (j * w) - 1) / (Complex.exp w - 1) := by
-  rw [← Ico_add_one_right_eq_Icc]
-  have hpow : ∀ k : ℕ, Complex.exp (k * w) = Complex.exp w ^ k := Complex.exp_nat_mul w
-  simp_rw [hpow]
-  rw [geom_sum_Ico hw (Nat.le_add_left 1 j), pow_add, pow_one]
-  ring
-
-/-- **Exact summation by parts against a geometric sequence.** For a module action of a ring `R`
-on a division ring `𝕜`, `z ≠ 1`, and `m ≤ n`,
-`∑_{j=m}^{n-1} f(j) • z^j = f(n) • z^n / (z - 1) - f(m) • z^m / (z - 1)
-  + ∑_{j=m}^{n-1} (f(j) - f(j + 1)) • z^{j+1} / (z - 1)`. -/
-theorem sum_Ico_smul_geom_eq {R 𝕜 : Type*} [Ring R] [DivisionRing 𝕜] [Module R 𝕜]
-    (f : ℕ → R) {z : 𝕜} (hz : z ≠ 1) {m n : ℕ} (hmn : m ≤ n) :
-    ∑ j ∈ Ico m n, f j • z ^ j =
-      f n • (z ^ n / (z - 1)) - f m • (z ^ m / (z - 1)) +
-        ∑ j ∈ Ico m n, (f j - f (j + 1)) • (z ^ (j + 1) / (z - 1)) := by
-  induction n, hmn using Nat.le_induction with
-  | base => simp
-  | succ k hmk ih =>
-    have hz₁ : z - 1 ≠ 0 := sub_ne_zero.mpr hz
-    have hstep : z ^ k = z ^ (k + 1) / (z - 1) - z ^ k / (z - 1) := by
-      rw [← sub_div, pow_succ, ← mul_sub_one, mul_div_cancel_right₀ _ hz₁]
-    have hterm : f k • z ^ k =
-        f (k + 1) • (z ^ (k + 1) / (z - 1)) - f k • (z ^ k / (z - 1)) +
-          (f k - f (k + 1)) • (z ^ (k + 1) / (z - 1)) := by
-      conv_lhs => rw [hstep]
-      rw [smul_sub, sub_smul]
-      abel
-    rw [sum_Ico_succ_top hmk, sum_Ico_succ_top hmk, ih, hterm]
-    abel
+/-! ### Exact summation by parts for oscillatory power sums -/
 
 /-- **Exact summation by parts for oscillatory real-power sums (DLMF 2.10.14).** For `e^{iβ} ≠ 1`
 and `1 ≤ n`,
@@ -538,24 +460,13 @@ theorem isBigO_sum_Ico_rpow_smul_geom_sub_step {𝕜 : Type*} [NormedDivisionRin
   rw [Nat.cast_one, Real.one_rpow, one_smul, pow_one] at hid
   have hcomm : Commute z (z - 1)⁻¹ :=
     ((Commute.refl z).sub_right (Commute.one_right z)).inv_right₀
+  have : SMulCommClass ℝ 𝕜 𝕜 :=
+    ⟨fun r a b ↦ (map_real_smul (AddMonoidHom.mulLeft a) (continuous_const_mul a) r b).symm⟩
   have hlin : (z / (z - 1)) * (α • ∑ j ∈ Ico 1 n, (j : ℝ) ^ (α - 1) • z ^ j) =
       ∑ j ∈ Ico 1 n, (α * (j : ℝ) ^ (α - 1)) • (z ^ (j + 1) / (z - 1)) := by
     rw [smul_sum, mul_sum]
     refine sum_congr rfl fun j _ ↦ ?_
-    have hsmul : (fun s : ℝ ↦ (z / (z - 1)) * (s • z ^ j)) =
-        fun s : ℝ ↦ s • ((z / (z - 1)) * z ^ j) :=
-      DenseRange.equalizer Rat.denseRange_cast
-        (continuous_const.mul (continuous_id.smul continuous_const))
-        (continuous_id.smul continuous_const) (by
-          ext q
-          dsimp only [Function.comp_apply]
-          have hden : (q.den : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr q.pos.ne'
-          apply smul_right_injective 𝕜 hden
-          dsimp only
-          rw [Nat.cast_smul_eq_nsmul ℝ q.den (_ * _), ← mul_smul_comm, ← Nat.cast_smul_eq_nsmul ℝ,
-            ← mul_smul, ← mul_smul, Rat.cast_def, mul_div_cancel₀ _ hden, Int.cast_smul_eq_zsmul,
-            Int.cast_smul_eq_zsmul, mul_smul_comm])
-    rw [smul_smul, congrFun hsmul, div_eq_mul_inv, div_eq_mul_inv, pow_succ',
+    rw [smul_smul, mul_smul_comm, div_eq_mul_inv, div_eq_mul_inv, pow_succ',
       mul_assoc z (z ^ j), (hcomm.pow_left j).eq, ← mul_assoc]
   rw [hid, hlin]
   have hsplit : ∑ j ∈ Ico 1 n,

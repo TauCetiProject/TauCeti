@@ -91,6 +91,13 @@ If `u : ℝ → F` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ �
 `a > 0` and `b < a / 2`. This is the part of a time-Lipschitz estimate for a Hölder-in-time
 function that does not need a derivative.
 
+For nonpositive exponents `α ≤ 0`, `t ↦ t ^ α` is antitone on `(0, ∞)`, so unit-step differences
+of the antiderivative `t ↦ t ^ (α + 1) / (α + 1)` bracket `x ^ α`:
+`((x + 1) ^ (α + 1) - x ^ (α + 1)) / (α + 1) ≤ x ^ α` for every `0 < x` and `α ≤ 0`, and
+`x ^ α ≤ (x ^ (α + 1) - (x - 1) ^ (α + 1)) / (α + 1)` for `1 ≤ x` and `-1 < α ≤ 0` (including the
+endpoint `x = 1` where `(x - 1) ^ (α + 1) = 0`). Telescoping these bounds controls discrete power
+sums `∑ j ^ α` in the sublinear regime `-1 < α ≤ 0`.
+
 ## Main results
 
 * `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
@@ -118,6 +125,9 @@ function that does not need a derivative.
 * `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
   for `1 < q`, `0 < δ ≤ 1` and `0 ≤ r ≤ 1`.
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality.
+* `Real.rpow_le_rpow_sub_sub_one_rpow_div` and `Real.add_one_rpow_sub_rpow_div_le_rpow`: unit
+  backward- and forward-difference bounds on `t ↦ t ^ (α + 1) / (α + 1)` comparing with `x ^ α`
+  for `α ≤ 0`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -469,6 +479,56 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
     _ = (1 - φ r₀ / 2 ^ q) * 2 ^ (q - 1) * (s ^ q + t ^ q) := by
         rw [hr_def, div_rpow ht hs.le]
         field_simp
+
+/-- For `-1 < α ≤ 0` and `1 ≤ x`, `x ^ α` is bounded above by the unit backward difference of
+`t ↦ t ^ (α + 1) / (α + 1)` (at `x = 1`, `(x - 1) ^ (α + 1) = 0` requires `-1 < α`). -/
+theorem rpow_le_rpow_sub_sub_one_rpow_div {α : ℝ} (hα : -1 < α) (hα₀ : α ≤ 0) {x : ℝ}
+    (hx : 1 ≤ x) :
+    x ^ α ≤ (x ^ (α + 1) - (x - 1) ^ (α + 1)) / (α + 1) := by
+  have hα₁ : 0 < α + 1 := by linarith
+  have hx₀ : 0 < x := zero_lt_one.trans_le hx
+  have hbern := rpow_one_add_le_one_add_mul_self (s := -x⁻¹)
+    (by rw [neg_le, neg_neg, inv_le_one₀ hx₀]; exact hx) hα₁.le (by linarith)
+  have hmul := mul_le_mul_of_nonneg_left hbern (rpow_nonneg hx₀.le (α + 1))
+  have hprod : x ^ (α + 1) * (1 + -x⁻¹) ^ (α + 1) = (x - 1) ^ (α + 1) := by
+    rw [← mul_rpow hx₀.le (by rw [← sub_eq_add_neg]; linarith [inv_le_one_of_one_le₀ hx]),
+      mul_add, mul_neg, mul_inv_cancel₀ hx₀.ne', mul_one, ← sub_eq_add_neg]
+  have hrhs : x ^ (α + 1) * (1 + (α + 1) * -x⁻¹) = x ^ (α + 1) - (α + 1) * x ^ α := by
+    rw [rpow_add_one hx₀.ne']
+    field_simp
+    ring
+  rw [hprod, hrhs] at hmul
+  rw [le_div_iff₀ hα₁]
+  linarith
+
+/-- For `α ≤ 0` and `0 < x`, `x ^ α` is bounded below by the unit forward difference of
+`t ↦ t ^ (α + 1) / (α + 1)`. -/
+theorem add_one_rpow_sub_rpow_div_le_rpow {α : ℝ} (hα₀ : α ≤ 0) {x : ℝ} (hx : 0 < x) :
+    ((x + 1) ^ (α + 1) - x ^ (α + 1)) / (α + 1) ≤ x ^ α := by
+  have hprod : x ^ (α + 1) * (1 + x⁻¹) ^ (α + 1) = (x + 1) ^ (α + 1) := by
+    rw [← mul_rpow hx.le (by positivity), mul_add, mul_one, mul_inv_cancel₀ hx.ne']
+  have hrhs : x ^ (α + 1) * (1 + (α + 1) * x⁻¹) = x ^ (α + 1) + (α + 1) * x ^ α := by
+    rw [rpow_add_one hx.ne']
+    field_simp
+  rcases lt_trichotomy (α + 1) 0 with hlt | heq | hgt
+  · have hlog : log (1 + x⁻¹) ≤ x⁻¹ := by
+      linarith [log_le_sub_one_of_pos (by positivity : 0 < 1 + x⁻¹)]
+    have hbern : 1 + (α + 1) * x⁻¹ ≤ (1 + x⁻¹) ^ (α + 1) := by
+      rw [rpow_def_of_pos (by positivity)]
+      linarith [(add_one_le_exp (x⁻¹ * (α + 1))).trans
+        (exp_le_exp.mpr (mul_le_mul_of_nonpos_right hlog hlt.le))]
+    have hmul := mul_le_mul_of_nonneg_left hbern (rpow_nonneg hx.le (α + 1))
+    rw [hprod, hrhs] at hmul
+    rw [div_le_iff_of_neg hlt]
+    linarith
+  · rw [heq, div_zero]
+    positivity
+  · have hbern := rpow_one_add_le_one_add_mul_self (s := x⁻¹)
+      (by linarith [inv_nonneg.mpr hx.le]) hgt.le (by linarith)
+    have hmul := mul_le_mul_of_nonneg_left hbern (rpow_nonneg hx.le (α + 1))
+    rw [hprod, hrhs] at hmul
+    rw [div_le_iff₀ hgt]
+    linarith
 
 end Real
 
