@@ -99,9 +99,7 @@ theorem nhds_one_hasBasis_isCompact_and_le [NonarchimedeanGroup G] {U₀ : OpenS
     (𝓝 (1 : G)).HasBasis (fun V : OpenSubgroup G ↦ IsCompact (V : Set G) ∧ V ≤ U₀)
       fun V ↦ (V : Set G) :=
   (NonarchimedeanGroup.nhds_one_hasBasis_openSubgroup G).to_hasBasis'
-    (fun W _ ↦ ⟨U₀ ⊓ W, ⟨(U₀ ⊓ W).isCompact_of_subset_isCompact hU₀ inf_le_left, inf_le_left⟩,
-      inf_le_right⟩)
-    fun V _ ↦ V.mem_nhds_one
+    (fun W _ ↦ isCoinitial_isCompact_and_le hU₀ W) fun V _ ↦ V.mem_nhds_one
 
 /-- **Profinite normal refinement inside a compact open subgroup.** Because a compact open subgroup
 `U₀` of a totally disconnected topological group is profinite, every identity neighbourhood of `G`
@@ -140,7 +138,7 @@ theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
   have hsub : V.toSubgroup.subgroupOf U₀' = N.toSubgroup := by
     ext x
     simp [V, H_sub, Subgroup.mem_subgroupOf]
-  refine ⟨V, V.isCompact_of_subset_isCompact hU₀ hVU₀, hVU₀, ?_, ?_⟩
+  refine ⟨V, hU₀.of_isClosed_subset V.isClosed hVU₀, hVU₀, ?_, ?_⟩
   · rw [hsub]
     exact N.isNormal'
   · rintro _ ⟨x, hxN, rfl⟩
@@ -163,7 +161,7 @@ theorem exists_openSubgroup_isCompact_subset {U : Set G} (hU : U ∈ 𝓝 (1 : G
     ∃ H : OpenSubgroup G, IsCompact (H : Set G) ∧ (H : Set G) ⊆ U := by
   obtain ⟨K, hK_compact, hK_mem⟩ := exists_compact_mem_nhds (1 : G)
   obtain ⟨H, hH⟩ := is_nonarchimedean (U ∩ K) (inter_mem hU hK_mem)
-  exact ⟨H, H.isCompact_of_subset_isCompact hK_compact (hH.trans inter_subset_right),
+  exact ⟨H, hK_compact.of_isClosed_subset H.isClosed (hH.trans inter_subset_right),
     hH.trans inter_subset_left⟩
 
 /-- In a weakly locally compact nonarchimedean group (and hence in every locally profinite group),
@@ -202,42 +200,27 @@ end NonarchimedeanGroup
 namespace IsTopologicalGroup
 
 /-- **Van Dantzig's basis step.** A weakly locally compact zero-dimensional topological group is
-nonarchimedean: shrinking any neighbourhood of `1` to a closed compact neighbourhood and refining
-by a clopen set produces a compact clopen identity neighbourhood whose left-translation stabilizer
-is an open subgroup inside it. Since a locally compact (or compact) totally disconnected
-topological group is Hausdorff and therefore zero-dimensional, this instance applies automatically
-to every profinite and locally profinite group. -/
+nonarchimedean. In particular, this applies to profinite and locally profinite groups, which are
+zero-dimensional because they are Hausdorff, totally disconnected, and weakly locally compact. -/
 @[to_additive /-- **Van Dantzig's basis step.** A weakly locally compact zero-dimensional
-topological additive group is nonarchimedean: shrinking any neighbourhood of `0` to a closed
-compact neighbourhood and refining by a clopen set produces a compact clopen neighbourhood of `0`
-whose translation stabilizer is an open additive subgroup inside it. Since a locally compact (or
-compact) totally disconnected topological additive group is Hausdorff and therefore
-zero-dimensional, this instance applies automatically to every profinite and locally profinite
-additive group. -/]
+topological additive group is nonarchimedean. In particular, this applies to profinite and locally
+profinite additive groups, which are zero-dimensional because they are Hausdorff, totally
+disconnected, and weakly locally compact. -/]
 instance (priority := 100) nonarchimedeanGroup_of_weaklyLocallyCompactSpace {G : Type*} [Group G]
     [TopologicalSpace G] [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G]
     [ZeroDimensionalSpace G] : NonarchimedeanGroup G where
   is_nonarchimedean _ hU := by
+    -- Shrink `U` to a closed compact neighbourhood `K` of `1`, refine `K` by a clopen
+    -- neighbourhood `C` of `1`, and take the left-translation stabilizer of `C`.
     obtain ⟨K, hK_mem, -, hK_compact, -, hKU⟩ :=
       TauCeti.exists_mem_nhds_one_isClosed_isCompact_inv_eq_subset hU
     obtain ⟨C, ⟨hC_clopen, h1C⟩, hCK⟩ := (nhds_basis_isClopen (1 : G)).mem_iff.mp hK_mem
     have hC_compact : IsCompact C := hK_compact.of_isClosed_subset hC_clopen.isClosed hCK
-    exact ⟨OpenSubgroup.stabilizer G hC_compact hC_clopen.isOpen,
-      (OpenSubgroup.stabilizer_subset hC_compact hC_clopen.isOpen h1C).trans (hCK.trans hKU)⟩
+    refine ⟨OpenSubgroup.stabilizer G hC_compact hC_clopen.isOpen, ?_⟩
+    rw [OpenSubgroup.coe_stabilizer]
+    exact (MulAction.stabilizer_subset_of_one_mem h1C).trans (hCK.trans hKU)
 
 section VanDantzig
-
-/-- A topological group admitting a compact open subgroup (in particular, one in which every
-identity neighbourhood contains a compact open subgroup) is locally compact. -/
-@[to_additive /-- A topological additive group admitting a compact open additive subgroup (in
-particular, one in which every neighbourhood of `0` contains a compact open additive subgroup) is
-locally compact. -/]
-theorem locallyCompactSpace_of_exists_openSubgroup_isCompact {G : Type*} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G]
-    (h : ∀ U ∈ 𝓝 (1 : G), ∃ H : OpenSubgroup G, IsCompact (H : Set G) ∧ (H : Set G) ⊆ U) :
-    LocallyCompactSpace G := by
-  obtain ⟨H, hH_compact, -⟩ := h univ univ_mem
-  exact hH_compact.locallyCompactSpace_of_mem_nhds_of_group H.mem_nhds_one
 
 /-- **Van Dantzig's theorem.** For a Hausdorff topological group `G`, the following are equivalent:
 1. `G` is locally compact and totally disconnected
@@ -265,8 +248,10 @@ theorem locallyCompactSpace_and_totallyDisconnectedSpace_tfae (G : Type*) [Group
   tfae_have 4 → 3
   | hB => fun U hU ↦ hB.mem_iff.mp hU
   tfae_have 3 → 2
-  | h => ⟨locallyCompactSpace_of_exists_openSubgroup_isCompact h,
-      { is_nonarchimedean := fun U hU ↦ let ⟨H, _, hHU⟩ := h U hU; ⟨H, hHU⟩ }⟩
+  | h =>
+    ⟨let ⟨H, hH, _⟩ := h univ univ_mem
+     hH.locallyCompactSpace_of_mem_nhds_of_group H.mem_nhds_one,
+     { is_nonarchimedean := fun U hU ↦ let ⟨H, _, hHU⟩ := h U hU; ⟨H, hHU⟩ }⟩
   tfae_have 2 → 1
   | ⟨hLC, hNA⟩ => ⟨hLC, inferInstance⟩
   tfae_finish

@@ -26,7 +26,7 @@ of van Dantzig's theorem, written for left translations in place of right transl
 ## Main definitions and results
 
 * `MulAction.isOpen_stabilizer_of_isCompact`, with additive form
-  `AddAction.isOpen_stabilizer_of_isCompact`: the pointwise stabilizer of a compact open subset
+  `AddAction.isOpen_stabilizer_of_isCompact`: the setwise stabilizer of a compact open subset
   under a continuous group action is open.
 * `OpenSubgroup.stabilizer`, with additive form `OpenAddSubgroup.stabilizer`: that stabilizer
   bundled as an `OpenSubgroup`, together with its coercion and membership simp lemmas.
@@ -47,10 +47,10 @@ open scoped Pointwise Topology
 
 namespace MulAction
 
-/-- **The pointwise stabilizer of a compact open set is open.** For a continuous action of `G` on
+/-- **The setwise stabilizer of a compact open set is open.** For a continuous action of `G` on
 `X`, Wallace's tube lemma gives an open neighbourhood of `1` mapping `C` into itself, and its
 symmetric core lies in `MulAction.stabilizer G C`. -/
-@[to_additive /-- **The pointwise stabilizer of a compact open set is open.** For a continuous
+@[to_additive /-- **The setwise stabilizer of a compact open set is open.** For a continuous
 additive action of `G` on `X`, Wallace's tube lemma gives an open neighbourhood of `0` mapping `C`
 into itself, and its symmetric core lies in `AddAction.stabilizer G C`. -/]
 theorem isOpen_stabilizer_of_isCompact {G X : Type*} [Group G] [TopologicalSpace G]
@@ -101,9 +101,9 @@ section Action
 variable (G : Type*) {X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   [ContinuousInv G] [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X] {C : Set X}
 
-/-- The pointwise stabilizer of a compact open set under a continuous group action, bundled as an
+/-- The setwise stabilizer of a compact open set under a continuous group action, bundled as an
 `OpenSubgroup`. -/
-@[to_additive /-- The pointwise stabilizer of a compact open set under a continuous additive group
+@[to_additive /-- The setwise stabilizer of a compact open set under a continuous additive group
 action, bundled as an `OpenAddSubgroup`. -/]
 def stabilizer (hC : IsCompact C) (hC_open : IsOpen C) : OpenSubgroup G where
   toSubgroup := MulAction.stabilizer G C
@@ -134,34 +134,13 @@ theorem mem_stabilizer_iff (hC : IsCompact C) (hC_open : IsOpen C) {g : G} :
 
 end Action
 
-section LeftTranslation
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {C : Set G}
-
-/-- For a compact open set `C ⊆ G` containing `1`, its bundled left-translation stabilizer is
-contained in `C`. -/
-@[to_additive /-- For a compact open set `C ⊆ G` containing `0`, its bundled translation
-stabilizer is contained in `C`. -/]
-theorem stabilizer_subset (hC : IsCompact C) (hC_open : IsOpen C) (h1 : (1 : G) ∈ C) :
-    (stabilizer G hC hC_open : Set G) ⊆ C :=
-  MulAction.stabilizer_subset_of_one_mem h1
-
-/-- For a compact open set `C ⊆ G` containing `1`, its bundled left-translation stabilizer is
-compact. -/
-@[to_additive /-- For a compact open set `C ⊆ G` containing `0`, its bundled translation
-stabilizer is compact. -/]
-theorem isCompact_stabilizer (hC : IsCompact C) (hC_open : IsOpen C) (h1 : (1 : G) ∈ C) :
-    IsCompact (stabilizer G hC hC_open : Set G) :=
-  MulAction.isCompact_stabilizer hC hC_open h1
-
 /-- The bundled left-translation stabilizer of a compact open subgroup is the subgroup itself. -/
 @[to_additive (attr := simp) /-- The bundled translation stabilizer of a compact open additive
 subgroup is the subgroup itself. -/]
-theorem stabilizer_coe (H : OpenSubgroup G) (hH : IsCompact (H : Set G)) :
+theorem stabilizer_coe {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (H : OpenSubgroup G) (hH : IsCompact (H : Set G)) :
     stabilizer G hH H.isOpen = H :=
   toSubgroup_injective (MulAction.stabilizer_subgroup H.toSubgroup)
-
-end LeftTranslation
 
 end OpenSubgroup
 

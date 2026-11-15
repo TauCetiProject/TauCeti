@@ -72,20 +72,19 @@ example :
       exact mul_le_of_le_one_right (zpow_nonneg zero_le_two (-m)) hy
     · rw [norm_mul, hnorm, neg_neg]
       exact (mul_le_mul_of_nonneg_left hx (zpow_nonneg zero_le_two m)).trans_eq
-        (by simp; field_simp)
-    · simp; field_simp
+        (by rw [zpow_neg, mul_inv_cancel₀ (zpow_ne_zero m two_ne_zero)])
+    · rw [zpow_neg, mul_inv_cancel_left₀ (zpow_ne_zero m two_ne_zero)]
   let L_sub (m : ℤ) : AddSubgroup ℚ_[2] :=
     (PadicInt.subring 2).toAddSubgroup.map (AddMonoidHom.mulLeft ((2 : ℚ_[2]) ^ m))
   have hL_coe (m : ℤ) : (L_sub m : Set ℚ_[2]) =
       (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := by
     ext x
     simp [L_sub, mem_smul_set, smul_eq_mul]
-  let L (m : ℤ) : OpenAddSubgroup ℚ_[2] :=
-    ⟨L_sub m, by
-      change IsOpen (L_sub m : Set ℚ_[2])
-      rw [hL_coe, hball]
-      exact (IsUltrametricDist.isClopen_closedBall (0 : ℚ_[2])
-        (zpow_ne_zero (-m) two_ne_zero)).isOpen⟩
+  have hL_open (m : ℤ) : IsOpen (L_sub m : Set ℚ_[2]) := by
+    rw [hL_coe, hball]
+    exact (IsUltrametricDist.isClopen_closedBall (0 : ℚ_[2])
+      (zpow_ne_zero (-m) two_ne_zero)).isOpen
+  let L (m : ℤ) : OpenAddSubgroup ℚ_[2] := ⟨L_sub m, hL_open m⟩
   have hL_set (m : ℤ) : (L m : Set ℚ_[2]) =
       (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := hL_coe m
   have hL_compact (m : ℤ) : IsCompact (L m : Set ℚ_[2]) := by
@@ -127,7 +126,7 @@ example :
     have hgC : g ∈ C := MulAction.stabilizer_subset_of_one_mem (by simp [C]) hg
     have hg_mem := MulAction.mem_stabilizer_set.mp hg
     rcases hgC with rfl | rfl | rfl
-    · rfl
+    · exact Subgroup.one_mem _
     · exact False.elim (hnot ((hg_mem (Equiv.swap 0 2)).mpr (by simp [C])))
     · have hnot' : Equiv.swap (0 : Fin 3) 2 * Equiv.swap 0 1 ∉ C := by
         simp only [C, mem_insert_iff, mem_singleton_iff]
