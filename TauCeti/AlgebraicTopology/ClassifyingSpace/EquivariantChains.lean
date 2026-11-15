@@ -217,6 +217,12 @@ instance (n : ℕ) : Projective ((universalGSpaceCellularComplex k G).X n) :=
 
 /-- Geometric cellular chains with their translation action resolve the trivial module.
 The augmentation is the cellular augmentation, expressed via ordered chains. -/
+-- The body is exposed, as for `universalGSpaceResolution`, `singularChainsResolution`, and
+-- Mathlib's `Rep.standardResolution`, so that the complex of the resolution is
+-- `universalGSpaceCellularComplex k G` by definition and consumers can apply `groupHomologyIso`,
+-- `groupCohomologyIso`, and resolution comparison lemmas directly without `eqToHom`/`eqToIso`
+-- transport wrappers.
+@[expose]
 def universalGSpaceCellularResolution : ProjectiveResolution (Rep.trivial k G k) where
   complex := universalGSpaceCellularComplex k G
   π := (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G
@@ -230,39 +236,36 @@ theorem universalGSpaceCellularResolution_complex :
 @[simp]
 theorem universalGSpaceCellularResolution_π :
     (universalGSpaceCellularResolution k G).π =
-      eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-        (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G :=
-  -- The reflexive transport reduces to the identity inside this defining module; clients
-  -- need it in the statement because the projective resolution's body is hidden.
-  (Category.id_comp _).symm
+      (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G :=
+  (rfl)
 
 /-- In degree zero the augmentation is the geometric cellular augmentation, not just
 an abstract map to the trivial representation. -/
 theorem universalGSpaceCellularResolution_π_f_zero_hom_apply
     (x : (cellularChainGroup (univ : Set (universalGSpace G))
       (ModuleCat.of k k) 0 : ModuleCat k)) :
-    ((eqToHom (universalGSpaceCellularResolution_complex k G).symm ≫
-        (universalGSpaceCellularResolution k G).π).f 0).hom
+    ((universalGSpaceCellularResolution k G).π.f 0).hom
       ((eqToHom (universalGSpaceCellularComplex_X k G 0).symm) x) =
       cellularAugmentation (univ : Set (universalGSpace G)) (ModuleCat.of k k) x := by
-  -- Evaluation cancels the transports identifying the resolution's degree-zero term with
-  -- its geometric cellular chain group.
-  simp only [universalGSpaceCellularResolution_π, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, HomologicalComplex.comp_f, universalGSpaceCellularComplexIso_hom_f,
-    universalGSpaceAugmentation_f_zero]
-  dsimp only [universalGSpaceChainComplex]
-  erw [← ConcreteCategory.comp_apply, ← Category.assoc, ← Category.assoc,
-    eqToHom_trans, eqToHom_refl, Category.id_comp]
-  -- The augmentation's codomain still carries the single₀ term's module instance. Specify
-  -- the concrete composite to normalize that instance before using the linear-map API.
-  change (permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)).hom
-      ((universalGSpaceCellularRepIso k G 0).hom.hom x) = _
-  simpa only [← Representation.IntertwiningMap.toLinearMap_apply,
-    universalGSpaceCellularRepIso_hom_toLinearMap, LinearEquiv.coe_coe,
-    ModuleCat.hom_comp, LinearMap.comp_apply, LinearEquiv.toModuleIso_hom,
-    Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom] using
-    ConcreteCategory.congr_hom
-      (universalGSpaceCellularChainLinearEquiv_comp_permutationAugmentation k G) x
+  simp only [universalGSpaceCellularResolution_π, HomologicalComplex.comp_f,
+    universalGSpaceCellularComplexIso_hom_f, universalGSpaceAugmentation_f_zero]
+  -- Cancel the inverse degree-zero complex-carrier transports before reading off the linear maps.
+  have hcomp :
+      ((eqToHom (universalGSpaceCellularComplex_X k G 0) ≫
+          (universalGSpaceCellularRepIso k G 0).hom ≫
+            permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)).hom)
+        ((eqToHom (universalGSpaceCellularComplex_X k G 0).symm) x) =
+        (permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)).hom
+          ((universalGSpaceCellularRepIso k G 0).hom.hom x) := by
+    rw [← ConcreteCategory.comp_apply, ← Category.assoc, ← Category.assoc,
+      eqToHom_trans, eqToHom_refl, Category.id_comp, ConcreteCategory.comp_apply]
+  exact hcomp.trans <| by
+    simpa only [← Representation.IntertwiningMap.toLinearMap_apply,
+      universalGSpaceCellularRepIso_hom_toLinearMap, LinearEquiv.coe_coe,
+      ModuleCat.hom_comp, LinearMap.comp_apply, LinearEquiv.toModuleIso_hom,
+      Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom] using
+      ConcreteCategory.congr_hom
+        (universalGSpaceCellularChainLinearEquiv_comp_permutationAugmentation k G) x
 
 /-- The geometric cellular-to-bar comparison is a chain homotopy equivalence in `Rep k G`:
 its inverse and both homotopies retain equivariance. -/
@@ -330,57 +333,21 @@ theorem universalGSpaceCellularRepStandardHomotopyEquiv_hom_f_hom_cellularChainB
 theorem universalGSpaceCellularRepStandardHomotopyEquiv_comp_π :
     (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom ≫
         (Rep.standardResolution k G).π =
-      (universalGSpaceCellularComplexIso k G).hom ≫ universalGSpaceAugmentation k G := by
-  rw [universalGSpaceCellularRepStandardHomotopyEquiv_hom]
+      (universalGSpaceCellularResolution k G).π := by
+  rw [universalGSpaceCellularRepStandardHomotopyEquiv_hom, universalGSpaceCellularResolution_π]
   exact (Category.assoc _ _ _).trans
     (congrArg ((universalGSpaceCellularComplexIso k G).hom ≫ ·)
       (universalGSpaceChainComplexToStandardComplex_comp_standardResolution_π k G))
 
-/-- The explicit geometric cellular-to-standard comparison typed between the underlying complexes
-of `universalGSpaceCellularResolution` and `Rep.standardResolution`. -/
-def universalGSpaceCellularResolutionToStandard :
-    (universalGSpaceCellularResolution k G).complex ⟶ (Rep.standardResolution k G).complex :=
-  eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-    (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom
-
-/-- `universalGSpaceCellularResolutionToStandard` is
-`eqToHom (universalGSpaceCellularResolution_complex k G)` followed by the forward map of
-`universalGSpaceCellularRepStandardHomotopyEquiv`. -/
-theorem universalGSpaceCellularResolutionToStandard_def :
-    universalGSpaceCellularResolutionToStandard k G =
-      eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-        (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom :=
-  (rfl)
-
-/-- `universalGSpaceCellularResolutionToStandard` commutes with the resolution augmentations. -/
-@[reassoc (attr := simp)]
-theorem universalGSpaceCellularResolutionToStandard_comp_π :
-    universalGSpaceCellularResolutionToStandard k G ≫ (Rep.standardResolution k G).π =
-      (universalGSpaceCellularResolution k G).π :=
-  (Category.assoc _ _ _).trans <|
-    (congrArg (eqToHom (universalGSpaceCellularResolution_complex k G) ≫ ·)
-      (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G)).trans
-      (universalGSpaceCellularResolution_π k G).symm
-
-/-- `universalGSpaceCellularResolutionToStandard` preserves the resolution augmentations in degree
-zero. -/
-@[reassoc]
-theorem universalGSpaceCellularResolutionToStandard_f_zero_comp_π :
-    (universalGSpaceCellularResolutionToStandard k G).f 0 ≫
-        (Rep.standardResolution k G).π.f 0 =
-      (universalGSpaceCellularResolution k G).π.f 0 :=
-  HomologicalComplex.congr_hom (universalGSpaceCellularResolutionToStandard_comp_π k G) 0
-
 /-- The explicit geometric cellular-to-bar map agrees up to equivariant chain homotopy
 with Mathlib's abstract comparison of the two projective resolutions. -/
 def universalGSpaceCellularStandardComparisonHomotopy :
-    Homotopy (eqToHom (universalGSpaceCellularResolution_complex k G) ≫
-        (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom)
+    Homotopy (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom
       (ProjectiveResolution.homotopyEquiv (universalGSpaceCellularResolution k G)
         (Rep.standardResolution k G)).hom :=
   ProjectiveResolution.homotopyOfComm (universalGSpaceCellularResolution k G)
-    (Rep.standardResolution k G) (universalGSpaceCellularResolutionToStandard k G)
-    (universalGSpaceCellularResolutionToStandard_comp_π k G)
+    (Rep.standardResolution k G) (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom
+    (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G)
 
 end Resolution
 

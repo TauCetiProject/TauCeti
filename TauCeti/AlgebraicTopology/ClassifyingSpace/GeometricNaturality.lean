@@ -24,8 +24,10 @@ equivalences from geometric cellular chains to Mathlib's standard complex, both 
 (`TauCeti.universalGSpaceCellularRepStandardHomotopyEquiv`) and after forgetting the action
 (`TauCeti.universalGSpaceCellularStandardHomotopyEquiv`). Their forward maps are strictly natural
 in group homomorphisms (`MonoidHom.universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality`,
-`MonoidHom.universalGSpaceCellularStandardHomotopyEquiv_hom_naturality`), while the homotopy
-inverses commute with group homomorphisms up to equivariant chain homotopy
+`MonoidHom.universalGSpaceCellularStandardHomotopyEquiv_hom_naturality`), so
+`MonoidHom.universalGSpaceCellularComplexMap` preserves the resolution augmentations in degree
+zero (`MonoidHom.universalGSpaceCellularComplexMap_f_zero_comp_π`), while the homotopy inverses
+commute with group homomorphisms up to equivariant chain homotopy
 (`MonoidHom.universalGSpaceCellularRepStandardHomotopyEquivInvHomotopy`). For a nontrivial
 coefficient ring, the module-level forward comparison is likewise a homotopy equivalence and not an
 isomorphism (`TauCeti.not_isIso_universalGSpaceCellularStandardHomotopyEquiv_hom`).
@@ -262,6 +264,55 @@ theorem universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality (φ : G �
     universalGSpaceCellularRepStandardHomotopyEquiv_hom, CategoryTheory.Functor.map_comp,
     φ.universalGSpaceCellularComplexIso_hom_naturality_assoc,
     φ.universalGSpaceChainComplexToStandardComplex_naturality, Category.assoc]
+
+/-- In degree zero, `universalGSpaceCellularComplexMap` preserves the resolution augmentations. -/
+@[reassoc]
+theorem universalGSpaceCellularComplexMap_f_zero_comp_π (φ : G →* H) :
+    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+        (Rep.resFunctor φ).map ((universalGSpaceCellularResolution k H).π.f 0) =
+      (universalGSpaceCellularResolution k G).π.f 0 :=
+  -- `(universalGSpaceCellularResolution k _).complex`, `(Rep.standardResolution k _).complex`,
+  -- and `(Rep.resFunctor φ).obj (Rep.trivial k H k)` agree with their target carriers only by
+  -- unfolding rather than at implicit transparency, so the diagram is assembled in a typed `calc`
+  -- block.
+  let eG : (universalGSpaceCellularComplex k G).X 0 ⟶ (Rep.standardComplex k G).X 0 :=
+    ((universalGSpaceCellularRepStandardHomotopyEquiv k G).hom).f 0
+  let eH : (universalGSpaceCellularComplex k H).X 0 ⟶ (Rep.standardComplex k H).X 0 :=
+    ((universalGSpaceCellularRepStandardHomotopyEquiv k H).hom).f 0
+  let πG : (Rep.standardComplex k G).X 0 ⟶ Rep.trivial k G k :=
+    (Rep.standardResolution k G).π.f 0
+  let πH : (Rep.standardComplex k H).X 0 ⟶ Rep.trivial k H k :=
+    (Rep.standardResolution k H).π.f 0
+  let πCellG : (universalGSpaceCellularComplex k G).X 0 ⟶ Rep.trivial k G k :=
+    (universalGSpaceCellularResolution k G).π.f 0
+  let πCellH : (universalGSpaceCellularComplex k H).X 0 ⟶ Rep.trivial k H k :=
+    (universalGSpaceCellularResolution k H).π.f 0
+  let resπH : Rep.res φ ((Rep.standardComplex k H).X 0) ⟶ Rep.trivial k G k :=
+    (Rep.resFunctor φ).map πH
+  let resπCellH : Rep.res φ ((universalGSpaceCellularComplex k H).X 0) ⟶ Rep.trivial k G k :=
+    (Rep.resFunctor φ).map πCellH
+  have hH : resπCellH = (Rep.resFunctor φ).map eH ≫ resπH :=
+    (congrArg ((Rep.resFunctor φ).map ·)
+      (HomologicalComplex.congr_hom
+        (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k H) 0).symm).trans
+      ((Rep.resFunctor φ).map_comp eH πH)
+  have hG : eG ≫ πG = πCellG :=
+    HomologicalComplex.congr_hom
+      (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G) 0
+  have hnat : (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫ (Rep.resFunctor φ).map eH =
+      eG ≫ (φ.standardComplexMap (k := k)).f 0 :=
+    HomologicalComplex.congr_hom
+      (φ.universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality (k := k)) 0
+  have hstd : (φ.standardComplexMap (k := k)).f 0 ≫ resπH = πG :=
+    φ.standardComplexMap_f_zero_comp_standardResolution_π
+  calc (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫ resπCellH
+      = ((φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫ (Rep.resFunctor φ).map eH) ≫
+          resπH := by
+        rw [hH, Category.assoc]
+    _ = eG ≫ ((φ.standardComplexMap (k := k)).f 0 ≫ resπH) := by
+        rw [hnat, Category.assoc]
+    _ = eG ≫ πG := congrArg (eG ≫ ·) hstd
+    _ = πCellG := hG
 
 /-- **The equivariant homotopy inverses from the standard complex to geometric cellular chains
 commute with group homomorphisms up to equivariant chain homotopy.** For any group homomorphism
