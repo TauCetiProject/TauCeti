@@ -7,6 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.Basic
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+public import Mathlib.RingTheory.PrincipalIdealDomain
+import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import Mathlib.Algebra.Module.Torsion.Basic
+import Mathlib.LinearAlgebra.FreeModule.PID
 
 /-!
 # Annihilators of `Ext` groups of modules
@@ -20,6 +27,13 @@ finite module `M`. A map out of a finite free module with image in `I F`, for an
 `N` the residue field of a local ring this is the property of minimal free presentations used to
 compute depths.
 
+Over a principal ideal domain, every `Ext` group of positive degree out of a finitely generated
+module is torsion. The torsion submodule `T` of `N` is killed by a nonzero divisor, while `N ⧸ T`
+is free, so that the restriction `Ext N M (n + 1) → Ext T M (n + 1)` is injective. Over `ℤ` this
+says that `Ext¹(A, M)` is a torsion group for every finitely generated abelian group `A`, which is
+what makes the kernel of the Kronecker map in the universal coefficient sequence of singular
+cohomology torsion when the homology is finitely generated.
+
 ## Main results
 
 * `CategoryTheory.Abelian.Ext.smul_eq_zero_of_mem_annihilator_left` and
@@ -29,6 +43,9 @@ compute depths.
   the annihilators of `N` and `M` are comaximal.
 * `CategoryTheory.Abelian.Ext.comp_mk₀_eq_zero_of_range_le_smul_top`: if `I` annihilates `N`, a map
   `K ⟶ F` from a finite free module with image in `I • ⊤` induces zero on `Ext N - n`.
+* `CategoryTheory.Abelian.Ext.exists_mem_nonZeroDivisors_smul_eq_zero`: over a principal ideal
+  domain, every element of `Ext N M (n + 1)` with `N` finitely generated is killed by a nonzero
+  divisor.
 -/
 
 public section
@@ -92,5 +109,28 @@ theorem Ext.comp_mk₀_eq_zero_of_range_le_smul_top {K F : ModuleCat.{v} R} [Mod
     simp [Finsupp.single_apply]
   rw [hsum, Ext.mk₀_sum, Ext.comp_sum]
   exact Finset.sum_eq_zero fun j _ ↦ key _ (hf ⟨b j, rfl⟩)
+
+/-- **`Ext` out of a finitely generated module over a principal ideal domain is torsion** in
+positive degrees: every `x : Ext N M (n + 1)` is killed by a nonzero divisor. Over `ℤ`, `Ext¹(A, M)`
+is a torsion group for every finitely generated abelian group `A`. -/
+theorem Ext.exists_mem_nonZeroDivisors_smul_eq_zero [IsDomain R] [IsPrincipalIdealRing R]
+    [Module.Finite R N] {n : ℕ} (x : Ext N M (n + 1)) : ∃ r ∈ nonZeroDivisors R, r • x = 0 := by
+  -- The short exact sequence `0 ⟶ T ⟶ N ⟶ N ⧸ T ⟶ 0` of the torsion submodule `T` of `N`.
+  let T := Submodule.torsion R N
+  let S : ShortComplex (ModuleCat.{v} R) :=
+    ModuleCat.shortComplexOfCompEqZero T.subtype T.mkQ (by ext; simp)
+  have hS : S.ShortExact := ModuleCat.shortComplex_shortExact S (LinearMap.exact_subtype_mkQ T)
+    T.injective_subtype T.mkQ_surjective
+  -- The finitely generated torsion module `T` is killed by a nonzero divisor `r`.
+  obtain ⟨r, hr, hr₀⟩ := Submodule.annihilator_top_inter_nonZeroDivisors
+    (Submodule.torsion_isTorsion (R := R) (M := N))
+  refine ⟨r, hr₀, ?_⟩
+  have h₁ : (Ext.mk₀ S.f).comp (r • x) (zero_add _) = 0 := by
+    rw [Ext.comp_smul]
+    exact smul_eq_zero_of_mem_annihilator_left (by rwa [← Submodule.annihilator_top]) _
+  -- `N ⧸ T` is finitely generated and torsion-free, hence free, so `Ext (N ⧸ T) M (n + 1) = 0`.
+  have : Projective S.X₃ := ModuleCat.projective_of_free (Module.Free.chooseBasis R (N ⧸ T))
+  obtain ⟨y, hy⟩ := Ext.contravariant_sequence_exact₂ hS M (r • x) h₁
+  rw [← hy, Ext.eq_zero_of_projective y, Ext.comp_zero]
 
 end CategoryTheory.Abelian

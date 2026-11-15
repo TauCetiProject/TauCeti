@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
@@ -56,6 +58,14 @@ isomorphism in degree `n + 1` (`TopCat.singularKronecker_bijective_succ_of_proje
 instance, integral cohomology vanishes above the top degree of a space whose integral homology is
 free in that degree and zero above it, while in the top degree it need not be torsion-free.
 
+Over a principal ideal domain the `Ext¹` term of a finitely generated module is torsion
+(`CategoryTheory.Abelian.Ext.exists_mem_nonZeroDivisors_smul_eq_zero`). So if `Hₙ(X; R)` is finitely
+generated, every class of `Hⁿ⁺¹(X; R, M)` evaluating to zero on `Hₙ₊₁(X; R)` is torsion
+(`TopCat.mem_torsion_of_singularKronecker_eq_zero`), and for torsion-free `M` the kernel of the
+Kronecker map is exactly the torsion submodule (`TopCat.singularKronecker_eq_zero_iff_mem_torsion`).
+For `k = R = M = ℤ` this says that a class of `Hⁿ⁺¹(X; ℤ)` has finite order exactly when it
+evaluates to zero on `Hₙ₊₁(X; ℤ)`, provided `Hₙ(X; ℤ)` is finitely generated.
+
 ## Main declarations
 
 * `TopCat.singularKronecker_bijective_of_projective_homology` and
@@ -90,6 +100,10 @@ free in that degree and zero above it, while in the top degree it need not be to
   `Hⁿ⁺¹(X; R, M) ≃ₗ[k] Ext¹(Hₙ(X; R), M) × Hom(Hₙ₊₁(X; R), M)`.
 * `TopCat.singularExtToCohomology_naturality`: naturality of the first map in `X`; the naturality
   of the Kronecker map is `TopCat.singularKronecker_naturality`.
+* `TopCat.mem_torsion_of_singularKronecker_eq_zero` and
+  `TopCat.singularKronecker_eq_zero_iff_mem_torsion`: over a principal ideal domain, when `Hₙ(X; R)`
+  is finitely generated, classes of `Hⁿ⁺¹(X; R, M)` with vanishing Kronecker pairing are torsion,
+  and for torsion-free `M` these are exactly the torsion classes.
 
 ## References
 
@@ -360,6 +374,41 @@ theorem isZero_singularCohomology_succ_of_projective_homology (n : ℕ)
   exact TauCeti.ChainComplex.isZero_homology_linearYonedaObj_succ_of_projective_homology n h
 
 end HereditarySingleDegree
+
+section PrincipalIdealDomain
+
+variable {k : Type w} [CommRing k] [IsDomain k] [IsPrincipalIdealRing k] (X : TopCat.{w})
+  (R M : ModuleCat.{w} k) [Module.Projective k R]
+
+/-- **Classes with vanishing Kronecker pairing are torsion when the homology below is finitely
+generated**: over a principal ideal domain `k`, for a projective coefficient module `R`, if
+`Hₙ(X; R)` is finitely generated, every class of `Hⁿ⁺¹(X; R, M)` evaluating to zero on
+`Hₙ₊₁(X; R)` is killed by a nonzero divisor of `k`. -/
+theorem mem_torsion_of_singularKronecker_eq_zero (n : ℕ)
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    {x : X.singularCohomology R k M (n + 1)} (hx : X.singularKronecker k (n + 1) x = 0) :
+    x ∈ Submodule.torsion k (X.singularCohomology R k M (n + 1)) := by
+  obtain ⟨e, rfl⟩ := (X.exact_singularExtToCohomology_singularKronecker R M n x).1 hx
+  obtain ⟨r, hr, hre⟩ := Ext.exists_mem_nonZeroDivisors_smul_eq_zero e
+  exact ⟨⟨r, hr⟩, by rw [Submonoid.smul_def, ← map_smul, hre, map_zero]⟩
+
+/-- **The torsion of singular cohomology is the kernel of the Kronecker map** over a principal
+ideal domain `k`, for a projective coefficient module `R` and a torsion-free module `M`, when
+`Hₙ(X; R)` is finitely generated: a class of `Hⁿ⁺¹(X; R, M)` is torsion exactly when it evaluates
+to zero on `Hₙ₊₁(X; R)`. For `k = R = M = ℤ` and finitely generated `Hₙ(X; ℤ)`, the torsion
+subgroup of `Hⁿ⁺¹(X; ℤ)` is the kernel of `Hⁿ⁺¹(X; ℤ) → Hom(Hₙ₊₁(X; ℤ), ℤ)`. -/
+theorem singularKronecker_eq_zero_iff_mem_torsion (n : ℕ)
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.IsTorsionFree k M] (x : X.singularCohomology R k M (n + 1)) :
+    X.singularKronecker k (n + 1) x = 0 ↔
+      x ∈ Submodule.torsion k (X.singularCohomology R k M (n + 1)) := by
+  refine ⟨X.mem_torsion_of_singularKronecker_eq_zero R M n, fun ⟨a, ha⟩ ↦ ?_⟩
+  ext y
+  apply (isRegular_iff_mem_nonZeroDivisors.mpr a.2).isSMulRegular
+  have := congrArg (fun f ↦ f.hom y) (congrArg (X.singularKronecker k (n + 1)) ha)
+  simpa [Submonoid.smul_def] using this
+
+end PrincipalIdealDomain
 
 end TopCat
 
