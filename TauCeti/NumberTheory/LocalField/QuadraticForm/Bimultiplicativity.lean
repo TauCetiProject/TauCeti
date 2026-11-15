@@ -99,9 +99,7 @@ only if `a : Kˣ` is a square. -/
 theorem quadraticNormSubgroup_eq_top_iff (h2 : (2 : K) ≠ 0) (a : Kˣ) :
     quadraticNormSubgroup (a : K) = ⊤ ↔ IsSquare a := by
   have : Invertible (2 : K) := invertibleOfNonzero h2
-  refine ⟨fun h ↦ by_contra fun ha ↦ ?_, fun ha ↦ eq_top_iff.mpr fun b _ ↦
-    (hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a b).mp
-      (hilbertSymbol_eq_one_of_isSquare_left ha b)⟩
+  refine ⟨fun h ↦ by_contra fun ha ↦ ?_, quadraticNormSubgroup_eq_top_of_isSquare⟩
   have hidx := quadraticNormSubgroup_index_eq_two_of_not_isSquare h2 ha
   rw [h, Subgroup.index_top] at hidx
   omega
