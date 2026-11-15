@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.SeededRegularization
 import Mathlib.Data.Rat.BigOperators
 import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
+import TauCeti.Combinatorics.Enumerative.RandomColoring
 
 /-!
 # Strong regular approximation of pair-color systems
@@ -82,36 +83,6 @@ theorem strongPairColorHostBound_mono (q₂ : ℕ) (δ : ℝ) (G : ℕ → ℝ) 
   dsimp [strongPairColorHostBound]; have hB := strongPairColorPartBound_mono q₂ δ G hab
   exact max_le_max le_rfl (Nat.mul_le_mul (sup_mono (range_mono (Nat.add_le_add_right hB 1)))
     (max_le_max (strongPairColorStepBound_mono q₂ δ G hB) le_rfl))
-private theorem union_bound_powerset_product {V : Type*} {q₂ : ℕ} {ξ₀ : ℝ} {u w : Finset V} (hu :
-    (q₂ + 3 : ℝ) ≤ ξ₀ ^ 2 * #u) (hw : (q₂ + 3 : ℝ) ≤ ξ₀ ^ 2 * #w) : 2 * (Fintype.card ↥(u.powerset
-    ×ˢ w.powerset) + 1) * q₂ * exp (-2 * (ξ₀ * (#u * #w : ℕ)) ^ 2 / #(u ×ˢ w)) < 1 := by
-  classical
-  rcases Nat.eq_zero_or_pos q₂ with rfl | _; · simp
-  have hpos {x : ℕ} (hx : (q₂ + 3 : ℝ) ≤ ξ₀ ^ 2 * x) : (0 : ℝ) < x := by
-    by_contra! h
-    nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg ξ₀) h, Nat.cast_nonneg (α := ℝ) q₂]
-  have hu_pos := hpos hu; have hw_pos := hpos hw
-  have hw1 : (1 : ℝ) ≤ #w := Nat.one_le_cast.2 (Nat.cast_pos.1 hw_pos)
-  have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k := (pow_le_pow_left₀ zero_le_two
-    (by linarith [add_one_le_exp (1 : ℝ)] : (2 : ℝ) ≤ exp 1) k).trans_eq
-    (by rw [← exp_nat_mul, mul_one])
-  have h4 := hpow 2; norm_num at h4
-  have hq_exp : (q₂ : ℝ) ≤ exp ((q₂ : ℝ) - 1) := (by linarith [add_one_le_exp ((q₂ : ℝ) - 1)])
-  have h1le : (1 : ℝ) ≤ (2 : ℝ) ^ #u * (2 : ℝ) ^ #w := one_le_mul_of_one_le_of_one_le (one_le_pow₀
-    (by norm_num)) (one_le_pow₀ (by norm_num))
-  refine (mul_le_mul_of_nonneg_right (c := exp 2 * (exp #u * exp #w) * exp ((q₂ : ℝ) - 1)) ?_
-    (exp_pos _).le).trans_lt ?_
-  · rw [Fintype.card_coe, card_product, card_powerset, card_powerset]; push_cast
-    refine (mul_le_mul_of_nonneg_right
-      (by linarith : 2 * ((2 : ℝ) ^ #u * (2 : ℝ) ^ #w + 1) ≤ 4 * ((2 : ℝ) ^ #u * (2 : ℝ) ^ #w))
-      (Nat.cast_nonneg _)).trans ?_
-    gcongr; exacts [hpow #u, hpow #w]
-  · rw [show -2 * (ξ₀ * (#u * #w : ℕ)) ^ 2 / (#(u ×ˢ w) : ℝ) = -2 * (ξ₀ ^ 2 * #u) * #w by
-      rw [card_product]; push_cast; field_simp]
-    simp only [← exp_add]; rw [exp_lt_one_iff]
-    nlinarith [mul_le_mul_of_nonneg_right hu hw_pos.le, mul_le_mul_of_nonneg_right hw hu_pos.le,
-      le_mul_of_one_le_right (Nat.cast_nonneg (α := ℝ) q₂) hw1, mul_nonneg (Nat.cast_nonneg (α :=
-      ℝ) q₂) hu_pos.le]
 
 namespace PairColorSystem
 variable {κ V : Type*} [Fintype V] [DecidableEq V]
@@ -282,7 +253,15 @@ theorem exists_strong_recoloring_isPairColorRegular [Fintype κ] (S : PairColorS
         sum_pairColorDensity S _ _ hAB_ne) (I := ↥(U.1.powerset ×ˢ W.1.powerset)) (fun i ↦ i.1.1 ×ˢ
         i.1.2) (fun i ↦ product_subset_product (mem_powerset.1 (mem_product.1 i.2).1)
         (mem_powerset.1 (mem_product.1 i.2).2)) (a := ξ₀ * (#U.1 * #W.1 : ℕ)) (mul_pos hξ₀_pos
-        hUW_pos) (union_bound_powerset_product (hU_large U.1 U.2) (hU_large W.1 W.2))
+        hUW_pos) (by
+          rw [card_product]; refine two_mul_add_one_mul_exp_lt_one (k := #U.1 + #W.1)
+            (by rw [Fintype.card_coe, card_product, card_powerset, card_powerset, ← pow_add]) ?_
+          have hU1 : (1 : ℝ) ≤ #U.1 := Nat.one_le_cast.2 (Q.nonempty_of_mem_parts U.2).card_pos
+          rw [Nat.cast_add, Nat.cast_mul]; linarith only [hU1, Nat.one_le_cast (α := ℝ).2
+            (Q.nonempty_of_mem_parts W.2).card_pos, mul_le_mul_of_nonneg_right (hU_large U.1 U.2)
+            (Nat.cast_nonneg #W.1), mul_le_mul_of_nonneg_right (hU_large W.1 W.2)
+            (Nat.cast_nonneg #U.1), le_mul_of_one_le_right (Nat.cast_nonneg (α := ℝ) q₂) hU1,
+            mul_nonneg (Nat.cast_nonneg (α := ℝ) q₂) (Nat.cast_nonneg #W.1)])
       have hx₀_cnt {s t' : Finset V} (hs : s ⊆ U.1) (ht' : t' ⊆ W.1) (c : κ) : (#{q ∈ s ×ˢ t' | x₀
           q = c} : ℝ) = (pairColorDensity S c s t' : ℝ) * (#s * #t' : ℕ) := by
         rw [← show {q ∈ s ×ˢ t' | S.colorOfPair q.1 q.2 = some c} = {q ∈ s ×ˢ t' | x₀ q = c} from
@@ -461,14 +440,12 @@ theorem exists_strong_recoloring_isPairColorRegular [Fintype κ] (S : PairColorS
           · exact mem_union_left _ (mem_filter.2 ⟨mem_univ _, hlt, hne⟩)
           · exact absurd (by simp [R, heq]) hne
           · exact mem_union_right _ (mem_filter.2 ⟨mem_univ _, hgt, hne⟩)
-        let sw : {p : V × V // p.1 ≠ p.2} ≃ {p : V × V // p.1 ≠ p.2} := ⟨fun p ↦ ⟨p.1.swap,
-          p.2.symm⟩, fun p ↦ ⟨p.1.swap, p.2.symm⟩, fun p ↦ Subtype.ext (Prod.swap_swap p.1), fun p
-          ↦ Subtype.ext (Prod.swap_swap p.1)⟩
-        have hmap_eq : Egt.map sw.toEmbedding = Elt := by
-          ext p; rw [mem_map_equiv]; simp only [Egt, Elt, mem_filter, mem_univ, true_and, sw,
-            Equiv.coe_fn_symm_mk, Prod.fst_swap, Prod.snd_swap, ne_eq, show (R.color ⟨p.1.swap,
-            p.2.symm⟩ = S.color ⟨p.1.swap, p.2.symm⟩) ↔ R.color p = S.color p
-            by rw [R.color_rev, S.color_rev]; exact S.rev_involutive.injective.eq_iff]
+        have hmap_eq : Egt.map pairSwap.toEmbedding = Elt := by
+          ext p; rw [mem_map_equiv]
+          have hcol : R.color (pairSwap p) = S.color (pairSwap p) ↔ R.color p = S.color p := by
+            rw [R.color_pairSwap, S.color_pairSwap]; exact S.rev_involutive.injective.eq_iff
+          simp only [Egt, Elt, mem_filter, mem_univ, true_and, pairSwap_symm, coe_pairSwap,
+            Prod.fst_swap, Prod.snd_swap, ne_eq, hcol]
         exact (card_le_card hsub).trans ((card_union_le _ _).trans_eq
           (by rw [← hmap_eq, card_map, two_mul]))
       let Fpairs := univ.filter fun UW : Q.parts × Q.parts ↦ idx (parent UW.1) < idx (parent UW.2)

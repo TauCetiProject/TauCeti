@@ -100,46 +100,6 @@ private theorem cast_card_pos_of_add_one_le [Fintype κ] {ε : ℝ} {u : Finset 
   have : ε ^ 6 * #u ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (by positivity) h'
   linarith [(Nat.cast_nonneg (Fintype.card κ) : (0 : ℝ) ≤ _)]
 
-/-- The union bound succeeds: for `card κ + 1 ≤ ε ^ 6 * #s` and `card κ + 1 ≤ ε ^ 6 * #t`, twice
-the number of rectangles times the palette size times `exp (-2 (ε³ #s #t)² / (#s #t))` is less
-than one. -/
-private theorem two_mul_two_pow_mul_two_pow_mul_exp_lt [Fintype κ] [Nonempty κ] {ε : ℝ}
-    (hs : Fintype.card κ + 1 ≤ ε ^ 6 * #s) (ht : Fintype.card κ + 1 ≤ ε ^ 6 * #t) :
-    2 * (2 ^ #s * 2 ^ #t : ℕ) * Fintype.card κ *
-      exp (-2 * (ε ^ 3 * #s * #t) ^ 2 / (#s * #t : ℕ)) < 1 := by
-  have hK : (1 : ℝ) ≤ Fintype.card κ := Nat.one_le_cast.2 Fintype.card_pos
-  have hm := cast_card_pos_of_add_one_le hs
-  have hn := cast_card_pos_of_add_one_le ht
-  -- Bound each factor by an exponential, using `x + 1 ≤ exp x`.
-  have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
-  have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
-    calc (2 : ℝ) ^ k ≤ exp 1 ^ k := pow_le_pow_left₀ (by norm_num) h2 k
-      _ = exp k := by rw [← exp_nat_mul, mul_one]
-  have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ - 1) := by
-    linarith [add_one_le_exp ((Fintype.card κ : ℝ) - 1)]
-  have hexp : -2 * (ε ^ 3 * #s * #t) ^ 2 / ((#s * #t : ℕ) : ℝ) = -2 * (ε ^ 6 * #s) * #t := by
-    push_cast
-    field_simp
-  calc 2 * ((2 ^ #s * 2 ^ #t : ℕ) : ℝ) * Fintype.card κ *
-        exp (-2 * (ε ^ 3 * #s * #t) ^ 2 / (#s * #t : ℕ))
-      ≤ exp 1 * (exp #s * exp #t) * exp (Fintype.card κ - 1) *
-          exp (-2 * (ε ^ 6 * #s) * #t) := by
-        rw [hexp]
-        push_cast
-        gcongr
-        all_goals exact hpow _
-    _ = exp (#s + #t + Fintype.card κ - 2 * (ε ^ 6 * #s) * #t) := by
-        simp only [← exp_add]
-        ring_nf
-    _ < 1 := by
-        rw [exp_lt_one_iff, sub_neg]
-        -- `2 ε⁶ #s #t ≥ (card κ + 1) (#s + #t) > #s + #t + card κ`.
-        have hm1 : (1 : ℝ) ≤ #s := Nat.one_le_cast.2 (Nat.cast_pos.1 hm)
-        have hn1 : (1 : ℝ) ≤ #t := Nat.one_le_cast.2 (Nat.cast_pos.1 hn)
-        nlinarith [mul_le_mul_of_nonneg_right hs hn.le, mul_le_mul_of_nonneg_right ht hm.le,
-          le_mul_of_one_le_right (by linarith : (0 : ℝ) ≤ Fintype.card κ) hm1,
-          le_mul_of_one_le_right (by linarith : (0 : ℝ) ≤ Fintype.card κ) hn1]
-
 /-- **Regular recoloring with prescribed densities.** Let `S` be a pair-color system with a
 finite palette `κ`, let `s` and `t` be disjoint vertex sets with `card κ + 1 ≤ ε ^ 6 * #s` and
 `card κ + 1 ≤ ε ^ 6 * #t`, and let `p` be a probability distribution on `κ`. Then there is a
@@ -167,8 +127,16 @@ theorem exists_recoloring_abs_pairColorDensity_sub_le [Fintype κ] (S : PairColo
       rw [card_product]
       exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs')) (card_le_card (mem_powerset.1 ht')))
     (a := ε ^ 3 * #s * #t)
-    (mul_pos (mul_pos (pow_pos hε 3) hs0) ht0)
-    (by simpa using two_mul_two_pow_mul_two_pow_mul_exp_lt hs ht)
+    (mul_pos (mul_pos (pow_pos hε 3) hs0) ht0) (by
+      have ha_eq : ε ^ 3 * (#s : ℝ) * #t = ε ^ 3 * (#s * #t : ℕ) := by push_cast; ring
+      rw [ha_eq]; refine lt_of_le_of_lt (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+        (by linarith only) (Nat.cast_nonneg _)) (exp_pos _).le) (two_mul_add_one_mul_exp_lt_one
+        (k := #s + #t) (by rw [Fintype.card_coe, card_product, card_powerset, card_powerset,
+          ← pow_add]) ?_)
+      rw [Nat.cast_add, Nat.cast_mul]; nlinarith only [Nat.one_le_cast (α := ℝ).2
+        (Fintype.card_pos (α := κ)), Nat.one_le_cast (α := ℝ).2 (Nat.cast_pos.1 hs0),
+        Nat.one_le_cast (α := ℝ).2 (Nat.cast_pos.1 ht0), mul_le_mul_of_nonneg_right hs ht0.le,
+        mul_le_mul_of_nonneg_right ht hs0.le])
   refine ⟨S.recolorProduct hst x, rfl, fun u v ↦ colorOfPair_recolorProduct_of_not_mem hst x, ?_⟩
   intro c s' hs' t' ht' hs's ht't
   have hpos : (0 : ℝ) < #s' * #t' :=

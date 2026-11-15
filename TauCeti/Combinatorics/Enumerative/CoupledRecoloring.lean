@@ -104,11 +104,6 @@ private theorem sum_mul_couplingKernel (hp : ∀ b, 0 ≤ p b) (hsum : ∑ b, m 
     · rw [min_eq_left h, max_eq_left (sub_nonneg.2 h)]; ring
     · rw [min_eq_right h, max_eq_right (sub_nonpos.2 h), add_zero]
 end
-private theorem card_eq_sum_card_fiber [DecidableEq κ] (A : Finset ι) (f : ι → κ) : #A = ∑ c, #{e ∈
-    A | f e = c} := by
-  classical
-  rw [← card_biUnion (fun c₁ _ c₂ _ hne ↦ disjoint_left.2 fun e h₁ h₂ ↦ hne ((mem_filter.1
-    h₁).2.symm.trans (mem_filter.1 h₂).2))]; congr 1; ext e; simp
 /-- **Coupled low-discrepancy recoloring.** -/
 theorem exists_coupled_recoloring_abs_card_filter_sub_le [DecidableEq κ] (S : Finset ι) (x₀ : ι →
     κ) {p : κ → ℝ} (hp : ∀ c, 0 ≤ p c) (hp1 : ∑ c, p c = 1) {I : Type*} [Fintype I] (T : I → Finset
@@ -125,7 +120,8 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [DecidableEq κ] (S : F
   have hSposR : (0 : ℝ) < #S := Nat.cast_pos.2 hSpos; let Sc (c : κ) := {e ∈ S | x₀ e = c}
   let m (c : κ) : ℝ := #(Sc c); let P (c : κ) : ℝ := p c * #S
   have hP_nn (c : κ) : 0 ≤ P c := mul_nonneg (hp c) hSposR.le
-  have hm_sum : ∑ c, m c = #S := by simp_rw [m, Sc, ← Nat.cast_sum, ← card_eq_sum_card_fiber S x₀]
+  have hm_sum : ∑ c, m c = #S := by simp_rw [m, Sc, ← Nat.cast_sum,
+    ← card_eq_sum_card_fiberwise (f := x₀) (t := univ) fun _ _ ↦ mem_univ _]
   have hmP_sum : ∑ c, m c = ∑ c, P c := (by rw [hm_sum, ← sum_mul, hp1, one_mul])
   let Topt (c : κ) : Option I → Finset ι | none => Sc c | some i => T i ∩ Sc c
   have hTopt_le (c : κ) : ∀ o, #(Topt c o) ≤ #S
@@ -137,8 +133,8 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [DecidableEq κ] (S : F
   let x (e : ι) : κ := if e ∈ S then y (x₀ e) e else x₀ e
   refine ⟨x, fun e he ↦ ite_eq_right he, ?_, fun i c' ↦ ?_⟩
   · have hkeep : #{e ∈ S | x e = x₀ e} = ∑ c, #{e ∈ Sc c | y c e = c} := by
-      rw [card_eq_sum_card_fiber _ x₀]; refine sum_congr rfl fun c _ ↦ congrArg card (ext fun e ↦
-        ?_)
+      rw [card_eq_sum_card_fiberwise (f := x₀) (t := univ) fun _ _ ↦ mem_univ _]
+      refine sum_congr rfl fun c _ ↦ congrArg card (ext fun e ↦ ?_)
       simp only [mem_filter, Sc, x]; exact ⟨fun ⟨⟨he, hxe⟩, rfl⟩ ↦ ⟨⟨he, rfl⟩, by
         rwa [ite_eq_left he] at hxe⟩, fun ⟨⟨he, rfl⟩, hyc⟩ ↦ ⟨⟨he, by simp [he, hyc]⟩, rfl⟩⟩
     have hedits : (#{e ∈ S | x e ≠ x₀ e} : ℝ) = ∑ c, (m c - (#{e ∈ Sc c | y c e = c} : ℝ)) := by
@@ -160,7 +156,7 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [DecidableEq κ] (S : F
       simp only [mem_inter, mem_filter, Sc]
       exact ⟨fun ⟨h1, _, h2⟩ ↦ ⟨h1, h2⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, hT i h1, h2⟩⟩
     have hcount : (#{e ∈ T i | x e = c'} : ℝ) = ∑ c, (#{e ∈ T i ∩ Sc c | y c e = c'} : ℝ) := by
-      rw [card_eq_sum_card_fiber _ x₀, Nat.cast_sum]
+      rw [card_eq_sum_card_fiberwise (f := x₀) (t := univ) fun _ _ ↦ mem_univ _, Nat.cast_sum]
       refine sum_congr rfl fun c _ ↦ congrArg (Nat.cast ∘ card) (ext fun e ↦ ?_)
       simp only [mem_filter, mem_inter, Sc, x]
       exact ⟨fun ⟨⟨heT, hxe⟩, rfl⟩ ↦ ⟨⟨heT, hT i heT, rfl⟩,

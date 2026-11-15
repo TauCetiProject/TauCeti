@@ -25,13 +25,27 @@ coherent by recording its colors in both orientations, using the product palette
 `PairColorSystem.relabel` renames the palette along an equivalence.
 `PairColorSystem.split` refines a coloring by a symmetric labelling of the unordered pairs.
 `PairColorSystem.comap` restricts a coloring along a vertex embedding, preserving the palette.
-`coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple, and
-`card_filter_coordPair_mem_le` counts the injective triples with a coordinate pair in a given set.
+`pairSwap` exchanges the two coordinates of an ordered distinct pair, `coordPair` extracts the
+ordered distinct pair of two coordinates of an injective tuple, and `card_filter_coordPair_mem_le`
+counts the injective triples with a coordinate pair in a given set.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- The involution exchanging the two coordinates of an ordered distinct pair. -/
+def pairSwap {V : Type*} : {p : V × V // p.1 ≠ p.2} ≃ {p : V × V // p.1 ≠ p.2} :=
+  ⟨fun p ↦ ⟨p.val.swap, p.property.symm⟩, fun p ↦ ⟨p.val.swap, p.property.symm⟩,
+    fun p ↦ Subtype.ext (Prod.swap_swap p.val), fun p ↦ Subtype.ext (Prod.swap_swap p.val)⟩
+/-- The underlying pair of `pairSwap p` is `p.1.swap`. -/
+@[simp] theorem coe_pairSwap {V : Type*} (p : {p : V × V // p.1 ≠ p.2}) :
+    (pairSwap p : V × V) = p.1.swap := (rfl)
+/-- `pairSwap` is its own inverse. -/
+@[simp] theorem pairSwap_symm {V : Type*} : (pairSwap (V := V)).symm = pairSwap := (rfl)
+/-- Applying `pairSwap` twice recovers the original pair. -/
+@[simp] theorem pairSwap_pairSwap {V : Type*} (p : {p : V × V // p.1 ≠ p.2}) :
+    pairSwap (pairSwap p) = p := pairSwap.left_inv p
 
 /-- A coloring of ordered distinct pairs, coherent with an involution of the palette. -/
 structure PairColorSystem (κ : Type*) (V : Type*) where
@@ -59,6 +73,9 @@ theorem ext {S T : PairColorSystem κ V} (hcolor : ∀ p, S.color p = T.color p)
 @[simp]
 theorem rev_rev (S : PairColorSystem κ V) (c : κ) : S.rev (S.rev c) = c :=
   S.rev_involutive c
+/-- Exchanging the vertices of an ordered distinct pair reverses its color. -/
+@[simp] theorem color_pairSwap (S : PairColorSystem κ V) (p : {p : V × V // p.1 ≠ p.2}) :
+    S.color (pairSwap p) = S.rev (S.color p) := S.color_rev p
 
 /-- The total pair color, with `none` exactly on the diagonal. -/
 noncomputable def colorOfPair (S : PairColorSystem κ V) (u v : V) : Option κ := by
@@ -202,6 +219,9 @@ def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j :
 @[simp]
 theorem coe_coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
     (hij : i ≠ j) : (coordPair x i j hij : V × V) = (x.1 i, x.1 j) := (rfl)
+/-- Swapping `coordPair x i j hij` exchanges the two coordinate indices. -/
+@[simp] theorem pairSwap_coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
+    (hij : i ≠ j) : pairSwap (coordPair x i j hij) = coordPair x j i hij.symm := (rfl)
 
 /-- The color of a coordinate pair is the total pair color of the two coordinates. -/
 theorem PairColorSystem.color_coordPair_eq_iff {ι κ V : Type*} (C : PairColorSystem κ V)

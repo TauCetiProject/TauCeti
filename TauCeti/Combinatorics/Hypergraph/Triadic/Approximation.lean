@@ -12,6 +12,7 @@ public import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Symmetry
 public import TauCeti.Combinatorics.Hypergraph.Triadic.TopRegularization
 import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
+import TauCeti.Combinatorics.Enumerative.RandomColoring
 import TauCeti.Order.Partition.Pi
 import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
 
@@ -48,35 +49,6 @@ private theorem isPairColorRegular_relabel {κ κ' V : Type*} [Fintype V] [Decid
   simp only [PairSkeleton3.isPairColorRegular_iff, PairSkeleton3.relabel_vertexPart,
     PairSkeleton3.relabel_pairColors, pairColorDensity_relabel]
   exact ⟨fun h c ↦ by simpa using h (e c), fun h c ↦ h (e.symm c)⟩
-private theorem hoeffding_subpolyad_lt_one {κ₂ V : Type*} [Fintype V] [DecidableEq V] {S :
-    PairSkeleton3 κ₂ V} (Q : Polyad3 S) {q₃ m : ℕ} {η α : ℝ} (hη : 0 < η) (hα : 0 < α) (hn1 : 1 ≤
-    Fintype.card V) (hsupp : α * (Fintype.card V : ℝ) ^ 3 ≤ m) (hhost : (q₃ + 6 : ℝ) < 2 * η ^ 2 *
-    α * Fintype.card V) : 2 * (Fintype.card (Subpolyad3 Q) + 1) * q₃ * exp (-2 * (η * m) ^ 2 / m) <
-    1 := by
-  rcases Nat.eq_zero_or_pos q₃ with rfl | _; · simp
-  set n := Fintype.card V; have hn_pos : (0 : ℝ) < n := Nat.cast_pos.2 hn1
-  have hm_pos : (0 : ℝ) < m := (mul_pos hα (pow_pos hn_pos 3)).trans_le hsupp
-  have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k := (pow_le_pow_left₀ zero_le_two
-    (by linarith [add_one_le_exp (1 : ℝ)] : (2 : ℝ) ≤ exp 1) k).trans_eq
-    (by rw [← exp_nat_mul, mul_one])
-  have h4 := hpow 2; norm_num at h4; have h1p : (1 : ℝ) ≤ (2 : ℝ) ^ (3 * n ^ 2) := one_le_pow₀ (by
-    norm_num)
-  have hc : (Fintype.card (Subpolyad3 Q) : ℝ) ≤ (2 : ℝ) ^ (3 * n ^ 2) := mod_cast
-    card_subpolyad3_le Q
-  have hf1 : 2 * ((Fintype.card (Subpolyad3 Q) : ℝ) + 1) ≤ exp 2 * exp (3 * (n : ℝ) ^ 2) := (by
-    linarith : _ ≤ 4 * (2 : ℝ) ^ (3 * n ^ 2)).trans <| mul_le_mul h4 ((hpow (3 * n ^ 2)).trans_eq
-    (by push_cast; rfl)) (by positivity) (exp_pos _).le
-  refine (mul_le_mul_of_nonneg_right (mul_le_mul hf1
-    (by linarith [add_one_le_exp (q₃ : ℝ)] : (q₃ : ℝ) ≤ exp q₃) (Nat.cast_nonneg _)
-    (by positivity)) (exp_pos _).le).trans_lt ?_
-  rw [show -2 * (η * m) ^ 2 / (m : ℝ) = -2 * η ^ 2 * m by field_simp [hm_pos.ne']]
-  simp only [← exp_add]; rw [exp_lt_one_iff]
-  have hn1R : (1 : ℝ) ≤ (n : ℝ) ^ 2 := (by nlinarith [show (1 : ℝ) ≤ n from Nat.one_le_cast.2 hn1])
-  have hq3 : 2 + 3 * (n : ℝ) ^ 2 + q₃ ≤ (q₃ + 6 : ℝ) * (n : ℝ) ^ 2 := by
-    linarith [mul_le_mul_of_nonneg_left hn1R (show (0 : ℝ) ≤ q₃ + 3 by positivity)]
-  have hst : (q₃ + 6 : ℝ) * (n : ℝ) ^ 2 < 2 * η ^ 2 * (α * (n : ℝ) ^ 3) := (mul_lt_mul_of_pos_right
-    hhost (pow_pos hn_pos 2)).trans_eq (by ring)
-  linarith [mul_le_mul_of_nonneg_left hsupp (show 0 ≤ 2 * η ^ 2 by positivity)]
 private noncomputable def triadicEps1 (ε : ℝ) : ℝ := min ε 1
 private noncomputable def triadicSched1 (F : ℕ → ℝ) (k : ℕ) : ℝ := min 1 ((range (k + 1)).inf'
   nonempty_range_add_one F)
@@ -427,25 +399,28 @@ theorem exists_strong_regular_approximation3 (H : Colored3Graph κ V) {ε : ℝ}
         : ℕ) + 1 : ℝ))))⌉₊ + 1) (mem_range.2 (Nat.lt_succ_of_le hK_cap))).trans ((le_max_right _
         _).trans (le_max_right _ _))).trans hV
       have hlt : (q₃ + 6 : ℝ) / (2 * η ^ 2 * α_min) < n := (Nat.le_ceil _).trans_lt
-        ((by push_cast; linarith : (_ : ℝ) < (⌈(q₃ + 6 : ℝ) / (2 * η ^ 2 * α_min)⌉₊ + 1 :
-            ℕ)).trans_le (mod_cast hceil_n))
-      exact
-        (by linarith [(div_lt_iff₀ (by positivity : 0 < 2 * η ^ 2 * α_min)).1 hlt] : (q₃ + 6 : ℝ) <
-            2 * η ^ 2 * α_min * n).trans_le (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-        hα_min_le (by positivity)) hn_pos.le)
+        ((by push_cast; linarith : (_ : ℝ) < (⌈(q₃ + 6 : ℝ) / (2 * η ^ 2 * α_min)⌉₊ + 1 : ℕ)
+          ).trans_le (mod_cast hceil_n))
+      exact (by linarith [(div_lt_iff₀ (by positivity : 0 < 2 * η ^ 2 * α_min)).1 hlt] :
+        (q₃ + 6 : ℝ) < 2 * η ^ 2 * α_min * n).trans_le (mul_le_mul_of_nonneg_right
+        (mul_le_mul_of_nonneg_left hα_min_le (by positivity)) hn_pos.le)
     have hrec (Q : GoodCanon) :=
       let hQ2 := (mem_filter.1 Q.2).2; let hcard_U :=
         Polyad3.card_image_tripleSet_of_subset hQ2.1.isTransversal Subset.rfl
-      let hQ_pos : 0 < #Q.1.support :=
-        Nat.cast_pos.1 ((mul_pos hα_pos (pow_pos hn_pos 3)).trans_le hQ2.2.1)
+      let hQ_pos := Nat.cast_pos.1 ((mul_pos hα_pos (pow_pos hn_pos 3)).trans_le hQ2.2.1)
       exists_coupled_recoloring_abs_card_filter_sub_le (U_of Q.1) H.color (p := fun c ↦
       (H.relativeDensity c (Q.1.coarsen hstop.vertex_eq.le f) : ℝ)) (fun c ↦ mod_cast
       H.relativeDensity_nonneg c _) (mod_cast H.sum_relativeDensity ((Finset.card_pos.1
       hQ_pos).mono (Polyad3.support_subset_coarsen hstop.vertex_eq.le f hf_symm Q.1))) (fun W :
       Subpolyad3 Q.1 ↦ W.support.image tripleSet) (fun W ↦ image_subset_image W.support_subset) (a
-      := η * #(U_of Q.1)) (by rw [hcard_U]; exact mul_pos hη_pos (Nat.cast_pos.2 hQ_pos))
-      (by rw [hcard_U]; exact hoeffding_subpolyad_lt_one Q.1 hη_pos hα_pos (by omega) hQ2.2.1
-            hhost_strict)
+      := η * #(U_of Q.1)) (by rw [hcard_U]; exact mul_pos hη_pos (Nat.cast_pos.2 hQ_pos)) (by
+        rw [hcard_U]; refine two_mul_add_one_mul_exp_lt_one (card_subpolyad3_le Q.1) ?_
+        have hst : (q₃ + 6 : ℝ) * (n : ℝ) ^ 2 < 2 * η ^ 2 * (α_fine * (n : ℝ) ^ 3) :=
+          (mul_lt_mul_of_pos_right hhost_strict (pow_pos hn_pos 2)).trans_eq (by ring)
+        rw [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_pow]; linarith only [hst,
+          mul_le_mul_of_nonneg_left (one_le_pow₀ (n := 2) (Nat.one_le_cast.2 (by omega : 1 ≤ n)))
+            (add_nonneg (Nat.cast_nonneg q₃) (by norm_num : (0 : ℝ) ≤ 3)),
+          mul_le_mul_of_nonneg_left hQ2.2.1 (mul_nonneg zero_le_two (sq_nonneg η))])
     choose xloc _ hxloc_edits hxloc_sub using hrec
     let H' : Colored3Graph κ V := ⟨fun s ↦ if hs : ∃ Q ∈ GoodCanon, s ∈ U_of Q then xloc
       ⟨hs.choose, hs.choose_spec.1⟩ s else H.color s⟩

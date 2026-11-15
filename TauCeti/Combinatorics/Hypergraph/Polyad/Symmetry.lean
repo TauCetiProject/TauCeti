@@ -51,9 +51,6 @@ theorem tripleSet_def {V : Type*} (x : {x : Fin 3 → V // Injective x}) : tripl
 /-- A vertex belongs to `tripleSet x` iff it is one of the three coordinates of `x`. -/
 @[simp] theorem mem_tripleSet_iff {V : Type*} {x : {x : Fin 3 → V // Injective x}} {v : V} : v ∈
     (tripleSet x).1 ↔ ∃ i : Fin 3, x.1 i = v := by simp [tripleSet]
-private def pairSwap {V : Type*} : {p : V × V // p.1 ≠ p.2} ≃ {p : V × V // p.1 ≠ p.2} := ⟨fun p ↦
-  ⟨p.val.swap, p.property.symm⟩, fun p ↦ ⟨p.val.swap, p.property.symm⟩, fun _ ↦ Subtype.ext
-  (Prod.swap_swap _), fun _ ↦ Subtype.ext (Prod.swap_swap _)⟩
 private def triplePerm {V : Type*} (σ : Equiv.Perm (Fin 3)) : {x : Fin 3 → V // Injective x} ≃ {x :
     Fin 3 → V // Injective x} := ⟨fun x ↦ ⟨x.1 ∘ σ, x.2.comp σ.injective⟩, fun x ↦ ⟨x.1 ∘ σ.symm,
     x.2.comp σ.symm.injective⟩, fun _ ↦ Subtype.ext (by ext; simp), fun _ ↦ Subtype.ext
@@ -194,8 +191,8 @@ private def subpolyadSwap01 {S : PairSkeleton3 κ₂ V} {P : Polyad3 S} (W : Sub
     Subpolyad3 P := ⟨W.pair₀₁.map pairSwap.toEmbedding, W.pair₁₂, W.pair₀₂, fun q hq ↦ by
       obtain ⟨p, hp, rfl⟩ := mem_map.1 hq; have hp' := (mem_pairSupport₀₁ _ p).1 (W.pair₀₁_sub hp)
       simp only [swap01, ofData_c₀, ofData_c₁, ofData_color₀₁] at hp'
-      exact (mem_pairSupport₀₁ _ _).2 ⟨hp'.2.1, hp'.1,
-        by simpa [pairSwap, S.pairColors.color_rev] using congrArg S.pairColors.rev hp'.2.2⟩,
+      exact (mem_pairSupport₀₁ _ _).2 ⟨by simpa using hp'.2.1, by simpa using hp'.1,
+        by simpa using congrArg S.pairColors.rev hp'.2.2⟩,
     fun p hp ↦ by simpa [mem_pairSupport₀₂, mem_pairSupport₁₂, swap01] using W.pair₁₂_sub hp,
     fun p hp ↦ by simpa [mem_pairSupport₁₂, mem_pairSupport₀₂, swap01] using W.pair₀₂_sub hp⟩
 private theorem support_subpolyadSwap01 {S : PairSkeleton3 κ₂ V} {P : Polyad3 S} (W : Subpolyad3
@@ -206,7 +203,7 @@ private theorem support_subpolyadSwap01 {S : PairSkeleton3 κ₂ V} {P : Polyad3
     (triplePerm (Equiv.swap 0 1)).symm x = triplePerm (Equiv.swap 0 1) x from Subtype.ext
     (by ext; simp [triplePerm]), show pairSwap.symm (coordPair x 0 1 (by decide)) = coordPair
     (triplePerm (Equiv.swap 0 1) x) 0 1 (by decide) from Subtype.ext
-    (by simp [pairSwap, coe_coordPair, triplePerm]), show coordPair (triplePerm (Equiv.swap 0 1) x)
+    (by simp [coe_coordPair, triplePerm]), show coordPair (triplePerm (Equiv.swap 0 1) x)
     0 2 (by decide) = coordPair x 1 2 (by decide) from Subtype.ext
     (by simp [coe_coordPair, triplePerm, h2]), show coordPair (triplePerm (Equiv.swap 0 1) x) 1 2
     (by decide) = coordPair x 0 2 (by decide) from Subtype.ext
@@ -218,8 +215,8 @@ private def subpolyadSwap12 {S : PairSkeleton3 κ₂ V} {P : Polyad3 S} (W : Sub
         simpa [mem_pairSupport₀₂, mem_pairSupport₀₁, swap12] using W.pair₀₁_sub hp, fun q hq ↦ by
       obtain ⟨p, hp, rfl⟩ := mem_map.1 hq; have hp' := (mem_pairSupport₁₂ _ p).1 (W.pair₁₂_sub hp)
       simp only [swap12, ofData_c₁, ofData_c₂, ofData_color₁₂] at hp'
-      exact (mem_pairSupport₁₂ _ _).2 ⟨hp'.2.1, hp'.1,
-        by simpa [pairSwap, S.pairColors.color_rev] using congrArg S.pairColors.rev hp'.2.2⟩⟩
+      exact (mem_pairSupport₁₂ _ _).2 ⟨by simpa using hp'.2.1, by simpa using hp'.1,
+        by simpa using congrArg S.pairColors.rev hp'.2.2⟩⟩
 private theorem support_subpolyadSwap12 {S : PairSkeleton3 κ₂ V} {P : Polyad3 S} (W : Subpolyad3
     P.swap12) : (subpolyadSwap12 W).support = W.support.map (triplePerm (Equiv.swap 1
     2)).toEmbedding := by
@@ -231,7 +228,7 @@ private theorem support_subpolyadSwap12 {S : PairSkeleton3 κ₂ V} {P : Polyad3
     coordPair (triplePerm (Equiv.swap 1 2) x) 0 2 (by decide) = coordPair x 0 1 (by decide) from
     Subtype.ext (by simp [coe_coordPair, triplePerm, h0]), show pairSwap.symm (coordPair x 1 2
     (by decide)) = coordPair (triplePerm (Equiv.swap 1 2) x) 1 2 (by decide) from Subtype.ext
-    (by simp [pairSwap, coe_coordPair, triplePerm])]
+    (by simp [coe_coordPair, triplePerm])]
   tauto
 private theorem isTopRegularOverPolyad_of_inv {S : PairSkeleton3 κ₂ V} [DecidableEq κ] (H :
     Colored3Graph κ V) {φ : Polyad3 S → Polyad3 S} (hinv : Involutive φ) (σ : Equiv.Perm (Fin 3))
@@ -292,15 +289,12 @@ theorem exists_isCanonical_of_isTransversal [DecidableEq κ] {S : PairSkeleton3 
   by_cases h3 : i₀ < i₂ ∧ i₂ < i₁
   · exact ⟨Q'.swap12, by simpa [IsCanonical, swap12] using h3, hswap12 Q'⟩
   by_cases h4 : i₁ < i₂ ∧ i₂ < i₀
-  · exact ⟨Q'.swap01.swap12,
-      by simpa [IsCanonical, swap01, swap12] using h4, htrans (hswap12 _) (hswap01 _)⟩
+  · exact ⟨_, by simpa [IsCanonical, swap01, swap12] using h4, htrans (hswap12 _) (hswap01 Q')⟩
   by_cases h5 : i₂ < i₀ ∧ i₀ < i₁
-  · exact ⟨Q'.swap12.swap01,
-      by simpa [IsCanonical, swap01, swap12] using h5, htrans (hswap01 _) (hswap12 _)⟩
+  · exact ⟨_, by simpa [IsCanonical, swap01, swap12] using h5, htrans (hswap01 _) (hswap12 Q')⟩
   have h6 : i₂ < i₁ ∧ i₁ < i₀ := by
     simp only [Fin.lt_def, not_and_or, not_lt] at h1 h2 h3 h4 h5 ⊢; omega
-  exact ⟨Q'.swap01.swap12.swap01,
-    by simpa [IsCanonical, swap01, swap12] using h6, htrans (hswap01 _) (htrans (hswap12 _)
-        (hswap01 _))⟩
+  exact ⟨_, by simpa [IsCanonical, swap01, swap12] using h6,
+    htrans (hswap01 _) (htrans (hswap12 _) (hswap01 Q'))⟩
 end Polyad3
 end TauCeti

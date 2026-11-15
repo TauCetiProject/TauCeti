@@ -35,6 +35,7 @@ sets in which every color has nearly the same density on every large rectangle.
   points of a test set with a given color, under the product of a `PMF`.
 * `TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt`: a coloring of `ι` whose color counts
   on every test set are within `a` of their means.
+* `TauCeti.two_mul_add_one_mul_exp_lt_one`: exponential bound discharging the union bound.
 
 ## Implementation notes
 
@@ -213,5 +214,32 @@ theorem exists_forall_abs_card_filter_sub_mul_card_lt [Fintype κ] {p : κ → �
     · obtain ⟨he, hc⟩ := mem_filter.1 he
       exact ⟨⟨e, hU he⟩, mem_filter.2 ⟨mem_subtype.2 he, by simpa [hU he] using hc⟩, rfl⟩
   simpa [hcount, hcard] using hy i c
+
+/-- **Exponential union-bound discharge.** If `N ≤ 2 ^ k` and `k + q + 1 ≤ 2 ξ² m`, then
+`2 (N + 1) q exp (-2 (ξ m)² / m) < 1`, discharging the union bound in
+`TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt` (with room for one extra test set). -/
+theorem two_mul_add_one_mul_exp_lt_one {N k q m : ℕ} {ξ : ℝ} (hN : N ≤ 2 ^ k)
+    (hm : (k + q + 1 : ℝ) ≤ 2 * ξ ^ 2 * m) :
+    2 * (N + 1) * q * exp (-2 * (ξ * m) ^ 2 / m) < 1 := by
+  have hm_pos : (0 : ℝ) < m := by
+    by_contra! hm0; linarith [mul_nonpos_of_nonneg_of_nonpos (by positivity : 0 ≤ 2 * ξ ^ 2) hm0,
+      Nat.cast_nonneg (α := ℝ) k, Nat.cast_nonneg (α := ℝ) q]
+  have h4 : (4 : ℝ) ≤ exp (12 / 7) := by
+    have h := pow_le_pow_left₀ (by norm_num) (by linarith [add_one_le_exp (3 / 7 : ℝ)] :
+      (10 / 7 : ℝ) ≤ exp (3 / 7)) 4
+    rw [← exp_nat_mul] at h; norm_num at h; linarith
+  have hpow : (2 : ℝ) ^ k ≤ exp k := (pow_le_pow_left₀ zero_le_two
+    (by linarith [add_one_le_exp (1 : ℝ)] : (2 : ℝ) ≤ exp 1) k).trans_eq
+    (by rw [← exp_nat_mul, mul_one])
+  have hN_le : 2 * ((N : ℝ) + 1) ≤ exp (12 / 7) * exp k := by
+    have hNk : (N : ℝ) ≤ (2 : ℝ) ^ k := mod_cast hN
+    exact (by linarith [one_le_pow₀ (n := k) (one_le_two (α := ℝ))] :
+      2 * ((N : ℝ) + 1) ≤ 4 * (2 : ℝ) ^ k).trans (by gcongr)
+  have hq_le : (q : ℝ) ≤ exp ((q : ℝ) - 1) := by linarith [add_one_le_exp ((q : ℝ) - 1)]
+  have hexp : -2 * (ξ * m) ^ 2 / (m : ℝ) = -2 * ξ ^ 2 * m := by field_simp
+  calc 2 * ((N : ℝ) + 1) * q * exp (-2 * (ξ * m) ^ 2 / m)
+      ≤ exp (12 / 7) * exp k * exp ((q : ℝ) - 1) * exp (-2 * ξ ^ 2 * m) := by rw [hexp]; gcongr
+    _ = exp (12 / 7 + k + ((q : ℝ) - 1) + -2 * ξ ^ 2 * m) := by simp only [← exp_add]
+    _ < 1 := by rw [exp_lt_one_iff]; linarith
 
 end TauCeti
