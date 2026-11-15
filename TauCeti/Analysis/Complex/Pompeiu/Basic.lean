@@ -629,7 +629,8 @@ end Regularity
 /-- **Cutoff Cauchy–Pompeiu representation.** For an open set `V`, a compactly supported `C¹`
 cutoff `α : ℂ → ℝ` equal to `1` on `V` with `tsupport α ⊆ U` (`U` open), and any function
 `f : ℂ → F` holomorphic on `U` into a complex Banach space, the values of `f` on `V` are given by
-the area integral over `tsupport α \ V` of `(w - z)⁻¹ • conjWirtingerDeriv α z 1 • f z`. -/
+`π⁻¹` times the area integral over `tsupport α \ V` of
+`(w - z)⁻¹ • conjWirtingerDeriv (fun y ↦ (α y : ℂ)) z 1 • f z`. -/
 theorem eq_pi_inv_smul_setIntegral_of_differentiableOn {V U : Set ℂ} {α : ℂ → ℝ}
     (hV : IsOpen V) (hU : IsOpen U) (hα : ContDiff ℝ 1 α) (hα_cpt : HasCompactSupport α)
     (hα_one : EqOn α 1 V) (hα_U : tsupport α ⊆ U) {f : ℂ → F}

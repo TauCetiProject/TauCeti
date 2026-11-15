@@ -30,10 +30,11 @@ to be empty.
 
 Holomorphic hulls govern Runge approximation on open domains `Ω ⊆ ℂ`: as established in
 `TauCeti.Analysis.Complex.Runge.Approximation`, a compact set `K ⊆ Ω` admits uniform approximation
-by `Ω`-holomorphic functions if and only if `holomorphicHull Ω K = K` (equivalently, `K` has no
-relatively compact complementary components in `Ω`), and telescoping such approximations along the
-explicit filled compact exhaustion `TauCeti.rungeExhaustion Ω`
-(`TauCeti.Analysis.Normed.Module.Exhaustion`) constructs global holomorphic functions on `Ω`.
+of neighbourhood-holomorphic functions by `Ω`-holomorphic functions if and only if
+`holomorphicHull Ω K = K` (equivalently, `K` has no relatively compact complementary components in
+`Ω`). In turn, `TauCeti.rungeExhaustion Ω` (`TauCeti.Analysis.Normed.Module.Exhaustion`) supplies an
+explicit exhaustion of `Ω` by compact sets equal to their holomorphic hulls, intended for
+telescoping Runge approximations across `Ω`.
 
 ## Main declarations and results
 

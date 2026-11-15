@@ -30,11 +30,16 @@ point-evaluation approximations, as in `TauCeti/Analysis/Complex/Runge/Operator.
   with `δ ≤ r`, `‖κ y - κ ζ‖ ≤ ε` on `A`, and `f` is holomorphic and bounded in norm by `B` on
   `ball ζ r`, then
   `‖(∫ y in A, κ y • f y ∂μ) - μ.real A • (κ ζ • f ζ)‖ ≤ μ.real A * ((ε + 2 * ‖κ ζ‖ * δ / r) * B)`.
+* `TauCeti.norm_setIntegral_smul_sub_sum_measureReal_smul_le`: summing the single-cell bound across
+  a finite measurable partition `⋃ j, A j = s` with `A j ⊆ ball (ζ j) δ` (`δ ≤ r`) and
+  `‖κ (ζ j)‖ ≤ M` bounds
+  `‖(∫ y in s, κ y • f y ∂μ) - ∑ j, μ.real (A j) • (κ (ζ j) • f (ζ j))‖` by
+  `μ.real s * ((ε + 2 * M * δ / r) * B)`.
 -/
 
 public section
 
-open MeasureTheory Metric Set
+open Function MeasureTheory Metric Set
 open scoped ENNReal
 
 namespace TauCeti
@@ -76,5 +81,52 @@ theorem norm_setIntegral_smul_sub_measureReal_smul_le
         add_le_add (mul_le_mul (hκ y hy) hfyB (norm_nonneg _) ((norm_nonneg _).trans (hκ y hy)))
           (mul_le_mul_of_nonneg_left hf_diff (norm_nonneg _))
     _ = (ε + 2 * ‖κ ζ‖ * δ / r) * B := by ring
+
+/-- **Partition quadrature error for a kernel-weighted holomorphic map.** For a finite measurable
+partition `⋃ j, A j = s` of a finite-measure set `s` with each cell `A j ⊆ ball (ζ j) δ` (`δ ≤ r`),
+if `κ` varies by at most `ε` from `κ (ζ j)` on `A j`, `‖κ (ζ j)‖ ≤ M`, and `f` is holomorphic and
+bounded in norm by `B` on each `ball (ζ j) r`, then replacing `∫ y in s, κ y • f y ∂μ` by
+`∑ j, μ.real (A j) • (κ (ζ j) • f (ζ j))` incurs error at most
+`μ.real s * ((ε + 2 * M * δ / r) * B)`. -/
+theorem norm_setIntegral_smul_sub_sum_measureReal_smul_le
+    {ι V E : Type*} [Fintype ι] [NormedAddCommGroup V] [NormedSpace ℂ V] [MeasurableSpace V]
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {μ : Measure V} {s : Set V} {A : ι → Set V} {ζ : ι → V}
+    {κ : V → ℂ} {f : V → E} {δ r ε M B : ℝ}
+    (hs : μ s < ∞) (hAm : ∀ j, MeasurableSet (A j))
+    (hAdisj : Pairwise (Disjoint on A)) (hAunion : ⋃ j, A j = s)
+    (hA_ball : ∀ j, A j ⊆ ball (ζ j) δ) (hδr : δ ≤ r)
+    (hint : IntegrableOn (fun y ↦ κ y • f y) s μ)
+    (hκ : ∀ j, ∀ y ∈ A j, ‖κ y - κ (ζ j)‖ ≤ ε)
+    (hκM : ∀ j, ‖κ (ζ j)‖ ≤ M)
+    (hf : ∀ j, DifferentiableOn ℂ f (ball (ζ j) r))
+    (hfB : ∀ j, ∀ u ∈ ball (ζ j) r, ‖f u‖ ≤ B) :
+    ‖(∫ y in s, κ y • f y ∂μ) - ∑ j, μ.real (A j) • (κ (ζ j) • f (ζ j))‖ ≤
+      μ.real s * ((ε + 2 * M * δ / r) * B) := by
+  have hAs : ∀ j, A j ⊆ s := fun j ↦ hAunion ▸ subset_iUnion A j
+  have hcell : ∀ j,
+      ‖(∫ y in A j, κ y • f y ∂μ) - μ.real (A j) • (κ (ζ j) • f (ζ j))‖ ≤
+        μ.real (A j) * ((ε + 2 * M * δ / r) * B) := fun j ↦ by
+    rcases (A j).eq_empty_or_nonempty with hAj | ⟨y₀, hy₀⟩
+    · simp [hAj]
+    have hy₀_δ : y₀ ∈ ball (ζ j) δ := hA_ball j hy₀
+    have hδ0 : 0 < δ := nonempty_ball.mp ⟨y₀, hy₀_δ⟩
+    have hr0 : 0 < r := hδ0.trans_le hδr
+    have hB0 : 0 ≤ B := (norm_nonneg _).trans (hfB j y₀ (ball_subset_ball hδr hy₀_δ))
+    refine (norm_setIntegral_smul_sub_measureReal_smul_le
+      ((measure_mono (hAs j)).trans_lt hs) (hA_ball j) hδr (hint.mono_set (hAs j))
+      (hκ j) (hf j) (hfB j)).trans ?_
+    have hM : ‖κ (ζ j)‖ ≤ M := hκM j
+    gcongr
+  rw [← hAunion, integral_iUnion_fintype hAm hAdisj (fun j ↦ hint.mono_set (hAs j)),
+    ← Finset.sum_sub_distrib]
+  calc ‖∑ j, ((∫ y in A j, κ y • f y ∂μ) - μ.real (A j) • (κ (ζ j) • f (ζ j)))‖
+      ≤ ∑ j, ‖(∫ y in A j, κ y • f y ∂μ) - μ.real (A j) • (κ (ζ j) • f (ζ j))‖ :=
+        norm_sum_le _ _
+    _ ≤ ∑ j, μ.real (A j) * ((ε + 2 * M * δ / r) * B) :=
+        Finset.sum_le_sum fun j _ ↦ hcell j
+    _ = (∑ j, μ.real (A j)) * ((ε + 2 * M * δ / r) * B) := (Finset.sum_mul _ _ _).symm
+    _ = μ.real (⋃ j, A j) * ((ε + 2 * M * δ / r) * B) := by
+        rw [measureReal_iUnion_fintype hAdisj hAm fun j ↦ ((measure_mono (hAs j)).trans_lt hs).ne]
 
 end TauCeti

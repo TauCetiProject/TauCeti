@@ -29,9 +29,9 @@ exhaustions `TauCeti.rungeExhaustion Ω` (`TauCeti.Analysis.Normed.Module.Exhaus
 equivalences provide the compact-to-global patching step for constructing global holomorphic
 functions on arbitrary open plane sets.
 
-From scalar Runge approximation we identify `TauCeti.holomorphicHull Ω K` with the union of `K`
-and all relatively compact connected components of `Ω \ K` in `Ω`
-(`TauCeti.holomorphicHull_eq_fill`), establishing `holomorphicHull Ω K = K ↔ IsFilledIn K Ω`.
+From scalar Runge approximation we identify `TauCeti.holomorphicHull Ω K` with
+`TauCeti.fillIn K Ω`, the union of `K` and all relatively compact connected components of `Ω \ K` in
+`Ω` (`TauCeti.holomorphicHull_eq_fill`), establishing `holomorphicHull Ω K = K ↔ IsFilledIn K Ω`.
 Specializing to `Ω = Set.univ` links `TauCeti.holomorphicHull Set.univ K = TauCeti.filledHull K`,
 polynomial convexity in dimension one, and uniform polynomial approximation on compact sets with
 connected complement.
@@ -92,25 +92,16 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {Ω K U : Set ℂ
   obtain ⟨L, hL, -, hLUO, hop⟩ := exists_finite_rank_runge_operator hRunge hU hKU
   obtain ⟨M, hM⟩ :=
     hL.bddAbove_image (hf.continuousOn.mono (hLUO.trans inter_subset_left)).norm
-  set B : ℝ := max M 0
-  have hB0 : 0 ≤ B := le_max_right _ _
+  set B : ℝ := max M 1
+  have hB1 : 0 < B := zero_lt_one.trans_le (le_max_right _ _)
   have hLB : ∀ z ∈ L, ‖f z‖ ≤ B := fun z hz =>
     (hM ⟨z, hz, rfl⟩).trans (le_max_left _ _)
-  set ε' : ℝ := ε / (2 * (B + 1))
-  have hε' : 0 < ε' := by positivity
-  obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop ε' hε'
+  obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop (ε / 2 / B) (by positivity)
   refine ⟨fun z => ∑ j : Fin N, w j * f (ζ j) * g j z, ?_, fun z hz => ?_⟩
   · exact DifferentiableOn.fun_sum fun j _ => (hg_diff j).const_mul (w j * f (ζ j))
-  · calc ‖f z - ∑ j : Fin N, w j * f (ζ j) * g j z‖
-        ≤ ε' * B := hbound f hf B hB0 hLB z hz
-      _ = (ε / 2) * (B / (B + 1)) := by
-          simp only [ε']
-          field_simp
-      _ ≤ (ε / 2) * 1 := by
-          gcongr
-          exact (div_le_one (by linarith)).mpr (by linarith)
-      _ = ε / 2 := mul_one _
-      _ < ε := half_lt_self hε
+  · refine (hbound f hf B hB1.le hLB z hz).trans_lt ?_
+    rw [div_mul_cancel₀ _ hB1.ne']
+    exact half_lt_self hε
 
 /-- **Runge's approximation theorem** (domain-relative form): for compact `K ⊆ Ω` with `Ω ⊆ ℂ`
 open, `IsRungeCompactPair Ω K` holds if and only if every function holomorphic on an open
@@ -130,13 +121,12 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
   have hf_diff : DifferentiableOn ℂ (fun z : ℂ => (z - x)⁻¹) {x}ᶜ :=
     (differentiableOn_id.sub_const x).inv fun _ hz => sub_ne_zero.mpr hz
   obtain ⟨M, hM⟩ := hK.bddAbove_image (continuous_id.sub continuous_const).norm.continuousOn
-  set B : ℝ := max M 0
-  have hB0 : 0 ≤ B := le_max_right _ _
+  set B : ℝ := max M 1
+  have hB1 : 0 < B := zero_lt_one.trans_le (le_max_right _ _)
   have hKB : ∀ w ∈ K, ‖w - x‖ ≤ B := fun w hw =>
     (hM ⟨w, hw, rfl⟩).trans (le_max_left _ _)
-  set ε : ℝ := (2 * (B + 1))⁻¹
-  have hε : 0 < ε := by positivity
-  obtain ⟨g, hg_diff, hg_lt⟩ := happrox {x}ᶜ isOpen_ne hKU (fun z => (z - x)⁻¹) hf_diff ε hε
+  obtain ⟨g, hg_diff, hg_lt⟩ :=
+    happrox {x}ᶜ isOpen_ne hKU (fun z => (z - x)⁻¹) hf_diff (1 / 2 / B) (by positivity)
   let h : ℂ → ℂ := fun z => 1 - (z - x) * g z
   have hh_diff : DifferentiableOn ℂ h (closure C) :=
     ((differentiableOn_id.sub_const x).mul (hg_diff.mono hCΩ)).const_sub 1
@@ -149,15 +139,8 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
       simp only [h]
       rw [mul_sub, mul_inv_cancel₀ hwx]
     rw [hfactor, norm_mul]
-    calc ‖w - x‖ * ‖(w - x)⁻¹ - g w‖
-        ≤ B * ε := mul_le_mul (hKB w hwK) (hg_lt w hwK).le (norm_nonneg _) hB0
-      _ = (1 / 2 : ℝ) * (B / (B + 1)) := by
-          simp only [ε]
-          field_simp
-      _ ≤ (1 / 2 : ℝ) * 1 := by
-          gcongr
-          exact (div_le_one (by linarith)).mpr (by linarith)
-      _ = 1 / 2 := mul_one _
+    exact (mul_le_mul (hKB w hwK) (hg_lt w hwK).le (norm_nonneg _) hB1.le).trans_eq
+      (mul_div_cancel₀ _ hB1.ne')
   have hhx : ‖h x‖ ≤ (1 / 2 : ℝ) :=
     Complex.norm_le_of_forall_mem_frontier_norm_le (hCc.isBounded.subset subset_closure) hh_cl
       hh_fr (subset_closure (mem_connectedComponentIn hx))
@@ -165,28 +148,24 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
   rw [hhx1, norm_one] at hhx
   linarith
 
-/-- For an open set `Ω ⊆ ℂ` and a compact subset `K ⊆ Ω`, `holomorphicHull Ω K` is compact and
-coincides with `TauCeti.fillIn K Ω`, the union of `K` and all connected components of `Ω \ K`
-whose closures are compact subsets of `Ω`. -/
+/-- For an open set `Ω ⊆ ℂ` and a compact subset `K ⊆ Ω`, `holomorphicHull Ω K` coincides with
+`TauCeti.fillIn K Ω`, the union of `K` and all connected components of `Ω \ K` whose closures are
+compact subsets of `Ω`. -/
 theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    IsCompact (holomorphicHull Ω K) ∧
-      holomorphicHull Ω K = K ∪ {z | z ∈ Ω \ K ∧
-        IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
-        closure (connectedComponentIn (Ω \ K) z) ⊆ Ω} := by
-  rw [← fillIn_def]
-  refine ⟨isCompact_holomorphicHull hK hKΩ, Subset.antisymm (fun z hz => ?_)
-    (fillIn_subset_holomorphicHull (hΩ.sdiff hK.isClosed) hKΩ)⟩
+    holomorphicHull Ω K = fillIn K Ω := by
+  refine Subset.antisymm (fun z hz => ?_)
+    (fillIn_subset_holomorphicHull (hΩ.sdiff hK.isClosed) hKΩ)
   set Ktilde : Set ℂ := fillIn K Ω
   by_contra hzKt
+  -- Step 1: Adjoin `z ∉ Ktilde` to the filled compact set `Ktilde`, preserving Runge's condition.
   have hKt_cpt : IsCompact Ktilde := hK.fillIn hΩ
-  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-    rw [Complex.rank_real_complex]
-    exact Cardinal.one_lt_two
   have hRunge₁ : IsRungeCompactPair Ω (insert z Ktilde) :=
     isRungeCompactPair_iff.mpr ⟨hΩ, hKt_cpt.insert z,
       insert_subset_iff.mpr ⟨holomorphicHull_subset hz, fillIn_subset hKΩ⟩,
-      (isFilledIn_fillIn K Ω).insert hrank (hΩ.sdiff hKt_cpt.isClosed) z⟩
+      (isFilledIn_fillIn K Ω).insert (by simp [Complex.rank_real_complex])
+        (hΩ.sdiff hKt_cpt.isClosed) z⟩
+  -- Step 2: Separate `z` from `Ktilde` by a `0`/`1` function on disjoint open sets.
   obtain ⟨r, hr, hr_ball⟩ := Metric.isOpen_iff.mp hKt_cpt.isClosed.isOpen_compl z hzKt
   set r' : ℝ := r / 2
   have hr' : 0 < r' := half_pos hr
@@ -199,15 +178,11 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
     disjoint_left.mpr fun _ hw1 hw2 => hw1 (ball_subset_closedBall hw2)
   classical
   let f : ℂ → ℂ := fun w => if w ∈ U₁ then 0 else 1
-  have hf_diff : DifferentiableOn ℂ f (U₁ ∪ U₂) := fun w hw => by
-    rcases hw with hw1 | hw2
-    · have heq : f =ᶠ[𝓝 w] fun _ => (0 : ℂ) :=
-        Filter.eventually_of_mem (hU₁.mem_nhds hw1) fun y hy => by simp [f, hy]
-      exact (differentiableAt_const 0).congr_of_eventuallyEq heq |>.differentiableWithinAt
-    · have heq : f =ᶠ[𝓝 w] fun _ => (1 : ℂ) :=
-        Filter.eventually_of_mem (isOpen_ball.mem_nhds hw2) fun y hy => by
-          simp [f, hdisj.notMem_of_mem_right hy]
-      exact (differentiableAt_const 1).congr_of_eventuallyEq heq |>.differentiableWithinAt
+  have hf_diff : DifferentiableOn ℂ f (U₁ ∪ U₂) :=
+    ((differentiableOn_const 0).congr fun _ hw => by simp [f, hw]).union_of_isOpen
+      ((differentiableOn_const 1).congr fun _ hw => by simp [f, hdisj.notMem_of_mem_right hw])
+      hU₁ isOpen_ball
+  -- Step 3: Approximate `f` on `insert z Ktilde` via Runge and contradict the hull bound at `z`.
   obtain ⟨g, hg_diff, hg_lt⟩ :=
     hRunge₁.exists_differentiableOn_norm_sub_lt (hU₁.union isOpen_ball)
       (insert_subset_iff.mpr ⟨Or.inr (mem_ball_self hr'), hKtU₁.trans subset_union_left⟩)
@@ -223,8 +198,7 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
   have hfz : f z = 1 := by simp [f, hdisj.notMem_of_mem_right (mem_ball_self hr')]
   rw [hfz] at hgz1
   have htri : (1 : ℝ) ≤ ‖(1 : ℂ) - g z‖ + ‖g z‖ := by
-    calc (1 : ℝ) = ‖(1 : ℂ) - g z + g z‖ := by simp
-      _ ≤ ‖(1 : ℂ) - g z‖ + ‖g z‖ := norm_add_le _ _
+    simpa only [sub_add_cancel, norm_one] using norm_add_le ((1 : ℂ) - g z) (g z)
   linarith
 
 /-- For compact `K ⊆ Ω` with `Ω` open, `holomorphicHull Ω K = K` if and only if `K` is filled in
@@ -232,7 +206,7 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
 theorem holomorphicHull_eq_self_iff_isFilledIn {Ω K : Set ℂ}
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     holomorphicHull Ω K = K ↔ IsFilledIn K Ω := by
-  rw [(holomorphicHull_eq_fill hΩ hK hKΩ).2, ← fillIn_def, fillIn_eq_self_iff_isFilledIn]
+  rw [holomorphicHull_eq_fill hΩ hK hKΩ, fillIn_eq_self_iff_isFilledIn]
 
 /-- For an open set `Ω ⊆ ℂ` and a compact set `K ⊆ ℂ`, `IsRungeCompactPair Ω K` holds if and only
 if `holomorphicHull Ω K = K`. -/
@@ -292,7 +266,7 @@ theorem holomorphicHull_rungeExhaustion {Ω : Set ℂ} (hΩ : IsOpen Ω) (n : �
 topological filled hull `TauCeti.filledHull K`. -/
 theorem holomorphicHull_univ_eq_filledHull {K : Set ℂ} (hK : IsCompact K) :
     holomorphicHull Set.univ K = filledHull K := by
-  rw [(holomorphicHull_eq_fill isOpen_univ hK (subset_univ K)).2, ← fillIn_def, fillIn_univ]
+  rw [holomorphicHull_eq_fill isOpen_univ hK (subset_univ K), fillIn_univ]
 
 /-- For compact `K ⊆ ℂ`, the complement `Kᶜ` is connected if and only if the image of `K` in
 `Fin 1 → ℂ` is polynomially convex. -/
@@ -303,10 +277,8 @@ theorem _root_.IsCompact.isConnected_compl_iff_isPolynomiallyConvex {K : Set ℂ
     holomorphicHull_univ_eq_filledHull hK]
   refine ⟨fun hconn => filledHull_eq_self hconn.isPreconnected fun hb =>
     NormedSpace.unbounded_univ ℝ ℂ (by simpa using hb.union hK.isBounded), fun hfill => ?_⟩
-  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-    rw [Complex.rank_real_complex]
-    exact Cardinal.one_lt_two
-  simpa only [hfill] using isConnected_compl_filledHull hrank hK.isBounded
+  simpa only [hfill] using
+    isConnected_compl_filledHull (by simp [Complex.rank_real_complex]) hK.isBounded
 
 /-- **Polynomial Runge theorem**: a compact set `K ⊆ ℂ` has connected complement `Kᶜ` if and only
 if every holomorphic function on an open neighbourhood `U ⊇ K` can be approximated uniformly on `K`
