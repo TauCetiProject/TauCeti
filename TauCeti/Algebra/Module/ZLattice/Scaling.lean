@@ -51,14 +51,21 @@ first statement does not extend to `|c| < 1`.
 * `ZLattice.isIntegral_smul_iff`, `ZLattice.isEven_smul_iff`: the exact criteria for `c • L` to be
   integral or even.
 * `ZLattice.IsIntegral.sqrt_smul`, `ZLattice.IsEven.sqrt_smul`,
-  `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
-  even or when `L` is integral and `m` is even.
+  `ZLattice.IsIntegral.isEven_sqrt_smul`, `ZLattice.IsIntegral.natCast_smul`,
+  `ZLattice.IsEven.natCast_smul`, `ZLattice.IsIntegral.isEven_natCast_smul_iff`: `√m • L` and
+  `m • L` are integral when `L` is, and `m • L` (for integral `L`) is even if and only if `m` is
+  even or `L` is even.
 * `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
   `det (√m • L) = mⁿ det L` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L` and `m ≠ 0`), and
   `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
   by `|c| > 1`, or a unimodular lattice by `|c| ≠ 1`, does not give a unimodular lattice.
+* `ZLattice.dual_inv_natCast_smul`, `ZLattice.IsUnimodular.dual_inv_natCast_smul_lt`,
+  `ZLattice.IsUnimodular.not_isIntegral_inv_natCast_smul`: for a unimodular lattice `L` in positive
+  dimension and `m > 1`, the down-scaled lattice `m⁻¹ • L` has dual `m • L < m⁻¹ • L`, trivial
+  discriminant group, determinant `m⁻²ⁿ < 1`, and is neither integral, even, nor unimodular (for
+  `L = ℤ` and `m = 2`, this is the half-integer lattice `½ ℤ ⊆ ℝ` with dual `2 ℤ`).
 
 ## References
 
@@ -80,6 +87,18 @@ open scoped Pointwise RealInnerProductSpace
 
 namespace ZLattice
 
+section Module
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] (L : Submodule ℤ E)
+
+/-- Dividing a `ℤ`-submodule by a nonzero natural number `m` enlarges it: `L ≤ (m : ℝ)⁻¹ • L`. -/
+theorem le_inv_natCast_smul {m : ℕ} (hm : m ≠ 0) : L ≤ (m : ℝ)⁻¹ • L := fun x hx ↦
+  (mem_smul_pointwise_iff_exists _ _ _).mpr
+    ⟨(m : ℝ) • x, by simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hx m,
+      inv_smul_smul₀ (Nat.cast_ne_zero.mpr hm) x⟩
+
+end Module
+
 /-! ### Evenness -/
 
 section Seminormed
@@ -99,6 +118,12 @@ theorem IsEven.sqrt_smul (h : IsEven L) (m : ℕ) : IsEven (√(m : ℝ) • L) 
   refine (isEven_smul_iff L _).mpr fun x hx ↦ ?_
   obtain ⟨a, ha⟩ := isEven_iff.mp h x hx
   exact ⟨m * a, by rw [Real.sq_sqrt m.cast_nonneg, ha]; push_cast; ring⟩
+
+/-- Scaling an even lattice by a natural number gives an even lattice. -/
+theorem IsEven.natCast_smul (h : IsEven L) (m : ℕ) : IsEven ((m : ℝ) • L) := by
+  refine (isEven_smul_iff L _).mpr fun x hx ↦ ?_
+  obtain ⟨a, ha⟩ := isEven_iff.mp h x hx
+  exact ⟨m ^ 2 * a, by rw [ha]; push_cast; ring⟩
 
 end Seminormed
 
@@ -232,6 +257,13 @@ theorem covolume_natCast_smul (c : ℕ) (μ : Measure E := by volume_tac) [μ.Is
     covolume ((c : ℝ) • L) μ = (c : ℝ) ^ finrank ℝ E * covolume L μ := by
   rw [covolume_smul L μ, Nat.abs_cast]
 
+/-- Dividing a full lattice by a natural number `c` divides its covolume by `cⁿ`, where `n` is the
+dimension of the space, for any Haar measure (for `c = 0` in positive dimension both sides
+vanish). -/
+theorem covolume_inv_natCast_smul (c : ℕ) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    covolume ((c : ℝ)⁻¹ • L) μ = ((c : ℝ) ^ finrank ℝ E)⁻¹ * covolume L μ := by
+  rw [covolume_smul L μ, abs_inv, Nat.abs_cast, inv_pow]
+
 end Normed
 
 /-! ### Duality, integrality and the determinant -/
@@ -274,6 +306,79 @@ theorem IsIntegral.isEven_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : Even m) :
   rw [real_inner_self_eq_norm_sq] at ha
   exact ⟨k * a, by rw [Real.sq_sqrt (k + k).cast_nonneg, ha]; push_cast; ring⟩
 
+/-- Scaling an integral lattice by a natural number gives an integral lattice. -/
+theorem IsIntegral.natCast_smul (h : IsIntegral L) (m : ℕ) : IsIntegral ((m : ℝ) • L) := by
+  refine (isIntegral_smul_iff L _).mpr fun x hx y hy ↦ ?_
+  obtain ⟨a, ha⟩ := isIntegral_iff.mp h x hx y hy
+  exact ⟨m ^ 2 * a, by rw [ha]; push_cast; ring⟩
+
+/-- Scaling an integral lattice by an even natural number gives an even lattice. -/
+theorem IsIntegral.isEven_natCast_smul (h : IsIntegral L) {m : ℕ} (hm : Even m) :
+    IsEven ((m : ℝ) • L) := by
+  refine (isEven_smul_iff L _).mpr fun x hx ↦ ?_
+  obtain ⟨k, rfl⟩ := hm
+  obtain ⟨a, ha⟩ := isIntegral_iff.mp h x hx x hx
+  rw [real_inner_self_eq_norm_sq] at ha
+  exact ⟨2 * k ^ 2 * a, by rw [ha]; push_cast; ring⟩
+
+/-- For an integral lattice `L` and a natural number `m`, the scaled lattice `m • L` is even if
+and only if `m` is even or `L` is even. -/
+theorem IsIntegral.isEven_natCast_smul_iff (h : IsIntegral L) {m : ℕ} :
+    IsEven ((m : ℝ) • L) ↔ Even m ∨ IsEven L := by
+  refine ⟨fun hmL ↦ or_iff_not_imp_left.mpr fun hm ↦ isEven_iff.mpr fun x hx ↦ ?_,
+    fun h' ↦ h'.elim h.isEven_natCast_smul fun hL ↦ hL.natCast_smul m⟩
+  obtain ⟨q, rfl⟩ : Odd m := Nat.not_even_iff_odd.mp hm
+  obtain ⟨a, ha⟩ := isIntegral_iff.mp h x hx x hx
+  rw [real_inner_self_eq_norm_sq] at ha
+  obtain ⟨b, hb⟩ := (isEven_smul_iff L (2 * q + 1 : ℕ)).mp hmL x hx
+  refine ⟨b - (2 * (q : ℤ) ^ 2 + 2 * q) * a, ?_⟩
+  push_cast at hb ⊢
+  linear_combination hb - (4 * (q : ℝ) ^ 2 + 4 * q) * ha
+
+/-- The dual of the down-scaled lattice `m⁻¹ • L` (`m ≠ 0`) is `m • L^∨`. -/
+theorem dual_inv_natCast_smul (L : Submodule ℤ E) {m : ℕ} (hm : m ≠ 0) :
+    dual ((m : ℝ)⁻¹ • L) = (m : ℝ) • dual L := by
+  rw [dual_smul L (inv_ne_zero (Nat.cast_ne_zero.mpr hm)), inv_inv]
+
+/-- When `dual L ≤ L` and `m ≠ 0`, the dual of `m⁻¹ • L` is contained in `m⁻¹ • L`:
+`(m⁻¹ • L)^∨ = m • L^∨ ≤ m • L ≤ L ≤ m⁻¹ • L`. -/
+theorem dual_inv_natCast_smul_le_of_dual_le (h : dual L ≤ L) {m : ℕ} (hm : m ≠ 0) :
+    dual ((m : ℝ)⁻¹ • L) ≤ (m : ℝ)⁻¹ • L := by
+  rw [dual_inv_natCast_smul L hm]
+  exact (smul_mono_right (m : ℝ) h).trans ((natCast_smul_le L m).trans (le_inv_natCast_smul L hm))
+
+/-- When `dual L ≤ L` and `m ≠ 0`, the down-scaled lattice `m⁻¹ • L` has trivial discriminant
+group. -/
+theorem subsingleton_discriminantGroup_inv_natCast_smul_of_dual_le (h : dual L ≤ L) {m : ℕ}
+    (hm : m ≠ 0) : Subsingleton (DiscriminantGroup ((m : ℝ)⁻¹ • L)) :=
+  subsingleton_discriminantGroup_iff.mpr (dual_inv_natCast_smul_le_of_dual_le h hm)
+
+/-- When `dual L ≤ L` and `m ≠ 0`, the discriminant group of `m⁻¹ • L` has order `1`. -/
+theorem card_discriminantGroup_inv_natCast_smul_of_dual_le (h : dual L ≤ L) {m : ℕ}
+    (hm : m ≠ 0) : Nat.card (DiscriminantGroup ((m : ℝ)⁻¹ • L)) = 1 :=
+  have := subsingleton_discriminantGroup_inv_natCast_smul_of_dual_le h hm
+  Nat.card_unique
+
+/-- For a unimodular lattice `L` and `m ≠ 0`, the dual of `m⁻¹ • L` is `m • L`. -/
+theorem IsUnimodular.dual_inv_natCast_smul (h : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) :
+    dual ((m : ℝ)⁻¹ • L) = (m : ℝ) • L := by
+  rw [ZLattice.dual_inv_natCast_smul L hm, h.dual_eq]
+
+/-- For a unimodular lattice `L` and `m ≠ 0`, the dual of `m⁻¹ • L` is contained in `m⁻¹ • L`. -/
+theorem IsUnimodular.dual_inv_natCast_smul_le (h : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) :
+    dual ((m : ℝ)⁻¹ • L) ≤ (m : ℝ)⁻¹ • L :=
+  dual_inv_natCast_smul_le_of_dual_le h.dual_eq.le hm
+
+/-- For a unimodular lattice `L` and `m ≠ 0`, the discriminant group of `m⁻¹ • L` is trivial. -/
+theorem IsUnimodular.subsingleton_discriminantGroup_inv_natCast_smul (h : IsUnimodular L) {m : ℕ}
+    (hm : m ≠ 0) : Subsingleton (DiscriminantGroup ((m : ℝ)⁻¹ • L)) :=
+  subsingleton_discriminantGroup_inv_natCast_smul_of_dual_le h.dual_eq.le hm
+
+/-- For a unimodular lattice `L` and `m ≠ 0`, the discriminant group of `m⁻¹ • L` has order `1`. -/
+theorem IsUnimodular.card_discriminantGroup_inv_natCast_smul (h : IsUnimodular L) {m : ℕ}
+    (hm : m ≠ 0) : Nat.card (DiscriminantGroup ((m : ℝ)⁻¹ • L)) = 1 :=
+  card_discriminantGroup_inv_natCast_smul_of_dual_le h.dual_eq.le hm
+
 variable (L) [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]
 
@@ -283,6 +388,12 @@ of the space. -/
 theorem det_smul {c : ℝ} : det (c • L) = c ^ (2 * finrank ℝ E) * det L := by
   rw [det_def, det_def, covolume_smul L volume, mul_pow, ← pow_mul, mul_comm (finrank ℝ E),
     pow_mul, pow_mul, sq_abs]
+
+/-- Dividing a full lattice by a natural number `m` divides its determinant by `m²ⁿ`, where `n` is
+the dimension of the space. -/
+theorem det_inv_natCast_smul {m : ℕ} :
+    det ((m : ℝ)⁻¹ • L) = ((m : ℝ) ^ (2 * finrank ℝ E))⁻¹ * det L := by
+  rw [det_smul L, inv_pow]
 
 /-- Scaling a full lattice by `√m`, for a natural number `m`, multiplies its determinant by `mⁿ`,
 where `n` is the dimension of the space. -/
@@ -342,6 +453,15 @@ theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [
   exact_mod_cast h.symm
 
 variable {L}
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- Dividing a unimodular lattice `L` by a natural number `m` gives determinant `m⁻²ⁿ`, where `n`
+is the dimension of the space. -/
+theorem IsUnimodular.det_inv_natCast_smul (h : IsUnimodular L) (m : ℕ) :
+    det ((m : ℝ)⁻¹ • L) = ((m : ℝ) ^ (2 * finrank ℝ E))⁻¹ := by
+  have := h.isIntegral.discreteTopology
+  have : IsZLattice ℝ L := ⟨h.span_eq_top⟩
+  rw [ZLattice.det_inv_natCast_smul L, h.det_eq_one, mul_one]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
@@ -407,6 +527,129 @@ theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {
       pow_eq_one_iff_of_nonneg (abs_nonneg c) (mul_ne_zero two_ne_zero finrank_pos.ne')] at hdet
     exact hc hdet
 
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, dividing a unimodular lattice by a natural number `m > 1` never gives a
+unimodular lattice. -/
+theorem IsUnimodular.not_isUnimodular_inv_natCast_smul [Nontrivial E] (h : IsUnimodular L)
+    {m : ℕ} (hm : 1 < m) : ¬ IsUnimodular ((m : ℝ)⁻¹ • L) := by
+  refine h.not_isUnimodular_smul ?_
+  have hm1 : (1 : ℝ) < m := by exact_mod_cast hm
+  rw [abs_of_nonneg (inv_nonneg.mpr (zero_le_one.trans hm1.le))]
+  exact (inv_lt_one_of_one_lt₀ hm1).ne
+
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, dividing a unimodular lattice by a natural number `m > 1` produces a
+non-integral lattice: its dual `m • L` lies inside `m⁻¹ • L`, so integrality would force
+unimodularity. -/
+theorem IsUnimodular.not_isIntegral_inv_natCast_smul [Nontrivial E] (h : IsUnimodular L)
+    {m : ℕ} (hm : 1 < m) : ¬ IsIntegral ((m : ℝ)⁻¹ • L) := by
+  rw [isIntegral_iff_isUnimodular_of_dual_le (h.dual_inv_natCast_smul_le (by omega))]
+  exact h.not_isUnimodular_inv_natCast_smul hm
+
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, dividing a unimodular lattice by a natural number `m > 1` never gives an
+even lattice. -/
+theorem IsUnimodular.not_isEven_inv_natCast_smul [Nontrivial E] (h : IsUnimodular L)
+    {m : ℕ} (hm : 1 < m) : ¬ IsEven ((m : ℝ)⁻¹ • L) :=
+  fun he ↦ h.not_isIntegral_inv_natCast_smul hm he.isIntegral
+
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, for a unimodular lattice `L` and `m > 1`, the dual `m • L` is strictly
+contained in `m⁻¹ • L`. -/
+theorem IsUnimodular.dual_inv_natCast_smul_lt [Nontrivial E] (h : IsUnimodular L) {m : ℕ}
+    (hm : 1 < m) : dual ((m : ℝ)⁻¹ • L) < (m : ℝ)⁻¹ • L :=
+  (dual_lt_iff_not_isUnimodular_of_dual_le (h.dual_inv_natCast_smul_le (by omega))).mpr
+    (h.not_isUnimodular_inv_natCast_smul hm)
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, dividing a unimodular lattice by a natural number `m > 1` gives a
+lattice of determinant strictly less than `1`. -/
+theorem IsUnimodular.det_inv_natCast_smul_lt_one [Nontrivial E] (h : IsUnimodular L) {m : ℕ}
+    (hm : 1 < m) : det ((m : ℝ)⁻¹ • L) < 1 := by
+  rw [h.det_inv_natCast_smul]
+  have hm1 : (1 : ℝ) < m := by exact_mod_cast hm
+  exact inv_lt_one_of_one_lt₀ (one_lt_pow₀ hm1 (mul_ne_zero two_ne_zero finrank_pos.ne'))
+
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, for a unimodular lattice `L` and `m > 1`, `det (m⁻¹ • L) = m⁻²ⁿ < 1`
+differs from the order `1` of `DiscriminantGroup (m⁻¹ • L)`, showing that `IsIntegral` is needed in
+`IsIntegral.det_eq_card_discriminantGroup`. -/
+theorem IsUnimodular.det_inv_natCast_smul_ne_card_discriminantGroup [Nontrivial E]
+    (h : IsUnimodular L) {m : ℕ} (hm : 1 < m) :
+    det ((m : ℝ)⁻¹ • L) ≠ Nat.card (DiscriminantGroup ((m : ℝ)⁻¹ • L)) := by
+  rw [h.card_discriminantGroup_inv_natCast_smul (by omega), Nat.cast_one]
+  exact (h.det_inv_natCast_smul_lt_one hm).ne
+
 end InnerProductSpace
+
+/-! ### The half-integer lattice `½ ℤ` -/
+
+section HalfInt
+
+/-- The half-integer lattice `½ ℤ ⊆ ℝ` is the integer lattice `ℤ` scaled by `2⁻¹`. -/
+theorem span_one_div_two_eq_inv_smul :
+    (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) = ((2 : ℕ) : ℝ)⁻¹ • span ℤ {1} := by
+  simp [smul_span]
+
+/-- The dual of the half-integer lattice `½ ℤ ⊆ ℝ` is `2 ℤ`. -/
+theorem dual_span_one_div_two :
+    dual (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) = span ℤ {2} := by
+  simpa using dual_span_singleton (c := (1 / 2 : ℝ)) (by norm_num)
+
+/-- The dual `2 ℤ` of `½ ℤ ⊆ ℝ` is contained in `½ ℤ`. -/
+theorem dual_span_one_div_two_le :
+    dual (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) ≤ span ℤ {1 / 2} := by
+  rw [span_one_div_two_eq_inv_smul]
+  exact isUnimodular_span_one.dual_inv_natCast_smul_le two_ne_zero
+
+/-- The dual `2 ℤ` of `½ ℤ ⊆ ℝ` is strictly contained in `½ ℤ`. -/
+theorem dual_span_one_div_two_lt :
+    dual (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) < span ℤ {1 / 2} := by
+  rw [span_one_div_two_eq_inv_smul]
+  exact isUnimodular_span_one.dual_inv_natCast_smul_lt one_lt_two
+
+/-- The discriminant group `(½ ℤ)^∨ ⧸ ((½ ℤ) ∩ (½ ℤ)^∨) = 2ℤ ⧸ 2ℤ` of `½ ℤ ⊆ ℝ` is a
+subsingleton. -/
+instance instSubsingletonDiscriminantGroupSpanOneDivTwo :
+    Subsingleton (DiscriminantGroup (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ)) :=
+  subsingleton_discriminantGroup_iff.mpr dual_span_one_div_two_le
+
+/-- The discriminant group `(½ ℤ)^∨ ⧸ ((½ ℤ) ∩ (½ ℤ)^∨) = 2ℤ ⧸ 2ℤ` of `½ ℤ ⊆ ℝ` has `0` as its
+unique element. -/
+noncomputable instance instUniqueDiscriminantGroupSpanOneDivTwo :
+    Unique (DiscriminantGroup (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ)) where
+  toInhabited := inferInstance
+  uniq x := Subsingleton.elim x default
+
+/-- The discriminant group of `½ ℤ ⊆ ℝ` has order `1`. -/
+theorem card_discriminantGroup_span_one_div_two :
+    Nat.card (DiscriminantGroup (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ)) = 1 :=
+  Nat.card_unique
+
+/-- The half-integer lattice `½ ℤ ⊆ ℝ` is not integral: `⟪1/2, 1/2⟫ = 1/4 ∉ ℤ`. -/
+theorem not_isIntegral_span_one_div_two :
+    ¬ IsIntegral (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) := by
+  rw [span_one_div_two_eq_inv_smul]
+  exact isUnimodular_span_one.not_isIntegral_inv_natCast_smul one_lt_two
+
+/-- The half-integer lattice `½ ℤ ⊆ ℝ` is not even. -/
+theorem not_isEven_span_one_div_two :
+    ¬ IsEven (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) := by
+  rw [span_one_div_two_eq_inv_smul]
+  exact isUnimodular_span_one.not_isEven_inv_natCast_smul one_lt_two
+
+/-- The half-integer lattice `½ ℤ ⊆ ℝ` is not unimodular. -/
+theorem not_isUnimodular_span_one_div_two :
+    ¬ IsUnimodular (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) := by
+  rw [span_one_div_two_eq_inv_smul]
+  exact isUnimodular_span_one.not_isUnimodular_inv_natCast_smul one_lt_two
+
+/-- The half-integer lattice `½ ℤ ⊆ ℝ` has determinant `1 / 4`. -/
+theorem det_span_one_div_two :
+    det (span ℤ {(1 / 2 : ℝ)} : Submodule ℤ ℝ) = 1 / 4 := by
+  rw [span_one_div_two_eq_inv_smul, isUnimodular_span_one.det_inv_natCast_smul, Module.finrank_self]
+  norm_num
+
+end HalfInt
 
 end ZLattice

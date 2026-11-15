@@ -51,6 +51,8 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
 
 * `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
   so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
+* `ZLattice.thetaCoset_bot`, `ZLattice.thetaSeries_bot`: on the zero subgroup `⊥`,
+  `θ_{γ+⊥}(τ) = exp (π i ‖γ‖² τ)` and `Θ_⊥ = 1`.
 * `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
@@ -141,6 +143,24 @@ theorem thetaCoset_eq_zero_of_forall_not_summable (γ : E)
 theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
   ext τ
   simp [thetaCoset_apply, thetaSeries_apply]
+
+/-- The theta series of the translate `γ + ⊥` of the zero subgroup has the single term
+`exp (π i ‖γ‖² τ)`. -/
+@[simp]
+theorem thetaCoset_bot (γ : E) (τ : ℍ) :
+    thetaCoset (⊥ : Submodule ℤ E) γ τ = cexp (π * I * (‖γ‖ ^ 2 : ℝ) * τ) := by
+  simp [thetaCoset_apply, Subsingleton.elim (default : (⊥ : Submodule ℤ E)) 0]
+
+/-- The theta series of the zero subgroup `⊥` is constantly `1`. -/
+@[simp]
+theorem thetaSeries_bot : thetaSeries (⊥ : Submodule ℤ E) = 1 := by
+  ext τ
+  rw [← thetaCoset_zero, thetaCoset_bot, Pi.one_apply]
+  simp
+
+/-- At every `τ : ℍ`, the theta series of the zero subgroup `⊥` takes the value `1`. -/
+theorem thetaSeries_bot_apply (τ : ℍ) : thetaSeries (⊥ : Submodule ℤ E) τ = 1 := by
+  simp
 
 /-- Translating `γ` by a vector of `L` does not change the theta series of the translate `γ + L`:
 the series is reindexed by `v ↦ w + v`. -/

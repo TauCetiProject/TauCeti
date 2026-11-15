@@ -49,9 +49,14 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.isIntegral_iff`: `L` is integral if and only if all inner products on `L` are
   integers.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
-* `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
+* `ZLattice.IsIntegral.discreteTopology`, `ZLattice.IsIntegral.one_le_norm_of_ne_zero`: an
+  integral lattice is discrete, and every nonzero vector in it has norm at least `1`.
 * `ZLattice.IsUnimodular.span_eq_top`: a unimodular lattice in a finite-dimensional space spans it.
-* `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v` is even if and only if `‖v‖² ∈ 2ℤ`.
+* `ZLattice.isIntegral_iff_isUnimodular_of_dual_le`,
+  `ZLattice.dual_lt_iff_not_isIntegral_of_dual_le`: when `dual L ≤ L`, `L` is integral if and only
+  if it is unimodular, and `dual L < L` holds if and only if `L` is not integral.
+* `ZLattice.isEven_span_singleton_iff`, `ZLattice.isIntegral_span_singleton_iff`: the lattice `ℤ v`
+  is even if and only if `‖v‖² ∈ 2ℤ`, and integral if and only if `‖v‖² ∈ ℤ`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
@@ -143,6 +148,22 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
 
+/-- Every nonzero vector of an integral lattice has norm at least `1`, since its squared norm is a
+positive integer. -/
+theorem IsIntegral.one_le_norm_of_ne_zero {L : Submodule ℤ E} (hL : IsIntegral L) {x : E}
+    (hx : x ∈ L) (hx0 : x ≠ 0) : 1 ≤ ‖x‖ := by
+  obtain ⟨m, hm⟩ := isIntegral_iff.1 hL x hx x hx
+  rw [real_inner_self_eq_norm_sq] at hm
+  have hpos : (0 : ℝ) < ‖x‖ := norm_pos_iff.2 hx0
+  have hm0 : (0 : ℤ) < m := by exact_mod_cast hm ▸ pow_pos hpos 2
+  have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm0
+  nlinarith
+
+/-- A lattice containing a nonzero vector of norm strictly less than `1` is not integral. -/
+theorem not_isIntegral_of_mem_of_norm_lt_one {L : Submodule ℤ E} {x : E} (hx : x ∈ L)
+    (hx0 : x ≠ 0) (hlt : ‖x‖ < 1) : ¬ IsIntegral L :=
+  fun hL ↦ hlt.not_ge (hL.one_le_norm_of_ne_zero hx hx0)
+
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
     DiscreteTopology L := by
@@ -152,12 +173,22 @@ theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :
   refine ⟨1, one_pos, fun x hx ↦ ?_⟩
   have hx1 : ‖(x : E)‖ < 1 := by simpa using hx
   by_contra hx0
-  obtain ⟨m, hm⟩ := isIntegral_iff.1 h x.1 x.2 x.1 x.2
-  rw [real_inner_self_eq_norm_sq] at hm
-  have hpos : (0 : ℝ) < ‖(x : E)‖ := norm_pos_iff.2 fun h0 ↦ hx0 (Subtype.ext h0)
-  have hm0 : (0 : ℤ) < m := by exact_mod_cast hm ▸ pow_pos hpos 2
-  have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm0
-  nlinarith
+  exact hx1.not_ge (h.one_le_norm_of_ne_zero x.2 fun h0 ↦ hx0 (Subtype.ext h0))
+
+/-- The lattice spanned by a single vector `v` is integral if and only if `‖v‖²` is an integer. -/
+theorem isIntegral_span_singleton_iff {v : E} :
+    IsIntegral (span ℤ {v}) ↔ ∃ m : ℤ, ‖v‖ ^ 2 = m := by
+  rw [isIntegral_iff]
+  refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ x hx y hy ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := h v (mem_span_singleton_self v) v (mem_span_singleton_self v)
+    exact ⟨m, real_inner_self_eq_norm_sq v ▸ hm⟩
+  · obtain ⟨a, rfl⟩ := mem_span_singleton.mp hx
+    obtain ⟨b, rfl⟩ := mem_span_singleton.mp hy
+    refine ⟨a * b * m, ?_⟩
+    rw [← Int.cast_smul_eq_zsmul ℝ a, ← Int.cast_smul_eq_zsmul ℝ b, real_inner_smul_left,
+      real_inner_smul_right, real_inner_self_eq_norm_sq, hm]
+    push_cast
+    ring
 
 /-- The integer-valued inner product on an integral lattice, as a `ℤ`-bilinear form on `L`. -/
 noncomputable def IsIntegral.integralForm {L : Submodule ℤ E} (hL : IsIntegral L) :
@@ -265,6 +296,23 @@ theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E}
 theorem IsIntegral.isUnimodular_iff {L : Submodule ℤ E} (h : IsIntegral L) :
     IsUnimodular L ↔ dual L ≤ L :=
   ⟨fun hu ↦ hu.dual_eq.le, h.antisymm⟩
+
+/-- A lattice containing its dual is integral if and only if it is unimodular. -/
+theorem isIntegral_iff_isUnimodular_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) :
+    IsIntegral L ↔ IsUnimodular L :=
+  ⟨fun hi ↦ hi.antisymm h, IsUnimodular.isIntegral⟩
+
+/-- When `dual L ≤ L`, the inclusion `dual L < L` is strict if and only if `L` is not integral. -/
+theorem dual_lt_iff_not_isIntegral_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) :
+    dual L < L ↔ ¬ IsIntegral L := by
+  rw [lt_iff_le_and_ne, and_iff_right h, ne_comm, ne_eq, ← isUnimodular_iff_eq_dual,
+    isIntegral_iff_isUnimodular_of_dual_le h]
+
+/-- When `dual L ≤ L`, the inclusion `dual L < L` is strict if and only if `L` is not
+unimodular. -/
+theorem dual_lt_iff_not_isUnimodular_of_dual_le {L : Submodule ℤ E} (h : dual L ≤ L) :
+    dual L < L ↔ ¬ IsUnimodular L := by
+  rw [dual_lt_iff_not_isIntegral_of_dual_le h, isIntegral_iff_isUnimodular_of_dual_le h]
 
 /-- The `ℤ`-span of an orthonormal basis is unimodular. -/
 theorem isUnimodular_span_orthonormalBasis {ι : Type*} [Fintype ι]
