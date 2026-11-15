@@ -588,16 +588,16 @@ omit [DecidableEq α] in
 agree in the abelianization: an even-length word is then an even power of one element of order at
 most two there. -/
 theorem commutator_eq_ker_parityHom
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a)) :
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a)) :
     commutator (PresentedGroup R) = h.parityHom.ker := by
-  let u := Abelianization.of (PresentedGroup.of a : PresentedGroup R)
+  let u := Group.Abelianization.of (PresentedGroup.of a : PresentedGroup R)
   have hu : (2 : ℤ) • Additive.ofMul u = 0 := by
     rw [← ofMul_zpow, ofMul_eq_zero]
     simp [u, zpow_ofNat, sq, ← map_mul, h.of_mul_of]
-  let f : Multiplicative (ZMod 2) →* Abelianization (PresentedGroup R) :=
+  let f : Multiplicative (ZMod 2) →* Group.Abelianization (PresentedGroup R) :=
     (ZMod.lift 2 ⟨zmultiplesHom _ (Additive.ofMul u), hu⟩).toMultiplicativeLeft
-  have hf : Abelianization.of = f.comp h.parityHom := by
+  have hf : Group.Abelianization.of = f.comp h.parityHom := by
     apply PresentedGroup.ext
     intro x
     rw [MonoidHom.comp_apply, parityHom_of, habel]
@@ -605,24 +605,24 @@ theorem commutator_eq_ker_parityHom
     rw [AddMonoidHom.toMultiplicativeLeft_apply_apply, toAdd_ofAdd, ← Int.cast_one,
       ZMod.lift_coe _ _ 1]
     simp [u]
-  refine le_antisymm (Abelianization.commutator_le_ker _) ?_
-  rw [← Abelianization.ker_of, hf]
+  refine le_antisymm (Group.Abelianization.commutator_le_ker _) ?_
+  rw [← Group.Abelianization.ker_of, hf]
   exact h.parityHom.ker_le_comap f.ker
 
 /-- **Index-two Reidemeister--Schreier rewriting onto the commutator subgroup.** When all
 generators agree in the abelianization, the group presented by the rewrites of the source words is
 the commutator subgroup of the source presented group. -/
 noncomputable def mulEquivCommutator
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a)) :
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a)) :
     PresentedGroup (schreierRelators a e W) ≃* ↥(commutator (PresentedGroup R)) :=
   (h.mulEquivKerParityHom a e).trans
     (MulEquiv.subgroupCongr (h.commutator_eq_ker_parityHom a habel).symm)
 
 @[simp]
 theorem coe_mulEquivCommutator_apply
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a))
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a))
     (g : PresentedGroup (schreierRelators a e W)) :
     (h.mulEquivCommutator a e habel g : PresentedGroup R) = h.toPresentedGroup a e g := by
   simp [mulEquivCommutator, MulEquiv.subgroupCongr_apply]
@@ -643,8 +643,8 @@ auditable format, so that a transcription can be identified with the subgroup it
 describes. -/
 noncomputable def GroupPresentation.mulEquivCommutator (P : GroupPresentation)
     (h : IsSchreierIndexTwoSource R W) (a : α) (e : {x : α // x ≠ a} ≃ Fin P.generatorCount)
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a))
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a))
     (hrel : Subgroup.normalClosure (Relator.relatorSet P.transcribed) =
       Subgroup.normalClosure (schreierRelators a e W)) :
     P.Group ≃* ↥(commutator (PresentedGroup R)) :=
@@ -656,8 +656,8 @@ noncomputable def GroupPresentation.mulEquivCommutator (P : GroupPresentation)
 @[simp]
 theorem GroupPresentation.coe_mulEquivCommutator_of (P : GroupPresentation)
     (h : IsSchreierIndexTwoSource R W) (a : α) (e : {x : α // x ≠ a} ≃ Fin P.generatorCount)
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a))
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a))
     (hrel : Subgroup.normalClosure (Relator.relatorSet P.transcribed) =
       Subgroup.normalClosure (schreierRelators a e W)) (i : Fin P.generatorCount) :
     (P.mulEquivCommutator h a e habel hrel (PresentedGroup.of i) : PresentedGroup R) =

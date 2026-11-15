@@ -62,18 +62,18 @@ variable {R : Type u} {M : Type v}
   [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- The internal grading on the multiplicative opposite, with `op x` in the same degree as `x`. -/
-noncomputable def opposite (G : InternalGrading R M) : InternalGrading R Mᵐᵒᵖ :=
+noncomputable def opposite (G : InternalGrading R M ℤ) : InternalGrading R Mᵐᵒᵖ ℤ :=
   G.map (opLinearEquiv R)
 
 /-- The degree-`p` opposite piece is the image of the original piece under `op`. -/
 @[simp]
-theorem opposite_piece (G : InternalGrading R M) (p : ℤ) :
+theorem opposite_piece (G : InternalGrading R M ℤ) (p : ℤ) :
     G.opposite.piece p = (G.piece p).map (opLinearEquiv R).toLinearMap :=
   G.map_piece (opLinearEquiv R) p
 
 /-- An opposite element belongs to degree `p` exactly when the original element does. This is the
 special case of `mem_opposite_piece_iff` that `simp` already reaches. -/
-theorem op_mem_opposite_piece_iff (G : InternalGrading R M) (p : ℤ) (x : M) :
+theorem op_mem_opposite_piece_iff (G : InternalGrading R M ℤ) (p : ℤ) (x : M) :
     op x ∈ G.opposite.piece p ↔ x ∈ G.piece p := by
   simp [opposite]
 
@@ -81,18 +81,18 @@ theorem op_mem_opposite_piece_iff (G : InternalGrading R M) (p : ℤ) (x : M) :
 
 This is not a `simp` lemma: `opposite_piece` already rewrites the left-hand side to a
 `Submodule.map`, from which the `simp` set reaches the same right-hand side. -/
-theorem mem_opposite_piece_iff (G : InternalGrading R M) (p : ℤ) (x : Mᵐᵒᵖ) :
+theorem mem_opposite_piece_iff (G : InternalGrading R M ℤ) (p : ℤ) (x : Mᵐᵒᵖ) :
     x ∈ G.opposite.piece p ↔ x.unop ∈ G.piece p := by
   simp [opposite]
 
 /-- Passage to the multiplicative opposite is homogeneous of degree zero. -/
-theorem isHomogeneous_op (G : InternalGrading R M) :
+theorem isHomogeneous_op (G : InternalGrading R M ℤ) :
     TauCeti.LinearMap.IsHomogeneous
       (opLinearEquiv R).toLinearMap G.piece G.opposite.piece 0 :=
   G.isHomogeneous_map (opLinearEquiv R)
 
 /-- Returning from the multiplicative opposite is homogeneous of degree zero. -/
-theorem isHomogeneous_unop (G : InternalGrading R M) :
+theorem isHomogeneous_unop (G : InternalGrading R M ℤ) :
     TauCeti.LinearMap.IsHomogeneous
       (opLinearEquiv R).symm.toLinearMap G.opposite.piece G.piece 0 :=
   G.isHomogeneous_map_symm (opLinearEquiv R)
@@ -105,7 +105,7 @@ variable {R : Type u} {M : Type v}
   [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The Koszul twist commutes with the linear equivalence to the multiplicative opposite. -/
-theorem opLinearEquiv_comp_koszulTwist (G : InternalGrading R M) (q : ℤ) :
+theorem opLinearEquiv_comp_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) :
     (opLinearEquiv R).toLinearMap ∘ₗ G.koszulTwist q =
       G.opposite.koszulTwist q ∘ₗ (opLinearEquiv R).toLinearMap := by
   ext x
@@ -113,14 +113,14 @@ theorem opLinearEquiv_comp_koszulTwist (G : InternalGrading R M) (q : ℤ) :
 
 /-- Applying the Koszul twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
-theorem op_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : M) :
+theorem op_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) (x : M) :
     op (G.koszulTwist q x) = G.opposite.koszulTwist q (op x) := by
   exact LinearMap.congr_fun (G.opLinearEquiv_comp_koszulTwist q) x
 
 /-- Applying the Koszul twist to an opposite element and then `unop` agrees with twisting its
 underlying element. -/
 @[simp]
-theorem unop_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : Mᵐᵒᵖ) :
+theorem unop_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) (x : Mᵐᵒᵖ) :
     unop (G.opposite.koszulTwist q x) = G.koszulTwist q x.unop := by
   have h := congrArg unop (G.op_koszulTwist q x.unop)
   simpa only [op_unop, unop_op] using h.symm
@@ -133,7 +133,7 @@ variable {R : Type u} {M : Type v}
   [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- The quadratic twist commutes with the linear equivalence to the multiplicative opposite. -/
-theorem opLinearEquiv_comp_quadraticTwist (G : InternalGrading R M) :
+theorem opLinearEquiv_comp_quadraticTwist (G : InternalGrading R M ℤ) :
     (opLinearEquiv R).toLinearMap ∘ₗ G.quadraticTwist =
       G.opposite.quadraticTwist ∘ₗ (opLinearEquiv R).toLinearMap := by
   apply G.linearMap_ext
@@ -143,14 +143,14 @@ theorem opLinearEquiv_comp_quadraticTwist (G : InternalGrading R M) :
 
 /-- Applying the quadratic twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
-theorem op_quadraticTwist (G : InternalGrading R M) (x : M) :
+theorem op_quadraticTwist (G : InternalGrading R M ℤ) (x : M) :
     op (G.quadraticTwist x) = G.opposite.quadraticTwist (op x) := by
   exact LinearMap.congr_fun G.opLinearEquiv_comp_quadraticTwist x
 
 /-- Applying the quadratic twist to an opposite element and then `unop` agrees with twisting its
 underlying element. -/
 @[simp]
-theorem unop_quadraticTwist (G : InternalGrading R M) (x : Mᵐᵒᵖ) :
+theorem unop_quadraticTwist (G : InternalGrading R M ℤ) (x : Mᵐᵒᵖ) :
     unop (G.opposite.quadraticTwist x) = G.quadraticTwist x.unop := by
   have h := congrArg unop (G.op_quadraticTwist x.unop)
   simpa only [op_unop, unop_op] using h.symm
@@ -162,7 +162,7 @@ section GradedMonoid
 variable {R : Type u} {A : Type v}
   [Semiring R] [AddCommMonoid A] [Module R A] [Monoid A]
 
-variable (G : InternalGrading R A) [SetLike.GradedMonoid G.piece]
+variable (G : InternalGrading R A ℤ) [SetLike.GradedMonoid G.piece]
 
 /-- The opposite pieces are multiplicative: reversing the factors reverses their degrees, which
 does not change their sum in the integer grading. -/
@@ -183,7 +183,7 @@ section GradedAlgebra
 variable {R : Type u} {A : Type v}
   [CommSemiring R] [Semiring A] [Algebra R A]
 
-variable (G : InternalGrading R A) [SetLike.GradedMonoid G.piece]
+variable (G : InternalGrading R A ℤ) [SetLike.GradedMonoid G.piece]
 
 /-- An internally graded algebra induces the internal graded algebra on its multiplicative
 opposite. -/

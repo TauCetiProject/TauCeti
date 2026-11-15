@@ -689,7 +689,7 @@ theorem localMass_comp_intervalCylinderHomotopyCLM_le {𝓕 : Type*}
   refine enorm_apply_le_localMass_mul_of_forall_enorm_le T
     ((tsupport_intervalCylinderHomotopyCLM_subset ω).trans
       (image_mono (inter_subset_inter_left _ hωU))) fun x ↦ ?_
-  rw [← ofReal_norm, Real.enorm_eq_ofReal_abs]
+  rw [← ofReal_norm, Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal ((norm_intervalCylinderHomotopyCLM_apply_le ω
     fun t _ ↦ hω _).trans_eq (mul_one _))
 
@@ -783,7 +783,7 @@ theorem IsNormal.comp_intervalCylinderHomotopyCLM
     {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hT : IsNormal T) :
     IsNormal (T ∘L intervalCylinderHomotopyCLM a b hW) := by
   rw [isNormal_succ_iff, ContinuousLinearMap.coe_comp]
-  refine ⟨ne_top_of_le_ne_top (ENNReal.mul_ne_top enorm_ne_top hT.mass_ne_top)
+  refine ⟨ne_top_of_le_ne_top (ENNReal.mul_ne_top eNorm_ne_top hT.mass_ne_top)
     (mass_comp_intervalCylinderHomotopyCLM_le T), ?_⟩
   cases k with
   | zero =>
@@ -792,7 +792,7 @@ theorem IsNormal.comp_intervalCylinderHomotopyCLM
   | succ k =>
     have hT := isNormal_succ_iff.1 hT
     exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.ofNat_ne_top hT.1,
-      ENNReal.mul_ne_top enorm_ne_top hT.2⟩)
+      ENNReal.mul_ne_top eNorm_ne_top hT.2⟩)
       (mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_le T)
 
 end Interval

@@ -33,47 +33,6 @@ open CategoryTheory TopologicalSpace Opposite
 
 namespace AlgebraicGeometry
 
-private theorem exists_ne_zero_map_vanishingIdeal_compl_eq_span (R : CommRingCat.{u}) [IsDomain R]
-    [IsNoetherianRing R] {U : (Spec R).Opens} (hW : IsAffineOpen U)
-    (hne : (U : Set (Spec R)).Nonempty) (prime : Ideal R) [prime.IsPrime] (S : Type u) [CommRing S]
-    [Algebra R S] [IsLocalization.AtPrime S prime] [UniqueFactorizationMonoid S] :
-    ∃ a : S, a ≠ 0 ∧
-      (PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ).map
-        (algebraMap R S) = Ideal.span {a} := by
-  have : IsDomain S := IsLocalization.isDomain_of_atPrime S prime
-  have : IsNoetherianRing S := IsLocalization.isNoetherianRing prime.primeCompl S inferInstance
-  let ringMap : R ⟶ CommRingCat.of S := CommRingCat.ofHom (algebraMap R S)
-  have hinj : Function.Injective (algebraMap R S) :=
-    IsLocalization.injective S prime.primeCompl_le_nonZeroDivisors
-  obtain ⟨a, hf0, hf⟩ :=
-    IsAffineOpen.exists_vanishingIdeal_compl_eq_span_singleton (CommRingCat.of S)
-    (hW.preimage (Spec.map ringMap)) ⟨⟨⊥, Ideal.isPrime_bot⟩,
-      PrimeSpectrum.mem_of_isOpen_of_asIdeal_eq_bot U.isOpen hne
-        (Ideal.comap_bot_of_injective _ hinj)⟩
-  have hf' : (PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ).map
-      (algebraMap R S) = Ideal.span {a} := by
-    have hz := PrimeSpectrum.zeroLocus_vanishingIdeal_compl_of_isOpen U.isOpen
-    have hpre : (Spec.map ringMap ⁻¹ᵁ U : Set (Spec (.of S)))ᶜ =
-        PrimeSpectrum.comap (algebraMap R S) ⁻¹'
-          PrimeSpectrum.zeroLocus (PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ) := by
-      -- On points `Spec.map ringMap` is contraction along `algebraMap R S`, and
-      -- preimages commute with complements.
-      exact congrArg (fun Z ↦ PrimeSpectrum.comap (algebraMap R S) ⁻¹' Z) hz.symm
-    calc
-      _ = ((PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ).map
-          (algebraMap R S)).radical :=
-        (congrArg (Ideal.map (algebraMap R S))
-          (PrimeSpectrum.isRadical_vanishingIdeal _).radical.symm).trans
-            (IsLocalization.map_radical prime.primeCompl S
-              (PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ))
-      _ = PrimeSpectrum.vanishingIdeal
-          (PrimeSpectrum.comap (algebraMap R S) ⁻¹'
-            PrimeSpectrum.zeroLocus (PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ)) := by
-        rw [PrimeSpectrum.preimage_comap_zeroLocus, ← PrimeSpectrum.zeroLocus_span,
-          ← Ideal.map, PrimeSpectrum.vanishingIdeal_zeroLocus_eq_radical]
-      _ = _ := (congrArg PrimeSpectrum.vanishingIdeal hpre.symm).trans hf
-  exact ⟨a, hf0, hf'⟩
-
 /-- The reduced complement of a nonempty affine open on a separated integral locally
 Noetherian scheme with factorial local rings is an effective Cartier divisor. -/
 @[stacks 0BCW]
@@ -100,7 +59,7 @@ theorem Scheme.isEffectiveCartier_vanishingIdeal_compl_of_isAffineOpen
   have : UniqueFactorizationMonoid (Localization.AtPrime P) :=
     (IsLocalization.algEquiv P.primeCompl (X.presheaf.stalk x)
       (Localization.AtPrime P)).toMulEquiv.uniqueFactorizationMonoid inferInstance
-  obtain ⟨a, ha, hgen⟩ := exists_ne_zero_map_vanishingIdeal_compl_eq_span Γ(X, V)
+  obtain ⟨a, ha, hgen⟩ := IsAffineOpen.exists_ne_zero_map_vanishingIdeal_compl_eq_span_singleton
     (hU.preimage hV.fromSpec) hWne P (Localization.AtPrime P)
   have hideal : (IdealSheafData.vanishingIdeal
       ⟨(U : Set X)ᶜ, U.isOpen.isClosed_compl⟩).ideal ⟨V, hV⟩ =

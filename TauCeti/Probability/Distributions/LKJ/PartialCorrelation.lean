@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Topology.Constructions.Pi
 
 /-!
-# Independent partial correlations of the LKJ law
+# Laws of LKJ partial correlations
 
 In partial-correlation coordinates the LKJ density of shape `η > 0` factors into independent
 one-dimensional densities. The partial correlation in zero-based column `j` of a `p × p`
@@ -46,6 +46,10 @@ density pointwise, and no integral needs to be evaluated.
 * `TauCeti.Probability.map_partialCorrelationOfCorrelationCoordinates_withDensity`: conversely,
   the partial correlations of a correlation matrix with the LKJ density are independent centered
   symmetric Beta variables.
+* `TauCeti.Probability.map_partialCorrelationOfCorrelationCoordinates_lkjMeasure` transfers this
+  joint law to the symmetric-matrix carrier of `lkjMeasure`;
+  `ProbabilityTheory.HasLaw.iIndepFun_partialCorrelation_lkjMeasure` gives joint independence
+  for any random matrix with this law.
 
 ## References
 
@@ -190,4 +194,84 @@ theorem map_partialCorrelationOfCorrelationCoordinates_withDensity (hη : 0 < η
     (lkjPartialCorrelationShape_pos hη)] with z hz
   exact partialCorrelationOfCorrelationCoordinates_correlationCoordinatesOfPartialCorrelation hz
 
+/-- The joint law of the partial correlations extracted from an LKJ matrix is the product of
+the centered symmetric Beta laws with the column-dependent shapes. -/
+theorem map_partialCorrelationOfCorrelationCoordinates_lkjMeasure (hη : 0 < η) :
+    (lkjMeasure p η).map
+        (fun R ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R)) =
+      Measure.pi fun ij : strictLowerTriangle p ↦
+        (betaMeasure (lkjPartialCorrelationShape p η ij)
+          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x) := by
+  rw [← map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure hη,
+    Measure.map_map (g := fun R ↦
+      partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R))
+      (measurable_partialCorrelationOfCorrelationCoordinates.comp
+        (correlationCoordinates p).continuous.measurable)
+      (correlationMatrix p).continuous.measurable]
+  simp only [Function.comp_def, correlationCoordinates_correlationMatrix]
+  rw [map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure hη]
+  exact map_partialCorrelationOfCorrelationCoordinates_withDensity hη
+
+/-- Each partial correlation of an LKJ matrix is a centered symmetric Beta variable. -/
+theorem map_eval_partialCorrelationOfCorrelationCoordinates_lkjMeasure (hη : 0 < η)
+    (ij : strictLowerTriangle p) :
+    (lkjMeasure p η).map
+        (fun R ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R) ij) =
+      (betaMeasure (lkjPartialCorrelationShape p η ij)
+        (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x) := by
+  let _ (kl : strictLowerTriangle p) :=
+    isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη kl)
+      (lkjPartialCorrelationShape_pos hη kl)
+  have h := congrArg (Measure.map (Function.eval ij))
+    (map_partialCorrelationOfCorrelationCoordinates_lkjMeasure hη)
+  rw [Measure.map_map (f := fun R ↦
+    partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R))
+    (measurable_pi_apply ij)
+    (measurable_partialCorrelationOfCorrelationCoordinates.comp
+      (correlationCoordinates p).continuous.measurable),
+    (measurePreserving_eval _ ij).map_eq] at h
+  exact h
+
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {p : ℕ} {η : ℝ}
+  {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+
+/-- A random matrix with LKJ law has the product centered-Beta partial-correlation law. -/
+theorem partialCorrelation_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P) (hη : 0 < η) :
+    HasLaw (fun ω ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p (X ω)))
+      (Measure.pi fun ij : strictLowerTriangle p ↦
+        (betaMeasure (lkjPartialCorrelationShape p η ij)
+          (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) P := by
+  exact (⟨(measurable_partialCorrelationOfCorrelationCoordinates.comp
+    (correlationCoordinates p).continuous.measurable).aemeasurable,
+    map_partialCorrelationOfCorrelationCoordinates_lkjMeasure hη⟩ : HasLaw _ _ _).fun_comp hX
+
+/-- Each partial correlation of a random matrix with LKJ law has the corresponding centered
+symmetric Beta law. -/
+theorem eval_partialCorrelation_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P) (hη : 0 < η)
+    (ij : strictLowerTriangle p) :
+    HasLaw (fun ω ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p (X ω)) ij)
+      ((betaMeasure (lkjPartialCorrelationShape p η ij)
+        (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) P := by
+  let _ (kl : strictLowerTriangle p) :=
+    isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη kl)
+      (lkjPartialCorrelationShape_pos hη kl)
+  exact (measurePreserving_eval _ ij).hasLaw.fun_comp (hX.partialCorrelation_lkjMeasure hη)
+
+/-- The partial correlations of a random matrix with LKJ law are jointly independent. -/
+theorem iIndepFun_partialCorrelation_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) :
+    iIndepFun
+      (fun ij ω ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p (X ω)) ij)
+      P := by
+  let _ := isProbabilityMeasure_lkjMeasure (p := p) hη
+  let _ := hX.isProbabilityMeasure
+  exact (iIndepFun_iff_hasLaw_pi_pi (hX.eval_partialCorrelation_lkjMeasure hη)).2
+    (hX.partialCorrelation_lkjMeasure hη)
+
+end ProbabilityTheory.HasLaw

@@ -13,10 +13,11 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
 Mathlib's `CochainComplex.HomComplex.Cochain.diff K` is the differential of a cochain complex `K`
 read as a degree `1` cochain from `K` to itself, and `CochainComplex.HomComplex.δ` is the
 differential of the Hom complex.  This file records the elementary calculus relating the two:
-`δ` is composition with the differential cochains on either side, a morphism of cochain complexes
-commutes with them, and they square to zero. It also reads off the components of the homotopy
-that Mathlib's `CochainComplex.HomComplex.Cochain.equivHomotopy` builds from a cochain, and records
-how the components of a cochain absorb the identifications `K.X p ≅ K.X p'` of
+`δ` is composition with the differential cochains on either side, a cochain is a cocycle exactly
+when it commutes with them up to sign (in particular a morphism of cochain complexes commutes with
+them), and the differential cochains square to zero. It also reads off the components of the
+homotopy that Mathlib's `CochainComplex.HomComplex.Cochain.equivHomotopy` builds from a cochain,
+and records how the components of a cochain absorb the identifications `K.X p ≅ K.X p'` of
 `HomologicalComplex.XIsoOfEq` on the source side, complementing Mathlib's
 `CochainComplex.HomComplex.Cochain.v_comp_XIsoOfEq_hom` on the target side.
 
@@ -26,6 +27,8 @@ These are general facts about Mathlib's Hom complex, independent of any particul
 
 * `TauCeti.δ_eq_comp_diff_add_diff_comp`: the differential of the Hom complex is
   `δ z = z d + (-1)^(n+1) d z`.
+* `TauCeti.δ_eq_zero_iff_comp_diff_eq_diff_comp`: a cochain of degree `n` is a cocycle exactly
+  when `z d = (-1)^n d z`.
 * `TauCeti.ofHom_comp_diff`: a morphism of cochain complexes commutes with the differential
   cochains.
 * `TauCeti.diff_comp_diff`: the differential cochain squares to zero.
@@ -61,13 +64,20 @@ theorem δ_eq_comp_diff_add_diff_comp (n m : ℤ) (hnm : n + 1 = m) (z : Cochain
     Cochain.comp_v (Cochain.diff F) z (by lia) p (p + 1) q (by lia) (by lia),
     Cochain.diff_v, Cochain.diff_v]
 
+/-- A cochain `z` of degree `n` is a cocycle exactly when it commutes with the differential
+cochains up to the sign `(-1)^n`: `δ z = 0 ↔ z d = (-1)^n d z`. -/
+theorem δ_eq_zero_iff_comp_diff_eq_diff_comp (n m : ℤ) (hnm : n + 1 = m) (z : Cochain F G n) :
+    δ n m z = 0 ↔
+      z.comp (Cochain.diff G) hnm = n.negOnePow • (Cochain.diff F).comp z (by lia) := by
+  subst hnm
+  rw [δ_eq_comp_diff_add_diff_comp n _ rfl, Int.negOnePow_succ, Units.neg_smul,
+    ← sub_eq_add_neg, sub_eq_zero]
+
 /-- A morphism of cochain complexes commutes with the differential cochains. -/
 theorem ofHom_comp_diff (φ : F ⟶ G) :
     (Cochain.ofHom φ).comp (Cochain.diff G) (zero_add 1) =
       (Cochain.diff F).comp (Cochain.ofHom φ) (add_zero 1) := by
-  ext p q hpq
-  rw [Cochain.zero_cochain_comp_v, Cochain.comp_zero_cochain_v, Cochain.diff_v, Cochain.diff_v,
-    Cochain.ofHom_v, Cochain.ofHom_v, φ.comm]
+  simpa using (δ_eq_zero_iff_comp_diff_eq_diff_comp 0 1 (zero_add 1) _).mp (δ_ofHom φ)
 
 variable (F) in
 /-- The differential cochain squares to zero. -/

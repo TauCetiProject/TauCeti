@@ -25,8 +25,8 @@ that both halves are available at once. Everything here is stated and proved pur
 level, in terms of `TauCeti.inversions` and `TauCeti.wordProd`: no Coxeter presentation is
 mentioned, assumed, or needed. Downstream it *is* the root-level form of the Coxeter length of a
 Weyl group, because Mathlib defines `CoxeterSystem.length` to be exactly the least length of a
-word in the simple reflections; so once the Coxeter presentation lands, the Coxeter-length
-spelling of this theorem is a rewrite of it rather than a further theorem.
+word in the simple reflections; so the Coxeter-length spelling of this theorem is a rewrite of it
+rather than a further theorem.
 
 The subadditivity, inversion-invariance and descent consequences recorded here are the standard
 length-function axioms in their inversion-count spelling.
@@ -56,19 +56,10 @@ length-function axioms in their inversion-count spelling.
 
 ## References
 
-This file iterates over a whole word the root-level exchange step of "Inversion sets and the
-exchange step" in Layer 1 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, the item
-that asks for exactly that iteration: the step "iterated, is the exchange/deletion condition for
-the geometric action and the combinatorial core that Layer 2's generation and presentation
-consume". Nothing beyond that Layer 1 material is consumed, and all of it is on `main`
-(`TauCeti/LinearAlgebra/RootSystem/Inversions/StrongExchange.lean` and its imports).
-
-What Layer 2's presentation takes from the iteration is that a nonempty word of least length
-spells an element other than the identity, equivalently that its inversion set is nonempty: that
-is how the roadmap proves the lift from the presented group injective in Tits' theorem, "a
-nonempty reduced word has a nonempty inversion set". This file therefore precedes
-`weylCoxeterSystem` rather than waiting on it, and the Coxeter-length identity
-`(weylCoxeterSystem b).length w = (inversions b w).ncard` is not proved here.
+This file iterates over a whole word the root-level exchange step of
+`TauCeti/LinearAlgebra/RootSystem/Inversions/StrongExchange.lean`. The Coxeter-length identity
+`TauCeti.length_weylCoxeterSystem_eq` is not proved here but in
+`TauCeti/LinearAlgebra/RootSystem/Coxeter/Presentation.lean`, which builds on this file.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.3, and in Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.

@@ -51,12 +51,12 @@ theorem LayerRestriction.transferHom_eq_zero_of_range_eq_commutator {small big :
     (T : LayerRestriction small big) (hT : T.galHom.range = commutator big.Gal) :
     T.transferHom = 0 := by
   have key (H : Subgroup big.Gal) (hH : H = commutator big.Gal) [H.FiniteIndex]
-      (ϕ : H →* Abelianization small.Gal) : ϕ.transfer = 1 := by
+      (ϕ : H →* Group.Abelianization small.Gal) : ϕ.transfer = 1 := by
     subst hH
     exact MonoidHom.transfer_commutator_eq_one ϕ
   refine AddMonoidHom.ext fun x ↦ ?_
   obtain ⟨x, rfl⟩ := Additive.ofMul.surjective x
-  obtain ⟨y, rfl⟩ : ∃ y, Abelianization.of y = x := QuotientGroup.mk_surjective x
+  obtain ⟨y, rfl⟩ : ∃ y, Group.Abelianization.of y = x := QuotientGroup.mk_surjective x
   rw [AddMonoidHom.zero_apply, transferHom_of, key _ hT,
     MonoidHom.one_apply, ofMul_one]
 

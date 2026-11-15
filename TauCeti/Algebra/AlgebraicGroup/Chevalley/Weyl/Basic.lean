@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Action
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
 /-!
@@ -25,6 +25,9 @@ the torus requires further structure and is not asserted here.
 
 The torus action and its character equation are reused from
 `DynkinType.geckWeylTorusAction`; that construction depends only on the pinned root datum.
+The Weyl projection also detects nontriviality of simple-root elements with additive parameter
+one over fields. Passage to a residue field and simple-reflection induction give nontriviality
+for every root over every nontrivial commutative ring.
 
 ## References
 
@@ -313,6 +316,60 @@ theorem weylProjection_weylElement (k : Type v) [Field k] (i : Fin t.rank) :
     (D.exists_realizesWeyl_algebraicClosure k (D.weylElement_mem_weylSubgroup k i)).choose_spec
     (by simpa only [RealizesWeyl, map_weylElement, map_one] using
       D.weylElement_conj_weightTorus (AlgebraicClosure k) i)
+
+private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
+    (k : Type v) [Field k] (i : Fin t.rank) :
+    D.rootSubgroupPoints (t.simpleIndex ht i) k (Multiplicative.ofAdd 1) ≠ 1 := by
+  intro hx
+  have hconj := D.weylElement_conj_rootSubgroupPoints i (t.simpleIndex ht i) k 1
+  have hy : D.rootSubgroupPoints
+      ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i))
+      k (Multiplicative.ofAdd (-1)) = 1 := by
+    rcases Int.units_eq_one_or (t.chevalleyWeylSign ht (t.simpleIndex ht i)
+      (t.simpleIndex ht i)) with hε | hε
+    · simpa [hx, hε] using congrArg Inv.inv hconj.symm
+    · simpa [hx, hε] using hconj.symm
+  have hw : D.weylElement (t.simpleIndex ht i) k 1 = 1 := by
+    simp only [D.weylElement_def, inv_one, Units.val_one, hx, hy, one_mul]
+  have hsub : (⟨D.weylElement (t.simpleIndex ht i) k 1,
+      D.weylElement_mem_weylSubgroup k i⟩ : D.weylSubgroup k) = 1 := Subtype.ext hw
+  have hproj := D.weylProjection_weylElement k i
+  rw [hsub, map_one] at hproj
+  exact RootPairing.weylGroup.ofIdx_ne_one (t.simplyConnectedRootDatum ht)
+    (t.simpleIndex ht i) hproj.symm
+
+private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one
+    (A : Type v) [CommRing A] [Nontrivial A] (i : Fin t.rank) :
+    D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd 1) ≠ 1 := by
+  obtain ⟨M, hM⟩ := Ideal.exists_maximal A
+  let : M.IsMaximal := hM
+  let := Ideal.Quotient.field M
+  intro hx
+  apply D.rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field (A ⧸ M) i
+  have h := congrArg
+    ((D.pointsPresentation A).map (D.pointsPresentation (A ⧸ M)) (Ideal.Quotient.mk M)) hx
+  simpa only [D.map_rootSubgroupPoints, toAdd_ofAdd, map_one] using h
+
+/-- For every Chevalley datum over a nontrivial ring, every root element with additive
+parameter one is nonidentity. -/
+@[simp]
+theorem rootSubgroupPoints_ofAdd_one_ne_one
+    (A : Type v) [CommRing A] [Nontrivial A] (γ : Fin t.numRoots) :
+    D.rootSubgroupPoints γ A (Multiplicative.ofAdd 1) ≠ 1 := by
+  induction γ using (t.rationalBase ht).induction_simple_reflect with
+  | h₁ γ hγ =>
+    obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγ
+    exact D.rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one A i
+  | h₂ γ j hγ hj =>
+    obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
+    rw [t.reflectionPerm_rationalRootSystem ht]
+    intro hx
+    apply hγ
+    apply (conj_eq_one_iff (a := D.weylElement (t.simpleIndex ht i) A 1)).mp
+    have hconj := D.weylElement_conj_rootSubgroupPoints i γ A 1
+    rcases Int.units_eq_one_or (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) with hε | hε
+    · simpa [hε, hx] using hconj
+    · simpa [hε, ofAdd_neg, map_inv, hx] using hconj
 
 /-- The Weyl projection is surjective: the pinned representatives lift every word in the
 simple reflections. -/

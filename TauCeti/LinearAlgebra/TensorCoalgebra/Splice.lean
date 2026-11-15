@@ -188,7 +188,7 @@ theorem splice_smul {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (c : R) (e : M) 
         simp [i]
       · have hjp : j.1 ≠ p := fun h ↦ hj (Fin.ext h)
         simp [Function.update_of_ne hj, hjp]
-    rw [hupd (c • e), (PiTensorProduct.tprod R).map_update_smul, ← hupd e]
+    rw [hupd (c • e), (PiTensorProduct.tprod R).map_update_smul, ← hupd e, RingHom.id_apply]
   · rw [splice_eq_zero R x _ h, splice_eq_zero R x e h, smul_zero]
 
 /-- A letter outside the collapsed block survives in a spliced word: the spliced word is a pure

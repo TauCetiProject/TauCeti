@@ -26,6 +26,8 @@ the pullback is `C^n`.
 * `OpenPartialHomeomorph.contDiffOn_pullbackEnd`: the pullback costs one derivative.
 * `OpenPartialHomeomorph.fderiv_comp_pullbackEnd`: the derivative of `e` intertwines the
   pullback with `J`.
+* `OpenPartialHomeomorph.symm_pullbackEnd_comp_fderiv`: the derivative of `e` intertwines `J`
+  with its pullback along `e.symm`.
 * `OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`: the pullback of a field squaring
   to `-1` squares to `-1`.
 -/
@@ -67,10 +69,17 @@ theorem fderiv_comp_pullbackEnd (J : F → F →L[𝕜] F) {p : E} (hp : p ∈ e
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
     (fderiv 𝕜 e p).comp (e.pullbackEnd J p) = (J (e p)).comp (fderiv 𝕜 e p) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have h := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) (by rwa [e.left_inv hp]) hs
-    (J (e p) (fderiv 𝕜 e p v))
-  rw [e.left_inv hp] at h
-  simpa only [ContinuousLinearMap.comp_apply, pullbackEnd_apply] using h
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, pullbackEnd_apply,
+    e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs]
+
+/-- The derivative of `e` intertwines `J` with its pullback `e.symm.pullbackEnd J` along the
+inverse, that is with the pushforward `De ∘ J ∘ De⁻¹` of `J` by `e`. -/
+theorem symm_pullbackEnd_comp_fderiv (J : E → E →L[𝕜] E) {p : E} (hp : p ∈ e.source)
+    (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
+    (e.symm.pullbackEnd J (e p)).comp (fderiv 𝕜 e p) = (fderiv 𝕜 e p).comp (J p) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, pullbackEnd_apply,
+    e.symm_symm, e.left_inv hp, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
 
 /-- **The pullback of an almost complex structure is an almost complex structure.** If
 `J (e p)` squares to `-1`, so does the pulled-back endomorphism at `p`. -/
@@ -78,10 +87,7 @@ theorem pullbackEnd_apply_pullbackEnd_apply {J : F → F →L[𝕜] F} {p : E} (
     (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p))
     (hsq : ∀ w, J (e p) (J (e p) w) = -w) (v : E) :
     e.pullbackEnd J p (e.pullbackEnd J p v) = -v := by
-  have hd : DifferentiableAt 𝕜 e (e.symm (e p)) := by rwa [e.left_inv hp]
-  have hright := e.fderiv_apply_fderiv_symm_apply (e.map_source hp) hd hs
-  have hleft := e.fderiv_symm_apply_fderiv_apply (e.map_source hp) hd hs
-  rw [e.left_inv hp] at hright hleft
-  rw [pullbackEnd_apply, pullbackEnd_apply, hright, hsq, map_neg, hleft]
+  rw [pullbackEnd_apply, pullbackEnd_apply, e.fderiv_apply_fderiv_symm_apply_of_mem_source hp he hs,
+    hsq, map_neg, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
 
 end OpenPartialHomeomorph

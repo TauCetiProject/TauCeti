@@ -80,7 +80,7 @@ theorem IsGroebnerBasis.comap_rename (h : m.IsGroebnerBasis G I)
     rw [Ideal.map_span, Ideal.span_le, ← Set.image_comp, Set.image_subset_iff]
     intro g hg
     by_cases hdeg : ↑(m.degree g).support ⊆ Set.range e
-    · obtain ⟨g', rfl⟩ := exists_rename_eq_of_coe_support_degree_subset helim he hdeg
+    · obtain ⟨g', rfl⟩ := exists_rename_eq_of_coe_support_degree_subset helim hdeg
       rw [Set.mem_preimage, Function.comp_apply, leadingTerm_rename hm, killCompl_rename_app]
       exact Ideal.subset_span ⟨g', hg, rfl⟩
     · rw [Set.mem_preimage, Function.comp_apply, leadingTerm,

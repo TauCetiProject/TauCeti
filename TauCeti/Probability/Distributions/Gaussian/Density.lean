@@ -236,7 +236,7 @@ theorem support_multivariateGaussian (hS : S.PosSemidef) (m : EuclideanSpace ℝ
     ← hS.range_toEuclideanLin_sqrt]
   let A : AffineSubspace ℝ (EuclideanSpace ℝ ι) :=
     AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin (CFC.sqrt S)))
-  have hAclosed : IsClosed (A : Set (EuclideanSpace ℝ ι)) := A.closed_of_finiteDimensional
+  have hAclosed : IsClosed (A : Set (EuclideanSpace ℝ ι)) := A.isClosed_of_finiteDimensional
   have hrange : Set.range (fun x => m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x) =
       (A : Set (EuclideanSpace ℝ ι)) := by
     ext y
@@ -345,7 +345,7 @@ theorem mutuallySingular_multivariateGaussian_volume (hS : ¬ S.PosDef)
     have hAtop : A ≠ ⊤ := fun h => hptop <| by
       rw [← AffineSubspace.direction_mk' m p, ← hA, h, AffineSubspace.direction_top]
     have hAc : MeasurableSet (A : Set (EuclideanSpace ℝ ι))ᶜ :=
-      A.closed_of_finiteDimensional.measurableSet.compl
+      A.isClosed_of_finiteDimensional.measurableSet.compl
     refine ⟨(A : Set (EuclideanSpace ℝ ι))ᶜ, hAc, ?_, ?_⟩
     · simpa only [hA, hp] using
         mem_ae_iff.mp (Filter.eventually_mem_set.mp (ae_mem_affineRange_multivariateGaussian hSS m))

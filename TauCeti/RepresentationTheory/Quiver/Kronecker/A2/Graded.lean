@@ -111,7 +111,7 @@ theorem submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 :
   have ht := congrFun₂ h tgt (![src, tgt] j)
   fin_cases i <;> fin_cases j <;>
     simp [-gradedCartanMatrix_apply, Matrix.mul_apply, Matrix.one_apply,
-      sum_univ, Nat.card_eq_fintype_card] at hs ht ⊢ <;>
+      sum_univ, Nat.card_eq_fintype_card, Function.swap] at hs ht ⊢ <;>
     simp_all [-gradedCartanMatrix_apply]
   -- Only entry (1, 0) remains: `ht` gives its value via `-q + C₁₀ = 0`.
   -- Simplification does not rearrange this additive equation, so solve it linearly.

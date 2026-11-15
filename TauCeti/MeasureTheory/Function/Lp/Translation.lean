@@ -192,7 +192,7 @@ theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
       coeFn_translateLp (mu := mu) h f] with x hx hy
     rw [hx, Pi.sub_apply, hy]
     rfl
-  rw [Lp.enorm_def, eLpNorm_congr_ae hae]
+  rw [Lp.eNorm_def, eLpNorm_congr_ae hae]
 
 end LpTranslation
 
@@ -341,7 +341,7 @@ theorem ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u)
   set g : E → ℝ≥0∞ := T.indicator fun y => ‖fderiv ℝ u y h‖ₑ ^ r
   have hg : Measurable g :=
     (ENNReal.continuous_rpow_const.comp (((hu.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).enorm)).measurable.indicator hT
+      continuous_const).eNorm)).measurable.indicator hT
   have hjoint : Measurable fun z : E × ℝ => g (z.1 + z.2 • h) :=
     hg.comp (by fun_prop : Continuous fun z : E × ℝ => z.1 + z.2 • h).measurable
   calc ∫⁻ x in K, ‖u (x + h) - u x‖ₑ ^ r ∂mu
@@ -399,7 +399,7 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
       eLpNorm_exponent_top hfd.aestronglyMeasurable]
     let C := eLpNormEssSup (fun x => fderiv ℝ u x h) (mu.restrict T)
     let g : E → ℝ≥0∞ := T.indicator fun x => ‖fderiv ℝ u x h‖ₑ
-    have hg : Measurable g := hfd.enorm.measurable.indicator hT
+    have hg : Measurable g := hfd.eNorm.measurable.indicator hT
     have hgC : ∀ᵐ x ∂mu, g x ≤ C := by
       filter_upwards [(ae_restrict_iff' hT).1
         (ae_le_eLpNormEssSup (f := fun x => fderiv ℝ u x h))] with x hx
@@ -416,8 +416,8 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
         (measurableSet_le hjoint measurable_const)).2
         (Filter.Eventually.of_forall fun t =>
           (measurePreserving_add_right mu (t • h)).quasiMeasurePreserving.tendsto_ae.eventually hgC)
-    apply eLpNormEssSup_le_of_ae_enorm_bound
-    refine (ae_restrict_iff (measurableSet_le hsub.enorm.measurable measurable_const)).2 ?_
+    apply eLpNormEssSup_le_of_ae_eNorm_bound
+    refine (ae_restrict_iff (measurableSet_le hsub.eNorm.measurable measurable_const)).2 ?_
     filter_upwards [hsegments] with x hx hxK
     calc ‖u (x + h) - u x‖ₑ
         ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by
@@ -430,8 +430,8 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
       _ = C := by simp [Real.volume_Icc]
   · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
     have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hsub.aestronglyMeasurable,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hfd.aestronglyMeasurable]
     exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
       (by positivity)
 
