@@ -260,18 +260,17 @@ end Action
 
 section Restrict
 
-variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
-
 /-- **The action preserves the fibres of restriction**: `σ • P` lies over the same place of
 `F / k` as `P` does, because `σ` fixes `F` pointwise. -/
 @[simp]
-theorem restrict_smul : (σ • P).restrict k F = P.restrict k F :=
+theorem restrict_smul [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F') :
+    (σ • P).restrict k F = P.restrict k F :=
   restrict_map_restrictScalars P σ
 
-omit [Algebra.IsIntegral F F'] in
 /-- The ramification index is invariant under the action. -/
 @[simp]
-theorem ramificationIdx_smul : ramificationIdx F (σ • P) = ramificationIdx F P := by
+theorem ramificationIdx_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
+    ramificationIdx F (σ • P) = ramificationIdx F P := by
   rw [ramificationIdx_def, ramificationIdx_def]
   congr 1
   exact Valuation.ext fun f ↦ by simp [valuation_smul, AlgEquiv.commutes]
@@ -280,7 +279,8 @@ theorem ramificationIdx_smul : ramificationIdx F (σ • P) = ramificationIdx F 
 residue field of `σ • P` with the residue field of `P` over the residue field of the place
 below, which is the same for both. -/
 @[simp]
-theorem relativeDegree_smul : relativeDegree k F (σ • P) = relativeDegree k F P := by
+theorem relativeDegree_smul [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F') :
+    relativeDegree k F (σ • P) = relativeDegree k F P := by
   rw [relativeDegree_def k F (σ • P), relativeDegree_def k F P]
   refine Algebra.finrank_eq_of_equiv_equiv
     (IsLocalRing.ResidueField.mapEquiv (integersEquivOfEq (restrict_smul σ P)))
