@@ -26,10 +26,21 @@ this is the naturality of the isomorphism of induced functors given by a homotop
 the loop itself, transported along `e ⋀ e = e`
 (`HSpace.pathHmul_id_left_comp_eqToHom`, `HSpace.pathHmul_id_right_comp_eqToHom`).
 
+Multiplying a path class `p : a ⟶ b` on the left by a loop class `ℓ` at `e`, and reading the
+product `ℓ ⋀ p : e ⋀ a ⟶ e ⋀ b` back through the traces of `eHmul`, gives a path class
+`HSpace.loopHmul ℓ p : a ⟶ b` with the same endpoints. This is a left action of the loops at `e`
+on the path classes between any two points (`HSpace.loopHmul_id`, `HSpace.loopHmul_loopHmul`),
+commuting with composition on both sides (`HSpace.loopHmul_comp`, `HSpace.comp_loopHmul`). On a
+path class `D` from `a` to `e` it is postcomposition with `ℓ` (`HSpace.loopHmul_eq_comp_loop`),
+and in general it is precomposition with the loop `D ≫ ℓ ≫ D⁻¹` at `a`, for any such `D`
+(`HSpace.loopHmul_eq_comp_comp_inv_comp`).
+
 The main example is the loop space `Ω X x = Path x x`, with concatenation of loops and the
 constant loop. A path in `Ω X x` from a loop `γ` to the constant loop is a disc bounding `γ`, and
 `pathHmul` places two such discs side by side; the unit laws say that placing the constant disc
-beside a sphere at the constant loop does not change the sphere.
+beside a sphere at the constant loop does not change the sphere. For a loop class `ℓ` at the
+constant loop, that is a sphere, `loopHmul ℓ p` places the sphere beside a homotopy of loops `p`:
+it glues the sphere to the cylinder `p`.
 
 ## References
 
@@ -153,5 +164,102 @@ theorem pathHmul_id_right_comp_eqToHom (p : (⟨e⟩ : FundamentalGroupoid Y) �
       eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) ≫ p := by
   rw [← mk_evalAt_hmulE_e]
   exact pathHmul_id_right_comp_evalAt_hmulE p
+
+/-! ### Left multiplication by loops at the neutral element -/
+
+/-- The trace at `a` of the left unit homotopy `eHmul`, a path class from `e ⋀ a` to `a`. -/
+private def eHmulTrace (a : Y) : (⟨e ⋀ a⟩ : FundamentalGroupoid Y) ⟶ ⟨a⟩ :=
+  ⟦eHmul.evalAt a⟧
+
+private theorem pathHmul_id_left_comp_eHmulTrace {a b : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+    pathHmul (𝟙 (⟨e⟩ : FundamentalGroupoid Y)) p ≫ eHmulTrace b = eHmulTrace a ≫ p :=
+  pathHmul_id_left_comp_evalAt_eHmul p
+
+private theorem eHmulTrace_e :
+    eHmulTrace (e : Y) = eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) :=
+  mk_evalAt_eHmul_e
+
+private theorem inv_eHmulTrace_comp_pathHmul_id_left {a b : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+    inv (eHmulTrace a) ≫ pathHmul (𝟙 (⟨e⟩ : FundamentalGroupoid Y)) p = p ≫ inv (eHmulTrace b) := by
+  rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv, pathHmul_id_left_comp_eHmulTrace]
+
+/-- **Left multiplication of a path class by a loop at the neutral element.** For a loop class
+`ℓ` at `e` and a path class `p : a ⟶ b`, the product `ℓ ⋀ p : e ⋀ a ⟶ e ⋀ b`, read back as a path
+class from `a` to `b` through the traces at `a` and `b` of the left unit homotopy `eHmul`. For the
+identity of `e` it is `p` itself (`HSpace.loopHmul_id`); it is a left action of the loops at `e`
+on the path classes between any two points (`HSpace.loopHmul_loopHmul`), commuting with
+composition on either side (`HSpace.loopHmul_comp`, `HSpace.comp_loopHmul`). -/
+def loopHmul (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a b : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩ :=
+  inv (eHmulTrace a) ≫ pathHmul ℓ p ≫ eHmulTrace b
+
+theorem loopHmul_def (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a b : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+    loopHmul ℓ p = inv (FundamentalGroupoid.fromPath ⟦eHmul.evalAt a⟧) ≫ pathHmul ℓ p ≫
+      FundamentalGroupoid.fromPath ⟦eHmul.evalAt b⟧ :=
+  (rfl)
+
+/-- Left multiplication by the identity of `e` does not change a path class. -/
+@[simp]
+theorem loopHmul_id {a b : Y} (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+    loopHmul (𝟙 _) p = p := by
+  rw [loopHmul, pathHmul_id_left_comp_eHmulTrace, IsIso.inv_hom_id_assoc]
+
+/-- Left multiplication by a loop commutes with postcomposition. -/
+@[reassoc]
+theorem loopHmul_comp (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a b c : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) (q : (⟨b⟩ : FundamentalGroupoid Y) ⟶ ⟨c⟩) :
+    loopHmul ℓ (p ≫ q) = loopHmul ℓ p ≫ q := by
+  have h := pathHmul_comp ℓ (𝟙 _) p q
+  rw [Category.comp_id] at h
+  simp only [loopHmul, h, Category.assoc, pathHmul_id_left_comp_eHmulTrace]
+
+/-- Left multiplication by a loop commutes with precomposition. -/
+@[reassoc]
+theorem comp_loopHmul (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a b c : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) (q : (⟨b⟩ : FundamentalGroupoid Y) ⟶ ⟨c⟩) :
+    p ≫ loopHmul ℓ q = loopHmul ℓ (p ≫ q) := by
+  have h := pathHmul_comp (𝟙 _) ℓ p q
+  rw [Category.id_comp] at h
+  simp only [loopHmul, h, ← Category.assoc, inv_eHmulTrace_comp_pathHmul_id_left]
+
+/-- Left multiplication by a loop `ℓ` of a path class ending at `e` is postcomposition with `ℓ`. -/
+@[reassoc]
+theorem loopHmul_eq_comp_loop (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) : loopHmul ℓ p = p ≫ ℓ := by
+  have h₁ : loopHmul ℓ (𝟙 (⟨e⟩ : FundamentalGroupoid Y)) = ℓ := by
+    rw [loopHmul, IsIso.inv_comp_eq, eHmulTrace_e]
+    exact pathHmul_id_right_comp_eqToHom ℓ
+  rw [← Category.comp_id p, ← comp_loopHmul, h₁, Category.comp_id]
+
+/-- Left multiplication by a loop `ℓ` of a path class starting at `e` is precomposition with
+`ℓ`. -/
+@[reassoc]
+theorem loopHmul_eq_loop_comp (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {b : Y}
+    (p : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) : loopHmul ℓ p = ℓ ≫ p := by
+  rw [← Category.id_comp p, loopHmul_comp, loopHmul_eq_comp_loop, Category.id_comp,
+    Category.id_comp]
+
+/-- **Left multiplication by loops is an action**: multiplying by `ℓ'` and then by `ℓ` is
+multiplying by the composite loop `ℓ' ≫ ℓ`. -/
+theorem loopHmul_loopHmul (ℓ ℓ' : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a b : Y}
+    (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+    loopHmul ℓ (loopHmul ℓ' p) = loopHmul (ℓ' ≫ ℓ) p := by
+  have h := pathHmul_comp ℓ' ℓ p (𝟙 _)
+  rw [Category.comp_id] at h
+  rw [← Category.comp_id (loopHmul ℓ' p), ← comp_loopHmul]
+  simp only [loopHmul, h, Category.assoc, IsIso.hom_inv_id_assoc]
+
+/-- **Left multiplication by a loop is conjugation along any path to `e`.** If `D` is a path class
+from `a` to `e`, then multiplying a path class `p` starting at `a` by the loop `ℓ` is precomposing
+`p` with the loop `D ≫ ℓ ≫ D⁻¹` at `a`. -/
+@[reassoc]
+theorem loopHmul_eq_comp_comp_inv_comp (ℓ : (⟨e⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) {a b : Y}
+    (D : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨e⟩) (p : (⟨a⟩ : FundamentalGroupoid Y) ⟶ ⟨b⟩) :
+    loopHmul ℓ p = D ≫ ℓ ≫ inv D ≫ p := by
+  conv_lhs => rw [← IsIso.hom_inv_id_assoc D p]
+  rw [← comp_loopHmul, loopHmul_eq_loop_comp]
 
 end HSpace

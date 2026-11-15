@@ -258,11 +258,7 @@ theorem quantizeUniformCLM_apply (a : Symbol n V W m) (ha : a.IsUniform)
 theorem quantizeUniformCLM_add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     quantizeUniformCLM (a + b) (ha.add hb) = quantizeUniformCLM a ha + quantizeUniformCLM b hb := by
   ext u x
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-  obtain ⟨C', -, hC'⟩ := b.exists_bound_coefficient_slice x
-  simpa using quantizeSchwartzValue_add_left
-    (a.continuous_coefficient_slice x).aestronglyMeasurable hC
-    (b.continuous_coefficient_slice x).aestronglyMeasurable hC' u
+  simpa using quantizeSchwartzValue_coefficient_add a b u x
 
 /-- The quantization is homogeneous in the symbol. -/
 theorem quantizeUniformCLM_smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) :

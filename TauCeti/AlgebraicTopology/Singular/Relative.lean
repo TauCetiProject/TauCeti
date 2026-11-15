@@ -362,6 +362,21 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- **A pair whose subspace is everything has no relative homology.** If the embedding of the
+subspace of `P` is surjective, the relative singular homology of `P` vanishes in every degree. -/
+lemma isZero_singularHomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
+    IsZero (P.singularHomology R n) := by
+  -- The identity of `P` factors through the subspace, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularHomologyMap_id]
+  exact singularHomologyMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x) n
+
+/-- **A subspace relative to itself has no relative homology.** For every subset `s` of `X`, the
+relative singular homology of the pair `(s, s)` vanishes in every degree. -/
+lemma isZero_singularHomology_ofInclusion_self {X : TopCat.{w}} (s : Set X) (n : ℕ) :
+    IsZero ((ofInclusion (subset_refl s)).singularHomology R n) :=
+  isZero_singularHomology_of_surjective_map _ R (fun x ↦ ⟨x, rfl⟩) n
+
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=
@@ -542,6 +557,22 @@ lemma singularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m : �
     P.singularHomologyδ R n m h ≫ SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m =
       TopPair.singularHomologyMap f R n ≫ P'.singularHomologyδ R n m h :=
   SSetPair.homologyδ_naturality (toSSetPair.map f) R n m h
+
+/-- On homology, the subspace component of the morphism of chain sequences induced by a map of
+pairs `f` is the singular homology map of `Hom.snd f`. -/
+lemma homologyMap_chainComplexShortComplexMap_τ₁ {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R).τ₁
+        n = ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map (Hom.snd f) := by
+  rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+  rfl
+
+/-- On homology, the ambient component of the morphism of chain sequences induced by a map of
+pairs `f` is the singular homology map of `Hom.fst f`. -/
+lemma homologyMap_chainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R).τ₂
+        n = ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map (Hom.fst f) := by
+  rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+  rfl
 
 /-- **The five lemma for relative singular homology.** A map of pairs `f : (X, A) ⟶ (X', A')`
 inducing isomorphisms `Hₙ(X) ≅ Hₙ(X')` and `Hₙ(A) ≅ Hₙ(A')`, and also `Hₘ(X) ≅ Hₘ(X')` and
