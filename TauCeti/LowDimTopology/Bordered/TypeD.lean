@@ -182,8 +182,7 @@ variable (N) in
 def idMorphism [DecidableEq X] : Matrix X X A :=
   Matrix.diagonal fun x => ι (N.idem x)
 
-theorem idMorphism_def [DecidableEq X] :
-    N.idMorphism = Matrix.diagonal fun x => ι (N.idem x) :=
+theorem idMorphism_def [DecidableEq X] : N.idMorphism = Matrix.diagonal fun x => ι (N.idem x) :=
   (rfl)
 
 @[simp]
