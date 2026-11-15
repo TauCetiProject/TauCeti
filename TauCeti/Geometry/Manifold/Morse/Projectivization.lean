@@ -12,6 +12,7 @@ import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Data.Set.Card
 import TauCeti.Geometry.Manifold.Morse.Hessian
 
@@ -382,12 +383,6 @@ theorem projectiveMomentFunction_mk (w : Fin (n + 1) → ℝ) (v : Fin (n + 1) �
     projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = (∑ i, w i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2 :=
   (rfl)
 
-/-- The denominator `∑ i, ‖v i‖ ^ 2` of the moment function is positive at a nonzero vector. -/
-private theorem sum_norm_sq_pos {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) : 0 < ∑ i, ‖v i‖ ^ 2 := by
-  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-  exact Finset.sum_pos' (fun j _ ↦ by positivity)
-    ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
-
 /-- The moment function is at least any lower bound `c` of the weights. In particular it is
 nonnegative when the weights are. -/
 theorem le_projectiveMomentFunction {w : Fin (n + 1) → ℝ} {c : ℝ} (hw : ∀ i, c ≤ w i)
@@ -747,17 +742,6 @@ theorem manifoldMorseIndex_projectiveMomentFunction_natCast_real (k : Fin (n + 1
       (mk ℝ (Pi.single k 1) (by simp)) = k := by
   rw [manifoldMorseIndex_projectiveMomentFunction_natCast, Module.finrank_self, one_mul]
 
-/-- A natural number in the band `[q - 1/2, q + 1/2]` is `q`. -/
-private theorem natCast_eq_of_mem_Icc {k : ℕ} {q : ℤ}
-    (h : (k : ℝ) ∈ Icc ((q : ℝ) - 1 / 2) (((q + 1 : ℤ) : ℝ) - 1 / 2)) : (k : ℤ) = q := by
-  obtain ⟨h₁, h₂⟩ := h
-  push_cast at h₂
-  have h₁real : (q : ℝ) - 1 < k := by linarith
-  have h₂real : (k : ℝ) < q + 1 := by linarith
-  have h₁' : q - 1 < (k : ℤ) := by exact_mod_cast h₁real
-  have h₂' : (k : ℤ) < q + 1 := by exact_mod_cast h₂real
-  omega
-
 /-- With the standard weights `w i = i`, a critical point of the moment function with value in
 the band `[q - 1/2, q + 1/2]` is the coordinate point `[e_q]`. -/
 theorem exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCast
@@ -770,7 +754,13 @@ theorem exists_eq_mk_single_of_mem_criticalPoints_projectiveMomentFunction_natCa
     (Nat.cast_injective.comp Fin.val_injective)] at hx
   obtain ⟨k, rfl⟩ := hx
   rw [projectiveMomentFunction_mk_single] at hfx
-  exact ⟨k, natCast_eq_of_mem_Icc hfx, rfl⟩
+  refine ⟨k, ?_, rfl⟩
+  -- The only integer in `[q - 1/2, q + 1/2]` is `q`.
+  obtain ⟨h₁, h₂⟩ := hfx
+  push_cast at h₂
+  have h₁' : q - 1 < ((k : ℕ) : ℤ) := by exact_mod_cast (by linarith : (q : ℝ) - 1 < (k : ℕ))
+  have h₂' : ((k : ℕ) : ℤ) < q + 1 := by exact_mod_cast (by linarith : ((k : ℕ) : ℝ) < q + 1)
+  omega
 
 /-- **The half-integer cut.** For the moment function `[v] ↦ (∑ i, i * ‖v i‖ ^ 2) / ∑ i, ‖v i‖ ^ 2`
 on `ℙ 𝕜 (Fin (n + 1) → 𝕜)`, whose critical points are the coordinate points `[eₖ]` with values

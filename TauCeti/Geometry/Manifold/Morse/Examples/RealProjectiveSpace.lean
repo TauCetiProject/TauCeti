@@ -51,10 +51,11 @@ differential is injective and the second page vanishes at the maximum.
   `nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso`: the first
   differential from the saddle to the minimum vanishes, and the minimum survives to the second
   page.
-* On `ℝℙ²`, the first differential from the maximum to the saddle is injective with cokernel
-  `R / 2R` (`mono_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two` and
-  `nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso`), so
-  `ℤ/2` integrally
+* On `ℝℙ²`, the first differential from the maximum to the saddle has cokernel `R / 2R`
+  (`nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso`), and
+  it is injective when right multiplication by `2` is injective on `R`
+  (`mono_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two`). So it is injective
+  with cokernel `ℤ/2` integrally
   (`nonempty_cokernel_realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_iso`),
   where it is multiplication by `±2`:
   `realProjectiveMomentSpectralSequence_two_int_page_two_d_neg_four_two_eq_two_smul_or_neg_two_smul`
@@ -124,16 +125,6 @@ private theorem monotone_filt (N : ℕ) : Monotone (filt N) :=
 private theorem contractibleSpace_filt_one (N : ℕ) : ContractibleSpace (filt N 1) :=
   contractibleSpace_sublevel_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := N)
     (c := ((1 : ℤ) : ℝ) - 1 / 2) (by norm_num) (by norm_num)
-
-/-- On the first page, the position before `pq + (2, -1)` is `pq`. -/
-private theorem prev_page_two (pq pq' : ℤ × ℤ) (h₁ : pq.1 + 2 = pq'.1) (h₂ : pq.2 - 1 = pq'.2) :
-    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).prev pq' = pq :=
-  (ComplexShape.up' _).prev_eq' (Prod.ext h₁ (by simp only [Prod.snd_add]; lia))
-
-/-- On the first page, the position after `pq` is `pq + (2, -1)`. -/
-private theorem next_page_two (pq pq' : ℤ × ℤ) (h₁ : pq.1 + 2 = pq'.1) (h₂ : pq.2 - 1 = pq'.2) :
-    (ComplexShape.up' ((2, 1 - 2) : ℤ × ℤ)).next pq = pq' :=
-  (ComplexShape.up' _).next_eq' (Prod.ext h₁ (by simp only [Prod.snd_add]; lia))
 
 section SpectralSequence
 
@@ -243,9 +234,9 @@ theorem nonempty_realProjectiveMomentSpectralSequence_page_three_X_zero_zero_iso
     (isZero_filteredSpaceSpectralSequence_page_two_X R (monotone_filt N) (2, -1)
       (by norm_num)).eq_of_tgt _ _
   exact ⟨((realProjectiveMomentSpectralSequence N R).iso 2 3 (0, 0)).symm ≪≫
-    (K.isoHomologyπ (-2, 1) (0, 0) (prev_page_two (-2, 1) (0, 0) (by norm_num) (by norm_num))
+    (K.isoHomologyπ (-2, 1) (0, 0) ((ComplexShape.up' _).prev_eq' (by decide))
       (realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero R)).symm ≪≫
-    K.iCyclesIso (0, 0) (2, -1) (next_page_two (0, 0) (2, -1) (by norm_num) (by norm_num)) hd ≪≫ e⟩
+    K.iCyclesIso (0, 0) (2, -1) ((ComplexShape.up' _).next_eq' (by decide)) hd ≪≫ e⟩
 
 end SpectralSequence
 
@@ -310,7 +301,8 @@ private abbrev upperTriple : TopTriple :=
   TopTriple.ofInclusions (monotone_filt 2 (by norm_num : (1 : ℤ) ≤ 2))
     (monotone_filt 2 (by norm_num : (2 : ℤ) ≤ 3))
 
-/-- The connecting map `H₂({f ≤ 5/2}, {f ≤ 3/2}) ⟶ H₁({f ≤ 3/2}, {f ≤ 1/2})` is injective, since
+/-- When right multiplication by `2` is injective on `R`, the connecting map
+`H₂({f ≤ 5/2}, {f ≤ 3/2}) ⟶ H₁({f ≤ 3/2}, {f ≤ 1/2})` is injective, since
 `H₂(ℝℙ², {f ≤ 1/2}) = 0`. -/
 private theorem mono_singularHomologyδ_upperTriple (h2 : IsRightRegular (2 : R)) :
     Mono (upperTriple.singularHomologyδ (ModuleCat.of R R) 2 1) :=
@@ -437,8 +429,8 @@ theorem isZero_realProjectiveMomentSpectralSequence_two_page_three_X_neg_four_tw
   refine IsZero.of_iso ?_ ((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).iso 2 3
     (-4, 2)).symm
   refine IsZero.of_iso ?_ (K.homologyIsoSc' (-6, 3) (-4, 2) (-2, 1)
-    (prev_page_two (-6, 3) (-4, 2) (by norm_num) (by norm_num))
-    (next_page_two (-4, 2) (-2, 1) (by norm_num) (by norm_num)))
+    ((ComplexShape.up' _).prev_eq' (by decide))
+    ((ComplexShape.up' _).next_eq' (by decide)))
   refine (ShortComplex.exact_iff_isZero_homology _).1
     ((ShortComplex.exact_iff_mono (K.sc' (-6, 3) (-4, 2) (-2, 1))
       ((isZero_realProjectiveMomentSpectralSequence_page_two_X (ModuleCat.of R R) (-6, 3)
@@ -457,10 +449,10 @@ theorem nonempty_realProjectiveMomentSpectralSequence_two_page_three_X_neg_two_o
   obtain ⟨e⟩ :=
     nonempty_cokernel_realProjectiveMomentSpectralSequence_two_page_two_d_neg_four_two_iso R
   exact ⟨((realProjectiveMomentSpectralSequence 2 (ModuleCat.of R R)).iso 2 3 (-2, 1)).symm ≪≫
-    K.isoHomologyι (-2, 1) (0, 0) (next_page_two (-2, 1) (0, 0) (by norm_num) (by norm_num))
+    K.isoHomologyι (-2, 1) (0, 0) ((ComplexShape.up' _).next_eq' (by decide))
       (realProjectiveMomentSpectralSequence_page_two_d_neg_two_one_eq_zero _) ≪≫
     (K.opcyclesIsCokernel (-4, 2) (-2, 1)
-      (prev_page_two (-4, 2) (-2, 1) (by norm_num) (by norm_num))).coconePointUniqueUpToIso
+      ((ComplexShape.up' _).prev_eq' (by decide))).coconePointUniqueUpToIso
       (cokernelIsCokernel _) ≪≫ e⟩
 
 /-- **The integral second page at the saddle is `ℤ/2`.** On the second page (numbered `3`) of the
