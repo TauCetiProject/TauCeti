@@ -363,6 +363,7 @@ theorem le_lowerIndex_iff {n : ℕ∞} {σ : G} :
 
 /-- An element of a subgroup `H`, acting on `S` by restriction, has the same lower index in `H` as
 in `G`. -/
+@[simp]
 theorem lowerIndex_coe {H : Subgroup G} (τ : H) : lowerIndex S (τ : G) = lowerIndex S τ :=
   (rfl)
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.FaithfulImage
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 /-!
 # The Galois group of a symmetric algebra over its invariants
@@ -152,32 +153,11 @@ theorem faithfulSMul_quotient_symmetricAlgebra (hρ : Function.Injective ρ) (H 
     [H.Normal] :
     letI := ρ.symmetricAlgebraMulSemiringAction
     haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-    FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra R (SymmetricAlgebra R M) H) := by
-  let := ρ.symmetricAlgebraMulSemiringAction
-  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  have := ρ.isGaloisGroup_symmetricAlgebraInvariants hρ
-  -- Mathlib's `IsGaloisGroup.quotient`, for the tower `Sym(M)^G ≤ Sym(M)^H ≤ Sym M`, with `G`
-  -- acting on the `H`-invariants through `G ⧸ H`.
-  let B := FixedPoints.subalgebra R (SymmetricAlgebra R M) H
-  let := (Subalgebra.inclusion (S := ρ.symmetricAlgebraInvariants) (T := B)
-    fun p hp h ↦ (ρ.mem_symmetricAlgebraInvariants p).1 hp h).toAlgebra
-  have : IsScalarTower ρ.symmetricAlgebraInvariants B (SymmetricAlgebra R M) :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  -- `H` is a Galois group of `Sym M` over its fixed points `B`; each field is a Mathlib instance
-  -- for `FixedPoints.subalgebra R`, as in `fixingSubgroup_symmetricAlgebraInvariants_comp_subtype`.
-  have : IsGaloisGroup H B (SymmetricAlgebra R M) :=
-    { faithful := have := ρ.faithfulSMul_symmetricAlgebraMulSemiringAction_iff.2 hρ; inferInstance
-      commutes := inferInstance
-      isInvariant := inferInstance }
-  let := MulSemiringAction.compHom B (QuotientGroup.mk' H)
-  have : IsScalarTower G (G ⧸ H) B := ⟨fun g q b ↦ by
-    induction q using QuotientGroup.induction_on
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.mk_mul]
-    exact mul_smul _ _ b⟩
-  have : SMulDistribClass G B (SymmetricAlgebra R M) := ⟨fun _ _ _ ↦ smul_mul' _ _ _⟩
-  have := IsGaloisGroup.smulCommClassQuotient G ρ.symmetricAlgebraInvariants B
-    (SymmetricAlgebra R M) H
-  exact (IsGaloisGroup.quotient G ρ.symmetricAlgebraInvariants B (SymmetricAlgebra R M) H).faithful
+    FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra R (SymmetricAlgebra R M) H) :=
+  letI := ρ.symmetricAlgebraMulSemiringAction
+  haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  haveI := ρ.faithfulSMul_symmetricAlgebraMulSemiringAction_iff.2 hρ
+  inferInstance
 
 end IsDomain
 

@@ -83,7 +83,7 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
       IsDiscreteValuationRing.addVal 𝒪[M]
         ((σ • MulSemiringAction.charpoly (M ≃ₐ[L] M) x).eval x) := by
     refine (IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2 <| associated_of_dvd_dvd
-      (TauCeti.MulSemiringAction.dvd_eval_smul_charpoly (fun c hc ↦ ?_) x)
+      (TauCeti.MulSemiringAction.smul_sub_dvd_eval_smul_charpoly (fun c hc ↦ ?_) x)
       (dvd_sub_comm.1 (TauCeti.MulSemiringAction.eval_smul_charpoly_dvd_sub_smul hx hinj
         (fun τ ↦ smul_algebraMap τ y) σ))
     obtain ⟨w, rfl⟩ := Algebra.IsInvariant.isInvariant (A := 𝒪[L]) (G := M ≃ₐ[L] M) c hc

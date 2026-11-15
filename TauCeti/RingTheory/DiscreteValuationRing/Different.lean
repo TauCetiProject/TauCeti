@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
-import TauCeti.RingTheory.IsGaloisGroup.Dedekind
+import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.Invariant.Minpoly
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 public import TauCeti.RingTheory.Valuation.AddValuation

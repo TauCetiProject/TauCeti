@@ -73,18 +73,15 @@ theorem lowerIndex_mul_restrictScalars_of_forall_le (σ : M ≃ₐ[K] M)
   exact TauCeti.IsLocalRing.lowerIndex_mul_eq_min_of_le (hσ τ)
 
 omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
-  [Module.Finite K L] [Normal K L] [ValuativeExtension L M] [IsGalois L M] in
+  [Module.Finite K L] [Normal K L] [ValuativeExtension L M] [Module.Finite L M] [IsGalois L M] in
 /-- Every coset `σ H` contains an element of largest lower index. -/
 theorem exists_forall_lowerIndex_mul_restrictScalars_le (σ : M ≃ₐ[K] M) :
     ∃ τ₀ : M ≃ₐ[L] M, ∀ τ : M ≃ₐ[L] M,
       lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K * τ.restrictScalars K) ≤
         lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K) := by
-  obtain ⟨τ₀, -, hτ₀⟩ := Finset.exists_max_image (Finset.univ : Finset (M ≃ₐ[L] M))
-    (fun τ ↦ lowerIndex 𝒪[M] (σ * τ.restrictScalars K)) Finset.univ_nonempty
-  refine ⟨τ₀, fun τ ↦ ?_⟩
-  have := hτ₀ (τ₀ * τ) (Finset.mem_univ _)
-  rwa [← AlgEquiv.restrictScalarsHom_apply K (τ₀ * τ), map_mul, AlgEquiv.restrictScalarsHom_apply,
-    AlgEquiv.restrictScalarsHom_apply, ← mul_assoc] at this
+  obtain ⟨_, ⟨τ₀, rfl⟩, hτ₀⟩ := TauCeti.IsLocalRing.exists_mem_forall_lowerIndex_mul_le
+    (S := 𝒪[M]) (AlgEquiv.restrictScalarsHom K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range σ
+  exact ⟨τ₀, fun τ ↦ hτ₀ _ ⟨τ, rfl⟩⟩
 
 /-- **Serre's lemma on the lower index of a quotient**, in counting form. If `σ` has the
 largest lower index in its coset `σ H`, and `i_G(σ) = j` is finite, then

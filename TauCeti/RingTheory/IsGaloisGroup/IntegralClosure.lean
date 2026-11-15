@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RingTheory.Invariant.Galois
+import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 
 /-!
 # Galois groups of integral closures
@@ -36,6 +37,12 @@ in `M ^ H`, the subgroup `H` is a Galois group of `B / C`.
   of the integral closures of a common base in `M ^ H` and in `M`.
 * `TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSMul`: the same, bundled with
   the injectivity of `C → B`, as used to set up instances for the fixed-field integral closure.
+* `TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed`: conversely, starting from the
+  rings, a domain `B` with a finite Galois group over a Noetherian integrally closed domain `A`
+  embedding in `B` is a finite `A`-module.
+* `TauCeti.FixedPoints.faithfulSMul_quotient_subalgebra`: for a finite group `G` acting faithfully
+  on a domain `B` and a normal subgroup `H`, the quotient `G ⧸ H` acts faithfully on the
+  `H`-invariants.
 -/
 
 public section
@@ -146,3 +153,47 @@ theorem _root_.TauCeti.IsIntegralClosure.isGaloisGroup_fixedField_and_faithfulSM
 end FixedField
 
 end IsGaloisGroup
+
+attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra in
+/-- If a finite group `G` is a Galois group of a domain `B` over a Noetherian integrally closed
+domain `A` embedding in `B`, then `B` is a finite `A`-module. -/
+theorem TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed (G A B : Type*) [Group G]
+    [Finite G] [CommRing A] [IsDomain A] [IsIntegrallyClosed A] [IsNoetherianRing A] [CommRing B]
+    [IsDomain B] [Algebra A B] [FaithfulSMul A B] [MulSemiringAction G B]
+    [IsGaloisGroup G A B] : Module.Finite A B := by
+  let := IsFractionRing.mulSemiringAction G B (FractionRing B)
+  have := IsGaloisGroup.isGalois G (FractionRing A) (FractionRing B)
+  have := IsGaloisGroup.finiteDimensional G (FractionRing A) (FractionRing B)
+  have := Algebra.IsInvariant.isIntegral A B G
+  -- `B` embeds `A`-linearly in the integral closure of `A` in `Frac B`, which is finite over `A`.
+  have := IsIntegralClosure.finite A (FractionRing A) (FractionRing B)
+    (integralClosure A (FractionRing B))
+  let f := (IsScalarTower.toAlgHom A B (FractionRing B)).codRestrict
+    (integralClosure A (FractionRing B)) fun b ↦ (Algebra.IsIntegral.isIntegral b).algebraMap
+  exact Module.Finite.of_injective f.toLinearMap fun b c h ↦
+    IsFractionRing.injective B (FractionRing B) (congrArg Subtype.val h)
+
+namespace TauCeti.FixedPoints
+
+variable {A B G : Type*} [CommRing A] [CommRing B] [IsDomain B] [Algebra A B] [Group G]
+  [Finite G] [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
+
+/-- For a finite group `G` acting faithfully on a domain `B` and a normal subgroup `H`, the
+quotient `G ⧸ H` acts faithfully on the `H`-invariants. -/
+instance faithfulSMul_quotient_subalgebra (H : Subgroup G) [H.Normal] :
+    FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra A B H) := by
+  have : IsGaloisGroup G (FixedPoints.subalgebra A B G) B :=
+    ⟨inferInstance, inferInstance, inferInstance⟩
+  have : IsGaloisGroup H (FixedPoints.subalgebra A B H) B :=
+    ⟨inferInstance, inferInstance, inferInstance⟩
+  have hH := IsGaloisGroup.fixingSubgroup_range_algebraMap G (FixedPoints.subalgebra A B G)
+    (FixedPoints.subalgebra A B H) B H
+  refine ⟨fun {q₁ q₂} h ↦ ?_⟩
+  induction q₁ using QuotientGroup.induction_on with | H σ₁ =>
+  induction q₂ using QuotientGroup.induction_on with | H σ₂ =>
+  rw [QuotientGroup.eq, ← hH, mem_fixingSubgroup_iff]
+  rintro _ ⟨c, rfl⟩
+  have hc : σ₁ • (c : B) = σ₂ • (c : B) := congrArg Subtype.val (h c)
+  rw [Subalgebra.algebraMap_apply, mul_smul, ← hc, inv_smul_smul]
+
+end TauCeti.FixedPoints
