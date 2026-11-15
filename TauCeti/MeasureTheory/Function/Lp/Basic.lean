@@ -8,20 +8,24 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Basic lemmas on `Lp` classes and `ContinuousLinearMap.compLp`
+# Finite sums of `MemLp.toLp` classes, and composition with a continuous linear map
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
 class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
-witness on the sum, together with functoriality of `ContinuousLinearMap.compLp` under composition of
-continuous linear maps.
+witness on the sum.
+
+Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
+the bundled continuous semilinear map `L.compLpL p μ`; this file also records that the two agree
+and that `compLp` commutes with composition of continuous semilinear maps.
 
 ## Main declarations
 
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `ContinuousLinearMap.compLp_comp`: `L₁.compLp (L₂.compLp f) = (L₁.comp L₂).compLp f`.
 -/
 
@@ -54,13 +58,25 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 
-/-- Composing `Lp` postcompositions by two continuous linear maps agrees with postcomposing by their
-composition. -/
+variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+
+/-- The bundled composition `L.compLpL p μ` applied to `f` is the composition `L.compLp f`. -/
 @[simp]
-theorem compLp_comp {α 𝕜 F₁ F₂ F₃ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
-    [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
-    (L₁ : F₂ →L[𝕜] F₃) (L₂ : F₁ →L[𝕜] F₂) (f : Lp F₁ p μ) :
+theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
+    L.compLpL p μ f = L.compLp f :=
+  rfl
+
+/-- Composing `Lp` postcompositions by two continuous semilinear maps agrees with postcomposing by
+their composition.
+
+Not marked `@[simp]` because rewriting `L₁.compLp (L₂.compLp f)` to `(L₁.comp L₂).compLp f`
+prevents `simp` from matching `ContinuousLinearMap.coeFn_compLp` hypotheses on `L₁` and `L₂`. -/
+theorem compLp_comp {G 𝕜'' : Type*} [NontriviallyNormedField 𝕜'']
+    {τ : 𝕜' →+* 𝕜''} {ρ : 𝕜 →+* 𝕜''} [RingHomIsometric τ] [RingHomIsometric ρ]
+    [RingHomCompTriple σ τ ρ] [NormedAddCommGroup G] [NormedSpace 𝕜'' G]
+    (L₁ : F →SL[τ] G) (L₂ : E →SL[σ] F) (f : Lp E p μ) :
     L₁.compLp (L₂.compLp f) = (L₁.comp L₂).compLp f := by
   apply Lp.ext
   filter_upwards [L₁.coeFn_compLp (L₂.compLp f), L₂.coeFn_compLp f,
