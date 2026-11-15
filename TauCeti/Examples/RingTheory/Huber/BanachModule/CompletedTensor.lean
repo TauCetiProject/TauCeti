@@ -12,11 +12,12 @@ public import Mathlib.Algebra.Algebra.Bilinear
 # Checks for the completed tensor product of topological modules
 
 The elementary tensor map is the completion image of the algebraic tensor, so it respects signs
-and vanishes on a zero factor. Lifting multiplication of a complete nonarchimedean ring evaluates
-products, the zero bilinear map lifts to zero, and the functor `map` cancels two signs and kills a
-zero factor on the whole completion. The unit isomorphism `lid` evaluates scalar multiples and
-kills everything when the module is zero; the comparison `finiteProjectiveEquiv` is zero in rank
-zero, recovers Mathlib's algebraic unit map in rank one, and keeps signs in rank two.
+and vanishes on a zero factor, while `comm` swaps the two factors involutively. Lifting
+multiplication of a complete nonarchimedean ring evaluates products, the zero bilinear map lifts to
+zero, and the functor `map` cancels two signs and kills a zero factor on the whole completion. The
+unit isomorphisms `lid` and `rid` evaluate scalar multiples and kill everything when the module is
+zero; the comparison `finiteProjectiveEquiv` is zero in rank zero, recovers Mathlib's algebraic
+unit map in rank one, and keeps signs in rank two.
 -/
 
 public section
@@ -51,6 +52,18 @@ example (v : V) (w : W) :
 /-- Tensoring a zero map with the identity is zero on the whole completion. -/
 example : CompletedTensor.map (0 : V →L[A] V) (ContinuousLinearMap.id A W) = 0 :=
   CompletedTensor.ext fun v w ↦ by simp
+
+/-- Swapping the factors sends `v₁ ⊗ w₁ - v₂ ⊗ w₂` to `w₁ ⊗ v₁ - w₂ ⊗ v₂`. -/
+example (v₁ v₂ : V) (w₁ w₂ : W) :
+    CompletedTensor.comm A V W
+        (CompletedTensor.tmul A V W v₁ w₁ - CompletedTensor.tmul A V W v₂ w₂) =
+      CompletedTensor.tmul A W V w₁ v₁ - CompletedTensor.tmul A W V w₂ v₂ := by
+  simp
+
+/-- Applying `comm` twice is the identity on the whole completion. -/
+example (z : CompletedTensor A V W) :
+    CompletedTensor.comm A W V (CompletedTensor.comm A V W z) = z := by
+  simp
 
 end Generic
 
@@ -87,6 +100,16 @@ example (a b : A) (v w : M) :
 
 /-- The inverse of the unit map sends `w` to `1 ⊗ w`. -/
 example (w : M) : (CompletedTensor.lid A M).symm w = CompletedTensor.tmul A A M 1 w := by
+  simp
+
+/-- The right completed tensor unit map sends `v ⊗ a - w ⊗ b` to `a • v - b • w`. -/
+example (a b : A) (v w : M) :
+    CompletedTensor.rid A M (CompletedTensor.tmul A M A v a - CompletedTensor.tmul A M A w b) =
+      a • v - b • w := by
+  simp
+
+/-- The inverse of the right unit map sends `w` to `w ⊗ 1`. -/
+example (w : M) : (CompletedTensor.rid A M).symm w = CompletedTensor.tmul A M A w 1 := by
   simp
 
 /-- For a zero module, every completed tensor and its image under the unit map are zero. -/

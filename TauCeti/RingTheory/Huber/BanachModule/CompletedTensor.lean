@@ -61,7 +61,11 @@ products with a finite projective factor can be computed with the algebraic tens
   induced by a continuous bilinear map.
 * `TauCeti.Huber.BanachModule.CompletedTensor.map`: the completed tensor product of two continuous
   linear maps.
-* `TauCeti.Huber.BanachModule.CompletedTensor.lid`: the unit isomorphism `A ⊗̂_A M ≃ M`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.comm`: the symmetry isomorphism
+  `V ⊗̂_A W ≃ W ⊗̂_A V`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.lid` and
+  `TauCeti.Huber.BanachModule.CompletedTensor.rid`: the unit isomorphisms `A ⊗̂_A M ≃ M` and
+  `M ⊗̂_A A ≃ M`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.finiteProjectiveEquiv`: the isomorphism
   `P ⊗[A] M ≃ P ⊗̂_A M` for a finite projective `A`-module `P`.
 
@@ -77,11 +81,12 @@ products with a finite projective factor can be computed with the algebraic tens
   and `dense_span_range_tmul`: the elementary tensors span a dense submodule.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lift_tmul` and `ext`: the universal property.
 * `TauCeti.Huber.BanachModule.CompletedTensor.map_tmul`, `map_id`, `map_comp`: functoriality.
+* `TauCeti.Huber.BanachModule.CompletedTensor.comm_tmul`: symmetry exchanges elementary tensors.
 * `TauCeti.Huber.BanachModule.CompletedTensor.prodLeft`: completed tensoring in the first
   variable preserves binary products, with component formulas `prodLeft_apply` and
   `prodLeft_symm_apply`.
-* `TauCeti.Huber.BanachModule.CompletedTensor.lid_tmul`: the unit isomorphism sends `a ⊗ m` to
-  `a • m`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.lid_tmul` and `rid_tmul`: the unit isomorphisms
+  evaluate scalar multiples.
 * `TauCeti.Huber.BanachModule.CompletedTensor.toCompletion_bijective_of_finite_projective`:
   tensoring with a finite projective module needs no completion.
 
@@ -151,6 +156,16 @@ theorem continuous_banachTensorTopology_iff {M : Type*} [AddCommGroup M] [Module
   refine continuous_iff_le_induced.mpr (banachTensorTopology_le
     (nonarchimedeanAddGroup_induced f) (continuousSMul_induced f) ?_)
   exact continuous_induced_rng.mpr hf
+
+/-- Exchanging the factors is continuous for the tensor topology. -/
+theorem continuous_comm_banachTensorTopology :
+    Continuous[banachTensorTopology A V W, banachTensorTopology A W V]
+      (TensorProduct.comm A V W) := by
+  let := banachTensorTopology A W V
+  have := nonarchimedeanAddGroup_banachTensorTopology A W V
+  have := continuousSMul_banachTensorTopology A W V
+  exact (continuous_banachTensorTopology_iff (TensorProduct.comm A V W).toLinearMap).mpr
+    (((continuous_tmul_banachTensorTopology A W V).comp continuous_swap).congr fun _ ↦ by simp)
 
 end Topology
 
@@ -373,6 +388,82 @@ theorem lid_toCompletion (x : A ⊗[A] M) :
 end Lid
 
 end Lift
+
+section Comm
+
+variable (A V W)
+
+private noncomputable def commCLM : CompletedTensor A V W →L[A] CompletedTensor A W V :=
+  ContinuousLinearMap.completion
+    ⟨(TensorProduct.comm A V W).toLinearMap, continuous_comm_banachTensorTopology A V W⟩
+
+private theorem commCLM_toCompletion (x : V ⊗[A] W) :
+    commCLM A V W (toCompletion A V W x) = toCompletion A W V (TensorProduct.comm A V W x) :=
+  ContinuousLinearMap.completion_apply_coe _ x
+
+/-- **Symmetry of the completed tensor product** `V ⊗̂_A W ≃ W ⊗̂_A V`, exchanging elementary
+tensors (`comm_tmul`). -/
+noncomputable def comm : CompletedTensor A V W ≃L[A] CompletedTensor A W V :=
+  .equivOfInverse' (commCLM A V W) (commCLM A W V)
+    (ext fun w v ↦ by simp [← toCompletion_tmul, commCLM_toCompletion])
+    (ext fun v w ↦ by simp [← toCompletion_tmul, commCLM_toCompletion])
+
+/-- The symmetry isomorphism extends Mathlib's `TensorProduct.comm` from `V ⊗[A] W`. -/
+@[simp]
+theorem comm_toCompletion (x : V ⊗[A] W) :
+    comm A V W (toCompletion A V W x) = toCompletion A W V (TensorProduct.comm A V W x) :=
+  commCLM_toCompletion A V W x
+
+/-- The symmetry isomorphism sends `v ⊗ w` to `w ⊗ v`. -/
+@[simp]
+theorem comm_tmul (v : V) (w : W) :
+    comm A V W (tmul A V W v w) = tmul A W V w v := by
+  simp [← toCompletion_tmul]
+
+/-- The inverse of `comm` is `comm` with the factors interchanged. -/
+@[simp]
+theorem comm_symm : (comm A V W).symm = comm A W V := by
+  ext z
+  rfl
+
+/-- Applying `comm` twice is the identity on `V ⊗̂_A W`. -/
+@[simp]
+theorem comm_comm (z : CompletedTensor A V W) : comm A W V (comm A V W z) = z := by
+  rw [← comm_symm]
+  exact (comm A V W).symm_apply_apply z
+
+end Comm
+
+section Rid
+
+variable (A) (M : Type*) [AddCommGroup M] [Module A M] [UniformSpace M] [IsUniformAddGroup M]
+  [NonarchimedeanAddGroup M] [ContinuousSMul A M] [CompleteSpace M] [T0Space M]
+
+/-- **The right unit isomorphism** `M ⊗̂_A A ≃ M` of a complete Hausdorff nonarchimedean
+topological `A`-module `M` with continuous action: it sends `m ⊗ a` to `a • m` (`rid_tmul`), and
+its inverse sends `m` to `m ⊗ 1` (`rid_symm_apply`). -/
+noncomputable def rid : CompletedTensor A M A ≃L[A] M :=
+  (comm A M A).trans (lid A M)
+
+/-- The right unit isomorphism sends `m ⊗ a` to `a • m`. -/
+@[simp]
+theorem rid_tmul (m : M) (a : A) : rid A M (tmul A M A m a) = a • m := by
+  simp [rid]
+
+/-- The inverse of the right unit isomorphism sends `m` to `m ⊗ 1`. -/
+@[simp]
+theorem rid_symm_apply (m : M) : (rid A M).symm m = tmul A M A m 1 := by
+  simp [rid]
+
+/-- The right unit isomorphism extends Mathlib's algebraic right unit map `M ⊗[A] A ≃ M`. -/
+@[simp]
+theorem rid_toCompletion (x : M ⊗[A] A) :
+    rid A M (toCompletion A M A x) = TensorProduct.rid A M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul m a => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end Rid
 
 section Map
 
