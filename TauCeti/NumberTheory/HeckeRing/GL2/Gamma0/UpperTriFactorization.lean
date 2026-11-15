@@ -119,7 +119,7 @@ results in `TauCeti/NumberTheory/ModularForms/HeckeSlash/UpperTri/Invariance.lea
       = ((γ 1 1 * γ 0 1 + (j : ℕ) * (γ 1 1 * γ 1 1) : ℤ) : ZMod p) := by
   have hA : ((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod p) = ((γ 0 0 : ℤ) : ZMod p) := by
     push_cast
-    exact intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγp j
+    exact intCast_add_natCast_mul_of_mem_Gamma0 hγp j
   rw [upperTriShift_natCast, hA,
     ZMod.inv_eq_of_mul_eq_one _ _ ((γ 1 1 : ℤ) : ZMod p)
       (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγp)]
@@ -234,7 +234,7 @@ theorem exists_mem_Gamma0_upperTriRep_mul [NeZero p] {γ : SL(2, ℤ)} (hγp : �
       (γ' 1 1 : ℤ) = γ 1 1 - γ 1 0 * ((upperTriShift p γ j : ℕ) : ℤ) ∧
       upperTriRep p j * mapGL ℚ γ = mapGL ℚ γ' * upperTriRep p (upperTriShift p γ j) :=
   exists_mem_Gamma0_upperTriRep_mul_of_isUnit
-    (isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγp j) hpc
+    (isUnit_intCast_add_natCast_mul_of_mem_Gamma0 hγp j) hpc
 
 /-- **The coset factorisation at `γ ∈ Γ₀(N)`.** The specialisation of
 `exists_mem_Gamma0_upperTriRep_mul` that `p ∣ N` and `γ ∈ Γ₀(N)` afford: both hypotheses of the
