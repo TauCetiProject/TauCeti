@@ -39,10 +39,12 @@ coarse pointwise bounds, with constants depending only on `c`:
   and `K = 128 c² + 128 c³ + 4 c⁴ + 64 c⁶`
   (`TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq`). This is Taubes's comparison
   argument: one evaluates the inequalities at a maximum of `|β|² + (κ / r) |α|²` with
-  `κ = 4 c²`. The cross term `c |β| |∇_a α|` of the `β` inequality is
-  absorbed by the term `(κ / r) |∇_a α|²` that the `α` inequality contributes, which is what
-  forces `κ ≥ 4 c²`. The defect `1 - |α|²` appears with the same coefficient on both sides and
-  cancels, so the bound holds with the error `O(r⁻²)` rather than `O(r⁻¹)`. In particular
+  `κ = 4 c²`. This choice lets the cross term `c |β| |∇_a α|` of the `β` inequality be absorbed
+  into `(κ / r) |∇_a α|² + (r / 16) |β|²`, the first term coming from the `α` inequality.
+  Substituting `|β|² = v + (κ / r) (1 - |α|²)`, the terms `c² |α|² (1 - |α|²)` of the two
+  potentials cancel, leaving `-(c² / 2) (1 - |α|²)` on the right-hand side, which is `O(r⁻¹)`
+  because `|α|² - 1 ≤ (c² + 8 c) / r`. Hence `v` is bounded with the error `O(r⁻²)` rather
+  than `O(r⁻¹)`. In particular
   `|β|² ≤ (K / r) w₊ + K / r²` with `w₊ = max (1 - |α|²) 0`
   (`TauCeti.SeibergWitten.norm_sq_le_div_mul_max_add_div_sq`), the form in which the coarse
   bounds of `TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds`, such as
@@ -51,10 +53,10 @@ coarse pointwise bounds, with constants depending only on `c`:
 The same statements hold at a local maximum on any boundaryless Riemannian manifold
 (`TauCeti.SeibergWitten.norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax`,
 `TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax`). The sections `α`,
-`β` and their covariant derivatives `∇_a α`, `∇β` are arbitrary families of elements of normed
-groups over the manifold satisfying the displayed inequalities; only the squared norms `|α|²` and
-`|β|²` need to be `C²`, and for the local statements only at the maximum. Deriving the scalar
-inequalities from the Seiberg–Witten equations is not done here.
+`β` and their covariant derivatives `∇_a α`, `∇β` are arbitrary families of elements of
+seminormed groups over the manifold satisfying the displayed inequalities; only the squared norms
+`|α|²` and `|β|²` need to be `C²`, and for the local statements only at the maximum. Deriving the
+scalar inequalities from the Seiberg–Witten equations is not done here.
 
 ## Main results
 
@@ -107,10 +109,11 @@ private theorem sq_add_sq_le_of_weitzenbock {a b da db ga gb c r : ℝ} (hc : 0 
     have : s - 1 ≤ (c ^ 2 + 8 * c) / r := by rw [le_div_iff₀ hr]; linarith
     linarith
 
-/-- The comparison step of the `β` bound. With `k = 4 c² / r`, add `k` times the `α` inequality
-to the `β` inequality at a point where `Δ|β|² + k Δ|α|² ≤ 0`, absorb the derivative cross terms,
-and rewrite the potential through `v = |β|² - k (1 - |α|²)`: the defect `1 - |α|²` enters on both
-sides with the same coefficient and cancels. -/
+/-- The comparison step of the `β` bound. With `k = 4 c² / r`, `r ≥ 32 c` and
+`v = |β|² - k (1 - |α|²)`, at a point where `Δ|β|² + k Δ|α|² ≤ 0` the projected Weitzenböck
+inequalities bound `(r / 8 + (r / 4) |α|²) v` by
+`(8 c² / r) |α|² + (k c)² |α|² / 4 + k c (|α|² + |α| |β|) - (c² / 2) (1 - |α|²)`.
+The notation is that of `sq_add_sq_le_of_weitzenbock`. -/
 private theorem comparison_of_weitzenbock {a b da db ga gb c r k : ℝ} (hr : 0 < r)
     (hr32 : 32 * c ≤ r) (hk_def : k = 4 * c ^ 2 / r)
     (hα : -ga / 2 + da ^ 2 + r / 4 * (a ^ 2 + b ^ 2 - 1) * a ^ 2 ≤ c * a * (db + a + b))
@@ -229,24 +232,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  {A B F₁ F₂ : M → Type*} [∀ x, NormedAddCommGroup (A x)] [∀ x, NormedAddCommGroup (B x)]
-  [∀ x, NormedAddCommGroup (F₁ x)] [∀ x, NormedAddCommGroup (F₂ x)]
-  {α : (x : M) → A x} {β : (x : M) → B x} {Dα : (x : M) → F₁ x} {Dβ : (x : M) → F₂ x}
-  {c r : ℝ}
+  {A B : M → Type*} [∀ x, SeminormedAddCommGroup (A x)] [∀ x, SeminormedAddCommGroup (B x)]
+  {α : (x : M) → A x} {β : (x : M) → B x} {c r : ℝ}
+
+section LocalMax
+
+variable {G₁ G₂ : Type*} [SeminormedAddCommGroup G₁] [SeminormedAddCommGroup G₂]
+  {Dα₀ : G₁} {Dβ₀ : G₂}
 
 /-- **The bound `|ψ|² ≤ 1 + O(1 / r)` at a local maximum.** At a local maximum `x₀` of
 `|α|² + |β|²`, the projected Weitzenböck inequalities at `x₀` give
-`|α(x₀)|² + |β(x₀)|² ≤ 1 + (c² + 8 c) / r`. Here `Dα` and `Dβ` stand for `∇_a α` and `∇β`. -/
+`|α(x₀)|² + |β(x₀)|² ≤ 1 + (c² + 8 c) / r`. Here `Dα₀` and `Dβ₀` stand for the values of
+`∇_a α` and `∇β` at `x₀`. -/
 theorem norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax {x₀ : M} (hc : 0 ≤ c) (hr : 0 < r)
     (hα₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖α x‖ ^ 2) x₀)
     (hβ₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2) x₀)
     (hmax : IsLocalMax (fun x ↦ ‖α x‖ ^ 2 + ‖β x‖ ^ 2) x₀)
-    (hWα : -laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x₀ / 2 + ‖Dα x₀‖ ^ 2 +
+    (hWα : -laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x₀ / 2 + ‖Dα₀‖ ^ 2 +
       r / 4 * (‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 - 1) * ‖α x₀‖ ^ 2 ≤
-        c * ‖α x₀‖ * (‖Dβ x₀‖ + ‖α x₀‖ + ‖β x₀‖))
-    (hWβ : -laplaceBeltrami I (fun x ↦ ‖β x‖ ^ 2) x₀ / 2 + ‖Dβ x₀‖ ^ 2 +
+        c * ‖α x₀‖ * (‖Dβ₀‖ + ‖α x₀‖ + ‖β x₀‖))
+    (hWβ : -laplaceBeltrami I (fun x ↦ ‖β x‖ ^ 2) x₀ / 2 + ‖Dβ₀‖ ^ 2 +
       r / 4 * (‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 + 1) * ‖β x₀‖ ^ 2 ≤
-        c * ‖β x₀‖ * (‖Dα x₀‖ + ‖α x₀‖ + ‖β x₀‖)) :
+        c * ‖β x₀‖ * (‖Dα₀‖ + ‖α x₀‖ + ‖β x₀‖)) :
     ‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 ≤ 1 + (c ^ 2 + 8 * c) / r := by
   -- The function `fun x ↦ ‖α x‖ ^ 2 + ‖β x‖ ^ 2` is the pointwise sum of the two squared norms.
   have hlap : laplaceBeltrami I ((fun x ↦ ‖α x‖ ^ 2) + fun x ↦ ‖β x‖ ^ 2) x₀ ≤ 0 :=
@@ -258,19 +265,20 @@ theorem norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax {x₀ : M} (hc : 0 ≤ 
 maximum `x₀` of `|β|² + (4 c² / r) |α|²` where `|α|² + |β|² ≤ 1 + (c² + 8 c) / r`, the projected
 Weitzenböck inequalities at `x₀` give
 `|β(x₀)|² ≤ (4 c² / r) (1 - |α(x₀)|²) + (128 c² + 128 c³ + 4 c⁴ + 64 c⁶) / r²`, provided
-`r ≥ 1`, `r ≥ 32 c` and `r ≥ c² + 8 c`. -/
+`r ≥ 1`, `r ≥ 32 c` and `r ≥ c² + 8 c`. The notation is that of
+`norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax`. -/
 theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax {x₀ : M} (hc : 0 ≤ c) (hr1 : 1 ≤ r)
     (hr32 : 32 * c ≤ r) (hrK : c ^ 2 + 8 * c ≤ r)
     (hα₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖α x‖ ^ 2) x₀)
     (hβ₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2) x₀)
     (hmax : IsLocalMax (fun x ↦ ‖β x‖ ^ 2 + 4 * c ^ 2 / r * ‖α x‖ ^ 2) x₀)
     (hs : ‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 ≤ 1 + (c ^ 2 + 8 * c) / r)
-    (hWα : -laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x₀ / 2 + ‖Dα x₀‖ ^ 2 +
+    (hWα : -laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x₀ / 2 + ‖Dα₀‖ ^ 2 +
       r / 4 * (‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 - 1) * ‖α x₀‖ ^ 2 ≤
-        c * ‖α x₀‖ * (‖Dβ x₀‖ + ‖α x₀‖ + ‖β x₀‖))
-    (hWβ : -laplaceBeltrami I (fun x ↦ ‖β x‖ ^ 2) x₀ / 2 + ‖Dβ x₀‖ ^ 2 +
+        c * ‖α x₀‖ * (‖Dβ₀‖ + ‖α x₀‖ + ‖β x₀‖))
+    (hWβ : -laplaceBeltrami I (fun x ↦ ‖β x‖ ^ 2) x₀ / 2 + ‖Dβ₀‖ ^ 2 +
       r / 4 * (‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 + 1) * ‖β x₀‖ ^ 2 ≤
-        c * ‖β x₀‖ * (‖Dα x₀‖ + ‖α x₀‖ + ‖β x₀‖)) :
+        c * ‖β x₀‖ * (‖Dα₀‖ + ‖α x₀‖ + ‖β x₀‖)) :
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (1 - ‖α x₀‖ ^ 2) +
       (128 * c ^ 2 + 128 * c ^ 3 + 4 * c ^ 4 + 64 * c ^ 6) / r ^ 2 := by
   -- The comparison function is `fun x ↦ ‖β x‖ ^ 2 + k * ‖α x‖ ^ 2`, that is `g + k • f`.
@@ -283,9 +291,12 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax {x₀ : M} (hc : 0 �
     laplaceBeltrami_smul_of_contMDiffAt I _ hα₂] at hlap
   exact sq_le_of_weitzenbock hc hr1 hr32 hrK hs hWα hWβ hlap
 
+end LocalMax
+
 /-! ### The global bounds on a closed manifold -/
 
-variable [CompactSpace M]
+variable [CompactSpace M] {F₁ F₂ : M → Type*} [∀ x, SeminormedAddCommGroup (F₁ x)]
+  [∀ x, SeminormedAddCommGroup (F₂ x)] {Dα : (x : M) → F₁ x} {Dβ : (x : M) → F₂ x}
 
 /-- **Taubes's bound `|α|² + |β|² ≤ 1 + O(1 / r)`.** On a closed Riemannian manifold, if the
 projected Weitzenböck inequalities hold everywhere, then
