@@ -83,12 +83,13 @@ along the isomorphism of completions `L_w ≃ L_{w'}` induced by `σ`. -/
 theorem semilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
     {w w' : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}}
     (h : w'.1.asIdeal = σ • w.1.asIdeal) (z : v.adicCompletion K ⊗[K] L) :
-    semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ z) w' =
-      completionCongr v σ h (semilocalEquiv L v z w) := by
+    v.adicCompletionSemilocalEquiv K (𝒪 L) L
+        (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L σ z) w' =
+      completionCongr v σ h (v.adicCompletionSemilocalEquiv K (𝒪 L) L z w) := by
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
-    rw [Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, semilocalEquiv_tmul,
-      map_mul, AlgEquiv.commutes, completionCongr_algebraMap]
+    rw [Algebra.TensorProduct.baseChangeAutHom_tmul, adicCompletionSemilocalEquiv_tmul,
+      adicCompletionSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom
@@ -122,7 +123,8 @@ private def semilocalUnitsComponent :
   Rep.ofHom ⟨(Units.map ((Pi.evalMonoidHom
       (fun w' : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
         w'.1.adicCompletion L) ⟨w, ‹_›⟩).comp
-      (semilocalEquiv L v : v.adicCompletion K ⊗[K] L →* _))).toAdditive.toIntLinearMap,
+      (v.adicCompletionSemilocalEquiv K (𝒪 L) L :
+        v.adicCompletion K ⊗[K] L →* _))).toAdditive.toIntLinearMap,
     fun d ↦ LinearMap.ext fun y : Additive (v.adicCompletion K ⊗[K] L)ˣ ↦
       Additive.toMul.injective <| Units.ext <|
         -- an element of the decomposition group fixes `w`, so it acts on the factor at `w`
@@ -143,7 +145,8 @@ theorem semilocalUnitsToCoind_apply (y : (v.adicCompletion K ⊗[K] L)ˣ) (g : L
     ((Additive.toMul (α := (w.adicCompletion L)ˣ)
       (((semilocalUnitsToCoind v w).hom (Additive.ofMul y)).1 g) : (w.adicCompletion L)ˣ) :
         w.adicCompletion L) =
-      semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y)
+      v.adicCompletionSemilocalEquiv K (𝒪 L) L
+        (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y)
         ⟨w, ‹_›⟩ :=
   (rfl)
 
@@ -175,7 +178,8 @@ private theorem semilocalUnitsToCoind_bijective [IsGalois K L] :
     (T := fun g _ _ h ↦ (Units.mapEquiv (completionCongr v g h).toMulEquiv).toEquiv)
     (semilocalUnitsComponent v w)
     (Additive.toMul.trans
-      ((Units.mapEquiv (semilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
+      ((Units.mapEquiv (v.adicCompletionSemilocalEquiv K (𝒪 L) L).toMulEquiv).trans
+        MulEquiv.piUnits).toEquiv)
     (fun g y _ _ h ↦ Units.ext (semilocalEquiv_baseChangeAutHom g h
       (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
     (exists_asIdeal_eq_smul v w) (exists_place_asIdeal_eq_smul v w)

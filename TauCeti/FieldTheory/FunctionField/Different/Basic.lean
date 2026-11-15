@@ -172,15 +172,12 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 /-- **The prime of `𝒪_P` below the centre of `P'` on the local model is the maximal ideal of
 `𝒪_P`**: the residue extension read on the local model is the residue-field extension of the two
 places. -/
-@[simp]
 theorem center_restrict_asIdeal_eq_maximalIdeal :
     ((P'.restrict k F).center (algebraMap_mem_integers_restrict
         (R := ((P'.restrict k F).integers)) k F P'
         (algebraMap_mem_integers_of_mem_integralClosure k F P'))).asIdeal
-      = IsLocalRing.maximalIdeal ((P'.restrict k F).integers) := by
-  ext f
-  rw [mem_center_asIdeal, mem_maximalIdeal_iff_valuation_lt_one]
-  exact Iff.rfl
+      = IsLocalRing.maximalIdeal ((P'.restrict k F).integers) :=
+  (P'.restrict k F).center_integers_asIdeal _
 
 variable [Algebra.IsSeparable F F']
 

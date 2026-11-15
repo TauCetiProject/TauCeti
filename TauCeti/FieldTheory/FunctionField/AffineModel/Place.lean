@@ -35,7 +35,8 @@ integrally closed, then swallows everything integral over `k[x]`.
   as soon as `x ∈ 𝒪_P`.
 * `TauCeti.Place.center`: the height one prime of an affine model below a place finite on it,
   with `TauCeti.Place.valuation_center` identifying the adic valuation of that prime with the
-  valuation of the place, `TauCeti.Place.center_injective` showing that a place finite on a
+  valuation of the place, `TauCeti.Place.center_integers_asIdeal` identifying the centre on `𝒪_P`
+  with the maximal ideal of `𝒪_P`, `TauCeti.Place.center_injective` showing that a place finite on a
   model is determined by its centre, and `TauCeti.Place.comap_center_asIdeal` showing that the
   centre on a larger model contracts to the centre on a smaller one.
 * `TauCeti.Place.existsUnique_valuation_eq`: the uniqueness statement, and
@@ -167,6 +168,13 @@ theorem center_injective {Q : Place k F} (hQ : ∀ r : R, algebraMap R F r ∈ Q
 end Dedekind
 
 end Center
+
+/-- The centre of `P` on its own valuation ring `𝒪_P` is the maximal ideal of `𝒪_P`. -/
+@[simp]
+theorem center_integers_asIdeal (hC : ∀ c : P.integers, algebraMap P.integers F c ∈ P.integers) :
+    (P.center hC).asIdeal = IsLocalRing.maximalIdeal P.integers := by
+  ext x
+  rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply, mem_maximalIdeal_iff_valuation_lt_one]
 
 variable [IsDedekindDomain R]
 

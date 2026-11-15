@@ -15,8 +15,9 @@ import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 Let `L/K` be an extension of number fields and `v` a finite place of `K`. A finite adele `a` of
 `L` has a component `a_w ∈ L_w` at each of the finitely many places `w` of `L` above `v`. Read
-through the semi-local decomposition `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` (`TauCeti.semilocalEquiv`),
-this family is an element of the scalar extension `K_v ⊗[K] L`, and
+through the semi-local decomposition `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w`
+(`IsDedekindDomain.HeightOneSpectrum.adicCompletionSemilocalEquiv`), this family is an element of
+the scalar extension `K_v ⊗[K] L`, and
 
 ```text
 finiteAdeleSemilocalHom L v : 𝔸_L^f → K_v ⊗[K] L
@@ -56,8 +57,7 @@ family of semi-local components of a finite idele (`finiteIdeleOfSemilocalUnits`
 
 ## References
 
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, Proposition (8.3), and
-  Chapter VI, §2.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (8.3), and Chapter VI, §2.
 -/
 
 public section
@@ -79,7 +79,7 @@ variable {K : Type*} [Field K] [NumberField K] (L : Type*) [Field L] [NumberFiel
 `L` at the places `w` of `L` above the finite place `v` of `K`, read in `K_v ⊗[K] L` through the
 semi-local decomposition `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w`. -/
 def finiteAdeleSemilocalHom : FiniteAdeleRing (𝒪 L) L →+* v.adicCompletion K ⊗[K] L :=
-  (semilocalEquiv L v).symm.toRingHom.comp
+  (v.adicCompletionSemilocalEquiv K (𝒪 L) L).symm.toRingHom.comp
     (RingHom.pi fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
       RestrictedProduct.evalRingHom _ w.1)
 
@@ -89,7 +89,7 @@ variable {L v}
 family of components at the places above `v`. -/
 theorem finiteAdeleSemilocalHom_apply (a : FiniteAdeleRing (𝒪 L) L) :
     finiteAdeleSemilocalHom L v a =
-      (semilocalEquiv L v).symm
+      (v.adicCompletionSemilocalEquiv K (𝒪 L) L).symm
         fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦ a w.1 :=
   (rfl)
 
@@ -97,7 +97,7 @@ theorem finiteAdeleSemilocalHom_apply (a : FiniteAdeleRing (𝒪 L) L) :
 of components at the places above `v`. -/
 @[simp]
 theorem semilocalEquiv_finiteAdeleSemilocalHom (a : FiniteAdeleRing (𝒪 L) L) :
-    semilocalEquiv L v (finiteAdeleSemilocalHom L v a) =
+    v.adicCompletionSemilocalEquiv K (𝒪 L) L (finiteAdeleSemilocalHom L v a) =
       fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦ a w.1 := by
   rw [finiteAdeleSemilocalHom_apply, AlgEquiv.apply_symm_apply]
 
@@ -105,8 +105,9 @@ theorem semilocalEquiv_finiteAdeleSemilocalHom (a : FiniteAdeleRing (𝒪 L) L) 
 @[simp]
 theorem finiteAdeleSemilocalHom_algebraMap (x : L) :
     finiteAdeleSemilocalHom L v (algebraMap L _ x) = 1 ⊗ₜ[K] x := by
-  rw [finiteAdeleSemilocalHom_apply, ← semilocalEquiv_symm_algebraMap L v x]
-  exact congrArg (semilocalEquiv L v).symm
+  rw [finiteAdeleSemilocalHom_apply,
+    ← v.adicCompletionSemilocalEquiv_symm_algebraMap (K := K) (B := 𝒪 L) (L := L) x]
+  exact congrArg (v.adicCompletionSemilocalEquiv K (𝒪 L) L).symm
     (funext fun w ↦ FiniteAdeleRing.algebraMap_apply (𝒪 L) L x w.1)
 
 /-! ### Naturality -/
@@ -121,7 +122,7 @@ products are finite-dimensional over `K_v`. -/
 private theorem continuous_semilocalEquiv_linearMap_finiteAdeleSemilocalHom
     (φ : v.adicCompletion K ⊗[K] L →ₗ[v.adicCompletion K] v.adicCompletion K ⊗[K] M) :
     Continuous fun a : FiniteAdeleRing (𝒪 L) L ↦
-      semilocalEquiv M v (φ (finiteAdeleSemilocalHom L v a)) := by
+      v.adicCompletionSemilocalEquiv K (𝒪 M) M (φ (finiteAdeleSemilocalHom L v a)) := by
   let := moduleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)
   have : IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) := ⟨rfl⟩
   let := moduleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] M)
@@ -142,12 +143,12 @@ omit [Algebra K L] in
 on `L` and are continuous after the semi-local decomposition, by strong approximation. -/
 private theorem finiteAdeleSemilocal_ringHom_ext
     {f g : FiniteAdeleRing (𝒪 L) L →+* v.adicCompletion K ⊗[K] M}
-    (hf : Continuous fun a ↦ semilocalEquiv M v (f a))
-    (hg : Continuous fun a ↦ semilocalEquiv M v (g a))
+    (hf : Continuous fun a ↦ v.adicCompletionSemilocalEquiv K (𝒪 M) M (f a))
+    (hg : Continuous fun a ↦ v.adicCompletionSemilocalEquiv K (𝒪 M) M (g a))
     (h : ∀ x : L, f (algebraMap L _ x) = g (algebraMap L _ x)) : f = g :=
-  RingHom.ext fun a ↦ (semilocalEquiv M v).injective <| congrFun
+  RingHom.ext fun a ↦ (v.adicCompletionSemilocalEquiv K (𝒪 M) M).injective <| congrFun
     ((FiniteAdeleRing.denseRange_algebraMap (𝒪 L) L).equalizer hf hg
-      (funext fun x ↦ congrArg (semilocalEquiv M v) (h x))) a
+      (funext fun x ↦ congrArg (v.adicCompletionSemilocalEquiv K (𝒪 M) M) (h x))) a
 
 variable (v) in
 /-- **Naturality under isomorphisms**: transporting a finite adele of `L` along a `K`-algebra
@@ -231,7 +232,8 @@ theorem coe_finiteIdeleSemilocalHom (a : (FiniteAdeleRing (𝒪 L) L)ˣ) :
 of components at the places above `v`. -/
 theorem semilocalEquiv_finiteIdeleSemilocalHom (a : (FiniteAdeleRing (𝒪 L) L)ˣ)
     (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    semilocalEquiv L v (finiteIdeleSemilocalHom L v a) w = (a : FiniteAdeleRing (𝒪 L) L) w.1 := by
+    v.adicCompletionSemilocalEquiv K (𝒪 L) L (finiteIdeleSemilocalHom L v a) w =
+      (a : FiniteAdeleRing (𝒪 L) L) w.1 := by
   rw [coe_finiteIdeleSemilocalHom, semilocalEquiv_finiteAdeleSemilocalHom]
 
 /-- **A finite idele is determined by its semi-local components.** -/
@@ -271,7 +273,7 @@ def finiteIdeleOfSemilocalUnits (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adic
     (fun w ↦ Units.map ((Pi.evalMonoidHom (fun w' :
         {w' : HeightOneSpectrum (𝒪 L) // w'.asIdeal.LiesOver (w.under (𝒪 K)).asIdeal} ↦
           w'.1.adicCompletion L) ⟨w, inferInstance⟩).comp
-        (semilocalEquiv L (w.under (𝒪 K)) : _ →* _)) (y (w.under (𝒪 K))))
+        ((w.under (𝒪 K)).adicCompletionSemilocalEquiv K (𝒪 L) L : _ →* _)) (y (w.under (𝒪 K))))
     (by
       filter_upwards [(tendsto_under_cofinite (𝒪 K) (𝒪 L)).eventually hy] with w hw
       exact adicCompletionIntegers.mem_units_iff_valued_eq_one.2
@@ -285,7 +287,8 @@ theorem coe_finiteIdeleOfSemilocalUnits_apply
     (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v)
     (w : HeightOneSpectrum (𝒪 L)) :
     (finiteIdeleOfSemilocalUnits y hy : FiniteAdeleRing (𝒪 L) L) w =
-      semilocalEquiv L (w.under (𝒪 K)) (y (w.under (𝒪 K))) ⟨w, inferInstance⟩ :=
+      (w.under (𝒪 K)).adicCompletionSemilocalEquiv K (𝒪 L) L
+        (y (w.under (𝒪 K))) ⟨w, inferInstance⟩ :=
   -- `rfl` deliberately unfolds `RestrictedProduct.mkUnit`, `Units.map` and `Pi.evalMonoidHom`
   -- in the definition of `finiteIdeleOfSemilocalUnits`
   (rfl)
@@ -297,7 +300,7 @@ theorem finiteIdeleSemilocalHom_finiteIdeleOfSemilocalUnits
     (y : ∀ v : HeightOneSpectrum (𝒪 K), (v.adicCompletion K ⊗[K] L)ˣ)
     (hy : ∀ᶠ v in Filter.cofinite, y v ∈ semilocalIntegralUnits L v) :
     finiteIdeleSemilocalHom L v (finiteIdeleOfSemilocalUnits y hy) = y v := by
-  refine Units.ext ((semilocalEquiv L v).injective (funext fun w ↦ ?_))
+  refine Units.ext ((v.adicCompletionSemilocalEquiv K (𝒪 L) L).injective (funext fun w ↦ ?_))
   rw [semilocalEquiv_finiteIdeleSemilocalHom]
   obtain ⟨w, hw⟩ := w
   obtain rfl := under_eq_iff_liesOver.mpr hw

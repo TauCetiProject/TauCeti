@@ -30,10 +30,19 @@ fields `R ⧸ v` and `B ⧸ w`, the completed extension `𝒪_w / 𝒪_v` inside
   `multiplicity w (differentIdeal R B) * w.asIdeal.inertiaDeg R`, where `w.asIdeal.inertiaDeg R` is
   the full inertia degree (including its inseparable factor).
 
+These results allow local different exponents, complementary-module lengths, and discriminant
+valuations to be computed after passing to complete discrete valuation rings even when the residue
+fields are infinite or the residue extension is inseparable (as in function fields over arbitrary
+constant fields or localizations of Dedekind domains).
+
+All `IsDedekindDomain.HeightOneSpectrum` declarations in this file use the canonical local algebra
+structures `𝒪_v → 𝒪_w` and `K_v → L_w` (together with their module-finiteness, integral-closure,
+and separability instances) from `open scoped AdicCompletionExtension`.
+
 ## Main results
 
 Height-one spectrum declarations live in `IsDedekindDomain.HeightOneSpectrum`, and the local
-discrete-valuation-ring invariance corollaries live in `TauCeti`:
+discrete-valuation-ring invariance corollaries live in `TauCeti` and `Module.Basis`:
 
 * `IsDedekindDomain.HeightOneSpectrum.sum_trace_adicCompletion_mul_smul_eq`: a trace-dual expansion
   of `L / K` remains one of `L_w / K_v`.
@@ -51,19 +60,13 @@ discrete-valuation-ring invariance corollaries live in `TauCeti`:
   complementary-module length and discriminant valuation equal `d(w ∣ v) · f(w ∣ v)` with no
   residue-separability hypothesis; for a local extension of discrete valuation rings,
   `TauCeti.length_traceDual_adicCompletionIntegers_quotient_eq` and
-  `TauCeti.ord_discr_adicCompletionIntegers_eq` show both invariants are unchanged by completion.
-
-## Provenance
-
-The trace-dual and fractional-ideal comparison adapts the number-field argument in
-`TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Basic` from `𝓞 K ⊆ 𝓞 L` to an arbitrary
-finite separable extension of Dedekind domains via the residue-unrestricted semilocal decomposition
-of `TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal`.
+  `Module.Basis.ord_discr_adicCompletionIntegers_eq` show both invariants are unchanged by
+  completion.
 
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter III, §§3–4.
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter III, Proposition (2.2).
+* J. Neukirch, *Algebraic Number Theory*, Chapter III, Proposition (2.2).
 -/
 
 public section
@@ -201,21 +204,16 @@ theorem traceDual_one_adicCompletionIntegers_eq_span :
     exact algebraMap_mem_traceDual_adicCompletionIntegers v w hd
 
 omit [Module.IsTorsionFree R B] in
-/-- **Trace duals commute with adic completion** as fractional ideals. -/
+/-- **The fractional-ideal trace dual of the ring of integers commutes with adic completion**: the
+trace dual of `B` over `R` (`1`) extends to the trace dual of `𝒪_w` over `𝒪_v`. -/
 theorem dual_one_adicCompletionIntegers_eq_extended :
     haveI : Module.Finite R B := IsIntegralClosure.finite R K L B
-    haveI := finiteDimensional_adicCompletion_of_finite (K := K) (B := B) (L := L) v w
-    haveI := isIntegralClosure_adicCompletionIntegers_of_finite (K := K) (B := B) (L := L) v w
-    haveI := isSeparable_adicCompletion_of_isSeparable (K := K) (B := B) (L := L) v w
     FractionalIdeal.dual (v.adicCompletionIntegers K) (v.adicCompletion K)
         (1 : FractionalIdeal (w.adicCompletionIntegers L)⁰ (w.adicCompletion L)) =
       (FractionalIdeal.dual R K (1 : FractionalIdeal B⁰ L)).extended (w.adicCompletion L)
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have := finiteDimensional_adicCompletion_of_finite (K := K) (B := B) (L := L) v w
-  have := isIntegralClosure_adicCompletionIntegers_of_finite (K := K) (B := B) (L := L) v w
-  have := isSeparable_adicCompletion_of_isSeparable (K := K) (B := B) (L := L) v w
   have hmap : IsLocalization.map (S := L) (w.adicCompletion L)
       (algebraMap B (w.adicCompletionIntegers L))
       (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
@@ -239,10 +237,6 @@ theorem differentIdeal_adicCompletionIntegers_eq_map :
     differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) =
       (differentIdeal R B).map (algebraMap B (w.adicCompletionIntegers L)) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have := moduleFinite_adicCompletionIntegers_of_finite (K := K) (B := B) (L := L) v w
-  have := finiteDimensional_adicCompletion_of_finite (K := K) (B := B) (L := L) v w
-  have := isIntegralClosure_adicCompletionIntegers_of_finite (K := K) (B := B) (L := L) v w
-  have := isSeparable_adicCompletion_of_isSeparable (K := K) (B := B) (L := L) v w
   rw [← FractionalIdeal.coeIdeal_inj (K := w.adicCompletion L),
     ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) (w.adicCompletion L)
       (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
@@ -263,27 +257,49 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
         (v.adicCompletionIntegersSemilocalEquiv K B L) =
       Ideal.pi fun u ↦
         differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
+  classical
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  let f : B →+* ∀ u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
+      u.1.adicCompletionIntegers L :=
+    (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
+      (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
   have hmap : ((differentIdeal R B).map
         (Algebra.TensorProduct.includeRight :
           B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
         (v.adicCompletionIntegersSemilocalEquiv K B L) =
-      (differentIdeal R B).map
-        ((v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
-          (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom) :=
+      (differentIdeal R B).map f :=
     Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
       (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom
+  have hcomp (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
+      ((differentIdeal R B).map f).map
+          (Pi.evalRingHom (fun u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
+            u.1.adicCompletionIntegers L) u) =
+        differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
+    rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.1]
+    congr 1
+    ext x
+    simp [f]
   rw [hmap]
-  apply Ideal.piOrderIso.injective
-  funext u
-  simp only [Ideal.piOrderIso, OrderIso.symm_mk, RelIso.coe_fn_mk,
-    Equiv.coe_fn_symm_mk, RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom,
-    AlgHom.toRingHom_eq_coe]
-  rw [Ideal.map_evalRingHom_pi, Ideal.map_map,
-    differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.1]
-  congr 1
-  ext x
-  simp
+  ext r
+  rw [Ideal.mem_pi]
+  refine ⟨fun hr u ↦ hcomp u ▸ Ideal.mem_map_of_mem _ hr, fun hr ↦ ?_⟩
+  have hmem (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
+      ∃ y ∈ (differentIdeal R B).map f, y u = r u := by
+    have hru : r u ∈ ((differentIdeal R B).map f).map
+        (Pi.evalRingHom (fun u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
+          u.1.adicCompletionIntegers L) u) := by
+      rw [hcomp u]
+      exact hr u
+    simpa using (Ideal.mem_map_iff_of_surjective
+      (Pi.evalRingHom (fun u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
+        u.1.adicCompletionIntegers L) u) (Function.surjective_eval u)).mp hru
+  choose y hy hyu using hmem
+  have := Fintype.ofFinite {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}
+  have hr_eq : r = ∑ u, Pi.single u 1 * y u := by
+    ext u
+    rw [Finset.sum_apply, Fintype.sum_eq_single u fun u' hu' ↦ by simp [hu'.symm]]
+    simp [hyu]
+  exact hr_eq ▸ sum_mem fun u _ ↦ Ideal.mul_mem_left _ _ (hy u)
 
 include K L in
 /-- **Completion preserves the different exponent**: the multiplicity of the maximal ideal of `𝒪_w`
@@ -305,10 +321,6 @@ theorem differentIdeal_adicCompletionIntegers_eq_maximalIdeal_pow :
       IsLocalRing.maximalIdeal (w.adicCompletionIntegers L) ^
         multiplicity w.asIdeal (differentIdeal R B) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have := moduleFinite_adicCompletionIntegers_of_finite (K := K) (B := B) (L := L) v w
-  have := finiteDimensional_adicCompletion_of_finite (K := K) (B := B) (L := L) v w
-  have := isIntegralClosure_adicCompletionIntegers_of_finite (K := K) (B := B) (L := L) v w
-  have := isSeparable_adicCompletion_of_isSeparable (K := K) (B := B) (L := L) v w
   have hD : differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) ≠ ⊥ :=
     differentIdeal_ne_bot_of_isSeparable (K := v.adicCompletion K) (L := w.adicCompletion L)
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (w.adicCompletionIntegers L)
@@ -335,10 +347,6 @@ theorem length_traceDual_adicCompletionIntegers_quotient :
               (1 : Submodule (w.adicCompletionIntegers L) (w.adicCompletion L))).subtype) =
       (multiplicity w.asIdeal (differentIdeal R B) : ℕ∞) * w.asIdeal.inertiaDeg R := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have := v.moduleFinite_adicCompletionIntegers_of_finite (K := K) (L := L) w
-  have := v.finiteDimensional_adicCompletion_of_finite (K := K) (L := L) w
-  have := v.isIntegralClosure_adicCompletionIntegers_of_finite (K := K) (L := L) w
-  have := v.isSeparable_adicCompletion_of_isSeparable (K := K) (L := L) w
   rw [length_traceDual_quotient_eq_multiplicity_mul_finrank,
     multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w,
     finrank_residueField_adicCompletionIntegers (K := K) (L := L) v w]
@@ -352,8 +360,6 @@ theorem ord_discr_adicCompletionIntegers {ι : Type*} [Fintype ι] [DecidableEq 
     Ring.ord (v.adicCompletionIntegers K) (Algebra.discr (v.adicCompletionIntegers K) b) =
       (multiplicity w.asIdeal (differentIdeal R B) : ℕ∞) * w.asIdeal.inertiaDeg R := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  have := v.isIntegralClosure_adicCompletionIntegers_of_finite (K := K) (L := L) w
-  have := v.isSeparable_adicCompletion_of_isSeparable (K := K) (L := L) w
   rw [ord_discr_eq_multiplicity_mul_finrank (v.adicCompletion K) (w.adicCompletion L) b,
     multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w,
     finrank_residueField_adicCompletionIntegers (K := K) (L := L) v w]
@@ -372,34 +378,9 @@ variable {A : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [IsIntegralClosure B A L] [Module.IsTorsionFree A B] [IsLocalHom (algebraMap A B)]
   [FiniteDimensional K L] [Algebra.IsSeparable K L]
 
-omit [IsFractionRing A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-  [Algebra B L] [IsFractionRing B L] [IsScalarTower A B L]
-  [IsIntegralClosure B A L] [Module.IsTorsionFree A B]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] in
-private theorem inertiaDeg_maximalIdeal_eq_finrank_residueField :
-    haveI : (IsDiscreteValuationRing.maximalIdeal B).asIdeal.LiesOver
-        (IsDiscreteValuationRing.maximalIdeal A).asIdeal :=
-      ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
-    (IsDiscreteValuationRing.maximalIdeal B).asIdeal.inertiaDeg A =
-      Module.finrank (IsLocalRing.ResidueField A) (IsLocalRing.ResidueField B) := by
-  let v := IsDiscreteValuationRing.maximalIdeal A
-  let w := IsDiscreteValuationRing.maximalIdeal B
-  have : w.asIdeal.LiesOver v.asIdeal :=
-    ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
-  rw [Ideal.inertiaDeg_eq_of_isMaximal v.asIdeal w.asIdeal]
-  refine Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl _) (RingEquiv.refl _)
-    (RingHom.ext fun x ↦ ?_)
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  exact (IsLocalRing.ResidueField.algebraMap_residue a).trans
-    (Ideal.Quotient.algebraMap_mk_of_liesOver w.asIdeal v.asIdeal a).symm
-
 /-- **Completing a local extension of discrete valuation rings preserves the complementary-module
 length**, with no separability hypothesis on the residue fields. -/
-theorem length_traceDual_adicCompletionIntegers_quotient_eq
-    [Module.Finite (IsLocalRing.ResidueField A) (IsLocalRing.ResidueField B)] :
-    haveI : (IsDiscreteValuationRing.maximalIdeal B).asIdeal.LiesOver
-        (IsDiscreteValuationRing.maximalIdeal A).asIdeal :=
-      ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
+theorem length_traceDual_adicCompletionIntegers_quotient_eq :
     Module.length ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K)
         ((Submodule.traceDual
             ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K)
@@ -416,40 +397,50 @@ theorem length_traceDual_adicCompletionIntegers_quotient_eq
       Module.length A
         ((Submodule.traceDual A K (1 : Submodule B L)) ⧸
           (1 : Submodule B L).comap (Submodule.traceDual A K (1 : Submodule B L)).subtype) := by
-  let v := IsDiscreteValuationRing.maximalIdeal A
-  let w := IsDiscreteValuationRing.maximalIdeal B
-  have : w.asIdeal.LiesOver v.asIdeal :=
-    ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
-  rw [v.length_traceDual_adicCompletionIntegers_quotient (K := K) (L := L) w,
+  have : Module.Finite A B := IsIntegralClosure.finite A K L B
+  rw [(IsDiscreteValuationRing.maximalIdeal A).length_traceDual_adicCompletionIntegers_quotient
+      (K := K) (L := L) (IsDiscreteValuationRing.maximalIdeal B),
     length_traceDual_quotient_eq_multiplicity_mul_finrank,
-    inertiaDeg_maximalIdeal_eq_finrank_residueField (A := A) (B := B)]
-  rfl
+    TauCeti.IsDiscreteValuationRing.asIdeal_maximalIdeal,
+    TauCeti.IsLocalRing.inertiaDeg_maximalIdeal]
+
+end DiscreteValuationRing
+
+end TauCeti
+
+namespace _root_.Module.Basis
+
+section DiscreteValuationRing
+
+variable {A : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
+  {K : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
+  {B : Type*} [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
+  {L : Type*} [Field L] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+  [Algebra B L] [IsFractionRing B L] [IsScalarTower A B L]
+  [IsIntegralClosure B A L] [Module.IsTorsionFree A B] [IsLocalHom (algebraMap A B)]
+  [Algebra.IsSeparable K L]
 
 include K L in
 /-- **Completing a local extension of discrete valuation rings preserves the discriminant
 valuation**, with no separability hypothesis on the residue fields. -/
 theorem ord_discr_adicCompletionIntegers_eq {ι ι' : Type*} [Fintype ι] [DecidableEq ι]
-    [Fintype ι'] [DecidableEq ι'] (b : Module.Basis ι A B) :
-    haveI : (IsDiscreteValuationRing.maximalIdeal B).asIdeal.LiesOver
-        (IsDiscreteValuationRing.maximalIdeal A).asIdeal :=
-      ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
-    ∀ b' : Module.Basis ι' ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K)
-        ((IsDiscreteValuationRing.maximalIdeal B).adicCompletionIntegers L),
-      Ring.ord ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K)
-          (Algebra.discr ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K) b') =
-        Ring.ord A (Algebra.discr A b) := by
-  let v := IsDiscreteValuationRing.maximalIdeal A
-  let w := IsDiscreteValuationRing.maximalIdeal B
-  have : w.asIdeal.LiesOver v.asIdeal :=
-    ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
-  intro b'
-  rw [v.ord_discr_adicCompletionIntegers (K := K) (L := L) w b',
+    [Fintype ι'] [DecidableEq ι'] (b : Module.Basis ι A B)
+    (b' : Module.Basis ι' ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K)
+      ((IsDiscreteValuationRing.maximalIdeal B).adicCompletionIntegers L)) :
+    Ring.ord ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K)
+        (Algebra.discr ((IsDiscreteValuationRing.maximalIdeal A).adicCompletionIntegers K) b') =
+      Ring.ord A (Algebra.discr A b) := by
+  have : Module.Finite A B := .of_basis b
+  have := IsIntegralClosure.isLocalization A K L B
+  have : FiniteDimensional K L := .of_basis (b.localizationLocalization K A⁰ L)
+  rw [(IsDiscreteValuationRing.maximalIdeal A).ord_discr_adicCompletionIntegers
+      (K := K) (L := L) (IsDiscreteValuationRing.maximalIdeal B) b',
     ord_discr_eq_multiplicity_mul_finrank K L b,
-    inertiaDeg_maximalIdeal_eq_finrank_residueField (A := A) (B := B)]
-  rfl
+    TauCeti.IsDiscreteValuationRing.asIdeal_maximalIdeal,
+    TauCeti.IsLocalRing.inertiaDeg_maximalIdeal]
 
 end DiscreteValuationRing
 
-end TauCeti
+end _root_.Module.Basis
 
 end

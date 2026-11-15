@@ -663,10 +663,12 @@ theorem toMul_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq_map_ideleFini
   -- The map `K_v ⊗[K] E → K_vˢ`, `a ⊗ x ↦ a τ(x)`, is `τ'` after projecting to the factor `E_w`.
   have h : Algebra.TensorProduct.lift (Algebra.ofId _ _)
       (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _) =
-      τ'.comp ((Pi.evalAlgHom _ _ ⟨w, inferInstance⟩).comp (semilocalEquiv E v).toAlgHom) := by
+      τ'.comp ((Pi.evalAlgHom _ _ ⟨w, inferInstance⟩).comp
+        (v.adicCompletionSemilocalEquiv K (𝓞 E) E).toAlgHom) := by
     refine Algebra.TensorProduct.ext' fun b x ↦ ?_
     simp only [AlgHom.comp_apply, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply,
-      IsScalarTower.coe_toAlgHom', AlgEquiv.coe_toAlgHom, semilocalEquiv_tmul, Pi.evalAlgHom_apply,
+      IsScalarTower.coe_toAlgHom', AlgEquiv.coe_toAlgHom,
+      HeightOneSpectrum.adicCompletionSemilocalEquiv_tmul, Pi.evalAlgHom_apply,
       map_mul, AlgHom.commutes, IntermediateField.algebraMap_apply, ← hτ]
   rw [h]
   simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,

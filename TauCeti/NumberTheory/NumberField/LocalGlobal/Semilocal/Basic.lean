@@ -9,63 +9,45 @@ public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import TauCeti.RingTheory.Ideal.PrimesOver
 
 /-!
-# The semi-local map `K_v ⊗[K] L → ∏_{w ∣ v} L_w`
+# Topological and number-field aspects of the semi-local decomposition
 
 Let `L/K` be an extension of number fields and `v` a finite place of `K`. Every finite place `w`
 of `L` above `v` gives a completion `L_w`, which is a `K_v`-algebra through the canonical
-completion map `completionAlgHom v w`. Together these give the semi-local map
+completion map `completionAlgHom v w`. The algebraic semi-local decomposition
+`K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`
+(`IsDedekindDomain.HeightOneSpectrum.adicCompletionSemilocalEquiv`) and the degree identity
+`∑_{w ∣ v} [L_w : K_v] = [L : K]`
+(`IsDedekindDomain.HeightOneSpectrum.sum_finrank_adicCompletion_of_finite`) are proved for general
+Dedekind domains in `TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal`.
 
-```text
-semilocalHom v : K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w,    a ⊗ x ↦ (a · x)_w .
-```
-
-This map is an isomorphism of `K_v`-algebras, `semilocalEquiv v`: the semi-local decomposition of
-Neukirch II (8.3). It identifies the scalar extension of `L` to `K_v` with the product of the
-completions of `L` at the places above `v`, so a question about `L` over `K` at `v` becomes the
-same question for the finitely many local extensions `L_w/K_v`. Comparing the degrees of its two
-sides gives the local–global degree identity `∑_{w ∣ v} [L_w : K_v] = [L : K]`, whose counterpart
-at the infinite places is Mathlib's `NumberField.InfinitePlace.sum_inertiaDeg_eq_finrank`.
-
-The places above `v` are indexed by the subtype
-`{w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}`, which is finite
-(`IsDedekindDomain.HeightOneSpectrum.finite_liesOver`) and which
-`IsDedekindDomain.HeightOneSpectrum.liesOverEquivPrimesOver` identifies with
-`Ideal.primesOver v.asIdeal (𝓞 L)`.
+This file supplies the number-field weak-approximation density result above `v`, the extension of
+embeddings into `K_v`-domains, and the topological enhancement of the semi-local isomorphism when
+`K_v ⊗[K] L` carries its `K_v`-module topology.
 
 ## Main definitions
 
-* `TauCeti.semilocalHom`: the semi-local map
-  `K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w`.
-* `TauCeti.semilocalEquiv`: that map, as an isomorphism of `K_v`-algebras.
+* `TauCeti.semilocalContinuousEquiv`: the semi-local decomposition as a continuous algebra
+  equivalence when the tensor product carries its module topology over `K_v`.
 
 ## Main results
 
-* `TauCeti.semilocalHom_tmul` and `TauCeti.semilocalEquiv_tmul`: the value on pure tensors,
-  `semilocalEquiv v (a ⊗ₜ x) w = algebraMap K_v L_w a * algebraMap L L_w x`, which determines
-  the map.
-* `TauCeti.denseRange_algebraMap_pi_liesOver`: `L` is dense in
-  `∏_{w ∣ v} L_w`.
-* `TauCeti.semilocalHom_surjective` and `TauCeti.semilocalHom_injective`: the semi-local map is
-  surjective and injective.
-* `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
-  `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
+* `TauCeti.denseRange_algebraMap_pi_liesOver`: `L` is dense in `∏_{w ∣ v} L_w`.
 * `TauCeti.exists_algHom_adicCompletion_eq`: a `K`-algebra map from `L` to a `K_v`-algebra that
   is a domain extends to the completion `L_w` at some place `w` above `v`.
-* `TauCeti.semilocalContinuousEquiv`: the semi-local decomposition as a continuous algebra
-  equivalence when the tensor product carries its module topology over `K_v`.
 
 ## Topology
 
 Both sides of the semi-local decomposition are finite-dimensional `K_v`-vector spaces. Each
 carries its canonical `K_v`-module topology, which on `∏_{w ∣ v} L_w` is the product topology,
 and `K_v`-linear maps between such spaces are continuous. So when `K_v ⊗[K] L` carries its module
-topology, `semilocalEquiv v` is a homeomorphism. This placewise identification of topological
-rings is the finite-place input for identifying the finite adeles of `L` with the scalar
-extension of the finite adeles of `K` to `L`.
+topology, `v.adicCompletionSemilocalEquiv K (𝒪 L) L` is a homeomorphism. This placewise
+identification of topological rings is the finite-place input for identifying the finite adeles of
+`L` with the scalar extension of the finite adeles of `K` to `L`.
 
 ## Provenance
 
@@ -75,7 +57,7 @@ The continuous equivalence and its companion formulas follow the archimedean ana
 
 ## References
 
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, Proposition (8.3).
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (8.3).
 -/
 
 public section
@@ -92,30 +74,6 @@ local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
 variable {K : Type*} [Field K] [NumberField K] (L : Type*) [Field L] [NumberField L] [Algebra K L]
   (v : HeightOneSpectrum (𝒪 K))
-
-/-- The semi-local map `K_v ⊗[K] L → ∏_{w ∣ v} L_w` of a finite place `v` of `K`, sending
-`a ⊗ x` to the family `(a · x)_w` over the places `w` of `L` above `v`. Each `L_w` is a
-`K_v`-algebra through the canonical completion map `completionAlgHom v w`. -/
-def semilocalHom :
-    v.adicCompletion K ⊗[K] L →ₐ[v.adicCompletion K]
-      ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L) :=
-  Algebra.TensorProduct.lift (Algebra.ofId _ _)
-    (AlgHom.pi fun w ↦ IsScalarTower.toAlgHom K L (w.1.adicCompletion L))
-    fun _ _ ↦ .all _ _
-
-variable {L v}
-
-/-- The semi-local map on a pure tensor. -/
-@[simp]
-theorem semilocalHom_tmul (a : v.adicCompletion K) (x : L)
-    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    semilocalHom L v (a ⊗ₜ x) w =
-      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
-        algebraMap L (w.1.adicCompletion L) x := by
-  simp [semilocalHom]
-
-variable (L v)
 
 omit [NumberField K] in
 /-- **Weak approximation above `v`.** The diagonal image of `L` is dense in the product of the
@@ -144,99 +102,6 @@ theorem denseRange_algebraMap_pi_liesOver :
   exact Φ.surjective.denseRange.comp
     (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) Φ.continuous
 
-/-- **The semi-local map is surjective**: every family `(y_w)_{w ∣ v}` of elements of the
-completions `L_w` is the image of an element of `K_v ⊗[K] L`. -/
-theorem semilocalHom_surjective : Function.Surjective (semilocalHom L v) := by
-  let s := LinearMap.range (semilocalHom L v).toLinearMap
-  have hs : Set.range (fun (x : L) (w : {w : HeightOneSpectrum (𝒪 L) //
-      w.asIdeal.LiesOver v.asIdeal}) ↦ algebraMap L (w.1.adicCompletion L) x) ⊆ s := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨1 ⊗ₜ x, funext fun w ↦ by simp⟩
-  intro y
-  exact s.isClosed_of_finiteDimensional.closure_subset_iff.mpr hs
-    (denseRange_algebraMap_pi_liesOver L v y)
-
-attribute [local instance] Fintype.ofFinite in
-/-- **The local degrees above `v` add up to the global degree**:
-`∑_{w ∣ v} [L_w : K_v] = [L : K]`. Each local degree is `e(w ∣ v) · f(w ∣ v)`, and the sum of
-those products over the primes above `v` is the global degree. -/
-theorem sum_finrank_adicCompletion_eq_finrank :
-    ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
-        finrank (v.adicCompletion K) (w.1.adicCompletion L) = finrank K L := by
-  let _ : Fintype (v.asIdeal.primesOver (𝒪 L)) :=
-    Fintype.ofEquiv _ (liesOverEquivPrimesOver (𝒪 L) v)
-  calc ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
-          finrank (v.adicCompletion K) (w.1.adicCompletion L)
-      = ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
-          w.1.asIdeal.ramificationIdx (𝒪 K) * w.1.asIdeal.inertiaDeg (𝒪 K) :=
-        Finset.sum_congr rfl fun w _ ↦
-          have _ : Finite (𝒪 L ⧸ w.1.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.1.ne_bot
-          finrank_adicCompletion v w.1
-    _ = ∑ Q : v.asIdeal.primesOver (𝒪 L),
-          (Q : Ideal (𝒪 L)).ramificationIdx (𝒪 K) * (Q : Ideal (𝒪 L)).inertiaDeg (𝒪 K) :=
-        Fintype.sum_equiv (liesOverEquivPrimesOver (𝒪 L) v) _ _ fun w ↦ by
-          rw [liesOverEquivPrimesOver_apply]
-    _ = finrank (𝒪 K) (𝒪 L) := Ideal.sum_ramification_inertia_eq_finrank v.asIdeal (𝒪 L)
-    _ = finrank K L := (IsFractionRing.finrank_eq (𝒪 K) K (𝒪 L) L).symm
-
-attribute [local instance] Fintype.ofFinite in
-/-- **The semi-local map is injective**: an element of `K_v ⊗[K] L` is determined by its images
-in the completions `L_w` at the places `w` of `L` above `v`. -/
-theorem semilocalHom_injective : Function.Injective (semilocalHom L v) := by
-  -- source and target have the same degree over `K_v`, and the map is surjective
-  have hdim : finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
-      finrank (v.adicCompletion K)
-        ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-          w.1.adicCompletion L) := by
-    rw [finrank_pi_fintype, finrank_baseChange, sum_finrank_adicCompletion_eq_finrank]
-  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
-    (f := (semilocalHom L v).toLinearMap)).2 (semilocalHom_surjective L v)
-
-/-- **The semi-local decomposition** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`: completing `L` at the
-finitely many places above a finite place `v` of `K` decomposes the scalar extension of `L` to
-`K_v` into the product of those completions. -/
-def semilocalEquiv :
-    v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
-      ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L) :=
-  AlgEquiv.ofBijective (semilocalHom L v)
-    -- The `show` is load-bearing. `Function.Bijective` is semireducible, so the bare anonymous
-    -- constructor elaborates at the unfolded conjunction instead, and the resulting
-    -- `AlgEquiv.ofBijective` term is then not type-correct at `instances` transparency: `simp`
-    -- refuses to rewrite it with `AlgEquiv.coe_ofBijective`, which is what proves
-    -- `semilocalEquiv_tmul` below.
-    (show Function.Bijective (semilocalHom L v) from
-      ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩)
-
-/-- The semi-local decomposition is the semi-local map. -/
-theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := by
-  rw [semilocalEquiv, AlgEquiv.coe_ofBijective]
-
-variable {L v}
-
-/-- **The semi-local decomposition on a pure tensor**, the formula that determines it. -/
-@[simp]
-theorem semilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
-    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    semilocalEquiv L v (a ⊗ₜ x) w =
-      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
-        algebraMap L (w.1.adicCompletion L) x := by
-  rw [semilocalEquiv, AlgEquiv.ofBijective_apply]
-  exact semilocalHom_tmul a x w
-
-variable (L v)
-
-/-- The inverse semi-local comparison sends a diagonal field element to `1 ⊗ x`. -/
-@[simp]
-theorem semilocalEquiv_symm_algebraMap (x : L) :
-    (semilocalEquiv L v).symm
-      (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-        algebraMap L (w.1.adicCompletion L) x) = 1 ⊗ₜ[K] x := by
-  apply (semilocalEquiv L v).symm_apply_eq.mpr
-  funext w
-  rw [semilocalEquiv_tmul]
-  simp
-
 attribute [local instance] Fintype.ofFinite in
 /-- **An embedding of `L` into a `K_v`-domain extends to a completion of `L` above `v`.** For a
 domain `M` that is a `K_v`-algebra, every `K`-algebra map `φ : L → M` is the restriction to `L` of
@@ -251,7 +116,7 @@ theorem exists_algHom_adicCompletion_eq {M : Type*} [CommRing M] [IsDomain M] [A
   classical
   -- The `K_v`-algebra map `∏_{w ∣ v} L_w ≃ K_v ⊗[K] L → M` induced by `φ`.
   let f := (Algebra.TensorProduct.lift (Algebra.ofId (v.adicCompletion K) M) φ
-    fun _ _ ↦ .all _ _).comp (semilocalEquiv L v).symm.toAlgHom
+    fun _ _ ↦ .all _ _).comp (v.adicCompletionSemilocalEquiv K (𝒪 L) L).symm.toAlgHom
   -- It kills one of the idempotents `e i = 1 - [i]`, whose product vanishes.
   let e (i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
       (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
@@ -286,7 +151,7 @@ theorem exists_algHom_adicCompletion_eq {M : Type*} [CommRing M] [IsDomain M] [A
       (fun x y ↦ by simp [Pi.single_mul])
   refine ⟨i.1, i.2, φ', fun x ↦ ?_⟩
   have : φ x = f (fun w ↦ algebraMap L (w.1.adicCompletion L) x) := by
-    simp [f, semilocalEquiv_symm_algebraMap L v x]
+    simp [f, v.adicCompletionSemilocalEquiv_symm_algebraMap (K := K) (B := 𝒪 L) (L := L) x]
   rw [this, hf]
   rfl
 
@@ -299,21 +164,22 @@ def semilocalContinuousEquiv :
     v.adicCompletion K ⊗[K] L ≃A[v.adicCompletion K]
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L) where
-  toAlgEquiv := semilocalEquiv L v
+  toAlgEquiv := v.adicCompletionSemilocalEquiv K (𝒪 L) L
   continuous_toFun := IsModuleTopology.continuous_of_linearMap
-    (semilocalEquiv L v).toLinearMap
+    (v.adicCompletionSemilocalEquiv K (𝒪 L) L).toLinearMap
   continuous_invFun := by
     let := IsModuleTopology.toContinuousAdd (v.adicCompletion K)
       (v.adicCompletion K ⊗[K] L)
     let := isModuleTopologyOfFiniteDimensional (𝕜 := v.adicCompletion K)
       (E := (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L)
-    exact IsModuleTopology.continuous_of_linearMap (semilocalEquiv L v).symm.toLinearMap
+    exact IsModuleTopology.continuous_of_linearMap
+      (v.adicCompletionSemilocalEquiv K (𝒪 L) L).symm.toLinearMap
 
 /-- Forgetting continuity recovers the algebraic semi-local decomposition. -/
 @[simp]
 theorem semilocalContinuousEquiv_toAlgEquiv :
-    (semilocalContinuousEquiv L v).toAlgEquiv = semilocalEquiv L v :=
+    (semilocalContinuousEquiv L v).toAlgEquiv = v.adicCompletionSemilocalEquiv K (𝒪 L) L :=
   (rfl)
 
 variable {L v}
@@ -326,7 +192,7 @@ theorem semilocalContinuousEquiv_tmul (a : v.adicCompletion K) (x : L)
       algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
         algebraMap L (w.1.adicCompletion L) x := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv, semilocalContinuousEquiv_toAlgEquiv]
-  exact semilocalEquiv_tmul a x w
+  exact v.adicCompletionSemilocalEquiv_tmul a x w
 
 /-- The inverse continuous comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
@@ -336,6 +202,6 @@ theorem semilocalContinuousEquiv_symm_algebraMap (x : L) :
         algebraMap L (w.1.adicCompletion L) x) = 1 ⊗ₜ[K] x := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv, ContinuousAlgEquiv.symm_toAlgEquiv,
     semilocalContinuousEquiv_toAlgEquiv]
-  exact semilocalEquiv_symm_algebraMap L v x
+  exact v.adicCompletionSemilocalEquiv_symm_algebraMap x
 
 end TauCeti

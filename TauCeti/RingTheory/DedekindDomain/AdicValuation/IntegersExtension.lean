@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
+public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!
 # The completed integer rings of an extension of Dedekind domains
@@ -19,10 +21,11 @@ This file turns that restriction into an algebra structure of `𝒪_w` over `�
 `AdicCompletionExtension` scope where the algebra structure of `L_w` over `K_v` already lives,
 and proves the facts needed to use the extension `𝒪_w / 𝒪_v` as an extension of Dedekind domains:
 it is compatible with `L_w` as a `K_v`-algebra, it is torsion-free, it is compatible with the
-global map `R → B`, and the maximal ideal of `𝒪_w` lies over that of `𝒪_v`. These are the
-hypotheses that ideal-theoretic constructions such as `differentIdeal 𝒪_v 𝒪_w`, `Ideal.LiesOver`,
-and the ramification index and inertia degree of `𝒪_w / 𝒪_v` take as input, and they make the
-local extension comparable with the global one along `B → 𝒪_w`.
+global map `R → B`, the maximal ideal of `𝒪_w` lies over that of `𝒪_v`, the maximal ideal of `𝒪_v`
+extends to `𝔪_w ^ e(w ∣ v)`, and the residue-field degree of `𝒪_w / 𝒪_v` equals `f(w ∣ v)`. These
+are the hypotheses that ideal-theoretic constructions such as `differentIdeal 𝒪_v 𝒪_w`,
+`Ideal.LiesOver`, and the ramification index and inertia degree of `𝒪_w / 𝒪_v` take as input, and
+they make the local extension comparable with the global one along `B → 𝒪_w`.
 
 ## Main definitions
 
@@ -34,8 +37,9 @@ local extension comparable with the global one along `B → 𝒪_w`.
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersExtension_injective`: the map on
   completed integer rings is injective.
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersExtension_algebraMap`: it extends the
-  global map `R → B`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersExtension_algebraMap` and
+  `IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletionExtension_algebraMap`: the completed
+  integer and field maps extend the global maps `R → B` and `K → L`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isScalarTower`: `𝒪_v`, `𝒪_w` and
   `L_w` form a scalar tower, so the two ways of letting `𝒪_v` act on `L_w` agree.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isTorsionFree`: `𝒪_w` is a
@@ -44,10 +48,15 @@ local extension comparable with the global one along `B → 𝒪_w`.
   canonical map `𝒪_v → 𝒪_w` is a local ring homomorphism.
 * `IsDedekindDomain.HeightOneSpectrum.maximalIdeal_adicCompletionIntegers_liesOver`: the maximal
   ideal of `𝒪_w` lies over the maximal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.valued_algebraMap_adicCompletion_of_irreducible` and
+  `IsDedekindDomain.HeightOneSpectrum.map_maximalIdeal_adicCompletionIntegers_eq_pow`: a
+  uniformizer of `𝒪_v` has `L_w`-valuation `exp (-e(w ∣ v))`, so `𝔪_v · 𝒪_w = 𝔪_w ^ e(w ∣ v)`.
+* `IsDedekindDomain.HeightOneSpectrum.finrank_residueField_adicCompletionIntegers`: the
+  residue-field degree of `𝒪_w / 𝒪_v` equals the global inertia degree `w.asIdeal.inertiaDeg R`.
 
 ## References
 
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, §4 and §6.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §4 and §6.
 -/
 
 public section
@@ -66,6 +75,8 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
   (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
+
+section ExplicitFields
 
 variable (K L)
 
@@ -151,6 +162,64 @@ theorem maximalIdeal_adicCompletionIntegers_liesOver :
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.maximalIdeal_adicCompletionIntegers_liesOver
+
+end ExplicitFields
+
+/-- The map `K_v → L_w` on completed fields extends the global map `K → L`. -/
+theorem algebraMap_adicCompletionExtension_algebraMap (x : K) :
+    algebraMap (v.adicCompletion K) (w.adicCompletion L) (algebraMap K (v.adicCompletion K) x) =
+      algebraMap L (w.adicCompletion L) (algebraMap K L x) := by
+  rw [algebraMap_adicCompletionExtensionAlgebra, algebraMap_adicCompletion,
+    algebraMap_adicCompletion, Function.comp_apply, Function.comp_apply,
+    Algebra.algebraMap_self_apply, Algebra.algebraMap_self_apply, adicCompletionExtension_coe]
+
+/-- The `w`-adic valuation in `L_w` of an irreducible element of `𝒪_v` equals `exp (-e(w ∣ v))`. -/
+theorem valued_algebraMap_adicCompletion_of_irreducible {π : v.adicCompletionIntegers K}
+    (hπ : Irreducible π) :
+    Valued.v (algebraMap (v.adicCompletionIntegers K) (w.adicCompletion L) π) =
+      WithZero.exp (-(w.asIdeal.ramificationIdx R : ℤ)) := by
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  rw [IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (w.adicCompletion L),
+    algebraMap_adicCompletionExtensionAlgebra, valued_adicCompletionExtension,
+    Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot,
+    v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ, ← WithZero.exp_nsmul]
+  simp
+
+/-- The maximal ideal of `𝒪_v` extends to the `e(w ∣ v)`-th power of the maximal ideal of `𝒪_w`. -/
+theorem map_maximalIdeal_adicCompletionIntegers_eq_pow :
+    (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)).map
+        (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
+      IsLocalRing.maximalIdeal (w.adicCompletionIntegers L) ^ w.asIdeal.ramificationIdx R := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
+  rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
+  refine w.span_singleton_eq_maximalIdeal_pow ?_
+  rw [← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K)
+    (w.adicCompletionIntegers L) (w.adicCompletion L)]
+  exact v.valued_algebraMap_adicCompletion_of_irreducible (L := L) w hπ
+
+/-- The degree of the residue-field extension of completed integer rings is the global inertia
+degree `w.asIdeal.inertiaDeg R` (including any inseparable factor). -/
+@[simp]
+theorem finrank_residueField_adicCompletionIntegers :
+    Module.finrank (IsLocalRing.ResidueField (v.adicCompletionIntegers K))
+        (IsLocalRing.ResidueField (w.adicCompletionIntegers L)) =
+      w.asIdeal.inertiaDeg R := by
+  rw [Ideal.inertiaDeg_eq_of_isMaximal v.asIdeal w.asIdeal]
+  refine (Algebra.finrank_eq_of_equiv_equiv
+    ((v.residueFieldEquivAdicCompletionIntegers (K := K)).trans
+      (TauCeti.IsLocalRing.quotientMaximalIdealEquivResidueField _))
+    ((w.residueFieldEquivAdicCompletionIntegers (K := L)).trans
+      (TauCeti.IsLocalRing.quotientMaximalIdealEquivResidueField _))
+    (RingHom.ext fun x ↦ ?_)).symm
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    RingEquiv.trans_apply, Ideal.Quotient.algebraMap_mk_of_liesOver,
+    v.residueFieldEquivAdicCompletionIntegers_apply_mk,
+    w.residueFieldEquivAdicCompletionIntegers_apply_mk,
+    TauCeti.IsLocalRing.quotientMaximalIdealEquivResidueField_mk,
+    IsLocalRing.ResidueField.algebraMap_residue,
+    algebraMap_adicCompletionIntegersExtensionAlgebra, adicCompletionIntegersExtension_algebraMap]
 
 end Extension
 

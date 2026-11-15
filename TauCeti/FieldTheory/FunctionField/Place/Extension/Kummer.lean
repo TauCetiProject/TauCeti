@@ -743,11 +743,8 @@ private theorem ofPrime_maximalIdeal (P : Place k F) :
   have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
     rw [ValuationSubring.algebraMap_apply]
     exact r.2
-  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR := by
-    ext r
-    rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply,
-      ← mem_maximalIdeal_iff_valuation_lt_one]
-    rfl
+  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR :=
+    HeightOneSpectrum.ext (P.center_integers_asIdeal hR).symm
   rw [h, ofPrime_center]
 
 variable {P : Place k F} {y : F'}

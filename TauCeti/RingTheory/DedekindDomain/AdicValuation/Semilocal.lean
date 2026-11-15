@@ -9,9 +9,7 @@ public import Mathlib.FieldTheory.SeparableClosure
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.InertiaDegree
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegersExtension
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
 public import TauCeti.RingTheory.Ideal.PrimesOver
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
@@ -37,11 +35,16 @@ the product over the finitely many height-one primes `w` of `B` lying over `v`:
 
 In particular, each completed extension `𝒪_w / 𝒪_v` is finite and free of rank
 `[L_w : K_v] = e(w ∣ v) · f(w ∣ v)`, `𝒪_w` is the integral closure of `𝒪_v` in `L_w`, `L_w / K_v`
-is separable whenever `L / K` is separable, and the global trace `Tr_{L/K}` decomposes as
-`∑_{w ∣ v} Tr_{L_w/K_v}`. This complements
+is separable whenever `L / K` is separable, and the global norm `N_{L/K}` and trace `Tr_{L/K}`
+decompose as `∏_{w ∣ v} N_{L_w/K_v}` and `∑_{w ∣ v} Tr_{L_w/K_v}`. This complements
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegralClosure` and
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree`, which establish local finiteness
 and `[L_w : K_v] = e · f` under `[Finite (B ⧸ w.asIdeal)]` without `[Module.Finite R B]`.
+
+All `IsDedekindDomain.HeightOneSpectrum` declarations in this file use the canonical local algebra
+structures `𝒪_v → 𝒪_w` and `K_v → L_w` from the `AdicCompletionExtension` scope
+(`open scoped AdicCompletionExtension`), where the local finiteness, freeness, integral-closure,
+and separability theorems below are also registered as scoped instances.
 
 ## Proof strategy
 
@@ -70,9 +73,6 @@ field and integral levels.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.map_maximalIdeal_adicCompletionIntegers_eq_pow` and
-  `IsDedekindDomain.HeightOneSpectrum.finrank_residueField_adicCompletionIntegers`: the
-  maximal-ideal extension and residue degree of `𝒪_w / 𝒪_v` agree with `e(w ∣ v)` and `f(w ∣ v)`.
 * `IsDedekindDomain.HeightOneSpectrum.moduleFinite_adicCompletionIntegers_of_finite`,
   `IsDedekindDomain.HeightOneSpectrum.moduleFree_adicCompletionIntegers_of_finite`,
   `IsDedekindDomain.HeightOneSpectrum.isIntegralClosure_adicCompletionIntegers_of_finite`, and
@@ -81,31 +81,23 @@ field and integral levels.
 * `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletionIntegers_of_finite` and
   `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletion_of_finite`:
   `finrank 𝒪_v 𝒪_w = finrank K_v L_w = e(w ∣ v) · f(w ∣ v)`.
-* `IsDedekindDomain.HeightOneSpectrum.algebraMap_trace_eq_sum_trace_adicCompletion` and
+* `IsDedekindDomain.HeightOneSpectrum.algebraMap_norm_eq_prod_norm_adicCompletion`,
+  `IsDedekindDomain.HeightOneSpectrum.algebraMap_trace_eq_sum_trace_adicCompletion`, and
   `IsDedekindDomain.HeightOneSpectrum.trace_adicCompletionSemilocalEquiv_symm_single_mul`: the
-  local-global trace decomposition.
+  local-global norm and trace decompositions.
 * `IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable`: separability of
   `L / K` passes to `L_w / K_v`.
 
-## Provenance
-
-The algebraic comparison between the integral and field tensor products and the componentwise trace
-identities adapt the number-field development in
-`TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic`,
-`TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers`, and
-`TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace`, replacing the compactness
-argument for surjectivity by `𝔪_v`-adic completeness over an arbitrary Dedekind base.
-
 ## References
 
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, §8.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §8.
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter II, §§2–3.
 -/
 
 public section
 noncomputable section
 
-open TauCeti IsDedekindDomain ValuativeRel WithZero TensorProduct
+open TauCeti IsDedekindDomain WithZero TensorProduct
 open scoped AdicCompletionExtension nonZeroDivisors
 
 namespace IsDedekindDomain.HeightOneSpectrum
@@ -117,55 +109,6 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra R B]
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
-
-/-- The maximal ideal of `𝒪_v` extends to the `e(w ∣ v)`-th power of the maximal ideal of `𝒪_w`. -/
-theorem map_maximalIdeal_adicCompletionIntegers_eq_pow (v : HeightOneSpectrum R)
-    (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal] :
-    (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)).map
-        (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) =
-      IsLocalRing.maximalIdeal (w.adicCompletionIntegers L) ^ w.asIdeal.ramificationIdx R := by
-  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
-  rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton]
-  refine w.span_singleton_eq_maximalIdeal_pow ?_
-  rw [← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K)
-      (w.adicCompletionIntegers L) (w.adicCompletion L),
-    IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K)
-      (w.adicCompletion L),
-    algebraMap_adicCompletionExtensionAlgebra, valued_adicCompletionExtension,
-    Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot,
-    v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ, ← exp_nsmul]
-  simp
-
-/-- The degree of the residue-field extension of completed integer rings is the global inertia
-degree `w.asIdeal.inertiaDeg R` (including any inseparable factor). -/
-@[simp]
-theorem finrank_residueField_adicCompletionIntegers (v : HeightOneSpectrum R)
-    (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal] :
-    Module.finrank (IsLocalRing.ResidueField (v.adicCompletionIntegers K))
-        (IsLocalRing.ResidueField (w.adicCompletionIntegers L)) =
-      w.asIdeal.inertiaDeg R := by
-  rw [Ideal.inertiaDeg_eq_of_isMaximal v.asIdeal w.asIdeal]
-  refine (Algebra.finrank_eq_of_equiv_equiv
-    (v.residueFieldEquivAdicCompletionIntegers (K := K))
-    (w.residueFieldEquivAdicCompletionIntegers (K := L)) (RingHom.ext fun x ↦ ?_)).symm
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-  change algebraMap (IsLocalRing.ResidueField (v.adicCompletionIntegers K))
-      (IsLocalRing.ResidueField (w.adicCompletionIntegers L))
-      (v.residueFieldEquivAdicCompletionIntegers (K := K) (Ideal.Quotient.mk v.asIdeal r)) =
-    w.residueFieldEquivAdicCompletionIntegers (K := L)
-      (algebraMap (R ⧸ v.asIdeal) (B ⧸ w.asIdeal) (Ideal.Quotient.mk v.asIdeal r))
-  rw [Ideal.Quotient.algebraMap_mk_of_liesOver,
-    v.residueFieldEquivAdicCompletionIntegers_apply_mk,
-    w.residueFieldEquivAdicCompletionIntegers_apply_mk]
-  change algebraMap (IsLocalRing.ResidueField (v.adicCompletionIntegers K))
-      (IsLocalRing.ResidueField (w.adicCompletionIntegers L))
-      (IsLocalRing.residue (v.adicCompletionIntegers K)
-        (algebraMap R (v.adicCompletionIntegers K) r)) =
-    IsLocalRing.residue (w.adicCompletionIntegers L)
-      (algebraMap B (w.adicCompletionIntegers L) (algebraMap R B r))
-  rw [IsLocalRing.ResidueField.algebraMap_residue,
-    algebraMap_adicCompletionIntegersExtensionAlgebra, adicCompletionIntegersExtension_algebraMap]
 
 /-- The canonical `𝒪_v`-algebra map from `𝒪_v ⊗[R] B` to the product of the completed integer rings
 at the primes of `B` lying over `v`. -/
@@ -188,10 +131,10 @@ def adicCompletionIntegersSemilocalHom (v : HeightOneSpectrum R) (K B L : Type*)
     (AlgHom.pi fun w ↦
       { algebraMap B (w.1.adicCompletionIntegers L) with
         commutes' := fun r ↦ by
-          change algebraMap B (w.1.adicCompletionIntegers L) (algebraMap R B r) =
-            algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L)
-              (algebraMap R (v.adicCompletionIntegers K) r)
-          rw [algebraMap_adicCompletionIntegersExtensionAlgebra,
+          rw [RingHom.toFun_eq_coe,
+            IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
+              (w.1.adicCompletionIntegers L),
+            algebraMap_adicCompletionIntegersExtensionAlgebra,
             adicCompletionIntegersExtension_algebraMap] })
     fun _ _ ↦ .all _ _
 
@@ -226,13 +169,9 @@ def adicCompletionSemilocalHom (v : HeightOneSpectrum R) (K B L : Type*)
     (AlgHom.pi fun w ↦
       { algebraMap L (w.1.adicCompletion L) with
         commutes' := fun x ↦ by
-          change algebraMap L (w.1.adicCompletion L) (algebraMap K L x) =
-            algebraMap (v.adicCompletion K) (w.1.adicCompletion L)
-              (algebraMap K (v.adicCompletion K) x)
-          rw [algebraMap_adicCompletionExtensionAlgebra, algebraMap_adicCompletion,
-            algebraMap_adicCompletion, Function.comp_apply, Function.comp_apply,
-            Algebra.algebraMap_self_apply, Algebra.algebraMap_self_apply]
-          exact (adicCompletionExtension_coe K L v w.1 x).symm })
+          rw [RingHom.toFun_eq_coe,
+            IsScalarTower.algebraMap_apply K (v.adicCompletion K) (w.1.adicCompletion L),
+            v.algebraMap_adicCompletionExtension_algebraMap w.1] })
     fun _ _ ↦ .all _ _
 
 /-- `adicCompletionSemilocalHom` sends a pure tensor `a ⊗ x` to `(a · x)_{w ∣ v}`. -/
@@ -263,20 +202,14 @@ private theorem exists_smul_eq_of_valued_le (v : HeightOneSpectrum R)
     {π : v.adicCompletionIntegers K} (hπ : Irreducible π) {z : w.adicCompletionIntegers L}
     (hz : Valued.v (z : w.adicCompletion L) ≤ exp (-(w.asIdeal.ramificationIdx R : ℤ))) :
     ∃ q : w.adicCompletionIntegers L, π • q = z := by
-  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   let E : w.adicCompletion L :=
     (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) π : w.adicCompletion L)
   have hEval : Valued.v E = exp (-(w.asIdeal.ramificationIdx R : ℤ)) := by
     dsimp only [E]
     rw [← ValuationSubring.algebraMap_apply,
       ← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K)
-        (w.adicCompletionIntegers L) (w.adicCompletion L),
-      IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K)
-        (w.adicCompletion L),
-      algebraMap_adicCompletionExtensionAlgebra, valued_adicCompletionExtension,
-      Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot,
-      v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ, ← exp_nsmul]
-    simp
+        (w.adicCompletionIntegers L) (w.adicCompletion L)]
+    exact v.valued_algebraMap_adicCompletion_of_irreducible (L := L) w hπ
   have hE0 : E ≠ 0 := fun h0 ↦ exp_ne_zero ((h0 ▸ hEval).symm.trans (map_zero _))
   have hq : (z : w.adicCompletion L) / E ∈ w.adicCompletionIntegers L := by
     rw [mem_adicCompletionIntegers, map_div₀, hEval]
@@ -285,9 +218,9 @@ private theorem exists_smul_eq_of_valued_le (v : HeightOneSpectrum R)
   rw [Algebra.smul_def, Subring.coe_mul]
   exact mul_div_cancel₀ _ hE0
 
-/-- **Surjectivity of the integral semilocal map**, without any residue-field finiteness
-hypothesis: simultaneous approximation in `B` gives surjectivity modulo `𝔪_v`, and `𝔪_v`-adic
-completeness of `𝒪_v` lifts it to `𝒪_v ⊗[R] B`. -/
+/-- **Surjectivity of the integral semilocal map**: whenever `B` is module-finite over `R` (with no
+finiteness hypothesis on the residue fields), `adicCompletionIntegersSemilocalHom` surjects onto
+`∏_{w ∣ v} 𝒪_w`. -/
 theorem adicCompletionIntegersSemilocalHom_surjective (v : HeightOneSpectrum R) :
     Function.Surjective (v.adicCompletionIntegersSemilocalHom K B L) := by
   classical
@@ -303,6 +236,7 @@ theorem adicCompletionIntegersSemilocalHom_surjective (v : HeightOneSpectrum R) 
     IsHausdorff.of_map (IsLocalRing.map_maximalIdeal_le
       (algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L)))
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
+  have hI : I = Ideal.span {π} := hπ.maximalIdeal_eq
   refine surjective_of_mkQ_comp_surjective (I := I)
     (f := (v.adicCompletionIntegersSemilocalHom K B L).toLinearMap) fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
@@ -314,8 +248,7 @@ theorem adicCompletionIntegersSemilocalHom_surjective (v : HeightOneSpectrum R) 
   obtain ⟨b, hb⟩ := exists_forall_valued_sub_le (K := L) s x n
   refine ⟨1 ⊗ₜ b, ?_⟩
   rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq,
-    show I = Ideal.span {π} from hπ.maximalIdeal_eq, Submodule.ideal_span_singleton_smul,
-    Submodule.mem_smul_pointwise_iff_exists]
+    hI, Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists]
   have hsub (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
       ∃ q : w.1.adicCompletionIntegers L,
         π • q = (v.adicCompletionIntegersSemilocalHom K B L (1 ⊗ₜ b) - y) w := by
@@ -347,19 +280,22 @@ theorem moduleFinite_adicCompletionIntegers_of_finite (v : HeightOneSpectrum R)
     ((Function.surjective_eval _).comp
       (v.adicCompletionIntegersSemilocalHom_surjective (K := K) (L := L)))
 
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.moduleFinite_adicCompletionIntegers_of_finite
+
 /-- **`𝒪_w` is a free `𝒪_v`-module** whenever `B` is module-finite over `R`. -/
 theorem moduleFree_adicCompletionIntegers_of_finite (v : HeightOneSpectrum R)
     (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal] :
-    Module.Free (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) := by
-  have := v.moduleFinite_adicCompletionIntegers_of_finite (K := K) (L := L) w
-  exact Module.free_of_finite_type_torsion_free'
+    Module.Free (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) :=
+  Module.free_of_finite_type_torsion_free'
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.moduleFree_adicCompletionIntegers_of_finite
 
 /-- **`L_w` is finite-dimensional over `K_v`** whenever `B` is module-finite over `R`. -/
 theorem finiteDimensional_adicCompletion_of_finite (v : HeightOneSpectrum R)
     (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal] :
     FiniteDimensional (v.adicCompletion K) (w.adicCompletion L) := by
-  have := v.moduleFinite_adicCompletionIntegers_of_finite (K := K) (L := L) w
-  have := v.moduleFree_adicCompletionIntegers_of_finite (K := K) (L := L) w
   have := (IsFractionRing.isLocalization_algebraMapSubmonoid_iff
     (v.adicCompletionIntegers K) (S := w.adicCompletionIntegers L)
     (w.adicCompletion L)).mpr inferInstance
@@ -367,14 +303,19 @@ theorem finiteDimensional_adicCompletion_of_finite (v : HeightOneSpectrum R)
     (w.adicCompletionIntegers L)).localizationLocalization (v.adicCompletion K)
       (v.adicCompletionIntegers K)⁰ (w.adicCompletion L))
 
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.finiteDimensional_adicCompletion_of_finite
+
 /-- **`𝒪_w` is the integral closure of `𝒪_v` in `L_w`** whenever `B` is module-finite over `R`,
 with no finiteness hypothesis on the residue fields. -/
 theorem isIntegralClosure_adicCompletionIntegers_of_finite (v : HeightOneSpectrum R)
     (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal] :
     IsIntegralClosure (w.adicCompletionIntegers L) (v.adicCompletionIntegers K)
-      (w.adicCompletion L) := by
-  have := v.moduleFinite_adicCompletionIntegers_of_finite (K := K) (L := L) w
-  infer_instance
+      (w.adicCompletion L) :=
+  inferInstance
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.isIntegralClosure_adicCompletionIntegers_of_finite
 
 /-- `L` is the localization of `B` at the non-zero-divisors of `R` whenever `B` is module-finite
 over `R`. -/
@@ -404,20 +345,12 @@ private theorem adicCompletionFieldBaseChangeEquiv_tmul (v : HeightOneSpectrum R
 omit [Module.Finite R B] in
 private def adicCompletionIntegersToCompletion (v : HeightOneSpectrum R) :
     v.adicCompletionIntegers K →ₐ[R] v.adicCompletion K :=
-  { (Algebra.ofId (v.adicCompletionIntegers K) (v.adicCompletion K)).toRingHom with
-    commutes' := fun r ↦ by
-      change algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
-          (algebraMap R (v.adicCompletionIntegers K) r) =
-        algebraMap R (v.adicCompletion K) r
-      rw [IsScalarTower.algebraMap_apply R K (v.adicCompletion K)]
-      exact (v.algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers r).symm }
+  IsScalarTower.toAlgHom R (v.adicCompletionIntegers K) (v.adicCompletion K)
 
 omit [Module.Finite R B] in
 private def adicCompletionIntegersTensorToBaseChange (v : HeightOneSpectrum R) :
     v.adicCompletionIntegers K ⊗[R] B →ₐ[R] v.adicCompletion K ⊗[R] B :=
-  { (Algebra.TensorProduct.map (v.adicCompletionIntegersToCompletion (K := K))
-      (AlgHom.id R B)).toRingHom with
-    commutes' := fun _ ↦ rfl }
+  Algebra.TensorProduct.map (v.adicCompletionIntegersToCompletion (K := K)) (AlgHom.id R B)
 
 /-- The canonical inclusion `𝒪_v ⊗[R] B →ₐ[R] K_v ⊗[K] L` from the integral tensor product into
 the field tensor product. -/
@@ -427,14 +360,8 @@ def adicCompletionIntegersSemilocalToField (v : HeightOneSpectrum R) (K B L : Ty
     [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
     [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L] :
     v.adicCompletionIntegers K ⊗[R] B →ₐ[R] v.adicCompletion K ⊗[K] L :=
-  let eHom : v.adicCompletion K ⊗[R] B →ₐ[R] v.adicCompletion K ⊗[K] L :=
-    { (v.adicCompletionFieldBaseChangeEquiv (K := K) (B := B) (L := L)).toRingEquiv.toRingHom with
-      commutes' := fun r ↦ by
-        change v.adicCompletionFieldBaseChangeEquiv (K := K) (B := B) (L := L)
-            (algebraMap R (v.adicCompletion K) r ⊗ₜ[R] (1 : B)) =
-          algebraMap R (v.adicCompletion K) r ⊗ₜ[K] (1 : L)
-        rw [adicCompletionFieldBaseChangeEquiv_tmul, map_one] }
-  eHom.comp (v.adicCompletionIntegersTensorToBaseChange (K := K) (B := B))
+  ((v.adicCompletionFieldBaseChangeEquiv (K := K) (B := B) (L := L)).toAlgHom.restrictScalars
+    R).comp (v.adicCompletionIntegersTensorToBaseChange (K := K) (B := B))
 
 /-- `adicCompletionIntegersSemilocalToField` sends `a ⊗ b` to `(a : K_v) ⊗ (b : L)`. -/
 @[simp]
@@ -442,9 +369,8 @@ theorem adicCompletionIntegersSemilocalToField_tmul (v : HeightOneSpectrum R)
     (a : v.adicCompletionIntegers K) (b : B) :
     v.adicCompletionIntegersSemilocalToField K B L (a ⊗ₜ b) =
       (a : v.adicCompletion K) ⊗ₜ algebraMap B L b := by
-  change v.adicCompletionFieldBaseChangeEquiv (K := K) (B := B) (L := L)
-      ((a : v.adicCompletion K) ⊗ₜ b) = _
-  exact v.adicCompletionFieldBaseChangeEquiv_tmul (a : v.adicCompletion K) b
+  simp [adicCompletionIntegersSemilocalToField, adicCompletionIntegersTensorToBaseChange,
+    adicCompletionIntegersToCompletion]
 
 private theorem adicCompletionSemilocalHom_toField (v : HeightOneSpectrum R)
     (z : v.adicCompletionIntegers K ⊗[R] B) :
@@ -492,8 +418,8 @@ private theorem exists_pow_irreducible_mul_mem_adicCompletionIntegers (v : Heigh
   have hk : log (Valued.v z) ≤ (k : ℤ) := Int.natCast_natAbs _ ▸ le_abs_self _
   nlinarith
 
-/-- **Surjectivity of the field semilocal map**, deduced from integral surjectivity by clearing
-denominators with a power of a uniformizer of `𝒪_v`. -/
+/-- **Surjectivity of the field semilocal map**: whenever `B` is module-finite over `R` (with
+arbitrary residue fields), `adicCompletionSemilocalHom` surjects onto `∏_{w ∣ v} L_w`. -/
 theorem adicCompletionSemilocalHom_surjective (v : HeightOneSpectrum R) :
     Function.Surjective (v.adicCompletionSemilocalHom K B L) := by
   classical
@@ -530,35 +456,28 @@ theorem finrank_adicCompletionIntegers_of_finite (v : HeightOneSpectrum R)
     Module.finrank (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) =
       w.asIdeal.ramificationIdx R * w.asIdeal.inertiaDeg R := by
   classical
-  have := v.moduleFinite_adicCompletionIntegers_of_finite (K := K) (L := L) w
   set p := IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)
   set Q := IsLocalRing.maximalIdeal (w.adicCompletionIntegers L)
   have hp0 : p ≠ ⊥ := IsDiscreteValuationRing.not_a_field (v.adicCompletionIntegers K)
   have hQ0 : Q ≠ ⊥ := IsDiscreteValuationRing.not_a_field (w.adicCompletionIntegers L)
   have : NeZero p := ⟨hp0⟩
   rw [← Ideal.sum_ramification_inertia_eq_finrank p (w.adicCompletionIntegers L)]
-  have : Q.LiesOver p := v.maximalIdeal_adicCompletionIntegers_liesOver K L w
   have hp_map : p.map (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) ≠ ⊥ :=
     map_maximalIdeal_adicCompletionIntegers_eq_pow (K := K) (L := L) v w ▸ pow_ne_zero _ hQ0
-  have hQmem : Q ∈ p.primesOver (w.adicCompletionIntegers L) := ⟨inferInstance, inferInstance⟩
-  have huniq : ∀ P ∈ p.primesOver (w.adicCompletionIntegers L), P = Q := fun P hP ↦
-    have : P.LiesOver p := hP.2
-    IsLocalRing.eq_maximalIdeal
-      (hP.1.isMaximal (ne_bot_of_le_ne_bot hp_map (Ideal.map_le_of_le_comap (P.over_def p).le)))
+  have hs : p.primesOver (w.adicCompletionIntegers L) = {Q} :=
+    IsLocalRing.primesOver_eq (w.adicCompletionIntegers L) hp0
+  have hQmem : Q ∈ p.primesOver (w.adicCompletionIntegers L) := by
+    rw [hs]; exact Set.mem_singleton _
   rw [Finset.sum_eq_single ⟨Q, hQmem⟩
-    (fun P _ hPQ ↦ absurd (Subtype.ext (huniq P.1 P.2)) hPQ)
+    (fun P _ hPQ ↦ absurd (Subtype.ext (by simpa [hs] using P.2)) hPQ)
     (fun h ↦ absurd (Finset.mem_univ _) h)]
   have hram : Q.ramificationIdx (v.adicCompletionIntegers K) = w.asIdeal.ramificationIdx R := by
     rw [Ideal.IsDedekindDomain.ramificationIdx_eq_multiplicity p Q hp_map,
       map_maximalIdeal_adicCompletionIntegers_eq_pow (K := K) (L := L) v w,
       multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime hQ0 inferInstance)]
-  have hinert : Q.inertiaDeg (v.adicCompletionIntegers K) = w.asIdeal.inertiaDeg R := by
-    rw [Ideal.inertiaDeg_eq_of_isMaximal p Q,
-      ← finrank_residueField_adicCompletionIntegers (K := K) (L := L) v w]
-    refine Algebra.finrank_eq_of_equiv_equiv (.refl _) (.refl _) (RingHom.ext fun x ↦ ?_)
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    exact (IsLocalRing.ResidueField.algebraMap_residue a).trans
-      (Ideal.Quotient.algebraMap_mk_of_liesOver Q p a).symm
+  have hinert : Q.inertiaDeg (v.adicCompletionIntegers K) = w.asIdeal.inertiaDeg R :=
+    TauCeti.IsLocalRing.inertiaDeg_maximalIdeal.trans
+      (v.finrank_residueField_adicCompletionIntegers (K := K) (L := L) w)
   exact congrArg₂ (· * ·) hram hinert
 
 /-- **The local degree of `L_w / K_v` is `e(w ∣ v) · f(w ∣ v)`** whenever `B` is module-finite
@@ -594,6 +513,27 @@ theorem sum_finrank_adicCompletion_of_finite (v : HeightOneSpectrum R)
     _ = Module.finrank R B := Ideal.sum_ramification_inertia_eq_finrank v.asIdeal B
     _ = Module.finrank K L := (IsFractionRing.finrank_eq R K B L).symm
 
+/-- **Injectivity of the field semilocal map**: whenever `B` is module-finite over `R` (with
+arbitrary residue fields), `adicCompletionSemilocalHom` is injective. -/
+theorem adicCompletionSemilocalHom_injective (v : HeightOneSpectrum R) :
+    Function.Injective (v.adicCompletionSemilocalHom K B L) := by
+  classical
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  let _ : Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} :=
+    Fintype.ofFinite _
+  have : IsLocalization (Algebra.algebraMapSubmonoid B R⁰) L :=
+    isLocalization_algebraMapSubmonoid_of_finite (B := B) (L := L) K
+  have : FiniteDimensional K L := Module.Finite.of_isLocalization R B R⁰
+  have hfin : Module.finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
+      Module.finrank (v.adicCompletion K)
+        (∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
+          w.1.adicCompletion L) := by
+    rw [Module.finrank_tensorProduct, Module.finrank_self, one_mul,
+      Module.finrank_pi_fintype,
+      v.sum_finrank_adicCompletion_of_finite (K := K) (B := B) (L := L)]
+  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mpr
+    (v.adicCompletionSemilocalHom_surjective (K := K) (B := B) (L := L))
+
 /-- **The field semilocal isomorphism** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`, for any finite
 extension of Dedekind domains `R ⊆ B` (with arbitrary residue fields). -/
 def adicCompletionSemilocalEquiv (v : HeightOneSpectrum R) (K B L : Type*)
@@ -604,27 +544,24 @@ def adicCompletionSemilocalEquiv (v : HeightOneSpectrum R) (K B L : Type*)
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
       ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
         w.1.adicCompletion L :=
+  -- The `show Function.Bijective ...` ascription is load-bearing: `Function.Bijective` is
+  -- semireducible, so without the explicit type Lean exports the bare conjunction, which prevents
+  -- `AlgEquiv.coe_ofBijective` and `AlgEquiv.ofBijective_apply` from matching at `instances`
+  -- transparency.
   AlgEquiv.ofBijective (v.adicCompletionSemilocalHom K B L)
-    (show Function.Bijective (v.adicCompletionSemilocalHom K B L) from by
-      classical
-      have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-      let _ : Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} :=
-        Fintype.ofFinite _
-      have _ (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-          FiniteDimensional (v.adicCompletion K) (w.1.adicCompletion L) :=
-        v.finiteDimensional_adicCompletion_of_finite (K := K) (L := L) w.1
-      have : IsLocalization (Algebra.algebraMapSubmonoid B R⁰) L :=
-        isLocalization_algebraMapSubmonoid_of_finite (B := B) (L := L) K
-      have : FiniteDimensional K L := Module.Finite.of_isLocalization R B R⁰
-      have hsurj := v.adicCompletionSemilocalHom_surjective (K := K) (B := B) (L := L)
-      have hfin : Module.finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
-          Module.finrank (v.adicCompletion K)
-            (∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
-              w.1.adicCompletion L) := by
-        rw [Module.finrank_tensorProduct, Module.finrank_self, one_mul,
-          Module.finrank_pi_fintype,
-          v.sum_finrank_adicCompletion_of_finite (K := K) (B := B) (L := L)]
-      exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mpr hsurj, hsurj⟩)
+    (show Function.Bijective (v.adicCompletionSemilocalHom K B L) from
+      ⟨v.adicCompletionSemilocalHom_injective (K := K) (B := B) (L := L),
+        v.adicCompletionSemilocalHom_surjective (K := K) (B := B) (L := L)⟩)
+
+/-- As a function, `adicCompletionSemilocalEquiv` is `adicCompletionSemilocalHom`. -/
+theorem coe_adicCompletionSemilocalEquiv (v : HeightOneSpectrum R) :
+    ⇑(v.adicCompletionSemilocalEquiv K B L) = v.adicCompletionSemilocalHom K B L := by
+  rw [adicCompletionSemilocalEquiv, AlgEquiv.coe_ofBijective]
+
+/-- As an algebra homomorphism, `adicCompletionSemilocalEquiv` is `adicCompletionSemilocalHom`. -/
+theorem toAlgHom_adicCompletionSemilocalEquiv (v : HeightOneSpectrum R) :
+    (v.adicCompletionSemilocalEquiv K B L).toAlgHom = v.adicCompletionSemilocalHom K B L :=
+  AlgHom.ext fun x ↦ congrFun (v.coe_adicCompletionSemilocalEquiv (K := K) (B := B) (L := L)) x
 
 /-- `adicCompletionSemilocalEquiv` sends a pure tensor `a ⊗ x` to `(a · x)_{w ∣ v}`. -/
 @[simp]
@@ -637,6 +574,17 @@ theorem adicCompletionSemilocalEquiv_tmul (v : HeightOneSpectrum R)
   rw [adicCompletionSemilocalEquiv, AlgEquiv.ofBijective_apply]
   exact v.adicCompletionSemilocalHom_tmul a x w
 
+/-- The inverse field semilocal isomorphism sends the diagonal image of `x ∈ L` to `1 ⊗ x`. -/
+@[simp]
+theorem adicCompletionSemilocalEquiv_symm_algebraMap (v : HeightOneSpectrum R) (x : L) :
+    (v.adicCompletionSemilocalEquiv K B L).symm
+        (fun w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
+          algebraMap L (w.1.adicCompletion L) x) =
+      1 ⊗ₜ[K] x := by
+  apply (v.adicCompletionSemilocalEquiv K B L).symm_apply_eq.mpr
+  funext w
+  simp
+
 /-- Compatibility of the integral and field semilocal maps under inclusion into the completions. -/
 theorem adicCompletionIntegersSemilocalHom_fieldCompatibility (v : HeightOneSpectrum R)
     (z : v.adicCompletionIntegers K ⊗[R] B) :
@@ -645,8 +593,8 @@ theorem adicCompletionIntegersSemilocalHom_fieldCompatibility (v : HeightOneSpec
   rw [adicCompletionSemilocalEquiv, AlgEquiv.ofBijective_apply]
   exact v.adicCompletionSemilocalHom_toField z
 
-/-- The canonical inclusion `𝒪_v ⊗[R] B → K_v ⊗[K] L` is injective, since `B` is flat
-(torsion-free) over the Dedekind domain `R`. -/
+/-- Whenever `B` is module-finite over `R`, the canonical map
+`adicCompletionIntegersSemilocalToField : 𝒪_v ⊗[R] B →ₐ[R] K_v ⊗[K] L` is injective. -/
 theorem adicCompletionIntegersSemilocalToField_injective (v : HeightOneSpectrum R) :
     Function.Injective (v.adicCompletionIntegersSemilocalToField K B L) := by
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
@@ -663,6 +611,15 @@ theorem adicCompletionIntegersSemilocalToField_injective (v : HeightOneSpectrum 
   intro x y hxy
   exact hinj ((v.adicCompletionFieldBaseChangeEquiv (K := K) (B := B) (L := L)).injective hxy)
 
+/-- **Injectivity of the integral semilocal map**: whenever `B` is module-finite over `R` (with
+arbitrary residue fields), `adicCompletionIntegersSemilocalHom` is injective. -/
+theorem adicCompletionIntegersSemilocalHom_injective (v : HeightOneSpectrum R) :
+    Function.Injective (v.adicCompletionIntegersSemilocalHom K B L) := fun x y hxy ↦
+  v.adicCompletionIntegersSemilocalToField_injective (K := K) (B := B) (L := L) <|
+    (v.adicCompletionSemilocalEquiv K B L).injective <| by
+      rw [adicCompletionIntegersSemilocalHom_fieldCompatibility,
+        adicCompletionIntegersSemilocalHom_fieldCompatibility, hxy]
+
 /-- **The integral semilocal isomorphism** `𝒪_v ⊗[R] B ≃ₐ[𝒪_v] ∏_{w ∣ v} 𝒪_w`, for any finite
 extension of Dedekind domains `R ⊆ B` (with arbitrary residue fields). -/
 def adicCompletionIntegersSemilocalEquiv (v : HeightOneSpectrum R) (K B L : Type*)
@@ -673,14 +630,27 @@ def adicCompletionIntegersSemilocalEquiv (v : HeightOneSpectrum R) (K B L : Type
     v.adicCompletionIntegers K ⊗[R] B ≃ₐ[v.adicCompletionIntegers K]
       ∀ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
         w.1.adicCompletionIntegers L :=
+  -- Keep the `Function.Bijective` type explicit so `AlgEquiv.coe_ofBijective` and
+  -- `AlgEquiv.ofBijective_apply` match without unfolding the semireducible `Bijective` wrapper.
   AlgEquiv.ofBijective (v.adicCompletionIntegersSemilocalHom K B L)
     (show Function.Bijective (v.adicCompletionIntegersSemilocalHom K B L) from
-      ⟨fun x y hxy ↦
-          v.adicCompletionIntegersSemilocalToField_injective (K := K) (B := B) (L := L) <|
-            (v.adicCompletionSemilocalEquiv K B L).injective <| by
-              rw [adicCompletionIntegersSemilocalHom_fieldCompatibility,
-                adicCompletionIntegersSemilocalHom_fieldCompatibility, hxy],
+      ⟨v.adicCompletionIntegersSemilocalHom_injective (K := K) (B := B) (L := L),
         v.adicCompletionIntegersSemilocalHom_surjective (K := K) (B := B) (L := L)⟩)
+
+/-- As a function, `adicCompletionIntegersSemilocalEquiv` is
+`adicCompletionIntegersSemilocalHom`. -/
+theorem coe_adicCompletionIntegersSemilocalEquiv (v : HeightOneSpectrum R) :
+    ⇑(v.adicCompletionIntegersSemilocalEquiv K B L) =
+      v.adicCompletionIntegersSemilocalHom K B L := by
+  rw [adicCompletionIntegersSemilocalEquiv, AlgEquiv.coe_ofBijective]
+
+/-- As an algebra homomorphism, `adicCompletionIntegersSemilocalEquiv` is
+`adicCompletionIntegersSemilocalHom`. -/
+theorem toAlgHom_adicCompletionIntegersSemilocalEquiv (v : HeightOneSpectrum R) :
+    (v.adicCompletionIntegersSemilocalEquiv K B L).toAlgHom =
+      v.adicCompletionIntegersSemilocalHom K B L :=
+  AlgHom.ext fun x ↦
+    congrFun (v.coe_adicCompletionIntegersSemilocalEquiv (K := K) (B := B) (L := L)) x
 
 /-- `adicCompletionIntegersSemilocalEquiv` sends a pure tensor `a ⊗ b` to `(a · b)_{w ∣ v}`. -/
 @[simp]
@@ -693,12 +663,50 @@ theorem adicCompletionIntegersSemilocalEquiv_tmul (v : HeightOneSpectrum R)
   rw [adicCompletionIntegersSemilocalEquiv, AlgEquiv.ofBijective_apply]
   exact v.adicCompletionIntegersSemilocalHom_tmul a b w
 
+/-- The inverse integral semilocal isomorphism sends the diagonal image of `b ∈ B` to `1 ⊗ b`. -/
+@[simp]
+theorem adicCompletionIntegersSemilocalEquiv_symm_algebraMap (v : HeightOneSpectrum R) (b : B) :
+    (v.adicCompletionIntegersSemilocalEquiv K B L).symm
+        (fun w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
+          algebraMap B (w.1.adicCompletionIntegers L) b) =
+      1 ⊗ₜ[R] b := by
+  apply (v.adicCompletionIntegersSemilocalEquiv K B L).symm_apply_eq.mpr
+  funext w
+  simp
+
 /-- Compatibility of `adicCompletionIntegersSemilocalEquiv` with `adicCompletionSemilocalEquiv`. -/
 theorem adicCompletionIntegersSemilocalEquiv_fieldCompatibility (v : HeightOneSpectrum R)
     (z : v.adicCompletionIntegers K ⊗[R] B) :
     v.adicCompletionSemilocalEquiv K B L (v.adicCompletionIntegersSemilocalToField K B L z) =
       fun w ↦ (v.adicCompletionIntegersSemilocalEquiv K B L z w : w.1.adicCompletion L) :=
   v.adicCompletionIntegersSemilocalHom_fieldCompatibility z
+
+/-- The norm of `K_v ⊗[K] L` over `K_v` is the product of the local norms of its semilocal
+components. -/
+theorem norm_eq_prod_norm_adicCompletionSemilocalEquiv (v : HeightOneSpectrum R)
+    [Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}]
+    (ξ : v.adicCompletion K ⊗[K] L) :
+    Algebra.norm (v.adicCompletion K) ξ =
+      ∏ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.norm (v.adicCompletion K) (v.adicCompletionSemilocalEquiv K B L ξ w) := by
+  classical
+  rw [← Algebra.norm_eq_of_algEquiv (v.adicCompletionSemilocalEquiv K B L)]
+  exact Algebra.norm_pi _
+
+/-- **Local-global norm formula**: the image in `K_v` of `N_{L/K}(x)` is the product of the local
+norms `N_{L_w/K_v}(x)` over the primes `w` of `B` lying over `v`. -/
+theorem algebraMap_norm_eq_prod_norm_adicCompletion (v : HeightOneSpectrum R)
+    [Fintype {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}] (x : L) :
+    algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
+      ∏ w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.norm (v.adicCompletion K) (algebraMap L (w.1.adicCompletion L) x) := by
+  have : IsLocalization (Algebra.algebraMapSubmonoid B R⁰) L :=
+    isLocalization_algebraMapSubmonoid_of_finite (B := B) (L := L) K
+  have : FiniteDimensional K L := Module.Finite.of_isLocalization R B R⁰
+  rw [← Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x,
+    v.norm_eq_prod_norm_adicCompletionSemilocalEquiv (B := B)]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  rw [adicCompletionSemilocalEquiv_tmul, map_one, one_mul]
 
 /-- The trace of a pure integral tensor paired with an element of `L` extends the global trace
 pairing to `K_v`. -/
@@ -727,9 +735,6 @@ theorem trace_eq_sum_trace_adicCompletionSemilocalEquiv (v : HeightOneSpectrum R
         Algebra.trace (v.adicCompletion K) (w.1.adicCompletion L)
           (v.adicCompletionSemilocalEquiv K B L ξ w) := by
   classical
-  have _ (w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
-      Module.Finite (v.adicCompletion K) (w.1.adicCompletion L) :=
-    v.finiteDimensional_adicCompletion_of_finite (K := K) (L := L) w.1
   rw [← Algebra.trace_eq_of_algEquiv (v.adicCompletionSemilocalEquiv K B L)]
   exact Algebra.trace_pi _
 
@@ -781,11 +786,8 @@ theorem isSeparable_adicCompletion_of_isSeparable [Algebra.IsSeparable K L]
   have : IsScalarTower K L (w.adicCompletion L) := .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower K (v.adicCompletion K) (w.adicCompletion L) :=
     .of_algebraMap_eq fun c ↦ by
-      change algebraMap L (w.adicCompletion L) (algebraMap K L c) =
-        algebraMap (v.adicCompletion K) (w.adicCompletion L) (algebraMap K (v.adicCompletion K) c)
-      rw [algebraMap_adicCompletionExtensionAlgebra, algebraMap_adicCompletion,
-        algebraMap_adicCompletion, Function.comp_apply, Function.comp_apply,
-        Algebra.algebraMap_self_apply, Algebra.algebraMap_self_apply, adicCompletionExtension_coe]
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        ← v.algebraMap_adicCompletionExtension_algebraMap w c]
   let proj : v.adicCompletion K ⊗[K] L →ₐ[v.adicCompletion K] w.adicCompletion L :=
     (Pi.evalAlgHom (v.adicCompletion K)
       (fun u : {u : HeightOneSpectrum B // u.asIdeal.LiesOver v.asIdeal} ↦ u.1.adicCompletion L)
@@ -809,6 +811,9 @@ theorem isSeparable_adicCompletion_of_isSeparable [Algebra.IsSeparable K L]
     exact ((Algebra.IsSeparable.isSeparable K x).map
       (IsScalarTower.toAlgHom K L (w.adicCompletion L))
       (RingHom.injective _)).tower_top (v.adicCompletion K)
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable
 
 end FiniteExtension
 

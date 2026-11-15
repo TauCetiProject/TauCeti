@@ -16,10 +16,11 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 For a finite extension of number fields `L/K`, choose a primitive element `α` and factor its
 minimal polynomial over the completion `K_v`. The irreducible factors are in bijection with the
 places `w` of `L` above `v`; their quotient fields are the completions `L_w`. The Chinese
-remainder assembly of these factor fields agrees with `semilocalEquiv`.
+remainder assembly of these factor fields agrees with
+`IsDedekindDomain.HeightOneSpectrum.adicCompletionSemilocalEquiv`.
 
 This is the factor/CRT realization of Neukirch II, Proposition (8.3). The underlying semi-local
-equivalence is constructed in `TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic` without
+equivalence is constructed in `TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal` without
 choosing a primitive element.
 
 ## Main definitions
@@ -37,11 +38,11 @@ choosing a primitive element.
   factors attached to the places above `v`.
 * `TauCeti.factorFieldEquivCompletion_algebraMap`: the factor-field equivalence is compatible
   with the canonical map from `L`.
-* `TauCeti.semilocalEquiv_eq_crt`: the factor/CRT assembly is `semilocalEquiv`.
+* `TauCeti.semilocalEquiv_eq_crt`: the factor/CRT assembly is `adicCompletionSemilocalEquiv`.
 
 ## References
 
-* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, Proposition (8.3).
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (8.3).
 -/
 
 public section
@@ -91,7 +92,7 @@ private def semilocalPiPowerBasis :
     PowerBasis (v.adicCompletion K)
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L) :=
-  (semilocalTensorPowerBasis L v).map (semilocalEquiv L v)
+  (semilocalTensorPowerBasis L v).map (v.adicCompletionSemilocalEquiv K (𝒪 L) L)
 
 /-- The irreducible factor over `K_v` associated with a place `w` above `v`: the minimal
 polynomial of the chosen primitive element in `L_w`. -/
@@ -218,7 +219,7 @@ theorem completionPolynomial_eq_prod :
   rw [Polynomial.natDegree_prod_of_monic _ _
     (fun w _ ↦ completionFactor_monic L v w)]
   simp_rw [completionFactor_natDegree]
-  rw [sum_finrank_adicCompletion_eq_finrank]
+  rw [v.sum_finrank_adicCompletion_of_finite]
   rw [completionPolynomial, natDegree_map]
   exact ((semilocalPowerBasis (K := K) L).natDegree_minpoly.trans
     (semilocalPowerBasis (K := K) L).finrank.symm).le
@@ -380,7 +381,8 @@ theorem factorFieldsEquivCompletions_apply
 
 private theorem factorFieldsEquivCompletions_semilocalCrtHom
     (z : v.adicCompletion K ⊗[K] L) :
-    factorFieldsEquivCompletions L v (semilocalCrtHom L v z) = semilocalEquiv L v z := by
+    factorFieldsEquivCompletions L v (semilocalCrtHom L v z) =
+      v.adicCompletionSemilocalEquiv K (𝒪 L) L z := by
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
       ext w
@@ -388,7 +390,7 @@ private theorem factorFieldsEquivCompletions_semilocalCrtHom
       simp only [factorFieldsEquivCompletions, AlgEquiv.trans_apply,
         AlgEquiv.piCongrLeft_apply, Equiv.piCongrLeft_apply_apply,
         AlgEquiv.piCongrRight_apply, semilocalCrtHom, AlgHom.pi_apply,
-        semilocalFactorHom, Algebra.TensorProduct.lift_tmul, semilocalEquiv_tmul]
+        semilocalFactorHom, Algebra.TensorProduct.lift_tmul, adicCompletionSemilocalEquiv_tmul]
       rw [map_mul, Algebra.ofId_apply, (factorFieldEquivCompletion L v _).commutes,
         factorFieldEquivCompletion_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
@@ -399,7 +401,7 @@ semi-local decomposition, read through the factor fields. -/
 def semilocalCrtEquiv :
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
       ((q : completionFactors L v) → AdjoinRoot q.1) :=
-  (semilocalEquiv L v).trans (factorFieldsEquivCompletions L v).symm
+  (v.adicCompletionSemilocalEquiv K (𝒪 L) L).trans (factorFieldsEquivCompletions L v).symm
 
 /-- The underlying map of the Chinese remainder equivalence is `semilocalCrtHom`. -/
 @[simp]
@@ -419,9 +421,9 @@ theorem semilocalCrtEquiv_tmul (a : v.adicCompletion K) (x : L)
 
 /-- **The CRT assembly is the semi-local decomposition.** After identifying every factor field
 with its corresponding completion and reindexing factors by places, `semilocalCrtEquiv` agrees
-with `semilocalEquiv`. -/
+with `adicCompletionSemilocalEquiv`. -/
 theorem semilocalEquiv_eq_crt :
-    semilocalEquiv L v =
+    v.adicCompletionSemilocalEquiv K (𝒪 L) L =
       (semilocalCrtEquiv L v).trans (factorFieldsEquivCompletions L v) :=
   AlgEquiv.ext fun z ↦ by
     rw [AlgEquiv.trans_apply, semilocalCrtEquiv, AlgEquiv.trans_apply,
