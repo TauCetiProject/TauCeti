@@ -47,6 +47,8 @@ implies the other.
 * `LinearIndependent.exists_smul_eq`: the Jacobson-Chevalley form of density. Over a
   simple module, a single element of `R` carries any finite `D`-linearly independent family
   to an arbitrary family of targets.
+* `Algebra.lsmul_surjective_of_forall_end_eq_smul`: a finite semisimple module with scalar
+  commuting endomorphisms has full endomorphism algebra as the image of its action.
 * `TauCeti.algEquivEndEndOfIsSimpleRing`: the finite-dimensional-algebra form, where the finiteness
   hypothesis is supplied by finiteness over a commutative base ring acting compatibly.
 * `Subalgebra.centralizer_centralizer_of_isSemisimpleModule`: the **subalgebra form**. A subalgebra
@@ -67,6 +69,10 @@ ring itself, rather than finite-dimensionality over an unrelated base ring. That
 surjectivity of the action needs. When a base ring `K` acts compatibly, its scalars are `R`-linear
 endomorphisms, so `Module.Finite K M` gives it by
 `Module.Finite.of_restrictScalars_finite`.
+
+The scalar-commutant form `Algebra.lsmul_surjective_of_forall_end_eq_smul` factors the density
+argument used for monoid representations in `TauCeti.RepresentationTheory.Irreducible`.
+It separates the density input from any particular version of Schur's lemma.
 
 A faithful simple module makes `R` a *primitive* ring, not necessarily a simple one, so
 `TauCeti.toModuleEnd_moduleEnd_bijective` is genuinely more general than its simple-ring corollary.
@@ -204,6 +210,27 @@ theorem _root_.LinearIndependent.exists_smul_eq [IsSimpleModule R M]
   exact (hr (v i) (by simp)).symm.trans hvi
 
 /-! ### The finite-dimensional algebra case -/
+
+/-- **Density with scalar commutant.** If a finite semisimple module has only scalar commuting
+endomorphisms, its acting algebra realizes every linear endomorphism over the base ring.
+Neither algebraic closedness nor faithfulness of the action is required. -/
+theorem _root_.Algebra.lsmul_surjective_of_forall_end_eq_smul
+    {K : Type*} [CommSemiring K] [Algebra K R] [Module K M] [IsScalarTower K R M]
+    [Module.Finite K M] [IsSemisimpleModule R M]
+    (h : ∀ g : Module.End R M, ∃ c : K, ∀ m : M, g m = c • m) :
+    Function.Surjective (Algebra.lsmul K K M : R →ₐ[K] Module.End K M) := by
+  have : Module.Finite (Module.End R M) M :=
+    Module.Finite.of_restrictScalars_finite K (Module.End R M) M
+  intro f
+  -- Scalar commutants make every K-linear map linear over the whole commutant.
+  let f' : Module.End (Module.End R M) M :=
+    { toFun := f
+      map_add' := f.map_add
+      map_smul' := fun g m => by
+        obtain ⟨c, hc⟩ := h g
+        simpa only [Module.End.smul_def, RingHom.id_apply, hc] using f.map_smul c m }
+  obtain ⟨r, hr⟩ := Module.Finite.toModuleEnd_moduleEnd_surjective (R := R) (M := M) f'
+  exact ⟨r, LinearMap.ext fun m => LinearMap.congr_fun hr m⟩
 
 variable (R M)
 

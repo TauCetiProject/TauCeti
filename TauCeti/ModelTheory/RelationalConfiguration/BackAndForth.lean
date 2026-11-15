@@ -34,8 +34,12 @@ counting the countable models of an infinitary sentence.
 ## Main results
 
 * `TauCeti.RelationalConfiguration.bfEquivSetoid_anti` — the levels decrease with `α`;
+* `TauCeti.RelationalConfiguration.bfEquivSetoid_lift` — lifting `α` across universes leaves
+  `bfEquivSetoid` unchanged;
 * `TauCeti.RelationalConfiguration.isoSetoid_le_bfEquivSetoid` — isomorphic configurations are
   equivalent at every level;
+* `TauCeti.RelationalConfiguration.isoSetoid_iff_bfEquivSetoid_of_isEmpty` — on an empty carrier,
+  every back-and-forth level coincides with isomorphism;
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_forall_bfEquivSetoid` — on a countable carrier,
   isomorphism is equivalence at every level;
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_bfEquiv` and
@@ -56,7 +60,7 @@ counting the countable models of an infinitary sentence.
 
 public section
 
-universe u v w o
+universe u v w o o'
 
 open FirstOrder FirstOrder.Language
 
@@ -123,12 +127,40 @@ theorem bfEquivSetoid_anti : Antitone (bfEquivSetoid L V : Ordinal.{o} → _) :=
   fun α β hαβ c d h =>
     @BFEquiv.mono L _ V V c.toStructure d.toStructure 0 Fin.elim0 Fin.elim0 α β h hαβ
 
+/-- Lifting the ordinal depth across universes does not change `bfEquivSetoid`. -/
+@[simp]
+theorem bfEquivSetoid_lift (α : Ordinal.{o}) :
+    bfEquivSetoid L V (Ordinal.lift.{o'} α) = bfEquivSetoid L V α := by
+  ext c d
+  exact @BFEquiv.lift L _ V V c.toStructure d.toStructure 0 α Fin.elim0 Fin.elim0
+
 /-- Isomorphic configurations are equivalent at every back-and-forth level. -/
 theorem isoSetoid_le_bfEquivSetoid (α : Ordinal.{o}) : isoSetoid L V ≤ bfEquivSetoid L V α :=
   fun c d hcd => by
     obtain ⟨e⟩ := isoSetoid_apply.mp hcd
     have h := @Language.Equiv.bfEquiv L _ V V c.toStructure d.toStructure e α 0 Fin.elim0
     rwa [Subsingleton.elim (e ∘ Fin.elim0) Fin.elim0] at h
+
+/-- On an empty carrier, configurations that agree at back-and-forth level zero are equal. -/
+theorem eq_of_bfEquivSetoid_zero [IsEmpty V] {c d : RelationalConfiguration L V}
+    (h : bfEquivSetoid L V (0 : Ordinal.{o}) c d) : c = d := by
+  have h0 := (@sameAtomicType_def L 0 V V c.toStructure d.toStructure _ Fin.elim0 Fin.elim0).mp
+    ((@BFEquiv.zero L _ V V c.toStructure d.toStructure 0 Fin.elim0 Fin.elim0).mp h)
+  ext a
+  induction a using Atom.induction_atom with
+  | @h k R x =>
+    cases k with
+    | zero =>
+      rw [Subsingleton.elim x (Fin.elim0 ∘ Fin.elim0), Bool.eq_iff_iff]
+      simpa only [AtomicIdx.holds_rel, toStructure_relMap] using h0 (.rel R Fin.elim0)
+    | succ k => exact isEmptyElim (x 0)
+
+/-- On an empty carrier, every back-and-forth level coincides with isomorphism. -/
+theorem isoSetoid_iff_bfEquivSetoid_of_isEmpty [IsEmpty V] {α : Ordinal.{o}}
+    {c d : RelationalConfiguration L V} :
+    isoSetoid L V c d ↔ bfEquivSetoid L V α c d :=
+  ⟨fun h => isoSetoid_le_bfEquivSetoid α h,
+    fun h => eq_of_bfEquivSetoid_zero (bfEquivSetoid_anti bot_le h) ▸ (isoSetoid L V).refl _⟩
 
 /-- On a countable carrier, two configurations are isomorphic exactly when they are equivalent at
 every back-and-forth level. This is Scott's back-and-forth argument for the decoded

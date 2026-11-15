@@ -113,9 +113,9 @@ The results below are stated for maps of `ℂ`, as in `Conformal/BoundaryCorresp
   on the closure.
 * `TauCeti.exists_mem_frontier_mem_clusterSetOn` and
   `TauCeti.biUnion_clusterSetOn_eq_frontier_image` — **the boundary correspondence is onto**: on a
-  bounded domain the boundary cluster sets cover, hence exactly exhaust, the frontier of the image.
-  The case a Riemann map presents is the unit disc, where `frontier_ball` rewrites `frontier U` to
-  the unit circle.
+  bounded domain the boundary cluster sets cover the frontier of the image, with no openness of
+  `U` needed, and when `U` is open they exactly exhaust it. The case a Riemann map presents is the
+  unit disc, where `frontier_ball` rewrites `frontier U` to the unit circle.
 * `TauCeti.frontier_inter_closure_image_eq_biUnion_clusterSetOn` and
   `TauCeti.frontier_inter_frontier_image_eq_biUnion_clusterSetOn` — **the relative form**: the
   boundary piece a subdomain `V ⊆ U` clings to is the union of the cluster sets along `V` over the
@@ -128,7 +128,7 @@ The results below are stated for maps of `ℂ`, as in `Conformal/BoundaryCorresp
 * `TauCeti.subsingleton_or_exists_injective_path_clusterSetOn` — on a convex domain whose image has
   Jordan frontier, a boundary cluster set other than the whole frontier is a point or an arc.
 * `TauCeti.subsingleton_clusterSetOn_of_subset_closure_sdiff` — such a cluster set that is nowhere
-  dense in the frontier is a single point.
+  dense in the frontier is a point or empty; it is a single point for `w ∈ frontier U`.
 * `TauCeti.exists_continuousOn_closure_eqOn_of_forall_subset_closure_sdiff` — **a nowhere-density
   criterion for the Carathéodory extension**: if no boundary cluster set has interior in the Jordan
   frontier of the image, the map extends continuously to `closure U`.
@@ -218,28 +218,40 @@ theorem injOn_closure_of_injOn_frontier (hUo : IsOpen U) (hfd : DifferentiableOn
 /-! ## The boundary correspondence is onto -/
 
 /-- **Every boundary point of the image is a boundary cluster value.** If `f` is holomorphic and
-injective on a bounded open `U`, then each point of `frontier (f '' U)` is approached by `f` at some
+injective on a bounded `U`, then each point of `frontier (f '' U)` is approached by `f` at some
 point of `frontier U`.
 
 All the work is done by the general covering theorem
 `TauCeti.exists_mem_frontier_mem_clusterSetOn_of_notMem_image`, which needs only that `closure U` be
 compact — here, boundedness of `U` — and that `f` be continuous on `U`. What conformality
-contributes is that `f '' U` is *open*, so that `frontier (f '' U)` is `closure (f '' U) \ f '' U`
-and the boundary value `v` is an adherent value of the image that is not attained.
+contributes is that `f '' interior U` is *open*, so that a boundary value `v` of the image is not
+attained on `interior U`: either it is not attained at all, and the covering theorem applies, or it
+is attained on `frontier U`, where it is the value of `f` there.
 
-This is the converse of `TauCeti.clusterSetOn_subset_frontier_image`, and the two together say that
-the boundary correspondence `w ↦ clusterSetOn f U w` is onto `frontier (f '' U)`. Carathéodory's
+This is the converse of `TauCeti.clusterSetOn_subset_frontier_image`, which needs `U` open. If `U`
+is also open, the two together say that the boundary correspondence `w ↦ clusterSetOn f U w` is onto
+`frontier (f '' U)`: the union of the boundary cluster sets is exactly that frontier. Without
+openness of `U` only the covering statement below holds, since a boundary cluster set can then
+contain values in the interior of the image. Carathéodory's
 theorem refines this for a Riemann map of a Jordan domain by showing each of these cluster sets to
 be a singleton, which turns the correspondence into a continuous *map* of `frontier U` onto
 `frontier (f '' U)`; that this map is moreover *injective* is a further assertion of Carathéodory's
 theorem, and does not follow from the singleton property. The surjectivity below holds with no
 hypothesis on `frontier U` whatever. -/
-theorem exists_mem_frontier_mem_clusterSetOn (hUo : IsOpen U) (hUb : Bornology.IsBounded U)
+theorem exists_mem_frontier_mem_clusterSetOn (hUb : Bornology.IsBounded U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (hv : v ∈ frontier (f '' U)) :
     ∃ w ∈ frontier U, v ∈ clusterSetOn f U w := by
-  rw [(isOpen_image_of_differentiableOn_of_injOn hUo hfd hfi).frontier_eq] at hv
-  exact exists_mem_frontier_mem_clusterSetOn_of_notMem_image hUb.isCompact_closure hfd.continuousOn
-    hv.1 hv.2
+  by_cases hvn : v ∈ f '' U
+  · -- an attained boundary value is attained on `frontier U`, as the image of `interior U` is open
+    obtain ⟨u, hu, rfl⟩ := hvn
+    have hui : u ∉ interior U := fun hui => hv.2 <| interior_maximal (image_mono interior_subset)
+      (isOpen_image_of_differentiableOn_of_injOn isOpen_interior (hfd.mono interior_subset)
+        (hfi.mono interior_subset)) (mem_image_of_mem f hui)
+    refine ⟨u, ⟨subset_closure hu, hui⟩, ?_⟩
+    rw [clusterSetOn_eq_singleton_of_continuousWithinAt hu (hfd.continuousOn u hu)]
+    exact mem_singleton _
+  · exact exists_mem_frontier_mem_clusterSetOn_of_notMem_image hUb.isCompact_closure
+      hfd.continuousOn (frontier_subset_closure hv) hvn
 
 /-- **The boundary piece a subdomain clings to is the union of its own boundary cluster sets.** For
 `f` holomorphic and injective on an open `U` and any `V ⊆ U` with compact closure,
@@ -412,22 +424,28 @@ which `TauCeti.isCompact_clusterSetOn_of_isBounded`,
 `Convex.isConnected_clusterSetOn_of_isBounded` and
 `TauCeti.clusterSetOn_subset_frontier_image` together exhibit as a compact connected subset of the
 curve. Carathéodory's theorem is the assertion that for a Riemann map of a Jordan domain the first
-case always holds. -/
+case always holds. Off `frontier U` the cluster set is a point or empty
+(`ContinuousOn.subsingleton_clusterSetOn_of_notMem_frontier`), so no hypothesis `w ∈ frontier U` is
+needed. -/
 theorem subsingleton_or_exists_injective_path_clusterSetOn (hUo : IsOpen U) (hUc : Convex ℝ U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (hfb : Bornology.IsBounded (f '' U))
-    (hJ : IsJordanCurve (frontier (f '' U))) (hw : w ∈ frontier U)
+    (hJ : IsJordanCurve (frontier (f '' U)))
     (hne : clusterSetOn f U w ≠ frontier (f '' U)) :
     (clusterSetOn f U w).Subsingleton ∨
-      ∃ (p q : ℂ) (γ : Path p q), Function.Injective γ ∧ range γ = clusterSetOn f U w :=
-  hJ.subsingleton_or_exists_injective_path (clusterSetOn_subset_frontier_image hUo hfd hfi hw)
+      ∃ (p q : ℂ) (γ : Path p q), Function.Injective γ ∧ range γ = clusterSetOn f U w := by
+  by_cases hw : w ∈ frontier U
+  swap
+  · exact Or.inl (hfd.continuousOn.subsingleton_clusterSetOn_of_notMem_frontier hw)
+  exact hJ.subsingleton_or_exists_injective_path (clusterSetOn_subset_frontier_image hUo hfd hfi hw)
     (isCompact_clusterSetOn_of_isBounded hfb)
     (hUc.isConnected_clusterSetOn_of_isBounded hfd.continuousOn hfb
       (frontier_subset_closure hw)).isPreconnected hne
 
-/-- **A boundary cluster set that is nowhere dense in a Jordan image boundary is a single point.**
+/-- **A boundary cluster set that is nowhere dense in a Jordan image boundary is a point or empty.**
 If every value the conformal map clusters at over the boundary point `w` is adherent to the rest of
-`frontier (f '' U)`, then there is only one such value: the conclusion is that the cluster set is a
-subsingleton, and under these hypotheses it is nonempty, being a continuum by
+`frontier (f '' U)`, then there is at most one such value: the conclusion is that the cluster
+set is a subsingleton, possibly empty (off `frontier U` the cluster set may be empty). For
+`w ∈ frontier U` it is a single point, being a nonempty continuum by
 `Convex.isConnected_clusterSetOn_of_isBounded`.
 
 This is the nondegeneracy criterion
@@ -436,10 +454,13 @@ it is the whole content of the reduction: the cluster set is a continuum on the 
 continuum on a Jordan curve that occupies no relatively open piece of it can only be a point. -/
 theorem subsingleton_clusterSetOn_of_subset_closure_sdiff (hUo : IsOpen U) (hUc : Convex ℝ U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (hfb : Bornology.IsBounded (f '' U))
-    (hJ : IsJordanCurve (frontier (f '' U))) (hw : w ∈ frontier U)
+    (hJ : IsJordanCurve (frontier (f '' U)))
     (hnwd : clusterSetOn f U w ⊆ closure (frontier (f '' U) \ clusterSetOn f U w)) :
-    (clusterSetOn f U w).Subsingleton :=
-  hJ.subsingleton_of_subset_closure_sdiff (clusterSetOn_subset_frontier_image hUo hfd hfi hw)
+    (clusterSetOn f U w).Subsingleton := by
+  by_cases hw : w ∈ frontier U
+  swap
+  · exact hfd.continuousOn.subsingleton_clusterSetOn_of_notMem_frontier hw
+  exact hJ.subsingleton_of_subset_closure_sdiff (clusterSetOn_subset_frontier_image hUo hfd hfi hw)
     (isCompact_clusterSetOn_of_isBounded hfb)
     (hUc.isConnected_clusterSetOn_of_isBounded hfd.continuousOn hfb
       (frontier_subset_closure hw)).isPreconnected hnwd
@@ -466,7 +487,7 @@ theorem exists_continuousOn_closure_eqOn_of_forall_subset_closure_sdiff (hUo : I
     (hnwd : ∀ w ∈ frontier U,
       clusterSetOn f U w ⊆ closure (frontier (f '' U) \ clusterSetOn f U w)) :
     ∃ F : ℂ → ℂ, ContinuousOn F (closure U) ∧ EqOn F f U :=
-  exists_continuousOn_closure_eqOn_of_isBounded hUo hfd.continuousOn hfb fun w hw =>
-    subsingleton_clusterSetOn_of_subset_closure_sdiff hUo hUc hfd hfi hfb hJ hw (hnwd w hw)
+  exists_continuousOn_closure_eqOn_of_isBounded hfd.continuousOn hfb fun w hw =>
+    subsingleton_clusterSetOn_of_subset_closure_sdiff hUo hUc hfd hfi hfb hJ (hnwd w hw)
 
 end TauCeti

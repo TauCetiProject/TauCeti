@@ -129,8 +129,8 @@ theorem indepFun_restrict_map_of_map_pairReindex_eq {ρ : Measure (ℕ × ℕ �
   rw [restrict_map_product_eq, restrict_map_product_eq]
   refine IndepFun.comp ?_ (measurable_finsetBlockReindex σ τ I₁ I₂)
     (measurable_finsetBlockReindex σ τ J₁ J₂)
-  rw [← indepFun_map_iff_comp (measurable_pairReindex σ τ) (Finset.measurable_restrict _)
-    (Finset.measurable_restrict _), hρ]
+  rw [← indepFun_map_iff_comp (measurable_pairReindex σ τ).aemeasurable
+    (Finset.measurable_restrict _).aemeasurable (Finset.measurable_restrict _).aemeasurable, hρ]
   exact h
 
 end Probability

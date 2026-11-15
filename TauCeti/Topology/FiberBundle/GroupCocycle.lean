@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.FiberBundle.Basic
-public import TauCeti.Topology.FiberBundle.Principal
+public import TauCeti.Topology.FiberBundle.Principal.Basic
 
 /-!
 # Fiber bundles from group-valued transition functions
@@ -109,6 +109,14 @@ lemma fiberBundleCoreOfGroupCocycle_localTriv_baseSet (i : ι) :
 lemma fiberBundleCoreOfGroupCocycle_indexAt :
     (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).indexAt =
       indexAt := (rfl)
+
+/-- The trivialization of the glued bundle at a base point is the chart chosen there. -/
+@[simp]
+lemma trivializationAt_fiberBundleCoreOfGroupCocycle (b : B) :
+    trivializationAt F (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).Fiber
+        b =
+      (fiberBundleCoreOfGroupCocycle U c hc F hU indexAt hindex hcontinuous).localTriv
+        (indexAt b) := (rfl)
 
 /-- The core's coordinate change is the given group action. -/
 @[simp]

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.CDF
 public import Mathlib.Probability.HasLaw
-public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta
+public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Cdf
 
@@ -18,13 +18,8 @@ This file computes `ProbabilityTheory.cdf (betaMeasure α β)` in closed form: f
 parameters it is the regularized incomplete beta function `TauCeti.regularizedIncompleteBeta`,
 `I_x(α, β)`.
 
-This is the beta entry of the closed-form cdf target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2.
-
 The identity holds for every real `x`, with no constraint to the unit interval: outside `[0, 1]`
 both sides are constant, because `TauCeti.regularizedIncompleteBeta` clamps its argument there.
-That agreement at the clamping convention is the reason the roadmap prescribes the totalization
-it does.
 
 The proof splits `Set.Iic x` at the two ends of the support. Below the origin the density
 vanishes, so the cdf is `0`; on `[0, 1]` the cdf integral is exactly the normalized beta integral
@@ -46,8 +41,6 @@ integral divided by itself, namely `1`.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 2, the "Closed-form cdfs and
-  tails" target.
 * Formal template: `TauCeti/Probability/Distributions/Gamma/Cdf.lean`.
 * *NIST Digital Library of Mathematical Functions*, [§8.17](https://dlmf.nist.gov/8.17).
 -/
@@ -174,8 +167,7 @@ theorem measureReal_Ioc_betaMeasure (hα : 0 < α) (hβ : 0 < β) {y : ℝ} (hyx
 theorem measureReal_Ioi_betaMeasure (hα : 0 < α) (hβ : 0 < β) (x : ℝ) :
     (betaMeasure α β).real (Ioi x) = 1 - regularizedIncompleteBeta α β x := by
   have hp : IsProbabilityMeasure (betaMeasure α β) := isProbabilityMeasureBeta hα hβ
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, measureReal_Iic_betaMeasure hα hβ]
-  simp
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_betaMeasure_eq hα hβ]
 
 /-- The cumulative distribution function of a beta law is continuous: `I_·(α, β)` is continuous
 even at the two endpoints of the support, where for `α < 1` or `β < 1` the beta integrand blows
@@ -185,7 +177,7 @@ theorem continuous_cdf_betaMeasure (hα : 0 < α) (hβ : 0 < β) :
   have h : ⇑(cdf (betaMeasure α β)) = regularizedIncompleteBeta α β :=
     funext (cdf_betaMeasure_eq hα hβ)
   rw [h]
-  exact continuous_regularizedIncompleteBeta hα hβ
+  exact continuous_regularizedIncompleteBeta hα.ne' β
 
 /-- A random variable with a beta law has the regularized incomplete beta function as its
 cumulative distribution function. -/

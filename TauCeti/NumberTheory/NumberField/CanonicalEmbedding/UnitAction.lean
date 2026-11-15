@@ -74,6 +74,41 @@ theorem unitSMul_mixedEmbedding_eq_self_iff [NumberField K] {x : K} (hx : x ≠ 
 
 end TauCeti.NumberField.Units
 
+namespace Units
+
+variable {K : Type*} [Field K]
+
+open scoped nonZeroDivisors in
+/-- Multiplication by a unit preserves every fractional-ideal lattice in the mixed space. -/
+@[simp↓]
+theorem unitSMul_mem_idealLattice_iff (u : (𝓞 K)ˣ)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (x : mixedEmbedding.mixedSpace K) :
+    u • x ∈ mixedEmbedding.idealLattice K I ↔ x ∈ mixedEmbedding.idealLattice K I := by
+  have h (v : (𝓞 K)ˣ) {z : mixedEmbedding.mixedSpace K}
+      (hz : z ∈ mixedEmbedding.idealLattice K I) : v • z ∈ mixedEmbedding.idealLattice K I := by
+    obtain ⟨a, ha, rfl⟩ := (mixedEmbedding.mem_idealLattice K I).mp hz
+    rw [mixedEmbedding.unitSMul_smul, ← map_mul]
+    exact (mixedEmbedding.mem_idealLattice K I).mpr
+      ⟨(v : K) * a, (I : FractionalIdeal (𝓞 K)⁰ K).coeToSubmodule.smul_mem (v : 𝓞 K) ha, rfl⟩
+  refine ⟨fun hx ↦ ?_, h u⟩
+  have hx' := h u⁻¹ hx
+  rwa [inv_smul_smul] at hx'
+
+open scoped nonZeroDivisors in
+/-- Multiplication by a unit permutes the points of every fractional-ideal lattice. -/
+noncomputable def unitSMulIdealLatticeEquiv (u : (𝓞 K)ˣ) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    mixedEmbedding.idealLattice K I ≃ mixedEmbedding.idealLattice K I :=
+  Equiv.subtypeEquiv (MulAction.toPerm u) fun x ↦ (u.unitSMul_mem_idealLattice_iff I x).symm
+
+open scoped nonZeroDivisors in
+@[simp]
+theorem unitSMulIdealLatticeEquiv_apply (u : (𝓞 K)ˣ) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (x : mixedEmbedding.idealLattice K I) :
+    (u.unitSMulIdealLatticeEquiv I x : mixedEmbedding.mixedSpace K) =
+      u • (x : mixedEmbedding.mixedSpace K) := (rfl)
+
+end Units
+
 open NumberField.mixedEmbedding
 
 namespace TauCeti.NumberField.mixedEmbedding

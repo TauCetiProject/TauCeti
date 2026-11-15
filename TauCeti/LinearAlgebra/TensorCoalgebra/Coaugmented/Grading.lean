@@ -16,6 +16,9 @@ The total-letter-degree pieces of the coaugmented tensor coalgebra form an inter
 sum. Thus every tensor word has a unique finite decomposition by cohomological degree,
 independently of its decomposition by tensor length. The empty word has degree zero.
 
+Concatenation adds total degrees, so the pieces make the tensor words a graded monoid for their
+concatenation product.
+
 `TensorWords.grading` uses the existing `TensorWords.gradedPiece` submodules. Its Koszul
 twist is the letterwise extension of the twist of the generating module. This identifies
 the sign in the coalgebra coderivation equation with the sign of the total grading, and
@@ -40,7 +43,7 @@ universe uR uM
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
-private noncomputable def degreeProjection (G : InternalGrading R M) (p : ℤ) :
+private noncomputable def degreeProjection (G : InternalGrading R M ℤ) (p : ℤ) :
     TensorWords R M →ₗ[R] TensorWords R M :=
   DirectSum.toModule R ℕ _ fun n ↦ PiTensorProduct.lift
     (InternalGrading.multilinearFromPieces (fun _ : Fin n ↦ G) fun d ↦
@@ -49,7 +52,7 @@ private noncomputable def degreeProjection (G : InternalGrading R M) (p : ℤ) :
           ((PiTensorProduct.tprod R).compLinearMap fun i ↦ (G.piece (d i)).subtype)
       else 0)
 
-private theorem degreeProjection_of_tprod (G : InternalGrading R M) (p : ℤ) {n : ℕ}
+private theorem degreeProjection_of_tprod (G : InternalGrading R M ℤ) (p : ℤ) {n : ℕ}
     (d : Fin n → ℤ) (x : Fin n → M) (hx : ∀ i, x i ∈ G.piece (d i)) :
     degreeProjection G p (of R M n (PiTensorProduct.tprod R x)) =
       if ∑ i, d i = p then of R M n (PiTensorProduct.tprod R x) else 0 := by
@@ -64,7 +67,7 @@ private theorem degreeProjection_of_tprod (G : InternalGrading R M) (p : ℤ) {n
     MultilinearMap.compLinearMap_apply, Submodule.subtype_apply, of_def,
     zero_apply]
 
-private theorem degreeProjection_apply_of_mem (G : InternalGrading R M) {d : ℤ}
+private theorem degreeProjection_apply_of_mem (G : InternalGrading R M ℤ) {d : ℤ}
     {x : TensorWords R M} (hx : x ∈ gradedPiece G d) (p : ℤ) :
     degreeProjection G p x = if d = p then x else 0 := by
   refine gradedPiece_induction
@@ -78,7 +81,7 @@ private theorem degreeProjection_apply_of_mem (G : InternalGrading R M) {d : ℤ
     simp only [map_smul, hx, smul_ite, smul_zero]
 
 /-- Distinct total-letter-degree pieces are independent, including in characteristic two. -/
-theorem iSupIndep_gradedPiece (G : InternalGrading R M) : iSupIndep (gradedPiece G) := by
+theorem iSupIndep_gradedPiece (G : InternalGrading R M ℤ) : iSupIndep (gradedPiece G) := by
   rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
   intro s x hx hsum p hp
   have h := congrArg (degreeProjection G p) hsum
@@ -92,27 +95,27 @@ theorem iSupIndep_gradedPiece (G : InternalGrading R M) : iSupIndep (gradedPiece
   rwa [hproj] at h
 
 /-- The total-degree pieces of the coaugmented tensor coalgebra form an internal direct sum. -/
-theorem isInternal_gradedPiece (G : InternalGrading R M) :
+theorem isInternal_gradedPiece (G : InternalGrading R M ℤ) :
     DirectSum.IsInternal (gradedPiece G) :=
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
     (iSupIndep_gradedPiece G) (iSup_gradedPiece_eq_top G)
 
 /-- Tensor words graded by the sum of the cohomological degrees of their letters. -/
-noncomputable def grading (G : InternalGrading R M) : InternalGrading R (TensorWords R M) where
+noncomputable def grading (G : InternalGrading R M ℤ) : InternalGrading R (TensorWords R M) ℤ where
   piece := gradedPiece G
   isInternal := isInternal_gradedPiece G
 
 /-- The internal grading uses the total-letter-degree pieces. -/
 @[simp]
-theorem grading_piece (G : InternalGrading R M) : (grading G).piece = gradedPiece G := (rfl)
+theorem grading_piece (G : InternalGrading R M ℤ) : (grading G).piece = gradedPiece G := (rfl)
 
 /-- Total-degree decomposition is available on the existing degree pieces. -/
-noncomputable instance (G : InternalGrading R M) : DirectSum.Decomposition (gradedPiece G) :=
+noncomputable instance (G : InternalGrading R M ℤ) : DirectSum.Decomposition (gradedPiece G) :=
   (isInternal_gradedPiece G).chooseDecomposition
 
 /-- The degree-`p` component of a homogeneous pure word is that word when its total degree is
 `p`, and zero otherwise. -/
-theorem coe_decompose_of_tprod (G : InternalGrading R M) {n : ℕ}
+theorem coe_decompose_of_tprod (G : InternalGrading R M ℤ) {n : ℕ}
     (d : Fin n → ℤ) (x : Fin n → M) (hx : ∀ i, x i ∈ G.piece (d i)) (p : ℤ) :
     (DirectSum.decompose (gradedPiece G) (of R M n (PiTensorProduct.tprod R x)) p :
       TensorWords R M) =
@@ -123,14 +126,39 @@ theorem coe_decompose_of_tprod (G : InternalGrading R M) {n : ℕ}
   · exact DirectSum.decompose_of_mem_ne _ (mem_gradedPiece_of_tprod G x d hx) hp
 
 /-- The empty word belongs to degree zero. -/
-theorem one_mem_gradedPiece (G : InternalGrading R M) :
+theorem one_mem_gradedPiece (G : InternalGrading R M ℤ) :
     (1 : TensorWords R M) ∈ gradedPiece G 0 := by
   rw [one_eq_of_zero]
   simpa using mem_gradedPiece_of_tprod G (fun i : Fin 0 ↦ i.elim0)
     (fun i : Fin 0 ↦ i.elim0) (fun i ↦ i.elim0)
 
+/-- Concatenation of tensor words adds total letter degrees. -/
+theorem mul_mem_gradedPiece (G : InternalGrading R M ℤ) {p q : ℤ} {u v : TensorWords R M}
+    (hu : u ∈ gradedPiece G p) (hv : v ∈ gradedPiece G q) : u * v ∈ gradedPiece G (p + q) := by
+  refine gradedPiece_induction (motive := fun u ↦ u * v ∈ gradedPiece G (p + q)) hu ?_
+    (by simp) (fun a b _ _ ha hb ↦ by simpa only [add_mul] using add_mem ha hb)
+    (fun r a _ ha ↦ by simpa only [smul_mul_assoc] using Submodule.smul_mem _ r ha)
+  intro l d x hx hd
+  refine gradedPiece_induction
+    (motive := fun v ↦ of R M l (PiTensorProduct.tprod R x) * v ∈ gradedPiece G (p + q)) hv ?_
+    (by simp) (fun a b _ _ ha hb ↦ by simpa only [mul_add] using add_mem ha hb)
+    (fun r a _ ha ↦ by simpa only [mul_smul_comm] using Submodule.smul_mem _ r ha)
+  intro n e y hy he
+  have hsum : ∑ i, Fin.append d e i = p + q := by
+    simp [Fin.sum_univ_add, hd, he]
+  rw [of_tprod_mul_of_tprod, ← hsum]
+  refine mem_gradedPiece_of_tprod G _ _ fun i ↦ ?_
+  refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i
+  · simpa only [Fin.append_left] using hx i
+  · simpa only [Fin.append_right] using hy i
+
+/-- The concatenation product of tensor words is graded by total letter degree. -/
+instance (G : InternalGrading R M ℤ) : SetLike.GradedMonoid (gradedPiece G) where
+  one_mem := one_mem_gradedPiece G
+  mul_mem _ _ _ _ := mul_mem_gradedPiece G
+
 /-- The counit is supported in total cohomological degree zero. -/
-theorem counit_eq_zero_of_mem_gradedPiece (G : InternalGrading R M) {p : ℤ}
+theorem counit_eq_zero_of_mem_gradedPiece (G : InternalGrading R M ℤ) {p : ℤ}
     {w : TensorWords R M} (hw : w ∈ gradedPiece G p) (hp : p ≠ 0) :
     counit R M w = 0 := by
   refine gradedPiece_induction
@@ -149,7 +177,7 @@ theorem counit_eq_zero_of_mem_gradedPiece (G : InternalGrading R M) {p : ℤ}
 
 /-- The total-degree Koszul twist is exactly the letterwise Koszul twist. -/
 @[simp]
-theorem koszulTwist_grading (G : InternalGrading R M) (q : ℤ) :
+theorem koszulTwist_grading (G : InternalGrading R M ℤ) (q : ℤ) :
     (grading G).koszulTwist q = map (G.koszulTwist q) := by
   apply InternalGrading.linearMap_ext (grading G)
   intro p x hx
@@ -157,7 +185,7 @@ theorem koszulTwist_grading (G : InternalGrading R M) (q : ℤ) :
   exact (map_koszulTwist_apply_of_mem G (by simpa only [grading_piece] using hx) q).symm
 
 /-- Twisting every letter of a block twists exactly that block of the ambient tuple. -/
-theorem map_koszulTwist_subword (G : InternalGrading R M) (q : ℤ) {n : ℕ} (x : Fin n → M)
+theorem map_koszulTwist_subword (G : InternalGrading R M ℤ) (q : ℤ) {n : ℕ} (x : Fin n → M)
     (a b : ℕ) :
     map (G.koszulTwist q) (subword R x a b) = subword R (G.twistedTuple q x a b) a b := by
   rw [map_subword]
@@ -169,7 +197,7 @@ theorem map_koszulTwist_subword (G : InternalGrading R M) (q : ℤ) {n : ℕ} (x
 
 /-- Deconcatenation preserves total cohomological degree: the degrees of the two cut halves
 add to the degree of the original word. -/
-theorem isHomogeneous_deconcatenation (G : InternalGrading R M) :
+theorem isHomogeneous_deconcatenation (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (deconcatenation R M) (grading G).piece
       ((grading G).tensorProduct (grading G)).piece 0 := by
   rw [LinearMap.isHomogeneous_def]
@@ -212,8 +240,8 @@ variable {N : Type uN} [AddCommMonoid N] [Module R N]
 /-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
 the tensor-product grading of `N ⊗ Tᶜ(M)`: only the degree-zero part of the tensor word
 survives. -/
-theorem isHomogeneous_rid_comp_lTensor_counit (G : InternalGrading R N)
-    (H : InternalGrading R M) :
+theorem isHomogeneous_rid_comp_lTensor_counit (G : InternalGrading R N ℤ)
+    (H : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous
       ((TensorProduct.rid R N).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R M)).lTensor N)
@@ -245,8 +273,8 @@ theorem isHomogeneous_rid_comp_lTensor_counit (G : InternalGrading R N)
 /-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
 the tensor-product grading of `Tᶜ(M) ⊗ N`: only the degree-zero part of the tensor word
 survives. -/
-theorem isHomogeneous_lid_comp_rTensor_counit (H : InternalGrading R M)
-    (G : InternalGrading R N) :
+theorem isHomogeneous_lid_comp_rTensor_counit (H : InternalGrading R M ℤ)
+    (G : InternalGrading R N ℤ) :
     LinearMap.IsHomogeneous
       ((TensorProduct.lid R N).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R M)).rTensor N)

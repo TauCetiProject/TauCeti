@@ -266,7 +266,8 @@ section IdeleNorm
 
 variable {L : Type*} [Field L] [NumberField L] [Algebra K L] {b : Kˣ}
 
-open scoped AdicCompletionExtension NumberField.LiesOver in
+open scoped AdicCompletionExtension in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- **The finite coordinates of an idele norm are local norms.** If `b ∈ Kˣ` is a square in a
 number field `L` over `K`, then at every finite place `v` of `K` the coordinate of an idele norm
 from `L` has Hilbert symbol `1` with `b`. It is a product of norms from completions `L_w` in which
@@ -287,7 +288,7 @@ from `L` has Hilbert symbol `1` with `b`. It is a product of norms from completi
     IsScalarTower.algebraMap_apply K L]
   exact hb.map _
 
-open scoped NumberField.LiesOver in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- **The infinite coordinates of an idele norm are local norms.** If `b ∈ Kˣ` is a square in a
 number field `L` over `K`, then at every infinite place `v` of `K` the coordinate of an idele norm
 from `L` has Hilbert symbol `1` with `b`. -/

@@ -183,14 +183,11 @@ theorem pseudoReductive_coinvariants_unipotentRadical
     (hconnected : geometricallyConnectedCommHopfAlgProperty k G.obj) :
     let hR := isNormal_unipotentRadicalDefiningIdeal G
     letI := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-    letI : Algebra.IsGeometricallyReduced k G := isGeometricallyReduced_of_smooth k G
     let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
       ⟨CommHopfAlgCat.coinvariants hR,
         (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩
     pseudoReductiveCommHopfAlgProperty k Q := by
   intro hR Q
-  -- Elaboration eliminates the statement's letI bindings; restore the instance needed below.
-  let _ : Algebra.IsGeometricallyReduced k G := isGeometricallyReduced_of_smooth k G
   exact pseudoReductiveCommHopfAlgProperty_of_kernel_eq_unipotentRadical (Q := Q)
     (CommHopfAlgCat.coinvariantsι hR) (CommHopfAlgCat.faithfullyFlat_coinvariantsι hR)
     inferInstance hconnected (CommHopfAlgCat.kernelHopfIdeal_coinvariantsι_eq hR)
@@ -203,7 +200,6 @@ theorem reductive_coinvariants_unipotentRadical [IsAlgClosed k]
     (hconnected : geometricallyConnectedCommHopfAlgProperty k G.obj) :
     let hR := isNormal_unipotentRadicalDefiningIdeal G
     letI := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-    letI : Algebra.IsGeometricallyReduced k G := isGeometricallyReduced_of_smooth k G
     let Q : FiniteTypeCommHopfAlgCat.{u, u} k :=
       ⟨CommHopfAlgCat.coinvariants hR,
         (finiteTypeCommHopfAlgProperty_iff _).mpr hR.finiteType_coinvariants⟩

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
+public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
@@ -32,6 +33,8 @@ finite place of the extension.
   `IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one`; here the latter is
   transferred to absolute values through `WithAbs`. Consequently an absolute value lying over a
   nonarchimedean one is nonarchimedean, `AbsoluteValue.isNonarchimedean_of_liesOver`.
+* `IsNonarchimedean.isUltrametricDist_withAbs`: equipping a ring with a nonarchimedean real
+  absolute value through `WithAbs` produces an ultrametric distance.
 * `IsNonarchimedean.apply_le_one_of_isIntegral`: a nonarchimedean absolute value on an
   `R`-algebra which is bounded by `1` on the image of `R` is bounded by `1` on every element
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
@@ -86,10 +89,10 @@ theorem isNonarchimedean_iff_forall_natCast_le_one :
 
 /-- An absolute value on a field lying over a nonarchimedean absolute value is nonarchimedean: it
 agrees with the latter on the natural numbers, where both are therefore bounded by `1`. -/
-theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Nontrivial K] [Algebra K F]
-    [FaithfulSMul K F] {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) :
-    IsNonarchimedean v :=
+theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Algebra K F] [FaithfulSMul K F]
+    {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) : IsNonarchimedean v :=
   isNonarchimedean_of_forall_natCast_le_one fun n ↦ by
+    have : Nontrivial K := (algebraMap K F).domain_nontrivial
     rw [← map_natCast (algebraMap K F), LiesOver.apply_algebraMap u]
     exact hu.apply_natCast_le_one (by simp) (map_one _)
 
@@ -98,6 +101,13 @@ end Field
 end AbsoluteValue
 
 namespace IsNonarchimedean
+
+/-- Equipping a ring with a nonarchimedean real absolute value via `WithAbs` yields an
+ultrametric distance. -/
+theorem isUltrametricDist_withAbs {R : Type*} [Ring R] {v : AbsoluteValue R ℝ}
+    (hv : IsNonarchimedean v) : IsUltrametricDist (WithAbs v) :=
+  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
+    simpa only [WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_add] using hv x.ofAbs y.ofAbs
 
 variable {R F : Type*} [CommRing R] [Ring F] [Algebra R F] {v : AbsoluteValue F ℝ}
 

@@ -27,7 +27,11 @@ of the derived category are computed as homotopy classes of chain maps into its 
 which is how unbounded right derived functors and derived `Hom` are constructed.
 
 The adjunction is built from Mathlib's `CochainComplex.IsKInjective.Qh_map_bijective`: maps in
-the homotopy category into a K-injective complex are the maps in the derived category.
+the homotopy category into a K-injective complex are the maps in the derived category. In terms of
+chain maps, every map in the derived category into a K-injective complex comes from a chain map
+(`CochainComplex.IsKInjective.Q_map_surjective`), and a chain map into a K-injective complex
+vanishes in the derived category exactly when it is null-homotopic
+(`CochainComplex.IsKInjective.Q_map_eq_zero_iff`).
 
 ## References
 
@@ -81,6 +85,30 @@ theorem exists_homotopyEquiv {K I₁ I₂ : CochainComplex C ℤ} [I₁.IsKInjec
   refine ⟨e, ⟨HomotopyCategory.homotopyOfEq _ _ ((Qh_map_bijective _ I₂).injective ?_)⟩⟩
   rw [← cancel_mono ((quotientCompQhIso C).hom.app I₂)]
   simp [he, hQ]
+
+/-- A chain map into a K-injective complex vanishes in the derived category if and only if it is
+null-homotopic. -/
+theorem Q_map_eq_zero_iff [HasDerivedCategory.{w} C] {K L : CochainComplex C ℤ} [L.IsKInjective]
+    (χ : K ⟶ L) : Q.map χ = 0 ↔ Nonempty (Homotopy χ 0) := by
+  -- Transport along `quotientCompQhIso`, which identifies `Q` with `quotient ⋙ Qh`.
+  have hQ : Q.map χ = (quotientCompQhIso C).inv.app K ≫
+      Qh.map ((HomotopyCategory.quotient _ _).map χ) ≫ (quotientCompQhIso C).hom.app L :=
+    (NatIso.naturality_1 _ χ).symm
+  -- `Qh` is faithful on maps into the K-injective complex `L`.
+  rw [hQ, Preadditive.IsIso.comp_left_eq_zero, Preadditive.IsIso.comp_right_eq_zero,
+    ← HomotopyCategory.quotient_map_eq_zero_iff, ← (Qh_map_bijective _ L).1.eq_iff,
+    Functor.map_zero]
+
+/-- Every map in the derived category into a K-injective complex comes from a chain map. -/
+theorem Q_map_surjective [HasDerivedCategory.{w} C] (K L : CochainComplex C ℤ) [L.IsKInjective] :
+    Function.Surjective (Q.map : (K ⟶ L) → (Q.obj K ⟶ Q.obj L)) := by
+  intro ψ
+  obtain ⟨g, hg⟩ := (Qh_map_bijective ((HomotopyCategory.quotient _ _).obj K) L).2
+    ((quotientCompQhIso C).hom.app K ≫ ψ ≫ (quotientCompQhIso C).inv.app L)
+  obtain ⟨χ, rfl⟩ := (HomotopyCategory.quotient _ _).map_surjective g
+  refine ⟨χ, ?_⟩
+  rw [← cancel_epi ((quotientCompQhIso C).hom.app K), ← quotientCompQhIso_hom_naturality, hg]
+  simp
 
 end CochainComplex.IsKInjective
 

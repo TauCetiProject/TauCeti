@@ -21,7 +21,7 @@ object under `z`, and by `z`: its target is the translate `g • z = F.map g z`
 (`CategoryTheory.Functor.Elements.act`). So the total arrows of `F.Elements` are the fiber product
 of the total arrows of `C` and the total space, along the source and the anchor
 (`CategoryTheory.Functor.Elements.totalEquiv`). This is the algebraic description behind the
-topology of action categories of families in `TauCeti.Topology.CategoryTheory.Elements`.
+topology of action categories of families in `TauCeti.Topology.CategoryTheory.Elements.Basic`.
 
 ## References
 
@@ -101,6 +101,43 @@ theorem totalEquiv_symm_apply_right
 /-- The target of a total arrow of the category of elements is the translate of its source. -/
 theorem act_totalEquiv (a : Quiver.Total F.Elements) : act F (totalEquiv F a) = a.right := by
   rw [← totalEquiv_symm_apply_right, Equiv.symm_apply_apply]
+
+section BaseChange
+
+variable {D : Type*} [Category D] (K : D ⥤ C)
+
+/-- The total space of the pulled-back family is the fiber product of the object map and
+the original anchor. This uses the native precomposition functor on categories of elements. -/
+def precompEquiv : (K ⋙ F).Elements ≃
+    K.obj.Pullback (Functor.Elements.obj (F := F)) where
+  toFun z := ⟨(z.obj, (precomp K F).obj z), rfl⟩
+  invFun q := { obj := q.1.1, val := F.map (eqToHom q.2.symm) q.1.2.val }
+  left_inv z := by
+    cases z
+    simp
+  right_inv q := by
+    obtain ⟨⟨d, @⟨c, z⟩⟩, h⟩ := q
+    dsimp only at h
+    subst c
+    simp [precomp]
+
+/-- The fiber-product coordinates of a point in a pulled-back family. -/
+@[simp]
+theorem precompEquiv_apply (z : (K ⋙ F).Elements) :
+    precompEquiv F K z = ⟨(z.obj, (precomp K F).obj z), rfl⟩ := (rfl)
+
+/-- The anchor of the point reconstructed from fiber-product coordinates. -/
+@[simp]
+theorem precompEquiv_symm_apply_obj (q : K.obj.Pullback (Functor.Elements.obj (F := F))) :
+    ((precompEquiv F K).symm q).obj = q.1.1 := (rfl)
+
+/-- The original point is recovered by forgetting the new base coordinate. -/
+@[simp]
+theorem precomp_obj_precompEquiv_symm (q : K.obj.Pullback (Functor.Elements.obj (F := F))) :
+    (precomp K F).obj ((precompEquiv F K).symm q) = q.1.2 := by
+  exact congrArg (fun p => p.1.2) ((precompEquiv F K).apply_symm_apply q)
+
+end BaseChange
 
 end Functor.Elements
 

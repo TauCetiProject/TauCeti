@@ -521,7 +521,7 @@ theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField
   rw [NumberField.adeleExtension_fst]
   exact GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleExtension (M := M) w b.1
 
-open scoped NumberField.LiesOver in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- The coordinate at an infinite place through a completion of a finite subextension.
 If `τ` agrees on `E` with an embedding `τ'` of `E_u`, the coordinate is the component at `u`
 embedded by `τ'`. No normality of `E/K` is needed. -/
@@ -549,7 +549,7 @@ theorem toMul_ideleCoeffInfiniteComponent_ideleCoeffOfIntermediateField_eq_map_i
   simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
     GlobalNumberFields.infiniteSemilocalEquiv_infiniteAdeleSemilocalHom, Pi.evalAlgHom_apply]
 
-open scoped NumberField.LiesOver in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- Every infinite completion coordinate of an idele of a finite subextension is a coordinate
 of the corresponding idele of `Kˢ`, along suitable embeddings of separable closures: the
 archimedean analogue of `exists_ideleCoeffComponent_ideleCoeffOfIntermediateField_eq`. The
@@ -882,7 +882,7 @@ theorem exists_ideleCoeffComponent_ideleExtension_eq :
     ← HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra]
   exact τ'.commutes _
 
-open scoped NumberField.LiesOver in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- **The coordinates at an infinite place of the ideles of `K`.** Some embedding
 `τ : Kˢ → K_wˢ` of separable closures reads, for every idele `a` of `K`, its component
 `a_w ∈ K_wˣ` as the coordinate at `w` of the extension of `a` to `Kˢ`. -/
@@ -902,8 +902,9 @@ theorem exists_ideleCoeffInfiniteComponent_ideleExtension_eq (w : InfinitePlace 
   refine (h (GlobalNumberFields.ideleExtension K E₀ a)).trans ?_
   simp only [GlobalNumberFields.ideleInfiniteCoord_ideleExtension,
     toMul_coe_baseUnitsEquivInvariants, toMul_ofMul]
-  -- The algebra structure of `u.Completion` over the completion below is `completionMap`.
-  exact Units.ext (τ'.commutes _)
+  -- The algebra structure of `u.Completion` over the completion below is the completion map.
+  exact Units.ext ((congrArg τ'
+    (AbsoluteValue.Completion.algebraMap_apply_of_liesOver _ _ _).symm).trans (τ'.commutes _))
 
 end Ground
 
@@ -922,7 +923,7 @@ def ideleLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+
     (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
       ((w : InfinitePlace K) → Br w.Completion) where
   toFun x :=
-    (dfinsuppOfFiniteSupport (fun v ↦ ideleBrLocalization v x)
+    (DFinsupp.ofSupportFinite (fun v ↦ ideleBrLocalization v x)
       (finite_setOfPred_ideleBrLocalization_ne_zero x), fun w ↦ ideleInfiniteBrLocalization w x)
   map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_zero _)
   map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_add _ x y)
@@ -931,7 +932,7 @@ def ideleLocalization : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) →+
 @[simp]
 theorem ideleLocalization_fst_apply (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
     (v : HeightOneSpectrum (𝓞 K)) : (ideleLocalization K x).1 v = ideleBrLocalization v x :=
-  dfinsuppOfFiniteSupport_apply _ _ v
+  DFinsupp.ofSupportFinite_apply _ _ v
 
 /-- The component of the localization map at an infinite place `w` is
 `ideleInfiniteBrLocalization w`. -/

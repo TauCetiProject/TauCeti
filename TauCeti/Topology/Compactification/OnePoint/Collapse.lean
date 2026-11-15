@@ -29,6 +29,7 @@ source of homotopies between collapse maps.
 
 * `TauCeti.onePointCollapse e g`: the collapse of `M` onto `OnePoint V` along `e` and `g`.
 * `TauCeti.onePointCollapse_apply`, `TauCeti.onePointCollapse_eq_infty_iff`: its values.
+* `TauCeti.onePointCollapse_eq_onePointCollapse_iff`: its fibres, for injective `e` and `g`.
 * `TauCeti.preimage_onePointCollapse`: the preimage of a set not containing `∞`.
 * `TauCeti.continuous_onePointCollapse`: continuity for an open embedding `e` into a Hausdorff
   space and a proper map `g`.
@@ -82,6 +83,20 @@ theorem onePointCollapse_eq_coe_iff (he : Injective e) {m : M} {v : V} :
     simp [he, he.eq_iff]
   · rw [onePointCollapse_of_notMem_range hm]
     exact ⟨fun h ↦ (coe_ne_infty v h.symm).elim, fun ⟨x, _, hx⟩ ↦ (hm ⟨x, hx⟩).elim⟩
+
+/-- For injective `e` and `g`, two points have the same image under the collapse exactly when they
+are equal or both lie outside the range of `e`. -/
+theorem onePointCollapse_eq_onePointCollapse_iff (he : Injective e) (hg : Injective g) {m n : M} :
+    onePointCollapse e g m = onePointCollapse e g n ↔ m = n ∨ m ∉ range e ∧ n ∉ range e := by
+  by_cases hm : m ∈ range e <;> by_cases hn : n ∈ range e
+  · obtain ⟨x, rfl⟩ := hm
+    obtain ⟨y, rfl⟩ := hn
+    simp [he, hg.eq_iff, he.eq_iff]
+  · obtain ⟨x, rfl⟩ := hm
+    simpa [he, hn] using fun h : e x = n ↦ hn ⟨x, h⟩
+  · obtain ⟨y, rfl⟩ := hn
+    simpa [he, hm] using fun h : m = e y ↦ hm ⟨y, h.symm⟩
+  · simp [onePointCollapse_of_notMem_range, hm, hn]
 
 /-- The preimage under the collapse of a set `s` not containing `∞` is the image under `e` of the
 preimage of `s` under `g`. -/

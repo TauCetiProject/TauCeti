@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.Cover.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.Instances.Comap
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 
 /-!
 # The canonical orientation of the smooth orientation cover
@@ -39,7 +40,7 @@ open scoped ContDiff Manifold Topology
 namespace TauCeti.Manifold.OrientationCover
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
 
 /-- The charts of the orientation cover are pulled back along its projection. -/
@@ -72,10 +73,44 @@ theorem isLocalDiffeomorph_proj {n : ℕ∞ω} :
     IsLocalDiffeomorph I I n (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   (isCoveringMap_proj I M).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
 
+/-- The orientation cover of a boundaryless manifold is boundaryless. -/
+instance instBoundarylessManifold [BoundarylessManifold I M] :
+    BoundarylessManifold I (OrientationCover I M) :=
+  (isLocalDiffeomorph_proj (n := 1)).boundarylessManifold one_ne_zero
+
 /-- The projection of the orientation cover is smooth. -/
 theorem contMDiff_proj {n : ℕ∞ω} :
     ContMDiff I I n (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   (isCoveringMap_proj I M).isLocalHomeomorph.contMDiff_chartedSpaceComap
+
+/-- The orientation-changing deck involution of the cover is smooth. -/
+theorem contMDiff_deck {n : ℕ∞ω} :
+    ContMDiff I I n (VectorBundleOrientationCover.deck : OrientationCover I M → _) := by
+  apply (isCoveringMap_proj I M).isLocalHomeomorph.contMDiff_chartedSpaceComap_iff.mpr
+  refine ⟨VectorBundleOrientationCover.deck.continuous, ?_⟩
+  simpa only [Function.comp_def, VectorBundleOrientationCover.proj_deck] using
+    (contMDiff_proj (I := I) (M := M) (n := n))
+
+/-- The smooth deck involution as a diffeomorphism of the orientation cover. -/
+def deckDiffeomorph (n : ℕ∞ω) : (OrientationCover I M) ≃ₘ^n⟮I, I⟯ (OrientationCover I M) where
+  toFun := VectorBundleOrientationCover.deck
+  invFun := VectorBundleOrientationCover.deck
+  left_inv := VectorBundleOrientationCover.deck_deck
+  right_inv := VectorBundleOrientationCover.deck_deck
+  contMDiff_toFun := contMDiff_deck
+  contMDiff_invFun := contMDiff_deck
+
+/-- The deck diffeomorphism is the original orientation-changing deck involution. -/
+@[simp]
+theorem deckDiffeomorph_apply (n : ℕ∞ω) (p : OrientationCover I M) :
+    deckDiffeomorph n p = VectorBundleOrientationCover.deck p :=
+  (rfl)
+
+/-- The inverse deck diffeomorphism is the same involution. -/
+@[simp]
+theorem deckDiffeomorph_symm_apply (n : ℕ∞ω) (p : OrientationCover I M) :
+    (deckDiffeomorph n).symm p = VectorBundleOrientationCover.deck p :=
+  (rfl)
 
 private def projDerivEquiv (p : OrientationCover I M) :
     TangentSpace I p ≃L[ℝ] TangentSpace I p.proj :=
@@ -86,6 +121,8 @@ private theorem projDerivEquiv_coe (p : OrientationCover I M) :
       mfderiv I I (VectorBundleOrientationCover.proj : OrientationCover I M → M) p :=
   (isLocalDiffeomorph_proj (I := I) (M := M) (n := 1)
     |>.isInvertible_mfderiv one_ne_zero p).choose_spec
+
+variable [FiniteDimensional ℝ E]
 
 private def tautologicalTangentOrientation :
     VectorBundleOrientation E (TangentSpace I : OrientationCover I M → Type _)
@@ -100,7 +137,7 @@ private def tautologicalTangentOrientation :
         ((trivializationAt E (TangentSpace I) p.proj).mapOrientation _ hp p.orientation) :=
       VectorBundleOrientationCover.mem_sheet_iff.mpr ⟨hp, rfl⟩
     filter_upwards [(VectorBundleOrientationCover.isOpen_sheet_trivializationAt _ _).mem_nhds hs]
-      with q hq hmem
+      with q hq _
     exact (VectorBundleOrientationCover.mem_sheet_iff.mp hq).choose_spec
 
 /-- The canonical orientation of the orientation cover: the derivative of the projection at
@@ -136,35 +173,6 @@ theorem map_orientationAt_canonicalOrientation (p : OrientationCover I M)
 /-- Every smooth manifold's orientation cover is orientable, whether or not the base is. -/
 instance instOrientable : Orientable I (OrientationCover I M) :=
   ⟨⟨canonicalOrientation⟩⟩
-
-/-- The orientation-changing deck involution of the cover is smooth. -/
-theorem contMDiff_deck {n : ℕ∞ω} :
-    ContMDiff I I n (VectorBundleOrientationCover.deck : OrientationCover I M → _) := by
-  apply (isCoveringMap_proj I M).isLocalHomeomorph.contMDiff_chartedSpaceComap_iff.mpr
-  refine ⟨VectorBundleOrientationCover.deck.continuous, ?_⟩
-  simpa only [Function.comp_def, VectorBundleOrientationCover.proj_deck] using
-    (contMDiff_proj (I := I) (M := M) (n := n))
-
-/-- The smooth deck involution as a diffeomorphism of the orientation cover. -/
-def deckDiffeomorph (n : ℕ∞ω) : (OrientationCover I M) ≃ₘ^n⟮I, I⟯ (OrientationCover I M) where
-  toFun := VectorBundleOrientationCover.deck
-  invFun := VectorBundleOrientationCover.deck
-  left_inv := VectorBundleOrientationCover.deck_deck
-  right_inv := VectorBundleOrientationCover.deck_deck
-  contMDiff_toFun := contMDiff_deck
-  contMDiff_invFun := contMDiff_deck
-
-/-- The deck diffeomorphism is the original orientation-changing deck involution. -/
-@[simp]
-theorem deckDiffeomorph_apply (n : ℕ∞ω) (p : OrientationCover I M) :
-    deckDiffeomorph n p = VectorBundleOrientationCover.deck p :=
-  (rfl)
-
-/-- The inverse deck diffeomorphism is the same involution. -/
-@[simp]
-theorem deckDiffeomorph_symm_apply (n : ℕ∞ω) (p : OrientationCover I M) :
-    (deckDiffeomorph n).symm p = VectorBundleOrientationCover.deck p :=
-  (rfl)
 
 /-- The deck involution reverses the canonical orientation of the orientation cover. -/
 theorem isOrientationReversingAt_deck (p : OrientationCover I M) :

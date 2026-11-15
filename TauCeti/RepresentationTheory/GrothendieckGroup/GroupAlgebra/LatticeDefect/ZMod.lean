@@ -12,13 +12,13 @@ public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Lattic
 # Reduction classes of `ZMod n`-representations
 
 A representation `ρ` of `G` over `ZMod n` is in particular a representation on an abelian group,
-`ρ.restrictScalarsInt`. Its reduction `ZMod n ⊗_ℤ W` is `W` again: since every element of
+`ρ.restrictScalars ℤ`. Its reduction `ZMod n ⊗_ℤ W` is `W` again: since every element of
 `ZMod n` is the image of an integer, Mathlib's `TensorProduct.lidOfCompatibleSMul` identifies
 `ZMod n ⊗_ℤ W` with `W` by `r ⊗ w ↦ r • w`, and this identification is `G`-equivariant
 (`Representation.baseChangeRestrictScalarsIntEquiv`, in
 `TauCeti.RepresentationTheory.BaseChange`). Hence the reduction class of
-`ρ.restrictScalarsInt` in `G₀(ZMod n[G])` is the class of `ρ` itself
-(`TauCeti.reductionK0_restrictScalarsInt`).
+`ρ.restrictScalars ℤ` in `G₀(ZMod n[G])` is the class of `ρ` itself
+(`TauCeti.reductionK0_restrictScalars`).
 
 This is how the reduction classes computed for groups such as `Lˣ ⧸ (Lˣ)^ℓ`, which are naturally
 `ZMod ℓ`-modules, are compared with the classes of the corresponding `ZMod ℓ`-representations.
@@ -35,13 +35,13 @@ namespace TauCeti
 
 /-- **The reduction class of a `ZMod n`-representation is its class.** In `G₀(ZMod n[G])`,
 the class of `ZMod n ⊗_ℤ W` is the class of the `ZMod n[G]`-module of `ρ`. -/
-theorem reductionK0_restrictScalarsInt [Module.Finite (ZMod n) W]
+theorem reductionK0_restrictScalars [Module.Finite (ZMod n) W]
     (ρ : Representation (ZMod n) G W) :
     haveI : Module.Finite (ZMod n) (ZMod n ⊗[ℤ] W) :=
       Module.Finite.equiv (ρ.baseChangeRestrictScalarsIntEquiv).toLinearEquiv.symm
     haveI : Module.Finite (ZMod n)[G] ρ.asModule :=
       Module.Finite.of_restrictScalars_finite (ZMod n) (ZMod n)[G] _
-    reductionK0 (ZMod n) ρ.restrictScalarsInt =
+    reductionK0 (ZMod n) (ρ.restrictScalars ℤ) =
       ExactK0.of (FGModuleCat.of (ZMod n)[G] ρ.asModule) := by
   have : Module.Finite (ZMod n) (ZMod n ⊗[ℤ] W) :=
     Module.Finite.equiv (ρ.baseChangeRestrictScalarsIntEquiv).toLinearEquiv.symm

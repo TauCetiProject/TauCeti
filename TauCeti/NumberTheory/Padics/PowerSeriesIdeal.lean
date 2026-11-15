@@ -25,7 +25,7 @@ height one.
 * `PadicInt.ker_map_toZMod`: the kernel of `ℤ_[p]⟦X⟧ → (ℤ/pℤ)⟦X⟧` is `(p)`.
 * `PadicInt.isPrime_span_C_p`: `(p)` is a prime ideal of `ℤ_[p]⟦X⟧`.
 * `PadicInt.height_span_C_p`: `(p)` has height one in `ℤ_[p]⟦X⟧`.
-* `PadicInt.one_lt_height_of_C_p_mem_of_X_mem`: a prime containing `p` and `X` has height at
+* `PadicInt.one_lt_height_of_C_p_mem_of_X_mem`: an ideal containing `p` and `X` has height at
   least two.
 -/
 
@@ -56,9 +56,9 @@ theorem height_span_C_p : (Ideal.span {C (p : ℤ_[p])}).height = 1 := by
     exact (Fact.out : p.Prime).ne_zero
   · simpa using hu.map constantCoeff
 
-/-- A prime of `ℤ_[p]⟦X⟧` containing both `p` and `X` has height at least two: it strictly
+/-- An ideal of `ℤ_[p]⟦X⟧` containing both `p` and `X` has height at least two: it strictly
 contains the height-one prime `(p)`, which does not contain `X`. -/
-theorem one_lt_height_of_C_p_mem_of_X_mem {𝔮 : Ideal ℤ_[p]⟦X⟧} [𝔮.IsPrime]
+theorem one_lt_height_of_C_p_mem_of_X_mem {𝔮 : Ideal ℤ_[p]⟦X⟧}
     (hp : C (p : ℤ_[p]) ∈ 𝔮) (hX : X ∈ 𝔮) : 1 < 𝔮.height := by
   have hX' : X ∉ Ideal.span {C (p : ℤ_[p])} := by
     rw [← ker_map_toZMod, RingHom.mem_ker, map_X]
@@ -66,8 +66,6 @@ theorem one_lt_height_of_C_p_mem_of_X_mem {𝔮 : Ideal ℤ_[p]⟦X⟧} [𝔮.Is
   have hlt : Ideal.span {C (p : ℤ_[p])} < 𝔮 :=
     lt_of_le_of_ne ((Ideal.span_singleton_le_iff_mem _).mpr hp) fun h ↦ hX' (h ▸ hX)
   have := isPrime_span_C_p (p := p)
-  have h2 := Ideal.height_add_one_le_of_lt_of_isPrime hlt
-  rw [height_span_C_p] at h2
-  exact lt_of_lt_of_le (by norm_num) h2
+  simpa only [height_span_C_p] using Ideal.height_strict_mono_of_isPrime hlt
 
 end PadicInt

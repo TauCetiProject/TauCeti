@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.RestrictPartition
+public import TauCeti.MeasureTheory.Measure.Restrict.Basic
+public import TauCeti.MeasureTheory.Measure.Restrict.Partition
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 
 /-!
@@ -65,6 +66,24 @@ theorem transportCost_le_mul_of_ae_mem {A : Set X} {B : Set Y} (hA : MeasurableS
           lintegral_indicator_const hA.compl, lintegral_indicator_const hB.compl, hαA', hβB']
         simp
 
+/-- **Transport inside a rescaled cell.** Two measures obtained from the restrictions of `μ` and
+`ν` to cells `A` and `B`, rescaled by `s` and `t ≤ 1` to have the same mass, are transported at
+cost at most `η` per unit of mass of `ν` in `B`. -/
+private theorem transportCost_smul_restrict_le {A : Set X} {B : Set Y} (hA : MeasurableSet A)
+    (hB : MeasurableSet B) {η : ℝ≥0∞} (hc : ∀ x ∈ A, ∀ y ∈ B, c (x, y) ≤ η) {s t : ℝ≥0∞}
+    (ht : t ≤ 1) {μ : Measure X} {ν : Measure Y} [IsFiniteMeasure ν]
+    (h : s * μ A = t * ν B) :
+    transportCost c (s • μ.restrict A) (t • ν.restrict B) ≤ η * ν B := by
+  have hle : t * ν B ≤ ν B := by simpa using mul_le_mul_left ht (ν B)
+  have : IsFiniteMeasure (s • μ.restrict A) :=
+    ⟨by rw [Measure.smul_restrict_univ, h]; exact hle.trans_lt (measure_lt_top _ _)⟩
+  refine (transportCost_le_mul_of_ae_mem hA hB hc ?_ ?_
+    (by rw [Measure.smul_restrict_univ, Measure.smul_restrict_univ, h])).trans ?_
+  · exact Measure.ae_smul_measure (ae_restrict_mem hA) _
+  · exact Measure.ae_smul_measure (ae_restrict_mem hB) _
+  · rw [Measure.smul_restrict_univ, h]
+    gcongr
+
 /-- **Transport along matching partitions.** Let `A` and `B` be finite measurable partitions of
 `X` and `Y` indexed by the same type, such that the cost is at most `η i` on `A i × B i` and at
 most `M` everywhere. Then two measures of equal finite mass have transport cost at most the sum of
@@ -106,50 +125,13 @@ theorem transportCost_le_sum_of_partition {ι : Type*} [Fintype ι] {A : ι → 
   have hν : ν = ∑ i, β i + ∑ i, β' i :=
     Measure.eq_sum_smul_restrict_add_sum_one_sub_smul_restrict (hBm · |>.nullMeasurableSet)
       hBd.aedisjoint (by rw [hBu]) ht1
-  have hα_univ (i : ι) : α i univ = m i := by
-    simp only [α, _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
-      smul_eq_mul, hsμ]
-  have hβ_univ (i : ι) : β i univ = m i := by
-    simp only [β, _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
-      smul_eq_mul, htν]
+  have hα_univ (i : ι) : α i univ = m i := by rw [Measure.smul_restrict_univ, hsμ]
+  have hβ_univ (i : ι) : β i univ = m i := by rw [Measure.smul_restrict_univ, htν]
   have hα'_univ (i : ι) : α' i univ = μ (A i) - ν (B i) := by
-    simp only [α', _root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter,
-      smul_eq_mul]
-    rw [ENNReal.sub_mul fun _ _ ↦ measure_ne_top _ _, one_mul, hsμ, hm, tsub_min]
-  -- Inside each cell the matched parts are transported at cost at most `η i` per unit of mass.
-  have hcell (i : ι) : transportCost c (α i) (β i) ≤ η i * ν (B i) := by
-    have : IsFiniteMeasure (α i) :=
-      ⟨by rw [hα_univ]; exact (min_le_left _ _).trans_lt (measure_lt_top _ _)⟩
-    refine (transportCost_le_mul_of_ae_mem (hAm i) (hBm i) (hc i) ?_ ?_
-      ((hα_univ i).trans (hβ_univ i).symm)).trans ?_
-    · exact (Measure.ae_smul_measure (ae_restrict_mem (hAm i)) _)
-    · exact (Measure.ae_smul_measure (ae_restrict_mem (hBm i)) _)
-    · rw [hα_univ]
-      gcongr
-      exact min_le_right _ _
-  -- The remainders have equal mass, and are transported at cost at most `M` per unit of mass.
-  have hrest : (∑ i, α' i) univ = (∑ i, β' i) univ := by
-    have hsum : (∑ i, α i) univ = (∑ i, β i) univ := by
-      simp only [FunLike.coe_sum, Finset.sum_apply, hα_univ, hβ_univ]
-    have hne : (∑ i, α i) univ ≠ ∞ := by
-      simp only [FunLike.coe_sum, Finset.sum_apply, hα_univ]
-      exact ENNReal.sum_ne_top.2 fun i _ ↦ ((min_le_left _ _).trans_lt (measure_lt_top _ _)).ne
-    have htot : (∑ i, α i) univ + (∑ i, α' i) univ = (∑ i, β i) univ + (∑ i, β' i) univ := by
-      rw [← _root_.add_apply, ← _root_.add_apply, ← hμ, ← hν, h]
-    rwa [hsum, ENNReal.add_right_inj (hsum ▸ hne)] at htot
-  calc transportCost c μ ν
-      = transportCost c (∑ i, α i + ∑ i, α' i) (∑ i, β i + ∑ i, β' i) := by rw [← hμ, ← hν]
-    _ ≤ transportCost c (∑ i, α i) (∑ i, β i) + transportCost c (∑ i, α' i) (∑ i, β' i) :=
-        transportCost_add_le c _ _ _ _
-    _ ≤ ∑ i, transportCost c (α i) (β i) + transportCost (fun _ ↦ M) (∑ i, α' i) (∑ i, β' i) :=
-        add_le_add (transportCost_finset_sum_le _ c _ _) (transportCost_mono hM)
-    _ ≤ ∑ i, η i * ν (B i) + M * ∑ i, (μ (A i) - ν (B i)) := by
-        have : IsFiniteMeasure (∑ i, α' i) := ⟨by
-          simp only [FunLike.coe_sum, Finset.sum_apply, hα'_univ]
-          exact lt_top_iff_ne_top.2 (ENNReal.sum_ne_top.2 fun i _ ↦
-            ne_top_of_le_ne_top (measure_ne_top μ (A i)) tsub_le_self)⟩
-        rw [transportCost_const (exists_isCoupling_iff.2 hrest)]
-        refine add_le_add (Finset.sum_le_sum fun i _ ↦ hcell i) (le_of_eq ?_)
-        simp only [FunLike.coe_sum, Finset.sum_apply, hα'_univ]
+    rw [Measure.smul_restrict_univ, ENNReal.sub_mul fun _ _ ↦ measure_ne_top _ _, one_mul, hsμ, hm,
+      tsub_min]
+  exact transportCost_le_sum_of_split hμ hν h (fun i ↦ (hα_univ i).trans (hβ_univ i).symm)
+    (fun i ↦ transportCost_smul_restrict_le (hAm i) (hBm i) (hc i) (ht1 i)
+      ((hsμ i).trans (htν i).symm)) hM hα'_univ
 
 end TauCeti

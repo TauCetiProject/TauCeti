@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # The standard complex line as a source for constant-structure `J`-holomorphic maps
@@ -31,7 +32,10 @@ energy and elliptic estimates.
   `(1, 0)` and `(0, 1)` in the standard complex line.
 * `TauCeti.equivRealProdCLM_symm_stdComplexLineReal` and
   `TauCeti.equivRealProdCLM_symm_stdComplexLineImag`: under `Complex.equivRealProdCLM` they are
-  the complex numbers `1` and `i`.
+  the complex numbers `1` and `i`; conversely `TauCeti.equivRealProdCLM_one` and
+  `TauCeti.equivRealProdCLM_I`.
+* `TauCeti.fderiv_comp_equivRealProdCLM_one` and `TauCeti.fderiv_comp_equivRealProdCLM_I`: read
+  in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
 * `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
   coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
@@ -102,6 +106,32 @@ lemma equivRealProdCLM_symm_stdComplexLineReal :
 lemma equivRealProdCLM_symm_stdComplexLineImag :
     Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
   apply Complex.ext <;> simp [stdComplexLineImag_eq]
+
+/-- The complex number `1` is the real coordinate vector of `ℝ × ℝ`. -/
+lemma equivRealProdCLM_one : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
+  rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The complex number `i` is the imaginary coordinate vector of `ℝ × ℝ`. -/
+lemma equivRealProdCLM_I : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
+  rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- In the complex coordinate `Complex.equivRealProdCLM`, the derivative of `u` in the direction
+`1` is its derivative `∂s u` in the real coordinate direction. -/
+lemma fderiv_comp_equivRealProdCLM_one {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (u : ℝ × ℝ → E) (y : ℂ) :
+    fderiv ℝ (u ∘ Complex.equivRealProdCLM) y 1 =
+      fderiv ℝ u (Complex.equivRealProdCLM y) stdComplexLineReal := by
+  rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one]
+
+/-- In the complex coordinate `Complex.equivRealProdCLM`, the derivative of `u` in the direction
+`i` is its derivative `∂t u` in the imaginary coordinate direction. -/
+lemma fderiv_comp_equivRealProdCLM_I {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (u : ℝ × ℝ → E) (y : ℂ) :
+    fderiv ℝ (u ∘ Complex.equivRealProdCLM) y Complex.I =
+      fderiv ℝ u (Complex.equivRealProdCLM y) stdComplexLineImag := by
+  rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, equivRealProdCLM_I]
 
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=

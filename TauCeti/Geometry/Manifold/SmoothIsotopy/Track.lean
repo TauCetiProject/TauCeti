@@ -35,7 +35,7 @@ public section
 namespace TauCeti.SmoothIsotopy
 
 open Set Topology
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 variable {E E' H H' M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -85,7 +85,7 @@ theorem hasLeftInverse_mfderiv_track (F : SmoothIsotopy f₀ f₁) (hn : n ≠ 0
 end TauCeti.SmoothIsotopy
 
 open Manifold
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 /-- The time-preserving track of a jointly smooth motion through topological embeddings with
 split injective slice differentials, from a compact boundaryless source into a finite-dimensional
@@ -111,5 +111,5 @@ theorem ContMDiff.isSmoothEmbedding_fst_prod
   -- A slice immersion into a finite-dimensional target makes the source model finite-dimensional.
   have : FiniteDimensional ℝ E := FiniteDimensional.of_injective
     (mfderiv I J (fun x => G (q.1, x)) q.2).toLinearMap hq.mfderiv_injective
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact hG.isImmersionAt_fst_prod hn hq

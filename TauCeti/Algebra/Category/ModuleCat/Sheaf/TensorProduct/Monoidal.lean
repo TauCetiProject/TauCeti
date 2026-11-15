@@ -145,6 +145,14 @@ theorem sheafification_ε :
       (sheafificationUnitIso R).inv :=
   rfl
 
+/-- The inverse sheafification identification at the unit is the monoidal unit comparison. -/
+theorem sheafificationIso_unit_inv :
+    (sheafificationIso (ringCatSheaf R) (_root_.SheafOfModules.unit (ringCatSheaf R))).inv =
+      Functor.LaxMonoidal.ε (PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)) := by
+  rw [sheafification_ε]
+  exact (Iso.inv_eq_inv _ _).2 ((sheafificationIso_hom _ _).trans
+    (sheafificationUnitIso_hom R).symm)
+
 /-- The inverse unit comparison of the monoidal functor sheafification is
 `sheafificationUnitIso`. -/
 @[simp]
@@ -266,10 +274,7 @@ instance forgetLaxMonoidal : (_root_.SheafOfModules.forget (ringCatSheaf R)).Lax
 right adjoint of braided monoidal sheafification. -/
 instance forgetLaxBraided : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxBraided where
   toLaxMonoidal := forgetLaxMonoidal R
-  braided M N := by
-    have h := ((sheafificationForgetAdjunction R).rightAdjointLaxBraided).braided M N
-    rw [Adjunction.rightAdjointLaxBraided_toLaxMonoidal] at h
-    exact h
+  braided := (sheafificationForgetAdjunction R).μ_comp_map_braiding_hom fun _ _ ↦ by simp
 
 /-- The unit map of the inclusion of sheaves of modules into presheaves of modules is the
 identity. -/

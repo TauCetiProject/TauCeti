@@ -113,7 +113,6 @@ theorem exists_continuousOn_update_memLp_fderiv_of_finite_energy
     hg hc hR hW hJ hK hKW hJsq hu hCR huK htame henergy
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   let M := max B 0
-  have hM : 0 ≤ M := le_max_right _ _
   have hbound : ∀ z ∈ ball z₀ R \ {z₀}, ‖J (u z)‖ ≤ M := fun z hz ↦
     (hB _ (huK hz)).trans (le_max_left _ _)
   obtain ⟨ε, hε, hεR, hmem⟩ := ω.exists_pos_forall_memLp_fderiv_of_finite_energy

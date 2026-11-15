@@ -17,7 +17,7 @@ is an integer, which is integral); this file packages such an `x` as an element
 `NumberField.integralSqrt hx` of the ring of integers `𝓞 K`, together with its two
 defining identities: its image in `K` is `x`, and it squares to `d` in `𝓞 K`.
 
-This is the shared square-root packaging used by the multiquadratic Layer 1 files: the
+This is the shared square-root packaging used by the multiquadratic files: the
 splitting law (`TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting`) moves the
 generators `√dᵢ` into `𝓞 K` to compare residues, and the Frobenius computation
 (`TauCeti.NumberTheory.NumberField.Frobenius`) applies the arithmetic-Frobenius congruence,
@@ -79,7 +79,7 @@ integer `d` that is not a square in `ℚ`, then `X ^ 2 - d` is the minimal polyn
 `NumberField.integralSqrt hx`. Over `ℚ` this is Kummer irreducibility
 (`irreducible_X_pow_sub_C_of_prime`); the descent to `ℤ` is
 `minpoly.isIntegrallyClosed_eq_field_fractions`. -/
-theorem minpoly_integralSqrt [NumberField K] (hx : x ^ 2 = algebraMap ℤ K d)
+theorem minpoly_integralSqrt [CharZero K] (hx : x ^ 2 = algebraMap ℤ K d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) : minpoly ℤ (integralSqrt hx) = X ^ 2 - C d := by
   have hxQ : x ^ 2 = algebraMap ℚ K ((d : ℤ) : ℚ) := by
     rw [hx, IsScalarTower.algebraMap_apply ℤ ℚ K]

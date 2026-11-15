@@ -59,13 +59,12 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 /-- The dimension of `Cl⁺(K)/Cl⁺(K)²` is `#s - 1`, read off the narrow `2`-rank formula. -/
 private theorem finrank_narrowElementaryTwoQuotient_eq {s : Finset ℤ}
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ P' ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant P' → P = P')
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) :
     Module.finrank (ZMod 2) (NarrowClassGroup.ElementaryTwoQuotient K) = s.card - 1 := by
   rw [← NarrowClassGroup.twoRank_def, narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf,
-    ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod]
+    ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod]
 
 /-- **The genus characters realize exactly the sign vectors of product one.** For `K = ℚ(√d)` with
 `d` squarefree and `∏ P ∈ s, P = fundamentalDiscriminant d` a prime-discriminant factorization, a
@@ -103,7 +102,7 @@ theorem mem_range_genusCharFunElementaryTwoQuotientFamilyLinearMap_iff {s : Fins
         exact ⟨x, hx⟩
       · rw [TauCeti.finrank_ker_additiveIntUnitsCoordinateSum, Fintype.card_coe]
         exact (LinearMap.finrank_range_le Φ).trans
-          (finrank_narrowElementaryTwoQuotient_eq hs heven hprod hmin hgen hsf).le
+          (finrank_narrowElementaryTwoQuotient_eq hs hprod hmin hgen hsf).le
     rw [hrange, LinearMap.mem_ker, TauCeti.additiveIntUnitsCoordinateSum_apply]
 
 /-- **The genus characters separate narrow classes modulo squares.** The `ZMod 2`-linear family of
@@ -118,7 +117,7 @@ theorem genusCharFunElementaryTwoQuotientFamilyLinearMap_injective {s : Finset �
     Function.Injective
       (genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf) := by
   set Φ := genusCharFunElementaryTwoQuotientFamilyLinearMap hs heven hprod hmin hgen hsf
-  have hsrc := finrank_narrowElementaryTwoQuotient_eq hs heven hprod hmin hgen hsf (s := s)
+  have hsrc := finrank_narrowElementaryTwoQuotient_eq hs hprod hmin hgen hsf (s := s)
   rcases s.eq_empty_or_nonempty with rfl | hne
   · -- With no prime discriminants the source is already trivial.
     have : Subsingleton (NarrowClassGroup.ElementaryTwoQuotient K) :=

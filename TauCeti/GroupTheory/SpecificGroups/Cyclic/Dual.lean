@@ -14,16 +14,20 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 
 Let `G` be a finite cyclic group and `M` a commutative monoid with enough roots of unity of order
 `|G|`, so that Mathlib's `IsCyclic.monoidHom_equiv_self` identifies the character group
-`G →* Mˣ` with `G`. This file bounds the number of characters fixed by precomposition with the
-`n`-th power map `g ↦ g ^ n`: for `n > 1` there are at most `n - 1` of them.
+`G →* Mˣ` with `G`. This file counts the characters fixed by precomposition with the `n`-th power
+map `g ↦ g ^ n`: for `n ≠ 0` there are exactly `gcd(|G|, n - 1)` of them, in particular at most
+`n - 1` when `n > 1`. A character `χ` is fixed exactly when `χ ^ (n - 1) = 1`, so the count
+reduces, via Mathlib's `IsCyclic.card_powMonoidHom_ker`, to the size `gcd(|G|, n - 1)` of the
+kernel of `g ↦ g ^ (n - 1)` on `G`.
 
-This bound enters the count of the irreducible characters of `GL₂(𝔽_q)`, where it bounds the
-number of characters of the cyclic group `𝔽_{q²}ˣ` fixed by the Frobenius `u ↦ u ^ q`.
+This count enters the classification of the irreducible characters of `GL₂(𝔽_q)`, where it bounds
+the number of characters of the cyclic group `𝔽_{q²}ˣ` fixed by the Frobenius `u ↦ u ^ q`.
 
 ## Main results
 
-* `IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_le`: for `n > 1`, at most `n - 1` characters
-  of a finite cyclic group are fixed by precomposition with the `n`-th power map.
+* `IsCyclic.natCard_monoidHom_comp_powMonoidHom_eq_eq_gcd`: for `n ≠ 0`, exactly
+  `gcd(|G|, n - 1)` characters of a finite cyclic group `G` are fixed by precomposition with the
+  `n`-th power map.
 -/
 
 public section
@@ -33,20 +37,16 @@ namespace IsCyclic
 variable (G M : Type*) [CommGroup G] [Finite G] [IsCyclic G] [CommMonoid M]
   [HasEnoughRootsOfUnity M (Nat.card G)]
 
-/-- **At most `n - 1` characters of a finite cyclic group are fixed by the `n`-th power map**
-(`n > 1`). -/
-theorem natCard_monoidHom_comp_powMonoidHom_eq_le {n : ℕ} (hn : 1 < n) :
-    Nat.card {χ : G →* Mˣ // χ.comp (powMonoidHom n) = χ} ≤ n - 1 := by
-  classical
+/-- **Exactly `gcd(|G|, n - 1)` characters of a finite cyclic group `G` are fixed by the `n`-th
+power map** (`n ≠ 0`). -/
+theorem natCard_monoidHom_comp_powMonoidHom_eq_eq_gcd {n : ℕ} (hn : n ≠ 0) :
+    Nat.card {χ : G →* Mˣ // χ.comp (powMonoidHom n) = χ} = (Nat.card G).gcd (n - 1) := by
   obtain ⟨e⟩ := IsCyclic.monoidHom_equiv_self G M
-  have : Finite (G →* Mˣ) := Finite.of_equiv G e.symm
-  have : IsCyclic (G →* Mˣ) := e.isCyclic.2 ‹_›
-  let := Fintype.ofFinite (G →* Mˣ)
   have hfix (χ : G →* Mˣ) : χ.comp (powMonoidHom n) = χ ↔ χ ^ (n - 1) = 1 := by
-    rw [← mul_eq_right (b := χ), ← pow_succ, Nat.sub_add_cancel hn.le]
+    rw [← mul_eq_right (b := χ), ← pow_succ, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
     simp [MonoidHom.ext_iff]
-  rw [Nat.card_congr (Equiv.subtypeEquivRight hfix), Nat.card_eq_fintype_card,
-    Fintype.card_subtype]
-  exact IsCyclic.card_pow_eq_one_le (Nat.sub_pos_of_lt hn)
+  rw [← IsCyclic.card_powMonoidHom_ker]
+  exact Nat.card_congr (e.toEquiv.subtypeEquiv fun χ => by
+    simp [hfix, ← map_pow, map_eq_one_iff e e.injective])
 
 end IsCyclic

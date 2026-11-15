@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Order.Lattice
 public import Mathlib.Topology.Algebra.IsUniformGroup.Defs
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import Mathlib.Topology.UniformSpace.HeineCantor
 public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
@@ -47,6 +48,8 @@ general group can differ, so no `IsUniformGroup` structure is used.
   `u ↦ f (u * ·)` tends to `f` in supremum norm as `u → 1`.
 * `TauCeti.mem_ucb_iff_uniformContinuous`: the condition is uniform continuity for the right
   uniformity of `G`.
+* `TauCeti.mem_ucbSubalgebra_of_hasCompactSupport`, `TauCeti.mem_ucb_of_hasCompactSupport`:
+  bounded continuous functions with compact support satisfy the condition.
 * `TauCeti.isClosed_ucb`: `ucb G` is closed under uniform limits, so `UCB G` is complete.
 * `TauCeti.sup_mem_ucb`, `TauCeti.inf_mem_ucb`, `TauCeti.abs_mem_ucb`: closure under the lattice
   operations.
@@ -166,6 +169,14 @@ theorem compLeftContinuousBounded_mem_ucbSubalgebra {𝕜' 𝕜'' : Type*} [Norm
       (mem_ucbSubalgebra_iff_tendsto.1 hf)).congr fun _ =>
         L.compLeftContinuousBounded_compContinuous ..
 
+/-- A bounded continuous function with compact support belongs to `ucbSubalgebra 𝕜 G`: by the
+Heine–Cantor theorem it is uniformly continuous for the right uniformity of `G`. -/
+theorem mem_ucbSubalgebra_of_hasCompactSupport {f : G →ᵇ 𝕜} (hf : HasCompactSupport f) :
+    f ∈ ucbSubalgebra 𝕜 G := by
+  let : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
+  simpa only [mem_ucbSubalgebra_iff, dist_eq_norm] using
+    (uniformContinuous_rightUniformSpace_iff f).1 (hf.uniformContinuous_of_continuous f.continuous)
+
 variable (G) in
 /-- The real bounded continuous functions `f` on `G` such that `f (u * x)` is uniformly close to
 `f x` for all `u` near `1`, as a subalgebra of `G →ᵇ ℝ`. -/
@@ -199,6 +210,10 @@ theorem mem_ucb_iff_uniformContinuous {f : G →ᵇ ℝ} :
       (letI : UniformSpace G := IsTopologicalGroup.rightUniformSpace G
        UniformContinuous f) := by
   simp only [mem_ucb_iff, ← Real.dist_eq, uniformContinuous_rightUniformSpace_iff]
+
+/-- A bounded continuous function with compact support belongs to `ucb G`. -/
+theorem mem_ucb_of_hasCompactSupport {f : G →ᵇ ℝ} (hf : HasCompactSupport f) : f ∈ ucb G :=
+  mem_ucbSubalgebra_of_hasCompactSupport hf
 
 /-- `ucb G` is closed in `G →ᵇ ℝ`: a uniform limit of functions in `ucb G` lies in `ucb G`. -/
 theorem isClosed_ucb : IsClosed (ucb G : Set (G →ᵇ ℝ)) := by

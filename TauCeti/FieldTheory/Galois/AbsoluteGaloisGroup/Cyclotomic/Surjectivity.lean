@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.NumberTheory.Padics.RingHoms
 
-import Mathlib.NumberTheory.Cyclotomic.Gal
+import TauCeti.NumberTheory.Cyclotomic.Surjectivity
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
@@ -46,63 +46,25 @@ open Polynomial
 
 namespace TauCeti
 
-variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [CharZero K]
-
-private theorem exists_localCyclotomicCharacter_toZModPow_eq
-    (hirr : ∀ n : ℕ, Irreducible (cyclotomic (p ^ n) K))
-    (u : ℤ_[p]ˣ) (n : ℕ) :
-    ∃ σ : Field.absoluteGaloisGroup K,
-      PadicInt.toZModPow n (localCyclotomicCharacter p K σ : ℤ_[p]) =
-        PadicInt.toZModPow n (u : ℤ_[p]) := by
-  let ζ : AlgebraicClosure K :=
-    HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose
-  have hζ : IsPrimitiveRoot ζ (p ^ n) :=
-    HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n) |>.choose_spec
-  let L := IntermediateField.adjoin K ({ζ} : Set (AlgebraicClosure K))
-  let _ : IsCyclotomicExtension {p ^ n} K L :=
-    hζ.intermediateField_adjoin_isCyclotomicExtension K
-  let c : (ZMod (p ^ n))ˣ := Units.map (PadicInt.toZModPow n).toMonoidHom u
-  let τ : L ≃ₐ[K] L := (IsCyclotomicExtension.autEquivPow L (hirr n)).symm c
-  let _ : IsGalois K L := IsCyclotomicExtension.isGalois (S := {p ^ n}) K L
-  obtain ⟨σ, hσ⟩ := AlgEquiv.restrictNormalHom_surjective (AlgebraicClosure K) τ
-  let g : Field.absoluteGaloisGroup K := σ
-  refine ⟨g, ?_⟩
-  have hζL : ζ ∈ L := by
-    dsimp only [L]
-    exact IntermediateField.subset_adjoin K _ (Set.mem_singleton ζ)
-  have hτζ : τ ⟨ζ, hζL⟩ = (⟨ζ, hζL⟩ : L) ^ (c : ZMod (p ^ n)).val := by
-    have hζsub : IsPrimitiveRoot (⟨ζ, hζL⟩ : L) (p ^ n) :=
-      IsPrimitiveRoot.of_map_of_injective (f := L.val) (by simpa using hζ) L.val.injective
-    have hc : hζsub.autToPow K τ = c := by
-      calc
-        hζsub.autToPow K τ = modularCyclotomicCharacter L hζsub.card_rootsOfUnity τ :=
-          IsPrimitiveRoot.autToPow_eq_modularCyclotomicCharacter _ K hζsub τ
-        _ = (IsCyclotomicExtension.zeta_spec (p ^ n) K L).autToPow K τ := by
-          simpa only [MonoidHom.toFun_eq_coe] using
-            (IsPrimitiveRoot.autToPow_eq_modularCyclotomicCharacter _ K
-              (IsCyclotomicExtension.zeta_spec (p ^ n) K L) τ).symm
-        _ = (IsCyclotomicExtension.autEquivPow L (hirr n)) τ := by
-          simpa only [MonoidHom.toFun_eq_coe] using
-            (IsCyclotomicExtension.autEquivPow_apply L (hirr n) τ).symm
-        _ = c := (IsCyclotomicExtension.autEquivPow L (hirr n)).apply_symm_apply c
-    rw [← hc]
-    exact (IsPrimitiveRoot.autToPow_spec K hζsub τ).symm
-  have hσζ : σ ζ = ζ ^ (c : ZMod (p ^ n)).val := by
-    have hcomm := AlgEquiv.restrictNormal_commutes σ L ⟨ζ, hζL⟩
-    have hrestrict : σ.restrictNormal L = τ := hσ
-    rw [hrestrict] at hcomm
-    exact hcomm.symm.trans (congrArg Subtype.val hτζ)
-  have hchar := cyclotomicCharacter.spec p g.toRingEquiv ζ hζ.pow_eq_one
-  rw [localCyclotomicCharacter_apply]
-  apply ZMod.val_injective
-  apply hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _)
-  exact hchar.symm.trans (hσζ.trans (by simp [c]))
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
 
 /-- The local `p`-adic cyclotomic character is surjective if all `p`-power cyclotomic
-polynomials are irreducible over the base field. -/
+polynomials are irreducible over the base field. In characteristic `p` the hypothesis fails, since
+`Φ_{p²} = (X - 1) ^ (p² - p)` there. -/
 theorem localCyclotomicCharacter_surjective_of_irreducible
     (hirr : ∀ n : ℕ, Irreducible (cyclotomic (p ^ n) K)) :
     Function.Surjective (localCyclotomicCharacter p K) := by
+  have : NeZero (p : K) := ⟨fun h0 ↦ by
+    have : CharP K p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr h0
+    have hp := (Fact.out : p.Prime)
+    have hcyc := cyclotomic_mul_prime_pow_eq K (p := p) (m := 1)
+      (fun h ↦ hp.one_lt.ne' (Nat.dvd_one.mp h)) (k := 2) two_pos
+    rw [mul_one, cyclotomic_one] at hcyc
+    refine not_irreducible_pow (n := p ^ 2 - p ^ (2 - 1)) ?_ (hcyc ▸ hirr 2)
+    have : 2 ≤ p := hp.two_le
+    have : p ^ 2 = p * p := sq p
+    simp only [Nat.add_one_sub_one, pow_one]
+    nlinarith [Nat.sub_add_cancel (show p ≤ p ^ 2 by nlinarith)]⟩
   intro u
   let t : ℕ → Set (Field.absoluteGaloisGroup K) := fun n ↦
     {σ | PadicInt.toZModPow n (localCyclotomicCharacter p K σ : ℤ_[p]) =
@@ -112,8 +74,15 @@ theorem localCyclotomicCharacter_surjective_of_irreducible
       ((PadicInt.continuous_toZModPow n).comp
         (Units.continuous_val.comp (localCyclotomicCharacter_continuous p K)))
       continuous_const
-  have htnonempty (n : ℕ) : (t n).Nonempty :=
-    exists_localCyclotomicCharacter_toZModPow_eq hirr u n
+  have htnonempty (n : ℕ) : (t n).Nonempty := by
+    obtain ⟨σ, hσ⟩ := modularCyclotomicCharacter_surjective_of_irreducible (K := K)
+      (HasEnoughRootsOfUnity.natCard_rootsOfUnity (AlgebraicClosure K) (p ^ n))
+      (hirr n) (Units.map (PadicInt.toZModPow n).toMonoidHom u)
+    let g : Field.absoluteGaloisGroup K := σ
+    refine ⟨g, ?_⟩
+    dsimp only [t]
+    rw [Set.mem_ofPred_eq, localCyclotomicCharacter_apply, cyclotomicCharacter.toZModPow]
+    exact congrArg Units.val hσ
   have htmono (n : ℕ) : t (n + 1) ⊆ t n := by
     intro σ hσ
     dsimp [t] at hσ ⊢

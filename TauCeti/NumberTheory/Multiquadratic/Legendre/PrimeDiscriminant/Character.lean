@@ -195,7 +195,7 @@ theorem primeDiscriminantCharFun_eq_one_or_eq_neg_one {P n : ℤ} (hP : IsPrimeD
     refine legendreSym.eq_one_or_neg_one p ?_
     rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
     exact oddPrimeDiscriminant_dvd_iff.mpr.mt
-      ((prime_oddPrimeDiscriminant hp).coprime_iff_not_dvd.mp hcop.symm)
+      ((prime_oddPrimeDiscriminant_iff.mpr hp).coprime_iff_not_dvd.mp hcop.symm)
 
 /-- The character attached to a prime discriminant vanishes exactly on the integers that are not
 coprime to it. -/
@@ -293,7 +293,7 @@ theorem primeDiscriminantCharFun_eq_kroneckerSym {P : ℤ} (hP : IsPrimeDiscrimi
       | (rw [kroneckerSym_eq_zero_iff.mpr (by decide)]; decide)
       | (rw [kroneckerSym_of_odd _ (by decide)]; norm_num)
   · rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd,
-      kroneckerSym_eq_jacobiSym_natAbs (oddPrimeDiscriminant_mod_four_eq_one hodd),
+      kroneckerSym_eq_jacobiSym_natAbs (oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd),
       oddPrimeDiscriminant_natAbs]
 
 /-! ### Nontriviality -/

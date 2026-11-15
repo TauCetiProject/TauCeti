@@ -11,7 +11,10 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
-# Smoothness and derivatives of real powers of `1 - k² sin² θ`
+# Derivatives of trigonometric expressions
+
+The first and second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
+(`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`).
 
 For every real exponent `p`, the map `(k, θ) ↦ (1 - k² sin² θ) ^ p` is smooth on the open set
 `{(k, θ) | k ^ 2 < 1}`, where its base is positive, and its partial derivative in `k` there is
@@ -32,6 +35,19 @@ theorem contDiffOn_one_sub_sq_mul_sin_sq_rpow {n : WithTop ℕ∞} (p : ℝ) :
       {z : ℝ × ℝ | z.1 ^ 2 < 1} :=
   (by fun_prop : ContDiff ℝ n fun z : ℝ × ℝ ↦ 1 - z.1 ^ 2 * sin z.2 ^ 2).contDiffOn
     |>.rpow_const_of_ne fun z hz ↦ (one_sub_mul_sin_sq_pos hz z.2).ne'
+
+/-- The derivative of `t ↦ cos (c t)` is `-c sin (c t)`. -/
+theorem deriv_cos_mul (c t : ℝ) : deriv (fun s ↦ cos (c * s)) t = -(c * sin (c * t)) := by
+  rw [deriv_comp_mul_left (f := cos), Real.deriv_cos, smul_eq_mul, mul_neg]
+
+/-- The second derivative of `t ↦ cos (c t)` is `-c² cos (c t)`. -/
+theorem deriv_deriv_cos_mul (c t : ℝ) :
+    deriv (deriv fun s ↦ cos (c * s)) t = -(c ^ 2 * cos (c * t)) := by
+  have hderiv : (deriv fun s ↦ cos (c * s)) = fun s ↦ -(c * sin (c * s)) :=
+    funext (deriv_cos_mul c)
+  rw [hderiv, deriv.fun_neg, deriv_const_mul _ (by fun_prop), deriv_comp_mul_left (f := sin),
+    Real.deriv_sin, smul_eq_mul]
+  ring
 
 /-- For `k ^ 2 < 1` and every real exponent `p`, the derivative in `k` of
 `(1 - k² sin² θ) ^ p` is `-2 p k sin² θ (1 - k² sin² θ) ^ (p - 1)`. -/

@@ -75,6 +75,15 @@ variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
   funext i j
   exact ContinuousMap.ext (h i j)
 
+/-- The operator form of `CoordinateHom.compatible`: changing the target chart after a chart
+operator agrees with changing the source chart before the other chart operator. -/
+theorem coordChange_comp_operator (a : CoordinateHom Z W) (i i' : ι) (j j' : κ) (x : B)
+    (hi : x ∈ Z.baseSet i) (hi' : x ∈ Z.baseSet i') (hj : x ∈ W.baseSet j)
+    (hj' : x ∈ W.baseSet j') :
+    (W.coordChange j j' x).comp (a.operator i j ⟨x, hi, hj⟩) =
+      (a.operator i' j' ⟨x, hi', hj'⟩).comp (Z.coordChange i i' x) :=
+  ContinuousLinearMap.ext (a.compatible i i' j j' x hi hi' hj hj')
+
 /-- The descended linear operator in the preferred coordinates at a base point. -/
 def fiberMap (a : CoordinateHom Z W) (x : B) : F →L[𝕜] G :=
   a.operator (Z.indexAt x) (W.indexAt x) ⟨x, Z.mem_baseSet_at x, W.mem_baseSet_at x⟩

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Topology.Bases
 
 /-!
 # Gluing functions along a sequence of sets
@@ -15,11 +16,17 @@ pairwise intersections, come from a single function. This is the step which glue
 obtained on each member of a compact exhaustion, into one function, as in the diagonal argument
 for sequential compactness in `Lᵖ_loc`.
 
+In a second-countable space, a property holding almost everywhere on each member of an open cover
+of a set holds almost everywhere on that set, even if the cover is uncountable: Mathlib's
+`TopologicalSpace.isOpen_iUnion_countable` extracts a countable subcover.
+
 ## Main results
 
 * `TauCeti.exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter`: functions on a sequence of
   measurable sets which agree almost everywhere on the pairwise intersections glue to a single
   function.
+* `TauCeti.ae_restrict_of_subset_iUnion_isOpen`: almost-everywhere statements on the members of an
+  open cover hold almost everywhere on the covered set.
 -/
 
 public section
@@ -48,5 +55,16 @@ theorem exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter {Y : Type*} {L : �
   have h : ∃ m, y ∈ L m := ⟨m, hym⟩
   rw [dite_eq_left h]
   exact hy _ (Nat.find_spec h)
+
+/-- **Almost everywhere along an open cover.** In a second-countable space, a property holding
+almost everywhere on each member of a family of open sets covering `s` holds almost everywhere on
+`s`. The family may be uncountable. -/
+theorem ae_restrict_of_subset_iUnion_isOpen [TopologicalSpace X] [SecondCountableTopology X]
+    {ι : Type*} {s : Set X} {t : ι → Set X} (ht : ∀ i, IsOpen (t i)) (hs : s ⊆ ⋃ i, t i)
+    {P : X → Prop} (h : ∀ i, ∀ᵐ x ∂μ.restrict (t i), P x) : ∀ᵐ x ∂μ.restrict s, P x := by
+  obtain ⟨T, hTc, hT⟩ := TopologicalSpace.isOpen_iUnion_countable t ht
+  have : Countable T := hTc.to_subtype
+  rw [← hT, Set.biUnion_eq_iUnion] at hs
+  exact ae_mono (Measure.restrict_mono_set μ hs) ((ae_restrict_iUnion_iff _ _).2 fun i => h i)
 
 end TauCeti

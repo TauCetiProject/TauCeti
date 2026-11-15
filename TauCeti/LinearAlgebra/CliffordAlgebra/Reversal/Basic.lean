@@ -68,6 +68,14 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
   apply Subtype.ext
   simp [even.ι]
 
+/-- Clifford reversal negates the even bivector of two orthogonal vectors. -/
+theorem reverseEven_even_ι_bilin_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
+    reverseEven Q ((even.ι Q).bilin x y) = -(even.ι Q).bilin x y := by
+  rw [reverseEven_ι]
+  apply Subtype.ext
+  simp only [even.ι, NegMemClass.coe_neg]
+  exact ι_mul_ι_comm_of_isOrtho h.symm
+
 /-- Reversal restricted to the even subalgebra is an involution. -/
 @[simp] theorem reverseEven_reverseEven (x : ↥(even Q)) :
     reverseEven Q (reverseEven Q x) = x := by

@@ -178,7 +178,7 @@ theorem coeff_formalGroup_sub_mem_augmentationIdeal (d : Fin 2 →₀ ℕ) :
 /-- Integers `cᵢ` with `∑_{0 < i < n} cᵢ (n.choose i / d_n) = 1`, for `n ≥ 2`. -/
 private def bezout (n : ℕ) : ℕ → ℤ :=
   if h : 2 ≤ n then
-    (exists_sum_natCast_mul_eq_one_of_gcd_eq_one (gcd_choose_div_lazardGcd_eq_one h)).choose
+    (gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one h)).choose
   else 0
 
 private theorem sum_bezout (n : ℕ+) :
@@ -186,7 +186,7 @@ private theorem sum_bezout (n : ℕ+) :
       bezout (n + 1) i = 1 := by
   have hn : 2 ≤ (n : ℕ) + 1 := by have := n.pos; omega
   simp only [bezout, hn, ↓reduceDIte]
-  simpa only [Nat.add_sub_cancel] using (exists_sum_natCast_mul_eq_one_of_gcd_eq_one
+  simpa only [Nat.add_sub_cancel] using (gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1
     (gcd_choose_div_lazardGcd_eq_one hn)).choose_spec
 
 /-- The **generator** `xₙ` of the indecomposables of the Lazard ring in degree `2n`: the integral
@@ -319,17 +319,14 @@ private theorem snd_cocycleHom_generator (n m : ℕ+) :
       have h₁ : ¬(i = 1 ∧ (m : ℕ) + 1 - i = 0) := by omega
       have h₂ : ¬(i = 0 ∧ (m : ℕ) + 1 - i = 1) := by omega
       simp [h₁, h₂]
-    rw [map_zsmul, TrivSqZeroExt.snd_smul, cocycleHom_coeff_formalGroup, hX, zero_add,
-      coeff_lazardCocycle]
+    rw [map_zsmul, TrivSqZeroExt.snd_smul, cocycleHom_coeff_formalGroup, hX, zero_add]
     by_cases hmn : m = n
     · subst hmn
-      have hi₀ : i ≠ 0 := by omega
-      have hj₀ : (m : ℕ) + 1 - i ≠ 0 := by omega
-      have hsum : i + (m + 1 - i) = m + 1 := by omega
-      simp [hi₀, hj₀, hsum, mul_comm]
+      rw [coeff_single_add_single_lazardCocycle (by omega) (by omega)]
+      simp [mul_comm]
     · have hmn' : (m : ℕ) ≠ n := fun h ↦ hmn (PNat.coe_injective h)
       have hsum : i + (m + 1 - i) ≠ n + 1 := by omega
-      simp [hmn, hsum]
+      simp [coeff_lazardCocycle, hmn, hsum]
   rw [sum_congr rfl h]
   split_ifs with hmn
   · subst hmn

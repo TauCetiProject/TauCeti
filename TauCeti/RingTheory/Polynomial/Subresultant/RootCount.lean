@@ -44,9 +44,7 @@ convention.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 variable {K : Type*} [Field K] [DecidableEq K]
 
@@ -55,7 +53,7 @@ section CommonRoots
 /-- For nonzero `p` and `q` with `p` split, `r` is the number of common roots of `p` and `q`,
 each counted with the minimum of its two multiplicities, exactly when the principal subresultant
 coefficient at index `r` is the first nonzero one. -/
-theorem _root_.Polynomial.card_roots_inter_eq_iff_psc_of_splits {p q : K[X]} (hp : p ≠ 0)
+theorem card_roots_inter_eq_iff_psc_of_splits {p q : K[X]} (hp : p ≠ 0)
     (hq : q ≠ 0) (hsplit : p.Splits) (r : ℕ) :
     Multiset.card (p.roots ∩ q.roots) = r ↔
       psc p q p.natDegree q.natDegree r ≠ 0 ∧ ∀ i < r, psc p q p.natDegree q.natDegree i = 0 := by
@@ -65,7 +63,7 @@ theorem _root_.Polynomial.card_roots_inter_eq_iff_psc_of_splits {p q : K[X]} (hp
 in an algebraically closed field `K`, each counted with the minimum of its two multiplicities,
 exactly when the principal subresultant coefficient over `k` at index `r` is the first nonzero
 one. -/
-theorem _root_.Polynomial.card_aroots_inter_eq_iff_psc [IsAlgClosed K] {k : Type*} [Field k]
+theorem card_aroots_inter_eq_iff_psc [IsAlgClosed K] {k : Type*} [Field k]
     [Algebra k K] {p q : k[X]} (hp : p ≠ 0) (hq : q ≠ 0) (r : ℕ) :
     Multiset.card (p.aroots K ∩ q.aroots K) = r ↔
       psc p q p.natDegree q.natDegree r ≠ 0 ∧ ∀ i < r, psc p q p.natDegree q.natDegree i = 0 := by
@@ -78,7 +76,7 @@ variable [CharZero K]
 
 /-- For a split polynomial, `r` is the number of distinct roots exactly when the principal
 subresultant coefficient at index `degree - r` is the first nonzero one. -/
-theorem _root_.Polynomial.card_roots_toFinset_eq_iff_psc_of_splits {p : K[X]} (hp : p ≠ 0)
+theorem card_roots_toFinset_eq_iff_psc_of_splits {p : K[X]} (hp : p ≠ 0)
     (hsplit : p.Splits) (r : ℕ) (hr : r ≤ p.natDegree) :
     p.roots.toFinset.card = r ↔
       psc p p.derivative p.natDegree p.derivative.natDegree (p.natDegree - r) ≠ 0 ∧
@@ -88,7 +86,7 @@ theorem _root_.Polynomial.card_roots_toFinset_eq_iff_psc_of_splits {p : K[X]} (h
   have hg : (EuclideanDomain.gcd p p.derivative).natDegree ≤ p.natDegree :=
     natDegree_le_of_dvd (EuclideanDomain.gcd_dvd_left p p.derivative) hp
   have hcount :=
-    natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp hsplit
+    natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hsplit
   omega
 
 section IsAlgClosed
@@ -97,7 +95,7 @@ variable [IsAlgClosed K]
 
 /-- Over an algebraically closed field, `r` is the number of distinct roots exactly when the
 principal subresultant coefficient at index `degree - r` is the first nonzero one. -/
-theorem _root_.Polynomial.card_roots_toFinset_eq_iff_psc {p : K[X]} (hp : p ≠ 0)
+theorem card_roots_toFinset_eq_iff_psc {p : K[X]} (hp : p ≠ 0)
     (r : ℕ) (hr : r ≤ p.natDegree) :
     p.roots.toFinset.card = r ↔
       psc p p.derivative p.natDegree p.derivative.natDegree (p.natDegree - r) ≠ 0 ∧
@@ -107,4 +105,4 @@ theorem _root_.Polynomial.card_roots_toFinset_eq_iff_psc {p : K[X]} (hp : p ≠ 
 
 end IsAlgClosed
 
-end TauCeti
+end Polynomial

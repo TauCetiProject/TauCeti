@@ -10,18 +10,23 @@ public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Module.Shrink
 public import Mathlib.RingTheory.Finiteness.Small
+public import TauCeti.Algebra.Category.HopfModuleCat.Basic
 
 /-!
 # Finite-dimensional modules over an algebra
 
-`FiniteHopfModuleCat k H` is the category of left `H`-modules finite-dimensional over `k`.
-Its objects are native `ModuleCat H` objects, with finiteness tested after native restriction
-of scalars along `algebraMap k H`. Their carriers lie in the universe of `k`, so tensor products
+`FiniteHopfModuleCat k H` is the category of left `H`-modules finite-dimensional over `k`: the
+full subcategory of `HopfModuleCat k H` (native `ModuleCat H` objects) cut out by
+`HopfModuleCat.isFinite`, finiteness tested after native restriction of scalars along
+`algebraMap k H`. Their carriers lie in the universe of `k`, so tensor products
 over `k`, the scalar field itself, and finite duals can all have the same carrier universe.
 
 The underlying category and its faithful forgetful functors require only a `k`-algebra.
 The type synonym keeps additional Hopf-module tensor structures separate from tensor products
 over a commutative `H`. In particular, no monoidal structure is installed here.
+
+The inclusion `toHopfModuleCat` into all modules is the identity on underlying modules. It is
+fully faithful; `ObjectProperty.fullyFaithfulι` gives the `Functor.FullyFaithful` structure.
 
 `ofShrink` places any finite-dimensional module, even one in a larger universe, in this category.
 `ofShrinkEquiv` is an `H`-linear comparison with the original module; `ofShrinkLinearEquiv` is
@@ -41,15 +46,17 @@ universe u v w
 
 variable (k : Type u) [Field k] (H : Type v) [Ring H] [Algebra k H]
 
+/-- The property of a module of being finite-dimensional over the scalar field. -/
+abbrev HopfModuleCat.isFinite : ObjectProperty (HopfModuleCat k H) :=
+  fun M => Module.Finite k ((HopfModuleCat.forgetToModule k H).obj M)
+
 /-- Left modules over `H` whose restriction to `k` is finite-dimensional, with carriers in the
 universe of `k`. Only the algebra structure is needed for the underlying category. -/
 -- Expose the type synonym to retain the native full-subcategory projections and constructors.
 -- Implicit reducibility lets tactics typecheck those projections, without allowing instance
 -- search to inherit tensor products over `H`.
 @[expose, implicit_reducible]
-def FiniteHopfModuleCat :=
-  ObjectProperty.FullSubcategory (fun M : ModuleCat.{u} H =>
-    Module.Finite k ((ModuleCat.restrictScalars (algebraMap k H)).obj M))
+def FiniteHopfModuleCat := (HopfModuleCat.isFinite k H).FullSubcategory
 
 namespace FiniteHopfModuleCat
 
@@ -86,29 +93,30 @@ instance (M : FiniteHopfModuleCat k H) : IsScalarTower k H M :=
 
 instance (M : FiniteHopfModuleCat k H) : Module.Finite k M := M.property
 
-/-- Inclusion into all native left `H`-modules. -/
-abbrev incl : FiniteHopfModuleCat k H ⥤ ModuleCat.{u} H :=
+/-- The inclusion of the finite-dimensional modules into all modules. -/
+abbrev toHopfModuleCat : FiniteHopfModuleCat k H ⥤ HopfModuleCat k H :=
   ObjectProperty.ι _
 
-instance : (incl k H).Faithful := ObjectProperty.faithful_ι _
+instance : (toHopfModuleCat k H).Faithful := ObjectProperty.faithful_ι _
 
-instance : (incl k H).Full := ObjectProperty.full_ι _
+instance : (toHopfModuleCat k H).Full := ObjectProperty.full_ι _
 
 /-- The inclusion sends a morphism to its underlying morphism of `H`-modules. -/
 @[simp]
-theorem incl_map {M N : FiniteHopfModuleCat k H} (f : M ⟶ N) :
-    (incl k H).map f = f.hom := (rfl)
+theorem toHopfModuleCat_map {M N : FiniteHopfModuleCat k H} (f : M ⟶ N) :
+    (toHopfModuleCat k H).map f = f.hom := (rfl)
 
-instance : (incl k H).Additive where
+instance : (toHopfModuleCat k H).Additive where
 
-instance : (incl k H).Linear k where
+instance : (toHopfModuleCat k H).Linear k where
 
-/-- Forget the `H`-action by native restriction of scalars to `k`. -/
+/-- Forget the `H`-action: the inclusion followed by the forgetful functor of all modules,
+native restriction of scalars to `k`. -/
 abbrev forgetToModule : FiniteHopfModuleCat k H ⥤ ModuleCat.{u} k :=
-  incl k H ⋙ ModuleCat.restrictScalars (algebraMap k H)
+  toHopfModuleCat k H ⋙ HopfModuleCat.forgetToModule k H
 
 instance : (forgetToModule k H).Faithful :=
-  inferInstanceAs (incl k H ⋙ ModuleCat.restrictScalars (algebraMap k H)).Faithful
+  inferInstanceAs (toHopfModuleCat k H ⋙ HopfModuleCat.forgetToModule k H).Faithful
 
 instance : (forgetToModule k H).Additive := inferInstance
 
@@ -169,7 +177,7 @@ variable {k H}
 /-- Bundle a native module that is finite-dimensional over the scalar field. -/
 abbrev of (V : Type u) [AddCommGroup V] [Module k V] [Module H V]
     [IsScalarTower k H V] [Module.Finite k V] : FiniteHopfModuleCat k H :=
-  ⟨ModuleCat.of H V, by
+  ⟨HopfModuleCat.of V, by
     let e : ((ModuleCat.restrictScalars (algebraMap k H)).obj (ModuleCat.of H V)) ≃ₗ[k] V :=
       { AddEquiv.refl V with
         map_smul' := fun r x =>
@@ -182,7 +190,7 @@ abbrev ofHom {V W : Type u} [AddCommGroup V] [Module k V] [Module H V]
     [IsScalarTower k H V] [Module.Finite k V] [AddCommGroup W] [Module k W] [Module H W]
     [IsScalarTower k H W] [Module.Finite k W] (f : V →ₗ[H] W) :
     of (k := k) (H := H) V ⟶ of (k := k) (H := H) W :=
-  ObjectProperty.homMk (ModuleCat.ofHom f)
+  ObjectProperty.homMk (HopfModuleCat.ofHom f)
 
 /-- An `H`-linear equivalence gives an isomorphism of bundled finite-dimensional modules. -/
 def _root_.LinearEquiv.toFiniteHopfModuleCatIso
@@ -201,11 +209,26 @@ theorem _root_.LinearEquiv.toFiniteHopfModuleCatIso_inv_hom
     {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) :
     e.toFiniteHopfModuleCatIso.inv.hom.hom = e.symm.toLinearMap := (rfl)
 
+/-- An isomorphism of finite-dimensional modules gives an `H`-linear equivalence of the underlying
+modules. -/
+def isoToLinearEquiv {M N : FiniteHopfModuleCat k H} (e : M ≅ N) : M ≃ₗ[H] N :=
+  ((toHopfModuleCat k H).mapIso e).toLinearEquiv
+
+/-- The `H`-linear equivalence of an isomorphism is its forward map. -/
+@[simp]
+theorem isoToLinearEquiv_apply {M N : FiniteHopfModuleCat k H} (e : M ≅ N) (x : M) :
+    isoToLinearEquiv e x = e.hom.hom.hom x := (rfl)
+
+/-- The inverse of the `H`-linear equivalence of an isomorphism is its inverse map. -/
+@[simp]
+theorem isoToLinearEquiv_symm_apply {M N : FiniteHopfModuleCat k H} (e : M ≅ N) (x : N) :
+    (isoToLinearEquiv e).symm x = e.inv.hom.hom x := (rfl)
+
 /-- Morphisms of finite-dimensional modules are determined by their native linear maps. -/
 @[ext]
 theorem hom_ext {M N : FiniteHopfModuleCat k H} {f g : M ⟶ N}
     (h : f.hom.hom = g.hom.hom) : f = g :=
-  ObjectProperty.hom_ext _ (ModuleCat.hom_ext h)
+  ObjectProperty.hom_ext _ (HopfModuleCat.hom_ext h)
 
 /-- The native linear map underlying the categorical identity is the identity. -/
 @[simp]

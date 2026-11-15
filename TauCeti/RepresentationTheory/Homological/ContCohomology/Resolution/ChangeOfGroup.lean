@@ -28,7 +28,9 @@ to a cocycle whose class is the image of the class of `z`
 `TopRep.ResolutionContraction.res_cohomologyClass`. For complexes assembled from graded
 representations, a morphism of degree zero commuting with the differentials gives such a chain map
 (`TopRep.gradedCochainComplexResMap`), and the statement becomes one about homogeneous cocycles on
-the total modules (`TopRep.ResolutionContraction.map_gradedCohomologyClass`).
+the total modules (`TopRep.ResolutionContraction.map_gradedCohomologyClass`). On the total
+coinduced resolution itself, the chain map is `TopRep.gradedResolutionMap φ f`
+(`TopRep.map_gradedResolutionContraction_gradedCohomologyClass`).
 
 So restriction and inflation of a class built on a contracted complex, such as the class of the
 diagonal tensor of a cocycle on the tensor-induced resolution of an open subgroup in Evens'
@@ -50,6 +52,8 @@ coinduced resolution. As for the independence of these classes from the comparis
 * `TopRep.ResolutionContraction.res_cohomologyClass`: the restriction to a subgroup.
 * `TopRep.ResolutionContraction.map_gradedCohomologyClass`: naturality of the classes of
   homogeneous cocycles in compatible pairs.
+* `TopRep.map_gradedResolutionContraction_gradedCohomologyClass`: naturality of the classes of
+  cocycles of the total coinduced resolution in compatible pairs.
 
 ## References
 
@@ -233,5 +237,43 @@ theorem map_gradedCohomologyClass {M : TopRep.{max v w} k G} {ℳ : ℤ → Subm
     gradedCochainComplexInvariant_val, gradedCochainComplexInvariant_val]
 
 end ResolutionContraction
+
+variable {k : Type u} [Ring k] [TopologicalSpace k] [DiscreteTopology k]
+  {G H : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H] (φ : H →ₜ* G)
+  {X : TopRep.{max v w} k G} {Y : TopRep.{max v w} k H}
+
+/-- **Naturality of the classes of cocycles of the total coinduced resolution.** For smooth
+discrete coefficients, the map of a compatible pair `(φ, f)` carries the class of a homogeneous
+cocycle `z` of the total resolution of `X` to the class of its image
+`TopRep.gradedResolutionMap φ f z`, the cochain `F ↦ f ∘ F ∘ φ` in each degree. -/
+theorem map_gradedResolutionContraction_gradedCohomologyClass (hX : TauCeti.IsSmoothDiscrete k X)
+    (hY : TauCeti.IsSmoothDiscrete k Y) (f : TopRep.res (φ : H →* G) X ⟶ Y) {n : ℕ}
+    {z : X.gradedResolutionModule} (hz : z ∈ X.gradedResolutionPiece n)
+    (hinv : ∀ g, X.gradedResolutionTopRep.ρ g z = z)
+    (hdz : X.gradedResolutionTopRepDifferential.hom z = 0) :
+    _root_.ContinuousCohomology.map φ f n
+        ((gradedResolutionContraction hX).gradedCohomologyClass z hz hinv hdz) =
+      (gradedResolutionContraction hY).gradedCohomologyClass (gradedResolutionMap φ f z)
+        (gradedResolutionMap_mem_piece φ f hz)
+        (fun h ↦ (gradedResolutionTopRep_ρ_apply _ _ _).trans
+          (gradedResolutionMap_invariant φ f
+            (fun g ↦ (gradedResolutionTopRep_ρ_apply _ _ _).symm.trans (hinv g)) h))
+        ((gradedResolutionTopRepDifferential_apply _ _).trans
+          ((gradedResolutionMap_differential φ f z).symm.trans
+            ((congrArg _ ((gradedResolutionTopRepDifferential_apply _ _).symm.trans hdz)).trans
+              (map_zero _)))) := by
+  have := hX.discreteTopology
+  have := hY.discreteTopology
+  refine (ResolutionContraction.map_gradedCohomologyClass φ _ _ f
+    (gradedResolutionTopRepResMap φ f) (isHomogeneous_gradedResolutionTopRepResMap φ f)
+    (gradedResolutionTopRepResMap_differential φ f)
+    (fun x ↦ (congrArg (gradedResolutionTopRepResMap φ f).hom
+      (gradedResolutionContraction_ι_apply hX x)).trans
+        ((gradedResolutionTopRepResMap_apply φ f _).trans
+          ((gradedResolutionMap_augmentation φ f x).trans
+            (gradedResolutionContraction_ι_apply hY _).symm))) hz hinv hdz).trans ?_
+  congr 1
+  exact gradedResolutionTopRepResMap_apply φ f z
 
 end TopRep

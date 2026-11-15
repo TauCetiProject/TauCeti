@@ -422,8 +422,8 @@ where `σ` is the reflection of `E` in the great sphere `⟪x, ι i⟫ = 0`
 and `ρ` is the half-turn in the plane `ι ℂ`. The isometry `ρ ∘ σ` negates `ι 1` and fixes `ι i`
 and the orthogonal complement of `ι ℂ`, so it is the reflection in the great sphere
 `⟪x, ι 1⟫ = 0` and reverses the orientation of `E`; the reparametrization `z ↦ (-z)⁻¹` reverses the
-orientation of the circle. This is the knot whose connected sum with `K` is topologically slice
-(`TauCeti.SmoothCircleEmbedding.isTopologicallySlice_connectedSum_reverseMirror`). -/
+orientation of the circle. This is the knot whose connected sum with `K` is smoothly slice
+(`TauCeti.SmoothCircleEmbedding.isSmoothlySlice_connectedSum_reverseMirror`). -/
 def reverseMirror (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
   (K.reverse.rotate (-1)).transDiffeomorph

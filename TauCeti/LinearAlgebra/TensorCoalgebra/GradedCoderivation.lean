@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coderivation
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Graded coderivations of the reduced tensor coalgebra
@@ -102,7 +103,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- The endomorphism of length-`n` tensor words twisting the first `p` letters: precomposing the
 ungraded Taylor summand at position `p` with it produces the graded, Koszul-signed summand. -/
-private noncomputable def ReducedTensorWords.gradedTwistFirst (G : InternalGrading R M) (q : ℤ)
+private noncomputable def ReducedTensorWords.gradedTwistFirst (G : InternalGrading R M ℤ) (q : ℤ)
     (n p : ℕ) :
     TensorPower R n M →ₗ[R] TensorPower R n M :=
   PiTensorProduct.map (s := fun _ : Fin n => M) (t := fun _ : Fin n => M)
@@ -110,25 +111,31 @@ private noncomputable def ReducedTensorWords.gradedTwistFirst (G : InternalGradi
 
 /-- The `(p, d)` summand of the graded Taylor expansion of `F` at twist parameter `q`: the ungraded
 summand, precomposed with the twist of the letters preceding the collapsed block. -/
-private noncomputable def ReducedTensorWords.gradedCoderivSummand (G : InternalGrading R M)
+private noncomputable def ReducedTensorWords.gradedCoderivSummand (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) (n p d : ℕ) :
     TensorPower R n M →ₗ[R] ReducedTensorWords R M :=
   coderivSummand R F n p d ∘ₗ gradedTwistFirst G q n p
 
 /-- On a pure tensor word, the graded Taylor summand splices the value of `F` on the collapsed
 block into the tuple whose first `p` letters carry the Koszul twist. -/
-private theorem ReducedTensorWords.gradedCoderivSummand_tprod (G : InternalGrading R M)
-    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n p d : ℕ} (hd : 0 < d) (hpd : p + d ≤ n)
+private theorem ReducedTensorWords.gradedCoderivSummand_tprod (G : InternalGrading R M ℤ)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n p d : ℕ}
     (x : Fin n → M) :
     gradedCoderivSummand G F q n p d (PiTensorProduct.tprod R x)
       = splice R (twistedTuple G q x 0 p) 0 n p d (F (subword R x p d)) := by
+  by_cases h : 0 < d ∧ p + d ≤ n
+  swap
+  · rw [gradedCoderivSummand, coderivSummand_eq_zero R F h, LinearMap.zero_comp,
+      LinearMap.zero_apply]
+    exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
+  obtain ⟨_, hpd⟩ := h
   have hsub : subword R
       (fun i => (if i.val < p then koszulTwist G q else LinearMap.id) (x i)) p d =
       subword R x p d :=
     subword_congr R _ _ (by omega) (by omega) fun j hj ↦ by
       simp [show ¬(p + j < p) from by omega]
   rw [gradedCoderivSummand, LinearMap.coe_comp, Function.comp_apply, gradedTwistFirst,
-    PiTensorProduct.map_tprod, coderivSummand_tprod R F hd hpd, hsub]
+    PiTensorProduct.map_tprod, coderivSummand_tprod R F, hsub]
   refine splice_congr R _ _ _ (by omega) (by omega) fun j hj ↦ ?_
   simp only [twistedTuple_apply, Nat.zero_le, true_and]
   by_cases hj' : j < p <;> simp [hj']
@@ -140,13 +147,13 @@ twist of the letters preceding the block.
 If the inputs are homogeneous of degrees `𝒟 i`, the collapse at position `p` thus carries the
 Koszul sign `(-1)^(q * (𝒟 0 + ⋯ + 𝒟 (p - 1)))`, because the Koszul twist scales each of those
 letters by its own sign factor; see `gradedCoderiv_of_tprod_of_homogeneous`. -/
-noncomputable def ReducedTensorWords.gradedCoderiv (G : InternalGrading R M)
+noncomputable def ReducedTensorWords.gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M :=
   DirectSum.toModule R {n : ℕ // 0 < n} _ fun n =>
     ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), gradedCoderivSummand G F q n.1 p d
 
-private theorem gradedCoderiv_of (G : InternalGrading R M) (F : ReducedTensorWords R M →ₗ[R] M)
+private theorem gradedCoderiv_of (G : InternalGrading R M ℤ) (F : ReducedTensorWords R M →ₗ[R] M)
     (q : ℤ) (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
     gradedCoderiv G F q (of R M n z)
       = ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
@@ -156,22 +163,18 @@ private theorem gradedCoderiv_of (G : InternalGrading R M) (F : ReducedTensorWor
 
 /-- Evaluation of the graded Taylor expansion on a pure tensor word: every summand collapses one
 block and twists the letters preceding it. -/
-theorem ReducedTensorWords.gradedCoderiv_of_tprod (G : InternalGrading R M)
+theorem ReducedTensorWords.gradedCoderiv_of_tprod (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
     gradedCoderiv G F q (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x))
       = ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
           splice R (twistedTuple G q x 0 p) 0 n p d (F (subword R x p d)) := by
   rw [gradedCoderiv_of]
   refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun d _ ↦ ?_
-  by_cases h : 0 < d ∧ p + d ≤ n
-  · rw [gradedCoderivSummand_tprod G F q h.1 h.2 x]
-  · rw [gradedCoderivSummand, coderivSummand_eq_zero R F (by tauto), LinearMap.zero_comp,
-      LinearMap.zero_apply]
-    exact (splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)).symm
+  exact gradedCoderivSummand_tprod G F q x
 
 /-- Splicing a Koszul-twisted prefix of a homogeneous tuple produces the Koszul sign of that
 prefix times the untwisted splice. -/
-theorem ReducedTensorWords.splice_twistedTuple_smul (G : InternalGrading R M) (q : ℤ)
+theorem ReducedTensorWords.splice_twistedTuple_smul (G : InternalGrading R M ℤ) (q : ℤ)
     {n : ℕ} (x : Fin n → M) (𝒟 : Fin n → ℤ) (hx : ∀ i, x i ∈ G.piece (𝒟 i))
     (p d : ℕ) (e : M) :
     splice R (twistedTuple G q x 0 p) 0 n p d e =
@@ -229,7 +232,7 @@ theorem ReducedTensorWords.splice_twistedTuple_smul (G : InternalGrading R M) (q
 /-- Evaluation of the graded Taylor expansion on a pure tensor of homogeneous letters: each
 summand is the corresponding untwisted splice, scaled by the Koszul sign
 `(-1)^(q * (𝒟 0 + ⋯ + 𝒟 (p - 1)))` of the letters preceding the collapsed block. -/
-theorem ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous (G : InternalGrading R M)
+theorem ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (hn : 0 < n) (x : Fin n → M)
     (𝒟 : Fin n → ℤ) (hx : ∀ i, x i ∈ G.piece (𝒟 i)) :
     gradedCoderiv G F q (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)) =
@@ -243,7 +246,7 @@ theorem ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous (G : InternalGr
 /-- Evaluation of the graded Taylor expansion of a map acting on single letters only: it applies
 `f` to one letter at a time and twists the letters preceding it.  On homogeneous letters the twist
 is the Koszul sign of moving an operation of degree `q` past those letters. -/
-theorem ReducedTensorWords.gradedCoderiv_comp_letter_of_tprod (G : InternalGrading R M)
+theorem ReducedTensorWords.gradedCoderiv_comp_letter_of_tprod (G : InternalGrading R M ℤ)
     (f : M →ₗ[R] M) (q : ℤ) {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
     gradedCoderiv G (f ∘ₗ letter R M) q (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)) =
       ∑ p ∈ Finset.range n, of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i ↦
@@ -262,7 +265,7 @@ theorem ReducedTensorWords.gradedCoderiv_comp_letter_of_tprod (G : InternalGradi
 
 /-- Evaluation of a Taylor summand on a block read out of a longer tuple: the same transport as
 for the ungraded summands, with the twisted tuple carried along. -/
-private theorem ReducedTensorWords.gradedCoderivSummand_tprod_of_eq (G : InternalGrading R M)
+private theorem ReducedTensorWords.gradedCoderivSummand_tprod_of_eq (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n b : ℕ} (x : Fin n → M) (y : Fin b → M)
     {a : ℕ} (hab : a + b ≤ n)
     (hy : ∀ j : Fin b, y j = x ⟨a + j.val, by omega⟩)
@@ -292,7 +295,7 @@ private theorem ReducedTensorWords.gradedCoderivSummand_tprod_of_eq (G : Interna
 for the ungraded `coderiv_subword`, with each spliced tuple twisted before the block that
 collapses.  The two ranges may be taken as large as convenient, since a summand whose collapsed
 block does not fit vanishes. -/
-theorem ReducedTensorWords.gradedCoderiv_subword (G : InternalGrading R M)
+theorem ReducedTensorWords.gradedCoderiv_subword (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) {a b K : ℕ}
     (hK : b ≤ K) :
     gradedCoderiv G F q (subword R x a b)
@@ -322,7 +325,7 @@ theorem ReducedTensorWords.gradedCoderiv_subword (G : InternalGrading R M)
 
 /-- The words of total degree `D`: the span of the pure tensor words whose letters lie in
 homogeneous pieces the degrees of which add up to `D`. -/
-noncomputable def ReducedTensorWords.gradedPiece (G : InternalGrading R M) (D : ℤ) :
+noncomputable def ReducedTensorWords.gradedPiece (G : InternalGrading R M ℤ) (D : ℤ) :
     Submodule R (ReducedTensorWords R M) :=
   Submodule.span R {z | ∃ (n : ℕ) (_hn : 0 < n) (𝒟 : Fin n → ℤ) (x : Fin n → M),
     (∀ i, x i ∈ G.piece (𝒟 i)) ∧ (∑ i, 𝒟 i) = D ∧
@@ -330,13 +333,12 @@ noncomputable def ReducedTensorWords.gradedPiece (G : InternalGrading R M) (D : 
 
 /-- Induction on membership in `gradedPiece`: a consumer may apply this in place of
 `Submodule.span_induction`, whose span is sealed behind the definition. -/
-theorem ReducedTensorWords.gradedPiece_induction {G : InternalGrading R M} {D : ℤ}
+theorem ReducedTensorWords.gradedPiece_induction {G : InternalGrading R M ℤ} {D : ℤ}
     {motive : ReducedTensorWords R M → Prop} {z : ReducedTensorWords R M}
     (hz : z ∈ gradedPiece G D)
     (mem : ∀ (n : ℕ) (hn : 0 < n) (𝒟 : Fin n → ℤ) (x : Fin n → M),
       (∀ i, x i ∈ G.piece (𝒟 i)) → (∑ i, 𝒟 i) = D →
         motive (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)))
-    (zero : motive 0)
     (add : ∀ u v, u ∈ gradedPiece G D → v ∈ gradedPiece G D → motive u → motive v →
       motive (u + v))
     (smul : ∀ (a : R) u, u ∈ gradedPiece G D → motive u → motive (a • u)) :
@@ -345,19 +347,24 @@ theorem ReducedTensorWords.gradedPiece_induction {G : InternalGrading R M} {D : 
   | mem _ hw =>
     obtain ⟨n, hn, 𝒟, x, hx, hD, rfl⟩ := hw
     exact mem n hn 𝒟 x hx hD
-  | zero => exact zero
+  | zero =>
+    have h := mem 1 one_pos (fun _ ↦ D) (fun _ ↦ 0) (fun _ ↦ zero_mem _) (by simp)
+    -- the singleton word on the letter `0` is the zero tensor, since `tprod` is multilinear
+    have htprod : PiTensorProduct.tprod R (fun _ : Fin 1 ↦ (0 : M)) = 0 :=
+      MultilinearMap.map_coord_zero _ (0 : Fin 1) rfl
+    rwa [htprod, map_zero] at h
   | add u v hu hv ihu ihv => exact add u v hu hv ihu ihv
   | smul a u hu ih => exact smul a u hu ih
 
 /-- A pure tensor word of homogeneous letters of degrees `𝒟 i` lies in the graded piece of total
 degree `∑ i, 𝒟 i`. -/
-theorem ReducedTensorWords.mem_gradedPiece_of_tprod (G : InternalGrading R M) {n : ℕ} (hn : 0 < n)
+theorem ReducedTensorWords.mem_gradedPiece_of_tprod (G : InternalGrading R M ℤ) {n : ℕ} (hn : 0 < n)
     (x : Fin n → M) (𝒟 : Fin n → ℤ) (h𝒟 : ∀ i, x i ∈ G.piece (𝒟 i)) :
     of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x) ∈ gradedPiece G (∑ i, 𝒟 i) :=
   Submodule.subset_span ⟨n, hn, 𝒟, x, h𝒟, rfl, rfl⟩
 
 /-- A single homogeneous letter is a word of the same total degree. -/
-theorem ReducedTensorWords.ofLetter_mem_gradedPiece (G : InternalGrading R M) {p : ℤ} {x : M}
+theorem ReducedTensorWords.ofLetter_mem_gradedPiece (G : InternalGrading R M ℤ) {p : ℤ} {x : M}
     (hx : x ∈ G.piece p) : ofLetter R M x ∈ gradedPiece G p := by
   have h := mem_gradedPiece_of_tprod G Nat.one_pos (fun _ : Fin 1 ↦ x) (fun _ ↦ p) fun _ ↦ hx
   rwa [of_tprod_eq_subword R Nat.one_pos, subword_one R M _ Nat.one_pos,
@@ -366,19 +373,17 @@ theorem ReducedTensorWords.ofLetter_mem_gradedPiece (G : InternalGrading R M) {p
 /-- Prepending a letter of degree `p` to a word of total degree `D` gives a word of total degree
 `p + D`. -/
 theorem ReducedTensorWords.prepend_mem_gradedPiece {N : Type uN} [AddCommMonoid N] [Module R N]
-    {H : InternalGrading R N} {p D : ℤ} {a : N} (ha : a ∈ H.piece p)
+    {H : InternalGrading R N ℤ} {p D : ℤ} {a : N} (ha : a ∈ H.piece p)
     {w : ReducedTensorWords R N} (hw : w ∈ gradedPiece H D) :
     prepend R N a w ∈ gradedPiece H (p + D) := by
   refine gradedPiece_induction (motive := fun w ↦ prepend R N a w ∈ gradedPiece H (p + D)) hw
-    ?_ ?_ ?_ ?_
+    ?_ ?_ ?_
   · intro k hk 𝒟 y hy hD
     rw [prepend_of_tprod, ← hD, ← Fin.sum_cons p 𝒟]
     refine mem_gradedPiece_of_tprod H _ _ _ fun i ↦ ?_
     induction i using Fin.cases with
     | zero => simpa only [Fin.cons_zero] using ha
     | succ j => simpa only [Fin.cons_succ] using hy j
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
@@ -388,10 +393,13 @@ theorem ReducedTensorWords.prepend_mem_gradedPiece {N : Type uN} [AddCommMonoid 
 
 /-- A block of a pure tensor word of homogeneous letters lies in the graded piece of the sum of
 the degrees of its letters. The degree family is indexed by absolute positions. -/
-theorem ReducedTensorWords.subword_mem_gradedPiece {G : InternalGrading R M} {n : ℕ}
+theorem ReducedTensorWords.subword_mem_gradedPiece {G : InternalGrading R M ℤ} {n : ℕ}
     (x : Fin n → M) (𝒟 : ℕ → ℤ) (h𝒟 : ∀ i : Fin n, x i ∈ G.piece (𝒟 i))
-    (a b : ℕ) (hab : a + b ≤ n) :
+    (a b : ℕ) :
     subword R x a b ∈ gradedPiece G (∑ j ∈ Finset.range b, 𝒟 (a + j)) := by
+  rcases lt_or_ge n (a + b) with hab | hab
+  · rw [subword_eq_zero_of_lt_add R x hab]
+    exact zero_mem _
   rcases Nat.eq_zero_or_pos b with rfl | hb
   · rw [subword_length_zero]
     exact zero_mem _
@@ -399,12 +407,12 @@ theorem ReducedTensorWords.subword_mem_gradedPiece {G : InternalGrading R M} {n 
     exact mem_gradedPiece_of_tprod G hb _ _ fun j ↦ h𝒟 ⟨a + j.1, by have := j.isLt; omega⟩
 
 /-- Projecting a word onto its length-one component preserves the total degree. -/
-theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
+theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (letter R M) (gradedPiece G) G.piece 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   rw [add_zero]
-  refine gradedPiece_induction (motive := fun w ↦ letter R M w ∈ G.piece D) hz ?_ ?_ ?_ ?_
+  refine gradedPiece_induction (motive := fun w ↦ letter R M w ∈ G.piece D) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     by_cases h1 : n = 1
     · subst h1
@@ -414,8 +422,6 @@ theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
     · have hne : (⟨n, hn⟩ : {n : ℕ // 0 < n}) ≠ 1 := fun h ↦ h1 (congrArg Subtype.val h)
       rw [letter_apply, component_of_of_ne R M hne, map_zero]
       exact zero_mem _
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
@@ -427,20 +433,18 @@ theorem ReducedTensorWords.isHomogeneous_letter (G : InternalGrading R M) :
 the letterwise extension `ReducedTensorWords.map f` is homogeneous of degree zero for the total
 degree gradings. -/
 theorem ReducedTensorWords.isHomogeneous_map {N : Type uN} [AddCommMonoid N] [Module R N]
-    (G : InternalGrading R M) (H : InternalGrading R N) {f : M →ₗ[R] N}
+    (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) {f : M →ₗ[R] N}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
     LinearMap.IsHomogeneous (ReducedTensorWords.map (R := R) f) (gradedPiece G)
       (gradedPiece H) 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   refine gradedPiece_induction
-    (motive := fun w ↦ ReducedTensorWords.map (R := R) f w ∈ gradedPiece H (D + 0)) hz ?_ ?_ ?_ ?_
+    (motive := fun w ↦ ReducedTensorWords.map (R := R) f w ∈ gradedPiece H (D + 0)) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     rw [map_of_tprod]
     simpa only [hD, add_zero] using mem_gradedPiece_of_tprod H hn (fun i ↦ f (x i)) 𝒟
       fun i ↦ by simpa only [add_zero] using hf.map_mem (hx i)
-  · rw [map_zero]
-    exact Submodule.zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact Submodule.add_mem _ hu hv
@@ -451,12 +455,15 @@ theorem ReducedTensorWords.isHomogeneous_map {N : Type uN} [AddCommMonoid N] [Mo
 /-- Splicing one homogeneous letter into a word of homogeneous letters stays inside the graded
 piece: the total degree is that of the untouched prefix and suffix plus the degree of the new
 letter.  The degree family is indexed by absolute positions, since splicing shifts them. -/
-theorem ReducedTensorWords.splice_mem_gradedPiece (G : InternalGrading R M) {n : ℕ}
+theorem ReducedTensorWords.splice_mem_gradedPiece (G : InternalGrading R M ℤ) {n : ℕ}
     (x : Fin n → M) (𝒟 : ℕ → ℤ) (h𝒟 : ∀ i : Fin n, x i ∈ G.piece (𝒟 i))
-    (p d : ℕ) {E : ℤ} {e : M} (he : e ∈ G.piece E) (hpd : p + d ≤ n) :
+    (p d : ℕ) {E : ℤ} {e : M} (he : e ∈ G.piece E) :
     splice R x 0 n p d e ∈ gradedPiece G
       ((∑ j ∈ Finset.range p, 𝒟 j) + E +
         ∑ j ∈ Finset.range (n - p - d), 𝒟 (p + d + j)) := by
+  rcases lt_or_ge n (p + d) with hpd | hpd
+  · rw [splice_eq_zero_of_block_lt_add R x e hpd]
+    exact Submodule.zero_mem _
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · rw [splice_zero_length]
     exact Submodule.zero_mem _
@@ -505,7 +512,7 @@ theorem ReducedTensorWords.splice_mem_gradedPiece (G : InternalGrading R M) {n :
 
 /-- The total-degree pieces span the reduced tensor coalgebra. In particular, an equality of
 linear maps out of reduced tensor words may be checked separately on these pieces. -/
-theorem ReducedTensorWords.iSup_gradedPiece_eq_top (G : InternalGrading R M) :
+theorem ReducedTensorWords.iSup_gradedPiece_eq_top (G : InternalGrading R M ℤ) :
     ⨆ D : ℤ, gradedPiece G D = ⊤ := by
   classical
   apply le_antisymm le_top
@@ -541,13 +548,13 @@ theorem ReducedTensorWords.iSup_gradedPiece_eq_top (G : InternalGrading R M) :
 
 /-- On the total-degree-`D` piece of reduced tensor words, applying the Koszul twist to every
 letter is scalar multiplication by `(-1)^(q * D)`. -/
-theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M) {D : ℤ}
+theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M ℤ) {D : ℤ}
     {z : ReducedTensorWords R M} (hz : z ∈ gradedPiece G D) (q : ℤ) :
     ReducedTensorWords.map (R := R) (G.koszulTwist q) z =
       (((q * D).negOnePow : ℤ) : R) • z := by
   refine gradedPiece_induction
     (motive := fun z ↦ ReducedTensorWords.map (R := R) (G.koszulTwist q) z =
-      (((q * D).negOnePow : ℤ) : R) • z) hz ?_ (by simp) ?_ ?_
+      (((q * D).negOnePow : ℤ) : R) • z) hz ?_ ?_ ?_
   · intro n hn degree x hx hD
     rw [map_of_tprod]
     have htuple : (fun i ↦ G.koszulTwist q (x i)) =
@@ -558,7 +565,9 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
         (((q * ∑ i, degree i).negOnePow : ℤ) : R) =
           ∏ i, (((q * degree i).negOnePow : ℤ) : R) := by
       simp only [← negOnePowCast_eq_intCast, Finset.mul_sum, negOnePowCast_sum]
-    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ, map_smul, ← hD, ← hsign]
+    rw [htuple, (PiTensorProduct.tprod R).map_smul_univ]
+    simp only [RingHom.id_apply]
+    rw [map_smul, ← hD, ← hsign]
   · intro u v _ _ hu hv
     simp only [map_add, hu, hv, smul_add]
   · intro a u _ hu
@@ -567,7 +576,7 @@ theorem ReducedTensorWords.map_koszulTwist_apply_of_mem (G : InternalGrading R M
 /-- A homogeneous linear map of reduced tensor words commutes with the letterwise Koszul twists
 up to the sign contributed by its degree. -/
 theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {N : Type uN} [AddCommMonoid N] [Module R N]
-    {G : InternalGrading R M} {H : InternalGrading R N}
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} {r : ℤ}
     (hb : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece H) r) (q : ℤ) :
     ReducedTensorWords.map (R := R) (H.koszulTwist q) ∘ₗ b =
@@ -596,7 +605,7 @@ theorem LinearMap.IsHomogeneous.map_koszulTwist_comp {N : Type uN} [AddCommMonoi
 /-- If `F` raises total degrees by `r`, so does its graded Taylor expansion, independently of
 the twist parameter `q`: for every `D`, the map `gradedCoderiv G F q` sends `gradedPiece G D`
 into `gradedPiece G (D + r)`. The twist preserves each homogeneous piece. -/
-theorem ReducedTensorWords.isHomogeneous_gradedCoderiv (G : InternalGrading R M)
+theorem ReducedTensorWords.isHomogeneous_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q r : ℤ)
     (hF : LinearMap.IsHomogeneous F (gradedPiece G) (fun e => G.piece e) r) :
     LinearMap.IsHomogeneous (gradedCoderiv G F q) (gradedPiece G) (gradedPiece G) r := by
@@ -639,7 +648,7 @@ theorem ReducedTensorWords.isHomogeneous_gradedCoderiv (G : InternalGrading R M)
           exact Finset.sum_congr rfl fun i _ => (hg i).symm
         rw [hgsum, sum_range_add_add g hfit.2]
         abel
-      have step := splice_mem_gradedPiece G (twistedTuple G q x 0 p) g ht p d hFe hfit.2
+      have step := splice_mem_gradedPiece G (twistedTuple G q x 0 p) g ht p d hFe
       rwa [idx] at step
     · rw [splice_eq_zero R (twistedTuple G q x 0 p) _ (by tauto)]
       exact Submodule.zero_mem _
@@ -670,7 +679,7 @@ On a word `z` of homogeneous letters, summing over cuts `w₁ ⊗ w₂` of `z`,
 the classical signed co-Leibniz rule.  For `q = 0` the twist is the identity and this is plain
 `IsCoderivation`. Homogeneity of degree `r` is recorded by
 `IsGradedCoderivation.isHomogeneous`. -/
-def ReducedTensorWords.IsGradedCoderivation (G : InternalGrading R M) (q : ℤ)
+def ReducedTensorWords.IsGradedCoderivation (G : InternalGrading R M ℤ) (q : ℤ)
     (b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) : Prop :=
   deconcatenation R M ∘ₗ b =
     LinearMap.rTensor (ReducedTensorWords R M) b ∘ₗ deconcatenation R M +
@@ -708,7 +717,7 @@ theorem ReducedTensorWords.isGradedCoderivation_iff {q : ℤ}
   Iff.rfl
 
 /-- On a block of a pure tensor word, twisting letterwise is the twisted tuple read in place. -/
-private theorem map_twist_subword (G : InternalGrading R M) (q : ℤ) {n : ℕ}
+private theorem map_twist_subword (G : InternalGrading R M ℤ) (q : ℤ) {n : ℕ}
     (x : Fin n → M) {a b : ℕ} (hab : a + b ≤ n) :
     ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q) (subword R x a b) =
       subword R (twistedTuple G q x a b) a b := by
@@ -736,7 +745,7 @@ end Predicate
 
 /-- The words `twistedTuple G q x 0 m` and `twistedTuple G q x 0 c` agree on their first `c`
 letters whenever `c ≤ m ≤ n`, since twisting only affects positions below the twist length. -/
-private theorem subword_twistedTuple_congr (G : InternalGrading R M) (q : ℤ) {n : ℕ}
+private theorem subword_twistedTuple_congr (G : InternalGrading R M ℤ) (q : ℤ) {n : ℕ}
     (x : Fin n → M) {m c : ℕ} (hcm : c ≤ m) (hm : m ≤ n) :
     subword R (twistedTuple G q x 0 m) 0 c = subword R (twistedTuple G q x 0 c) 0 c := by
   refine subword_congr R (twistedTuple G q x 0 m) (twistedTuple G q x 0 c)
@@ -746,7 +755,7 @@ private theorem subword_twistedTuple_congr (G : InternalGrading R M) (q : ℤ) {
 
 /-- The tuples `twistedTuple G q x 0 (c + p)` and `twistedTuple G q x c p` agree on every letter
 from position `c` onward, so splices acting on the letters at and after position `c` coincide. -/
-private theorem splice_twistedTuple_congr (G : InternalGrading R M) (q : ℤ) {n : ℕ}
+private theorem splice_twistedTuple_congr (G : InternalGrading R M ℤ) (q : ℤ) {n : ℕ}
     (x : Fin n → M) {b c p d : ℕ} (hab : c + b ≤ n) (e : M) :
     splice R (twistedTuple G q x 0 (c + p)) c b p d e =
       splice R (twistedTuple G q x c p) c b p d e := by
@@ -758,121 +767,135 @@ private theorem splice_twistedTuple_congr (G : InternalGrading R M) (q : ℤ) {n
   · have e2 : ¬(c ≤ c + j ∧ c + j < c + p) := by omega
     rw [ite_eq_right (show ¬(c + j < c + p) from by omega), ite_eq_right e2]
 
+/-- The coproduct of a graded Taylor coderivation applied to a whole word is a sum of two triple
+sums over a cut, a collapsed-block start, and a block length: the first collapses a block in the
+right half of the cut, the second in the left half. -/
+private theorem deconcatenation_gradedCoderiv_subword_eq (G : InternalGrading R M ℤ)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    deconcatenation R M (gradedCoderiv G F q (subword R x 0 n)) =
+      (∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range (p + 1),
+          subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
+            splice R (twistedTuple G q x 0 p) c (n - c) (p - c) d (F (subword R x p d))) +
+        ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range n,
+          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+            subword R (twistedTuple G q x 0 p) c (n - c) := by
+  rw [gradedCoderiv_subword G F q x (K := n) (le_refl n), map_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [deconcatenation_splice R (twistedTuple G q x 0 p)]
+  simp only [Nat.zero_add]
+
+/-- The right-hand side of the twisted co-Leibniz identity for the graded Taylor expansion, on a
+whole word, as a triple sum over a cut, a collapsed-block start, and a block length. -/
+private theorem coLeibniz_gradedCoderiv_subword_eq (G : InternalGrading R M ℤ)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    LinearMap.rTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
+        (deconcatenation R M (subword R x 0 n)) +
+      LinearMap.lTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
+        (LinearMap.rTensor (ReducedTensorWords R M)
+          (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q))
+          (deconcatenation R M (subword R x 0 n))) =
+      (∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+            subword R x c (n - c)) +
+        ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+          subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
+            splice R (twistedTuple G q x c p) c (n - c) p d
+              (F (subword R x (c + p) d)) := by
+  have hdelta : deconcatenation R M (subword R x 0 n) =
+      ∑ c ∈ Finset.range n, subword R x 0 c ⊗ₜ[R] subword R x c (n - c) := by
+    rw [deconcatenation_subword R x (a := 0) (b := n)]
+    simp only [Nat.zero_add]
+    exact sum_Ioo_eq_sum_range n _ (by rw [subword_length_zero, TensorProduct.zero_tmul])
+  rw [hdelta, map_sum, map_sum, map_sum]
+  congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
+    simp only [Finset.mem_range] at hc
+  · rw [LinearMap.rTensor_tmul,
+      gradedCoderiv_subword G F q x (a := 0) (b := c) (K := n) (by omega),
+      TensorProduct.sum_tmul]
+    exact Finset.sum_congr rfl fun p _ ↦ by
+      rw [TensorProduct.sum_tmul]
+      simp only [Nat.zero_add]
+  · rw [LinearMap.rTensor_tmul, map_twist_subword G q x (hab := by omega),
+      LinearMap.lTensor_tmul,
+      gradedCoderiv_subword G F q x (a := c) (b := n - c) (K := n) (by omega)]
+    rw [TensorProduct.tmul_sum]
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    rw [TensorProduct.tmul_sum]
+
+/-- Blocks collapsed in the left half match the plain co-Leibniz term. -/
+private theorem sum_splice_tmul_subword_twistedTuple_eq (G : InternalGrading R M ℤ)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range n,
+      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+        subword R (twistedTuple G q x 0 p) c (n - c) =
+    ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+        subword R x c (n - c) := by
+  refine Eq.trans (Finset.sum_congr rfl fun p _ ↦ Finset.sum_comm) ?_
+  refine Finset.sum_comm.trans ?_
+  refine Finset.sum_congr rfl fun c hc ↦ Finset.sum_congr rfl fun p _ ↦
+    Finset.sum_congr rfl fun d _ ↦ ?_
+  simp only [Finset.mem_range] at hc
+  by_cases hpc : p + d ≤ c
+  · have hrw : subword R (twistedTuple G q x 0 p) c (n - c) = subword R x c (n - c) :=
+      subword_congr R _ _ (by omega) (by omega) fun j hj ↦ by
+        have h2 : ¬((0:ℕ) ≤ c + j ∧ c + j < 0 + p) := by omega
+        simp only [twistedTuple_apply, h2, ite_false]
+    simp only [hrw]
+  · rw [splice_eq_zero_of_block_lt_add R (twistedTuple G q x 0 p)
+      (F (subword R x p d)) (by omega), TensorProduct.zero_tmul,
+      TensorProduct.zero_tmul]
+
+/-- Blocks collapsed in the right half match the twisted co-Leibniz term, after reindexing the
+absolute block position through the triangle identity. -/
+private theorem sum_subword_twistedTuple_tmul_splice_eq (G : InternalGrading R M ℤ)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+      ∑ c ∈ Finset.range (p + 1),
+        subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
+          splice R (twistedTuple G q x 0 p) c (n - c) (p - c) d (F (subword R x p d)) =
+    ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+      subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
+        splice R (twistedTuple G q x c p) c (n - c) p d
+          (F (subword R x (c + p) d)) := by
+  have hg : ∀ c p : ℕ, n ≤ c + p →
+      (∑ d ∈ Finset.range (n + 1),
+          subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
+            splice R (twistedTuple G q x c p) c (n - c) p d
+              (F (subword R x (c + p) d))) = 0 :=
+    fun c p hp ↦ sum_tmul_splice_eq_zero R (twistedTuple G q x c p)
+      (subword R (twistedTuple G q x 0 c) 0 c) (fun d => F (subword R x (c + p) d)) hp
+  rw [(sum_range_triangle n _ hg).symm]
+  rw [Finset.sum_congr rfl fun p (_ : p ∈ Finset.range n) ↦ Finset.sum_comm]
+  refine Finset.sum_congr rfl fun P hP ↦ Finset.sum_congr rfl fun c hc ↦
+    Finset.sum_congr rfl fun d _ ↦ ?_
+  simp only [Finset.mem_range] at hP hc
+  have hcp : c + (P - c) = P := by omega
+  have hl := subword_twistedTuple_congr (G := G) (q := q) (x := x) (m := P) (c := c)
+    (by omega) (by omega)
+  have hbF : subword R x (c + (P - c)) d = subword R x P d := by
+    rw [hcp]
+  have hr := splice_twistedTuple_congr (G := G) (q := q) (x := x) (b := n - c) (c := c)
+    (p := P - c) (d := d) (hab := by omega)
+  rw [hcp] at hr
+  rw [← hbF, hl, hr]
+
 /-- The graded Taylor expansion of any linear map `F` from tensor words to letters is a
 `q`-twisted coderivation: the signed analogue of `isCoderivation_coderiv`.  The twist of the
 letters preceding each collapsed block produces exactly the Koszul sign `(-1)^(q * |left half|)`
 of the co-Leibniz rule, so the identity holds for an arbitrary `F`, homogeneous or not. -/
 @[simp]
-theorem ReducedTensorWords.isGradedCoderivation_gradedCoderiv (G : InternalGrading R M)
+theorem ReducedTensorWords.isGradedCoderivation_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     IsGradedCoderivation G q (gradedCoderiv G F q) := by
   refine linearMap_ext R M fun n x ↦ ?_
-  have hn : 0 < n.1 := n.2
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply]
-  rw [of_tprod_eq_subword R hn x]
-  -- Both sides expand as triple sums over a cut, a collapsed-block start, and a block length.
-  have hLHS : deconcatenation R M (gradedCoderiv G F q (subword R x 0 n.1)) =
-      (∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range (p + 1),
-          subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
-            splice R (twistedTuple G q x 0 p) c (n.1 - c) (p - c) d (F (subword R x p d))) +
-        ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range n.1,
-          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-            subword R (twistedTuple G q x 0 p) c (n.1 - c) := by
-    rw [gradedCoderiv_subword G F q x (K := n.1) (le_refl n.1), map_sum,
-      ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [map_sum, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun d _ ↦ ?_
-    rw [deconcatenation_splice R (twistedTuple G q x 0 p)]
-    simp only [Nat.zero_add]
-  have hdelta : deconcatenation R M (subword R x 0 n.1) =
-      ∑ c ∈ Finset.range n.1, subword R x 0 c ⊗ₜ[R] subword R x c (n.1 - c) := by
-    rw [deconcatenation_subword R x (a := 0) (b := n.1)]
-    simp only [Nat.zero_add]
-    exact sum_Ioo_eq_sum_range n.1 _ (by rw [subword_length_zero, TensorProduct.zero_tmul])
-  have hRHS : LinearMap.rTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
-        (deconcatenation R M (subword R x 0 n.1)) +
-      LinearMap.lTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
-        (LinearMap.rTensor (ReducedTensorWords R M)
-          (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q))
-          (deconcatenation R M (subword R x 0 n.1))) =
-      (∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-            subword R x c (n.1 - c)) +
-        ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-          subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
-            splice R (twistedTuple G q x c p) c (n.1 - c) p d
-              (F (subword R x (c + p) d)) := by
-    rw [hdelta, map_sum, map_sum, map_sum]
-    congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
-      simp only [Finset.mem_range] at hc
-    · rw [LinearMap.rTensor_tmul,
-        gradedCoderiv_subword G F q x (a := 0) (b := c) (K := n.1) (by omega),
-        TensorProduct.sum_tmul]
-      exact Finset.sum_congr rfl fun p _ ↦ by
-        rw [TensorProduct.sum_tmul]
-        simp only [Nat.zero_add]
-    · rw [LinearMap.rTensor_tmul, map_twist_subword G q x (hab := by omega),
-        LinearMap.lTensor_tmul,
-        gradedCoderiv_subword G F q x (a := c) (b := n.1 - c) (K := n.1) (by omega)]
-      rw [TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun p _ ↦ ?_
-      rw [TensorProduct.tmul_sum]
-  rw [hLHS]
-  rw [hRHS]
-  -- Blocks collapsed in the left half match the plain co-Leibniz term.
-  have hA2 : ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range n.1,
-      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-        subword R (twistedTuple G q x 0 p) c (n.1 - c) =
-    ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-        subword R x c (n.1 - c) := by
-    refine Eq.trans (Finset.sum_congr rfl fun p _ ↦ Finset.sum_comm) ?_
-    refine Finset.sum_comm.trans ?_
-    refine Finset.sum_congr rfl fun c hc ↦ Finset.sum_congr rfl fun p _ ↦
-      Finset.sum_congr rfl fun d _ ↦ ?_
-    simp only [Finset.mem_range] at hc
-    by_cases hpc : p + d ≤ c
-    · have hrw : subword R (twistedTuple G q x 0 p) c (n.1 - c) = subword R x c (n.1 - c) :=
-        subword_congr R _ _ (by omega) (by omega) fun j hj ↦ by
-          have h2 : ¬((0:ℕ) ≤ c + j ∧ c + j < 0 + p) := by omega
-          simp only [twistedTuple_apply, h2, ite_false]
-      simp only [hrw]
-    · rw [splice_eq_zero_of_block_lt_add R (twistedTuple G q x 0 p)
-        (F (subword R x p d)) (by omega), TensorProduct.zero_tmul,
-        TensorProduct.zero_tmul]
-  -- Blocks collapsed in the right half match the twisted co-Leibniz term, after reindexing the
-  -- absolute block position through the triangle identity.
-  have hA1 : ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-      ∑ c ∈ Finset.range (p + 1),
-        subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
-          splice R (twistedTuple G q x 0 p) c (n.1 - c) (p - c) d (F (subword R x p d)) =
-    ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-      subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
-        splice R (twistedTuple G q x c p) c (n.1 - c) p d
-          (F (subword R x (c + p) d)) := by
-    have hg : ∀ c p : ℕ, n.1 ≤ c + p →
-        (∑ d ∈ Finset.range (n.1 + 1),
-            subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
-              splice R (twistedTuple G q x c p) c (n.1 - c) p d
-                (F (subword R x (c + p) d))) = 0 :=
-      fun c p hp ↦ sum_tmul_splice_eq_zero R (twistedTuple G q x c p)
-        (subword R (twistedTuple G q x 0 c) 0 c) (fun d => F (subword R x (c + p) d)) hp
-    rw [(sum_range_triangle n.1 _ hg).symm]
-    rw [Finset.sum_congr rfl fun p (_ : p ∈ Finset.range n.1) ↦ Finset.sum_comm]
-    refine Finset.sum_congr rfl fun P hP ↦ Finset.sum_congr rfl fun c hc ↦
-      Finset.sum_congr rfl fun d _ ↦ ?_
-    simp only [Finset.mem_range] at hP hc
-    have hcp : c + (P - c) = P := by omega
-    have hl := subword_twistedTuple_congr (G := G) (q := q) (x := x) (m := P) (c := c)
-      (by omega) (by omega)
-    have hbF : subword R x (c + (P - c)) d = subword R x P d := by
-      rw [hcp]
-    have hr := splice_twistedTuple_congr (G := G) (q := q) (x := x) (b := n.1 - c) (c := c)
-      (p := P - c) (d := d) (hab := by omega)
-    rw [hcp] at hr
-    rw [← hbF, hl, hr]
-  rw [add_comm, hA2, hA1]
+  rw [of_tprod_eq_subword R n.2 x, deconcatenation_gradedCoderiv_subword_eq,
+    coLeibniz_gradedCoderiv_subword_eq, add_comm, sum_splice_tmul_subword_twistedTuple_eq,
+    sum_subword_twistedTuple_tmul_splice_eq]
 
 
 /-! ### Determinedness and the correspondence -/
@@ -886,7 +909,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 /-- The Taylor components of the graded Taylor expansion are the given map: the only summand
 leaving a single letter is the one collapsing the whole word, whose preceding twist is empty. -/
 @[simp]
-theorem ReducedTensorWords.letter_comp_gradedCoderiv (G : InternalGrading R M)
+theorem ReducedTensorWords.letter_comp_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     letter R M ∘ₗ gradedCoderiv G F q = F := by
   refine linearMap_ext R M fun n x ↦ ?_
@@ -912,7 +935,7 @@ theorem ReducedTensorWords.letter_comp_gradedCoderiv (G : InternalGrading R M)
 /-- The arity-`n` component of a graded Taylor expansion is the restriction of its defining
 Taylor map to words of length `n`. -/
 @[simp]
-theorem ReducedTensorWords.taylorComponent_gradedCoderiv (G : InternalGrading R M)
+theorem ReducedTensorWords.taylorComponent_gradedCoderiv (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) (n : {n : ℕ // 0 < n}) :
     (gradedCoderiv G F q).taylorComponent n = F ∘ₗ of R M n := by
   apply LinearMap.ext
@@ -923,7 +946,7 @@ theorem ReducedTensorWords.taylorComponent_gradedCoderiv (G : InternalGrading R 
 /-- A graded coderivation whose letter component raises degrees by `r` raises degrees by `r`:
 being determined by its letter component, it inherits homogeneity from it. The twist parameter
 `q` of the co-Leibniz identity is independent of this shift. -/
-theorem ReducedTensorWords.IsGradedCoderivation.isHomogeneous {G : InternalGrading R M}
+theorem ReducedTensorWords.IsGradedCoderivation.isHomogeneous {G : InternalGrading R M ℤ}
     {q r : ℤ} {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsGradedCoderivation G q b)
     (hhom : LinearMap.IsHomogeneous (letter R M ∘ₗ b) (gradedPiece G) (fun e => G.piece e) r) :
@@ -940,7 +963,7 @@ end Letter
 ordinary coderivation.  The anticommutation relation expresses oddness when `q` is odd.  For even
 `q`, the twist is the identity and the hypothesis instead reduces to `b + b = 0`. -/
 theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self
-    {G : InternalGrading R M} {q : ℤ}
+    {G : InternalGrading R M ℤ} {q : ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsGradedCoderivation G q b)
     (hodd : b ∘ₗ ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q) +
@@ -951,70 +974,22 @@ theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self
   intro z
   simp only [LinearMap.comp_apply, LinearMap.add_apply]
   rw [hb.deconcatenation_apply (b z), hb.deconcatenation_apply z]
-  simp only [map_add]
-  let τ := ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)
-  let w := deconcatenation R M z
-  have hfirst :
-      LinearMap.rTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) b w) =
-        LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-    rw [← LinearMap.rTensor_comp_apply]
-  have hcrossLeft :
-      LinearMap.rTensor (ReducedTensorWords R M) b
-          (LinearMap.lTensor (ReducedTensorWords R M) b
-            (LinearMap.rTensor (ReducedTensorWords R M) τ w)) =
-        TensorProduct.map (b ∘ₗ τ) b w := by
-    rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor, LinearMap.map_rTensor]
-  have hcrossRight :
-      LinearMap.lTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) τ
-            (LinearMap.rTensor (ReducedTensorWords R M) b w)) =
-        TensorProduct.map (τ ∘ₗ b) b w := by
-    rw [← LinearMap.rTensor_comp_apply, ← LinearMap.comp_apply,
-      LinearMap.lTensor_comp_rTensor]
-  have hcross :
-      TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
-    have hodd' : b ∘ₗ τ + τ ∘ₗ b = 0 := hodd
-    rw [← LinearMap.add_apply, ← TensorProduct.map_add_left,
-      hodd', TensorProduct.map_zero_left, LinearMap.zero_apply]
-  have hcommute (y : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
-      LinearMap.rTensor (ReducedTensorWords R M) τ
-          (LinearMap.lTensor (ReducedTensorWords R M) b y) =
-        LinearMap.lTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) τ y) := by
-    rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor,
-      ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor]
-  have hlast :
-      LinearMap.lTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) τ
-            (LinearMap.lTensor (ReducedTensorWords R M) b
-              (LinearMap.rTensor (ReducedTensorWords R M) τ w))) =
-        LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-    have hτ : τ ∘ₗ τ = LinearMap.id := by
-      rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
-        ReducedTensorWords.map_id]
-    rw [hcommute, ← LinearMap.lTensor_comp_apply, ← LinearMap.rTensor_comp_apply,
-      hτ, LinearMap.rTensor_id_apply]
-  rw [hfirst, hcrossLeft, hcrossRight, hlast]
-  calc
-    (LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w +
-          TensorProduct.map (b ∘ₗ τ) b w) +
-        (TensorProduct.map (τ ∘ₗ b) b w +
-          LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w) =
-      LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w +
-          (TensorProduct.map (b ∘ₗ τ) b w +
-            TensorProduct.map (τ ∘ₗ b) b w) +
-        LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-          ac_rfl
-    _ = LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w +
-        LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-      rw [hcross, add_zero]
+  have hτ : ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q) ∘ₗ
+      ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q) = LinearMap.id := by
+    rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
+      ReducedTensorWords.map_id]
+  have h := LinearMap.congr_fun (LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self b
+    (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)) hτ hodd)
+    (deconcatenation R M z)
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add] at h ⊢
+  rw [← h]
+  abel
 
 /-! ### Twist parameter zero -/
 
 /-- A `0`-twisted graded coderivation is a coderivation: the twist of parameter zero is the
 identity, so the Koszul sign drops out of the co-Leibniz rule. -/
-theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation {G : InternalGrading R M}
+theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation {G : InternalGrading R M ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsGradedCoderivation G 0 b) : IsCoderivation R b := by
   rw [isCoderivation_iff]
@@ -1026,7 +1001,7 @@ theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation {G : InternalGrad
 
 /-- A coderivation is a graded coderivation of every even twist parameter, since the Koszul twist
 of an even parameter is the identity. -/
-theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation_two_mul (G : InternalGrading R M)
+theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation_two_mul (G : InternalGrading R M ℤ)
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsCoderivation R b) (q : ℤ) : IsGradedCoderivation G (2 * q) b := by
   rw [isCoderivation_iff] at hb
@@ -1035,14 +1010,14 @@ theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation_two_mul (G : Inte
     LinearMap.comp_id, ← LinearMap.add_comp]
 
 /-- A coderivation is a `0`-twisted graded coderivation. -/
-theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation (G : InternalGrading R M)
+theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation (G : InternalGrading R M ℤ)
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsCoderivation R b) : IsGradedCoderivation G 0 b := by
   simpa using hb.isGradedCoderivation_two_mul G 0
 
 /-- At twist parameter zero the graded Taylor expansion is the ungraded one. -/
 @[simp]
-theorem ReducedTensorWords.gradedCoderiv_zero (G : InternalGrading R M)
+theorem ReducedTensorWords.gradedCoderiv_zero (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) :
     gradedCoderiv G F 0 = coderiv R F :=
   IsCoderivation.eq_of_letter_comp_eq
@@ -1059,7 +1034,7 @@ endomorphisms: both sides of the twisted co-Leibniz identity depend linearly on 
 endomorphism `b`. Membership is the co-Leibniz condition only; it does not include homogeneity,
 and it depends only on the parity of `q`. See `isHomogeneous_gradedCoderiv` and
 `IsGradedCoderivation.isHomogeneous` for the degree statement. -/
-noncomputable def ReducedTensorWords.gradedCoderivations (G : InternalGrading R M) (q : ℤ) :
+noncomputable def ReducedTensorWords.gradedCoderivations (G : InternalGrading R M ℤ) (q : ℤ) :
     Submodule R (ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) where
   carrier := {b | IsGradedCoderivation G q b}
   add_mem' {b₁ b₂} hb₁ hb₂ := by
@@ -1088,7 +1063,7 @@ noncomputable def ReducedTensorWords.gradedCoderivations (G : InternalGrading R 
 
 /-- Membership in `gradedCoderivations` is, by definition, being a graded coderivation. -/
 @[simp]
-theorem ReducedTensorWords.mem_gradedCoderivations (G : InternalGrading R M) {q : ℤ}
+theorem ReducedTensorWords.mem_gradedCoderivations (G : InternalGrading R M ℤ) {q : ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} :
     b ∈ gradedCoderivations G q ↔ IsGradedCoderivation G q b :=
   Iff.rfl
@@ -1098,7 +1073,7 @@ condition, not a homogeneity hypothesis) is determined by its letter component, 
 map from tensor words to letters is the letter component of exactly one such coderivation, namely
 its graded Taylor expansion `gradedCoderiv G F q`. The carrier depends only on the parity of `q`.
 This is the signed analogue of `ReducedTensorWords.coderivEquivTaylor`. -/
-noncomputable def ReducedTensorWords.gradedCoderivEquivTaylor (G : InternalGrading R M) (q : ℤ) :
+noncomputable def ReducedTensorWords.gradedCoderivEquivTaylor (G : InternalGrading R M ℤ) (q : ℤ) :
     gradedCoderivations G q ≃ₗ[R] (ReducedTensorWords R M →ₗ[R] M) where
   toFun b := letter R M ∘ₗ (b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
   invFun F := ⟨gradedCoderiv G F q, (mem_gradedCoderivations G).2
@@ -1120,7 +1095,7 @@ noncomputable def ReducedTensorWords.gradedCoderivEquivTaylor (G : InternalGradi
 
 /-- The graded coderivation/Taylor equivalence sends a coderivation to its letter component. -/
 @[simp]
-theorem ReducedTensorWords.gradedCoderivEquivTaylor_apply (G : InternalGrading R M) (q : ℤ)
+theorem ReducedTensorWords.gradedCoderivEquivTaylor_apply (G : InternalGrading R M ℤ) (q : ℤ)
     (b : gradedCoderivations G q) :
     gradedCoderivEquivTaylor G q b =
       letter R M ∘ₗ (b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M) :=
@@ -1128,7 +1103,7 @@ theorem ReducedTensorWords.gradedCoderivEquivTaylor_apply (G : InternalGrading R
 
 /-- The inverse of the graded coderivation/Taylor equivalence is the graded Taylor expansion. -/
 @[simp]
-theorem ReducedTensorWords.gradedCoderivEquivTaylor_symm_apply (G : InternalGrading R M) (q : ℤ)
+theorem ReducedTensorWords.gradedCoderivEquivTaylor_symm_apply (G : InternalGrading R M ℤ) (q : ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) :
     (gradedCoderivEquivTaylor G q).symm F =
       ⟨gradedCoderiv G F q, (mem_gradedCoderivations G).2
@@ -1137,21 +1112,21 @@ theorem ReducedTensorWords.gradedCoderivEquivTaylor_symm_apply (G : InternalGrad
 
 /-- The graded Taylor expansion is additive in the Taylor map. -/
 @[simp]
-theorem ReducedTensorWords.gradedCoderiv_add (G : InternalGrading R M)
+theorem ReducedTensorWords.gradedCoderiv_add (G : InternalGrading R M ℤ)
     (F₁ F₂ : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     gradedCoderiv G (F₁ + F₂) q = gradedCoderiv G F₁ q + gradedCoderiv G F₂ q :=
   congrArg Subtype.val (map_add (gradedCoderivEquivTaylor G q).symm F₁ F₂)
 
 /-- The graded Taylor expansion is `R`-linear in the Taylor map. -/
 @[simp]
-theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M) (c : R)
+theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M ℤ) (c : R)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     gradedCoderiv G (c • F) q = c • gradedCoderiv G F q :=
   congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c F)
 
 /-- The graded Taylor expansion of the zero Taylor map is zero. -/
 @[simp]
-theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M) (q : ℤ) :
+theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M ℤ) (q : ℤ) :
     gradedCoderiv G (0 : ReducedTensorWords R M →ₗ[R] M) q = 0 :=
   congrArg Subtype.val (map_zero (gradedCoderivEquivTaylor G q).symm)
 
@@ -1162,11 +1137,11 @@ end GradedCoderiv
 section Commutator
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
-  {G : InternalGrading R M}
+  {G : InternalGrading R M ℤ}
 
 /-- The co-Leibniz identity of a graded coderivation, with both terms written through
 `TensorProduct.map`. -/
-private theorem ReducedTensorWords.IsGradedCoderivation.deconcatenation_comp_eq {q : ℤ}
+theorem ReducedTensorWords.IsGradedCoderivation.deconcatenation_comp_eq {q : ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsGradedCoderivation G q b) :
     deconcatenation R M ∘ₗ b =

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
 public import Mathlib.Data.Matrix.Mul
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -89,6 +90,21 @@ theorem continuationMap_apply (f : P → M) (y : Q) :
     continuationMap R M ν f y = ∑ x, op (ν x y) • f x :=
   (rfl)
 
+/-- The continuation map is additive in the matrix. -/
+theorem continuationMap_add (F G : Matrix P Q A) :
+    continuationMap R M (F + G) = continuationMap R M F + continuationMap R M G :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (F + G) f y).trans <| by
+    simp only [LinearMap.add_apply, Pi.add_apply, continuationMap_apply F,
+      continuationMap_apply G, Matrix.add_apply, op_add, add_smul, Finset.sum_add_distrib]
+
+variable (R M P Q) in
+/-- The zero matrix induces the zero map. -/
+@[simp]
+theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (0 : Matrix P Q A) f y).trans <| by
+    simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
+      Pi.zero_apply]
+
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
 theorem continuationMap_single_apply [DecidableEq P] (x : P) (α : M) (y : Q) :
@@ -123,13 +139,12 @@ theorem continuationMap_kronecker [DecidableEq P] :
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
 /-- The matrix product induces the composite of the continuation maps. -/
-theorem continuationMap_matMul (ν₁ : P → Q → A) (ν₂ : Q → S → A) :
-    continuationMap R M (Matrix.of ν₁ * Matrix.of ν₂) =
-      (continuationMap R M ν₂).comp (continuationMap R M ν₁) := by
-  refine LinearMap.ext fun f ↦ funext fun z ↦ (continuationMap_apply _ f z).trans ?_
-  rw [LinearMap.comp_apply, continuationMap_apply]
-  simp only [continuationMap_apply, Matrix.mul_apply, Matrix.of_apply, Finset.op_sum,
-    Finset.sum_smul, Finset.smul_sum, op_mul, mul_smul]
+theorem continuationMap_matMul (F : Matrix P Q A) (G : Matrix Q S A) :
+    continuationMap R M (F * G) = (continuationMap R M G).comp (continuationMap R M F) := by
+  refine LinearMap.ext fun f ↦ funext fun z ↦ ?_
+  rw [LinearMap.comp_apply, continuationMap_apply (F * G), continuationMap_apply G]
+  simp only [continuationMap_apply F, Matrix.mul_apply, Finset.op_sum, Finset.sum_smul,
+    Finset.smul_sum, op_mul, mul_smul]
   exact Finset.sum_comm
 
 end MapMatrix
@@ -200,13 +215,10 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
   suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
       continuationMap R M ν (twistedDifferential mP ℳ dM (Pi.single x α)) =
         twistedDifferential mQ ℳ dM (continuationMap R M ν (Pi.single x α)) by
-    rw [← Finset.univ_sum_single f, map_sum, map_sum, map_sum, map_sum]
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb => rw [Pi.single_add, map_add, map_add, map_add, map_add, ha, hb]
+    have hlin : continuationMap R M ν ∘ₗ twistedDifferential mP ℳ dM =
+        twistedDifferential mQ ℳ dM ∘ₗ continuationMap R M ν :=
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ key x hα
+    exact LinearMap.congr_fun hlin f
   intro x q α hα
   funext w
   -- Left-hand side: `Ψ` of `D_P (α ⊗ x) = dM α ⊗ x + (-1) ^ q Σ_z (α · mP x z) ⊗ z`.

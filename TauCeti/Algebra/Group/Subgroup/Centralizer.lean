@@ -13,6 +13,8 @@ public import Mathlib.Order.Zorn
 -- `Subgroup.zpowers` occurs in `Subgroup.zpowers_le_centralizer_singleton`.
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 import TauCeti.Algebra.Group.Torsion
+-- `group` proves the conjugation identity behind `commute_conj_zpow_of_inv_mul_mem_centralizer`.
+import Mathlib.Tactic.Group
 
 /-!
 # Centralizers and maximal commutative subgroups
@@ -29,11 +31,15 @@ which is the form every concrete centralizer computation in a matrix group start
   exactly when the two commute as elements of the monoid.
 * `Subgroup.zpowers_le_centralizer_singleton`: an element's cyclic subgroup lies in its
   centralizer.
+* `Subgroup.centralizer_singleton_eq_zpowers_of_centralizer_le`: an element whose cyclic subgroup
+  contains the centralizer of some element generates its own centralizer.
 * `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
   maximal among commutative subgroups.
 * `Subgroup.exists_maximal_isMulCommutative`: every commutative subgroup lies in a maximal one.
 * `Subgroup.centralizer_zpow_eq` and `Subgroup.centralizer_pow_eq`: nonzero powers have the same
   centralizer as their base in groups with unique roots.
+* `Group.commute_conj_zpow_of_inv_mul_mem_centralizer`: conjugates of powers of `u` by `y` and
+  `y'` commute when `y⁻¹ * y'` centralizes `u`.
 -/
 
 public section
@@ -68,6 +74,15 @@ theorem exists_maximal_isMulCommutative {G : Type*} [Group G] (H : Subgroup G)
 theorem zpowers_le_centralizer_singleton {G : Type*} [Group G] (x : G) :
     zpowers x ≤ centralizer {x} :=
   zpowers_le.2 (mem_centralizer_singleton_iff.2 rfl)
+
+/-- An element whose cyclic subgroup contains the centralizer of some element generates its own
+centralizer. -/
+theorem centralizer_singleton_eq_zpowers_of_centralizer_le {G : Type*} [Group G] {x c : G}
+    (h : centralizer {x} ≤ zpowers c) : centralizer {c} = zpowers c := by
+  refine le_antisymm (fun y hy ↦ ?_) (zpowers_le_centralizer_singleton c)
+  obtain ⟨k, rfl⟩ := mem_zpowers_iff.1 (h (mem_centralizer_singleton_iff.2 rfl))
+  exact h (mem_centralizer_singleton_iff.2
+    (Commute.zpow_right (mem_centralizer_singleton_iff.1 hy) k))
 
 /-- A self-centralizing subgroup is maximal among commutative subgroups. -/
 theorem eq_of_centralizer_eq_self_of_le_of_isMulCommutative {G : Type*} [Group G]
@@ -104,3 +119,21 @@ theorem centralizer_pow_eq {n : ℕ} (hn : n ≠ 0) :
   simpa only [zpow_natCast] using centralizer_zpow_eq x hn'
 
 end Subgroup
+
+namespace Group
+
+variable {G : Type*} [Group G]
+
+/-- Conjugates of powers of `u` by `y` and `y'` commute when `y⁻¹ * y'` centralizes `u`. -/
+theorem commute_conj_zpow_of_inv_mul_mem_centralizer {u y y' : G} (e e' : ℤ)
+    (hy : y⁻¹ * y' ∈ Subgroup.centralizer {u}) :
+    Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
+  have hc : Commute (y⁻¹ * y') (u ^ e') :=
+    (Commute.zpow_right (Subgroup.mem_centralizer_singleton_iff.1 hy) e')
+  have : y' * u ^ e' * y'⁻¹ = y * u ^ e' * y⁻¹ := by
+    calc y' * u ^ e' * y'⁻¹ = y * ((y⁻¹ * y') * u ^ e' * (y⁻¹ * y')⁻¹) * y⁻¹ := by group
+      _ = y * u ^ e' * y⁻¹ := by rw [hc.eq, mul_inv_cancel_right]
+  rw [this, Commute.conj_iff]
+  exact Commute.zpow_zpow_self u e e'
+
+end Group

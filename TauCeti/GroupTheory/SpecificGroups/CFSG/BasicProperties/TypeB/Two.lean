@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SymplecticFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.SpinAgreement
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Perfect
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Simple
 
 /-!
-# The Steinberg fixed points of `B₂(q)` and its projective symplectic group
+# The Steinberg fixed points of `B₂(q)`, its projective symplectic group and its simplicity
 
 The untwisted family `Bₙ(q)` is built at every rank on the full-weight spin carrier, and its
 Steinberg map is the carrier's `q`-power Frobenius. At rank two the spin representation of
@@ -33,8 +34,10 @@ element other than `0` and `1`, so `Sp₄(𝔽_q)` is perfect by
 `TauCeti.GLSymplecticFin.commutator_eq_top_of_two_le`. Its derived subgroup is then the whole group,
 and the candidate group of `B₂(q)`, the derived subgroup of the fixed points modulo its centre, is
 the projective symplectic group `PSp₄(𝔽_q) = Sp₄(𝔽_q) ⧸ Z(Sp₄(𝔽_q))`. That is
-`TauCeti.TypeB2LieIndex.projectiveSymplecticEquivGroup`. Nothing here asserts that this group is
-simple.
+`TauCeti.TypeB2LieIndex.projectiveSymplecticEquivGroup`. It is simple by Iwasawa's criterion
+(`TauCeti.GLSymplecticFin.isSimpleGroup_quotient_center`), so every `B₂(q)` on
+the classification list is simple, read both on the type-`B` index and on the assembled carrier
+`TauCeti.ValidLieTypeIndex.Group`.
 
 ## Main definitions and results
 
@@ -45,6 +48,8 @@ simple.
 * `TauCeti.TypeB2LieIndex.commutator_symplectic_eq_top`: `Sp₄(𝔽_q)` is perfect.
 * `TauCeti.TypeB2LieIndex.projectiveSymplecticEquivGroup`: the group attached to `B₂(q)` is
   `PSp₄(𝔽_q)`.
+* `TauCeti.TypeB2LieIndex.isSimpleGroup_group` and `TauCeti.ValidLieTypeIndex.isSimpleGroup_B_two`:
+  the group attached to `B₂(q)` is simple.
 
 ## References
 
@@ -125,11 +130,8 @@ def projectiveSymplecticEquivGroup :
     GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent) ⧸
         Subgroup.center (GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent))
       ≃* d.toTypeBLieIndex.Group :=
-  letI : Group.IsPerfect (GLSymplecticFin 2
-      (GaloisField d.1.1.characteristic d.1.1.fieldExponent)) :=
-    ⟨d.commutator_symplectic_eq_top⟩
-  DerivedCentralQuotient.mulEquivQuotientCenter.symm.trans
-    (DerivedCentralQuotient.congr d.symplecticEquivFixedPoints)
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect d.commutator_symplectic_eq_top
+    d.symplecticEquivFixedPoints
 
 /-- The isomorphism with `PSp₄(𝔽_q)` sends the class of a matrix in the derived subgroup to the
 class of the corresponding fixed point. -/
@@ -139,14 +141,29 @@ theorem projectiveSymplecticEquivGroup_mk
     d.projectiveSymplecticEquivGroup (QuotientGroup.mk (s := Subgroup.center _)
         (x : GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent))) =
       ((MulEquiv.commutatorCongr d.symplecticEquivFixedPoints x :
-          commutator d.toTypeBLieIndex.FixedPoints) : d.toTypeBLieIndex.Group) := by
-  let _ : Group.IsPerfect (GLSymplecticFin 2
-      (GaloisField d.1.1.characteristic d.1.1.fieldExponent)) :=
-    ⟨d.commutator_symplectic_eq_top⟩
-  rw [projectiveSymplecticEquivGroup, MulEquiv.trans_apply,
-    ← DerivedCentralQuotient.mulEquivQuotientCenter_mk, MulEquiv.symm_apply_apply,
-    DerivedCentralQuotient.congr_mk]
+          commutator d.toTypeBLieIndex.FixedPoints) : d.toTypeBLieIndex.Group) :=
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
+
+/-- **The group attached to `B₂(q)` is simple**, for every valid index: it is `PSp₄(𝔽_q)`, which is
+simple by Iwasawa's criterion because `Sp₄(𝔽_q)` is perfect. -/
+theorem isSimpleGroup_group : IsSimpleGroup d.toTypeBLieIndex.Group :=
+  have := GLSymplecticFin.isSimpleGroup_quotient_center
+    d.commutator_symplectic_eq_top
+  d.projectiveSymplecticEquivGroup.symm.isSimpleGroup
 
 end TauCeti.TypeB2LieIndex
+
+namespace TauCeti.ValidLieTypeIndex
+
+/-- **Every `B₂(q)` on the classification list is simple.** On the constructor `B 2 q` the
+Steinberg endomorphism of the assembly is that of the type-`B` family, so the assembled candidate
+is the one of `TauCeti.TypeB2LieIndex.of q hv`. -/
+theorem isSimpleGroup_B_two {q : PrimePower} (hv : (LieTypeIndex.B 2 q).Valid) :
+    IsSimpleGroup (ValidLieTypeIndex.Group ⟨_, hv⟩) := by
+  unfold ValidLieTypeIndex.Group
+  rw [steinberg_B, GraphTwistedIndex.steinberg_B]
+  exact (TypeB2LieIndex.of q hv).isSimpleGroup_group
+
+end TauCeti.ValidLieTypeIndex
 
 end

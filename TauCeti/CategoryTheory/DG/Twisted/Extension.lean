@@ -88,8 +88,8 @@ projections and inclusions of one extension and the inclusions and projections o
 * `TauCeti.DGTwistedObject.extension_dgHom_ext`: morphisms out of an extension are determined by
   their composites with the two inclusions.
 * `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_extensionFst_extensionInr` and
-  `TauCeti.DGTwistedObject.isZero_of_extension`: an extension along an invertible morphism is
-  contractible.
+  `TauCeti.DGTwistedObject.isZero_extension_of_dgComp_eq_dgId`: an extension along an invertible
+  morphism is contractible.
 * `TauCeti.DGTwistedObject.isZero_of_isEmpty`: a twisted object with no summands is a zero object
   of the homotopy category; in particular the homotopy category has a zero object.
 * `TauCeti.DGTwistedObject.extensionHomOfHomotopy_zero`: the zero morphism induces the identity.
@@ -326,23 +326,29 @@ extension, the form in which it appears in the matrix entries of morphisms out o
 extension; `simp` does not see through this projection to the entry lemmas of
 `TauCeti.DGTwistedObject.extensionTwist`. -/
 
+/-- The `(inl, inl)` entry of the twist of an extension is the corresponding entry of the twist of
+`P`. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inl_inl (i j : P.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inl j) =
       matrixEquiv R _ _ 1 P.twist i j :=
   dgHomEquiv_extensionTwist_inl_inl R P Q g i j
 
+/-- The `(inl, inr)` entry of the twist of an extension vanishes. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inl_inr (i : P.obj.ι) (j : Q.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inr j) = 0 :=
   dgHomEquiv_extensionTwist_inl_inr R P Q g i j
 
+/-- The `(inr, inl)` entry of the twist of an extension is the corresponding entry of `g`. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inr_inl (i : Q.obj.ι) (j : P.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inl j) =
       matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) i j :=
   dgHomEquiv_extensionTwist_inr_inl R P Q g i j
 
+/-- The `(inr, inr)` entry of the twist of an extension is the corresponding entry of the twist of
+`Q`. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inr_inr (i j : Q.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inr j) =
@@ -562,7 +568,7 @@ theorem dgComp_extensionInr_extensionSnd :
 
 /-- **An extension is the direct sum of `P` and `Q` as a graded object**: the projections
 followed by the inclusions sum to the identity. -/
-theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
+theorem extension_total :
     dgComp R (extensionFst R hg) (extensionInl R hg) (add_zero 0) +
       dgComp R (extensionSnd R hg) (extensionInr R hg) (add_zero 0) = dgId R _ :=
   dgHom_ext' fun a b ↦ by
@@ -588,7 +594,7 @@ theorem extension_dgHom_ext {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : �
       dgComp R (extensionInr R hg) f' (zero_add n)) :
     f = f' := by
   rw [← dgId_dgComp R f, ← dgId_dgComp R f',
-    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg, add_dgComp,
+    ← extension_total R hg, add_dgComp,
     add_dgComp, dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
     dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
     dgComp_assoc R _ _ f' (add_zero 0) (zero_add n) (by omega),
@@ -664,13 +670,13 @@ theorem dgDifferential_neg_dgComp_extensionFst_extensionInr
     dgDifferential_extensionInr, dgDifferential_eq_zero_of_dgComp_eq_dgId R hg _ hgg' hg'g]
   simp only [dgComp_zero, smul_zero, add_zero, neg_dgComp, Int.negOnePow_neg, Int.negOnePow_one,
     Units.neg_smul, one_smul, hsnd, hfst]
-  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  rw [← extension_total R hg]
   abel
 
 /-- **An extension along an invertible morphism is contractible**: if the closed degree-one
 morphism `g : Q ⟶ P` has an inverse of degree `-1`, then the extension of `Q` by `P` along `g` is
 a zero object of the homotopy category. -/
-theorem isZero_of_extension (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
+theorem isZero_extension_of_dgComp_eq_dgId (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
     (hg'g : dgComp R g' g (neg_add_cancel 1) = dgId R P) :
     Limits.IsZero (DGHomotopyCategory.of R (extension P Q g hg)) :=
   (DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries R _).mpr
@@ -715,6 +721,7 @@ noncomputable def extensionHomOfHomotopy (k : DGHom R 0 Q P) :
     dgComp R (extensionSnd R hg) (extensionInr R hg') (add_zero 0) +
     dgComp R (extensionSnd R hg) (dgComp R k (extensionInl R hg') (add_zero 0)) (add_zero 0)
 
+/-- The definition of `extensionHomOfHomotopy`, as an equation. -/
 theorem extensionHomOfHomotopy_def (k : DGHom R 0 Q P) :
     extensionHomOfHomotopy R hg hg' k =
       dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
@@ -727,7 +734,7 @@ theorem extensionHomOfHomotopy_def (k : DGHom R 0 Q P) :
 theorem extensionHomOfHomotopy_zero :
     extensionHomOfHomotopy R hg hg 0 = dgId R (extension P Q g hg) := by
   rw [extensionHomOfHomotopy_def, zero_dgComp, dgComp_zero, add_zero,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+    extension_total]
 
 /-- **The morphism of extensions induced by a homotopy is closed**: if `d k = g - g'`, then the
 differential of `TauCeti.DGTwistedObject.extensionHomOfHomotopy` vanishes. -/
@@ -790,7 +797,7 @@ theorem dgComp_extensionHomOfHomotopy_neg (k : DGHom R 0 Q P) :
     dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
     dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, dgComp_zero,
     add_zero]
-  rw [← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg]
+  rw [← extension_total R hg]
   abel
 
 variable {hg hg'} in
@@ -815,6 +822,7 @@ noncomputable def extensionIsoOfHomotopy {k : DGHom R 0 Q P}
     simp only [DGHomotopyCategory.homOf_comp, dgCompZero_def, h, DGHomotopyCategory.homOf_dgId]
 
 variable {hg hg'} in
+/-- The forward morphism of `extensionIsoOfHomotopy` is the class of `extensionHomOfHomotopy`. -/
 @[simp]
 theorem extensionIsoOfHomotopy_hom {k : DGHom R 0 Q P} (hk : dgDifferential R 0 k = g - g') :
     (extensionIsoOfHomotopy R (hg := hg) (hg' := hg') hk).hom =
@@ -823,6 +831,8 @@ theorem extensionIsoOfHomotopy_hom {k : DGHom R 0 Q P} (hk : dgDifferential R 0 
   (rfl)
 
 variable {hg hg'} in
+/-- The inverse morphism of `extensionIsoOfHomotopy` is the class of `extensionHomOfHomotopy`
+for `-k`. -/
 @[simp]
 theorem extensionIsoOfHomotopy_inv {k : DGHom R 0 Q P} (hk : dgDifferential R 0 k = g - g') :
     (extensionIsoOfHomotopy R (hg := hg) (hg' := hg') hk).inv =
@@ -875,6 +885,7 @@ noncomputable def extensionMap (φ : DGHom R 0 Q Q') :
   dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
     dgComp R (extensionSnd R hg) (dgComp R φ (extensionInr R hg') (add_zero 0)) (add_zero 0)
 
+/-- The definition of `extensionMap`, as an equation. -/
 theorem extensionMap_def (φ : DGHom R 0 Q Q') :
     extensionMap R hg hg' φ =
       dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
@@ -885,7 +896,7 @@ theorem extensionMap_def (φ : DGHom R 0 Q Q') :
 @[simp↓]
 theorem extensionMap_dgId : extensionMap R hg hg (dgId R Q) = dgId R (extension P Q g hg) := by
   rw [extensionMap_def, dgId_dgComp,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+    extension_total]
 
 /-- **The morphism of extensions induced by a closed morphism compatible with the gluing morphisms
 is closed**: if `φ : Q ⟶ Q'` is closed and `φ` followed by `g'` is `g`, then the differential of
@@ -1023,6 +1034,7 @@ noncomputable def extensionIsoOfIso {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
       extensionMap_dgId, DGHomotopyCategory.homOf_dgId]
 
 variable {hg hg'} in
+/-- The forward morphism of `extensionIsoOfIso` is the class of `extensionMap` for `φ`. -/
 @[simp]
 theorem extensionIsoOfIso_hom {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
     (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
@@ -1033,6 +1045,7 @@ theorem extensionIsoOfIso_hom {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
   (rfl)
 
 variable {hg hg'} in
+/-- The inverse morphism of `extensionIsoOfIso` is the class of `extensionMap` for `ψ`. -/
 @[simp]
 theorem extensionIsoOfIso_inv {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
     (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
@@ -1123,13 +1136,12 @@ theorem dgDifferential_mapExtensionHom : dgDifferential R 0 (mapExtensionHom G h
           (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g) (zero_add 1) := by
     rw [← dgMap_dgDifferential, dgDifferential_extensionFst, map_neg,
       dgMap_dgComp]
-  rw [mapExtensionHom_def, map_add, dgDifferential_dgComp, dgDifferential_dgComp, hfst,
+  simp only [mapExtensionHom_def, map_add, dgDifferential_dgComp, hfst,
     G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero
-      (dgDifferential_extensionSnd R hg)]
-  simp only [dgDifferential_extensionInl, dgDifferential_extensionInr, neg_dgComp, zero_dgComp,
-    dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
+      (dgDifferential_extensionSnd R hg), dgDifferential_extensionInl,
+    dgDifferential_extensionInr, neg_dgComp, zero_dgComp, dgComp_zero, smul_zero, add_zero,
+    zero_add, Int.negOnePow_zero, one_smul]
   exact neg_add_eq_zero.2 (dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) rfl)
-
 
 /-- The image of the inclusion of `P` followed by the comparison is the inclusion of `G P`. -/
 @[simp↓]
@@ -1190,7 +1202,7 @@ theorem dgComp_mapExtensionHom_mapExtensionInv :
     dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
     dgComp_extensionInl_mapExtensionInv, dgComp_extensionInr_mapExtensionInv,
     ← dgMap_dgComp, ← dgMap_dgComp, ← map_add,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr,
+    extension_total,
     dgMap_dgId]
 
 /-- The inverse comparison followed by the comparison is the identity of the extension of the
@@ -1229,12 +1241,14 @@ noncomputable def mapExtensionIso :
   inv_hom_id := DGHomotopyCategory.homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
     (dgComp_mapExtensionInv_mapExtensionHom G hg)
 
+/-- The forward morphism of `mapExtensionIso` is the class of `mapExtensionHom`. -/
 @[simp]
 theorem mapExtensionIso_hom :
     (mapExtensionIso G hg).hom = DGHomotopyCategory.homOf R (mapExtensionHom G hg)
       ((mem_dgCycles R).mpr (dgDifferential_mapExtensionHom G hg)) :=
   (rfl)
 
+/-- The inverse morphism of `mapExtensionIso` is the class of `mapExtensionInv`. -/
 @[simp]
 theorem mapExtensionIso_inv :
     (mapExtensionIso G hg).inv = DGHomotopyCategory.homOf R (mapExtensionInv G hg)

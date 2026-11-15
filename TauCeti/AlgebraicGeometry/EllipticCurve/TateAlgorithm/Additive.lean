@@ -84,6 +84,28 @@ open IsLocalRing
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
 
+omit [IsDiscreteValuationRing R] in
+/-- If `ϖ` is prime, `ϖ ∣ a₁`, `ϖ ∣ a₂`, `ϖ² ∣ a₃`, `ϖ³ ∣ a₆` and `ϖ³ ∣ b₈`, then `ϖ² ∣ a₄`.
+Indeed `b₈ = a₁² a₆ + 4 a₂ a₆ − a₁ a₃ a₄ + a₂ a₃² − a₄²` and every term but `a₄²` is divisible by
+`ϖ³`, so `ϖ³ ∣ a₄²`; then `ϖ ∣ a₄`, and writing `a₄ = ϖ c` gives `ϖ ∣ c²`, so `ϖ ∣ c`. -/
+private theorem dvd_a₄_of_dvd_b₈ (hp : Prime ϖ) (V : WeierstrassCurve R) (h₁ : ϖ ∣ V.a₁)
+    (h₂ : ϖ ∣ V.a₂) (h₃ : ϖ ^ 2 ∣ V.a₃) (h₆ : ϖ ^ 3 ∣ V.a₆) (hb₈ : ϖ ^ 3 ∣ V.b₈) :
+    ϖ ^ 2 ∣ V.a₄ := by
+  have h₄ : ϖ ^ 2 * ϖ ∣ V.a₄ ^ 2 := by
+    obtain ⟨x₁, hx₁⟩ := h₁
+    obtain ⟨x₂, hx₂⟩ := h₂
+    obtain ⟨x₃, hx₃⟩ := h₃
+    obtain ⟨x₆, hx₆⟩ := h₆
+    obtain ⟨y, hy⟩ := hb₈
+    refine ⟨ϖ ^ 2 * x₁ ^ 2 * x₆ + 4 * ϖ * x₂ * x₆ - x₁ * x₃ * V.a₄ + ϖ ^ 2 * x₂ * x₃ ^ 2 - y, ?_⟩
+    have hb := hy
+    rw [b₈, hx₁, hx₂, hx₃, hx₆] at hb
+    linear_combination -hb
+  obtain ⟨c, hc⟩ := hp.dvd_of_dvd_pow (dvd_trans (dvd_mul_left ϖ _) h₄)
+  rw [hc, mul_pow, mul_dvd_mul_iff_left (pow_ne_zero 2 hp.ne_zero)] at h₄
+  rw [hc, sq ϖ]
+  exact mul_dvd_mul_left ϖ (hp.dvd_of_dvd_pow h₄)
+
 /-- **Tate's algorithm, Step 6.** Over a discrete valuation ring with uniformiser `ϖ` and perfect
 residue field, let `W` be a Weierstrass equation over `R` on which Steps 3–5 do not stop:
 `ϖ ∣ b₂`, `ϖ² ∣ a₆`, `ϖ³ ∣ b₈` and `ϖ³ ∣ b₆`. (After Step 2, `ϖ ∣ b₂` says the reduction is
@@ -136,22 +158,7 @@ theorem exists_variableChange_dvd_a₁_a₂_a₃_a₄_a₆ [PerfectField (Residu
   have h₃ : ϖ ^ 2 ∣ V.a₃ := by rw [hV₃, sq]; exact mul_dvd_mul_left ϖ hτ₁
   have h₆ : ϖ ^ 3 ∣ V.a₆ := by rw [hV₆, pow_succ ϖ 2]; exact mul_dvd_mul_left _ hτ₂
   refine ⟨h₁, h₂, h₃, ?_, h₆⟩
-  -- `b₈ = a₁² a₆ + 4 a₂ a₆ − a₁ a₃ a₄ + a₂ a₃² − a₄²`, and every term but `a₄²` is divisible by
-  -- `ϖ³`, so `ϖ³ ∣ a₄²`. Then `ϖ ∣ a₄`, and writing `a₄ = ϖ c` gives `ϖ ∣ c²`, so `ϖ ∣ c`.
-  have h₄ : ϖ ^ 2 * ϖ ∣ V.a₄ ^ 2 := by
-    obtain ⟨x₁, hx₁⟩ := h₁
-    obtain ⟨x₂, hx₂⟩ := h₂
-    obtain ⟨x₃, hx₃⟩ := h₃
-    obtain ⟨x₆, hx₆⟩ := h₆
-    obtain ⟨y, hy⟩ := hb₈
-    refine ⟨ϖ ^ 2 * x₁ ^ 2 * x₆ + 4 * ϖ * x₂ * x₆ - x₁ * x₃ * V.a₄ + ϖ ^ 2 * x₂ * x₃ ^ 2 - y, ?_⟩
-    have hb := hV₈
-    rw [b₈, hy, hx₁, hx₂, hx₃, hx₆] at hb
-    linear_combination -hb
-  obtain ⟨c, hc⟩ := hp.dvd_of_dvd_pow (dvd_trans (dvd_mul_left ϖ _) h₄)
-  rw [hc, mul_pow, mul_dvd_mul_iff_left (pow_ne_zero 2 hp.ne_zero)] at h₄
-  rw [hc, sq ϖ]
-  exact mul_dvd_mul_left ϖ (hp.dvd_of_dvd_pow h₄)
+  exact dvd_a₄_of_dvd_b₈ hp V h₁ h₂ h₃ h₆ (by rw [hV₈]; exact hb₈)
 
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
@@ -296,25 +303,39 @@ theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_
   rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
   ring
 
+/-- From `4 b₈ = b₂ b₆ - b₄²`: if `b₂ = ϖ B₂`, `b₆ = ϖ² B₆` and `b₈ = ϖ³ B₈`, then
+`b₄² = ϖ³ (B₂ B₆ - 4 B₈)`. -/
+theorem _root_.WeierstrassCurve.b₄_sq_eq_pow_three_mul {B₂ B₆ B₈ : R}
+    (hB₂ : W.b₂ = ϖ * B₂) (hB₆ : W.b₆ = ϖ ^ 2 * B₆) (hB₈ : W.b₈ = ϖ ^ 3 * B₈) :
+    W.b₄ ^ 2 = ϖ ^ 3 * (B₂ * B₆ - 4 * B₈) := by
+  have heq : W.b₄ ^ 2 = W.b₂ * W.b₆ - 4 * W.b₈ := by
+    linear_combination W.b_relation
+  rw [heq, hB₂, hB₆, hB₈]
+  ring
+
+/-- At Step 4, the failed `b₈` test forces `ϖ ∣ b₄` for a prime `ϖ`. No domain hypothesis is
+needed. -/
+theorem _root_.WeierstrassCurve.dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
+    (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆) (hb₈ : ϖ ^ 3 ∣ W.b₈) :
+    ϖ ∣ W.b₄ := by
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  exact hϖ.dvd_of_dvd_pow (n := 2)
+    ⟨ϖ ^ 2 * (B₂ * B₆ - 4 * B₈), by rw [W.b₄_sq_eq_pow_three_mul ϖ hB₂ hB₆ hB₈]; ring⟩
+
 /-- At Step 4, the failed `b₈` test forces `ϖ² ∣ b₄` from
 `4 b₈ = b₂ b₆ - b₄²`. No restriction on the residue characteristic is needed. -/
 theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
     [IsDomain R]
     (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 2 ∣ W.b₄ := by
-  have heq : W.b₄ ^ 2 = W.b₂ * W.b₆ - 4 * W.b₈ := by
-    linear_combination W.b_relation
+  obtain ⟨B₄, hB₄⟩ := W.dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
   have hsq : ϖ ^ 3 ∣ W.b₄ ^ 2 := by
-    rw [heq]
     obtain ⟨B₂, hB₂⟩ := hb₂
     obtain ⟨B₆, hB₆⟩ := hb₆
     obtain ⟨B₈, hB₈⟩ := hb₈
-    refine ⟨B₂ * B₆ - 4 * B₈, ?_⟩
-    rw [hB₂, hB₆, hB₈]
-    ring
-  have hp : ϖ ∣ W.b₄ := hϖ.dvd_of_dvd_pow
-    ((dvd_pow_self ϖ (by decide : 3 ≠ 0)).trans hsq)
-  obtain ⟨B₄, hB₄⟩ := hp
+    exact ⟨_, W.b₄_sq_eq_pow_three_mul ϖ hB₂ hB₆ hB₈⟩
   have hB₄sq : ϖ ∣ B₄ ^ 2 := by
     rw [hB₄, mul_pow] at hsq
     rw [pow_succ ϖ 2] at hsq
@@ -325,17 +346,19 @@ theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_th
 /-- If the Step 4 test fails (`ϖ³ ∣ b₈`), then `ϖ⁴` divides the discriminant.
 The `ϖ² ∣ b₆` hypothesis already follows from the failed Step 3 test. -/
 theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
-    [IsDomain R]
     (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
     (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 4 ∣ W.Δ := by
-  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
+  obtain ⟨B₄, hB₄⟩ := W.dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
   obtain ⟨B₂, hB₂⟩ := hb₂
-  obtain ⟨B₄, hB₄⟩ := hb₄
   obtain ⟨B₆, hB₆⟩ := hb₆
   obtain ⟨B₈, hB₈⟩ := hb₈
-  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * ϖ ^ 2 * B₄ ^ 3 - 27 * B₆ ^ 2 +
-    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
-  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  have hsq := W.b₄_sq_eq_pow_three_mul ϖ hB₂ hB₆ hB₈
+  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * B₄ * (B₂ * B₆ - 4 * B₈) - 27 * B₆ ^ 2 +
+    9 * B₂ * B₄ * B₆, ?_⟩
+  have hb₄₃ : W.b₄ ^ 3 = ϖ ^ 4 * (B₄ * (B₂ * B₆ - 4 * B₈)) := by
+    rw [pow_succ, hsq, hB₄]
+    ring
+  rw [WeierstrassCurve.Δ, hb₄₃, hB₂, hB₄, hB₆, hB₈]
   ring
 
 /-- If the Step 5 test also fails (`ϖ³ ∣ b₆`), then `ϖ⁵` divides the discriminant.

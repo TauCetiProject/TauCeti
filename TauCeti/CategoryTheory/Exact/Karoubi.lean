@@ -27,6 +27,9 @@ short complexes, of the images of conflations of `E` under `toKaroubi`.
   `TauCeti.ExactStructure.karoubi_isDeflation_iff`: the inflations (deflations) of `E.karoubi`
   are the retracts, in the arrow category, of images of inflations (deflations) of `E`.
 * `TauCeti.ExactStructure.isConflationExact_toKaroubi`: the embedding `toKaroubi` is exact.
+* `TauCeti.ExactStructure.karoubi_isDeflation_decompId_p` and
+  `TauCeti.ExactStructure.karoubi_isInflation_decompId_i`: every object `X` is split off
+  `toKaroubi X.X` by a deflation and an inflation.
 
 ## Implementation notes
 
@@ -51,10 +54,7 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Idempotents
 
 universe v u
 
-variable {C : Type u} [Category.{v} C]
-
-
-variable [Preadditive C]
+variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 namespace ExactStructure
 
@@ -68,13 +68,12 @@ private def karoubiConflations : ConflationClass (Karoubi C) where
   Conflation S := ∃ T : ShortComplex C, E.Conflation T ∧ Nonempty (Retract S (T.map (toKaroubi C)))
   isKernelCokernelPair _ := fun ⟨_, hT, ⟨e⟩⟩ ↦
     ((E.isKernelCokernelPair _ hT).map (toKaroubi C)).of_retract e
-  isClosedUnderIsomorphisms := ⟨fun e ⟨T, hT, ⟨r⟩⟩ ↦
-    ⟨T, hT, ⟨⟨e.inv ≫ r.i, r.r ≫ e.hom, by simp⟩⟩⟩⟩
+  isClosedUnderIsomorphisms := ⟨fun e ⟨T, hT, ⟨r⟩⟩ ↦ ⟨T, hT, ⟨(Retract.ofIso e.symm).trans r⟩⟩⟩
 
 /-- The image of a conflation of `E` is a conflation of the idempotent completion. -/
 private theorem karoubiConflations_map_toKaroubi {T : ShortComplex C} (hT : E.Conflation T) :
     E.karoubiConflations.Conflation (T.map (toKaroubi C)) :=
-  ⟨T, hT, ⟨⟨𝟙 _, 𝟙 _, by simp⟩⟩⟩
+  ⟨T, hT, ⟨Retract.refl _⟩⟩
 
 /-- A retract of the image of an inflation of `E` is an inflation of the idempotent completion.
 The cokernel is the image of the idempotent induced on the cokernel of the inflation of `E`. -/
@@ -119,7 +118,8 @@ private theorem karoubiConflations_isInflation_of_retract {P Q : Karoubi C} {f :
           rw [← reassoc_of% heD, ← h₂, Category.assoc, h₁, Category.comp_id] }
   · ext <;> simp [h₁]
 
-/-- An inflation of the idempotent completion is a retract of the image of an inflation of `E`. -/
+/-- A morphism of the idempotent completion is an inflation if and only if it is a retract of the
+image of an inflation of `E`. -/
 private theorem karoubiConflations_isInflation_iff {P Q : Karoubi C} (f : P ⟶ Q) :
     E.karoubiConflations.IsInflation f ↔ ∃ (A B : C) (a : A ⟶ B),
       E.IsInflation a ∧ Nonempty (RetractArrow f ((toKaroubi C).map a)) := by
@@ -175,7 +175,8 @@ private theorem karoubiConflations_isDeflation_of_retract {Q R : Karoubi C} {g :
         comm₂₃ := wr.symm }
   · ext <;> simp [h₁]
 
-/-- A deflation of the idempotent completion is a retract of the image of a deflation of `E`. -/
+/-- A morphism of the idempotent completion is a deflation if and only if it is a retract of the
+image of a deflation of `E`. -/
 private theorem karoubiConflations_isDeflation_iff {Q R : Karoubi C} (g : Q ⟶ R) :
     E.karoubiConflations.IsDeflation g ↔ ∃ (B D : C) (d : B ⟶ D),
       E.IsDeflation d ∧ Nonempty (RetractArrow g ((toKaroubi C).map d)) := by
@@ -317,6 +318,24 @@ theorem karoubi_isDeflation_iff {Q R : Karoubi C} (g : Q ⟶ R) :
 /-- The embedding of `C` into its idempotent completion is exact. -/
 theorem isConflationExact_toKaroubi : E.IsConflationExact E.karoubi (toKaroubi C) where
   map_conflation hT := E.karoubiConflations_map_toKaroubi hT
+
+/-- The projection of `toKaroubi X.X` onto its summand `X` is a split deflation. -/
+theorem karoubi_isDeflation_decompId_p (X : Karoubi C) : E.karoubi.IsDeflation X.decompId_p := by
+  have h : X.decompId_p = X.decomposition.inv ≫ biprod.fst := (biprod.lift_fst _ _).symm
+  rw [h]
+  refine MorphismProperty.RespectsIso.precomp _ _ _ (E.karoubi.isDeflation_g
+    (S := ShortComplex.mk (biprod.inr : X.complement ⟶ X ⊞ X.complement) biprod.fst (by simp))
+    (E.karoubi.conflation_of_splitting
+      { r := biprod.snd, s := biprod.inl, f_r := by simp, s_g := by simp, id := ?_ }))
+  rw [add_comm]
+  exact biprod.total
+
+/-- The inclusion of the summand `X` into `toKaroubi X.X` is a split inflation. -/
+theorem karoubi_isInflation_decompId_i (X : Karoubi C) : E.karoubi.IsInflation X.decompId_i := by
+  have h : X.decompId_i = biprod.inl ≫ X.decomposition.hom := (biprod.inl_desc _ _).symm
+  rw [h]
+  exact MorphismProperty.RespectsIso.postcomp _ _ _ (E.karoubi.isInflation_f
+    (E.karoubi.conflation_biprodShortComplex X X.complement))
 
 end ExactStructure
 

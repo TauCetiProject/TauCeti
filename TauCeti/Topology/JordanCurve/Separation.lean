@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.JordanCurve.Basic
+import TauCeti.Topology.Circle.Arc
 
 /-!
 # Two points cut a Jordan curve into two arcs
@@ -82,28 +83,6 @@ variable {X : Type*} [TopologicalSpace X] {C : Set X} {p q : X} {r : ℝ}
 
 /-! ## Cutting the circle -/
 
-/-- An open arc of the circle is path connected: it is the image of the real interval `Ioo 0 1`
-under `Path.extend`, which reparametrizes `Circle.path u v` by all of `ℝ` and so lets the
-path-connectedness be read off the convexity of `Ioo 0 1`. -/
-private lemma isPathConnected_path_image_Ioo (u v : Circle) :
-    IsPathConnected (Circle.path u v '' Ioo 0 1) := by
-  have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
-    ext t
-    simp only [mem_image, mem_Ioo]
-    refine ⟨?_, fun ht => ⟨t, ⟨unitInterval.coe_pos.2 ht.1, unitInterval.coe_lt_one.2 ht.2⟩,
-      Set.projIcc_val _ t⟩⟩
-    rintro ⟨s, hs, rfl⟩
-    rw [Set.projIcc_of_mem _ (Ioo_subset_Icc_self hs)]
-    exact ⟨by simpa [← unitInterval.coe_pos] using hs.1,
-      by simpa [← unitInterval.coe_lt_one] using hs.2⟩
-  have himg : (Circle.path u v).extend '' Ioo (0 : ℝ) 1 = Circle.path u v '' Ioo 0 1 := by
-    rw [← hproj, ← image_comp]
-    refine image_congr fun t ht => ?_
-    rw [Function.comp_apply, ← (Circle.path u v).extend_extends' (Set.projIcc 0 1 zero_le_one t),
-      Set.projIcc_of_mem _ (Ioo_subset_Icc_self ht)]
-  exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
-    (Path.continuous_extend _).continuousOn
-
 /-- **Two distinct points cut the circle into two arcs.** The complement of `{z, w}` is the union
 of two disjoint nonempty open path-connected sets, namely the two open arcs
 `Circle.path z w '' Ioo 0 1` and `Circle.path w z '' Ioo 0 1` that Mathlib cuts the circle into.
@@ -115,17 +94,10 @@ of a path is compact; and the two closed arcs meet in `{z, w}` by
 `Circle.range_path_inter_range_path`, which is the union statement. -/
 theorem exists_isOpen_isPathConnected_union_eq_compl_pair_circle {z w : Circle} (hzw : z ≠ w) :
     ∃ A B : Set Circle, IsOpen A ∧ IsOpen B ∧ IsPathConnected A ∧ IsPathConnected B ∧
-      Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ := by
-  have hA : Circle.path z w '' Ioo 0 1 = (range (Circle.path w z))ᶜ :=
-    (Circle.compl_range_path hzw.symm).symm
-  have hB : Circle.path w z '' Ioo 0 1 = (range (Circle.path z w))ᶜ :=
-    (Circle.compl_range_path hzw).symm
-  refine ⟨_, _, ?_, ?_, isPathConnected_path_image_Ioo z w, isPathConnected_path_image_Ioo w z,
-    ?_, ?_⟩
-  · rw [hA]; exact (isCompact_range (Circle.path w z).continuous).isClosed.isOpen_compl
-  · rw [hB]; exact (isCompact_range (Circle.path z w).continuous).isClosed.isOpen_compl
-  · rw [hA]; exact disjoint_compl_left_iff_subset.mpr (image_subset_range _ _)
-  · rw [hA, hB, ← compl_inter, Circle.range_path_inter_range_path hzw.symm, pair_comm w z]
+      Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ :=
+  ⟨_, _, Circle.isOpen_path_image_Ioo hzw, Circle.isOpen_path_image_Ioo hzw.symm,
+    Circle.isPathConnected_path_image_Ioo z w, Circle.isPathConnected_path_image_Ioo w z,
+    Circle.disjoint_path_image_Ioo hzw, Circle.path_image_Ioo_union hzw⟩
 
 /-! ## Cutting a Jordan curve
 
@@ -208,11 +180,15 @@ theorem IsJordanCurve.not_isPreconnected_sdiff_pair (h : IsJordanCurve C) (hp : 
 /-- **A Jordan curve is the union of two closed arcs meeting in two given points.** For `p ≠ q` on
 a Jordan curve `C` there are compact connected sets `A` and `B` with `A ∪ B = C` and
 `A ∩ B = {p, q}`: the images of the closed arcs `Circle.path z w` and `Circle.path w z` of the
-circle, where `z` and `w` correspond to `p` and `q`. -/
+circle, where `z` and `w` correspond to `p` and `q`. For `p = q` take `A = C` and `B = {p}`. -/
 theorem IsJordanCurve.exists_isCompact_isConnected_union_eq_inter_eq_pair (h : IsJordanCurve C)
-    (hp : p ∈ C) (hq : q ∈ C) (hpq : p ≠ q) :
+    (hp : p ∈ C) (hq : q ∈ C) :
     ∃ A B : Set X, IsCompact A ∧ IsCompact B ∧ IsConnected A ∧ IsConnected B ∧
       A ∪ B = C ∧ A ∩ B = {p, q} := by
+  rcases eq_or_ne p q with rfl | hpq
+  · exact ⟨C, {p}, h.isCompact, isCompact_singleton, h.isConnected, isConnected_singleton,
+      union_eq_self_of_subset_right (singleton_subset_iff.2 hp),
+      by simpa using inter_eq_right.2 (singleton_subset_iff.2 hp)⟩
   obtain ⟨e⟩ := isJordanCurve_iff.mp h
   have hzw : e ⟨p, hp⟩ ≠ e ⟨q, hq⟩ := fun hh => hpq (congrArg Subtype.val (e.injective hh))
   set z := e ⟨p, hp⟩

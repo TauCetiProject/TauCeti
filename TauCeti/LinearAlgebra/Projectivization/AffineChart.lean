@@ -32,9 +32,16 @@ of complex projective space are built.
 
 * `Projectivization.affineOpen i`: the points whose `i`-th homogeneous coordinate is nonzero;
   `Projectivization.iUnion_affineOpen` says that these sets cover projective space.
+* `Projectivization.instNontrivial`: projective space over at least two coordinates has at least
+  two points.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates.
+* `Projectivization.rep_div_rep_eq_insertNth_affineChart`: homogeneous ratios on the chart of `j`
+  as coordinates of `[Fin.insertNth j 1 z]`.
+* `Projectivization.affineChart_symm_zero`: the centre of the chart of `i` is the coordinate point
+  `[eᵢ]`, which lies in no other standard affine open
+  (`Projectivization.mk_single_mem_affineOpen_iff`).
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
 * `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
@@ -91,7 +98,30 @@ theorem affineOpen_eq_univ [Subsingleton ι] (i : ι) : affineOpen (K := K) i = 
   obtain ⟨j, hj⟩ := exists_mem_affineOpen x
   rwa [Subsingleton.elim j i] at hj
 
+variable [DecidableEq ι]
+
+/-- The coordinate point `[eₖ]`, the line spanned by the `k`-th standard basis vector, lies in the
+standard affine open of `i` exactly when `i = k`. -/
+theorem mk_single_mem_affineOpen_iff (k i : ι) :
+    mk K (Pi.single k 1) (by simp) ∈ affineOpen i ↔ i = k := by
+  rw [mk_mem_affineOpen_iff]
+  by_cases h : i = k <;> simp [h]
+
+/-- Distinct standard basis vectors span distinct coordinate points of projective space. -/
+theorem mk_single_injective :
+    Function.Injective fun k : ι ↦ mk K (Pi.single k 1 : ι → K) (by simp) := by
+  intro k k' h
+  have h' : mk K (Pi.single k 1 : ι → K) (by simp) = mk K (Pi.single k' 1 : ι → K) (by simp) := h
+  exact (mk_single_mem_affineOpen_iff k' k).mp (h' ▸ (mk_single_mem_affineOpen_iff k k).mpr rfl)
+
 end AffineOpen
+
+/-- Projective space over a coordinate space with at least two coordinates has at least two points:
+the coordinate points of two distinct indices differ. -/
+instance instNontrivial {K : Type*} [DivisionRing K] {ι : Type*} [Nontrivial ι] :
+    Nontrivial (ℙ K (ι → K)) := by
+  classical
+  exact mk_single_injective.nontrivial
 
 variable {K : Type*} [Field K] {n : ℕ}
 
@@ -135,12 +165,37 @@ theorem affineChart_mk (i : Fin (n + 1)) (v : Fin (n + 1) → K) (hv : v ≠ 0) 
     affineChart i (mk K v hv) = fun j ↦ v (i.succAbove j) / v i :=
   (rfl)
 
+/-- On the chart `j`, the ratio `x.rep i / x.rep j` is the `i`-th homogeneous coordinate of
+`[1 : z]` in the coordinate positions of the chart `j`, for `z` the affine coordinates of `x`. -/
+theorem rep_div_rep_eq_insertNth_affineChart (i : Fin (n + 1)) {j : Fin (n + 1)}
+    {x : ℙ K (Fin (n + 1) → K)} (hj : x ∈ affineOpen j) :
+    x.rep i / x.rep j = Fin.insertNth (α := fun _ ↦ K) j 1 (affineChart j x) i := by
+  have hx : x = mk K x.rep x.rep_ne_zero := (mk_rep x).symm
+  conv_rhs => rw [hx, affineChart_mk,
+    Fin.insertNth_one_div_eq_inv_smul j _ ((mem_affineOpen_iff j x).1 hj)]
+  simp [div_eq_inv_mul]
+
 /-- The inverse of the standard affine chart sends `z` to `[Fin.insertNth i 1 z]`. -/
 @[simp]
 theorem affineChart_symm_apply (i : Fin (n + 1)) (z : Fin n → K) :
     (affineChart i).symm z = mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
       (Fin.insertNth_one_ne_zero i z) :=
   (rfl)
+
+/-- The centre of the standard affine chart of `i` is the coordinate point `[eᵢ]`, the line spanned
+by the `i`-th standard basis vector. -/
+theorem affineChart_symm_zero (i : Fin (n + 1)) :
+    (affineChart (K := K) i).symm 0 = mk K (Pi.single i 1) (by simp) := by
+  rw [affineChart_symm_apply]
+  congr 1
+  funext j
+  rcases Fin.eq_self_or_eq_succAbove i j with rfl | ⟨j, rfl⟩ <;> simp
+
+/-- The standard affine chart of `i` sends the coordinate point `[eᵢ]` to its centre `0`. -/
+theorem affineChart_mk_single (i : Fin (n + 1)) :
+    affineChart i (mk K (Pi.single i 1) (by simp)) = 0 := by
+  rw [← affineChart_symm_zero]
+  exact (affineChart i).right_inv (by simp)
 
 /-- The domain of the transition map from the standard affine chart of `i` to that of `j`
 consists of the points whose homogeneous coordinates `Fin.insertNth i 1 z` have nonzero `j`-th

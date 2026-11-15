@@ -33,7 +33,11 @@ The homotopy limit is the mapping cocone functor of the natural transformation `
 (`NatTrans.mappingCoconeFunctor`), so it commutes with the shifts of complexes, and its projection
 `holim K → ∏ₙ Kₙ` is compatible with these isomorphisms. Through the localization this equips
 `Rlim` with `Functor.CommShift ℤ`, that is with coherent isomorphisms `Rlim (K⟦a⟧) ≅ (Rlim K)⟦a⟧`,
-compatible with the identification of `Rlim` with the homotopy limit.
+compatible with the identification of `Rlim` with the homotopy limit. The homotopy limit sends
+the mapping cone triangle of a morphism of complexes of towers to the mapping cone triangle of its
+image (`NatTrans.mappingCoconeFunctorMapTriangleIso`), so `Rlim` is a triangulated functor: it
+sends distinguished triangles of towers, with their connecting morphisms, to distinguished
+triangles of `D(R)`.
 
 The key input is that products of modules are exact: the product functor `A ↦ ∏ₙ Aₙ` on towers
 (`TauCeti.ModuleTower.productFunctor`) preserves homology, hence quasi-isomorphisms of complexes,
@@ -57,7 +61,8 @@ with localization.
   derived category (`TauCeti.ModuleTower.homotopyLimitTriangle_distinguished`).
 * `TauCeti.ModuleTower.derivedLimit`: the derived limit functor `Rlim`, with
   `TauCeti.ModuleTower.derivedLimitFactors : Q ⋙ Rlim ≅ holim ⋙ Q`, and its commutation with
-  the shifts, as a `Functor.CommShift ℤ` instance compatible with `derivedLimitFactors`.
+  the shifts, as a `Functor.CommShift ℤ` instance compatible with `derivedLimitFactors`, which
+  makes it a triangulated functor (`Functor.IsTriangulated`).
 * `TauCeti.ModuleTower.derivedLimitπ`: the projections `Rlim K → Kₙ`, compatible with the
   transitions (`TauCeti.ModuleTower.derivedLimitπ_comp_transition`).
 * `TauCeti.ModuleTower.homotopyLimitLift`: the natural comparison map `lim K → holim K`, whose
@@ -337,6 +342,23 @@ instance : NatTrans.CommShift (derivedLimitFactors R).hom ℤ :=
   inferInstanceAs (NatTrans.CommShift (Localization.Lifting.iso DerivedCategory.Q
     (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ))
     (homotopyLimitFunctor R ⋙ DerivedCategory.Q) (derivedLimit R)).hom ℤ)
+
+/-- The derived limit is a triangulated functor: it sends distinguished triangles of the derived
+category of towers to distinguished triangles of `D(R)`, retaining their connecting morphisms
+through its commutation with the shifts. This rests on the homotopy limit sending the mapping
+cone triangle of a morphism of complexes of towers to the mapping cone triangle of its image
+(`NatTrans.mappingCoconeFunctorMapTriangleIso`). -/
+instance : (derivedLimit R).IsTriangulated where
+  map_distinguished T hT := by
+    obtain ⟨K, L, φ, ⟨e⟩⟩ := (DerivedCategory.mem_distTriang_iff T).1 hT
+    exact Pretriangulated.isomorphic_distinguished _
+      (DerivedCategory.mappingCone_triangle_distinguished ((homotopyLimitFunctor R).map φ)) _
+      ((derivedLimit R).mapTriangle.mapIso e ≪≫
+        (Functor.mapTriangleCompIso DerivedCategory.Q (derivedLimit R)).symm.app _ ≪≫
+        (Functor.mapTriangleIso (derivedLimitFactors R)).app _ ≪≫
+        (Functor.mapTriangleCompIso (homotopyLimitFunctor R) DerivedCategory.Q).app _ ≪≫
+        DerivedCategory.Q.mapTriangle.mapIso
+          (NatTrans.mappingCoconeFunctorMapTriangleIso (shiftNatTrans R) φ))
 
 end Derived
 

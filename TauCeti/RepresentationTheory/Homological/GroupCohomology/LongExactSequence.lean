@@ -54,7 +54,7 @@ public section
 
 universe u
 
-open CategoryTheory Rep ShortComplex
+open CategoryTheory Rep
 
 namespace TauCeti.groupCohomology
 
@@ -84,26 +84,26 @@ noncomputable def cochainsMapShortComplex (Φ : Y.map (resFunctor f) ⟶ X) :
     (cochainsMap_comp f (MonoidHom.id G) Φ.τ₂ X.g).symm.trans
       ((congrArg (cochainsMap f) Φ.comm₂₃).trans (cochainsMap_comp (MonoidHom.id H) f Y.g Φ.τ₃))
 
-/-- The first component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair `(f,
-Φ.τ₁)`. -/
+/-- The first component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair
+`(f, Φ.τ₁)`. -/
 @[simp]
 theorem cochainsMapShortComplex_τ₁ (Φ : Y.map (resFunctor f) ⟶ X) :
-    (cochainsMapShortComplex f Φ).τ₁ = cochainsMap f Φ.τ₁ := by
-  rw [cochainsMapShortComplex.eq_def]
+    (cochainsMapShortComplex f Φ).τ₁ = cochainsMap f Φ.τ₁ :=
+  (rfl)
 
 /-- The second component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair
 `(f, Φ.τ₂)`. -/
 @[simp]
 theorem cochainsMapShortComplex_τ₂ (Φ : Y.map (resFunctor f) ⟶ X) :
-    (cochainsMapShortComplex f Φ).τ₂ = cochainsMap f Φ.τ₂ := by
-  rw [cochainsMapShortComplex.eq_def]
+    (cochainsMapShortComplex f Φ).τ₂ = cochainsMap f Φ.τ₂ :=
+  (rfl)
 
-/-- The third component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair `(f,
-Φ.τ₃)`. -/
+/-- The third component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair
+`(f, Φ.τ₃)`. -/
 @[simp]
 theorem cochainsMapShortComplex_τ₃ (Φ : Y.map (resFunctor f) ⟶ X) :
-    (cochainsMapShortComplex f Φ).τ₃ = cochainsMap f Φ.τ₃ := by
-  rw [cochainsMapShortComplex.eq_def]
+    (cochainsMapShortComplex f Φ).τ₃ = cochainsMap f Φ.τ₃ :=
+  (rfl)
 
 /-- **The connecting map of group cohomology is natural with respect to change of group.** For
 short exact sequences `Y` of `H`-representations and `X` of `G`-representations, and a morphism
@@ -118,8 +118,8 @@ theorem δ_naturality (hY : Y.ShortExact) (hX : X.ShortExact) (Φ : Y.map (resFu
 
 /-- In a short exact sequence `0 → X₁ → X₂ → X₃ → 0`, vanishing of `Hⁿ(G, X₁)` and
 `Hⁿ⁺¹(G, X₁)` makes the coefficient map `Hⁿ(G, X₂) → Hⁿ(G, X₃)` an isomorphism. -/
-theorem isIso_map_of_shortExact_of_isZero {X : ShortComplex (Rep k G)}
-    (hX : X.ShortExact) (n : ℕ) (hn : Limits.IsZero (groupCohomology X.X₁ n))
+theorem isIso_map_of_shortExact_of_isZero (hX : X.ShortExact) (n : ℕ)
+    (hn : Limits.IsZero (groupCohomology X.X₁ n))
     (hn' : Limits.IsZero (groupCohomology X.X₁ (n + 1))) :
     IsIso ((_root_.groupCohomology.functor k G n).map X.g) := by
   have : Mono ((_root_.groupCohomology.functor k G n).map X.g) :=

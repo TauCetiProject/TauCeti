@@ -38,7 +38,8 @@ field.
 Together with `TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`, this identifies the irreducible
 representations of `T` lying over `A` with the irreducible projective representations of `T/N`
 whose factor set is `β⁻¹`, the inverse of a cocycle representing the Clifford obstruction
-`TauCeti.cliffordObstruction A`: `σ ↦ Hom_N(A, σ)` and `U ↦ A ⊗ U` are mutually inverse up to
+`TauCeti.cliffordObstruction A hScalar`, with `hScalar` supplied by Schur's lemma:
+`σ ↦ Hom_N(A, σ)` and `U ↦ A ⊗ U` are mutually inverse up to
 isomorphism.
 
 ## Main definitions
@@ -253,8 +254,7 @@ theorem eq_bot_or_eq_top_of_homAction_mem {W : Type w} [AddCommGroup W] [Module 
     (p : Submodule k (IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))))
     (hp : ∀ q, ∀ ψ ∈ p, h.homAction σ q ψ ∈ p) : p = ⊥ ∨ p = ⊤ :=
   ((h.isIrreducible_tensorRep_iff (h.isProjectiveRep_homAction σ)).1
-    (isIrreducible_of_linearEquiv (h.tensorRepEquiv σ hφ).symm.toLinearEquiv
-      (h.tensorRepEquiv σ hφ).symm.toIntertwiningMap.isIntertwining inferInstance)).2 p hp
+    ((h.tensorRepEquiv σ hφ).symm.isIrreducible inferInstance)).2 p hp
 
 end Field
 

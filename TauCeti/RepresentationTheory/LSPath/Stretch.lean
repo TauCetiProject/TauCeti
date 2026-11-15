@@ -53,11 +53,8 @@ private theorem isAChain_map_nsmul {a : ℚ} (n : ℕ)
   have hscaled (k : Fin C.length) : ∃ z : ℤ,
       a * P.reflectionBond b ((C k.castSucc).1 • n • lam) ((C k.succ).1 • n • lam) = z := by
     obtain ⟨z, hz⟩ := isAChain_iff_forall_reflectionBond.mp hC k
-    have hb := P.reflectionBond_smul (b := b) (n : ℤ)
-      ((C k.castSucc).1 • lam) ((C k.succ).1 • lam)
-    simp only [Nat.cast_smul_eq_nsmul] at hb
     refine ⟨(n : ℤ) * z, ?_⟩
-    rw [smul_comm (C k.castSucc).1 n lam, smul_comm (C k.succ).1 n lam, hb]
+    rw [P.reflectionBond_smul_nsmul b]
     push_cast
     rw [mul_left_comm a, hz]
   have hentry (j : Fin (C.length + 1)) : ((C.map f) j).1 = (C j).1 :=
@@ -74,13 +71,7 @@ private theorem isAChain_map_nsmul {a : ℚ} (n : ℕ)
 All its break-chain bonds are multiplied by `n`. -/
 noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
     LSPath P b (n • lam) := by
-  have hw : P.wallIndices b (n • lam) = P.wallIndices b lam := by
-    simpa only [Nat.cast_smul_eq_nsmul] using
-      (P.wallIndices_smul (b := b) (Int.natCast_ne_zero.mpr hn.ne') lam)
-  let liftDir (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep
-      (P.wallIndices b lam) w}) :
-      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} :=
-    ⟨w.1, hw.symm ▸ w.2⟩
+  let liftDir := P.minimalCosetRepNsmulEquiv b lam n hn.ne'
   refine
     { length := π.length
       dir := fun j ↦ liftDir (π.dir j)
@@ -88,19 +79,16 @@ noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
       time_zero := π.time_zero
       time_last := π.time_last
       strictMono_time := π.strictMono_time
-      dir_succ_ne := by
-        intro j h
-        apply π.dir_succ_ne j
-        apply Subtype.ext
-        exact congrArg (fun w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep
-          (P.wallIndices b (n • lam)) w} ↦ w.1) h
+      dir_succ_ne := fun j h ↦ π.dir_succ_ne j (liftDir.injective h)
       exists_isAChain := ?_ }
   intro j
   obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j
   let D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b (n • lam)) :=
     C.map ⟨liftDir, fun {x y} h ↦ by
-      simpa only [Set.mem_ofPred_eq, liftDir, hw] using h⟩
-  refine ⟨D, ?_, ?_, isAChain_map_nsmul n C _ (fun _ ↦ rfl) hC⟩
+      simpa only [Set.mem_ofPred_eq, liftDir, coe_minimalCosetRepNsmulEquiv,
+        P.wallIndices_nsmul b hn.ne' lam] using h⟩
+  refine ⟨D, ?_, ?_, isAChain_map_nsmul n C _
+    (fun _ ↦ P.coe_minimalCosetRepNsmulEquiv b lam n hn.ne' _) hC⟩
   · simpa only [D, RelSeries.head_map, RelHom.coeFn_mk] using congrArg liftDir hhead
   · simpa only [D, RelSeries.last_map, RelHom.coeFn_mk] using congrArg liftDir hlast
 
@@ -112,7 +100,9 @@ theorem length_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
 theorem dir_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
     (j : Fin ((π.stretch n hn).length + 1)) :
     ((π.stretch n hn).dir j).1 =
-      (π.dir (j.cast (congrArg (· + 1) (π.length_stretch n hn)))).1 := (rfl)
+      (π.dir (j.cast (congrArg (· + 1) (π.length_stretch n hn)))).1 := by
+  simp only [stretch, coe_minimalCosetRepNsmulEquiv]
+  exact congrArg (fun k ↦ (π.dir k).1) (Fin.ext rfl)
 
 @[simp]
 theorem time_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)

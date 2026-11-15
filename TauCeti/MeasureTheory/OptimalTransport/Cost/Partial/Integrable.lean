@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.DominatedMeasure
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedMeasure
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Partial.Basic
 
 /-!

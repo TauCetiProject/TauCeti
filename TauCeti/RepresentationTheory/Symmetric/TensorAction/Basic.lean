@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.Matrix.KroneckerPower
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 
 /-!
 # Permuting tensor factors
@@ -16,11 +16,7 @@ This file defines the symmetric-group action on a power of a module by permuting
 factors. Mathlib's `Representation.asAlgebraHom` then extends the action linearly to the group
 algebra, which is the action used by Young symmetrizers.
 
-The construction is the first target in Layer 2 of the
-[classical-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md)
-and the first construction in Layer 8 of the
-[Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md).
-It reuses `PiTensorProduct.reindex`; the convention is
+The construction reuses `PiTensorProduct.reindex`; the convention is
 `σ • (⨂ₜ i, m i) = ⨂ₜ i, m (σ⁻¹ i)`.
 
 ## Main definitions
@@ -255,9 +251,8 @@ theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} 
     LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
         (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
       A.kroneckerPower (Fin d) := by
-  ext v u
-  rw [LinearMap.toMatrix_apply, A.piTensorProductMap_tensorPowerBasis u, map_sum]
-  simp [Finsupp.single_apply, -tensorPowerBasis_apply]
+  rw [tensorPowerBasis_def]
+  exact A.toMatrix_piTensorProductMap_mulVecLin
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.

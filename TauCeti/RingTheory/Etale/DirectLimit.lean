@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Shrink
 public import Mathlib.RingTheory.Etale.Finite
 public import TauCeti.Algebra.Colimit.Ring
 public import TauCeti.RingTheory.Etale.NoetherianDescent
@@ -61,23 +60,9 @@ theorem exists_etale_finite_algEquiv_tensorProduct (S : Type*) [CommRing S]
       Algebra.Etale (G i) Sᵢ ∧ Module.Finite (G i) Sᵢ ∧
       letI := (of G (f · · ·) i).toAlgebra
       Nonempty (S ≃ₐ[DirectLimit G (f · · ·)] DirectLimit G (f · · ·) ⊗[G i] Sᵢ) := by
-  obtain ⟨R₀, S₀, _, _, hR₀, _, _, ⟨e⟩⟩ :=
-    Algebra.Etale.exists_subalgebra_fg_of_finite ℤ (DirectLimit G (f · · ·)) S
-  have : Algebra.FinitePresentation ℤ R₀ :=
-    Algebra.FinitePresentation.of_finiteType.1 (Subalgebra.fg_iff_finiteType R₀ |>.1 hR₀)
-  obtain ⟨i, φ, hφ⟩ :=
-    exists_of_comp_eq_of_finitePresentation (algebraMap R₀ (DirectLimit G (f · · ·)))
-  let := (of G (f · · ·) i).toAlgebra
-  let : Algebra R₀ (G i) := φ.toAlgebra
-  have : IsScalarTower R₀ (G i) (DirectLimit G (f · · ·)) :=
-    .of_algebraMap_eq fun x ↦ congr($hφ x).symm
-  -- The stage model `G i ⊗[R₀] S₀` is finite over `G i`, hence small over `G i`.
-  have : Small.{u} (G i ⊗[R₀] S₀) := Module.Finite.small (G i) _
-  let e' := Shrink.algEquiv (G i) (G i ⊗[R₀] S₀)
-  exact ⟨i, Shrink.{u} (G i ⊗[R₀] S₀), inferInstance, inferInstance, .of_equiv e'.symm,
-    .equiv e'.symm.toLinearEquiv,
-    ⟨e.trans <| (Algebra.TensorProduct.cancelBaseChange R₀ (G i) _ _ S₀).symm.trans <|
-      Algebra.TensorProduct.congr .refl e'.symm⟩⟩
+  exact TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization G
+    (of G (f · · ·))
+    (fun _ _ _ g ↦ exists_of_comp_eq_of_finitePresentation g) S
 
 /-- Every finite étale algebra over a directed colimit of rings is, up to isomorphism, the base
 change of a finite étale algebra over some stage. -/

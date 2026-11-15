@@ -47,7 +47,40 @@ universe v w
 noncomputable section
 
 variable (k : Type v) (K : Type max v w)
-  [CommRing k] [CommRing K] [Algebra k K] [Module.Free k K]
+  [CommRing k] [CommRing K] [Algebra k K]
+
+/-- The scalar-extension isomorphism on each positive generator's coordinate algebra, typed
+using the positive generator family. -/
+def generatorCodomainBaseChangeIso (j : Fin 4 ⊕ Unit) :
+    CommHopfAlgCat.baseChange (K := K) (generatorCodomain k j) ≅ generatorCodomain K j :=
+  generatorCoordinateAlgebraBaseChangeIso k K (match j with
+    | .inl i => .inl (.inl i)
+    | .inr u => .inr u)
+
+/-- The positive-generator adapter is the corresponding full-carrier generator isomorphism. -/
+theorem generatorCodomainBaseChangeIso_def (j : Fin 4 ⊕ Unit) :
+    generatorCodomainBaseChangeIso k K j =
+      generatorCoordinateAlgebraBaseChangeIso k K (match j with
+        | .inl i => .inl (.inl i)
+        | .inr u => .inr u) := (rfl)
+
+/-- Scalar extension respects the ambient coordinate map of every positive generator. -/
+theorem generatedCoordinateMap_comp_generator_baseChange (j : Fin 4 ⊕ Unit) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24).inv ≫
+        CommHopfAlgCat.baseChangeMap (generatedCoordinateMap k ≫ generator k j) ≫
+        (generatorCodomainBaseChangeIso k K j).hom =
+      generatedCoordinateMap K ≫ generator K j := by
+  rw [generatorCodomainBaseChangeIso_def]
+  rcases j with i | u
+  · simpa only [generator_inl, generatedCoordinateMap_comp_generatedCoordinateLift,
+      Category.assoc] using
+      D4Tripled.generatorCoordinateMap_baseChange k K (.inl (.inl i))
+  · cases u
+    simpa only [generator_inr, generatedCoordinateMap_comp_generatedCoordinateLift,
+      Category.assoc] using
+      D4Tripled.generatorCoordinateMap_baseChange k K (.inr ())
+
+variable [Module.Free k K]
 
 /-- Free scalar extension carries the positive subgroup's intrinsic defining ideal onto the
 ideal of the positive subgroup generated over the extension ring. -/
@@ -57,11 +90,10 @@ theorem map_baseChangeHopfIdeal_definingIdeal :
       definingIdeal K := by
   apply CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal
     (generator k) (generatedCoordinateHopfAlgebraBaseChangeIso k K)
-    (fun j ↦ generatorCoordinateAlgebraBaseChangeIso k K (match j with
-      | .inl i => .inl (.inl i)
-      | .inr u => .inr u))
-    (generator K)
-  rintro (i | u)
+    (generatorCodomainBaseChangeIso k K) (generator K)
+  intro j
+  rw [generatorCodomainBaseChangeIso_def]
+  rcases j with i | u
   · rw [generator_inl, generator_inl, Category.assoc,
       baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom k K,
       Iso.inv_hom_id_assoc]

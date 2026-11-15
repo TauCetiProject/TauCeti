@@ -29,10 +29,11 @@ This covers split and non-reduced quadratic algebras such as `K × K` and `K[X]/
 also identify the trace and norm of the eigenvalues used in the elliptic conjugacy normal forms
 of `GL₂(K)`.
 
-For a separable quadratic extension `L/K` the trace and norm are the two elementary symmetric
-functions of the pair `{x, σx}`, where `σ` is the nontrivial automorphism: `tr x = x + σx` and
-`N x = x · σx` (`algebraMap_trace_eq_add`, `algebraMap_norm_eq_mul`). These give the
-discriminant characterisation of the generators:
+For a quadratic extension `L/K` with a nontrivial automorphism `σ` (which then makes `L/K`
+Galois) the trace and norm are the two elementary symmetric functions of the pair `{x, σx}`:
+`tr x = x + σx` and `N x = x · σx` (`algebraMap_trace_eq_add`, `algebraMap_norm_eq_mul`). For a
+separable quadratic extension, which has such a `σ`, these give the discriminant
+characterisation of the generators:
 
 * `discrim_eq_zero_iff_mem_range_algebraMap`: the discriminant `t² - 4n` of `X² - tX + n`, the
   characteristic polynomial of multiplication by `θ`, vanishes exactly when `θ ∈ K`. (That
@@ -211,14 +212,16 @@ end CommRing
 
 namespace Module.Basis
 
-variable {K L : Type*} [CommRing K] [Nontrivial K] [CommRing L] [Algebra K L]
+variable {K L : Type*} [CommRing K] [CommRing L] [Algebra K L]
 
 /-- **The norm form of a basis `(1, θ)`.** For a basis `B` of a commutative algebra `L` over a
-nontrivial commutative ring `K` with `B 0 = 1` and `θ = B 1`, the norm of `w = x + y θ` is
+commutative ring `K` with `B 0 = 1` and `θ = B 1`, the norm of `w = x + y θ` is
 `x² + x y Tr(θ) + y² N(θ)`. -/
 theorem norm_eq_of_apply_zero_eq_one (B : Module.Basis (Fin 2) K L) (hB : B 0 = 1) (w : L) :
     Algebra.norm K w = B.repr w 0 ^ 2 + B.repr w 0 * B.repr w 1 * Algebra.trace K L (B 1) +
       B.repr w 1 ^ 2 * Algebra.norm K (B 1) := by
+  rcases subsingleton_or_nontrivial K with _ | _
+  · exact Subsingleton.elim _ _
   have : Algebra.IsQuadraticExtension K L :=
     { toFree := .of_basis B
       finrank_eq_two' := by rw [Module.finrank_eq_card_basis B, Fintype.card_fin] }
@@ -369,7 +372,7 @@ variable {K L : Type*} [Field K] [CommRing L] [Algebra K L]
 exactly the unit values of `x² - d y²`. The scalar extension can be split or nonreduced;
 it is not required to be a field. -/
 theorem mem_range_normUnits_baseChange_iff_exists_sq_sub_mul_sq
-    (F : Type*) [CommRing F] [Nontrivial F] [Algebra K F] {θ : L} {d : K}
+    (F : Type*) [CommRing F] [Algebra K F] {θ : L} {d : K}
     (hθ : θ ∉ Set.range (algebraMap K L)) (hθ2 : θ ^ 2 = algebraMap K L d) (a : Fˣ) :
     a ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range ↔
       ∃ x y : F, (a : F) = x ^ 2 - algebraMap K F d * y ^ 2 := by
@@ -404,25 +407,29 @@ end TauCeti.Algebra
 section Field
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
-variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
+variable [Algebra.IsQuadraticExtension K L]
 
 namespace Algebra.IsQuadraticExtension
 
-/-- In a separable quadratic extension, the trace of `x` is `x + σx`, where `σ` is the
-nontrivial automorphism. -/
+/-- In a quadratic extension, the trace of `x` is `x + σx`, where `σ` is a nontrivial
+automorphism. Its existence makes the extension Galois, so no separability is assumed. -/
 theorem algebraMap_trace_eq_add {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (x : L) :
     algebraMap K L (Algebra.trace K L x) = x + σ x := by
   classical
+  have := isGalois_of_algEquiv_ne_one K L hσ
   rw [trace_eq_sum_automorphisms, univ_eq_pair K L hσ, Finset.sum_pair (Ne.symm hσ)]
   simp
 
-/-- In a separable quadratic extension, the norm of `x` is `x * σx`, where `σ` is the
-nontrivial automorphism. -/
+/-- In a quadratic extension, the norm of `x` is `x * σx`, where `σ` is a nontrivial
+automorphism. Its existence makes the extension Galois, so no separability is assumed. -/
 theorem algebraMap_norm_eq_mul {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (x : L) :
     algebraMap K L (Algebra.norm K x) = x * σ x := by
   classical
+  have := isGalois_of_algEquiv_ne_one K L hσ
   rw [Algebra.norm_eq_prod_automorphisms, univ_eq_pair K L hσ, Finset.prod_pair (Ne.symm hσ)]
   simp
+
+variable [Algebra.IsSeparable K L]
 
 /-- **Nonzero discriminant characterises the generators** of a separable quadratic extension: for
 `t`, `n` the trace and norm of `θ`, so that `θ² = tθ - n`, the discriminant `t² - 4n` of the
@@ -443,7 +450,7 @@ theorem discrim_eq_zero_iff_mem_range_algebraMap {θ : L} :
     simp only [map_sub, map_pow, map_mul, map_zero, map_ofNat,
       algebraMap_trace_eq_add K L hσ, algebraMap_norm_eq_mul K L hσ] at h2
     linear_combination h2
-  exact mem_range_algebraMap_of_apply_eq K L hσ
+  exact (mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr
     (sub_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp h1)).symm
 
 /-- A generator of a separable quadratic extension — an element outside `K` — has nonzero

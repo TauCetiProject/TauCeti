@@ -58,7 +58,7 @@ theorem baseChange_lieSpan (s : Set M) :
         simpa only [TensorProduct.tmul_add, mem_toSubmodule] using N.add_mem ihn ihk
     | smul r n hn ihn =>
         simpa using N.smul_mem (algebraMap R A r) ihn
-    | lie x n hn ihn =>
+    | lie x n _ ihn =>
         simpa using N.lie_mem (x := 1 ⊗ₜ[R] x) ihn
   refine le_antisymm ?_ (lieSpan_le.mpr ?_)
   · intro m hm

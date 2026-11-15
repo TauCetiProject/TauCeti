@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
-public import Mathlib.GroupTheory.Coset.Defs
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 
 /-!
@@ -24,7 +24,13 @@ ring. It supplies the quotient sheaf whose representability as a homogeneous spa
 subsequently be proved. Sheafification is essential: a section of `G/N` need only lift
 to `G` locally in the fppf topology.
 
-We use Mathlib's left-coset setoid and sheafification adjunction. Values are lifted by
+Ground-ring-valued group points give natural left-translation automorphisms of both the
+coset presheaf and its sheafification. The quotient projection intertwines left multiplication
+with these automorphisms. Translation by a product first translates by the right factor.
+This constructs translations by global points, not an internal action morphism of sheaves.
+
+We use Mathlib's left-coset action and sheafification adjunction, and extend global points
+along value-algebra structure maps with `HopfAlgebra.extendPoint`. Values are lifted by
 one universe so that type-valued sheafification is available on the affine site.
 
 ## References
@@ -163,6 +169,21 @@ theorem homogeneousQuotientPresheafLift_app_mk
         (homogeneousQuotientPresheafMk H I A g) =
       f.app A (ULift.up g) :=
   (rfl)
+
+/-- Restricting a descended map along the coset projection recovers the original map. -/
+@[reassoc (attr := simp)]
+theorem homogeneousQuotientPresheafProjection_comp_lift
+    {F : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1)}
+    (f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ F)
+    (hf : ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+      (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+      (n : quotientPointsSubgroup H I A.unop.unop),
+      f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)) :
+    homogeneousQuotientPresheafProjection H I ≫
+      homogeneousQuotientPresheafLift H I f hf = f := by
+  ext A g
+  obtain ⟨g⟩ := g
+  rfl
 
 /-- A map from the coset presheaf is determined by its values on group points. -/
 theorem homogeneousQuotientPresheaf_hom_ext
@@ -308,6 +329,17 @@ theorem fppfHomogeneousQuotientHomEquiv_apply
   dsimp only [fppfHomogeneousQuotientProjection, sheafToPresheaf]
   exact (Category.assoc _ _ _).symm
 
+/-- A map out of the fppf homogeneous quotient is determined by its composite with
+the projection from the ambient group. -/
+theorem fppfHomogeneousQuotient_hom_ext
+    {F : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1))}
+    {f g : fppfHomogeneousQuotient H I ⟶ F}
+    (h : fppfHomogeneousQuotientProjection H I ≫ f.hom =
+      fppfHomogeneousQuotientProjection H I ≫ g.hom) : f = g := by
+  apply (fppfHomogeneousQuotientHomEquiv H I F).injective
+  apply Subtype.ext
+  simpa only [fppfHomogeneousQuotientHomEquiv_apply] using h
+
 /-- Descending a subgroup-invariant natural map and then restricting along the quotient
 projection recovers that map. -/
 @[simp]
@@ -366,6 +398,202 @@ theorem isIso_fppfHomogeneousQuotientHomEquiv_symm
   · exact Presheaf.isLocallyInjective_of_isLocallyInjective_of_isLocallySurjective_fac J ψ hfac
   · exact Presheaf.isLocallySurjective_of_isLocallySurjective_fac J
       (fppfHomogeneousQuotientHomEquiv_symm_apply H I F f hf)
+
+private def homogeneousQuotientPresheafTranslationHom
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheaf H I ⟶ homogeneousQuotientPresheaf H I where
+  app A := ↾fun q ↦ ULift.up (HopfAlgebra.extendPoint H A.unop.unop g • q.down)
+  naturality {A B} χ := by
+    ext q
+    induction q using homogeneousQuotientPresheaf_induction_on H I with
+    | h x =>
+      -- Present the naturality square through its coset and universe-lift wrappers.
+      change ULift.up (QuotientGroup.mk (HopfAlgebra.extendPoint H B.unop.unop g *
+        HopfAlgebra.mapPoints (H := H) χ.unop.unop x)) =
+          ULift.up (QuotientGroup.mk (HopfAlgebra.mapPoints (H := H) χ.unop.unop
+            (HopfAlgebra.extendPoint H A.unop.unop g * x)))
+      rw [map_mul, HopfAlgebra.mapPoints_extendPoint]
+
+@[simp]
+private theorem homogeneousQuotientPresheafTranslationHom_app_mk
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (homogeneousQuotientPresheafTranslationHom H I g).app A
+        (homogeneousQuotientPresheafMk H I A x) =
+      homogeneousQuotientPresheafMk H I A (HopfAlgebra.extendPoint H A.unop.unop g * x) :=
+  (rfl)
+
+private theorem homogeneousQuotientPresheafTranslationHom_comp_inv
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheafTranslationHom H I g ≫
+      homogeneousQuotientPresheafTranslationHom H I g⁻¹ = 𝟙 _ := by
+  ext A q
+  induction q using homogeneousQuotientPresheaf_induction_on H I with
+  | h x => simp
+
+/-- Left translation on the coset presheaf by a ground-ring-valued group point.
+The point is extended along the structure map of each value algebra. -/
+def homogeneousQuotientPresheafTranslation
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheaf H I ≅ homogeneousQuotientPresheaf H I where
+  hom := homogeneousQuotientPresheafTranslationHom H I g
+  inv := homogeneousQuotientPresheafTranslationHom H I g⁻¹
+  hom_inv_id := homogeneousQuotientPresheafTranslationHom_comp_inv H I g
+  inv_hom_id := by
+    simpa only [inv_inv] using homogeneousQuotientPresheafTranslationHom_comp_inv H I g⁻¹
+
+/-- Translation carries the coset of `x` to the coset of `g * x`, with `g` extended to the
+value algebra. -/
+@[simp]
+theorem homogeneousQuotientPresheafTranslation_hom_app_mk
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (homogeneousQuotientPresheafTranslation H I g).hom.app A
+        (homogeneousQuotientPresheafMk H I A x) =
+      homogeneousQuotientPresheafMk H I A (HopfAlgebra.extendPoint H A.unop.unop g * x) :=
+  (rfl)
+
+/-- Inverse translation carries the coset of `x` to the coset of `g⁻¹ * x`, with the
+inverse point extended to the value algebra. -/
+@[simp]
+theorem homogeneousQuotientPresheafTranslation_inv_app_mk
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (homogeneousQuotientPresheafTranslation H I g).inv.app A
+        (homogeneousQuotientPresheafMk H I A x) =
+      homogeneousQuotientPresheafMk H I A (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ * x) :=
+  (rfl)
+
+/-- Translation by the identity point fixes the coset presheaf. -/
+@[simp]
+theorem homogeneousQuotientPresheafTranslation_one :
+    homogeneousQuotientPresheafTranslation H I 1 = Iso.refl _ := by
+  apply Iso.ext
+  ext A q
+  induction q using homogeneousQuotientPresheaf_induction_on H I with
+  | h x => simp
+
+/-- Translations compose in left-action order. -/
+@[simp]
+theorem homogeneousQuotientPresheafTranslation_mul
+    (g h : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheafTranslation H I (g * h) =
+      homogeneousQuotientPresheafTranslation H I h ≪≫
+        homogeneousQuotientPresheafTranslation H I g := by
+  apply Iso.ext
+  ext A q
+  induction q using homogeneousQuotientPresheaf_induction_on H I with
+  | h x => simp [mul_assoc]
+
+/-- Inverting the point inverts its translation. -/
+@[simp]
+theorem homogeneousQuotientPresheafTranslation_inv
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheafTranslation H I g⁻¹ =
+      (homogeneousQuotientPresheafTranslation H I g).symm := by
+  apply Iso.ext
+  rfl
+
+/-- Left translation on the fppf homogeneous quotient, obtained by sheafifying translation
+on the coset presheaf. -/
+def fppfHomogeneousQuotientTranslation
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    fppfHomogeneousQuotient H I ≅ fppfHomogeneousQuotient H I :=
+  (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).mapIso
+    (homogeneousQuotientPresheafTranslation H I g)
+
+/-- Sheafification intertwines translation on cosets and on the fppf quotient. -/
+@[reassoc]
+theorem toSheafify_comp_fppfHomogeneousQuotientTranslation
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+      eqToHom (fppfHomogeneousQuotient_obj H I).symm) ≫
+        (fppfHomogeneousQuotientTranslation H I g).hom.hom =
+      (homogeneousQuotientPresheafTranslation H I g).hom ≫
+        toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+          eqToHom (fppfHomogeneousQuotient_obj H I).symm := by
+  exact (toSheafify_naturality (CommAlgCat.fppfTopology R)
+    (homogeneousQuotientPresheafTranslation H I g).hom).symm
+
+/-- On projected group points, translation is left multiplication by the extended point. -/
+@[simp]
+theorem fppfHomogeneousQuotientTranslation_hom_app_projection
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    dsimp% (fppfHomogeneousQuotientTranslation H I g).hom.hom.app A
+        ((fppfHomogeneousQuotientProjection H I).app A (ULift.up x)) =
+      (fppfHomogeneousQuotientProjection H I).app A
+        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g * x)) := by
+  have h := congrArg (fun f ↦ f.app A (homogeneousQuotientPresheafMk H I A x))
+    (toSheafify_comp_fppfHomogeneousQuotientTranslation H I g)
+  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply,
+    homogeneousQuotientPresheafTranslation_hom_app_mk] at h
+  -- Explicitly identify the quotient projection with the sheafified coset projection.
+  rw [fppfHomogeneousQuotientProjection_def]
+  dsimp only [NatTrans.comp_app, homogeneousQuotientPresheafProjection,
+    homogeneousQuotientPresheafMk] at h ⊢
+  exact h
+
+/-- Translation by the identity point fixes the fppf homogeneous quotient. -/
+@[simp]
+theorem fppfHomogeneousQuotientTranslation_one :
+    fppfHomogeneousQuotientTranslation H I 1 = Iso.refl _ := by
+  simp only [fppfHomogeneousQuotientTranslation, homogeneousQuotientPresheafTranslation_one,
+    Functor.mapIso_refl]
+  rfl
+
+/-- Translations on the sheaf quotient compose in left-action order. -/
+@[simp]
+theorem fppfHomogeneousQuotientTranslation_mul
+    (g h : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    fppfHomogeneousQuotientTranslation H I (g * h) =
+      fppfHomogeneousQuotientTranslation H I h ≪≫
+        fppfHomogeneousQuotientTranslation H I g := by
+  rw [fppfHomogeneousQuotientTranslation, homogeneousQuotientPresheafTranslation_mul,
+    Functor.mapIso_trans]
+  rfl
+
+/-- Inverting the group point inverts translation on the fppf quotient. -/
+@[simp]
+theorem fppfHomogeneousQuotientTranslation_inv
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    fppfHomogeneousQuotientTranslation H I g⁻¹ =
+      (fppfHomogeneousQuotientTranslation H I g).symm := by
+  rw [fppfHomogeneousQuotientTranslation, homogeneousQuotientPresheafTranslation_inv,
+    Functor.mapIso_symm]
+  rfl
+
+/-- Sheafification also intertwines inverse translations on cosets and on the fppf quotient. -/
+@[reassoc]
+theorem toSheafify_comp_fppfHomogeneousQuotientTranslation_inv
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+      eqToHom (fppfHomogeneousQuotient_obj H I).symm) ≫
+        (fppfHomogeneousQuotientTranslation H I g).inv.hom =
+      (homogeneousQuotientPresheafTranslation H I g).inv ≫
+        toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+          eqToHom (fppfHomogeneousQuotient_obj H I).symm := by
+  rw [← Iso.symm_hom, ← fppfHomogeneousQuotientTranslation_inv,
+    ← Iso.symm_hom, ← homogeneousQuotientPresheafTranslation_inv]
+  exact toSheafify_comp_fppfHomogeneousQuotientTranslation H I g⁻¹
+
+/-- On projected group points, inverse translation is left multiplication by the extended
+inverse point. -/
+@[simp]
+theorem fppfHomogeneousQuotientTranslation_inv_app_projection
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    dsimp% (fppfHomogeneousQuotientTranslation H I g).inv.hom.app A
+        ((fppfHomogeneousQuotientProjection H I).app A (ULift.up x)) =
+      (fppfHomogeneousQuotientProjection H I).app A
+        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ * x)) := by
+  rw [← Iso.symm_hom, ← fppfHomogeneousQuotientTranslation_inv]
+  exact fppfHomogeneousQuotientTranslation_hom_app_projection H I g⁻¹ A x
 
 end
 

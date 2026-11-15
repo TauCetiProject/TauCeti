@@ -40,7 +40,7 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] d4NeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 private def d4SocleWalk : Fin 4 → List (Fin 4)
   | 0 => [0, 1, 2, 1, 0]
@@ -92,8 +92,7 @@ private theorem signlessWord_d4SocleWalk_ne_zero (v : Fin 4) :
   intro hzero
   have h := congrArg (signlessPreprojectiveD4FrobeniusFunctional k) hzero
   rw [map_zero,
-    signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _
-      (d4SocleWalk_isChain v) (d4SocleWalk_ne_nil v)] at h
+    signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _] at h
   fin_cases v <;> simp [d4SocleWalk] at h
 
 local notation "Q" => OrientedQuiver zigzagD4Graph zigzagD4Coloring.sourceSink

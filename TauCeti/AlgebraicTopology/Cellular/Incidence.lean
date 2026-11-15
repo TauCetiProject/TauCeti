@@ -27,6 +27,8 @@ The columns are also identified with the attaching maps: send the reduced fundam
 the boundary sphere through the attaching map, pass to skeletal relative homology, and take
 cellular coordinates. This is the homological coefficient formula; identifying it with the
 geometric degree of a sphere map obtained by collapsing the other cells is a separate result.
+Before passing to relative homology, the range of the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` is spanned by these attaching spheres (`TauCeti.range_skeletonPairδ`).
 The bases use the disk and sphere generators of `cellularChainGroupIso`. The sphere generator
 in `reducedSingularHomologyTopCatSphereIso` is fixed by the ordered standard orthonormal basis,
 starting with the reduced degree-zero class `[-e₀] - [e₀]`. The disk generator maps to it under
@@ -129,6 +131,30 @@ lemma cellularBoundaryColumn_eq_attaching (n : ℕ) (j : cell C (n + 1)) :
   congr 1
   exact ConcreteCategory.congr_hom
     (ι_cellularChainGroupIso_inv_comp_cellularDifferential C (ModuleCat.of R R) n j) 1
+
+/-- The connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` sends the basis vector of an
+`(n + 1)`-cell to the image of the reduced sphere generator under its attaching map. -/
+lemma skeletonPairδ_cellularChainBasis (n : ℕ) (j : cell C (n + 1)) :
+    skeletonPairδ C (ModuleCat.of R R) n (cellularChainBasis C R (n + 1) j) =
+      SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n
+        ((reducedSingularHomologyι (ModuleCat.of R R) n).app (TopCat.diskBoundary.{w} (n + 1))
+          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) n).inv 1)) := by
+  rw [cellularChainBasis_apply]
+  exact ConcreteCategory.congr_hom
+    (ι_cellularChainGroupIso_inv_comp_skeletonPairδ C (ModuleCat.of R R) n j) 1
+
+/-- **The boundaries of the skeletal pair are spanned by the attaching spheres.** The range of
+the connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` is the submodule spanned by the images of the
+reduced sphere generator under the attaching maps of the `(n + 1)`-cells. -/
+theorem range_skeletonPairδ (n : ℕ) :
+    LinearMap.range (skeletonPairδ C (ModuleCat.of R R) n).hom =
+      Submodule.span R (Set.range fun j : cell C (n + 1) ↦
+        SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) (ModuleCat.of R R) n
+          ((reducedSingularHomologyι (ModuleCat.of R R) n).app (TopCat.diskBoundary.{w} (n + 1))
+            ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) n).inv 1))) := by
+  rw [LinearMap.range_eq_map, ← (cellularChainBasis C R (n + 1)).span_eq, Submodule.map_span,
+    ← Set.range_comp]
+  exact congrArg _ (congrArg Set.range (funext fun j ↦ skeletonPairδ_cellularChainBasis C R n j))
 
 /-- The differential on a cell is the finite sum of its incidence coefficients times the
 basis vectors of the preceding dimension. -/

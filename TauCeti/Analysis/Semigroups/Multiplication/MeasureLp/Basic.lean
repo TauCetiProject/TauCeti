@@ -111,23 +111,22 @@ private theorem measureLpMultiplicationOperator_continuous {m : α → ℝ≥0}
       (fun t : ℝ≥0 => eLpNorm
         ((fun a => Real.exp (-((t : ℝ) * m a)) • f a) -
           (fun a => Real.exp (-((s : ℝ) * m a)) • f a)) p μ) (𝓝 s) (𝓝 0) := by
-    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto
-      (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp
-      (.of_forall fun t => by fun_prop) (by fun_prop) (Lp.memLp f) (C := 2)
+    apply TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto hp (.of_forall fun t => by fun_prop)
+      (Lp.memLp f) (C := 2)
     · filter_upwards with t
       filter_upwards with a
       have hbound (u : ℝ≥0) : ‖Real.exp (-((u : ℝ) * m a)) • f a‖ₑ ≤ ‖f a‖ₑ := by
-        rw [enorm_smul]
+        rw [eNorm_smul]
         apply mul_le_of_le_one_left zero_le
-        rw [enorm_eq_nnnorm, ← ENNReal.coe_one, ENNReal.coe_le_coe]
+        rw [eNorm_eq_nnNorm, ← ENNReal.coe_one, ENNReal.coe_le_coe]
         apply NNReal.coe_le_coe.mp
-        simp only [coe_nnnorm, NNReal.coe_one, Real.norm_eq_abs, Real.abs_exp,
+        simp only [coe_nnNorm, NNReal.coe_one, Real.norm_eq_abs, Real.abs_exp,
           Real.exp_le_one_iff]
         exact neg_nonpos.mpr (by positivity)
       calc
         ‖Real.exp (-((t : ℝ) * m a)) • f a - Real.exp (-((s : ℝ) * m a)) • f a‖ₑ
             ≤ ‖Real.exp (-((t : ℝ) * m a)) • f a‖ₑ +
-              ‖Real.exp (-((s : ℝ) * m a)) • f a‖ₑ := enorm_sub_le
+              ‖Real.exp (-((s : ℝ) * m a)) • f a‖ₑ := eNorm_sub_le
         _ ≤ ‖f a‖ₑ + ‖f a‖ₑ := add_le_add (hbound t) (hbound s)
         _ = (2 : ℝ≥0) * ‖f a‖ₑ := by simp [two_mul]
     · filter_upwards with a

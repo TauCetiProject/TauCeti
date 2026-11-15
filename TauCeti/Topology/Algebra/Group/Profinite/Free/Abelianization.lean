@@ -318,6 +318,7 @@ theorem toAdd_exponentSum_eq_single_iff [DecidableEq X] (y : freeProP p X) (x₀
     eq_comm]
   exact Multiplicative.toAdd.eq_symm_apply.symm
 
+omit [Finite X] in
 /-- **A continuous homomorphism from a free pro-`p` group of finite rank to a commutative pro-`p`
 group is computed by the exponent sums**: `ψ y = ∏ x, ψ (x_x) ^ (u x)` for `u = exponentSum y`,
 the powers being the `p`-adic powers of the target. -/
@@ -344,6 +345,7 @@ theorem apply_eq_prod_padicPow_exponentSum [Fintype X] {A : Type*} [CommGroup A]
   rw [MonoidHom.coe_ofClass] at hmap
   rw [hmap, TopologicalAbelianization.lift_mk]
 
+omit [Finite X] in
 /-- **The exponent vector under a continuous homomorphism of free pro-`p` groups** is the linear
 image of the exponent vector: `exponentSum (φ y) = ∑ x, (exponentSum y)_x • exponentSum (φ x_x)`.
 The vectors `exponentSum (φ x_x)` are the columns of the matrix of the abelianization of `φ`. -/
@@ -358,6 +360,23 @@ theorem toAdd_exponentSum_apply_eq_sum_smul [Fintype X] {Y : Type v}
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [Function.comp_apply, ← ofAdd_toAdd (exponentSum p Y (φ (of x))), IsProP.padicPow_ofAdd_pi,
     toAdd_ofAdd, toAdd_ofAdd]
+
+/-- The abelianization isomorphism of the free pro-`p` group carries the `p`-adic powers of the
+class of `r` to the multiples of its exponent vector. -/
+@[simp]
+lemma abelianizationEquiv_padicPow_class (r : freeProP p X) (l : ℤ_[p]) :
+    abelianizationEquiv p X
+        ((isProP_freeProP p X).topologicalAbelianization_self.padicPow
+          (r : TopologicalAbelianization (freeProP p X)) l) =
+      ofAdd (l • (exponentSum p X r).toAdd) := by
+  have hερ : abelianizationEquiv p X (r : TopologicalAbelianization (freeProP p X)) =
+      ofAdd (exponentSum p X r).toAdd := by
+    rw [abelianizationEquiv_mk, ofAdd_toAdd]
+  have h := (isProP_freeProP p X).topologicalAbelianization_self.map_padicPow_pi
+    (abelianizationEquiv p X : TopologicalAbelianization
+      (freeProP p X) →ₜ* Multiplicative (X → ℤ_[p]))
+    (r : TopologicalAbelianization (freeProP p X)) l
+  rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
 
 end freeProP
 

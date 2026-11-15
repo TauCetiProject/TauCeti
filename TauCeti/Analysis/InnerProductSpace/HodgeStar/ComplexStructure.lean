@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 -- Private: adapted orthonormal bases of an orthogonal complex structure are used only in proofs.
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
@@ -19,7 +19,7 @@ Let `V` be a finite-dimensional real inner product space with inner product `g`,
 identity `g(u, v) = ω(u, J v)` says that `J` is compatible with `ω` and that `g` is the metric
 `ω(·, J ·)` of the compatible pair. It holds exactly when `J = A` and `A² = -1`; in particular
 such a `J` is unique (`TauCeti.AlmostComplexStructure.toLinearMap_eq_twoVectorContraction`, in
-`HodgeStar/Kahler.lean`). It is then orthogonal, and `F` is the Kähler two-vector of `J`.
+`HodgeStar/Kahler/Basic.lean`). It is then orthogonal, and `F` is the Kähler two-vector of `J`.
 
 In dimension four, for an orientation `o` with Hodge star `⋆`, a self-dual or anti-self-dual
 two-vector, `⋆F = ±F`, satisfies `‖u ⌟ F‖² = (‖F‖² / 2) ‖u‖²`, hence

@@ -38,6 +38,8 @@ finitary formulas.
 
 ## References
 
+* The finite conjunction lemma `BoundedFormulaInf.realize_foldr_inf` follows Mathlib's
+  `BoundedFormula.realize_foldr_inf` in `Mathlib/ModelTheory/Semantics.lean` (Aaron Anderson).
 * Ported from `cameronfreer/infinitary-logic` at commit
   `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`, whose infinitary semantics is
   `Mathlib/ModelTheory/Infinitary/Semantics.lean` in `leanprover-community/mathlib4#42758`
@@ -142,6 +144,14 @@ theorem realize_bot : (⊥ : L.BoundedFormulaInf ι α n).Realize v xs ↔ False
 theorem realize_inf {φ ψ : L.BoundedFormulaInf ι α n} :
     (φ ⊓ ψ).Realize v xs ↔ φ.Realize v xs ∧ ψ.Realize v xs := by
   simp only [inf_def, realize_not, realize_imp, not_imp, not_not]
+
+/-- A finite conjunction holds exactly when every formula in the list holds. -/
+@[simp]
+theorem realize_foldr_inf (l : List (L.BoundedFormulaInf ι α n)) :
+    (l.foldr (· ⊓ ·) ⊤).Realize v xs ↔ ∀ φ ∈ l, φ.Realize v xs := by
+  induction l with
+  | nil => simp
+  | cons φ l ih => simp [ih]
 
 @[simp]
 theorem realize_sup {φ ψ : L.BoundedFormulaInf ι α n} :
@@ -279,6 +289,19 @@ theorem SentenceInf.realize_iInf {M : Type w} [L.Structure M] {φs : ι → L.Se
 theorem SentenceInf.realize_not {M : Type w} [L.Structure M] {φ : L.SentenceInf ι} :
     SentenceInf.Realize φ.not M ↔ ¬φ.Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
+
+/-- An implication of sentences holds exactly when its conclusion holds whenever its hypothesis
+does. -/
+@[simp]
+theorem SentenceInf.realize_imp {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ.imp ψ) M ↔ (φ.Realize M → ψ.Realize M) := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_imp]
+
+/-- Every closed term equals itself in every structure. -/
+@[simp]
+theorem SentenceInf.realize_equal_self {M : Type w} [L.Structure M] (t : L.Term (Empty ⊕ Fin 0)) :
+    SentenceInf.Realize (BoundedFormulaInf.equal t t : L.SentenceInf ι) M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_equal]
 
 /-- The false sentence holds in no structure. -/
 @[simp]

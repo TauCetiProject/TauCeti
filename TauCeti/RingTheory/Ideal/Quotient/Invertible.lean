@@ -13,9 +13,10 @@ public import TauCeti.RingTheory.Ideal.Quotient.Finite
 /-!
 # Quotients by products with invertible ideals
 
-For an ideal `I` that is invertible as an `R`-module and an ideal `J` with semilocal
-quotient, `I / IJ` is isomorphic to `R / J`. Consequently, when `R` is an algebra over
-a field and both ideals have finite codimension, codimension is additive on `I * J`.
+For an ideal `I` that is invertible as an `R`-module and an ideal `J` whose quotient has
+trivial Picard group (for instance, a semilocal quotient), `I / IJ` is isomorphic to `R / J`.
+Consequently, when `R` is an algebra over a field and both ideals have finite codimension,
+codimension is additive on `I * J`.
 Neither a domain hypothesis nor a choice of fraction field is required.
 
 These are the commutative-algebra steps in the point-to-class surjectivity argument,
@@ -29,11 +30,11 @@ namespace Ideal
 
 variable {R : Type*} [CommRing R]
 
-/-- For an invertible ideal `I` and a semilocal quotient `R / J`, the quotient `I / IJ`
-is isomorphic to `R / J` as an `R`-module. -/
+/-- For an invertible ideal `I` and a quotient `R / J` with trivial Picard group (for
+instance, a semilocal quotient), the quotient `I / IJ` is isomorphic to `R / J` as an
+`R`-module. -/
 theorem nonempty_quotient_comap_mul_linearEquiv_quotient (I J : Ideal R)
-    [Module.Invertible R I]
-    [Finite (MaximalSpectrum (R ⧸ J))] :
+    [Module.Invertible R I] [Subsingleton (CommRing.Pic (R ⧸ J))] :
     Nonempty ((I ⧸ Submodule.comap I.subtype (I * J)) ≃ₗ[R] R ⧸ J) := by
   obtain ⟨e⟩ := Module.Invertible.nonempty_quotientEquiv I J
   exact ⟨(Submodule.quotEquivOfEq _ _ (I.smul_top_eq_comap_mul J).symm).trans e⟩

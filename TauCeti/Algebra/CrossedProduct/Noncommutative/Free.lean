@@ -54,6 +54,20 @@ attribute [local instance] rightSubgroupModule
 theorem rightSubgroupModule_smul (a : (Algebra (c.comap H.subtype))ᵐᵒᵖ) (x : Algebra c) :
     a • x = x * comapHom c H.subtype (unop a) := (rfl)
 
+/-- The ground-ring action agrees with restriction of the right subgroup action. -/
+instance isScalarTower_rightSubgroup :
+    IsScalarTower k (Algebra (c.comap H.subtype))ᵐᵒᵖ (Algebra c) :=
+  IsScalarTower.of_algebraMap_smul fun r x => by
+    rw [rightSubgroupModule_smul]
+    simp only [MulOpposite.algebraMap_apply, unop_op, AlgHom.commutes]
+    exact (_root_.Algebra.commutes r x).symm.trans (_root_.Algebra.smul_def r x).symm
+
+/-- Left multiplication commutes with the right action of the subgroup crossed product. -/
+instance smulCommClass_rightSubgroup :
+    SMulCommClass (Algebra c) (Algebra (c.comap H.subtype))ᵐᵒᵖ (Algebra c) :=
+  SMul.comp.smulCommClass' (α := Algebra c) (β := Algebra c)
+    (comapHom c H.subtype).toRingHom.op
+
 private noncomputable def coefficientTwist (q : G ⧸ H) (h : H) : D ≃+ D :=
   (c.action q.out).toAddEquiv.trans (AddAut.mulRight (c.factor q.out h))
 

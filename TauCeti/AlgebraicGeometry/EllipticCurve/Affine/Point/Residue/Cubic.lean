@@ -150,12 +150,11 @@ private theorem exists_yCoord_eq_and_dvd_cubic {ϖ : v.valuationSubring}
   obtain ⟨hp, h₁, h₃, -⟩ :=
     prime_and_dvd_and_not_dvd_discr_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆
   obtain ⟨m₃, m₄, m₆⟩ := mem_maximalIdeal_of_isTateTerminal_IStar_zero v hϖ h
-  obtain ⟨x, y, hxy, rfl, -, hy⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
+  obtain ⟨x, y, hxy, rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   rw [Point.xCoord_some] at hX
   obtain rfl := Subtype.val_injective hX
   obtain ⟨⟨Y, rfl⟩, hX⟩ := (integralModel v.valuationSubring W).sq_dvd_and_dvd_cubic_of_equation hp
     h₁ h₂ h₃ h₄ h₆ ((equation_integralModel_iff v).2 hxy.left)
-    ((mem_maximalIdeal_iff_dvd hϖ).1 hy)
   exact ⟨Y, Point.yCoord_some hxy, hX⟩
 
 /-- **At `I₀*`, a point with singular reduction has `x = ϖ X`, with the residue of `X` a root of the
@@ -274,13 +273,8 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
   -- `X₁ − X₂` is a unit, so `x₁ ≠ x₂`
   have hu : IsUnit (X₁ - X₂) :=
     notMem_maximalIdeal.1 fun hm ↦ hX ((mem_maximalIdeal_iff_dvd hϖ).1 hm)
-  have hx : x₁ ≠ x₂ := by
-    intro hx
-    rw [hX₁, hX₂] at hx
-    have : X₁ - X₂ = 0 := by
-      rw [sub_eq_zero]
-      exact mul_left_cancel₀ hp.ne_zero (Subtype.val_injective hx)
-    exact hX (this ▸ dvd_zero ϖ)
+  have hx : x₁ ≠ x₂ := fun he ↦ hu.ne_zero <| sub_eq_zero.2 <|
+    mul_left_cancel₀ hp.ne_zero (Subtype.val_injective (hX₁ ▸ hX₂ ▸ he))
   have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := fun hxy ↦ hx hxy.1
   have ha₁ : W.a₁ = ϖ * A₁ := by
     rw [← integralModel_a₁_eq v.valuationSubring W, hA₁]; simp

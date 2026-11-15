@@ -73,6 +73,11 @@ noncomputable def geckGeneratedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin t.rank))).obj :=
   t.geckGeneratedCoordinateLift ht R (.inr ())
 
+/-- The weight-torus coordinate map is the stored torus generator lift. -/
+theorem geckGeneratedWeightTorusCoordinateMap_def :
+    t.geckGeneratedWeightTorusCoordinateMap ht R =
+      t.geckGeneratedCoordinateLift ht R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient Geck weight torus. -/
 @[reassoc (attr := simp)]
 theorem geckGeneratedCoordinateMap_comp_geckGeneratedWeightTorusCoordinateMap :

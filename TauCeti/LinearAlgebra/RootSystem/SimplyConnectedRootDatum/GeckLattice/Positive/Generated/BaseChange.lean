@@ -58,6 +58,29 @@ noncomputable section
 variable (t : DynkinType) (ht : t.Valid)
 variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
+/-- Scalar extension of a positive generator's coordinate algebra, including the torus branch. -/
+def geckPositiveGeneratorCoordinateAlgebraBaseChangeIso (j : Sum (Fin t.rank) Unit) :
+    CommHopfAlgCat.baseChange (K := K) (t.geckPositiveGeneratorCoordinateAlgebra k j) ≅
+      t.geckPositiveGeneratorCoordinateAlgebra K j :=
+  match j with
+  | .inl i => t.geckGeneratorCoordinateAlgebraBaseChangeIso k K (.inl (.inl i))
+  | .inr u => t.geckGeneratorCoordinateAlgebraBaseChangeIso k K (.inr u)
+
+/-- The positive generators commute with arbitrary scalar extension. -/
+theorem geckPositiveGeneratorCoordinateMap_baseChange (j : Sum (Fin t.rank) Unit) :
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht)).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) (t.geckPositiveGeneratorCoordinateMap ht k j) ≫
+        (t.geckPositiveGeneratorCoordinateAlgebraBaseChangeIso k K j).hom =
+      t.geckPositiveGeneratorCoordinateMap ht K j := by
+  rcases j with i | u
+  · simpa only [geckPositiveGeneratorCoordinateMap_inl,
+      geckPositiveGeneratorCoordinateAlgebraBaseChangeIso] using
+      t.geckGeneratorCoordinateMap_baseChange ht k K (.inl (.inl i))
+  · cases u
+    simpa only [geckPositiveGeneratorCoordinateMap_inr,
+      geckPositiveGeneratorCoordinateAlgebraBaseChangeIso] using
+      t.geckGeneratorCoordinateMap_baseChange ht k K (.inr ())
+
 /-- **Generation of the positive Geck subgroup commutes with free base change.** The ideal
 is transported through the ambient general-linear coordinate-algebra comparison. -/
 theorem map_baseChangeHopfIdeal_geckPositiveGeneratedDefiningIdeal [Module.Free k K] :
@@ -69,16 +92,10 @@ theorem map_baseChangeHopfIdeal_geckPositiveGeneratedDefiningIdeal [Module.Free 
   apply CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal
     (t.geckPositiveGeneratorCoordinateMap ht k)
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (t.geckDim ht))
-    (fun j ↦ match j with
-      | .inl i => t.geckGeneratorCoordinateAlgebraBaseChangeIso k K (.inl (.inl i))
-      | .inr u => t.geckGeneratorCoordinateAlgebraBaseChangeIso k K (.inr u))
+    (t.geckPositiveGeneratorCoordinateAlgebraBaseChangeIso k K)
     (t.geckPositiveGeneratorCoordinateMap ht K)
-  rintro (i | u)
-  · simpa only [geckPositiveGeneratorCoordinateMap_inl, Category.assoc] using
-      t.geckGeneratorCoordinateMap_baseChange ht k K (.inl (.inl i))
-  · cases u
-    simpa only [geckPositiveGeneratorCoordinateMap_inr, Category.assoc] using
-      t.geckGeneratorCoordinateMap_baseChange ht k K (.inr ())
+  intro j
+  simpa only [Category.assoc] using t.geckPositiveGeneratorCoordinateMap_baseChange ht k K j
 
 /-- The scalar extension of the positive generated coordinate algebra is the coordinate algebra
 of the positive subgroup generated over the extension ring. -/

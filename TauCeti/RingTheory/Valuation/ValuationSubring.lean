@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+import Mathlib.RingTheory.Valuation.LocalSubring
 
 /-!
 # Nonunits and domination for valuation subrings
@@ -112,3 +113,22 @@ theorem comap_eq_of_map_maximalIdeal_le {S : Type*} [CommRing S]
       hnon _ (hQ (Ideal.mem_map_of_mem _ (coe_mem_nonunits_iff.mp hx)))
 
 end ValuationSubring
+
+namespace RingHom
+
+/-- If `ψ : R →+* L` is a ring map to a field whose kernel lies in a proper ideal `Q`, then some
+valuation subring of `L` contains the range of `ψ` and has the image of `Q` among its nonunits. -/
+theorem exists_valuationSubring_mem_and_image_subset_nonunits {R L : Type*} [CommRing R]
+    [Field L] (ψ : R →+* L) {Q : Ideal R} (hQ : Q ≠ ⊤) (hker : RingHom.ker ψ ≤ Q) :
+    ∃ W : ValuationSubring L, (∀ x, ψ x ∈ W) ∧ ∀ x ∈ Q, ψ x ∈ W.nonunits := by
+  have hQ' : Q.map ψ.rangeRestrict ≠ ⊤ := fun htop ↦ hQ <| by
+    have := Ideal.comap_map_of_surjective _ ψ.rangeRestrict_surjective Q
+    rw [htop, Ideal.comap_top, sup_eq_left.mpr] at this
+    · exact this.symm
+    · intro x hx
+      exact hker (congrArg Subtype.val (Ideal.mem_bot.mp hx))
+  obtain ⟨W, hrange, hnon⟩ := Ideal.image_subset_nonunits_valuationSubring _ hQ'
+  exact ⟨W, fun x ↦ hrange ⟨x, rfl⟩, fun x hx ↦
+    hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩⟩
+
+end RingHom

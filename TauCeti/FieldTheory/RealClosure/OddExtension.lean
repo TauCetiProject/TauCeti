@@ -72,7 +72,7 @@ private theorem extensionCone.exists_lt (p : K[X])
     rw [Nat.even_iff, hdegrees] at heven
     rw [Nat.odd_iff] at hodd ⊢
     omega
-  obtain ⟨r, hr, hrodd, hrq⟩ := exists_irreducible_factor_of_odd_natDegree q hqodd
+  obtain ⟨r, hr, hrodd, hrq⟩ := exists_irreducible_factor_of_odd_natDegree hqodd
   have hrdeg : r.natDegree < p.natDegree :=
     (natDegree_le_of_dvd hrq hq0).trans_lt hqdeg
   have hrw : r ∣ w := by rw [hq]; exact hrq.trans (dvd_mul_left q p)

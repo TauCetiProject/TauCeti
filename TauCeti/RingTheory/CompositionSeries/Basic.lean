@@ -21,8 +21,8 @@ This file records only how the transported series is built (its length, terms an
 
 For a linear map `f : M →ₗ[R] N` over a single ring (the case `σ = RingHom.id R`), the transported
 series also keeps the *factors* themselves, and not just their number: this is the identification
-of subquotients `TauCeti.mapSubquotientEquivOfInjective`, respectively
-`TauCeti.comapSubquotientEquivOfSurjective`, of `TauCeti.Algebra.Module.Submodule.Quotient`, which
+of subquotients `LinearMap.mapSubquotientEquivOfInjective`, respectively
+`LinearMap.comapSubquotientEquivOfSurjective`, of `TauCeti.Algebra.Module.Submodule.Quotient`, which
 are stated only for such linear maps.
 
 Taking `f` to be a linear equivalence, this is what makes an invariant read off a composition

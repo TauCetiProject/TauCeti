@@ -20,14 +20,39 @@ with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): fin
 bounds it, and it lies between the open and the closed interval spanned by its infimum and
 supremum.
 
+Pulling real Lebesgue measure on `(0,T]` back to `ℝ≥0` commutes with restriction,
+and the resulting finite-horizon measure has total mass `T`.
+
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
 preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
+
+The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
+their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
 -/
 
 public section
 
 open MeasureTheory Set
-open scoped ENNReal
+open scoped ENNReal NNReal Interval
+
+namespace NNReal
+
+/-- Pulling Lebesgue measure on `(0,T]` back to `ℝ≥0` is the restriction of its pullback. -/
+theorem comap_volume_restrict_Ioc (T : ℝ≥0) :
+    (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) =
+      (volume.comap ((↑) : ℝ≥0 → ℝ)).restrict (Ioc 0 T) := by
+  rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict]
+  -- The preimage is definitionally `Ioc 0 T`: the order on `ℝ≥0` is inherited from `ℝ`.
+  congr 1
+
+/-- The pullback of Lebesgue measure on `(0,T]` to `ℝ≥0` has total mass `T`. -/
+theorem comap_volume_restrict_Ioc_univ (T : ℝ≥0) :
+    (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) univ = T := by
+  rw [comap_volume_restrict_Ioc, Measure.restrict_apply_univ,
+    NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
+  simp
+
+end NNReal
 
 namespace TauCeti
 
@@ -61,6 +86,17 @@ theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm �
   exact hmul.comp
     (volume_preserving_arrowCongr' e.symm (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _))
 
+/-- The measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of their
+lengths `max (a i) (b i) - min (a i) (b i)`. -/
+theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι → ℝ)
+    (h : (I : Set ι).PairwiseDisjoint fun i ↦ Ι (a i) (b i)) :
+    volume (⋃ i ∈ I, Ι (a i) (b i)) =
+      ENNReal.ofReal (∑ i ∈ I, (max (a i) (b i) - min (a i) (b i))) := by
+  rw [measure_biUnion_finset h fun _ _ ↦ measurableSet_uIoc,
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
+
 end TauCeti
 
 /-- An order-connected subset of `ℝ` of positive finite volume agrees almost everywhere with a
@@ -79,7 +115,8 @@ theorem Set.OrdConnected.exists_ae_eq_Ioo {I : Set ℝ} (hI : I.OrdConnected) (h
       exact hI.out hy hwI ⟨hz, hwz.le⟩
   have hsub := IsConnected.Ioo_csInf_csSup_subset ⟨⟨y, hy⟩, hI.isPreconnected⟩ hbdd.1 hbdd.2
   have hae : I =ᵐ[volume] Ioo (sInf I) (sSup I) :=
-    ((subset_Icc_csInf_csSup hbdd.1 hbdd.2).eventuallyLE.trans Ioo_ae_eq_Icc.symm.le).antisymm
-      hsub.eventuallyLE
+    ((subset_Icc_csInf_csSup hbdd.1 hbdd.2).eventuallySubset.trans
+        Ioo_ae_eq_Icc.symm.subset).antisymm
+      hsub.eventuallySubset
   refine ⟨sInf I, sSup I, lt_of_not_ge fun hle => h0 ?_, hae⟩
   rw [measure_congr hae, Ioo_eq_empty_of_le hle, measure_empty]

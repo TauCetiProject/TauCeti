@@ -50,7 +50,7 @@ theorem exists_polygonal_approximation_winding (hab : a < b)
   have hu' : TendstoUniformlyOn γn γ atTop (uIcc a b) := by
     rwa [uIcc_of_le hab.le]
   filter_upwards [AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl
-    hγ hAC hclosed hcl hu' hU htrace] with n hn
+    hγ hAC hcl hu' hU htrace] with n hn
   exact ⟨hn.1, fun z hz ↦ (hn.2 z hz).trans (hindex z hz)⟩
 
 end TauCeti.Green

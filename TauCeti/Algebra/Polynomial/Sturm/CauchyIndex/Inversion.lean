@@ -108,7 +108,7 @@ theorem _root_.Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Ioc (p q : R[X])
   · simp
   have hi (r s : R[X]) :
       cauchyIndex r s (Ioc a b) = cauchyIndex r s (Ioo a b) + cauchyJump r s b := by
-    rw [← Ioo_insert_right hab, insert_eq, union_comm,
+    rw [← insert_right_Ioo hab, insert_eq, union_comm,
       cauchyIndex_union _ _ (disjoint_singleton_right.mpr (by simp)), cauchyIndex_singleton]
   have h := two_mul_cauchyIndex_add_cauchyIndex_Ioo p q hab
   have hj := two_mul_cauchyJump_add_cauchyJump p q b
@@ -124,7 +124,7 @@ theorem _root_.Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Ico (p q : R[X])
   · simp
   have hi (r s : R[X]) :
       cauchyIndex r s (Ico a b) = cauchyJump r s a + cauchyIndex r s (Ioo a b) := by
-    rw [← Ioo_insert_left hab, insert_eq,
+    rw [← insert_left_Ioo hab, insert_eq,
       cauchyIndex_union _ _ (disjoint_singleton_left.mpr (by simp)), cauchyIndex_singleton]
   have h := two_mul_cauchyIndex_add_cauchyIndex_Ioo p q hab
   have hj := two_mul_cauchyJump_add_cauchyJump p q a
@@ -138,7 +138,7 @@ theorem _root_.Polynomial.two_mul_cauchyIndex_add_cauchyIndex_Icc (p q : R[X])
       ((p * q).derivSignRight b : ℤ) - (p * q).derivSignLeft a := by
   have hi (r s : R[X]) :
       cauchyIndex r s (Icc a b) = cauchyJump r s a + cauchyIndex r s (Ioc a b) := by
-    rw [← Ioc_insert_left hab, insert_eq,
+    rw [← insert_left_Ioc hab, insert_eq,
       cauchyIndex_union _ _ (disjoint_singleton_left.mpr (by simp)), cauchyIndex_singleton]
   have h := two_mul_cauchyIndex_add_cauchyIndex_Ioc p q hab
   have hj := two_mul_cauchyJump_add_cauchyJump p q a

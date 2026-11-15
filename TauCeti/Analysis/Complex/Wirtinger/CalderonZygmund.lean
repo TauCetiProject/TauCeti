@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.Schwartz
 public import TauCeti.Analysis.Fourier.MihlinHormander
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
@@ -101,29 +101,11 @@ private theorem memLp_dbarSymbol (v : ℂ) (μ : Measure ℂ) : MemLp (dbarSymbo
 
 variable {F : Type*} [NormedAddCommGroup F]
 
-/-- The Cauchy–Riemann operator `\bar∂ = (∂ₓ + I ∂ᵧ) / 2` on Schwartz functions on `ℂ`. -/
-private def schwartzDbar [NormedSpace ℂ F] (u : 𝓢(ℂ, F)) : 𝓢(ℂ, F) :=
-  (2 : ℂ)⁻¹ • (∂_{(1 : ℂ)} u + I • ∂_{I} u)
-
-private theorem schwartzDbar_apply [NormedSpace ℂ F] (u : 𝓢(ℂ, F)) (z : ℂ) :
-    schwartzDbar u z = conjWirtingerDeriv (⇑u) z 1 := by
-  simp [schwartzDbar, conjWirtingerDeriv_apply, SchwartzMap.lineDerivOp_apply_eq_fderiv]
-
-/-- On the Fourier side, `\bar∂` is multiplication by `πi ξ`. -/
-private theorem fourier_schwartzDbar_apply [NormedSpace ℂ F] (u : 𝓢(ℂ, F)) (ξ : ℂ) :
-    𝓕 (schwartzDbar u) ξ = (π * I * ξ) • 𝓕 u ξ := by
-  simp only [schwartzDbar, FourierTransform.fourier_smul, FourierTransform.fourier_add,
-    smul_apply, add_apply, SchwartzMap.fourier_lineDerivOp_apply, smul_smul, ← add_smul]
-  congr 1
-  conv_rhs => rw [← re_add_im ξ]
-  simp only [Complex.inner, conj_re, conj_im, mul_re, one_re, one_im, I_re, I_im]
-  push_cast
-  ring
-
 /-- On the Fourier side, `∂_v u` is the symbol `2 ⟪ξ, v⟫ / ξ` times `\bar∂u`. -/
 private theorem fourier_lineDerivOp_apply_eq_dbarSymbol_smul [NormedSpace ℂ F] (u : 𝓢(ℂ, F))
-    (v ξ : ℂ) : 𝓕 (∂_{v} u) ξ = dbarSymbol v ξ • 𝓕 (schwartzDbar u) ξ := by
-  rw [SchwartzMap.fourier_lineDerivOp_apply, fourier_schwartzDbar_apply, smul_smul]
+    (v ξ : ℂ) : 𝓕 (∂_{v} u) ξ = dbarSymbol v ξ • 𝓕 (SchwartzMap.conjWirtingerDerivCLM F u) ξ := by
+  rw [SchwartzMap.fourier_lineDerivOp_apply,
+    SchwartzMap.fourier_conjWirtingerDerivCLM_apply, smul_smul]
   congr 1
   linear_combination (-(π : ℂ) * I) * dbarSymbol_mul v ξ
 
@@ -133,7 +115,7 @@ variable [InnerProductSpace ℂ F] [CompleteSpace F]
 `m_v(ξ) = 2 ⟪ξ, v⟫ / ξ`. -/
 private theorem toLp_lineDerivOp_eq_fourierMultiplierCLM (u : 𝓢(ℂ, F)) (v : ℂ) :
     (∂_{v} u).toLp 2 = Lp.fourierMultiplierCLM F ((memLp_dbarSymbol v volume).toLp _)
-      ((schwartzDbar u).toLp 2) :=
+      ((SchwartzMap.conjWirtingerDerivCLM F u).toLp 2) :=
   SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
     (memLp_dbarSymbol v volume).coeFn_toLp (fourier_lineDerivOp_apply_eq_dbarSymbol_smul u v)
 
@@ -142,14 +124,15 @@ multiplier theorem. -/
 private theorem exists_eLpNorm_lineDerivOp_le (v : ℂ) {p : ℝ≥0∞} (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ u : 𝓢(ℂ, F),
-      eLpNorm (⇑(∂_{v} u : 𝓢(ℂ, F))) p volume ≤ C * eLpNorm (⇑(schwartzDbar u)) p volume := by
+      eLpNorm (⇑(∂_{v} u : 𝓢(ℂ, F))) p volume ≤
+        C * eLpNorm (SchwartzMap.conjWirtingerDerivCLM F u) p volume := by
   obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq (N := 2)
     ((contDiffOn_dbarSymbol v).of_le (by simp)) fun t ht ξ ↦ dbarSymbol_smul v ht ξ
   obtain ⟨C, hC⟩ := exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le (V := ℂ)
     (F := F) (N := 2) (by simp [Complex.finrank_real_complex]) hp hp_top
   refine ⟨C * A, fun u ↦ ?_⟩
   have h := hC (contDiffOn_dbarSymbol v) hA _ (memLp_dbarSymbol v volume).coeFn_toLp
-    ((schwartzDbar u).toLp 2)
+    ((SchwartzMap.conjWirtingerDerivCLM F u).toLp 2)
   rwa [← toLp_lineDerivOp_eq_fourierMultiplierCLM,
     eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 volume),
     eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ 2 volume), ← ENNReal.coe_mul] at h
@@ -183,10 +166,11 @@ theorem exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv {p : ℝ≥0∞} (hp
         refine (eLpNorm_add_le (f := fun z ↦ ‖u₁ z‖) (g := fun z ↦ ‖u₂ z‖) hp.le).trans_eq ?_
         rw [eLpNorm_norm _ u₁.continuous.aestronglyMeasurable,
           eLpNorm_norm _ u₂.continuous.aestronglyMeasurable]
-    _ ≤ C₁ * eLpNorm (⇑(schwartzDbar u)) p volume + C₂ * eLpNorm (⇑(schwartzDbar u)) p volume :=
+    _ ≤ C₁ * eLpNorm (SchwartzMap.conjWirtingerDerivCLM F u) p volume +
+        C₂ * eLpNorm (SchwartzMap.conjWirtingerDerivCLM F u) p volume :=
         add_le_add (hC₁ u) (hC₂ u)
     _ = (C₁ + C₂ : ℝ≥0) * eLpNorm (fun z ↦ conjWirtingerDeriv (⇑u) z 1) p volume := by
-        rw [← funext (schwartzDbar_apply u), ENNReal.coe_add, add_mul]
+        rw [← funext (SchwartzMap.conjWirtingerDerivCLM_apply u), ENNReal.coe_add, add_mul]
 
 /-- **The Calderón–Zygmund inequality for smooth compactly supported maps.** Let `1 < p < ∞`.
 There is a constant `C` with `‖Du‖_{Lᵖ} ≤ C ‖\bar∂u‖_{Lᵖ}` for every smooth compactly supported map

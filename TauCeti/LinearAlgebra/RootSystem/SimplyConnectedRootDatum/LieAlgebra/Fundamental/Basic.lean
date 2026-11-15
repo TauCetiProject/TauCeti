@@ -143,6 +143,11 @@ instance instFiniteDimensionalFundamentalModule (i : Fin t.rank) :
   finiteDimensional_irreducibleQuotient_of_isDominantIntegral
     (t.isDominantIntegral_fundamentalWeight ht i)
 
+/-- The rational fundamental module is torsion-free over `ℤ`. -/
+instance instIsTorsionFreeFundamentalModule (i : Fin t.rank) :
+    Module.IsTorsionFree ℤ (t.fundamentalModule ht i) :=
+  Module.IsTorsionFree.trans ℚ
+
 /-- **The highest weight space of `L(ϖᵢ)` is a line**: its `ϖᵢ`-weight space is spanned by the
 highest weight vector `v⁺ᵢ`. -/
 theorem genWeightSpace_fundamentalModule_fundamentalWeight (i : Fin t.rank) :
@@ -184,6 +189,14 @@ theorem lie_lieBasis_e_fundamentalModuleGenerator (i j : Fin t.rank) :
     (mem_positiveNilradical_of_mem_rootSpace _ _
       (support_subset_posRoots _ _ ((t.lieBasis ht).baseSupportEquiv j).property)
       (lieBasis_e_mem_rootSpace (t.lieBasis ht) j))
+
+/-- `eᵢ (fᵢ v⁺ᵢ) = v⁺ᵢ`: raising the first lowering recovers the highest vector. -/
+@[simp]
+theorem lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator (i : Fin t.rank) :
+    ⁅(t.lieBasis ht).e i, ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆⁆ =
+      t.fundamentalModuleGenerator ht i := by
+  rw [leibniz_lie, ((t.lieBasis ht).sl2 i).lie_e_f]
+  simp
 
 /-- `fⱼᵏ⁺¹ v⁺ᵢ = 0` whenever `ϖᵢ (hⱼ) = k`: the integrability relation on the highest weight
 vector, read on the pinned generators. -/

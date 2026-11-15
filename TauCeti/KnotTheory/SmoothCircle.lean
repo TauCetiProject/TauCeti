@@ -65,7 +65,7 @@ open scoped EuclideanSpace
 namespace TauCeti
 
 open Set
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 /-- Rotations of the complex unit circle, as smooth self-diffeomorphisms. -/
 def circleRotationHom : Circle →* Diff (𝓡 1) Circle ∞ where

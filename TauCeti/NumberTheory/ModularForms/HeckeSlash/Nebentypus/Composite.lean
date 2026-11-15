@@ -60,7 +60,7 @@ prime-power blocks instead of summing over divisors.
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups HeckeCosetModule
 

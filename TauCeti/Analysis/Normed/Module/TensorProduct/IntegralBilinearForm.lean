@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Map
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 
@@ -33,7 +34,9 @@ The forgetful map to bounded bilinear forms is the contraction
 `TauCeti.IntegralBilinearForm.liftIsometry` of integral bilinear forms with the dual of the
 injective tensor product shows that the carrier is a Banach space when `𝕜` is complete.
 Restricting a functional on the injective tensor product along the contraction from the projective
-tensor product recovers the functional induced by the underlying bounded bilinear form.
+tensor product recovers the functional induced by the underlying bounded bilinear form, and
+likewise for the completed tensor products. In particular, the elementary functionals
+`x ⊗ₜ y ↦ f x * g y` vanish on the kernel of the contraction `E ⊗̂π F → E ⊗̂ε F`.
 
 ## Main declarations
 
@@ -130,12 +133,12 @@ private theorem lift_eq_liftIsometry (B : E →L[𝕜] F →L[𝕜] 𝕜) (u : E
 theorem integralENorm_smul (c : 𝕜) (B : E →L[𝕜] F →L[𝕜] 𝕜) :
     (c • B).integralENorm = ‖c‖ₑ * B.integralENorm := by
   simp only [integralENorm_def, lift_eq_liftIsometry]
-  simp only [map_smul, _root_.smul_apply, smul_eq_mul, enorm_mul, mul_div_assoc, ENNReal.mul_iSup]
+  simp only [map_smul, _root_.smul_apply, smul_eq_mul, eNorm_mul, mul_div_assoc, ENNReal.mul_iSup]
 
 /-- Negation preserves the integral norm. -/
 @[simp]
 theorem integralENorm_neg (B : E →L[𝕜] F →L[𝕜] 𝕜) : (-B).integralENorm = B.integralENorm := by
-  rw [← neg_one_smul 𝕜 B, integralENorm_smul, enorm_neg, enorm_one, one_mul]
+  rw [← neg_one_smul 𝕜 B, integralENorm_smul, eNorm_neg, eNorm_one, one_mul]
 
 /-- The integral norm is subadditive. -/
 theorem integralENorm_add_le (B B' : E →L[𝕜] F →L[𝕜] 𝕜) :
@@ -145,7 +148,7 @@ theorem integralENorm_add_le (B B' : E →L[𝕜] F →L[𝕜] 𝕜) :
     ← lift_eq_liftIsometry]
   calc
     _ ≤ (‖lift B.toLinearMap₁₂ u‖ₑ + ‖lift B'.toLinearMap₁₂ u‖ₑ) /
-        ENNReal.ofReal (injectiveSeminorm 𝕜 E F u) := by gcongr; exact enorm_add_le _ _
+        ENNReal.ofReal (injectiveSeminorm 𝕜 E F u) := by gcongr; exact eNorm_add_le _ _
     _ = _ := ENNReal.add_div
     _ ≤ _ := add_le_add (B.enorm_lift_div_le_integralENorm u) (B'.enorm_lift_div_le_integralENorm u)
 
@@ -338,6 +341,17 @@ theorem liftIsometry_comp_toInjectiveTensor (B : IntegralBilinearForm 𝕜 E F) 
       ProjectiveTensor.liftIsometry 𝕜 E F 𝕜 B.toContinuousLinearMap :=
   ProjectiveTensor.continuousLinearMap_ext fun x y ↦ by simp
 
+/-- The completed form of `liftIsometry_comp_toInjectiveTensor`: restricting the extension to
+`E ⊗̂ε F` of the functional induced by an integral bilinear form along the contraction
+`E ⊗̂π F → E ⊗̂ε F` gives the functional induced by the underlying bounded bilinear form. -/
+theorem liftIsometry_fromCompletion_comp_toCompletedInjectiveTensor [CompleteSpace 𝕜]
+    (B : IntegralBilinearForm 𝕜 E F) :
+    (liftIsometry 𝕜 E F B).fromCompletion ∘L
+        CompletedProjectiveTensor.toCompletedInjectiveTensor 𝕜 E F =
+      CompletedProjectiveTensor.liftIsometry 𝕜 E F 𝕜 B.toContinuousLinearMap :=
+  CompletedProjectiveTensor.continuousLinearMap_ext fun x y ↦ by
+    simp [ProjectiveTensor.toInjectiveTensor_apply]
+
 /-- Over a complete field, the integral bilinear forms form a Banach space. -/
 instance [CompleteSpace 𝕜] : CompleteSpace (IntegralBilinearForm 𝕜 E F) :=
   (liftIsometry 𝕜 E F).toIsometryEquiv.completeSpace
@@ -348,7 +362,7 @@ private def bilinearCompAux (a : E' →L[𝕜] E) (b : F' →L[𝕜] F) (B : Int
     IntegralBilinearForm 𝕜 E' F' :=
   ⟨B.toContinuousLinearMap.bilinearComp a b, OperatorGauge.mem_finiteSubmodule.2 <|
     (ContinuousLinearMap.integralENorm_bilinearComp_le _ a b).trans_lt <|
-      ENNReal.mul_lt_top (ENNReal.mul_lt_top enorm_lt_top enorm_lt_top) B.gauge_lt_top⟩
+      ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top eNorm_lt_top) B.gauge_lt_top⟩
 
 private theorem norm_bilinearCompAux_le (a : E' →L[𝕜] E) (b : F' →L[𝕜] F)
     (B : IntegralBilinearForm 𝕜 E F) : ‖bilinearCompAux a b B‖ ≤ ‖a‖ * ‖b‖ * ‖B‖ := by
@@ -389,7 +403,7 @@ theorem liftIsometry_bilinearComp (a : E' →L[𝕜] E) (b : F' →L[𝕜] F)
 /-- The rank-one integral bilinear form `(x, y) ↦ f x * g y`. -/
 def smulRight (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) : IntegralBilinearForm 𝕜 E F :=
   ⟨f.smulRight g, OperatorGauge.mem_finiteSubmodule.2 <| by
-    simpa using ENNReal.mul_lt_top enorm_lt_top enorm_lt_top⟩
+    simpa using ENNReal.mul_lt_top eNorm_lt_top eNorm_lt_top⟩
 
 @[simp]
 theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
@@ -401,8 +415,25 @@ theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 
 theorem norm_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
     ‖smulRight f g‖ = ‖f‖ * ‖g‖ := by
   rw [norm_def, toContinuousLinearMap_smulRight, ContinuousLinearMap.integralENorm_smulRight,
-    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
 end IntegralBilinearForm
+
+namespace CompletedProjectiveTensor
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- An elementary functional `x ⊗ₜ y ↦ f x * g y` vanishes on every element of `E ⊗̂π F` that
+the contraction to `E ⊗̂ε F` sends to zero. -/
+theorem liftIsometry_smulRight_eq_zero_of_toCompletedInjectiveTensor_eq_zero
+    {u : CompletedProjectiveTensor 𝕜 E F} (hu : toCompletedInjectiveTensor 𝕜 E F u = 0)
+    (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
+    liftIsometry 𝕜 E F 𝕜 (f.smulRight g) u = 0 := by
+  rw [← IntegralBilinearForm.toContinuousLinearMap_smulRight,
+    ← IntegralBilinearForm.liftIsometry_fromCompletion_comp_toCompletedInjectiveTensor,
+    ContinuousLinearMap.comp_apply, hu, map_zero]
+
+end CompletedProjectiveTensor
 
 end TauCeti

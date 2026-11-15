@@ -26,11 +26,12 @@ non-isomorphic:
 Every member of the family has dimension vector `(1, 1)`. So on a quiver with at least two arrows
 the dimension vector of a finite-dimensional indecomposable **does not determine it**, and its
 Tits value is `2 - #arrows`, not `1`. Both facts are sharpness statements: the Gabriel injection
-`TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic` and the real-root property
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic` are proved for an acyclic
-quiver whose Tits form is *positive definite*, and every generalized Kronecker quiver is acyclic,
-so neither survives the weakening of that hypothesis to acyclicity alone. Already the *smallest*
-such weakening fails, at the Kronecker quiver `• ⇉ •` of exactly two arrows: its Tits form
+`TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable` and the real-root property
+`TauCeti.titsForm_dimVector_eq_one_of_indecomposable` are proved for a
+quiver whose Tits form is *positive definite* (which forces it to be acyclic), and every
+generalized Kronecker quiver is acyclic, so neither survives the weakening of that hypothesis to
+acyclicity alone. Already the *smallest* such weakening fails, at the Kronecker quiver `• ⇉ •` of
+exactly two arrows: its Tits form
 `TauCeti.Quiver.Kronecker.titsForm_apply` is there the square `(a - b) ^ 2` of
 `TauCeti.Quiver.Kronecker.titsForm_eq_sq`, hence positive semidefinite but not positive definite,
 which is the threshold `TauCeti.Quiver.Kronecker.titsForm_nonneg` records. That threshold is the
@@ -189,14 +190,6 @@ theorem dimVector_kroneckerLineRep (w : Quiver.Kronecker A) :
     dimVector (kroneckerLineRep k a₁ c) w = 1 := by
   rw [dimVector_apply]
   cases w <;> exact Module.finrank_self k
-
-/-- A line representation is nonzero: its vertex spaces are the base field. -/
-theorem not_isZero_kroneckerLineRep :
-    ¬ IsZero (kroneckerLineRep k a₁ c) := by
-  intro hz
-  have : Subsingleton k :=
-    ModuleCat.subsingleton_of_isZero (hz.obj (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)))
-  exact false_of_nontrivial_of_subsingleton k
 
 /-! ### The morphisms between two line representations -/
 
@@ -448,7 +441,7 @@ simples. That quiver has only the three isomorphism classes counted by
 `TauCeti.card_skeleton_indecomposable_kronecker`, with no room for a family. -/
 theorem indecomposable_kroneckerLineRep (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
     Indecomposable (kroneckerLineRep k a₁ c) :=
-  indecomposable_of_injective_of_isLocalRing not_isZero_kroneckerLineRep kroneckerLineRepScalar
+  indecomposable_of_injective_of_isLocalRing kroneckerLineRepScalar
     (kroneckerLineRepScalar_injective h) kroneckerLineRepScalar_zero kroneckerLineRepScalar_id
     fun e ↦ kroneckerLineRepScalar_comp e e
 
@@ -480,12 +473,12 @@ determine an indecomposable.** Over every field such a quiver carries two non-is
 finite-dimensional indecomposable representations with the same dimension vector, the lines at the
 scalars `0` and `1`.
 
-This is the sharpness of `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`:
-that theorem holds over an acyclic quiver whose Tits form is positive definite, and every
-generalized Kronecker quiver is acyclic, so acyclicity alone does not suffice. Specializing `A` to
-a two-element type gives the boundary case, where the Tits form is still positive semidefinite by
-`TauCeti.Quiver.Kronecker.titsForm_nonneg`; for three or more arrows, covered here too, it is
-indefinite instead. -/
+This is the sharpness of `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`:
+that theorem holds over a quiver whose Tits form is positive definite (which forces acyclicity),
+and every generalized Kronecker quiver is acyclic, so acyclicity alone does not suffice.
+Specializing `A` to a two-element type gives the boundary case, where the Tits form is still
+positive semidefinite by `TauCeti.Quiver.Kronecker.titsForm_nonneg`; for three or more arrows,
+covered here too, it is indefinite instead. -/
 theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type u) [Field k]
     (A : Type v) [Nontrivial A] :
     ∃ M N : QuiverRep.{u, 0, v, u} k (Quiver.Kronecker A),
@@ -502,7 +495,7 @@ theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type 
 /-- **The Tits value of the dimension vector of a line representation is `2 - #arrows`.** It is
 `1` exactly for the `A₂` quiver of a single arrow, and `0` for the Kronecker quiver `• ⇉ •`.
 
-This is the sharpness of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`: over
+This is the sharpness of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`: over
 an acyclic quiver whose Tits form is not assumed positive definite, the dimension vector of an
 indecomposable need not have Tits value `1`, that is, need not be a *real* root. It remains a root
 of the Kronecker quiver, an imaginary one: on exactly two arrows -- the boundary case, where the

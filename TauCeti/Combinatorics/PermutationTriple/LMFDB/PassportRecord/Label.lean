@@ -17,7 +17,8 @@ string parses, and its group number and ordered partitions agree with the stored
 Together with validity of the record, this certifies that the parsed group is conjugate to
 the monodromy group and that the parsed partitions are the full cycle partitions. Through
 `PassportSpec.hasLabel_iff_exists_conjugate_eq_toPassportSpec` it also identifies the canonical
-reference passport up to conjugation.
+reference passport up to conjugation, and `PassportRecord.IsValidAt.hasLabel_iff_hasPassport`
+shows that the certified label labels exactly the passports containing the reference triple.
 
 ## References
 
@@ -80,6 +81,15 @@ theorem hasLabel_of_hasValidLabel (h : r.IsValidAt t) (hr : r.HasValidLabel)
     · exact congrArg (fun d => d.2.1) hparts'
     · exact congrArg (fun d => d.2.2) hparts'
   exact hLK ▸ hK
+
+/-- A certified full label of a valid record labels exactly the passports containing the
+reference triple. -/
+theorem hasLabel_iff_hasPassport (h : r.IsValidAt t) (hr : r.HasValidLabel)
+    {L : PassportLabel n} (hL : parsePassportLabel n r.plabel = some L) (P : PassportSpec n) :
+    P.HasLabel L ↔ PassportSpec.HasPassport t P :=
+  ⟨fun hP => (hP.hasPassport_iff t).mpr
+      (h.hasLabel_of_hasValidLabel hr hL t.hasPassport_passportOf),
+    h.hasLabel_of_hasValidLabel hr hL⟩
 
 end IsValidAt
 

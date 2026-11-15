@@ -69,10 +69,8 @@ theorem actionRatio_le_adaptedNorm
   le_ciSup (bddAbove_range_actionRatio h x) a
 
 /-- The adapted norm is nonnegative, including on the zero module. -/
-theorem adaptedNorm_nonneg
-    (h : ∀ (a : R) (x : M), ‖a • x‖ ≤ C * ‖a‖ * ‖x‖) (x : M) :
-    0 ≤ adaptedNorm R x := by
-  simpa using actionRatio_le_adaptedNorm h 0 x
+theorem adaptedNorm_nonneg (x : M) : 0 ≤ adaptedNorm R x :=
+  Real.iSup_nonneg fun _ ↦ by positivity
 
 /-- The adapted norm vanishes at zero. -/
 @[simp]
@@ -138,13 +136,13 @@ theorem adaptedNorm_smul_le
     adaptedNorm R (a • x) ≤ ‖a‖ * adaptedNorm R x := by
   refine ciSup_le fun b ↦ ?_
   by_cases hb : ‖b‖ = 0
-  · simpa only [hb, div_zero] using mul_nonneg (norm_nonneg a) (adaptedNorm_nonneg h x)
+  · simpa only [hb, div_zero] using mul_nonneg (norm_nonneg a) (adaptedNorm_nonneg x)
   · apply (div_le_iff₀ (lt_of_le_of_ne (norm_nonneg _) (Ne.symm hb))).mpr
     calc
       ‖b • (a • x)‖ = ‖(b * a) • x‖ := by rw [mul_smul]
       _ ≤ ‖b * a‖ * adaptedNorm R x := norm_smul_le_mul_adaptedNorm h _ _
       _ ≤ (‖b‖ * ‖a‖) * adaptedNorm R x :=
-        mul_le_mul_of_nonneg_right (norm_mul_le _ _) (adaptedNorm_nonneg h x)
+        mul_le_mul_of_nonneg_right (norm_mul_le _ _) (adaptedNorm_nonneg x)
       _ = (‖a‖ * adaptedNorm R x) * ‖b‖ := by ring
 
 variable [NormOneClass R]

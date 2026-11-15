@@ -38,8 +38,9 @@ contractive. For complete ultrametric `E`, summing these vectors gives a continu
 `TauCeti.AnalyticStage.amiceMap : C₀(ℕ, E) → LA_h(E)`,  `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ`,
 
 which does not increase norms. Followed by evaluation, it is the Mahler series with
-coefficients `m_h(n) • cₙ` (`TauCeti.AnalyticStage.eval_amiceMap`). Amice's theorem, which is not
-proved here, asserts that `amiceMap` is an isometric isomorphism.
+coefficients `m_h(n) • cₙ` (`TauCeti.AnalyticStage.eval_amiceMap`). Amice's theorem, that
+`amiceMap` is an isometric isomorphism, is `TauCeti.AnalyticStage.amiceEquiv` in
+`TauCeti.NumberTheory.Padics.Distribution.Amice.Isometry`.
 
 Its arithmetic input is the reduction of Amice's polynomials modulo `p`. Write `n = pʰ q + r`
 with `r < pʰ`, and let `a` be a natural number. In `∏_{i < n} (a - i + pʰ w)`, the factors with
@@ -329,7 +330,7 @@ private theorem exists_amicePolynomial_eq_C_mul (h n a : ℕ) :
   have hu : IsUnit (F.coeff N) := PadicInt.isUnit_iff.mpr hlead
   obtain ⟨c, hc⟩ : ∃ c : ℤ_[p], (n ! : ℤ_[p]) * c = ((n / p ^ h)! : ℤ_[p]) * K := by
     refine ⟨(amicePolynomial p h n a).coeff N * ↑hu.unit⁻¹, ?_⟩
-    have := congrArg (coeff · N) hA
+    have := congrArg (AddMonoidAlgebra.coeff · N) hA
     simp only [coeff_C_mul] at this
     rw [← mul_assoc, this, mul_assoc, IsUnit.mul_val_inv, mul_one]
   have hn : (n ! : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (factorial_ne_zero n)

@@ -82,13 +82,17 @@ lemma logHeight₁_div_le (x y : K) : logHeight₁ (x / y) ≤ logHeight₁ x + 
   rw [div_eq_mul_inv, ← logHeight₁_inv y]
   exact logHeight₁_mul_le x y⁻¹
 
-/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, so that
+/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂`, so that for `y ≠ 0`
 `x / y = (θ₀ - t θ₂) / (1 - t)`, then
-`h(x / y) ≤ 2 h(t) + h(θ₀) + h(θ₂) + 2 totalWeight K log 2`. -/
-lemma logHeight₁_div_le_of_mul_sub_mul_eq {θ₀ θ₂ x y t : K} (hθ : θ₀ ≠ θ₂) (hy : y ≠ 0)
+`h(x / y) ≤ 2 h(t) + h(θ₀) + h(θ₂) + 2 totalWeight K log 2`.
+For `y = 0` the quotient is the field's totalized `0` and the bound is trivial. -/
+lemma logHeight₁_div_le_of_mul_sub_mul_eq {θ₀ θ₂ x y t : K} (hθ : θ₀ ≠ θ₂)
     (ht : t * (x - θ₂ * y) = x - θ₀ * y) :
     logHeight₁ (x / y) ≤ 2 * logHeight₁ t + logHeight₁ θ₀ + logHeight₁ θ₂ +
       2 * (totalWeight K * Real.log 2) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [div_zero, logHeight₁_zero]
+    positivity
   have h1t := logHeight₁_sub_le (1 : K) t
   rw [logHeight₁_one] at h1t
   rw [TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq hθ hy ht]
@@ -143,13 +147,35 @@ lemma mulHeight_le_of_forall_iSup_le {ι' : Type*} [Finite ι'] {x : ι → K} (
       (fun v ↦ Real.iSup_nonneg fun _ ↦ AbsoluteValue.nonneg _ _)
       ((hasFiniteMulSupport_iSup_nonarchAbsVal hx).pow p) fun v ↦ hnon v.val v.prop
 
+omit [Finite ι] [AdmissibleAbsValues K] in
+/-- A tuple with the same local factor `⨆ i, v (x i)` at every absolute value as a nonzero tuple
+is nonzero: the trivial absolute value sees a nonzero coordinate. -/
+lemma ne_zero_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K} (hx : x ≠ 0)
+    (h : ∀ v : AbsoluteValue K ℝ, ⨆ i, v (x i) = ⨆ i, v (y i)) : y ≠ 0 := by
+  classical
+  rintro rfl
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hx
+  have h1 : (1 : ℝ) ≤ ⨆ i, (AbsoluteValue.trivial : AbsoluteValue K ℝ) (x i) :=
+    le_ciSup_of_le ⟨1, by
+      rintro _ ⟨j, rfl⟩
+      by_cases hj : x j = 0 <;> simp [AbsoluteValue.trivial_apply, hj]⟩ i
+      (by simp [AbsoluteValue.trivial_apply hi])
+  rw [h AbsoluteValue.trivial] at h1
+  have h0 : (⨆ i, (AbsoluteValue.trivial : AbsoluteValue K ℝ) ((0 : ι' → K) i)) = 0 := by simp
+  exact absurd (h0 ▸ h1) zero_lt_one.not_ge
+
 omit [Finite ι] in
-/-- Two nonzero tuples with the same local factor `⨆ i, v (x i)` at every absolute value have
-the same height. -/
-lemma mulHeight_eq_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K} (hx : x ≠ 0)
-    (hy : y ≠ 0) (h : ∀ v : AbsoluteValue K ℝ, ⨆ i, v (x i) = ⨆ i, v (y i)) :
+/-- Two tuples with the same local factor `⨆ i, v (x i)` at every absolute value have the same
+height. -/
+lemma mulHeight_eq_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K}
+    (h : ∀ v : AbsoluteValue K ℝ, ⨆ i, v (x i) = ⨆ i, v (y i)) :
     mulHeight x = mulHeight y := by
-  simp only [mulHeight_eq hx, mulHeight_eq hy, h]
+  rcases eq_or_ne x 0 with rfl | hx
+  · obtain rfl : y = 0 := by
+      by_contra hy
+      exact ne_zero_of_forall_iSup_eq hy (fun v ↦ (h v).symm) rfl
+    rw [mulHeight_zero, mulHeight_zero]
+  · simp only [mulHeight_eq hx, mulHeight_eq (ne_zero_of_forall_iSup_eq hx h), h]
 
 open AdmissibleAbsValues in
 /-- A tuple whose local factor `⨆ i, v (x i)` is at most `C` at every archimedean absolute value
@@ -162,14 +188,24 @@ lemma mulHeight_le_pow_totalWeight {x : ι → K} {C : ℝ} (hC : 1 ≤ C)
     (Function.ne_iff.mpr ⟨(), one_ne_zero⟩) x hC (p := 0)
     (by simpa using harch) (by simpa using hnon)
 
+omit [Finite ι] in
 open AdmissibleAbsValues in
-/-- A tuple of natural numbers bounded by `N ≥ 1` has height at most `N ^ totalWeight K`. -/
+/-- A tuple of natural numbers bounded by `N ≥ 1` has height at most `N ^ totalWeight K`. The
+index type need not be finite: the tuple takes only finitely many values. -/
 lemma mulHeight_natCast_le {n : ι → ℕ} {N : ℕ} (hN : 1 ≤ N) (hn : ∀ i, n i ≤ N) :
     mulHeight (fun i ↦ (n i : K)) ≤ (N : ℝ) ^ totalWeight K := by
+  have : Finite (Set.range n) :=
+    ((Set.finite_Iic N).subset (by rintro _ ⟨i, rfl⟩; exact hn i)).to_subtype
+  have hsurj : Function.Surjective (Set.rangeFactorization n) := Set.rangeFactorization_surjective
+  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.1 : ℕ) : K))
+    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v ((s.1 : ℕ) : K)).trans_le ?_
+  have hs (s : Set.range n) : (s.1 : ℕ) ≤ N := by
+    obtain ⟨i, hi⟩ := s.2
+    exact hi ▸ hn i
   refine mulHeight_le_pow_totalWeight (mod_cast hN) (fun v _ ↦ ?_) fun v hv ↦ ?_
-  · exact Real.iSup_le (fun i ↦ (v.apply_nat_le_self (n i)).trans (mod_cast hn i))
+  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.1).trans (mod_cast hs s))
       (Nat.cast_nonneg N)
-  · exact Real.iSup_le (fun i ↦ (isNonarchimedean v hv).apply_natCast_le_one (by simp) (by simp))
+  · exact Real.iSup_le (fun s ↦ (isNonarchimedean v hv).apply_natCast_le_one (by simp) (by simp))
       zero_le_one
 
 /-- The tuple of powers `α ^ k`, `0 ≤ k ≤ d`, has height exactly `mulHeight₁ α ^ d`: at every
@@ -190,8 +226,7 @@ lemma mulHeight_pow_range (α : K) (d : ℕ) :
       · exact (pow_le_pow_right₀ h (Nat.lt_succ_iff.mp k.isLt)).trans (le_max_left _ _)
     · exact Finite.le_ciSup_of_le (Fin.last d) (by simp [map_pow])
     · exact Finite.le_ciSup_of_le 0 (by simp)
-  rw [mulHeight_eq_of_forall_iSup_eq (Function.ne_iff.mpr ⟨0, by simp⟩)
-    (Function.ne_iff.mpr ⟨1, by simp⟩) key, ← mulHeight₁_pow, mulHeight₁_eq_mulHeight,
+  rw [mulHeight_eq_of_forall_iSup_eq key, ← mulHeight₁_pow, mulHeight₁_eq_mulHeight,
     mulHeight_swap]
 
 end Height

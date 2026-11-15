@@ -11,13 +11,14 @@ public import Mathlib.RingTheory.AlgebraTower
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import TauCeti.RingTheory.Algebraic.LinearIndependent
 import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # Simple transcendental field extensions
 
 A simple transcendental field extension has transcendence degree one.  Conversely, an element
-`x` over which a transcendental extension `F / k` is algebraic is itself transcendental over `k`.
+`x` over which a transcendental extension `F / k` is algebraic is itself transcendental over `k`;
+in particular so is a single generator of `F / k`.
 
 Combined with the tower rule for linear independence, a family that is linearly independent over
 the simple extension `k⟮x⟯` stays linearly independent over `k` after multiplying by arbitrary
@@ -39,6 +40,10 @@ The statements below assert linear independence; the valuation estimates are sep
   dimension estimates.
 * `TauCeti.transcendental_of_isAlgebraic_adjoin`: if a transcendental extension `F / k` is
   algebraic over `k⟮x⟯`, then `x` is transcendental over `k`.
+* `TauCeti.transcendental_of_adjoin_simple_eq_top`: in particular, a single generator of a
+  transcendental extension is transcendental.
+* `IsAlgebraic.finrank_adjoin_eq_zero`: in a transcendental extension `F / k`, an
+  element algebraic over `k` generates a subfield over which `F` has degree `0` by convention.
 -/
 
 public section
@@ -100,5 +105,21 @@ theorem transcendental_of_isAlgebraic_adjoin [Algebra.Transcendental k F]
     [Algebra.IsAlgebraic k⟮x⟯ F] : Transcendental k x := fun halg ↦ by
   have : Algebra.IsAlgebraic k k⟮x⟯ := IntermediateField.isAlgebraic_adjoin_simple halg.isIntegral
   exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› (Algebra.IsAlgebraic.trans k k⟮x⟯ F)
+
+/-- **A generator of a transcendental extension is transcendental**: if `k⟮x⟯ = F` for a
+transcendental extension `F / k`, then `x` is transcendental over `k`. -/
+theorem transcendental_of_adjoin_simple_eq_top [Algebra.Transcendental k F] (h : k⟮x⟯ = ⊤) :
+    Transcendental k x :=
+  have : Algebra.IsAlgebraic k⟮x⟯ F := by rw [h]; infer_instance
+  transcendental_of_isAlgebraic_adjoin
+
+/-- If `F` has an element transcendental over `k`, then an element `z` algebraic over `k` generates
+a subfield over which `F` is not finite, so `[F : k(z)]` is `0` by convention: otherwise `F` would
+be finite over `k`, hence algebraic, contradicting the transcendental element. -/
+theorem _root_.IsAlgebraic.finrank_adjoin_eq_zero [Algebra.Transcendental k F] {z : F}
+    (hz : IsAlgebraic k z) : Module.finrank k⟮z⟯ F = 0 := by
+  by_contra h
+  have : Module.Finite k⟮z⟯ F := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero h)
+  exact (transcendental_of_isAlgebraic_adjoin (k := k) (F := F) (x := z)) hz
 
 end TauCeti

@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.TensorProduct.Prod
 # Tensor products of equivalent quadratic forms
 
 This file shows that tensor products preserve isometric equivalences and equivalence of quadratic
-forms. It complements Mathlib's tensor product of quadratic-form isometries.
+forms, including Mathlib's heterobasic tensor products whose left factor is a form over an
+`R`-algebra `A`. It complements Mathlib's tensor product of quadratic-form isometries.
 
 ## Main definitions
 
@@ -42,69 +43,73 @@ theorem _root_.QuadraticForm.smul_tmul
     [AddCommGroup M₂] [Module R M₂]
     (a : A) (Q₁ : QuadraticForm A M₁) (Q₂ : QuadraticForm R M₂) :
     QuadraticForm.tmul (a • Q₁) Q₂ = a • QuadraticForm.tmul Q₁ Q₂ := by
-  -- `tmul` is an abbreviation, so expose `tensorDistrib` to apply its linearity.
-  change QuadraticForm.tensorDistrib R A ((a • Q₁) ⊗ₜ[R] Q₂) =
-    a • QuadraticForm.tensorDistrib R A (Q₁ ⊗ₜ[R] Q₂)
-  rw [← TensorProduct.smul_tmul', map_smul]
+  rw [← map_smul, TensorProduct.smul_tmul']
 
 /-- Tensoring a form with the quadratic line `a • sq` is isometric to scaling by `a`.
 The isometry is the left unit equivalence of the tensor product. -/
 def _root_.QuadraticMap.rankOneTensorIsometry
     {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) :
     (QuadraticForm.tmul (a • (QuadraticMap.sq : QuadraticForm R R)) Q).IsometryEquiv (a • Q) where
-  toLinearEquiv := (QuadraticForm.tensorLId (a • Q)).toLinearEquiv
-  map_app' x := by
-    rw [QuadraticForm.smul_tmul, smul_apply, smul_apply]
-    exact congrArg (a • ·) (QuadraticForm.tmul_tensorLId_apply Q x)
+  toLinearEquiv := TensorProduct.lid R V
+  map_app' x := by simp
 
 /-- The rank-one tensor isometry sends a pure tensor to scalar multiplication. -/
 @[simp]
 theorem _root_.QuadraticMap.rankOneTensorIsometry_tmul
     {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a r : R) (v : V) :
-    rankOneTensorIsometry Q a (r ⊗ₜ[R] v) = r • v := by
-  have h : rankOneTensorIsometry Q a (r ⊗ₜ[R] v) =
-      (QuadraticForm.tensorLId (a • Q)) (r ⊗ₜ[R] v) := rfl
-  rw [h, QuadraticForm.tensorLId_apply, TensorProduct.lid_tmul]
+    rankOneTensorIsometry Q a (r ⊗ₜ[R] v) = r • v :=
+  TensorProduct.lid_tmul v r
 
 /-- The inverse rank-one tensor isometry sends a vector to its unit pure tensor. -/
 @[simp]
 theorem _root_.QuadraticMap.rankOneTensorIsometry_symm_apply
     {V : Type*} [AddCommGroup V] [Module R V] (Q : QuadraticForm R V) (a : R) (v : V) :
-    (rankOneTensorIsometry Q a).symm v = (1 : R) ⊗ₜ[R] v := by
-  have h : (rankOneTensorIsometry Q a).symm v =
-      (QuadraticForm.tensorLId (a • Q)).symm v := rfl
-  rw [h, QuadraticForm.tensorLId_symm_apply, TensorProduct.lid_symm_apply]
+    (rankOneTensorIsometry Q a).symm v = (1 : R) ⊗ₜ[R] v :=
+  TensorProduct.lid_symm_apply v
 
-/-- Tensor product of isometric equivalences of quadratic forms. -/
+/-- Tensor product of isometric equivalences of quadratic forms. As for `QuadraticForm.tmul`, the
+left factors may be forms over an `R`-algebra `A`. -/
 def _root_.QuadraticMap.IsometryEquiv.tmul
-    {M₁ M₂ N₁ N₂ : Type*}
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {A M₁ M₂ N₁ N₂ : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M₁] [Module R M₁] [Module A M₁] [IsScalarTower R A M₁]
+    [AddCommGroup M₂] [Module R M₂] [Module A M₂] [IsScalarTower R A M₂]
     [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
-    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁ : QuadraticForm A M₁} {Q₂ : QuadraticForm A M₂}
     {S₁ : QuadraticForm R N₁} {S₂ : QuadraticForm R N₂}
     (e : Q₁.IsometryEquiv Q₂) (f : S₁.IsometryEquiv S₂) :
     (Q₁.tmul S₁).IsometryEquiv (Q₂.tmul S₂) where
-  toLinearEquiv := TensorProduct.congr e.toLinearEquiv f.toLinearEquiv
-  map_app' x := QuadraticForm.tmul_tensorMap_apply e.toIsometry f.toIsometry x
+  toLinearEquiv := TensorProduct.AlgebraTensorModule.congr e.toLinearEquiv f.toLinearEquiv
+  map_app' x := by
+    let : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    have h : (Q₂.tmul S₂).comp
+        (TensorProduct.AlgebraTensorModule.congr e.toLinearEquiv f.toLinearEquiv).toLinearMap =
+          Q₁.tmul S₁ := by
+      refine (associated_rightInverse A).injective ?_
+      ext m n m' n'
+      simp [QuadraticForm.associated_tmul, associated_apply, ← map_add, IsometryEquiv.map_app]
+    exact congr($h x)
 
 /-- The tensor product of two isometric equivalences acts componentwise on pure tensors. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.tmul_tmul
-    {M₁ M₂ N₁ N₂ : Type*}
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {A M₁ M₂ N₁ N₂ : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M₁] [Module R M₁] [Module A M₁] [IsScalarTower R A M₁]
+    [AddCommGroup M₂] [Module R M₂] [Module A M₂] [IsScalarTower R A M₂]
     [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
-    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁ : QuadraticForm A M₁} {Q₂ : QuadraticForm A M₂}
     {S₁ : QuadraticForm R N₁} {S₂ : QuadraticForm R N₂}
     (e : Q₁.IsometryEquiv Q₂) (f : S₁.IsometryEquiv S₂) (x : M₁) (y : N₁) :
     e.tmul f (x ⊗ₜ[R] y) = e x ⊗ₜ[R] f y :=
-  TensorProduct.congr_tmul e.toLinearEquiv f.toLinearEquiv x y
+  TensorProduct.AlgebraTensorModule.congr_tmul e.toLinearEquiv f.toLinearEquiv x y
 
 /-- Tensor product preserves equivalence of quadratic forms. -/
 theorem _root_.QuadraticMap.Equivalent.tmul
-    {M₁ M₂ N₁ N₂ : Type*}
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {A M₁ M₂ N₁ N₂ : Type*} [CommRing A] [Algebra R A]
+    [AddCommGroup M₁] [Module R M₁] [Module A M₁] [IsScalarTower R A M₁]
+    [AddCommGroup M₂] [Module R M₂] [Module A M₂] [IsScalarTower R A M₂]
     [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
-    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁ : QuadraticForm A M₁} {Q₂ : QuadraticForm A M₂}
     {S₁ : QuadraticForm R N₁} {S₂ : QuadraticForm R N₂}
     (hQ : Q₁.Equivalent Q₂) (hS : S₁.Equivalent S₂) :
     (Q₁.tmul S₁).Equivalent (Q₂.tmul S₂) :=
@@ -123,20 +128,11 @@ def _root_.QuadraticForm.IsometryEquiv.tmulProd
   map_app' x := by
     let : Invertible (2 : A) :=
       (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
-    rw [← associated_eq_self_apply (S := A), ← associated_eq_self_apply (S := A)]
-    have hassoc :
-        (associated ((Q.tmul S).prod (Q.tmul T))).compl₁₂
-            (TensorProduct.prodRight R A M N P).toLinearMap
-            (TensorProduct.prodRight R A M N P).toLinearMap =
-          associated (Q.tmul (S.prod T)) := by
-      apply TensorProduct.AlgebraTensorModule.ext
-      intro m np
-      apply TensorProduct.AlgebraTensorModule.ext
-      intro m' np'
-      rcases np with ⟨n, p⟩
-      rcases np' with ⟨n', p'⟩
-      simp [QuadraticMap.associated_prod, QuadraticForm.associated_tmul, add_smul]
-    exact DFunLike.congr_fun (DFunLike.congr_fun hassoc x) x
+    have h : ((Q.tmul S).prod (Q.tmul T)).comp
+        (TensorProduct.prodRight R A M N P).toLinearMap = Q.tmul (S.prod T) := by
+      refine (associated_rightInverse A).injective ?_
+      ext <;> simp [QuadraticMap.associated_prod, QuadraticForm.associated_tmul]
+    exact congr($h x)
 
 /-- The distributivity isometry acts on a pure tensor by projecting its product-valued
 factor. -/

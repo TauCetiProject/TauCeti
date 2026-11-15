@@ -18,13 +18,17 @@ import Mathlib.Data.Fintype.BigOperators
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
 without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
-used to recover the generator's membership in any submodule. Acting on a line gives the line
+used to recover the generator's membership in any submodule. A vector outside an integer line is
+not cancelled by adding an integer multiple of the generator. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
 exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
-the spans of initial segments.
+the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
+as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
+Over a scalar extension, the image span of a semilinear map is spanned by its values on any
+spanning family of the domain.
 -/
 
 public section
@@ -54,6 +58,11 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
 end TauCeti.Submodule
 
 namespace Submodule
+
+/-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
+theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}
+    (hy : y ∉ ℤ ∙ v) (k : ℤ) : y + k • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
+  ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
 
 variable {K V : Type*} [DivisionSemiring K] [AddCommMonoid V] [Module K V]
 
@@ -155,5 +164,43 @@ theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
     rwa [sub_sub_cancel] at hmem
 
 end Unitriangular
+
+section RingHom
+
+/-- A ring homomorphism `f : R → S` carries `span_A T` into `span_B T'` as soon as it carries
+every generator in `T` into `span_B T'` and the image of every scalar in `A` is a scalar in `B`.
+Unlike `Submodule.apply_mem_span_image_of_mem_span`, no ring map `A → B` is required. -/
+theorem map_mem_span_of_forall_exists {A B R S : Type*} [CommSemiring A] [CommSemiring B]
+    [Semiring R] [Semiring S] [Algebra A R] [Algebra B S] (f : R →+* S) (T : Set R) (T' : Set S)
+    (hA : ∀ r : A, ∃ b : B, f (algebraMap A R r) = algebraMap B S b)
+    (hT : ∀ t ∈ T, f t ∈ Submodule.span B T') {z : R} (hz : z ∈ Submodule.span A T) :
+    f z ∈ Submodule.span B T' := by
+  induction hz using Submodule.span_induction with
+  | mem x hx => exact hT x hx
+  | zero => simp
+  | add x y _ _ hx hy => simpa using add_mem hx hy
+  | smul r x _ hx =>
+    obtain ⟨b, hb⟩ := hA r
+    rw [Algebra.smul_def, map_mul, hb, ← Algebra.smul_def]
+    exact Submodule.smul_mem _ _ hx
+
+end RingHom
+
+section SpanningFamily
+
+/-- Over a scalar extension, the image of a semilinear map is spanned by its values on any
+spanning family. The ring homomorphism defining semilinearity need not be surjective. -/
+theorem span_range_eq_span_range_comp_of_span_eq_top
+    {R R' S M N ι : Type*} [Semiring R] [Semiring R'] [Semiring S] [SMul R' S]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N]
+    [Module S N] [IsScalarTower R' S N] {σ : R →+* R'} {v : ι → M}
+    (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ] N) :
+    span S (Set.range f) = span S (Set.range (f ∘ v)) := by
+  refine le_antisymm (span_le.mpr ?_) (span_mono (Set.range_comp_subset_range _ _))
+  rintro _ ⟨x, rfl⟩
+  exact (image_span_subset f _ ((span S (Set.range (f ∘ v))).restrictScalars R')).mpr
+    (Set.forall_mem_range.mpr fun i ↦ subset_span ⟨i, rfl⟩) ⟨x, hv ▸ mem_top, rfl⟩
+
+end SpanningFamily
 
 end Submodule

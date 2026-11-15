@@ -37,9 +37,11 @@ of `φ`, of `[m]` and of `φ̂`, and so the Selmer groups `Sel_φ`, `Sel_m` and 
   `φ`.
 * `TauCeti.Isogeny.torsionShortExact`: for separable `φ`, the short exact sequence
   `0 → E₁(Kˢ)[φ] → E₁(Kˢ)[deg φ] → E₂(Kˢ)[φ̂] → 0`.
+* `TauCeti.Isogeny.finite_kerCoeff_ofIsogeny`: `E₁(Kˢ)[φ]` is finite.
 
 ## Main results
 
+* `TauCeti.Isogeny.degree_nsmul_kerCoeff_eq_zero`: `E₁(Kˢ)[φ]` is killed by `deg φ`.
 * `TauCeti.Isogeny.range_explicitCoeff1_kerCoeffToTorsionCoeff`: exactness of
   `H¹(G_K, E₁[φ]) → H¹(G_K, E₁[deg φ]) → H¹(G_K, E₂[φ̂])`.
 * `TauCeti.Isogeny.explicitCoeff1_kerCoeffToTorsionCoeff_eq_zero_iff`: a class of
@@ -89,6 +91,21 @@ def kerCoeffToTorsionCoeff :
 theorem coe_kerCoeffToTorsionCoeff (P : (ofIsogeny φ).KerCoeff) :
     (φ.kerCoeffToTorsionCoeff P : W₁.PointCoeff) = P :=
   (rfl)
+
+/-- **The kernel of an isogeny is killed by its degree**: `deg φ • P = 0` for `P ∈ E₁(Kˢ)[φ]`,
+since `φ̂ ∘ φ = [deg φ]`. -/
+theorem degree_nsmul_kerCoeff_eq_zero (P : (ofIsogeny φ).KerCoeff) : φ.degree • P = 0 := by
+  have h := congrArg Subtype.val (AddSubgroup.torsionBy.nsmul (φ.kerCoeffToTorsionCoeff P))
+  rw [AddSubgroup.coe_nsmul, coe_kerCoeffToTorsionCoeff, ZeroMemClass.coe_zero] at h
+  exact Subtype.ext (by rw [AddSubgroup.coe_nsmul, h, ZeroMemClass.coe_zero])
+
+/-- `E₁(Kˢ)[φ]` is finite: it lies in the finite group `E₁(Kˢ)[deg φ]`. Unlike
+`TauCeti.Isogeny.Hom.finite_kerCoeff`, which covers every nonzero morphism, this needs no input
+beyond the degree. It is an instance because the continuity of the Galois action on the internal
+dual `Hom(E₁(Kˢ)[φ], μ_n)` is inferred from it. -/
+instance finite_kerCoeff_ofIsogeny : Finite (ofIsogeny φ).KerCoeff :=
+  Finite.of_injective (φ.kerCoeffToTorsionCoeff : _ → W₁.TorsionCoeff φ.degree) fun _ _ h ↦
+    Subtype.ext (by simpa using congrArg Subtype.val h)
 
 /-- **The map `E₁(Kˢ)[deg φ] → E₂(Kˢ)[φ̂]` induced by `φ`**: the image under `φ` of a point killed
 by `deg φ` is killed by `φ̂`, since `φ̂ ∘ φ = [deg φ]`. -/

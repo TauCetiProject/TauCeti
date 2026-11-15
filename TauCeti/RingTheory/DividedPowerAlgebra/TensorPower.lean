@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DividedPowerAlgebra.Representability
 public import TauCeti.LinearAlgebra.TensorPower.PolynomialLaw
-import TauCeti.Data.Sym.Basic
+import TauCeti.Data.Finsupp.Multiset
 
 /-!
 # The integral comparison from divided powers to tensor powers
@@ -110,7 +110,7 @@ theorem toTensorPower_prod_dp (d : ℕ) {ι : Type*} [Fintype ι] (m : ι → M)
     PolynomialLaw.coeff_apply, TensorPower.diagonalLaw_toFun]
   simp only [map_sum, LinearMap.baseChange_tmul]
 
-open MvPolynomial PiTensorProduct TauCeti.Sym in
+open MvPolynomial PiTensorProduct in
 /-- The product formula for `toTensorPower`: for exponents `l` supported in a finite set `F` of
 total degree `d`, the image of `∏_{j ∈ F} dp R lⱼ mⱼ` is the sum of `m_{w 0} ⊗ ⋯ ⊗ m_{w (d - 1)}`
 over all words `w : Fin d → ι` in which each letter `j` occurs exactly `lⱼ` times. -/
@@ -149,14 +149,15 @@ theorem toTensorPower_prod_dp_eq_sum_tprod (d : ℕ) {ι : Type*} [DecidableEq �
     refine ⟨fun h ↦ Finsupp.ext fun j ↦ ?_, fun h ↦ Finsupp.ext fun j ↦ ?_⟩
     · by_cases hj : j ∈ F
       · have h' := DFunLike.congr_fun h ⟨j, hj⟩
-        simp only [sum_single_apply, k, Finsupp.subtypeDomain_apply, Subtype.ext_iff] at h'
-        rw [sum_single_apply, h']
+        simp only [Finsupp.sum_single_one_apply, k, Finsupp.subtypeDomain_apply,
+          Subtype.ext_iff] at h'
+        rw [Finsupp.sum_single_one_apply, h']
       · -- letters outside `F` occur neither in the word nor in `l`
         rw [Finsupp.notMem_support_iff.mp fun h' ↦ hj (hF h')]
         by_contra h'
-        obtain ⟨t, rfl⟩ := sum_single_apply_ne_zero_iff.mp h'
+        obtain ⟨t, rfl⟩ := Finsupp.sum_single_one_apply_ne_zero_iff.mp h'
         exact hj (w t).2
-    · simp only [k, Finsupp.subtypeDomain_apply, ← h, sum_single_apply, Subtype.ext_iff]
+    · simp only [k, Finsupp.subtypeDomain_apply, ← h, Finsupp.sum_single_one_apply, Subtype.ext_iff]
   refine Finset.sum_bij (fun w _ t ↦ w t) (fun w hw ↦ ?_) (fun v _ w _ h ↦ ?_) (fun w hw ↦ ?_)
     fun _ _ ↦ rfl
   · rw [Finset.mem_filter] at hw ⊢

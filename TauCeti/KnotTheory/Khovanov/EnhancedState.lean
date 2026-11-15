@@ -136,6 +136,18 @@ theorem sum_T_labelingQuantumDegree [DecidableEq ι] :
     ← Finset.card_univ, ← Finset.prod_const]
   simp [add_comm]
 
+/-- Relabelling a circle from `1` to `X` lowers the quantum degree by two. -/
+theorem labelingQuantumDegree_update_true [DecidableEq ι] {l : ι → Bool} {i : ι}
+    (hi : l i = false) :
+    labelingQuantumDegree ι (Function.update l i true) = labelingQuantumDegree ι l - 2 := by
+  have hne : ∀ j ∈ ({i}ᶜ : Finset ι),
+      (bif Function.update l i true j then (-1 : ℤ) else 1) = bif l j then -1 else 1 :=
+    fun j hj ↦ by rw [Function.update_of_ne (by simpa using hj)]
+  rw [labelingQuantumDegree_def, labelingQuantumDegree_def, Fintype.sum_eq_add_sum_compl i,
+    Fintype.sum_eq_add_sum_compl i (fun j ↦ bif l j then -1 else 1), Finset.sum_congr rfl hne]
+  simp only [Function.update_self, hi, Bool.cond_true, Bool.cond_false]
+  ring
+
 variable {σ τ : Type*} [Fintype σ] [Fintype τ] [DecidableEq τ]
 
 /-- When no fibre of `f` carries two `X`-labels of `l`, merging along `f` changes the quantum degree

@@ -9,10 +9,6 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
-public import TauCeti.FieldTheory.Galois.Restriction
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
--- Proof-only: a `K`-algebra of dimension two has no subalgebras but `⊥` and `⊤`.
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -67,6 +63,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
 * `TauCeti.galoisOpenNormalSubgroup K L σ`: for a finite normal `L/K`, the subgroup fixing
   `σ(L)` as an open normal subgroup of `G_K`; for such `L/K`, `galoisSubgroup K L σ` is normal
   (`TauCeti.normal_galoisSubgroup`).
+* `TauCeti.quotientGaloisSubgroupEquiv K L σ`: for a finite normal `L/K`, the isomorphism of
+  topological groups `G_K ⧸ galoisSubgroup K L σ ≃ₜ* Gal(L/K)`.
 * `TauCeti.fixingOpenNormalSubgroup K L`: for a finite `L/K`, the open normal subgroup of `G_K`
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
 * `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
@@ -101,7 +99,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   open subgroup `galoisSubgroup K L σ`, of index `[L : K]`; its image under the restriction
   isomorphism is the subgroup fixing `σ(L)` (`TauCeti.map_range_absoluteGaloisGroupExtend`).
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`,
-  `TauCeti.absoluteGaloisGroupExtendQuotientEquiv_mk`: the two quotient isomorphisms send the
+  `TauCeti.quotientGaloisSubgroupEquiv_mk`,
+  `TauCeti.absoluteGaloisGroupExtendQuotientEquiv_mk`: the three quotient isomorphisms send the
   class of `g` to its restriction along `σ`.
 * `TauCeti.toSubgroup_eq_fixingSubgroup_of_fixedField_eq`: an open subgroup of `G_K` is the
   subgroup fixing its fixed field, which is finite over `K`
@@ -469,13 +468,12 @@ instance normal_galoisSubgroup : (galoisSubgroup K L σ).toSubgroup.Normal :=
 /-- The quotient by the open subgroup fixing a finite normal extension, identified
 topologically with its finite Galois group. -/
 noncomputable def quotientGaloisSubgroupEquiv :
-    AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L σ).toSubgroup ≃ₜ* Gal(L/K) := by
-  let e := (QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L σ)).trans
-    (quotientFixingSubgroupFieldRangeEquiv K L σ)
-  letI := QuotientGroup.discreteTopology (galoisSubgroup K L σ).isOpen
-  exact { e with
-    continuous_toFun := continuous_of_discreteTopology
-    continuous_invFun := continuous_of_discreteTopology }
+    AbsoluteGaloisGroup K ⧸ (galoisSubgroup K L σ).toSubgroup ≃ₜ* Gal(L/K) :=
+  .mk ((QuotientGroup.quotientMulEquivOfEq (galoisSubgroup_toSubgroup K L σ)).trans
+      (quotientFixingSubgroupFieldRangeEquiv K L σ))
+    (have := QuotientGroup.discreteTopology (galoisSubgroup K L σ).isOpen
+     continuous_of_discreteTopology)
+    continuous_of_discreteTopology
 
 /-- The quotient identification sends the class of an absolute Galois automorphism to its
 restriction along the chosen embedding of the finite extension. -/
@@ -548,7 +546,7 @@ theorem exists_le_hasEnoughRootsOfUnity (p : ℕ) [NeZero (p : K)]
     InfiniteGalois.fixedField_fixingSubgroup E, inferInstance, ?_⟩
   · exact OpenSubgroup.toSubgroup_le.1 <|
       (IntermediateField.fixingSubgroup_antitone le_sup_left).trans
-        (toSubgroup_eq_fixingSubgroup_of_fixedField_eq rfl).ge
+        (toSubgroup_eq_fixingSubgroup_of_fixedField_eq (U := W) rfl).ge
   · have hζE : IsPrimitiveRoot
         (⟨ζ, (le_sup_right : K⟮ζ⟯ ≤ E) (mem_adjoin_simple_self K ζ)⟩ : E) p :=
       hζ.of_map_of_injective (f := E.val) Subtype.val_injective
@@ -607,7 +605,7 @@ section FixingNormalClosure
 
 /-- **The open normal subgroup cut out by a finite extension** `L/K`: the subgroup of
 `G_K = Gal(Kˢ/K)` fixing the normal closure of `L` in `Kˢ`, that is, fixing the image of every
-`K`-embedding of `L` into `Kˢ`. When `L/K` is Galois all these images coincide, so this is
+`K`-embedding of `L` into `Kˢ`. When `L/K` is normal all these images coincide, so this is
 `TauCeti.galoisOpenNormalSubgroup K L ι` for every embedding `ι`
 (`fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup`), with no embedding chosen. -/
 def fixingOpenNormalSubgroup : OpenNormalSubgroup (AbsoluteGaloisGroup K) where
@@ -615,16 +613,16 @@ def fixingOpenNormalSubgroup : OpenNormalSubgroup (AbsoluteGaloisGroup K) where
   isOpen' := (normalClosure K L (SeparableClosure K)).fixingSubgroup_isOpen
   isNormal' := (InfiniteGalois.normal_iff_isGalois _).2 inferInstance
 
-variable {K L} [IsGalois K L]
+variable {K L} [Normal K L]
 
 /-- The subgroup underlying `fixingOpenNormalSubgroup K L` is the fixing subgroup of the image of
-any `K`-embedding `ι` of the Galois extension `L` into `Kˢ`. -/
+any `K`-embedding `ι` of the normal extension `L` into `Kˢ`. -/
 theorem fixingOpenNormalSubgroup_toSubgroup (ι : L →ₐ[K] SeparableClosure K) :
     (fixingOpenNormalSubgroup K L).toSubgroup = ι.fieldRange.fixingSubgroup := by
   rw [← IntermediateField.normalClosure_eq_fieldRange ι]
   rfl
 
-/-- **The fixing subgroup of a Galois extension does not depend on the embedding**: it is the
+/-- **The fixing subgroup of a normal extension does not depend on the embedding**: it is the
 subgroup `TauCeti.galoisOpenNormalSubgroup K L ι` fixing the image of any `K`-embedding `ι`. -/
 theorem fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup (ι : L →ₐ[K] SeparableClosure K) :
     fixingOpenNormalSubgroup K L = galoisOpenNormalSubgroup K L ι :=
@@ -632,7 +630,7 @@ theorem fixingOpenNormalSubgroup_eq_galoisOpenNormalSubgroup (ι : L →ₐ[K] S
     (fixingOpenNormalSubgroup_toSubgroup ι).trans (galoisOpenNormalSubgroup_toSubgroup K L ι).symm
 
 /-- An element of `G_K` lies in `fixingOpenNormalSubgroup K L` exactly when it fixes the image
-of a (any) `K`-embedding `ι` of the Galois extension `L` into `Kˢ`. -/
+of a (any) `K`-embedding `ι` of the normal extension `L` into `Kˢ`. -/
 theorem mem_fixingOpenNormalSubgroup_iff (ι : L →ₐ[K] SeparableClosure K)
     {σ : AbsoluteGaloisGroup K} :
     σ ∈ fixingOpenNormalSubgroup K L ↔ ∀ x : L, σ (ι x) = ι x := by

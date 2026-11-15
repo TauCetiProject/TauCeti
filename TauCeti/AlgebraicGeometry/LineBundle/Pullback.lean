@@ -19,6 +19,10 @@ The generic restriction compatibility used to establish this result is provided 
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Modules.unitIsoRestrictImage`: transport a local trivialization
+  to its image along an open immersion;
+* `AlgebraicGeometry.Scheme.Modules.unitIsoRestrictPullback`: pull back a local trivialization
+  to an open contained in the preimage of its domain;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
   sheaf is invertible;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_forall_restrict`: a sheaf of modules
@@ -34,6 +38,37 @@ The generic restriction compatibility used to establish this result is provided 
 public section
 
 open CategoryTheory TopologicalSpace
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+universe u
+
+noncomputable section
+
+variable {X Y : Scheme.{u}}
+
+/-- Transport a trivialization on an open of the source of an open immersion to its image. -/
+def unitIsoRestrictImage (g : X ⟶ Y) [IsOpenImmersion g] (V : X.Opens) {M : Y.Modules}
+    (e : SheafOfModules.unit V.toScheme.ringCatSheaf ≅ (M.restrict g).restrict V.ι) :
+    SheafOfModules.unit (g ''ᵁ V).toScheme.ringCatSheaf ≅ M.restrict (g ''ᵁ V).ι :=
+  (restrictUnitIso (g.isoImage V).inv).symm ≪≫
+    (restrictFunctor (g.isoImage V).inv).mapIso
+      (e ≪≫ ((restrictFunctorComp V.ι g).app M).symm) ≪≫
+    ((restrictFunctorComp (g.isoImage V).inv (V.ι ≫ g)).app M).symm ≪≫
+    (restrictFunctorCongr (g.isoImage_inv_ι V)).app M
+
+/-- Pull back a local trivialization to any open contained in the preimage of its domain. -/
+def unitIsoRestrictPullback (f : X ⟶ Y) {V : Y.Opens} {W : X.Opens}
+    (hW : W ≤ f ⁻¹ᵁ V) {M : Y.Modules}
+    (e : SheafOfModules.unit V.toScheme.ringCatSheaf ≅ M.restrict V.ι) :
+    SheafOfModules.unit W.toScheme.ringCatSheaf ≅ ((pullback f).obj M).restrict W.ι :=
+  (pullbackObjUnitIso (f.resLE V W hW)).symm ≪≫
+    (pullback (f.resLE V W hW)).mapIso e ≪≫
+    ((restrictPullbackIso f V W hW).app M).symm
+
+end
+
+end AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti
 
@@ -56,9 +91,7 @@ instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
     TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mp hM
   refine TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mpr
     ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦
-      ⟨(Scheme.Modules.pullbackObjUnitIso (f.resLE (V i) _ le_rfl)).symm ≪≫
-        (Scheme.Modules.pullback (f.resLE (V i) _ le_rfl)).mapIso (e i).some ≪≫
-        ((Scheme.Modules.restrictPullbackIso f (V i) _ le_rfl).app M).symm⟩⟩
+      ⟨Scheme.Modules.unitIsoRestrictPullback f le_rfl (e i).some⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
 
 /-- **Invertibility is local**: a sheaf of modules on a scheme is invertible exactly when its
@@ -79,13 +112,8 @@ theorem isInvertible_iff_forall_restrict (𝒰 : X.OpenCover) (M : X.Modules) :
     IsOpenCover.mk (top_unique fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hk x⟩), fun x ↦ ⟨?_⟩⟩
   -- Transport the trivialization over `W i k` to its image along the isomorphism
   -- `(𝒰.f i).isoImage (W i k)` of open subschemes.
-  set g := 𝒰.f (i x)
-  set V := W (i x) (k x)
-  exact (Scheme.Modules.restrictUnitIso (g.isoImage V).inv).symm ≪≫
-    (Scheme.Modules.restrictFunctor (g.isoImage V).inv).mapIso
-      ((e (i x) (k x)).some ≪≫ ((Scheme.Modules.restrictFunctorComp V.ι g).app M).symm) ≪≫
-    ((Scheme.Modules.restrictFunctorComp (g.isoImage V).inv (V.ι ≫ g)).app M).symm ≪≫
-    (Scheme.Modules.restrictFunctorCongr (g.isoImage_inv_ι V)).app M
+  exact Scheme.Modules.unitIsoRestrictImage (𝒰.f (i x)) (W (i x) (k x))
+    (e (i x) (k x)).some
 
 end SheafOfModules
 

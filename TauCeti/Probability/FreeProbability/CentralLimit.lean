@@ -104,7 +104,7 @@ private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing
   set C : Finset (Fin n) → ℝ := fun B =>
     ∑ τ : NoncrossingPartition B, ‖mu 𝕜 τ ⊤‖ * ∏ D ∈ τ.1.parts, M #D
   have hC (B : Finset (Fin n)) (j : ℕ) : ‖freeCumulant φ (fun _ => a j) B‖ ≤ C B :=
-    norm_freeCumulant_const_le φ (a j) fun k _ => hM k j
+    norm_freeCumulant_const_le φ (a j) fun k _ _ => hM k j
   have hinv : Tendsto (fun N : ℕ => (√(N : ℝ))⁻¹) atTop (𝓝 0) :=
     tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
   have hlim : Tendsto (fun N : ℕ => (√(N : ℝ))⁻¹ ^ (n - 2 * #π.1.parts) * ∏ B ∈ π.1.parts, C B)

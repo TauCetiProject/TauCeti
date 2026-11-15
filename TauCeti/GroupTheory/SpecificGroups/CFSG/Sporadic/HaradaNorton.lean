@@ -10,11 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Harada--Norton group
 
-This file carries the `HN` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the corrected five-generator presentation of
-the Harada--Norton group given by Bray and Curtis as a `TauCeti.GroupPresentation`, together with
-its source, generator convention, transcription notes, characteristic equations, and decidable
-checks on the compiled and freely reduced relator words.
+This file carries the `HN` row of the sporadic presentation data. It records the corrected
+five-generator presentation of the Harada--Norton group given by Bray and Curtis as a
+`TauCeti.GroupPresentation`, together with its source, generator convention, transcription notes,
+characteristic equations, and decidable checks on the compiled and freely reduced relator words.
 
 The nineteen relators are
 
@@ -68,7 +67,7 @@ only changed entry is the fifth, replaced there by `[a,b³]³`; the row explicit
 first presentation and therefore correctly retains `a⁻²(abab³)³`. There are no commented or
 optional entries inside that first constructor. This checks every source relator, inverse,
 exponent, conjugation boundary, and constructor boundary independently of the original
-transcription and closes this row's S1 source-to-Lean read-through.
+transcription and closes this row's source-to-Lean read-through.
 
 ## Main definitions and results
 

@@ -116,6 +116,13 @@ theorem toIdeal_irrelevant_eq_ker_algebraMapInv :
     projZeroRingHom_eq_algebraMap_comp_algebraMapInv, RingHom.comp_apply,
     map_eq_zero_iff _ (SymmetricAlgebra.algebraMap_leftInverse M).injective, RingHom.coe_coe]
 
+variable {R M} in
+/-- An element is in the irrelevant ideal exactly when its augmentation is zero. -/
+theorem mem_irrelevant_iff_algebraMapInv_eq_zero {p : SymmetricAlgebra R M} :
+    p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ↔
+      SymmetricAlgebra.algebraMapInv p = 0 := by
+  rw [← HomogeneousIdeal.mem_iff, toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker]
+
 /-- Over a reduced base, the irrelevant ideal of a symmetric algebra is a radical ideal: the
 quotient by it is the base ring. -/
 theorem isRadical_toIdeal_irrelevant [IsReduced R] :

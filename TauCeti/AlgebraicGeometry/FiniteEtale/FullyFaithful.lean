@@ -7,8 +7,14 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Hartogs
+public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
+import TauCeti.AlgebraicGeometry.FiniteEtale.ZariskiLocal
+import TauCeti.AlgebraicGeometry.Scheme.Depth
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Depth.Finite
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Restricting finite étale schemes to an open whose complement has depth two
@@ -37,6 +43,16 @@ For a Noetherian ring, such a pair exists in the vanishing ideal of the compleme
 as `depth R_𝔭 ≥ 2` for every prime `𝔭 ∉ W`. For a Noetherian local ring of depth at least two,
 this applies to the punctured spectrum, the complement of the closed point.
 
+The affine statement globalizes. Let `X` be a locally Noetherian scheme and `U` an open subscheme
+such that the local ring `𝒪_{X,x}` has depth at least two at every point `x ∉ U`. Then restriction
+of finite étale schemes over `X` to `U` is fully faithful. Fullness is Zariski local on `X` once `U`
+is dense (`TauCeti.FiniteEtaleScheme.full_pullback_ι_of_openCover`). On an affine chart `Spec R`,
+the local rings of `X` are the localizations of `R`
+(`AlgebraicGeometry.Scheme.Hom.depth_stalk_eq_depth_localization`), so the depth hypothesis gives a
+weakly regular pair `a, b` with `D(a), D(b)` in the preimage of `U`. This supplies both the affine
+fullness and the density of `U`, as `D(a)` is dense for a nonzerodivisor `a`
+(`PrimeSpectrum.dense_basicOpen_of_mem_nonZeroDivisors`).
+
 ## Main results
 
 * `TauCeti.FiniteEtaleScheme.pullback_map_bijective_of_isIso_appTop`: the criterion for finite
@@ -48,6 +64,8 @@ this applies to the punctured spectrum, the complement of the closed point.
 * `TauCeti.FiniteEtaleScheme.fullyFaithfulPullbackιOfTwoLeDepthOfIsLocalRing`: restriction to an
   open containing the punctured spectrum of a Noetherian local ring of depth at least two is
   fully faithful.
+* `TauCeti.FiniteEtaleScheme.fullyFaithfulPullbackιOfTwoLeDepthStalk`: restriction to `U` is fully
+  faithful if `X` is locally Noetherian and `depth 𝒪_{X,x} ≥ 2` for every point `x ∉ U`.
 
 ## References
 
@@ -56,6 +74,9 @@ this applies to the punctured spectrum, the complement of the closed point.
 * [The Stacks Project, Lemma 58.20.2](https://stacks.math.columbia.edu/tag/0BLK), whose proof
   uses that a finite étale algebra over a local ring of depth at least two is recovered from its
   sections over the punctured spectrum.
+* [The Stacks Project, Lemma 58.21.6](https://stacks.math.columbia.edu/tag/0EY7), extension of
+  finite étale covers across points where purity holds, whose gluing step uses this full
+  faithfulness.
 -/
 
 public section
@@ -126,5 +147,34 @@ noncomputable def fullyFaithfulPullbackιOfTwoLeDepthOfIsLocalRing [IsLocalRing 
     obtain rfl : p = closedPoint R := not_not.mp (mt (hW p) hp)
     have := (le_depth_iff_forall_isMaximal (S := R) (N := R) 2).mp hdepth (maximalIdeal R)
     rwa [Ideal.depth_localizedModule_self] at this
+
+variable {X : Scheme.{u}}
+
+/-- Let `X` be a locally Noetherian scheme and `U` an open subscheme such that the local ring
+`𝒪_{X,x}` has depth at least two at every point `x ∉ U`. Then restriction of finite étale schemes
+over `X` to `U` is fully faithful. -/
+noncomputable def fullyFaithfulPullbackιOfTwoLeDepthStalk [IsLocallyNoetherian X] (U : X.Opens)
+    (h : ∀ x : X, x ∉ U →
+      2 ≤ depth (ModuleCat.of (X.presheaf.stalk x) (X.presheaf.stalk x))) :
+    (pullback U.ι).FullyFaithful :=
+  have ⟨_, _⟩ : (pullback U.ι).Full ∧ (pullback U.ι).Faithful := by
+    let 𝒰 := X.affineOpenCover
+    have (i : 𝒰.I₀) : IsNoetherianRing (𝒰.X i) :=
+      isLocallyNoetherian_Spec.mp (isLocallyNoetherian_of_isOpenImmersion (𝒰.f i))
+    -- On each affine chart `Spec R`, the depth hypothesis gives a weakly regular pair `a, b`
+    -- with `D(a), D(b)` in the preimage of `U`.
+    choose a b hab ha hb using fun i ↦
+      TauCeti.AlgebraicGeometry.StructureSheaf.exists_isWeaklyRegular_basicOpen_le_of_two_le_depth
+        (M := 𝒰.X i) (𝒰.f i ⁻¹ᵁ U) fun p hp ↦ p.asIdeal.depth_localizedModule_self.trans_ge <|
+          (𝒰.f i).depth_stalk_eq_depth_localization p ▸ h _ hp
+    -- `U` is dense: on each chart its preimage contains `D(a)` for a nonzerodivisor `a`.
+    have hdense : Dense (U : Set X) := 𝒰.openCover.dense_of_forall_dense_subset
+      (fun i ↦ PrimeSpectrum.dense_basicOpen_of_mem_nonZeroDivisors <|
+        isRegular_iff_mem_nonZeroDivisors.mp <| isLeftRegular_iff_isRegular.mp <|
+          (isWeaklyRegular_cons_iff ..).mp (hab i) |>.1) ha
+    have := Opens.isDominant_ι hdense
+    exact ⟨full_pullback_ι_of_openCover U hdense 𝒰.openCover fun i ↦
+      (fullyFaithfulPullbackιOfIsWeaklyRegular _ (hab i) (ha i) (hb i)).full, inferInstance⟩
+  .ofFullyFaithful _
 
 end TauCeti.FiniteEtaleScheme

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
@@ -47,6 +47,24 @@ theorem quantile_map_cast_eval_multivariateHypergeometricMeasure
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_multivariateHypergeometricMeasure]
+
+/-- A natural number is the coordinate quantile of a valid multivariate hypergeometric sample
+exactly when it is the least count whose scalar hypergeometric cumulative mass reaches the level. -/
+theorem quantile_map_cast_eval_multivariateHypergeometricMeasure_eq_iff
+    (K : ι → ℕ) {n : ℕ} (hn : n ≤ ∑ j, K j) (i : ι) {u : ℝ}
+    (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    ((multivariateHypergeometricMeasure K n).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
+      IsLeast
+        {m : ℕ | u ≤ ∑ j ∈ Finset.Iic m,
+          if j ≤ n then
+            ((K i).choose j : ℝ) * ((∑ l, K l - K i).choose (n - j) : ℝ) /
+              ((∑ l, K l).choose n : ℝ)
+          else 0}
+        k := by
+  have hKi : K i ≤ ∑ j, K j :=
+    Finset.single_le_sum (fun j _ ↦ Nat.zero_le (K j)) (Finset.mem_univ i)
+  rw [quantile_map_cast_eval_multivariateHypergeometricMeasure,
+    quantile_map_cast_hypergeometricMeasure_eq_iff hKi hn hu]
 
 /-- At level zero, a coordinate quantile tends to the number of objects from that category
 forced into a valid sample. -/

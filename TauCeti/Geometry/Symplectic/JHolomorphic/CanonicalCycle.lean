@@ -218,7 +218,6 @@ theorem apply_self_eq_zero_of_one_lt_mult (hB : B.IsSymm) (h : IsCanonicalCycle 
     (hi : 1 < m i) : B (C i) (C i) = 0 := by
   have hmul := h.apply_canonical_eq_mul hB i
   rw [h.apply_canonical_eq_apply_self] at hmul
-  have hm : (1 : ℤ) < m i := by exact_mod_cast hi
   have : ((m i : ℤ) - 1) * B (C i) (C i) = 0 := by linarith
   exact (mul_eq_zero.1 this).resolve_left (by linarith)
 

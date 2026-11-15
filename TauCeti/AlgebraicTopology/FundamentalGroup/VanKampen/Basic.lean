@@ -16,6 +16,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.CoverGeneration
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Pushout
+import TauCeti.AlgebraicTopology.NotSimplyConnected
 import TauCeti.CategoryTheory.Groupoid.SingleObj
 import TauCeti.Topology.Connected.PathConnected
 
@@ -428,10 +429,10 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
     (rfl : eAB ⟨x', hxA, hxB⟩ = ⟨x, hxA, hxB⟩)).toGrpIso
   refine (isPushout_fundamentalGroup hCover hA' hB' hAB' hxA hxB).of_iso
     iAB iA iB (Iso.refl _) ?_ ?_ ?_ ?_
-  · exact FundamentalGroup.subspace_inclusion_square
-      (inter_subset_left.trans subset_union_left) subset_union_left inter_subset_left x ⟨hxA, hxB⟩
-  · exact FundamentalGroup.subspace_inclusion_square
-      (inter_subset_left.trans subset_union_left) subset_union_right inter_subset_right x ⟨hxA, hxB⟩
+  · exact FundamentalGroup.subspace_inclusion_square subset_union_left inter_subset_left x
+      ⟨hxA, hxB⟩
+  · exact FundamentalGroup.subspace_inclusion_square subset_union_right inter_subset_right x
+      ⟨hxA, hxB⟩
   · exact FundamentalGroup.subspace_subtypeVal_square subset_union_left x hxA
   · exact FundamentalGroup.subspace_subtypeVal_square subset_union_right x hxB
 
@@ -506,14 +507,7 @@ theorem simplyConnectedSpace_of_interior_union
     obtain ⟨g', rfl⟩ := hsurj g
     obtain ⟨h', rfl⟩ := hsurj h
     rw [himage_one, himage_one]
-  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun x γ ↦ ?_⟩
-  let e := FundamentalGroup.fundamentalGroupMulEquivOfPath
-    (PathConnectedSpace.somePath z x)
-  have hxsub : Subsingleton (FundamentalGroup X x) :=
-    ⟨fun a b ↦ e.symm.injective (hzsub.elim (e.symm a) (e.symm b))⟩
-  exact Quotient.eq.mp (congrArg End.asHom (hxsub.elim
-    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))
-    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)))))
+  exact simplyConnectedSpace_of_subsingleton_fundamentalGroup z
 
 /-- **The based Seifert--van Kampen theorem for a simply connected overlap.**
 

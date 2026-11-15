@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
-public import TauCeti.QuantumGroups.QuantumInteger.Laurent
+public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 
 import TauCeti.Algebra.Ring.Units
 
@@ -19,7 +19,7 @@ import Mathlib.Tactic.LinearCombination
 
 The quantum integers `TauCeti.qInt R δ n` are defined at an arbitrary loop parameter `δ`, with no
 `q` in sight. At `δ = u + u⁻¹` for a unit `u` they satisfy `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`
-(`TauCeti.sub_inv_mul_qInt_add_inv`, in `TauCeti/QuantumGroups/QuantumInteger/Laurent.lean`).
+(`TauCeti.sub_inv_mul_qInt_add_inv`, in `TauCeti/QuantumGroups/QuantumInteger/Laurent/Basic.lean`).
 This file derives from it the dictionary between the vanishing of quantum integers at `δ` and
 `q` being a root of unity.
 

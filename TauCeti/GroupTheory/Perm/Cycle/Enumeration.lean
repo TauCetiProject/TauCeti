@@ -56,6 +56,9 @@ which `σ` is `finRotate`.
   product over the iterates of its representative below the length of the cycle.
 * `Equiv.Perm.partialProd_init_sigmaCycleEquiv`: the prefix products along an enumerated cycle are
   the products over the first `i` iterates of its representative.
+* `Equiv.Perm.prod_quotient_sameCycle_prod_range`: a product over a finite type is the product
+  over the cycles of `σ` of the products along the cycles;
+  `Equiv.Perm.sum_quotient_sameCycle_sum_range` is the additive version.
 -/
 
 public section
@@ -162,6 +165,7 @@ theorem sigmaCycleEquiv_symm_fst {x : α} {j : J} (h : σ.SameCycle (rep j) x) :
   rw [Equiv.symm_apply_apply]
   exact (hrep _).unique (σ.sameCycle_sigmaCycleEquiv rep hrep k i) h
 
+omit [Finite α] in
 /-- A product over the iterates of a point below the length of its cycle is the product over the
 points of that cycle. -/
 @[to_additive /-- A sum over the iterates of a point below the length of its cycle is the sum over
@@ -180,6 +184,7 @@ theorem prod_range_minimalPeriod [Fintype α] [DecidableRel σ.SameCycle] {M : T
     refine ⟨k % minimalPeriod σ x, Finset.mem_range.mpr (Nat.mod_lt k hpos), ?_⟩
     rw [coe_pow, coe_pow, iterate_mod_minimalPeriod_eq]
 
+omit [Finite α] in
 /-- A product over complete periods repeats the distinct-cycle product with multiplicity
 `k / minimalPeriod σ x`. Only the point `x` needs to be periodic with period `k`. -/
 @[to_additive sum_range_pow_eq_nsmul_sum_cycle
@@ -231,5 +236,21 @@ theorem partialProd_init_sigmaCycleEquiv {M : Type*} [CommMonoid M] (f : α → 
   | succ l ih =>
     rw [Fin.partialProd_succ, ih, Fin.val_succ, Finset.prod_range_succ]
     simp [Fin.init]
+
+omit [Finite α] in
+/-- **Products over the cycles of a permutation.** For a permutation `σ` of a finite type, a
+product over the type is the product over the cycles `q` of `σ` of the products of the values at
+`(σ ^ i) q.out` for `i` below the length of the cycle of the representative `q.out`. -/
+@[to_additive /-- **Sums over the cycles of a permutation.** For a permutation `σ` of a finite
+type, a sum over the type is the sum over the cycles `q` of `σ` of the sums of the values at
+`(σ ^ i) q.out` for `i` below the length of the cycle of the representative `q.out`. -/]
+theorem prod_quotient_sameCycle_prod_range [Fintype α] [Fintype (Quotient (SameCycle.setoid σ))]
+    {M : Type*} [CommMonoid M] (f : α → M) :
+    ∏ q : Quotient (SameCycle.setoid σ), ∏ i ∈ Finset.range (minimalPeriod σ q.out),
+      f ((σ ^ i) q.out) = ∏ x, f x := by
+  rw [← (σ.sigmaCycleEquiv Quotient.out σ.existsUnique_sameCycle_out).prod_comp,
+    Fintype.prod_sigma]
+  exact Finset.prod_congr rfl fun q _ ↦
+    (σ.prod_sigmaCycleEquiv_eq_prod_range Quotient.out σ.existsUnique_sameCycle_out f q).symm
 
 end Equiv.Perm

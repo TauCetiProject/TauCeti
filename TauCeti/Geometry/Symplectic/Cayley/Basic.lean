@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.LocallyConvex.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.Geometry.Symplectic.TameMetric
 
@@ -57,6 +58,9 @@ structures that agree with given ones on the cylindrical ends of a punctured Rie
 ## Main results
 
 * `TauCeti.SymplecticForm.Tames.convex_cayleyBall`: the Cayley ball is convex.
+* `TauCeti.SymplecticForm.Tames.balanced_cayleyBall` and
+  `TauCeti.SymplecticForm.Tames.balanced_compatibleCayleyBall`: both balls are balanced, so
+  `t • C` stays in them for `|t| ≤ 1`.
 * `TauCeti.SymplecticForm.Tames.isUnit_one_sub_mul` and
   `TauCeti.SymplecticForm.isUnit_one_sub_of_mem_cayleyBall`: the denominators `1 - J₀ J` of the
   transform and `1 - C` of its inverse are invertible.
@@ -143,6 +147,12 @@ theorem Tames.convex_cayleyBall (h₀ : ω.Tames J₀) : Convex ℝ (ω.cayleyBa
     have habm : a * m + b * m = m := by rw [← add_mul, hab, one_mul]
     nlinarith [mul_nonneg (mul_nonneg ha hb) hnonneg]
 
+/-- The Cayley ball of `J₀` is balanced when `ω` tames `J₀`: it is convex, and `C ↦ -C`
+preserves both the anticommutation with `J₀` and the contraction condition. -/
+theorem Tames.balanced_cayleyBall (h₀ : ω.Tames J₀) : Balanced ℝ (ω.cayleyBall J₀) :=
+  (balanced_iff_neg_mem h₀.convex_cayleyBall).2 fun C hC =>
+    ⟨by simp [hC.1], fun v hv => by simpa using hC.2 v hv⟩
+
 variable (ω J₀) in
 /-- The **compatible Cayley ball** of `ω` at `J₀`: the elements of the Cayley ball that are
 self-adjoint for the bilinear form `g₀ = ω(·, J₀ ·)`. For `ω`-compatible `J₀` it is the image of
@@ -171,6 +181,14 @@ the convex Cayley ball with a linear subspace. -/
 theorem Tames.convex_compatibleCayleyBall (h₀ : ω.Tames J₀) :
     Convex ℝ (ω.compatibleCayleyBall J₀) :=
   h₀.convex_cayleyBall.inter (Submodule.convex _)
+
+/-- The compatible Cayley ball of `J₀` is balanced when `ω` tames `J₀`: it is the intersection
+of the balanced Cayley ball with a linear subspace. -/
+theorem Tames.balanced_compatibleCayleyBall (h₀ : ω.Tames J₀) :
+    Balanced ℝ (ω.compatibleCayleyBall J₀) :=
+  (balanced_iff_neg_mem h₀.convex_compatibleCayleyBall).2 fun _ hC =>
+    ⟨(balanced_iff_neg_mem h₀.convex_cayleyBall).1 h₀.balanced_cayleyBall hC.1,
+      Submodule.neg_mem _ hC.2⟩
 
 /-- For two structures tamed by `ω`, the endomorphism `1 - J₀ J` is invertible, since
 `ω(v, J₀ (v - J₀ J v)) = ω(v, J₀ v) + ω(v, J v)` is positive for `v ≠ 0`. -/
@@ -462,13 +480,19 @@ theorem Compatible.cayley_mem_compatibleCayleyBall_iff (h₀ : ω.Compatible J�
     LinearMap.mem_selfAdjointSubmodule, h₀.isSelfAdjoint_cayley_iff h, compatible_iff]
   exact ⟨fun hC => ⟨hC.2, h⟩, fun hJ => ⟨h₀.cayley_mem_cayleyBall h, hJ.1⟩⟩
 
-/-- Multiplying a compatible Cayley coordinate by a scalar between zero and one stays in the
-compatible Cayley ball. -/
+/-- Multiplying a tame Cayley coordinate by a scalar of absolute value at most one stays in the
+Cayley ball. -/
+theorem Compatible.smul_cayley_mem_cayleyBall (h₀ : ω.Compatible J₀) (h : ω.Tames J) {t : ℝ}
+    (ht : |t| ≤ 1) : t • J₀.cayley J ∈ ω.cayleyBall J₀ :=
+  h₀.tames.balanced_cayleyBall.smul_mem (by rwa [Real.norm_eq_abs]) (h₀.cayley_mem_cayleyBall h)
+
+/-- Multiplying a compatible Cayley coordinate by a scalar of absolute value at most one stays in
+the compatible Cayley ball. -/
 theorem Compatible.smul_cayley_mem_compatibleCayleyBall (h₀ : ω.Compatible J₀)
-    (h : ω.Compatible J) {t : ℝ} (ht : t ∈ Set.Icc 0 1) :
+    (h : ω.Compatible J) {t : ℝ} (ht : |t| ≤ 1) :
     t • J₀.cayley J ∈ ω.compatibleCayleyBall J₀ :=
-  h₀.tames.convex_compatibleCayleyBall.smul_mem_of_zero_mem
-    h₀.tames.zero_mem_compatibleCayleyBall ((h₀.cayley_mem_compatibleCayleyBall_iff h.tames).2 h) ht
+  h₀.tames.balanced_compatibleCayleyBall.smul_mem (by rwa [Real.norm_eq_abs])
+    ((h₀.cayley_mem_compatibleCayleyBall_iff h.tames).2 h)
 
 /-- For an `ω`-compatible `J₀`, the Cayley transform `J ↦ -(1 + J₀ J)(1 - J₀ J)⁻¹` is a bijection
 from the `ω`-compatible complex structures onto the compatible Cayley ball of `J₀`. Its inverse is

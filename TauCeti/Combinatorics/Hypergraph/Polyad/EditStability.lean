@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -17,6 +18,7 @@ test carrying an `ε`-fraction of its support changes by at most `η / ε`; the 
 whole polyad changes by at most `η`. Consequently `(δ, r)`-top regularity survives with
 positive parameter `ε` whenever `δ + η + η / ε ≤ ε`. For positive `δ` and `0 ≤ η`, the parameter
 `δ + 2 * √η` suffices, independently of the rank and the number of top colors.
+More sharply, editing at most a `δ²`-fraction preserves top regularity with tolerance `2δ`.
 
 These estimates control the regularity error incurred by editing a coloring, including the
 cleanup and rebalancing steps in regular approximation arguments. All edit counts here count
@@ -42,7 +44,7 @@ variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 The new threshold `ε` must absorb the old error, the change on the whole support, and the
 change on a test of relative size at least `ε`. The rank is unchanged. -/
 theorem IsTopRegularOverPolyad.of_card_editedOn_le
-    (h : H.IsTopRegularOverPolyad P δ r) (hε : 0 < ε) (hη : 0 ≤ η) (hbudget : δ + η + η / ε ≤ ε)
+    (h : H.IsTopRegularOverPolyad P δ r) (hε : 0 < ε) (hbudget : δ + η + η / ε ≤ ε)
     (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support) :
     H'.IsTopRegularOverPolyad P ε r := by
   rw [isTopRegularOverPolyad_iff]
@@ -51,6 +53,9 @@ theorem IsTopRegularOverPolyad.of_card_editedOn_le
   · have hU : Subpolyad3.unionSupport Q = ∅ :=
       subset_empty.1 (hP ▸ Subpolyad3.unionSupport_subset Q)
     simp [hU, H'.relativeDensity_of_support_eq_empty c hP, hε.le]
+  have hη : 0 ≤ η :=
+    nonneg_of_mul_nonneg_left ((Nat.cast_nonneg _).trans hedit)
+      (by exact_mod_cast hP.card_pos)
   have hwhole : |(H.relativeDensity c P : ℝ) - H'.relativeDensity c P| ≤ η := by
     simpa [relativeDensity_def] using H.abs_relDensityOn_sub_le_div_of_card_editedOn_le H' c
       (Subset.rfl (s := P.support)) zero_lt_one hη (by simp) hedit
@@ -87,7 +92,7 @@ theorem IsTopRegularOverPolyad.of_card_editedOn_le_sqrt (h : H.IsTopRegularOverP
     have hs₂ := Real.sq_sqrt hη
     have hs₁ : Real.sqrt η ≤ 1 := (Real.sqrt_le_one).2 hη₁
     have hε : 0 < δ + 2 * Real.sqrt η := by positivity
-    apply h.of_card_editedOn_le hε hη ?_ hedit
+    apply h.of_card_editedOn_le hε ?_ hedit
     have hdiv : η / (δ + 2 * Real.sqrt η) ≤ Real.sqrt η := by
       apply (div_le_iff₀ hε).2
       nlinarith
@@ -95,5 +100,18 @@ theorem IsTopRegularOverPolyad.of_card_editedOn_le_sqrt (h : H.IsTopRegularOverP
   · have hs₁ : 1 ≤ Real.sqrt η := by
       simpa using Real.sqrt_le_sqrt (le_of_not_ge hη₁)
     exact isTopRegularOverPolyad_of_one_le (H := H') (P := P) (r := r) (by linarith)
+
+/-- Editing at most a `δ²`-fraction of a polyad's supported ordered triples preserves its top
+regularity at every rank, with the tolerance doubled. No upper bound on `δ` is needed. -/
+theorem IsTopRegularOverPolyad.of_card_editedOn_le_sq (h : H.IsTopRegularOverPolyad P δ r)
+    (hδ : 0 < δ)
+    (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ δ ^ 2 * #P.support) :
+    H'.IsTopRegularOverPolyad P (2 * δ) r := by
+  by_cases hlarge : 1 ≤ 2 * δ
+  · exact isTopRegularOverPolyad_of_one_le (H := H') (P := P) (r := r) hlarge
+  refine h.of_card_editedOn_le (by positivity) ?_ hedit
+  have hdiv : δ ^ 2 / (2 * δ) = δ / 2 := by field_simp
+  rw [hdiv]
+  nlinarith
 
 end TauCeti.Colored3Graph

@@ -50,8 +50,8 @@ def rootEntryEquiv (h2 : ∀ x : R, x + x = 0 → x = 0) :
     (Matrix.ofStrictUpper fun p => a (.inr (.inl p)))
     (Matrix.ofStrictUpper fun p => -a (.inr (.inr p)))
     (-Matrix.transpose (fun i j => a (.inl (i, j)))),
-    Matrix.fromBlocks_mem_typeD _ _ _
-      (Matrix.transpose_ofStrictUpper _) (Matrix.transpose_ofStrictUpper _)⟩
+    Matrix.fromBlocks_mem_typeD_iff.mpr
+      ⟨Matrix.transpose_ofStrictUpper _, Matrix.transpose_ofStrictUpper _, rfl⟩⟩
   left_inv X := by
     have hB : Matrix.transpose (fun i j => X.val (.inl i) (.inr j)) =
         -(fun i j => X.val (.inl i) (.inr j) : Matrix ι ι R) := by

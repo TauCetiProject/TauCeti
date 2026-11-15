@@ -54,6 +54,8 @@ bounds for the supports of the factors: it is the product of the coefficients at
 The sum of the lower bounds bounds the support of the product
 (`HahnSeries.add_le_of_mem_support_mul`), and for powers `HahnSeries.nsmul_le_of_mem_support_pow`
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
+`HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
+of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
 -/
 
 public section
@@ -167,6 +169,20 @@ theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
 end HahnModule
 
 namespace HahnSeries
+
+section OrderTop
+
+variable {Γ R : Type*} [Zero Γ] [PartialOrder Γ] [Zero R]
+
+/-- A monomial of nonnegative exponent has nonnegative order. -/
+theorem zero_le_orderTop_single {a : Γ} (ha : 0 ≤ a) (r : R) : 0 ≤ (single a r).orderTop :=
+  (WithTop.coe_le_coe.2 ha).trans orderTop_single_le
+
+/-- The constant `1` has nonnegative order. -/
+theorem zero_le_orderTop_one [One R] : 0 ≤ (1 : HahnSeries Γ R).orderTop :=
+  zero_le_orderTop_single le_rfl 1
+
+end OrderTop
 
 variable {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
 

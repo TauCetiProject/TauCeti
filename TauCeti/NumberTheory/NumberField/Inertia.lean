@@ -106,10 +106,11 @@ theorem finrank_eq_one_of_forall_ramificationIdx_eq_one {F : Type*} [Field F] [N
 
 section Intermediate
 
-variable {K : Type*} [Field K] [NumberField K] {G : Type*} [Group G] [Finite G]
+variable {K : Type*} [Field K] [NumberField K] {G : Type*} [Group G]
   [MulSemiringAction G K] [IsGaloisGroup G ℚ K]
   {F : Type*} [Field F] [NumberField F] [Algebra F K]
 
+omit [NumberField F] in
 /-- **Unramifiedness in an intermediate field is containment of inertia.** Let `H` be a subgroup
 of `G` with fixed field `F`, and let `P` be a prime of `𝓞 K`. The prime of `𝓞 F` below `P` is
 unramified over `ℤ` exactly when the inertia subgroup of `P` is contained in `H`.
@@ -125,6 +126,9 @@ intersection is everything.
 theorem ramificationIdx_under_eq_one_iff_inertia_le (H : Subgroup G) [IsGaloisGroup H F K]
     (P : Ideal (𝓞 K)) (hP : P.IsPrime) :
     (P.under (𝓞 F)).ramificationIdx ℤ = 1 ↔ P.inertia G ≤ H := by
+  have : Finite G := IsGaloisGroup.finite G ℚ K
+  have : CharZero F := RingHom.charZero (algebraMap F K)
+  have : NumberField F := NumberField.of_tower ℚ K F
   have : P.IsPrime := hP
   have : IsGaloisGroup H (𝓞 F) (𝓞 K) := IsGaloisGroup.of_isFractionRing H (𝓞 F) (𝓞 K) F K
   have htower : P.ramificationIdx ℤ
@@ -193,6 +197,7 @@ theorem notMem_ramifiedPrimes_iff_inertia_le [IsMulCommutative G] (H : Subgroup 
     [IsGaloisGroup H F K] {p : ℕ} (hp : p.Prime) (P : Ideal (𝓞 K)) (hP : P.IsPrime)
     (hPp : P.LiesOver (Ideal.span {(p : ℤ)})) :
     p ∉ ramifiedPrimes F ↔ P.inertia G ≤ H := by
+  have : Finite G := IsGaloisGroup.finite G ℚ K
   have : P.IsPrime := hP
   have : P.LiesOver (Ideal.span {(p : ℤ)}) := hPp
   rw [notMem_ramifiedPrimes_iff_forall_inertia_le (K := K) (F := F) H hp]
@@ -205,7 +210,7 @@ end Intermediate
 
 section Generation
 
-variable {K : Type*} [Field K] [NumberField K] (G : Type*) [Group G] [Finite G]
+variable {K : Type*} [Field K] [NumberField K] (G : Type*) [Group G]
   [MulSemiringAction G K] [IsGaloisGroup G ℚ K]
 
 variable {G} in
@@ -220,6 +225,7 @@ field unramified over `ℚ` is `ℚ`, so `F = ℚ`. -/
 theorem eq_top_of_forall_inertia_le {H : Subgroup G}
     (h : ∀ P : Ideal (𝓞 K), P.IsMaximal → P.inertia G ≤ H) : H = ⊤ := by
   classical
+  have : Finite G := IsGaloisGroup.finite G ℚ K
   set F : IntermediateField ℚ K := FixedPoints.intermediateField H
   let _ : NumberField F := NumberField.of_intermediateField F
   -- Every nonzero prime of `𝓞 F` is unramified over `ℤ`.
@@ -247,11 +253,11 @@ end Generation
 
 section Unramified
 
-variable {K : Type*} [Field K] [NumberField K] {G : Type*} [Group G] [Finite G]
+variable {K : Type*} [Field K] [NumberField K] {G : Type*} [Group G]
   [MulSemiringAction G K] [IsGaloisGroup G ℚ K]
   {F : Type*} [Field F] [NumberField F] [Algebra ℚ F] [Algebra F K] [IsScalarTower ℚ F K]
 
-omit [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [NumberField F] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
 /-- **The inertia subgroup at an unramified prime meets `H` trivially.** Let `H` be a subgroup of
 `G` whose fixed field is `F`. If `P` is unramified over `𝓞 F`, then the inertia subgroup of `P`
 is disjoint from `H`, since its intersection with `H` is the inertia subgroup of `P` over `𝓞 F`,
@@ -259,6 +265,8 @@ of order `e(P / 𝓞 F) = 1`. -/
 theorem disjoint_inertia_of_ramificationIdx_eq_one (H : Subgroup G) [IsGaloisGroup H F K]
     (P : Ideal (𝓞 K)) (hP : P.IsPrime) (hunr : P.ramificationIdx (𝓞 F) = 1) :
     Disjoint (P.inertia G) H := by
+  have : CharZero F := RingHom.charZero (algebraMap F K)
+  have : NumberField F := NumberField.of_tower ℚ K F
   have : P.IsPrime := hP
   have : IsGaloisGroup H (𝓞 F) (𝓞 K) := IsGaloisGroup.of_isFractionRing H (𝓞 F) (𝓞 K) F K
   rw [← Subgroup.subgroupOf_eq_bot]
@@ -266,7 +274,7 @@ theorem disjoint_inertia_of_ramificationIdx_eq_one (H : Subgroup G) [IsGaloisGro
   rw [AddSubgroup.subgroupOf_inertia, Ideal.card_inertia_eq_ramificationIdx (𝓞 F) H P]
   exact hunr
 
-omit [Finite G] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [NumberField F] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
 /-- **The index of `H` kills inertia at a prime unramified over the fixed field.** If `H` is a
 normal subgroup of `G` with fixed field `F` and `P` is unramified over `𝓞 F`, then every element
 of the inertia subgroup at `P` is killed by `H.index`: its `H.index`-th power lies in `H`, and it
@@ -275,6 +283,8 @@ lies in the inertia subgroup, which meets `H` trivially. If the index is infinit
 theorem pow_index_eq_one_of_ramificationIdx_eq_one {H : Subgroup G} [H.Normal]
     [IsGaloisGroup H F K] {P : Ideal (𝓞 K)} (hP : P.IsPrime)
     (hunr : P.ramificationIdx (𝓞 F) = 1) {g : G} (hg : g ∈ P.inertia G) : g ^ H.index = 1 := by
+  have : CharZero F := RingHom.charZero (algebraMap F K)
+  have : NumberField F := NumberField.of_tower ℚ K F
   by_cases hi : H.index = 0
   · simp [hi]
   have : Module.Finite F K := Module.Finite.of_restrictScalars_finite ℚ F K
@@ -285,7 +295,7 @@ theorem pow_index_eq_one_of_ramificationIdx_eq_one {H : Subgroup G} [H.Normal]
   exact Subgroup.disjoint_def.mp (disjoint_inertia_of_ramificationIdx_eq_one H P hP hunr)
     (pow_mem hg _) (H.pow_index_mem g)
 
-omit [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [NumberField F] [Algebra ℚ F] [IsScalarTower ℚ F K] in
 open scoped IsMulCommutative in
 /-- **An abelian extension of `ℚ` unramified over a subfield has exponent dividing its degree.**
 Let `K` be a number field, Galois over `ℚ` with abelian Galois group `G`, and let `H` be a
@@ -304,6 +314,8 @@ theorem pow_index_eq_one_of_isUnramifiedIn [IsMulCommutative G] (H : Subgroup G)
     [IsGaloisGroup H F K]
     (hunr : ∀ q : Ideal (𝓞 F), q.IsPrime → Algebra.IsUnramifiedIn (𝓞 K) q) (g : G) :
     g ^ H.index = 1 := by
+  have : CharZero F := RingHom.charZero (algebraMap F K)
+  have : NumberField F := NumberField.of_tower ℚ K F
   have h : (powMonoidHom H.index : G →* G).ker = ⊤ :=
     eq_top_of_forall_inertia_le fun P hP x hx => by
       have : P.IsPrime := hP.isPrime

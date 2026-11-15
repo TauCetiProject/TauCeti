@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.NAry
 public import Mathlib.Logic.Equiv.Prod
-public import TauCeti.Geometry.Neuromanifold.Basic
+public import TauCeti.Geometry.Neuromanifold.Transport
 
 /-!
 # Composition of realization maps
@@ -68,11 +68,8 @@ theorem realizedFunctions_eq_image2_of_equiv {P Y' : Type*} {F : P → X → Z} 
       Set.image2 (fun f' g' => g' ∘ a ∘ f') (realizedFunctions f) (realizedFunctions g) := by
   have hc : F ∘ e.symm = compose f fun p₂ => g p₂ ∘ a := funext fun p =>
     (h p.1 p.2).trans (compose_apply f (fun p₂ => g p₂ ∘ a) p).symm
-  have hg : realizedFunctions (fun p₂ => g p₂ ∘ a) = (· ∘ a) '' realizedFunctions g :=
-    (realizedFunctions_def _).trans ((Set.range_comp (· ∘ a) g).trans
-      (congrArg _ (realizedFunctions_def g).symm))
   rw [realizedFunctions_def, ← e.symm.surjective.range_comp, hc, ← realizedFunctions_def,
-    realizedFunctions_compose, hg, Set.image2_image_right]
+    realizedFunctions_compose, realizedFunctions_precomp, Set.image2_image_right]
   simp only [Function.comp_assoc]
 
 /-- Composition of models is associative up to the canonical reassociation of parameter

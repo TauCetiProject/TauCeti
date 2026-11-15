@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Orbit.Weight
 public import TauCeti.Algebra.Module.IntegralOrbit
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Algebra.Lie.Basis.Cartan
@@ -48,8 +49,6 @@ This is Steinberg, *Lectures on Chevalley Groups*, Chapter 2, Corollary 1 to The
   a weight vector, of weight `λ` minus the corresponding combination of simple roots.
 * `LieAlgebra.Basis.orbitOfRep_kostantForm_eq_span_loweringMonomial`: the orbit `U_ℤ · v` is the
   integral span of the lowering monomials applied to `v`.
-* `LieAlgebra.Basis.orbitOfRep_kostantForm_le_iSup_jointWeightSpace`: the orbit lies in the span
-  of the integral joint weight spaces.
 * `LieAlgebra.Basis.fg_orbitOfRep_kostantForm`: the orbit is finitely generated over `ℤ` when `V`
   is finite-dimensional.
 * `LieAlgebra.Basis.exists_eq_zsmul_of_mem_orbitOfRep_kostantForm`: the vectors of weight `λ` in
@@ -287,20 +286,6 @@ theorem orbitOfRep_kostantForm_eq_span_loweringMonomial
   exact (mem_stabilizer_iff ρ _ u).1
     (kostantForm_le_stabilizer_span_loweringMonomial hv hve hu) v
     self_mem_span_loweringMonomial
-
-variable (b) in
-/-- **The Kostant orbit of a highest-weight vector has integral weights.** Every element of the
-orbit is a sum of weight vectors of integral weight. This is the weight hypothesis of
-`TauCeti.UniversalEnvelopingAlgebra.kostantWeightBasis`. -/
-theorem orbitOfRep_kostantForm_le_iSup_jointWeightSpace
-    (hv : IsCartanWeightVector b.h ρ wt v)
-    (hve : ∀ i, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e i)) v = 0) :
-    Subring.orbitOfRep b.kostantForm ρ {v} ≤
-      (⨆ μ : ι → ℤ, jointWeightSpace b.h ρ μ).restrictScalars ℤ := by
-  rw [b.orbitOfRep_kostantForm_eq_span_loweringMonomial hv hve]
-  refine Submodule.span_le.2 (range_subset_iff.2 fun l => ?_)
-  exact Submodule.mem_iSup_of_mem _
-    ((mem_jointWeightSpace_iff b.h ρ).2 (b.isCartanWeightVector_loweringMonomial hv l))
 
 /-! ## Finite generation -/
 

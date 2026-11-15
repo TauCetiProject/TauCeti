@@ -40,7 +40,7 @@ variable {R K : Type*} [Field R] [Field K] [Algebra R K] [IsAlgClosed K]
 odd degree has a root. -/
 theorem exists_isRoot_of_odd_natDegree_of_finrank_eq_two_pow (p : R[X]) (hp : Odd p.natDegree)
     {k : ℕ} (hK : finrank R K = 2 ^ k) : ∃ x, p.IsRoot x := by
-  obtain ⟨q, hq, hqodd, hqp⟩ := exists_irreducible_factor_of_odd_natDegree p hp
+  obtain ⟨q, hq, hqodd, hqp⟩ := exists_irreducible_factor_of_odd_natDegree hp
   have hdvd : q.natDegree ∣ 2 ^ k :=
     hK ▸ Irreducible.natDegree_dvd_finrank hq (IsAlgClosed.splits _)
   have hq1 : q.natDegree = 1 :=

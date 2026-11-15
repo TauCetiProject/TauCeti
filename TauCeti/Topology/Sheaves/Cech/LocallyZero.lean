@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.Colimits
+public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.CategoryTheory.Limits.Lattice
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.ModuleCat
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Refinement
 public import TauCeti.Topology.Sheaves.Cech.Colimit
+import Mathlib.Algebra.Category.Grp.EpiMono
 
 /-!
-# Čech cohomology of locally zero presheaves on compact spaces
+# Čech cohomology of locally zero presheaves
 
 Let `P` be a presheaf of modules on a compact normal space `X` (for instance a compact Hausdorff
 space) such that `P(∅) = 0` and every section of `P` is locally zero: a section over `W` restricts
@@ -34,6 +37,11 @@ The hypothesis `P(∅) = 0` cannot be dropped: on a two-point discrete space, th
 cohomology. These vanishing results are the input for comparing the Čech cohomology of a presheaf
 with that of its sheafification.
 
+In degree `0` no hypothesis on `X` or on `P(∅)` is needed, since a degree `0` cochain has one
+component for each member of the cover, and each member of a point-neighborhood cover contains its
+point: shrinking every member to a neighborhood of its point on which the component vanishes kills
+the cochain. This is proved for presheaves of abelian groups, the coefficients of sheaf cohomology.
+
 ## Main results
 
 * `TauCeti.Topology.exists_cechComplexMap_f_eq_zero_of_locally_eq_zero`: every Čech cochain of a
@@ -43,6 +51,10 @@ with that of its sheafification.
   cohomology in every degree.
 * `TauCeti.Topology.isZero_cechCohomology_obj_of_isZero_sheafify`: a presheaf of modules with
   `P(∅) = 0` and zero sheafification has zero Čech cohomology in every degree.
+* `TauCeti.Topology.exists_cechComplexMap_f_zero_eq_zero_of_locally_eq_zero` and
+  `TauCeti.Topology.isZero_cechCohomology_zero_obj_of_locally_eq_zero`: on an arbitrary space, a
+  locally zero presheaf of abelian groups has its degree `0` cochains killed by refinements, and
+  zero degree `0` Čech cohomology.
 
 ## References
 
@@ -59,6 +71,8 @@ open CategoryTheory Limits Opposite TopologicalSpace Topology
 universe u
 
 namespace TauCeti.Topology
+
+section Compact
 
 variable {X : TopCat.{u}} [CompactSpace X] [NormalSpace X] {R : Type u} [Ring R]
   (P : (Opens X)ᵒᵖ ⥤ ModuleCat.{u} R)
@@ -131,7 +145,7 @@ theorem isZero_cechCohomology_obj_of_locally_eq_zero (h₀ : IsZero (P.obj (op �
       ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧ P.map (homOfLE hVW).op s = 0) (n : ℕ) :
     IsZero ((cechCohomology X (ModuleCat.{u} R) n).obj P) := by
   refine TauCeti.CategoryTheory.isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero
-    _ _ n P fun U z ↦ ?_
+    _ _ n (forget₂ _ AddCommGrpCat) P fun U z ↦ ?_
   -- a class is represented by a cocycle, which some refinement kills
   let K := (cechComplexFunctor U.opens).obj P
   obtain ⟨c, rfl⟩ := (ModuleCat.epi_iff_surjective (K.homologyπ n)).1 inferInstance z
@@ -143,7 +157,8 @@ theorem isZero_cechCohomology_obj_of_locally_eq_zero (h₀ : IsZero (P.obj (op �
     apply (ModuleCat.mono_iff_injective (HomologicalComplex.iCycles _ n)).1 inferInstance
     rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
       hc, map_zero]
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
+  rw [ModuleCat.forget₂_map, AddCommGrpCat.ofHom_apply, AddMonoidHom.coe_ofClass,
+    ← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
     ConcreteCategory.comp_apply, h, map_zero]
 
 /-- **Presheaves with zero sheafification have no Čech cohomology.** On a compact normal space,
@@ -161,5 +176,73 @@ theorem isZero_cechCohomology_obj_of_isZero_sheafify
     (toSheafify (Opens.grothendieckTopology X) P) s 0
     ((ModuleCat.subsingleton_of_isZero (hP.obj _)).elim _ _) x hx
   exact ⟨V, leOfHom f, hxV, hf.trans (map_zero _)⟩
+
+end Compact
+
+/-! ### Degree zero on arbitrary spaces -/
+
+section DegreeZero
+
+variable {X : TopCat.{u}}
+
+/-- **Degree `0` cochains of a locally zero presheaf die after refinement.** Let `P` be a presheaf
+of abelian groups on any topological space, every section of which restricts to zero on a
+neighborhood of each point of its domain. Then every degree `0` Čech cochain of `P` for a
+point-neighborhood cover `U` is sent to zero by the map induced by some point-neighborhood
+refinement of `U`. -/
+theorem exists_cechComplexMap_f_zero_eq_zero_of_locally_eq_zero
+    (P : (Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u})
+    (hP : ∀ (W : Opens X) (s : P.obj (op W)) (x : X), x ∈ W →
+      ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧ P.map (homOfLE hVW).op s = 0)
+    (U : PointOpenCover X) (c : ((cechComplexFunctor U.opens).obj P).X 0) :
+    ∃ (V : PointOpenCover X) (φ : V.toFormalCoproduct ⟶ U.toFormalCoproduct),
+      (TauCeti.CategoryTheory.cechComplexMap P φ).f 0 c = 0 := by
+  -- the component of `c` at the constant tuple at `x` vanishes on a neighborhood `O x` of `x`
+  have hx (x : X) : x ∈ (∏ᶜ fun _ : Fin 1 ↦ U.opens x : Opens X) :=
+    leOfHom (Pi.lift fun _ ↦ 𝟙 (U.opens x)) (U.mem_opens x)
+  choose O hOU hxO hO using fun x : X ↦
+    hP _ (Pi.π (fun b : Fin 1 → X ↦ P.obj (op (∏ᶜ fun j ↦ U.opens (b j)))) (fun _ ↦ x) c) x (hx x)
+  let V : PointOpenCover X := ⟨O, hxO⟩
+  let φ : V.toFormalCoproduct ⟶ U.toFormalCoproduct :=
+    ⟨id, fun x ↦ homOfLE ((hOU x).trans (leOfHom (Pi.π (fun _ : Fin 1 ↦ U.opens x) 0)))⟩
+  refine ⟨V, φ, ?_⟩
+  -- componentwise, as in `exists_cechComplexMap_f_eq_zero_of_locally_eq_zero`
+  refine Concrete.isLimit_ext _ (productIsProduct
+    fun b : Fin 1 → X ↦ P.obj (op (∏ᶜ fun j ↦ V.opens (b j)))) _ _ fun ⟨b⟩ ↦ ?_
+  refine (ConcreteCategory.congr_hom (TauCeti.CategoryTheory.cechComplexMap_f_π P φ 0 b) c).trans
+    (Eq.trans ?_ (map_zero _).symm)
+  -- a tuple of length one is constant
+  obtain ⟨x, rfl⟩ : ∃ x, b = fun _ ↦ x := ⟨b 0, funext fun j ↦ by rw [Subsingleton.elim j 0]⟩
+  have : (Limits.Pi.map fun j ↦ φ.φ ((fun _ ↦ x : Fin 1 → X) j)) =
+      homOfLE (leOfHom (Pi.π (fun _ : Fin 1 ↦ V.opens x) 0)) ≫ homOfLE (hOU x) :=
+    Subsingleton.elim _ _
+  rw [this, op_comp, P.map_comp]
+  exact (congrArg (P.map _).hom (hO x)).trans (map_zero _)
+
+/-- **Locally zero presheaves have no degree `0` Čech cohomology.** On any topological space, a
+presheaf of abelian groups every section of which restricts to zero on a neighborhood of each
+point of its domain has zero degree `0` Čech cohomology. Unlike the results above, neither
+compactness nor a condition on `P(∅)` is needed: degree `0` cochains only see the members of a
+cover, each of which contains its point. -/
+theorem isZero_cechCohomology_zero_obj_of_locally_eq_zero (P : (Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u})
+    (hP : ∀ (W : Opens X) (s : P.obj (op W)) (x : X), x ∈ W →
+      ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧ P.map (homOfLE hVW).op s = 0) :
+    IsZero ((cechCohomology X AddCommGrpCat.{u} 0).obj P) := by
+  refine TauCeti.CategoryTheory.isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero
+    _ _ 0 (𝟭 _) P fun U z ↦ ?_
+  -- a class is represented by a cocycle, which some refinement kills
+  let K := (cechComplexFunctor U.opens).obj P
+  obtain ⟨c, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (K.homologyπ 0)).1 inferInstance z
+  obtain ⟨V, φ, hc⟩ := exists_cechComplexMap_f_zero_eq_zero_of_locally_eq_zero P hP U
+    (K.iCycles 0 c)
+  refine ⟨V, ⟨φ⟩, φ, ?_⟩
+  have h : HomologicalComplex.cyclesMap (TauCeti.CategoryTheory.cechComplexMap P φ) 0 c = 0 := by
+    apply (AddCommGrpCat.mono_iff_injective (HomologicalComplex.iCycles _ 0)).1 inferInstance
+    rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+      hc, map_zero]
+  rw [Functor.id_map, ← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
+    ConcreteCategory.comp_apply, h, map_zero]
+
+end DegreeZero
 
 end TauCeti.Topology

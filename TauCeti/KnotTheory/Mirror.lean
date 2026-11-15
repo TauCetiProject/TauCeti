@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Sphere
-public import TauCeti.KnotTheory.Cobordism
+public import TauCeti.KnotTheory.Cobordism.Basic
 public import TauCeti.KnotTheory.Slice.TopologicalGenus
 
 /-!

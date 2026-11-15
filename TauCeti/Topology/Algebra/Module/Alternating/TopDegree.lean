@@ -13,9 +13,11 @@ public import Mathlib.LinearAlgebra.Determinant
 
 Top-degree scalar-valued continuous alternating forms over a commutative ring are determined
 by their basis coefficient, which vanishes only for the zero form. Pullback by a continuous
-linear endomorphism multiplies that coefficient by its determinant. Above the top degree,
-continuous alternating maps on a finite-dimensional space over a division ring vanish. No
-compatibility between the topology and the module structure is required for those statements.
+linear endomorphism multiplies that coefficient by its determinant. Pullback along a continuous
+linear map `A : E → F` multiplies it by the determinant of `C⁻¹ ∘ A` for any continuous linear
+equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. Above the
+top degree, continuous alternating maps on a finite-dimensional space over a division ring vanish.
+No compatibility between the topology and the module structure is required for those statements.
 -/
 
 public section
@@ -40,6 +42,24 @@ theorem compContinuousLinearMap_apply_basis [Finite ι] (ω : E [⋀^ι]→L[R] 
   let : Fintype ι := Fintype.ofFinite ι
   rw [compContinuousLinearMap_apply, apply_eq_det_mul ω b]
   simp only [← ContinuousLinearMap.coe_coe A, b.det_comp, b.det_self, mul_one]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- Pullback along a continuous linear map `A : E → F` multiplies the coefficient of a
+top-degree form by the determinant of `A` read in `E` through a continuous linear equivalence
+`C : E ≃ F`: the coefficient of `A^* ω` in a basis `b` of `E` is `det (C⁻¹ ∘ A)` times the
+coefficient of `ω` in the basis `C ∘ b` of `F`. -/
+theorem compContinuousLinearMap_apply_basis_map [Finite ι] {F : Type*} [AddCommGroup F]
+    [Module R F] [TopologicalSpace F] (ω : F [⋀^ι]→L[R] R) (b : Module.Basis ι R E)
+    (A : E →L[R] F) (C : E ≃L[R] F) :
+    (ω.compContinuousLinearMap A) b =
+      ((C.symm : F →L[R] E) ∘L A).toLinearMap.det * ω (b.map C.toLinearEquiv) := by
+  have hA : ω.compContinuousLinearMap A =
+      (ω.compContinuousLinearMap (C : E →L[R] F)).compContinuousLinearMap
+        ((C.symm : F →L[R] E) ∘L A) := by
+    ext v
+    simp [Function.comp_def]
+  rw [hA, compContinuousLinearMap_apply_basis, compContinuousLinearMap_apply,
+    Module.Basis.coe_map, ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_coe]
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- A top-degree alternating form vanishes on a basis exactly when it is zero. -/

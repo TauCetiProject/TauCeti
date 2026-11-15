@@ -118,7 +118,6 @@ private theorem summable_norm_thetaTerm (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     have h := congrArg norm (thetaTerm_add_one q u (-((n : ℤ) + 2)))
     rw [hstep, norm_mul, norm_neg, norm_mul, norm_zpow, zpow_neg, hcast, zpow_natCast] at h
     rw [norm_norm, norm_norm, hidx, h]
-    have hq₀ : ‖(q : K)‖ ≠ 0 := norm_ne_zero_iff.mpr q.ne_zero
     have hu₀ : ‖(u : K)‖ ≠ 0 := norm_ne_zero_iff.mpr u.ne_zero
     have h₀ : ‖thetaTerm q u (-((n + 2 : ℕ) : ℤ))‖ ≠ 0 := hne _
     field_simp
@@ -302,6 +301,11 @@ theorem tateTheta_eq_zero_iff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     exact Subgroup.mem_zpowers_iff.mpr ⟨-n, by rw [zpow_neg, inv_eq_of_mul_eq_one_right h']⟩
   · rintro ⟨n, rfl⟩
     simpa using tateTheta_zpow_mul q 1 n
+
+/-- The theta function is nonzero away from the powers of `q`. -/
+theorem tateTheta_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) {u : Kˣ}
+    (hu : u ∉ Subgroup.zpowers q) : tateTheta q u ≠ 0 :=
+  fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
 
 end TauCeti
 

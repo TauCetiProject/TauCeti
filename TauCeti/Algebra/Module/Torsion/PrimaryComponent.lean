@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
@@ -54,6 +55,8 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
 * `TauCeti.injOn_pPowerTorsion_of_exact`, `TauCeti.surjOn_pPowerTorsion_of_exact`: for `p` prime,
   in an exact sequence `Z → M → N → P` whose outer terms have no `p`-power torsion and whose terms
   `Z` and `M` are torsion, `M → N` is a bijection of `p`-power torsion;
+* `Ideal.primaryComponent_directSum_eq_top`: direct sums of ideal-power torsion modules are torsion;
+* `Ideal.primaryComponent_quotient_pow_eq_top`: `R / Iⁿ` is `I`-power torsion;
 * `Ideal.primaryComponent_primaryComponent_eq_top`: `Γ_𝔞(N)` is `𝔞`-power torsion;
 * `Ideal.exists_le_torsionBySet_pow_of_le_primaryComponent`: a finitely generated submodule of
   `Γ_𝔞(N)` is killed by a single power of `𝔞`;
@@ -174,8 +177,17 @@ end TauCeti
 namespace Ideal
 
 open Submodule
+open scoped DirectSum
 
 variable {R : Type*} [CommRing R]
+
+/-- A module annihilated by `I` is `I`-power torsion. -/
+theorem primaryComponent_eq_top_of_le_annihilator {M : Type*} [AddCommMonoid M]
+    [Module R M] (I : Ideal R) (hI : I ≤ Module.annihilator R M) :
+    I.primaryComponent M = ⊤ := by
+  refine eq_top_iff'.mpr fun m ↦ (I.primaryComponent_mem _ _).mpr ⟨1, ?_⟩
+  rw [pow_one, mem_torsionBySet_iff]
+  exact fun r ↦ Module.mem_annihilator.mp (hI r.2) m
 
 /-- The primary component of a submodule is the preimage of the ambient primary component. -/
 @[simp]
@@ -191,6 +203,30 @@ theorem primaryComponent_comap_subtype {M : Type*} [AddCommMonoid M] [Module R M
 theorem primaryComponent_primaryComponent_eq_top {M : Type*} [AddCommMonoid M] [Module R M]
     (I : Ideal R) : I.primaryComponent (I.primaryComponent M) = ⊤ := by
   rw [← primaryComponent_comap_subtype, comap_subtype_self]
+
+/-- A direct sum of `I`-power torsion modules is `I`-power torsion. The power killing an element
+may depend on its finite support. -/
+theorem primaryComponent_directSum_eq_top (I : Ideal R) {ι : Type*} {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (hM : ∀ i, I.primaryComponent (M i) = ⊤) :
+    I.primaryComponent (⨁ i, M i) = ⊤ := by
+  classical
+  refine eq_top_iff'.mpr fun x ↦ ?_
+  induction x using DirectSum.induction_on with
+  | zero => exact zero_mem _
+  | of i m =>
+    exact I.primaryComponent_map_mem (DirectSum.lof R ι M i) ⟨m, hM i ▸ mem_top⟩
+  | add x y hx hy => exact add_mem hx hy
+
+/-- The quotient by a power of `I` is `I`-power torsion. -/
+@[simp]
+theorem primaryComponent_quotient_pow_eq_top (I : Ideal R) (n : ℕ) :
+    I.primaryComponent (R ⧸ I ^ n) = ⊤ := by
+  refine eq_top_iff'.mpr fun x ↦ (I.primaryComponent_mem _ _).mpr ⟨n, ?_⟩
+  rw [mem_torsionBySet_iff]
+  intro a
+  rw [← algebraMap_smul (R ⧸ I ^ n), Ideal.Quotient.algebraMap_eq,
+    Ideal.Quotient.eq_zero_iff_mem.mpr a.2, zero_smul]
 
 /-- A finitely generated submodule of the `𝔞`-primary component is killed by a single power of
 `𝔞`: the primary component is the directed union of the submodules killed by `𝔞ⁿ`. -/
@@ -229,6 +265,26 @@ theorem mem_primaryComponent_span_iff {N : Type*} [AddCommMonoid N] [Module R N]
         exact ⟨n, (mem_torsionOf_iff _ _).mpr hn⟩)
       ⟨G, rfl⟩
     exact ⟨n, fun r hr ↦ (mem_torsionOf_iff _ _).mp (hn hr)⟩
+
+/-- An element is in the primary component of `(r)` exactly when a power of `r` kills it. -/
+@[simp] theorem mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N] [Module R N]
+    (r : R) {x : N} : x ∈ (span {r}).primaryComponent N ↔ ∃ n : ℕ, r ^ n • x = 0 := by
+  simpa only [Finset.coe_singleton, Finset.mem_singleton, forall_eq] using
+    (mem_primaryComponent_span_iff (N := N) {r} (y := x))
+
+/-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
+theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
+    (r : R) : (span {r}).primaryComponent N = ⊥ ↔ IsSMulRegular N r := by
+  constructor
+  · intro h
+    apply (isSMulRegular_iff_torsionBy_eq_bot N r).mpr
+    refine eq_bot_iff.mpr fun x hx ↦ h.le ?_
+    exact (mem_primaryComponent_span_singleton_iff r).mpr ⟨1, by simpa using hx⟩
+  · intro h
+    refine eq_bot_iff.mpr fun x hx ↦ ?_
+    obtain ⟨n, hn⟩ := (mem_primaryComponent_span_singleton_iff r).mp hx
+    rw [Submodule.mem_bot]
+    exact (h.pow n) (hn.trans (smul_zero _).symm)
 
 /-- For a finitely generated ideal `𝔞`, the quotient of a module by its `𝔞`-primary component has
 no `𝔞`-power torsion. -/

@@ -46,6 +46,8 @@ noncommutative ring are allowed.
   shift map.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.limEquivOfIso`, `TauCeti.ModuleTower.limOneEquivOfIso`: the linear
+  equivalences on `lim` and `lim¹` induced by an isomorphism of towers.
 * `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
   determined by the map it induces on `lim`.
 * `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
@@ -56,6 +58,8 @@ noncommutative ring are allowed.
   `∏ₙ Bₙ` inside the image of the shift map.
 * `TauCeti.ModuleTower.subsingleton_limOne_of_surjective`: towers with surjective transitions
   have vanishing `lim¹`.
+* `TauCeti.ModuleTower.smulTower`: the tower `M ←f M ←f ⋯` of a module over a commutative ring,
+  whose transitions are multiplication by `f`.
 
 ## References
 
@@ -146,15 +150,16 @@ theorem range_transitionOfLE_le {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k) :
   rw [← F.transitionOfLE_comp_transitionOfLE hmn hnk]
   exact LinearMap.range_comp_le_range _ _
 
-/-- If every transition map of a tower is surjective, then so is every composite transition. -/
-theorem transitionOfLE_surjective (h : ∀ n, Function.Surjective (F.transition n)) {n k : ℕ}
-    (hnk : n ≤ k) : Function.Surjective (F.transitionOfLE hnk) := by
-  induction k, hnk using Nat.le_induction with
+/-- If every transition map `F.transition n` with `m ≤ n` is surjective, then so is every
+composite transition `Aₖ → Aₘ`. -/
+theorem transitionOfLE_surjective {m k : ℕ} (h : ∀ n, m ≤ n → Function.Surjective (F.transition n))
+    (hmk : m ≤ k) : Function.Surjective (F.transitionOfLE hmk) := by
+  induction k, hmk using Nat.le_induction with
   | base => simpa using Function.surjective_id
-  | succ k hnk ih =>
-    rw [← F.transitionOfLE_comp_transitionOfLE hnk (Nat.le_succ k), transitionOfLE_succ,
+  | succ k hmk ih =>
+    rw [← F.transitionOfLE_comp_transitionOfLE hmk (Nat.le_succ k), transitionOfLE_succ,
       LinearMap.coe_comp]
-    exact ih.comp (h k)
+    exact ih.comp (h k hmk)
 
 /-- The shift map `δ : ∏ₙ Aₙ → ∏ₙ Aₙ`, `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)`. -/
 def shift : F.Product →ₗ[R] F.Product :=
@@ -506,6 +511,21 @@ theorem limMap_injective {f : F ⟶ G} (hf : ∀ n, Function.Injective (f.app (o
   Subtype.ext <| productMap_injective hf <| by
     rw [← coe_limMap_apply, ← coe_limMap_apply, hxy]
 
+/-- The linear equivalence `lim A ≃ lim B` induced by an isomorphism of towers. -/
+def limEquivOfIso (e : F ≅ G) : F.lim ≃ₗ[R] G.lim :=
+  LinearEquiv.ofLinearMap (limMap e.hom) (limMap e.inv)
+    (by rw [← limMap_comp, e.inv_hom_id, limMap_id])
+    (by rw [← limMap_comp, e.hom_inv_id, limMap_id])
+
+@[simp]
+theorem limEquivOfIso_apply (e : F ≅ G) (x : F.lim) : limEquivOfIso e x = limMap e.hom x :=
+  (rfl)
+
+@[simp]
+theorem limEquivOfIso_symm_apply (e : F ≅ G) (x : G.lim) :
+    (limEquivOfIso e).symm x = limMap e.inv x :=
+  (rfl)
+
 /-- A morphism of towers maps the image of the shift map into the image of the shift map. -/
 theorem range_shift_le_comap (f : F ⟶ G) :
     LinearMap.range F.shift ≤ (LinearMap.range G.shift).comap (productMap f) := by
@@ -551,7 +571,46 @@ theorem limOneMap_surjective {g : G ⟶ H} (hg : ∀ n, Function.Surjective (g.a
   obtain ⟨y, rfl⟩ := productMap_surjective hg z
   exact ⟨Submodule.Quotient.mk y, limOneMap_mk g y⟩
 
+/-- The linear equivalence `lim¹ A ≃ lim¹ B` induced by an isomorphism of towers. -/
+def limOneEquivOfIso (e : F ≅ G) : F.limOne ≃ₗ[R] G.limOne :=
+  LinearEquiv.ofLinearMap (limOneMap e.hom) (limOneMap e.inv)
+    (by rw [← limOneMap_comp, e.inv_hom_id, limOneMap_id])
+    (by rw [← limOneMap_comp, e.hom_inv_id, limOneMap_id])
+
+@[simp]
+theorem limOneEquivOfIso_apply (e : F ≅ G) (x : F.limOne) :
+    limOneEquivOfIso e x = limOneMap e.hom x :=
+  (rfl)
+
+@[simp]
+theorem limOneEquivOfIso_symm_apply (e : F ≅ G) (x : G.limOne) :
+    (limOneEquivOfIso e).symm x = limOneMap e.inv x :=
+  (rfl)
+
 end Functoriality
+
+end ModuleTower
+
+namespace ModuleTower
+
+section SMulTower
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+variable (M) in
+/-- The tower `M ←f M ←f ⋯` whose transition maps are multiplication by `f`. -/
+@[expose] def smulTower (f : R) : ModuleTower.{v} R :=
+  Functor.ofOpSequence (X := fun _ ↦ ModuleCat.of R M) fun _ ↦ ModuleCat.ofHom (f • LinearMap.id)
+
+/-- The transition maps of `M ←f M ←f ⋯` are multiplication by `f`. -/
+@[simp]
+theorem smulTower_transition (f : R) (n : ℕ) :
+    (smulTower M f).transition n = (f • LinearMap.id : M →ₗ[R] M) := by
+  simp only [smulTower, transition_def, Functor.ofOpSequence_map_homOfLE_succ]
+  -- `ModuleCat.hom_ofHom`, stated for the carrier `M` rather than `ModuleCat.of R M`
+  rfl
+
+end SMulTower
 
 end ModuleTower
 

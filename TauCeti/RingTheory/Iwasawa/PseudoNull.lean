@@ -53,7 +53,7 @@ dimension two with finite residue field.
   `TauCeti.Iwasawa.IsPseudoNull.of_exact`: over a noetherian ring, submodules, quotients and
   extensions of pseudo-null modules are pseudo-null.
 * `TauCeti.Iwasawa.isPseudoNull_iff_finite`: over a noetherian local ring of dimension two with
-  finite residue field, a finitely generated module is pseudo-null iff it is finite.
+  finite residue field, a module is pseudo-null iff it is finite.
 
 The examples at the end of the file check the definition over `Λ = ℤ_p⟦T⟧`: the module
 `Λ ⧸ (p, T) = 𝔽_p` is pseudo-null, while `Λ ⧸ (p)` is not, because its support contains the
@@ -192,23 +192,29 @@ variable [IsLocalRing A]
 
 /-- Over a noetherian local ring of dimension two with finite residue field, for example the
 Iwasawa algebra `O⟦T⟧` of a complete discrete valuation ring `O` with finite residue field, a
-finitely generated module is pseudo-null iff it is finite. -/
+module is pseudo-null iff it is finite. -/
 theorem isPseudoNull_iff_finite [IsNoetherianRing A] [Finite (ResidueField A)]
-    (hdim : ringKrullDim A = 2) [Module.Finite A M] : IsPseudoNull A M ↔ Finite M := by
-  -- In dimension two the maximal ideal is the only prime of height at least two.
-  have key (𝔭 : Ideal A) [𝔭.IsPrime] : 1 < 𝔭.height ↔ 𝔭 = maximalIdeal A :=
-    Ideal.lt_height_iff_eq_maximalIdeal (n := 1) hdim
-  -- Both sides say that the annihilator contains a power of the maximal ideal.
-  rw [isPseudoNull_iff_annihilator,
-    Module.finite_iff_finite_quotient_annihilator (A := A), finite_quotient_iff]
-  refine ⟨fun h ↦ Ideal.exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _),
-    fun ⟨n, hn⟩ 𝔭 h𝔭 ↦ ?_⟩
-  · rw [Ideal.radical_eq_sInf]
-    refine le_sInf fun J ⟨hJ, hJp⟩ ↦ ?_
-    rw [(key J).mp (h ⟨J, hJp⟩ hJ)]
-  · rw [key]
-    exact le_antisymm (le_maximalIdeal Ideal.IsPrime.ne_top')
-      (Ideal.IsPrime.le_of_pow_le (hn.trans h𝔭))
+    (hdim : ringKrullDim A = 2) : IsPseudoNull A M ↔ Finite M := by
+  have main [Module.Finite A M] : IsPseudoNull A M ↔ Finite M := by
+    -- In dimension two the maximal ideal is the only prime of height at least two.
+    have key (𝔭 : Ideal A) [𝔭.IsPrime] : 1 < 𝔭.height ↔ 𝔭 = maximalIdeal A :=
+      Ideal.lt_height_iff_eq_maximalIdeal (n := 1) hdim
+    -- Both sides say that the annihilator contains a power of the maximal ideal.
+    rw [isPseudoNull_iff_annihilator,
+      Module.finite_iff_finite_quotient_annihilator (A := A), finite_quotient_iff]
+    refine ⟨fun h ↦ Ideal.exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _),
+      fun ⟨n, hn⟩ 𝔭 h𝔭 ↦ ?_⟩
+    · rw [Ideal.radical_eq_sInf]
+      refine le_sInf fun J ⟨hJ, hJp⟩ ↦ ?_
+      rw [(key J).mp (h ⟨J, hJp⟩ hJ)]
+    · rw [key]
+      exact le_antisymm (le_maximalIdeal Ideal.IsPrime.ne_top')
+        (Ideal.IsPrime.le_of_pow_le (hn.trans h𝔭))
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have := h.finite
+    exact main.mp h
+  · have : Module.Finite A M := .of_finite
+    exact main.mpr h
 
 end Local
 

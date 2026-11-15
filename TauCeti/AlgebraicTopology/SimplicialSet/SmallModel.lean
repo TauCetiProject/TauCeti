@@ -29,6 +29,9 @@ obstruction: the discrete simplicial set on a type has a small model exactly whe
 (`TauCeti.hasSmallSpaceModel_const_iff`), the model being the singular simplicial set of the
 discrete space on a small copy of the type.
 
+The universe lift of a small Kan complex retains that complex as a small model
+(`SSet.smallSpaceModelUlift`).
+
 ## References
 
 * J. Lurie, *Higher Topos Theory*, Corollary 5.4.1.5 and Proposition 5.4.1.7.
@@ -207,3 +210,27 @@ lemma hasSmallSpaceModel_const_iff (ι : Type v) :
         (Functor.constComp SimplexCategoryᵒᵖ ι uliftFunctor.{u, v}).symm)⟩
 
 end TauCeti
+
+namespace SSet
+
+/-- A universe lift of a small Kan complex has the original complex as a small space model.
+The comparison merely inserts or removes the extra `ULift` wrapper; it does not enlarge
+or replace the chosen model. This constructor is transparent so that the comparison maps
+have the original complex as their small-model endpoint. -/
+noncomputable abbrev smallSpaceModelUlift (X : SSet.{u}) [KanComplex X] :
+    TauCeti.SmallSpaceModel.{u, max u v} (uliftFunctor.{v, u}.obj X) :=
+  TauCeti.SmallSpaceModel.ofIso X
+    { hom :=
+        { app _ := ↾fun x ↦ ULift.up (ULift.up x.down)
+          naturality _ _ _ := rfl }
+      inv :=
+        { app _ := ↾fun x ↦ ULift.up x.down.down
+          naturality _ _ _ := rfl } }
+
+/-- The small model of a lifted Kan complex is the original complex. -/
+@[simp]
+lemma smallSpaceModelUlift_model (X : SSet.{u}) [KanComplex X] :
+    (smallSpaceModelUlift.{u, v} X).model = X :=
+  (rfl)
+
+end SSet

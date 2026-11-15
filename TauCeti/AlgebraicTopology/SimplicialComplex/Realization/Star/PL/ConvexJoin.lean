@@ -57,13 +57,13 @@ variable {ι κ : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v 
 apex. -/
 private def joinFormula (F : (ι → ℝ) → (κ → ℝ)) (b : κ → ℝ) (v : ι) :
     (ι → ℝ) → (κ → ℝ) :=
-  coneToJoin b ∘ coneMap F ∘ starToCone v
+  coneToJoin b ∘ coneMap ℝ F ∘ starToCone v
 
 /-- The ambient formula of the inverse join map: read off the height, cone the inverse link
 formula, then put the vertex `v` at the apex. -/
 private def joinInverseFormula (G : (κ → ℝ) → (ι → ℝ)) (h : (κ → ℝ) → ℝ) (b : κ → ℝ)
     (v : ι) : (κ → ℝ) → (ι → ℝ) :=
-  coneToJoin (Pi.single v 1) ∘ coneMap G ∘ fun z => (z - h z • b, 1 - h z)
+  coneToJoin (Pi.single v 1) ∘ coneMap ℝ G ∘ fun z => (z - h z • b, 1 - h z)
 
 /-- Away from the apex, the join formula is the point at parameter `x v` on the segment from the
 image of the radial projection to the centre. -/
@@ -72,7 +72,7 @@ private theorem joinFormula_of_lt (F : (ι → ℝ) → (κ → ℝ)) (b : κ �
     joinFormula F b v (x.1.1 : ι → ℝ) = (1 - x.1.1 v) • F ((starLinkProjection K v
       ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩).1.1 : ι → ℝ) + x.1.1 v • b := by
   rw [joinFormula, Function.comp_apply, Function.comp_apply, starToCone_of_lt x hx,
-    coneMap_smul F _ (sub_pos.mpr hx).ne', coneToJoin_apply]
+    coneMap_smul F _ _, coneToJoin_apply]
   module
 
 /-- The join formula sends the apex to the centre. -/
@@ -150,7 +150,7 @@ private theorem joinInverseFormula_joinFormula (hne : (geometricLink K v).Nonemp
     have hray := starRay_starLinkProjection K v ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩
     simp only [joinInverseFormula, Function.comp_apply]
     rw [hx', joinFormula_of_lt F b x hx, add_sub_cancel_right,
-      coneMap_smul G _ (sub_pos.mpr hx).ne', hGF, coneToJoin_apply]
+      coneMap_smul G _ _, hGF, coneToJoin_apply]
     funext w
     have hw := congrArg (fun z : puncturedClosedStar K v => z.1.1 w) hray
     simp only [starRay_apply] at hw
@@ -178,7 +178,7 @@ private theorem mem_cone_of_mem_convexJoin
     (hhF : ∀ y : geometricLink K v, ∀ t ∈ Icc (0 : ℝ) 1,
       h ((1 - t) • F (y.1.1 : ι → ℝ) + t • b) = t)
     {z : κ → ℝ} (hz : z ∈ convexJoin ℝ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)) {b}) :
-    (z - h z • b, 1 - h z) ∈ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)).cone := by
+    (z - h z • b, 1 - h z) ∈ (range fun y : geometricLink K v => F (y.1.1 : ι → ℝ)).cone ℝ := by
   obtain ⟨_, ⟨y, rfl⟩, _, rfl, α, β, hα, hβ, hαβ, rfl⟩ := mem_convexJoin.mp hz
   obtain rfl : α = 1 - β := by linarith
   rw [hhF y β ⟨hβ, by linarith⟩, add_sub_cancel_right]

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
+public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Compact chart seminorms for bundle sections
@@ -26,7 +28,7 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace Bundle
+open Set TopologicalSpace Bundle Filter Topology
 open scoped Manifold ContDiff
 
 namespace Bundle.Trivialization
@@ -85,6 +87,17 @@ theorem frameCoordinates_coordChange (e' : Trivialization F (π F V))
   simp only [frameCoordinates_apply, e.coordChangeL_apply e' ⟨hU x.2, hU' x.2⟩,
     e.symm_apply_apply_mk (hU x.2)]
 
+/-- Coefficients in a second frame are obtained by the smooth transition multiplier. -/
+theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))
+    [MemTrivializationAtlas e'] (hU' : (U : Set M) ⊆ e'.baseSet)
+    (s : Cₛ^n⟮I; F, V⟯) :
+    e'.frameCoordinates hU' s = ContMDiffMap.clmApplyLinearMap
+      (frameTransitionMap (I := I) (n := n) e e' hU hU') (e.frameCoordinates hU s) := by
+  ext x
+  simp only [ContMDiffMap.clmApplyLinearMap_apply, frameTransitionMap_apply]
+  exact (e.frameCoordinates_coordChange hU e' hU' s x).symm
+
+
 variable [IsManifold I n M]
 
 /-- The supremum seminorm of the derivative of order `m` in a source chart and bundle frame,
@@ -127,10 +140,38 @@ theorem chartDerivativeSeminorm_bot (x : U) (m : ℕ) (hm : m ≤ n) :
     chartDerivativeSeminorm (I := I) e hU x ⊥ m hm = 0 := by
   rw [chartDerivativeSeminorm, ContMDiffMap.chartDerivativeSeminorm_bot, Seminorm.zero_comp]
 
+/-- **Locality.** A frame derivative seminorm vanishes on a section which is zero near the points
+of the base represented by the compact coordinate set. -/
+theorem chartDerivativeSeminorm_eq_zero_of_eventuallyEq_zero (x : U)
+    (K : Compacts (extChartAt I x).target) (m : ℕ) (hm : m ≤ n) {s : Cₛ^n⟮I; F, V⟯}
+    (hs : ∀ᶠ y in 𝓝ˢ (Subtype.val '' ((extChartAt I x).symm ''
+      (Subtype.val '' (K : Set (extChartAt I x).target)))), s y = 0) :
+    chartDerivativeSeminorm e hU x K m hm s = 0 := by
+  have hCk : ContMDiffMap.chartCkSeminorm x K m hm (frameCoordinates e hU s) = 0 := by
+    refine ContMDiffMap.chartCkSeminorm_eq_zero_of_eventuallyEq_zero x K m hm fun z hz ↦ ?_
+    have hz' : (((extChartAt I x).symm z : U) : M) ∈ Subtype.val '' ((extChartAt I x).symm ''
+        (Subtype.val '' (K : Set (extChartAt I x).target))) :=
+      ⟨_, ⟨z, ⟨z, hz, rfl⟩, rfl⟩, rfl⟩
+    have hnhds := (continuous_subtype_val.continuousAt
+      (x := (extChartAt I x).symm z)).eventually (hs.filter_mono (nhds_le_nhdsSet hz'))
+    filter_upwards [hnhds] with y hy
+    exact (frameCoordinates_eq_iff e hU s 0 y).mpr (by simpa using hy) |>.trans (by simp)
+  refine le_antisymm ?_ (apply_nonneg _ _)
+  refine (chartDerivativeSeminorm_le_iff e hU x K m hm s le_rfl).mpr fun z hz ↦ ?_
+  exact (ContMDiffMap.chartCkSeminorm_le_iff x K m hm _ le_rfl).mp hCk.le m le_rfl z hz
+
 /-- The compact chart/frame `C^k` seminorm of a section, including order zero. -/
 def chartCkSeminorm (x : U) (K : Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) :
     Seminorm 𝕜 Cₛ^n⟮I; F, V⟯ :=
   (ContMDiffMap.chartCkSeminorm x K k hk).comp (frameCoordinates e hU)
+
+/-- A compact frame seminorm is the compact chart seminorm of its coefficient function. -/
+@[simp]
+theorem chartCkSeminorm_apply (x : U) (K : Compacts (extChartAt I x).target)
+    (k : ℕ) (hk : k ≤ n) (s : Cₛ^n⟮I; F, V⟯) :
+    chartCkSeminorm e hU x K k hk s =
+      ContMDiffMap.chartCkSeminorm x K k hk (frameCoordinates e hU s) := by
+  rfl
 
 /-- A `C^k` bound is simultaneous control of every frame-coordinate derivative through order `k`. -/
 theorem chartCkSeminorm_le_iff (x : U) (K : Compacts (extChartAt I x).target)

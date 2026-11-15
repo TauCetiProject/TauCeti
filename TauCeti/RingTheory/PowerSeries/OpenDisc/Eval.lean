@@ -34,8 +34,9 @@ value at `b` is bounded by a constant multiple of the Gauss norm at `r`
 ## Main results
 
 * `PowerSeries.OnOpenDisc.hasSum_evalAt`: the series `∑ aₙ • bⁿ` converges to `f(b)`.
-* `PowerSeries.OnOpenDisc.evalAt_add`, `PowerSeries.OnOpenDisc.evalAt_mul`: evaluation is additive
-  and multiplicative.
+* `PowerSeries.OnOpenDisc.evalAt_add`, `PowerSeries.OnOpenDisc.evalAt_smul`,
+  `PowerSeries.OnOpenDisc.evalAt_sum` and `PowerSeries.OnOpenDisc.evalAt_mul`: evaluation
+  preserves addition, scalar multiplication, finite sums and multiplication.
 * `PowerSeries.OnOpenDisc.map_evalAt`: naturality in continuous algebra homomorphisms.
 * `PowerSeries.OnOpenDisc.evalAtHom_comp_inclusion`: entire series are evaluated as such.
 * `TauCeti.PowerSeries.OnOpenDisc.isRestrictedEvalAtHom_comp_restrict`: restricting to a closed
@@ -98,11 +99,24 @@ theorem OnOpenDisc.evalAt_add (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) 
     (f + g).evalAt b = f.evalAt b + g.evalAt b :=
   evalAt_add_of_summable_norm (hf.summable_norm_smul_pow hb) (hg.summable_norm_smul_pow hb)
 
+/-- Evaluation at a point of norm less than `R₀` commutes with scalar multiplication of series on
+the open disc of radius `R₀`. -/
+theorem OnOpenDisc.evalAt_smul (hf : f.OnOpenDisc R₀) (c : R) (hb : ‖b‖ < R₀) :
+    (c • f).evalAt b = c • f.evalAt b := by
+  rw [evalAt_def]
+  exact HasSum.tsum_eq (by simpa [mul_smul] using (hf.hasSum_evalAt hb).const_smul c)
+
 /-- Evaluation at a point of norm less than `R₀` is multiplicative on series on the open disc of
 radius `R₀`. -/
 theorem OnOpenDisc.evalAt_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) (hb : ‖b‖ < R₀) :
     (f * g).evalAt b = f.evalAt b * g.evalAt b :=
   evalAt_mul_of_summable_norm (hf.summable_norm_smul_pow hb) (hg.summable_norm_smul_pow hb)
+
+/-- Evaluation commutes with finite sums on an open disc. -/
+theorem OnOpenDisc.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, (f i).OnOpenDisc R₀) (hb : ‖b‖ < R₀) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b :=
+  evalAt_sum_of_summable_norm s fun i hi ↦ (hf i hi).summable_norm_smul_pow hb
 
 variable (R) in
 /-- **Evaluation of series on an open disc at `b`** as a ring homomorphism from the series on the

@@ -13,7 +13,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 The disjoint union `Σ i, M i` of a family of charted spaces on a common model `H` is charted on
 `H`: each copy `Sigma.mk i '' M i` is open, and the chart at `⟨i, x⟩` is the chart of `M i` at `x`
 read on that copy. This is the indexed form of Mathlib's binary disjoint union
-`ChartedSpace.sum`, and is how a closed manifold with several boundary components, such as a link
+`ChartedSpace.sum`, and is how a manifold with several boundary components, such as a link
 exterior, has its boundary presented as one charted space.
 
 ## Main definitions
@@ -38,7 +38,7 @@ public section
 open Set Topology
 
 variable {H : Type*} [TopologicalSpace H] {ι : Type*} {M : ι → Type*}
-  [∀ i, TopologicalSpace (M i)] [cm : ∀ i, ChartedSpace H (M i)]
+  [∀ i, TopologicalSpace (M i)] [∀ i, ChartedSpace H (M i)]
 
 namespace ChartedSpace
 
@@ -84,7 +84,7 @@ lemma sigma_chartAt_source {i : ι} {x : M i} :
     (chartAt H (⟨i, x⟩ : Σ i, M i)).source = Sigma.mk i '' (chartAt H x).source := by
   have : Nonempty H := nonempty_of_chartedSpace x
   rw [sigma_chartAt]
-  rfl
+  exact OpenPartialHomeomorph.lift_openEmbedding_source _ _
 
 /-- The target of the chart of a disjoint union at `⟨i, x⟩` is the target of the chart of `M i`
 at `x`. -/
@@ -93,16 +93,15 @@ lemma sigma_chartAt_target {i : ι} {x : M i} :
     (chartAt H (⟨i, x⟩ : Σ i, M i)).target = (chartAt H x).target := by
   have : Nonempty H := nonempty_of_chartedSpace x
   rw [sigma_chartAt]
-  rfl
+  exact OpenPartialHomeomorph.lift_openEmbedding_target _ _
 
-/-- Every chart in the atlas of a disjoint union is a chart in the atlas of one of the components,
+/-- The atlas of a disjoint union consists of the charts in the atlases of the components, each
 lifted along the corresponding open embedding `Sigma.mk i`. -/
-lemma mem_atlas_sigma [h : Nonempty H] {e : OpenPartialHomeomorph (Σ i, M i) H}
-    (he : e ∈ atlas H (Σ i, M i)) :
-    ∃ i, ∃ f ∈ atlas H (M i), e = f.lift_openEmbedding (IsOpenEmbedding.sigmaMk (σ := M)) := by
-  simp +instances only [atlas, sigma, h, ↓reduceDIte] at he
-  obtain ⟨i, f, hf, rfl⟩ := mem_iUnion.1 he
-  exact ⟨i, f, hf, rfl⟩
+lemma mem_atlas_sigma [h : Nonempty H] {e : OpenPartialHomeomorph (Σ i, M i) H} :
+    e ∈ atlas H (Σ i, M i) ↔
+      ∃ i, ∃ f ∈ atlas H (M i), e = f.lift_openEmbedding (IsOpenEmbedding.sigmaMk (σ := M)) := by
+  simp +instances only [atlas, sigma, sigmaOfNonempty, h, ↓reduceDIte, mem_iUnion, mem_image,
+    eq_comm]
 
 end ChartedSpace
 
@@ -119,17 +118,14 @@ instance sigma : IsManifold I n (Σ i, M i) where
   compatible {e} e' he he' := by
     obtain h | h := isEmpty_or_nonempty H
     · exact ContDiffGroupoid.mem_of_source_eq_empty _ (eq_empty_of_isEmpty _)
-    obtain ⟨i, f, hf, rfl⟩ := ChartedSpace.mem_atlas_sigma he
-    obtain ⟨j, g, hg, rfl⟩ := ChartedSpace.mem_atlas_sigma he'
+    obtain ⟨i, f, hf, rfl⟩ := ChartedSpace.mem_atlas_sigma.1 he
+    obtain ⟨j, g, hg, rfl⟩ := ChartedSpace.mem_atlas_sigma.1 he'
     by_cases hij : i = j
     · subst j
       rw [f.lift_openEmbedding_trans g IsOpenEmbedding.sigmaMk]
       exact (contDiffGroupoid n I).compatible hf hg
-    · apply ContDiffGroupoid.mem_of_source_eq_empty
-      ext x
-      constructor
-      · rintro ⟨hx, y, hy, hxy⟩
-        exact hij (by simpa using (congrArg Sigma.fst hxy).symm)
-      · exact fun hx ↦ hx.elim
+    · refine ContDiffGroupoid.mem_of_source_eq_empty _ <| eq_empty_of_forall_notMem ?_
+      rintro x ⟨-, y, -, hxy⟩
+      exact hij (congrArg Sigma.fst hxy).symm
 
 end IsManifold

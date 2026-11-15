@@ -16,7 +16,7 @@ isomorphic, semilinearly over the constant-field isomorphism, so residue degrees
 This permits coefficient automorphisms to act on places even when they do not fix the constants
 pointwise, as in Galois actions on base-changed curves. Over the identity of the constants it is
 the transport `TauCeti.Place.map` along an algebra isomorphism
-(`TauCeti.Place.map_eq_equivOfRingEquiv`).
+(`TauCeti.Place.map_eq_equivOfRingEquiv`, `TauCeti.Place.mapEquiv_eq_equivOfRingEquiv`).
 
 ## References
 
@@ -78,6 +78,13 @@ theorem map_eq_equivOfRingEquiv {F F' : Type*} [Field F] [Field F'] [Algebra k F
     (e : F ≃ₐ[k] F') (P : Place k F) :
     P.map e = equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by simp) P :=
   Place.ext (Valuation.ext fun x ↦ by simp [valuation_map])
+
+/-- **The place bijection along an algebra isomorphism is `equivOfRingEquiv` over the identity** of
+the constants. -/
+theorem mapEquiv_eq_equivOfRingEquiv {F F' : Type*} [Field F] [Field F'] [Algebra k F]
+    [Algebra k F'] (e : F ≃ₐ[k] F') :
+    mapEquiv e = equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by simp) :=
+  Equiv.ext fun P ↦ (mapEquiv_apply e P).trans (map_eq_equivOfRingEquiv e P)
 
 /-- Transport restricts to an isomorphism of the valuation rings. -/
 noncomputable def integersEquivOfRingEquiv (P : Place k L) :

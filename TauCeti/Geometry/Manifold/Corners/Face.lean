@@ -256,6 +256,63 @@ variable [Fintype ι] [Fintype ι'] {H : Type*} [TopologicalSpace H]
   {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {H' : Type*} [TopologicalSpace H']
   {J' : ModelWithCorners ℝ (EuclideanSpace ℝ ι') H'}
 
+omit [Fintype ι] [Fintype ι'] in
+/-- **Face matching from eventual implications.** Let `φ` and `ψ` be mutually inverse on
+neighbourhoods `s` of `y` and `t` of `φ y` in the regions cut out by `S` and `S'`, carrying these
+neighbourhoods to each other. If `σ` sends each coordinate in `S` vanishing at `y` to a coordinate
+in `S'` vanishing at `φ y`, and `τ` goes back, with `z i = 0` eventually implying `φ z (σ i) = 0`
+and `w j = 0` eventually implying `ψ w (τ j) = 0`, then `σ` is part of a bijection, unique with this
+property, matching the local faces. -/
+private theorem existsUnique_equiv_of_eventually_apply_eq_zero_imp [Finite ι] [Finite ι']
+    {φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι'} {ψ : EuclideanSpace ℝ ι' → EuclideanSpace ℝ ι}
+    {y : EuclideanSpace ℝ ι} (hy : ∀ i ∈ S, 0 ≤ y i) (hφy : ∀ j ∈ S', 0 ≤ φ y j)
+    {s : Set (EuclideanSpace ℝ ι)} {t : Set (EuclideanSpace ℝ ι')}
+    (hs : s ∈ 𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y) (ht : t ∈ 𝓝[{w | ∀ j ∈ S', 0 ≤ w j}] (φ y))
+    (hψφ : LeftInvOn ψ φ s) (hφψ : LeftInvOn φ ψ t)
+    (hTφ : Tendsto φ (𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y) (𝓝[{w | ∀ j ∈ S', 0 ≤ w j}] (φ y)))
+    (hTψ : Tendsto ψ (𝓝[{w | ∀ j ∈ S', 0 ≤ w j}] (φ y)) (𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y))
+    {σ : {i // i ∈ S ∧ y i = 0} → ι'} {τ : {j // j ∈ S' ∧ φ y j = 0} → ι}
+    (hσS : ∀ i, σ i ∈ S') (hσy : ∀ i, φ y (σ i) = 0)
+    (hσ : ∀ i, ∀ᶠ z in 𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y, z i = 0 → φ z (σ i) = 0)
+    (hτS : ∀ j, τ j ∈ S) (hτy : ∀ j, y (τ j) = 0)
+    (hτ : ∀ j, ∀ᶠ w in 𝓝[{w | ∀ j ∈ S', 0 ≤ w j}] (φ y), w j = 0 → ψ w (τ j) = 0) :
+    ∃! σ : {i // i ∈ S ∧ y i = 0} ≃ {j // j ∈ S' ∧ φ y j = 0},
+      ∀ᶠ z in 𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y, ∀ i, φ z (σ i) = 0 ↔ z i = 0 := by
+  -- Going to `φ y` and back returns to the face one started from.
+  have hback (i : {i // i ∈ S ∧ y i = 0}) :
+      ∀ᶠ z in 𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y, φ z (σ i) = 0 → z (τ ⟨σ i, hσS i, hσy i⟩) = 0 := by
+    filter_upwards [hTφ.eventually (hτ ⟨σ i, hσS i, hσy i⟩), hs] with z hz hzs h
+    rw [← hψφ hzs]
+    exact hz h
+  have hforth (j : {j // j ∈ S' ∧ φ y j = 0}) :
+      ∀ᶠ w in 𝓝[{w | ∀ j ∈ S', 0 ≤ w j}] (φ y), ψ w (τ j) = 0 → w (σ ⟨τ j, hτS j, hτy j⟩) = 0 := by
+    filter_upwards [hTψ.eventually (hσ ⟨τ j, hτS j, hτy j⟩), ht] with w hw hwt h
+    rw [← hφψ hwt]
+    exact hw h
+  have hστ (i : {i // i ∈ S ∧ y i = 0}) : τ ⟨σ i, hσS i, hσy i⟩ = i :=
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.2.2 (hτy _) <| by
+      filter_upwards [hσ i, hback i] with z h₁ h₂ h
+      exact h₂ (h₁ h)).symm
+  have hτσ (j : {j // j ∈ S' ∧ φ y j = 0}) : σ ⟨τ j, hτS j, hτy j⟩ = j :=
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.2.2 (hσy _) <| by
+      filter_upwards [hτ j, hforth j] with w h₁ h₂ h
+      exact h₂ (h₁ h)).symm
+  let e : {i // i ∈ S ∧ y i = 0} ≃ {j // j ∈ S' ∧ φ y j = 0} :=
+    { toFun := fun i ↦ ⟨σ i, hσS i, hσy i⟩
+      invFun := fun j ↦ ⟨τ j, hτS j, hτy j⟩
+      left_inv := fun i ↦ Subtype.ext (hστ i)
+      right_inv := fun j ↦ Subtype.ext (hτσ j) }
+  have hiff (i : {i // i ∈ S ∧ y i = 0}) :
+      ∀ᶠ z in 𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y, φ z (σ i) = 0 ↔ z i = 0 := by
+    filter_upwards [hσ i, hback i] with z h₁ h₂
+    exact ⟨fun h ↦ hστ i ▸ h₂ h, h₁⟩
+  refine ⟨e, eventually_all.2 hiff, fun e' he' ↦ Equiv.ext fun i ↦ Subtype.ext ?_⟩
+  -- Two such bijections agree: pull both characterizations back along `ψ`.
+  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).2.2 (hσy i) ?_
+  filter_upwards [hTψ.eventually he', hTψ.eventually (hiff i), ht] with w h₁ h₂ hwt h
+  rw [hφψ hwt] at h₁ h₂
+  exact h₂.2 ((h₁ i).1 h)
+
 /-- **A depth-preserving local homeomorphism matches the local faces.** Let `J` and `J'` be models
 with corners whose ranges are cut out by the nonnegativity of the coordinates indexed by `S` and
 `S'`. Let `φ` and `ψ` be mutually inverse continuous maps between neighbourhoods `s` of `y` in
@@ -310,39 +367,8 @@ theorem existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq
   choose σ hσS hσy hσ using hσ
   choose τ hτS hτy hτ using hτ
   rw [hψy] at hτy
-  -- Going to `φ y` and back returns to the face one started from.
-  have hback (i : {i // i ∈ S ∧ y i = 0}) :
-      ∀ᶠ z in 𝓝[R] y, φ z (σ i) = 0 → z (τ ⟨σ i, hσS i, hσy i⟩) = 0 := by
-    filter_upwards [hTφ.eventually (hτ ⟨σ i, hσS i, hσy i⟩), hs] with z hz hzs h
-    rw [← hψφ hzs]
-    exact hz h
-  have hforth (j : {j // j ∈ S' ∧ φ y j = 0}) :
-      ∀ᶠ w in 𝓝[R'] (φ y), ψ w (τ j) = 0 → w (σ ⟨τ j, hτS j, hτy j⟩) = 0 := by
-    filter_upwards [hTψ.eventually (hσ ⟨τ j, hτS j, hτy j⟩), ht] with w hw hwt h
-    rw [← hφψ hwt]
-    exact hw h
-  have hστ (i : {i // i ∈ S ∧ y i = 0}) : τ ⟨σ i, hσS i, hσy i⟩ = i :=
-    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.2.2 (hτy _) <| by
-      filter_upwards [hσ i, hback i] with z h₁ h₂ h
-      exact h₂ (h₁ h)).symm
-  have hτσ (j : {j // j ∈ S' ∧ φ y j = 0}) : σ ⟨τ j, hτS j, hτy j⟩ = j :=
-    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.2.2 (hσy _) <| by
-      filter_upwards [hτ j, hforth j] with w h₁ h₂ h
-      exact h₂ (h₁ h)).symm
-  let e : {i // i ∈ S ∧ y i = 0} ≃ {j // j ∈ S' ∧ φ y j = 0} :=
-    { toFun := fun i ↦ ⟨σ i, hσS i, hσy i⟩
-      invFun := fun j ↦ ⟨τ j, hτS j, hτy j⟩
-      left_inv := fun i ↦ Subtype.ext (hστ i)
-      right_inv := fun j ↦ Subtype.ext (hτσ j) }
-  have hiff (i : {i // i ∈ S ∧ y i = 0}) : ∀ᶠ z in 𝓝[R] y, φ z (σ i) = 0 ↔ z i = 0 := by
-    filter_upwards [hσ i, hback i] with z h₁ h₂
-    exact ⟨fun h ↦ hστ i ▸ h₂ h, h₁⟩
-  refine ⟨e, eventually_all.2 hiff, fun e' he' ↦ Equiv.ext fun i ↦ Subtype.ext ?_⟩
-  -- Two such bijections agree: pull both characterizations back along `ψ`.
-  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).2.2 (hσy i) ?_
-  filter_upwards [hTψ.eventually he', hTψ.eventually (hiff i), ht] with w h₁ h₂ hwt h
-  rw [hφψ hwt] at h₁ h₂
-  exact h₂.2 ((h₁ i).1 h)
+  exact existsUnique_equiv_of_eventually_apply_eq_zero_imp hy hφy hs ht hψφ hφψ hTφ hTψ hσS hσy hσ
+    hτS hτy hτ
 
 end Coordinates
 

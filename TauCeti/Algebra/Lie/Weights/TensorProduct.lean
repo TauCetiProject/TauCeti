@@ -135,12 +135,8 @@ finiteness or triangularizability is involved. -/
 theorem tmul_mem_genWeightSpace_add {χ ψ : L → R} {m : M} {n : N}
     (hm : m ∈ genWeightSpace M χ) (hn : n ∈ genWeightSpace N ψ) :
     m ⊗ₜ[R] n ∈ genWeightSpace (M ⊗[R] N) (χ + ψ) := by
-  rw [mem_genWeightSpace] at hm hn ⊢
-  intro x
-  have := tmul_mem_maxGenEigenspace_add (R := R) (x := x) (m := m) (n := n)
-    ((Module.End.mem_maxGenEigenspace _ _ _).mpr (hm x))
-    ((Module.End.mem_maxGenEigenspace _ _ _).mpr (hn x))
-  simpa using (Module.End.mem_maxGenEigenspace _ _ _).mp this
+  simp only [mem_genWeightSpace, ← Module.End.mem_maxGenEigenspace, Pi.add_apply] at hm hn ⊢
+  exact fun x ↦ tmul_mem_maxGenEigenspace_add (hm x) (hn x)
 
 variable (M N) in
 /-- The submodule of `M ⊗ N` spanned by the pure tensors of a `χ`-weight vector of `M` and a
@@ -192,14 +188,10 @@ variable (K L M N)
 theorem iSup_map₂_mk_genWeightSpace_eq_top :
     ⨆ (χ : L → K) (ψ : L → K), Submodule.map₂ (TensorProduct.mk K M N)
         (genWeightSpace M χ).toSubmodule (genWeightSpace N ψ).toSubmodule = ⊤ := by
-  have hM : ⨆ χ : L → K, (genWeightSpace M χ).toSubmodule = ⊤ := by
-    rw [← LieSubmodule.iSup_toSubmodule, iSup_genWeightSpace_eq_top K L M,
-      LieSubmodule.top_toSubmodule]
-  have hN : ⨆ ψ : L → K, (genWeightSpace N ψ).toSubmodule = ⊤ := by
-    rw [← LieSubmodule.iSup_toSubmodule, iSup_genWeightSpace_eq_top K L N,
-      LieSubmodule.top_toSubmodule]
   simp_rw [← Submodule.map₂_iSup_right]
-  rw [← Submodule.map₂_iSup_left, hM, hN, TensorProduct.map₂_mk_top_top_eq_top]
+  rw [← Submodule.map₂_iSup_left, LieSubmodule.iSup_toSubmodule_eq_top.mpr
+    (iSup_genWeightSpace_eq_top K L M), LieSubmodule.iSup_toSubmodule_eq_top.mpr
+    (iSup_genWeightSpace_eq_top K L N), TensorProduct.map₂_mk_top_top_eq_top]
 
 variable {K L M N}
 
@@ -227,9 +219,8 @@ theorem genWeightSpace_tensorProduct_eq_iSup (χ : L → K) :
     refine iSup_congr fun μ ↦ ?_
     rw [iSup_comm]
     exact iSup_congr fun ν ↦ iSup_iSup_eq_right
-  have hindep : iSupIndep q := by
-    have := iSupIndep_genWeightSpace K L (M ⊗[K] N)
-    rwa [← LieSubmodule.iSupIndep_toSubmodule] at this
+  have hindep : iSupIndep q :=
+    LieSubmodule.iSupIndep_toSubmodule.mpr (iSupIndep_genWeightSpace K L (M ⊗[K] N))
   exact (congr_fun ((hindep.le_iff_eq_of_iSup_eq_top hptop).mp hle) χ).symm
 
 /-- **Every weight of a tensor product is a sum of weights.** If `χ` is a weight of `M ⊗ N`, then
@@ -241,20 +232,16 @@ If no such pair existed then every term of the decomposition
 that weight space would be zero. -/
 theorem exists_weight_add_eq (χ : Weight K L (M ⊗[K] N)) :
     ∃ (μ : Weight K L M) (ν : Weight K L N), (μ : L → K) + (ν : L → K) = (χ : L → K) := by
-  by_contra hc
-  push Not at hc
-  have hbot : genWeightSpace (M ⊗[K] N) (χ : L → K) = ⊥ := by
-    rw [← LieSubmodule.toSubmodule_eq_bot, genWeightSpace_tensorProduct_eq_iSup]
-    simp only [iSup_eq_bot]
-    intro μ ν hμν
-    by_cases hμ : genWeightSpace M μ = ⊥
-    · rw [hμ]
-      simp
-    by_cases hν : genWeightSpace N ν = ⊥
-    · rw [hν]
-      simp
-    exact absurd hμν (hc ⟨μ, hμ⟩ ⟨ν, hν⟩)
-  exact absurd hbot χ.genWeightSpace_ne_bot
+  by_contra! hc
+  refine Weight.genWeightSpace_ne_bot (M ⊗[K] N) χ ?_
+  rw [← LieSubmodule.toSubmodule_eq_bot, genWeightSpace_tensorProduct_eq_iSup]
+  simp only [iSup_eq_bot]
+  intro μ ν hμν
+  by_cases hμ : genWeightSpace M μ = ⊥
+  · simp [hμ]
+  by_cases hν : genWeightSpace N ν = ⊥
+  · simp [hν]
+  exact (hc ⟨μ, hμ⟩ ⟨ν, hν⟩ hμν).elim
 
 /-- **Weights in an additively closed set are preserved by tensor products.** If every weight of
 `M` and every weight of `N` agrees with a linear form in `s`, a set closed under addition such as a
@@ -272,26 +259,10 @@ theorem exists_mem_weight_tensorProduct {S : Type*} [SetLike S (Module.Dual K L)
 /-- A tensor product of finite-dimensional triangularizable modules with linear weights again has
 linear weights. Every weight of the tensor product is a sum of weights of the two factors. -/
 instance instLinearWeightsTensorProduct [LinearWeights K L M] [LinearWeights K L N] :
-    LinearWeights K L (M ⊗[K] N) where
-  map_add χ hχ x y := by
-    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N))
-    have hχ_eq : χ = (μ : L → K) + (ν : L → K) := by
-      simpa using hμν.symm
-    rw [hχ_eq]
-    simp only [Pi.add_apply, map_add]
-    ac_rfl
-  map_smul χ hχ t x := by
-    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N))
-    have hχ_eq : χ = (μ : L → K) + (ν : L → K) := by
-      simpa using hμν.symm
-    rw [hχ_eq]
-    simp only [Pi.add_apply, map_smul, smul_eq_mul, mul_add]
-  map_lie χ hχ x y := by
-    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N))
-    have hχ_eq : χ = (μ : L → K) + (ν : L → K) := by
-      simpa using hμν.symm
-    rw [hχ_eq]
-    simp only [Pi.add_apply, Weight.apply_lie, add_zero]
+    LinearWeights K L (M ⊗[K] N) := by
+  refine ⟨?_, ?_, ?_⟩ <;> intro χ hχ <;>
+    obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq (⟨χ, hχ⟩ : Weight K L (M ⊗[K] N)) <;>
+    simp only [Weight.coe_weight_mk] at hμν <;> subst hμν <;> simp [add_add_add_comm, mul_add]
 
 end Field
 

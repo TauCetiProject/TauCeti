@@ -127,6 +127,7 @@ private theorem exists_conjugate_eq_of_smooth_connected (n : ℕ) :
         have heq := congrArg (fun B : HopfIdeal k H ↦ B.conjugate h⁻¹) ha
         simpa [conjugate_mul, mul_assoc] using heq⟩
 
+omit [IsAlgClosed k] in
 /-- **Borel conjugacy.** Any two Borel subgroups of a finite-type affine group over an
 algebraically closed field are conjugate by a rational point. The ambient group need not
 be smooth, reduced, or connected. -/
@@ -134,6 +135,7 @@ theorem IsBorelOverAlgClosed.exists_conjugate_eq
     {H : FiniteTypeCommHopfAlgCat.{u, u} k} {I J : HopfIdeal k H}
     (hI : IsBorelOverAlgClosed k H I) (hJ : IsBorelOverAlgClosed k H J) :
     ∃ g : WithConv (H →ₐ[k] k), I.conjugate g = J := by
+  have : IsAlgClosed k := ((isBorelOverAlgClosed_iff k H I).1 hI).1
   apply exists_conjugate_eq_of_isBorelOverAlgClosed_of_smooth_connected _ hI hJ
   intro K hsm hconn
   exact exists_conjugate_eq_of_smooth_connected _ K hsm hconn le_rfl

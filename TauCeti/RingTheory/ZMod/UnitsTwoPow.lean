@@ -25,10 +25,8 @@ two-power level from their values at `-1` and `5`.
 
 ## Main definitions and results
 
-* `TauCeti.ZMod.unitsTwoPowFive`: the class of `5` in `(ZMod (2 ^ (e + 2)))ˣ`.
-* `TauCeti.ZMod.orderOf_unitsTwoPowFive`: it has order `2 ^ e`.
-* `TauCeti.ZMod.unitsMap_unitsTwoPowFive`: reduction modulo `4` sends `5` to `1`.
-* `TauCeti.ZMod.neg_one_notMem_zpowers_unitsTwoPowFive`: `-1` is not a power of `5`.
+* `TauCeti.ZMod.unitsMap_unitFive_eq_one`: reduction modulo `4` sends `ZMod.unitFive` to `1`.
+* `TauCeti.ZMod.neg_one_notMem_zpowers_unitFive`: `-1` is not a power of `ZMod.unitFive`.
 * `TauCeti.ZMod.unitsTwoPowEquiv`: the isomorphism with `ℤ/2 × ℤ/2^e`.
 * `TauCeti.ZMod.unitsTwoPowEquiv_symm_apply`, `TauCeti.ZMod.unitsTwoPowEquiv_symm_ofAdd_natCast`,
   `TauCeti.ZMod.unitsTwoPowEquiv_neg_one`, `TauCeti.ZMod.unitsTwoPowEquiv_five`: its values.
@@ -49,45 +47,30 @@ open Multiplicative
 
 variable (e : ℕ)
 
-/-- The class of `5` in the units modulo `2 ^ (e + 2)`. -/
-def unitsTwoPowFive : (ZMod (2 ^ (e + 2)))ˣ :=
-  ZMod.unitOfCoprime 5 (Nat.Coprime.pow_right _ (by decide))
-
-/-- The unit `ZMod.unitsTwoPowFive e` is the residue `5`. -/
-@[simp]
-theorem coe_unitsTwoPowFive : (unitsTwoPowFive e : ZMod (2 ^ (e + 2))) = 5 := by
-  simp [unitsTwoPowFive]
-
-/-- The unit `5` modulo `2 ^ (e + 2)` has order `2 ^ e`; this is Mathlib's
-`ZMod.orderOf_five` read in the unit group. -/
-@[simp]
-theorem orderOf_unitsTwoPowFive : orderOf (unitsTwoPowFive e) = 2 ^ e := by
-  rw [← orderOf_units, coe_unitsTwoPowFive]
-  exact ZMod.orderOf_five e
-
 /-- Reduction modulo `4` sends the unit `5` modulo `2 ^ (e + 2)` to `1`. -/
 @[simp]
-theorem unitsMap_unitsTwoPowFive (h : 4 ∣ 2 ^ (e + 2)) :
-    ZMod.unitsMap h (unitsTwoPowFive e) = 1 := by
-  ext
-  -- `ZMod.unitOfCoprime` coerces the natural number `5`, which `ZMod.cast_natCast` reduces.
-  rw [ZMod.unitsMap_val, unitsTwoPowFive, ZMod.coe_unitOfCoprime, ZMod.cast_natCast h]
-  decide
+theorem unitsMap_unitFive_eq_one (h : 4 ∣ 2 ^ (e + 2)) :
+    ZMod.unitsMap h (ZMod.unitFive (n := e + 2)) = 1 := by
+  have h' : 2 ^ 2 ∣ 2 ^ (e + 2) := by simpa using h
+  simpa only [_root_.ZMod.unitFive_eq_one le_rfl] using
+    (_root_.ZMod.unitsMap_unitFive h')
 
 /-- The unit `-1` modulo `2 ^ (e + 2)` is not a power of `5`. -/
 @[simp]
-theorem neg_one_notMem_zpowers_unitsTwoPowFive :
-    -1 ∉ Subgroup.zpowers (unitsTwoPowFive e) := by
-  -- Reduction modulo `4` kills `5` but not `-1`.
-  have h4 : 4 ∣ 2 ^ (e + 2) := ⟨2 ^ e, by ring⟩
-  have hle : Subgroup.zpowers (unitsTwoPowFive e) ≤ (ZMod.unitsMap h4).ker := by
-    rw [Subgroup.zpowers_le, MonoidHom.mem_ker, unitsMap_unitsTwoPowFive]
+theorem neg_one_notMem_zpowers_unitFive :
+    -1 ∉ Subgroup.zpowers (ZMod.unitFive (n := e + 2)) := by
   intro h
-  have h' := hle h
-  have hneg : ZMod.unitsMap h4 (-1) = -1 := by
-    simpa only [ZMod.unitsMap_def] using Units.map_neg_one (ZMod.castHom h4 (ZMod 4))
-  rw [MonoidHom.mem_ker, hneg] at h'
-  exact absurd h' (by decide)
+  have hmem : -1 ∈ Subgroup.zpowers (-1 : (ZMod (2 ^ (e + 2)))ˣ) :=
+    Subgroup.mem_zpowers _
+  have hbot :=
+    (_root_.ZMod.isComplement'_zpowers_unitFive_neg_one (e + 2)).disjoint.le_bot ⟨h, hmem⟩
+  have heq : (-1 : (ZMod (2 ^ (e + 2)))ˣ) = 1 := by
+    simpa only [Subgroup.mem_bot] using hbot
+  have hval := congrArg Units.val heq
+  simp only [Units.val_neg, Units.val_one] at hval
+  rw [_root_.ZMod.neg_one_eq_one_iff] at hval
+  have h4 : 4 ∣ 2 ^ (e + 2) := ⟨2 ^ e, by ring⟩
+  rcases hval with hval | hval <;> omega
 
 /-- The homomorphism `(s, k) ↦ (-1) ^ s * 5 ^ k`, well defined since `(-1) ^ 2 = 1` and
 `5 ^ (2 ^ e) = 1`. -/
@@ -96,12 +79,16 @@ private noncomputable def unitsTwoPowHom :
   AddMonoidHom.toMultiplicativeLeft <|
     (ZMod.lift 2 ⟨zmultiplesHom _ (Additive.ofMul (-1)), by
       simp [← ofMul_zpow]⟩).coprod
-    (ZMod.lift (2 ^ e) ⟨zmultiplesHom _ (Additive.ofMul (unitsTwoPowFive e)), by
-      simp only [zmultiplesHom_apply, ← ofMul_zpow, zpow_natCast, ← orderOf_unitsTwoPowFive,
-        pow_orderOf_eq_one, ofMul_one]⟩)
+    (ZMod.lift (2 ^ e) ⟨zmultiplesHom _ (Additive.ofMul (ZMod.unitFive (n := e + 2))), by
+      have horder : orderOf (ZMod.unitFive : (ZMod (2 ^ (e + 2)))ˣ) = 2 ^ e := by
+        simpa using _root_.ZMod.orderOf_unitFive (e + 2)
+      have hpow : (ZMod.unitFive : (ZMod (2 ^ (e + 2)))ˣ) ^ 2 ^ e = 1 := by
+        rw [← horder]
+        exact pow_orderOf_eq_one _
+      simp only [zmultiplesHom_apply, ← ofMul_zpow, zpow_natCast, hpow, ofMul_one]⟩)
 
 private theorem unitsTwoPowHom_apply (x : ZMod 2 × ZMod (2 ^ e)) :
-    unitsTwoPowHom e (ofAdd x) = (-1) ^ x.1.val * unitsTwoPowFive e ^ x.2.val := by
+    unitsTwoPowHom e (ofAdd x) = (-1) ^ x.1.val * ZMod.unitFive ^ x.2.val := by
   obtain ⟨s, k⟩ := x
   have hs : s = ((s.val : ℤ) : ZMod 2) := by simp
   have hk : k = ((k.val : ℤ) : ZMod (2 ^ e)) := by simp
@@ -118,11 +105,11 @@ private theorem unitsTwoPowHom_injective : Function.Injective (unitsTwoPowHom e)
   obtain rfl | rfl := (by decide : ∀ t : ZMod 2, t = 0 ∨ t = 1) s
   · -- For `s = 0`, the order of `5` divides `k.val`, so `k = 0`.
     simp only [ZMod.val_zero, pow_zero, one_mul] at hx
-    rw [← orderOf_dvd_iff_pow_eq_one, orderOf_unitsTwoPowFive] at hx
+    rw [← orderOf_dvd_iff_pow_eq_one, ZMod.orderOf_unitFive, Nat.add_sub_cancel_right] at hx
     simpa [← ZMod.natCast_eq_zero_iff] using hx
   · -- For `s = 1`, `-1` would be a power of `5`.
     rw [ZMod.val_one'' (by decide), pow_one] at hx
-    refine absurd ?_ (neg_one_notMem_zpowers_unitsTwoPowFive e)
+    refine absurd ?_ (neg_one_notMem_zpowers_unitFive e)
     rw [eq_inv_of_mul_eq_one_left hx]
     exact Subgroup.inv_mem _ (Subgroup.npow_mem_zpowers _ _)
 
@@ -142,16 +129,18 @@ noncomputable def unitsTwoPowEquiv :
 and `k` read through their canonical representatives. -/
 @[simp]
 theorem unitsTwoPowEquiv_symm_apply (x : ZMod 2 × ZMod (2 ^ e)) :
-    (unitsTwoPowEquiv e).symm (ofAdd x) = (-1) ^ x.1.val * unitsTwoPowFive e ^ x.2.val := by
+    (unitsTwoPowEquiv e).symm (ofAdd x) = (-1) ^ x.1.val * ZMod.unitFive ^ x.2.val := by
   rw [unitsTwoPowEquiv, MulEquiv.symm_symm, MulEquiv.ofBijective_apply, unitsTwoPowHom_apply]
 
 /-- The inverse of `ZMod.unitsTwoPowEquiv` sends the classes of natural numbers `s` and `k` to
 `(-1) ^ s * 5 ^ k`. -/
 theorem unitsTwoPowEquiv_symm_ofAdd_natCast (s k : ℕ) :
     (unitsTwoPowEquiv e).symm (ofAdd ((s : ZMod 2), (k : ZMod (2 ^ e)))) =
-      (-1) ^ s * unitsTwoPowFive e ^ k := by
-  have h5 : unitsTwoPowFive e ^ 2 ^ e = 1 := by
-    rw [← orderOf_unitsTwoPowFive e]
+      (-1) ^ s * ZMod.unitFive ^ k := by
+  have h5 : (ZMod.unitFive : (ZMod (2 ^ (e + 2)))ˣ) ^ 2 ^ e = 1 := by
+    have horder : orderOf (ZMod.unitFive : (ZMod (2 ^ (e + 2)))ˣ) = 2 ^ e := by
+      simpa using _root_.ZMod.orderOf_unitFive (e + 2)
+    rw [← horder]
     exact pow_orderOf_eq_one _
   rw [unitsTwoPowEquiv_symm_apply, pow_val_natCast neg_one_sq, pow_val_natCast h5]
 
@@ -164,7 +153,7 @@ theorem unitsTwoPowEquiv_neg_one : unitsTwoPowEquiv e (-1) = ofAdd (1, 0) := by
 /-- `ZMod.unitsTwoPowEquiv` sends `5` to `(0, 1)`. -/
 @[simp]
 theorem unitsTwoPowEquiv_five :
-    unitsTwoPowEquiv e (unitsTwoPowFive e) = ofAdd (0, 1) := by
+    unitsTwoPowEquiv e ZMod.unitFive = ofAdd (0, 1) := by
   rw [← MulEquiv.eq_symm_apply, ← Nat.cast_zero, ← Nat.cast_one (R := ZMod (2 ^ e)),
     unitsTwoPowEquiv_symm_ofAdd_natCast]
   simp
@@ -175,7 +164,8 @@ theorem unitsTwoPowEquiv_five :
 example : ∀ u : (ZMod 8)ˣ, u ^ 2 = 1 := by decide
 
 /-- Modulo `16` the class of `5` has order `4`, not `8`. -/
-example : orderOf (unitsTwoPowFive 2) = 4 := orderOf_unitsTwoPowFive 2
+example : orderOf (ZMod.unitFive (n := 4) : (ZMod (2 ^ 4))ˣ) = 4 := by
+  simpa using _root_.ZMod.orderOf_unitFive 4
 
 /-- Modulo `16` the class of `7` has order `2`, so it cannot replace `5` as the generator of the
 cyclic factor. -/

@@ -275,6 +275,22 @@ theorem cartanProjection_ι_coe_mul' (h : H) (u : U L) :
         cartanProjection b u :=
   cartanProjection_ι_coe_mul b h u
 
+/-- **The Cartan projection fixes a generator from `H`.** -/
+-- `simp`-normal form is `cartanProjection_ι_coe'`, since `simp` unfolds `ι` through `ι_apply`.
+theorem cartanProjection_ι_coe (h : H) :
+    cartanProjection b (_root_.UniversalEnvelopingAlgebra.ι K (h : L)) =
+      _root_.UniversalEnvelopingAlgebra.ι K h := by
+  simpa using cartanProjection_ι_coe_mul b h 1
+
+/-- The `simp`-normal form of `cartanProjection_ι_coe`, stated for the canonical generators as
+`simp` writes them. -/
+@[simp]
+theorem cartanProjection_ι_coe' (h : H) :
+    cartanProjection b
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom K L (TensorAlgebra.ι K (h : L))) =
+      _root_.UniversalEnvelopingAlgebra.mkAlgHom K H (TensorAlgebra.ι K h) :=
+  cartanProjection_ι_coe b h
+
 /-! ### Evaluation at a weight -/
 
 variable (lam : Dual K H)

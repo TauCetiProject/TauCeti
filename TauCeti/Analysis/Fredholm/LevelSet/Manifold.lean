@@ -92,8 +92,7 @@ theorem contDiffOn_coe_levelSetChartAt_symm
   set u := (chart.symm (K.symm k) : ↥{x | f x = c})
   have hinner : ContDiffAt 𝕜 m
       (fun j ↦ ((chart.symm j : ↥{x | f x = c}) : E)) (K.symm k) := by
-    refine contDiffAt_coe_levelSetChart_symm_of_mem _ _ _ _ hk.1 ?_ (A := D u.1)
-      ((hf u.1 u.2).hasFDerivAt) (hsmooth u.1 u.2)
+    refine contDiffAt_coe_levelSetChart_symm_of_mem _ _ _ _ hk.1 ?_ (hsmooth u.1 u.2)
     have hmem := hk.2
     rw [Set.mem_preimage, mem_levelSetImplicitCoordSource_iff, hpt k] at hmem
     exact hmem

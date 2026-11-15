@@ -176,6 +176,30 @@ instance instIsDTopologyCompatibleOpens [TopologicalSpace X]
     _root_.Diffeology.IsDTopologyCompatible U :=
   isDTopologyCompatible_subtype U.isOpen
 
+/-! ### Maps smooth on a subset -/
+
+/-- If `f` is smooth on `V`, in the sense that its restriction to `V` with the subspace diffeology
+is smooth, then `f ∘ p` is a plot on the part of the domain of a plot `p` where `p` lands in `V`. -/
+theorem IsPlotOn.comp_inter_preimage [DiffeologicalSpace Y] {n : ℕ} {u : Set (𝔼ⁿ)}
+    {p : 𝔼ⁿ → X} {V : Set X} {f : X → Y} (hp : IsPlotOn u p)
+    (hf : _root_.Diffeology.DSmooth (V.domRestrict f)) : IsPlotOn (u ∩ p ⁻¹' V) (f ∘ p) :=
+  isPlotOn_iff.mpr fun g hg hgd ↦ hf _ (fun y ↦ ⟨p (g y), (hg (mem_univ y)).2⟩)
+    ((hp.mono inter_subset_left).isPlot_comp hg hgd)
+
+/-- A map whose restriction to a D-open set `V` is smooth is continuous on `V` for the
+D-topologies. -/
+theorem continuousOn_dTopology_of_dSmooth_domRestrict [DiffeologicalSpace Y] {V : Set X}
+    {f : X → Y}
+    (hV : IsOpen[_root_.Diffeology.dTopology] V)
+    (hf : _root_.Diffeology.DSmooth (V.domRestrict f)) :
+    @ContinuousOn _ _ _root_.Diffeology.dTopology _root_.Diffeology.dTopology f V := by
+  let : TopologicalSpace X := _root_.Diffeology.dTopology
+  let : TopologicalSpace Y := _root_.Diffeology.dTopology
+  rw [continuousOn_iff_continuous_domRestrict]
+  -- The D-topology of the subspace `V` is its subspace topology, since `V` is D-open.
+  have hcont := hf.continuous
+  rwa [dTopology_subtype_of_isOpen hV] at hcont
+
 /-! ### Restricting subductions -/
 
 /-- The restriction of a subduction over a subset of its target is a subduction for the subspace

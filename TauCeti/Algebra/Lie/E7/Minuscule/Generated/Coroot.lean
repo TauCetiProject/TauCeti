@@ -116,14 +116,26 @@ theorem generatedSerreLift_serreH_eq_derivationComp_generatedCorootCocharacter (
   rw [generatedSerreLift_serreH,
     generatedCartanVector_eq_derivationComp_generatedCorootCocharacter]
 
+/-- The differential of a coordinate cocharacter of the generated weight torus is its
+numbered Cartan vector. -/
+-- Rewrite before `derivationCompLieHom_apply` unfolds the differential.
+@[simp↓]
+theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter (i : Fin 7) :
+    derivationCompLieHom
+        ((generatedWeightTorusCoordinateMap R).hom.cocharacter
+          (Finsupp.applyAddHom i).toMultiplicative)
+        (MultiplicativeGroup.tangentLinearEquiv.symm (1 : R)) = generatedCartanVector R i := by
+  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
+    generatedCorootCocharacter_def, derivationCompLieHom_apply]
+
 /-- The weight-torus differential sends a coordinate tangent vector to its Cartan vector. -/
+-- Rewrite before `derivationCompLieHom_apply` unfolds the differential.
+@[simp↓]
 theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis (i : Fin 7) :
     derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom
         (SplitTorus.tangentBasis (R := R) (B := R) i) = generatedCartanVector R i := by
   rw [SplitTorus.derivationCompLieHom_tangentBasis,
-    generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
-    generatedCorootCocharacter_def,
-    derivationCompLieHom_apply]
+    derivationCompLieHom_generatedWeightTorusCoordinateMap_cocharacter]
 
 /-- The tangent image of the generated weight torus is the span of the normalized
 Cartan vectors. No injectivity of the torus differential is assumed. -/
@@ -164,7 +176,7 @@ theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
   simpa only [derivationCompLieHom_apply, ← generatedCorootCocharacter_def R,
     ← generatedCartanVector_eq_derivationComp_generatedCorootCocharacter R] using
-    SplitTorus.linearIndependent_derivationComp_cocharacter
+    SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
       (B := R) (generatedWeightTorusCoordinateMap R).hom
       (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
 

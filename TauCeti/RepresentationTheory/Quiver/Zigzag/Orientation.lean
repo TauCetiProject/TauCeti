@@ -35,9 +35,11 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
-* `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder` and
-  `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts and acyclicity for
-  the linear-order orientation.
+* `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder`,
+  `TauCeti.DoubledQuiver.OrientedQuiver.lt_of_path_of_length_pos_ofLinearOrder`,
+  `TauCeti.DoubledQuiver.OrientedQuiver.le_of_path_ofLinearOrder`, and
+  `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts, path monotonicity,
+  and acyclicity for the linear-order orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
   recovers the adjacency counts of the graph.
 * `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
@@ -83,6 +85,7 @@ instance : SetLike (Orientation G) G.Dart where
     rintro ⟨s, hs⟩ ⟨t, ht⟩ h
     congr
 
+variable {G} in
 @[ext]
 theorem ext {o₁ o₂ : Orientation G} (h : ∀ d, d ∈ o₁ ↔ d ∈ o₂) : o₁ = o₂ := by
   apply SetLike.ext
@@ -90,6 +93,7 @@ theorem ext {o₁ o₂ : Orientation G} (h : ∀ d, d ∈ o₁ ↔ d ∈ o₂) :
 
 attribute [simp] Orientation.symm_mem_iff_not_mem
 
+variable {G} in
 /-- A reversed dart is not chosen exactly when the original dart is chosen. -/
 @[simp]
 theorem symm_notMem_iff_mem (o : Orientation G) (d : G.Dart) : d.symm ∉ o ↔ d ∈ o := by
@@ -219,15 +223,16 @@ theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G
   · exact Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ ↦ Subtype.ext rfl⟩, ⟨⟨h.2, h.1⟩⟩⟩
   · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.2, p.1⟩⟩
 
-private theorem path_length_zero_or_lt_ofLinearOrder [LinearOrder V]
+/-- Along any positive-length path in the linear-order orientation, the start vertex is strictly
+smaller than the end vertex. -/
+theorem lt_of_path_of_length_pos_ofLinearOrder [LinearOrder V]
     {a b : OrientedQuiver G (Orientation.ofLinearOrder G)}
-    (p : _root_.Quiver.Path a b) : p.length = 0 ∨
-      (vertexEquiv G (Orientation.ofLinearOrder G)).symm a <
-        (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
+    (p : _root_.Quiver.Path a b) (hp : 0 < p.length) :
+    (vertexEquiv G (Orientation.ofLinearOrder G)).symm a <
+      (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
   induction p with
-  | nil => exact Or.inl rfl
+  | nil => cases hp
   | @cons b c p e ih =>
-    right
     have he : (vertexEquiv G (Orientation.ofLinearOrder G)).symm b <
         (vertexEquiv G (Orientation.ofLinearOrder G)).symm c := by
       have he' := (homEquiv G (Orientation.ofLinearOrder G)
@@ -235,10 +240,20 @@ private theorem path_length_zero_or_lt_ofLinearOrder [LinearOrder V]
         ((vertexEquiv G (Orientation.ofLinearOrder G)).symm c)
         (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).2
       simpa only [Orientation.mem_ofLinearOrder_iff] using he'
-    rcases ih with hp | hp
-    · rw [(Path.eq_of_length_zero p hp)]
+    rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+    · rw [Path.eq_of_length_zero p h0]
       exact he
-    · exact lt_trans hp he
+    · exact lt_trans (ih hpos) he
+
+/-- Along any path in the linear-order orientation, the start vertex is at most the end vertex. -/
+theorem le_of_path_ofLinearOrder [LinearOrder V]
+    {a b : OrientedQuiver G (Orientation.ofLinearOrder G)}
+    (p : _root_.Quiver.Path a b) :
+    (vertexEquiv G (Orientation.ofLinearOrder G)).symm a ≤
+      (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
+  rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+  · rw [Path.eq_of_length_zero p h0]
+  · exact (lt_of_path_of_length_pos_ofLinearOrder G p hpos).le
 
 /-- Orienting every edge of a graph from the smaller vertex to the larger makes an acyclic
 quiver. -/
@@ -246,9 +261,9 @@ theorem isAcyclic_ofLinearOrder [LinearOrder V] :
     TauCeti.Quiver.IsAcyclic (OrientedQuiver G (Orientation.ofLinearOrder G)) := by
   apply TauCeti.Quiver.isAcyclic_def.mpr
   intro a p
-  rcases path_length_zero_or_lt_ofLinearOrder G p with hp | hp
-  · exact p.eq_nil_of_length_zero hp
-  · exact (lt_irrefl _ hp).elim
+  rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+  · exact p.eq_nil_of_length_zero h0
+  · exact (lt_irrefl _ (lt_of_path_of_length_pos_ofLinearOrder G p hpos)).elim
 
 /-- An orientation has one arrow, in total across the two directions, over each edge. -/
 theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
@@ -258,7 +273,7 @@ theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
   rw [Nat.card_congr (homEquiv G o i j), Nat.card_congr (homEquiv G o j i)]
   split_ifs with h
   · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem _).2 ho
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
         Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
@@ -516,7 +531,7 @@ theorem unsymmetrifyMap_isCovering : (unsymmetrifyMap G o).IsCovering := by
   exact (Quiver.Hom.cast_heq rfl htarget _).symm.trans
     (heq_of_eq (Subsingleton.elim _ _))
 
-/-- The inverse comparison from a symmetrified orientation to the doubled graph is also a quiver
+/-- The canonical comparison from a symmetrified orientation to the doubled graph is also a quiver
 covering. -/
 theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
   let φ := unsymmetrifyMap G o

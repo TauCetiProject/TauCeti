@@ -606,6 +606,34 @@ theorem derivationComp_tangentCoefficientLieEquiv
   rw [tangentBaseChangeLieEquiv_symm_derivationComp, LieEquiv.symm_apply_apply,
     LieEquiv.symm_apply_apply]
 
+/-- The differential of a transported matrix-valued morphism is computed by restricting its
+source tangent vector to the original coordinate algebra. This transports matrix differential
+calculations through arbitrary scalar extension, without a flatness assumption. -/
+theorem tangentMatrix_derivationComp_transportedBaseChange
+    {H : CommHopfAlgCat.{u} R} {H' : CommHopfAlgCat.{max u v} K}
+    (f : coordinateHopfAlgebra R n ⟶ H)
+    (e : CommHopfAlgCat.baseChange (K := K) H ≅ H')
+    (d : Derivation K H' (Bialgebra.CounitAlgebra K H' K)) :
+    tangentMatrix n (derivationComp (B := K)
+      ((coordinateHopfAlgebraBaseChangeIso R K n).inv ≫
+        CommHopfAlgCat.baseChangeMap (K := K) f ≫ e.hom).hom d) =
+    tangentMatrix n (derivationComp (B := K) f.hom
+      ((tangentBaseChangeLieEquiv (R := R) (K := K) (H := H)).symm
+        (derivationComp (B := K) e.hom.hom d))) := by
+  ext i j
+  simp only [tangentMatrix_apply, algEquivSelf_derivationComp_apply,
+    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
+    _root_.CommHopfAlgCat.hom_comp]
+  -- Categorical morphisms and bundled bialgebra morphisms have different function coercions.
+  change (Bialgebra.CounitAlgebra.algEquivSelf K H' K)
+    (d (e.hom ((CommHopfAlgCat.baseChangeMap (K := K) f).hom
+      ((coordinateHopfAlgebraBaseChangeIso R K n).inv
+        (coordinateHopfAlgebraAlgEquiv K n
+          (coordinateRingMap K n (MvPolynomial.X (i, j)))))))) = _
+  rw [coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul]
+  rfl
+
 end BaseChange
 
 end GeneralLinear

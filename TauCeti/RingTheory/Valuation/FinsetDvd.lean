@@ -8,10 +8,10 @@ module
 public import Mathlib.RingTheory.Valuation.ValuationRing
 
 /-!
-# A finite family in a ring with total divisibility has a member dividing all others
+# A finite family in a semigroup with total divisibility has a member dividing all others
 
-In a monoid with total divisibility, for instance a valuation ring or the `p`-adic integers, any
-two elements are comparable for divisibility. Consequently a finite nonempty family of elements
+In a semigroup with total divisibility, for instance a valuation ring or the `p`-adic integers,
+any two elements are comparable for divisibility. Consequently a finite nonempty family of elements
 has a member that divides every member of the family: the divisibility preorder restricted to the
 family is total, and a finite nonempty totally preordered set has a least element.
 
@@ -20,8 +20,8 @@ minimal valuation, which then divides all the other coordinates.
 
 ## Main results
 
-* `TauCeti.PreValuationRing.exists_mem_forall_dvd`: a finite nonempty family in a monoid with
-  total divisibility has a member dividing every member.
+* `TauCeti.PreValuationRing.exists_mem_forall_dvd`: a finite nonempty family in a semigroup
+  with total divisibility has a member dividing every member.
 * `TauCeti.PreValuationRing.exists_forall_dvd`: the same for a family indexed by a finite nonempty
   type.
 -/
@@ -32,29 +32,25 @@ namespace TauCeti
 
 namespace PreValuationRing
 
-variable {R : Type*} [Monoid R] [PreValuationRing R] {ι : Type*}
+variable {R : Type*} [Semigroup R] [PreValuationRing R] {ι : Type*}
 
-/-- In a monoid with total divisibility, a finite nonempty family has a member dividing every
+/-- In a semigroup with total divisibility, a finite nonempty family has a member dividing every
 member of the family. -/
 theorem exists_mem_forall_dvd {s : Finset ι} (hs : s.Nonempty) (f : ι → R) :
     ∃ i ∈ s, ∀ j ∈ s, f i ∣ f j := by
+  -- Totality makes divisibility reflexive, although `R` need not have a unit.
+  have hrefl (x : R) : x ∣ x := (ValuationRing.dvd_total x x).elim id id
   induction hs using Finset.Nonempty.cons_induction with
-  | singleton a =>
-    exact ⟨a, Finset.mem_singleton_self a, fun j hj ↦ by rw [Finset.mem_singleton.mp hj]⟩
-  | cons a s ha _ ih =>
+  | singleton a => simpa using hrefl (f a)
+  | cons a s _ _ ih =>
     obtain ⟨i, hi, hfi⟩ := ih
+    simp only [Finset.exists_mem_cons, Finset.forall_mem_cons]
     rcases ValuationRing.dvd_total (f a) (f i) with h | h
-    · refine ⟨a, Finset.mem_cons_self a s, fun j hj ↦ ?_⟩
-      rcases Finset.mem_cons.mp hj with rfl | hj
-      · exact dvd_rfl
-      · exact h.trans (hfi j hj)
-    · refine ⟨i, Finset.mem_cons_of_mem hi, fun j hj ↦ ?_⟩
-      rcases Finset.mem_cons.mp hj with rfl | hj
-      · exact h
-      · exact hfi j hj
+    · exact .inl ⟨hrefl (f a), fun j hj ↦ h.trans (hfi j hj)⟩
+    · exact .inr ⟨i, hi, h, hfi⟩
 
-/-- In a monoid with total divisibility, a family indexed by a finite nonempty type has a member
-dividing every member of the family. -/
+/-- In a semigroup with total divisibility, a family indexed by a finite nonempty type has a
+member dividing every member of the family. -/
 theorem exists_forall_dvd [Finite ι] [Nonempty ι] (f : ι → R) : ∃ i, ∀ j, f i ∣ f j := by
   cases nonempty_fintype ι
   obtain ⟨i, -, h⟩ := exists_mem_forall_dvd Finset.univ_nonempty f

@@ -12,12 +12,13 @@ import Mathlib.RingTheory.MvPolynomial.Ideal
 /-!
 # Localization of the nodal equation at the closed point
 
-For a local ring `R` and `π` in its maximal ideal, the image of `(𝔪_R, x, y)` in
-`NodeAlgebra R (π ^ n)` is prime exactly when `n ≠ 0`. Whenever the image of `(𝔪_R, x, y)` in
-`NodeAlgebra R a` is prime, its localization is the quotient of the ambient polynomial local
-ring by `xy - a`. This comparison needs no regularity hypothesis on the base ring and transfers
-local invariants of the hypersurface to the node algebra. Simp lemmas describe the comparison and
-its inverse on polynomial representatives.
+For a local ring `R` and `a` in its maximal ideal, the image of `(𝔪_R, x, y)` in
+`NodeAlgebra R a` is a maximal ideal, the origin of the special fibre; for `π` in the maximal
+ideal, its image in `NodeAlgebra R (π ^ n)` is prime exactly when `n ≠ 0`. Whenever the image
+of `(𝔪_R, x, y)` in `NodeAlgebra R a` is prime, its localization is the quotient of the ambient
+polynomial local ring by `xy - a`. This comparison needs no regularity hypothesis on the base
+ring and transfers local invariants of the hypersurface to the node algebra. Simp lemmas
+describe the comparison and its inverse on polynomial representatives.
 -/
 
 public section
@@ -85,20 +86,32 @@ theorem mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C {a : R}
   simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, NodeAlgebra.mk_X] using
     isUnit_of_mul_isUnit_left hu
 
+/-- For `a ∈ 𝔪_R`, the image of `𝔪 = (𝔪_R, x, y)` in `R[x, y] ⧸ (xy - a)` is a maximal ideal:
+the origin of the special fibre is a closed point of the model, with residue field `R ⧸ 𝔪_R`. -/
+theorem isMaximal_map_quotient_X_mul_X_sub_C (ha : a ∈ maximalIdeal R) :
+    (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk a)).IsMaximal := by
+  have : ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).IsMaximal :=
+    comap_isMaximal_of_surjective _ fun r ↦ ⟨C r, constantCoeff_C _ r⟩
+  have hprime := map_isPrime_of_surjective (f := NodeAlgebra.mk a) (NodeAlgebra.mk_surjective _)
+    (I := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)) (by
+      rw [AlgHom.ker_coe, NodeAlgebra.ker_mk, span_le, Set.singleton_subset_iff,
+        SetLike.mem_coe]
+      exact X_mul_X_sub_C_mem_comap_maximalIdeal ha)
+  exact (map_eq_top_or_isMaximal_of_surjective _ (NodeAlgebra.mk_surjective a)
+    this).resolve_left hprime.ne_top
+
 /-- The image of `𝔪 = (𝔪_R, x, y)` in `R[x, y] ⧸ (xy - πⁿ)` is a prime ideal exactly when
 `n ≠ 0`, that is, exactly when the origin of the special fibre lies on the model. -/
 theorem isPrime_map_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalIdeal R) (n : ℕ) :
     (((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
       (NodeAlgebra.mk (π ^ n))).IsPrime ↔ n ≠ 0 := by
-  refine ⟨?_, fun hn ↦ map_isPrime_of_surjective
-    (f := NodeAlgebra.mk (π ^ n)) (NodeAlgebra.mk_surjective _) ?_⟩
-  · -- for `n = 0` the constant `πⁿ = 1` is a unit, so it does not lie in `𝔪_R`
-    rintro h rfl
-    exact mem_nonunits_iff.mp ((mem_maximalIdeal _).mp
-      (mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C (a := π ^ 0))) (by simp)
-  · rw [AlgHom.ker_coe, NodeAlgebra.ker_mk, span_le, Set.singleton_subset_iff,
-      SetLike.mem_coe]
-    exact X_mul_X_sub_C_mem_comap_maximalIdeal (pow_mem_of_mem _ hπ n (Nat.pos_of_ne_zero hn))
+  refine ⟨?_, fun hn ↦
+    (isMaximal_map_quotient_X_mul_X_sub_C (pow_mem_of_mem _ hπ n (Nat.pos_of_ne_zero hn))).isPrime⟩
+  -- for `n = 0` the constant `πⁿ = 1` is a unit, so it does not lie in `𝔪_R`
+  rintro h rfl
+  exact mem_nonunits_iff.mp ((mem_maximalIdeal _).mp
+    (mem_maximalIdeal_of_isPrime_map_quotient_X_mul_X_sub_C (a := π ^ 0))) (by simp)
 
 private noncomputable def nodeToLocalQuotient :
     NodeAlgebra R a →ₐ[R]

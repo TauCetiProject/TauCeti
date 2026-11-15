@@ -71,7 +71,7 @@ theorem integrableExpSet_id_map_cast_negativeBinomialMeasure_cond_compl_zero_ato
       if w = 1 then univ else {t | (1 - p) * exp t < 1} := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   rw [Measure.integrableExpSet_id_map_natCast_cond_compl_zero_atomMixture_zero,
-    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1]
+    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp]
 
 /-- The mean of the negative-binomial hurdle law is `(1 - w) r (1 - p) / p / (1 - p ^ r)`. -/
 theorem integral_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero
@@ -79,8 +79,7 @@ theorem integral_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture
     ∫ x, x ∂(((negativeBinomialMeasure r p)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (r * (1 - p) / p) / (1 - p ^ r) := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
-  rw [Measure.integral_id_map_natCast_cond_compl_zero_atomMixture_zero _ _
-      ((memLp_id_map_cast_negativeBinomialMeasure hr hp hp1 1).integrable le_rfl),
+  rw [Measure.integral_id_map_natCast_cond_compl_zero_atomMixture_zero,
     integral_id_map_cast_negativeBinomialMeasure hr hp hp1,
     negativeBinomialMeasure_real_singleton_zero hr hp hp1]
 
@@ -94,7 +93,7 @@ theorem variance_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture
         ((1 - (w : ℝ)) * (r * (1 - p) / p) / (1 - p ^ r)) ^ 2 := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
   rw [Measure.variance_id_map_natCast_cond_compl_zero_atomMixture_zero _ _
-      (memLp_id_map_cast_negativeBinomialMeasure hr hp hp1 2).integrable_sq,
+      (memLp_id_map_cast_negativeBinomialMeasure 2).integrable_sq,
     integral_sq_map_cast_negativeBinomialMeasure hr hp hp1,
     integral_id_map_cast_negativeBinomialMeasure hr hp hp1,
     negativeBinomialMeasure_real_singleton_zero hr hp hp1]
@@ -109,7 +108,7 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero (h
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
   rw [Measure.cdf_map_natCast_cond_compl_zero_atomMixture_zero _ _
       (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hx,
-    cdf_map_cast_negativeBinomialMeasure hr hp hp1.le hx,
+    cdf_map_cast_negativeBinomialMeasure hr.le hp hx,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
 
 /-- A natural number is the quantile of the negative-binomial hurdle law of positive shape and

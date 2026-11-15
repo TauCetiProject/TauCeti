@@ -24,6 +24,8 @@ any subgroup of the joint area/Chern kernel, use the descended area and Chern ho
 `periodGroupComparison` specializes to the quotient by the entire joint kernel. In that case
 two monomials with the same nonzero coefficient become equal exactly when their areas and
 Chern numbers agree. No individual quantum invariant is assumed to descend without summation.
+If the target class group is trivial, the comparison sends a series to the sum of all of its
+coefficients (`coeff_zero_coefficientComparison_of_subsingleton`).
 
 The construction reuses `NovikovSeries.mapRingHom`; no augmentation at `q = 1` is involved.
 
@@ -84,6 +86,17 @@ theorem coeff_coefficientComparison (a : NovikovSeries R S ω) (γ : Γ) :
   · intro A hA
     exact ((Set.Finite.mem_toFinset _).1 hA).2
 
+/-- **Over a trivial target class group the comparison is the total count.** The comparison
+sends `∑_A N_A q^A` to `∑_A N_A`, a finite sum by
+`TauCeti.NovikovSeries.finite_support_of_bddAbove_image`, since every class has zero area:
+`ω A = Ω (q A) = 0`. -/
+theorem coeff_zero_coefficientComparison_of_subsingleton [Subsingleton Γ]
+    (a : NovikovSeries R S ω) :
+    (coefficientComparison q hω a).coeff 0 = ∑ᶠ A, a.coeff A := by
+  have h : (-q) ⁻¹' {0} = Set.univ := Set.eq_univ_of_forall fun A => Subsingleton.elim _ _
+  rw [coefficientComparison_apply, coeff_map, h, finsum_mem_univ]
+  simp only [AddMonoidHom.coe_ofClass, RingHom.id_apply]
+
 /-- No new support classes appear except images under negative class projection. -/
 theorem support_coefficientComparison_subset (a : NovikovSeries R S ω) :
     (coefficientComparison q hω a).support ⊆ (-q) '' a.support := by
@@ -99,6 +112,14 @@ theorem coefficientComparison_surjective (hq : Function.Surjective q) :
     (N := ω) (N' := -Ω) ⟨1, one_pos, period_rescale_neg hω⟩
     Function.surjective_id (neg_surjective.comp hq) b
   exact ⟨a, (coefficientComparison_apply q hω a).trans ha⟩
+
+/-- An injective map of class groups gives an injective comparison: the coefficient of the
+comparison at `-q A` is the coefficient at `A`. -/
+theorem coefficientComparison_injective (hq : Function.Injective q) :
+    Function.Injective (coefficientComparison (R := R) q hω) := fun a b hab =>
+  map_injective (RingHom.id R : R →+ R) (-q) ⟨1, one_pos, period_rescale_neg hω⟩
+    Function.injective_id (fun _ _ h => hq (neg_injective h)) <| by
+      rwa [← coefficientComparison_apply, ← coefficientComparison_apply]
 
 /-- If source and target Chern maps agree under class projection, the comparison negates the
 Chern number of a homogeneous support. -/
@@ -164,6 +185,20 @@ separate classes. -/
 theorem periodGroupComparison_surjective [Semiring R] :
     Function.Surjective (periodGroupComparison (R := R) ω c) :=
   coefficientComparison_surjective _ _ (QuotientAddGroup.mk'_surjective _)
+
+/-- Descent to the joint-period quotient is injective when area and first Chern number jointly
+separate classes, that is, when only the zero class has vanishing area and Chern number. -/
+theorem periodGroupComparison_injective [Semiring R] (h : Disjoint ω.ker c.ker) :
+    Function.Injective (periodGroupComparison (R := R) ω c) :=
+  coefficientComparison_injective _ _ <| (injective_iff_map_eq_zero _).2 fun s hs => by
+    rw [← AddSubgroup.mem_bot, ← h.eq_bot, ← AddMonoidHom.ker_prod]
+    exact (QuotientAddGroup.eq_zero_iff s).1 hs
+
+/-- Descent to the joint-period quotient is bijective when area and first Chern number jointly
+separate classes. -/
+theorem periodGroupComparison_bijective [Semiring R] (h : Disjoint ω.ker c.ker) :
+    Function.Bijective (periodGroupComparison (R := R) ω c) :=
+  ⟨periodGroupComparison_injective ω c h, periodGroupComparison_surjective ω c⟩
 
 /-- The joint-period comparison is continuous for the energy topologies. -/
 @[fun_prop]

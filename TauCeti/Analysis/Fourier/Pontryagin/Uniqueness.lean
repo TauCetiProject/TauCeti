@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Pontryagin.Measure
-public import TauCeti.MeasureTheory.Measure.FiniteMeasureExt
+public import TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext
 import Mathlib.Algebra.MonoidAlgebra.Basic
 
 /-!

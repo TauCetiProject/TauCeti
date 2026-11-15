@@ -88,10 +88,8 @@ theorem occCount_lt_of_comp {Y : Type*} {u : X → S} {v : Y → S} {a : S}
   let _ := Fintype.ofFinite {x // u x = a}
   let _ := Fintype.ofFinite {y // v y = a}
   rw [occCount_def, occCount_def, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-  apply Fintype.card_lt_of_injective_not_surjective f f.injective
-  intro hsurj
-  obtain ⟨x, hx⟩ := hsurj ⟨j, hj⟩
-  exact hmiss x (congrArg Subtype.val hx)
+  exact Fintype.card_lt_of_injective_of_notMem f f.injective (b := ⟨j, hj⟩)
+    fun ⟨x, hx⟩ => hmiss x (congrArg Subtype.val hx)
 
 /-- For a finite fiber, positive occurrence count is equivalent to the value being attained. -/
 @[simp, grind =]
@@ -154,15 +152,13 @@ theorem sum_occCount_eq_card [Finite X] (f : X → S) {T : Finset S}
 segment together with a possible occurrence at the last position. -/
 theorem occCount_castSucc [DecidableEq S] {n : ℕ} (w : Fin (n + 1) → S) (a : S) :
     occCount (w ∘ Fin.castSucc) a + (if w (Fin.last n) = a then 1 else 0) = occCount w a := by
-  rw [occCount_eq_sum, occCount_eq_sum, Fin.sum_univ_castSucc]
-  rfl
+  rw [occCount_eq_sum, occCount_eq_sum, Fin.sum_univ_castSucc, Function.comp_def]
 
 /-- Splitting off the first position: the occurrences of `a` in a word are those in its final
 segment together with a possible occurrence at the first position. -/
 theorem occCount_succ [DecidableEq S] {n : ℕ} (w : Fin (n + 1) → S) (a : S) :
     occCount (w ∘ Fin.succ) a + (if w 0 = a then 1 else 0) = occCount w a := by
-  rw [occCount_eq_sum, occCount_eq_sum, Fin.sum_univ_succ, Nat.add_comm]
-  rfl
+  rw [occCount_eq_sum, occCount_eq_sum, Fin.sum_univ_succ, Nat.add_comm, Function.comp_def]
 
 /-- Two finite families with equal occurrence counts are related by a bijection of their
 index types. -/
@@ -197,9 +193,8 @@ theorem occCount_subtype_ne (f : X → S) {z a : S} (ha : a ≠ z) :
 /-- After deleting the indices at which a family takes the value `z`, the value `z` no longer
 occurs. -/
 theorem occCount_subtype_ne_self (f : X → S) (z : S) :
-    occCount (fun x : {x // f x ≠ z} => f x) z = 0 := by
-  rw [occCount_def, Nat.card_eq_zero]
-  exact Or.inl ⟨fun x => x.1.2 x.2⟩
+    occCount (fun x : {x // f x ≠ z} => f x) z = 0 :=
+  occCount_of_notMem_range _ _ fun ⟨x, hx⟩ => x.2 hx
 
 /-- Two finite families with the same occurrence counts away from a value `z` are related by a
 bijection between the indices at which they do not take the value `z`. -/
@@ -208,8 +203,8 @@ theorem exists_equiv_subtype_ne_of_occCount_eq {Y : Type*} [Finite X] [Finite Y]
     ∃ σ : {x // u x ≠ z} ≃ {y // v y ≠ z}, ∀ x, v (σ x) = u x := by
   obtain ⟨σ, hσ⟩ := exists_equiv_of_occCount_eq (u := fun x : {x // u x ≠ z} => u x)
     (v := fun y : {y // v y ≠ z} => v y) fun a => by
-      by_cases ha : a = z
-      · rw [ha, occCount_subtype_ne_self, occCount_subtype_ne_self]
+      obtain rfl | ha := eq_or_ne a z
+      · rw [occCount_subtype_ne_self, occCount_subtype_ne_self]
       · rw [occCount_subtype_ne u ha, occCount_subtype_ne v ha, h a ha]
   exact ⟨σ, congrFun hσ⟩
 
@@ -242,9 +237,10 @@ deleting the indices at which it takes another value `z`. -/]
 theorem prod_filter_subtype_ne [Fintype X] [DecidableEq S] {M : Type*} [CommMonoid M]
     (f : X → S) (g : X → M) {z a : S} (ha : a ≠ z) :
     ∏ x ∈ ({x | f x = a} : Finset {x // f x ≠ z}), g x = ∏ x with f x = a, g x := by
-  rw [prod_filter, prod_filter, ← Fintype.prod_subtype_mul_prod_subtype (fun x => f x ≠ z),
-    Fintype.prod_eq_one (fun x : {x // ¬f x ≠ z} => if f x = a then g x else 1)
-      fun x => ite_eq_right_iff.mpr fun hx => absurd (hx ▸ ha) x.2, mul_one]
+  rw [← prod_subtype_of_mem g fun x hx => (mem_filter.1 hx).2 ▸ ha]
+  congr 1
+  ext
+  simp
 
 /-- Matching the indices at which two families do not take a value `z` along a bijection that
 preserves the values does not change a product over the indices at which they take another value

@@ -15,11 +15,19 @@ homotopy `H : I × A → B` whose initial map lifts along `p` to `f : A → E` l
 homotopy `G : I × A → E` starting at `f`.  The property is stated for maps between topological
 spaces in arbitrary universes.  Covering maps have it for every space
 (`IsCoveringMap.hasHomotopyLiftingProperty`), as do product projections
-(`TauCeti.hasHomotopyLiftingProperty_fst`) and homeomorphisms
+(`TauCeti.hasHomotopyLiftingProperty_fst`), maps to a subsingleton
+(`TauCeti.hasHomotopyLiftingProperty_of_subsingleton`) and homeomorphisms
 (`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
-(`TauCeti.HasHomotopyLiftingProperty.comp`) and base change
-(`TauCeti.HasHomotopyLiftingProperty.pullback`); it depends on the space only up to homeomorphism
-(`Homeomorph.hasHomotopyLiftingProperty_iff`), and a map with it lifts paths
+(`TauCeti.HasHomotopyLiftingProperty.comp`), products
+(`TauCeti.HasHomotopyLiftingProperty.prodMap`), base change
+(`TauCeti.HasHomotopyLiftingProperty.pullback`), restriction over a subset of the base
+(`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`) and restriction to a subset of the total
+space closed under joining by paths (`TauCeti.HasHomotopyLiftingProperty.comp_subtypeVal`), and
+homotopy lifting of
+`U.restrictPreimage p` lifts homotopies valued in `U`
+(`TauCeti.HasHomotopyLiftingProperty.exists_lift_of_mem`); it depends on the space only up to
+homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
+embeddings (`TauCeti.HasHomotopyLiftingProperty.of_isOpenEmbedding`), and a map with it lifts paths
 (`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
@@ -76,6 +84,25 @@ theorem hasHomotopyLiftingProperty_fst (F : Type*) [TopologicalSpace F] (A : Typ
     [TopologicalSpace A] : HasHomotopyLiftingProperty (Prod.fst : B × F → B) A :=
   fun f H hH ↦ ⟨⟨fun x ↦ (H x, (f x.2).2), by fun_prop⟩, rfl, fun a ↦ Prod.ext (hH a) rfl⟩
 
+/-- A map to a subsingleton space has the homotopy lifting property with respect to every space:
+a homotopy lifts as the constant homotopy of the initial lift. -/
+theorem hasHomotopyLiftingProperty_of_subsingleton [Subsingleton B] (A : Type w)
+    [TopologicalSpace A] : HasHomotopyLiftingProperty p A :=
+  fun f _ _ ↦ ⟨f.comp ContinuousMap.snd, funext fun _ ↦ Subsingleton.elim _ _, fun _ ↦ rfl⟩
+
+/-- The product of two maps with the homotopy lifting property with respect to `A` has it as well:
+a homotopy lifts coordinatewise. -/
+theorem HasHomotopyLiftingProperty.prodMap {E' : Type*} {B' : Type*} [TopologicalSpace E']
+    [TopologicalSpace B'] {q : E' → B'} (hp : HasHomotopyLiftingProperty p A)
+    (hq : HasHomotopyLiftingProperty q A) : HasHomotopyLiftingProperty (Prod.map p q) A := by
+  intro f H hH
+  obtain ⟨G₁, hG₁, hG₁₀⟩ := hp (ContinuousMap.fst.comp f) (ContinuousMap.fst.comp H)
+    fun a ↦ congrArg Prod.fst (hH a)
+  obtain ⟨G₂, hG₂, hG₂₀⟩ := hq (ContinuousMap.snd.comp f) (ContinuousMap.snd.comp H)
+    fun a ↦ congrArg Prod.snd (hH a)
+  exact ⟨G₁.prodMk G₂, funext fun x ↦ Prod.ext (congrFun hG₁ x) (congrFun hG₂ x),
+    fun a ↦ Prod.ext (hG₁₀ a) (hG₂₀ a)⟩
+
 /-- A homeomorphism has the homotopy lifting property with respect to every space. -/
 theorem _root_.Homeomorph.hasHomotopyLiftingProperty (e : E ≃ₜ B) (A : Type w)
     [TopologicalSpace A] : HasHomotopyLiftingProperty e A :=
@@ -103,6 +130,56 @@ theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
   refine ⟨⟨fun x ↦ ⟨(H x, G x), (congrFun hG x).symm⟩, by fun_prop⟩, funext fun x ↦ rfl, fun a ↦ ?_⟩
   exact Subtype.ext (Prod.ext (hH a) (hG₀ a))
 
+/-- The homotopy lifting property passes to the restriction `p⁻¹(t) → t` of `p` over any subset
+`t` of the base: a lift of a homotopy in `t` lies over `t`. -/
+theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProperty p A)
+    (t : Set B) : HasHomotopyLiftingProperty (t.restrictPreimage p) A := by
+  intro f H hH
+  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(p ⁻¹' t, E)).comp f)
+    ((⟨Subtype.val, continuous_subtype_val⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
+  have hGt (x : I × A) : p (G x) ∈ t := by
+    have hx := congrFun hG x
+    simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] at hx
+    rw [hx]
+    exact (H x).2
+  exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
+    fun a ↦ Subtype.ext (hG₀ a)⟩
+
+/-- The homotopy lifting property passes to the restriction `S → B` of `p` to a subset `S` of the
+total space that is closed under joining by paths, for instance a union of path components: each
+value of a lift is joined to the starting point of its track. -/
+theorem HasHomotopyLiftingProperty.comp_subtypeVal (hp : HasHomotopyLiftingProperty p A)
+    {S : Set E} (hS : ∀ ⦃e e' : E⦄, e ∈ S → Joined e e' → e' ∈ S) :
+    HasHomotopyLiftingProperty (p ∘ Subtype.val : S → B) A := by
+  intro f H hH
+  obtain ⟨G, hG, hG₀⟩ :=
+    hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(S, E)).comp f) H hH
+  have hGS (x : I × A) : G x ∈ S := by
+    have : PathConnectedSpace I :=
+      (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
+    have h : Joined ((0 : I), x.2) x := (PathConnectedSpace.joined _ _).prod (Joined.refl x.2)
+    have h' := h.map G.continuous
+    rw [hG₀] at h'
+    exact hS (f x.2).2 h'
+  exact ⟨⟨fun x ↦ ⟨G x, hGS x⟩, by fun_prop⟩, hG, fun a ↦ Subtype.ext (hG₀ a)⟩
+
+/-- If the restriction `U.restrictPreimage p : p ⁻¹' U → U` over `U : Set B` has the homotopy
+lifting property with respect to `A`, then every homotopy `H : C(I × A, B)` valued in `U` whose
+initial map lifts along `p` to `f : C(A, E)` lifts along `p` to a homotopy `G : C(I × A, E)`
+starting at `f`. -/
+theorem HasHomotopyLiftingProperty.exists_lift_of_mem {U : Set B}
+    (h : HasHomotopyLiftingProperty (U.restrictPreimage p) A)
+    (f : C(A, E)) (H : C(I × A, B)) (hHU : ∀ z, H z ∈ U) (hH : ∀ a, H (0, a) = p (f a)) :
+    ∃ G : C(I × A, E), p ∘ G = H ∧ ∀ a, G (0, a) = f a := by
+  have hfU (a : A) : f a ∈ p ⁻¹' U := by
+    rw [Set.mem_preimage, ← hH a]
+    exact hHU (0, a)
+  obtain ⟨G, hG, hG₀⟩ := h ⟨fun a ↦ ⟨f a, hfU a⟩, by fun_prop⟩
+    ⟨fun z ↦ ⟨H z, hHU z⟩, by fun_prop⟩ fun a ↦ Subtype.ext (hH a)
+  exact ⟨(ContinuousMap.subtypeVal _).comp G,
+    funext fun z ↦ congrArg Subtype.val (congrFun hG z),
+    fun a ↦ congrArg Subtype.val (hG₀ a)⟩
+
 /-- The homotopy lifting property with respect to a space passes to every space homeomorphic to
 it. -/
 theorem HasHomotopyLiftingProperty.of_homeomorph (h : HasHomotopyLiftingProperty p A')
@@ -114,6 +191,14 @@ theorem HasHomotopyLiftingProperty.of_homeomorph (h : HasHomotopyLiftingProperty
   obtain ⟨G, hG, hG₀⟩ := h (f.comp e.symm) (H.comp ψ) fun y ↦ hH (e.symm y)
   refine ⟨G.comp φ, funext fun x ↦ ?_, fun x ↦ by simpa [φ] using hG₀ (e x)⟩
   simpa [φ, ψ] using congrFun hG (φ x)
+
+/-- If `p` has the homotopy lifting property with respect to every open subset of `A'`, then it has
+the homotopy lifting property with respect to every space admitting an open embedding into `A'`. -/
+theorem HasHomotopyLiftingProperty.of_isOpenEmbedding
+    (h : ∀ W : Set A', IsOpen W → HasHomotopyLiftingProperty p W)
+    {e : A → A'} (he : Topology.IsOpenEmbedding e) :
+    HasHomotopyLiftingProperty p A :=
+  (h (Set.range e) he.isOpen_range).of_homeomorph he.toHomeomorph
 
 end TauCeti
 

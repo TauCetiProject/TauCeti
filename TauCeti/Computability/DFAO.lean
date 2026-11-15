@@ -32,6 +32,9 @@ require finitely many states; finiteness is imposed where it is used.
   product automaton running two automata in parallel.
 * `TauCeti.DFAO.reindex`: relabelling the states along an equivalence, as Mathlib's
   `DFA.reindex`.
+* `TauCeti.DFAO.comap`: changing the input alphabet along a map.
+* `TauCeti.DFAO.reverse`: a finite-state reversal construction, with arbitrary input and output
+  alphabets; `TauCeti.DFAO.output_eval_reverse` specifies its output on every word.
 
 ## References
 
@@ -39,6 +42,8 @@ require finitely many states; finiteness is imposed where it is used.
   11 (2017), Section 2.1.
 * G. Christol, T. Kamae, M. Mendès France, G. Rauzy, *Suites algébriques, automates et
   substitutions*, Bull. Soc. Math. France 108 (1980), Section 4.
+* Thijmen J. P. Krebs, *A more reasonable proof of Cobham's theorem*, 2018,
+  arXiv:1801.06704, Definition 2 and Lemma 5.
 -/
 
 public section
@@ -229,6 +234,96 @@ theorem eval_prod {τ : Type x} {Δ' : Type y} (N : DFAO α τ Δ') (x : List α
     (M.prod N).eval x = (M.eval x, N.eval x) :=
   M.evalFrom_prod N _ x
 
+/-! ### Changing the input alphabet -/
+
+/-- Change the input alphabet along `f`, applying `f` to each letter before taking a step. -/
+def comap {α' : Type x} (f : α' → α) : DFAO α' σ Δ where
+  step s a := M.step s (f a)
+  start := M.start
+  output := M.output
+
+@[simp]
+theorem comap_step {α' : Type x} (f : α' → α) (s : σ) (a : α') :
+    (M.comap f).step s a = M.step s (f a) :=
+  (rfl)
+
+@[simp]
+theorem comap_start {α' : Type x} (f : α' → α) : (M.comap f).start = M.start :=
+  (rfl)
+
+@[simp]
+theorem comap_output {α' : Type x} (f : α' → α) (s : σ) :
+    (M.comap f).output s = M.output s :=
+  (rfl)
+
+@[simp]
+theorem evalFrom_comap {α' : Type x} (f : α' → α) (s : σ) (w : List α') :
+    (M.comap f).evalFrom s w = M.evalFrom s (w.map f) := by
+  induction w generalizing s with
+  | nil => simp
+  | cons a w ih => simp [ih]
+
+@[simp]
+theorem eval_comap {α' : Type x} (f : α' → α) (w : List α') :
+    (M.comap f).eval w = M.eval (w.map f) := by
+  simp [eval_eq_evalFrom]
+
+/-- Changing the input alphabet along the identity leaves the automaton unchanged. -/
+@[simp]
+theorem comap_id : M.comap id = M :=
+  (rfl)
+
+/-- Successive changes of input alphabet compose the letter maps. -/
+@[simp]
+theorem comap_comap {α' : Type x} {α'' : Type z} (f : α' → α) (g : α'' → α') :
+    (M.comap f).comap g = M.comap (f ∘ g) :=
+  (rfl)
+
+/-- Selecting accepting outputs commutes with changing the input alphabet. -/
+@[simp]
+theorem toDFA_comap {α' : Type x} (f : α' → α) (S : Set Δ) :
+    (M.comap f).toDFA S = (M.toDFA S).comap f :=
+  (rfl)
+
+/-! ### Reversing the reading order -/
+
+/-- An automaton computing the output of `M` on the reversed word. Its states are functions
+from the original states to the image of the output map. Thus finite original states suffice
+for finite reversed states, even when the input or output alphabet is infinite. -/
+def reverse : DFAO α (σ → Set.range M.output) Δ where
+  step f a q := f (M.step q a)
+  start q := ⟨M.output q, Set.mem_range_self q⟩
+  output f := f M.start
+
+@[simp]
+theorem reverse_step (f : σ → Set.range M.output) (a : α) (q : σ) :
+    M.reverse.step f a q = f (M.step q a) :=
+  (rfl)
+
+@[simp]
+theorem reverse_start_coe (q : σ) : (M.reverse.start q : Δ) = M.output q :=
+  (rfl)
+
+@[simp]
+theorem reverse_output (f : σ → Set.range M.output) : M.reverse.output f = f M.start :=
+  (rfl)
+
+/-- Running the reversed automaton from `f` precomposes `f` with the original run on the
+reversed word. This describes every state, not only the output at the initial state. -/
+theorem evalFrom_reverse (f : σ → Set.range M.output) (w : List α) (q : σ) :
+    (M.reverse.evalFrom f w) q = f (M.evalFrom q w.reverse) := by
+  induction w generalizing f with
+  | nil => simp
+  | cons a w ih => simp [ih, List.reverse_cons]
+
+/-- The reversed automaton returns the original output on the reversed word, including the
+empty word and words with padding. -/
+-- Prefer the whole-word specification to unfolding the output projection.
+@[simp high]
+theorem output_eval_reverse (w : List α) :
+    M.reverse.output (M.reverse.eval w) = M.output (M.eval w.reverse) := by
+  simp [eval_eq_evalFrom, evalFrom_reverse]
+
 /-! ### Relabelling the states -/
 
 /-- Lift an equivalence of state types to an equivalence of automata with output: the relabelled
@@ -289,6 +384,19 @@ theorem output_eval_reindex {σ' : Type x} (g : σ ≃ σ') (x : List α) :
 end DFAO
 
 /-! ### Checks -/
+
+/-- Reversing a noncommuting pair of transitions changes the output, in the required order. -/
+example :
+    (⟨fun q b ↦ if b then 2 * q else q + 1, 0, id⟩ : DFAO Bool (ZMod 3) (ZMod 3)).reverse.output
+      ((⟨fun q b ↦ if b then 2 * q else q + 1, 0, id⟩ :
+        DFAO Bool (ZMod 3) (ZMod 3)).reverse.eval [false, true]) = 1 := by
+  rw [DFAO.output_eval_reverse]
+  decide
+
+/-- All-word correctness preserves the empty-word output. -/
+example {α σ Δ : Type*} (M : DFAO α σ Δ) :
+    M.reverse.output (M.reverse.eval []) = M.output M.start := by
+  simp
 
 /-- The parity automaton on `Fin 2`, adding the letters in `ZMod 2`. -/
 private def parityDFAO : DFAO (Fin 2) (ZMod 2) (ZMod 2) := ⟨fun s a => s + (a : ℕ), 0, id⟩

@@ -50,27 +50,27 @@ namespace List
 length. -/
 def rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
     Fin (l.rotate k).length ≃ Fin l.length :=
-  (finCongr (List.length_rotate l k)).trans (finRotate l.length ^ k)
+  (finCongr (length_rotate l k)).trans (finRotate l.length ^ k)
 
 /-- Looking up an entry after rotation and translating its index gives the same entry in the
 original list. -/
 theorem getElem_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ)
     (j : Fin (l.rotate k).length) :
     (l.rotate k)[j.1] = l[(l.rotateIndexEquiv k j).1] := by
-  rw [List.getElem_rotate]
+  rw [getElem_rotate]
   congr 1
   simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
 
 /-- Translating every index of a rotated list gives the correspondingly rotated list of the
 original indices. -/
 theorem map_finRange_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
-    (List.finRange (l.rotate k).length).map (l.rotateIndexEquiv k) =
-      (List.finRange l.length).rotate k := by
-  apply List.ext_getElem
+    (finRange (l.rotate k).length).map (l.rotateIndexEquiv k) =
+      (finRange l.length).rotate k := by
+  apply ext_getElem
   · simp
   · intro i hi hi'
-    simp only [List.length_map, List.length_finRange] at hi
-    simp only [List.getElem_map, List.getElem_finRange, List.getElem_rotate]
+    simp only [length_map, length_finRange] at hi
+    simp only [getElem_map, getElem_finRange, getElem_rotate]
     apply Fin.ext
     simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
 
@@ -80,15 +80,15 @@ theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
     (l.map e).formPerm = e.permCongr l.formPerm := by
   induction l with
   | nil =>
-    rw [List.map_nil, List.formPerm_nil, List.formPerm_nil, Equiv.Perm.one_def,
+    rw [map_nil, formPerm_nil, formPerm_nil, Equiv.Perm.one_def,
       Equiv.Perm.one_def, Equiv.permCongr_refl]
   | cons x l ih =>
     cases l with
     | nil =>
-      rw [List.map_singleton, List.formPerm_singleton, List.formPerm_singleton,
+      rw [map_singleton, formPerm_singleton, formPerm_singleton,
         Equiv.Perm.one_def, Equiv.Perm.one_def, Equiv.permCongr_refl]
     | cons y l =>
-      simp only [List.map_cons, List.formPerm_cons_cons, Equiv.permCongr_mul]
+      simp only [map_cons, formPerm_cons_cons, Equiv.permCongr_mul]
       rw [Equiv.permCongr_def, Equiv.symm_trans_swap_trans]
       exact congrArg (Equiv.swap (e x) (e y) * ·) ih
 
@@ -103,8 +103,8 @@ theorem formPerm_map_apply {α β : Type*} [DecidableEq α] [DecidableEq β] {f 
     cases l with
     | nil => simp
     | cons z l =>
-      rw [List.map_cons, List.map_cons, List.formPerm_cons_cons, List.formPerm_cons_cons,
-        Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, ← List.map_cons, ih, hf.swap_apply]
+      rw [map_cons, map_cons, formPerm_cons_cons, formPerm_cons_cons,
+        Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, ← map_cons, ih, hf.swap_apply]
 
 /-- On an entry `x` of `V`, the permutation formed by `T ++ V` agrees with the one formed by `V`,
 except that the last entry of `V`, which `V.formPerm` sends back to the head of `V`, is sent to
@@ -154,19 +154,19 @@ rotation. -/
 theorem IsRotated.filter {α : Type*} {l l' : List α} (h : l ~r l') (p : α → Bool) :
     l.filter p ~r l'.filter p := by
   obtain ⟨k, rfl⟩ := h
-  rw [List.rotate_eq_drop_append_take_mod, List.filter_append]
-  have hrot := List.isRotated_append
+  rw [rotate_eq_drop_append_take_mod, filter_append]
+  have hrot := isRotated_append
     (l := (l.take (k % l.length)).filter p)
     (l' := (l.drop (k % l.length)).filter p)
-  simpa only [← List.filter_append, List.take_append_drop] using hrot
+  simpa only [← filter_append, take_append_drop] using hrot
 
 /-- A function `φ` on a monoid with `φ (x * y) = φ (y * x)`, such as a trace, takes the same value
 on the products of cyclically rotated lists. -/
 theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
     (hφ : ∀ x y, φ (x * y) = φ (y * x)) {l l' : List M} (h : l ~r l') : φ l.prod = φ l'.prod := by
   obtain ⟨k, rfl⟩ := h
-  rw [List.rotate_eq_drop_append_take_mod, List.prod_append, hφ, ← List.prod_append,
-    List.take_append_drop]
+  rw [rotate_eq_drop_append_take_mod, prod_append, hφ, ← prod_append,
+    take_append_drop]
 
 /-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
 its entries by the same amount. -/

@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.KummerPolynomial
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 
 /-!
 # Ramification in an inseparable constant field extension

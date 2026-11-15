@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.OpenMapping
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.RingTheory.RootsOfUnity.PowFiber
@@ -50,8 +51,12 @@ restricted power map with its image.
 * `SubMulAction.rootsOfUnityQuotientHomeomorph`: the orbit space of an invariant set `s` is
   homeomorphic to `(· ^ m) '' s`, sending the class of `u` to `u ^ m`.
 * `TauCeti.rootsOfUnityBall`: the open disc of radius `r` about `0`, as an invariant set.
+* `TauCeti.isOpen_rootsOfUnityBall`: the disc is open in `ℂ`, hence locally compact
+  (`TauCeti.rootsOfUnityBall.instLocallyCompactSpace`).
 * `TauCeti.image_pow_ball`: `u ↦ u ^ m` maps the disc of radius `r` onto the disc of radius
   `r ^ m`.
+* `TauCeti.rootsOfUnityBall.powMap`, `TauCeti.rootsOfUnityBall.rootMap`: the power map from the
+  disc of radius `r` to the disc of radius `r ^ m`, and its principal-root section.
 * `TauCeti.rootsOfUnityBallQuotientHomeomorph`: the orbit space of the disc of radius `r` is
   homeomorphic to the disc of radius `r ^ m`.
 * `TauCeti.freeLocus_rootsOfUnity`: for `m ≥ 2`, the action is free exactly off `0`.
@@ -152,6 +157,19 @@ theorem coe_rootsOfUnityBall (r : ℝ) :
 theorem mem_rootsOfUnityBall {r : ℝ} {u : ℂ} : u ∈ rootsOfUnityBall m r ↔ ‖u‖ < r := by
   rw [← SetLike.mem_coe, coe_rootsOfUnityBall, mem_ball_zero_iff]
 
+/-- The disc of radius `r` is open in `ℂ`. -/
+theorem isOpen_rootsOfUnityBall {r : ℝ} : IsOpen (rootsOfUnityBall m r : Set ℂ) := by
+  simp [Metric.isOpen_ball]
+
+/-- The disc of radius `r` is locally compact, as an open subset of `ℂ`. -/
+instance rootsOfUnityBall.instLocallyCompactSpace {r : ℝ} :
+    LocallyCompactSpace (rootsOfUnityBall m r) :=
+  isOpen_rootsOfUnityBall.locallyCompactSpace
+/-- The rotations do not change the coordinate `u ↦ u ^ m` of a point of the disc. -/
+theorem coe_smul_rootsOfUnityBall_pow {r : ℝ} (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
+    ((ζ • u : rootsOfUnityBall m r) : ℂ) ^ m = (u : ℂ) ^ m := by
+  rw [SubMulAction.val_smul, rootsOfUnity.smul_pow]
+
 /-- For `0 ≤ r`, the map `u ↦ u ^ m` sends the disc of radius `r` about `0` onto the disc of
 radius `r ^ m`. -/
 theorem image_pow_ball {r : ℝ} (hr : 0 ≤ r) :
@@ -166,6 +184,57 @@ theorem image_pow_ball {r : ℝ} (hr : 0 ≤ r) :
   · intro hw
     obtain ⟨u, rfl⟩ := (Complex.isOpenQuotientMap_pow m).surjective w
     exact ⟨u, hlt.mp (by rwa [← norm_pow]), rfl⟩
+
+namespace rootsOfUnityBall
+
+variable {r : ℝ}
+
+variable (m r) in
+/-- The power map `u ↦ u ^ m` from the disc of radius `r` about `0` to the disc of radius
+`r ^ m`. It is invariant under the rotations (`TauCeti.rootsOfUnityBall.powMap_smul`) and, for
+`0 ≤ r`, surjective, with section `TauCeti.rootsOfUnityBall.rootMap`. -/
+noncomputable def powMap (u : rootsOfUnityBall m r) : Metric.ball (0 : ℂ) (r ^ m) :=
+  ⟨(u : ℂ) ^ m, by
+    rw [mem_ball_zero_iff, norm_pow]
+    exact pow_lt_pow_left₀ (mem_rootsOfUnityBall.1 u.2) (norm_nonneg _) (NeZero.ne m)⟩
+
+@[simp]
+theorem coe_powMap (u : rootsOfUnityBall m r) : (powMap m r u : ℂ) = (u : ℂ) ^ m :=
+  (rfl)
+
+/-- The power map is invariant under the rotations. -/
+@[simp]
+theorem powMap_smul (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
+    powMap m r (ζ • u) = powMap m r u :=
+  Subtype.ext (coe_smul_rootsOfUnityBall_pow ζ u)
+
+/-- The power map is continuous. -/
+theorem continuous_powMap : Continuous (powMap m r) :=
+  ((continuous_subtype_val.pow m)).subtype_mk _
+
+/-- For `0 ≤ r`, the principal `m`-th root `t ↦ t ^ (1 / m)` from the disc of radius `r ^ m`
+to the disc of radius `r`. It is a section of `TauCeti.rootsOfUnityBall.powMap`
+(`TauCeti.rootsOfUnityBall.powMap_rootMap`). For `m = 1` it is the identity; for `m > 1` it is
+not continuous at the strictly negative real points of its domain. -/
+noncomputable def rootMap (hr : 0 ≤ r) (t : Metric.ball (0 : ℂ) (r ^ m)) : rootsOfUnityBall m r :=
+  ⟨(t : ℂ) ^ ((m : ℂ)⁻¹), by
+    have hm : (0 : ℝ) < m := Nat.cast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
+    rw [mem_rootsOfUnityBall, Complex.norm_cpow_inv_nat,
+      Real.rpow_inv_lt_iff_of_pos (norm_nonneg _) hr hm, Real.rpow_natCast]
+    exact mem_ball_zero_iff.1 t.2⟩
+
+@[simp]
+theorem coe_rootMap (hr : 0 ≤ r) (t : Metric.ball (0 : ℂ) (r ^ m)) :
+    (rootMap hr t : ℂ) = (t : ℂ) ^ ((m : ℂ)⁻¹) :=
+  (rfl)
+
+/-- The principal root is a section of the power map. -/
+@[simp]
+theorem powMap_rootMap (hr : 0 ≤ r) (t : Metric.ball (0 : ℂ) (r ^ m)) :
+    powMap m r (rootMap hr t) = t :=
+  Subtype.ext (Complex.cpow_nat_inv_pow _ (NeZero.ne m))
+
+end rootsOfUnityBall
 
 /-- For `0 ≤ r`, the orbit space of the disc of radius `r` about `0` under the `m`-th roots of
 unity is homeomorphic to the disc of radius `r ^ m`, by sending the orbit of `u` to `u ^ m`. -/

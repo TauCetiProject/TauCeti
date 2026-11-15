@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.RingTheory.Henselization.Quotient
-import TauCeti.RingTheory.AdicCompletion.Flat
+import TauCeti.RingTheory.AdicCompletion.Flat.Basic
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Etale.Weakly
 import TauCeti.RingTheory.Flat.Noetherian

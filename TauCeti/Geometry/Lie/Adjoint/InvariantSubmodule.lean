@@ -69,7 +69,7 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal in
 preserves a closed subspace `V` exactly when its generator lies in `E`, is skew-adjoint, and
 brackets `V` into itself. -/
 theorem forall_exp_smul_mem_unitary_and_mem_and_conj_mem_iff [StarRing R] [ContinuousStar R]
-    [StarModule ℝ R] {E : Subalgebra ℝ R} (hE : IsClosed (E : Set R)) {V : Submodule ℝ R}
+    {E : Subalgebra ℝ R} (hE : IsClosed (E : Set R)) {V : Submodule ℝ R}
     (hV : IsClosed (V : Set R)) (x : R) :
     (∀ t : ℝ, exp (t • x) ∈ unitary R ∧ exp (t • x) ∈ E ∧
         ∀ y ∈ V, exp (t • x) * y * star (exp (t • x)) ∈ V) ↔

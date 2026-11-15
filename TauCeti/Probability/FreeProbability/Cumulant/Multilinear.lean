@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Multilinear.Basic
-public import TauCeti.Probability.FreeProbability.Cumulant.Basic
+public import TauCeti.Probability.FreeProbability.Cumulant.Product
 
 /-!
 # Multilinearity of free cumulants
@@ -45,6 +45,8 @@ all of `α` are bundled as multilinear maps `(α → A) → R`:
   `κ_π(a)` and `κ_s(a)` are linear in each entry `a i` with `i ∈ s`.
 * `TauCeti.freeCumulant_add_algebraMap` — for a normalised `φ`, free cumulants of order at least
   two are invariant under adding scalars to their arguments, in particular under centring.
+* `TauCeti.freeCumulant_sum_smul` — the free cumulant of linear combinations of a family expands
+  as a sum over words in the family.
 
 ## Implementation notes
 
@@ -130,6 +132,14 @@ theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
       freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
   simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
 
+/-- A free cumulant for an additive map vanishes if one of its letters is zero. -/
+theorem freeCumulant_eq_zero_of_apply_eq_zero {i : α} (hai : a i = 0) (hi : i ∈ s) :
+    freeCumulant φ a s = 0 := by
+  classical
+  have he : update a i 0 = a := update_eq_self_iff.2 hai.symm
+  have h := freeCumulant_update_add φ a hi 0 0
+  exact add_eq_left.mp (by simpa only [add_zero, he] using h.symm)
+
 end Additive
 
 section Homogeneous
@@ -185,6 +195,15 @@ theorem freeCumulant_add_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s
       add_zero, hai]
     exact ih ((subset_insert i t).trans hts)
 
+/-- Scalar words have vanishing free cumulants of order at least two for a normalised
+functional. -/
+@[simp]
+theorem freeCumulant_algebraMap (hφ : φ 1 = 1) (c : α → R) (hs : 1 < #s) :
+    freeCumulant φ (fun i => algebraMap R A (c i)) s = 0 := by
+  obtain ⟨i, hi⟩ := card_pos.1 (by omega : 0 < #s)
+  have hz := freeCumulant_eq_zero_of_apply_eq_zero φ (fun _ : α => (0 : A)) rfl hi
+  simpa using (freeCumulant_add_algebraMap φ (fun _ : α => (0 : A)) hφ c hs).trans hz
+
 end Homogeneous
 
 end Cumulant
@@ -200,7 +219,7 @@ variable [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
 /-- The block moment `a ↦ φ_P(a)` of a finite partition `P` of all positions of a finite linear
 order `α`, as a multilinear map. -/
 def partitionMomentMultilinear (P : Finpartition (univ : Finset α)) :
-    MultilinearMap R (fun _ : α => A) R :=
+    MultilinearMap (RingHom.id R) (fun _ : α => A) R :=
   MultilinearMap.mk' (fun a => partitionMoment φ a P)
     (fun a _ x y => partitionMoment_update_add φ a P (mem_univ _) x y)
     (fun a _ c x => partitionMoment_update_smul φ a P (mem_univ _) c x)
@@ -220,7 +239,7 @@ variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
 /-- The free cumulant `a ↦ κ_π(a)` of a noncrossing partition `π` of all positions of a finite
 linear order `α`, as a multilinear map. -/
 def partitionCumulantMultilinear (π : NoncrossingPartition (univ : Finset α)) :
-    MultilinearMap R (fun _ : α => A) R :=
+    MultilinearMap (RingHom.id R) (fun _ : α => A) R :=
   MultilinearMap.mk' (fun a => partitionCumulant φ a π)
     (fun a _ x y => partitionCumulant_update_add φ a π (mem_univ _) x y)
     (fun a _ c x => partitionCumulant_update_smul φ a π (mem_univ _) c x)
@@ -234,7 +253,7 @@ theorem partitionCumulantMultilinear_apply (π : NoncrossingPartition (univ : Fi
 /-- The free cumulant `a ↦ κ_α(a)` of the words indexed by a finite linear order `α`, as a
 multilinear map. For `α = Fin n` with `n ≥ 1` this is the `n`-th free cumulant
 `κ_n(a₁, …, aₙ)`. -/
-def freeCumulantMultilinear : MultilinearMap R (fun _ : α => A) R :=
+def freeCumulantMultilinear : MultilinearMap (RingHom.id R) (fun _ : α => A) R :=
   partitionCumulantMultilinear φ ⊤
 
 /-- Evaluating the bundled free cumulant at a word gives the free cumulant of the whole word. -/
@@ -243,8 +262,40 @@ theorem freeCumulantMultilinear_apply (a : α → A) :
     freeCumulantMultilinear φ a = freeCumulant φ a univ := by
   rw [freeCumulantMultilinear, partitionCumulantMultilinear_apply, freeCumulant_def]
 
+/-- *Multilinear expansion*: the free cumulant of the linear combinations
+`m ↦ ∑ i, c m i • s i` is the sum, over all words `v` in the family `s`, of the product of the
+coefficients `c m (v m)` times the free cumulant of `s ∘ v`. -/
+theorem freeCumulant_sum_smul {ι : Type*} [DecidableEq α] [Fintype ι] (s : ι → A)
+    (c : α → ι → R) :
+    freeCumulant φ (fun m => ∑ i, c m i • s i) univ =
+      ∑ v : α → ι, (∏ m, c m (v m)) * freeCumulant φ (s ∘ v) univ := by
+  simp_rw [← freeCumulantMultilinear_apply, MultilinearMap.map_sum, MultilinearMap.map_smul_univ,
+    RingHom.id_apply, smul_eq_mul, comp_def]
+
 end Cumulant
 
 end Multilinear
+
+section Relabel
+
+variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
+
+/-- Scaling each letter scales the free cumulant by the product of the corresponding scalars. -/
+@[simp]
+theorem freeCumulant_smul (c : α → R) (a : α → A) (s : Finset α) :
+    freeCumulant φ (fun i => c i • a i) s = (∏ i ∈ s, c i) * freeCumulant φ a s := by
+  classical
+  simp only [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ _ s,
+    ← freeCumulantMultilinear_apply, Function.comp_def]
+  rw [MultilinearMap.map_smul_univ, smul_eq_mul]
+  congr 1
+  symm
+  calc
+    ∏ i ∈ s, c i = ∏ i ∈ univ.image (s.orderEmbOfFin rfl), c i := by
+      rw [image_orderEmbOfFin_univ]
+    _ = ∏ i : Fin #s, c (s.orderEmbOfFin rfl i) :=
+      prod_image (s.orderEmbOfFin rfl).injective.injOn
+
+end Relabel
 
 end TauCeti

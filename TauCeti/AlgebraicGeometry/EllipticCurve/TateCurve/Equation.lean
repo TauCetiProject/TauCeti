@@ -35,10 +35,10 @@ coordinates `x` and `y` become power series in `v` whose coefficients are polyno
 coefficient of `vᴺ` in `x` is `∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` for `N ≥ 1`
 (`TauCeti.coeff_tateFormalX_of_ne_zero`), and its constant coefficient is `u / (1 - u)²`
 (`TauCeti.coeff_zero_tateFormalX_mul_one_sub_X_sq`). So the formal Tate equation multiplied by
-`(1 - u)⁶` is an identity in `ℤ[u]⟦v⟧`. An integral polynomial has norm at most one on the closed
-unit disc (`Polynomial.norm_aeval_le_one`), so `ℤ[u]⟦v⟧` can be evaluated at `u` and `v = q / u`
-whenever `‖u‖ = 1`. With `v = q / u` the coefficient of `qᴺ` in `x` becomes
-`∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2)`, and these Lambert series regroup
+`(1 - u)⁶` is an identity in `ℤ[u]⟦v⟧` (`TauCeti.tateClearedY_sq_add_mul_eq`). An integral
+polynomial has norm at most one on the closed unit disc (`Polynomial.norm_aeval_le_one`), so
+`ℤ[u]⟦v⟧` can be evaluated at `u` and `v = q / u` whenever `‖u‖ = 1`. With `v = q / u` the
+coefficient of `qᴺ` in `x` becomes `∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2)`, and these Lambert series regroup
 (`TauCeti.hasSum_sum_divisors_mul_pow`) into the bilateral series defining `X(u)`, and likewise for
 `Y(u)`. Dividing by `(1 - u)⁶ ≠ 0` gives the equation.
 
@@ -65,79 +65,13 @@ open scoped ArithmeticFunction.sigma
 
 namespace TauCeti
 
-/-! ### The formal equation with polynomial coefficients -/
-
-/-- The inclusion `ℤ[u]⟦v⟧ → ℤ⟦u⟧⟦v⟧`. -/
-private noncomputable abbrev toSeries : (Polynomial ℤ)⟦X⟧ →+* ℤ⟦X⟧⟦X⟧ :=
-  map Polynomial.coeToPowerSeries.ringHom
-
-private theorem toSeries_injective : Function.Injective toSeries :=
-  map_injective _ fun _ _ h ↦ Polynomial.coe_injective ℤ h
-
-/-- `(1 - u)² x` as a power series in `v` with polynomial coefficients in `u`. -/
-private noncomputable def circleX : (Polynomial ℤ)⟦X⟧ :=
-  C Polynomial.X + C ((1 - Polynomial.X) ^ 2) * mk fun N ↦ ∑ d ∈ N.divisors,
-    (d : Polynomial ℤ) * (Polynomial.X ^ (N + d) + Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N)
-
-/-- `(1 - u)³ y` as a power series in `v` with polynomial coefficients in `u`. -/
-private noncomputable def circleY : (Polynomial ℤ)⟦X⟧ :=
-  C (Polynomial.X ^ 2) + C ((1 - Polynomial.X) ^ 3) * mk fun N ↦ ∑ d ∈ N.divisors,
-    ((d.choose 2 : Polynomial ℤ) * Polynomial.X ^ (N + d) -
-      ((d + 1).choose 2 : Polynomial ℤ) * Polynomial.X ^ (N - d) +
-        (d : Polynomial ℤ) * Polynomial.X ^ N)
-
-/-- The substitution `q = u v`, as a ring map `ℤ⟦q⟧ → ℤ[u]⟦v⟧`. -/
-private noncomputable def circleParam : ℤ⟦X⟧ →+* (Polynomial ℤ)⟦X⟧ :=
-  (rescale (Polynomial.X : Polynomial ℤ)).comp (map Polynomial.C)
-
-private theorem toSeries_circleX : toSeries circleX = C ((1 - X) ^ 2) * tateFormalX ℤ := by
-  refine PowerSeries.ext fun N ↦ ?_
-  rw [coeff_map, coeff_C_mul, circleX, map_add, coeff_C, coeff_C_mul, coeff_mk]
-  rcases eq_or_ne N 0 with rfl | hN
-  · simp only [↓reduceIte, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero,
-      mul_comm _ (coeff 0 _), coeff_zero_tateFormalX_mul_one_sub_X_sq,
-      Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-  · simp only [hN, ↓reduceIte, zero_add, coeff_tateFormalX_of_ne_zero hN, map_add, map_mul,
-      map_pow, map_sub, map_one, map_sum, map_natCast, map_ofNat,
-      Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-
-private theorem toSeries_circleY : toSeries circleY = C ((1 - X) ^ 3) * tateFormalY ℤ := by
-  refine PowerSeries.ext fun N ↦ ?_
-  rw [coeff_map, coeff_C_mul, circleY, map_add, coeff_C, coeff_C_mul, coeff_mk]
-  rcases eq_or_ne N 0 with rfl | hN
-  · simp only [↓reduceIte, Nat.divisors_zero, Finset.sum_empty, mul_zero, add_zero,
-      mul_comm _ (coeff 0 _), coeff_zero_tateFormalY_mul_one_sub_X_pow_three, map_pow,
-      Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-  · simp only [hN, ↓reduceIte, zero_add, coeff_tateFormalY_of_ne_zero hN, map_add, map_mul,
-      map_pow, map_sub, map_one, map_sum, map_natCast,
-      Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-
-private theorem toSeries_circleParam (g : ℤ⟦X⟧) : toSeries (circleParam g) = tateParamHom ℤ g := by
-  refine PowerSeries.ext fun b ↦ PowerSeries.ext fun a ↦ ?_
-  simp [coeff_coeff_tateParamHom, circleParam, coeff_rescale, mul_comm _ (Polynomial.C _),
-    -eq_intCast]
-
-/-- The formal Tate equation multiplied by `(1 - u)⁶`, in `ℤ[u]⟦v⟧`. -/
-private theorem circle_equation :
-    circleY ^ 2 + C (1 - Polynomial.X) * circleX * circleY =
-      circleX ^ 3 + C ((1 - Polynomial.X) ^ 4) * circleParam tateCurve.a₄ * circleX +
-        C ((1 - Polynomial.X) ^ 6) * circleParam tateCurve.a₆ := by
-  apply toSeries_injective
-  have h := equation_tateFormalX_tateFormalY ℤ
-  rw [WeierstrassCurve.Affine.equation_iff] at h
-  simp only [WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,
-    WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆, tateCurve_a₁, tateCurve_a₂, tateCurve_a₃,
-    map_one, _root_.map_zero] at h
-  simp only [map_add, map_mul, map_pow, toSeries_circleX, toSeries_circleY, toSeries_circleParam,
-    map_C, map_sub, map_one, Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_X]
-  linear_combination (1 - C (X : ℤ⟦X⟧)) ^ 6 * h
-
 /-! ### Evaluation on the unit circle -/
 
 variable {K : Type*} [NormedField K]
 
-/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the coefficient
-`∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` of `vᴺ` in `circleX` becomes `∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2) qᴺ`. -/
+/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the divisor sum
+`∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)`, which `tateClearedX` multiplies by `(1 - u)²` to form its
+coefficient of `vᴺ` for `N ≥ 1`, becomes `∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2) qᴺ`. -/
 private theorem aeval_sum_divisors_X_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N : ℕ) :
     Polynomial.aeval u (∑ d ∈ N.divisors, (d : Polynomial ℤ) * (Polynomial.X ^ (N + d) +
         Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N)) * (q / u) ^ N =
@@ -154,7 +88,9 @@ private theorem aeval_sum_divisors_X_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N 
   field_simp
   ring
 
-/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the coefficient of `vᴺ` in `circleY` becomes
+/-- Evaluated at `u` and multiplied by `(q / u)ᴺ`, the divisor sum
+`∑_{d ∣ N} (d (d - 1) / 2 · uᴺ⁺ᵈ - d (d + 1) / 2 · uᴺ⁻ᵈ + d uᴺ)`, which `tateClearedY`
+multiplies by `(1 - u)³` to form its coefficient of `vᴺ` for `N ≥ 1`, becomes
 `∑_{d ∣ N} (d (d - 1) / 2 · uᵈ - d (d + 1) / 2 · u⁻ᵈ + d) qᴺ`. -/
 private theorem aeval_sum_divisors_Y_mul_div_pow {q u : K} (hu₀ : u ≠ 0) (N : ℕ) :
     Polynomial.aeval u (∑ d ∈ N.divisors, ((d.choose 2 : Polynomial ℤ) * Polynomial.X ^ (N + d) -
@@ -190,12 +126,12 @@ private theorem circleEval_mk (u : K) (hu : ‖u‖ ≤ 1) (w : K) (hw : ‖w‖
   rw [circleEval, RingHom.evalBoundedSeries_apply]
   simp
 
-private theorem circleEval_circleParam {q u : K} (hu : ‖u‖ ≤ 1) (hu₀ : u ≠ 0) (hq : ‖q‖ < 1)
+private theorem circleEval_tateClearedParamHom {q u : K} (hu : ‖u‖ ≤ 1) (hu₀ : u ≠ 0) (hq : ‖q‖ < 1)
     (hw : ‖q / u‖ < 1) (g : ℤ⟦X⟧) :
-    circleEval u hu (q / u) hw (circleParam g) = evalIntSeries q hq g := by
+    circleEval u hu (q / u) hw (tateClearedParamHom g) = evalIntSeries q hq g := by
   rw [circleEval, RingHom.evalBoundedSeries_apply, evalIntSeries_apply]
   refine tsum_congr fun N ↦ ?_
-  rw [circleParam, RingHom.comp_apply, coeff_rescale, coeff_map]
+  rw [coeff_tateClearedParamHom]
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_mul, map_pow, Polynomial.aeval_X,
     eq_intCast, map_intCast, div_pow]
   field_simp
@@ -222,10 +158,11 @@ private theorem hasSum_sum_divisors_intCast_mul_pow (a : ℕ → ℤ) (F : K →
   rw [mul_pow, pow_mul]
   ring
 
-/-- `circleX` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)² X(u)`. -/
-private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
+/-- `tateClearedX` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)² X(u)`. -/
+private theorem circleEval_tateClearedX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
     (hu₁ : (u : K) ≠ 1) (hw : ‖(q : K) / u‖ < 1) :
-    circleEval (u : K) hu.le ((q : K) / u) hw circleX = (1 - u) ^ 2 * tateUniformizationX q u := by
+    circleEval (u : K) hu.le ((q : K) / u) hw tateClearedX =
+      (1 - u) ^ 2 * tateUniformizationX q u := by
   have hu₀ : (u : K) ≠ 0 := u.ne_zero
   have hui : ‖(u : K)⁻¹‖ ≤ 1 := by rw [norm_inv, hu, inv_one]
   have hF (r : K) (hr : ‖r‖ < 1) :
@@ -236,7 +173,7 @@ private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   have hS := (summable_divisorSumSeries 1 hq).hasSum
   have hP := ((hA.add hB).sub (hS.mul_left 2)).congr_fun fun N ↦
     (aeval_sum_divisors_X_mul_div_pow hu₀ N).trans (by push_cast; rfl)
-  rw [circleX, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
+  rw [tateClearedX_def, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
     ← divisorSumAt_def]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
   rw [tateUniformizationX_eq_tsum_nat q hq u]
@@ -244,10 +181,11 @@ private theorem circleEval_circleX {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   field_simp
   ring
 
-/-- `circleY` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)³ Y(u)`. -/
-private theorem circleEval_circleY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
+/-- `tateClearedY` evaluated at `u` on the unit circle and `v = q / u` is `(1 - u)³ Y(u)`. -/
+private theorem circleEval_tateClearedY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
     (hu₁ : (u : K) ≠ 1) (hw : ‖(q : K) / u‖ < 1) :
-    circleEval (u : K) hu.le ((q : K) / u) hw circleY = (1 - u) ^ 3 * tateUniformizationY q u := by
+    circleEval (u : K) hu.le ((q : K) / u) hw tateClearedY =
+      (1 - u) ^ 3 * tateUniformizationY q u := by
   have hu₀ : (u : K) ≠ 0 := u.ne_zero
   have hui : ‖(u : K)⁻¹‖ ≤ 1 := by rw [norm_inv, hu, inv_one]
   have hF₁ (r : K) (hr : ‖r‖ < 1) :
@@ -261,7 +199,7 @@ private theorem circleEval_circleY {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : �
   have hS := (summable_divisorSumSeries 1 hq).hasSum
   have hP := ((hA.add hB).add hS).congr_fun fun N ↦
     (aeval_sum_divisors_Y_mul_div_pow hu₀ N).trans (by push_cast; rfl)
-  rw [circleY, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
+  rw [tateClearedY_def, map_add, map_mul, circleEval_C, circleEval_C, circleEval_mk, hP.tsum_eq,
     ← divisorSumAt_def]
   have h₁ : (1 : K) - u ≠ 0 := sub_ne_zero.mpr (Ne.symm hu₁)
   rw [tateUniformizationY_eq_tsum_nat q hq u]
@@ -277,9 +215,9 @@ theorem equation_tateUniformizationX_tateUniformizationY_of_norm_eq_one (q u : K
     (tateCurveAt q hq).toAffine.Equation (tateUniformizationX q u) (tateUniformizationY q u) := by
   have hu₁' : (u : K) ≠ 1 := fun h ↦ hu₁ (Units.val_eq_one.mp h)
   have hw : ‖(q : K) / u‖ < 1 := by rwa [norm_div, hu, div_one]
-  have h := congrArg (circleEval (u : K) hu.le ((q : K) / u) hw) circle_equation
-  simp only [map_add, map_mul, map_pow, circleEval_C, circleEval_circleX hq hu hu₁' hw,
-    circleEval_circleY hq hu hu₁' hw, circleEval_circleParam hu.le u.ne_zero hq hw,
+  have h := congrArg (circleEval (u : K) hu.le ((q : K) / u) hw) tateClearedY_sq_add_mul_eq
+  simp only [map_add, map_mul, map_pow, circleEval_C, circleEval_tateClearedX hq hu hu₁' hw,
+    circleEval_tateClearedY hq hu hu₁' hw, circleEval_tateClearedParamHom hu.le u.ne_zero hq hw,
     map_sub, map_one, Polynomial.aeval_X] at h
   rw [WeierstrassCurve.Affine.equation_iff, tateCurveAt_def]
   simp only [WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,

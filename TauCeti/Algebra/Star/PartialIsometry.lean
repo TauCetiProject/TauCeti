@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
 
 /-!
-# Partial isometries in a star monoid
+# Partial isometries in a star semigroup
 
-An element `u` of a star monoid is a *partial isometry* when `u * star u * u = u`. For a bounded
+An element `u` of a star semigroup is a *partial isometry* when `u * star u * u = u`. For a bounded
 operator on a Hilbert space this is the usual notion: `star u * u` is then the orthogonal
 projection onto the initial space of `u`, and `u` is isometric there and zero on its orthogonal
 complement. The Hilbert-space characterizations are in
@@ -20,7 +20,9 @@ part of the theory.
 
 ## Main definitions
 
-* `TauCeti.IsPartialIsometry u`: the element `u` satisfies `u * star u * u = u`.
+* `TauCeti.IsPartialIsometry u`: the element `u` satisfies `u * star u * u = u`. The predicate
+  only needs a multiplication and a star operation; the structural results below hold in any
+  star semigroup, so in particular in non-unital star rings such as non-unital C⋆-algebras.
 
 ## Main statements
 
@@ -44,11 +46,12 @@ namespace TauCeti
 
 variable {R : Type*}
 
-section Monoid
+section Mul
 
-variable [Monoid R] [StarMul R] {u : R}
+variable [Mul R] [Star R] {u : R}
 
-/-- An element `u` of a star monoid is a **partial isometry** when `u * star u * u = u`. -/
+/-- An element `u` of a type with a multiplication and a star operation is a
+**partial isometry** when `u * star u * u = u`. -/
 def IsPartialIsometry (u : R) : Prop :=
   u * star u * u = u
 
@@ -56,11 +59,17 @@ def IsPartialIsometry (u : R) : Prop :=
 theorem isPartialIsometry_iff : IsPartialIsometry u ↔ u * star u * u = u :=
   Iff.rfl
 
-namespace IsPartialIsometry
-
 /-- The defining equation `u * star u * u = u` of a partial isometry. -/
-theorem mul_star_mul_self (hu : IsPartialIsometry u) : u * star u * u = u :=
+theorem IsPartialIsometry.mul_star_mul_self (hu : IsPartialIsometry u) : u * star u * u = u :=
   hu
+
+end Mul
+
+section Semigroup
+
+variable [Semigroup R] [StarMul R] {u : R}
+
+namespace IsPartialIsometry
 
 /-- The adjoint of a partial isometry is a partial isometry. -/
 protected theorem star (hu : IsPartialIsometry u) : IsPartialIsometry (star u) := by
@@ -79,22 +88,6 @@ theorem isStarProjection_mul_star_self (hu : IsPartialIsometry u) :
     IsStarProjection (u * star u) := by
   simpa only [star_star] using hu.star.isStarProjection_star_mul_self
 
-/-- An isometry, that is an element with `star u * u = 1`, is a partial isometry. -/
-theorem of_star_mul_self_eq_one (h : star u * u = 1) : IsPartialIsometry u := by
-  rw [isPartialIsometry_iff, mul_assoc, h, mul_one]
-
-/-- A coisometry, that is an element with `u * star u = 1`, is a partial isometry. -/
-theorem of_mul_star_self_eq_one (h : u * star u = 1) : IsPartialIsometry u := by
-  rw [isPartialIsometry_iff, h, one_mul]
-
-/-- A unitary element is a partial isometry. -/
-theorem of_mem_unitary (hu : u ∈ unitary R) : IsPartialIsometry u :=
-  of_star_mul_self_eq_one (Unitary.star_mul_self_of_mem hu)
-
-/-- The identity is a partial isometry. -/
-protected theorem one : IsPartialIsometry (1 : R) :=
-  of_star_mul_self_eq_one (by rw [star_one, one_mul])
-
 end IsPartialIsometry
 
 /-- An element is a partial isometry iff its adjoint is. -/
@@ -102,17 +95,41 @@ end IsPartialIsometry
 theorem isPartialIsometry_star_iff : IsPartialIsometry (star u) ↔ IsPartialIsometry u :=
   ⟨fun h => by simpa only [star_star] using h.star, IsPartialIsometry.star⟩
 
-end Monoid
+end Semigroup
+
+namespace IsPartialIsometry
+
+/-- An isometry, that is an element with `star u * u = 1`, is a partial isometry. -/
+theorem of_star_mul_self_eq_one [Monoid R] [Star R] {u : R} (h : star u * u = 1) :
+    IsPartialIsometry u := by
+  rw [isPartialIsometry_iff, mul_assoc, h, mul_one]
+
+/-- A coisometry, that is an element with `u * star u = 1`, is a partial isometry. -/
+theorem of_mul_star_self_eq_one [MulOneClass R] [Star R] {u : R} (h : u * star u = 1) :
+    IsPartialIsometry u := by
+  rw [isPartialIsometry_iff, h, one_mul]
+
+/-- A unitary element is a partial isometry. -/
+theorem of_mem_unitary [Monoid R] [StarMul R] {u : R} (hu : u ∈ unitary R) :
+    IsPartialIsometry u :=
+  of_star_mul_self_eq_one (Unitary.star_mul_self_of_mem hu)
+
+end IsPartialIsometry
+
+/-- The identity is a partial isometry. -/
+protected theorem IsPartialIsometry.one [MulOneClass R] [StarMul R] :
+    IsPartialIsometry (1 : R) := by
+  rw [isPartialIsometry_iff, star_one, mul_one, mul_one]
 
 /-- Zero is a partial isometry. -/
-protected theorem IsPartialIsometry.zero [MonoidWithZero R] [StarMul R] :
+protected theorem IsPartialIsometry.zero [MulZeroClass R] [Star R] :
     IsPartialIsometry (0 : R) := by
   rw [isPartialIsometry_iff, mul_zero]
 
 end TauCeti
 
 /-- A star projection is a partial isometry. -/
-theorem IsStarProjection.isPartialIsometry {R : Type*} [Monoid R] [StarMul R] {p : R}
+theorem IsStarProjection.isPartialIsometry {R : Type*} [Mul R] [Star R] {p : R}
     (hp : IsStarProjection p) : TauCeti.IsPartialIsometry p := by
   rw [TauCeti.isPartialIsometry_iff, hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq,
     hp.isIdempotentElem.eq]

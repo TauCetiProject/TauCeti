@@ -18,7 +18,9 @@ splitting assumptions on the polynomial family.
 
 We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
-`f.natTrailingDegree` plus the nonzero roots satisfying it.
+`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
+`f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`.
 -/
 
 public section
@@ -68,5 +70,25 @@ theorem card_filter_roots_eq_natTrailingDegree_add [DecidableEq R] (f : R[X]) {q
     congr 1
     exact Multiset.filter_congr fun α _ => ⟨And.left, fun h => ⟨h, h ▸ hq⟩⟩
   rw [hsplit, Multiset.card_add, Multiset.filter_eq', Multiset.card_replicate, count_zero_roots]
+
+/-- Over a domain, the sum of root multiplicities of a polynomial `f` across any finite set of
+points is at most `f.natDegree` (also when `f = 0`, where every multiplicity vanishes). -/
+theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
+    ∑ a ∈ s, f.rootMultiplicity a ≤ f.natDegree := by
+  classical
+  calc ∑ a ∈ s, f.rootMultiplicity a
+      = ∑ a ∈ s, f.roots.count a := Finset.sum_congr rfl fun _ _ ↦ (count_roots f).symm
+    _ ≤ ∑ a ∈ f.roots.toFinset, f.roots.count a :=
+        Finset.sum_le_sum_of_ne_zero fun _ _ ha ↦
+          Multiset.mem_toFinset.mpr (Multiset.count_pos.mp (Nat.pos_of_ne_zero ha))
+    _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
+    _ ≤ f.natDegree := card_roots' f
+
+/-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
+`r i`. -/
+theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l ≠ 0)
+    (r : ι → R) (z : R) : (C l * ∏ i, (X - C (r i))).IsRoot z ↔ ∃ i, r i = z := by
+  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
+  simp [sub_eq_zero, eq_comm]
 
 end Polynomial

@@ -49,6 +49,8 @@ topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multiva
 * `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
+* `PowerSeries.constantCoeff_polynomial_aeval`: the constant coefficient of a polynomial evaluated
+  at a power series `f` is the polynomial evaluated at the constant coefficient of `f`.
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
 * `PowerSeries.hasSum_smul_pow_aeval`: the series expansion of the evaluation of a power series
   whose coefficients come from a scalar ring.
@@ -97,6 +99,14 @@ theorem algHom_coe_eq_aeval (φ : A⟦X⟧ →ₐ[A] B) (f : Polynomial A) :
   have : φ.comp (Polynomial.coeToPowerSeries.algHom A) = Polynomial.aeval (φ X) :=
     Polynomial.algHom_ext (by simp)
   exact DFunLike.congr_fun this f
+
+/-- Evaluating a polynomial at a power series `f` and taking the constant coefficient is
+evaluating it at the constant coefficient of `f`. -/
+@[simp]
+theorem constantCoeff_polynomial_aeval (f : A⟦X⟧) (p : Polynomial A) :
+    constantCoeff (Polynomial.aeval f p) = p.eval (constantCoeff f) := by
+  rw [Polynomial.aeval_def, Polynomial.hom_eval₂, algebraMap_eq, constantCoeff_comp_C,
+    Polynomial.eval₂_id]
 
 end AlgHom
 

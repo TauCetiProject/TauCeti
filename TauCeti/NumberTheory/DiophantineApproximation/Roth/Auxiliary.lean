@@ -67,26 +67,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
 
-/-- Counting the equations: if `2 D ≤ exp (ε² n / 2)`, then `2 D` times the number of points `d`
-of the box `∏ᵢ {0, …, rᵢ}` with `∑ᵢ dᵢ / rᵢ ≤ (n / 2) (1 - ε)` is at most the number
-`∏ᵢ (rᵢ + 1)` of all points of the box. -/
-private theorem two_mul_mul_card_filter_le [DecidableEq ι] {r : ι → ℕ} (hr : ∀ i, r i ≠ 0)
-    {ε : ℝ} (hε : 0 ≤ ε) {D : ℝ} (hD : 0 ≤ D) (hDε : 2 * D ≤ exp (ε ^ 2 * Fintype.card ι / 2)) :
-    2 * (D * #{d ∈ Fintype.piFinset fun i ↦ range (r i + 1) |
-        ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)}) ≤ ∏ i, ((r i : ℝ) + 1) := by
-  have hcount := card_filter_sum_div_le_mul_one_sub_le hr hε
-  calc 2 * (D * #{d ∈ Fintype.piFinset fun i ↦ range (r i + 1) |
-        ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)})
-      ≤ 2 * D * ((∏ i, ((r i : ℝ) + 1)) * exp (-(ε ^ 2 * Fintype.card ι / 2))) := by
-        rw [← mul_assoc]
-        gcongr
-    _ = (∏ i, ((r i : ℝ) + 1)) * (2 * D / exp (ε ^ 2 * Fintype.card ι / 2)) := by
-        rw [exp_neg]
-        ring
-    _ ≤ ∏ i, ((r i : ℝ) + 1) := by
-        refine mul_le_of_le_one_right (by positivity) ?_
-        rwa [div_le_one (exp_pos _)]
-
 /-- The bound of Siegel's lemma for the linear system of Roth's auxiliary polynomial: if
 `2 D ≤ N ≤ 2 ^ R` and `R ≥ 1`, then `(3 N (2 b H) ^ R) ^ (D / (N - D)) ≤ (12 b H) ^ R`. -/
 private theorem rpow_div_sub_le {N R b : ℕ} {D H : ℝ} (hb : 0 < b) (hH : 1 ≤ H) (hN : 0 < N)
@@ -108,26 +88,19 @@ private theorem rpow_div_sub_le {N R b : ℕ} {D H : ℝ} (hb : 0 < b) (hH : 1 �
         · exact_mod_cast hNR
     _ = (12 * b * H) ^ R := by rw [← mul_pow, ← mul_pow]; ring_nf
 
-/-- Roth's auxiliary polynomial over a number field `K`, in which `α` lies. -/
-private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] (α : K) {b : ℕ}
-    (hb : 0 < b) (hbα : IsIntegral ℤ ((b : K) * α)) {ε : ℝ} (hε : 0 ≤ ε)
-    (hn : 2 * (finrank ℚ K : ℝ) ≤ exp (ε ^ 2 * Fintype.card ι / 2)) {r : ι → ℕ}
-    (hr : ∀ i, r i ≠ 0) :
-    ∃ P : MvPolynomial ι ℤ, P ≠ 0 ∧ (∀ i, P.degreeOf i ≤ r i) ∧
-      ENNReal.ofReal (Fintype.card ι / 2 * (1 - ε)) ≤
-        weightedIndex r (fun _ ↦ α) (P.map (Int.castRingHom K)) ∧
-      ∀ m, |(P.coeff m : ℝ)| ≤ (12 * b * max 1 (NumberField.house α)) ^ ∑ i, r i := by
-  -- Set up the linear system over `𝓞 K`, count its equations, solve it with Siegel's lemma,
-  -- and read off the polynomial from the solution.
+/-- The linear system of Roth's auxiliary polynomial, over `𝓞 K`: for every finite set `rows` of
+jet orders, the equation for `d` multiplied by `b ^ R`, with `R = ∑ᵢ rᵢ`, has integral coefficients
+`a d μ` at the unknown coefficient of `X ^ μ`, and these are bounded by `(2 b max (1, ⌈α⌉)) ^ R`
+in house. -/
+private theorem exists_matrix_hasseDerivRow_house_le [NumberField K] (α : K) {b : ℕ}
+    (hbα : IsIntegral ℤ ((b : K) * α)) (r : ι → ℕ) (rows : Finset (ι → ℕ)) :
+    ∃ a : Matrix rows (∀ i, Fin (r i + 1)) (𝓞 K),
+      (∀ d μ, (a d μ : K) = hasseDerivRow r (fun _ ↦ α) (Finsupp.equivFunOnFinite.symm d.1) μ *
+        (b : K) ^ ∑ i, r i) ∧
+      ∀ d μ, NumberField.house (a d μ : K) ≤
+        (2 * b * max 1 (NumberField.house α)) ^ ∑ i, r i := by
   classical
   set R := ∑ i, r i
-  set t : ℝ := Fintype.card ι / 2 * (1 - ε)
-  -- The unknowns are indexed by the box `∀ i, Fin (r i + 1)`, the equations by its points `d`
-  -- with `∑ᵢ dᵢ / rᵢ ≤ t`.
-  set box : Finset (ι → ℕ) := Fintype.piFinset fun i ↦ range (r i + 1)
-  set rows : Finset (ι → ℕ) := {d ∈ box | ∑ i, (d i : ℝ) / r i ≤ t}
-  have hbox {μ : ι → ℕ} : μ ∈ box ↔ ∀ i, μ i ≤ r i := by
-    simp [box]
   have hle (μ : ∀ i, Fin (r i + 1)) (j : ι) : (μ j : ℕ) ≤ r j := Nat.lt_succ_iff.mp (μ j).isLt
   -- The equation for `d`, multiplied by `b ^ R`, has coefficient `e d μ` at the unknown
   -- coefficient of `X ^ μ`.
@@ -149,38 +122,46 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
   have he (d : rows) (μ : ∀ i, Fin (r i + 1)) : IsIntegral ℤ (e d μ) := by
     rw [he_eq]
     exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (hdeg d μ))
-  let a : Matrix rows (∀ i, Fin (r i + 1)) (𝓞 K) := fun d μ ↦ (⟨e d μ, he d μ⟩ : 𝓞 K)
+  -- The entry `a d μ` coerces to `e d μ` by `RingOfIntegers.map_mk`, which holds by `rfl`.
+  refine ⟨fun d μ ↦ (⟨e d μ, he d μ⟩ : 𝓞 K), fun _ _ ↦ rfl, fun d μ ↦ ?_⟩
+  change NumberField.house (e d μ) ≤ _
+  rw [he_eq]
+  exact house_natCast_mul_pow_mul_pow_le α (hchoose d μ) (hdeg d μ)
+
+/-- Roth's auxiliary polynomial over a number field `K`, in which `α` lies. -/
+private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] (α : K) {b : ℕ}
+    (hb : 0 < b) (hbα : IsIntegral ℤ ((b : K) * α)) {ε : ℝ} (hε : 0 ≤ ε)
+    (hn : 2 * (finrank ℚ K : ℝ) ≤ exp (ε ^ 2 * Fintype.card ι / 2)) {r : ι → ℕ}
+    (hr : ∀ i, r i ≠ 0) :
+    ∃ P : MvPolynomial ι ℤ, P ≠ 0 ∧ (∀ i, P.degreeOf i ≤ r i) ∧
+      ENNReal.ofReal (Fintype.card ι / 2 * (1 - ε)) ≤
+        weightedIndex r (fun _ ↦ α) (P.map (Int.castRingHom K)) ∧
+      ∀ m, |(P.coeff m : ℝ)| ≤ (12 * b * max 1 (NumberField.house α)) ^ ∑ i, r i := by
+  -- Set up the linear system over `𝓞 K`, count its equations, solve it with Siegel's lemma,
+  -- and read off the polynomial from the solution.
+  classical
+  set R := ∑ i, r i
+  set t : ℝ := Fintype.card ι / 2 * (1 - ε)
+  -- The unknowns are indexed by the box `∀ i, Fin (r i + 1)`, the equations by its points `d`
+  -- with `∑ᵢ dᵢ / rᵢ ≤ t`.
+  set box : Finset (ι → ℕ) := Fintype.piFinset fun i ↦ range (r i + 1)
+  set rows : Finset (ι → ℕ) := {d ∈ box | ∑ i, (d i : ℝ) / r i ≤ t}
+  have hbox {μ : ι → ℕ} : μ ∈ box ↔ ∀ i, μ i ≤ r i := by
+    simp [box]
+  obtain ⟨a, hae, ha⟩ := exists_matrix_hasseDerivRow_house_le α hbα r rows
   have hH : 1 ≤ max 1 (NumberField.house α) := le_max_left _ _
   have hA : 1 ≤ (2 * b * max 1 (NumberField.house α) : ℝ) ^ R :=
     one_le_pow₀ (by nlinarith [show (1 : ℝ) ≤ b by exact_mod_cast hb])
-  -- The entry `a d μ` coerces to `e d μ` by `RingOfIntegers.map_mk`, which holds by `rfl`.
-  have hae (d μ) : (a d μ : K) = e d μ := rfl
-  have ha (d μ) : NumberField.house (a d μ : K) ≤ (2 * b * max 1 (NumberField.house α)) ^ R := by
-    rw [hae, he_eq]
-    exact house_natCast_mul_pow_mul_pow_le α (hchoose d μ) (hdeg d μ)
   have hcardbox : Fintype.card (∀ i, Fin (r i + 1)) = #box := by
     rw [card_piFinset_range]
     simp
-  have hN : (Fintype.card (∀ i, Fin (r i + 1)) : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
-    rw [hcardbox]
-    exact_mod_cast card_piFinset_range r
-  have hM : 2 * (finrank ℚ K * Fintype.card rows : ℝ) ≤ Fintype.card (∀ i, Fin (r i + 1)) := by
-    rw [hN, Fintype.card_coe]
-    exact two_mul_mul_card_filter_le hr hε (Nat.cast_nonneg _) hn
   have hN₀ : 0 < Fintype.card (∀ i, Fin (r i + 1)) := Fintype.card_pos
-  have hcard : finrank ℚ K * Fintype.card rows < Fintype.card (∀ i, Fin (r i + 1)) := by
-    have : (finrank ℚ K * Fintype.card rows : ℝ) < Fintype.card (∀ i, Fin (r i + 1)) := by
-      nlinarith [show (0 : ℝ) < Fintype.card (∀ i, Fin (r i + 1)) by exact_mod_cast hN₀]
-    exact_mod_cast this
+  have hM : 2 * (finrank ℚ K * Fintype.card rows) ≤ Fintype.card (∀ i, Fin (r i + 1)) := by
+    rw [hcardbox, Fintype.card_coe]
+    exact two_mul_mul_card_filter_le hr hε hn
+  have hcard : finrank ℚ K * Fintype.card rows < Fintype.card (∀ i, Fin (r i + 1)) := by omega
   obtain ⟨x, hx0, hax, hxle⟩ := exists_ne_zero_int_vec_abs_le_of_house_le a hA hcard ha
-  have hR : 1 ≤ R := by
-    have hι : Fintype.card ι ≠ 0 := by
-      intro hι
-      rw [hι] at hn
-      norm_num at hn
-      linarith [show (1 : ℝ) ≤ finrank ℚ K by exact_mod_cast finrank_pos]
-    obtain ⟨i⟩ := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hι)
-    exact (Nat.one_le_iff_ne_zero.mpr (hr i)).trans (single_le_sum (by simp) (mem_univ i))
+  have hR : 1 ≤ R := one_le_sum_of_le_exp hr finrank_pos hn
   have hNR : Fintype.card (∀ i, Fin (r i + 1)) ≤ 2 ^ R := by
     rw [hcardbox]
     exact card_piFinset_range_le_two_pow r
@@ -193,20 +174,20 @@ private theorem exists_roth_auxiliary_polynomial_of_numberField [NumberField K] 
     refine ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero
       (fun i ↦ (MvPolynomial.degreeOf_map_le _ _ i).trans (hPdeg i)) fun d hdr hdt ↦ ?_
     have hdrow : ⇑d ∈ rows := mem_filter.mpr ⟨hbox.mpr hdr, hdt.le⟩
-    -- `(a d μ : K)` is `e d μ` by `hae`.
-    have hrow : ∑ μ, e ⟨d, hdrow⟩ μ * (x μ : K) = 0 :=
+    have hrow : ∑ μ, (a ⟨d, hdrow⟩ μ : K) * (x μ : K) = 0 :=
       sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax ⟨d, hdrow⟩
     have hb' : (b : K) ^ R ≠ 0 := pow_ne_zero _ (by exact_mod_cast hb.ne')
     refine (mul_eq_zero.mp ?_).resolve_left hb'
     rw [← hrow, hasseDeriv_map, eval_map, ← algebraMap_int_eq, ← aeval_def,
       aeval_hasseDeriv_ofBox, mul_sum]
     refine sum_congr rfl fun μ _ ↦ ?_
-    simp only [e, Finsupp.equivFunOnFinite_symm_coe, eq_intCast]
+    rw [hae]
+    simp only [Finsupp.equivFunOnFinite_symm_coe, eq_intCast]
     ring
   · by_cases hm : ∀ j, m j ≤ r j
     · obtain ⟨μ, rfl⟩ := exists_boxMonomial_eq hm
       rw [coeff_ofBox]
-      exact (hxle _).trans (rpow_div_sub_le hb hH hN₀ (by linarith) hNR hR)
+      exact (hxle _).trans (rpow_div_sub_le hb hH hN₀ (by exact_mod_cast hM) hNR hR)
     · rw [coeff_ofBox_of_not_le x hm]
       simp
 

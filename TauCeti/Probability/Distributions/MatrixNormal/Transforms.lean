@@ -97,7 +97,7 @@ theorem memLp_trace_transpose_mul_matrixNormalMeasure (M T : Matrix ι κ ℝ)
   · exact ((HasLaw.id (μ := matrixNormalMeasure M U V)).matrixNormal_trace_transpose_mul
       T h.1 h.2).memLp (memLp_id_gaussianReal p)
   · rw [matrixNormalMeasure_of_not_posSemidef M h]
-    exact memLp_dirac enorm_lt_top
+    exact memLp_dirac eNorm_lt_top
 
 /-- The variance of a matrix normal linear statistic is its covariance quadratic form. -/
 @[simp]
@@ -126,7 +126,7 @@ theorem integrableExpSet_trace_transpose_mul_matrixNormalMeasure (M T : Matrix �
   · rw [matrixNormalMeasure_of_not_posSemidef M h]
     ext t
     simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-    exact integrable_dirac enorm_lt_top
+    exact integrable_dirac eNorm_lt_top
 
 /-- The directional mgf of a matrix normal law is the exponential of its linear mean term
 plus half its covariance quadratic form. The formula holds for every real order. -/

@@ -289,10 +289,8 @@ private theorem isSmoothEmbedding_whiteheadSphereMap :
     contMDiff_whiteheadMap.codRestrict_sphere _
   have hinj : Injective whiteheadSphereMap := fun z w hzw ↦
     whiteheadMap_injective (congrArg Subtype.val hzw)
-  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun z ↦ ?_,
+  refine ⟨hsmooth.isImmersion_of_injective_mfderiv (by simp) fun z ↦ ?_,
     (hsmooth.continuous.isClosedEmbedding hinj).isEmbedding⟩
-  refine (hsmooth.contMDiffOn (s := univ).isImmersionAt_iff_injective_mfderiv isOpen_univ
-    (mem_univ _) (by simp)).2 ?_
   -- The derivative of the curve in `ℝ⁴` is that of the curve in the sphere followed by the
   -- derivative of the inclusion, so its injectivity suffices.
   have hcomp := mvfderiv_comp (f := whiteheadSphereMap)

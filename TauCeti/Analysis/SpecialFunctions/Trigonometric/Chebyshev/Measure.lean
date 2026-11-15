@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogon
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Function.BoundedSupportExponential
+import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 import Mathlib.Topology.Algebra.Polynomial
 
@@ -17,8 +18,7 @@ import Mathlib.Topology.Algebra.Polynomial
 
 This file records the finite-measure bookkeeping for Mathlib's Chebyshev
 orthogonality measure `Polynomial.Chebyshev.measureT`, together with the
-single normalization constant used by the roadmap's Chebyshev Hilbert-basis
-target.
+single normalization constant of the Chebyshev Hilbert basis.
 
 The main facts are that `measureT` has total mass `π`, hence is finite and
 nonzero, that it is Lebesgue measure on `(-1, 1]` weighted by the Chebyshev
@@ -36,9 +36,9 @@ to the normalized modes and their orthonormality.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory Polynomial.Chebyshev
+
+namespace TauCeti
 
 open scoped ENNReal
 
@@ -129,10 +129,8 @@ what moves an almost-everywhere identity between representatives from `measureT`
 theorem volume_restrict_absolutelyContinuous_measureT :
     (volume.restrict (Set.Ioc (-1 : ℝ) 1)) ≪ (Polynomial.Chebyshev.measureT : Measure ℝ) := by
   rw [chebyshevMeasureT_eq_withDensity]
-  refine withDensity_absolutelyContinuous' measurable_chebyshevWeight.ennreal_ofReal.aemeasurable ?_
-  filter_upwards [ae_zero_lt_chebyshevWeight] with x hx
-  simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
-  exact hx
+  exact absolutelyContinuous_withDensity_ofReal measurable_chebyshevWeight.aemeasurable
+    ae_zero_lt_chebyshevWeight
 
 /-- The squared `L²(measureT)` norm of the `n`th Chebyshev `T` polynomial. -/
 noncomputable def chebyshevTNormSq (n : ℕ) : ℝ :=

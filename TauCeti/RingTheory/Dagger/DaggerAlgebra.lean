@@ -85,7 +85,7 @@ algebra. -/
 theorem of_surjective_washnitzerAlgebra {σ : Type*} [Finite σ]
     (φ : washnitzerAlgebra σ K →ₐ[K] A) (hφ : Function.Surjective φ) : IsDaggerAlgebra K A := by
   let := Fintype.ofFinite σ
-  let e := washnitzerAlgebra.renameEquiv (R := K) (Fintype.equivFin σ).symm
+  let e := washnitzerAlgebra.renameAlgEquiv (R := K) (Fintype.equivFin σ).symm
   exact ⟨_, φ.comp e.toAlgHom, hφ.comp e.surjective⟩
 
 /-- The Monsky–Washnitzer algebra in finitely many variables is a dagger algebra. -/
@@ -155,7 +155,7 @@ theorem presentationDim_eq_zero_iff :
       h ▸ ⟨presentation K A, presentation_surjective K A⟩
     refine fun a ↦ ?_
     obtain ⟨f, rfl⟩ := hφ a
-    obtain ⟨r, rfl⟩ := algebraMap_washnitzerAlgebra_surjective f
+    obtain ⟨r, rfl⟩ := washnitzerAlgebra.algebraMap_surjective f
     exact ⟨r, (φ.commutes r).symm⟩
   · intro h
     let e := washnitzerAlgebra.isEmptyAlgEquiv (Fin 0) K

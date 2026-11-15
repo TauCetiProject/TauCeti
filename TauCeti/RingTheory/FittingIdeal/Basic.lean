@@ -49,6 +49,8 @@ is carried by a shear automorphism of `F × F'` onto `ker φ × F'`.
   from free modules of finite rank onto the same module agree after the shift by the ranks.
 * `TauCeti.fittingIdeal_eq_minorsIdeal_ker`: the Fitting ideals may be computed from any
   surjection from a free module of finite rank.
+* `Submodule.minorsIdeal_eq_bot_iff_finrank_lt`: over a field, the `p × p` minors of a
+  finite-dimensional subspace vanish exactly when its dimension is less than `p`.
 * `TauCeti.fittingIdeal_monotone`: `Fitt₀(M) ≤ Fitt₁(M) ≤ ⋯`.
 * `TauCeti.fittingIdeal_prod_add_finrank`: adjoining a free summand of rank `r` to the module
   shifts its Fitting ideals by `r`.
@@ -131,14 +133,21 @@ theorem minorsIdeal_map_le (φ : F →ₗ[R] F') (N : Submodule R F) (p : ℕ) :
   obtain rfl : v = fun i ↦ φ (w i) := funext fun i ↦ (hwv i).symm
   exact det_mem_minorsIdeal (fun j ↦ f j ∘ₗ φ) hw
 
+/-- The minors ideals are invariant under a linear map with a left inverse, such as the inclusion
+of a direct summand. -/
+theorem minorsIdeal_map_of_leftInverse {φ : F →ₗ[R] F'} {ψ : F' →ₗ[R] F}
+    (h : Function.LeftInverse ψ φ) (N : Submodule R F) (p : ℕ) :
+    (N.map φ).minorsIdeal p = N.minorsIdeal p := by
+  refine le_antisymm (minorsIdeal_map_le _ _ _) ?_
+  calc N.minorsIdeal p = ((N.map φ).map ψ).minorsIdeal p := by
+        rw [← map_comp, (LinearMap.ext h : ψ ∘ₗ φ = LinearMap.id), map_id]
+    _ ≤ (N.map φ).minorsIdeal p := minorsIdeal_map_le _ _ _
+
 /-- The minors ideals are invariant under linear equivalences of the ambient module. -/
 @[simp]
 theorem minorsIdeal_map_equiv (e : F ≃ₗ[R] F') (N : Submodule R F) (p : ℕ) :
-    (N.map (e : F →ₗ[R] F')).minorsIdeal p = N.minorsIdeal p := by
-  refine le_antisymm (minorsIdeal_map_le _ _ _) ?_
-  calc N.minorsIdeal p = ((N.map (e : F →ₗ[R] F')).map (e.symm : F' →ₗ[R] F)).minorsIdeal p := by
-        rw [(map_symm_eq_iff e).2 rfl]
-    _ ≤ (N.map (e : F →ₗ[R] F')).minorsIdeal p := minorsIdeal_map_le _ _ _
+    (N.map (e : F →ₗ[R] F')).minorsIdeal p = N.minorsIdeal p :=
+  minorsIdeal_map_of_leftInverse (ψ := (e.symm : F' →ₗ[R] F)) e.symm_apply_apply N p
 
 /-- The minors ideals are invariant under linear equivalences of the ambient module. -/
 @[simp]
@@ -302,6 +311,41 @@ theorem minorsIdeal_ker_eq_of_surjective [Free R F] [Module.Finite R F] [Free R 
     simp [add_comm]
   rw [← minorsIdeal_ker_coprod hφ ψ, ← minorsIdeal_ker_coprod hψ φ, ← hswap,
     minorsIdeal_comap_equiv, add_comm (finrank R F')]
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- Over a field, the ideal of `p × p` minors of a finite-dimensional subspace `U` vanishes exactly
+when `U` has dimension less than `p`. -/
+@[simp]
+theorem minorsIdeal_eq_bot_iff_finrank_lt (U : Submodule K V) [FiniteDimensional K U] {p : ℕ} :
+    U.minorsIdeal p = ⊥ ↔ finrank K U < p := by
+  refine ⟨fun h ↦ ?_, fun h ↦ le_bot_iff.1 <| minorsIdeal_le_iff.2 fun f v hv ↦ ?_⟩
+  · -- `p` vectors of a basis of `U` and extensions of their coordinate functionals give the
+    -- identity matrix as a minor
+    by_contra! hp
+    let b := Module.finBasis K U
+    choose g hg using fun j : Fin p ↦ LinearMap.exists_extend (b.coord (Fin.castLE hp j))
+    have hdet : (Matrix.of fun i j ↦ g j (b (Fin.castLE hp i) : V)) = 1 := by
+      ext i j
+      have := congr($(hg j) (b (Fin.castLE hp i)))
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply] at this
+      simp [this, Matrix.one_apply, Finsupp.single_apply]
+    have := det_mem_minorsIdeal (N := U) g (v := fun i ↦ (b (Fin.castLE hp i) : V))
+      fun i ↦ (b _).2
+    rw [h, hdet, Matrix.det_one, Ideal.mem_bot] at this
+    exact one_ne_zero this
+  · -- more than `dim U` vectors of `U` are dependent, so the rows of the minor are dependent
+    have hdep : ¬LinearIndependent K (fun i ↦ (⟨v i, hv i⟩ : U)) := fun hli ↦
+      h.not_ge (by simpa using hli.fintype_card_le_finrank)
+    obtain ⟨c, hc, i, hi⟩ := Fintype.not_linearIndependent_iff.1 hdep
+    rw [Ideal.mem_bot, ← Matrix.exists_vecMul_eq_zero_iff]
+    refine ⟨c, fun h0 ↦ hi (congrFun h0 i), funext fun j ↦ ?_⟩
+    have := congr(f j ($hc : V))
+    simpa [Matrix.vecMul, dotProduct, map_sum, mul_comm] using this
+
+end Field
 
 end Submodule
 

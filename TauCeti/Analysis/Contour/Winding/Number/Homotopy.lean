@@ -10,11 +10,16 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Path
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
-import TauCeti.Analysis.Contour.Curve.Approximation
 import TauCeti.Analysis.Contour.NullHomologous
 import TauCeti.Analysis.Contour.Winding.Proximity
+import TauCeti.Analysis.Contour.Winding.Number.Affine
 import Mathlib.Analysis.SpecialFunctions.Bernstein
+import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.Topology.LocallyConstant.Basic
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # Homotopy invariance of the winding number
@@ -22,29 +27,47 @@ import Mathlib.Analysis.SpecialFunctions.Bernstein
 Two piecewise-`C¹` paths with the same endpoints, joined by an arbitrary continuous fixed-endpoint
 homotopy through `ℂ \ {w}`, have the same winding number about `w`. The proof regularizes finitely
 many horizontal slices of the homotopy by endpoint-preserving smooth approximations, then chains
-the resulting smooth paths with proximity invariance of the winding number.
+the resulting smooth paths with proximity invariance of the winding number. For closed paths the
+endpoints may move: a homotopy through closed loops in `ℂ \ {w}` becomes a fixed-endpoint homotopy
+of loops based at `1` after replacing each loop `γ` by `t ↦ (γ t - w) / (γ 0 - w)`, whose winding
+number about `0` equals the winding number of `γ` about `w`.
+
+For closed curves the base point may move. A family of closed piecewise-`C¹` curves avoiding `w`,
+depending jointly continuously on a parameter in a preconnected set, has a constant winding number
+about `w`: nearby curves of the family are uniformly closer to each other than to `w`, so the
+winding number is locally constant in the parameter. Shrinking concentric circles gives the
+annulus and disc forms: if a `C¹` map `f` does not take the value `w` on a closed annulus, the
+images of its two boundary circles wind equally often around `w`, and if `f` does not take the
+value `w` on a closed disc, the image of the boundary circle does not wind around `w` at all.
 
 ## Main results
 
 * `windingNumber_eq_of_pathHomotopy` proves homotopy invariance without any
   regularity hypothesis on the homotopy.
+* `windingNumber_eq_of_homotopy` is the invariance of the winding number of closed paths under
+  homotopies through closed loops, whose basepoint may move.
 * `curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy` is its curve-integral form: such a homotopy
   preserves the integral of the Cauchy-kernel `1`-form.
 * `isNullHomologous_iff_of_pathHomotopy` transfers null-homology across a homotopy in the ambient
   set.
+* `windingNumber_eq_of_continuousOn_uncurry` proves invariance along a continuous family of
+  closed curves, with a moving base point.
+* `windingNumber_comp_circleMap_eq_of_annulus` and `windingNumber_comp_circleMap_eq_zero` are the
+  annulus and disc forms for the image of a circle under a `C¹` map.
 
 ## Provenance
 
-The regularization step is `exists_contDiff_eq_endpoints_dist_lt`, which reuses Mathlib's
-`bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the
-classical winding number is standard complex analysis; see L. Ahlfors, *Complex Analysis*, Ch. 4.
+The regularization step is `ContinuousMap.exists_contDiff_eq_endpoints_dist_lt`, which reuses
+Mathlib's `bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of
+the classical winding number is standard complex analysis; see L. Ahlfors, *Complex Analysis*,
+Ch. 4.
 -/
 
 public section
 
 noncomputable section
 
-open scoped unitInterval
+open scoped unitInterval Topology
 open MeasureTheory Set
 
 namespace TauCeti.Contour
@@ -101,6 +124,36 @@ private theorem windingNumber_eq_of_dist_lt_of_le_dist {γ δ : ℝ → ℂ} {w 
   rw [hcoe] at hc hf
   exact hc.trans_le hf
 
+/-- Two piecewise-`C¹` curves with common endpoints that both stay within `ρ / 5` of curves
+`f₁` and `f₂` which are `ρ / 5` apart, with `γ₂` at distance more than `4 * ρ / 5` from `w`,
+have the same winding number about `w`: the adjacent step of the chain of approximants below. -/
+private theorem windingNumber_eq_of_dist_lt_of_dist_lt {γ₁ γ₂ : ℝ → ℂ} {f₁ f₂ : I → ℂ} {w : ℂ}
+    {ρ : ℝ} (hρ : 0 ≤ ρ) (hγ₁ : IsPiecewiseC1On γ₁ 0 1) (hγ₂ : IsPiecewiseC1On γ₂ 0 1)
+    (h₀ : γ₁ 0 = γ₂ 0) (h₁ : γ₁ 1 = γ₂ 1) (hclose₁ : ∀ t : I, dist (γ₁ t) (f₁ t) < ρ / 5)
+    (hclose₂ : ∀ t : I, dist (γ₂ t) (f₂ t) < ρ / 5) (hf : ∀ t : I, dist (f₁ t) (f₂ t) < ρ / 5)
+    (hfar : ∀ t : I, 4 * ρ / 5 < dist (γ₂ t) w) :
+    windingNumber γ₁ 0 1 w = windingNumber γ₂ 0 1 w := by
+  refine windingNumber_eq_of_dist_lt_of_le_dist (c := 3 * ρ / 5) hγ₁ hγ₂ h₀ h₁ (fun t => ?_)
+    (fun t => ?_)
+  · exact (dist_triangle4 (γ₁ t) (f₁ t) (f₂ t) (γ₂ t)).trans_lt
+      (by linarith [hclose₁ t, hf t, hclose₂ t, dist_comm (f₂ t) (γ₂ t)])
+  · linarith [hfar t, hρ]
+
+/-- A piecewise-`C¹` curve `γ` with the endpoints of a path `r` that stays within `ρ / 5` of `r`,
+where `r` stays at distance at least `ρ` from `w`, has the same winding number about `w` as
+`r.extend`: the endpoint step of the chain of approximants below. -/
+private theorem windingNumber_eq_extend_of_dist_lt {x y w : ℂ} {r : Path x y} {γ : ℝ → ℂ}
+    {ρ : ℝ} (hρ : 0 ≤ ρ) (hγ : IsPiecewiseC1On γ 0 1) (hr : IsPiecewiseC1On r.extend 0 1)
+    (h₀ : γ 0 = x) (h₁ : γ 1 = y) (hclose : ∀ t : I, dist (γ t) (r t) < ρ / 5)
+    (hfar : ∀ t : I, ρ ≤ dist (r t) w) :
+    windingNumber γ 0 1 w = windingNumber r.extend 0 1 w := by
+  refine windingNumber_eq_of_dist_lt_of_le_dist (c := ρ / 5) hγ hr
+    (by rw [Path.extend_zero, h₀]) (by rw [Path.extend_one, h₁]) (fun t => ?_) (fun t => ?_)
+  · rw [Path.extend_extends']
+    exact hclose t
+  · rw [Path.extend_extends']
+    linarith [hfar t, hρ]
+
 /-- **Homotopy invariance of the winding number off the curve.** Two piecewise-`C¹` paths with the
 same endpoints, joined through `ℂ \ {w}` by an arbitrary continuous path homotopy, have the same
 winding number about `w`. No differentiability of the homotopy is required. -/
@@ -113,7 +166,7 @@ theorem windingNumber_eq_of_pathHomotopy {x y w : ℂ} {p q : Path x y} (φ : p.
     (0 : ℝ) < 5))
   let slice : Fin (N + 1) → C(I, ℂ) := fun k => (φ.eval (bernstein.z k)).toContinuousMap
   choose γ hγ using fun k : Fin (N + 1) =>
-    exists_contDiff_eq_endpoints_dist_lt (slice k) (ε := ρ / 5) (div_pos hρ (by norm_num))
+    (slice k).exists_contDiff_eq_endpoints_dist_lt (ε := ρ / 5) (div_pos hρ (by norm_num))
   have hγpw (k : Fin (N + 1)) : IsPiecewiseC1On (γ k) 0 1 :=
     IsPiecewiseC1On.of_contDiffOn ((hγ k).1.contDiffOn.of_le (by norm_num))
   have hγclose (k : Fin (N + 1)) (t : I) : dist (γ k t) (φ (bernstein.z k, t)) < ρ / 5 := by
@@ -136,53 +189,83 @@ theorem windingNumber_eq_of_pathHomotopy {x y w : ℂ} {p q : Path x y} (φ : p.
     linarith
   -- Consecutive approximants are close enough for the leash lemma.
   have hadjacent (k : Fin N) : windingNumber (γ k.succ) 0 1 w =
-      windingNumber (γ k.castSucc) 0 1 w := by
-    refine windingNumber_eq_of_dist_lt_of_le_dist (c := 3 * ρ / 5) (hγpw k.succ) (hγpw k.castSucc)
+      windingNumber (γ k.castSucc) 0 1 w :=
+    windingNumber_eq_of_dist_lt_of_dist_lt hρ.le (hγpw k.succ) (hγpw k.castSucc)
       ((hγzero k.succ).trans (hγzero k.castSucc).symm)
-      ((hγone k.succ).trans (hγone k.castSucc).symm) (fun t => ?_) (fun t => ?_)
-    · calc
-        dist (γ k.succ t) (γ k.castSucc t) ≤
-            dist (γ k.succ t) (φ (bernstein.z k.succ, t)) +
-              dist (φ (bernstein.z k.succ, t)) (γ k.castSucc t) := dist_triangle _ _ _
-        _ ≤ dist (γ k.succ t) (φ (bernstein.z k.succ, t)) +
-              (dist (φ (bernstein.z k.succ, t)) (φ (bernstein.z k.castSucc, t)) +
-                dist (φ (bernstein.z k.castSucc, t)) (γ k.castSucc t)) := by
-                  gcongr
-                  exact dist_triangle _ _ _
-        _ < 3 * ρ / 5 := by
-              rw [dist_comm (φ (bernstein.z k.castSucc, t)) (γ k.castSucc t)]
-              linarith [hγclose k.succ t, hstage k t, hγclose k.castSucc t]
-    · linarith [hγdist k.castSucc t]
+      ((hγone k.succ).trans (hγone k.castSucc).symm) (hγclose k.succ) (hγclose k.castSucc)
+      (hstage k) (hγdist k.castSucc)
   -- Chain the finitely many approximants from homotopy time `0` to time `1`.
   have hchain (k : Fin (N + 1)) : windingNumber (γ k) 0 1 w = windingNumber (γ 0) 0 1 w := by
     induction k using Fin.induction with
     | zero => rfl
     | succ k ih => exact (hadjacent k).trans ih
   -- The first and last approximants are close to the original endpoint paths.
-  have hstart : windingNumber (γ 0) 0 1 w = windingNumber p.extend 0 1 w := by
-    have hp_apply (t : I) : p.extend t = φ (0, t) := by
-      rw [Path.extend_extends' p t]
-      simp
-    refine windingNumber_eq_of_dist_lt_of_le_dist (c := ρ / 5) (hγpw 0) hp
-      (by rw [Path.extend_zero, hγzero]) (by rw [Path.extend_one, hγone])
-      (fun t => ?_) (fun t => ?_)
-    · rw [hp_apply t]
-      simpa using hγclose 0 t
-    · rw [hp_apply t]
-      linarith [hρle (0, t)]
-  have hend : windingNumber (γ (Fin.last N)) 0 1 w = windingNumber q.extend 0 1 w := by
-    have hq_apply (t : I) : q.extend t = φ (1, t) := by
-      rw [Path.extend_extends' q t]
-      simp
-    have hz : bernstein.z (Fin.last N) = (1 : I) := bernstein.z_last hN
-    refine windingNumber_eq_of_dist_lt_of_le_dist (c := ρ / 5) (hγpw (Fin.last N)) hq
-      (by rw [Path.extend_zero, hγzero]) (by rw [Path.extend_one, hγone])
-      (fun t => ?_) (fun t => ?_)
-    · rw [hq_apply t]
-      simpa [hz] using hγclose (Fin.last N) t
-    · rw [hq_apply t]
-      linarith [hρle (1, t)]
+  have hstart : windingNumber (γ 0) 0 1 w = windingNumber p.extend 0 1 w :=
+    windingNumber_eq_extend_of_dist_lt hρ.le (hγpw 0) hp (hγzero 0) (hγone 0)
+      (fun t => by simpa using hγclose 0 t) fun t => by simpa using hρle (0, t)
+  have hend : windingNumber (γ (Fin.last N)) 0 1 w = windingNumber q.extend 0 1 w :=
+    windingNumber_eq_extend_of_dist_lt hρ.le (hγpw (Fin.last N)) hq (hγzero _) (hγone _)
+      (fun t => by simpa [bernstein.z_last hN] using hγclose (Fin.last N) t)
+      fun t => by simpa using hρle (1, t)
   exact hstart.symm.trans ((hchain (Fin.last N)).symm.trans hend)
+
+/-- Dividing a loop `r` at `z` by `z - w` after translating `w` to the origin gives a loop at `1`,
+whose extension is the corresponding affine image of `r.extend`. -/
+private theorem exists_path_one_eq_inv_mul_sub {z w : ℂ} (r : Path z z) (hz : z - w ≠ 0) :
+    ∃ R : Path (1 : ℂ) 1, (∀ t, R t = (z - w)⁻¹ * (r t - w)) ∧
+      R.extend = fun t ↦ (z - w)⁻¹ * (r.extend t - w) := by
+  let f : ℂ → ℂ := fun u ↦ (z - w)⁻¹ * (u - w)
+  have hf : Continuous f := continuous_const.mul (continuous_id.sub continuous_const)
+  have hfz : f z = 1 := inv_mul_cancel₀ hz
+  let R : Path (1 : ℂ) 1 := (r.map hf).cast hfz.symm hfz.symm
+  have hR (t : I) : R t = f (r t) := by
+    simp only [R, Path.cast_coe, Path.map_coe, Function.comp_apply]
+  refine ⟨R, hR, funext fun t ↦ ?_⟩
+  -- `Path.extend` is `Set.IccExtend`, which commutes with postcomposition by `f`.
+  simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, hR, f]
+
+/-- **Free homotopy invariance of the winding number.** Two closed piecewise-`C¹` paths joined by
+a continuous homotopy `F` through closed loops in `ℂ \ {w}` have the same winding number about
+`w`. The basepoint `F (s, 0) = F (s, 1)` may move, and no regularity of the intermediate loops is
+required. -/
+theorem windingNumber_eq_of_homotopy {x y w : ℂ} {p : Path x x} {q : Path y y}
+    (F : C(I × I, ℂ)) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
+    (hF : ∀ s, F (s, 0) = F (s, 1)) (havoid : ∀ st, F st ≠ w)
+    (hp : IsPiecewiseC1On p.extend 0 1) (hq : IsPiecewiseC1On q.extend 0 1) :
+    windingNumber p.extend 0 1 w = windingNumber q.extend 0 1 w := by
+  have hF₀ (s : I) : F (s, 0) - w ≠ 0 := sub_ne_zero.mpr (havoid (s, 0))
+  have hx : x - w ≠ 0 := by simpa only [h₀, Path.source] using hF₀ 0
+  have hy : y - w ≠ 0 := by simpa only [h₁, Path.source] using hF₀ 1
+  obtain ⟨P, hPt, hP⟩ := exists_path_one_eq_inv_mul_sub p hx
+  obtain ⟨Q, hQt, hQ⟩ := exists_path_one_eq_inv_mul_sub q hy
+  let H : P.Homotopy Q :=
+    { toFun := fun st ↦ (F (st.1, 0) - w)⁻¹ * (F st - w)
+      continuous_toFun :=
+        (((F.continuous.comp (continuous_fst.prodMk continuous_const)).sub
+          continuous_const).inv₀ fun st ↦ hF₀ st.1).mul (F.continuous.sub continuous_const)
+      map_zero_left := fun t ↦ by simp only [h₀, Path.source, Path.coe_toContinuousMap, hPt]
+      map_one_left := fun t ↦ by simp only [h₁, Path.source, Path.coe_toContinuousMap, hQt]
+      prop' := by
+        intro s t ht
+        rcases ht with rfl | ht
+        · simp [hPt, hF₀ s, hx]
+        · rw [Set.mem_singleton_iff] at ht
+          subst t
+          simp [← hF s, hPt, hF₀ s, hx] }
+  have hconst : IsPiecewiseC1On (fun _ ↦ w) 0 1 := .of_contDiffOn contDiffOn_const
+  have hw := windingNumber_eq_of_pathHomotopy H
+    (by simpa only [hP, smul_eq_mul] using (hp.sub hconst).const_smul (x - w)⁻¹)
+    (by simpa only [hQ, smul_eq_mul] using (hq.sub hconst).const_smul (y - w)⁻¹)
+    fun st ↦ mul_ne_zero (inv_ne_zero (hF₀ st.1)) (sub_ne_zero.mpr (havoid st))
+  have hnorm {z : ℂ} {r : Path z z} (hz : z - w ≠ 0) :
+      windingNumber (fun t ↦ (z - w)⁻¹ * (r.extend t - w)) 0 1 0 =
+        windingNumber r.extend 0 1 w := by
+    have h := windingNumber_affine (γ := r.extend) (a := 0) (b := 1) (z₀ := w)
+      (d := -((z - w)⁻¹ * w)) (inv_ne_zero hz)
+    rw [add_neg_cancel] at h
+    simpa only [sub_eq_add_neg, mul_add, mul_neg] using h
+  rw [hP, hQ] at hw
+  exact (hnorm hx).symm.trans (hw.trans (hnorm hy))
 
 /-- **A path homotopy avoiding `w` preserves the curve integral of the Cauchy kernel.** Two
 piecewise-`C¹` paths with the same endpoints, joined by an arbitrary continuous homotopy through
@@ -220,6 +303,73 @@ theorem isNullHomologous_iff_of_pathHomotopy {x y : ℂ} {p q : Path x y} {Ω : 
     exact h.congr_windingNumber fun z hz ↦
       windingNumber_eq_of_pathHomotopy φ hp hq
         (fun st (hst : φ st = z) ↦ hz (hst ▸ hφΩ st))
+
+/-- **Homotopy invariance of the winding number of closed curves.** Let `H p`, for `p` in a
+preconnected set `S` of parameters, be closed piecewise-`C¹` curves on the parameter interval with
+endpoints `a`, `b`, depending jointly continuously on the parameter and the time, and avoiding `w`.
+Then all the curves `H p`, `p ∈ S`, have the same winding number about `w`. Unlike
+`windingNumber_eq_of_pathHomotopy`, the base point `H p a` may move with `p`. -/
+theorem windingNumber_eq_of_continuousOn_uncurry {P : Type*} [TopologicalSpace P] {S : Set P}
+    (hS : IsPreconnected S) {H : P → ℝ → ℂ} {a b : ℝ} {w : ℂ}
+    (hH : ContinuousOn (Function.uncurry H) (S ×ˢ uIcc a b))
+    (hpw : ∀ p ∈ S, IsPiecewiseC1On (H p) a b) (hclosed : ∀ p ∈ S, H p a = H p b)
+    (havoid : ∀ p ∈ S, ∀ t ∈ uIcc a b, H p t ≠ w) {p q : P} (hp : p ∈ S) (hq : q ∈ S) :
+    windingNumber (H p) a b w = windingNumber (H q) a b w := by
+  -- The curves near `H q` stay closer to it than `H q` stays to `w`, so the winding number is
+  -- locally constant in the parameter.
+  have hloc (q : P) (hq : q ∈ S) :
+      ∀ᶠ p in 𝓝[S] q, windingNumber (H p) a b w = windingNumber (H q) a b w := by
+    obtain ⟨t₀, ht₀, hmin⟩ := isCompact_uIcc.exists_isMinOn nonempty_uIcc
+      ((continuous_id.dist continuous_const).comp_continuousOn (hpw q hq).continuousOn :
+        ContinuousOn (fun t ↦ dist (H q t) w) _)
+    obtain ⟨v, hv, hclose⟩ := isCompact_uIcc.mem_uniformity_of_prod hH hq
+      (Metric.dist_mem_uniformity (dist_pos.2 (havoid q hq t₀ ht₀)))
+    filter_upwards [hv, self_mem_nhdsWithin] with p hpv hpS
+    exact (hpw q hq).windingNumber_eq_of_dist_lt_dist (hpw p hpS) (hclosed q hq) (hclosed p hpS)
+      fun t ht ↦ (hclose p hpv t ht).trans_le (hmin ht)
+  -- A locally constant function on a preconnected space is constant.
+  have := isPreconnected_iff_preconnectedSpace.1 hS
+  have hconst : IsLocallyConstant fun x : S ↦ windingNumber (H x) a b w :=
+    (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
+      (eventually_nhds_subtype_iff S x _).2 (hloc x x.2)
+  exact hconst.apply_eq_of_preconnectedSpace ⟨p, hp⟩ ⟨q, hq⟩
+
+/-- **Concentric circles through an annulus avoiding `w` wind equally often.** If `f` is `C¹` on
+the closed annulus `r₁ ≤ |z - z₀| ≤ r₂`, with `0 ≤ r₁ ≤ r₂`, and does not take the value `w`
+there, then the images under `f` of the two boundary circles, each traversed once from the angle
+`a`, have the same winding number about `w`. -/
+theorem windingNumber_comp_circleMap_eq_of_annulus {f : ℂ → ℂ} {z₀ w : ℂ} {r₁ r₂ : ℝ}
+    (hr₁ : 0 ≤ r₁) (hr : r₁ ≤ r₂)
+    (hf : ContDiffOn ℝ 1 f (Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁))
+    (hw : ∀ z ∈ Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁, f z ≠ w) (a : ℝ) :
+    windingNumber (f ∘ circleMap z₀ r₁) a (a + 2 * Real.pi) w =
+      windingNumber (f ∘ circleMap z₀ r₂) a (a + 2 * Real.pi) w := by
+  have hmaps {s : ℝ} (hs : s ∈ Icc r₁ r₂) (θ : ℝ) :
+      circleMap z₀ s θ ∈ Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁ := by
+    have hθ := Metric.mem_sphere.1 (circleMap_mem_sphere z₀ (hr₁.trans hs.1) θ)
+    simp only [Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball, hθ, not_lt]
+    exact ⟨hs.2, hs.1⟩
+  refine windingNumber_eq_of_continuousOn_uncurry (H := fun s θ ↦ f (circleMap z₀ s θ))
+    isPreconnected_Icc ?_ (fun s hs ↦ ?_) (fun s _ ↦ ?_) (fun s hs θ _ ↦ hw _ (hmaps hs θ))
+    (left_mem_Icc.2 hr) (right_mem_Icc.2 hr)
+  · refine hf.continuousOn.comp (Continuous.continuousOn (by unfold circleMap; fun_prop))
+      fun x hx ↦ hmaps hx.1 x.2
+  · exact IsPiecewiseC1On.of_contDiffOn
+      (hf.comp (contDiff_circleMap z₀ s).contDiffOn fun θ _ ↦ hmaps hs θ)
+  · exact congrArg f (periodic_circleMap z₀ s a).symm
+
+/-- **The image of the boundary of a disc missing `w` does not wind around `w`.** If `f` is `C¹`
+on the closed disc of radius `r ≥ 0` about `z₀` and does not take the value `w` there, then the
+image under `f` of the boundary circle, traversed once from the angle `a`, has winding number zero
+about `w`. -/
+theorem windingNumber_comp_circleMap_eq_zero {f : ℂ → ℂ} {z₀ w : ℂ} {r : ℝ} (hr : 0 ≤ r)
+    (hf : ContDiffOn ℝ 1 f (Metric.closedBall z₀ r))
+    (hw : ∀ z ∈ Metric.closedBall z₀ r, f z ≠ w) (a : ℝ) :
+    windingNumber (f ∘ circleMap z₀ r) a (a + 2 * Real.pi) w = 0 := by
+  rw [← sdiff_empty (s := Metric.closedBall z₀ r), ← Metric.ball_zero (x := z₀)] at hf hw
+  rw [← windingNumber_comp_circleMap_eq_of_annulus le_rfl hr hf hw, circleMap_zero_radius,
+    Function.comp_const]
+  exact windingNumber_const _ _ _ _
 
 end TauCeti.Contour
 

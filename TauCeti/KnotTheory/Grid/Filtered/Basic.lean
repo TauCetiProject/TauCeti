@@ -113,19 +113,18 @@ theorem filteredCoefficient_eq_unblockedCoefficient_add (x y : GridState n) :
 coefficient from `x` to `y` is `TauCeti.GridDiagram.filteredCoefficient`. -/
 noncomputable def filteredDifferential :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm (G.filteredCoefficient R x)
+  GridChain.matrixMap R (G.filteredCoefficient R)
 
 /-- The matrix coefficients of the filtered differential. -/
 @[simp]
 theorem filteredDifferential_single_apply (x y : GridState n) (p : MvPolynomial (Fin n) R) :
-    G.filteredDifferential R (Finsupp.single x p) y = p * G.filteredCoefficient R x y := by
-  simp [filteredDifferential]
+    G.filteredDifferential R (Finsupp.single x p) y = p * G.filteredCoefficient R x y :=
+  GridChain.matrixMap_single_apply R _ x y p
 
 /-- The coefficient formula for the filtered differential on an arbitrary chain. -/
 theorem filteredDifferential_apply_apply (c : GridChainMinus R n) (y : GridState n) :
-    G.filteredDifferential R c y = c.sum fun x p => p * G.filteredCoefficient R x y := by
-  simp [filteredDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+    G.filteredDifferential R c y = c.sum fun x p => p * G.filteredCoefficient R x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The matrix of the square of the filtered differential: its `(x, z)` entry is the sum over
 intermediate grid states of the products of the two matrix coefficients. -/

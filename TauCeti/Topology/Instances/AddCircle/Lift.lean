@@ -45,6 +45,9 @@ the circle is either strictly monotone of degree one or strictly antitone of deg
 * `AddCircle.exists_int_forall_add_period_eq_of_lift`: a continuous lift has an integer degree
   `d`, and then shifts integer multiples of the period by multiples of `d * T`
   (`AddCircle.lift_add_int_mul_of_degree`, stated for any real increment per period).
+* `AddCircle.add_mul_sub_add_period`: for any weight `c`, the interpolation
+  `x ↦ x + c * (F x - x)` between the identity and a lift `F` is again a lift.
+* `AddCircle.periodic_sub_of_lift`: the displacement `x ↦ F x - x` of a lift is periodic.
 * `Homeomorph.exists_addCircle_lift_symm_comp_eq_add`: for a homeomorphism `φ` of the circle, a
   continuous lift of `φ⁻¹` composed with a continuous lift of `φ` is a translation.
 * `AddCircle.strictMono_or_strictAnti_of_lift`: a continuous lift of a homeomorphism of the
@@ -78,6 +81,19 @@ theorem lift_add_int_mul_of_degree {a : ℝ} (hper : ∀ x, F (x + T) = F x + a)
 theorem lift_add_int_mul (hper : ∀ x, F (x + T) = F x + T) (x : ℝ) (k : ℤ) :
     F (x + k * T) = F x + k * T :=
   lift_add_int_mul_of_degree hper x k
+
+/-- Interpolating between the identity and a lift `F` with a weight `c` gives again a lift:
+`x ↦ x + c * (F x - x)` shifts `x + T` to the image of `x` plus `T`. -/
+theorem add_mul_sub_add_period (hper : ∀ x, F (x + T) = F x + T) (c x : ℝ) :
+    x + T + c * (F (x + T) - (x + T)) = x + c * (F x - x) + T := by
+  rw [hper]
+  ring
+
+/-- The displacement `x ↦ F x - x` of a lift `F` is periodic. -/
+theorem periodic_sub_of_lift (hper : ∀ x, F (x + T) = F x + T) :
+    Function.Periodic (fun x ↦ F x - x) T := fun x ↦ by
+  simp only [hper]
+  ring
 
 /-- A strictly monotone lift `F` maps the fundamental interval `(0, T]` into `(F 0, F 0 + T]`. -/
 theorem image_Ioc_subset_of_lift (hF : StrictMono F) (hper : ∀ x, F (x + T) = F x + T) :
@@ -133,15 +149,14 @@ theorem _root_.Homeomorph.exists_addCircle_lift_symm_comp_eq_add (φ : AddCircle
     fun x ↦ by simp [← hψ, ← hφ]
   exact ⟨G, c, hG, hψ, hc⟩
 
-variable [hT : Fact (0 < T)]
-
 /-- A continuous strictly monotone lift `F` maps the fundamental interval `(0, T]` onto
 `(F 0, F 0 + T]`. -/
 theorem image_Ioc_of_lift (hF : StrictMono F) (hFc : Continuous F)
     (hper : ∀ x, F (x + T) = F x + T) : F '' Ioc 0 T = Ioc (F 0) (F 0 + T) := by
-  refine (image_Ioc_subset_of_lift hF hper).antisymm ?_
-  have hT' : F T = F 0 + T := by simpa using hper 0
-  exact hT' ▸ intermediate_value_Ioc hT.out.le hFc.continuousOn
+  simpa only [show F T = F 0 + T by simpa using hper 0] using
+    hFc.image_Ioc_of_strictMono hF (a := 0) (b := T)
+
+variable [hT : Fact (0 < T)]
 
 /-- A circle map with a continuous strictly monotone lift is bijective. -/
 theorem bijective_of_lift (hF : StrictMono F) (hFc : Continuous F)
@@ -189,6 +204,13 @@ theorem apply_homeomorphOfLift_symm_apply (hF : StrictMono F) (hFc : Continuous 
     φ ((homeomorphOfLift φ hF hFc hper hφ).symm x) = x :=
   (homeomorphOfLift φ hF hFc hper hφ).apply_symm_apply x
 
+/-- Every left inverse of the circle map `φ` with a continuous strictly monotone lift is the inverse
+of `homeomorphOfLift`. -/
+theorem eq_homeomorphOfLift_symm_of_leftInverse (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) {ψ : AddCircle T → AddCircle T}
+    (hψφ : Function.LeftInverse ψ φ) : ψ = (homeomorphOfLift φ hF hFc hper hφ).symm :=
+  hψφ.eq_rightInverse (apply_homeomorphOfLift_symm_apply hF hFc hper hφ)
+
 /-- The composition form of `apply_homeomorphOfLift_symm_apply`, usable by `simp`: the applied
 form cannot be a simp lemma, because its left-hand side has the variable `φ` as head symbol. -/
 @[simp]
@@ -197,6 +219,7 @@ theorem comp_homeomorphOfLift_symm (hF : StrictMono F) (hFc : Continuous F)
     φ ∘ (homeomorphOfLift φ hF hFc hper hφ).symm = id :=
   (homeomorphOfLift φ hF hFc hper hφ).self_comp_symm
 
+omit hT in
 /-- **Lifts of homeomorphisms of the circle.** A continuous lift `F` of a homeomorphism `φ` of
 `AddCircle T` is either strictly monotone with `F (x + T) = F x + T` (the orientation-preserving
 case) or strictly antitone with `F (x + T) = F x - T` (the orientation-reversing case). -/
@@ -211,6 +234,10 @@ theorem strictMono_or_strictAnti_of_lift {φ : AddCircle T ≃ₜ AddCircle T} (
     have hy := hc y
     rw [hxy] at hx
     linarith
+  rcases eq_or_ne T 0 with rfl | hT0
+  · rcases hF.strictMono_of_inj hFi with hm | ha
+    · exact .inl ⟨hm, fun x ↦ by simp⟩
+    · exact .inr ⟨ha, fun x ↦ by simp⟩
   -- the degrees of `φ` and of its inverse multiply to `1`
   have hde : d * e = 1 := by
     have h₁ : G (F T) = T + c := by simpa using hc T
@@ -218,23 +245,30 @@ theorem strictMono_or_strictAnti_of_lift {φ : AddCircle T ≃ₜ AddCircle T} (
     have hFT : F T = F 0 + d * T := by simpa using hd 0
     rw [hFT, lift_add_int_mul_of_degree he, h₀] at h₁
     have : ((d * e : ℤ) : ℝ) * T = 1 * T := by push_cast; linarith
-    exact_mod_cast mul_right_cancel₀ hT.out.ne' this
-  have hT0 := hT.out
+    exact_mod_cast mul_right_cancel₀ hT0 this
   rcases hF.strictMono_of_inj hFi with hm | ha
   · refine .inl ⟨hm, fun x ↦ ?_⟩
-    have hlt : F 0 < F (0 + T) := hm (by linarith)
-    rw [hd] at hlt
     have hd0 : 0 < d := by
-      have : (0 : ℝ) < d := pos_of_mul_pos_left (by linarith : (0 : ℝ) < d * T) hT0.le
+      have hFT : F T = F 0 + d * T := by simpa using hd 0
+      have : (0 : ℝ) < d := by
+        rcases hT0.lt_or_gt with h | h
+        · have := hm (a := T) (b := 0) h
+          nlinarith
+        · have := hm (a := 0) (b := T) h
+          nlinarith
       exact_mod_cast this
     rcases Int.eq_one_or_neg_one_of_mul_eq_one hde with rfl | rfl
     · simpa using hd x
     · omega
   · refine .inr ⟨ha, fun x ↦ ?_⟩
-    have hlt : F (0 + T) < F 0 := ha (by linarith)
-    rw [hd] at hlt
     have hd0 : d < 0 := by
-      have : (d : ℝ) < 0 := by nlinarith
+      have hFT : F T = F 0 + d * T := by simpa using hd 0
+      have : (d : ℝ) < 0 := by
+        rcases hT0.lt_or_gt with h | h
+        · have := ha (a := T) (b := 0) (by simpa using h)
+          nlinarith
+        · have := ha (a := 0) (b := T) (by simpa using h)
+          nlinarith
       exact_mod_cast this
     rcases Int.eq_one_or_neg_one_of_mul_eq_one hde with rfl | rfl
     · omega

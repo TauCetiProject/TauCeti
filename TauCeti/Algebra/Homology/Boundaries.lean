@@ -11,12 +11,12 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 /-!
 # The differential onto the boundaries
 
-Let `K` be a homological complex in an abelian category.  Write `Zⱼ` for its cycles in degree `j`,
-`Hⱼ` for its homology and `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` for its boundaries, the kernel of the projection of
-the cycles onto the homology.  The differential `Kᵢ ⟶ Kⱼ` corestricts to a morphism
-`K.toBoundaries i j : Kᵢ ⟶ Bⱼ`.  For a relation `i → j` of the shape it is the cokernel of the
-inclusion `Zᵢ ⟶ Kᵢ` of the cycles (`HomologicalComplex.toBoundariesIsCokernel`), so that
-`0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Bⱼ ⟶ 0` is short exact.
+Let `K` be a homological complex.  Write `Zⱼ` for its cycles in degree `j`, `Hⱼ` for its homology
+and `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` for its boundaries, the kernel of the projection of the cycles onto the
+homology.  The differential `Kᵢ ⟶ Kⱼ` corestricts to a morphism `K.toBoundaries i j : Kᵢ ⟶ Bⱼ`;
+this needs only zero morphisms and the existence of `Hⱼ` and `Bⱼ`.  In an abelian category, for a
+relation `i → j` of the shape it is the cokernel of the inclusion `Zᵢ ⟶ Kᵢ` of the cycles
+(`HomologicalComplex.toBoundariesIsCokernel`), so that `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Bⱼ ⟶ 0` is short exact.
 
 Together with `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ ⟶ 0`, this is the decomposition of a complex into cycles,
 boundaries and homology, used for splitting complexes and for the universal coefficient sequence.
@@ -38,31 +38,49 @@ open CategoryTheory Limits
 
 namespace HomologicalComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex C c)
+variable {C : Type*} [Category* C] {ι : Type*} {c : ComplexShape ι}
+
+section HasZeroMorphisms
+
+variable [HasZeroMorphisms C] (K : HomologicalComplex C c)
 
 /-- The corestriction `Kᵢ ⟶ Bⱼ` of the differential to the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)`. -/
-def toBoundaries (i j : ι) : K.X i ⟶ kernel (K.homologyπ j) :=
+def toBoundaries (i j : ι) [K.HasHomology j] [HasKernel (K.homologyπ j)] :
+    K.X i ⟶ kernel (K.homologyπ j) :=
   kernel.lift _ (K.toCycles i j) (K.toCycles_comp_homologyπ i j)
 
 /-- The corestriction of the differential to the boundaries, followed by the inclusion of the
 boundaries into the cycles, is the corestriction of the differential to the cycles. -/
 @[reassoc (attr := simp)]
-lemma toBoundaries_ι (i j : ι) :
+lemma toBoundaries_ι (i j : ι) [K.HasHomology j] [HasKernel (K.homologyπ j)] :
     K.toBoundaries i j ≫ kernel.ι (K.homologyπ j) = K.toCycles i j :=
   kernel.lift_ι _ _ _
 
 /-- The corestriction of the differential to the boundaries vanishes on the cycles. -/
 @[reassoc (attr := simp)]
-lemma iCycles_toBoundaries (i j : ι) : K.iCycles i ≫ K.toBoundaries i j = 0 := by
+lemma iCycles_toBoundaries (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [HasKernel (K.homologyπ j)] : K.iCycles i ≫ K.toBoundaries i j = 0 := by
   rw [← cancel_mono (kernel.ι _), ← cancel_mono (K.iCycles j)]
   simp
 
 /-- The corestriction of the differential to the boundaries vanishes on boundaries. -/
 @[reassoc (attr := simp)]
-lemma d_toBoundaries (h i j : ι) : K.d h i ≫ K.toBoundaries i j = 0 := by
-  rw [← cancel_mono (kernel.ι _)]
+lemma d_toBoundaries (h i j : ι) [K.HasHomology j] [HasKernel (K.homologyπ j)] :
+    K.d h i ≫ K.toBoundaries i j = 0 := by
+  ext
   simp
+
+variable {K}
+
+/-- At a degree where a complex is exact, the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` are all of the
+cycles. -/
+lemma ExactAt.isIso_kernel_ι_homologyπ {j : ι} [K.HasHomology j] [HasKernel (K.homologyπ j)]
+    (hj : K.ExactAt j) : IsIso (kernel.ι (K.homologyπ j)) :=
+  kernel.ι_of_zero (hj.isZero_homology.eq_of_tgt _ _)
+
+end HasZeroMorphisms
+
+variable [Abelian C] (K : HomologicalComplex C c)
 
 /-- For a relation `i → j` of the shape, the corestriction `Kᵢ ⟶ Bⱼ` of the differential is an
 epimorphism, because the homology `Hⱼ` is the cokernel of `Kᵢ ⟶ Zⱼ`. -/
@@ -80,13 +98,5 @@ def toBoundariesIsCokernel {i j : ι} (hij : c.Rel i j) :
   Abelian.epiIsCokernelOfKernel _
     (isKernelOfComp (kernel.ι _ ≫ K.iCycles j) (K.d i j) (K.cyclesIsKernel i j (c.next_eq' hij))
       (K.iCycles_toBoundaries i j) (by simp))
-
-variable {K}
-
-/-- At a degree where a complex is exact, the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` are all of the
-cycles. -/
-lemma ExactAt.isIso_kernel_ι_homologyπ {j : ι} (hj : K.ExactAt j) :
-    IsIso (kernel.ι (K.homologyπ j)) :=
-  kernel.ι_of_zero (hj.isZero_homology.eq_of_tgt _ _)
 
 end HomologicalComplex

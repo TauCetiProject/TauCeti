@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Primrec.Bitwise
+public import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Primitive recursive operations on binary finite-set codes
 
-Primitive recursion certificates for membership, bounded filtering and least-element search on
-binary finite-set codes, and for the codes of the set of entries of a list and of
-`Finset.range n`. The code operations and their finite-set interpretations are defined
+Primitive recursion certificates for membership, the characteristic function, bounded filtering
+and least-element search on binary finite-set codes, and for the codes of the set of entries of a
+list and of `Finset.range n`. The code operations and their finite-set interpretations are defined
 in `TauCeti.Data.Nat.BitIndices`, using Mathlib's `Finset.equivBitIndices` rather than another
 encoding or a `Primcodable` instance for finite sets.
 
@@ -33,6 +34,13 @@ namespace Primrec
 theorem mem_equivBitIndices : PrimrecRel fun n x => x ∈ Finset.equivBitIndices n :=
   PrimrecRel.of_eq (Primrec.eq.comp nat_testBit (const true)).primrecRel
     fun n x => by simp
+
+/-- The characteristic function of the decoded binary finite set is primitive recursive in the
+code and the argument. -/
+theorem indicator_equivBitIndices :
+    Primrec₂ fun n x => (Finset.equivBitIndices n : Set ℕ).indicator (1 : ℕ → ℕ) x :=
+  (Primrec.ite mem_equivBitIndices (const 1) (const 0)).of_eq fun p => by
+    simp [Set.indicator_apply]
 
 /-- Bounded filtering of binary codes is primitive recursive, uniformly in a primitive
 recursive predicate and the code and bound supplied by the caller. -/

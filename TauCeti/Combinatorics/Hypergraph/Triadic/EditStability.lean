@@ -8,6 +8,8 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Colored.Stability
 public import TauCeti.Combinatorics.Hypergraph.Polyad.EditStability
 public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
 
 /-!
 # Exceptional polyad mass after recoloring
@@ -16,7 +18,9 @@ A small total edit count need not be small relative to every polyad. Charge poly
 more than an `η`-fraction of the support is edited to the total edit count, with a loss of
 `1 / η`. All other polyads inherit top regularity from the original coloring. Thus recoloring
 increases exceptional mass by at most the selected edit fraction divided by `η`, after the
-local regularity parameter is worsened to absorb the edits.
+local regularity parameter is worsened to absorb the edits. In particular, editing at most an
+`η δ²`-fraction of the selected support increases the exceptional proportion by at most `η`
+when the local tolerance is doubled from `δ` to `2δ`.
 
 The denominator is the total selected support, as in `exceptionalPolyadMass`, not `|V|³`.
 For a polyad decomposition it is `|V|.descFactorial 3`. The estimates also hold for an arbitrary
@@ -56,7 +60,7 @@ theorem sum_card_support_not_isTopRegularOverPolyad_le_add_div (C : TriadicCompl
   · simp only [hnew, hold, not_true_eq_false, not_false_eq_true, ↓reduceIte, zero_add]
     apply (le_div_iff₀ hη).2
     have hbad : ¬(#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support :=
-      fun hed ↦ hnew (hold.of_card_editedOn_le hε hη.le hbudget hed)
+      fun hed ↦ hnew (hold.of_card_editedOn_le hε hbudget hed)
     linarith [lt_of_not_ge hbad]
   · simpa only [hnew, hold, not_false_eq_true, ↓reduceIte] using le_add_of_nonneg_right he
 
@@ -116,5 +120,36 @@ theorem TopRegularOverMostPolyads.of_approximates3 {α ε₀ : ℝ} {C : Triadic
       (ε₀ + α * (Fintype.card V : ℝ) ^ 3 / (η * ∑ P ∈ C.polyads, (#P.support : ℝ))) r := by
   rw [topRegularOverMostPolyads_iff] at h ⊢
   exact (hedit.exceptionalPolyadMass_le C hε hη hbudget).trans (add_le_add h le_rfl)
+
+open Classical in
+/-- Editing an `η δ²`-fraction of the selected support increases the exceptional proportion
+by at most `η` when the top-regularity tolerance is doubled. The local edit proportions need
+not be uniformly bounded, and the rank is preserved. -/
+theorem TopRegularOverMostPolyads.of_sum_card_editedOn_le {C : TriadicComplex3 V} {ε₀ : ℝ}
+    (h : H.TopRegularOverMostPolyads C δ ε₀ r) (hδ : 0 < δ) (hη : 0 ≤ η)
+    (hedit : (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) ≤
+      η * δ ^ 2 * ∑ P ∈ C.polyads, (#P.support : ℝ)) :
+    H'.TopRegularOverMostPolyads C (2 * δ) (ε₀ + η) r := by
+  by_cases hlarge : 1 ≤ 2 * δ
+  · exact topRegularOverMostPolyads_of_forall
+      (fun P _ ↦ isTopRegularOverPolyad_of_one_le (H := H') (P := P) (r := r) hlarge)
+      (add_nonneg h.nonneg hη)
+  have hdiv : δ ^ 2 / (2 * δ) = δ / 2 := by field_simp
+  have hbudget : δ + δ ^ 2 + δ ^ 2 / (2 * δ) ≤ 2 * δ := by
+    rw [hdiv]
+    nlinarith
+  have hnew := sum_card_support_not_isTopRegularOverPolyad_le_add_div
+    (H := H) (H' := H') (r := r) C (by positivity) (sq_pos_of_pos hδ) hbudget
+  have hold := (topRegularOverMostPolyads_iff_sum_card_support_le h.nonneg).1 h
+  have hedit' : (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) / δ ^ 2 ≤
+      η * ∑ P ∈ C.polyads, (#P.support : ℝ) := by
+    apply (div_le_iff₀ (sq_pos_of_pos hδ)).2
+    nlinarith [hedit]
+  apply (topRegularOverMostPolyads_iff_sum_card_support_le (add_nonneg h.nonneg hη)).2
+  calc
+    _ ≤ ε₀ * ∑ P ∈ C.polyads, (#P.support : ℝ) +
+        η * ∑ P ∈ C.polyads, (#P.support : ℝ) :=
+      hnew.trans (add_le_add hold hedit')
+    _ = _ := (add_mul _ _ _).symm
 
 end TauCeti.Colored3Graph

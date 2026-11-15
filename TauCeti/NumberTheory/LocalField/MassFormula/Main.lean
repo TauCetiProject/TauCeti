@@ -71,7 +71,7 @@ separable closure of `K` satisfy `∑_L q ^ (-c(L)) = n`, where `q` is the resid
 `K` and `c(L)` is the wild exponent. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent :
     ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp [totallyRamifiedOfDegree_zero]
   -- Integrate against Haar measure on `Fin n → K` normalized on the integer box.
   let : MeasurableSpace (Fin n → K) := borel _
@@ -81,7 +81,7 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent :
       rw [isOpen_integerBox.interior_eq]
       exact ⟨0, by simp⟩⟩
   have hμ : Measure.addHaarMeasure B (integerBox K (Fin n)) = 1 := Measure.addHaarMeasure_self
-  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq hn _ hμ
+  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq _ hμ
     fun L hL ↦ L.lintegral_rootCount hL _ hμ
 
 /-- **Serre's second mass formula**: for `0 < n` and every set `R` of representatives of the

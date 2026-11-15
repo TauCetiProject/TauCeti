@@ -5,97 +5,89 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 
 /-!
-# Extending orthonormal rows to an orthogonal matrix
+# Extending orthonormal rows to a unitary matrix
 
-A real `q × p` matrix `V` with `V * Vᵀ = 1` has orthonormal rows, and `q ≤ p` leaves room for
-`p - q` more.  Extending those rows to an orthonormal basis of `ℝ ^ p` and reading the basis as
-the rows of a square matrix exhibits `V` as the first `q` rows of an orthogonal matrix.
+A matrix `V : Matrix m n 𝕜` over `𝕜 = ℝ` or `ℂ` with `V * Vᴴ = 1` has orthonormal rows. Given an
+injection `e : m → n`, placing these rows at the indices `e i` and extending them to an orthonormal
+basis of `EuclideanSpace 𝕜 n` exhibits `V` as the rows `e i` of a unitary matrix (an orthogonal
+matrix when `𝕜 = ℝ`).
 
-Dividing an arbitrary `M` of full row rank by a square factor `T` of its Gram matrix `M * Mᵀ`
-leaves orthonormal rows, so `M = T * Q.submatrix _ id` for an orthogonal `Q`.  This is the `LQ`
-decomposition, and it is what factors a congruence by a matrix of full row rank into a rotation
-followed by a coordinate selection.
+Dividing an arbitrary `M` by a square factor `T` of its Gram matrix `M * Mᴴ` leaves orthonormal
+rows, so `M = T * Q.submatrix e id` for a unitary `Q`. This is the `LQ` decomposition of a matrix
+of full row rank, and it is what factors a congruence by such a matrix into a rotation followed by
+a coordinate selection.
 
 ## Main results
 
-* `Matrix.exists_mul_transpose_eq_one_and_submatrix_castLE_eq` — a real matrix with orthonormal
-  rows consists of the first rows of an orthogonal matrix.
-* `Matrix.exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE` — a real matrix of full row
-  rank is a square factor of its Gram matrix times such a row selection.
+* `Matrix.exists_mul_conjTranspose_eq_one_and_submatrix_eq` — a matrix with orthonormal rows
+  consists of some rows of a unitary matrix.
+* `Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix` — a matrix is an invertible
+  square factor of its Gram matrix times such a row selection.
+* `Matrix.exists_orthogonal_mul_eq_mul_submatrix_one` — the same over `ℝ`, with the row selection
+  written as a submatrix of the identity matrix times an invertible orthogonal matrix.
 -/
 
 public section
 
 namespace Matrix
 
-open scoped RealInnerProductSpace
+variable {𝕜 m n : Type*} [RCLike 𝕜] [DecidableEq m] [Fintype n] [DecidableEq n]
 
-variable {p q : ℕ}
+/-- **A matrix with orthonormal rows is a row selection of a unitary matrix.** If `V * Vᴴ = 1` and
+`e : m → n` is injective, then `V` consists of the rows `e i` of a unitary matrix `Q`. -/
+theorem exists_mul_conjTranspose_eq_one_and_submatrix_eq (V : Matrix m n 𝕜) {e : m → n}
+    (he : Function.Injective e) (hV : V * Vᴴ = 1) :
+    ∃ Q : Matrix n n 𝕜, Q * Qᴴ = 1 ∧ Q.submatrix e id = V := by
+  -- The conjugated rows of `V` are orthonormal; place them at the indices `e i`.
+  set v : m → EuclideanSpace 𝕜 n := fun i ↦ WithLp.toLp 2 (star (V i)) with hv
+  have horth : Orthonormal 𝕜 v := by
+    rw [← gram_eq_one_iff_orthonormal, ← hV]
+    ext i j
+    simp [hv, gram_apply, EuclideanSpace.inner_toLp_toLp, Matrix.mul_apply, dotProduct, mul_comm]
+  have horth' : Orthonormal 𝕜 ((Set.range e).domRestrict (Function.extend e v 0)) := by
+    convert horth.comp _ (Equiv.ofInjective e he).symm.injective
+    ext ⟨_, i, rfl⟩ : 1
+    simp [he.extend_apply]
+  -- Extend them to an orthonormal basis `b`; the conjugated rows of `b` form `Q`.
+  obtain ⟨b, hb⟩ := horth'.exists_orthonormalBasis_extension_of_card_eq (by simp)
+  refine ⟨((EuclideanSpace.basisFun n 𝕜).toBasis.toMatrix b)ᴴ, by simp, ?_⟩
+  ext i j
+  simp [Module.Basis.toMatrix_apply, hb _ (Set.mem_range_self i), he.extend_apply, hv]
 
-/-- **A real matrix with orthonormal rows is a row selection of an orthogonal matrix.**  If
-`V * Vᵀ = 1` for a `q × p` matrix `V` with `q ≤ p`, then `V` consists of the first `q` rows of an
-orthogonal `p × p` matrix. -/
-theorem exists_mul_transpose_eq_one_and_submatrix_castLE_eq (V : Matrix (Fin q) (Fin p) ℝ)
-    (hqp : q ≤ p) (hV : V * Vᵀ = 1) :
-    ∃ Q : Matrix (Fin p) (Fin p) ℝ, Q * Qᵀ = 1 ∧ Q.submatrix (Fin.castLE hqp) id = V := by
-  classical
-  -- Pad `V` with zero rows, and read its rows as vectors of `ℝ ^ p`.
-  set W : Matrix (Fin p) (Fin p) ℝ :=
-    Matrix.of fun i j => if h : (i : ℕ) < q then V ⟨i, h⟩ j else 0 with hW
-  set v : Fin p → EuclideanSpace ℝ (Fin p) :=
-    fun i => (EuclideanSpace.equiv (Fin p) ℝ).symm (W i) with hv
-  have hinner : ∀ i i' : Fin p, ⟪v i, v i'⟫ = ∑ j, W i j * W i' j := by
-    intro i i'
-    simp [hv, PiLp.inner_apply, mul_comm]
-  set s : Set (Fin p) := {i : Fin p | (i : ℕ) < q} with hs
-  have hWrow : ∀ (i : Fin p) (hi : (i : ℕ) < q), W i = V ⟨(i : ℕ), hi⟩ := by
-    intro i hi
-    funext j
-    simp [hW, hi]
-  have horth : Orthonormal ℝ (s.domRestrict v) := by
-    rw [orthonormal_iff_ite]
-    rintro ⟨i, hi⟩ ⟨i', hi'⟩
-    have hiq : (i : ℕ) < q := hi
-    have hiq' : (i' : ℕ) < q := hi'
-    have hval : ∑ j, W i j * W i' j = (V * Vᵀ) ⟨(i : ℕ), hiq⟩ ⟨(i' : ℕ), hiq'⟩ := by
-      simp [Matrix.mul_apply, hWrow i hiq, hWrow i' hiq']
-    rw [Set.domRestrict_apply, Set.domRestrict_apply, hinner, hval, hV]
-    simp [Matrix.one_apply, Subtype.ext_iff, Fin.ext_iff]
-  have hcard : Module.finrank ℝ (EuclideanSpace ℝ (Fin p)) = Fintype.card (Fin p) := by simp
-  obtain ⟨b, hb⟩ := horth.exists_orthonormalBasis_extension_of_card_eq hcard
-  refine ⟨Matrix.of fun i j => EuclideanSpace.equiv (Fin p) ℝ (b i) j, ?_, ?_⟩
-  · ext i i'
-    have hbo := orthonormal_iff_ite.1 b.orthonormal i i'
-    rw [PiLp.inner_apply] at hbo
-    simpa [Matrix.mul_apply, Matrix.one_apply, mul_comm] using hbo
-  · ext i j
-    have hmem : Fin.castLE hqp i ∈ s := by simp [hs, i.isLt]
-    rw [Matrix.submatrix_apply, id_eq, Matrix.of_apply, hb _ hmem, hv]
-    simp [hW]
-
-/-- **A matrix of full row rank is a square factor of its Gram matrix times a row selection of an
-orthogonal matrix.**  If `T * Tᵀ = M * Mᵀ` with `T` invertible, then `T⁻¹ * M` has orthonormal
-rows, hence selects the first `q` rows of an orthogonal matrix `Q`, and `M = T * Q.submatrix _ id`.
+/-- **A matrix is a square factor of its Gram matrix times a row selection of a unitary matrix.**
+If `T * Tᴴ = M * Mᴴ` with `T` invertible and `e : m → n` injective, then `T⁻¹ * M` has orthonormal
+rows, hence consists of the rows `e i` of a unitary matrix `Q`, and `M = T * Q.submatrix e id`.
 This is the `LQ` decomposition of a matrix of full row rank. -/
-theorem exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE (M : Matrix (Fin q) (Fin p) ℝ)
-    (hqp : q ≤ p) {T : Matrix (Fin q) (Fin q) ℝ} (hTdet : T.det ≠ 0) (hT : T * Tᵀ = M * Mᵀ) :
-    ∃ Q : Matrix (Fin p) (Fin p) ℝ, Q * Qᵀ = 1 ∧ M = T * Q.submatrix (Fin.castLE hqp) id := by
-  have hTu : IsUnit T.det := isUnit_iff_ne_zero.2 hTdet
-  have hTtu : IsUnit Tᵀ.det := by rwa [Matrix.det_transpose]
-  have hVV : T⁻¹ * M * (T⁻¹ * M)ᵀ = 1 := by
-    calc T⁻¹ * M * (T⁻¹ * M)ᵀ = T⁻¹ * (M * Mᵀ) * (T⁻¹)ᵀ := by
-          rw [Matrix.transpose_mul]
-          simp only [Matrix.mul_assoc]
-      _ = T⁻¹ * T * (Tᵀ * (Tᵀ)⁻¹) := by
-          rw [← hT, Matrix.transpose_nonsing_inv]
-          simp only [Matrix.mul_assoc]
-      _ = 1 := by
-          rw [Matrix.nonsing_inv_mul T hTu, Matrix.mul_nonsing_inv Tᵀ hTtu, Matrix.one_mul]
-  obtain ⟨Q, hQ, hQV⟩ := exists_mul_transpose_eq_one_and_submatrix_castLE_eq (T⁻¹ * M) hqp hVV
-  refine ⟨Q, hQ, ?_⟩
-  rw [hQV, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv T hTu, Matrix.one_mul]
+theorem exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix [Fintype m] (M : Matrix m n 𝕜)
+    {e : m → n} (he : Function.Injective e) {T : Matrix m m 𝕜} (hTdet : T.det ≠ 0)
+    (hT : T * Tᴴ = M * Mᴴ) :
+    ∃ Q : Matrix n n 𝕜, Q * Qᴴ = 1 ∧ M = T * Q.submatrix e id := by
+  have := T.invertibleOfIsUnitDet (isUnit_iff_ne_zero.2 hTdet)
+  have hVV : T⁻¹ * M * (T⁻¹ * M)ᴴ = 1 :=
+    calc T⁻¹ * M * (T⁻¹ * M)ᴴ = T⁻¹ * (M * Mᴴ) * T⁻¹ᴴ := by
+          simp [conjTranspose_mul, Matrix.mul_assoc]
+      _ = 1 := by simp [← hT, conjTranspose_nonsing_inv]
+  obtain ⟨Q, hQ, hQV⟩ := exists_mul_conjTranspose_eq_one_and_submatrix_eq (T⁻¹ * M) he hVV
+  exact ⟨Q, hQ, by simp [hQV, ← Matrix.mul_assoc]⟩
+
+/-- **A matrix is an invertible square factor times a row selection of an orthogonal matrix.** Over
+`ℝ`, if `T * Tᵀ = A * Aᵀ` with `T` invertible and `e : m → n` injective, then `A = T * (E * Q)`
+for a row selection `E` of the identity matrix at the indices `e i` and an invertible orthogonal
+matrix `Q`. -/
+theorem exists_orthogonal_mul_eq_mul_submatrix_one {m n : Type*} [Fintype m] [DecidableEq m]
+    [Fintype n] [DecidableEq n] {e : m → n} (he : Function.Injective e) (A : Matrix m n ℝ)
+    (Tm : Matrix m m ℝ) (hTm : Tm.det ≠ 0) (hA : Tm * Tmᵀ = A * Aᵀ) :
+    ∃ Q : Matrix n n ℝ, Q * Qᵀ = 1 ∧ Q.det ≠ 0 ∧
+      A = Tm * ((1 : Matrix n n ℝ).submatrix e id * Q) := by
+  obtain ⟨Q, hQ, hQfac⟩ := exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix A he hTm
+    (by simpa using hA)
+  rw [conjTranspose_eq_transpose_of_trivial] at hQ
+  refine ⟨Q, hQ, det_ne_zero_of_right_inverse hQ, ?_⟩
+  have hsel : (1 : Matrix n n ℝ).submatrix e id * Q = Q.submatrix e id := by
+    simpa using one_submatrix_mul e (Equiv.refl n) Q
+  rw [hsel, hQfac]
 
 end Matrix

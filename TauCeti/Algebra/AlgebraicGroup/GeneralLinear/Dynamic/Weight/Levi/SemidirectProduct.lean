@@ -320,38 +320,9 @@ private theorem mapPointsFunctor_weightParabolicSemidirectProductCoordinateMap_a
           (CommHopfAlgCat.grpObj (CommHopfAlgCat.quotient H J)) := by
     simp only [weightParabolicCategoricalSemidirectPointsMulEquiv, q]
     exact (action.pointMulEquiv_right _).trans rfl
-  rw [hxleft, hxright]
-  -- Multiplication on represented points is composition with the categorical multiplication;
-  -- its normal-semidirect formula then separates into the two quotient inclusions.
-  calc
-    _ = CommHopfAlgCat.grpObjPointsMulEquiv H (op A)
-        (q ≫ CommHopfAlgCat.Hom.grpObjMap
-          (weightParabolicSemidirectProductCoordinateMap R w)) := by
-      have hcomp := CommHopfAlgCat.grpObjPointsMulEquiv_comp_grpObjMap
-        (weightParabolicSemidirectProductCoordinateMap R w) (op A) q
-      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, hq] at hcomp
-      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
-      exact hcomp.symm
-    _ = CommHopfAlgCat.grpObjPointsMulEquiv H (op A)
-        (q ≫ (GrpObj.Action.normalSemidirectMul
-          (CommHopfAlgCat.quotientGrpObjInclusion H I)
-          (CommHopfAlgCat.quotientGrpObjInclusion H J)).hom.hom) := by
-      rw [hmap]
-    _ = CommHopfAlgCat.grpObjPointsMulEquiv H (op A)
-        ((q ≫ fst _ _ ≫
-            CommHopfAlgCat.quotientGrpObjInclusion H I) *
-          (q ≫ snd _ _ ≫
-            CommHopfAlgCat.quotientGrpObjInclusion H J)) := by
-      rw [GrpObj.Action.comp_normalSemidirectMul]
-    _ = _ := by
-      rw [map_mul]
-      have hleft := CommHopfAlgCat.grpObjPointsMulEquiv_comp_quotientGrpObjInclusion
-        H I (op A) (q ≫ fst (CommHopfAlgCat.grpObj (CommHopfAlgCat.quotient H I))
-          (CommHopfAlgCat.grpObj (CommHopfAlgCat.quotient H J)))
-      have hright := CommHopfAlgCat.grpObjPointsMulEquiv_comp_quotientGrpObjInclusion
-        H J (op A) (q ≫ snd (CommHopfAlgCat.grpObj (CommHopfAlgCat.quotient H I))
-          (CommHopfAlgCat.grpObj (CommHopfAlgCat.quotient H J)))
-      simpa only [H, I, J, Category.assoc] using congrArg₂ (· * ·) hleft hright
+  rw [hxleft, hxright, ← hq]
+  exact CommHopfAlgCat.mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect H I J hI A _
+    hmap q
 
 /-- The represented weight-parabolic semidirect-product equivalence is induced by the
 coordinate morphism dual to multiplication. -/

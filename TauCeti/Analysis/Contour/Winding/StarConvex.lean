@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Cycle.Winding
-import TauCeti.Analysis.Contour.Winding.Proximity
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # Curves in a star-shaped set are null-homologous there
 
 A closed piecewise-`C¹` curve drawn inside a set `Ω` that is star-shaped about `x` has winding
-number `0` about every point outside `Ω`. The proof is the straight-line contraction of the curve
-to the constant curve at the centre: for each parameter `t` the segment from `γ t` to `x` lies in
-`Ω` by star-convexity, hence misses every `w ∉ Ω`, so
-`TauCeti.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` equates `n_w(γ)` with the
-winding number of a constant curve, which is `0`.
+number `0` about every point outside `Ω`. The proof reduces immediately to the absolutely
+continuous version `AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_starConvex`, which
+contracts the curve along straight segments to the constant curve at `x`.
 
 This discharges the `TauCeti.Contour.IsNullHomologous` hypothesis carried by the homology form of
 Cauchy's theorem and by everything built on it, on the domains that ordinary applications supply — a
@@ -57,18 +56,8 @@ avoids `w`. -/
 theorem windingNumber_eq_zero_of_starConvex {Ω : Set ℂ} {x : ℂ} (hstar : StarConvex ℝ x Ω)
     (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hw : w ∉ Ω) :
-    windingNumber γ a b w = 0 := by
-  let γ₀ : ℝ → ℂ := Function.const ℝ x
-  have hγ₀ : IsPiecewiseC1On γ₀ a b :=
-    IsPiecewiseC1On.of_contDiffOn contDiff_const.contDiffOn
-  have hseg : ∀ t ∈ uIcc a b, w ∉ segment ℝ (γ t) (γ₀ t) := by
-    intro t ht hwt
-    have hwt' : w ∈ segment ℝ x (γ t) := by
-      rw [segment_symm]
-      exact hwt
-    exact hw (hstar.segment_subset (hγΩ t ht) hwt')
-  rw [← hγ.windingNumber_eq_of_notMem_segment hγ₀ hclosed rfl hseg]
-  exact windingNumber_const x a b w
+    windingNumber γ a b w = 0 :=
+  hγ.absolutelyContinuousOnInterval.windingNumber_eq_zero_of_starConvex hstar hclosed hγΩ hw
 
 /-- **A closed piecewise-`C¹` curve in a star-shaped set is null-homologous there.** -/
 theorem isNullHomologous_of_starConvex {Ω : Set ℂ} {x : ℂ} (hstar : StarConvex ℝ x Ω)

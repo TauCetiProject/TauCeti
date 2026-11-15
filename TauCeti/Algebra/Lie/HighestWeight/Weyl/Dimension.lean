@@ -41,8 +41,9 @@ passes from the field `K` to the integers through `TauCeti.intCast_coweightPairi
   `dim M · ∏_{α>0} ⟨ρ, α^∨⟩ = ∏_{α>0} ⟨lam + ρ, α^∨⟩` of the dimension formula, in `ℤ`.
 * `TauCeti.finrank_eq_prod_coweightPairing_div`: **the Weyl dimension formula**
   `dim M = ∏_{α>0} ⟨lam + ρ, α^∨⟩ / ⟨ρ, α^∨⟩`, in `ℚ`.
-* `TauCeti.finrank_irreducibleQuotient_weylVector`: the irreducible module of highest weight
-  `ρ` has dimension `2 ^ ((dim L - dim H) / 2)`.
+* `TauCeti.finiteDimensional_irreducibleQuotient_weylVector` and
+  `TauCeti.finrank_irreducibleQuotient_weylVector`: the irreducible module of highest weight `ρ` is
+  finite-dimensional, of dimension `2 ^ ((dim L - dim H) / 2)`.
 
 ## References
 
@@ -58,7 +59,7 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [Invertible (2 : K)]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
@@ -83,6 +84,8 @@ theorem finrank_mul_prod_coweightPairing_weylVector_eq :
           coweightPairing (weylVector (IsKilling.rootSystem H) b) i
       = ∏ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
           coweightPairing (lam + weylVector (IsKilling.rootSystem H) b) i := by
+  -- The Weyl character formula fixes the instance `invertibleTwo`.
+  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
   have _ := RootPairing.finite_weylGroup (IsKilling.rootSystem H)
   let _ := Fintype.ofFinite (IsKilling.rootSystem H).weylGroup
   have hρ : IsIntegralWeight (weylVector (IsKilling.rootSystem H) b) :=
@@ -128,6 +131,12 @@ end HighestWeightModule
 
 /-! ### The module of highest weight `ρ` -/
 
+/-- **The irreducible module of highest weight `ρ` is finite-dimensional**, `ρ` being a dominant
+integral weight. -/
+theorem finiteDimensional_irreducibleQuotient_weylVector (b : (IsKilling.rootSystem H).Base) :
+    FiniteDimensional K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b)) :=
+  finiteDimensional_irreducibleQuotient_of_isDominantIntegral isDominantIntegral_weylVector
+
 /-- **The irreducible module of highest weight `ρ` has dimension
 `2 ^ ((dim L - dim H) / 2)`.** In the Weyl dimension formula for `L(ρ)`, every positive-root
 factor is
@@ -141,8 +150,7 @@ theorem finrank_irreducibleQuotient_weylVector
     (b : (IsKilling.rootSystem H).Base) :
     finrank K (irreducibleQuotient b (weylVector (IsKilling.rootSystem H) b)) =
       2 ^ ((finrank K L - finrank K H) / 2) := by
-  let _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
-    (isDominantIntegral_weylVector (b := b))
+  let _ := finiteDimensional_irreducibleQuotient_weylVector b
   have hdim := finrank_eq_prod_coweightPairing_div
     (isHighestWeightVector_irreducibleQuotientGenerator b
       (weylVector (IsKilling.rootSystem H) b))

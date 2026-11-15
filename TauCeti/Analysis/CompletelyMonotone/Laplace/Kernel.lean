@@ -30,8 +30,8 @@ depend on each other.
 
 public section
 
-open MeasureTheory ProbabilityTheory
-open scoped BoundedContinuousFunction ENNReal NNReal
+open Filter MeasureTheory ProbabilityTheory
+open scoped BoundedContinuousFunction ENNReal NNReal Topology
 
 namespace NNReal
 
@@ -72,6 +72,35 @@ lemma integrable_exp_neg_mul (μ : Measure ℝ≥0) [IsFiniteMeasure μ] {x : �
     Integrable (fun p : ℝ≥0 => Real.exp (-(x * (p : ℝ)))) μ := by
   have h := (laplaceKernelBoundedContinuous hx).integrable μ
   rwa [funext (laplaceKernelBoundedContinuous_apply hx)] at h
+
+/-- Monotone convergence for the exponentially damped functions `exp (-(ε n * x)) * q x`, where
+`ε n` decreases to `0` and `q` is almost everywhere measurable. -/
+lemma tendsto_lintegral_ofReal_exp_mul {σ : Measure ℝ≥0} {q : ℝ≥0 → ℝ} {ε : ℕ → ℝ}
+    (hε : Antitone ε) (hε₀ : Tendsto ε atTop (𝓝 0)) (hq_meas : AEMeasurable q σ) :
+    Tendsto (fun n => ∫⁻ x, ENNReal.ofReal (Real.exp (-(ε n * (x : ℝ))) * q x) ∂σ)
+      atTop (𝓝 (∫⁻ x, ENNReal.ofReal (q x) ∂σ)) := by
+  have hG_mono : ∀ x : ℝ≥0,
+      Monotone fun n => ENNReal.ofReal (Real.exp (-(ε n * (x : ℝ))) * q x) := by
+    intro x n m hnm
+    rcases le_or_gt 0 (q x) with hq | hq
+    · exact ENNReal.ofReal_le_ofReal <| mul_le_mul_of_nonneg_right
+        (Real.exp_le_exp.mpr <| neg_le_neg <| mul_le_mul_of_nonneg_right (hε hnm) x.coe_nonneg)
+        hq
+    · simp only [ENNReal.ofReal_of_nonpos (mul_neg_of_pos_of_neg (Real.exp_pos _) hq).le,
+        zero_le]
+  have hG_tendsto_real : ∀ x : ℝ≥0,
+      Tendsto (fun n => Real.exp (-(ε n * (x : ℝ))) * q x) atTop (𝓝 (q x)) := by
+    intro x
+    have hexp : Tendsto (fun n => Real.exp (-(ε n * (x : ℝ)))) atTop (𝓝 1) := by
+      have harg : Tendsto (fun n => -(ε n * (x : ℝ))) atTop (𝓝 0) := by
+        simpa [mul_comm] using hε₀.const_mul (-(x : ℝ))
+      simpa only [Real.exp_zero] using harg.rexp
+    simpa only [one_mul] using hexp.mul_const (q x)
+  exact lintegral_tendsto_of_tendsto_of_monotone
+    (fun n => (((by fun_prop : Measurable fun x : ℝ≥0 => Real.exp (-(ε n * (x : ℝ))))
+      |>.aemeasurable).mul hq_meas).ennreal_ofReal)
+    (ae_of_all _ hG_mono)
+    (ae_of_all _ fun x => ENNReal.tendsto_ofReal (hG_tendsto_real x))
 
 /-! ## The extended-nonnegative-valued Laplace transform -/
 

@@ -58,8 +58,8 @@ requirements are separate matters, not treated here.
 * `TauCeti.Priority.finite_injurySet_iff_finite_injuryStages`,
   `TauCeti.Priority.finite_injurySet_iff_eventually_eq_empty`: under monotone stages, finitely
   many injuring numbers are equivalent to both.
-* `TauCeti.Priority.ncard_injuryStages_le`: finitely many injuring numbers bound the number of
-  injury stages.
+* `TauCeti.Priority.ncard_injuryStages_le`: under monotone stages, there are at most as many
+  injury stages as injuring numbers (as `ncard`s, which are both `0` in the infinite case).
 * `TauCeti.Priority.finite_injurySet_of_eventually_bounded`: an eventually bounded restraint admits
   only finitely many injuring numbers.
 * `TauCeti.Priority.exists_forall_injuriesAt_eq_empty_of_eventually_bounded`: under monotone
@@ -281,11 +281,18 @@ theorem exists_forall_injuriesAt_eq_empty_of_eventually_bounded (hA : Monotone A
     ∃ s₁, ∀ s, s₁ ≤ s → injuriesAt A r e s = ∅ :=
   (finite_injurySet_iff_eventually_eq_empty hA).1 (finite_injurySet_of_eventually_bounded h)
 
-/-- **At most as many injury stages as injuring numbers**, when there are finitely many injuring
-numbers and the stages are monotone. Several numbers may injure at one stage, so the inequality can
-be strict. -/
-theorem ncard_injuryStages_le (hA : Monotone A) (h : (injurySet A r e).Finite) :
+/-- **At most as many injury stages as injuring numbers**, when the stages are monotone. Several
+numbers may injure at one stage, so the inequality can be strict. When there are infinitely many
+injuring numbers there are infinitely many stages, and both cardinalities are `0`. -/
+theorem ncard_injuryStages_le (hA : Monotone A) :
     (injuryStages A r e).ncard ≤ (injurySet A r e).ncard := by
+  by_cases h : (injurySet A r e).Finite
+  swap
+  · -- infinitely many injuring numbers force infinitely many stages: both `ncard`s are `0`
+    have hs : (injuryStages A r e).Infinite := fun hs =>
+      h ((finite_injurySet_iff_finite_injuryStages hA).2 hs)
+    rw [hs.ncard]
+    exact zero_le
   have hinj := injOn_snd_injuryEvents (r := r) (e := e) hA
   have hev : (injuryEvents A r e).Finite := by
     rw [injurySet_eq_image] at h

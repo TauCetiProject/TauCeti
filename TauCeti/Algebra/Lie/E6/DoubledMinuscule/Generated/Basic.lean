@@ -90,6 +90,15 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 54 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54) (generatedDefiningIdeal A)
 
+/-- The named coordinate morphism is the quotient map under the quotient presentation. -/
+@[reassoc (attr := simp)]
+theorem generatedCoordinateMap_comp_eqToHom :
+    generatedCoordinateMap A ≫ eqToHom (generatedCoordinateHopfAlgebra_def A) =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 54)
+        (generatedDefiningIdeal A) := by
+  -- The named algebra and coordinate map are defined by this quotient and its projection.
+  rfl
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
   CommHopfAlgCat.mkQuotient_surjective
@@ -166,7 +175,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso
   match j with
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
         (G := SplitTorus.characterGroup (Fin 6)))
 
 /-- Each numbered root or torus generator over `K` is the scalar extension of the corresponding
@@ -179,8 +188,8 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
   rcases j with j | _
   · rw [Category.assoc, generatorCoordinateMap_inl, generatorCoordinateMap_inl]
     exact
-      UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
-        _ _ _ _ _ _ _ k K j
+      UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_baseChange
+        _ _ _ _ _ j _ _ k K
   · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
 

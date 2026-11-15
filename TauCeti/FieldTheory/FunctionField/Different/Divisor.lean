@@ -55,7 +55,7 @@ whether or not `b` happens to be an `𝒪_P`-basis of `𝒪'_P`.
   at all but finitely many places of `F'`, and only finitely many places of `F` ramify.
 * `TauCeti.Place.finite_setOf_ramificationIdx_ne_one`: only finitely many places of `F'` have
   ramification index other than one.
-* `TauCeti.Divisor.zero_le_different`: the different divisor is effective (Stichtenoth,
+* `TauCeti.Divisor.different_nonneg`: the different divisor is effective (Stichtenoth,
   Remark 3.4.4).
 * `TauCeti.Divisor.mem_support_different_iff_not_isUnramifiedAt`: its support is the set of
   ramified places (Stichtenoth, Corollary 3.5.5).
@@ -168,19 +168,15 @@ theorem mem_support_different_iff {P' : Place k' F'} :
   rw [WeilDivisor.mem_support_iff, coeff_different, ne_eq, Nat.cast_eq_zero]
 
 /-- **The different divisor is effective** (Stichtenoth, Remark 3.4.4). -/
-theorem isEffective_different : (different k' F' hF).IsEffective := by
-  refine (WeilDivisor.isEffective_iff _).mpr fun P' ↦ ?_
+theorem different_nonneg : 0 ≤ different k' F' hF := by
+  refine (WeilDivisor.nonneg_iff _).mpr fun P' ↦ ?_
   rw [coeff_different]
   exact Int.natCast_nonneg _
 
-/-- Effectivity of the different divisor, in the order form the degree bound consumes. -/
-theorem zero_le_different : 0 ≤ different k' F' hF :=
-  WeilDivisor.isEffective_iff_zero_le.mp (isEffective_different k' F' hF)
-
 /-- The different divisor has nonnegative degree, the input the Hurwitz genus formula reads it
 through. -/
-theorem zero_le_degree_different : 0 ≤ degree (different k' F' hF) :=
-  degree_nonneg (zero_le_different k' F' hF)
+theorem degree_different_nonneg : 0 ≤ degree (different k' F' hF) :=
+  degree_nonneg (different_nonneg k' F' hF)
 
 /-- **The support of the different divisor is the set of ramified places** (Stichtenoth,
 Corollary 3.5.5), ramification being read in Mathlib's `Algebra.IsUnramifiedAt` sense at the

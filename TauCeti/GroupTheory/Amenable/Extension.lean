@@ -178,8 +178,8 @@ theorem amenable_iff_subgroup_quotient (N : Subgroup G) [N.Normal] :
   have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
   refine ⟨fun _ => ⟨inferInstance, ?_⟩, fun ⟨_, _⟩ =>
     .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
-  exact .of_surjective ⟨QuotientGroup.mk' N, continuous_of_discreteTopology⟩
-    (QuotientGroup.mk'_surjective N)
+  exact .of_denseRange ⟨QuotientGroup.mk' N, continuous_of_discreteTopology⟩
+    (QuotientGroup.mk'_surjective N).denseRange
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable
 quotient. -/

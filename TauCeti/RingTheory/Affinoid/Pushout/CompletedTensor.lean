@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Huber.TensorProduct.Completion
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 import TauCeti.RingTheory.Affinoid.FiniteQuotient
-import TauCeti.RingTheory.Huber.ClosedSubmodule
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import TauCeti.Topology.Algebra.Ring.Ideal
@@ -84,10 +83,7 @@ omit [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)] in
 -- Every ideal of `A⟨X, Y⟩` is closed, since `A⟨X, Y⟩` is a noetherian Banach algebra over `K`.
 private theorem isClosed_pushoutIdeal (hA : IsAffinoidAlgebra K A) :
     IsClosed (pushoutIdeal I J : Set (IsRestricted.subring (R := A) (fun _ : Fin (m + n) ↦ 1))) :=
-  have := (hA.isRestricted_subring (τ := Fin (m + n))).isNoetherianRing
-  have : IsTateRing (IsRestricted.subring (R := A) (fun _ : Fin (m + n) ↦ 1)) :=
-    IsTateRing.of_normedAlgebra K _
-  isClosed_of_isNoetherian _
+  (hA.isRestricted_subring (τ := Fin (m + n))).isClosed_ideal _
 
 /-- The map `B ⊗̂_A C → A⟨X, Y⟩ ⧸ (I, J)` induced by the coprojections of the affinoid pushout. -/
 private noncomputable def ofCompletedTensor (hA : IsAffinoidAlgebra K A) :

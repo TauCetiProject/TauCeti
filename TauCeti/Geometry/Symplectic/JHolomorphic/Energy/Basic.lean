@@ -113,16 +113,9 @@ lemma stdComplexLineEnergyDensity_zero (ω : SymplecticForm V) (J : AlmostComple
 lemma stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J)
     (F : (ℝ × ℝ) →ₗ[ℝ] V) :
     0 ≤ ω.stdComplexLineEnergyDensity J F := by
+  have h := (ω.tames_iff_associated_pos J).mp hω
   rw [stdComplexLineEnergyDensity_def]
-  refine add_nonneg ?_ ?_
-  · rw [associatedBilinForm_apply]
-    by_cases h : F stdComplexLineReal = 0
-    · simp [h]
-    · exact (hω (F stdComplexLineReal) h).le
-  · rw [associatedBilinForm_apply]
-    by_cases h : F stdComplexLineImag = 0
-    · simp [h]
-    · exact (hω (F stdComplexLineImag) h).le
+  exact add_nonneg (associatedBilinForm_self_nonneg h _) (associatedBilinForm_self_nonneg h _)
 
 /-- Under tameness, the standard pointwise energy density of a nonzero real-linear map from the
 standard complex line is positive. -/
@@ -143,11 +136,7 @@ lemma stdComplexLineEnergyDensity_pos (hω : ω.Tames J) {F : (ℝ × ℝ) →�
       (by simpa [associatedBilinForm_apply] using hω (F stdComplexLineImag) himag)
   · exact add_pos_of_pos_of_nonneg
       (by simpa [associatedBilinForm_apply] using hω (F stdComplexLineReal) hreal)
-      (by
-        rw [associatedBilinForm_apply]
-        by_cases himag : F stdComplexLineImag = 0
-        · simp [himag]
-        · exact (hω (F stdComplexLineImag) himag).le)
+      (associatedBilinForm_self_nonneg ((ω.tames_iff_associated_pos J).mp hω) _)
 
 /-- Under tameness, standard pointwise energy density vanishes exactly for the zero real-linear
 map from the standard complex line. -/
@@ -158,28 +147,17 @@ lemma stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J)
   constructor
   · intro henergy
     rw [stdComplexLineEnergyDensity_def] at henergy
-    have hreal_nonneg :
-        0 ≤ ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) := by
-      rw [associatedBilinForm_apply]
-      by_cases hreal : F stdComplexLineReal = 0
-      · simp [hreal]
-      · exact (hω (F stdComplexLineReal) hreal).le
-    have himag_nonneg :
-        0 ≤ ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) := by
-      rw [associatedBilinForm_apply]
-      by_cases himag : F stdComplexLineImag = 0
-      · simp [himag]
-      · exact (hω (F stdComplexLineImag) himag).le
+    have hpos := (ω.tames_iff_associated_pos J).mp hω
+    have hreal_nonneg := associatedBilinForm_self_nonneg hpos (F stdComplexLineReal)
+    have himag_nonneg := associatedBilinForm_self_nonneg hpos (F stdComplexLineImag)
     have hreal_zero :
         ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) = 0 := by
       linarith
     have himag_zero :
         ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) = 0 := by
       linarith
-    have hreal : F stdComplexLineReal = 0 :=
-      (associatedBilinForm_self_eq_zero ((ω.tames_iff_associated_pos J).mp hω)).mp hreal_zero
-    have himag : F stdComplexLineImag = 0 :=
-      (associatedBilinForm_self_eq_zero ((ω.tames_iff_associated_pos J).mp hω)).mp himag_zero
+    have hreal : F stdComplexLineReal = 0 := (associatedBilinForm_self_eq_zero hpos).mp hreal_zero
+    have himag : F stdComplexLineImag = 0 := (associatedBilinForm_self_eq_zero hpos).mp himag_zero
     apply LinearMap.ext
     intro z
     rw [LinearMap.apply_stdComplexLine F z, hreal, himag]

@@ -105,7 +105,9 @@ theorem exists_eqOn_compl_support_mul_mul_inv_mem_zpowers {g x : Perm α}
       refine (card_dvd_of_le inf_le_right).trans (dvd_of_eq ?_)
       rw [← Nat.card_congr (MonoidHom.ofInjective ofSubtype_injective).toEquiv, Nat.card_perm,
         Nat.card_eq_fintype_card, Fintype.card_coe]
-    exact hgp.not_sq_dvd_factorial (h.trans hcard)
+    have := hgp.sq_dvd_factorial_iff.1 (h.trans hcard)
+    have := hgp.pos
+    omega
   obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd hsq
     (g := ⟨g, hgF⟩) (h := ⟨x * g * x⁻¹, hg'F⟩) (by rw [orderOf_mk, hgc.orderOf])
     (by rw [orderOf_mk, hgc.conj.orderOf, card_support_conj])
@@ -132,7 +134,7 @@ private theorem exists_eqOn_swap_mul_mul_inv_mem_zpowers {g : Perm α} (hgc : g.
     g.supportᶜ.equivFin.symm.toEmbedding.trans (Function.Embedding.subtype _)
   obtain ⟨x, hx⟩ := exists_smul_eq G e (e.trans (swap a b).toEmbedding)
   have hxΔ : ∀ z ∉ g.support, (x : Perm α) z = swap a b z := fun z hz ↦ by
-    simpa only [e, Function.Embedding.smul_apply, Function.Embedding.trans_apply,
+    simpa only [e, smul_apply, Function.Embedding.trans_apply,
       Function.Embedding.subtype_apply, Equiv.toEmbedding_apply, Equiv.symm_apply_apply,
       Subgroup.smul_def, Perm.smul_def] using
       DFunLike.congr_fun hx (g.supportᶜ.equivFin ⟨z, mem_compl.2 hz⟩)

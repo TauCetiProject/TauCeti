@@ -52,6 +52,8 @@ the perfectoid cover of an analytic adic space by a tower of finite étale torso
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.isGaloisGroup`: over a nonzero ring, `G` is a Galois group
   of `B` over `A` in Mathlib's sense.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.rankAtStalk_eq_card`: a torsor has constant rank `|G|`.
+* `TauCeti.Algebra.IsFiniteEtaleTorsor.of_algEquiv`: torsors are invariant under `G`-equivariant
+  isomorphisms of algebras.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.baseChange`: for every ring map `A → A'`, `A' ⊗[A] B` is a
   `G`-torsor over `A'`, with `G` acting on the right factor.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.of_isPushout`: the same for any base change `B'` of `B`
@@ -163,6 +165,26 @@ theorem rankAtStalk_eq_card [h : IsFiniteEtaleTorsor G A B] (p : PrimeSpectrum A
   rw [← Module.rankAtStalk_baseChange, Module.rankAtStalk_eq_of_equiv e,
     Module.rankAtStalk_eq_finrank_of_free]
   simp [Nat.card_eq_fintype_card]
+
+/-- A `G`-equivariant isomorphism of algebras carries finite étale `G`-torsors to finite étale
+`G`-torsors. -/
+theorem of_algEquiv {C : Type*} [CommRing C] [Algebra A C] [MulSemiringAction G C]
+    [SMulCommClass G A C] [h : IsFiniteEtaleTorsor G A B] (e : B ≃ₐ[A] C)
+    (he : ∀ (g : G) (b : B), e (g • b) = g • e b) : IsFiniteEtaleTorsor G A C := by
+  have := h.etale
+  have := h.finite
+  have := h.faithfullyFlat
+  refine ⟨.of_equiv e, .equiv e.toLinearEquiv, .of_linearEquiv _ _ e.symm.toLinearEquiv, ?_⟩
+  -- The Galois map of `C` is that of `B`, read through `e ⊗ e` and `e` in each coordinate.
+  let eG : (G → B) ≃ₐ[A] (G → C) := AlgEquiv.piCongrRight fun _ ↦ e
+  have hcomp : ⇑(MulSemiringAction.tensorToPi A C G) ∘ ⇑(Algebra.TensorProduct.congr e e) =
+      ⇑eG ∘ ⇑(MulSemiringAction.tensorToPi A B G) := by
+    funext z
+    induction z using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [Function.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
+    | tmul b b' => funext g; simp [eG, he]
+  rw [← Function.Bijective.of_comp_iff _ (Algebra.TensorProduct.congr e e).bijective, hcomp]
+  exact eG.bijective.comp h.bijective_tensorToPi
 
 section BaseChange
 

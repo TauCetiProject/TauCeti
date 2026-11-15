@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Retract
 public import Mathlib.RingTheory.LocalRing.Basic
 public import TauCeti.CategoryTheory.IrreducibleMorphism
+public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 
 /-!
 # Right and left almost split morphisms
@@ -68,6 +69,10 @@ what ties the sequence to the arrows of the Auslander-Reiten quiver.
 * `TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`:
   in a preadditive category, **the source of a left almost split morphism and the target of a
   right almost split morphism have local endomorphism rings**, with no finiteness hypothesis.
+* `TauCeti.IsRightAlmostSplit.mem_jacobsonRadical` and
+  `TauCeti.isRightAlmostSplit_iff_mem_jacobsonRadical_and_forall`: a right almost split morphism is
+  radical, and if the target has a local endomorphism ring, a morphism into it is right almost split
+  exactly when it is radical and every radical morphism into the target factors through it.
 * `TauCeti.IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm` and
   `TauCeti.IsRightAlmostSplit.isIso_of_isSplitEpi_of_comm`: in a commutative square whose lower
   map is left almost split and whose upper map is not a split monomorphism, a split monomorphism
@@ -243,67 +248,57 @@ theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit
 
 /-- **Postcomposing a right almost split morphism with an isomorphism keeps it right almost
 split.** -/
-theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
-    IsRightAlmostSplit (f ≫ e.hom) := by
-  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp_iso f e), fun Z g hg ↦ ?_⟩
-  have hg' : ¬ IsSplitEpi (g ≫ e.symm.hom) :=
-    fun _ ↦ hg (isSplitEpi_of_isSplitEpi_comp_iso g e.symm)
-  obtain ⟨h, hh⟩ := hf.factors Z (g ≫ e.symm.hom) hg'
+theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (g : Y ⟶ Y')
+    [IsIso g] : IsRightAlmostSplit (f ≫ g) := by
+  refine ⟨by simpa using hf.not_isSplitEpi, fun Z a ha ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hf.factors Z (a ≫ inv g) (by simpa using ha)
   exact ⟨h, by simp [reassoc_of% hh]⟩
 
 /-- **Precomposing a right almost split morphism with an isomorphism keeps it right almost
 split.** -/
-theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (e : X' ≅ X) :
-    IsRightAlmostSplit (e.hom ≫ f) := by
-  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp e.hom f), fun Z g hg ↦ ?_⟩
-  obtain ⟨h, hh⟩ := hf.factors Z g hg
-  exact ⟨h ≫ e.inv, by simp [hh]⟩
+theorem IsRightAlmostSplit.iso_comp (hf : IsRightAlmostSplit f) {X' : C} (g : X' ⟶ X)
+    [IsIso g] : IsRightAlmostSplit (g ≫ f) := by
+  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp g f), fun Z a ha ↦ ?_⟩
+  obtain ⟨h, hh⟩ := hf.factors Z a ha
+  exact ⟨h ≫ inv g, by simp [hh]⟩
 
 /-- **Precomposing a left almost split morphism with an isomorphism keeps it left almost
 split.** -/
-theorem IsLeftAlmostSplit.iso_comp (hf : IsLeftAlmostSplit f) {X' : C} (e : X' ≅ X) :
-    IsLeftAlmostSplit (e.hom ≫ f) := by
-  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
-  exact (isRightAlmostSplit_op_iff.mpr hf).comp_iso e.op
+theorem IsLeftAlmostSplit.iso_comp (hf : IsLeftAlmostSplit f) {X' : C} (g : X' ⟶ X)
+    [IsIso g] : IsLeftAlmostSplit (g ≫ f) := by
+  rw [← isRightAlmostSplit_op_iff, op_comp]
+  exact (isRightAlmostSplit_op_iff.mpr hf).comp_iso g.op
 
 /-- **Postcomposing a left almost split morphism with an isomorphism keeps it left almost
 split.** -/
-theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
-    IsLeftAlmostSplit (f ≫ e.hom) := by
-  rw [← isRightAlmostSplit_op_iff, op_comp, ← Iso.op_hom]
-  exact (isRightAlmostSplit_op_iff.mpr hf).iso_comp e.op
+theorem IsLeftAlmostSplit.comp_iso (hf : IsLeftAlmostSplit f) {Y' : C} (g : Y ⟶ Y')
+    [IsIso g] : IsLeftAlmostSplit (f ≫ g) := by
+  rw [← isRightAlmostSplit_op_iff, op_comp]
+  exact (isRightAlmostSplit_op_iff.mpr hf).iso_comp g.op
 
 /-- Being right almost split is invariant under an isomorphism of the target. -/
 @[simp]
-theorem isRightAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
-    IsRightAlmostSplit (f ≫ e.hom) ↔ IsRightAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
-  have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
-  exact h ▸ hf.comp_iso e.symm
+theorem isRightAlmostSplit_comp_iso_iff {Y' : C} (g : Y ⟶ Y') [IsIso g] :
+    IsRightAlmostSplit (f ≫ g) ↔ IsRightAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.comp_iso (inv g), fun hf ↦ hf.comp_iso g⟩
 
 /-- Being right almost split is invariant under an isomorphism of the source. -/
 @[simp]
-theorem isRightAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
-    IsRightAlmostSplit (e.hom ≫ f) ↔ IsRightAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.iso_comp e⟩
-  have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
-  exact h ▸ hf.iso_comp e.symm
+theorem isRightAlmostSplit_iso_comp_iff {X' : C} (g : X' ⟶ X) [IsIso g] :
+    IsRightAlmostSplit (g ≫ f) ↔ IsRightAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.iso_comp (inv g), fun hf ↦ hf.iso_comp g⟩
 
 /-- Being left almost split is invariant under an isomorphism of the source. -/
 @[simp]
-theorem isLeftAlmostSplit_iso_comp_iff {X' : C} (e : X' ≅ X) :
-    IsLeftAlmostSplit (e.hom ≫ f) ↔ IsLeftAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.iso_comp e⟩
-  have h : e.symm.hom ≫ e.hom ≫ f = f := by simp
-  exact h ▸ hf.iso_comp e.symm
+theorem isLeftAlmostSplit_iso_comp_iff {X' : C} (g : X' ⟶ X) [IsIso g] :
+    IsLeftAlmostSplit (g ≫ f) ↔ IsLeftAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.iso_comp (inv g), fun hf ↦ hf.iso_comp g⟩
 
 /-- Being left almost split is invariant under an isomorphism of the target. -/
 @[simp]
-theorem isLeftAlmostSplit_comp_iso_iff {Y' : C} (e : Y ≅ Y') :
-    IsLeftAlmostSplit (f ≫ e.hom) ↔ IsLeftAlmostSplit f := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ hf.comp_iso e⟩
-  have h : (f ≫ e.hom) ≫ e.symm.hom = f := by simp
-  exact h ▸ hf.comp_iso e.symm
+theorem isLeftAlmostSplit_comp_iso_iff {Y' : C} (g : Y ⟶ Y') [IsIso g] :
+    IsLeftAlmostSplit (f ≫ g) ↔ IsLeftAlmostSplit f :=
+  ⟨fun hf ↦ by simpa using hf.comp_iso (inv g), fun hf ↦ hf.comp_iso g⟩
 
 /-- Restricting a right almost split morphism to a retract through which it factors
 preserves right almost splitness. -/
@@ -615,5 +610,33 @@ theorem IsRightAlmostSplit.isLocalRing_end (hf : IsRightAlmostSplit f) :
     exact Or.inr (hf.isIso_of_isSplitEpi _)
 
 end LocalRing
+
+/-! ### Right almost split morphisms and the radical -/
+
+section Radical
+
+variable [Preadditive C]
+
+/-- A right almost split morphism is radical. -/
+theorem IsRightAlmostSplit.mem_jacobsonRadical (hf : IsRightAlmostSplit f) :
+    f ∈ jacobsonRadical X Y :=
+  have := hf.isLocalRing_end
+  mem_jacobsonRadical_iff_not_isSplitEpi.2 hf.not_isSplitEpi
+
+/-- A left almost split morphism is radical. -/
+theorem IsLeftAlmostSplit.mem_jacobsonRadical (hf : IsLeftAlmostSplit f) :
+    f ∈ jacobsonRadical X Y :=
+  have := hf.isLocalRing_end
+  mem_jacobsonRadical_iff_not_isSplitMono.2 hf.not_isSplitMono
+
+/-- If `End Y` is local, then `f : X ⟶ Y` is right almost split exactly when it is radical and every
+radical morphism into `Y` factors through it: the morphisms factoring through `f` are the radical
+morphisms into `Y`. -/
+theorem isRightAlmostSplit_iff_mem_jacobsonRadical_and_forall [IsLocalRing (End Y)] :
+    IsRightAlmostSplit f ↔ f ∈ jacobsonRadical X Y ∧
+      ∀ ⦃Z : C⦄ (g : Z ⟶ Y), g ∈ jacobsonRadical Z Y → ∃ h : Z ⟶ X, h ≫ f = g := by
+  simp only [isRightAlmostSplit_iff, mem_jacobsonRadical_iff_not_isSplitEpi]
+
+end Radical
 
 end TauCeti

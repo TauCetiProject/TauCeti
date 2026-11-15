@@ -100,7 +100,7 @@ theorem notMem_affineSpan (hs : s ∈ K.faces) : p ∉ affineSpan 𝕜 (s : Set 
   intro hp
   have hne := K.nonempty_of_mem_faces hs
   set c := s.centroid 𝕜 id
-  obtain ⟨ε, hε, hq⟩ := s.exists_lineMap_centroid_mem_convexHull hne hp
+  obtain ⟨ε, hε, hq⟩ := s.exists_lineMap_centroid_mem_convexHull hp
   have hc : c ∈ K.space := convexHull_subset_space hs (s.centroid_mem_convexHull hne)
   have hcp : p ≠ c := fun hpc => h.notMem_space (hpc ▸ hc)
   -- the centroid lies on the segment from `p` to a point of the face beyond it

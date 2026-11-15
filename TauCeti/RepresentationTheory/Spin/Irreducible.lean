@@ -114,8 +114,8 @@ central summands, for which the results here are the even-dimensional half; it i
   once the Spin group spans the even subalgebra and that subalgebra exhausts the endomorphisms of
   the spinor module.
 * `TauCeti.isIrreducible_spinRep_of_isSquare` and `TauCeti.spinRep_isIrreducible_of_odd`: **the
-  spin representation is irreducible in odd dimension**, the type `Bₗ` half of Layer 4, under the
-  square normalization and over a separably closed field respectively.
+  spin representation is irreducible in odd dimension**, the type `Bₗ` case, under the square
+  normalization and over a separably closed field respectively.
 * `TauCeti.not_forall_map_spinRep_spinPlus_le_of_isIrreducible` and
   `TauCeti.not_forall_map_spinRep_spinMinus_le_of_isIrreducible`: **an irreducible spinor module
   does not split along exterior parity**, provided `P.W ≠ ⊥`, which rules out only dimension one;
@@ -132,8 +132,6 @@ central summands, for which the results here are the even-dimensional half; it i
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press (1989),
   Chapter I, §5: the complex spinor representations and their irreducibility in both parities.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layers 1 and 4, "the structure theorem" and "the spin and half-spin representations".
 -/
 
 public section
@@ -306,7 +304,7 @@ section Even
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  [Invertible (2 : K)] [FiniteDimensional K V]
+  [FiniteDimensional K V]
 
 
 /-! ### Invariant-subspace dichotomies and inequivalence of the two half-spin actions -/
@@ -381,7 +379,7 @@ section SpinGroup
 
 variable {K : Type u} [Field K]
   {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-  [Invertible (2 : K)] [FiniteDimensional K V] (P : SpinPolarizationData Q)
+  [FiniteDimensional K V] (P : SpinPolarizationData Q)
 
 /-- **The even half-spin representation of the Spin group is irreducible** when the Spin group
 linearly spans the even Clifford algebra. -/
@@ -474,6 +472,8 @@ theorem isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_of_span
       congrArg ((spinMinusSubrep P hline).toRepresentation g) (hef s)
     _ = eMinus ((spinGroupRepresentation (spinMinusAction Q P hline)) g (f s)) :=
       (hMinus (f s)).symm
+
+variable [Invertible (2 : K)]
 
 /-- **The even half-spin representation of the Spin group is irreducible** when anisotropic pairs
 admit the square normalization needed to span the even Clifford algebra. -/
@@ -628,7 +628,6 @@ variable [IsSepClosed K]
 dimension `2 * l + 1` over a separably closed field of characteristic not two, the Spin group acts
 irreducibly on the whole spinor module `S = ⋀·W`.
 
-This is the type `Bₗ` half of the Layer-4 irreducibility statement, in the shape the roadmap pins.
 Nondegeneracy of `Q` is not assumed: the polarization data already carries it, by
 `TauCeti.SpinPolarizationData.nondegenerate`. Except in dimension one, where `W = ⊥` and `S = K` is
 entirely even, the exterior parity splitting `S = S⁺ ⊕ S⁻` is *not* a splitting of representations

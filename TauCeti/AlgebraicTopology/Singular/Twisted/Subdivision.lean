@@ -126,6 +126,16 @@ def twistedAffineSimplex (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n
       (pathTransport σ z (affineToTop v (toTopInitialVertex ⦋k⦌))))
     (ιTwistedChainComplex L k (affineSimplex σ v))
 
+/-- The affine summand transports its coefficient to the initial vertex of the affine simplex
+and then includes that simplex's coefficient fibre. -/
+lemma twistedAffineSimplex_def (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop)
+    {k : ℕ} (v : Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) :
+    twistedAffineSimplex L σ z v =
+      L.map (pathTransport σ z (ULift.up
+        (StdSimplex.continuousAffineMapMk v (toTopInitialVertex.{v} ⦋k⦌).down))) ≫
+      ιTwistedChainComplex L k ((X.toSSetObjEquiv _).symm
+        ((X.toSSetObjEquiv n σ).comp (StdSimplex.continuousAffineMapMk v))) := (rfl)
+
 /-- The boundary of the summand of an affine simplex of `σ` is the alternating sum of the summands
 of its facets, all with coefficients transported from the same point of `σ`. -/
 @[simp]
@@ -612,6 +622,29 @@ lemma twistedChainComplexMap_f_comp_twistedPrismX (k : ℕ) :
     _ = _ := by
       rw [ιTwistedChainComplex_twistedPrismX_assoc,
         twistedSingularChain_comp_twistedChainComplexMap_f]
+
+/-- Barycentric subdivision, iterated any number of times, is natural in the space. -/
+@[reassoc]
+lemma twistedChainComplexMap_comp_pow_twistedSubdivisionChainMap (N : ℕ) :
+    twistedChainComplexMap f M ≫ (End.of (twistedSubdivisionChainMap M) ^ N).asHom =
+      (End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom ≫
+        twistedChainComplexMap f M := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [pow_succ', End.mul_asHom, pow_succ', End.mul_asHom, reassoc_of% ih,
+      twistedChainComplexMap_comp_twistedSubdivisionChainMap, Category.assoc]
+
+/-- Barycentric subdivision, iterated any number of times, is natural in the space, on
+elements. -/
+lemma twistedChainComplexMap_f_iterate_twistedSubdivision (N : ℕ) {n : ℕ}
+    (c : ((pullback f.hom).obj M).twistedChainComplex.X n) :
+    ((twistedChainComplexMap f M).f n).hom
+        (((End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom.f n).hom c) =
+      ((End.of (twistedSubdivisionChainMap M) ^ N).asHom.f n).hom
+        (((twistedChainComplexMap f M).f n).hom c) :=
+  (congrArg (fun φ ↦ (φ.f n).hom c)
+    (twistedChainComplexMap_comp_pow_twistedSubdivisionChainMap f M N)).symm
 
 end Naturality
 

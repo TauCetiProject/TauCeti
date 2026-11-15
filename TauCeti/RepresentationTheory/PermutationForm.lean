@@ -64,13 +64,13 @@ which is why they ask for an ordered field rather than for a finite group. In pa
 below reproves Maschke's theorem: the content is that the complement can be taken orthogonal, so
 that a submodule and its complement are separated by an explicit pairing.
 
-The orthogonal-complement half of this file is the bilinear-form transcription of an existing
-TauCeti development: `ofMulAction_mem_orthogonal`, `orthogonal_mem_invtSubmodule`,
-`orthogonalSubrepresentation`, `toSubmodule_orthogonalSubrepresentation` and
-`isCompl_orthogonalSubrepresentation` follow, statement for statement and proof for proof, their
-namesakes in `TauCeti.RepresentationTheory.Continuous.InvariantComplement`, with
-`IsUnitary.inner_map_right` replaced by `permutationForm_ofMulAction_left` and
-`Submodule.isCompl_orthogonal` by
+The orthogonal-complement half of this file is the bilinear-form analogue of the unitary API in
+`TauCeti.RepresentationTheory.Continuous.InvariantComplement`: `ofMulAction_mem_orthogonal`
+corresponds to `ContRepresentation.IsUnitary.apply_mem_orthogonal`, and
+`orthogonal_mem_invtSubmodule`, `orthogonalSubrepresentation`,
+`toSubmodule_orthogonalSubrepresentation` and `isCompl_orthogonalSubrepresentation` to their
+namesakes there, with `IsUnitary.inner_map_right` replaced by `permutationForm_ofMulAction_left`
+and `Submodule.isCompl_orthogonal` by
 `LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate`.  The two cannot be unified:
 that file works over an inner-product space, which is unavailable over `ℚ`.
 
@@ -80,8 +80,6 @@ that file works over an inner-product space, which is unavailable over `ℚ`.
   API this file adapts to a bilinear form, as described in the implementation notes above.
 * G. D. James, *The Representation Theory of the Symmetric Groups*, Chapter 1, where this form is
   introduced on the permutation module of a Young subgroup and used for the submodule theorem.
-* [Schur-Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3, which asks for the tabloid bilinear form and its orthogonality API.
 -/
 
 public section
@@ -117,21 +115,22 @@ theorem permutationForm_single_left (x : X) (a : k) (w : MonoidAlgebra k X) :
     permutationForm k X (MonoidAlgebra.single x a) w = a * w.coeff x := by
   rw [permutationForm_apply, MonoidAlgebra.coeff_single, Finsupp.sum_single_index (by simp)]
 
-/-- The permutation form is symmetric: both sides are the sum of `v x * w x` over the union of the
-two supports. -/
-theorem permutationForm_comm (v w : MonoidAlgebra k X) :
-    permutationForm k X v w = permutationForm k X w v := by
+/-- Pairing with a standard basis vector on the right reads off a coefficient. -/
+@[simp]
+theorem permutationForm_single_right (v : MonoidAlgebra k X) (x : X) (a : k) :
+    permutationForm k X v (MonoidAlgebra.single x a) = v.coeff x * a := by
   classical
-  have h₁ : (v.coeff.sum fun x a => a * w.coeff x) =
-      ∑ x ∈ v.coeff.support ∪ w.coeff.support, v.coeff x * w.coeff x :=
-    Finsupp.sum_of_support_subset _ Finset.subset_union_left _ (by simp)
-  have h₂ : (w.coeff.sum fun x a => a * v.coeff x) =
-      ∑ x ∈ v.coeff.support ∪ w.coeff.support, w.coeff x * v.coeff x :=
-    Finsupp.sum_of_support_subset _ Finset.subset_union_right _ (by simp)
-  rw [permutationForm_apply, permutationForm_apply, h₁, h₂]
-  exact Finset.sum_congr rfl fun x _ => mul_comm _ _
+  simp +contextual [permutationForm_apply, Finsupp.single_apply]
 
 /-- The permutation form is symmetric. -/
+theorem permutationForm_comm (v w : MonoidAlgebra k X) :
+    permutationForm k X v w = permutationForm k X w v := by
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add v₁ v₂ h₁ h₂ => simp [h₁, h₂]
+  | single x a => rw [permutationForm_single_left, permutationForm_single_right, mul_comm]
+
+/-- The permutation form is a symmetric bilinear form. -/
 theorem permutationForm_isSymm : (permutationForm k X).IsSymm :=
   ⟨fun v w => permutationForm_comm v w⟩
 
@@ -139,21 +138,11 @@ theorem permutationForm_isSymm : (permutationForm k X).IsSymm :=
 theorem permutationForm_isRefl : (permutationForm k X).IsRefl :=
   permutationForm_isSymm.isRefl
 
-/-- Pairing with a standard basis vector on the right reads off a coefficient. -/
-@[simp]
-theorem permutationForm_single_right (v : MonoidAlgebra k X) (x : X) (a : k) :
-    permutationForm k X v (MonoidAlgebra.single x a) = v.coeff x * a := by
-  rw [permutationForm_comm, permutationForm_single_left, mul_comm]
-
 /-- The standard basis of `k[X]` is orthonormal for the permutation form. -/
 theorem permutationForm_single_single (x y : X) [Decidable (x = y)] (a b : k) :
     permutationForm k X (MonoidAlgebra.single x a) (MonoidAlgebra.single y b) =
       if x = y then a * b else 0 := by
-  classical
-  rw [permutationForm_single_left, MonoidAlgebra.coeff_single, Finsupp.single_apply]
-  by_cases h : x = y
-  · subst h; simp
-  · simp [h, Ne.symm h]
+  simp [Finsupp.single_apply]
 
 /-- An element pairing to zero with everything on the right is zero: it is enough to pair it with
 the standard basis vectors. -/
@@ -190,9 +179,8 @@ theorem permutationForm_self_pos {v : MonoidAlgebra k X} (hv : v ≠ 0) :
 for the permutation form only if it is zero. -/
 @[simp]
 theorem permutationForm_self_eq_zero_iff {v : MonoidAlgebra k X} :
-    permutationForm k X v v = 0 ↔ v = 0 := by
-  refine ⟨fun h => by_contra fun hv => ?_, fun h => by simp [h]⟩
-  exact (permutationForm_self_pos hv).ne' h
+    permutationForm k X v v = 0 ↔ v = 0 :=
+  ⟨not_imp_not.mp fun hv => (permutationForm_self_pos hv).ne', by rintro rfl; simp⟩
 
 /-- A positive definite form stays nondegenerate on every submodule, which is what makes the
 orthogonal complement below a genuine complement. -/
@@ -284,12 +272,10 @@ hypothesis on `G` is needed: neither finiteness nor invertibility of `|G|`.  The
 of characteristic zero, so this is not a statement about positive characteristic. -/
 theorem isCompl_orthogonalSubrepresentation
     (σ : Subrepresentation (Representation.ofMulAction k G X)) :
-    IsCompl σ (orthogonalSubrepresentation σ) := by
-  have : Module.Finite k (MonoidAlgebra k X) := Module.Finite.of_basis (MonoidAlgebra.basis X k)
-  have h : IsCompl σ.toSubmodule ((permutationForm k X).orthogonal σ.toSubmodule) :=
+    IsCompl σ (orthogonalSubrepresentation σ) :=
+  Subrepresentation.isCompl_toSubmodule.mp <|
     LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate permutationForm_isRefl
       (permutationForm_restrict_nondegenerate σ.toSubmodule)
-  exact Subrepresentation.isCompl_toSubmodule.mp h
 
 end OrderedField
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
@@ -55,11 +57,17 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
   pointwise formulas, almost everywhere.
 * `MeasureTheory.Lp.modularInversion_modularInversion`: the modular inversion is an involution.
 * `MeasureTheory.Lp.leftTranslation_rightTranslation`: left and right translations commute.
-* `MeasureTheory.Lp.rightTranslation_le_rightTranslation_iff`: right translation is an order
-  automorphism of real `Lᵖ`.
-* `MeasureTheory.Lp.integral_rightTranslation`: right translation on `L¹` preserves the integral.
+* `MeasureTheory.Lp.modularInversion_le_modularInversion_iff`,
+  `MeasureTheory.Lp.rightTranslation_le_rightTranslation_iff`: the modular inversion and right
+  translation are order automorphisms of real `Lᵖ`.
+* `MeasureTheory.Lp.integral_modularInversion`, `MeasureTheory.Lp.integral_rightTranslation`: on
+  `L¹` they preserve the integral.
+* `MeasureTheory.Lp.modularInversion_toL1`: on `L¹`, the modular inversion of a compactly
+  supported continuous function is the class of `x ↦ c(x) • f x⁻¹`.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
-  for `p < ∞`.
+  for `p < ∞`, so `R_(g⁻¹) f → f` as `g → 1` (`MeasureTheory.Lp.tendsto_rightTranslation_inv`).
+* `MeasureTheory.Lp.integrable_smul_rightTranslation_inv`: the weighted orbit
+  `z ↦ k z • R_(z⁻¹) h` of `h ∈ L¹` is integrable for an integrable weight `k`.
 * `MeasureTheory.eLpNorm_comp_mul_right_of_regular`: the unweighted right translate satisfies
   `‖f (· * g)‖_p = c(g)^(1/p) ‖f‖_p`.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`: `‖f (· * g) - f‖_p → 0`
@@ -95,6 +103,19 @@ theorem AEStronglyMeasurable.modularCharacter_rpow_smul_comp_inv {f : G → E}
 
 end MeasureTheory
 
+omit [MeasurableSpace G] [BorelSpace G] in
+/-- The weighted inversion `x ↦ c(x) • f x⁻¹` of a continuous function is continuous. -/
+theorem Continuous.modularCharacter_smul_comp_inv {f : G → E} (hf : Continuous f) :
+    Continuous fun x => (modularCharacter x : ℝ) • f x⁻¹ :=
+  (NNReal.continuous_coe.comp continuous_modularCharacter).smul (hf.comp continuous_inv)
+
+omit [MeasurableSpace G] [BorelSpace G] in
+/-- The weighted inversion `x ↦ c(x) • f x⁻¹` of a compactly supported function is compactly
+supported. -/
+theorem HasCompactSupport.modularCharacter_smul_comp_inv {f : G → E}
+    (hf : HasCompactSupport f) : HasCompactSupport fun x => (modularCharacter x : ℝ) • f x⁻¹ :=
+  (hf.comp_homeomorph (Homeomorph.inv G)).smul_left (f := fun x => (modularCharacter x : ℝ))
+
 namespace TauCeti
 
 /-- The weighted inversion `x ↦ c(x)^(1/p) • f x⁻¹` preserves the `Lᵖ` seminorm of an almost
@@ -108,8 +129,8 @@ theorem eLpNorm_modularCharacter_rpow_smul_comp_inv {f : G → E}
   rcases eq_or_ne p ∞ with rfl | hptop
   · -- For `p = ∞` the weight is `1`, and `μ` and `μ.inv` have the same null sets.
     simp only [ENNReal.toReal_top, inv_zero, Real.rpow_zero, one_smul] at hJf ⊢
-    rw [eLpNorm_exponent_top hJf, eLpNorm_exponent_top hf, eLpNormEssSup_eq_essSup_enorm,
-      eLpNormEssSup_eq_essSup_enorm]
+    rw [eLpNorm_exponent_top hJf, eLpNorm_exponent_top hf, eLpNormEssSup_eq_essSup_eNorm,
+      eLpNormEssSup_eq_essSup_eNorm]
     have h := (MeasurableEquiv.inv G).measurableEmbedding.essSup_map_measure (μ := μ)
       (g := fun x => ‖f x‖ₑ)
     rw [MeasurableEquiv.inv_apply, ← Measure.inv] at h
@@ -118,12 +139,12 @@ theorem eLpNorm_modularCharacter_rpow_smul_comp_inv {f : G → E}
       (essSup_mono_measure (absolutelyContinuous_inv_of_regular μ))
   -- For `0 < p < ∞`, the weight raised to the power `p` is the density `c` of `μ.inv`.
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hptop
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hJf,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hJf,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf]
   congr 1
   have hweight (x : G) : ‖(modularCharacter x : ℝ) ^ p.toReal⁻¹ • f x⁻¹‖ₑ ^ p.toReal =
       modularCharacter x * ‖f x⁻¹‖ₑ ^ p.toReal := by
-    rw [enorm_smul, ENNReal.mul_rpow_of_nonneg _ _ hq.le, Real.enorm_of_nonneg (by positivity),
+    rw [eNorm_smul, ENNReal.mul_rpow_of_nonneg _ _ hq.le, Real.eNorm_of_nonneg (by positivity),
       ENNReal.ofReal_rpow_of_nonneg (by positivity) hq.le, ← Real.rpow_mul (by positivity),
       inv_mul_cancel₀ hq.ne', Real.rpow_one, ENNReal.ofReal_coe_nnreal]
   have h := lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular (μ := μ)
@@ -289,6 +310,47 @@ theorem rightTranslation_le_rightTranslation_iff {g : G} {f f' : Lp ℝ p μ} :
   refine ⟨fun h => ?_, rightTranslation_mono g⟩
   simpa [← rightTranslation_symm] using rightTranslation_mono (μ := μ) g⁻¹ h
 
+/-- The modular inversion is monotone on real `Lᵖ`. -/
+theorem modularInversion_mono {f f' : Lp ℝ p μ} (h : f ≤ f') :
+    modularInversion μ p ℝ f ≤ modularInversion μ p ℝ f' := by
+  rw [← coeFn_le] at h ⊢
+  filter_upwards [coeFn_modularInversion (𝕜 := ℝ) f, coeFn_modularInversion (𝕜 := ℝ) f',
+    (quasiMeasurePreserving_inv_of_regular μ).ae h] with x hx hx' hle
+  rw [hx, hx']
+  exact smul_le_smul_of_nonneg_left hle (by positivity)
+
+/-- The modular inversion is an order automorphism of real `Lᵖ`. -/
+@[simp]
+theorem modularInversion_le_modularInversion_iff {f f' : Lp ℝ p μ} :
+    modularInversion μ p ℝ f ≤ modularInversion μ p ℝ f' ↔ f ≤ f' :=
+  ⟨fun h => by simpa using modularInversion_mono h, modularInversion_mono⟩
+
+/-- The modular inversion on `L¹` preserves the integral: `∫ x, c(x) • f x⁻¹ dμ = ∫ f dμ`. -/
+@[simp]
+theorem integral_modularInversion (f : Lp E 1 μ) :
+    ∫ x, modularInversion μ 1 𝕜 f x ∂μ = ∫ x, f x ∂μ := by
+  rw [integral_congr_ae (coeFn_modularInversion f)]
+  have h := integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
+    fun x => (modularCharacter x⁻¹ : ℝ) • f x
+  simp only [inv_inv, smul_smul, modularCharacter_mul_inv, one_smul] at h
+  simpa using h
+
+/-- The modular inversion of the `L¹` class of a compactly supported continuous function `f` is the
+class of `x ↦ c(x) • f x⁻¹`. -/
+theorem modularInversion_toL1 {f : G → E} (hfc : Continuous f) (hfs : HasCompactSupport f) :
+    modularInversion μ 1 𝕜 ((hfc.integrable_of_hasCompactSupport (μ := μ) hfs).toL1 f) =
+      (hfc.modularCharacter_smul_comp_inv.integrable_of_hasCompactSupport
+        hfs.modularCharacter_smul_comp_inv).toL1 _ := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜)
+      ((hfc.integrable_of_hasCompactSupport (μ := μ) hfs).toL1 f),
+    (quasiMeasurePreserving_inv_of_regular μ).ae
+      (hfc.integrable_of_hasCompactSupport (μ := μ) hfs).coeFn_toL1,
+    (hfc.modularCharacter_smul_comp_inv.integrable_of_hasCompactSupport (μ := μ)
+      hfs.modularCharacter_smul_comp_inv).coeFn_toL1] with x h₁ h₂ h₃
+  rw [h₁, h₃, h₂]
+  simp
+
 /-- Right translation on `L¹` preserves the integral: the weight `c(g⁻¹)` of
 `(R_g f)(x) = c(g⁻¹) • f (x * g)` compensates the factor `c(g)` by which right translation scales
 the integral. -/
@@ -307,6 +369,22 @@ theorem continuous_rightTranslation_apply (hp : p ≠ ∞) (f : Lp E p μ) :
   simp only [rightTranslation_apply, leftTranslation_apply]
   exact (modularInversion μ p 𝕜).continuous.comp
     ((DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const)
+
+open Topology in
+/-- The right translates `R_(g⁻¹) f` tend to `f` in `Lᵖ` as `g → 1`, for `p < ∞`. -/
+theorem tendsto_rightTranslation_inv (hp : p ≠ ∞) (f : Lp E p μ) :
+    Tendsto (fun g : G => rightTranslation μ p 𝕜 g⁻¹ f) (𝓝 1) (𝓝 f) := by
+  simpa only [Function.comp_def, inv_one, map_one, LinearIsometryEquiv.coe_one, id_eq]
+    using ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp f).comp continuous_inv).tendsto 1
+
+/-- For an integrable weight `k` and `h ∈ L¹(G, μ)`, the weighted orbit `z ↦ k z • R_(z⁻¹) h` is
+integrable; its integral is the convolution `h ⋆ k` when `E = ℝ`. -/
+theorem integrable_smul_rightTranslation_inv {k : G → ℝ} (hk : Integrable k μ) (h : Lp E 1 μ) :
+    Integrable (fun z => k z • rightTranslation μ 1 ℝ z⁻¹ h) μ := by
+  refine (hk.norm.mul_const ‖h‖).mono' (hk.aefinStronglyMeasurable.aestronglyMeasurable_smul
+    ((continuous_rightTranslation_apply ENNReal.one_ne_top h).comp continuous_inv))
+    (.of_forall fun z => ?_)
+  rw [norm_smul, LinearIsometryEquiv.norm_map]
 
 end Lp
 
@@ -355,9 +433,9 @@ theorem MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular {f : G → E} (hf : 
   have h : Tendsto (fun g => a g • Lp.rightTranslation μ p ℝ g F - F) (𝓝 1) (𝓝 0) := by
     simpa [a] using ((ha.tendsto 1).smul
       ((Lp.continuous_rightTranslation_apply hp F).tendsto 1)).sub_const F
-  refine (enorm_zero (E := Lp E p μ) ▸ (continuous_enorm.tendsto 0).comp h).congr' <|
+  refine (eNorm_zero (E := Lp E p μ) ▸ (continuous_eNorm.tendsto 0).comp h).congr' <|
     Eventually.of_forall fun g => ?_
-  rw [Function.comp_apply, Lp.enorm_def]
+  rw [Function.comp_apply, Lp.eNorm_def]
   refine eLpNorm_congr_ae ?_
   filter_upwards [Lp.coeFn_sub (a g • Lp.rightTranslation μ p ℝ g F) F,
     Lp.coeFn_smul (a g) (Lp.rightTranslation μ p ℝ g F),

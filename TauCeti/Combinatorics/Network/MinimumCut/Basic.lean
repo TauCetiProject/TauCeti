@@ -441,6 +441,10 @@ end Extremal
   classical
   simp [isAdmissible_iff]
 
+/-- A side admissible for a pair of singleton terminal sets separates distinct terminals. -/
+theorem IsAdmissible.ne {s t : V} {S : Finset V} (hS : IsAdmissible {s} {t} S) : s ≠ t :=
+  ne_of_mem_of_not_mem (isAdmissible_singleton.1 hS).1 (isAdmissible_singleton.1 hS).2
+
 /-- A minimum cut for a pair of singleton terminal sets has the usual source-membership,
 sink-exclusion, and optimality characterization. -/
 theorem isMinimum_singleton_iff [Preorder K] {f : Finset V → K} {s t : V}
@@ -480,9 +484,7 @@ theorem pairMinimumValue_le {s t : V} {S : Finset V} (hs : s ∈ S) (ht : t ∉ 
 /-- A minimum cut between two vertices attains their minimum cut value. -/
 theorem IsMinimum.pairMinimumValue_eq {f : Finset V → K} {s t : V} {S : Finset V}
     (hS : IsMinimum f {s} {t} S) : pairMinimumValue f s t = f S := by
-  obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
-  have hst : s ≠ t := fun h ↦ ht (h ▸ hs)
-  rw [pairMinimumValue_of_ne f hst]
+  rw [pairMinimumValue_of_ne f hS.admissible.ne]
   exact (((isMinimum_iff_value_eq f _).mp hS).2).symm
 
 /-- A cut separating two vertices is minimum exactly when it attains their minimum cut value. -/
@@ -493,6 +495,18 @@ theorem isMinimum_singleton_iff_pairMinimumValue_eq {s t : V} {S : Finset V} :
       (isAdmissible_singleton.mp hS.admissible).2, hS.pairMinimumValue_eq.symm⟩
   · exact isMinimum_singleton_iff.mpr ⟨hs, ht, fun T hsT htT ↦
       heq.le.trans (pairMinimumValue_le f hsT htT)⟩
+
+/-- Relabelling vertices preserves pairwise minimum cut values, including the zero diagonal
+convention. -/
+theorem pairMinimumValue_map [Finite W] (e : V ≃ W) (g : Finset W → K)
+    (hfg : ∀ S, g (S.map e.toEmbedding) = f S) (s t : V) :
+    pairMinimumValue g (e s) (e t) = pairMinimumValue f s t := by
+  classical
+  by_cases hst : s = t
+  · subst t
+    simp
+  · rw [pairMinimumValue_of_ne g (e.injective.ne hst), pairMinimumValue_of_ne f hst]
+    simpa using minimumValue_map e hfg (disjoint_singleton.mpr hst)
 
 /-- **Ultrametric inequality** for minimum cut values: every cut separating `s` from `t`
 separates `s` from `v` or `v` from `t`. The intermediate vertex `v` is arbitrary. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.GraphAutomorphism
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Coordinates
-import TauCeti.LinearAlgebra.Basis.RangeSpan
+import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.LinearAlgebra.End.OrderTwoThree
 
 /-!
@@ -167,7 +167,7 @@ theorem typeDGraphLieEquiv_fixedSubmodule_eq_span (c : I) :
   have hspan : Submodule.span R (Set.range (fun p => b p + f (b p))) =
       LinearMap.range (1 + f) := by
     rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
-      Module.Basis.span_range_eq_span_range_basis b]
+      Submodule.span_range_eq_span_range_comp_of_span_eq_top b.span_eq]
     rfl
   exact hfixed.trans ((End.range_one_add_eq_ker_one_sub hf).symm.trans hspan.symm)
 

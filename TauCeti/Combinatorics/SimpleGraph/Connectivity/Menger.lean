@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.ArrowWalk
+public import TauCeti.Combinatorics.SimpleGraph.Paths
 
 /-!
 # Menger's theorem for vertex-disjoint paths in simple graphs
@@ -35,13 +36,8 @@ deleting vertices.
   included, against its capacity.
 
 Each form comes with weak duality, which needs no finiteness, and a witness form giving a path
-family and a separator of equal size. The local form for nonadjacent vertices and the set-to-set
-form also have predicate forms.
-
-## Main definitions
-
-* `SimpleGraph.Walk.InternallyDisjoint`: two walks from `s` to `t` sharing no vertex other than `s`
-  and `t`.
+family and a separator of equal size. The local form and the set-to-set form also have predicate
+forms; the predicate form of the local form holds for arbitrary vertices `s` and `t`.
 
 ## Main results
 
@@ -94,21 +90,6 @@ variable {V : Type u} {G : SimpleGraph V}
 namespace Walk
 
 variable {s t : V} {p q : G.Walk s t}
-
-/-- Two walks from `s` to `t` are *internally disjoint* when they share no vertex other than `s`
-and `t`. -/
-def InternallyDisjoint (p q : G.Walk s t) : Prop :=
-  ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t
-
-theorem internallyDisjoint_def :
-    p.InternallyDisjoint q ↔ ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t :=
-  Iff.rfl
-
-theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjoint p :=
-  fun v hq hp ↦ h v hp hq
-
-theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
-  ⟨.symm, .symm⟩
 
 @[simp]
 theorem internallyDisjoint_toArrowWalk_iff :
@@ -201,30 +182,21 @@ theorem exists_paths_vertexSeparator_card_eq [Finite V] (hst : s ≠ t) (hadj : 
     fun h ↦ hX (reachable_induce_compl_iff.1 h), hk⟩
 
 /-- **Menger's theorem for internally vertex-disjoint paths, predicate form.** Let `s` and `t` be
-distinct nonadjacent vertices of a simple graph on a finite vertex type. Then `t` stays reachable
+vertices of a simple graph on a finite vertex type. Then `t` stays reachable
 from `s` after deleting any fewer than `k` vertices other than `s` and `t` exactly when there are
 `k` paths from `s` to `t` pairwise sharing no vertex other than `s` and `t`. -/
-theorem forall_reachable_induce_iff_exists_paths [Finite V] (hst : s ≠ t) (hadj : ¬G.Adj s t)
-    (k : ℕ) :
+theorem forall_reachable_induce_iff_exists_paths [Finite V] (k : ℕ) :
     (∀ (X : Finset V) (hs : s ∉ X) (ht : t ∉ X), #X < k →
         (G.induce (X : Set V)ᶜ).Reachable ⟨s, hs⟩ ⟨t, ht⟩) ↔
       ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
         Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
   refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ X hs ht hX ↦ ?_⟩
-  · obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths (Q := G.AdjHom) hst
-      (isEmpty_plift.2 (isEmpty_Prop.2 hadj)) k).1 fun X hs ht hX ↦
-        reachable_induce_compl_iff.1 (h X hs ht hX)
+  · obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths (Q := G.AdjHom) k).1
+      fun X hs ht hX ↦ reachable_induce_compl_iff.1 (h X hs ht hX)
     exact ⟨fun i ↦ (P i).toWalk, fun i ↦ by simpa using hP i,
       fun _ _ hij ↦ by simpa using hdisj hij⟩
   · by_contra h
     exact hX.not_ge (by simpa using card_le_card_of_not_reachable_induce hP hs ht h)
-
-/-- A walk between distinct nonadjacent vertices visits a vertex other than its endpoints. -/
-theorem Walk.exists_mem_support_ne_ne (hst : s ≠ t) (hadj : ¬G.Adj s t) (p : G.Walk s t) :
-    ∃ v ∈ p.support, v ≠ s ∧ v ≠ t := by
-  cases p with
-  | nil => exact absurd rfl hst
-  | @cons _ x _ h p => exact ⟨x, by simp, h.ne.symm, fun hxt ↦ hadj (hxt ▸ h)⟩
 
 /-! ### Paths between adjacent vertices -/
 
@@ -280,7 +252,9 @@ theorem exists_paths_vertexSeparator_card_add_one_eq [Finite V] (h : G.Adj s t) 
     obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.2 hi
     exact hP'c i ▸ (P i).exists_mem_support_ne_ne h.ne hadj
   have hdisj' : Pairwise fun i j ↦ (P' i).InternallyDisjoint (P' j) := by
-    intro i j hij v hvi hvj
+    intro i j hij
+    rw [Walk.internallyDisjoint_def]
+    intro v hvi hvj
     induction i using Fin.lastCases with
     | last => simpa [hP'l] using hvi
     | cast i =>
@@ -288,14 +262,15 @@ theorem exists_paths_vertexSeparator_card_add_one_eq [Finite V] (h : G.Adj s t) 
       | last => simpa [hP'l] using hvj
       | cast j =>
         rw [hP'c] at hvi hvj
-        exact hdisj (fun hij' ↦ hij (congrArg _ hij')) v hvi hvj
+        exact Walk.internallyDisjoint_def.1
+          (hdisj (fun hij' ↦ hij (congrArg _ hij'))) v hvi hvj
   refine ⟨k, P', X, fun i j hij ↦ ?_, fun i ↦ ?_, hdisj', hP'l, hs, ht, hX, hk⟩
   · by_contra hne
     obtain ⟨v, hv, hvs, hvt⟩ : ∃ v ∈ (P' i).support, v ≠ s ∧ v ≠ t := by
       by_cases hi : i = Fin.last k
       · exact hij ▸ hint (hi ▸ Ne.symm hne)
       · exact hint hi
-    exact (hdisj' hne v hv (hij ▸ hv)).elim hvs hvt
+    exact (Walk.internallyDisjoint_def.1 (hdisj' hne) v hv (hij ▸ hv)).elim hvs hvt
   · induction i using Fin.lastCases with
     | last => exact hP'l ▸ h.isPath_toWalk
     | cast i => simpa [P'] using hP i

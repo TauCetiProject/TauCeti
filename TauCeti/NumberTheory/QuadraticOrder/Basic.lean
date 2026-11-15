@@ -79,7 +79,6 @@ theorem parameter_discr (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
   have hdiv : (4 : ℤ) ∣ D - D ^ 2 := by
     rw [Int.dvd_iff_emod_eq_zero, Int.sub_emod, pow_two, Int.mul_emod]
     rcases hD with hD | hD <;> simp [hD]
-  have hmul := Int.mul_ediv_cancel' hdiv
   rw [QuadraticAlgebra.discr_def]
   omega
 

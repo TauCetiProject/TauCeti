@@ -160,6 +160,17 @@ theorem kernelMap_ofFinsupp_single_val (p₁ : S₁) :
     simp [Ne.symm hp]]
   simp
 
+/-- A kernel whose rows have finitely many nonzero entries maps finite combinations to finite
+combinations. -/
+theorem kernelMap_ofFinsupp_mem_range (hm' : ∀ p₁, (support (m p₁)).Finite) (a : S₁ →₀ R) :
+    kernelMap hm hmfin (ofFinsupp F₁ a) ∈ LinearMap.range (ofFinsupp F₀) := by
+  refine mem_range_ofFinsupp_iff.2 ((a.hasFiniteSupport.biUnion fun p₁ _ => hm' p₁).subset ?_)
+  intro p₀ hp₀
+  obtain ⟨p₁, hp⟩ : ∃ p₁, a p₁ * m p₁ p₀ ≠ 0 := by
+    by_contra! h
+    exact hp₀ (by simp [h])
+  exact Set.mem_biUnion (left_ne_zero_of_mul hp) (right_ne_zero_of_mul hp)
+
 /-- The map shifts potential cutoffs by the constant of the potential bound: if `a` vanishes
 above `D`, then its image vanishes above `D + C`. -/
 theorem kernelMap_apply_val_eq_zero {a : NovikovModule R F₁} {D : ℝ}

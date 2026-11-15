@@ -175,7 +175,7 @@ theorem carLieModule_isFaithful (h : (Fintype.card n : K) ≠ 0) :
 /-! ### The Fock space -/
 
 variable (K n) in
-omit [DecidableEq n] in
+omit [DecidableEq n] [Invertible (2 : K)] in
 /-- **The carrier of the CAR module is the fermionic Fock space `⋀(gl n K)`**, of dimension
 `2 ^ N²`: the Clifford algebra of any quadratic form on a finite free module has rank two to the
 rank of the module, and `gl n K` has rank `N²`. -/

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BrauerGroup.ULift
-public import TauCeti.Algebra.CrossedProduct.Comparison
-public import TauCeti.FieldTheory.GaloisCohomology.Congr
+public import TauCeti.Algebra.BrauerGroup.TwoTorsionBaseChange
+public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Congr
 import TauCeti.Algebra.CrossedProduct.Congr
 import TauCeti.Algebra.CrossedProduct.FieldCongr
 import TauCeti.Algebra.CrossedProduct.ULift
@@ -47,6 +46,12 @@ same compatible pair of group and coefficient maps. It follows from the explicit
 the comparison of the explicit `H²` with `continuousCohomology` carries one transport to the other
 (`RingEquiv.explicitH2AddEquivContinuousCohomology_unitsH2Congr`).
 
+Restricted to `2`-torsion, the square holds for `brauer2EquivH2 : Br(K)[2] ≃ H²(G_K, 𝔽₂)`, with
+right-hand vertical map the transport `TauCeti.trivialF2Map2Equiv` of mod-two cohomology along
+`G_{ULift K} ≃ G_K`. It follows from the continuous square, because `brauer2EquivH2` is
+`brauerCohomologyEquiv` read through the injective map `h2MuToUnits`, and `h2MuToUnits` carries
+one transport to the other (`RingEquiv.h2MuToUnits_trivialF2Map2Equiv`).
+
 ## Main results
 
 * `TauCeti.brauerExplicitH2Equiv_uliftEquiv`: the comparison commutes with universe lifting, for
@@ -56,6 +61,9 @@ the comparison of the explicit `H²` with `continuousCohomology` carries one tra
 * `TauCeti.brauerCohomologyEquiv_uliftEquiv`,
   `TauCeti.brauerCohomologyEquiv_symm_unitsContinuousH2Congr`: the two squares for the
   comparison with Mathlib's continuous cohomology.
+* `TauCeti.brauer2EquivH2_twoTorsionUliftEquiv`,
+  `TauCeti.brauer2EquivH2_symm_trivialF2Map2Equiv`: the two squares for the `2`-torsion
+  comparison with mod-two cohomology.
 
 ## References
 
@@ -242,6 +250,39 @@ theorem brauerCohomologyEquiv_symm_unitsContinuousH2Congr
       Additive.ofMul
         (BrauerGroup.uliftEquiv.{u, w} K ((brauerCohomologyEquiv K).symm y).toMul) := by
   rw [AddEquiv.symm_apply_eq, brauerCohomologyEquiv_uliftEquiv, ofMul_toMul,
+    AddEquiv.apply_symm_apply]
+
+attribute [local instance] locallyCompactSpace_absoluteGaloisGroup
+
+variable [Invertible (2 : K)] [Invertible (2 : ULift.{w} K)]
+
+/-- **The `2`-torsion comparison commutes with universe lifting.** Scalar extension of
+`2`-torsion Brauer classes from `K` to `ULift K` corresponds, under
+`brauer2EquivH2 : Br(K)[2] ≃ H²(G_K, 𝔽₂)`, to transport of mod-two cohomology along
+`G_{ULift K} ≃ G_K`. -/
+@[simp]
+theorem brauer2EquivH2_twoTorsionUliftEquiv (x : BrauerGroup.twoTorsion K) :
+    brauer2EquivH2 (ULift.{w} K)
+        (Additive.ofMul (BrauerGroup.twoTorsionUliftEquiv.{u, w} K x)) =
+      trivialF2Map2Equiv (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr
+        (brauer2EquivH2 K (Additive.ofMul x)) := by
+  apply h2MuToUnits_injective (ULift.{w} K)
+  rw [brauer2EquivH2_h2MuToUnits, RingEquiv.h2MuToUnits_trivialF2Map2Equiv,
+    brauer2EquivH2_h2MuToUnits, BrauerGroup.coe_twoTorsionUliftEquiv]
+  exact brauerCohomologyEquiv_uliftEquiv (x : BrauerGroup K)
+
+/-- **The inverse `2`-torsion comparison commutes with universe lifting.** The transported class
+of `y ∈ H²(G_K, 𝔽₂)` corresponds to the scalar extension of the `2`-torsion Brauer class of
+`y`. -/
+@[simp]
+theorem brauer2EquivH2_symm_trivialF2Map2Equiv
+    (y : continuousCohomology 2 (trivialF2 (AbsoluteGaloisGroup K))) :
+    (brauer2EquivH2 (ULift.{w} K)).symm
+        (trivialF2Map2Equiv (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr
+          y) =
+      Additive.ofMul
+        (BrauerGroup.twoTorsionUliftEquiv.{u, w} K ((brauer2EquivH2 K).symm y).toMul) := by
+  rw [AddEquiv.symm_apply_eq, brauer2EquivH2_twoTorsionUliftEquiv, ofMul_toMul,
     AddEquiv.apply_symm_apply]
 
 end TauCeti

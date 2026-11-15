@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.Matrix.Triangular
-public import TauCeti.LinearAlgebra.RootSystem.Chain
 
 /-!
 # The determinants of the classical Cartan matrices of types `A`, `B` and `C`

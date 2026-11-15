@@ -135,6 +135,21 @@ theorem editDiscrepancy3_def (H H' : Colored3Graph κ V) :
     H.editDiscrepancy3 H' = 6 * {s | H.color s ≠ H'.color s}.ncard / (Nat.card V : ℚ) ^ 3 :=
   (rfl)
 
+/-- Multiplying edit discrepancy by the host-size cube recovers six times the edit count.
+The finite-host hypothesis is necessary because `Nat.card` vanishes on infinite types. -/
+theorem editDiscrepancy3_mul_card_pow [Finite V] (H H' : Colored3Graph κ V) :
+    H.editDiscrepancy3 H' * (Nat.card V : ℚ) ^ 3 =
+      6 * {s | H.color s ≠ H'.color s}.ncard := by
+  by_cases hn : Nat.card V = 0
+  · have he : {s | H.color s ≠ H'.color s}.ncard = 0 := by
+      apply Nat.eq_zero_of_le_zero
+      calc
+        _ ≤ Nat.card (Set.powersetCard V 3) := Set.ncard_le_card _
+        _ = 0 := by simp [hn]
+    simp [hn, he]
+  · rw [editDiscrepancy3_def, div_mul_cancel₀]
+    exact pow_ne_zero 3 (Nat.cast_ne_zero.mpr hn)
+
 /-- The edit discrepancy is nonnegative. -/
 theorem editDiscrepancy3_nonneg (H H' : Colored3Graph κ V) : 0 ≤ H.editDiscrepancy3 H' := by
   rw [editDiscrepancy3_def]

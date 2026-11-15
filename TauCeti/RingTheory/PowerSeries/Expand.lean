@@ -74,9 +74,12 @@ theorem mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ} 
 
 /-- Every summand `m c * l c` of an element `l` of the weighted antidiagonal is at most `n`. -/
 theorem mul_le_of_mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ}
-    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) {c : ι} (hc : c ∈ s) :
-    (m c : ℕ) * l c ≤ n :=
-  mul_le_of_sum_mul_eq (mem_weightedFinsuppAntidiag.1 hl).2 hc
+    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) (c : ι) :
+    (m c : ℕ) * l c ≤ n := by
+  obtain ⟨hsupp, hsum⟩ := mem_weightedFinsuppAntidiag.1 hl
+  by_cases hc : c ∈ s
+  · exact mul_le_of_sum_mul_eq hsum hc
+  · simp [Finsupp.notMem_support_iff.1 fun h ↦ hc (hsupp h)]
 
 end Finset
 
@@ -178,7 +181,7 @@ theorem coeff_prod_expand_of_subset {s t : Finset ι} (hst : s ⊆ t) {m : ι �
   -- An element of the weighted antidiagonal over `t` vanishes at every adjoined index.
   have hzero : ∀ l ∈ t.weightedFinsuppAntidiag m n, ∀ c ∈ t, c ∉ s → l c = 0 := by
     intro l hl c hct hcs
-    have hle := Finset.mul_le_of_mem_weightedFinsuppAntidiag hl hct
+    have hle := Finset.mul_le_of_mem_weightedFinsuppAntidiag hl c
     have := h c hct hcs
     by_contra hlc
     have := Nat.le_mul_of_pos_right (m c : ℕ) (Nat.pos_of_ne_zero hlc)

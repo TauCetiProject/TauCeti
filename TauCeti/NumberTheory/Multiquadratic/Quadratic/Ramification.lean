@@ -22,8 +22,8 @@ discriminant, which is `fundamentalDiscriminant d`. Concretely:
 * for `p ∤ 2` (an odd prime up to sign), `p` is unramified iff `p ∤ d` — i.e. the ramified odd
   primes are exactly those dividing the radicand `d`.
 
-This is the finite-prime half of the Layer-1 ramified-prime behaviour of the multiquadratic
-roadmap. It combines Mathlib's `NumberField.not_dvd_discr_iff_isUnramifiedIn` with the quadratic
+This is the finite-prime half of the ramified-prime behaviour of quadratic fields. It combines
+Mathlib's `NumberField.not_dvd_discr_iff_isUnramifiedIn` with the quadratic
 discriminant computation `TauCeti.Multiquadratic.discr_eq_fundamentalDiscriminant`.
 
 The second half of the file counts the ramified primes. Writing `fundamentalDiscriminant d` as a
@@ -182,16 +182,17 @@ theorem ramifiedPrimes_eq_image (hmin : minpoly ℤ θ = X ^ 2 - C d)
 discriminant.** This is the `t` of genus theory: the exponent in the degree `2 ^ t` of the candidate
 genus field, and the `t` of the `2`-rank formula `t - 1`. Distinct prime-discriminant factors give
 distinct ramified primes because only the three even prime discriminants share a prime, and `s`
-contains at most one of them. -/
+contains at most one of them, since its product is a fundamental discriminant. -/
 theorem ncard_ramifiedPrimes_eq_card (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d)
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q)
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d) :
     (ramifiedPrimes K).ncard = s.card := by
   classical
   rw [ramifiedPrimes_eq_image hmin hgen hsf hs hprod, Set.ncard_coe_finset,
-    Finset.card_image_of_injOn (injOn_primeDiscriminantPrime hs heven)]
+    Finset.card_image_of_injOn (injOn_primeDiscriminantPrime hs fun _ hP _ hQ ↦
+      eq_of_isEvenPrimeDiscriminant_of_prod_eq (isFundamentalDiscr_fundamentalDiscriminant hsf)
+        hprod hP hQ)]
 
 /-- **The ramified primes of `ℚ(√d)`, counted by a prime-discriminant factorization of the
 discriminant.** Packages `ncard_ramifiedPrimes_eq_card` with the existence of the factorization, so
@@ -200,9 +201,9 @@ theorem exists_finset_primeDiscriminant_ncard_ramifiedPrimes (hmin : minpoly ℤ
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) :
     ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
       ∏ P ∈ s, P = fundamentalDiscriminant d ∧ (ramifiedPrimes K).ncard = s.card := by
-  obtain ⟨s, hs, heven, hprod⟩ :=
+  obtain ⟨s, hs, -, hprod⟩ :=
     (isFundamentalDiscr_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
-  exact ⟨s, hs, hprod, ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod⟩
+  exact ⟨s, hs, hprod, ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod⟩
 
 /-! ### Total ramification
 
@@ -212,24 +213,39 @@ here through the discriminant criterion above. -/
 
 variable {p : ℕ} {𝔭 : Ideal (𝓞 K)} [𝔭.IsPrime] [𝔭.LiesOver (Ideal.span {(p : ℤ)})]
 
+include 𝔭 in
+omit [NumberField K] in
+/-- A natural number below a prime of `𝓞 K` that divides the nonzero fundamental discriminant is
+prime. -/
+private theorem prime_of_dvd_fundamentalDiscriminant (hsf : Squarefree d)
+    (hdvd : (p : ℤ) ∣ fundamentalDiscriminant d) : p.Prime := by
+  have hp0 : (p : ℤ) ≠ 0 := fun h => fundamentalDiscriminant_ne_zero hsf.ne_zero
+    (zero_dvd_iff.mp (h ▸ hdvd))
+  have hspan : (Ideal.span {(p : ℤ)}).IsPrime := by
+    rw [Ideal.over_def 𝔭 (Ideal.span {(p : ℤ)})]
+    infer_instance
+  exact Nat.prime_iff_prime_int.mpr ((Ideal.span_singleton_prime hp0).mp hspan)
+
 /-- **A prime dividing the discriminant of `ℚ(√d)` is totally ramified.** If the rational prime `p`
 divides `fundamentalDiscriminant d` and `𝔭` is a prime of `𝓞 K` above `p`, then
 `e(𝔭 ∣ p) = 2`. -/
 theorem ramificationIdx_eq_two_of_dvd_fundamentalDiscriminant (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hp : p.Prime)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d)
     (hdvd : (p : ℤ) ∣ fundamentalDiscriminant d) : 𝔭.ramificationIdx ℤ = 2 :=
   NumberField.ramificationIdx_eq_two_of_mem_ramifiedPrimes
     (NumberField.finrank_rat_eq_two hmin hgen)
-    ((mem_ramifiedPrimes_iff_dvd_fundamentalDiscriminant hmin hgen hsf hp).mpr hdvd) 𝔭
+    ((mem_ramifiedPrimes_iff_dvd_fundamentalDiscriminant hmin hgen hsf
+      (prime_of_dvd_fundamentalDiscriminant (𝔭 := 𝔭) hsf hdvd)).mpr hdvd) 𝔭
 
 /-- **`p 𝓞 K = 𝔭 ^ 2` at a prime dividing the discriminant of `ℚ(√d)`.** -/
 theorem map_span_eq_sq_of_dvd_fundamentalDiscriminant (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) (hp : p.Prime)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d)
     (hdvd : (p : ℤ) ∣ fundamentalDiscriminant d) :
     (Ideal.span {(p : ℤ)} : Ideal ℤ).map (algebraMap ℤ (𝓞 K)) = 𝔭 ^ 2 :=
   NumberField.map_span_eq_sq_of_mem_ramifiedPrimes
     (NumberField.finrank_rat_eq_two hmin hgen)
-    ((mem_ramifiedPrimes_iff_dvd_fundamentalDiscriminant hmin hgen hsf hp).mpr hdvd) 𝔭
+    ((mem_ramifiedPrimes_iff_dvd_fundamentalDiscriminant hmin hgen hsf
+      (prime_of_dvd_fundamentalDiscriminant (𝔭 := 𝔭) hsf hdvd)).mpr hdvd) 𝔭
 
 /-- **The quadratic field of a prime discriminant is totally ramified at its one ramified prime.**
 For a prime discriminant `D` and `K = ℚ(√(primeDiscriminantRadicand D))`, the prime

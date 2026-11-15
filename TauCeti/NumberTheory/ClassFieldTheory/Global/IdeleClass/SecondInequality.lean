@@ -30,10 +30,7 @@ cyclic extension `L/F` of number fields of prime degree `p` whose ground field `
 This file assembles that reduction for the idele-class formation. The Kummer index computation
 (`index_range_ideleClassNormMap_le_of_finrank_prime`) shows that the Kummer case holds for all
 number fields. It therefore gives `H¹ = 0` and `#H² ∣ [U : V]` for every layer of
-`globalFormation K`
-(`subsingleton_h1_globalFormation_of_forall_index_le`,
-`natCard_H2_globalFormation_dvd_degree_of_forall_index_le`), both conditionally from any Kummer
-bound and unconditionally by applying the proved one.
+`globalFormation K` (`subsingleton_h1_globalFormation`, `natCard_H2_globalFormation_dvd_degree`).
 
 The steps are the following.
 
@@ -48,7 +45,7 @@ The steps are the following.
   degree prime to `p`, carries the divisibility `#(C_F / N_{L/F}(C_L)) ∣ p` to every layer of
   prime degree `p` (`NormalLayer.natCard_normQuotient_dvd_prime_of_adjoin_nth_roots`). So every
   layer of prime degree has norm quotient of order its degree
-  (`natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le`).
+  (`natCard_normQuotient_globalFormation_eq_degree_of_prime`).
 * A layer of prime degree is cyclic, so its Herbrand quotient is its degree
   (`herbrandQuotient_rep_globalFormation_eq_degree`). The reduction to layers of prime degree
   (`NormalLayer.subsingleton_h1_of_herbrandQuotient_of_prime_degree`,
@@ -57,12 +54,8 @@ The steps are the following.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le`:
-  from the Kummer case, a layer of prime degree has norm quotient of order its degree.
-* `TauCeti.ClassFieldTheory.subsingleton_h1_globalFormation_of_forall_index_le`: from the Kummer
-  case, `H¹` of every layer of the idele-class formation vanishes.
-* `TauCeti.ClassFieldTheory.natCard_H2_globalFormation_dvd_degree_of_forall_index_le`: from the
-  Kummer case, the order of `H²` of every layer divides its degree.
+* `TauCeti.ClassFieldTheory.natCard_normQuotient_globalFormation_eq_degree_of_prime`: a layer of
+  prime degree has norm quotient of order its degree.
 * `TauCeti.ClassFieldTheory.subsingleton_h1_globalFormation`: `H¹` of every layer of the
   idele-class formation vanishes.
 * `TauCeti.ClassFieldTheory.subsingleton_groupCohomology_one_ideleClassRep`: `H¹(Gal(L/K), C_L)`
@@ -86,17 +79,13 @@ open IntermediateField NumberField
 namespace TauCeti.ClassFieldTheory
 
 variable {K : Type} [Field K] [NumberField K]
-  (h : ∀ (F L : Type) [Field F] [NumberField F] [Field L] [NumberField L] [Algebra F L]
-    [IsGalois F L] (p : ℕ) [Fact p.Prime] [HasEnoughRootsOfUnity F p],
-    Module.finrank F L = p → (GlobalNumberFields.ideleClassNormMap F L).range.index ≤ p)
 
-include h in
 /-- **A layer of degree `p` over the `p`-th roots of unity, read on number fields.** If a layer
 `V ◁ U` of `globalFormation K` has prime degree `p` and its ground subgroup fixes the `p`-th roots
 of unity of `Kˢ`, then, with `F` and `L` the fixed fields of `U` and `V`, the extension `L/F` is
 Galois of degree `p`, `F` has enough `p`-th roots of unity, and the norm quotient of the layer has
-the order of `C_F / N_{L/F}(C_L)`. So a bound on the index of the norm group in the Kummer case
-bounds the order of the norm quotient. -/
+the order of `C_F / N_{L/F}(C_L)`. So the Kummer case of the second inequality bounds the order of
+the norm quotient by `p`. -/
 private theorem natCard_normQuotient_le_of_le_fixingSubgroup
     (Lay : NormalLayer (AbsoluteGaloisGroup K)) {p : ℕ} [Fact p.Prime] (hdeg : Lay.degree = p)
     (hμ : Lay.ground.toSubgroup ≤
@@ -129,14 +118,10 @@ private theorem natCard_normQuotient_le_of_le_fixingSubgroup
         rw [Subgroup.index_eq_card]
         exact (Nat.card_congr (Lay.ideleClassNormQuotientEquiv rfl rfl).toEquiv).symm.trans
           (Nat.card_congr Additive.ofMul.symm)
-    _ ≤ p := h _ _ p hfin
+    _ ≤ p := index_range_ideleClassNormMap_le_of_finrank_prime _ _ p hfin
 
-include h in
-/-- **The norm index of a layer of prime degree, from the Kummer case.** Suppose that for every
-Galois extension `L/F` of number fields of prime degree `p` such that `F` contains the `p`-th roots
-of unity, `N_{L/F}(C_L)` has index at most `p` in `C_F`. Then every layer of prime degree of the
-idele-class formation `globalFormation K` has norm quotient of order its degree. -/
-theorem natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le
+/-- **The norm quotient on a layer of prime degree has order its degree.** -/
+theorem natCard_normQuotient_globalFormation_eq_degree_of_prime
     (Lay : NormalLayer (AbsoluteGaloisGroup K)) (hp : Lay.degree.Prime) :
     Nat.card (Lay.NormQuotient (globalFormation K)) = Lay.degree := by
   have := NormalLayer.isCyclic_gal_of_prime_degree hp
@@ -147,53 +132,18 @@ theorem natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le
   refine NormalLayer.natCard_normQuotient_dvd_prime_of_adjoin_nth_roots _ hp
     (fun L' hL' hμ ↦ ?_) Lay rfl
   have := NormalLayer.isCyclic_gal_of_prime_degree (hL' ▸ hp)
-  refine (le_antisymm (natCard_normQuotient_le_of_le_fixingSubgroup h L' hL' hμ) ?_).dvd
+  refine (le_antisymm (natCard_normQuotient_le_of_le_fixingSubgroup L' hL' hμ) ?_).dvd
   exact hL' ▸ degree_le_natCard_normQuotient_of_isCyclic L'
-
-include h in
-/-- **`H¹` of the idele classes vanishes, from the Kummer case.** Suppose that for every Galois
-extension `L/F` of number fields of prime degree `p` such that `F` contains the `p`-th roots of
-unity, `N_{L/F}(C_L)` has index at most `p` in `C_F`. Then `H¹` of every layer of the idele-class
-formation `globalFormation K` vanishes. -/
-theorem subsingleton_h1_globalFormation_of_forall_index_le
-    (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
-    Subsingleton (Lay.H (globalFormation K) 1) :=
-  Lay.subsingleton_h1_of_herbrandQuotient_of_prime_degree _ fun L' _ _ hp ↦
-    have := NormalLayer.isCyclic_gal_of_prime_degree hp
-    ⟨herbrandQuotient_rep_globalFormation_eq_degree L',
-      (natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le h L' hp).dvd⟩
-
-include h in
-/-- **The second fundamental inequality, from the Kummer case.** Suppose that for every Galois
-extension `L/F` of number fields of prime degree `p` such that `F` contains the `p`-th roots of
-unity, `N_{L/F}(C_L)` has index at most `p` in `C_F`. Then the order of `H²` of every layer
-`V ◁ U` of the idele-class formation `globalFormation K` divides its degree `[U : V]`. -/
-theorem natCard_H2_globalFormation_dvd_degree_of_forall_index_le
-    (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
-    Nat.card (Lay.H (globalFormation K) 2) ∣ Lay.degree :=
-  Lay.natCard_H2_dvd_degree_of_herbrandQuotient_of_prime_degree _ fun L' _ _ hp ↦
-    have := NormalLayer.isCyclic_gal_of_prime_degree hp
-    ⟨herbrandQuotient_rep_globalFormation_eq_degree L',
-      (natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le h L' hp).dvd⟩
-
-/-! ### Unconditional consequences -/
-
-/-- **The norm quotient on a layer of prime degree has order its degree.** -/
-theorem natCard_normQuotient_globalFormation_eq_degree_of_prime
-    (Lay : NormalLayer (AbsoluteGaloisGroup K)) (hp : Lay.degree.Prime) :
-    Nat.card (Lay.NormQuotient (globalFormation K)) = Lay.degree :=
-  natCard_normQuotient_globalFormation_eq_degree_of_forall_index_le
-    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
-      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay hp
 
 /-- **`H¹` of the global idele-class formation vanishes.** For every finite normal layer
 `V ◁ U` of `G_K`, the group `H¹(U/V, C_L)` is trivial. -/
 theorem subsingleton_h1_globalFormation
     (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
     Subsingleton (Lay.H (globalFormation K) 1) :=
-  subsingleton_h1_globalFormation_of_forall_index_le
-    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
-      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
+  Lay.subsingleton_h1_of_herbrandQuotient_of_prime_degree _ fun L' _ _ hp ↦
+    have := NormalLayer.isCyclic_gal_of_prime_degree hp
+    ⟨herbrandQuotient_rep_globalFormation_eq_degree L',
+      (natCard_normQuotient_globalFormation_eq_degree_of_prime L' hp).dvd⟩
 
 variable (K) in
 /-- **`H¹` of the idele classes of a finite Galois extension vanishes.** For every finite Galois
@@ -209,8 +159,9 @@ normal layer `V ◁ U` of `G_K`, the order of `H²(U/V, C_L)` divides `[U : V]`.
 theorem natCard_H2_globalFormation_dvd_degree
     (Lay : NormalLayer (AbsoluteGaloisGroup K)) :
     Nat.card (Lay.H (globalFormation K) 2) ∣ Lay.degree :=
-  natCard_H2_globalFormation_dvd_degree_of_forall_index_le
-    (fun F L _ _ _ _ _ _ p _ _ hfin ↦
-      index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
+  Lay.natCard_H2_dvd_degree_of_herbrandQuotient_of_prime_degree _ fun L' _ _ hp ↦
+    have := NormalLayer.isCyclic_gal_of_prime_degree hp
+    ⟨herbrandQuotient_rep_globalFormation_eq_degree L',
+      (natCard_normQuotient_globalFormation_eq_degree_of_prime L' hp).dvd⟩
 
 end TauCeti.ClassFieldTheory

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.ResidueField
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.TotalSpace
 public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace.AffineSpace
 
@@ -27,6 +28,9 @@ If `R` is local, then `V` is free, of rank the rank of `E` at the image `x` of t
 `𝔸ⁿ_{κ(x)}` of dimension `n = rank_x E` (`totalSpaceFiberIso`). These identifications depend on a
 choice of basis of `V`; the canonical form of the fibre is `Spec (Sym_{κ(x)} V^∨)` with
 `V = Γ(Spec κ(x), ι^* E)`, the case `f = ι : Spec κ(x) ⟶ X` of `totalSpaceBaseChangeSpecIso`.
+Here `V` is the module fibre `κ(x) ⊗_{𝒪_{X,x}} E_x` of `E` at `x`
+(`AlgebraicGeometry.Scheme.Modules.residueFieldPullbackSectionsEquiv`), so the fibre of `𝕍(E)`
+over `x` is `Spec (Sym_{κ(x)} (κ(x) ⊗_{𝒪_{X,x}} E_x)^∨)` (`totalSpaceFiberSpecIso`).
 
 The input is that a finite locally free sheaf on the spectrum of a local ring is free
 (`FiniteLocallyFreeSheaf.isoFreeOfIsLocalRing`).
@@ -38,7 +42,9 @@ The input is that a finite locally free sheaf on the spectrum of a local ring is
 * `TauCeti.AlgebraicGeometry.totalSpaceBaseChangeAffineSpaceIso`: over a local ring,
   `Spec R ×_X 𝕍(E) ≅ 𝔸ⁿ_R` with `n` the rank of `E` at the image of the closed point;
 * `TauCeti.AlgebraicGeometry.totalSpaceFiberIso`: the fibre of `𝕍(E)` over `x` is `𝔸ⁿ_{κ(x)}`
-  with `n = rank_x E`.
+  with `n = rank_x E`;
+* `TauCeti.AlgebraicGeometry.totalSpaceFiberSpecIso`: the fibre of `𝕍(E)` over `x` is
+  `Spec (Sym_{κ(x)} (κ(x) ⊗_{𝒪_{X,x}} E_x)^∨)`, without a choice of basis.
 
 ## References
 
@@ -50,6 +56,7 @@ The input is that a finite locally free sheaf on the spectrum of a local ring is
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -127,6 +134,35 @@ def totalSpaceFiberIso (E : FiniteLocallyFreeSheaf X) (x : X) :
 lemma totalSpaceFiberIso_def (E : FiniteLocallyFreeSheaf X) (x : X) :
     totalSpaceFiberIso E x = totalSpaceBaseChangeAffineSpaceIso E (X.fromSpecResidueField x)
       (congrArg E.rank (X.fromSpecResidueField_apply x _)) :=
+  (rfl)
+
+/-- **The fibre of the total space of a vector bundle, without a choice of basis.** For a finite
+locally free sheaf `E` on `X` and a point `x` of `X`, the fibre
+`Spec κ(x) ×_X 𝕍(E)` of the total space of `E` over `x` is isomorphic over `Spec κ(x)` to
+`Spec (Sym_{κ(x)} (κ(x) ⊗_{𝒪_{X,x}} E_x)^∨)`, the spectrum of the symmetric algebra of the dual of
+the module fibre `κ(x) ⊗_{𝒪_{X,x}} E_x`. The module fibre is identified with the global sections
+of the pullback of `E` along `Spec κ(x) ⟶ X` by
+`Scheme.Modules.residueFieldPullbackSectionsEquiv`. -/
+def totalSpaceFiberSpecIso (E : FiniteLocallyFreeSheaf X) (x : X) :
+    (baseChangeAffineSchemeOver (X.fromSpecResidueField x)).obj ((totalSpaceScheme X).obj E) ≅
+      specSymmetricAlgebraOver (ModuleCat.of (X.residueField x)
+        (Module.Dual (X.residueField x)
+          (X.residueField x ⊗[X.presheaf.stalk x] E.obj.presheaf.stalk x))) :=
+  totalSpaceBaseChangeSpecIso E (X.fromSpecResidueField x) ≪≫
+    specSymmetricAlgebraOverIso
+      ((Scheme.Modules.residueFieldPullbackSectionsEquiv x E.obj).trans
+        (moduleSpecΓFunctor.mapIso (eqToIso (pullback_obj_obj _ E).symm)).toLinearEquiv).dualMap
+
+/-- `totalSpaceFiberSpecIso` is `totalSpaceBaseChangeSpecIso` for the morphism `Spec κ(x) ⟶ X`,
+followed by the dual of the identification `κ(x) ⊗_{𝒪_{X,x}} E_x ≅ Γ(Spec κ(x), ι^* E)` of the
+module fibre with the global sections of the pullback. -/
+lemma totalSpaceFiberSpecIso_hom (E : FiniteLocallyFreeSheaf X) (x : X) :
+    (totalSpaceFiberSpecIso E x).hom =
+      (totalSpaceBaseChangeSpecIso E (X.fromSpecResidueField x)).hom ≫
+        (specSymmetricAlgebraOverIso
+          ((Scheme.Modules.residueFieldPullbackSectionsEquiv x E.obj).trans
+            (moduleSpecΓFunctor.mapIso
+              (eqToIso (pullback_obj_obj _ E).symm)).toLinearEquiv).dualMap).hom :=
   (rfl)
 
 end

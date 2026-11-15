@@ -60,7 +60,7 @@ open _root_.ModularGroup
 /-! ### The descent
 
 `TauCeti.ModularGroup.tPrime` is Popa--Zagier's `T′ = (1 0; 1 1)`, whose class in `PSL(2, ℤ)` is
-`U² * S`. The descent is `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem` with
+`U² * S`. The descent is `MulAction.eq_empty_of_forall_exists_smul_mem` with
 `E = {T, T′}` and `P` the set of classes of the matrices in `SL(2, ℤ)` with non-negative entries.
 -/
 

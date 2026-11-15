@@ -71,15 +71,15 @@ example : ¬IsSquare (5 : ZMod 8) := by decide
 -- The Conrey pairing at the unit 5 detects the cyclic factor of order four.
 example : ∃ χ : DirichletCharacter ℂ 16, χ.IsPrimitive ∧ orderOf χ = 4 := by
   -- The concrete levels coincide: 2 ^ 4 = 2 ^ (2 + 2) = 16, by numeral reduction.
-  let f := Circle.toUnits.comp (TauCeti.conreyLocal 2 4 (TauCeti.ZMod.unitsTwoPowFive 2))
+  let f := Circle.toUnits.comp (TauCeti.conreyLocal 2 4 (ZMod.unitFive (n := 4)))
   let χ : DirichletCharacter ℂ 16 := MulChar.ofUnitHom f
   have h9 : χ (9 : ZMod 16) = -1 := by
     have h := TauCeti.conreyLocal_two_apply (e := 2)
-      (m := TauCeti.ZMod.unitsTwoPowFive 2)
+      (m := ZMod.unitFive (n := 4))
       (n := ZMod.unitOfCoprime 9 (by decide)) (x := 0) (y := 0) (a := 1) (b := 2)
       (by simp) (by decide)
     have hc : χ (9 : ZMod 16) =
-        (TauCeti.conreyLocal 2 4 (TauCeti.ZMod.unitsTwoPowFive 2)
+        (TauCeti.conreyLocal 2 4 (ZMod.unitFive (n := 4))
           (ZMod.unitOfCoprime 9 (by decide)) : ℂ) := by
       have hv : (9 : ZMod 16) =
           (ZMod.unitOfCoprime 9 (by decide) : (ZMod 16)ˣ) := by decide

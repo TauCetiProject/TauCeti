@@ -32,6 +32,7 @@ integral curve with the constant field extension of its function field.
   `F ⊗[k] k' → F · k'` is onto for algebraic `k' / k`.
 * `TauCeti.productMap_bijective_of_constantCompositum_eq_top`: multiplication
   `F ⊗[k] k' → F · k'` is bijective when `F ⊗[k] k'` is a domain and `k' / k` is algebraic.
+* `TauCeti.finrank_eq_finrank_of_constantCompositum_eq_top`: then `[F · k' : F] = [k' : k]`.
 * `TauCeti.isFractionRing_tensorProduct_of_constantCompositum_eq_top`: then `F · k'` is the
   fraction field of `A ⊗[k] k'` for every `A` with fraction field `F`.
 
@@ -74,6 +75,20 @@ theorem productMap_bijective_of_constantCompositum_eq_top [Algebra.IsAlgebraic k
   exact ⟨RingHom.injective (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
       (IsScalarTower.toAlgHom k k' F') : F ⊗[k] k' →+* F'),
     productMap_surjective_of_constantCompositum_eq_top h⟩
+
+/-- **The degree of a constant field extension that is a tensor product.** If `k' / k` is
+algebraic and `F ⊗[k] k'` is a domain, then `[F · k' : F] = [k' : k]`. -/
+theorem finrank_eq_finrank_of_constantCompositum_eq_top [Algebra.IsAlgebraic k k']
+    [IsDomain (F ⊗[k] k')] (h : constantCompositum F k' F' = ⊤) :
+    Module.finrank F F' = Module.finrank k k' := by
+  -- multiplication `F ⊗[k] k' → F'` is `F`-linear for the left `F`-module structure
+  let φ := Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId F F')
+    (IsScalarTower.toAlgHom k k' F')
+  have hφ : Function.Bijective φ := by
+    convert productMap_bijective_of_constantCompositum_eq_top (k := k) (F' := F') h using 1
+    exact congrArg DFunLike.coe (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [φ] :
+      φ.restrictScalars k = _)
+  rw [← (LinearEquiv.ofBijective φ.toLinearMap hφ).finrank_eq, Module.finrank_baseChange]
 
 /-- **The constant field extension is the fraction field of the base change.** Let `F` be the
 fraction field of a `k`-algebra `A`, let `k' / k` be algebraic with `F ⊗[k] k'` a domain, and let

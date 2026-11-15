@@ -17,6 +17,10 @@ simple objects. Every other pivotal structure is uniquely the twist of `P` by a 
 the universal grading group. The equivalence `PivotalCategory.characterEquiv` sends `Q` to the
 character of the monoidal automorphism `Q /ₛ P`; its inverse twists `P` by a character.
 
+Concretely, twisting a pivotal structure by a character `χ` multiplies its component at each
+simple object `X` by `χ (degree [X])`
+(`PivotalCategory.characterMonoidalAut_smul_pivotalIso_hom_app_of_simple`).
+
 The base pivotal structure is explicit: this does not assert that every fusion category has
 a pivotal structure. No finiteness assumption on the set of simple classes or characteristic
 assumption on the field is needed.
@@ -34,9 +38,32 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory
 
-universe v u
+universe v u w
 
 namespace TauCeti.PivotalCategory
+
+section Twist
+
+variable {R : Type w} [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] [RigidCategory C]
+
+/-- Twisting a pivotal structure by a character `χ` of the universal grading group multiplies
+its component at a simple object `X` by `χ (degree [X])`. -/
+theorem characterMonoidalAut_smul_pivotalIso_hom_app_of_simple
+    (χ : universalGradingGroup C →* Rˣ) (P : PivotalCategory C) (X : C) [Simple X] :
+    (characterMonoidalAut R χ • P).pivotalIso.hom.app X =
+      (χ (universalGradingGroup.degree (SimpleClasses.classOf X)) : R) •
+        P.pivotalIso.hom.app X := by
+  rw [smul_pivotalIso, Iso.trans_hom, NatTrans.comp_app, characterMonoidalAut_app_of_simple,
+    Linear.smul_comp]
+  -- The identity sits on `(LaxMonoidalFunctor.of (𝟭 C)).obj X`, which is `X` only up to
+  -- unfolding, so `Category.id_comp` is applied up to definitional equality.
+  exact congrArg _ (Category.id_comp _)
+
+end Twist
+
+section Classification
 
 variable (k : Type*) [Field k] [IsAlgClosed k]
   {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [RigidCategory C]
@@ -70,5 +97,7 @@ theorem existsUnique_character_smul_eq (P Q : PivotalCategory C) :
     ∃! χ : universalGradingGroup C →* kˣ, characterMonoidalAut k χ • P = Q := by
   simpa only [characterEquiv_symm_apply] using
     (characterEquiv (hfin := hfin) k P).symm.bijective.existsUnique Q
+
+end Classification
 
 end TauCeti.PivotalCategory

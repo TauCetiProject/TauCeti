@@ -41,10 +41,8 @@ jobs:
   publish:
     # A NEW ephemeral runner for this job, separate from the candidate sandbox.
     # Direct labels request no privileged container, cache volume, git mirror or tool cache.
-    # Priority zero precedes compiler jobs; run-ID assignment prevents cross-run pickup.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    # Staging uses reserved disposable control guests; other publishers retain their cloud route.
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 15
     outputs:
       published: ${{ steps.result.outputs.published }}
@@ -81,15 +79,14 @@ jobs:
             scripts/lake_cache_publish.py
             scripts/ci_publication_observation.py
             scripts/lake_cache_probe.py
-            scripts/lake_cache_reuse.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: publisher-tools
 
       - name: Download the staged oleans
@@ -115,8 +112,11 @@ jobs:
             echo "::error::the staging build used '$REPORTED' but the revision pins '$TOOLCHAIN'"
             exit 1
           fi
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -138,7 +138,7 @@ jobs:
           done
           printf 'name=%s\n' "$TOOLCHAIN" >> "$GITHUB_OUTPUT"
 
-      - name: Validate staged data and verify inherited objects without credentials
+      - name: Copy native staging data into the credential boundary
         if: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT != '' && vars.LAKE_CACHE_REVISION_ENDPOINT != '' && vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC != '' }}
         env:
           STAGING: ${{ runner.temp }}/lake-cache-staging
@@ -149,8 +149,7 @@ jobs:
           TOOLCHAIN: ${{ steps.toolchain.outputs.name }}
         run: |
           python3 publisher-tools/scripts/lake_cache_publish.py prepare \
-            "$STAGING" "$RUNNER_TEMP/lake-publication-plan" \
-            --toolchain "$TOOLCHAIN" --revision "$REVISION"
+            "$STAGING" "$RUNNER_TEMP/lake-publication-plan"
 
       - name: Publish the staged Lake cache
         id: upload
@@ -192,29 +191,23 @@ jobs:
           [ -n "$KEY" ] || skip_or_fail 'the LAKE_CACHE_KEY secret is empty after trimming'
           echo "::add-mask::$KEY"
 
-          # The workflow-pinned, key-free planner supplied only validated flat files
-          # and URLs. No repository helper, Lake workspace, or candidate code executes
-          # in this step. Artifacts complete before the FULL map becomes visible.
+          # Native put-staged does not load workspace configuration or candidate code.
+          # The preceding key-free copy accepted only flat, ordinary staged files.
           PLAN="$RUNNER_TEMP/lake-publication-plan"
           started=$SECONDS
-          if [ -s "$PLAN/artifacts.curl" ]; then
-            curl --parallel --parallel-max 50 --fail-early --fail --silent --show-error \
-              --retry 2 --retry-all-errors --max-time 120 \
-              --aws-sigv4 aws:amz:auto:s3 --user "$KEY" --request PUT \
-              --header 'Content-Type: application/vnd.reservoir.artifact' \
-              --config "$PLAN/artifacts.curl"
-          fi
-          curl --fail --silent --show-error --retry 2 --retry-all-errors --max-time 120 \
-            --aws-sigv4 aws:amz:auto:s3 --user "$KEY" --request PUT \
-            --header 'Content-Type: application/vnd.reservoir.outputs+json-lines' \
-            --upload-file "$PLAN/outputs.jsonl" "$(cat "$PLAN/map-url")"
+          cd "$PLAN"
+          LAKE_CACHE_KEY="$KEY" \
+          LAKE_CACHE_ARTIFACT_ENDPOINT="$S3_ARTIFACT_ENDPOINT" \
+          LAKE_CACHE_REVISION_ENDPOINT="$S3_REVISION_ENDPOINT" \
+            lake cache put-staged "$PLAN" --repo TauCetiProject/TauCeti \
+              --rev="$REVISION" --toolchain="$ELAN_TOOLCHAIN"
           echo "Lake publication upload seconds: $((SECONDS - started))"
 
           echo 'uploaded=true' >> "$GITHUB_OUTPUT"
           echo "::notice::uploaded the Lake cache for $REVISION"
 
       # This separate, key-free step uses the workflow-pinned public-map helper;
-      # --expected confirms that the FULL map, not the upload subset, is public.
+      # --expected confirms that the exact native map is public.
       - name: Confirm the exact revision map on the public endpoint
         id: confirm
         if: ${{ steps.upload.outputs.uploaded == 'true' }}

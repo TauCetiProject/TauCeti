@@ -8,10 +8,11 @@ module
 public import Mathlib.Data.List.Basic
 
 /-!
-# Replacing three consecutive entries of a list
+# Replacing consecutive entries of a list
 
-The lists `u ++ a :: b :: c :: v` and `u ++ a' :: b' :: c' :: v` differ at most in the three
-positions `u.length`, `u.length + 1` and `u.length + 2`, and agree at every other position.
+The lists `u ++ a :: v` and `u ++ a' :: v` differ at most in the position `u.length`, and the lists
+`u ++ a :: b :: c :: v` and `u ++ a' :: b' :: c' :: v` differ at most in the three positions
+`u.length`, `u.length + 1` and `u.length + 2`. They agree at every other position.
 -/
 
 public section
@@ -19,6 +20,17 @@ public section
 namespace List
 
 variable {α : Type*}
+
+/-- Two lists which differ only in the entry following `u` have the same entry at every other
+position. -/
+theorem getElem?_append_cons_of_ne (u v : List α) (a a' : α) {k : ℕ} (h : k ≠ u.length) :
+    (u ++ a :: v)[k]? = (u ++ a' :: v)[k]? := by
+  rcases Nat.lt_or_ge k u.length with hk | hk
+  · rw [getElem?_append_left hk, getElem?_append_left hk]
+  · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hk
+    rw [getElem?_append_right hk, getElem?_append_right hk, Nat.add_sub_cancel_left]
+    match m, h with
+    | m + 1, _ => simp
 
 /-- Two lists which differ only in the three entries following `u` have the same entry at every
 other position. -/

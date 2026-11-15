@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Galois.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Limits
-public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative
+public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative.Basic
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
 public import TauCeti.AlgebraicGeometry.RelativeSpec.MorphismProperties
 public import TauCeti.RingTheory.Etale.Equalizer
@@ -22,8 +22,8 @@ The quotient `Y / G` exists in `FiniteEtaleScheme S`. This is the quotient half 
 algebras in `TauCeti.AlgebraicGeometry.FiniteEtale.Colimits`.
 
 The quotient is the relative invariant quotient of
-`TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative`. The finite morphism `p` is affine, so
-`Y` is the relative spectrum of its function algebra `A = p_* 𝒪_Y`
+`TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative.Basic`. The finite morphism `p` is affine,
+so `Y` is the relative spectrum of its function algebra `A = p_* 𝒪_Y`
 (`AlgebraicGeometry.Scheme.Hom.relativeSpecFunctionsIso`), and `G` acts on `A` by pullback of
 functions (`TauCeti.FiniteEtaleScheme.functionAlgebraAction`). The quotient is the relative
 spectrum `Spec_S(A)/G` of the presheaf of invariant sections

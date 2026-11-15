@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.BigOperators
 public import Mathlib.Algebra.Star.TensorProduct
-public import Mathlib.RingTheory.Coalgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Basic
 
 /-!
 # Star coalgebras
@@ -94,10 +94,7 @@ theorem counit_star (a : A) : counit (R := R) (star a) = star (counit (R := R) a
   have hl : ∑ i ∈ 𝓡.index, star (counit (R := R) (star (𝓡.left i))) • 𝓡.right i = a := by
     simpa [star_sum, star_smul] using congr(star $(sum_counit_smul 𝓡.star))
   -- The other counit law reads `∑ ε(yᵢ) • xᵢ = a`.
-  have hr : ∑ i ∈ 𝓡.index, counit (R := R) (𝓡.right i) • 𝓡.left i = a := by
-    simpa only [map_sum, TensorProduct.rid_tmul, one_smul] using
-      congr(TensorProduct.rid R A $(sum_tmul_counit_eq 𝓡))
-  conv_lhs => rw [← hr]
+  conv_lhs => rw [← sum_smul_counit 𝓡]
   conv_rhs => rw [← hl]
   simp [star_sum, mul_comm]
 

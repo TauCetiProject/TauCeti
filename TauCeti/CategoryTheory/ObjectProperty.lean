@@ -168,26 +168,6 @@ end ObjectProperty
 
 namespace Equivalence
 
-/-- The forward functor on corresponding full subcategories is the lift of the original functor. -/
-theorem congrFullSubcategory_functor_eq_lift
-    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
-    {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
-    (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
-    (e.congrFullSubcategory h).functor =
-      Q.lift (P.ι ⋙ e.functor) (fun ⟨X, hX⟩ ↦ by rwa [← h] at hX) :=
-  rfl
-
-/-- The inverse functor on corresponding full subcategories is the lift of the original inverse. -/
-theorem congrFullSubcategory_inverse_eq_lift
-    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
-    {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
-    (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
-    (e.congrFullSubcategory h).inverse =
-      P.lift (Q.ι ⋙ e.inverse) (fun ⟨Y, hY⟩ ↦ by
-        rw [← h]
-        exact Q.prop_of_iso (e.counitIso.app Y).symm hY) :=
-  rfl
-
 /-- The forward functor on corresponding full subcategories, followed by the inclusion, is the
 inclusion followed by the original functor. -/
 theorem congrFullSubcategory_functor_comp_ι
@@ -195,7 +175,7 @@ theorem congrFullSubcategory_functor_comp_ι
     {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
     (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).functor ⋙ Q.ι = P.ι ⋙ e.functor := by
-  rw [congrFullSubcategory_functor_eq_lift]
+  rw [congrFullSubcategory_functor]
   exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
     simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
       Category.comp_id]
@@ -207,7 +187,7 @@ theorem congrFullSubcategory_inverse_comp_ι
     {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
     (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).inverse ⋙ P.ι = Q.ι ⋙ e.inverse := by
-  rw [congrFullSubcategory_inverse_eq_lift]
+  rw [congrFullSubcategory_inverse]
   exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by
     simp only [Functor.comp_map, ObjectProperty.ι_obj_lift_map, eqToHom_refl, Category.id_comp,
       Category.comp_id]
@@ -222,7 +202,7 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 functor. Not a simp lemma: `congrFullSubcategory_functor` already unfolds the left-hand side. -/
 theorem congrFullSubcategory_functor_obj_obj (X : P.FullSubcategory) :
     ((e.congrFullSubcategory h).functor.obj X).obj = e.functor.obj X.obj := by
-  rw [congrFullSubcategory_functor_eq_lift, ObjectProperty.lift_obj_obj, Functor.comp_obj,
+  rw [congrFullSubcategory_functor, ObjectProperty.lift_obj_obj, Functor.comp_obj,
     ObjectProperty.ι_obj]
 
 /-- The forward functor on corresponding full subcategories acts on morphisms as the original
@@ -238,7 +218,7 @@ theorem congrFullSubcategory_functor_map_hom {X Y : P.FullSubcategory} (f : X �
 inverse. Not a simp lemma: `congrFullSubcategory_inverse` already unfolds the left-hand side. -/
 theorem congrFullSubcategory_inverse_obj_obj (Y : Q.FullSubcategory) :
     ((e.congrFullSubcategory h).inverse.obj Y).obj = e.inverse.obj Y.obj := by
-  rw [congrFullSubcategory_inverse_eq_lift, ObjectProperty.lift_obj_obj, Functor.comp_obj,
+  rw [congrFullSubcategory_inverse, ObjectProperty.lift_obj_obj, Functor.comp_obj,
     ObjectProperty.ι_obj]
 
 /-- The inverse functor on corresponding full subcategories acts on morphisms as the original
@@ -259,7 +239,7 @@ instance congrFullSubcategory_functor_additive
     {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
     (e : C ≌ D) [e.functor.Additive] (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).functor.Additive := by
-  rw [congrFullSubcategory_functor_eq_lift]
+  rw [congrFullSubcategory_functor]
   infer_instance
 
 /-- The inverse of an equivalence restricted to corresponding full subcategories is additive. -/
@@ -269,7 +249,7 @@ instance congrFullSubcategory_inverse_additive
     {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
     (e : C ≌ D) [e.inverse.Additive] (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).inverse.Additive := by
-  rw [congrFullSubcategory_inverse_eq_lift]
+  rw [congrFullSubcategory_inverse]
   infer_instance
 
 end Equivalence

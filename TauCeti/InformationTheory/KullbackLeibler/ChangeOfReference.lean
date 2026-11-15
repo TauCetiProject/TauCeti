@@ -28,7 +28,8 @@ marginals.
 
 * `TauCeti.llr_withDensity_exp`: the log-likelihood ratio of `R.withDensity (exp ∘ f)` against
   `R` is `f`.
-* `TauCeti.llr_add_llr`: the chain rule `llr γ π + llr π R = llr γ R`, `γ`-almost everywhere.
+* `TauCeti.llr_add_llr`: the chain rule `llr γ π + llr π R = llr γ R`, `γ`-almost everywhere,
+  for `γ` absolutely continuous with respect to both `π` and `R`.
 * `TauCeti.klDiv_eq_klDiv_add_klDiv`: the Pythagorean identity.
 
 ## References
@@ -54,18 +55,17 @@ theorem llr_withDensity_exp [SigmaFinite R] {f : α → ℝ} (hf : AEMeasurable 
     (by fun_prop)] with x hx
   simp [llr_def, hx, ENNReal.toReal_ofReal (Real.exp_pos _).le]
 
-/-- **Chain rule for log-likelihood ratios.** If `γ ≪ π ≪ R`, then
-`llr γ π + llr π R = llr γ R`, `γ`-almost everywhere. -/
+/-- **Chain rule for log-likelihood ratios.** If `γ ≪ π` and `γ ≪ R`, then
+`llr γ π + llr π R = llr γ R`, `γ`-almost everywhere. No relation between `π` and `R` is
+needed. -/
 theorem llr_add_llr [SigmaFinite γ] [SigmaFinite π] [SigmaFinite R] (hγπ : γ ≪ π)
-    (hπR : π ≪ R) : llr γ π + llr π R =ᵐ[γ] llr γ R := by
-  have hγR := hγπ.trans hπR
-  filter_upwards [hγR.ae_le (Measure.rnDeriv_mul_rnDeriv hγπ), Measure.rnDeriv_pos hγπ,
-    hγπ.ae_le (Measure.rnDeriv_lt_top γ π), hγπ.ae_le (Measure.rnDeriv_pos hπR),
-    hγR.ae_le (Measure.rnDeriv_lt_top π R)] with x hx h₁ h₂ h₃ h₄
-  rw [Pi.mul_apply] at hx
-  simp only [Pi.add_apply, llr_def, ← hx, ENNReal.toReal_mul]
-  exact (Real.log_mul (ENNReal.toReal_pos h₁.ne' h₂.ne).ne'
-    (ENNReal.toReal_pos h₃.ne' h₄.ne).ne').symm
+    (hγR : γ ≪ R) : llr γ π + llr π R =ᵐ[γ] llr γ R := by
+  filter_upwards [hγR.ae_le (Measure.rnDeriv_mul_rnDeriv hγπ), Measure.rnDeriv_pos hγR,
+    hγR.ae_le (Measure.rnDeriv_lt_top γ R)] with x hx h₀ h₁
+  have h := (ENNReal.toReal_pos h₀.ne' h₁.ne).ne'
+  rw [← hx, Pi.mul_apply, ENNReal.toReal_mul] at h
+  obtain ⟨h₂, h₃⟩ := mul_ne_zero_iff.1 h
+  simp [llr_def, ← hx, Real.log_mul h₂ h₃]
 
 /-- **Csiszár's Pythagorean identity.** Let `γ ≪ π ≪ R` be finite measures such that `llr π R` is
 integrable against both `γ` and `π`, with the same integral. Then
@@ -75,7 +75,7 @@ theorem klDiv_eq_klDiv_add_klDiv [IsFiniteMeasure γ] [IsFiniteMeasure π] [IsFi
     (h : ∫ x, llr π R x ∂γ = ∫ x, llr π R x ∂π) :
     klDiv γ R = klDiv γ π + klDiv π R := by
   have hγR := hγπ.trans hπR
-  have hchain := llr_add_llr hγπ hπR
+  have hchain := llr_add_llr hγπ hγR
   by_cases hint : Integrable (llr γ π) γ
   swap
   · have hint' : ¬ Integrable (llr γ R) γ := fun h' ↦
@@ -87,6 +87,7 @@ theorem klDiv_eq_klDiv_add_klDiv [IsFiniteMeasure γ] [IsFiniteMeasure π] [IsFi
       (integral_llr_add_sub_measure_univ_nonneg hγπ hint)
       (integral_llr_add_sub_measure_univ_nonneg hπR hπ),
     ← integral_congr_ae hchain, Pi.add_def, integral_add hint hγ, h]
-  ring_nf
+  congr 1
+  ring
 
 end TauCeti

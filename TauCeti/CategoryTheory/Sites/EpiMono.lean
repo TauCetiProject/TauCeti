@@ -11,9 +11,11 @@ public import Mathlib.CategoryTheory.Sites.EpiMono
 # Epimorphisms of sheaves with values in a concrete category
 
 For a concrete category `A`, the functor `sheafCompose J (forget A) : Sheaf J A ⥤ Sheaf J (Type w)`
-preserves and reflects epimorphisms (`CategoryTheory.Sheaf.epi_sheafCompose_forget_map_iff`):
-in both categories the epimorphisms are the locally surjective morphisms, and local surjectivity of
-an `A`-valued presheaf map is a condition on its underlying map of presheaves of types
+preserves epimorphisms (`CategoryTheory.Sheaf.preservesEpimorphisms_sheafCompose_forget`) and
+reflects them, so a morphism of `A`-valued sheaves is an epimorphism if and only if its underlying
+morphism of sheaves of types is (`CategoryTheory.Functor.epi_map_iff_epi`): in both categories the
+epimorphisms are the locally surjective morphisms, and local surjectivity of an `A`-valued presheaf
+map is a condition on its underlying map of presheaves of types
 (`CategoryTheory.Presheaf.isLocallySurjective_iff_whisker_forget`).
 
 This generalizes Mathlib's `PreservesEpimorphisms` instance for `LightCondensed.forget` in
@@ -21,6 +23,10 @@ This generalizes Mathlib's `PreservesEpimorphisms` instance for `LightCondensed.
 to arbitrary sites. Reflection of epimorphisms needs no separate instance:
 `sheafCompose J (forget A)` is faithful, so Mathlib's `Functor.reflectsEpimorphisms_of_faithful`
 applies.
+
+It also records that a monomorphism of sheaves with values in a concrete category whose forgetful
+functor preserves pullbacks is injective on the sections over every object
+(`CategoryTheory.Sheaf.injective_app_of_mono`).
 -/
 
 public section
@@ -34,18 +40,37 @@ namespace CategoryTheory.Sheaf
 variable {C : Type*} [Category* C] (J : GrothendieckTopology C)
   {A : Type*} [Category* A] {FA : A → A → Type*} {CA : A → Type w}
   [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory.{w} A FA]
-  [J.HasSheafCompose (forget A)] [HasSheafify J (Type w)] [HasSheafify J A]
-  [ConcreteCategory.HasFunctorialSurjectiveInjectiveFactorization A]
-  [J.WEqualsLocallyBijective A] [Balanced (Sheaf J A)]
+  [HasSheafify J A] [J.HasSheafCompose (forget A)] [J.WEqualsLocallyBijective A]
+  [ConcreteCategory.HasFunctorialSurjectiveInjectiveFactorization A] [Balanced (Sheaf J A)]
 
-/-- A morphism of `A`-valued sheaves is an epimorphism if and only if its underlying morphism of
-sheaves of types is: both conditions say that the morphism is locally surjective. -/
-theorem epi_sheafCompose_forget_map_iff {F G : Sheaf J A} (φ : F ⟶ G) :
-    Epi ((sheafCompose J (forget A)).map φ) ↔ Epi φ := by
-  rw [← isLocallySurjective_iff_epi, ← isLocallySurjective_iff_epi']
-  exact (Presheaf.isLocallySurjective_iff_whisker_forget J φ.hom).symm
+/-- An epimorphism of sheaves with values in a concrete category is an epimorphism of the
+underlying sheaves of sets: both are the locally surjective morphisms. -/
+instance preservesEpimorphisms_sheafCompose_forget :
+    (sheafCompose J (forget A)).PreservesEpimorphisms where
+  preserves φ _ := by
+    have : IsLocallySurjective φ := (isLocallySurjective_iff_epi' (φ := φ)).2 ‹_›
+    infer_instance
 
-instance : (sheafCompose J (forget A)).PreservesEpimorphisms :=
-  ⟨fun φ _ ↦ (epi_sheafCompose_forget_map_iff J φ).2 inferInstance⟩
+end CategoryTheory.Sheaf
+
+namespace CategoryTheory.Sheaf
+
+section Mono
+
+variable {D : Type*} [Category D] {J : GrothendieckTopology D}
+  {C : Type*} [Category C] {FC : C → C → Type*} {CC : C → Type*}
+  [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory C FC]
+  [HasPullbacks C]
+  [PreservesLimitsOfShape WalkingCospan (forget C)] {F G : Sheaf J C}
+
+/-- A monomorphism of sheaves of a concrete category, whose forgetful functor preserves pullbacks,
+is injective on sections over every object. -/
+theorem injective_app_of_mono (f : F ⟶ G) [Mono f] (W : Dᵒᵖ) :
+    Function.Injective (f.hom.app W) := by
+  have : Mono f.hom := (sheafToPresheaf J C).map_mono f
+  have : Mono (f.hom.app W) := inferInstance
+  exact ConcreteCategory.injective_of_mono_of_preservesPullback (f.hom.app W)
+
+end Mono
 
 end CategoryTheory.Sheaf

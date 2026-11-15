@@ -25,7 +25,7 @@ derivative formulas that variational arguments consume, valid at every parameter
 is `C²`: the transverse derivative of the squared speed of the curves `F s`, and the product rule
 for `⟪V, γ'⟫` along `γ`.  They are the pointwise content of the Gauss lemma
 (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic`) and of the first variation of energy
-(`TauCeti.Geometry.Manifold.Riemannian.FirstVariation`).
+(`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic`).
 
 ## Main results
 

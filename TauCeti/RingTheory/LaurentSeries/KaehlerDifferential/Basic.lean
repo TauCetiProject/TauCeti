@@ -358,6 +358,14 @@ theorem subst_subst {ψ : K⟦X⟧} (hψ : constantCoeff ψ = 0) (hψ₀ : ψ �
       ((subst_eq_zero_iff hψ hψ₀).not.mpr hφ₀) ω, hD, map_mul,
     TauCeti.LaurentSeries.substAlgHom_comp_substAlgHom_apply, mul_assoc]
 
+/-- Equal substitution series give the same pullback of one-forms, independently of the
+proofs of their substitution hypotheses. This compares the underlying maps even when their
+semilinearity homomorphisms are not definitionally equal. -/
+theorem subst_congr {ψ : K⟦X⟧} (h : φ = ψ) (hψ : constantCoeff ψ = 0) (hψ₀ : ψ ≠ 0)
+    (ω : ContinuousKaehlerDifferential K) : subst hφ hφ₀ ω = subst hψ hψ₀ ω := by
+  subst ψ
+  rfl
+
 /-- Substituting `X` into one-forms is the identity. -/
 @[simp]
 theorem subst_X (ω : ContinuousKaehlerDifferential K) :

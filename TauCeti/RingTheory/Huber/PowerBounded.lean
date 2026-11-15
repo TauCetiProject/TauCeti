@@ -82,6 +82,11 @@ a prior formalisation of this theory; its proofs were not used.
   `A° ≃+* B°`; that restriction carries `A°°` onto `B°°`
   (`TauCeti.Huber.mem_topologicallyNilpotentIdeal_powerBoundedSubringEquiv_iff` pointwise,
   `TauCeti.Huber.map_topologicallyNilpotentIdeal` as an equality of ideals).
+* `TauCeti.Huber.isPowerBounded_completion_coe_of_isPowerBounded`,
+  `TauCeti.Huber.isPowerBounded_of_isPowerBounded_completion_coe`,
+  `TauCeti.Huber.isPowerBounded_completion_coe_iff`: in a uniform topological ring, an element is
+  power-bounded exactly when its image in the completion is (Wedhorn's Lemma 7.47(1) at the level
+  of elements, that `A⁰` is the preimage of `Â⁰`).
 * `TauCeti.Huber.isPowerBounded_ringEquiv_iff`,
   `TauCeti.Huber.isTopologicallyNilpotent_ringEquiv_iff`: both constructions transport along a
   topological ring isomorphism.
@@ -220,6 +225,40 @@ theorem IsPowerBounded.isTopologicallyNilpotent_mul {a b : R} (ha : IsPowerBound
   ha.isTopologicallyNilpotent_mul_of_commute (Commute.all ..) hb
 
 end CommMonoidWithZero
+
+section ContinuousConstSMul
+
+variable {R : Type*} [MonoidWithZero R] [TopologicalSpace R] [ContinuousConstSMul Rᵐᵒᵖ R]
+
+/-- An element with a power-bounded positive power is power-bounded. -/
+theorem IsPowerBounded.of_pow {x : R} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
+    IsPowerBounded x := by
+  -- Each of the finitely many powers `x ^ r` with `r < n` is absorbed into the neighbourhood
+  -- supplied by the boundedness of the powers of `x ^ n`, by continuity of multiplication by
+  -- `x ^ r`.
+  rw [isPowerBounded_iff, isBounded_iff]
+  intro U hU
+  obtain ⟨V', hV', hV'U⟩ := isBounded_iff.mp (isPowerBounded_iff.mp hx) U hU
+  have hV : ∀ r : Fin n, (· * x ^ (r : ℕ)) ⁻¹' V' ∈ 𝓝 (0 : R) := fun r ↦
+    (continuous_const_smul (MulOpposite.op (x ^ (r : ℕ)))).continuousAt.preimage_mem_nhds
+      (by simpa using hV')
+  refine ⟨⋂ r : Fin n, (· * x ^ (r : ℕ)) ⁻¹' V', Filter.iInter_mem.mpr hV, ?_⟩
+  rintro _ ⟨v, hv, _, ⟨j, rfl⟩, rfl⟩
+  have hj : v * x ^ j = (v * x ^ (j % n)) * (x ^ n) ^ (j / n) := by
+    rw [mul_assoc, ← pow_mul, ← pow_add, Nat.mod_add_div]
+  -- `rintro` leaves the product as the beta-redex `(fun a b ↦ a * b) v ((fun k ↦ x ^ k) j)`,
+  -- which `rw [hj]` cannot match.
+  change v * x ^ j ∈ U
+  rw [hj]
+  exact hV'U (Set.mul_mem_mul (Set.mem_iInter.mp hv ⟨j % n, Nat.mod_lt _ (Nat.pos_of_ne_zero hn)⟩)
+    ⟨j / n, rfl⟩)
+
+/-- A positive power of an element is power-bounded exactly when the element is. -/
+theorem isPowerBounded_pow_iff {x : R} {n : ℕ} (hn : n ≠ 0) :
+    IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
+  ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
+
+end ContinuousConstSMul
 
 section HasDistribNeg
 
@@ -496,18 +535,6 @@ theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubri
     · rw [h]; exact zero_mem _
     · exact Subring.subset_closure (Polynomial.coeff_mem_coeffs h)
 
-/-- An element with a power-bounded positive power is power-bounded. -/
-theorem IsPowerBounded.of_pow {x : A} {n : ℕ} (hn : n ≠ 0) (hx : IsPowerBounded (x ^ n)) :
-    IsPowerBounded x :=
-  -- `x` is a root of the monic polynomial `X ^ n - x ^ n` over `A°`
-  isPowerBounded_of_isIntegral <| IsIntegral.of_pow (Nat.pos_of_ne_zero hn) <|
-    isIntegral_algebraMap (x := (⟨x ^ n, hx⟩ : powerBoundedSubring A))
-
-/-- A positive power of an element is power-bounded exactly when the element is. -/
-theorem isPowerBounded_pow_iff {x : A} {n : ℕ} (hn : n ≠ 0) :
-    IsPowerBounded (x ^ n) ↔ IsPowerBounded x :=
-  ⟨IsPowerBounded.of_pow hn, fun h ↦ h.pow n⟩
-
 /-- **Homogeneity of power bounds**: if `c ∈ A°` and `c * S ^ n`, `c * T ^ n` are power-bounded,
 then so is `c * (S ^ a * T ^ b)` whenever `a + b ≤ n`. -/
 theorem mul_pow_mul_pow_mem_powerBoundedSubring {c S T : A} {n a b : ℕ} (hab : a + b ≤ n)
@@ -734,5 +761,46 @@ theorem map_topologicallyNilpotentIdeal (e : A ≃+* B) (he : Continuous e)
 end TransportIdeal
 
 end Transport
+
+section Completion
+
+open UniformSpace
+
+variable {A : Type*} [Ring A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+
+/-- **A power-bounded element of `A` stays power-bounded in `Â`.** -/
+theorem isPowerBounded_completion_coe_of_isPowerBounded {a : A}
+    (ha : IsPowerBounded a) : IsPowerBounded ((a : Completion A)) := by
+  -- the coercion is `⇑Completion.coeRingHom`, so it commutes with powers; stated once here
+  have hcoe : ∀ k : ℕ, ((a : Completion A)) ^ k = ((a ^ k : A) : Completion A) :=
+    fun k ↦ (map_pow Completion.coeRingHom a k).symm
+  have h : Set.range (((a : Completion A)) ^ · : ℕ → Completion A)
+      = ((↑) : A → Completion A) '' Set.range (a ^ · : ℕ → A) := by
+    simpa only [hcoe] using Set.range_comp' (((↑) : A → Completion A)) (a ^ · : ℕ → A)
+  rw [isPowerBounded_iff, h]
+  exact isBounded_image_completion_coe_of_isBounded (isPowerBounded_iff.mp ha)
+
+/-- **The converse of `isPowerBounded_completion_coe_of_isPowerBounded`.** An element of `A` whose
+image in `Â` is power-bounded was already power-bounded. -/
+theorem isPowerBounded_of_isPowerBounded_completion_coe {a : A}
+    (ha : IsPowerBounded ((a : Completion A))) : IsPowerBounded a := by
+  have hcoe : ∀ k : ℕ, ((a : Completion A)) ^ k = ((a ^ k : A) : Completion A) :=
+    fun k ↦ (map_pow Completion.coeRingHom a k).symm
+  have h : Set.range (((a : Completion A)) ^ · : ℕ → Completion A)
+      = ((↑) : A → Completion A) '' Set.range (a ^ · : ℕ → A) := by
+    simpa only [hcoe] using Set.range_comp' (((↑) : A → Completion A)) (a ^ · : ℕ → A)
+  rw [isPowerBounded_iff] at ha ⊢
+  rw [h] at ha
+  exact isBounded_of_isBounded_image_completion_coe ha
+
+/-- **Wedhorn Lemma 7.47(1), at the level of elements: `A⁰` is the preimage of `Â⁰`.** An element of
+`A` is power-bounded exactly when its image in the completion is. -/
+@[simp]
+theorem isPowerBounded_completion_coe_iff {a : A} :
+    IsPowerBounded ((a : Completion A)) ↔ IsPowerBounded a :=
+  ⟨isPowerBounded_of_isPowerBounded_completion_coe,
+    isPowerBounded_completion_coe_of_isPowerBounded⟩
+
+end Completion
 
 end TauCeti.Huber

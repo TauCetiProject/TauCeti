@@ -32,13 +32,19 @@ cannot attain its maximum over `[0, τ] × K` (for `τ < T`) at a point `(t₀, 
 maximum, while `∂ₜu(t₀, x₀) ≥ ε` because `t₀` is a maximum from the left. Letting `ε → 0` gives
 the bound for `t < T`, and continuity carries it to the top `t = T`. Unlike the elliptic
 principle for `Δ + b·∇`, no bound on the drift is needed, because the perturbation `εt` does not
-depend on the space variable.
+depend on the space variable. This perturbation argument only uses, at an interior maximizer, that
+a spatial local maximum above the bound forces `∂ₜu ≤ 0`; it is stated in that form, for a compact
+subset of any topological space, so that other parabolic operators can share it.
 
 Regularity is only required on the open cylinder `(0, T) × interior K` (`C²` in space,
 differentiable in time), together with continuity on the closed cylinder `[0, T] × K`.
 
 ## Main declarations
 
+* `TauCeti.le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary`: the perturbation argument,
+  for any operator for which `∂ₜu ≤ 0` at a spatial local maximum above the bound.
+* `TauCeti.le_of_continuousOn_of_forall_mem_Ico_le`: continuity carries a bound below the top of
+  the cylinder to the top.
 * `TauCeti.le_of_deriv_le_laplacian_add_fderiv_le_parabolicBoundary`: the **weak maximum
   principle** for `∂ₜ - Δ - b·∇`, in bound form.
 * `TauCeti.le_of_deriv_le_laplacian_le_parabolicBoundary`: its case `b = 0`, the weak maximum
@@ -68,60 +74,90 @@ namespace TauCeti
 
 open InnerProductSpace Laplacian Set
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {K : Set E} {T : ℝ} {u : ℝ → E → ℝ} {b : ℝ → E → E}
+section Cylinder
 
-/-- The perturbed bound behind the weak parabolic maximum principle: for a subsolution of
-`∂ₜ - Δ - b·∇` bounded by `m` on the parabolic boundary, every `ε > 0` and every `τ < T`, the
-strict subsolution `u - εt` is bounded by `m` on `[0, τ] × K`. -/
-private theorem sub_mul_le_of_deriv_le_laplacian_add_fderiv (hK : IsCompact K) {m ε τ : ℝ}
+variable {X : Type*} [TopologicalSpace X] {K : Set X} {T : ℝ} {u : ℝ → X → ℝ}
+
+/-- Continuity carries a bound below the top of the cylinder `[0, T] × K` to the top: if `u` is
+continuous on `[0, T] × K`, `x ∈ K`, `u 0 x ≤ m` and `u s x ≤ m` for every `s ∈ [0, T)`, then
+`u t x ≤ m` for every `t ∈ [0, T]`. -/
+theorem le_of_continuousOn_of_forall_mem_Ico_le {m : ℝ} {x : X}
+    (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K)) (hx : x ∈ K)
+    (hinit : u 0 x ≤ m) (hlt : ∀ s ∈ Ico 0 T, u s x ≤ m) :
+    ∀ ⦃t⦄, t ∈ Icc 0 T → u t x ≤ m := by
+  intro t ht
+  rcases ht.2.lt_or_eq with htT | rfl
+  · exact hlt t ⟨ht.1, htT⟩
+  rcases ht.1.eq_or_lt with h0 | hpos
+  · exact h0 ▸ hinit
+  -- At the top `t = T > 0`, pass to the limit from below by continuity.
+  have hcw : ContinuousWithinAt (fun s ↦ u s x) (Ico 0 t) t :=
+    ((hcont.comp (continuousOn_id.prodMk continuousOn_const) fun s hs ↦ ⟨hs, hx⟩) t ht).mono
+      Ico_subset_Icc_self
+  exact hcw.closure_le (by rw [closure_Ico hpos.ne]; exact ht) continuousWithinAt_const hlt
+
+/-- **The perturbation argument behind the weak parabolic maximum principle.**
+
+Let `K` be compact, and let `u` be continuous on the closed cylinder `[0, T] × K` and
+differentiable in time on the open cylinder `(0, T) × interior K`. Suppose that `∂ₜu ≤ 0` at
+every point `(t, x)` of the open cylinder at which `x` is a spatial local maximum of `u t` and
+`u t x > m`. If `u ≤ m` on the parabolic boundary, then `u ≤ m` on all of `[0, T] × K`.
+
+Each concrete weak maximum principle supplies the interior hypothesis from its own operator. -/
+theorem le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary (hK : IsCompact K) {m : ℝ}
     (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ K))
-    (hcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 (u t) x)
     (hdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
       DifferentiableAt ℝ (fun s ↦ u s x) t)
-    (hsub : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K →
-      deriv (fun s ↦ u s x) t ≤ Δ (u t) x + fderiv ℝ (u t) x (b t x))
+    (hloc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ ⦃x⦄, x ∈ interior K → IsLocalMax (u t) x → m < u t x →
+      deriv (fun s ↦ u s x) t ≤ 0)
     (hinit : ∀ ⦃x⦄, x ∈ K → u 0 x ≤ m)
-    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ m)
-    (hε : 0 < ε) (hτ : τ < T) :
-    ∀ ⦃t⦄, t ∈ Icc 0 τ → ∀ ⦃x⦄, x ∈ K → u t x - ε * t ≤ m := by
+    (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ m) :
+    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ m := by
   intro t ht x hx
-  set w : ℝ × E → ℝ := fun p ↦ Function.uncurry u p - ε * p.1
-  have hsub' : Icc 0 τ ×ˢ K ⊆ Icc 0 T ×ˢ K := prod_mono (Icc_subset_Icc_right hτ.le) le_rfl
+  refine le_of_continuousOn_of_forall_mem_Ico_le hcont hx (hinit hx) (fun τ hτ ↦ ?_) ht
+  -- Below the top, let `ε → 0` in the perturbed bound `u - εt ≤ m` on `[0, τ] × K`.
+  refine le_of_forall_pos_mul_le (C := τ) fun ε hε ↦ ?_
+  suffices h : u τ x - ε * τ ≤ m by linarith
+  set w : ℝ × X → ℝ := fun p ↦ Function.uncurry u p - ε * p.1
+  have hsub' : Icc 0 τ ×ˢ K ⊆ Icc 0 T ×ˢ K := prod_mono (Icc_subset_Icc_right hτ.2.le) le_rfl
   have hwcont : ContinuousOn w (Icc 0 τ ×ˢ K) :=
     (hcont.mono hsub').sub (continuousOn_const.mul continuousOn_fst)
   obtain ⟨⟨t₀, x₀⟩, hmem, hmax⟩ :=
-    (isCompact_Icc.prod hK).exists_isMaxOn ⟨(t, x), ht, hx⟩ hwcont
+    (isCompact_Icc.prod hK).exists_isMaxOn ⟨(τ, x), ⟨hτ.1, le_rfl⟩, hx⟩ hwcont
   have ht₀ : t₀ ∈ Icc 0 τ := hmem.1
   have hx₀ : x₀ ∈ K := hmem.2
   have hmax' : ∀ ⦃s⦄, s ∈ Icc 0 τ → ∀ ⦃y⦄, y ∈ K → u s y - ε * s ≤ u t₀ x₀ - ε * t₀ :=
     fun s hs y hy ↦ isMaxOn_iff.mp hmax (s, y) ⟨hs, hy⟩
-  refine (hmax' ht hx).trans ?_
+  refine (hmax' ⟨hτ.1, le_rfl⟩ hx).trans ?_
   -- The maximizer lies on the parabolic boundary, where `u ≤ m`.
   rcases ht₀.1.eq_or_lt with h0 | hpos
   · rw [← h0, mul_zero, sub_zero]
     exact hinit hx₀
   by_cases hfr : x₀ ∈ frontier K
-  · have := hlat ⟨ht₀.1, ht₀.2.trans hτ.le⟩ hfr
+  · have := hlat ⟨ht₀.1, ht₀.2.trans hτ.2.le⟩ hfr
     nlinarith
-  -- Otherwise `(t₀, x₀)` is an interior point of the open cylinder, which is impossible.
-  exfalso
-  have ht₀T : t₀ ∈ Ioo 0 T := ⟨hpos, ht₀.2.trans_lt hτ⟩
+  -- Otherwise `(t₀, x₀)` is a point of the open cylinder, where the maximum cannot exceed `m`.
+  by_contra hlt
+  have ht₀T : t₀ ∈ Ioo 0 T := ⟨hpos, ht₀.2.trans_lt hτ.2⟩
   have hint : x₀ ∈ interior K := by
     rw [← self_sdiff_frontier]
     exact ⟨hx₀, hfr⟩
   -- In space, `x₀` is a local maximum of `u t₀`.
-  have hloc : IsLocalMax (u t₀) x₀ :=
+  have hlocmax : IsLocalMax (u t₀) x₀ :=
     Filter.eventually_of_mem (isOpen_interior.mem_nhds hint) fun y hy ↦ by
       linarith [hmax' ht₀ (interior_subset hy)]
-  -- In time, `t₀` maximizes `s ↦ u s x₀ - ε s` from the left, so its derivative is `≥ 0`.
+  -- In time, `t₀` maximizes `s ↦ u s x₀ - ε s` from the left, so `∂ₜu ≥ ε > 0`.
   have hg : HasDerivAt (fun s ↦ u s x₀ - ε * s) (deriv (fun s ↦ u s x₀) t₀ - ε) t₀ := by
     simpa using (hdiff ht₀T hint).hasDerivAt.fun_sub ((hasDerivAt_id t₀).const_mul ε)
   have hleft : IsLocalMaxOn (fun s ↦ u s x₀ - ε * s) (Iic t₀) t₀ :=
     Filter.mem_of_superset (Icc_mem_nhdsLE hpos) fun s hs ↦ hmax' ⟨hs.1, hs.2.trans ht₀.2⟩ hx₀
-  -- Hence `0 < ε ≤ ∂ₜu ≤ Δu + b·∇u` at `(t₀, x₀)`, which rules out the spatial local maximum.
-  refine not_isLocalMax_of_laplacian_add_fderiv_pos (v := b t₀ x₀) (hcd ht₀T hint) ?_ hloc
-  linarith [hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt, hsub ht₀T hint]
+  linarith [hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt,
+    hloc ht₀T hint hlocmax (by nlinarith)]
+
+end Cylinder
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {K : Set E} {T : ℝ} {u : ℝ → E → ℝ} {b : ℝ → E → E}
 
 /-- **Weak maximum principle for `∂ₜ - Δ - b·∇`.**
 
@@ -139,23 +175,12 @@ theorem le_of_deriv_le_laplacian_add_fderiv_le_parabolicBoundary (hK : IsCompact
       deriv (fun s ↦ u s x) t ≤ Δ (u t) x + fderiv ℝ (u t) x (b t x))
     (hinit : ∀ ⦃x⦄, x ∈ K → u 0 x ≤ m)
     (hlat : ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ frontier K → u t x ≤ m) :
-    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ m := by
-  intro t ht x hx
-  -- Below the top, let `ε → 0` in the perturbed bound `u - εt ≤ m`.
-  have hlt : ∀ s ∈ Ico 0 T, u s x ≤ m := fun s hs ↦
-    le_of_forall_pos_mul_le (C := s) fun ε hε ↦ by
-      have := sub_mul_le_of_deriv_le_laplacian_add_fderiv hK hcont hcd hdiff hsub hinit hlat
-        hε hs.2 ⟨hs.1, le_rfl⟩ hx
-      linarith
-  rcases ht.2.lt_or_eq with htT | rfl
-  · exact hlt t ⟨ht.1, htT⟩
-  rcases ht.1.eq_or_lt with h0 | hpos
-  · exact h0 ▸ hinit hx
-  -- At the top `t = T > 0`, pass to the limit from below by continuity.
-  have hcw : ContinuousWithinAt (fun s ↦ u s x) (Ico 0 t) t :=
-    ((hcont.comp (continuousOn_id.prodMk continuousOn_const) fun s hs ↦ ⟨hs, hx⟩) t ht).mono
-      Ico_subset_Icc_self
-  exact hcw.closure_le (by rw [closure_Ico hpos.ne]; exact ht) continuousWithinAt_const hlt
+    ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ ⦃x⦄, x ∈ K → u t x ≤ m :=
+  -- At a spatial local maximum `Δu + b·∇u ≤ 0`, so `∂ₜu ≤ 0`.
+  le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary hK hcont hdiff
+    (fun _ ht _ hx hloc _ ↦ (hsub ht hx).trans <| not_lt.mp fun hpos ↦
+      not_isLocalMax_of_laplacian_add_fderiv_pos (hcd ht hx) hpos hloc)
+    hinit hlat
 
 /-- **Weak maximum principle for the heat equation.** A subsolution `∂ₜu ≤ Δu` of the heat
 equation, continuous on the closed cylinder `[0, T] × K` over a compact `K` and regular on the

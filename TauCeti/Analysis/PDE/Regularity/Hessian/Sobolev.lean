@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Calderón–Zygmund estimate for strong solutions in `W^{2,p}` of the whole space
@@ -169,7 +170,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq
     rwa [hcoe, ← hL] at this
   have hTH : ‖T.compLpL p _ (Wkp.iteratedGradient 1
       (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ))‖ = lpNorm L p volume := by
-    rw [Lp.norm_def, eLpNorm_congr_ae hae, hvol, lpNorm]
+    rw [Lp.norm_eq_lpNorm_of_ae_eq hae, hvol]
   rw [hTH]
   exact norm_iteratedGradient_ofTestFunctionₗ_le (by positivity) hLfin φ h
 
@@ -227,7 +228,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq
     exact hC ψ
   have hTH : ‖T (Wkp.iteratedGradient 1 (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ))‖ =
       lpNorm (Δ (φ : V → ℝ)) p volume := by
-    rw [Lp.norm_def, eLpNorm_congr_ae hae, hvol, lpNorm]
+    rw [Lp.norm_eq_lpNorm_of_ae_eq hae, hvol]
   rw [hTH]
   exact norm_iteratedGradient_ofTestFunctionₗ_le C.coe_nonneg hLfin φ h
 

@@ -14,6 +14,9 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 -- dimension into an equality, and `Submodule.finrank_le` bounds the dimension of a subalgebra by
 -- that of the ambient algebra.
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+-- `Subalgebra.isMulCommutative_bot` supplies the commutative subalgebra `⊥` that starts the search
+-- for one of maximal dimension.
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Commutative subalgebras of maximal dimension
@@ -30,9 +33,17 @@ division algebra, where a commutative subalgebra of maximal dimension is a maxim
 
 ## Main results
 
+* `TauCeti.exists_forall_finrank_le`: among the subalgebras of a finite-dimensional algebra
+  satisfying a predicate, if there are any, one has maximal dimension.
 * `TauCeti.exists_isMulCommutative_forall_finrank_le`: a finite-dimensional algebra has a
   commutative subalgebra of maximal dimension.
-* `TauCeti.centralizer_eq_self_of_forall_finrank_le`: such a subalgebra is its own centralizer.
+* `Subalgebra.pairwise_commute_insert_of_mem_centralizer`: adjoining to a commutative subalgebra an
+  element of its centralizer gives a set of pairwise commuting elements.
+* `Subalgebra.mem_of_finrank_adjoin_insert_le`: an element whose adjunction does not raise the
+  dimension of a subalgebra already lies in it.
+* `Subalgebra.centralizer_eq_self_of_forall_finrank_le`: a commutative subalgebra of maximal
+  dimension among the commutative subalgebras containing it, in particular one of maximal
+  dimension, is its own centralizer.
 
 ## Implementation notes
 
@@ -41,20 +52,44 @@ what `Algebra.isMulCommutative_adjoin` produces, rather than a hand-rolled
 `∀ x ∈ L, ∀ y ∈ L, x * y = y * x`; `setLike_mul_comm` is the lemma that reads the second off the
 first.
 
-Maximality is in dimension over `K`, stated as a bound on every commutative subalgebra, and not as
-maximality for inclusion; the two agree here, but the dimension form is what the count in a central
-simple algebra consumes.
+The hypothesis of the centralizer theorem is maximality for inclusion among commutative
+subalgebras, phrased as a dimension bound over the commutative subalgebras containing `L` (the two
+are equivalent by `Subalgebra.eq_of_le_of_finrank_le`). The bound over all commutative subalgebras
+produced by `TauCeti.exists_isMulCommutative_forall_finrank_le` implies it, and is the form that the
+count in a central simple algebra consumes.
 -/
 
 public section
 
-namespace TauCeti
-
 open Module
 
-section Maximal
+namespace Subalgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- Adjoining to a commutative subalgebra an element of its centralizer gives a set of pairwise
+commuting elements. -/
+theorem pairwise_commute_insert_of_mem_centralizer (L : Subalgebra R A) [IsMulCommutative L]
+    {x : A} (hx : x ∈ centralizer R (L : Set A)) : (insert x (L : Set A)).Pairwise Commute :=
+  Set.Pairwise.insert_of_symm_of_refl (fun _ ha _ hb _ ↦ setLike_mul_comm ha hb)
+    fun b hb ↦ ((mem_centralizer_iff R).1 hx b hb).symm
+
+end Subalgebra
+
+namespace TauCeti
 
 variable (K A : Type*) [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
+
+/-- **Among the subalgebras satisfying a predicate, one has maximal dimension**, provided that some
+subalgebra satisfies it: dimensions of subalgebras are bounded by `finrank K A`. -/
+theorem exists_forall_finrank_le (P : Subalgebra K A → Prop) (hP : ∃ M, P M) :
+    ∃ L, P L ∧ ∀ M, P M → finrank K M ≤ finrank K L := by
+  classical
+  have hle (M : Subalgebra K A) : finrank K M ≤ finrank K A := Submodule.finrank_le M.toSubmodule
+  obtain ⟨M₀, hM₀⟩ := hP
+  obtain ⟨L, hL, hLn⟩ := Nat.findGreatest_spec (hle M₀)
+    (P := fun n ↦ ∃ M, P M ∧ finrank K M = n) ⟨M₀, hM₀, rfl⟩
+  exact ⟨L, hL, fun M hM ↦ hLn ▸ Nat.le_findGreatest (hle M) ⟨M, hM, rfl⟩⟩
 
 /-- **A finite-dimensional algebra has a commutative subalgebra of maximal dimension.**
 
@@ -65,52 +100,43 @@ No hypothesis beyond finite-dimensionality is needed; it is in a division algebr
 subalgebra becomes interesting
 (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`). -/
 theorem exists_isMulCommutative_forall_finrank_le :
-    ∃ L : Subalgebra K A, IsMulCommutative ↥L ∧
-      ∀ M : Subalgebra K A, IsMulCommutative ↥M → finrank K ↥M ≤ finrank K ↥L := by
-  classical
-  set P : ℕ → Prop := fun n ↦ ∃ M : Subalgebra K A, IsMulCommutative ↥M ∧ finrank K ↥M = n
-  -- The bottom subalgebra is commutative, so `P` is satisfied below the bound `finrank K A`.
-  have hbot : IsMulCommutative ↥(⊥ : Subalgebra K A) :=
-    Algebra.adjoin_empty K A ▸ Algebra.isMulCommutative_adjoin K (by simp)
-  have hle : ∀ M : Subalgebra K A, finrank K ↥M ≤ finrank K A := fun M ↦
-    Submodule.finrank_le (Subalgebra.toSubmodule M)
-  have hstart : P (finrank K ↥(⊥ : Subalgebra K A)) := ⟨⊥, hbot, rfl⟩
-  obtain ⟨L, hL, hLn⟩ := Nat.findGreatest_spec (hle ⊥) hstart
-  refine ⟨L, hL, fun M hM ↦ ?_⟩
-  rw [hLn]
-  exact Nat.le_findGreatest (hle M) ⟨M, hM, rfl⟩
+    ∃ L : Subalgebra K A, IsMulCommutative L ∧
+      ∀ M : Subalgebra K A, IsMulCommutative M → finrank K M ≤ finrank K L :=
+  exists_forall_finrank_le K A (fun M ↦ IsMulCommutative M) ⟨⊥, inferInstance⟩
 
-variable {K A}
+end TauCeti
+
+namespace Subalgebra
+
+variable {K A : Type*} [Field K] [Ring A] [Algebra K A]
+
+/-- An element whose adjunction to a subalgebra does not raise its dimension already lies in it. -/
+theorem mem_of_finrank_adjoin_insert_le {L : Subalgebra K A} {x : A}
+    [FiniteDimensional K (Algebra.adjoin K (insert x (L : Set A)))]
+    (h : finrank K (Algebra.adjoin K (insert x (L : Set A))) ≤ finrank K L) : x ∈ L :=
+  eq_of_le_of_finrank_le (fun _ ha ↦ Algebra.subset_adjoin (Set.mem_insert_of_mem _ ha)) h ▸
+    Algebra.subset_adjoin (Set.mem_insert _ _)
+
+variable [FiniteDimensional K A]
 
 /-- **A commutative subalgebra of maximal dimension is its own centralizer.**
 
-Maximality enters as the hypothesis `hmax`, the dimension bound over all commutative subalgebras
-of `A` that `TauCeti.exists_isMulCommutative_forall_finrank_le` produces.
+Maximality enters as the hypothesis `hmax`: no commutative subalgebra of `A` containing `L` has
+larger dimension over `K`. The bound over all commutative subalgebras of `A` that
+`TauCeti.exists_isMulCommutative_forall_finrank_le` produces implies it.
 
 Nothing beyond finite-dimensionality is asked of `A`; it is in a division algebra that the
 conclusion becomes the maximality of a subfield
 (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`). -/
-theorem centralizer_eq_self_of_forall_finrank_le {L : Subalgebra K A} [IsMulCommutative ↥L]
-    (hmax : ∀ M : Subalgebra K A, IsMulCommutative ↥M → finrank K ↥M ≤ finrank K ↥L) :
-    Subalgebra.centralizer K (L : Set A) = L := by
-  refine le_antisymm (fun x hx ↦ ?_)
-    (fun y hy ↦ (Subalgebra.mem_centralizer_iff K).2 fun z hz ↦ setLike_mul_comm hz hy)
-  -- The elements of `insert x L` commute pairwise.
-  have hcomm : (insert x (L : Set A)).Pairwise Commute := by
-    rintro a (rfl | ha) b (rfl | hb) -
-    · rfl
-    · exact ((Subalgebra.mem_centralizer_iff K).1 hx b hb).symm
-    · exact (Subalgebra.mem_centralizer_iff K).1 hx a ha
-    · exact setLike_mul_comm ha hb
-  have hM : IsMulCommutative ↥(Algebra.adjoin K (insert x (L : Set A))) :=
-    Algebra.isMulCommutative_adjoin K hcomm
-  have hsub : L ≤ Algebra.adjoin K (insert x (L : Set A)) := fun a ha ↦
-    Algebra.subset_adjoin (Set.mem_insert_of_mem _ ha)
-  have := Subalgebra.eq_of_le_of_finrank_le hsub (hmax _ hM)
-  exact this ▸ Algebra.subset_adjoin (Set.mem_insert _ _)
+theorem centralizer_eq_self_of_forall_finrank_le (L : Subalgebra K A) [IsMulCommutative L]
+    (hmax : ∀ M : Subalgebra K A, L ≤ M → IsMulCommutative M → finrank K M ≤ finrank K L) :
+    centralizer K (L : Set A) = L :=
+  le_antisymm
+    (fun _ hx ↦ mem_of_finrank_adjoin_insert_le <| hmax _
+      (fun _ ha ↦ Algebra.subset_adjoin (Set.mem_insert_of_mem _ ha))
+      (Algebra.isMulCommutative_adjoin K (L.pairwise_commute_insert_of_mem_centralizer hx)))
+    fun _ hy ↦ (mem_centralizer_iff K).2 fun _ hz ↦ setLike_mul_comm hz hy
 
-end Maximal
-
-end TauCeti
+end Subalgebra
 
 end

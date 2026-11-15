@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
+public import TauCeti.MeasureTheory.Function.BoundedBorel
 public import TauCeti.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
@@ -39,6 +40,9 @@ operators bounded.
   `M` is approximated in this way by a continuous function bounded by `M`.
 * `MeasureTheory.exists_seq_continuous_norm_le_tendsto_integral_norm_sub`: a sequence of
   continuous functions bounded by `M` whose `L¹(μ i)` distances to `f` tend to zero for all `i`.
+* `TauCeti.BoundedBorelFunction.eq_of_forall_ofContinuousMap_eq`: on a compact normal space, two
+  maps on bounded Borel symbols that are Lipschitz for `L¹` distances against finite weakly
+  regular measures and agree on continuous symbols are equal.
 
 ## Provenance
 
@@ -127,3 +131,38 @@ theorem exists_seq_continuous_norm_le_tendsto_integral_norm_sub {f : α → E}
     tendsto_one_div_add_atTop_nhds_zero_nat
 
 end MeasureTheory
+
+namespace TauCeti.BoundedBorelFunction
+
+open MeasureTheory
+
+variable {α : Type*} [TopologicalSpace α] [NormalSpace α] [CompactSpace α] [MeasurableSpace α]
+  [BorelSpace α] {F : Type*} [MetricSpace F]
+
+/-- **Extension from continuous symbols.** Let `ν₁` and `ν₂` be finite weakly regular measures on a
+compact normal Borel space. If `Φ` is Lipschitz for the `L¹(ν₁)` distance of bounded Borel
+symbols, `Ψ` is Lipschitz for the `L¹(ν₂)` distance, and `Φ` and `Ψ` agree on continuous symbols,
+then they agree on every bounded Borel symbol: continuous symbols bounded by `‖f‖` approximate `f`
+in `L¹(ν₁)` and `L¹(ν₂)` at once. -/
+theorem eq_of_forall_ofContinuousMap_eq {ν₁ ν₂ : Measure α} [IsFiniteMeasure ν₁]
+    [IsFiniteMeasure ν₂] [ν₁.WeaklyRegular] [ν₂.WeaklyRegular]
+    {Φ Ψ : BoundedBorelFunction α → F} {C₁ C₂ : ℝ}
+    (hΦ : ∀ f g, dist (Φ f) (Φ g) ≤ C₁ * ∫ x, ‖f x - g x‖ ∂ν₁)
+    (hΨ : ∀ f g, dist (Ψ f) (Ψ g) ≤ C₂ * ∫ x, ‖f x - g x‖ ∂ν₂)
+    (h : ∀ g : C(α, ℂ), Φ (ofContinuousMap g) = Ψ (ofContinuousMap g)) : Φ = Ψ := by
+  funext f
+  let ν : Bool → Measure α := fun b ↦ cond b ν₁ ν₂
+  have : ∀ b, IsFiniteMeasure (ν b) := fun b ↦ by cases b <;> assumption
+  have : ∀ b, (ν b).WeaklyRegular := fun b ↦ by cases b <;> assumption
+  obtain ⟨g, -, -, hg⟩ := exists_seq_continuous_norm_le_tendsto_integral_norm_sub (μ := ν)
+    (fun _ ↦ f.measurable.aestronglyMeasurable) f.norm_coe_le_norm
+  -- A map that is Lipschitz for the `L¹(ν b)` distance sends the approximants to its value at `f`.
+  have key {G : BoundedBorelFunction α → F} {C : ℝ} (b : Bool)
+      (hG : ∀ f g, dist (G f) (G g) ≤ C * ∫ x, ‖f x - g x‖ ∂ν b) :
+      Tendsto (fun n ↦ G (ofContinuousMap (g n))) atTop (𝓝 (G f)) := by
+    refine tendsto_iff_dist_tendsto_zero.2 <| squeeze_zero (fun _ ↦ dist_nonneg)
+      (fun n ↦ hG _ _) ?_
+    simpa [norm_sub_rev] using (hg b).const_mul C
+  exact tendsto_nhds_unique ((key true hΦ).congr fun n ↦ h (g n)) (key false hΨ)
+
+end TauCeti.BoundedBorelFunction

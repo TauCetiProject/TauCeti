@@ -121,25 +121,18 @@ private theorem exists_seq_finset_forall_one_lt_re_apply {C : Set (WeakDual 𝕜
   let A : ℕ → Finset E := fun n ↦ Nat.rec ∅ (fun n A ↦ A ∪ F n A) n
   have hgood (n : ℕ) : Good n (A n) := by
     induction n with
-    | zero =>
-      intro f hfC hf
-      exact absurd (hCr f hfC) (by simpa using hf)
+    | zero => exact fun f hfC hf ↦ absurd (hCr f hfC) (by simpa using hf)
     | succ n ih => exact hFgood n _ ih
   have hA (n : ℕ) : ∀ x ∈ A n, ∃ m, x ∈ F m (A m) := by
     induction n with
     | zero => simp [A]
-    | succ n ih =>
-      intro x hx
-      rcases Finset.mem_union.1 hx with hx | hx
-      · exact ih x hx
-      · exact ⟨n, hx⟩
+    | succ n ih => exact fun x hx ↦ (Finset.mem_union.1 hx).elim (ih x) fun hx ↦ ⟨n, hx⟩
   refine ⟨fun n ↦ F n (A n), fun n ↦ hF n _, fun f hfC ↦ ?_⟩
   obtain ⟨n, hn⟩ := exists_nat_ge (‖toStrongDual f‖ / r)
   obtain ⟨x, hx, hfx⟩ := hgood n f hfC <| by
     rw [div_le_iff₀ hr] at hn
     nlinarith
-  obtain ⟨m, hm⟩ := hA n x hx
-  exact ⟨m, x, hm, hfx⟩
+  exact (hA n x hx).imp fun m hm ↦ ⟨x, hm, hfx⟩
 
 /-- Translating a set of functionals with weak-star closed bounded slices by `f₀` gives a set
 which again has weak-star closed bounded slices. -/
@@ -198,12 +191,7 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   have hTC : Convex ℝ (T '' C) := by
     rintro _ ⟨f, hf, rfl⟩ _ ⟨g, hg, rfl⟩ a b ha hb hab
     refine ⟨a • f + b • g, hC hf hg ha hb hab, ZeroAtInftyContinuousMap.ext fun i ↦ ?_⟩
-    simp only [hT, _root_.add_apply, _root_.smul_apply,
-      smul_eq_mul]
-    -- Mathlib has no apply lemma for sums in `WeakDual 𝕜 E`, so evaluate through `toStrongDual`;
-    -- `simp` then splits the sum and applies `WeakDual.real_smul_apply`.
-    rw [← toStrongDual_apply]
-    simp [WeakDual.real_smul_apply]
+    simp only [hT, _root_.add_apply, _root_.smul_apply, smul_eq_mul, map_add, smul_re]
   -- `T` maps `C` into the complement of the open unit ball of `c₀`.
   have hdisj : Disjoint (ball (0 : C₀(ι, ℝ)) 1) (T '' C) := by
     refine Set.disjoint_right.2 ?_
@@ -215,24 +203,13 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   obtain ⟨Λ, u, hΛ, hΛC⟩ :=
     _root_.geometric_hahn_banach_open (convex_ball 0 1) isOpen_ball hTC hdisj
   have hu : 0 < u := by simpa using hΛ 0 (mem_ball_self one_pos)
-  -- The coefficients of `Λ` are absolutely summable and `v` is bounded, so they define a point
-  -- `∑' i, a i • v i` of `E`.
-  set a := fun i ↦ Λ (ZeroAtInftyContinuousMap.single i 1)
+  -- `Λ` is evaluation at a point `x` of `E`, which after rescaling separates `C` from zero.
   have hvM : Tendsto (‖v ·‖) cofinite (𝓝 0) := by simpa using hv.norm
-  obtain ⟨M, hM⟩ := hvM.bddAbove_range_of_cofinite
-  have hsum : Summable fun i ↦ (a i : 𝕜) • v i :=
-    .of_norm_bounded ((ZeroAtInftyContinuousMap.summable_norm_apply_single_one Λ).mul_right M)
-      fun i ↦ by
-        rw [norm_smul, norm_ofReal, ← Real.norm_eq_abs]
-        exact mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) (norm_nonneg _)
-  -- The real part of `f` at this point is the value of `Λ` at `T f`.
-  have hΛT (f : WeakDual 𝕜 E) : re (f (∑' i, (a i : 𝕜) • v i)) = Λ (T f) := by
-    have h₁ := (hsum.hasSum.mapL (toStrongDual f)).mapL reCLM
-    have h₂ := ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul Λ (T f)
-    simp only [hT, reCLM_apply, map_smul, smul_eq_mul, re_ofReal_mul, toStrongDual_apply] at h₁ h₂
-    exact h₁.unique h₂
-  refine ⟨((u⁻¹ : ℝ) : 𝕜) • ∑' i, (a i : 𝕜) • v i, fun f hfC ↦ ?_⟩
-  rw [map_smul, smul_eq_mul, re_ofReal_mul, hΛT, le_inv_mul_iff₀ hu, mul_one]
+  obtain ⟨x, hx⟩ := ZeroAtInftyContinuousMap.exists_forall_re_apply_eq_of_bddAbove (𝕜 := 𝕜)
+    hvM.bddAbove_range_of_cofinite Λ
+  refine ⟨((u⁻¹ : ℝ) : 𝕜) • x, fun f hfC ↦ ?_⟩
+  rw [map_smul, smul_eq_mul, re_ofReal_mul, ← toStrongDual_apply,
+    hx _ (T f) fun i ↦ by rw [hT, toStrongDual_apply], le_inv_mul_iff₀ hu, mul_one]
   exact hΛC _ ⟨f, hfC, rfl⟩
 
 /-- **Separation lemma of the Krein–Šmulian theorem.** Let `C` be a convex set of functionals on

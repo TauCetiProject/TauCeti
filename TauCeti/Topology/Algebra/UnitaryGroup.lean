@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
@@ -51,6 +52,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   closed.
 * `Matrix.GeneralLinearGroup.isCompact_unitarySubgroup`: the unitary subgroup of the general linear
   group over `ℝ` or `ℂ` is compact.
+* `Matrix.UnitaryGroup.continuous_fromBlocksOne`: the block embedding `B ↦ diag(1_r, B)` of `U(m)`
+  in `U(r + m)` is continuous.
 -/
 
 public section
@@ -150,6 +153,20 @@ variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
 compact. -/
 theorem isCompact_unitarySubgroup :
     IsCompact ((unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) : Set (GL n 𝕜)) :=
-  TauCeti.isCompact_unitarySubgroup_units TauCeti.Matrix.isCompact_unitaryGroup
+  TauCeti.isCompact_unitarySubgroup_units_iff.mpr TauCeti.Matrix.isCompact_unitaryGroup
 
 end Matrix.GeneralLinearGroup
+
+namespace Matrix.UnitaryGroup
+
+variable {𝕜 : Type*} [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜] {r : ℕ}
+
+/-- The block embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (fromBlocksOne 𝕜 r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, coe_fromBlocksOne]
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtype_val).matrix_reindex _ _
+
+end Matrix.UnitaryGroup

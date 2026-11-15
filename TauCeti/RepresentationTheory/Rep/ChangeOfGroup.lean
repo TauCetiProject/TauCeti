@@ -17,7 +17,7 @@ monoid. For a homomorphism `f : G →* H`, a linear map intertwining `ρ : Repre
 `M ⟶ Res(f)(N)`, and, when `f` is an isomorphism, also as a morphism `Res(f⁻¹)(M) ⟶ N` of
 `H`-representations. This file supplies those two adapters, the identity, composition and
 inversion lemmas for intertwining maps along a homomorphism of monoids, and the compatibility of
-such a map with the norm `∑ g, ρ g` of a finite group.
+such a map along an isomorphism of finite groups with the norms `∑ g, ρ g`.
 
 These are the general representation-theoretic inputs of a change-of-group map in group homology
 and cohomology: `groupHomology.chainsMap` consumes the first adapter and
@@ -37,6 +37,8 @@ and restriction along a monoid isomorphism is an equivalence of representation c
 * `Representation.IsIntertwiningMap.ofRes`: an intertwining map along an isomorphism
   `e : G ≃* H` read as a morphism `Res(e⁻¹)(M) ⟶ N` of `H`-representations.
 * `MulEquiv.resFunctorEquiv`: the equivalence induced by restriction along a monoid isomorphism.
+* `Rep.resInclusionHom`: the identity of the restriction of a representation to a subgroup `K`,
+  as a morphism into the restriction to `K` of its restriction to a larger subgroup `L`.
 
 ## Main results
 
@@ -57,9 +59,10 @@ and restriction along a monoid isomorphism is an equivalence of representation c
   homomorphism of monoids.
 * `Rep.isIntertwiningMap_trivial`: the identity intertwines trivial representations along any
   homomorphism of monoids.
-* `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
-  map is intertwining along the identity isomorphism of the monoid, and along `f` between a
-  restricted representation and the representation it restricts.
+* `Representation.isIntertwiningMap_id`: the identity map of a representation is intertwining
+  along the identity isomorphism of its monoid.
+* `Rep.isIntertwiningMap_res`: the identity map is intertwining along `f` between a restricted
+  representation and the representation it restricts.
 * `Rep.isIntertwiningMap_res_res` and `Rep.isIntertwiningMap_res_res_toRes_naturality`: the identity
   map is intertwining between the restrictions along two factorisations of one homomorphism,
   naturally in the representation.
@@ -109,6 +112,12 @@ theorem symm {e' : V ≃ₗ[R] W}
 
 end IsIntertwiningMap
 
+/-- The identity map of a representation is intertwining along the identity isomorphism of its
+monoid. -/
+theorem isIntertwiningMap_id (ρ : Representation R G V) :
+    ρ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G)) LinearMap.id :=
+  ⟨fun g v ↦ by simp⟩
+
 /-- The restriction of a trivial representation along a homomorphism of monoids is trivial. -/
 instance isTrivial_comp (σ : Representation R H W) [σ.IsTrivial] (f : G →* H) :
     Representation.IsTrivial (σ.comp f) :=
@@ -154,13 +163,7 @@ variable {R : Type u} {G : Type uG} {H : Type uH} [Semiring R] [Monoid G] [Monoi
 
 namespace Rep
 
-/-- The identity map of a representation is intertwining along the identity isomorphism of its
-monoid. -/
-theorem isIntertwiningMap_id (M : Rep.{uV} R G) :
-    M.ρ.IsIntertwiningMap (M.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
-      (LinearMap.id : M.V →ₗ[R] M.V) := ⟨fun g v ↦ by simp⟩
-
-/-- Restricting the coefficients along `f` and comparing back by the identity is an intertwining
+/-- The identity of `N`, read as a map from the restriction `Res(f)(N)` to `N`, is an intertwining
 map along `f`. -/
 theorem isIntertwiningMap_res (N : Rep.{uV} R H) (f : G →* H) :
     (Rep.res f N).ρ.IsIntertwiningMap (N.ρ.comp f)
@@ -234,6 +237,37 @@ theorem Rep.isIntertwiningMap_res_res_toRes_naturality {K : Type uK} {L : Type u
   simp
 
 end RepMorphisms
+
+section Subgroup
+
+open CategoryTheory
+
+variable {R : Type u} {G : Type uG} [Semiring R] [Group G]
+
+namespace Rep
+
+/-- The identity of the restriction of `A` to a subgroup `K`, viewed as a morphism into the
+restriction to `K` (along `Subgroup.inclusion h`) of the restriction of `A` to a larger subgroup
+`L`. The two representations of `K` have the same underlying module and action. -/
+def resInclusionHom (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) :
+    res K.subtype A ⟶ res (Subgroup.inclusion h) (res L.subtype A) :=
+  𝟙 (res K.subtype A)
+
+/-- `resInclusionHom A h` acts on vectors as the identity. The coercion is stated at
+`IntertwiningMap (A.ρ.comp K.subtype) ((A.ρ.comp L.subtype).comp (Subgroup.inclusion h))`, `simp`'s
+normal form of the coercion of a morphism between the two restrictions, so that `simp` can use
+this lemma. -/
+@[simp]
+theorem resInclusionHom_hom_apply (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) (v : A.V) :
+    @DFunLike.coe (Representation.IntertwiningMap (A.ρ.comp K.subtype)
+      ((A.ρ.comp L.subtype).comp (Subgroup.inclusion h))) _ _ _ (resInclusionHom A h).hom v =
+        v := by
+  simp only [resInclusionHom]
+  rfl
+
+end Rep
+
+end Subgroup
 
 section Tensor
 

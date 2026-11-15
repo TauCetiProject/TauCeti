@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.KoszulComplex.Basic
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 public import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.Algebra.FiveLemma
 
 /-!
 # Ext and first Koszul cohomology
@@ -19,7 +20,9 @@ It is the degree-one universal coefficient sequence, using `H₀(K(φ)) = R / φ
 Neither regularity nor exactness of the Koszul complex is assumed. This comparison
 is useful in descent of extensions: its obstruction term is a Hom module from a module
 annihilated by the image ideal. If `N` has no elements annihilated by that ideal, the
-comparison is an isomorphism.
+comparison is an isomorphism. More generally,
+`postcomp_ext_bijective_of_cohomologyMap_bijective` compares first Ext groups along a
+coefficient morphism by comparing first Koszul cohomology and detecting the Hom obstruction.
 
 For a finite list of generators of an ideal, this is Stacks 05EE. The kernel of the
 Koszul presentation onto the image ideal in 05ED is canonically `H₁(K(φ))`, so the
@@ -102,6 +105,33 @@ theorem extToCohomology_naturality {N' : ModuleCat.{u} R} (g : N ⟶ N')
     extLinearEquivOfIso_apply, Iso.refl_hom, Ext.comp_mk₀_id]
   rw [← Ext.comp_assoc _ _ _ (zero_add 1) (add_zero 1) (by omega)]
   exact ChainComplex.extToHomology_coefficient_naturality g 1 0 _
+
+/-- A coefficient morphism induces a bijection on first extensions of the image-ideal
+quotient if it induces a bijection on first Koszul cohomology and is injective on Hom from
+first Koszul homology. No regular sequence or torsion-freeness assumption is needed. -/
+theorem postcomp_ext_bijective_of_cohomologyMap_bijective
+    {N' : ModuleCat.{u} R} (g : N ⟶ N')
+    (hH : Function.Bijective
+      (HomologicalComplex.homologyMap ((koszulComplex φ).linearYonedaObjMap R g) 1))
+    (hHom : Function.Injective
+      (Linear.rightComp R ((koszulComplex φ).homology 1) g)) :
+    Function.Bijective
+      ((Ext.mk₀ g).postcompOfLinear R (ModuleCat.of R (R ⧸ LinearMap.range φ)) (add_zero 1)) := by
+  apply LinearMap.bijective_of_bijective_of_injective_of_left_exact
+    (extToCohomology φ N) (ChainComplex.kronecker R (koszulComplex φ) N 1)
+    (extToCohomology φ N') (ChainComplex.kronecker R (koszulComplex φ) N' 1)
+    ((Ext.mk₀ g).postcompOfLinear R _ (add_zero 1))
+    (HomologicalComplex.homologyMap ((koszulComplex φ).linearYonedaObjMap R g) 1).hom
+    (Linear.rightComp R ((koszulComplex φ).homology 1) g)
+  · exact LinearMap.ext fun e ↦ extToCohomology_naturality φ N g e
+  · exact LinearMap.ext fun e ↦
+      ChainComplex.kronecker_coefficient_naturality g 1 e
+  · exact exact_extToCohomology_kronecker φ N
+  · exact exact_extToCohomology_kronecker φ N'
+  · exact hH
+  · exact hHom
+  · exact extToCohomology_injective φ N
+  · exact extToCohomology_injective φ N'
 
 omit [HasExt (ModuleCat R)] in
 /-- If the coefficient module has no elements annihilated by the image ideal, every map from

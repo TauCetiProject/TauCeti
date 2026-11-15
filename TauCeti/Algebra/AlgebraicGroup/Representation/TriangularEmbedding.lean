@@ -59,9 +59,9 @@ theorem exists_upperTriangular_surjective_of_weight_vectors
     rw [← hcoeff]
     exact Comodule.matrixCoefficientSubalgebra_le_coordinateBialgHom_range b
   have hker := GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker k n
-    π.hom.toAlgHom (fun i j hji ↦ by
-      simpa only [π, CommHopfAlgCat.hom_ofHom, BialgHom.coe_toAlgHom,
-        Comodule.coordinateBialgHom_X] using htri hji)
+    π.hom.toAlgHom.toRingHom (fun i j hji ↦ by
+      simpa only [π, CommHopfAlgCat.hom_ofHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        BialgHom.coe_toAlgHom, Comodule.coordinateBialgHom_X] using htri hji)
   exact ⟨n, CommHopfAlgCat.liftQuotient _ π hker,
     CommHopfAlgCat.liftQuotient_surjective_of_surjective _ π hker hπ⟩
 

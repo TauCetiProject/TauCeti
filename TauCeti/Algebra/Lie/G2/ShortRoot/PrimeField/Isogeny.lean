@@ -45,14 +45,10 @@ local notation "𝔽₃" => ZMod 3
 
 /-- The exceptional coordinate endomorphism of the short-root G₂ carrier is an isogeny. -/
 theorem isIsogeny_specialIsogenyCoordinateMap :
-    CommHopfAlgCat.IsIsogeny specialIsogenyCoordinateMap := by
-  have hsmooth : Algebra.Smooth 𝔽₃ carrierAlgebra := algebraSmooth_carrierAlgebra
-  let _ : Algebra.IsGeometricallyReduced 𝔽₃ carrierAlgebra :=
-    @isGeometricallyReduced_of_smooth 𝔽₃ carrierAlgebra _ _ _ hsmooth
-  exact (CommHopfAlgCat.isIsogeny_iff_finite_and_dominant
-    specialIsogenyCoordinateMap).2
-      ⟨finite_specialIsogenyCoordinateMap,
-        comap_specialIsogenyCoordinateMap_involutive.surjective.denseRange⟩
+    CommHopfAlgCat.IsIsogeny specialIsogenyCoordinateMap :=
+  (CommHopfAlgCat.isIsogeny_iff_finite_and_dominant specialIsogenyCoordinateMap).2
+    ⟨finite_specialIsogenyCoordinateMap,
+      comap_specialIsogenyCoordinateMap_involutive.surjective.denseRange⟩
 
 /-- The exceptional endomorphism of the short-root G₂ carrier group scheme is an isogeny. -/
 theorem isIsogeny_specialIsogenyHom : GroupScheme.IsIsogeny specialIsogenyHom := by

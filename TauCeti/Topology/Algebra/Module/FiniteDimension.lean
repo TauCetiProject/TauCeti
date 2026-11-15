@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
+import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -19,8 +21,11 @@ The linear-map conversion API preserves composition and recovers a continuous li
 forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
 source. `LinearMap.toContinuousLinearMap_comp` needs finite dimension on the source and
 intermediate space; the target may be any topological vector space.
+`Module.End.toContinuousLinearMap_apply` identifies the values of an endomorphism and its
+continuous version.
 
-A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
+A multilinear map `f : MultilinearMap (RingHom.id
+𝕜) M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
 and scalar multiplication are continuous in the codomain:
 `MultilinearMap.continuous_of_finiteDimensional`. The codomain need only be an additive
@@ -34,10 +39,13 @@ construction, say — rather than from analysis. In particular alternating maps 
 are the same as continuous alternating maps: `AlternatingMap.toContinuousAlternatingMap` is the
 alternating companion of `LinearMap.toContinuousLinearMap`.
 
-Continuous alternating maps between finite free modules over a Noetherian ring form a finite
-module, `ContinuousAlternatingMap.instModuleFinite`, the alternating companion of Mathlib's
-`ContinuousLinearMap.instModuleFinite`. No topological assumption beyond what makes them a module
-is needed: they embed linearly into the finite module of multilinear maps.
+Continuous multilinear and continuous alternating maps between finite free modules over a
+Noetherian ring form finite modules, `ContinuousMultilinearMap.instModuleFinite` and
+`ContinuousAlternatingMap.instModuleFinite`, the multilinear and alternating companions of
+Mathlib's `ContinuousLinearMap.instModuleFinite`. No topological assumption beyond what makes them
+a module is needed: they embed linearly into the finite module of multilinear maps. Over a field
+this says that spaces of continuous multilinear maps between finite-dimensional spaces are
+finite-dimensional.
 
 In the same setting every seminorm on a finite-dimensional Hausdorff topological vector space is
 continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is dominated by a multiple
@@ -61,6 +69,10 @@ vector space is surjective, since its range is finite-dimensional and therefore 
 `LinearMap.surjective_of_denseRange`. For an algebra map `f : A → B` with dense range into a
 topological `K`-algebra, this makes `A ⧸ (J ∩ A) → B ⧸ J` bijective whenever `B ⧸ J` is Hausdorff
 and `A ⧸ (J ∩ A)` is finite over `K`: `Ideal.quotientMapₐ_bijective_of_denseRange`.
+
+An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
+proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
+`LinearMap.isClosedEmbedding_of_injective`.
 -/
 
 public section
@@ -92,6 +104,19 @@ theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F)
 
 end LinearMap
 
+namespace Module.End
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- An endomorphism and its continuous version have the same values. -/
+@[simp]
+theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
+    toContinuousLinearMap E f v = f v :=
+  rfl
+
+end Module.End
+
 namespace MultilinearMap
 
 variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -103,19 +128,14 @@ variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedFie
 /-- A multilinear map on finitely many finite-dimensional Hausdorff topological vector spaces
 over a complete nontrivially normed field is continuous when its codomain is an additive
 commutative monoid with continuous addition and scalar multiplication. No bound is required. -/
-theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuous f := by
+theorem continuous_of_finiteDimensional (f : MultilinearMap (RingHom.id 𝕜) M N) : Continuous f := by
   classical
   cases nonempty_fintype ι
   set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=
     fun i ↦ Module.finBasis 𝕜 (M i) with _
   have key : ⇑f = fun m : ∀ i, M i ↦ ∑ r : ∀ i, Fin (Module.finrank 𝕜 (M i)),
-      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) := by
-    funext m
-    have hm : f m = f fun i ↦ ∑ j, (b i).repr (m i) j • b i j := by
-      congr 1 with i
-      exact ((b i).sum_repr (m i)).symm
-    rw [hm, f.map_sum]
-    exact Finset.sum_congr rfl fun r _ ↦ f.map_smul_univ _ _
+      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) :=
+    funext (f.apply_eq_sum_prod_repr_smul b)
   rw [key]
   refine continuous_finsetSum _ fun r _ ↦ Continuous.smul ?_ continuous_const
   refine continuous_finsetProd _ fun i _ ↦ ?_
@@ -155,6 +175,21 @@ theorem toContinuousAlternatingMap_symm_apply (f : M [⋀^ι]→L[𝕜] N) :
   (rfl)
 
 end AlternatingMap
+
+namespace ContinuousMultilinearMap
+
+variable {R ι N : Type*} {M : ι → Type*} [CommRing R] [IsNoetherianRing R] [Finite ι]
+  [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, TopologicalSpace (M i)]
+  [∀ i, Module.Finite R (M i)] [∀ i, Module.Free R (M i)] [AddCommGroup N] [Module R N]
+  [TopologicalSpace N] [ContinuousAdd N] [ContinuousConstSMul R N] [Module.Finite R N]
+  [Module.Free R N]
+
+/-- The space of continuous multilinear maps between finite free modules over a Noetherian ring
+is a finite module. -/
+instance instModuleFinite : Module.Finite R (ContinuousMultilinearMap R M N) :=
+  .of_injective toMultilinearMapLinear toMultilinearMap_injective
+
+end ContinuousMultilinearMap
 
 namespace ContinuousAlternatingMap
 
@@ -206,7 +241,15 @@ namespace Module.Basis
 
 variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
   [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
-  [Fintype ι]
+
+/-- Forgetting continuity in the coordinate equivalence recovers the algebraic coordinate
+equivalence. -/
+@[simp] theorem equivFunL_toLinearEquiv [Finite ι] (v : Basis ι 𝕜 E) :
+    v.equivFunL.toLinearEquiv = v.equivFun := by
+  ext x i
+  simp [equivFun_apply]
+
+variable [Fintype ι]
 
 /-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
 vector `x` to the linear combination `∑ i, x i • v i`. -/
@@ -228,7 +271,7 @@ theorem sup_eq_top_of_dense (hS : IsClosed (S : Set E)) [FiniteDimensional 𝕜 
     (hD : Dense (D : Set E)) : S ⊔ D = ⊤ := by
   -- The image of `D` in the finite-dimensional Hausdorff quotient `E ⧸ S` is dense and closed.
   have hmap : D.map S.mkQ = ⊤ := by
-    rw [← coe_eq_univ, ← (D.map S.mkQ).closed_of_finiteDimensional.closure_eq, map_coe]
+    rw [← coe_eq_univ, ← (D.map S.mkQ).isClosed_of_finiteDimensional.closure_eq, map_coe]
     exact (S.mkQ_surjective.denseRange.dense_image S.continuous_mkQ hD).closure_eq
   rw [← comap_map_mkQ, hmap, comap_top]
 
@@ -273,10 +316,37 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 range is a finite-dimensional, hence closed, subspace of the Hausdorff topological vector space. -/
 theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
     Function.Surjective f := fun y ↦
-  LinearMap.mem_range.mp <| (LinearMap.range f).closed_of_finiteDimensional.closure_subset_iff.mpr
+  LinearMap.mem_range.mp <| (LinearMap.range f).isClosed_of_finiteDimensional.closure_subset_iff.mpr
     (LinearMap.coe_range f).ge (hf y)
 
 end LinearMap
+
+namespace ContinuousAffineMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- An injective continuous affine map with finite-dimensional domain is a closed embedding: it is
+the translate of its linear part, which is an injective linear map, by `f 0`. This is the affine
+companion of `LinearMap.isClosedEmbedding_of_injective`. -/
+theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Injective f) :
+    Topology.IsClosedEmbedding f := by
+  have : T2Space E := T2Space.of_injective_continuous hf f.cont
+  have hker : LinearMap.ker (f.contLinear : E →ₗ[𝕜] F) = ⊥ :=
+    LinearMap.ker_eq_bot.2 (f.toAffineMap.linear_injective_iff.2 hf)
+  have hf' : ⇑f = (· + f 0) ∘ f.contLinear := by
+    ext x
+    have h := (f : E →ᵃ[𝕜] F).linear_apply_vsub x 0
+    rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at h
+    simp [h]
+  rw [hf']
+  exact (Homeomorph.addRight (f 0)).isClosedEmbedding.comp
+    (LinearMap.isClosedEmbedding_of_injective hker)
+
+end ContinuousAffineMap
 
 /-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
 range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If

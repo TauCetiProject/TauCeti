@@ -88,6 +88,15 @@ noncomputable def oracle (A : Set ℕ) : ℕ →. ℕ :=
 theorem oracle_apply (A : Set ℕ) (n : ℕ) : A.oracle n = Part.some (A.indicator 1 n) :=
   (rfl)
 
+/-- A set's characteristic function is computable in its own oracle. -/
+theorem computableIn_indicator (A : Set ℕ) : ComputableIn {A.oracle} (A.indicator 1 : ℕ → ℕ) :=
+  RecursiveIn.of_eq (RecursiveIn.oracle A.oracle rfl) fun n => A.oracle_apply n
+
+/-- Reducing a set oracle is equivalent to computing its characteristic function. -/
+theorem turingReducible_iff_computableIn_indicator (A : Set ℕ) (O : ℕ →. ℕ) :
+    TuringReducible A.oracle O ↔ ComputableIn {O} (A.indicator 1 : ℕ → ℕ) := by
+  rw [TuringReducible, funext A.oracle_apply, ComputableIn]
+
 /-- The empty set answers zero on every input. -/
 @[simp]
 theorem oracle_empty : (∅ : Set ℕ).oracle = fun _ => Part.some 0 := by

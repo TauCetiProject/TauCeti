@@ -73,13 +73,15 @@ theorem prime_eq_two_of_localRootOfUnityOrder_eq_two
     exact ((Nat.dvd_prime Nat.prime_two).mp hdiv).resolve_left
       (Fact.out : p.Prime).ne_one
 
+omit [Fact p.Prime] in
 /-- Once the `p`-power roots of unity are finite, a single level of the root tower contains
 them all: that level is their order. -/
 theorem pPowerRootsOfUnity_eq_rootsOfUnity_order
     (h : Finite (pPowerRootsOfUnity p K)) :
     pPowerRootsOfUnity p K = rootsOfUnity (localRootOfUnityOrder p K h) K := by
   let _ := h
-  obtain ⟨n, hn⟩ := localRootOfUnityOrder_isPow p K h
+  obtain ⟨n, hn⟩ := (isPGroup_iff_card_dvd_pow (p := p)).mp
+    (CommGroup.primaryComponent.isPGroup (G := Kˣ) (p := p))
   ext x
   constructor
   · intro hx
@@ -88,7 +90,9 @@ theorem pPowerRootsOfUnity_eq_rootsOfUnity_order
     exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨x, hx⟩ : pPowerRootsOfUnity p K)))
   · intro hx
     apply (mem_pPowerRootsOfUnity_iff p K x).mpr
-    exact ⟨n, by simpa only [← hn, mem_rootsOfUnity] using hx⟩
+    obtain ⟨c, hc⟩ := hn
+    rw [mem_rootsOfUnity, localRootOfUnityOrder_def] at hx
+    exact ⟨n, by rw [hc, pow_mul, hx, one_pow]⟩
 
 end
 
@@ -102,7 +106,6 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
     [NeZero p] (hfinite : Finite (pPowerRootsOfUnity p K)) (n : ℕ) :
     (∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) ↔
       p ^ n ∣ localRootOfUnityOrder p K hfinite := by
-  let _ := hfinite
   constructor
   · rintro ⟨ζ, hζ⟩
     have hpn : p ^ n ≠ 0 := pow_ne_zero n (NeZero.ne p)
@@ -118,7 +121,6 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
     simpa only [localRootOfUnityOrder_def, hord] using
       (orderOf_dvd_natCard (⟨u, hmem⟩ : pPowerRootsOfUnity p K))
   · intro hdvd
-    let _ := isCyclic_pPowerRootsOfUnity p K hfinite
     obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard
       (α := pPowerRootsOfUnity p K)
     have hdiv : p ^ n ∣ orderOf g := by

@@ -17,10 +17,10 @@ inverse of `exp y`, while Mathlib's exponential-inverse API makes `exp (-y)` a r
 Uniqueness of inverses identifies them. This identity requires no additive or continuous star
 structure, and no real scalar action.
 
-For a complete normed real star algebra `R` with continuous star compatible with real scalar
-multiplication, the exponential line `t ↦ exp (t • x)` is the one-parameter subgroup of `Rˣ`
-that `x` generates. Its whole line stays inside the unitary group exactly when `x` is
-skew-adjoint, `star x = -x`.
+For a complete normed real star algebra `R` with continuous star (which makes the star
+compatible with real scalar multiplication), the exponential line `t ↦ exp (t • x)` is the
+one-parameter subgroup of `Rˣ` that `x` generates. Its whole line stays inside the unitary group
+exactly when `x` is skew-adjoint, `star x = -x`.
 
 For this line characterization, one direction is Mathlib's
 `exp_mem_unitary_of_mem_skewAdjoint`, applied at every `t • x`. The converse uses the pointwise
@@ -63,7 +63,7 @@ theorem star_exp_eq_exp_neg_of_exp_mem_unitary {y : R} (h : exp y ∈ unitary R)
 end Rat
 
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R] [StarRing R]
-  [ContinuousStar R] [StarModule ℝ R]
+  [ContinuousStar R]
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
@@ -73,6 +73,9 @@ elements": the left-hand side is the condition defining the Lie algebra of a sub
 through the exponential, and the right-hand side is `star x = -x`. -/
 theorem forall_exp_smul_mem_unitary_iff_mem_skewAdjoint (x : R) :
     (∀ t : ℝ, exp (t • x) ∈ unitary R) ↔ x ∈ skewAdjoint R := by
+  have hstar (t : ℝ) (y : R) : star (t • y) = t • star y :=
+    map_real_smul (starAddEquiv : R ≃+ R) continuous_star t y
+  have : StarModule ℝ R := ⟨fun t y ↦ by simpa using hstar t y⟩
   refine ⟨fun h => ?_, fun hx t => exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t hx)⟩
   rw [skewAdjoint.mem_iff]
   refine eq_of_forall_exp_smul_eq fun t => ?_

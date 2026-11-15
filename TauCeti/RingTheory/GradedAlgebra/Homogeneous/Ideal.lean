@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
+public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.Field.Equiv
+import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
 # Homogeneous ideals: generators and componentwise absorption
@@ -31,6 +33,8 @@ element is its constant term plus an element of the irrelevant ideal. So the sca
   homogeneous.
 * `Ideal.proj_mul_mem_left` and `Ideal.proj_mul_mem_right`: the absorption lemmas. The right one
   asks the ideal to be two-sided, through `Ideal.IsTwoSided`.
+* `CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span`: a complete family of orthogonal
+  idempotents with homogeneous left ideals consists of degree-zero elements.
 * `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: in a connected graded algebra
   every element is a scalar plus an element of the irrelevant ideal.
 * `TauCeti.GradedAlgebra.surjective_algebraMap_quotient_irrelevant`: in a connected graded algebra
@@ -102,6 +106,48 @@ theorem proj_mul_mem_right [I.IsTwoSided] {x : A} (hx : ∀ i, GradedRing.proj �
   simpa only [GradedRing.proj_apply] using hx l
 
 end Ideal
+
+section CompleteOrthogonalIdempotents
+
+variable {ι σ A : Type*} [Semiring A] [DecidableEq ι] [AddMonoid ι] [SetLike σ A]
+  [AddSubmonoidClass σ A] (𝒜 : ι → σ) [GradedRing 𝒜] {I : Type*} [Fintype I] {e : I → A}
+
+/-- **A complete family of orthogonal idempotents with homogeneous left ideals is homogeneous of
+degree zero.** -/
+theorem CompleteOrthogonalIdempotents.mem_zero_of_isHomogeneous_span
+    (he : CompleteOrthogonalIdempotents e) (hI : ∀ i, (Ideal.span {e i}).IsHomogeneous 𝒜) (i : I) :
+    e i ∈ 𝒜 0 := by
+  classical
+  -- the nonzero-degree components of `e j` lie in `A * e j`, they sum to the nonzero-degree
+  -- components of `1`, which vanish, and the ideals `A * e j` are independent
+  have hfix : ∀ j p, (decompose 𝒜 (e j) p : A) * e j = decompose 𝒜 (e j) p := fun j p ↦
+    (TauCeti.mem_span_singleton_iff_mul_eq_self (he.idem j)).1
+      (hI j p (Ideal.mem_span_singleton_self _))
+  have hvanish : ∀ p, p ≠ 0 → (decompose 𝒜 (e i) p : A) = 0 := by
+    intro p hp
+    have hsum : ∑ j, (decompose 𝒜 (e j) p : A) = 0 := by
+      have h : (decompose 𝒜 (∑ j, e j) p : A) = ∑ j, (decompose 𝒜 (e j) p : A) := by
+        rw [decompose_sum, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum]
+      rw [← h, he.complete]
+      exact decompose_of_mem_ne 𝒜 SetLike.GradedOne.one_mem hp.symm
+    calc (decompose 𝒜 (e i) p : A)
+        = (decompose 𝒜 (e i) p : A) * e i := (hfix i p).symm
+      _ = (∑ j, (decompose 𝒜 (e j) p : A)) * e i := by
+        rw [Finset.sum_mul, Finset.sum_eq_single i _ (by simp)]
+        intro j _ hji
+        calc (decompose 𝒜 (e j) p : A) * e i
+            = ((decompose 𝒜 (e j) p : A) * e j) * e i := by rw [hfix j p]
+          _ = 0 := by rw [mul_assoc, he.ortho hji, mul_zero]
+      _ = 0 := by rw [hsum, zero_mul]
+  rw [← sum_support_decompose 𝒜 (e i)]
+  refine sum_mem fun p _ ↦ ?_
+  by_cases hp : p = 0
+  · subst hp
+    exact (decompose 𝒜 (e i) 0).2
+  · rw [hvanish p hp]
+    exact zero_mem _
+
+end CompleteOrthogonalIdempotents
 
 namespace TauCeti.GradedAlgebra
 

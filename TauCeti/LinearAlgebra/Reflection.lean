@@ -79,10 +79,13 @@ theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
 
 /-- A finite free module of positive rank has a linear automorphism of determinant `-1`, namely
 a reflection in a basis vector. -/
-theorem exists_det_eq_neg_one [Module.Free R M] [Module.Finite R M] [StrongRankCondition R]
+theorem exists_det_eq_neg_one [Module.Free R M] [Module.Finite R M]
     (hM : 0 < finrank R M) : ∃ g : M ≃ₗ[R] M, LinearEquiv.det g = -1 := by
-  let b := Module.finBasis R M
-  let i : Fin (finrank R M) := ⟨0, hM⟩
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact ⟨LinearEquiv.refl R M, Subsingleton.elim _ _⟩
+  let b := Module.Free.chooseBasis R M
+  have := Module.nontrivial_of_finrank_pos (R := R) hM
+  obtain ⟨i⟩ := b.index_nonempty
   have hf : (2 • b.coord i) (b i) = 2 := by simp
   exact ⟨reflection hf, det_reflection hf⟩
 

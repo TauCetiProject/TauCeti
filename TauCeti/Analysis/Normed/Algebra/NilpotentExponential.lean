@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.RingTheory.Nilpotent.Log
-import TauCeti.RingTheory.Nilpotent.Exp
+import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
 # Finite exponentials and logarithms as continuous and analytic maps

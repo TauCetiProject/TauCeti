@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 import Mathlib.RingTheory.Finiteness.Projective
+import TauCeti.LinearAlgebra.LinearMap.Comp
+import TauCeti.LinearAlgebra.TensorProduct.Tower
+import TauCeti.Logic.Function.Basic
 
 /-!
 # Scalar extension of linear-map spaces
@@ -57,24 +60,17 @@ theorem linearMapLeftRight_of_projective [Module.Finite R M] [Module.Projective 
   let ΦF := LinearMap.liftBaseChange S (linearMapLeftRightHom jF β)
   have hΦF : Function.Bijective ΦF := by
     convert (jF.linearMapLeftRight k).equiv.bijective using 1
-    funext x
-    induction x with
-    | tmul s y => simp [ΦF, IsBaseChange.equiv_tmul]
-    | add x y hx hy => simp only [map_add, hx, hy]
+    exact congr_arg DFunLike.coe (AlgebraTensorModule.ext fun s y ↦ by simp [ΦF])
   -- The comparison maps commute with composition with the retraction and the section.
   have hp (x : M →ₗ[R] N) : linearMapLeftRightHom jF β (x ∘ₗ p) =
       linearMapLeftRightHom j β x ∘ₗ pS := by
-    apply jF.algHom_ext
-    intro v
+    refine jF.algHom_ext _ _ fun v ↦ ?_
     rw [linearMapLeftRightHom_comp_apply]
-    simp [pS, linearMapLeftRightHom_comp_apply]
+    simp [pS]
   have hi (y : F →ₗ[R] N) : linearMapLeftRightHom j β (y ∘ₗ i) =
       linearMapLeftRightHom jF β y ∘ₗ iS := by
-    apply j.algHom_ext
-    intro m
-    rw [linearMapLeftRightHom_comp_apply]
-    simp only [LinearMap.comp_apply, iS, j.lift_eq]
-    exact (linearMapLeftRightHom_comp_apply jF β y (i m)).symm
+    refine j.algHom_ext _ _ fun m ↦ ?_
+    simp [iS, j.lift_eq, -mk_apply]
   have ha (z : S ⊗[R] (M →ₗ[R] N)) :
       ΦF ((LinearMap.lcomp R N p).baseChange S z) = ΦM z ∘ₗ pS := by
     induction z with
@@ -85,22 +81,14 @@ theorem linearMapLeftRight_of_projective [Module.Finite R M] [Module.Projective 
     induction z with
     | tmul s y => simp [ΦF, ΦM, ← hi, LinearMap.smul_comp, LinearMap.lcomp_apply']
     | add x y hx hy => simp [hx, hy, LinearMap.add_comp]
-  have hc (z : S ⊗[R] (M →ₗ[R] N)) :
-      (LinearMap.lcomp R N i).baseChange S ((LinearMap.lcomp R N p).baseChange S z) = z := by
-    rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
-    have : LinearMap.lcomp R N i ∘ₗ LinearMap.lcomp R N p = LinearMap.id := by
-      ext x : 1
-      simp [LinearMap.lcomp_apply', LinearMap.comp_assoc, hpi]
-    simp [this]
   have hd (g : P →ₗ[S] Q) : (g ∘ₗ pS) ∘ₗ iS = g := by
     ext x
     simp [hpiS]
   -- Hence `ΦM` is a retract of the bijection `ΦF`, so it is bijective.
-  refine of_equiv (LinearEquiv.ofBijective ΦM ⟨fun z z' h ↦ ?_, fun g ↦ ?_⟩) fun x ↦
+  exact of_equiv (LinearEquiv.ofBijective ΦM (Function.bijective_of_retract (a := fun z ↦
+    (LinearMap.lcomp R N p).baseChange S z) (b := (· ∘ₗ pS)) (d := (· ∘ₗ iS)) hΦF ha hb
+    (LinearMap.baseChange_leftInverse (LinearMap.lcomp_comp_lcomp_eq_id hpi)) hd)) fun x ↦
     (LinearMap.liftBaseChange_tmul _ _ _ _).trans (one_smul S _)
-  · rw [← hc z, ← hc z', hΦF.1 ((ha z).trans (h ▸ (ha z').symm))]
-  · obtain ⟨z, hz⟩ := hΦF.2 (g ∘ₗ pS)
-    exact ⟨(LinearMap.lcomp R N i).baseChange S z, by rw [hb, hz, hd]⟩
 
 end IsBaseChange
 

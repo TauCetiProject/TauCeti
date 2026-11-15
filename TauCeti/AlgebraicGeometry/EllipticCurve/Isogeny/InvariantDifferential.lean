@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divisor.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Differential
+-- Proof-only: the source of an isogeny to an elliptic curve is elliptic.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 -- Proof-only: a separable isogeny has trivial different.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 -- Proof-only: the Kähler pullback is the cotrace of Weil differentials.
@@ -56,11 +58,12 @@ open WeierstrassCurve.Affine
 
 namespace TauCeti.Isogeny
 
-variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₂.IsElliptic]
 
 section Separable
 
-variable (φ : Isogeny W₁ W₂) [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
+variable [W₁.IsElliptic] (φ : Isogeny W₁ W₂)
+  [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
 /-- The Weil differential attached to the pullback of `ω₂` along a separable isogeny is nonzero. -/
 theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_pullbackDifferential_ne_zero :
@@ -119,6 +122,7 @@ By `TauCeti.Isogeny.isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul`, th
 nonzero exactly when `φ` is separable. -/
 theorem existsUnique_pullbackDifferential_invariantDifferential_eq_smul (φ : Isogeny W₁ W₂) :
     ∃! c : F, φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁ := by
+  have := φ.isElliptic
   refine existsUnique_of_exists_of_unique ?_ fun c c' hc hc' ↦
     smul_left_injective F (invariantDifferential_ne_zero W₁) (hc.symm.trans hc')
   by_cases hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField
@@ -159,6 +163,7 @@ constant `c ∈ F`, then `φ` is separable if and only if `c ≠ 0`. -/
 theorem isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul (φ : Isogeny W₁ W₂) {c : F}
     (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔ c ≠ 0 := by
+  have := φ.isElliptic
   rw [isSeparable_iff_pullbackDifferential_ne_zero, hc,
     smul_ne_zero_iff_left (invariantDifferential_ne_zero W₁)]
 
@@ -169,6 +174,7 @@ theorem ne_zero_of_pullbackDifferential_eq_smul [CharZero F] (φ : Isogeny W₁ 
     c ≠ 0 :=
   (isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul φ hc).mp inferInstance
 
+variable [W₁.IsElliptic] in
 /-- **A morphism pulls the invariant differential back to a constant multiple**: for every
 morphism `f : W₁ → W₂`, `f^*ω₂ = c ω₁` for a unique constant `c ∈ F`, with `c = 0` for the zero
 morphism. -/

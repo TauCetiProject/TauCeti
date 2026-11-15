@@ -55,6 +55,9 @@ fat.
 * `AbstractSimplicialComplex.eventually_isSimplexImmersion_secantMap_edgewiseSubdivision`: on a
   finite complex, the secant map of a map which is a `C¹` immersion on every closed simplex is an
   immersion on every closed simplex of all sufficiently fine edgewise subdivisions.
+* `AbstractSimplicialComplex.secantMap_faceInclusion_edgewiseSubdivision`: on a simplex of the
+  edgewise subdivision, the secant map of `f` is the combination of the values of `f` at the
+  points `edgewisePoint u` of its vertices, placed in a face of `K` by `edgewiseVertexPoint`.
 * `Continuous.eventually_norm_secantMap_sub_lt_edgewiseSubdivision`: on a finite complex, the
   secant maps of a continuous map on fine edgewise subdivisions converge to it uniformly.
 
@@ -174,13 +177,14 @@ variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [Norme
 
 /-- The vertex `a` of a simplex `ρ` of the edgewise subdivision, placed at `edgewisePoint a` in
 the closed simplex on a set `σ` containing the entries of all vertices of `ρ`. -/
-private noncomputable def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
+noncomputable def edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
     (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (a : ρ) : StandardSimplex σ :=
   ⟨edgewisePoint a.1.1, by
     simpa only [coe_image] using edgewisePoint_mem_convexHull a.1.ne_zero (hρσ a.1 a.2)⟩
 
 /-- The placed vertex `edgewiseVertexPoint hρσ a` has coordinates `edgewisePoint a`. -/
-private theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
+@[simp]
+theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ : Finset ι}
     (hρσ : ∀ u ∈ ρ, ∀ l, u.1 l ∈ σ) (a : ρ) :
     (edgewiseVertexPoint hρσ a : ι →₀ ℝ) = edgewisePoint a.1.1 :=
   (rfl)
@@ -188,7 +192,7 @@ private theorem coe_edgewiseVertexPoint {ρ : Finset (K.EdgewiseVertex k)} {σ :
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the secant map of `f` pulled back to the subdivision is the secant map of `f` on `σ`
 through the points `edgewisePoint a` of the vertices `a` of `ρ`. -/
-private theorem secantMap_faceInclusion_edgewiseSubdivision (f : Realization K → E)
+theorem secantMap_faceInclusion_edgewiseSubdivision (f : Realization K → E)
     (ρ : Face (K.edgewiseSubdivision k)) (σ : Face K) (hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1)
     (x : StandardSimplex ρ.1) :
     (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)

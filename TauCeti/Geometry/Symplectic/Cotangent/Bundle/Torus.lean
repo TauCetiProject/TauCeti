@@ -61,10 +61,7 @@ theorem isLagrangianMap_section_sum_smul_torusTimeForm (c : ι → ℝ) :
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
       (fun x ↦ TotalSpace.mk' ((ι → ℝ) →L[ℝ] ℝ) x
         (SmoothForm.degreeOneEquiv (∑ j, c j • torusTimeForm p j) x)) := by
-  refine (isLagrangianMap_section_iff _).2 ((SmoothForm.isClosed_def _).2 ?_)
-  rw [← mem_closedForms]
-  exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _
-    ((mem_closedForms _ _).2 ((SmoothForm.isClosed_def _).1 (isClosed_torusTimeForm p j)))
+  exact (isLagrangianMap_section_iff _).2 (isClosed_sum_smul_torusTimeForm p c)
 
 /-- **The graph of a constant-coefficient angle form is exact only when it is the zero section.**
 The section of the cotangent bundle of the torus defined by `∑ j, c j • dt_j` is an exact

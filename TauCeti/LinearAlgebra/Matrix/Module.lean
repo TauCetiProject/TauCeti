@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Module
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
-# Vanishing of a family fixed by a matrix
+# Matrix modules
 
 A family `y : n → P` in a module over a ring `A` satisfying `yᵢ = ∑ⱼ Bᵢⱼ • yⱼ` is exactly a
 fixed point of Mathlib's `Matrix n n A`-action on `n → P` (`Matrix.Module.matrixModule`), so it
@@ -17,6 +18,10 @@ is killed by `1 - B`. If `1 - B` is a unit, `y` vanishes.
 This is pure algebra: `P` carries no topology and `A` need not be commutative. Criteria producing
 `IsUnit (1 - B)`, such as topological nilpotence of the entries of `B`, live elsewhere, so this
 statement applies to abstract subquotients without importing them.
+
+The scoped column action on `ι → R` agrees with the matrix-to-endomorphism algebra
+equivalence; in particular its action map is bijective. This identifies the matrix module
+used by matrix Morita equivalence with the usual full endomorphism representation.
 
 ## Main results
 
@@ -49,3 +54,22 @@ theorem eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul {A : Type*} [Ring A] {n 
   rw [Matrix.Module.smul_apply, ← hy i]
 
 end TauCeti
+
+namespace Matrix.Module
+
+variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+
+/-- The scoped column action agrees with the usual matrix-to-endomorphism equivalence. -/
+theorem lsmul_eq_toLinAlgEquiv' :
+    (Algebra.lsmul R R (ι → R) : Matrix ι ι R →ₐ[R] _) =
+      Matrix.toLinAlgEquiv'.toAlgHom := by
+  ext a v i
+  simp [Matrix.Module.smul_apply, Matrix.mulVec, dotProduct]
+
+/-- The native column action is the full endomorphism algebra of the column space. -/
+theorem lsmul_bijective :
+    Function.Bijective (Algebra.lsmul R R (ι → R) : Matrix ι ι R →ₐ[R] _) := by
+  rw [lsmul_eq_toLinAlgEquiv']
+  exact Matrix.toLinAlgEquiv'.bijective
+
+end Matrix.Module

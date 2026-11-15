@@ -174,7 +174,8 @@ private noncomputable def descendHomLeft
         pullback.fst Y.hom p) :
     X.left ⟶ Y.left :=
   Cofork.IsColimit.desc ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
-    (pullback.isKernelPair_mapSnd X.hom p)) (φ.left ≫ pullback.fst Y.hom p) h
+    (pullback.isKernelPair_mapSnd X.hom (IsKernelPair.of_hasPullback p)))
+    (φ.left ≫ pullback.fst Y.hom p) h
 
 @[reassoc]
 private theorem fst_comp_descendHomLeft
@@ -185,7 +186,7 @@ private theorem fst_comp_descendHomLeft
     pullback.fst X.hom p ≫ descendHomLeft p φ h = φ.left ≫ pullback.fst Y.hom p := by
   simpa [descendHomLeft, Cofork.π_ofπ] using
     Cofork.IsColimit.π_desc' ((EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback
-      (pullback.isKernelPair_mapSnd X.hom p)) _ h
+      (pullback.isKernelPair_mapSnd X.hom (IsKernelPair.of_hasPullback p))) _ h
 
 /-- **Descent of a morphism.** A morphism `φ : X ×_S S' ⟶ Y ×_S S'` over `S'`, whose two pullbacks
 to `S' ×_S S'` agree, descends to a morphism `X ⟶ Y` over `S`, provided that the base change

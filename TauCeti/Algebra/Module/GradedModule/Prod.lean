@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Prod
 
 The product of two internally graded modules has the componentwise grading. This supplies
 the grading on finite biproducts and mapping cones of curved differential graded modules.
+The two inclusions into the product have degree zero.
 -/
 
 public section
@@ -25,7 +26,7 @@ universe u v w
 
 variable {R : Type u} [Semiring R] {M : Type v} {N : Type w}
   [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
-  (G : InternalGrading R M) (H : InternalGrading R N)
+  (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
 
 private def prodInl (p : ℤ) : G.piece p →ₗ[R] (G.piece p).prod (H.piece p) :=
   LinearMap.codRestrict _ ((LinearMap.inl R M N).comp (G.piece p).subtype)
@@ -83,7 +84,7 @@ private theorem prodDecompose_comp_coeLinearMap :
   exact prodDecompose_of_mem G H p x.1.1 x.1.2 x.2.1 x.2.2
 
 /-- The componentwise internal grading on a product of modules. -/
-noncomputable def prod : InternalGrading R (M × N) := by
+noncomputable def prod : InternalGrading R (M × N) ℤ := by
   letI := DirectSum.Decomposition.ofLinearMap (fun p ↦ (G.piece p).prod (H.piece p))
     (prodDecompose G H)
     (coeLinearMap_comp_prodDecompose G H) (prodDecompose_comp_coeLinearMap G H)
@@ -93,5 +94,15 @@ noncomputable def prod : InternalGrading R (M × N) := by
 @[simp]
 theorem prod_piece (p : ℤ) : (G.prod H).piece p = (G.piece p).prod (H.piece p) := by
   simp only [prod, ofDecomposition_piece]
+
+/-- The first inclusion into the product has degree zero. -/
+theorem isHomogeneous_inl :
+    LinearMap.IsHomogeneous (LinearMap.inl R M N) G.piece (G.prod H).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
+
+/-- The second inclusion into the product has degree zero. -/
+theorem isHomogeneous_inr :
+    LinearMap.IsHomogeneous (LinearMap.inr R M N) H.piece (G.prod H).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
 
 end TauCeti.InternalGrading

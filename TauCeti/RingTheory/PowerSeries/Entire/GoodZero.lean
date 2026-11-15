@@ -46,6 +46,8 @@ coefficient. No discreteness of the valuation, Weierstrass product or identity t
 * `PowerSeries.isGoodZero_coe_iff`, `PowerSeries.isGoodZero_coe_iff_of_field`: for polynomials
   the order is the root multiplicity, and over a ring the quotient by `(X - a)ʰ` must be a unit
   at `a`.
+* `PowerSeries.isGoodZero_iff_associated_taylor`: a good zero of order `h` at `a` is a Taylor
+  translate at `a` of the form `Xʰ` times a unit of `R⟦X⟧`.
 * `PowerSeries.isGoodZero_iff_order_taylor_eq`: over a field, the order of a good zero at `a` is
   the order of the Taylor translate at `a`.
 * `PowerSeries.IsEntire.isGoodZero_iff`: factorisation of an entire series at a good zero.
@@ -155,6 +157,20 @@ theorem isGoodZero_coe_iff_of_field {K : Type*} [Field K] [TopologicalSpace K]
     exact ⟨fun hp ↦ hne (by simp [hp]), rfl⟩
   · rintro ⟨hp, rfl⟩
     exact ⟨rfl, Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero a hp⟩
+
+/-- Over any coefficient ring, `f` has a good zero of order `h` at `a` exactly when its Taylor
+translate at `a` is `Xʰ` times a unit of `R⟦X⟧`. -/
+theorem isGoodZero_iff_associated_taylor :
+    f.IsGoodZero a h ↔ Associated (X ^ h) (taylor a f) := by
+  refine ⟨fun hf ↦ ?_, fun ⟨u, hu⟩ ↦ ⟨fun j hj ↦ ?_, ?_⟩⟩
+  · obtain ⟨g, hg⟩ := X_pow_dvd_iff (φ := taylor a f).2 fun j hj ↦ by
+      simpa using hf.evalAt_hasseDeriv_eq_zero hj
+    have hg0 := hf.isUnit_evalAt_hasseDeriv
+    rw [← coeff_taylor, hg, coeff_X_pow_mul'] at hg0
+    exact ⟨(isUnit_iff_constantCoeff.2 (by simpa using hg0)).unit, hg.symm⟩
+  · simpa [← hu, coeff_X_pow_mul', Nat.not_le.2 hj] using (coeff_taylor a f j).symm
+  · rw [← coeff_taylor, ← hu, coeff_X_pow_mul']
+    simpa using isUnit_iff_constantCoeff.1 u.isUnit
 
 /-- Over a field, `f` has a good zero of order `h` at `a` exactly when its Taylor translate at `a`
 has order `h`. -/

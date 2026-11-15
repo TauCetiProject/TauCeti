@@ -78,6 +78,14 @@ theorem iterateFrobeniusEquivPowers_algebraMap (c : k) :
   apply Subtype.ext
   simp [iterateFrobenius_def]
 
+/-- The inverse of the power-subfield isomorphism acts on constants by the inverse Frobenius
+automorphism of `k`. -/
+@[simp]
+theorem iterateFrobeniusEquivPowers_symm_algebraMap (c : k) :
+    (iterateFrobeniusEquivPowers k F p n).symm (algebraMap k (frobeniusPowers k F p n) c) =
+      algebraMap k F ((iterateFrobeniusEquiv k p n).symm c) :=
+  (iterateFrobeniusEquivPowers k F p n).symm_apply_eq.mpr (by simp)
+
 /-- The ambient field is purely inseparable over its iterated Frobenius power subfield. -/
 instance isPurelyInseparable_frobeniusPowers :
     IsPurelyInseparable (frobeniusPowers k F p n) F := by

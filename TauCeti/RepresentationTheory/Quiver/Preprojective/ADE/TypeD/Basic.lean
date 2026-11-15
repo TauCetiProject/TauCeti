@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Algebra.SquareZeroPair
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
@@ -71,12 +72,9 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
-noncomputable local instance forkNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
+-- The finiteness structure of the orientation comparisons of
+-- `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`.
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### Graphs with a long arm and two leaves at its end -/
 
@@ -132,7 +130,7 @@ private def ForkNormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra 
 
 variable {G} {c}
 variable (hn : n = c + 3)
-  (hG : ∀ i j : Fin n, G.Adj i j ↔ (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ c ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ c ∨
+  (hG : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ c ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ c ∨
     (i : ℕ) = c ∧ c < j ∨ (j : ℕ) = c ∧ c < i)
 include hn hG
 
@@ -146,7 +144,7 @@ private theorem sum_fork_relation (v : ℕ) (hv : v < n) (S : Finset ℕ) (hS : 
   rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
   rw [← h]
   refine Finset.sum_subset (fun w hw => Finset.mem_range.2 (hS w hw)) fun w hw hwS => ?_
-  rw [signlessArrow_eq_zero k fun _ _ hvw => hnbr w (Finset.mem_range.1 hw) hwS ((hG _ _).1 hvw),
+  rw [signlessArrow_eq_zero k fun _ _ hvw => hnbr w (Finset.mem_range.1 hw) hwS (hG _ _ hvw),
     mul_zero]
 
 omit hn in
@@ -154,7 +152,7 @@ omit hn in
 private theorem signlessArrow_fork_eq_zero {i j : ℕ}
     (h : ¬(i + 1 = j ∧ j ≤ c ∨ j + 1 = i ∧ i ≤ c ∨ i = c ∧ c < j ∨ j = c ∧ c < i)) :
     signlessArrow k G i j = 0 :=
-  signlessArrow_eq_zero k fun _ _ hij => h ((hG _ _).1 hij)
+  signlessArrow_eq_zero k fun _ _ hij => h (hG _ _ hij)
 
 omit hn in
 /-- The long arm has no step away from the branch node beyond its far end. -/
@@ -408,7 +406,7 @@ private theorem forkNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
-    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).2 ((hG _ _).1 e.down) ih
+    exact forkNormalForm_cons k hn hG ((vertexEquiv G).symm b).2 (hG _ _ e.down) ih
 
 /-- **Every path of length at least `4 n` vanishes** in the signless algebra of a graph on
 `Fin (c + 3)` made of a long arm `0, …, c` and two leaves `c + 1`, `c + 2` attached to `c`. -/
@@ -433,26 +431,6 @@ end ForkGraph
 
 /-! ### The `Dₙ` diagram -/
 
-/-- From rank three on, two nodes of the `Dₙ` diagram are joined exactly when they are consecutive
-on the long arm `0, …, n - 3`, or one is the branch node `n - 3` and the other a leaf. -/
-private theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
-    (diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ n - 3 ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ n - 3 ∨
-        (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
-  have := i.2
-  have := j.2
-  split_ifs <;> simp <;> omega
-
-/-- Below rank three the `Dₙ` diagram has no edges. -/
-private theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
-    ¬(diagramGraph (DynkinType.D n).cartanMatrix : SimpleGraph (Fin n)).Adj i j := by
-  rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
-  rintro ⟨hij, h, -⟩
-  have hn' : n ≤ 2 := by omega
-  simp [CartanMatrix.D, hn', hij] at h
-
 /-- The two-colouring of `Dₙ`: the parity along the long arm, with both leaves coloured like the
 node `n - 2`. -/
 private def dColoring (n : ℕ) : (diagramGraph (DynkinType.D n).cartanMatrix).Coloring Bool :=
@@ -476,7 +454,7 @@ theorem signlessPreprojectiveMk_D_ofPath_eq_zero_of_le
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   by_cases hn : 3 ≤ n
   · exact signlessPreprojectiveMk_ofPath_eq_zero_of_fork k (n := n) (c := n - 3) (by omega)
-      (diagramGraph_D_adj hn) x hx
+      (fun i j => (diagramGraph_D_adj hn i j).1) x hx
   · -- Below rank three there are no arrows, and the only empty paths are over no vertices.
     obtain ⟨a, b, p⟩ := x
     cases p with

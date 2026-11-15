@@ -64,7 +64,7 @@ of the two restrictions. Its effect on points is `homEquiv_compAlgEquiv`. The de
 instances on the direct extension are obtained by transitivity. -/
 def compAlgEquiv
     (hfin : Module.Finite A C := Module.Finite.trans B C)
-    (hproj : Module.Projective A C := Module.Projective.trans (S := B)) :
+    (hproj : Module.Projective A C := Module.Projective.trans B C) :
     WeilRestriction A B (WeilRestriction B C D) ≃ₐ[A] WeilRestriction A C D :=
   let f := (compHomEquiv A B C D _).symm (universalPoint A C D)
   let g := (homEquiv A C D _).symm

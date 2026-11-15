@@ -41,6 +41,8 @@ which are not treated in this file.
 ## Main results
 
 * `TauCeti.EisensteinSeries.charWeight_intCast`: the weight evaluated at an integer pair.
+* `TauCeti.EisensteinSeries.charWeight_intCast_smul`: scaling an integer pair by `n` multiplies
+  the weight by `ψ(n) φ⁻¹(n)`.
 * `TauCeti.EisensteinSeries.charWeight_vecMul_inv`,
   `TauCeti.EisensteinSeries.charWeight_vecMul_map_inv`: the transformation of the weight under
   `Γ₀(N)`, on integer pairs and on residue pairs.
@@ -84,6 +86,12 @@ depend on the choice of representatives (`charWeight_intCast`). -/
 def charWeight (a : Fin 2 → ZMod N) : ℂ :=
   if v ∣ (a 0).val then ψ (((a 0).val / v : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0
 
+/-- The defining formula of the character weight, on the least nonnegative representatives. -/
+theorem charWeight_def (a : Fin 2 → ZMod N) :
+    charWeight N ψ φ a =
+      if v ∣ (a 0).val then ψ (((a 0).val / v : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0 :=
+  (rfl)
+
 variable {N}
 
 /-- The weight at the reduction of an integer pair `x`: `ψ(x₀ / v) φ⁻¹(x₁)` if `v ∣ x₀`,
@@ -101,7 +109,7 @@ theorem charWeight_intCast [NeZero N] (huv : u * v ∣ N) (x : Fin 2 → ℤ) :
   rw [h1]
   simp only [hdvd]
   split_ifs with h
-  · rw [ZMod.natCast_val_div_eq_intCast_div huv h]
+  · rw [ZMod.natCast_val_div_eq_intCast_div huv _]
   · rfl
 
 /-- Scaling the first coordinate of an integer pair by `R`, coprime to `v`, and the second by `S`
@@ -124,6 +132,32 @@ private lemma charWeight_intCast_mul [NeZero N] (huv : u * v ∣ N) {R : ℤ}
     rw [map_mul, map_mul]
     ring
   · simp [h, mt hR.dvd_of_dvd_mul_left h]
+
+/-- Scaling an integer pair by `n` multiplies the weight by `ψ(n) φ⁻¹(n)`. Unlike
+`charWeight_intCast_mul`, `n` need not be coprime to `v`: when `n` rather than `x₀` supplies the
+divisibility by `v`, the factor `φ⁻¹(n)` vanishes. -/
+theorem charWeight_intCast_smul [NeZero N] (huv : u * v ∣ N) (n : ℤ) (x : Fin 2 → ℤ) :
+    charWeight N ψ φ ((↑) ∘ (n • x)) =
+      ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * charWeight N ψ φ ((↑) ∘ x) := by
+  have hv0 : (v : ℤ) ≠ 0 := by
+    have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
+    exact_mod_cast this
+  rw [charWeight_intCast ψ φ huv, charWeight_intCast ψ φ huv]
+  simp only [Pi.smul_apply, smul_eq_mul]
+  by_cases h : (v : ℤ) ∣ x 0
+  · simp only [h, h.mul_left n, ↓reduceIte]
+    obtain ⟨e, he⟩ := h
+    rw [he, mul_left_comm, Int.mul_ediv_cancel_left _ hv0, Int.mul_ediv_cancel_left _ hv0]
+    push_cast
+    rw [map_mul, map_mul]
+    ring
+  · simp only [h, ↓reduceIte, mul_zero]
+    split_ifs with hn
+    · have hnu : ¬IsUnit (n : ZMod v) := fun hu ↦
+        h (((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hu).dvd_of_dvd_mul_left hn)
+      rw [Int.cast_mul, map_mul, MulChar.map_nonunit _ hnu]
+      ring
+    · rfl
 
 /-- If scaling the coordinates of residue pairs by units `R` and `S` multiplies the weight by a
 constant `ψ(R) φ⁻¹(S) ≠ 1`, the weights sum to zero. -/
@@ -182,29 +216,15 @@ theorem tsum_charWeight_mul_zpow [NeZero N] (huv : u * v ∣ N) (c a : ℤ) :
         ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) *
           ∑' n : ℤ, ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-k)
       else 0 := by
-  simp only [charWeight_intCast ψ φ huv, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  have hx (n : ℤ) : ((↑) ∘ ![-(n * c), n * a] : Fin 2 → ZMod N) = (↑) ∘ (n • ![-c, a]) := by
+    ext i
+    fin_cases i <;> simp
+  simp only [hx, charWeight_intCast_smul ψ φ huv, charWeight_intCast ψ φ huv,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, dvd_neg]
   split_ifs with hc
-  · obtain ⟨c, rfl⟩ := hc
-    have hv : (v : ℤ) ≠ 0 := by
-      have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
-      exact_mod_cast this
-    rw [Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left]
-    refine tsum_congr fun n ↦ ?_
-    have hdvd : (v : ℤ) ∣ -(n * (v * c)) := Dvd.intro (-(n * c)) (by ring)
-    have hfactor : -(n * (v * c)) = (v : ℤ) * (n * -c) := by ring
-    have hquot : -(n * (v * c)) / (v : ℤ) = n * -c := by
-      rw [hfactor, Int.mul_ediv_cancel_left _ hv]
-    rw [hquot]
-    simp only [hdvd, ↓reduceIte, Int.cast_mul, map_mul]
-    ring
-  · refine (tsum_congr fun n ↦ ?_).trans tsum_zero
-    split_ifs with hn
-    · rw [MulChar.map_nonunit φ⁻¹, mul_zero, zero_mul]
-      intro hu
-      rw [ZMod.isUnit_intCast_iff_isCoprime] at hu
-      exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
-    · rw [zero_mul]
+  · rw [Int.neg_ediv_of_dvd hc, ← tsum_mul_left]
+    exact tsum_congr fun n ↦ by ring
+  · simp
 
 /-- **The transformation of the weight under `Γ₀(N)`.** For `γ ∈ Γ₀(N)` with lower-right entry
 `d`, right multiplication by `γ⁻¹` multiplies the weight by `ψ(d) φ(d)`. -/
@@ -217,22 +237,13 @@ theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (
     simpa [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd] using hγ
   obtain ⟨n, rfl⟩ := huv
   have hv0 : (v : ℤ) ≠ 0 := by
-    rintro hv0
-    have hv0' : v = 0 := by exact_mod_cast hv0
-    exact NeZero.ne (u * v * n) (by simp [hv0'])
-  have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-    have := γ.det_coe
-    rwa [Matrix.det_fin_two] at this
+    exact_mod_cast right_ne_zero_of_mul (left_ne_zero_of_mul (NeZero.ne (u * v * n)))
+  have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := γ.fin_two_mul_sub_mul_eq_one
+  rw [vecMul_inv_apply_zero, vecMul_inv_apply_one]
   set a := γ 0 0
   set b := γ 0 1
   set c := γ 1 0
   set d := γ 1 1
-  have hx0 : (x ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) 0 = x 0 * d - x 1 * c := by
-    simp [vecMul, dotProduct, Matrix.adjugate_fin_two, c, d]
-    ring
-  have hx1 : (x ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) 1 = -(x 0 * b) + x 1 * a := by
-    simp [vecMul, dotProduct, Matrix.adjugate_fin_two, a, b]
-  rw [hx0, hx1]
   -- `d` is a unit modulo `v`, so divisibility of the first entry does not change
   have hcop : IsCoprime (v : ℤ) d :=
     ⟨-(u * n * t) * b, a, by rw [← hdet, ht]; push_cast; ring⟩

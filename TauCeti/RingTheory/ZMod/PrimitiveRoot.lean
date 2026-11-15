@@ -58,17 +58,12 @@ search over all residues modulo `p` succeeds exactly when `ZMod p` contains a pr
 root of unity. -/
 theorem isSome_primitiveRoot?_iff {p k : ℕ} [NeZero p] (hk : k ≠ 0) :
     (primitiveRoot? p k).isSome ↔ ∃ ζ : ZMod p, IsPrimitiveRoot ζ k := by
-  refine ⟨fun h ↦ ?_, fun ⟨ζ, hζ⟩ ↦ ?_⟩
-  · obtain ⟨ζ, -⟩ := Option.isSome_iff_exists.mp h
-    exact ⟨ζ.1, ζ.2⟩
-  · rw [primitiveRoot?, List.findSome?_isSome_iff]
-    refine ⟨ζ.val, List.mem_range.mpr (ζ.val_lt), ?_⟩
-    have htest : 0 < k ∧ ((ζ.val : ℕ) : ZMod p) ^ k = 1 ∧
-        ∀ l < k, 0 < l → ((ζ.val : ℕ) : ZMod p) ^ l ≠ 1 :=
-      ⟨Nat.pos_of_ne_zero hk, by simpa using hζ.pow_eq_one,
-        fun l hlk hl ↦ by simpa using hζ.pow_ne_one_of_pos_of_lt hl.ne' hlk⟩
-    rw [dite_eq_left_of_eq_true (eq_true htest)]
-    rfl
+  refine ⟨fun h ↦ ⟨_, ((primitiveRoot? p k).get h).2⟩, fun ⟨ζ, hζ⟩ ↦ ?_⟩
+  simp only [primitiveRoot?, List.findSome?_isSome_iff, List.mem_range, Option.isSome_dite]
+  refine ⟨ζ.val, ζ.val_lt, ?_⟩
+  rw [ZMod.natCast_zmod_val]
+  exact ⟨Nat.pos_of_ne_zero hk, hζ.pow_eq_one,
+    fun l hlk hl ↦ hζ.pow_ne_one_of_pos_of_lt hl.ne' hlk⟩
 
 /-- **Which root the search returns.** The search returns `ζ` exactly when `ζ` passes the
 criterion `ζ ^ k = 1` and `ζ ^ l ≠ 1` for `0 < l < k` and no smaller residue does; the condition
@@ -86,7 +81,7 @@ theorem map_val_primitiveRoot?_eq_some_iff {p k : ℕ} {ζ : ZMod p} :
     congr 1
     funext a
     simp only [Function.comp_apply, Option.guard, decide_eq_true_eq]
-    split_ifs <;> simp_all
+    split_ifs <;> simp
   rw [hsearch, Option.map_eq_some_iff]
   simp only [List.find?_range_eq_some, decide_eq_true_eq, List.mem_range, Bool.not_eq_eq_eq_not,
     Bool.not_true, decide_eq_false_iff_not]

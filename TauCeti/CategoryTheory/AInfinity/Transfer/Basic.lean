@@ -116,7 +116,7 @@ it is a sum of words obtained by applying a Koszul twist, the homotopy or `i p` 
 theorem reducedTensorWordsHomotopy_mem_composableWords (s : ℤ) {U V : C}
     {w : ReducedTensorWords R (TotalHom R C)} (hw : w ∈ composableWords R U V) :
     c.reducedTensorWordsHomotopy ((totalGrading R C).shift s) w ∈ composableWords R U V := by
-  refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_)
     (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
     (fun r x hx ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hx) hw
   subst ha hb
@@ -301,8 +301,8 @@ private theorem perturbationSeries_mem
     · exact fun y hy ↦ 𝒞.higherBarDifferential_mem_composableWords hy
   obtain ⟨k, hk⟩ := 𝒞.exists_pow_higherBarDifferential_comp_homotopy_eq_zero c
     (𝒞.higherBarDifferential z)
-  refine LinearSpecialContraction.perturbationSeries_mem _ _
-    (𝒞.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)
+  refine LinearSpecialContraction.perturbationSeries_mem
+    (𝒞.barTensorTrick c hh hincl hproj) 𝒞.higherBarDifferential
     (S := S.toAddSubgroup) hδ (fun y hy ↦ ?_) hz (k := k) ?_
   · rw [AInfinityAlgebra.barTensorTrick_homotopy]
     exact 𝒞.reducedTensorWordsHomotopy_mem e c hc hS hy

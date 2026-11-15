@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
--- Support only: the shared maximizer step is proof machinery, not part of this file's API.
-import TauCeti.Analysis.InnerProductSpace.Laplacian.BarrierMaximizer
+-- Support only: the drift-free case is read off the lower-order principle.
+import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 
 /-!
 # The weak maximum principle for `-Δ + c` with a nonnegative zeroth-order term
@@ -25,12 +25,10 @@ by a **nonnegative** `m` on the frontier is bounded by `m` throughout. (The nonn
 needed once `c ≠ 0`; on the set where `f ≤ 0 ≤ m` the estimate is automatic, and the argument only
 has to control the set where `f` is positive, where `c · f ≥ 0` makes `f` subharmonic.)
 
-The proof reuses the perturbation `f + ε‖·‖²` of the bare-Laplacian file, but replaces the
-strictly-subharmonic boundary principle by the maximizer step `TauCeti.le_of_isMaxOn_add_smul` of
-`TauCeti.Analysis.InnerProductSpace.Laplacian.BarrierMaximizer`, run here with no drift and the
-quadratic barrier. At a maximizer of the perturbation the bound `f z ≤ m` either holds already, or
-`m < f z` puts `f z` above the nonnegative `m`, which forces `Δ(f + ε‖·‖²) > 0` and so contradicts
-local maximality. Letting `ε → 0` gives the bound.
+The weak maximum principle is the drift-free case (`b = 0`, `β = 0`) of
+`TauCeti.le_of_mul_le_laplacian_add_fderiv_le_frontier` of
+`TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple`; the remaining statements
+are deduced from it.
 
 ## Main declarations
 
@@ -77,19 +75,8 @@ theorem le_of_mul_le_laplacian_le_frontier {K : Set E} (hK : IsCompact K) {c f :
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
   intro x hxK
-  have hfrpos : (0 : ℝ) < Module.finrank ℝ E := by exact_mod_cast Module.finrank_pos
-  refine BddAbove.le_of_forall_pos_exists_add_mul_le
-    (hK.bddAbove_image (f := fun y : E => ‖y‖ ^ 2) (by fun_prop)) fun ε hε => ?_
-  have hgcont : ContinuousOn (fun y : E => f y + ε • ‖y‖ ^ 2) K := hcont.add (by fun_prop)
-  -- The perturbation attains its maximum over `K` at some point `z`.
-  obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩ hgcont
-  -- The maximizer step is the shared one, run with no drift and the quadratic barrier `‖·‖²`,
-  -- whose Laplacian `2 · finrank` is the strict positivity it asks for.
-  refine ⟨z, hzK, ?_, le_of_isMaxOn_add_smul (v := 0) hε (fun h => hcd h) (fun hz hlt => ?_)
-    (fun hz => hbdry hz) hzK (fun _ => (contDiff_norm_sq ℝ).contDiffAt) (fun _ => ?_) hzmax⟩
-  · simpa only [smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK
-  · simpa using (mul_nonneg (hc hz) (hm.trans hlt.le)).trans (hsub hz)
-  · simpa [laplacian_norm_sq] using mul_pos two_pos hfrpos
+  exact le_of_mul_le_laplacian_add_fderiv_le_frontier (b := 0) (β := 0) hK hm hcont hcd hc
+    (fun _ _ => by simp) (fun y hy => by simpa using hsub hy) hbdry hxK
 
 /-- **Comparison principle for `-Δ + c` with `c ≥ 0`.**
 

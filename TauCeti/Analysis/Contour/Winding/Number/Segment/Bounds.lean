@@ -132,4 +132,33 @@ theorem windingNumber_segment_swap {p q z : ℂ} (hz : z ∉ segment ℝ p q) :
   push_cast
   ring
 
+
+/-- On a cell `[p, q]` where `γ` is affine and whose trace avoids `z`, the winding number of `γ`
+equals that of the straight segment parametrised over `[0, 1]`. -/
+theorem windingNumber_eq_of_affine_cell {γ : ℝ → ℂ} {p q : ℝ} {z : ℂ} (hpq : p < q)
+    (hsegments : ∀ t ∈ Icc p q, γ t = γ p + ((t - p) / (q - p)) • (γ q - γ p))
+    (hzcell : z ∉ γ '' uIcc p q) :
+    windingNumber γ p q z =
+      windingNumber (fun t : ℝ ↦ γ p + t • (γ q - γ p)) 0 1 z := by
+  have hzedge : z ∉ segment ℝ (γ p) (γ q) := by
+    rw [segment_eq_image']
+    rintro ⟨t, ht, heq⟩
+    let u := p + t * (q - p)
+    have hu : u ∈ Icc p q := by
+      dsimp [u]
+      constructor <;> nlinarith [ht.1, ht.2]
+    have hratio : (u - p) / (q - p) = t := by
+      dsimp [u]
+      rw [add_sub_cancel_left, mul_div_cancel_right₀ _ (sub_pos.mpr hpq).ne']
+    apply hzcell
+    refine ⟨u, (uIcc_of_le hpq.le).symm ▸ hu, ?_⟩
+    rw [hsegments u hu, hratio]
+    exact heq
+  have hw : windingNumber γ p q z =
+      windingNumber (fun t : ℝ ↦ γ p + ((t - p) / (q - p)) • (γ q - γ p)) p q z := by
+    apply windingNumber_congr_curve
+    intro t ht
+    exact hsegments t (by simpa only [uIcc_of_le hpq.le] using uIoo_subset_uIcc_self ht)
+  rw [← windingNumber_segment_interval hpq hzedge, ← hw]
+
 end TauCeti.Contour

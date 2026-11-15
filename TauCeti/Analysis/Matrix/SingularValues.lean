@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Singular values and two-sided unitary matrix orbits
@@ -15,6 +15,8 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 Rectangular matrices lie in the same two-sided unitary orbit exactly when their singular values
 agree. The singular values are Mathlib's `LinearMap.singularValues`, applied through
 `Matrix.toEuclideanLin`; no second enumeration is introduced.
+The estimate `Matrix.abs_sq_singularValues_sub_le` controls squared singular values by the
+operator-norm distance of the source Gram matrix from a scalar matrix.
 
 `Matrix.exists_unitary_mul_diagonal_mul_unitary` reads the operator singular value decomposition
 in the standard orthonormal basis. The orbit characterization then identifies the diagonal
@@ -160,8 +162,8 @@ private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
           (UnitaryGroup.det_isUnit Q).ne_zero] using hdet
       exact ⟨i, by rw [hi, mul_zero, zero_mul]⟩
     · exact ⟨0, by rw [mul_right_comm, h, one_mul]⟩
-  let D₁ : unitaryGroup (Fin n) 𝕜 := ⟨_, diagonal_update_one_mem_unitaryGroup ha i⟩
-  let D₂ : unitaryGroup (Fin n) 𝕜 := ⟨_, diagonal_update_one_mem_unitaryGroup hb i⟩
+  let D₁ : unitaryGroup (Fin n) 𝕜 := ⟨_, (diagonal_update_one_mem_unitary_iff (i := i)).mpr ha⟩
+  let D₂ : unitaryGroup (Fin n) 𝕜 := ⟨_, (diagonal_update_one_mem_unitary_iff (i := i)).mpr hb⟩
   have hD : (D₁ : Matrix (Fin n) (Fin n) 𝕜) * diagonal σ * D₂ = diagonal σ := by
     simp only [D₁, D₂, diagonal_mul_diagonal]
     congr 1
@@ -249,5 +251,39 @@ theorem exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_d
     · rw [det_mul, hY, Unitary.star_mul_self_of_mem hV]
     · conv_lhs => rw [hUV, ← hXY]
       simp only [Matrix.mul_assoc]
+
+end Matrix
+
+namespace Matrix
+
+open scoped Matrix.Norms.L2Operator
+
+/-- The squared singular values stay within the operator-norm distance of the source Gram
+matrix from a scalar matrix. Only source indices are included, so this applies to rectangular
+matrices without interpreting the infinite zero tail as additional singular values. -/
+theorem abs_sq_singularValues_sub_le {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
+    [DecidableEq n] (A : Matrix m n 𝕜) (a : ℝ) (i : Fin (Fintype.card n)) :
+    |(toEuclideanLin A).singularValues i ^ 2 - a| ≤ ‖Aᴴ * A - a • 1‖ := by
+  classical
+  let T := toEuclideanLin A
+  let j : Fin (Module.finrank 𝕜 (EuclideanSpace 𝕜 n)) :=
+    ⟨i, by simpa only [finrank_euclideanSpace] using i.isLt⟩
+  let v := T.rightSingularBasis j
+  have hv : ‖v‖ = 1 := T.rightSingularBasis.norm_eq_one j
+  have hD : toEuclideanLin (Aᴴ * A - a • 1) =
+      (LinearMap.adjoint T ∘ₗ T) - a • LinearMap.id := by
+    rw [map_sub, LinearMapClass.map_smul_of_tower,
+      ← toEuclideanLin_conjTranspose_eq_adjoint A]
+    simp only [T, toEuclideanLin, toLpLin_mul_same, toLpLin_one]
+  have hDv : toEuclideanLin (Aᴴ * A - a • 1) v =
+      (((T.singularValues i ^ 2 - a : ℝ) : 𝕜)) • v := by
+    rw [hD, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply]
+    have hTv : (LinearMap.adjoint T ∘ₗ T) v = ((T.singularValues i ^ 2 : ℝ) : 𝕜) • v :=
+      T.adjoint_comp_self_rightSingularBasis j
+    rw [hTv]
+    simp [sub_smul]
+  have hb : ‖toEuclideanLin (Aᴴ * A - a • 1) v‖ ≤ ‖Aᴴ * A - a • 1‖ * ‖v‖ :=
+    l2_opNorm_mulVec (Aᴴ * A - a • 1) v
+  simpa only [hDv, norm_smul, RCLike.norm_ofReal, hv, mul_one] using hb
 
 end Matrix

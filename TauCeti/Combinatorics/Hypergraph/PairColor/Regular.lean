@@ -174,16 +174,9 @@ theorem IsRegularPair.abs_card_filter_colorOfPair_sub_le (h : S.IsRegularPair ε
   have hε : 0 ≤ ε := haveI : Nonempty κ := ⟨c⟩; h.nonneg
   have hs : (#s' : ℝ) ≤ #s := by exact_mod_cast card_le_card hs'
   have ht : (#t' : ℝ) ≤ #t := by exact_mod_cast card_le_card ht'
-  -- The sets are disjoint, so every pair in `s' ×ˢ t'` is a pair of distinct vertices.
-  have hsupp : {p ∈ s' ×ˢ t' | p.1 ≠ p.2} = s' ×ˢ t' := by
-    refine filter_true_of_mem fun p hp ↦ ?_
-    rw [mem_product] at hp
-    exact ne_of_mem_of_not_mem hp.1 (disjoint_right.mp (hst.mono hs' ht') hp.2)
   have hcount : (#{p ∈ s' ×ˢ t' | S.colorOfPair p.1 p.2 = some c} : ℝ) =
-      pairColorDensity S c s' t' * (#s' * #t') := by
-    have := pairColorDensity_mul_card_support S c s' t'
-    rw [hsupp, card_product] at this
-    exact_mod_cast this.symm
+      pairColorDensity S c s' t' * (#s' * #t') :=
+    mod_cast (pairColorDensity_mul_card_of_disjoint S c (hst.mono hs' ht')).symm
   have hd₀ : (0 : ℝ) ≤ pairColorDensity S c s t := mod_cast pairColorDensity_nonneg S c s t
   have hd₁ : (pairColorDensity S c s t : ℝ) ≤ 1 := mod_cast pairColorDensity_le_one S c s t
   by_cases hbig : ε * #s ≤ #s' ∧ ε * #t ≤ #t'

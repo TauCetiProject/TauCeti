@@ -323,8 +323,8 @@ lemma supportedHRestrict_supportedHMap (hZS : Z ≤ S) {W' W : Opens X} (h : W' 
     F.supportedHRestrict S h n (F.supportedHMap hZS W n x) =
       F.supportedHMap hZS W' n (F.supportedHRestrict Z h n x) := by
   simp only [supportedHRestrict, supportedHMap, relativeH'.map_map]
-  -- both sides are induced by morphisms of pairs into `(W', W' ∖ S)`, which agree because
-  -- `Opens X` is a thin category
+  -- both sides are induced by morphisms of pairs from `(W', W' ∖ S)` to `(W, W ∖ Z)`, which
+  -- agree because `Opens X` is a thin category
   rfl
 
 /-- Under `supportedHZeroEquiv`, enlarging the support in degree zero is the inclusion of
@@ -454,11 +454,9 @@ theorem extClass_postcomp_bijective_of_isFlasque
     (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj] {U V : Opens X} (i : U ⟶ V)
     (n : ℕ) :
     Function.Bijective (hT.extClass.postcomp _ (rfl : n + 1 + 1 = n + 2) :
-      T.X₃.relativeH' i (n + 1) →+ T.X₁.relativeH' i (n + 2)) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨z, rfl⟩ := Abelian.Ext.covariant_sequence_exact₃ _ hT x rfl hx
-    rw [Subsingleton.elim z 0, Abelian.Ext.zero_comp]
-  · exact Abelian.Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
+      T.X₃.relativeH' i (n + 1) →+ T.X₁.relativeH' i (n + 2)) :=
+  hT.extClass_postcomp_bijective _ rfl (subsingleton_succ_of_isFlasque T.X₂ i n)
+    (subsingleton_succ_of_isFlasque T.X₂ i (n + 1))
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact sequence of sheaves with `F₁` flasque, the map
 `Hⁿ⁺¹(V, U; F₂) ⟶ Hⁿ⁺¹(V, U; F₃)` induced by `F₂ ⟶ F₃` is bijective. -/
@@ -548,13 +546,13 @@ theorem isIso_supportedHPresheafPostcomp {F G : Sheaf (Opens.grothendieckTopolog
     exact h W.unop
   exact NatIso.isIso_of_isIso_app _
 
-/-- An isomorphism of sheaves `e : F ≅ G` induces an isomorphism of presheaves
+/-- An isomorphism of sheaves `f : F ⟶ G` induces an isomorphism of presheaves
 `H_Sⁿ(-, F) ≅ H_Sⁿ(-, G)`. -/
-instance isIso_supportedHPresheafPostcomp_mk₀_hom {F G : Sheaf (Opens.grothendieckTopology X)
-    AddCommGrpCat.{u}} (e : F ≅ G) (n : ℕ) :
-    IsIso (supportedHPresheafPostcomp S (Ext.mk₀ e.hom) (add_zero n)) :=
+instance isIso_supportedHPresheafPostcomp_mk₀ {F G : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} (f : F ⟶ G) [IsIso f] (n : ℕ) :
+    IsIso (supportedHPresheafPostcomp S (Ext.mk₀ f) (add_zero n)) :=
   isIso_supportedHPresheafPostcomp S _ _ fun _ ↦
-    Function.bijective_iff_has_inverse.2 ⟨(Ext.mk₀ e.inv).postcomp _ (add_zero n),
+    Function.bijective_iff_has_inverse.2 ⟨(Ext.mk₀ (inv f)).postcomp _ (add_zero n),
       fun x ↦ by simp, fun x ↦ by simp⟩
 
 /-- If `F₂` is flasque, the connecting morphism `H_Sᵃ⁺¹(-, F₃) ⟶ H_Sᵏ(-, F₁)`, for `k = a + 2`, is

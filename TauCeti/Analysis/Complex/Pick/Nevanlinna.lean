@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Pick.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
 
 /-!
 # Boundary Cayley coordinates and Nevanlinna measure transport

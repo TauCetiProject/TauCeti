@@ -25,15 +25,15 @@ analytically on the coefficients of `P` near those of `P₀`, **with no assumpti
 `P₀` are distinct**. By Newton's identities the same then holds for the elementary symmetric
 functions of the values `g(z)`, that is, for the coefficients of `∏ (X - g(z))`.
 
-Read through the elementary symmetric chart `TauCeti.Sym.coeffEquiv`, which identifies `Sym^n ℂ`
+Read through the elementary symmetric chart `Sym.coeffEquiv`, which identifies `Sym^n ℂ`
 with `Fin n → ℂ`, this says that a holomorphic change of coordinate `φ` acts analytically on
 elementary symmetric coordinates everywhere, including along the diagonal where points collide:
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`. This is the local analytic
+`Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`. This is the local analytic
 input needed to prove that the transition maps of the elementary symmetric atlas on the symmetric
 power of a Riemann surface are holomorphic (Ozsváth--Szabó,
 [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). At tuples of distinct points the
 same local conclusion is
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm`, obtained there from the implicit function
+`Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm`, obtained there from the implicit function
 theorem, which is unavailable once roots collide.
 
 ## The argument
@@ -45,7 +45,7 @@ by `g` (Ahlfors, *Complex Analysis*, Ch. 4, §5.2),
 `(2πi)⁻¹ ∮_{C(w, r)} g(t) P'(t) / P(t) dt = ∑_{z root of P, |z - w| < r} g(z)`,
 
 and for `P` near `P₀` every root of `P` lies in one of the discs, by continuity of the roots
-(`TauCeti.Sym.coeffHomeomorph`). Summing over `w` expresses `∑ g(z)` as a finite sum of contour
+(`Sym.coeffHomeomorph`). Summing over `w` expresses `∑ g(z)` as a finite sum of contour
 integrals; summing only over the `w` lying in a region `U` whose frontier contains no root of
 `P₀` expresses the sum over the roots in `U`. Each of these is analytic in the coefficients `c` of
 `P`: restricted to the circle, `P` and `P'` are affine functions of `c` with values in the Banach
@@ -57,16 +57,19 @@ circle is a continuous linear functional on `C(sphere w r, ℂ)`.
 
 * `Polynomial.circleIntegral_mul_derivative_div_eval`: the argument principle for a polynomial,
   weighted by a holomorphic function.
+* `Polynomial.sum_circleIntegral_eq_sum_map_filter_roots`: for roots confined to separated discs,
+  the sum of a holomorphic function over the roots in a region is the sum of the normalised contour
+  integrals about the disc centres lying in the region.
 * `TauCeti.Polynomial.analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff`: such a contour
   integral depends analytically on the coefficients of a monic polynomial not vanishing on the
   circle.
 * `TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow`: analyticity passes from the power
   sums of a family of multisets to its elementary symmetric functions.
-* `TauCeti.Sym.analyticAt_sum_map_filter_coeffEquiv_symm`: **sums of a holomorphic function over
+* `Sym.analyticAt_sum_map_filter_coeffEquiv_symm`: **sums of a holomorphic function over
   the roots lying in a region are analytic in the coefficients**, colliding roots included, provided
-  no root lies on the frontier of the region; `TauCeti.Sym.analyticAt_sum_map_coeffEquiv_symm` is
+  no root lies on the frontier of the region; `Sym.analyticAt_sum_map_coeffEquiv_symm` is
   the case of the whole plane.
-* `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`: **a holomorphic
+* `Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`: **a holomorphic
   coordinate change acts analytically on elementary symmetric coordinates**, colliding points
   included.
 * `TauCeti.analyticAt_sum_map_nthRoots`: the sum of a holomorphic function over the `m`-th roots
@@ -229,8 +232,6 @@ theorem _root_.Polynomial.circleIntegral_mul_derivative_div_eval (p : ℂ[X]) (h
 
 end Trace
 
-namespace Sym
-
 section Separated
 
 variable {T : Finset ℂ} {r : ℝ}
@@ -278,6 +279,41 @@ private theorem sum_sum_map_filter_mem_ball (g : ℂ → ℂ) {m : Multiset ℂ}
 
 end Separated
 
+/-- If every root of the polynomial `p` lies in one of the separated discs `ball w r` about the
+points `w` of `T`, with `g` holomorphic on the open discs centred in `U` and continuous up to
+their boundary, and the open discs centred in `U` inside `U` while the other open discs miss `U`,
+then the sum of `g` over the roots of `p` in `U` is the sum, over the points `w ∈ T ∩ U`, of
+`(2πi)⁻¹` times the contour integral of `g · p' / p` about `w`. -/
+theorem _root_.Polynomial.sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r : ℝ}
+    (hsep : ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w') {g : ℂ → ℂ} {U : Set ℂ}
+    [DecidablePred (· ∈ U)] (hr : 0 < r)
+    (hin : ∀ w ∈ T, w ∈ U → ball w r ⊆ U)
+    (hout : ∀ w ∈ T, w ∉ U → ball w r ⊆ Uᶜ)
+    (hgd : ∀ w ∈ T, w ∈ U → DiffContOnCl ℂ g (ball w r)) (p : ℂ[X])
+    (hc : ∀ z ∈ p.roots, ∃ w ∈ T, z ∈ ball w r) :
+    ∑ w ∈ T with w ∈ U, (2 * π * I)⁻¹ * ∮ t in C(w, r),
+      g t * (p.derivative.eval t / p.eval t) = ((p.roots.filter (· ∈ U)).map g).sum := by
+  classical
+  rw [← sum_sum_map_filter_mem_ball hsep g (m := p.roots.filter (· ∈ U))
+    (fun z hz => hc z (Multiset.mem_of_mem_filter hz)), Finset.sum_filter]
+  refine Finset.sum_congr rfl fun w hw => ?_
+  split_ifs with hwU
+  · have hfilter : (p.roots.filter (· ∈ U)).filter (· ∈ ball w r) =
+        p.roots.filter (· ∈ ball w r) := by
+      rw [Multiset.filter_filter]
+      exact Multiset.filter_congr fun z _ => and_iff_left_of_imp fun hz => hin w hw hwU hz
+    rw [Polynomial.circleIntegral_mul_derivative_div_eval _ hr (hgd w hw hwU) fun z hz => by
+        obtain ⟨w', hw', hzw'⟩ := hc z hz
+        exact notMem_sphere_of_mem_ball hsep hw hw' hzw',
+      inv_mul_cancel_left₀ two_pi_I_ne_zero, hfilter]
+  · rw [Multiset.filter_eq_nil.2 fun z hz hzw =>
+      hout w hw hwU hzw (Multiset.mem_filter.1 hz).2]
+    simp
+
+end TauCeti
+
+namespace Sym
+
 variable {n : ℕ}
 
 /-- **Sums of a holomorphic function over the roots in a region depend analytically on the
@@ -294,10 +330,10 @@ theorem analyticAt_sum_map_filter_coeffEquiv_symm {g : ℂ → ℂ} {U : Set ℂ
   classical
   set T := ((coeffEquiv ℂ n).symm c₀ : Multiset ℂ).toFinset
   have hmemT : ∀ z, z ∈ T ↔ z ∈ (coeffEquiv ℂ n).symm c₀ := fun z =>
-    Multiset.mem_toFinset.trans _root_.Sym.mem_coe
+    Multiset.mem_toFinset.trans Sym.mem_coe
   -- Separated discs `ball w r` about the distinct points `w` of the tuple: for `w ∈ U`, inside
   -- `U` and inside the region where `g` is holomorphic; for `w ∉ U`, outside the closure of `U`.
-  obtain ⟨r, hr, hrU, hsep⟩ := exists_pos_closedBall_subset_and_lt_dist (T := T)
+  obtain ⟨r, hr, hrU, hsep⟩ := TauCeti.exists_pos_closedBall_subset_and_lt_dist (T := T)
     (U := fun w => if w ∈ U then interior U ∩ {z | AnalyticAt ℂ g z} else (closure U)ᶜ)
     fun w hw => by
       have hwT := (hmemT w).1 hw
@@ -321,48 +357,37 @@ theorem analyticAt_sum_map_filter_coeffEquiv_symm {g : ℂ → ℂ} {U : Set ℂ
         funext fun c => (coeffHomeomorph_symm_apply ℂ n c).symm
       rw [h]
       exact (coeffHomeomorph ℂ n).symm.continuous.continuousAt
-    refine hcont.preimage_mem_nhds ((isOpen_setOf_forall_mem (n := n) ?_).mem_nhds
+    refine hcont.preimage_mem_nhds ((Sym.isOpen_setOf_forall_mem (n := n) ?_).mem_nhds
       fun z hz => ?_)
     · exact isOpen_biUnion fun _ _ => isOpen_ball
     · exact Set.mem_iUnion₂.2 ⟨z, (hmemT z).2 hz, mem_ball_self hr⟩
   -- There, the sum over the points of the tuple in `U` is a sum of contour integrals, one about
   -- each disc centred in `U`: the discs centred outside `U` do not meet `U`.
   have hsum : ∀ᶠ c in 𝓝 c₀, ∑ w ∈ T with w ∈ U, (2 * π * I)⁻¹ * ∮ t in C(w, r),
-      g t * ((Polynomial.monicOfCoeff c).derivative.eval t / (Polynomial.monicOfCoeff c).eval t) =
+      g t * ((TauCeti.Polynomial.monicOfCoeff c).derivative.eval t /
+        (TauCeti.Polynomial.monicOfCoeff c).eval t) =
       ((((coeffEquiv ℂ n).symm c : Multiset ℂ).filter (· ∈ U)).map g).sum := by
     filter_upwards [hN] with c hc
-    have hc' : ∀ z ∈ (Polynomial.monicOfCoeff c).roots, z ∈ V := fun z hz =>
-      hc z (by rwa [← _root_.Sym.mem_coe, coeffEquiv_symm_apply])
-    rw [coeffEquiv_symm_apply, ← sum_sum_map_filter_mem_ball hsep g
-      (m := (Polynomial.monicOfCoeff c).roots.filter (· ∈ U))
-      (fun z hz => hV z (hc' z (Multiset.mem_of_mem_filter hz))), Finset.sum_filter]
-    refine Finset.sum_congr rfl fun w hw => ?_
-    split_ifs with hwU
-    · have hgw : DiffContOnCl ℂ g (ball w r) :=
-        ((hgd w hw hwU).mono (closure_ball w hr.ne').subset).diffContOnCl
-      have hfilter : ((Polynomial.monicOfCoeff c).roots.filter (· ∈ U)).filter (· ∈ ball w r) =
-          (Polynomial.monicOfCoeff c).roots.filter (· ∈ ball w r) := by
-        rw [Multiset.filter_filter]
-        exact Multiset.filter_congr fun z _ => and_iff_left_of_imp fun hz =>
-          interior_subset (hin w hw hwU (ball_subset_closedBall hz)).1
-      rw [Polynomial.circleIntegral_mul_derivative_div_eval _ hr hgw fun z hz => by
-          obtain ⟨w', hw', hzw'⟩ := hV z (hc' z hz)
-          exact notMem_sphere_of_mem_ball hsep hw hw' hzw',
-        inv_mul_cancel_left₀ two_pi_I_ne_zero, hfilter]
-    · rw [Multiset.filter_eq_nil.2 fun z hz hzw =>
-        hout w hw hwU (ball_subset_closedBall hzw) (subset_closure (Multiset.mem_filter.1 hz).2)]
-      simp
+    rw [coeffEquiv_symm_apply]
+    exact Polynomial.sum_circleIntegral_eq_sum_map_filter_roots hsep hr
+      (fun w hw hwU => (ball_subset_closedBall.trans (hin w hw hwU)).trans
+        (Set.inter_subset_left.trans interior_subset))
+      (fun w hw hwU => (ball_subset_closedBall.trans (hout w hw hwU)).trans
+        (Set.compl_subset_compl.2 subset_closure))
+      (fun w hw hwU => ((hgd w hw hwU).mono (closure_ball w hr.ne').subset).diffContOnCl) _
+      fun z hz => hV z <|
+      hc z (by rwa [← Sym.mem_coe, coeffEquiv_symm_apply])
   -- Each contour integral is analytic in the coefficients.
   refine AnalyticAt.congr (Finset.analyticAt_fun_sum _ fun w hw => ?_) hsum
   obtain ⟨hw, hwU⟩ := Finset.mem_filter.1 hw
   refine analyticAt_const.mul
-    (Polynomial.analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff hr.le
+    (TauCeti.Polynomial.analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff hr.le
       ((hgd w hw hwU).mono sphere_subset_closedBall).continuousOn fun t ht h0 => ?_)
   have ht0 : t ∈ T := by
-    rw [hmemT, ← _root_.Sym.mem_coe, coeffEquiv_symm_apply,
-      mem_roots (Polynomial.monic_monicOfCoeff c₀).ne_zero]
+    rw [hmemT, ← Sym.mem_coe, coeffEquiv_symm_apply,
+      mem_roots (TauCeti.Polynomial.monic_monicOfCoeff c₀).ne_zero]
     exact h0
-  exact notMem_sphere_of_mem_ball hsep hw ht0 (mem_ball_self hr) ht
+  exact TauCeti.notMem_sphere_of_mem_ball hsep hw ht0 (mem_ball_self hr) ht
 
 /-- **Sums of a holomorphic function over the roots depend analytically on the coefficients.**
 If `g` is holomorphic at every point of the unordered tuple with elementary symmetric coordinates
@@ -386,17 +411,19 @@ Read on the symmetric power of a Riemann surface, this is the local analytic inp
 holomorphy of the corresponding transition map of elementary symmetric charts. -/
 theorem analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt {φ : ℂ → ℂ} {c₀ : Fin n → ℂ}
     (hφ : ∀ z ∈ (coeffEquiv ℂ n).symm c₀, AnalyticAt ℂ φ z) :
-    AnalyticAt ℂ (fun c => coeffEquiv ℂ n (_root_.Sym.map φ ((coeffEquiv ℂ n).symm c))) c₀ := by
+    AnalyticAt ℂ (fun c => coeffEquiv ℂ n (Sym.map φ ((coeffEquiv ℂ n).symm c))) c₀ := by
   have hpow (j : ℕ) (_ : 0 < j) : AnalyticAt ℂ
       (fun c => (((((coeffEquiv ℂ n).symm c : Multiset ℂ)).map φ).map (· ^ j)).sum) c₀ := by
     simpa only [Multiset.map_map, Function.comp_def] using
       analyticAt_sum_map_coeffEquiv_symm fun z hz => (hφ z hz).fun_pow j
   refine AnalyticAt.pi fun i => ?_
-  simp only [coeffEquiv_apply, _root_.Sym.coe_map]
-  exact analyticAt_const.mul (analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun j hj _ =>
-    hpow j hj)
+  simp only [coeffEquiv_apply, Sym.coe_map]
+  exact analyticAt_const.mul
+    (TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun j hj _ => hpow j hj)
 
 end Sym
+
+namespace TauCeti
 
 /-! ### Sums over the roots of `X ^ m - s` -/
 
@@ -422,7 +449,7 @@ theorem analyticAt_sum_map_nthRoots {G : ℂ → ℂ} (hG : AnalyticAt ℂ G 0) 
   simp_rw [hroots]
   refine AnalyticAt.comp (g := fun c ↦ (((Sym.coeffEquiv ℂ m).symm c : Multiset ℂ).map G).sum)
     (Sym.analyticAt_sum_map_coeffEquiv_symm fun z hz ↦ ?_) hc
-  rw [← _root_.Sym.mem_coe, ← hroots, nthRoots_zero_right] at hz
+  rw [← Sym.mem_coe, ← hroots, nthRoots_zero_right] at hz
   rwa [Multiset.eq_of_mem_replicate hz]
 
 end TauCeti

@@ -28,6 +28,10 @@ inside a passport is asserted.
 * `TauCeti.PassportSpec.classSet`: the finite set of connected isomorphism classes in a passport.
 * `TauCeti.PassportSpec.passportSize`: the number of those classes.
 * `TauCeti.PassportSpec.passportSize_eq_card_hasPassport`: the passport size as a `Nat.card`.
+* `TauCeti.PassportSpec.partition_eq_of_mem_classSet`: passports sharing a class have the same
+  ordered partitions.
+* `TauCeti.PassportSpec.disjoint_classSet`: distinct passports with the same reference subgroup
+  share no class.
 * `TauCeti.PassportSpec.cycleData_eq_of_hasPassport`: two triples in one passport have the same
   ordered cycle data.
 * `TauCeti.PassportSpec.genus_eq_of_hasPassport`: a passport determines the genus.
@@ -138,6 +142,28 @@ theorem classSet_conjugate (P : PassportSpec n) (tau : Perm (Fin n)) :
 theorem passportSize_conjugate (P : PassportSpec n) (tau : Perm (Fin n)) :
     (P.conjugate tau).passportSize = P.passportSize := by
   rw [passportSize_def, passportSize_def, classSet_conjugate]
+
+/-- Two passports sharing an isomorphism class have the same ordered cycle partitions. -/
+theorem partition_eq_of_mem_classSet {P Q : PassportSpec n} {c : ConnectedIsoClass n}
+    (hP : c ∈ P.classSet) (hQ : c ∈ Q.classSet) (i : Fin 3) : P.partition i = Q.partition i := by
+  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
+  rw [mem_classSet, ConnectedIsoClass.hasPassport_mk, hasPassport_iff] at hP hQ
+  obtain ⟨-, hP0, hP1, hPinf⟩ := hP
+  obtain ⟨-, hQ0, hQ1, hQinf⟩ := hQ
+  fin_cases i
+  · simp [← hP0, ← hQ0]
+  · simp [← hP1, ← hQ1]
+  · simp [← hPinf, ← hQinf]
+
+/-- Two passports with the same reference subgroup that share an isomorphism class are equal. -/
+theorem eq_of_mem_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) {c : ConnectedIsoClass n}
+    (hP : c ∈ P.classSet) (hQ : c ∈ Q.classSet) : P = Q :=
+  ext_partition hG (partition_eq_of_mem_classSet hP hQ)
+
+/-- Distinct passports with the same reference subgroup have disjoint class sets. -/
+theorem disjoint_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) (hne : P ≠ Q) :
+    Disjoint P.classSet Q.classSet :=
+  Finset.disjoint_left.mpr fun _ hP hQ ↦ hne (eq_of_mem_classSet hG hP hQ)
 
 /-! ## Invariants determined by a passport -/
 

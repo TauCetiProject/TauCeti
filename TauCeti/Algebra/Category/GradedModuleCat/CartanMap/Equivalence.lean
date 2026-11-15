@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.RestrictScalars
-public import TauCeti.CategoryTheory.Preadditive.Equivalence
+public import TauCeti.CategoryTheory.Adjunction.Additive
 
 /-!
 # Invariance of `K₀^gr(proj A)`, `G₀^gr(mod A)` and the graded Cartan map

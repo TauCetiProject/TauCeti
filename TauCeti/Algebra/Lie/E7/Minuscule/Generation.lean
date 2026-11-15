@@ -63,7 +63,7 @@ open TauCeti.DynkinType TauCeti.UniversalEnvelopingAlgebra
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-local notation "CM" => CartanMatrix.E 7
+local notation "CM" => weightTable.cartanMatrix
 local notation "rootGen" => TauCeti.serreRootGenerator CM
 local notation "cartanGen" => TauCeti.serreH ℚ CM
 local notation "rootWeight" => DynkinType.E7.rootGeneratorWeight DynkinType.valid_E7
