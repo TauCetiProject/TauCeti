@@ -47,8 +47,6 @@ only depends on the cutoff near the support of `T`.
   `χ P T` of a differential operator `P` with smooth coefficients applied to `T` as a differential
   operator applied to the tempered distribution `φ T`; this is
   `Distribution.cutoffTempered_sum_smul_smulLeftCLM_iteratedLineDerivOp`.
-* `TestFunction.coe_iteratedLineDerivOp_of_coe_eq`: a test function and a Schwartz function with
-  the same values have the same iterated derivatives.
 
 ## References
 
@@ -62,26 +60,6 @@ noncomputable section
 
 open Complex Filter Set TopologicalSpace TestFunction MeasureTheory
 open scoped Distributions Topology SchwartzMap ContDiff LineDeriv
-
-namespace TestFunction
-
-open LineDeriv
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] {Ω : Opens E}
-
-/-- A test function and a Schwartz function with the same values have the same iterated
-derivatives. -/
-theorem coe_iteratedLineDerivOp_of_coe_eq {φ : 𝓓(Ω, F)} {f : 𝓢(E, F)} (h : ⇑φ = ⇑f) {k : ℕ}
-    (m : Fin k → E) : ⇑(∂^{m} φ) = ⇑(∂^{m} f) := by
-  induction k with
-  | zero => exact h
-  | succ k ih =>
-    ext x
-    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, lineDerivOp_apply,
-      SchwartzMap.lineDerivOp_apply, ih]
-
-end TestFunction
 
 namespace Distribution
 

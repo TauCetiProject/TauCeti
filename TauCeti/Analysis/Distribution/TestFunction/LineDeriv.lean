@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 
@@ -13,7 +14,8 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 # Directional derivatives of test functions
 
 Mathlib equips the test functions `𝓓(Ω, F)` with the directional derivative `∂_{v}`. This file
-evaluates it pointwise as the classical directional derivative, and shows that two directional
+evaluates it pointwise as the classical directional derivative, so a test function and a Schwartz
+function with the same values have the same iterated derivatives, and shows that two directional
 derivatives of a test function commute, `∂_{v} (∂_{w} φ) = ∂_{w} (∂_{v} φ)`, because the second
 derivative of a smooth function is symmetric. Moving derivatives between the two sides of an
 integration-by-parts identity uses exactly this, for instance to show that weak derivatives
@@ -26,6 +28,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`: `∂_{v} φ x = Dφ(x) v`.
+* `TestFunction.coe_iteratedLineDerivOp_of_coe_eq`: a test function and a Schwartz function with
+  the same values have the same iterated derivatives.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
   factor equal to `1` on `Ω`.
@@ -54,7 +58,7 @@ public section
 namespace TestFunction
 
 open LineDeriv TopologicalSpace
-open scoped ContDiff Distributions
+open scoped ContDiff Distributions SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E}
@@ -68,6 +72,17 @@ theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeri
 direction. -/
 theorem lineDerivOp_apply_eq_fderiv (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = fderiv ℝ φ x v := by
   rw [lineDerivOp_apply, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
+
+/-- A test function and a Schwartz function with the same values have the same iterated
+derivatives. -/
+theorem coe_iteratedLineDerivOp_of_coe_eq {φ : 𝓓(Ω, F)} {f : 𝓢(E, F)} (h : ⇑φ = ⇑f) {k : ℕ}
+    (m : Fin k → E) : ⇑(∂^{m} φ) = ⇑(∂^{m} f) := by
+  induction k with
+  | zero => exact h
+  | succ k ih =>
+    ext x
+    rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, lineDerivOp_apply,
+      SchwartzMap.lineDerivOp_apply, ih]
 
 /-- A directional derivative of a test function is supported in the support of the function. -/
 theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :

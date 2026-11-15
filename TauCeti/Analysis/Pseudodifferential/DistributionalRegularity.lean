@@ -269,7 +269,8 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove {Ω : Opens (Coordi
       add_sub_cancel_right, ← cutoffTempered_sum_smul_smulLeftCLM_iteratedLineDerivOp T hφχ]
   -- Near the support of `ψ`, where `χ = 1`, the symbol `p` agrees with `a`.
   set ψS : 𝓢(CoordinateSpace d, ℂ) := ψ.hasCompactSupport.toSchwartzMap ψ.contDiff
-  have hψS : (ψS : CoordinateSpace d → ℂ) = ψ := rfl
+  have hψS : (ψS : CoordinateSpace d → ℂ) = ψ :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   have hap : ∀ᶠ y in 𝓝ˢ (tsupport ψS), ∀ ξ, p.coefficient (y, ξ) = a.coefficient (y, ξ) := by
     rw [hψS]
     filter_upwards [hχψ.and haP] with y hy ξ

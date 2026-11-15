@@ -56,6 +56,7 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢'(ℂ, F)) :
 /-- **Iterated derivatives of tempered distributions by duality.** An iterated derivative of
 order `n` of a tempered distribution pairs with a Schwartz function `u` as `(-1)^n` times the
 distribution paired with the iterated derivative of `u` in the reversed directions. -/
+@[simp]
 theorem iteratedLineDerivOp_apply_apply (f : 𝓢'(E, F)) {n : ℕ} (m : Fin n → E) (u : 𝓢(E, ℂ)) :
     ∂^{m} f u = (-1 : ℂ) ^ n • f (∂^{m ∘ Fin.rev} u) := by
   induction n generalizing u with
