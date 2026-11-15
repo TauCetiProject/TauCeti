@@ -1,0 +1,47 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Order.Monoid.Canonical.Defs
+public import Mathlib.Algebra.Order.Sub.Defs
+public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Algebra.Order.Sub.Unbundled.Basic
+
+/-!
+# Sigma-product bijection for initial intervals under ordered subtraction
+
+In a canonically ordered additive type `α` with ordered subtraction and locally finite initial
+segments, pairs `(b, c) : α × α` with `b + c = a` are parametrized by `b ∈ Finset.Iic a` via
+`c = a - b`. `Finset.sigmaIicEquivProd` packages the resulting bijection `(Σ a : α, Iic a) ≃ α × α`,
+serving as the `Finset.Iic` counterpart of `Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd` for
+types such as `ι → ℕ` that carry no `Finset.HasAntidiagonal` instance.
+
+## Main definitions
+
+* `Finset.sigmaIicEquivProd`: the equivalence `(Σ a : α, Iic a) ≃ α × α` sending `(a, b)` to
+  `(b, a - b)` and `(b, c)` to `(b + c, b)`.
+-/
+
+public section
+
+namespace Finset
+
+variable {α : Type*} [AddCommSemigroup α] [PartialOrder α] [CanonicallyOrderedAdd α]
+  [Sub α] [OrderedSub α] [AddLeftReflectLE α] [LocallyFiniteOrderBot α]
+
+/-- Bijection between the sigma type `Σ a, Iic a` of pairs `(a, b)` with `b ≤ a` and `α × α`,
+sending `(a, b)` to `(b, a - b)` and `(b, c)` to `(b + c, b)`. -/
+@[expose, simps]
+def sigmaIicEquivProd : (Σ a : α, Iic a) ≃ α × α where
+  toFun x := (x.2.1, x.1 - x.2.1)
+  invFun p := ⟨p.1 + p.2, ⟨p.1, mem_Iic.2 le_self_add⟩⟩
+  left_inv := by
+    rintro ⟨a, b, hb⟩
+    exact Sigma.subtype_ext (add_tsub_cancel_of_le (mem_Iic.1 hb)) rfl
+  right_inv p := by
+    ext <;> simp
+
+end Finset

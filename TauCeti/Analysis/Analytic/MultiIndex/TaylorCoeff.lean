@@ -6,14 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-public import Mathlib.Data.Pi.Interval
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
-import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 
@@ -469,79 +466,6 @@ theorem mvTaylorCoeff_apply [DecidableEq ι] (i : ι) (x : ι → 𝕜) (α : ι
 
 end TauCeti
 
-section ProductRule
-
-omit [Fintype ι] in
-/-- Bijection grouping pairs `(β, γ)` of multi-indices by their sum `α = β + γ` and `β ∈ Iic α`. -/
-private def sigmaIicEquiv [DecidableEq ι] :
-    (Σ α : ι → ℕ, {β // β ∈ Iic α}) ≃ (ι → ℕ) × (ι → ℕ) where
-  toFun x := (x.2.1, x.1 - x.2.1)
-  invFun p := ⟨p.1 + p.2, ⟨p.1, mem_Iic.2 le_self_add⟩⟩
-  left_inv := by
-    rintro ⟨α, β, hβ⟩
-    exact Sigma.subtype_ext (funext fun i ↦ add_tsub_cancel_of_le (mem_Iic.1 hβ i)) rfl
-  right_inv p := by
-    ext <;> simp
-
-/-- Normal summability at radius `ρ` is preserved under Cauchy convolution over `Finset.Iic`. -/
-private theorem summable_norm_cauchy_mul_pow {A G : Type*} [NormedRing A] [NormedAddCommGroup G]
-    [Module A G] [IsBoundedSMul A G] [DecidableEq ι] {a : (ι → ℕ) → A} {b : (ι → ℕ) → G} {ρ : ℝ}
-    (hρ : 0 ≤ ρ) (ha : Summable fun β : ι → ℕ ↦ ‖a β‖ * ρ ^ (∑ i, β i))
-    (hb : Summable fun γ : ι → ℕ ↦ ‖b γ‖ * ρ ^ (∑ i, γ i)) :
-    Summable fun ν : ι → ℕ ↦ ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i) := by
-  have hprod := ha.mul_of_nonneg hb (fun _ ↦ by positivity) (fun _ ↦ by positivity)
-  have hsig := ((sigmaIicEquiv (ι := ι)).summable_iff.2 hprod).sigma
-  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun ν ↦ ?_) hsig
-  calc ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i)
-      ≤ (∑ β ∈ Iic ν, ‖a β‖ * ‖b (ν - β)‖) * ρ ^ (∑ i, ν i) := by
-        gcongr
-        exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_smul_le _ _)
-    _ = ∑ β ∈ Iic ν, (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i)) := by
-        rw [sum_mul]
-        refine sum_congr rfl fun β hβ ↦ ?_
-        have hdeg : ∑ i, β i + ∑ i, (ν - β) i = ∑ i, ν i := by
-          rw [← sum_add_distrib]
-          exact sum_congr rfl fun i _ ↦ add_tsub_cancel_of_le (mem_Iic.1 hβ i)
-        rw [← hdeg, pow_add]
-        ring
-    _ = ∑ x : {β // β ∈ Iic ν},
-          (‖a x.1‖ * ρ ^ (∑ i, x.1 i)) * (‖b (ν - x.1)‖ * ρ ^ (∑ i, (ν - x.1) i)) :=
-        (sum_coe_sort (Iic ν) fun β ↦
-          (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i))).symm
-    _ = _ := (tsum_fintype _).symm
-
-/-- Grouping the Cauchy product along `sigmaIicEquiv` evaluates the convolved multi-index series on
-`‖y‖ ≤ ρ`. -/
-private theorem hasSum_prod_pow_smul_cauchy {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
-    [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F] [DecidableEq ι]
-    {a : (ι → ℕ) → A} {b : (ι → ℕ) → F} {ρ : ℝ} {y : ι → 𝕜} {u : A} {v : F}
-    (ha : Summable fun β : ι → ℕ ↦ ‖a β‖ * ρ ^ (∑ i, β i))
-    (hb : Summable fun γ : ι → ℕ ↦ ‖b γ‖ * ρ ^ (∑ i, γ i)) (hy : ‖y‖ ≤ ρ)
-    (hu : HasSum (fun β : ι → ℕ ↦ (∏ i, y i ^ β i) • a β) u)
-    (hv : HasSum (fun γ : ι → ℕ ↦ (∏ i, y i ^ γ i) • b γ) v) :
-    HasSum (fun ν : ι → ℕ ↦ (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β)) (u • v) := by
-  have hu_norm := TauCeti.summable_norm_prod_pow_smul_of_le ha hy
-  have hv_norm := TauCeti.summable_norm_prod_pow_smul_of_le hb hy
-  have hprod := hu.smul_of_summable_norm hv hu_norm hv_norm
-  refine ((sigmaIicEquiv (ι := ι)).hasSum_iff.2 hprod).sigma fun ν ↦ ?_
-  have hfib : (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β) =
-      ∑ β : {β // β ∈ Iic ν},
-        ((∏ i, y i ^ β.1 i) • a β.1) • ((∏ i, y i ^ (ν - β.1) i) • b (ν - β.1)) := by
-    rw [sum_coe_sort (Iic ν) fun β ↦
-      ((∏ i, y i ^ β i) • a β) • ((∏ i, y i ^ (ν - β) i) • b (ν - β)), smul_sum]
-    refine sum_congr rfl fun β hβ ↦ ?_
-    have hpow : (∏ i, y i ^ β i) * (∏ i, y i ^ (ν - β) i) = ∏ i, y i ^ ν i := by
-      rw [← prod_mul_distrib]
-      exact prod_congr rfl fun i _ ↦ by
-        rw [← pow_add, Pi.sub_apply, add_tsub_cancel_of_le (mem_Iic.1 hβ i)]
-    have hcomm : a β • ((∏ i, y i ^ (ν - β) i) • b (ν - β)) =
-        (∏ i, y i ^ (ν - β) i) • (a β • b (ν - β)) := by
-      rw [← IsScalarTower.algebraMap_smul A (∏ i, y i ^ (ν - β) i) (b (ν - β)), ← mul_smul,
-        ← Algebra.commutes, mul_smul, IsScalarTower.algebraMap_smul]
-    rw [smul_assoc (∏ i, y i ^ β i) (a β), hcomm, smul_smul, hpow]
-  rw [hfib]
-  exact hasSum_fintype _
-
 namespace AnalyticAt
 
 open TauCeti
@@ -563,17 +487,19 @@ theorem mvTaylorCoeff_smul [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 
   obtain ⟨ρ₁, hρ₁, hsum₁, hexp₁⟩ := hf.exists_hasSum_mvTaylorCoeff
   obtain ⟨ρ₂, hρ₂, hsum₂, hexp₂⟩ := hg.exists_hasSum_mvTaylorCoeff
   let ρ : ℝ≥0 := min ρ₁ ρ₂
+  have hρ₁_le : (ρ : ℝ) ≤ ρ₁ := NNReal.coe_le_coe.2 (min_le_left ρ₁ ρ₂)
+  have hρ₂_le : (ρ : ℝ) ≤ ρ₂ := NNReal.coe_le_coe.2 (min_le_right ρ₁ ρ₂)
   have hfρ : Summable fun β : ι → ℕ ↦ ‖mvTaylorCoeff f x β‖ * (ρ : ℝ) ^ (∑ i, β i) :=
-    Summable.of_nonneg_of_le (fun _ ↦ by positivity)
-      (fun _ ↦ by gcongr; exact_mod_cast min_le_left ρ₁ ρ₂) hsum₁
+    Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun _ ↦ by gcongr) hsum₁
   have hgρ : Summable fun γ : ι → ℕ ↦ ‖mvTaylorCoeff g x γ‖ * (ρ : ℝ) ^ (∑ i, γ i) :=
-    Summable.of_nonneg_of_le (fun _ ↦ by positivity)
-      (fun _ ↦ by gcongr; exact_mod_cast min_le_right ρ₁ ρ₂) hsum₂
-  refine mvTaylorCoeff_eq_of_hasSum (lt_min hρ₁ hρ₂)
-    (summable_norm_cauchy_mul_pow ρ.coe_nonneg hfρ hgρ) (fun y hy ↦ ?_) α
-  exact hasSum_prod_pow_smul_cauchy hfρ hgρ hy.le
-    (hexp₁ y (hy.trans_le (by exact_mod_cast min_le_left ρ₁ ρ₂)))
-    (hexp₂ y (hy.trans_le (by exact_mod_cast min_le_right ρ₁ ρ₂)))
+    Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun _ ↦ by gcongr) hsum₂
+  have hconv := summable_norm_sum_Iic_smul_mul_pow ρ.coe_nonneg hfρ hgρ
+  refine mvTaylorCoeff_eq_of_hasSum (lt_min hρ₁ hρ₂) hconv (fun y hy ↦ ?_) α
+  have hu := hexp₁ y (hy.trans_le hρ₁_le)
+  have hv := hexp₂ y (hy.trans_le hρ₂_le)
+  have hu_norm := summable_norm_prod_pow_smul_of_le hfρ hy.le
+  have hv_norm := summable_norm_prod_pow_smul_of_le hgρ hy.le
+  exact hasSum_prod_pow_smul_sum_Iic_smul hu hv hu_norm hv_norm
 
 /-- **Product rule for algebra-valued analytic functions**: the Taylor coefficient of `f * g` at
 `α` is `∑ β ∈ Iic α, mvTaylorCoeff f x β * mvTaylorCoeff g x (α - β)`. -/
@@ -587,8 +513,6 @@ theorem mvTaylorCoeff_mul [DecidableEq ι] {f g : (ι → 𝕜) → A} {x : ι �
 end Algebra
 
 end AnalyticAt
-
-end ProductRule
 
 /-- Postcomposition with a continuous linear map commutes with `mvTaylorCoeff` for functions
 analytic at `x`. -/

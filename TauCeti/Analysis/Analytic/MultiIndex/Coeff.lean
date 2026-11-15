@@ -7,9 +7,14 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Data.Pi.Interval
+import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Algebra.MvPolynomial.Funext
+import TauCeti.Algebra.Order.Antidiag.Prod
+import TauCeti.Analysis.Normed.Module.InfiniteSum
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 
 /-!
@@ -41,6 +46,9 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   implies absolute summability on `‖y‖ ≤ ρ`, and the multi-index series converges
   normally and absolutely wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ρ ^ k` are
   summable.
+* `TauCeti.summable_norm_sum_Iic_smul_mul_pow` and
+  `TauCeti.hasSum_prod_pow_smul_sum_Iic_smul`: Cauchy convolution over `Finset.Iic` preserves
+  normal summability and evaluates the product of two absolutely summable multi-index power series.
 * `HasFPowerSeriesOnBall.hasSum_mvCoeff`: a function with a power series is the sum of its
   multi-index series wherever the operator-norm bounds `(card ι) ^ k * ‖p k‖ * ‖z‖ ^ k` are
   summable.
@@ -169,9 +177,11 @@ end NormedField
 
 end FormalMultilinearSeries
 
+namespace TauCeti
+
 /-- On the closed polydisc `‖y‖ ≤ ρ`, normal summability of a multi-index family `d` at radius `ρ`
 implies absolute summability of `(∏ i, y i ^ β i) • d β`. -/
-theorem TauCeti.summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι : Type*}
+theorem summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField 𝕜] {ι : Type*}
     [Fintype ι] {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {d : (ι → ℕ) → F} {ρ : ℝ} {y : ι → 𝕜}
     (hd : Summable fun β : ι → ℕ ↦ ‖d β‖ * ρ ^ (∑ i, β i)) (hy : ‖y‖ ≤ ρ) :
@@ -181,6 +191,67 @@ theorem TauCeti.summable_norm_prod_pow_smul_of_le {𝕜 : Type*} [NormedField �
   gcongr with i
   rw [norm_pow]
   exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm y i).trans hy) _
+
+/-- Normal summability at radius `ρ` is preserved under Cauchy convolution over `Finset.Iic`. -/
+theorem summable_norm_sum_Iic_smul_mul_pow {ι A G : Type*} [Fintype ι] [DecidableEq ι]
+    [SeminormedAddGroup A] [SeminormedAddCommGroup G] [SMulZeroClass A G] [IsBoundedSMul A G]
+    {a : (ι → ℕ) → A} {b : (ι → ℕ) → G} {ρ : ℝ} (hρ : 0 ≤ ρ)
+    (ha : Summable fun β : ι → ℕ ↦ ‖a β‖ * ρ ^ (∑ i, β i))
+    (hb : Summable fun γ : ι → ℕ ↦ ‖b γ‖ * ρ ^ (∑ i, γ i)) :
+    Summable fun ν : ι → ℕ ↦ ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i) := by
+  have hprod := ha.mul_of_nonneg hb (fun _ ↦ by positivity) (fun _ ↦ by positivity)
+  have hsig := (sigmaIicEquivProd.summable_iff.2 hprod).sigma
+  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun ν ↦ ?_) hsig
+  calc ‖∑ β ∈ Iic ν, a β • b (ν - β)‖ * ρ ^ (∑ i, ν i)
+      ≤ (∑ β ∈ Iic ν, ‖a β‖ * ‖b (ν - β)‖) * ρ ^ (∑ i, ν i) := by
+        gcongr
+        exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_smul_le _ _)
+    _ = ∑ β ∈ Iic ν, (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i)) := by
+        rw [sum_mul]
+        refine sum_congr rfl fun β hβ ↦ ?_
+        have hdeg : ∑ i, β i + ∑ i, (ν - β) i = ∑ i, ν i := by
+          rw [← sum_add_distrib]
+          exact sum_congr rfl fun i _ ↦ add_tsub_cancel_of_le (mem_Iic.1 hβ i)
+        rw [← hdeg, pow_add]
+        ring
+    _ = ∑ x : Iic ν,
+          (‖a x.1‖ * ρ ^ (∑ i, x.1 i)) * (‖b (ν - x.1)‖ * ρ ^ (∑ i, (ν - x.1) i)) :=
+        (sum_coe_sort (Iic ν) fun β ↦
+          (‖a β‖ * ρ ^ (∑ i, β i)) * (‖b (ν - β)‖ * ρ ^ (∑ i, (ν - β) i))).symm
+    _ = _ := (tsum_fintype _).symm
+
+/-- **Cauchy product of absolutely summable multi-index power series**: if `(∏ i, y i ^ β i) • a β`
+and `(∏ i, y i ^ γ i) • b γ` are summable in norm and have sums `u` and `v`, then the convolved
+series `(∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β)` has sum `u • v`. No completeness
+assumption on `F` is needed. -/
+theorem hasSum_prod_pow_smul_sum_Iic_smul {𝕜 ι A F : Type*} [CommMonoid 𝕜] [Fintype ι]
+    [DecidableEq ι] [SeminormedRing A] [SeminormedAddCommGroup F] [SMul 𝕜 A]
+    [DistribMulAction 𝕜 F] [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F]
+    [SMulCommClass 𝕜 A F]
+    {a : (ι → ℕ) → A} {b : (ι → ℕ) → F} {y : ι → 𝕜} {u : A} {v : F}
+    (hu : HasSum (fun β : ι → ℕ ↦ (∏ i, y i ^ β i) • a β) u)
+    (hv : HasSum (fun γ : ι → ℕ ↦ (∏ i, y i ^ γ i) • b γ) v)
+    (hu_norm : Summable fun β : ι → ℕ ↦ ‖(∏ i, y i ^ β i) • a β‖)
+    (hv_norm : Summable fun γ : ι → ℕ ↦ ‖(∏ i, y i ^ γ i) • b γ‖) :
+    HasSum (fun ν : ι → ℕ ↦ (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β)) (u • v) := by
+  have hprod := hu.smul_of_summable_norm hv hu_norm hv_norm
+  refine (sigmaIicEquivProd.hasSum_iff.2 hprod).sigma fun ν ↦ ?_
+  have hfib : (∏ i, y i ^ ν i) • ∑ β ∈ Iic ν, a β • b (ν - β) =
+      ∑ β : Iic ν,
+        ((∏ i, y i ^ β.1 i) • a β.1) • ((∏ i, y i ^ (ν - β.1) i) • b (ν - β.1)) := by
+    rw [sum_coe_sort (Iic ν) fun β ↦
+      ((∏ i, y i ^ β i) • a β) • ((∏ i, y i ^ (ν - β) i) • b (ν - β)), smul_sum]
+    refine sum_congr rfl fun β hβ ↦ ?_
+    have hpow : (∏ i, y i ^ β i) * (∏ i, y i ^ (ν - β) i) = ∏ i, y i ^ ν i := by
+      rw [← prod_mul_distrib]
+      exact prod_congr rfl fun i _ ↦ by
+        rw [← pow_add, Pi.sub_apply, add_tsub_cancel_of_le (mem_Iic.1 hβ i)]
+    rw [smul_assoc (∏ i, y i ^ β i) (a β), ← smul_comm (∏ i, y i ^ (ν - β) i) (a β),
+      smul_smul, hpow]
+  rw [hfib]
+  exact hasSum_fintype _
+
+end TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
