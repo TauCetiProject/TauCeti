@@ -638,7 +638,7 @@ theorem cast_labelα_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : 
     exact sigma_mk_cast _ _
 
 /-- The end label of the last edge of the circle of `p i`, read in `A_{v₀}`, is the last element
-`g_k` of `p i`. -/
+`g_{k+1}` of `p i`. -/
 theorem cast_labelω_wedgeDart_of_add_one_eq_length (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) + 1 = (p i).length) :
     MulEquiv.cast (M := 𝔸.vertexGroup)

@@ -774,10 +774,6 @@ instance (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {i // (p i).length 
   inferInstanceAs (Finite (Option (Σ c : {i // (p i).length ≠ 0},
     Fin (IndexedPath.ofAlternatingPath (p c) c.2).1)))
 
-instance (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {i // (p i).length ≠ 0}] :
-    Finite (wedge p).graph.GeomEdge :=
-  Finite.of_surjective _ (SerreGraph.toGeomEdge_surjective _)
-
 /-- The wedge is a finite `𝔸`-graph when finitely many paths have positive length and its base
 vertex group is finitely generated, for instance for a finite family. -/
 theorem isFinite_wedge (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {i // (p i).length ≠ 0}]

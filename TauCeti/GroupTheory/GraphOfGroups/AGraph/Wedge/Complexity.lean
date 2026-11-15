@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.AGraph.Wedge.Basic
+import TauCeti.GroupTheory.Rank
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Tactic.FinCases
 
@@ -83,18 +84,10 @@ the paths of positive length. -/
 theorem rank_subgroup_wedge_le_complexity (p : ι → 𝔸.AlternatingPath v₀ v₀)
     [Finite {i // (p i).length ≠ 0}] [Group.FG (wedgeGroup p)] :
     Group.rank (wedge p).subgroup ≤ (wedge p).complexity := by
-  obtain ⟨T, hT, hK⟩ := Group.rank_spec (wedgeGroup p)
-  set f := (π₁.vertexHom (Quiver.Path.nil : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩)).comp (wedgeGroup p).subtype
-  set R := Set.range fun c : {i // (p i).length ≠ 0} => π₁.mk (p c).toPath
-  have h : (wedge p).subgroup = Subgroup.closure (f '' T ∪ R) := by
-    rw [subgroup_wedge_eq_sup, Subgroup.closure_union, ← MonoidHom.map_closure, hK,
-      ← MonoidHom.range_eq_map, MonoidHom.range_comp, Subgroup.range_subtype]
-  have h₁ : Nat.card ↥(f '' T ∪ R) ≤ T.card + Nat.card {i // (p i).length ≠ 0} :=
-    (Set.card_union_le _ _).trans (add_le_add ((Finite.card_image_le f).trans_eq
-      (Nat.card_eq_finsetCard T)) (Finite.card_range_le _))
-  rw [Subgroup.rank_congr h, complexity_wedge]
-  have h₂ := Subgroup.rank_closure_finite_le_nat_card (f '' T ∪ R)
-  omega
+  rw [Subgroup.rank_congr (subgroup_wedge_eq_sup p), complexity_wedge, add_comm]
+  exact (Subgroup.rank_sup_le _ _).trans (add_le_add
+    (Group.rank_le_of_surjective _ (MonoidHom.subgroupMap_surjective _ _))
+    ((Subgroup.rank_closure_finite_le_nat_card _).trans (Finite.card_range_le _)))
 
 /-- The complexity of the wedge of a finite family of closed alternating paths is the number of
 paths when no smaller family generates the subgroup they generate. -/
