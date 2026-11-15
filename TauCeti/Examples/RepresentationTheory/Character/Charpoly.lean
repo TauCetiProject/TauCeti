@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Charpoly
+public import TauCeti.RepresentationTheory.Character.Charpoly
+public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
@@ -18,8 +19,8 @@ character form.
   `2 det A = tr (A) ^ 2 - tr (A ^ 2)`.
 * `d = 0`: `det (1 - X A) = 1`, and both sides of the recurrence vanish in every positive degree.
 * A four-dimensional representation and an element with `g ^ 2 = 1`: the traces of the powers
-  alternate between `χ (g)` and `4`, and `χ (g) = 2` forces the characteristic polynomial
-  `(X - 1) ^ 3 * (X + 1)`.
+  alternate between `χ (g)` and `4`, and in characteristic zero `χ (g) = 2` forces the
+  characteristic polynomial `(X - 1) ^ 3 * (X + 1)`.
 * Adding a trivial summand of dimension `s` multiplies the characteristic polynomial by
   `(X - 1) ^ s` and adds `s` to every trace of a power, including for `s = 0`.
 -/
@@ -28,7 +29,7 @@ public section
 
 open Finset Module Polynomial Representation
 
-namespace TauCeti.Examples.RepresentationTheory.CharacterTableCharpoly
+namespace TauCeti.Examples.RepresentationTheory.CharacterCharpoly
 
 /-! ### Matrices of size two and zero -/
 
@@ -65,19 +66,18 @@ example (hV : finrank k V = 4) {g : G} (hg : g ^ 2 = 1) :
   simp only [trace_pow_eq_character_pow, hg, h3, h4, char_one, hV]
   exact ⟨rfl, by norm_num, trivial, by norm_num⟩
 
-/-- For an element with `g ^ 2 = 1` and `χ (g) = 2` of a four-dimensional representation, the
-characteristic polynomial of `ρ g` is `(X - 1) ^ 3 * (X + 1)`. -/
+/-- In characteristic zero, for an element with `g ^ 2 = 1` and `χ (g) = 2` of a four-dimensional
+representation, the characteristic polynomial of `ρ g` is `(X - 1) ^ 3 * (X + 1)`. -/
 example (hV : finrank k V = 4) {g : G} (hg : g ^ 2 = 1) (hχ : ρ.character g = 2) :
     (ρ g).charpoly = (X - 1) ^ 3 * (X + 1) := by
-  rw [ρ.charpoly_apply_eq_of_sq_eq_one hg (a := 3) (b := 1) (by omega) (by rw [hχ]; norm_num),
+  rw [charpoly_apply_eq_of_sq_eq_one hg (a := 3) (b := 1) (by omega) (by rw [hχ]; norm_num),
     pow_one]
 
 /-- Adding a trivial summand of dimension `s` multiplies the characteristic polynomial by
 `(X - 1) ^ s`. -/
 example (s : ℕ) (g : G) :
     (ρ.prod (trivial k G (Fin s → k)) g).charpoly = (ρ g).charpoly * (X - 1) ^ s := by
-  have h1 : trivial k G (Fin s → k) g = 1 := by ext; simp
-  rw [charpoly_prod_apply, h1, LinearMap.charpoly_one, finrank_fin_fun]
+  rw [charpoly_prod_apply, charpoly_trivial_apply, finrank_fin_fun]
 
 /-- Adding a trivial summand of dimension `s` adds `s` to every trace of a power. -/
 example (s : ℕ) (g : G) (j : ℕ) :
@@ -85,4 +85,4 @@ example (s : ℕ) (g : G) (j : ℕ) :
       LinearMap.trace k V (ρ g ^ j) + s := by
   simp [trace_pow_eq_character_pow, char_trivial]
 
-end TauCeti.Examples.RepresentationTheory.CharacterTableCharpoly
+end TauCeti.Examples.RepresentationTheory.CharacterCharpoly
