@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.TensorProduct.Module
-public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
-public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 
 /-!
@@ -24,8 +22,7 @@ enveloping algebra, with the tensor-product internal grading. Restricting the
 enveloping action supplies the actions used to balance. The quotient has the sum
 internal grading and the two outer actions.
 
-The construction uses the existing balanced quotient, grading, map, and lift APIs.
-Its internal grading introduces no Koszul sign. Cohomological tensor signs come
+The internal grading introduces no Koszul sign. Cohomological tensor signs come
 from Mathlib's totalization when this bifunctor is applied to cochain complexes.
 Taking all three algebras and gradings equal gives tensor composition of
 endobimodules; heterogeneous composition also supplies the tensors needed for
@@ -883,8 +880,7 @@ theorem bimoduleTensorMap_add_left (f f' : M ⟶ M') (g : N ⟶ N') :
       bimoduleTensorMap Γ Δ Θ f g + bimoduleTensorMap Γ Δ Θ f' g := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.add_tmul k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
@@ -892,24 +888,21 @@ theorem bimoduleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
       bimoduleTensorMap Γ Δ Θ f g + bimoduleTensorMap Γ Δ Θ f g' := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_add k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleTensorMap_smul_left (c : k) (f : M ⟶ M') (g : N ⟶ N') :
     bimoduleTensorMap Γ Δ Θ (c • f) g = c • bimoduleTensorMap Γ Δ Θ f g := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.smul_tmul k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N') :
     bimoduleTensorMap Γ Δ Θ f (c • g) = c • bimoduleTensorMap Γ Δ Θ f g := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_smul k B _ _ _
+  simp
 
 /-- Balanced tensor composition of internally graded bimodules. -/
 -- Expose the object assignment so the tensor maps have the computed source and target types.
