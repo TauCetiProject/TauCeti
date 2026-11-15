@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.PhragmenLindelof.VerticalStrip
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Phragmén–Lindelöf with polynomial edge bounds
@@ -124,28 +125,28 @@ private theorem abs_arg_stripBase_mul_abs_im_le {a b : ℝ} {s : ℂ} (hs : s.re
     · rw [Real.sin_neg, sin_arg, ← neg_div]
       gcongr
       exact neg_le_abs _
-  have hj := (Real.mul_le_sin (abs_nonneg (arg x)) harg).trans hsin
-  rw [le_div_iff₀ hx] at hj
+  -- Jordan's inequality turns this into `|arg x| * ‖x‖ ≤ π / 2 * |x.im|`.
+  have hj : |arg x| * ‖x‖ ≤ Real.pi / 2 * |x.im| := by
+    have h := (TauCeti.le_pi_div_two_mul_sin (abs_nonneg _) harg).trans
+      (mul_le_mul_of_nonneg_left hsin (by positivity))
+    rw [mul_div_assoc', le_div_iff₀ hx] at h
+    exact h
   have him : |x.im| ≤ |s.im| * (b - a) := by
     rw [stripBase_im, abs_mul]
     gcongr
     exact abs_le.mpr ⟨by linarith [hs.2], by linarith [hs.1]⟩
   have hnorm : 1 + s.im ^ 2 ≤ ‖x‖ := (one_add_sq_le_stripBase_re hs).trans (re_le_norm x)
   have hab : 0 ≤ b - a := by linarith [hs.1, hs.2]
-  have hpi := Real.pi_pos
-  have ht : |s.im| ^ 2 = s.im ^ 2 := sq_abs _
-  -- `|arg x| * |t| * (1 + t ^ 2) ≤ |arg x| * |t| * ‖x‖ ≤ π / 2 * |x.im| * |t| ≤ π / 2 (b - a) t²`
-  have key : |arg x| * |s.im| * (1 + s.im ^ 2) ≤ Real.pi / 2 * (b - a) * (1 + s.im ^ 2) := by
-    have h1 : |arg x| * |s.im| * (1 + s.im ^ 2) ≤ |arg x| * |s.im| * ‖x‖ := by gcongr
-    have h2 : |arg x| * ‖x‖ ≤ Real.pi / 2 * |x.im| := by
-      field_simp at hj ⊢
-      linarith
-    have h3 : |arg x| * |s.im| * ‖x‖ ≤ Real.pi / 2 * (|s.im| * (b - a)) * |s.im| := by
-      calc |arg x| * |s.im| * ‖x‖ = |arg x| * ‖x‖ * |s.im| := by ring
-        _ ≤ Real.pi / 2 * |x.im| * |s.im| := by gcongr
-        _ ≤ Real.pi / 2 * (|s.im| * (b - a)) * |s.im| := by gcongr
-    nlinarith [mul_nonneg hpi.le hab]
-  exact le_of_mul_le_mul_right key (by positivity)
+  -- `|arg x| * |t| * ‖x‖ ≤ π / 2 * |x.im| * |t| ≤ π / 2 (b - a) t² ≤ π / 2 (b - a) ‖x‖`
+  have key : |arg x| * |s.im| * ‖x‖ ≤ Real.pi / 2 * (b - a) * ‖x‖ :=
+    calc |arg x| * |s.im| * ‖x‖ = |arg x| * ‖x‖ * |s.im| := by ring
+      _ ≤ Real.pi / 2 * |x.im| * |s.im| := by gcongr
+      _ ≤ Real.pi / 2 * (|s.im| * (b - a)) * |s.im| := by gcongr
+      _ = Real.pi / 2 * (b - a) * s.im ^ 2 := by rw [← sq_abs s.im]; ring
+      _ ≤ Real.pi / 2 * (b - a) * ‖x‖ := by
+        gcongr
+        linarith
+  exact le_of_mul_le_mul_right key hx
 
 /-- Real powers of `‖x(s)‖` are comparable to the same powers of `(1 + |im s|) ^ 2`, up to the
 factor `(2 (1 + (b - a)) ^ 2) ^ P` for every exponent of absolute value at most `P`. -/
@@ -159,19 +160,11 @@ private theorem rpow_norm_stripBase_bounds {a b p P : ℝ} {s : ℂ} (hs : s.re 
   -- the comparison is symmetric in the two quantities
   have key {r u : ℝ} (hu : 0 < u) (h₁ : u ≤ N * r) (h₂ : r ≤ N * u) : r ^ p ≤ N ^ P * u ^ p := by
     have hr : 0 < r := pos_of_mul_pos_right (hu.trans_le h₁) hN0.le
-    rcases le_or_gt 0 p with h | h
-    · calc r ^ p ≤ (N * u) ^ p := Real.rpow_le_rpow hr.le h₂ h
-        _ = N ^ p * u ^ p := Real.mul_rpow hN0.le hu.le
-        _ ≤ N ^ P * u ^ p := by
-          gcongr
-          exact (le_abs_self p).trans hp
-    · have hdiv : u / N ≤ r := (div_le_iff₀ hN0).mpr (by linarith)
-      calc r ^ p ≤ (u / N) ^ p := Real.rpow_le_rpow_of_nonpos (by positivity) hdiv h.le
-        _ = N ^ (-p) * u ^ p := by
-          rw [Real.div_rpow hu.le hN0.le, Real.rpow_neg hN0.le, div_eq_mul_inv, mul_comm]
-        _ ≤ N ^ P * u ^ p := by
-          gcongr
-          exact (neg_le_abs p).trans hp
+    have hru := Real.rpow_le_rpow_abs (div_pos hr hu) ((div_le_iff₀ hu).mpr h₂)
+      (by rw [inv_div]; exact (div_le_iff₀ hr).mpr h₁) p
+    rw [Real.div_rpow hr.le hu.le, div_le_iff₀ (by positivity)] at hru
+    exact hru.trans
+      (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_le hN hp) (by positivity))
   have hx : 0 < ‖stripBase a b s‖ :=
     lt_of_lt_of_le (by positivity) ((one_add_sq_le_stripBase_re hs).trans (re_le_norm _))
   obtain ⟨hlo, hhi⟩ := norm_stripBase_bounds hs
@@ -210,6 +203,10 @@ private theorem one_le_weightConst {a b : ℝ} (hab : a ≤ b) (α β : ℝ) :
   have h1 : 1 ≤ 2 * (1 + (b - a)) ^ 2 := by nlinarith [sub_nonneg.mpr hab]
   exact one_le_mul_of_one_le_of_one_le (Real.one_le_exp (by positivity))
     (Real.one_le_rpow h1 (by positivity))
+
+private theorem weightConst_pos {a b : ℝ} (hab : a ≤ b) (α β : ℝ) :
+    0 < weightConst a b α β :=
+  one_pos.trans_le (one_le_weightConst hab α β)
 
 /-- The norm of the weight, split into a real power of `‖x(s)‖` and the factor contributed by the
 imaginary part of the exponent. -/
@@ -288,7 +285,7 @@ private theorem norm_stripWeight_le_exp {a b α β : ℝ} (hab : a < b) {s : ℂ
     (hs : s.re ∈ Icc a b) :
     ‖stripWeight a b α β s‖ ≤ weightConst a b α β * Real.exp ((|α| + |β|) * ‖s‖) := by
   refine (norm_stripWeight_bounds hab hs).1.trans
-    (mul_le_mul_of_nonneg_left ?_ (zero_le_one.trans (one_le_weightConst hab.le α β)))
+    (mul_le_mul_of_nonneg_left ?_ (weightConst_pos hab.le α β).le)
   have hℓ : -(α + (β - α) / (b - a) * (s.re - a)) ≤ |α| + |β| :=
     (neg_le_abs _).trans (abs_interp_exponent_le hab hs)
   calc (1 + |s.im|) ^ (-(α + (β - α) / (b - a) * (s.re - a)))
@@ -311,35 +308,30 @@ private theorem isBigO_stripWeight_smul {E : Type*} [NormedAddCommGroup E] [Norm
     ∃ A B : ℝ, (fun s ↦ stripWeight a b α β s • f s) =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' Ioo a b)]
       (fun w ↦ Real.exp (B * ‖w‖ ^ A)) := by
   obtain ⟨A, B, hf⟩ := hg
-  obtain ⟨c₀, hc₀⟩ := hf.bound
   set q := |α| + |β|
-  set K₀ := weightConst a b α β
   have hq : 0 ≤ q := by positivity
-  have hK₀ : 0 ≤ K₀ := zero_le_one.trans (one_le_weightConst hab.le α β)
-  refine ⟨max A 1, |B| + q, IsBigO.of_bound (|c₀| * K₀) ?_⟩
+  refine ⟨max A 1, |B| + q, ?_⟩
+  have hw : stripWeight a b α β =O[cobounded ℂ ⊓ 𝓟 (re ⁻¹' Ioo a b)]
+      fun w ↦ Real.exp (q * ‖w‖) := by
+    refine IsBigO.of_bound (weightConst a b α β) ?_
+    filter_upwards [(eventually_mem_principal _).filter_mono inf_le_right] with s hs
+    rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+    exact norm_stripWeight_le_exp hab (Ioo_subset_Icc_self hs)
   have hcob : ∀ᶠ s in cobounded ℂ ⊓ 𝓟 (re ⁻¹' Ioo a b), 1 ≤ ‖s‖ :=
     (tendsto_norm_cobounded_atTop.eventually (eventually_ge_atTop 1)).filter_mono inf_le_left
-  filter_upwards [hc₀, hcob, (eventually_mem_principal _).filter_mono inf_le_right]
-    with s hfs hs1 hs
-  have hw := norm_stripWeight_le_exp (α := α) (β := β) hab (Ioo_subset_Icc_self hs)
-  have hexp : Real.exp (q * ‖s‖) * Real.exp (B * ‖s‖ ^ A) ≤
-      Real.exp ((|B| + q) * ‖s‖ ^ max A 1) := by
-    rw [← Real.exp_add, Real.exp_le_exp]
-    have h1 : ‖s‖ ≤ ‖s‖ ^ max A 1 := by
-      simpa using Real.rpow_le_rpow_of_exponent_le hs1 (le_max_right A 1)
-    have h2 : ‖s‖ ^ A ≤ ‖s‖ ^ max A 1 := Real.rpow_le_rpow_of_exponent_le hs1 (le_max_left A 1)
-    have h3 : B * ‖s‖ ^ A ≤ |B| * ‖s‖ ^ max A 1 :=
-      (mul_le_mul_of_nonneg_right (le_abs_self B) (by positivity)).trans
-        (mul_le_mul_of_nonneg_left h2 (abs_nonneg B))
-    nlinarith [mul_le_mul_of_nonneg_left h1 hq]
-  rw [Real.norm_eq_abs, Real.abs_exp] at hfs ⊢
-  rw [norm_smul]
-  calc ‖stripWeight a b α β s‖ * ‖f s‖
-      ≤ K₀ * Real.exp (q * ‖s‖) * (|c₀| * Real.exp (B * ‖s‖ ^ A)) := by
-        gcongr
-        exact hfs.trans (mul_le_mul_of_nonneg_right (le_abs_self c₀) (Real.exp_nonneg _))
-    _ = |c₀| * K₀ * (Real.exp (q * ‖s‖) * Real.exp (B * ‖s‖ ^ A)) := by ring
-    _ ≤ |c₀| * K₀ * Real.exp ((|B| + q) * ‖s‖ ^ max A 1) := by gcongr
+  refine isBigO_norm_left.mp ?_
+  simp_rw [norm_smul]
+  refine (hw.norm_left.mul hf.norm_left).trans (IsBigO.of_bound 1 ?_)
+  filter_upwards [hcob] with s hs1
+  rw [one_mul, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (Real.exp_nonneg _),
+    ← Real.exp_add, Real.exp_le_exp]
+  have h1 : ‖s‖ ≤ ‖s‖ ^ max A 1 := by
+    simpa using Real.rpow_le_rpow_of_exponent_le hs1 (le_max_right A 1)
+  have h2 : ‖s‖ ^ A ≤ ‖s‖ ^ max A 1 := Real.rpow_le_rpow_of_exponent_le hs1 (le_max_left A 1)
+  have h3 : B * ‖s‖ ^ A ≤ |B| * ‖s‖ ^ max A 1 :=
+    (mul_le_mul_of_nonneg_right (le_abs_self B) (by positivity)).trans
+      (mul_le_mul_of_nonneg_left h2 (abs_nonneg B))
+  nlinarith [mul_le_mul_of_nonneg_left h1 hq]
 
 /-- A polynomial bound of the matching exponent on a vertical line becomes a constant bound after
 weighting. -/
@@ -351,7 +343,7 @@ private theorem norm_stripWeight_smul_le_of_edge {E : Type*} [NormedAddCommGroup
   have hbound := (norm_stripWeight_bounds (α := α) (β := β) hab (hv ▸ hσ : v.re ∈ Icc a b)).1
   rw [hv, hℓ] at hbound
   have hpos : 0 < 1 + |v.im| := by positivity
-  have hK₀ : 0 ≤ weightConst a b α β := zero_le_one.trans (one_le_weightConst hab.le α β)
+  have hK₀ := (weightConst_pos (α := α) (β := β) hab.le).le
   rw [norm_smul]
   calc ‖stripWeight a b α β v‖ * ‖f v‖
       ≤ weightConst a b α β * (1 + |v.im|) ^ (-γ) * (C * (1 + |v.im|) ^ γ) :=
@@ -373,7 +365,7 @@ private theorem norm_le_of_norm_stripWeight_smul_le {E : Type*} [NormedAddCommGr
   have hpos : 0 < 1 + |z.im| := by positivity
   have hinv : (1 + |z.im|) ^ ℓ * (1 + |z.im|) ^ (-ℓ) = 1 := by
     rw [← Real.rpow_add hpos, add_neg_cancel, Real.rpow_zero]
-  have hK₀ : 0 ≤ weightConst a b α β := zero_le_one.trans (one_le_weightConst hab.le α β)
+  have hK₀ := (weightConst_pos (α := α) (β := β) hab.le).le
   rw [norm_smul] at h
   calc ‖f z‖ = (1 + |z.im|) ^ ℓ * ((1 + |z.im|) ^ (-ℓ) * ‖f z‖) := by
         rw [← mul_assoc, hinv, one_mul]
@@ -409,7 +401,7 @@ theorem exists_norm_le_interp_mul_one_add_abs_im_rpow (a b α β : ℝ) :
     have hab : b - a = 0 := by linarith [hz.1, hz.2]
     simpa [hza, hab] using ha z hza
   set K₀ := weightConst a b α β
-  have hK₀ : 0 < K₀ := one_pos.trans_le (one_le_weightConst hab.le α β)
+  have hK₀ : 0 < K₀ := weightConst_pos hab.le α β
   refine ⟨K₀ * K₀, by positivity, fun {f C₁ C₂} hd hg ha hb z hz ↦ ?_⟩
   set θ := (z.re - a) / (b - a)
   have hC₁ : 0 ≤ C₁ := by simpa using (norm_nonneg _).trans (ha (a : ℂ) (by simp))
@@ -454,6 +446,6 @@ theorem exists_norm_le_mul_one_add_abs_im_rpow (a b α β : ℝ) :
   have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (ha (a : ℂ) (by simp))
   have hCC : C ^ (1 - (z.re - a) / (b - a)) * C ^ ((z.re - a) / (b - a)) = C := by
     rw [← Real.rpow_add' hC (by simp), sub_add_cancel, Real.rpow_one]
-  simpa only [mul_assoc, hCC] using h hd hg ha hb z hz
+  exact (h hd hg ha hb z hz).trans_eq (by rw [mul_assoc K, hCC])
 
 end TauCeti.PhragmenLindelof
