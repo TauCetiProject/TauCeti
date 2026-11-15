@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
 
 /-!
 # Unitary permutation matrices as invertible matrices
@@ -42,11 +41,10 @@ theorem toUnits_permutationUnitary {R : Type*} [CommRing R] [StarRing R] {ι : T
 
 /-- A permutation matrix lies in the unitary subgroup of the general linear group; over a ring
 with trivial star, such as `ℝ`, this is the orthogonal group. -/
-theorem permutationGL_mem_unitarySubgroup {R : Type*} [CommRing R] [StarRing R] {ι : Type*}
+theorem permutationGL_mem_unitarySubgroup {R : Type*} [Semiring R] [StarRing R] {ι : Type*}
     [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
     permutationGL σ ∈ unitarySubgroup (GL ι R) := by
-  rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, ← toUnits_permutationUnitary,
-    Unitary.val_toUnits_apply]
-  exact (permutationUnitary σ).property
+  simp [mem_unitarySubgroup_iff, Units.unitary_eq, Unitary.mem_iff, star_eq_conjTranspose,
+    conjTranspose_permMatrix, ← permMatrix_mul]
 
 end TauCeti
