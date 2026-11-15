@@ -134,6 +134,13 @@ theorem spinGroupMap_comp (f : Q₂ →qᵢ Q) (g : Q₁ →qᵢ Q₂) :
   ext x
   exact AlgHom.congr_fun (CliffordAlgebra.map_comp_map f g) (x : CliffordAlgebra Q₁)
 
+/-- Applying two Spin-group maps in succession agrees with the Spin-group map of the composite
+quadratic isometry. -/
+@[simp]
+theorem spinGroupMap_spinGroupMap (f : Q₂ →qᵢ Q) (g : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
+    f.spinGroupMap (g.spinGroupMap x) = (f.comp g).spinGroupMap x :=
+  DFunLike.congr_fun (f.spinGroupMap_comp g) x
+
 end QuadraticMap.Isometry
 
 

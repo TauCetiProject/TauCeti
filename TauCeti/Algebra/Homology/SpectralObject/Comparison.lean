@@ -35,11 +35,11 @@ open ComposableArrows Limits
 variable {C : Type*} [Category* C] [Abelian C] {X Y : SpectralObject C EInt} (φ : X ⟶ Y)
 
 /-- **The comparison theorem on `E∞`.** Let `φ : X ⟶ Y` be a morphism of spectral objects
-indexed by `EInt` and `a ≤ b` such that `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for `X` and `Y`
-(the filtrations of the abutments in degree `n` start at `a` and end at `b`). If `φ` is an
-isomorphism on `EInfty q n` for `a ≤ q < b`, then it is an isomorphism on the abutment
-`H^n(⊥ ≤ ⊤)`. -/
-theorem isIso_hom_app_abutment {a b n : ℤ} (hab : a ≤ b)
+indexed by `EInt` and integers `a`, `b` such that `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for `X`
+and `Y` (the filtrations of the abutments in degree `n` start at `a` and end at `b`; if `b < a`
+the abutments vanish). If `φ` is an isomorphism on `EInfty q n` for `a ≤ q < b`, then it is an
+isomorphism on the abutment `H^n(⊥ ≤ ⊤)`. -/
+theorem isIso_hom_app_abutment {a b n : ℤ}
     (hXa : IsZero ((X.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))))
     (hYa : IsZero ((Y.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))))
     (hXb : IsZero ((X.H n).obj (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤)))))
@@ -48,6 +48,11 @@ theorem isIso_hom_app_abutment {a b n : ℤ} (hab : a ≤ b)
       (homOfLE (coe_le_coe_add_one q)) (homOfLE (le_top : ((q + 1 : ℤ) : EInt) ≤ ⊤))
       (n - 1) n (n + 1) (sub_add_cancel n 1) rfl)) :
     IsIso ((φ.hom n).app (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
+  by_cases hab : a ≤ b
+  swap
+  · -- If `b < a`, the abutments vanish.
+    exact ⟨⟨0, (X.isZero_abutment_of_le (not_le.1 hab).le hXa hXb).eq_of_src _ _,
+      (Y.isZero_abutment_of_le (not_le.1 hab).le hYa hYb).eq_of_src _ _⟩⟩
   have key : ∀ q, a ≤ q → q ≤ b → IsIso (opcyclesMapOfHom φ
       (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (le_top : (q : EInt) ≤ ⊤)) n) := by
     intro q hq
@@ -129,10 +134,7 @@ theorem isIso_hom_app_abutment_of_isIso_page {a b : ℤ} (n : ℤ)
     (r : ℤ) (hr : 2 ≤ r)
     (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological φ).hom r hr).f pq)) :
     IsIso ((φ.hom n).app (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) := by
-  wlog hab : a ≤ b generalizing a
-  · exact this (a := b) (fun m i hm₀ hm₁ hi => hXa m i hm₀ hm₁ (hi.trans (not_le.1 hab).le))
-      (fun m i hm₀ hm₁ hi => hYa m i hm₀ hm₁ (hi.trans (not_le.1 hab).le)) le_rfl
-  refine isIso_hom_app_abutment φ hab (hXa n a le_rfl (by lia) le_rfl)
+  refine isIso_hom_app_abutment φ (hXa n a le_rfl (by lia) le_rfl)
     (hYa n a le_rfl (by lia) le_rfl) (hXb n b (by lia) le_rfl le_rfl)
     (hYb n b (by lia) le_rfl le_rfl) (fun q haq hqb => ?_)
   have hr' : r ≤ max r (b - a + 1) := le_max_left _ _
