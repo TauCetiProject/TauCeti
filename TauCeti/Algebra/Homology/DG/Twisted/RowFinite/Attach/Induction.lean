@@ -151,8 +151,7 @@ private theorem rowFiniteTwistedDifferential_fullRows_inl (p : P) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (fullRows m₀ m) (fullRows m₀ m (Sum.inl p)) =
       0 := by
   rw [fullRows, Sum.elim_inl, ← fullRows, rowFiniteTwistedDifferential_fullRows_mapDomain_inl,
-    (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero _ (m₀.mem_graded p)).1
-      (m₀.twisting p), mapDomain_zero]
+    m₀.differential_row p, mapDomain_zero]
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
 /-- The images `Sum.elim g c` commute with the differentials on the base generators. -/
@@ -255,7 +254,7 @@ private theorem isStage_zero
   rw [← hrange]
   exact (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain Sum.inl
     Sum.inl_injective (rowFiniteTwistedDifferential_fullRows_mapDomain_inl m₀ 0)
-    (fun _ ↦ rfl) (N 0)).1 hK
+    (fun _ ↦ rfl) (N 0 : Set M)).1 hK
 
 /-- **One more stage of cells.** The first `n` stages of a semi-free model extend to the first
 `n + 1`, without changing the rows and images of the cells of stage `< n`, by attaching the cells
@@ -305,7 +304,7 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
   have hK := (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain Subtype.val
     Subtype.val_injective (mP := mL.m)
     RowFiniteTwistingCocycle.rowFiniteTwistedDifferential_mapDomain_ofComapDomain
-    (fun z : L ↦ rfl) (N n)).2 (by rw [Subtype.range_coe]; exact hs.exists_eq)
+    (fun z : L ↦ rfl) (N n : Set M)).2 (by rw [Subtype.range_coe]; exact hs.exists_eq)
   -- Attach the cells of stage `n`.
   have hgL (z : L) : linearCombination A cL (mL.m z) = dM (cL z) := by
     have : linearCombination A (Sum.elim g c) (fullRows m₀ m z.1) = dM (cL z) := by
@@ -436,7 +435,7 @@ private theorem IsStage.exists_succ (hM : IsDGLeftModule h ℳ dM) (hN : Monoton
           exacts [⟨Sum.inl ⟨Sum.inr x, inr_mem_below.2 hx⟩, rfl⟩, ⟨Sum.inr ⟨x, hx⟩, rfl⟩]
     rw [← hrange]
     exact (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain φ hφ hDφ hcφ
-      (N (n + 1))).1 hext
+      (N (n + 1) : Set M)).1 hext
 
 /-- **A semi-free model along a filtration, relative to a base model.** Let `M` be a DG left
 module, filtered by homogeneous submodules `N 0 ≤ N 1 ≤ ⋯`, and let `g : K_{m₀} → M` be a base
@@ -615,43 +614,29 @@ theorem exists_rowFiniteTwistingCocycle_of_forall_exists (hM : IsDGLeftModule h 
     mX.comap Sum.inr Sum.inr_injective fun x ↦ hrange _
   have hD (f : G →₀ A) := mX.rowFiniteTwistedDifferential_mapDomain_comap
     (he := Sum.inr_injective) (hsupp := fun x ↦ hrange (mX.m (Sum.inr x))) f
-  have hL (f : G →₀ A) :
-      linearCombination A (Sum.elim Empty.elim c) (mapDomain Sum.inr f) =
-        linearCombination A c f := by
-    rw [linearCombination_mapDomain, Sum.elim_comp_inr]
-  -- Relative cycles of `c` on a set `S` of generators are those of `Sum.elim Empty.elim c`.
-  have htransport (S : Set G) (N' : Submodule A M)
-      (H : ∀ (F : Empty ⊕ G →₀ A) (w : M), (∀ x, Sum.inr x ∈ F.support → x ∈ S) →
-        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mX.m F = 0 →
-          linearCombination A (Sum.elim Empty.elim c) F = dM w → w ∈ N' →
-            ∃ (F' : Empty ⊕ G →₀ A) (w' : M), (∀ x, Sum.inr x ∈ F'.support → x ∈ S) ∧
-              w' ∈ N' ∧ rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mX.m F' = F ∧
-                linearCombination A (Sum.elim Empty.elim c) F' + dM w' = w)
-      (f : G →₀ A) (w : M) (hf : ↑f.support ⊆ S)
-      (hDf : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f = 0)
-      (hfw : linearCombination A c f = dM w) (hw : w ∈ N') :
-      ∃ (f' : G →₀ A) (w' : M), ↑f'.support ⊆ S ∧ w' ∈ N' ∧
-        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f' = f ∧
-          linearCombination A c f' + dM w' = w := by
-    obtain ⟨F', w', hF', hw', hDF', hFw'⟩ := H (mapDomain Sum.inr f) w (fun x hx ↦ by
-        obtain ⟨y, hy, hyx⟩ := Finset.mem_image.1 (mapDomain_support hx)
-        exact Sum.inr_injective hyx ▸ hf hy)
-      (by rw [hD, hDf, mapDomain_zero]) (by rwa [hL]) hw
-    have hF'eq : mapDomain Sum.inr (comapDomain Sum.inr F' Sum.inr_injective.injOn) = F' :=
-      mapDomain_comapDomain _ Sum.inr_injective _ (hrange F')
-    refine ⟨comapDomain Sum.inr F' Sum.inr_injective.injOn, w', fun x hx ↦ hF' x ?_, hw',
-      mapDomain_injective (Sum.inr_injective (α := Empty)) ?_, ?_⟩
-    · simpa using hx
-    · rw [← hD, hF'eq, hDF']
-    · rw [← hL, hF'eq, hFw']
+  -- Vectors supported on the cells of a set `S` are those supported on `Sum.inr '' S`.
+  have himage (F : Empty ⊕ G →₀ A) (S : Set G) :
+      (F.support : Set (Empty ⊕ G)) ⊆ Sum.inr '' S ↔ ∀ x, Sum.inr x ∈ F.support → x ∈ S := by
+    refine ⟨fun hF x hx ↦ ?_, fun hF ↦ ?_⟩
+    · obtain ⟨y, hy, hyx⟩ := hF (Finset.mem_coe.2 hx)
+      exact Sum.inr_injective hyx ▸ hy
+    · rintro (e | x) hx
+      exacts [e.elim, ⟨x, hF x hx, rfl⟩]
   refine ⟨m, c, fun x y hy ↦ hlt x y (by simpa [m] using hy), hc, hcN, hcsub, fun x ↦ ?_,
-    fun n ↦ htransport {x | st x < n} (N n) (hstage n), fun f w hDf hfw hw ↦ ?_⟩
+    fun n ↦ ?_, ?_⟩
   · have := hom x
     rwa [← mX.mapDomain_comap_m (he := Sum.inr_injective)
-      (hsupp := fun x ↦ hrange (mX.m (Sum.inr x))) x, hL] at this
-  · obtain ⟨f', w', -, hf'⟩ := htransport Set.univ (⨆ n, N n) (fun F w _ hDF hFw hw ↦ by
-      obtain ⟨F', w', hF'⟩ := hunion F w hDF hFw hw
-      exact ⟨F', w', fun _ _ ↦ trivial, hF'⟩) f w (Set.subset_univ _) hDf hfw hw
-    exact ⟨f', w', hf'⟩
+      (hsupp := fun x ↦ hrange (mX.m (Sum.inr x))) x, linearCombination_mapDomain,
+      Sum.elim_comp_inr] at this
+  · refine (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain_image (dM := dM)
+      Sum.inr Sum.inr_injective hD (c := Sum.elim Empty.elim c) (fun _ ↦ rfl) {x | st x < n}
+      (N n : Set M)).2 fun F w hF hDF hFw hw ↦ ?_
+    obtain ⟨F', w', hF', hF'w⟩ := hstage n F w ((himage F _).1 hF) hDF hFw hw
+    exact ⟨F', w', (himage F' _).2 hF', hF'w⟩
+  · refine (forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain (dM := dM) Sum.inr
+      Sum.inr_injective hD (c := Sum.elim Empty.elim c) (fun _ ↦ rfl)
+      ((⨆ n, N n : Submodule A M) : Set M)).2 fun F w _ hDF hFw hw ↦ ?_
+    obtain ⟨F', w', hF'⟩ := hunion F w hDF hFw hw
+    exact ⟨F', w', hrange F', hF'⟩
 
 end TauCeti
