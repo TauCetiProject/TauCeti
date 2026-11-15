@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 
 /-!
@@ -96,8 +97,7 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
     ψ η • bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom (η : E)) φ
   have hf (η : Y) (x : E) : f η x = ψ η * (φ x * TauCeti.fourierAtom (η : E) x) := by
     simp [f, bilinLeftCLM_apply]
-  let χ : 𝓓(Ω, ℂ) := ⟨fun x ↦ φ x * 𝓕 ψ x, φ.contDiff.mul ((𝓕 ψ).smooth ⊤),
-    φ.hasCompactSupport.mul_right, tsupport_mul_subset_left.trans φ.tsupport_subset⟩
+  let χ : 𝓓(Ω, ℂ) := bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) ((𝓕 ψ).smooth ⊤) φ
   -- The integrands vanish off the support of `ψ`, so integrals over `Y` are integrals over `E`.
   have hYE (g : E → ℂ) (hg : ∀ η, ψ η = 0 → g η = 0) :
       ∫ η : Y, g η ∂(volume.comap ((↑) : Y → E)) = ∫ η, g η := by
@@ -107,8 +107,8 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
   have hχ (x : E) : χ x = ∫ η : Y, f η x ∂(volume.comap ((↑) : Y → E)) := by
     simp only [hf]
     rw [hYE (fun η ↦ ψ η * (φ x * TauCeti.fourierAtom η x)) fun η hη ↦ by simp [hη]]
-    rw [show χ x = φ x * 𝓕 ψ x from (rfl), SchwartzMap.fourier_coe, Real.fourier_eq,
-      ← integral_const_mul]
+    simp only [χ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply']
+    rw [SchwartzMap.fourier_coe, Real.fourier_eq, ← integral_const_mul]
     refine integral_congr_ae (ae_of_all _ fun η ↦ ?_)
     simp only [TauCeti.fourierAtom_eq_fourierChar, Circle.smul_def, smul_eq_mul, real_inner_comm]
     ring
@@ -123,9 +123,8 @@ theorem fourier_cutoffTempered_apply (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) {
   have hfK (η : Y) : tsupport (f η) ⊆ tsupport φ := by
     rw [show ⇑(f η) = fun x ↦ ψ η * (φ x * TauCeti.fourierAtom (η : E) x) from funext (hf η)]
     exact tsupport_mul_subset_right.trans tsupport_mul_subset_left
-  rw [cutoffTempered_apply T φ (χ := χ) fun _ ↦ (rfl),
-    complexPairing_eq_integral_of_continuous_iteratedFDeriv T (K := ⟨_, φ.hasCompactSupport⟩)
-      φ.tsupport_subset hfK hjets hχ]
+  rw [cutoffTempered_def, complexPairing_eq_integral_of_continuous_iteratedFDeriv T
+    (K := ⟨_, φ.hasCompactSupport⟩) φ.tsupport_subset hfK hjets hχ]
   rw [← hYE _ fun η hη ↦ by simp [hη]]
   refine integral_congr_ae (ae_of_all _ fun η ↦ ?_)
   simp only [f, map_smul, smul_eq_mul, localFourier_def]
@@ -173,6 +172,8 @@ theorem memSobolev_cutoffTempered_iff :
       ((Lp.memLp f').locallyIntegrable one_le_two) hGc.locallyIntegrable fun g hg hgc ↦ ?_)
     have hgc' : HasCompactSupport fun x ↦ (g x : ℂ) := hgc.comp_left ofReal_zero
     let ψ : 𝓢(E, ℂ) := hgc'.toSchwartzMap (ofRealCLM.contDiff.comp hg)
+    -- Mathlib has no evaluation lemma for `HasCompactSupport.toSchwartzMap`; by definition it
+    -- evaluates to the underlying function.
     have hψ (x : E) : ψ x = g x := (rfl)
     have h := smulLeftCLM_fourier_cutoffTempered_apply s T φ (ψ := ψ) hgc'
     rw [hf', Lp.toTemperedDistribution_apply] at h
