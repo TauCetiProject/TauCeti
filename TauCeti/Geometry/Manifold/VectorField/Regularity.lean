@@ -119,6 +119,7 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨contMDiffAt_const, (hv p).congr_of_eventuallyEq ?_⟩
   filter_upwards with q
+  rw [TangentBundle.trivializationAt_apply]
   -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
   change tangentCoordChange I x x x (v q) = v q
   exact tangentCoordChange_self (mem_extChartAt_source x)
