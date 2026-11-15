@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Parametric
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 
 /-!
 # Global parametric transversality for Fredholm equations
@@ -118,6 +119,21 @@ omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
 theorem IsRegularParameter.isRegularParameterOn {f : E × Λ → F} {U : Set (E × Λ)} {c : F}
     {l : Λ} (h : IsRegularParameter f c l) : IsRegularParameterOn f U c l :=
   (isRegularParameterOn_univ.2 h).mono (subset_univ U)
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter equation is differentiable at each solution in its specified set. -/
+theorem IsRegularParameterOn.differentiableAt {f : E × Λ → F} {U : Set (E × Λ)}
+    {c : F} {l : Λ} {x : E} (h : IsRegularParameterOn f U c l)
+    (hxU : (x, l) ∈ U) (hx : f (x, l) = c) : DifferentiableAt ℝ f (x, l) := by
+  have hs := isRegularParameterOn_iff.1 h x hxU hx
+  rw [ContinuousLinearMap.coe_comp] at hs
+  exact differentiableAt_of_fderiv_surjective hs.of_comp
+
+omit [CompleteSpace E] [CompleteSpace Λ] [CompleteSpace F] in
+/-- A regular parameter equation is differentiable at each solution. -/
+theorem IsRegularParameter.differentiableAt {f : E × Λ → F} {c : F} {l : Λ} {x : E}
+    (h : IsRegularParameter f c l) (hx : f (x, l) = c) : DifferentiableAt ℝ f (x, l) :=
+  h.isRegularParameterOn.differentiableAt (mem_univ _) hx
 
 /-- **Global parametric transversality.** The non-regular parameters of a sufficiently smooth
 universal Fredholm equation form a meagre set.
