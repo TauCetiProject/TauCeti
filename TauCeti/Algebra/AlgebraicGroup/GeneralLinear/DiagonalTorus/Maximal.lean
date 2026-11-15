@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
-public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal.Points
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
+import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
@@ -240,8 +241,12 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
     [Coalgebra.IsCocomm k (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I)]
     (hI : I ≤ diagonalTorusDefiningIdeal k n) :
     I = diagonalTorusDefiningIdeal k n :=
-  HopfIdeal.eq_of_le_of_centralizer_quotientPointsSubgroup hI
-    (centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal k n (AlgebraicClosure k))
+  HopfIdeal.eq_of_le_of_isCocomm_of_maximal_points (K := AlgebraicClosure k)
+    (diagonalTorusDefiningIdeal k n) (MonoidHom.id _)
+    Function.injective_id (Subgroup.map_id _)
+    (fun _ _ hP ↦ Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+      (centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal k n (AlgebraicClosure k)) hP)
+    I hI
 
 /-- **The diagonal torus of `GL_n` is a maximal torus over every field.** Its points over an
 algebraic closure are self-centralizing, so the geometric-point criterion applies. -/
@@ -249,9 +254,12 @@ algebraic closure are self-centralizing, so the geometric-point criterion applie
 theorem isMaximalTorus_diagonalTorusDefiningIdeal :
     HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n)
       (diagonalTorusDefiningIdeal k n) :=
-  HopfIdeal.isMaximalTorus_of_centralizer_quotientPointsSubgroup
-    (torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n)
-    (centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal k n (AlgebraicClosure k))
+  HopfIdeal.isMaximalTorus_of_maximal_points (K := AlgebraicClosure k)
+    (diagonalTorusDefiningIdeal k n)
+    (torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n) (MonoidHom.id _)
+    Function.injective_id (Subgroup.map_id _)
+    (fun _ _ hP ↦ Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative
+      (centralizer_quotientPointsSubgroup_diagonalTorusDefiningIdeal k n (AlgebraicClosure k)) hP)
 
 end
 
