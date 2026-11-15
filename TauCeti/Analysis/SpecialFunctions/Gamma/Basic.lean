@@ -57,6 +57,10 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
+* `Complex.ascPochhammer_eval_div_Gamma_add_natCast`,
+  `Real.ascPochhammer_eval_div_Gamma_add_natCast` —
+  `(s)ₙ / Γ(s + n) = (Γ s)⁻¹` for every `s` and `n : ℕ`, including at the nonpositive-integer poles
+  of `Γ`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -261,6 +265,20 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
 
+/-- Iterating `one_div_Gamma_eq_self_mul_one_div_Gamma_add_one` expresses the reciprocal Gamma
+function at `s` as `(s)ₙ / Γ(s + n)` for every `s : ℂ` and `n : ℕ`, without pole exclusions: at
+`s = −k`, both sides vanish (`(−k)ₙ = 0` for `k < n`, while `Γ(s + n) = Γ(−(k − n)) = 0` for
+`n ≤ k`). -/
+theorem ascPochhammer_eval_div_Gamma_add_natCast (s : ℂ) (n : ℕ) :
+    (ascPochhammer ℂ n).eval s / Gamma (s + n) = (Gamma s)⁻¹ := by
+  rw [div_eq_mul_inv]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [ascPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_X,
+      Polynomial.eval_natCast, mul_assoc, Nat.cast_succ, ← add_assoc,
+      ← one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (s + n), ih]
+
 end Complex
 
 namespace Real
@@ -275,6 +293,19 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+/-- Real specialization of `Complex.ascPochhammer_eval_div_Gamma_add_natCast`:
+`(x)ₙ / Γ(x + n) = (Γ x)⁻¹` for every `x : ℝ` and `n : ℕ`, including at the nonpositive-integer
+poles of `Real.Gamma`. -/
+theorem ascPochhammer_eval_div_Gamma_add_natCast (x : ℝ) (n : ℕ) :
+    (ascPochhammer ℝ n).eval x / Gamma (x + n) = (Gamma x)⁻¹ := by
+  rw [← Complex.ofReal_inj]
+  have heval : (((ascPochhammer ℝ n).eval x : ℝ) : ℂ) = (ascPochhammer ℂ n).eval (x : ℂ) := by
+    simpa [ascPochhammer_map] using
+      ((ascPochhammer ℝ n).eval_map_apply Complex.ofRealHom x).symm
+  push_cast
+  rw [heval, ← Complex.Gamma_ofReal, ← Complex.Gamma_ofReal]
+  simpa [add_assoc] using Complex.ascPochhammer_eval_div_Gamma_add_natCast (x : ℂ) n
 
 end Real
 
