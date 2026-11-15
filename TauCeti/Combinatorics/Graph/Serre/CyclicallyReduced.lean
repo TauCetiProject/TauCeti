@@ -710,14 +710,11 @@ theorem IsCore.degree_eq_zero_iff_isAcyclic {v : Γ.V} (hΓ : Γ.IsCore v) :
   refine ⟨fun h => ?_, fun h => degree_eq_zero_iff.mpr fun e =>
     (hΓ.isEmpty_of_isAcyclic h).elim e⟩
   -- Each dart lies on a reduced closed path at `v`, whose first dart would leave `v`.
-  have hE : IsEmpty Γ.E := ⟨fun e => by
+  have : IsEmpty Γ.E := ⟨fun e => by
     obtain ⟨p, -, he⟩ := ((Γ.isCore_iff v).mp hΓ).2 e
     obtain ⟨x, hx⟩ := Option.isSome_iff_exists.mp (List.isSome_head?.mpr (List.ne_nil_of_mem he))
     exact degree_eq_zero_iff.mp h x (Path.src_eq_of_mem_head?_darts Γ p hx)⟩
-  refine Γ.isAcyclic_iff.mpr fun u p _ => ?_
-  cases p with
-  | nil => rfl
-  | cons _ e => exact isEmptyElim e.1
+  exact Γ.isAcyclic_of_isEmpty_dart
 
 /-- A dart of a path leaving only from vertices on no cyclically reduced closed path is on no such
 path. -/
