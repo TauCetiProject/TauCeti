@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Smeval
@@ -15,11 +16,12 @@ import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Binomial
 
 /-!
-# Descending Pochhammer polynomials
+# Pochhammer polynomials
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
 over general rings, together with their sums over integer intervals and their forward
-differences.
+differences, as well as evaluation and inverse-shift identities for ascending Pochhammer
+polynomials `ascPochhammer S n` over general semirings and division semirings.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -60,6 +62,13 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
+* `TauCeti.ascPochhammer_succ_left_eval`: `(ascPochhammer S (m + 1)).eval x =
+  x * (ascPochhammer S m).eval (x + 1)` over any semiring `S`.
+* `TauCeti.ascPochhammer_add_eval`: `(ascPochhammer S (m + n)).eval x =
+  (ascPochhammer S m).eval x * (ascPochhammer S n).eval (x + m)` over any semiring `S`.
+* `TauCeti.inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval`:
+  `((ascPochhammer S m).eval x)⁻¹ = (x + m) * ((ascPochhammer S (m + 1)).eval x)⁻¹` for
+  `x + m ≠ 0`.
 -/
 
 public section
@@ -312,5 +321,31 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
   have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
     rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
   simpa [hD] using congrArg (aeval x) hP
+
+/-! ### Rising Pochhammer evaluations -/
+
+/-- Shifting the argument of a rising Pochhammer polynomial by one peels off its leading factor:
+`(x)_{m + 1} = x * (x + 1)_m`. -/
+theorem ascPochhammer_succ_left_eval {S : Type*} [Semiring S] (m : ℕ) (x : S) :
+    (ascPochhammer S (m + 1)).eval x = x * (ascPochhammer S m).eval (x + 1) :=
+  (ascPochhammer_succ_eval m x).trans (ascPochhammer_eval_succ m x).symm
+
+/-- Evaluating a rising Pochhammer polynomial of degree `m + n` splits into the degree `m`
+evaluation at `x` times the degree `n` evaluation at `x + m`. -/
+theorem ascPochhammer_add_eval {S : Type*} [Semiring S] (m n : ℕ) (x : S) :
+    (ascPochhammer S (m + n)).eval x =
+      (ascPochhammer S m).eval x * (ascPochhammer S n).eval (x + m) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
+      Nat.cast_add, add_assoc]
+
+/-- Stepping an inverse rising Pochhammer evaluation from `m` to `m + 1`: when `x + m ≠ 0`,
+`((x)_m)⁻¹ = (x + m) * ((x)_{m + 1})⁻¹`. -/
+theorem inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval {S : Type*} [DivisionSemiring S]
+    {x : S} {m : ℕ} (hx : x + m ≠ 0) :
+    ((ascPochhammer S m).eval x)⁻¹ = (x + m) * ((ascPochhammer S (m + 1)).eval x)⁻¹ := by
+  rw [ascPochhammer_succ_eval, mul_inv_rev, ← mul_assoc, mul_inv_cancel₀ hx, one_mul]
 
 end TauCeti

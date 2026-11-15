@@ -204,22 +204,6 @@ section MulOfScalars
 open FormalMultilinearSeries
 open scoped NNReal
 
-private theorem ofFn_eq_append {α : Type*} {n k : ℕ} (hk : k ≤ n) (m : Fin n → α) :
-    List.ofFn m =
-      List.ofFn (fun i : Fin k ↦ m (Fin.castLE hk i)) ++
-        List.ofFn (fun j : Fin (n - k) ↦ m ⟨k + j, by omega⟩) := by
-  refine List.ext_getElem (by simp only [List.length_append, List.length_ofFn]; omega)
-    fun i hi₁ hi₂ ↦ ?_
-  by_cases hik : i < k
-  · rw [List.getElem_append_left (by simp [hik])]
-    simp
-  · rw [List.getElem_append_right (by simp only [List.length_ofFn]; omega)]
-    simp only [List.length_ofFn, List.getElem_ofFn]
-    congr 1
-    ext
-    dsimp only
-    omega
-
 private theorem norm_ofScalars_sum_range_mul_le {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
     [SeminormedRing A] [NormedAlgebra 𝕂 A] (c d : ℕ → 𝕂) (n : ℕ) :
     ‖ofScalars A (fun m ↦ ∑ k ∈ Finset.range (m + 1), c k * d (m - k)) n‖ ≤
@@ -229,13 +213,14 @@ private theorem norm_ofScalars_sum_range_mul_le {𝕂 A : Type*} [NontriviallyNo
   simp only [ofScalars, _root_.smul_apply,
     ContinuousMultilinearMap.mkPiAlgebraFin_apply, Finset.sum_smul, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k hk ↦ ?_)
-  have hkn : k ≤ n := Finset.mem_range_succ_iff.mp hk
-  let m₁ : Fin k → A := fun i ↦ m (Fin.castLE hkn i)
-  let m₂ : Fin (n - k) → A := fun j ↦ m ⟨k + j, by omega⟩
-  have hnorm_prod : ∏ i, ‖m i‖ = (∏ i, ‖m₁ i‖) * ∏ j, ‖m₂ j‖ := by
-    simp only [← Fin.prod_ofFn]
-    rw [ofFn_eq_append hkn fun i ↦ ‖m i‖, List.prod_append]
-  rw [ofFn_eq_append hkn m, List.prod_append, ← smul_mul_smul_comm]
+  have heq : k + (n - k) = n := Nat.add_sub_of_le (Finset.mem_range_succ_iff.mp hk)
+  let m₁ : Fin k → A := fun i ↦ m ((Fin.castAdd (n - k) i).cast heq)
+  let m₂ : Fin (n - k) → A := fun j ↦ m ((Fin.natAdd k j).cast heq)
+  have hnorm_prod : ∏ i, ‖m i‖ = (∏ i, ‖m₁ i‖) * ∏ j, ‖m₂ j‖ :=
+    (Fin.prod_congr' (fun i ↦ ‖m i‖) heq).symm.trans (Fin.prod_univ_add _)
+  have hofFn : List.ofFn m = List.ofFn m₁ ++ List.ofFn m₂ :=
+    (List.ofFn_congr heq.symm m).trans List.ofFn_add
+  rw [hofFn, List.prod_append, ← smul_mul_smul_comm]
   calc ‖(c k • (List.ofFn m₁).prod) * (d (n - k) • (List.ofFn m₂).prod)‖
       ≤ ‖ofScalars A c k m₁‖ * ‖ofScalars A d (n - k) m₂‖ := norm_mul_le _ _
     _ ≤ (‖ofScalars A c k‖ * ∏ i, ‖m₁ i‖) * (‖ofScalars A d (n - k)‖ * ∏ j, ‖m₂ j‖) := by
@@ -244,15 +229,15 @@ private theorem norm_ofScalars_sum_range_mul_le {𝕂 A : Type*} [NontriviallyNo
         rw [hnorm_prod]; ring
 
 /-- **Cauchy product of scalar power series on a ball.** In any normed `𝕂`-algebra `A`, if `f` and
-`g` are represented on the ball of radius `r` about `0` by the scalar power series `∑ c k • z ^ k`
-and `∑ d k • z ^ k`, then `z ↦ f z * g z` is represented on the same ball by the scalar power
-series with Cauchy product coefficients `∑ k ≤ n, c k * d (n - k)`. -/
+`g` are represented on the ball of radius `r` about `x` by the scalar power series
+`∑ c k • (z - x) ^ k` and `∑ d k • (z - x) ^ k`, then `z ↦ f z * g z` is represented on the same
+ball by the scalar power series with Cauchy product coefficients `∑ k ≤ n, c k * d (n - k)`. -/
 theorem _root_.HasFPowerSeriesOnBall.mul_ofScalars {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
-    [NormedRing A] [NormedAlgebra 𝕂 A] {f g : A → A} {c d : ℕ → 𝕂} {r : ℝ≥0∞}
-    (hf : HasFPowerSeriesOnBall f (ofScalars A c) 0 r)
-    (hg : HasFPowerSeriesOnBall g (ofScalars A d) 0 r) :
+    [NormedRing A] [NormedAlgebra 𝕂 A] {f g : A → A} {c d : ℕ → 𝕂} {x : A} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars A c) x r)
+    (hg : HasFPowerSeriesOnBall g (ofScalars A d) x r) :
     HasFPowerSeriesOnBall (fun z ↦ f z * g z)
-      (ofScalars A fun n ↦ ∑ k ∈ Finset.range (n + 1), c k * d (n - k)) 0 r where
+      (ofScalars A fun n ↦ ∑ k ∈ Finset.range (n + 1), c k * d (n - k)) x r where
   r_le := ENNReal.le_of_forall_nnreal_lt fun ρ hρ ↦ by
     apply le_radius_of_summable
     have hp := (ofScalars A c).summable_norm_mul_pow (hρ.trans_le hf.r_le)
@@ -277,7 +262,6 @@ theorem _root_.HasFPowerSeriesOnBall.mul_ofScalars {𝕂 A : Type*} [Nontriviall
       (mem_eball_zero_iff.mpr ((mem_eball_zero_iff.mp hy).trans_le hf.r_le))
     have hgn := (ofScalars A d).summable_norm_apply
       (mem_eball_zero_iff.mpr ((mem_eball_zero_iff.mp hy).trans_le hg.r_le))
-    rw [zero_add] at hfy hgy ⊢
     rw [← hfy.tsum_eq, ← hgy.tsum_eq]
     refine (hasSum_sum_range_mul_of_summable_norm' hfn hfy.summable hgn hgy.summable).congr_fun
       fun n ↦ ?_

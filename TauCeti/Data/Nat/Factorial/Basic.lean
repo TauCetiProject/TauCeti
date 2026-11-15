@@ -20,7 +20,8 @@ square into falling factorials, which converts second factorial moments into sec
 and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
 termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
-termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
+termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`, and
+`Nat.factorial_add_sq_le_factorial_mul_factorial_add_two_mul`, `((m + s)!)² ≤ m ! * (m + 2 * s)!`.
 -/
 
 public section
@@ -74,5 +75,16 @@ theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
     exact le_of_dvd (factorial_pos _) (factorial_mul_factorial_dvd_factorial_add n n)
   rw [factorial_succ, Nat.mul_pow, Nat.pow_two n !]
   exact Nat.mul_le_mul hn hc
+
+/-- `((m + s)!)² ≤ m ! * (m + 2 * s)!`, with equality when `s = 0`. -/
+theorem factorial_add_sq_le_factorial_mul_factorial_add_two_mul (m s : ℕ) :
+    (m + s)! ^ 2 ≤ m ! * (m + 2 * s)! := by
+  have h1 : (m + s)! = m ! * (m + 1).ascFactorial s := (factorial_mul_ascFactorial m s).symm
+  have h2 : (m + 2 * s)! = (m + s)! * (m + s + 1).ascFactorial s := by
+    simpa [Nat.two_mul, Nat.add_assoc] using (factorial_mul_ascFactorial (m + s) s).symm
+  rw [Nat.pow_two, h2, ← Nat.mul_assoc]
+  nth_rw 1 [h1]
+  rw [Nat.mul_right_comm]
+  exact Nat.mul_le_mul_left _ (ascFactorial_le s (by omega))
 
 end Nat

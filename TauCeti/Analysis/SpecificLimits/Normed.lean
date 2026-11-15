@@ -16,7 +16,8 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test.
+test. In a normed ring with summable geometric series, polynomial weights `(n + 1) ^ k` against
+`r ^ n` are summable for `‖r‖ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -87,6 +88,23 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
+
+/-- In a normed ring with summable geometric series, `∑ₙ (n + 1) ^ k * r ^ n` is summable for
+`‖r‖ < 1`. -/
+theorem summable_add_one_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
+    [HasSummableGeomSeries R] (k : ℕ) {r : R} (hr : ‖r‖ < 1) :
+    Summable fun n : ℕ ↦ ((n : R) + 1) ^ k * r ^ n := by
+  have hexp (n : ℕ) : ((n : R) + 1) ^ k * r ^ n =
+      ∑ j ∈ Finset.range (k + 1), (k.choose j : R) * ((n : R) ^ j * r ^ n) := by
+    have hnat : (n + 1) ^ k = ∑ j ∈ Finset.range (k + 1), k.choose j * n ^ j := by
+      rw [add_pow]
+      simp [Nat.mul_comm]
+    rw [← Nat.cast_one, ← Nat.cast_add, ← Nat.cast_pow, hnat, Nat.cast_sum, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [Nat.cast_mul, Nat.cast_pow, mul_assoc]
+  simp_rw [hexp]
+  exact summable_sum fun j _ ↦
+    (summable_pow_mul_geometric_of_norm_lt_one j hr).mul_left (k.choose j : R)
 
 variable {K : Type*} [NormedField K]
 

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Polynomial.Pochhammer
 
 /-!
 # Measurability, reciprocal bounds, and ratio asymptotics of the Gamma function
@@ -59,8 +60,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
   shifts on `[1, ∞)`.
 * `Complex.ascPochhammer_eval_mul_inv_Gamma_add` and `Real.ascPochhammer_eval_mul_inv_Gamma_add` —
   `(z)ₙ (Γ(z + n))⁻¹ = (Γ z)⁻¹` for every `z`, including nonpositive integer poles.
-* `Complex.exists_norm_inv_Gamma_add_natCast_le` — polynomial-times-inverse-factorial bound
-  `‖(Γ(s + k))⁻¹‖ ≤ C (k + 1) ^ M / k!` along natural-number shifts for arbitrary complex `s`.
+* `Complex.exists_norm_inv_Gamma_add_natCast_le` and `Real.exists_abs_inv_Gamma_add_natCast_le` —
+  polynomial-times-inverse-factorial bounds along natural-number shifts for arbitrary complex or
+  real `s`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
@@ -284,19 +286,12 @@ theorem exists_norm_inv_Gamma_add_natCast_le (s : ℂ) :
   have hsM : 1 ≤ (s + M).re := by
     rw [add_re, natCast_re]
     linarith [Nat.le_ceil (1 - s.re)]
-  have hp : ∀ j : ℕ, ∀ w : ℂ, ‖(ascPochhammer ℂ j).eval w‖ ≤ (‖w‖ + j) ^ j := fun j w => by
-    induction j with
-    | zero => simp
-    | succ j ih =>
-      rw [ascPochhammer_succ_eval, norm_mul, pow_succ]
-      push_cast
-      refine mul_le_mul (ih.trans (pow_le_pow_left₀ (by positivity) (by linarith) j))
-        ((norm_add_le w j).trans (by rw [norm_natCast]; linarith)) (norm_nonneg _) (by positivity)
   refine ⟨(‖s‖ + M + 1) ^ M * ‖(Gamma (s + M))⁻¹‖, M, by positivity, fun k => ?_⟩
   have hshift : s + k + (M : ℂ) = s + M + k := by ring
   rw [← ascPochhammer_eval_mul_inv_Gamma_add (s + k) M, hshift, norm_mul]
   have hpoch : ‖(ascPochhammer ℂ M).eval (s + k)‖ ≤ ((‖s‖ + M + 1) * ((k : ℝ) + 1)) ^ M := by
-    refine (hp M (s + k)).trans (pow_le_pow_left₀ (by positivity) ?_ M)
+    refine (TauCeti.norm_ascPochhammer_eval_le_pow M (s + k)).trans
+      (pow_le_pow_left₀ (by positivity) ?_ M)
     calc ‖s + (k : ℂ)‖ + M ≤ ‖s‖ + k + M := by linarith [norm_add_le s (k : ℂ), norm_natCast k]
       _ ≤ (‖s‖ + M + 1) * ((k : ℝ) + 1) := by nlinarith [norm_nonneg s, k.cast_nonneg (α := ℝ)]
   calc ‖(ascPochhammer ℂ M).eval (s + k)‖ * ‖(Gamma (s + M + k))⁻¹‖
@@ -315,9 +310,7 @@ nonpositive integers. -/
 theorem ascPochhammer_eval_mul_inv_Gamma_add (x : ℝ) (n : ℕ) :
     (ascPochhammer ℝ n).eval x * (Gamma (x + n))⁻¹ = (Gamma x)⁻¹ := by
   have hp : (ascPochhammer ℂ n).eval (x : ℂ) = (((ascPochhammer ℝ n).eval x : ℝ) : ℂ) := by
-    induction n with
-    | zero => simp
-    | succ n ih => simp [ascPochhammer_succ_eval, ih]
+    simpa using Polynomial.eval_map_apply (f := Complex.ofRealHom) (p := ascPochhammer ℝ n) x
   have h := Complex.ascPochhammer_eval_mul_inv_Gamma_add (x : ℂ) n
   have hcast : (x : ℂ) + n = ((x + n : ℝ) : ℂ) := by push_cast; ring
   rw [hcast, hp, Complex.Gamma_ofReal, Complex.Gamma_ofReal, ← Complex.ofReal_inv,
@@ -334,6 +327,16 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
+
+/-- For every real parameter `s`, `|(Γ(s + k))⁻¹|` is bounded by a polynomial in `k + 1`
+divided by `k!`, the real specialization of `Complex.exists_norm_inv_Gamma_add_natCast_le`. -/
+theorem exists_abs_inv_Gamma_add_natCast_le (s : ℝ) :
+    ∃ C : ℝ, ∃ M : ℕ, 0 ≤ C ∧ ∀ k : ℕ, |(Gamma (s + k))⁻¹| ≤ C * ((k : ℝ) + 1) ^ M / k ! := by
+  obtain ⟨C, M, hC, h⟩ := Complex.exists_norm_inv_Gamma_add_natCast_le (s : ℂ)
+  refine ⟨C, M, hC, fun k => ?_⟩
+  have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
+  simpa only [hcast, Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.norm_real,
+    Real.norm_eq_abs] using h k
 
 end Real
 
