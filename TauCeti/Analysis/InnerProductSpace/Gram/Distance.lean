@@ -45,6 +45,33 @@ theorem inner_sum_smul_gram_inv (hv : LinearIndependent 𝕜 v) (i j : ι) :
   simp only [Matrix.mul_apply, Matrix.one_apply, gram_apply] at h
   simpa only [inner_sum, inner_smul_right, mul_comm] using h
 
+/-- Biorthogonality of the inverse-Gram vectors, with the inner product reversed. -/
+@[simp]
+theorem sum_smul_gram_inv_inner (hv : LinearIndependent 𝕜 v) (i j : ι) :
+    ⟪∑ k, (gram 𝕜 v)⁻¹ k i • v k, v j⟫_𝕜 = if j = i then 1 else 0 := by
+  rw [← inner_conj_symm _ (v j), hv.inner_sum_smul_gram_inv]
+  split_ifs <;> simp
+
+/-- An inverse-Gram diagonal entry is the squared norm of the corresponding dual vector. -/
+theorem gram_inv_apply_self_eq_norm_sum_smul_sq (hv : LinearIndependent 𝕜 v) (i : ι) :
+    (gram 𝕜 v)⁻¹ i i = (‖∑ k, (gram 𝕜 v)⁻¹ k i • v k‖ : 𝕜) ^ 2 := by
+  calc
+    _ = ⟪∑ k, (gram 𝕜 v)⁻¹ k i • v k, ∑ k, (gram 𝕜 v)⁻¹ k i • v k⟫_𝕜 := by
+      rw [inner_sum]
+      simp [inner_smul_right, hv.sum_smul_gram_inv_inner]
+    _ = _ := inner_self_eq_norm_sq_to_K _
+
+/-- The inverse-Gram dual vector is orthogonal to the span of the other family members. -/
+theorem sum_smul_gram_inv_inner_eq_zero (hv : LinearIndependent 𝕜 v) (i : ι) {z : E}
+    (hz : z ∈ span 𝕜 (v '' {i}ᶜ)) :
+    ⟪∑ k, (gram 𝕜 v)⁻¹ k i • v k, z⟫_𝕜 = 0 := by
+  refine span_induction (fun y hy ↦ ?_) (by simp)
+    (fun x y _ _ hx hy ↦ by simp [inner_add_right, hx, hy])
+    (fun a x _ hx ↦ by simp [inner_smul_right, hx]) hz
+  obtain ⟨j, hj, rfl⟩ := hy
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hj
+  simp [hv.sum_smul_gram_inv_inner, hj]
+
 /-- The diagonal of the inverse Gram matrix is the reciprocal squared distance from a vector
 to the span of the other vectors. -/
 theorem gram_inv_apply_self_eq_inv_infDist_sq (hv : LinearIndependent 𝕜 v) (i : ι) :
@@ -53,15 +80,8 @@ theorem gram_inv_apply_self_eq_inv_infDist_sq (hv : LinearIndependent 𝕜 v) (i
   let u : E := ∑ k, (gram 𝕜 v)⁻¹ k i • v k
   have hu (j : ι) : ⟪v j, u⟫_𝕜 = if j = i then 1 else 0 :=
     inner_sum_smul_gram_inv hv i j
-  have hu' (j : ι) : ⟪u, v j⟫_𝕜 = if j = i then 1 else 0 := by
-    rw [← inner_conj_symm u (v j), hu]
-    split_ifs <;> simp
-  have hnorm : (gram 𝕜 v)⁻¹ i i = (‖u‖ : 𝕜) ^ 2 := by
-    calc
-      _ = ⟪u, u⟫_𝕜 := by
-        conv_rhs => rhs; unfold u
-        simp [inner_sum, inner_smul_right, hu']
-      _ = _ := inner_self_eq_norm_sq_to_K u
+  have hnorm : (gram 𝕜 v)⁻¹ i i = (‖u‖ : 𝕜) ^ 2 :=
+    hv.gram_inv_apply_self_eq_norm_sum_smul_sq i
   have hune : u ≠ 0 := by
     intro h
     simpa [h] using hu i
@@ -70,6 +90,7 @@ theorem gram_inv_apply_self_eq_inv_infDist_sq (hv : LinearIndependent 𝕜 v) (i
     exact pow_ne_zero _ (RCLike.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hune))
   let c : 𝕜 := ((gram 𝕜 v)⁻¹ i i)⁻¹
   let K := span 𝕜 (v '' {i}ᶜ)
+  -- Subtracting the scaled dual vector cancels the coefficient of the selected vector.
   have hmem : v i - c • u ∈ K := by
     have heq : v i - c • u =
         ∑ j, ((if j = i then 1 else 0) - c * (gram 𝕜 v)⁻¹ j i) • v j := by
@@ -81,23 +102,16 @@ theorem gram_inv_apply_self_eq_inv_infDist_sq (hv : LinearIndependent 𝕜 v) (i
     · subst j
       simp [c, inv_mul_cancel₀ hdiag]
     · exact K.smul_mem _ (subset_span ⟨j, hji, rfl⟩)
-  have horth : ∀ z ∈ K, ⟪u, z⟫_𝕜 = 0 := by
-    intro z hz
-    refine span_induction (fun y hy ↦ ?_) (by simp)
-      (fun x y _ _ hx hy ↦ by simp [inner_add_right, hx, hy])
-      (fun a x _ hx ↦ by simp [inner_smul_right, hx]) hz
-    obtain ⟨j, hj, rfl⟩ := hy
-    simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hj
-    simpa only [hu', ite_eq_right_iff, one_ne_zero, imp_false] using hj
+  -- Orthogonality makes this decomposition minimize the distance to the other vectors' span.
   have hdist : Metric.infDist (v i) (K : Set E) = ‖c • u‖ := by
     rw [Metric.infDist_eq_iInf]
     simp_rw [dist_eq_norm]
     have hmin := K.norm_eq_iInf_iff_inner_eq_zero (u := v i) hmem
-    convert (hmin.2 fun z hz ↦ by simp [inner_smul_left, horth z hz]).symm using 1
+    convert (hmin.2 fun z hz ↦ by
+      simp [inner_smul_left, u, hv.sum_smul_gram_inv_inner_eq_zero i hz]).symm using 1
     simp only [sub_sub_cancel]
-  rw [hdist, norm_smul, mul_pow, norm_inv, hnorm, norm_pow,
-    RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _)]
-  push_cast
+  rw [hdist, hnorm]
+  simp [norm_smul, c, hnorm, mul_pow]
   field_simp
 
 /-- The real trace of the inverse Gram matrix is the sum of reciprocal squared distances to

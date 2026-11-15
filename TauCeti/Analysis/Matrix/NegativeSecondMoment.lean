@@ -39,7 +39,7 @@ variable {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
 
 /-- The real trace of the inverse row Gram matrix is the negative second moment of the
 singular values, summed over the row dimension. -/
-theorem re_trace_inv_mul_conjTranspose_eq_sum_inv_sq_singularValues
+theorem re_trace_mul_conjTranspose_self_inv_eq_sum_inv_sq_singularValues
     (A : Matrix m n 𝕜) (hA : IsUnit (A * Aᴴ)) :
     RCLike.re (A * Aᴴ)⁻¹.trace =
       ∑ i : Fin (Fintype.card m), ((toEuclideanLin A).singularValues i ^ 2)⁻¹ := by
@@ -78,7 +78,7 @@ theorem sum_inv_sq_singularValues_eq_sum_inv_infDist_sq (A : Matrix m n 𝕜)
   have hunit : IsUnit (A * Aᴴ) := by
     rw [isUnit_iff_isUnit_det, ← hgram, det_transpose, isUnit_iff_ne_zero]
     exact det_gram_ne_zero_iff_linearIndependent.2 hA
-  rw [← re_trace_inv_mul_conjTranspose_eq_sum_inv_sq_singularValues A hunit,
+  rw [← re_trace_mul_conjTranspose_self_inv_eq_sum_inv_sq_singularValues A hunit,
     ← hgram, ← transpose_nonsing_inv, trace_transpose]
   exact hA.re_trace_gram_inv_eq_sum_inv_infDist_sq
 
