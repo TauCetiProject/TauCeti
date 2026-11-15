@@ -27,7 +27,7 @@ theory of `A₃ → S₃ → S₃ ⧸ A₃` on this example.
   and multiplies the crossed projection by the principal crossed map of `(0 1 2)`.
 * **The crossed transfer from `A₃`.** Along the transversal of `A₃` given by the splitting with
   range the stabilizer of `a`, the crossed transfer of the identity of `A₃` is the square of the
-  crossed projection along that stabilizer; on `A₃` it is `n ↦ n ^ 2`. The inverse exponent of
+  crossed projection along that stabilizer; it sends `(0 1 2)` to `(0 2 1)`. The inverse exponent of
   `[S₃ : A₃] = 2` modulo `3` is `2`, and Gaschütz's construction from the local complement `⊥` of
   `A₃` in itself returns the stabilizer of `a`. Different transversals thus give different, but
   `A₃`-conjugate, complements.
@@ -73,21 +73,19 @@ theorem card_normalized_isCocycle₁ :
   rw [← Nat.card_congr (Subgroup.crossedProjectionEquiv (alternatingGroup (Fin 3))),
     card_isComplement'_alternatingGroup_fin_three]
 
-/-- The transposition `(0 1)` lies in the stabilizer of `2`. -/
-private theorem swap_mem_stabilizer :
-    swap (0 : Fin 3) 1 ∈ MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) :=
-  swap_mem_stabilizer_perm_fin_three 2
-
 /-- The three-cycle `(0 1 2)`, as an element of `A₃`. -/
-@[expose] def threeCycle : alternatingGroup (Fin 3) :=
+def threeCycle : alternatingGroup (Fin 3) :=
   ⟨finRotate 3, Perm.finRotate_bit1_mem_alternatingGroup (n := 1)⟩
 
 /-- The three-cycle of `A₃` is `finRotate 3`. -/
 @[simp]
-theorem coe_threeCycle : (threeCycle : Perm (Fin 3)) = finRotate 3 := rfl
+theorem coe_threeCycle : (threeCycle : Perm (Fin 3)) = finRotate 3 := (rfl)
 
-/-- Every crossed projection onto `A₃` sends the three-cycle to itself. -/
-private theorem crossedProjection_finRotate {D : Subgroup (Perm (Fin 3))}
+/-- Every crossed projection onto `A₃` sends the three-cycle to itself. This is
+`Subgroup.IsComplement'.crossedProjection_coe` at `threeCycle`, in the simp normal form produced by
+`coe_threeCycle`. -/
+@[simp]
+theorem crossedProjection_finRotate {D : Subgroup (Perm (Fin 3))}
     (h : (alternatingGroup (Fin 3)).IsComplement' D) :
     h.crossedProjection (finRotate 3) = threeCycle :=
   h.crossedProjection_coe threeCycle
@@ -104,7 +102,7 @@ theorem coe_crossedProjection_swap_zero_two :
   have h : swap (0 : Fin 3) 2 = finRotate 3 * swap 0 1 := by decide
   rw [h]
   exact congrArg Subtype.val
-    (h₂.crossedProjection_mul threeCycle ⟨_, swap_mem_stabilizer⟩)
+    (h₂.crossedProjection_mul threeCycle ⟨swap 0 1, swap_mem_stabilizer_perm_fin_three 2⟩)
 
 /-- The crossed projection along `⟨(0 1)⟩` sends `(0 1) * (0 1 2) = (0 2 1) * (0 1)` to
 `(0 2 1)`. -/
@@ -112,7 +110,8 @@ theorem coe_crossedProjection_swap_mul_finRotate :
     (h₂.crossedProjection (swap 0 1 * finRotate 3) : Perm (Fin 3)) = (finRotate 3)⁻¹ := by
   have h : swap (0 : Fin 3) 1 * finRotate 3 = (finRotate 3)⁻¹ * swap 0 1 := by decide
   rw [h]
-  exact congrArg Subtype.val (h₂.crossedProjection_mul threeCycle⁻¹ ⟨_, swap_mem_stabilizer⟩)
+  exact congrArg Subtype.val
+    (h₂.crossedProjection_mul threeCycle⁻¹ ⟨swap 0 1, swap_mem_stabilizer_perm_fin_three 2⟩)
 
 /-- **A crossed projection need not be a homomorphism**: the projection along `⟨(0 1)⟩` of
 `(0 1) * (0 1 2)` is not the product of the projections of `(0 1)` and `(0 1 2)`. -/
@@ -122,7 +121,7 @@ theorem crossedProjection_mul_ne :
   intro h
   have h' := congrArg Subtype.val h
   rw [coe_crossedProjection_swap_mul_finRotate, h₂.crossedProjection_coe_right
-      ⟨_, swap_mem_stabilizer⟩, one_mul,
+      ⟨swap 0 1, swap_mem_stabilizer_perm_fin_three 2⟩, one_mul,
     crossedProjection_finRotate h₂, coe_threeCycle] at h'
   revert h'
   decide
@@ -132,12 +131,9 @@ stabilizer of `0`. -/
 theorem conj_finRotate_smul_stabilizer :
     MulAut.conj (finRotate 3) • MulAction.stabilizer (Perm (Fin 3)) (2 : Fin 3) =
       MulAction.stabilizer (Perm (Fin 3)) (0 : Fin 3) := by
-  ext x
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, MulAction.mem_stabilizer_iff,
-    MulAction.mem_stabilizer_iff]
-  have h : finRotate 3 2 = 0 := by decide
-  simp only [MulAut.smul_def, MulAut.inv_apply, MulAut.conj_symm_apply,
-    Perm.smul_def, Perm.mul_apply, Perm.inv_eq_iff_eq, h]
+  have h : finRotate 3 • (2 : Fin 3) = 0 := by decide
+  rw [← h, MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    map_conj_eq_conj_smul]
 
 /-- **Principal crossed maps move complements.** The crossed projection along `⟨(1 2)⟩` is the
 crossed projection along `⟨(0 1)⟩` times the principal crossed map `x ↦ x • a / a` of the
@@ -157,6 +153,18 @@ odd coset to the transposition of the two points other than `a`. -/
 noncomputable def transversal (a : Fin 3) :
     Perm (Fin 3) ⧸ alternatingGroup (Fin 3) → Perm (Fin 3) :=
   fun q => (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting q
+
+/-- The transversal along the stabilizer of `a` is the splitting of the quotient extension with
+range that stabilizer. -/
+theorem transversal_apply (a : Fin 3) (q : Perm (Fin 3) ⧸ alternatingGroup (Fin 3)) :
+    transversal a q =
+      (isComplement'_alternatingGroup_stabilizer_perm_fin_three a).quotientSplitting q :=
+  (rfl)
+
+/-- The transversal along the stabilizer of `a` sends the trivial coset to `1`. -/
+@[simp]
+theorem transversal_one (a : Fin 3) : transversal a 1 = 1 :=
+  (transversal_apply a 1).trans (map_one _)
 
 /-- The transversal along the stabilizer of `a` is a transversal: it represents each coset. -/
 @[simp]
@@ -188,8 +196,8 @@ theorem crossedTransfer_id_apply {a : Fin 3}
       h.crossedProjection g ^ 2 := by
   rw [h.crossedTransfer_id_apply _ _ (transversal_mem a), alternatingGroup.index_eq_two]
 
-/-- **On `A₃` the crossed transfer of the identity is `n ↦ n ^ 2`**: for the three-cycle,
-`(0 1 2) ↦ (0 2 1)`. -/
+/-- **The crossed transfer of the identity of `A₃` sends `(0 1 2)` to its square `(0 2 1)`**, along
+the transversal in the stabilizer of any point. -/
 theorem coe_crossedTransfer_id_finRotate (a : Fin 3) :
     ((crossedTransfer (alternatingGroup (Fin 3)) (transversal a) (mk_transversal a)
       (id : alternatingGroup (Fin 3) → alternatingGroup (Fin 3)) (finRotate 3) :
@@ -206,7 +214,8 @@ theorem crossedTransfer_id_swap :
       (id : alternatingGroup (Fin 3) → alternatingGroup (Fin 3))
       (swap 0 1) = 1 := by
   have h := isComplement'_alternatingGroup_stabilizer_perm_fin_three 2
-  rw [crossedTransfer_id_apply h, h.crossedProjection_coe_right ⟨_, swap_mem_stabilizer⟩, one_pow]
+  rw [crossedTransfer_id_apply h,
+    h.crossedProjection_coe_right ⟨swap 0 1, swap_mem_stabilizer_perm_fin_three 2⟩, one_pow]
 
 /-- The index `[S₃ : A₃] = 2` is prime to `|A₃| = 3`. -/
 theorem coprime_index_card :
@@ -230,9 +239,8 @@ Gaschütz complement of the local complement `⊥` of `A₃` in itself is the st
 theorem gaschutzComplement_transversal (a : Fin 3) :
     h.gaschutzComplement (transversal a) (mk_transversal a) =
       MulAction.stabilizer (Perm (Fin 3)) a :=
-  h.gaschutzComplement_eq_of_forall_mem
-    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) _ _ (transversal_mem a)
-    coprime_index_card
+  h.gaschutzComplement_eq_of_forall_mem _ _ coprime_index_card
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) bot_le (transversal_mem a)
 
 /-- **The Gaschütz complement depends on the transversal.** The transversals through `(0 1)` and
 through `(1 2)` give the complements `⟨(0 1)⟩` and `⟨(1 2)⟩`, which are distinct but conjugate by
@@ -307,14 +315,9 @@ theorem isComplement'_and_le_normalizer_iff (a : Fin 3) (D : Subgroup (Perm (Fin
     rintro rfl
     exact ⟨isComplement'_alternatingGroup_stabilizer_perm_fin_three a, Subgroup.le_normalizer⟩⟩
   obtain ⟨b, rfl⟩ := (isComplement'_alternatingGroup_fin_three_iff D).mp hD
-  have hs := (Subgroup.mem_normalizer_iff.mp
-    (hle (swap_mem_stabilizer_perm_fin_three a)) (swap (b + 1) (b + 2))).mp
-    (swap_mem_stabilizer_perm_fin_three b)
-  rw [mem_stabilizer_perm_fin_three_iff] at hs
-  have key : ∀ a b : Fin 3, (swap (a + 1) (a + 2) * swap (b + 1) (b + 2) *
-      (swap (a + 1) (a + 2))⁻¹ = 1 ∨ swap (a + 1) (a + 2) * swap (b + 1) (b + 2) *
-        (swap (a + 1) (a + 2))⁻¹ = swap (b + 1) (b + 2)) → b = a := by
-    decide
-  rw [key a b hs]
+  -- point stabilizers are self-normalizing, and any two have the same order
+  rw [(isFrobeniusComplement_stabilizer_perm_fin_three b).normalizer_eq_self] at hle
+  exact (Subgroup.eq_of_le_of_card_ge hle
+    (by rw [card_stabilizer_perm_fin_three, card_stabilizer_perm_fin_three])).symm
 
 end TauCeti.Examples.SymmetricThree
