@@ -37,11 +37,13 @@ abbrev Completion : Place K → Type _
   | .inl v => v.adicCompletion K
   | .inr w => w.Completion
 
-noncomputable instance (v : Place K) : Field v.Completion := by
-  cases v <;> exact inferInstance
+noncomputable instance : ∀ v : Place K, Field v.Completion
+  | .inl _ => inferInstance
+  | .inr _ => inferInstance
 
-noncomputable instance (v : Place K) : Algebra K v.Completion := by
-  cases v <;> exact inferInstance
+noncomputable instance : ∀ v : Place K, Algebra K v.Completion
+  | .inl _ => inferInstance
+  | .inr _ => inferInstance
 
 end TauCeti.GlobalNumberFields.Place
 

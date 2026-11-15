@@ -92,6 +92,43 @@ theorem kerH1WeilPairing_eq_zero_of_mem_ker
   rw [← range_kummerMap] at ha hb
   exact φ.kerH1WeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb
 
+/-- The Brauer-valued isogeny Weil pairing vanishes on the Kummer classes of rational points. -/
+@[simp↓]
+theorem kerWeilBrauerPairing_kummerMap_kummerMap_eq_zero
+    (Q : W₂.toAffine.Point) (P : W₁.toAffine.Point) :
+    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+    φ.kerWeilBrauerPairing hn (φ.kummerMap Q) (φ.dual.kummerMap P) = 0 := by
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+  simp only [kerWeilBrauerPairing_apply, kerH1WeilPairing_kummerMap_kummerMap_eq_zero, map_zero]
+
+/-- The Brauer-valued isogeny Weil pairing vanishes on the two Kummer subgroups. -/
+theorem kerWeilBrauerPairing_eq_zero_of_mem_range_kummerMap
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} :
+    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+    letI := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+    a ∈ φ.kummerMap.range → b ∈ φ.dual.kummerMap.range → φ.kerWeilBrauerPairing hn a b = 0 := by
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
+  intro ha hb
+  simp only [kerWeilBrauerPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb,
+    map_zero]
+
+omit [DecidableEq K] in
+/-- The Selmer local-condition kernels for an isogeny and its dual pair to zero in `Br K`.
+This applies over every field in which `deg φ` is invertible, including `ℝ` and `ℂ`. -/
+theorem kerWeilBrauerPairing_eq_zero_of_mem_ker
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
+      continuous_of_discreteTopology).ker)
+    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+      continuous_of_discreteTopology).ker) :
+    φ.kerWeilBrauerPairing hn a b = 0 := by
+  simp only [kerWeilBrauerPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb, map_zero]
+
 section Local
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -128,6 +165,22 @@ theorem localTateKerWeilPairing_eq_zero_of_mem_range_kummerMap
   simp only [localTateKerWeilPairing_apply,
     φ.kerH1WeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb, map_zero]
 
+omit [DecidableEq K] in
+/-- The kernels defining the local Selmer conditions of an isogeny and of its dual are orthogonal
+under local Tate duality, including at places dividing the degree of the isogeny. -/
+theorem localTateKerWeilPairing_eq_zero_of_mem_ker
+    {a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
+      continuous_of_discreteTopology).ker)
+    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+      continuous_of_discreteTopology).ker) :
+    φ.localTateKerWeilPairing hn a b = 0 := by
+  simp only [localTateKerWeilPairing_apply, φ.kerH1WeilPairing_eq_zero_of_mem_ker hn ha hb,
+    map_zero]
+
 end Local
 
 end TauCeti.Isogeny
+
+end

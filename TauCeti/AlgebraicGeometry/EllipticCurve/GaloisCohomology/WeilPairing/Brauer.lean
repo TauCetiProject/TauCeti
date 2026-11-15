@@ -6,18 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Torsion
 
 /-!
 # The Brauer-valued Weil cup product
 
 Composing the Weil cup product with `H²(K, μ_m) → Br K` gives a bilinear pairing on
-`H¹(K, E[m])` over any field. Its comparison with the local Tate pairing is proved in
-`WeilPairing.Local`; this module does not require local-field hypotheses.
+`H¹(K, E[m])` over any field. Likewise, for an isogeny `φ : E₁ → E₂` of degree `n` invertible in
+`K`, composing the isogeny Weil cup product with `H²(K, μ_n) → Br K` gives a bilinear pairing
+`H¹(K, E₁[φ]) × H¹(K, E₂[φ̂]) → Br K`. Their comparisons with the local Tate pairings are proved
+in `WeilPairing.Local`; this module does not require local-field hypotheses.
+
+## Main definitions
+
+* `WeierstrassCurve.torsionWeilBrauerPairing`: the Brauer-valued Weil cup product on `H¹(K, E[m])`.
+* `TauCeti.Isogeny.kerWeilBrauerPairing`: the Brauer-valued Weil cup product on
+  `H¹(K, E₁[φ]) × H¹(K, E₂[φ̂])`.
 
 ## References
 
 * J. S. Milne, *Arithmetic Duality Theorems*, second edition, I, §§2 and 4.
+* J. W. S. Cassels, *Arithmetic on curves of genus 1. VIII. On conjectures of Birch and
+  Swinnerton-Dyer*, J. reine angew. Math. 217 (1965), 180–199.
 -/
 
 public section
@@ -47,3 +58,43 @@ theorem torsionWeilBrauerPairing_apply
   (rfl)
 
 end WeierstrassCurve
+
+namespace TauCeti.Isogeny
+
+open WeierstrassCurve TauCeti.ContCohomology TauCeti.ClassFieldTheory
+open Hom (ofIsogeny)
+
+variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : K))
+
+/-- The isogeny Weil cup product, followed by the inclusion `H²(K, μ_n) → Br K` for `n = deg φ`.
+It pairs `H¹(K, E₁[φ])` bilinearly with `H¹(K, E₂[φ̂])` into `Br K`. -/
+def kerWeilBrauerPairing : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff →+
+    H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff →+ Br K :=
+  (AddMonoidHom.compHom ((h2MuToBr φ.degree K).comp
+    (muNRepH2Equiv φ.degree K).toAddMonoidHom)).comp (φ.kerH1WeilPairing hn)
+
+/-- The Brauer-valued isogeny pairing is the image of the isogeny Weil cup product. -/
+@[simp]
+theorem kerWeilBrauerPairing_apply
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    φ.kerWeilBrauerPairing hn a b =
+      h2MuToBr φ.degree K (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
+  (rfl)
+
+/-- The Brauer-valued isogeny Weil pairing is compatible with inclusion into degree-torsion and
+projection onto the dual kernel. -/
+theorem kerWeilBrauerPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    φ.kerWeilBrauerPairing hn a
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      W₁.torsionWeilBrauerPairing φ.degree hn
+        (explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology a) b := by
+  simp only [kerWeilBrauerPairing_apply, torsionWeilBrauerPairing_apply,
+    kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff]
+
+end TauCeti.Isogeny
+
+end
