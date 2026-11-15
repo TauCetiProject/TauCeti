@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
+public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Algebra.GroupWithZero
 import TauCeti.Order.Filter.AtTopBot
@@ -25,7 +26,8 @@ primes `p ≤ B k` converge exactly when the products over the primes `p ≤ n` 
 `B k = nth Nat.Prime k`, the increasing enumeration of the primes, are the basic example. Along
 an arbitrary sequence of cutoffs tending to infinity only the forward implication holds, and it
 is `Filter.Tendsto.comp`; real cutoffs `x ↦ ∏ p ∈ primesLE ⌊x⌋₊, f p` are handled by
-`TauCeti.tendsto_comp_natFloor_iff`.
+`TauCeti.tendsto_comp_natFloor_iff` and split at an intermediate cutoff `y ≤ x` by
+`Nat.prod_primesLE_floor_eq_mul_filter_gt`.
 
 These comparisons concern conditionally convergent products such as Euler products at the edge
 of their half-plane of absolute convergence, where only ordered cutoffs make sense and different
@@ -37,10 +39,13 @@ convergence of the cutoffs therefore transports in both directions with this exp
 
 ## Main results
 
+* `Nat.primesLE_filter_lt`: filtering `Nat.primesLE n` by `· < n` recovers `Nat.primesBelow n`.
 * `Nat.primesBelow_eq_image_nth`, `Nat.primesLE_eq_image_nth`: the primes below a bound are the
   first primes in increasing order.
 * `Nat.prod_primesLE_eq_prod_range_nth`: a product over the primes `p ≤ n` is the product over
   the first `π n` primes.
+* `Nat.prod_primesLE_floor_eq_mul_filter_gt`, `Nat.sum_primesLE_floor_eq_add_filter_gt`: splitting
+  products and sums over `Nat.primesLE ⌊x⌋₊` at an intermediate cutoff `y ≤ x`.
 * `Nat.tendsto_prod_primesLE_iff`: the ordered products over the primes `p ≤ n` converge exactly
   when the products over the first `k` primes do.
 * `Nat.tendsto_prod_primesLE_comp_iff`: the same along cutoffs passing every prime one at a time.
@@ -56,6 +61,14 @@ open Filter Finset
 open scoped Topology
 
 namespace Nat
+
+/-- Filtering `Nat.primesLE n` by strict inequality `· < n` gives `Nat.primesBelow n`. -/
+@[simp]
+theorem primesLE_filter_lt (n : ℕ) :
+    (primesLE n).filter (· < n) = primesBelow n := by
+  ext p
+  simp only [mem_filter, mem_primesLE, mem_primesBelow]
+  exact ⟨fun ⟨⟨_, hp⟩, hlt⟩ ↦ ⟨hlt, hp⟩, fun ⟨hlt, hp⟩ ↦ ⟨⟨hlt.le, hp⟩, hlt⟩⟩
 
 /-- The primes below `n` are the first `π' n` primes. -/
 theorem primesBelow_eq_image_nth (n : ℕ) :
@@ -77,6 +90,25 @@ theorem prod_primesLE_eq_prod_range_nth {M : Type*} [CommMonoid M] (f : ℕ → 
     ∏ p ∈ primesLE n, f p = ∏ k ∈ range (primeCounting n), f (nth Nat.Prime k) := by
   rw [primesLE_eq_image_nth,
     prod_image fun _ _ _ _ h ↦ nth_injective infinite_setOfPred_prime h]
+
+/-- For `y ≤ x` in a floor semiring, the product over the primes `p ≤ ⌊x⌋₊` splits into the
+product over `p ≤ ⌊y⌋₊` and the product over `y < p ≤ ⌊x⌋₊`, with any prime at `y` retained in
+the lower part. -/
+@[to_additive /-- For `y ≤ x` in a floor semiring, the sum over the primes `p ≤ ⌊x⌋₊` splits into
+the sum over `p ≤ ⌊y⌋₊` and the sum over `y < p ≤ ⌊x⌋₊`, with any prime at `y` retained in the
+lower part. -/]
+theorem prod_primesLE_floor_eq_mul_filter_gt {R M : Type*} [Semiring R] [LinearOrder R]
+    [FloorSemiring R] [CommMonoid M] (f : ℕ → M) {y x : R} (hyx : y ≤ x) :
+    ∏ p ∈ primesLE ⌊x⌋₊, f p =
+      (∏ p ∈ primesLE ⌊y⌋₊, f p) *
+        ∏ p ∈ (primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ y < (p : R)), f p := by
+  have hle : primesLE ⌊y⌋₊ = (primesLE ⌊x⌋₊).filter (fun p : ℕ ↦ ¬y < (p : R)) := by
+    ext p
+    simp only [mem_primesLE, mem_filter, not_lt]
+    refine ⟨fun ⟨hpy, hp⟩ ↦ ?_, fun ⟨⟨_, hp⟩, hpy⟩ ↦ ⟨le_floor hpy, hp⟩⟩
+    have hpy' : (p : R) ≤ y := (le_floor_iff' hp.ne_zero).mp hpy
+    exact ⟨⟨(le_floor_iff' hp.ne_zero).mpr (hpy'.trans hyx), hp⟩, hpy'⟩
+  rw [hle, mul_comm, prod_filter_mul_prod_filter_not]
 
 /-- The prime counting function increases by at most one at each step. -/
 theorem primeCounting_add_one_le (n : ℕ) : primeCounting (n + 1) ≤ primeCounting n + 1 := by

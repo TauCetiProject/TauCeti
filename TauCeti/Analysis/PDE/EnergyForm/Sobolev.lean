@@ -342,7 +342,7 @@ theorem jetLpL_apply_ae (u : W1p mu Omega 2) :
 /-- The squared gradient component of the Sobolev jet field is integrable. -/
 theorem integrable_norm_jetField_snd_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖(jetField u x).2‖ ^ 2) (mu.restrict Omega) := by
-  simpa only [jetField_apply] using W1p.integrable_norm_gradient_sq u
+  simpa only [jetField_apply] using (Lp.memLp (W1p.gradient u)).norm.integrable_sq
 
 /-- The squared value component of the Sobolev jet field is integrable. -/
 theorem integrable_jetField_fst_sq (u : W1p mu Omega 2) :
