@@ -209,10 +209,6 @@ theorem freeSL_eq_sideSL_mul_S_inv_mul_inv {a b c d a' b' c' d' : ℤ}
     (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
     (freeSL h h' : PSL(2, ℤ))⁻¹ = freeSL h' h := by
   rw [← QuotientGroup.mk_inv, freeSL_inv, Matrix.ProjectiveSpecialLinearGroup.mk_neg]
-/-- In `PSL(2, ℤ)`, swapping the order of a free pair inverts the generator. -/
-theorem coe_freeSL_swap {a b c d a' b' c' d' : ℤ}
-    (h : c * b - a * d = 1) (h' : c' * b' - a' * d' = 1) :
-    (freeSL h' h : PSL(2, ℤ)) = (freeSL h h' : PSL(2, ℤ))⁻¹ := (coe_freeSL_inv h h').symm
 
 /-- Every even side generator has exact order `2` in `PSL(2, ℤ)`. -/
 @[simp] theorem orderOf_coe_evenSL {a b c d : ℤ} (h : c * b - a * d = 1) :
@@ -588,8 +584,8 @@ theorem isParabolic_coe_freeSideSL_iff {F : FareySymbol} {i j : Fin F.labels.len
       (Matrix.ProjectiveSpecialLinearGroup.IsParabolic (F.freeSideSL i j : PSL(2, ℤ)) ↔
         F.SharesCusp i j) by
     rcases lt_or_gt_of_ne hne with hij | hji; · exact this hij
-    rw [freeSideSL_def, coe_freeSL_swap, Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff,
-      sharesCusp_comm]; exact this hji
+    rw [freeSideSL_def, ← coe_freeSL_inv, Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff,
+      ← freeSideSL_def, sharesCusp_comm]; exact this hji
   intro i j hij; by_cases hsc : F.SharesCusp i j
   · exact ⟨fun _ ↦ hsc, fun _ ↦ F.isParabolic_coe_freeSideSL_of_lt_of_sharesCusp hxs hij hsc⟩
   · refine ⟨fun hpar ↦ False.elim ?_, fun h ↦ False.elim (hsc h)⟩
@@ -695,7 +691,7 @@ theorem group_eq_closure_orderedGeneratorSet (F : FareySymbol) :
     · exact Subgroup.subset_closure ⟨i, Or.inr (Or.inl ⟨hi, rfl⟩)⟩
     · rcases lt_or_gt_of_ne hne with hij | hji
       · exact Subgroup.subset_closure ⟨i, Or.inr (Or.inr ⟨j, l, hij, hi, hj, rfl⟩)⟩
-      · rw [freeSideSL_def, coe_freeSL_swap]
+      · rw [freeSideSL_def, ← coe_freeSL_inv, ← freeSideSL_def]
         exact inv_mem (Subgroup.subset_closure ⟨j, Or.inr (Or.inr ⟨i, l, hji, hj, hi, rfl⟩)⟩))
     (Subgroup.closure_mono fun g ⟨i, h⟩ ↦ ⟨i, h.imp id (Or.imp id fun ⟨j, l, hij, hi, hj, hg⟩ ↦
       ⟨j, l, hij.ne, hi, hj, hg⟩)⟩)
