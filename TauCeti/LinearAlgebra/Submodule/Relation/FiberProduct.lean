@@ -22,6 +22,12 @@ This is the linear algebra of clean composition of correspondences: matching tan
 are quotiented by the vectors invisible to both outer projections. No symplectic structure is
 needed for the quotient construction.
 
+For three relations, the matching conditions can be imposed in either order. If `S ≤ B` and the
+map `G : W → B` are transverse, and so are `H : W → C` and `T ≤ C`, then matching in `B` first
+and then in `C` is transverse exactly when matching in `C` first and then in `B` is
+(`Submodule.map_comap_sup_eq_top_iff_sup_map_comap_eq_top`). This is the tangent-space content
+of the associativity of transverse composition.
+
 ## References
 
 * A. Weinstein, *Symplectic categories*, Portugaliae Mathematica 67 (2010), 261–278.
@@ -261,5 +267,43 @@ theorem finrank_relComp_add_finrank_relCompExcess (L : Submodule R (M × N))
   exact Submodule.finrank_quotient_add_finrank _
 
 end DivisionRing
+
+section Transversality
+
+/-! ### Transversality of iterated matching spaces
+
+Let `G : W → B` and `H : W → C` be the two outer maps of a middle space `W`, and let `S ≤ B` and
+`T ≤ C` be the images of the two other factors. The space `comap G S` consists of the middle
+vectors matching a vector of `S` in `B`, so `map H (comap G S) ⊔ T = ⊤` is transversality in `C`
+after first matching in `B`, and `S ⊔ map G (comap H T) = ⊤` is transversality in `B` after first
+matching in `C`. When the first matchings are themselves transverse, the two conditions agree. -/
+
+variable {R B C W : Type*} [Ring R] [AddCommGroup B] [Module R B] [AddCommGroup C] [Module R C]
+  [AddCommGroup W] [Module R W] {S : Submodule R B} {T : Submodule R C}
+  {G : W →ₗ[R] B} {H : W →ₗ[R] C}
+
+/-- If `S` and `G` are transverse in `B`, and matching in `B` first is transverse to `T` in `C`,
+then matching in `C` first is transverse to `S` in `B`. -/
+theorem sup_map_comap_eq_top_of_map_comap_sup_eq_top (hS : S ⊔ LinearMap.range G = ⊤)
+    (h : map H (comap G S) ⊔ T = ⊤) : S ⊔ map G (comap H T) = ⊤ := by
+  refine eq_top_iff.2 fun b _ ↦ ?_
+  obtain ⟨s, hs, _, ⟨w₀, rfl⟩, rfl⟩ := mem_sup.1 (hS ▸ mem_top : b ∈ S ⊔ LinearMap.range G)
+  obtain ⟨_, ⟨w₁, hw₁, rfl⟩, t, ht, hsum⟩ :=
+    mem_sup.1 (h ▸ mem_top : H w₀ ∈ map H (comap G S) ⊔ T)
+  refine mem_sup.2 ⟨s + G w₁, add_mem hs hw₁, G (w₀ - w₁), ⟨w₀ - w₁, ?_, rfl⟩, by simp⟩
+  rw [SetLike.mem_coe, mem_comap, map_sub, ← hsum, add_sub_cancel_left]
+  exact ht
+
+/-- **Transversality of iterated matching spaces is associative.** When `S` and `G` are
+transverse in `B` and `H` and `T` are transverse in `C`, matching in `B` first is transverse to
+`T` exactly when matching in `C` first is transverse to `S`. -/
+theorem map_comap_sup_eq_top_iff_sup_map_comap_eq_top (hS : S ⊔ LinearMap.range G = ⊤)
+    (hT : LinearMap.range H ⊔ T = ⊤) :
+    map H (comap G S) ⊔ T = ⊤ ↔ S ⊔ map G (comap H T) = ⊤ := by
+  refine ⟨sup_map_comap_eq_top_of_map_comap_sup_eq_top hS, fun h ↦ ?_⟩
+  rw [sup_comm] at hT h ⊢
+  exact sup_map_comap_eq_top_of_map_comap_sup_eq_top hT h
+
+end Transversality
 
 end Submodule
