@@ -72,6 +72,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   map carries the normal coordinates and the frame to positive multiples of themselves.
 * `eventually_mem_unstableSet_and_unstableFrame_eq`: on the unstable axis of a Morse chart, the
   unstable frame of the coordinates is the velocity.
+* `eventually_mem_unstableSet_and_unstableFrame_eq_and_neg`: the same at `c` and at `-c`.
 
 ## References
 
@@ -564,10 +565,10 @@ private theorem unstableFrame_toChart_symm_negativeExtend {c : {i // φ.weight i
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) hy
   exact hinv.injective (hF.trans hV.symm)
 
-/-- **The unstable axis of a Morse chart.** Let `X` be linear in the Morse chart `φ` at `p`. For
+/-- **The unstable axis of a Morse chart.** Let `X` be linear in the Morse chart `φ` at `x`. For
 every small `c` in the space of coordinates of negative weight, the point `y` of the chart whose
 coordinates are `c` in the directions of negative weight and `0` elsewhere lies on the unstable
-manifold of `p`, and the unstable frame at `y` sends `c` to the velocity `X y`. -/
+manifold of `x`, and the unstable frame at `y` sends `c` to the velocity `X y`. -/
 theorem eventually_mem_unstableSet_and_unstableFrame_eq :
     ∀ᶠ c in 𝓝 (0 : {i // φ.weight i < 0} → ℝ), φ.negativeExtend c ∈ φ.toChart.target ∧
       φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet x ∧
@@ -592,6 +593,21 @@ theorem eventually_mem_unstableSet_and_unstableFrame_eq :
     exact (mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 ht)).trans_lt hc
   exact ⟨by simpa using hmem 0 le_rfl, toChart_symm_negativeExtend_mem_unstableSet hφ hmem,
     unstableFrame_toChart_symm_negativeExtend hφ hmem⟩
+
+/-- **The unstable axis on both sides.** The conclusions of
+`eventually_mem_unstableSet_and_unstableFrame_eq` hold at both `c` and `-c`, for every small `c`. -/
+theorem eventually_mem_unstableSet_and_unstableFrame_eq_and_neg :
+    ∀ᶠ c in 𝓝 (0 : {i // φ.weight i < 0} → ℝ),
+      (φ.negativeExtend c ∈ φ.toChart.target ∧
+        φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet x ∧
+          hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
+            X (φ.toChart.symm (φ.negativeExtend c))) ∧
+      (φ.negativeExtend (-c) ∈ φ.toChart.target ∧
+        φ.toChart.symm (φ.negativeExtend (-c)) ∈ hX.flow.unstableSet x ∧
+          hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend (-c))) (-c) =
+            X (φ.toChart.symm (φ.negativeExtend (-c)))) :=
+  have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
+  h.and ((continuous_neg.tendsto' 0 0 neg_zero).eventually h)
 
 end IsAdaptedPseudoGradient
 

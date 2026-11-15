@@ -14,12 +14,14 @@ import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
 
 Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo-gradient adapted
 to `f`, and `p` a critical point of index `1`. Its unstable manifold `W^u(p)` is a line through
-`p`, so `W^u(p) - {p}` consists of two trajectories, one leaving `p` in each direction. This file
-shows that, for the signs of the integral Morse complex, these two trajectories always carry
-opposite signs whenever they end at the same critical point. Consequently their contributions
-to the integral boundary cancel, and with a single minimum every critical point of index `1` is
-an integral cycle. This is the cancellation behind the integral Morse complexes of the sphere
-with two maxima, of the torus and of the real projective plane in degree `1`.
+`p`, so `W^u(p) - {p}` consists of two trajectories, one leaving `p` in each direction. Suppose
+that `X` is Morse–Smale, and linear in Morse charts at `p` and at a critical point `q` of index
+`0`. This file shows that, if both trajectories end at `q`, they carry opposite signs for the
+integral Morse complex
+(`TauCeti.IsAdaptedPseudoGradient.trajectorySign_eq_neg_of_notMem_orbit`). Consequently their
+contributions to the integral boundary cancel, and with a single minimum every critical point of
+index `1` is an integral cycle. This is the cancellation behind the integral Morse complexes of
+the sphere with two maxima, of the torus and of the real projective plane in degree `1`.
 
 The two trajectories are seen in a Morse chart `φ` at `p` in which `X` is linear. Its space `V` of
 coordinates of negative weight is a line, oriented by the orientation of `W^u(p)` at `p`. For
@@ -116,51 +118,48 @@ private theorem exists_axis_point
         hX.flow.orbit (φ.toChart.symm (φ.negativeExtend (-c)))) := by
   have : Nontrivial ({i // φ.weight i < 0} → ℝ) :=
     Module.nontrivial_of_finrank_eq_succ (by rw [φ.finrank_negativeWeight_fun, hp])
-  have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
   obtain ⟨c, ⟨⟨hT₁, h₁⟩, hT₂, h₂⟩, hW, hc⟩ := ((eventually_nhdsWithin_of_eventually_nhds
-    (h.and ((continuous_neg.tendsto' 0 0 neg_zero).eventually h))).and
+    (eventually_mem_unstableSet_and_unstableFrame_eq_and_neg (hX := hX) hφ)).and
       ((eventually_unstableSet_eq_insert_union_orbit hφ hf hp).and self_mem_nhdsWithin)).exists
-  have hc : c ≠ 0 := hc
+  have hc : c ≠ 0 := mem_compl_singleton_iff.1 hc
   exact ⟨c, hc, h₁, h₂, φ.toChart_symm_negativeExtend_ne hc hT₁,
     φ.toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) hT₂, hW⟩
 
 /-- If the unstable manifold of `p` is `p` together with the orbits of two points `a` and `b` of
 trajectories from `p` to `q`, then the middle-level slice of the trajectories from `p` to `q`
-consists of one point on each of these orbits. -/
-private theorem exists_morseTrajectorySlice_eq_pair {q a b : M} (hpq : p ≠ q)
-    (ha : a ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+consists of one point on each of these orbits: for `-X` these are the trajectories from `q` to `p`,
+read off the decomposition of the stable set of `p` by
+`morseTrajectorySlice_eq_image_of_stableSet_subset`. -/
+private theorem exists_morseTrajectorySlice_eq_pair (hf : IsMorse 𝓘(ℝ, E) f) {q a b : M}
+    (hpq : p ≠ q) (ha : a ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hb : b ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hU : hX.flow.unstableSet p = insert p (hX.flow.orbit a ∪ hX.flow.orbit b)) :
     ∃ za ∈ hX.flow.orbit a, ∃ zb ∈ hX.flow.orbit b,
       hX.morseTrajectorySlice p q = {za, zb} := by
+  set hXn := hX.neg hf
+  have horbit (y : M) : hXn.flow.orbit y = hX.flow.orbit y := by
+    rw [hX.neg_flow hf, Flow.orbit_reverse]
+  have hneg {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+      y ∈ hXn.flow.unstableSet q ∩ hXn.flow.stableSet p := by
+    rwa [hX.neg_flow hf, Flow.unstableSet_reverse, Flow.stableSet_reverse, inter_comm]
   -- Each of the two trajectories crosses the middle level once.
-  have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq ha
-  have hlo : f q < (f p + f q) / 2 := by linarith [hval.1, hval.2]
-  have hhi : (f p + f q) / 2 < f p := by linarith [hval.1, hval.2]
-  obtain ⟨τa, hτa, huniqa⟩ :=
-    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpq ha hlo hhi
-  obtain ⟨τb, hτb, huniqb⟩ :=
-    hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpq hb hlo hhi
-  refine ⟨hX.flow τa a, Flow.mem_orbit _ _ _, hX.flow τb b, Flow.mem_orbit _ _ _, ?_⟩
+  obtain ⟨τa, hτa, -⟩ :=
+    hXn.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hpq.symm (hneg ha)
+  obtain ⟨τb, hτb, -⟩ :=
+    hXn.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hpq.symm (hneg hb)
+  refine ⟨hXn.flow τa a, horbit a ▸ Flow.mem_orbit _ _ _, hXn.flow τb b,
+    horbit b ▸ Flow.mem_orbit _ _ _, ?_⟩
+  have hW : hXn.flow.stableSet p ⊆
+      insert p (⋃ i : Bool, hXn.flow.orbit (bif i then a else b)) := by
+    rw [← hX.unstableSet_eq_stableSet_neg hf, hU, union_eq_iUnion]
+    refine insert_subset_insert (iUnion_mono fun i ↦ ?_)
+    cases i <;> simp [horbit]
+  rw [← hX.neg_morseTrajectorySlice hf, hXn.morseTrajectorySlice_eq_image_of_stableSet_subset
+    (a := fun _ ↦ q) (τ := fun i ↦ bif i then τa else τb) hpq.symm hW
+    (fun i ↦ by cases i <;> simp [hneg ha, hneg hb]) (fun i ↦ by cases i <;> simp [hτa, hτb])]
+  -- Both orbits start at `q` for `-X`, so the image is the pair of crossings.
   ext z
-  simp only [mem_morseTrajectorySlice, mem_insert_iff, mem_singleton_iff]
-  constructor
-  · rintro ⟨hzu, -, hzc⟩
-    have hzp : z ≠ p := by
-      rintro rfl
-      linarith
-    rw [hU] at hzu
-    rcases hzu with h | h | h
-    · exact absurd h hzp
-    · obtain ⟨t, rfl⟩ := (hX.flow.mem_orbit_iff).1 h
-      exact Or.inl (by rw [huniqa t hzc])
-    · obtain ⟨t, rfl⟩ := (hX.flow.mem_orbit_iff).1 h
-      exact Or.inr (by rw [huniqb t hzc])
-  · rintro (rfl | rfl)
-    · exact ⟨(Flow.apply_mem_unstableSet_iff _ τa).2 ha.1,
-        (Flow.apply_mem_stableSet_iff _ τa).2 ha.2, hτa⟩
-    · exact ⟨(Flow.apply_mem_unstableSet_iff _ τb).2 hb.1,
-        (Flow.apply_mem_stableSet_iff _ τb).2 hb.2, hτb⟩
+  simp [or_comm]
 
 section Sign
 
@@ -313,7 +312,7 @@ theorem signedTrajectoryCount_eq_zero_of_mem_stableSet (hMS : hX.IsMorseSmale)
   have ha : a ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨h₁.1, hW a h₁.1 hp₁⟩
   have hb : b ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q := ⟨h₂.1, hW b h₂.1 hp₂⟩
   -- The slice consists of one crossing on each of the two orbits, which carry opposite signs.
-  obtain ⟨za, hza, zb, hzb, hslice⟩ := exists_morseTrajectorySlice_eq_pair hne ha hb hU
+  obtain ⟨za, hza, zb, hzb, hslice⟩ := exists_morseTrajectorySlice_eq_pair hf hne ha hb hU
   have hmem {z : M} (hz : z ∈ hX.morseTrajectorySlice p q) :
       z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
     ⟨(hX.mem_morseTrajectorySlice.1 hz).1, (hX.mem_morseTrajectorySlice.1 hz).2.1⟩

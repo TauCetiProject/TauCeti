@@ -185,13 +185,12 @@ theorem eventually_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) 
           hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) ∧
         hX.flow.unstableSet x = insert x (hX.flow.orbit (φ.toChart.symm (φ.negativeExtend c)) ∪
           hX.flow.orbit (φ.toChart.symm (φ.negativeExtend (-c)))) := by
-  have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
   filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-      (h.and ((continuous_neg.tendsto' 0 0 neg_zero).eventually h)),
+      (eventually_mem_unstableSet_and_unstableFrame_eq_and_neg (hX := hX) hφ),
     self_mem_nhdsWithin] with c ⟨h₁, h₂⟩ hc
   set y₁ := φ.toChart.symm (φ.negativeExtend c)
   set y₂ := φ.toChart.symm (φ.negativeExtend (-c))
-  have hc : c ≠ 0 := hc
+  have hc : c ≠ 0 := mem_compl_singleton_iff.1 hc
   have hsep := notMem_orbit_toChart_symm_negativeExtend_neg hφ hf hc h₁ h₂
   refine ⟨hsep, ?_⟩
   obtain ⟨u₁, u₂, -, -, -, hW⟩ := hX.exists_unstableSet_eq_insert_union_orbit hf
@@ -201,14 +200,18 @@ theorem eventually_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) 
   have hmem₁ := h₁.2.1
   have hmem₂ := h₂.2.1
   rw [hW] at hmem₁ hmem₂
+  -- Neither point is `x`, and they lie on different orbits, so each of `u₁` and `u₂` shares its
+  -- orbit with exactly one of them.
   rcases hmem₁ with h | h | h
   · exact absurd h hy₁
-  all_goals rcases hmem₂ with h' | h' | h'
-  all_goals first
-    | exact absurd h' hy₂
-    | exact absurd (by rw [hX.flow.orbit_eq_iff.2 h]; exact h') hsep
-    | rw [hW, hX.flow.orbit_eq_iff.2 h, hX.flow.orbit_eq_iff.2 h']
-  exact congrArg (insert x) (union_comm _ _)
+  · rcases hmem₂ with h' | h' | h'
+    · exact absurd h' hy₂
+    · exact (hsep (by rw [hX.flow.orbit_eq_iff.2 h]; exact h')).elim
+    · rw [hW, hX.flow.orbit_eq_iff.2 h, hX.flow.orbit_eq_iff.2 h']
+  · rcases hmem₂ with h' | h' | h'
+    · exact absurd h' hy₂
+    · rw [hW, hX.flow.orbit_eq_iff.2 h, hX.flow.orbit_eq_iff.2 h', union_comm]
+    · exact (hsep (by rw [hX.flow.orbit_eq_iff.2 h]; exact h')).elim
 
 end UnstableAxis
 
