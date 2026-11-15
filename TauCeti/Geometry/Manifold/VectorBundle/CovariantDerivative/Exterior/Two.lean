@@ -215,7 +215,7 @@ private theorem contMDiffOn_exteriorTwoValue [ContMDiffCovariantDerivative cov �
   have hEval (i j : Fin 3) : CMDiff[u] ∞
       (T% (fun y ↦ α.eval₂ y (X i y) (X j y))) := by
     simpa only [twoFormTensor_apply] using (hA.clm_bundle_apply (hX i)).clm_bundle_apply (hX j)
-  have hCov := cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) hu
+  have hCov := cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) hu
   have hD (i j k : Fin 3) : CMDiff[u] ∞
       (T% (fun y ↦ cov (fun z ↦ α.eval₂ z (X i z) (X j z)) y (X k y))) :=
     (hCov.contMDiff (by simpa using hEval i j)).clm_bundle_apply (hX k)

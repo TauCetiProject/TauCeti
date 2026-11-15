@@ -52,8 +52,9 @@ trivialization.
   the local-frame vectors weighted by the coordinates of its reading in `e`.
 * `TauCeti.Manifold.basisAt_apply`: the basis `e.basisAt b hx` is the continuous inverse of `e`
   applied to `b`.
-* `TauCeti.Manifold.contMDiffOn_symm_baseSet`: the section with constant coordinates in a
-  trivialization is smooth on its base set.
+* `TauCeti.Manifold.contMDiffOn_symm_baseSet`,
+  `TauCeti.Manifold.mdifferentiableAt_symm_of_mem_baseSet`: the section with constant coordinates
+  in a trivialization is smooth on its base set.
 * `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
   change-of-basis matrix between the corresponding local frames.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
@@ -185,6 +186,13 @@ theorem contMDiffOn_symm_baseSet {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] 
     CMDiff[e.baseSet] n (T% (fun y ↦ e.symm y v)) :=
   e.contMDiffOn_section_baseSet_iff.2 <| (contMDiffOn_const (c := v)).congr fun y hy ↦ by
     simp only [e.apply_mk_symm hy]
+
+/-- The section with constant coordinates `v` in a trivialization `e` is differentiable at each
+point of the base set of `e`. -/
+theorem mdifferentiableAt_symm_of_mem_baseSet [ContMDiffVectorBundle 1 F V I] (v : F)
+    (hx : x ∈ e.baseSet) : MDiffAt (T% (fun y ↦ e.symm y v)) x :=
+  ((contMDiffOn_symm_baseSet (n := 1) v).contMDiffAt (e.open_baseSet.mem_nhds hx)).mdifferentiableAt
+    one_ne_zero
 
 /-- The matrix of a coordinate change between two vector-bundle trivializations is the
 change-of-basis matrix between the corresponding local frames. -/
