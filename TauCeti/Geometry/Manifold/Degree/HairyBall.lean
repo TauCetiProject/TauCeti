@@ -8,10 +8,14 @@ module
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import Mathlib.Topology.Homotopy.Basic
-import TauCeti.Analysis.InnerProductSpace.SkewIsometry
+import Mathlib.Topology.Homotopy.Path
+import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
 import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Sphere.Connected
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
 # The hairy ball theorem
@@ -32,15 +36,18 @@ homotopic maps have the same degree (`TauCeti.degree_eq_of_homotopy`), the ident
 and the antipodal map has degree `(-1)^(n+1) = -1`
 (`TauCeti.Manifold.Orientation.degree_neg_sphere`).
 For `n = 0` the sphere is the two points `±x` of a line, and the path `t ↦ H (t, x)` of a homotopy
-`H` would join `x` to `-x`. A nowhere-vanishing continuous tangent field `v` gives a homotopy from
-the identity to the antipodal map along great circles,
+`H` would join `x` to `-x`, which lie in distinct path components
+(`TauCeti.zerothHomotopy_mk_neg_ne`). A nowhere-vanishing continuous tangent field `v` gives a
+homotopy from the identity to the antipodal map along great circles,
 `(t, x) ↦ cos (π t) • x + sin (π t) • v x / ‖v x‖`.
 
-The parity hypothesis is needed. In even dimension `n + 1` a linear isometry `J` with
-`⟪J x, x⟫ = 0` (`TauCeti.exists_linearIsometryEquiv_inner_map_self_eq_zero`), such as
-`(x₁, x₂, x₃, x₄, …) ↦ (-x₂, x₁, -x₄, x₃, …)`, is a nowhere-vanishing tangent field on `Sⁿ`; so `Sⁿ`
-carries one exactly when `n` is odd (`TauCeti.exists_inner_eq_zero_and_ne_zero_iff_odd`). On the
-unit circle of `ℂ` it is `z ↦ i z`.
+The parity hypothesis is needed. In even dimension `n + 1` an orthogonal almost complex structure
+`J` (`TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`), such as
+`(x₁, x₂, x₃, x₄, …) ↦ (-x₂, x₁, -x₄, x₃, …)`, satisfies `⟪J x, x⟫ = 0`
+(`TauCeti.AlmostComplexStructure.inner_apply_self`) and is a nowhere-vanishing tangent field on
+`Sⁿ`; so `Sⁿ` carries one exactly when `n` is odd
+(`TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`). On the unit circle of `ℂ` it is
+`z ↦ i z`.
 
 ## Main results
 
@@ -52,7 +59,7 @@ unit circle of `ℂ` it is `z ↦ i z`.
   even-dimensional unit sphere.
 * `TauCeti.exists_eq_zero_of_continuous_section`: a continuous section of the tangent bundle of an
   even-dimensional unit sphere vanishes somewhere.
-* `TauCeti.exists_inner_eq_zero_and_ne_zero_iff_odd`: the unit sphere `Sⁿ` carries a
+* `TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`: the unit sphere `Sⁿ` carries a
   nowhere-vanishing continuous tangent field exactly when `n` is odd.
 
 ## References
@@ -81,10 +88,7 @@ private theorem not_homotopic_id_neg_sphere_of_neZero [NeZero n] (hn : Even n) :
     ¬ (ContinuousMap.id (sphere (0 : E) 1)).Homotopic (-ContinuousMap.id _) := fun h ↦ by
   have hE : finrank ℝ E = n + 1 := Fact.out
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
   have := connectedSpace_sphere (E := E) n
-  have : Nonempty (sphere (0 : E) 1) :=
-    ((NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one).to_subtype
   obtain ⟨K, hK, hK₀, hK₁⟩ := h.exists_contMDiff_homotopy (I := 𝓡 n) (J := 𝓡 n) ⊤ contMDiff_id
     contMDiff_neg_sphere
   -- Restrict the smooth homotopy `K : Sⁿ × ℝ → Sⁿ` to the times in `[0, 1]`.
@@ -103,25 +107,12 @@ and the antipodal map `x ↦ -x` are not homotopic. -/
 theorem not_homotopic_id_neg_sphere (hn : Even n) :
     ¬ (ContinuousMap.id (sphere (0 : E) 1)).Homotopic (-ContinuousMap.id _) := by
   rcases Nat.eq_zero_or_pos n with rfl | hpos
-  · -- `S⁰` is the two points `±x` of a line: along a homotopy `H`, the continuous function
-    -- `t ↦ ⟪H (t, x), x⟫` only takes the values `±1` but goes from `1` to `-1`.
+  · -- `S⁰` is the two points `±x` of a line, in distinct path components, but along a homotopy
+    -- `H` the path `t ↦ H (t, x)` joins `x` to `-x`.
     rintro ⟨H⟩
-    have hE : finrank ℝ E = 1 := Fact.out
-    have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+    have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (R := ℝ) (n := 0) Fact.out
     obtain ⟨x⟩ := ((NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one).to_subtype
-    have hx1 : ⟪(x : E), (x : E)⟫_ℝ = 1 := by
-      rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, one_pow]
-    have hφ : Continuous fun t : unitInterval ↦ ⟪(H (t, x) : E), (x : E)⟫_ℝ := by fun_prop
-    obtain ⟨t, ht⟩ : (0 : ℝ) ∈ range fun t : unitInterval ↦ ⟪(H (t, x) : E), (x : E)⟫_ℝ :=
-      intermediate_value_univ 1 0 hφ ⟨by simp, by simp⟩
-    dsimp only at ht
-    -- `H (t, x)` is a multiple `c • x` of norm one, so `c = ±1`, yet `⟪H (t, x), x⟫ = c` is `0`.
-    obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' (x : E) (ne_zero_of_mem_unit_sphere x)).1 hE
-      (H (t, x))
-    have hc1 := norm_eq_of_mem_sphere (H (t, x))
-    rw [← hc, norm_smul, norm_eq_of_mem_sphere, mul_one] at hc1
-    rw [← hc, real_inner_smul_left, hx1, mul_one] at ht
-    simp [ht] at hc1
+    exact zerothHomotopy_mk_neg_ne Fact.out x (ZerothHomotopy.sound (H.evalAt x)).symm
   · have : NeZero n := ⟨hpos.ne'⟩
     exact not_homotopic_id_neg_sphere_of_neZero hn
 
@@ -170,35 +161,29 @@ theorem exists_eq_zero_of_continuous_section (hn : Even n)
     ∃ x, V x = 0 := by
   -- Read in `E` through the derivative of the inclusion, `V` is a tangent field of `Sⁿ`.
   set ι : sphere (0 : E) 1 → E := (↑)
-  have hT : Continuous fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
-      (tangentMap (𝓡 n) 𝓘(ℝ, E) ι p).2 :=
-    continuous_snd.comp ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, E)).continuous.comp
-      (contMDiff_coe_sphere.continuous_tangentMap le_rfl))
   have hv : Continuous fun x ↦ mvfderiv (𝓡 n) ι x (V x) :=
-    (hT.comp hV).congr fun x ↦
-      ((mvfderiv_apply_eq_mfderiv_apply _ x (V x)).trans tangentMap_snd.symm).symm
+    ((contMDiff_coe_sphere (m := 1)).contMDiff_mvfderiv_apply (m := 0) le_rfl).continuous.comp hV
   obtain ⟨x, hx⟩ := exists_eq_zero_of_continuous_of_inner_eq_zero (n := n) hn hv fun x ↦ by
-    have hmem : mvfderiv (𝓡 n) ι x (V x) ∈ (ℝ ∙ (x : E))ᗮ := by
-      rw [← range_mvfderiv_subtypeVal (n := n)]
-      exact LinearMap.mem_range_self _ _
-    rw [real_inner_comm]
-    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 hmem
+    refine Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self (x : E)) ?_
+    rw [← range_mvfderiv_subtypeVal (n := n)]
+    exact LinearMap.mem_range_self _ _
   exact ⟨x, injective_mvfderiv_subtypeVal_sphere x (hx.trans (map_zero _).symm)⟩
 
 /-- **Tangent fields on spheres.** The unit sphere `Sⁿ` of a real inner product space of dimension
 `n + 1` carries a nowhere-vanishing continuous tangent vector field exactly when `n` is odd. For odd
-`n` one such field is `x ↦ J x` for a linear isometry `J` with `⟪J x, x⟫ = 0`, which reads
+`n` one such field is `x ↦ J x` for an orthogonal almost complex structure `J`, which reads
 `(x₁, x₂, x₃, x₄, …) ↦ (-x₂, x₁, -x₄, x₃, …)` in a suitable orthonormal basis. -/
-theorem exists_inner_eq_zero_and_ne_zero_iff_odd :
+theorem exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd :
     (∃ v : E → E, ContinuousOn v (sphere (0 : E) 1) ∧
       ∀ x ∈ sphere (0 : E) 1, ⟪v x, x⟫_ℝ = 0 ∧ v x ≠ 0) ↔ Odd n := by
   refine ⟨fun ⟨v, hv, h⟩ ↦ Nat.not_even_iff_odd.1 fun hn ↦ ?_, fun hn ↦ ?_⟩
   · obtain ⟨x, hx, h0⟩ := exists_eq_zero_of_inner_eq_zero hn hv fun x hx ↦ (h x hx).1
     exact (h x hx).2 h0
   · have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-    obtain ⟨J, hJ⟩ := exists_linearIsometryEquiv_inner_map_self_eq_zero (E := E)
+    obtain ⟨J, hJ⟩ := AlmostComplexStructure.exists_forall_norm_apply_eq (V := E)
       (by rw [Fact.out (p := finrank ℝ E = n + 1)]; exact hn.add_one)
-    exact ⟨J, J.continuous.continuousOn, fun x hx ↦ ⟨hJ x, fun h ↦
-      ne_zero_of_mem_unit_sphere ⟨x, hx⟩ (J.map_eq_zero_iff.1 h)⟩⟩
+    let L : E →ₗᵢ[ℝ] E := ⟨J.toLinearMap, hJ⟩
+    exact ⟨J, L.continuous.continuousOn, fun x hx ↦ ⟨J.inner_apply_self L.inner_map_map x,
+      J.map_ne_zero_iff.2 (ne_zero_of_mem_unit_sphere ⟨x, hx⟩)⟩⟩
 
 end TauCeti

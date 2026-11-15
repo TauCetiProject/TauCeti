@@ -295,15 +295,13 @@ theorem Manifold.Orientation.degree_neg_sphere [NeZero n]
     (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) :
     degree o o (fun x : sphere (0 : E) 1 ↦ -x) = (-1) ^ (n + 1) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (R := ℝ) (n := n) Fact.out
   -- Every point is regular, since the orientation sign `(-1)^(n+1)` is nonzero.
   have hreg (y : sphere (0 : E) 1) : IsRegularValue (𝓡 n) (𝓡 n)
       (fun x : sphere (0 : E) 1 ↦ -x) y := isRegularValue_iff.2 fun x _ ↦
-    (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <| not_not.1 fun h ↦ by
-      simpa using
-        (orientationSign_neg_sphere o x).symm.trans (orientationSign_of_not_isInvertible h)
-  obtain ⟨y⟩ := (NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one
-  rw [degree_eq_degreeAtRegularValue_choose ⟨⟨y, ‹_›⟩, hreg _⟩, degreeAtRegularValue_neg_sphere]
+    (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <| not_not.1 <|
+      orientationSign_eq_zero_iff.not.1 <| (orientationSign_neg_sphere o x).trans_ne (by simp)
+  obtain ⟨y⟩ := (connectedSpace_sphere (E := E) n).toNonempty
+  rw [degree_eq_degreeAtRegularValue_choose ⟨y, hreg y⟩, degreeAtRegularValue_neg_sphere]
 
 /-- The unit sphere of a finite-dimensional real inner product space is orientable. -/
 theorem orientable_sphere : Orientable (𝓡 n) (sphere (0 : E) 1) := by
