@@ -112,14 +112,14 @@ theorem toOrientationCover_smul (o : Orientation ℝ V ι) (g : unitary (V →L[
       toOrientationCover (Orientation.map ι (Unitary.linearIsometryEquiv g).toLinearEquiv o) p :=
   VectorBundleOrientationCover.mk_eq_mk_iff.2 (Orientation.map_trans _ _ o)
 
-variable [Fintype ι] [FiniteDimensional ℝ V]
+variable [Fintype ι]
 
 /-- An orthogonal transformation of positive determinant preserves the orientation of a frame. -/
 theorem toOrientationCover_smul_of_det_pos (hι : Fintype.card ι = finrank ℝ V)
     (o : Orientation ℝ V ι) {g : unitary (V →L[ℝ] V)} (hg : 0 < (g : V →L[ℝ] V).det)
     (p : OrthonormalFrameBundle ℝ F E V) :
     toOrientationCover o (op g • p) = toOrientationCover o p := by
-  rw [toOrientationCover_smul, (o.map_eq_iff_det_pos _ hι).2 hg]
+  rw [toOrientationCover_smul, (o.map_eq_iff_det_pos_of_card_eq_finrank _ hι).2 hg]
 
 /-- Two orthonormal frames determine the same orientation exactly when they differ by an
 orthogonal transformation of positive determinant. -/
@@ -135,7 +135,7 @@ theorem toOrientationCover_eq_toOrientationCover_iff (hι : Fintype.card ι = fi
   -- is injective.
   have h' := (Orientation.map ι p.frame.toLinearEquiv).injective
     (VectorBundleOrientationCover.mk_eq_mk_iff.1 h)
-  exact (o.map_eq_iff_det_pos _ hι).1 h'.symm
+  exact (o.map_eq_iff_det_pos_of_card_eq_finrank _ hι).1 h'.symm
 
 variable (F E V) in
 /-- The relation on orthonormal frames of differing by a special orthogonal transformation of `V`,
@@ -146,9 +146,14 @@ def orientedRel : Setoid (OrthonormalFrameBundle ℝ F E V) where
   -- By `toOrientationCover_eq_toOrientationCover_iff`, for any orientation of `V`, the relation
   -- says that the two frames give the same orientation of the fibre.
   iseqv := by
+    obtain ⟨n, o, hι⟩ :
+        ∃ (n : ℕ) (_ : Orientation ℝ V (Fin n)), Fintype.card (Fin n) = finrank ℝ V := by
+      by_cases hV : FiniteDimensional ℝ V
+      · exact ⟨finrank ℝ V, (Module.finBasis ℝ V).orientation, Fintype.card_fin _⟩
+      · exact ⟨0, positiveOrientation,
+          (Fintype.card_fin 0).trans (finrank_of_not_finite hV).symm⟩
     have h (p q : OrthonormalFrameBundle ℝ F E V) :=
-      toOrientationCover_eq_toOrientationCover_iff (p := p) (q := q)
-        (Fintype.card_fin (finrank ℝ V)) (Module.finBasis ℝ V).orientation
+      toOrientationCover_eq_toOrientationCover_iff (p := p) (q := q) hι o
     exact ⟨fun p ↦ (h p p).1 rfl, fun {p q} hpq ↦ (h q p).1 ((h p q).2 hpq).symm,
       fun {p q r} hpq hqr ↦ (h p r).1 (((h p q).2 hpq).trans ((h q r).2 hqr))⟩
 
@@ -175,10 +180,10 @@ theorem toOrientationCover_neg (o : Orientation ℝ V ι) (p : OrthonormalFrameB
   rw [VectorBundleOrientationCover.deck_apply]
   exact VectorBundleOrientationCover.mk_eq_mk_iff.2 (Module.Ray.map_neg _ o)
 
-variable [Fintype ι] [FiniteDimensional ℝ V]
+variable [Fintype ι]
 
 /-- An orthogonal transformation of negative determinant reverses the orientation of a frame. -/
-theorem toOrientationCover_smul_of_det_neg (hι : Fintype.card ι = finrank ℝ V)
+theorem toOrientationCover_smul_of_det_neg [CompleteSpace V] (hι : Fintype.card ι = finrank ℝ V)
     (o : Orientation ℝ V ι) {g : unitary (V →L[ℝ] V)} (hg : (g : V →L[ℝ] V).det < 0)
     (p : OrthonormalFrameBundle ℝ F E V) :
     toOrientationCover o (op g • p) =
@@ -194,9 +199,6 @@ private theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank �
     ∀ᶠ q in 𝓝 p₀, ∃ hq : q.proj ∈ e.baseSet,
       e.mapOrientation ι hq (Orientation.map ι q.frame.toLinearEquiv o) =
         e.mapOrientation ι h₀ (Orientation.map ι p₀.frame.toLinearEquiv o) := by
-  -- The frames near `p₀`, read in `e` and then read back in the frame `p₀`, form a continuous
-  -- family of endomorphisms of `V` equal to the identity at `p₀`, so their determinants stay
-  -- positive near `p₀`.
   have hU : proj ⁻¹' e.baseSet ∈ 𝓝 p₀ := (e.open_baseSet.preimage continuous_proj).mem_nhds h₀
   -- `L q` is the frame at `q` read in `e`.
   let L (q : OrthonormalFrameBundle ℝ F E V) (hq : q.proj ∈ e.baseSet) : V ≃L[ℝ] F :=
@@ -204,31 +206,42 @@ private theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank �
   have hL {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
       (L q hq).toLinearEquiv = q.frame.toLinearEquiv.trans (e.linearEquivAt ℝ q.proj hq) :=
     rfl
-  have hcoord {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
-      (((L p₀ h₀).symm : F →L[ℝ] V).comp (coord e q) : V →ₗ[ℝ] V) =
-        ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv := by
-    ext v
-    simp [L, coord_apply hq, e.continuousLinearEquivAt_apply (R := ℝ)]
-  let d : OrthonormalFrameBundle ℝ F E V → ℝ := fun q ↦
-    (((L p₀ h₀).symm : F →L[ℝ] V).comp (coord e q)).det
-  have hd : ContinuousAt d p₀ := ContinuousLinearMap.continuous_det.continuousAt.comp
-    (continuousAt_const.clm_comp ((continuousOn_coord e).continuousAt hU))
-  have hd₀ : d p₀ = 1 := by
-    simp only [d, ContinuousLinearMap.det, hcoord h₀, ContinuousLinearEquiv.self_trans_symm]
-    exact LinearMap.det_id
-  filter_upwards [hU, hd.eventually (lt_mem_nhds (hd₀ ▸ one_pos))] with q hq hdq
-  refine ⟨hq, ?_⟩
-  have hpos : Orientation.map ι ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv o = o := by
-    refine (o.map_eq_iff_det_pos _ hι).2 ?_
+  suffices ∀ᶠ q in 𝓝 p₀, ∃ hq : q.proj ∈ e.baseSet,
+      Orientation.map ι ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv o = o by
+    filter_upwards [this] with q ⟨hq, hpos⟩
+    refine ⟨hq, ?_⟩
+    simp only [Trivialization.mapOrientation_apply, ← Orientation.map_trans, ← hL]
+    calc Orientation.map ι (L q hq).toLinearEquiv o
+        = Orientation.map ι (L p₀ h₀).toLinearEquiv
+            (Orientation.map ι ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv o) := by
+          rw [← Orientation.map_trans]
+          refine congrArg (fun f : V ≃ₗ[ℝ] F ↦ Orientation.map ι f o) (LinearEquiv.ext fun v ↦ ?_)
+          simp
+      _ = Orientation.map ι (L p₀ h₀).toLinearEquiv o := by rw [hpos]
+  -- `continuousOn_coord` requires `FiniteDimensional ℝ V`, which follows from `hι` once `ι` is
+  -- nonempty.
+  rcases isEmpty_or_nonempty ι with _ | _
+  · filter_upwards [hU] with q hq
+    exact ⟨hq, Orientation.map_of_isEmpty ι o _⟩
+  · have : FiniteDimensional ℝ V := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
+    -- The frames near `p₀`, read in `e` and then read back in the frame `p₀`, form a continuous
+    -- family of endomorphisms of `V` equal to the identity at `p₀`, so their determinants stay
+    -- positive near `p₀`.
+    have hcoord {q : OrthonormalFrameBundle ℝ F E V} (hq : q.proj ∈ e.baseSet) :
+        (((L p₀ h₀).symm : F →L[ℝ] V).comp (coord e q) : V →ₗ[ℝ] V) =
+          ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv := by
+      ext v
+      simp [L, coord_apply hq, e.continuousLinearEquivAt_apply (R := ℝ)]
+    let d : OrthonormalFrameBundle ℝ F E V → ℝ := fun q ↦
+      (((L p₀ h₀).symm : F →L[ℝ] V).comp (coord e q)).det
+    have hd : ContinuousAt d p₀ := ContinuousLinearMap.continuous_det.continuousAt.comp
+      (continuousAt_const.clm_comp ((continuousOn_coord e).continuousAt hU))
+    have hd₀ : d p₀ = 1 := by
+      simp only [d, ContinuousLinearMap.det, hcoord h₀, ContinuousLinearEquiv.self_trans_symm]
+      exact LinearMap.det_id
+    filter_upwards [hU, hd.eventually (lt_mem_nhds (hd₀ ▸ one_pos))] with q hq hdq
+    refine ⟨hq, (o.map_eq_iff_det_pos _ hι).2 ?_⟩
     rwa [← hcoord hq]
-  simp only [Trivialization.mapOrientation_apply, ← Orientation.map_trans, ← hL]
-  calc Orientation.map ι (L q hq).toLinearEquiv o
-      = Orientation.map ι (L p₀ h₀).toLinearEquiv
-          (Orientation.map ι ((L q hq).trans (L p₀ h₀).symm).toLinearEquiv o) := by
-        rw [← Orientation.map_trans]
-        refine congrArg (fun f : V ≃ₗ[ℝ] F ↦ Orientation.map ι f o) (LinearEquiv.ext fun v ↦ ?_)
-        simp
-    _ = Orientation.map ι (L p₀ h₀).toLinearEquiv o := by rw [hpos]
 
 /-- The map from the orthonormal frame bundle to the orientation double cover is continuous. -/
 theorem continuous_toOrientationCover (hι : Fintype.card ι = finrank ℝ V)
@@ -240,7 +253,6 @@ theorem continuous_toOrientationCover (hι : Fintype.card ι = finrank ℝ V)
       filter_upwards [eventually_mapOrientation_eq hι o _ h₀] with q ⟨hq, hq'⟩
       exact VectorBundleOrientationCover.mem_sheet_iff.2 ⟨hq, hq'.trans hp₀⟩
 
-omit [FiniteDimensional ℝ V] in
 /-- Over a point of the base, every orientation of the fibre is transported from `o` by some
 orthonormal frame, provided the rank `card ι` is positive and equal to the dimension of `V` and of
 the model fibre. -/
@@ -253,7 +265,7 @@ theorem surjective_toOrientationCover [Nonempty ι] (hι : Fintype.card ι = fin
     (((trivializationAt F E b).linearEquivAt ℝ b hb).finrank_eq.trans hF.symm) o o'
   exact ⟨⟨b, φ⟩, VectorBundleOrientationCover.mk_eq_mk_iff.2 hφ⟩
 
-variable [IsContinuousRiemannianBundle F E]
+variable [FiniteDimensional ℝ V] [IsContinuousRiemannianBundle F E]
 
 /-- The map from the orthonormal frame bundle to the orientation double cover is open, provided
 `card ι` is the dimension of `V` and of the model fibre. -/
