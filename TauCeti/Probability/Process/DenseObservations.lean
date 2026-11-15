@@ -13,9 +13,10 @@ public import Mathlib.Topology.Sequences
 
 For a process indexed by a first-countable space `ι` with almost surely continuous paths into
 a completely metrizable Borel space `Y`, observing a dense set `D` of times determines all
-observation-measurable claims valued in any completely metrizable space `E`, up to
-almost-everywhere equality. The observations at times in `D` must be strongly measurable for
-the chosen observation sigma algebra. The sample space need not be a continuous-path space,
+claims valued in any completely metrizable space `E` that are almost everywhere strongly
+measurable from the full process, up to almost-everywhere equality. The observations at times
+in `D` must be strongly measurable for the chosen observation sigma algebra. The sample space
+need not be a continuous-path space,
 and the observation sigma algebra need not contain the ambient null sets. The conclusion uses
 almost-everywhere strong measurability, not literal measurability of an arbitrary raw version.
 
