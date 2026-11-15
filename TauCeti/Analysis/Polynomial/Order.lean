@@ -15,7 +15,8 @@ public import TauCeti.Algebra.Polynomial.Reverse
 # Analytic order of polynomial evaluation
 
 At zero, the analytic order of polynomial evaluation equals its trailing degree, including
-infinite order for the zero polynomial. This connects coefficient calculations for polynomial
+infinite order for the zero polynomial; so a polynomial of degree less than `d` vanishing to order
+at least `d` at zero is zero. This connects coefficient calculations for polynomial
 slices to the analytic order used in preparation theorems. At an arbitrary point, the analytic
 order of a nonzero polynomial function is the root multiplicity of the polynomial there.
 
@@ -58,6 +59,16 @@ theorem analyticOrderAt_eval_zero (p : Polynomial 𝕜) :
   exact Eventually.of_forall fun t ↦ by
     conv_lhs => rw [hq]
     simp only [eval_mul, eval_pow, eval_X, sub_zero, smul_eq_mul]
+
+/-- A polynomial of degree less than `d` whose evaluation vanishes to order at least `d` at zero
+is zero. -/
+theorem eq_zero_of_degree_lt_of_natCast_le_analyticOrderAt_eval_zero {p : Polynomial 𝕜} {d : ℕ}
+    (hp : p.degree < d) (h : (d : ℕ∞) ≤ analyticOrderAt (fun t ↦ p.eval t) 0) : p = 0 := by
+  by_contra hne
+  rw [analyticOrderAt_eval_zero, trailingDegree_eq_natTrailingDegree hne, Nat.cast_le] at h
+  have := (natDegree_lt_iff_degree_lt hne).2 hp
+  have := natTrailingDegree_le_natDegree p
+  omega
 
 /-- The analytic order of a nonzero polynomial function at a point is the multiplicity of that
 point as a root of the polynomial. -/

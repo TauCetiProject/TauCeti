@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Complex.PowerSeries.Polydisc
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Complex.TransverseDivisor
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Polydisc
@@ -44,12 +46,23 @@ function, with their multiplicities. In Taubes's analysis of Seiberg–Witten so
 pseudoholomorphic curve, the rescaled limits are such pairs on `ℂ_base × ℂ_normal`, and this
 complex gauge is how their zero divisors become holomorphic.
 
+**Confined sections.** If moreover `α` has no zeros where the `i`-th coordinate is large,
+`‖z_i‖ ≥ K`, then so has the entire function `exp g • α`, and its zero divisor is the pullback of
+a divisor of the `i`-th coordinate line
+(`Differentiable.exists_differentiable_ne_zero_eq_mul_prod_sub`).
+Hence `α = u ∏_{a ∈ s} (z_i - a)` for a multiset `s` of points of norm less than `K` and a smooth
+nowhere vanishing `u` (`TauCeti.exists_contDiff_ne_zero_eq_mul_prod_sub`). For the rescaled
+Seiberg–Witten limits, with `z_i` the normal coordinate, this says that the zeros of `α` form the
+product of `ℂ_base` with the fixed divisor `s` of `ℂ_normal`.
+
 ## Main results
 
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_single_eq`: the `bar∂`-Poincaré lemma for
   `(0,1)`-forms on `ℂⁿ`.
 * `TauCeti.exists_contDiff_differentiable_exp_smul`: a section annihilated by `bar∂ + b` for a
   `bar∂`-closed `(0,1)`-form `b` is holomorphic in a smooth complex gauge.
+* `TauCeti.exists_contDiff_ne_zero_eq_mul_prod_sub`: such a section with no zeros where one
+  coordinate is large is a smooth unit times a polynomial in that coordinate.
 
 ## References
 
@@ -155,5 +168,47 @@ theorem exists_contDiff_differentiable_exp_smul {b : ι → (ι → ℂ) → ℂ
     rw [hcomp, ContinuousLinearMap.comp_apply, hgb z j, (hasDerivAt_exp (g z)).hasFDerivAt.fderiv]
     simp [mul_comm]
   rw [conjWirtingerDeriv_smul_apply hed (hα z), hexp, mul_smul, ← smul_add, hαb z j, smul_zero]
+
+/-- **Sections with confined zeros.** Let `b = ∑ j, b_j d(conj z_j)` be a smooth `bar∂`-closed
+`(0,1)`-form on `ι → ℂ` and `α` a real-differentiable section with `bar∂ α + b α = 0`, and suppose
+that `α z ≠ 0` whenever `K ≤ ‖z i‖`. Then there are a multiset `s` of points of norm less than `K`
+and a smooth nowhere vanishing `u` with `α z = u z * ∏_{a ∈ s} (z i - a)`. -/
+theorem exists_contDiff_ne_zero_eq_mul_prod_sub (i : ι) {b : ι → (ι → ℂ) → ℂ}
+    (hb : ∀ j, ContDiff ℝ ∞ (b j))
+    (hclosed : ∀ z j k,
+      conjWirtingerDeriv (b k) z (Pi.single j 1) = conjWirtingerDeriv (b j) z (Pi.single k 1))
+    {α : (ι → ℂ) → ℂ} (hα : Differentiable ℝ α)
+    (hαb : ∀ z j, conjWirtingerDeriv α z (Pi.single j 1) + b j z * α z = 0)
+    {K : ℝ} (hK : ∀ z, K ≤ ‖z i‖ → α z ≠ 0) :
+    ∃ s : Multiset ℂ, (∀ a ∈ s, ‖a‖ < K) ∧ ∃ u : (ι → ℂ) → ℂ, ContDiff ℝ ∞ u ∧ (∀ z, u z ≠ 0) ∧
+      ∀ z, α z = u z * (s.map fun a ↦ z i - a).prod := by
+  -- In a holomorphic gauge `exp g`, the section becomes an entire function.
+  obtain ⟨g, hg, -, hhol⟩ := exists_contDiff_differentiable_exp_smul hb hclosed hα
+    (fun z j ↦ by rw [smul_eq_mul]; exact hαb z j)
+  -- View it on `(ι → ℂ) × ℂ`, the second factor replacing the `i`-th coordinate.
+  have hupd : Differentiable ℂ fun p : (ι → ℂ) × ℂ ↦ Function.update p.1 i p.2 := by
+    refine differentiable_pi.2 fun j ↦ ?_
+    by_cases hj : j = i
+    · subst hj
+      simp only [Function.update_self]
+      fun_prop
+    · simp only [Function.update_of_ne hj]
+      fun_prop
+  set f : (ι → ℂ) × ℂ → ℂ := fun p ↦
+    cexp (g (Function.update p.1 i p.2)) * α (Function.update p.1 i p.2) with hfdef
+  -- On `ℂ`-valued functions `exp g • α` is `exp g * α`.
+  have hf : Differentiable ℂ f := hhol.comp hupd
+  have hfK (x : ι → ℂ) (w : ℂ) (hw : K ≤ ‖w‖) : f (x, w) ≠ 0 :=
+    mul_ne_zero (Complex.exp_ne_zero _) (hK _ (by simpa using hw))
+  obtain ⟨s, hsK, Φ, hΦ, hΦ0, hfΦ⟩ := hf.exists_differentiable_ne_zero_eq_mul_prod_sub hfK
+  have hΦc : ContDiff ℝ ∞ Φ := (contDiffOn_univ.1
+    (hΦ.differentiableOn.contDiffOn_of_finiteDimensional isOpen_univ)).restrict_scalars ℝ
+  refine ⟨s, hsK, fun z ↦ cexp (-g z) * Φ (z, z i), ?_,
+    fun z ↦ mul_ne_zero (Complex.exp_ne_zero _) (hΦ0 _), fun z ↦ ?_⟩
+  · have hpr : ContDiff ℝ ∞ fun z : ι → ℂ ↦ (z, z i) := by fun_prop
+    exact hg.neg.cexp.mul (hΦc.comp hpr)
+  · have h := hfΦ z (z i)
+    simp only [hfdef, Function.update_eq_self] at h
+    rw [mul_assoc, ← h, ← mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, one_mul]
 
 end TauCeti

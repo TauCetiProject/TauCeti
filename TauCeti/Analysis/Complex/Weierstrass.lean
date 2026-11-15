@@ -47,6 +47,10 @@ vanishing `d` at `w₀`. This file proves the local analytic **Weierstrass prepa
 * `AnalyticAt.exists_weierstrassDivision`: **Weierstrass division.** Combining preparation and
   division by a Weierstrass polynomial divides any analytic `g` by any `f` whose slice has order
   `d` at `w₀`.
+* `AnalyticAt.exists_eventuallyEq_sub_pow_mul`: **division by a power of `w - w₀`.** If every slice
+  `w ↦ f (x, w)` with `x` near `x₀` vanishes to order at least `d` at `w₀`, then near `(x₀, w₀)`,
+  `f (x, w) = (w - w₀) ^ d * q (x, w)` with `q` analytic, and `q (x₀, w₀) ≠ 0` when the slice over
+  `x₀` vanishes to order exactly `d`.
 
 ## Proof outline
 
@@ -71,6 +75,10 @@ nonvanishing on `sphere 0 R` for `x ∈ ball 0 δ`. Expanding `(P_x(ζ) - P_x(w)
 polynomial in `w` of degree `< d` via `geom_sum₂_mul` rewrites the Cauchy kernel `(ζ - w)⁻¹` as
 `P_x(w) / ((ζ - w) P_x(ζ))` plus a degree-`< d` polynomial in `w`; integrating against
 `(2πi)⁻¹ g (x, ζ)` over `C(0, R)` produces the analytic quotient and remainder coefficients.
+
+Division by `(w - w₀) ^ d`, the Weierstrass polynomial with zero lower coefficients, leaves a
+remainder of degree less than `d` in `w - w₀`. When the slices vanish to order at least `d`, so
+does the remainder, which is therefore zero.
 
 ## References
 
@@ -482,5 +490,65 @@ theorem exists_weierstrassDivision {f g : E × ℂ → ℂ} {x₀ : E} {w₀ : �
   refine ⟨fun p ↦ q₀ p / u p, r, hq₀.fun_div hu hu0, hr, ?_⟩
   filter_upwards [hprep, hdiv, hu.continuousAt.eventually_ne hu0] with p hp hgp hup
   rw [hgp, hp, mul_assoc, mul_div_cancel₀ _ hup]
+
+/-- **Division by a power of `w - w₀`.** Let `f : E × ℂ → ℂ` be analytic at `(x₀, w₀)`, and suppose
+that for every `x` near `x₀` the slice `w ↦ f (x, w)` vanishes to order at least `d` at `w₀`. Then
+`f (x, w) = (w - w₀) ^ d * q (x, w)` near `(x₀, w₀)` for some `q` analytic at `(x₀, w₀)`, and
+`q (x₀, w₀) ≠ 0` if the slice over `x₀` vanishes to order exactly `d`. -/
+theorem exists_eventuallyEq_sub_pow_mul {f : E × ℂ → ℂ} {x₀ : E} {w₀ : ℂ} {d : ℕ}
+    (hf : AnalyticAt ℂ f (x₀, w₀))
+    (hd : ∀ᶠ x in 𝓝 x₀, (d : ℕ∞) ≤ analyticOrderAt (fun w ↦ f (x, w)) w₀) :
+    ∃ q : E × ℂ → ℂ, AnalyticAt ℂ q (x₀, w₀) ∧
+      (analyticOrderAt (fun w ↦ f (x₀, w)) w₀ = d → q (x₀, w₀) ≠ 0) ∧
+      f =ᶠ[𝓝 (x₀, w₀)] fun p ↦ (p.2 - w₀) ^ d * q p := by
+  -- Divide by the Weierstrass polynomial `(w - w₀) ^ d`, with zero lower coefficients.
+  obtain ⟨q, r, hq, -, hdiv⟩ := hf.exists_weierstrassDivision_monicOfCoeff
+    (c := fun (_ : Fin d) (_ : E) ↦ (0 : ℂ)) (fun _ ↦ analyticAt_const) (fun _ ↦ rfl)
+  simp only [TauCeti.Polynomial.eval_monicOfCoeff, zero_mul, Finset.sum_const_zero,
+    add_zero] at hdiv
+  -- The remainder is the polynomial `∑ rᵢ(x) Xⁱ` evaluated at `w - w₀`.
+  set p : E → ℂ[X] := fun x ↦ ∑ i : Fin d, C (r i x) * X ^ (i : ℕ) with hp
+  have hpeval (x : E) (t : ℂ) : (p x).eval t = ∑ i : Fin d, r i x * t ^ (i : ℕ) := by
+    simp [hp, eval_finsetSum]
+  -- Over `x` near `x₀` the remainder has degree less than `d` but vanishes to order `d` at `0`.
+  have hp0 : ∀ᶠ x in 𝓝 x₀, p x = 0 := by
+    have hslice : ∀ᶠ x in 𝓝 x₀, ∀ᶠ w in 𝓝 w₀,
+        f (x, w) = (w - w₀) ^ d * q (x, w) + ∑ i : Fin d, r i x * (w - w₀) ^ (i : ℕ) := by
+      rw [nhds_prod_eq] at hdiv
+      exact hdiv.curry
+    have hx₀ : Tendsto (fun x : E ↦ (x, w₀)) (𝓝 x₀) (𝓝 (x₀, w₀)) :=
+      (continuous_id.prodMk continuous_const).tendsto x₀
+    filter_upwards [hslice, hx₀.eventually hq.eventually_analyticAt,
+      hx₀.eventually hf.eventually_analyticAt, hd] with x hx hqx hfx hdx
+    obtain ⟨g, hg, hfg⟩ := (natCast_le_analyticOrderAt hfx.curry_right).1 hdx
+    have hw₀ : Tendsto (fun t : ℂ ↦ w₀ + t) (𝓝 0) (𝓝 w₀) :=
+      (continuous_const.add continuous_id').tendsto' 0 w₀ (add_zero w₀)
+    have hlin : AnalyticAt ℂ (fun t : ℂ ↦ w₀ + t) 0 := analyticAt_const.add analyticAt_id
+    refine Polynomial.eq_zero_of_degree_lt_of_natCast_le_analyticOrderAt_eval_zero
+      (degree_sum_fin_lt _) ((natCast_le_analyticOrderAt
+        ((p x).differentiable.analyticAt (z := 0))).2 ⟨fun t ↦ g (w₀ + t) - q (x, w₀ + t),
+        (hg.comp_of_eq hlin (by simp)).sub (hqx.curry_right.comp_of_eq hlin (by simp)), ?_⟩)
+    filter_upwards [hw₀.eventually hx, hw₀.eventually hfg] with t ht hgt
+    rw [add_sub_cancel_left] at ht hgt
+    rw [hpeval, smul_eq_mul, sub_zero]
+    rw [smul_eq_mul] at hgt
+    linear_combination hgt - ht
+  have heq : f =ᶠ[𝓝 (x₀, w₀)] fun p ↦ (p.2 - w₀) ^ d * q p := by
+    filter_upwards [hdiv, (continuous_fst.tendsto (x₀, w₀)).eventually hp0] with y hy hpy
+    rw [hy, ← hpeval, hpy, eval_zero, add_zero]
+  refine ⟨q, hq, fun hdx hq0 ↦ ?_, heq⟩
+  -- If `q` vanished at `(x₀, w₀)`, the slice over `x₀` would vanish to order `d + 1`.
+  have hq1 : (1 : ℕ∞) ≤ analyticOrderAt (fun w ↦ q (x₀, w)) w₀ :=
+    Order.one_le_iff_ne_zero.2 (analyticOrderAt_ne_zero.2 ⟨hq.curry_right, hq0⟩)
+  obtain ⟨g, hg, hqg⟩ := (natCast_le_analyticOrderAt hq.curry_right).1 hq1
+  have hle : ((d + 1 : ℕ) : ℕ∞) ≤ analyticOrderAt (fun w ↦ f (x₀, w)) w₀ := by
+    refine (natCast_le_analyticOrderAt hf.curry_right).2 ⟨g, hg, ?_⟩
+    have hw : Tendsto (fun w : ℂ ↦ (x₀, w)) (𝓝 w₀) (𝓝 (x₀, w₀)) :=
+      (continuous_const.prodMk continuous_id).tendsto w₀
+    filter_upwards [hw.eventually heq, hqg] with w hw hgw
+    rw [hw, hgw, smul_eq_mul, smul_eq_mul, pow_succ]
+    ring
+  rw [hdx, Nat.cast_le] at hle
+  omega
 
 end AnalyticAt
