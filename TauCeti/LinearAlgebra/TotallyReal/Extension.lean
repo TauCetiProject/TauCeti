@@ -55,12 +55,7 @@ private theorem eq_zero_of_sub_smul_mem (hJ : J.comp J = -LinearMap.id) {M : Sub
     simp only [map_sub, map_smul, hJJ]
     module
   by_contra hts
-  have hpos : t * t + s * s ≠ 0 := by
-    rw [not_and_or] at hts
-    rcases hts with ht | hs
-    · exact (add_pos_of_pos_of_nonneg (mul_self_pos.2 ht) (mul_self_nonneg s)).ne'
-    · exact (add_pos_of_nonneg_of_pos (mul_self_nonneg t) (mul_self_pos.2 hs)).ne'
-  exact he ((M.smul_mem_iff hpos).1 hsum)
+  exact he ((M.smul_mem_iff (mt mul_self_add_mul_self_eq_zero.1 hts)).1 hsum)
 
 /-- Adding to a totally real subspace `L` a vector outside `L ⊔ J(L)` keeps it totally real,
 when `J² = -1`. -/
