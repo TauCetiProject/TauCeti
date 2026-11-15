@@ -42,6 +42,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   form, the orthogonal complement of the derived ideal is the centre.
 * `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
   invariance.
+* `LinearMap.BilinForm.lieInvariant_of_isTrivial`: every bilinear form on a trivial Lie module,
+  for instance on an abelian Lie algebra, is invariant.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
@@ -75,6 +77,13 @@ theorem LinearMap.BilinForm.lieInvariant.compl₁₂ {R L L' : Type*} [CommRing 
   intro x y z
   simpa only [LinearMap.compl₁₂_apply, LieHom.map_lie, LieHom.coe_toLinearMap] using
     hB (f x) (f y) (f z)
+
+/-- Every bilinear form on a trivial Lie module is invariant, both sides of the invariance
+equation vanishing. In particular every bilinear form on an abelian Lie algebra is invariant. -/
+theorem LinearMap.BilinForm.lieInvariant_of_isTrivial {R L M : Type*} [CommRing R] [LieRing L]
+    [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule.IsTrivial L M]
+    (B : LinearMap.BilinForm R M) : B.lieInvariant L := fun x y z => by
+  rw [trivial_lie_zero, trivial_lie_zero, map_zero, map_zero, LinearMap.zero_apply, neg_zero]
 
 open Module (Dual finrank)
 

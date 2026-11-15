@@ -35,7 +35,9 @@ and comparisons with extensions whose kernels are themselves abelian Lie algebra
 * `LieAlgebra.ofTwoCocycle.derivation`: for trivial coefficients, the derivation
   `(x, m) ↦ (D x, 0)` induced by a derivation `D` of the quotient for which the cocycle is skew;
 * `LieAlgebra.ofTwoCocycle.centralElement`: for coefficients the trivial module `R`, the central
-  element `K = (0, 1)`, which is nonzero over a nontrivial ring, and in terms of which every
+  element `K = (0, 1)`, whose brackets vanish (`LieAlgebra.ofTwoCocycle.lie_centralElement`,
+  `LieAlgebra.ofTwoCocycle.centralElement_lie`), which is nonzero over a nontrivial ring, and in
+  terms of which every
   element is an element of `L` plus a multiple of `K`
   (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`);
 * `LieAlgebra.Extension.ofTwoCocycleEquiv`: the comparison of an extension with abelian kernel
@@ -476,6 +478,16 @@ theorem centralElement_mem_center : centralElement c ∈ center R (ofTwoCocycle 
     simp only [centralElement, bracket_ofTwoCocycle, Equiv.symm_apply_apply, lie_zero,
       trivial_lie_zero, map_zero, sub_zero, add_zero]
     exact of_zero c
+
+/-- The bracket of any element with `K` vanishes. -/
+@[simp]
+theorem lie_centralElement (v : ofTwoCocycle c) : ⁅v, centralElement c⁆ = 0 :=
+  (LieModule.mem_maxTrivSubmodule R _ _ _).1 (centralElement_mem_center c) v
+
+/-- The bracket of `K` with any element vanishes. -/
+@[simp]
+theorem centralElement_lie (v : ofTwoCocycle c) : ⁅centralElement c, v⁆ = 0 := by
+  rw [← lie_skew, lie_centralElement, neg_zero]
 
 /-- The element `K` is nonzero over a nontrivial ring. -/
 theorem centralElement_ne_zero [Nontrivial R] : centralElement c ≠ 0 := by
