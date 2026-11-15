@@ -13,7 +13,9 @@ public import Mathlib.Probability.HasLaw
 
 Finite independent families with densities have joint density equal to the product of
 those densities. The reference measures may be any sigma-finite measures.
-This combines `iIndepFun.hasLaw_pi` with `TauCeti.pi_withDensity₀`.
+The joint product-density laws support pushforward and change-of-variables arguments on
+tuples; independence supplies finiteness of the coordinate laws. The central ingredients
+are `iIndepFun.hasLaw_pi` and `TauCeti.pi_withDensity₀`.
 -/
 
 public section
@@ -48,11 +50,30 @@ theorem hasLaw_pi_withDensity (hind : iIndepFun X P)
       ((Measure.pi μ).withDensity fun x ↦ ∏ i, p i (x i)) P :=
   hind.hasLaw_pi_withDensity₀ hX (fun i ↦ (hp i).aemeasurable)
 
-/-- Independent real coordinates with Lebesgue densities have the product Lebesgue density. -/
-theorem hasLaw_pi_volume_withDensity {X : ι → Ω → ℝ} {p : ι → ℝ → ℝ≥0∞}
-    (hind : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (volume.withDensity (p i)) P)
+section Volume
+
+variable {α : ι → Type*} [∀ i, MeasureSpace (α i)]
+  [∀ i, SigmaFinite (volume : Measure (α i))]
+  {X : ∀ i, Ω → α i} {p : ∀ i, α i → ℝ≥0∞}
+
+/-- Independent coordinates with almost everywhere measurable volume densities have their
+product as joint volume density. -/
+theorem hasLaw_pi_volume_withDensity₀ (hind : iIndepFun X P)
+    (hX : ∀ i, HasLaw (X i) (volume.withDensity (p i)) P)
+    (hp : ∀ i, AEMeasurable (p i) volume) :
+    HasLaw (fun ω i ↦ X i ω)
+      (volume.withDensity fun x : ∀ i, α i ↦ ∏ i, p i (x i)) P := by
+  simpa only [← volume_pi] using hind.hasLaw_pi_withDensity₀ hX hp
+
+/-- Independent coordinates with measurable volume densities have their product as joint
+volume density. -/
+theorem hasLaw_pi_volume_withDensity (hind : iIndepFun X P)
+    (hX : ∀ i, HasLaw (X i) (volume.withDensity (p i)) P)
     (hp : ∀ i, Measurable (p i)) :
-    HasLaw (fun ω i ↦ X i ω) (volume.withDensity fun x : ι → ℝ ↦ ∏ i, p i (x i)) P := by
-  simpa only [← volume_pi] using hind.hasLaw_pi_withDensity hX hp
+    HasLaw (fun ω i ↦ X i ω)
+      (volume.withDensity fun x : ∀ i, α i ↦ ∏ i, p i (x i)) P :=
+  hind.hasLaw_pi_volume_withDensity₀ hX (fun i ↦ (hp i).aemeasurable)
+
+end Volume
 
 end ProbabilityTheory.iIndepFun

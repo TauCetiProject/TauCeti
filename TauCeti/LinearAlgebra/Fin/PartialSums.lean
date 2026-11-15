@@ -88,6 +88,11 @@ theorem partialSumsLinearEquiv_apply (x : Fin n → R) (i : Fin n) :
     partialSumsLinearEquiv R n x i = Fin.partialSum x i.succ := by
   rw [coe_partialSumsLinearEquiv, partialSumsLinearMap_apply]
 
+/-- The inclusive initial-sum description of the partial-sum linear equivalence. -/
+theorem partialSumsLinearEquiv_apply_eq_sum_Iic (x : Fin n → R) (i : Fin n) :
+    partialSumsLinearEquiv R n x i = ∑ j ∈ Iic i, x j := by
+  rw [coe_partialSumsLinearEquiv, partialSumsLinearMap_apply_eq_sum_Iic]
+
 /-- The inverse partial-sum map takes differences, with an initial zero adjoined. -/
 @[simp]
 theorem partialSumsLinearEquiv_symm_apply (x : Fin n → R) (i : Fin n) :

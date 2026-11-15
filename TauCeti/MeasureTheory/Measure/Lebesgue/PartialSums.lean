@@ -34,20 +34,16 @@ theorem measurePreserving_partialSumsLinearEquiv (n : ℕ) :
     (Real.map_linearMap_volume_pi_eq_smul_volume_pi
       (f := partialSumsLinearMap ℝ n) (by simp))
 
-end TauCeti
-
-namespace MeasureTheory.Measure
-
 /-- Translating cumulative sums transports any Lebesgue density by successive differences.
 No measurability assumption on the density is needed. -/
-theorem map_add_partialSumsLinearEquiv_withDensity (n : ℕ) (a : ℝ)
+theorem map_add_partialSumsLinearEquiv_volume_withDensity (n : ℕ) (a : ℝ)
     (g : (Fin n → ℝ) → ℝ≥0∞) :
     (volume.withDensity g).map
         (fun x : Fin n → ℝ ↦ (fun _ ↦ a) + TauCeti.partialSumsLinearEquiv ℝ n x) =
       volume.withDensity (fun y ↦ g (fun i ↦
         y i - (Fin.cons a y : Fin (n + 1) → ℝ) i.castSucc)) := by
   let A := (TauCeti.partialSumsLinearEquiv ℝ n).toContinuousLinearEquiv
-  have hmap := map_affine_withDensity (volume : Measure (Fin n → ℝ)) A
+  have hmap := Measure.map_affine_withDensity (volume : Measure (Fin n → ℝ)) A
     (fun _ ↦ a) g
   have hdet : LinearMap.det (A : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ)) = 1 := by
     simp [A]
@@ -63,4 +59,4 @@ theorem map_add_partialSumsLinearEquiv_withDensity (n : ℕ) (a : ℝ)
       induction i using Fin.cases <;> simp [Fin.cons_zero, Fin.cons_succ]
   simpa only [funext (hdiff _), A, LinearEquiv.coe_toContinuousLinearEquiv'] using hmap
 
-end MeasureTheory.Measure
+end TauCeti
