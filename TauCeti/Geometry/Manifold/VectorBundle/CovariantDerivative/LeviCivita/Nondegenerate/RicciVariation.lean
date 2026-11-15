@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.CurvatureVariation
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Variation
 
 /-!
 # The first variation of the Ricci tensor of a family of nondegenerate metrics
@@ -20,12 +21,13 @@ connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`. This file proves the *
 
 `∂ₛ Ric^s(u, v) = tr (w ↦ (∇ᵗ_w Γ')(v, u)) - tr (w ↦ (∇ᵗ_u Γ')(v, w))` at `s = t`,
 
-in index notation `∂ₜ R_ij = ∇_k Γ'^k_ij - ∇_i Γ'^k_kj` with `Γ'(∂_j, ∂_i) = Γ'^k_ij ∂_k`. The
-traces are written as sums of coordinates in an arbitrary basis of `T_x M`, as in
-`CovariantDerivative.ricciTensor_eq_sum`. It is
+in index notation `∂ₜ R_ij = ∇_k Γ'^k_ij - ∇_i Γ'^k_kj` with `Γ'(∂_j, ∂_i) = Γ'^k_ij ∂_k`. It is
 the contraction of the pointwise curvature variation
 `ContMDiffNondegenerateMetricFamily.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection`, since
-`Ric(u, v) = tr (w ↦ R(w, u) v)`.
+`Ric(u, v) = tr (w ↦ R(w, u) v)`
+(`TauCeti.Manifold.hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor`).
+The traces are also expanded as sums of coordinates in an arbitrary basis of `T_x M`, as in
+`CovariantDerivative.ricciTensor_eq_sum`.
 
 Combined with the first variation formula of the Levi-Civita connection
 (`ContMDiffNondegenerateMetricFamily.two_mul_apply_deriv_difference_eq_derivBilinearTensor`), which
@@ -40,6 +42,7 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
 
 * `hasDerivAt_ricciTensor_of_isLeviCivitaConnection`: the Palatini identity for the first
   variation of the Ricci tensor.
+* `hasDerivAt_ricciTensor_sum_of_isLeviCivitaConnection`: the Palatini identity in a basis.
 * `hasDerivAt_ricciTensor_zero_of_derivBilinearTensor_eq_zero`: the Ricci tensor has zero first
   variation at points near which the metric variation is parallel.
 
@@ -74,17 +77,40 @@ of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which
 and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Write `Γ'` for the
 derivative at `t` of the difference tensors `∇ˢ - ∇ᵗ`, and `∇ᵗΓ'` for its covariant derivative
 along the connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`, so that `∇ᵗΓ' x u w v` is
-`(∇ᵗ_u Γ')(w, v)`. Then for `u, v ∈ T_x M` and every basis `b` of `T_x M`,
+`(∇ᵗ_u Γ')(w, v)`. Then for `u, v ∈ T_x M`,
 
-`∂ₛ Ric^s(u, v) = ∑ᵢ bᵢ* ((∇ᵗ_{bᵢ} Γ')(v, u) - (∇ᵗ_u Γ')(v, bᵢ))` at `s = t`,
+`∂ₛ Ric^s(u, v) = tr (w ↦ (∇ᵗ_w Γ')(v, u)) - tr (w ↦ (∇ᵗ_u Γ')(v, w))` at `s = t`.
 
-where `bᵢ*` is the `i`-th coordinate in `b`; that is,
-`∂ₛ Ric^s(u, v) = tr (w ↦ (∇ᵗ_w Γ')(v, u)) - tr (w ↦ (∇ᵗ_u Γ')(v, w))`.
+The first trace is that of the endomorphism `w ↦ ∇ᵗΓ' x w v u`, obtained from `∇ᵗΓ' x` by
+flipping its arguments, and the second that of `∇ᵗΓ' x u v`. For the expansion in a basis see
+`hasDerivAt_ricciTensor_sum_of_isLeviCivitaConnection`.
 
 The smoothness instances of the connections `∇ˢ` are needed to state the Ricci tensor; they hold
 for Levi-Civita connections of smooth metrics by
 `ContMDiffNondegenerateMetric.IsLeviCivitaConnection.contMDiffCovariantDerivative`. -/
 theorem hasDerivAt_ricciTensor_of_isLeviCivitaConnection
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) (x : M)
+    (u v : TangentSpace I x) :
+    HasDerivAt (fun s ↦ (cov s).ricciTensor x u v)
+      (LinearMap.trace ℝ (TangentSpace I x)
+          (((((cov t).hom ((cov t).hom (cov t))
+            (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x).toLinearMap₁₂.compr₂
+              (ContinuousLinearMap.coeLM ℝ)).flip v).flip u) -
+        LinearMap.trace ℝ (TangentSpace I x)
+          ((cov t).hom ((cov t).hom (cov t))
+            (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u v)) t := by
+  rw [← map_sub]
+  refine hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor fun w ↦ ?_
+  simpa using g.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection hc hcov x w u v
+
+/-- **The Palatini identity in a basis.** In the setting of
+`hasDerivAt_ricciTensor_of_isLeviCivitaConnection`, for every basis `b` of `T_x M`,
+
+`∂ₛ Ric^s(u, v) = ∑ᵢ bᵢ* ((∇ᵗ_{bᵢ} Γ')(v, u) - (∇ᵗ_u Γ')(v, bᵢ))` at `s = t`,
+
+where `bᵢ*` is the `i`-th coordinate in `b`. -/
+theorem hasDerivAt_ricciTensor_sum_of_isLeviCivitaConnection
     (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
     (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) (x : M)
     {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ (TangentSpace I x)) (u v : TangentSpace I x) :
@@ -93,13 +119,10 @@ theorem hasDerivAt_ricciTensor_of_isLeviCivitaConnection
           (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x (b i) v u -
         (cov t).hom ((cov t).hom (cov t))
           (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u v (b i)) i) t := by
-  -- The tangent space at `x` is the model space `E`, whose normed structure differentiates the
-  -- coordinate functionals of `b`.
-  let b' : Module.Basis ι ℝ E := b
-  refine (HasDerivAt.fun_sum fun i _ ↦ ?_).congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ CovariantDerivative.ricciTensor_eq_sum (cov s) x b u v)
-  exact (LinearMap.toContinuousLinearMap (b'.coord i)).hasFDerivAt.comp_hasDerivAt t
-    (g.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection hc hcov x (b i) u v)
+  classical
+  convert g.hasDerivAt_ricciTensor_of_isLeviCivitaConnection hc hcov x u v using 1
+  rw [← map_sub, LinearMap.trace_eq_matrix_trace ℝ b]
+  simp [Matrix.trace, LinearMap.toMatrix_apply]
 
 /-- **The Ricci tensor is stationary where the metric variation is parallel.** Let `g` be a
 smooth family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is
@@ -118,10 +141,11 @@ theorem hasDerivAt_ricciTensor_zero_of_derivBilinearTensor_eq_zero
       (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x = 0 := by
     rw [((cov t).hom ((cov t).hom (cov t))).isCovariantDerivativeOnUniv.congr_of_eventuallyEq
       ((g.contMDiff_deriv_difference_of_isLeviCivitaConnection hc hcov x).mdifferentiableAt
-        one_ne_zero) (mdifferentiableAt_zeroSection ℝ _) Filter.univ_mem
+        (by simp)) (mdifferentiableAt_zeroSection ℝ _) Filter.univ_mem
       (hh.mono fun y hy ↦ g.deriv_difference_eq_zero_of_derivBilinearTensor_eq_zero hc hcov hy)]
     exact congrFun (CovariantDerivative.zero _) x
-  simpa [hD] using g.hasDerivAt_ricciTensor_of_isLeviCivitaConnection hc hcov x
-    (Module.finBasis ℝ E) u v
+  have h := hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor (D := 0) fun w ↦ by
+    simpa [hD] using g.hasDerivAt_curvatureTensor_of_isLeviCivitaConnection hc hcov x w u v
+  simpa only [map_zero] using h
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetricFamily

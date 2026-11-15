@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Parametric
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # The first variation of the curvature of a family of connections
@@ -34,10 +38,24 @@ parameter derivative with the outer covariant derivative `∇ᵗ_X` is
 `TauCeti.Manifold.hasDerivAt_covariantDerivative_covariantDerivative_of_hasDerivAt_difference`.
 No metric is involved.
 
+When `Γ'` is a differentiable section of `Hom(TM, Hom(TM, TM))`, `∇ᵗΓ'` is the covariant derivative
+of `Γ'` for the connection induced by `∇ᵗ` on this iterated Hom bundle (`CovariantDerivative.hom`),
+and the formula becomes the pointwise identity
+
+`∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)`
+
+for the curvature tensors `R^s` at a point. Since `Ric(u, v) = tr (w ↦ R(w, u) v)`, the parameter
+derivative of the Ricci tensor is the trace of that of the curvature tensor; this needs neither a
+metric nor vanishing torsion.
+
 ## Main results
 
 * `TauCeti.Manifold.hasDerivAt_curvatureOperator_of_hasDerivAt_difference`: the first variation
   of the curvature of a family of connections.
+* `TauCeti.Manifold.hasDerivAt_curvatureTensor_of_hasDerivAt_difference`: the first variation of
+  the curvature tensor at a point, in terms of the covariant derivative of `Γ'`.
+* `TauCeti.Manifold.hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor`: the first variation of
+  the Ricci tensor is the trace of that of the curvature tensor.
 
 ## References
 
@@ -49,7 +67,7 @@ public section
 
 noncomputable section
 
-open Bundle Filter VectorField
+open Bundle FiberBundle Filter VectorField
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -101,5 +119,69 @@ theorem hasDerivAt_curvatureOperator_of_hasDerivAt_difference
   -- Rearrange the six terms, read in the model space `E`.
   have key (a b c d p q : E) : a - d - p - (c - b - q) = a + b - (c + d) - (p - q) := by abel
   exact (key _ _ _ _ _ _).symm
+
+section Tensor
+
+variable [T2Space M] [IsManifold I ∞ M]
+  [∀ s, CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞]
+
+/-- **The first variation of the curvature tensor of a family of connections.** Let `∇ˢ` be a
+family of smooth covariant derivatives on `TM` whose difference tensors `∇ˢ - ∇ᵗ` have derivative
+`Γ'` at `s = t` near `x`, with `Γ'` a section of `Hom(TM, Hom(TM, TM))` differentiable at `x` and
+`∇ᵗ` torsion free at `x`. Suppose that for smooth vector fields `X` and `Z` the vector fields
+`∇ˢ_X Z` are jointly `C²` in `(s, y)` at `(t, x)`. Write `∇ᵗΓ'` for the covariant derivative of
+`Γ'` along the connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`, so that `∇ᵗΓ' x u w v` is
+`(∇ᵗ_u Γ')(w, v)`. Then for `u, v, w ∈ T_x M` the curvature tensors satisfy
+
+`∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)` at `s = t`. -/
+theorem hasDerivAt_curvatureTensor_of_hasDerivAt_difference
+    (hC : ∀ᶠ y in 𝓝 x, HasDerivAt (fun s ↦ (cov s).difference (cov t) y) (C y) t)
+    (hCd : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
+      (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y) y (C y)) x)
+    (htors : (cov t).torsion x = 0)
+    (hreg : ∀ X Z : Π y : M, TangentSpace I y, CMDiff ∞ (T% X) → CMDiff ∞ (T% Z) →
+      ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
+        (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x))
+    (u v w : TangentSpace I x) :
+    HasDerivAt (fun s ↦ (cov s).curvatureTensor x u v w)
+      ((cov t).hom ((cov t).hom (cov t)) C x u w v -
+        (cov t).hom ((cov t).hom (cov t)) C x v w u) t := by
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
+  have hXd := (hX x).mdifferentiableAt (by simp)
+  have hYd := (hY x).mdifferentiableAt (by simp)
+  have hZd := (hZ x).mdifferentiableAt (by simp)
+  rw [CovariantDerivative.hom_hom_apply _ _ _ hCd hZd hYd,
+    CovariantDerivative.hom_hom_apply _ _ _ hCd hZd hXd]
+  exact HasDerivAt.congr_of_eventuallyEq (F := E)
+    (hasDerivAt_curvatureOperator_of_hasDerivAt_difference hC htors hXd hYd
+      (Eventually.of_forall fun y ↦ (hZ y).mdifferentiableAt (by simp)) (hreg X Z hX hZ)
+      (hreg Y Z hY hZ))
+    (Eventually.of_forall fun s ↦ CovariantDerivative.curvatureTensor_apply (cov s) x hX hY hZ)
+
+/-- **The first variation of the Ricci tensor is the trace of that of the curvature tensor.** Let
+`∇ˢ` be a family of smooth covariant derivatives on `TM`, and let `u, v ∈ T_x M`. If for every
+`w ∈ T_x M` the curve `s ↦ R^s(w, u) v` has derivative `D w` at `t`, for a linear map `D` of
+`T_x M`, then `s ↦ Ric^s(u, v)` has derivative `tr D` at `t`. Neither a metric nor vanishing
+torsion is needed. -/
+theorem hasDerivAt_ricciTensor_of_hasDerivAt_curvatureTensor {u v : TangentSpace I x}
+    {D : TangentSpace I x →ₗ[ℝ] TangentSpace I x}
+    (hD : ∀ w, HasDerivAt (fun s ↦ (cov s).curvatureTensor x w u v) (D w) t) :
+    HasDerivAt (fun s ↦ (cov s).ricciTensor x u v) (LinearMap.trace ℝ (TangentSpace I x) D) t := by
+  classical
+  let b := Module.finBasis ℝ (TangentSpace I x)
+  rw [LinearMap.trace_eq_matrix_trace ℝ b]
+  simp only [Matrix.trace, Matrix.diag, LinearMap.toMatrix_apply]
+  refine (HasDerivAt.fun_sum fun i _ ↦ ?_).congr_of_eventuallyEq
+    (Eventually.of_forall fun s ↦ (cov s).ricciTensor_eq_sum x b u v)
+  -- The tangent space at `x` is the model space `E`, whose normed structure differentiates the
+  -- coordinate functionals of `b`.
+  let b' : Module.Basis (Fin (Module.finrank ℝ E)) ℝ E := b
+  have hDi : HasDerivAt (F := E) (fun s ↦ (cov s).curvatureTensor x (b i) u v) (D (b i)) t :=
+    hD (b i)
+  exact (LinearMap.toContinuousLinearMap (b'.coord i)).hasFDerivAt.comp_hasDerivAt t hDi
+
+end Tensor
 
 end TauCeti.Manifold
