@@ -96,7 +96,13 @@ protected def seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
     Seminorm ℂ (Symbol n V W m) :=
   Seminorm.weightedSup (fun i : K × CoordinateSpace n => mixedDerivLinearMap α β i.1 i.2)
     (fun i => (1 + ‖i.2‖ ^ 2) ^ ((m - β.length) / 2)) (fun i => rpow_weight_pos i.2 _)
-    fun a => let ⟨C, _, h⟩ := a.exists_bound K K.isCompact α β; ⟨C, fun i => h i.1 i.1.2 i.2⟩
+
+/-- Every symbol satisfies the weighted estimates defining `Symbol.seminorm K α β`. -/
+private theorem exists_bound_mixedDerivLinearMap (K : Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) (a : Symbol n V W m) :
+    ∃ C, ∀ i : K × CoordinateSpace n,
+      ‖mixedDerivLinearMap α β i.1 i.2 a‖ ≤ C * (1 + ‖i.2‖ ^ 2) ^ ((m - β.length) / 2) :=
+  let ⟨C, _, h⟩ := a.exists_bound K K.isCompact α β; ⟨C, fun i => h i.1 i.1.2 i.2⟩
 
 /-- The seminorm `p_{K,α,β}(a)` bounds `‖∂_x^α ∂_ξ^β a(x, ξ)‖ / ⟨ξ⟩^(m - |β|)` for `x ∈ K`. -/
 theorem le_seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
@@ -104,7 +110,7 @@ theorem le_seminorm (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
     ‖mixedDeriv α β a.coefficient x ξ‖ ≤
       Symbol.seminorm K α β a * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
   Seminorm.norm_le_weightedSup (fun i : K × CoordinateSpace n => mixedDerivLinearMap α β i.1 i.2)
-    _ _ _ a (⟨x, hx⟩, ξ)
+    _ _ (exists_bound_mixedDerivLinearMap K α β) a (⟨x, hx⟩, ξ)
 
 /-- A constant in the estimate of `∂_x^α ∂_ξ^β a` on `K` bounds the seminorm `p_{K,α,β}(a)`. -/
 theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
@@ -112,7 +118,7 @@ theorem seminorm_le_bound (K : Compacts (CoordinateSpace n)) (α β : List (Fin 
     (h : ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
     Symbol.seminorm K α β a ≤ C :=
-  Seminorm.weightedSup_le _ _ _ _ hC fun i => h i.1 i.1.2 i.2
+  Seminorm.weightedSup_le _ _ _ hC fun i => h i.1 i.1.2 i.2
 
 /-- The seminorm `p_{K,α,β}(a)` is at most `C ≥ 0` exactly when `C` is a constant in the estimate
 of `∂_x^α ∂_ξ^β a` on `K`. -/

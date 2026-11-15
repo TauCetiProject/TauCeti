@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
+public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 
 /-!
 # Best constants of weighted estimates
 
 For a family of linear maps `L i : E → F` into a normed space and positive weights `w i`, the
 best constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` for all `i` is a seminorm
-`Seminorm.weightedSup L w hw hL` on `E`, provided that every `a` satisfies some such estimate.
-It is the supremum of `‖L i a‖ / w i`.
+`Seminorm.weightedSup L w hw` on `E`, provided that every `a` satisfies some such estimate. It is
+the supremum, in the lattice of seminorms, of the seminorms `a ↦ ‖L i a‖ / w i`.
 
 This is the common shape of the seminorms of spaces of functions defined by weighted bounds on
 their derivatives, such as symbol classes: `i` runs over the points, `L i` evaluates a derivative
@@ -25,58 +24,68 @@ public section
 
 noncomputable section
 
+open scoped NNReal
+
 namespace Seminorm
 
 variable {𝕜 E F ι : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   (L : ι → E →ₗ[𝕜] F) (w : ι → ℝ) (hw : ∀ i, 0 < w i) (hL : ∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i)
 
-include hw hL in
-private theorem bddAbove_range_norm_div (a : E) :
-    BddAbove (Set.range fun i => ‖L i a‖ / w i) :=
-  let ⟨C, hC⟩ := hL a
-  ⟨C, Set.forall_mem_range.2 fun i => (div_le_iff₀ (hw i)).2 (hC i)⟩
-
-include hw in
-private theorem iSup_norm_div_nonneg (a : E) : 0 ≤ ⨆ i, ‖L i a‖ / w i :=
-  Real.iSup_nonneg fun i => div_nonneg (norm_nonneg _) (hw i).le
-
 /-- The best constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` for all `i`, for linear maps
-`L i` and positive weights `w i`: the supremum of `‖L i a‖ / w i`. -/
+`L i` and positive weights `w i`: the supremum of the seminorms `a ↦ ‖L i a‖ / w i`. When every
+`a` satisfies some such estimate, it is the supremum of `‖L i a‖ / w i`
+(`Seminorm.weightedSup_apply`). -/
 def weightedSup : Seminorm 𝕜 E :=
-  Seminorm.ofSMulLE (fun a => ⨆ i, ‖L i a‖ / w i) (by simp)
-    (fun a b => Real.iSup_le (fun i => calc
-        ‖L i (a + b)‖ / w i ≤ ‖L i a‖ / w i + ‖L i b‖ / w i := by
-          rw [map_add, ← add_div]
-          exact div_le_div_of_nonneg_right (norm_add_le _ _) (hw i).le
-        _ ≤ _ := add_le_add (le_ciSup (bddAbove_range_norm_div L w hw hL a) i)
-          (le_ciSup (bddAbove_range_norm_div L w hw hL b) i))
-      (add_nonneg (iSup_norm_div_nonneg L w hw a) (iSup_norm_div_nonneg L w hw b)))
-    (fun c a => Real.iSup_le (fun i => by
-        rw [map_smul, norm_smul, mul_div_assoc]
-        exact mul_le_mul_of_nonneg_left (le_ciSup (bddAbove_range_norm_div L w hw hL a) i)
-          (norm_nonneg c))
-      (mul_nonneg (norm_nonneg c) (iSup_norm_div_nonneg L w hw a)))
+  ⨆ i, (show ℝ≥0 from ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩) • (normSeminorm 𝕜 F).comp (L i)
 
-/-- The seminorm `weightedSup L w hw hL` is the supremum of `‖L i a‖ / w i`. -/
-@[simp]
-theorem weightedSup_apply (a : E) : weightedSup L w hw hL a = ⨆ i, ‖L i a‖ / w i :=
-  (rfl)
+/-- The seminorms `a ↦ ‖L i a‖ / w i` whose supremum is `weightedSup L w hw`. -/
+private theorem smul_comp_normSeminorm_apply (i : ι) (a : E) :
+    ((show ℝ≥0 from ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩) • (normSeminorm 𝕜 F).comp (L i)) a =
+      ‖L i a‖ / w i := by
+  rw [smul_apply, comp_apply, coe_normSeminorm, NNReal.smul_def, smul_eq_mul, div_eq_inv_mul]
+  rfl
 
-/-- The seminorm `weightedSup L w hw hL` is a constant in the estimates `‖L i a‖ ≤ C * w i`. -/
-theorem norm_le_weightedSup (a : E) (i : ι) : ‖L i a‖ ≤ weightedSup L w hw hL a * w i :=
-  (div_le_iff₀ (hw i)).1 (le_ciSup (bddAbove_range_norm_div L w hw hL a) i)
+/-- The seminorms `a ↦ ‖L i a‖ / w i` are bounded above exactly when every `a` satisfies an
+estimate `‖L i a‖ ≤ C * w i` for all `i`. -/
+private theorem bddAbove_range_smul_comp_normSeminorm_iff :
+    BddAbove (Set.range fun i =>
+      (show ℝ≥0 from ⟨(w i)⁻¹, inv_nonneg.2 (hw i).le⟩) • (normSeminorm 𝕜 F).comp (L i)) ↔
+      ∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i := by
+  simp_rw [Seminorm.bddAbove_range_iff, smul_comp_normSeminorm_apply L w hw, bddAbove_def,
+    Set.forall_mem_range, div_le_iff₀ (hw _)]
 
-/-- A constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` bounds `weightedSup L w hw hL a`. -/
+include hL in
+/-- The seminorm `weightedSup L w hw` is the supremum of `‖L i a‖ / w i`. -/
+theorem weightedSup_apply (a : E) : weightedSup L w hw a = ⨆ i, ‖L i a‖ / w i := by
+  rw [weightedSup, Seminorm.iSup_apply ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).2 hL)]
+  simp_rw [smul_comp_normSeminorm_apply L w hw]
+
+include hL in
+/-- The seminorm `weightedSup L w hw` is a constant in the estimates `‖L i a‖ ≤ C * w i`. -/
+theorem norm_le_weightedSup (a : E) (i : ι) : ‖L i a‖ ≤ weightedSup L w hw a * w i := by
+  rw [weightedSup_apply L w hw hL, ← div_le_iff₀ (hw i)]
+  obtain ⟨C, hC⟩ := hL a
+  exact le_ciSup ⟨C, Set.forall_mem_range.2 fun j => (div_le_iff₀ (hw j)).2 (hC j)⟩ i
+
+/-- A constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` bounds `weightedSup L w hw a`. -/
 theorem weightedSup_le {a : E} {C : ℝ} (hC : 0 ≤ C) (h : ∀ i, ‖L i a‖ ≤ C * w i) :
-    weightedSup L w hw hL a ≤ C :=
-  Real.iSup_le (fun i => (div_le_iff₀ (hw i)).2 (h i)) hC
+    weightedSup L w hw a ≤ C := by
+  by_cases hL : ∀ b, ∃ C, ∀ i, ‖L i b‖ ≤ C * w i
+  · rw [weightedSup_apply L w hw hL]
+    exact Real.iSup_le (fun i => (div_le_iff₀ (hw i)).2 (h i)) hC
+  -- Without estimates for every `b`, the supremum of the seminorms is the junk value `⊥`.
+  have hb := Seminorm.bddAbove_iff.not.1
+    ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).not.2 hL)
+  simp only [weightedSup, iSup, sSup, hb, dite_false]
+  exact hC
 
-/-- The seminorm `weightedSup L w hw hL a` is at most `C ≥ 0` exactly when `C` is a constant in
+include hL in
+/-- The seminorm `weightedSup L w hw a` is at most `C ≥ 0` exactly when `C` is a constant in
 the estimates `‖L i a‖ ≤ C * w i`. -/
 theorem weightedSup_le_iff {a : E} {C : ℝ} (hC : 0 ≤ C) :
-    weightedSup L w hw hL a ≤ C ↔ ∀ i, ‖L i a‖ ≤ C * w i :=
+    weightedSup L w hw a ≤ C ↔ ∀ i, ‖L i a‖ ≤ C * w i :=
   ⟨fun h i => (norm_le_weightedSup L w hw hL a i).trans
-    (mul_le_mul_of_nonneg_right h (hw i).le), weightedSup_le L w hw hL hC⟩
+    (mul_le_mul_of_nonneg_right h (hw i).le), weightedSup_le L w hw hC⟩
 
 end Seminorm
