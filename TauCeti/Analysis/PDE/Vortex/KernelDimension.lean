@@ -132,6 +132,12 @@ private theorem exists_sectionValue_eq_mul_add_exp_mul_of_mem {ν : ℂ → ℂ}
     hp hq hhol hν hνeq h₁ h₂ h₃ h₄ h₅
   exact ⟨G, hG.continuous, H, hH, hGH⟩
 
+/-- The real dimension of `ℂ^|D|`, the target of the principal-part map, is `2 |D|`. -/
+private theorem finrank_toType_pi_complex (D : Multiset ℂ) :
+    Module.finrank ℝ (Multiset.ToType D → ℂ) = 2 * Multiset.card D := by
+  rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
+    Finset.card_univ, Multiset.card_coe, mul_comm]
+
 /-- **The principal-part map on the kernel.** For a space `V` of `C²` square-integrable kernel
 elements, the principal-part map `TauCeti.Vortex.principalPartMap` gives an injective real-linear
 map from `V` to `ℂ^|D|`. -/
@@ -182,9 +188,7 @@ theorem finrank_le_two_mul_card_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ
     (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
     Module.finrank ℝ V ≤ 2 * Multiset.card D := by
   obtain ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
-  refine (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq ?_
-  rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex, smul_eq_mul,
-    Finset.card_univ, Multiset.card_coe, mul_comm]
+  exact (LinearMap.finrank_le_finrank_of_injective hΦ).trans_eq (finrank_toType_pi_complex D)
 
 /-- **Kernel elements at a framed vortex form a finite-dimensional space.** At a `C²` field with
 vanishing holomorphicity rows and the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, every real
@@ -660,8 +664,7 @@ theorem finrank_gaugeFixedKernel {m : ℕ} (hx : ContDiff ℝ ∞ x) (hsol : ∀
   have := finiteDimensional_gaugeFixedKernel (hx.of_le (by simp)) hhol hframe
   refine le_antisymm (finrank_gaugeFixedKernel_le (hx.of_le (by simp)) hhol hframe) ?_
   calc 2 * m = Module.finrank ℝ (Multiset.ToType (D : Multiset ℂ) → ℂ) := by
-        rw [Module.finrank_pi_fintype, Finset.sum_const, Complex.finrank_real_complex,
-          smul_eq_mul, Finset.card_univ, Multiset.card_coe, Sym.card_coe, mul_comm]
+        rw [finrank_toType_pi_complex, Sym.card_coe]
     _ ≤ Module.finrank ℝ (gaugeFixedKernel x) :=
         LinearMap.finrank_le_finrank_of_surjective hsurj
 
