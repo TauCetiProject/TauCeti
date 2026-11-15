@@ -55,10 +55,10 @@ Interval integrals of elementary functions in closed form or as series, continui
   over an interval is a difference of arctangents.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
-* `Complex.hasSum_integral_exp_mul_cos_mul_exp`,
-  `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp`, and
-  `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the sum
-  of its termwise Fourier integrals and in simplified factorial form, for complex `z` and real `κ`.
+* `Complex.hasSum_integral_exp_mul_cos_mul_exp` and
+  `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp`:
+  `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the sum of its termwise Fourier integrals and in
+  simplified factorial form, for complex `z` and integer `n`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
   from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
@@ -497,14 +497,24 @@ theorem hasSum_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
     convert h using 2 with k
     ring
 
-/-- For any complex `z` and natural `n`, `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` is the sum of
-`2 π (z / 2) ^ (2 l + n) / (l ! (l + n)!)` over `l : ℕ`. -/
-theorem hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℕ) :
-    HasSum (fun l : ℕ => 2 * Real.pi * ((z / 2) ^ (2 * l + n) / (l ! * (l + n)!)))
+/-- For any complex `z` and integer `n`, `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` is the sum of
+`2 π (z / 2) ^ (2 l + |n|) / (l ! (l + |n|)!)` over `l : ℕ`. -/
+theorem hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
+    HasSum (fun l : ℕ => 2 * Real.pi * ((z / 2) ^ (2 * l + n.natAbs) / (l ! * (l + n.natAbs)!)))
       (∫ θ in -Real.pi..Real.pi, exp (z * Real.cos θ) * exp (n * θ * I)) := by
+  wlog hn : 0 ≤ n generalizing n
+  · convert this (-n) (by omega) using 1
+    · simp only [Int.natAbs_neg]
+    · have hcomp := intervalIntegral.integral_comp_neg (a := -Real.pi) (b := Real.pi)
+        (fun θ : ℝ => exp (z * Real.cos θ) * exp (((-n : ℤ) : ℂ) * θ * I))
+      rw [neg_neg] at hcomp
+      rw [← hcomp]
+      refine intervalIntegral.integral_congr fun θ _ => ?_
+      simp only [Real.cos_neg, ofReal_neg, Int.cast_neg, neg_mul, mul_neg, neg_neg]
+  lift n to ℕ using hn
+  rw [Int.natAbs_natCast]
   have h := hasSum_integral_exp_mul_cos_mul_exp z n
   simp only [TauCeti.integral_cos_pow_mul_cexp] at h
-  rw [Int.cast_natCast] at h
   have hz : ∀ k ∉ Set.range (fun l : ℕ => 2 * l + n),
       z ^ k / k ! * (∑ m ∈ Finset.range (k + 1), (1 / 2 : ℂ) ^ k * k.choose m *
         if 2 * (m : ℤ) - k + n = 0 then 2 * (Real.pi : ℂ) else 0) = 0 := by
@@ -529,17 +539,3 @@ theorem hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℕ
   ring
 
 end Complex
-
-namespace Real
-
-/-- For any real `κ` and integer `n`, `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` is the sum of the
-integrals of the exponential series terms `κᵏ cosᵏ θ exp (n θ i) / k!`. -/
-theorem hasSum_integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
-    HasSum (fun k : ℕ => ((κ ^ k / k ! : ℝ) : ℂ) *
-        ∫ θ in -Real.pi..Real.pi, (Real.cos θ : ℂ) ^ k * Complex.exp (n * θ * Complex.I))
-      (∫ θ in -Real.pi..Real.pi,
-        (Real.exp (κ * Real.cos θ) : ℂ) * Complex.exp (n * θ * Complex.I)) := by
-  simpa only [Complex.ofReal_div, Complex.ofReal_pow, Complex.ofReal_natCast, Complex.ofReal_exp,
-    Complex.ofReal_mul] using Complex.hasSum_integral_exp_mul_cos_mul_exp (κ : ℂ) n
-
-end Real

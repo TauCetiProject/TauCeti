@@ -117,37 +117,26 @@ theorem hasSum_besselJ_zero_left (z : ℂ) :
 
 /-! ### Circle-integral representations -/
 
-private theorem integral_exp_I_mul_cos_mul_exp_natCast (z : ℂ) (n : ℕ) :
-    ∫ θ in -π..π, exp (I * z * Real.cos θ) * exp (n * θ * I) =
-      2 * π * I ^ n * besselJ n z := by
-  refine (hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (I * z) n).unique ?_
-  convert (hasSum_besselJ_natCast n z).mul_left (2 * (π : ℂ) * I ^ n) using 2 with l
-  have hdiv : I * z / 2 = I * (z / 2) := mul_div_assoc I z 2
-  have hI : I ^ (2 * l + n) = (-1) ^ l * I ^ n := by
-    rw [pow_add, pow_mul, I_sq]
-  rw [hdiv, mul_pow, hI]
-  ring
-
 /-- **Full-period Hansen–Bessel integral.** For every complex argument `z` and integer order `n`,
 `∫_{-π}^{π} e^{i z cos θ} e^{i n θ} dθ = 2 π i^n J_n(z)`. -/
 theorem integral_exp_I_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
     ∫ θ in -π..π, exp (I * z * Real.cos θ) * exp (n * θ * I) =
       2 * π * I ^ n * besselJ n z := by
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · simpa only [Int.cast_natCast, zpow_natCast] using integral_exp_I_mul_cos_mul_exp_natCast z m
-  · have h := intervalIntegral.integral_comp_neg (a := -π) (b := π)
-      (fun θ : ℝ => exp (I * z * Real.cos θ) * exp (m * θ * I))
-    rw [neg_neg, integral_exp_I_mul_cos_mul_exp_natCast] at h
-    have hI : I ^ (-(m : ℤ)) * (-1 : ℂ) ^ (m : ℤ) = I ^ m := by
-      simp [← inv_pow, ← mul_pow]
-    have hrhs : 2 * (π : ℂ) * I ^ (-(m : ℤ)) * besselJ ((-(m : ℤ) : ℤ) : ℂ) z =
-        2 * π * I ^ m * besselJ m z := by
-      rw [Int.cast_neg, besselJ_neg_int, Int.cast_natCast]
-      linear_combination 2 * (π : ℂ) * besselJ m z * hI
-    rw [hrhs, ← h]
-    refine intervalIntegral.integral_congr fun θ _ => ?_
-    simp only [Real.cos_neg, ofReal_neg, Int.cast_neg, Int.cast_natCast]
-    ring_nf
+  have hsym : I ^ n * besselJ n z = I ^ n.natAbs * besselJ n.natAbs z := by
+    obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+    · simp
+    · rw [Int.cast_neg, besselJ_neg_int, Int.cast_natCast, Int.natAbs_neg, Int.natAbs_natCast]
+      have hI : I ^ (-(m : ℤ)) * (-1 : ℂ) ^ (m : ℤ) = I ^ m := by
+        simp [← inv_pow, ← mul_pow]
+      linear_combination besselJ m z * hI
+  rw [mul_assoc, hsym, ← mul_assoc]
+  refine (hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (I * z) n).unique ?_
+  convert (hasSum_besselJ_natCast n.natAbs z).mul_left (2 * (π : ℂ) * I ^ n.natAbs) using 2 with l
+  have hdiv : I * z / 2 = I * (z / 2) := mul_div_assoc I z 2
+  have hI : I ^ (2 * l + n.natAbs) = (-1) ^ l * I ^ n.natAbs := by
+    rw [pow_add, pow_mul, I_sq]
+  rw [hdiv, mul_pow, hI]
+  ring
 
 /-- Over `[0, 2π]`, `∫_0^{2π} e^{i z cos θ} e^{i n θ} dθ = 2 π i^n J_n(z)`. -/
 theorem integral_zero_two_pi_exp_I_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
