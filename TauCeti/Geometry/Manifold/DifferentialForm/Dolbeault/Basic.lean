@@ -295,6 +295,15 @@ theorem mpullback_delBar (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J
   simp only [delBar_apply, map_sum, mpullback_typeProjection hu hJ,
     ← SmoothForm.mextDerivₗ_mpullback]
 
+/-- Pullback of type forms along a smooth pseudoholomorphic map commutes with `∂bar`. -/
+@[simp]
+theorem delBarType_mpullbackType (hu : ContMDiff I I' ∞ u) (hJ : IsPseudoholomorphic J J' u)
+    (p q : ℕ) (φ : J'.typeForms (F := F) p q) :
+    J.delBarType p q (mpullbackType hu hJ p q φ) =
+      mpullbackType hu hJ p (q + 1) (J'.delBarType p q φ) :=
+  Subtype.ext <| by
+    simp only [coe_delBarType, coe_mpullbackType, mpullback_delBar _ hu hJ]
+
 end Pullback
 
 /-! ### Squares when `d = ∂ + ∂bar` -/

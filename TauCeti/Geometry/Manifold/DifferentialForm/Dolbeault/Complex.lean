@@ -111,6 +111,13 @@ theorem mem_closedForms (p q : ℕ)
   simp only [closedForms, LinearMap.mem_ker, Subtype.ext_iff, coe_delBarType,
     Submodule.coe_zero]
 
+/-- A type form is closed exactly when its image under the Dolbeault differential on type forms
+vanishes. -/
+theorem mem_closedForms_iff_delBarType_eq_zero (p q : ℕ)
+    (φ : (ofComplexManifold E M).typeForms (F := F) p q) :
+    φ ∈ closedForms E M F p q ↔ (ofComplexManifold E M).delBarType p q φ = 0 :=
+  LinearMap.mem_ker
+
 /-- No nonzero form is exact in antiholomorphic degree zero. -/
 @[simp]
 theorem exactForms_zero (p : ℕ) : exactForms E M F p 0 = ⊥ := (rfl)
