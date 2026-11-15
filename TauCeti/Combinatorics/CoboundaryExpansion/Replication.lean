@@ -32,9 +32,10 @@ is needed):
   `complete (V ×ₗ ι)` by `Fintype.card ι` times the ratio of any cochain on `complete V` at
   positive gauge distance.
 
-Together with the star bound `TauCeti.card_div_three_le_h1`, a cochain on `complete V` attaining
-`Fintype.card V / 3` therefore yields one on `complete (V ×ₗ ι)` attaining
-`Fintype.card (V ×ₗ ι) / 3`.
+In particular, if `ι` is nonempty and a cochain on `complete V` at positive gauge distance has
+ratio `Fintype.card V / 3`, then its replication has positive gauge distance and ratio
+`Fintype.card (V ×ₗ ι) / 3`. When `ℓ` is moreover conjugation invariant, the star bound
+`TauCeti.card_div_three_le_h1` then shows that this value equals `h1 (complete (V ×ₗ ι)) ℓ`.
 
 ## References
 
