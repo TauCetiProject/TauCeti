@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.PullbackAverage
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Pullback.Average
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 

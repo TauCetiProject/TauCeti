@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Pullback.Basic
 
 /-!
 # Averaging a bundle metric with its pullback by a fibre automorphism
