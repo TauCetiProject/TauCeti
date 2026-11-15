@@ -25,6 +25,8 @@ this constant, uniformly in `N`.
 
 * `ArithmeticFunction.vonMangoldt.summable_nonprime_div`: `∑ₙ (if n is prime then 0 else Λ(n)) / n`
   converges.
+* `TauCeti.sum_primesLE_log_div_eq_sum_vonMangoldt_div_filter`:
+  `∑_{p ≤ N} log p / p = ∑_{n ≤ N, n prime} Λ(n) / n`.
 * `TauCeti.sum_primesLE_log_div_le_sum_vonMangoldt_div`:
   `∑_{p ≤ N} log p / p ≤ ∑_{n ≤ N} Λ(n) / n`.
 * `TauCeti.sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum`:
@@ -51,14 +53,19 @@ open Finset Real
 
 namespace TauCeti
 
+/-- The sum of `log p / p` over the primes `p ≤ N` is the prime part of
+`∑_{n ≤ N} Λ(n) / n`. -/
+theorem sum_primesLE_log_div_eq_sum_vonMangoldt_div_filter (N : ℕ) :
+    ∑ p ∈ Nat.primesLE N, log p / p = ∑ n ∈ Ioc 0 N with n.Prime, Λ n / n := by
+  rw [← Nat.primesLE_eq_filter_Ioc_zero]
+  exact sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
+
 /-- The primes contribute at most `∑_{n ≤ N} Λ(n) / n`. -/
 theorem sum_primesLE_log_div_le_sum_vonMangoldt_div (N : ℕ) :
     ∑ p ∈ Nat.primesLE N, log p / p ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
-  calc ∑ p ∈ Nat.primesLE N, log p / p = ∑ p ∈ Nat.primesLE N, Λ p / p :=
-        sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
-    _ ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
-      refine sum_le_sum_of_subset_of_nonneg (Nat.primesLE_eq_filter_Ioc_zero N ▸ filter_subset _ _)
-        fun n _ _ ↦ by positivity [vonMangoldt_nonneg (n := n)]
+  rw [sum_primesLE_log_div_eq_sum_vonMangoldt_div_filter]
+  exact sum_le_sum_of_subset_of_nonneg (filter_subset _ _)
+    fun n _ _ ↦ by positivity [vonMangoldt_nonneg (n := n)]
 
 /-- The prime powers `p ^ k` with `k ≥ 2` contribute a bounded amount to `∑_{n ≤ N} Λ(n) / n`:
 at most the convergent series `∑_{n not prime} Λ(n) / n`. -/
@@ -67,8 +74,7 @@ theorem sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum (N : ℕ) :
       ∑ p ∈ Nat.primesLE N, log p / p + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
   have hprime : ∑ n ∈ Ioc 0 N, (if n.Prime then Λ n / n else 0) =
       ∑ p ∈ Nat.primesLE N, log p / p := by
-    rw [← sum_filter, ← Nat.primesLE_eq_filter_Ioc_zero]
-    exact sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
+    rw [← sum_filter, sum_primesLE_log_div_eq_sum_vonMangoldt_div_filter]
   calc ∑ n ∈ Ioc 0 N, Λ n / n
       = ∑ n ∈ Ioc 0 N, ((if n.Prime then Λ n / n else 0) + (if n.Prime then 0 else Λ n) / n) :=
         sum_congr rfl fun n _ ↦ by split_ifs <;> simp

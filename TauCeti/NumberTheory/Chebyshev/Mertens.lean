@@ -17,12 +17,13 @@ import TauCeti.NumberTheory.Chebyshev.LogFactorial
 This file proves Mertens's first theorem with an absolute constant, valid at every real cutoff:
 
 * `|∑_{n ≤ x} Λ(n) / n - log x| ≤ log 4 + 4` for every real `x ≥ 1`;
-* `∑_{p ≤ x} log p / p = log x + O(1)` uniformly in real `x ≥ 1`, summing over Mathlib's
-  `Nat.primesLE ⌊x⌋₊`;
+* `|∑_{p ≤ x} log p / p - log x| ≤ log 4 + 4 + ∑_{n not prime} Λ(n) / n` for every real
+  `x ≥ 1`, summing over Mathlib's `Nat.primesLE ⌊x⌋₊`;
 
 and its standard consequence for the prime divisors of an integer,
 
-* `∑_{p ∣ N} log p / p ≤ log log N + O(1)` for every natural number `N ≥ 3`.
+* `∑_{p ∣ N} log p / p ≤ log log N + O(1)` for every natural number `N ≥ 3`, with the same
+  explicit constant plus one.
 
 The proof is Chebyshev's. By `Chebyshev.log_floor_factorial_eq_sum_vonMangoldt`,
 `log ⌊x⌋! = ∑_{n ≤ x} Λ(n) ⌊x / n⌋`, which lies between `x ∑_{n ≤ x} Λ(n) / n - ψ(x)` and
@@ -36,14 +37,16 @@ the primes `p ≤ log N` contribute `log log N + O(1)` by the prime form, and th
 
 `TauCeti.LFunctions.isBigO_primeSummatory_log_absNorm_div_sub_log` proves Mertens's first theorem
 for every number field as an asymptotic statement over prime ideals; the statements here are the
-uniform bounds over rational primes, with an explicit constant in the von Mangoldt form.
+uniform bounds over rational primes, with explicit constants.
 
 ## Main results
 
 * `TauCeti.abs_sum_vonMangoldt_div_sub_log_le`: `|∑_{n ≤ x} Λ(n) / n - log x| ≤ log 4 + 4`.
-* `TauCeti.exists_abs_sum_primesLE_log_div_sub_log_le`: `∑_{p ≤ x} log p / p = log x + O(1)`.
-* `TauCeti.exists_sum_primeFactors_log_div_le_log_log_add`:
-  `∑_{p ∣ N} log p / p ≤ log log N + O(1)`.
+* `TauCeti.abs_sum_primesLE_log_div_sub_log_le`: `∑_{p ≤ x} log p / p = log x + O(1)`, with an
+  explicit constant.
+* `TauCeti.sum_primeFactors_log_le_log`: `∑_{p ∣ N} log p ≤ log N`.
+* `TauCeti.sum_primeFactors_log_div_le_log_log_add`:
+  `∑_{p ∣ N} log p / p ≤ log log N + O(1)`, with an explicit constant.
 
 ## References
 
@@ -88,27 +91,36 @@ theorem abs_sum_vonMangoldt_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
   have hlog4 : 0 ≤ log 4 := log_nonneg (by norm_num)
   -- Multiply through by `x > 0`.
   rw [abs_le, ← mul_le_mul_iff_of_pos_left hx0, ← mul_le_mul_iff_of_pos_left hx0 (b := S - log x)]
-  constructor <;> nlinarith
+  constructor <;> linarith [mul_nonneg hlog4 hx0.le]
 
-/-- **Mertens's first theorem.** There is an absolute constant `C` with
-`|∑_{p ≤ x} log p / p - log x| ≤ C` for every real `x ≥ 1`. -/
-theorem exists_abs_sum_primesLE_log_div_sub_log_le :
-    ∃ C, ∀ x : ℝ, 1 ≤ x → |∑ p ∈ Nat.primesLE ⌊x⌋₊, log p / p - log x| ≤ C := by
-  set B := ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n
-  have hB : 0 ≤ B := tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
-  refine ⟨log 4 + 4 + B, fun x hx ↦ ?_⟩
+/-- **Mertens's first theorem.** For every real `x ≥ 1`,
+`|∑_{p ≤ x} log p / p - log x| ≤ log 4 + 4 + ∑_{n not prime} Λ(n) / n`. -/
+theorem abs_sum_primesLE_log_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
+    |∑ p ∈ Nat.primesLE ⌊x⌋₊, log p / p - log x| ≤
+      log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
+  have hB : 0 ≤ ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n :=
+    tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
   have hM := abs_le.mp (abs_sum_vonMangoldt_div_sub_log_le hx)
   have h₂ := sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊
   have h₁ := sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum ⌊x⌋₊
   rw [abs_le]
   constructor <;> linarith [hM.1, hM.2]
 
-/-- The sum of `log p / p` over the prime divisors of `N` is `O(log log N)`: there is an absolute
-constant `C` with `∑_{p ∣ N} log p / p ≤ log log N + C` for every natural number `N ≥ 3`. -/
-theorem exists_sum_primeFactors_log_div_le_log_log_add :
-    ∃ C, ∀ N : ℕ, 3 ≤ N → ∑ p ∈ N.primeFactors, log p / p ≤ log (log N) + C := by
-  obtain ⟨C, hC⟩ := exists_abs_sum_primesLE_log_div_sub_log_le
-  refine ⟨C + 1, fun N hN ↦ ?_⟩
+/-- The sum of `log p` over the prime divisors of a nonzero `N` is at most `log N`, since their
+product divides `N`. -/
+theorem sum_primeFactors_log_le_log {N : ℕ} (hN : N ≠ 0) :
+    ∑ p ∈ N.primeFactors, log p ≤ log N := by
+  rw [← log_prod (fun p hp ↦ by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero),
+    ← Nat.cast_prod]
+  exact log_le_log (by exact_mod_cast prod_pos fun p hp ↦ Nat.pos_of_mem_primeFactors hp)
+    (by exact_mod_cast Nat.le_of_dvd (by lia) (Nat.prod_primeFactors_dvd N))
+
+/-- The sum of `log p / p` over the prime divisors of `N` is `O(log log N)`: for every natural
+number `N ≥ 3`, `∑_{p ∣ N} log p / p ≤ log log N + log 4 + 5 + ∑_{n not prime} Λ(n) / n`. -/
+theorem sum_primeFactors_log_div_le_log_log_add {N : ℕ} (hN : 3 ≤ N) :
+    ∑ p ∈ N.primeFactors, log p / p ≤
+      log (log N) + (log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n + 1) := by
+  set C := log 4 + 4 + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n
   have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast hN
   have hN0 : (0 : ℝ) < N := by linarith
   set y := log N
@@ -122,18 +134,12 @@ theorem exists_sum_primeFactors_log_div_le_log_log_add :
   -- The primes `p ≤ log N` contribute at most `log log N + C` by Mertens's theorem.
   have hsmall : ∑ p ∈ N.primeFactors with p ≤ ⌊y⌋₊, log p / p ≤ log y + C := by
     refine le_trans (sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) fun p _ _ ↦ ?_)
-      (sub_le_iff_le_add'.mp (abs_le.mp (hC y hy)).2)
+      (sub_le_iff_le_add'.mp (abs_le.mp (abs_sum_primesLE_log_div_sub_log_le hy)).2)
     · rw [mem_filter, Nat.mem_primeFactors] at hp
       exact Nat.mem_primesLE.mpr ⟨hp.2, hp.1.1⟩
     · positivity
   -- The primes `p > log N` dividing `N` contribute at most `(∑_{p ∣ N} log p) / log N ≤ 1`.
   have hlarge : ∑ p ∈ N.primeFactors with ¬p ≤ ⌊y⌋₊, log p / p ≤ 1 := by
-    have hprod : ∑ p ∈ N.primeFactors, log p ≤ y := by
-      have hle : ∏ p ∈ N.primeFactors, p ≤ N := Nat.le_of_dvd (by lia) (Nat.prod_primeFactors_dvd N)
-      rw [← log_prod (fun p hp ↦ by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero),
-        ← Nat.cast_prod]
-      exact log_le_log (by exact_mod_cast prod_pos fun p hp ↦ Nat.pos_of_mem_primeFactors hp)
-        (by exact_mod_cast hle)
     calc ∑ p ∈ N.primeFactors with ¬p ≤ ⌊y⌋₊, log p / p
         ≤ ∑ p ∈ N.primeFactors with ¬p ≤ ⌊y⌋₊, log p / y := by
           refine sum_le_sum fun p hp ↦ ?_
@@ -144,7 +150,7 @@ theorem exists_sum_primeFactors_log_div_le_log_log_add :
             div_nonneg (hlogp p hp) hy0.le
       _ ≤ 1 := by
           rw [← sum_div, div_le_one hy0]
-          exact hprod
+          exact sum_primeFactors_log_le_log (by lia)
   exact (add_le_add hsmall hlarge).trans_eq (by ring)
 
 end TauCeti
