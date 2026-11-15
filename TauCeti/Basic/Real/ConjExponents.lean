@@ -15,7 +15,8 @@ conjugate exponents are greater than one (`Real.HolderConjugate.two_le_of_natCas
 `NNReal.HolderConjugate.two_le_of_natCast`). This is how the dimension bound `2 ≤ n` is read off
 the Sobolev exponent `n / (n - 1)` of the Gagliardo–Nirenberg–Sobolev inequality.
 
-The conjugate of an exponent `p > 2` in `ℝ≥0∞` is less than two (`ENNReal.conjExponent_lt_two`):
+Of two Hölder conjugate exponents in `ℝ≥0∞`, one is less than two exactly when the other is
+greater than two (`ENNReal.HolderConjugate.lt_two_iff_two_lt`, `ENNReal.conjExponent_lt_two_iff`):
 supercritical exponents in the plane have subcritical conjugates.
 -/
 
@@ -33,14 +34,27 @@ theorem NNReal.HolderConjugate.two_le_of_natCast {n : ℕ} {q : ℝ≥0}
     (h : (n : ℝ≥0).HolderConjugate q) : 2 ≤ n := by
   exact_mod_cast h.lt
 
-/-- The conjugate exponent of `p > 2` is less than two. -/
-theorem ENNReal.conjExponent_lt_two {p : ℝ≥0∞} (hp : 2 < p) : p.conjExponent < 2 := by
-  have : p.HolderConjugate p.conjExponent :=
-    .conjExponent ((by norm_num : (1 : ℝ≥0∞) ≤ 2).trans hp.le)
-  have h := ENNReal.HolderConjugate.inv_add_inv_eq_one p p.conjExponent
-  by_contra h2
-  have h1 : p⁻¹ < 2⁻¹ := ENNReal.inv_lt_inv.2 hp
-  have h3 : p.conjExponent⁻¹ ≤ 2⁻¹ := ENNReal.inv_le_inv.2 (not_lt.1 h2)
-  have := ENNReal.add_lt_add_of_lt_of_le (h3.trans_lt (by norm_num)).ne h1 h3
-  rw [h, ENNReal.inv_two_add_inv_two] at this
-  exact lt_irrefl _ this
+/-- For a Hölder conjugate pair of extended exponents, one exponent is less than two exactly when
+the other is greater than two. -/
+theorem ENNReal.HolderConjugate.lt_two_iff_two_lt (p q : ℝ≥0∞) [p.HolderConjugate q] :
+    p < 2 ↔ 2 < q := by
+  have h := ENNReal.HolderConjugate.inv_add_inv_eq_one p q
+  have hp : p⁻¹ ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (h ▸ le_self_add)
+  rw [← ENNReal.inv_two_add_inv_two] at h
+  rw [← ENNReal.inv_lt_inv, ← ENNReal.inv_lt_inv (a := q)]
+  constructor
+  · intro hlt
+    by_contra hle
+    exact (ENNReal.add_lt_add_of_lt_of_le (by simp) hlt (not_lt.1 hle : 2⁻¹ ≤ q⁻¹)).ne' h
+  · intro hlt
+    by_contra hle
+    exact (ENNReal.add_lt_add_of_le_of_lt hp (not_lt.1 hle : p⁻¹ ≤ 2⁻¹) hlt).ne h
+
+/-- The conjugate exponent of `p` is less than two exactly when `p > 2`. -/
+theorem ENNReal.conjExponent_lt_two_iff {p : ℝ≥0∞} : p.conjExponent < 2 ↔ 2 < p := by
+  rcases lt_or_ge p 1 with hp | hp
+  · -- below one, the conjugate exponent is `∞`
+    rw [conjExponent, tsub_eq_zero_of_le hp.le, ENNReal.inv_zero, add_top]
+    exact iff_of_false (by simp) (by simpa using (hp.trans one_lt_two).le)
+  · have := HolderConjugate.conjExponent hp
+    exact HolderConjugate.lt_two_iff_two_lt p.conjExponent p

@@ -10,6 +10,7 @@ public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Unique continuation from a similarity factorization
@@ -94,14 +95,15 @@ theorem HasSimilarityFactorizationAt.of_eqOn_ball {r : ℝ} (hr : 0 < r)
 /-- The disc form of the factorization with a complex-linear factor: `ξ = Ψ σ` on a disc about
 `z₀`, with `Ψ` a family of complex-linear maps continuous on the disc and invertible at `z₀`, and
 `σ` complex differentiable on the disc. -/
-theorem HasSimilarityFactorizationAt.of_eqOn_ball_clm {r : ℝ} (hr : 0 < r) {Ψ : ℂ → V →L[ℂ] V}
-    (hΨ : ContinuousOn Ψ (ball z₀ r)) (hΨ₀ : IsUnit (Ψ z₀)) (hσ : DifferentiableOn ℂ σ (ball z₀ r))
-    (hξ : EqOn ξ (fun z ↦ Ψ z (σ z)) (ball z₀ r)) : HasSimilarityFactorizationAt ξ z₀ := by
-  obtain ⟨u, hu⟩ := hΨ₀
-  -- restricting the scalars of the equivalence `Ψ z₀` to `ℝ` keeps it invertible
-  exact .of_eqOn_ball hr (Φ := fun z ↦ (Ψ z).restrictScalars ℝ)
+theorem HasSimilarityFactorizationAt.of_eqOn_ball_complex {r : ℝ} (hr : 0 < r)
+    {Ψ : ℂ → V →L[ℂ] V} (hΨ : ContinuousOn Ψ (ball z₀ r)) (hΨ₀ : IsUnit (Ψ z₀))
+    (hσ : DifferentiableOn ℂ σ (ball z₀ r)) (hξ : EqOn ξ (fun z ↦ Ψ z (σ z)) (ball z₀ r)) :
+    HasSimilarityFactorizationAt ξ z₀ :=
+  -- restricting the scalars of the invertible map `Ψ z₀` to `ℝ` keeps it invertible
+  .of_eqOn_ball hr (Φ := fun z ↦ (Ψ z).restrictScalars ℝ)
     ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΨ)
-    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξ
+    (ContinuousLinearMap.isInvertible_iff_isUnit.1
+      (ContinuousLinearMap.isInvertible_iff_isUnit.2 hΨ₀).restrictScalars) hσ hξ
 
 omit [CompleteSpace V] in
 /-- A family of real-linear maps continuous at `z₀` and invertible there carries a factorization of

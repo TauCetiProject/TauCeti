@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Weyl
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Basic.Real.ConjExponents
@@ -81,13 +82,12 @@ namespace TauCeti
 
 /-! ### Small discs -/
 
-/-- About a point `z₀` of an open set `Ω`, a field `C ∈ Lᵖ_loc(Ω)`, `1 ≤ p < ∞`, is dominated on a
+/-- About a point `z₀` of an open set `Ω`, a field `C ∈ Lᵖ_loc(Ω)`, `p < ∞`, is dominated on a
 small closed disc of radius `r` by a function `G ∈ Lᵖ` with `π⁻¹ ‖K_{2R}‖_{L^q} ‖G‖_{Lᵖ} ≤ 1/2`,
 where `closedBall z₀ R ⊆ Ω` with `r ≤ R` and `K_{2R}` is the reciprocal kernel truncated at `2R`.
 These are the hypotheses of `TauCeti.exists_cauchyTransform_eq_of_memLp`. -/
 private theorem exists_closedBall_eLpNorm_le {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0}
-    (hp1 : (1 : ℝ≥0∞) ≤ p) {Ω : Opens ℂ} {C : ℂ → F} (hC : MemLpLoc p Ω C) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ Ω) (q : ℝ≥0∞) :
+    {Ω : Opens ℂ} {C : ℂ → F} (hC : MemLpLoc p Ω C) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (q : ℝ≥0∞) :
     ∃ r R : ℝ, 0 < r ∧ r ≤ R ∧ closedBall z₀ R ⊆ Ω ∧ ∃ G : ℂ → ℝ, MemLp G p volume ∧
       (∀ z ∈ closedBall z₀ r, ‖C z‖ ≤ G z) ∧
       Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal *
@@ -102,7 +102,7 @@ private theorem exists_closedBall_eLpNorm_le {F : Type*} [NormedAddCommGroup F] 
       (memLpLoc_iff.1 hC _ hKΩ (isCompact_closedBall _ _))
   -- a smaller disc on which the `Lᵖ` norm of `C` is small
   set κ := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal
-  obtain ⟨r, hr, hrR, hsmallr⟩ := exists_eLpNorm_indicator_closedBall_le hp1
+  obtain ⟨r, hr, hrR, hsmallr⟩ := exists_eLpNorm_indicator_closedBall_le
     ENNReal.coe_ne_top hCK.norm (measure_singleton z₀) hR
     (ε := ENNReal.ofReal (2 * (κ + 1))⁻¹) (ENNReal.ofReal_pos.2 (by positivity))
   have hrK : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR
@@ -136,10 +136,10 @@ private theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id_of_in
   have hp1 : (1 : ℝ≥0∞) < p := (by norm_num : (1 : ℝ≥0∞) < 2).trans hp2
   set q := (p : ℝ≥0∞).conjExponent
   have : (p : ℝ≥0∞).HolderConjugate q := .conjExponent hp1.le
-  have hq : q < 2 := ENNReal.conjExponent_lt_two hp2
+  have hq : q < 2 := ENNReal.conjExponent_lt_two_iff.2 hp2
   obtain ⟨hξc, hξp, Dξ, hDξ, hDξp, hae⟩ := isWeakLinearCauchyRiemannOn_iff_of_isOpen.1 hξ
   -- a disc on which `C` has small `Lᵖ` norm
-  obtain ⟨r, R, hr, hrR, hKΩ, G, hG, hCG, hsmall⟩ := exists_closedBall_eLpNorm_le hp1.le hC hz₀ q
+  obtain ⟨r, R, hr, hrR, hKΩ, G, hG, hCG, hsmall⟩ := exists_closedBall_eLpNorm_le hC hz₀ q
   have hsubΩ : closedBall z₀ r ⊆ Ω := (closedBall_subset_closedBall hrR).trans hKΩ
   have hball : ball z₀ r ⊆ Ω := ball_subset_closedBall.trans hsubΩ
   -- absorb the real-linear coefficient and solve the Cauchy integral equation
@@ -201,9 +201,7 @@ private theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id_of_in
     rw [IsUnit.unit_spec] at hc
     exact (hc.comp hΨc.continuousAt).continuousWithinAt
   · exact (hunit z hz).ringInverse
-  · beta_reduce
-    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
-      Ring.inverse_mul_cancel _ (hunit z hz), one_apply_eq_self]
+  · exact (ContinuousLinearMap.ringInverse_apply_apply (hunit z hz) (ξ z)).symm
 
 /-! ### Finite-dimensional complex normed spaces -/
 
@@ -247,9 +245,11 @@ theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id (hp : 2 < p)
   obtain ⟨hΦ', hΦu', hσ', hξσ'⟩ :=
     continuousOn_and_isUnit_and_differentiableOn_and_eqOn_symm_conjContinuousAlgEquiv (e := e)
       (ξ := ξ) hΦ hΦu hσ fun z hz ↦ by simpa [A] using hξσ hz
-  exact ⟨r, hr, hrΩ, _, _, hΦ',
-    hΦW.clm_comp ((e.symm.arrowCongr e.symm).toContinuousLinearMap.restrictScalars ℝ),
-    hΦu', hσ', hξσ'⟩
+  refine ⟨r, hr, hrΩ, _, _, hΦ', ?_, hΦu', hσ', hξσ'⟩
+  simpa only [ContinuousLinearEquiv.coe_restrictScalars',
+    ContinuousAlgEquiv.toContinuousLinearEquiv_apply] using
+    (e.symm.conjContinuousAlgEquiv.toContinuousLinearEquiv.restrictScalars' ℝ).comp_memWkpLoc_iff.2
+      hΦW
 
 /-- Let `2 < p`, possibly `p = ∞`. A `W^{1,p}_loc` weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` on
 an open set `Ω` (`TauCeti.IsWeakLinearCauchyRiemannOn p`), with `C ∈ Lᵖ_loc(Ω)`, has a similarity
@@ -265,7 +265,7 @@ theorem hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn_I_smul_id (h
     exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul_id (lt_min hp (by norm_num))
       ((min_le_right _ _).trans_lt ENNReal.ofNat_lt_top).ne (hC.mono_exponent hq)
       (IsWeakCauchyRiemannOn.mono_exponent hξ hq) hz₀
-  exact .of_eqOn_ball_clm hr hΦ (hΦu z₀ (mem_ball_self hr)) hσ hξσ
+  exact .of_eqOn_ball_complex hr hΦ (hΦu z₀ (mem_ball_self hr)) hσ hξσ
 
 /-- **Unique continuation** for weak solutions with `Lᵖ` coefficients. Let `2 < p`, possibly
 `p = ∞`. On a connected open set `Ω`, a `W^{1,p}_loc` weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0`

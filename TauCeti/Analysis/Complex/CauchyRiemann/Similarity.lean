@@ -12,6 +12,8 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.MetricSpace.Contracting
 public import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Pompeiu.Weak
+import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.RankOne
 
 /-!
@@ -171,9 +173,8 @@ theorem exists_cauchyTransform_eq_of_memLp [CompleteSpace E] {p q : ℝ≥0∞}
       ‖cauchyTransform (cauchySource D Ψ) w‖ ≤ 4⁻¹ * ‖Ψ‖ := by
     have hsrc : (eLpNorm (cauchySource D Ψ) p volume).toReal ≤
         2⁻¹ * ‖Ψ‖ * (eLpNorm G p volume).toReal := by
-      have h := eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hmeas Ψ) (ae_of_all _ (hbd Ψ)) p
-      refine (ENNReal.toReal_mono (by finiteness [hG.eLpNorm_ne_top]) h).trans_eq ?_
-      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+      simpa only [toReal_eLpNorm] using
+        lpNorm_le_mul_lpNorm_of_ae_le_mul (hmeas Ψ) hG (ae_of_all _ (hbd Ψ))
     calc ‖cauchyTransform (cauchySource D Ψ) w‖
         ≤ Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal *
             (eLpNorm (cauchySource D Ψ) p volume).toReal :=
@@ -233,10 +234,9 @@ private theorem exists_cauchyTransform_eq [CompleteSpace E] {D : ℂ → E →L[
       ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
   -- the `L¹` norm of the kernel truncated at `2 r` is `4 π r`
   have hK : (eLpNorm (truncatedCauchyKernel (r + r)) 1 volume).toReal = 2 * Real.pi * (r + r) := by
-    rw [eLpNorm_one_eq_lintegral_eNorm, ← ofReal_integral_norm_eq_lintegral_eNorm
-      (integrable_truncatedCauchyKernel _), integral_norm_truncatedCauchyKernel (by positivity),
-      ENNReal.toReal_ofReal (by positivity)]
-    exact (measurable_truncatedCauchyKernel _).aestronglyMeasurable
+    rw [toReal_eLpNorm, lpNorm_one_eq_integral_norm
+      (measurable_truncatedCauchyKernel _).aestronglyMeasurable,
+      integral_norm_truncatedCauchyKernel (by positivity)]
   have hMtop : (eLpNorm (fun _ : ℂ ↦ M) ∞ volume).toReal ≤ M :=
     ENNReal.toReal_le_of_le_ofReal hM <| (eLpNorm_exponent_top aestronglyMeasurable_const).trans_le
       (eLpNormEssSup_le_of_ae_bound (ae_of_all _ fun _ ↦ (Real.norm_of_nonneg hM).le))
@@ -341,9 +341,7 @@ private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDime
     rw [hσ] at hw0
     exact hw0.differentiableOn
       ((continuous_const.add hTg).continuousOn.clm_apply (hξ.continuousOn.mono hball))
-  · beta_reduce
-    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
-      Ring.inverse_mul_cancel _ (hunit z hz), one_apply_eq_self]
+  · exact (ContinuousLinearMap.ringInverse_apply_apply (hunit z hz) (ξ z)).symm
 
 /-! ### Transport along complex-linear equivalences -/
 
@@ -425,7 +423,7 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn (hΩ : IsOpen Ω) (hξ : Cont
   have := FiniteDimensional.completeSpace ℂ V
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀
-  exact .of_eqOn_ball_clm hr hΦ (hΦu z₀ (mem_ball_self hr)) hσ hξσ
+  exact .of_eqOn_ball_complex hr hΦ (hΦu z₀ (mem_ball_self hr)) hσ hξσ
 
 /-- **Unique continuation** for classical solutions. On a connected open set `Ω`, a `C¹` solution
 of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient `C`, that

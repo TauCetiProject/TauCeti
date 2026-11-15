@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -162,12 +163,8 @@ theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
     (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) :
     Continuous (cauchyTransform f) := by
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine continuous_cauchyTransform_of_norm_le hf.aestronglyMeasurable hs
-      (M := (eLpNormEssSup f volume).toReal) ?_
-    filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := volume)] with z hz
-    rw [← toReal_eNorm]
-    exact ENNReal.toReal_mono
-      (by rw [← eLpNorm_exponent_top hf.aestronglyMeasurable]; exact hf.eLpNorm_ne_top) hz
+  · exact continuous_cauchyTransform_of_norm_le hf.aestronglyMeasurable hs
+      (ae_le_lpNorm_exponent_top hf)
   -- bounded continuous approximations, cut off to the disc
   have happrox (n : ℕ) : ∃ g : ℂ →ᵇ F,
       eLpNorm (f - ⇑g) p volume ≤ ENNReal.ofReal (1 / (n + 1)) ∧ MemLp g p volume :=
