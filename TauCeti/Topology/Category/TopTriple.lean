@@ -25,7 +25,10 @@ natural.
 Nested subsets `s ⊆ t ⊆ u` of a topological space give the triple `TopTriple.ofInclusions`, whose
 three pairs are the pairs `TopPair.ofInclusion` of the three inclusions among them.
 Nested subsets `B ⊆ A` of a topological space `X` give the triple `TopTriple.ofSubset`, whose outer
-and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`.
+and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`. A continuous map
+carrying `A` into `A'` and `B` into `B'` induces a map of such triples,
+`TopTriple.ofSubsetMap`, whose outer and inner maps of pairs are `TopPair.ofSubsetMap` and
+`TopPair.ofInclusionMap`.
 -/
 
 @[expose] public section
@@ -241,6 +244,35 @@ lemma totalToOuter_app_ofSubset {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) :
   ext x : 2
   · exact Subtype.ext (TopPair.ofSubsetMap_snd_apply (𝟙 X) _ x).symm
   · exact (TopPair.ofSubsetMap_fst_apply _ _ x).symm
+
+
+section ofSubsetMap
+
+variable {X Y : TopCat.{u}} (g : X ⟶ Y) {A B : Set X} {A' B' : Set Y} (h : B ⊆ A) (h' : B' ⊆ A')
+  (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')
+
+/-- A continuous map `g : X ⟶ Y` carrying `A` into `A'` and `B` into `B'` induces a map of triples
+`(X, A, B) ⟶ (Y, A', B')`, for nested subsets `B ⊆ A` of `X` and `B' ⊆ A'` of `Y`. -/
+def ofSubsetMap : ofSubset h ⟶ ofSubset h' :=
+  ⟨ComposableArrows.homMk₂ (TopCat.ofHom ⟨hB.restrict, g.hom.continuous.restrict hB⟩)
+    (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) g rfl rfl⟩
+
+/-- The map of outer pairs `(X, A) ⟶ (Y, A')` of `TopTriple.ofSubsetMap` is induced by `g`. -/
+@[simp]
+lemma outerPair_map_ofSubsetMap :
+    outerPair.map (ofSubsetMap g h h' hA hB) = TopPair.ofSubsetMap g hA :=
+  TopPair.hom_ext_of_fst _ (TopPair.ofSubsetMap_fst _ _).symm
+
+/-- The map of inner pairs `(A, B) ⟶ (A', B')` of `TopTriple.ofSubsetMap` is the restriction of
+`g`. -/
+@[simp]
+lemma innerPair_map_ofSubsetMap :
+    innerPair.map (ofSubsetMap g h h' hA hB) =
+      TopPair.ofInclusionMap h h' ⟨hA.restrict, g.hom.continuous.restrict hA⟩
+        fun _ hx ↦ hB hx :=
+  TopPair.hom_ext_of_fst _ (TopPair.ofInclusionMap_fst _ _).symm
+
+end ofSubsetMap
 
 end TopTriple
 
