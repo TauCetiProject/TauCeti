@@ -370,7 +370,8 @@ theorem exists_iteratedLineDerivOp_smulLeftCLM_eq_and_norm_le :
       rw [← hf']
       exact isVanishingOn_fourier_lineDerivOp hf w
     obtain ⟨v₁, hv₁, hv₁n⟩ := ih (hg.fderiv_apply w)
-      (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by simp) hgG w) hR f hf
+      (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
+        rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) hR f hf
       (Fin.init m)
     obtain ⟨v₂, hv₂, hv₂n⟩ := ih hg (fun n hn ↦ hgG n (by omega)) hR f' hf'v (Fin.init m)
     refine ⟨v₁ + v₂, ?_, ?_⟩

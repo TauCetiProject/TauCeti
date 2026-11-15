@@ -9,20 +9,35 @@ public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Order.Monotone.Defs
 
 /-!
-# Injectivity from three injective pieces
+# Injectivity on order intervals
 
 A function on a linear order which is injective on `Iic a`, `Icc a b` and `Ici b`, sends the two
 outer pieces into disjoint sets, and meets those sets inside `Icc a b` only at the endpoint values,
 is injective.
 
+If a function is injective on `Ico a b` and has equal endpoint values, its value at a point
+of `Ioo a b` is attained nowhere else on `Icc a b`.
+
 ## Main results
 
+* `Set.InjOn.eq_of_mem_Ioo_of_mem_Icc`: uniqueness of values at points of an open interval.
 * `TauCeti.injective_of_injOn_Iic_Icc_Ici`: injectivity from the three injective pieces.
 -/
 
 public section
 
 open Set
+
+/-- If `γ` is injective on `Ico a b` and `γ a = γ b`, then any `t ∈ Icc a b` with
+`γ t = γ t₀` for `t₀ ∈ Ioo a b` equals `t₀`. -/
+theorem Set.InjOn.eq_of_mem_Ioo_of_mem_Icc {ι α : Type*} [PartialOrder ι]
+    {γ : ι → α} {a b t₀ t : ι}
+    (hinj : InjOn γ (Ico a b)) (hclosed : γ a = γ b) (ht₀ : t₀ ∈ Ioo a b) (ht : t ∈ Icc a b)
+    (heq : γ t = γ t₀) : t = t₀ := by
+  rcases ht.2.eq_or_lt with rfl | htb
+  · exact absurd (hinj ⟨le_rfl, ht₀.1.trans ht₀.2⟩ (Ioo_subset_Ico_self ht₀) (hclosed.trans heq))
+      ht₀.1.ne
+  · exact hinj ⟨ht.1, htb⟩ (Ioo_subset_Ico_self ht₀) heq
 
 namespace TauCeti
 

@@ -226,8 +226,8 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le_of_annulu
       rw [← hy i]; exact isVanishingOn_fourier_littlewoodPaleyBlock φ j _) (b i)
     have hgb (i : Fin (Module.finrank ℝ E)) :
         ∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n (fun y ↦ fderiv ℝ g y (b i)) x‖ ≤ G := by
-      simpa [b.orthonormal.1] using
-        hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by simp) hgG (b i)
+      simpa [b.orthonormal.1] using hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
+        rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG (b i)
     choose z hz hzn using fun i ↦ hKb (hg.fderiv_apply (b i)) (hgb i) j hR (h i) (hh i).1
     refine ⟨∑ i, (y' i - z i), ?_, ?_⟩
     · -- `g ∂_{bᵢ} hᵢ = ∂_{bᵢ} (g hᵢ) - (∂_{bᵢ} g) hᵢ`.

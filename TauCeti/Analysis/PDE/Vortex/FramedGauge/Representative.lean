@@ -8,38 +8,29 @@ module
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Smooth framed vortices in the affine Sobolev field space
 
-A plane vortex `x` whose section is normalized at its end — equal outside a compact set to `|α|`
-times the winding phase `(z / |z|)^m` — has real positive section `|α| = exp ((1 / 2) log |α|²)` in
-the winding-`m` end trivialization. Away from the zeros of `α`, the holomorphicity equation
-`∂bar_a α = 0` expresses the connection of the end trivialization as `(-∂₂ L, ∂₁ L)` where
-`L = (1 / 2) log |α|²` (`TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_zero`,
-`TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_one`), while outside the cutoff disc of
-`referenceField f m` its winding-`m` end trivialization
-`gaugeTransform (windingPhase m)⁻¹ (referenceField f m)` equals `vacuumField`
-(`TauCeti.Vortex.gaugeTransform_inv_windingPhase_referenceField`) and its section equals
-`windingPhase m` (`TauCeti.Vortex.referenceSection_eq_phase`). Hence outside a ball the
-end-trivialized defect `gaugeTransform (windingPhase m)⁻¹ x - vacuumField` has coordinates
-`(-∂₂ L, ∂₁ L, (exp L - 1) / 2, 0)` and the field defect `x - referenceField f m` has coordinates
-
-`(-∂₂ L, ∂₁ L, (exp L - 1) (x_ref)₂, (exp L - 1) (x_ref)₃)`.
-
-Every iterated derivative of `log |α|²` is `O(exp (-c |z|))` at infinity for every `c < 1 / 2`
-(`TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`), and every iterated derivative of
-`referenceField f m` is globally bounded
-(`TauCeti.Vortex.exists_norm_iteratedFDeriv_referenceField_apply_le`). Differentiating the exterior
-formulas therefore gives exponential decay at infinity of all iterated derivatives of both
-`gaugeTransform (windingPhase m)⁻¹ x - vacuumField`
-(`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField`) and
-`x - referenceField f m` (`TauCeti.Vortex.isBigO_iteratedFDeriv_sub_referenceField`,
-`TauCeti.Vortex.exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`).
+Let `x` be a plane vortex with `C²` section and `|α| → 1` at infinity whose section is normalized at
+its end, equal outside a compact set to `|α|` times the winding phase `(z / |z|)^m`. In the
+winding-`m` end trivialization, `y = gaugeTransform (windingPhase m)⁻¹ x` is smooth near infinity
+(`TauCeti.Vortex.eventually_contDiffAt_gaugeTransform_inv`) and every iterated derivative of
+`y - vacuumField` is `O(exp (-c |z|))` for every rate `c < 1 / 2`
+(`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField`). Outside the cutoff disc
+of `referenceField f m`, the reference field has end trivialization `vacuumField`
+(`TauCeti.Vortex.gaugeTransform_inv_windingPhase_referenceField`) and section `windingPhase m`
+(`TauCeti.Vortex.referenceSection_eq_phase`), so `x - referenceField f m` is recovered from
+`y - vacuumField` by rotating its section variation by `referenceSection f m`, whose iterated
+derivatives are globally bounded (`TauCeti.Vortex.exists_norm_iteratedFDeriv_referenceSection_le`).
+Every iterated derivative of `x - referenceField f m` is therefore `O(exp (-c |z|))` at infinity for
+every `c < 1 / 2` (`TauCeti.Vortex.isBigO_iteratedFDeriv_sub_referenceField_apply`,
+`TauCeti.Vortex.isBigO_iteratedFDeriv_sub_referenceField`), and globally bounded by
+`K exp (-c |z|)` when `x` is smooth
+(`TauCeti.Vortex.exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`).
 
 When `x` is smooth, each coordinate of `x - referenceField f m` lies in `realSobolevFunctions` by
 `TemperedDistribution.mem_realSobolevFunctions_of_isBigO_iteratedFDeriv_exp`, so `x` belongs to the
@@ -55,18 +46,11 @@ lies in `A_m^s`.
 
 ## Main results
 
-* `TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_zero`,
-  `TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_one`: the connection coordinates
-  `(-(1 / 2) ∂₂(log |α|²), (1 / 2) ∂₁(log |α|²))` of the winding-`m` end trivialization where
-  `∂bar_a α = 0` and the section is `|α|` times `windingPhase m`.
-* `TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField_apply`,
-  `TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField`: for a
-  vortex with smooth section, `|α| → 1`, and end-normalized phase outside a compact set, every
-  iterated derivative of `gaugeTransform (windingPhase m)⁻¹ x - vacuumField` is `O(exp (-c |z|))` at
-  infinity for all `c < 1 / 2`.
 * `TauCeti.Vortex.isBigO_iteratedFDeriv_sub_referenceField_apply`,
-  `TauCeti.Vortex.isBigO_iteratedFDeriv_sub_referenceField`: the corresponding `O(exp (-c |z|))`
-  derivative decay for `x - referenceField f m`.
+  `TauCeti.Vortex.isBigO_iteratedFDeriv_sub_referenceField`: for a plane vortex with `C²` section,
+  `|α| → 1`, and section equal to `|α|` times `windingPhase m` near infinity, every iterated
+  derivative of `x - referenceField f m` (and of each coordinate) is `O(exp (-c |z|))` at infinity
+  for every `c < 1 / 2`.
 * `TauCeti.Vortex.exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp`: when `x` is smooth,
   `‖Dⁿ(x - referenceField f m)(z)‖ ≤ K exp (-c |z|)` on the whole plane.
 * `TauCeti.Vortex.mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase`: a smooth
@@ -90,226 +74,105 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Asymptotics Complex ComplexConjugate Filter Metric
+open Asymptotics Complex Filter
 open scoped ContDiff Topology
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
-/-! ### Exterior coordinate formulas in the end trivialization -/
+/-! ### Exponential decay of all derivatives of an end-normalized vortex -/
 
-/-- Shared proof of `gaugeTransform_inv_windingPhase_apply_zero` and
-`gaugeTransform_inv_windingPhase_apply_one`. -/
-private theorem gaugeTransform_inv_windingPhase_apply_zero_and_one {z : ℂ} (hz : z ≠ 0)
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
-    (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0)
-    (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0)
-    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w) :
-    gaugeTransform (windingPhase m)⁻¹ x z 0 =
-        -(1 / 2) * fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z I ∧
-      gaugeTransform (windingPhase m)⁻¹ x z 1 =
-        (1 / 2) * fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z 1 := by
-  set ℓ : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))
-  set u : ℂ → Circle := (windingPhase m)⁻¹
-  set y : ℂ → EuclideanSpace ℝ (Fin 4) := gaugeTransform u x
-  have hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z := by
-    simpa only [u, Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def, conjCLE_apply] using
-      conjCLE.contDiff.contDiffAt.comp z (contDiffAt_windingPhase m hz)
-  have hu1 : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z := hu.differentiableAt two_ne_zero
-  -- In the end trivialization `y`, the section is real on `𝓝 z`, so `y · 3` vanishes near `z`.
-  have hy3_nhds : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) := by
-    filter_upwards [hphase] with w hw
-    have him := congrArg Complex.im
-      (sectionValue_apply y w ▸ sectionValue_gaugeTransform_inv_windingPhase hw)
-    simp only [mul_im, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at him
-    linarith
-  have hy3 : y z 3 = 0 := hy3_nhds.eq_of_nhds
-  have hdy3 : fderiv ℝ (fun w ↦ y w 3) z = 0 := by simpa using hy3_nhds.fderiv_eq
-  have hyp : DifferentiableAt ℝ (fun w ↦ y w 2) z := by
-    simp only [y, gaugeTransform_apply, PiLp.toLp_apply, Matrix.cons_val_two, Matrix.head_cons,
-      Matrix.tail_cons]
-    exact ((reCLM.differentiableAt.comp z hu1).mul hp).sub
-      ((imCLM.differentiableAt.comp z hu1).mul hq)
-  have hyq : DifferentiableAt ℝ (fun w ↦ y w 3) z :=
-    (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq hy3_nhds
-  -- Gauge covariance of `∂bar_a α` gives `equation y z 1 = 0` and `equation y z 2 = 0` at `z`.
-  have hdbar : 2 * ((equation y z 1 : ℂ) + (equation y z 2 : ℂ) * I) = 0 := by
-    calc 2 * ((equation y z 1 : ℂ) + (equation y z 2 : ℂ) * I)
-        = covariantDerivative y z 1 + I * covariantDerivative y z I :=
-          (covariantDerivative_one_add_I_mul_covariantDerivative_I hyp hyq).symm
-      _ = (u z : ℂ) * (covariantDerivative x z 1 + I * covariantDerivative x z I) := by
-          rw [covariantDerivative_gaugeTransform hu1 hp hq 1,
-            covariantDerivative_gaugeTransform hu1 hp hq I]
-          ring
-      _ = (u z : ℂ) * (2 * ((equation x z 1 : ℂ) + (equation x z 2 : ℂ) * I)) := by
-          rw [covariantDerivative_one_add_I_mul_covariantDerivative_I hp hq]
-      _ = 0 := by simp [h₁, h₂]
-  have hy12 : (equation y z 1 : ℂ) + (equation y z 2 : ℂ) * I = 0 :=
-    (mul_eq_zero.1 hdbar).resolve_left two_ne_zero
-  have hy1 : equation y z 1 = 0 := by simpa using congrArg Complex.re hy12
-  have hy2 : equation y z 2 = 0 := by simpa using congrArg Complex.im hy12
-  have hℓy : (fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))) = ℓ := by
-    funext w; simp only [ℓ, y, u, gaugeTransform_apply_two_sq_add_apply_three_sq]
-  have hyα : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0 := by
-    simpa only [y, u, gaugeTransform_apply_two_sq_add_apply_three_sq] using hα
-  have hf1 := fderiv_log_normSq_apply_one hyp hyq hyα hy1 hy2
-  have hfI := fderiv_log_normSq_apply_I hyp hyq hyα hy1 hy2
-  rw [hℓy, hy3, hdy3] at hf1 hfI
-  simp only [zero_apply, mul_zero, zero_mul, sub_zero, zero_div, neg_zero, zero_sub] at hf1 hfI
-  exact ⟨by linarith [hfI], by linarith [hf1]⟩
-
-/-- At a nonzero point where `α ≠ 0`, `∂bar_a α = 0`, and near which the section is `|α|` times
-`windingPhase m`, the first connection coordinate of the winding-`m` end trivialization of `x` is
-`-(1 / 2) ∂₂(log |α|²)`. -/
-theorem gaugeTransform_inv_windingPhase_apply_zero {z : ℂ} (hz : z ≠ 0)
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
-    (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0)
-    (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0)
-    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w) :
-    gaugeTransform (windingPhase m)⁻¹ x z 0 =
-      -(1 / 2) * fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z I :=
-  (gaugeTransform_inv_windingPhase_apply_zero_and_one hz hp hq hα h₁ h₂ hphase).1
-
-/-- At a nonzero point where `α ≠ 0`, `∂bar_a α = 0`, and near which the section is `|α|` times
-`windingPhase m`, the second connection coordinate of the winding-`m` end trivialization of `x` is
-`(1 / 2) ∂₁(log |α|²)`. -/
-theorem gaugeTransform_inv_windingPhase_apply_one {z : ℂ} (hz : z ≠ 0)
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
-    (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0)
-    (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0)
-    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w) :
-    gaugeTransform (windingPhase m)⁻¹ x z 1 =
-      (1 / 2) * fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z 1 :=
-  (gaugeTransform_inv_windingPhase_apply_zero_and_one hz hp hq hα h₁ h₂ hphase).2
-
-/-- Express the section norm `|α(z)|` as `exp ((1 / 2) log (4 (p² + q²)))` when
-`4 (p² + q²) > 0`. -/
-private theorem norm_sectionValue_eq_exp_half_log_normSq {z : ℂ}
-    (hpos : 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
-    ‖sectionValue x z‖ = Real.exp ((1 / 2) * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by
-  rw [one_div_mul_eq_div, Real.exp_half, Real.exp_log hpos, ← sq_norm_sectionValue,
-    Real.sqrt_sq (norm_nonneg _)]
-
-/-- Cut off `(1 / 2) log |α|²` near the origin via `TauCeti.exists_contDiff_eventually_eventuallyEq`
-to obtain a globally smooth function `L` on `ℂ` that agrees locally with
-`(1 / 2) log (4 (p² + q²))` outside a compact set and inherits exponential derivative decay at
-every rate `c' < 1 / 2`. -/
-private theorem exists_contDiff_eq_half_log_normSq
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ L : ℂ → ℝ, ContDiff ℝ ∞ L ∧
-      (∀ᶠ z in cocompact ℂ,
-        L =ᶠ[𝓝 z] fun w ↦ (1 / 2) * Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) ∧
-      ∀ {c' : ℝ}, c' < 1 / 2 → ∀ j : ℕ,
-        iteratedFDeriv ℝ j L =O[cocompact ℂ] fun z ↦ Real.exp (-(c' * ‖z‖)) := by
-  have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
-    hlim.eventually (lt_mem_nhds (by norm_num : (1 : ℝ) / 2 < 1))
-  obtain ⟨L, hL, hL_ev⟩ := TauCeti.exists_contDiff_eventually_eventuallyEq (n := ⊤)
-    (f := fun w ↦ (1 / 2) * Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)))
-    (hpos.mono fun _ hz ↦ contDiffAt_const.mul ((contDiff_normSq hp hq).contDiffAt.log
-      (by positivity)))
-  refine ⟨L, hL, hL_ev, fun {c'} hc' j ↦ ?_⟩
-  have hlog :=
-    (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim hc' j).norm_left.const_mul_left (1 / 2)
-  refine isBigO_norm_left.1 ((EventuallyEq.isBigO ?_).trans hlog)
-  filter_upwards [hL_ev, hpos] with z hnhds hz
-  have hnhds' : L =ᶠ[𝓝 z] fun w ↦ (1 / 2 : ℝ) • Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) := by
-    simpa only [smul_eq_mul] using hnhds
-  have hcd_log : ContDiffAt ℝ j (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z :=
-    ((contDiff_normSq hp hq).contDiffAt.log (by positivity)).of_le (by simp)
-  rw [(hnhds'.iteratedFDeriv ℝ j).eq_of_nhds, iteratedFDeriv_const_smul_apply' hcd_log, norm_smul,
-    Real.norm_eq_abs, abs_of_pos one_half_pos]
-
-/-- Shared exterior-surrogate estimate for both `gaugeTransform (windingPhase m)⁻¹ x - vacuumField`
-and `x - referenceField f m`: whenever `y - r` has the connection of
-`gaugeTransform (windingPhase m)⁻¹ x` and `sectionValue y = ‖sectionValue x‖ * sectionValue r`
-outside a compact set, `y - r` agrees near infinity with a smooth surrogate built from the
-cutoff log-amplitude `L` and `r`, giving `O(exp (-c |z|))` bounds on all iterated derivatives. -/
-private theorem isBigO_iteratedFDeriv_sub_of_eventually_eq
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
+/-- Shared exterior-surrogate proof for `isBigO_iteratedFDeriv_sub_referenceField_apply` and
+`isBigO_iteratedFDeriv_sub_referenceField`: cut off the end-trivialized defect
+`gaugeTransform (windingPhase m)⁻¹ x - vacuumField` near the origin via
+`exists_contDiff_eventually_eventuallyEq`, rotate its section coordinates by `referenceSection f m`,
+and apply the Leibniz rule. -/
+private theorem isBigO_iteratedFDeriv_sub_referenceField_aux
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    {y r : ℂ → EuclideanSpace ℝ (Fin 4)} (hr : ContDiff ℝ ∞ r)
-    (hr_bdd : ∀ k j, iteratedFDeriv ℝ j (fun z ↦ r z k) =O[cocompact ℂ] fun _ ↦ (1 : ℝ))
-    (hyr : ∀ᶠ z in cocompact ℂ,
-      y z 0 - r z 0 = gaugeTransform (windingPhase m)⁻¹ x z 0 ∧
-      y z 1 - r z 1 = gaugeTransform (windingPhase m)⁻¹ x z 1 ∧
-      sectionValue y z = ‖sectionValue x z‖ * sectionValue r z)
-    {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
-    (∀ i, iteratedFDeriv ℝ n (fun z ↦ y z i - r z i) =O[cocompact ℂ]
+    (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
+    (∀ i, iteratedFDeriv ℝ n (fun z ↦ x z i - referenceField f m z i) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖))) ∧
-    iteratedFDeriv ℝ n (y - r) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  -- Smoothly extend `(1 / 2) log |α|²` across the compact core to build the surrogate field `G`.
-  obtain ⟨L, hL, hL_ev, hL_decay⟩ := exists_contDiff_eq_half_log_normSq hp hq hsol hlim
-  have hLf : ContDiff ℝ ∞ (fderiv ℝ L) := hL.fderiv_right (m := (⊤ : ℕ∞)) (by simp)
-  have hr_cd := contDiff_euclidean.1 hr
+    iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
+  -- A globally smooth surrogate `Y` for the end-trivialized defect near infinity.
+  have hvac : ContDiff ℝ ∞ vacuumField := funext vacuumField_apply ▸ contDiff_const
+  obtain ⟨Y, hY, hY_ev⟩ := exists_contDiff_eventually_eventuallyEq (n := ⊤)
+    (f := fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w - vacuumField w)
+    ((eventually_contDiffAt_gaugeTransform_inv hp hq hsol hlim hphase).mono fun _ hz ↦
+      hz.sub hvac.contDiffAt)
+  set ρ : ℂ → ℝ := fun z ↦ Real.exp (-(max c 0 * ‖z‖))
+  have hY_dec (j : ℕ) : iteratedFDeriv ℝ j Y =O[cocompact ℂ] ρ :=
+    (isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
+      (max_lt hc (by norm_num)) j).congr'
+      (hY_ev.mono fun _ hz ↦ (hz.iteratedFDeriv ℝ j).eq_of_nhds.symm) EventuallyEq.rfl
+  have hYc_cd (k : Fin 4) : ContDiff ℝ ∞ (fun z ↦ Y z k) := contDiff_euclidean.1 hY k
+  have hYc_dec (k : Fin 4) (j : ℕ) : iteratedFDeriv ℝ j (fun z ↦ Y z k) =O[cocompact ℂ] ρ :=
+    (EuclideanSpace.proj k).isBigO_iteratedFDeriv_comp_left hY (by simp) (hY_dec j)
+  -- Rotate the section coordinates of `Y` by `s = referenceSection f m` to form `G`.
+  set s := referenceSection f m
+  have hs_cd : ContDiff ℝ ∞ s := contDiff_referenceSection f m
+  have hr : ContDiff ℝ ∞ (fun z ↦ (s z).re) := reCLM.contDiff.comp hs_cd
+  have hi : ContDiff ℝ ∞ (fun z ↦ (s z).im) := imCLM.contDiff.comp hs_cd
   let G : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦
-    !₂[-fderiv ℝ L z I, fderiv ℝ L z 1,
-      (Real.exp (L z) - 1) * r z 2, (Real.exp (L z) - 1) * r z 3]
+    !₂[Y z 0, Y z 1,
+      (s z).re * Y z 2 - (s z).im * Y z 3,
+      (s z).im * Y z 2 + (s z).re * Y z 3]
   have hG : ContDiff ℝ ∞ G := by
     refine contDiff_euclidean.2 fun i ↦ ?_
     fin_cases i
-    · exact ((ContinuousLinearMap.apply ℝ ℝ I).contDiff.comp hLf).neg
-    · exact (ContinuousLinearMap.apply ℝ ℝ (1 : ℂ)).contDiff.comp hLf
-    · exact ((Real.contDiff_exp.comp hL).sub contDiff_const).mul (hr_cd 2)
-    · exact ((Real.contDiff_exp.comp hL).sub contDiff_const).mul (hr_cd 3)
-  -- Match the connection and section of `y - r` and `G` outside a compact set, then upgrade to `𝓝`.
-  have hev : ∀ᶠ z in cocompact ℂ, (y - r) z = G z := by
-    filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop 0,
-      hlim.eventually (lt_mem_nhds (by norm_num : (1 : ℝ) / 2 < 1)),
-      hL_ev, TauCeti.eventually_cocompact_nhds.2 hphase, hyr] with
-      z hz0 hgt hL_nhds hnhds_phase ⟨h0, h1, hsec⟩
-    have hz : z ≠ 0 := norm_pos_iff.1 hz0
-    have hpos : 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by linarith
-    have hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h ↦ by simp [h] at hpos
-    have hfderiv_L : fderiv ℝ L z =
-        (1 / 2 : ℝ) • fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z := by
-      rw [hL_nhds.fderiv_eq]
-      exact fderiv_const_mul (((contDiff_normSq hp hq).contDiffAt.log
-        (mul_ne_zero four_ne_zero hα)).differentiableAt (by simp)) (1 / 2)
-    have hexp : ‖sectionValue x z‖ = Real.exp (L z) :=
-      hL_nhds.eq_of_nhds ▸ norm_sectionValue_eq_exp_half_log_normSq hpos
-    refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-    · rw [Pi.sub_apply, PiLp.sub_apply, h0, gaugeTransform_inv_windingPhase_apply_zero hz
-        (hp.differentiable (by simp) z) (hq.differentiable (by simp) z) hα
-        (by simp [hsol z]) (by simp [hsol z]) hnhds_phase]
-      simp [G, hfderiv_L, smul_eq_mul]
-    · rw [Pi.sub_apply, PiLp.sub_apply, h1, gaugeTransform_inv_windingPhase_apply_one hz
-        (hp.differentiable (by simp) z) (hq.differentiable (by simp) z) hα
-        (by simp [hsol z]) (by simp [hsol z]) hnhds_phase]
-      simp [G, hfderiv_L, smul_eq_mul]
-    · rw [sectionValue_sub, hsec, hexp, sectionValue_apply G, sectionValue_apply r]
-      simp only [G, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
-      push_cast
-      ring
-  have hG_ev : ∀ᶠ z in cocompact ℂ, y - r =ᶠ[𝓝 z] G := TauCeti.eventually_cocompact_nhds.2 hev
-  -- Bound each coordinate's derivatives from those of `L`, then lift to `EuclideanSpace ℝ (Fin 4)`.
-  have hLbdd (j : ℕ) : iteratedFDeriv ℝ j L =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := by
-    simpa using hL_decay (by norm_num : (0 : ℝ) < 1 / 2) j
-  have hL₀ : L =O[cocompact ℂ] fun _ ↦ (1 : ℝ) :=
-    (isBigO_of_le _ fun _ ↦ by simp [iteratedFDeriv_zero_eq_comp]).trans (hLbdd 0)
-  have hmul (k : Fin 4) :
-      iteratedFDeriv ℝ n (fun z ↦ (Real.exp (L z) - 1) * r z k) =O[cocompact ℂ]
-        fun z ↦ Real.exp (-(c * ‖z‖)) := by
-    have hexp (j : ℕ) := (hL.of_le (m := j) (by simp)).isBigO_iteratedFDeriv_exp_sub_one hL₀
-      (fun i _ _ ↦ hLbdd i) (fun i _ ↦ hL_decay hc i)
-    simpa only [ContinuousLinearMap.mul_apply', Function.comp_apply, mul_one] using
+    · exact hYc_cd 0
+    · exact hYc_cd 1
+    · exact (hr.mul (hYc_cd 2)).sub (hi.mul (hYc_cd 3))
+    · exact (hi.mul (hYc_cd 2)).add (hr.mul (hYc_cd 3))
+  -- Outside the cutoff disc `s = windingPhase m` and `G` agrees with `x - referenceField f m`.
+  have hev : ∀ᶠ z in cocompact ℂ, (x - referenceField f m) z = G z := by
+    filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut), hY_ev]
+      with z hzR hYz_nhds
+    have hrOut : f.rOut ≤ ‖z‖ ^ 2 := rOut_le_norm_sq f hzR
+    have hs_eq : s z = (windingPhase m z : ℂ) :=
+      (referenceSection_eq_phase f m hrOut).trans
+        (coe_windingPhase m (ne_zero_of_rOut_le_norm_sq f hrOut)).symm
+    set V := gaugeLinearAction (windingPhase m)⁻¹ (x - referenceField f m)
+    have hYz : Y z = V z := by
+      have hsub := congrFun
+        (gaugeTransform_sub_gaugeTransform (windingPhase m)⁻¹ x (referenceField f m)) z
+      rw [Pi.sub_apply, gaugeTransform_inv_windingPhase_referenceField f m hrOut] at hsub
+      exact hYz_nhds.eq_of_nhds.trans hsub
+    calc (x - referenceField f m) z
+        = gaugeLinearAction (windingPhase m) V z := by
+          rw [← gaugeLinearAction_gaugeLinearAction_inv (windingPhase m) (x - referenceField f m)]
+      _ = G z := by simp only [G, gaugeLinearAction_apply, hs_eq, hYz]
+  have hG_ev : ∀ᶠ z in cocompact ℂ, x - referenceField f m =ᶠ[𝓝 z] G :=
+    TauCeti.eventually_cocompact_nhds.2 hev
+  -- Bound the derivatives of each coordinate of `G` via the Leibniz rule for `ℓ(s) * Y_k`.
+  have hmul (ℓ : ℂ →L[ℝ] ℝ) (k : Fin 4) :
+      iteratedFDeriv ℝ n (fun z ↦ ℓ (s z) * Y z k) =O[cocompact ℂ] ρ := by
+    have hℓs_bdd (j : ℕ) :
+        iteratedFDeriv ℝ j (fun z ↦ ℓ (s z)) =O[cocompact ℂ] fun _ ↦ (1 : ℝ) := by
+      obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceSection_le f m j
+      exact ℓ.isBigO_iteratedFDeriv_comp_left hs_cd (by simp)
+        (IsBigO.of_bound (max C 0) (Eventually.of_forall fun z ↦ by
+          simpa using (hC z).trans (le_max_left C 0)))
+    simpa only [ContinuousLinearMap.mul_apply', Function.comp_apply, one_mul] using
       (ContinuousLinearMap.mul ℝ ℝ).isBigO_iteratedFDeriv_of_bilinear
-        ((Real.contDiff_exp.comp hL).sub contDiff_const) (hr_cd k) (by simp)
-        (fun j _ ↦ hexp j) (fun j _ ↦ hr_bdd k j)
+        (ℓ.contDiff.comp hs_cd) (hYc_cd k) (by simp)
+        (fun j _ ↦ hℓs_bdd j) (fun j _ ↦ hYc_dec k j)
   have hG_coord (i : Fin 4) :
       iteratedFDeriv ℝ n (fun z ↦ G z i) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
+    refine (?hbound : iteratedFDeriv ℝ n (fun z ↦ G z i) =O[cocompact ℂ] ρ).trans
+      (isBigO_exp_neg_mul_norm_of_le (le_max_left c 0) _)
     fin_cases i
-    · dsimp [G]
-      have hneg : iteratedFDeriv ℝ n (fun z ↦ -fderiv ℝ L z I) =
-          -iteratedFDeriv ℝ n (fun z ↦ fderiv ℝ L z I) :=
-        funext fun _ ↦ iteratedFDeriv_neg_apply
-      rw [hneg]
-      exact (hL.isBigO_iteratedFDeriv_fderiv_apply (by simp) (hL_decay hc (n + 1)) I).neg_left
-    · exact hL.isBigO_iteratedFDeriv_fderiv_apply (by simp) (hL_decay hc (n + 1)) 1
-    · exact hmul 2
-    · exact hmul 3
+    · exact hYc_dec 0 n
+    · exact hYc_dec 1 n
+    · change iteratedFDeriv ℝ n (fun z ↦ (s z).re * Y z 2 - (s z).im * Y z 3) =O[cocompact ℂ] ρ
+      rw [fun_iteratedFDeriv_sub ((hr.mul (hYc_cd 2)).of_le (by simp))
+        ((hi.mul (hYc_cd 3)).of_le (by simp))]
+      exact (hmul reCLM 2).sub (hmul imCLM 3)
+    · change iteratedFDeriv ℝ n (fun z ↦ (s z).im * Y z 2 + (s z).re * Y z 3) =O[cocompact ℂ] ρ
+      rw [fun_iteratedFDeriv_add ((hi.mul (hYc_cd 2)).of_le (by simp))
+        ((hr.mul (hYc_cd 3)).of_le (by simp))]
+      exact (hmul imCLM 2).add (hmul reCLM 3)
   have hG_vec : iteratedFDeriv ℝ n G =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
     rw [← (PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin 4 ↦ ℝ).isBigO_iteratedFDeriv_comp_left_iff,
       ((PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin 4 ↦ ℝ).comp_contDiff_iff.2
@@ -318,106 +181,17 @@ private theorem isBigO_iteratedFDeriv_sub_of_eventually_eq
   refine ⟨fun i ↦ (EventuallyEq.isBigO ?_).trans (hG_coord i),
     (EventuallyEq.isBigO (hG_ev.mono fun _ hz ↦ (hz.iteratedFDeriv ℝ n).eq_of_nhds)).trans hG_vec⟩
   filter_upwards [hG_ev] with z hz
-  have hc_nhds : (fun w ↦ y w i - r w i) =ᶠ[𝓝 z] fun w ↦ G w i :=
+  have hc_nhds : (fun w ↦ x w i - referenceField f m w i) =ᶠ[𝓝 z] fun w ↦ G w i :=
     hz.mono fun _ hw ↦ congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) hw
   exact (hc_nhds.iteratedFDeriv ℝ n).eq_of_nhds
 
-/-! ### Exponential decay of all derivatives of an end-normalized vortex -/
-
-/-- Shared instantiation of `isBigO_iteratedFDeriv_sub_of_eventually_eq` for `vacuumField`. -/
-private theorem isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField_aux
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
-    (∀ i, iteratedFDeriv ℝ n
-      (fun z ↦ gaugeTransform (windingPhase m)⁻¹ x z i - vacuumField z i) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖))) ∧
-    iteratedFDeriv ℝ n (gaugeTransform (windingPhase m)⁻¹ x - vacuumField) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  refine isBigO_iteratedFDeriv_sub_of_eventually_eq hp hq hsol hlim hphase
-    (by rw [funext vacuumField_apply]; exact contDiff_const) (fun k j ↦ ?_) ?_ hc n
-  · have hc_eq : (fun z ↦ vacuumField z k) = fun _ ↦ vacuumField 0 k :=
-      funext fun _ ↦ by simp [vacuumField_apply]
-    rw [hc_eq]
-    rcases j with _ | j
-    · exact IsBigO.of_bound ‖vacuumField 0 k‖
-        (Eventually.of_forall fun _ ↦ by simp [iteratedFDeriv_zero_eq_comp])
-    · rw [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero j)]
-      exact isBigO_zero _ _
-  · filter_upwards [hphase] with z hz
-    refine ⟨by simp [vacuumField_apply], by simp [vacuumField_apply], ?_⟩
-    rw [sectionValue_gaugeTransform_inv_windingPhase hz]
-    simp [sectionValue_apply, vacuumField_apply]
-
-/-- Shared instantiation of `isBigO_iteratedFDeriv_sub_of_eventually_eq` for
-`referenceField f m`. -/
-private theorem isBigO_iteratedFDeriv_sub_referenceField_aux
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
-    (∀ i, iteratedFDeriv ℝ n (fun z ↦ x z i - referenceField f m z i) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖))) ∧
-    iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  refine isBigO_iteratedFDeriv_sub_of_eventually_eq hp hq hsol hlim hphase
-    (contDiff_referenceField f m) (fun k j ↦ ?_) ?_ hc n
-  · obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceField_apply_le f m k j
-    exact IsBigO.of_bound (max C 0) (Eventually.of_forall fun z ↦ by
-      simpa using (hC z).trans (le_max_left C 0))
-  · filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut), hphase]
-      with z hzR hz_phase
-    have hrOut : f.rOut ≤ ‖z‖ ^ 2 := rOut_le_norm_sq f hzR
-    have hz : z ≠ 0 := ne_zero_of_rOut_le_norm_sq f hrOut
-    have hsub := congrFun (gaugeTransform_sub_gaugeTransform (windingPhase m)⁻¹ x
-      (referenceField f m)) z
-    rw [Pi.sub_apply, gaugeTransform_inv_windingPhase_referenceField f m hrOut] at hsub
-    refine ⟨?_, ?_, ?_⟩
-    · simpa [vacuumField_apply, gaugeLinearAction_apply] using (congrArg (· 0) hsub).symm
-    · simpa [vacuumField_apply, gaugeLinearAction_apply] using (congrArg (· 1) hsub).symm
-    · rw [sectionValue_referenceField, referenceSection_eq_phase f m hrOut, ← coe_windingPhase m hz]
-      exact hz_phase
-
-/-- **Coordinate derivative decay in the winding-`m` end trivialization.** Let `x` be a plane vortex
-with smooth section, `|α| → 1` at infinity, and section equal to `|α|` times `windingPhase m`
-outside a compact set. Then for every rate `c < 1 / 2`, every coordinate `i`, and every order `n`,
-`Dⁿ((gaugeTransform (windingPhase m)⁻¹ x)ᵢ - vacuumFieldᵢ) = O(exp (-c |z|))` at infinity. -/
-theorem isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField_apply
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    {c : ℝ} (hc : c < 1 / 2) (i : Fin 4) (n : ℕ) :
-    iteratedFDeriv ℝ n
-      (fun z ↦ gaugeTransform (windingPhase m)⁻¹ x z i - vacuumField z i) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖)) :=
-  (isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField_aux hp hq hsol hlim
-    hphase hc n).1 i
-
-/-- **Derivative decay in the winding-`m` end trivialization.** Let `x` be a plane vortex with
-smooth section, `|α| → 1` at infinity, and section equal to `|α|` times `windingPhase m` outside a
-compact set. Then for every rate `c < 1 / 2` and every order `n`,
-`Dⁿ(gaugeTransform (windingPhase m)⁻¹ x - vacuumField) = O(exp (-c |z|))` at infinity. -/
-theorem isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
-    {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
-    iteratedFDeriv ℝ n (gaugeTransform (windingPhase m)⁻¹ x - vacuumField) =O[cocompact ℂ]
-      fun z ↦ Real.exp (-(c * ‖z‖)) :=
-  (isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField_aux hp hq hsol hlim
-    hphase hc n).2
-
 /-- **Coordinate derivative decay for an end-normalized vortex.** Let `x` be a plane vortex with
-smooth section, `|α| → 1` at infinity, and section equal to `|α|` times `windingPhase m` outside a
+`C²` section, `|α| → 1` at infinity, and section equal to `|α|` times `windingPhase m` outside a
 compact set. Then for every cutoff `f`, every rate `c < 1 / 2`, every coordinate `i`, and every
 order `n`, `Dⁿ(xᵢ - (x_ref)ᵢ) = O(exp (-c |z|))` at infinity. No global regularity assumption on
 the connection components of `x` is needed. -/
 theorem isBigO_iteratedFDeriv_sub_referenceField_apply
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
@@ -426,12 +200,12 @@ theorem isBigO_iteratedFDeriv_sub_referenceField_apply
       fun z ↦ Real.exp (-(c * ‖z‖)) :=
   (isBigO_iteratedFDeriv_sub_referenceField_aux hp hq hsol hlim hphase f hc n).1 i
 
-/-- **Derivative decay of an end-normalized vortex.** Let `x` be a plane vortex with smooth
+/-- **Derivative decay of an end-normalized vortex.** Let `x` be a plane vortex with `C²`
 section, `|α| → 1` at infinity, and section equal to `|α|` times `windingPhase m` outside a compact
 set. Then for every cutoff `f`, every rate `c < 1 / 2`, and every order `n`,
 `Dⁿ(x - referenceField f m) = O(exp (-c |z|))` at infinity. -/
 theorem isBigO_iteratedFDeriv_sub_referenceField
-    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
@@ -451,7 +225,8 @@ theorem exists_norm_iteratedFDeriv_sub_referenceField_le_mul_exp (hx : ContDiff 
     (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
     ∃ K, ∀ z, ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨K, hK⟩ := (isBigO_iteratedFDeriv_sub_referenceField
-    (contDiff_euclidean.1 hx 2) (contDiff_euclidean.1 hx 3) hsol hlim hphase f hc n).bound
+    ((contDiff_euclidean.1 hx 2).of_le (by simp)) ((contDiff_euclidean.1 hx 3).of_le (by simp))
+    hsol hlim hphase f hc n).bound
   have hcont : Continuous fun z ↦ ‖iteratedFDeriv ℝ n (x - referenceField f m) z‖ :=
     ((hx.sub (contDiff_referenceField f m)).continuous_iteratedFDeriv (by simp)).norm
   refine exists_forall_le_mul_exp_of_eventually_le hcont (K := K) ?_
@@ -473,8 +248,9 @@ theorem mem_framedFieldSpace_of_sectionValue_eq_mul_windingPhase (hx : ContDiff 
     (contDiff_euclidean.1 hx i).sub (contDiff_euclidean.1 (contDiff_referenceField f m) i)
   exact TemperedDistribution.mem_realSobolevFunctions_of_isBigO_iteratedFDeriv_exp hcoord
     (c := 1 / 4) (by norm_num)
-    (isBigO_iteratedFDeriv_sub_referenceField_apply (contDiff_euclidean.1 hx 2)
-      (contDiff_euclidean.1 hx 3) hsol hlim hphase f (by norm_num) i) s
+    (isBigO_iteratedFDeriv_sub_referenceField_apply
+      ((contDiff_euclidean.1 hx 2).of_le (by simp)) ((contDiff_euclidean.1 hx 3).of_le (by simp))
+      hsol hlim hphase f (by norm_num) i) s
 
 /-! ### Smooth framed gauge representatives in `A_m^s` -/
 
