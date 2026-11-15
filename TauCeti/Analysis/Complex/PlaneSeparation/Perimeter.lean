@@ -7,22 +7,21 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.Representation
 public import TauCeti.Analysis.BoundedVariation.Space
-public import TauCeti.Analysis.Complex.PlaneSeparation.CantorCircle
+public import TauCeti.Analysis.Green.Jordan
 public import TauCeti.MeasureTheory.Function.AreaFormula.Curve
+public import TauCeti.Topology.JordanCurve.Length
+public import TauCeti.Topology.MetricSpace.Arclength.SimpleClosed
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import TauCeti.Analysis.Green.Jordan
-import TauCeti.LinearAlgebra.Trace.Complex
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!
 # Perimeter, variation measure, and outer normal of planar Jordan domains
 
 Let `C ⊆ ℂ` be a rectifiable Jordan curve (`TauCeti.IsJordanCurve C`, `μHE[1] C ≠ ∞`), with bounded
-inside `D = TauCeti.filledHull C \ C`. Topologically `frontier D = C`, which by itself says nothing
-about the De Giorgi perimeter of `D`. Combining the Jordan index theorem, Green's flux-divergence
-identity along an arclength parametrization, the one-dimensional area formula on simple closed
-curves, and the distributional representation theorem for sets of finite perimeter identifies all
-measure-theoretic boundary invariants of `D` unconditionally and without orientation hypotheses:
+inside `D = TauCeti.filledHull C \ C`. This file identifies the De Giorgi measure-theoretic boundary
+invariants of `D` unconditionally and without orientation hypotheses:
 
 * **Perimeter measure**: for every open set `Ω : Opens ℂ`,
   `variationMeasure volume Ω (D.indicator 1) = (μHE[1].restrict C).comap ((↑) : Ω → ℂ)`, and the
@@ -40,33 +39,31 @@ measure-theoretic boundary invariants of `D` unconditionally and without orienta
   vector field `φ : ℂ → ℂ` on `W` (not necessarily compactly supported), both sides are integrable
   and `∫ z in D, tr(Dφ z) = ∫ z in C, ⟪φ z, outerNormal volume ⊤ D z⟫_ℝ ∂μHE[1]`.
 
-The same identities are proved for parametrized unit-speed (`HasUnitSpeedOn`) and continuous
-bounded-variation (`BoundedVariationOn`) simple closed curves, where `eVariationOn γ (Icc a b)` is
-the perimeter of the inside. Specializing to `TauCeti.cantorCircle` gives the perimeter `2π` and
-enclosed area `π` of a continuous simple closed curve that is not absolutely continuous.
+Parametrized counterparts are also provided for unit-speed simple closed curves (`HasUnitSpeedOn`:
+variation measure, relative and global perimeter including `ENNReal.ofReal (b - a)`, reduced
+boundary concentration, and a.e. outward normal) and for continuous bounded-variation simple closed
+curves (`BoundedVariationOn`: variation measure, relative perimeter, global perimeter equal to
+`eVariationOn γ (Icc a b)`, `MemBV`, and a.e. outward normal along `naturalParameterization`).
 
 ## Main results
 
-* `AbsolutelyContinuousOnInterval.setIntegral_filledHull_sdiff_trace_fderiv_eq`: divergence-flux
-  form of Green's theorem on `filledHull (γ '' uIcc a b) \ γ '' uIcc a b`.
 * `HasUnitSpeedOn.variationMeasure_filledHull_sdiff`,
   `HasUnitSpeedOn.perimeter_filledHull_sdiff`,
-  `HasUnitSpeedOn.perimeter_filledHull_sdiff_eq_ofReal_sub`, and
-  `HasUnitSpeedOn.ae_outerNormal_filledHull_sdiff`: perimeter measure, perimeter, and a.e. outward
-  normal `-(jordanSign α a b : ℝ) • (I * deriv α s)` along a unit-speed simple closed curve.
+  `HasUnitSpeedOn.perimeter_filledHull_sdiff_eq_ofReal_sub`,
+  `HasUnitSpeedOn.ae_mem_reducedBoundary_filledHull_sdiff`, and
+  `HasUnitSpeedOn.ae_outerNormal_filledHull_sdiff`: perimeter measure, perimeter, reduced boundary,
+  and a.e. outward normal `-(jordanSign α a b : ℝ) • (I * deriv α s)` along a unit-speed simple
+  closed curve.
 * `BoundedVariationOn.variationMeasure_filledHull_sdiff`,
   `BoundedVariationOn.perimeter_filledHull_sdiff`, `BoundedVariationOn.memBV_filledHull_sdiff`, and
-  `BoundedVariationOn.ae_outerNormal_naturalParameterization`: the corresponding results for
-  continuous rectifiable simple closed curves.
+  `BoundedVariationOn.ae_outerNormal_naturalParameterization`: perimeter measure, perimeter,
+  `MemBV`, and a.e. outward normal for continuous rectifiable simple closed curves.
 * `TauCeti.IsJordanCurve.variationMeasure_filledHull_sdiff`,
   `TauCeti.IsJordanCurve.perimeter_filledHull_sdiff`,
   `TauCeti.IsJordanCurve.ae_mem_reducedBoundary_filledHull_sdiff`,
   `TauCeti.IsJordanCurve.integrableOn_inner_outerNormal_filledHull_sdiff`, and
   `TauCeti.IsJordanCurve.setIntegral_filledHull_sdiff_trace_fderiv_eq`: intrinsic Jordan-curve
   theorems independent of parametrization.
-* `TauCeti.perimeter_filledHull_sdiff_cantorCircle`,
-  `TauCeti.volume_real_filledHull_sdiff_cantorCircle`, and
-  `TauCeti.abs_rectifiableSignedArea_cantorCircle`: perimeter and area for `cantorCircle`.
 
 ## References
 
@@ -81,114 +78,20 @@ public section
 
 noncomputable section
 
-open Complex MeasureTheory TopologicalSpace TestFunction Metric Set Filter
-open scoped ENNReal NNReal Real Distributions RealInnerProductSpace
+open Complex MeasureTheory TopologicalSpace TestFunction Set Filter
+open scoped ENNReal NNReal Distributions RealInnerProductSpace
 
 namespace TauCeti
-
-/-- A subset of `ℂ` with finite one-dimensional Euclidean Hausdorff measure has Lebesgue area zero.
--/
-private theorem volume_eq_zero_of_euclideanHausdorffMeasure_one_ne_top
-    {C : Set ℂ} (hfin : μHE[1] C ≠ ∞) : volume C = 0 := by
-  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, Complex.finrank_real_complex]
-  exact (Measure.euclideanHausdorffMeasure_zero_or_top one_lt_two C).resolve_right hfin
 
 /-- When `C ⊆ ℂ` has finite one-dimensional Hausdorff measure, `filledHull C` and `filledHull C \ C`
 agree Lebesgue-almost everywhere because `volume C = 0`. -/
 theorem filledHull_ae_eq_filledHull_sdiff {C : Set ℂ} (hfin : μHE[1] C ≠ ∞) :
-    filledHull C =ᵐ[volume] filledHull C \ C := by
-  rw [ae_eq_set]
-  refine ⟨measure_mono_null (fun z hz => by_contra fun hzC => hz.2 ⟨hz.1, hzC⟩)
-    (volume_eq_zero_of_euclideanHausdorffMeasure_one_ne_top hfin),
-    measure_mono_null (fun z hz => False.elim (hz.2 hz.1.1)) measure_empty⟩
+    filledHull C =ᵐ[volume] filledHull C \ C :=
+  (sdiff_null_ae_eq_self
+    (volume_eq_zero_of_euclideanHausdorffMeasure_ne_top
+      (by rw [Complex.finrank_real_complex]; exact one_lt_two) hfin)).symm
 
 end TauCeti
-
-namespace AbsolutelyContinuousOnInterval
-
-variable {γ : ℝ → ℂ} {a b : ℝ}
-
-/-- Bundle of integrability and Green's divergence-flux identity on the bounded inside of a simple
-closed absolutely continuous curve. -/
-private theorem integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv {W : Set ℂ} {φ : ℂ → ℂ}
-    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
-    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
-    IntegrableOn (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap)
-        (TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b) ∧
-      IntervalIntegrable
-        (fun t => ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫)
-        volume a b ∧
-      (∫ z in TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b,
-          LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) =
-        ∫ t in a..b,
-          ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫ := by
-  set D := TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b
-  set σ : ℝ := (TauCeti.Contour.jordanSign γ a b : ℝ)
-  have hD : MeasurableSet D :=
-    (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isClosed.isOpen_filledHull_sdiff
-      |>.measurableSet
-  have hflux := TauCeti.Green.green_ac_flux_jordan hab hγ hclosed hinj hW hregion
-    (Complex.reCLM.contDiff.comp_contDiffOn hφ) (Complex.imCLM.contDiff.comp_contDiffOn hφ)
-  have htr : EqOn (fun z => fderiv ℝ (Complex.reCLM ∘ φ) z 1 + fderiv ℝ (Complex.imCLM ∘ φ) z I)
-      (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) D := fun z hz => by
-    dsimp only
-    have hd : DifferentiableAt ℝ φ z :=
-      (hφ.differentiableOn one_ne_zero z (sdiff_subset.trans hregion hz)).differentiableAt
-        (hW.mem_nhds (sdiff_subset.trans hregion hz))
-    rw [LinearMap.trace_complex_apply, (Complex.reCLM.hasFDerivAt.comp z hd.hasFDerivAt).fderiv,
-      (Complex.imCLM.hasFDerivAt.comp z hd.hasFDerivAt).fderiv]
-    rfl
-  have hpt (t : ℝ) :
-      ⟪φ (γ t), -σ • (I * deriv γ t)⟫ =
-        σ * ((φ (γ t)).re * (deriv γ t).im - (φ (γ t)).im * (deriv γ t).re) := by
-    simp [Complex.inner, mul_re, mul_im]
-    ring
-  have hσsq : σ * σ = 1 := by
-    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [σ, h]
-  refine ⟨hflux.2.1.congr_fun htr hD, ?_, ?_⟩
-  · simp only [Function.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply] at hflux
-    simpa only [hpt] using hflux.1.const_mul σ
-  · simp only [Function.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply] at hflux
-    simp_rw [hpt, intervalIntegral.integral_const_mul]
-    rw [← setIntegral_congr_fun hD htr, hflux.2.2, ← mul_assoc, hσsq, one_mul]
-
-/-- The divergence `tr(Dφ)` of a `C¹` vector field on an open neighbourhood of
-`filledHull (γ '' uIcc a b)` is integrable on `filledHull (γ '' uIcc a b) \ γ '' uIcc a b`. -/
-theorem integrableOn_filledHull_sdiff_trace_fderiv {W : Set ℂ} {φ : ℂ → ℂ}
-    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
-    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
-    IntegrableOn (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap)
-      (TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b) :=
-  (hγ.integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv hab hclosed hinj hW hregion hφ).1
-
-/-- Along a simple closed absolutely continuous curve `γ`, the normal flux integrand
-`⟪φ (γ t), -(jordanSign γ a b : ℝ) • (I * deriv γ t)⟫` is interval-integrable on `[a, b]` for any
-`C¹` vector field `φ` on an open neighbourhood of `filledHull (γ '' uIcc a b)`. -/
-theorem intervalIntegrable_inner_jordanSign_smul_I_mul_deriv {W : Set ℂ} {φ : ℂ → ℂ}
-    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
-    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
-    IntervalIntegrable
-      (fun t => ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫)
-      volume a b :=
-  (hγ.integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv hab hclosed hinj hW hregion hφ).2.1
-
-/-- **Divergence-flux form of Green's theorem for a simple closed absolutely continuous curve.**
-For any `C¹` vector field `φ : ℂ → ℂ` on an open neighbourhood `W` of `filledHull (γ '' uIcc a b)`,
-`∫_{filledHull C \ C} tr(Dφ) = ∫ₐᵇ ⟪φ (γ t), -(jordanSign γ a b : ℝ) • (I * deriv γ t)⟫`. -/
-theorem setIntegral_filledHull_sdiff_trace_fderiv_eq {W : Set ℂ} {φ : ℂ → ℂ}
-    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    (hinj : InjOn γ (Ico a b)) (hW : IsOpen W)
-    (hregion : TauCeti.filledHull (γ '' uIcc a b) ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
-    (∫ z in TauCeti.filledHull (γ '' uIcc a b) \ γ '' uIcc a b,
-        LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) =
-      ∫ t in a..b,
-        ⟪φ (γ t), -(TauCeti.Contour.jordanSign γ a b : ℝ) • (I * deriv γ t)⟫ :=
-  (hγ.integrableOn_and_setIntegral_filledHull_sdiff_trace_fderiv hab hclosed hinj hW hregion hφ).2.2
-
-end AbsolutelyContinuousOnInterval
 
 namespace HasUnitSpeedOn
 
@@ -275,17 +178,6 @@ private theorem measurableSet_filledHull_sdiff (hα : HasUnitSpeedOn α (Icc a b
   (isCompact_Icc.image_of_continuousOn hα.lipschitzOnWith.continuousOn).isClosed
     |>.isOpen_filledHull_sdiff.measurableSet
 
-/-- `μHE[1]` restricted to the trace of a unit-speed simple closed curve is a finite measure. -/
-private theorem isFiniteMeasure_euclideanHausdorffMeasure_restrict (hab : a ≤ b)
-    (hα : HasUnitSpeedOn α (Icc a b)) (hinj : InjOn α (Ico a b)) :
-    IsFiniteMeasure (μHE[1].restrict (α '' Icc a b)) := by
-  refine isFiniteMeasure_restrict.2 ?_
-  rw [← hα.lipschitzOnWith.continuousOn.eVariationOn_eq_euclideanHausdorffMeasure_image
-    (hinj.mono Ioo_subset_Ico_self)]
-  have hαu : HasUnitSpeedOn α (uIcc a b) := by rwa [uIcc_of_le hab]
-  have hbv := hαu.lipschitzOnWith.absolutelyContinuousOnInterval.boundedVariationOn
-  rwa [BoundedVariationOn, uIcc_of_le hab] at hbv
-
 /-- **Perimeter measure of the inside of a unit-speed simple closed curve.** On every open set
 `Ω : Opens ℂ`, the variation measure of the indicator of `filledHull C \ C` is the pullback to `Ω`
 of `μHE[1]` restricted to `C = α '' Icc a b`. -/
@@ -294,7 +186,7 @@ theorem variationMeasure_filledHull_sdiff (hab : a < b) (hα : HasUnitSpeedOn α
     TauCeti.variationMeasure volume Ω
         ((TauCeti.filledHull (α '' Icc a b) \ α '' Icc a b).indicator 1) =
       (μHE[1].restrict (α '' Icc a b)).comap ((↑) : Ω → ℂ) := by
-  have := isFiniteMeasure_euclideanHausdorffMeasure_restrict hab.le hα hinj
+  have := hα.isFiniteMeasure_euclideanHausdorffMeasure_restrict
   exact TauCeti.variationMeasure_indicator_eq_of_forall_setIntegral_divergenceCLM_eq
     hα.measurableSet_filledHull_sdiff.nullMeasurableSet
     ((measurable_candidateNormal hα hinj).comp measurable_subtype_coe).aestronglyMeasurable
@@ -308,7 +200,7 @@ theorem perimeter_filledHull_sdiff_opens (hab : a < b) (hα : HasUnitSpeedOn α 
     (hclosed : α a = α b) (hinj : InjOn α (Ico a b)) (U : Opens ℂ) :
     TauCeti.perimeter volume U (TauCeti.filledHull (α '' Icc a b) \ α '' Icc a b) =
       μHE[1] (α '' Icc a b ∩ U) := by
-  have := isFiniteMeasure_euclideanHausdorffMeasure_restrict hab.le hα hinj
+  have := hα.isFiniteMeasure_euclideanHausdorffMeasure_restrict
   rw [TauCeti.perimeter_eq_of_forall_setIntegral_divergenceCLM_eq (Ω := ⊤)
     hα.measurableSet_filledHull_sdiff.nullMeasurableSet
     ((measurable_candidateNormal hα hinj).comp measurable_subtype_coe).aestronglyMeasurable
@@ -351,7 +243,7 @@ private theorem ae_mem_reducedBoundary_and_outerNormal_eq_candidateNormal (hab :
       z ∈ TauCeti.reducedBoundary volume ⊤ (TauCeti.filledHull (α '' Icc a b) \ α '' Icc a b) ∧
         TauCeti.outerNormal volume ⊤ (TauCeti.filledHull (α '' Icc a b) \ α '' Icc a b) z =
           candidateNormal α a b z := by
-  have := isFiniteMeasure_euclideanHausdorffMeasure_restrict hab.le hα hinj
+  have := hα.isFiniteMeasure_euclideanHausdorffMeasure_restrict
   have hc1 := (ae_restrict_iff_subtype (⊤ : Opens ℂ).isOpen.measurableSet).1
     (ae_restrict_of_ae (ae_norm_candidateNormal_eq_one hab hα hclosed hinj))
   have hdiv := setIntegral_divergenceCLM_filledHull_sdiff_eq hab hα hclosed hinj ⊤
@@ -406,15 +298,6 @@ namespace BoundedVariationOn
 
 variable {γ : ℝ → ℂ} {a b : ℝ}
 
-/-- Unit-speed property of `naturalParameterization γ (Icc a b) a` on
-`Icc 0 (eVariationOn γ (Icc a b)).toReal` for a continuous curve of bounded variation. -/
-private theorem hasUnitSpeedOn_naturalParameterization_Icc
-    (hγ : BoundedVariationOn γ (Icc a b)) (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
-    HasUnitSpeedOn (naturalParameterization γ (Icc a b) a)
-      (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
-  rw [← hγ.image_variationOnFromTo_Icc hcont hab]
-  exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn (left_mem_Icc.mpr hab)
-
 /-- **Perimeter measure of the inside of a rectifiable simple closed curve.** For a continuous
 simple closed curve of bounded variation on `[a, b]` (`a < b`), the variation measure on any open
 `Ω : Opens ℂ` of the indicator of `filledHull C \ C` is the pullback of `μHE[1]` restricted to
@@ -428,7 +311,7 @@ theorem variationMeasure_filledHull_sdiff (hab : a < b) (hγ : BoundedVariationO
   have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
     hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
   rw [← hγ.image_naturalParameterization_Icc hcont hab.le]
-  exact (hγ.hasUnitSpeedOn_naturalParameterization_Icc hcont hab.le)
+  exact (hγ.hasUnitSpeedOn_naturalParameterization hcont hab.le)
     |>.variationMeasure_filledHull_sdiff hL
     (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) Ω
@@ -443,7 +326,7 @@ theorem perimeter_filledHull_sdiff_opens (hab : a < b) (hγ : BoundedVariationOn
   have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
     hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
   rw [← hγ.image_naturalParameterization_Icc hcont hab.le]
-  exact (hγ.hasUnitSpeedOn_naturalParameterization_Icc hcont hab.le)
+  exact (hγ.hasUnitSpeedOn_naturalParameterization hcont hab.le)
     |>.perimeter_filledHull_sdiff_opens hL
     (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) U
@@ -494,7 +377,7 @@ theorem ae_outerNormal_naturalParameterization (hab : a < b) (hγ : BoundedVaria
   have hL : 0 < (eVariationOn γ (Icc a b)).toReal :=
     hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self)
   rw [← hγ.image_naturalParameterization_Icc hcont hab.le]
-  exact (hγ.hasUnitSpeedOn_naturalParameterization_Icc hcont hab.le).ae_outerNormal_filledHull_sdiff
+  exact (hγ.hasUnitSpeedOn_naturalParameterization hcont hab.le).ae_outerNormal_filledHull_sdiff
     hL (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le
       hclosed) (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
 
@@ -506,26 +389,6 @@ section JordanCurve
 
 variable {C : Set ℂ}
 
-/-- Extract a unit-speed simple closed parametrization `α` on `[0, L]` (`0 < L`) of a rectifiable
-Jordan curve `C`. -/
-private theorem IsJordanCurve.exists_unitSpeed_simpleClosed (hC : IsJordanCurve C)
-    (hfin : μHE[1] C ≠ ∞) :
-    ∃ (L : ℝ) (α : ℝ → ℂ), 0 < L ∧ HasUnitSpeedOn α (Icc 0 L) ∧ α 0 = α L ∧
-      InjOn α (Ico 0 L) ∧ α '' Icc 0 L = C := by
-  have hfin' : μH[1] C < ∞ := by
-    rw [← Measure.euclideanHausdorffMeasure_one]
-    exact hfin.lt_top
-  obtain ⟨γ, hcont, hclosed, hinj, hγ, rfl⟩ :=
-    (isJordanCurve_and_hausdorffMeasure_lt_top_iff zero_lt_one).1 ⟨hC, hfin'⟩
-  refine ⟨(eVariationOn γ (Icc 0 1)).toReal, naturalParameterization γ (Icc 0 1) 0,
-    hγ.toReal_eVariationOn_pos_of_injOn_Ioo zero_lt_one (hinj.mono Ioo_subset_Ico_self),
-    ?_, hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn zero_le_one
-      hclosed, hγ.injOn_naturalParameterization_Ico hcont hinj zero_le_one,
-    hγ.image_naturalParameterization_Icc hcont zero_le_one⟩
-  rw [← hγ.image_variationOnFromTo_Icc hcont zero_le_one]
-  exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn
-    (left_mem_Icc.mpr zero_le_one)
-
 /-- **Perimeter measure of the bounded inside of a rectifiable Jordan curve.** For every open set
 `Ω : Opens ℂ`, the variation measure of the indicator of `filledHull C \ C` is the pullback to `Ω`
 of `μHE[1]` restricted to `C`. -/
@@ -533,7 +396,8 @@ theorem IsJordanCurve.variationMeasure_filledHull_sdiff (hC : IsJordanCurve C)
     (hfin : μHE[1] C ≠ ∞) (Ω : Opens ℂ) :
     variationMeasure volume Ω ((filledHull C \ C).indicator 1) =
       (μHE[1].restrict C).comap ((↑) : Ω → ℂ) := by
-  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ := hC.exists_unitSpeed_simpleClosed hfin
+  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ :=
+    hC.exists_unitSpeed_simpleClosed (Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top)
   exact hα.variationMeasure_filledHull_sdiff hL hclosed hinj Ω
 
 /-- **Perimeter measure of `filledHull C` for a rectifiable Jordan curve.** Because `volume C = 0`,
@@ -551,7 +415,8 @@ theorem IsJordanCurve.variationMeasure_filledHull (hC : IsJordanCurve C)
 theorem IsJordanCurve.perimeter_filledHull_sdiff_opens (hC : IsJordanCurve C)
     (hfin : μHE[1] C ≠ ∞) (U : Opens ℂ) :
     perimeter volume U (filledHull C \ C) = μHE[1] (C ∩ U) := by
-  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ := hC.exists_unitSpeed_simpleClosed hfin
+  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ :=
+    hC.exists_unitSpeed_simpleClosed (Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top)
   exact hα.perimeter_filledHull_sdiff_opens hL hclosed hinj U
 
 /-- **Perimeter of the bounded inside of a rectifiable Jordan curve.** For every rectifiable Jordan
@@ -573,11 +438,9 @@ Jordan curve `C ⊆ ℂ` and every open `U : Opens ℂ`, the indicator of `fille
 theorem IsJordanCurve.memBV_filledHull_sdiff (hC : IsJordanCurve C) (hfin : μHE[1] C ≠ ∞)
     (U : Opens ℂ) :
     MemBV volume U ((filledHull C \ C).indicator 1) := by
-  have hfin' : μH[1] C < ∞ := by
-    rw [← Measure.euclideanHausdorffMeasure_one]
-    exact hfin.lt_top
   obtain ⟨γ, hcont, hclosed, hinj, hγ, rfl⟩ :=
-    (isJordanCurve_and_hausdorffMeasure_lt_top_iff zero_lt_one).1 ⟨hC, hfin'⟩
+    (isJordanCurve_and_hausdorffMeasure_lt_top_iff zero_lt_one).1
+      ⟨hC, Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top⟩
   exact hγ.memBV_filledHull_sdiff zero_lt_one hcont hclosed hinj U
 
 /-- **Reduced boundary concentration on a rectifiable Jordan curve.** `μHE[1]`-almost every point of
@@ -585,7 +448,8 @@ theorem IsJordanCurve.memBV_filledHull_sdiff (hC : IsJordanCurve C) (hfin : μHE
 theorem IsJordanCurve.ae_mem_reducedBoundary_filledHull_sdiff (hC : IsJordanCurve C)
     (hfin : μHE[1] C ≠ ∞) :
     ∀ᵐ z ∂μHE[1].restrict C, z ∈ reducedBoundary volume ⊤ (filledHull C \ C) := by
-  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ := hC.exists_unitSpeed_simpleClosed hfin
+  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ :=
+    hC.exists_unitSpeed_simpleClosed (Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top)
   exact (hα.ae_mem_reducedBoundary_and_outerNormal_eq_candidateNormal hL hclosed hinj).mono
     fun _ h => h.1
 
@@ -595,7 +459,8 @@ theorem IsJordanCurve.integrableOn_filledHull_sdiff_trace_fderiv (hC : IsJordanC
     (hfin : μHE[1] C ≠ ∞) {W : Set ℂ} {φ : ℂ → ℂ} (hW : IsOpen W)
     (hregion : filledHull C ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
     IntegrableOn (fun z => LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) (filledHull C \ C) := by
-  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ := hC.exists_unitSpeed_simpleClosed hfin
+  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ :=
+    hC.exists_unitSpeed_simpleClosed (Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top)
   have hαu : HasUnitSpeedOn α (uIcc 0 L) := by rwa [uIcc_of_le hL.le]
   have hint := hαu.lipschitzOnWith.absolutelyContinuousOnInterval
     |>.integrableOn_filledHull_sdiff_trace_fderiv hL hclosed hinj hW
@@ -609,7 +474,8 @@ theorem IsJordanCurve.integrableOn_inner_outerNormal_filledHull_sdiff (hC : IsJo
     (hfin : μHE[1] C ≠ ∞) {W : Set ℂ} {φ : ℂ → ℂ} (hW : IsOpen W)
     (hregion : filledHull C ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
     IntegrableOn (fun z => ⟪φ z, outerNormal volume ⊤ (filledHull C \ C) z⟫) C μHE[1] := by
-  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ := hC.exists_unitSpeed_simpleClosed hfin
+  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ :=
+    hC.exists_unitSpeed_simpleClosed (Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top)
   have hαu : HasUnitSpeedOn α (uIcc 0 L) := by rwa [uIcc_of_le hL.le]
   have hintIoc := (intervalIntegrable_iff_integrableOn_Icc_of_le hL.le).1
     (hαu.lipschitzOnWith.absolutelyContinuousOnInterval
@@ -628,7 +494,8 @@ theorem IsJordanCurve.setIntegral_filledHull_sdiff_trace_fderiv_eq (hC : IsJorda
     (hregion : filledHull C ⊆ W) (hφ : ContDiffOn ℝ 1 φ W) :
     (∫ z in filledHull C \ C, LinearMap.trace ℝ ℂ (fderiv ℝ φ z).toLinearMap) =
       ∫ z in C, ⟪φ z, outerNormal volume ⊤ (filledHull C \ C) z⟫ ∂μHE[1] := by
-  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ := hC.exists_unitSpeed_simpleClosed hfin
+  obtain ⟨L, α, hL, hα, hclosed, hinj, rfl⟩ :=
+    hC.exists_unitSpeed_simpleClosed (Measure.euclideanHausdorffMeasure_one (X := ℂ) ▸ hfin.lt_top)
   have hαu : HasUnitSpeedOn α (uIcc 0 L) := by rwa [uIcc_of_le hL.le]
   have hgreen := hαu.lipschitzOnWith.absolutelyContinuousOnInterval
     |>.setIntegral_filledHull_sdiff_trace_fderiv_eq hL hclosed hinj hW
@@ -642,35 +509,5 @@ theorem IsJordanCurve.setIntegral_filledHull_sdiff_trace_fderiv_eq (hC : IsJorda
   rw [hs hsIcc]
 
 end JordanCurve
-
-section CantorCircle
-
-/-- **Perimeter of the inside of `cantorCircle`.** The bounded inside of `cantorCircle` — a
-continuous simple closed curve of bounded variation that is not absolutely continuous — has
-De Giorgi perimeter `2π`. -/
-theorem perimeter_filledHull_sdiff_cantorCircle :
-    perimeter volume ⊤ (filledHull (cantorCircle '' Icc 0 1) \ cantorCircle '' Icc 0 1) =
-      ENNReal.ofReal (2 * π) := by
-  rw [boundedVariationOn_cantorCircle.perimeter_filledHull_sdiff zero_lt_one
-    continuous_cantorCircle.continuousOn (by simp) injOn_cantorCircle, eVariationOn_cantorCircle]
-
-/-- **Area of the inside of `cantorCircle`.** The bounded inside of `cantorCircle` has Lebesgue area
-`π`. -/
-theorem volume_real_filledHull_sdiff_cantorCircle :
-    volume.real (filledHull (cantorCircle '' Icc 0 1) \ cantorCircle '' Icc 0 1) = π := by
-  have h := four_pi_mul_volume_real_filledHull_sdiff_cantorCircle
-  rw [eVariationOn_cantorCircle, ENNReal.toReal_ofReal Real.two_pi_pos.le] at h
-  have hπ : 0 < 4 * π := by positivity
-  nlinarith
-
-/-- **Geometric signed area of `cantorCircle` up to sign.** The arclength signed area of the
-non-absolutely-continuous simple closed curve `cantorCircle` has absolute value `π`. -/
-theorem abs_rectifiableSignedArea_cantorCircle :
-    |rectifiableSignedArea cantorCircle 0 1| = π := by
-  rw [boundedVariationOn_cantorCircle.abs_rectifiableSignedArea_eq_volume_real zero_lt_one
-    continuous_cantorCircle.continuousOn (by simp) injOn_cantorCircle,
-    volume_real_filledHull_sdiff_cantorCircle]
-
-end CantorCircle
 
 end TauCeti

@@ -23,18 +23,23 @@ the Lipschitz case of the Banach indicatrix formula `ContinuousOn.eVariationOn_e
 which holds for every continuous curve in an extended metric space.
 
 When the curve is injective on the open interval `(a, b)` — covering both injective arcs and
-simple closed curves — the fiber over `μHE[1]`-almost every point of the trace has cardinality
-one. Consequently, pushing forward the speed-weighted interval measure `(‖deriv γ ·‖ₑ) dt` on
-`[a, b]` along `γ` yields `μHE[1].restrict (γ '' Icc a b)`. For a curve of constant speed `l`,
-this becomes `(l : ℝ≥0∞) • (volume.restrict (Icc a b)).map γ = μHE[1].restrict (γ '' Icc a b)`,
-and for a unit-speed curve `HasUnitSpeedOn γ (Icc a b)` the interval Lebesgue measure pushes
-forward directly to `μHE[1]` on the trace, identifying `μHE[1]`-integrability and Bochner
-integrals over `γ '' Icc a b` with parameter integrability and integrals over `[a, b]`.
+simple closed curves — pushing forward the speed-weighted interval measure `(‖deriv γ ·‖ₑ) dt` on
+`[a, b]` along `γ` yields `μHE[1].restrict (γ '' Icc a b)`
+(`LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict`). For a curve
+of constant speed `l`, this becomes
+`(l : ℝ≥0∞) • (volume.restrict (Icc a b)).map γ = μHE[1].restrict (γ '' Icc a b)`
+(`HasConstantSpeedOnWith.smul_map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict`). For a
+unit-speed curve `HasUnitSpeedOn γ (Icc a b)`, Lebesgue measure on `[a, b]` (or on `(a, b)` via
+`domRestrict`) pushes forward directly to `μHE[1]` on the trace
+(`HasUnitSpeedOn.map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict`,
+`HasUnitSpeedOn.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict`), identifying lower
+Lebesgue integrals (`HasUnitSpeedOn.setLIntegral_euclideanHausdorffMeasure_image_eq`), Bochner
+integrability (`HasUnitSpeedOn.integrableOn_image_euclideanHausdorffMeasure_iff`), and Bochner
+integrals (`HasUnitSpeedOn.setIntegral_euclideanHausdorffMeasure_image_eq`) over `γ '' Icc a b`
+with parameter integrals over `[a, b]`.
 
-The curve need only be Lipschitz on the parameter interval. A finite-dimensional Lipschitz
-extension reduces the result to the global area formula; derivatives and fiber sums are then
-transported back to the original curve. The one-dimensional geometric Jacobian is identified
-with the norm of the velocity.
+The curve need only be Lipschitz on the parameter interval `[a, b]`; no global Lipschitz condition
+or injectivity at the endpoints is assumed.
 
 ## References
 
@@ -195,7 +200,7 @@ theorem map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict
 
 /-- Pushing forward Lebesgue measure on `Ioo a b` along `(Ioo a b).domRestrict γ` recovers
 `μHE[1].restrict (γ '' Icc a b)` for a unit-speed curve injective on `(a, b)`. -/
-private theorem map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict
+theorem map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict
     (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) :
     Measure.map ((Ioo a b).domRestrict γ) (volume.comap ((↑) : Ioo a b → ℝ)) =
       μHE[1].restrict (γ '' Icc a b) := by
@@ -203,11 +208,25 @@ private theorem map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict
     (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self).aemeasurable measurableSet_Ioo
   have hmap : Measure.map ((Ioo a b).domRestrict γ) (volume.comap ((↑) : Ioo a b → ℝ)) =
       (volume.restrict (Ioo a b)).map γ := by
-    have hcomp : (Ioo a b).domRestrict γ = γ ∘ ((↑) : Ioo a b → ℝ) := rfl
     rw [← map_comap_subtype_coe measurableSet_Ioo] at haem ⊢
-    rw [hcomp, AEMeasurable.map_map_of_aemeasurable haem measurable_subtype_coe.aemeasurable]
+    rw [domRestrict_eq,
+      AEMeasurable.map_map_of_aemeasurable haem measurable_subtype_coe.aemeasurable]
   rw [hmap, Measure.restrict_congr_set Ioo_ae_eq_Icc,
     hγ.map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict hinj]
+
+/-- **Lebesgue line-integral transport along a unit-speed curve.** For a unit-speed curve on
+`[a, b]` injective on `(a, b)` and any function `f : V → ℝ≥0∞` (not assumed measurable), the lower
+Lebesgue `μHE[1]`-integral of `f` over `γ '' Icc a b` equals `∫⁻ t in Icc a b, f (γ t)`. -/
+theorem setLIntegral_euclideanHausdorffMeasure_image_eq
+    (hγ : HasUnitSpeedOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b)) (f : V → ℝ≥0∞) :
+    ∫⁻ y in γ '' Icc a b, f y ∂μHE[1] = ∫⁻ t in Icc a b, f (γ t) := by
+  have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
+    (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
+  have hc := MeasurableEmbedding.subtype_coe (measurableSet_Ioo (a := a) (b := b))
+  rw [← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj, he.lintegral_map]
+  simp only [domRestrict_apply, ← Function.comp_apply (f := f)]
+  rw [← hc.lintegral_map, map_comap_subtype_coe measurableSet_Ioo,
+    Measure.restrict_congr_set Ioo_ae_eq_Icc]
 
 /-- **Bochner line-integrability along a unit-speed curve.** For a unit-speed curve on `[a, b]`
 injective on `(a, b)` and any `f : V → F`, `f` is `μHE[1]`-integrable on `γ '' Icc a b` if and only

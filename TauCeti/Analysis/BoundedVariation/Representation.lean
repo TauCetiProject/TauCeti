@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.LebesgueDecomposition
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Identifying variation measures and outer normals from Gauss–Green identities
@@ -20,30 +21,30 @@ field `g : Ω → E`:
 
 `∫ x, div φ x * u x ∂μ = -∫ x, ⟪φ x, g x⟫ ∂ν` for all `φ ∈ 𝓓(Ω, E)`.
 
-Testing the supremum definition of `TauCeti.totalVariationOn` bounds the variation on every open
-subset `U ⊆ Ω` by `∫⁻_{(↑) ⁻¹' U} ‖g‖ₑ ∂ν`, which implies local finiteness of variation and
-dominates `TauCeti.variationMeasure` by `ν.withDensity (‖g ·‖ₑ)`. Consequently the singular part of
-`|Du|` relative to `ν` vanishes, and uniqueness of the Lebesgue decomposition of `Du`
-(`TauCeti.ae_eq_acDerivativeDensity`) identifies `g` almost everywhere with `(d|Du|/dν) • σ_u`.
-Taking norms gives the exact measure identity `|Du| = ν.withDensity (‖g ·‖ₑ)` and the directional
-identity `‖g‖ • σ_u = g` `ν`-almost everywhere.
+This file shows that `u` then has locally finite variation on `Ω`, identifies its variation
+measure as `|Du| = ν.withDensity (‖g ·‖ₑ)` and its relative total variation on every open
+`U ⊆ Ω` as `∫⁻_{(↑) ⁻¹' U} ‖g‖ₑ ∂ν`, and identifies its polar density via
+`‖g x‖ • polarDensity μ Ω u x = g x` for `ν`-almost every `x`.
 
-When `‖σ‖ = 1` `ν`-almost everywhere, this yields `|Du| = ν` and `σ_u = σ` `ν`-almost everywhere,
-without requiring continuity of `σ`. Specializing to the indicator of a locally `μ`-null-measurable
-set `s` whose distributional Gauss–Green formula holds against `ν` with a `ν`-almost everywhere unit
-vector field `n` identifies the perimeter measure with `ν`, the relative perimeter `P(s; U)` with
+When `‖σ‖ = 1` `ν`-almost everywhere, this yields `|Du| = ν`,
+`totalVariationOn μ U u = ν ((↑) ⁻¹' U)`, and `polarDensity μ Ω u =ᵐ[ν] σ`, without requiring
+continuity of `σ`. Specializing to the indicator of a locally `μ`-null-measurable set `s` whose
+distributional Gauss–Green formula holds against `ν` with a `ν`-almost everywhere unit vector field
+`n` identifies the perimeter measure with `ν`, the relative perimeter `P(s; U)` with
 `ν ((↑) ⁻¹' U)`, and shows that `ν`-almost every point lies in the reduced boundary `∂*s` with
 measure-theoretic outer normal `TauCeti.outerNormal μ Ω s = n`.
 
 ## Main results
 
-* `TauCeti.variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq`: if `g` is
-  locally `ν`-integrable and represents `Du`, then `|Du| = ν.withDensity (‖g ·‖ₑ)`.
-* `TauCeti.ae_norm_smul_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq`: under the same
-  hypotheses, `‖g x‖ • polarDensity μ Ω u x = g x` for `ν`-almost every `x`.
-* `TauCeti.variationMeasure_eq_of_forall_integral_divergenceCLM_mul_eq` and
-  `TauCeti.ae_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq`: when `‖σ x‖ = 1` `ν`-a.e.,
-  `|Du| = ν` and `polarDensity μ Ω u =ᵐ[ν] σ`.
+* `TauCeti.variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq`,
+  `TauCeti.totalVariationOn_eq_setLIntegral_of_forall_integral_divergenceCLM_mul_eq`, and
+  `TauCeti.ae_norm_smul_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq`: variation
+  measure, relative total variation, and polar density from a locally `ν`-integrable representing
+  vector field `g`.
+* `TauCeti.variationMeasure_eq_of_forall_integral_divergenceCLM_mul_eq`,
+  `TauCeti.totalVariationOn_eq_of_forall_integral_divergenceCLM_mul_eq`, and
+  `TauCeti.ae_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq`: the specialization when
+  `‖σ x‖ = 1` `ν`-almost everywhere.
 * `TauCeti.variationMeasure_indicator_eq_of_forall_setIntegral_divergenceCLM_eq`,
   `TauCeti.perimeter_eq_of_forall_setIntegral_divergenceCLM_eq`,
   `TauCeti.ae_mem_reducedBoundary_of_forall_setIntegral_divergenceCLM_eq`, and
@@ -86,14 +87,9 @@ theorem totalVariationOn_le_setLIntegral_of_forall_integral_divergenceCLM_mul_eq
   have hdivφ (x : E) : divergenceCLM φ x = divergenceCLM φΩ x := by simp [φΩ]
   simp_rw [hdivφ, hdiv φΩ]
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
-  rw [← Real.eNorm_eq_ofReal_abs, ← lintegral_indicator hVm]
-  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
-  by_cases hx : x ∈ V
-  · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
-  · have h0 : φΩ x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h)
-    simp [h0]
+  rw [← Real.eNorm_eq_ofReal_abs, ← withDensity_apply _ hVm]
+  exact TestFunction.enorm_integral_inner_le_withDensity (φ := φΩ) U.isOpen.measurableSet
+    φ.tsupport_subset hφ ν g
 
 /-- A locally `ν`-integrable vector field representing `Du` against `ν` forces `u` to have locally
 finite variation on `Ω`. -/
@@ -123,9 +119,8 @@ private theorem ae_eq_acDerivativeDensity_of_forall_integral_divergenceCLM_mul_e
   have := Ω.isOpen.locallyCompactSpace
   have hfin :=
     forall_isCompact_exists_totalVariationOn_ne_top_of_forall_integral_divergenceCLM_mul_eq hg hdiv
-  have h0 : LocallyIntegrable (0 : Ω → E) (0 : Measure Ω) := fun _ =>
-    ⟨univ, univ_mem, integrableOn_zero⟩
-  refine ae_eq_acDerivativeDensity hu hfin ν hg h0 Measure.MutuallySingular.zero_left fun φ => ?_
+  refine ae_eq_acDerivativeDensity hu hfin ν hg locallyIntegrable_zero
+    Measure.MutuallySingular.zero_left fun φ => ?_
   simpa using hdiv φ
 
 /-- **Variation measure of a measure-represented distributional gradient.** If `u` is locally
@@ -146,10 +141,8 @@ theorem variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq
   have hle : variationMeasure μ Ω u ≤ ρ := Measure.le_iff.2 fun s _ => by
     rw [s.measure_eq_iInf_isOpen, s.measure_eq_iInf_isOpen]
     refine iInf₂_mono fun W _ => iInf_mono fun hW => ?_
-    let V : Opens E := ⟨((↑) : Ω → E) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩
-    have hV : V ≤ Ω := Subtype.coe_image_subset _ _
-    have hW_eq : ((↑) : Ω → E) ⁻¹' (V : Set E) = W := preimage_image_eq W Subtype.val_injective
-    rw [withDensity_apply _ hW.measurableSet, ← hW_eq]
+    obtain ⟨V, hV, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
+    rw [withDensity_apply _ hW.measurableSet]
     exact (variationMeasure_preimage_coe hu hfin hV).trans_le
       (totalVariationOn_le_setLIntegral_of_forall_integral_divergenceCLM_mul_eq hdiv hV)
   have hac : variationMeasure μ Ω u ≪ ν :=
@@ -159,6 +152,21 @@ theorem variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq
   have hg_eq := ae_eq_acDerivativeDensity_of_forall_integral_divergenceCLM_mul_eq hu hg hdiv
   rw [← withDensity_enorm_acDerivativeDensity_add_singularPart hu hfin ν, hsing, add_zero]
   exact withDensity_congr_ae (hg_eq.symm.fun_comp (‖·‖ₑ))
+
+/-- **Total variation of a measure-represented distributional gradient.** Under the hypotheses of
+`TauCeti.variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq`, the total
+variation of `u` on every open `U ⊆ Ω` equals `∫⁻ x in (↑) ⁻¹' U, ‖g x‖ₑ ∂ν`. -/
+theorem totalVariationOn_eq_setLIntegral_of_forall_integral_divergenceCLM_mul_eq
+    (hu : LocallyIntegrableOn u Ω μ) {ν : Measure Ω} [IsFiniteMeasureOnCompacts ν]
+    {g : Ω → E} (hg : LocallyIntegrable g ν)
+    (hdiv : ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ = -∫ x, ⟪φ x, g x⟫ ∂ν)
+    (hU : U ≤ Ω) :
+    totalVariationOn μ U u = ∫⁻ x in ((↑) : Ω → E) ⁻¹' (U : Set E), ‖g x‖ₑ ∂ν := by
+  have hfin :=
+    forall_isCompact_exists_totalVariationOn_ne_top_of_forall_integral_divergenceCLM_mul_eq hg hdiv
+  rw [← variationMeasure_preimage_coe hu hfin hU,
+    variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq hu hg hdiv,
+    withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
 
 /-- **Polar density of a measure-represented distributional gradient.** If `u` is locally
 integrable on `Ω` and `Du` is represented against a locally finite measure `ν` on `Ω` by a locally
@@ -177,17 +185,6 @@ theorem ae_norm_smul_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq
     rw [← hrn, ← hx, ← ofReal_norm, ENNReal.toReal_ofReal (norm_nonneg _)]
   rw [← hnorm, ← acDerivativeDensity_def, hx]
 
-omit [BorelSpace E] in
-/-- A `ν`-a.e. strongly measurable vector field on `Ω` of unit norm `ν`-a.e. is locally
-`ν`-integrable. -/
-private theorem locallyIntegrable_of_ae_norm_eq_one {ν : Measure Ω} [IsFiniteMeasureOnCompacts ν]
-    {σ : Ω → E} (hσm : AEStronglyMeasurable σ ν) (hσ1 : ∀ᵐ x ∂ν, ‖σ x‖ = 1) :
-    LocallyIntegrable σ ν := by
-  have := Ω.isOpen.locallyCompactSpace
-  exact locallyIntegrable_iff.2 fun K hK =>
-    Measure.integrableOn_of_bounded hK.measure_lt_top.ne hσm (M := 1)
-      (ae_restrict_of_ae (hσ1.mono fun _ h => h.le))
-
 /-- **Variation measure from a unit-norm representation.** If `Du` is represented against a locally
 finite measure `ν` on `Ω` by a `ν`-a.e. strongly measurable vector field `σ` of unit norm `ν`-a.e.,
 then `variationMeasure μ Ω u = ν`. -/
@@ -196,8 +193,10 @@ theorem variationMeasure_eq_of_forall_integral_divergenceCLM_mul_eq
     {σ : Ω → E} (hσm : AEStronglyMeasurable σ ν) (hσ1 : ∀ᵐ x ∂ν, ‖σ x‖ = 1)
     (hdiv : ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ = -∫ x, ⟪φ x, σ x⟫ ∂ν) :
     variationMeasure μ Ω u = ν := by
-  rw [variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq hu
-    (locallyIntegrable_of_ae_norm_eq_one hσm hσ1) hdiv]
+  have := Ω.isOpen.locallyCompactSpace
+  have hσloc : LocallyIntegrable σ ν :=
+    (memLp_top_of_bound hσm 1 (hσ1.mono fun _ h => h.le)).locallyIntegrable le_top
+  rw [variationMeasure_eq_withDensity_of_forall_integral_divergenceCLM_mul_eq hu hσloc hdiv]
   refine (withDensity_congr_ae ?_).trans withDensity_one
   filter_upwards [hσ1] with x hx
   simp [← ofReal_norm, hx]
@@ -211,11 +210,13 @@ theorem totalVariationOn_eq_of_forall_integral_divergenceCLM_mul_eq
     (hdiv : ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ = -∫ x, ⟪φ x, σ x⟫ ∂ν)
     (hU : U ≤ Ω) :
     totalVariationOn μ U u = ν (((↑) : Ω → E) ⁻¹' (U : Set E)) := by
-  have hfin :=
-    forall_isCompact_exists_totalVariationOn_ne_top_of_forall_integral_divergenceCLM_mul_eq
-      (locallyIntegrable_of_ae_norm_eq_one hσm hσ1) hdiv
-  rw [← variationMeasure_preimage_coe hu hfin hU,
-    variationMeasure_eq_of_forall_integral_divergenceCLM_mul_eq hu hσm hσ1 hdiv]
+  have := Ω.isOpen.locallyCompactSpace
+  have hσloc : LocallyIntegrable σ ν :=
+    (memLp_top_of_bound hσm 1 (hσ1.mono fun _ h => h.le)).locallyIntegrable le_top
+  rw [totalVariationOn_eq_setLIntegral_of_forall_integral_divergenceCLM_mul_eq hu hσloc hdiv hU]
+  have hae : (fun x => ‖σ x‖ₑ) =ᵐ[ν.restrict (((↑) : Ω → E) ⁻¹' (U : Set E))] fun _ => 1 :=
+    ae_restrict_of_ae (hσ1.mono fun _ hx => by simp [← ofReal_norm, hx])
+  rw [lintegral_congr_ae hae, lintegral_one, Measure.restrict_apply_univ]
 
 /-- **Polar density from a unit-norm representation.** Under the hypotheses of
 `TauCeti.variationMeasure_eq_of_forall_integral_divergenceCLM_mul_eq`, `polarDensity μ Ω u =ᵐ[ν] σ`.
@@ -225,8 +226,11 @@ theorem ae_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq
     {σ : Ω → E} (hσm : AEStronglyMeasurable σ ν) (hσ1 : ∀ᵐ x ∂ν, ‖σ x‖ = 1)
     (hdiv : ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ = -∫ x, ⟪φ x, σ x⟫ ∂ν) :
     polarDensity μ Ω u =ᵐ[ν] σ := by
+  have := Ω.isOpen.locallyCompactSpace
+  have hσloc : LocallyIntegrable σ ν :=
+    (memLp_top_of_bound hσm 1 (hσ1.mono fun _ h => h.le)).locallyIntegrable le_top
   filter_upwards [ae_norm_smul_polarDensity_eq_of_forall_integral_divergenceCLM_mul_eq hu
-    (locallyIntegrable_of_ae_norm_eq_one hσm hσ1) hdiv, hσ1] with x hx h1
+    hσloc hdiv, hσ1] with x hx h1
   simpa [h1] using hx
 
 /-- Rewriting a set Gauss–Green identity `∫_s div φ ∂μ = ∫ ⟪φ, n⟫ ∂ν` into the distributional

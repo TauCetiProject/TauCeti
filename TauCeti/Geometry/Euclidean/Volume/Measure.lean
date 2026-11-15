@@ -23,7 +23,9 @@ either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite
 inner product space `E` and Hausdorff measure decreases with the dimension parameter, every
 Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ E`
 (`TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero`,
-`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`). In dimension zero, Hausdorff
+`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`); conversely, every subset of `E`
+with finite `μHE[d]` measure for `d < finrank ℝ E` has Lebesgue volume zero
+(`TauCeti.volume_eq_zero_of_euclideanHausdorffMeasure_ne_top`). In dimension zero, Hausdorff
 measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
 normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
 `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
@@ -143,6 +145,15 @@ theorem euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedA
     μHE[d] s = 0 :=
   Measure.euclideanHausdorffMeasure_eq_zero_iff.2
     (hausdorffMeasure_eq_zero_of_volume_eq_zero hs (Nat.cast_le.2 hd))
+
+/-- A subset of a finite-dimensional real inner product space `E` with finite `d`-dimensional
+Euclidean Hausdorff measure has Lebesgue volume zero whenever `d < finrank ℝ E`. -/
+theorem volume_eq_zero_of_euclideanHausdorffMeasure_ne_top {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {d : ℕ} (hd : d < finrank ℝ E) {s : Set E} (hs : μHE[d] s ≠ ∞) :
+    volume s = 0 := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  exact (Measure.euclideanHausdorffMeasure_zero_or_top hd s).resolve_right hs
 
 end TauCeti
 
