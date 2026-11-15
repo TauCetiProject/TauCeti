@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
@@ -13,7 +14,9 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -24,9 +27,9 @@ stated for unit spheres of real normed spaces (such as their CW structures) appl
 without unfolding the synonym.
 
 It also packages the exponential `t ↦ exp (i t)` as a continuous homomorphism from the real line,
-and records that the coordinate function `z ↦ z` is a unitary element of `C(S¹, ℂ)`. Finally,
-it parametrizes the upper semicircle by the real part, so that the circle is two closed intervals
-glued at their endpoints `±1`.
+computes its velocity `i exp (i t)`, and records that the coordinate function `z ↦ z` is a
+unitary element of `C(S¹, ℂ)`. Finally, it parametrizes the upper semicircle by the real part, so
+that the circle is two closed intervals glued at their endpoints `±1`.
 
 ## Main declarations
 
@@ -54,6 +57,7 @@ glued at their endpoints `±1`.
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
+* `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 -/
 
 public section
@@ -292,3 +296,15 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
     · simp [hsqrt, abs_of_neg him]
 
 end Circle
+
+namespace TauCeti
+
+open Complex
+
+/-- Read in `ℂ`, the circle exponential `t ↦ exp (t i)` has velocity `i exp (t i)`. -/
+theorem hasDerivAt_coe_circleExp (t : ℝ) :
+    HasDerivAt (fun s : ℝ ↦ ((Circle.exp s : Circle) : ℂ)) (I * Circle.exp t) t := by
+  simp only [Circle.coe_exp]
+  simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
+
+end TauCeti

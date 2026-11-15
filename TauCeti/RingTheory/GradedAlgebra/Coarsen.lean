@@ -35,7 +35,10 @@ of `ℤ` by an element of `ZMod 2`.
   apply in particular to `parityGrading 𝒜`.
 * `TauCeti.mul_eq_uzpow_smul_mul_of_mem_coarsenGrading` and
   `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: Koszul graded commutativity passes to
-  sign-preserving coarsenings, and in particular from integer degree to parity.
+  sign-preserving coarsenings, and in particular from integer degree to parity; in any
+  `ZMod 2`-graded ring with Koszul signs, even-parity elements commute with every element
+  (`TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero`) and odd-parity elements square to their
+  own negatives (`TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one`).
 * `TauCeti.leibniz_coarsenGrading_of_leibniz`: the graded Leibniz rule passes to sign-preserving
   coarsenings.
 -/
@@ -162,6 +165,29 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
   mul_eq_uzpow_smul_mul_of_mem_coarsenGrading (f := Int.castRingHom (ZMod 2))
     (fun p ↦ uzpow_intCast (-1) p) hcomm ha hb
+
+omit [Semiring R] [Module R A] in
+/-- In an internally `ZMod 2`-graded ring with Koszul signs, every element of even parity commutes
+with the entire ring. -/
+theorem commute_of_mul_eq_uzpow_smul_mul_of_mem_zero {σ : Type*} [SetLike σ A]
+    [AddSubmonoidClass σ A] {ℬ : ZMod 2 → σ} [Decomposition ℬ]
+    (hcomm : ∀ {i j : ZMod 2} {a b : A},
+      a ∈ ℬ i → b ∈ ℬ j → a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a))
+    {a : A} (ha : a ∈ ℬ 0) (b : A) : Commute a b := by
+  induction b using Decomposition.inductionOn ℬ with
+  | zero => simp [Commute, SemiconjBy]
+  | @homogeneous j b => simpa [Commute, SemiconjBy] using hcomm ha b.2
+  | add x y hx hy => simp only [Commute, SemiconjBy, mul_add, add_mul, hx.eq, hy.eq]
+
+omit [Semiring R] [Module R A] in
+/-- Under `ZMod 2`-graded Koszul commutativity, every element of odd parity squares to its own
+negative. -/
+theorem mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one {σ : Type*} [SetLike σ A]
+    {ℬ : ZMod 2 → σ}
+    (hcomm : ∀ {i j : ZMod 2} {a b : A},
+      a ∈ ℬ i → b ∈ ℬ j → a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a))
+    {a : A} (ha : a ∈ ℬ 1) : a * a = -(a * a) := by
+  simpa using hcomm ha ha
 
 end ParityComm
 

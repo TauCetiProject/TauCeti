@@ -24,7 +24,7 @@ Consequently `SignedSym G` is canonically isomorphic as an `R`-algebra to `Signe
 (`TauCeti.SignedSym.coarsenEquiv`), compatibly with generators, the tensor-algebra quotient map,
 augmentation, word length, functorial maps, the coarsened input-degree grading, and odd derivations.
 
-See `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity` for the specialization to
+See `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Basic` for the specialization to
 `Int.castRingHom (ZMod 2) : ℤ →+* ZMod 2`, comparing an integer-graded signed symmetric algebra and
 its differential graded algebra structure with its parity reduction `SignedSym G.parity`.
 
@@ -95,25 +95,15 @@ private noncomputable def toCoarsenAlgHom (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p =
     exact generator_mul_generator (G.coarsen f) (G.mem_coarsen_of_mem f hx)
       (G.mem_coarsen_of_mem f hy)
 
-omit [CommSemiring κ] [Module κ (Additive ℤˣ)] [RingHomClass F ι κ] in
-private theorem generator_mem_coarsenGrading {k : κ} {x : V} (hx : x ∈ (G.coarsen f).piece k) :
-    generator G x ∈ coarsenGrading (signedSymPiece G) f k := by
-  rw [InternalGrading.coarsen_piece] at hx
-  exact coarsenGrading_induction
-    (motive := fun y ↦ generator G y ∈ coarsenGrading (signedSymPiece G) f k)
-    hx (fun p hp y hy ↦ by
-      rw [← hp]
-      exact mem_coarsenGrading_of_mem f (generator_mem_signedSymPiece G hy))
-    (by simp) fun y z hy hz ↦ by rw [map_add]; exact add_mem hy hz
-
 /-- Generators in coarsened homogeneous pieces still supercommute in `SignedSym G` with the
 coarsened Koszul sign, even when they mix several degrees of `G`. -/
 theorem generator_mul_generator_of_mem_coarsen (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
     {i j : κ} {x y : V} (hx : x ∈ (G.coarsen f).piece i) (hy : y ∈ (G.coarsen f).piece j) :
     generator G x * generator G y =
-      ((-1 : ℤˣ) ^ (i * j)) • (generator G y * generator G x) :=
-  mul_eq_uzpow_smul_mul_of_mem_coarsenGrading hf (mul_eq_uzpow_smul_mul G)
-    (generator_mem_coarsenGrading G hx) (generator_mem_coarsenGrading G hy)
+      ((-1 : ℤˣ) ^ (i * j)) • (generator G y * generator G x) := by
+  rw [InternalGrading.coarsen_piece] at hx hy
+  exact mul_eq_uzpow_smul_mul_of_mem_coarsenGrading hf (mul_eq_uzpow_smul_mul G)
+    (generator_mem_coarsenGrading G f hx) (generator_mem_coarsenGrading G f hy)
 
 private noncomputable def ofCoarsenAlgHom (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p) :
     SignedSym (G.coarsen f) →ₐ[R] SignedSym G :=
