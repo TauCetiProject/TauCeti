@@ -92,20 +92,16 @@ def IsTypical (p : ℕ) : Prop :=
   F.tautologicalCurve.IsTypical p
 
 /-- Unfold `FormalGroup.IsTypical` in terms of the tautological curve. -/
-theorem isTypical_def (p : ℕ) :
-    F.IsTypical p ↔ F.tautologicalCurve.IsTypical p :=
-  Iff.rfl
+theorem isTypical_def (p : ℕ) : F.IsTypical p ↔ F.tautologicalCurve.IsTypical p := Iff.rfl
 
 /-- Unfold `FormalGroup.IsTypical` in terms of Cartier's Frobenius operators on `T`. -/
-theorem isTypical_iff (p : ℕ) :
-    F.IsTypical p ↔
-      ∀ (q : ℕ) (hq : q.Prime), ¬ q ∣ p → F.frobeniusCurve q hq.ne_zero F.tautologicalCurve = 0 :=
-  Curve.isTypical_def F.tautologicalCurve p
+theorem isTypical_iff (p : ℕ) : F.IsTypical p ↔
+    ∀ (q : ℕ) (hq : q.Prime), ¬ q ∣ p → F.frobeniusCurve q hq.ne_zero F.tautologicalCurve = 0 :=
+  F.tautologicalCurve.isTypical_def p
 
 /-- When `p` is prime, `F` is `p`-typical iff `f_q(T) = 0` for every prime `q ≠ p`. -/
-theorem isTypical_iff_of_prime {p : ℕ} (hp : p.Prime) :
-    F.IsTypical p ↔
-      ∀ (q : ℕ) (hq : q.Prime), q ≠ p → F.frobeniusCurve q hq.ne_zero F.tautologicalCurve = 0 :=
+theorem isTypical_iff_of_prime {p : ℕ} (hp : p.Prime) : F.IsTypical p ↔
+    ∀ (q : ℕ) (hq : q.Prime), q ≠ p → F.frobeniusCurve q hq.ne_zero F.tautologicalCurve = 0 :=
   Curve.isTypical_iff_of_prime hp
 
 /-- Every commutative formal group law is `0`-typical, since every prime divides `0`. -/
@@ -116,23 +112,19 @@ theorem isTypical_zero_right : F.IsTypical 0 :=
 /-- The additive formal group law `𝔾ₐ` is `p`-typical for every `p` over any commutative ring. -/
 @[simp]
 theorem isTypical_𝔾ₐ (p : ℕ) : (𝔾ₐ (R := R)).IsTypical p :=
-  Curve.isTypical_𝔾ₐ_of_coeff_eq_zero fun k ⟨q, hqk, _⟩ ↦ by
-    rw [toPowerSeries_tautologicalCurve, PowerSeries.coeff_X, ite_eq_right_iff]
-    rintro rfl
-    simp at hqk
+  Curve.isTypical_𝔾ₐ_of_coeff_eq_zero fun k ⟨_, hqk, _⟩ ↦ by
+    rcases eq_or_ne k 1 with rfl | hk <;>
+      simp_all [toPowerSeries_tautologicalCurve, PowerSeries.coeff_X]
 
 variable {F}
 
 /-- Congruence for `FormalGroup.IsTypical` across equalities of commutative formal group laws. -/
 theorem isTypical_congr {G : FormalGroup R} [G.IsComm] (h : F = G) {p : ℕ} :
-    F.IsTypical p ↔ G.IsTypical p := by
-  cases h
-  rfl
+    F.IsTypical p ↔ G.IsTypical p := h ▸ Iff.rfl
 
 /-- The tautological curve of a `p`-typical formal group law is `p`-typical. -/
 theorem IsTypical.tautologicalCurve {p : ℕ} (hF : F.IsTypical p) :
-    F.tautologicalCurve.IsTypical p :=
-  hF
+    F.tautologicalCurve.IsTypical p := hF
 
 /-- On a `p`-typical formal group law with `p ≠ 0`, every curve `T^(p^r) = V_{p^r} T` is
 `p`-typical. -/
@@ -220,11 +212,14 @@ section Typicalize
 
 variable (F : FormalGroup R) [F.IsComm]
 
+section FixedPrime
+
+variable (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R))
+
 /-- **Cartier's canonical strict coordinate** `c_F(X)` attached to a commutative formal group law
 `F` when every prime `q` not dividing `p` is invertible in `R`: its underlying power series is the
 image of the tautological curve `T` under Cartier's infinite typical projector. -/
-noncomputable def typicalCoordinate (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) : TauCeti.FormalCoordinate R where
+noncomputable def typicalCoordinate : TauCeti.FormalCoordinate R where
   toPowerSeries := (F.typicalProjectorCurve p hunit F.tautologicalCurve).toPowerSeries
   constantCoeff_toPowerSeries :=
     (F.typicalProjectorCurve p hunit F.tautologicalCurve).constantCoeff_toPowerSeries
@@ -233,39 +228,112 @@ noncomputable def typicalCoordinate (p : ℕ)
     exact isUnit_one
 
 /-- The underlying series of `F.typicalCoordinate p hunit` is the typical projection of `T`. -/
-theorem toPowerSeries_typicalCoordinate (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalCoordinate p hunit).toPowerSeries =
-      (F.typicalProjectorCurve p hunit F.tautologicalCurve).toPowerSeries :=
-  (rfl)
+theorem toPowerSeries_typicalCoordinate : (F.typicalCoordinate p hunit).toPowerSeries =
+    (F.typicalProjectorCurve p hunit F.tautologicalCurve).toPowerSeries := (rfl)
 
 /-- Cartier's canonical typical coordinate is strict: its linear coefficient is `1`. -/
 @[simp]
-theorem coeff_one_typicalCoordinate (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
+theorem coeff_one_typicalCoordinate :
     PowerSeries.coeff 1 (F.typicalCoordinate p hunit).toPowerSeries = 1 := by
   rw [toPowerSeries_typicalCoordinate, F.coeff_one_typicalProjectorCurve,
     toPowerSeries_tautologicalCurve, PowerSeries.coeff_one_X]
 
 /-- Cartier's canonical typical coordinate has unit linear coefficient `1`. -/
 @[simp]
-theorem linearCoeff_typicalCoordinate (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
+theorem linearCoeff_typicalCoordinate :
     TauCeti.FormalCoordinate.linearCoeff (F.typicalCoordinate p hunit) = 1 :=
   Units.ext <| by
     rw [TauCeti.FormalCoordinate.val_linearCoeff, Units.val_one, F.coeff_one_typicalCoordinate]
 
 /-- Cartier's canonical typical coordinate lies in the subgroup of strict coordinates. -/
-theorem typicalCoordinate_mem_ker_linearCoeff (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
+theorem typicalCoordinate_mem_ker_linearCoeff :
     F.typicalCoordinate p hunit ∈ (TauCeti.FormalCoordinate.linearCoeff (R := R)).ker :=
   MonoidHom.mem_ker.mpr (F.linearCoeff_typicalCoordinate p hunit)
 
 /-- The inverse of Cartier's canonical typical coordinate is a strict coordinate. -/
-theorem inv_typicalCoordinate_mem_ker_linearCoeff (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
+theorem inv_typicalCoordinate_mem_ker_linearCoeff :
     (F.typicalCoordinate p hunit)⁻¹ ∈ (TauCeti.FormalCoordinate.linearCoeff (R := R)).ker :=
   Subgroup.inv_mem _ (F.typicalCoordinate_mem_ker_linearCoeff p hunit)
+
+/-- Cartier's canonical typical coordinate is the identity coordinate `X` if and only if `F` is
+`p`-typical. -/
+@[simp]
+theorem typicalCoordinate_eq_one_iff : F.typicalCoordinate p hunit = 1 ↔ F.IsTypical p := by
+  rw [TauCeti.FormalCoordinate.ext_iff, toPowerSeries_typicalCoordinate,
+    TauCeti.FormalCoordinate.toPowerSeries_one, ← F.toPowerSeries_tautologicalCurve,
+    ← Curve.ext_iff, F.typicalProjectorCurve_eq_self_iff, isTypical_def]
+
+/-- **Cartier's canonical `p`-typicalization** of a commutative formal group law `F` when every
+prime `q` not dividing `p` is invertible in `R`: the coordinate change of `F` along the inverse of
+`F.typicalCoordinate p hunit`. -/
+noncomputable def typicalize : FormalGroup R := (F.typicalCoordinate p hunit)⁻¹ • F
+
+/-- Unfold `FormalGroup.typicalize` as `(F.typicalCoordinate p hunit)⁻¹ • F`. -/
+theorem typicalize_def : F.typicalize p hunit = (F.typicalCoordinate p hunit)⁻¹ • F := (rfl)
+
+instance : (F.typicalize p hunit).IsComm :=
+  inferInstanceAs (((F.typicalCoordinate p hunit)⁻¹ • F).IsComm)
+
+/-- **Cartier's canonical strict isomorphism** from `F` to its `p`-typicalization
+`F.typicalize p hunit`, with underlying forward series `(F.typicalCoordinate p hunit)⁻¹` and
+inverse series `F.typicalCoordinate p hunit`. -/
+noncomputable def typicalizeIso : TauCeti.FormalGroupIso F (F.typicalize p hunit) :=
+  smulIso (F.typicalCoordinate p hunit)⁻¹ F
+
+instance : (F.typicalizeIso p hunit).IsStrict :=
+  (isStrict_smulIso_iff _ _).mpr <| by rw [map_inv, F.linearCoeff_typicalCoordinate, inv_one]
+
+/-- The forward series of `F.typicalizeIso p hunit` is `(F.typicalCoordinate p hunit)⁻¹`. -/
+@[simp]
+theorem typicalizeIso_toHom_toPowerSeries :
+    (F.typicalizeIso p hunit).toHom.toPowerSeries =
+      (F.typicalCoordinate p hunit)⁻¹.toPowerSeries :=
+  smulIso_toHom_toPowerSeries _ _
+
+/-- The inverse series of `F.typicalizeIso p hunit` is `F.typicalCoordinate p hunit`. -/
+@[simp]
+theorem typicalizeIso_invHom_toPowerSeries :
+    (F.typicalizeIso p hunit).invHom.toPowerSeries = (F.typicalCoordinate p hunit).toPowerSeries :=
+  by rw [typicalizeIso, smulIso_invHom_toPowerSeries, inv_inv]
+
+/-- Under the inverse of `F.typicalizeIso p hunit`, the tautological curve of `F.typicalize p hunit`
+maps to Cartier's typical projection of the tautological curve of `F`. -/
+theorem typicalizeIso_invHom_mapCurve_tautologicalCurve :
+    (F.typicalizeIso p hunit).invHom.mapCurve (F.typicalize p hunit).tautologicalCurve =
+      F.typicalProjectorCurve p hunit F.tautologicalCurve :=
+  Curve.ext <| by
+    rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, toPowerSeries_tautologicalCurve,
+      PowerSeries.X_subst, typicalizeIso_invHom_toPowerSeries, toPowerSeries_typicalCoordinate]
+
+/-- **Cartier's typicalization theorem**: `F.typicalize p hunit` is `p`-typical. -/
+@[simp]
+theorem isTypical_typicalize : (F.typicalize p hunit).IsTypical p := by
+  rw [isTypical_def, ← (F.typicalizeIso p hunit).symm.isTypical_curveEquiv_iff,
+    TauCeti.FormalGroupIso.curveEquiv_apply, TauCeti.FormalGroupIso.symm_toHom,
+    F.typicalizeIso_invHom_mapCurve_tautologicalCurve]
+  exact F.isTypical_typicalProjectorCurve p hunit F.tautologicalCurve
+
+/-- Every `p`-typical formal group law is fixed by `typicalize`. -/
+theorem typicalize_eq_self (hF : F.IsTypical p) : F.typicalize p hunit = F := by
+  rw [typicalize_def, (F.typicalCoordinate_eq_one_iff p hunit).mpr hF, inv_one, one_smul]
+
+/-- A formal group law is fixed by `typicalize` if and only if it is `p`-typical. -/
+@[simp]
+theorem typicalize_eq_self_iff : F.typicalize p hunit = F ↔ F.IsTypical p :=
+  ⟨fun h ↦ (isTypical_congr h).mp (F.isTypical_typicalize p hunit), F.typicalize_eq_self p hunit⟩
+
+/-- The canonical typical coordinate of `F.typicalize p hunit` is the identity coordinate. -/
+@[simp]
+theorem typicalCoordinate_typicalize : (F.typicalize p hunit).typicalCoordinate p hunit = 1 :=
+  ((F.typicalize p hunit).typicalCoordinate_eq_one_iff p hunit).mpr
+    (F.isTypical_typicalize p hunit)
+
+/-- Cartier's `p`-typicalization is idempotent. -/
+@[simp]
+theorem typicalize_typicalize : (F.typicalize p hunit).typicalize p hunit = F.typicalize p hunit :=
+  (F.typicalize p hunit).typicalize_eq_self p hunit (F.isTypical_typicalize p hunit)
+
+end FixedPrime
 
 /-- Cartier's canonical typical coordinate commutes with base change of the coefficient ring. -/
 theorem map_typicalCoordinate (φ : R →+* S) (p : ℕ)
@@ -278,94 +346,6 @@ theorem map_typicalCoordinate (φ : R →+* S) (p : ℕ)
       toPowerSeries_typicalCoordinate, ← Curve.toPowerSeries_map,
       F.map_typicalProjectorCurve φ p hR hS, F.map_tautologicalCurve]
 
-/-- Cartier's canonical typical coordinate is the identity coordinate `X` if and only if `F` is
-`p`-typical. -/
-@[simp]
-theorem typicalCoordinate_eq_one_iff (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    F.typicalCoordinate p hunit = 1 ↔ F.IsTypical p := by
-  rw [TauCeti.FormalCoordinate.ext_iff, toPowerSeries_typicalCoordinate,
-    TauCeti.FormalCoordinate.toPowerSeries_one, ← F.toPowerSeries_tautologicalCurve,
-    ← Curve.ext_iff, F.typicalProjectorCurve_eq_self_iff, isTypical_def]
-
-/-- **Cartier's canonical `p`-typicalization** of a commutative formal group law `F` when every
-prime `q` not dividing `p` is invertible in `R`: the coordinate change of `F` along the inverse of
-`F.typicalCoordinate p hunit`. -/
-noncomputable def typicalize (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) : FormalGroup R :=
-  (F.typicalCoordinate p hunit)⁻¹ • F
-
-/-- Unfold `FormalGroup.typicalize` as `(F.typicalCoordinate p hunit)⁻¹ • F`. -/
-theorem typicalize_def (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    F.typicalize p hunit = (F.typicalCoordinate p hunit)⁻¹ • F :=
-  (rfl)
-
-instance (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalize p hunit).IsComm :=
-  inferInstanceAs (((F.typicalCoordinate p hunit)⁻¹ • F).IsComm)
-
-/-- **Cartier's canonical strict isomorphism** from `F` to its `p`-typicalization
-`F.typicalize p hunit`, with underlying forward series `(F.typicalCoordinate p hunit)⁻¹` and
-inverse series `F.typicalCoordinate p hunit`. -/
-noncomputable def typicalizeIso (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    TauCeti.FormalGroupIso F (F.typicalize p hunit) :=
-  smulIso (F.typicalCoordinate p hunit)⁻¹ F
-
-instance (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalizeIso p hunit).IsStrict :=
-  (isStrict_smulIso_iff _ _).mpr <| by
-    rw [map_inv, F.linearCoeff_typicalCoordinate, inv_one]
-
-/-- The forward series of `F.typicalizeIso p hunit` is `(F.typicalCoordinate p hunit)⁻¹`. -/
-@[simp]
-theorem typicalizeIso_toHom_toPowerSeries (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalizeIso p hunit).toHom.toPowerSeries =
-      (F.typicalCoordinate p hunit)⁻¹.toPowerSeries :=
-  smulIso_toHom_toPowerSeries _ _
-
-/-- The inverse series of `F.typicalizeIso p hunit` is `F.typicalCoordinate p hunit`. -/
-@[simp]
-theorem typicalizeIso_invHom_toPowerSeries (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalizeIso p hunit).invHom.toPowerSeries =
-      (F.typicalCoordinate p hunit).toPowerSeries := by
-  rw [typicalizeIso, smulIso_invHom_toPowerSeries, inv_inv]
-
-/-- Under the inverse of `F.typicalizeIso p hunit`, the tautological curve of `F.typicalize p hunit`
-maps to Cartier's typical projection of the tautological curve of `F`. -/
-theorem typicalizeIso_invHom_mapCurve_tautologicalCurve (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalizeIso p hunit).invHom.mapCurve (F.typicalize p hunit).tautologicalCurve =
-      F.typicalProjectorCurve p hunit F.tautologicalCurve :=
-  Curve.ext <| by
-    rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, toPowerSeries_tautologicalCurve,
-      PowerSeries.X_subst, typicalizeIso_invHom_toPowerSeries, toPowerSeries_typicalCoordinate]
-
-/-- **Cartier's typicalization theorem**: `F.typicalize p hunit` is `p`-typical. -/
-@[simp]
-theorem isTypical_typicalize (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalize p hunit).IsTypical p := by
-  rw [isTypical_def, ← (F.typicalizeIso p hunit).symm.isTypical_curveEquiv_iff,
-    TauCeti.FormalGroupIso.curveEquiv_apply, TauCeti.FormalGroupIso.symm_toHom,
-    F.typicalizeIso_invHom_mapCurve_tautologicalCurve]
-  exact F.isTypical_typicalProjectorCurve p hunit F.tautologicalCurve
-
-/-- Every `p`-typical formal group law is fixed by `typicalize`. -/
-theorem typicalize_eq_self (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) (hF : F.IsTypical p) :
-    F.typicalize p hunit = F := by
-  rw [typicalize_def, (F.typicalCoordinate_eq_one_iff p hunit).mpr hF, inv_one, one_smul]
-
-/-- A formal group law is fixed by `typicalize` if and only if it is `p`-typical. -/
-@[simp]
-theorem typicalize_eq_self_iff (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    F.typicalize p hunit = F ↔ F.IsTypical p :=
-  ⟨fun h ↦ (isTypical_congr h).mp (F.isTypical_typicalize p hunit), F.typicalize_eq_self p hunit⟩
-
 section Congr
 
 variable {F}
@@ -374,33 +354,14 @@ variable {F}
 laws. -/
 theorem typicalCoordinate_congr {G : FormalGroup R} [G.IsComm] (h : F = G) (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    F.typicalCoordinate p hunit = G.typicalCoordinate p hunit := by
-  cases h
-  rfl
+    F.typicalCoordinate p hunit = G.typicalCoordinate p hunit := h ▸ rfl
 
 /-- Congruence for `FormalGroup.typicalize` across equalities of commutative formal group laws. -/
 theorem typicalize_congr {G : FormalGroup R} [G.IsComm] (h : F = G) (p : ℕ)
     (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    F.typicalize p hunit = G.typicalize p hunit := by
-  cases h
-  rfl
+    F.typicalize p hunit = G.typicalize p hunit := h ▸ rfl
 
 end Congr
-
-/-- The canonical typical coordinate of `F.typicalize p hunit` is the identity coordinate. -/
-@[simp]
-theorem typicalCoordinate_typicalize (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalize p hunit).typicalCoordinate p hunit = 1 :=
-  ((F.typicalize p hunit).typicalCoordinate_eq_one_iff p hunit).mpr
-    (F.isTypical_typicalize p hunit)
-
-/-- Cartier's `p`-typicalization is idempotent. -/
-@[simp]
-theorem typicalize_typicalize (p : ℕ)
-    (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) :
-    (F.typicalize p hunit).typicalize p hunit = F.typicalize p hunit :=
-  (F.typicalize p hunit).typicalize_eq_self p hunit (F.isTypical_typicalize p hunit)
 
 /-- Cartier's `p`-typicalization commutes with base change of the coefficient ring. -/
 theorem map_typicalize (φ : R →+* S) (p : ℕ)
@@ -511,21 +472,18 @@ theorem typicalCoordinate_homothety_smul (F : FormalGroup R) [F.IsComm] (p : ℕ
       TauCeti.FormalCoordinate.homothety u * F.typicalCoordinate p hunit *
         (TauCeti.FormalCoordinate.homothety u)⁻¹ := by
   let f := (smulIso (TauCeti.FormalCoordinate.homothety u) F).toHom
+  let δ := F.homothetyCurve (↑u⁻¹ : R) (F.typicalProjectorCurve p hunit F.tautologicalCurve)
   have hproj :=
     f.mapCurve_typicalProjectorCurve p hunit (F.homothetyCurve (↑u⁻¹ : R) F.tautologicalCurve)
   rw [mapCurve_homothety_tautologicalCurve, F.typicalProjectorCurve_homothetyCurve] at hproj
   apply TauCeti.FormalCoordinate.ext
   rw [toPowerSeries_typicalCoordinate, ← hproj, TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
     smulIso_toHom_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_homothety,
-    PowerSeries.subst_smul
-      (F.homothetyCurve (↑u⁻¹ : R) (F.typicalProjectorCurve p hunit F.tautologicalCurve)).hasSubst,
-    PowerSeries.subst_X
-      (F.homothetyCurve (↑u⁻¹ : R) (F.typicalProjectorCurve p hunit F.tautologicalCurve)).hasSubst,
-    toPowerSeries_homothetyCurve, ← toPowerSeries_typicalCoordinate]
+    PowerSeries.subst_smul δ.hasSubst, PowerSeries.subst_X δ.hasSubst, toPowerSeries_homothetyCurve,
+    ← toPowerSeries_typicalCoordinate]
   ext k
-  have hconj :=
-    TauCeti.FormalCoordinate.coeff_homothety_inv_mul_mul_homothety u⁻¹ (F.typicalCoordinate p hunit)
-      k
+  have hconj := TauCeti.FormalCoordinate.coeff_homothety_inv_mul_mul_homothety u⁻¹
+    (F.typicalCoordinate p hunit) k
   rw [inv_inv, map_inv] at hconj
   rw [hconj, PowerSeries.coeff_smul, PowerSeries.coeff_rescale, smul_eq_mul, mul_assoc]
 

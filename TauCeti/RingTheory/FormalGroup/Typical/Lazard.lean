@@ -100,16 +100,9 @@ theorem natCast_mem_coprimeSubmonoid (p : ℕ) {q : ℕ} (hq : q.Prime) (hqp : �
 
 /-- Every element of `coprimeSubmonoid p` is the cast of a natural number. -/
 theorem exists_natCast_of_mem_coprimeSubmonoid {p : ℕ} {m : LazardRing}
-    (hm : m ∈ coprimeSubmonoid p) : ∃ n : ℕ, (n : LazardRing) = m := by
-  induction hm using Submonoid.closure_induction with
-  | mem _ hx =>
-    obtain ⟨q, _, rfl⟩ := hx
-    exact ⟨q, rfl⟩
-  | one => exact ⟨1, Nat.cast_one⟩
-  | mul _ _ _ _ ha hb =>
-    obtain ⟨a, rfl⟩ := ha
-    obtain ⟨b, rfl⟩ := hb
-    exact ⟨a * b, Nat.cast_mul a b⟩
+    (hm : m ∈ coprimeSubmonoid p) : ∃ n : ℕ, (n : LazardRing) = m :=
+  Submonoid.closure_induction (fun _ ⟨q, _, hq⟩ ↦ ⟨q, hq⟩) ⟨1, Nat.cast_one⟩
+    (fun _ _ _ _ ⟨a, ha⟩ ⟨b, hb⟩ ↦ ⟨a * b, by rw [Nat.cast_mul, ha, hb]⟩) hm
 
 /-- Every element of `coprimeSubmonoid p` is homogeneous of degree `0` in `LazardRing`. -/
 theorem coprimeSubmonoid_le_grading_zero (p : ℕ) :
@@ -146,15 +139,11 @@ theorem localizedHom_ext {S : Type*} [CommRing S] [Algebra LazardRing S]
 
 private theorem isUnit_lift_of_mem_coprimeSubmonoid {R : Type*} [CommRing R]
     (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R))
-    (F : {F : FormalGroup R // F.IsComm}) (m : coprimeSubmonoid p) :
-    IsUnit (lift F m) := by
-  rcases m with ⟨m, hm⟩
-  induction hm using Submonoid.closure_induction with
-  | mem _ hx =>
-    obtain ⟨q, ⟨hq, hqp⟩, rfl⟩ := hx
-    simpa only [map_natCast] using hunit q hq hqp
-  | one => simpa only [map_one] using isUnit_one
-  | mul _ _ _ _ ha hb => simpa only [map_mul] using ha.mul hb
+    (F : {F : FormalGroup R // F.IsComm}) (m : coprimeSubmonoid p) : IsUnit (lift F m) :=
+  Submonoid.closure_induction
+    (fun _ ⟨q, ⟨hq, hqp⟩, hqm⟩ ↦ hqm ▸ by simpa only [map_natCast] using hunit q hq hqp)
+    (by simpa only [map_one] using isUnit_one)
+    (fun _ _ _ _ ha hb ↦ by simpa only [map_mul] using ha.mul hb) m.2
 
 /-- **Universal property of the localized Lazard ring**: for any commutative ring `R` in which
 every prime `q` not dividing `p` is invertible, commutative formal group laws over `R` correspond
@@ -169,7 +158,6 @@ def localizedLift {R : Type*} [CommRing R]
     dsimp only
     rw [FormalGroup.map_comp, IsLocalization.lift_comp (M := coprimeSubmonoid p) (S := S), map_lift]
   right_inv f := localizedHom_ext p <| by
-    dsimp only
     rw [FormalGroup.map_comp, IsLocalization.lift_comp (M := coprimeSubmonoid p) (S := S), map_lift]
 
 /-- `localizedLift` restricts along `algebraMap LazardRing S` to `LazardRing.lift`. -/
@@ -202,9 +190,8 @@ theorem map_localizedLift {R : Type*} [CommRing R]
 @[simp]
 theorem coe_localizedLift_symm {R : Type*} [CommRing R]
     (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R)) (f : S →+* R) :
-    ((localizedLift p S hunit).symm f).1 = (formalGroup.map (algebraMap LazardRing S)).map f := by
-  rw [localizedLift]
-  rfl
+    ((localizedLift p S hunit).symm f).1 = (formalGroup.map (algebraMap LazardRing S)).map f :=
+  (rfl)
 
 /-! ### Quillen's `p`-typicalization idempotent and its fixed subring -/
 
@@ -305,10 +292,8 @@ def typicalFormalGroup : FormalGroup (typicalIdempotent p S).range :=
 
 /-- Unfold `typicalFormalGroup p S` as the base change along
 `(typicalIdempotent p S).rangeRestrict`. -/
-theorem typicalFormalGroup_def :
-    typicalFormalGroup p S =
-      (formalGroup.map (algebraMap LazardRing S)).map (typicalIdempotent p S).rangeRestrict :=
-  (rfl)
+theorem typicalFormalGroup_def : typicalFormalGroup p S =
+    (formalGroup.map (algebraMap LazardRing S)).map (typicalIdempotent p S).rangeRestrict := (rfl)
 
 instance : (typicalFormalGroup p S).IsComm :=
   inferInstanceAs
@@ -343,23 +328,21 @@ def typicalLocalizedLift {R : Type*} [CommRing R]
       ((typicalIdempotent p S).range →+* R) where
   toFun F := (localizedLift p S hunit ⟨F.1, F.2.1⟩).comp (typicalIdempotent p S).range.subtype
   invFun g :=
-    ⟨(typicalFormalGroup p S).map g,
-      ⟨inferInstance, (isTypical_typicalFormalGroup p S).map g⟩⟩
+    ⟨(typicalFormalGroup p S).map g, ⟨inferInstance, (isTypical_typicalFormalGroup p S).map g⟩⟩
   left_inv F := Subtype.ext <| by
-    dsimp only
     have : F.1.IsComm := F.2.1
+    dsimp only
     rw [← FormalGroup.map_comp, map_subtype_typicalFormalGroup,
       (formalGroup.map (algebraMap LazardRing S)).map_typicalize _ p _ hunit,
       FormalGroup.typicalize_congr (map_localizedLift p S hunit ⟨F.1, F.2.1⟩) p hunit,
       F.1.typicalize_eq_self p hunit F.2.2]
   right_inv g := by
-    dsimp only
     have hg : localizedLift p S hunit ⟨(typicalFormalGroup p S).map g, inferInstance⟩ =
         g.comp (typicalIdempotent p S).rangeRestrict :=
-      localizedHom_ext p <| by
-        rw [map_localizedLift]
+      localizedHom_ext p <| (map_localizedLift p S hunit _).trans <| by
         dsimp only
         rw [typicalFormalGroup_def, FormalGroup.map_comp]
+    dsimp only
     rw [hg, RingHom.comp_assoc, typicalIdempotent_rangeRestrict_comp_subtype, RingHom.comp_id]
 
 /-- Base-changing `typicalFormalGroup p S` along `typicalLocalizedLift p S hunit F` recovers `F`. -/
@@ -367,10 +350,8 @@ def typicalLocalizedLift {R : Type*} [CommRing R]
 theorem map_typicalLocalizedLift {R : Type*} [CommRing R]
     (hunit : ∀ q : ℕ, q.Prime → ¬ q ∣ p → IsUnit (q : R))
     (F : {F : FormalGroup R // ∃ (_ : F.IsComm), F.IsTypical p}) :
-    (typicalFormalGroup p S).map (typicalLocalizedLift p S hunit F) = F.1 := by
-  have h := congrArg Subtype.val ((typicalLocalizedLift p S hunit).left_inv F)
-  rw [typicalLocalizedLift] at h ⊢
-  exact h
+    (typicalFormalGroup p S).map (typicalLocalizedLift p S hunit F) = F.1 :=
+  Subtype.ext_iff.mp ((typicalLocalizedLift p S hunit).left_inv F)
 
 /-- Extending `typicalLocalizedLift p S hunit F` along `(typicalIdempotent p S).rangeRestrict`
 recovers the classifying map `localizedLift p S hunit ⟨F.1, F.2.1⟩` on `S`. -/
@@ -401,10 +382,8 @@ def typicalCoordinateHom : MvPolynomial ℕ+ LazardRing →+* S :=
 `algebraMap LazardRing S`. -/
 @[simp]
 theorem typicalCoordinateHom_comp_C :
-    (typicalCoordinateHom p S).comp C = algebraMap LazardRing S := by
-  rw [typicalCoordinateHom]
-  refine (coordinateChangeLift_comp_C _).trans (hom_ext ?_)
-  exact map_lift _
+    (typicalCoordinateHom p S).comp C = algebraMap LazardRing S :=
+  (coordinateChangeLift_comp_C _).trans (hom_ext (map_lift _))
 
 /-- Along the right unit `η_R`, `typicalCoordinateHom p S` restricts to
 `typicalIdempotent p S ∘ algebraMap LazardRing S`. -/
@@ -412,12 +391,10 @@ theorem typicalCoordinateHom_comp_C :
 theorem typicalCoordinateHom_comp_rightUnit :
     (typicalCoordinateHom p S).comp rightUnit =
       (typicalIdempotent p S).comp (algebraMap LazardRing S) := by
-  rw [typicalCoordinateHom]
-  refine (coordinateChangeLift_comp_rightUnit _).trans ?_
-  rw [typicalIdempotent_comp_algebraMap]
-  refine hom_ext ?_
-  rw [map_lift, map_lift]
-  exact ((formalGroup.map (algebraMap LazardRing S)).typicalize_def p _).symm
+  rw [typicalCoordinateHom, coordinateChangeLift_comp_rightUnit, typicalIdempotent_comp_algebraMap]
+  exact hom_ext <| by
+    rw [map_lift, map_lift]
+    exact (FormalGroup.typicalize_def _ _ _).symm
 
 /-- **Quillen's `p`-typicalization idempotent preserves homogeneous degrees**: for any `ℕ`-grading
 `ℬ` on `S` such that `algebraMap LazardRing S` maps `grading k` into `ℬ k`, `typicalIdempotent p S`
@@ -426,9 +403,7 @@ theorem typicalIdempotent_mem_graded {τ : Type*} [SetLike τ S] [AddSubgroupCla
     {ℬ : ℕ → τ} [GradedRing ℬ]
     (halg : ∀ ⦃k : ℕ⦄ ⦃x : LazardRing⦄, x ∈ grading k → algebraMap LazardRing S x ∈ ℬ k)
     {k : ℕ} {b : S} (hb : b ∈ ℬ k) : typicalIdempotent p S b ∈ ℬ k := by
-  let f : grading →+*ᵍ ℬ :=
-    { toRingHom := algebraMap LazardRing S
-      map_mem := fun hx ↦ halg hx }
+  let f : grading →+*ᵍ ℬ := ⟨algebraMap LazardRing S, fun hx ↦ halg hx⟩
   have halg_inst : f.toRingHom.toAlgebra = ‹Algebra LazardRing S› :=
     Algebra.algebra_ext _ _ fun _ ↦ rfl
   have hloc : letI := f.toRingHom.toAlgebra; IsLocalization (coprimeSubmonoid p) S :=
@@ -438,15 +413,13 @@ theorem typicalIdempotent_mem_graded {τ : Type*} [SetLike τ S] [AddSubgroupCla
   have hm_fix : typicalIdempotent p S (algebraMap LazardRing S m) = algebraMap LazardRing S m := by
     obtain ⟨n, hn⟩ := exists_natCast_of_mem_coprimeSubmonoid m.2
     rw [← hn, map_natCast, map_natCast]
+  have hlift_alg : lift ⟨formalGroup.map (algebraMap LazardRing S), inferInstance⟩ =
+      algebraMap LazardRing S := hom_ext (map_lift _)
   have hcoeff : ∀ d : Fin 2 →₀ ℕ,
       MvPowerSeries.coeff d (formalGroup.map (algebraMap LazardRing S)).toPowerSeries ∈
         ℬ (2 * (d.degree - 1)) :=
     (lift_mem_iff (.id ℕ) ⟨formalGroup.map (algebraMap LazardRing S), inferInstance⟩).mp
-      fun _ _ hx ↦ by
-        have halg_eq : lift ⟨formalGroup.map (algebraMap LazardRing S), inferInstance⟩ =
-            algebraMap LazardRing S := hom_ext (map_lift _)
-        rw [halg_eq]
-        exact halg hx
+      fun _ _ hx ↦ by simpa only [hlift_alg, AddMonoidHom.id_apply] using halg hx
   have ha' : typicalIdempotent p S (algebraMap LazardRing S a) ∈ ℬ k := by
     rw [← RingHom.comp_apply, typicalIdempotent_comp_algebraMap]
     exact (lift_mem_iff (.id ℕ) _).mpr
@@ -460,9 +433,8 @@ theorem typicalIdempotent_mem_graded {τ : Type*} [SetLike τ S] [AddSubgroupCla
       algebraMap LazardRing S m = typicalIdempotent p S b * algebraMap LazardRing S m := by
     rw [← DirectSum.coe_decompose_mul_of_right_mem_zero ℬ hu0,
       DirectSum.decompose_of_mem_same ℬ hmul]
-  have hcancel := (IsLocalization.map_units S m).mul_right_cancel hdecomp
-  rw [← hcancel]
-  exact (DirectSum.decompose ℬ (typicalIdempotent p S b) k).2
+  exact (IsLocalization.map_units S m).mul_right_cancel hdecomp ▸
+    (DirectSum.decompose ℬ (typicalIdempotent p S b) k).2
 
 /-- Quillen's `p`-typicalization idempotent bundled as a graded ring endomorphism `ℬ →+*ᵍ ℬ` on any
 compatibly `ℕ`-graded localization `S` of `LazardRing` at `coprimeSubmonoid p`. -/
@@ -479,8 +451,7 @@ def gradedTypicalIdempotent {τ : Type*} [SetLike τ S] [AddSubgroupClass τ S]
 theorem toRingHom_gradedTypicalIdempotent {τ : Type*} [SetLike τ S] [AddSubgroupClass τ S]
     {ℬ : ℕ → τ} [GradedRing ℬ]
     (halg : ∀ ⦃k : ℕ⦄ ⦃x : LazardRing⦄, x ∈ grading k → algebraMap LazardRing S x ∈ ℬ k) :
-    (gradedTypicalIdempotent p S halg).toRingHom = typicalIdempotent p S :=
-  (rfl)
+    (gradedTypicalIdempotent p S halg).toRingHom = typicalIdempotent p S := (rfl)
 
 /-- `gradedTypicalIdempotent p S halg` is idempotent as a graded ring endomorphism. -/
 @[simp]
