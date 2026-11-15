@@ -55,8 +55,8 @@ are equal (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
 
 ## Main results
 
-* `TauCeti.Dagger.existsUnique_mul_add_eq_of_isDistinguished`: unique division with remainder, with
-  the quotient and remainder bundled as a unique pair.
+* `TauCeti.Dagger.washnitzerAlgebra.existsUnique_mul_add_eq_of_isDistinguished`: unique division
+  with remainder, `q * g + r(Y) = f`, with the quotient and remainder bundled as a unique pair.
 * `TauCeti.Dagger.washnitzerAlgebra.exists_mul_add_eq_of_isDistinguished`: existence of the
   division, as `q * g + r(Y) = f` in `K⟨X, Y⟩†`.
 * `TauCeti.Dagger.washnitzerAlgebra.exists_mul_add_eq_and_norm_le_of_isDistinguished`: existence
@@ -293,29 +293,24 @@ theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
   exact (norm_toTate (r.coeff i)).symm.trans_le
     (hle.trans ((le_max_right _ _).trans hnorm.ge))
 
-end washnitzerAlgebra
-
-/-- **Unique overconvergent Weierstrass division**, with the quotient and polynomial remainder
-bundled as a unique pair. No characteristic or nontrivial-norm assumption is required. Here the
-division is stated after `washnitzerAlgebra.optionSeries`; in `K⟨X, Y⟩†` itself, as
-`q * g + r(Y) = f`, existence is `washnitzerAlgebra.exists_mul_add_eq_of_isDistinguished` and
-uniqueness is `washnitzerAlgebra.eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished`. -/
+/-- **Unique overconvergent Weierstrass division.** Under the hypotheses of
+`exists_mul_add_eq_of_isDistinguished`, the overconvergent quotient `q` and the polynomial
+remainder `r ∈ K⟨X⟩†[Y]` of degree less than `s` with `q * g + r(Y) = f` are unique, bundled as a
+unique pair. No characteristic or nontrivial-norm assumption is required. Existence is
+`exists_mul_add_eq_of_isDistinguished` and uniqueness is
+`eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished`. -/
 theorem existsUnique_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
       (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) (f : W') :
     ∃! p : W' × Polynomial W, p.2.degree < (s : WithBot ℕ) ∧
-      optionSeries p.1 * optionSeries g + (p.2 : PowerSeries W) = optionSeries f := by
-  simp only [← washnitzerAlgebra.optionSeries_polynomialToOption, ← map_mul, ← map_add,
-    washnitzerAlgebra.optionSeries_injective.eq_iff]
-  obtain ⟨q, r, hr, hqr⟩ := washnitzerAlgebra.exists_mul_add_eq_of_isDistinguished hg hu f
+      p.1 * g + polynomialToOption p.2 = f := by
+  obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
   refine ⟨(q, r), ⟨hr, hqr⟩, fun p ⟨hp, he⟩ ↦ ?_⟩
-  obtain ⟨h1, h2⟩ := washnitzerAlgebra.eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished hg hp hr
+  obtain ⟨h1, h2⟩ := eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished hg hp hr
     (he.trans hqr.symm)
   exact Prod.ext h1 h2
-
-namespace washnitzerAlgebra
 
 section Polynomial
 
