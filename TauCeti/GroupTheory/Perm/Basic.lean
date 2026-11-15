@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Int.Cast.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
@@ -351,10 +352,9 @@ theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePr
 `x ↦ σ x` equals its total increase. -/
 theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
-  have key (a b : ℕ) : ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = a - b := by omega
   have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
     push_cast [← Finset.sum_sub_distrib]
-    simp_rw [key]
+    simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
 
