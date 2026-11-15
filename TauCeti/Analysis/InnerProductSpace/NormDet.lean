@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 /-!
 # Continuity, adjoints, one-dimensional values, and orthogonal extensions of the Jacobian `normDet`
@@ -38,8 +39,8 @@ identity.
 
 * `ContinuousLinearMap.continuous_normDet`, `ContinuousLinearMap.continuous_normDet_adjoint`:
   the Jacobian `normDet` and the coarea Jacobian `A ↦ A†.normDet` are continuous.
-* `LinearMap.normDet_eq_norm_apply_one`: for a map from `ℝ`, the Jacobian is the norm of the
-  image of `1`.
+* `LinearMap.normDet_eq_norm_apply_one`, `LinearMap.normDet_toSpanSingleton`: for a map from an
+  `RCLike` scalar field `𝕜`, the Jacobian is the norm of the image of `1`.
 * `LinearMap.normDet_adjoint`: between spaces of equal dimension, the adjoint has the same
   Jacobian.
 * `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
@@ -58,13 +59,14 @@ identity.
 * `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
   same Jacobian.
 * `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
-* `LinearMap.pow_finrank_le_normDet_of_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
+* `LinearMap.pow_finrank_le_normDet_of_mul_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
   `LinearMap.normDet_eq_pow_finrank_of_norm_eq`: uniform lower, upper, and exact norm bounds on a
   linear map control its `normDet` by the `finrank`-th power of the factor.
-* `LinearMap.normDet_eq_div_mul_normDet_orthogonal`,
-  `LinearMap.normDet_eq_norm_mul_normDet_orthogonal`: when `f u` is orthogonal to the image of
-  `(𝕜 ∙ u)ᗮ`, the Jacobian splits into the radial stretch `‖f u‖ / ‖u‖` times the Jacobian on
-  `(𝕜 ∙ u)ᗮ`.
+* `LinearMap.normDet_eq_mul_normDet_orthogonal`,
+  `LinearMap.normDet_eq_div_mul_normDet_orthogonal`,
+  `LinearMap.normDet_eq_norm_mul_normDet_orthogonal`: when `f` maps a submodule `K` and `Kᗮ` to
+  orthogonal subspaces, `f.normDet` factors as the product of the restrictions; along a single line
+  `𝕜 ∙ u`, this splits off the radial stretch `‖f u‖ / ‖u‖`.
 -/
 
 public section
@@ -74,15 +76,22 @@ open scoped NNReal Topology
 
 namespace LinearMap
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
 /-- The one-dimensional geometric Jacobian of a linear map is the norm of the image of `1`. -/
-theorem normDet_eq_norm_apply_one (A : ℝ →ₗ[ℝ] V) : A.normDet = ‖A 1‖ := by
-  have h := A.normDet_sq_eq_det_gram (OrthonormalBasis.singleton Unit ℝ)
+theorem normDet_eq_norm_apply_one {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] (A : 𝕜 →ₗ[𝕜] V) : A.normDet = ‖A 1‖ := by
+  have h := A.normDet_sq_eq_det_gram (OrthonormalBasis.singleton Unit 𝕜)
   rw [Matrix.det_unique] at h
   simp only [OrthonormalBasis.singleton_apply, Matrix.gram_apply,
-    real_inner_self_eq_norm_sq, RCLike.ofReal_real_eq_id] at h
-  exact sq_eq_sq₀ A.normDet_nonneg (norm_nonneg (A 1)) |>.mp h
+    inner_self_eq_norm_sq_to_K] at h
+  have hreal : A.normDet ^ 2 = ‖A 1‖ ^ 2 :=
+    RCLike.ofReal_injective (K := 𝕜) (by simpa using h)
+  exact (sq_eq_sq₀ A.normDet_nonneg (norm_nonneg (A 1))).mp hreal
+
+/-- Over any `RCLike` scalar field, the one-dimensional `normDet` of `a ↦ a • y` is `‖y‖`. -/
+@[simp]
+theorem normDet_toSpanSingleton {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] (y : V) : (toSpanSingleton 𝕜 V y).normDet = ‖y‖ := by
+  simp [normDet_eq_norm_apply_one]
 
 /-- Between spaces of the same finite dimension, a linear map and its adjoint have the same
 Jacobian `normDet`. The dimension hypothesis is necessary: an injective map into a larger space
@@ -320,32 +329,10 @@ section Bounds
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-/-- At each singular value of index `i < finrank 𝕜 E`, a linear map between finite-dimensional
-inner product spaces stretches the corresponding unit eigenvector of `f† f` by
-`singularValues i`. -/
-private theorem exists_unit_norm_apply_eq_singularValues [FiniteDimensional 𝕜 F] (f : E →ₗ[𝕜] F)
-    {i : ℕ} (hi : i < Module.finrank 𝕜 E) :
-    ∃ v : E, ‖v‖ = 1 ∧ ‖f v‖ = f.singularValues i := by
-  have hS := f.isSymmetric_adjoint_comp_self
-  let b := hS.eigenvectorBasis rfl
-  let j : Fin (Module.finrank 𝕜 E) := ⟨i, hi⟩
-  refine ⟨b j, b.orthonormal.1 j, ?_⟩
-  have heig : inner 𝕜 (b j) ((f.adjoint ∘ₗ f) (b j)) = (hS.eigenvalues rfl j : 𝕜) := by
-    rw [hS.apply_eigenvectorBasis rfl j, inner_smul_right,
-      inner_self_eq_norm_sq_to_K, b.orthonormal.1 j]
-    simp
-  have hnorm : ((‖f (b j)‖ ^ 2 : ℝ) : 𝕜) = (hS.eigenvalues rfl j : 𝕜) := by
-    rw [← heig, comp_apply, adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-    norm_cast
-  have hsq : ‖f (b j)‖ ^ 2 = f.singularValues i ^ 2 := by
-    rw [f.sq_singularValues_of_lt rfl hi]
-    exact RCLike.ofReal_injective hnorm
-  exact (sq_eq_sq₀ (norm_nonneg _) (f.singularValues_nonneg i)).mp hsq
-
 /-- **Lower bound on `normDet` from a uniform lower norm bound.** If `f` expands every vector by
 at least `c ≥ 0`, then `f.normDet ≥ c ^ finrank 𝕜 E`. The codomain need not be finite
 dimensional. -/
-theorem pow_finrank_le_normDet_of_norm_le (f : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+theorem pow_finrank_le_normDet_of_mul_norm_le (f : E →ₗ[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
     (hf : ∀ u : E, c * ‖u‖ ≤ ‖f u‖) :
     c ^ Module.finrank 𝕜 E ≤ f.normDet := by
   let g : E →ₗ[𝕜] f.range := f.rangeRestrict
@@ -354,9 +341,8 @@ theorem pow_finrank_le_normDet_of_norm_le (f : E →ₗ[𝕜] F) {c : ℝ} (hc :
       = ∏ _ ∈ Finset.range (Module.finrank 𝕜 E), c := by simp
     _ ≤ ∏ i ∈ Finset.range (Module.finrank 𝕜 E), g.singularValues i := by
         gcongr with i hi
-        obtain ⟨v, hv1, hgv⟩ := exists_unit_norm_apply_eq_singularValues g (Finset.mem_range.mp hi)
-        rw [← hgv]
-        simpa [g, hv1] using hf v
+        rw [← g.norm_apply_rightSingularBasis ⟨i, Finset.mem_range.mp hi⟩, ← Submodule.norm_coe]
+        simpa [g] using hf (g.rightSingularBasis ⟨i, Finset.mem_range.mp hi⟩)
 
 /-- **Upper bound on `normDet` from a uniform upper norm bound.** If `‖f u‖ ≤ c * ‖u‖` for all
 `u`, then `f.normDet ≤ c ^ finrank 𝕜 E`. The codomain need not be finite dimensional. -/
@@ -370,10 +356,8 @@ theorem normDet_le_pow_finrank_of_norm_le (f : E →ₗ[𝕜] F) {c : ℝ}
         gcongr with i hi
         · intro j _
           exact g.singularValues_nonneg j
-        · obtain ⟨v, hv1, hgv⟩ :=
-            exists_unit_norm_apply_eq_singularValues g (Finset.mem_range.mp hi)
-          rw [← hgv]
-          simpa [g, hv1] using hf v
+        · rw [← g.norm_apply_rightSingularBasis ⟨i, Finset.mem_range.mp hi⟩, ← Submodule.norm_coe]
+          simpa [g] using hf (g.rightSingularBasis ⟨i, Finset.mem_range.mp hi⟩)
     _ = c ^ Module.finrank 𝕜 E := by simp
 
 /-- **Exact `normDet` of a scalar similarity.** If `‖f u‖ = c * ‖u‖` for all `u`, then
@@ -381,34 +365,39 @@ theorem normDet_le_pow_finrank_of_norm_le (f : E →ₗ[𝕜] F) {c : ℝ}
 theorem normDet_eq_pow_finrank_of_norm_eq (f : E →ₗ[𝕜] F) {c : ℝ}
     (hf : ∀ u : E, ‖f u‖ = c * ‖u‖) :
     f.normDet = c ^ Module.finrank 𝕜 E := by
-  by_cases h0 : Module.finrank 𝕜 E = 0
-  · let g : E →ₗ[𝕜] f.range := f.rangeRestrict
-    rw [← f.normDet_codRestrict f.mem_range_self, g.normDet_eq_prod_singularValues, h0]
-    simp
-  · have : Nontrivial E := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero h0)
-    obtain ⟨u, hu⟩ := exists_ne (0 : E)
-    have hc : 0 ≤ c :=
-      nonneg_of_mul_nonneg_left (hf u ▸ norm_nonneg (f u)) (norm_pos_iff.mpr hu)
-    exact le_antisymm
-      (f.normDet_le_pow_finrank_of_norm_le fun v ↦ (hf v).le)
-      (f.pow_finrank_le_normDet_of_norm_le hc fun v ↦ (hf v).ge)
+  nontriviality E
+  obtain ⟨u, hu⟩ := exists_ne (0 : E)
+  have hc : 0 ≤ c :=
+    nonneg_of_mul_nonneg_left (hf u ▸ norm_nonneg (f u)) (norm_pos_iff.mpr hu)
+  exact le_antisymm
+    (f.normDet_le_pow_finrank_of_norm_le fun v ↦ (hf v).le)
+    (f.pow_finrank_le_normDet_of_mul_norm_le hc fun v ↦ (hf v).ge)
 
 end Bounds
 
-section OrthogonalLine
+section Orthogonal
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-/-- Over any `RCLike` scalar field, the one-dimensional `normDet` of `a ↦ a • y` is `‖y‖`. -/
-private theorem normDet_toSpanSingleton (y : F) : (toSpanSingleton 𝕜 F y).normDet = ‖y‖ := by
-  have h := (toSpanSingleton 𝕜 F y).normDet_sq_eq_det_gram (OrthonormalBasis.singleton Unit 𝕜)
-  rw [Matrix.det_unique] at h
-  simp only [OrthonormalBasis.singleton_apply, Matrix.gram_apply, toSpanSingleton_apply, one_smul,
-    inner_self_eq_norm_sq_to_K] at h
-  have hreal : (toSpanSingleton 𝕜 F y).normDet ^ 2 = ‖y‖ ^ 2 :=
-    RCLike.ofReal_injective (K := 𝕜) (by simpa using h)
-  exact (sq_eq_sq₀ (normDet_nonneg _) (norm_nonneg y)).mp hreal
+/-- **Splitting `normDet` along a submodule and its orthogonal complement.** If `f` maps `K` and
+`Kᗮ` to mutually orthogonal subspaces of `F`, then `f.normDet` is the product of the `normDet`s
+of `f` restricted to `K` and to `Kᗮ`. -/
+theorem normDet_eq_mul_normDet_orthogonal (f : E →ₗ[𝕜] F) (K : Submodule 𝕜 E)
+    (horth : ∀ u ∈ K, ∀ w ∈ Kᗮ, inner 𝕜 (f u) (f w) = 0) :
+    f.normDet = (f ∘ₗ K.subtype).normDet * (f ∘ₗ Kᗮ.subtype).normDet := by
+  let Ψ : WithLp 2 (K × Kᗮ) ≃ₗᵢ[𝕜] E := K.orthogonalDecomposition.symm
+  have hcomp : f ∘ₗ Ψ.toLinearIsometry.toLinearMap =
+      ((f ∘ₗ K.subtype).coprod (f ∘ₗ Kᗮ.subtype)) ∘ₗ
+        (WithLp.linearEquiv 2 𝕜 (K × Kᗮ)).toLinearMap := by
+    ext p
+    simp [Ψ]
+  calc f.normDet
+      = (f ∘ₗ Ψ.toLinearIsometry.toLinearMap).normDet := by
+        rw [normDet_comp_of_finrank_eq Ψ.toLinearIsometry.toLinearMap f Ψ.toLinearEquiv.finrank_eq,
+          Ψ.toLinearIsometry.normDet_eq_one, mul_one]
+    _ = (f ∘ₗ K.subtype).normDet * (f ∘ₗ Kᗮ.subtype).normDet := by
+        rw [hcomp, normDet_coprod_of_orthogonal _ _ fun u w ↦ horth u.1 u.2 w.1 w.2]
 
 /-- **Splitting `normDet` along a nonzero vector and its orthogonal complement.** If `u ≠ 0` and
 `f u` is orthogonal to `f w` for every `w ∈ (𝕜 ∙ u)ᗮ`, then `f.normDet` is the radial stretch
@@ -416,51 +405,20 @@ private theorem normDet_toSpanSingleton (y : F) : (toSpanSingleton 𝕜 F y).nor
 theorem normDet_eq_div_mul_normDet_orthogonal (f : E →ₗ[𝕜] F) {u : E} (hu : u ≠ 0)
     (horth : ∀ w ∈ (𝕜 ∙ u)ᗮ, inner 𝕜 (f u) (f w) = 0) :
     f.normDet = ‖f u‖ / ‖u‖ * (f ∘ₗ (𝕜 ∙ u)ᗮ.subtype).normDet := by
-  let e : E := (‖u‖ : 𝕜)⁻¹ • u
-  have he_norm : ‖e‖ = 1 := by
-    simp [e, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hu)]
-  -- Map the Euclidean product `𝕜 × (𝕜 ∙ u)ᗮ` isometrically onto `E` via `(a, w) ↦ a • e + w`.
-  let ψ : WithLp 2 (𝕜 × (𝕜 ∙ u)ᗮ) →ₗ[𝕜] E :=
-    ((toSpanSingleton 𝕜 E e).coprod (𝕜 ∙ u)ᗮ.subtype) ∘ₗ
-      (WithLp.linearEquiv 2 𝕜 (𝕜 × (𝕜 ∙ u)ᗮ)).toLinearMap
-  have hψ_iso : ∀ p : WithLp 2 (𝕜 × (𝕜 ∙ u)ᗮ), ‖ψ p‖ = ‖p‖ := by
-    intro p
-    have he_mem : p.fst • e ∈ 𝕜 ∙ u :=
-      Submodule.smul_mem _ _ (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self u))
-    have hinner : inner 𝕜 (p.fst • e) (p.snd : E) = 0 :=
-      (Submodule.mem_orthogonal (𝕜 ∙ u) (p.snd : E)).mp p.snd.2 _ he_mem
-    have hsq : ‖ψ p‖ ^ 2 = ‖p‖ ^ 2 := by
-      rw [WithLp.prod_norm_sq_eq_of_L2]
-      calc ‖p.fst • e + (p.snd : E)‖ ^ 2
-          = ‖p.fst • e‖ ^ 2 + ‖(p.snd : E)‖ ^ 2 := by
-            simpa only [sq] using
-              norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (p.fst • e) (p.snd : E) hinner
-        _ = ‖p.fst‖ ^ 2 + ‖p.snd‖ ^ 2 := by
-            rw [norm_smul, he_norm, mul_one, Submodule.norm_coe]
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
-  let Ψ : WithLp 2 (𝕜 × (𝕜 ∙ u)ᗮ) →ₗᵢ[𝕜] E := { toLinearMap := ψ, norm_map' := hψ_iso }
-  have hdim : Module.finrank 𝕜 (WithLp 2 (𝕜 × (𝕜 ∙ u)ᗮ)) = Module.finrank 𝕜 E := by
-    rw [(WithLp.linearEquiv 2 𝕜 (𝕜 × (𝕜 ∙ u)ᗮ)).finrank_eq, Module.finrank_prod,
-      Module.finrank_self, ← finrank_span_singleton (K := 𝕜) hu]
-    exact (𝕜 ∙ u).finrank_add_finrank_orthogonal
-  have hcomp : f ∘ₗ Ψ.toLinearMap =
-      ((toSpanSingleton 𝕜 F (f e)).coprod (f ∘ₗ (𝕜 ∙ u)ᗮ.subtype)) ∘ₗ
-        (WithLp.linearEquiv 2 𝕜 (𝕜 × (𝕜 ∙ u)ᗮ)).toLinearMap := by
-    ext p
-    simp [Ψ, ψ]
-  have hcoprod := normDet_coprod_of_orthogonal (toSpanSingleton 𝕜 F (f e))
-    (f ∘ₗ (𝕜 ∙ u)ᗮ.subtype) fun a w ↦ by
-      simp [e, inner_smul_left, horth w.1 w.2]
-  have hfe : ‖f e‖ = ‖f u‖ / ‖u‖ := by
-    rw [show f e = (‖u‖ : 𝕜)⁻¹ • f u from f.map_smul _ _, norm_smul, norm_inv,
-      RCLike.norm_ofReal, abs_norm, inv_mul_eq_div]
-  calc f.normDet
-      = (f ∘ₗ Ψ.toLinearMap).normDet := by
-        rw [normDet_comp_of_finrank_eq Ψ.toLinearMap f hdim, Ψ.normDet_eq_one, mul_one]
-    _ = (toSpanSingleton 𝕜 F (f e)).normDet * (f ∘ₗ (𝕜 ∙ u)ᗮ.subtype).normDet := by
-        rw [hcomp, hcoprod]
-    _ = ‖f u‖ / ‖u‖ * (f ∘ₗ (𝕜 ∙ u)ᗮ.subtype).normDet := by
-        rw [normDet_toSpanSingleton, hfe]
+  have horth' : ∀ x ∈ 𝕜 ∙ u, ∀ w ∈ (𝕜 ∙ u)ᗮ, inner 𝕜 (f x) (f w) = 0 := by
+    intro x hx w hw
+    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    simp [inner_smul_left, horth w hw]
+  have hline : (f ∘ₗ (𝕜 ∙ u).subtype).normDet = ‖f u‖ / ‖u‖ := by
+    have hscale : ∀ x : 𝕜 ∙ u, ‖(f ∘ₗ (𝕜 ∙ u).subtype) x‖ = (‖f u‖ / ‖u‖) * ‖x‖ := by
+      intro x
+      obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp x.2
+      have hxu : (x : E) = a • u := ha.symm
+      simp only [comp_apply, Submodule.coe_subtype, ← Submodule.norm_coe, hxu, map_smul, norm_smul]
+      field_simp [norm_ne_zero_iff.mpr hu]
+    rw [(f ∘ₗ (𝕜 ∙ u).subtype).normDet_eq_pow_finrank_of_norm_eq hscale,
+      finrank_span_singleton hu, pow_one]
+  rw [f.normDet_eq_mul_normDet_orthogonal (𝕜 ∙ u) horth', hline]
 
 /-- **Splitting `normDet` along a unit vector and its orthogonal complement.** If `‖u‖ = 1` and
 `f u` is orthogonal to `f w` for every `w ∈ (𝕜 ∙ u)ᗮ`, then
@@ -471,6 +429,6 @@ theorem normDet_eq_norm_mul_normDet_orthogonal (f : E →ₗ[𝕜] F) {u : E} (h
   have hu0 : u ≠ 0 := norm_ne_zero_iff.mp (by rw [hu]; exact one_ne_zero)
   rw [f.normDet_eq_div_mul_normDet_orthogonal hu0 horth, hu, div_one]
 
-end OrthogonalLine
+end Orthogonal
 
 end LinearMap

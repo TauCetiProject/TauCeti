@@ -8,32 +8,36 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.Analysis.Calculus.DSlope
+import Mathlib.Analysis.Calculus.LHopital
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Sturm
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # The constant-curvature model ball volume
 
-In the `n`-dimensional constant-curvature space form of sectional curvature `κ`, the area of a
-geodesic sphere of radius `t` (up to the unit `(n - 1)`-sphere area `ω_{n - 1}`) is
+In the `n`-dimensional constant-curvature space form of sectional curvature `κ` (for `n ≥ 1`),
+the area of a geodesic sphere of radius `t` (up to the unit `(n - 1)`-sphere area
+`|S^{n - 1}| = n * ω_n`, where `ω_n = vol(B^n)` is the Euclidean unit `n`-ball volume) is
 `s_κ(t) ^ (n - 1)`, where `s_κ` is the model sine `TauCeti.curvatureSine κ`. Integrating from `0`
 to `r` gives the **normalized model ball volume**
 
 `modelBallVolume κ n r = ∫ t in 0..r, curvatureSine κ t ^ (n - 1)`.
 
-Multiplying by `ω_{n - 1} = n * vol(B^n)` produces the volume of a geodesic ball of radius `r` in
-the `n`-dimensional space form of curvature `κ`, valid for `r ≥ 0` with `r ≤ π / √κ` when `κ > 0`.
-Factoring out `ω_{n - 1}` keeps the comparison function purely analytic: in relative-volume ratios
-such as Bishop–Gromov, the constant `ω_{n - 1}` cancels altogether.
+For positive dimension `n ≥ 1`, multiplying by `n * ω_n = |S^{n - 1}|` produces the volume of a
+geodesic ball of radius `r` in the `n`-dimensional space form of curvature `κ`, valid for `r ≥ 0`
+with `r ≤ π / √κ` when `κ > 0` (at `n = 0`, the factor `n * ω_n` vanishes, whereas the
+`0`-dimensional ball has counting volume `1`). Factoring out `n * ω_n` keeps the comparison
+function purely analytic: in relative-volume ratios such as Bishop–Gromov, the constant `n * ω_n`
+cancels altogether.
 
 ## Main definitions and results
 
 * `TauCeti.modelBallVolume`: the radial integral `∫ t in 0..r, curvatureSine κ t ^ (n - 1)`.
 * `TauCeti.modelBallVolume_zero_dim`, `TauCeti.modelBallVolume_one_dim`,
-  `TauCeti.modelBallVolume_zero_curvature`, `TauCeti.modelBallVolume_two_dim_of_pos`,
+  `TauCeti.modelBallVolume_zero_curvature`, `TauCeti.mul_modelBallVolume_two_dim`,
+  `TauCeti.modelBallVolume_two_dim`, `TauCeti.modelBallVolume_two_dim_of_pos`,
   `TauCeti.modelBallVolume_two_dim_of_neg`: closed forms in dimensions `0`, `1`, `2` and in flat
   curvature `κ = 0`.
 * `TauCeti.hasDerivAt_modelBallVolume`, `TauCeti.deriv_modelBallVolume`,
@@ -50,6 +54,10 @@ such as Bishop–Gromov, the constant `ω_{n - 1}` cancels altogether.
 * `TauCeti.tendsto_modelBallVolume_div_pow_zero`,
   `TauCeti.tendsto_modelBallVolume_div_zero_curvature`: Euclidean small-radius asymptotics
   `modelBallVolume κ n r / r ^ n → 1 / n` as `r → 0`.
+* `TauCeti.measurable_curvatureSine_mul_norm_sq`,
+  `TauCeti.setLIntegral_ball_curvatureSine_pow`: polar integration of the model Jacobian
+  `curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (n - 1)` over a ball in any nontrivial finite-dimensional real
+  normed space with an additive Haar measure.
 
 ## References
 
@@ -67,10 +75,11 @@ open scoped ContDiff ENNReal Topology
 namespace TauCeti
 
 /-- The **normalized model ball volume** in dimension `n` and constant sectional curvature `κ`:
-`∫ t in 0..r, curvatureSine κ t ^ (n - 1)`. Multiplying by the unit `(n - 1)`-sphere area
-`n * vol(B^n)` gives the volume of a geodesic ball of radius `r` in the `n`-dimensional space form
-of curvature `κ` (for `0 ≤ r`, with `r ≤ π / √κ` when `0 < κ`). For both `n = 0` and `n = 1`,
-natural-number subtraction gives `n - 1 = 0`, so the integral evaluates to `r`. -/
+`∫ t in 0..r, curvatureSine κ t ^ (n - 1)`. In positive dimension `n ≥ 1`, multiplying by the unit
+`(n - 1)`-sphere area `n * vol(B^n)` gives the volume of a geodesic ball of radius `r` in the
+`n`-dimensional space form of curvature `κ` (for `0 ≤ r`, with `r ≤ π / √κ` when `0 < κ`). For
+both `n = 0` and `n = 1`, natural-number subtraction gives `n - 1 = 0`, so the integral evaluates
+to `r`. -/
 noncomputable def modelBallVolume (κ : ℝ) (n : ℕ) (r : ℝ) : ℝ :=
   ∫ t in (0 : ℝ)..r, curvatureSine κ t ^ (n - 1)
 
@@ -103,26 +112,29 @@ theorem modelBallVolume_zero_curvature {n : ℕ} (hn : n ≠ 0) (r : ℝ) :
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
   simp [modelBallVolume, integral_pow]
 
+/-- In dimension two, `κ * modelBallVolume κ 2 r = 1 - curvatureCosine κ r` for every real
+curvature `κ` (including `κ = 0`, where both sides vanish). -/
+theorem mul_modelBallVolume_two_dim (κ r : ℝ) :
+    κ * modelBallVolume κ 2 r = 1 - curvatureCosine κ r := by
+  have hderiv (t : ℝ) : HasDerivAt (fun s ↦ 1 - curvatureCosine κ s)
+      (κ * curvatureSine κ t) t := by
+    simpa only [neg_neg, neg_mul] using (hasDerivAt_curvatureCosine κ t).const_sub 1
+  have hint : IntervalIntegrable (fun t ↦ κ * curvatureSine κ t) volume 0 r :=
+    (continuous_const.mul (contDiff_curvatureSine κ).continuous).intervalIntegrable 0 r
+  have h := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hderiv t) hint
+  simpa [modelBallVolume, intervalIntegral.integral_const_mul] using h
+
+/-- In dimension two and nonzero curvature `κ ≠ 0`,
+`modelBallVolume κ 2 r = (1 - curvatureCosine κ r) / κ`. -/
+theorem modelBallVolume_two_dim {κ : ℝ} (hκ : κ ≠ 0) (r : ℝ) :
+    modelBallVolume κ 2 r = (1 - curvatureCosine κ r) / κ :=
+  eq_div_of_mul_eq hκ (by rw [mul_comm, mul_modelBallVolume_two_dim])
+
 /-- In dimension two and positive curvature `κ > 0`,
 `modelBallVolume κ 2 r = (1 - cos (√κ * r)) / κ`. -/
 theorem modelBallVolume_two_dim_of_pos {κ : ℝ} (hκ : 0 < κ) (r : ℝ) :
     modelBallVolume κ 2 r = (1 - Real.cos (√κ * r)) / κ := by
-  have hs : √κ ≠ 0 := (Real.sqrt_pos.2 hκ).ne'
-  have hsq : √κ * √κ = κ := Real.mul_self_sqrt hκ.le
-  let F : ℝ → ℝ := fun t ↦ (1 - Real.cos (√κ * t)) / κ
-  have hderiv (t : ℝ) : HasDerivAt F (curvatureSine κ t ^ (2 - 1)) t := by
-    simp only [Nat.reduceSub, pow_one, curvatureSine_of_pos hκ]
-    have hd := (((hasDerivAt_id t).const_mul (√κ)).cos.const_sub 1).div_const κ
-    refine hd.congr_deriv ?_
-    simp only [id_eq, mul_one]
-    calc -(-Real.sin (√κ * t) * √κ) / κ
-        = Real.sin (√κ * t) * √κ / κ := by ring
-      _ = Real.sin (√κ * t) * √κ / (√κ * √κ) := by rw [hsq]
-      _ = Real.sin (√κ * t) / √κ := by field_simp [hs]
-  have hint : IntervalIntegrable (fun t ↦ curvatureSine κ t ^ (2 - 1)) volume 0 r :=
-    ((contDiff_curvatureSine κ).continuous.pow _).intervalIntegrable 0 r
-  simpa [modelBallVolume, F] using
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hderiv t) hint
+  rw [modelBallVolume_two_dim hκ.ne', curvatureCosine_of_pos hκ]
 
 /-- On the unit two-sphere (`κ = 1`, `n = 2`), `modelBallVolume 1 2 r = 1 - cos r`. -/
 theorem modelBallVolume_one_two_dim (r : ℝ) :
@@ -133,22 +145,7 @@ theorem modelBallVolume_one_two_dim (r : ℝ) :
 `modelBallVolume κ 2 r = (cosh (√(-κ) * r) - 1) / (-κ)`. -/
 theorem modelBallVolume_two_dim_of_neg {κ : ℝ} (hκ : κ < 0) (r : ℝ) :
     modelBallVolume κ 2 r = (Real.cosh (√(-κ) * r) - 1) / (-κ) := by
-  have hneg : 0 < -κ := neg_pos.2 hκ
-  have hs : √(-κ) ≠ 0 := (Real.sqrt_pos.2 hneg).ne'
-  have hsq : √(-κ) * √(-κ) = -κ := Real.mul_self_sqrt hneg.le
-  let F : ℝ → ℝ := fun t ↦ (Real.cosh (√(-κ) * t) - 1) / (-κ)
-  have hderiv (t : ℝ) : HasDerivAt F (curvatureSine κ t ^ (2 - 1)) t := by
-    simp only [Nat.reduceSub, pow_one, curvatureSine_of_neg hκ]
-    have hd := (((hasDerivAt_id t).const_mul (√(-κ))).cosh.sub_const 1).div_const (-κ)
-    refine hd.congr_deriv ?_
-    simp only [id_eq, mul_one]
-    calc Real.sinh (√(-κ) * t) * √(-κ) / -κ
-        = Real.sinh (√(-κ) * t) * √(-κ) / (√(-κ) * √(-κ)) := by rw [hsq]
-      _ = Real.sinh (√(-κ) * t) / √(-κ) := by field_simp [hs]
-  have hint : IntervalIntegrable (fun t ↦ curvatureSine κ t ^ (2 - 1)) volume 0 r :=
-    ((contDiff_curvatureSine κ).continuous.pow _).intervalIntegrable 0 r
-  simpa [modelBallVolume, F] using
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hderiv t) hint
+  rw [modelBallVolume_two_dim hκ.ne, curvatureCosine_of_neg hκ, ← neg_div_neg_eq, neg_sub]
 
 /-! ### Derivative and regularity -/
 
@@ -296,55 +293,101 @@ theorem pow_div_le_modelBallVolume_of_nonpos {κ r : ℝ} {n : ℕ} (hκ : κ �
 `modelBallVolume κ n r / r ^ n → 1 / n` as `r → 0` (`r ≠ 0`). -/
 theorem tendsto_modelBallVolume_div_pow_zero (κ : ℝ) {n : ℕ} (hn : n ≠ 0) :
     Tendsto (fun r ↦ modelBallVolume κ n r / r ^ n) (𝓝[≠] 0) (𝓝 (1 / (n : ℝ))) := by
-  let g : ℝ → ℝ := dslope (curvatureSine κ) 0
-  have hg_cont : Continuous g := continuousOn_univ.1 <|
-    (continuousOn_dslope univ_mem).2 ⟨(contDiff_curvatureSine κ).continuous.continuousOn,
-      (hasDerivAt_curvatureSine κ 0).differentiableAt⟩
-  have hg0 : g 0 = 1 := by simp [g]
-  let G : ℝ → ℝ := fun r ↦ ∫ t in (0 : ℝ)..1, (t * g (r * t)) ^ (n - 1)
-  have hG_cont : Continuous G :=
-    intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
-      (by fun_prop) 0 1
-  have hG0 : G 0 = 1 / (n : ℝ) := by
-    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-    simp [G, hg0, integral_pow]
-  have heq : G =ᶠ[𝓝[≠] (0 : ℝ)] fun r ↦ modelBallVolume κ n r / r ^ n := by
-    filter_upwards [self_mem_nhdsWithin] with r (hr : r ≠ 0)
-    have hscale : modelBallVolume κ n r =
-        r * ∫ t in (0 : ℝ)..1, curvatureSine κ (r * t) ^ (n - 1) := by
-      have h := intervalIntegral.smul_integral_comp_mul_left
-        (a := (0 : ℝ)) (b := 1) (fun u ↦ curvatureSine κ u ^ (n - 1)) r
-      simpa [modelBallVolume, mul_zero, mul_one] using h.symm
-    have hterm (t : ℝ) : curvatureSine κ (r * t) / r = t * g (r * t) := by
-      have hds := sub_smul_dslope (curvatureSine κ) 0 (r * t)
-      simp only [sub_zero, curvatureSine_zero_right, smul_eq_mul] at hds
-      rw [← hds]
-      field_simp [hr]
-      rfl
-    symm
-    calc modelBallVolume κ n r / r ^ n
-        = (r * ∫ t in (0 : ℝ)..1, curvatureSine κ (r * t) ^ (n - 1)) / (r * r ^ (n - 1)) := by
-          rw [hscale, mul_pow_sub_one hn]
-      _ = (∫ t in (0 : ℝ)..1, curvatureSine κ (r * t) ^ (n - 1)) / r ^ (n - 1) :=
-          mul_div_mul_left _ _ hr
-      _ = ∫ t in (0 : ℝ)..1, curvatureSine κ (r * t) ^ (n - 1) / r ^ (n - 1) :=
-          (intervalIntegral.integral_div (r ^ (n - 1)) _).symm
-      _ = G r := by
-          refine intervalIntegral.integral_congr fun t _ ↦ ?_
-          rw [← div_pow, hterm]
-  exact ((hG0 ▸ hG_cont.tendsto 0).mono_left nhdsWithin_le_nhds).congr' heq
+  refine HasDerivAt.lhopital_zero_nhdsNE
+    (Eventually.of_forall (hasDerivAt_modelBallVolume κ n))
+    (Eventually.of_forall fun r ↦ by simpa using hasDerivAt_pow n r) ?_ ?_ ?_ ?_
+  · filter_upwards [self_mem_nhdsWithin] with r (hr : r ≠ 0)
+    exact mul_ne_zero (Nat.cast_ne_zero.mpr hn) (pow_ne_zero _ hr)
+  · simpa [modelBallVolume_zero_right] using
+      ((continuous_modelBallVolume κ n).tendsto 0).mono_left nhdsWithin_le_nhds
+  · simpa [zero_pow hn] using
+      ((continuous_pow n).tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds
+  · have hlim : Tendsto (fun r ↦ (curvatureSine κ r / r) ^ (n - 1) / (n : ℝ))
+        (𝓝[≠] 0) (𝓝 (1 / (n : ℝ))) := by
+      simpa using ((tendsto_curvatureSine_div_zero κ).pow (n - 1)).div_const (n : ℝ)
+    exact hlim.congr fun r ↦ by rw [div_pow, div_div, mul_comm]
 
 /-- At small radius, the ratio of `modelBallVolume κ n r` to the Euclidean model
-`modelBallVolume 0 n r = r ^ n / n` tends to `1`. -/
-theorem tendsto_modelBallVolume_div_zero_curvature (κ : ℝ) {n : ℕ} (hn : n ≠ 0) :
+`modelBallVolume 0 n r` tends to `1`, for every dimension `n : ℕ`. -/
+theorem tendsto_modelBallVolume_div_zero_curvature (κ : ℝ) (n : ℕ) :
     Tendsto (fun r ↦ modelBallVolume κ n r / modelBallVolume 0 n r) (𝓝[≠] 0) (𝓝 1) := by
-  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have h := (tendsto_modelBallVolume_div_pow_zero κ hn).const_mul (n : ℝ)
-  rw [mul_one_div_cancel hnR] at h
-  refine h.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with r hr
-  have hr0 : r ≠ 0 := hr
-  rw [modelBallVolume_zero_curvature hn]
-  field_simp
+  rcases eq_or_ne n 0 with rfl | hn
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with r (hr : r ≠ 0)
+    simp [hr]
+  · have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+    have h := (tendsto_modelBallVolume_div_pow_zero κ hn).const_mul (n : ℝ)
+    rw [mul_one_div_cancel hnR] at h
+    refine h.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with r (hr : r ≠ 0)
+    rw [modelBallVolume_zero_curvature hn]
+    field_simp
+
+/-! ### Polar integration of the model Jacobian on a real normed space -/
+
+open Classical in
+/-- The speed-rescaled model sine `x ↦ curvatureSine (κ * ‖x‖ ^ 2) 1` is Borel measurable on any
+normed additive commutative group. -/
+theorem measurable_curvatureSine_mul_norm_sq {F : Type*} [NormedAddCommGroup F]
+    [MeasurableSpace F] [BorelSpace F] (κ : ℝ) :
+    Measurable (fun x : F ↦ curvatureSine (κ * ‖x‖ ^ 2) 1) := by
+  have heq : (fun x : F ↦ curvatureSine (κ * ‖x‖ ^ 2) 1) =
+      fun x : F ↦ if x = 0 then (1 : ℝ) else curvatureSine κ ‖x‖ / ‖x‖ := by
+    ext x
+    by_cases hx : x = 0
+    · simp [hx]
+    · simp [hx, curvatureSine_mul_sq_one κ (norm_ne_zero_iff.mpr hx)]
+  rw [heq]
+  exact Measurable.ite (measurableSet_singleton (0 : F)) measurable_const
+    (((contDiff_curvatureSine κ).continuous.measurable.comp measurable_norm).div measurable_norm)
+
+/-- Polar integration of the model angular Jacobian `curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (n - 1)` over
+`Metric.ball (0 : F) r` against any additive Haar measure `μ` on a nontrivial finite-dimensional
+real normed space `F`. -/
+theorem setLIntegral_ball_curvatureSine_pow {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    [Nontrivial F] (μ : Measure F) [μ.IsAddHaarMeasure] {κ r : ℝ} (hr : 0 ≤ r)
+    (hbound : 0 < κ → r ≤ π / √κ) :
+    ∫⁻ x in Metric.ball (0 : F) r,
+        ENNReal.ofReal (curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (Module.finrank ℝ F - 1)) ∂μ =
+      ENNReal.ofReal ((Module.finrank ℝ F : ℝ) * modelBallVolume κ (Module.finrank ℝ F) r) *
+        μ (Metric.ball (0 : F) 1) := by
+  set n := Module.finrank ℝ F
+  have hmeas : Measurable
+      (fun x : F ↦ ENNReal.ofReal (curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (n - 1))) :=
+    ((measurable_curvatureSine_mul_norm_sq κ).pow_const _).ennreal_ofReal
+  rw [← lintegral_indicator measurableSet_ball,
+    lintegral_eq_lintegral_toSphere_lintegral_Ioi (hmeas.indicator measurableSet_ball)]
+  have hray (u : Metric.sphere (0 : F) 1) :
+      ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (n - 1)) *
+          (Metric.ball (0 : F) r).indicator
+            (fun x ↦ ENNReal.ofReal (curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (n - 1))) (t • (u : F)) =
+        ENNReal.ofReal (modelBallVolume κ n r) := by
+    have hu : ‖(u : F)‖ = 1 := mem_sphere_zero_iff_norm.mp u.2
+    have hcongr : ∀ t ∈ Ioi (0 : ℝ),
+        ENNReal.ofReal (t ^ (n - 1)) *
+          (Metric.ball (0 : F) r).indicator
+            (fun x ↦ ENNReal.ofReal (curvatureSine (κ * ‖x‖ ^ 2) 1 ^ (n - 1))) (t • (u : F)) =
+        (Iio r).indicator (fun t ↦ ENNReal.ofReal (curvatureSine κ t ^ (n - 1))) t := by
+      intro t ht
+      have hnorm : ‖t • (u : F)‖ = t := by
+        rw [norm_smul, Real.norm_of_nonneg (le_of_lt ht), hu, mul_one]
+      by_cases htr : t < r
+      · have hmem : t • (u : F) ∈ Metric.ball (0 : F) r := by
+          rw [mem_ball_zero_iff, hnorm]
+          exact htr
+        rw [indicator_of_mem hmem, indicator_of_mem htr, hnorm,
+          ← ENNReal.ofReal_mul (pow_nonneg (le_of_lt ht) _), ← mul_pow,
+          mul_curvatureSine_mul_sq, mul_one]
+      · have hnmem : t • (u : F) ∉ Metric.ball (0 : F) r := by
+          rw [mem_ball_zero_iff, hnorm]
+          exact htr
+        rw [indicator_of_notMem hnmem, indicator_of_notMem htr, mul_zero]
+    rw [setLIntegral_congr_fun measurableSet_Ioi hcongr,
+      lintegral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio,
+      inter_comm, Ioi_inter_Iio, ofReal_modelBallVolume_eq_lintegral_Ioo n hr hbound]
+  rw [lintegral_congr hray, lintegral_const, Measure.toSphere_apply_univ,
+    ← ENNReal.ofReal_natCast n, mul_comm, mul_assoc, mul_comm (μ _), ← mul_assoc,
+    ← ENNReal.ofReal_mul (Nat.cast_nonneg n)]
 
 end TauCeti
