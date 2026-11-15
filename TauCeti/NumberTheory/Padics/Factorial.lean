@@ -30,6 +30,8 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
   divides, `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
+* `Padic.rpow_neg_pred_div_le_norm_factorial`: `p ^ (-(n - 1) / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
+* `Padic.norm_factorial_pow`: `‖(pᵏ)!‖ = p ^ (-(pᵏ - 1) / (p - 1))` in `ℚ_[p]`.
 -/
 
 public section
@@ -119,6 +121,41 @@ theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
   have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
     rw [Nat.cast_sub hp.one_le, Nat.cast_one]
   simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
+
+/-- For every `n`, the norm of `n!` in `ℚ_[p]` is bounded below by `p ^ (-(n - 1) / (p - 1))`,
+sharpening `rpow_neg_div_le_norm_factorial` for `1 ≤ n`. -/
+theorem rpow_neg_pred_div_le_norm_factorial (n : ℕ) :
+    (p : ℝ) ^ (-(((n - 1 : ℕ) : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : ℚ_[p])‖ := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  have hp := (Fact.out : p.Prime)
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
+  rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
+  simp only [Int.cast_neg, Int.cast_natCast]
+  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
+  rw [le_div_iff₀ (sub_pos.mpr hp1)]
+  have hleg : (p - 1) * padicValNat p n.factorial ≤ n - 1 := by
+    have hlt := sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
+    rw [← Nat.padicValNat_def] at hlt
+    omega
+  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
+    rw [Nat.cast_sub hp.one_le, Nat.cast_one]
+  simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
+
+/-- The factorial of `p ^ k` has exact `p`-adic norm `p ^ (-(p ^ k - 1) / (p - 1))`, achieving
+equality in `rpow_neg_pred_div_le_norm_factorial`. -/
+theorem norm_factorial_pow (k : ℕ) :
+    ‖((p ^ k)! : ℚ_[p])‖ = (p : ℝ) ^ (-(((p ^ k : ℝ) - 1) / ((p : ℝ) - 1))) := by
+  have hp := (Fact.out : p.Prime)
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
+  rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
+  congr 1
+  have hleg := congrArg (Nat.cast : ℕ → ℝ) (TauCeti.sub_one_mul_padicValNat_factorial_pow p k)
+  rw [Nat.cast_mul, Nat.cast_sub hp.one_le, Nat.cast_one,
+    Nat.cast_sub (Nat.one_le_pow k p hp.pos), Nat.cast_pow, Nat.cast_one] at hleg
+  have hsub : (p : ℝ) - 1 ≠ 0 := (sub_pos.mpr hp1).ne'
+  rw [Int.cast_neg, Int.cast_natCast, neg_inj, eq_div_iff hsub, mul_comm]
+  exact hleg
 
 /-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
 `k!` to `(p k)!` raises the valuation by `k`. -/
