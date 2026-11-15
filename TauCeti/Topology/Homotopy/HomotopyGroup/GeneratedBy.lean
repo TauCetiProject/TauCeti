@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Convenient.CompactlyGenerated
+public import TauCeti.Topology.Category.CompactlyGenerated.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 
 /-!
@@ -27,7 +27,7 @@ not assert that the counit is a homeomorphism or a Hurewicz fibration.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory* (1971).
 
 The generated refinement and its counit are Mathlib's `WithGeneratedByTopology` and
-`GeneratedByTopCat.adjCounit`.
+`GeneratedByTopCat.adjCounit` (specialized to `CompactlyGenerated.adjCounit`).
 -/
 
 public section
@@ -188,8 +188,8 @@ theorem isWeakHomotopyEquivalence_generatedByCounit
 spaces whose original topology is not compactly generated. The test-space universe is
 independent of the universe of the target. -/
 theorem isWeakHomotopyEquivalence_compactlyGeneratedCounit (X : TopCat.{u}) :
-    ContinuousMap.IsWeakHomotopyEquivalence
-      ((GeneratedByTopCat.adjCounit (X := fun K : CompHaus.{v} ↦ K)).app X).hom :=
-  isWeakHomotopyEquivalence_generatedByCounit _ X
+    (CompactlyGenerated.adjCounit.{v, u}.app X).hom.IsWeakHomotopyEquivalence := by
+  simpa only [CompactlyGenerated.adjCounit_app_hom, ← GeneratedByTopCat.adjCounit_app_hom] using!
+    isWeakHomotopyEquivalence_generatedByCounit (fun K : CompHaus.{v} ↦ K) X
 
 end TauCeti
