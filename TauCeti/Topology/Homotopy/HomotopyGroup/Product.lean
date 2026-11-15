@@ -31,6 +31,8 @@ circle computes the higher homotopy groups of a torus.
   product of the homotopy groups.
 * `HomotopyGroup.prodMulEquiv`, `HomotopyGroup.piMulEquiv`: the
   positive-dimensional multiplicative forms.
+* `HomotopyGroup.map_prodMk_const_map_fst`: if the homotopy group of `Y` is trivial, every
+  homotopy class of `X × Y` comes from a slice `X × {y}`.
 -/
 
 public section
@@ -171,6 +173,35 @@ theorem prod_map_fst_map_snd (a : HomotopyGroup N (X × Y) (x, y)) :
   intro p
   rw [map_mk, map_mk, prod_mk, GenLoop.prod_map_fst_map_snd]
   rfl
+
+/-- The slice inclusion `x' ↦ (x', y)` sends a homotopy class `a` of `X` to the product of `a`
+with the class of the constant generalized loop at `y`. -/
+theorem map_prodMk_const (a : HomotopyGroup N X x) :
+    map ((ContinuousMap.id X).prodMk (ContinuousMap.const X y)) rfl a =
+      prod a (⟦_root_.GenLoop.const⟧ : HomotopyGroup N Y y) := by
+  refine Quotient.inductionOn a fun p ↦ ?_
+  rw [map_mk, prod_mk]
+  congr 1
+  apply _root_.GenLoop.ext
+  intro t
+  rw [GenLoop.map_apply]
+  -- Both sides are `(p t, y)`. The loops live over the base points `(id.prodMk (const y)) x` and
+  -- `(x, y)`, which agree only after unfolding `prodMk`, so `GenLoop.prod_apply` cannot be used
+  -- to rewrite; the two sides are equal by definition.
+  rfl
+
+/-- **Homotopy classes of a product with a factor of trivial homotopy group.** If the homotopy
+group of `Y` at `y` is trivial, every homotopy class of `X × Y` at `(x, y)` is the image of its
+first coordinate under the slice inclusion `x' ↦ (x', y)`. -/
+theorem map_prodMk_const_map_fst [Subsingleton (HomotopyGroup N Y y)]
+    (a : HomotopyGroup N (X × Y) (x, y)) :
+    map ((ContinuousMap.id X).prodMk (ContinuousMap.const X y)) rfl
+      (map (ContinuousMap.fst : C(X × Y, X)) rfl a) = a := by
+  have h : (⟦_root_.GenLoop.const⟧ : HomotopyGroup N Y y) =
+      map (ContinuousMap.snd : C(X × Y, Y)) rfl a :=
+    Subsingleton.elim (α := HomotopyGroup N Y y) _ _
+  rw [map_prodMk_const, h]
+  exact prod_map_fst_map_snd a
 
 /-- The homotopy group of a binary product is the product of the homotopy groups. -/
 def prodEquiv (x : X) (y : Y) :
