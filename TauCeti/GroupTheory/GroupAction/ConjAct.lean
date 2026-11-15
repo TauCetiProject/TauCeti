@@ -34,7 +34,9 @@ by conjugation on every transitive normal subgroup.
 * `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
-* `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
+* `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup, trivial on
+  central elements (`Subgroup.conjugationAction_smul_of_mem_center`,
+  `Subgroup.conjugationAction_center_smul`).
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_iff`: membership in a conjugate `g H g⁻¹`.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
@@ -96,7 +98,21 @@ attribute [local instance] conjugationAction
 theorem coe_conjugationAction_smul (g : G) (n : N) :
     ((g • n : N) : G) = g * n * g⁻¹ := (rfl)
 
-variable {N} [IsMulCommutative N]
+variable {N}
+
+/-- Conjugation by the ambient group fixes every element of a normal subgroup that lies in the
+center of the ambient group. -/
+theorem conjugationAction_smul_of_mem_center (g : G) {n : N} (hn : (n : G) ∈ center G) :
+    g • n = n := by
+  apply Subtype.ext
+  rw [coe_conjugationAction_smul, mem_center_iff.mp hn g, mul_inv_cancel_right]
+
+/-- The conjugation action of a group on its center is trivial. -/
+@[simp]
+theorem conjugationAction_center_smul (g : G) (z : center G) : g • z = z :=
+  conjugationAction_smul_of_mem_center g z.2
+
+variable [IsMulCommutative N]
 
 /-- Conjugation by an element of an abelian normal subgroup is trivial on that subgroup. -/
 @[simp]

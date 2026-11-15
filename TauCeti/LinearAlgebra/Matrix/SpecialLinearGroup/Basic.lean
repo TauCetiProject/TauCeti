@@ -101,6 +101,11 @@ proof is independent of the source's.
   it does not — both under `-1 ≠ 1`, which fails exactly when `(2 : R) = 0`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_one_or_two`: that order is `1` or `2`,
   needing no hypothesis beyond `NoZeroDivisors R`.
+* `Matrix.SpecialLinearGroup.coe_sq_eq_trace_smul_sub_one`: the rank-two Cayley–Hamilton identity
+  `g ^ 2 = (g 0 0 + g 1 1) • g - 1` for `g ∈ SL₂(R)`.
+* `Matrix.SpecialLinearGroup.sq_eq_one_iff_eq_one_or_eq_neg_one` and
+  `Matrix.SpecialLinearGroup.orderOf_eq_two_iff_eq_neg_one`: when `R` has no zero divisors and
+  `(2 : R) ≠ 0`, `-I` is the unique element of `SL₂(R)` of order two.
 
 ## References
 
@@ -367,16 +372,85 @@ theorem card_center_le_two [NoZeroDivisors R] :
   rw [h, Nat.card_coe_set_eq]
   exact (Set.ncard_insert_le _ _).trans (by simp)
 
-/-- `-I ≠ I` in `SL₂` is exactly `(2 : R) ≠ 0`, read off the `(0,0)` entry. Stated as a helper so
-the `@[simp]` lemmas below can take `[NeZero (2 : R)]`, which simp's discharger can settle by
-typeclass synthesis, rather than an explicit hypothesis, which it cannot. -/
-private theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
+/-- When `(2 : R) ≠ 0`, `-1` and `1` are distinct in `SL₂(R)`. -/
+theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
     (-1 : SpecialLinearGroup (Fin 2) R) ≠ 1 := fun h ↦ by
   have h00 := congrArg (fun g : SpecialLinearGroup (Fin 2) R ↦
     (g : Matrix (Fin 2) (Fin 2) R) 0 0) h
   simp only [Fin.isValue, SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one,
     Matrix.neg_apply, one_apply_eq] at h00
   exact NeZero.ne (2 : R) (by linear_combination -h00)
+
+/-- **Cayley–Hamilton for `SL₂(R)`**: every `g ∈ SL₂(R)` satisfies
+`g ^ 2 = (g 0 0 + g 1 1) • g - 1` as `2 × 2` matrices. -/
+theorem coe_sq_eq_trace_smul_sub_one (g : SpecialLinearGroup (Fin 2) R) :
+    ((g ^ 2 : SpecialLinearGroup (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) =
+      (g 0 0 + g 1 1) • (g : Matrix (Fin 2) (Fin 2) R) - 1 := by
+  have hdet := fin_two_mul_sub_mul_eq_one g
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [sq, coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
+  · linear_combination -hdet
+  · ring
+  · ring
+  · linear_combination -hdet
+
+/-- **Elements of `SL₂(R)` squaring to `I`.** Over a commutative ring without zero divisors in
+which `2 ≠ 0`, the only elements of `SL₂(R)` satisfying `g ^ 2 = 1` are `1` and `-1`. The
+hypothesis `2 ≠ 0` is necessary: over `ZMod 2` the transvection `[1, 1; 0, 1]` also squares to
+`1`. -/
+theorem sq_eq_one_iff_eq_one_or_eq_neg_one [NoZeroDivisors R] [NeZero (2 : R)]
+    {g : SpecialLinearGroup (Fin 2) R} :
+    g ^ 2 = 1 ↔ g = 1 ∨ g = -1 := by
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · have hmat : (g 0 0 + g 1 1) • (g : Matrix (Fin 2) (Fin 2) R) - 1 = 1 := by
+      rw [← coe_sq_eq_trace_smul_sub_one, hg, coe_one]
+    have h00 : (g 0 0 + g 1 1) * g 0 0 = 2 := by
+      have h := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M 0 0) hmat
+      simp only [Fin.isValue, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, one_apply_eq] at h
+      linear_combination h
+    have h11 : (g 0 0 + g 1 1) * g 1 1 = 2 := by
+      have h := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M 1 1) hmat
+      simp only [Fin.isValue, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, one_apply_eq] at h
+      linear_combination h
+    have h01 : (g 0 0 + g 1 1) * g 0 1 = 0 := by
+      have h := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M 0 1) hmat
+      simpa only [Fin.isValue, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul,
+        one_apply_ne zero_ne_one, sub_zero] using h
+    have h10 : (g 0 0 + g 1 1) * g 1 0 = 0 := by
+      have h := congrArg (fun M : Matrix (Fin 2) (Fin 2) R ↦ M 1 0) hmat
+      simpa only [Fin.isValue, Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul,
+        one_apply_ne one_ne_zero, sub_zero] using h
+    have htr : g 0 0 + g 1 1 ≠ 0 := fun ht ↦
+      NeZero.ne (2 : R) (by linear_combination -h00 + g 0 0 * ht)
+    have hb : g 0 1 = 0 := (mul_eq_zero.mp h01).resolve_left htr
+    have hc : g 1 0 = 0 := (mul_eq_zero.mp h10).resolve_left htr
+    have hd : g 1 1 = g 0 0 := by
+      have hdiff : (g 0 0 + g 1 1) * (g 1 1 - g 0 0) = 0 := by linear_combination h11 - h00
+      exact sub_eq_zero.mp ((mul_eq_zero.mp hdiff).resolve_left htr)
+    have ha2 : g 0 0 * g 0 0 = 1 := by
+      have hdet := fin_two_mul_sub_mul_eq_one g
+      rw [hb, hc, hd] at hdet
+      linear_combination hdet
+    rcases mul_self_eq_one_iff.mp ha2 with ha | ha <;> [left; right] <;>
+      · ext i j
+        fin_cases i <;> fin_cases j <;> simp [ha, hb, hc, hd]
+  · rintro (rfl | rfl)
+    · exact one_pow 2
+    · exact neg_one_sq
+
+/-- **Unique involution of `SL₂(R)`.** When `R` has no zero divisors and `2 ≠ 0`, `-I` is the
+unique element of `SL₂(R)` of order two. -/
+theorem orderOf_eq_two_iff_eq_neg_one [NoZeroDivisors R] [NeZero (2 : R)]
+    {g : SpecialLinearGroup (Fin 2) R} :
+    orderOf g = 2 ↔ g = -1 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · rcases sq_eq_one_iff_eq_one_or_eq_neg_one.mp (h ▸ pow_orderOf_eq_one g) with rfl | hg
+    · simp at h
+    · exact hg
+  · rintro rfl
+    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+    exact orderOf_eq_prime neg_one_sq neg_one_ne_one_of_neZero_two
 
 /-- **The centre of `SL₂` has exactly two elements** once `-I ≠ I`. `card_center_le_two` is the
 unconditional bound; this is the value, and it is what a consumer evaluating the centre factor of
