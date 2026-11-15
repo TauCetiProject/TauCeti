@@ -237,9 +237,10 @@ private theorem propagatorField_mem (hS1 : ContDiff ℝ 1 S) (hper : Function.Pe
   rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
     ContinuousLinearMap.coe_coe, sub_eq_zero] at hv
   rw [mem_doublyTwistedContDiff]
-  refine ⟨contDiff_dysonSeriesLeft_apply_snd hS1 v, fun z => ?_, fun ⟨_, t⟩ => ?_⟩
+  refine ⟨contDiff_dysonSeriesLeft_apply_snd (m := 1) hS1 v, fun z => ?_, fun ⟨_, t⟩ => ?_⟩
   · simp [propagatorField]
-  · exact dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hS1.continuous hper hv.symm t
+  · exact dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul
+      ((continuous_const (y := J₀)).clm_comp hS1.continuous) (hper.comp (J₀ ∘L ·)) hv.symm t
 
 /-- A kernel element of `D` on maps twisted by `ε₁` along `(k ℓ, 0)` and by `ε₂` along `(a ℓ, n d)`
 is the propagator field of its value at the origin, and that value lies in the `ε₂`-eigenspace

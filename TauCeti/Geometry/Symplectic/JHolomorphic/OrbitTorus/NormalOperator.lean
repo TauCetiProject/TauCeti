@@ -561,12 +561,12 @@ theorem orbitTorusOperator_dysonSeriesLeft_apply_eq_zero (hJ₀sq : ∀ x, J₀ 
   rw [orbitTorusOperator_apply, hf.fderiv]
   simp [stdComplexLineReal, stdComplexLineImag, hJ₀sq]
 
-/-- For a `C¹` path `S`, the propagator `Ψ` of the loop equation `w' = J₀ S(t) w`, applied to a
-vector `v` and extended constantly in `s`, is a `C²` map. -/
-theorem contDiff_dysonSeriesLeft_apply_snd (hS1 : ContDiff ℝ 1 S) (v : V) :
-    ContDiff ℝ 2 fun z : ℝ × ℝ => dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 v :=
-  ((((contDiff_dysonSeriesLeft (n := 1) ((contDiff_const (c := J₀)).clm_comp
-    (by simpa using hS1))).of_le (by norm_num)).clm_apply contDiff_const).comp contDiff_snd)
+/-- For a `Cᵐ` path `S`, the propagator `Ψ` of the loop equation `w' = J₀ S(t) w`, applied to a
+vector `v` and extended constantly in `s`, is a `Cᵐ⁺¹` map. -/
+theorem contDiff_dysonSeriesLeft_apply_snd {m : ℕ} (hS : ContDiff ℝ m S) (v : V) :
+    ContDiff ℝ (m + 1) fun z : ℝ × ℝ => dysonSeriesLeft (fun t => J₀ ∘L S t) z.2 v :=
+  ((contDiff_dysonSeriesLeft ((contDiff_const (c := J₀)).clm_comp hS)).clm_apply
+    contDiff_const).comp contDiff_snd
 
 /-- **The propagator is symplectic.** If `J₀` is an orthogonal complex structure and every `S(t)` is
 symmetric, then `J₀ S(t)` is skew for the symplectic form `⟪J₀ ·, ·⟫`, so the propagator `Ψ(t)` of
@@ -685,22 +685,6 @@ theorem dysonSeriesLeft_pow_apply_eq_smul_of_orbitTorusOperator_eq_zero (hℓ : 
   rw [zero_add, zero_add, hΨ, ← Prod.zero_eq_mk] at h
   rwa [dysonSeriesLeft_natCast_mul_of_periodic hM hMper] at h
 
-/-- **The return twist of the propagator on a cover.** If `S` is `d`-periodic and `v` lies in the
-`ε₂`-eigenspace of `Ψ(d) ^ n`, the return map of the `n`-th iterate of the loop, then
-`Ψ(t + n d) v = ε₂ • Ψ(t) v` for all `t`. -/
-theorem dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul (hScont : Continuous S)
-    (hper : Function.Periodic S d) {n : ℕ} {v : V}
-    (hv : (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) v = ε₂ • v) (t : ℝ) :
-    dysonSeriesLeft (fun t => J₀ ∘L S t) (t + n * d) v =
-      ε₂ • dysonSeriesLeft (fun t => J₀ ∘L S t) t v := by
-  set Ψ := dysonSeriesLeft (fun t => J₀ ∘L S t)
-  have hM : Continuous fun t => J₀ ∘L S t := (continuous_const (y := J₀)).clm_comp hScont
-  have hMper : Function.Periodic (fun t => J₀ ∘L S t) d := fun t => by simp only [hper t]
-  have hadd : Ψ (t + n * d) = Ψ t * Ψ d ^ n :=
-    (dysonSeriesLeft_add_of_periodic hM (hMper.nat_mul n) t).trans
-      (congrArg (Ψ t * ·) (dysonSeriesLeft_natCast_mul_of_periodic hM hMper n))
-  rw [hadd, mul_apply_eq_comp, hv, map_smul]
-
 end Complete
 
 /-- **Nondegeneracy on finite covers.** Let `V` be finite-dimensional, `J₀` an orthogonal complex
@@ -740,9 +724,9 @@ theorem exists_ne_zero_orbitTorusOperator_eq_zero_iff_eq_one_and_det_eq_zero
       have h0 : (ε₂ • 1 - Ψ d ^ n) v = 0 := hv
       rw [sub_apply, smul_apply, one_apply_eq_self, sub_eq_zero] at h0
       exact h0.symm
-    refine ⟨fun z => Ψ z.2 v, contDiff_dysonSeriesLeft_apply_snd hS1 v, fun h => hne ?_,
-      fun _ _ => (one_smul ℝ _).symm,
-      fun _ t => dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul hScont hper hΨv t,
+    refine ⟨fun z => Ψ z.2 v, contDiff_dysonSeriesLeft_apply_snd (m := 1) hS1 v, fun h => hne ?_,
+      fun _ _ => (one_smul ℝ _).symm, fun _ t => dysonSeriesLeft_add_natCast_mul_apply_of_eq_smul
+        ((continuous_const (y := J₀)).clm_comp hScont) (hper.comp (J₀ ∘L ·)) hΨv t,
       orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hScont v⟩
     simpa [Ψ] using congrFun h (0, 0)
 
