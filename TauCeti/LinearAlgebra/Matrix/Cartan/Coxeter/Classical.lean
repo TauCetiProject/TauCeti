@@ -13,7 +13,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Classical.TypeD
 import Mathlib.Data.List.Sort
 import Mathlib.Data.Matrix.Block
 import TauCeti.GroupTheory.OrderOfElement.Basic
-import TauCeti.LinearAlgebra.Matrix.Cartan.Classical
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 
 /-!
@@ -100,6 +99,43 @@ private theorem prod_take_map_finRange_apply {T : Fin n → Matrix (Fin n) (Fin 
     simp only [Fin.cast_mk, Pi.sub_apply, Pi.single_apply, Fin.eq_mk_iff_val_eq]
     grind
 
+/-- If the last of `m + 1` ambient reflections is `1 - vecMulVec u v` and the others are the
+reflections in the chain roots, then the product is the cycle `e₀ ↦ e₁ ↦ ⋯ ↦ eₘ ↦ e₀` of
+`prod_take_map_finRange_apply` followed by `1 - vecMulVec u v`. -/
+private theorem prod_map_finRange_apply {m : ℕ}
+    {T : Fin (m + 1) → Matrix (Fin (m + 1)) (Fin (m + 1)) ℤ}
+    (hT : ∀ (i : Fin (m + 1)) (h : (i : ℕ) + 1 < m + 1),
+      T i = 1 - vecMulVec (Pi.single i 1 - Pi.single ⟨(i : ℕ) + 1, h⟩ 1)
+        (Pi.single i 1 - Pi.single ⟨(i : ℕ) + 1, h⟩ 1))
+    {u v : Fin (m + 1) → ℤ} (hlast : T (Fin.last m) = 1 - vecMulVec u v) (k j : Fin (m + 1)) :
+    ((List.finRange (m + 1)).map T).prod k j =
+      (if (j : ℕ) < m then (if (k : ℕ) = j + 1 then 1 else 0) else if (k : ℕ) = 0 then 1 else 0) -
+        (if (k : ℕ) = 0 then u (Fin.last m) else u ⟨k - 1, by omega⟩) * v j := by
+  have hP := prod_take_map_finRange_apply hT (Nat.lt_succ_self m)
+  rw [← List.take_length (l := (List.finRange (m + 1)).map T), List.length_map,
+    List.length_finRange, List.prod_take_succ _ _ (by simp), List.getElem_map,
+    List.getElem_finRange, Fin.cast_mk, show (⟨m, _⟩ : Fin (m + 1)) = Fin.last m from rfl, hlast,
+    mul_one_sub_vecMulVec_apply, hP]
+  congr 1
+  · split_ifs <;> omega
+  · congr 1
+    rw [mulVec, dotProduct]
+    have := k.isLt
+    split_ifs with hk
+    · rw [Finset.sum_eq_single (Fin.last m) (fun l _ hl => ?_) (by simp)]
+      · simp [hP, hk]
+      · have hl' : (l : ℕ) ≠ m := fun h' => hl (Fin.ext h')
+        have := l.isLt
+        rw [hP]
+        split_ifs <;> omega
+    · rw [Finset.sum_eq_single ⟨k - 1, by omega⟩ (fun l _ hl => ?_) (by simp)]
+      · rw [hP, Fin.val_mk]
+        split_ifs <;> omega
+      · have hl' : (l : ℕ) ≠ k - 1 := fun h' => hl (Fin.ext h')
+        have := l.isLt
+        rw [hP]
+        split_ifs <;> omega
+
 /-- The product, in order, of the ambient reflections of the simple roots of type `Bₙ` is the
 negacyclic shift. -/
 private theorem prod_map_typeB (hn : 0 < n) :
@@ -107,13 +143,11 @@ private theorem prod_map_typeB (hn : 0 < n) :
       1 - vecMulVec (typeBSimpleRoot n i) (typeBSimpleCoroot n i)).prod = negacyclicShift ℤ n := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   ext k j
-  rw [← List.take_length (l := (List.finRange (m + 1)).map _), List.length_map,
-    List.length_finRange, List.prod_take_succ _ _ (by simp), List.getElem_map,
-    List.getElem_finRange, typeBSimpleRoot_of_not_add_one_lt (by simp),
-    typeBSimpleCoroot_of_not_add_one_lt (by simp), mul_one_sub_vecMulVec_apply,
-    mulVec_single_one, col_apply, prod_take_map_finRange_apply (fun i h => by simp [h]) (by omega),
-    prod_take_map_finRange_apply (fun i h => by simp [h]) (by omega), negacyclicShift_apply]
-  simp only [Fin.cast_mk, Pi.single_apply, Fin.eq_mk_iff_val_eq]
+  rw [prod_map_finRange_apply (fun i h => by simp [h]) (by
+      rw [typeBSimpleRoot_of_not_add_one_lt (by simp),
+        typeBSimpleCoroot_of_not_add_one_lt (by simp)]),
+    negacyclicShift_apply]
+  simp only [Pi.single_apply, Fin.ext_iff, Fin.val_last]
   grind
 
 /-! ### One-degenerate orders of the classical diagrams -/
@@ -217,13 +251,8 @@ private theorem prod_map_typeD_apply (hn : 4 ≤ n) (k j : Fin n) :
         1 - vecMulVec (Pi.single i 1 - Pi.single ⟨(i : ℕ) + 1, h⟩ 1)
           (Pi.single i 1 - Pi.single ⟨(i : ℕ) + 1, h⟩ 1) := fun i h => by
     rw [typeDSimpleRoot_of_add_one_lt hn h]
-  rw [← List.take_length (l := (List.finRange (m + 1)).map _), List.length_map,
-    List.length_finRange, List.prod_take_succ _ _ (by simp), List.getElem_map,
-    List.getElem_finRange, typeDSimpleRoot_of_not_add_one_lt hn (by simp),
-    mul_one_sub_vecMulVec_apply, mulVec_add, mulVec_single_one, mulVec_single_one, Pi.add_apply,
-    col_apply, col_apply, prod_take_map_finRange_apply hT (by omega),
-    prod_take_map_finRange_apply hT (by omega), prod_take_map_finRange_apply hT (by omega)]
-  simp only [Pi.add_apply, Pi.single_apply, Fin.eq_mk_iff_val_eq]
+  rw [prod_map_finRange_apply hT (by rw [typeDSimpleRoot_of_not_add_one_lt hn (by simp)])]
+  simp only [Pi.add_apply, Pi.single_apply, Fin.ext_iff, Fin.val_last]
   grind
 
 /-- The product of the ambient reflections of type `Dₙ₊₁` is block diagonal, with the negacyclic

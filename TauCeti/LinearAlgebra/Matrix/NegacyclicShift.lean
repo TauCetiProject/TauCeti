@@ -56,6 +56,12 @@ theorem negacyclicShift_apply (k j : Fin n) :
       if (k : ℕ) = j + 1 then 1 else if (k : ℕ) = 0 ∧ (j : ℕ) + 1 = n then -1 else 0 :=
   (rfl)
 
+/-- An entry of the negacyclic shift vanishes unless `k = j + 1`, or `k = 0` and `j` is the last
+index. -/
+theorem negacyclicShift_apply_eq_zero {k j : Fin n} (h₁ : (k : ℕ) ≠ j + 1)
+    (h₂ : ¬((k : ℕ) = 0 ∧ (j : ℕ) + 1 = n)) : negacyclicShift R n k j = 0 := by
+  simp only [negacyclicShift_apply, h₁, h₂, ite_false]
+
 /-- Multiplying on the right by the negacyclic shift moves column `j + 1` to column `j`, and the
 negated column `0` to the last column. -/
 theorem mul_negacyclicShift_apply {m : Type*} (M : Matrix m (Fin n) R) (k : m) (j : Fin n) :
@@ -64,16 +70,12 @@ theorem mul_negacyclicShift_apply {m : Type*} (M : Matrix m (Fin n) R) (k : m) (
   rw [Matrix.mul_apply]
   split_ifs with h
   · rw [Finset.sum_eq_single ⟨j + 1, h⟩ (fun l _ hl => by
-      rw [Ne, Fin.ext_iff] at hl
-      simp only at hl
-      rw [show negacyclicShift R n l j = 0 by
-        rw [negacyclicShift_apply]; split_ifs <;> first | rfl | omega, mul_zero]) (by simp)]
+      rw [negacyclicShift_apply_eq_zero (fun h' => hl (Fin.ext h')) (by omega), mul_zero])
+      (by simp)]
     simp [negacyclicShift_apply]
   · rw [Finset.sum_eq_single ⟨0, j.pos⟩ (fun l _ hl => by
-      rw [Ne, Fin.ext_iff] at hl
-      rw [show negacyclicShift R n l j = 0 by
-        rw [negacyclicShift_apply]; split_ifs <;> first | rfl | (simp only at hl; omega),
-        mul_zero]) (by simp)]
+      have hl' : (l : ℕ) ≠ 0 := fun h' => hl (Fin.ext h')
+      rw [negacyclicShift_apply_eq_zero (by omega) (by omega), mul_zero]) (by simp)]
     simp [negacyclicShift_apply]
     omega
 

@@ -103,6 +103,7 @@ theorem typeBSimpleCoroot_mul_transpose_typeBSimpleRoot :
 
 /-- The matrix whose rows are the simple roots of type `Bₙ` is unitriangular, so it has
 determinant `1`. -/
+@[simp]
 theorem det_typeBSimpleRoot_eq_one : (Matrix.of (typeBSimpleRoot n)).det = 1 := by
   rw [det_of_isUpperTriangular fun i j hji => ?_]
   · refine Finset.prod_eq_one fun i _ => ?_
@@ -111,6 +112,7 @@ theorem det_typeBSimpleRoot_eq_one : (Matrix.of (typeBSimpleRoot n)).det = 1 := 
     by_cases hi : (i : ℕ) + 1 < n <;> simp [hi, Pi.single_apply, Fin.ext_iff] <;> omega
 
 /-- The matrix whose rows are the simple coroots of type `Bₙ` has determinant `2`. -/
+@[simp]
 theorem det_typeBSimpleCoroot_eq_two (hn : 0 < n) : (Matrix.of (typeBSimpleCoroot n)).det = 2 := by
   have := congrArg det (typeBSimpleRoot_mul_transpose_typeBSimpleCoroot (n := n))
   rwa [det_mul, det_transpose, det_typeBSimpleRoot_eq_one, one_mul, CartanMatrix.B_det hn] at this
