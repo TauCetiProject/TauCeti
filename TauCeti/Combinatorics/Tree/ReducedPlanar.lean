@@ -387,13 +387,9 @@ theorem sum_arity_three {M : Type*} [AddCommMonoid M] (f : Arity 3 → M) :
   let t₂ : Arity 3 := ⟨binary leaf (corolla 0), by simp⟩
   have huniv : (Finset.univ : Finset (Arity 3)) = {t₀, t₁, t₂} := by
     ext t
-    simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff,
-      Subtype.ext_iff, t₀, t₁, t₂]
-    exact (numLeaves_eq_three_iff t.val).mp t.property
-  have h01 : t₀ ≠ t₁ := by simp [Subtype.ext_iff, t₀, t₁, corolla, binary]
-  have h02 : t₀ ≠ t₂ := by simp [Subtype.ext_iff, t₀, t₂, corolla, binary]
-  have h12 : t₁ ≠ t₂ := by simp [Subtype.ext_iff, t₁, t₂, corolla]
-  rw [huniv, Finset.sum_insert (by simp [h01, h02]), Finset.sum_insert (by simp [h12]),
+    simpa [Subtype.ext_iff, t₀, t₁, t₂] using (numLeaves_eq_three_iff t.val).mp t.property
+  rw [huniv, Finset.sum_insert (by simp [Subtype.ext_iff, t₀, t₁, t₂, corolla, binary]),
+    Finset.sum_insert (by simp [Subtype.ext_iff, t₁, t₂, corolla]),
     Finset.sum_singleton, add_assoc]
 
 /-! ## Root decomposition via compositions -/
@@ -450,66 +446,55 @@ private theorem cast_nodeComposition_blocksFun {n : ℕ} (k : ℕ)
   rw [Composition.cast_blocksFun, nodeComposition_blocksFun]
   rfl
 
+private theorem node_child_eq_of_eq {m n : ℕ} {f : Fin (m + 2) → ReducedPlanarTree}
+    {g : Fin (n + 2) → ReducedPlanarTree} (h : node m f = node n g) (i : Fin (n + 2)) :
+    f (i.cast (by have := (node.inj h).1; omega)) = g i := by
+  obtain ⟨rfl, hg⟩ := node.inj h
+  exact congrFun (eq_of_heq hg) i
+
+private theorem ofComposition_injective {n : ℕ} :
+    Function.Injective fun p : Σ c : {c : Composition n // 2 ≤ c.length},
+      ∀ i : Fin c.1.length, Arity (c.1.blocksFun i) ↦ ofComposition p.1.1 p.1.2 p.2 := by
+  rintro ⟨⟨c₁, hc₁⟩, ch₁⟩ ⟨⟨c₂, hc₂⟩, ch₂⟩ h
+  have hnode := Subtype.ext_iff.mp h
+  dsimp only [val_ofComposition] at hnode
+  have hlen : c₁.length = c₂.length := by have := (node.inj hnode).1; omega
+  have hch (i : Fin c₂.length) : (ch₁ (i.cast hlen.symm)).val = (ch₂ i).val :=
+    node_child_eq_of_eq hnode (i.cast (Nat.sub_add_cancel hc₂).symm)
+  obtain rfl : c₁ = c₂ := Composition.ext <|
+    List.ext_getElem (by simpa [Composition.blocks_length] using hlen) fun i _ hi₂ ↦ by
+      have hi := congrArg numLeaves (hch ⟨i, by rwa [← c₂.blocks_length]⟩)
+      simpa [Composition.blocksFun_eq_getElem, (ch₁ _).property, (ch₂ _).property] using hi
+  exact congrArg (Sigma.mk (β := fun e : {e : Composition n // 2 ≤ e.length} ↦
+    ∀ i : Fin e.1.length, Arity (e.1.blocksFun i)) ⟨c₁, hc₁⟩)
+    (funext fun i ↦ Subtype.ext (hch i))
+
+private def arityCompositionInv {n : ℕ} (hn : 2 ≤ n) :
+    Arity n → Σ c : {c : Composition n // 2 ≤ c.length},
+      ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)
+  | ⟨leaf, ht⟩ => False.elim (by simp at ht; omega)
+  | ⟨node k children, ht⟩ =>
+    let c : Composition n := (nodeComposition k children).cast ht
+    have hcl : c.length = k + 2 := cast_nodeComposition_length k children ht
+    ⟨⟨c, by omega⟩, fun i ↦ ⟨children (i.cast hcl),
+      (cast_nodeComposition_blocksFun k children ht i).symm⟩⟩
+
+private theorem ofComposition_arityCompositionInv {n : ℕ} (hn : 2 ≤ n) (t : Arity n) :
+    ofComposition (arityCompositionInv hn t).1.1 (arityCompositionInv hn t).1.2
+      (arityCompositionInv hn t).2 = t := by
+  rcases t with ⟨leaf | ⟨k, children⟩, ht⟩
+  · simp at ht; omega
+  · exact Subtype.ext (node_congr (by simp [arityCompositionInv]) fun _ ↦ rfl)
+
 /-- Decomposing a reduced planar tree of arity `n ≥ 2` at its root identifies `Arity n` with
 compositions of `n` into at least two blocks paired with a child tree on each block. -/
 def arityCompositionEquiv {n : ℕ} (hn : 2 ≤ n) :
     (Σ c : {c : Composition n // 2 ≤ c.length},
       ∀ i : Fin c.1.length, Arity (c.1.blocksFun i)) ≃ Arity n where
   toFun p := ofComposition p.1.1 p.1.2 p.2
-  invFun
-    | ⟨leaf, ht⟩ => absurd ht (by simp; omega)
-    | ⟨node k children, ht⟩ =>
-      let c : Composition n := (nodeComposition k children).cast ht
-      have hcl : c.length = k + 2 := cast_nodeComposition_length k children ht
-      ⟨⟨c, by omega⟩, fun i ↦ ⟨children (i.cast hcl),
-        (cast_nodeComposition_blocksFun k children ht i).symm⟩⟩
-  left_inv := fun ⟨⟨c, hc⟩, children⟩ ↦ by
-    let k := c.length - 2
-    let children' : Fin (k + 2) → ReducedPlanarTree :=
-      fun i ↦ (children (i.cast (Nat.sub_add_cancel hc))).val
-    let ht : (node k children').numLeaves = n := (ofComposition c hc children).property
-    let d : Composition n := (nodeComposition k children').cast ht
-    have hdl : d.length = k + 2 := cast_nodeComposition_length k children' ht
-    set q : (Σ e : {e : Composition n // 2 ≤ e.length},
-        ∀ i : Fin e.1.length, Arity (e.1.blocksFun i)) :=
-      ⟨⟨d, by omega⟩, fun i ↦ ⟨children' (i.cast hdl),
-        (cast_nodeComposition_blocksFun k children' ht i).symm⟩⟩
-    change q = ⟨⟨c, hc⟩, children⟩
-    rcases hq : q with ⟨e, g⟩
-    have he : e = ⟨c, hc⟩ := by
-      apply Subtype.ext
-      apply Composition.ext
-      have heblocks : e.1.blocks =
-          List.ofFn (fun i : Fin (c.length - 2 + 2) ↦
-            (children (i.cast (Nat.sub_add_cancel hc))).val.numLeaves) := by
-        have hb := congrArg (fun p ↦ p.1.1.blocks) hq.symm
-        simpa [q, d] using hb
-      rw [heblocks]
-      have hcl : c.length - 2 + 2 = c.blocks.length :=
-        (Nat.sub_add_cancel hc).trans c.blocks_length.symm
-      refine List.ext_getElem (by simp [hcl]) fun i hi₁ hi₂ ↦ ?_
-      simp only [List.getElem_ofFn, (children _).property, Composition.blocksFun_eq_getElem]
-      rfl
-    subst he
-    refine congrArg
-      (Sigma.mk (β := fun e : {e : Composition n // 2 ≤ e.length} ↦
-        ∀ i : Fin e.1.length, Arity (e.1.blocksFun i)) ⟨c, hc⟩)
-      (funext fun i ↦ Subtype.ext ?_)
-    have hval := congrArg
-      (fun p : (Σ e : {e : Composition n // 2 ≤ e.length},
-          ∀ j : Fin e.1.length, Arity (e.1.blocksFun j)) ↦
-        if hi : i.1 < p.1.1.length then (p.2 ⟨i.1, hi⟩).val else leaf) hq
-    have hiq : i.1 < d.length := hdl.symm ▸ (Nat.sub_add_cancel hc).symm ▸ i.2
-    dsimp only [q] at hval
-    rw [dite_eq_left hiq, dite_eq_left i.2] at hval
-    exact hval.symm
-  right_inv := by
-    rintro ⟨t, ht⟩
-    cases t with
-    | leaf => simp at ht; omega
-    | node k children =>
-      apply Subtype.ext
-      exact node_congr (by simp) fun i ↦ rfl
+  invFun := arityCompositionInv hn
+  left_inv _ := ofComposition_injective (ofComposition_arityCompositionInv hn _)
+  right_inv := ofComposition_arityCompositionInv hn
 
 @[simp] theorem arityCompositionEquiv_apply {n : ℕ} (hn : 2 ≤ n)
     (c : {c : Composition n // 2 ≤ c.length})
