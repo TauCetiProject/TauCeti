@@ -171,7 +171,7 @@ theorem map_comap_of_isClosedImmersion {Y : Scheme.{u}} (J : Y.IdealSheafData) (
 
 /-- **Ideal sheaves of quasi-compact morphisms commute with flat base change.** If `f' : U ⟶ V` is
 the base change of a quasi-compact morphism `f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y`, then
-the ideal sheaf of `f'` is the inverse image of the ideal sheaf of `f` (Stacks Tag 01R8). -/
+the ideal sheaf of `f'` is the inverse image of the ideal sheaf of `f`. -/
 theorem ker_eq_comap_of_isPullback_of_flat {U V Y : Scheme.{u}} {f : X ⟶ Y}
     {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV] [QuasiCompact f]
     (H : IsPullback f' iU iV f) : f'.ker = f.ker.comap iV := by
@@ -204,7 +204,7 @@ theorem isPullback_subschemeMap_comap {X' S' : Scheme.{u}} (I : X.IdealSheafData
 /-- **Schematic images of quasi-compact morphisms commute with flat base change.** If `f' : U ⟶ V`
 is the base change of a quasi-compact morphism `f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y`,
 then pulling the schematic image `I.map f` back along `iV` gives the schematic image along `f'` of
-the inverse image `I.comap iU` (Stacks Tag 01R8). -/
+the inverse image `I.comap iU`. -/
 theorem comap_map_of_isPullback_of_flat {U V Y : Scheme.{u}} (I : X.IdealSheafData)
     {f : X ⟶ Y} {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV] [QuasiCompact f]
     (H : IsPullback f' iU iV f) : (I.map f).comap iV = (I.comap iU).map f' :=

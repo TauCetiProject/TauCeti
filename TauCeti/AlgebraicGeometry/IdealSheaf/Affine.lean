@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 
-import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 
 /-!
@@ -179,18 +178,13 @@ theorem exists_pow_mul_mem_of_comap_basicOpen_le {B : CommRingCat.{u}} {N₁ N�
   dsimp only at hle'
   rw [← comap_comp, ← comap_comp, hfac, comap_ofIdealTop_map_ΓSpecIso_inv,
     comap_ofIdealTop_map_ΓSpecIso_inv, ← equivOfIsAffine_symm_apply,
-    ← equivOfIsAffine_symm_apply, map_le_map_iff, CommRingCat.hom_ofHom] at hle'
-  have hgf : ((Scheme.ΓSpecIso (.of (Localization.Away g))).hom.hom).comp
-      (Scheme.ΓSpecIso (.of (Localization.Away g))).inv.hom = RingHom.id _ := by
-    ext x
-    exact (Scheme.ΓSpecIso (.of (Localization.Away g))).inv_hom_id_apply x
-  have hle_loc : N₁.map (algebraMap B (Localization.Away g)) ≤
-      N₂.map (algebraMap B (Localization.Away g)) := by
-    simpa only [Ideal.map_map, ← RingHom.comp_assoc, hgf, RingHom.id_comp] using
-      Ideal.map_mono (f := (Scheme.ΓSpecIso (.of (Localization.Away g))).hom.hom) hle'
+    ← equivOfIsAffine_symm_apply, map_le_map_iff, CommRingCat.hom_ofHom,
+    Ideal.map_le_iff_le_comap,
+    Ideal.comap_map_of_bijective _ (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso _).inv)]
+    at hle'
   obtain ⟨_, ⟨k, rfl⟩, hk⟩ :=
     (IsLocalization.algebraMap_mem_map_algebraMap_iff (Submonoid.powers g) _ _ _).mp
-      (hle_loc (Ideal.mem_map_of_mem _ hz))
+      (hle' (Ideal.mem_map_of_mem _ hz))
   exact ⟨k, hk⟩
 
 /-- For ideal sheaves `K ≤ I'` and an affine open `U`, the kernel of the map from the sections of

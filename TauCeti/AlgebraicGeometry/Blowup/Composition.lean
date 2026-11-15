@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.Product
-import Mathlib.RingTheory.Finiteness.Ideal
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
@@ -565,8 +564,10 @@ private theorem exists_comap_map_blowupToBase_comap_blowupChart_eq (I : X.IdealS
       M.comap_map_of_isPullback_of_flat hV.fromSpec
         (I.isPullback_blowupChart_fromSpec hV)]
   rw [hLHS, comap_mul, comap_pow, I.comap_blowupChart_comap_blowupToBase hV]
-  -- Peel the outer congruence layers so `CommRingCat.of Γ(X, V) = Γ(X, V)` closes instantaneously.
-  convert hN d hd using 5
+  -- `CommRingCat.of Γ(X, V) = Γ(X, V)` (`CommRingCat.of_carrier`); reducible transparency avoids
+  -- unfolding `IdealSheafData` during unification.
+  dsimp only [CommRingCat.of_carrier] at hN
+  with_reducible exact hN d hd
 
 /-- **Global schematic image identity for blowups.** On a quasi-compact scheme `X`, let `I` be an
 ideal sheaf of finite type on `X` and `J` an ideal sheaf of finite type on `Bl_I X`. Then for
@@ -639,7 +640,8 @@ private theorem exists_fg_ideal_comap_blowupChart_eq (I : X.IdealSheafData)
   obtain ⟨K₀, hK₀fg, hK₀⟩ := hN N le_rfl
   refine ⟨N, K₀, hK₀fg, ?_⟩
   rw [comap_mul, comap_pow, I.comap_blowupChart_comap_blowupToBase hV]
-  convert hK₀ using 3
+  dsimp only [CommRingCat.of_carrier] at hK₀
+  with_reducible exact hK₀
 
 /-- **Composition of finite-type blowups over an affine scheme.** When `X` is affine (with no
 Noetherian assumption), the composite of two blowups along finite-type centres avoiding `U` is
