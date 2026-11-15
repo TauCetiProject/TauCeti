@@ -126,7 +126,7 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
-  strictly contains that of `x ^ n` when `n ≠ 1`.
+  differs from that of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`: over a group `H` with
   unique roots and injective coefficients, the radical of the one-variable equation
@@ -261,12 +261,8 @@ theorem preimage_wordMap_V_eq_V_image {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (T : Set (GX G Y)) :
     wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T = V ι (σ '' T) := by
-  calc
-    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T =
-        V ι ((eval (inl : G →* GX G X)
-          (fun y => σ (inr (FreeGroup.of y)))) '' T) := preimage_wordMap_V _ _
-    _ = V ι (σ '' T) := congrArg (fun f : GX G Y →* GX G X => V ι (f '' T))
-      (eval_eq_of_comp_inl σ.comp_coeff)
+  ext v
+  simp [eval_wordMap]
 
 /-- A word map sends solutions to solutions of the inverse-image system. -/
 theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
@@ -276,7 +272,8 @@ theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
   have h := (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
   exact h.mpr (V_antitone ι (Set.image_preimage_subset σ S) hv)
 
-/-- A tuple solves `S` exactly when its word map solves the inverse-image system. -/
+/-- When `σ` is surjective, a tuple solves `S` exactly when its word map solves the inverse-image
+system. -/
 theorem wordMap_mem_V_iff {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (hσ : Function.Surjective σ) (S : Set (GX G X)) (v : X → H) :
@@ -948,7 +945,8 @@ theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
   simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply,
     homOfMapsToWordMap_mk, evalGHom_mk, wordMap_apply, eval_inr_of]
 
-/-- A coefficient-preserving word map induces a homomorphism between coordinate groups. -/
+/-- A coefficient-preserving homomorphism `σ : G[Y] →* G[X]` induces a `G`-homomorphism from the
+coordinate group of the inverse-image system `σ ⁻¹' S` to that of `S`; on classes it is `σ`. -/
 def homOfWordMap {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) :=

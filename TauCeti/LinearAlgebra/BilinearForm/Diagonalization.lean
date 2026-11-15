@@ -6,14 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.BilinearForm.Ideals
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import Mathlib.LinearAlgebra.Basis.SMul
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -127,7 +123,6 @@ theorem iIsOrtho.toMatrix_eq_diagonal {R M ι : Type*} [CommSemiring R] [AddComm
 theorem iIsOrtho.apply_basis_left {R M ι : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M} (hb : B.iIsOrtho b)
     (i : ι) (x : M) : B (b i) x = b.repr x i * B (b i) (b i) := by
-  classical
   conv_lhs => rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply, Finsupp.sum,
     map_sum]
   simp_rw [map_smul, smul_eq_mul]

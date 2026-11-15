@@ -6,13 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
-public import Mathlib.Data.Finsupp.Order
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.Topology.Separation.Basic
-import Mathlib.LinearAlgebra.Finsupp.Supported
-import Mathlib.Tactic.NormNum.Basic
-import Mathlib.Tactic.Ring
 
 /-!
 # Weil divisors as finite integer combinations of points
@@ -216,7 +211,7 @@ lemma domCongr_ofPoint (e : X ≃ Y) (x : X) :
   simp [ofPoint]
 
 @[simp]
-lemma pushforward_id : pushforward (fun x : X => x) = AddMonoidHom.id (WeilDivisor X) := by
+lemma pushforward_id : pushforward (id : X → X) = AddMonoidHom.id (WeilDivisor X) := by
   ext D x
   simp [pushforward, coeff]
 
@@ -362,11 +357,12 @@ lemma weightedDegree_range (w : X → ℤ) :
     AddSubgroup.closure (Set.range w)
   rw [Finsupp.range_linearCombination, Submodule.span_int_eq_addSubgroupClosure]
 
-/-- An effective divisor has nonnegative weighted degree when all weights are nonnegative. -/
-lemma weightedDegree_nonneg {w : X → ℤ} (hw : ∀ x, 0 ≤ w x)
-    {D : WeilDivisor X} (hD : 0 ≤ D) : 0 ≤ weightedDegree w D := by
+/-- An effective divisor has nonnegative weighted degree when the weights are nonnegative on its
+support. -/
+lemma weightedDegree_nonneg {w : X → ℤ} {D : WeilDivisor X} (hw : ∀ x ∈ D.support, 0 ≤ w x)
+    (hD : 0 ≤ D) : 0 ≤ weightedDegree w D := by
   rw [weightedDegree_apply]
-  exact Finsupp.sum_nonneg fun x _ => mul_nonneg (coeff_nonneg hD x) (hw x)
+  exact Finsupp.sum_nonneg fun x hx => mul_nonneg (coeff_nonneg hD x) (hw x hx)
 
 /-- With strictly positive weights on the support, an effective divisor has weighted degree
 zero iff it is zero. -/
@@ -400,12 +396,12 @@ lemma eq_zero_of_weightedDegree_eq_zero_of_pos {w : X → ℤ} (hw : ∀ x, 0 < 
     {D : WeilDivisor X} (hD : 0 ≤ D) (hdeg : weightedDegree w D = 0) : D = 0 :=
   eq_zero_of_weightedDegree_eq_zero_of_pos_on_support hD (fun x _ => hw x) hdeg
 
-/-- With strictly positive weights, a nonzero effective divisor has positive weighted degree. -/
-lemma weightedDegree_pos_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
-    {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D ≠ 0) :
-    0 < weightedDegree w D :=
-  lt_of_le_of_ne (weightedDegree_nonneg (fun x => le_of_lt (hw x)) hD) fun h =>
-    hD0 ((weightedDegree_eq_zero_iff_of_pos hw hD).mp h.symm)
+/-- With strictly positive weights on the support, a nonzero effective divisor has positive
+weighted degree. -/
+lemma weightedDegree_pos_of_pos {w : X → ℤ} {D : WeilDivisor X} (hw : ∀ x ∈ D.support, 0 < w x)
+    (hD : 0 ≤ D) (hD0 : D ≠ 0) : 0 < weightedDegree w D :=
+  lt_of_le_of_ne (weightedDegree_nonneg (fun x hx => (hw x hx).le) hD) fun h =>
+    hD0 ((weightedDegree_eq_zero_iff_of_pos_on_support hD hw).1 h.symm)
 
 @[simp]
 lemma weightedDegree_one_eq_degree (D : WeilDivisor X) :
@@ -416,7 +412,7 @@ lemma weightedDegree_one_eq_degree (D : WeilDivisor X) :
 /-- An effective divisor has nonnegative degree. -/
 lemma degree_nonneg {D : WeilDivisor X} (hD : 0 ≤ D) : 0 ≤ degree D := by
   simpa using
-    weightedDegree_nonneg (w := fun _ : X => (1 : ℤ)) (fun _ => zero_le_one) hD
+    weightedDegree_nonneg (w := fun _ : X => (1 : ℤ)) (fun _ _ => zero_le_one) hD
 
 /-- An effective divisor has degree zero iff it is zero. -/
 lemma degree_eq_zero_iff {D : WeilDivisor X} (hD : 0 ≤ D) : degree D = 0 ↔ D = 0 := by
@@ -431,7 +427,7 @@ lemma eq_zero_of_degree_eq_zero {D : WeilDivisor X} (hD : 0 ≤ D) (hdeg : degre
 /-- A nonzero effective divisor has positive degree. -/
 lemma degree_pos {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D ≠ 0) : 0 < degree D := by
   simpa using
-    weightedDegree_pos_of_pos (w := fun _ : X => (1 : ℤ)) (fun _ => zero_lt_one) hD hD0
+    weightedDegree_pos_of_pos (w := fun _ : X => (1 : ℤ)) (fun _ _ => zero_lt_one) hD hD0
 
 /-- The subgroup of divisors of unweighted degree zero.
 
@@ -468,11 +464,11 @@ lemma pointDifference_self (x : X) : pointDifference x x = 0 := by
 @[simp]
 lemma pointDifference_add_pointDifference_cancel (x y z : X) :
     pointDifference x y + pointDifference y z = pointDifference x z := by
-  simp [pointDifference, sub_eq_add_neg, add_assoc, add_left_comm]
+  exact sub_add_sub_cancel _ _ _
 
 /-- Reversing a point difference negates it. -/
-lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y := by
-  simp [pointDifference, sub_eq_add_neg, add_comm]
+lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y :=
+  (neg_sub _ _).symm
 
 @[simp]
 lemma coeff_pointDifference_left (x y : X) :
@@ -529,7 +525,7 @@ lemma pushforwardDegreeZero_apply (f : X → Y) (D : degreeZeroSubgroup X) :
 
 @[simp]
 lemma pushforwardDegreeZero_id :
-    pushforwardDegreeZero (fun x : X => x) = AddMonoidHom.id (degreeZeroSubgroup X) := by
+    pushforwardDegreeZero (id : X → X) = AddMonoidHom.id (degreeZeroSubgroup X) := by
   ext D x
   simp
 
@@ -636,8 +632,7 @@ lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x�
 @[simp]
 lemma weightedDegree_weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) :
     weightedDegree w (weightedPointBaseDifference w x₀ x) = w x * (1 - w x₀) := by
-  simp [weightedPointBaseDifference]
-  ring
+  simp [weightedPointBaseDifference, mul_sub]
 
 /-- If the base point has weight `1`, then `[x] - w(x)[x₀]` has weighted degree zero. -/
 lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ : X}
@@ -688,7 +683,7 @@ lemma pushforwardWeightedDegreeZero_apply (wX : X → ℤ) (wY : Y → ℤ) (f :
 
 @[simp]
 lemma pushforwardWeightedDegreeZero_id (w : X → ℤ) :
-    pushforwardWeightedDegreeZero w w (fun x : X => x) (fun _ => rfl) =
+    pushforwardWeightedDegreeZero w w (id : X → X) (fun _ => rfl) =
       AddMonoidHom.id (weightedDegreeZeroSubgroup w) := by
   ext D x
   simp

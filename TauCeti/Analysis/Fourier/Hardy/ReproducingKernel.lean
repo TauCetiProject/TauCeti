@@ -76,11 +76,8 @@ theorem hardyBasis_repr_reproducingKernel (n : ℕ) :
 /-- The kernel is characterized uniquely by its reproducing property. -/
 theorem eq_reproducingKernel_iff (k : HardySpace) :
     k = reproducingKernel w ↔ ∀ x : HardySpace, ⟪k, x⟫_ℂ = x.diskFunction w := by
-  constructor
-  · rintro rfl x
-    exact inner_reproducingKernel w x
-  · intro h
-    exact ext_inner_right ℂ fun x => (h x).trans (inner_reproducingKernel w x).symm
+  simpa only [inner_reproducingKernel] using
+    ext_iff_inner_right ℂ (x := k) (y := reproducingKernel w)
 
 /-- The disk function of the Szegő kernel is its geometric-series expression wherever the series
 `∑ (conj w * z) ^ n` converges, that is, whenever `‖conj w * z‖ < 1`; this includes the closed unit
@@ -106,15 +103,11 @@ theorem norm_reproducingKernel_sq :
     ‖reproducingKernel w‖ ^ 2 = (1 - ‖(w : ℂ)‖ ^ 2)⁻¹ := by
   have hw : ‖(w : ℂ)‖ < 1 := by
     simpa only [Metric.mem_ball, dist_zero_right] using w.property
-  have hpos : 0 < 1 - ‖(w : ℂ)‖ ^ 2 := by nlinarith [norm_nonneg (w : ℂ)]
-  calc
-    ‖reproducingKernel w‖ ^ 2 = ‖⟪reproducingKernel w, reproducingKernel w⟫_ℂ‖ :=
-      by rw [← inner_self_re_eq_norm, inner_self_eq_norm_sq]
-    _ = ‖(1 - starRingEnd ℂ (w : ℂ) * (w : ℂ))⁻¹‖ := by
-      rw [inner_reproducingKernel, diskFunction_reproducingKernel w hw]
-    _ = (1 - ‖(w : ℂ)‖ ^ 2)⁻¹ := by
-      rw [norm_inv, Complex.conj_mul', ← Complex.ofReal_pow, ← Complex.ofReal_one,
-        ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hpos]
+  have h := inner_reproducingKernel w (reproducingKernel w)
+  rw [inner_self_eq_norm_sq_to_K, diskFunction_reproducingKernel w hw, Complex.conj_mul'] at h
+  apply RCLike.ofReal_injective (K := ℂ)
+  push_cast
+  exact h
 
 /-- The norm of the Szegő kernel is the reciprocal square root of the disk defect. -/
 theorem norm_reproducingKernel :
