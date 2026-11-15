@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Data.Matrix.Block
 
 /-!
@@ -33,8 +34,9 @@ and empty blocks.
 
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
-* `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`: the direct sum of idempotent matrices is
-  idempotent.
+* `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
+  the direct sum of idempotent matrices is idempotent, and that of star projections is a star
+  projection.
 * `Matrix.fromBlocks_one_sub_mul_self_of_mul_eq` and
   `Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq`: Murray–von Neumann
   equivalent idempotents are conjugate after stabilization.
@@ -95,6 +97,17 @@ public theorem IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*
     (hf : IsIdempotentElem f) : IsIdempotentElem (Matrix.fromBlocks e 0 0 f) := by
   rw [IsIdempotentElem, Matrix.fromBlocks_multiply, he.eq, hf.eq]
   simp
+
+/-- The block-diagonal matrix `Matrix.fromBlocks p 0 0 q` with star projections as diagonal blocks
+is a star projection. -/
+public theorem IsStarProjection.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*} [Fintype m] [Fintype n]
+    [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α} {q : Matrix n n α}
+    (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    IsStarProjection (Matrix.fromBlocks p 0 0 q) := by
+  refine ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq.isIdempotentElem, ?_⟩
+  rw [IsSelfAdjoint, Matrix.star_eq_conjTranspose, Matrix.fromBlocks_conjTranspose,
+    ← Matrix.star_eq_conjTranspose, ← Matrix.star_eq_conjTranspose, hp.isSelfAdjoint.star_eq,
+    hq.isSelfAdjoint.star_eq, Matrix.conjTranspose_zero, Matrix.conjTranspose_zero]
 
 section MurrayVonNeumann
 
