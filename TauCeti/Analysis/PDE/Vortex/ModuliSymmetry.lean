@@ -30,7 +30,8 @@ identification with `Sym ℂ m` is equivariant: moving a vortex moves its zeros.
   of the framed gauge group. This is an action of `Circle`, and the zeros of `u • x` are those of
   `x` rotated by `u` (`TauCeti.Vortex.framedVortexDivisor_circle_smul`).
 * The two actions satisfy the semidirect product law `u • (a +ᵥ x) = (u a) +ᵥ (u • x)`
-  (`TauCeti.Vortex.circle_smul_vadd`) of the group of orientation-preserving isometries.
+  (`TauCeti.Vortex.circle_smul_vadd`) of the group of orientation-preserving isometries, and so
+  do the actions on the moduli space (`TauCeti.Vortex.circle_smul_vadd_moduli`).
 
 By Taubes's uniqueness theorem two framed vortices lie in one framed gauge orbit exactly when
 their divisors agree (`TauCeti.Vortex.orbitRel_iff_framedVortexDivisor_eq`), so both actions
@@ -54,14 +55,6 @@ open scoped ContDiff
 namespace TauCeti.Vortex
 
 variable {m : ℕ}
-
-/-- **Uniqueness modulo framed gauge.** Two smooth framed degree-`m` vortices lie in one framed
-gauge orbit exactly when their zero divisors agree. -/
-theorem orbitRel_iff_framedVortexDivisor_eq {x y : framedVortexSubMulAction m} :
-    MulAction.orbitRel framedGaugeGroup (framedVortexSubMulAction m) x y ↔
-      framedVortexDivisor x = framedVortexDivisor y := by
-  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
-    framedVortexDivisor_eq_framedVortexDivisor_iff]
 
 /-! ### Translations -/
 
@@ -217,5 +210,14 @@ theorem framedVortexModuliEquiv_circle_smul (u : Circle)
   Quotient.inductionOn' q fun x ↦ by
     rw [circle_smul_mk_framedVortex, framedVortexModuliEquiv_mk, framedVortexModuliEquiv_mk,
       framedVortexDivisor_circle_smul]
+
+/-- **The semidirect product law on the moduli space.** Rotating a translated framed gauge orbit
+is translating the rotated orbit by the rotated vector. -/
+theorem circle_smul_vadd_moduli (u : Circle) (a : ℂ)
+    (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
+    u • (a +ᵥ q) = ((u : ℂ) * a) +ᵥ (u • q) :=
+  Quotient.inductionOn' q fun x ↦ by
+    rw [vadd_mk_framedVortex, circle_smul_mk_framedVortex, circle_smul_mk_framedVortex,
+      vadd_mk_framedVortex, circle_smul_vadd]
 
 end TauCeti.Vortex

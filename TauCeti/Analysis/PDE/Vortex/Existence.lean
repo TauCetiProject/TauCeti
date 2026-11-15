@@ -307,6 +307,14 @@ theorem framedVortexDivisor_eq_framedVortexDivisor_iff {x y : framedVortexSubMul
     (isZeroMultiplicity_sectionValue_framedVortexDivisor y)]
   simp only [Subtype.ext_iff, SubMulAction.val_smul]
 
+/-- **Uniqueness modulo framed gauge.** Two smooth framed degree-`m` vortices lie in one framed
+gauge orbit exactly when their zero divisors agree. -/
+theorem orbitRel_iff_framedVortexDivisor_eq {x y : framedVortexSubMulAction m} :
+    MulAction.orbitRel framedGaugeGroup (framedVortexSubMulAction m) x y ↔
+      framedVortexDivisor x = framedVortexDivisor y := by
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
+    framedVortexDivisor_eq_framedVortexDivisor_iff]
+
 /-- **Taubes's existence theorem.** Every effective divisor of degree `m` is the divisor of a
 smooth framed degree-`m` vortex. -/
 theorem framedVortexDivisor_surjective (m : ℕ) :
@@ -320,12 +328,9 @@ effective divisors of degree `m`. -/
 def framedVortexModuliEquiv (m : ℕ) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) ≃ Sym ℂ m :=
   Equiv.ofBijective
-    (Quotient.lift framedVortexDivisor fun x y h ↦ by
-      obtain ⟨u, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-      exact framedVortexDivisor_smul u y)
-    ⟨fun a b ↦ Quotient.inductionOn₂ a b fun x y h ↦ Quotient.sound <|
-        MulAction.orbitRel_apply.2 <| MulAction.mem_orbit_iff.2 <|
-          framedVortexDivisor_eq_framedVortexDivisor_iff.1 h,
+    (Quotient.lift framedVortexDivisor fun _ _ ↦ orbitRel_iff_framedVortexDivisor_eq.1)
+    ⟨fun a b ↦ Quotient.inductionOn₂ a b fun _ _ h ↦ Quotient.sound <|
+        orbitRel_iff_framedVortexDivisor_eq.2 h,
       fun D ↦ (framedVortexDivisor_surjective m D).elim fun x hx ↦ ⟨Quotient.mk'' x, hx⟩⟩
 
 /-- The class of a smooth framed vortex goes to its divisor. -/
