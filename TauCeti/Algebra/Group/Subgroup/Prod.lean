@@ -108,8 +108,9 @@ theorem prod_bot_sup_bot_prod (H : Subgroup G) (K : Subgroup G') :
 their joins. -/]
 theorem prod_sup_prod (H₁ K₁ : Subgroup G) (H₂ K₂ : Subgroup G') :
     (H₁.prod H₂) ⊔ (K₁.prod K₂) = (H₁ ⊔ K₁).prod (H₂ ⊔ K₂) := by
-  rw [← prod_bot_sup_bot_prod H₁ H₂, ← prod_bot_sup_bot_prod K₁ K₂, sup_sup_sup_comm,
-    ← map_inl, ← map_inl, ← map_sup, map_inl,
-    ← map_inr, ← map_inr, ← map_sup, map_inr, prod_bot_sup_bot_prod]
+  rw [← prod_bot_sup_bot_prod H₁ H₂, ← prod_bot_sup_bot_prod K₁ K₂,
+    ← prod_bot_sup_bot_prod (H₁ ⊔ K₁) (H₂ ⊔ K₂)]
+  simp only [← map_inl, ← map_inr, map_sup]
+  ac_rfl
 
 end Subgroup

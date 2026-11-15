@@ -112,11 +112,23 @@ theorem twoSubgroup_eq_zpowers :
     · exact Subgroup.mem_zpowers _
   · exact (mem_twoSubgroup_iff _).mpr (Or.inr rfl)
 
-theorem card_twoSubgroup : Nat.card twoSubgroup = 2 := by
-  have hbij : Function.Bijective zmodFourExtension.inl.rangeRestrict :=
-    ⟨fun a b h => zmodFourExtension.inl_injective (congrArg Subtype.val h),
-      zmodFourExtension.inl.rangeRestrict_surjective⟩
-  exact (Nat.card_eq_of_bijective _ hbij).symm.trans (by simp)
+/-- The kernel isomorphism `Multiplicative (ZMod 2) ≃* twoSubgroup` induced by the injective
+inclusion of `TauCeti.zmodFourExtension`. -/
+noncomputable def twoSubgroupMulEquiv : Multiplicative (ZMod 2) ≃* twoSubgroup :=
+  MonoidHom.ofInjective zmodFourExtension.inl_injective
+
+@[simp]
+theorem coe_twoSubgroupMulEquiv_apply (x : Multiplicative (ZMod 2)) :
+    (twoSubgroupMulEquiv x : Multiplicative (ZMod 4)) = zmodFourExtension.inl x :=
+  (rfl)
+
+theorem card_twoSubgroup : Nat.card twoSubgroup = 2 :=
+  (Nat.card_congr twoSubgroupMulEquiv.toEquiv).symm.trans (by simp)
+
+/-- Every element of `twoSubgroup` squares to `1`. -/
+@[simp]
+theorem sq_eq_one_twoSubgroup (n : twoSubgroup) : n ^ 2 = 1 :=
+  card_twoSubgroup ▸ pow_card_eq_one'
 
 @[simp]
 theorem index_twoSubgroup : twoSubgroup.index = 2 := by
@@ -182,16 +194,6 @@ theorem not_exists_isComplement'_twoSubgroup :
   exact not_exists_isLocalComplement_twoSubgroup_top ⟨D, Subgroup.isLocalComplement_top_iff.mpr hD⟩
 
 /-! ### Identifying `twoSubgroup.quotientExtension` with `TauCeti.zmodFourExtension` -/
-
-/-- The kernel isomorphism `Multiplicative (ZMod 2) ≃* twoSubgroup` induced by the injective
-inclusion of `TauCeti.zmodFourExtension`. -/
-noncomputable def twoSubgroupMulEquiv : Multiplicative (ZMod 2) ≃* twoSubgroup :=
-  MonoidHom.ofInjective zmodFourExtension.inl_injective
-
-@[simp]
-theorem coe_twoSubgroupMulEquiv_apply (x : Multiplicative (ZMod 2)) :
-    (twoSubgroupMulEquiv x : Multiplicative (ZMod 4)) = zmodFourExtension.inl x :=
-  (rfl)
 
 /-- The quotient isomorphism `(Multiplicative (ZMod 4) ⧸ twoSubgroup) ≃* Multiplicative (ZMod 2)`
 induced by `zmodFourExtension.rightHom`. -/
@@ -262,12 +264,12 @@ theorem conjugationAction_smul_twoSubgroup (g : Multiplicative (ZMod 4)) (n : tw
 
 /-- Every multiplicative `1`-cocycle `Multiplicative (ZMod 4) → twoSubgroup` vanishes at the
 generator `ofAdd 2` of `twoSubgroup`, because `c (ofAdd 1 * ofAdd 1) = c (ofAdd 1) ^ 2 = 1`. -/
-theorem isMulCocycle₁_apply_ofAdd_two {c : Multiplicative (ZMod 4) → twoSubgroup}
+theorem apply_ofAdd_two_eq_one_of_isMulCocycle₁ {c : Multiplicative (ZMod 4) → twoSubgroup}
     (hc : IsMulCocycle₁ c) :
     c (ofAdd 2) = 1 := by
   have h11 : (ofAdd 1 : Multiplicative (ZMod 4)) * ofAdd 1 = ofAdd 2 := by decide
   rw [← h11, hc (ofAdd 1) (ofAdd 1), conjugationAction_smul_twoSubgroup, ← sq,
-    ← card_twoSubgroup, pow_card_eq_one']
+    sq_eq_one_twoSubgroup]
 
 /-- No multiplicative `1`-cocycle `Multiplicative (ZMod 4) → twoSubgroup` restricts to the identity
 on `twoSubgroup`. -/
@@ -275,7 +277,7 @@ theorem not_exists_normalized_isMulCocycle₁_twoSubgroup :
     ¬ ∃ c : Multiplicative (ZMod 4) → twoSubgroup,
       IsMulCocycle₁ c ∧ ∀ n : twoSubgroup, c n = n := by
   rintro ⟨c, hc, hn⟩
-  have h1 : c twoGenerator = 1 := isMulCocycle₁_apply_ofAdd_two hc
+  have h1 : c twoGenerator = 1 := apply_ofAdd_two_eq_one_of_isMulCocycle₁ hc
   rw [hn twoGenerator] at h1
   exact twoGenerator_ne_one h1
 

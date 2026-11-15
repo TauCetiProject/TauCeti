@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
-public import TauCeti.GroupTheory.GroupExtension.Splitting
 
 /-!
 # Factor sets up to cohomology are the second cohomology group
@@ -72,9 +71,7 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
   cohomologous factor-set representative with pointwise `n`-th power one under the same
   hypotheses, allowing torsion classes to be represented by root-valued factor sets.
 * `TauCeti.GroupExtension.cohomologyClass_factorSet_eq`: the class of the factor set of a
-  normalized section does not depend on the section, and
-  `TauCeti.GroupExtension.nonempty_splitting_iff_cohomologyClass_factorSet_eq_zero` shows it
-  vanishes exactly when the extension splits.
+  normalized section does not depend on the section.
 * `TauCeti.GroupExtension.nonempty_equiv_iff_cohomologyClass_factorSet_eq`: **`H²(G, M)` classifies
   group extensions of `G` by `M` inducing the given action, up to equivalence.**
 
@@ -363,14 +360,6 @@ theorem cohomologyClass_factorSet_eq (σ σ' : S.Section) (hσ : σ 1 = 1) (hσ'
     (hact : InducesAction S) :
     (factorSet σ hσ hact).cohomologyClass = (factorSet σ' hσ' hact).cohomologyClass :=
   (FactorSet.cohomologyClass_eq_iff _ _).2 (isMulCoboundary₂_div σ σ' hσ hσ' hact)
-
-/-- **An extension with abelian kernel splits if and only if the cohomology class of its factor set
-vanishes**, for the conjugation action it induces and any normalized section. -/
-theorem nonempty_splitting_iff_cohomologyClass_factorSet_eq_zero (σ : S.Section) (hσ : σ 1 = 1)
-    (hact : InducesAction S) :
-    Nonempty S.Splitting ↔ (factorSet σ hσ hact).cohomologyClass = 0 :=
-  (factorSetToGroupExtensionEquiv σ hσ hact).nonempty_splitting_iff.symm.trans
-    FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero
 
 /-- **`H²(G, M)` classifies group extensions up to equivalence.** Two extensions of `G` by the
 abelian kernel `M`, both inducing the ambient action, are equivalent exactly when the factor sets
