@@ -107,7 +107,7 @@ theorem IsSolutionTable.map (h : IsSolutionTable r W T u) (f : Z → Z') {u' : Z
     IsSolutionTable r W (fun o => (T o).map (Prod.map (Sum.map f id) id)) u' := by
   have hsub (o : Occurrence r) :
       substituteVars u' ((T o).map (Prod.map (Sum.map f id) id)) = substituteVars u (T o) := by
-    rw [FreeGroup.substituteVars_map_sumMap, FreeGroup.substituteVars_congr (U := u' ∘ f) (hu o)]
+    rw [FreeGroup.substituteVars_map, FreeGroup.substituteVars_congr (U := u' ∘ f) (hu o)]
   have hne (o : Occurrence r) {z' : Z'} {b : Bool}
       (hz : (Sum.inl z', b) ∈ (T o).map (Prod.map (Sum.map f id) id)) : u' z' ≠ [] := by
     obtain ⟨⟨z | a, b'⟩, hy, heq⟩ := List.mem_map.1 hz

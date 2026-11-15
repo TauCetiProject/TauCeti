@@ -179,12 +179,12 @@ theorem substituteVars_congr {U U' : X → List (A × Bool)} {w : List ((X ⊕ A
   · exact h x b hy
   · rfl
 
-/-- Renaming the variables of a word along `f` and then substituting `U` is substituting
-`U ∘ f`. -/
+/-- Renaming the variables of a word along `g` and then substituting `U` is substituting
+`U ∘ g`. -/
 @[simp]
-theorem substituteVars_map_sumMap {Y : Type*} (U : Y → List (A × Bool)) (f : X → Y)
-    (w : List ((X ⊕ A) × Bool)) :
-    substituteVars U (w.map (Prod.map (Sum.map f id) id)) = substituteVars (U ∘ f) w := by
+theorem substituteVars_map {Y : Type*} (U : X → List (A × Bool)) (g : Y → X)
+    (w : List ((Y ⊕ A) × Bool)) :
+    substituteVars U (w.map (Prod.map (Sum.map g id) id)) = substituteVars (U ∘ g) w := by
   simp [substituteVars, Sum.elim_comp_map]
 
 /-- Substitution without free reduction commutes with formal inverses. -/
