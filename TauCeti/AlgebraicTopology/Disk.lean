@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.Homotopy.Contractible
-public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
@@ -38,10 +37,11 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 in that universe be applied to it.  In particular the boundary of the `n`-disk is empty exactly
 when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
 `1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`), so `S⁰`
-(`TopCat.sphere 0`) is the discrete two-point space (`TauCeti.TopCat.discreteTopology_sphere_zero`)
-consisting of the poles `e₀` and `-e₀` (`TauCeti.spherePlus`, `TauCeti.sphereMinus`,
-`TauCeti.eq_sphereMinus_or_eq_spherePlus`), and `S⁰ × Y` decomposes as the disjoint union of two
-copies of `Y` (`TopCat.sigmaSphereZeroProdIso`).  The antipodal map of
+(`TopCat.sphere 0`) is a finite discrete two-point space (`TauCeti.TopCat.finite_sphere_zero`,
+`TauCeti.TopCat.discreteTopology_sphere_zero`) consisting of the poles `e₀` and `-e₀`
+(`TauCeti.spherePlus`, `TauCeti.sphereMinus`, `TauCeti.eq_sphereMinus_or_eq_spherePlus` on
+`TopCat.diskBoundary 1`, and `TauCeti.sphereZeroPlus`, `TauCeti.sphereZeroMinus`,
+`TauCeti.eq_sphereZeroMinus_or_eq_sphereZeroPlus` typed on `TopCat.sphere 0`).  The antipodal map of
 the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
 `EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary sphere,
 compatible with the boundary
@@ -424,59 +424,41 @@ lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{u} 1) ≠ 
     ((p : ULift.{u} _).down : EuclideanSpace ℝ (Fin 1)) 0) h
   norm_num [sphereMinus_down_apply_zero, spherePlus_down_apply_zero] at h'
 
+/-- The positive pole `e₀` (`1`) of `TopCat.sphere 0`, defined from `TauCeti.spherePlus` with
+syntactic type `TopCat.sphere 0`. -/
+def sphereZeroPlus : TopCat.sphere.{u} 0 := spherePlus
+
+/-- The negative pole `-e₀` (`-1`) of `TopCat.sphere 0`, defined from `TauCeti.sphereMinus` with
+syntactic type `TopCat.sphere 0`. -/
+def sphereZeroMinus : TopCat.sphere.{u} 0 := sphereMinus
+
+/-- **`TopCat.sphere 0` consists of the two poles `-e₀` and `e₀`.** -/
+lemma eq_sphereZeroMinus_or_eq_sphereZeroPlus (p : TopCat.sphere.{u} 0) :
+    p = sphereZeroMinus ∨ p = sphereZeroPlus :=
+  eq_sphereMinus_or_eq_spherePlus p
+
+/-- The two poles `-e₀` and `e₀` of `TopCat.sphere 0` are distinct. -/
+lemma sphereZeroMinus_ne_sphereZeroPlus :
+    (sphereZeroMinus : TopCat.sphere.{u} 0) ≠ sphereZeroPlus :=
+  sphereMinus_ne_spherePlus
+
+/-- The boundary `S⁰` of the `1`-disk is finite. -/
+instance TopCat.finite_diskBoundary_one : Finite (TopCat.diskBoundary.{u} 1) :=
+  Finite.of_surjective (fun b : Bool ↦ cond b spherePlus sphereMinus) fun p ↦
+    (eq_sphereMinus_or_eq_spherePlus p).elim (fun hp ↦ ⟨false, hp.symm⟩) fun hp ↦ ⟨true, hp.symm⟩
+
+/-- The zero-sphere `TopCat.sphere 0` is finite. -/
+instance TopCat.finite_sphere_zero : Finite (TopCat.sphere.{u} 0) :=
+  TopCat.finite_diskBoundary_one
+
 /-- The boundary `S⁰` of the `1`-disk has the discrete topology. -/
 instance TopCat.discreteTopology_diskBoundary_one :
-    DiscreteTopology (TopCat.diskBoundary.{u} 1) := by
-  have : Finite (TopCat.diskBoundary.{u} 1) :=
-    Finite.of_surjective (fun b : Bool ↦ cond b spherePlus sphereMinus) fun p ↦
-      (eq_sphereMinus_or_eq_spherePlus p).elim (fun hp ↦ ⟨false, hp.symm⟩) fun hp ↦ ⟨true, hp.symm⟩
-  infer_instance
+    DiscreteTopology (TopCat.diskBoundary.{u} 1) :=
+  inferInstance
 
 /-- The zero-sphere `TopCat.sphere 0` has the discrete topology. -/
 instance TopCat.discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
   TopCat.discreteTopology_diskBoundary_one
-
-open Classical in
-/-- The homeomorphism `ULift Bool ≃ₜ TopCat.sphere 0` (`true ↦ spherePlus`, `false ↦ sphereMinus`).
--/
-def uliftBoolHomeomorphSphereZero : ULift.{u} Bool ≃ₜ TopCat.sphere.{u} 0 :=
-  ({ toFun b := if b.down then spherePlus else sphereMinus
-     invFun x := ULift.up (decide (x = spherePlus))
-     left_inv := fun ⟨b⟩ ↦ by
-       cases b
-       exacts [ULift.ext (decide_eq_false sphereMinus_ne_spherePlus),
-         ULift.ext (decide_eq_true rfl)]
-     right_inv x := by
-       rcases eq_sphereMinus_or_eq_spherePlus x with rfl | rfl <;> dsimp only
-       · rw [decide_eq_false sphereMinus_ne_spherePlus]; rfl
-       · rw [decide_eq_true rfl]; rfl
-     continuous_toFun := continuous_of_discreteTopology
-     continuous_invFun := continuous_of_discreteTopology } :
-    ULift.{u} Bool ≃ₜ TopCat.diskBoundary.{u} 1)
-
-/-- `TauCeti.uliftBoolHomeomorphSphereZero` maps `true` to `spherePlus` and `false` to
-`sphereMinus`. -/
-@[simp]
-lemma uliftBoolHomeomorphSphereZero_apply (b : ULift.{u} Bool) :
-    uliftBoolHomeomorphSphereZero b =
-      (if b.down then spherePlus else sphereMinus : TopCat.diskBoundary.{u} 1) := (rfl)
-
-open Classical in
-/-- The inverse of `TauCeti.uliftBoolHomeomorphSphereZero` tests equality with `spherePlus`. -/
-lemma uliftBoolHomeomorphSphereZero_symm_apply (x : TopCat.sphere.{u} 0) :
-    uliftBoolHomeomorphSphereZero.symm x = ULift.up (decide (x = spherePlus)) := (rfl)
-
-/-- The inverse of `TauCeti.uliftBoolHomeomorphSphereZero` maps `spherePlus` to `true`. -/
-@[simp]
-lemma uliftBoolHomeomorphSphereZero_symm_spherePlus :
-    uliftBoolHomeomorphSphereZero.symm spherePlus = ULift.up.{u} true :=
-  uliftBoolHomeomorphSphereZero.symm_apply_apply ⟨true⟩
-
-/-- The inverse of `TauCeti.uliftBoolHomeomorphSphereZero` maps `sphereMinus` to `false`. -/
-@[simp]
-lemma uliftBoolHomeomorphSphereZero_symm_sphereMinus :
-    uliftBoolHomeomorphSphereZero.symm sphereMinus = ULift.up.{u} false :=
-  uliftBoolHomeomorphSphereZero.symm_apply_apply ⟨false⟩
 
 /-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/
@@ -762,54 +744,5 @@ lemma diskBoundaryIso_neg_hom :
   simp
 
 end LinearIsometryEquiv
-
-namespace TopCat
-
-open MonoidalCategory CartesianMonoidalCategory
-
-/-- The isomorphism `(Σ _ : ULift Bool, Y) ≅ S⁰ × Y` in `TopCat` identifying `S⁰ × Y` with the
-disjoint union of two copies of `Y`. -/
-def sigmaSphereZeroProdIso (Y : TopCat.{u}) :
-    TopCat.of (Σ _ : ULift.{u} Bool, Y) ≅ sphere.{u} 0 ⊗ Y where
-  hom := ConcreteCategory.ofHom ⟨fun p ↦ (TauCeti.uliftBoolHomeomorphSphereZero p.1, p.2),
-    continuous_sigma_iff.2 fun _ ↦ by fun_prop⟩
-  inv := ConcreteCategory.ofHom ⟨fun q ↦ ⟨TauCeti.uliftBoolHomeomorphSphereZero.symm q.1, q.2⟩,
-    continuous_prod_of_discrete_left.2 fun a ↦ (ContinuousMap.sigmaMk
-      (X := fun _ : ULift.{u} Bool ↦ (Y : Type u))
-      (TauCeti.uliftBoolHomeomorphSphereZero.symm a)).continuous⟩
-  hom_inv_id := TopCat.ext fun ⟨b, _⟩ ↦ by
-    dsimp; exact Sigma.ext (TauCeti.uliftBoolHomeomorphSphereZero.symm_apply_apply b) .rfl
-  inv_hom_id := TopCat.ext fun ⟨a, _⟩ ↦
-    Prod.ext (TauCeti.uliftBoolHomeomorphSphereZero.apply_symm_apply a) rfl
-
-/-- The forward map of `TopCat.sigmaSphereZeroProdIso` pairs the pole of `p.1` with `p.2`. -/
-@[simp]
-theorem sigmaSphereZeroProdIso_hom_apply (Y : TopCat.{u}) (p : Σ _ : ULift.{u} Bool, Y) :
-    (sigmaSphereZeroProdIso Y).hom p = (TauCeti.uliftBoolHomeomorphSphereZero p.1, p.2) := (rfl)
-
-/-- The inverse map of `TopCat.sigmaSphereZeroProdIso` indexes `q.2` by the pole `q.1`. -/
-@[simp]
-theorem sigmaSphereZeroProdIso_inv_apply (Y : TopCat.{u}) (q : (sphere.{u} 0 ⊗ Y : TopCat.{u})) :
-    (sigmaSphereZeroProdIso Y).inv q = ⟨TauCeti.uliftBoolHomeomorphSphereZero.symm q.1, q.2⟩ :=
-  (rfl)
-
-/-- Each summand inclusion composes with `(sigmaSphereZeroProdIso Y).hom` to `prodFiberInclusion`
-at the corresponding pole. -/
-@[reassoc (attr := simp)]
-theorem sigmaι_comp_sigmaSphereZeroProdIso_hom (Y : TopCat.{u}) (b : ULift.{u} Bool) :
-    sigmaι (fun _ : ULift.{u} Bool ↦ Y) b ≫ (sigmaSphereZeroProdIso Y).hom =
-      prodFiberInclusion (sphere.{u} 0) Y (TauCeti.uliftBoolHomeomorphSphereZero b) :=
-  TopCat.ext fun y ↦ (prodFiberInclusion_apply _ Y _ y).symm
-
-/-- Fibre inclusion at `x ∈ S⁰` composes with `(sigmaSphereZeroProdIso Y).inv` to the summand
-inclusion at `uliftBoolHomeomorphSphereZero.symm x`. -/
-@[reassoc (attr := simp)]
-theorem prodFiberInclusion_comp_sigmaSphereZeroProdIso_inv (Y : TopCat.{u}) (x : sphere.{u} 0) :
-    prodFiberInclusion (sphere.{u} 0) Y x ≫ (sigmaSphereZeroProdIso Y).inv =
-      sigmaι (fun _ : ULift.{u} Bool ↦ Y) (TauCeti.uliftBoolHomeomorphSphereZero.symm x) :=
-  TopCat.ext fun y ↦ (TopCat.comp_app _ _ y).trans
-    (congrArg (sigmaSphereZeroProdIso Y).inv (prodFiberInclusion_apply _ Y x y))
-
-end TopCat
 
 end

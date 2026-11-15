@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
-import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # Mayer–Vietoris for the cup product with a pulled-back relative class
@@ -32,8 +31,7 @@ over `U`, over `V` and over `U ∩ V`, with values in the cohomology of the pair
 
 For the induction over finite unions of trivializing open sets the step is restated for the maps
 `TopCat.pullbackCupRestrict` over subsets of the base of a fixed map `π : X ⟶ Y` and pair `(X, Z)`:
-over the empty subset `∅` it is bijective trivially (`TopCat.bijective_pullbackCupRestrict_empty`),
-and if the maps over open sets `U`, `V` and `U ∩ V` are bijective in degrees `q ≤ p` and
+if the maps over open sets `U`, `V` and `U ∩ V` are bijective in degrees `q ≤ p` and
 `Hⁿ⁻¹(π⁻¹(U ∩ V), π⁻¹(U ∩ V) ∩ Z; M) = 0`, then the map over `U ∪ V` is bijective in degree `p`
 (`TopCat.bijective_pullbackCupRestrict_union`).
 
@@ -53,8 +51,6 @@ degree `0` the sequence of `Y` starts with an injective map, and the vanishing o
 * `TopPair.bijective_pullbackCup_union`: the Mayer–Vietoris step.
 * `TopCat.bijective_pullbackCup_of_union_eq_univ`: the step for the pair `(X, Z)` and an open
   cover of the base by two sets.
-* `TopCat.bijective_pullbackCupRestrict_empty`: the empty base case for induction over finite
-  unions.
 * `TopCat.bijective_pullbackCupRestrict_union`: the step over the union of two open sets of the
   base.
 
@@ -487,24 +483,6 @@ private theorem bijective_pullbackCupRestrict_restrict_iff (hSW : S ⊆ W) {n p 
     (by
       rw [restrictPreimagePairRestrictPreimageIso_hom_fst]
       exact TopCat.ext fun _ ↦ Subtype.ext rfl) h _
-
-/-- **The empty base case for `TopCat.pullbackCupRestrict`**: over the empty subset `∅ ⊆ Y`, both
-`Hᵖ(∅; M)` and `Hᵐ(π⁻¹ ∅, π⁻¹ ∅ ∩ Z; M)` vanish, so `TopCat.pullbackCupRestrict` is bijective in
-every degree. -/
-theorem bijective_pullbackCupRestrict_empty {n p m : ℕ} (h : p + n = m)
-    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    Function.Bijective (pullbackCupRestrict π Z M (∅ : Set Y) n p m h u) := by
-  let P := TopPair.ofInclusion (inter_subset_left : π ⁻¹' (∅ : Set Y) ∩ Z ⊆ π ⁻¹' (∅ : Set Y))
-  have : IsEmpty P.fst := ⟨fun x ↦ x.2⟩
-  have : IsEmpty P.snd := ⟨fun x ↦ x.2.1⟩
-  have : Subsingleton ((of (∅ : Set Y)).singularCohomology (ModuleCat.of K K) K M p) :=
-    ModuleCat.subsingleton_of_isZero
-      (TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M (of (∅ : Set Y)) p)
-  have : Subsingleton (P.singularCohomology (ModuleCat.of K K) K M m) :=
-    ModuleCat.subsingleton_of_isZero
-      ((TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M P.fst m).of_iso
-        (asIso (P.singularCohomologyπ (ModuleCat.of K K) K M m)))
-  exact ⟨fun x y _ ↦ Subsingleton.elim x y, fun y ↦ ⟨0, Subsingleton.elim _ y⟩⟩
 
 /-- **The Mayer–Vietoris step over a union.** Let `π : X ⟶ Y` be a map, `Z ⊆ X`,
 `u ∈ Hⁿ(X, Z; K)`, and let `U` and `V` be open sets of `Y`. Suppose that the maps

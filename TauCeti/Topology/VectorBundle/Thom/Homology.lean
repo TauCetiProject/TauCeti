@@ -361,12 +361,12 @@ theorem bijective_thomMap_of_field (M : ModuleCat.{w} K) (p m : ℕ) (h : p + fi
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
     Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
-  have h' : finrank ℝ F + p = m := by omega
   have : IsIso ((thomPair F E).pushforwardCap (thomPairProj F E) (ModuleCat.of K K)
-      (finrank ℝ F) p m h' u) := isIso_homologyThomMap_of_field p m h' hu
+      (finrank ℝ F) p m (by omega) u) := isIso_homologyThomMap_of_field p m (by omega) hu
   rw [thomMap_def]
-  exact (thomPair F E).bijective_pullbackCup_of_isIso_pushforwardCap (thomPairProj F E) M h h'
-    (fun _ _ ↦ inferInstance) (fun _ _ ↦ inferInstance) u
+  exact (thomPair F E).bijective_pullbackCup_of_isIso_pushforwardCap (thomPairProj F E) M h
+    ((TopCat.of B).singularKronecker_bijective_of_projective_homology (ModuleCat.of K K) M p)
+    ((thomPair F E).singularKronecker_bijective_of_projective_homology (ModuleCat.of K K) M m) u
 
 variable (F E) in
 /-- **The cohomology Thom isomorphism over a field and an arbitrary base**, bundled as

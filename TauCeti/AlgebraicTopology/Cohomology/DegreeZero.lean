@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.Topology.Category.TopCat.Monoidal
 import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
@@ -37,7 +38,9 @@ gives a `k`-linear equivalence `H⁰(X; k) ≃ₗ[k] k` (`TauCeti.singularCohomo
 Pulling back along the constant map at `x` gives the value at `x` times the unit
 (`TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul`), which reduces
 multiplicativity of the values for the cup product
-(`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point.
+(`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point, and implies that
+restricting `pr₂^* b + pr₁^* θ ⌣ pr₂^* c` along `TopCat.prodFiberInclusion X Y p` yields
+`b + θ(p) • c` (`TopCat.singularCohomologyMap_prodFiberInclusion_add_singularCup`).
 
 Consequently invertibility in `H⁰(X; k)` can be tested pointwise, one path component at a time: a
 square matrix of degree-zero classes whose matrices of values are invertible at every point is
@@ -380,3 +383,33 @@ theorem bijective_singularCup_right_of_forall_isUnit (M : ModuleCat.{w} k) (p : 
 end Invertibility
 
 end TauCeti
+
+namespace TopCat
+
+open CartesianMonoidalCategory
+
+variable {k : Type w} [CommRing k] (M : ModuleCat.{w} k)
+
+/-- Restricting `pr₂^* b + pr₁^* θ ⌣ pr₂^* c` (`θ ∈ H⁰(X; k)`) along
+`TopCat.prodFiberInclusion X Y p` yields `b + θ(p) • c`. -/
+theorem singularCohomologyMap_prodFiberInclusion_add_singularCup (X Y : TopCat.{w}) (p : X) (n : ℕ)
+    (θ : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+    (b c : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+    TopCat.singularCohomologyMap (prodFiberInclusion X Y p) n
+        (TopCat.singularCohomologyMap (snd X Y) n b +
+          (X ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom 0 n n (zero_add n)
+            (TopCat.singularCohomologyMap (fst X Y) 0 θ)
+            (TopCat.singularCohomologyMap (snd X Y) n c)) =
+      b + TauCeti.singularCohomologyZeroEval p θ • c := by
+  have hsnd (y : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+      TopCat.singularCohomologyMap (prodFiberInclusion X Y p) n
+        (TopCat.singularCohomologyMap (snd X Y) n y) = y := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, prodFiberInclusion_snd,
+      TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply]
+  rw [map_add, hsnd, ← TopCat.singularCup_naturality, hsnd, ← ConcreteCategory.comp_apply,
+    ← TopCat.singularCohomologyMap_comp, prodFiberInclusion_fst,
+    TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul, map_smul,
+    LinearMap.smul_apply, TopCat.singularCohomologyZeroOne_def,
+    Y.singularCup_constSingularCocycle_left k (η := 𝟙 _) (by monoidal) (by monoidal) (zero_add n)]
+
+end TopCat
