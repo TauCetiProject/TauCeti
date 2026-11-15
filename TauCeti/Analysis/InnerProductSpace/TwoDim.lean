@@ -72,7 +72,7 @@ theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
 `x`. -/
 theorem areaForm_ne_zero_iff {x y : E} :
     o.areaForm x y ≠ 0 ↔ x ≠ 0 ∧ ∀ c : ℝ, y ≠ c • x := by
-  rw [← TauCeti.abs_real_inner_lt_norm_mul_norm_iff,
+  rw [← TauCeti.abs_real_inner_lt_norm_iff,
     ← pow_lt_pow_iff_left₀ (abs_nonneg _) (by positivity) two_ne_zero, sq_abs, mul_pow,
     ← o.inner_sq_add_areaForm_sq x y, lt_add_iff_pos_right, sq_pos_iff]
 

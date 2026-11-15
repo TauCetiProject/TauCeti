@@ -249,7 +249,7 @@ theorem abs_cotangentGeneratingSource_billiardGeneratingFunction_snd_apply_lt_no
     (differentiableAt_of_deriv_ne_zero hs0) ht hst, one_mul,
     real_inner_smul_left, abs_mul, abs_inv, abs_norm,
     inv_mul_lt_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 hst)), real_inner_comm, mul_comm]
-  exact abs_real_inner_lt_norm_mul_norm_iff.2 ⟨hs0, fun c hc ↦
+  exact abs_real_inner_lt_norm_iff.2 ⟨hs0, fun c hc ↦
     htan c (by rw [← hc, add_sub_cancel])⟩
 
 /-- The tangential component `-∂_t S(s, t)` of a chord which does not lie on the tangent line at

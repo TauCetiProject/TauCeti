@@ -13,7 +13,7 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 In an inner product space over `ℝ` or `ℂ`, the Cauchy–Schwarz inequality `‖⟪a, b⟫‖ ≤ ‖a‖ ‖b‖` is
 strict exactly when `a` is nonzero and `b` is not a multiple of `a`
 (`TauCeti.norm_inner_lt_norm_iff`; for real inner products in terms of the absolute value,
-`TauCeti.abs_real_inner_lt_norm_mul_norm_iff`).
+`TauCeti.abs_real_inner_lt_norm_iff`).
 -/
 
 public section
@@ -40,7 +40,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {a b : E}
 
 /-- **Strict Cauchy–Schwarz** for a real inner product: `|⟪a, b⟫| < ‖a‖ ‖b‖` exactly when `a` is
 nonzero and `b` is not a multiple of `a`. -/
-theorem abs_real_inner_lt_norm_mul_norm_iff :
+theorem abs_real_inner_lt_norm_iff :
     |⟪a, b⟫| < ‖a‖ * ‖b‖ ↔ a ≠ 0 ∧ ∀ c : ℝ, b ≠ c • a := by
   rw [← Real.norm_eq_abs, norm_inner_lt_norm_iff]
 
