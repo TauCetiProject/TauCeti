@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import Mathlib.Analysis.RCLike.Basic
+public import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.Normed.Ring.InfiniteProd
 
@@ -37,6 +38,8 @@ stage `N` is at most `(N + 1)⁻¹`, whereas `∑_n ⨆_x ‖f n x‖ = ∑_n (n
   `TauCeti.summableUniformlyOn_nat_iff_tail_tsum_lt`: for nonnegative functions,
   `SummableUniformlyOn` on `s` is equivalent to pointwise summability together with uniformly
   vanishing cofinite or sequential tails on `s`.
+* `SummableUniformlyOn.exists_finset_forall_disjoint_norm_sum_lt`: uniform norm-vanishing of
+  disjoint finite sub-sums in any seminormed additive commutative group.
 * `SummableUniformlyOn.exists_finset_norm_tprod_compl_one_add_sub_one_lt`,
   `SummableUniformlyOn.exists_finset_tprod_compl_one_add_ne_zero`,
   `SummableUniformlyOn.finite_setOf_exists_mem_one_add_eq_zero`,
@@ -44,7 +47,8 @@ stage `N` is at most `(N + 1)⁻¹`, whereas `∑_n ⨆_x ‖f n x‖ = ∑_n (n
   uniformly within `ε` of `1` on `s`, only finitely many factors vanish anywhere on `s`, and at each
   `x ∈ s` the infinite product vanishes if and only if one factor vanishes.
 * `SummableUniformlyOn.hasProdUniformlyOn_one_add`: uniform-tail product criterion on an arbitrary
-  set `s` without topological or compactness hypotheses.
+  set `s` without topological or compactness hypotheses (supplementing the empty-set and
+  finite-support cases in `TauCeti.Topology.Algebra.InfiniteSum.UniformOn`).
 * `TauCeti.hasProdUniformlyOn_nat_one_add_of_tail_lt`,
   `TauCeti.tendstoUniformlyOn_prod_range_one_add_of_tail_lt`: sequential `ℕ`-indexed unordered and
   partial-product convergence from uniformly vanishing sequential norm tails.
@@ -131,53 +135,18 @@ end TauCeti
 
 namespace SummableUniformlyOn
 
-section NonnegHelpers
+section Vanishing
 
-variable {α ι : Type*}
+variable {α ι E : Type*} [SeminormedAddCommGroup E]
 
-/-- If `u : ι → α → ℝ` is nonnegative on `s` and `SummableUniformlyOn u s`, then for every `ε > 0`
-there is a finite set `t` such that every finite sub-sum disjoint from `t` is uniformly below `ε`
-on `s`. -/
-theorem exists_finset_forall_disjoint_sum_lt {u : ι → α → ℝ} {s : Set α}
-    (hu : SummableUniformlyOn u s) (hu₀ : ∀ i, ∀ x ∈ s, 0 ≤ u i x) {ε : ℝ} (hε : 0 < ε) :
-    ∃ t : Finset ι, ∀ r : Finset ι, Disjoint r t → ∀ x ∈ s, ∑ i ∈ r, u i x < ε := by
-  classical
-  obtain ⟨hsum, htail⟩ := (TauCeti.summableUniformlyOn_iff_tail_tsum_lt hu₀).mp hu
-  obtain ⟨t, ht⟩ := htail ε hε
-  refine ⟨t, fun r hrt x hx ↦ ?_⟩
-  have h1 : ∑ i ∈ t, u i x + ∑ i ∈ r, u i x ≤ ∑' i, u i x := by
-    rw [← Finset.sum_union hrt.symm]
-    exact (hsum x hx).sum_le_tsum (t ∪ r) fun i _ ↦ hu₀ i x hx
-  have h2 := (hsum x hx).sum_add_tsum_subtype_compl t
-  linarith [ht x hx]
+/-- If `u : ι → α → E` is uniformly summable on `s`, then for every `ε > 0` there is a finite set
+`t` such that every finite sub-sum disjoint from `t` has norm uniformly below `ε` on `s`. -/
+theorem exists_finset_forall_disjoint_norm_sum_lt {u : ι → α → E} {s : Set α}
+    (hu : SummableUniformlyOn u s) {ε : ℝ} (hε : 0 < ε) :
+    ∃ t : Finset ι, ∀ r : Finset ι, Disjoint r t → ∀ x ∈ s, ‖∑ i ∈ r, u i x‖ < ε := by
+  simpa [Metric.mem_ball, dist_zero_right] using hu.vanishing (Metric.ball_mem_nhds 0 hε)
 
-/-- Restricting the index type preserves `SummableUniformlyOn` for nonnegative real-valued
-families. -/
-theorem subtype_of_nonneg {u : ι → α → ℝ} {s : Set α}
-    (hu : SummableUniformlyOn u s) (hu₀ : ∀ i, ∀ x ∈ s, 0 ≤ u i x) (p : Set ι) :
-    SummableUniformlyOn (fun (i : p) x ↦ u i x) s := by
-  classical
-  refine (TauCeti.summableUniformlyOn_iff_tail_tsum_lt (u := fun (i : p) x ↦ u i x)
-    (fun i x hx ↦ hu₀ i x hx)).mpr ⟨fun x hx ↦ (hu.summable hx).subtype _, fun ε hε ↦ ?_⟩
-  obtain ⟨t, ht⟩ := hu.exists_finset_forall_disjoint_sum_lt hu₀ (half_pos hε)
-  let t' : Finset p := t.subtype (· ∈ p)
-  refine ⟨t', fun x hx ↦ ?_⟩
-  have hsub : Summable fun j : {j : p // j ∉ t'} ↦ u j x :=
-    ((hu.summable hx).subtype _).subtype _
-  have hle : ∑' j : {j : p // j ∉ t'}, u j x ≤ ε / 2 := by
-    refine le_of_tendsto' hsub.hasSum fun w ↦ ?_
-    let r : Finset ι := w.map ⟨fun j ↦ (j.1 : ι),
-      Subtype.val_injective.comp Subtype.val_injective⟩
-    have hrt : Disjoint r t := by
-      rw [Finset.disjoint_left]
-      rintro i hi hit
-      rcases Finset.mem_map.mp hi with ⟨⟨j, hj⟩, _, rfl⟩
-      exact hj (Finset.mem_subtype.mpr hit)
-    have hsum_eq : ∑ j ∈ w, u j x = ∑ i ∈ r, u i x := by simp [r]
-    exact hsum_eq ▸ (ht r hrt x hx).le
-  linarith
-
-end NonnegHelpers
+end Vanishing
 
 section ArbitrarySet
 
@@ -197,7 +166,7 @@ theorem exists_finset_norm_tprod_compl_one_add_sub_one_lt {f : ι → α → R} 
   have hδ : 0 < δ := Real.log_pos (by linarith)
   obtain ⟨_, htail'⟩ := (TauCeti.summableUniformlyOn_iff_tail_tsum_lt hnn).mp htail
   obtain ⟨t, ht⟩ := htail' δ hδ
-  refine ⟨t, htail.subtype_of_nonneg hnn {i | i ∉ t}, fun x hx ↦ ?_⟩
+  refine ⟨t, Summable.subtype htail (· ∉ t), fun x hx ↦ ?_⟩
   have hsum_x : Summable fun i : {i // i ∉ t} ↦ ‖f i x‖ := (htail.summable hx).subtype _
   calc ‖(∏' i : {i // i ∉ t}, (1 + f i x)) - 1‖
       ≤ Real.exp (∑' i : {i // i ∉ t}, ‖f i x‖) - 1 :=
@@ -268,9 +237,8 @@ theorem hasProdUniformlyOn_one_add [CompleteSpace R] {f : ι → α → R} {s : 
     (hbdd : ∀ i, ∃ M, ∀ x ∈ s, ‖f i x‖ ≤ M) :
     HasProdUniformlyOn (fun i x ↦ 1 + f i x) (fun x ↦ ∏' i, (1 + f i x)) s := by
   classical
-  have hnn : ∀ i, ∀ x ∈ s, 0 ≤ ‖f i x‖ := fun _ _ _ ↦ norm_nonneg _
   choose M hM using hbdd
-  obtain ⟨t₀, ht₀⟩ := htail.exists_finset_forall_disjoint_sum_lt hnn zero_lt_one
+  obtain ⟨t₀, ht₀⟩ := htail.exists_finset_forall_disjoint_norm_sum_lt zero_lt_one
   let C : ℝ := (∑ i ∈ t₀, max (M i) 0) + 1
   -- Every finite partial product on `s` has norm bounded by `exp C`.
   have hprod_le : ∀ b : Finset ι, ∀ x ∈ s, ‖∏ i ∈ b, (1 + f i x)‖ ≤ Real.exp C := by
@@ -280,14 +248,16 @@ theorem hasProdUniformlyOn_one_add [CompleteSpace R] {f : ι → α → R} {s : 
       (Finset.sum_union disjoint_sdiff_self_right (f := fun i ↦ ‖f i x‖))
     have hhead : ∑ i ∈ t₀, ‖f i x‖ ≤ ∑ i ∈ t₀, max (M i) 0 :=
       Finset.sum_le_sum fun i _ ↦ (hM i x hx).trans (le_max_left _ _)
+    have htail₀ : ∑ i ∈ b \ t₀, ‖f i x‖ < 1 :=
+      (Real.le_norm_self _).trans_lt (ht₀ (b \ t₀) sdiff_disjoint x hx)
     exact (b.norm_prod_one_add_le_prod_one_add_norm fun i ↦ f i x).trans <|
       (Real.prod_one_add_le_exp_sum b fun _ ↦ norm_nonneg _).trans
-        (Real.exp_le_exp.mpr (by linarith [ht₀ (b \ t₀) sdiff_disjoint x hx]))
+        (Real.exp_le_exp.mpr (by linarith))
   rw [hasProdUniformlyOn_iff_tendstoUniformlyOn, Metric.tendstoUniformlyOn_iff]
   intro ε hε
   let η : ℝ := Real.log (1 + ε / (2 * Real.exp C))
   have hη : 0 < η := Real.log_pos (by linarith [div_pos hε (mul_pos zero_lt_two (Real.exp_pos C))])
-  obtain ⟨t₁, ht₁⟩ := htail.exists_finset_forall_disjoint_sum_lt hnn hη
+  obtain ⟨t₁, ht₁⟩ := htail.exists_finset_forall_disjoint_norm_sum_lt hη
   refine eventually_atTop.mpr ⟨t₁, fun b hb x hx ↦ ?_⟩
   have hmult : Multipliable fun i ↦ 1 + f i x :=
     multipliable_one_add_of_summable (htail.summable hx)
@@ -301,7 +271,8 @@ theorem hasProdUniformlyOn_one_add [CompleteSpace R] {f : ι → α → R} {s : 
         arg 1
         rw [← Finset.union_sdiff_of_subset hbb', Finset.prod_union sdiff_disjoint.symm]
       rw [mul_sub_one]
-    have hdisj := (ht₁ (b' \ b) (sdiff_disjoint.mono_right hb) x hx).le
+    have hdisj : ∑ i ∈ b' \ b, ‖f i x‖ ≤ η :=
+      (Real.le_norm_self _).trans (ht₁ (b' \ b) (sdiff_disjoint.mono_right hb) x hx).le
     calc ‖∏ i ∈ b', (1 + f i x) - ∏ i ∈ b, (1 + f i x)‖
         ≤ ‖∏ i ∈ b, (1 + f i x)‖ * ‖∏ i ∈ b' \ b, (1 + f i x) - 1‖ := hsplit ▸ norm_mul_le _ _
       _ ≤ Real.exp C * (Real.exp (∑ i ∈ b' \ b, ‖f i x‖) - 1) :=

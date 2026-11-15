@@ -58,10 +58,10 @@ variable {ι κ : Type*} {l : Filter κ}
 to `f` on an open set `U ⊆ ℂ` and `F a` is eventually holomorphic on `U`, then `logDeriv (F a)`
 converges locally uniformly to `logDeriv f` on any subset `V ⊆ U` (not necessarily open) where `f`
 does not vanish. -/
-theorem logDeriv {F : κ → ℂ → ℂ} {f : ℂ → ℂ} {U V : Set ℂ}
+protected theorem logDeriv {F : κ → ℂ → ℂ} {f : ℂ → ℂ} {U V : Set ℂ}
     (hF : TendstoLocallyUniformlyOn F f l U) (hU : IsOpen U)
     (hd : ∀ᶠ a in l, DifferentiableOn ℂ (F a) U) (hVU : V ⊆ U) (hf₀ : ∀ z ∈ V, f z ≠ 0) :
-    TendstoLocallyUniformlyOn (fun a ↦ _root_.logDeriv (F a)) (_root_.logDeriv f) l V := by
+    TendstoLocallyUniformlyOn (fun a ↦ logDeriv (F a)) (logDeriv f) l V := by
   rcases l.eq_or_neBot with rfl | _
   · intro u _ x _
     exact ⟨V, self_mem_nhdsWithin, eventually_bot⟩
@@ -74,7 +74,7 @@ theorem tendstoUniformlyOn_logDeriv_of_isCompact {F : κ → ℂ → ℂ} {f : �
     (hF : TendstoLocallyUniformlyOn F f l U) (hU : IsOpen U)
     (hd : ∀ᶠ a in l, DifferentiableOn ℂ (F a) U) (hK : IsCompact K) (hKU : K ⊆ U)
     (hf₀ : ∀ z ∈ K, f z ≠ 0) :
-    TendstoUniformlyOn (fun a ↦ _root_.logDeriv (F a)) (_root_.logDeriv f) l K :=
+    TendstoUniformlyOn (fun a ↦ logDeriv (F a)) (logDeriv f) l K :=
   (tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).mp
     (hF.logDeriv hU hd hKU hf₀)
 
@@ -88,8 +88,8 @@ theorem sum_logDeriv {I : κ → Finset ι} {f : ι → ℂ → ℂ} {F : ℂ �
     (hF : TendstoLocallyUniformlyOn (fun a z ↦ ∏ i ∈ I a, f i z) F l U) (hU : IsOpen U)
     (hd : ∀ i, DifferentiableOn ℂ (f i) U) (hVU : V ⊆ U)
     (hf₀ : ∀ i, ∀ z ∈ V, f i z ≠ 0) (hF₀ : ∀ z ∈ V, F z ≠ 0) :
-    TendstoLocallyUniformlyOn (fun a z ↦ ∑ i ∈ I a, _root_.logDeriv (f i) z)
-      (_root_.logDeriv F) l V := by
+    TendstoLocallyUniformlyOn (fun a z ↦ ∑ i ∈ I a, logDeriv (f i) z)
+      (logDeriv F) l V := by
   have hd_prod : ∀ᶠ a in l, DifferentiableOn ℂ (fun z ↦ ∏ i ∈ I a, f i z) U :=
     .of_forall fun _ ↦ by fun_prop
   refine (hF.logDeriv hU hd_prod hVU hF₀).congr fun a z hz ↦ ?_

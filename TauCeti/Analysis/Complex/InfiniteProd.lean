@@ -19,8 +19,11 @@ Let `Ω ⊆ ℂ` be an open set and `u : ι → ℂ → ℂ` a family of holomor
 series `∑' i, ‖u i z‖` converges uniformly on every compact subset `K ⊆ Ω`. This file establishes
 the function-theoretic properties of the infinite product `z ↦ ∏' i, (1 + u i z)` on `Ω`:
 
-1. **Holomorphy and analyticity**: `z ↦ ∏' i, (1 + u i z)` is holomorphic (hence `AnalyticOnNhd`) on
-   `Ω`.
+1. **Holomorphy and analyticity**: `z ↦ ∏' i, (1 + u i z)` converges locally uniformly on `Ω`
+   (both unordered and sequentially, via
+   `TauCeti.hasProdLocallyUniformlyOn_one_add_of_forall_isCompact` and
+   `TauCeti.tendstoLocallyUniformlyOn_prod_range_one_add_of_tail_lt`) and is holomorphic, hence
+   `AnalyticOnNhd`, on `Ω`.
 2. **Local analytic unit-tail factorization**: for every compact `K ⊆ Ω`, outside a finite set
    `t : Finset ι` the complementary product `g w = ∏' i : {i // i ∉ t}, (1 + u i w)` is analytic on
    `Ω` and nowhere vanishing on `K`, with `∏' i, (1 + u i w) = (∏ i ∈ t, (1 + u i w)) * g w` on `Ω`.
@@ -68,20 +71,14 @@ section GeneralIndex
 
 variable {ι : Type*} {u : ι → ℂ → ℂ} {Ω V K : Set ℂ}
 
-private theorem hasProdLocallyUniformlyOn_one_add_of_differentiableOn (hΩ : IsOpen Ω)
-    (hd : ∀ i, DifferentiableOn ℂ (u i) Ω)
-    (htail : ∀ K ⊆ Ω, IsCompact K → SummableUniformlyOn (fun i z ↦ ‖u i z‖) K) :
-    HasProdLocallyUniformlyOn (fun i z ↦ 1 + u i z) (fun z ↦ ∏' i, (1 + u i z)) Ω :=
-  hasProdLocallyUniformlyOn_one_add_of_forall_isCompact hΩ htail fun i ↦ (hd i).continuousOn
-
 /-- Under compact-uniform norm summability on an open set `Ω ⊆ ℂ`, the infinite product
 `z ↦ ∏' i, (1 + u i z)` of holomorphic factors is holomorphic on `Ω`. -/
 theorem differentiableOn_tprod_one_add (hΩ : IsOpen Ω)
     (hd : ∀ i, DifferentiableOn ℂ (u i) Ω)
     (htail : ∀ K ⊆ Ω, IsCompact K → SummableUniformlyOn (fun i z ↦ ‖u i z‖) K) :
     DifferentiableOn ℂ (fun z ↦ ∏' i, (1 + u i z)) Ω :=
-  (hasProdLocallyUniformlyOn_one_add_of_differentiableOn hΩ hd htail).differentiableOn
-    (.of_forall fun _ ↦ by fun_prop) hΩ
+  (hasProdLocallyUniformlyOn_one_add_of_forall_isCompact hΩ htail
+    fun i ↦ (hd i).continuousOn).differentiableOn (.of_forall fun _ ↦ by fun_prop) hΩ
 
 /-- Under compact-uniform norm summability on an open set `Ω ⊆ ℂ`, the infinite product
 `z ↦ ∏' i, (1 + u i z)` is analytic on a neighborhood of every point of `Ω`. -/
@@ -109,7 +106,7 @@ theorem exists_finset_tprod_one_add_eq_prod_mul_compl (hΩ : IsOpen Ω)
   obtain ⟨t, hfac, hprod⟩ := (htail K hKΩ hK).exists_finset_tprod_compl_one_add_ne_zero
   have htail_compl :
       ∀ L ⊆ Ω, IsCompact L → SummableUniformlyOn (fun (i : {i // i ∉ t}) z ↦ ‖u i z‖) L :=
-    fun L hLΩ hL ↦ (htail L hLΩ hL).subtype_of_nonneg (fun _ _ _ ↦ norm_nonneg _) {i | i ∉ t}
+    fun L hLΩ hL ↦ Summable.subtype (htail L hLΩ hL) (· ∉ t)
   refine ⟨t, analyticOnNhd_tprod_one_add hΩ (fun i ↦ hd i) htail_compl, hfac, hprod, fun w hw ↦ ?_⟩
   exact (prod_mul_tprod_compl_one_add
     ((htail {w} (singleton_subset_iff.mpr hw) isCompact_singleton).summable (mem_singleton w))
@@ -241,7 +238,8 @@ theorem hasSumLocallyUniformlyOn_logDeriv_one_add (hΩ : IsOpen Ω)
     (hVΩ : V ⊆ Ω) (hu₀ : ∀ i, ∀ z ∈ V, 1 + u i z ≠ 0) :
     HasSumLocallyUniformlyOn (fun i z ↦ deriv (u i) z / (1 + u i z))
       (logDeriv (fun z ↦ ∏' i, (1 + u i z))) V := by
-  have hprod := hasProdLocallyUniformlyOn_one_add_of_differentiableOn hΩ hd htail
+  have hprod := hasProdLocallyUniformlyOn_one_add_of_forall_isCompact hΩ htail
+    fun i ↦ (hd i).continuousOn
   have hd1 : ∀ i, DifferentiableOn ℂ (fun z ↦ 1 + u i z) Ω := fun i ↦ (hd i).const_add 1
   have hF₀ : ∀ z ∈ V, (∏' i, (1 + u i z)) ≠ 0 := by
     intro z hz hzero
