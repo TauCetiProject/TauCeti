@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
-public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 public import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
@@ -41,14 +40,9 @@ Silverman V.3.1):
 
 Because every isogeny `φ : W₁ → W₂` induces a nonzero formal-group homomorphism
 `φ.formalGroupHom : FormalGroupHom (formalGroup W₁) (formalGroup W₂)`, formal-group height — and
-hence ordinarity and supersingularity — are invariant under arbitrary isogenies.
-
-Finally, for an elliptic curve `W` over an arbitrary commutative ring `R` and any prime `p`,
-reducing modulo maximal ideals shows that the Landweber height ideals `I_n(Ê)` equal the unit ideal
-for all `n ≥ 3` (`WeierstrassCurve.heightIdeal_formalGroup_eq_top`), and consequently the
-coefficient `v₂` of `X ^ (p ^ 2)` in `[p]_Ê` is a unit in `R ⧸ I₂(Ê)`
-(`WeierstrassCurve.isUnit_mk_heightIdeal_formalGroup_two_coeff_sq_nsmulSeries_formalGroup`). Thus
-the sequence `(p, v₁, v₂)` truncates at height two over any elliptic curve over any base ring.
+hence ordinarity and supersingularity — are invariant under arbitrary isogenies. The resulting
+family-level truncation of Landweber height ideals over arbitrary commutative rings is deduced in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound`.
 
 ## Main results
 
@@ -69,20 +63,12 @@ the sequence `(p, v₁, v₂)` truncates at height two over any elliptic curve o
   characteristic `p` has height `1` or `2`.
 * `TauCeti.Isogeny.isSupersingular_iff` and `TauCeti.Isogeny.isOrdinary_iff`: supersingularity and
   ordinarity of elliptic curves are invariant under arbitrary isogenies.
-* `WeierstrassCurve.heightIdeal_formalGroup_eq_top` and
-  `WeierstrassCurve.isUnit_mk_heightIdeal_formalGroup_two_coeff_sq_nsmulSeries_formalGroup`: for an
-  elliptic curve `W` over any commutative ring `R`, `I_n(formalGroup W) = ⊤` for all `n ≥ 3`, and
-  `v₂` becomes a unit modulo `I₂(formalGroup W)`.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.4, IV.7 and V.3.1.
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics Studies
   108, Princeton University Press, 1985, §12.4.
-* P. S. Landweber, *Homological properties of comodules over `MU_*(MU)` and `BP_*(BP)`*,
-  Amer. J. Math. 98 (1976), 591–610.
-* P. G. Goerss, *Topological modular forms [after Hopkins, Miller and Lurie]*, Séminaire
-  Bourbaki 1005 (2009), §3.2.
 -/
 
 public section
@@ -279,57 +265,5 @@ theorem isOrdinary_iff (φ : Isogeny W₁.toAffine W₂.toAffine) (p : ℕ) [Exp
   rw [← W₁.not_isSupersingular, ← W₂.not_isSupersingular, φ.isSupersingular_iff p]
 
 end TauCeti.Isogeny
-
-/-! ### Truncation of Landweber height ideals over arbitrary commutative rings -/
-
-namespace WeierstrassCurve
-
-section Ring
-
-variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
-
-/-- **For an elliptic curve `W` over any commutative ring `R`, the Landweber height ideals
-`I_n(formalGroup W)` at a prime `p` equal the unit ideal for all `n ≥ 3`.** -/
-theorem heightIdeal_formalGroup_eq_top {p : ℕ} (hp : p.Prime) {n : ℕ} (hn : 3 ≤ n) :
-    (formalGroup W).heightIdeal p n = ⊤ := by
-  -- If `I_n(Ê) ≤ 𝔪` for a maximal ideal `𝔪`, then `R ⧸ 𝔪` has characteristic `p` (since
-  -- `p ∈ I₁(Ê) ≤ I_n(Ê) ≤ 𝔪`) and `formalGroup (W.map π)` has height `≥ n ≥ 3`, contradicting
-  -- `height_formalGroup_le_two`.
-  by_contra hne
-  obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal _ hne
-  let _ : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
-  set π := Ideal.Quotient.mk 𝔪
-  have hp_mem : (p : R) ∈ 𝔪 := by
-    have h1 : (p : R) ∈ (formalGroup W).heightIdeal p 1 := by
-      rw [(formalGroup W).heightIdeal_one hp]
-      exact Ideal.mem_span_singleton_self _
-    exact hle ((formalGroup W).heightIdeal_mono (by omega : 1 ≤ n) h1)
-  have : CharP (R ⧸ 𝔪) p := (CharP.charP_iff_prime_eq_zero hp).mpr <| by
-    rwa [← map_natCast π, Ideal.Quotient.eq_zero_iff_mem]
-  have : Fact p.Prime := ⟨hp⟩
-  -- In `R ⧸ 𝔪`, the image of `I_n(formalGroup W)` is both `⊥` (since `I_n ≤ 𝔪`) and `⊤`
-  -- (since `height p (formalGroup (W.map π)) ≤ 2 < n`).
-  have hbot : ((formalGroup W).heightIdeal p n).map π = ⊥ := by
-    rw [Ideal.map_eq_bot_iff_le_ker, Ideal.mk_ker]
-    exact hle
-  have htop : ((formalGroup W).heightIdeal p n).map π = ⊤ := by
-    rw [FormalGroup.map_heightIdeal, ← map_formalGroup,
-      FormalGroup.heightIdeal_eq_top_iff_height_lt]
-    exact (W.map π).height_formalGroup_le_two.trans_lt
-      (by exact_mod_cast (by omega : 2 < n))
-  exact bot_ne_top (hbot.symm.trans htop)
-
-/-- **The height-two coefficient `v₂ = [X ^ (p ^ 2)] [p]_Ê` is a unit modulo `I₂(formalGroup W)`**
-for every elliptic curve `W` over every commutative ring `R` and every prime `p`. That is, on the
-closed subscheme `Spec (R ⧸ I₂(Ê))` where `p` and `v₁` vanish, `v₂` is invertible. -/
-theorem isUnit_mk_heightIdeal_formalGroup_two_coeff_sq_nsmulSeries_formalGroup
-    {p : ℕ} (hp : p.Prime) :
-    IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
-      (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) :=
-  ((formalGroup W).heightIdeal_succ_eq_top_iff hp 2).mp (W.heightIdeal_formalGroup_eq_top hp le_rfl)
-
-end Ring
-
-end WeierstrassCurve
 
 end
