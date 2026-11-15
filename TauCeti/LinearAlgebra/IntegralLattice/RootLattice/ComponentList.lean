@@ -329,8 +329,7 @@ theorem componentAlphabetIsometry_cons {c d : Component} {cs ds : List Component
     (x₁ : c.glueAlphabet) (x₂ : componentAlphabet cs) :
     componentAlphabetIsometry (.cons f rest) (x₁, x₂) =
       (componentGlueAlphabetIsometry f x₁, componentAlphabetIsometry rest x₂) :=
-  FiniteQuadraticModule.Isometry.prod_apply (componentGlueAlphabetIsometry f)
-    (componentAlphabetIsometry rest) x₁ x₂
+  (rfl)
 
 /-- **Naturality of the component-list discriminant isometry passes to an adjoined component.**  If
 the component-list discriminant isometry is natural for the tails `cs` and `ds`, then it is natural
