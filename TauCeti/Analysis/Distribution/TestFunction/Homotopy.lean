@@ -501,17 +501,16 @@ theorem tsupport_cutoffHomotopyPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin (k
   ext _
   simp
 
-/-- The pointwise norm of the homotopy operator with a cutoff, on a form of norm at most one, is
-at most `|χ x| A L ^ k`, if `‖∂ₜ H‖ ≤ A` and the spatial derivative of `H` has operator norm at
-most `L` along `{x} × [0, 1]`. -/
-theorem norm_cutoffHomotopyPullbackCLM_apply_le {ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)}
-    (hω : ∀ y, ‖ω y‖ ≤ 1) {x : E} {A L : ℝ≥0}
+/-- The pointwise norm of the homotopy operator with a cutoff is at most `|χ x| B A L ^ k`, if
+`‖ω‖ ≤ B` along the track `H (x, t)`, `‖∂ₜ H‖ ≤ A` and the spatial derivative of `H` has operator
+norm at most `L` along `{x} × [0, 1]`. -/
+theorem norm_cutoffHomotopyPullbackCLM_apply_le {ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)} {x : E}
+    {A B L : ℝ} (hω : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (H (x, t))‖ ≤ B)
     (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ H (x, t) (0, 1)‖ ≤ A)
     (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L) :
-    ‖cutoffHomotopyPullbackCLM χ hH ω x‖ ≤ |χ x| * (A * L ^ k) := by
+    ‖cutoffHomotopyPullbackCLM χ hH ω x‖ ≤ |χ x| * (B * A * L ^ k) := by
   rw [cutoffHomotopyPullbackCLM_apply, norm_smul, Real.norm_eq_abs]
-  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
-  simpa using norm_cylinderHomotopy_pullback_le (B := 1) (fun t _ ↦ hω _) hA hL
+  exact mul_le_mul_of_nonneg_left (norm_cylinderHomotopy_pullback_le hω hA hL) (abs_nonneg _)
 
 omit [CompleteSpace F] in
 /-- At the end times, the slices of the cut-off reparametrized pullback are the pullbacks with

@@ -59,8 +59,9 @@ lies in the image under `H` of `(tsupport χ ∩ spt T) × [0, 1]`, and
 * `Distribution.dsupport_comp_cutoffHomotopyPullbackCLM_subset`,
   `Distribution.mass_comp_cutoffHomotopyPullbackCLM_le`: the support and mass of the homotopy
   current.
-* `Distribution.IsNormal.comp_cutoffHomotopyPullbackCLM`: the homotopy current
-  `H_# ([[0, 1]] × T)` of a normal current `T` with compact support is normal.
+* `Distribution.IsLocallyNormal.isNormal_comp_cutoffHomotopyPullbackCLM`,
+  `Distribution.IsNormal.comp_cutoffHomotopyPullbackCLM`: the homotopy current `T ∘ K_χ` of a
+  locally normal current `T` is normal.
 
 ## References
 
@@ -311,10 +312,10 @@ theorem mass_comp_cutoffHomotopyPullbackCLM_le [NormedAddCommGroup V] [NormedSpa
     refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
     rw [coe_toBoundedContinuousFunction]
     by_cases hx : x ∈ tsupport χ
-    · refine (norm_cutoffHomotopyPullbackCLM_apply_le hω (fun t ht ↦ hA _ ⟨hx, ht⟩)
-        fun t ht ↦ hL _ ⟨hx, ht⟩).trans ?_
-      calc |χ x| * (A * L ^ k : ℝ) ≤ 1 * (A * L ^ k) := by gcongr; exact hχ x
-        _ = A * L ^ k := one_mul _
+    · refine (norm_cutoffHomotopyPullbackCLM_apply_le (B := 1) (fun t _ ↦ hω _)
+        (fun t ht ↦ hA _ ⟨hx, ht⟩) fun t ht ↦ hL _ ⟨hx, ht⟩).trans ?_
+      calc |χ x| * (1 * A * L ^ k : ℝ) ≤ 1 * (1 * A * L ^ k) := by gcongr; exact hχ x
+        _ = A * L ^ k := by ring
     · rw [cutoffHomotopyPullbackCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul,
         norm_zero]
       positivity
@@ -330,10 +331,9 @@ theorem mass_comp_cutoffHomotopyPullbackCLM_le [NormedAddCommGroup V] [NormedSpa
         push_cast
         ring
 
-/-- **Homotopy currents of normal currents are normal**: if `T` is a normal current whose support
-lies in the interior of `{χ = 1}`, then the homotopy current `H_# ([[0, 1]] × T) = T ∘ K_χ` is
-normal, where `K_χ` is the homotopy operator with cutoff `χ`. -/
-theorem IsNormal.comp_cutoffHomotopyPullbackCLM [FiniteDimensional ℝ E]
+/-- The homotopy current `T ∘ K_χ` of a normal current `T` whose support lies in the interior of
+`{χ = 1}` is normal. -/
+private theorem IsNormal.comp_cutoffHomotopyPullbackCLM_of_eventually_eq_one [FiniteDimensional ℝ E]
     [NormedAddCommGroup V] [NormedSpace ℝ V] {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
     (hT : IsNormal T) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
     IsNormal (T ∘L (cutoffHomotopyPullbackCLM χ hH :
@@ -380,6 +380,40 @@ theorem IsNormal.comp_cutoffHomotopyPullbackCLM [FiniteDimensional ℝ E]
     exact ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2
       ⟨hpush hT.mass_ne_top ⟨zero_le_one, le_rfl⟩, hpush hT.mass_ne_top ⟨le_rfl, zero_le_one⟩⟩,
       hmass (isNormal_succ_iff.1 hT).2⟩
+
+/-- **Homotopy currents of locally normal currents are normal**: for a locally normal current `T`,
+the homotopy current `T ∘ K_χ` is normal, where `K_χ` is the homotopy operator with cutoff `χ`. -/
+theorem IsLocallyNormal.isNormal_comp_cutoffHomotopyPullbackCLM [FiniteDimensional ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    (hT : IsLocallyNormal T) :
+    IsNormal (T ∘L (cutoffHomotopyPullbackCLM χ hH :
+      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) := by
+  -- `T ∘ K_χ = (χ T) ∘ K_ψ` for a cutoff `ψ` equal to one near `tsupport χ`, and `χ T` is a
+  -- normal current supported in `tsupport χ`.
+  obtain ⟨ψ, -, hψ1, -⟩ := TestFunction.exists_cutoff_tsupport_subset (n := (⊤ : ℕ∞))
+    χ.hasCompactSupport.isCompact Ω.isOpen χ.tsupport_subset le_rfl
+  have heq : T ∘L (cutoffHomotopyPullbackCLM χ hH : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _) =
+      (T ∘L smulLeftCLM χ.contDiff) ∘L cutoffHomotopyPullbackCLM ψ hH := by
+    ext ω
+    refine congrArg T (TestFunction.ext fun x ↦ ?_)
+    by_cases hx : x ∈ tsupport χ
+    · simp [smulLeftCLM_apply, hψ1.self_of_nhdsSet x hx]
+    · simp [smulLeftCLM_apply, image_eq_zero_of_notMem_tsupport hx]
+  have hsub : dsupport (T ∘L smulLeftCLM χ.contDiff) ⊆ tsupport χ := by
+    rw [ContinuousLinearMap.coe_comp]
+    exact (dsupport_comp_smulLeftCLM_subset T χ.contDiff).trans inter_subset_left
+  rw [heq]
+  exact (hT.isNormal_comp_smulLeftCLM χ).comp_cutoffHomotopyPullbackCLM_of_eventually_eq_one
+    (hψ1.filter_mono (nhdsSet_mono hsub))
+
+/-- **Homotopy currents of normal currents are normal**: for a normal current `T`, the homotopy
+current `T ∘ K_χ` is normal, where `K_χ` is the homotopy operator with cutoff `χ`. -/
+theorem IsNormal.comp_cutoffHomotopyPullbackCLM [FiniteDimensional ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    (hT : IsNormal T) :
+    IsNormal (T ∘L (cutoffHomotopyPullbackCLM χ hH :
+      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) :=
+  hT.isLocallyNormal.isNormal_comp_cutoffHomotopyPullbackCLM
 
 end Homotopy
 

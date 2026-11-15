@@ -84,7 +84,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped unitInterval Interval NNReal
+open scoped unitInterval Interval
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
@@ -245,12 +245,14 @@ cylinder homotopy operator of the pullback `Φ^* ω` is bounded by `B A L ^ n` a
 argument of the pulled-back form sees the time direction, which gives this bound rather than the
 one from the full norm of `DΦ`. -/
 theorem norm_cylinderHomotopy_pullback_le {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    {Φ : E × ℝ → E'} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F} {x : E} {A B L : ℝ≥0}
+    {Φ : E × ℝ → E'} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F} {x : E} {A B L : ℝ}
     (hω : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (Φ (x, t))‖ ≤ B)
     (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ Φ (x, t) (0, 1)‖ ≤ A)
     (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L) :
     ‖cylinderHomotopy (fun p ↦ (ω (Φ p)).compContinuousLinearMap (fderiv ℝ Φ p)) x‖ ≤
       B * A * L ^ n := by
+  have hB : 0 ≤ B := (norm_nonneg _).trans (hω 0 ⟨le_rfl, zero_le_one⟩)
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0 ⟨le_rfl, zero_le_one⟩)
   have hle : ∀ t ∈ Ι (0 : ℝ) 1, ‖contractInl ((ω (Φ (x, t))).compContinuousLinearMap
       (fderiv ℝ Φ (x, t)))‖ ≤ B * A * L ^ n := fun t ht ↦ by
     rw [uIoc_of_le zero_le_one] at ht
