@@ -37,20 +37,26 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
 
 ## Main definitions
 
-* `TauCeti.HasFoelnerSets G`: the counting-measure Følner filter of `G` is nontrivial.
+* `TauCeti.HasFoelnerSets G`, `TauCeti.HasAddFoelnerSets G`: the counting-measure Følner filter of
+  `G` is nontrivial.
 
 ## Main results
 
-* `IsFoelner.tendsto_card_smul_symmDiff_div_card`: the real cardinality ratios of a
+* `IsFoelner.tendsto_card_smul_symmDiff_div_card`,
+  `IsAddFoelner.tendsto_card_vadd_symmDiff_div_card`: the real cardinality ratios of a
   counting-measure Følner family of finite sets tend to zero.
-* `IsFoelner.exists_finset_card_smul_symmDiff_lt`: a nontrivial counting-measure Følner family
+* `IsFoelner.exists_finset_card_smul_symmDiff_lt`,
+  `IsAddFoelner.exists_finset_card_vadd_symmDiff_lt`: a nontrivial counting-measure Følner family
   passes every finite test.
-* `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
-  of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
-* `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
-* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
+* `TauCeti.exists_isFoelner_atTop`, `TauCeti.exists_isAddFoelner_atTop`: if every finite test has a
+  witness, there is a Følner family of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
+* `TauCeti.hasFoelnerSets_iff`, `TauCeti.hasAddFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to
+  the finite-set condition.
+* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`,
+  `TauCeti.HasAddFoelnerSets.of_tendsto_card_vadd_symmDiff_div_card`: finite sets with vanishing
   relative translation boundaries along a nontrivial filter give Følner sets.
-* `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
+* `MulEquiv.hasFoelnerSets_iff`, `AddEquiv.hasAddFoelnerSets_iff`: having Følner sets is invariant
+  under group isomorphisms.
 
 ## References
 
@@ -71,6 +77,8 @@ variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [Decidable
 
 /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
 `ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
+@[to_additive /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is
+below `ENNReal.ofReal ε` exactly when `|(m +ᵥ F) △ F| < ε · |F|`. -/]
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
     [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
@@ -82,6 +90,8 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
 from above. -/
+@[to_additive /-- The counting-measure Følner ratio of a measurable finite set bounds the additive
+cardinality ratio from above. -/]
 theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M : Type*}
     [SMul M X] {F : Finset X} (hFm : MeasurableSet (F : Set X)) (m : M) :
     (#((m • F) ∆ F) : ℝ≥0∞) / #F ≤
@@ -95,6 +105,9 @@ theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M 
 omit [MeasurableSingletonClass X] in
 /-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
 zero for every group element. -/
+@[to_additive IsAddFoelner.tendsto_card_vadd_symmDiff_div_card
+/-- The real cardinality ratios of a counting-measure additive Følner family of finite sets tend to
+zero for every group element. -/]
 theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type*}
     {l : Filter ι} {F : ι → Finset X}
     (hF : IsFoelner G Measure.count l (fun i => (F i : Set X))) (g : G) :
@@ -113,6 +126,9 @@ omit [MeasurableSingletonClass X] in
 /-- A Følner family for counting measure along a nontrivial filter passes every finite test: for
 each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with `|gF △ F| < ε · |F|` for
 all `g ∈ K`. -/
+@[to_additive /-- An additive Følner family for counting measure along a nontrivial filter passes
+every finite test: for each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with
+`|(g +ᵥ F) △ F| < ε · |F|` for all `g ∈ K`. -/]
 theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Set X} (hF : IsFoelner G Measure.count l F)
     (K : Finset G) {ε : ℝ} (hε : 0 < ε) :
@@ -137,6 +153,9 @@ namespace TauCeti
 
 /-- If every finite test has a witness, then there is a Følner family of finite nonempty sets for
 counting measure, indexed by `Finset G × ℕ` along `atTop`. -/
+@[to_additive exists_isAddFoelner_atTop /-- If every finite test has a witness, then there is an
+additive Følner family of finite nonempty sets for counting measure, indexed by `Finset G × ℕ`
+along `atTop`. -/]
 theorem exists_isFoelner_atTop [MulAction G X]
     (h : ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset X, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F) :
@@ -169,12 +188,19 @@ variable (G) in
 /-- A group `G` has Følner sets when Mathlib's maximal Følner filter for the left regular action
 of `G` on itself with counting measure is nontrivial. The measurable space `⊤` is installed
 locally, so every subset of `G` is measurable and the notion depends only on the group. -/
+@[to_additive HasAddFoelnerSets /-- An additive group `G` has Følner sets when Mathlib's maximal
+Følner filter for the left regular action of `G` on itself with counting measure is nontrivial. The
+measurable space `⊤` is installed locally, so every subset of `G` is measurable and the notion
+depends only on the additive group. -/]
 abbrev HasFoelnerSets : Prop :=
   letI : MeasurableSpace G := ⊤
   NeBot (maxFoelner G (Measure.count : Measure G))
 
 /-- A group has Følner sets exactly when for every finite `K ⊆ G` and every `ε > 0` there is a
 finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/
+@[to_additive hasAddFoelnerSets_iff /-- An additive group has Følner sets exactly when for every
+finite `K ⊆ G` and every `ε > 0` there is a finite nonempty `F ⊆ G` with `|(g +ᵥ F) △ F| < ε · |F|`
+for all `g ∈ K`. -/]
 theorem hasFoelnerSets_iff [DecidableEq G] : HasFoelnerSets G ↔
     ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
@@ -186,6 +212,9 @@ theorem hasFoelnerSets_iff [DecidableEq G] : HasFoelnerSets G ↔
 
 /-- A group has Følner sets if a family of eventually nonempty finite sets has vanishing
 relative translation boundaries along a nontrivial filter. -/
+@[to_additive HasAddFoelnerSets.of_tendsto_card_vadd_symmDiff_div_card /-- An additive group has
+Følner sets if a family of eventually nonempty finite sets has vanishing relative translation
+boundaries along a nontrivial filter. -/]
 theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
     (hF : ∀ g : G, Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
@@ -207,6 +236,7 @@ open TauCeti
 variable {H : Type*} [Group H]
 
 /-- An isomorphism carries Følner sets of `G` to Følner sets of `H`. -/
+@[to_additive AddEquiv.hasAddFoelnerSets_of_addEquiv]
 private theorem hasFoelnerSets_of_mulEquiv (e : G ≃* H) (h : HasFoelnerSets G) :
     HasFoelnerSets H := by
   classical
@@ -221,6 +251,8 @@ private theorem hasFoelnerSets_of_mulEquiv (e : G ≃* H) (h : HasFoelnerSets G)
   exact hFK _ (mem_image_of_mem _ hg)
 
 /-- Having Følner sets is invariant under group isomorphisms. -/
+@[to_additive AddEquiv.hasAddFoelnerSets_iff
+/-- Having Følner sets is invariant under additive group isomorphisms. -/]
 theorem hasFoelnerSets_iff (e : G ≃* H) : HasFoelnerSets G ↔ HasFoelnerSets H :=
   ⟨hasFoelnerSets_of_mulEquiv e, hasFoelnerSets_of_mulEquiv e.symm⟩
 
