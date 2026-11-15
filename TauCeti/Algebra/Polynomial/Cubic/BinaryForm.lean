@@ -89,20 +89,11 @@ theorem homogenize_toPoly (P : Cubic R) :
 
 /-- A cubic is determined by its binary cubic form. -/
 theorem homogenize_toPoly_injective :
-    Function.Injective fun P : Cubic R ↦ P.toPoly.homogenize 3 := by
-  intro P Q h
-  have hcoeff (m : Fin 2 →₀ ℕ) :
-      (P.toPoly.homogenize 3).coeff m = (Q.toPoly.homogenize 3).coeff m := by
-    simp only at h
-    rw [h]
-  simp only [Polynomial.coeff_homogenize] at hcoeff
-  have key (k : ℕ) (hk : k ≤ 3) : P.toPoly.coeff k = Q.toPoly.coeff k := by
-    simpa [Nat.add_sub_cancel' hk] using hcoeff (fun₀ | 0 => k | 1 => 3 - k)
-  ext
-  · simpa [coeff_eq_a] using key 3 le_rfl
-  · simpa [coeff_eq_b] using key 2 (by norm_num)
-  · simpa [coeff_eq_c] using key 1 (by norm_num)
-  · simpa [coeff_eq_d] using key 0 (by norm_num)
+    Function.Injective fun P : Cubic R ↦ P.toPoly.homogenize 3 := fun P Q h ↦
+  (toPoly_injective P Q).1 <| by
+    rw [← Polynomial.aeval_homogenize_X_one P.toPoly Polynomial.natDegree_cubic_le,
+      ← Polynomial.aeval_homogenize_X_one Q.toPoly Polynomial.natDegree_cubic_le]
+    exact congrArg _ h
 
 /-- The binary cubic forms are exactly the homogeneous polynomials of degree three in two
 variables. -/
@@ -183,7 +174,7 @@ instance instMulActionGeneralLinearGroup : MulAction (GL (Fin 2) R) (Cubic R) wh
   mul_smul g h P := by
     have hdet : (↑(GeneralLinearGroup.det (g * h))⁻¹ : R) =
         ↑(GeneralLinearGroup.det g)⁻¹ * ↑(GeneralLinearGroup.det h)⁻¹ := by
-      rw [map_mul, _root_.mul_inv_rev, Units.val_mul, mul_comm]
+      simp [mul_comm]
     ext <;>
     · simp only [smul_a, smul_b, smul_c, smul_d, hdet, Units.val_mul, Matrix.mul_apply,
         Fin.sum_univ_two]
@@ -217,20 +208,14 @@ invariant of weight two for the twisted action: `disc(g • f) = det(g)² disc(f
 @[simp]
 theorem discr_smul (g : GL (Fin 2) R) (P : Cubic R) :
     (g • P).discr = ↑(GeneralLinearGroup.det g) ^ 2 * P.discr := by
-  have hu : (↑(GeneralLinearGroup.det g)⁻¹ : R) * ↑(GeneralLinearGroup.det g) = 1 :=
-    Units.inv_mul _
   -- Untwisted, the substitution multiplies the discriminant by `det(g) ^ 6`; each of the four
   -- coefficients carries one factor `det(g)⁻¹`, and the discriminant has degree four.
-  have hP : (g • P).discr = ↑(GeneralLinearGroup.det g)⁻¹ ^ 4 *
-      (↑(GeneralLinearGroup.det g) ^ 6 * P.discr) := by
+  have hP : (g • P).discr = (↑(GeneralLinearGroup.det g)⁻¹ * ↑(GeneralLinearGroup.det g)) ^ 4 *
+      (↑(GeneralLinearGroup.det g) ^ 2 * P.discr) := by
     rw [GeneralLinearGroup.val_det_apply, det_fin_two]
     simp only [discr, smul_a, smul_b, smul_c, smul_d]
     ring
-  rw [hP]
-  linear_combination ↑(GeneralLinearGroup.det g) ^ 2 * P.discr *
-    ((↑(GeneralLinearGroup.det g)⁻¹ * ↑(GeneralLinearGroup.det g)) ^ 3 +
-      (↑(GeneralLinearGroup.det g)⁻¹ * ↑(GeneralLinearGroup.det g)) ^ 2 +
-      ↑(GeneralLinearGroup.det g)⁻¹ * ↑(GeneralLinearGroup.det g) + 1) * hu
+  rw [hP, Units.inv_mul, one_pow, one_mul]
 
 /-- The action preserves vanishing of the discriminant. -/
 theorem discr_smul_eq_zero_iff (g : GL (Fin 2) R) (P : Cubic R) :
@@ -245,7 +230,8 @@ cubic form by `u³` and its determinant is `u²`. -/
 theorem scalar_smul (u : Rˣ) (P : Cubic R) :
     GeneralLinearGroup.scalar (Fin 2) u • P = ⟨↑u * P.a, ↑u * P.b, ↑u * P.c, ↑u * P.d⟩ := by
   have hu : (↑u⁻¹ : R) ^ 2 * ↑u ^ 3 = ↑u := by
-    linear_combination ↑u * (↑u⁻¹ * ↑u + 1) * u.inv_mul
+    rw [show (↑u⁻¹ : R) ^ 2 * ↑u ^ 3 = (↑u⁻¹ * ↑u) ^ 2 * ↑u by ring, Units.inv_mul, one_pow,
+      one_mul]
   ext
   · simp; linear_combination P.a * hu
   · simp; linear_combination P.b * hu
@@ -259,7 +245,7 @@ theorem smul_map {S : Type*} [CommRing S] (f : R →+* S) (g : GL (Fin 2) R) (P 
     GeneralLinearGroup.map f g • P.map f = (g • P).map f := by
   have hdet : (↑(GeneralLinearGroup.det (GeneralLinearGroup.map f g))⁻¹ : S) =
       f ↑(GeneralLinearGroup.det g)⁻¹ := by
-    rw [GeneralLinearGroup.map_det, Units.coe_map_inv, MonoidHom.coe_ofClass]
+    simp [GeneralLinearGroup.map_det]
   ext <;> simp [map, hdet, map_ofNat]
 
 section Examples
