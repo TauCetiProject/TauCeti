@@ -34,10 +34,10 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
 (`RingHom.IsRueckert.exists_finite_quotient`). Consequently:
 
 * `RingHom.IsRueckert.isNoetherianRing`: if `A` is noetherian, so is `B`;
-* `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A` is a unique factorisation domain and `B`
-  is a domain, then `B` is a unique factorisation domain. Each `φ w` is a product of primes,
-  because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and a member
-  `w ∈ W` is prime or irreducible in `A[X]` if and only if `φ w` is so in `B`
+* `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A` is a unique factorisation monoid and `B`
+  satisfies `IsCancelMulZero`, then `B` is a unique factorisation monoid. Each `φ w` is a product
+  of primes, because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and a
+  member `w ∈ W` is prime or irreducible in `A[X]` if and only if `φ w` is so in `B`
   (`RingHom.IsRueckert.prime_apply_iff`, `RingHom.IsRueckert.irreducible_apply_iff`);
 * `RingHom.IsRueckert.isJacobsonRing`: if `A` is a Jacobson ring and the Jacobson radical of `B`
   is zero, then `B` is a Jacobson ring. Indeed every nonzero radical ideal of `B` is the
@@ -176,9 +176,9 @@ theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) : Prime (φ w) ↔ Prime w := 
   rw [← Ideal.span_singleton_prime hw0, ← Ideal.span_singleton_prime hφw0,
     h.isPrime_span_apply_iff hw]
 
-/-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
+/-- Over a unique factorisation monoid `A`, the image of every member of `W` is associated to a
 product of primes. -/
-theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w : A[X]}
+theorem exists_prime_factors_apply [UniqueFactorizationMonoid A] {w : A[X]}
     (hw : w ∈ W) : ∃ f : Multiset B, (∀ b ∈ f, Prime b) ∧ Associated f.prod (φ w) := by
   induction hn : w.natDegree using Nat.strong_induction_on generalizing w with
   | _ n ih =>
@@ -200,9 +200,9 @@ theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w
   rw [Multiset.prod_add, map_mul]
   exact hFf.mul_mul hGg
 
-/-- **Rückert's factorial descent.** If `A` is a unique factorisation domain and `B` is a domain,
-then `B` is a unique factorisation domain. -/
-theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B] :
+/-- **Rückert's factorial descent.** If `A` is a unique factorisation monoid and `B` satisfies
+`IsCancelMulZero`, then `B` is a unique factorisation monoid. -/
+theorem uniqueFactorizationMonoid [UniqueFactorizationMonoid A] [IsCancelMulZero B] :
     UniqueFactorizationMonoid B := by
   refine UniqueFactorizationMonoid.of_exists_prime_factors fun b hb ↦ ?_
   obtain ⟨α, u, w, hw, hu⟩ := h.exists_mul_eq hb
@@ -215,9 +215,9 @@ theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [Is
     rw [← hu, map_mul, RingEquiv.symm_apply_apply]
     exact associated_unit_mul_left b _ (u.isUnit.map α.symm)
 
-/-- Over a unique factorisation domain `A` with a domain codomain `B`, a member of `W` has
-irreducible image under `φ` if and only if it is irreducible in `A[X]`. -/
-theorem irreducible_apply_iff [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B]
+/-- Over a unique factorisation monoid `A` with codomain `B` satisfying `IsCancelMulZero`, a member
+of `W` has irreducible image under `φ` if and only if it is irreducible in `A[X]`. -/
+theorem irreducible_apply_iff [UniqueFactorizationMonoid A] [IsCancelMulZero B]
     {w : A[X]} (hw : w ∈ W) : Irreducible (φ w) ↔ Irreducible w := by
   have := h.uniqueFactorizationMonoid
   rw [UniqueFactorizationMonoid.irreducible_iff_prime,

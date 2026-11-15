@@ -21,8 +21,8 @@ At any point `x` of a finite-dimensional complex manifold `X` without boundary, 
 of holomorphic germs and the stalk of Mathlib's complex-smooth structure sheaf are unique
 factorization domains (and hence integrally closed via
 `UniqueFactorizationMonoid.instIsIntegrallyClosed`). The same holds chart-locally at any point in
-the domain of a holomorphic chart into a finite-dimensional complex normed space, without assuming
-a global manifold structure.
+the domain of a holomorphic chart with respect to a boundaryless model on a finite-dimensional
+complex normed space, without assuming a global manifold structure.
 
 On a finite-dimensional complex normed space `E`, vertical polynomial evaluation
 `evalVertical x₀ w₀ : (𝒪_{E, x₀})[X] →+* 𝒪_{E × ℂ, (x₀, w₀)}` satisfies the abstract Rückert
@@ -189,6 +189,34 @@ private theorem uniqueFactorizationMonoid_stalk_of_finrank_eq :
 
 end Rueckert
 
+end TauCeti.holomorphicStructureSheaf
+
+namespace OpenPartialHomeomorph
+
+open TauCeti TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  (e : OpenPartialHomeomorph X H) (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source)
+
+include he hx in
+/-- At any point in the domain of a holomorphic chart with respect to a boundaryless model on a
+finite-dimensional complex normed space `E`, the holomorphic stalk is a unique factorization
+domain, without assuming a global manifold structure on `X`. -/
+theorem uniqueFactorizationMonoid_holomorphicStalk :
+    UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  let V := Fin (finrank ℂ E) → ℂ
+  let L : E ≃L[ℂ] V := ContinuousLinearEquiv.ofFinrankEq (by simp [V])
+  have hV := uniqueFactorizationMonoid_stalk_of_finrank_eq (finrank ℂ E) V (by simp [V])
+    (L (e.extend I x))
+  exact (RingEquiv.ofBijective _
+    (e.holomorphicStalkPullback_comp_bijective he hx L)).toMulEquiv.uniqueFactorizationMonoid hV
+
+end OpenPartialHomeomorph
+
+namespace TauCeti.holomorphicStructureSheaf
+
 section Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
@@ -201,12 +229,8 @@ domain. -/
 instance stalkUniqueFactorizationMonoid (x : X) :
     UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
   let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  let V := Fin (finrank ℂ E) → ℂ
-  let L : E ≃L[ℂ] V := ContinuousLinearEquiv.ofFinrankEq (by simp [V])
-  have hV := uniqueFactorizationMonoid_stalk_of_finrank_eq (finrank ℂ E) V (by simp [V])
-    ((L ∘ extChartAt I x) x)
-  exact (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x L)).toMulEquiv
-    |>.uniqueFactorizationMonoid hV
+  exact (chartAt H x).uniqueFactorizationMonoid_holomorphicStalk
+    (chart_mem_maximalAtlas x) (mem_chart_source H x)
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a unique factorization domain, via its comparison with holomorphic germs. -/
@@ -233,24 +257,3 @@ theorem irreducible_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ
 end Irreducible
 
 end TauCeti.holomorphicStructureSheaf
-
-namespace OpenPartialHomeomorph
-
-open TauCeti TauCeti.holomorphicStructureSheaf
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {X : Type} [TopologicalSpace X] [ChartedSpace E X]
-  (e : OpenPartialHomeomorph X E) (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X) {x : X} (hx : x ∈ e.source)
-
-include he hx in
-/-- At any point in the domain of a holomorphic chart into a finite-dimensional complex normed
-space `E`, the holomorphic stalk is a unique factorization domain, without assuming a global
-manifold structure on `X`. -/
-theorem uniqueFactorizationMonoid_holomorphicStalk :
-    UniqueFactorizationMonoid ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) := by
-  let L : E ≃L[ℂ] Fin (finrank ℂ E) → ℂ := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  exact (RingEquiv.ofBijective _
-    (e.holomorphicStalkPullback_comp_bijective he hx L)).toMulEquiv.uniqueFactorizationMonoid
-      inferInstance
-
-end OpenPartialHomeomorph
