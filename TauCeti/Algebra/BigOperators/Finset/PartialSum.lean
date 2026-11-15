@@ -22,8 +22,8 @@ This file contains basic facts about finite partial sums.
 
 ## Main results
 
-* `TauCeti.prefixSum_succ`, `TauCeti.prefixSum_of_le`: the recurrence for prefix sums, and the
-  prefix sum of full length is the total sum.
+* `TauCeti.prefixSum_succ`, `TauCeti.sum_filter_val_lt_succ`, `TauCeti.prefixSum_of_le`: the
+  recurrence for prefix sums, its unfolded `Finset.filter` form, and the prefix sum of full length.
 * `TauCeti.sum_sub_prefixSum`: successive differences of a function of the prefix sums
   telescope.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
@@ -73,6 +73,11 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
     omega
   rw [prefixSum, prefixSum, hfilter, sum_insert (by simp), add_comm]
 
+/-- Filtering `Fin n` by `i.val < k + 1` splits off the `k`-th coordinate when `k < n`. -/
+theorem sum_filter_val_lt_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
+    (∑ i : Fin n with i.val < k + 1, x i) = (∑ i : Fin n with i.val < k, x i) + x ⟨k, hk⟩ := by
+  simpa only [prefixSum_def] using prefixSum_succ hk x
+
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
   rw [prefixSum, filter_true_of_mem fun i _ ↦ i.isLt.trans_le hk]
@@ -85,10 +90,7 @@ theorem sum_sub_prefixSum {G : Type*} [AddCommGroup G] (F : M → G) (k : ℕ) (
   | zero => simp
   | succ k ih =>
     by_cases hk : k < n
-    · have h := prefixSum_succ hk fun i : Fin n ↦
-        F (prefixSum (i.val + 1) x) - F (prefixSum i.val x)
-      rw [prefixSum_def, prefixSum_def] at h
-      rw [h, ih, prefixSum_succ hk x]
+    · rw [sum_filter_val_lt_succ hk, ih, prefixSum_succ hk x]
       exact sub_add_sub_cancel' _ _ _
     · rw [filter_congr (q := fun i : Fin n ↦ i.val < k) (fun i _ ↦ by omega), ih,
         prefixSum_of_le (by omega), prefixSum_of_le (by omega)]

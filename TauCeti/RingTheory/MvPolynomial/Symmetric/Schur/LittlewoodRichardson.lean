@@ -340,7 +340,6 @@ theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
     Nat.card (LRTableau lam outer μ) = Nat.card (LRTableau μ outer lam) := by
   by_cases hcard : outer.card = lam.card + μ.card
   · set d := lam.card + μ.card
-    set N := Fintype.card (Fin d)
     let e : (μ.card + lam.card).Partition ≃ d.Partition :=
       { toFun p := (ofPartition p).toPartition
           ((YoungDiagram.card_ofPartition p).trans (add_comm μ.card lam.card))
@@ -352,34 +351,18 @@ theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
           simp [YoungDiagram.ofPartition_toPartition, YoungDiagram.toPartition_ofPartition] }
     have he (p : (μ.card + lam.card).Partition) : ofPartition (e p) = ofPartition p := by
       simp [e, YoungDiagram.ofPartition_toPartition]
-    have hmul :
+    have heq_diag :
         ∑ ν : d.Partition,
-          (Nat.card (LRTableau lam (ofPartition ν) μ) : ℤ) • schurPoly (Fin d) ℤ ν =
+          Nat.card (LRTableau lam (ofPartition ν) μ) • diagramSchurPoly d ℤ (ofPartition ν) =
         ∑ ν : d.Partition,
-          (Nat.card (LRTableau μ (ofPartition ν) lam) : ℤ) • schurPoly (Fin d) ℤ ν := by
-      have h₁ :=
-        diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau (N := N) (R := ℤ) lam μ
-      have h₂ :=
-        diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau (N := N) (R := ℤ) μ lam
-      have heq_diag :
-          ∑ ν : d.Partition,
-            Nat.card (LRTableau lam (ofPartition ν) μ) • diagramSchurPoly N ℤ (ofPartition ν) =
-          ∑ ν : d.Partition,
-            Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly N ℤ (ofPartition ν) := by
-        rw [← h₁, mul_comm, h₂]
-        exact (Finset.sum_congr rfl fun p _ => by simp only [he]).trans
-          (Equiv.sum_comp e fun ν =>
-            Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly N ℤ (ofPartition ν))
-      have hren := congrArg (MvPolynomial.rename (Fintype.equivFin (Fin d)).symm) heq_diag
-      simpa only [N, map_sum, map_nsmul, ← schurPoly_eq_rename, natCast_zsmul] using hren
-    have hli := (linearIndependent_iff'ₛ.mp
-      (linearIndependent_schurPoly (R := ℤ) (σ := Fin d) (n := d) (Fintype.card_fin d).ge))
-      Finset.univ
-      (fun ν => (Nat.card (LRTableau lam (ofPartition ν) μ) : ℤ))
-      (fun ν => (Nat.card (LRTableau μ (ofPartition ν) lam) : ℤ))
-      hmul (outer.toPartition hcard) (Finset.mem_univ _)
-    rw [YoungDiagram.ofPartition_toPartition] at hli
-    exact Int.ofNat_inj.mp hli
+          Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν) := by
+      rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau, mul_comm,
+        diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau]
+      exact (Finset.sum_congr rfl fun p _ => by simp only [he]).trans
+        (Equiv.sum_comp e fun ν =>
+          Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν))
+    simpa only [YoungDiagram.ofPartition_toPartition] using
+      congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq le_rfl heq_diag) (outer.toPartition hcard)
   · have hcard' : outer.card ≠ μ.card + lam.card := by omega
     rw [@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard),
       @Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard')]

@@ -37,6 +37,8 @@ first letter `m > i` would be read before any `m - 1`. Consequently
 ## Main definitions
 
 * `TauCeti.LRTableau λ ν μ`: the Littlewood–Richardson tableaux of shape `ν / λ` and content `μ`.
+* `TauCeti.LRTableau.congr`: transport a Littlewood–Richardson tableau along equalities of shapes
+  and content.
 * `TauCeti.LRTableau.highestWeight μ`: the highest-weight tableau, the Littlewood–Richardson
   tableau of straight shape `μ / ⊥` and content `μ`.
 
@@ -44,7 +46,8 @@ first letter `m > i` would be read before any `m - 1`. Consequently
 
 * `TauCeti.SkewSemistandardYoungTableau.isLatticeWord_readingWord_iff`: the lattice condition in
   terms of row counts.
-* `TauCeti.LRTableau.entry_le`: the entries in row `i` are at most `i`.
+* `TauCeti.LRTableau.entry_le` and `TauCeti.LRTableau.rowCount_eq_zero_of_lt`: the entries in row
+  `i` are at most `i`, so letter `k` never occurs above row `k`.
 * `TauCeti.LRTableau.card_eq`: a Littlewood–Richardson tableau of shape `ν / λ` and content `μ`
   forces `|ν| = |λ| + |μ|`.
 * `TauCeti.natCard_lrTableau_bot_left`: `c^ν_{∅ μ}` is `1` if `ν = μ` and `0` otherwise.
@@ -150,6 +153,47 @@ theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.1 i j ≤ i := b
     List.count_eq_zero_of_not_mem fun h => (hsmall _ h).not_ge (by omega),
     List.count_eq_zero_of_not_mem (by simp; omega)] at hpre
   omega
+
+/-- For a Littlewood–Richardson tableau `T`, letter `k` never appears above row `k`
+(`T.1.rowCount r k = 0` for `r < k`). -/
+theorem rowCount_eq_zero_of_lt (T : LRTableau inner outer μ) {r k : ℕ} (hrk : r < k) :
+    T.1.rowCount r k = 0 := by
+  rw [SkewSemistandardYoungTableau.rowCount_def, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro c _ hc
+  have hle := T.entry_le r c
+  omega
+
+/-- Transport a Littlewood–Richardson tableau along equalities of its inner shape, outer shape,
+and content. -/
+def congr {inner' outer' μ' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ') :
+    LRTableau inner outer μ ≃ LRTableau inner' outer' μ' :=
+  Equiv.cast (by subst hinner; subst houter; subst hμ; rfl)
+
+/-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
+entries. -/
+@[simp]
+theorem congr_apply {inner' outer' μ' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
+    (T : LRTableau inner outer μ) (i j : ℕ) :
+    (congr hinner houter hμ T).1 i j = T.1 i j := by
+  subst hinner; subst houter; subst hμ; rfl
+
+/-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
+row counts. -/
+@[simp]
+theorem rowCount_congr {inner' outer' μ' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
+    (T : LRTableau inner outer μ) (r k : ℕ) :
+    (congr hinner houter hμ T).1.rowCount r k = T.1.rowCount r k := by
+  subst hinner; subst houter; subst hμ; rfl
+
+/-- The inverse of `TauCeti.LRTableau.congr` transports along the symmetric equalities. -/
+@[simp]
+theorem congr_symm {inner' outer' μ' : YoungDiagram}
+    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ') :
+    (congr hinner houter hμ).symm = congr hinner.symm houter.symm hμ.symm := by
+  subst hinner; subst houter; subst hμ; rfl
 
 /-- **The sizes of the shapes of a Littlewood–Richardson tableau add up**: a tableau of shape
 `ν / λ` and content `μ` forces `|ν| = |λ| + |μ|`. -/

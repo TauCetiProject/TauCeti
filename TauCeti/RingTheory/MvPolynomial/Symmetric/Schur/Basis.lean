@@ -73,6 +73,10 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.schurPolyBasis` and `TauCeti.coe_schurPolyBasis`: **the Schur polynomials of the
   partitions of `n` with at most `Fintype.card σ` parts are a basis of the symmetric homogeneous
   polynomials of degree `n`.**
+* `TauCeti.linearIndependent_schurPoly`, `TauCeti.linearIndependent_diagramSchurPoly`, and
+  `TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`: linear independence of the Schur polynomials of
+  all partitions of `n` in at least `n` variables, and uniqueness of `ℕ`-coefficients over a
+  characteristic-zero commutative ring.
 
 ## References
 
@@ -332,6 +336,34 @@ theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :
   simpa only [Function.comp_def, Submodule.subtype_apply, coe_schurPolyBasis, f] using
     ((schurPolyBasis σ R n).linearIndependent.comp f hf).map'
       (symmetricHomogeneousSubmodule σ R n).subtype (Submodule.ker_subtype _)
+
+/-- In at least `n` variables, the diagram-indexed Schur polynomials `s_ν` of all partitions `ν`
+of `n` are linearly independent. -/
+theorem linearIndependent_diagramSchurPoly {N : ℕ} (h : n ≤ N) :
+    LinearIndependent R
+      (fun ν : n.Partition => diagramSchurPoly N R (YoungDiagram.ofPartition ν)) := by
+  have heq : (fun ν : n.Partition => diagramSchurPoly N R (YoungDiagram.ofPartition ν)) =
+      schurPoly (Fin N) R := funext fun ν => by
+    rw [schurPoly_eq_rename, rename_diagramSchurPoly]
+  rw [heq]
+  exact linearIndependent_schurPoly (h.trans_eq (Fintype.card_fin N).symm)
+
+/-- Over a characteristic-zero commutative ring, a natural-number linear combination of the
+diagram Schur polynomials of the partitions of `n` in `N ≥ n` variables determines its
+coefficients uniquely. -/
+theorem eq_of_sum_nsmul_diagramSchurPoly_eq [CharZero R] {N : ℕ} (h : n ≤ N)
+    {c c' : n.Partition → ℕ}
+    (heq : ∑ ν : n.Partition, c ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν) =
+      ∑ ν : n.Partition, c' ν • diagramSchurPoly N R (YoungDiagram.ofPartition ν)) :
+    c = c' := by
+  funext ν
+  have heq' :
+      ∑ μ : n.Partition, (c μ : R) • diagramSchurPoly N R (YoungDiagram.ofPartition μ) =
+      ∑ μ : n.Partition, (c' μ : R) • diagramSchurPoly N R (YoungDiagram.ofPartition μ) := by
+    simpa only [Nat.cast_smul_eq_nsmul] using heq
+  exact Nat.cast_injective <|
+    linearIndependent_iff'ₛ.mp (linearIndependent_diagramSchurPoly h)
+      Finset.univ (fun μ => (c μ : R)) (fun μ => (c' μ : R)) heq' ν (Finset.mem_univ ν)
 
 end CommRing
 

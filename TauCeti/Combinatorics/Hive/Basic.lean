@@ -19,6 +19,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Hives, gauge symmetries, and dominant-weight boundaries
@@ -56,7 +57,8 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
 
 ## Main results
 
-* `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`.
+* `TauCeti.Hive.rhombusSlack_add_barycentricLinear`, `TauCeti.Hive.ofRhombusConcave_eq_iff`,
+  `TauCeti.Hive.isRhombusConcave_iff_productVertex`.
 * `TauCeti.Hive.mixedDiff_nonpos_of_isUnitStep`,
   `TauCeti.Hive.counterexampleSeven_nonunit_mixedDiff_pos`.
 * `TauCeti.Hive.sum_boundary`, `TauCeti.Hive.boundary_antitone`.
@@ -339,6 +341,18 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
 
 @[simp] theorem affine_apply (β γ : R) (p : Vertex n) : affine n β γ p = p.y • β + p.z • γ := (rfl)
 
+variable (n R) in
+/-- The affine hive with zero slopes is the zero hive. -/
+@[simp] theorem affine_zero : affine n (0 : R) 0 = 0 := by
+  ext p; simp
+
+/-- `Hive.affine` is additive in both slope parameters. -/
+@[simp] theorem affine_add (β₁ γ₁ β₂ γ₂ : R) :
+    affine n (β₁ + β₂) (γ₁ + γ₂) = affine n β₁ γ₁ + affine n β₂ γ₂ := by
+  ext p
+  simp only [affine_apply, add_apply, smul_add]
+  abel
+
 @[simp] theorem rhombusSlack_affine (β γ : R) {a b c d : Vertex n} (hr : IsRhombus a b c d) :
     rhombusSlack (affine n β γ) a b c d = 0 := by
   simpa [barycentricLinear, rhombusSlack, affine_apply] using
@@ -512,13 +526,9 @@ theorem sum_boundaryLinear_lt [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) 
   induction k with
   | zero => simp
   | succ m ih =>
-    have hsplit : ({i : Fin n | i.val < m + 1} : Finset (Fin n)) =
-        insert ⟨m, by omega⟩ ({i : Fin n | i.val < m} : Finset (Fin n)) := by
-      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Fin.ext_iff]; omega
-    have hnm : (⟨m, by omega⟩ : Fin n) ∉ ({i : Fin n | i.val < m} : Finset (Fin n)) := by simp
-    rw [hsplit, Finset.sum_insert hnm, ih (by omega), boundaryLinear_apply, Fin.succ_mk,
-      Fin.castSucc_mk]; abel
+    rw [sum_filter_val_lt_succ (by omega : m < n), ih (by omega), boundaryLinear_apply,
+      Fin.succ_mk, Fin.castSucc_mk]
+    abel
 
 /-- Along side `s`, the `n` edge differences telescope to the difference of its two corners. -/
 theorem sum_boundaryLinear_side [AddCommGroup R] (f : Vertex n → R) (s : Fin 3) :
@@ -697,6 +707,186 @@ theorem sum_productBoundary_eq_zero_iff (lam μ γ : DominantWeight n) :
     DominantWeight.sum_dual]; omega
 
 end Boundary
+
+/-! ### Product-chart concavity and perimeter evaluations -/
+
+section ProductChart
+
+private theorem long_diag_cases {n : ℕ} {b d : Vertex n} (hlong : b.sqDist d = 6) :
+    (((b.x : ℤ) - d.x = 1 ∧ (b.y : ℤ) - d.y = -2 ∧ (b.z : ℤ) - d.z = 1) ∨
+      ((b.x : ℤ) - d.x = -1 ∧ (b.y : ℤ) - d.y = 2 ∧ (b.z : ℤ) - d.z = -1) ∨
+      ((b.x : ℤ) - d.x = 2 ∧ (b.y : ℤ) - d.y = -1 ∧ (b.z : ℤ) - d.z = -1) ∨
+      ((b.x : ℤ) - d.x = -2 ∧ (b.y : ℤ) - d.y = 1 ∧ (b.z : ℤ) - d.z = 1) ∨
+      ((b.x : ℤ) - d.x = 1 ∧ (b.y : ℤ) - d.y = 1 ∧ (b.z : ℤ) - d.z = -2) ∨
+      ((b.x : ℤ) - d.x = -1 ∧ (b.y : ℤ) - d.y = -1 ∧ (b.z : ℤ) - d.z = 2)) := by
+  have bnd : ∀ a : ℤ, a ^ 2 ≤ 6 → -2 ≤ a ∧ a ≤ 2 := fun a ha => by
+    refine ⟨?_, ?_⟩
+    · by_contra! h'; have : a ≤ -3 := by omega
+      nlinarith
+    · by_contra! h'; have : 3 ≤ a := by omega
+      nlinarith
+  have hbsum := b.sum_eq; have hdsum := d.sum_eq
+  rw [Vertex.sqDist_def] at hlong
+  set dx : ℤ := (b.x : ℤ) - d.x
+  set dy : ℤ := (b.y : ℤ) - d.y
+  set dz : ℤ := (b.z : ℤ) - d.z
+  have hdx := bnd dx (by linarith [sq_nonneg dy, sq_nonneg dz])
+  have hdy := bnd dy (by linarith [sq_nonneg dx, sq_nonneg dz])
+  have hdz : dz = -dx - dy := by omega
+  rw [hdz] at hlong ⊢
+  rcases (by omega : dx = -2 ∨ dx = -1 ∨ dx = 0 ∨ dx = 1 ∨ dx = 2) with
+    h1 | h1 | h1 | h1 | h1 <;>
+  rcases (by omega : dy = -2 ∨ dy = -1 ∨ dy = 0 ∨ dy = 1 ∨ dy = 2) with
+    h2 | h2 | h2 | h2 | h2 <;>
+  rw [h1, h2] at hlong ⊢ <;> revert hlong <;> decide
+
+private theorem short_diag_bounds {n : ℕ} {a c : Vertex n} (hshort : a.sqDist c = 2) :
+    (-1 ≤ (a.x : ℤ) - c.x ∧ (a.x : ℤ) - c.x ≤ 1) ∧
+      (-1 ≤ (a.y : ℤ) - c.y ∧ (a.y : ℤ) - c.y ≤ 1) ∧
+      (-1 ≤ (a.z : ℤ) - c.z ∧ (a.z : ℤ) - c.z ≤ 1) := by
+  have bnd : ∀ u : ℤ, u ^ 2 ≤ 2 → -1 ≤ u ∧ u ≤ 1 := fun u hu => by
+    refine ⟨?_, ?_⟩
+    · by_contra! h'; have : u ≤ -2 := by omega
+      nlinarith
+    · by_contra! h'; have : 2 ≤ u := by omega
+      nlinarith
+  rw [Vertex.sqDist_def] at hshort
+  exact ⟨bnd _ (by linarith [sq_nonneg ((a.y : ℤ) - c.y), sq_nonneg ((a.z : ℤ) - c.z)]),
+    bnd _ (by linarith [sq_nonneg ((a.x : ℤ) - c.x), sq_nonneg ((a.z : ℤ) - c.z)]),
+    bnd _ (by linarith [sq_nonneg ((a.x : ℤ) - c.x), sq_nonneg ((a.y : ℤ) - c.y)])⟩
+
+private theorem apply_eq_productVertex {n : ℕ} {R : Type*} (f : Vertex n → R) (p : Vertex n)
+    (i j : ℕ) (hij : i ≤ j) (hj : j ≤ n) (hz : p.z = i) (hyz : p.y + p.z = j) :
+    f p = f (Vertex.productVertex n i j hij hj) :=
+  congrArg f (by have := p.sum_eq; ext <;> simp <;> omega)
+
+private theorem productVertex_rhombus_le {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
+    {f : Vertex n → R}
+    (hmix : ∀ (i j : ℕ) (hij : i < j) (hj : j + 1 ≤ n),
+      f (Vertex.productVertex n (i + 1) j (by omega) (by omega)) +
+        f (Vertex.productVertex n i (j + 1) (by omega) hj) ≤
+      f (Vertex.productVertex n i j (by omega) (by omega)) +
+        f (Vertex.productVertex n (i + 1) (j + 1) (by omega) hj))
+    (hcol : ∀ (i j : ℕ) (hij : i ≤ j) (hj : j + 2 ≤ n),
+      f (Vertex.productVertex n i j hij (by omega)) +
+        f (Vertex.productVertex n (i + 1) (j + 2) (by omega) hj) ≤
+      f (Vertex.productVertex n i (j + 1) (by omega) (by omega)) +
+        f (Vertex.productVertex n (i + 1) (j + 1) (by omega) (by omega)))
+    (hbal : ∀ (i j : ℕ) (hij : i < j) (hj : j + 1 ≤ n),
+      f (Vertex.productVertex n i j (by omega) (by omega)) +
+        f (Vertex.productVertex n (i + 2) (j + 1) (by omega) hj) ≤
+      f (Vertex.productVertex n (i + 1) j (by omega) (by omega)) +
+        f (Vertex.productVertex n (i + 1) (j + 1) (by omega) hj))
+    {a b c d : Vertex n} (hr : IsRhombus a b c d)
+    (hor : ((b.x : ℤ) - d.x = 1 ∧ (b.y : ℤ) - d.y = -2 ∧ (b.z : ℤ) - d.z = 1) ∨
+      ((b.x : ℤ) - d.x = 2 ∧ (b.y : ℤ) - d.y = -1 ∧ (b.z : ℤ) - d.z = -1) ∨
+      ((b.x : ℤ) - d.x = 1 ∧ (b.y : ℤ) - d.y = 1 ∧ (b.z : ℤ) - d.z = -2)) :
+    f b + f d ≤ f a + f c := by
+  suffices hnorm : ∀ {u v : Vertex n}, IsRhombus u b v d →
+      (u.z < v.z ∨ (u.z = v.z ∧ v.x ≤ u.x)) → f b + f d ≤ f u + f v by
+    rcases lt_trichotomy a.z c.z with hlt | heq | hgt
+    · exact hnorm hr (Or.inl hlt)
+    · rcases le_total c.x a.x with hx | hx
+      · exact hnorm hr (Or.inr ⟨heq, hx⟩)
+      · rw [add_comm (f a)]; exact hnorm hr.swap_opposite.reverse (Or.inr ⟨heq.symm, hx⟩)
+    · rw [add_comm (f a)]; exact hnorm hr.swap_opposite.reverse (Or.inl hgt)
+  intro u v hruv huv
+  have hu := u.sum_eq; have hv := v.sum_eq; have hb := b.sum_eq; have hd := d.sum_eq
+  have hmx := hruv.midpoint_x; have hmy := hruv.midpoint_y
+  obtain ⟨hux, huy, huz⟩ := short_diag_bounds hruv.short
+  rcases hor with ⟨hdx, hdy, -⟩ | ⟨hdx, hdy, -⟩ | ⟨hdx, hdy, -⟩
+  · rw [apply_eq_productVertex f b (d.z + 1) (b.y + 1 + d.z) (by omega) (by omega)
+        (by omega) (by omega),
+      apply_eq_productVertex f d d.z (b.y + 1 + d.z + 1) (by omega) (by omega) rfl (by omega),
+      apply_eq_productVertex f u d.z (b.y + 1 + d.z) (by omega) (by omega) (by omega) (by omega),
+      apply_eq_productVertex f v (d.z + 1) (b.y + 1 + d.z + 1) (by omega) (by omega)
+        (by omega) (by omega)]
+    exact hmix d.z (b.y + 1 + d.z) (by omega) (by omega)
+  · rw [apply_eq_productVertex f b b.z (b.y + b.z) (by omega) (by omega) rfl rfl,
+      apply_eq_productVertex f d (b.z + 1) (b.y + b.z + 2) (by omega) (by omega)
+        (by omega) (by omega),
+      apply_eq_productVertex f u b.z (b.y + b.z + 1) (by omega) (by omega) (by omega) (by omega),
+      apply_eq_productVertex f v (b.z + 1) (b.y + b.z + 1) (by omega) (by omega)
+        (by omega) (by omega)]
+    exact hcol b.z (b.y + b.z) (by omega) (by omega)
+  · rw [apply_eq_productVertex f b b.z (d.y + 1 + b.z) (by omega) (by omega) rfl (by omega),
+      apply_eq_productVertex f d (b.z + 2) (d.y + 1 + b.z + 1) (by omega) (by omega)
+        (by omega) (by omega),
+      apply_eq_productVertex f u (b.z + 1) (d.y + 1 + b.z) (by omega) (by omega)
+        (by omega) (by omega),
+      apply_eq_productVertex f v (b.z + 1) (d.y + 1 + b.z + 1) (by omega) (by omega)
+        (by omega) (by omega)]
+    exact hbal b.z (d.y + 1 + b.z) (by omega) (by omega)
+
+/-- **Product-chart characterization of hive concavity**: `f : Vertex n → R` is rhombus-concave iff
+it satisfies the three product-chart rhombus inequality families (mixed differences, row
+comparison, and ballot prefixes). -/
+theorem isRhombusConcave_iff_productVertex {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R]
+    (f : Vertex n → R) :
+    IsRhombusConcave f ↔
+      (∀ (i j : ℕ) (hij : i < j) (hj : j + 1 ≤ n),
+        f (Vertex.productVertex n (i + 1) j (by omega) (by omega)) +
+          f (Vertex.productVertex n i (j + 1) (by omega) hj) ≤
+        f (Vertex.productVertex n i j (by omega) (by omega)) +
+          f (Vertex.productVertex n (i + 1) (j + 1) (by omega) hj)) ∧
+      (∀ (i j : ℕ) (hij : i ≤ j) (hj : j + 2 ≤ n),
+        f (Vertex.productVertex n i j hij (by omega)) +
+          f (Vertex.productVertex n (i + 1) (j + 2) (by omega) hj) ≤
+        f (Vertex.productVertex n i (j + 1) (by omega) (by omega)) +
+          f (Vertex.productVertex n (i + 1) (j + 1) (by omega) (by omega))) ∧
+      (∀ (i j : ℕ) (hij : i < j) (hj : j + 1 ≤ n),
+        f (Vertex.productVertex n i j (by omega) (by omega)) +
+          f (Vertex.productVertex n (i + 2) (j + 1) (by omega) hj) ≤
+        f (Vertex.productVertex n (i + 1) j (by omega) (by omega)) +
+          f (Vertex.productVertex n (i + 1) (j + 1) (by omega) hj)) := by
+  rw [isRhombusConcave_def]
+  refine ⟨fun hf => ⟨fun i j hij hj => hf (isRhombus_productVertex_mixed hij hj),
+      fun i j hij hj => hf (isRhombus_productVertex_col hij hj),
+      fun i j hij hj => hf (isRhombus_productVertex_ballot hij hj)⟩, ?_⟩
+  rintro ⟨hmix, hcol, hbal⟩ a b c d hr
+  rcases long_diag_cases hr.long with h1 | h1 | h2 | h2 | h3 | h3
+  · exact productVertex_rhombus_le hmix hcol hbal hr (Or.inl h1)
+  · rw [add_comm (f b)]
+    exact productVertex_rhombus_le hmix hcol hbal hr.reverse (Or.inl (by omega))
+  · exact productVertex_rhombus_le hmix hcol hbal hr (Or.inr (Or.inl h2))
+  · rw [add_comm (f b)]
+    exact productVertex_rhombus_le hmix hcol hbal hr.reverse (Or.inr (Or.inl (by omega)))
+  · exact productVertex_rhombus_le hmix hcol hbal hr (Or.inr (Or.inr h3))
+  · rw [add_comm (f b)]
+    exact productVertex_rhombus_le hmix hcol hbal hr.reverse (Or.inr (Or.inr (by omega)))
+
+/-- Boundary evaluation along `i = 0` for a hive with boundary `productBoundary lam μ γ`. -/
+theorem apply_productVertex_zero_left_of_productBoundary {n j : ℕ} {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (hj : j ≤ n) :
+    h (Vertex.productVertex n 0 j (Nat.zero_le j) hj) = ∑ r : Fin n with r.val < j, lam.1 r := by
+  rw [Vertex.productVertex_zero_left, apply_edgePoint_zero, hb, productBoundary_zero]
+
+/-- Boundary evaluation along `j = n` for a hive with boundary `productBoundary lam μ γ`. -/
+theorem apply_productVertex_right_self_of_productBoundary {n i : ℕ} {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (hi : i ≤ n) :
+    h (Vertex.productVertex n i n hi le_rfl) =
+      (∑ r : Fin n, lam.1 r) + ∑ k : Fin n with k.val < i, μ.1 k := by
+  rw [Vertex.productVertex_right_self, apply_edgePoint_one, hb, productBoundary_zero,
+    productBoundary_one]
+
+/-- Boundary evaluation along the diagonal `i = j` for a hive with boundary
+`productBoundary lam μ γ`. -/
+theorem apply_productVertex_diag_of_productBoundary {n j : ℕ} {lam μ γ : DominantWeight n}
+    {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) (hj : j ≤ n) :
+    h (Vertex.productVertex n j j le_rfl hj) = ∑ r : Fin n with r.val < j, γ.1 r := by
+  rw [Vertex.productVertex_diag, apply_edgePoint_two, hb, productBoundary_two]
+  simp only [DominantWeight.dual_apply, Finset.sum_neg_distrib, neg_neg, Finset.sum_filter]
+  refine (Equiv.sum_comp Fin.revPerm
+    (fun m : Fin n => if n - j ≤ m.val then γ.1 m.rev else 0)).symm.trans ?_
+  refine Finset.sum_congr rfl fun r _ => ?_
+  simp only [Fin.revPerm_apply, Fin.rev_rev, Fin.val_rev]
+  by_cases hr : r.val < j
+  · have hle : n - j ≤ n - (r.val + 1) := by omega
+    simp [hr, hle]
+  · have hlt : ¬ n - j ≤ n - (r.val + 1) := by omega
+    simp [hr, hlt]
+
+end ProductChart
 
 /-! ### Dihedral action on normalized hives and boundaries -/
 
