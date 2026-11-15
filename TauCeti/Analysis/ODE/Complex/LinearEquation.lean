@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.ODE.Gronwall.Uniqueness
 
 /-!
 # Analytic scalar equations, companion systems, and disc initial-value theorems
@@ -26,14 +27,15 @@ the vector consists of the successive, unscaled derivatives of its first coordin
 In particular, its value at an initial point is the native `HolomorphicFunctions.jet`,
 not the vector of Taylor coefficients.
 
-Combining this companion reduction with Cauchy's holomorphic matrix-system solver from
-`TauCeti.Analysis.ODE.Complex.System` yields uniqueness of scalar solutions on
-preconnected open domains, existence and uniqueness on open discs, the initial-jet
-linear isomorphism `LinearEquation.initialJetEquivBall : E.solutionSpace ≃ₗ[ℂ] (Fin n → ℂ)`
-on positive-radius discs, and `Module.finrank ℂ E.solutionSpace = n`. Non-monic scalar
-equations `∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` with nowhere-zero leading
-coefficient `p (Fin.last m)` normalize to monic equations via
-`LinearEquation.ofLeadingNeZero`.
+Combining this companion reduction with the holomorphic matrix-system solver from
+`TauCeti.Analysis.ODE.Complex.System` and Grönwall uniqueness from
+`TauCeti.Analysis.ODE.Gronwall.Uniqueness` yields uniqueness of scalar solutions on
+preconnected open domains, existence and uniqueness on open discs (giving Cauchy's local
+initial-value theorem when `0 < r`, and holding vacuously on the empty ball when `r ≤ 0`), the
+initial-jet linear isomorphism `LinearEquation.initialJetEquivBall` on positive-radius discs,
+and `Module.finrank ℂ E.solutionSpace = n`. Non-monic scalar equations
+`∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` with nowhere-zero leading coefficient
+`p (Fin.last m)` normalize to monic equations via `LinearEquation.ofLeadingNeZero`.
 
 ## References
 
@@ -411,11 +413,14 @@ theorem initialJet_injective_of_isPreconnected (E : LinearEquation U n)
     (fun j ↦ by simpa only [initialJet_apply] using congrFun hjet j) z.property
   simpa [HolomorphicFunctions.extend_apply _ z] using heq
 
-/-! ### Cauchy's disc initial-value theorem and dimension of the solution space -/
+/-! ### Disc existence, uniqueness, and dimension of the solution space -/
 
-/-- **Cauchy's disc existence and uniqueness for companion systems.** On `ball z₀ r`, every initial
-vector `c : Fin n → ℂ` admits an analytic companion solution `v` with `v z₀ = c`, unique on
-`ball z₀ r`. -/
+/-- **Disc existence and uniqueness for companion systems.** For any `E` on `ball z₀ r` and any
+vector `c : Fin n → ℂ`, there exists an ambient companion solution `v` of `E` with `v z₀ = c`,
+unique on `ball z₀ r` among companion solutions taking value `c` at `z₀`. When `0 < r`,
+`z₀ ∈ ball z₀ r` and this is Cauchy's local initial-value theorem for the companion system; when
+`r ≤ 0`, `ball z₀ r` is empty so `E.IsCompanionSolution` and `EqOn` uniqueness on `ball z₀ r` hold
+vacuously while `v z₀ = c` still holds. -/
 theorem exists_isCompanionSolution_ball {z₀ : ℂ} {r : ℝ}
     (E : LinearEquation ⟨Metric.ball z₀ r, Metric.isOpen_ball⟩ n) (c : Fin n → ℂ) :
     ∃ v : ℂ → Fin n → ℂ, E.IsCompanionSolution v ∧ v z₀ = c ∧
@@ -426,9 +431,12 @@ theorem exists_isCompanionSolution_ball {z₀ : ℂ} {r : ℝ}
       (fun i j ↦ (E.analyticOnNhd_companion i j).differentiableOn) c
   exact ⟨v, ⟨hv_an, hv_deriv⟩, hv0, fun w hw hw0 ↦ huniq w hw.hasDerivAt hw0⟩
 
-/-- **Cauchy's disc existence and uniqueness for monic scalar linear equations.** On `ball z₀ r`,
-every prescribed initial jet `c : Fin n → ℂ` is realized at `z₀` by an analytic solution `y` of
-`E`, unique on `ball z₀ r`. -/
+/-- **Disc existence and uniqueness for monic scalar linear equations.** For any `E` on `ball z₀ r`
+and any `c : Fin n → ℂ`, there exists a scalar solution `y` of `E` whose first `n` iterated
+derivatives at `z₀` equal `c`, unique on `ball z₀ r` among solutions with the same derivatives at
+`z₀`. When `0 < r`, `z₀ ∈ ball z₀ r` and this is Cauchy's initial-value theorem on `ball z₀ r`;
+when `r ≤ 0`, `ball z₀ r` is empty so `E.IsSolution` and `EqOn` uniqueness on `ball z₀ r` hold
+vacuously while `y` still realizes the prescribed derivatives at `z₀`. -/
 theorem exists_isSolution_ball {z₀ : ℂ} {r : ℝ}
     (E : LinearEquation ⟨Metric.ball z₀ r, Metric.isOpen_ball⟩ n) (c : Fin n → ℂ) :
     ∃ y : ℂ → ℂ, E.IsSolution y ∧ (∀ j : Fin n, iteratedDeriv j y z₀ = c j) ∧
@@ -442,12 +450,11 @@ theorem exists_isSolution_ball {z₀ : ℂ} {r : ℝ}
       simpa using congrFun hvec ⟨0, E.order_pos⟩
   · let E₁ : LinearEquation ⟨Metric.ball z₀ 1, Metric.isOpen_ball⟩ n := ⟨E.order_pos, fun _ ↦ 0⟩
     obtain ⟨v, hv, hv0, -⟩ := E₁.exists_isCompanionSolution_ball c
-    have hempty : Metric.ball z₀ r = ∅ := Metric.ball_eq_empty.mpr (not_lt.mp hr)
-    refine ⟨fun z ↦ v z ⟨0, E.order_pos⟩, ?_, fun j ↦ ?_, fun _ _ _ z hz ↦ ?_⟩
-    · refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩ <;>
-        exact (hempty ▸ show z ∈ Metric.ball z₀ r from hz).elim
-    · rw [← hv.eq_iteratedDeriv z₀ (Metric.mem_ball_self zero_lt_one) j, hv0]
-    · exact (hempty ▸ hz).elim
+    have hfalse {z : ℂ} (hz : z ∈ Metric.ball z₀ r) : False := hr (Metric.pos_of_mem_ball hz)
+    refine ⟨fun z ↦ v z ⟨0, E.order_pos⟩,
+      ⟨fun _ hz ↦ (hfalse hz).elim, fun _ hz ↦ (hfalse hz).elim⟩,
+      fun j ↦ ?_, fun _ _ _ _ hz ↦ (hfalse hz).elim⟩
+    rw [← hv.eq_iteratedDeriv z₀ (Metric.mem_ball_self zero_lt_one) j, hv0]
 
 /-- **Initial-jet linear isomorphism on a positive-radius disc.** On `ball z₀ r` (`0 < r`), the
 unscaled initial-jet map at `z₀` is a `ℂ`-linear isomorphism `E.solutionSpace ≃ₗ[ℂ] (Fin n → ℂ)`. -/
@@ -579,12 +586,14 @@ example : HolomorphicFunctions.jet (U := (⊤ : Opens ℂ)) (a := 0) (by simp) 3
 
 end LinearEquation
 
-/-- **Cauchy's disc initial-value theorem for scalar linear differential equations.** For any order
-`m : ℕ`, holomorphic coefficients `p : Fin (m + 1) → ℂ → ℂ` on `ball z₀ r` with nowhere-zero leading
-coefficient `p (Fin.last m)` on `ball z₀ r`, and initial jet `c : Fin m → ℂ`, there exists an
-analytic function `y : ℂ → ℂ` on `ball z₀ r` solving
-`∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` on `ball z₀ r` with
-`iteratedDeriv j y z₀ = c j` for all `j : Fin m`, unique on `ball z₀ r`. -/
+/-- **Disc existence and uniqueness for scalar linear differential equations.** For any order
+`m : ℕ`, coefficients `p : Fin (m + 1) → ℂ → ℂ` complex differentiable on `ball z₀ r` with
+nowhere-zero leading coefficient `p (Fin.last m)` on `ball z₀ r`, and `c : Fin m → ℂ`, there exists
+`y : ℂ → ℂ` analytic on `ball z₀ r` solving `∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` on
+`ball z₀ r` with `iteratedDeriv j y z₀ = c j` for all `j : Fin m`, unique on `ball z₀ r`. When
+`0 < r`, `z₀ ∈ ball z₀ r` and this is Cauchy's initial-value theorem on `ball z₀ r`; when `r ≤ 0`,
+`ball z₀ r` is empty so the hypotheses and conclusions on `ball z₀ r` hold vacuously while `y` still
+realizes the prescribed derivatives at `z₀`. -/
 theorem exists_analyticOnNhd_ball_sum_iteratedDeriv_eq_zero
     {z₀ : ℂ} {r : ℝ} {m : ℕ} {p : Fin (m + 1) → ℂ → ℂ}
     (hp : ∀ i, DifferentiableOn ℂ (p i) (Metric.ball z₀ r))

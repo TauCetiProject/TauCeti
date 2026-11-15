@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Instances.Int
+public import TauCeti.Topology.Algebra.Module.Matrix
 
 /-!
 # Derivatives of matrix-vector products
@@ -23,7 +24,11 @@ of `A` with the directional Jacobian of `v`, plus the column-divergence term of 
 `v`. In particular, the latter term vanishes when every column has zero directional divergence.
 
 The field and the directions may be defined on any normed vector space over a nontrivially
-normed field. Neither completeness nor independence of the directions is required.
+normed field. Neither completeness nor independence of the directions is required. Entrywise
+differentiability of a rectangular matrix field `M : E → Matrix κ ι 𝕜` also implies
+differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVecCLM`
+(`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
+`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`).
 
 For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
 at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`). Conversely, if the derivatives of two `C¹`
@@ -75,6 +80,47 @@ theorem sum_fderiv_mulVec_eq_trace_of_sum_fderiv_eq_zero
       (A x * Matrix.of (fun j i ↦ fderiv 𝕜 (fun y ↦ v y j) x (e i))).trace := by
   rw [sum_fderiv_mulVec_eq_trace_add A v e x hA hv]
   simp only [hdiv, mul_zero, Finset.sum_const_zero, add_zero]
+
+/-- If every entry of `M : E → Matrix κ ι 𝕜` is differentiable within `s` at `x`, then the
+induced operator family `y ↦ (M y).mulVecCLM` is differentiable within `s` at `x`. -/
+theorem differentiableWithinAt_mulVecCLM {κ : Type*} [Finite κ]
+    {M : E → Matrix κ ι 𝕜} {s : Set E} {x : E}
+    (hM : ∀ i j, DifferentiableWithinAt 𝕜 (fun y ↦ M y i j) s x) :
+    DifferentiableWithinAt 𝕜 (fun y ↦ (M y).mulVecCLM) s x := by
+  classical
+  cases nonempty_fintype κ
+  have hEq : (fun y ↦ (M y).mulVecCLM) = fun y ↦ ∑ i : κ, ∑ j : ι, M y i j •
+      (ContinuousLinearMap.single 𝕜 (fun _ : κ ↦ 𝕜) i ∘L
+        ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) j) :=
+    funext fun y ↦ mulVecCLM_eq_sum (M y)
+  rw [hEq]
+  exact DifferentiableWithinAt.fun_sum fun i _ ↦ DifferentiableWithinAt.fun_sum fun j _ ↦
+    (hM i j).smul_const _
+
+/-- If every entry of `M : E → Matrix κ ι 𝕜` is differentiable at `x`, then the induced operator
+family `y ↦ (M y).mulVecCLM` is differentiable at `x`. -/
+theorem differentiableAt_mulVecCLM {κ : Type*} [Finite κ]
+    {M : E → Matrix κ ι 𝕜} {x : E}
+    (hM : ∀ i j, DifferentiableAt 𝕜 (fun y ↦ M y i j) x) :
+    DifferentiableAt 𝕜 (fun y ↦ (M y).mulVecCLM) x :=
+  differentiableWithinAt_univ.mp <|
+    differentiableWithinAt_mulVecCLM fun i j ↦ (hM i j).differentiableWithinAt
+
+/-- If every entry of `M : E → Matrix κ ι 𝕜` is differentiable on `s`, then the induced operator
+family `y ↦ (M y).mulVecCLM` is differentiable on `s`. -/
+theorem differentiableOn_mulVecCLM {κ : Type*} [Finite κ]
+    {M : E → Matrix κ ι 𝕜} {s : Set E}
+    (hM : ∀ i j, DifferentiableOn 𝕜 (fun y ↦ M y i j) s) :
+    DifferentiableOn 𝕜 (fun y ↦ (M y).mulVecCLM) s :=
+  fun x hx ↦ differentiableWithinAt_mulVecCLM fun i j ↦ hM i j x hx
+
+/-- If every entry of `M : E → Matrix κ ι 𝕜` is differentiable everywhere, then the induced
+operator family `y ↦ (M y).mulVecCLM` is differentiable everywhere. -/
+theorem differentiable_mulVecCLM {κ : Type*} [Finite κ]
+    {M : E → Matrix κ ι 𝕜}
+    (hM : ∀ i j, Differentiable 𝕜 (fun y ↦ M y i j)) :
+    Differentiable 𝕜 (fun y ↦ (M y).mulVecCLM) :=
+  fun x ↦ differentiableAt_mulVecCLM fun i j ↦ hM i j x
 
 end Matrix
 

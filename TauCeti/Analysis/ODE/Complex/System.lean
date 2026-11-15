@@ -6,56 +6,53 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.Topology.Algebra.Module.Matrix
 import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Calculus.FDeriv.Matrix
+import TauCeti.Analysis.ODE.Gronwall.Uniqueness
 
 /-!
 # Holomorphic linear differential systems on discs
 
 For a holomorphic family `A : ℂ → B` in a complete complex normed algebra on an open disc around
 `z₀`, the linear differential equation `Φ' z = A z * Φ z` with `Φ z₀ = 1` is solved by the power
-series `TauCeti.holomorphicPropagator A z₀`, whose coefficients are determined recursively by
+series `TauCeti.propagatorSeries A z₀`, whose coefficients are determined recursively by
 Cauchy convolution with the Taylor coefficients of `A` at `z₀`. Unlike `TauCeti.dysonSeriesLeft`,
 which integrates continuous paths along the real line, this series converges and differentiates
 termwise on any complex disc `Metric.eball z₀ r` (finite or infinite radius) on which `A` is
 complex differentiable: Cauchy's derivative estimate on interior circles together with Bernoulli's
 inequality bounds the `n`-th coefficient by `‖1‖ * (n + 1) ^ K / ρ ^ n`.
 
-Uniqueness requires neither completeness nor holomorphy: for a continuous operator family
-`A : 𝕜 → E →L[𝕜] E` over any nontrivially normed `ℝ`-algebra field `𝕜`, two solutions agreeing at
-one point agree on any convex domain (`Convex.eqOn_of_hasDerivWithinAt_clm_apply`) and on any open
-preconnected domain (`IsOpen.eqOn_of_hasDerivAt_clm_apply`), by restricting along real line
-segments and applying Mathlib's Gronwall uniqueness theorem.
-
-Specializing `B` to `E →L[ℂ] E` yields Cauchy's local existence and uniqueness theorem for linear
-systems on discs, the restricted solution submodule `TauCeti.linearODESolutionSpace`, and its
-evaluation linear equivalence with `E` on positive-radius discs. Specializing further to
-`E = (ι → ℂ)` gives the matrix initial-value theorem, `TauCeti.matrixODESolutionSpace`, and its
-dimension `Fintype.card ι`.
+Combining this series construction with the general Grönwall uniqueness theorems on convex and open
+preconnected domains from `TauCeti.Analysis.ODE.Gronwall.Uniqueness` and specializing `B` to
+`E →L[ℂ] E` yields existence and uniqueness for linear operator systems on open discs (giving
+Cauchy's local initial-value theorem when `0 < r`, and holding vacuously on the empty ball when
+`r ≤ 0`), the restricted solution submodule `TauCeti.linearODESolutionSpace`, and its evaluation
+linear equivalences `TauCeti.linearODESolutionSpace.evalEquivEball` and
+`TauCeti.linearODESolutionSpace.evalEquivBall` with `E` on positive-radius discs. Specializing
+further via `Matrix.mulVecCLM` to `E = (ι → ℂ)` gives the matrix disc existence and uniqueness
+theorem, `TauCeti.matrixODESolutionSpace`, and its dimension `Fintype.card ι` on positive-radius
+discs.
 
 ## Main declarations
 
-* `Convex.eqOn_of_hasDerivWithinAt_clm_apply`, `IsOpen.eqOn_of_hasDerivAt_clm_apply`: uniqueness of
-  solutions to `v' = A(z) v` on convex sets and open preconnected sets.
-* `TauCeti.propagatorCoeff`, `TauCeti.holomorphicPropagator`: recursive Taylor coefficients and
-  power-series propagator solving `Φ' z = A z * Φ z` with `Φ z₀ = 1`.
+* `TauCeti.propagatorCoeff`, `TauCeti.propagatorSeries`: recursive Taylor coefficients and
+  power-series sum solving `Φ' z = A z * Φ z` with `Φ z₀ = 1` when `A` is holomorphic on a disc.
 * `TauCeti.norm_propagatorCoeff_le_of_forall_mem_sphere_norm_le`: Cauchy--Bernoulli majorant bound
   on the propagator coefficients.
-* `TauCeti.hasDerivAt_holomorphicPropagator_of_mem_eball`: the propagator solves `Φ' = A * Φ` on
+* `TauCeti.hasDerivAt_propagatorSeries_of_mem_eball`: `propagatorSeries` solves `Φ' = A * Φ` on
   `Metric.eball z₀ r`.
-* `TauCeti.linearODESolutionSpace`, `TauCeti.linearODESolutionSpace.evalEquivBall`: the restricted
-  solution submodule of `v' = A(z) v` and its evaluation linear isomorphism with `E` on a disc of
-  positive radius.
+* `TauCeti.linearODESolutionSpace`, `TauCeti.linearODESolutionSpace.evalEquivEball`,
+  `TauCeti.linearODESolutionSpace.evalEquivBall`: the restricted solution submodule of
+  `v' = A(z) v` and its evaluation linear isomorphisms with `E` on discs of positive radius.
 * `TauCeti.exists_analyticOnNhd_ball_hasDerivAt_mulVec`, `TauCeti.matrixODESolutionSpace`,
   `TauCeti.finrank_matrixODESolutionSpace_ball`: existence, uniqueness, evaluation isomorphism, and
   dimension for holomorphic matrix systems `y' = M(z) *ᵥ y`.
@@ -72,98 +69,15 @@ public noncomputable section
 open Filter Function Metric Set Topology
 open scoped ENNReal NNReal Matrix
 
-/-- **Uniqueness for linear differential equations on convex sets.** Over any nontrivially normed
-real-algebra field `𝕜`, two solutions of `v' = A(z) v` within a convex set `s` for a continuous
-operator family `A` that agree at one point of `s` agree throughout `s`. -/
-theorem Convex.eqOn_of_hasDerivWithinAt_clm_apply
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {s : Set 𝕜} (hs : Convex ℝ s) {A : 𝕜 → E →L[𝕜] E} (hA : ContinuousOn A s)
-    {v w : 𝕜 → E} (hv : ∀ z ∈ s, HasDerivWithinAt v (A z (v z)) s z)
-    (hw : ∀ z ∈ s, HasDerivWithinAt w (A z (w z)) s z)
-    {z₀ : 𝕜} (hz₀ : z₀ ∈ s) (h : v z₀ = w z₀) : EqOn v w s := by
-  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  intro z hz
-  set γ : ℝ → 𝕜 := ⇑(AffineMap.lineMap (k := ℝ) z₀ z)
-  have hγ : MapsTo γ (Icc 0 1) s := hs.mapsTo_lineMap hz₀ hz
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hA.comp (AffineMap.lineMap_continuous (R := ℝ)).continuousOn hγ)
-  set K : ℝ≥0 := Real.toNNReal (‖z - z₀‖ * max C 0)
-  have hLip (t : ℝ) (ht : t ∈ Ico (0 : ℝ) 1) :
-      LipschitzOnWith K (fun x : E ↦ (z - z₀) • A (γ t) x) univ := by
-    refine LipschitzWith.lipschitzOnWith (LipschitzWith.of_dist_le_mul fun x y ↦ ?_)
-    have hAt : ‖A (γ t)‖ ≤ max C 0 :=
-      (hC t (Ico_subset_Icc_self ht)).trans (le_max_left C 0)
-    have hnorm : ‖(z - z₀) • A (γ t) (x - y)‖ ≤ (K : ℝ) * ‖x - y‖ := by
-      calc
-        ‖(z - z₀) • A (γ t) (x - y)‖
-            ≤ ‖z - z₀‖ * (‖A (γ t)‖ * ‖x - y‖) := by
-              rw [norm_smul]
-              gcongr
-              exact (A (γ t)).le_opNorm (x - y)
-        _ ≤ ‖z - z₀‖ * (max C 0 * ‖x - y‖) := by gcongr
-        _ = (K : ℝ) * ‖x - y‖ := by
-              rw [Real.coe_toNNReal _ (by positivity), mul_assoc]
-    simpa [dist_eq_norm, smul_sub] using hnorm
-  have hchain {u : 𝕜 → E} (hu : ∀ p ∈ s, HasDerivWithinAt u (A p (u p)) s p) :
-      ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt (u ∘ γ) ((z - z₀) • A (γ t) (u (γ t))) (Icc 0 1) t :=
-    fun t ht ↦ by
-      simpa using ((hu (γ t) (hγ ht)).hasFDerivWithinAt.restrictScalars ℝ).comp_hasDerivWithinAt t
-        (AffineMap.hasDerivWithinAt_lineMap (𝕜 := ℝ)) hγ
-  have hvI := hchain hv
-  have hwI := hchain hw
-  have h0 : (v ∘ γ) 0 = (w ∘ γ) 0 := by simpa [γ] using h
-  have h1 := ODE_solution_unique_of_mem_Icc_right
-    (v := fun t x ↦ (z - z₀) • A (γ t) x) (s := fun _ ↦ univ) hLip
-    (fun t ht ↦ (hvI t ht).continuousWithinAt)
-    (fun t ht ↦ (hvI t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht))
-    (fun _ _ ↦ mem_univ _)
-    (fun t ht ↦ (hwI t ht).continuousWithinAt)
-    (fun t ht ↦ (hwI t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem ht))
-    (fun _ _ ↦ mem_univ _) h0 ⟨zero_le_one, le_rfl⟩
-  simpa [γ] using h1
-
-/-- **Uniqueness for linear differential equations on open preconnected domains.** Two solutions of
-`v' = A(z) v` on an open preconnected set `s` for a continuous operator family `A` that agree at
-one point of `s` agree throughout `s`. -/
-theorem IsOpen.eqOn_of_hasDerivAt_clm_apply
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {s : Set 𝕜} (hs : IsOpen s) (hs' : IsPreconnected s)
-    {A : 𝕜 → E →L[𝕜] E} (hA : ContinuousOn A s)
-    {v w : 𝕜 → E} (hv : ∀ z ∈ s, HasDerivAt v (A z (v z)) z)
-    (hw : ∀ z ∈ s, HasDerivAt w (A z (w z)) z)
-    {z₀ : 𝕜} (hz₀ : z₀ ∈ s) (h : v z₀ = w z₀) : EqOn v w s := by
-  let U₁ : Set 𝕜 := {z | z ∈ s ∧ v z = w z}
-  let U₂ : Set 𝕜 := {z | z ∈ s ∧ v z ≠ w z}
-  have hU₁ : IsOpen U₁ := Metric.isOpen_iff.mpr fun z ⟨hzs, hzw⟩ ↦ by
-    obtain ⟨r, hr, hsub⟩ := Metric.isOpen_iff.mp hs z hzs
-    refine ⟨r, hr, fun y hy ↦ ⟨hsub hy, ?_⟩⟩
-    exact (convex_ball z r).eqOn_of_hasDerivWithinAt_clm_apply (hA.mono hsub)
-      (fun p hp ↦ (hv p (hsub hp)).hasDerivWithinAt)
-      (fun p hp ↦ (hw p (hsub hp)).hasDerivWithinAt)
-      (mem_ball_self hr) hzw hy
-  have hU₂ : IsOpen U₂ := isOpen_iff_mem_nhds.mpr fun z ⟨hzs, hne⟩ ↦ by
-    have hcont : ContinuousAt (fun y ↦ v y - w y) z :=
-      (hv z hzs).continuousAt.sub (hw z hzs).continuousAt
-    filter_upwards [hs.mem_nhds hzs,
-      hcont.eventually_ne (sub_ne_zero.mpr hne)] with y hys hyne
-    exact ⟨hys, sub_ne_zero.mp hyne⟩
-  intro z hzs
-  by_contra hne
-  obtain ⟨p, -, hp₁, hp₂⟩ := hs' U₁ U₂ hU₁ hU₂
-    (fun y hy ↦ by by_cases hyw : v y = w y <;> [exact Or.inl ⟨hy, hyw⟩; exact Or.inr ⟨hy, hyw⟩])
-    ⟨z₀, hz₀, hz₀, h⟩ ⟨z, hzs, hzs, hne⟩
-  exact hp₂.2 hp₁.2
-
 namespace TauCeti
 
 section Propagator
 
 variable {B : Type*} [NormedRing B] [NormedAlgebra ℂ B]
 
-/-- Recursive Taylor coefficients of the propagator solving `Φ' z = A z * Φ z` with `Φ z₀ = 1`
-around `z₀`. -/
+/-- Recursive Taylor coefficients around `z₀` associated with a family `A : ℂ → B`, which give the
+Taylor coefficients of the propagator solving `Φ' z = A z * Φ z` with `Φ z₀ = 1` when `B` is
+complete and `A` is complex differentiable on an open disc around `z₀`. -/
 def propagatorCoeff (A : ℂ → B) (z₀ : ℂ) : ℕ → B
   | 0 => 1
   | n + 1 => ((n + 1 : ℂ))⁻¹ •
@@ -187,19 +101,21 @@ theorem propagatorCoeff_succ (A : ℂ → B) (z₀ : ℂ) (n : ℕ) :
 theorem propagatorCoeff_one (A : ℂ → B) (z₀ : ℂ) : propagatorCoeff A z₀ 1 = A z₀ := by
   simp [propagatorCoeff]
 
-/-- The power-series propagator around `z₀` associated with a coefficient family `A : ℂ → B`. -/
-def holomorphicPropagator (A : ℂ → B) (z₀ z : ℂ) : B :=
+/-- The `tsum` power series around `z₀` with coefficients `propagatorCoeff A z₀` associated with a
+family `A : ℂ → B`. When `B` is complete and `A` is complex differentiable on an open disc around
+`z₀`, this series converges and solves `Φ' z = A z * Φ z` with `Φ z₀ = 1`. -/
+def propagatorSeries (A : ℂ → B) (z₀ z : ℂ) : B :=
   ∑' n : ℕ, (z - z₀) ^ n • propagatorCoeff A z₀ n
 
-/-- Defining series for `holomorphicPropagator`. -/
-theorem holomorphicPropagator_def (A : ℂ → B) (z₀ z : ℂ) :
-    holomorphicPropagator A z₀ z = ∑' n : ℕ, (z - z₀) ^ n • propagatorCoeff A z₀ n := by rfl
+/-- Defining series for `propagatorSeries`. -/
+theorem propagatorSeries_def (A : ℂ → B) (z₀ z : ℂ) :
+    propagatorSeries A z₀ z = ∑' n : ℕ, (z - z₀) ^ n • propagatorCoeff A z₀ n := by rfl
 
-/-- At the center `z₀`, the propagator evaluates to `1`. -/
+/-- At the center `z₀`, `propagatorSeries` evaluates to `1`. -/
 @[simp]
-theorem holomorphicPropagator_self (A : ℂ → B) (z₀ : ℂ) :
-    holomorphicPropagator A z₀ z₀ = 1 := by
-  rw [holomorphicPropagator_def, tsum_eq_single 0]
+theorem propagatorSeries_self (A : ℂ → B) (z₀ : ℂ) :
+    propagatorSeries A z₀ z₀ = 1 := by
+  rw [propagatorSeries_def, tsum_eq_single 0]
   · simp
   · intro n hn
     simp [zero_pow hn]
@@ -353,7 +269,7 @@ private theorem summable_pow_succ_mul_geometric {q : ℝ} (hq0 : 0 < q) (hq1 : q
   dsimp only [Function.comp_def]
   rw [Nat.cast_add, pow_add, mul_assoc, mul_inv_cancel_right₀ hqd]
 
-/-- The power series defining `holomorphicPropagator A z₀ z` is norm-summable at every point of an
+/-- The power series defining `propagatorSeries A z₀ z` is norm-summable at every point of an
 extended open ball on which `A` is complex differentiable. -/
 theorem summable_norm_pow_smul_propagatorCoeff_of_mem_eball
     {A : ℂ → B} {z₀ z : ℂ} {r : ℝ≥0∞} (hA : DifferentiableOn ℂ A (eball z₀ r))
@@ -381,7 +297,7 @@ private theorem tsum_deriv_propagator_eq_mul
     (hA_coeff : ∀ k, ‖(k.factorial : ℂ)⁻¹ • iteratedDeriv k A z₀‖ ≤ C / ρ ^ k)
     (hg'_sum : Summable (fun n : ℕ ↦ ((n : ℂ) * (z - z₀) ^ (n - 1)) • propagatorCoeff A z₀ n)) :
     (∑' n : ℕ, ((n : ℂ) * (z - z₀) ^ (n - 1)) • propagatorCoeff A z₀ n) =
-      A z * holomorphicPropagator A z₀ z := by
+      A z * propagatorSeries A z₀ z := by
   have hf_sum :
       Summable (fun k : ℕ ↦ ‖(k.factorial : ℂ)⁻¹ • (z - z₀) ^ k • iteratedDeriv k A z₀‖) :=
     Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun k ↦ by
@@ -398,14 +314,14 @@ private theorem tsum_deriv_propagator_eq_mul
   simp_rw [natCast_succ_smul_pow_smul_propagatorCoeff_succ]
   rw [← tsum_mul_tsum_eq_tsum_sum_range_of_summable_norm hf_sum
     (summable_norm_pow_smul_propagatorCoeff_of_mem_eball hA hz),
-    Complex.taylorSeries_eq_on_eball hA hz, holomorphicPropagator_def]
+    Complex.taylorSeries_eq_on_eball hA hz, propagatorSeries_def]
 
-/-- On any extended open ball where `A` is complex differentiable, `holomorphicPropagator A z₀`
+/-- On any extended open ball where `A` is complex differentiable, `propagatorSeries A z₀`
 satisfies the differential equation `Φ' z = A z * Φ z`. -/
-theorem hasDerivAt_holomorphicPropagator_of_mem_eball
+theorem hasDerivAt_propagatorSeries_of_mem_eball
     {A : ℂ → B} {z₀ z : ℂ} {r : ℝ≥0∞} (hA : DifferentiableOn ℂ A (eball z₀ r))
     (hz : z ∈ eball z₀ r) :
-    HasDerivAt (holomorphicPropagator A z₀) (A z * holomorphicPropagator A z₀ z) z := by
+    HasDerivAt (propagatorSeries A z₀) (A z * propagatorSeries A z₀ z) z := by
   obtain ⟨r₁, ρ, C, K, hr₁, hr₁ρ, -, hzr₁, hA_coeff, hbound⟩ :=
     exists_subdisc_bound_of_mem_eball hA hz
   have hρ : 0 < ρ := hr₁.trans hr₁ρ
@@ -446,40 +362,40 @@ theorem hasDerivAt_holomorphicPropagator_of_mem_eball
   have hg'_sum : Summable (fun n ↦ g' n z) := .of_norm_bounded hu fun n ↦ hg' n z hzr₁
   have hprod := tsum_deriv_propagator_eq_mul hA hz hρ ((mem_ball_iff_norm.mp hzr₁).trans hr₁ρ)
     hA_coeff hg'_sum
-  rwa [← funext (holomorphicPropagator_def A z₀), hprod] at hderiv
+  rwa [← funext (propagatorSeries_def A z₀), hprod] at hderiv
 
-/-- On any extended open ball where `A` is complex differentiable, `holomorphicPropagator A z₀` is
+/-- On any extended open ball where `A` is complex differentiable, `propagatorSeries A z₀` is
 analytic. -/
-theorem analyticOnNhd_holomorphicPropagator_eball
+theorem analyticOnNhd_propagatorSeries_eball
     {A : ℂ → B} {z₀ : ℂ} {r : ℝ≥0∞} (hA : DifferentiableOn ℂ A (eball z₀ r)) :
-    AnalyticOnNhd ℂ (holomorphicPropagator A z₀) (eball z₀ r) := by
-  have hdiff : DifferentiableOn ℂ (holomorphicPropagator A z₀) (eball z₀ r) := fun z hz ↦
-    (hasDerivAt_holomorphicPropagator_of_mem_eball hA hz).differentiableAt.differentiableWithinAt
+    AnalyticOnNhd ℂ (propagatorSeries A z₀) (eball z₀ r) := by
+  have hdiff : DifferentiableOn ℂ (propagatorSeries A z₀) (eball z₀ r) := fun z hz ↦
+    (hasDerivAt_propagatorSeries_of_mem_eball hA hz).differentiableAt.differentiableWithinAt
   exact hdiff.analyticOnNhd isOpen_eball
 
-/-- On any open disc `ball z₀ r` where `A` is complex differentiable, `holomorphicPropagator A z₀`
+/-- On any open disc `ball z₀ r` where `A` is complex differentiable, `propagatorSeries A z₀`
 satisfies `Φ' z = A z * Φ z`. -/
-theorem hasDerivAt_holomorphicPropagator_of_mem_ball
+theorem hasDerivAt_propagatorSeries_of_mem_ball
     {A : ℂ → B} {z₀ z : ℂ} {r : ℝ} (hA : DifferentiableOn ℂ A (ball z₀ r))
     (hz : z ∈ ball z₀ r) :
-    HasDerivAt (holomorphicPropagator A z₀) (A z * holomorphicPropagator A z₀ z) z := by
+    HasDerivAt (propagatorSeries A z₀) (A z * propagatorSeries A z₀ z) z := by
   rw [← eball_ofReal] at hA hz
-  exact hasDerivAt_holomorphicPropagator_of_mem_eball hA hz
+  exact hasDerivAt_propagatorSeries_of_mem_eball hA hz
 
-/-- On any open disc `ball z₀ r` where `A` is complex differentiable, `holomorphicPropagator A z₀`
+/-- On any open disc `ball z₀ r` where `A` is complex differentiable, `propagatorSeries A z₀`
 is analytic. -/
-theorem analyticOnNhd_holomorphicPropagator_ball
+theorem analyticOnNhd_propagatorSeries_ball
     {A : ℂ → B} {z₀ : ℂ} {r : ℝ} (hA : DifferentiableOn ℂ A (ball z₀ r)) :
-    AnalyticOnNhd ℂ (holomorphicPropagator A z₀) (ball z₀ r) := by
+    AnalyticOnNhd ℂ (propagatorSeries A z₀) (ball z₀ r) := by
   rw [← eball_ofReal] at hA ⊢
-  exact analyticOnNhd_holomorphicPropagator_eball hA
+  exact analyticOnNhd_propagatorSeries_eball hA
 
-/-- For an entire coefficient family `A : ℂ → B`, `holomorphicPropagator A z₀` solves
+/-- For an entire coefficient family `A : ℂ → B`, `propagatorSeries A z₀` solves
 `Φ' z = A z * Φ z` on all of `ℂ`. -/
-theorem hasDerivAt_holomorphicPropagator_of_differentiable
+theorem hasDerivAt_propagatorSeries_of_differentiable
     {A : ℂ → B} (hA : Differentiable ℂ A) (z₀ z : ℂ) :
-    HasDerivAt (holomorphicPropagator A z₀) (A z * holomorphicPropagator A z₀ z) z :=
-  hasDerivAt_holomorphicPropagator_of_mem_eball
+    HasDerivAt (propagatorSeries A z₀) (A z * propagatorSeries A z₀ z) z :=
+  hasDerivAt_propagatorSeries_of_mem_eball
     (r := ⊤) (by simpa [eball_top] using hA.differentiableOn) (by simp [eball_top])
 
 end Complete
@@ -589,30 +505,33 @@ section CompleteSystem
 
 variable [CompleteSpace E]
 
-/-- Applying `holomorphicPropagator A z₀` to an initial vector `y₀ : E` solves the linear system
+/-- Applying `propagatorSeries A z₀` to an initial vector `y₀ : E` solves the linear system
 `y' z = A z (y z)` on `eball z₀ r`. -/
-theorem hasDerivAt_holomorphicPropagator_apply_of_mem_eball
+theorem hasDerivAt_propagatorSeries_apply_of_mem_eball
     {A : ℂ → E →L[ℂ] E} {z₀ z : ℂ} {r : ℝ≥0∞}
     (hA : DifferentiableOn ℂ A (eball z₀ r)) (hz : z ∈ eball z₀ r) (y₀ : E) :
-    HasDerivAt (fun w ↦ holomorphicPropagator A z₀ w y₀)
-      (A z (holomorphicPropagator A z₀ z y₀)) z := by
+    HasDerivAt (fun w ↦ propagatorSeries A z₀ w y₀)
+      (A z (propagatorSeries A z₀ z y₀)) z := by
   simpa [Function.comp_def] using (ContinuousLinearMap.apply ℂ E y₀).hasFDerivAt.comp_hasDerivAt z
-    (hasDerivAt_holomorphicPropagator_of_mem_eball hA hz)
+    (hasDerivAt_propagatorSeries_of_mem_eball hA hz)
 
-/-- Applying `holomorphicPropagator A z₀` to an initial vector `y₀ : E` solves the linear system
+/-- Applying `propagatorSeries A z₀` to an initial vector `y₀ : E` solves the linear system
 `y' z = A z (y z)` on `ball z₀ r`. -/
-theorem hasDerivAt_holomorphicPropagator_apply_of_mem_ball
+theorem hasDerivAt_propagatorSeries_apply_of_mem_ball
     {A : ℂ → E →L[ℂ] E} {z₀ z : ℂ} {r : ℝ}
     (hA : DifferentiableOn ℂ A (ball z₀ r)) (hz : z ∈ ball z₀ r) (y₀ : E) :
-    HasDerivAt (fun w ↦ holomorphicPropagator A z₀ w y₀)
-      (A z (holomorphicPropagator A z₀ z y₀)) z := by
+    HasDerivAt (fun w ↦ propagatorSeries A z₀ w y₀)
+      (A z (propagatorSeries A z₀ z y₀)) z := by
   rw [← eball_ofReal] at hA hz
-  exact hasDerivAt_holomorphicPropagator_apply_of_mem_eball hA hz y₀
+  exact hasDerivAt_propagatorSeries_apply_of_mem_eball hA hz y₀
 
-/-- **Cauchy's existence and uniqueness theorem for holomorphic linear operator systems on discs.**
-For any `A : ℂ → E →L[ℂ] E` complex differentiable on `ball z₀ r` and any `y₀ : E`, there exists
-a function analytic on `ball z₀ r` solving `y' z = A z (y z)` with `y z₀ = y₀`, and any solution on
-`ball z₀ r` with initial value `y₀` agrees with `y` on `ball z₀ r`. -/
+/-- **Existence and uniqueness for holomorphic linear operator systems on open discs.**
+For any `A : ℂ → E →L[ℂ] E` complex differentiable on `ball z₀ r` and any `y₀ : E`, there exists a
+function `y : ℂ → E` analytic on `ball z₀ r` solving `y' z = A z (y z)` on `ball z₀ r` with
+`y z₀ = y₀`, and any solution on `ball z₀ r` with `w z₀ = y₀` agrees with `y` on `ball z₀ r`.
+When `0 < r`, `z₀ ∈ ball z₀ r` and this is Cauchy's local initial-value theorem on `ball z₀ r`;
+when `r ≤ 0`, `ball z₀ r` is empty so the domain conditions and `EqOn` uniqueness hold vacuously
+while `y z₀ = y₀` still holds at `z₀`. -/
 theorem exists_analyticOnNhd_ball_hasDerivAt_clm_apply
     {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ}
     (hA : DifferentiableOn ℂ A (ball z₀ r)) (y₀ : E) :
@@ -621,16 +540,16 @@ theorem exists_analyticOnNhd_ball_hasDerivAt_clm_apply
       y z₀ = y₀ ∧
       ∀ w : ℂ → E, (∀ z ∈ ball z₀ r, HasDerivAt w (A z (w z)) z) →
         w z₀ = y₀ → EqOn w y (ball z₀ r) := by
-  refine ⟨fun z ↦ holomorphicPropagator A z₀ z y₀, ?_, ?_, by simp, ?_⟩
+  refine ⟨fun z ↦ propagatorSeries A z₀ z y₀, ?_, ?_, by simp, ?_⟩
   · intro z hz
     exact ((ContinuousLinearMap.apply ℂ E y₀).analyticAt _).comp
-      (analyticOnNhd_holomorphicPropagator_ball hA z hz)
-  · exact fun z hz ↦ hasDerivAt_holomorphicPropagator_apply_of_mem_ball hA hz y₀
+      (analyticOnNhd_propagatorSeries_ball hA z hz)
+  · exact fun z hz ↦ hasDerivAt_propagatorSeries_apply_of_mem_ball hA hz y₀
   · intro w hw hw0 z hz
     have hr : 0 < r := pos_of_mem_ball hz
     exact isOpen_ball.eqOn_of_hasDerivAt_clm_apply (convex_ball z₀ r).isPreconnected
       hA.continuousOn hw
-      (fun p hp ↦ hasDerivAt_holomorphicPropagator_apply_of_mem_ball hA hp y₀)
+      (fun p hp ↦ hasDerivAt_propagatorSeries_apply_of_mem_ball hA hp y₀)
       (mem_ball_self hr) (by simp [hw0]) hz
 
 namespace linearODESolutionSpace
@@ -648,36 +567,61 @@ def evalEquivEball {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ≥0∞} (hr
           · lift r to ℝ≥0 using hr_ne
             simpa [eball_coe] using (convex_ball z₀ r).isPreconnected)
         hA.continuousOn (mem_eball_self hr),
-      fun y₀ ↦ ⟨of A (eball z₀ r) (fun z ↦ holomorphicPropagator A z₀ z y₀)
-        (fun z hz ↦ hasDerivAt_holomorphicPropagator_apply_of_mem_eball hA hz y₀), by simp⟩⟩
+      fun y₀ ↦ ⟨of A (eball z₀ r) (fun z ↦ propagatorSeries A z₀ z y₀)
+        (fun z hz ↦ hasDerivAt_propagatorSeries_apply_of_mem_eball hA hz y₀), by simp⟩⟩
+
+/-- Forward evaluation of `evalEquivEball` reads the value at `z₀`. -/
+@[simp]
+theorem evalEquivEball_apply {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
+    (hA : DifferentiableOn ℂ A (eball z₀ r)) (y : linearODESolutionSpace A (eball z₀ r)) :
+    evalEquivEball hr hA y = y.val ⟨z₀, mem_eball_self hr⟩ := by rfl
+
+/-- The inverse of `evalEquivEball` sends `y₀` to the propagator solution
+`z ↦ propagatorSeries A z₀ z y₀`. -/
+@[simp]
+theorem evalEquivEball_symm_apply {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ≥0∞} (hr : 0 < r)
+    (hA : DifferentiableOn ℂ A (eball z₀ r)) (y₀ : E) (z : eball z₀ r) :
+    ((evalEquivEball hr hA).symm y₀).val z = propagatorSeries A z₀ z y₀ := by
+  let sol := of A (eball z₀ r) (fun w ↦ propagatorSeries A z₀ w y₀)
+    (fun w hw ↦ hasDerivAt_propagatorSeries_apply_of_mem_eball hA hw y₀)
+  have hsol : evalEquivEball hr hA sol = y₀ := by simp [sol]
+  conv_lhs => rw [← hsol, LinearEquiv.symm_apply_apply]
+  exact of_apply A (eball z₀ r) _ _ z
 
 /-- On an open disc `ball z₀ r` of positive radius where `A` is complex differentiable, evaluation
 at the center `z₀` is a `ℂ`-linear isomorphism `linearODESolutionSpace A (ball z₀ r) ≃ₗ[ℂ] E`. -/
 def evalEquivBall {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     (hA : DifferentiableOn ℂ A (ball z₀ r)) :
     linearODESolutionSpace A (ball z₀ r) ≃ₗ[ℂ] E :=
-  LinearEquiv.ofBijective (eval A (mem_ball_self hr))
-    ⟨eval_injective_of_isPreconnected isOpen_ball (convex_ball z₀ r).isPreconnected
-        hA.continuousOn (mem_ball_self hr),
-      fun y₀ ↦ ⟨of A (ball z₀ r) (fun z ↦ holomorphicPropagator A z₀ z y₀)
-        (fun z hz ↦ hasDerivAt_holomorphicPropagator_apply_of_mem_ball hA hz y₀), by simp⟩⟩
+  eball_ofReal (x := z₀) (ε := r) ▸
+    evalEquivEball (ENNReal.ofReal_pos.mpr hr) (by rwa [eball_ofReal])
 
 /-- Forward evaluation of `evalEquivBall` reads the value at `z₀`. -/
 @[simp]
 theorem evalEquivBall_apply {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     (hA : DifferentiableOn ℂ A (ball z₀ r)) (y : linearODESolutionSpace A (ball z₀ r)) :
-    evalEquivBall hr hA y = y.val ⟨z₀, mem_ball_self hr⟩ := by rfl
+    evalEquivBall hr hA y = y.val ⟨z₀, mem_ball_self hr⟩ := by
+  have hAe : DifferentiableOn ℂ A (eball z₀ (ENNReal.ofReal r)) := by rwa [eball_ofReal]
+  have key : ∀ (U : Set ℂ) (hU : eball z₀ (ENNReal.ofReal r) = U) (hz₀ : z₀ ∈ U)
+      (y : linearODESolutionSpace A U),
+      (hU ▸ evalEquivEball (ENNReal.ofReal_pos.mpr hr) hAe) y = y.val ⟨z₀, hz₀⟩ := by
+    rintro _ rfl _ y
+    exact evalEquivEball_apply (ENNReal.ofReal_pos.mpr hr) hAe y
+  exact key (ball z₀ r) eball_ofReal (mem_ball_self hr) y
 
-/-- The inverse of `evalEquivBall` sends `y₀` to the propagator solution `z ↦ Φ(z) y₀`. -/
+/-- The inverse of `evalEquivBall` sends `y₀` to the propagator solution
+`z ↦ propagatorSeries A z₀ z y₀`. -/
 @[simp]
 theorem evalEquivBall_symm_apply {A : ℂ → E →L[ℂ] E} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     (hA : DifferentiableOn ℂ A (ball z₀ r)) (y₀ : E) (z : ball z₀ r) :
-    ((evalEquivBall hr hA).symm y₀).val z = holomorphicPropagator A z₀ z y₀ := by
-  let sol := of A (ball z₀ r) (fun w ↦ holomorphicPropagator A z₀ w y₀)
-    (fun w hw ↦ hasDerivAt_holomorphicPropagator_apply_of_mem_ball hA hw y₀)
-  have hsol : evalEquivBall hr hA sol = y₀ := by simp [sol]
-  conv_lhs => rw [← hsol, LinearEquiv.symm_apply_apply]
-  exact of_apply A (ball z₀ r) _ _ z
+    ((evalEquivBall hr hA).symm y₀).val z = propagatorSeries A z₀ z y₀ := by
+  have hAe : DifferentiableOn ℂ A (eball z₀ (ENNReal.ofReal r)) := by rwa [eball_ofReal]
+  have key : ∀ (U : Set ℂ) (hU : eball z₀ (ENNReal.ofReal r) = U) (z : U),
+      ((hU ▸ evalEquivEball (ENNReal.ofReal_pos.mpr hr) hAe).symm y₀).val z =
+        propagatorSeries A z₀ z y₀ := by
+    rintro _ rfl z
+    exact evalEquivEball_symm_apply (ENNReal.ofReal_pos.mpr hr) hAe y₀ z
+  exact key (ball z₀ r) eball_ofReal z
 
 end linearODESolutionSpace
 
@@ -693,80 +637,17 @@ end CompleteSystem
 
 end LinearSystem
 
-end TauCeti
-
-section MatrixUniqueness
-
-private def matrixMulVecCLM {𝕜 ι : Type*} [SeminormedCommRing 𝕜] [Fintype ι]
-    (N : Matrix ι ι 𝕜) : (ι → 𝕜) →L[𝕜] (ι → 𝕜) where
-  toFun v := N *ᵥ v
-  map_add' := Matrix.mulVec_add N
-  map_smul' := Matrix.mulVec_smul N
-  cont := by
-    have hcont : Continuous fun (v : ι → 𝕜) (i : ι) ↦ ∑ j, N i j * v j := by fun_prop
-    exact hcont
-
-private theorem matrixMulVecCLM_apply {𝕜 ι : Type*} [SeminormedCommRing 𝕜] [Fintype ι]
-    (N : Matrix ι ι 𝕜) (v : ι → 𝕜) : matrixMulVecCLM N v = N *ᵥ v := rfl
-
-private theorem continuousOn_matrixMulVecCLM {𝕜 ι : Type*}
-    [NontriviallyNormedField 𝕜] [Fintype ι] {s : Set 𝕜}
-    {M : 𝕜 → Matrix ι ι 𝕜} (hM : ∀ i j, ContinuousOn (fun z ↦ M z i j) s) :
-    ContinuousOn (fun z ↦ matrixMulVecCLM (M z)) s := by
-  classical
-  have hEq : (fun z ↦ matrixMulVecCLM (M z)) =
-      fun z ↦ ∑ i : ι, ∑ j : ι, M z i j •
-        (ContinuousLinearMap.single 𝕜 (fun _ : ι ↦ 𝕜) i ∘L
-          ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) j) := by
-    ext z v k
-    simp [matrixMulVecCLM_apply, Matrix.mulVec, dotProduct, Pi.single_apply]
-  rw [hEq]
-  fun_prop
-
-private theorem differentiableOn_matrixMulVecCLM {ι : Type*} [Fintype ι] {s : Set ℂ}
-    {M : ℂ → Matrix ι ι ℂ} (hM : ∀ i j, DifferentiableOn ℂ (fun z ↦ M z i j) s) :
-    DifferentiableOn ℂ (fun z ↦ matrixMulVecCLM (M z)) s := by
-  classical
-  have hEq : (fun z ↦ matrixMulVecCLM (M z)) =
-      fun z ↦ ∑ i : ι, ∑ j : ι, M z i j •
-        (ContinuousLinearMap.single ℂ (fun _ : ι ↦ ℂ) i ∘L
-          ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) j) := by
-    ext z v k
-    simp [matrixMulVecCLM_apply, Matrix.mulVec, dotProduct, Pi.single_apply]
-  rw [hEq]
-  exact DifferentiableOn.fun_sum fun i _ ↦ DifferentiableOn.fun_sum fun j _ ↦
-    (hM i j).smul_const _
-
-/-- **Uniqueness for linear matrix differential systems on convex sets.** -/
-theorem Convex.eqOn_of_hasDerivWithinAt_mulVec
-    {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Fintype ι]
-    {s : Set 𝕜} (hs : Convex ℝ s) {M : 𝕜 → Matrix ι ι 𝕜}
-    (hM : ∀ i j, ContinuousOn (fun z ↦ M z i j) s)
-    {v w : 𝕜 → ι → 𝕜} (hv : ∀ z ∈ s, HasDerivWithinAt v (M z *ᵥ v z) s z)
-    (hw : ∀ z ∈ s, HasDerivWithinAt w (M z *ᵥ w z) s z)
-    {z₀ : 𝕜} (hz₀ : z₀ ∈ s) (h : v z₀ = w z₀) : EqOn v w s :=
-  hs.eqOn_of_hasDerivWithinAt_clm_apply (continuousOn_matrixMulVecCLM hM) hv hw hz₀ h
-
-/-- **Uniqueness for linear matrix differential systems on open preconnected domains.** -/
-theorem IsOpen.eqOn_of_hasDerivAt_mulVec
-    {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Fintype ι]
-    {s : Set 𝕜} (hs : IsOpen s) (hs' : IsPreconnected s) {M : 𝕜 → Matrix ι ι 𝕜}
-    (hM : ∀ i j, ContinuousOn (fun z ↦ M z i j) s)
-    {v w : 𝕜 → ι → 𝕜} (hv : ∀ z ∈ s, HasDerivAt v (M z *ᵥ v z) z)
-    (hw : ∀ z ∈ s, HasDerivAt w (M z *ᵥ w z) z)
-    {z₀ : 𝕜} (hz₀ : z₀ ∈ s) (h : v z₀ = w z₀) : EqOn v w s :=
-  hs.eqOn_of_hasDerivAt_clm_apply hs' (continuousOn_matrixMulVecCLM hM) hv hw hz₀ h
-
-namespace TauCeti
-
 section MatrixSystem
 
 variable {ι : Type*} [Fintype ι]
 
-/-- **Cauchy's existence and uniqueness theorem for holomorphic matrix differential systems.**
-For a matrix family `M : ℂ → Matrix ι ι ℂ` with holomorphic entries on `ball z₀ r` and any initial
-vector `y₀ : ι → ℂ`, there exists an analytic solution `y : ℂ → ι → ℂ` on `ball z₀ r` of
-`y' z = M z *ᵥ y z` with `y z₀ = y₀`, unique on `ball z₀ r`. -/
+/-- **Existence and uniqueness for holomorphic matrix differential systems on open discs.**
+For a matrix family `M : ℂ → Matrix ι ι ℂ` with holomorphic entries on `ball z₀ r` and any vector
+`y₀ : ι → ℂ`, there exists a function `y : ℂ → ι → ℂ` analytic on `ball z₀ r` solving
+`y' z = M z *ᵥ y z` on `ball z₀ r` with `y z₀ = y₀`, unique on `ball z₀ r` among solutions taking
+value `y₀` at `z₀`. When `0 < r`, `z₀ ∈ ball z₀ r` and this is Cauchy's disc initial-value theorem;
+when `r ≤ 0`, `ball z₀ r` is empty so the differential equation and `EqOn` uniqueness on
+`ball z₀ r` hold vacuously while `y z₀ = y₀` still holds. -/
 theorem exists_analyticOnNhd_ball_hasDerivAt_mulVec
     {M : ℂ → Matrix ι ι ℂ} {z₀ : ℂ} {r : ℝ}
     (hM : ∀ i j, DifferentiableOn ℂ (fun z ↦ M z i j) (ball z₀ r)) (y₀ : ι → ℂ) :
@@ -774,26 +655,28 @@ theorem exists_analyticOnNhd_ball_hasDerivAt_mulVec
       (∀ z ∈ ball z₀ r, HasDerivAt y (M z *ᵥ y z) z) ∧
       y z₀ = y₀ ∧
       ∀ w : ℂ → ι → ℂ, (∀ z ∈ ball z₀ r, HasDerivAt w (M z *ᵥ w z) z) →
-        w z₀ = y₀ → EqOn w y (ball z₀ r) :=
-  exists_analyticOnNhd_ball_hasDerivAt_clm_apply (differentiableOn_matrixMulVecCLM hM) y₀
+        w z₀ = y₀ → EqOn w y (ball z₀ r) := by
+  simpa only [Matrix.mulVecCLM_apply] using
+    exists_analyticOnNhd_ball_hasDerivAt_clm_apply (Matrix.differentiableOn_mulVecCLM hM) y₀
 
 /-- The complex subspace of functions `U → ι → ℂ` extending to ambient solutions of the matrix
 differential system `Y' z = M z *ᵥ Y z` on `U`. -/
 def matrixODESolutionSpace (M : ℂ → Matrix ι ι ℂ) (U : Set ℂ) : Submodule ℂ (U → ι → ℂ) :=
-  linearODESolutionSpace (fun z ↦ matrixMulVecCLM (M z)) U
+  linearODESolutionSpace (fun z ↦ (M z).mulVecCLM) U
 
 /-- Membership in `matrixODESolutionSpace M U` means having an ambient solution of
 `Y' z = M z *ᵥ Y z` on `U` extending `y`. -/
 theorem mem_matrixODESolutionSpace_iff {M : ℂ → Matrix ι ι ℂ} {U : Set ℂ} {y : U → ι → ℂ} :
     y ∈ matrixODESolutionSpace M U ↔
-      ∃ Y : ℂ → ι → ℂ, (∀ z : U, Y z = y z) ∧ ∀ z ∈ U, HasDerivAt Y (M z *ᵥ Y z) z := by rfl
+      ∃ Y : ℂ → ι → ℂ, (∀ z : U, Y z = y z) ∧ ∀ z ∈ U, HasDerivAt Y (M z *ᵥ Y z) z := by
+  simp [matrixODESolutionSpace, mem_linearODESolutionSpace_iff]
 
 namespace matrixODESolutionSpace
 
 /-- Restrict an ambient solution of `Y' z = M z *ᵥ Y z` on `U` to `matrixODESolutionSpace M U`. -/
 def of (M : ℂ → Matrix ι ι ℂ) (U : Set ℂ) (Y : ℂ → ι → ℂ)
     (hY : ∀ z ∈ U, HasDerivAt Y (M z *ᵥ Y z) z) : matrixODESolutionSpace M U :=
-  linearODESolutionSpace.of (fun z ↦ matrixMulVecCLM (M z)) U Y hY
+  linearODESolutionSpace.of (fun z ↦ (M z).mulVecCLM) U Y fun z hz ↦ by simpa using hY z hz
 
 /-- Restricting an ambient matrix-system solution evaluates pointwise on `U`. -/
 @[simp]
@@ -804,7 +687,7 @@ theorem of_apply (M : ℂ → Matrix ι ι ℂ) (U : Set ℂ) (Y : ℂ → ι �
 /-- Evaluation at `z₀ ∈ U` as a `ℂ`-linear map on `matrixODESolutionSpace M U`. -/
 def eval (M : ℂ → Matrix ι ι ℂ) {U : Set ℂ} {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
     matrixODESolutionSpace M U →ₗ[ℂ] (ι → ℂ) :=
-  linearODESolutionSpace.eval (fun z ↦ matrixMulVecCLM (M z)) hz₀
+  linearODESolutionSpace.eval (fun z ↦ (M z).mulVecCLM) hz₀
 
 /-- Evaluation at `z₀` reads the value of the restricted solution at `⟨z₀, hz₀⟩`. -/
 @[simp]
@@ -819,21 +702,32 @@ theorem eval_injective_of_isPreconnected {M : ℂ → Matrix ι ι ℂ} {U : Set
     (hM : ∀ i j, ContinuousOn (fun z ↦ M z i j) U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
     Injective (eval M hz₀) :=
   linearODESolutionSpace.eval_injective_of_isPreconnected hU hU'
-    (continuousOn_matrixMulVecCLM hM) hz₀
+    (Matrix.continuousOn_mulVecCLM hM) hz₀
 
 /-- On an open disc `ball z₀ r` of positive radius where `M` has holomorphic entries, evaluation at
 `z₀` is a `ℂ`-linear isomorphism `matrixODESolutionSpace M (ball z₀ r) ≃ₗ[ℂ] (ι → ℂ)`. -/
 def evalEquivBall {M : ℂ → Matrix ι ι ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     (hM : ∀ i j, DifferentiableOn ℂ (fun z ↦ M z i j) (ball z₀ r)) :
     matrixODESolutionSpace M (ball z₀ r) ≃ₗ[ℂ] (ι → ℂ) :=
-  linearODESolutionSpace.evalEquivBall hr (differentiableOn_matrixMulVecCLM hM)
+  linearODESolutionSpace.evalEquivBall hr (Matrix.differentiableOn_mulVecCLM hM)
 
 /-- Forward evaluation of `matrixODESolutionSpace.evalEquivBall` reads the value at `z₀`. -/
 @[simp]
 theorem evalEquivBall_apply {M : ℂ → Matrix ι ι ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
     (hM : ∀ i j, DifferentiableOn ℂ (fun z ↦ M z i j) (ball z₀ r))
     (y : matrixODESolutionSpace M (ball z₀ r)) :
-    evalEquivBall hr hM y = y.val ⟨z₀, mem_ball_self hr⟩ := by rfl
+    evalEquivBall hr hM y = y.val ⟨z₀, mem_ball_self hr⟩ :=
+  linearODESolutionSpace.evalEquivBall_apply hr (Matrix.differentiableOn_mulVecCLM hM) y
+
+/-- The inverse of `matrixODESolutionSpace.evalEquivBall` sends `y₀` to the propagator solution
+`z ↦ propagatorSeries (fun w ↦ (M w).mulVecCLM) z₀ z y₀`. -/
+@[simp]
+theorem evalEquivBall_symm_apply {M : ℂ → Matrix ι ι ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
+    (hM : ∀ i j, DifferentiableOn ℂ (fun z ↦ M z i j) (ball z₀ r))
+    (y₀ : ι → ℂ) (z : ball z₀ r) :
+    ((evalEquivBall hr hM).symm y₀).val z =
+      propagatorSeries (fun w ↦ (M w).mulVecCLM) z₀ z y₀ :=
+  linearODESolutionSpace.evalEquivBall_symm_apply hr (Matrix.differentiableOn_mulVecCLM hM) y₀ z
 
 end matrixODESolutionSpace
 
@@ -844,7 +738,7 @@ theorem finrank_matrixODESolutionSpace_ball
     (hM : ∀ i j, DifferentiableOn ℂ (fun z ↦ M z i j) (ball z₀ r)) :
     Module.finrank ℂ (matrixODESolutionSpace M (ball z₀ r)) = Fintype.card ι := by
   rw [matrixODESolutionSpace,
-    finrank_linearODESolutionSpace_ball hr (differentiableOn_matrixMulVecCLM hM),
+    finrank_linearODESolutionSpace_ball hr (Matrix.differentiableOn_mulVecCLM hM),
     Module.finrank_pi]
 
 end MatrixSystem
@@ -867,5 +761,3 @@ example (z₀ : ℂ) :
   simpa using finrank_matrixODESolutionSpace_ball zero_lt_one hM
 
 end TauCeti
-
-end MatrixUniqueness
