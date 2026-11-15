@@ -171,10 +171,8 @@ by `α η`, with no connection part. -/
 theorem logVariation_eq_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η : ℂ → ℂ}
     {z : ℂ} (hη : DifferentiableAt ℂ η z) :
     logVariation x η z = sectionVariation (fun w ↦ sectionValue x w * η w) z := by
-  refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-  · simpa using logVariation_apply_zero_eq_zero_of_differentiableAt x hη
-  · simpa using logVariation_apply_one_eq_zero_of_differentiableAt x hη
-  · rw [sectionValue_logVariation, sectionValue_sectionVariation]
+  exact eq_sectionVariation_iff.2 ⟨logVariation_apply_zero_eq_zero_of_differentiableAt x hη,
+    logVariation_apply_one_eq_zero_of_differentiableAt x hη, sectionValue_logVariation x η z⟩
 
 /-- The logarithmic variation of a `C¹` function `η ∈ H²(ℂ; ℂ)` along a field with bounded section
 is square integrable: its connection part consists of first derivatives of `η`, and its section

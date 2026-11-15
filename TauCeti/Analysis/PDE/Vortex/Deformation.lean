@@ -144,6 +144,15 @@ theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
     sectionValue (sectionVariation F) z = F z := by
   apply Complex.ext <;> simp [sectionValue_apply] <;> ring
 
+/-- A field is the variation of the section alone by `F` at a point exactly when its connection
+coordinates vanish there and its section is `F`. -/
+theorem eq_sectionVariation_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℂ} {z : ℂ} :
+    y z = sectionVariation F z ↔ y z 0 = 0 ∧ y z 1 = 0 ∧ sectionValue y z = F z := by
+  refine ⟨fun h ↦ ?_, fun ⟨h₀, h₁, hs⟩ ↦ apply_eq_of_sectionValue_eq h₀ h₁ (by simp [hs])⟩
+  have hs : sectionValue y z = sectionValue (sectionVariation F) z := by
+    simp only [sectionValue_apply, h]
+  simp [h, hs]
+
 /-- The variation of the section alone by a `Cⁿ` function is `Cⁿ`. -/
 theorem contDiff_sectionVariation {F : ℂ → ℂ} {n : WithTop ℕ∞} (hF : ContDiff ℝ n F) :
     ContDiff ℝ n (sectionVariation F) := by

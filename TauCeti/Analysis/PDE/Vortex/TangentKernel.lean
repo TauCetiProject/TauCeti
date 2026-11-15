@@ -187,7 +187,7 @@ private theorem logVariation_cutoff_of_notMem_tsupport
   have hα := sectionValue_ne_zero_of_notMem_tsupport hρR hR hz
   rw [logVariation_congr_nhds x (cutoff_eventuallyEq hz),
     logVariation_eq_of_differentiableAt x (analyticAt_div hf hH hα).differentiableAt]
-  exact apply_eq_of_sectionValue_eq (by simp) (by simp) (by simp [sectionValue_mul_div hα])
+  exact eq_sectionVariation_iff.2 ⟨by simp, by simp, by simp [sectionValue_mul_div hα]⟩
 
 end Cutoff
 
@@ -236,7 +236,7 @@ private theorem gaugeFixedOperator_logVariation_add_sectionVariation_eq_zero {ν
     rw [logVariation_add_apply x (hG.differentiable (by simp) v) (hEv.restrictScalars ℝ),
       logVariation_eq_of_differentiableAt x hEv, Pi.add_apply]
     congr 1
-    exact apply_eq_of_sectionValue_eq (by simp) (by simp) (by simp [sectionValue_mul_div hv])
+    exact eq_sectionVariation_iff.2 ⟨by simp, by simp, by simp [sectionValue_mul_div hv]⟩
   have hE := analyticAt_div hf hH hw
   have hG2 : ContDiffAt ℝ 2 (h - σ) w := (hG.of_le (by simp)).contDiffAt
   have hE2 : ContDiffAt ℝ 2 E w := hE.contDiffAt.restrict_scalars ℝ

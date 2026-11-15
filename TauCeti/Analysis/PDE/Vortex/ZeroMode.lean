@@ -388,7 +388,7 @@ private theorem exists_contDiff_hasCompactSupport_eq_logVariation (hx : ContDiff
   set Y₀ : ℂ → EuclideanSpace ℝ (Fin 4) := sectionVariation fun w ↦ c * ψ w
   have hY₀u (z : ℂ) (hz : z ≠ a) : logVariation x u z = Y₀ z := by
     rw [logVariation_eq_of_differentiableAt x (hu z hz).differentiableAt]
-    exact apply_eq_of_sectionValue_eq (by simp [Y₀]) (by simp [Y₀]) (by simp [Y₀, hαu z hz])
+    exact eq_sectionVariation_iff.2 ⟨by simp, by simp, by simp [hαu z hz]⟩
   have hY₀s : ContDiff ℝ ∞ Y₀ := contDiff_sectionVariation (contDiff_const.mul hψ)
   refine ⟨fun w ↦ Y₀ w - logVariation x v w,
     hY₀s.sub (contDiff_logVariation hx (hv.of_le (by simp))), ?_, fun z hz ↦ ?_⟩
