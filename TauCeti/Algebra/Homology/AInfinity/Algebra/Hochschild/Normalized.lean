@@ -137,19 +137,6 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     Finset.sum_ite_eq', Finset.mem_range]
   congr 1 <;> split_ifs <;> first | rfl | omega
 
-/-- A homogeneous cochain of degree `q` sends the first `n` letters of a homogeneous word of
-length `n + 1` to the piece of degree `S n + q + 1`, where `S n` is the sum of their degrees. -/
-private theorem apply_subword_mem_piece
-    (hF : LinearMap.IsHomogeneous F (gradedPiece (𝒜.grading.shift 1))
-      (𝒜.grading.shift 1).piece q)
-    {n : ℕ} (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ)
-    (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i)) :
-    F (subword R x 0 n) ∈
-      𝒜.grading.piece ((∑ i ∈ Finset.range n, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) + q + 1) := by
-  have hsub := subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
-  simpa [InternalGrading.shift_piece] using hF.map_mem hsub
-
 /-- The Hochschild differential of a normalized cochain vanishes on a homogeneous word containing
 the unit. -/
 private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
@@ -169,23 +156,13 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
   by_cases hj0 : j.1 = 0
   · simp (disch := omega) [hj0]
   by_cases hjn' : j.1 = n
-  · set S : ℤ := ∑ i ∈ Finset.range n, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0 with hS
-    have hmem : subword R x 0 n ∈ (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece S := by
-      rw [grading_piece]
-      simpa only [hS, Nat.zero_add] using
-        subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-          (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
-    have hdeg : F (subword R x 0 n) ∈ 𝒜.grading.piece (S + q + 1) :=
-      apply_subword_mem_piece hF x 𝒟 hx
-    simp (disch := omega) only [hjn', true_and, ite_eq_right, ite_eq_left, zero_add, zero_sub,
-      smul_neg, sub_neg_eq_add]
-    rw [(ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist_one_apply_of_mem hmem,
-      map_smul, ← negOnePowCast_eq_intCast, 𝒜.grading.koszulTwist_one_apply_of_mem hdeg,
-      ← negOnePowCast_eq_intCast, smul_smul, ← negOnePowCast_add, ← add_smul]
-    have hsign : negOnePowCast R (S + q + 1) + negOnePowCast R (q + S) = 0 := by
-      rw [add_comm q S, negOnePowCast_add (R := R) (S + q) 1, negOnePowCast_one, mul_neg_one,
-        neg_add_cancel]
-    rw [hsign, zero_smul]
+  · have hF' : LinearMap.IsHomogeneous F (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece
+        (𝒜.grading.shift 1).piece q := by
+      rwa [ReducedTensorWords.grading_piece]
+    have hkt := hF'.koszulTwist_apply 1 (subword R x 0 n)
+    rw [InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply, one_mul,
+      ← negOnePowCast_eq_intCast] at hkt
+    simp (disch := omega) [hn, hjn', neg_eq_iff_eq_neg.mp hkt]
   · simp (disch := omega) [hj0, hjn']
 
 /-- **The Hochschild differential preserves normalized cochains.**  If `e` is a strict unit and

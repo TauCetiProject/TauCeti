@@ -343,6 +343,39 @@ theorem reducedAlgebra_taylor (ε : 𝒜.Augmentation) :
       ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype := by
   rw [reducedAlgebra, AInfinityAlgebra.ofStasheff_taylor, reducedTaylor]
 
+/-- The reduced-part projection annihilates the strict unit. -/
+@[simp]
+theorem reducedPart_unit (ε : 𝒜.Augmentation) : ε.reducedPart ε.unit = 0 :=
+  Subtype.ext <| by rw [coe_reducedPart, map_unit, one_smul, sub_self, Submodule.coe_zero]
+
+/-- The reduced-part projection is homogeneous of degree zero. -/
+theorem isHomogeneous_reducedPart (ε : 𝒜.Augmentation) :
+    LinearMap.IsHomogeneous ε.reducedPart 𝒜.grading.piece ε.reducedAlgebra.grading.piece 0 :=
+  LinearMap.isHomogeneous_def.mpr fun p a ha ↦ by
+    rw [add_zero, ε.reducedAlgebra_grading, ε.reducedGrading_piece, Submodule.mem_comap,
+      Submodule.subtype_apply, ε.coe_reducedPart]
+    by_cases hp : p = 0
+    · subst hp; exact Submodule.sub_mem _ ha (Submodule.smul_mem _ _ ε.isStrictUnit.degree_zero)
+    · simpa only [ε.map_of_mem_ne_zero p a ha hp, zero_smul, sub_zero] using ha
+
+/-- An augmentation is invariant under any Koszul twist, since it vanishes outside degree zero. -/
+@[simp]
+theorem map_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
+    ε (𝒜.grading.koszulTwist q x) = ε x := by
+  induction x using DirectSum.Decomposition.inductionOn 𝒜.grading.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    rw [𝒜.grading.koszulTwist_apply_of_mem x.2 q, map_smul]
+    by_cases hp : p = 0
+    · subst hp; simp
+    · rw [ε.map_of_mem_ne_zero p _ x.2 hp, smul_zero]
+  | add _ _ hx hy => simp [map_add, hx, hy]
+
+/-- Koszul twists preserve membership in the augmentation ideal. -/
+theorem koszulTwist_mem_augmentationIdeal_iff (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
+    𝒜.grading.koszulTwist q x ∈ ε.augmentationIdeal ↔ x ∈ ε.augmentationIdeal := by
+  rw [mem_augmentationIdeal, mem_augmentationIdeal, ε.map_koszulTwist]
+
 /-- The canonical linear splitting of an augmented `A∞` algebra into its scalar and reduced
 parts. -/
 noncomputable def splitLinearEquiv (ε : 𝒜.Augmentation) :

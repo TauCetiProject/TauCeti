@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
+public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # Augmented differential graded algebras
@@ -195,6 +196,26 @@ theorem splitLinearEquiv_symm_apply (x : R × e.augmentationIdeal) :
   refine Prod.ext ?_ (Subtype.ext ?_)
   · rw [map_add, e.map_algebraMap, hx, add_zero]
   · rw [coe_reducedPart, map_add, e.map_algebraMap, hx, add_zero, add_sub_cancel_left]
+
+/-- An augmentation fixes the Koszul twist, since it vanishes outside degree zero. -/
+@[simp]
+theorem map_koszulTwist (q : ℤ) (x : A) :
+    e ((InternalGrading.ofDecomposition 𝒜).koszulTwist q x) = e x := by
+  induction x using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous p x =>
+    rw [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ x.2 q, map_smul]
+    rcases (mem_trivialGrading_iff R R).mp (e.map_mem x.2) with hp | hex
+    · subst hp; simp
+    · have hex' : e x = 0 := by simpa using hex
+      rw [hex', smul_zero]
+  | add _ _ hx hy => simp [map_add, hx, hy]
+
+/-- The Koszul twist preserves membership in the augmentation ideal. -/
+theorem koszulTwist_mem_augmentationIdeal_iff (q : ℤ) (x : A) :
+    (InternalGrading.ofDecomposition 𝒜).koszulTwist q x ∈ e.augmentationIdeal ↔
+      x ∈ e.augmentationIdeal := by
+  rw [mem_augmentationIdeal, mem_augmentationIdeal, e.map_koszulTwist]
 
 end DGAlgAugmentation
 

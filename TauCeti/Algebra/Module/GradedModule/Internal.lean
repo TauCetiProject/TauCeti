@@ -551,6 +551,19 @@ theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule
   have := koszulTwist_mem_piece _ hx' q
   rwa [InternalGrading.ofDecomposition_piece] at this
 
+/-- The Koszul twist is homogeneous of degree zero. -/
+theorem InternalGrading.isHomogeneous_koszulTwist (G : InternalGrading R M ℤ) (q : ℤ) :
+    LinearMap.IsHomogeneous (G.koszulTwist q) G.piece G.piece 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    simpa only [add_zero] using G.koszulTwist_mem_piece hx q
+
+/-- The Koszul twist of a decomposition `ℳ` is homogeneous of degree zero. -/
+theorem InternalGrading.isHomogeneous_koszulTwist_ofDecomposition (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] (q : ℤ) :
+    LinearMap.IsHomogeneous ((InternalGrading.ofDecomposition ℳ).koszulTwist q) ℳ ℳ 0 := by
+  simpa only [InternalGrading.ofDecomposition_piece] using
+    (InternalGrading.ofDecomposition ℳ).isHomogeneous_koszulTwist q
+
 /-- On an element of degree `e` of a decomposition `ℳ`, the Koszul twist of parameter `q` of the
 grading of `ℳ` acts as the scalar `(-1)^(q * e)`. -/
 theorem InternalGrading.koszulTwist_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
