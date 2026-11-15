@@ -65,8 +65,10 @@ theorem continuousAt_zero (hf : IsAdicHom f) : ContinuousAt f 0 := by
     (x := (0 : P.ringOfDefinition))).mp
   exact continuous_subtype_val.continuousAt.comp hc.continuousAt
 
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
 /-- An adic homomorphism is continuous. -/
-theorem continuous (hf : IsAdicHom f) : Continuous f :=
+theorem continuous [IsTopologicalAddGroup A] [ContinuousAdd B] (hf : IsAdicHom f) :
+    Continuous f :=
   continuous_of_continuousAt_zero f hf.continuousAt_zero
 
 /-- The identity homomorphism of a Huber ring is adic. -/
@@ -97,17 +99,19 @@ theorem isOpen_map (hf : IsAdicHom f) {I : Ideal A} (hI : IsOpen (I : Set A)) :
   exact P.isOpen_map_of_isOpen_map_extendedIdealOfDefinition Q f
     (heq ▸ Q.isOpen_extendedIdealOfDefinition) hI
 
-omit [IsTopologicalRing A] in
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
 /-- Adic homomorphisms carry bounded sets to bounded sets. -/
-theorem isBounded_image (hf : IsAdicHom f) {S : Set A} (hS : IsBounded S) :
+theorem isBounded_image [SeparatelyContinuousAdd B] [SeparatelyContinuousMul B]
+    (hf : IsAdicHom f) {S : Set A} (hS : IsBounded S) :
     IsBounded (f '' S) := by
   obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
   exact hS.image_of_map_extendedIdealOfDefinition_mem_nhds P Q hf.continuousAt_zero
     ((heq ▸ Q.isOpen_extendedIdealOfDefinition).mem_nhds (zero_mem _))
 
-omit [IsTopologicalRing A] in
+omit [IsTopologicalRing A] [IsTopologicalRing B] in
 /-- Adic homomorphisms carry power-bounded elements to power-bounded elements. -/
-theorem isPowerBounded_map (hf : IsAdicHom f) {a : A} (ha : IsPowerBounded a) :
+theorem isPowerBounded_map [SeparatelyContinuousAdd B] [SeparatelyContinuousMul B]
+    (hf : IsAdicHom f) {a : A} (ha : IsPowerBounded a) :
     IsPowerBounded (f a) := by
   obtain ⟨P, Q, heq⟩ := hf.exists_map_extendedIdealOfDefinition_eq
   exact ha.map_of_map_extendedIdealOfDefinition_mem_nhds P Q hf.continuousAt_zero
