@@ -143,12 +143,11 @@ theorem isSigma_two_dom_eval_jump (c : Code) :
       Code.stageUse (Code.setAnswers (Finset.equivBitIndices p.2.unpair.2 : Set ℕ))
         p.2.unpair.1 c p.1) :=
     ((Code.primrec_stageUse Code.primrec₂_setAnswers_equivBitIndices).comp hargs).computableIn
-  have hbit : Primrec (fun q : (ℕ × ℕ) × ℕ => q.1.2.unpair.2.testBit q.2) :=
-    Primrec.nat_testBit.comp
-      (Primrec.snd.comp (Primrec.unpair.comp (Primrec.snd.comp Primrec.fst))) Primrec.snd
   have hmemF : IsSigma Z 0 (fun q : (ℕ × ℕ) × ℕ =>
       q.2 ∈ Finset.equivBitIndices q.1.2.unpair.2) :=
-    isSigma_zero_iff.2 ⟨_, hbit.computableIn, fun _ => by simp⟩
+    (isSigma_zero_empty_iff_computablePred.2
+      (Primrec.mem_equivBitIndices.comp
+        (Primrec.fst.comp (hargs.comp Primrec.fst)) Primrec.snd).computablePred).of_empty
   -- Positive queries below the stage use are bounded universal `Σ⁰₁(Z)`; negative ones `Π⁰₁(Z)`.
   have hpos : IsSigma Z 2 (fun p : ℕ × ℕ =>
       ∀ z < Code.stageUse (Code.setAnswers (Finset.equivBitIndices p.2.unpair.2 : Set ℕ))
@@ -172,21 +171,12 @@ theorem isSigma_two_dom_eval_jump (c : Code) :
 
 /-- A predicate is `Σ⁰₂` relative to `Z` if and only if it is `Σ⁰₁` relative to `Z'`. -/
 theorem isSigma_two_iff_isSigma_one_jump : IsSigma Z 2 p ↔ IsSigma Z.jump 1 p := by
-  classical
   constructor
   · intro hp
     obtain ⟨q, hq, heq⟩ := isSigma_succ_iff.1 hp
-    obtain ⟨f, hf, -, hfeq⟩ := (isSigma_not_iff.2 hq).oneOneReducible_jump
-    refine isSigma_one_iff.2 ⟨fun a => Z.jump.indicator 1 (f a) == 0,
-      (Primrec.beq.comp Primrec.id (Primrec.const 0)).computableIn.comp
-        (Z.jump.computableIn_indicator.comp hf.computableIn), fun x => ?_⟩
-    refine (heq x).trans (exists_congr fun y => ?_)
-    by_cases hfy : f (x, y) ∈ Z.jump
-    · simp [hfy, (hfeq (x, y)).2 hfy]
-    · have hqy : q (x, y) := by
-        by_contra hnq
-        exact hfy ((hfeq (x, y)).1 hnq)
-      simp [hfy, hqy]
+    have hcompl : IsPi Z.jump 0 (· ∈ Z.jumpᶜ) :=
+      (isPi_not_iff.2 (isSigma_zero_mem_iff_turingReducible.2 .rfl)).of_eq fun _ => Iff.rfl
+    exact isSigma_succ_iff.2 ⟨q, hcompl.of_oneOneReducible hq.oneOneReducible_compl_jump, heq⟩
   · intro hp
     obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hp
     exact ((isSigma_two_dom_eval_jump c).preimage Primrec.encode.computableIn).of_eq

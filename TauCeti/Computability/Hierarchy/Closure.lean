@@ -216,24 +216,6 @@ private theorem isSigma_zero_exists_lt {r : α × ℕ → Prop} (hr : IsSigma Z 
     (Primrec.eq.comp Primrec.id (Primrec.const true)).exists_mem_list.decide
   exact isSigma_zero_iff.2 ⟨_, hany.computableIn.comp hlist, fun x => by simp [← hdeq]⟩
 
-private theorem forall_lt_exists_iff_exists_bound {m : ℕ} {P : ℕ → ℕ → Prop} :
-    (∀ y < m, ∃ w, P y w) ↔ ∃ B, ∀ y < m, ∃ w < B, P y w := by
-  constructor
-  · intro hm
-    induction m with
-    | zero => exact ⟨0, by simp⟩
-    | succ m ihm =>
-      obtain ⟨B, hB⟩ := ihm fun y hy => hm y (Nat.lt_succ_of_lt hy)
-      obtain ⟨wm, hwm⟩ := hm m m.lt_succ_self
-      refine ⟨max B (wm + 1), fun y hy => ?_⟩
-      rcases Nat.lt_succ_iff_lt_or_eq.1 hy with hlt | rfl
-      · obtain ⟨w, hwB, hw⟩ := hB y hlt
-        exact ⟨w, hwB.trans_le (le_max_left _ _), hw⟩
-      · exact ⟨wm, wm.lt_succ_self.trans_le (le_max_right _ _), hwm⟩
-  · rintro ⟨B, hB⟩ y hy
-    obtain ⟨w, -, hw⟩ := hB y hy
-    exact ⟨w, hw⟩
-
 -- Bounded existential and universal closure must be established together: universal bounded
 -- quantification at `n + 1` collects a uniform upper bound on the existential witnesses and
 -- pushes a bounded existential quantifier inside the preceding universal matrix.
@@ -269,7 +251,12 @@ private theorem sigma_exists_lt_and_forall_lt {r : α × ℕ → Prop} (hr : IsS
       refine isSigma_succ_iff.2
         ⟨fun a => ∀ y < b a.1, ∃ w < a.2, q ((a.1, y), w), h₂, fun x => ?_⟩
       simp only [hreq]
-      exact forall_lt_exists_iff_exists_bound
+      refine ⟨fun hm => ?_, fun ⟨_, hB⟩ y hy => let ⟨w, _, hw⟩ := hB y hy; ⟨w, hw⟩⟩
+      let w (y : ℕ) : ℕ := if h : y < b x then (hm y h).choose else 0
+      exact ⟨(Finset.range (b x)).sup w + 1, fun y hy =>
+        ⟨w y, Nat.lt_succ_of_le (Finset.le_sup (Finset.mem_range.2 hy)), by
+          simp only [w, dite_eq_left hy]
+          exact (hm y hy).choose_spec⟩⟩
 
 /-- Existential pointclasses are closed under bounded existential number quantifiers with
 oracle-computable bounds. -/
