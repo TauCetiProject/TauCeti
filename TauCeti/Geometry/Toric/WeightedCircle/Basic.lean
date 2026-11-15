@@ -224,7 +224,7 @@ theorem isLeast_weightedRotation_exp_neg_eq_self_of_fst_eq_zero (hb : 0 < b) {z 
 variable (a b) in
 /-- The ellipsoid `a |z₁|² + b |z₂|² = 2 ε` in `ℂ²`, the level `ε` of the moment map
 `(a |z₁|² + b |z₂|²) / 2` of the weighted circle action. -/
-def weightedEllipsoid (ε : ℝ) : Set (ℂ × ℂ) :=
+@[expose] def weightedEllipsoid (ε : ℝ) : Set (ℂ × ℂ) :=
   {z | a * ‖z.1‖ ^ 2 + b * ‖z.2‖ ^ 2 = 2 * ε}
 
 variable {ε : ℝ}
