@@ -37,6 +37,9 @@ of `exists_continuous_forall_mem_convex_of_local`: over a normal paracompact bas
 fibrewise conditions can be met by sections that are continuous near each point, then they are met
 by a single global continuous section. This is how continuous fibre metrics, and other
 fibrewise-convex structures on bundles over paracompact bases, are constructed.
+Its affine counterpart `TauCeti.exists_continuous_section_map_eq_of_local` solves a fibrewise
+linear equation `A x (s x) = c x` globally once it is solvable locally; it applies to bundles over
+any field containing `ℝ`, in particular to complex bundles.
 
 The statements and proofs are the continuous counterparts of Mathlib's smooth section API
 `ContMDiffWithinAt.add_section`, `ContMDiffOn.smul_section_of_tsupport` and
@@ -251,6 +254,8 @@ end Operations
 
 namespace TauCeti
 
+section ConvexGluing
+
 variable {B F : Type*} [TopologicalSpace B] [NormalSpace B] [ParacompactSpace B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type*}
   [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)] [∀ x, TopologicalSpace (E x)]
@@ -275,6 +280,52 @@ theorem exists_continuous_section_forall_mem_convex_of_local (t : ∀ x, Set (E 
       ((hsc i).mono interior_subset)
   · refine (ht x).finsum_mem (fun i ↦ ρ.nonneg i x) (ρ.sum_eq_one (mem_univ x)) fun i hi ↦ ?_
     exact hst i x (interior_subset (hρ i (subset_closure hi)))
+
+end ConvexGluing
+
+section AffineGluing
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [TopologicalSpace B] [NormalSpace B] [ParacompactSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  {G : B → Type*} [∀ x, AddCommGroup (G x)] [∀ x, Module 𝕜 (G x)]
+
+/-- Let `A x : E x → G x` be a family of linear maps out of the fibres of a vector bundle over a
+normal paracompact space, and `c x ∈ G x`. If near each point the equation `A x (s x) = c x` has
+a solution `s` which is a section continuous there, then it has a global continuous solution.
+The solutions in each fibre form an affine subspace, so local solutions glue along a partition of
+unity. The scalars only need to contain `ℝ`, so this applies to complex bundles. -/
+theorem exists_continuous_section_map_eq_of_local (A : ∀ x, E x →ₗ[𝕜] G x) (c : ∀ x, G x)
+    (H : ∀ x₀ : B, ∃ U ∈ 𝓝 x₀, ∃ s : ∀ x, E x,
+      ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) U ∧ ∀ y ∈ U, A y (s y) = c y) :
+    ∃ s : ∀ x, E x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧ ∀ x, A x (s x) = c x := by
+  choose U hU s hsc hst using H
+  obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate isClosed_univ (fun x ↦ interior (U x))
+    (fun x ↦ isOpen_interior) fun x _ ↦ mem_iUnion.2 ⟨x, mem_interior_iff_mem_nhds.2 (hU x)⟩
+  have hρs : ∀ i x, ρ i x ≠ 0 → x ∈ U i := fun i x hx ↦
+    interior_subset (hρ i (subset_closure hx))
+  refine ⟨fun x ↦ ∑ᶠ i, algebraMap ℝ 𝕜 (ρ i x) • s i x, ?_, fun x ↦ ?_⟩
+  · refine Continuous.finsum_section_of_locallyFinite 𝕜
+      (ρ.locallyFinite.subset fun i x (hx : algebraMap ℝ 𝕜 (ρ i x) • s i x ≠ 0) ↦ ?_) fun i ↦ ?_
+    · exact fun h ↦ hx (by simp [show ρ i x = 0 from h])
+    · exact ContinuousOn.smul_section_of_tsupport
+        ((continuous_algebraMap ℝ 𝕜).comp (ρ i).continuous) isOpen_interior
+        ((tsupport_comp_subset (map_zero _) _).trans (hρ i)) ((hsc i).mono interior_subset)
+  · have hfin := ρ.locallyFinite.point_finite x
+    rw [map_finsum (A x) (hfin.subset fun i hi h ↦ hi (by simp [show ρ i x = 0 from h]))]
+    simp_rw [map_smul]
+    calc ∑ᶠ i, algebraMap ℝ 𝕜 (ρ i x) • A x (s i x)
+        = ∑ᶠ i, algebraMap ℝ 𝕜 (ρ i x) • c x := finsum_congr fun i ↦ by
+          by_cases h : ρ i x = 0
+          · simp [h]
+          · rw [hst i x (hρs i x h)]
+      _ = c x := by
+        rw [← finsum_smul, ← map_finsum (algebraMap ℝ 𝕜) hfin, ρ.sum_eq_one (mem_univ x),
+          map_one, one_smul]
+
+end AffineGluing
 
 end TauCeti
 
