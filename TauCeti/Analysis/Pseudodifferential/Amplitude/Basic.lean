@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.OscillatoryIntegral
-public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.Sobolev.Basic
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre

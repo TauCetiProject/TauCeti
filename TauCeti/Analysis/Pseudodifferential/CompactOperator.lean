@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.Sobolev.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 
 /-!
