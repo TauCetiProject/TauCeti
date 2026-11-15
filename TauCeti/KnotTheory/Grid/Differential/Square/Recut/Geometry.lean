@@ -63,8 +63,7 @@ theorem IsRecutOfLeftEqRight.recut_geometry {D E : GridRectangleDecomposition x 
               E.second.bottom = D.first.bottom ∧ E.second.top = D.second.bottom) := by
   have hcommon := hdata.side_eq
   have hother : D.first.right ≠ D.second.left := fun h => by
-    have hbot : D.second.bottom = D.first.bottom := by
-      rw [D.second.bottom_def, D.first.bottom_def, ← h, D.first.map_right]
+    have hbot := D.second_bottom_eq_first_bottom_of_right_eq_left h
     rcases hdata.recut_branch with ⟨hrow, -⟩ | ⟨hrow, -⟩ <;> rw [hbot] at hrow <;>
       exact Grid.left_notMem_cIoo _ _ hrow
   obtain ⟨hEfirstBottom, hEsecondBottom⟩ := hdata.recut_sides
@@ -111,8 +110,7 @@ theorem IsRecutOfRightEqLeft.recut_geometry {D E : GridRectangleDecomposition x 
               E.second.bottom = D.second.top ∧ E.second.top = D.first.top) := by
   have hcommon := hdata.side_eq
   have hother : D.first.left ≠ D.second.right := fun h => by
-    have htop : D.second.top = D.first.top := by
-      rw [D.second.top_def, D.first.top_def, ← h, D.first.map_left]
+    have htop := D.second_top_eq_first_top_of_left_eq_right h
     rcases hdata.recut_branch with ⟨hrow, -⟩ | ⟨hrow, -⟩ <;> rw [htop] at hrow <;>
       exact Grid.ne_right_of_mem_cIoo hrow rfl
   obtain ⟨hEfirstTop, hEsecondTop⟩ := hdata.recut_sides
