@@ -62,6 +62,15 @@ theorem rootSubgroupPoints_mem_elementarySubgroup (γ : Fin t.numRoots) (u : Mul
     D.rootSubgroupPoints γ A u ∈ D.elementarySubgroup A :=
   Subgroup.subset_closure (Set.mem_iUnion.2 ⟨γ, u, rfl⟩)
 
+/-- Every Steinberg Weyl element `n_γ(s)` lies in the elementary Chevalley subgroup. -/
+@[simp]
+theorem weylElement_mem_elementarySubgroup (γ : Fin t.numRoots) (s : Aˣ) :
+    D.weylElement γ A s ∈ D.elementarySubgroup A := by
+  rw [D.weylElement_def]
+  exact mul_mem (mul_mem (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
+    (D.rootSubgroupPoints_mem_elementarySubgroup A _ _))
+    (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
+
 /-- To contain the elementary subgroup it suffices to contain every root subgroup. -/
 theorem elementarySubgroup_le_iff (H : Subgroup (D.points A)) :
     D.elementarySubgroup A ≤ H ↔ ∀ γ u, D.rootSubgroupPoints γ A u ∈ H := by

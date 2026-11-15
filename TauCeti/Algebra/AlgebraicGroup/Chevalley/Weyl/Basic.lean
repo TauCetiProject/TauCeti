@@ -41,7 +41,7 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v
+universe v w
 
 -- Match the coefficient structure used by `D.points`, including on an algebraic closure.
 attribute [local instance high] Ring.toIntAlgebra
@@ -67,10 +67,34 @@ theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank �
     D.torusPoints A s ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inl ⟨s, rfl⟩)
 
+/-- The actual weight-lattice torus image is contained in the Weyl subgroup over every commutative
+ring. -/
+theorem range_torusPoints_le_weylSubgroup (A : Type v) [CommRing A] :
+    (D.torusPoints A).range ≤ D.weylSubgroup A := by
+  rintro _ ⟨s, rfl⟩
+  exact D.torusPoints_mem_weylSubgroup A s
+
 /-- Each pinned simple Weyl representative belongs to the Weyl subgroup. -/
 theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
+
+/-- Scalar extension carries the Weyl subgroup into the Weyl subgroup over the target ring,
+without a surjectivity assumption on the ring map. -/
+theorem map_weylSubgroup_le {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B) :
+    (D.weylSubgroup A).map ((D.pointsPresentation A).map (D.pointsPresentation B) f) ≤
+      D.weylSubgroup B := by
+  rw [Subgroup.map_le_iff_le_comap, D.weylSubgroup_def, Subgroup.closure_le]
+  rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_torusPoints]
+    exact D.torusPoints_mem_weylSubgroup B _
+  · rw [SetLike.mem_coe, Subgroup.mem_comap]
+    have hmap : (D.pointsPresentation A).map (D.pointsPresentation B) f
+        (D.weylElement (t.simpleIndex ht i) A 1) = D.weylElement (t.simpleIndex ht i) B 1 :=
+      Subtype.ext ((GeneralLinear.IntegralPointsPresentation.coe_map _ _ f _).trans
+        (by simpa only [map_one] using D.map_weylElement f (t.simpleIndex ht i) 1))
+    rw [hmap]
+    exact D.weylElement_mem_weylSubgroup B i
 
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple

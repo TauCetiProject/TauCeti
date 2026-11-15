@@ -7,10 +7,14 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Intersection
 public import TauCeti.GroupTheory.TitsSystem.Comap
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Centralizer
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
+import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.FieldTheory.IsAlgClosed.Units
+import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -30,6 +34,10 @@ double-coset multiplication laws for `(B n_{αᵢ}(1) B)(B n B)`: it equals `B (
 `w⁻¹ αᵢ` is positive (`w = D.weylProjection k n`) and `B (n_{αᵢ}(1) n) B ∪ B n B` when `w⁻¹ αᵢ` is
 negative.
 
+From `D.ker_weylProjection ℚ` and integral weight-lattice descent, the canonical Weyl quotient
+isomorphism `N(A) ⧸ T(A) ≃* W` extends to every nontrivial commutative ring `A` and is compatible
+with arbitrary ring homomorphisms (`D.weylQuotientMulEquiv_map`).
+
 In particular, `TitsSystem.existsUnique_mem_bruhatCell` gives the disjoint Weyl-indexed Bruhat
 decompositions of both `D.extendedElementarySubgroup k` and `D.elementarySubgroup k`. Neither
 equality of `D.extendedElementarySubgroup k` with all scheme points `D.points k` nor a refined
@@ -37,6 +45,8 @@ normal form `u n_w b` on inversion root subgroups is asserted here.
 
 ## Main declarations
 
+* `TauCeti.DynkinType.ChevalleyDatum.weylProjection_eq_one_of_mem_borelSubgroup`: every element of
+  `D.weylSubgroup k` lying in `D.borelSubgroup k` has trivial Weyl projection.
 * `TauCeti.DynkinType.ChevalleyDatum.doubleCoset_weylElement_mul_eq_of_mem_posRoots` and
   `TauCeti.DynkinType.ChevalleyDatum.doubleCoset_weylElement_mul_eq_union_of_mem_negRoots`:
   simple-reflection Bruhat double-coset multiplication in `D.points k`.
@@ -44,12 +54,14 @@ normal form `u n_w b` on inversion root subgroups is asserted here.
   `TauCeti.DynkinType.ChevalleyDatum.titsSystemWeylGroupMulEquiv`: the Tits system on
   `D.extendedElementarySubgroup k` and its Weyl-group isomorphism onto
   `(t.simplyConnectedRootDatum ht).weylGroup`.
-* `TauCeti.DynkinType.ChevalleyDatum.ker_weylProjection` and
-  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientMulEquiv`: `(D.weylProjection k).ker = T(k)` and
-  `N(k) ⧸ T(k) ≃* (t.simplyConnectedRootDatum ht).weylGroup`.
+* `TauCeti.DynkinType.ChevalleyDatum.ker_weylProjection`: `(D.weylProjection k).ker = T(k)`.
 * `TauCeti.DynkinType.ChevalleyDatum.elementaryTitsSystem` and
   `TauCeti.DynkinType.ChevalleyDatum.elementaryTitsSystemWeylGroupMulEquiv`: the pulled-back Tits
   system on `D.elementarySubgroup k` and its Weyl-group isomorphism.
+* `TauCeti.DynkinType.ChevalleyDatum.weylQuotientMulEquiv` and
+  `TauCeti.DynkinType.ChevalleyDatum.weylQuotientMulEquiv_map`:
+  `N(A) ⧸ T(A) ≃* (t.simplyConnectedRootDatum ht).weylGroup` over every nontrivial commutative
+  ring `A`, compatible with ring homomorphisms.
 
 ## References
 
@@ -60,41 +72,100 @@ normal form `u n_w b` on inversion root subgroups is asserted here.
 
 public section
 
-open Multiplicative
+open Multiplicative TauCeti.UniversalEnvelopingAlgebra
 open scoped Pointwise
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v
+universe v w
+
+-- Match the coefficient structure used by `D.points`, including on an algebraic closure.
+attribute [local instance high] Ring.toIntAlgebra
+attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-! ## Elementary containment over commutative rings -/
-
-section CommRing
-
-variable (A : Type v) [CommRing A]
-
-/-- Every positive point lies in the elementary Chevalley subgroup. -/
-theorem positivePoints_le_elementarySubgroup :
-    D.positivePoints A ≤ D.elementarySubgroup A :=
-  D.positivePoints_le_iff.mpr fun γ _ u => D.rootSubgroupPoints_mem_elementarySubgroup A γ u
-
-/-- Every Steinberg Weyl element `n_γ(s)` lies in the elementary Chevalley subgroup. -/
-theorem weylElement_mem_elementarySubgroup (γ : Fin t.numRoots) (s : Aˣ) :
-    D.weylElement γ A s ∈ D.elementarySubgroup A := by
-  rw [D.weylElement_def]
-  exact mul_mem (mul_mem (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-    (D.rootSubgroupPoints_mem_elementarySubgroup A _ _))
-    (D.rootSubgroupPoints_mem_elementarySubgroup A _ _)
-
-end CommRing
-
-/-! ## Simple-reflection Bruhat cell multiplication over a field -/
+/-! ## Borel-Weyl projection and field-level intersection -/
 
 noncomputable section Field
 
 variable (k : Type v) [Field k]
+
+/-- An element of `D.weylSubgroup k` that also belongs to `D.borelSubgroup k` projects to `1` in
+the Weyl group. -/
+theorem weylProjection_eq_one_of_mem_borelSubgroup {g : D.weylSubgroup k}
+    (hg : (g : D.points k) ∈ D.borelSubgroup k) :
+    D.weylProjection k g = 1 := by
+  by_contra hne
+  let _ := t.isReduced_simplyConnectedRootDatum ht
+  obtain ⟨γ, -, hγinv⟩ := exists_mem_support_mem_inversions_of_ne_one
+    (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) hne
+  have hγpos : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [posRoots_rationalRootSystem]
+    exact inversions_subset_posRoots _ _ _ hγinv
+  have hγneg :
+      (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k g) γ ∈
+        negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    have hneg := mapsTo_inversions_negRoots
+      (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) (D.weylProjection k g) hγinv
+    rwa [mem_negRoots, ← mem_posRoots, ← posRoots_rationalRootSystem, mem_posRoots,
+      ← mem_negRoots] at hneg
+  obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints k g γ
+  have hconj := hc ((c⁻¹ : kˣ) : k)
+  rw [Units.mul_inv, MulAut.conj_apply] at hconj
+  have hmem : D.rootSubgroupPoints
+      ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k g) γ) k
+      (ofAdd 1) ∈ D.borelSubgroup k := by
+    rw [← hconj]
+    exact mul_mem (mul_mem hg (D.positivePoints_le_borelSubgroup k
+      (D.rootSubgroupPoints_mem_positivePoints k hγpos _))) (inv_mem hg)
+  exact D.rootSubgroupPoints_ofAdd_one_ne_one k _
+    ((D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots k hγneg _).mp hmem)
+
+/-- Over any field, an element of `D.weylSubgroup k` lying in `D.borelSubgroup k` belongs to the
+actual weight-lattice torus. Base change to `AlgebraicClosure k` makes its positive factor
+centralize the actual torus over an infinite field, forcing that factor to be trivial by
+`D.positivePoints_inf_centralizer_range_torusPoints`. -/
+private theorem mem_range_torusPoints_of_mem_borelSubgroup_field {g : D.weylSubgroup k}
+    (hg : (g : D.points k) ∈ D.borelSubgroup k) :
+    (g : D.points k) ∈ (D.torusPoints k).range := by
+  obtain ⟨u, huP, s, hgu⟩ := (D.mem_borelSubgroup_iff k).mp hg
+  have huW : u ∈ D.weylSubgroup k := by
+    simpa only [← hgu, mul_inv_cancel_right] using
+      (D.weylSubgroup k).mul_mem g.2
+        ((D.weylSubgroup k).inv_mem (D.torusPoints_mem_weylSubgroup k s))
+  have hw : D.weylProjection k ⟨u, huW⟩ = 1 :=
+    D.weylProjection_eq_one_of_mem_borelSubgroup k (D.positivePoints_le_borelSubgroup k huP)
+  let K := AlgebraicClosure k
+  let φ : k →+* K := algebraMap k K
+  let uK : D.points K := (D.pointsPresentation k).map (D.pointsPresentation K) φ u
+  have huKP : uK ∈ D.positivePoints K := D.map_positivePoints_le φ ⟨u, huP, rfl⟩
+  have huK_cent : uK ∈ Subgroup.centralizer (Set.range (D.torusPoints K)) := by
+    rw [Subgroup.mem_centralizer_iff]
+    rintro _ ⟨r, rfl⟩
+    obtain ⟨r', rfl⟩ := D.fullWeightTorusRestriction_surjective K r
+    apply Subtype.ext
+    have hs := (D.weylProjection_eq_iff k ⟨u, huW⟩ 1).mp hw r'
+    rw [Subgroup.coe_mul, Subgroup.coe_mul, D.coe_torusPoints, ← D.kostantTorusMatrix_weight,
+      kostantTorusMatrix_apply]
+    dsimp only [uK]
+    rw [GeneralLinear.IntegralPointsPresentation.coe_map]
+    symm
+    simpa only [K, φ, map_one, MulAut.one_apply, mul_inv_eq_iff_eq_mul] using hs
+  have huK_one : uK = 1 := Subgroup.mem_bot.mp
+    ((D.positivePoints_inf_centralizer_range_torusPoints K) ▸
+      Subgroup.mem_inf.mpr ⟨huKP, huK_cent⟩)
+  have hu1 : u = 1 := by
+    apply Subtype.ext
+    apply Matrix.GeneralLinearGroup.map_injective φ.injective
+    have hcoe := GeneralLinear.IntegralPointsPresentation.coe_map
+      (D.pointsPresentation k) (D.pointsPresentation K) φ u
+    rw [← hcoe, show (D.pointsPresentation k).map (D.pointsPresentation K) φ u = 1 from huK_one,
+      Subgroup.coe_one, Subgroup.coe_one, map_one]
+  rw [← hgu, hu1, one_mul]
+  exact ⟨s, rfl⟩
+
+/-! ## Simple-reflection Bruhat cell multiplication over a field -/
 
 /-- Using `B = U⁽ⁱ⁾ X_{αᵢ} T`, `n_{αᵢ}(1) ∈ N_G(U⁽ⁱ⁾)`, and `n ∈ N_G(T)`, every element of
 `(B n_{αᵢ}(1) B)(B n B)` reduces to `b₁ (n_{αᵢ}(1) x_{αᵢ}(a) n) b₂` with `b₁, b₂ ∈ B`. -/
@@ -192,6 +263,69 @@ theorem doubleCoset_weylElement_mul_eq_of_mem_posRoots
   · exact DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset (M := D.points k)
       (D.borelSubgroup k) (D.borelSubgroup k) (D.borelSubgroup k) (D.borelSubgroup k).one_mem _ _
 
+private theorem inv_weylProjection_mul_simpleIndex_mem_posRoots
+    (i : Fin t.rank) (n : D.weylSubgroup k)
+    (hneg : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹
+      (t.simpleIndex ht i) ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    (t.simplyConnectedRootDatum ht).weylGroupToPerm
+        (D.weylProjection k
+          (⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩⁻¹ * n))⁻¹
+        (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+  let P := t.simplyConnectedRootDatum ht
+  let _ := P.indexNeg
+  have hproj : (D.weylProjection k
+      (⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩⁻¹ * n))⁻¹ =
+      (D.weylProjection k n)⁻¹ * RootPairing.weylGroup.ofIdx P (t.simpleIndex ht i) := by
+    simp only [P, map_mul, map_inv, mul_inv_rev, inv_inv, D.weylProjection_weylElement]
+  have hperm : P.weylGroupToPerm (D.weylProjection k
+      (⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩⁻¹ * n))⁻¹
+      (t.simpleIndex ht i) =
+      P.reflectionPerm (P.weylGroupToPerm (D.weylProjection k n)⁻¹ (t.simpleIndex ht i))
+        (P.weylGroupToPerm (D.weylProjection k n)⁻¹ (t.simpleIndex ht i)) := by
+    rw [hproj, map_mul, Equiv.Perm.mul_apply, RootPairing.weylGroupToPerm_ofIdx_apply,
+      ← RootPairing.indexNeg_neg, P.weylGroupToPerm_neg, RootPairing.indexNeg_neg]
+  rw [hperm, ← t.reflectionPerm_rationalRootSystem ht]
+  exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots
+    (t.rationalRootSystem ht) (t.rationalBase ht) _).mpr hneg
+
+private theorem weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_negRoots
+    (i : Fin t.rank) (n : D.weylSubgroup k)
+    (hneg : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹
+      (t.simpleIndex ht i) ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : kˣ) :
+    D.weylElement (t.simpleIndex ht i) k 1 *
+        D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u : k)) * (n : D.points k) ∈
+      DoubleCoset.doubleCoset (n : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) := by
+  let r := D.weylElement (t.simpleIndex ht i) k 1
+  let m : D.weylSubgroup k := ⟨r, D.weylElement_mem_weylSubgroup k i⟩⁻¹ * n
+  have hm_pos := D.inv_weylProjection_mul_simpleIndex_mem_posRoots k i n hneg
+  have hexch := D.weylElement_mul_rootSubgroup_mul_weylElement i k u
+  have hbL : D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
+      D.simpleCorootPoints i k (-u⁻¹) ∈ D.borelSubgroup k :=
+    mul_mem
+      (D.positivePoints_le_borelSubgroup k
+        (D.rootSubgroupPoints_mem_positivePoints k (simpleIndex_mem_posRoots i) _))
+      (by
+        rw [D.simpleCorootPoints_eq_torusPoints]
+        exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩)
+  have hbR := D.conj_inv_rootSubgroupPoints_mem_borelSubgroup_of_mem_posRoots k i m hm_pos
+    (ofAdd (-((u⁻¹ : kˣ) : k)))
+  refine DoubleCoset.mem_doubleCoset.mpr ⟨_, hbL, _, hbR, ?_⟩
+  have hm_coe : (m : D.points k) = r⁻¹ * (n : D.points k) := rfl
+  calc
+    r * D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u : k)) * (n : D.points k)
+      = (r * D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u : k)) * r) *
+          (m : D.points k) := by rw [hm_coe]; group
+    _ = (D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
+          D.simpleCorootPoints i k (-u⁻¹) * r *
+          D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k)))) *
+          (m : D.points k) := by rw [hexch]
+    _ = (D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
+          D.simpleCorootPoints i k (-u⁻¹)) * (n : D.points k) *
+          ((m : D.points k)⁻¹ *
+            D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
+            (m : D.points k)) := by rw [hm_coe]; group
+
 /-- **Length-decreasing simple Bruhat multiplication in `D.points k`.** When `w⁻¹ αᵢ` is a negative
 root for `w = D.weylProjection k n`, multiplying `B n_{αᵢ}(1) B` by `B n B` gives the union
 `B (n_{αᵢ}(1) n) B ∪ B n B`. -/
@@ -206,53 +340,6 @@ theorem doubleCoset_weylElement_mul_eq_union_of_mem_negRoots
           (D.borelSubgroup k) (D.borelSubgroup k) ∪
         DoubleCoset.doubleCoset (n : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) := by
   let r := D.weylElement (t.simpleIndex ht i) k 1
-  let rN : D.weylSubgroup k := ⟨r, D.weylElement_mem_weylSubgroup k i⟩
-  let m : D.weylSubgroup k := rN⁻¹ * n
-  have hm_pos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k m)⁻¹
-      (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    let P := t.simplyConnectedRootDatum ht
-    let _ := P.indexNeg
-    have hproj : (D.weylProjection k m)⁻¹ =
-        (D.weylProjection k n)⁻¹ * RootPairing.weylGroup.ofIdx P (t.simpleIndex ht i) := by
-      simp only [m, rN, r, P, map_mul, map_inv, mul_inv_rev, inv_inv,
-        D.weylProjection_weylElement]
-    have hperm : P.weylGroupToPerm (D.weylProjection k m)⁻¹ (t.simpleIndex ht i) =
-        P.reflectionPerm (P.weylGroupToPerm (D.weylProjection k n)⁻¹ (t.simpleIndex ht i))
-          (P.weylGroupToPerm (D.weylProjection k n)⁻¹ (t.simpleIndex ht i)) := by
-      rw [hproj, map_mul, Equiv.Perm.mul_apply, RootPairing.weylGroupToPerm_ofIdx_apply,
-        ← RootPairing.indexNeg_neg, P.weylGroupToPerm_neg, RootPairing.indexNeg_neg]
-    rw [hperm, ← t.reflectionPerm_rationalRootSystem ht]
-    exact (reflectionPerm_self_mem_posRoots_iff_mem_negRoots
-      (t.rationalRootSystem ht) (t.rationalBase ht) _).mpr hneg
-  have hunit_mem (u : kˣ) :
-      r * D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u : k)) * (n : D.points k) ∈
-        DoubleCoset.doubleCoset (n : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) := by
-    have hexch := D.weylElement_mul_rootSubgroup_mul_weylElement i k u
-    have hbL : D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
-        D.simpleCorootPoints i k (-u⁻¹) ∈ D.borelSubgroup k :=
-      mul_mem
-        (D.positivePoints_le_borelSubgroup k
-          (D.rootSubgroupPoints_mem_positivePoints k (simpleIndex_mem_posRoots i) _))
-        (by
-          rw [D.simpleCorootPoints_eq_torusPoints]
-          exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩)
-    have hbR := D.conj_inv_rootSubgroupPoints_mem_borelSubgroup_of_mem_posRoots k i m hm_pos
-      (ofAdd (-((u⁻¹ : kˣ) : k)))
-    refine DoubleCoset.mem_doubleCoset.mpr ⟨_, hbL, _, hbR, ?_⟩
-    have hm_coe : (m : D.points k) = r⁻¹ * (n : D.points k) := rfl
-    calc
-      r * D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u : k)) * (n : D.points k)
-        = (r * D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (u : k)) * r) *
-            (m : D.points k) := by rw [hm_coe]; group
-      _ = (D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
-            D.simpleCorootPoints i k (-u⁻¹) * r *
-            D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k)))) *
-            (m : D.points k) := by rw [hexch]
-      _ = (D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
-            D.simpleCorootPoints i k (-u⁻¹)) * (n : D.points k) *
-            ((m : D.points k)⁻¹ *
-              D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd (-((u⁻¹ : kˣ) : k))) *
-              (m : D.points k)) := by rw [hm_coe]; group
   apply Set.Subset.antisymm
   · intro g hg
     obtain ⟨b₁, hb₁, b₂, hb₂, a, rfl⟩ :=
@@ -261,8 +348,9 @@ theorem doubleCoset_weylElement_mul_eq_union_of_mem_negRoots
     · have ha1 : a = 1 := toAdd.injective (ha.trans toAdd_one.symm)
       rw [ha1, map_one, mul_one]
       exact Or.inl (DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, b₂, hb₂, rfl⟩)
-    · obtain ⟨c₁, hc₁, c₂, hc₂, hc⟩ :=
-        DoubleCoset.mem_doubleCoset.mp (hunit_mem (Units.mk0 (toAdd a) ha))
+    · obtain ⟨c₁, hc₁, c₂, hc₂, hc⟩ := DoubleCoset.mem_doubleCoset.mp
+        (D.weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_negRoots k i n hneg
+          (Units.mk0 (toAdd a) ha))
       have ha_eq : ofAdd ((Units.mk0 (toAdd a) ha : kˣ) : k) = a := ofAdd_toAdd a
       rw [ha_eq] at hc
       exact Or.inr (DoubleCoset.mem_doubleCoset.mpr
@@ -271,7 +359,9 @@ theorem doubleCoset_weylElement_mul_eq_union_of_mem_negRoots
       (DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset (M := D.points k) (D.borelSubgroup k)
         (D.borelSubgroup k) (D.borelSubgroup k) (D.borelSubgroup k).one_mem _ _) ?_
     -- At parameter `u = 1`, `r * x_i(1) * n` lies in both `(B r B)(B n B)` and `B n B`.
-    conv_lhs => rw [← DoubleCoset.doubleCoset_eq_of_mem (hunit_mem 1)]
+    conv_lhs =>
+      rw [← DoubleCoset.doubleCoset_eq_of_mem
+        (D.weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_negRoots k i n hneg 1)]
     rintro g hg
     obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
     refine ⟨b₁ * r * D.rootSubgroupPoints (t.simpleIndex ht i) k (ofAdd ((1 : kˣ) : k)),
@@ -279,6 +369,7 @@ theorem doubleCoset_weylElement_mul_eq_union_of_mem_negRoots
         (D.rootSubgroupPoints_mem_positivePoints k (simpleIndex_mem_posRoots i) _), rfl⟩,
       (n : D.points k) * b₂,
       DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, b₂, hb₂, by rw [one_mul]⟩, ?_⟩
+    dsimp only [r]
     group
 
 /-! ## The Tits system of the extended elementary subgroup -/
@@ -304,8 +395,9 @@ private theorem subgroupOf_borel_subgroupOf_weyl_eq_comap :
       (((D.torusPoints k).range).subgroupOf (D.weylSubgroup k)).comap
         (Subgroup.subgroupOfEquivOfLe
           (D.weylSubgroup_le_extendedElementarySubgroup k)).toMonoidHom := by
-  rw [← D.borelSubgroup_subgroupOf_weylSubgroup k]
-  rfl
+  ext g
+  exact ⟨fun hg => D.mem_range_torusPoints_of_mem_borelSubgroup_field k (g := ⟨_, g.2⟩) hg,
+    fun hg => D.range_torusPoints_le_borelSubgroup k hg⟩
 
 private instance :
     (((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)).subgroupOf
@@ -318,6 +410,29 @@ private def extendedSimpleRep (i : Fin t.rank) :
   ⟨⟨D.weylElement (t.simpleIndex ht i) k 1,
     D.weylSubgroup_le_extendedElementarySubgroup k (D.weylElement_mem_weylSubgroup k i)⟩,
     D.weylElement_mem_weylSubgroup k i⟩
+
+private theorem closure_borel_union_weyl_subgroupOf :
+    Subgroup.closure
+      (((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k) :
+          Set (D.extendedElementarySubgroup k)) ∪
+        ((D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k) :
+          Set (D.extendedElementarySubgroup k))) = ⊤ := by
+  have hsub : ((D.borelSubgroup k : Set (D.points k)) ∪ D.weylSubgroup k) ⊆
+      Set.range (D.extendedElementarySubgroup k).subtype := by
+    rw [Subgroup.coe_subtype, Subtype.range_coe_subtype]
+    rintro g (hg | hg)
+    · exact D.borelSubgroup_le_extendedElementarySubgroup k hg
+    · exact D.weylSubgroup_le_extendedElementarySubgroup k hg
+  have hpre : (D.extendedElementarySubgroup k).subtype ⁻¹'
+      ((D.borelSubgroup k : Set (D.points k)) ∪ D.weylSubgroup k) =
+      (((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k) :
+          Set (D.extendedElementarySubgroup k)) ∪
+        ((D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k) :
+          Set (D.extendedElementarySubgroup k))) := rfl
+  rw [← hpre, MonoidHom.closure_preimage_eq_of_injective _
+    (D.extendedElementarySubgroup k).subtype_injective hsub, Subgroup.closure_union,
+    Subgroup.closure_eq, Subgroup.closure_eq, D.borelSubgroup_sup_weylSubgroup k,
+    Subgroup.comap_subtype, Subgroup.subgroupOf_self]
 
 private theorem closure_range_mk_extendedSimpleRep :
     Subgroup.closure (Set.range fun i : Fin t.rank =>
@@ -349,64 +464,73 @@ private theorem closure_range_mk_extendedSimpleRep :
   have heq : n' = n := Subtype.ext (Subtype.ext hval)
   rwa [← heq]
 
+private theorem extendedSimpleRep_mul_self_mem (i : Fin t.rank) :
+    D.extendedSimpleRep k i * D.extendedSimpleRep k i ∈
+      ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)).subgroupOf
+        ((D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) := by
+  rw [Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_mul]
+  have hmul : (((D.extendedSimpleRep k i : D.extendedElementarySubgroup k) : D.points k) *
+      ((D.extendedSimpleRep k i : D.extendedElementarySubgroup k) : D.points k)) =
+      D.simpleCorootPoints i k (-1) := D.weylElement_mul_self i k
+  rw [hmul, D.simpleCorootPoints_eq_torusPoints]
+  exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩
+
+private theorem mul_doubleCoset_subset_extendedElementarySubgroup
+    (i : Fin t.rank) (w : (D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) :
+    DoubleCoset.doubleCoset (D.extendedSimpleRep k i : D.extendedElementarySubgroup k)
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k))
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) *
+        DoubleCoset.doubleCoset (w : D.extendedElementarySubgroup k)
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k))
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) ⊆
+      DoubleCoset.doubleCoset
+          ((D.extendedSimpleRep k i * w :
+            (D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) :
+            D.extendedElementarySubgroup k)
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k))
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) ∪
+        DoubleCoset.doubleCoset (w : D.extendedElementarySubgroup k)
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k))
+          ((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)) := by
+  intro z hz
+  obtain ⟨z₁, hz₁, z₂, hz₂, rfl⟩ := Set.mem_mul.mp hz
+  rw [D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k] at hz₁ hz₂
+  let n : D.weylSubgroup k := ⟨((w : D.extendedElementarySubgroup k) : D.points k), w.2⟩
+  have hprod : ((z₁ * z₂ : D.extendedElementarySubgroup k) : D.points k) ∈
+      DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) k 1)
+        (D.borelSubgroup k) (D.borelSubgroup k) *
+      DoubleCoset.doubleCoset (n : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) :=
+    Set.mul_mem_mul hz₁ hz₂
+  by_cases hpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹
+      (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)
+  · rw [D.doubleCoset_weylElement_mul_eq_of_mem_posRoots k i n hpos] at hprod
+    exact Or.inl ((D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k _ _).mpr hprod)
+  · have hneg : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹
+        (t.simpleIndex ht i) ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+      rwa [mem_negRoots, ← mem_posRoots]
+    rw [D.doubleCoset_weylElement_mul_eq_union_of_mem_negRoots k i n hneg] at hprod
+    exact hprod.imp
+      ((D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k _ _).mpr)
+      ((D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k _ _).mpr)
+
 /-- **The Tits system of the extended elementary Chevalley subgroup** over an arbitrary field `k`
 (including `𝔽₂`), with Borel subgroup `B(k) = U(k) T(k)`, Weyl subgroup `N(k)`, and simple
 reflections represented by `n_{αᵢ}(1)`. -/
 def titsSystem : TitsSystem (D.extendedElementarySubgroup k) where
   subgroupB := (D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k)
   subgroupN := (D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k)
-  closure_subgroupB_union_subgroupN := by
-    have hsub : ((D.borelSubgroup k : Set (D.points k)) ∪ D.weylSubgroup k) ⊆
-        Set.range (D.extendedElementarySubgroup k).subtype := by
-      rw [Subgroup.coe_subtype, Subtype.range_coe_subtype]
-      rintro g (hg | hg)
-      · exact D.borelSubgroup_le_extendedElementarySubgroup k hg
-      · exact D.weylSubgroup_le_extendedElementarySubgroup k hg
-    have hpre : (D.extendedElementarySubgroup k).subtype ⁻¹'
-        ((D.borelSubgroup k : Set (D.points k)) ∪ D.weylSubgroup k) =
-        (((D.borelSubgroup k).subgroupOf (D.extendedElementarySubgroup k) : Set _) ∪
-          ((D.weylSubgroup k).subgroupOf (D.extendedElementarySubgroup k) : Set _)) := rfl
-    rw [← hpre, MonoidHom.closure_preimage_eq_of_injective _
-      (D.extendedElementarySubgroup k).subtype_injective hsub, Subgroup.closure_union,
-      Subgroup.closure_eq, Subgroup.closure_eq,
-      D.borelSubgroup_sup_weylSubgroup k, Subgroup.comap_subtype,
-      Subgroup.subgroupOf_self]
+  closure_subgroupB_union_subgroupN := D.closure_borel_union_weyl_subgroupOf k
   intersection_normal := inferInstance
   simple := Set.range fun i : Fin t.rank => QuotientGroup.mk (D.extendedSimpleRep k i)
   closure_simple := D.closure_range_mk_extendedSimpleRep k
-  exists_simpleRep_mul_self_mem s hs := by
-    obtain ⟨i, rfl⟩ := hs
-    refine ⟨D.extendedSimpleRep k i, rfl, ?_⟩
-    rw [Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_mul]
-    have hmul : (((D.extendedSimpleRep k i : D.extendedElementarySubgroup k) : D.points k) *
-        ((D.extendedSimpleRep k i : D.extendedElementarySubgroup k) : D.points k)) =
-        D.simpleCorootPoints i k (-1) := D.weylElement_mul_self i k
-    rw [hmul, D.simpleCorootPoints_eq_torusPoints]
-    exact D.range_torusPoints_le_borelSubgroup k ⟨_, rfl⟩
-  mul_doubleCoset_subset s hs := by
-    obtain ⟨i, rfl⟩ := hs
-    refine ⟨D.extendedSimpleRep k i, rfl, fun w z hz => ?_⟩
-    obtain ⟨z₁, hz₁, z₂, hz₂, rfl⟩ := Set.mem_mul.mp hz
-    rw [D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k] at hz₁ hz₂
-    let n : D.weylSubgroup k := ⟨((w : D.extendedElementarySubgroup k) : D.points k), w.2⟩
-    have hprod : ((z₁ * z₂ : D.extendedElementarySubgroup k) : D.points k) ∈
-        DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) k 1)
-          (D.borelSubgroup k) (D.borelSubgroup k) *
-        DoubleCoset.doubleCoset (n : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) :=
-      Set.mul_mem_mul hz₁ hz₂
-    by_cases hpos : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹
-        (t.simpleIndex ht i) ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)
-    · rw [D.doubleCoset_weylElement_mul_eq_of_mem_posRoots k i n hpos] at hprod
-      exact Or.inl ((D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k _ _).mpr hprod)
-    · have hneg : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection k n)⁻¹
-          (t.simpleIndex ht i) ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-        rwa [mem_negRoots, ← mem_posRoots]
-      rw [D.doubleCoset_weylElement_mul_eq_union_of_mem_negRoots k i n hneg] at hprod
-      exact hprod.imp
-        ((D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k _ _).mpr)
-        ((D.mem_doubleCoset_subgroupOf_extendedElementarySubgroup_iff k _ _).mpr)
-  exists_conj_not_mem s hs := by
-    obtain ⟨i, rfl⟩ := hs
+  exists_simpleRep_mul_self_mem _ := by
+    rintro ⟨i, rfl⟩
+    exact ⟨D.extendedSimpleRep k i, rfl, D.extendedSimpleRep_mul_self_mem k i⟩
+  mul_doubleCoset_subset _ := by
+    rintro ⟨i, rfl⟩
+    exact ⟨D.extendedSimpleRep k i, rfl, D.mul_doubleCoset_subset_extendedElementarySubgroup k i⟩
+  exists_conj_not_mem _ := by
+    rintro ⟨i, rfl⟩
     obtain ⟨b, hb⟩ := D.exists_weylElement_conj_notMem_borelSubgroup k i
     exact ⟨D.extendedSimpleRep k i, rfl,
       ⟨⟨b.val, D.borelSubgroup_le_extendedElementarySubgroup k b.2⟩, b.2⟩, hb⟩
@@ -430,12 +554,9 @@ theorem titsSystem_subgroupN :
 /-- In `D.titsSystem k`, `B ∩ N` consists of the points of the actual weight-lattice torus. -/
 theorem titsSystem_mem_intersection (g : (D.titsSystem k).subgroupN) :
     g ∈ (D.titsSystem k).intersection ↔
-      ((g : D.extendedElementarySubgroup k) : D.points k) ∈ (D.torusPoints k).range := by
-  have hgN : ((g : D.extendedElementarySubgroup k) : D.points k) ∈ D.weylSubgroup k := by
-    simpa only [D.titsSystem_subgroupN, Subgroup.mem_subgroupOf] using g.2
-  rw [TitsSystem.mem_intersection, D.titsSystem_subgroupB, Subgroup.mem_subgroupOf,
-    ← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints k, Subgroup.mem_inf]
-  exact (and_iff_left hgN).symm
+      ((g : D.extendedElementarySubgroup k) : D.points k) ∈ (D.torusPoints k).range :=
+  ⟨fun hg => D.mem_range_torusPoints_of_mem_borelSubgroup_field k (g := ⟨_, g.2⟩) hg,
+   fun hg => D.range_torusPoints_le_borelSubgroup k hg⟩
 
 /-- The pinned representative of the `i`-th simple reflection in `D.titsSystem k`. -/
 def titsSystemSimpleRep (i : Fin t.rank) : (D.titsSystem k).subgroupN :=
@@ -456,7 +577,7 @@ theorem titsSystem_simple :
         (QuotientGroup.mk (D.titsSystemSimpleRep k i) : (D.titsSystem k).WeylGroup) :=
   (rfl)
 
-/-! ## Kernel of `weylProjection` and identification of the Weyl quotients -/
+/-! ## Kernel of `weylProjection` and identification of the Tits Weyl group -/
 
 private def titsSystemWeylProjectionHom :
     (D.titsSystem k).WeylGroup →* (t.simplyConnectedRootDatum ht).weylGroup :=
@@ -623,19 +744,6 @@ theorem weylProjection_eq_one_iff_mem_range_torusPoints (g : D.weylSubgroup k) :
     D.weylProjection k g = 1 ↔ (g : D.points k) ∈ (D.torusPoints k).range := by
   rw [← MonoidHom.mem_ker, D.ker_weylProjection k, Subgroup.mem_subgroupOf]
 
-/-- **The Weyl quotient `N(k) ⧸ T(k)` is canonically isomorphic to the root datum's Weyl group**
-over every field `k`. -/
-def weylQuotientMulEquiv :
-    D.weylSubgroup k ⧸ ((D.torusPoints k).range).subgroupOf (D.weylSubgroup k) ≃*
-      (t.simplyConnectedRootDatum ht).weylGroup :=
-  QuotientGroup.liftEquiv _ (D.weylProjection_surjective k) (D.ker_weylProjection k).symm
-
-/-- The Weyl-quotient isomorphism sends the coset of `g ∈ N(k)` to `D.weylProjection k g`. -/
-@[simp]
-theorem weylQuotientMulEquiv_mk (g : D.weylSubgroup k) :
-    D.weylQuotientMulEquiv k (QuotientGroup.mk g) = D.weylProjection k g :=
-  (rfl)
-
 /-! ## The Tits system of the elementary Chevalley subgroup -/
 
 private theorem exists_inclusion_mul_mem_inf (g : D.extendedElementarySubgroup k) :
@@ -757,12 +865,15 @@ theorem titsSystem_mem_bruhatCell_mk (n : (D.titsSystem k).subgroupN)
 the actual weight-lattice torus `T(k)`. -/
 theorem elementaryTitsSystem_mem_intersection (g : (D.elementaryTitsSystem k).subgroupN) :
     g ∈ (D.elementaryTitsSystem k).intersection ↔
-      ((g : D.elementarySubgroup k) : D.points k) ∈ (D.torusPoints k).range := by
-  have hgN : ((g : D.elementarySubgroup k) : D.points k) ∈ D.weylSubgroup k := by
-    simpa only [D.elementaryTitsSystem_subgroupN, Subgroup.mem_subgroupOf] using g.2
-  rw [TitsSystem.mem_intersection, D.elementaryTitsSystem_subgroupB, Subgroup.mem_subgroupOf,
-    ← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints k, Subgroup.mem_inf]
-  exact (and_iff_left hgN).symm
+      ((g : D.elementarySubgroup k) : D.points k) ∈ (D.torusPoints k).range :=
+  ⟨fun hg => D.mem_range_torusPoints_of_mem_borelSubgroup_field k
+      (g := ⟨_, by
+        simpa only [D.elementaryTitsSystem_subgroupN, Subgroup.mem_subgroupOf] using g.2⟩)
+      (by simpa only [TitsSystem.mem_intersection, D.elementaryTitsSystem_subgroupB,
+        Subgroup.mem_subgroupOf] using hg),
+   fun hg => by
+     simpa only [TitsSystem.mem_intersection, D.elementaryTitsSystem_subgroupB,
+       Subgroup.mem_subgroupOf] using D.range_torusPoints_le_borelSubgroup k hg⟩
 
 /-- Membership in a Bruhat cell of `D.elementaryTitsSystem k` coincides with membership in the
 corresponding `D.borelSubgroup k` double coset inside `D.points k`, even when `D.torusPoints k` is
@@ -785,5 +896,325 @@ theorem elementaryTitsSystem_mem_bruhatCell_mk (n : (D.elementaryTitsSystem k).s
   rfl
 
 end Field
+
+/-! ## Canonical Weyl quotient over nontrivial commutative rings -/
+
+noncomputable section WeylQuotient
+
+private theorem map_weylElement_one {A : Type v} {B : Type w} [CommRing A] [CommRing B]
+    (f : A →+* B) (γ : Fin t.numRoots) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f (D.weylElement γ A 1) =
+      D.weylElement γ B 1 :=
+  Subtype.ext ((GeneralLinear.IntegralPointsPresentation.coe_map _ _ f _).trans
+    (by simpa only [map_one] using D.map_weylElement f γ 1))
+
+private def weylSubgroupMap {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B) :
+    D.weylSubgroup A →* D.weylSubgroup B :=
+  (((D.pointsPresentation A).map (D.pointsPresentation B) f).domRestrict
+    (D.weylSubgroup A)).codRestrict (D.weylSubgroup B) fun g =>
+      D.map_weylSubgroup_le f ⟨g, g.2, rfl⟩
+
+private theorem weylSubgroup_hom_ext {A : Type v} [CommRing A] {G : Type w} [Group G]
+    {h₁ h₂ : D.weylSubgroup A →* G}
+    (htorus : ∀ s : Fin t.rank → Aˣ,
+      h₁ ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ =
+        h₂ ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩)
+    (hweyl : ∀ i : Fin t.rank,
+      h₁ ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ =
+        h₂ ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩) :
+    h₁ = h₂ := by
+  ext g
+  let P : Subgroup (D.points A) := (MonoidHom.eqLocus h₁ h₂).map (D.weylSubgroup A).subtype
+  have hle : D.weylSubgroup A ≤ P := by
+    rw [D.weylSubgroup_def A, Subgroup.closure_le]
+    rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+    · exact ⟨⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩, htorus s, rfl⟩
+    · exact ⟨⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩,
+        hweyl i, rfl⟩
+  obtain ⟨g', hg', hval⟩ := hle g.2
+  have heq : g' = g := Subtype.ext hval
+  rwa [← heq]
+
+/-- Every element of `D.weylSubgroup A` factors as an actual torus point times the image of an
+integral Weyl element. -/
+private theorem mem_weylSubgroup_iff_exists_torusPoints_mul_map_int
+    (A : Type v) [CommRing A] (g : D.points A) :
+    g ∈ D.weylSubgroup A ↔
+      ∃ s : Fin t.rank → Aˣ, ∃ w ∈ D.weylSubgroup ℤ,
+        D.torusPoints A s *
+          (D.pointsPresentation ℤ).map (D.pointsPresentation A) (Int.castRingHom A) w = g := by
+  let φ := (D.pointsPresentation ℤ).map (D.pointsPresentation A) (Int.castRingHom A)
+  have hsup : D.weylSubgroup A = (D.torusPoints A).range ⊔ (D.weylSubgroup ℤ).map φ := by
+    apply le_antisymm
+    · rw [D.weylSubgroup_def A, Subgroup.closure_le]
+      rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+      · exact Subgroup.mem_sup_left ⟨s, rfl⟩
+      · exact Subgroup.mem_sup_right ⟨D.weylElement (t.simpleIndex ht i) ℤ 1,
+          D.weylElement_mem_weylSubgroup ℤ i, D.map_weylElement_one (Int.castRingHom A) _⟩
+    · exact sup_le (D.range_torusPoints_le_weylSubgroup A)
+        (D.map_weylSubgroup_le (Int.castRingHom A))
+  have hnorm : (D.weylSubgroup ℤ).map φ ≤ Subgroup.normalizer (D.torusPoints A).range :=
+    (D.map_weylSubgroup_le (Int.castRingHom A)).trans
+      (D.weylSubgroup_le_normalizer_range_torusPoints A)
+  rw [hsup, Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
+  constructor
+  · rintro ⟨_, ⟨s, rfl⟩, _, ⟨w, hw, rfl⟩, h⟩
+    exact ⟨s, w, hw, h⟩
+  · rintro ⟨s, w, hw, h⟩
+    exact ⟨_, ⟨s, rfl⟩, _, ⟨w, hw, rfl⟩, h⟩
+
+/-- The Weyl projection of an integral Weyl element is independent of the target field. -/
+private theorem weylProjection_map_int_eq {k₁ : Type v} {k₂ : Type w} [Field k₁] [Field k₂]
+    (w : D.weylSubgroup ℤ) :
+    D.weylProjection k₁ (D.weylSubgroupMap (Int.castRingHom k₁) w) =
+      D.weylProjection k₂ (D.weylSubgroupMap (Int.castRingHom k₂) w) :=
+  DFunLike.congr_fun
+    (D.weylSubgroup_hom_ext
+      (h₁ := (D.weylProjection k₁).comp (D.weylSubgroupMap (Int.castRingHom k₁)))
+      (h₂ := (D.weylProjection k₂).comp (D.weylSubgroupMap (Int.castRingHom k₂)))
+      (fun s => by
+        have ht₁ : D.weylSubgroupMap (Int.castRingHom k₁)
+            ⟨D.torusPoints ℤ s, D.torusPoints_mem_weylSubgroup ℤ s⟩ =
+            ⟨D.torusPoints k₁ (fun j => Units.map (Int.castRingHom k₁).toMonoidHom (s j)),
+              D.torusPoints_mem_weylSubgroup k₁ _⟩ := Subtype.ext (D.map_torusPoints _ s)
+        have ht₂ : D.weylSubgroupMap (Int.castRingHom k₂)
+            ⟨D.torusPoints ℤ s, D.torusPoints_mem_weylSubgroup ℤ s⟩ =
+            ⟨D.torusPoints k₂ (fun j => Units.map (Int.castRingHom k₂).toMonoidHom (s j)),
+              D.torusPoints_mem_weylSubgroup k₂ _⟩ := Subtype.ext (D.map_torusPoints _ s)
+        simp only [MonoidHom.comp_apply, ht₁, ht₂, D.weylProjection_torusPoints])
+      (fun i => by
+        have hw₁ : D.weylSubgroupMap (Int.castRingHom k₁)
+            ⟨D.weylElement (t.simpleIndex ht i) ℤ 1, D.weylElement_mem_weylSubgroup ℤ i⟩ =
+            ⟨D.weylElement (t.simpleIndex ht i) k₁ 1, D.weylElement_mem_weylSubgroup k₁ i⟩ :=
+          Subtype.ext (D.map_weylElement_one (Int.castRingHom k₁) _)
+        have hw₂ : D.weylSubgroupMap (Int.castRingHom k₂)
+            ⟨D.weylElement (t.simpleIndex ht i) ℤ 1, D.weylElement_mem_weylSubgroup ℤ i⟩ =
+            ⟨D.weylElement (t.simpleIndex ht i) k₂ 1, D.weylElement_mem_weylSubgroup k₂ i⟩ :=
+          Subtype.ext (D.map_weylElement_one (Int.castRingHom k₂) _)
+        simp only [MonoidHom.comp_apply, hw₁, hw₂, D.weylProjection_weylElement])) w
+
+private theorem exists_diag_units_of_map_rat_eq_torusPoints (w : D.points ℤ)
+    (sQ : Fin t.rank → ℚˣ)
+    (hsQ : D.torusPoints ℚ sQ =
+      (D.pointsPresentation ℤ).map (D.pointsPresentation ℚ) (Int.castRingHom ℚ) w) :
+    ∃ d : Fin D.dim → ℤˣ, ∀ r : Fin D.dim,
+      Units.map (Int.castRingHom ℚ).toMonoidHom (d r) =
+        torusCharacter sQ (D.coordinateWeight r) := by
+  let M : Matrix (Fin D.dim) (Fin D.dim) ℤ := (w : Matrix.GeneralLinearGroup (Fin D.dim) ℤ)
+  let M' : Matrix (Fin D.dim) (Fin D.dim) ℤ :=
+    ((w⁻¹ : D.points ℤ) : Matrix.GeneralLinearGroup (Fin D.dim) ℤ)
+  have hM_rat (r c : Fin D.dim) :
+      (M r c : ℚ) =
+        Matrix.diagonal (fun j => (torusCharacter sQ (D.coordinateWeight j) : ℚ)) r c := by
+    have hcoe := congrArg (fun x : D.points ℚ =>
+      ((x : Matrix.GeneralLinearGroup (Fin D.dim) ℚ) : Matrix (Fin D.dim) (Fin D.dim) ℚ) r c)
+      hsQ.symm
+    rw [GeneralLinear.IntegralPointsPresentation.coe_map, D.coe_torusPoints,
+      kostantTorusMatrix_apply] at hcoe
+    simpa only [M, Matrix.GeneralLinearGroup.map_apply, Matrix.map_apply, Int.coe_castRingHom,
+      diagGL_coe] using hcoe
+  have hM_off {r c : Fin D.dim} (hrc : r ≠ c) : M r c = 0 :=
+    Int.cast_injective (α := ℚ) (by rw [hM_rat r c, Matrix.diagonal_apply_ne _ hrc, Int.cast_zero])
+  have hMr (r : Fin D.dim) : M r r * M' r r = 1 := by
+    have hmul : M * M' = 1 := by simp [M, M']
+    have h1 := congrFun (congrFun hmul r) r
+    rw [Matrix.mul_apply, Matrix.one_apply_eq, Finset.sum_eq_single r] at h1
+    · exact h1
+    · intro c _ hcr
+      rw [hM_off hcr.symm, zero_mul]
+    · intro hr
+      exact (hr (Finset.mem_univ r)).elim
+  refine ⟨fun r => ⟨M r r, M' r r, hMr r, by rw [mul_comm]; exact hMr r⟩, fun r => Units.ext ?_⟩
+  change (M r r : ℚ) = _
+  simpa only [Matrix.diagonal_apply_eq] using hM_rat r r
+
+/-- An integral point whose image over `ℚ` lies in the rational torus already lies in the actual
+integral torus `(D.torusPoints ℤ).range`, because the coordinate weights integrally span the
+character lattice. -/
+private theorem mem_range_torusPoints_int_of_map_rat_mem_range_torusPoints
+    (w : D.points ℤ)
+    (hw : (D.pointsPresentation ℤ).map (D.pointsPresentation ℚ) (Int.castRingHom ℚ) w ∈
+      (D.torusPoints ℚ).range) :
+    w ∈ (D.torusPoints ℤ).range := by
+  obtain ⟨sQ, hsQ⟩ := hw
+  obtain ⟨d, hd⟩ := D.exists_diag_units_of_map_rat_eq_torusPoints w sQ hsQ
+  have hspan (j : Fin t.rank) : ∃ c : Fin D.dim → ℤ,
+      ∑ r : Fin D.dim, c r • D.coordinateWeight r = Pi.single j 1 :=
+    (Submodule.mem_span_range_iff_exists_fun ℤ).mp (by
+      rw [D.span_range_coordinateWeight_eq_top]; trivial)
+  let sZ (j : Fin t.rank) : ℤˣ := ∏ r : Fin D.dim, d r ^ (hspan j).choose r
+  have hsZ (j : Fin t.rank) : Units.map (Int.castRingHom ℚ).toMonoidHom (sZ j) = sQ j := by
+    calc Units.map (Int.castRingHom ℚ).toMonoidHom (sZ j)
+        = ∏ r : Fin D.dim, (torusCharacter sQ (D.coordinateWeight r)) ^ (hspan j).choose r := by
+          simp only [sZ, map_prod, map_zpow, hd]
+      _ = torusCharacter sQ (∑ r : Fin D.dim, (hspan j).choose r • D.coordinateWeight r) := by
+          rw [torusCharacter_sum]
+          exact Finset.prod_congr rfl fun r _ => (torusCharacter_zsmul sQ _ _).symm
+      _ = torusCharacter sQ (Pi.single j 1) := by rw [(hspan j).choose_spec]
+      _ = sQ j := by simp only [torusCharacter_single, zpow_one]
+  refine ⟨sZ, Subtype.ext (Matrix.GeneralLinearGroup.map_injective (f := Int.castRingHom ℚ)
+    Int.cast_injective ?_)⟩
+  have hmap : (D.pointsPresentation ℤ).map (D.pointsPresentation ℚ) (Int.castRingHom ℚ)
+      (D.torusPoints ℤ sZ) =
+      (D.pointsPresentation ℤ).map (D.pointsPresentation ℚ) (Int.castRingHom ℚ) w := by
+    rw [D.map_torusPoints, funext hsZ]
+    exact hsQ
+  rw [← GeneralLinear.IntegralPointsPresentation.coe_map (D.pointsPresentation ℤ)
+      (D.pointsPresentation ℚ) (Int.castRingHom ℚ) (D.torusPoints ℤ sZ),
+    ← GeneralLinear.IntegralPointsPresentation.coe_map (D.pointsPresentation ℤ)
+      (D.pointsPresentation ℚ) (Int.castRingHom ℚ) w]
+  exact congrArg Subtype.val hmap
+
+private def ringWeylProjection (A : Type v) [CommRing A] [Nontrivial A] :
+    D.weylSubgroup A →* (t.simplyConnectedRootDatum ht).weylGroup :=
+  let M := (Ideal.exists_maximal A).choose
+  let _ : M.IsMaximal := (Ideal.exists_maximal A).choose_spec
+  let _ : Field (A ⧸ M) := Ideal.Quotient.field M
+  (D.weylProjection (A ⧸ M)).comp (D.weylSubgroupMap (Ideal.Quotient.mk M))
+
+private theorem ringWeylProjection_torusPoints (A : Type v) [CommRing A] [Nontrivial A]
+    (s : Fin t.rank → Aˣ) :
+    D.ringWeylProjection A ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ = 1 := by
+  let M := (Ideal.exists_maximal A).choose
+  let _ : M.IsMaximal := (Ideal.exists_maximal A).choose_spec
+  let _ : Field (A ⧸ M) := Ideal.Quotient.field M
+  have hsub : D.weylSubgroupMap (Ideal.Quotient.mk M)
+      ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ =
+      ⟨D.torusPoints (A ⧸ M) (fun j => Units.map (Ideal.Quotient.mk M).toMonoidHom (s j)),
+        D.torusPoints_mem_weylSubgroup (A ⧸ M) _⟩ := Subtype.ext (D.map_torusPoints _ s)
+  change D.weylProjection (A ⧸ M) (D.weylSubgroupMap (Ideal.Quotient.mk M) _) = 1
+  rw [hsub, D.weylProjection_torusPoints]
+
+private theorem ringWeylProjection_weylElement (A : Type v) [CommRing A] [Nontrivial A]
+    (i : Fin t.rank) :
+    D.ringWeylProjection A
+        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
+  let M := (Ideal.exists_maximal A).choose
+  let _ : M.IsMaximal := (Ideal.exists_maximal A).choose_spec
+  let _ : Field (A ⧸ M) := Ideal.Quotient.field M
+  have hsub : D.weylSubgroupMap (Ideal.Quotient.mk M)
+      ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ =
+      ⟨D.weylElement (t.simpleIndex ht i) (A ⧸ M) 1,
+        D.weylElement_mem_weylSubgroup (A ⧸ M) i⟩ :=
+    Subtype.ext (D.map_weylElement_one (Ideal.Quotient.mk M) _)
+  change D.weylProjection (A ⧸ M) (D.weylSubgroupMap (Ideal.Quotient.mk M) _) = _
+  rw [hsub, D.weylProjection_weylElement]
+
+private theorem ringWeylProjection_surjective (A : Type v) [CommRing A] [Nontrivial A] :
+    Function.Surjective (D.ringWeylProjection A) := by
+  have hword (l : List (Fin t.rank)) :
+      ∃ g : D.weylSubgroup A, D.ringWeylProjection A g = t.geckWeylWordProd ht l := by
+    induction l with
+    | nil => exact ⟨1, by simp⟩
+    | cons i l ih =>
+      obtain ⟨g, hg⟩ := ih
+      exact ⟨⟨D.weylElement (t.simpleIndex ht i) A 1,
+        D.weylElement_mem_weylSubgroup A i⟩ * g, by
+        simp only [map_mul, D.ringWeylProjection_weylElement, hg,
+          DynkinType.geckWeylWordProd_cons]⟩
+  intro w
+  obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
+  exact hword l
+
+private theorem ker_ringWeylProjection (A : Type v) [CommRing A] [Nontrivial A] :
+    (D.ringWeylProjection A).ker = ((D.torusPoints A).range).subgroupOf (D.weylSubgroup A) := by
+  apply le_antisymm
+  · intro g hg
+    obtain ⟨s, w, hw, hsw⟩ :=
+      (D.mem_weylSubgroup_iff_exists_torusPoints_mul_map_int A g.val).mp g.2
+    let M := (Ideal.exists_maximal A).choose
+    let _ : M.IsMaximal := (Ideal.exists_maximal A).choose_spec
+    let _ : Field (A ⧸ M) := Ideal.Quotient.field M
+    have hg_eq : g = ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ *
+        D.weylSubgroupMap (Int.castRingHom A) ⟨w, hw⟩ := Subtype.ext hsw.symm
+    have hcomp : D.weylSubgroupMap (Ideal.Quotient.mk M)
+        (D.weylSubgroupMap (Int.castRingHom A) ⟨w, hw⟩) =
+        D.weylSubgroupMap (Int.castRingHom (A ⧸ M)) ⟨w, hw⟩ := by
+      apply Subtype.ext
+      have hring : (Ideal.Quotient.mk M).comp (Int.castRingHom A) = Int.castRingHom (A ⧸ M) :=
+        Subsingleton.elim _ _
+      rw [← hring]
+      exact (congrArg (fun f => f w) (GeneralLinear.IntegralPointsPresentation.map_comp
+        (D.pointsPresentation ℤ) (D.pointsPresentation A) (D.pointsPresentation (A ⧸ M))
+        (Int.castRingHom A) (Ideal.Quotient.mk M))).symm
+    have hproj_k : D.weylProjection (A ⧸ M)
+        (D.weylSubgroupMap (Int.castRingHom (A ⧸ M)) ⟨w, hw⟩) = 1 := by
+      rw [MonoidHom.mem_ker, hg_eq, map_mul, D.ringWeylProjection_torusPoints, one_mul] at hg
+      dsimp only [ringWeylProjection, MonoidHom.comp_apply] at hg
+      simpa only [M, hcomp] using hg
+    have hproj_rat : D.weylProjection ℚ (D.weylSubgroupMap (Int.castRingHom ℚ) ⟨w, hw⟩) = 1 :=
+      (D.weylProjection_map_int_eq (k₁ := ℚ) (k₂ := A ⧸ M) ⟨w, hw⟩).trans hproj_k
+    have htorus_rat : (D.pointsPresentation ℤ).map (D.pointsPresentation ℚ) (Int.castRingHom ℚ) w ∈
+        (D.torusPoints ℚ).range :=
+      (D.weylProjection_eq_one_iff_mem_range_torusPoints ℚ _).mp hproj_rat
+    obtain ⟨sZ, hsZ⟩ :=
+      D.mem_range_torusPoints_int_of_map_rat_mem_range_torusPoints w htorus_rat
+    rw [Subgroup.mem_subgroupOf, ← hsw, ← hsZ, D.map_torusPoints, ← map_mul]
+    exact ⟨_, rfl⟩
+  · rintro g ⟨s, hs⟩
+    have hsub : g = ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ := Subtype.ext hs.symm
+    rw [MonoidHom.mem_ker, hsub, D.ringWeylProjection_torusPoints]
+
+/-- **The Weyl quotient `N(A) ⧸ T(A)` is canonically isomorphic to the root datum's Weyl group**
+over every nontrivial commutative ring `A`. -/
+def weylQuotientMulEquiv (A : Type v) [CommRing A] [Nontrivial A] :
+    D.weylSubgroup A ⧸ ((D.torusPoints A).range).subgroupOf (D.weylSubgroup A) ≃*
+      (t.simplyConnectedRootDatum ht).weylGroup :=
+  QuotientGroup.liftEquiv _ (D.ringWeylProjection_surjective A) (D.ker_ringWeylProjection A).symm
+
+/-- The Weyl-quotient isomorphism sends the coset of the `i`-th pinned simple Weyl representative
+to the `i`-th simple reflection of the root datum's Weyl group. -/
+@[simp]
+theorem weylQuotientMulEquiv_mk_weylElement (A : Type v) [CommRing A] [Nontrivial A]
+    (i : Fin t.rank) :
+    D.weylQuotientMulEquiv A
+        (QuotientGroup.mk
+          ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) :=
+  D.ringWeylProjection_weylElement A i
+
+/-- The canonical Weyl-quotient isomorphism commutes with every ring homomorphism between
+nontrivial commutative rings. -/
+theorem weylQuotientMulEquiv_map {A : Type v} {B : Type w}
+    [CommRing A] [Nontrivial A] [CommRing B] [Nontrivial B]
+    (f : A →+* B) (g : D.weylSubgroup A) :
+    D.weylQuotientMulEquiv B (QuotientGroup.mk
+        ⟨(D.pointsPresentation A).map (D.pointsPresentation B) f g,
+          D.map_weylSubgroup_le f ⟨g, g.2, rfl⟩⟩) =
+      D.weylQuotientMulEquiv A (QuotientGroup.mk g) :=
+  DFunLike.congr_fun
+    (D.weylSubgroup_hom_ext
+      (h₁ := (D.ringWeylProjection B).comp (D.weylSubgroupMap f))
+      (h₂ := D.ringWeylProjection A)
+      (fun s => by
+        have hsub : D.weylSubgroupMap f
+            ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ =
+            ⟨D.torusPoints B (fun j => Units.map f.toMonoidHom (s j)),
+              D.torusPoints_mem_weylSubgroup B _⟩ := Subtype.ext (D.map_torusPoints f s)
+        simp only [MonoidHom.comp_apply, hsub, D.ringWeylProjection_torusPoints])
+      (fun i => by
+        have hsub : D.weylSubgroupMap f
+            ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ =
+            ⟨D.weylElement (t.simpleIndex ht i) B 1, D.weylElement_mem_weylSubgroup B i⟩ :=
+          Subtype.ext (D.map_weylElement_one f _)
+        simp only [MonoidHom.comp_apply, hsub, D.ringWeylProjection_weylElement])) g
+
+/-- Over a field, the Weyl-quotient isomorphism sends the coset of `g ∈ N(k)` to
+`D.weylProjection k g`. -/
+@[simp]
+theorem weylQuotientMulEquiv_mk (k : Type v) [Field k] (g : D.weylSubgroup k) :
+    D.weylQuotientMulEquiv k (QuotientGroup.mk g) = D.weylProjection k g :=
+  DFunLike.congr_fun
+    (D.weylSubgroup_hom_ext
+      (h₁ := D.ringWeylProjection k)
+      (h₂ := D.weylProjection k)
+      (fun s => (D.ringWeylProjection_torusPoints k s).trans
+        (D.weylProjection_torusPoints k s).symm)
+      (fun i => (D.ringWeylProjection_weylElement k i).trans
+        (D.weylProjection_weylElement k i).symm))
+    g
+
+end WeylQuotient
 
 end TauCeti.DynkinType.ChevalleyDatum
