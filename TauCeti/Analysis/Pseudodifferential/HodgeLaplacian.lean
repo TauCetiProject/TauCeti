@@ -46,8 +46,6 @@ The Laplacian of the adjoint sequence `b†`, `a†` is the same symbol
 
 public section
 
-open scoped InnerProductSpace
-
 namespace TauCeti
 
 namespace HomogeneousSymbol
@@ -85,20 +83,10 @@ exact at every nonzero frequency. -/
 theorem exact_of_isElliptic_hodgeLaplacian (hba : b.comp a = 0)
     (h : (a.hodgeLaplacian b).IsElliptic) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     Function.Exact (a.coefficient (x, ξ)) (b.coefficient (x, ξ)) := by
-  set A := a.coefficient (x, ξ)
-  set B := b.coefficient (x, ξ)
-  have hBA : B ∘L A = 0 := by simpa [A, B] using congrFun (congrArg coefficient hba) (x, ξ)
-  refine LinearMap.exact_of_comp_of_mem_range
-    (by simpa using congrArg ContinuousLinearMap.toLinearMap hBA) fun v hv ↦ ?_
-  obtain ⟨w, hw⟩ := (isElliptic_iff.1 h x ξ hξ).surjective v
-  rw [coefficient_hodgeLaplacian, ContinuousLinearMap.hodgeLaplacian_apply] at hw
-  have hBBw : B (ContinuousLinearMap.adjoint B (B w)) = 0 := by
-    simpa [A, B, ← ContinuousLinearMap.comp_apply B A, hBA, show B v = 0 from hv] using
-      congrArg B hw
-  have hBw : ContinuousLinearMap.adjoint B (B w) = 0 :=
-    inner_self_eq_zero (𝕜 := ℂ).1
-      (by rw [ContinuousLinearMap.adjoint_inner_left, hBBw, inner_zero_right])
-  exact ⟨ContinuousLinearMap.adjoint A w, by simpa [A, B, hBw] using hw⟩
+  refine (a.coefficient (x, ξ)).exact_of_surjective_hodgeLaplacian (b.coefficient (x, ξ)) ?_ ?_
+  · simpa using congrFun (congrArg coefficient hba) (x, ξ)
+  · rw [← coefficient_hodgeLaplacian]
+    exact (isElliptic_iff.1 h x ξ hξ).surjective
 
 end CompleteSpace
 
