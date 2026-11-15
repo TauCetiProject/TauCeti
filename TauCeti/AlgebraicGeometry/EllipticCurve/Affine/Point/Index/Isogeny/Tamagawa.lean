@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.RealPeriod
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 
 import Mathlib.Algebra.FiniteSupport.Basic
@@ -17,6 +17,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.AdicCompletion
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
@@ -150,14 +151,13 @@ private theorem valued_ne_zero_of_pullbackDifferential_eq_smul (v : HeightOneSpe
     (hc : φ.pullbackDifferential (Affine.invariantDifferential W₂.toAffine) =
       c • Affine.invariantDifferential W₁.toAffine)
     (hφ : (φ.degree : R) ≠ 0) : Valued.v c ≠ 0 := by
-  obtain ⟨e, hne⟩ := v.exists_span_algebraMap_adicCompletionIntegers_eq_maximalIdeal_pow (K := K) hφ
-  rw [map_natCast] at hne
   obtain ⟨c', hc', -⟩ := φ.dual.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
-  have hcc' : Valued.v c * Valued.v c' = WithZero.exp (-(e : ℤ)) := by
-    rw [← map_mul, φ.mul_eq_degree_of_pullbackDifferential_eq_smul hc hc',
-      ← v.valued_eq_exp_neg_of_span_eq_maximalIdeal_pow hne]
-    simp
-  exact left_ne_zero_of_mul (hcc' ▸ WithZero.exp_ne_zero)
+  have hdeg : (φ.degree : v.adicCompletion K) ≠ 0 := by
+    rw [← map_natCast (algebraMap K (v.adicCompletion K)), ← map_natCast (algebraMap R K)]
+    exact (algebraMap K (v.adicCompletion K)).injective.ne
+      ((FaithfulSMul.algebraMap_eq_zero_iff R K).not.mpr hφ)
+  exact (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).ne_zero_iff.mpr <|
+    left_ne_zero_of_mul <| by rwa [φ.mul_eq_degree_of_pullbackDifferential_eq_smul hc hc']
 
 /-- Auxiliary form of `zpow_natCard_mul_kummerRatio_mul_tamagawaNumber_of_isMinimal` for curves
 already presented as base changes from `v.adicCompletionIntegers K`. -/
@@ -292,20 +292,6 @@ section FinitePlace
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Ring.HasFiniteQuotients R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- At a height-one prime `v` of `R`, the residue-cardinality power `(#κ(v)) ^ log (v x)` of a
-nonzero element `x ∈ K` equals its normalised `v`-adic absolute value `adicAbv K v x`. -/
-private theorem zpow_natCard_residueField_eq_adicAbv (v : HeightOneSpectrum R) {x : K}
-    (hx : x ≠ 0) :
-    (Nat.card 𝓀[v.adicCompletion K] : ℝ) ^
-        WithZero.log (Valued.v (algebraMap K (v.adicCompletion K) x)) =
-      NumberField.HeightOneSpectrum.adicAbv K v x := by
-  rw [NumberField.HeightOneSpectrum.adicAbv_def,
-    WithZeroMulInt.toNNReal_neg_apply _ ((v.valuation K).ne_zero_iff.mpr hx),
-    v.natCard_residueField_adicCompletion_eq_absNorm, algebraMap_adicCompletion,
-    Function.comp_apply, valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
-  push_cast
-  rfl
-
 /-- **The finite-place Kummer ratio and Tamagawa number under an isogeny.** Let `φ : E₁ → E₂` be an
 isogeny over `K` with `φ^*ω₂ = c ω₁`, and let `C₁`, `C₂` carry `E₁`, `E₂` to minimal equations at
 `v`. If `2 ≠ 0` in `K` and `deg φ` is nonzero in `R`, then
@@ -358,7 +344,16 @@ theorem adicAbv_mul_finiteKummerRatio_mul_tamagawaNumberAt
   rw [hval, hkr, ← E₁.tamagawaNumberAt_def v, ← E₂.tamagawaNumberAt_def v] at hloc
   have hlocR := congrArg (Rat.cast (K := ℝ)) hloc
   push_cast at hlocR
-  rwa [← zpow_natCard_residueField_eq_adicAbv v hq0]
+  have hadic : (Nat.card 𝓀[v.adicCompletion K] : ℝ) ^
+      WithZero.log (Valued.v (algebraMap K (v.adicCompletion K) (c * C₂.u / C₁.u))) =
+      NumberField.HeightOneSpectrum.adicAbv K v (c * C₂.u / C₁.u) := by
+    rw [NumberField.HeightOneSpectrum.adicAbv_def,
+      WithZeroMulInt.toNNReal_neg_apply _ ((v.valuation K).ne_zero_iff.mpr hq0),
+      v.natCard_residueField_adicCompletion_eq_absNorm, algebraMap_adicCompletion,
+      Function.comp_apply, valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+    push_cast
+    rfl
+  rwa [← hadic]
 
 /-- **The finite-place Kummer ratio and Tamagawa number between globally minimal equations.** If
 `φ : E₁ → E₂` is an isogeny between globally minimal equations over `R` with `φ^*ω₂ = c ω₁`,
@@ -429,27 +424,8 @@ theorem abs_mul_realKummerRatio_mul_minimalRealPeriod_of_isGlobalMinimal
       c • Affine.invariantDifferential E₁.toAffine)
     (h₁ : IsGlobalMinimal ℤ E₁) (h₂ : IsGlobalMinimal ℤ E₂) :
     |(c : ℝ)| * (φ.realKummerRatio : ℝ) * E₁.minimalRealPeriod = E₂.minimalRealPeriod := by
-  classical
-  have h := abs_mul_minimalRealPeriod_mul_index_eq_card_ker_mul_of_isGlobalMinimal φ hc h₁ h₂
-  have := (Hom.ofIsogeny (φ.baseChange ℝ)).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero _)
-  have hker : (Nat.card (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.ker : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  have hkr : (φ.realKummerRatio : ℝ) =
-      ((Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.range.index : ℝ) /
-        Nat.card (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.ker := by
-    rw [realKummerRatio_def, kummerRatio_def]
-    push_cast
-    rfl
-  rw [hkr]
-  calc |(c : ℝ)| *
-        (((Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.range.index : ℝ) /
-          Nat.card (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.ker) * E₁.minimalRealPeriod
-      = (|(c : ℝ)| * E₁.minimalRealPeriod *
-          (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.range.index) /
-          Nat.card (Hom.ofIsogeny (φ.baseChange ℝ)).pointMapHom.ker := by ring
-    _ = E₂.minimalRealPeriod := by
-        rw [h]
-        field_simp [hker]
+  simpa using abs_mul_realKummerRatio_mul_minimalRealPeriod φ hc
+    (C₁ := 1) (C₂ := 1) (by simpa using h₁) (by simpa using h₂)
 
 /-- Equivalence between height-one primes of `ℤ` and `NumberField.FinitePlace ℚ`. -/
 private noncomputable def finitePlaceRatEquiv :
@@ -503,12 +479,6 @@ private theorem abs_mul_finprod_adicAbv_rat {q : ℚ} (hq : q ≠ 0) :
     NumberField.FinitePlace.prod_eq_inv_abs_norm hq, Algebra.norm_self, MonoidHom.id_apply,
     Rat.cast_inv, Rat.cast_abs, mul_inv_cancel₀ (abs_ne_zero.mpr (Rat.cast_ne_zero.mpr hq))]
 
-/-- Transport `IsGlobalMinimal` across equality of elliptic Weierstrass equations. -/
-private theorem isGlobalMinimal_of_eq {W₁ W₂ : WeierstrassCurve ℚ} [W₁.IsElliptic] [W₂.IsElliptic]
-    (h : W₁ = W₂) (hW₂ : IsGlobalMinimal ℤ W₂) : IsGlobalMinimal ℤ W₁ := by
-  subst h
-  exact hW₂
-
 /-- Multiplying the finite-place identities over all `v : HeightOneSpectrum ℤ` relates the global
 Tamagawa products of `E₁` and `E₂`. -/
 private theorem finprod_adicAbv_mul_finiteKummerRatio_mul_tamagawaProduct
@@ -561,8 +531,10 @@ theorem kummerRatioProduct_mul_minimalRealPeriod_mul_tamagawaProduct
       E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ) := by
   obtain ⟨C₁, hC₁⟩ := exists_smul_eq_reducedMinimalModel E₁
   obtain ⟨C₂, hC₂⟩ := exists_smul_eq_reducedMinimalModel E₂
-  have hGM₁ := isGlobalMinimal_of_eq hC₁ (isReducedMinimal_reducedMinimalModel E₁).isGlobalMinimal
-  have hGM₂ := isGlobalMinimal_of_eq hC₂ (isReducedMinimal_reducedMinimalModel E₂).isGlobalMinimal
+  have hGM₁ : IsGlobalMinimal ℤ (C₁ • E₁) := by
+    simpa [hC₁] using (isReducedMinimal_reducedMinimalModel E₁).isGlobalMinimal
+  have hGM₂ : IsGlobalMinimal ℤ (C₂ • E₂) := by
+    simpa [hC₂] using (isReducedMinimal_reducedMinimalModel E₂).isGlobalMinimal
   obtain ⟨c, hc, -⟩ := φ.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
   obtain ⟨c', hc', -⟩ := φ.dual.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
   have hc0 : c ≠ 0 := left_ne_zero_of_mul <| by

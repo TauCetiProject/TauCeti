@@ -92,17 +92,6 @@ theorem isMinimal_adicCompletion_iff (v : HeightOneSpectrum R)
     (inferInstance : IsDiscreteValuationRing (v.adicCompletionIntegers K))
   rfl
 
-/-- An element of `K` comes from the localisation at `v` if and only if its image in `K_v` lies in
-`v.adicCompletionIntegers K`. -/
-private theorem exists_localizationAtPrime_iff_mem_adicCompletionIntegers
-    (v : HeightOneSpectrum R) (x : K) :
-    (∃ r : Localization.AtPrime v.asIdeal, algebraMap _ K r = x) ↔
-      algebraMap K (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
-  have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
-  rw [mem_adicCompletionIntegers, algebraMap_adicCompletion, Function.comp_apply,
-    valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
-  exact ⟨fun ⟨r, hr⟩ ↦ hr ▸ hv.map_le_one r, fun hx ↦ hv.exists_of_le_one hx⟩
-
 /-- A Weierstrass equation over `K` is integral over `Localization.AtPrime v.asIdeal` if and only
 if its base change to `K_v` is integral over `v.adicCompletionIntegers K`. -/
 theorem isIntegral_localizationAtPrime_iff_adicCompletionIntegers
@@ -113,7 +102,14 @@ theorem isIntegral_localizationAtPrime_iff_adicCompletionIntegers
       (∃ r : Localization.AtPrime v.asIdeal, algebraMap _ K r = x) ↔
         ∃ r : v.adicCompletionIntegers K,
           algebraMap _ (v.adicCompletion K) r = algebraMap K (v.adicCompletion K) x := by
-    rw [exists_localizationAtPrime_iff_mem_adicCompletionIntegers]
+    have hv :=
+      v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
+    have hmem : (∃ r : Localization.AtPrime v.asIdeal, algebraMap _ K r = x) ↔
+        algebraMap K (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
+      rw [mem_adicCompletionIntegers, algebraMap_adicCompletion, Function.comp_apply,
+        valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+      exact ⟨fun ⟨r, hr⟩ ↦ hr ▸ hv.map_le_one r, fun hx ↦ hv.exists_of_le_one hx⟩
+    rw [hmem]
     exact ⟨fun hx ↦ ⟨⟨_, hx⟩, rfl⟩, fun ⟨r, hr⟩ ↦ hr ▸ r.2⟩
   refine ⟨fun _ ↦ isIntegral_of_exists_lift _
       ((lift W.a₁).mp ⟨_, integralModel_a₁_eq _ W⟩)
@@ -163,7 +159,7 @@ private theorem exists_variableChange_isIntegral_and_valued_Δ_eq
     (C_v : VariableChange (v.adicCompletion K))
     [IsIntegral (v.adicCompletionIntegers K) (C_v • W.baseChange (v.adicCompletion K))] :
     ∃ C : VariableChange K, IsIntegral (Localization.AtPrime v.asIdeal) (C • W) ∧
-      Valued.v (algebraMap K (v.adicCompletion K) (C • W).Δ) =
+      Valued.v ((C • W).baseChange (v.adicCompletion K)).Δ =
         Valued.v (C_v • W.baseChange (v.adicCompletion K)).Δ := by
   let K_v := v.adicCompletion K
   let P := invVariableChangeCurve (W.baseChange K_v)
@@ -239,9 +235,7 @@ theorem isMinimal_localizationAtPrime_iff_adicCompletionIntegers
     rw [one_smul, ← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral _ (C_v • _),
       valuation_Δ_aux_eq_of_isIntegral _ (W.baseChange (v.adicCompletion K)), hΔ W,
       valuation_maximalIdeal_adicCompletionIntegers, ← hval,
-      ← valuation_maximalIdeal_adicCompletionIntegers,
-      show algebraMap K (v.adicCompletion K) (C • W).Δ =
-        ((C • W).baseChange (v.adicCompletion K)).Δ by simp [baseChange], hΔ (C • W)]
+      ← valuation_maximalIdeal_adicCompletionIntegers, hΔ (C • W)]
     exact valuation_Δ_le_of_isMinimal_smul (Localization.AtPrime v.asIdeal) C rfl
   · have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
       (isIntegral_localizationAtPrime_iff_adicCompletionIntegers v W).mpr inferInstance
