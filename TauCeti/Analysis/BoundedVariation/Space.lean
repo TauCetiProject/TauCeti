@@ -184,6 +184,13 @@ theorem totalVariationOn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
     totalVariationOn μ Ω (ofFunction u hu) = totalVariationOn μ Ω u :=
   totalVariationOn_congr_ae (coeFn_ofFunction u hu)
 
+/-- The `L¹` norm of the BV class constructed from a function is the integral of its norm
+over `Ω`. -/
+theorem norm_toL1_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
+    ‖(ofFunction u hu).toL1‖ = ∫ x in Ω, ‖u x‖ ∂μ := by
+  rw [L1.norm_eq_integral_norm]
+  exact integral_congr_ae ((coeFn_ofFunction u hu).mono fun x hx => by simp only [hx])
+
 /-- Reconstructing a BV class from its representative gives the original class. -/
 @[simp]
 theorem ofFunction_coeFn (u : BV μ Ω) : ofFunction u u.memBV = u :=
