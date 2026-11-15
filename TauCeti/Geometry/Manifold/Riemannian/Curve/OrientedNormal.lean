@@ -18,8 +18,7 @@ by `+π/2` in the oriented tangent plane and divided by its speed, `ν = J γ' /
 points it is a unit vector orthogonal to the velocity, and the oriented area of the pair
 `(γ', ν)` is the speed, so `ν` points to the left of `γ` with respect to the orientation. Along a
 positively oriented boundary curve of a domain it is the inward normal. It vanishes where the
-velocity does, increasing reparametrizations do not change it, and reversing the curve reverses
-it.
+velocity does, and reversing the curve reverses it.
 
 ## Main results
 
@@ -30,7 +29,7 @@ it.
 * `TauCeti.Manifold.riemannianVolumeForm_curveVelocity_orientedUnitNormal`: the oriented area of
   the velocity and the normal is the speed.
 * `TauCeti.Manifold.orientedUnitNormal_comp`: reparametrization multiplies the normal by the
-  sign of its derivative, with positive and negative derivative specializations.
+  sign of the derivative.
 * `TauCeti.Manifold.orientedUnitNormal_comp_const_sub`: reversing the curve reverses the normal.
 
 ## References
@@ -104,6 +103,16 @@ theorem riemannianVolumeForm_curveVelocity_orientedUnitNormal
   · simp [h]
   · field_simp
 
+/-- Under a differentiable reparametrization the oriented unit normal is multiplied by the
+sign of its derivative. A zero derivative gives the zero normal. -/
+theorem orientedUnitNormal_comp (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) (hφ : DifferentiableAt ℝ φ t) :
+    orientedUnitNormal o (γ ∘ φ) t =
+      (SignType.sign (deriv φ t) : ℝ) • orientedUnitNormal o γ (φ t) := by
+  let := o.fact_finrank_tangentSpace (γ (φ t))
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply,
+    curveVelocity_comp hφ.hasDerivAt hγ, NormedSpace.normalize_smul, map_smul, Function.comp_apply]
+
 /-- Reversing a curve reverses its oriented unit normal. -/
 theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
     orientedUnitNormal o (fun r ↦ γ (d - r)) t = -orientedUnitNormal o γ (d - t) := by
@@ -117,26 +126,20 @@ theorem _root_.Filter.EventuallyEq.orientedUnitNormal_eq
     orientedUnitNormal o γ t = orientedUnitNormal o η t := by
   rw [orientedUnitNormal_apply, orientedUnitNormal_apply, h.self_of_nhds, h.curveVelocity_eq]
 
-/-- Reparametrization multiplies the oriented unit normal by the sign of its derivative. -/
-theorem orientedUnitNormal_comp (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
-    {c t : ℝ} (hφ : HasDerivAt φ c t) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
-    orientedUnitNormal o (γ ∘ φ) t = (SignType.sign c : ℝ) • orientedUnitNormal o γ (φ t) := by
-  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp hφ hγ,
-    NormedSpace.normalize_smul, map_smul]
-  simp only [Function.comp_apply]
-
 /-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
 at `t`. -/
 theorem orientedUnitNormal_comp_of_pos (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
     {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : 0 < c) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
     orientedUnitNormal o (γ ∘ φ) t = orientedUnitNormal o γ (φ t) := by
-  simpa [hc] using orientedUnitNormal_comp o hφ hγ
+  simpa [hφ.deriv, hc] using
+    orientedUnitNormal_comp o hγ hφ.differentiableAt
 
 /-- A reparametrization with negative derivative at a parameter reverses the oriented unit normal
 there. -/
 theorem orientedUnitNormal_comp_of_neg (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
     {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : c < 0) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
     orientedUnitNormal o (γ ∘ φ) t = -orientedUnitNormal o γ (φ t) := by
-  simpa [hc] using orientedUnitNormal_comp o hφ hγ
+  simpa [hφ.deriv, hc] using
+    orientedUnitNormal_comp o hγ hφ.differentiableAt
 
 end TauCeti.Manifold
