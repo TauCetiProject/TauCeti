@@ -24,9 +24,16 @@ this lower bound is equivalent to stability.
   uniformly bounded below.
 * `TauCeti.isStableSequence_iff_exists_forall_norm_le`: for operators on finite-dimensional
   spaces, stability is an eventual uniform lower bound.
+* `TauCeti.isStableSequence_continuousLinearEquiv_comp_iff`: stability is invariant under
+  uniformly bounded invertible coordinate changes with uniformly bounded inverses.
+* `TauCeti.conditionNumber_linearIsometryEquiv_comp` and
+  `TauCeti.isStableSequence_linearIsometryEquiv_comp_iff`: isometric equivalences preserve
+  operator condition numbers and sequence stability.
 
 ## References
 
+* A. Böttcher, *C\*-Algebras in Numerical Analysis*, Irish Math. Soc. Bull. 45 (2000), 57–101,
+  Sections 1 and 7.
 * A. Böttcher and B. Silbermann, *Introduction to Large Truncated Toeplitz Matrices*,
   Section 1.4, for stability of approximating sequences.
 -/
@@ -39,8 +46,52 @@ namespace TauCeti
 
 section Operator
 
-variable {𝕜 : Type*} {E : ℕ → Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
+section Single
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Transporting an operator on both sides by linear isometric equivalences preserves its condition
+number. -/
+@[simp]
+theorem conditionNumber_linearIsometryEquiv_comp (e₁ : F ≃ₗᵢ[𝕜] E) (e₂ : E ≃ₗᵢ[𝕜] F)
+    (T : E →L[𝕜] E) :
+    conditionNumber ((e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)) = conditionNumber T := by
+  set B : F →L[𝕜] F := (e₂ : E →L[𝕜] F) ∘L T ∘L (e₁ : F →L[𝕜] E)
+  by_cases hT : IsUnit T
+  · let B' : F →L[𝕜] F :=
+      (e₁.symm : E →L[𝕜] F) ∘L Ring.inverse T ∘L (e₂.symm : F →L[𝕜] E)
+    let u : (F →L[𝕜] F)ˣ :=
+      { val := B
+        inv := B'
+        val_inv := ContinuousLinearMap.ext fun y ↦ by
+          simp [B, B', ContinuousLinearMap.apply_ringInverse_apply hT]
+        inv_val := ContinuousLinearMap.ext fun y ↦ by
+          simp [B, B', ContinuousLinearMap.ringInverse_apply_apply hT] }
+    have hinv : Ring.inverse B = B' := Ring.inverse_unit u
+    rw [conditionNumber_def, hinv, conditionNumber_def]
+    simp only [B, B', ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+      ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+  · have hB : ¬IsUnit B := fun hu ↦ hT <| by
+      let A' : E →L[𝕜] E :=
+        (e₁ : F →L[𝕜] E) ∘L Ring.inverse B ∘L (e₂ : E →L[𝕜] F)
+      exact ⟨{ val := T
+               inv := A'
+               val_inv := ContinuousLinearMap.ext fun x ↦ by
+                 have := ContinuousLinearMap.apply_ringInverse_apply hu (e₂ x)
+                 simpa [B, A'] using congrArg e₂.symm this
+               inv_val := ContinuousLinearMap.ext fun x ↦ by
+                 have := ContinuousLinearMap.ringInverse_apply_apply hu (e₁.symm x)
+                 simpa [B, A'] using congrArg e₁ this }, rfl⟩
+    rw [conditionNumber_of_not_isUnit hB, conditionNumber_of_not_isUnit hT]
+
+end Single
+
+variable {E F : ℕ → Type*}
   [∀ n, NormedAddCommGroup (E n)] [∀ n, NormedSpace 𝕜 (E n)]
+  [∀ n, NormedAddCommGroup (F n)] [∀ n, NormedSpace 𝕜 (F n)]
 
 /-- The members of a stable sequence of operators are eventually uniformly bounded below. -/
 theorem IsStableSequence.exists_forall_norm_le {A : ∀ n, E n →L[𝕜] E n}
@@ -66,6 +117,76 @@ theorem isStableSequence_iff_exists_forall_norm_le [∀ n, FiniteDimensional �
   have hunit : IsUnit (A n) := ⟨(ContinuousLinearEquiv.unitsEquiv 𝕜 (E n)).symm e', he'⟩
   exact ⟨hunit, ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le
     (le_max_right _ _) h'⟩
+
+/-- Stability of an operator sequence passes across two-sided continuous linear equivalences when
+the norms entering the inverse `e₁⁻¹ ∘ A⁻¹ ∘ e₂⁻¹` are eventually bounded. -/
+theorem IsStableSequence.continuousLinearEquiv_comp {e₁ : ∀ n, F n ≃L[𝕜] E n}
+    {e₂ : ∀ n, E n ≃L[𝕜] F n} {A : ∀ n, E n →L[𝕜] E n} (hA : IsStableSequence A)
+    (he₁ : ∃ C₁ : ℝ, ∀ᶠ n in atTop, ‖((e₁ n).symm : E n →L[𝕜] F n)‖ ≤ C₁)
+    (he₂ : ∃ C₂ : ℝ, ∀ᶠ n in atTop, ‖((e₂ n).symm : F n →L[𝕜] E n)‖ ≤ C₂) :
+    IsStableSequence (fun n ↦ (e₂ n : E n →L[𝕜] F n) ∘L A n ∘L (e₁ n : F n →L[𝕜] E n)) := by
+  obtain ⟨M, hM⟩ := (isStableSequence_def _).mp hA
+  obtain ⟨C₁, hC₁⟩ := he₁
+  obtain ⟨C₂, hC₂⟩ := he₂
+  refine (isStableSequence_def _).mpr
+    ⟨C₁ * (max M 0 * C₂), (hM.and (hC₁.and hC₂)).mono fun n ⟨⟨hu, hn⟩, hn₁, hn₂⟩ ↦ ?_⟩
+  let B : F n →L[𝕜] F n := (e₂ n : E n →L[𝕜] F n) ∘L A n ∘L (e₁ n : F n →L[𝕜] E n)
+  let B' : F n →L[𝕜] F n :=
+    ((e₁ n).symm : E n →L[𝕜] F n) ∘L Ring.inverse (A n) ∘L ((e₂ n).symm : F n →L[𝕜] E n)
+  let u : (F n →L[𝕜] F n)ˣ :=
+    { val := B
+      inv := B'
+      val_inv := ContinuousLinearMap.ext fun y ↦ by
+        simp [B, B', ContinuousLinearMap.apply_ringInverse_apply hu]
+      inv_val := ContinuousLinearMap.ext fun y ↦ by
+        simp [B, B', ContinuousLinearMap.ringInverse_apply_apply hu] }
+  have hinv : Ring.inverse B = B' := Ring.inverse_unit u
+  refine ⟨⟨u, rfl⟩, ?_⟩
+  rw [hinv]
+  have hM0 : ‖Ring.inverse (A n)‖ ≤ max M 0 := hn.trans (le_max_left _ _)
+  have hC₁0 : 0 ≤ C₁ := (norm_nonneg _).trans hn₁
+  calc
+    ‖B'‖ ≤ ‖((e₁ n).symm : E n →L[𝕜] F n)‖ *
+        ‖Ring.inverse (A n) ∘L ((e₂ n).symm : F n →L[𝕜] E n)‖ :=
+      ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ ‖((e₁ n).symm : E n →L[𝕜] F n)‖ *
+        (‖Ring.inverse (A n)‖ * ‖((e₂ n).symm : F n →L[𝕜] E n)‖) :=
+      mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _)
+    _ ≤ C₁ * (max M 0 * C₂) :=
+      mul_le_mul hn₁ (mul_le_mul hM0 hn₂ (norm_nonneg _) (le_max_right _ _))
+        (mul_nonneg (norm_nonneg _) (norm_nonneg _)) hC₁0
+
+/-- Uniformly bounded invertible coordinate changes with uniformly bounded inverses preserve
+stability of operator sequences. -/
+theorem isStableSequence_continuousLinearEquiv_comp_iff {e₁ : ∀ n, F n ≃L[𝕜] E n}
+    {e₂ : ∀ n, E n ≃L[𝕜] F n} {A : ∀ n, E n →L[𝕜] E n}
+    (he₁ : ∃ C₁ : ℝ, ∀ᶠ n in atTop, ‖(e₁ n : F n →L[𝕜] E n)‖ ≤ C₁)
+    (he₁' : ∃ C₁' : ℝ, ∀ᶠ n in atTop, ‖((e₁ n).symm : E n →L[𝕜] F n)‖ ≤ C₁')
+    (he₂ : ∃ C₂ : ℝ, ∀ᶠ n in atTop, ‖(e₂ n : E n →L[𝕜] F n)‖ ≤ C₂)
+    (he₂' : ∃ C₂' : ℝ, ∀ᶠ n in atTop, ‖((e₂ n).symm : F n →L[𝕜] E n)‖ ≤ C₂') :
+    IsStableSequence (fun n ↦ (e₂ n : E n →L[𝕜] F n) ∘L A n ∘L (e₁ n : F n →L[𝕜] E n)) ↔
+      IsStableSequence A := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.continuousLinearEquiv_comp he₁' he₂'⟩
+  have h' := h.continuousLinearEquiv_comp (e₁ := fun n ↦ (e₁ n).symm)
+    (e₂ := fun n ↦ (e₂ n).symm) he₁ he₂
+  refine h'.congr (Eventually.of_forall fun n ↦ ?_)
+  ext x
+  simp
+
+/-- Transporting a sequence of operators on both sides by linear isometric equivalences preserves
+stability. -/
+@[simp]
+theorem isStableSequence_linearIsometryEquiv_comp_iff
+    (e₁ : ∀ n, F n ≃ₗᵢ[𝕜] E n) (e₂ : ∀ n, E n ≃ₗᵢ[𝕜] F n) {A : ∀ n, E n →L[𝕜] E n} :
+    IsStableSequence (fun n ↦ (e₂ n : E n →L[𝕜] F n) ∘L A n ∘L (e₁ n : F n →L[𝕜] E n)) ↔
+      IsStableSequence A :=
+  isStableSequence_continuousLinearEquiv_comp_iff
+    (e₁ := fun n ↦ (e₁ n).toContinuousLinearEquiv)
+    (e₂ := fun n ↦ (e₂ n).toContinuousLinearEquiv)
+    ⟨1, Eventually.of_forall fun n ↦ (e₁ n).toLinearIsometry.norm_toContinuousLinearMap_le⟩
+    ⟨1, Eventually.of_forall fun n ↦ (e₁ n).symm.toLinearIsometry.norm_toContinuousLinearMap_le⟩
+    ⟨1, Eventually.of_forall fun n ↦ (e₂ n).toLinearIsometry.norm_toContinuousLinearMap_le⟩
+    ⟨1, Eventually.of_forall fun n ↦ (e₂ n).symm.toLinearIsometry.norm_toContinuousLinearMap_le⟩
 
 end Operator
 
