@@ -34,12 +34,9 @@ The topology is induced by `u ↦ u - 1 ∈ H^s(ℂ)`, so it is that of the dist
 (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`). The product law is polynomial,
 and continuous for the `H^s` norm because pointwise multiplication is a continuous bilinear map on
 `H^s(ℂ)`, `s > 1` (`BesselPotentialSpace.mulCLM`). Inversion is continuous without discussing
-complex conjugation on `H^s`: near each `v`, the distance `‖u⁻¹ - v⁻¹‖_{H^s}` is bounded linearly
-in `‖u - v‖_{H^s}`, and only the algebra structure of `H^s(ℂ)` enters. The element `w = u⁻¹ - 1`
-is the quasi-inverse of `h = u - 1`, `h + w + h w = 0`. If `c`, `w₀` are the coordinates of `v`,
-`v⁻¹`, and `δ`, `ε` are the differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the
-quasi-inverse relations give `ε + c ε = X` with `X = -δ - δ w`, and multiplying by `1 + w₀`, the
-inverse of `1 + c` coming from the quasi-inverse `w₀` of `c`, gives `ε = X + w₀ X`.
+complex conjugation on `H^s`: the element `u⁻¹ - 1` is the quasi-inverse of `u - 1`, and the
+algebra structure of `H^s(ℂ)` alone then bounds `‖u⁻¹ - v⁻¹‖_{H^s}` linearly in `‖u - v‖_{H^s}`
+for `u` near each `v`.
 
 ## Main definitions
 
@@ -57,9 +54,10 @@ inverse of `1 + c` coming from the quasi-inverse `w₀` of `c`, gives `ε = X + 
   `u - 1` in `H^s(ℂ)`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.norm_subOne_inv_sub_le`: a Lipschitz bound for
   inversion at a point `v`: `‖u⁻¹ - v⁻¹‖_{H^s} ≤ 2 K² ‖u - v‖_{H^s}` once `‖u - v‖_{H^s}` is small
-  compared with `K = 1 + M ‖v⁻¹ - 1‖_{H^s}`.
-* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.tendsto_subOne_inv`: if `u - 1` converges in
-  `H^s(ℂ)`, then so does `u⁻¹ - 1`.
+  compared with `K = 1 + M ‖v⁻¹ - 1‖_{H^s}`, where `M` is the norm of the multiplication
+  `BesselPotentialSpace.mulCLM` of `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.tendsto_subOne_inv`: if `u_a - 1 → u - 1` in
+  `H^s(ℂ)` for some `u ∈ G_s`, then `u_a⁻¹ - 1 → u⁻¹ - 1`.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`: the topology of `G_s` is
   induced by the injective map `u ↦ u - 1` into `H^s(ℂ)`, that is, by the distance
   `‖u - v‖_{H^s}`.
@@ -239,8 +237,8 @@ theorem norm_subOne_inv_sub_le {u v : SobolevTopologicalGaugeGroup hs}
   have h₂ := mul_le_mul_of_nonneg_right h (norm_nonneg ε)
   nlinarith [norm_nonneg δ, norm_nonneg ε]
 
-/-- **Inversion is continuous in the coordinate `u - 1` alone:** if `u - 1` converges in
-`H^s(ℂ)`, then so does `u⁻¹ - 1`. -/
+/-- **Inversion is continuous in the coordinate `u - 1` alone:** if `f a - 1 → u - 1` in
+`H^s(ℂ)` along `l` for some `u ∈ G_s`, then `(f a)⁻¹ - 1 → u⁻¹ - 1`. -/
 theorem tendsto_subOne_inv {α : Type*} {l : Filter α} {f : α → SobolevTopologicalGaugeGroup hs}
     {u : SobolevTopologicalGaugeGroup hs}
     (hf : Tendsto (fun a ↦ subOne (f a)) l (𝓝 (subOne u))) :
