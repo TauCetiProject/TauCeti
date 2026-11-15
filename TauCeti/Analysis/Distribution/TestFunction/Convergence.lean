@@ -26,8 +26,12 @@ continuously on the parameter.
 * `TestFunction.tendsto_of_tendstoUniformly_iteratedFDeriv`: test functions supported in a common
   compact subset of `Ω` whose derivatives of order at most `n` converge uniformly converge in
   `𝓓^{n}(Ω, F)`.
-* `TestFunction.continuous_of_contDiff_uncurry`: a family of test functions supported in a common
-  compact subset of `Ω` and jointly `Cⁿ` in the parameter and the point is continuous.
+* `ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv`,
+  `TestFunction.continuous_of_continuous_iteratedFDeriv`: a family of test functions supported in a
+  common compact set, whose derivatives of order at most `n` are jointly continuous in the
+  parameter and the point, is continuous.
+* `TestFunction.continuous_of_contDiff_uncurry`: in particular, so is a family of test functions
+  supported in a common compact subset of `Ω` and jointly `Cⁿ` in the parameter and the point.
 
 ## References
 
@@ -92,6 +96,62 @@ theorem tendsto_of_tendstoUniformly_iteratedFDeriv {ι : Type*} {l : Filter ι}
     simp [ψK]
   rwa [hφ, hψ] at ht
 
+/-- **Continuity of families with continuous jets.** Let `φ y`, for `y` in a topological space
+`Y`, be `Cⁿ` functions supported in a compact set `K`. If for every order `k ≤ n` the `k`-th
+derivative `(y, x) ↦ D^k (φ y) x` is jointly continuous, then `y ↦ φ y` is continuous for the
+topology of `𝓓^{n}_{K}(E, F)`. -/
+theorem _root_.ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv {Y : Type*}
+    [TopologicalSpace Y] {K : Compacts E} {φ : Y → 𝓓^{n}_{K}(E, F)}
+    (hφ : ∀ k : ℕ, (k : ℕ∞) ≤ n → Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (φ p.1) p.2) :
+    Continuous φ := by
+  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
+  refine ((ContDiffMapSupportedIn.withSeminorms ℝ E F n K).tendsto_nhds φ (φ y₀)).2
+    fun k ε hε ↦ ?_
+  by_cases hk : (k : ℕ∞) ≤ n
+  swap
+  · refine Eventually.of_forall fun y ↦ lt_of_le_of_lt ?_ hε
+    exact (ContDiffMapSupportedIn.seminorm_le_iff ℝ le_rfl k (φ y - φ y₀)).2 fun h ↦ absurd h hk
+  -- By the tube lemma, the `k`-th derivatives converge uniformly on `K`: near each `(y₀, x)`,
+  -- the `k`-th derivative at `y` is `ε / 2`-close to the one at `y₀`.
+  have hclose : ∀ x ∈ (K : Set E), ∀ᶠ p : Y × E in 𝓝 (y₀, x),
+      ‖iteratedFDeriv ℝ k (φ p.1) p.2 - iteratedFDeriv ℝ k (φ y₀) p.2‖ < ε / 2 := by
+    intro x _
+    have hc : Continuous fun p : Y × E ↦
+        iteratedFDeriv ℝ k (φ p.1) p.2 - iteratedFDeriv ℝ k (φ y₀) p.2 :=
+      (hφ k hk).sub ((hφ k hk).comp (continuous_const.prodMk continuous_snd))
+    have h0 := hc.tendsto (y₀, x)
+    simp only [sub_self] at h0
+    exact (tendsto_norm_zero.comp h0).eventually (gt_mem_nhds (half_pos hε))
+  have hk' : (k : WithTop ℕ∞) ≤ n := by exact_mod_cast hk
+  filter_upwards [K.isCompact.eventually_forall_of_forall_eventually (P := fun y x ↦
+    ‖iteratedFDeriv ℝ k (φ y) x - iteratedFDeriv ℝ k (φ y₀) x‖ < ε / 2) hclose] with y hy
+  refine lt_of_le_of_lt ((ContDiffMapSupportedIn.seminorm_le_iff ℝ (half_pos hε).le k
+    (φ y - φ y₀)).2
+    fun _ x hx ↦ ?_) (half_lt_self hε)
+  rw [FunLike.coe_sub, iteratedFDeriv_sub_apply ((φ y).contDiff.contDiffAt.of_le hk')
+    ((φ y₀).contDiff.contDiffAt.of_le hk')]
+  exact (hy x hx).le
+
+/-- **Continuity of families of test functions with continuous jets.** Let `φ y`, for `y` in a
+topological space `Y`, be test functions on `Ω` all supported in a fixed compact subset `K` of
+`Ω`. If for every order `k ≤ n` the `k`-th derivative `(y, x) ↦ D^k (φ y) x` is jointly
+continuous, then `y ↦ φ y` is continuous for the LF topology of `𝓓^{n}(Ω, F)`. -/
+theorem continuous_of_continuous_iteratedFDeriv {Y : Type*} [TopologicalSpace Y]
+    {φ : Y → 𝓓^{n}(Ω, F)} {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    (hφK : ∀ y, tsupport (φ y) ⊆ K)
+    (hφ : ∀ k : ℕ, (k : ℕ∞) ≤ n → Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (φ p.1) p.2) :
+    Continuous φ := by
+  let K' : Compacts E := ⟨K, hK⟩
+  let φK : Y → 𝓓^{n}_{K'}(E, F) := fun y ↦
+    .of_support_subset (φ y).contDiff ((subset_tsupport _).trans (hφK y))
+  have hφK' (y : Y) : ⇑(φK y) = φ y := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  have hc : Continuous φK :=
+    ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv fun k hk ↦ by
+      simpa only [hφK'] using hφ k hk
+  refine ((continuous_ofSupportedIn hKΩ).comp hc).congr fun y ↦ ?_
+  ext x
+  simp [φK]
+
 /-- **Continuity of jointly smooth families of test functions.** Let `φ p`, for `p` in a real
 normed space `P`, be test functions on `Ω` all supported in a fixed compact subset `K` of `Ω`. If
 `(p, x) ↦ φ p x` is `Cⁿ` on `P × E`, then `p ↦ φ p` is continuous for the LF topology of
@@ -100,8 +160,7 @@ theorem continuous_of_contDiff_uncurry {P : Type*} [NormedAddCommGroup P] [Norme
     {φ : P → 𝓓^{n}(Ω, F)} {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
     (hφK : ∀ p, tsupport (φ p) ⊆ K) (hφ : ContDiff ℝ n fun q : P × E ↦ φ q.1 q.2) :
     Continuous φ := by
-  refine continuous_iff_continuousAt.2 fun p₀ ↦
-    tendsto_of_tendstoUniformly_iteratedFDeriv hK hKΩ hφK fun k hk ↦ ?_
+  refine continuous_of_continuous_iteratedFDeriv hK hKΩ hφK fun k hk ↦ ?_
   have hk' : (k : WithTop ℕ∞) ≤ n := by exact_mod_cast hk
   -- The `k`-th derivative in the point variable is the `k`-th derivative on `P × E` restricted
   -- to the directions of `E`, hence jointly continuous in `(p, x)`.
@@ -118,21 +177,7 @@ theorem continuous_of_contDiff_uncurry {P : Type*} [NormedAddCommGroup P] [Norme
     rw [h, ContinuousLinearMap.iteratedFDeriv_comp_right _ hf _ hk',
       iteratedFDeriv_comp_add_left (f := fun q : P × E ↦ φ q.1 q.2)]
     simp [L]
-  have hcont : Continuous fun q : P × E ↦ iteratedFDeriv ℝ k (φ q.1) q.2 := by
-    simp only [hD]
-    exact L.continuous.comp (hφ.continuous_iteratedFDeriv hk')
-  rw [Metric.tendstoUniformly_iff]
-  intro ε hε
-  -- Uniformly on `K` by compactness; outside `K` all the derivatives vanish.
-  obtain ⟨v, hv, hvK⟩ := hK.mem_uniformity_of_prod (f := fun p x ↦ iteratedFDeriv ℝ k (φ p) x)
-    hcont.continuousOn (Set.mem_univ p₀) (Metric.dist_mem_uniformity hε)
-  rw [nhdsWithin_univ] at hv
-  filter_upwards [hv] with p hp x
-  by_cases hx : x ∈ K
-  · rw [dist_comm]
-    exact hvK p hp x hx
-  · have hzero (q : P) : iteratedFDeriv ℝ k (φ q) x = 0 :=
-      image_eq_zero_of_notMem_tsupport fun h ↦ hx (hφK q (tsupport_iteratedFDeriv_subset k h))
-    simpa [hzero] using hε
+  simp only [hD]
+  exact L.continuous.comp (hφ.continuous_iteratedFDeriv hk')
 
 end TestFunction

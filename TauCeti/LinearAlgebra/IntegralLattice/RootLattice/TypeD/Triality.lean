@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Quaternary
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoots
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # The triality isometry of `D₄`
