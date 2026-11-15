@@ -21,6 +21,8 @@ and it is positive definite when `Mᴴ M` is, in particular when `M` has indepen
 
 ## Main results
 
+* `Matrix.conjTranspose_map_ofReal`, `Matrix.map_ofReal_mul`, `Matrix.map_re_map_ofReal`: the
+  coercion commutes with transposition and multiplication, and the real part undoes it.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
@@ -38,6 +40,22 @@ open scoped ComplexOrder
 namespace Matrix
 
 variable {l m n : Type*}
+
+/-- The conjugate transpose of a real matrix viewed as a complex matrix is its transpose. -/
+theorem conjTranspose_map_ofReal (M : Matrix m n ℝ) :
+    (M.map ((↑) : ℝ → ℂ))ᴴ = Mᵀ.map ((↑) : ℝ → ℂ) := by
+  rw [← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
+    conjTranspose_eq_transpose_of_trivial]
+
+/-- Viewing real matrices as complex matrices is multiplicative. -/
+theorem map_ofReal_mul [Fintype m] (M : Matrix l m ℝ) (N : Matrix m n ℝ) :
+    (M * N).map ((↑) : ℝ → ℂ) = M.map ((↑) : ℝ → ℂ) * N.map ((↑) : ℝ → ℂ) :=
+  Matrix.map_mul (f := Complex.ofRealHom)
+
+/-- The real part of a real matrix viewed as a complex matrix is the matrix itself. -/
+theorem map_re_map_ofReal (M : Matrix m n ℝ) : (M.map ((↑) : ℝ → ℂ)).map Complex.re = M := by
+  ext i j
+  simp
 
 /-- An orthogonal real matrix is unitary as a complex matrix. -/
 theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
