@@ -130,10 +130,12 @@ theorem MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop
   · have heq : (fun u : ℝ ↦ Complex.exp ((((-2 * π * T) * u : ℝ) : ℂ) * I) • q u) =
         (fun u : ℝ ↦ Complex.exp (((-2 * π * u * T : ℝ) : ℂ) * I) • q u) := by
       ext u
+      -- Match hi at frequency -2 * π * T to the input-first phase in the sine decomposition.
       rw [show (-2 * π * T) * u = -2 * π * u * T by ring]
     exact heq ▸ hi (-2 * π * T)
   · have heq : (fun u : ℝ ↦ Complex.exp ((((2 * π * T) * u : ℝ) : ℂ) * I) • q u) =
         (fun u : ℝ ↦ Complex.exp (((-2 * π * u * -T : ℝ) : ℂ) * I) • q u) := by
       ext u
+      -- The reflected parameter -T supplies the opposite frequency in the second phase.
       rw [show (2 * π * T) * u = -2 * π * u * -T by ring]
     exact heq ▸ hi (2 * π * T)

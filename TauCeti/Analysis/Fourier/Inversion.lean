@@ -138,12 +138,14 @@ theorem MeasureTheory.Integrable.intervalIntegral_fourierInv_fourier_eq_integral
         apply congrArg (fun r : ℝ ↦ (r : ℂ) * I)
         ring
       rw [heq]
+      -- Factor out T so the zero-frequency phase is expressed in terms of ha.
       by_cases ha : 2 * π * (x - y) = 0
       · simp [ha, show 2 * π * T * (x - y) = T * (2 * π * (x - y)) by ring]
         ring
       · rw [intervalIntegral.integral_comp_mul_right
           (fun t : ℝ ↦ Complex.exp ((t : ℂ) * I)) ha,
           neg_mul, integral_exp_mul_I_eq_sinc]
+        -- Match the endpoint times frequency returned by the scaled integral formula.
         rw [show 2 * π * T * (x - y) = T * (2 * π * (x - y)) by ring]
         simp only [Complex.real_smul]
         push_cast
@@ -207,6 +209,7 @@ private theorem window_mass {R : ℝ} (hR : 0 < R) :
   apply H'.congr'
   filter_upwards [eventually_gt_atTop (0 : ℝ)] with T hT
   dsimp only [Function.comp_apply, id_eq]
+  -- Put both endpoints in the scaled form required by the interval substitution theorem.
   rw [show 2 * π * R * T = R * (2 * π * T) by ring,
     show -(R * (2 * π * T)) = (-R) * (2 * π * T) by ring,
     ← intervalIntegral.smul_integral_comp_mul_right]
