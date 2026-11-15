@@ -198,7 +198,7 @@ private theorem setLIntegral_level_le {h : ℝ → ℝ≥0∞} (hm : ∫⁻ x, h
       (∫⁻ x in Iic t, h x).toReal - (∫⁻ x in Iic s, h x).toReal ≤ M * (φ t - φ s))
     (h0 : ∀ s, 0 ≤ φ s) (n j : ℕ) :
     ∫⁻ x in level φ n j, h x ≤ ENNReal.ofReal M / 2 ^ n := by
-  refine setLIntegral_le_of_ordConnected (ordConnected_level hφ n j) fun s hs t ht hst => ?_
+  refine (ordConnected_level hφ n j).setLIntegral_le fun s hs t ht hst => ?_
   -- The integral over `[s, t]` is the increment of the cumulative integral.
   have hfin (u : ℝ) : ∫⁻ x in Iic u, h x ≠ ∞ :=
     ne_top_of_le_ne_top hm (setLIntegral_le_lintegral _ _)

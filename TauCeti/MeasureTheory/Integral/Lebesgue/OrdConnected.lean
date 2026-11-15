@@ -20,7 +20,7 @@ particular, a common bound for the integrals over the closed subintervals bounds
 
 ## Main statements
 
-* `TauCeti.setLIntegral_le_of_ordConnected`: `∫_J h ≤ c` when `∫_{[s, t]} h ≤ c` for all
+* `Set.OrdConnected.setLIntegral_le`: `∫_J h ≤ c` when `∫_{[s, t]} h ≤ c` for all
   `s ≤ t` in `J`.
 -/
 
@@ -30,11 +30,11 @@ open MeasureTheory Set
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace Set.OrdConnected
 
 /-- The integral of `h` over an interval `J ⊆ ℝ` is at most any common bound for its integrals over
 the closed subintervals of `J`. -/
-theorem setLIntegral_le_of_ordConnected {μ : Measure ℝ} {h : ℝ → ℝ≥0∞} {J : Set ℝ}
+theorem setLIntegral_le {μ : Measure ℝ} {h : ℝ → ℝ≥0∞} {J : Set ℝ}
     (hJ : J.OrdConnected) {c : ℝ≥0∞}
     (hc : ∀ s ∈ J, ∀ t ∈ J, s ≤ t → ∫⁻ x in Icc s t, h x ∂μ ≤ c) :
     ∫⁻ x in J, h x ∂μ ≤ c := by
@@ -84,4 +84,4 @@ theorem setLIntegral_le_of_ordConnected {μ : Measure ℝ} {h : ℝ → ℝ≥0�
         · exact hc _ hq.1.1 _ hq.2.1 hle
         · simp [Icc_eq_empty_of_lt hlt]
 
-end TauCeti
+end Set.OrdConnected
