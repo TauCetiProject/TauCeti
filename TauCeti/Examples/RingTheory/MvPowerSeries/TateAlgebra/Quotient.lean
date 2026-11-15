@@ -25,20 +25,25 @@ those regimes and instantiating the strongest one:
    The identity ring isomorphism from trivially normed `ℤ_[p]` (`WithAbs AbsoluteValue.trivial`) to
    `p`-adically normed `ℤ_[p]` is contractive and bijective, yet `∑ pⁿ Xⁿ` lies in `ℤ_[p]⟨X⟩` and
    has no restricted preimage (`not_surjective_restrictedMap_trivialPadicInt`).
-2. **Uniformly `L`-bounded linear sections give open quotient maps with continuous additive lifts,
-   but fail isometry when `L > 1`.** Evaluating `f ∈ ℚ_[p]{Y/2}` at `Y = 0` and `Y = 1` gives a
-   contractive ring homomorphism `ℚ_[p]{Y/2} →+* ℚ_[p] × ℚ_[p]` with `2`-bounded additive section
-   `(u, v) ↦ u + (v - u) Y`. At every positive polyradius `c`, `restrictedMap` is therefore an open
-   quotient map with continuous additive right inverse `restrictedAddMap`, yet every preimage of
-   `(0, 1)` in `ℚ_[p]{Y/2}` has Gauss norm at least `2 > ‖(0, 1)‖`, so the induced quotient
-   equivalence is **not** an isometry (`not_isometry_quotientKerEquiv_evalZeroOne`).
+2. **Uniformly `L`-bounded linear sections yield open quotient maps with continuous additive lifts,
+   but need not give an isometric quotient.** Witnessed by `evalZeroOneHom`: evaluating
+   `f ∈ ℚ_[p]{Y/2}` at `Y = 0` and `Y = 1` gives a contractive ring homomorphism
+   `ℚ_[p]{Y/2} →+* ℚ_[p] × ℚ_[p]` with `2`-bounded additive section `interpZeroOneAddHom` sending
+   `(u, v)` to `u + (v - u) Y`. At every positive polyradius `c`, `restrictedMap` is an open
+   quotient map (`isOpenQuotientMap_restrictedMap_evalZeroOneHom`) with continuous additive right
+   inverse `restrictedAddMap` (`rightInverse_restrictedAddMap_interpZeroOneAddHom`), yet every
+   preimage of `(0, 1)` in `ℚ_[p]{Y/2}` has Gauss norm at least `2 > ‖(0, 1)‖`, so the induced
+   quotient equivalence is **not** an isometry
+   (`not_isometry_quotientKerEquivOfSurjective_restrictedMap_evalZeroOneHom`).
 3. **Quotients of Tate algebras satisfy exact Gauss-norm lifting and isometric quotient
    comparison.** Every ideal `I` of a finite-variable Tate algebra `K{Y/d}` over a complete
    ultrametric field `K` is strictly closed (`Ideal.exists_mk_eq_and_norm_eq_isRestricted_subring`).
    Consequently, for any second variable set `σ` and positive polyradius `c`, reducing coefficients
-   modulo `I` lifts restricted series with **exact** Gauss-norm equality and induces an isometric
-   quotient equivalence, and likewise lifts elements of the completed Huber algebra
-   `(K{Y/d} ⧸ I)⟨X₁, …, Xₖ⟩` with exact compared Gauss norm.
+   modulo `I` lifts restricted series with **exact** Gauss-norm equality
+   (`exists_restrictedMap_mk_eq_and_norm_eq_tateQuotient`) and induces an isometric quotient
+   equivalence (`isometry_quotientKerEquivOfSurjective_restrictedMap_mk_tateQuotient`), and likewise
+   lifts elements of the completed Huber algebra `(K{Y/d} ⧸ I)⟨X₁, …, Xₖ⟩` with exact compared Gauss
+   norm (`exists_weightedMapCompletion_eq_and_norm_eq_tateQuotient`).
 -/
 
 public section
@@ -107,9 +112,8 @@ theorem not_surjective_restrictedMap_trivialPadicInt :
       (Finsupp.equivFunOnFinite.trans
         (Equiv.funUnique Unit ℕ)).injective.tendsto_cofinite.mono_right Nat.cofinite_eq_atTop.le
     refine (hlim.comp hev).congr fun t ↦ ?_
-    simp only [Function.comp_apply, one_pow, Finsupp.prod, Finset.prod_const_one, mul_one]
-    change ‖(p : ℤ_[p])‖ ^ t () = ‖(p : ℤ_[p]) ^ t ()‖
-    rw [norm_pow]
+    simp only [Function.comp_apply, one_pow, Finsupp.prod, Finset.prod_const_one, mul_one,
+      coeff_apply g, g, norm_pow]
   obtain ⟨f, hf⟩ := hsurj ⟨g, hg⟩
   have hfnorm (t : Unit →₀ ℕ) :
       ‖coeff t (f : MvPowerSeries Unit
@@ -137,7 +141,7 @@ theorem not_surjective_restrictedMap_trivialPadicInt :
 
 end AlgebraicBijectionFailsSurjectivity
 
-section BoundedSectionFailsIsometry
+section BoundedSectionNotIsometry
 
 variable (p : ℕ) [Fact p.Prime]
 
@@ -231,37 +235,41 @@ theorem two_le_norm_of_evalZeroOneHom_eq
   rw [h1, norm_one] at hle
   linarith
 
-/-- **Uniformly `L`-bounded linear sections yield open quotient maps and continuous additive
-sections on restricted series, yet fail isometry.** At any nonempty or empty variable set `σ` and
-positive polyradius `c : σ → ℝ`, `evalZeroOneHom` induces an open quotient map with continuous
-additive right inverse `restrictedAddMap`, while its first-isomorphism equivalence is **not** an
-isometry. -/
-theorem not_isometry_quotientKerEquiv_evalZeroOne {σ : Type*} {c : σ → ℝ} [∀ i, Fact (0 < c i)] :
+/-- For every variable set `σ` and positive polyradius `c : σ → ℝ`, `evalZeroOneHom` induces an open
+quotient map on restricted power series. -/
+theorem isOpenQuotientMap_restrictedMap_evalZeroOneHom
+    {σ : Type*} {c : σ → ℝ} [∀ i, Fact (0 < c i)] :
     IsOpenQuotientMap (restrictedMap (c := c) (evalZeroOneHom p)
-        (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f)) ∧
-      Function.RightInverse (restrictedAddMap (c := c) (interpZeroOneAddHom p)
-          (norm_interpZeroOneAddHom_le p))
-        (restrictedMap (c := c) (evalZeroOneHom p)
-          (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f)) ∧
-      ¬ Isometry (RingHom.quotientKerEquivOfSurjective
-        (f := restrictedMap (c := c) (evalZeroOneHom p)
-          (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f))
-        (isOpenQuotientMap_restrictedMap (evalZeroOneHom p)
-          (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f)
-          (fun x ↦ ⟨interpZeroOneAddHom p x, rightInverse_interpZeroOneAddHom p x,
-            norm_interpZeroOneAddHom_le p x⟩)).surjective) := by
-  have hlift : ∀ x, ∃ f, evalZeroOneHom p f = x ∧ ‖f‖ ≤ 2 * ‖x‖ :=
-    fun x ↦ ⟨interpZeroOneAddHom p x, rightInverse_interpZeroOneAddHom p x,
-      norm_interpZeroOneAddHom_le p x⟩
-  refine ⟨isOpenQuotientMap_restrictedMap _ _ hlift,
-    rightInverse_restrictedAddMap _ _ _ _ (rightInverse_interpZeroOneAddHom p), ?_⟩
+      (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f)) :=
+  isOpenQuotientMap_restrictedMap (evalZeroOneHom p) _ fun x ↦
+    ⟨interpZeroOneAddHom p x, rightInverse_interpZeroOneAddHom p x, norm_interpZeroOneAddHom_le p x⟩
+
+/-- For every variable set `σ` and polyradius `c : σ → ℝ`,
+`restrictedAddMap (interpZeroOneAddHom p)` is an additive right inverse to
+`restrictedMap (evalZeroOneHom p)`. -/
+theorem rightInverse_restrictedAddMap_interpZeroOneAddHom {σ : Type*} {c : σ → ℝ} :
+    Function.RightInverse
+      (restrictedAddMap (c := c) (interpZeroOneAddHom p) (norm_interpZeroOneAddHom_le p))
+      (restrictedMap (c := c) (evalZeroOneHom p)
+        (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f)) :=
+  rightInverse_restrictedAddMap _ _ _ _ (rightInverse_interpZeroOneAddHom p)
+
+/-- For every variable set `σ` and positive polyradius `c : σ → ℝ`, the first-isomorphism
+equivalence induced by `restrictedMap (evalZeroOneHom p)` is **not** an isometry, even though
+`evalZeroOneHom p` admits the `2`-bounded additive section `interpZeroOneAddHom p`. -/
+theorem not_isometry_quotientKerEquivOfSurjective_restrictedMap_evalZeroOneHom
+    {σ : Type*} {c : σ → ℝ} [∀ i, Fact (0 < c i)] :
+    ¬ Isometry (RingHom.quotientKerEquivOfSurjective
+      (f := restrictedMap (c := c) (evalZeroOneHom p)
+        (fun f ↦ (one_mul ‖f‖).symm ▸ norm_evalZeroOneHom_le p f))
+      (isOpenQuotientMap_restrictedMap_evalZeroOneHom p).surjective) := by
   rw [isometry_quotientKerEquivOfSurjective_restrictedMap_iff]
   rintro ⟨-, hsharp⟩
   obtain ⟨f, hf, hlt⟩ := hsharp (0, 1) (1 / 2) (by norm_num)
   have hnorm01 : ‖((0, 1) : ℚ_[p] × ℚ_[p])‖ = 1 := by simp [Prod.norm_def]
   linarith [two_le_norm_of_evalZeroOneHom_eq p hf]
 
-end BoundedSectionFailsIsometry
+end BoundedSectionNotIsometry
 
 section TateQuotientExactLifts
 
@@ -271,27 +279,34 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {τ : Type*} [Finite τ] {d : τ → ℝ} [∀ j, Fact (0 < d j)]
   (I : Ideal (IsRestricted.subring (R := K) d))
 
-/-- **Exact Gauss-norm-attaining lifts and isometric quotient over any Tate quotient algebra.**
-Because every ideal `I` of `K{Y/d}` is strictly closed
-(`Ideal.exists_mk_eq_and_norm_eq_isRestricted_subring`), for any second variable set `σ` and
-positive polyradius `c : σ → ℝ`, reducing coefficients modulo `I` lifts restricted series with exact
-Gauss-norm equality and induces an isometric quotient equivalence `(K{Y/d}){X/c} ⧸ ker ≃+*
-(K{Y/d} ⧸ I){X/c}`. -/
-theorem exact_lift_and_isometry_tateQuotient {σ : Type*} {c : σ → ℝ} [∀ i, Fact (0 < c i)] :
-    (∀ G : IsRestricted.subring (R := IsRestricted.subring (R := K) d ⧸ I) c,
-      ∃ F : IsRestricted.subring (R := IsRestricted.subring (R := K) d) c,
-        restrictedMap (Ideal.Quotient.mk I)
-          (fun a ↦ (one_mul ‖a‖).symm ▸ Ideal.Quotient.norm_mk_le_norm I a) F = G ∧
-        ‖F‖ = ‖G‖) ∧
-      Isometry (RingHom.quotientKerEquivOfSurjective
-        (f := restrictedMap (c := c) (Ideal.Quotient.mk I)
-          (fun a ↦ (one_mul ‖a‖).symm ▸ Ideal.Quotient.norm_mk_le_norm I a))
-        (I.isOpenQuotientMap_restrictedMap_mk (c := c)).surjective) :=
-  ⟨exists_restrictedMap_eq_and_norm_eq (Ideal.Quotient.mk I) _
-      (Ideal.Quotient.norm_mk_le_norm I)
-      (fun q ↦ let ⟨f, hf, hnorm⟩ := I.exists_mk_eq_and_norm_eq_isRestricted_subring q
-        ⟨f, hf, hnorm.le⟩),
-    I.isometry_quotientKerEquivOfSurjective_restrictedMap_mk⟩
+/-- **Exact Gauss-norm-attaining lifts over any Tate quotient algebra.** For any ideal `I` of
+`K{Y/d}`, any second variable set `σ`, and any positive polyradius `c : σ → ℝ`, every restricted
+series `G` over `K{Y/d} ⧸ I` lifts along `restrictedMap (Ideal.Quotient.mk I)` to a restricted
+series `F` over `K{Y/d}` of the exact same Gauss norm. -/
+theorem exists_restrictedMap_mk_eq_and_norm_eq_tateQuotient
+    {σ : Type*} {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    (G : IsRestricted.subring (R := IsRestricted.subring (R := K) d ⧸ I) c) :
+    ∃ F : IsRestricted.subring (R := IsRestricted.subring (R := K) d) c,
+      restrictedMap (Ideal.Quotient.mk I)
+        (fun a ↦ (one_mul ‖a‖).symm ▸ Ideal.Quotient.norm_mk_le_norm I a) F = G ∧
+      ‖F‖ = ‖G‖ :=
+  exists_restrictedMap_eq_and_norm_eq (Ideal.Quotient.mk I) _
+    (Ideal.Quotient.norm_mk_le_norm I)
+    (fun q ↦ let ⟨f, hf, hnorm⟩ := I.exists_mk_eq_and_norm_eq_isRestricted_subring q
+      ⟨f, hf, hnorm.le⟩)
+    G
+
+/-- **Isometric quotient equivalence over any Tate quotient algebra.** For any ideal `I` of
+`K{Y/d}`, any second variable set `σ`, and any positive polyradius `c : σ → ℝ`, reducing
+coefficients modulo `I` induces an isometric ring isomorphism
+`(K{Y/d}){X/c} ⧸ ker ≃+* (K{Y/d} ⧸ I){X/c}`. -/
+theorem isometry_quotientKerEquivOfSurjective_restrictedMap_mk_tateQuotient
+    {σ : Type*} {c : σ → ℝ} [∀ i, Fact (0 < c i)] :
+    Isometry (RingHom.quotientKerEquivOfSurjective
+      (f := restrictedMap (c := c) (Ideal.Quotient.mk I)
+        (fun a ↦ (one_mul ‖a‖).symm ▸ Ideal.Quotient.norm_mk_le_norm I a))
+      (I.isOpenQuotientMap_restrictedMap_mk (c := c)).surjective) :=
+  I.isometry_quotientKerEquivOfSurjective_restrictedMap_mk
 
 /-- **Completed Huber counterpart over Tate quotient algebras.** For any `k : ℕ`, every element of
 the completed Huber algebra `(K{Y/d} ⧸ I)⟨X₁, …, Xₖ⟩` lifts along `weightedMapCompletion` to an

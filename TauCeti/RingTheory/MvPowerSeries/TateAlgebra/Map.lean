@@ -8,13 +8,17 @@ module
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 
+import TauCeti.Topology.Algebra.Ring.Ideal
+
 /-!
 # Restricted series along a strict surjection
 
 A bounded ring homomorphism `φ : R → S` of ultrametric normed rings, `‖φ r‖ ≤ C ‖r‖`, maps
 restricted series to restricted series coefficientwise, giving a ring homomorphism
-`R{X/c} → S{X/c}`. If `φ` is moreover *strictly* surjective, that is, every `s ∈ S` lifts to some
-`r` with `‖r‖ ≤ C' ‖s‖`, then lifting every coefficient shows that `R{X/c} → S{X/c}` is
+`R{X/c} → S{X/c}`. Likewise a bounded additive homomorphism `ψ : S →+ R` induces a Lipschitz
+additive map `restrictedAddMap ψ hψ : S{X/c} →+ R{X/c}`, giving a continuous additive right inverse
+when `ψ` is a right inverse to `φ`. If `φ` is *strictly* surjective, that is, every `s ∈ S` lifts to
+some `r` with `‖r‖ ≤ C' ‖s‖`, then lifting every coefficient shows that `R{X/c} → S{X/c}` is
 surjective. The norm control is what makes the lifted coefficients still tend to zero.
 
 Combined with the identification `R{X/c, Y/d} ≅ R{Y/d}{X/c}` of
@@ -30,6 +34,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 
 * `TauCeti.MvPowerSeries.restrictedMap`: the coefficientwise map `R{X/c} →+* S{X/c}` induced by
   a bounded ring homomorphism `R →+* S`.
+* `TauCeti.MvPowerSeries.restrictedAddMap`: the Lipschitz additive map `S{X/c} →+ R{X/c}` induced
+  by a bounded additive map `S →+ R`.
 
 ## Main results
 
@@ -42,15 +48,27 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
   the variables.
 * `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`: `restrictedMap` commutes with the
   iteration `R{X/c, Y/d} ≅ R{Y/d}{X/c}`.
-* `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
+* `TauCeti.MvPowerSeries.norm_restrictedMap_le` and
+  `TauCeti.MvPowerSeries.norm_restrictedMap_le_of_norm_le`: `restrictedMap` is bounded by the same
+  constant, and contractive when `φ` is contractive.
 * `TauCeti.MvPowerSeries.norm_restrictedMap` and `TauCeti.MvPowerSeries.isometry_restrictedMap`:
   a norm-preserving `φ` induces an isometry for the Gauss norms.
-* `TauCeti.MvPowerSeries.restrictedMap_eq_zero_iff`: the coefficientwise kernel formula.
+* `TauCeti.MvPowerSeries.restrictedMap_eq_zero_iff`,
+  `TauCeti.MvPowerSeries.mem_ker_restrictedMap_iff`,
+  `TauCeti.MvPowerSeries.restrictedMap_injective`, and
+  `TauCeti.MvPowerSeries.isClosed_ker_restrictedMap`: the coefficientwise kernel formula,
+  injectivity from coefficient injectivity, and closedness of the kernel.
 * `TauCeti.MvPowerSeries.continuous_restrictedMap`: continuity for the Gauss norm topologies.
+* `TauCeti.MvPowerSeries.norm_restrictedAddMap_le`,
+  `TauCeti.MvPowerSeries.continuous_restrictedAddMap`, and
+  `TauCeti.MvPowerSeries.rightInverse_restrictedAddMap`: Gauss-norm bound, continuity, and right
+  inverse property of `restrictedAddMap`.
 * `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le`: coefficientwise bounded
   lifts.
-* `TauCeti.MvPowerSeries.restrictedMap_surjective`: a strictly surjective `φ` induces a
-  surjection `R{X/c} → S{X/c}`.
+* `TauCeti.MvPowerSeries.restrictedMap_surjective` and
+  `TauCeti.MvPowerSeries.surjective_of_restrictedMap_surjective`: a strictly surjective `φ` induces
+  a surjection `R{X/c} → S{X/c}`, and conversely surjectivity of `restrictedMap` forces `φ` to be
+  surjective.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_surjective`: if `R{X/c}` is
   noetherian, so is `S{X/c}`.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_surjective_of_sumElim`: if
@@ -110,6 +128,19 @@ theorem restrictedMap_eq_zero_iff (f : IsRestricted.subring (R := R) c) :
     ext t
     simpa only [coeff_restrictedMap, ZeroMemClass.coe_zero, map_zero] using h t
 
+/-- The kernel of `restrictedMap` consists of the restricted series whose coefficients all lie in
+`RingHom.ker φ`. -/
+theorem mem_ker_restrictedMap_iff (f : IsRestricted.subring (R := R) c) :
+    f ∈ RingHom.ker (restrictedMap φ hφ) ↔
+      ∀ t, coeff t (f : MvPowerSeries σ R) ∈ RingHom.ker φ := by
+  simp only [RingHom.mem_ker, restrictedMap_eq_zero_iff]
+
+/-- An injective bounded coefficient homomorphism induces an injective homomorphism on restricted
+series at every polyradius. -/
+theorem restrictedMap_injective (hφinj : Function.Injective φ) :
+    Function.Injective (restrictedMap (c := c) φ hφ) :=
+  _root_.MvPowerSeries.Restricted.map_injective c hφ hφinj
+
 /-- The identity induces the identity on restricted series. -/
 @[simp]
 theorem restrictedMap_id {C : ℝ} (hC : ∀ r : R, ‖RingHom.id R r‖ ≤ C * ‖r‖) :
@@ -142,6 +173,16 @@ theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)]
   rw [coeff_restrictedMap]
   exact hφ _
 
+/-- If `φ` is contractive, `restrictedMap φ hφ` is contractive regardless of the auxiliary bound `C`
+used to construct it. -/
+theorem norm_restrictedMap_le_of_norm_le [∀ i, Fact (0 < c i)] (hφ1 : ∀ a, ‖φ a‖ ≤ ‖a‖)
+    (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedMap φ hφ f‖ ≤ ‖f‖ := by
+  have h1' : ∀ a, ‖φ a‖ ≤ 1 * ‖a‖ := fun a ↦ by simpa only [one_mul] using hφ1 a
+  have heq : restrictedMap (c := c) φ hφ f = restrictedMap φ h1' f :=
+    Subtype.ext (by simp only [coe_restrictedMap])
+  simpa only [heq, one_mul] using norm_restrictedMap_le φ h1' f
+
 /-- A norm-preserving coefficient map preserves the Gauss norm. -/
 @[simp]
 theorem norm_restrictedMap [∀ i, Fact (0 < c i)] (hφ' : ∀ r, ‖φ r‖ = ‖r‖)
@@ -164,6 +205,11 @@ theorem lipschitzWith_restrictedMap [∀ i, Fact (0 < c i)] :
 theorem continuous_restrictedMap [∀ i, Fact (0 < c i)] :
     Continuous (restrictedMap (c := c) φ hφ) :=
   (lipschitzWith_restrictedMap (c := c) φ hφ).continuous
+
+/-- At positive polyradii, the kernel of `restrictedMap` is closed for the Gauss norm topology. -/
+instance isClosed_ker_restrictedMap [∀ i, Fact (0 < c i)] :
+    IsClosed (RingHom.ker (restrictedMap (c := c) φ hφ) : Set (IsRestricted.subring (R := R) c)) :=
+  RingHom.isClosed_ker (continuous_restrictedMap φ hφ)
 
 /-- A uniform bound for coefficient lifts gives a restricted lift with the same bound at
 each coefficient. This does not require positive radii or complete coefficient rings. -/
@@ -191,7 +237,66 @@ theorem restrictedMap_surjective {C' : ℝ} (hlift : ∀ s, ∃ r, φ r = s ∧ 
   obtain ⟨f, hf, -⟩ := exists_restrictedMap_eq_and_norm_coeff_le φ hφ hlift g
   exact ⟨f, hf⟩
 
+/-- If `restrictedMap φ hφ` is surjective at some polyradius `c`, then `φ` is surjective. -/
+theorem surjective_of_restrictedMap_surjective
+    (hsurj : Function.Surjective (restrictedMap (c := c) φ hφ)) :
+    Function.Surjective φ := by
+  intro b
+  obtain ⟨f, hf⟩ := hsurj ⟨_root_.MvPowerSeries.C b, isRestricted_C c b⟩
+  refine ⟨coeff 0 (f : MvPowerSeries σ R), ?_⟩
+  simpa only [coeff_restrictedMap, coeff_zero_eq_constantCoeff_apply, constantCoeff_C] using
+    congrArg (fun g : IsRestricted.subring (R := S) c ↦ coeff 0 (g : MvPowerSeries σ S)) hf
+
 end Map
+
+section AdditiveLift
+
+variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R]
+  [NormedRing S] [IsUltrametricDist S] {c : σ → ℝ}
+  (ψ : S →+ R) {L : ℝ} (hψ : ∀ b, ‖ψ b‖ ≤ L * ‖b‖)
+
+/-- **Continuous additive lift of restricted series.** A bounded additive map `ψ : S →+ R` acts
+coefficientwise on restricted series (`MvPowerSeries.Restricted.mapAdditive` typed on
+`IsRestricted.subring`), giving an additive homomorphism `S{X/c} →+ R{X/c}` with the same
+Gauss-norm bound at positive polyradii. -/
+noncomputable def restrictedAddMap :
+    IsRestricted.subring (R := S) c →+ IsRestricted.subring (R := R) c :=
+  _root_.MvPowerSeries.Restricted.mapAdditive c ψ hψ
+
+/-- `restrictedAddMap` applies `ψ` to each coefficient. -/
+@[simp]
+theorem coeff_restrictedAddMap (g : IsRestricted.subring (R := S) c) (t : σ →₀ ℕ) :
+    coeff t (restrictedAddMap ψ hψ g : MvPowerSeries σ R) =
+      ψ (coeff t (g : MvPowerSeries σ S)) :=
+  _root_.MvPowerSeries.Restricted.coeff_val_mapAdditive c ψ hψ g t
+
+/-- `restrictedAddMap` satisfies the same norm bound as the coefficient additive map. -/
+theorem norm_restrictedAddMap_le [∀ i, Fact (0 < c i)] (g : IsRestricted.subring (R := S) c) :
+    ‖restrictedAddMap ψ hψ g‖ ≤ L * ‖g‖ := by
+  refine norm_le_mul_of_norm_coeff_le fun t ↦ ?_
+  rw [coeff_restrictedAddMap]
+  exact hψ _
+
+/-- `restrictedAddMap` is Lipschitz for the Gauss norm. -/
+theorem lipschitzWith_restrictedAddMap [∀ i, Fact (0 < c i)] :
+    LipschitzWith (Real.toNNReal L) (restrictedAddMap (c := c) ψ hψ) :=
+  AddMonoidHomClass.lipschitz_of_bound _ L (norm_restrictedAddMap_le ψ hψ)
+
+/-- `restrictedAddMap` is continuous for the Gauss norm topologies. -/
+@[continuity]
+theorem continuous_restrictedAddMap [∀ i, Fact (0 < c i)] :
+    Continuous (restrictedAddMap (c := c) ψ hψ) :=
+  (lipschitzWith_restrictedAddMap (c := c) ψ hψ).continuous
+
+/-- A bounded additive right inverse `ψ` to `φ` induces an additive right inverse to
+`restrictedMap φ hφ`. -/
+theorem rightInverse_restrictedAddMap (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖)
+    (hinv : Function.RightInverse ψ φ) :
+    Function.RightInverse (restrictedAddMap (c := c) ψ hψ) (restrictedMap (c := c) φ hφ) :=
+  fun g ↦ Subtype.ext <| MvPowerSeries.ext fun t ↦ by
+    rw [coeff_restrictedMap, coeff_restrictedAddMap, hinv]
+
+end AdditiveLift
 
 section Algebra
 

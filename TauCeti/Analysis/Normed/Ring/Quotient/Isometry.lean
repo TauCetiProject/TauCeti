@@ -32,8 +32,6 @@ contractive and every image `f a` admits preimages of norm arbitrarily close to 
 
 * `RingHom.isometry_quotientMap`: an isometric ring homomorphism with dense range induces an
   isometry on ideal quotients.
-* `RingHom.isClosed_ker`: the kernel of a continuous ring homomorphism into a `T1` semiring is
-  closed.
 * `RingHom.norm_kerLift_le` and `RingHom.norm_quotientKerEquivOfSurjective_symm_le`: norm bounds on
   `RingHom.kerLift` and the inverse of `RingHom.quotientKerEquivOfSurjective`.
 * `RingHom.isometry_kerLift_iff` and `RingHom.isometry_quotientKerEquivOfSurjective_iff`:
@@ -73,13 +71,6 @@ theorem isometry_quotientMap (f : A →+* B) (hf : Isometry f) (hd : DenseRange 
 end QuotientMap
 
 section Ker
-
-/-- The kernel of a continuous ring homomorphism into a `T1` semiring is closed. -/
-theorem isClosed_ker {R S : Type*} [Ring R] [TopologicalSpace R] [Semiring S]
-    [TopologicalSpace S] [T1Space S] {f : R →+* S} (hf : Continuous f) :
-    IsClosed (ker f : Set R) := by
-  have h : (ker f : Set R) = f ⁻¹' {0} := rfl
-  exact h ▸ isClosed_singleton.preimage hf
 
 variable {R S : Type*} [SeminormedRing R] [SeminormedRing S]
 
@@ -160,8 +151,9 @@ and every `b : S` admits preimages of norm arbitrarily close to `‖b‖`. -/
 theorem isometry_quotientKerEquivOfSurjective_iff {f : R →+* S} (hf : Function.Surjective f) :
     Isometry (f.quotientKerEquivOfSurjective hf) ↔
       (∀ a, ‖f a‖ ≤ ‖a‖) ∧ ∀ b, ∀ ε > 0, ∃ a, f a = b ∧ ‖a‖ < ‖b‖ + ε := by
-  change Isometry f.kerLift ↔ _
-  rw [f.isometry_kerLift_iff, hf.forall]
+  rw [AddMonoidHomClass.isometry_iff_norm, Ideal.Quotient.mk_surjective.forall]
+  simp only [quotientKerEquivOfSurjective_apply_mk, eq_comm (b := ‖Ideal.Quotient.mk (ker f) _‖),
+    f.norm_mk_ker_eq_iff, hf.forall]
 
 /-- Non-strict approximate preimages `‖a‖ ≤ ‖b‖ + ε` suffice for the quotient seminorm modulo
 `ker f` to equal `‖f ·‖`. -/
@@ -178,9 +170,9 @@ theorem isometry_quotientKerEquivOfSurjective_of_forall_pos_exists_norm_le_add {
     (hf : Function.Surjective f) (h1 : ∀ a, ‖f a‖ ≤ ‖a‖)
     (h2 : ∀ b, ∀ ε > 0, ∃ a, f a = b ∧ ‖a‖ ≤ ‖b‖ + ε) :
     Isometry (f.quotientKerEquivOfSurjective hf) := by
-  refine (f.isometry_quotientKerEquivOfSurjective_iff hf).mpr ⟨h1, fun b ε hε ↦ ?_⟩
-  obtain ⟨a, ha, hle⟩ := h2 b (ε / 2) (half_pos hε)
-  exact ⟨a, ha, by linarith [half_lt_self hε]⟩
+  rw [AddMonoidHomClass.isometry_iff_norm, Ideal.Quotient.mk_surjective.forall]
+  intro a
+  rw [quotientKerEquivOfSurjective_apply_mk, norm_mk_ker_eq_of_forall_pos_exists_norm_le_add h1 h2]
 
 end Ker
 

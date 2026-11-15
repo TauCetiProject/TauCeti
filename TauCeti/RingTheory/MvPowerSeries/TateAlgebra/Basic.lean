@@ -47,8 +47,10 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
-* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
-  the same Gauss-norm bound, even across different coefficient rings.
+* `TauCeti.MvPowerSeries.isRestricted_of_norm_coeff_le` and
+  `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound against a
+  restricted series preserves restrictedness and gives the same Gauss-norm bound, even across
+  different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -966,6 +968,18 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
       _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
+
+/-- If each coefficient norm of `f` is bounded by `C` times the corresponding coefficient norm of a
+restricted series `g`, then `f` is restricted at the same polyradius. Neither positivity of the
+polyradii nor ultrametricity is needed, and the two series may have different coefficient rings. -/
+theorem isRestricted_of_norm_coeff_le {σ R S : Type*} [NormedRing R] [NormedRing S] {c : σ → ℝ}
+    {f : MvPowerSeries σ R} {g : MvPowerSeries σ S} {C : ℝ} (hg : IsRestricted c g)
+    (h : ∀ t, ‖coeff t f‖ ≤ C * ‖coeff t g‖) : IsRestricted c f := by
+  rw [← isRestricted_abs_iff, IsRestricted] at hg ⊢
+  refine tendsto_const_nhds.squeeze (mul_zero C ▸ hg.const_mul C)
+    (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) fun t ↦ ?_
+  rw [← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (h t) (prod_abs_pow_nonneg t)
 
 /-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
 possibly different coefficient rings, at the same positive polyradii. The constant `K` may be
