@@ -133,13 +133,11 @@ theorem isSeparable_completionEmbedding [Algebra.IsSeparable F F'] (y : F') :
   refine hsep.of_dvd (minpoly.dvd P.Completion (P'.completionEmbedding y) ?_)
   have hcomp :
       (algebraMap P.Completion P'.Completion).comp P.completionEmbedding.toRingHom =
-        P'.completionEmbedding.toRingHom.comp (algebraMap F F') := by
+        (P'.completionEmbedding : F' →+* P'.Completion).comp (algebraMap F F') := by
     ext x
     simp [algebraMap_completionExtensionAlgebra]
-  rw [aeval_def, eval₂_map, hcomp]
-  simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_def] using
-    (hom_eval₂ (minpoly F y) (algebraMap F F') P'.completionEmbedding.toRingHom y).symm.trans
-      (by simp [← aeval_def])
+  rw [aeval_def, eval₂_map, hcomp, ← AlgHom.coe_toRingHom (f := P'.completionEmbedding),
+    ← hom_eval₂, ← aeval_def, minpoly.aeval, map_zero]
 
 /-- The canonical ring homomorphism from the local integral closure `𝒪'_P` to the completed
 valuation ring `𝒪̂_{P'}` at a place `P'` lying over `P`. -/

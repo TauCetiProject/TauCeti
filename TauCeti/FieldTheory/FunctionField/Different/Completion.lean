@@ -55,8 +55,8 @@ All declarations live in `TauCeti.Place`:
   invariance along `𝒪'_P →+* 𝒪̂_{P'}`.
 * `map_differentIdeal_eq_differentIdeal_completion`: the different ideal of `𝒪'_P / 𝒪_P` generates
   the different ideal of `𝒪̂_{P'} / 𝒪̂_P`.
-* `differentIdeal_integralCompletionSemilocal`: under `integralCompletionSemilocalEquiv`, the
-  extended different ideal is the product of the completed different ideals above `P`.
+* `map_differentIdeal_integralCompletionSemilocalEquiv`: under `integralCompletionSemilocalEquiv`,
+  the extended different ideal is the product of the completed different ideals above `P`.
 * `differentIdeal_completionIntegers_eq_maximalIdeal_pow` and
   `multiplicity_differentIdeal_completionIntegers`: `differentIdeal 𝒪̂_P 𝒪̂_{P'} =
   𝔪̂_{P'} ^ d(P' ∣ P)` and its multiplicity at `𝔪̂_{P'}` is `d(P' ∣ P)`.
@@ -94,20 +94,6 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 
 omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
   [IsScalarTower k F F'] in
-/-- Scalar multiplication and the trace pairing commute with base change from `F` to `F̂_P`. -/
-private theorem trace_tmul_mul_smul (P : Place k F) (a : P.Completion) (x b y : F') :
-    Algebra.trace P.Completion (P.Completion ⊗[F] F')
-        ((a ⊗ₜ x) * (1 ⊗ₜ b)) • ((1 : P.Completion) ⊗ₜ[F] y) =
-      a ⊗ₜ[F] (Algebra.trace F F' (x * b) • y) := by
-  have ha : a ⊗ₜ[F] (x * b) = a • ((1 : P.Completion) ⊗ₜ[F] (x * b)) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, ha, map_smul,
-    TauCeti.Algebra.trace_baseChange_tmul]
-  simp only [smul_eq_mul, TensorProduct.smul_tmul', mul_one, mul_comm a,
-    ← Algebra.smul_def, TensorProduct.smul_tmul]
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] in
 /-- On the image of `𝒪̂_P ⊗[𝒪_P] 𝒪'_P`, pairing under the trace with an element of the complementary
 module `C_P` takes values in `𝒪̂_P`. -/
 private theorem trace_integralCompletionSemilocalToField_mul_mem (P : Place k F) {d : F'}
@@ -121,8 +107,8 @@ private theorem trace_integralCompletionSemilocalToField_mul_mem (P : Place k F)
     rw [map_add, add_mul, map_add]
     exact add_mem ht hu
   | tmul a x =>
-    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨x, rfl⟩)
-    change algebraMap P.integers F r = (Algebra.traceForm F F') d (x : F') at hr
+    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd (x : F')
+      (Submodule.mem_one.mpr ⟨x, Subalgebra.algebraMap_apply _ _⟩)
     refine ⟨a * algebraMap P.integers P.completionPlace.integers r, ?_⟩
     rw [trace_integralCompletionSemilocalToField_tmul_mul, mul_comm (x : F'),
       ← Algebra.traceForm_apply, ← hr]
@@ -141,19 +127,10 @@ theorem sum_trace_mul_smul_completionEmbedding_eq (P : Place k F) (P' : Place k'
         (z * P'.completionEmbedding (b i)) • P'.completionEmbedding (y i) = z := by
   classical
   let _ := P.completionExtensionAlgebra P' hP
-  have hF (ξ : P.Completion ⊗[F] F') :
-      ∑ i, Algebra.trace P.Completion (P.Completion ⊗[F] F') (ξ * (1 ⊗ₜ b i)) •
-        ((1 : P.Completion) ⊗ₜ[F] y i) = ξ := by
-    induction ξ using TensorProduct.inductionOn with
-    | add ξ η hξ hη =>
-      conv_rhs => rw [← hξ, ← hη]
-      simp only [add_mul, map_add, add_smul, Finset.sum_add_distrib]
-    | tmul a x =>
-      conv_rhs => rw [← h x, TensorProduct.tmul_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ trace_tmul_mul_smul P a x (b i) (y i)
   let Q₀ : {Q : Place k' F' // Q.restrict k F = P} := ⟨P', hP⟩
   have h' := congrArg (fun ξ ↦ completionSemilocalEquiv k' F' P ξ Q₀)
-    (hF ((completionSemilocalEquiv k' F' P).symm (Pi.single Q₀ z)))
+    (TauCeti.Algebra.sum_trace_mul_smul_tmul_eq (A := P.Completion) b y h
+      ((completionSemilocalEquiv k' F' P).symm (Pi.single Q₀ z)))
   simp only [AlgEquiv.apply_symm_apply, Pi.single_eq_same, map_sum, map_smul,
     Finset.sum_apply, Pi.smul_apply, completionSemilocalEquiv_tmul, map_one, one_mul,
     Q₀, trace_completionSemilocalEquiv_symm_single_mul] at h'
@@ -182,7 +159,8 @@ private theorem completionEmbedding_mem_traceDual (P : Place k F) (P' : Place k'
   have hξ : integralCompletionSemilocalToField F' P t =
       (completionSemilocalEquiv k' F' P).symm
         (Pi.single Q₀ (algebraMap P'.completionPlace.integers P'.Completion z)) := by
-    rw [AlgEquiv.eq_symm_apply, integralCompletionSemilocalEquiv_fieldCompatibility k' F' P, ht]
+    rw [AlgEquiv.eq_symm_apply,
+      completionSemilocalEquiv_integralCompletionSemilocalToField k' F' P, ht]
     funext Q
     obtain rfl | hQ := eq_or_ne Q Q₀
     · simp
@@ -251,8 +229,8 @@ theorem extended_dual_one_eq_dual_one_completion (P : Place k F) (P' : Place k' 
       P'.completionEmbedding.toRingHom := by
     refine IsFractionRing.ringHom_ext (A := integralClosure P.integers F') fun x ↦ ?_
     rw [IsLocalization.map_eq, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      ValuationSubring.algebraMap_apply, coe_completionIntegersIntegralClosureHom]
-    rfl
+      ValuationSubring.algebraMap_apply, coe_completionIntegersIntegralClosureHom,
+      Subalgebra.algebraMap_apply]
   have hdual : ((FractionalIdeal.dual P.integers F
         (1 : FractionalIdeal (integralClosure P.integers F')⁰ F')) : Set F') =
       Submodule.traceDual P.integers F (1 : Submodule (integralClosure P.integers F') F') := by
@@ -294,7 +272,7 @@ variable (k' F') in
 /-- **Componentwise decomposition of the different in the integral semilocal algebra.** Extending
 `differentIdeal 𝒪_P 𝒪'_P` to `𝒪̂_P ⊗[𝒪_P] 𝒪'_P` and transporting along
 `integralCompletionSemilocalEquiv` gives the product of the completed different ideals above `P`. -/
-theorem differentIdeal_integralCompletionSemilocal (P : Place k F) :
+theorem map_differentIdeal_integralCompletionSemilocalEquiv (P : Place k F) :
     ((differentIdeal P.integers (integralClosure P.integers F')).map
         (Algebra.TensorProduct.includeRight :
           integralClosure P.integers F' →ₐ[P.integers]
@@ -464,14 +442,10 @@ theorem differentExponent_completionPlace :
   have hC : ∀ c : P'.completionPlace.integers,
       algebraMap P'.completionPlace.integers P'.Completion c ∈ P'.completionPlace.integers :=
     fun c ↦ c.2
-  have hcenter : (P'.completionPlace.center hC).asIdeal =
-      maximalIdeal P'.completionPlace.integers := by
-    ext f
-    rw [mem_center_asIdeal, mem_maximalIdeal_iff_valuation_lt_one]
-    exact Iff.rfl
   rw [differentExponent_eq_multiplicity_center (B := P.completionPlace.integers)
       (C := P'.completionPlace.integers) P'.completionPlace hC,
-    hcenter, multiplicity_differentIdeal_completionIntegers P P' hP]
+    IsLocalRing.eq_maximalIdeal (P'.completionPlace.center hC).isMaximal,
+    multiplicity_differentIdeal_completionIntegers P P' hP]
 
 end SameConstants
 
