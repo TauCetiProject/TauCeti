@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Analysis.Calculus.Morse.ChartRescaling
 public import TauCeti.Analysis.InnerProductSpace.Indefinite
 public import TauCeti.Analysis.InnerProductSpace.Polar.Det
+public import TauCeti.Analysis.InnerProductSpace.Polar.NegativeFrame
 public import TauCeti.Analysis.Normed.Module.NegativeSubspace
 public import TauCeti.Topology.Algebra.OrthogonalGroup
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -52,7 +53,13 @@ determinants are: orientation transport through negative subspaces is multiplica
 (`PartialDiffeomorph.det_polarFactor_fst_fderiv_transition_inl_eq_mul`). Hence, for Euclidean
 negative coordinates, `h₀₁ h₁₂` and `h₀₂` lie in the same component of the orthogonal group and are
 joined by a path of orthogonal maps
-(`PartialDiffeomorph.exists_path_linearIsometryEquiv_of_polarFactor_transition`).
+(`PartialDiffeomorph.exists_path_linearIsometryEquiv_of_polarFactor_transition`). For families of
+charts over a parameter space, with transition derivatives continuous in the parameter, `h₀₁ h₁₂`
+is joined to `h₀₂` by a homotopy of linear isometries continuous in the parameter
+(`PartialDiffeomorph.exists_homotopy_polarFactor_transition_family`): the polar factors of the
+negative blocks along the contraction of the negative frame `A₁₂ ∘ inl` through negative frames,
+after the polar deformations of the two negative blocks
+(`ContinuousLinearMap.exists_homotopy_polarFactor_fst_comp_comp_of_norm_snd_lt`).
 
 ## Main results
 
@@ -68,6 +75,9 @@ joined by a path of orthogonal maps
   `det h₀₂ = det h₀₁ * det h₁₂`.
 * `PartialDiffeomorph.exists_path_linearIsometryEquiv_of_polarFactor_transition`: for three charts
   with Euclidean negative coordinates, `h₀₁ h₁₂` is joined to `h₀₂` by a path of orthogonal maps.
+* `PartialDiffeomorph.exists_homotopy_polarFactor_transition_family`: for three families of charts
+  whose transition derivatives are continuous in the parameter, `h₀₁ h₁₂` is joined to `h₀₂` by a
+  homotopy of linear isometries continuous in the parameter.
 * `PartialDiffeomorph.exists_negative_disk_homotopy_polarFactor`: the small negative disk
   `u ↦ ψ₁⁻¹(u, 0)` is homotopic to `u ↦ ψ₀⁻¹(h u, 0)`, staying in a given neighbourhood of `x`
   with `f ≤ f(x) - ‖u‖²` over each point `u`.
@@ -314,5 +324,70 @@ theorem exists_path_linearIsometryEquiv_of_polarFactor_transition
   exact congrArg LinearMap.det (LinearMap.ext fun v ↦ h₁₂.trans_apply h₀₁ v)
 
 end EuclideanNegative
+
+section Family
+
+variable {V H M E F X : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ V H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [TopologicalSpace X] {n : ℕ∞ω}
+  {f : M → ℝ} {x : X → M}
+
+/-- **The polar factors of three families of Morse charts agree up to a homotopy of isometries,
+continuously in the parameter.** Let `ψ₀ p`, `ψ₁ p`, `ψ₂ p` be split Morse charts centred at
+`x p`, for `p` in a topological space `X`, and let `h_ij p` be the polar factor of the negative
+block of the derivative at the origin of the transition `ψ_i p ∘ (ψ_j p)⁻¹`. If the derivatives of
+the transitions `ψ₀ p ∘ (ψ₁ p)⁻¹` and `ψ₁ p ∘ (ψ₂ p)⁻¹` at the origin are continuous in `p`, then
+`h₀₁ p ∘ h₁₂ p` and `h₀₂ p` are joined by a homotopy `H` through linear isometries of `E`,
+continuous in `p` as well as in time. Pointwise this refines
+`PartialDiffeomorph.exists_path_linearIsometryEquiv_of_polarFactor_transition`, whose path is
+chosen separately for each triple of charts. -/
+theorem exists_homotopy_polarFactor_transition_family
+    (ψ₀ ψ₁ ψ₂ : X → PartialDiffeomorph I 𝓘(ℝ, E × F) M (E × F) n) (hn : 1 ≤ n)
+    (hx₀ : ∀ p, x p ∈ (ψ₀ p).source) (hx₁ : ∀ p, x p ∈ (ψ₁ p).source)
+    (hx₂ : ∀ p, x p ∈ (ψ₂ p).source)
+    (hψ₀ : ∀ p, ψ₀ p (x p) = 0) (hψ₁ : ∀ p, ψ₁ p (x p) = 0) (hψ₂ : ∀ p, ψ₂ p (x p) = 0)
+    (hf₀ : ∀ p, ∀ y ∈ (ψ₀ p).source, f y = f (x p) - ‖(ψ₀ p y).1‖ ^ 2 + ‖(ψ₀ p y).2‖ ^ 2)
+    (hf₁ : ∀ p, ∀ y ∈ (ψ₁ p).source, f y = f (x p) - ‖(ψ₁ p y).1‖ ^ 2 + ‖(ψ₁ p y).2‖ ^ 2)
+    (hf₂ : ∀ p, ∀ y ∈ (ψ₂ p).source, f y = f (x p) - ‖(ψ₂ p y).1‖ ^ 2 + ‖(ψ₂ p y).2‖ ^ 2)
+    (hc₀₁ : Continuous fun p ↦ fderiv ℝ (fun w ↦ ψ₀ p ((ψ₁ p).symm w)) 0)
+    (hc₁₂ : Continuous fun p ↦ fderiv ℝ (fun w ↦ ψ₁ p ((ψ₂ p).symm w)) 0) :
+    ∃ G : C(unitInterval × X, E →L[ℝ] E),
+      (∀ p, G (0, p) = ((ContinuousLinearMap.fst ℝ E F).comp
+          ((fderiv ℝ (fun w ↦ ψ₀ p ((ψ₁ p).symm w)) 0).comp
+            (ContinuousLinearMap.inl ℝ E F))).polarFactor ∘L
+        ((ContinuousLinearMap.fst ℝ E F).comp ((fderiv ℝ (fun w ↦ ψ₁ p ((ψ₂ p).symm w)) 0).comp
+          (ContinuousLinearMap.inl ℝ E F))).polarFactor) ∧
+      (∀ p, G (1, p) = ((ContinuousLinearMap.fst ℝ E F).comp
+          ((fderiv ℝ (fun w ↦ ψ₀ p ((ψ₂ p).symm w)) 0).comp
+            (ContinuousLinearMap.inl ℝ E F))).polarFactor) ∧
+      ∀ q v, ‖G q v‖ = ‖v‖ := by
+  -- `A₀₁ p` maps the negative cone into itself, since it preserves `‖u‖² - ‖v‖²`.
+  have hcone (p : X) (z : E × F) (hz : ‖z.2‖ < ‖z.1‖) :
+      ‖(fderiv ℝ (fun w ↦ ψ₀ p ((ψ₁ p).symm w)) 0 z).2‖ <
+        ‖(fderiv ℝ (fun w ↦ ψ₀ p ((ψ₁ p).symm w)) 0 z).1‖ := by
+    have hQ := (ψ₀ p).norm_sq_sub_fderiv_transition (ψ₁ p) hn (hx₀ p) (hx₁ p) (hψ₀ p) (hψ₁ p)
+      (hf₀ p) (hf₁ p) z
+    have hz2 : ‖z.2‖ ^ 2 < ‖z.1‖ ^ 2 := pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
+    exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by linarith)
+  -- `A₁₂ p ∘ inl` is a negative frame.
+  have hframe (p : X) (u : E) (hu : u ≠ 0) :
+      ‖((fderiv ℝ (fun w ↦ ψ₁ p ((ψ₂ p).symm w)) 0).comp (ContinuousLinearMap.inl ℝ E F) u).2‖ <
+        ‖((fderiv ℝ (fun w ↦ ψ₁ p ((ψ₂ p).symm w)) 0).comp
+          (ContinuousLinearMap.inl ℝ E F) u).1‖ := by
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
+    exact (ψ₁ p).norm_snd_fderiv_transition_lt (ψ₂ p) hn (hx₁ p) (hx₂ p) (hψ₁ p) (hψ₂ p) (hf₁ p)
+      (hf₂ p) hu
+  obtain ⟨G, h0, h1, hG⟩ :=
+    ContinuousLinearMap.exists_homotopy_polarFactor_fst_comp_comp_of_norm_snd_lt hc₀₁
+      (hc₁₂.clm_comp continuous_const) hcone hframe
+  refine ⟨G, h0, fun p ↦ ?_, hG⟩
+  -- The derivative of `ψ₀ p ∘ (ψ₂ p)⁻¹` is `A₀₁ p ∘ A₁₂ p`, by the chain rule.
+  have hA := (ψ₀ p).fderiv_comp_symm_eq_comp (ψ₁ p) (ψ₂ p) (zero_lt_one.trans_le hn).ne' (hx₀ p)
+    (hx₁ p) (hx₂ p)
+  rw [hψ₁, hψ₂] at hA
+  rw [h1, hA, ContinuousLinearMap.comp_assoc]
+
+end Family
 
 end PartialDiffeomorph

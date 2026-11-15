@@ -85,6 +85,13 @@ theorem det_fst_comp_ne_zero_of_norm_snd_lt [FiniteDimensional ℝ E] (L : E →
     LinearMap.ker_eq_bot]
   exact L.injective_fst_comp_of_norm_snd_lt hL
 
+/-- A frame whose nonzero values lie strictly inside the negative cone has invertible negative
+block, as an operator. -/
+theorem isInvertible_fst_comp_of_norm_snd_lt [FiniteDimensional ℝ E] (L : E →L[ℝ] E × F)
+    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) : ((fst ℝ E F).comp L).IsInvertible :=
+  ((fst ℝ E F).comp L).isInvertible_of_injective_of_finrank_eq rfl
+    (L.injective_fst_comp_of_norm_snd_lt hL)
+
 /-- **Orientation transport through negative subspaces.** Along a continuous family of frames
 whose nonzero values lie strictly inside the negative cone, parametrized by a preconnected space,
 the sign of the determinant of the negative block is constant. -/

@@ -49,9 +49,13 @@ on `T`.
 * `ContinuousLinearMap.modulus_adjoint_comp_polarFactor`: the left polar decomposition
   `|T†| U = T`.
 * `ContinuousLinearMap.polarFactor_eq_comp_inverse`: `U = T |T|⁻¹` when `|T|` is invertible.
+* `ContinuousLinearMap.polarFactor_eq_self_of_forall_norm_eq`: an operator preserving norms is its
+  own polar factor.
 * `ContinuousLinearMap.norm_sub_polarFactor_le`: `‖T - U‖ ≤ ‖|T| - 1‖` for an endomorphism `T`.
 * `ContinuousLinearMap.continuousOn_polarFactor`: on real Hilbert spaces, `U` depends
   continuously on `T` where `|T|` is invertible.
+* `ContinuousLinearMap.continuousOn_polarFactor_isUnit`: in particular, `U` depends continuously on
+  an invertible endomorphism `T`.
 
 ## References
 
@@ -270,6 +274,14 @@ theorem polarFactor_eq_comp_inverse (hT : IsUnit T.modulus) :
     T.polarFactor = T ∘L Ring.inverse T.modulus :=
   factorThru_eq_comp_inverse hT
 
+/-- An operator preserving norms has modulus `1`, so it is its own polar factor. -/
+theorem polarFactor_eq_self_of_forall_norm_eq {T : E →L[𝕜] F} (hT : ∀ x, ‖T x‖ = ‖x‖) :
+    T.polarFactor = T := by
+  have hmod : T.modulus = 1 := (eq_modulus_iff.2 ⟨isPositive_one, by
+    rw [← mul_def, mul_one, T.norm_map_iff_adjoint_comp_self.1 hT]⟩).symm
+  have h := T.polarFactor_comp_modulus
+  rwa [hmod, one_def, comp_id] at h
+
 /-- The polar factor of an invertible operator is invertible. -/
 @[simp]
 theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polarFactor := by
@@ -295,6 +307,13 @@ theorem continuousOn_polarFactor :
       exact ((hu ▸ NormedRing.inverse_continuousAt u).comp
         continuous_modulus.continuousAt).continuousWithinAt
   exact (continuousOn_id.clm_comp hinv).congr fun T hT ↦ polarFactor_eq_comp_inverse T hT
+
+/-- The polar factor of an endomorphism of a real Hilbert space depends continuously on the
+operator, in operator norm, at the invertible operators. -/
+theorem continuousOn_polarFactor_isUnit :
+    ContinuousOn (polarFactor : (E →L[ℝ] E) → E →L[ℝ] E) {T | IsUnit T} :=
+  continuousOn_polarFactor.mono fun _ hT ↦
+    (isStrictlyPositive_modulus_of_isInvertible (isInvertible_iff_isUnit.2 hT)).isUnit
 
 end Continuity
 
