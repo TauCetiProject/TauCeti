@@ -71,8 +71,8 @@ theorem tendsto_gaussianSmear_graph (a : α.generator.domain) :
 /-- The entire analytic subalgebra is a core for the closed infinitesimal generator. -/
 theorem generator_hasCore_entireAnalytic :
     α.generator.HasCore α.entireAnalytic.toSubmodule := by
-  refine .of_graph_subset_closure α.isClosed_generator
-    (fun a ha => (mem_entireAnalytic.mp ha).mem_generator_domain) ?_
+  refine (α.isClosed_generator.hasCore_iff_graph_subset_closure
+    fun a ha => (mem_entireAnalytic.mp ha).mem_generator_domain).2 ?_
   intro p hp
   obtain ⟨a, rfl⟩ := (α.generator.mem_graph_iff').mp hp
   apply mem_closure_of_tendsto (α.tendsto_gaussianSmear_graph a)

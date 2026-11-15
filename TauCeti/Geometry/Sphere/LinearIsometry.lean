@@ -43,13 +43,16 @@ This file develops that restriction independently of the manifold structure on s
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: the restriction is an isometry.
 * `TauCeti.LinearMap.eq_of_eqOn_unitSphere`: a real linear map is determined by its
   values on the unit sphere.
+* `TauCeti.Sphere.exists_homeomorph_apply_eq`: a homeomorphism of the unit sphere of a real
+  inner product space moves any point to any other.
 
 ## Implementation notes
 
 The declarations extending `LinearIsometry` and `LinearIsometryEquiv` live in the root-level
 `LinearIsometry` and `LinearIsometryEquiv` namespaces, so receiver notation elaborates. The
 separate linear-map lemma remains in `TauCeti.LinearMap`; it has no explicit `LinearMap` receiver
-for dot notation.
+for dot notation. Likewise the homogeneity of the sphere, whose explicit arguments are points of
+the sphere, lives in `TauCeti.Sphere`.
 -/
 
 public section
@@ -274,5 +277,19 @@ theorem eq_of_eqOn_unitSphere {f g : E →ₗ[ℝ] F} (h : Set.EqOn f g (sphere 
 end Normed
 
 end LinearMap
+
+namespace Sphere
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **The unit sphere is homogeneous.** Any point `x` of the unit sphere of a real inner product
+space is moved to any other point `y` by a homeomorphism of the sphere, namely the
+restriction of a linear isometry equivalence (`LinearIsometryEquiv.isPretransitive_unitSphere`). -/
+theorem exists_homeomorph_apply_eq (x y : sphere (0 : E) 1) :
+    ∃ e : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1, e x = y := by
+  obtain ⟨e, he⟩ := MulAction.exists_smul_eq (E ≃ₗᵢ[ℝ] E) x y
+  exact ⟨e.unitSphereIsometryEquiv.toHomeomorph, by simpa using he⟩
+
+end Sphere
 
 end TauCeti

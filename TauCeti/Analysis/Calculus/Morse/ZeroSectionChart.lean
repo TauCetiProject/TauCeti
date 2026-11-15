@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Parametric
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Ball
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -27,7 +27,7 @@ a neighbourhood of the whole zero section over `U`, in which `F` is its vertical
 form (`TauCeti.exists_parametricMorseCoord_chart`). The family need only be `C^{n+2}` on an open set
 containing the zero section over `U`. The source of the chart is a union of products of open sets of
 the base with balls about `0`; over each base point these balls are nested, so the chart is
-injective.
+injective (`TauCeti.exists_partialDiffeomorph_source_eq_biUnion_prod_ball`).
 
 ## Main declarations
 
@@ -115,9 +115,7 @@ theorem exists_parametricMorseCoord_chart (hW : IsOpen W) (hF : ContDiffOn ℝ (
       ContDiffOn ℝ n ψ ψ.source ∧ ContDiffOn ℝ n ψ.symm ψ.target ∧
       ∀ z ∈ ψ.source, F z = F (z.1, 0) + (2 : ℝ)⁻¹ *
         fderiv ℝ (fderiv ℝ (fun v ↦ F (z.1, v))) 0 (ψ z).2 (ψ z).2 := by
-  set Φ : P × E → P × E := fun z ↦ (z.1, parametricMorseCoord F z)
-    with hΦdef
-  -- Near each point `(b, 0)` of the zero section over `U`, the canonical map `Φ` is a partial
+  -- Near each point `(b, 0)` of the zero section over `U`, the canonical map is a partial
   -- diffeomorphism on a product of an open set with a ball.
   have hloc := fun b (hb : b ∈ U) ↦
     exists_parametricMorseCoord_partialDiffeomorph_prod_ball (hW.mem_nhds (hUW b hb)) hF
@@ -125,49 +123,24 @@ theorem exists_parametricMorseCoord_chart (hW : IsOpen W) (hF : ContDiffOn ℝ (
   have : Nonempty (PartialDiffeomorph 𝓘(ℝ, P × E) 𝓘(ℝ, P × E) (P × E) (P × E) n) :=
     ⟨(Diffeomorph.refl 𝓘(ℝ, P × E) (P × E) n).toPartialDiffeomorph⟩
   choose! U₀ r Θ hU₀ hbU₀ hr hΘsource hsubW hΘeq hnf using hloc
-  set S : Set (P × E) := ⋃ b ∈ U, U₀ b ×ˢ Metric.ball 0 (r b) with hSdef
-  have hS : IsOpen S :=
-    isOpen_biUnion fun b hb ↦ (hU₀ b hb).prod Metric.isOpen_ball
-  have hmemS {z : P × E} : z ∈ S ↔ ∃ b ∈ U, z ∈ U₀ b ×ˢ Metric.ball 0 (r b) := by
-    simp only [hSdef, mem_iUnion, exists_prop]
-  -- On each product piece, `Φ` is the partial diffeomorphism `Θ b`.
-  have hΦΘ {b : P} (hb : b ∈ U) {z : P × E} (hz : z ∈ U₀ b ×ˢ Metric.ball 0 (r b)) :
-      Φ z = Θ b z := (hΘeq b hb z hz).symm
-  -- The fibres of the pieces are nested balls about `0`, so `Φ` is injective on their union.
-  have hinj : InjOn Φ S := by
-    intro z hz z' hz' h
-    obtain ⟨b, hb, hzb⟩ := hmemS.mp hz
-    obtain ⟨b', hb', hzb'⟩ := hmemS.mp hz'
-    have h1 : z.1 = z'.1 := by simpa [hΦdef] using congrArg Prod.fst h
-    wlog hle : r b ≤ r b' generalizing z z' b b'
-    · exact (this hz' hz h.symm b' hb' hzb' b hb hzb h1.symm (le_of_not_ge hle)).symm
-    have hzb'' : z ∈ U₀ b' ×ˢ Metric.ball 0 (r b') :=
-      ⟨h1 ▸ hzb'.1, Metric.ball_subset_ball hle hzb.2⟩
-    refine (Θ b').toPartialEquiv.injOn (hΘsource b' hb' ▸ hzb'') (hΘsource b' hb' ▸ hzb') ?_
-    rw [← hΦΘ hb' hzb'', ← hΦΘ hb' hzb', h]
-  have hld : IsLocalDiffeomorphOn 𝓘(ℝ, P × E) 𝓘(ℝ, P × E) n Φ S := fun ⟨z, hz⟩ ↦ by
-    obtain ⟨b, hb, hzb⟩ := hmemS.mp hz
-    exact isLocalDiffeomorphAt_of_eqOn (hΘsource b hb ▸ hzb) fun z' hz' ↦
-      hΦΘ hb (hΘsource b hb ▸ hz')
-  have : Nonempty (P × E) := ⟨0⟩
-  let ψ := (hld.partialDiffeomorphOfInjOn hS hinj).toOpenPartialHomeomorph
-  have hψ : (ψ : P × E → P × E) = Φ := by
-    simp only [ψ, PartialDiffeomorph.toFun'_toOpenPartialHomeomorph,
-      IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn]
-  have hψsource : ψ.source = S := by
-    simp only [ψ, PartialDiffeomorph.toOpenPartialHomeomorph_source,
-      IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source]
+  -- These local partial diffeomorphisms glue along the nested balls of their sources.
+  obtain ⟨Ψ, hΨsource, hΨ⟩ := exists_partialDiffeomorph_source_eq_biUnion_prod_ball
+    (Φ := fun z : P × E ↦ (z.1, parametricMorseCoord F z)) (fun _ _ ↦ rfl) hU₀
+    (fun b hb ↦ (hΘsource b hb).ge) fun b hb z hz ↦ (hΘeq b hb z hz).symm
+  have hmem {z : P × E} : z ∈ Ψ.source ↔ ∃ b ∈ U, z ∈ U₀ b ×ˢ Metric.ball 0 (r b) := by
+    simp only [hΨsource, mem_iUnion, exists_prop]
+  let ψ := Ψ.toOpenPartialHomeomorph
+  have hψ : (ψ : P × E → P × E) = fun z ↦ (z.1, parametricMorseCoord F z) :=
+    (Ψ.toFun'_toOpenPartialHomeomorph).trans hΨ
   refine ⟨ψ, fun z hz ↦ ?_, fun b hb ↦ ?_, fun z _ ↦ by rw [hψ], fun z hz ↦ ?_,
-    (hld.partialDiffeomorphOfInjOn hS hinj).contMDiffOn_toFun.contDiffOn,
-    (hld.partialDiffeomorphOfInjOn hS hinj).contMDiffOn_invFun.contDiffOn, fun z hz ↦ ?_⟩
-  · obtain ⟨b, hb, hzb⟩ := hmemS.mp (hψsource ▸ hz)
+    Ψ.contMDiffOn_toFun.contDiffOn, Ψ.contMDiffOn_invFun.contDiffOn, fun z hz ↦ ?_⟩
+  · obtain ⟨b, hb, hzb⟩ := hmem.mp hz
     exact hsubW b hb hzb
-  · rw [hψsource]
-    exact hmemS.mpr ⟨b, hb, hbU₀ b hb, Metric.mem_ball_self (hr b hb)⟩
+  · exact hmem.mpr ⟨b, hb, hbU₀ b hb, Metric.mem_ball_self (hr b hb)⟩
   · -- the first coordinate of `ψ (ψ.symm z) = z` is that of `ψ.symm z`
     have h := congrArg Prod.fst (ψ.right_inv hz)
     rwa [hψ] at h
-  · obtain ⟨b, hb, hzb⟩ := hmemS.mp (hψsource ▸ hz)
+  · obtain ⟨b, hb, hzb⟩ := hmem.mp hz
     rw [hψ]
     exact hnf b hb z hzb
 

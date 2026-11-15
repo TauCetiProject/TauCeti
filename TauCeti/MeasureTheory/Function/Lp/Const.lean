@@ -50,7 +50,7 @@ variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F] {μ : Measur
 `fun x => f x - a` is the distance from `f` to the constant class `a`. -/
 theorem eLpNorm_sub_const_eq_enorm (a : F) (f : Lp F p μ) :
     eLpNorm (fun x => f x - a) p μ = ‖f - Lp.const p μ a‖ₑ := by
-  rw [Lp.enorm_def]
+  rw [Lp.eNorm_def]
   exact eLpNorm_congr_ae ((Lp.coeFn_sub _ _).trans (.sub .rfl (Lp.coeFn_const p μ a))).symm
 
 omit [IsFiniteMeasure μ] in

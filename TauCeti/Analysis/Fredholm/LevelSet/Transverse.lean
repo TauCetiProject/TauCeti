@@ -90,7 +90,7 @@ theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G :
   -- The level equation `P ∘ e ∘ G = 0`, with `P` the projection onto a complement `C` of `L`.
   obtain ⟨C, hLC⟩ := L.exists_isCompl
   have hCL := (Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hLC
-    L.closed_of_finiteDimensional).symm
+    L.isClosed_of_finiteDimensional).symm
   set P : F →L[ℝ] C := C.projectionOntoL L hCL
   have hfinrank : finrank ℝ C = finrank ℝ F - finrank ℝ L := by
     rw [← Submodule.finrank_add_eq_of_isCompl hLC, Nat.add_sub_cancel_left]
@@ -110,7 +110,7 @@ theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G :
     refine ⟨A, (P.hasFDerivAt.comp (G w) hA).comp w
       ((hcont w hw.1 hw.2 hwS).differentiableAt hn0).hasFDerivAt,
       LinearMap.range_eq_top.2 <| (Submodule.projectionOntoL_surjective hCL).comp A.surjective, ?_⟩
-    rw [hS.span_tangentConeAt_eq_comap L.closed_of_finiteDimensional hw.2 hwS hA]
+    rw [hS.span_tangentConeAt_eq_comap L.isClosed_of_finiteDimensional hw.2 hwS hA]
     ext v
     simp [P]
   have hreg : ∀ᵐ l ∂ν, IsRegularParameterOn (fun w ↦ P (e (G w))) W 0 l := by

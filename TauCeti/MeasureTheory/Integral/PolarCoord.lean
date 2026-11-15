@@ -181,7 +181,6 @@ theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : �
     filter_upwards [Ioi_ae_eq_Ici (μ := (volume : Measure ℝ)) (a := 0)] with r hr
     simp only [mem_inter_iff]
     rw [hr]
-    apply propext
     exact ⟨And.right, fun h ↦ ⟨ha.trans h.1, h⟩⟩
   rw [he, Icc_prod_eq, Measure.volume_eq_prod]
   exact setIntegral_congr_set

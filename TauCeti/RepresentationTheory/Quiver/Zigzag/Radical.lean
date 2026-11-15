@@ -350,6 +350,26 @@ theorem zigzagMk_ofArrow_mem_jacobson (d : G.Dart) :
   rw [pow_three']
   exact mul_mul_eq_zero_of_mem_zigzagPositiveSpan hy hy hy
 
+/-- Every volume class belongs to the square of the Jacobson radical: it is the product of an
+arrow with its reverse, or zero at an isolated vertex. -/
+theorem zigzagVolume_mem_jacobson_sq (i : V) :
+    zigzagVolume k G i ∈ Ring.jacobson (nonisolatedZigzagQuotient k G) ^ 2 := by
+  by_cases hi : ∃ j, G.Adj i j
+  swap
+  · rw [zigzagVolume_eq_zero_of_isIsolated k G fun j hj => hi ⟨j, hj⟩]
+    exact Submodule.zero_mem _
+  obtain ⟨j, hij⟩ := hi
+  let d : G.Dart := ⟨(i, j), hij⟩
+  -- Ideal powers use the submodule successor recursion, so expose `2` as a successor.
+  rw [show 2 = 1 + 1 by omega, Ideal.IsTwoSided.pow_succ, Submodule.pow_one]
+  have hprod := Ideal.mul_mem_mul (zigzagMk_ofArrow_mem_jacobson (k := k) (G := G) d.symm)
+    (zigzagMk_ofArrow_mem_jacobson (k := k) (G := G) d)
+  have hprod' : zigzagVolume k G d.symm.snd ∈
+      Ring.jacobson (nonisolatedZigzagQuotient k G) *
+        Ring.jacobson (nonisolatedZigzagQuotient k G) :=
+    (zigzagMk_ofArrow_mul_ofArrow_symm k G d.symm) ▸ hprod
+  simpa [d] using hprod'
+
 end CommRing
 
 /-! ### Identification with the Jacobson radical -/
@@ -390,31 +410,6 @@ theorem restrictScalars_jacobson_nonisolatedZigzagQuotient_eq_zigzagPositiveSpan
   rw [jacobson_nonisolatedZigzagQuotient_eq_ker hns,
     ker_zigzagTrivialCoeff_eq_zigzagPositiveSpan hns]
 
-/-- Every volume class belongs to the square of the Jacobson radical: it is the product of an
-arrow with its reverse. -/
-theorem zigzagVolume_mem_jacobson_sq (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
-    zigzagVolume k G i ∈ Ring.jacobson (nonisolatedZigzagQuotient k G) ^ 2 := by
-  obtain ⟨j, hij⟩ := hns i
-  let d : G.Dart := ⟨(i, j), hij⟩
-  -- Ideal powers use the submodule successor recursion, so expose `2` as a successor.
-  rw [show 2 = 1 + 1 by omega, Ideal.IsTwoSided.pow_succ, Submodule.pow_one]
-  have hd : zigzagMk k G (ofArrow (arrow G d.symm.adj)) ∈
-      Ring.jacobson (nonisolatedZigzagQuotient k G) := by
-    rw [jacobson_nonisolatedZigzagQuotient_eq_ker hns, RingHom.mem_ker]
-    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using
-      zigzagTrivialCoeff_ofArrow k G d.symm
-  have hdr : zigzagMk k G (ofArrow (arrow G d.adj)) ∈
-      Ring.jacobson (nonisolatedZigzagQuotient k G) := by
-    rw [jacobson_nonisolatedZigzagQuotient_eq_ker hns, RingHom.mem_ker]
-    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using
-      zigzagTrivialCoeff_ofArrow k G d
-  have hprod := Ideal.mul_mem_mul hd hdr
-  have hprod' : zigzagVolume k G d.symm.snd ∈
-      Ring.jacobson (nonisolatedZigzagQuotient k G) *
-        Ring.jacobson (nonisolatedZigzagQuotient k G) :=
-    (zigzagMk_ofArrow_mul_ofArrow_symm k G d.symm) ▸ hprod
-  simpa [d] using hprod'
-
 /-- **The square of the Jacobson radical is the volume span.** -/
 theorem restrictScalars_jacobson_sq_nonisolatedZigzagQuotient_eq_zigzagVolumeSpan
     (hns : ∀ i : V, ∃ j, G.Adj i j) :
@@ -438,7 +433,7 @@ theorem restrictScalars_jacobson_sq_nonisolatedZigzagQuotient_eq_zigzagVolumeSpa
       exact mul_mem_zigzagVolumeSpan hx' hy'
     · exact Submodule.add_mem _ hx hy
   · rw [zigzagVolumeSpan, Submodule.span_le, Set.range_subset_iff]
-    exact zigzagVolume_mem_jacobson_sq hns
+    exact zigzagVolume_mem_jacobson_sq
 
 /-- **The third power of the Jacobson radical of a zigzag algebra vanishes.** -/
 theorem jacobson_pow_three_nonisolatedZigzagQuotient_eq_bot

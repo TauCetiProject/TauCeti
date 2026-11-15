@@ -359,7 +359,7 @@ theorem exists_lipschitzOnWith_negativeGradientRemainder (hf : ContDiffAt ℝ 2 
     (ε : ℝ≥0) (hε : 0 < ε) :
     ∃ r > 0, LipschitzOnWith ε (negativeGradientRemainder f x) (Metric.closedBall x r) := by
   obtain ⟨s, hs, hlip⟩ := hf.hasStrictFDerivAt_negativeGradientRemainder
-    |>.exists_lipschitzOnWith_of_nnnorm_lt ε (by simpa using hε)
+    |>.exists_lipschitzOnWith_of_nnNorm_lt ε (by simpa using hε)
   obtain ⟨r, hr, hrs⟩ := Metric.nhds_basis_closedBall.mem_iff.mp hs
   exact ⟨r, hr, hlip.mono hrs⟩
 

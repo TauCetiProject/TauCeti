@@ -16,12 +16,11 @@ the auditable format of `TauCeti.GroupPresentation`. The row records the generat
 counts and the relator expressions. Its docstring records the generator names, source and locator,
 generator and commutator conventions, and transcription notes.
 
-The source is admissible in the sense the CFSG roadmap requires of a manifest row: it is a full
-presentation of the abstract group, not a semi-presentation for recognizing generators inside an
-already constructed group, and it is *proved* there to define `Th`. The proof is Theorem 3.1 of the
-source, whose final step is a coset enumeration of the `143 127 000` cosets of the maximal subgroup
-`³D₄(2):3`. Until that paper appeared, `Th` was the only sporadic simple group with no published
-presentation for it or for its automorphism group.
+The source gives a full presentation of the abstract group, not a semi-presentation for recognizing
+generators inside an already constructed group, and it is *proved* there to define `Th`. The proof
+is Theorem 3.1 of the source, whose final step is a coset enumeration of the `143 127 000` cosets of
+the maximal subgroup `³D₄(2):3`. Until that paper appeared, `Th` was the only sporadic simple group
+with no published presentation for it or for its automorphism group.
 
 ## The relator groups
 
@@ -54,8 +53,8 @@ between the printed source and the free-group element used as a relation is left
 
 Nothing here asserts that the presented group is nontrivial, finite or simple, that it has any
 particular order, or that it is isomorphic to any other construction of the Thompson group. Those
-are downstream statements that the CFSG roadmap deliberately does not ask for; what this file
-supplies is a named group built from explicit, cited relator data.
+are downstream statements; what this file supplies is a named group built from explicit, cited
+relator data.
 
 The checks that are proved are transcription arithmetic. `TauCeti.Sporadic.Thompson.presentation`
 has eight generators and thirty-nine relators, split as `14 + 6 + 7 + 7 + 1 + 4` over the source's
@@ -106,12 +105,11 @@ the source's equation `w₁ = w₂`, `.conj` for `w₁ ^ w₂`, and `Relator.com
 source convention `[w₁,w₂] = w₁⁻¹w₂⁻¹w₁w₂`; the characteristic free-group lemmas cited above check
 those three nontrivial notation choices. `relatorList` concatenates the six source groups in order,
 and their checked lengths give `14 + 6 + 7 + 7 + 1 + 4 = 39`, with none dropped or duplicated. This
-closes the row's S1 source-to-Lean read-through.
+closes the row's source-to-Lean read-through.
 
-The independent `FiniteSimpleGroups` development named by the roadmap does not cover `Th`, so the
-additional explicit-construction comparison does not apply to this row. The source states that
-some relators are redundant, kept for clarity or to help the enumeration, so the list is
-deliberately not minimal.
+The independent `FiniteSimpleGroups` development does not cover `Th`, so the additional
+explicit-construction comparison does not apply to this row. The source states that some relators
+are redundant, kept for clarity or to help the enumeration, so the list is deliberately not minimal.
 
 ## Main definitions
 
@@ -134,9 +132,7 @@ deliberately not minimal.
 
 ## References
 
-This fills one of the twenty-six rows owed by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`, which asks for the complete relator words of an
-admissible source for each sporadic name. The source is
+The source is
 
 * G. Havas, L. H. Soicher and R. A. Wilson, *A presentation for the Thompson sporadic simple
   group*, in *Groups and Computation III* (Columbus, OH, 1999), Ohio State University Mathematical
