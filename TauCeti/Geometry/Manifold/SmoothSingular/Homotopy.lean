@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
@@ -15,6 +16,8 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+
+import TauCeti.Geometry.Manifold.ContMDiff.Homotopy
 
 /-!
 # Homotopy invariance of smooth singular homology
@@ -41,8 +44,13 @@ restriction of the homotopy of singular simplicial sets
 
 Consequently a smoothly contractible manifold has the smooth singular homology of a point: if the
 identity of `M` is smoothly homotopic to a constant map, the positive-degree smooth singular
-homology of `M` vanishes (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`). This
-applies to every star-convex open subset of a real normed space
+homology of `M` vanishes (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`), and more
+strongly the inclusion of smooth singular chains into singular chains is a chain homotopy
+equivalence (`TauCeti.smoothSingularChainHomotopyEquivOfContMDiff`) and hence a quasi-isomorphism
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`), as is the inclusion
+for any subsingleton charted space
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton`). Vanishing in
+positive degrees applies to every star-convex open subset of a real normed space
 (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`), the contraction being
 `(t, x) ↦ c + (1 - ψ t) • (x - c)` for a smooth `ψ : ℝ → [0, 1]` with `ψ 0 = 0` and `ψ 1 = 1`. The
 homotopy is required to be smooth on all of `ℝ × M`, not merely on `[0, 1] × M`: a smooth simplex is
@@ -54,8 +62,6 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
 
 ## Main definitions and results
 
-* `TauCeti.topCatHomotopyOfContMDiff`: the `TopCat.Homotopy` on `[0, 1] × M` restricted from a
-  `C^n` map `F : ℝ × M → N`.
 * `TauCeti.smoothSingularSubcomplexHomotopy`: a smooth homotopy induces a simplicial homotopy of
   the maps of smooth singular subcomplexes, restricting the homotopy of singular simplicial sets.
 * `TauCeti.smoothSingularChainHomotopy`: the induced chain homotopy of smooth singular chains.
@@ -65,6 +71,12 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
   has no smooth singular homology in positive degrees.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has a star-convex open
   subset of a normed space.
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton`: on a subsingleton
+  charted space (including the empty space and a point), the inclusion of smooth singular chains
+  into singular chains is a quasi-isomorphism.
+* `TauCeti.smoothSingularChainHomotopyEquivOfContMDiff` and
+  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`: explicit chain
+  homotopy equivalence and quasi-isomorphism for smoothly contractible charted spaces.
 
 ## References
 
@@ -79,9 +91,11 @@ noncomputable section
 open CategoryTheory Limits MonoidalCategory Simplicial Opposite Set Convexity
 open scoped Manifold ContDiff
 
-universe u
+universe u v w
 
 namespace TauCeti
+
+section Homotopy
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
@@ -178,27 +192,6 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq [CategoryWithHomology C] (n :
   (smoothSingularSubcomplexHomotopy hf hg H hF hFH).congr_homologyMap R n
 
 omit hf hg in
-/-- A `C^n` map `F : ℝ × M → N` with `F (0, ·) = f` and `F (1, ·) = g` restricts to `[0, 1] × M`
-as a `TopCat.Homotopy` between the morphisms induced by `f` and `g`. -/
-def topCatHomotopyOfContMDiff {k : ℕ∞ω} (hf : ContMDiff I J k f) (hg : ContMDiff I J k g)
-    (hF : ContMDiff (𝓘(ℝ).prod I) J k F)
-    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
-    TopCat.Homotopy (TopCat.ofHom ⟨f, hf.continuous⟩) (TopCat.ofHom ⟨g, hg.continuous⟩) where
-  toFun p := F (p.1, p.2)
-  continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
-  map_zero_left := h₀
-  map_one_left := h₁
-
-omit hf hg in
-/-- Evaluating `topCatHomotopyOfContMDiff` on `[0, 1] × M` applies the ambient map `F`. -/
-@[simp]
-theorem topCatHomotopyOfContMDiff_apply {k : ℕ∞ω} (hf : ContMDiff I J k f)
-    (hg : ContMDiff I J k g) (hF : ContMDiff (𝓘(ℝ).prod I) J k F)
-    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) (p : unitInterval × M) :
-    topCatHomotopyOfContMDiff hf hg hF h₀ h₁ p = F (p.1, p.2) := by
-  rfl
-
-omit hf hg in
 /-- Smooth maps `f` and `g` joined by a smooth map `F : ℝ × M → N`, with `F (0, ·) = f` and
 `F (1, ·) = g`, induce the same map on smooth singular homology. -/
 theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHomology C]
@@ -272,5 +265,100 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF ⟨c, hU.mem hne⟩
     (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.zero]))
     (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.one])) hn
+
+end Homotopy
+
+/-! ### Chain homotopy equivalence for subsingleton and smoothly contractible spaces -/
+
+section Contractible
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- On a subsingleton charted space, the inclusion of smooth singular chains into singular chains
+is a quasi-isomorphism. -/
+instance quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_subsingleton [Subsingleton M]
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C]
+    [CategoryWithHomology C] (R : C) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) :=
+  inferInstance
+
+private def homotopy_ι_comp_constToSmoothSingularSubcomplex
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
+    Homotopy
+      (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R ≫
+        SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R)
+      (𝟙 _) := by
+  refine (Homotopy.ofEq ?_).trans
+    (((smoothSingularChainHomotopy (contMDiff_id (I := I))
+      (contMDiff_const : ContMDiff I I ∞ _)
+      (topCatHomotopyOfContMDiff (contMDiff_id (I := I)) contMDiff_const hF h₀ h₁)
+      hF (fun p ↦ (topCatHomotopyOfContMDiff_apply _ _ _ _ _ p).symm) R).symm).trans
+      (Homotopy.ofEq ?_))
+  · rw [← Functor.map_comp, ι_comp_constToSmoothSingularSubcomplex]
+  · rw [smoothSingularSubcomplexMap_id]
+    exact ((SSet.chainComplexFunctor C).obj R).map_id _
+
+private def homotopy_constToSmoothSingularSubcomplex_comp_ι
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
+    Homotopy
+      (SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R ≫
+        SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
+      (𝟙 _) := by
+  refine (Homotopy.ofEq ?_).trans
+    ((((topCatHomotopyOfContMDiff (contMDiff_id (I := I))
+      (contMDiff_const : ContMDiff I I ∞ _) hF h₀ h₁).toSSet.chainComplexMap R).symm).trans
+      (Homotopy.ofEq ?_))
+  · rw [← Functor.map_comp, constToSmoothSingularSubcomplex_ι]
+    exact congrArg (fun f ↦ SSet.chainComplexMap (TopCat.toSSet.map f) R) (by ext; simp)
+  · have hid : (TopCat.ofHom ⟨id, (contMDiff_id (I := I) (n := ∞)).continuous⟩ :
+        TopCat.of M ⟶ TopCat.of M) = 𝟙 (TopCat.of M) := by
+      ext
+      simp
+    rw [hid, CategoryTheory.Functor.map_id]
+    exact ((SSet.chainComplexFunctor C).obj R).map_id _
+
+/-- **Chain homotopy equivalence on a smoothly contractible charted space.** If `F : ℝ × M → M` is
+a smooth homotopy from the identity `F (0, ·) = id` to a constant map `F (1, ·) = c`, then the
+inclusion of smooth singular chains into singular chains is a chain homotopy equivalence, with
+inverse induced by collapsing `M` to the constant smooth `0`-simplex at `c`. -/
+def smoothSingularChainHomotopyEquivOfContMDiff
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
+    HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R) where
+  hom := SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R
+  inv := SSet.chainComplexMap (constToSmoothSingularSubcomplex I (TopCat.of M) c) R
+  homotopyHomInvId := homotopy_ι_comp_constToSmoothSingularSubcomplex R hF c h₀ h₁
+  homotopyInvHomId := homotopy_constToSmoothSingularSubcomplex_comp_ι R hF c h₀ h₁
+
+/-- The forward map of `smoothSingularChainHomotopyEquivOfContMDiff` is the chain map induced by the
+inclusion of smooth singular simplices. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivOfContMDiff_hom
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
+    (smoothSingularChainHomotopyEquivOfContMDiff R hF c h₀ h₁).hom =
+      SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R := by
+  rfl
+
+/-- On a smoothly contractible charted space, the inclusion of smooth singular chains into singular
+chains is a quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff
+    {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C]
+    [CategoryWithHomology C] (R : C)
+    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M)
+    (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = c) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) := by
+  rw [← smoothSingularChainHomotopyEquivOfContMDiff_hom R hF c h₀ h₁]
+  exact (smoothSingularChainHomotopyEquivOfContMDiff R hF c h₀ h₁).quasiIso_hom
+
+end Contractible
 
 end TauCeti
