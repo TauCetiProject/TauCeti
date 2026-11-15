@@ -98,39 +98,34 @@ def isColimitCategorySimplicialObjectXCofan (M : C ⥤ A) (n : ℕ) :
     IsColimit (categorySimplicialObjectXCofan M n) :=
   coproductIsCoproduct _
 
-@[ext]
-lemma categorySimplicialObject_hom_ext {M : C ⥤ A} {n : ℕ} {T : A}
+@[ext] lemma categorySimplicialObject_hom_ext {M : C ⥤ A} {n : ℕ} {T : A}
     {f g : (categorySimplicialObject C M) _⦋n⦌ ⟶ T}
     (h : ∀ σ : ComposableArrows C n,
       ιCategorySimplicialObject M σ ≫ f = ιCategorySimplicialObject M σ ≫ g) : f = g :=
   (isColimitCategorySimplicialObjectXCofan M n).hom_ext fun ⟨σ⟩ ↦ h σ
 
 /-- Action of `φ : ⦋m⦌ ⟶ ⦋n⦌` on the `σ`-summand of `categorySimplicialObject C M`. -/
-@[reassoc]
-lemma ιCategorySimplicialObject_map (M : C ⥤ A) {m n : ℕ} (φ : ⦋m⦌ ⟶ ⦋n⦌)
+@[reassoc] lemma ιCategorySimplicialObject_map (M : C ⥤ A) {m n : ℕ} (φ : ⦋m⦌ ⟶ ⦋n⦌)
     (σ : ComposableArrows C n) :
     ιCategorySimplicialObject M σ ≫ (categorySimplicialObject C M).map φ.op =
       M.map (σ.map (homOfLE (Fin.zero_le (φ.toOrderHom 0)))) ≫
-        ιCategorySimplicialObject M ((nerve C).map φ.op σ) :=
-  Sigma.ι_comp_desc _ _
+        ιCategorySimplicialObject M ((nerve C).map φ.op σ) := Sigma.ι_comp_desc _ _
 
-@[reassoc (attr := simp)]
-lemma ιCategorySimplicialObject_δ_zero (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C (n + 1)) :
+@[reassoc (attr := simp)] lemma ιCategorySimplicialObject_δ_zero (M : C ⥤ A) {n : ℕ}
+    (σ : ComposableArrows C (n + 1)) :
     ιCategorySimplicialObject M σ ≫ (categorySimplicialObject C M).δ 0 =
       M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
         ιCategorySimplicialObject M ((nerve C).δ 0 σ) := by
   rw [SimplicialObject.δ, ιCategorySimplicialObject_map]; rfl
 
-@[reassoc (attr := simp)]
-lemma ιCategorySimplicialObject_δ_succ (M : C ⥤ A) {n : ℕ} (j : Fin (n + 1))
-    (σ : ComposableArrows C (n + 1)) :
+@[reassoc (attr := simp)] lemma ιCategorySimplicialObject_δ_succ (M : C ⥤ A) {n : ℕ}
+    (j : Fin (n + 1)) (σ : ComposableArrows C (n + 1)) :
     ιCategorySimplicialObject M σ ≫ (categorySimplicialObject C M).δ j.succ =
       ιCategorySimplicialObject M ((nerve C).δ j.succ σ) :=
   (ιCategorySimplicialObject_map M (SimplexCategory.δ j.succ) σ).trans
     ((congrArg (· ≫ _) (eq_of_heq (map_zero_le_heq_id M σ rfl))).trans (Category.id_comp _))
 
-@[reassoc (attr := simp)]
-lemma ιCategorySimplicialObject_σ (M : C ⥤ A) {n : ℕ} (i : Fin (n + 1))
+@[reassoc (attr := simp)] lemma ιCategorySimplicialObject_σ (M : C ⥤ A) {n : ℕ} (i : Fin (n + 1))
     (τ : ComposableArrows C n) :
     ιCategorySimplicialObject M τ ≫ (categorySimplicialObject C M).σ i =
       ιCategorySimplicialObject M ((nerve C).σ i τ) :=
@@ -143,8 +138,7 @@ def categorySimplicialObjectCoeffMap {M N : C ⥤ A} (α : M ⟶ N) :
   app Δ := Sigma.desc fun σ ↦
     α.app (σ.obj 0) ≫ Sigma.ι (fun τ : ComposableArrows C Δ.unop.len ↦ N.obj (τ.obj 0)) σ
   naturality {Δ₁ Δ₂} f := by
-    dsimp only [categorySimplicialObject]
-    ext σ
+    dsimp only [categorySimplicialObject]; ext σ
     refine (ι_comp_desc_desc σ
       (fun τ : ComposableArrows C Δ₁.unop.len ↦ τ.whiskerLeft f.unop.toOrderHom.monotone.functor)
       (fun τ ↦ M.map (τ.map (homOfLE (Fin.zero_le (f.unop.toOrderHom 0)))))
@@ -157,20 +151,16 @@ def categorySimplicialObjectCoeffMap {M N : C ⥤ A} (α : M ⟶ N) :
     exact (Category.assoc _ _ _).symm.trans
       ((congrArg (· ≫ _) (α.naturality _).symm).trans (Category.assoc _ _ _))
 
-@[reassoc (attr := simp)]
-lemma ιCategorySimplicialObject_coeffMap_app {M N : C ⥤ A} (α : M ⟶ N) {n : ℕ}
-    (σ : ComposableArrows C n) :
+@[reassoc (attr := simp)] lemma ιCategorySimplicialObject_coeffMap_app {M N : C ⥤ A} (α : M ⟶ N)
+    {n : ℕ} (σ : ComposableArrows C n) :
     ιCategorySimplicialObject M σ ≫ (categorySimplicialObjectCoeffMap α).app (op ⦋n⦌) =
-      α.app (σ.obj 0) ≫ ιCategorySimplicialObject N σ :=
-  Sigma.ι_comp_desc _ _
+      α.app (σ.obj 0) ≫ ιCategorySimplicialObject N σ := Sigma.ι_comp_desc _ _
 
-@[simp]
-lemma categorySimplicialObjectCoeffMap_id (M : C ⥤ A) :
+@[simp] lemma categorySimplicialObjectCoeffMap_id (M : C ⥤ A) :
     categorySimplicialObjectCoeffMap (𝟙 M) = 𝟙 (categorySimplicialObject C M) :=
   NatTrans.ext (funext fun ⟨⟨_⟩⟩ ↦ categorySimplicialObject_hom_ext fun _ ↦ by simp)
 
-@[reassoc]
-lemma categorySimplicialObjectCoeffMap_comp {L M N : C ⥤ A} (α : L ⟶ M) (β : M ⟶ N) :
+@[reassoc] lemma categorySimplicialObjectCoeffMap_comp {L M N : C ⥤ A} (α : L ⟶ M) (β : M ⟶ N) :
     categorySimplicialObjectCoeffMap (α ≫ β) =
       categorySimplicialObjectCoeffMap α ≫ categorySimplicialObjectCoeffMap β :=
   NatTrans.ext (funext fun ⟨⟨_⟩⟩ ↦ categorySimplicialObject_hom_ext fun _ ↦ by simp)
@@ -183,8 +173,7 @@ def categorySimplicialObjectMap {D : Type u₂} [Category.{v₂} D] [HasCoproduc
     Sigma.ι (fun τ : ComposableArrows D Δ.unop.len ↦ M.obj (τ.obj 0))
       ((F.mapComposableArrows Δ.unop.len).obj σ)
   naturality {Δ₁ Δ₂} f := by
-    dsimp only [categorySimplicialObject]
-    ext σ
+    dsimp only [categorySimplicialObject]; ext σ
     exact (ι_comp_desc_desc
       (Q := fun ρ : ComposableArrows C Δ₂.unop.len ↦ (F ⋙ M).obj (ρ.obj 0)) σ
       (fun τ : ComposableArrows C Δ₁.unop.len ↦ τ.whiskerLeft f.unop.toOrderHom.monotone.functor)
@@ -197,23 +186,19 @@ def categorySimplicialObjectMap {D : Type u₂} [Category.{v₂} D] [HasCoproduc
           Sigma.ι (fun υ : ComposableArrows D Δ₂.unop.len ↦ M.obj (υ.obj 0))
             (ρ.whiskerLeft f.unop.toOrderHom.monotone.functor))).symm
 
-@[reassoc (attr := simp)]
-lemma ιCategorySimplicialObject_categorySimplicialObjectMap_app
+@[reassoc (attr := simp)] lemma ιCategorySimplicialObject_categorySimplicialObjectMap_app
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     (F : C ⥤ D) (M : D ⥤ A) {n : ℕ} (σ : ComposableArrows C n) :
     ιCategorySimplicialObject (F ⋙ M) σ ≫ (categorySimplicialObjectMap F M).app (op ⦋n⦌) =
-      ιCategorySimplicialObject M ((F.mapComposableArrows n).obj σ) :=
-  Sigma.ι_comp_desc _ _
+      ιCategorySimplicialObject M ((F.mapComposableArrows n).obj σ) := Sigma.ι_comp_desc _ _
 
-@[simp]
-lemma categorySimplicialObjectMap_id (M : C ⥤ A) :
+@[simp] lemma categorySimplicialObjectMap_id (M : C ⥤ A) :
     categorySimplicialObjectMap (𝟭 C) M = 𝟙 (categorySimplicialObject C M) :=
   NatTrans.ext (funext fun ⟨⟨_⟩⟩ ↦ categorySimplicialObject_hom_ext fun σ ↦
     (ιCategorySimplicialObject_categorySimplicialObjectMap_app (𝟭 C) M σ).trans
       (Category.comp_id _).symm)
 
-@[reassoc]
-lemma categorySimplicialObjectMap_comp
+@[reassoc] lemma categorySimplicialObjectMap_comp
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     {E : Type u₃} [Category.{v₃} E] [HasCoproducts.{max u₃ v₃} A]
     (F : C ⥤ D) (G : D ⥤ E) (M : E ⥤ A) :
@@ -226,8 +211,7 @@ lemma categorySimplicialObjectMap_comp
       (ιCategorySimplicialObject_categorySimplicialObjectMap_app F (G ⋙ M) σ)).trans
       (ιCategorySimplicialObject_categorySimplicialObjectMap_app G M _))).symm
 
-@[reassoc]
-lemma categorySimplicialObjectMap_naturality
+@[reassoc] lemma categorySimplicialObjectMap_naturality
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     (F : C ⥤ D) {M N : D ⥤ A} (α : M ⟶ N) :
     categorySimplicialObjectCoeffMap (Functor.whiskerLeft F α) ≫ categorySimplicialObjectMap F N =
@@ -243,11 +227,10 @@ end SimplicialLemmas
 /-- Functoriality of `categorySimplicialObject` in `M : C ⥤ A`. -/
 abbrev categorySimplicialObjectFunctor (C : Type u) [Category.{v} C]
     (A : Type u') [Category.{v'} A] [HasCoproducts.{max u v} A] :
-    (C ⥤ A) ⥤ SimplicialObject A where
-  obj M := categorySimplicialObject C M
-  map α := categorySimplicialObjectCoeffMap α
-  map_id := categorySimplicialObjectCoeffMap_id
-  map_comp := categorySimplicialObjectCoeffMap_comp
+    (C ⥤ A) ⥤ SimplicialObject A :=
+  { obj := categorySimplicialObject C, map := categorySimplicialObjectCoeffMap
+    map_id := categorySimplicialObjectCoeffMap_id
+    map_comp := categorySimplicialObjectCoeffMap_comp }
 
 /-- Identification of `categorySimplicialObject` for constant coefficients with
 `(sigmaConst.obj X).obj (nerve C)`. -/
@@ -262,16 +245,14 @@ def categorySimplicialObjectConstIso (C : Type u) [Category.{v} C] [HasCoproduct
       inv_hom_id := by dsimp [categorySimplicialObject]; ext σ; simp })
     (fun _ ↦ by dsimp [categorySimplicialObject]; ext σ; simp [Sigma.map']; rfl)
 
-@[reassoc (attr := simp)]
-lemma ιCategorySimplicialObject_constIso_hom {C : Type u} [Category.{v} C]
-    [HasCoproducts.{max u v} A] (X : A) {n : ℕ} (σ : ComposableArrows C n) :
+@[reassoc (attr := simp)] lemma ιCategorySimplicialObject_constIso_hom {C : Type u}
+    [Category.{v} C] [HasCoproducts.{max u v} A] (X : A) {n : ℕ} (σ : ComposableArrows C n) :
     ιCategorySimplicialObject ((Functor.const C).obj X) σ ≫
       (categorySimplicialObjectConstIso C X).hom.app (op ⦋n⦌) =
       Sigma.ι (fun _ : (nerve C) _⦋n⦌ ↦ X) σ := Sigma.ι_comp_desc _ _
 
-@[reassoc (attr := simp)]
-lemma ι_categorySimplicialObjectConstIso_inv {C : Type u} [Category.{v} C]
-    [HasCoproducts.{max u v} A] (X : A) {n : ℕ} (σ : ComposableArrows C n) :
+@[reassoc (attr := simp)] lemma ι_categorySimplicialObjectConstIso_inv {C : Type u}
+    [Category.{v} C] [HasCoproducts.{max u v} A] (X : A) {n : ℕ} (σ : ComposableArrows C n) :
     Sigma.ι (fun _ : (nerve C) _⦋n⦌ ↦ X) σ ≫
       (categorySimplicialObjectConstIso C X).inv.app (op ⦋n⦌) =
       ιCategorySimplicialObject ((Functor.const C).obj X) σ := Sigma.ι_comp_desc _ _
@@ -330,16 +311,13 @@ def ιCategoryChainComplex₁ (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ ⟶ c₁) 
 def ιCategoryChainComplex₂ (M : C ⥤ A) {c₀ c₁ c₂ : C} (f : c₀ ⟶ c₁) (g : c₁ ⟶ c₂) :
     M.obj c₀ ⟶ (categoryChainComplex C M).X 2 := ιCategoryChainComplex M (ComposableArrows.mk₂ f g)
 
-@[simp]
-lemma ιCategoryChainComplex_mk₀ (M : C ⥤ A) (c : C) :
+@[simp] lemma ιCategoryChainComplex_mk₀ (M : C ⥤ A) (c : C) :
     ιCategoryChainComplex M (ComposableArrows.mk₀ c) = ιCategoryChainComplex₀ M c := (rfl)
 
-@[simp]
-lemma ιCategoryChainComplex_mk₁ (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ ⟶ c₁) :
+@[simp] lemma ιCategoryChainComplex_mk₁ (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ ⟶ c₁) :
     ιCategoryChainComplex M (ComposableArrows.mk₁ f) = ιCategoryChainComplex₁ M f := (rfl)
 
-@[simp]
-lemma ιCategoryChainComplex_mk₂ (M : C ⥤ A) {c₀ c₁ c₂ : C} (f : c₀ ⟶ c₁) (g : c₁ ⟶ c₂) :
+@[simp] lemma ιCategoryChainComplex_mk₂ (M : C ⥤ A) {c₀ c₁ c₂ : C} (f : c₀ ⟶ c₁) (g : c₁ ⟶ c₂) :
     ιCategoryChainComplex M (ComposableArrows.mk₂ f g) = ιCategoryChainComplex₂ M f g := (rfl)
 
 /-- Colimit cofan presenting `(categoryChainComplex C M).X n` as `∐_{σ ∈ NₙC} M(σ₀)`. -/
@@ -350,8 +328,7 @@ abbrev categoryChainComplexXCofan (M : C ⥤ A) (n : ℕ) :
 def isColimitCategoryChainComplexXCofan (M : C ⥤ A) (n : ℕ) :
     IsColimit (categoryChainComplexXCofan M n) := isColimitCategorySimplicialObjectXCofan M n
 
-@[ext]
-lemma categoryChainComplex_hom_ext {M : C ⥤ A} {n : ℕ} {T : A}
+@[ext] lemma categoryChainComplex_hom_ext {M : C ⥤ A} {n : ℕ} {T : A}
     {f g : (categoryChainComplex C M).X n ⟶ T}
     (h : ∀ σ : ComposableArrows C n,
       ιCategoryChainComplex M σ ≫ f = ιCategoryChainComplex M σ ≫ g) : f = g :=
@@ -366,8 +343,7 @@ lemma ιCategoryChainComplex_congr_heq {M : C ⥤ A} {n : ℕ} {σ τ : Composab
     (h : σ = τ) : ιCategoryChainComplex M σ ≍ ιCategoryChainComplex M τ := by cases h; rfl
 
 /-- Alternating-face boundary formula on the `σ`-summand of `categoryChainComplex C M`. -/
-@[reassoc]
-lemma ιCategoryChainComplex_d (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C (n + 1)) :
+@[reassoc] lemma ιCategoryChainComplex_d (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C (n + 1)) :
     ιCategoryChainComplex M σ ≫ (categoryChainComplex C M).d (n + 1) n =
       M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
         ιCategoryChainComplex M ((nerve C).δ 0 σ) +
@@ -380,8 +356,7 @@ lemma ιCategoryChainComplex_d (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C 
     ιCategorySimplicialObject_δ_zero, Fin.val_succ, ιCategorySimplicialObject_δ_succ]; rfl
 
 /-- Degree-`1` boundary on an arrow `f : c₀ ⟶ c₁`. -/
-@[reassoc]
-lemma ιCategoryChainComplex₁_d_one_zero (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ ⟶ c₁) :
+@[reassoc] lemma ιCategoryChainComplex₁_d_one_zero (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ ⟶ c₁) :
     ιCategoryChainComplex₁ M f ≫ (categoryChainComplex C M).d 1 0 =
       M.map f ≫ ιCategoryChainComplex₀ M c₁ - ιCategoryChainComplex₀ M c₀ := by
   refine (ιCategoryChainComplex_d M (ComposableArrows.mk₁ f)).trans ?_
@@ -397,8 +372,8 @@ lemma ιCategoryChainComplex₁_d_one_zero (M : C ⥤ A) {c₀ c₁ : C} (f : c�
   exact (congrArg₂ (· + ·) t₀ t₁).trans (sub_eq_add_neg _ _).symm
 
 /-- Degree-`2` boundary on a composable pair `(f, g)`. -/
-@[reassoc]
-lemma ιCategoryChainComplex₂_d_two_one (M : C ⥤ A) {c₀ c₁ c₂ : C} (f : c₀ ⟶ c₁) (g : c₁ ⟶ c₂) :
+@[reassoc] lemma ιCategoryChainComplex₂_d_two_one (M : C ⥤ A) {c₀ c₁ c₂ : C} (f : c₀ ⟶ c₁)
+    (g : c₁ ⟶ c₂) :
     ιCategoryChainComplex₂ M f g ≫ (categoryChainComplex C M).d 2 1 =
       M.map f ≫ ιCategoryChainComplex₁ M g - ιCategoryChainComplex₁ M (f ≫ g) +
         ιCategoryChainComplex₁ M f := by
@@ -422,15 +397,14 @@ lemma ιCategoryChainComplex₂_d_two_one (M : C ⥤ A) {c₀ c₁ c₂ : C} (f 
       (eq_of_heq (ιCategoryChainComplex_congr_heq (CategoryTheory.nerve.δ₂_mk₂_eq f g)))
   exact congrArg₂ (· + ·) t₀ ((Fin.sum_univ_two _).trans (congrArg₂ (· + ·) t₁ t₂))
 
-@[reassoc]
-lemma ιCategoryChainComplex_categoryChainComplexCoeffMap_f {M N : C ⥤ A} (α : M ⟶ N) {n : ℕ}
-    (σ : ComposableArrows C n) :
+@[reassoc] lemma ιCategoryChainComplex_categoryChainComplexCoeffMap_f {M N : C ⥤ A} (α : M ⟶ N)
+    {n : ℕ} (σ : ComposableArrows C n) :
     ιCategoryChainComplex M σ ≫ (categoryChainComplexCoeffMap α).f n =
       α.app (σ.obj 0) ≫ ιCategoryChainComplex N σ :=
   ιCategorySimplicialObject_coeffMap_app α σ
 
-@[reassoc]
-lemma ιCategoryChainComplex₀_categoryChainComplexCoeffMap_f {M N : C ⥤ A} (α : M ⟶ N) (c : C) :
+@[reassoc] lemma ιCategoryChainComplex₀_categoryChainComplexCoeffMap_f {M N : C ⥤ A} (α : M ⟶ N)
+    (c : C) :
     ιCategoryChainComplex₀ M c ≫ (categoryChainComplexCoeffMap α).f 0 =
       α.app c ≫ ιCategoryChainComplex₀ N c :=
   ιCategorySimplicialObject_coeffMap_app α (ComposableArrows.mk₀ c)
@@ -441,16 +415,14 @@ def categoryChainComplexMap {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{
     categoryChainComplex C (F ⋙ M) ⟶ categoryChainComplex D M :=
   (AlgebraicTopology.alternatingFaceMapComplex A).map (categorySimplicialObjectMap F M)
 
-@[reassoc (attr := simp)]
-lemma ιCategoryChainComplex_categoryChainComplexMap_f
+@[reassoc (attr := simp)] lemma ιCategoryChainComplex_categoryChainComplexMap_f
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     (F : C ⥤ D) (M : D ⥤ A) {n : ℕ} (σ : ComposableArrows C n) :
     ιCategoryChainComplex (F ⋙ M) σ ≫ (categoryChainComplexMap F M).f n =
       ιCategoryChainComplex M ((F.mapComposableArrows n).obj σ) :=
   ιCategorySimplicialObject_categorySimplicialObjectMap_app F M σ
 
-@[reassoc (attr := simp)]
-lemma ιCategoryChainComplex₀_categoryChainComplexMap_f
+@[reassoc (attr := simp)] lemma ιCategoryChainComplex₀_categoryChainComplexMap_f
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     (F : C ⥤ D) (M : D ⥤ A) (c : C) :
     ιCategoryChainComplex₀ (F ⋙ M) c ≫ (categoryChainComplexMap F M).f 0 =
@@ -458,15 +430,13 @@ lemma ιCategoryChainComplex₀_categoryChainComplexMap_f
   (ιCategoryChainComplex_categoryChainComplexMap_f F M (ComposableArrows.mk₀ c)).trans
     (eq_of_heq (ιCategoryChainComplex_congr_heq (ComposableArrows.ext₀ rfl)))
 
-@[simp]
-lemma categoryChainComplexMap_id (M : C ⥤ A) :
+@[simp] lemma categoryChainComplexMap_id (M : C ⥤ A) :
     categoryChainComplexMap (𝟭 C) M = 𝟙 (categoryChainComplex C M) :=
   (congrArg (AlgebraicTopology.alternatingFaceMapComplex A).map
     (categorySimplicialObjectMap_id M)).trans
     ((AlgebraicTopology.alternatingFaceMapComplex A).map_id _)
 
-@[reassoc]
-lemma categoryChainComplexMap_comp
+@[reassoc] lemma categoryChainComplexMap_comp
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     {E : Type u₃} [Category.{v₃} E] [HasCoproducts.{max u₃ v₃} A]
     (F : C ⥤ D) (G : D ⥤ E) (M : E ⥤ A) :
@@ -474,8 +444,7 @@ lemma categoryChainComplexMap_comp
       categoryChainComplexMap F (G ⋙ M) ≫ categoryChainComplexMap G M := by
   rw [categoryChainComplexMap, categorySimplicialObjectMap_comp, Functor.map_comp]; rfl
 
-@[reassoc]
-lemma categoryChainComplexMap_naturality
+@[reassoc] lemma categoryChainComplexMap_naturality
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     (F : C ⥤ D) {M N : D ⥤ A} (α : M ⟶ N) :
     categoryChainComplexCoeffMap (Functor.whiskerLeft F α) ≫ categoryChainComplexMap F N =
@@ -483,20 +452,19 @@ lemma categoryChainComplexMap_naturality
   simp only [categoryChainComplexCoeffMap, categoryChainComplexMap, ← Functor.map_comp,
     categorySimplicialObjectMap_naturality]
 
-@[reassoc (attr := simp)]
-lemma ιCategoryChainComplex_constIso_hom (X : A) {n : ℕ} (σ : ComposableArrows C n) :
+@[reassoc (attr := simp)] lemma ιCategoryChainComplex_constIso_hom (X : A) {n : ℕ}
+    (σ : ComposableArrows C n) :
     ιCategoryChainComplex ((Functor.const C).obj X) σ ≫
       (categoryChainComplexConstIso C X).hom.f n = (nerve C).ιChainComplex σ := by
   simp [categoryChainComplexConstIso, ιCategoryChainComplex, SSet.ιChainComplex]
 
-@[reassoc (attr := simp)]
-lemma ιChainComplex_constIso_inv (X : A) {n : ℕ} (σ : ComposableArrows C n) :
+@[reassoc (attr := simp)] lemma ιChainComplex_constIso_inv (X : A) {n : ℕ}
+    (σ : ComposableArrows C n) :
     (nerve C).ιChainComplex σ ≫ (categoryChainComplexConstIso C X).inv.f n =
       ιCategoryChainComplex ((Functor.const C).obj X) σ := by
   simp [categoryChainComplexConstIso, ιCategoryChainComplex, SSet.ιChainComplex]
 
-@[reassoc]
-lemma categoryChainComplexMap_constIso_hom {D : Type u} [Category.{v} D]
+@[reassoc] lemma categoryChainComplexMap_constIso_hom {D : Type u} [Category.{v} D]
     (F : C ⥤ D) (X : A) :
     categoryChainComplexMap F ((Functor.const D).obj X) ≫
       (categoryChainComplexConstIso D X).hom =
@@ -549,13 +517,11 @@ abbrev categoryHomologyCoeffMap {M N : C ⥤ A} (α : M ⟶ N) (n : ℕ) :
     categoryHomology C M n ⟶ categoryHomology C N n :=
   HomologicalComplex.homologyMap (categoryChainComplexCoeffMap α) n
 
-@[simp]
-lemma categoryHomologyCoeffMap_id (M : C ⥤ A) (n : ℕ) :
+@[simp] lemma categoryHomologyCoeffMap_id (M : C ⥤ A) (n : ℕ) :
     categoryHomologyCoeffMap (𝟙 M) n = 𝟙 (categoryHomology C M n) := by
   simp [categoryHomologyCoeffMap, categoryChainComplexCoeffMap]
 
-@[reassoc]
-lemma categoryHomologyCoeffMap_comp {L M N : C ⥤ A} (α : L ⟶ M) (β : M ⟶ N) (n : ℕ) :
+@[reassoc] lemma categoryHomologyCoeffMap_comp {L M N : C ⥤ A} (α : L ⟶ M) (β : M ⟶ N) (n : ℕ) :
     categoryHomologyCoeffMap (α ≫ β) n =
       categoryHomologyCoeffMap α n ≫ categoryHomologyCoeffMap β n := by
   dsimp only [categoryHomologyCoeffMap, categoryChainComplexCoeffMap]
@@ -567,14 +533,12 @@ def categoryHomologyMap {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max 
     categoryHomology C (F ⋙ M) n ⟶ categoryHomology D M n :=
   HomologicalComplex.homologyMap (categoryChainComplexMap F M) n
 
-@[simp]
-lemma categoryHomologyMap_id (M : C ⥤ A) (n : ℕ) :
+@[simp] lemma categoryHomologyMap_id (M : C ⥤ A) (n : ℕ) :
     categoryHomologyMap (𝟭 C) M n = 𝟙 (categoryHomology C M n) :=
   (congrArg (HomologicalComplex.homologyMap · n) (categoryChainComplexMap_id M)).trans
     (HomologicalComplex.homologyMap_id _ n)
 
-@[reassoc]
-lemma categoryHomologyMap_comp
+@[reassoc] lemma categoryHomologyMap_comp
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     {E : Type u₃} [Category.{v₃} E] [HasCoproducts.{max u₃ v₃} A]
     (F : C ⥤ D) (G : D ⥤ E) (M : E ⥤ A) (n : ℕ) :
@@ -582,8 +546,7 @@ lemma categoryHomologyMap_comp
       categoryHomologyMap F (G ⋙ M) n ≫ categoryHomologyMap G M n := by
   rw [categoryHomologyMap, categoryChainComplexMap_comp, HomologicalComplex.homologyMap_comp]; rfl
 
-@[reassoc]
-lemma categoryHomologyMap_naturality
+@[reassoc] lemma categoryHomologyMap_naturality
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A]
     (F : C ⥤ D) {M N : D ⥤ A} (α : M ⟶ N) (n : ℕ) :
     categoryHomologyCoeffMap (Functor.whiskerLeft F α) n ≫ categoryHomologyMap F N n =
@@ -591,8 +554,7 @@ lemma categoryHomologyMap_naturality
   simp only [categoryHomologyCoeffMap, categoryHomologyMap, ← HomologicalComplex.homologyMap_comp,
     categoryChainComplexMap_naturality]
 
-@[reassoc]
-lemma categoryHomologyMap_constIso_hom {D : Type u} [Category.{v} D]
+@[reassoc] lemma categoryHomologyMap_constIso_hom {D : Type u} [Category.{v} D]
     (F : C ⥤ D) (X : A) (n : ℕ) :
     categoryHomologyMap F ((Functor.const D).obj X) n ≫
       (categoryHomologyConstIso D X n).hom =
@@ -630,20 +592,18 @@ lemma shortExact_map_categoryChainComplexFunctor {S : ShortComplex (C ⥤ A)} (h
   have hS₀ : S₀.ShortExact := hS.map_of_exact W
   let cocone (M : C ⥤ A) : Cocone (W.obj M) :=
     ⟨(categoryChainComplex C M).X n, Discrete.natTrans fun j ↦ ιCategoryChainComplex M j.as⟩
+  let cf {M : C ⥤ A} (s : Cocone (W.obj M)) := Cofan.mk s.pt fun σ ↦ s.ι.app ⟨σ⟩
   let isColim (M : C ⥤ A) : IsColimit (cocone M) :=
-    { desc s := (isColimitCategoryChainComplexXCofan M n).desc (Cofan.mk s.pt fun σ ↦ s.ι.app ⟨σ⟩)
-      fac s j := (isColimitCategoryChainComplexXCofan M n).fac
-        (Cofan.mk s.pt fun σ ↦ s.ι.app ⟨σ⟩) ⟨j.as⟩
-      uniq s m hm := (isColimitCategoryChainComplexXCofan M n).uniq
-        (Cofan.mk s.pt fun σ ↦ s.ι.app ⟨σ⟩) m fun ⟨σ⟩ ↦ hm ⟨σ⟩ }
+    { desc s := (isColimitCategoryChainComplexXCofan M n).desc (cf s)
+      fac s j := (isColimitCategoryChainComplexXCofan M n).fac (cf s) ⟨j.as⟩
+      uniq s m hm := (isColimitCategoryChainComplexXCofan M n).uniq (cf s) m fun ⟨σ⟩ ↦ hm ⟨σ⟩ }
   have hf (j : J) : (cocone S.X₁).ι.app j ≫ (categoryChainComplexCoeffMap S.f).f n =
       S₀.f.app j ≫ (cocone S.X₂).ι.app j :=
     ιCategoryChainComplex_categoryChainComplexCoeffMap_f S.f j.as
   have hg (j : J) : (cocone S.X₂).ι.app j ≫ (categoryChainComplexCoeffMap S.g).f n =
       S₀.g.app j ≫ (cocone S.X₃).ι.app j :=
     ιCategoryChainComplex_categoryChainComplexCoeffMap_f S.g j.as
-  have : Mono S₀.f := hS₀.mono_f
-  have : Epi S₀.g := hS₀.epi_g
+  have : Mono S₀.f := hS₀.mono_f; have : Epi S₀.g := hS₀.epi_g
   have (j : J) : Epi (S₀.g.app j) := inferInstance
   exact { exact := colim.exact_mapShortComplex hS₀.exact
             (isColim S.X₁) (isColim S.X₂) (isColim S.X₃) _ _ hf hg
@@ -656,15 +616,13 @@ def categoryHomologyδ {S : ShortComplex (C ⥤ A)} (hS : S.ShortExact) (n m : �
     (h : m + 1 = n := by lia) : categoryHomology C S.X₃ n ⟶ categoryHomology C S.X₁ m :=
   (shortExact_map_categoryChainComplexFunctor hS).δ n m (by simpa)
 
-@[reassoc (attr := simp)]
-lemma comp_categoryHomologyδ {S : ShortComplex (C ⥤ A)} (hS : S.ShortExact) (n m : ℕ)
-    (h : m + 1 = n := by lia) :
+@[reassoc (attr := simp)] lemma comp_categoryHomologyδ {S : ShortComplex (C ⥤ A)}
+    (hS : S.ShortExact) (n m : ℕ) (h : m + 1 = n := by lia) :
     categoryHomologyCoeffMap S.g n ≫ categoryHomologyδ hS n m h = 0 :=
   (shortExact_map_categoryChainComplexFunctor hS).comp_δ n m (by simpa)
 
-@[reassoc (attr := simp)]
-lemma categoryHomologyδ_comp {S : ShortComplex (C ⥤ A)} (hS : S.ShortExact) (n m : ℕ)
-    (h : m + 1 = n := by lia) :
+@[reassoc (attr := simp)] lemma categoryHomologyδ_comp {S : ShortComplex (C ⥤ A)}
+    (hS : S.ShortExact) (n m : ℕ) (h : m + 1 = n := by lia) :
     categoryHomologyδ hS n m h ≫ categoryHomologyCoeffMap S.f m = 0 :=
   (shortExact_map_categoryChainComplexFunctor hS).δ_comp n m (by simpa)
 
@@ -685,8 +643,7 @@ lemma categoryHomology_exact₃ {S : ShortComplex (C ⥤ A)} (hS : S.ShortExact)
     (ShortComplex.mk _ _ (comp_categoryHomologyδ hS n m h)).Exact :=
   (shortExact_map_categoryChainComplexFunctor hS).homology_exact₃ n m (by simpa)
 
-@[reassoc]
-lemma categoryHomologyδ_naturality_coeff {S₁ S₂ : ShortComplex (C ⥤ A)}
+@[reassoc] lemma categoryHomologyδ_naturality_coeff {S₁ S₂ : ShortComplex (C ⥤ A)}
     (φ : S₁ ⟶ S₂) (hS₁ : S₁.ShortExact) (hS₂ : S₂.ShortExact) (n m : ℕ) (h : m + 1 = n := by lia) :
     categoryHomologyδ hS₁ n m h ≫ categoryHomologyCoeffMap φ.τ₁ m =
       categoryHomologyCoeffMap φ.τ₃ n ≫ categoryHomologyδ hS₂ n m h :=
@@ -695,8 +652,7 @@ lemma categoryHomologyδ_naturality_coeff {S₁ S₂ : ShortComplex (C ⥤ A)}
     (shortExact_map_categoryChainComplexFunctor hS₁)
     (shortExact_map_categoryChainComplexFunctor hS₂) n m (by simpa)
 
-@[reassoc]
-lemma categoryHomologyδ_naturality_functor
+@[reassoc] lemma categoryHomologyδ_naturality_functor
     {D : Type u₂} [Category.{v₂} D] [HasCoproducts.{max u₂ v₂} A] [AB4OfSize.{max u₂ v₂} A]
     (F : C ⥤ D) {S : ShortComplex (D ⥤ A)} (hS : S.ShortExact) (n m : ℕ)
     (h : m + 1 = n := by lia) :

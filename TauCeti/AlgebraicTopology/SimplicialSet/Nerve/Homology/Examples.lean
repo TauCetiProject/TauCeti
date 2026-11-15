@@ -63,13 +63,11 @@ private lemma totalArrow_eq_of_mapG₂_eq_one {m : ℕ} (τ : ComposableArrows C
 private def paritySimplex (n : ℕ) : ComposableArrows C₂ n :=
   SingleObj.differenceFunctor fun i : Fin (n + 1) ↦ Multiplicative.ofAdd (i.val : ZMod 2)
 
-@[simp]
-private lemma mapG₂_paritySimplex {n : ℕ} {i j : Fin (n + 1)} (f : i ⟶ j) :
+@[simp] private lemma mapG₂_paritySimplex {n : ℕ} {i j : Fin (n + 1)} (f : i ⟶ j) :
     mapG₂ (paritySimplex n) f = Multiplicative.ofAdd ((j.val : ZMod 2) - (i.val : ZMod 2)) := by
   simp [mapG₂, paritySimplex, ← ofAdd_neg, ← ofAdd_add, sub_eq_add_neg]
 
-@[simp]
-private lemma mapG₂_δ {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C₂ (n + 1))
+@[simp] private lemma mapG₂_δ {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C₂ (n + 1))
     {i j : Fin (n + 1)} (f : i ⟶ j) :
     mapG₂ ((nerve C₂).δ k σ) f =
       mapG₂ σ (homOfLE ((Fin.strictMono_succAbove k).monotone (leOfHom f))) :=
@@ -89,8 +87,7 @@ private lemma paritySimplex_nonDegenerate (n : ℕ) :
     have h1 := mapG₂_eq_one_of_totalArrow (paritySimplex (n + 1)) i hx
     rw [mapG₂_paritySimplex, Fin.val_succ, Fin.val_castSucc, ← ofAdd_zero] at h1
     have hsub : ((i.val + 1 : ℕ) : ZMod 2) - (i.val : ZMod 2) = 1 := by push_cast; ring
-    have h10 : (1 : ZMod 2) = 0 := hsub ▸ Multiplicative.ofAdd.injective h1
-    exact absurd h10 (by decide)
+    exact absurd (hsub ▸ Multiplicative.ofAdd.injective h1) (by decide)
 
 private lemma mapG₂_zero_le_of_notMem_degenerate {n : ℕ} (σ : ComposableArrows C₂ n)
     (hnotdeg : toNerve₂ σ ∉ (nerve C₂).degenerate n) (m : ℕ) (hm : m < n + 1) :
@@ -142,9 +139,7 @@ private lemma δ₁_paritySimplex_two_degenerate :
   rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion]
   refine ⟨0, (CategoryTheory.nerve.mem_range_σ_iff τ 0).mpr
     ⟨SingleObj.star G₂, totalArrow_eq_of_mapG₂_eq_one τ 0 ?_⟩⟩
-  dsimp only [τ]
-  rw [mapG₂_δ, mapG₂_paritySimplex]
-  decide
+  dsimp only [τ]; rw [mapG₂_δ, mapG₂_paritySimplex]; decide
 
 private lemma paritySimplex_two_face_eq (k : Fin 3)
     (hne : mapG₂ ((nerve C₂).δ k (paritySimplex 2)) (homOfLE (0 : Fin 1).castSucc_le_succ) ≠ 1) :
@@ -165,10 +160,8 @@ theorem isZero_categoryHomology_singleObj_zmod_two_int_two :
   let M : C₂ ⥤ ModuleCat ℤ := (Functor.const C₂).obj R
   let e₂ := normalizedCategoryChainComplexXIsoOfUnique M 2
   let e₁ := normalizedCategoryChainComplexXIsoOfUnique M 1
-  have hdef₂ : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 2) = paritySimplex 2 :=
-    nerveNonDegSimplex_mk _ _
-  have hdef₁ : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate 1) = paritySimplex 1 :=
-    nerveNonDegSimplex_mk _ _
+  have hdef (n : ℕ) : nerveNonDegSimplex (default : (nerve C₂).nonDegenerate n) =
+      paritySimplex n := nerveNonDegSimplex_mk _ _
   have hd₀ : (nerve C₂).δ 0 (paritySimplex 2) = paritySimplex 1 :=
     paritySimplex_two_face_eq 0 (by decide)
   have hd₂ : (nerve C₂).δ 2 (paritySimplex 2) = paritySimplex 1 :=
@@ -176,7 +169,7 @@ theorem isZero_categoryHomology_singleObj_zmod_two_int_two :
   have hd : e₂.hom ≫ (normalizedCategoryChainComplex C₂ M).d 2 1 = ((2 : ℤ) • 𝟙 R) ≫ e₁.hom := by
     dsimp only [e₂, e₁]
     rw [normalizedCategoryChainComplexXIsoOfUnique_hom,
-      normalizedCategoryChainComplexXIsoOfUnique_hom, hdef₂, hdef₁,
+      normalizedCategoryChainComplexXIsoOfUnique_hom, hdef 2, hdef 1,
       ιNormalizedCategoryChainComplex_d, Fin.sum_univ_two]
     dsimp only [M, Functor.const_obj_obj, Functor.const_obj_map]
     simp only [Category.id_comp, Fin.val_zero, Fin.val_one, zero_add, Nat.reduceAdd, pow_one,

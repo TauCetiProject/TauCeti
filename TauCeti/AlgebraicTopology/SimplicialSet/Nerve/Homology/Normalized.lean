@@ -48,8 +48,7 @@ variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A]
 /-- Underlying chain of `n` composable arrows of a nondegenerate `n`-simplex of `nerve C`. -/
 def nerveNonDegSimplex {n : ℕ} (y : (nerve C).nonDegenerate n) : ComposableArrows C n := y.1
 
-@[simp]
-lemma nerveNonDegSimplex_mk {n : ℕ} (σ : ComposableArrows C n)
+@[simp] lemma nerveNonDegSimplex_mk {n : ℕ} (σ : ComposableArrows C n)
     (hσ : (σ : (nerve C) _⦋n⦌) ∈ (nerve C).nonDegenerate n) :
     nerveNonDegSimplex ⟨σ, hσ⟩ = σ := (rfl)
 
@@ -131,8 +130,7 @@ def homotopyEquivNormalizedCategoryChainComplex (M : C ⥤ A) :
 
 variable {C}
 
-@[reassoc (attr := simp)]
-lemma PInfty_toNormalizedCategoryChainComplex (M : C ⥤ A) :
+@[reassoc (attr := simp)] lemma PInfty_toNormalizedCategoryChainComplex (M : C ⥤ A) :
     PInfty ≫ toNormalizedCategoryChainComplex C M = toNormalizedCategoryChainComplex C M :=
   SimplicialObject.Splitting.PInfty_toNondegComplex _
 
@@ -144,37 +142,32 @@ instance isSplitMono_fromNormalizedCategoryChainComplex (M : C ⥤ A) :
     IsSplitMono (fromNormalizedCategoryChainComplex C M) :=
   SimplicialObject.Splitting.isSplitMono_fromNondegComplex _
 
-@[reassoc (attr := simp)]
-lemma fromNormalizedCategoryChainComplex_toNormalizedCategoryChainComplex (M : C ⥤ A) :
+@[reassoc (attr := simp)] lemma fromNormalizedCategoryChainComplex_toNormalizedCategoryChainComplex
+    (M : C ⥤ A) :
     fromNormalizedCategoryChainComplex C M ≫ toNormalizedCategoryChainComplex C M = 𝟙 _ :=
   SimplicialObject.Splitting.fromNondegComplex_toNondegComplex _
 
 @[reassoc (attr := simp)]
-lemma fromNormalizedCategoryChainComplex_f_toNormalizedCategoryChainComplex_f
-    (M : C ⥤ A) (n : ℕ) :
+lemma fromNormalizedCategoryChainComplex_f_toNormalizedCategoryChainComplex_f (M : C ⥤ A) (n : ℕ) :
     (fromNormalizedCategoryChainComplex C M).f n ≫
-      (toNormalizedCategoryChainComplex C M).f n = 𝟙 _ := by
-  simp [← HomologicalComplex.comp_f]
+      (toNormalizedCategoryChainComplex C M).f n = 𝟙 _ := by simp [← HomologicalComplex.comp_f]
 
-@[reassoc (attr := simp)]
-lemma toNormalizedCategoryChainComplex_fromNormalizedCategoryChainComplex (M : C ⥤ A) :
+@[reassoc (attr := simp)] lemma toNormalizedCategoryChainComplex_fromNormalizedCategoryChainComplex
+    (M : C ⥤ A) :
     toNormalizedCategoryChainComplex C M ≫ fromNormalizedCategoryChainComplex C M = PInfty :=
   SimplicialObject.Splitting.toNondegComplex_fromNondegComplex _
 
 @[reassoc (attr := simp)]
-lemma toNormalizedCategoryChainComplex_f_fromNormalizedCategoryChainComplex_f
-    (M : C ⥤ A) (n : ℕ) :
+lemma toNormalizedCategoryChainComplex_f_fromNormalizedCategoryChainComplex_f (M : C ⥤ A) (n : ℕ) :
     (toNormalizedCategoryChainComplex C M).f n ≫
       (fromNormalizedCategoryChainComplex C M).f n = PInfty.f n := by
   simp [← HomologicalComplex.comp_f]
 
-@[simp]
-lemma homotopyEquivNormalizedCategoryChainComplex_hom (M : C ⥤ A) :
+@[simp] lemma homotopyEquivNormalizedCategoryChainComplex_hom (M : C ⥤ A) :
     (homotopyEquivNormalizedCategoryChainComplex C M).hom =
       toNormalizedCategoryChainComplex C M := (rfl)
 
-@[simp]
-lemma homotopyEquivNormalizedCategoryChainComplex_inv (M : C ⥤ A) :
+@[simp] lemma homotopyEquivNormalizedCategoryChainComplex_inv (M : C ⥤ A) :
     (homotopyEquivNormalizedCategoryChainComplex C M).inv =
       fromNormalizedCategoryChainComplex C M := (rfl)
 
@@ -185,8 +178,8 @@ def ιNormalizedCategoryChainComplex (M : C ⥤ A) {n : ℕ} (σ : ComposableArr
   ιCategoryChainComplex M σ ≫ (toNormalizedCategoryChainComplex C M).f n
 
 /-- Alternating face boundary formula in `normalizedCategoryChainComplex C M`. -/
-@[reassoc]
-lemma ιNormalizedCategoryChainComplex_d (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C (n + 1)) :
+@[reassoc] lemma ιNormalizedCategoryChainComplex_d (M : C ⥤ A) {n : ℕ}
+    (σ : ComposableArrows C (n + 1)) :
     ιNormalizedCategoryChainComplex M σ ≫ (normalizedCategoryChainComplex C M).d (n + 1) n =
       M.map (σ.map (homOfLE (Fin.zero_le (1 : Fin (n + 2))))) ≫
           ιNormalizedCategoryChainComplex M ((nerve C).δ 0 σ) +
@@ -199,15 +192,13 @@ lemma ιNormalizedCategoryChainComplex_d (M : C ⥤ A) {n : ℕ} (σ : Composabl
     dsimp only [ιNormalizedCategoryChainComplex]
     rw [Category.assoc, (toNormalizedCategoryChainComplex C M).comm (n + 1) n, Category.assoc]
   refine hc.trans ((congrArg (· ≫ _) (ιCategoryChainComplex_d M σ)).trans ?_)
-  exact (Preadditive.add_comp _ _ _ _ _ _).trans (congrArg₂ (· + ·)
-    ((Category.assoc _ _ _).trans rfl)
+  exact (Preadditive.add_comp _ _ _ _ _ _).trans (congrArg₂ (· + ·) (Category.assoc _ _ _)
     ((Preadditive.sum_comp _ _ _).trans (Finset.sum_congr rfl fun j _ ↦
       Preadditive.zsmul_comp _ _ _)))
 
 /-- `ιNormalizedCategoryChainComplex M σ` vanishes whenever `σ` is a degenerate nerve simplex. -/
 lemma ιNormalizedCategoryChainComplex_eq_zero (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n)
-    (hσ : σ ∈ (nerve C).degenerate n) :
-    ιNormalizedCategoryChainComplex M σ = 0 := by
+    (hσ : σ ∈ (nerve C).degenerate n) : ιNormalizedCategoryChainComplex M σ = 0 := by
   dsimp only [ιNormalizedCategoryChainComplex]
   rw [← PInfty_toNormalizedCategoryChainComplex, HomologicalComplex.comp_f, ← Category.assoc]
   obtain _ | n := n
@@ -215,14 +206,13 @@ lemma ιNormalizedCategoryChainComplex_eq_zero (M : C ⥤ A) {n : ℕ} (σ : Com
   · let σ' : (nerve C) _⦋n + 1⦌ := σ
     have hσ' : σ' ∈ (nerve C).degenerate (n + 1) := hσ
     rw [SSet.degenerate_eq_iUnion_range_σ, Set.mem_iUnion] at hσ'
-    obtain ⟨τ, hτ⟩ := Set.mem_range.mp hσ'.choose_spec
-    have hτ' : ((nerve C).σ hσ'.choose τ : ComposableArrows C (n + 1)) = σ := hτ
-    have h0 : ιCategoryChainComplex M ((nerve C).σ hσ'.choose τ) ≫
+    obtain ⟨i, τ, hτ⟩ := hσ'
+    have hτ' : ((nerve C).σ i τ : ComposableArrows C (n + 1)) = σ := hτ
+    have h0 : ιCategoryChainComplex M ((nerve C).σ i τ) ≫
         (PInfty : categoryChainComplex C M ⟶ categoryChainComplex C M).f (n + 1) = 0 :=
-      (congrArg (· ≫ _) (ιCategorySimplicialObject_σ M hσ'.choose τ).symm).trans
+      (congrArg (· ≫ _) (ιCategorySimplicialObject_σ M i τ).symm).trans
         ((Category.assoc _ _ _).trans
-          ((congrArg (_ ≫ ·) (σ_comp_PInfty (categorySimplicialObject C M) hσ'.choose)).trans
-            comp_zero))
+          ((congrArg (_ ≫ ·) (σ_comp_PInfty (categorySimplicialObject C M) i)).trans comp_zero))
     exact (congrArg (· ≫ _) (hτ' ▸ h0)).trans zero_comp
 
 private lemma ιNormalizedCategoryChainComplex_eq_ι (M : C ⥤ A) {n : ℕ}
@@ -240,8 +230,7 @@ private lemma ιNormalizedCategoryChainComplex_eq_ι (M : C ⥤ A) {n : ℕ}
   exact (congrArg (· ≫ s.toNondegComplex.f n)
     (Sigma.ι_comp_desc (fun z : (nerve C).nonDegenerate n ↦
       ιCategorySimplicialObject M (nerveNonDegSimplex z)) y)).symm.trans
-    ((Category.assoc _ _ _).trans
-      ((congrArg (Sigma.ι _ y ≫ ·) hs).trans (Category.comp_id _)))
+    ((Category.assoc _ _ _).trans ((congrArg (Sigma.ι _ y ≫ ·) hs).trans (Category.comp_id _)))
 
 /-- Cofan presenting `(normalizedCategoryChainComplex C M).X n` over `(nerve C).nonDegenerate n`. -/
 abbrev cofanNormalizedCategoryChainComplex (M : C ⥤ A) (n : ℕ) :
@@ -256,12 +245,10 @@ def isColimitCofanNormalizedCategoryChainComplex (M : C ⥤ A) (n : ℕ) :
     (Cofan.ext (Iso.refl _) fun y ↦
       (Category.comp_id _).trans (ιNormalizedCategoryChainComplex_eq_ι M y).symm)
 
-@[ext]
-lemma normalizedCategoryChainComplex_hom_ext {M : C ⥤ A} {n : ℕ} {T : A}
+@[ext] lemma normalizedCategoryChainComplex_hom_ext {M : C ⥤ A} {n : ℕ} {T : A}
     {f g : (normalizedCategoryChainComplex C M).X n ⟶ T}
     (h : ∀ (σ : ComposableArrows C n), σ ∈ (nerve C).nonDegenerate n →
-      ιNormalizedCategoryChainComplex M σ ≫ f = ιNormalizedCategoryChainComplex M σ ≫ g) :
-    f = g :=
+      ιNormalizedCategoryChainComplex M σ ≫ f = ιNormalizedCategoryChainComplex M σ ≫ g) : f = g :=
   Cofan.IsColimit.hom_ext (isColimitCofanNormalizedCategoryChainComplex M n) _ _ fun ⟨σ, hσ⟩ ↦
     h σ hσ
 
@@ -284,8 +271,7 @@ def normalizedCategoryChainComplexXIsoOfUnique (M : C ⥤ A) (n : ℕ)
             (eqToHom_refl _ _))).trans
           ((Category.id_comp _).trans (Category.comp_id _).symm))
 
-@[simp]
-lemma normalizedCategoryChainComplexXIsoOfUnique_hom (M : C ⥤ A) (n : ℕ)
+@[simp] lemma normalizedCategoryChainComplexXIsoOfUnique_hom (M : C ⥤ A) (n : ℕ)
     [Unique ((nerve C).nonDegenerate n)] :
     (normalizedCategoryChainComplexXIsoOfUnique M n).hom =
       ιNormalizedCategoryChainComplex M (nerveNonDegSimplex default) := (rfl)

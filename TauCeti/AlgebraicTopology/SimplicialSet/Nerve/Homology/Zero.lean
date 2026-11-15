@@ -51,21 +51,19 @@ def fromCategoryChainComplexXZero (M : C ⥤ A) (s : Cocone M) :
     (categoryChainComplex C M).X 0 ⟶ s.pt :=
   Cofan.IsColimit.desc (isColimitCategoryChainComplexXCofan M 0) fun σ ↦ s.ι.app (σ.obj 0)
 
-@[reassoc (attr := simp)]
-lemma ιCategoryChainComplex_fromCategoryChainComplexXZero (M : C ⥤ A) (s : Cocone M)
-    (σ : ComposableArrows C 0) :
+@[reassoc (attr := simp)] lemma ιCategoryChainComplex_fromCategoryChainComplexXZero (M : C ⥤ A)
+    (s : Cocone M) (σ : ComposableArrows C 0) :
     ιCategoryChainComplex M σ ≫ fromCategoryChainComplexXZero M s = s.ι.app (σ.obj 0) :=
   Cofan.IsColimit.fac (isColimitCategoryChainComplexXCofan M 0) _ σ
 
-@[reassoc (attr := simp)]
-lemma ιCategoryChainComplex₀_fromCategoryChainComplexXZero (M : C ⥤ A) (s : Cocone M) (c : C) :
+@[reassoc (attr := simp)] lemma ιCategoryChainComplex₀_fromCategoryChainComplexXZero (M : C ⥤ A)
+    (s : Cocone M) (c : C) :
     ιCategoryChainComplex₀ M c ≫ fromCategoryChainComplexXZero M s = s.ι.app c :=
   (congrArg (· ≫ fromCategoryChainComplexXZero M s) (ιCategoryChainComplex_mk₀ M c).symm).trans
     (ιCategoryChainComplex_fromCategoryChainComplexXZero M s (ComposableArrows.mk₀ c))
 
-@[reassoc (attr := simp)]
-lemma d_fromCategoryChainComplexXZero (M : C ⥤ A) (s : Cocone M) (n : ℕ) :
-    (categoryChainComplex C M).d n 0 ≫ fromCategoryChainComplexXZero M s = 0 := by
+@[reassoc (attr := simp)] lemma d_fromCategoryChainComplexXZero (M : C ⥤ A) (s : Cocone M)
+    (n : ℕ) : (categoryChainComplex C M).d n 0 ≫ fromCategoryChainComplexXZero M s = 0 := by
   by_cases hn : n = 1
   · subst hn; ext σ
     have hσ : ComposableArrows.mk₁ (σ.map' 0 1) = σ := ComposableArrows.ext₁ rfl rfl (by simp)
@@ -83,9 +81,8 @@ def ιCategoryHomology₀ (M : C ⥤ A) (c : C) : M.obj c ⟶ categoryHomology C
   ιCategoryChainComplex₀ M c ≫ (categoryChainComplex C M).pOpcycles 0 ≫
     (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).inv
 
-@[reassoc (attr := simp)]
-lemma ιCategoryHomology₀_naturality (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ ⟶ c₁) :
-    M.map f ≫ ιCategoryHomology₀ M c₁ = ιCategoryHomology₀ M c₀ := by
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_naturality (M : C ⥤ A) {c₀ c₁ : C}
+    (f : c₀ ⟶ c₁) : M.map f ≫ ιCategoryHomology₀ M c₁ = ιCategoryHomology₀ M c₀ := by
   dsimp only [ιCategoryHomology₀]
   rw [← sub_eq_zero, ← Category.assoc (M.map f), ← Preadditive.sub_comp,
     ← ιCategoryChainComplex₁_d_one_zero, Category.assoc,
@@ -96,8 +93,7 @@ lemma ιCategoryHomology₀_naturality (M : C ⥤ A) {c₀ c₁ : C} (f : c₀ �
 abbrev categoryHomology₀Cocone (M : C ⥤ A) : Cocone M :=
   ⟨categoryHomology C M 0, { app := ιCategoryHomology₀ M, naturality := fun _ _ _ ↦ by simp }⟩
 
-@[ext]
-lemma categoryHomology₀_hom_ext {M : C ⥤ A} {T : A} {f g : categoryHomology C M 0 ⟶ T}
+@[ext] lemma categoryHomology₀_hom_ext {M : C ⥤ A} {T : A} {f g : categoryHomology C M 0 ⟶ T}
     (h : ∀ c : C, ιCategoryHomology₀ M c ≫ f = ιCategoryHomology₀ M c ≫ g) : f = g := by
   rw [← cancel_epi (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).inv,
     ← cancel_epi ((categoryChainComplex C M).pOpcycles 0)]
@@ -106,21 +102,19 @@ lemma categoryHomology₀_hom_ext {M : C ⥤ A} {T : A} {f g : categoryHomology 
 
 /-- `categoryHomology₀Cocone M` presents `categoryHomology C M 0` as a colimit of `M`. -/
 def isColimitCategoryHomology₀Cocone (M : C ⥤ A) : IsColimit (categoryHomology₀Cocone M) := by
-  have hfac (s : Cocone M) (c : C) : ιCategoryHomology₀ M c ≫
-      ((ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).hom ≫
-        (categoryChainComplex C M).descOpcycles (fromCategoryChainComplexXZero M s) 1
-          (ChainComplex.prev ℕ 0) (d_fromCategoryChainComplexXZero M s 1)) = s.ι.app c := by
-    dsimp only [ιCategoryHomology₀]
+  let d (s : Cocone M) : categoryHomology C M 0 ⟶ s.pt :=
+    (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).hom ≫
+      (categoryChainComplex C M).descOpcycles (fromCategoryChainComplexXZero M s) 1
+        (ChainComplex.prev ℕ 0) (d_fromCategoryChainComplexXZero M s 1)
+  have hfac (s : Cocone M) (c : C) : ιCategoryHomology₀ M c ≫ d s = s.ι.app c := by
+    dsimp only [ιCategoryHomology₀, d]
     rw [Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
       HomologicalComplex.p_descOpcycles, ιCategoryChainComplex₀_fromCategoryChainComplexXZero]
-  exact { desc s := (ChainComplex.isoHomologyι₀ (categoryChainComplex C M)).hom ≫
-            (categoryChainComplex C M).descOpcycles (fromCategoryChainComplexXZero M s) 1
-              (ChainComplex.prev ℕ 0) (d_fromCategoryChainComplexXZero M s 1)
-          fac := hfac
+  exact { desc := d, fac := hfac,
           uniq s m hm := categoryHomology₀_hom_ext fun c ↦ (hm c).trans (hfac s c).symm }
 
-@[reassoc (attr := simp)]
-lemma ιCategoryHomology₀_categoryHomologyCoeffMap {M N : C ⥤ A} (α : M ⟶ N) (c : C) :
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_categoryHomologyCoeffMap {M N : C ⥤ A}
+    (α : M ⟶ N) (c : C) :
     ιCategoryHomology₀ M c ≫ categoryHomologyCoeffMap α 0 = α.app c ≫ ιCategoryHomology₀ N c := by
   dsimp only [ιCategoryHomology₀, categoryHomologyCoeffMap, HomologicalComplex.homologyFunctor_map]
   rw [Category.assoc, Category.assoc, ChainComplex.isoHomologyι₀_inv_naturality,
@@ -132,15 +126,13 @@ def categoryHomologyZeroIsoOfIsColimit (M : C ⥤ A) (s : Cocone M) (hs : IsColi
     categoryHomology C M 0 ≅ s.pt :=
   (isColimitCategoryHomology₀Cocone M).coconePointUniqueUpToIso hs
 
-@[reassoc (attr := simp)]
-lemma ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom (M : C ⥤ A) (s : Cocone M)
-    (hs : IsColimit s) (c : C) :
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom
+    (M : C ⥤ A) (s : Cocone M) (hs : IsColimit s) (c : C) :
     ιCategoryHomology₀ M c ≫ (categoryHomologyZeroIsoOfIsColimit M s hs).hom = s.ι.app c :=
   (isColimitCategoryHomology₀Cocone M).comp_coconePointUniqueUpToIso_hom hs c
 
-@[reassoc (attr := simp)]
-lemma ι_categoryHomologyZeroIsoOfIsColimit_inv (M : C ⥤ A) (s : Cocone M) (hs : IsColimit s)
-    (c : C) :
+@[reassoc (attr := simp)] lemma ι_categoryHomologyZeroIsoOfIsColimit_inv (M : C ⥤ A)
+    (s : Cocone M) (hs : IsColimit s) (c : C) :
     s.ι.app c ≫ (categoryHomologyZeroIsoOfIsColimit M s hs).inv = ιCategoryHomology₀ M c :=
   (isColimitCategoryHomology₀Cocone M).comp_coconePointUniqueUpToIso_inv hs c
 
@@ -148,13 +140,12 @@ lemma ι_categoryHomologyZeroIsoOfIsColimit_inv (M : C ⥤ A) (s : Cocone M) (hs
 def categoryHomologyZeroIso (M : C ⥤ A) [HasColimit M] : categoryHomology C M 0 ≅ colimit M :=
   categoryHomologyZeroIsoOfIsColimit M _ (colimit.isColimit M)
 
-@[reassoc (attr := simp)]
-lemma ιCategoryHomology₀_categoryHomologyZeroIso_hom (M : C ⥤ A) [HasColimit M] (c : C) :
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_categoryHomologyZeroIso_hom (M : C ⥤ A)
+    [HasColimit M] (c : C) :
     ιCategoryHomology₀ M c ≫ (categoryHomologyZeroIso M).hom = colimit.ι M c :=
   ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom M _ (colimit.isColimit M) c
 
-@[reassoc (attr := simp)]
-lemma ι_categoryHomologyZeroIso_inv (M : C ⥤ A) [HasColimit M] (c : C) :
+@[reassoc (attr := simp)] lemma ι_categoryHomologyZeroIso_inv (M : C ⥤ A) [HasColimit M] (c : C) :
     colimit.ι M c ≫ (categoryHomologyZeroIso M).inv = ιCategoryHomology₀ M c :=
   ι_categoryHomologyZeroIsoOfIsColimit_inv M _ (colimit.isColimit M) c
 
@@ -175,9 +166,8 @@ def categoryHomologyZeroConstIsoOfIsConnected (C : Type u) [Category.{v} C] [IsC
     (X : A) : categoryHomology C ((Functor.const C).obj X) 0 ≅ X :=
   categoryHomologyZeroIsoOfIsColimit _ (constCocone C X) (isColimitConstCocone C X)
 
-@[reassoc (attr := simp)]
-lemma ιCategoryHomology₀_categoryHomologyZeroConstIsoOfIsConnected_hom [IsConnected C] (X : A)
-    (c : C) : ιCategoryHomology₀ ((Functor.const C).obj X) c ≫
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_categoryHomologyZeroConstIsoOfIsConnected_hom
+    [IsConnected C] (X : A) (c : C) : ιCategoryHomology₀ ((Functor.const C).obj X) c ≫
       (categoryHomologyZeroConstIsoOfIsConnected C X).hom = 𝟙 X :=
   ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom _ _ _ c
 
@@ -199,6 +189,10 @@ private lemma nerveFace_zero_obj_zero {n : ℕ} (σ : ComposableArrows C (n + 1)
 private lemma nerveFace_succ_obj_zero {n : ℕ} (j : Fin (n + 1)) (σ : ComposableArrows C (n + 1)) :
     (nerveFace j.succ σ).obj 0 = σ.obj 0 := rfl
 
+private lemma eqToHom_ι_of_eq (M : C ⥤ A) {m : ℕ} {τ σ : ComposableArrows C m}
+    (h : τ = σ) (h₀ : M.obj (σ.obj 0) = M.obj (τ.obj 0)) :
+    eqToHom h₀ ≫ ιCategoryChainComplex M τ = ιCategoryChainComplex M σ := by subst h; simp
+
 private lemma ιCategoryChainComplex_d_nerveFace (M : C ⥤ A) {n : ℕ}
     (σ : ComposableArrows C (n + 1)) :
     ιCategoryChainComplex M σ ≫ (categoryChainComplex C M).d (n + 1) n =
@@ -207,20 +201,14 @@ private lemma ιCategoryChainComplex_d_nerveFace (M : C ⥤ A) {n : ℕ}
             ιCategoryChainComplex M (nerveFace 0 σ) +
         ∑ j : Fin (n + 1), (-1) ^ (j.val + 1) •
           (eqToHom (congrArg M.obj (nerveFace_succ_obj_zero j σ).symm) ≫
-            ιCategoryChainComplex M (nerveFace j.succ σ)) := by
-  refine (ιCategoryChainComplex_d M σ).trans (congrArg₂ (· + ·) ?_
-    (Finset.sum_congr rfl fun j _ ↦ congrArg ((-1 : ℤ) ^ (j.val + 1) • ·) ?_))
-  · exact congrArg (M.map _ ≫ ·)
-      ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
-  · exact ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)).symm
+            ιCategoryChainComplex M (nerveFace j.succ σ)) :=
+  (ιCategoryChainComplex_d M σ).trans (congrArg₂ (· + ·)
+    (congrArg (_ ≫ ·) (eqToHom_ι_of_eq M rfl _).symm)
+    (Finset.sum_congr rfl fun _ _ ↦ congrArg _ (eqToHom_ι_of_eq M rfl _).symm))
 
 private def ιPostcomp (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) :
     M.obj (σ.obj 0) ⟶ (categoryChainComplex C M).X (n + 1) :=
   eqToHom (congrArg M.obj (σ.postcomp_obj_zero g).symm) ≫ ιCategoryChainComplex M (σ.postcomp g)
-
-private lemma eqToHom_ι_of_eq (M : C ⥤ A) {m : ℕ} {τ σ : ComposableArrows C m}
-    (h : τ = σ) (h₀ : M.obj (σ.obj 0) = M.obj (τ.obj 0)) :
-    eqToHom h₀ ≫ ιCategoryChainComplex M τ = ιCategoryChainComplex M σ := by subst h; simp
 
 private lemma eqToHom_ι_eq_ιPostcomp (M : C ⥤ A) {m : ℕ} {ρ : ComposableArrows C (m + 1)}
     {ν : ComposableArrows C m} {Y : C} {q : ν.right ⟶ Y}
@@ -243,8 +231,7 @@ private lemma ιPostcomp_d_one_zero (M : C ⥤ A) {t : C} (ht : IsTerminal t)
     (σ : ComposableArrows C 0) :
     ιPostcomp M σ (ht.from σ.right) ≫ (categoryChainComplex C M).d 1 0 =
       M.map (ht.from (σ.obj 0)) ≫ ιCategoryChainComplex₀ M t - ιCategoryChainComplex M σ := by
-  let g := ht.from σ.right
-  let τ := σ.postcomp g
+  let g := ht.from σ.right; let τ := σ.postcomp g
   dsimp only [ιPostcomp]
   rw [Category.assoc, ιCategoryChainComplex_d_nerveFace, Fin.sum_univ_one]
   simp only [Fin.val_zero, zero_add, pow_one, neg_smul, one_smul, Preadditive.comp_add,
@@ -383,8 +370,7 @@ def categoryChainComplexFromTerminalSingle₀ (M : C ⥤ A) (t : C) :
   HomologicalComplex.mkHomFromSingle (ιCategoryChainComplex₀ M t)
     fun _ hk ↦ absurd hk (Nat.succ_ne_zero _)
 
-@[simp]
-lemma categoryChainComplexFromTerminalSingle₀_comp_toTerminalSingle₀ (M : C ⥤ A) {t : C}
+@[simp] lemma categoryChainComplexFromTerminalSingle₀_comp_toTerminalSingle₀ (M : C ⥤ A) {t : C}
     (ht : IsTerminal t) :
     categoryChainComplexFromTerminalSingle₀ M t ≫
       categoryChainComplexToTerminalSingle₀ M ht = 𝟙 _ := by
@@ -422,8 +408,7 @@ def categoryChainComplexTerminalHomotopy (M : C ⥤ A) {t : C} (ht : IsTerminal 
       have hzf : (categoryChainComplexFromTerminalSingle₀ M t).f (n + 1) = 0 :=
         (HomologicalComplex.isZero_single_obj_X _ 0 (M.obj t) (n + 1)
           (Nat.succ_ne_zero n)).eq_of_src _ _
-      rw [hzf, comp_zero, add_zero]
-      ext σ
+      rw [hzf, comp_zero, add_zero]; ext σ
       exact (Category.comp_id _).trans (ι_terminalHomotopy_succ M ht σ).symm
 
 /-- When `t` is terminal in `C`, `categoryChainComplex C M` is chain homotopy equivalent to
@@ -433,8 +418,7 @@ def categoryChainComplexTerminalHomotopyEquiv (M : C ⥤ A) {t : C} (ht : IsTerm
   hom := categoryChainComplexToTerminalSingle₀ M ht
   inv := categoryChainComplexFromTerminalSingle₀ M t
   homotopyHomInvId := (categoryChainComplexTerminalHomotopy M ht).symm
-  homotopyInvHomId := Homotopy.ofEq
-    (categoryChainComplexFromTerminalSingle₀_comp_toTerminalSingle₀ M ht)
+  homotopyInvHomId := Homotopy.ofEq (by simp)
 
 end Single₀
 
@@ -448,9 +432,8 @@ def categoryHomologyZeroTerminalIso (M : C ⥤ A) {t : C} (ht : IsTerminal t) :
   categoryHomologyZeroIsoOfIsColimit M (coconeOfDiagramTerminal ht M)
     (colimitOfDiagramTerminal ht M)
 
-@[reassoc (attr := simp)]
-lemma ιCategoryHomology₀_categoryHomologyZeroTerminalIso_hom (M : C ⥤ A) {t : C}
-    (ht : IsTerminal t) (c : C) :
+@[reassoc (attr := simp)] lemma ιCategoryHomology₀_categoryHomologyZeroTerminalIso_hom
+    (M : C ⥤ A) {t : C} (ht : IsTerminal t) (c : C) :
     ιCategoryHomology₀ M c ≫ (categoryHomologyZeroTerminalIso M ht).hom = M.map (ht.from c) :=
   ιCategoryHomology₀_categoryHomologyZeroIsoOfIsColimit_hom M _ _ c
 

@@ -37,12 +37,10 @@ private lemma obj_of_lt (F : ComposableArrows C n) (Y : C) (i : Fin (n + 2)) (h 
 private lemma obj_of_not_lt (F : ComposableArrows C n) (Y : C) (i : Fin (n + 2))
     (h : ¬ i.val < n + 1) : obj F Y i = Y := dite_eq_right h
 
-@[simp]
-private lemma obj_castSucc (F : ComposableArrows C n) (Y : C) (i : Fin (n + 1)) :
+@[simp] private lemma obj_castSucc (F : ComposableArrows C n) (Y : C) (i : Fin (n + 1)) :
     obj F Y i.castSucc = F.obj i := obj_of_lt F Y i.castSucc i.isLt
 
-@[simp]
-private lemma obj_last (F : ComposableArrows C n) (Y : C) :
+@[simp] private lemma obj_last (F : ComposableArrows C n) (Y : C) :
     obj F Y (Fin.last (n + 1)) = Y := obj_of_not_lt F Y _ (Nat.lt_irrefl _)
 
 private def map (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) (i j : Fin (n + 2))
@@ -75,34 +73,23 @@ def postcomp (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) : Composable
   map_id := Postcomp.map_id F g
   map_comp h₁ h₂ := Postcomp.map_comp F g (leOfHom h₁) (leOfHom h₂)
 
-@[simp]
-theorem postcomp_obj_castSucc (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y)
-    (i : Fin (n + 1)) : (F.postcomp g).obj i.castSucc = F.obj i :=
-  Postcomp.obj_castSucc F Y i
+@[simp] theorem postcomp_obj_castSucc (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y)
+    (i : Fin (n + 1)) : (F.postcomp g).obj i.castSucc = F.obj i := Postcomp.obj_castSucc F Y i
 
-@[simp]
-theorem postcomp_obj_zero (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
-    (F.postcomp g).obj 0 = F.obj 0 :=
-  F.postcomp_obj_castSucc g 0
+@[simp] theorem postcomp_obj_zero (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+    (F.postcomp g).obj 0 = F.obj 0 := F.postcomp_obj_castSucc g 0
 
-@[simp]
-theorem postcomp_obj_last (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
-    (F.postcomp g).obj (Fin.last (n + 1)) = Y :=
-  Postcomp.obj_last F Y
+@[simp] theorem postcomp_obj_last (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+    (F.postcomp g).obj (Fin.last (n + 1)) = Y := Postcomp.obj_last F Y
 
-@[simp]
-theorem postcomp_left (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
-    (F.postcomp g).left = F.left :=
-  F.postcomp_obj_castSucc g 0
+@[simp] theorem postcomp_left (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+    (F.postcomp g).left = F.left := F.postcomp_obj_castSucc g 0
 
-@[simp]
-theorem postcomp_right (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
-    (F.postcomp g).right = Y :=
-  Postcomp.obj_last F Y
+@[simp] theorem postcomp_right (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+    (F.postcomp g).right = Y := Postcomp.obj_last F Y
 
 /-- Arrows of `F.postcomp g` between non-final vertices coincide with the arrows of `F`. -/
-@[simp]
-theorem totalArrow_postcomp_castSucc_castSucc (F : ComposableArrows C n) {Y : C}
+@[simp] theorem totalArrow_postcomp_castSucc_castSucc (F : ComposableArrows C n) {Y : C}
     (g : F.right ⟶ Y) (i j : Fin (n + 1)) (hij : i ≤ j) :
     (F.postcomp g).totalArrow i.castSucc j.castSucc (Fin.castSucc_le_castSucc_iff.mpr hij) =
       F.totalArrow i j hij := by
@@ -112,8 +99,7 @@ theorem totalArrow_postcomp_castSucc_castSucc (F : ComposableArrows C n) {Y : C}
     (F.postcomp_obj_castSucc g j)).mp (by simp [postcomp, Postcomp.map, j.isLt])
 
 /-- The arrow of `F.postcomp g` from `i.castSucc` to the final vertex composes with `g`. -/
-@[simp]
-theorem totalArrow_postcomp_castSucc_last (F : ComposableArrows C n) {Y : C}
+@[simp] theorem totalArrow_postcomp_castSucc_last (F : ComposableArrows C n) {Y : C}
     (g : F.right ⟶ Y) (i : Fin (n + 1)) :
     (F.postcomp g).totalArrow i.castSucc (Fin.last (n + 1)) (Fin.le_last _) =
       ⟨F.obj i, Y, F.map (homOfLE (Fin.le_last i)) ≫ g⟩ := by
@@ -123,22 +109,19 @@ theorem totalArrow_postcomp_castSucc_last (F : ComposableArrows C n) {Y : C}
     (F.postcomp_obj_last g)).mp (by simp [postcomp, Postcomp.map, i.isLt])
 
 /-- Deleting the final vertex of `F.postcomp g` recovers `F`. -/
-@[simp]
-theorem δlast_postcomp (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+@[simp] theorem δlast_postcomp (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
     (F.postcomp g).δlast = F :=
   ext_of_totalArrow fun i j hij ↦
     ((F.postcomp g).totalArrow_whiskerLeft (Fin.castSuccFunctor (n + 1)) i j hij).trans
       (F.totalArrow_postcomp_castSucc_castSucc g i j hij)
 
 /-- Applying a functor `Φ` to `F.postcomp g` appends `Φ.map g` to the image of `F`. -/
-@[simp]
-theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_postcomp {D : Type*} [Category* D]
-    (Φ : C ⥤ D) (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+@[simp] theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_postcomp {D : Type*}
+    [Category* D] (Φ : C ⥤ D) (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
     (Φ.mapComposableArrows (n + 1)).obj (F.postcomp g) =
       ((Φ.mapComposableArrows n).obj F).postcomp (Φ.map g) := by
   let FΦ : ComposableArrows D n := (Φ.mapComposableArrows n).obj F
-  refine ext_of_totalArrow fun i j hij ↦ ?_
-  rw [totalArrow_mapComposableArrows_obj]
+  refine ext_of_totalArrow fun i j hij ↦ (totalArrow_mapComposableArrows_obj ..).trans ?_
   induction j using Fin.lastCases with
   | last =>
     induction i using Fin.lastCases with

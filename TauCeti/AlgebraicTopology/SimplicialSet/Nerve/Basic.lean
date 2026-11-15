@@ -193,8 +193,7 @@ private lemma totalArrow_congr_idx {m : ℕ} (F : ComposableArrows C m) {a a' b 
     F.totalArrow a b hab = F.totalArrow a' b' (ha ▸ hb ▸ hab) := by subst ha; subst hb; rfl
 
 /-- The last face of `F.postcomp g` in `nerve C` is `F`. -/
-@[simp]
-theorem δ_last_postcomp {n : ℕ} (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
+@[simp] theorem δ_last_postcomp {n : ℕ} (F : ComposableArrows C n) {Y : C} (g : F.right ⟶ Y) :
     (nerve C).δ (Fin.last (n + 1)) (F.postcomp g) = F :=
   ComposableArrows.ext_of_totalArrow fun i j hij ↦ by
     rw [totalArrow_δ, totalArrow_congr_idx _ (Fin.succAbove_last_apply i)
@@ -220,8 +219,8 @@ theorem δ_castSucc_postcomp_isTerminal {n : ℕ} (F : ComposableArrows C (n + 1
       rw [totalArrow_congr_idx _ hl hl, ComposableArrows.totalArrow_self,
         ComposableArrows.totalArrow_self]
       have hlast : (F.postcomp (ht.from F.right)).obj (Fin.last (n + 2)) =
-          (G.postcomp (ht.from G.right)).obj (Fin.last (n + 1)) := by
-        rw [F.postcomp_obj_last _, G.postcomp_obj_last _]
+          (G.postcomp (ht.from G.right)).obj (Fin.last (n + 1)) :=
+        (F.postcomp_obj_last _).trans (G.postcomp_obj_last _).symm
       exact Quiver.Total.ext hlast hlast ((conj_eqToHom_iff_heq _ _ hlast hlast).mp (by simp [G]))
     | cast i =>
       rw [totalArrow_congr_idx _ Fin.castSucc_succAbove_castSucc hl,
@@ -238,8 +237,7 @@ theorem δ_castSucc_postcomp_isTerminal {n : ℕ} (F : ComposableArrows C (n + 1
       exact (totalArrow_δ k F i j hij').symm
 
 /-- For a `0`-simplex `σ` of `nerve C`, the zeroth face of `σ.postcomp g` is `mk₀ Y`. -/
-@[simp]
-theorem δ_zero_postcomp_zero (σ : ComposableArrows C 0) {Y : C} (g : σ.right ⟶ Y) :
+@[simp] theorem δ_zero_postcomp_zero (σ : ComposableArrows C 0) {Y : C} (g : σ.right ⟶ Y) :
     (nerve C).δ 0 (σ.postcomp g) = ComposableArrows.mk₀ Y :=
   ComposableArrows.ext₀ (σ.postcomp_obj_last g)
 
