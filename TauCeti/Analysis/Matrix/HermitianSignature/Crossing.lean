@@ -262,8 +262,10 @@ private theorem eventually_add_sigNeg_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq N M
   rw [LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero (B := (V t₀).toBilinForm)
     (fun x hx hx0 ↦ (hN' x hx hx0).ne)
-    (fun x hx ↦ by simp [show V t₀ x = 0 from LinearMap.mem_ker.1 (hMK hx)]), finrank_bot,
-    add_zero] at hdim
+    (fun x hx ↦ by
+      have h := LinearMap.mem_ker.1 (hMK hx)
+      rw [ContinuousLinearMap.coe_coe] at h
+      simp [h]), finrank_bot, add_zero] at hdim
   rw [← hNr, ← hM'r, ← hMr, ← hdim]
   exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
 
