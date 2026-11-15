@@ -45,8 +45,9 @@ universe u v w
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The quadratic Lie subalgebra of a finite-dimensional polarized quadratic space acts
-faithfully on the spinor module, since it lies in the even Clifford subalgebra. -/
+/-- The quadratic Lie subalgebra of a finite-dimensional polarized quadratic space over a field
+in which two is invertible acts faithfully on the spinor module, since it lies in the even
+Clifford subalgebra. -/
 theorem spinAction_comp_quadraticLieSubalgebra_incl_injective
     {K : Type u} [Field K] [Invertible (2 : K)]
     {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
