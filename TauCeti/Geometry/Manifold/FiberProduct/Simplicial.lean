@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.FiberProduct.Iterated
 import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 
 /-!
@@ -126,9 +127,9 @@ theorem surjective_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1) �
     intro j
     by_cases hj : ∃ i, α i = j
     · obtain ⟨i, rfl⟩ := hj
-      change π (extend α x.1 (fun _ ↦ x.1 0) (α i)) = baseProj x
+      dsimp only [g]
       rw [hα.extend_apply, baseProj_eq_apply x i]
-    · change π (extend α x.1 (fun _ ↦ x.1 0) j) = baseProj x
+    · dsimp only [g]
       rw [extend_apply' _ _ _ hj, baseProj_eq_apply x 0]
   refine ⟨⟨g, fun j₁ j₂ ↦ (hg_base j₁).trans (hg_base j₂).symm⟩, ext fun i ↦ ?_⟩
   rw [eval_apply, eval_apply]
@@ -503,25 +504,10 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
   choose v hv_hit hv_map using hsurj
   have hcompat : ∀ j₁ j₂ : Fin (m₂ + 1),
       mfderiv IY IM π (y.1 j₁) (v j₁) =
-        tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) := by
-    intro j₁ j₂
-    have hcast : ∀ {a b c : M}, a = b → b = c → ∀ (z : TangentSpace IM a),
-        tangentSpaceCast IM b c (tangentSpaceCast IM a b z) = tangentSpaceCast IM a c z := by
-      rintro _ _ _ rfl rfl _
-      rfl
-    have hself : ∀ {a : M} (z : TangentSpace IM a), tangentSpaceCast IM a a z = z :=
-      fun _ ↦ rfl
-    calc mfderiv IY IM π (y.1 j₁) (v j₁)
-        = tangentSpaceCast IM (π (y.1 (α 0))) (π (y.1 j₁))
-            (tangentSpaceCast IM (π (y.1 j₁)) (π (y.1 (α 0)))
-              (mfderiv IY IM π (y.1 j₁) (v j₁))) := by
-          rw [hcast (y.2 j₁ (α 0)) (y.2 (α 0) j₁), hself]
-      _ = tangentSpaceCast IM (π (y.1 (α 0))) (π (y.1 j₁))
-            (tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 (α 0)))
-              (mfderiv IY IM π (y.1 j₂) (v j₂))) := by
-          rw [hv_map j₁, hv_map j₂]
-      _ = tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) :=
-          hcast (y.2 j₂ (α 0)) (y.2 (α 0) j₁) _
+        tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) :=
+    fun j₁ j₂ ↦
+      (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.2 j₁ (α 0)) (y.2 j₂ (α 0))).2
+        ((hv_map j₁).trans (hv_map j₂).symm)
   have hemb₁ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₁
   have hemb₂ := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m₂
   obtain ⟨ξ, hξ⟩ := (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₂ y v).2 hcompat

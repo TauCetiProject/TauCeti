@@ -8,8 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.FiberProduct.Identity
 public import TauCeti.Geometry.Manifold.FiberProduct.Submersion
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
+import TauCeti.Geometry.Manifold.Diffeomorph.Pi
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 
@@ -193,10 +195,8 @@ closed as the preimage of the closed multidiagonal of `Fin k → M` under `Pi.ma
 theorem isClosed_setOf_map_eq [TopologicalSpace M] [T2Space M] (hπ : Continuous π) (k : ℕ) :
     IsClosed {y : Fin k → Y | ∀ i j, π (y i) = π (y j)} := by
   have hdiag : IsClosed {z : Fin k → M | ∀ i j, z i = z j} := by
-    have hEq : {z : Fin k → M | ∀ i j, z i = z j} =
-        ⋂ (i : Fin k) (j : Fin k), {z | z i = z j} := by
-      ext z
-      simp
+    have hEq : {z : Fin k → M | ∀ i j, z i = z j} = ⋂ i, ⋂ j, {z : Fin k → M | z i = z j} := by
+      ext z; simp
     rw [hEq]
     exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦
       isClosed_eq (continuous_apply i) (continuous_apply j)
@@ -228,97 +228,6 @@ variable {EY HY Y EM HM M : Type*}
   [TopologicalSpace Y] [ChartedSpace HY Y]
   [TopologicalSpace M] [ChartedSpace HM M]
   {n : ℕ∞ω}
-
-private theorem tangentSpaceCast_trans {a b c : M} :
-    a = b → b = c → ∀ z : TangentSpace IM a,
-      tangentSpaceCast IM b c (tangentSpaceCast IM a b z) = tangentSpaceCast IM a c z := by
-  rintro rfl rfl _
-  rfl
-
-private theorem tangentSpaceCast_self {a : M} (z : TangentSpace IM a) :
-    tangentSpaceCast IM a a z = z :=
-  rfl
-
-private def piFinOneInvDiffeomorph :
-    Y ≃ₘ^n⟮IY, ModelWithCorners.pi (fun _ : Fin 1 ↦ IY)⟯ (Fin 1 → Y) where
-  toFun z _ := z
-  invFun f := f 0
-  left_inv _ := rfl
-  right_inv f := funext fun i ↦ by rw [Fin.eq_zero i]
-  contMDiff_toFun := contMDiff_pi_iff.2 fun _ ↦ contMDiff_id
-  contMDiff_invFun := contMDiff_apply (i := 0)
-
-@[simp]
-private theorem piFinOneInvDiffeomorph_apply (z : Y) (i : Fin 1) :
-    piFinOneInvDiffeomorph (IY := IY) (n := n) z i = z := rfl
-
-private def piSnocDiffeomorph (m : ℕ) :
-    ((Fin (m + 1) → Y) × Y) ≃ₘ^n⟮
-      (ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY).prod IY,
-      ModelWithCorners.pi fun _ : Fin (m + 2) ↦ IY⟯ (Fin (m + 2) → Y) where
-  toFun p := Fin.snoc (α := fun _ ↦ Y) p.1 p.2
-  invFun g := (Fin.init g, g (Fin.last (m + 1)))
-  left_inv p := by ext <;> simp
-  right_inv g := Fin.snoc_init_self g
-  contMDiff_toFun := contMDiff_pi_iff.2 fun i ↦ i.lastCases
-    (by
-      change ContMDiff _ _ _ (fun p : (Fin (m + 1) → Y) × Y ↦
-        Fin.snoc (α := fun _ ↦ Y) p.1 p.2 (Fin.last (m + 1)))
-      simp only [Fin.snoc_last]
-      exact contMDiff_snd)
-    (fun k ↦ by
-      change ContMDiff _ _ _ (fun p : (Fin (m + 1) → Y) × Y ↦
-        Fin.snoc (α := fun _ ↦ Y) p.1 p.2 k.castSucc)
-      simp only [Fin.snoc_castSucc]
-      exact (contMDiff_apply (i := k)).comp contMDiff_fst)
-  contMDiff_invFun :=
-    (contMDiff_pi_iff.2 fun k ↦ contMDiff_apply (i := k.castSucc)).prodMk
-      (contMDiff_apply (i := Fin.last (m + 1)))
-
-@[simp]
-private theorem piSnocDiffeomorph_apply (m : ℕ) (p : (Fin (m + 1) → Y) × Y) :
-    piSnocDiffeomorph (IY := IY) (Y := Y) (n := n) m p = Fin.snoc (α := fun _ ↦ Y) p.1 p.2 := rfl
-
-private theorem mfderiv_piSnocDiffeomorph_apply [IsManifold IY n Y] (hn : 1 ≤ n) (m : ℕ)
-    (p : (Fin (m + 1) → Y) × Y)
-    (u : TangentSpace (ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY) p.1)
-    (w : TangentSpace IY p.2) :
-    mfderiv ((ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY).prod IY)
-      (ModelWithCorners.pi fun _ : Fin (m + 2) ↦ IY)
-      (piSnocDiffeomorph (IY := IY) (Y := Y) (n := n) m) p (u, w) =
-      Fin.snoc (α := fun _ ↦ EY) u w := by
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  have : IsManifold IY 1 Y := .of_le hn
-  let snocD := piSnocDiffeomorph (IY := IY) (Y := Y) (n := n) m
-  funext i
-  have hcoord := mfderiv_comp (I' := ModelWithCorners.pi fun _ : Fin (m + 2) ↦ IY) p
-    (TauCeti.hasMFDerivAt_apply (I := fun _ : Fin (m + 2) ↦ IY) i (snocD p)).mdifferentiableAt
-    ((snocD.contMDiff p).mdifferentiableAt hn0)
-  rw [TauCeti.mfderiv_apply, Function.comp_def] at hcoord
-  let u' : Fin (m + 1) → EY := u
-  let w' : EY := w
-  have hi : mfderiv ((ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY).prod IY) IY
-      (fun q ↦ snocD q i) p (u, w) = Fin.snoc (α := fun _ ↦ EY) u w i := by
-    refine i.lastCases ?_ fun k ↦ ?_
-    · have hlast_eq : (fun q : (Fin (m + 1) → Y) × Y ↦ snocD q (Fin.last (m + 1))) = Prod.snd :=
-        funext fun q ↦ by simp [snocD]
-      have h1 : mfderiv ((ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY).prod IY) IY
-          (fun q ↦ snocD q (Fin.last (m + 1))) p (u, w) = w' := by
-        rw [hlast_eq, mfderiv_snd]
-        rfl
-      exact h1.trans (Fin.snoc_last (α := fun _ ↦ EY) w u).symm
-    · have hcast_eq : (fun q : (Fin (m + 1) → Y) × Y ↦ snocD q k.castSucc) = fun q ↦ q.1 k :=
-        funext fun q ↦ by simp [snocD]
-      have h1 : mfderiv ((ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY).prod IY) IY
-          (fun q ↦ snocD q k.castSucc) p (u, w) = u' k := by
-        rw [hcast_eq]
-        have hcomp := mfderiv_comp (I' := ModelWithCorners.pi fun _ : Fin (m + 1) ↦ IY) p
-          (TauCeti.hasMFDerivAt_apply (I := fun _ : Fin (m + 1) ↦ IY) k p.1).mdifferentiableAt
-          (mdifferentiableAt_fst (I' := IY))
-        rw [TauCeti.mfderiv_apply, Function.comp_def, mfderiv_fst] at hcomp
-        exact DFunLike.congr_fun hcomp (u, w)
-      exact h1.trans (Fin.snoc_castSucc (α := fun _ ↦ EY) w u k).symm
-  exact (DFunLike.congr_fun hcoord (u, w)).symm.trans hi
 
 private def iteratedOneHomeomorph {π : Y → M} (hπ : Continuous π) :
     IteratedFiberProduct π 1 ≃ₜ {p : M × Y // id p.1 = π p.2} where
@@ -352,46 +261,13 @@ private def iteratedStepHomeomorph {π : Y → M} (m : ℕ) :
       (IteratedFiberProduct.continuous_eval (Fin.last (m + 1)))).subtype_mk _
   continuous_invFun := by
     refine (continuous_pi fun i ↦ ?_).subtype_mk _
-    refine i.lastCases ?_ fun k ↦ ?_
-    · change Continuous (fun p :
-          {p : IteratedFiberProduct π (m + 1) × Y //
-            IteratedFiberProduct.baseProj p.1 = π p.2} ↦
-          Fin.snoc (α := fun _ ↦ Y) p.1.1.1 p.1.2 (Fin.last (m + 1)))
+    induction i using Fin.lastCases with
+    | last =>
       simp only [Fin.snoc_last]
       exact continuous_subtype_val.snd
-    · change Continuous (fun p :
-          {p : IteratedFiberProduct π (m + 1) × Y //
-            IteratedFiberProduct.baseProj p.1 = π p.2} ↦
-          Fin.snoc (α := fun _ ↦ Y) p.1.1.1 p.1.2 k.castSucc)
+    | cast k =>
       simp only [Fin.snoc_castSucc]
       exact (IteratedFiberProduct.continuous_eval k).comp continuous_subtype_val.fst
-
-/-- Every map `f : X → M` is transverse to a `C^n` submersion `π : Y → M` (`1 ≤ n`) in the
-second factor. -/
-theorem transverse_of_isSubmersion_right {EX HX X : Type*}
-    [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
-    {IX : ModelWithCorners ℝ EX HX} [TopologicalSpace X] [ChartedSpace HX X]
-    {f : X → M} {π : Y → M} (hn : 1 ≤ n) (hπ : Manifold.IsSubmersion IY IM n π)
-    (p : X × Y) :
-    (mfderiv IX IM f p.1).range ⊔
-      (((tangentSpaceCast IM (π p.2) (f p.1)).toContinuousLinearMap).comp
-        (mfderiv IY IM π p.2)).range = ⊤ := by
-  have hs := (tangentSpaceCast IM (π p.2) (f p.1)).surjective.comp
-    (hπ.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.2)
-  have hr : (((tangentSpaceCast IM (π p.2) (f p.1)).toContinuousLinearMap).comp
-      (mfderiv IY IM π p.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
-  rw [hr, sup_top_eq]
-
-private theorem iter_dim_succ (m a b : ℕ) :
-    (m + 1) * a - m * b + a - b = (m + 2) * a - (m + 1) * b := by
-  rw [Nat.succ_mul (m + 1) a, Nat.succ_mul m b]
-  rcases le_or_gt (m * b) ((m + 1) * a) with h | h
-  · rw [← Nat.sub_add_comm h, Nat.sub_sub]
-  · have hab : a < b := lt_of_not_ge fun hba ↦ by
-      have hmba : m * b ≤ m * a := Nat.mul_le_mul_left m hba
-      rw [Nat.succ_mul m a] at h
-      omega
-    omega
 
 variable [IsManifold IY n Y] [IsManifold IM n M]
   [IY.Boundaryless]
@@ -420,32 +296,20 @@ theorem exists_submersionCharts_iteratedFiberProduct {π : Y → M} (hn : 1 ≤ 
         (z ∈ range (Subtype.val : IteratedFiberProduct π (m + 1) → (Fin (m + 1) → Y)) ↔
           ∀ i j : Fin (m + 1),
             (L i ((φ i).extend IY (z i))).1 = (L j ((φ j).extend IY (z j))).1) := by
-  have hchart : ∀ i : Fin (m + 1),
-      ∃ (φ_i : OpenPartialHomeomorph Y HY)
-        (L_i : EY ≃L[ℝ] EM × (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ)),
-        y.1 i ∈ φ_i.source ∧ φ_i ∈ IsManifold.maximalAtlas IY n Y ∧
-        φ_i.source ⊆ π ⁻¹' (chartAt HM (IteratedFiberProduct.baseProj y)).source ∧
-        ∀ w ∈ φ_i.source,
-          extChartAt IM (IteratedFiberProduct.baseProj y) (π w) = (L_i (φ_i.extend IY w)).1 := by
-    intro i
+  choose φ L hyφ hφmax hφsub hφeq using fun i : Fin (m + 1) ↦ by
     simpa only [← IteratedFiberProduct.baseProj_eq_apply y i] using
       hπ.exists_domChart_mem_maximalAtlas_chartAt hn (y.1 i)
-  choose φ L hyφ hφmax hφsub hφeq using hchart
   refine ⟨φ, L, fun i _ ↦ hyφ i, TauCeti.pi_mem_maximalAtlas hφmax, hφeq, fun z hz ↦ ?_⟩
   rw [mem_range_coe_iteratedFiberProduct_iff]
-  have hzeq : ∀ i : Fin (m + 1),
-      (L i ((φ i).extend IY (z i))).1 =
-        extChartAt IM (IteratedFiberProduct.baseProj y) (π (z i)) :=
+  have hzeq : ∀ i, (L i ((φ i).extend IY (z i))).1 =
+      extChartAt IM (IteratedFiberProduct.baseProj y) (π (z i)) :=
     fun i ↦ (hφeq i (z i) (hz i trivial)).symm
-  have hzmem : ∀ i : Fin (m + 1),
-      π (z i) ∈ (extChartAt IM (IteratedFiberProduct.baseProj y)).source := by
-    intro i
-    rw [extChartAt_source]
-    exact hφsub i (hz i trivial)
   refine ⟨fun h i j ↦ by rw [hzeq i, hzeq j, h i j], fun h i j ↦ ?_⟩
   have hinj := h i j
   rw [hzeq i, hzeq j] at hinj
-  exact (extChartAt IM (IteratedFiberProduct.baseProj y)).injOn (hzmem i) (hzmem j) hinj
+  exact (extChartAt IM (IteratedFiberProduct.baseProj y)).injOn
+    ((extChartAt_source IM (IteratedFiberProduct.baseProj y)).symm ▸ hφsub i (hz i trivial))
+    ((extChartAt_source IM (IteratedFiberProduct.baseProj y)).symm ▸ hφsub j (hz j trivial)) hinj
 
 variable [IM.Boundaryless]
 
@@ -493,26 +357,22 @@ theorem exists_isManifold_iteratedFiberProduct_isSmoothEmbedding {π : Y → M}
         ModelWithCorners.pi (fun _ : Fin 1 ↦ IY)⟯ (Fin 1 → Y) :=
       ((e₀.pullbackDiffeomorph 𝓘(ℝ, Fin d₀ → ℝ) n).trans
         (transverseFiberProductIdLeftDiffeomorph hn hπ.contMDiff)).trans
-        (piFinOneInvDiffeomorph (IY := IY) (n := n))
+        (Diffeomorph.piUnique (fun _ : Fin 1 ↦ IY) (fun _ : Fin 1 ↦ Y) n).symm
     have hΦcoe : (Φ : IteratedFiberProduct π 1 → (Fin 1 → Y)) = Subtype.val := by
-      funext y; funext i
+      funext y i
       rw [Fin.eq_zero i]
-      simp only [Φ, Diffeomorph.coe_trans, Function.comp_apply, piFinOneInvDiffeomorph_apply,
-        Homeomorph.coe_pullbackDiffeomorph]
+      simp only [Φ, Diffeomorph.coe_trans, Function.comp_apply, Diffeomorph.piUnique_symm_apply,
+        uniqueElim_const, Homeomorph.coe_pullbackDiffeomorph]
       exact transverseFiberProductIdLeftDiffeomorph_apply hn hπ.contMDiff (e₀ y)
     have himm : Manifold.IsImmersion 𝓘(ℝ, Fin d₀ → ℝ)
         (ModelWithCorners.pi fun _ : Fin 1 ↦ IY) n
         (Subtype.val : IteratedFiberProduct π 1 → (Fin 1 → Y)) := by
-      have hcomp : (Subtype.val : IteratedFiberProduct π 1 → (Fin 1 → Y)) = Φ ∘ id := by
-        rw [comp_id, hΦcoe]
-      rw [hcomp]
+      rw [← hΦcoe, ← comp_id (f := (Φ : IteratedFiberProduct π 1 → (Fin 1 → Y)))]
       exact Φ.isImmersion_comp hn Manifold.IsImmersion.id
     refine ⟨inferInstance, inferInstance, ⟨himm, IsEmbedding.subtypeVal⟩, fun y v ↦ ?_⟩
     rw [← hΦcoe]
-    refine ⟨fun _ i j ↦ ?_, fun _ ↦ ?_⟩
-    · rw [Fin.eq_zero i, Fin.eq_zero j]
-      rfl
-    · exact (Φ.isInvertible_mfderiv hn0).surjective v
+    exact ⟨fun _ i j ↦ by rw [Fin.eq_zero i, Fin.eq_zero j]; rfl,
+      fun _ ↦ (Φ.isInvertible_mfderiv hn0).surjective v⟩
   | succ m ih =>
     obtain ⟨cs_m, hman_m, hemb_m, hrange_m⟩ := ih
     let := cs_m
@@ -523,20 +383,23 @@ theorem exists_isManifold_iteratedFiberProduct_isSmoothEmbedding {π : Y → M}
     have hf : ContMDiff K_m IM n
         (IteratedFiberProduct.baseProj : IteratedFiberProduct π (m + 1) → M) :=
       hπ.contMDiff.comp ((contMDiff_apply (i := (0 : Fin (m + 1)))).comp hemb_m.contMDiff)
-    have htrans : ∀ p : IteratedFiberProduct π (m + 1) × Y,
-        IteratedFiberProduct.baseProj p.1 = π p.2 →
-        (mfderiv K_m IM IteratedFiberProduct.baseProj p.1).range ⊔
-          (((tangentSpaceCast IM (π p.2)
-            (IteratedFiberProduct.baseProj p.1)).toContinuousLinearMap).comp
-              (mfderiv IY IM π p.2)).range = ⊤ :=
-      fun p _ ↦ transverse_of_isSubmersion_right hn hπ p
+    have htrans := fun (p : IteratedFiberProduct π (m + 1) × Y)
+      (_ : IteratedFiberProduct.baseProj p.1 = π p.2) ↦
+        transverse_of_isSubmersion_right (IX := K_m) (f := IteratedFiberProduct.baseProj) hn hπ p
     let Q := {p : IteratedFiberProduct π (m + 1) × Y //
       IteratedFiberProduct.baseProj p.1 = π p.2}
     let d' := finrank ℝ (Fin d_m → ℝ) + finrank ℝ EY - finrank ℝ EM
     have hd' : d' = (m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM := by
       dsimp only [d', d_m]
-      rw [Module.finrank_fin_fun]
-      exact iter_dim_succ m (finrank ℝ EY) (finrank ℝ EM)
+      rw [Module.finrank_fin_fun, Nat.succ_mul (m + 1) (finrank ℝ EY),
+        Nat.succ_mul m (finrank ℝ EM)]
+      rcases le_or_gt (m * finrank ℝ EM) ((m + 1) * finrank ℝ EY) with h | h
+      · rw [← Nat.sub_add_comm h, Nat.sub_sub]
+      · have : finrank ℝ EY < finrank ℝ EM := lt_of_not_ge fun hba ↦ by
+          have := Nat.mul_le_mul_left m hba
+          rw [Nat.succ_mul m (finrank ℝ EY)] at h
+          omega
+        omega
     rw [← hd']
     let := transverseFiberProductChartedSpace hn hf hπ.contMDiff htrans
     have := isManifold_transverseFiberProduct hn hf hπ.contMDiff htrans
@@ -551,14 +414,13 @@ theorem exists_isManifold_iteratedFiberProduct_isSmoothEmbedding {π : Y → M}
     have he_step_cont : ContMDiff 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) n e_step :=
       hψ_coe ▸ ψ.contMDiff
     have he_step_inv : ∀ y : IteratedFiberProduct π (m + 2),
-        (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y).IsInvertible := fun y ↦ by
-      rw [← hψ_coe]
-      exact ψ.isInvertible_mfderiv hn0
-    let snocD := piSnocDiffeomorph (IY := IY) (Y := Y) (n := n) m
+        (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y).IsInvertible :=
+      fun y ↦ hψ_coe ▸ ψ.isInvertible_mfderiv hn0
+    let snocD := Diffeomorph.piSnoc (fun _ : Fin (m + 2) ↦ IY) (fun _ : Fin (m + 2) ↦ Y) n
     have hfactor : (Subtype.val : IteratedFiberProduct π (m + 2) → (Fin (m + 2) → Y)) =
         snocD ∘ Prod.map Subtype.val id ∘ (Subtype.val : Q → _) ∘ e_step := by
       funext y
-      simp only [Function.comp_apply, snocD, piSnocDiffeomorph_apply]
+      simp only [Function.comp_apply, snocD, Diffeomorph.piSnoc_apply]
       exact (Fin.snoc_init_self y.1).symm
     have hcont_coe : ContMDiff 𝓘(ℝ, Fin d' → ℝ) PI_succ n
         (Subtype.val : IteratedFiberProduct π (m + 2) → (Fin (m + 2) → Y)) := by
@@ -580,74 +442,43 @@ theorem exists_isManifold_iteratedFiberProduct_isSmoothEmbedding {π : Y → M}
       let q : Q := e_step y
       have hed := (he_step_cont y).mdifferentiableAt hn0
       have hQd := (hemb_Q.contMDiff q).mdifferentiableAt hn0
-      have hmd := ((hemb_m.contMDiff.prodMap (contMDiff_id (I := IY))) q.1).mdifferentiableAt
-        hn0
+      have hmd := ((hemb_m.contMDiff.prodMap (contMDiff_id (I := IY))) q.1).mdifferentiableAt hn0
       have hsnocd := (snocD.contMDiff (q.1.1.1, q.1.2)).mdifferentiableAt hn0
-      have hc_Qe := mfderiv_comp y hQd hed
-      have hc_mQe := mfderiv_comp y hmd (hQd.comp y hed)
-      have hc_all := mfderiv_comp y hsnocd (hmd.comp y (hQd.comp y hed))
       have hprod : mfderiv (K_m.prod IY) (PI_m.prod IY) (Prod.map Subtype.val id) q.1 =
           (mfderiv K_m PI_m Subtype.val q.1.1).prodMap
             (ContinuousLinearMap.id ℝ (TangentSpace IY q.1.2)) := by
         rw [mfderiv_prodMap (p := q.1) ((hemb_m.contMDiff q.1.1).mdifferentiableAt hn0)
           (mdifferentiableAt_id (I := IY)), mfderiv_id]
-      have hfactor_mf : mfderiv 𝓘(ℝ, Fin d' → ℝ) PI_succ
-          (Subtype.val : IteratedFiberProduct π (m + 2) → (Fin (m + 2) → Y)) y =
-          mfderiv 𝓘(ℝ, Fin d' → ℝ) PI_succ
-            (snocD ∘ Prod.map Subtype.val id ∘ (Subtype.val : Q → _) ∘ e_step) y := by
-        rw [hfactor]
-      have hc1 : mfderiv 𝓘(ℝ, Fin d' → ℝ) PI_succ
-          (Subtype.val : IteratedFiberProduct π (m + 2) → (Fin (m + 2) → Y)) y =
-          (mfderiv (PI_m.prod IY) PI_succ snocD (q.1.1.1, q.1.2)).comp
-            (((mfderiv K_m PI_m Subtype.val q.1.1).prodMap
-                (ContinuousLinearMap.id ℝ (TangentSpace IY q.1.2))).comp
-              ((mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val q).comp
-                (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y))) :=
-        hfactor_mf.trans (hc_all.trans
-          (congrArg (mfderiv (PI_m.prod IY) PI_succ snocD (q.1.1.1, q.1.2)).comp
-            (hc_mQe.trans
-              ((congrArg (fun L ↦ L.comp
-                  (mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) ((Subtype.val : Q → _) ∘ e_step) y))
-                hprod).trans
-                (congrArg ((mfderiv K_m PI_m Subtype.val q.1.1).prodMap
-                  (ContinuousLinearMap.id ℝ (TangentSpace IY q.1.2))).comp hc_Qe)))))
-      exact (DFunLike.congr_fun hc1 ξ).trans
-        (mfderiv_piSnocDiffeomorph_apply hn m (q.1.1.1, q.1.2) _ _)
+      rw [hfactor, mfderiv_comp_apply y hsnocd (hmd.comp y (hQd.comp y hed)),
+        mfderiv_comp_apply y hmd (hQd.comp y hed), mfderiv_comp_apply y hQd hed]
+      exact (congrArg (mfderiv (PI_m.prod IY) PI_succ snocD (q.1.1.1, q.1.2))
+        (DFunLike.congr_fun hprod _)).trans
+        (Diffeomorph.mfderiv_piSnoc_apply (fun _ : Fin (m + 2) ↦ IY)
+          (fun _ : Fin (m + 2) ↦ Y) n (q.1.1.1, q.1.2) _ _)
     have himm : Manifold.IsImmersion 𝓘(ℝ, Fin d' → ℝ) PI_succ n
         (Subtype.val : IteratedFiberProduct π (m + 2) → (Fin (m + 2) → Y)) := by
       refine hcont_coe.isImmersion_of_injective_mfderiv hn fun y ξ₁ ξ₂ hξ ↦ ?_
       have hsnoc := (hmf_coe y ξ₁).symm.trans (hξ.trans (hmf_coe y ξ₂))
-      have hinit : mfderiv K_m PI_m Subtype.val (e_step y).1.1
-          (mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y)
-            (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y ξ₁)).1 =
-        mfderiv K_m PI_m Subtype.val (e_step y).1.1
-          (mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y)
-            (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y ξ₂)).1 :=
-        funext fun k ↦
-          (Fin.snoc_castSucc (α := fun _ ↦ EY) _ _ k).symm.trans
-            ((congrFun hsnoc k.castSucc).trans (Fin.snoc_castSucc (α := fun _ ↦ EY) _ _ k))
-      have hlast :=
-        (Fin.snoc_last (α := fun _ ↦ EY) _ _).symm.trans
-          ((congrFun hsnoc (Fin.last (m + 1))).trans (Fin.snoc_last (α := fun _ ↦ EY) _ _))
-      have h1 := (hemb_m.isImmersion.isImmersionAt (e_step y).1.1).mfderiv_injective hn0 hinit
-      have hpair := Prod.ext h1 hlast
-      have hQ := (hemb_Q.isImmersion.isImmersionAt (e_step y)).mfderiv_injective hn0 hpair
-      exact (he_step_inv y).injective hQ
+      have hinit := (Fin.init_snoc (α := fun _ ↦ EY) _ _).symm.trans
+        ((congrArg Fin.init hsnoc).trans (Fin.init_snoc (α := fun _ ↦ EY) _ _))
+      have hlast := (Fin.snoc_last (α := fun _ ↦ EY) _ _).symm.trans
+        ((congrFun hsnoc (Fin.last (m + 1))).trans (Fin.snoc_last (α := fun _ ↦ EY) _ _))
+      have hpair := Prod.ext
+        ((hemb_m.isImmersion.isImmersionAt (e_step y).1.1).mfderiv_injective hn0 hinit) hlast
+      exact (he_step_inv y).injective
+        ((hemb_Q.isImmersion.isImmersionAt (e_step y)).mfderiv_injective hn0 hpair)
     refine ⟨inferInstance, inferInstance, ⟨himm, IsEmbedding.subtypeVal⟩, fun y v ↦ ?_⟩
     -- Identify the differential of `baseProj` at `p₁ = (e_step y).1.1` through the `0`-th factor.
     let p₁ : IteratedFiberProduct π (m + 1) := (e_step y).1.1
     have hmf_base : ∀ ζ : TangentSpace K_m p₁,
         mfderiv K_m IM IteratedFiberProduct.baseProj p₁ ζ =
           mfderiv IY IM π (y.1 0)
-            ((mfderiv K_m PI_m Subtype.val p₁ ζ : Fin (m + 1) → EY) 0) := by
-      intro ζ
-      have heval0 : MDifferentiableAt PI_m IY (fun f : Fin (m + 1) → Y ↦ f 0) p₁.1 :=
-        (TauCeti.hasMFDerivAt_apply (I := fun _ : Fin (m + 1) ↦ IY)
-          (0 : Fin (m + 1)) p₁.1).mdifferentiableAt
-      have hc1 := mfderiv_comp p₁
-        (((hπ.contMDiff (p₁.1 0)).mdifferentiableAt hn0).comp p₁.1 heval0)
-        ((hemb_m.contMDiff p₁).mdifferentiableAt hn0)
-      have hc2 := mfderiv_comp p₁.1 ((hπ.contMDiff (p₁.1 0)).mdifferentiableAt hn0) heval0
+            ((mfderiv K_m PI_m Subtype.val p₁ ζ : Fin (m + 1) → EY) 0) := fun ζ ↦ by
+      have he0 := (TauCeti.hasMFDerivAt_apply (I := fun _ : Fin (m + 1) ↦ IY)
+        (0 : Fin (m + 1)) p₁.1).mdifferentiableAt
+      have hπd := (hπ.contMDiff (p₁.1 0)).mdifferentiableAt hn0
+      have hc1 := mfderiv_comp p₁ (hπd.comp p₁.1 he0) ((hemb_m.contMDiff p₁).mdifferentiableAt hn0)
+      have hc2 := mfderiv_comp p₁.1 hπd he0
       rw [TauCeti.mfderiv_apply] at hc2
       exact DFunLike.congr_fun
         (hc1.trans (congrArg (·.comp (mfderiv K_m PI_m Subtype.val p₁)) hc2)) ζ
@@ -656,79 +487,30 @@ theorem exists_isManifold_iteratedFiberProduct_isSmoothEmbedding {π : Y → M}
       let η := mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y ξ
       let pair := mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y) η
       let u : Fin (m + 1) → EY := mfderiv K_m PI_m Subtype.val p₁ pair.1
-      have hv_eq : v = Fin.snoc (α := fun _ ↦ EY) u pair.2 :=
-        hξ.symm.trans (hmf_coe y ξ)
-      have hv_last : v (Fin.last (m + 1)) = pair.2 :=
-        (congrFun hv_eq (Fin.last (m + 1))).trans (Fin.snoc_last (α := fun _ ↦ EY) pair.2 u)
-      have hv_cast : ∀ k : Fin (m + 1), v k.castSucc = u k := fun k ↦
-        (congrFun hv_eq k.castSucc).trans (Fin.snoc_castSucc (α := fun _ ↦ EY) pair.2 u k)
-      have hQmem : mfderiv IY IM π (y.1 0) (u 0) =
-          tangentSpaceCast IM (π (y.1 (Fin.last (m + 1)))) (IteratedFiberProduct.baseProj p₁)
-            (mfderiv IY IM π (y.1 (Fin.last (m + 1))) pair.2) :=
-        (hmf_base pair.1).symm.trans ((hrange_Q (e_step y) pair).1 ⟨η, rfl⟩)
-      have humem : ∀ i j : Fin (m + 1),
-          mfderiv IY IM π (p₁.1 i) (u i) =
-            tangentSpaceCast IM (π (p₁.1 j)) (π (p₁.1 i)) (mfderiv IY IM π (p₁.1 j) (u j)) :=
-        (hrange_m p₁ u).1 ⟨pair.1, rfl⟩
+      have hv_eq : v = Fin.snoc (α := fun _ ↦ EY) u pair.2 := hξ.symm.trans (hmf_coe y ξ)
+      have hQmem := (hmf_base pair.1).symm.trans ((hrange_Q (e_step y) pair).1 ⟨η, rfl⟩)
+      have humem := (hrange_m p₁ u).1 ⟨pair.1, rfl⟩
       -- Every coordinate agrees with coordinate `0` after transporting to `π (y.1 0)`.
       have h0 : ∀ i : Fin (m + 2),
-          tangentSpaceCast IM (π (y.1 i)) (π (y.1 0))
-            (mfderiv IY IM π (y.1 i) (v i)) =
-            mfderiv IY IM π (y.1 0) (u 0) := by
-        intro i
-        refine i.lastCases ?_ fun k ↦ ?_
-        · exact (congrArg (fun z ↦
-            tangentSpaceCast IM (π (y.1 (Fin.last (m + 1)))) (π (y.1 0))
-              (mfderiv IY IM π (y.1 (Fin.last (m + 1))) z)) hv_last).trans hQmem.symm
-        · exact (congrArg (fun z ↦
-            tangentSpaceCast IM (π (y.1 k.castSucc)) (π (y.1 0))
-              (mfderiv IY IM π (y.1 k.castSucc) z)) (hv_cast k)).trans (humem 0 k).symm
-      intro i j
-      -- Transport both equalities from `π (y.1 0)` to `π (y.1 i)` along the common base point.
-      have h1 : mfderiv IY IM π (y.1 i) (v i) =
-          tangentSpaceCast IM (π (y.1 0)) (π (y.1 i))
-            (tangentSpaceCast IM (π (y.1 i)) (π (y.1 0))
-              (mfderiv IY IM π (y.1 i) (v i))) :=
-        (tangentSpaceCast_trans (y.2 i 0) (y.2 0 i) _).symm
-      have h2 : tangentSpaceCast IM (π (y.1 0)) (π (y.1 i))
-            (tangentSpaceCast IM (π (y.1 i)) (π (y.1 0))
-              (mfderiv IY IM π (y.1 i) (v i))) =
-          tangentSpaceCast IM (π (y.1 0)) (π (y.1 i))
-            (tangentSpaceCast IM (π (y.1 j)) (π (y.1 0))
-              (mfderiv IY IM π (y.1 j) (v j))) :=
-        congrArg (tangentSpaceCast IM (π (y.1 0)) (π (y.1 i))) ((h0 i).trans (h0 j).symm)
-      exact h1.trans (h2.trans (tangentSpaceCast_trans (y.2 j 0) (y.2 0 i) _))
+          tangentSpaceCast IM (π (y.1 i)) (π (y.1 0)) (mfderiv IY IM π (y.1 i) (v i)) =
+            mfderiv IY IM π (y.1 0) (u 0) := fun i ↦ by
+        rw [hv_eq]
+        induction i using Fin.lastCases with
+        | last => simp only [Fin.snoc_last]; exact hQmem.symm
+        | cast k => simp only [Fin.snoc_castSucc]; exact (humem 0 k).symm
+      exact fun i j ↦ (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.2 i 0) (y.2 j 0)).2
+        ((h0 i).trans (h0 j).symm)
     · intro hv
       obtain ⟨ζ, hζ⟩ := (hrange_m p₁ (Fin.init v)).2 fun i j ↦ hv i.castSucc j.castSucc
-      change mfderiv K_m PI_m Subtype.val p₁ ζ = Fin.init v at hζ
-      have hζ0 : (mfderiv K_m PI_m Subtype.val p₁ ζ : Fin (m + 1) → EY) 0 = v 0 :=
-        congrFun hζ 0
-      have hQcond : mfderiv K_m IM IteratedFiberProduct.baseProj p₁ ζ =
-          tangentSpaceCast IM (π (y.1 (Fin.last (m + 1)))) (IteratedFiberProduct.baseProj p₁)
-            (mfderiv IY IM π (y.1 (Fin.last (m + 1))) (v (Fin.last (m + 1)))) :=
-        (hmf_base ζ).trans ((congrArg (mfderiv IY IM π (y.1 0)) hζ0).trans
-          (hv 0 (Fin.last (m + 1))))
+      rw [ContinuousLinearMap.coe_coe] at hζ
+      have hQcond := (hmf_base ζ).trans
+        ((congrArg (mfderiv IY IM π (y.1 0)) (congrFun hζ 0)).trans (hv 0 (Fin.last (m + 1))))
       obtain ⟨η, hη⟩ := (hrange_Q (e_step y) (ζ, v (Fin.last (m + 1)))).2 hQcond
-      change mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y) η =
-        (ζ, v (Fin.last (m + 1))) at hη
+      rw [ContinuousLinearMap.coe_coe] at hη
       obtain ⟨ξ, hξ⟩ := (he_step_inv y).surjective η
-      have hpair_eq : mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y)
-          (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y ξ) =
-          (ζ, v (Fin.last (m + 1))) :=
-        (congrArg (mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y)) hξ).trans hη
-      have hu_eq : mfderiv K_m PI_m Subtype.val (e_step y).1.1
-          (mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y)
-            (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y ξ)).1 = Fin.init v :=
-        (congrArg (mfderiv K_m PI_m Subtype.val (e_step y).1.1)
-          (congrArg Prod.fst hpair_eq)).trans hζ
-      have hw_eq : (mfderiv 𝓘(ℝ, Fin d' → ℝ) (K_m.prod IY) Subtype.val (e_step y)
-          (mfderiv 𝓘(ℝ, Fin d' → ℝ) 𝓘(ℝ, Fin d' → ℝ) e_step y ξ)).2 =
-          v (Fin.last (m + 1)) :=
-        congrArg Prod.snd hpair_eq
-      refine ⟨ξ, (hmf_coe y ξ).trans (funext fun i ↦ ?_)⟩
-      refine i.lastCases ?_ fun k ↦ ?_
-      · exact (Fin.snoc_last (α := fun _ ↦ EY) _ _).trans hw_eq
-      · exact (Fin.snoc_castSucc (α := fun _ ↦ EY) _ _ k).trans (congrFun hu_eq k)
+      refine ⟨ξ, (hmf_coe y ξ).trans ?_⟩
+      rw [hξ, hη, hζ]
+      exact Fin.snoc_init_self v
 
 section ChosenAtlas
 
@@ -881,38 +663,19 @@ theorem isSubmersion_baseProj (m : ℕ) :
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   refine ((contMDiff_baseProj hn hπ le_rfl).isSubmersionOfComplement_of_surjective_mfderiv hn
     fun y w ↦ ?_).isSubmersion
-  have hsurj : ∀ i : Fin (m + 1),
-      ∃ u : TangentSpace IY (y.1 i),
-        tangentSpaceCast IM (π (y.1 i)) (IteratedFiberProduct.baseProj y)
-          (mfderiv IY IM π (y.1 i) u) = w :=
-    fun i ↦ ((tangentSpaceCast IM (π (y.1 i)) (IteratedFiberProduct.baseProj y)).surjective.comp
+  choose v hv using fun i : Fin (m + 1) ↦
+    ((tangentSpaceCast IM (π (y.1 i)) (IteratedFiberProduct.baseProj y)).surjective.comp
       (hπ.surjective_mfderiv hn0 (y.1 i))) w
-  choose v hv using hsurj
   have hcompat : ∀ i j : Fin (m + 1),
       mfderiv IY IM π (y.1 i) (v i) =
-        tangentSpaceCast IM (π (y.1 j)) (π (y.1 i)) (mfderiv IY IM π (y.1 j) (v j)) := by
-    intro i j
-    have hyi : π (y.1 i) = IteratedFiberProduct.baseProj y := y.2 i 0
-    have hyj : π (y.1 j) = IteratedFiberProduct.baseProj y := y.2 j 0
-    calc mfderiv IY IM π (y.1 i) (v i)
-        = tangentSpaceCast IM (IteratedFiberProduct.baseProj y) (π (y.1 i))
-            (tangentSpaceCast IM (π (y.1 i)) (IteratedFiberProduct.baseProj y)
-              (mfderiv IY IM π (y.1 i) (v i))) := by
-          rw [tangentSpaceCast_trans hyi hyi.symm, tangentSpaceCast_self]
-      _ = tangentSpaceCast IM (IteratedFiberProduct.baseProj y) (π (y.1 i))
-            (tangentSpaceCast IM (π (y.1 j)) (IteratedFiberProduct.baseProj y)
-              (mfderiv IY IM π (y.1 j) (v j))) := by
-          rw [hv i, hv j]
-      _ = tangentSpaceCast IM (π (y.1 j)) (π (y.1 i)) (mfderiv IY IM π (y.1 j) (v j)) :=
-          tangentSpaceCast_trans hyj hyi.symm _
+        tangentSpaceCast IM (π (y.1 j)) (π (y.1 i)) (mfderiv IY IM π (y.1 j) (v j)) :=
+    fun i j ↦ (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.2 i 0) (y.2 j 0)).2
+      ((hv i).trans (hv j).symm)
   obtain ⟨ξ, hξ⟩ := exists_mfderiv_eval_eq_of_iteratedFiberProduct hn hπ y v hcompat
   refine ⟨ξ, ?_⟩
-  have hbase_eq : (IteratedFiberProduct.baseProj : IteratedFiberProduct π (m + 1) → M) =
-      π ∘ IteratedFiberProduct.eval 0 := rfl
-  have hc := mfderiv_comp y ((hπ.contMDiff (y.1 0)).mdifferentiableAt hn0)
-    (((contMDiff_eval hn hπ le_rfl 0) y).mdifferentiableAt hn0)
-  rw [hbase_eq, hc, ContinuousLinearMap.comp_apply, hξ 0]
-  exact hv 0
+  have hc := mfderiv_comp_apply y ((hπ.contMDiff (y.1 0)).mdifferentiableAt hn0)
+    (((contMDiff_eval hn hπ le_rfl 0) y).mdifferentiableAt hn0) ξ
+  exact hc.trans (by rw [hξ 0]; exact hv 0)
 
 /-- **Every factor projection is a surjective submersion.** On `IteratedFiberProduct π (m + 1)`,
 each coordinate projection `eval i : Y^[m + 1] → Y` is a `C^n` submersion. -/
@@ -933,29 +696,16 @@ theorem isSubmersion_eval {m : ℕ} (i : Fin (m + 1)) :
           tangentSpaceCast IM (π (y.1 j)) (π (y.1 i)) (mfderiv IY IM π (y.1 j) v_j) = w₀ := by
     intro j
     by_cases hji : j = i
-    · subst hji
-      exact ⟨u, fun _ ↦ rfl, rfl⟩
-    · obtain ⟨v_j, hv_j⟩ :=
-        ((tangentSpaceCast IM (π (y.1 j)) (π (y.1 i))).surjective.comp
-          (hπ.surjective_mfderiv hn0 (y.1 j))) w₀
+    · subst hji; exact ⟨u, fun _ ↦ rfl, rfl⟩
+    · obtain ⟨v_j, hv_j⟩ := ((tangentSpaceCast IM (π (y.1 j)) (π (y.1 i))).surjective.comp
+        (hπ.surjective_mfderiv hn0 (y.1 j))) w₀
       exact ⟨v_j, fun h ↦ (hji h).elim, hv_j⟩
   choose v hv_eq hv_map using hsurj
   have hcompat : ∀ j₁ j₂ : Fin (m + 1),
       mfderiv IY IM π (y.1 j₁) (v j₁) =
-        tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) := by
-    intro j₁ j₂
-    calc mfderiv IY IM π (y.1 j₁) (v j₁)
-        = tangentSpaceCast IM (π (y.1 i)) (π (y.1 j₁))
-            (tangentSpaceCast IM (π (y.1 j₁)) (π (y.1 i))
-              (mfderiv IY IM π (y.1 j₁) (v j₁))) := by
-          rw [tangentSpaceCast_trans (y.2 j₁ i) (y.2 i j₁), tangentSpaceCast_self]
-      _ = tangentSpaceCast IM (π (y.1 i)) (π (y.1 j₁))
-            (tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 i))
-              (mfderiv IY IM π (y.1 j₂) (v j₂))) := by
-          rw [hv_map j₁, hv_map j₂]
-      _ = tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁))
-            (mfderiv IY IM π (y.1 j₂) (v j₂)) :=
-          tangentSpaceCast_trans (y.2 j₂ i) (y.2 i j₁) _
+        tangentSpaceCast IM (π (y.1 j₂)) (π (y.1 j₁)) (mfderiv IY IM π (y.1 j₂) (v j₂)) :=
+    fun j₁ j₂ ↦ (eq_tangentSpaceCast_iff_tangentSpaceCast_eq (y.2 j₁ i) (y.2 j₂ i)).2
+      ((hv_map j₁).trans (hv_map j₂).symm)
   obtain ⟨ξ, hξ⟩ := exists_mfderiv_eval_eq_of_iteratedFiberProduct hn hπ y v hcompat
   exact ⟨ξ, (hξ i).trans (hv_eq i rfl)⟩
 
@@ -1013,8 +763,7 @@ noncomputable def iteratedFiberProductTwoDiffeomorph :
         ((contMDiff_eval hn hπ le_rfl 0).prodMk (contMDiff_eval hn hπ le_rfl 1))
       contMDiff_invFun := (contMDiff_iteratedFiberProduct_iff hn hπ le_rfl).2 fun i ↦ by
         fin_cases i
-        · exact hemb.contMDiff.fst
-        · exact hemb.contMDiff.snd }
+        exacts [hemb.contMDiff.fst, hemb.contMDiff.snd] }
 
 /-- `iteratedFiberProductTwoDiffeomorph` sends `y` to the pair `(eval 0 y, eval 1 y)`. -/
 @[simp]
@@ -1048,8 +797,7 @@ noncomputable def iteratedFiberProductSplitDiffeomorph (m₁ m₂ : ℕ) :
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     IteratedFiberProduct π (m₁ + m₂ + 2) ≃ₘ^n⟮
       𝓘(ℝ, Fin ((m₁ + m₂ + 2) * finrank ℝ EY - (m₁ + m₂ + 1) * finrank ℝ EM) → ℝ),
@@ -1064,61 +812,52 @@ noncomputable def iteratedFiberProductSplitDiffeomorph (m₁ m₂ : ℕ) :
   haveI := isManifold_iteratedFiberProduct hn hπ m₁
   haveI := isManifold_iteratedFiberProduct hn hπ m₂
   letI := transverseFiberProductChartedSpace hn
-    (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-    (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+    (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
     (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
   have hemb := isSmoothEmbedding_coe_transverseFiberProduct hn
-    (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-    (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+    (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
     (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
-  let castEquiv : Fin ((m₁ + 1) + (m₂ + 1)) ≃ Fin (m₁ + m₂ + 2) :=
-    finCongr (by omega)
+  let castEquiv : Fin ((m₁ + 1) + (m₂ + 1)) ≃ Fin (m₁ + m₂ + 2) := finCongr (by omega)
   refine
     { toFun := fun y ↦
-        ⟨(⟨fun i ↦ y.1 (castEquiv (Fin.castAdd (m₂ + 1) i)),
-            fun i j ↦ y.2 _ _⟩,
-          ⟨fun j ↦ y.1 (castEquiv (Fin.natAdd (m₁ + 1) j)),
-            fun i j ↦ y.2 _ _⟩),
-          y.2 _ _⟩
+        ⟨(⟨fun i ↦ y.1 (castEquiv (Fin.castAdd (m₂ + 1) i)), fun _ _ ↦ y.2 _ _⟩,
+          ⟨fun j ↦ y.1 (castEquiv (Fin.natAdd (m₁ + 1) j)), fun _ _ ↦ y.2 _ _⟩), y.2 _ _⟩
       invFun := fun p ↦
         ⟨fun k ↦ Fin.append p.1.1.1 p.1.2.1 (castEquiv.symm k), by
           have hbase : ∀ r : Fin ((m₁ + 1) + (m₂ + 1)),
-              π (Fin.append p.1.1.1 p.1.2.1 r) = IteratedFiberProduct.baseProj p.1.1 := fun r ↦
-            Fin.addCases
-              (fun i ↦ by
-                rw [Fin.append_left]
-                exact (IteratedFiberProduct.baseProj_eq_apply p.1.1 i).symm)
-              (fun j ↦ by
-                rw [Fin.append_right]
-                exact (IteratedFiberProduct.baseProj_eq_apply p.1.2 j).symm.trans p.2.symm) r
-          exact fun k₁ k₂ ↦ (hbase _).trans (hbase _).symm⟩
+              π (Fin.append p.1.1.1 p.1.2.1 r) = IteratedFiberProduct.baseProj p.1.1 := fun r ↦ by
+            induction r using Fin.addCases with
+            | left i =>
+              rw [Fin.append_left]
+              exact (IteratedFiberProduct.baseProj_eq_apply p.1.1 i).symm
+            | right j =>
+              rw [Fin.append_right]
+              exact (IteratedFiberProduct.baseProj_eq_apply p.1.2 j).symm.trans p.2.symm
+          exact fun _ _ ↦ (hbase _).trans (hbase _).symm⟩
       left_inv := fun y ↦ Subtype.ext (funext fun k ↦ by
         obtain ⟨r, rfl⟩ := castEquiv.surjective k
         dsimp only
         rw [Equiv.symm_apply_apply]
-        exact Fin.addCases
-          (fun i ↦ by rw [Fin.append_left])
-          (fun j ↦ by rw [Fin.append_right]) r)
-      right_inv := fun p ↦ by
-        apply Subtype.ext
-        refine Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (Subtype.ext (funext fun j ↦ ?_))
-        · simp only [Equiv.symm_apply_apply, Fin.append_left]
-        · simp only [Equiv.symm_apply_apply, Fin.append_right]
+        induction r using Fin.addCases with
+        | left i => rw [Fin.append_left]
+        | right j => rw [Fin.append_right])
+      right_inv := fun p ↦ Subtype.ext <| Prod.ext
+        (Subtype.ext (funext fun _ ↦ by simp only [Equiv.symm_apply_apply, Fin.append_left]))
+        (Subtype.ext (funext fun _ ↦ by simp only [Equiv.symm_apply_apply, Fin.append_right]))
       contMDiff_toFun := hemb.contMDiff_iff_comp.2 <|
         ((contMDiff_iteratedFiberProduct_iff hn hπ le_rfl).2 fun i ↦
           contMDiff_eval hn hπ le_rfl (castEquiv (Fin.castAdd (m₂ + 1) i))).prodMk
         ((contMDiff_iteratedFiberProduct_iff hn hπ le_rfl).2 fun j ↦
           contMDiff_eval hn hπ le_rfl (castEquiv (Fin.natAdd (m₁ + 1) j)))
       contMDiff_invFun := (contMDiff_iteratedFiberProduct_iff hn hπ le_rfl).2 fun k ↦ by
-        let S := {p : IteratedFiberProduct π (m₁ + 1) × IteratedFiberProduct π (m₂ + 1) //
-          IteratedFiberProduct.baseProj p.1 = IteratedFiberProduct.baseProj p.2}
-        change ContMDiff _ IY n (fun p : S ↦ Fin.append p.1.1.1 p.1.2.1 (castEquiv.symm k))
-        refine Fin.addCases
-          (motive := fun r ↦ ContMDiff _ IY n (fun p : S ↦ Fin.append p.1.1.1 p.1.2.1 r))
-          (fun i ↦ ?_) (fun j ↦ ?_) (castEquiv.symm k)
-        · simp only [Fin.append_left]
+        obtain ⟨r, rfl⟩ := castEquiv.surjective k
+        simp only [IteratedFiberProduct.eval_apply, Equiv.coe_fn_symm_mk, Equiv.symm_apply_apply]
+        induction r using Fin.addCases with
+        | left i =>
+          simp only [Fin.append_left]
           exact (contMDiff_eval hn hπ le_rfl i).comp hemb.contMDiff.fst
-        · simp only [Fin.append_right]
+        | right j =>
+          simp only [Fin.append_right]
           exact (contMDiff_eval hn hπ le_rfl j).comp hemb.contMDiff.snd }
 
 /-- The underlying tuple of the first factor of `iteratedFiberProductSplitDiffeomorph` reads the
@@ -1132,8 +871,7 @@ theorem coe_fst_iteratedFiberProductSplitDiffeomorph (m₁ m₂ : ℕ)
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     ((iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂ y).1.1 : Fin (m₁ + 1) → Y) =
       fun i ↦ y.1 (finCongr (by omega) (Fin.castAdd (m₂ + 1) i)) := (rfl)
@@ -1148,8 +886,7 @@ theorem eval_fst_iteratedFiberProductSplitDiffeomorph (m₁ m₂ : ℕ)
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     IteratedFiberProduct.eval i (iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂ y).1.1 =
       IteratedFiberProduct.eval (finCongr (by omega) (Fin.castAdd (m₂ + 1) i)) y := (rfl)
@@ -1165,8 +902,7 @@ theorem coe_snd_iteratedFiberProductSplitDiffeomorph (m₁ m₂ : ℕ)
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     ((iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂ y).1.2 : Fin (m₂ + 1) → Y) =
       fun j ↦ y.1 (finCongr (by omega) (Fin.natAdd (m₁ + 1) j)) := (rfl)
@@ -1181,8 +917,7 @@ theorem eval_snd_iteratedFiberProductSplitDiffeomorph (m₁ m₂ : ℕ)
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     IteratedFiberProduct.eval j (iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂ y).1.2 =
       IteratedFiberProduct.eval (finCongr (by omega) (Fin.natAdd (m₁ + 1) j)) y := (rfl)
@@ -1199,8 +934,7 @@ theorem coe_iteratedFiberProductSplitDiffeomorph_symm (m₁ m₂ : ℕ)
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     ((iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂).symm p : Fin (m₁ + m₂ + 2) → Y) =
       fun k ↦ Fin.append p.1.1.1 p.1.2.1 ((finCongr (by omega)).symm k) := (rfl)
@@ -1217,8 +951,7 @@ theorem eval_iteratedFiberProductSplitDiffeomorph_symm (m₁ m₂ : ℕ)
     haveI := isManifold_iteratedFiberProduct hn hπ m₁
     haveI := isManifold_iteratedFiberProduct hn hπ m₂
     letI := transverseFiberProductChartedSpace hn
-      (contMDiff_baseProj hn hπ (m := m₁) le_rfl)
-      (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
+      (contMDiff_baseProj hn hπ (m := m₁) le_rfl) (contMDiff_baseProj hn hπ (m := m₂) le_rfl)
       (fun p _ ↦ transverse_of_isSubmersion_right hn (isSubmersion_baseProj hn hπ m₂) p)
     IteratedFiberProduct.eval k ((iteratedFiberProductSplitDiffeomorph hn hπ m₁ m₂).symm p) =
       Fin.append p.1.1.1 p.1.2.1 ((finCongr (by omega)).symm k) := (rfl)
@@ -1249,8 +982,7 @@ theorem iteratedFiberProductIdDiffeomorph_apply (hn : 1 ≤ n) (m : ℕ)
     (y : IteratedFiberProduct (id : M → M) (m + 1)) :
     letI := iteratedFiberProductChartedSpace hn
       (Manifold.IsSubmersion.id (I := IM) (n := n) (M := M)) m
-    iteratedFiberProductIdDiffeomorph (IM := IM) hn m y =
-      IteratedFiberProduct.baseProj y := (rfl)
+    iteratedFiberProductIdDiffeomorph (IM := IM) hn m y = IteratedFiberProduct.baseProj y := (rfl)
 
 /-- The inverse of `iteratedFiberProductIdDiffeomorph` is the constant diagonal `const (m + 1)`. -/
 @[simp]
