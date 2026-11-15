@@ -123,6 +123,12 @@ theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
     (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
   rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
 
+/-- **The flow preserves the pseudo-gradient.** The derivative of the time-`t` map of the flow
+carries `X y` to `X` at the image of `y`. -/
+theorem mfderiv_flow_apply_self (t : ℝ) (y : M) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (X y) = X (hX.flow t y) :=
+  mfderiv_globalFlow_apply_self _ hX.isCompleteVectorField t y
+
 /-- The derivative of `f` along an orbit of the flow is `df(X)`. -/
 theorem hasDerivAt_comp_flow (y : M) (t : ℝ) :
     HasDerivAt (fun s ↦ f (hX.flow s y)) (mvfderiv 𝓘(ℝ, E) f (hX.flow t y) (X (hX.flow t y))) t :=

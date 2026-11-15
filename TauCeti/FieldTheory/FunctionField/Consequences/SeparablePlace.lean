@@ -109,15 +109,11 @@ theorem exists_place_degree_le_finrank_and_isSeparable (hF : IsFunctionField k F
   have hφ0 : φ.map res ≠ 0 := (hφ.map res).ne_zero
   have hdeg : (φ.map res).natDegree = Module.finrank k⟮x⟯ F := by
     rw [hφ.natDegree_map, Place.natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
-  -- A monic irreducible factor `γ` of the reduction, and Kummer's theorem at `P₁`.
-  have hunit : ¬IsUnit (φ.map res) := fun h ↦ by
-    have := natDegree_eq_zero_of_isUnit h
-    rw [hdeg] at this
-    exact Module.finrank_pos.ne' this
-  obtain ⟨γ, hγ⟩ := UniqueFactorizationMonoid.exists_mem_normalizedFactors hφ0 hunit
-  obtain ⟨hirr, hmonic, hdvd⟩ := (Polynomial.mem_normalizedFactors_iff hφ0).mp hγ
+  -- An irreducible factor `γ` of the reduction, and Kummer's theorem at `P₁`.
+  obtain ⟨γ, hirr, hdvd⟩ := Polynomial.exists_irreducible_of_natDegree_pos (f := φ.map res)
+    (by rw [hdeg]; exact Module.finrank_pos)
   obtain ⟨P, hP, hrel, hsepres⟩ := Place.exists_restrict_eq_relativeDegree_eq_and_isSeparable
-    (k' := k) hF₁ P₁ hy hmin hsep hmonic hirr hdvd
+    (k' := k) hF₁ P₁ hy hmin hsep hirr hdvd
   subst hP
   refine ⟨P, ?_, ?_⟩
   · rw [Place.degree_eq_degree_restrict_mul_relativeDegree k k⟮x⟯ P, hP₁, one_mul, hrel, ← hdeg]
