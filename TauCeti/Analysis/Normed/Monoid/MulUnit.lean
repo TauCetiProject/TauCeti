@@ -21,8 +21,8 @@ multiplicative units. In a norm-one monoid, so is one, and the norms of powers a
 the norm. In a commutative norm-one monoid, finite products of multiplicative units are
 multiplicative units, with the product of the norms as norm.
 
-An element of nonzero norm scaling all norms exactly forces `‖1‖ = 1`; if it is a unit, its
-inverse has reciprocal norm.
+An element of nonzero norm scaling all norms exactly forces `‖1‖ = 1`. Any unit `u` scaling all
+norms exactly has inverse of norm `‖u‖⁻¹`; if `‖u‖ = 0`, every norm vanishes.
 
 ## References
 

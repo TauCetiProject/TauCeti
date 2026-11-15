@@ -28,8 +28,8 @@ The exact scaling law propagates to every module with contractive scalar action:
 rescaling `ϖ ^ n • m` into the shell `‖ϖ‖ < ‖ϖ ^ n • m‖ ≤ 1`. These are the shell arguments
 used throughout nonarchimedean functional analysis over Banach–Tate rings, for instance to turn
 topological statements about bounded maps into norm estimates. The inverse norm formula and the
-scaling law hold more generally for any unit `u` of positive norm with `‖u * x‖ = ‖u‖ * ‖x‖`,
-whatever the size of `‖u‖`.
+scaling law hold more generally for any unit `u` with `‖u * x‖ = ‖u‖ * ‖x‖`, whatever the size
+of `‖u‖`. Only the formula `‖u ^ n‖ = ‖u‖ ^ n` for powers of such a unit still requires `0 < ‖u‖`.
 
 The existence of a multiplicative pseudo-uniformiser forces `‖1‖ = 1`, so a Tate ring is
 nonzero, and its powers provide a zero sequence of units (`TauCeti.HasZeroSequenceOfUnits`). An
