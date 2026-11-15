@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
 
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
+
 /-!
 # Invariant forms under morphisms of root pairings
 
@@ -87,6 +89,10 @@ theorem comap_id (B : P.InvariantForm) : comap (Hom.id P) B = B := by
   ext x y
   simp
 
+@[simp]
+theorem comap_one (B : P.InvariantForm) : comap (1 : P.End) B = B :=
+  comap_id B
+
 theorem comap_comp (g : Q.Hom S) (f : P.Hom Q) (B : S.InvariantForm) :
     comap (g.comp f) B = comap f (comap g B) := by
   ext x y
@@ -106,17 +112,25 @@ theorem comap_toInvariantForm [Fintype ι] [Fintype ι₂] [P.IsAnisotropic] [Q.
   ext x y
   simp
 
+@[simp]
+theorem comap_symm_comap (e : P.Equiv Q) (B : Q.InvariantForm) :
+    comap (Equiv.symm P Q e).toHom (comap e.toHom B) = B := by
+  ext x y
+  simp [← Equiv.weightEquiv_apply]
+
+@[simp]
+theorem comap_comap_symm (e : P.Equiv Q) (B : P.InvariantForm) :
+    comap e.toHom (comap (Equiv.symm P Q e).toHom B) = B := by
+  ext x y
+  simp
+
 /-- Pulling back invariant forms along an equivalence of root pairings is a bijection, with inverse
 the pullback along the inverse equivalence. -/
 noncomputable def comapEquiv (e : P.Equiv Q) : Q.InvariantForm ≃ P.InvariantForm where
   toFun := comap e.toHom
   invFun := comap (Equiv.symm P Q e).toHom
-  left_inv B := by
-    ext x y
-    simp [← Equiv.weightEquiv_apply]
-  right_inv B := by
-    ext x y
-    simp
+  left_inv := comap_symm_comap e
+  right_inv := comap_comap_symm e
 
 @[simp]
 theorem comapEquiv_apply (e : P.Equiv Q) (B : Q.InvariantForm) : comapEquiv e B = comap e.toHom B :=
@@ -127,6 +141,19 @@ theorem comapEquiv_symm_apply (e : P.Equiv Q) (B : P.InvariantForm) :
     (comapEquiv e).symm B = comap (Equiv.symm P Q e).toHom B :=
   (rfl)
 
+theorem comapEquiv_id : comapEquiv (Equiv.id P) = _root_.Equiv.refl P.InvariantForm := by
+  ext B x y
+  simp
+
+theorem comapEquiv_comp (g : Q.Equiv S) (f : P.Equiv Q) :
+    comapEquiv (Equiv.comp g f) = (comapEquiv g).trans (comapEquiv f) := by
+  ext B : 1
+  simp [comap_comp]
+
+theorem comapEquiv_symm (e : P.Equiv Q) : (comapEquiv e).symm = comapEquiv (Equiv.symm P Q e) := by
+  ext B x y
+  simp
+
 section Ordered
 
 variable [PartialOrder R]
@@ -134,8 +161,8 @@ variable [PartialOrder R]
 /-- The pullback of a positive-definite invariant form along a morphism with injective weight map
 is positive definite. -/
 theorem posDef_comap {f : P.Hom Q} (hf : Function.Injective f.weightMap) {B : Q.InvariantForm}
-    (hB : B.form.toQuadraticMap.PosDef) : (comap f B).form.toQuadraticMap.PosDef := fun x hx ↦ by
-  simpa using hB (f.weightMap x) ((map_ne_zero_iff _ hf).mpr hx)
+    (hB : B.form.toQuadraticMap.PosDef) : (comap f B).form.toQuadraticMap.PosDef :=
+  B.form.posDef_toQuadraticMap_compl₁₂ hB f.weightMap hf
 
 /-- **Along an equivalence, an invariant form is positive definite exactly when its pullback
 is.** -/
@@ -143,8 +170,7 @@ is.** -/
 theorem posDef_comap_iff (e : P.Equiv Q) {B : Q.InvariantForm} :
     (comap e.toHom B).form.toQuadraticMap.PosDef ↔ B.form.toQuadraticMap.PosDef := by
   refine ⟨fun h ↦ ?_, posDef_comap e.bijective_weightMap.injective⟩
-  have := posDef_comap (Equiv.symm P Q e).bijective_weightMap.injective h
-  rwa [← comapEquiv_apply e B, ← comapEquiv_symm_apply, _root_.Equiv.symm_apply_apply] at this
+  simpa using posDef_comap (Equiv.symm P Q e).bijective_weightMap.injective h
 
 end Ordered
 

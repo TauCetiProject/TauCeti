@@ -38,8 +38,6 @@ weight-space vectors.
   which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
   coefficient subring.
-* `RootPairing.Hom.weightMap_reflection`: the weight map intertwines the reflection at a root with
-  the reflection at its image.
 * `RootPairing.Hom.indexEquiv_reflectionPerm`: it commutes with `RootPairing.reflectionPerm`, and
   therefore with the negation of an index, which is `RootPairing.reflectionPerm i i` by definition
   and is rewritten to that form by the `simp` lemma `RootPairing.indexNeg_neg`.
@@ -50,6 +48,10 @@ weight-space vectors.
   independence of a pair of roots.
 * `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
   preserves the two root-string coefficients.
+* `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
+  preserves coroot values and intertwines the reflection at a root with the reflection at its
+  image. These generalise Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` and
+  `RootPairing.Equiv.weightEquiv_reflection` from equivalences to morphisms.
 
 These invariance facts show that an automorphism of a root system permutes the matrices of Geck's
 construction, as developed in `TauCeti.LinearAlgebra.RootSystem.GeckConstruction.Symmetry`.
@@ -102,8 +104,10 @@ theorem indexEquiv_reflectionPerm (f : P.Hom P₂) (i j : ι) :
   rw [← Hom.root_weightMap_apply]
   simp [root_reflectionPerm, reflection_apply_root, Hom.root_weightMap_apply]
 
-/-- The weight map of a homomorphism of root pairings carries the coroot functional at `i` to the
-coroot functional at the image index. -/
+/-- The weight map of a homomorphism of root pairings preserves coroot values: pulling the coroot
+functional at `f.indexEquiv i` back along `f.weightMap` gives the coroot functional at `i`. This
+generalises Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` from equivalences to morphisms. -/
+@[grind =]
 theorem coroot'_weightMap (f : P.Hom P₂) (i : ι) (x : M) :
     P₂.coroot' (f.indexEquiv i) (f.weightMap x) = P.coroot' i x := by
   simpa [coroot', Hom.coroot_coweightMap_apply] using
@@ -111,7 +115,8 @@ theorem coroot'_weightMap (f : P.Hom P₂) (i : ι) (x : M) :
       (f.weight_coweight_transpose_apply P P₂ (P₂.coroot (f.indexEquiv i)))
 
 /-- The weight map of a homomorphism of root pairings intertwines the reflection at a root with
-the reflection at its image. -/
+the reflection at its image. This generalises Mathlib's `RootPairing.Equiv.weightEquiv_reflection`
+from equivalences to morphisms, with the same proof. -/
 theorem weightMap_reflection (f : P.Hom P₂) (i : ι) (x : M) :
     f.weightMap (P.reflection i x) = P₂.reflection (f.indexEquiv i) (f.weightMap x) := by
   rw [reflection_apply, reflection_apply, map_sub, map_smul, Hom.root_weightMap_apply,
