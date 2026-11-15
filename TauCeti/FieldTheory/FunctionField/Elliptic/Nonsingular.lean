@@ -136,8 +136,7 @@ theorem transcendental_div_of_isSingular
 field**: if `W` has a singular point over `k`, then `F` has genus zero. -/
 theorem genus_eq_zero_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
     {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) : genus k F = 0 :=
-  genus_eq_zero_of_adjoin_eq_top (h.transcendental_div_of_isSingular hs)
-    (h.adjoin_div_eq_top_of_isSingular hF hP hs)
+  genus_eq_zero_of_adjoin_eq_top (h.adjoin_div_eq_top_of_isSingular hF hP hs)
 
 /-- **The Weierstrass curve of a function field of nonzero genus is elliptic**, over a perfect
 field. -/
