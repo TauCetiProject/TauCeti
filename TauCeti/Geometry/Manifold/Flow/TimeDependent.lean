@@ -753,16 +753,17 @@ theorem contMDiffAt_timeDependentFlowOf {n : ℕ∞} (hn : 1 ≤ n) [IsManifold 
     ContMDiffAt I I n (timeDependentFlowOf X s t) x :=
   contMDiffAt_timeDependentFlowOf_comp hn hX contMDiffAt_const contMDiffAt_const contMDiffAt_id h
 
-/-- **The linearized flow is `C^m` in time.** Let `X` be jointly `C^n`, `1 ≤ n`, with `m + 1 ≤ n`.
+/-- **The linearized flow is `C^m` in time.** Let `X` be jointly `C^n`, with `m + 1 ≤ n`.
 At every time `t` at which the flow from `(s, x)` is defined, the tangent vector
 `dφ_{s, u} v` at `φ_{s, u}(x)` is a `C^m` function of `u` into the tangent bundle. -/
-theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hn : 1 ≤ n)
-    (hmn : m + 1 ≤ n) [IsManifold I n M]
+theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hmn : m + 1 ≤ n)
+    [IsManifold I n M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (v : TangentSpace I x) (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     ContMDiffAt 𝓘(ℝ, ℝ) I.tangent m (fun u ↦ Bundle.TotalSpace.mk' E (timeDependentFlowOf X s u x)
       (mfderiv I I (timeDependentFlowOf X s u) x v)) t := by
+  have hn : 1 ≤ n := le_add_self.trans hmn
   set W := {q : ℝ × M | ((s, q.1), q.2) ∈ timeDependentFlowDomain X}
   have hW : IsOpen W :=
     (isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).preimage (by fun_prop)

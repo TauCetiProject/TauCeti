@@ -69,9 +69,9 @@ isolated, fixed points is finite.
   of the return map is defined for all time.
 * `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: in finite dimensions, the derivative of
   the flow over one more period factors through the derivative of the return map, wherever both
-  are defined. At a fixed point of the return map in its domain, with `T ≠ 0`, a vector fixed by
-  the derivative of the return map therefore spreads to a periodic solution of the linearized
-  flow (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`).
+  are defined. At a fixed point of the return map in its domain, a vector fixed by the derivative
+  of the return map therefore spreads to a periodic solution of the linearized flow
+  (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`).
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
@@ -310,15 +310,17 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (
   rfl
 
 omit [CompleteSpace E] in
-/-- **Periodic solutions of the linearized flow.** If `X` is `T`-periodic, `T ≠ 0`, `x` is a fixed
-point of the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative, then
+/-- **Periodic solutions of the linearized flow.** If `X` is `T`-periodic, `x` is a fixed point of
+the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative, then
 `t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
 theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq [FiniteDimensional ℝ E]
-    (hT : Periodic X T) (hT0 : T ≠ 0) (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
+    (hT : Periodic X T) (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
     (hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) x) {v : TangentSpace I x}
     (hv : mfderiv I I (timeDependentFlowOf X s (s + T)) x v = v) (t : ℝ) :
     mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
       mfderiv I I (timeDependentFlowOf X s t) x v := by
+  rcases eq_or_ne T 0 with rfl | hT0
+  · rw [add_zero]
   have hall := mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 h hfix t
   have hRt : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X := by
     rw [hfix.eq]

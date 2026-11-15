@@ -359,11 +359,11 @@ theorem exists_ne_zero_floerLinearization_eq_zero_of_not_isNondegenerateFixedPt
   refine ⟨fun w ↦ mfderiv I I
       (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (G t)) s₀ w.2) x v,
     fun z ↦ (contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf (m := 1) (n := 2)
-      (by norm_num) (by norm_num) hX v (hall z.2)).comp z
+      (by norm_num) hX v (hall z.2)).comp z
         (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt,
     fun z hz ↦ hv0 (injective_mfderiv_timeDependentFlowOf hX₁ (hall z.2)
       (hz.trans (map_zero _).symm)), fun _ _ ↦ rfl,
-    fun z ↦ mfderiv_timeDependentFlowOf_add_period_apply_of_eq hX₁ hper one_ne_zero h hfix hv z.2,
+    fun z ↦ mfderiv_timeDependentFlowOf_add_period_apply_of_eq hX₁ hper h hfix hv z.2,
     fun cov htor J z ↦ floerLinearization_mfderiv_timeDependentFlowOf ω cov htor J hX v (hall z.2)⟩
 
 end StationaryCylinder
