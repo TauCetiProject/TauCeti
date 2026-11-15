@@ -35,9 +35,10 @@ such scalars, and the composition pairing is their dot product. Hence:
   `X` receives no nonzero morphism from the family.
 
 Over an algebraically closed field the representatives of the simple classes of a finite
-semisimple category form a split simple family; see `TauCeti.CategoryTheory.Semisimple.DualBasis`,
-which develops the field case. Over a general commutative ring the hypothesis also applies to
-categories which are not abelian, such as graded free modules of finite rank over `ℤ`, and it is
+semisimple category whose simple objects have finite-dimensional endomorphism spaces form a split
+simple family; see `TauCeti.CategoryTheory.Semisimple.DualBasis`, which develops the field case.
+Over a general commutative ring the hypothesis also applies to categories which are not abelian,
+such as graded free modules of finite rank over `ℤ`, and it is
 the setting in which fusion multiplicities and structure constants of a monoidal category with
 finitely many split simple objects are read off as coordinates in bases of Hom modules.
 
