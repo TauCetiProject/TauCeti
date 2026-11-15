@@ -55,13 +55,10 @@ theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
     ∃ hDVR : IsDiscreteValuationRing (integralClosure A K⟮α⟯),
       letI := hDVR
       IsUnramifiedWRT (integralClosure A K⟮α⟯) L⟮α⟯ := by
-  have : IsScalarTower A L Ω := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A K Ω, IsScalarTower.algebraMap_apply A K L,
-      IsScalarTower.algebraMap_apply K L Ω]
+  have : IsScalarTower A L Ω := IsScalarTower.to₁₃₄ A K L Ω
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
   have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮α⟯,
-      IsScalarTower.algebraMap_apply A K Ω] using hα)
+    (AdjoinSimple.gen_pow_eq_algebraMap_iff α n π).mpr hα
   have hgen : K⟮AdjoinSimple.gen K α⟯ = ⊤ :=
     _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   have := IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
@@ -71,11 +68,8 @@ theorem IsUnramifiedWRT.adjoin_root (h : IsUnramifiedWRT A L) {π : A}
     Module.finite_of_finrank_pos (hdegree ▸ Nat.pos_of_ne_zero hn)
   have : IsFractionRing (integralClosure A K⟮α⟯) K⟮α⟯ :=
     IsIntegralClosure.isFractionRing_of_finite_extension A K K⟮α⟯ _
-  have : IsScalarTower A K L⟮α⟯ := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A L L⟮α⟯,
-      IsScalarTower.algebraMap_apply K L L⟮α⟯, ← IsScalarTower.algebraMap_apply A K L]
   have : IsScalarTower A K⟮α⟯ L⟮α⟯ :=
-    IsScalarTower.of_algHom ((TauCeti.IntermediateField.adjoinBaseChange K L α).restrictScalars A)
+    TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A α
   have hint : IsIntegral K α :=
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap (R := A))).tower_top
   refine ⟨inferInstance, ?_⟩

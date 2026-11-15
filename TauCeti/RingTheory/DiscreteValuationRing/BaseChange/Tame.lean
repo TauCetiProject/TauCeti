@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.FieldTheory.SeparableDegree
-import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.ValuationRing
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer
@@ -183,43 +182,6 @@ private theorem formallyUnramified_localization_atPrime {π : A} (hπ : Irreduci
 
 end Local
 
-section FieldSetup
-
-variable {A K L Ω : Type*} [CommRing A] [Field K] [Algebra A K] [Field L] [Algebra A L]
-  [Algebra K L] [IsScalarTower A K L] [Field Ω] [Algebra K Ω] [Algebra L Ω] [Algebra A Ω]
-  [IsScalarTower K L Ω] [IsScalarTower A K Ω]
-
-variable (K) in
-include K in
-/-- The tower `A → L → Ω` induced by `A → K → L → Ω`. -/
-private theorem isScalarTower_left : IsScalarTower A L Ω := .of_algebraMap_eq fun a ↦ by
-  simp [IsScalarTower.algebraMap_apply A K Ω, IsScalarTower.algebraMap_apply A K L,
-    IsScalarTower.algebraMap_apply K L Ω]
-
-omit [IsScalarTower A K Ω] in
-/-- The tower `A → K → L(α)`. -/
-private theorem isScalarTower_adjoin [IsScalarTower A L Ω] (α : Ω) : IsScalarTower A K L⟮α⟯ :=
-  .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A L L⟮α⟯,
-      IsScalarTower.algebraMap_apply K L L⟮α⟯, ← IsScalarTower.algebraMap_apply A K L]
-
-/-- The tower `A → K(α) → L(α)`, for the canonical inclusion `K(α) → L(α)`. -/
-private theorem isScalarTower_adjoinBaseChange [IsScalarTower A L Ω] (α : Ω) :
-    letI := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-    IsScalarTower A K⟮α⟯ L⟮α⟯ :=
-  letI := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-  haveI := isScalarTower_adjoin (A := A) (K := K) (L := L) α
-  .of_algHom ((TauCeti.IntermediateField.adjoinBaseChange K L α).restrictScalars A)
-
-/-- An `n`-th root `α` of `π` in `Ω` gives the `n`-th root `AdjoinSimple.gen K α` of `π` in
-`K(α)`. -/
-private theorem adjoinSimple_gen_pow {π : A} {n : ℕ} {α : Ω} (hα : α ^ n = algebraMap A Ω π) :
-    AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π :=
-  Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮α⟯,
-    IsScalarTower.algebraMap_apply A K Ω] using hα)
-
-end FieldSetup
-
 section Field
 
 variable {A K L Ω : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
@@ -249,10 +211,11 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
-  have : IsScalarTower A L Ω := isScalarTower_left K
+  have : IsScalarTower A L Ω := IsScalarTower.to₁₃₄ A K L Ω
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
   -- The base: `K₁ = K(α)` is a Kummer extension, and `A₁ = A[α]` is a discrete valuation ring.
-  have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π := adjoinSimple_gen_pow hα
+  have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π :=
+    (AdjoinSimple.gen_pow_eq_algebraMap_iff α n π).mpr hα
   have hgen : K⟮AdjoinSimple.gen K α⟯ = ⊤ :=
     _root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α
   have := IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
@@ -262,8 +225,9 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
     Module.finite_of_finrank_pos (hdegree ▸ Nat.pos_of_ne_zero hn0)
   have : IsFractionRing (integralClosure A K⟮α⟯) K⟮α⟯ :=
     IsIntegralClosure.isFractionRing_of_finite_extension A K K⟮α⟯ _
-  have : IsScalarTower A K L⟮α⟯ := isScalarTower_adjoin α
-  have : IsScalarTower A K⟮α⟯ L⟮α⟯ := isScalarTower_adjoinBaseChange α
+  have : IsScalarTower A K L⟮α⟯ := IsScalarTower.to₁₂₄ A K L L⟮α⟯
+  have : IsScalarTower A K⟮α⟯ L⟮α⟯ :=
+    TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A α
   refine ⟨inferInstance, ?_⟩
   -- `E = L(α)` is finite separable over `K`: `α` is a root of the separable `X ^ n − π`.
   have hαint : IsIntegral A α :=
@@ -384,10 +348,12 @@ theorem isTamelyRamifiedWRT_iff_exists_kummer [IsAlgClosed Ω] {π : A} (hπ : I
   rintro ⟨n, hn, α, hα, hDVR, hL⟩
   -- Conversely `K(α)` is a tame Kummer extension, so `L(α)`, and hence `L`, is tame.
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-  have : IsScalarTower A L Ω := isScalarTower_left K
-  have : IsScalarTower A K L⟮α⟯ := isScalarTower_adjoin α
-  have : IsScalarTower A K⟮α⟯ L⟮α⟯ := isScalarTower_adjoinBaseChange α
-  have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π := adjoinSimple_gen_pow hα
+  have : IsScalarTower A L Ω := IsScalarTower.to₁₃₄ A K L Ω
+  have : IsScalarTower A K L⟮α⟯ := IsScalarTower.to₁₂₄ A K L L⟮α⟯
+  have : IsScalarTower A K⟮α⟯ L⟮α⟯ :=
+    TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A α
+  have hαK : AdjoinSimple.gen K α ^ n = algebraMap A K⟮α⟯ π :=
+    (AdjoinSimple.gen_pow_eq_algebraMap_iff α n π).mpr hα
   have hK₁ : IsTamelyRamifiedWRT A K⟮α⟯ :=
     (IsDiscreteValuationRing.isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hαK
       (_root_.IntermediateField.adjoin_adjoinSimple_gen_eq_top α)).mpr hn

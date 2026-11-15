@@ -43,6 +43,17 @@ theorem adjoinBaseChange_gen (α : Ω) :
     adjoinBaseChange K L α (AdjoinSimple.gen K α) = AdjoinSimple.gen L α :=
   (rfl)
 
+/-- For scalar towers `A → K → Ω` and `A → L → Ω`, the canonical inclusion `K(α) → L(α)` gives
+the tower `A → K(α) → L(α)`. -/
+theorem isScalarTower_adjoinBaseChange (A : Type*) [CommSemiring A] [Algebra A K] [Algebra A L]
+    [Algebra A Ω] [IsScalarTower A K Ω] [IsScalarTower A L Ω] (α : Ω) :
+    letI := (adjoinBaseChange K L α).toAlgebra
+    IsScalarTower A K⟮α⟯ L⟮α⟯ :=
+  letI := (adjoinBaseChange K L α).toAlgebra
+  haveI := IsScalarTower.to₁₂₃ A K L Ω
+  haveI := IsScalarTower.to₁₂₄ A K L L⟮α⟯
+  .of_algHom ((adjoinBaseChange K L α).restrictScalars A)
+
 /-- Multiplication into the compositum, with its `K(α)`-algebra structure induced by the
 canonical inclusion. -/
 def adjoinBaseChangeTensorLift (α : Ω) :
