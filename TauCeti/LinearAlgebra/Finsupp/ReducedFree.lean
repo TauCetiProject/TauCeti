@@ -20,10 +20,12 @@ the simplicial module `Ã[X]` whose underlying pointed simplicial set is the red
 construction used to build Eilenberg–MacLane spectra.
 
 A based map `f : α → β` induces the linear map `ReducedFreeModule.map R f`, sending generators to
-generators. For a commutative ring `R` and a function `p : α → β → γ` sending the two axes
-`{a} × β` and `α × {b}` to the basepoint `c`, such as the quotient map onto a smash product,
-`ReducedFreeModule.map₂ R p` is the bilinear map sending the generators of `x` and `y` to the
-generator of `p x y`. This is the external product of reduced free modules.
+generators, and a ring homomorphism `φ : R →+* S` induces the `φ`-semilinear map
+`ReducedFreeModule.mapRing φ`, changing coefficients on generators. For a commutative ring `R` and
+a function `p : α → β → γ` sending the two axes `{a} × β` and `α × {b}` to the basepoint `c`, such
+as the quotient map onto a smash product, `ReducedFreeModule.map₂ R p` is the bilinear map sending
+the generators of `x` and `y` to the generator of `p x y`. This is the external product of reduced
+free modules.
 
 ## Main definitions
 
@@ -32,17 +34,20 @@ generator of `p x y`. This is the external product of reduced free modules.
 * `ReducedFreeModule.lift R f`: the linear map extending a function `f` that vanishes at the
   basepoint.
 * `ReducedFreeModule.map R f`: the linear map induced by a based map `f`.
+* `ReducedFreeModule.mapRing φ`: the `φ`-semilinear change-of-rings map along `φ : R →+* S`.
 * `ReducedFreeModule.map₂ R p`: the bilinear map induced by a function `p` of two variables sending
   the axes to the basepoint.
 
 ## Main statements
 
 * `ReducedFreeModule.induction_on`: induction on elements through sums of multiples of
-  generators, and `ReducedFreeModule.linearMap_ext`: linear maps out of a reduced free module are
+  generators, `ReducedFreeModule.linearMap_ext`: semilinear maps out of a reduced free module are
   determined by their values on generators, and `ReducedFreeModule.linearMap_ext₂`: likewise for
-  bilinear maps out of two reduced free modules.
+  curried bilinear maps out of two reduced free modules.
 * `ReducedFreeModule.lift_mk`, `ReducedFreeModule.lift_unique`: the universal property of the
   reduced free module.
+* `ReducedFreeModule.mapRing_map`, `ReducedFreeModule.mapRing_map₂`: compatibility of `mapRing`
+  with based maps and external products.
 * `ReducedFreeModule.map_map₂`, `ReducedFreeModule.map₂_map_left`,
   `ReducedFreeModule.map₂_map_right`: naturality of `map₂`.
 * `ReducedFreeModule.map₂_assoc`, `ReducedFreeModule.map₂_swap`, `ReducedFreeModule.map₂_mk_left`,
@@ -96,15 +101,23 @@ lemma induction_on {motive : ReducedFreeModule R a → Prop} (v : ReducedFreeMod
 
 variable {R}
 
-/-- Linear maps out of a reduced free module are determined by their values on generators. -/
+/-- Semilinear maps out of a reduced free module are determined by their values on generators. -/
 @[ext high]
-lemma linearMap_ext {M : Type*} [AddCommGroup M] [Module R M]
-    {f g : ReducedFreeModule R a →ₗ[R] M} (h : ∀ x, f (mk R x) = g (mk R x)) : f = g := by
+lemma linearMap_ext {S : Type*} [Semiring S] {σ : R →+* S} {M : Type*} [AddCommMonoid M]
+    [Module S M] {f g : ReducedFreeModule R a →ₛₗ[σ] M} (h : ∀ x, f (mk R x) = g (mk R x)) :
+    f = g := by
   refine LinearMap.ext fun v ↦ ?_
   induction v using induction_on with
   | zero => simp
   | add v w hv hw => simp [hv, hw]
   | smul_mk r x => simp [h]
+
+/-- Curried semilinear maps out of two reduced free modules are determined by their values on
+pairs of generators. -/
+lemma linearMap_ext₂ {S : Type*} [CommSemiring S] {σ₁ σ₂ : R →+* S} {M : Type*} [AddCommMonoid M]
+    [Module S M] {f g : ReducedFreeModule R a →ₛₗ[σ₁] ReducedFreeModule R b →ₛₗ[σ₂] M}
+    (h : ∀ x y, f (mk R x) (mk R y) = g (mk R x) (mk R y)) : f = g :=
+  linearMap_ext fun x ↦ linearMap_ext fun y ↦ h x y
 
 variable (R)
 
@@ -148,6 +161,44 @@ lemma map_map (f : α → β) (g : β → γ) (hf : f a = b) (hg : g b = c) (v :
     map R g hg (map R f hf v) = map R (fun x ↦ g (f x)) (by simp [hf, hg]) v := by
   induction v using induction_on <;> simp_all
 
+section MapRing
+
+variable {R} {S T : Type*} [Ring S] [Ring T]
+
+/-- The `φ`-semilinear map of reduced free modules induced by a ring homomorphism `φ : R →+* S`,
+sending the generator of `x` over `R` to the generator of `x` over `S`. -/
+def mapRing (φ : R →+* S) : ReducedFreeModule R a →ₛₗ[φ] ReducedFreeModule S a :=
+  Submodule.mapQ _ _ (Finsupp.mapRange.linearMap φ.toSemilinearMap) <|
+    (Submodule.span_singleton_le_iff_mem _ _).2 <| Submodule.mem_comap.2 <| by
+      simp [Submodule.mem_span_singleton_self]
+
+@[simp]
+lemma mapRing_mk (φ : R →+* S) (x : α) : mapRing φ (mk R (a := a) x) = mk S x := by
+  simp [mapRing, mk]
+
+@[simp]
+lemma mapRing_id : mapRing (a := a) (RingHom.id R) = LinearMap.id :=
+  linearMap_ext fun _ ↦ by simp
+
+lemma mapRing_comp {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T} [RingHomCompTriple φ ψ χ] :
+    mapRing (a := a) χ = (mapRing ψ).comp (mapRing φ) :=
+  linearMap_ext fun _ ↦ by simp
+
+@[simp]
+lemma mapRing_mapRing (φ : R →+* S) (ψ : S →+* T) (v : ReducedFreeModule R a) :
+    mapRing ψ (mapRing φ v) = mapRing (ψ.comp φ) v := by
+  induction v using induction_on <;> simp_all
+
+lemma mapRing_comp_map (φ : R →+* S) (f : α → β) (hf : f a = b) :
+    (mapRing (a := b) φ).comp (map R f hf) = (map S f hf).comp (mapRing (a := a) φ) :=
+  linearMap_ext fun _ ↦ by simp
+
+lemma mapRing_map (φ : R →+* S) (f : α → β) (hf : f a = b) (v : ReducedFreeModule R a) :
+    mapRing φ (map R f hf v) = map S f hf (mapRing φ v) :=
+  LinearMap.congr_fun (mapRing_comp_map φ f hf) v
+
+end MapRing
+
 end Ring
 
 section CommRing
@@ -179,14 +230,6 @@ def map₂ (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c
 lemma map₂_mk_mk (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c) (x : α) (y : β) :
     map₂ R p hl hr (mk R x) (mk R y) = mk R (p x y) := by
   simp [map₂, mk]
-
-variable {R} in
-/-- Bilinear maps out of two reduced free modules are determined by their values on pairs of
-generators. -/
-lemma linearMap_ext₂ {M : Type*} [AddCommGroup M] [Module R M]
-    {f g : ReducedFreeModule R a →ₗ[R] ReducedFreeModule R b →ₗ[R] M}
-    (h : ∀ x y, f (mk R x) (mk R y) = g (mk R x) (mk R y)) : f = g :=
-  linearMap_ext fun x ↦ linearMap_ext fun y ↦ h x y
 
 /-- The external product with a generator in the first variable is the based map `p x`. -/
 @[simp]
@@ -262,6 +305,17 @@ lemma map₂_swap (p : α → β → γ) (hl : ∀ y, p a y = c) (hr : ∀ x, p 
     map₂ R p hl hr v w = map₂ R (fun y x ↦ p x y) hr hl w v :=
   LinearMap.congr_fun₂ (g := (map₂ R (fun y x ↦ p x y) hr hl).flip)
     (linearMap_ext₂ fun x y ↦ by simp) v w
+
+variable {R} in
+/-- Changing coefficients along `φ : R →+* S` commutes with the external product `map₂`. -/
+lemma mapRing_map₂ {S : Type*} [CommRing S] (φ : R →+* S) (p : α → β → γ)
+    (hl : ∀ y, p a y = c) (hr : ∀ x, p x b = c)
+    (v : ReducedFreeModule R a) (w : ReducedFreeModule R b) :
+    mapRing φ (map₂ R p hl hr v w) = map₂ S p hl hr (mapRing φ v) (mapRing φ w) := by
+  induction v using induction_on with
+  | zero => simp
+  | add v v' hv hv' => simp [hv, hv']
+  | smul_mk r x => simp [mapRing_map]
 
 end CommRing
 

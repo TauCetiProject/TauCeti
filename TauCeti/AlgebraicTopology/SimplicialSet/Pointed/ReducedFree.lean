@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.ExternalProduct.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Map
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
 public import TauCeti.LinearAlgebra.Finsupp.ReducedFree
 
@@ -17,44 +17,51 @@ For a ring `R` and a pointed simplicial set `X`, the reduced free module `R~[X]`
 `n`-simplices the reduced free `R`-module on the pointed set `X_n`: the free module on `X_n`
 modulo the generator of the basepoint. Simplicial operators act on generators, and the basepoint
 is zero. This is the functor `PointedSSet.reducedFree R`, and the generators give the based map
-`PointedSSet.reducedFreeι R X : X ⟶ R~[X]`, natural in `X` (`PointedSSet.toReducedFree R`).
+`PointedSSet.reducedFreeι R X : X ⟶ R~[X]`, natural in `X` (`PointedSSet.toReducedFree R`). A ring
+homomorphism `φ : R →+* S` induces `PointedSSet.reducedFreeRingMap φ : R~[X] ⟶ S~[X]`.
 
 For a commutative ring `R`, the external product of generators `[x] ∧ [y] ↦ [x ∧ y]` extends
 bilinearly to based maps `R~[X] ∧ R~[Y] ⟶ R~[X ∧ Y]`. With the unit `S⁰ ⟶ R~[S⁰]` given by the
 generators, they make `R~[-]` a lax braided functor on pointed simplicial sets with the smash
-product, and `X ⟶ R~[X]` a monoidal natural transformation. Applied to the spheres
-`Sⁿ = (S¹)^∧n`, this gives the commutative ring structure of the Eilenberg–MacLane symmetric
-spectrum `HR`, with levels `R~[Sⁿ]`, and its unit map from the sphere spectrum.
+product, and `X ⟶ R~[X]` and `R~[X] ⟶ S~[X]` monoidal natural transformations. Applied to the
+spheres `Sⁿ = (S¹)^∧n`, this gives the commutative ring structure of the Eilenberg–MacLane
+symmetric spectrum `HR`, with levels `R~[Sⁿ]`, its unit map from the sphere spectrum, and the
+ring maps `HR ⟶ HS`.
 
 For an `R`-module `M`, the reduced free module with coefficients in `M` is
 `M~[X] = R~[X] ⊗_R M`, whose `n`-simplices are the finite formal sums `Σ xᵢ ⊗ mᵢ` of `n`-simplices
-of `X` with coefficients in `M`, modulo the basepoint (`PointedSSet.reducedFreeTensor R M`). The
-bilinear extension of `[x] ∧ ([y] ⊗ m) ↦ [x ∧ y] ⊗ m` is an action
-`R~[X] ∧ M~[Y] ⟶ M~[X ∧ Y]` of the lax monoidal functor `R~[-]` on `M~[-]`, natural, unital and
-associative. Along a lax monoidal functor `K` to pointed simplicial sets, followed by the tensorator
-of `K`, it gives structure maps `R~[K p] ∧ M~[K q] ⟶ M~[K (p ⊗ q)]` satisfying the module laws over
-`K ⋙ R~[-]`. Applied to the spheres, these are the levels and structure maps of the
-Eilenberg–MacLane spectrum `HM` as a module over `HR`. A linear map `M ⟶ N` changes the
-coefficients compatibly with the action.
+of `X` with coefficients in `M`, modulo the basepoint (`PointedSSet.reducedFreeTensor R M`). For
+`M = R`, right tensoring with `R` identifies `R~[X] ⊗_R R` with `R~[X]` compatibly with the
+external product (`PointedSSet.reducedFreeTensorRingIso R`). The bilinear extension of
+`[x] ∧ ([y] ⊗ m) ↦ [x ∧ y] ⊗ m` is an action `R~[X] ∧ M~[Y] ⟶ M~[X ∧ Y]` of the lax monoidal
+functor `R~[-]` on `M~[-]`, natural, unital and associative. Along a lax monoidal functor `K` to
+pointed simplicial sets, followed by the tensorator of `K`, it gives structure maps
+`R~[K p] ∧ M~[K q] ⟶ M~[K (p ⊗ q)]` satisfying the module laws over `K ⋙ R~[-]`. Applied to the
+spheres, these are the levels and structure maps of the Eilenberg–MacLane spectrum `HM` as a
+module over `HR`. Linear and semilinear maps `M →ₛₗ[φ] N` change the coefficients compatibly with
+the action.
 
 ## Main definitions
 
 * `PointedSSet.reducedFree R`: the reduced free `R`-module functor `X ↦ R~[X]`.
 * `PointedSSet.reducedFreeι R X`: the based map `X ⟶ R~[X]` sending a simplex to its generator,
   and `PointedSSet.toReducedFree R`: the corresponding natural transformation.
+* `PointedSSet.reducedFreeRingMap φ`: the change of rings `R~[X] ⟶ S~[X]` along `φ : R →+* S`.
 * `PointedSSet.reducedFreeμ R X Y`: the external product `R~[X] ∧ R~[Y] ⟶ R~[X ∧ Y]`.
 * `PointedSSet.reducedFreeTensor R M`: the reduced free module functor `X ↦ M~[X]` with
   coefficients in an `R`-module `M`.
+* `PointedSSet.reducedFreeTensorRingIso R`: the natural isomorphism `R~[X] ⊗_R R ≅ R~[X]`.
 * `PointedSSet.reducedFreeTensorAct R M X Y`: the action `R~[X] ∧ M~[Y] ⟶ M~[X ∧ Y]`.
-* `PointedSSet.reducedFreeTensorMap R g`: the change of coefficients `M~[X] ⟶ N~[X]` along a
-  linear map `g : M →ₗ[R] N`.
+* `PointedSSet.reducedFreeTensorMap R g` and `PointedSSet.reducedFreeTensorSemilinearMap φ g`:
+  change of coefficients along `R`-linear and `φ`-semilinear maps.
 * `PointedSSet.reducedFreeTensorCompAct R M K`: the action along a lax monoidal functor `K`,
   `R~[K p] ∧ M~[K q] ⟶ M~[K (p ⊗ q)]`.
 
 ## Main statements
 
-* The instance `(PointedSSet.reducedFree R).LaxBraided`, and the instance stating that
-  `PointedSSet.toReducedFree R` is a monoidal natural transformation.
+* The instance `(PointedSSet.reducedFree R).LaxBraided`, and the instances stating that
+  `PointedSSet.toReducedFree R` and `PointedSSet.reducedFreeRingMap φ` are monoidal natural
+  transformations.
 * `PointedSSet.reducedFreeTensorAct_unit`, `PointedSSet.reducedFreeTensorAct_assoc`: the action
   of `R~[-]` on `M~[-]` is unital and associative.
 * `PointedSSet.reducedFreeTensorCompAct_unit`, `PointedSSet.reducedFreeTensorCompAct_assoc`: the
@@ -171,6 +178,48 @@ def toReducedFree : 𝟭 PointedSSet.{u} ⟶ reducedFree R where
 lemma toReducedFree_app (X : PointedSSet.{u}) : (toReducedFree R).app X = reducedFreeι R X :=
   (rfl)
 
+/-- The natural transformation `R~[X] ⟶ S~[X]` induced by a ring homomorphism `φ : R →+* S`,
+changing coefficients on generators. -/
+def reducedFreeRingMap {S : Type u} [Ring S] (φ : R →+* S) :
+    reducedFree R ⟶ reducedFree S where
+  app X := Under.homMk
+    { app n := ↾(ReducedFreeModule.mapRing (a := X.point n) φ)
+      naturality _ _ f := by
+        ext v
+        exact ReducedFreeModule.mapRing_map φ _ _ v }
+    (by ext; simp)
+  naturality _ _ f := by
+    ext n v
+    exact ReducedFreeModule.mapRing_map φ _ _ v
+
+@[simp]
+lemma reducedFreeRingMap_app_right_app {S : Type u} [Ring S] (φ : R →+* S)
+    (v : ((reducedFree R).obj X).right.obj n) :
+    ((reducedFreeRingMap φ).app X).right.app n v = ReducedFreeModule.mapRing φ v := (rfl)
+
+@[simp]
+lemma reducedFreeRingMap_id : reducedFreeRingMap (RingHom.id R) = 𝟙 (reducedFree R) := by
+  ext X n v
+  simp
+
+lemma reducedFreeRingMap_comp {S T : Type u} [Ring S] [Ring T] (φ : R →+* S) (ψ : S →+* T) :
+    reducedFreeRingMap (ψ.comp φ) = reducedFreeRingMap φ ≫ reducedFreeRingMap ψ := by
+  ext X n v
+  simp
+
+@[reassoc (attr := simp)]
+lemma reducedFreeι_comp_reducedFreeRingMap_app {S : Type u} [Ring S] (φ : R →+* S)
+    (X : PointedSSet.{u}) :
+    reducedFreeι R X ≫ (reducedFreeRingMap φ).app X = reducedFreeι S X := by
+  ext n x
+  simp
+
+@[reassoc (attr := simp)]
+lemma toReducedFree_comp_reducedFreeRingMap {S : Type u} [Ring S] (φ : R →+* S) :
+    toReducedFree R ≫ reducedFreeRingMap φ = toReducedFree S := by
+  ext X n x
+  simp
+
 end Ring
 
 section CommRing
@@ -276,6 +325,22 @@ instance : NatTrans.IsMonoidal (toReducedFree R) where
   tensor X Y := by
     ext n x y
     simp
+
+/-- Changing coefficients along `φ : R →+* S` commutes with the external product `reducedFreeμ`. -/
+@[reassoc (attr := simp)]
+lemma reducedFreeμ_comp_reducedFreeRingMap_app {S : Type u} [CommRing S] (φ : R →+* S)
+    (X Y : PointedSSet.{u}) :
+    reducedFreeμ R X Y ≫ (reducedFreeRingMap φ).app (X ⊗ Y) =
+      ((reducedFreeRingMap φ).app X ⊗ₘ (reducedFreeRingMap φ).app Y) ≫ reducedFreeμ S X Y := by
+  ext n v w
+  simp [ReducedFreeModule.mapRing_map₂]
+
+/-- Changing coefficients along `φ : R →+* S` is a monoidal natural transformation
+`R~[X] ⟶ S~[X]`. -/
+instance {S : Type u} [CommRing S] (φ : R →+* S) :
+    NatTrans.IsMonoidal (reducedFreeRingMap φ) where
+  unit := by simp
+  tensor X Y := by simp
 
 end CommRing
 
@@ -491,6 +556,134 @@ lemma reducedFreeTensorAct_comp_reducedFreeTensorMap_app (g : M →ₗ[R] N)
 
 end Map
 
+section SemilinearMap
+
+variable {S T : Type u} [CommRing S] [CommRing T]
+  {N : Type u} [AddCommGroup N] [Module S N]
+  {P : Type u} [AddCommGroup P] [Module T P]
+
+/-- The change of rings and coefficients `M~[X] ⟶ N~[X]` along a ring homomorphism `φ : R →+* S`
+and a `φ`-semilinear map `g : M →ₛₗ[φ] N`, sending `Σ xᵢ ⊗ mᵢ ↦ Σ xᵢ ⊗ g mᵢ`. -/
+def reducedFreeTensorSemilinearMap (φ : R →+* S) (g : M →ₛₗ[φ] N) :
+    reducedFreeTensor R M ⟶ reducedFreeTensor S N where
+  app X := Under.homMk
+    { app n := ↾(TensorProduct.map (ReducedFreeModule.mapRing (a := X.point n) φ) g)
+      naturality _ _ f := by
+        ext t
+        induction t using TensorProduct.inductionOn <;> simp_all [ReducedFreeModule.mapRing_map] }
+    (by ext; simp)
+  naturality _ _ f := by
+    ext n t
+    induction t using TensorProduct.inductionOn <;> simp_all [ReducedFreeModule.mapRing_map]
+
+@[simp]
+lemma reducedFreeTensorSemilinearMap_app_right_app (φ : R →+* S) (g : M →ₛₗ[φ] N)
+    (t : ((reducedFreeTensor R M).obj X).right.obj n) :
+    ((reducedFreeTensorSemilinearMap φ g).app X).right.app n t =
+      TensorProduct.map (ReducedFreeModule.mapRing φ) g t := (rfl)
+
+@[simp]
+lemma reducedFreeTensorSemilinearMap_id_ringHom {M' : Type u} [AddCommGroup M'] [Module R M']
+    (g : M →ₗ[R] M') :
+    reducedFreeTensorSemilinearMap (RingHom.id R) g = reducedFreeTensorMap R g := by
+  ext X n t
+  induction t using TensorProduct.inductionOn <;> simp_all
+
+lemma reducedFreeTensorSemilinearMap_comp {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T}
+    [RingHomCompTriple φ ψ χ] (g : M →ₛₗ[φ] N) (h : N →ₛₗ[ψ] P) :
+    reducedFreeTensorSemilinearMap χ (h.comp g) =
+      reducedFreeTensorSemilinearMap φ g ≫ reducedFreeTensorSemilinearMap ψ h := by
+  rcases RingHomCompTriple.comp_eq (σ₁₂ := φ) (σ₂₃ := ψ) (σ₁₃ := χ) with rfl
+  ext X n t
+  induction t using TensorProduct.inductionOn <;> simp_all
+
+/-- Semilinear change of coefficients is compatible with `reducedFreeRingMap φ` and the action of
+reduced free modules. -/
+@[reassoc (attr := simp)]
+lemma reducedFreeTensorAct_comp_reducedFreeTensorSemilinearMap_app
+    (φ : R →+* S) (g : M →ₛₗ[φ] N) (X Y : PointedSSet.{u}) :
+    reducedFreeTensorAct R M X Y ≫ (reducedFreeTensorSemilinearMap φ g).app (X ⊗ Y) =
+      ((reducedFreeRingMap φ).app X ⊗ₘ (reducedFreeTensorSemilinearMap φ g).app Y) ≫
+        reducedFreeTensorAct S N X Y := by
+  ext n v t
+  induction t using TensorProduct.inductionOn <;> simp_all [ReducedFreeModule.mapRing_map₂]
+
+end SemilinearMap
+
+section RingIso
+
+variable (R) in
+/-- For a commutative ring `R`, right tensoring with `R` identifies `R~[X] ⊗_R R` naturally with
+`R~[X]`, sending `v ⊗ r ↦ r • v` and `v ↦ v ⊗ 1`. -/
+def reducedFreeTensorRingIso : reducedFreeTensor R R ≅ reducedFree R where
+  hom :=
+    { app X := Under.homMk
+        { app n := ↾(TensorProduct.rid R (ReducedFreeModule R (X.point n))).toLinearMap
+          naturality _ _ f := by
+            ext t
+            induction t using TensorProduct.inductionOn <;> simp_all }
+        (by ext; simp)
+      naturality _ _ f := by
+        ext n t
+        induction t using TensorProduct.inductionOn <;> simp_all }
+  inv :=
+    { app X := Under.homMk
+        { app n := ↾(TensorProduct.rid R (ReducedFreeModule R (X.point n))).symm.toLinearMap
+          naturality _ _ f := by
+            ext v
+            simp }
+        (by ext; simp)
+      naturality _ _ f := by
+        ext n v
+        simp }
+  hom_inv_id := by
+    ext X n t
+    simp
+  inv_hom_id := by
+    ext X n v
+    simp
+
+@[simp]
+lemma reducedFreeTensorRingIso_hom_app_right_app
+    (t : ((reducedFreeTensor R R).obj X).right.obj n) :
+    ((reducedFreeTensorRingIso R).hom.app X).right.app n t =
+      TensorProduct.rid R (ReducedFreeModule R (X.point n)) t := (rfl)
+
+@[simp]
+lemma reducedFreeTensorRingIso_inv_app_right_app
+    (v : ((reducedFree R).obj X).right.obj n) :
+    ((reducedFreeTensorRingIso R).inv.app X).right.app n v =
+      (TensorProduct.rid R (ReducedFreeModule R (X.point n))).symm v := (rfl)
+
+/-- Under `reducedFreeTensorRingIso R`, the action `R~[X] ∧ (R~[Y] ⊗_R R) ⟶ R~[X ∧ Y] ⊗_R R`
+corresponds to the external product `reducedFreeμ R X Y`. -/
+@[reassoc (attr := simp)]
+lemma reducedFreeTensorAct_comp_reducedFreeTensorRingIso_hom_app (X Y : PointedSSet.{u}) :
+    reducedFreeTensorAct R R X Y ≫ (reducedFreeTensorRingIso R).hom.app (X ⊗ Y) =
+      _ ◁ (reducedFreeTensorRingIso R).hom.app Y ≫ reducedFreeμ R X Y := by
+  ext n v t
+  induction t using TensorProduct.inductionOn <;> simp_all
+
+/-- Under `reducedFreeTensorRingIso`, the semilinear map induced by `φ : R →+* S` agrees with
+`reducedFreeRingMap φ`. -/
+@[reassoc (attr := simp)]
+lemma reducedFreeTensorSemilinearMap_toSemilinearMap_comp_reducedFreeTensorRingIso_hom
+    {S : Type u} [CommRing S] (φ : R →+* S) :
+    reducedFreeTensorSemilinearMap φ φ.toSemilinearMap ≫ (reducedFreeTensorRingIso S).hom =
+      (reducedFreeTensorRingIso R).hom ≫ reducedFreeRingMap φ := by
+  ext X n t
+  induction t using TensorProduct.inductionOn <;> simp_all
+
+@[reassoc (attr := simp)]
+lemma reducedFreeTensorSemilinearMap_toSemilinearMap_comp_reducedFreeTensorRingIso_hom_app
+    {S : Type u} [CommRing S] (φ : R →+* S) (X : PointedSSet.{u}) :
+    (reducedFreeTensorSemilinearMap φ φ.toSemilinearMap).app X ≫
+        (reducedFreeTensorRingIso S).hom.app X =
+      (reducedFreeTensorRingIso R).hom.app X ≫ (reducedFreeRingMap φ).app X :=
+  congr_app (reducedFreeTensorSemilinearMap_toSemilinearMap_comp_reducedFreeTensorRingIso_hom φ) X
+
+end RingIso
+
 section Comp
 
 open scoped ExternalProduct
@@ -580,6 +773,36 @@ lemma reducedFreeTensorCompAct_app_comp_reducedFreeTensorMap_app {N : Type u} [A
       (K ⋙ reducedFree R).obj p ◁ (reducedFreeTensorMap R g).app (K.obj q) ≫
         (reducedFreeTensorCompAct R N K).app (p, q) := by
   simp
+
+/-- Semilinear change of coefficients is compatible with `reducedFreeRingMap φ` and the action
+along a lax monoidal functor `K`. -/
+@[reassoc]
+lemma reducedFreeTensorCompAct_app_comp_reducedFreeTensorSemilinearMap_app
+    {S : Type u} [CommRing S] {N : Type u} [AddCommGroup N] [Module S N]
+    (φ : R →+* S) (g : M →ₛₗ[φ] N) (p q : C) :
+    (reducedFreeTensorCompAct R M K).app (p, q) ≫
+        (reducedFreeTensorSemilinearMap φ g).app (K.obj (p ⊗ q)) =
+      ((reducedFreeRingMap φ).app (K.obj p) ⊗ₘ
+          (reducedFreeTensorSemilinearMap φ g).app (K.obj q)) ≫
+        (reducedFreeTensorCompAct S N K).app (p, q) := by
+  rw [reducedFreeTensorCompAct_app, Category.assoc,
+    (reducedFreeTensorSemilinearMap φ g).naturality,
+    reducedFreeTensorAct_comp_reducedFreeTensorSemilinearMap_app_assoc,
+    reducedFreeTensorCompAct_app]
+
+/-- Under `reducedFreeTensorRingIso R`, the action along a lax monoidal functor `K` corresponds to
+the tensorator of `K ⋙ reducedFree R`. -/
+@[reassoc]
+lemma reducedFreeTensorCompAct_app_comp_reducedFreeTensorRingIso_hom_app (p q : C) :
+    (reducedFreeTensorCompAct R R K).app (p, q) ≫
+        (reducedFreeTensorRingIso R).hom.app (K.obj (p ⊗ q)) =
+      (K ⋙ reducedFree R).obj p ◁ (reducedFreeTensorRingIso R).hom.app (K.obj q) ≫
+        Functor.LaxMonoidal.μ (K ⋙ reducedFree R) p q := by
+  rw [reducedFreeTensorCompAct_app, Category.assoc,
+    (reducedFreeTensorRingIso R).hom.naturality,
+    reducedFreeTensorAct_comp_reducedFreeTensorRingIso_hom_app_assoc,
+    Functor.LaxMonoidal.comp_μ, reducedFree_μ]
+  rfl
 
 end Comp
 
