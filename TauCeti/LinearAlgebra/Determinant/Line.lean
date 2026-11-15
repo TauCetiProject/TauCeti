@@ -188,6 +188,14 @@ theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x 
   rw [coe_detLineCongr, ← exteriorPower.coe_map, LinearMap.map_exteriorPower_finrank_eq_det_smul]
   simp
 
+/-- Negation acts on the determinant line of a finite free module by the sign
+`(-1) ^ finrank R V`. -/
+theorem detLineCongr_neg_apply [Module.Free R V] (x : detLine R V) :
+    detLineCongr (LinearEquiv.neg R) x = (-1 : R) ^ finrank R V • x := by
+  rw [detLineCongr_apply_eq_det_smul, show ((LinearEquiv.neg R : V ≃ₗ[R] V) : V →ₗ[R] V) =
+    (-1 : R) • LinearMap.id from LinearMap.ext fun _ ↦ by simp, LinearMap.det_smul,
+    LinearMap.det_id, mul_one]
+
 end LinearEquiv
 
 namespace TauCeti
