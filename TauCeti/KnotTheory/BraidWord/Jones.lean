@@ -41,8 +41,8 @@ on the unknot. The comparison holds over every commutative ring, without dividin
 
 ## Main results
 
-* `TauCeti.BraidWord.jonesTrace_toBraid`: the Markov trace of the Jones representation is `δ`
-  times the normalized Kauffman bracket of the closure.
+* `TauCeti.BraidWord.jonesTrace_toBraid`: the writhe-normalized Markov trace of the Jones
+  representation is `δ` times the normalized Kauffman bracket of the closure.
 * `TauCeti.BraidWord.jonesTrace_toBraid_eq_eval₂_jonesPolynomial`: the same in terms of the Jones
   polynomial of the closure.
 
@@ -136,8 +136,9 @@ theorem jonesTrace_toBraid (a : Rˣ) {n : ℕ} (w : BraidWord (n + 1)) :
       simp [OrientedPDCode.writhe_def])
   rw [congrFun h, closureBracket_mk]
 
-/-- The braid and diagram routes agree, in terms of the Jones polynomial: the Markov trace of the
-Jones representation is `δ` times the Jones polynomial of the closure at `t ^ (1/2) = A⁻²`. -/
+/-- The braid and diagram routes agree, in terms of the Jones polynomial: the writhe-normalized
+Markov trace of the Jones representation is `δ` times the Jones polynomial of the closure at
+`t ^ (1/2) = A⁻²`. -/
 theorem jonesTrace_toBraid_eq_eval₂_jonesPolynomial (a : Rˣ) {n : ℕ} (w : BraidWord (n + 1)) :
     MarkovBraid.jonesTrace ⟨n, w.toBraid⟩ a =
       jonesDelta a * eval₂ (Int.castRingHom R) (a⁻¹ ^ 2) w.closure.jonesPolynomial := by
