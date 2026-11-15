@@ -53,6 +53,9 @@ completed extension.
   `e(P' ∣ P) f(P' ∣ P)`.
 * `TauCeti.Place.finiteDimensional_completion` and `TauCeti.Place.finrank_completion`: **the
   local degree** `[F̂'_{P'} : F̂_P] = e(P' ∣ P) f(P' ∣ P)`.
+* `TauCeti.Place.isIntegralClosure_completionIntegers`: `𝒪̂_{P'}` is the integral closure of
+  `𝒪̂_P` in `F̂'_{P'}`.
+* `TauCeti.Place.isSeparable_completion`: completion preserves separability of `F' / F`.
 
 ## References
 
@@ -481,6 +484,55 @@ theorem finrank_completion :
   letI := P.completionExtensionAlgebra P' hP
   (Module.finrank_eq_card_basis (nonempty_basis_completion P P' hP).some).trans
     (by simp [mul_comm])
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension in
+/-- **The completed valuation ring above is the integral closure of the completed valuation ring
+below**: `𝒪̂_{P'}` is module-finite, hence integral, over `𝒪̂_P`, and as a valuation subring it is
+integrally closed in `F̂'_{P'}`. -/
+theorem isIntegralClosure_completionIntegers :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    haveI := P.isScalarTower_completionIntegers_completion P' hP
+    IsIntegralClosure P'.completionPlace.integers P.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  have _ := P.isScalarTower_completionIntegers_completion P' hP
+  have _ := P.moduleFinite_completionIntegers P' hP
+  refine ⟨ValuationSubring.subtype_injective _, fun {x} ↦ ⟨fun hx ↦ ?_, ?_⟩⟩
+  · refine ⟨⟨x, P'.completionPlace.mem_integers_of_isIntegral (fun a ↦ ?_) hx⟩, rfl⟩
+    rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+      algebraMap_completionExtensionAlgebra]
+    exact P.completionExtension_mem_integers P' hP a.2
+  · rintro ⟨y, rfl⟩
+    exact (Algebra.IsIntegral.isIntegral (R := P.completionPlace.integers) y).algebraMap
+
+/-- **Completion preserves separability of the field extension**: if `F' / F` is separable and the
+residue extension at `P'` is finite, then `F̂'_{P'} / F̂_P` is separable. No separability of the
+residue extension is needed. -/
+theorem isSeparable_completion [Algebra.IsSeparable F F'] :
+    letI := P.completionExtensionAlgebra P' hP
+    Algebra.IsSeparable P.Completion P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [← separableClosure.eq_top_iff, eq_top_iff]
+  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
+  have hle : (⊤ : Submodule P.Completion P'.Completion) ≤
+      Subalgebra.toSubmodule (separableClosure P.Completion P'.Completion).toSubalgebra := by
+    rw [← span_completion_eq_top P P' hP u hsp ht, Submodule.span_le]
+    rintro _ ⟨p, rfl⟩
+    set y : F' := (u p.1 : F') * (t : F') ^ (p.2 : ℕ)
+    rw [SetLike.mem_coe, Subalgebra.mem_toSubmodule, IntermediateField.mem_toSubalgebra,
+      mem_separableClosure_iff, IsSeparable]
+    refine (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)).of_dvd
+      (minpoly.dvd P.Completion ((P'.completionEmbedding : F' →+* P'.Completion) y)
+        (p := (minpoly F y).map (P.completionEmbedding : F →+* P.Completion)) ?_)
+    have hcomp : (algebraMap P.Completion P'.Completion).comp
+        (P.completionEmbedding : F →+* P.Completion) =
+        (P'.completionEmbedding : F' →+* P'.Completion).comp (algebraMap F F') := by
+      ext f
+      simp [algebraMap_completionExtensionAlgebra]
+    rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂,
+      ← Polynomial.aeval_def, minpoly.aeval, map_zero]
+  exact fun x _ ↦ hle Submodule.mem_top
 
 end Degree
 

@@ -19,9 +19,10 @@ The induced algebra structure makes the completed extension available for local 
 The algebra structure is explicit, since choosing different places above `P` gives different
 completed extensions. Install `completionExtensionAlgebra` locally. When the constant fields
 agree, `isScalarTower_completionExtensionAlgebra` also identifies the original constant action
-through the completed extension. The completed extension restricts to a local homomorphism
-`completionIntegersExtension` of completed valuation rings, whose algebra
-`completionIntegersExtensionAlgebra` is likewise installed locally.
+through the completed extension. The completed extension restricts to an injective local
+homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
+`completionIntegersExtensionAlgebra` is likewise installed locally, is torsion-free, and forms a
+scalar tower with `P'.Completion`.
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -231,6 +232,33 @@ theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace
     (algebraMap P.completionPlace.integers P'.completionPlace.integers x : P'.Completion) =
       P.completionExtension P' hP x :=
   (rfl)
+
+/-- The canonical map of completed valuation rings is injective. -/
+theorem completionIntegersExtension_injective :
+    Function.Injective (P.completionIntegersExtension P' hP) := fun _ _ h ↦
+  Subtype.ext ((P.completionExtension P' hP).injective (congrArg Subtype.val h))
+
+/-- The completed valuation ring above is torsion-free over the completed valuation ring below. -/
+instance isTorsionFree_completionIntegersExtensionAlgebra :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine .of_smul_eq_zero fun a b hab ↦ ?_
+  rw [Algebra.smul_def, mul_eq_zero, algebraMap_completionIntegersExtensionAlgebra] at hab
+  exact hab.imp (fun h ↦ P.completionIntegersExtension_injective P' hP (by rwa [map_zero])) id
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension in
+/-- The action of `𝒪̂_P` on `F̂'_{P'}` through `F̂_P` agrees with its action through `𝒪̂_{P'}`. -/
+theorem isScalarTower_completionIntegers_completion :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine .of_algebraMap_eq fun x ↦ ?_
+  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+    algebraMap_completionExtensionAlgebra, ValuationSubring.algebraMap_apply,
+    ValuationSubring.algebraMap_apply, coe_algebraMap_completionIntegersExtensionAlgebra]
 
 end Integers
 
