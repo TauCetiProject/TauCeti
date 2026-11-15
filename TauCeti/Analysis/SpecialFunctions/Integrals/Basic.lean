@@ -511,7 +511,8 @@ theorem hasSum_pow_div_factorial_integral_exp_mul_cos_mul_exp (z : ℂ) (n : ℕ
     intro k hk
     refine mul_eq_zero_of_right _ (Finset.sum_eq_zero fun m _ => ?_)
     rw [ite_eq_right fun hm => hk ⟨m, by dsimp only; omega⟩, mul_zero]
-  have hinj : Function.Injective fun l : ℕ => 2 * l + n := fun a b hab => by simpa using hab
+  have hinj : Function.Injective fun l : ℕ => 2 * l + n := fun a b hab => by
+    dsimp only at hab; omega
   rw [← hinj.hasSum_iff hz] at h
   convert h using 1
   ext l
