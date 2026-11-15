@@ -75,17 +75,12 @@ theorem generalizedExtremeValueMap_of_shape_ne_zero {ξ : ℝ} (hξ : ξ ≠ 0) 
       m + s * (Real.exp (-ξ * Real.log e) - 1) / ξ := by
   simp [generalizedExtremeValueMap, hξ]
 
-/-- On positive inputs, the generalized extreme-value transformation uses the usual real power
-`e ^ (-ξ)`. -/
-theorem generalizedExtremeValueMap_eq_rpow {e : ℝ} (he : 0 < e) (m s ξ : ℝ) :
-    generalizedExtremeValueMap m s ξ e =
-      if ξ = 0 then m - s * Real.log e else m + s * (e ^ (-ξ) - 1) / ξ := by
-  by_cases hξ : ξ = 0
-  · simp [hξ]
-  · rw [generalizedExtremeValueMap_of_shape_ne_zero hξ]
-    rw [ite_eq_right hξ, Real.rpow_def_of_pos he]
-    have hexp : -ξ * Real.log e = Real.log e * -ξ := mul_comm _ _
-    rw [hexp]
+/-- On positive inputs and at nonzero shape, the generalized extreme-value transformation uses the
+usual real power `e ^ (-ξ)`. -/
+theorem generalizedExtremeValueMap_eq_rpow {e ξ : ℝ} (he : 0 < e) (hξ : ξ ≠ 0) (m s : ℝ) :
+    generalizedExtremeValueMap m s ξ e = m + s * (e ^ (-ξ) - 1) / ξ := by
+  rw [generalizedExtremeValueMap_of_shape_ne_zero hξ, Real.rpow_def_of_pos he,
+    mul_comm (Real.log e)]
 
 /-- The generalized extreme-value transformation is measurable jointly in its four inputs. -/
 @[fun_prop]
@@ -143,7 +138,7 @@ theorem generalizedExtremeValueMeasure_of_shape_ne_zero {s ξ : ℝ} (hs : 0 < s
   rw [generalizedExtremeValueMeasure_of_pos hs]
   refine Measure.map_congr ?_
   filter_upwards [ae_pos_expMeasure 1] with e he
-  rw [generalizedExtremeValueMap_eq_rpow he, ite_eq_right hξ]
+  rw [generalizedExtremeValueMap_eq_rpow he hξ]
 
 /-- A generalized extreme-value law with positive scale is a probability measure. -/
 theorem isProbabilityMeasure_generalizedExtremeValueMeasure {s : ℝ} (hs : 0 < s) (m ξ : ℝ) :
