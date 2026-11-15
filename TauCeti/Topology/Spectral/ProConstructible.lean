@@ -82,6 +82,9 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
+* `TauCeti.isProConstructible_singleton` and `IsSpectralMap.generalizingMap_of_isOpenMap` —
+  singletons in T₀ prespectral spaces are pro-constructible, so open spectral maps into T₀
+  prespectral spaces lift generalizations.
 
 ## References
 
@@ -187,6 +190,18 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton in a T₀ prespectral space is pro-constructible, since the constructible
+topology is Hausdorff. -/
+@[simp]
+theorem isProConstructible_singleton [PrespectralSpace X] [T0Space X] (x : X) :
+    IsProConstructible ({x} : Set X) := by
+  have heq : (WithTopology.ofTopology ⁻¹' ({x} : Set X) : Set (WithConstructibleTopology X)) =
+      {WithTopology.toTopology (constructibleTopology X) x} := by
+    ext y
+    exact ⟨fun hy ↦ (WithTopology.ofTopology_injective _) hy, fun hy ↦ congrArg _ hy⟩
+  rw [IsProConstructible, heq]
+  exact isClosed_singleton
 
 /-! ### Functoriality -/
 
@@ -416,6 +431,20 @@ theorem _root_.IsSpectralMap.isQuotientMap_of_generalizingMap [CompactSpace X] [
   rw [Set.image_preimage_eq t hsurj, ← stableUnderGeneralization_compl_iff]
   convert hg.stableUnderGeneralization_image ht.isOpen_compl.stableUnderGeneralization
   rw [← Set.preimage_compl, Set.image_preimage_eq _ hsurj]
+
+/-- An open spectral map from a compact, quasi-sober, quasi-separated prespectral space to a T₀
+prespectral space lifts generalizations. -/
+theorem _root_.IsSpectralMap.generalizingMap_of_isOpenMap [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] [T0Space Y] [PrespectralSpace Y] {f : X → Y}
+    (hf : IsSpectralMap f) (hopen : IsOpenMap f) : GeneralizingMap f := by
+  intro x y hy
+  have hfib : IsProConstructible (f ⁻¹' {y}) := (isProConstructible_singleton y).preimage hf
+  have hx : x ∈ closure (f ⁻¹' {y}) := mem_closure_iff.mpr fun U hUo hxU ↦ by
+    obtain ⟨x', hx'U, hx'y⟩ := hy.mem_open (hopen U hUo) ⟨x, hxU, rfl⟩
+    exact ⟨x', hx'U, hx'y⟩
+  rw [hfib.closure_eq_setOfPred_specializes] at hx
+  obtain ⟨x', hx'y, hx'x⟩ := hx
+  exact ⟨x', hx'x, hx'y⟩
 
 end TauCeti
 

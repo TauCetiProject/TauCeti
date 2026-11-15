@@ -10,13 +10,18 @@ public import Mathlib.Topology.Constructible
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Spectral.Basic
+public import TauCeti.Topology.Spectral.ConstructibleTopology
+public import TauCeti.Topology.Spectral.PatchCriterion
+import Mathlib.Topology.WithTopology
 
 /-!
-# A basis criterion for spectral maps, and transport of spectrality along an embedding
+# A basis criterion for spectral maps, and transport of spectrality along surjections and embeddings
 
 Utilities for spectral spaces and maps. A continuous map is spectral as soon as the preimage
-of every member of some topological **basis** of the target is compact; and a set contained in the
-range of an embedding is spectral exactly when its preimage is.
+of every member of some topological **basis** of the target is compact; when the map is also
+surjective, the same basis hypothesis transfers prespectrality, quasiseparatedness,
+quasi-sobriety, and (once the target is `T0Space`) spectrality from the source to the target. A set
+contained in the range of an embedding is spectral exactly when its preimage is.
 
 The basis criterion first. Spectrality asks for compact preimages of all compact open sets; the
 reduction to a basis is the observation that a compact open set is a *finite* union of basis
@@ -26,7 +31,7 @@ union of compact preimages is compact.
 Nothing is assumed of the basis members themselves, not even compactness: only their preimages
 enter the argument. In the intended applications the basis members are the distinguished
 quasi-compact opens of a spectral space (Wedhorn's family `R` for `Spv (A, I)`), whose preimages
-are computed by hand.
+are computed by hand, or basic open sets of a quotient topology.
 
 Mathlib's `IsSpectralMap` API provides constructors from identities, compositions and embeddings,
 but no criterion that tests spectrality on a basis; this supplies the missing entry point.
@@ -35,12 +40,18 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 
 * `TauCeti.isSpectralMap_of_isTopologicalBasis` : a continuous map whose preimages of basis
   members are compact is a spectral map.
+* `TauCeti.spectralSpace_of_isTopologicalBasis_of_surjective` : a continuous surjection onto a
+  `T0Space` target admitting a basis with compact preimages transfers spectrality from a compact,
+  quasi-sober, quasiseparated prespectral source (built from the component transfers
+  `prespectralSpace_of_isTopologicalBasis_of_surjective`,
+  `quasiSeparatedSpace_of_isTopologicalBasis_of_surjective`, and
+  `quasiSober_of_isTopologicalBasis_of_surjective`).
 * `Set.MapsTo.isSpectralMap_restrict_iff`: spectrality of a restriction expressed in terms of
   subsets of the ambient spaces.
 * `TauCeti.isSpectralMap_eval`: a coordinate projection is spectral when every other factor
   is quasi-compact.
 * `Topology.IsEmbedding.spectralSpace_preimage_iff` : a subset of the range of an embedding is
-  spectral if and only if its preimage is — the transport step of any "prove it on a subspace"
+  spectral if and only if its preimage is — the transport step of any subspace spectrality
   argument.
 * `IsOpen.exists_spectralSpace_subset_inter`: compact spectral open neighbourhoods inside a
   spectral open subset.
@@ -55,6 +66,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1 — Lemma 7.5(2) is the intended consumer of the
   basis criterion, and Corollary 7.12 and Theorem 7.35 of the transport lemma.
+* P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, §2, Lemma 2.9 — target spectrality
+  from a basis with compact preimages.
 -/
 
 public section
@@ -94,6 +107,56 @@ theorem isSpectralMap_of_isTopologicalBasis {f : X → Y} {B : Set (Set Y)}
     exact Set.subset_sUnion_of_mem b.2
   rw [heq, Set.preimage_iUnion₂]
   exact t.isCompact_biUnion fun b _ ↦ hpre b (hSB b.2)
+
+/-- A space admitting a topological basis whose preimages under a continuous surjection are compact
+is prespectral: every basis member equals the image of its compact preimage. -/
+theorem prespectralSpace_of_isTopologicalBasis_of_surjective {f : X → Y} {B : Set (Set Y)}
+    (hB : IsTopologicalBasis B) (hsurj : Function.Surjective f) (hf : Continuous f)
+    (hpre : ∀ b ∈ B, IsCompact (f ⁻¹' b)) : PrespectralSpace Y :=
+  .of_isTopologicalBasis hB fun b hb ↦ by
+    rw [← image_preimage_eq b hsurj]
+    exact (hpre b hb).image hf
+
+/-- A continuous surjection from a quasiseparated space transfers quasiseparatedness to any target
+admitting a topological basis with compact preimages. -/
+theorem quasiSeparatedSpace_of_isTopologicalBasis_of_surjective [QuasiSeparatedSpace X]
+    {f : X → Y} {B : Set (Set Y)} (hB : IsTopologicalBasis B) (hsurj : Function.Surjective f)
+    (hf : Continuous f) (hpre : ∀ b ∈ B, IsCompact (f ⁻¹' b)) : QuasiSeparatedSpace Y := by
+  refine QuasiSeparatedSpace.of_isTopologicalBasis (b := fun b : B ↦ b.1)
+    (by simpa only [Subtype.range_coe_subtype, ofPred_mem_eq] using hB) fun b₁ b₂ ↦ ?_
+  rw [← image_preimage_eq (b₁.1 ∩ b₂.1) hsurj, preimage_inter]
+  exact ((hpre b₁.1 b₁.2).inter_of_isOpen (hpre b₂.1 b₂.2)
+    ((hB.isOpen b₁.2).preimage hf) ((hB.isOpen b₂.2).preimage hf)).image hf
+
+/-- A continuous surjection from a compact, quasi-sober, quasiseparated prespectral space transfers
+quasi-sobriety to any target admitting a topological basis with compact preimages. -/
+theorem quasiSober_of_isTopologicalBasis_of_surjective [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] {f : X → Y} {B : Set (Set Y)}
+    (hB : IsTopologicalBasis B) (hsurj : Function.Surjective f) (hf : Continuous f)
+    (hpre : ∀ b ∈ B, IsCompact (f ⁻¹' b)) : QuasiSober Y := by
+  let g : WithConstructibleTopology X → Y := f ∘ WithTopology.ofTopology
+  have hg_surj : Function.Surjective g := hsurj.comp (WithTopology.ofTopology_surjective _)
+  have hcomp : @CompactSpace Y (TopologicalSpace.coinduced g inferInstance) :=
+    @Function.Surjective.compactSpace _ _ _ (TopologicalSpace.coinduced g inferInstance) g
+      continuous_coinduced_rng inferInstance hg_surj
+  refine quasiSober_of_isClopen_generateFrom (t' := TopologicalSpace.coinduced g inferInstance)
+    hB.eq_generateFrom hcomp fun b hb ↦ ?_
+  have hcl : IsClopen (g ⁻¹' b) :=
+    (hpre b hb).isClopen_preimage_ofTopology_of_isOpen ((hB.isOpen hb).preimage hf)
+  exact ⟨isClosed_coinduced.mpr hcl.isClosed, isOpen_coinduced.mpr hcl.isOpen⟩
+
+/-- **Target spectrality from a basis with compact preimages.** If `f : X → Y` is a continuous
+surjection from a compact, quasi-sober, quasiseparated prespectral space onto a `T0Space` `Y`, and
+`Y` has a topological basis whose members pull back to compact subsets of `X`, then `Y` is a
+spectral space. Note that `X` itself need not be `T0Space`. -/
+theorem spectralSpace_of_isTopologicalBasis_of_surjective [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] [T0Space Y] {f : X → Y} {B : Set (Set Y)}
+    (hB : IsTopologicalBasis B) (hsurj : Function.Surjective f) (hf : Continuous f)
+    (hpre : ∀ b ∈ B, IsCompact (f ⁻¹' b)) : SpectralSpace Y where
+  toCompactSpace := hsurj.compactSpace hf
+  toQuasiSober := quasiSober_of_isTopologicalBasis_of_surjective hB hsurj hf hpre
+  toQuasiSeparatedSpace := quasiSeparatedSpace_of_isTopologicalBasis_of_surjective hB hsurj hf hpre
+  toPrespectralSpace := prespectralSpace_of_isTopologicalBasis_of_surjective hB hsurj hf hpre
 
 /-- Spectrality of the restriction of a map between subspaces is tested on compact open subsets of
 the ambient target: every compact open subset of `V` must pull back to a compact subset of `U`. -/

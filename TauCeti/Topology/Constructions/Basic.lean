@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Defs
+public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Data.Setoid.Basic
 
 /-!
 # Quotients by setoids and fibre products of topological spaces
@@ -21,6 +23,11 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Setoid.swapGraphHomeomorph`: swapping factors restricts to an involutive self-homeomorphism of
+  the graph `{q : X × X // s q.1 q.2}`, intertwining the two projections
+  (`Setoid.generalizingMap_fst_iff_snd`, `Setoid.isOpenMap_fst_iff_snd`).
+* `Setoid.isOpenMap_quotientMk_of_isOpenMap`: if a projection of the graph of `s` is open, then
+  `Quotient.mk s` is an open map.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
   fibre product are continuous.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
@@ -77,6 +84,54 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     refine isOpen_image_quotient_mk s (hU.isOpenMap_subtype_val W hW) ?_
     rintro _ y ⟨x, hx, rfl⟩ hxy
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
+
+/-- Swapping coordinates of `X × X` restricts to a self-homeomorphism of the graph of `s`. -/
+def swapGraphHomeomorph : {q : X × X // s q.1 q.2} ≃ₜ {q : X × X // s q.1 q.2} :=
+  (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨s.symm, s.symm⟩
+
+@[simp]
+theorem coe_swapGraphHomeomorph_apply (q : {q : X × X // s q.1 q.2}) :
+    (s.swapGraphHomeomorph q : X × X) = q.1.swap :=
+  (rfl)
+
+@[simp]
+theorem swapGraphHomeomorph_symm : s.swapGraphHomeomorph.symm = s.swapGraphHomeomorph := by
+  ext q <;> rfl
+
+/-- By symmetry of `s`, the first projection of the graph lifts generalizations if and only if the
+second projection does. -/
+theorem generalizingMap_fst_iff_snd :
+    GeneralizingMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ↔
+      GeneralizingMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) := by
+  have heq₁ : (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) =
+      (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ∘ s.swapGraphHomeomorph := rfl
+  have heq₂ : (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) =
+      (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) ∘ s.swapGraphHomeomorph := rfl
+  exact ⟨fun h ↦ heq₁ ▸ s.swapGraphHomeomorph.isOpenEmbedding.generalizingMap.comp h,
+    fun h ↦ heq₂ ▸ s.swapGraphHomeomorph.isOpenEmbedding.generalizingMap.comp h⟩
+
+/-- By symmetry of `s`, the first projection of the graph is an open map if and only if the second
+projection is. -/
+theorem isOpenMap_fst_iff_snd :
+    IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ↔
+      IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) := by
+  have heq₁ : (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) =
+      (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) ∘ s.swapGraphHomeomorph := rfl
+  have heq₂ : (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1) =
+      (fun q : {q : X × X // s q.1 q.2} ↦ q.1.2) ∘ s.swapGraphHomeomorph := rfl
+  exact ⟨fun h ↦ heq₁ ▸ h.comp s.swapGraphHomeomorph.isOpenMap,
+    fun h ↦ heq₂ ▸ h.comp s.swapGraphHomeomorph.isOpenMap⟩
+
+/-- If the first projection of the graph of `s` is an open map, then so is the quotient map
+`Quotient.mk s`. -/
+theorem isOpenMap_quotientMk_of_isOpenMap
+    (hopen : IsOpenMap (fun q : {q : X × X // s q.1 q.2} ↦ q.1.1)) :
+    IsOpenMap (Quotient.mk s) := by
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  intro U hU
+  rw [← hq.isOpen_preimage, s.preimage_image_quotientMk_eq_image_snd]
+  exact (s.isOpenMap_fst_iff_snd.mp hopen) _
+    (hU.preimage (continuous_fst.comp continuous_subtype_val))
 
 end Setoid
 
