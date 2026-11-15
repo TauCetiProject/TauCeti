@@ -299,6 +299,17 @@ def mk (k : ℕ) :
       obtain ⟨⟨α, β⟩, hx⟩ := x
       exact (d_XEquiv_symm_eq_zero_iff W _ _ k rfl rfl α β).mpr ((mem_cocycles I W _).mp hx)
 
+/-- The relative class map is the homology class map of the relative cocycles, embedded into the
+relative complex through the coordinates `XEquiv`. -/
+theorem mk_eq_moduleCatHomologyClass (k : ℕ) :
+    mk I W k =
+      (relativeDeRhamComplex I M W).moduleCatHomologyClass (Z := cocycles I W k)
+        (CochainComplex.next ℤ _)
+        ((XEquiv W _ k rfl).symm.toLinearMap ∘ₗ (cocycles I W k).subtype) fun x ↦ by
+          obtain ⟨⟨α, β⟩, hx⟩ := x
+          exact (d_XEquiv_symm_eq_zero_iff W _ _ k rfl rfl α β).mpr ((mem_cocycles I W _).mp hx) :=
+  (rfl)
+
 /-- Every relative de Rham cohomology class of positive degree is represented by a relative
 cocycle. -/
 theorem mk_surjective (k : ℕ) : Function.Surjective (mk I W k) := by
