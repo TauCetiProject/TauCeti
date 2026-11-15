@@ -575,6 +575,14 @@ theorem single_eq_single_iff {C₁ C₂ : Set M}
     single hC₁ m₁ = single hC₂ m₂ ↔ C₁ = C₂ ∧ m₁ = m₂ ∨ m₁ = 0 ∧ m₂ = 0 := by
   rw [EmbeddedCurveConfiguration.ext_iff, mult_single, mult_single, Finsupp.single_eq_single_iff]
 
+/-- Two one-curve configurations with the same nonzero multiplicity are equal exactly when they
+have the same curve. -/
+theorem single_left_inj {C₁ C₂ : Set M}
+    (hC₁ : IsClosedConnectedEmbeddedPseudoholomorphicCurve J C₁)
+    (hC₂ : IsClosedConnectedEmbeddedPseudoholomorphicCurve J C₂) {m : ℕ} (hm : m ≠ 0) :
+    single hC₁ m = single hC₂ m ↔ C₁ = C₂ := by
+  rw [EmbeddedCurveConfiguration.ext_iff, mult_single, mult_single, Finsupp.single_left_inj hm]
+
 /-- The multiplicity of a one-curve configuration determines it. -/
 theorem single_injective {C : Set M} (hC : IsClosedConnectedEmbeddedPseudoholomorphicCurve J C) :
     Function.Injective (single hC) := fun _ _ h ↦
