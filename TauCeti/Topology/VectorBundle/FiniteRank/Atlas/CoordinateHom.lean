@@ -133,22 +133,20 @@ private theorem continuous_stratum_totalSpaceMap {A D : FiniteRankAtlas 𝕜 X}
           (finCongr p.proj.2.1)).symm.toContinuousLinearMap)) p.2⟩ :
         ((D.stratumCore n).pullback (stratumPairSnd A D m n)).core.TotalSpace) := by
   let Z := ((A.stratumCore m).pullback (stratumPairFst A D m n)).core
-  have hlift : Continuous fun p : Z.TotalSpace ↦
-      TotalSpace.mk' (Fin m → 𝕜) (E := (A.charts m).Fiber) (stratumPairFst A D m n p.proj) p.2 :=
-    (FiniteRankBundleCore.continuous_pullback_iff
-      (A := A.stratumCore m) (f := stratumPairFst A D m n) (g := id)).1 continuous_id |>.2
+  have hlift := (A.stratumCore m).continuous_pullbackLift (stratumPairFst A D m n)
   have hZin : Continuous fun p : Z.TotalSpace ↦
       (⟨p.proj.1, (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
         (finCongr p.proj.2.1)).symm p.2⟩ : TotalSpace Unit A.Fiber) :=
     (A.totalSpaceHomeomorph.continuous.comp
-      (continuous_sigmaMk (σ := fun k ↦ (A.charts k).TotalSpace).comp hlift)).congr fun _ ↦ by
-      simp only [Function.comp_apply, totalSpaceHomeomorph_apply]; rfl
+      (continuous_sigmaMk (σ := fun k ↦ (A.charts k).TotalSpace).comp hlift)).congr fun ⟨_, _⟩ ↦ by
+      simp only [Function.comp_apply, FiniteRankBundleCore.pullbackLift_mk,
+        totalSpaceHomeomorph_apply]; rfl
   have hD := (D.continuous_mk_iff_rankStrata (continuous_subtype_val.comp Z.continuous_proj)
     fun p ↦ f.fiberMap p.proj.1 ((ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin m ↦ 𝕜)
       (finCongr p.proj.2.1)).symm p.2)).1 (f.continuous_totalSpaceMap.comp hZin) n
-  exact (FiniteRankBundleCore.continuous_pullback_iff
-    (A := D.stratumCore n) (f := stratumPairSnd A D m n)).2 ⟨Z.continuous_proj,
-      (hD.comp (continuous_id.subtype_mk fun p : Z.TotalSpace ↦ p.proj.2.2)).congr fun _ ↦ rfl⟩
+  exact ((D.stratumCore n).continuous_core_pullback_iff (stratumPairSnd A D m n)).2
+    ⟨Z.continuous_proj, (hD.comp (continuous_id.subtype_mk fun p : Z.TotalSpace ↦ p.proj.2.2)).congr
+      fun p ↦ ((D.stratumCore n).pullbackLift_mk (stratumPairSnd A D m n) p.proj _).symm⟩
 
 /-- Extract the compatible chart operators of an atlas morphism on the `(m, n)` stratum. -/
 def toStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) (m n : ℕ) :
@@ -185,17 +183,17 @@ private theorem continuous_ofStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X}
   have hZ : Continuous fun q : U ↦
       (⟨⟨q.1.1.proj, q.2, q.1.2⟩, fun i ↦ q.1.1.2 (Fin.cast q.2.symm i)⟩ :
         ((A.stratumCore m).pullback (stratumPairFst A D m n)).core.TotalSpace) :=
-    (FiniteRankBundleCore.continuous_pullback_iff
-      (A := A.stratumCore m) (f := stratumPairFst A D m n)).2
+    ((A.stratumCore m).continuous_core_pullback_iff (stratumPairFst A D m n)).2
       ⟨(A.continuous_proj.comp (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _,
         (hA.comp ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk
-          fun q : U ↦ q.2)).congr fun _ ↦ rfl⟩
-  have hW := (FiniteRankBundleCore.continuous_pullback_iff (g := id)
-    (A := D.stratumCore n) (f := stratumPairSnd A D m n)).1 continuous_id |>.2
+          fun q : U ↦ q.2)).congr fun q ↦
+            ((A.stratumCore m).pullbackLift_eq_mk (stratumPairFst A D m n)
+              ⟨⟨q.1.1.proj, q.2, q.1.2⟩, _⟩ rfl rfl).symm⟩
+  have hW := (D.stratumCore n).continuous_pullbackLift (stratumPairSnd A D m n)
   refine (hW.comp ((c m n).continuous_totalSpaceMap.comp hZ)).congr fun ⟨⟨⟨x, v⟩, hDn⟩, hAm⟩ ↦ ?_
   cases hAm; cases hDn
-  simp only [Function.comp_apply, id_eq, CoordinateHom.totalSpaceMap_def, Set.domRestrict_apply]
-  rfl
+  simp only [Function.comp_apply, CoordinateHom.totalSpaceMap_def, Set.domRestrict_apply]
+  exact (D.stratumCore (D.rank x)).pullbackLift_eq_mk _ _ rfl rfl
 
 /-- Assemble coordinate morphisms on the `(m, n)` joint rank strata into an atlas morphism. -/
 def ofStratumCoordinateHom {A D : FiniteRankAtlas 𝕜 X}
@@ -316,8 +314,7 @@ def ofCoreHomeomorph (C : FiniteRankBundleCore 𝕜 X) :
       continuous_sigma fun m ↦ by
         by_cases hm : C.rank = m
         · subst hm; rw [charts_ofCore_self]
-          exact ((FiniteRankBundleCore.continuous_pullback_iff (g := id)
-            (A := C) (f := inc)).1 continuous_id |>.2).congr fun _ ↦ rfl
+          exact (C.continuous_pullbackLift inc).congr fun ⟨x, v⟩ ↦ C.pullbackLift_mk inc x v
         · have : IsEmpty (((ofCore C).charts m).TotalSpace) := ⟨fun q ↦ hm q.proj.2⟩
           exact continuous_iff_continuousAt.2 isEmptyElim
     exact (hsigma.comp (ofCore C).totalSpaceHomeomorph.symm.continuous).congr fun p ↦ by
@@ -328,9 +325,9 @@ def ofCoreHomeomorph (C : FiniteRankBundleCore 𝕜 X) :
       (fun p : C.core.TotalSpace ↦ (p.2 : (ofCore C).Fiber p.proj))).2 fun m ↦ ?_
     by_cases hm : C.rank = m
     · subst hm; rw [charts_ofCore_self]
-      exact ((FiniteRankBundleCore.continuous_pullback_iff (A := C) (f := inc)).2
+      exact (C.continuous_core_pullback_iff inc).2
         ⟨(C.core.continuous_proj.comp continuous_subtype_val).subtype_mk _,
-          continuous_subtype_val⟩).congr fun _ ↦ rfl
+          continuous_subtype_val.congr fun ⟨⟨x, v⟩, hx⟩ ↦ (C.pullbackLift_mk inc ⟨x, hx⟩ v).symm⟩
     · have : IsEmpty {p : C.core.TotalSpace // (ofCore C).rank p.proj = m} := ⟨fun q ↦ hm q.2⟩
       exact continuous_iff_continuousAt.2 isEmptyElim
 
@@ -393,21 +390,20 @@ def ofCoreStratumIso (A : FiniteRankAtlas 𝕜 X) (n : ℕ) (hn : ∀ x, A.rank 
   · refine (A.continuous_mk_iff_rankStrata (ofCore C).continuous_proj _).2 fun m ↦ ?_
     by_cases hmn : m = n
     · subst hmn
-      have hZ := (FiniteRankBundleCore.continuous_pullback_iff (g := id)
-        (A := A.stratumCore m) (f := s)).1 continuous_id |>.2
+      have hZ := (A.stratumCore m).continuous_pullbackLift s
       refine (hZ.comp ((ofCoreHomeomorph C).continuous.comp continuous_subtype_val)).congr
         fun ⟨⟨x, v⟩, hxm⟩ ↦ ?_
       cases Subsingleton.elim (hn x) hxm
-      simp only [Function.comp_apply, s, ContinuousMap.coe_mk]; rfl
+      exact (A.stratumCore m).pullbackLift_eq_mk s _ rfl rfl
     · have : IsEmpty {p : TotalSpace Unit (ofCore C).Fiber // A.rank p.proj = m} :=
         ⟨fun q ↦ hmn (q.2.symm.trans (hn q.1.proj))⟩
       exact continuous_iff_continuousAt.2 isEmptyElim
   · have hA := (A.continuous_mk_iff_rankStrata A.continuous_proj (fun p ↦ p.2)).1 continuous_id n
     have hC : Continuous fun p : TotalSpace Unit A.Fiber ↦
         (⟨p.proj, fun i ↦ p.2 (Fin.cast (hn p.proj).symm i)⟩ : C.core.TotalSpace) :=
-      (FiniteRankBundleCore.continuous_pullback_iff (A := A.stratumCore n) (f := s)).2
+      ((A.stratumCore n).continuous_core_pullback_iff s).2
         ⟨A.continuous_proj, (hA.comp (continuous_id.subtype_mk fun p ↦ hn p.proj)).congr
-          fun _ ↦ rfl⟩
+          fun p ↦ ((A.stratumCore n).pullbackLift_mk s p.proj _).symm⟩
     exact ((ofCoreHomeomorph C).symm.continuous.comp hC).congr fun _ ↦ by
       simp only [Function.comp_apply, ofCoreHomeomorph_symm_apply]; rfl
 
