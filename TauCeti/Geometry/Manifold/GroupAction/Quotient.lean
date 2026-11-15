@@ -339,7 +339,8 @@ private theorem surjective_mfderiv_quotientMk (y : M) :
   have hπσ : Quotient.mk (MulAction.orbitRel G M) ∘ σ =
       (extChartAt 𝓘(ℝ, QuotientModelSpace E E') q).symm := by
     funext v
-    rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, Function.comp_id]
+    rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, Function.comp_id,
+      chartAt_orbitRelQuotient, sliceChart_symm_apply]
     exact Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit _ _))
   have hq0 : extChartAt 𝓘(ℝ, QuotientModelSpace E E') q q = 0 := by
     have h0 : (sliceChart I G I' x).symm 0 = q := by
