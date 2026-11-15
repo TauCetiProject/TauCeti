@@ -75,7 +75,7 @@ cooriented contact structure. In terms of the annihilator line `(ker α)⁰ ⊂ 
 * `TauCeti.SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_iff_of_mpullback_eq_symplectization`:
   local models of a symplectization; a map over `M` from `ℝ × M` to a manifold of one dimension
   more, pulling a one-form `θ` back to `eᵗ β`, identifies nondegeneracy of `dθ` with the contact
-  condition for `β`.
+  condition for `β`, at points `(t, x)` with `β_x ≠ 0`.
 * `TauCeti.SmoothForm.interior_mextDeriv_symplectization`,
   `TauCeti.SmoothForm.isLiouvilleVectorField_symplectization`: `∂_t` is the Liouville field.
 * `TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`: lifts of conformal maps of
@@ -246,13 +246,14 @@ theorem bilinFormAt_mextDerivₗ_symplectization_apply_of_mpullback_eq {θ : Smo
 
 /-- A map `φ : ℝ × M → N` over `M`, that is `q ∘ φ = Prod.snd` for a differentiable `q : N → M`,
 which pulls a one-form `θ` back to the symplectization form `eᵗ β`, is an immersion at every
-point `(t, x)` with `β_x ≠ 0`: a vector killed by `dφ` has no component along `M`, and `d(eᵗ β)`
-pairs its real component with a vector on which `β_x` does not vanish. -/
+point `(t, x)` with `β_x ≠ 0`. -/
 theorem injective_mfderiv_of_mpullback_eq_symplectization {θ : SmoothForm J N ℝ 1}
     {φ : ℝ × M → N} (hφ : ContMDiff (𝓘(ℝ).prod I) J ∞ φ) {q : N → M}
     (hq : MDifferentiable J I q) (hqφ : q ∘ φ = Prod.snd) {β : SmoothForm I M ℝ 1}
     (hθ : mpullback φ hφ θ = β.symplectization) {p : ℝ × M} (hβ : β.1 p.2 ≠ 0) :
     Function.Injective (mfderiv (𝓘(ℝ).prod I) J φ p) := by
+  -- A vector killed by `dφ` has no component along `M`, and `d(eᵗ β)` pairs its real component
+  -- with a vector `u` on which `β_x` does not vanish.
   obtain ⟨u, hu⟩ := RoughForm.exists_apply_ne_zero hβ
   rw [injective_iff_map_eq_zero]
   intro v hv
@@ -278,15 +279,15 @@ theorem injective_mfderiv_of_mpullback_eq_symplectization {θ : SmoothForm J N �
 `dim M + 1` and `φ : ℝ × M → N` a smooth map over `M`, that is `q ∘ φ = Prod.snd` for a
 differentiable `q : N → M`, pulling `θ` back to the symplectization form `eᵗ β` of a one-form `β`.
 At a point `p = (t, x)` with `β_x ≠ 0`, the two-form `dθ` is nondegenerate at `φ p` exactly when
-`β` is a contact form at `x`. The differential of `φ` at `p` is an isomorphism
-(`TauCeti.SmoothForm.injective_mfderiv_of_mpullback_eq_symplectization`), which identifies `dθ`
-at `φ p` with `d(eᵗ β)` at `p`. -/
+`β` is a contact form at `x`. -/
 theorem nondegenerate_bilinFormAt_mextDerivₗ_iff_of_mpullback_eq_symplectization
     {θ : SmoothForm J N ℝ 1} {φ : ℝ × M → N} (hφ : ContMDiff (𝓘(ℝ).prod I) J ∞ φ)
     {q : N → M} (hq : MDifferentiable J I q) (hqφ : q ∘ φ = Prod.snd)
     {β : SmoothForm I M ℝ 1} (hθ : mpullback φ hφ θ = β.symplectization)
     (hdim : Module.finrank ℝ G = Module.finrank ℝ E + 1) {p : ℝ × M} (hβ : β.1 p.2 ≠ 0) :
     ((mextDerivₗ J 1 θ).bilinFormAt (φ p)).Nondegenerate ↔ IsContactFormAt β.1 p.2 := by
+  -- The differential of `φ` at `p` is an isomorphism, which identifies `dθ` at `φ p` with
+  -- `d(eᵗ β)` at `p`.
   have hLinj := injective_mfderiv_of_mpullback_eq_symplectization hφ hq hqφ hθ hβ
   have : FiniteDimensional ℝ (TangentSpace J (φ p)) :=
     have : FiniteDimensional ℝ G := Module.finite_of_finrank_pos (by omega)
@@ -317,8 +318,10 @@ theorem nondegenerate_bilinFormAt_mextDerivₗ_iff_of_mpullback_eq_symplectizati
     refine LinearMap.ext₂ fun v w ↦ ?_
     rw [bilinFormAt_mextDerivₗ_symplectization_apply_of_mpullback_eq hφ hθ,
       LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm]
-    -- `e` is `LinearEquiv.ofBijective` of the differential, so it applies as the differential.
-    rfl
+    -- `e` applies as the differential. The module instances on the tangent spaces match those of
+    -- `LinearEquiv.ofBijective_apply` only up to unfolding `TangentSpace`, so `rw` cannot use it.
+    exact congrArg₂ ((mextDerivₗ J 1 θ).bilinFormAt (φ p) · ·)
+      (LinearEquiv.ofBijective_apply _ v).symm (LinearEquiv.ofBijective_apply _ w).symm
   rw [← LinearMap.BilinForm.nondegenerate_congr_iff e.symm, ← hBA,
     nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff]
 

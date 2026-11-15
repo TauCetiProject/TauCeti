@@ -47,9 +47,9 @@ No coorientation of `ξ` is chosen: `L` need not be trivial, and `L* ∖ 0` need
 halves. The proof is local. A nonzero covector `ℓ` over `x` vanishing on `ξ` is the value at `x` of
 a smooth one-form `β` vanishing on `ξ` everywhere and with kernel `ξ` near `x`
 (`TauCeti.CotangentBundle.exists_degreeOneEquiv_eq_of_mem_annihilatorSpace`). The map
-`(t, y) ↦ eᵗ β_y` into `L*` (`TauCeti.CotangentBundle.symplectizationToAnnihilator`) pulls `θ` back
-to the symplectization form `eᵗ β` of `TauCeti.Geometry.Contact.Symplectization.Basic`
-(`TauCeti.CotangentBundle.mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm`). Its
+`(t, y) ↦ eᵗ β_y` into `L*` (`TauCeti.SmoothForm.symplectizationToAnnihilator`) pulls `θ` back to
+the symplectization form `eᵗ β` of `TauCeti.Geometry.Contact.Symplectization.Basic`
+(`TauCeti.SmoothForm.mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm`). Its
 differential at `(0, x)` is injective, because `d(eᵗ β)` pairs the real direction with a vector on
 which `β_x` is nonzero, so by counting dimensions it identifies `dθ` at `ℓ` with `d(eᵗ β)` at
 `(0, x)`
@@ -65,7 +65,7 @@ nondegeneracy of `ξ` at `x`.
 * `TauCeti.CotangentBundle.annihilatorSymplectization`: the open complement `L* ∖ 0` of its zero
   section.
 * `TauCeti.CotangentBundle.annihilatorSymplecticForm`: the two-form `dθ` on `L* ∖ 0`.
-* `TauCeti.CotangentBundle.symplectizationToAnnihilator`: the map `(t, y) ↦ eᵗ β_y` into `L*` of a
+* `TauCeti.SmoothForm.symplectizationToAnnihilator`: the map `(t, y) ↦ eᵗ β_y` into `L*` of a
   one-form `β` vanishing on `ξ`.
 
 ## Main results
@@ -160,12 +160,22 @@ theorem mpullback_annihilatorInclusion_symplecticForm (hD : IsContMDiffDistribut
     (mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M))).trans ?_
   exact congrArg Neg.neg (SmoothForm.mextDerivₗ_mpullback _ hinc 1 (liouvilleForm I M)).symm
 
+end TauCeti.CotangentBundle
+
+namespace TauCeti.SmoothForm
+
+open CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+
 /-! ### Parametrizations by annihilating one-forms -/
 
 /-- The map `(t, y) ↦ eᵗ β_y` from `ℝ × M` into the annihilator line of `D`, for a one-form `β`
 vanishing on `D`. Followed by the inclusion into `T*M`, it is the map
 `TauCeti.SmoothForm.symplectizationToCotangent` of `β`
-(`TauCeti.CotangentBundle.annihilatorInclusion_comp_symplectizationToAnnihilator`). Where `β`
+(`TauCeti.SmoothForm.annihilatorInclusion_comp_symplectizationToAnnihilator`). Where `β`
 does not vanish, it parametrizes the nonzero covectors of the annihilator line that are positive
 multiples of `β`. -/
 def symplectizationToAnnihilator (β : SmoothForm I M ℝ 1)
@@ -178,6 +188,14 @@ def symplectizationToAnnihilator (β : SmoothForm I M ℝ 1)
 theorem proj_symplectizationToAnnihilator (β : SmoothForm I M ℝ 1)
     (hβ : ∀ y, SmoothForm.degreeOneEquiv β y ∈ annihilatorSpace D y) (p : ℝ × M) :
     (symplectizationToAnnihilator β hβ p).proj = p.2 := (rfl)
+
+/-- The covector carried by `(t, y) ↦ eᵗ β_y` is `eᵗ β_y`. -/
+@[simp]
+theorem coe_snd_symplectizationToAnnihilator (β : SmoothForm I M ℝ 1)
+    (hβ : ∀ y, SmoothForm.degreeOneEquiv β y ∈ annihilatorSpace D y) (p : ℝ × M) :
+    ((symplectizationToAnnihilator β hβ p).2 :
+        TangentSpace I (symplectizationToAnnihilator β hβ p).proj →L[ℝ] ℝ) =
+      Real.exp p.1 • SmoothForm.degreeOneEquiv β p.2 := (rfl)
 
 /-- The covectors `eᵗ β_y`, as a map into `T*M`, form the map
 `TauCeti.SmoothForm.symplectizationToCotangent` of `β`. -/
@@ -196,8 +214,10 @@ theorem annihilatorInclusion_comp_symplectizationToAnnihilator (β : SmoothForm 
       β.symplectizationToCotangent := by
   rw [← mk_exp_smul_degreeOneEquiv_eq]
   funext p
-  rw [Function.comp_apply, annihilatorInclusion_apply]
-  -- Both sides are `⟨p.2, eᵗ β_(p.2)⟩` once `symplectizationToAnnihilator` is unfolded.
+  refine CotangentBundle.ext (by simp) fun v ↦ ?_
+  rw [Function.comp_apply, annihilatorInclusion_snd, coe_snd_symplectizationToAnnihilator]
+  -- Both sides are now `(eᵗ β_y) v`, but as functionals on tangent spaces at base points that agree
+  -- only after unfolding `annihilatorInclusion`, so `simp` cannot close the goal.
   rfl
 
 /-- The map `(t, y) ↦ eᵗ β_y` into the annihilator line is smooth. -/
@@ -236,6 +256,14 @@ theorem mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm
       (Function.id_comp _).symm), SmoothForm.mpullback_id, LinearMap.id_apply,
     SmoothForm.mpullback_symplectizationToCotangent_liouvilleForm]
 
+end TauCeti.SmoothForm
+
+namespace TauCeti.CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+
 /-! ### Nondegeneracy and the Levi form -/
 
 section Nondegenerate
@@ -258,23 +286,23 @@ theorem nondegenerate_bilinFormAt_mextDerivₗ_annihilatorLiouvilleForm_iff
   let := annihilatorVectorBundle hD (m := ∞) (by simp) hk
   let := annihilatorContMDiffVectorBundle hD (m := ∞) (by simp) hk
   rintro ⟨x, c, hc⟩ hz
-  obtain ⟨β, hβD, hβx, hβker⟩ :=
-    exists_degreeOneEquiv_eq_of_mem_annihilatorSpace hD hk hc fun h ↦ hz (Subtype.ext h)
-  have hφx : symplectizationToAnnihilator β hβD ((0 : ℝ), x) = ⟨x, ⟨c, hc⟩⟩ :=
-    congrArg (TotalSpace.mk x) (Subtype.ext (by simp [Real.exp_zero, hβx]))
+  have hc0 : c ≠ 0 := fun h ↦ hz ((Submodule.mk_eq_zero _ hc).2 h)
+  obtain ⟨β, hβD, hβx, hβker⟩ := exists_degreeOneEquiv_eq_of_mem_annihilatorSpace hD hk hc hc0
+  have hφx : β.symplectizationToAnnihilator hβD ((0 : ℝ), x) = ⟨x, ⟨c, hc⟩⟩ := by
+    have h := SmoothForm.coe_snd_symplectizationToAnnihilator β hβD ((0 : ℝ), x)
+    rw [Real.exp_zero, one_smul, hβx] at h
+    exact congrArg (TotalSpace.mk x) (Subtype.ext h)
   have hβ0 : β.1 x ≠ 0 := by
     intro h
-    apply hz
-    apply Subtype.ext
-    -- The coercion of `⟨c, hc⟩` is `c` by definition of the subtype.
-    change c = 0
+    apply hc0
     rw [← hβx]
     ext v
     simp [SmoothForm.degreeOneEquiv_apply_apply_vec, h]
   have key := SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_iff_of_mpullback_eq_symplectization
-    (contMDiff_symplectizationToAnnihilator hD hk β hβD) (q := TotalSpace.proj)
+    (SmoothForm.contMDiff_symplectizationToAnnihilator hD hk β hβD) (q := TotalSpace.proj)
     ((Bundle.contMDiff_proj (n := ∞) (fun x ↦ annihilatorSpace D x)).mdifferentiable
-      (by simp)) rfl (mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm hD hk β hβD)
+      (by simp)) rfl
+      (SmoothForm.mpullback_symplectizationToAnnihilator_annihilatorLiouvilleForm hD hk β hβD)
     (by simp) (p := ((0 : ℝ), x)) hβ0
   rw [hφx] at key
   rw [key]
@@ -350,6 +378,16 @@ def annihilatorSymplecticForm (hD : IsContMDiffDistribution I ∞ k D) (hk : k +
   SmoothForm.mpullback Subtype.val contMDiff_subtype_val
     (mextDerivₗ (I.prod 𝓘(ℝ, Fin 1 → ℝ)) 1 (annihilatorLiouvilleForm hD hk))
 
+/-- The symplectic form of the symplectization `L* ∖ 0` is the restriction of `dθ` to `L* ∖ 0`. -/
+theorem annihilatorSymplecticForm_eq_mpullback (hD : IsContMDiffDistribution I ∞ k D)
+    (hk : k + 1 = finrank ℝ E) :
+    letI := annihilatorFiberBundle hD (m := ∞) (by simp) hk
+    letI := annihilatorVectorBundle hD (m := ∞) (by simp) hk
+    letI := annihilatorContMDiffVectorBundle hD (m := ∞) (by simp) hk
+    annihilatorSymplecticForm hD hk = SmoothForm.mpullback Subtype.val contMDiff_subtype_val
+      (mextDerivₗ (I.prod 𝓘(ℝ, Fin 1 → ℝ)) 1 (annihilatorLiouvilleForm hD hk)) :=
+  (rfl)
+
 /-- **The symplectization of a contact structure.** On a Hausdorff manifold, a smooth hyperplane
 field `D` is a contact structure exactly when its symplectization `L* ∖ 0`, with the exterior
 derivative `dθ` of the tautological one-form, is a symplectic manifold. -/
@@ -362,11 +400,14 @@ theorem isSymplectic_annihilatorSymplecticForm_iff [FiniteDimensional ℝ E] [T2
   let := annihilatorFiberBundle hD (m := ∞) (by simp) hk
   let := annihilatorVectorBundle hD (m := ∞) (by simp) hk
   let := annihilatorContMDiffVectorBundle hD (m := ∞) (by simp) hk
-  rw [isContactDistribution_iff_forall_nondegenerate hD hk]
+  rw [isContactDistribution_iff_forall_nondegenerate hD hk,
+    annihilatorSymplecticForm_eq_mpullback hD hk]
   refine ⟨fun h z hz ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
-  · exact SmoothTwoForm.isNondegenerate_mpullback_subtype_val_iff.1 h.isNondegenerate z hz
-  · rw [annihilatorSymplecticForm, ← SmoothForm.mextDerivₗ_mpullback]
+  · exact SmoothTwoForm.isNondegenerate_mpullback_subtype_val_iff.1 h.isNondegenerate z
+      ((mem_annihilatorSymplectization hD hk).2 hz)
+  · rw [← SmoothForm.mextDerivₗ_mpullback]
     exact SmoothForm.isClosed_mextDerivₗ _
-  · exact SmoothTwoForm.isNondegenerate_mpullback_subtype_val_iff.2 fun z hz ↦ h z hz
+  · exact SmoothTwoForm.isNondegenerate_mpullback_subtype_val_iff.2 fun z hz ↦
+      h z ((mem_annihilatorSymplectization hD hk).1 hz)
 
 end TauCeti.CotangentBundle

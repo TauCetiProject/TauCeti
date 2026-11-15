@@ -43,8 +43,8 @@ theorem nondegenerate_bilinFormAt_mpullback_subtype_val_iff {U : Opens M} (x : U
       LinearMap.BilinForm.congr e.symm (σ.bilinFormAt (x : M)) := by
     refine LinearMap.ext₂ fun v w ↦ ?_
     simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-      Manifold.mfderiv_subtype_val, LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm]
-    rfl
+      Manifold.mfderiv_subtype_val, LinearMap.BilinForm.congr_apply, LinearEquiv.symm_symm,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, e]
   rw [h, LinearMap.BilinForm.nondegenerate_congr_iff]
 
 /-- The restriction of a two-form to an open submanifold `U` is nondegenerate exactly when the
@@ -58,16 +58,8 @@ theorem isNondegenerate_mpullback_subtype_val_iff {U : Opens M} :
 
 /-- A nondegenerate two-form restricts to a nondegenerate form on every open submanifold. -/
 theorem IsNondegenerate.mpullback_subtype_val (hσ : σ.IsNondegenerate) (U : Opens M) :
-    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) := by
-  rw [isNondegenerate_iff_separatingLeft]
-  intro x v hv
-  apply (Manifold.tangentSpaceOpenEquiv (I := I) x).injective
-  rw [map_zero]
-  apply isNondegenerate_iff_separatingLeft.mp hσ (x : M)
-  intro w
-  simpa only [SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
-    hv ((Manifold.tangentSpaceOpenEquiv (I := I) x).symm w)
+    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) :=
+  isNondegenerate_mpullback_subtype_val_iff.2 fun x _ ↦ (isNondegenerate_def.1 hσ) x
 
 /-- Inclusion of an open submanifold transports its tangent-space symplectic form to the
 ambient tangent-space form. -/

@@ -94,9 +94,8 @@ def annihilatorSpace (x : M) : Submodule 𝕜 (TangentSpace I x →L[𝕜] 𝕜)
 /-- A covector at `x` lies in the annihilator of `D` exactly when it vanishes on `D x`. -/
 @[simp]
 theorem mem_annihilatorSpace_iff {x : M} {c : TangentSpace I x →L[𝕜] 𝕜} :
-    c ∈ annihilatorSpace D x ↔ ∀ v ∈ D x, c v = 0 := by
-  rw [annihilatorSpace, ← SetLike.mem_coe, StrongDual.polarSubmodule_eq_setOfPred]
-  rfl
+    c ∈ annihilatorSpace D x ↔ ∀ v ∈ D x, c v = 0 :=
+  StrongDual.mem_polarSubmodule _ _ _
 
 /-- A covector at `x` lies in the annihilator of `D` exactly when its kernel contains `D x`. -/
 theorem mem_annihilatorSpace_iff_le_ker {x : M} {c : TangentSpace I x →L[𝕜] 𝕜} :
@@ -110,22 +109,12 @@ theorem annihilatorSpace_eq_span_singleton {x : M} {a : TangentSpace I x →L[�
     annihilatorSpace D x = Submodule.span 𝕜 {a} := by
   refine le_antisymm (fun c hc ↦ ?_) ((Submodule.span_singleton_le_iff_mem _ _).2 ?_)
   · rw [mem_annihilatorSpace_iff_le_ker, ← ha] at hc
-    by_cases ha0 : a = 0
-    · subst ha0
-      have hc0 : c = 0 := ContinuousLinearMap.ext fun v ↦ hc (by simp)
-      simp [hc0]
-    · -- A covector vanishing on `ker a` is the multiple `(c u / a u) • a`, for any `a u ≠ 0`.
-      obtain ⟨u, hu⟩ : ∃ u, a u ≠ 0 := by
-        by_contra! h
-        exact ha0 (ContinuousLinearMap.ext h)
-      refine Submodule.mem_span_singleton.2 ⟨c u / a u, ContinuousLinearMap.ext fun v ↦ ?_⟩
-      have hv : v - (a v / a u) • u ∈ LinearMap.ker a.toLinearMap := by
-        simp [map_sub, map_smul, div_mul_cancel₀ _ hu]
-      have hcv := hc hv
-      simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, map_smul,
-        smul_eq_mul, sub_eq_zero] at hcv
-      rw [smul_apply, smul_eq_mul, hcv]
-      field_simp
+    -- A functional vanishing on `ker a` lies in the span of `a`.
+    have h := mem_span_of_iInf_ker_le_ker (L := fun _ : Unit ↦ a.toLinearMap)
+      (K := c.toLinearMap) (by simpa only [iInf_const] using hc)
+    rw [Set.range_const, Submodule.mem_span_singleton] at h
+    obtain ⟨s, hs⟩ := h
+    exact Submodule.mem_span_singleton.2 ⟨s, ContinuousLinearMap.coe_injective (by simpa using hs)⟩
   · rw [mem_annihilatorSpace_iff_le_ker, ha]
 
 /-! ### Canonical inclusion into the cotangent bundle -/

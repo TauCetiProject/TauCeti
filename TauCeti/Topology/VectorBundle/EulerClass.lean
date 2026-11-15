@@ -50,7 +50,6 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 ## Main definitions
 
-* `TauCeti.zeroSectionCompl`: the nonzero vectors `E₀` of a bundle.
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
 * `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
   base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
@@ -253,7 +252,7 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F] (E :
 def fiberThomPairMap (b : B) :
     TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ⟶ thomPair F E :=
   TopPair.ofSubsetMap (TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F E b⟩)
-    fun _ hx ↦ hx
+    fun _ hx ↦ mem_zeroSectionCompl.2 hx
 
 @[simp]
 theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
@@ -429,7 +428,7 @@ local instance pullbackFiberZero (b' : B') : Zero (((⇑f) *ᵖ E) b') :=
 /-- The map `(f*E, (f*E)₀) ⟶ (E, E₀)` of Thom pairs covering a continuous map `f : B' → B`. -/
 def pullbackThomPairMap : thomPair F ((⇑f) *ᵖ E) ⟶ thomPair F E :=
   TopPair.ofSubsetMap (TopCat.ofHom ⟨Pullback.lift f, Pullback.continuous_lift F E f⟩)
-    fun _ hv ↦ hv
+    fun _ hv ↦ mem_zeroSectionCompl.2 (mem_zeroSectionCompl.1 hv :)
 
 @[simp]
 theorem pullbackThomPairMap_fst_apply (v : TotalSpace F ((⇑f) *ᵖ E)) :
@@ -491,8 +490,8 @@ theorem negTotalSpace_apply (v : TotalSpace F E) :
 
 /-- Fibrewise negation `v ↦ -v`, as a self-map of the Thom pair `(E, E₀)`. -/
 def negThomPairMap : thomPair F E ⟶ thomPair F E :=
-  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun v (hv : v.2 ≠ 0) ↦
-    (smul_ne_zero (neg_ne_zero.2 one_ne_zero) hv : ((-1 : ℝ) • v.2) ≠ 0)
+  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun v hv ↦ mem_zeroSectionCompl.2
+    (smul_ne_zero (neg_ne_zero.2 one_ne_zero) (mem_zeroSectionCompl.1 hv) : ((-1 : ℝ) • v.2) ≠ 0)
 
 @[simp]
 theorem negThomPairMap_fst_apply (v : TotalSpace F E) :

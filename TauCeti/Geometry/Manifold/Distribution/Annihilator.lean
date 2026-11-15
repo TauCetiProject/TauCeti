@@ -261,6 +261,31 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {k : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
 
+/-- **A local annihilating one-form extends to a global one.** On a Hausdorff manifold, a one-form
+that is `C^∞` on an open neighbourhood `U` of `x` and annihilates `D` on `U` agrees near `x` with a
+smooth one-form that annihilates `D` at every point. -/
+theorem exists_isSmoothForm_eventually_eq_of_contMDiffOn [T2Space M] [IsManifold I ∞ M]
+    {U : Set M} (hU : IsOpen U) {x : M} (hxU : x ∈ U) {α : RoughForm I M ℝ 1}
+    (hα : ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) ∞
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U)
+    (hαD : ∀ y ∈ U, D y ≤ α.ker y) :
+    ∃ β : RoughForm I M ℝ 1, IsSmoothForm I ∞ β ∧ (∀ y, D y ≤ β.ker y) ∧
+      ∀ᶠ y in 𝓝 x, β y = α y := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  obtain ⟨ρ, -, hρU⟩ :=
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp (hU.mem_nhds hxU)
+  refine ⟨fun y ↦ ρ y • α y, ?_, fun y v hv ↦ ?_, ?_⟩
+  · rw [isSmoothForm_def]
+    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρU hα
+  · -- Outside `U` the bump function vanishes; inside `U` the form `α` annihilates `D`.
+    rw [RoughForm.mem_ker]
+    by_cases hy : y ∈ U
+    · simp [RoughForm.mem_ker.mp (hαD y hy hv)]
+    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρU h)]
+  · -- Near `x` the bump function is one.
+    filter_upwards [ρ.eventuallyEq_one] with y hy
+    simp [hy]
+
 /-- **A vector outside a distribution is detected by a global annihilating one-form.** On a
 Hausdorff manifold, for a tangent vector `u` outside a smooth distribution `D`, some smooth
 one-form annihilates `D` at every point and does not vanish on `u`. -/
@@ -269,17 +294,9 @@ theorem IsContMDiffDistribution.exists_isSmoothForm_apply_ne_zero [T2Space M] [I
     ∃ α : RoughForm I M ℝ 1, IsSmoothForm I ∞ α ∧ α x ![u] ≠ 0 ∧ ∀ y, D y ≤ α.ker y := by
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   obtain ⟨U, hU, hxU, α, hα, hαu, hαD⟩ := hD.exists_roughForm_apply_ne_zero hu
-  obtain ⟨ρ, -, hρU⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp (hU.mem_nhds hxU)
-  refine ⟨fun y ↦ ρ y • α y, ?_, by simpa [ρ.eventuallyEq_one.eq_of_nhds] using hαu,
-    fun y v hv ↦ ?_⟩
-  · rw [isSmoothForm_def]
-    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρU hα
-  · -- Outside `U` the bump function vanishes; inside `U` the form `α` annihilates `D`.
-    rw [RoughForm.mem_ker]
-    by_cases hy : y ∈ U
-    · simp [RoughForm.mem_ker.mp ((hαD y hy).2 hv)]
-    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρU h)]
+  obtain ⟨β, hβ, hβD, hβα⟩ :=
+    exists_isSmoothForm_eventually_eq_of_contMDiffOn hU hxU hα fun y hy ↦ (hαD y hy).2
+  exact ⟨β, hβ, by rwa [hβα.self_of_nhds], hβD⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **A hyperplane field is defined near a point by a global annihilating one-form.** On a
@@ -293,23 +310,14 @@ theorem IsContMDiffDistribution.exists_isSmoothForm_ker_eq [T2Space M] [IsManifo
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
   obtain ⟨U, hU, hxU, α, hα, hαD⟩ := hD.exists_roughForm_ker_eq hk x
-  obtain ⟨ρ, -, hρU⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp (hU.mem_nhds hxU)
-  refine ⟨fun y ↦ ρ y • α y, ?_, fun y v hv ↦ ?_, ?_⟩
-  · rw [isSmoothForm_def]
-    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport hU hρU hα
-  · -- Outside `U` the bump function vanishes; inside `U` the kernel of `α` is `D`.
-    rw [RoughForm.mem_ker]
-    by_cases hy : y ∈ U
-    · rw [← (hαD y hy).2, RoughForm.mem_ker] at hv
-      simp [hv]
-    · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hy (hρU h)]
-  · -- Near `x` the bump function is one, so the form is `α`.
-    filter_upwards [ρ.eventuallyEq_one, hU.mem_nhds hxU] with y hy1 hyU
-    have hyα : ρ y • α y = α y := by simp [hy1]
-    refine ⟨by simpa [hy1] using (hαD y hyU).1, ?_⟩
-    ext v
-    rw [RoughForm.mem_ker, hyα, ← RoughForm.mem_ker, (hαD y hyU).2]
+  obtain ⟨β, hβ, hβD, hβα⟩ :=
+    exists_isSmoothForm_eventually_eq_of_contMDiffOn hU hxU hα fun y hy ↦ (hαD y hy).2.ge
+  refine ⟨β, hβ, hβD, ?_⟩
+  -- Near `x` the form `β` is `α`.
+  filter_upwards [hβα, hU.mem_nhds hxU] with y hyβ hyU
+  refine ⟨by rw [hyβ]; exact (hαD y hyU).1, ?_⟩
+  ext v
+  rw [RoughForm.mem_ker, hyβ, ← RoughForm.mem_ker, (hαD y hyU).2]
 
 section Local
 

@@ -63,7 +63,7 @@ variable {B : Type*} (F : Type*) (E : B → Type*) [∀ b, Zero (E b)]
 
 /-- The complement `E₀` of the zero section in the total space of a bundle: its nonzero
 vectors. -/
-@[expose] def zeroSectionCompl : Set (TotalSpace F E) :=
+def zeroSectionCompl : Set (TotalSpace F E) :=
   {v | v.2 ≠ 0}
 
 variable {F E} in
