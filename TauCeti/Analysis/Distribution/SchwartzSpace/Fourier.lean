@@ -66,8 +66,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   support of the Fourier transform.
 * `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
   translation multiplies the Fourier transform by a phase and keeps its support.
-* `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_neg_apply`: reflection commutes with the
-  Fourier transform, `𝓕 (u (-·)) ξ = 𝓕 u (-ξ)`.
+* `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
+  equivalence commutes with the Fourier transform, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -315,11 +315,14 @@ theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
   rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
     TauCeti.support_fourier_comp_sub_const]
 
-/-- The Fourier transform commutes with reflection: `𝓕 (u (-·)) ξ = 𝓕 u (-ξ)`. -/
-theorem fourier_compCLMOfContinuousLinearEquiv_neg_apply (u : 𝓢(E, F)) (ξ : E) :
-    𝓕 (compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) u) ξ = 𝓕 u (-ξ) := by
+/-- The Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`. -/
+theorem fourier_compCLMOfContinuousLinearEquiv_apply {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) (ξ : D) :
+    𝓕 (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) ξ = 𝓕 u (A ξ) := by
   rw [fourier_coe, fourier_coe, compCLMOfContinuousLinearEquiv_apply]
-  exact Real.fourier_comp_linearIsometry (LinearIsometryEquiv.neg ℝ) u ξ
+  exact Real.fourier_comp_linearIsometry A u ξ
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

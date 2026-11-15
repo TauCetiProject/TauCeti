@@ -36,8 +36,8 @@ equals `1` near the origin, `c` differs from `b` by a smoothing symbol: the part
 removed, `(1 - χ(x - y)) K_b(x, y)`, vanishes near the diagonal, where all the singularity of
 `K_b` lies.
 
-So every pseudodifferential operator is a properly supported one, with kernel supported in any
-prescribed neighbourhood of the diagonal, up to an operator with a smoothing symbol
+So every pseudodifferential operator is a properly supported one, with kernel supported within
+any prescribed distance `ε > 0` of the diagonal, up to an operator with a smoothing symbol
 (`TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`). Properly supported
 operators preserve compact supports, so they can be composed when the symbols have no compact
 spatial support, and they are the pieces that are patched together on manifolds.
@@ -466,10 +466,12 @@ theorem quantizeSchwartzValue_kernelCutoff (b : Symbol n V W m) (u : 𝓢(Coordi
       (volume.prod volume) := integrable_cutoffQuantizeIntegrand χ b u x
   -- The Schwartz function `y ↦ χ(x - y)` and its Fourier transform `𝐞(-⟪x, t⟫) 𝓕χ(-t)`.
   set ρ : 𝓢(CoordinateSpace n, ℂ) := SchwartzMap.compSubConstCLM ℂ x
-    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) χ) with hρ
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+      (LinearIsometryEquiv.neg ℝ).toContinuousLinearEquiv χ) with hρ
   have hfρ (t : CoordinateSpace n) : 𝓕 ρ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
     rw [hρ, SchwartzMap.fourier_compSubConstCLM_apply,
-      SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_neg_apply, Circle.smul_def, smul_eq_mul]
+      SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply, LinearIsometryEquiv.coe_neg,
+      Circle.smul_def, smul_eq_mul]
   -- Insert the convolution formula for `𝓕(χ(x - ·) u)` and change variables to `η = ζ - t`.
   have hR : quantizeSchwartzValue b.coefficient
       (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) x = ∫ ζ, ∫ η, H ζ η := by
