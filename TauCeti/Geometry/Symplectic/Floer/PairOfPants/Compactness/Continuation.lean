@@ -69,76 +69,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {G H : Puncture → ℝ → V → ℝ}
 
-/-- The energy of a Floer pair of pants with continuation necks over an open part `Ω` of `S` is
-integrable and at most `A + ∑ q, (B_q + Δ_q)` when its action difference is at most `A`. -/
-private theorem integrableOn_and_setIntegral_floerEnergyDensity_pairOfPantsContinuation_le
-    (ω : SymplecticForm V)
-    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
-    (hGs : ∀ q, ContDiff ℝ 3 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 3 (uncurry (H q)))
-    {B Δ : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
-    (hΔ : ∀ q t x, |H q t x - G q t x| ≤ Δ q) (L : Puncture → ℝ)
-    {J : ℝ × ℝ → AlmostComplexStructure V}
-    (hJt : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z)) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 3 u thricePuncturedSphereReal)
-    (hfl : ∀ z ∈ thricePuncturedSphereReal,
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv
-          (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I)
-          u z : ℝ × ℝ →ₗ[ℝ] V))
-    {a : Puncture → ℝ} (ha : ∀ q, Tendsto (fun σ ↦ ω.hamiltonianAction (H q)
-      (fun t ↦ u (endChart q (q.endSign * σ, t)))) atTop (𝓝 (a q)))
-    {A : ℝ} (hA : a .zero + a .one - a .inf ≤ A) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
-    (hΩS : Ω ⊆ thricePuncturedSphereReal) :
-    IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u) Ω ∧
-      ∫ z in Ω, ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u z ≤
-        A + ∑ q, (B q + Δ q) := by
-  set S := thricePuncturedSphereReal
-  have hΩm : MeasurableSet Ω := hΩ.measurableSet
-  have hK' (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦
-      pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x v) (S ×ˢ univ) := by
-    rintro ⟨z, x⟩ ⟨hz, -⟩
-    exact (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
-      (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) L hz x
-      v).contDiffWithinAt
-  have hf0 {z : ℝ × ℝ} (hz : z ∈ S) : 0 ≤ ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u z :=
-    ω.floerEnergyDensity_nonneg (hJt z hz) (hfl z hz)
-  -- The action bound `a_∞ ≤ a_0 + a_1 + ∑ q, (B_q + Δ_q)` makes the energy bound nonnegative.
-  have hE0 : 0 ≤ A + ∑ q, (B q + Δ q) := by
-    have h := le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPerturbation ω
-      hG hH (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB
-      hΔ (hu.of_le (by norm_num)) hJt hfl fun q ↦ by simpa only [endChart_mk] using ha q
-    linarith
-  -- The energy over `Ω` is at most the energy over `S`, hence at most `A + ∑ q, (B_q + Δ_q)`.
-  have hlin : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u z) ≤
-      ENNReal.ofReal (A + ∑ q, (B q + Δ q)) := by
-    refine (setLIntegral_le_lintegral _ _).trans <|
-      (lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le ω hG hH
-        (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
-        L (hu.of_le (by norm_num)) hJt hfl ha).trans (ENNReal.ofReal_le_ofReal ?_)
-    simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
-      Puncture.endSign_inf]
-    linarith
-  have hint : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
-      (hu.of_le (by norm_num)) (hK' 1) (hK' I)).mono hΩS).aestronglyMeasurable hΩm,
-      (hasFiniteIntegral_iff_ofReal (ae_restrict_of_forall_mem hΩm fun z hz ↦ hf0 (hΩS hz))).2
-        (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hΩm fun z hz ↦ hf0 (hΩS hz))
-    hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
-
 /-- **Floer pairs of pants with continuation necks converge off finitely many bubbling points.**
 Let `K_L` be the pair-of-pants perturbation with continuation necks at the positions `L` from
 period-one `C³` inner Hamiltonians `G_q` to outer Hamiltonians `H_q`, with `|G_q|, |H_q| ≤ B_q` and
@@ -194,9 +124,7 @@ theorem
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   set S := thricePuncturedSphereReal
-  have hS : IsOpen (S ×ˢ (univ : Set V)) := isOpen_thricePuncturedSphereReal.prod isOpen_univ
-  -- The perturbation is jointly smooth in the neck positions and the domain and target points,
-  -- at the points of `S`.
+  -- The perturbation is jointly smooth in the neck positions and the points of `S × V`.
   have hKfam (v : ℂ) : ContDiffOn ℝ 3 (fun p : EuclideanSpace ℝ Puncture × ((ℝ × ℝ) × V) ↦
       pairOfPantsContinuationPerturbation G H p.1 (equivRealProdCLM.symm p.2.1) p.2.2 v)
       (univ ×ˢ (S ×ˢ univ)) := by
@@ -205,7 +133,8 @@ theorem
       (contDiffAt_pairOfPantsContinuationPerturbation_family_apply hG hH hGs hHs (⇑L) hz x v)
       (f := fun p : EuclideanSpace ℝ Puncture × ((ℝ × ℝ) × V) ↦ (⇑p.1, p.2))
       ((PiLp.contDiff_ofLp.comp contDiff_fst).prodMk contDiff_snd).contDiffAt).contDiffWithinAt
-  have hW' : IsOpen (W ∩ univ ×ˢ (S ×ˢ univ)) := hW.inter (isOpen_univ.prod hS)
+  have hW' : IsOpen (W ∩ univ ×ˢ (S ×ˢ univ)) :=
+    hW.inter (isOpen_univ.prod (isOpen_thricePuncturedSphereReal.prod isOpen_univ))
   have hCDKW' : C ×ˢ (D ×ˢ K) ⊆ W ∩ univ ×ˢ (S ×ˢ univ) := fun p hp ↦
     ⟨hCDKW hp, trivial, hDS hp.2.1, trivial⟩
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
@@ -216,10 +145,33 @@ theorem
     hW' ((hKfam 1).mono inter_subset_right) ((hKfam I).mono inter_subset_right)
     (hJ.mono inter_subset_left) hC hD hK hCDKW' fun L hL z hz x _ ↦ hJt L hL z (hDS hz) x
   refine ⟨δ, hδ, fun Ω L u a A hΩ hΩD hLC hu hfl ha hA huK ↦ ?_⟩
-  have hE (k : ℕ) := integrableOn_and_setIntegral_floerEnergyDensity_pairOfPantsContinuation_le ω
-    hG hH hGs hHs hGB hHB hΔ (L k) (fun z hz ↦ hJt _ (hLC k) z hz _) (hu k) (hfl k) (ha k) (hA k)
-    hΩ (hΩD.trans hDS)
-  exact hconv hΩ hΩD hLC (fun k ↦ (hu k).mono (hΩD.trans hDS))
-    (fun k z hz ↦ hfl k z (hΩD.trans hDS hz)) huK (fun k ↦ (hE k).1) fun k ↦ (hE k).2
+  have hΩS : Ω ⊆ S := hΩD.trans hDS
+  have hK' (k : ℕ) (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦
+      pairOfPantsContinuationPerturbation G H (L k) (equivRealProdCLM.symm z) x v)
+      (S ×ˢ univ) := by
+    rintro ⟨z, x⟩ ⟨hz, -⟩
+    exact (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH
+      (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) (L k) hz x
+      v).contDiffWithinAt
+  have hJt' (k : ℕ) : ∀ z ∈ S, ω.Tames (J (L k) z (u k z)) := fun z hz ↦ hJt _ (hLC k) z hz _
+  -- The action bound `a_∞ ≤ a_0 + a_1 + ∑ q, (B_q + Δ_q)` makes the energy bound nonnegative.
+  have hE0 : 0 ≤ A + ∑ q, (B q + Δ q) := by
+    linarith [hA 0, le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPerturbation
+      ω hG hH (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB
+      hΔ ((hu 0).of_le (by norm_num)) (hJt' 0) (hfl 0)
+      fun q ↦ by simpa only [endChart_mk] using ha 0 q]
+  -- Every solution has energy over `S` at most `A + ∑ q, (B_q + Δ_q)`.
+  have hE (k : ℕ) := ω.integrableOn_and_setIntegral_floerEnergyDensity_le
+    isOpen_thricePuncturedSphereReal ((hu k).of_le (by norm_num)) (hK' k 1) (hK' k I) (hJt' k)
+    (hfl k) hE0 ((setLIntegral_le_lintegral _ _).trans <|
+      (lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le ω hG hH
+        (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
+        (L k) ((hu k).of_le (by norm_num)) (hJt' k) (hfl k) (ha k)).trans
+      (ENNReal.ofReal_le_ofReal (by
+        simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
+          Puncture.endSign_inf]
+        linarith [hA k]))) hΩ.measurableSet hΩS
+  exact hconv hΩ hΩD hLC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
+    (fun k ↦ (hE k).1) fun k ↦ (hE k).2
 
 end TauCeti.SymplecticForm

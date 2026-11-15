@@ -267,18 +267,9 @@ theorem contMDiffAt_pairOfPantsContinuationPerturbation_family {n : ℕ∞}
   have hHq := (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x).comp (L, (w : ℂ), x)
     (contMDiffAt_snd (I := 𝓘(ℝ, Puncture → ℝ)))
   -- The neck cutoff `β(σ_q - L q)` is smooth in the domain point and the neck position.
-  have hre : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ) n
-      (fun p : (Puncture → ℝ) × ℂ × M => q.endSign * (q.endCoord p.2.1).re) (L, (w : ℂ), x) :=
-    ContMDiffAt.comp (g := fun w : ℂ => q.endSign * (q.endCoord w).re) (L, (w : ℂ), x)
-      (contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).contMDiffAt hf
-  have hL : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ) n
-      (fun p : (Puncture → ℝ) × ℂ × M => p.1 q) (L, (w : ℂ), x) :=
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Puncture => ℝ) q).contDiff.contMDiff
-      |>.contMDiffAt.comp (L, (w : ℂ), x) contMDiffAt_fst
-  have hσ : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ) n
-      (fun p : (Puncture → ℝ) × ℂ × M =>
-        smoothTransition (q.endSign * (q.endCoord p.2.1).re - p.1 q)) (L, (w : ℂ), x) :=
-    smoothTransition.contDiff.contMDiff.contMDiffAt.comp (L, (w : ℂ), x) (hre.sub hL)
+  have hσ := contMDiffAt_smoothTransition_endCoord_comp_sub q hf
+    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Puncture => ℝ) q).contDiff.contMDiff
+      |>.contMDiffAt.comp (L, (w : ℂ), x) contMDiffAt_fst) hw
   exact ((contMDiffAt_smoothTransition_endCoord_comp q 1 hf hw).smul (hGq.add
     (hσ.smul (hHq.sub hGq)))).smul hA
 
