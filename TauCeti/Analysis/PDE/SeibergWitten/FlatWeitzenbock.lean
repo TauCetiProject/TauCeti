@@ -39,8 +39,10 @@ the imaginary curvature `F_a = -iF`, the last term is the Clifford action of `F_
 vanishes on flat space.
 
 The proof is the classical one. The Clifford relations `c(eⱼ) c(eₖ) + c(eₖ) c(eⱼ) = -2 δⱼₖ` split
-`D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ` into the trace `-∑ₖ ∇²_{eₖ, eₖ} ψ` and the
-antisymmetric part `½ ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ`
+`D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ`
+(`TauCeti.SeibergWitten.twistedDirac_twistedDirac_eq_sum_sum`) into the trace
+`-∑ₖ ∇²_{eₖ, eₖ} ψ` and the antisymmetric part
+`½ ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ`
 (`TauCeti.sum_sum_apply_apply_eq_of_clifford_relation`). The Ricci identity
 `∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`
 (`TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`) and the expansion
@@ -79,6 +81,8 @@ does not contain.
 * `TauCeti.SeibergWitten.twistedDirac_eq_sum`: `D_b ψ` may be computed in any orthonormal basis.
 * `TauCeti.SeibergWitten.twistedDirac_add`, `TauCeti.SeibergWitten.twistedDirac_const_smul`:
   `D_b` is complex-linear on differentiable spinor fields.
+* `TauCeti.SeibergWitten.twistedDirac_twistedDirac_eq_sum_sum`: the expansion
+  `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ`.
 * `TauCeti.SeibergWitten.twistedDirac_twistedDirac`: the Weitzenböck formula
   `D_b D_b ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ - i c₂(F) ψ`.
 * `TauCeti.SeibergWitten.cliffordRestriction_apply_of_add_hodgeStar_eq`: the action of the
@@ -169,7 +173,53 @@ theorem twistedDirac_eq_zero_of_eventuallyEq_zero (hψ : ψ =ᶠ[𝓝 x] 0) :
 
 /-! ### The Weitzenböck formula -/
 
+/-- The antisymmetric part of the second covariant derivative contracted with Clifford
+multiplication is the curvature term: by the Ricci identity,
+`∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ = -2i c₂(F) ψ`. -/
+private theorem sum_sum_ι_apply_ι_apply_covariantDeriv_covariantDeriv_sub
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : OrthonormalBasis κ ℝ V) (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) {F : ⋀[ℝ]^2 V}
+    (hF : ∀ u w, ⟪F, exteriorPower.ιMulti ℝ 2 ![u, w]⟫ = -extDeriv b x ![u, w]) :
+    ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k))
+        (covariantDeriv b (covariantDeriv b ψ) x (e j) (e k) -
+          covariantDeriv b (covariantDeriv b ψ) x (e k) (e j))) =
+      (-(2 : ℂ) * I) • ρ (bivectorExterior Q F) (ψ x) := by
+  have hX (j k : κ) :
+      covariantDeriv b (covariantDeriv b ψ) x (e j) (e k) -
+          covariantDeriv b (covariantDeriv b ψ) x (e k) (e j) =
+        (-⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫) • I • ψ x := by
+    rw [covariantDeriv_covariantDeriv_sub hψ hb, hF, neg_neg]
+  have h := congrArg (fun T : CliffordAlgebra Q ↦ ρ T (ψ x)) (e.sum_sum_inner_smul_ι_mul_ι hQ F)
+  simp only [map_sum, map_smul, map_mul, LinearMap.sum_apply, LinearMap.smul_apply,
+    mul_apply_eq_comp] at h
+  calc _ = (-I) • ∑ j, ∑ k, ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ •
+          ρ (ι Q (e j)) (ρ (ι Q (e k)) (ψ x)) := by
+        simp only [hX, map_neg, map_smul, LinearMap.map_smul_of_tower, Finset.smul_sum,
+          neg_smul, smul_comm I (⟪F, _⟫ : ℝ)]
+    _ = (-(2 : ℂ) * I) • ρ (bivectorExterior Q F) (ψ x) := by
+        rw [h, RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
+        congr 1
+        push_cast
+        ring
+
 variable [FiniteDimensional ℂ W]
+
+/-- The square of the twisted Dirac operator in an orthonormal basis `e`: if `∇ψ` is
+differentiable at `x`, then `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ` at `x`. -/
+theorem twistedDirac_twistedDirac_eq_sum_sum (e : OrthonormalBasis κ ℝ V)
+    (hcov : DifferentiableAt ℝ (covariantDeriv b ψ) x) :
+    twistedDirac ρ b (twistedDirac ρ b ψ) x =
+      ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k))
+        (covariantDeriv b (covariantDeriv b ψ) x (e j) (e k))) := by
+  have hcovk (k : κ) : DifferentiableAt ℝ (fun y ↦ covariantDeriv b ψ y (e k)) x :=
+    hcov.clm_apply (differentiableAt_const _)
+  rw [twistedDirac_eq_sum ρ e, funext (twistedDirac_eq_sum ρ e b ψ)]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [covariantDeriv_fun_sum (f := fun k y ↦ ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)))
+    fun k ↦ ((LinearMap.toContinuousLinearMap (ρ (ι Q (e k)))).restrictScalars
+      ℝ).differentiableAt.comp x (hcovk k), sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [covariantDeriv_comp_apply _ (hcovk k), ← covariantDeriv_apply_apply hcov]
 
 /-- **The Weitzenböck formula for the twisted Dirac operator** on a flat space: for a `C²` spinor
 field `ψ`, a connection form `b` differentiable at `x`, and the two-vector `F` of the curvature
@@ -185,53 +235,18 @@ theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : Orthonor
       -∑ k, covariantDeriv b (covariantDeriv b ψ) x (e k) (e k) -
         I • ρ (bivectorExterior Q F) (ψ x) := by
   classical
-  have hψ₁ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
-    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hψ' : DifferentiableAt ℝ ψ x := hψ.differentiableAt two_ne_zero
   have hcov : DifferentiableAt ℝ (covariantDeriv b ψ) x :=
-    differentiableAt_covariantDeriv hψ₁ hψ' hb
-  have hcovk (k : κ) : DifferentiableAt ℝ (fun y ↦ covariantDeriv b ψ y (e k)) x :=
-    hcov.clm_apply (differentiableAt_const _)
-  set X : κ → κ → W := fun j k ↦ covariantDeriv b (covariantDeriv b ψ) x (e j) (e k) with hXdef
-  -- `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ`.
-  have hDD : twistedDirac ρ b (twistedDirac ρ b ψ) x =
-      ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k)) (X j k)) := by
-    have hfun : twistedDirac ρ b ψ =
-        fun y ↦ ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)) := by
-      ext y
-      exact twistedDirac_eq_sum ρ e b ψ y
-    rw [twistedDirac_eq_sum ρ e, hfun]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [covariantDeriv_fun_sum (f := fun k y ↦ ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)))
-      fun k ↦ ((LinearMap.toContinuousLinearMap (ρ (ι Q (e k)))).restrictScalars
-        ℝ).differentiableAt.comp x (hcovk k), sum_apply, map_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [covariantDeriv_comp_apply _ (hcovk k), ← covariantDeriv_apply_apply hcov]
-  -- The antisymmetric part is the curvature term, by the Ricci identity.
-  have hcurv : ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k)) (X j k - X k j)) =
-      (-(2 : ℂ) * I) • ρ (bivectorExterior Q F) (ψ x) := by
-    have hX (j k : κ) :
-        X j k - X k j = (-⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫) • I • ψ x := by
-      rw [hXdef, covariantDeriv_covariantDeriv_sub hψ hb, hF, neg_neg]
-    have h := congrArg (fun T : CliffordAlgebra Q ↦ ρ T (ψ x)) (e.sum_sum_inner_smul_ι_mul_ι hQ F)
-    simp only [map_sum, map_smul, map_mul, LinearMap.sum_apply, LinearMap.smul_apply,
-      mul_apply_eq_comp] at h
-    calc ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k)) (X j k - X k j))
-        = (-I) • ∑ j, ∑ k, ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ •
-            ρ (ι Q (e j)) (ρ (ι Q (e k)) (ψ x)) := by
-          simp only [hX, map_neg, map_smul, LinearMap.map_smul_of_tower, Finset.smul_sum,
-            neg_smul, smul_comm I (⟪F, _⟫ : ℝ)]
-      _ = (-(2 : ℂ) * I) • ρ (bivectorExterior Q F) (ψ x) := by
-          rw [h, RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
-          congr 1
-          push_cast
-          ring
+    differentiableAt_covariantDeriv
+      ((hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)
+      (hψ.differentiableAt two_ne_zero) hb
   have hrel (j k : κ) : ρ (ι Q (e j)) * ρ (ι Q (e k)) + ρ (ι Q (e k)) * ρ (ι Q (e j)) =
       if j = k then -2 else 0 := by
     rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_of_orthonormal hQ e j k]
     split_ifs <;> simp [map_ofNat]
-  rw [hDD, TauCeti.sum_sum_apply_apply_eq_of_clifford_relation _ X hrel, hcurv, smul_smul]
-  rw [sub_eq_add_neg, ← neg_smul]
+  rw [twistedDirac_twistedDirac_eq_sum_sum ρ e hcov,
+    TauCeti.sum_sum_apply_apply_eq_of_clifford_relation _ _ hrel,
+    sum_sum_ι_apply_ι_apply_covariantDeriv_covariantDeriv_sub ρ hQ e hψ hb hF, smul_smul,
+    sub_eq_add_neg, ← neg_smul]
   congr 2
   ring
 
@@ -275,20 +290,13 @@ theorem cliffordRestriction_apply_of_add_hodgeStar_eq (hr : 0 ≤ r)
   have hq : cliffordRestriction o ρ
       (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) (φ + β) =
         (r * ‖φ + β‖ ^ 2 / 2 : ℝ) • (φ + β) := by
-    rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul, map_smul,
-      smul_apply, cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂,
-      RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul]
-    congr 1
-    -- The norm factor of `cliffordRestriction_quadraticTwoForm_apply_self` is cast through
-    -- `algebraMap ℝ ℂ`; rewrite it to `Complex.ofReal` to match the other casts.
-    simp only [Complex.coe_algebraMap]
-    push_cast
-    ring
+    simp only [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul, map_smul, smul_apply,
+      cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂]
+    module
   -- Only the self-dual part of `F` acts on positive spinors.
-  rw [cliffordRestriction_eq_inv_two_smul_add_hodgeStar o ρ hQ hkl, hF, map_sub, map_sub, map_smul,
-    smul_apply, sub_apply, sub_apply, smul_apply, map_add, hω₁, hω₂, hq]
-  simp only [RCLike.real_smul_eq_coe_smul (K := ℂ)]
-  push_cast
+  rw [cliffordRestriction_eq_inv_two_smul_add_hodgeStar o ρ hQ hkl, hF]
+  simp only [map_sub, map_smul, sub_apply, smul_apply, hq, map_add (cliffordRestriction o ρ ω),
+    hω₁, hω₂]
   module
 
 include hQ hkl hρ h₂ hφ hβ in

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Kahler
 import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # Clifford multiplication on the canonical line of an almost Hermitian four-space
@@ -163,8 +164,7 @@ theorem inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v w : V) :
     ⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ = ((⟪v, w⟫ : ℂ) - ⟪v, J w⟫ * Complex.I) * ‖(ψ : W)‖ ^ 2 := by
   have hre (v w : V) : (⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ).re = ⟪v, w⟫ * ‖(ψ : W)‖ ^ 2 := by
-    rw [re_inner_map_ι_apply_map_ι_apply hρ]
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+    rw [re_inner_map_ι_apply_map_ι_apply hρ, QuadraticMap.polar_eq_neg_two_inner hQ]
     ring
   -- The imaginary part is the real part for `J w`, since `c(J w) ψ = i c(w) ψ`.
   have him : (⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ).im = -⟪v, J w⟫ * ‖(ψ : W)‖ ^ 2 := by
