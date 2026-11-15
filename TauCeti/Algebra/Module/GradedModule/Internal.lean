@@ -42,8 +42,11 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `DirectSum.Decomposition`, as graded algebras store it.
 * `InternalGrading.map`: transport an internal grading across a linear equivalence.
 * `InternalGrading.koszulTwist`: the operator scaling degree-`e` elements by `(-1)^(q * e)`.
+* `InternalGrading.quadraticExponent`: the exponent `p choose 2` of the quadratic sign in
+  degree `p`.
 * `InternalGrading.quadraticTwist`: multiplication of degree `p` by
   `(-1)^(p choose 2)`.
+* `InternalGrading.quadraticTwistEquiv`: the quadratic twist as a linear involution.
 * `InternalGrading.twistedTuple`: a tuple with a consecutive block of letters Koszul-twisted.
 
 ## Main results
@@ -64,6 +67,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
   is multiplicative and fixes the unit, so it may be applied factorwise to products.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
+* `TauCeti.InternalGrading.negOnePow_quadraticExponent_add`,
+  `TauCeti.InternalGrading.negOnePow_quadraticExponent_cancel` and
+  `TauCeti.InternalGrading.negOnePow_quadraticExponent_neg_add`: the quadratic signs differ under
+  addition by the Koszul sign.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
@@ -128,6 +135,7 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
     InternalGrading R M ι :=
   ⟨ℳ, DirectSum.Decomposition.isInternal ℳ⟩
 
+/-- The pieces of `ofDecomposition ℳ` are the given submodules `ℳ`. -/
 @[simp]
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
@@ -868,12 +876,15 @@ theorem quadraticTwist_involutive (G : InternalGrading R M ℤ) :
 noncomputable def quadraticTwistEquiv (G : InternalGrading R M ℤ) : M ≃ₗ[R] M :=
   LinearEquiv.ofInvolutive G.quadraticTwist G.quadraticTwist_involutive
 
+/-- The quadratic twist equivalence acts as the quadratic twist. -/
 @[simp]
 theorem quadraticTwistEquiv_apply (G : InternalGrading R M ℤ) (x : M) :
     G.quadraticTwistEquiv x = G.quadraticTwist x := by
   exact congr_fun (LinearEquiv.coe_ofInvolutive G.quadraticTwist
     G.quadraticTwist_involutive) x
 
+/-- The inverse of the quadratic twist equivalence acts as the quadratic twist, since the twist is
+an involution. -/
 @[simp]
 theorem quadraticTwistEquiv_symm_apply (G : InternalGrading R M ℤ) (x : M) :
     G.quadraticTwistEquiv.symm x = G.quadraticTwist x := by

@@ -12,6 +12,8 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
+import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Coordinate overlaps, measurability, precompact chart neighborhoods and transported charts
@@ -66,6 +68,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
+* `ModelWithCorners.tendsto_extChartAt_nhdsNE`, `ModelWithCorners.tendsto_extChartAt_symm_nhdsNE`:
+  punctured neighbourhoods at a point and at its extended chart image map into one another (the
+  inverse direction for a boundaryless model).
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: for a Borel measurable space on the manifold, the image of a
@@ -87,6 +92,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   on a locally compact space.
 * `TauCeti.exists_locallyFinite_compact_extChartAt_cover`: a locally finite compact coordinate
   cover of a locally compact, sigma-compact Hausdorff manifold.
+* `Topology.IsInducing.exists_isOpen_extChartAt_zero_mem`: along an inducing map out of a
+  manifold, an open set cutting the source of the chart at `x₀` down to points whose chart image
+  stays in a given neighbourhood of the chart point.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
   interior accumulating at the chart point.
@@ -226,6 +234,23 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
 
+variable (I) in
+/-- The extended chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
+`extChartAt I x x`. -/
+theorem _root_.ModelWithCorners.tendsto_extChartAt_nhdsNE (x : M) :
+    Filter.Tendsto (extChartAt I x) (𝓝[≠] x) (𝓝[≠] (extChartAt I x x)) :=
+  (I.continuous.continuousAt.tendsto_nhdsNE I.injective).comp (tendsto_chartAt_nhdsNE x)
+
+variable (I) in
+/-- For a boundaryless model, the inverse of the extended chart at `x` maps punctured
+neighbourhoods of `extChartAt I x x` into punctured neighbourhoods of `x`. -/
+theorem _root_.ModelWithCorners.tendsto_extChartAt_symm_nhdsNE [I.Boundaryless] (x : M) :
+    Filter.Tendsto (extChartAt I x).symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] x) := by
+  have hI : Filter.Tendsto I.symm (𝓝[≠] (extChartAt I x x)) (𝓝[≠] (chartAt H x x)) := by
+    have h := (I.toHomeomorph.symm.map_punctured_nhds_eq (I.toHomeomorph (chartAt H x x))).le
+    rwa [Homeomorph.symm_apply_apply, ModelWithCorners.toHomeomorph_apply] at h
+  exact (tendsto_chartAt_symm_nhdsNE x).comp hI
+
 /-- A point `y` of the closure of `s` is read in its preferred extended chart as a point of the
 closure of the chart image of `s`, intersected with the range of the model. -/
 theorem extChartAt_mem_closure_preimage_symm_inter_range {s : Set M} {y : M}
@@ -358,6 +383,25 @@ theorem extChartAt_inclusion_symm_eventuallyEq {U V : TopologicalSpace.Opens M} 
     simpa [extChartAt, TopologicalSpace.Opens.chartAt_eq] using
       I.continuous_symm.tendsto (extChartAt I x x)
   exact (TopologicalSpace.Opens.chartAt_inclusion_symm_eventuallyEq h).comp_tendsto hc
+
+open Set in
+/-- **Shrinking along an embedding.** For an inducing map `ι : M → X` and an open set
+`V ⊆ E × E` containing `(φ x₀, 0)`, with `φ` the extended chart at `x₀`, there is an open
+`O ∋ ι x₀` such that a point `z` with `ι z ∈ O` lies in the source of `φ` with `(φ z, 0) ∈ V`. -/
+theorem _root_.Topology.IsInducing.exists_isOpen_extChartAt_zero_mem {X : Type*}
+    [TopologicalSpace X] {ι : M → X} (hι : Topology.IsInducing ι) {V : Set (E × E)}
+    (hV : IsOpen V) {x₀ : M} (hx₀ : (extChartAt I x₀ x₀, (0 : E)) ∈ V) :
+    ∃ O : Set X, IsOpen O ∧ ι x₀ ∈ O ∧
+      ∀ z, ι z ∈ O → z ∈ (extChartAt I x₀).source ∧ (extChartAt I x₀ z, (0 : E)) ∈ V := by
+  have hS : IsOpen ((extChartAt I x₀).source ∩ (fun z ↦ (extChartAt I x₀ z, (0 : E))) ⁻¹' V) :=
+    ((continuousOn_extChartAt x₀).prodMk continuousOn_const).isOpen_inter_preimage
+      (isOpen_extChartAt_source x₀) hV
+  obtain ⟨O, hO, hOS⟩ := hι.isOpen_iff.mp hS
+  refine ⟨O, hO, ?_, fun z hz ↦ ?_⟩
+  · rw [← mem_preimage, hOS]
+    exact ⟨mem_extChartAt_source x₀, hx₀⟩
+  · rw [← mem_preimage, hOS] at hz
+    exact hz
 
 namespace Manifold
 
