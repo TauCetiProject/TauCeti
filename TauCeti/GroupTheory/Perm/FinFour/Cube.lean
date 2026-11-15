@@ -57,6 +57,9 @@ axis through two opposite face centres a double transposition, a third-turn abou
   permutation of the diagonals is an isomorphism.
 * `TauCeti.cubeBodyDiagonalHom_cubeEdgeHalfTurn` and its three companions: the permutations of the
   diagonals induced by the four named rotations.
+* `TauCeti.prod_cubeRotationGroup_smul`: a rotation multiplies the product of the coordinates of
+  each vertex by the sign of the permutation of the diagonals it induces, so the rotations inducing
+  odd permutations are those exchanging the two tetrahedra inscribed in the cube.
 * `TauCeti.natCard_fixed_cubeVertex_cubeEdgeHalfTurn`,
   `TauCeti.natCard_fixed_cubeEdgeSet_cubeEdgeHalfTurn` and their companions: the numbers of
   vertices and edges fixed by the four named rotations, `0, 0, 2, 0` and `2, 0, 0, 0`.
@@ -404,6 +407,48 @@ theorem cubeRotationEquiv_symm_formPerm_zero_one_two :
 theorem cubeRotationEquiv_symm_formPerm_zero_one_two_three :
     cubeRotationEquiv.symm [0, 1, 2, 3].formPerm = cubeFaceQuarterTurn :=
   cubeRotationEquiv.symm_apply_eq.mpr cubeBodyDiagonalHom_cubeFaceQuarterTurn.symm
+
+/-! ### The two inscribed tetrahedra -/
+
+/-- The endpoints `TauCeti.cubeBodyDiagonal k` are the vertices whose coordinates have product
+`1`; they span one of the two tetrahedra inscribed in the cube, and the antipodal vertices, with
+coordinate product `-1`, span the other. -/
+@[simp]
+theorem prod_cubeBodyDiagonal (k : Fin 4) : ∏ i, cubeBodyDiagonal k i = 1 := by
+  revert k
+  decide
+
+/-- **A rotation preserves the two inscribed tetrahedra exactly when it induces an even
+permutation of the body diagonals**: it multiplies the product of the coordinates of every vertex
+by the sign of that permutation. -/
+theorem prod_cubeRotationGroup_smul (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) :
+    ∏ i, (A • v) i = Perm.sign (cubeBodyDiagonalHom A) * ∏ i, v i := by
+  -- In monomial form a rotation multiplies the coordinate product by the product of its signs,
+  -- the coordinate product of the image of `(1, 1, 1)`.
+  have key (A : cubeRotationGroup) (v : Fin 3 → ℤˣ) :
+      ∏ i, (A • v) i = (∏ i, (A • (1 : Fin 3 → ℤˣ)) i) * ∏ i, v i := by
+    obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.2
+    simp only [cubeRotationGroup_smul_apply_of_monomialEquiv h, Pi.one_apply, mul_one,
+      Finset.prod_mul_distrib, Equiv.prod_comp σ.symm (fun i ↦ v i)]
+  -- That sign product is a homomorphism to `ℤˣ`, nontrivial on the edge half-turn, so it is the
+  -- sign of the induced permutation.
+  let χ : cubeRotationGroup →* ℤˣ :=
+    { toFun A := ∏ i, (A • (1 : Fin 3 → ℤˣ)) i
+      map_one' := by simp
+      map_mul' A B := by
+        simp only [mul_smul]
+        exact key A _ }
+  have hχ : χ.comp cubeRotationEquiv.symm.toMonoidHom = Perm.sign :=
+    Perm.eq_sign_of_surjective_hom fun u ↦ by
+      rcases Int.units_eq_one_or u with rfl | rfl
+      · exact ⟨1, map_one _⟩
+      · refine ⟨swap 0 1, ?_⟩
+        simp only [χ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MonoidHom.coe_mk,
+          OneHom.coe_mk, cubeRotationEquiv_symm_swap_zero_one]
+        decide
+  rw [key, ← cubeRotationEquiv_apply, ← hχ]
+  simp only [χ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
+    MonoidHom.coe_mk, OneHom.coe_mk]
 
 /-! ### Fixed vertices and edges -/
 
