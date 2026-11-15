@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.NumberTheory.LSeries.PrimesInAP
+import TauCeti.Algebra.Ring.Int.Units
 
 /-!
 # Primes with prescribed prime-discriminant characters
@@ -70,36 +71,24 @@ private theorem exists_primeDiscriminantCharFun_neg_four_eight (ε4 ε8 : ℤˣ)
       primeDiscriminantCharFun 8 a = ε8 := by
   obtain ⟨⟨h41, h81, -⟩, ⟨h43, h83, -⟩, ⟨h45, h85, -⟩, ⟨h47, h87, -⟩⟩ :=
     evenPrimeDiscriminantCharFun_table
-  rcases Int.units_eq_one_or ε4 with rfl | rfl <;>
-    rcases Int.units_eq_one_or ε8 with rfl | rfl
-  · exact ⟨1, by simp [h41], by simp [h81]⟩
-  · exact ⟨5, by simp [h45], by simp [h85]⟩
-  · exact ⟨7, by simp [h47], by simp [h87]⟩
-  · exact ⟨3, by simp [h43], by simp [h83]⟩
+  exact Int.exists_apply_eq_and_apply_eq (α := ℕ)
+    ⟨h41, h81⟩ ⟨h45, h85⟩ ⟨h47, h87⟩ ⟨h43, h83⟩ ε4 ε8
 
 private theorem exists_primeDiscriminantCharFun_neg_four_neg_eight (ε4 εm8 : ℤˣ) :
     ∃ a : ℕ, primeDiscriminantCharFun (-4) a = ε4 ∧
       primeDiscriminantCharFun (-8) a = εm8 := by
   obtain ⟨⟨h41, -, hm81⟩, ⟨h43, -, hm83⟩, ⟨h45, -, hm85⟩, ⟨h47, -, hm87⟩⟩ :=
     evenPrimeDiscriminantCharFun_table
-  rcases Int.units_eq_one_or ε4 with rfl | rfl <;>
-    rcases Int.units_eq_one_or εm8 with rfl | rfl
-  · exact ⟨1, by simp [h41], by simp [hm81]⟩
-  · exact ⟨5, by simp [h45], by simp [hm85]⟩
-  · exact ⟨3, by simp [h43], by simp [hm83]⟩
-  · exact ⟨7, by simp [h47], by simp [hm87]⟩
+  exact Int.exists_apply_eq_and_apply_eq (α := ℕ)
+    ⟨h41, hm81⟩ ⟨h45, hm85⟩ ⟨h43, hm83⟩ ⟨h47, hm87⟩ ε4 εm8
 
 private theorem exists_primeDiscriminantCharFun_eight_neg_eight (ε8 εm8 : ℤˣ) :
     ∃ a : ℕ, primeDiscriminantCharFun 8 a = ε8 ∧
       primeDiscriminantCharFun (-8) a = εm8 := by
   obtain ⟨⟨-, h81, hm81⟩, ⟨-, h83, hm83⟩, ⟨-, h85, hm85⟩, ⟨-, h87, hm87⟩⟩ :=
     evenPrimeDiscriminantCharFun_table
-  rcases Int.units_eq_one_or ε8 with rfl | rfl <;>
-    rcases Int.units_eq_one_or εm8 with rfl | rfl
-  · exact ⟨1, by simp [h81], by simp [hm81]⟩
-  · exact ⟨7, by simp [h87], by simp [hm87]⟩
-  · exact ⟨3, by simp [h83], by simp [hm83]⟩
-  · exact ⟨5, by simp [h85], by simp [hm85]⟩
+  exact Int.exists_apply_eq_and_apply_eq (α := ℕ)
+    ⟨h81, hm81⟩ ⟨h87, hm87⟩ ⟨h83, hm83⟩ ⟨h85, hm85⟩ ε8 εm8
 
 /-- The characters of any proper subfamily of the three even prime discriminants can take an
 arbitrary prescribed sign pattern. -/

@@ -57,9 +57,10 @@ theorem of_faithfullyFlat [IsRegularLocalRing S]
       (ringKrullDim_lt_top (R := S))).ne
 
 /-- Regularity descends along a flat local homomorphism, without a hypothesis on the closed
-fibre or a Noetherianity assumption on the source. -/
-theorem of_flat_of_isLocalHom [IsLocalRing R] [IsRegularLocalRing S] [Module.Flat R S]
+fibre or a locality or Noetherianity assumption on the source. -/
+theorem of_flat_of_isLocalHom [IsRegularLocalRing S] [Module.Flat R S]
     [IsLocalHom (algebraMap R S)] : IsRegularLocalRing R := by
+  have := (algebraMap R S).domain_isLocalRing
   have : Module.FaithfullyFlat R S := Module.FaithfullyFlat.of_flat_of_isLocalHom
   exact of_faithfullyFlat (S := S)
 
