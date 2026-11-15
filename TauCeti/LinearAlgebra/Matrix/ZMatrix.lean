@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Group.PosPart
 public import TauCeti.LinearAlgebra.Matrix.QuadraticForm
+import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.Compact
@@ -38,6 +39,8 @@ vector `x = x⁺ - x⁻` pair nonpositively under a Z-matrix `A`: `(x⁺)ᵀ A x
   with a nonzero vector `x` satisfying `xᵀ M x ≤ 0` has a nonzero nonnegative `δ` with `M δ ≤ 0`.
 * `Matrix.exists_nonneg_mulVec_nonpos_of_not_posDef`: the same for a symmetric real Z-matrix that
   is not positive definite.
+* `Matrix.PosSemidef.exists_nonneg_mulVec_eq_zero_of_not_posDef`: if the Z-matrix is moreover
+  positive semidefinite, that vector is a null vector, `M δ = 0`.
 
 ## References
 
@@ -149,5 +152,20 @@ theorem exists_nonneg_mulVec_nonpos_of_not_posDef {M : Matrix n n ℝ} (hM : M.I
   push Not at h
   obtain ⟨x, hx, hxM⟩ := h (isHermitian_iff_isSymm.mpr hM)
   exact exists_nonneg_mulVec_nonpos_of_dotProduct_mulVec_nonpos hM hM0 hx (by simpa using hxM)
+
+/-- **A positive semidefinite Z-matrix that is not positive definite has a nonnegative null
+vector.**
+If a positive semidefinite real matrix `M` with nonpositive off-diagonal entries is not positive
+definite, then some nonzero vector `δ` with nonnegative entries satisfies `M δ = 0`. -/
+theorem PosSemidef.exists_nonneg_mulVec_eq_zero_of_not_posDef {M : Matrix n n ℝ}
+    (hM : M.PosSemidef) (hM0 : ∀ i j, i ≠ j → M i j ≤ 0) (h : ¬ M.PosDef) :
+    ∃ δ : n → ℝ, 0 ≤ δ ∧ δ ≠ 0 ∧ M *ᵥ δ = 0 := by
+  obtain ⟨δ, hδ0, hδ, hMδ⟩ := exists_nonneg_mulVec_nonpos_of_not_posDef
+    (isHermitian_iff_isSymm.mp hM.isHermitian) hM0 h
+  refine ⟨δ, hδ0, hδ, hM.dotProduct_mulVec_zero_iff.mp
+    (le_antisymm ?_ (hM.dotProduct_mulVec_nonneg δ))⟩
+  -- The form at `δ` pairs a nonnegative vector with a nonpositive one.
+  rw [star_trivial]
+  exact sum_nonpos fun i _ ↦ mul_nonpos_of_nonneg_of_nonpos (hδ0 i) (hMδ i)
 
 end Matrix
