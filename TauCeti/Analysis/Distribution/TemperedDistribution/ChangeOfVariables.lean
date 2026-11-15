@@ -9,9 +9,8 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TemperateGrowth
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
-import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
 # Pullback of tempered distributions along a change of variables
@@ -189,20 +188,6 @@ section Lp
 
 variable [CompleteSpace F] {μ} {p : ℝ≥0∞} [hp : Fact (1 ≤ p)]
 
-private theorem addHaar_map_le_smul_of_abs_det_fderiv_symm_le (μ : Measure E) [μ.IsAddHaarMeasure]
-    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    {J : ℝ} (hJ : ∀ y, |(fderiv ℝ φ.symm y).det| ≤ J) :
-    μ.map φ ≤ ENNReal.ofReal J • μ := by
-  refine Measure.le_iff.2 fun t ht ↦ ?_
-  rw [Measure.map_apply hφ.1.continuous.measurable ht, ← Equiv.image_symm_eq_preimage]
-  calc μ (φ.symm '' t)
-      ≤ ∫⁻ y in t, ENNReal.ofReal |(fderiv ℝ φ.symm y).det| ∂μ :=
-        addHaar_image_le_lintegral_abs_det_fderiv μ ht
-          fun y _ ↦ (hψ.1.differentiable (by simp) y).hasFDerivAt.hasFDerivWithinAt
-    _ ≤ ∫⁻ _ in t, ENNReal.ofReal J ∂μ :=
-        setLIntegral_mono' ht fun y _ ↦ ENNReal.ofReal_le_ofReal (hJ y)
-    _ = (ENNReal.ofReal J • μ) t := by simp
-
 /-- Pulling back the tempered distribution of an `Lᵖ` function `u` along `φ` agrees with the
 `Lᵖ` precomposition `Lp.compOfMapLeSmul`, for every additive Haar measure `μ` and every
 `1 ≤ p ≤ ∞`. -/
@@ -225,7 +210,8 @@ theorem _root_.MeasureTheory.Lp.exists_compCLM_toTemperedDistribution_eq_and_nor
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     {J : ℝ} (hJ : ∀ y, |(fderiv ℝ φ.symm y).det| ≤ J) (u : Lp F p μ) :
     ∃ v : Lp F p μ, compCLM F φ hφ hψ (u : 𝓢'(E, F)) = v ∧ ‖v‖ ≤ max 1 J * ‖u‖ := by
-  have hmap := addHaar_map_le_smul_of_abs_det_fderiv_symm_le μ hφ hψ hJ
+  have hmap := map_addHaar_le_smul_of_leftInverse μ hφ.1.continuous.aemeasurable
+    (hψ.1.differentiable (by simp)) φ.left_inv hJ
   refine ⟨Lp.compOfMapLeSmul ℂ hφ.1.continuous.measurable ENNReal.ofReal_ne_top hmap u,
     Lp.compCLM_toTemperedDistribution_eq_compOfMapLeSmul hφ hψ ENNReal.ofReal_ne_top hmap u,
     (Lp.norm_compOfMapLeSmul_le hφ.1.continuous.measurable ENNReal.ofReal_ne_top hmap u).trans ?_⟩
