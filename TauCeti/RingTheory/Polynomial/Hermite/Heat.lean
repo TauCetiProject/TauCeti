@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
+public import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -57,8 +58,7 @@ theorem hermiteHeat_succ (n : ℕ) (t : R) :
 theorem hermiteHeat_one (t : R) : hermiteHeat 1 t = X := by
   simp [hermiteHeat_succ]
 
-/-- Spatial differentiation lowers the degree by one. -/
-@[simp]
+/-- Spatial differentiation lowers a positive index by one. -/
 theorem derivative_hermiteHeat_succ (n : ℕ) (t : R) :
     derivative (hermiteHeat (n + 1) t) = C (n + 1 : R) * hermiteHeat n t := by
   induction n with
@@ -70,6 +70,69 @@ theorem derivative_hermiteHeat_succ (n : ℕ) (t : R) :
       zero_add, derivative_mul, Nat.cast_add, Nat.cast_one, map_add, map_one]
     ring
 
+/-- Spatial differentiation lowers the index, with the constant case included. -/
+@[simp]
+theorem derivative_hermiteHeat (n : ℕ) (t : R) :
+    derivative (hermiteHeat n t) = C (n : R) * hermiteHeat (n - 1) t := by
+  cases n with
+  | zero => simp
+  | succ n => simpa using derivative_hermiteHeat_succ n t
+
+/-- The `k`-th spatial derivative lowers the index by `k` and multiplies by the descending
+factorial. For `k > n` both sides vanish. -/
+@[simp]
+theorem iterate_derivative_hermiteHeat (n k : ℕ) (t : R) :
+    derivative^[k] (hermiteHeat n t) = C (n.descFactorial k : R) * hermiteHeat (n - k) t := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, derivative_mul, derivative_C, zero_mul, zero_add,
+      derivative_hermiteHeat, Nat.descFactorial_succ, Nat.cast_mul, map_mul, Nat.sub_sub]
+    ring
+
+/-- Changing coefficient rings commutes with the variance-parameter Hermite family. -/
+@[simp]
+theorem map_hermiteHeat {S : Type*} [CommRing S] (f : R →+* S) (n : ℕ) (t : R) :
+    (hermiteHeat n t).map f = hermiteHeat n (f t) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    simp only [hermiteHeat_succ, Polynomial.map_sub, Polynomial.map_mul, map_X, map_C,
+      ← Polynomial.derivative_map, ih]
+
+private theorem monic_degree_hermiteHeat [Nontrivial R] (n : ℕ) (t : R) :
+    (hermiteHeat n t).Monic ∧ (hermiteHeat n t).degree = n := by
+  induction n with
+  | zero => simp [monic_one]
+  | succ n ih =>
+    have hdeg : (C t * derivative (hermiteHeat n t)).degree < (X * hermiteHeat n t).degree := by
+      have hle : (C t * derivative (hermiteHeat n t)).degree ≤ (n : WithBot ℕ) := by
+        simpa only [zero_add] using (degree_mul_le (C t) _).trans
+          (add_le_add degree_C_le (degree_derivative_le.trans ih.2.le))
+      apply lt_of_le_of_lt hle
+      rw [mul_comm X, degree_mul_X, ih.2]
+      exact_mod_cast Nat.lt_succ_self n
+    rw [hermiteHeat_succ]
+    exact ⟨(monic_X.mul ih.1).sub_of_left hdeg,
+      by rw [degree_sub_eq_left_of_degree_lt hdeg, mul_comm X, degree_mul_X, ih.2]; simp⟩
+
+/-- Every variance-parameter Hermite polynomial is monic. -/
+theorem monic_hermiteHeat (n : ℕ) (t : R) : (hermiteHeat n t).Monic := by
+  nontriviality R
+  exact (monic_degree_hermiteHeat n t).1
+
+/-- The degree of the `n`-th variance-parameter Hermite polynomial is `n`. -/
+@[simp]
+theorem degree_hermiteHeat [Nontrivial R] (n : ℕ) (t : R) :
+    (hermiteHeat n t).degree = n :=
+  (monic_degree_hermiteHeat n t).2
+
+/-- The natural degree of the `n`-th variance-parameter Hermite polynomial is `n`. -/
+@[simp]
+theorem natDegree_hermiteHeat [Nontrivial R] (n : ℕ) (t : R) :
+    (hermiteHeat n t).natDegree = n :=
+  natDegree_eq_of_degree_eq_some (degree_hermiteHeat n t)
+
 /-- The three-term recursion, with no spatial derivatives on its right side. -/
 theorem hermiteHeat_add_two (n : ℕ) (t : R) :
     hermiteHeat (n + 2) t =
@@ -78,20 +141,18 @@ theorem hermiteHeat_add_two (n : ℕ) (t : R) :
   ring
 
 /-- The degree-two space-time Hermite polynomial is `X² - t`. -/
-@[simp]
 theorem hermiteHeat_two (t : R) : hermiteHeat 2 t = X ^ 2 - C t := by
   simp [hermiteHeat_add_two, pow_two]
 
-/-- At time zero the space-time Hermite polynomials are monomials. -/
+/-- At zero variance the space-time Hermite polynomials are monomials. -/
 @[simp]
-theorem hermiteHeat_time_zero (n : ℕ) : hermiteHeat n (0 : R) = X ^ n := by
+theorem hermiteHeat_zero_right (n : ℕ) : hermiteHeat n (0 : R) = X ^ n := by
   induction n with
   | zero => simp
   | succ n ih => simp [hermiteHeat_succ, ih, pow_succ, mul_comm]
 
 /-- At unit variance this family agrees with Mathlib's Hermite polynomials. -/
-@[simp]
-theorem hermiteHeat_time_one (n : ℕ) :
+theorem hermiteHeat_one_right (n : ℕ) :
     hermiteHeat n (1 : R) = (Polynomial.hermite n).map (Int.castRingHom R) := by
   induction n with
   | zero => simp
@@ -117,8 +178,8 @@ theorem derivative_derivative_hermiteHeat_add_two (n : ℕ) (t : R) :
   simp only [Nat.cast_add, Nat.cast_one, map_add, map_one, C_ofNat]
   ring
 
-/-- Scaling the variance and spot recovers the native probabilists' Hermite polynomial.
-The formula requires no invertibility of the scale factor. -/
+/-- Scaling the variance and spatial coordinate recovers the native probabilists' Hermite
+polynomial. The formula requires no invertibility of the scale factor. -/
 theorem eval_hermiteHeat_sq_mul (n : ℕ) (a x : R) :
     (hermiteHeat n (a ^ 2)).eval (a * x) =
       a ^ n * Polynomial.aeval x (Polynomial.hermite n) := by

@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Polynomial.Hermite.Heat
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Add
 
@@ -46,7 +45,7 @@ theorem eval_hermiteHeat (n : ℕ) {t : ℝ} (ht : 0 < t) (x : ℝ) :
   have h := eval_hermiteHeat_sq_mul n (√t) (x / √t)
   rwa [sq_sqrt ht.le, mul_div_cancel₀ _ (sqrt_pos.mpr ht).ne'] at h
 
-/-- Space-time Hermite polynomials are jointly smooth on the entire time-spot plane,
+/-- Space-time Hermite polynomials are jointly smooth on the entire time-space plane,
 including time zero. -/
 theorem contDiff_hermiteHeat (n : ℕ) (k : WithTop ℕ∞) :
     ContDiff ℝ k (fun p : ℝ × ℝ ↦ (hermiteHeat n p.1).eval p.2) := by
@@ -57,9 +56,7 @@ theorem contDiff_hermiteHeat (n : ℕ) (k : WithTop ℕ∞) :
     simp only [hermiteHeat_add_two, eval_sub, eval_mul, eval_X, eval_C]
     exact (contDiff_snd.mul ih').sub ((contDiff_fst.mul contDiff_const).mul ih)
 
-/-- Time differentiation is minus one half of the spatial second derivative,
-including at time zero. -/
-theorem hasDerivAt_hermiteHeat_time (n : ℕ) (t x : ℝ) :
+private theorem hasDerivAt_hermiteHeat_time_aux (n : ℕ) (t x : ℝ) :
     HasDerivAt (fun u ↦ (hermiteHeat n u).eval x)
       (-1 / 2 * (derivative (derivative (hermiteHeat n t))).eval x) t := by
   induction n using Nat.twoStepInduction with
@@ -72,7 +69,7 @@ theorem hasDerivAt_hermiteHeat_time (n : ℕ) (t x : ℝ) :
     have hdd : (derivative (derivative (hermiteHeat (n + 1) t))).eval x =
         (n + 1 : ℝ) * (derivative (hermiteHeat n t)).eval x := by
       rw [derivative_hermiteHeat_succ, derivative_mul]
-      simp
+      simp only [derivative_C, zero_mul, zero_add, eval_mul, eval_C]
     simp only [eval_add, eval_sub, eval_mul, eval_C, eval_X, eval_zero] at hode
     convert h using 1
     · ext u
@@ -81,12 +78,29 @@ theorem hasDerivAt_hermiteHeat_time (n : ℕ) (t x : ℝ) :
       simp only [id_eq]
       linear_combination -(n + 1 : ℝ) / 2 * hode
 
-/-- The spatial derivative of a space-time Hermite polynomial. -/
-theorem hasDerivAt_hermiteHeat_spot (n : ℕ) (t x : ℝ) :
-    HasDerivAt (fun y ↦ (hermiteHeat (n + 1) t).eval y)
-      ((n + 1 : ℝ) * (hermiteHeat n t).eval x) x := by
-  simpa only [derivative_hermiteHeat_succ, eval_mul, eval_C] using
-    (hermiteHeat (n + 1) t).hasDerivAt x
+/-- Time differentiation lowers the index by two, including at time zero. -/
+theorem hasDerivAt_hermiteHeat_time (n : ℕ) (t x : ℝ) :
+    HasDerivAt (fun u ↦ (hermiteHeat n u).eval x)
+      (-((n.descFactorial 2 : ℝ) / 2) * (hermiteHeat (n - 2) t).eval x) t := by
+  have hdd := iterate_derivative_hermiteHeat n 2 t
+  simp only [Function.iterate_succ_apply', Function.iterate_zero, id_eq] at hdd
+  convert hasDerivAt_hermiteHeat_time_aux n t x using 1
+  rw [hdd, eval_mul, eval_C]
+  ring
+
+/-- The ordinary time derivative of a space-time Hermite polynomial. -/
+@[simp]
+theorem deriv_hermiteHeat_time (n : ℕ) (t x : ℝ) :
+    deriv (fun u ↦ (hermiteHeat n u).eval x) t =
+      -((n.descFactorial 2 : ℝ) / 2) * (hermiteHeat (n - 2) t).eval x :=
+  (hasDerivAt_hermiteHeat_time n t x).deriv
+
+/-- The spatial derivative of a space-time Hermite polynomial, including the constant case. -/
+theorem hasDerivAt_hermiteHeat_space (n : ℕ) (t x : ℝ) :
+    HasDerivAt (fun y ↦ (hermiteHeat n t).eval y)
+      ((n : ℝ) * (hermiteHeat (n - 1) t).eval x) x := by
+  simpa only [derivative_hermiteHeat, eval_mul, eval_C] using
+    (hermiteHeat n t).hasDerivAt x
 
 /-- The backward heat equation for the space-time Hermite polynomials,
 with ordinary derivatives valid even at time zero. -/
@@ -96,7 +110,7 @@ theorem hermiteHeat_heat_equation (n : ℕ) (t x : ℝ) :
   have hspace : deriv (fun y ↦ (hermiteHeat n t).eval y) =
       fun y ↦ (derivative (hermiteHeat n t)).eval y :=
     funext fun y ↦ (hermiteHeat n t).deriv
-  rw [(hasDerivAt_hermiteHeat_time n t x).deriv, hspace,
+  rw [(hasDerivAt_hermiteHeat_time_aux n t x).deriv, hspace,
     (derivative (hermiteHeat n t)).deriv]
   ring
 
