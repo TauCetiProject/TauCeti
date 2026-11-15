@@ -18,32 +18,28 @@ Let `Ω` be an open subset of a finite-dimensional real inner product space `E` 
 with respect to every point of an open ball `ball x₀ ρ` of positive radius `ρ`. For `1 ≤ p < ∞`
 and every natural order `k`, the restrictions to `Ω` of test functions on the whole space `E` are
 dense in `W^{k,p}(Ω)` in the full Sobolev norm. Equivalently, elements of `W^{k,p}(Ω)` represented
-almost everywhere by smooth compactly supported functions on `E` are dense. No boundedness
-hypothesis on `Ω` is required.
+almost everywhere by smooth compactly supported functions on `E` (or by globally smooth functions on
+`E`) are dense. No boundedness hypothesis on `Ω` is required.
+
+Unlike interior Meyers–Serrin approximants (`C^∞(Ω)`), whose derivatives may blow up near `∂Ω`,
+restrictions of whole-space test functions extend smoothly to `closure Ω` with bounded derivatives
+of every order. This allows uniform continuity estimates up to `closure Ω`, boundary trace
+arguments, and polynomial-approximation bounds on star-shaped domains to pass from smooth functions
+on `E` to `W^{k,p}(Ω)`.
 
 Every nonempty open convex set contains an open ball and is star-convex with respect to each of its
 points, while `W^{k,p}(∅)` is the zero space, so the same density holds on every open convex set
 `Ω ⊆ E` without boundedness or nonemptiness hypotheses.
 
-## Proof outline
-
-1. By `TauCeti.Wkp.dense_exists_isCompact_value_ae_eq_zero`, elements of `W^{k,p}(Ω)` vanishing
-   almost everywhere outside a compact subset `K ⊆ E` are dense in `W^{k,p}(Ω)`.
-2. A smooth partition of unity subordinate to finite balls of radius `ρ / 2` covering `K` splits
-   such an element into finitely many pieces, each supported in a compact subset of some ball
-   `ball z (ρ / 2)`.
-3. For a piece supported in `K' ⊆ ball z (ρ / 2)`, translating by `s • (x₀ - z)` moves every point
-   `x ∈ Ω ∩ ball z (ρ / 2)` along the cone toward `ball x₀ ρ`: by
-   `TauCeti.closedBall_add_smul_sub_subset_interior_of_forall_starConvex`, the closed ball of
-   radius `s * (ρ / 2)` around `x + s • (x₀ - z)` lies inside `Ω`, while for `x ∈ Ω` outside a
-   small thickening of `K'` it misses `K'`. Shifted mollification
-   (`TauCeti.Wkp.mem_closure_range_restrictL_ofTestFunctionₗ_top_of_shift`) then approximates each
-   piece by restrictions of whole-space test functions.
-
-Both hypotheses `p ≠ ∞` and `0 < ρ` are sharp: at `p = ∞`, smooth representatives fail to be dense
-even on a bounded open interval (`TauCeti.Wkp.not_dense_contDiff_representatives_Ioo_top`), and a
-slit disk in `ℝ²` is star-convex with respect to a single point (`ρ = 0`) while admitting `W^{1,p}`
-functions with a jump across the slit that cannot be approximated by functions continuous on `ℝ²`.
+Both `p ≠ ∞` and the positive radius `0 < ρ` are sharp:
+* At `p = ∞`, globally smooth representatives fail to be dense even on a nonempty bounded open
+  interval (`TauCeti.Wkp.not_dense_contDiff_representatives_Ioo_top`).
+* At `ρ ≤ 0`, the open ball `ball x₀ ρ` is empty, so the quantified condition
+  `∀ y ∈ ball x₀ ρ, StarConvex ℝ y Ω` is vacuous. Weakening it to star-convexity about a single
+  point also fails for `k ≥ 1`: the slit disk `ball 0 1 \ (Icc 0 1 ×ˢ {0})` in `ℝ²` is star-convex
+  about `(-1 / 2, 0)`, yet `(x, y) ↦ if 0 < x ∧ 0 < y then x ^ (k + 1) else 0` is `Cᵏ` with bounded
+  derivatives through order `k` on the slit disk while its jump across `(0, 1) × {0}` prevents
+  `W^{k,p}` approximation by functions smooth on `ℝ²`.
 
 ## Main declarations
 
@@ -62,7 +58,7 @@ functions with a jump across the slit that cannot be approximated by functions c
 
 * R. A. Adams, J. J. F. Fournier, *Sobolev Spaces*, 2nd ed., Theorem 3.22.
 * S. C. Brenner, L. R. Scott, *The Mathematical Theory of Finite Element Methods*, 3rd ed.,
-  Chapter 4, Exercise 4.x.20.
+  Definition 4.2.2 (p. 96) and Chapter 4, Exercises, no. 20 (p. 127).
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.3.3.
 -/
 
@@ -79,59 +75,14 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- The closure in `W^{k,p}(Ω)` of the restrictions of whole-space test functions. -/
-private abbrev testClosure (mu : Measure E) [mu.IsAddHaarMeasure]
-    (Omega : Opens E) (p : ENNReal) [Fact (1 ≤ p)] (k : ℕ) : Submodule ℝ (Wkp mu Omega p k) :=
-  (LinearMap.range ((restrictL (le_top : Omega ≤ ⊤) k).toLinearMap ∘ₗ
-    ofTestFunctionₗ (mu := mu) (p := p) k)).topologicalClosure
-
-private theorem mem_testClosure_iff {k : ℕ} {u : Wkp mu Omega p k} :
-    u ∈ testClosure mu Omega p k ↔ u ∈ closure (range fun psi : 𝓓((⊤ : Opens E), ℝ) =>
-      restrictL (le_top : Omega ≤ ⊤) k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) := by
-  rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe, LinearMap.coe_range]
-  rfl
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] [Fact (1 ≤ p)] in
-/-- **Segment condition on a ball patch of a star-shaped domain.** Let `Ω` be star-convex with
-respect to every point of `ball x₀ ρ`, and let `K` have its closed `δ`-thickening inside
-`ball z (ρ / 2)`. For `0 < s ≤ 1` small enough that `s * (dist x₀ z + ρ / 2) ≤ δ`, every `x ∈ Ω`
-has the closed ball `closedBall (x + s • (x₀ - z)) (s * (ρ / 2))` either contained in `Ω` or
-disjoint from `K`. -/
-private theorem starConvex_ballCondition {x₀ z : E} {ρ : ℝ}
-    (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y (Omega : Set E))
-    {K : Set E} {δ : ℝ} (hKB : cthickening δ K ⊆ ball z (ρ / 2))
-    {s : ℝ} (hs₀ : 0 < s) (hs₁ : s ≤ 1) (hsδ : s * (dist x₀ z + ρ / 2) ≤ δ)
-    {x : E} (hx : x ∈ Omega) :
-    closedBall (x + s • (x₀ - z)) (s * (ρ / 2)) ⊆ Omega ∨
-      Disjoint (closedBall (x + s • (x₀ - z)) (s * (ρ / 2))) K := by
-  by_cases hdis : Disjoint (closedBall (x + s • (x₀ - z)) (s * (ρ / 2))) K
-  · exact Or.inr hdis
-  left
-  obtain ⟨y, hyB, hyK⟩ := not_disjoint_iff.1 hdis
-  rw [mem_closedBall] at hyB
-  have hshift : dist x (x + s • (x₀ - z)) = s * dist x₀ z := by
-    rw [dist_eq_norm, sub_add_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg hs₀.le,
-      ← dist_eq_norm]
-  have hxy : dist x y ≤ δ :=
-    calc dist x y
-        ≤ dist x (x + s • (x₀ - z)) + dist (x + s • (x₀ - z)) y := dist_triangle _ _ _
-      _ ≤ s * dist x₀ z + s * (ρ / 2) := by
-          rw [dist_comm _ y]
-          exact add_le_add hshift.le hyB
-      _ = s * (dist x₀ z + ρ / 2) := (mul_add _ _ _).symm
-      _ ≤ δ := hsδ
-  have hxz : dist x z < ρ / 2 := mem_ball.1 (hKB (mem_cthickening_of_dist_le x y δ K hyK hxy))
-  exact (closedBall_add_smul_sub_subset_interior_of_forall_starConvex hstar (subset_closure hx)
-    hxz hs₀ hs₁).trans interior_subset
-
 /-- A Sobolev element vanishing outside a compact subset of `ball z (ρ / 2)` lies in
-`testClosure`. -/
-private theorem mem_testClosure_of_subset_ball (hp : p ≠ ⊤) {x₀ z : E} {ρ : ℝ} (hρ : 0 < ρ)
-    (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y (Omega : Set E))
+`restrictTestFunctionClosure`. -/
+private theorem mem_restrictTestFunctionClosure_of_subset_ball (hp : p ≠ ⊤) {x₀ z : E} {ρ : ℝ}
+    (hρ : 0 < ρ) (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y (Omega : Set E))
     {K : Set E} (hK : IsCompact K) (hKB : K ⊆ ball z (ρ / 2))
     (k : ℕ) (w : Wkp mu Omega p k) (hw : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → value k w x = 0) :
-    w ∈ testClosure mu Omega p k := by
-  rw [mem_testClosure_iff]
+    w ∈ restrictTestFunctionClosure mu (le_top : Omega ≤ ⊤) p k := by
+  rw [mem_restrictTestFunctionClosure_iff]
   obtain ⟨δ, hδ, hδB⟩ := hK.exists_cthickening_subset_open isOpen_ball hKB
   let c := min 1 (δ / (dist x₀ z + ρ / 2 + 1))
   have hc₀ : 0 < c := lt_min zero_lt_one (div_pos hδ (by positivity))
@@ -161,14 +112,16 @@ private theorem mem_testClosure_of_subset_ball (hp : p ≠ ⊤) {x₀ z : E} {ρ
       _ ≤ δ / (dist x₀ z + ρ / 2 + 1) * (dist x₀ z + ρ / 2 + 1) :=
           mul_le_mul_of_nonneg_right ((hs_le j).trans (min_le_right _ _)) hden.le
       _ = δ := div_mul_cancel₀ δ hden.ne'
-  exact starConvex_ballCondition hstar hδB (hs₀ j) hs₁ hsδ hx
+  exact (closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex hstar hδB
+    (hs₀ j) hs₁ hsδ (subset_closure hx)).imp_left fun h => h.trans interior_subset
 
-/-- Any Sobolev element vanishing outside a compact set `K ⊆ E` lies in `testClosure`. -/
-private theorem mem_testClosure_of_isCompact (hp : p ≠ ⊤) {x₀ : E} {ρ : ℝ} (hρ : 0 < ρ)
-    (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y (Omega : Set E))
+/-- Any Sobolev element vanishing outside a compact set `K ⊆ E` lies in
+`restrictTestFunctionClosure`. -/
+private theorem mem_restrictTestFunctionClosure_of_isCompact (hp : p ≠ ⊤) {x₀ : E} {ρ : ℝ}
+    (hρ : 0 < ρ) (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y (Omega : Set E))
     {K : Set E} (hK : IsCompact K) (k : ℕ) (v : Wkp mu Omega p k)
     (hv : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → value k v x = 0) :
-    v ∈ testClosure mu Omega p k := by
+    v ∈ restrictTestFunctionClosure mu (le_top : Omega ≤ ⊤) p k := by
   classical
   obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun z : E => ball z (ρ / 2)) (fun _ => isOpen_ball)
     (fun z _ => mem_iUnion.2 ⟨z, mem_ball_self (half_pos hρ)⟩)
@@ -195,7 +148,8 @@ private theorem mem_testClosure_of_isCompact (hp : p ≠ ⊤) {x₀ : E} {ρ : �
     · rw [hvy hyK, mul_zero]
   rw [hv_eq]
   refine Submodule.sum_mem _ fun z _ =>
-    mem_testClosure_of_subset_ball hp hρ hstar (hψ_cpt z).isCompact (hψ z) k (w z) ?_
+    mem_restrictTestFunctionClosure_of_subset_ball hp hρ hstar (hψ_cpt z).isCompact (hψ z) k (w z)
+      ?_
   filter_upwards [hw z] with y hy hyB
   rw [hy, image_eq_zero_of_notMem_tsupport hyB, zero_mul]
 
@@ -214,7 +168,8 @@ theorem denseRange_restrictL_ofTestFunctionₗ_top_of_forall_starConvex (hp : p 
         closure (range fun psi : 𝓓((⊤ : Opens E), ℝ) =>
           restrictL (le_top : Omega ≤ ⊤) k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) := by
     rintro v ⟨K, hK, hv⟩
-    exact mem_testClosure_iff.1 (mem_testClosure_of_isCompact hp hρ hstar hK k v hv)
+    exact (mem_restrictTestFunctionClosure_iff (le_top : Omega ≤ ⊤)).1
+      (mem_restrictTestFunctionClosure_of_isCompact hp hρ hstar hK k v hv)
   have hcl := closure_minimal hsub isClosed_closure
   rw [(dense_exists_isCompact_value_ae_eq_zero (mu := mu) (Omega := Omega) hp k).closure_eq] at hcl
   exact hcl (mem_univ u)

@@ -18,7 +18,10 @@ closure into its interior along the segment toward `x`: the ball of radius `(1 -
 `x + t • (y - x)` lies in `interior s` for every `0 ≤ t ≤ 1`
 (`TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex`), and for `z` within `r / 2` of
 `y` the translated closed ball `closedBall (y + t • (x - z)) (t * (r / 2))` lies in `interior s`
-for `0 < t ≤ 1` (`TauCeti.closedBall_add_smul_sub_subset_interior_of_forall_starConvex`). For a
+for `0 < t ≤ 1` (`TauCeti.closedBall_add_smul_sub_subset_interior_of_forall_starConvex`); when a
+set `K` has its closed `δ`-thickening inside `ball z (r / 2)` and `t * (dist x z + r / 2) ≤ δ`,
+that translated closed ball either lies in `interior s` or is disjoint from `K`
+(`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
 convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
 -/
 
@@ -94,6 +97,35 @@ theorem closedBall_add_smul_sub_subset_interior_of_forall_starConvex {s : Set E}
     _ < t * (r / 2) + t * (r / 2) := by
         linarith [mul_lt_mul_of_pos_left hz ht₀]
     _ = (1 - (1 - t)) * r := by ring
+
+/-- If `s` is star-convex with respect to every point of `ball x r` and `cthickening δ K` lies in
+`ball z (r / 2)`, then for every `y ∈ closure s` and every `0 < t ≤ 1` with
+`t * (dist x z + r / 2) ≤ δ`, the translated closed ball
+`closedBall (y + t • (x - z)) (t * (r / 2))` either lies in `interior s` or is disjoint from `K`. -/
+theorem closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex {s : Set E}
+    {x y z : E} {r δ t : ℝ} (hs : ∀ w ∈ ball x r, StarConvex ℝ w s)
+    (hKB : cthickening δ K ⊆ ball z (r / 2)) (ht₀ : 0 < t) (ht₁ : t ≤ 1)
+    (htδ : t * (dist x z + r / 2) ≤ δ) (hy : y ∈ closure s) :
+    closedBall (y + t • (x - z)) (t * (r / 2)) ⊆ interior s ∨
+      Disjoint (closedBall (y + t • (x - z)) (t * (r / 2))) K := by
+  by_cases hdis : Disjoint (closedBall (y + t • (x - z)) (t * (r / 2))) K
+  · exact Or.inr hdis
+  left
+  obtain ⟨q, hqB, hqK⟩ := not_disjoint_iff.1 hdis
+  rw [mem_closedBall] at hqB
+  have hshift : dist y (y + t • (x - z)) = t * dist x z := by
+    rw [dist_eq_norm, sub_add_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg ht₀.le,
+      ← dist_eq_norm]
+  have hyq : dist y q ≤ δ :=
+    calc dist y q
+        ≤ dist y (y + t • (x - z)) + dist (y + t • (x - z)) q := dist_triangle _ _ _
+      _ ≤ t * dist x z + t * (r / 2) := by
+          rw [dist_comm _ q]
+          exact add_le_add hshift.le hqB
+      _ = t * (dist x z + r / 2) := (mul_add _ _ _).symm
+      _ ≤ δ := htδ
+  have hyz : dist y z < r / 2 := mem_ball.1 (hKB (mem_cthickening_of_dist_le y q δ K hqK hyq))
+  exact closedBall_add_smul_sub_subset_interior_of_forall_starConvex hs hy hyz ht₀ ht₁
 
 end TauCeti
 
