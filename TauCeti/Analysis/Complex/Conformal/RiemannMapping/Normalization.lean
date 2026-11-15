@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Complex.Conformal.Koebe
 public import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Uniqueness
 public import Mathlib.Analysis.Complex.Order
 import Mathlib.Analysis.Complex.Isometry
+import Mathlib.Analysis.Complex.Liouville
+import Mathlib.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Complex.Conformal.Biholomorph
 
 /-!
 # The normalized Riemann map
@@ -50,7 +53,8 @@ domain, since the size of `deriv f z₀` is not free once the image is required 
 
 ## Main statements
 
-* `TauCeti.IsNormalizedRiemannMapOn` — the normalization, as a predicate.
+* `TauCeti.IsNormalizedRiemannMapOn` — the normalization, as a predicate, together with basic
+  consequences (`norm_deriv_pos`, `isSimplyConnected`, `ne_univ`, `deriv_eq`, `norm_deriv_eq`).
 * `TauCeti.exists_isNormalizedRiemannMapOn` — existence of the normalized Riemann map.
 * `TauCeti.IsNormalizedRiemannMapOn.eqOn` — uniqueness: two normalized maps agree on the domain.
 * `TauCeti.riemannMapping_normalized` — the two combined.
@@ -203,6 +207,55 @@ theorem IsNormalizedRiemannMapOn.eqOn (hg : IsNormalizedRiemannMapOn g Ω z₀)
   intro z hz
   have hz' := hu hz
   simpa only [hu1, one_mul] using hz'
+
+/-- A holomorphic bijection of an open plane set onto the open unit disc forces the source to be
+simply connected and proper: the homeomorphism onto the contractible disc gives simple connectivity,
+and Liouville's theorem rules out `Ω = univ`. -/
+private theorem isSimplyConnected_and_ne_univ_of_bijOn_ball (hΩo : IsOpen Ω)
+    (hfd : DifferentiableOn ℂ f Ω) (hfbij : BijOn f Ω (ball (0 : ℂ) 1)) :
+    IsSimplyConnected Ω ∧ Ω ≠ univ := by
+  have : ContractibleSpace (ball (0 : ℂ) 1) := contractibleSpace_ball one_pos
+  have hsc : IsSimplyConnected Ω :=
+    (hfd.toHomeomorphOfBijOn hΩo hfbij).toHomotopyEquiv.simplyConnectedSpace
+  refine ⟨hsc, ?_⟩
+  rintro rfl
+  have hent : Differentiable ℂ f := differentiableOn_univ.mp hfd
+  have hbdd : Bornology.IsBounded (range f) :=
+    isBounded_ball.subset (by rw [← image_univ]; exact hfbij.mapsTo.image_subset)
+  obtain ⟨c, hc⟩ := hent.exists_const_forall_eq_of_bounded hbdd
+  exact zero_ne_one (hfbij.injOn (mem_univ 0) (mem_univ 1) ((hc 0).trans (hc 1).symm))
+
+namespace IsNormalizedRiemannMapOn
+
+/-- An open domain carrying a normalized Riemann map is simply connected. -/
+theorem isSimplyConnected (hf : IsNormalizedRiemannMapOn f Ω z₀) (hΩo : IsOpen Ω) :
+    IsSimplyConnected Ω :=
+  (isSimplyConnected_and_ne_univ_of_bijOn_ball hΩo hf.differentiableOn hf.bijOn).1
+
+/-- No normalized Riemann map can have `Set.univ` as its domain, by Liouville's theorem. -/
+theorem ne_univ (hf : IsNormalizedRiemannMapOn f Ω z₀) : Ω ≠ univ := by
+  rintro rfl
+  exact (isSimplyConnected_and_ne_univ_of_bijOn_ball isOpen_univ hf.differentiableOn hf.bijOn).2 rfl
+
+/-- The derivative norm of a normalized Riemann map at its base point is strictly positive. -/
+theorem norm_deriv_pos (hf : IsNormalizedRiemannMapOn f Ω z₀) : 0 < ‖deriv f z₀‖ :=
+  norm_pos_iff.mpr hf.deriv_ne_zero_base
+
+/-- Any two normalized Riemann maps of an open domain at the same base point have the same complex
+derivative at that base point. -/
+theorem deriv_eq (hf : IsNormalizedRiemannMapOn f Ω z₀) (hg : IsNormalizedRiemannMapOn g Ω z₀)
+    (hΩo : IsOpen Ω) : deriv f z₀ = deriv g z₀ :=
+  Filter.EventuallyEq.deriv_eq <|
+    eventually_nhds_iff.mpr ⟨Ω, fun _ hz => hf.eqOn hg hΩo hz, hΩo, hf.base_mem⟩
+
+/-- Any two normalized Riemann maps of an open domain at the same base point have the same
+derivative norm at that base point. -/
+theorem norm_deriv_eq (hf : IsNormalizedRiemannMapOn f Ω z₀)
+    (hg : IsNormalizedRiemannMapOn g Ω z₀) (hΩo : IsOpen Ω) :
+    ‖deriv f z₀‖ = ‖deriv g z₀‖ :=
+  congrArg norm (hf.deriv_eq hg hΩo)
+
+end IsNormalizedRiemannMapOn
 
 /-- **The Riemann mapping theorem, normalized.** A nonempty, simply connected, open, proper subset
 `Ω` of `ℂ` with a base point `z₀` carries a holomorphic bijection onto the open unit disc that
