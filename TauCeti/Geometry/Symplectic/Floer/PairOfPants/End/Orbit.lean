@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
 
 /-!
 # Asymptotic orbits at the ends of a finite-energy Floer pair of pants
@@ -64,9 +64,9 @@ the actions holds along the whole end. Convergence of the whole end to a single 
 nondegenerate orbits and a bound on the derivative, is proved in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence`. The orbits at the ends of a
 pair of pants with values in a manifold are obtained in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, of which the energy bound
-`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le` is the case of
-a constant form.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`. The statements about positive end
+charts here are the case of a constant form of those in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback`.
 
 ## References
 
@@ -91,27 +91,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω : SymplecticForm V}
   {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {T₀ : ℝ}
 
-/-- Beyond `T₀` on the end `q`, the components of `K` in the end coordinates are differentiable
-in the target point when the end Hamiltonian is. -/
-private theorem differentiableAt_perturbation_positiveEndChart
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hHd : ∀ q t, Differentiable ℝ (H q t)) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
-    (y : V) :
-    DifferentiableAt ℝ (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v)
-      y := by
-  have hre : T₀ ≤ q.endSign *
-      (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).re := by
-    rw [positiveEndChart_apply, re_endCoord_endChart]
-    simpa [← mul_assoc] using hζ
-  have h : (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v) = fun x ↦
-      H q (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).im x *
-        q.endAngularForm (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) v := by
-    funext x
-    rw [hKH q _ x hre, smul_apply, smul_eq_mul]
-  rw [h]
-  exact ((hHd q _) y).mul_const _
-
 variable [FiniteDimensional ℝ V]
 
 /-! ### Orbits and actions in positive end charts -/
@@ -121,11 +100,12 @@ variable [FiniteDimensional ℝ V]
 theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ) :
     ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
       q.endSign • ω.hamiltonianVectorField (H q t) := by
+  -- This is the manifold statement for the constant form.
   funext y
-  rw [Pi.smul_apply, ← hamiltonianVectorField_const_mul]
-  congr 1
-  funext x
-  rw [positiveEndHamiltonian_apply, endSign_mul_endSign_mul]
+  have h := SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul
+    (ω := ω.constSmooth) (H := H) q t y
+  rw [hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth] at h
+  exact h
 
 /-- Reading an orbit of the positive end Hamiltonian `H'_q` with the time `±t` of the end gives
 an orbit of `H_q`. -/
@@ -172,26 +152,6 @@ theorem hamiltonianAction_positiveEndHamiltonian {q : Puncture} (hH : Periodic (
 
 /-! ### The ends of a Floer pair of pants as Floer half-cylinders -/
 
-/-- On the positive end beyond `T₀`, the pulled-back perturbation is `H'_q(t) dt`. -/
-private theorem perturbedFDeriv_comp_positiveEndChart_eq
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {u : ℝ × ℝ → V} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) :
-    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
-        (u ∘ positiveEndChart q) ζ =
-      ω.perturbedFDeriv
-        (perturbationPullback (positiveEndChart q)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal)
-        (perturbationPullback (positiveEndChart q)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag)
-        (u ∘ positiveEndChart q) ζ :=
-  ω.perturbedFDeriv_congr _
-    (funext fun x ↦ (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH hζ x).symm)
-    (funext fun x ↦
-      (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH hH hζ x).symm)
-
 /-- **The ends of a Floer pair of pants solve the Floer equation of a half-cylinder.** Let `K` be
 equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` solve the Floer equation
 `(du - X_K)^{0,1} = 0` for the almost complex structure `J` at the image `φ'_q(ζ)` of a point `ζ`
@@ -211,14 +171,15 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (u ∘ positiveEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] V) := by
-  rw [perturbedFDeriv_comp_positiveEndChart_eq hKH hH hζ]
-  exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
-    (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
-    ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hu
-    (differentiableAt_perturbation_positiveEndChart hKH hHd hζ 1 _)
-    (differentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
-    (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
+  -- This is the manifold statement for the constant form.
+  have h (Ks Kt : ℝ × ℝ → V → ℝ) (v : ℝ × ℝ → V) (z : ℝ × ℝ) :
+      (ω.constSmooth.perturbedMFDeriv Ks Kt v z).toLinearMap =
+        (ω.perturbedFDeriv Ks Kt v z : ℝ × ℝ →ₗ[ℝ] V) :=
+    LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt v z)
+  rw [← h] at hfloer ⊢
+  exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
+    (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hζ hu.mdifferentiableAt
+    hfloer
 
 /-- **The energy of an end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
