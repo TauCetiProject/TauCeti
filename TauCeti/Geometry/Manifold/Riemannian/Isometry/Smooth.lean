@@ -6,57 +6,108 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Radial
+public import TauCeti.Topology.MetricSpace.Isometry.Group
 import Mathlib.Analysis.InnerProductSpace.Convex
+import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Normed.Affine.Isometry.StrictConvex
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Distance
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.DistanceChart
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Uniform
 
 /-!
-# Distance-preserving maps are smooth
+# Smoothness of distance-preserving maps of Riemannian manifolds
 
-Let `f : M → N` preserve the Riemannian distances of two boundaryless Riemannian manifolds, with
-`N` complete. The theorem of Myers and Steenrod states that `f` is smooth and that its
-differential preserves the Riemannian metric; no regularity of `f` is assumed. Consequently a
-distance-preserving bijection onto a complete Riemannian manifold is a smooth Riemannian
-isometry. Conversely a smooth Riemannian isometry preserves distances (the `IsometryClass`
-instance on `TauCeti.RiemannianIsometry`), so on complete Riemannian manifolds the two notions of
-isometry agree.
+Every distance-preserving map `f : M → N` between smooth boundaryless Riemannian manifolds into a
+complete manifold is smooth and preserves the Riemannian metric (`Isometry.contMDiff`,
+`Isometry.inner_mfderiv`), and without completeness or connectedness assumptions every map that
+restricts locally to an open-image distance-preserving map — in particular every metric equivalence
+`M ≃ᵢ N` between extended-metric Riemannian manifolds — is smooth and a smooth local or global
+Riemannian isometry
+(`TauCeti.Manifold.isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict`,
+`IsometryEquiv.toRiemannianIsometry`).
 
-The proof follows Palais. Distance-preserving maps send short radial geodesics to radial
-geodesics (`Isometry.apply_riemannianExp_smul`), so the radial map
-`A v = log_{f p} (f (exp_p v))` preserves norms and scales along rays. On small balls the
-exponential map and the logarithm are Lipschitz with constants arbitrarily close to one, so near
-the origin `A` changes distances by factors arbitrarily close to one; scaling along rays then
-shows that `A` preserves distances on a ball. Hence `A` agrees there with a linear isometry `L`
-(`TauCeti.exists_linearIsometry_eqOn_ball`), and `f = exp_{f p} ∘ L ∘ log_p` near `p`.
+Two complementary arguments are combined:
+
+1. **Palais's radial-geodesic argument for complete targets of arbitrary codimension.** When `N` is
+   a complete metric Riemannian manifold, distance-preserving maps send short radial geodesics to
+   radial geodesics (`Isometry.apply_riemannianExp_smul`), so `A v = log_{f p} (f (exp_p v))`
+   preserves norms and scales along rays. Exponential and logarithmic distortion bounds near the
+   origin (`exists_isNormalDomain_ball_dist_riemannianExp_bounds`) together with ray scaling show
+   that `A` preserves distances on a ball, hence agrees there with a linear isometry `L`
+   (`TauCeti.exists_linearIsometry_eqOn_ball`), giving `f = exp_{f p} ∘ L ∘ log_p` near `p`.
+
+2. **Squared-distance coordinate charts without completeness.** Near `p ∈ M` at which `f` restricts
+   to an isometry on an open neighbourhood `U` with `f '' U ∈ 𝓝 (f p)`, choosing a squared-distance
+   chart `Φ` around `f p` (`exists_partialDiffeomorph_pi_toReal_edist_sq`) whose centres
+   `y i = f (a i)` come from points `a i` inside a uniformly normal ball around `p` expresses `f`
+   locally as `Φ.symm (fun i ↦ (edist (a i) ·).toReal ^ 2)`, a composition of smooth maps. Applying
+   the same argument to the local inverse yields a smooth local diffeomorphism, and comparing the
+   germ in normal coordinates along radial rays shows `‖df_p v‖ = ‖v‖`, hence `df_p` preserves inner
+   products by polarization. This requires neither completeness nor finite distance across
+   disconnected components (`EMetricSpace`).
+
+## Main definitions
+
+* `IsometryEquiv.toRiemannianIsometry`: a metric equivalence `M ≃ᵢ N` between smooth boundaryless
+  Riemannian manifolds promoted to a smooth `TauCeti.RiemannianIsometry`.
+* `Isometry.riemannianIsometryOfCompactSpace`: a distance-preserving self-map of a compact
+  boundaryless Riemannian manifold promoted to an element of `TauCeti.Isom I M`.
+* `TauCeti.RiemannianIsometry.isometryEquivEquiv`: the equivalence
+  `RiemannianIsometry I J M N ≃ (M ≃ᵢ N)`.
+* `TauCeti.RiemannianIsometry.isometryEquivMulEquiv`: the group isomorphism
+  `Isom I M ≃* (M ≃ᵢ M)`.
 
 ## Main results
 
 * `Isometry.exists_linearIsometry_apply_riemannianExp_eq`: `f (exp_p v) = exp_{f p} (L v)` on a
-  normal ball, for a linear isometry `L : T_p M →ₗᵢ[ℝ] T_{f p} N`.
-* `Isometry.contMDiff`: a distance-preserving map into a complete manifold is smooth.
-* `Isometry.inner_mfderiv`: its differential preserves inner products.
-* `IsometryEquiv.toRiemannianIsometry`: a distance-preserving bijection onto a complete
-  Riemannian manifold as a smooth Riemannian isometry.
+  normal ball for a linear isometry `L : T_p M →ₗᵢ[ℝ] T_{f p} N`, when `N` is complete.
+* `Isometry.contMDiff`, `Isometry.inner_mfderiv`: a distance-preserving map into a complete
+  Riemannian manifold is smooth and its differential preserves inner products.
+* `MDifferentiableAt.norm_mfderiv_eq_of_eventually_edist_eq`,
+  `MDifferentiableAt.inner_mfderiv_eq_of_eventually_edist_eq`: a map differentiable at `p` that
+  preserves extended distances from `p` near `p` preserves norms and inner products on `T_p M`.
+* `TauCeti.Manifold.contMDiffAt_of_isometry_domRestrict`,
+  `TauCeti.Manifold.isLocalDiffeomorphAt_of_isometry_domRestrict`,
+  `TauCeti.Manifold.isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict`: local
+  smoothness, local diffeomorphism, and local Riemannian isometry from local open-image metric
+  isometries without completeness.
+* `Isometry.isLocalRiemannianIsometry_of_isOpen_range`: a metric isometry with open range is a
+  smooth local Riemannian isometry.
+* `IsometryEquiv.contMDiff`: every metric equivalence `M ≃ᵢ N` is smooth.
+* `TauCeti.RiemannianIsometry.exists_coe_eq_iff_isometry_and_surjective`,
+  `TauCeti.RiemannianIsometry.exists_isom_coe_eq_iff_isometry`: smooth Riemannian isometries are
+  characterized among maps by preserving the Riemannian distance (and surjectivity, automatic for
+  self-maps of compact manifolds).
 
 ## References
 
 * S. B. Myers and N. E. Steenrod, *The group of isometries of a Riemannian manifold*, Ann. of
-  Math. 40 (1939), 400–416.
+  Math. (2) 40 (1939), 400–416.
 * R. S. Palais, *On the differentiability of isometries*, Proc. Amer. Math. Soc. 8 (1957),
   805–807.
+* S. Kobayashi and K. Nomizu, *Foundations of Differential Geometry*, Vol. I, Interscience, 1963,
+  Ch. IV, Theorem 3.10.
 * S. Kobayashi, *Transformation Groups in Differential Geometry*, Springer, 1972, Ch. II, §1.
+* M. Taylor, *Measure Theory and Integration*, Graduate Studies in Mathematics 76, AMS, 2006,
+  Appendix E; and *Finsler structures and smoothness of isometries*, Proc. Amer. Math. Soc. 134
+  (2006), no. 8, 2419–2423.
+* P. Petersen, *Riemannian Geometry*, 3rd ed., Springer GTM 171, 2016, §5.6.2.
 -/
 
 public section
 
-open Bundle Filter Manifold Metric Set TauCeti.Manifold
-open scoped ContDiff Manifold NNReal Topology
+open Bundle Filter Function Manifold Metric Set TauCeti.Manifold
+open scoped ContDiff ENNReal Manifold NNReal Topology
 
 noncomputable section
 
-section
+/-! ### Palais's smoothness theorem for distance-preserving maps into complete manifolds -/
+
+section CompleteTarget
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -227,49 +278,518 @@ theorem inner_mfderiv (hf : Isometry f) (x : M) (v w : TangentSpace I x) :
 
 end Isometry
 
+end CompleteTarget
+
+/-! ### Local smoothness and metric equivalences without completeness -/
+
+section ExtendedMetric
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  {M : Type*} [EMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+  {N : Type*} [EMetricSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+  [IsRiemannianManifold J N]
+
+namespace MDifferentiableAt
+
+/-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
+neighbourhood of `p`, then `df_p` preserves tangent-vector norms. -/
+theorem norm_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
+    (hf : MDifferentiableAt I J f p) (hedist : ∀ᶠ x in 𝓝 p, edist (f p) (f x) = edist p x)
+    (v : TangentSpace I p) :
+    ‖mfderiv I J f p v‖ = ‖v‖ := by
+  obtain ⟨rM, hrM, hM⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
+  obtain ⟨rN, hrN, hN⟩ := exists_isNormalDomain_ball (I := J) (M := N) (f p)
+  set L : N → TangentSpace J (f p) := riemannianLog J N (f p) (Metric.ball 0 rN)
+  set Ψ : TangentSpace I p → TangentSpace J (f p) := (L ∘ f) ∘ riemannianExp I M p
+  have hL : MDifferentiableAt J 𝓘(ℝ, TangentSpace J (f p)) L (f p) :=
+    hN.mdifferentiableAt_riemannianLog hN.self_mem_image
+  have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 :=
+    (contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt (by simp)
+  have hLf : MDifferentiableAt I 𝓘(ℝ, TangentSpace J (f p)) (L ∘ f) p := hL.comp p hf
+  have hΨ_diff : DifferentiableAt ℝ Ψ 0 :=
+    mdifferentiableAt_iff_differentiableAt.1 (hLf.comp_of_eq 0 hexp (riemannianExp_zero p))
+  have hfderiv : fderiv ℝ Ψ 0 v = mfderiv I J f p v := by
+    let v₀ : TangentSpace 𝓘(ℝ, TangentSpace I p) (0 : TangentSpace I p) :=
+      (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).symm v
+    calc fderiv ℝ Ψ 0 v
+        = mvfderiv 𝓘(ℝ, TangentSpace I p) Ψ 0 v₀ := by
+            rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+              ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+      _ = mvfderiv I (L ∘ f) p (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v₀) :=
+            mvfderiv_comp_apply_of_eq 0 hLf hexp (riemannianExp_zero p) v₀
+      _ = mvfderiv I (L ∘ f) p v :=
+            congrArg (mvfderiv I (L ∘ f) p) <|
+              (congrArg (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0)
+                (NormedSpace.fromTangentSpace_symm_apply (𝕜 := ℝ) (0 : TangentSpace I p) v)).trans
+                (mfderiv_riemannianExp_apply_zero (I := I) p v)
+      _ = mfderiv I J f p v := by
+            rw [mvfderiv_comp_apply p hL hf v, hN.mvfderiv_riemannianLog_self,
+              ContinuousLinearMap.id_apply]
+  -- Near `0 ∈ T_p M`, `exp_p u` stays in the normal ball at `p`, lands in the normal ball at
+  -- `f p`, and lies in the region where `f` preserves distance from `p`, so `‖Ψ u‖ = ‖u‖`.
+  have hexp_cont : ContinuousAt (riemannianExp I M p) 0 :=
+    continuousAt_riemannianExp (zero_mem_expDomain p)
+  have hnorm_ev : ∀ᶠ u : TangentSpace I p in 𝓝 0, ‖Ψ u‖ = ‖u‖ := by
+    have h1 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p), u ∈ Metric.ball (0 : TangentSpace I p) rM :=
+      Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hrM)
+    have h2 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p),
+        edist (f p) (f (riemannianExp I M p u)) = edist p (riemannianExp I M p u) :=
+      hexp_cont.eventually (by rwa [riemannianExp_zero])
+    have h3 : ∀ᶠ u in 𝓝 (0 : TangentSpace I p),
+        f (riemannianExp I M p u) ∈ eball (f p) (ENNReal.ofReal rN) := by
+      have hballN : eball (f p) (ENNReal.ofReal rN) ∈ 𝓝 (f p) :=
+        Metric.isOpen_eball.mem_nhds (Metric.mem_eball_self (ENNReal.ofReal_pos.2 hrN))
+      exact (hf.continuousAt.comp_of_eq hexp_cont (riemannianExp_zero p)).preimage_mem_nhds
+        (by simpa only [comp_apply, riemannianExp_zero] using hballN)
+    filter_upwards [h1, h2, h3] with u hu1 hu2 hu3
+    have hlog := hN.toReal_edist_eq_norm_riemannianLog_of_mem_eball subset_rfl hu3
+    simp only [Ψ, L, comp_apply]
+    rw [← hlog, hu2, hM.edist_riemannianExp_eq_of_mem_ball subset_rfl hu1, ← ofReal_norm,
+      ENNReal.toReal_ofReal (norm_nonneg u)]
+  have hΨ0 : Ψ 0 = 0 := by simpa using hnorm_ev.self_of_nhds
+  rw [← hfderiv]
+  exact hΨ_diff.norm_fderiv_apply_eq_of_eventually_norm_sub_eq
+    (by simpa [hΨ0] using hnorm_ev) v
+
+/-- If `f : M → N` is differentiable at `p` and preserves extended distances from `p` on a
+neighbourhood of `p`, then `df_p` preserves inner products of tangent vectors. -/
+theorem inner_mfderiv_eq_of_eventually_edist_eq {f : M → N} {p : M}
+    (hf : MDifferentiableAt I J f p) (hedist : ∀ᶠ x in 𝓝 p, edist (f p) (f x) = edist p x)
+    (v w : TangentSpace I p) :
+    inner ℝ (mfderiv I J f p v) (mfderiv I J f p w) = inner ℝ v w := by
+  let L : TangentSpace I p →ₗᵢ[ℝ] TangentSpace J (f p) :=
+    { toLinearMap := (mfderiv I J f p).toLinearMap
+      norm_map' := hf.norm_mfderiv_eq_of_eventually_edist_eq hedist }
+  exact L.inner_map_map v w
+
+end MDifferentiableAt
+
+namespace TauCeti.Manifold
+
+/-- **Local smoothness of metric isometries.** If `f : M → N` restricts to a metric isometry on an
+open neighbourhood `U` of `p` and `f '' U` is a neighbourhood of `f p`, then `f` is smooth at
+`p`. -/
+theorem contMDiffAt_of_isometry_domRestrict {f : M → N} {U : Set M} {p : M} (hU : IsOpen U)
+    (hp : p ∈ U) (hf : Isometry (U.domRestrict f)) (hfU : f '' U ∈ 𝓝 (f p)) :
+    ContMDiffAt I J ∞ f p := by
+  obtain ⟨r, hr, WM, hWM_nhds, hWM⟩ :=
+    exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M) p
+  obtain ⟨WM', hWM'_sub, hWM'o, hpWM'⟩ := mem_nhds_iff.1 hWM_nhds
+  set VM : Set M := U ∩ WM' ∩ eball p (ENNReal.ofReal (r / 2))
+  have hr2 : 0 < ENNReal.ofReal (r / 2) := ENNReal.ofReal_pos.2 (half_pos hr)
+  have hVMo : IsOpen VM := (hU.inter hWM'o).inter Metric.isOpen_eball
+  have hpVM : p ∈ VM := ⟨⟨hp, hpWM'⟩, Metric.mem_eball_self hr2⟩
+  -- Because `f` is isometric on `U`, the image of `VM` is still a neighbourhood of `f p`.
+  obtain ⟨ε, hε, hε_sub⟩ := EMetric.mem_nhds_iff.1 (hVMo.mem_nhds hpVM)
+  have hfVM : f '' VM ∈ 𝓝 (f p) := by
+    refine mem_of_superset (inter_mem hfU (Metric.isOpen_eball.mem_nhds
+      (Metric.mem_eball_self hε))) ?_
+    rintro _ ⟨⟨x, hxU, rfl⟩, hdist⟩
+    refine mem_image_of_mem f (hε_sub ?_)
+    rw [Metric.mem_eball] at hdist ⊢
+    have hiso := hf.edist_eq ⟨x, hxU⟩ ⟨p, hp⟩
+    exact hiso.symm.trans_lt hdist
+  obtain ⟨yN, Φ, hyN_mem, hfp_src, _, hΦ_eq⟩ :=
+    exists_partialDiffeomorph_pi_toReal_edist_sq (I := J) (M := N) (f p) hfVM
+  choose a ha_VM hfa using fun i ↦ hyN_mem i
+  have ha_norm (i : Fin (Module.finrank ℝ F)) : IsNormalDomain I M (a i) (Metric.ball 0 r) :=
+    (hWM (a i) (hWM'_sub (ha_VM i).1.2)).1
+  have hf_cont : ContinuousOn f U := continuousOn_iff_continuous_domRestrict.2 hf.continuous
+  set O : Set M := VM ∩ f ⁻¹' Φ.source
+  have hOo : IsOpen O :=
+    (hf_cont.mono fun _ (hz : _ ∈ VM) ↦ hz.1.1).isOpen_inter_preimage hVMo Φ.open_source
+  have hpO : p ∈ O := ⟨hpVM, hfp_src⟩
+  have hO_balls : O ⊆ ⋂ i, eball (a i) (ENNReal.ofReal r) := by
+    intro z hz
+    refine mem_iInter.2 fun i ↦ Metric.mem_eball'.2 ?_
+    have ha_ed : edist (a i) p < ENNReal.ofReal (r / 2) := Metric.mem_eball.1 (ha_VM i).2
+    have hz_ed : edist p z < ENNReal.ofReal (r / 2) := Metric.mem_eball'.1 hz.1.2
+    calc edist (a i) z
+        ≤ edist (a i) p + edist p z := edist_triangle _ _ _
+      _ < ENNReal.ofReal (r / 2) + ENNReal.ofReal (r / 2) := ENNReal.add_lt_add ha_ed hz_ed
+      _ = ENNReal.ofReal r := by
+          rw [← ENNReal.ofReal_add (half_pos hr).le (half_pos hr).le, add_halves]
+  set coord : M → Fin (Module.finrank ℝ F) → ℝ :=
+    fun z i ↦ (edist (a i) z).toReal ^ 2
+  have hcoord_smooth : ContMDiffOn I 𝓘(ℝ, Fin (Module.finrank ℝ F) → ℝ) ∞ coord O :=
+    (contMDiffOn_pi_toReal_edist_sq ha_norm fun _ ↦ subset_rfl).mono hO_balls
+  have hcoord_eq (z : M) (hz : z ∈ O) : coord z = Φ (f z) := by
+    rw [hΦ_eq (f z) hz.2]
+    ext i
+    have hiso := hf.edist_eq ⟨a i, (ha_VM i).1.1⟩ ⟨z, hz.1.1.1⟩
+    simp only [Set.domRestrict_apply, Subtype.edist_mk_mk, hfa i] at hiso
+    simp only [coord, ← hiso]
+  have hmaps : MapsTo coord O Φ.symm.source := fun z hz ↦ by
+    rw [hcoord_eq z hz]
+    exact Φ.map_source hz.2
+  have hcomp : ContMDiffOn I J ∞ (Φ.symm ∘ coord) O :=
+    Φ.symm.contMDiffOn.comp hcoord_smooth hmaps
+  have hcongr : EqOn f (Φ.symm ∘ coord) O := fun z hz ↦ by
+    simp only [comp_apply, hcoord_eq z hz]
+    exact (Φ.left_inv hz.2).symm
+  exact (hcomp.congr hcongr).contMDiffAt (hOo.mem_nhds hpO)
+
+/-- If `f : M → N` restricts to a metric isometry on an open neighbourhood `U` of `p` and
+`f '' U ∈ 𝓝 (f p)`, then `f` is a smooth local diffeomorphism at `p`. -/
+theorem isLocalDiffeomorphAt_of_isometry_domRestrict {f : M → N} {U : Set M} {p : M}
+    (hU : IsOpen U) (hp : p ∈ U) (hf : Isometry (U.domRestrict f)) (hfU : f '' U ∈ 𝓝 (f p)) :
+    IsLocalDiffeomorphAt I J ∞ f p := by
+  have : Nonempty M := ⟨p⟩
+  have hinj : InjOn f U := fun x₁ hx₁ x₂ hx₂ hfx ↦
+    congrArg Subtype.val (hf.injective (a₁ := ⟨x₁, hx₁⟩) (a₂ := ⟨x₂, hx₂⟩) hfx)
+  have hf_cont : ContinuousOn f U := continuousOn_iff_continuous_domRestrict.2 hf.continuous
+  set VN : Set N := interior (f '' U)
+  set U' : Set M := U ∩ f ⁻¹' VN
+  set g : N → M := invFunOn f U
+  have hVNo : IsOpen VN := isOpen_interior
+  have hU'o : IsOpen U' := hf_cont.isOpen_inter_preimage hU hVNo
+  have hpU' : p ∈ U' := ⟨hp, mem_interior_iff_mem_nhds.2 hfU⟩
+  have hg_mem {y : N} (hy : y ∈ VN) : g y ∈ U' :=
+    ⟨invFunOn_mem (interior_subset hy),
+      mem_preimage.2 (by simpa only [g, invFunOn_eq (interior_subset hy)] using hy)⟩
+  have hg_isom : Isometry (VN.domRestrict g) := fun ⟨y₁, hy₁⟩ ⟨y₂, hy₂⟩ ↦ by
+    have h := (hf.edist_eq ⟨g y₁, (hg_mem hy₁).1⟩ ⟨g y₂, (hg_mem hy₂).1⟩).symm
+    simpa only [Set.domRestrict_apply, Subtype.edist_mk_mk, g,
+      invFunOn_eq (interior_subset hy₁), invFunOn_eq (interior_subset hy₂)] using h
+  have hU'_sub_im : U' ⊆ g '' VN := fun x hx ↦ ⟨f x, hx.2, hinj.leftInvOn_invFunOn hx.1⟩
+  let Ψ : PartialDiffeomorph I J M N ∞ :=
+    { toFun := f
+      invFun := g
+      source := U'
+      target := VN
+      map_source' := fun _ hx ↦ hx.2
+      map_target' := fun _ hy ↦ hg_mem hy
+      left_inv' := fun _ hx ↦ hinj.leftInvOn_invFunOn hx.1
+      right_inv' := fun _ hy ↦ invFunOn_eq (interior_subset hy)
+      open_source := hU'o
+      open_target := hVNo
+      contMDiffOn_toFun := fun x hx ↦
+        (contMDiffAt_of_isometry_domRestrict hU hx.1 hf
+          (mem_interior_iff_mem_nhds.1 hx.2)).contMDiffWithinAt
+      contMDiffOn_invFun := fun y hy ↦
+        (contMDiffAt_of_isometry_domRestrict hVNo hy hg_isom
+          (mem_of_superset (hU'o.mem_nhds (hg_mem hy)) hU'_sub_im)).contMDiffWithinAt }
+  exact TauCeti.isLocalDiffeomorphAt_of_eqOn (Φ := Ψ) hpU' (eqOn_refl f U')
+
+/-- If `f : M → N` restricts around each point `p : M` to a metric isometry on an open
+neighbourhood `U` with `f '' U ∈ 𝓝 (f p)`, then `f` is a smooth local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict {f : M → N}
+    (hf : ∀ p : M, ∃ U : Set M, IsOpen U ∧ p ∈ U ∧ Isometry (U.domRestrict f) ∧ f '' U ∈ 𝓝 (f p)) :
+    TauCeti.IsLocalRiemannianIsometry I J f where
+  contMDiff p :=
+    let ⟨_, hUo, hpU, hfU_isom, hfU_nhds⟩ := hf p
+    contMDiffAt_of_isometry_domRestrict hUo hpU hfU_isom hfU_nhds
+  isInvertible_mfderiv p :=
+    let ⟨_, hUo, hpU, hfU_isom, hfU_nhds⟩ := hf p
+    (isLocalDiffeomorphAt_of_isometry_domRestrict (I := I) (J := J) hUo hpU hfU_isom hfU_nhds)
+      |>.isInvertible_mfderiv (by simp)
+  inner_mfderiv p :=
+    let ⟨U, hUo, hpU, hfU_isom, hfU_nhds⟩ := hf p
+    ((contMDiffAt_of_isometry_domRestrict (I := I) (J := J) hUo hpU hfU_isom hfU_nhds)
+      |>.mdifferentiableAt (by simp))
+      |>.inner_mfderiv_eq_of_eventually_edist_eq
+        (eventually_of_mem (hUo.mem_nhds hpU) fun y hy ↦ hfU_isom.edist_eq ⟨p, hpU⟩ ⟨y, hy⟩)
+
+end TauCeti.Manifold
+
+namespace Isometry
+
+/-- A metric isometry `f : M → N` whose range is a neighbourhood of `f p` is smooth at `p`. -/
+theorem contMDiffAt_of_range_mem_nhds {f : M → N} (hf : Isometry f) {p : M}
+    (hr : range f ∈ 𝓝 (f p)) : ContMDiffAt I J ∞ f p :=
+  contMDiffAt_of_isometry_domRestrict isOpen_univ (mem_univ p)
+    (hf.comp (fun _ _ ↦ rfl)) (by simpa only [image_univ] using hr)
+
+/-- A metric isometry `f : M → N` whose range is a neighbourhood of `f p` is a smooth local
+diffeomorphism at `p`. -/
+theorem isLocalDiffeomorphAt_of_range_mem_nhds {f : M → N} (hf : Isometry f) {p : M}
+    (hr : range f ∈ 𝓝 (f p)) : IsLocalDiffeomorphAt I J ∞ f p :=
+  isLocalDiffeomorphAt_of_isometry_domRestrict isOpen_univ (mem_univ p)
+    (hf.comp (fun _ _ ↦ rfl)) (by simpa only [image_univ] using hr)
+
+/-- A metric isometry `f : M → N` with open range is smooth. -/
+theorem contMDiff_of_isOpen_range {f : M → N} (hf : Isometry f) (hr : IsOpen (range f)) :
+    ContMDiff I J ∞ f :=
+  fun p ↦ hf.contMDiffAt_of_range_mem_nhds (hr.mem_nhds (mem_range_self p))
+
+/-- A metric isometry `f : M → N` with open range is a smooth local diffeomorphism. -/
+theorem isLocalDiffeomorph_of_isOpen_range {f : M → N} (hf : Isometry f)
+    (hr : IsOpen (range f)) : IsLocalDiffeomorph I J ∞ f :=
+  fun p ↦ hf.isLocalDiffeomorphAt_of_range_mem_nhds (hr.mem_nhds (mem_range_self p))
+
+/-- A metric isometry `f : M → N` with open range is a smooth local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_of_isOpen_range {f : M → N} (hf : Isometry f)
+    (hr : IsOpen (range f)) : TauCeti.IsLocalRiemannianIsometry I J f :=
+  isLocalRiemannianIsometry_of_forall_exists_isometry_domRestrict fun p ↦
+    ⟨univ, isOpen_univ, mem_univ p, hf.comp (fun _ _ ↦ rfl),
+      by simpa only [image_univ] using hr.mem_nhds (mem_range_self p)⟩
+
+/-- A surjective metric isometry `f : M → N` is smooth. -/
+theorem contMDiff_of_surjective {f : M → N} (hf : Isometry f) (hsurj : Surjective f) :
+    ContMDiff I J ∞ f :=
+  hf.contMDiff_of_isOpen_range (hsurj.range_eq.symm ▸ isOpen_univ)
+
+/-- A surjective metric isometry `f : M → N` is a smooth local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_of_surjective {f : M → N} (hf : Isometry f)
+    (hsurj : Surjective f) : TauCeti.IsLocalRiemannianIsometry I J f :=
+  hf.isLocalRiemannianIsometry_of_isOpen_range (hsurj.range_eq.symm ▸ isOpen_univ)
+
+end Isometry
+
 namespace IsometryEquiv
 
-variable [CompleteSpace N]
+variable (I J) in
+/-- **Myers–Steenrod smoothness theorem.** Every metric equivalence `e : M ≃ᵢ N` between smooth
+boundaryless Riemannian manifolds is smooth. -/
+protected theorem contMDiff (e : M ≃ᵢ N) : ContMDiff I J ∞ e :=
+  e.isometry.contMDiff_of_surjective e.surjective
 
 variable (I J) in
-/-- **A distance-preserving bijection is a Riemannian isometry.** A bijection between Riemannian
-manifolds which preserves their Riemannian distances, onto a complete manifold, is a smooth
-Riemannian isometry. -/
+/-- Promote a metric equivalence `e : M ≃ᵢ N` between smooth boundaryless Riemannian manifolds to a
+smooth `TauCeti.RiemannianIsometry`. -/
 def toRiemannianIsometry (e : M ≃ᵢ N) : TauCeti.RiemannianIsometry I J M N where
-  toEquiv := e.toEquiv
-  contMDiff_toFun := e.isometry.contMDiff
-  contMDiff_invFun := haveI := e.completeSpace; e.symm.isometry.contMDiff
-  inner_mfderiv' := e.isometry.inner_mfderiv
+  toDiffeomorph :=
+    { toEquiv := e.toEquiv
+      contMDiff_toFun := e.contMDiff I J
+      contMDiff_invFun := e.symm.contMDiff J I }
+  inner_mfderiv' :=
+    (e.isometry.isLocalRiemannianIsometry_of_surjective (I := I) (J := J) e.surjective)
+      |>.inner_mfderiv
 
-/-- The Riemannian isometry of `e` is `e` as a map. -/
+/-- Promoting a metric equivalence to a smooth Riemannian isometry preserves the underlying map. -/
 @[simp]
-theorem coe_toRiemannianIsometry (e : M ≃ᵢ N) : ⇑(e.toRiemannianIsometry I J) = e :=
+theorem coe_toRiemannianIsometry (e : M ≃ᵢ N) : ⇑(e.toRiemannianIsometry I J) = ⇑e :=
   (rfl)
 
-/-- The metric equivalence of the Riemannian isometry of `e` is `e`. -/
+/-- Applying `e.toRiemannianIsometry I J` evaluates `e`. -/
+@[simp]
+theorem toRiemannianIsometry_apply (e : M ≃ᵢ N) (x : M) : e.toRiemannianIsometry I J x = e x :=
+  (rfl)
+
+/-- Promoting the inverse metric equivalence gives the inverse smooth Riemannian isometry. -/
+@[simp]
+theorem toRiemannianIsometry_symm (e : M ≃ᵢ N) :
+    e.symm.toRiemannianIsometry J I = (e.toRiemannianIsometry I J).symm := by
+  ext y
+  apply (EquivLike.injective (e.toRiemannianIsometry I J))
+  simp
+
+/-- The inverse of the Riemannian isometry of `e` is the Riemannian isometry of `e.symm`. -/
+theorem symm_toRiemannianIsometry (e : M ≃ᵢ N) :
+    (e.toRiemannianIsometry I J).symm = e.symm.toRiemannianIsometry J I :=
+  (e.toRiemannianIsometry_symm (I := I) (J := J)).symm
+
+/-- Evaluating `(e.toRiemannianIsometry I J).symm` agrees with `e.symm`. -/
+@[simp]
+theorem coe_toRiemannianIsometry_symm (e : M ≃ᵢ N) :
+    ⇑(e.toRiemannianIsometry I J).symm = ⇑e.symm := by
+  rw [← toRiemannianIsometry_symm, coe_toRiemannianIsometry]
+
+/-- Promoting the identity metric equivalence gives the identity smooth Riemannian isometry. -/
+@[simp]
+theorem toRiemannianIsometry_refl :
+    (IsometryEquiv.refl M).toRiemannianIsometry I I = TauCeti.RiemannianIsometry.refl I M := by
+  ext x
+  simp only [toRiemannianIsometry_apply, TauCeti.RiemannianIsometry.refl_apply,
+    IsometryEquiv.coe_eq_toEquiv, IsometryEquiv.refl, Equiv.refl_apply]
+
+/-- Forgetting smoothness after `toRiemannianIsometry` recovers the original metric equivalence. -/
 @[simp]
 theorem toIsometryEquiv_toRiemannianIsometry (e : M ≃ᵢ N) :
     ((e.toRiemannianIsometry I J : TauCeti.RiemannianIsometry I J M N) : M ≃ᵢ N) = e := by
   ext x
+  rfl
+
+/-- Promoting `1 : M ≃ᵢ M` gives `1 : TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_one :
+    (1 : M ≃ᵢ M).toRiemannianIsometry I I = (1 : TauCeti.Isom I M) := by
+  ext x
   simp
 
-/-- The inverse of the Riemannian isometry of `e` is the Riemannian isometry of `e.symm`. -/
+/-- Promoting a product in `M ≃ᵢ M` gives the product in `TauCeti.Isom I M`. -/
 @[simp]
-theorem symm_toRiemannianIsometry [CompleteSpace M] (e : M ≃ᵢ N) :
-    (e.toRiemannianIsometry I J).symm = e.symm.toRiemannianIsometry J I := by
+theorem toRiemannianIsometry_mul (e₁ e₂ : M ≃ᵢ M) :
+    (e₁ * e₂).toRiemannianIsometry I I =
+      e₁.toRiemannianIsometry I I * e₂.toRiemannianIsometry I I := by
   ext x
-  apply e.injective
-  rw [← coe_toRiemannianIsometry (I := I) (J := J) e, TauCeti.RiemannianIsometry.apply_symm_apply,
-    coe_toRiemannianIsometry, coe_toRiemannianIsometry, apply_symm_apply]
+  simp
+
+/-- Promoting an inverse in `M ≃ᵢ M` gives the inverse in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_inv (e : M ≃ᵢ M) :
+    e⁻¹.toRiemannianIsometry I I = (e.toRiemannianIsometry I I)⁻¹ :=
+  eq_inv_of_mul_eq_one_left
+    (by rw [← toRiemannianIsometry_mul, inv_mul_cancel, toRiemannianIsometry_one])
+
+/-- Promoting a quotient in `M ≃ᵢ M` gives the quotient in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_div (e₁ e₂ : M ≃ᵢ M) :
+    (e₁ / e₂).toRiemannianIsometry I I =
+      e₁.toRiemannianIsometry I I / e₂.toRiemannianIsometry I I := by
+  simp [div_eq_mul_inv]
+
+/-- Promoting a natural power in `M ≃ᵢ M` gives the natural power in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_pow (e : M ≃ᵢ M) (n : ℕ) :
+    (e ^ n).toRiemannianIsometry I I = e.toRiemannianIsometry I I ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
+/-- Promoting an integer power in `M ≃ᵢ M` gives the integer power in `TauCeti.Isom I M`. -/
+@[simp]
+theorem toRiemannianIsometry_zpow (e : M ≃ᵢ M) (n : ℤ) :
+    (e ^ n).toRiemannianIsometry I I = e.toRiemannianIsometry I I ^ n := by
+  cases n with
+  | ofNat n => simp
+  | negSucc n => simp
+
+variable
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''} [K.Boundaryless]
+  {P : Type*} [EMetricSpace P] [ChartedSpace H'' P]
+  [RiemannianBundle (fun z : P ↦ TangentSpace K z)] [IsManifold K ∞ P]
+  [IsContMDiffRiemannianBundle K ∞ G (fun z : P ↦ TangentSpace K z)]
+  [IsRiemannianManifold K P]
+
+variable (J) in
+/-- Promoting a composite of metric equivalences agrees with composing the promoted smooth
+Riemannian isometries. -/
+theorem toRiemannianIsometry_trans (e₁ : M ≃ᵢ N) (e₂ : N ≃ᵢ P) :
+    (e₁.trans e₂).toRiemannianIsometry I K =
+      (e₁.toRiemannianIsometry I J).trans (e₂.toRiemannianIsometry J K) := by
+  ext x
+  simp
 
 end IsometryEquiv
 
-/-- The Riemannian isometry of the metric equivalence of a Riemannian isometry `Φ` is `Φ`. -/
+namespace Isometry
+
+variable (I) in
+/-- Every distance-preserving self-map of a compact smooth boundaryless Riemannian manifold is a
+smooth Riemannian self-isometry. -/
+def riemannianIsometryOfCompactSpace [CompactSpace M] {f : M → M} (hf : Isometry f) :
+    TauCeti.Isom I M :=
+  hf.isometryEquivOfCompactSpace.toRiemannianIsometry I I
+
+/-- `hf.riemannianIsometryOfCompactSpace I` is `hf.isometryEquivOfCompactSpace` promoted via
+`IsometryEquiv.toRiemannianIsometry`. -/
+theorem riemannianIsometryOfCompactSpace_def [CompactSpace M] {f : M → M} (hf : Isometry f) :
+    hf.riemannianIsometryOfCompactSpace I =
+      hf.isometryEquivOfCompactSpace.toRiemannianIsometry I I :=
+  (rfl)
+
+/-- The underlying map of `hf.riemannianIsometryOfCompactSpace I` is `f`. -/
 @[simp]
-theorem TauCeti.RiemannianIsometry.toRiemannianIsometry_toIsometryEquiv [CompleteSpace N]
-    (Φ : TauCeti.RiemannianIsometry I J M N) :
+theorem coe_riemannianIsometryOfCompactSpace [CompactSpace M] {f : M → M} (hf : Isometry f) :
+    ⇑(hf.riemannianIsometryOfCompactSpace I) = f := by
+  simp [riemannianIsometryOfCompactSpace_def]
+
+/-- Forgetting smoothness on `hf.riemannianIsometryOfCompactSpace I` recovers
+`hf.isometryEquivOfCompactSpace`. -/
+@[simp]
+theorem toIsometryEquiv_riemannianIsometryOfCompactSpace [CompactSpace M] {f : M → M}
+    (hf : Isometry f) :
+    ((hf.riemannianIsometryOfCompactSpace I : TauCeti.Isom I M) : M ≃ᵢ M) =
+      hf.isometryEquivOfCompactSpace := by
+  simp [riemannianIsometryOfCompactSpace_def]
+
+end Isometry
+
+namespace TauCeti.RiemannianIsometry
+
+/-- Promoting the underlying metric equivalence of a smooth Riemannian isometry recovers it. -/
+@[simp]
+theorem toRiemannianIsometry_toIsometryEquiv (Φ : RiemannianIsometry I J M N) :
     (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ := by
   ext x
-  simp
+  rfl
+
+variable (I J M N) in
+/-- **Equivalence between smooth Riemannian isometries and metric equivalences.** -/
+def isometryEquivEquiv : RiemannianIsometry I J M N ≃ (M ≃ᵢ N) where
+  toFun Φ := (Φ : M ≃ᵢ N)
+  invFun e := e.toRiemannianIsometry I J
+  left_inv := toRiemannianIsometry_toIsometryEquiv
+  right_inv := IsometryEquiv.toIsometryEquiv_toRiemannianIsometry
+
+/-- `isometryEquivEquiv` sends a smooth Riemannian isometry to its underlying metric equivalence. -/
+@[simp]
+theorem isometryEquivEquiv_apply (Φ : RiemannianIsometry I J M N) :
+    isometryEquivEquiv I J M N Φ = (Φ : M ≃ᵢ N) :=
+  (rfl)
+
+/-- `isometryEquivEquiv.symm` promotes a metric equivalence via `toRiemannianIsometry`. -/
+@[simp]
+theorem isometryEquivEquiv_symm_apply (e : M ≃ᵢ N) :
+    (isometryEquivEquiv I J M N).symm e = e.toRiemannianIsometry I J :=
+  (rfl)
+
+/-- A map `f : M → N` between smooth boundaryless Riemannian manifolds is the underlying map of a
+smooth Riemannian isometry if and only if it is a surjective metric isometry. -/
+theorem exists_coe_eq_iff_isometry_and_surjective {f : M → N} :
+    (∃ Φ : RiemannianIsometry I J M N, ⇑Φ = f) ↔ Isometry f ∧ Surjective f := by
+  refine ⟨?_, fun ⟨hf, hsurj⟩ ↦ ?_⟩
+  · rintro ⟨Φ, rfl⟩
+    exact ⟨IsometryClass.isometry Φ, Φ.toDiffeomorph.surjective⟩
+  · let e : M ≃ᵢ N :=
+      { toEquiv := Equiv.ofBijective f ⟨hf.injective, hsurj⟩
+        isometry_toFun := hf }
+    exact ⟨e.toRiemannianIsometry I J, rfl⟩
+
+/-- On a compact smooth boundaryless Riemannian manifold, a self-map `f : M → M` is the underlying
+map of a smooth Riemannian self-isometry if and only if it preserves the Riemannian distance. -/
+theorem exists_isom_coe_eq_iff_isometry [CompactSpace M] {f : M → M} :
+    (∃ Φ : Isom I M, ⇑Φ = f) ↔ Isometry f :=
+  exists_coe_eq_iff_isometry_and_surjective.trans
+    ⟨And.left, fun hf ↦ ⟨hf, hf.surjective_of_compactSpace⟩⟩
+
+/-- On a compact smooth boundaryless Riemannian manifold, the underlying maps of `Isom I M` are
+precisely the metric isometries `M → M`. -/
+theorem range_coe_isom [CompactSpace M] :
+    range ((⇑) : Isom I M → M → M) = {f : M → M | Isometry f} :=
+  Set.ext fun _ ↦ exists_isom_coe_eq_iff_isometry
+
+variable (I M) in
+/-- **Group isomorphism between `Isom I M` and `M ≃ᵢ M`.** -/
+def isometryEquivMulEquiv : Isom I M ≃* (M ≃ᵢ M) where
+  toEquiv := isometryEquivEquiv I I M M
+  map_mul' _ _ := by
+    ext x
+    simp
+
+/-- The underlying equivalence of `isometryEquivMulEquiv` is `isometryEquivEquiv`. -/
+@[simp]
+theorem toEquiv_isometryEquivMulEquiv :
+    (isometryEquivMulEquiv I M : Isom I M ≃ (M ≃ᵢ M)) = isometryEquivEquiv I I M M :=
+  (rfl)
+
+-- See note [hom simp lemma priority]
+/-- `isometryEquivMulEquiv` sends an element of `Isom I M` to its metric equivalence. -/
+@[simp low]
+theorem isometryEquivMulEquiv_apply (Φ : Isom I M) :
+    isometryEquivMulEquiv I M Φ = (Φ : M ≃ᵢ M) :=
+  (rfl)
+
+-- See note [hom simp lemma priority]
+/-- `isometryEquivMulEquiv.symm` promotes a self-metric equivalence via `toRiemannianIsometry`. -/
+@[simp low]
+theorem isometryEquivMulEquiv_symm_apply (e : M ≃ᵢ M) :
+    (isometryEquivMulEquiv I M).symm e = e.toRiemannianIsometry I I :=
+  (rfl)
+
+end TauCeti.RiemannianIsometry
+
+end ExtendedMetric
 
 end
