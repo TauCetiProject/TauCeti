@@ -44,6 +44,31 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- The normalized cutoff gives both Mellin convergence and differentiability in its strip. -/
+private theorem upperTail_mellin_regular {g : ℝ → ℂ} {r : ℝ} {s : ℂ}
+    (hg : LocallyIntegrableOn g (Ici 1)) (hO : g =O[atTop] fun t ↦ t ^ r)
+    (hs : r < s.re) :
+    MellinConvergent ((Ici 1).indicator g) (-s) ∧
+      DifferentiableAt ℂ (mellin ((Ici 1).indicator g)) (-s) := by
+  have hlocal : LocallyIntegrableOn ((Ici 1).indicator g) (Ioi 0) :=
+    hg.indicator_of_isClosed measurableSet_Ici.nullMeasurableSet
+      isOpen_Ioi.isLocallyClosed isClosed_Ici Set.inter_subset_right (by
+        filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht
+        exact fun hn ↦ (hn ht).elim)
+  have htop : (Ici 1).indicator g =O[atTop] fun t ↦ t ^ (-(-r)) := by
+    rw [neg_neg]
+    refine hO.congr' ?_ EventuallyEq.rfl
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
+    exact (Set.indicator_of_mem ht g).symm
+  have hbot : (Ici 1).indicator g =O[𝓝[>] 0] fun t ↦ t ^ (-((-s).re - 1)) := by
+    apply IsBigO.of_bound 0
+    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+    simp only [Set.indicator_of_notMem (Set.notMem_Ici.mpr ht.2) g,
+      norm_zero, zero_mul, le_refl]
+  have hstrip : (-s).re < -r := by simpa using hs
+  exact ⟨mellinConvergent_of_isBigO_rpow hlocal htop hstrip hbot (sub_one_lt (-s).re),
+    mellin_differentiableAt_of_isBigO_rpow hlocal htop hstrip hbot (sub_one_lt (-s).re)⟩
+
 /-- **Holomorphy of an integral against `t ^ (-(s + 1))`.** If `g` is `O(t ^ r)` at infinity,
 then `s ↦ ∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))` is complex-differentiable on `r < Re s`.
 No local-integrability hypothesis is needed: if it fails, all these Bochner integrals are zero. -/
@@ -55,22 +80,7 @@ theorem differentiableOn_integral_mul_cpow_of_isBigO {g : ℝ → ℂ} {r : ℝ}
   by_cases hg : LocallyIntegrableOn g (Set.Ici 1)
   · intro s hs
     have hmellin : DifferentiableAt ℂ (fun z : ℂ ↦ mellin ((Set.Ici 1).indicator g) (-z)) s :=
-      (mellin_differentiableAt_of_isBigO_rpow (a := -r)
-        (hg.indicator_of_isClosed measurableSet_Ici.nullMeasurableSet
-          isOpen_Ioi.isLocallyClosed isClosed_Ici Set.inter_subset_right
-          (by
-            filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht
-            exact fun hn ↦ (hn ht).elim))
-        (by
-          rw [neg_neg]
-          refine hO.congr' ?_ EventuallyEq.rfl
-          filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-          exact (Set.indicator_of_mem ht g).symm) (by simpa using hs)
-        (IsBigO.of_bound 0 <| by
-        filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-        simp only [Set.indicator_of_notMem (Set.notMem_Ici.mpr ht.2) g,
-          norm_zero, zero_mul, le_refl]) (sub_one_lt (-s).re)).comp s
-        differentiableAt_id.neg
+      (upperTail_mellin_regular hg hO hs).2.comp s differentiableAt_id.neg
     simpa only [mellin_indicator_Ici _ zero_le_one, smul_eq_mul, neg_add', mul_comm] using
       hmellin.differentiableWithinAt
   · have hzero (s : ℂ) :
@@ -99,22 +109,7 @@ theorem integrableOn_mul_cpow_of_isBigO {g : ℝ → ℂ} {r : ℝ}
     (hg : LocallyIntegrableOn g (Set.Ici 1)) (hO : g =O[atTop] fun t ↦ t ^ r) {s : ℂ}
     (hs : r < s.re) :
     IntegrableOn (fun t : ℝ ↦ g t * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 1) := by
-  have hconv : MellinConvergent ((Set.Ici 1).indicator g) (-s) :=
-    mellinConvergent_of_isBigO_rpow (a := -r)
-      (hg.indicator_of_isClosed measurableSet_Ici.nullMeasurableSet
-          isOpen_Ioi.isLocallyClosed isClosed_Ici Set.inter_subset_right
-          (by
-            filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht
-            exact fun hn ↦ (hn ht).elim))
-      (by
-        rw [neg_neg]
-        refine hO.congr' ?_ EventuallyEq.rfl
-        filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-        exact (Set.indicator_of_mem ht g).symm) (by simpa using hs)
-      (IsBigO.of_bound 0 <| by
-        filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-        simp only [Set.indicator_of_notMem (Set.notMem_Ici.mpr ht.2) g,
-          norm_zero, zero_mul, le_refl]) (sub_one_lt (-s).re)
+  have hconv := (upperTail_mellin_regular hg hO hs).1
   refine (hconv.mono_set (Set.Ioi_subset_Ioi zero_le_one)).congr_fun (fun t ht ↦ ?_)
     measurableSet_Ioi
   dsimp only
