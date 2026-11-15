@@ -12,8 +12,10 @@ public import TauCeti.Topology.Sheaves.Leray.Colimit
 import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Algebra.Category.Grp.IsSheafFor
+import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.AddCommGrp
+import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
@@ -51,6 +53,8 @@ the structure sheaf vanishes as well.
   cohomology `H¹(ℙ¹, 𝒪)` vanishes.
 * `TauCeti.RiemannSurface.isZero_cechCohomology_one_holomorphicStructureSheafModules_sphere`: the
   degree one Čech cohomology of the structure sheaf of `ℙ¹` vanishes.
+* `TauCeti.RiemannSurface.finrank_cechCohomology_one_holomorphicStructureSheafModules_sphere`:
+  `dim H¹(ℙ¹, 𝒪) = 0`.
 
 ## References
 
@@ -252,5 +256,18 @@ theorem isZero_cechCohomology_one_holomorphicStructureSheafModules_sphere :
   Sheaf.isZero_cechCohomology_one_of_subsingleton_H _
     (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
     subsingleton_H_one_holomorphicStructureSheafModules_sphere
+
+/-- **`dim H¹(ℙ¹, 𝒪) = 0`.** The degree one Čech cohomology of the structure sheaf of the Riemann
+sphere has dimension zero. -/
+theorem finrank_cechCohomology_one_holomorphicStructureSheafModules_sphere :
+    Module.finrank ℂ ((cechCohomology (TopCat.of (OnePoint ℂ)) (ModuleCat.{0} ℂ) 1).obj
+      (holomorphicStructureSheafModules 𝓘(ℂ) (OnePoint ℂ)).obj) = 0 := by
+  -- computed on the two-disc cover, which computes `H¹` by the degree one Leray theorem
+  rw [finrank_cechCohomology_one_holomorphicStructureSheafModules_eq_finrank_homology_cechComplex
+    sphereDiscCover iSup_sphereDiscCover
+    subsingleton_H'_one_holomorphicStructureSheafModules_sphereDiscCover]
+  exact ModuleCat.finrank_eq_zero_of_isZero <|
+    (isZero_homology_cechComplex_comp_iff sphereDiscCover _ _ 1).1
+      isZero_homology_one_cechComplex_sphereDiscCover
 
 end TauCeti.RiemannSurface

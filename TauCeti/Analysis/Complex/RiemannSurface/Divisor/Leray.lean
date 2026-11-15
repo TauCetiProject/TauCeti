@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Trivialization
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Leray
 public import TauCeti.Topology.Sheaves.Cohomology.Restriction
+public import TauCeti.Topology.Sheaves.Leray.Colimit
 
 /-!
 # Acyclic coordinate covers for divisor sheaves
@@ -20,7 +21,19 @@ Dolbeault lemma.
 Such discs form a neighbourhood basis. On a compact Riemann surface, every open cover
 therefore admits a finite refinement acyclic in degree one for the divisor sheaf. The
 degree-one Leray theorem then computes its first cohomology from these covers, independently
-of refinement; no acyclicity of their intersections is needed.
+of refinement; no acyclicity of their intersections is needed. In particular, every finite open
+cover whose members have vanishing `H¹` for `𝒪(D)` computes the degree one Čech cohomology of
+`𝒪(D)`, so `dim H¹(X, 𝒪(D))` may be computed on any such cover.
+
+## Main results
+
+* `TauCeti.RiemannSurface.exists_finite_cover_subsingleton_H'_one_divisorSheaf`: on a compact
+  Riemann surface, every open cover has a finite refinement whose members have vanishing `H¹` for
+  the divisor sheaf.
+* `TauCeti.RiemannSurface.isIso_toCechCohomology_one_divisorSheaf`: every such finite cover
+  computes the degree one Čech cohomology of the divisor sheaf.
+* `TauCeti.RiemannSurface.finrank_cechCohomology_one_divisorSheaf_eq_finrank_homology_cechComplex`:
+  `dim H¹(X, 𝒪(D))` is the dimension of the Čech `H¹` of any such cover.
 
 ## References
 
@@ -116,5 +129,47 @@ theorem exists_finite_cover_subsingleton_H'_one_divisorSheaf [CompactSpace X]
   obtain ⟨s, hs⟩ := hWc.exists_finite_of_compactSpace
   exact ⟨s, inferInstance, fun i ↦ W i.1, hs.iSup_eq_top, fun i ↦ ⟨k i.1, hWV i.1⟩,
     fun i ↦ hW i.1⟩
+
+section Compact
+
+open TauCeti.CategoryTheory TauCeti.Topology
+
+variable [CompactSpace X] {ι : Type} [Finite ι] (U : ι → Opens (TopCat.of X))
+  (hU : ⨆ i, U i = ⊤) (D : WeilDivisor X) (hFU : ∀ i, Subsingleton (Sheaf.H'
+    ((sheafCompose _ (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj (divisorSheaf D)) 1 (U i)))
+
+include hU hFU in
+/-- **Finite acyclic covers compute `H¹(X, 𝒪(D))`.** On a compact Riemann surface, a finite open
+cover whose members have vanishing `H¹` for the divisor sheaf `𝒪(D)` computes its degree one Čech
+cohomology. -/
+theorem isIso_toCechCohomology_one_divisorSheaf :
+    IsIso ((toCechCohomology (ModuleCat.{0} ℂ) 1 U (IsOpenCover.mk hU)).app
+      (divisorSheaf D).obj) :=
+  Sheaf.isIso_toCechCohomology_one_of_subsingleton_H' _
+    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_divisorSheaf D V hV) U hU hFU
+
+include hU hFU in
+/-- On a compact Riemann surface, `H¹(X, 𝒪(D))` is finite-dimensional exactly when the Čech `H¹`
+of a finite open cover whose members have vanishing `H¹` for `𝒪(D)` is. -/
+theorem finite_cechCohomology_one_divisorSheaf_iff_finite_homology_cechComplex :
+    Module.Finite ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
+        (divisorSheaf D).obj) ↔
+      Module.Finite ℂ (((cechComplexFunctor U).obj
+        (divisorSheaf D).obj).homology 1) :=
+  Sheaf.finite_cechCohomology_one_iff_finite_homology_cechComplex _
+    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_divisorSheaf D V hV) U hU hFU
+
+include hU hFU in
+/-- On a compact Riemann surface, `dim H¹(X, 𝒪(D))` is the dimension of the Čech `H¹` of any
+finite open cover whose members have vanishing `H¹` for `𝒪(D)`. -/
+theorem finrank_cechCohomology_one_divisorSheaf_eq_finrank_homology_cechComplex :
+    Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
+        (divisorSheaf D).obj) =
+      Module.finrank ℂ (((cechComplexFunctor U).obj
+        (divisorSheaf D).obj).homology 1) :=
+  Sheaf.finrank_cechCohomology_one_eq_finrank_homology_cechComplex _
+    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_divisorSheaf D V hV) U hU hFU
+
+end Compact
 
 end TauCeti.RiemannSurface

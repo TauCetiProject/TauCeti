@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Linear
+public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
@@ -24,6 +25,11 @@ for a finite family `U`. For instance, the Čech complex of a presheaf of module
 modules whose underlying complex of abelian groups is the Čech complex of the underlying presheaf
 of abelian groups.
 
+If `F` also preserves homology, then `F` applied to the cohomology of `Č(U, P)` is the cohomology
+of `Č(U, P ⋙ F)` (`TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso`), compatibly with the
+maps induced by morphisms of families. For a faithful `F`, the cohomology of `Č(U, P)` vanishes
+exactly when that of `Č(U, P ⋙ F)` does.
+
 When `A` is linear over a ring `R`, the Čech complex functor is `R`-linear
 (`TauCeti.CategoryTheory.cechComplexFunctor_linear`): multiplying a morphism of presheaves by a
 scalar multiplies the induced map of Čech complexes by that scalar.
@@ -32,6 +38,8 @@ scalar multiplies the induced map of Čech complexes by that scalar.
 
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso`: the natural isomorphism between `F` applied
   to the Čech complex of `P` and the Čech complex of `P ⋙ F`.
+* `TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso`: the isomorphism between `F` applied
+  to the cohomology of the Čech complex of `P` and the cohomology of the Čech complex of `P ⋙ F`.
 
 ## Main results
 
@@ -39,6 +47,10 @@ scalar multiplies the induced map of Čech complexes by that scalar.
   under `F` of the projections of the products.
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_comp_cechComplexMap`: it commutes
   with the maps induced by morphisms of families.
+* `TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap`:
+  the isomorphism on cohomology commutes with the maps induced by morphisms of families.
+* `TauCeti.CategoryTheory.isZero_homology_cechComplex_comp_iff`: for a faithful `F`, the cohomology
+  of `Č(U, P ⋙ F)` vanishes exactly when that of `Č(U, P)` does.
 * `TauCeti.CategoryTheory.cechComplexFunctor_linear`: the Čech complex functor is linear.
 -/
 
@@ -184,6 +196,90 @@ theorem cechComplexFunctorMapIso_hom_app_comp_cechComplexMap {κ : Type w} {V : 
   exact ((Category.assoc _ _ _).trans ((F.map _ ≫= h₁).trans h₄)).trans
     ((h₃ =≫ _).symm.trans ((Category.assoc _ _ _).trans
       ((_ ≫= h₂.symm).trans (Category.assoc _ _ _).symm)))
+
+section Homology
+
+variable [CategoryWithHomology A] [CategoryWithHomology B] [F.PreservesHomology]
+
+/-- **Čech cohomology under a change of coefficients.** For an additive functor `F : A ⥤ B`
+preserving homology and the products indexed by `Fin (n + 1) → ι` for every `n`, applying `F` to
+the degree `n` cohomology of the Čech complex of a presheaf `P` for the family `U` gives the degree
+`n` cohomology of the Čech complex of `P ⋙ F`. -/
+def cechComplexFunctorMapHomologyIso (P : Cᵒᵖ ⥤ A) (n : ℕ) :
+    F.obj (((cechComplexFunctor U).obj P).homology n) ≅
+      ((cechComplexFunctor U).obj (P ⋙ F)).homology n :=
+  ((((cechComplexFunctor U).obj P).sc n).mapHomologyIso F).symm ≪≫
+    HomologicalComplex.homologyMapIso ((cechComplexFunctorMapIso U F).app P) n
+
+/-- The forward map of `cechComplexFunctorMapHomologyIso`: the comparison map of `F` with the
+cohomology of the Čech complex, followed by the map on cohomology induced by
+`cechComplexFunctorMapIso`. -/
+theorem cechComplexFunctorMapHomologyIso_hom (P : Cᵒᵖ ⥤ A) (n : ℕ) :
+    (cechComplexFunctorMapHomologyIso U F P n).hom =
+      ((((cechComplexFunctor U).obj P).sc n).mapHomologyIso F).inv ≫
+        HomologicalComplex.homologyMap ((cechComplexFunctorMapIso U F).hom.app P) n :=
+  (rfl)
+
+/-- `cechComplexFunctorMapHomologyIso` is natural in the presheaf. -/
+@[reassoc]
+theorem cechComplexFunctorMapHomologyIso_hom_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
+    F.map (HomologicalComplex.homologyMap ((cechComplexFunctor U).map α) n) ≫
+        (cechComplexFunctorMapHomologyIso U F Q n).hom =
+      (cechComplexFunctorMapHomologyIso U F P n).hom ≫
+        HomologicalComplex.homologyMap
+          ((cechComplexFunctor U).map (Functor.whiskerRight α F)) n := by
+  -- `HomologicalComplex.homologyMap` is `ShortComplex.homologyMap` of the induced map of short
+  -- complexes only up to unfolding, so the naturality of `mapHomologyIso` is stated explicitly
+  have ha : F.map (HomologicalComplex.homologyMap ((cechComplexFunctor U).map α) n) ≫
+      ((((cechComplexFunctor U).obj Q).sc n).mapHomologyIso F).inv =
+        ((((cechComplexFunctor U).obj P).sc n).mapHomologyIso F).inv ≫
+          HomologicalComplex.homologyMap
+            ((F.mapHomologicalComplex _).map ((cechComplexFunctor U).map α)) n :=
+    ShortComplex.mapHomologyIso_inv_naturality _ F
+  have h := congrArg (HomologicalComplex.homologyMap · n)
+    ((cechComplexFunctorMapIso U F).hom.naturality α)
+  simp only [Functor.comp_map, Functor.whiskeringRight_obj_map,
+    HomologicalComplex.homologyMap_comp] at h
+  rw [cechComplexFunctorMapHomologyIso_hom, cechComplexFunctorMapHomologyIso_hom,
+    reassoc_of% ha, h, Category.assoc]
+
+/-- **`cechComplexFunctorMapHomologyIso` commutes with refinement maps.** For a morphism `φ` from
+the family `U` to a family `V`, applying `F` to the map `Hⁿ(Č(V, P)) ⟶ Hⁿ(Č(U, P))` induced by `φ`
+and then identifying with `Hⁿ(Č(U, P ⋙ F))` is identifying with `Hⁿ(Č(V, P ⋙ F))` and then
+applying the map induced by `φ`. -/
+@[reassoc]
+theorem cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap {κ : Type w}
+    {V : κ → C} [∀ n : ℕ, PreservesLimitsOfShape (Discrete (Fin (n + 1) → κ)) F] (P : Cᵒᵖ ⥤ A)
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
+    F.map (HomologicalComplex.homologyMap (cechComplexMap P φ) n) ≫
+        (cechComplexFunctorMapHomologyIso U F P n).hom =
+      (cechComplexFunctorMapHomologyIso V F P n).hom ≫
+        HomologicalComplex.homologyMap (cechComplexMap (P ⋙ F) φ) n := by
+  -- `HomologicalComplex.homologyMap` is `ShortComplex.homologyMap` of the induced map of short
+  -- complexes only up to unfolding, so the naturality of `mapHomologyIso` is stated explicitly
+  have ha : F.map (HomologicalComplex.homologyMap (cechComplexMap P φ) n) ≫
+      ((((cechComplexFunctor U).obj P).sc n).mapHomologyIso F).inv =
+        ((((cechComplexFunctor V).obj P).sc n).mapHomologyIso F).inv ≫
+          HomologicalComplex.homologyMap ((F.mapHomologicalComplex _).map (cechComplexMap P φ)) n :=
+    ShortComplex.mapHomologyIso_inv_naturality _ F
+  have h := congrArg (HomologicalComplex.homologyMap · n)
+    (cechComplexFunctorMapIso_hom_app_comp_cechComplexMap U F P φ)
+  simp only [HomologicalComplex.homologyMap_comp] at h
+  rw [cechComplexFunctorMapHomologyIso_hom, cechComplexFunctorMapHomologyIso_hom,
+    reassoc_of% ha, h, Category.assoc]
+
+/-- **Vanishing of Čech cohomology under a faithful change of coefficients.** For a faithful
+functor `F`, the degree `n` cohomology of the Čech complex of `P ⋙ F` for the family `U` vanishes
+if and only if that of the Čech complex of `P` does. -/
+theorem isZero_homology_cechComplex_comp_iff [F.Faithful] (P : Cᵒᵖ ⥤ A) (n : ℕ) :
+    IsZero (((cechComplexFunctor U).obj (P ⋙ F)).homology n) ↔
+      IsZero (((cechComplexFunctor U).obj P).homology n) := by
+  rw [← (cechComplexFunctorMapHomologyIso U F P n).isZero_iff]
+  refine ⟨fun h ↦ (IsZero.iff_id_eq_zero _).2 (F.map_injective ?_), F.map_isZero⟩
+  rw [F.map_id, F.map_zero]
+  exact h.eq_of_src _ _
+
+end Homology
 
 omit [HasProducts.{w} B] in
 /-- The Čech complex functor of a family is linear when the coefficient category is. -/

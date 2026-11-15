@@ -32,7 +32,9 @@ cover. No separation axiom is assumed.
 ## Main results
 
 * `TauCeti.Topology.cechComplexHomologyMap_comp_toCechCohomology`: `toCechCohomology` is natural
-  with respect to refinements of open covers.
+  with respect to refinements of open covers, and
+  `TauCeti.Topology.homologyMap_cechComplexMap_comp_toCechCohomology_app` is its component at a
+  presheaf.
 * `TauCeti.Topology.toCechCohomology_comp_finiteCechCohomologyIso_inv`: the inverse of
   `finiteCechCohomologyIso` on the image of the Čech cohomology of a small open cover.
 
@@ -97,6 +99,21 @@ theorem cechComplexHomologyMap_comp_toCechCohomology {ι κ : Type u} {U : ι �
     TauCeti.CategoryTheory.cechComplexHomologyMap A n φ ≫ toCechCohomology A n V hV =
       toCechCohomology A n U hU :=
   TauCeti.CategoryTheory.cechComplexHomologyMap_comp_toCechCohomology A _ _ n φ _
+
+/-- The component at a presheaf `P` of `cechComplexHomologyMap_comp_toCechCohomology`: the map on
+Čech cohomology induced by a refinement `φ` of the open cover `U` by the open cover `V`, followed
+by the structure map of `V`, is the structure map of `U`. -/
+@[reassoc]
+theorem homologyMap_cechComplexMap_comp_toCechCohomology_app {ι κ : Type u} {U : ι → Opens X}
+    {V : κ → Opens X} (φ : FormalCoproduct.mk κ V ⟶ FormalCoproduct.mk ι U) (hU : IsOpenCover U)
+    (hV : IsOpenCover V) (P : (Opens X)ᵒᵖ ⥤ A) :
+    HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) n ≫
+        (toCechCohomology A n V hV).app P =
+      (toCechCohomology A n U hU).app P := by
+  rw [← cechComplexHomologyMap_comp_toCechCohomology A n φ hU hV, NatTrans.comp_app,
+    TauCeti.CategoryTheory.cechComplexHomologyMap_app]
+  -- the two sides differ only in the unfolding of the source of `(toCechCohomology A n V hV).app P`
+  rfl
 
 variable (X) [CompactSpace X] [HasColimitsOfShape (FiniteOpenCover X) A]
 
