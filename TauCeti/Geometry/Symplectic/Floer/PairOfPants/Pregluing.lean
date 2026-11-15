@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
 
+import TauCeti.Algebra.Ring.Periodic
+
 /-!
 # Pre-gluing a Floer cylinder to an end of a pair of pants
 
@@ -140,16 +142,6 @@ theorem pairOfPantsPreglue_eventuallyEq_of_add_one_lt
   (continuousAt_const.eventually_lt (continuousAt_fst_positiveEndCoord q hz) hR).mono
     fun _ h ↦ pairOfPantsPreglue_of_add_one_le h.le
 
-/-- A map of period one in `t` does not see an integer shift of `t`. -/
-private theorem apply_add_intCast_sub_of_periodic {α : Type*} {f : ℝ × ℝ → α}
-    (hf : ∀ s, Periodic (fun t ↦ f (s, t)) 1) (p : ℝ × ℝ) (k : ℤ) (a : ℝ) :
-    f (p + (0, (k : ℝ)) - (a, 0)) = f (p - (a, 0)) := by
-  have h := (hf (p.1 - a)).int_mul k p.2
-  simp only [mul_one] at h
-  have e₁ : p + (0, (k : ℝ)) - (a, 0) = (p.1 - a, p.2 + k) := by ext <;> simp
-  have e₂ : p - (a, 0) = (p.1 - a, p.2) := by ext <;> simp
-  rw [e₁, e₂, h]
-
 /-- **The pre-glued pair of pants in the end chart.** For an orbit `x` and a cylinder `v` of period
 one in `t`, the pre-glued map read in the positive end chart of `q` is the pre-glued map of the
 two cylinders `u ∘ φ'_q` and `v`, translated by `R`. -/
@@ -160,7 +152,9 @@ theorem pairOfPantsPreglue_positiveEndChart (hx : Periodic x 1)
   obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
   -- The angular coordinate is recovered up to the integer `k`, which `x` and `v` do not see.
   have hxk : x (ζ.2 + k) = x ζ.2 := by simpa using (hx.int_mul k) ζ.2
-  have hvk := apply_add_intCast_sub_of_periodic hv ζ k (2 * R)
+  have hvk : v (ζ + (0, (k : ℝ)) - (2 * R, 0)) = v (ζ - (2 * R, 0)) := by
+    rw [add_sub_right_comm]
+    simpa using (periodic_zero_prodMk_iff.2 hv).zsmul k (ζ - (2 * R, 0))
   have hζ : ζ - (R, 0) - (R, 0) = ζ - (2 * R, 0) := by
     ext <;> simp only [Prod.fst_sub, Prod.snd_sub] <;> ring
   have hp := preglue_sub x (u ∘ positiveEndChart q) v R (ζ - (R, 0))
@@ -190,7 +184,7 @@ theorem contDiffOn_pairOfPantsPreglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hxp 
     hper (F := fun p ↦ x p.2) (hx.comp contDiff_snd) fun p ↦ by simpa using hxp p.2
   have hvz : ContDiffAt ℝ n (fun w ↦ v (positiveEndCoord q w - (2 * R, 0))) z :=
     hper (F := fun p ↦ v (p - (2 * R, 0))) (hv.comp (contDiff_id.sub contDiff_const))
-      fun p ↦ by exact_mod_cast apply_add_intCast_sub_of_periodic hvp p 1 (2 * R)
+      fun p ↦ by rw [add_sub_right_comm]; exact periodic_zero_prodMk_iff.2 hvp _
   have huz := (hu z hz).contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)
   have h₁ := hcut (g := fun s ↦ 1 - pregluingCutoff (s - R))
     (contDiff_const.sub (contDiff_pregluingCutoff.comp (contDiff_id.sub contDiff_const)))
@@ -214,8 +208,7 @@ theorem perturbedFDeriv_pairOfPantsPreglue_of_lt (ω : SymplecticForm V) (Ks Kt 
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) (hR : (positiveEndCoord q z).1 < R - 1) :
     ω.perturbedFDeriv Ks Kt (pairOfPantsPreglue q x u v R) z = ω.perturbedFDeriv Ks Kt u z := by
   have h := pairOfPantsPreglue_eventuallyEq_of_lt (x := x) (u := u) (v := v) hz hR
-  refine ContinuousLinearMap.ext fun w ↦ ?_
-  rw [perturbedFDeriv_apply, perturbedFDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
+  exact ω.perturbedFDeriv_congr_of_eventuallyEq Ks Kt h
 
 /-- **The Floer operator of the pre-glued pair of pants in the end chart.** For cylindrical data
 `J_t`, `H_t dt`, the Floer operator of the pre-glued map read in the positive end chart of `q` is

@@ -14,6 +14,10 @@ A function periodic under `c₁` and `c₂` is periodic under every integer comb
 `m c₁ + n c₂` (`Function.Periodic.int_mul_add_int_mul`). For the periods `1` and `i` of a
 function on `ℂ` these are the vectors of the lattice `ℤ + ℤ i`; for the periods `τ` and `1` of a
 function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
+
+A function on a product is periodic under `(0, c)` exactly when it is `c`-periodic in its second
+coordinate (`Function.periodic_zero_prodMk_iff`); for instance a map on the cylinder `ℝ × ℝ` of
+period one in `t`.
 -/
 
 public section
@@ -27,5 +31,11 @@ variable {α β : Type*} [NonAssocRing α] {f : α → β} {c₁ c₂ : α}
 theorem Periodic.int_mul_add_int_mul (h₁ : Periodic f c₁) (h₂ : Periodic f c₂) (m n : ℤ) :
     Periodic f (m * c₁ + n * c₂) :=
   (h₁.int_mul m).add_period (h₂.int_mul n)
+
+/-- A function on a product is periodic under `(0, c)` if and only if it is `c`-periodic in its
+second coordinate. -/
+theorem periodic_zero_prodMk_iff {γ δ : Type*} [AddZeroClass γ] [Add δ] {g : γ × δ → β}
+    {c : δ} : Periodic g (0, c) ↔ ∀ a, Periodic (fun b ↦ g (a, b)) c :=
+  ⟨fun h a b ↦ by simpa using h (a, b), fun h ⟨a, b⟩ ↦ by simpa using h a b⟩
 
 end Function
