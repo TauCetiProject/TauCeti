@@ -237,38 +237,27 @@ subspace and hence a null set. -/
 theorem tendsto_addHaar_closedBall_inter_setOf_abs_le_mul_norm {ψ : E →L[ℝ] ℝ} (hψ : ψ ≠ 0) :
     Tendsto (fun t : ℝ ↦ μ (closedBall (0 : E) 1 ∩ {v | |ψ v| ≤ t * ‖v‖})) (𝓝[>] 0) (𝓝 0) := by
   set C : ℝ → Set E := fun t ↦ closedBall (0 : E) 1 ∩ {v | |ψ v| ≤ t * ‖v‖}
-  have hmono : Monotone C := fun s t hst v hv ↦
-    ⟨hv.1, hv.2.trans (mul_le_mul_of_nonneg_right hst (norm_nonneg v))⟩
-  -- The sequence of cones of aperture `1 / (n + 1)`.
-  have hmeas (n : ℕ) : NullMeasurableSet (C (1 / (n + 1))) μ :=
-    (isClosed_closedBall.inter (isClosed_le (by fun_prop) (by fun_prop))).measurableSet
-      |>.nullMeasurableSet
-  have hanti : Antitone fun n : ℕ ↦ C (1 / (n + 1)) := fun m n hmn ↦ hmono (by gcongr)
-  have hfin : μ (C (1 / ((0 : ℕ) + 1))) ≠ ∞ :=
-    (measure_mono inter_subset_left).trans_lt measure_closedBall_lt_top |>.ne
-  have hlim := tendsto_measure_iInter_atTop hmeas hanti ⟨0, hfin⟩
+  have hlim : Tendsto (μ ∘ C) (𝓝[>] 0) (𝓝 (μ (⋂ t > 0, C t))) :=
+    tendsto_measure_biInter_gt
+      (fun t _ ↦ (isClosed_closedBall.inter (isClosed_le (by fun_prop) (by fun_prop)))
+        |>.measurableSet.nullMeasurableSet)
+      (fun s t _ hst v hv ↦ ⟨hv.1, hv.2.trans (mul_le_mul_of_nonneg_right hst (norm_nonneg v))⟩)
+      ⟨1, one_pos, (measure_mono inter_subset_left).trans_lt measure_closedBall_lt_top |>.ne⟩
   set W := LinearMap.ker (ψ : E →ₗ[ℝ] ℝ)
-  have hker : ⋂ n : ℕ, C (1 / (n + 1)) ⊆ (W : Set E) := by
+  have hker : ⋂ t > 0, C t ⊆ (W : Set E) := by
     intro v hv
     simp only [mem_iInter] at hv
     simp only [SetLike.mem_coe, W, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
     refine abs_eq_zero.mp (le_antisymm (le_of_forall_pos_le_add fun δ hδ ↦ ?_) (abs_nonneg _))
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
-    have hv1 : ‖v‖ ≤ 1 := mem_closedBall_zero_iff.mp (hv n).1
-    calc |ψ v| ≤ 1 / (n + 1) * ‖v‖ := (hv n).2
-      _ ≤ 1 / (n + 1) * 1 := by gcongr
-      _ ≤ 0 + δ := by linarith
+    calc |ψ v| ≤ δ * ‖v‖ := (hv δ hδ).2
+      _ ≤ δ * 1 := by gcongr; exact mem_closedBall_zero_iff.mp (hv δ hδ).1
+      _ = 0 + δ := by ring
   have hker0 : μ (W : Set E) = 0 := by
     refine Measure.addHaar_submodule _ _ fun htop ↦ hψ ?_
     ext v
     have hv : v ∈ W := htop ▸ Submodule.mem_top
     simpa [W] using hv
-  rw [measure_mono_null hker hker0] at hlim
-  -- Every small aperture is dominated by a term of the sequence.
-  refine ENNReal.tendsto_nhds_zero.mpr fun ε hε ↦ ?_
-  obtain ⟨n, hn⟩ := (ENNReal.tendsto_nhds_zero.mp hlim ε hε).exists
-  filter_upwards [Ioo_mem_nhdsGT (by positivity : (0 : ℝ) < 1 / (n + 1))] with t ht
-  exact (measure_mono (hmono ht.2.le)).trans hn
+  rwa [measure_mono_null hker hker0] at hlim
 
 end ThinCone
 
