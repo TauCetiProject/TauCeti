@@ -50,7 +50,7 @@ public section
 noncomputable section
 
 open Set Metric
-open scoped ENNReal NNReal
+open scoped NNReal
 
 namespace TauCeti
 
