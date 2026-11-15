@@ -101,8 +101,7 @@ theorem autCandidateGenusFieldEquivElementaryTwoQuotient_artinHomAway
     (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     autCandidateGenusFieldEquivElementaryTwoQuotient hd hneg
         (NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
-          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd
-            (not_isSquare_of_neg (by exact_mod_cast hneg)) v.asIdeal Q
+          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
             inferInstance inferInstance) I) =
       Multiplicative.ofAdd
         (TauCeti.elementaryTwoQuotientMk
@@ -123,8 +122,7 @@ theorem artinHomAway_candidateGenusField_eq_one_iff_of_neg
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
     (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     NumberFieldArithmetic.artinHomAway IsMulCommutative.is_comm.comm S
-        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd
-          (not_isSquare_of_neg (by exact_mod_cast hneg)) v.asIdeal Q
+        (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
           inferInstance inferInstance) I = 1 ↔
       IsSquare (ClassGroup.mk (candidateGenusFieldBase hd)
         (I : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
