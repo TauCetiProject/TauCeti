@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Scaling of the Schrödinger equation and the admissible Strichartz exponents
@@ -20,10 +21,10 @@ If `u(x, t)` solves the free Schrödinger equation `i ∂ₜu + Δu = 0` on a re
 
 `S(t) (D_λ f) = D_λ (S(t / λ²) f)`
 
-(`TauCeti.schrodingerPropagator_dilateLp`). It follows from the general fact that conjugating an
-`L²` Fourier multiplier by a dilation dilates its symbol
-(`MeasureTheory.Lp.fourierMultiplierCLM_dilateLp`), since the symbol `exp(-4π² i t ‖ξ‖²)` of
-`S(t)` is homogeneous of degree two in `ξ` jointly with `t`.
+(`TauCeti.schrodingerPropagator_dilateLp`). It is the case `k = 2` of the scaling law of a phase
+propagator whose phase is positively homogeneous of degree `k`
+(`TauCeti.phasePropagator_dilateLp`), since the phase `-4π² ‖ξ‖²` of `S(t)` is homogeneous of
+degree two.
 
 Taking `Lʳ` norms in space and then `L^q` norms in time, the dilation multiplies the Strichartz
 norm `‖S(t) f‖_{L^q_t L^r_x}` by `λ ^ (2/q + n/r - n/2)`
@@ -32,8 +33,8 @@ norm `‖S(t) f‖_{L^q_t L^r_x}` by `λ ^ (2/q + n/r - n/2)`
 `2/q + n/r = n/2`
 (`TauCeti.two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le`): otherwise
 dilating a fixed nonzero datum by `λ → 0` or `λ → ∞` makes the left side unbounded while the
-right side does not change. This is the converse of the Strichartz estimates in
-`TauCeti.Analysis.PDE.Schrodinger.Strichartz`, which hold on that line.
+right side does not change. This complements `TauCeti.Analysis.PDE.Schrodinger.Strichartz`,
+which proves the estimate (in weak form) at the non-endpoint admissible pairs `2 < q < ∞`.
 
 ## Main declarations
 
@@ -65,31 +66,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
-/-- Dilating the Schrödinger symbol in frequency by `r⁻¹` rescales time by `r⁻²`. -/
-private theorem dilateLp_toLp_phaseSymbol_laplacianSymbol {r : ℝ} (hr : 0 < r) (t : ℝ) :
-    dilateLp volume ∞ r hr ((memLp_phaseSymbol (E := E) laplacianSymbol t).toLp _) =
-      (memLp_phaseSymbol laplacianSymbol (t / r ^ 2)).toLp _ := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_dilateLp (μ := volume) (p := ∞) hr
-      ((memLp_phaseSymbol (E := E) laplacianSymbol t).toLp _),
-    (quasiMeasurePreserving_smul volume (inv_ne_zero hr.ne')).ae_eq_comp
-      (memLp_phaseSymbol (E := E) laplacianSymbol t).coeFn_toLp,
-    (memLp_phaseSymbol (E := E) laplacianSymbol (t / r ^ 2)).coeFn_toLp] with ξ h₁ h₂ h₃
-  simp only [Function.comp_apply] at h₂
-  rw [h₁, h₂, h₃, ENNReal.toReal_top, div_zero, neg_zero, Real.rpow_zero, one_smul,
-    phaseSymbol_apply, phaseSymbol_apply, laplacianSymbol_smul]
-  congr 3
-  field_simp
-
 /-- **The scaling law of the Schrödinger equation.** If `u(x, t)` solves `i ∂ₜu + Δu = 0`, so does
 `u(x / r, t / r²)`. For the propagator `S(t) = exp(itΔ)` and the normalized dilation
 `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of `L²`, this reads `S(t) (D_r f) = D_r (S(t / r²) f)`. -/
 theorem schrodingerPropagator_dilateLp {r : ℝ} (hr : 0 < r) (t : ℝ)
     (f : Lp F 2 (volume : Measure E)) :
     schrodingerPropagator F t (dilateLp volume 2 r hr f) =
-      dilateLp volume 2 r hr (schrodingerPropagator F (t / r ^ 2) f) := by
-  rw [schrodingerPropagator_def, phasePropagator_def, Lp.fourierMultiplierCLM_dilateLp,
-    dilateLp_toLp_phaseSymbol_laplacianSymbol, ← phasePropagator_def, ← schrodingerPropagator_def]
+      dilateLp volume 2 r hr (schrodingerPropagator F (t / r ^ 2) f) :=
+  phasePropagator_dilateLp (fun c _ ξ ↦ laplacianSymbol_smul c ξ) hr t f
 
 /-- **Scaling of the `Lʳ` norms.** At a fixed time, the `Lʳ` norm of `S(t) (D_λ f)` is
 `λ ^ (n/r - n/2)` times the `Lʳ` norm of `S(t / λ²) f`, where `n / r` is `n / r.toReal`, which is
@@ -98,16 +82,8 @@ theorem eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l) (t : ℝ)
     (f : Lp F 2 (volume : Measure E)) (r : ℝ≥0∞) :
     eLpNorm (schrodingerPropagator F t (dilateLp volume 2 l hl f)) r volume =
       ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
-        eLpNorm (schrodingerPropagator F (t / l ^ 2) f) r volume := by
-  set g := schrodingerPropagator F (t / l ^ 2) f
-  set c : ℝ := l ^ (-((finrank ℝ E : ℝ) / (2 : ℝ≥0∞).toReal))
-  have h : (fun x : E ↦ c • g (l⁻¹ • x)) = c • fun x ↦ g (l⁻¹ • x) := rfl
-  rw [schrodingerPropagator_dilateLp, eLpNorm_congr_ae (coeFn_dilateLp hl g), h,
-    eLpNorm_const_smul, eLpNorm_comp_inv_smul volume _ hl.ne', ← mul_assoc, abs_of_pos hl,
-    Real.eNorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity),
-    ← Real.rpow_add hl, ENNReal.toReal_ofNat]
-  congr 3
-  ring
+        eLpNorm (schrodingerPropagator F (t / l ^ 2) f) r volume :=
+  eLpNorm_phasePropagator_dilateLp (fun c _ ξ ↦ laplacianSymbol_smul c ξ) hl t f r
 
 /-- **Scaling of the Strichartz norms.** For `q ≠ 0`, dilating the datum by `λ` multiplies the
 mixed norm `‖S(t) f‖_{L^q_t L^r_x}`, `t ∈ ℝ`, by `λ ^ (n/r - n/2 + 2/q)`, where `n / r` and `2 / q`
@@ -127,9 +103,8 @@ theorem eLpNorm_eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l)
     eLpNorm_comp_inv_smul (volume : Measure ℝ)
       (fun s ↦ eLpNorm (schrodingerPropagator F s f) r volume) (pow_ne_zero 2 hl.ne'),
     finrank_self, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), abs_of_pos (pow_pos hl 2),
-    ← Real.rpow_natCast, ← Real.rpow_mul hl.le, ← Real.rpow_add hl]
+    ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
   congr 3
-  push_cast
   ring
 
 /-- The Strichartz norm of the evolution of a nonzero datum is nonzero. -/
@@ -144,14 +119,6 @@ private theorem eLpNorm_eLpNorm_schrodingerPropagator_ne_zero {q r : ℝ≥0∞}
   have hn := norm_phasePropagator_apply (F := F) (laplacianSymbol (E := E)) t f
   rw [← schrodingerPropagator_def, hS, norm_zero] at hn
   exact hf (norm_eq_zero.1 hn.symm)
-
-/-- A power `λ ^ a` that stays bounded for all `λ > 0` has exponent `a = 0`. -/
-private theorem eq_zero_of_forall_rpow_mul_le {a A B : ℝ} (hA : 0 < A)
-    (h : ∀ l : ℝ, 0 < l → l ^ a * A ≤ B) : a = 0 := by
-  by_contra ha
-  have h1 := h ((|B| / A + 1) ^ a⁻¹) (by positivity)
-  rw [Real.rpow_inv_rpow (by positivity) ha, add_mul, div_mul_cancel₀ _ hA.ne'] at h1
-  linarith [le_abs_self B]
 
 /-- **The admissibility condition is necessary for the Strichartz estimate.** Let `E` have
 dimension `n` and let `q, r` be nonzero exponents. If the global-in-time homogeneous Strichartz
@@ -185,7 +152,8 @@ theorem two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le {
   -- The dilates of `f` all have the norm of `f`, so the scaling factor stays bounded.
   set a : ℝ := (finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + 2 / q.toReal
   have ha : a = 0 := by
-    refine eq_zero_of_forall_rpow_mul_le (B := C * ‖f‖) (ENNReal.toReal_pos hN0 hNtop) fun l hl ↦ ?_
+    refine Real.eq_zero_of_forall_rpow_mul_le (B := C * ‖f‖) (ENNReal.toReal_pos hN0 hNtop)
+      fun l hl ↦ ?_
     have h1 := hC (dilateLp volume 2 l hl f)
     rw [eLpNorm_eLpNorm_schrodingerPropagator_dilateLp hl f hq, ← ofReal_norm,
       LinearIsometryEquiv.norm_map, ofReal_norm] at h1

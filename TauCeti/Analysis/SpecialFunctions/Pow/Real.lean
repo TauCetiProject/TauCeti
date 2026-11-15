@@ -139,6 +139,9 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
+* `Real.eq_zero_of_forall_rpow_mul_le`: a power `l ^ a` that stays bounded for all `l > 0`, even
+  after multiplication by a positive constant, has exponent `a = 0`; this is the form in which
+  scaling arguments rule out an estimate off its critical exponents.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
   nonnegative on `μ.support`.
 -/
@@ -458,6 +461,15 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
   have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
+
+/-- **A power bounded at every scale has exponent zero.** If `l ^ a * A ≤ B` for every `l > 0`,
+with `A > 0`, then `a = 0`: for `a ≠ 0`, the power `l ^ a` is unbounded as `l → 0` or `l → ∞`. -/
+theorem eq_zero_of_forall_rpow_mul_le {a A B : ℝ} (hA : 0 < A)
+    (h : ∀ l : ℝ, 0 < l → l ^ a * A ≤ B) : a = 0 := by
+  by_contra ha
+  have h1 := h ((|B| / A + 1) ^ a⁻¹) (by positivity)
+  rw [rpow_inv_rpow (by positivity) ha, add_mul, div_mul_cancel₀ _ hA.ne'] at h1
+  linarith [le_abs_self B]
 
 end Real
 

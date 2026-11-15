@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Integral.RieszThorin
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -467,8 +468,8 @@ private theorem norm_schrodingerPropagator_toLp_gaussian_ae (t : ℝ) :
     simp only [← ofReal_pow, ofReal_re, ofReal_im]
     field_simp
     ring
-  rw [hx, norm_mul, hn, norm_cpow_real, hnorm, norm_exp, hre, norm_smul,
-    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), smul_eq_mul]
+  rw [hx, norm_mul, hn, norm_cpow_real, hnorm, norm_exp, hre]
+  simp [norm_smul, abs_of_pos (rpow_pos_of_pos hs _)]
 
 /-- **The `Lʳ` norms of the evolved Gaussian.** The Gaussian `g(x) = exp(-π ‖x‖²)` evolves into a
 complex Gaussian of width `s = √(1 + 16π² t²)` and height `s ^ (-n/2)`
@@ -489,29 +490,17 @@ theorem eLpNorm_schrodingerPropagator_toLp_gaussian (t : ℝ) (r : ℝ≥0∞) :
   set c : ℝ := s ^ (-((finrank ℝ E : ℝ) / 2))
   have hm : AEStronglyMeasurable (fun x : E ↦ c • rexp (-π * ‖s⁻¹ • x‖ ^ 2)) volume :=
     (by fun_prop : Continuous fun x : E ↦ c • rexp (-π * ‖s⁻¹ • x‖ ^ 2)).aestronglyMeasurable
-  have h : (fun x : E ↦ c • rexp (-π * ‖s⁻¹ • x‖ ^ 2)) =
-      c • fun x ↦ rexp (-π * ‖s⁻¹ • x‖ ^ 2) := rfl
   rw [eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm
-      (norm_schrodingerPropagator_toLp_gaussian_ae t), h, eLpNorm_const_smul,
-    Measure.eLpNorm_comp_inv_smul volume (fun y : E ↦ rexp (-π * ‖y‖ ^ 2)) hs.ne', ← mul_assoc,
-    Real.eNorm_eq_ofReal (by positivity), abs_of_pos hs, ← ENNReal.ofReal_mul (by positivity),
-    ← rpow_add hs]
-  congr 3
-  ring
+      (norm_schrodingerPropagator_toLp_gaussian_ae t),
+    Measure.eLpNorm_rpow_neg_smul_comp_inv_smul volume (fun y : E ↦ rexp (-π * ‖y‖ ^ 2)) hs]
 
 /-- The Gaussian `exp(-π ‖x‖²)` has essential supremum `1`. -/
 private theorem eLpNorm_exp_neg_pi_mul_norm_sq_top :
     eLpNorm (fun x : E ↦ rexp (-π * ‖x‖ ^ 2)) ∞ volume = 1 := by
-  have hc : Continuous fun x : E ↦ rexp (-π * ‖x‖ ^ 2) := by fun_prop
-  rw [eLpNorm_exponent_top hc.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
-  refine le_antisymm (essSup_le_of_ae_le _ (Eventually.of_forall fun x ↦ ?_)) ?_
-  · dsimp only
-    rw [Real.eNorm_eq_ofReal (exp_nonneg _), ENNReal.ofReal_le_one, Real.exp_le_one_iff]
-    nlinarith [pi_pos, sq_nonneg ‖x‖]
-  · -- A continuous function has its supremum as essential supremum.
-    rw [← iSup_eq_essSup fun x a ha ↦ ((isOpen_lt continuous_const hc.eNorm).measure_ne_zero
-      volume ⟨x, ha⟩)]
-    exact le_iSup_of_le 0 (by simp)
+  rw [(by fun_prop : Continuous fun x : E ↦ rexp (-π * ‖x‖ ^ 2)).eLpNorm_top_eq_iSup]
+  refine le_antisymm (iSup_le fun x ↦ ?_) (le_iSup_of_le 0 (by simp))
+  rw [Real.eNorm_eq_ofReal (exp_nonneg _), ENNReal.ofReal_le_one, Real.exp_le_one_iff]
+  nlinarith [pi_pos, sq_nonneg ‖x‖]
 
 /-- **The dispersive decay of the Gaussian.** For the Gaussian `g(x) = exp(-π ‖x‖²)`,
 `‖S(t) g‖_∞ = (1 + 16π² t²) ^ (-n/4)`. Since `‖g‖₁ = 1`, the ratio of this to the bound

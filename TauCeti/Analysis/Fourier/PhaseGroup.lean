@@ -35,6 +35,10 @@ unitary group:
 Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
 (`TauCeti.phasePropagator_neg`).
 
+If the phase is positively homogeneous of degree `k`, as the Schrödinger phase is with `k = 2` and
+the half-wave phases are with `k = 1`, the propagator intertwines the normalized dilations `D_r` of
+`L²` with a rescaling of time: `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`.
+
 ## Main declarations
 
 * `TauCeti.phaseSymbol`: the symbol `exp(i t ω(ξ))`.
@@ -46,6 +50,9 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
   `TauCeti.adjoint_phasePropagator`: unitarity.
 * `TauCeti.continuous_phasePropagator_apply`: strong continuity.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
+* `TauCeti.phasePropagator_dilateLp`: for a phase positively homogeneous of degree `k`, the
+  scaling law `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`, and
+  `TauCeti.eLpNorm_phasePropagator_dilateLp`, its effect on the `Lʳ` norms at a fixed time.
 
 ## References
 
@@ -280,5 +287,52 @@ theorem phaseGroup_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
 theorem isUnitary_phaseGroup : (phaseGroup E F ω).IsUnitary :=
   Semigroups.StronglyContinuousGroup.IsUnitary.intro fun t f g ↦
     inner_phasePropagator_apply ω t f g
+
+/-! ### Scaling of homogeneous phases -/
+
+section Dilation
+
+open Measure Module
+
+variable {ω} {k : ℕ}
+
+/-- If the phase `ω` is positively homogeneous of degree `k`, dilating its phase symbol at time `t`
+by `r > 0` gives the phase symbol at time `t / r ^ k`. -/
+theorem dilateLp_toLp_phaseSymbol (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {r : ℝ}
+    (hr : 0 < r) (t : ℝ) :
+    dilateLp volume ∞ r hr ((memLp_phaseSymbol ω t).toLp _) =
+      (memLp_phaseSymbol ω (t / r ^ k)).toLp _ := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_dilateLp_of_ae_eq hr (memLp_phaseSymbol ω t).coeFn_toLp,
+    (memLp_phaseSymbol ω (t / r ^ k)).coeFn_toLp] with ξ h₁ h₂
+  rw [h₁, h₂, ENNReal.toReal_top, div_zero, neg_zero, Real.rpow_zero, one_smul, phaseSymbol_apply,
+    phaseSymbol_apply, hω _ (inv_pos.2 hr), inv_pow, ← mul_assoc, ← div_eq_mul_inv]
+
+/-- **Scaling of a homogeneous phase propagator.** If the phase `ω` is positively homogeneous of
+degree `k`, then for the normalized dilation `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of `L²`, `r > 0`,
+
+`exp(itω(D)) (D_r f) = D_r (exp(i(t / r ^ k)ω(D)) f)`.
+
+This is the scaling symmetry `u(x, t) ↦ u(x / r, t / r ^ k)` of the equation `∂ₜu = iω(D)u`: of
+degree `2` for the Schrödinger equation and of degree `1` for the half-wave equation. -/
+theorem phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {r : ℝ}
+    (hr : 0 < r) (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    phasePropagator F ω t (dilateLp volume 2 r hr f) =
+      dilateLp volume 2 r hr (phasePropagator F ω (t / r ^ k) f) := by
+  rw [phasePropagator_def, Lp.fourierMultiplierCLM_dilateLp, dilateLp_toLp_phaseSymbol hω,
+    ← phasePropagator_def]
+
+/-- **Scaling of the `Lʳ` norms of a homogeneous phase propagator.** If the phase `ω` is
+positively homogeneous of degree `k`, the `Lʳ` norm of `exp(itω(D)) (D_l f)` is `l ^ (n/r - n/2)`
+times the `Lʳ` norm of `exp(i(t / l ^ k)ω(D)) f`, where `n / r` is `n / r.toReal`, which is `0`
+for `r = ∞`. -/
+theorem eLpNorm_phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ)
+    {l : ℝ} (hl : 0 < l) (t : ℝ) (f : Lp F 2 (volume : Measure E)) (r : ℝ≥0∞) :
+    eLpNorm (phasePropagator F ω t (dilateLp volume 2 l hl f)) r volume =
+      ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (phasePropagator F ω (t / l ^ k) f) r volume := by
+  rw [phasePropagator_dilateLp hω, eLpNorm_dilateLp, ENNReal.toReal_ofNat]
+
+end Dilation
 
 end TauCeti
