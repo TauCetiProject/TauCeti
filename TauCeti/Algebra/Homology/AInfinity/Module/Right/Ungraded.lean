@@ -191,6 +191,40 @@ theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) (m : M) :
       ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) m :=
   (rfl)
 
+/-- The differential terms are additive in the family of multilinear maps. -/
+theorem ungradedStasheffDiff_add
+    (act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
+    (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff (act + act') d n a m =
+      ungradedStasheffDiff act d n a m + ungradedStasheffDiff act' d n a m := by
+  simp [ungradedStasheffDiff_def, sum_add_distrib]
+
+/-- The product terms are additive in the family of multilinear maps. -/
+theorem ungradedStasheffMul_add
+    (act' : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] N))
+    (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMul (act + act') n a m =
+      ungradedStasheffMul act n a m + ungradedStasheffMul act' n a m := by
+  cases n with
+  | zero => simp
+  | succ n => simp [ungradedStasheffMul_succ, sum_add_distrib]
+
+/-- The differential terms of the zero family vanish. -/
+@[simp]
+theorem ungradedStasheffDiff_zero_left (d : A →ₗ[R] A) (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiff (0 : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A)
+      (M →ₗ[R] N)) d n a m = 0 := by
+  simp [ungradedStasheffDiff_def]
+
+/-- The product terms of the zero family vanish. -/
+@[simp]
+theorem ungradedStasheffMul_zero_left (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMul (0 : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A)
+      (M →ₗ[R] N)) n a m = 0 := by
+  cases n with
+  | zero => simp
+  | succ n => simp [ungradedStasheffMul_succ]
+
 end StasheffTerms
 
 /-- An **ungraded `A∞` right module** over the algebra `A` with differential `d`. The operation
