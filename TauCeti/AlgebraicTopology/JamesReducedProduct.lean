@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 
 /-!
 # The James reduced product
@@ -432,16 +433,6 @@ compactly generated topology. -/
 instance instTopologicalSpace : TopologicalSpace (JamesReducedProduct X x₀) :=
   ⨆ n, .coinduced (mk : (Fin n → X) → JamesReducedProduct X x₀)
     (TopologicalSpace.compactlyGenerated.{u} (Fin n → X))
-
-/-- A map out of the compactly generated topology is continuous if and only if its composites with
-the continuous maps from compact Hausdorff spaces are. -/
-private theorem continuous_compactlyGenerated_iff {Z : Type u} [TopologicalSpace Z] {Y : Type v}
-    [t : TopologicalSpace Y] {f : Z → Y} :
-    Continuous[TopologicalSpace.compactlyGenerated.{u} Z, t] f ↔
-      ∀ (S : CompHaus.{u}) (g : C(S, Z)), Continuous (f ∘ g) := by
-  refine ⟨fun hf S g => ?_, continuous_from_compactlyGenerated f⟩
-  rw [TopologicalSpace.compactlyGenerated, continuous_coinduced_dom, continuous_sigma_iff] at hf
-  exact hf ⟨S, g⟩
 
 /-- A map out of the James reduced product is continuous if and only if, for every `n`, its
 composite with the reduced words of every continuous family of words `S → Xⁿ` parametrized by a
