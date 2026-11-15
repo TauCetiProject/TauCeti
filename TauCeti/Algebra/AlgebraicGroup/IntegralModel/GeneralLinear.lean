@@ -12,16 +12,16 @@ public import TauCeti.Algebra.AlgebraicGroup.IntegralModel.Basic
 /-!
 # The standard integral model of `GL_n`
 
-For a commutative ring `O` with an algebra map to a field `K`, the general linear group scheme
-`GL_{n,O}` is a smooth affine `O`-model of `GL_{n,K}`
-(`TauCeti.IntegralModel.SmoothModel.generalLinear`). When `O` is local it is a reductive model,
-so its integral points form a hyperspecial subgroup of the `K`-points of `GL_n`.
+For a commutative ring `O` with an algebra map to a commutative ring `K`, the general linear
+group scheme `GL_{n,O}` is a smooth affine `O`-model of `GL_{n,K}`
+(`TauCeti.IntegralModel.SmoothModel.generalLinear`). When `O` is local and `K` is a field it is a
+reductive model, so its integral points form a hyperspecial subgroup of the `K`-points of `GL_n`.
 
 ## Main declarations
 
 * `TauCeti.IntegralModel.SmoothModel.generalLinear`: the standard model of `GL_n`.
 * `TauCeti.IntegralModel.SmoothModel.isReductive_generalLinear`: it is reductive over a local
-  ring.
+  ring with a field `K`.
 * `TauCeti.IntegralModel.SmoothModel.isHyperspecialSubgroup_generalLinear`: its integral points
   form a hyperspecial subgroup.
 -/
@@ -32,7 +32,9 @@ namespace TauCeti.IntegralModel.SmoothModel
 
 universe u
 
-variable (O K : Type u) [CommRing O] [Field K] [Algebra O K]
+section CommRing
+
+variable (O K : Type u) [CommRing O] [CommRing K] [Algebra O K]
 
 /-- The standard smooth model `GL_{n,O}` of `GL_{n,K}`. -/
 @[expose] noncomputable def generalLinear (n : ℕ) :
@@ -56,7 +58,9 @@ theorem generalLinear_genericFiberIso (n : ℕ) :
       GeneralLinear.finiteTypeCoordinateHopfAlgebraBaseChangeIso O K n :=
   (rfl)
 
-variable [IsLocalRing O]
+end CommRing
+
+variable (O K : Type u) [CommRing O] [IsLocalRing O] [Field K] [Algebra O K]
 
 /-- The standard model `GL_{n,O}` is a reductive model of `GL_{n,K}`. -/
 theorem isReductive_generalLinear (n : ℕ) : (generalLinear O K n).IsReductive :=

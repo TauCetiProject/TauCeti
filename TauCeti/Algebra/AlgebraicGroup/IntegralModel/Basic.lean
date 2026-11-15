@@ -136,17 +136,14 @@ theorem mem_integralPoints_iff_mapDomain (g : WithConv (H →ₐ[K] K)) :
     g ∈ 𝒢.integralPoints ↔
       BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom) g ∈
         IntegralModel.integralPoints O K 𝒢.coord := by
-  have h₁ : (BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom)).comp
-      (BialgHom.mapDomain (A := K) (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv)) =
-        MonoidHom.id _ := by
-    rw [← BialgHom.mapDomain_comp, ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, Iso.hom_inv_id,
-      FiniteTypeCommHopfAlgCat.toBialgHom_id, BialgHom.mapDomain_id]
-  have h₂ : (BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv)).comp
-      (BialgHom.mapDomain (A := K) (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.hom)) =
-        MonoidHom.id _ := by
-    rw [← BialgHom.mapDomain_comp, ← FiniteTypeCommHopfAlgCat.toBialgHom_comp, Iso.inv_hom_id,
-      FiniteTypeCommHopfAlgCat.toBialgHom_id, BialgHom.mapDomain_id]
-  exact Subgroup.mem_map_equiv (f := MonoidHom.toMulEquiv _ _ h₁ h₂)
+  let e := BialgEquiv.mapDomainMulEquiv (A := K) (_root_.CommHopfAlgCat.ofIso
+    ((finiteTypeCommHopfAlgProperty K).ι.mapIso 𝒢.genericFiberIso))
+  have he : e.symm.toMonoidHom =
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom 𝒢.genericFiberIso.inv) :=
+    MonoidHom.ext (BialgEquiv.mapDomainMulEquiv_symm_apply _)
+  rw [integralPoints_def, ← he, Subgroup.mem_map_equiv, MulEquiv.symm_symm,
+    BialgEquiv.mapDomainMulEquiv_apply, CommHopfAlgCat.coe_ofIso,
+    CategoryTheory.Functor.mapIso_hom, ObjectProperty.ι_map]
 
 /-- When `O → K` is injective, a point `g` of `G` is integral for `𝒢` exactly when it takes
 values in the image of `O` on the image of every `a ∈ O[𝒢]` in `H`. -/
@@ -175,8 +172,8 @@ attribute [reassoc (attr := simp)] comm
 protected def id : Hom 𝒢 𝒢 where
   hom := 𝟙 _
   comm := by
-    rw [show FiniteTypeCommHopfAlgCat.baseChangeMap (K := K) (𝟙 𝒢.coord) = 𝟙 _ from
-      (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := K)).map_id _, Category.id_comp]
+    rw [← FiniteTypeCommHopfAlgCat.baseChangeFunctor_map, CategoryTheory.Functor.map_id,
+      Category.id_comp]
 
 /-- The identity morphism is the identity Hopf map. -/
 @[simp]
@@ -190,11 +187,9 @@ algebras. -/
 protected def comp (f : Hom 𝒢 𝒢') (f' : Hom 𝒢' 𝒢'') : Hom 𝒢 𝒢'' where
   hom := f.hom ≫ f'.hom
   comm := by
-    rw [show FiniteTypeCommHopfAlgCat.baseChangeMap (K := K) (f.hom ≫ f'.hom) =
-        FiniteTypeCommHopfAlgCat.baseChangeMap f.hom ≫
-          FiniteTypeCommHopfAlgCat.baseChangeMap f'.hom from
-      (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := K)).map_comp _ _, Category.assoc,
-      f'.comm, f.comm]
+    rw [← FiniteTypeCommHopfAlgCat.baseChangeFunctor_map, CategoryTheory.Functor.map_comp,
+      Category.assoc, FiniteTypeCommHopfAlgCat.baseChangeFunctor_map,
+      FiniteTypeCommHopfAlgCat.baseChangeFunctor_map, f'.comm, f.comm]
 
 /-- Composition of morphisms of models composes the Hopf maps. -/
 @[simp]
