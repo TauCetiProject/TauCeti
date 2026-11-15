@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.Category.TopPair
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
 # Topological pairs of nested subsets, and maps between pairs of subsets
@@ -58,6 +59,10 @@ union and the intersection of the pairs over `U` and over `V` are the pairs over
 (`TopCat.restrictPreimagePairUnionIso`) and over `U ∩ V` (`TopCat.restrictPreimagePairInterIso`).
 For `S ⊆ W`, restricting over `W` and then over `S` is restricting over `S`
 (`TopCat.restrictPreimagePairRestrictPreimageIso`).
+
+A map `f` over `B`, that is with `f ≫ p' = p`, induces maps of pairs
+`(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` for nested subsets `S ⊆ T` of `B`
+(`TopCat.Hom.preimagePairMap`), whose components are the restrictions `TopCat.Hom.preimageMap`.
 -/
 
 public section
@@ -689,3 +694,44 @@ lemma restrictPreimagePairRestrictPreimageIso_inv_fst (hSW : S ⊆ W) :
 end RestrictPreimage
 
 end TopCat
+
+namespace TopCat.Hom
+
+variable {E E' B : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
+
+/-- The map of pairs `(p⁻¹(T), p⁻¹(S)) ⟶ (p'⁻¹(T), p'⁻¹(S))` induced by a map `f` over `B`, that is
+with `f ≫ p' = p`, for nested subsets `S ⊆ T` of `B`. -/
+def preimagePairMap (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.ofInclusion (X := E) (Set.preimage_mono (f := p) hST) ⟶
+      TopPair.ofInclusion (X := E') (Set.preimage_mono (f := p') hST) :=
+  TopPair.ofHom (f.preimageMap hf T) (f.preimageMap hf S) (by
+    ext x
+    -- Both sides send a point `x` of `p⁻¹(S)` to `f x`.
+    exact Subtype.ext ((f.coe_preimageMap_apply hf S x).trans
+      (f.coe_preimageMap_apply hf T (Set.inclusion (Set.preimage_mono hST) x)).symm))
+
+@[simp]
+lemma preimagePairMap_fst (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.fst (preimagePairMap f hf hST) = f.preimageMap hf T :=
+  (rfl)
+
+@[simp]
+lemma preimagePairMap_snd (f : E ⟶ E') (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
+    TopPair.Hom.snd (preimagePairMap f hf hST) = f.preimageMap hf S :=
+  (rfl)
+
+@[simp]
+lemma preimagePairMap_id (hf : 𝟙 E ≫ p = p) {S T : Set B} (hST : S ⊆ T) :
+    preimagePairMap (𝟙 E) hf hST = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (preimageMap_id hf T)
+
+/-- The maps of pairs induced by maps over `B` compose. It is stated in this direction so that
+`simp` can use it: the middle map `p'` cannot be recovered from the composite. -/
+@[reassoc (attr := simp)]
+lemma preimagePairMap_comp_preimagePairMap {E'' : TopCat.{u}} {p'' : E'' ⟶ B} (f : E ⟶ E')
+    (f' : E' ⟶ E'') (hf : f ≫ p' = p) (hf' : f' ≫ p'' = p') {S T : Set B} (hST : S ⊆ T) :
+    preimagePairMap f hf hST ≫ preimagePairMap f' hf' hST =
+      preimagePairMap (f ≫ f') (by rw [Category.assoc, hf', hf]) hST :=
+  TopPair.hom_ext_of_fst _ (preimageMap_comp_preimageMap f f' hf hf' T)
+
+end TopCat.Hom
