@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Galerkin
+public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.ODE.Gronwall
 
 /-!
@@ -14,17 +15,18 @@ import TauCeti.Analysis.ODE.Gronwall
 Testing a parabolic equation against the time derivative controls that derivative in the
 pivot space and the solution in the energy space, uniformly in the Galerkin dimension.
 Here the energy form may depend differentiably on time. Its time derivative contributes
-an additional integral; a coercivity bound and Grönwall absorb this term.
+an additional integral; a form-relative bound and Grönwall absorb this term.
 
-The estimates apply to any continuously differentiable trial curve in a real normed space
-`V`, with a continuous linear map `ι : V →L[ℝ] H` into a real inner product space. The energy
-estimates need neither finite dimensionality nor injectivity. On a Galerkin trial space,
-use the restricted energy form and the composite of the trial map with the pivot inclusion.
-The forcing lies in `H`, not merely in the dual of `V`: this stronger data assumption is
-what permits testing against the time derivative with a dimension-independent bound.
+The estimates use derivatives within the time interval and square-integrable pivot-space
+forcing. Only the energy inequality tested against the velocity is required, so projected
+Galerkin equations suffice. The form-relative derivative bound involves no coordinate-space
+norm and is preserved on non-isometric trial spaces. A coercive specialization supplies the
+rate `M / α` from separate norm bounds.
 
 Symmetry is essential to this argument. No estimate for a nonsymmetric energy form is
 asserted. In the autonomous case, no coercivity is needed for the energy inequality itself.
+The trial-map estimates apply to already constructed curves in a normed coordinate space
+and allow a seminormed ambient energy space. The existence corollary also retains uniqueness.
 
 ## References
 
@@ -42,161 +44,242 @@ open scoped InnerProductSpace
 namespace TauCeti.PDE
 
 variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-  {ι : V →L[ℝ] H} {A : ℝ → V →L[ℝ] StrongDual ℝ V}
-  {u : ℝ → V} {f : ℝ → H} {a b α M : ℝ}
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {ι : V →L[ℝ] H} {A A' : ℝ → V →L[ℝ] StrongDual ℝ V}
+  {u u' : ℝ → V} {f : ℝ → H} {a b K α M : ℝ}
 
-/-- Differentiating the diagonal of a time-dependent symmetric form along a trial curve. -/
-private theorem hasDerivAt_energy (hA : ContDiff ℝ 1 A) (hu : ContDiff ℝ 1 u)
-    (t : ℝ) (hsym : ∀ x y, A t x y = A t y x) :
-    HasDerivAt (fun s ↦ A s (u s) (u s))
-      (deriv A t (u t) (u t) + 2 * A t (u t) (deriv u t)) t := by
-  convert (((hA.differentiable one_ne_zero t).hasDerivAt.clm_apply
-    (hu.differentiable one_ne_zero t).hasDerivAt).clm_apply
-    (hu.differentiable one_ne_zero t).hasDerivAt) using 1
-  simp only [add_apply, hsym (deriv u t) (u t)]
-  ring
-
-/-- **The second energy inequality before absorption.** Testing a symmetric parabolic
-Galerkin equation against `u'` bounds the accumulated squared pivot norm of `u'` and the
-terminal energy by the initial energy, the squared pivot norm of the forcing, and the
-integral of the time derivative of the energy form. -/
-theorem energy_add_integral_norm_deriv_sq_le (hA : ContDiff ℝ 1 A)
-    (hu : ContDiff ℝ 1 u) (hf : Continuous f)
-    (hsym : ∀ t ∈ Icc a b, ∀ x y, A t x y = A t y x)
-    (heq : ∀ t ∈ Icc a b, ∀ v,
-      ⟪ι (deriv u t), ι v⟫_ℝ + A t (u t) v = ⟪f t, ι v⟫_ℝ)
+/-- **The second energy inequality before absorption.** The velocity-tested inequality
+bounds terminal diagonal energy plus the accumulated squared pivot norm of the velocity
+by initial energy, squared forcing, and the integral of the derivative of the form.
+All differentiability and continuity assumptions are local to the time interval. -/
+theorem apply_self_add_integral_norm_sq_le_add_integral
+    (hA : ∀ s ∈ Icc a b, HasDerivWithinAt A (A' s) (Icc a b) s)
+    (hA' : ContinuousOn A' (Icc a b))
+    (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
+    (hu' : ContinuousOn u' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (hsym : ∀ s ∈ Icc a b, ∀ x y, A s x y = A s y x)
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (u' s)‖ ^ 2 + A s (u s) (u' s) ≤ ⟪f s, ι (u' s)⟫_ℝ)
     {t : ℝ} (ht : t ∈ Icc a b) :
-    A t (u t) (u t) + (∫ s in a..t, ‖ι (deriv u s)‖ ^ 2) ≤
+    A t (u t) (u t) + (∫ s in a..t, ‖ι (u' s)‖ ^ 2) ≤
       A a (u a) (u a) + (∫ s in a..t, ‖f s‖ ^ 2) +
-        ∫ s in a..t, deriv A s (u s) (u s) := by
-  have hD : Continuous (fun s ↦ ‖ι (deriv u s)‖ ^ 2) :=
-    (ι.continuous.comp hu.continuous_deriv_one).norm.pow 2
-  have hF : Continuous (fun s ↦ ‖f s‖ ^ 2) := hf.norm.pow 2
-  have hE' : Continuous (fun s ↦ deriv A s (u s) (u s)) :=
-    (hA.continuous_deriv_one.clm_apply hu.continuous).clm_apply hu.continuous
-  have hcross : Continuous (fun s ↦ 2 * A s (u s) (deriv u s)) :=
-    ((hA.continuous.clm_apply hu.continuous).clm_apply hu.continuous_deriv_one).const_mul 2
+        ∫ s in a..t, A' s (u s) (u s) := by
+  have hAc : ContinuousOn A (Icc a b) := fun s hs ↦
+    HasDerivWithinAt.continuousWithinAt (F := V →L[ℝ] StrongDual ℝ V) (hA s hs)
+  have huc : ContinuousOn u (Icc a b) := fun s hs ↦ (hu s hs).continuousWithinAt
+  have hD : ContinuousOn (fun s ↦ ‖ι (u' s)‖ ^ 2) (Icc a b) :=
+    (ι.continuous.comp_continuousOn hu').norm.pow 2
+  have hE' := (hA'.clm_apply huc).clm_apply huc
+  have hcross := ((hAc.clm_apply huc).clm_apply hu').const_mul 2
+  have hsub : Icc a t ⊆ Icc a b := Icc_subset_Icc_right ht.2
+  have hDi := (hD.mono hsub).intervalIntegrable_of_Icc (μ := volume) ht.1
+  have hEi := (hE'.mono hsub).intervalIntegrable_of_Icc (μ := volume) ht.1
+  have hCi := (hcross.mono hsub).intervalIntegrable_of_Icc (μ := volume) ht.1
+  have hFi := hf.mono_set (c := a) (d := t)
+    (by simpa only [uIcc_of_le ht.1, uIcc_of_le (ht.1.trans ht.2)] using hsub)
   have hid := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht.1
-    (((hA.continuous.clm_apply hu.continuous).clm_apply hu.continuous).continuousOn)
-    (fun s hs ↦ hasDerivAt_energy hA hu s (hsym s ⟨hs.1.le, hs.2.le.trans ht.2⟩))
-    ((hE'.add hcross).intervalIntegrable a t)
+    (((hAc.clm_apply huc).clm_apply huc).mono hsub)
+    (fun s hs ↦ ((hA s (hsub ⟨hs.1.le, hs.2.le⟩)).clm_apply_self
+      (hu s (hsub ⟨hs.1.le, hs.2.le⟩)) (hsym s (hsub ⟨hs.1.le, hs.2.le⟩))).hasDerivAt
+        (Icc_mem_nhds hs.1 (hs.2.trans_le ht.2)))
+    (hEi.add hCi)
   have hpoint (s : ℝ) (hs : s ∈ Icc a t) :
-      (deriv A s (u s) (u s) + 2 * A s (u s) (deriv u s)) +
-        ‖ι (deriv u s)‖ ^ 2 ≤ ‖f s‖ ^ 2 + deriv A s (u s) (u s) := by
-    have he := heq s (Icc_subset_Icc_right ht.2 hs) (deriv u s)
-    rw [real_inner_self_eq_norm_sq] at he
-    have hyoung := real_inner_le_norm (f s) (ι (deriv u s))
-    nlinarith [sq_nonneg (‖f s‖ - ‖ι (deriv u s)‖)]
+      (A' s (u s) (u s) + 2 * A s (u s) (u' s)) +
+        ‖ι (u' s)‖ ^ 2 ≤ ‖f s‖ ^ 2 + A' s (u s) (u s) := by
+    have he := heq s (hsub hs)
+    have hyoung := real_inner_le_norm (f s) (ι (u' s))
+    nlinarith [sq_nonneg (‖f s‖ - ‖ι (u' s)‖)]
   have hint := intervalIntegral.integral_mono_on (μ := volume) ht.1
-    ((hE'.add hcross).add hD |>.intervalIntegrable a t)
-    ((hF.add hE').intervalIntegrable a t) hpoint
-  have hsplit := intervalIntegral.integral_add (μ := volume)
-    (hE'.add hcross |>.intervalIntegrable a t) (hD.intervalIntegrable a t)
-  simp only [Pi.add_apply] at hint hsplit
-  rw [hsplit, hid,
-    intervalIntegral.integral_add (hF.intervalIntegrable a t) (hE'.intervalIntegrable a t)] at hint
+    ((hEi.add hCi).add hDi) (hFi.add hEi) hpoint
+  rw [intervalIntegral.integral_add (hEi.add hCi) hDi, hid,
+    intervalIntegral.integral_add hFi hEi] at hint
   linarith
 
-/-- **The second parabolic energy estimate.** Suppose the symmetric energy form is coercive
-with constant `α > 0` and its time derivative is bounded above by `M ‖v‖²`, with `M ≥ 0`.
-A classical solution with pivot-space forcing satisfies an estimate for its energy and the
-accumulated squared pivot norm of its time derivative. The constants are independent of any
-Galerkin dimension. -/
-theorem energy_add_integral_norm_deriv_sq_le_mul_exp (hA : ContDiff ℝ 1 A)
-    (hu : ContDiff ℝ 1 u) (hf : Continuous f)
-    (hsym : ∀ t ∈ Icc a b, ∀ x y, A t x y = A t y x) (hα : 0 < α) (hM : 0 ≤ M)
-    (hcoer : ∀ t ∈ Icc a b, ∀ v, α * ‖v‖ ^ 2 ≤ A t v v)
-    (hbound : ∀ t ∈ Icc a b, ∀ v, deriv A t v v ≤ M * ‖v‖ ^ 2)
-    (heq : ∀ t ∈ Icc a b, ∀ v,
-      ⟪ι (deriv u t), ι v⟫_ℝ + A t (u t) v = ⟪f t, ι v⟫_ℝ)
+/-- **The second parabolic energy estimate with a form-relative bound.** If the time
+variation of the symmetric form along the curve is at most `K` times its diagonal energy,
+where `K ≥ 0`, Grönwall bounds terminal energy and the squared velocity integral. No
+coercivity or coordinate-space norm bound is required. -/
+theorem apply_self_add_integral_norm_sq_le_mul_exp
+    (hA : ∀ s ∈ Icc a b, HasDerivWithinAt A (A' s) (Icc a b) s)
+    (hA' : ContinuousOn A' (Icc a b))
+    (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
+    (hu' : ContinuousOn u' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (hsym : ∀ s ∈ Icc a b, ∀ x y, A s x y = A s y x) (hK : 0 ≤ K)
+    (hbound : ∀ s ∈ Icc a b, A' s (u s) (u s) ≤ K * A s (u s) (u s))
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (u' s)‖ ^ 2 + A s (u s) (u' s) ≤ ⟪f s, ι (u' s)⟫_ℝ)
     {t : ℝ} (ht : t ∈ Icc a b) :
-    A t (u t) (u t) + (∫ s in a..t, ‖ι (deriv u s)‖ ^ 2) ≤
-      (A a (u a) (u a) + ∫ s in a..t, ‖f s‖ ^ 2) * Real.exp (M / α * (t - a)) := by
-  let X : ℝ → ℝ := fun s ↦ A s (u s) (u s) + ∫ r in a..s, ‖ι (deriv u r)‖ ^ 2
-  have hD : Continuous (fun s ↦ ‖ι (deriv u s)‖ ^ 2) :=
-    (ι.continuous.comp hu.continuous_deriv_one).norm.pow 2
-  have hF : Continuous (fun s ↦ ‖f s‖ ^ 2) := hf.norm.pow 2
-  have hE' : Continuous (fun s ↦ deriv A s (u s) (u s)) :=
-    (hA.continuous_deriv_one.clm_apply hu.continuous).clm_apply hu.continuous
-  have hprim : ContinuousOn (fun s ↦ ∫ r in a..s, ‖ι (deriv u r)‖ ^ 2) (Icc a t) := by
+    A t (u t) (u t) + (∫ s in a..t, ‖ι (u' s)‖ ^ 2) ≤
+      (A a (u a) (u a) + ∫ s in a..t, ‖f s‖ ^ 2) * Real.exp (K * (t - a)) := by
+  let X : ℝ → ℝ := fun s ↦ A s (u s) (u s) + ∫ r in a..s, ‖ι (u' r)‖ ^ 2
+  have hAc : ContinuousOn A (Icc a b) := fun s hs ↦
+    HasDerivWithinAt.continuousWithinAt (F := V →L[ℝ] StrongDual ℝ V) (hA s hs)
+  have huc : ContinuousOn u (Icc a b) := fun s hs ↦ (hu s hs).continuousWithinAt
+  have hD : ContinuousOn (fun s ↦ ‖ι (u' s)‖ ^ 2) (Icc a b) :=
+    (ι.continuous.comp_continuousOn hu').norm.pow 2
+  have hE' := (hA'.clm_apply huc).clm_apply huc
+  have hsub : Icc a t ⊆ Icc a b := Icc_subset_Icc_right ht.2
+  have hFi := hf.mono_set (c := a) (d := t)
+    (by simpa only [uIcc_of_le ht.1, uIcc_of_le (ht.1.trans ht.2)] using hsub)
+  have hprim : ContinuousOn (fun s ↦ ∫ r in a..s, ‖ι (u' r)‖ ^ 2) (Icc a t) := by
     rw [← uIcc_of_le ht.1]
-    exact intervalIntegral.continuousOn_primitive_interval hD.continuousOn.integrableOn_uIcc
+    exact intervalIntegral.continuousOn_primitive_interval
+      (by simpa only [uIcc_of_le ht.1] using (hD.mono hsub).integrableOn_Icc (μ := volume))
   have hX : ContinuousOn X (Icc a t) :=
-    ((hA.continuous.clm_apply hu.continuous).clm_apply hu.continuous).continuousOn.add hprim
+    (((hAc.clm_apply huc).clm_apply huc).mono hsub).add hprim
   have hEX (s : ℝ) (hs : s ∈ Icc a t) : A s (u s) (u s) ≤ X s :=
     le_add_of_nonneg_right (intervalIntegral.integral_nonneg hs.1 fun _ _ ↦ sq_nonneg _)
-  have hderiv (s : ℝ) (hs : s ∈ Icc a t) :
-      deriv A s (u s) (u s) ≤ M / α * X s := by
-    have hc := hcoer s (Icc_subset_Icc_right ht.2 hs) (u s)
-    have hb := hbound s (Icc_subset_Icc_right ht.2 hs) (u s)
-    calc
-      deriv A s (u s) (u s) ≤ M * ‖u s‖ ^ 2 := hb
-      _ ≤ M * (X s / α) := by
-        gcongr
-        exact (le_div_iff₀ hα).2 (by nlinarith [hEX s hs])
-      _ = M / α * X s := by ring
   have hgr : ∀ s ∈ Icc a t,
-      X s ≤ (A a (u a) (u a) + ∫ r in a..t, ‖f r‖ ^ 2) + M / α * ∫ r in a..s, X r := by
+      X s ≤ (A a (u a) (u a) + ∫ r in a..t, ‖f r‖ ^ 2) + K * ∫ r in a..s, X r := by
     intro s hs
-    have hst := Icc_subset_Icc_right ht.2 hs
-    have henergy := energy_add_integral_norm_deriv_sq_le hA hu hf hsym heq hst
+    have henergy := apply_self_add_integral_norm_sq_le_add_integral
+      hA hA' hu hu' hf hsym heq (hsub hs)
     have hfmono := intervalIntegral.integral_mono_interval (μ := volume) le_rfl hs.1 hs.2
-      (Filter.Eventually.of_forall fun r ↦ sq_nonneg ‖f r‖) (hF.intervalIntegrable a t)
+      (Filter.Eventually.of_forall fun r ↦ sq_nonneg ‖f r‖) hFi
     have hderivint := intervalIntegral.integral_mono_on (μ := volume) hs.1
-      (hE'.intervalIntegrable a s)
-      ((hX.const_mul (M / α)).mono (Icc_subset_Icc_right hs.2) |>.intervalIntegrable_of_Icc hs.1)
-      (fun r hr ↦ hderiv r (Icc_subset_Icc_right hs.2 hr))
+      ((hE'.mono (Icc_subset_Icc_right (hs.2.trans ht.2))).intervalIntegrable_of_Icc hs.1)
+      ((hX.const_mul K).mono (Icc_subset_Icc_right hs.2) |>.intervalIntegrable_of_Icc hs.1)
+      (fun r hr ↦ (hbound r (hsub (Icc_subset_Icc_right hs.2 hr))).trans
+        (mul_le_mul_of_nonneg_left (hEX r (Icc_subset_Icc_right hs.2 hr)) hK))
     rw [intervalIntegral.integral_const_mul] at hderivint
     exact henergy.trans (by linarith)
-  exact TauCeti.le_mul_exp_of_le_add_mul_integral hX (div_nonneg hM hα.le) hgr t
-    (right_mem_Icc.2 ht.1)
+  exact TauCeti.le_mul_exp_of_le_add_mul_integral hX hK hgr t (right_mem_Icc.2 ht.1)
 
-/-- **Autonomous second energy estimate.** For a fixed symmetric energy form, no coercivity
-is needed to bound terminal energy plus the time-derivative integral. In particular, for a
-coercive form the estimate controls the solution uniformly in the energy norm. -/
-theorem energy_add_integral_norm_deriv_sq_le_of_constant
-    {B : V →L[ℝ] StrongDual ℝ V} (hsym : ∀ x y, B x y = B y x)
-    (hu : ContDiff ℝ 1 u) (hf : Continuous f)
-    (heq : ∀ t ∈ Icc a b, ∀ v,
-      ⟪ι (deriv u t), ι v⟫_ℝ + B (u t) v = ⟪f t, ι v⟫_ℝ)
+/-- The coercive specialization of the second energy estimate: coercivity with constant
+`α > 0` and an upper derivative bound `M ‖v‖²`, with `M ≥ 0`, give the rate `M / α`. -/
+theorem apply_self_add_integral_norm_sq_le_mul_exp_of_coercive
+    (hA : ∀ s ∈ Icc a b, HasDerivWithinAt A (A' s) (Icc a b) s)
+    (hA' : ContinuousOn A' (Icc a b))
+    (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
+    (hu' : ContinuousOn u' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (hsym : ∀ s ∈ Icc a b, ∀ x y, A s x y = A s y x) (hα : 0 < α) (hM : 0 ≤ M)
+    (hcoer : ∀ s ∈ Icc a b, ∀ v, α * ‖v‖ ^ 2 ≤ A s v v)
+    (hbound : ∀ s ∈ Icc a b, ∀ v, A' s v v ≤ M * ‖v‖ ^ 2)
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (u' s)‖ ^ 2 + A s (u s) (u' s) ≤ ⟪f s, ι (u' s)⟫_ℝ)
     {t : ℝ} (ht : t ∈ Icc a b) :
-    B (u t) (u t) + (∫ s in a..t, ‖ι (deriv u s)‖ ^ 2) ≤
+    A t (u t) (u t) + (∫ s in a..t, ‖ι (u' s)‖ ^ 2) ≤
+      (A a (u a) (u a) + ∫ s in a..t, ‖f s‖ ^ 2) * Real.exp (M / α * (t - a)) := by
+  apply apply_self_add_integral_norm_sq_le_mul_exp hA hA' hu hu' hf hsym
+    (div_nonneg hM hα.le) ?_ heq ht
+  intro s hs
+  calc
+    A' s (u s) (u s) ≤ M * ‖u s‖ ^ 2 := hbound s hs (u s)
+    _ ≤ M * (A s (u s) (u s) / α) := by
+      gcongr
+      exact (le_div_iff₀ hα).2 (by simpa [mul_comm] using hcoer s hs (u s))
+    _ = M / α * A s (u s) (u s) := by ring
+
+/-- **Autonomous second energy estimate.** For a fixed symmetric form, no coercivity is
+needed to bound terminal diagonal energy plus the squared pivot velocity integral. -/
+theorem apply_self_add_integral_norm_sq_le
+    {B : V →L[ℝ] StrongDual ℝ V} (hsym : ∀ x y, B x y = B y x)
+    (hu : ∀ s ∈ Icc a b, HasDerivWithinAt u (u' s) (Icc a b) s)
+    (hu' : ContinuousOn u' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (u' s)‖ ^ 2 + B (u s) (u' s) ≤ ⟪f s, ι (u' s)⟫_ℝ)
+    {t : ℝ} (ht : t ∈ Icc a b) :
+    B (u t) (u t) + (∫ s in a..t, ‖ι (u' s)‖ ^ 2) ≤
       B (u a) (u a) + ∫ s in a..t, ‖f s‖ ^ 2 := by
-  have hd (s : ℝ) : deriv (fun _ : ℝ ↦ B) s = 0 := (hasDerivAt_const s B).deriv
-  simpa [hd] using energy_add_integral_norm_deriv_sq_le
-    (A := fun _ ↦ B) contDiff_const hu hf (fun _ _ ↦ hsym) heq ht
+  simpa using apply_self_add_integral_norm_sq_le_add_integral
+    (A := fun _ ↦ B) (A' := fun _ ↦ 0)
+    (fun s _ ↦ hasDerivWithinAt_const s (Icc a b) B) continuousOn_const
+    hu hu' hf (fun _ _ ↦ hsym) heq ht
+
+end TauCeti.PDE
+
+section TrialMap
+
+variable {V H F : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {ι : V →L[ℝ] H} {B : V →L[ℝ] StrongDual ℝ V}
+  {c c' : ℝ → F} {f : ℝ → H} {a b : ℝ}
+
+/-- The autonomous second energy estimate for an already constructed trial curve. Only
+testing the projected equation against its coordinate velocity is required. The trial map
+need not be injective or isometric, and the ambient energy space may be seminormed. -/
+theorem ContinuousLinearMap.apply_self_add_integral_norm_sq_le (e : F →L[ℝ] V)
+    (hsym : ∀ x y, B x y = B y x)
+    (hc : ∀ s ∈ Icc a b, HasDerivWithinAt c (c' s) (Icc a b) s)
+    (hc' : ContinuousOn c' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (e (c' s))‖ ^ 2 + B (e (c s)) (e (c' s)) ≤ ⟪f s, ι (e (c' s))⟫_ℝ)
+    {t : ℝ} (ht : t ∈ Icc a b) :
+    B (e (c t)) (e (c t)) + (∫ s in a..t, ‖ι (e (c' s))‖ ^ 2) ≤
+      B (e (c a)) (e (c a)) + ∫ s in a..t, ‖f s‖ ^ 2 := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.bilinearComp_apply] using
+    TauCeti.PDE.apply_self_add_integral_norm_sq_le
+      (ι := ι.comp e) (B := B.bilinearComp e e)
+      (fun v w ↦ hsym (e v) (e w)) hc hc' hf heq ht
+
+/-- The time-dependent second energy estimate on a trial space, with a form-relative bound
+in the ambient space. No coordinate norm, injectivity, or isometry of the trial map enters
+the estimate, so the rate `K` is unchanged by restriction to a Galerkin space. -/
+theorem ContinuousLinearMap.apply_self_add_integral_norm_sq_le_mul_exp (e : F →L[ℝ] V)
+    {A A' : ℝ → V →L[ℝ] StrongDual ℝ V} {K : ℝ}
+    (hA : ∀ s ∈ Icc a b, HasDerivWithinAt A (A' s) (Icc a b) s)
+    (hA' : ContinuousOn A' (Icc a b))
+    (hc : ∀ s ∈ Icc a b, HasDerivWithinAt c (c' s) (Icc a b) s)
+    (hc' : ContinuousOn c' (Icc a b))
+    (hf : IntervalIntegrable (fun s ↦ ‖f s‖ ^ 2) volume a b)
+    (hsym : ∀ s ∈ Icc a b, ∀ x y, A s x y = A s y x) (hK : 0 ≤ K)
+    (hbound : ∀ s ∈ Icc a b, A' s (e (c s)) (e (c s)) ≤ K * A s (e (c s)) (e (c s)))
+    (heq : ∀ s ∈ Icc a b,
+      ‖ι (e (c' s))‖ ^ 2 + A s (e (c s)) (e (c' s)) ≤ ⟪f s, ι (e (c' s))⟫_ℝ)
+    {t : ℝ} (ht : t ∈ Icc a b) :
+    A t (e (c t)) (e (c t)) + (∫ s in a..t, ‖ι (e (c' s))‖ ^ 2) ≤
+      (A a (e (c a)) (e (c a)) + ∫ s in a..t, ‖f s‖ ^ 2) * Real.exp (K * (t - a)) := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.bilinearComp_apply] using
+    TauCeti.PDE.apply_self_add_integral_norm_sq_le_mul_exp
+      (ι := ι.comp e) (A := fun s ↦ (A s).bilinearComp e e)
+      (A' := fun s ↦ (A' s).bilinearComp e e)
+      (fun s hs ↦ (hA s hs).bilinearComp e e) (hA'.bilinearComp e e) hc hc' hf
+      (fun s hs v w ↦ hsym s hs (e v) (e w)) hK hbound heq ht
+
+end TrialMap
+
+namespace TauCeti.PDE
 
 /-- **Galerkin approximations with the second energy estimate.** For a fixed symmetric
-energy form and continuous pivot-space forcing, each finite-dimensional trial map injective
-into the pivot space admits a global classical Galerkin solution. On every forward interval,
-its terminal energy plus the squared time-derivative integral is bounded by the initial
-energy plus the squared forcing integral, with constant one independent of the trial space. -/
-theorem exists_galerkinSolution_energy_add_integral_norm_deriv_sq_le
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+energy form and continuous pivot-space forcing, a finite-dimensional trial map injective
+into the pivot space admits a unique global classical Galerkin solution. Its terminal energy
+plus the squared velocity integral is bounded by initial energy plus squared forcing, with
+constant one independent of the trial space. -/
+theorem existsUnique_galerkinSolution_apply_self_add_integral_norm_deriv_sq_le
+    {V H F : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {ι : V →L[ℝ] H} {f : ℝ → H}
     {B : V →L[ℝ] StrongDual ℝ V} (hsym : ∀ x y, B x y = B y x)
     (e : F →L[ℝ] V) (he : Function.Injective (ι.comp e)) (hf : Continuous f) (x : F) (a : ℝ) :
-    ∃ c : ℝ → F, c a = x ∧ ContDiff ℝ 1 c ∧
+    ∃! c : ℝ → F, c a = x ∧ ContDiff ℝ 1 c ∧
       (∀ t v, ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + B (e (c t)) (e v) =
         ⟪f t, ι (e v)⟫_ℝ) ∧
       ∀ t ∈ Ici a, B (e (c t)) (e (c t)) +
           (∫ s in a..t, ‖ι (e (deriv c s))‖ ^ 2) ≤
         B (e x) (e x) + ∫ s in a..t, ‖f s‖ ^ 2 := by
-  obtain ⟨c, hc, _⟩ := existsUnique_galerkinSolution ι B e he
+  obtain ⟨c, hc, huniq⟩ := existsUnique_galerkinSolution ι B e he
     (ι.gelfandDual.continuous.comp hf) x a
   have hceq (t : ℝ) (v : F) :
       ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + B (e (c t)) (e v) = ⟪f t, ι (e v)⟫_ℝ := by
     simpa only [Function.comp_apply, ContinuousLinearMap.gelfandDual_apply] using hc.2.2 t v
-  refine ⟨c, hc.1, hc.2.1, hceq, fun t ht ↦ ?_⟩
-  have htrial : ∀ s ∈ Icc a t, ∀ v,
-      ⟪(ι.comp e) (deriv c s), (ι.comp e) v⟫_ℝ +
-        B.bilinearComp e e (c s) v = ⟪f s, (ι.comp e) v⟫_ℝ := by
-    intro s _ v
-    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.bilinearComp_apply]
-      using hceq s v
-  have henergy := energy_add_integral_norm_deriv_sq_le_of_constant
-    (fun v w ↦ hsym (e v) (e w)) hc.2.1 hf htrial (right_mem_Icc.2 ht)
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.bilinearComp_apply, hc.1]
-    using henergy
+  refine ⟨c, ⟨hc.1, hc.2.1, hceq, fun t ht ↦ ?_⟩, ?_⟩
+  · have henergy := ContinuousLinearMap.apply_self_add_integral_norm_sq_le
+      (ι := ι) (B := B) e hsym
+      (fun s _ ↦ (hc.2.1.differentiable one_ne_zero s).hasDerivAt.hasDerivWithinAt)
+      hc.2.1.continuous_deriv_one.continuousOn (hf.norm.pow 2 |>.intervalIntegrable a t)
+      (fun s _ ↦ by simpa only [real_inner_self_eq_norm_sq] using (hceq s (deriv c s)).le)
+      (right_mem_Icc.2 ht)
+    simpa only [hc.1] using henergy
+  · intro d hd
+    apply huniq d
+    refine ⟨hd.1, hd.2.1, fun t v ↦ ?_⟩
+    simpa only [Function.comp_apply, ContinuousLinearMap.gelfandDual_apply] using hd.2.2.1 t v
 
 end TauCeti.PDE

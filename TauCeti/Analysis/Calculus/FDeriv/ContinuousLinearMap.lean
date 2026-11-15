@@ -42,6 +42,8 @@ maps on the left with a fixed one composes its derivative with that map.
 * `TauCeti.hasFDerivAt_pairing`: the derivative of the evaluation pairing `(x, φ) ↦ φ x` of a
   space with its continuous linear maps, in particular with its continuous dual.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
+* `HasDerivWithinAt.clm_apply_self`, `HasDerivAt.clm_apply_self`: the derivative of a
+  time-dependent symmetric scalar-valued bilinear form evaluated along a curve.
 * `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
   near a point takes symmetric values there.
 * `TauCeti.clm_apply_fderiv_eq_zero`: a continuous linear map that vanishes on `g` near a point
@@ -56,6 +58,9 @@ maps on the left with a fixed one composes its derivative with that map.
   pointwise forms: the same criteria for families of bilinear maps, tested on pairs of vectors.
 * `HasDerivAt.const_clm_comp`: composing a family of continuous linear maps on the left with a
   fixed continuous linear map composes its derivative with that map.
+* `ContinuousOn.bilinearComp`, `HasDerivWithinAt.bilinearComp`: pulling back a family of
+  bilinear forms along fixed trial maps preserves continuity and pulls back its derivative,
+  including when the ambient spaces are only seminormed.
 -/
 
 public section
@@ -145,6 +150,29 @@ theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F
   simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearMap.flip_apply]
   abel
+
+/-- Differentiating a time-dependent symmetric bilinear form along the diagonal of a curve,
+within a set. Symmetry is needed only at the point of differentiation. -/
+theorem _root_.HasDerivWithinAt.clm_apply_self {c : 𝕜 → F →L[𝕜] F →L[𝕜] 𝕜}
+    {c' : F →L[𝕜] F →L[𝕜] 𝕜} {u : 𝕜 → F} {u' : F} {s : Set 𝕜} {t : 𝕜}
+    (hc : HasDerivWithinAt c c' s t) (hu : HasDerivWithinAt u u' s t)
+    (hsym : ∀ v w, c t v w = c t w v) :
+    HasDerivWithinAt (fun r ↦ c r (u r) (u r))
+      (c' (u t) (u t) + 2 * c t (u t) u') s t := by
+  convert (hc.clm_apply hu).clm_apply hu using 1
+  simp only [add_apply, hsym u' (u t)]
+  ring
+
+/-- Differentiating a time-dependent symmetric bilinear form along the diagonal of a curve.
+Symmetry is needed only at the point of differentiation. -/
+theorem _root_.HasDerivAt.clm_apply_self {c : 𝕜 → F →L[𝕜] F →L[𝕜] 𝕜}
+    {c' : F →L[𝕜] F →L[𝕜] 𝕜} {u : 𝕜 → F} {u' : F} {t : 𝕜}
+    (hc : HasDerivAt c c' t) (hu : HasDerivAt u u' t)
+    (hsym : ∀ v w, c t v w = c t w v) :
+    HasDerivAt (fun r ↦ c r (u r) (u r)) (c' (u t) (u t) + 2 * c t (u t) u') t := by
+  convert (hc.clm_apply hu).clm_apply hu using 1
+  simp only [add_apply, hsym u' (u t)]
+  ring
 
 /-- If a field `c` of bilinear maps takes symmetric values near `x`, then so does each directional
 derivative of `c` at `x`. -/
@@ -251,5 +279,44 @@ theorem _root_.HasDerivAt.const_clm_comp {c : 𝕜 → E →L[𝕜] F} {c' : E �
   simpa using (hasDerivAt_const t g).clm_comp hc
 
 end TauCeti
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity. The ambient spaces need only seminorms. -/
+theorem ContinuousOn.bilinearComp
+    {X V W : Type*} [TopologicalSpace X]
+    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+    {c : X → V →L[𝕜] W →L[𝕜] F'} {s : Set X} (hc : ContinuousOn c s)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    ContinuousOn (fun r ↦ (c r).bilinearComp e f) s := by
+  let L := (ContinuousLinearMap.compL 𝕜 F V (W →L[𝕜] F')).flip e
+  let R := (ContinuousLinearMap.compL 𝕜 G W F').flip f
+  let P := ContinuousLinearMap.compL 𝕜 F (W →L[𝕜] F') (G →L[𝕜] F') R
+  have hP (d : V →L[𝕜] W →L[𝕜] F') : (P.comp L) d = d.bilinearComp e f := by
+    ext v w
+    rfl
+  simpa only [Function.comp_def, hP] using (P.comp L).continuous.comp_continuousOn hc
+
+/-- Pulling back a differentiable family of bilinear maps along fixed trial maps pulls back
+its derivative. The ambient spaces need only seminorms. -/
+theorem HasDerivWithinAt.bilinearComp
+    {V W : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+    {c : 𝕜 → V →L[𝕜] W →L[𝕜] F'} {c' : V →L[𝕜] W →L[𝕜] F'}
+    {s : Set 𝕜} {t : 𝕜} (hc : HasDerivWithinAt c c' s t)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    HasDerivWithinAt (fun r ↦ (c r).bilinearComp e f) (c'.bilinearComp e f) s t := by
+  let L := (ContinuousLinearMap.compL 𝕜 F V (W →L[𝕜] F')).flip e
+  let R := (ContinuousLinearMap.compL 𝕜 G W F').flip f
+  let P := ContinuousLinearMap.compL 𝕜 F (W →L[𝕜] F') (G →L[𝕜] F') R
+  have hP (d : V →L[𝕜] W →L[𝕜] F') : (P.comp L) d = d.bilinearComp e f := by
+    ext v w
+    rfl
+  -- The form space need not be normed, so apply the pullback directly to the remainder.
+  refine HasFDerivWithinAt.of_isLittleOTVS ?_
+  have h := (P.comp L).isBigOTVS_comp.trans_isLittleOTVS hc.hasFDerivWithinAt.isLittleOTVS
+  simp only [Function.comp_def, map_sub, ContinuousLinearMap.toSpanSingleton_apply,
+    map_smul] at h
+  simpa only [hP, ContinuousLinearMap.toSpanSingleton_apply, sub_smul] using h
 
 end
