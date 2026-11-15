@@ -47,6 +47,7 @@ degree of `τ` and the class of `α`.
 
 * `TauCeti.sphereMeridian`: the meridian `γ_w : p ⇝ -p`.
 * `TauCeti.meridianLoop`: the loop `γ_w · γ_u⁻¹` at `p`, the map `α`.
+* `TauCeti.meridianLoop_swap`: exchanging the two directions reverses the loop.
 * `TauCeti.meridianContraction`: the path of loops `χ_u`.
 * `TauCeti.rotatingMeridianLoop`: the loop of loops `Γ_{u,v}`.
 * `TauCeti.stiefelDoubleLoop`: the double loop `σ_{p,u,v}`, with
@@ -129,6 +130,13 @@ def meridianLoop (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ �
 theorem meridianLoop_def (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
     meridianLoop p x = (sphereMeridian p x.2).trans (sphereMeridian p x.1).symm :=
   (rfl)
+
+/-- Exchanging the two directions of a meridian loop reverses it: `γ_u · γ_w⁻¹` is the reverse of
+`γ_w · γ_u⁻¹`. -/
+theorem meridianLoop_swap (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
+    meridianLoop p x.swap = (meridianLoop p x).symm := by
+  rw [meridianLoop_def, meridianLoop_def, Path.trans_symm, Path.symm_symm, Prod.fst_swap,
+    Prod.snd_swap]
 
 @[fun_prop]
 theorem continuous_meridianLoop : Continuous (meridianLoop p) := by

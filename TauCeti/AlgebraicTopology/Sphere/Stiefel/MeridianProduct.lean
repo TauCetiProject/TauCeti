@@ -39,8 +39,7 @@ proof of Proposition 6.17 then derives from the ring structure of `H_*(Ω_p Sⁿ
 ## Main declarations
 
 * `TauCeti.meridianMooreLoop`: the map `α`, with values in the Moore loop space.
-* `TauCeti.meridianLoop_swap`: exchanging the two directions reverses the loop.
-* `TauCeti.pontryaginMul_map_meridianMooreLoop`: `α_* (a × b) = λ_* a · λ'_* b`.
+* `TauCeti.pontryaginMul_map_meridianMooreLoop`: `(α ∘ swap)_* (a × b) = λ_* a · λ'_* b`.
 
 ## References
 
@@ -57,13 +56,6 @@ universe u
 namespace TauCeti
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphere (0 : E) 1)
-
-/-- Exchanging the two directions of a meridian loop reverses it: `γ_u · γ_w⁻¹` is the reverse of
-`γ_w · γ_u⁻¹`. -/
-theorem meridianLoop_swap (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
-    meridianLoop p x.swap = (meridianLoop p x).symm := by
-  rw [meridianLoop_def, meridianLoop_def, Path.trans_symm, Path.symm_symm, Prod.fst_swap,
-    Prod.snd_swap]
 
 /-- The map `α : (u, w) ↦ γ_w · γ_u⁻¹` of meridian loops at `p`, with values in the Moore loop
 space of the sphere at `p`. -/

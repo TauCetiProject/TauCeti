@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
+public import TauCeti.Topology.PathSpace.Moore.Between.Basic
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 /-!
@@ -23,6 +24,9 @@ Constant unit-interval paths become Moore paths of duration one, whereas the Moo
 section has duration zero. The explicit `constantBetweenHomotopy` compares these sections by
 shrinking the duration while keeping the path constant. This supplies compatibility with
 constant sections when transporting constructions between the two path models.
+
+For fixed endpoints, `Path.toMoorePathBetween` reads a path on the unit interval from `a` to `b`
+as a Moore path of length one in `MoorePathBetween X a b`.
 
 ## References
 
@@ -212,5 +216,28 @@ theorem coe_constantBetweenHomotopy (s : I) (x : ↥(A ∩ B)) :
   (rfl)
 
 end MoorePath
+
+/-! ### Paths with fixed endpoints -/
+
+section Path
+
+variable {a b : X}
+
+/-- A path on the unit interval from `a` to `b`, as a Moore path of length one between its end
+points. -/
+def _root_.Path.toMoorePathBetween (p : Path a b) : MoorePathBetween X a b :=
+  ⟨p.toMoorePath, by simp, by simp⟩
+
+@[simp]
+theorem _root_.Path.toMoorePath_toMoorePathBetween (p : Path a b) :
+    p.toMoorePathBetween.toMoorePath = p.toMoorePath :=
+  MoorePathBetween.toMoorePath_mk _ _
+
+@[fun_prop]
+theorem _root_.Path.continuous_toMoorePathBetween :
+    Continuous (Path.toMoorePathBetween : Path a b → MoorePathBetween X a b) :=
+  Path.continuous_toMoorePath.subtype_mk _
+
+end Path
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.PathSpace.Moore.Comparison.Between
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Trans
 public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 
@@ -104,14 +105,6 @@ private def mooreLoopTransSymmHomotopy (x y : X) :
     simp only [ContinuousMap.Homotopy.apply_one, transMoorePath_apply, transSymmMoorePath,
       ContinuousMap.coe_mk]
 
-/-- A path on the unit interval, as a Moore path between its end points. -/
-private def toMoorePathBetween {a b : X} (p : Path a b) : MoorePathBetween X a b :=
-  ⟨p.toMoorePath, by simp, by simp⟩
-
-private theorem continuous_toMoorePathBetween {a b : X} :
-    Continuous (toMoorePathBetween : Path a b → MoorePathBetween X a b) :=
-  Path.continuous_toMoorePath.subtype_mk _
-
 /-- The Moore loop of the concatenation of the Moore paths of `p`, `r⁻¹`, `r` and `q⁻¹`. -/
 private def cancelMoorePath (r : Path x y) : C(Path x y × Path x y, MooreLoopSpace X x) :=
   ⟨fun pq ↦ ⟨pq.1.toMoorePath.trans (r.symm.toMoorePath.trans
@@ -136,11 +129,11 @@ private def cancelHomotopy (r : Path x y) :
           (continuous_toMoorePathBetween.comp (Path.continuous_symm.comp continuous_snd.snd)))))
   map_zero_left pq := by
     simp only [ContinuousMap.Homotopy.apply_zero, ContinuousMap.id_apply]
-    exact MooreLoopSpace.ext (by simp [transSymmMoorePath, toMoorePathBetween])
+    exact MooreLoopSpace.ext (by simp [transSymmMoorePath])
   map_one_left pq := by
     simp only [ContinuousMap.Homotopy.apply_one, ContinuousMap.comp_apply,
       MoorePathBetween.prepend_apply]
-    exact MooreLoopSpace.ext (by simp [cancelMoorePath, toMoorePathBetween])
+    exact MooreLoopSpace.ext (by simp [cancelMoorePath])
 
 /-- The product of the Moore loops of `p · r⁻¹` and `r · q⁻¹` is homotopic to the concatenation of
 the Moore paths of `p`, `r⁻¹`, `r` and `q⁻¹`, reparametrizing each factor from length one to
