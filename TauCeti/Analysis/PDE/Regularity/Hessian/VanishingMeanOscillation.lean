@@ -8,15 +8,16 @@ module
 public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
-import TauCeti.Analysis.PDE.Ellipticity.Average
+import TauCeti.Analysis.PDE.Ellipticity.VanishingMeanOscillation
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.MaximalFunction
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
-import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The `W^{2,p}` estimate for coefficients of vanishing mean oscillation
@@ -51,10 +52,12 @@ The proof is Krylov's sharp function method.
   `(ρ / r)^(n + 3) ∫_{B_r} ‖D²u‖²` plus the `L²` norms on `B_r` of `f` and of the error.
   On a small ball `A` is the matrix of averages of `a` over `B_r`, which is uniformly elliptic
   (`TauCeti.PDE.UniformlyEllipticOn.setAverage`); on a large ball it is the matrix of averages over
-  the ball outside which `D²u` vanishes.
-* **Hölder.** The error is at most a constant times `w ‖D²u‖`, with `w = ∑ᵢⱼ |A - a|ᵢⱼ` bounded by
+  the ball outside which `D²u` vanishes
+  (`TauCeti.PDE.exists_uniformlyEllipticOn_and_setLAverage_indicator_le`).
+* **Hölder.** The error is at most `w ‖D²u‖`, with `w = ∑ᵢⱼ |A - a|ᵢⱼ` bounded by
   `2 (n + 1)² Λ`, so for `2 < 2t < p` its mean square is at most a constant times
-  `(⨍ w)^(1/t') (⨍ ‖D²u‖^(2t))^(1/t)`, and `⨍ w ≤ (n + 1)² γ` by the VMO hypothesis.
+  `(⨍ w)^(1/t') (⨍ ‖D²u‖^(2t))^(1/t)` (`TauCeti.lintegral_sq_mul_sq_le_of_ae_le`), and
+  `⨍ w ≤ (n + 1)² γ` by the VMO hypothesis.
 * **The sharp function.** For `x ∈ B_ρ` and `r = κ ρ`, every average over `B_r` is at most
   `2^(n + 1)` times a maximal function at `x`. This bounds the square of the sharp maximal
   function of `D²u` at `x`, up to constants, by
@@ -72,7 +75,7 @@ treated here.
 
 ## Main declarations
 
-* `TauCeti.PDE.lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq`:
+* `PDE.setLIntegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq`:
   the mean oscillation estimate for the Hessian with frozen coefficients.
 * `TauCeti.PDE.exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le`: the
   `W^{2,p}` estimate for coefficients of small mean oscillation.
@@ -109,7 +112,7 @@ of the error `∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu` made by freezing `a` at `A`
   + 2 (n + 1)² (4 D + 2) / λ² (∫_{B_r} f² + ∫_{B_r} (∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu)²)`,
 
 with `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. -/
-theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
+theorem setLIntegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
     {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (hA : UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
@@ -170,7 +173,7 @@ theorem lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mu
     calc _ ≤ ENNReal.ofReal (4 * ∫ x in ball c r, ‖H x‖ ^ 2) := ENNReal.ofReal_le_ofReal h4
       _ = _ := by rw [ENNReal.ofReal_mul (by norm_num), h0, ENNReal.ofReal_ofNat]
   have herr : AEMeasurable (fun x => ‖err x‖ₑ ^ 2) (volume.restrict (ball c r)) := by
-    exact (aestronglyMeasurable_contraction (aestronglyMeasurable_const.sub ha)
+    exact ((aestronglyMeasurable_const.sub ha).matrix_contraction
       hHr.aestronglyMeasurable).eNorm.pow_const 2
   have hgr : ENNReal.ofReal (∫ x in ball c r, (f x + err x) ^ 2) ≤
       2 * ((∫⁻ x in ball c r, ‖f x‖ₑ ^ 2) + ∫⁻ x in ball c r, ‖err x‖ₑ ^ 2) := by
@@ -233,6 +236,51 @@ private theorem decayConst_nonneg (n : ℕ) (lam Lam : ℝ) : 0 ≤ decayConst n
 private theorem forcingConst_nonneg (n : ℕ) (lam Lam : ℝ) : 0 ≤ forcingConst n lam Lam := by
   unfold forcingConst; positivity
 
+/-- **The coefficient error in mean.** Let `H` vanish almost everywhere on `s ∖ S`, and let the
+entries of `A - a` have absolute values summing to at most `W` on `s`. For Hölder conjugate
+exponents `t, t'`, the mean square of the error `∑ᵢⱼ (A - a)ᵢⱼ ⟪H eᵢ, eⱼ⟫` on `s` is controlled by
+the average over `s` of `w = ∑ᵢⱼ ‖A - a‖ᵢⱼ` restricted to `S` and the `L^{2t}` mean of `H` on `s`:
+
+`⨍_s (∑ᵢⱼ (A - a)ᵢⱼ ⟪H eᵢ, eⱼ⟫)² ≤ (W^(2t' - 1) ⨍_s 1_S w)^(1/t') (⨍_s ‖H‖^(2t))^(1/t)`. -/
+private theorem setLAverage_enorm_contraction_sq_le {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {s S : Set X} {A : Matrix (Fin n) (Fin n) ℝ}
+    {a : X → Matrix (Fin n) (Fin n) ℝ}
+    {H : X → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)} {W : ℝ}
+    (hW : ∀ᵐ x ∂μ.restrict s, ∑ i, ∑ j, |A i j - a x i j| ≤ W) (hS : MeasurableSet S)
+    (hw : AEMeasurable (fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ) (μ.restrict s))
+    (hH : AEMeasurable (fun x => ‖H x‖ₑ) (μ.restrict s))
+    (hsupp : ∀ᵐ x ∂μ.restrict s, x ∉ S → H x = 0) {t t' : ℝ} (htt : t.HolderConjugate t') :
+    ⨍⁻ x in s, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ∂μ ≤
+      (ENNReal.ofReal W ^ (2 * t' - 1) *
+        ⨍⁻ x in s, S.indicator (fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ) x ∂μ) ^ (1 / t') *
+        (⨍⁻ x in s, ‖H x‖ₑ ^ (2 * t) ∂μ) ^ (1 / t) := by
+  set w : X → ℝ≥0∞ := fun x => ∑ i, ∑ j, ‖A i j - a x i j‖ₑ
+  set v : X → ℝ≥0∞ := S.indicator w
+  set ν : Measure X := (μ s)⁻¹ • μ.restrict s
+  have hν : ν ≪ μ.restrict s := Measure.smul_absolutelyContinuous
+  -- Pointwise: `‖err‖ₑ² ≤ v² ‖H‖ₑ²`, since `H = 0` off `S`.
+  have hpt : ∀ᵐ x ∂ν, ‖contraction (A - a x) (H x)‖ₑ ^ 2 ≤ v x ^ 2 * ‖H x‖ₑ ^ 2 := by
+    filter_upwards [hν.ae_le hsupp] with x hx
+    by_cases hxS : x ∈ S
+    · have h := enorm_contraction_le (A - a x) (H x)
+      simp only [Matrix.sub_apply] at h
+      rw [show v x = w x from Set.indicator_of_mem hxS w, ← mul_pow]
+      gcongr
+    · simp [hx hxS]
+  -- The bound `v ≤ W` on `s`.
+  have hvW : ∀ᵐ x ∂ν, v x ≤ ENNReal.ofReal W := by
+    filter_upwards [hν.ae_le hW] with x hx
+    refine (Set.indicator_le_self S w x).trans ?_
+    refine le_trans (le_of_eq ?_) (ENNReal.ofReal_le_ofReal hx)
+    rw [ENNReal.ofReal_sum_of_nonneg (f := fun i => ∑ j, |A i j - a x i j|)
+      fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [ENNReal.ofReal_sum_of_nonneg (f := fun j => |A i j - a x i j|) fun _ _ => abs_nonneg _]
+    exact Finset.sum_congr rfl fun j _ => Real.eNorm_eq_ofReal_abs _
+  simp only [setLAverage_eq', one_div]
+  exact (lintegral_mono_ae hpt).trans
+    (lintegral_sq_mul_sq_le_of_ae_le htt ((hw.indicator hS).mono_ac hν) (hH.mono_ac hν) hvW)
+
 /-- **The mean oscillation estimate on one ball.** Let `u ∈ W^{2,2}(ℝ^{n+1})` solve
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f`, let `x ∈ B_ρ = ball c ρ` and `κ ≥ 1`, and freeze the coefficients on
 `B_{κρ}` at an elliptic constant matrix `A` whose deviation `w = ∑ᵢⱼ ‖A - a‖ᵢⱼ`, restricted to a set
@@ -291,7 +339,7 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
         ENNReal.ofReal (forcingConst n lam Lam) * ((∫⁻ y in ball c r, ‖f y‖ₑ ^ 2) +
           ∫⁻ y in ball c r, ‖contraction (A - a y) (H y)‖ₑ ^ 2) := by
     unfold decayConst forcingConst
-    exact lintegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
+    exact setLIntegral_ball_enorm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
       (hA.mono_set (subset_univ _)) u ha.restrict htop (ae_restrict_of_ae heq) hρ hρr
   -- Averages over `B_ρ` are `κ^(n + 1)` times averages over `B_r`.
   have hdiv : ∀ I : ℝ≥0∞, I / volume (ball c ρ) =
@@ -393,78 +441,6 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
           ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity)]
         ring
 
-/-- Freezing at the ball averages: on a ball of radius `s ≤ R`, the matrix of averages of `a` is
-elliptic, and the mean deviation `∑ᵢⱼ ‖A - a‖ᵢⱼ` from it is at most `(n + 1)² γ` when every entry
-of `a` has VMO modulus at most `γ` at radius `R`. -/
-private theorem exists_setAverage_deviation_le {a : EuclideanSpace ℝ (Fin (n + 1)) →
-      Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) (hell : UniformlyEllipticOn univ a lam Lam) {R γ s : ℝ}
-    (hvmo : ∀ i j, vmoModulus (fun x => a x i j) volume R ≤ ENNReal.ofReal γ)
-    (c' : EuclideanSpace ℝ (Fin (n + 1))) (hs : 0 < s) (hsR : s ≤ R) :
-    UniformlyEllipticOn univ (fun _ : EuclideanSpace ℝ (Fin (n + 1)) =>
-        Matrix.of fun i j => ⨍ x in ball c' s, a x i j) lam Lam ∧
-      ⨍⁻ y in ball c' s, (∑ i, ∑ j,
-          ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j - a y i j‖ₑ) ≤
-        ENNReal.ofReal ((n + 1) ^ 2 * γ) := by
-  have hentry : ∀ i j, AEStronglyMeasurable (fun x => a x i j) volume := fun i j =>
-    (continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha
-  have hint : ∀ i j, IntegrableOn (fun x => a x i j) (ball c' s) volume := fun i j =>
-    Measure.integrableOn_of_bounded (M := Lam) measure_ball_lt_top.ne (hentry i j)
-      (ae_of_all _ fun x => by
-        simpa [Real.norm_eq_abs] using (hell.abs_apply_le (mem_univ x)) i j)
-  refine ⟨(hell.mono_set (subset_univ _)).setAverage
-    (measure_ball_pos _ _ hs).ne' measure_ball_lt_top.ne hint univ, ?_⟩
-  have hmeas : ∀ i j, AEMeasurable (fun y => ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j -
-      a y i j‖ₑ) (volume.restrict (ball c' s)) := fun i j =>
-    (aestronglyMeasurable_const.sub (hentry i j)).eNorm.restrict
-  have hmeas' : ∀ i j, AEMeasurable
-      (fun y => ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j - a y i j‖ₑ)
-      ((volume (ball c' s))⁻¹ • volume.restrict (ball c' s)) := fun i j =>
-    (hmeas i j).mono_ac Measure.smul_absolutelyContinuous
-  simp only [setLAverage_eq']
-  rw [lintegral_finsetSum' _ fun i _ => Finset.aemeasurable_fun_sum _ fun j _ => hmeas' i j]
-  simp_rw [lintegral_finsetSum' _ fun j _ => hmeas' _ j, ← setLAverage_eq']
-  calc ∑ i, ∑ j, ⨍⁻ y in ball c' s,
-        ‖(Matrix.of fun i j => ⨍ x in ball c' s, a x i j) i j - a y i j‖ₑ
-      ≤ ∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), ENNReal.ofReal γ := by
-        refine Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => ?_
-        simp_rw [Matrix.of_apply, eNorm_sub_rev (⨍ x in ball c' s, a x i j)]
-        exact (setLAverage_enorm_sub_setAverage_le_vmoModulus _ volume c' hsR).trans (hvmo i j)
-    _ = ENNReal.ofReal ((n + 1) ^ 2 * γ) := by
-        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity)]
-        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        push_cast
-        rw [ENNReal.ofReal_add (by positivity) zero_le_one]
-        simp [sq, mul_assoc]
-
-/-- The choice of frozen coefficients on a ball `B_r`. On a small ball, `r ≤ R`, freeze at the
-averages over `B_r` itself; on a large ball, where only the part inside the support `B(z, R)` of the
-Hessian matters, freeze at the averages over `B(z, R)`. Either way the frozen matrix is elliptic,
-and the deviation from it, restricted to a set `S` containing the part of `B_r` inside `B(z, R)`,
-has average over `B_r` at most `(n + 1)² γ`. -/
-private theorem exists_frozen_coefficients {a : EuclideanSpace ℝ (Fin (n + 1)) →
-      Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) (hell : UniformlyEllipticOn univ a lam Lam) {R γ : ℝ}
-    (hR : 0 < R) (hvmo : ∀ i j, vmoModulus (fun x => a x i j) volume R ≤ ENNReal.ofReal γ)
-    (z : EuclideanSpace ℝ (Fin (n + 1))) (hr : 0 < r) :
-    ∃ (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (S : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-      UniformlyEllipticOn univ (fun _ : EuclideanSpace ℝ (Fin (n + 1)) => A) lam Lam ∧
-        MeasurableSet S ∧ ball c r ∩ ball z R ⊆ S ∧
-        ⨍⁻ y in ball c r, S.indicator (fun y => ∑ i, ∑ j, ‖A i j - a y i j‖ₑ) y ≤
-          ENNReal.ofReal ((n + 1) ^ 2 * γ) := by
-  rcases le_or_gt r R with hrR | hRr
-  · obtain ⟨hA, hw⟩ := exists_setAverage_deviation_le ha hell hvmo c hr hrR
-    refine ⟨_, ball c r, hA, measurableSet_ball, inter_subset_left, ?_⟩
-    rwa [setLAverage_eq, setLIntegral_indicator measurableSet_ball, inter_self, ← setLAverage_eq]
-  · obtain ⟨hA, hw⟩ := exists_setAverage_deviation_le ha hell hvmo z hR le_rfl
-    refine ⟨_, ball z R, hA, measurableSet_ball, inter_subset_right, ?_⟩
-    have hvol : volume (ball z R) ≤ volume (ball c r) := by
-      rw [Measure.addHaar_ball _ _ hR.le, Measure.addHaar_ball _ _ hr.le]
-      gcongr
-    refine le_trans ?_ hw
-    rw [setLAverage_eq, setLIntegral_indicator measurableSet_ball, setLAverage_eq]
-    exact ENNReal.div_le_div (lintegral_mono_set inter_subset_left) hvol
-
 /-- **Krylov's pointwise estimate for the sharp maximal function of the Hessian.** Let
 `u ∈ W^{2,2}(ℝ^{n+1})` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` with `D²u` vanishing outside `B(z, R)`, and let
 every entry of `a` have VMO modulus at most `γ` at radius `R`. Then for every `κ ≥ 1` the square of
@@ -473,7 +449,7 @@ of `f²` and of `‖H‖^(2t)`. -/
 private theorem sq_sharpMaximalFunction_iteratedGradient_le
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume) (hell : UniformlyEllipticOn univ a lam Lam) {R γ : ℝ}
-    (hR : 0 < R) (hγ : 0 ≤ γ)
+    (hγ : 0 ≤ γ)
     (hvmo : ∀ i j, vmoModulus (fun x => a x i j) volume R ≤ ENNReal.ofReal γ)
     (z : EuclideanSpace ℝ (Fin (n + 1)))
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ 2 2)
@@ -497,8 +473,10 @@ private theorem sq_sharpMaximalFunction_iteratedGradient_le
   rw [← ENNReal.rpow_two, ← ENNReal.le_rpow_inv_iff two_pos]
   refine sharpMaximalFunction_le fun c ρ hx => ?_
   have hρ : 0 < ρ := dist_nonneg.trans_lt (mem_ball.1 hx)
-  have hr : 0 < κ * ρ := mul_pos (zero_lt_one.trans_le hκ) hρ
-  obtain ⟨A, S, hA, hS, hsub, hw⟩ := exists_frozen_coefficients ha hell hR hvmo z (c := c) hr
+  obtain ⟨A, S, hA, hS, hsub, hw⟩ :=
+    exists_uniformlyEllipticOn_and_setLAverage_indicator_le (c := c) (z := z) (r := κ * ρ) ha
+      (hell.mono_set (subset_univ _)) hvmo (univ : Set (EuclideanSpace ℝ (Fin (n + 1))))
+  rw [Fintype.card_fin, Nat.cast_add_one] at hw
   have hsuppS : ∀ᵐ y ∂volume.restrict (ball c (κ * ρ)), y ∉ S →
       Wkp.iteratedGradient 1 u y = 0 := by
     filter_upwards [ae_restrict_of_ae hsupp, ae_restrict_mem measurableSet_ball] with y hy hyB hyS
@@ -513,7 +491,7 @@ the factors `κ⁻²` and `γ^(1/t')`. -/
 private theorem lintegral_enorm_iteratedGradient_rpow_le
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume) (hell : UniformlyEllipticOn univ a lam Lam) {R γ : ℝ}
-    (hR : 0 < R) (hγ : 0 ≤ γ)
+    (hγ : 0 ≤ γ)
     (hvmo : ∀ i j, vmoModulus (fun x => a x i j) volume R ≤ ENNReal.ofReal γ)
     (z : EuclideanSpace ℝ (Fin (n + 1)))
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) ⊤ 2 2)
@@ -528,22 +506,17 @@ private theorem lintegral_enorm_iteratedGradient_rpow_le
       CFS * ∫⁻ x, sharpMaximalFunction volume (Wkp.iteratedGradient 1 u) x ^ q) :
     ∫⁻ x, ‖Wkp.iteratedGradient 1 u x‖ₑ ^ q ≤ CFS * (2 ^ (q / 2 - 1) * (2 ^ (q / 2 - 1) *
         (ENNReal.ofReal (decayConst n lam Lam / κ ^ 2 * 2 ^ (n + 1)) ^ (q / 2) *
-          (ENNReal.ofReal (2 * (q / 2) * 2 ^ (q / 2 - 1) / (q / 2 - 1)) *
-            4 ^ Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) *
-              ∫⁻ x, ‖Wkp.iteratedGradient 1 u x‖ₑ ^ q) +
+          (maximalFunctionConst (n + 1) (q / 2) * ∫⁻ x, ‖Wkp.iteratedGradient 1 u x‖ₑ ^ q) +
         ENNReal.ofReal (forcingConst n lam Lam * κ ^ (n + 1) * 2 ^ (n + 1)) ^ (q / 2) *
-          (ENNReal.ofReal (2 * (q / 2) * 2 ^ (q / 2 - 1) / (q / 2 - 1)) *
-            4 ^ Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) * ∫⁻ x, ‖f x‖ₑ ^ q)) +
+          (maximalFunctionConst (n + 1) (q / 2) * ∫⁻ x, ‖f x‖ₑ ^ q)) +
       ENNReal.ofReal (forcingConst n lam Lam * κ ^ (n + 1) *
           ((2 * (n + 1) ^ 2 * Lam) ^ (2 * t.conjExponent - 1) * ((n + 1) ^ 2 * γ)) ^
             (1 / t.conjExponent) * (2 ^ (n + 1)) ^ (1 / t)) ^ (q / 2) *
-        (ENNReal.ofReal (2 * (q / 2 / t) * 2 ^ (q / 2 / t - 1) / (q / 2 / t - 1)) *
-          4 ^ Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) *
-            ∫⁻ x, ‖Wkp.iteratedGradient 1 u x‖ₑ ^ q))) := by
+        (maximalFunctionConst (n + 1) (q / 2 / t) * ∫⁻ x, ‖Wkp.iteratedGradient 1 u x‖ₑ ^ q))) := by
   set H := Wkp.iteratedGradient 1 u
   have hHm : AEStronglyMeasurable H volume := hint.aestronglyMeasurable
   have hfm : AEStronglyMeasurable f volume :=
-    (aestronglyMeasurable_contraction ha hHm).congr
+    (ha.matrix_contraction hHm).congr
       (heq.mono fun x hx => by simp only [contraction_apply, hx])
   have hsq : ∀ (y : ℝ≥0∞) (e : ℝ), e * (q / e) = q → (y ^ e) ^ (q / e) = y ^ q :=
     fun y e he => by rw [← ENNReal.rpow_mul, he]
@@ -553,14 +526,14 @@ private theorem lintegral_enorm_iteratedGradient_rpow_le
   have h3 : ∀ y : ℝ≥0∞, (y ^ (2 * t)) ^ (q / 2 / t) = y ^ q := fun y => by
     rw [div_div]; exact hsq y (2 * t) (by field_simp)
   refine hFS.trans (mul_le_mul_right ?_ _)
-  have hsharp := sq_sharpMaximalFunction_iteratedGradient_le ha hell hR hγ hvmo z u hsupp heq hκ
+  have hsharp := sq_sharpMaximalFunction_iteratedGradient_le ha hell hγ hvmo z u hsupp heq hκ
     (Real.HolderConjugate.conjExponent ht)
   simp only [one_div] at hsharp
   have hbound := lintegral_rpow_le_of_sq_le_maximalFunction (g := fun x =>
       sharpMaximalFunction volume H x) volume
     (h₁ := fun y => ‖H y‖ₑ ^ 2) (h₂ := fun y => ‖f y‖ₑ ^ 2) (h₃ := fun y => ‖H y‖ₑ ^ (2 * t))
     (hHm.eNorm.pow_const 2) (hfm.eNorm.pow_const 2) (hHm.eNorm.pow_const _) ht htq hsharp
-  simp only [h2, h3, maximalFunctionConst_def, one_div] at hbound ⊢
+  simp only [h2, h3, finrank_euclideanSpace, Fintype.card_fin, one_div] at hbound ⊢
   exact hbound
 
 /-- **The `W^{2,p}` estimate for coefficients of small mean oscillation.** Let `2 < p < ∞` and
@@ -599,11 +572,10 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
   set t' := t.conjExponent
   obtain ⟨CFS, hFS⟩ := exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow
     (ι := Fin (n + 1)) (show 1 < q by linarith)
-  set d := Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-  set cM : ℝ≥0∞ := ENNReal.ofReal (2 * (q / 2) * 2 ^ (q / 2 - 1) / (q / 2 - 1)) * 4 ^ d
-  set cM' : ℝ≥0∞ := ENNReal.ofReal (2 * (q / 2 / t) * 2 ^ (q / 2 / t - 1) / (q / 2 / t - 1)) * 4 ^ d
-  have hcM : cM ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)
-  have hcM' : cM' ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)
+  set cM := maximalFunctionConst (n + 1) (q / 2)
+  set cM' := maximalFunctionConst (n + 1) (q / 2 / t)
+  have hcM : cM ≠ ∞ := maximalFunctionConst_ne_top _ _
+  have hcM' : cM' ≠ ∞ := maximalFunctionConst_ne_top _ _
   set K₁ : ℝ≥0∞ := (CFS : ℝ≥0∞) * 2 ^ (q / 2 - 1) * 2 ^ (q / 2 - 1) * cM
   set K₃ : ℝ≥0∞ := (CFS : ℝ≥0∞) * 2 ^ (q / 2 - 1) * cM'
   have h2 : (2 : ℝ≥0∞) ^ (q / 2 - 1) ≠ ∞ :=
@@ -620,7 +592,7 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
       tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
     have h0 := h1.mul_const ((2 : ℝ) ^ (n + 1))
     rw [zero_mul] at h0
-    exact ((eventually_ge_atTop 1).and (eventually_mul_ofReal_rpow_lt h0 hK₁ (by positivity)
+    exact ((eventually_ge_atTop 1).and (h0.eventually_mul_ofReal_rpow_lt hK₁ (by positivity)
       hquarter)).exists
   -- Then choose `γ > 0` making the coefficient term small.
   set c₃ : ℝ → ℝ := fun γ => forcingConst n lam Lam * κ ^ (n + 1) *
@@ -637,7 +609,7 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
         have : t'⁻¹ ≠ 0 := by simpa [one_div] using ht'.ne'
         simp [c₃, Real.zero_rpow this]
       rwa [hc0] at h
-    exact ((eventually_mul_ofReal_rpow_lt h0 hK₃ (by positivity) hquarter).and
+    exact ((h0.eventually_mul_ofReal_rpow_lt hK₃ (by positivity) hquarter).and
       self_mem_nhdsWithin).exists
   set K₂ : ℝ≥0∞ := (CFS : ℝ≥0∞) * 2 ^ (q / 2 - 1) * 2 ^ (q / 2 - 1) *
     ENNReal.ofReal (forcingConst n lam Lam * κ ^ (n + 1) * 2 ^ (n + 1)) ^ (q / 2) * cM
@@ -647,19 +619,11 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
   refine ⟨((2 * K₂) ^ (1 / q)).toNNReal, γ, hγ, fun {a} ha hell {R} z hvmo u f hsupp hHp heq => ?_⟩
   set H := Wkp.iteratedGradient 1 u
   have hHm : AEStronglyMeasurable H volume := hHp.aestronglyMeasurable
-  rcases le_or_gt R 0 with hR | hR
-  · -- For `R ≤ 0` the Hessian vanishes almost everywhere.
-    have h0 : (H : EuclideanSpace ℝ (Fin (n + 1)) → _) =ᵐ[volume] 0 := by
-      filter_upwards [hsupp] with x hx
-      exact hx (by simp [ball_eq_empty.2 hR])
-    rw [eLpNorm_congr_ae h0,
-      eLpNorm_zero (ε := IteratedGradient (EuclideanSpace ℝ (Fin (n + 1))) 1)]
-    exact bot_le
   rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity)
       (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hK₂)),
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hHm,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top
-      ((aestronglyMeasurable_contraction ha hHm).congr
+      ((ha.matrix_contraction hHm).congr
         (heq.mono fun x hx => by simp only [contraction_apply, hx])),
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← hq_def]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
@@ -678,7 +642,7 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
   set J := ∫⁻ x, ‖f x‖ₑ ^ q
   have hI : I ≠ ∞ := (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp_top
     hHp.eLpNorm_lt_top).ne
-  have key := lintegral_enorm_iteratedGradient_rpow_le ha hell hR hγ.le hvmo z u hsupp heq hint
+  have key := lintegral_enorm_iteratedGradient_rpow_le ha hell hγ.le hvmo z u hsupp heq hint
     hκ ht htq (hFS H hint)
   -- Absorb the two terms carrying `I` on the right.
   have hsplit : I ≤ K₁ * ENNReal.ofReal (decayConst n lam Lam / κ ^ 2 * 2 ^ (n + 1)) ^ (q / 2) * I +

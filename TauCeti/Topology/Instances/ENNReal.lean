@@ -8,9 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Continuity
 public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
 # Limits of `ℝ≥0∞`-valued functions
@@ -32,8 +30,6 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
-* `TauCeti.eventually_mul_ofReal_rpow_lt`: if `g → 0`, then eventually
-  `K * ENNReal.ofReal (g x) ^ e < ε` for finite `K`, `e > 0` and `ε > 0`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
 -/
@@ -165,16 +161,5 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     simpa [Function.comp_def] using
       (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
-
-/-- If `g → 0` along `l`, then eventually `K * ENNReal.ofReal (g x) ^ e < ε` for finite `K`,
-`e > 0` and `ε > 0`. This is the form in which a vanishing real parameter makes a term small
-enough to be absorbed. -/
-theorem eventually_mul_ofReal_rpow_lt {α : Type*} {l : Filter α} {g : α → ℝ}
-    (hg : Filter.Tendsto g l (𝓝 0)) {K : ℝ≥0∞} (hK : K ≠ ∞) {e : ℝ} (he : 0 < e) {ε : ℝ≥0∞}
-    (hε : 0 < ε) : ∀ᶠ x in l, K * ENNReal.ofReal (g x) ^ e < ε := by
-  have hg' := ENNReal.tendsto_ofReal hg
-  rw [ENNReal.ofReal_zero] at hg'
-  exact ((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK he).comp hg').eventually
-    (gt_mem_nhds hε)
 
 end TauCeti

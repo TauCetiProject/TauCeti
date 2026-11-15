@@ -158,7 +158,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
   have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (TL x))
       (volume.restrict Omega) :=
-    Matrix.aestronglyMeasurable_contraction ha_meas (Lp.aestronglyMeasurable TL)
+    ha_meas.matrix_contraction (Lp.aestronglyMeasurable TL)
   have hEle : ∀ᵐ x ∂volume.restrict Omega,
       ‖Matrix.contraction (a x) (TL x)‖ ≤ n ^ 2 * Λ * ‖TL x‖ := by
     filter_upwards [hTK, ae_restrict_of_ae haΛ] with x h1 h2

@@ -194,7 +194,7 @@ private theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ 
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ)
       (volume.restrict S) := by
     simpa only [Matrix.contraction_apply] using
-      Matrix.aestronglyMeasurable_contraction ha hH.aestronglyMeasurable
+      ha.matrix_contraction hH.aestronglyMeasurable
   refine (hH.of_le_mul (c := n ^ 2 * Λ) hmeas ?_).ae_eq heq
   filter_upwards [(ae_restrict_iff' hSm).2 haΛ] with x hx
   rw [← Matrix.contraction_apply, Real.norm_eq_abs]
