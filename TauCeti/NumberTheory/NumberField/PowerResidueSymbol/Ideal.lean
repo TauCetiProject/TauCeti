@@ -45,6 +45,8 @@ zero ideal, which has no prime factors, is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mk_eq_zero_iff`: `(α / 𝔞)_n = 0` exactly when `α` and `𝔞` are
   not coprime.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
+* `Ideal.powerResidueSymbolIdeal_eq_zero_or_pow_eq_one`: every value of the symbol is either `0` or
+  an `n`-th root of unity.
 * `Ideal.powerResidueSymbolIdeal_neg`: `(-x / 𝔞)_n = (x / 𝔞)_n` for odd `n`.
 * `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
   `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
@@ -196,6 +198,14 @@ theorem powerResidueSymbolIdeal_pow_eq_one {x : 𝓞 K ⧸ 𝔞} (hx : IsUnit x)
       hx.map (Quotient.factor (le_of_dvd (dvd_of_mem_normalizedFactors hP)))
   rw [symbolAt, dite_eq_left hPm]
   exact powerResidueSymbol_pow_eq_one hαP.ne_zero
+
+/-- Every value of the `n`-th power residue symbol at an ideal is either `0` or an `n`-th root of
+unity. -/
+theorem powerResidueSymbolIdeal_eq_zero_or_pow_eq_one (𝔞 : Ideal (𝓞 K)) (x : 𝓞 K ⧸ 𝔞) :
+    powerResidueSymbolIdeal 𝔞 n x = 0 ∨ powerResidueSymbolIdeal 𝔞 n x ^ n = 1 := by
+  by_cases hx : IsUnit x
+  · exact Or.inr (powerResidueSymbolIdeal_pow_eq_one hx)
+  · exact Or.inl (MulChar.map_nonunit _ hx)
 
 /-- For odd `n`, `(-x / 𝔞)_n = (x / 𝔞)_n` at every ideal `𝔞`: the symbol is a character of odd
 order dividing `n`, so its value at `-1` is `1`. -/

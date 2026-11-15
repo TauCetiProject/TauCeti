@@ -19,6 +19,7 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.Ideal.Norm
+import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Cyclotomic
 import TauCeti.RingTheory.Ideal.Pointwise
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
@@ -162,30 +163,10 @@ theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (𝔅 : Idea
   · have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
     have hσ𝔅 (σ : Gal(K/ℚ)) : σ • 𝔅 ≠ ⊥ := fun h ↦
       h𝔅 (by simpa using congrArg (σ⁻¹ • ·) h)
-    -- Rewrite each factor `((σ⁻¹ α) / 𝔅)_m ^ c(σ)` as `(α / σ 𝔅)_m`.
-    have hfactor (σ : Gal(K/ℚ)) :
-        powerResidueSymbolIdeal 𝔅 m
-            (Quotient.mk 𝔅 ((σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val)) =
-          powerResidueSymbolIdeal (σ • 𝔅) m (Quotient.mk (σ • 𝔅) α) := by
-      let x := powerResidueSymbolIdeal 𝔅 m (Quotient.mk 𝔅 (σ⁻¹ • α))
-      let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
-      have hc : (galEquivZMod m K σ : ZMod m).val ≠ 0 :=
-        (ZMod.val_ne_zero _).mpr (Units.ne_zero _)
-      have hpow : x ^ (galEquivZMod m K σ : ZMod m).val = σ • x := by
-        by_cases hu : IsUnit (Quotient.mk 𝔅 (σ⁻¹ • α))
-        · exact (galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbolIdeal_pow_eq_one hu)).symm
-        · simp [x, MulChar.map_nonunit _ hu, zero_pow hc]
-      have hmap := map_powerResidueSymbolIdeal (n := m) 𝔅 τ (σ⁻¹ • α)
-      have hτx : τ x = σ • x := MulSemiringAction.toRingEquiv_apply_apply _ _ σ x
-      have hτ_hom : (τ : 𝓞 K →+* 𝓞 K) = MulSemiringAction.toRingHom _ _ σ :=
-        RingHom.ext (MulSemiringAction.toRingEquiv_apply_apply _ _ σ)
-      have hτ𝔅 : 𝔅.map τ = σ • 𝔅 := by
-        rw [← Ideal.map_coe, hτ_hom, Ideal.pointwise_smul_def]
-      have hτα : τ (σ⁻¹ • α) = α :=
-        (MulSemiringAction.toRingEquiv_apply_apply _ _ σ _).trans (smul_inv_smul σ α)
-      rw [map_pow, map_pow, hpow, ← hτx, hmap, hτα, hτ𝔅]
     rw [TauCeti.stickelbergerProduct_def, map_prod, map_prod,
-      Finset.prod_congr rfl fun σ _ ↦ hfactor σ,
+      Finset.prod_congr rfl fun σ _ ↦ by
+        rw [map_pow, map_pow, 𝔅.powerResidueSymbolIdeal_pow_val_galEquivZMod hm σ (σ⁻¹ • α),
+          smul_inv_smul],
       ← powerResidueSymbolIdeal_prod_right Finset.univ (fun σ _ ↦ hσ𝔅 σ) α,
       prod_automorphisms_smul_eq_span_absNorm]
 
