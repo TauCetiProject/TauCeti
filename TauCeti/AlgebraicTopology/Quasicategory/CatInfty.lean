@@ -9,7 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import Mathlib.AlgebraicTopology.SimplicialNerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
-public import TauCeti.AlgebraicTopology.Quasicategory.Core
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
 
 /-!
 # The simplicial category of quasicategories and `Cat∞`
@@ -25,11 +26,12 @@ Restricting to quasicategories gives the simplicial category `SSet.CatInftyΔ`, 
 Definition 3.0.0.1). The underlying ordinary category of `SSet.CatInftyΔ` is the category of
 quasicategories and maps of simplicial sets.
 
-The mapping simplicial sets of `SSet.CatInftyΔ` are quasicategories, and for a Kan complex `B`
-the core of `Fun(A, B)` is all of `Fun(A, B)`. That the core of every quasicategory is a Kan
-complex is Joyal's theorem on special outer horns, which is not proved here. It makes
-`SSet.CatInftyΔ` locally Kan, and hence `SSet.catInfty` a quasicategory (HTT Proposition
-1.1.5.10).
+By Joyal's theorem on special outer horns, the core of every quasicategory is a Kan complex
+(`SSet.core.kanComplex`). Consequently `SSet.CatInftyΔ` is locally Kan, and its simplicial nerve
+`SSet.catInfty` is a quasicategory (`SSet.catInfty.quasicategory`, HTT Proposition 1.1.5.10).
+For a Kan complex `B`, the core of `Fun(A, B)` is all of `Fun(A, B)`; by contrast,
+`Fun(Δ[0], Δ[n + 1]) ≅ Δ[n + 1]` is connected while `Fun(Δ[0], Δ[n + 1])^≃ ≅ (Δ[n + 1]).core`
+has `n + 2` connected components (`SSet.CatInftyΔ.π₀SHomObj₀StdSimplexEquiv`).
 
 ## Main definitions
 
@@ -46,7 +48,10 @@ complex is Joyal's theorem on special outer horns, which is not proved here. It 
   characterized by `SSet.CoreEnriched.eId_ι`, `SSet.CoreEnriched.eComp_ι` and
   `SSet.CoreEnriched.eHomEquiv_ι`.
 * `SSet.core_sHom_eq_top`: into a Kan complex, the core of a function complex is everything.
-* The mapping simplicial sets of `SSet.CatInftyΔ` are quasicategories.
+* The mapping simplicial sets of `SSet.CatInftyΔ` are Kan complexes, and `SSet.catInfty` is a
+  quasicategory (`SSet.catInfty.quasicategory`).
+* `SSet.CatInftyΔ.π₀SHomObj₀StdSimplexEquiv`: `π₀ Fun^≃(Δ[0], Δ[n]) ≃ Fin (n + 1)`, separating
+  the `n + 1` vertices of `Δ[n]` whereas `Fun(Δ[0], Δ[n])` is connected.
 
 ## References
 
@@ -55,7 +60,8 @@ complex is Joyal's theorem on special outer horns, which is not proved here. It 
 
 public section
 
-open CategoryTheory MonoidalCategory MonoidalClosed EnrichedCategory SimplicialCategory
+open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonoidalClosed
+open EnrichedCategory SimplicialCategory Simplicial
 
 universe u
 
@@ -74,6 +80,18 @@ lemma core_sHom_eq_top (A B : SSet.{u}) [KanComplex B] : (sHom A B).core = ⊤ :
   -- The function complex of `SSet` is Mathlib's internal hom `(ihom A).obj B`.
   have : KanComplex (sHom A B) := inferInstanceAs (KanComplex ((ihom A).obj B))
   core_eq_top
+
+/-- The function complex `Fun(Δ[0], X)` out of the point is isomorphic to `X`. -/
+noncomputable def sHomObj₀Iso (X : SSet.{u}) : sHom (Δ[0] : SSet.{u}) X ≅ X :=
+  ((sHomFunctor SSet.{u}).mapIso (Limits.IsTerminal.uniqueUpToIso isTerminalTensorUnit
+    stdSimplex.isTerminalObj₀).op).app X ≪≫
+    (unitIsoSelf (C := SSet.{u}) (X := X) : sHom (𝟙_ SSet.{u}) X ≅ X)
+
+/-- The function complex `Fun(Δ[0], Δ[n])` is connected, since `Δ[n]` is connected. -/
+instance isConnected_sHom_obj₀_stdSimplex (n : ℕ) : (sHom (Δ[0] : SSet.{u}) Δ[n]).IsConnected := by
+  rw [isConnected_iff_nonempty_unique]
+  exact ⟨(Equiv.uniqueCongr (π₀Functor.mapIso (sHomObj₀Iso Δ[n])).toEquiv).2
+    ((isConnected_iff_nonempty_unique (Δ[n] : SSet.{u})).1 inferInstance).some⟩
 
 /-- Simplicial sets, to be considered as a simplicial category whose mapping simplicial set from
 `A` to `B` is the core `Fun(A, B)^≃` of the function complex. Morphisms are maps of simplicial
@@ -148,6 +166,11 @@ lemma eHomEquiv_ι {A B : CoreEnriched.{u}} (f : A ⟶ B) :
     eHomEquiv SSet f ≫ (sHom A.toSSet B.toSSet).core.ι = eHomEquiv SSet f.hom :=
   coreUnitHomEquiv_symm_apply_ι _
 
+/-- The core functor space `Fun(Δ[0], X)^≃` is isomorphic to `X.core`. -/
+noncomputable def sHomObj₀Iso (X : SSet.{u}) :
+    sHom (of Δ[0]) (of X) ≅ (X.core : SSet.{u}) :=
+  core.mapIso (SSet.sHomObj₀Iso X)
+
 end CoreEnriched
 
 /-- The simplicial category of quasicategories, with the cores `Fun(A, B)^≃` of function complexes
@@ -156,22 +179,40 @@ abbrev CatInftyΔ : Type (u + 1) :=
   ObjectProperty.FullSubcategory fun A : CoreEnriched.{u} ↦ Quasicategory A.toSSet
 
 /-- The simplicial (homotopy coherent) nerve of `CatInftyΔ`, HTT's `Cat∞` of small quasicategories,
-whose objects are the quasicategories in universe `u`. It is a quasicategory once the cores of
-quasicategories are known to be Kan complexes. -/
+whose objects are the quasicategories in universe `u`. -/
 noncomputable abbrev catInfty : SSet.{u + 1} :=
   SimplicialNerve CatInftyΔ.{u}
 
 namespace CatInftyΔ
 
-/-- The mapping simplicial sets of `CatInftyΔ` are quasicategories, as cores of function complexes
-into quasicategories. -/
-instance (A B : CatInftyΔ.{u}) : Quasicategory (sHom A B) :=
+/-- **The simplicial category `CatInftyΔ` is locally Kan**: its mapping simplicial sets
+`Fun(A, B)^≃` are Kan complexes, as cores of function complexes into quasicategories. -/
+instance (A B : CatInftyΔ.{u}) : KanComplex (sHom A B) :=
   have := B.property
   -- The function complex of `SSet` is Mathlib's internal hom `(ihom A).obj B`.
   have : Quasicategory (sHom A.obj.toSSet B.obj.toSSet) :=
     inferInstanceAs (Quasicategory ((ihom A.obj.toSSet).obj B.obj.toSSet))
-  core.quasicategory
+  core.kanComplex
+
+/-- The connected components of the core functor space `Fun(Δ[0], Δ[n])^≃` in `CatInftyΔ` are in
+bijection with `Fin (n + 1)`. -/
+noncomputable def π₀SHomObj₀StdSimplexEquiv (n : ℕ) :
+    π₀ (sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n], inferInstance⟩) ≃
+      Fin (n + 1) :=
+  (π₀Functor.mapIso (CoreEnriched.sHomObj₀Iso Δ[n])).toEquiv.trans (stdSimplex.π₀CoreEquiv n)
+
+/-- Unlike `Fun(Δ[0], Δ[n + 1])`, the core functor space `Fun(Δ[0], Δ[n + 1])^≃` in `CatInftyΔ`
+has at least two connected components. -/
+instance (n : ℕ) :
+    Nontrivial
+      (π₀ (sHom (⟨.of Δ[0], inferInstance⟩ : CatInftyΔ.{u}) ⟨.of Δ[n + 1], inferInstance⟩)) :=
+  (π₀SHomObj₀StdSimplexEquiv (n + 1)).nontrivial
 
 end CatInftyΔ
+
+/-- **`Cat∞` is a quasicategory** (HTT Definition 3.0.0.1 and Proposition 1.1.5.10): it is the
+simplicial nerve of the locally Kan simplicial category `CatInftyΔ`. -/
+theorem catInfty.quasicategory : Quasicategory catInfty.{u} :=
+  inferInstance
 
 end SSet
