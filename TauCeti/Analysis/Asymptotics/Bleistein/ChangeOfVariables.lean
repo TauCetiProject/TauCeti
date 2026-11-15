@@ -21,6 +21,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Calculus.LHopital
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Bleistein's change of variables for a saddle point coalescing with an endpoint
@@ -74,17 +75,19 @@ variables transforms `I(α, x)` into the canonical integral (DLMF 2.3.29–2.3.3
 * `TauCeti.strictMonoOn_bleisteinCoord`: `bleisteinCoord g α` is strictly increasing when `g` is
   strictly decreasing up to `α` and strictly increasing from `α` onward.
 * `TauCeti.hasDerivAt_bleisteinCoord_of_ne`, `TauCeti.deriv_bleisteinCoord_of_ne`:
-  `dw / dt = g'(t) / (w - a)` for `t ≠ α` (DLMF 2.3.28).
+  `dw / dt = g'(t) / (w - a)` for `g α < g t` (DLMF 2.3.28).
 * `TauCeti.hasDerivAt_bleisteinCoord_self`, `TauCeti.deriv_bleisteinCoord_self_pos`,
   `TauCeti.contDiffOn_bleisteinCoord`: `dw / dt = √(g''(α)) > 0` at `t = α`, and
   `bleisteinCoord g α` is `C¹` on an open set `U` when `g` is `C²` on `U`.
-* `TauCeti.hasStrictDerivAt_bleisteinInv`, `TauCeti.contDiffOn_bleisteinInv`:
-  local inverse differentiability and `C¹` regularity of `bleisteinInv`.
-* `TauCeti.image_bleisteinCoord_Ioo_of_tendsto`,
+* `TauCeti.hasStrictDerivAt_bleisteinInv`, `TauCeti.contDiffOn_bleisteinInv`,
+  `TauCeti.bleisteinAmplitude_bleisteinCoord`: local inverse differentiability, `C¹` regularity of
+  `bleisteinInv`, and evaluation of `bleisteinAmplitude` at `bleisteinCoord g α t`.
+* `TauCeti.tendsto_bleisteinCoord_nhdsGT_zero`, `TauCeti.tendsto_bleisteinCoord_atTop`,
+  `TauCeti.image_bleisteinCoord_Ioo_of_tendsto`,
   `TauCeti.image_bleisteinCoord_Ioo_of_tendsto_atTop`,
   `TauCeti.image_bleisteinCoord_Ioi_of_tendsto`,
-  `TauCeti.image_bleisteinCoord_Ioi_of_tendsto_atTop`: identification of the transformed range
-  `(0, κ)` or `(0, ∞)`, including `κ = ∞` when `g(t) → ∞`.
+  `TauCeti.image_bleisteinCoord_Ioi_of_tendsto_atTop`: endpoint limits and identification of the
+  transformed range `(0, κ)` or `(0, ∞)`, including `κ = ∞` when `g(t) → ∞`.
 * `TauCeti.integrableOn_bleistein_iff`, `TauCeti.exp_mul_integral_bleistein_eq`: equivalence of
   integrability and equality of the original and transformed integrals (DLMF 2.3.24, 2.3.29).
 
@@ -242,16 +245,13 @@ theorem strictMonoOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} {α : ℝ}
   suffices h : Real.sign (t₁ - α) * Real.sqrt (2 * (g t₁ - g α)) <
       Real.sign (t₂ - α) * Real.sqrt (2 * (g t₂ - g α)) by
     exact add_lt_add_right h (bleisteinCenter g α)
-  have hgt : ∀ t ∈ U, t ≠ α → g α < g t := fun t ht hne ↦
-    hne.lt_or_gt.elim (fun h ↦ hanti ⟨ht, h.le⟩ ⟨hα, le_rfl⟩ h)
-      (fun h ↦ hmono ⟨hα, le_rfl⟩ ⟨ht, h.le⟩ h)
   have hpos : ∀ t ∈ U, t ≠ α → 0 < Real.sqrt (2 * (g t - g α)) := fun t ht hne ↦
-    Real.sqrt_pos.mpr (by linarith [hgt t ht hne])
+    Real.sqrt_pos.mpr (by linarith [lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht hne])
   rcases lt_trichotomy t₁ α with h₁ | rfl | h₁
   · rw [Real.sign_of_neg (sub_neg.mpr h₁), neg_one_mul]
     rcases lt_trichotomy t₂ α with h₂ | rfl | h₂
     · rw [Real.sign_of_neg (sub_neg.mpr h₂), neg_one_mul, neg_lt_neg_iff]
-      have hg2 : g α < g t₂ := hgt t₂ ht₂ h₂.ne
+      have hg2 : g α < g t₂ := lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht₂ h₂.ne
       have hg12 : g t₂ < g t₁ := hanti ⟨ht₁, h₁.le⟩ ⟨ht₂, h₂.le⟩ h12
       exact Real.sqrt_lt_sqrt (by linarith) (by linarith)
     · simpa using hpos t₁ ht₁ h₁.ne
@@ -261,7 +261,7 @@ theorem strictMonoOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} {α : ℝ}
     exact hpos t₂ ht₂ h12.ne'
   · have h₂ : α < t₂ := h₁.trans h12
     rw [Real.sign_of_pos (sub_pos.mpr h₁), Real.sign_of_pos (sub_pos.mpr h₂), one_mul, one_mul]
-    have hg1 : g α < g t₁ := hgt t₁ ht₁ h₁.ne'
+    have hg1 : g α < g t₁ := lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht₁ h₁.ne'
     have hg12 : g t₁ < g t₂ := hmono ⟨ht₁, h₁.le⟩ ⟨ht₂, h₂.le⟩ h12
     exact Real.sqrt_lt_sqrt (by linarith) (by linarith)
 
@@ -272,13 +272,14 @@ theorem bleisteinCoord_pos {g : ℝ → ℝ} {U : Set ℝ} {α t : ℝ}
     0 < bleisteinCoord g α t := by
   simpa [bleisteinCoord_zero] using strictMonoOn_bleisteinCoord hα hanti hmono h0 ht ht0
 
-/-- Continuity of `bleisteinCoord g α` on any set `U` where `g` is continuous. -/
-theorem continuousOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} (hg : ContinuousOn g U) (α : ℝ) :
-    ContinuousOn (bleisteinCoord g α) U := by
-  intro t ht
-  have hrad : ContinuousWithinAt (fun u ↦ Real.sqrt (2 * (g u - g α))) U t :=
+/-- Continuity of `bleisteinCoord g α` within a set `s` at `t` when `g` is continuous within `s`
+at `t`. -/
+theorem continuousWithinAt_bleisteinCoord {g : ℝ → ℝ} {s : Set ℝ} {t : ℝ}
+    (hg : ContinuousWithinAt g s t) (α : ℝ) :
+    ContinuousWithinAt (bleisteinCoord g α) s t := by
+  have hrad : ContinuousWithinAt (fun u ↦ Real.sqrt (2 * (g u - g α))) s t :=
     Real.continuous_sqrt.continuousAt.comp_continuousWithinAt
-      (continuousWithinAt_const.mul ((hg t ht).sub continuousWithinAt_const))
+      (continuousWithinAt_const.mul (hg.sub continuousWithinAt_const))
   rcases lt_trichotomy t α with hlt | rfl | hgt
   · refine ((continuousWithinAt_const (b := bleisteinCenter g α)).sub hrad).congr_of_eventuallyEq
       ?_ (by rw [bleisteinCoord, Real.sign_of_neg (sub_neg.mpr hlt), Pi.sub_apply]; ring)
@@ -286,10 +287,10 @@ theorem continuousOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} (hg : Contin
     rw [bleisteinCoord, Real.sign_of_neg (sub_neg.mpr hu), Pi.sub_apply]
     ring
   · rw [ContinuousWithinAt, bleisteinCoord_self]
-    have h0 : Tendsto (fun u ↦ Real.sqrt (2 * (g u - g t))) (𝓝[U] t) (𝓝 0) := by
+    have h0 : Tendsto (fun u ↦ Real.sqrt (2 * (g u - g t))) (𝓝[s] t) (𝓝 0) := by
       simpa using hrad.tendsto
     have hdisp : Tendsto (fun u ↦ Real.sign (u - t) * Real.sqrt (2 * (g u - g t)))
-        (𝓝[U] t) (𝓝 0) := by
+        (𝓝[s] t) (𝓝 0) := by
       refine squeeze_zero_norm ?_ h0
       intro u
       rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
@@ -297,27 +298,32 @@ theorem continuousOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} (hg : Contin
         rcases Real.sign_apply_eq (u - t) with h | h | h <;> simp [h]
       exact mul_le_of_le_one_left (Real.sqrt_nonneg _) hs
     have hsum : Tendsto (fun u ↦ bleisteinCenter g t +
-        Real.sign (u - t) * Real.sqrt (2 * (g u - g t))) (𝓝[U] t) (𝓝 (bleisteinCenter g t)) := by
+        Real.sign (u - t) * Real.sqrt (2 * (g u - g t))) (𝓝[s] t) (𝓝 (bleisteinCenter g t)) := by
       simpa only [add_zero] using (tendsto_const_nhds (x := bleisteinCenter g t)).add hdisp
-    exact hsum.congr fun _ ↦ rfl
+    exact hsum.congr fun u ↦ (bleisteinCoord_def g t u).symm
   · refine ((continuousWithinAt_const (b := bleisteinCenter g α)).add hrad).congr_of_eventuallyEq
       ?_ (by rw [bleisteinCoord, Real.sign_of_pos (sub_pos.mpr hgt), Pi.add_apply]; ring)
     filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds hgt)] with u (hu : α < u)
     rw [bleisteinCoord, Real.sign_of_pos (sub_pos.mpr hu), Pi.add_apply]
     ring
 
+/-- Continuity of `bleisteinCoord g α` on any set `U` where `g` is continuous. -/
+theorem continuousOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} (hg : ContinuousOn g U) (α : ℝ) :
+    ContinuousOn (bleisteinCoord g α) U :=
+  fun _ ht ↦ continuousWithinAt_bleisteinCoord (hg _ ht) α
+
 /-! ### Derivatives and `C¹` regularity -/
 
 /-- Derivative of `bleisteinCoord g α` away from the saddle point `t = α` (DLMF 2.3.28):
-`w'(t) = g'(t) / (w(t) - a(α))`. -/
+`w'(t) = g'(t) / (w(t) - a(α))` whenever `g α < g t`. -/
 theorem hasDerivAt_bleisteinCoord_of_ne {g : ℝ → ℝ} {α t g' : ℝ}
-    (hne : t ≠ α) (hgt : g α < g t) (hd : HasDerivAt g g' t) :
+    (hgt : g α < g t) (hd : HasDerivAt g g' t) :
     HasDerivAt (bleisteinCoord g α) (g' / (bleisteinCoord g α t - bleisteinCenter g α)) t := by
   have hrad : HasDerivAt (fun u ↦ Real.sqrt (2 * (g u - g α)))
       (g' / Real.sqrt (2 * (g t - g α))) t := by
     have h := ((hd.sub_const (g α)).const_mul 2).sqrt (by linarith)
     rwa [mul_div_mul_left _ _ (two_ne_zero : (2 : ℝ) ≠ 0)] at h
-  rcases hne.lt_or_gt with hlt | hgt'
+  rcases (ne_of_apply_ne g hgt.ne').lt_or_gt with hlt | hgt'
   · rw [bleisteinCoord_sub_bleisteinCenter_of_lt hlt, div_neg]
     refine (hrad.neg.const_add (bleisteinCenter g α)).congr_of_eventuallyEq ?_
     filter_upwards [Iio_mem_nhds hlt] with u (hu : u < α)
@@ -329,20 +335,20 @@ theorem hasDerivAt_bleisteinCoord_of_ne {g : ℝ → ℝ} {α t g' : ℝ}
 
 /-- `deriv` form of `hasDerivAt_bleisteinCoord_of_ne` (DLMF 2.3.28). -/
 theorem deriv_bleisteinCoord_of_ne {g : ℝ → ℝ} {α t : ℝ}
-    (hne : t ≠ α) (hgt : g α < g t) (hd : DifferentiableAt ℝ g t) :
+    (hgt : g α < g t) (hd : DifferentiableAt ℝ g t) :
     deriv (bleisteinCoord g α) t =
       deriv g t / (bleisteinCoord g α t - bleisteinCenter g α) :=
-  (hasDerivAt_bleisteinCoord_of_ne hne hgt hd.hasDerivAt).deriv
+  (hasDerivAt_bleisteinCoord_of_ne hgt hd.hasDerivAt).deriv
 
-/-- Strict positivity of `deriv (bleisteinCoord g α) t` away from `t = α` when `g'` has the sign
-of `t - α`. -/
+/-- Strict positivity of `deriv (bleisteinCoord g α) t` away from `t = α` when `g α < g t` and `g'`
+has the sign of `t - α`. -/
 theorem deriv_bleisteinCoord_pos_of_ne {g : ℝ → ℝ} {α t : ℝ}
-    (hne : t ≠ α) (hgt : g α < g t) (hd : DifferentiableAt ℝ g t)
+    (hgt : g α < g t) (hd : DifferentiableAt ℝ g t)
     (hsign : 0 < (t - α) * deriv g t) :
     0 < deriv (bleisteinCoord g α) t := by
-  rw [deriv_bleisteinCoord_of_ne hne hgt hd]
+  rw [deriv_bleisteinCoord_of_ne hgt hd]
   have hsqrt : 0 < Real.sqrt (2 * (g t - g α)) := Real.sqrt_pos.mpr (by linarith)
-  rcases hne.lt_or_gt with hlt | hgt'
+  rcases (ne_of_apply_ne g hgt.ne').lt_or_gt with hlt | hgt'
   · rw [bleisteinCoord_sub_bleisteinCenter_of_lt hlt]
     exact div_pos_of_neg_of_neg (neg_of_mul_pos_right hsign (sub_neg.mpr hlt).le)
       (neg_neg_of_pos hsqrt)
@@ -437,7 +443,22 @@ theorem continuousAt_deriv_bleisteinCoord_self {g : ℝ → ℝ} {α g'' : ℝ}
   have hgt : g α < g t := by
     contrapose! hw_ne
     rw [Real.sqrt_eq_zero_of_nonpos (by linarith), mul_zero]
-  rw [deriv_bleisteinCoord_of_ne ht hgt htd, bleisteinCoord_self, div_div_div_cancel_right₀ hsub]
+  rw [deriv_bleisteinCoord_of_ne hgt htd, bleisteinCoord_self, div_div_div_cancel_right₀ hsub]
+
+/-- Auxiliary `C²` decomposition for `g` on an open set `U` containing `α`: differentiability on
+`U`, continuity of `deriv g` on `U`, eventual differentiability near `α`, and second derivative at
+`α`. -/
+private theorem contDiffOn_two_bleistein_aux {g : ℝ → ℝ} {U : Set ℝ} {α : ℝ}
+    (hU : IsOpen U) (hα : α ∈ U) (hg : ContDiffOn ℝ 2 g U) :
+    (∀ t ∈ U, DifferentiableAt ℝ g t) ∧ ContinuousOn (deriv g) U ∧
+      (∀ᶠ t in 𝓝 α, DifferentiableAt ℝ g t) ∧
+      HasDerivAt (deriv g) (deriv (deriv g) α) α := by
+  have hg1 := (contDiffOn_succ_iff_deriv_of_isOpen (n := 1) hU).mp hg
+  have hg2 := (contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hg1.2.2
+  have hdiff : ∀ t ∈ U, DifferentiableAt ℝ g t :=
+    fun t ht ↦ hg1.1.differentiableAt (hU.mem_nhds ht)
+  exact ⟨hdiff, hg1.2.2.continuousOn, Filter.Eventually.mono (hU.mem_nhds hα) hdiff,
+    (hg2.1.differentiableAt (hU.mem_nhds hα)).hasDerivAt⟩
 
 /-- If `g` is `C²` on an open set `U` containing `α`, is strictly decreasing up to `α` and strictly
 increasing beyond `α`, and satisfies `deriv g α = 0` and `0 < deriv (deriv g) α`, then
@@ -447,30 +468,22 @@ theorem contDiffOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} {α : ℝ}
     (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
     (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α) :
     ContDiffOn ℝ 1 (bleisteinCoord g α) U := by
-  have hg1 := (contDiffOn_succ_iff_deriv_of_isOpen (n := 1) hU).mp hg
-  have hg2 := (contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hg1.2.2
-  have hdiff_nhds : ∀ᶠ u in 𝓝 α, DifferentiableAt ℝ g u :=
-    Filter.Eventually.mono (hU.mem_nhds hα) fun u hu ↦ hg1.1.differentiableAt (hU.mem_nhds hu)
-  have hd2_at : HasDerivAt (deriv g) (deriv (deriv g) α) α :=
-    (hg2.1.differentiableAt (hU.mem_nhds hα)).hasDerivAt
-  have hgt : ∀ u ∈ U, u ≠ α → g α < g u := fun u hu hne ↦
-    hne.lt_or_gt.elim (fun h ↦ hanti ⟨hu, h.le⟩ ⟨hα, le_rfl⟩ h)
-      (fun h ↦ hmono ⟨hα, le_rfl⟩ ⟨hu, h.le⟩ h)
+  obtain ⟨hdiff, hgd_cont_on, hdiff_nhds, hd2_at⟩ := contDiffOn_two_bleistein_aux hU hα hg
   rw [contDiffOn_one_iff_derivWithin hU.uniqueDiffOn]
   refine ⟨fun t ht ↦ ?_, ContinuousOn.congr ?_ fun _ hx ↦ derivWithin_of_isOpen hU hx⟩
   · rcases eq_or_ne t α with rfl | hne
     · exact (hasDerivAt_bleisteinCoord_self hdiff_nhds hd1 hd2_at).differentiableAt
         |>.differentiableWithinAt
-    · exact (hasDerivAt_bleisteinCoord_of_ne hne (hgt t ht hne)
-        (hg1.1.differentiableAt (hU.mem_nhds ht)).hasDerivAt).differentiableAt
-        |>.differentiableWithinAt
+    · exact (hasDerivAt_bleisteinCoord_of_ne
+        (lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht hne)
+        (hdiff t ht).hasDerivAt).differentiableAt.differentiableWithinAt
   · intro t ht
     rcases eq_or_ne t α with rfl | hne
     · exact (continuousAt_deriv_bleisteinCoord_self hdiff_nhds hd1 hd2_at hd2).continuousWithinAt
     · have hw_cont : ContinuousAt (bleisteinCoord g α) t :=
         (continuousOn_bleisteinCoord hg.continuousOn α).continuousAt (hU.mem_nhds ht)
       have hgd_cont : ContinuousAt (deriv g) t :=
-        hg1.2.2.continuousOn.continuousAt (hU.mem_nhds ht)
+        hgd_cont_on.continuousAt (hU.mem_nhds ht)
       have hw_ne : bleisteinCoord g α t - bleisteinCenter g α ≠ 0 := sub_ne_zero.mpr fun h ↦ by
         rw [← bleisteinCoord_self] at h
         exact hne ((strictMonoOn_bleisteinCoord hα hanti hmono).injOn ht hα h)
@@ -479,8 +492,8 @@ theorem contDiffOn_bleisteinCoord {g : ℝ → ℝ} {U : Set ℝ} {α : ℝ}
         hgd_cont.div (hw_cont.sub continuousAt_const) hw_ne
       refine (hquot.congr ?_).continuousWithinAt
       filter_upwards [hU.mem_nhds ht, isOpen_ne.mem_nhds hne] with u hu hune
-      exact (deriv_bleisteinCoord_of_ne hune (hgt u hu hune)
-        (hg1.1.differentiableAt (hU.mem_nhds hu))).symm
+      exact (deriv_bleisteinCoord_of_ne
+        (lt_of_strictAntiOn_strictMonoOn hα hanti hmono hu hune) (hdiff u hu)).symm
 
 /-- Strict positivity of `deriv (bleisteinCoord g α)` at a point `t ∈ U` whenever `g` has no
 stationary point at `t` other than `α` (`t ≠ α → deriv g t ≠ 0`). -/
@@ -490,12 +503,9 @@ theorem deriv_bleisteinCoord_pos {g : ℝ → ℝ} {U : Set ℝ} {α t : ℝ}
     (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
     (ht : t ∈ U) (hreg : t ≠ α → deriv g t ≠ 0) :
     0 < deriv (bleisteinCoord g α) t := by
-  have hg1 := (contDiffOn_succ_iff_deriv_of_isOpen (n := 1) hU).mp hg
-  have hg2 := (contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hg1.2.2
+  obtain ⟨hdiff, _, hdiff_nhds, hd2_at⟩ := contDiffOn_two_bleistein_aux hU hα hg
   rcases eq_or_ne t α with rfl | hne
-  · exact deriv_bleisteinCoord_self_pos
-      (Filter.Eventually.mono (hU.mem_nhds hα) fun u hu ↦ hg1.1.differentiableAt (hU.mem_nhds hu))
-      hd1 (hg2.1.differentiableAt (hU.mem_nhds hα)).hasDerivAt hd2
+  · exact deriv_bleisteinCoord_self_pos hdiff_nhds hd1 hd2_at hd2
   · have hsign : 0 < (t - α) * deriv g t := by
       rcases hne.lt_or_gt with hlt | hgt
       · have hle : deriv g t ≤ 0 := by
@@ -508,11 +518,17 @@ theorem deriv_bleisteinCoord_pos {g : ℝ → ℝ} {U : Set ℝ} {α t : ℝ}
           exact (hmono.monotoneOn.mono (inter_subset_inter_right U Ioi_subset_Ici_self))
             |>.derivWithin_nonneg
         exact mul_pos (sub_pos.mpr hgt) (lt_of_le_of_ne' hge (hreg hne))
-    have hgt : g α < g t := hne.lt_or_gt.elim (fun h ↦ hanti ⟨ht, h.le⟩ ⟨hα, le_rfl⟩ h)
-      (fun h ↦ hmono ⟨hα, le_rfl⟩ ⟨ht, h.le⟩ h)
-    exact deriv_bleisteinCoord_pos_of_ne hne hgt (hg1.1.differentiableAt (hU.mem_nhds ht)) hsign
+    exact deriv_bleisteinCoord_pos_of_ne
+      (lt_of_strictAntiOn_strictMonoOn hα hanti hmono ht hne) (hdiff t ht) hsign
 
 /-! ### Range of the canonical coordinate -/
+
+/-- Right-hand limit `bleisteinCoord g α t → 0` as `t → 0⁺` when `g` is right-continuous at `0`. -/
+theorem tendsto_bleisteinCoord_nhdsGT_zero {g : ℝ → ℝ} (α : ℝ)
+    (hg : ContinuousWithinAt g (Ioi 0) 0) :
+    Tendsto (bleisteinCoord g α) (𝓝[>] 0) (𝓝 0) := by
+  simpa only [ContinuousWithinAt, bleisteinCoord_zero] using
+    continuousWithinAt_bleisteinCoord hg α
 
 /-- If `g t → ∞` along a filter `l` concentrated strictly to the right of `α`, then
 `bleisteinCoord g α t → ∞` along `l`. -/
@@ -535,10 +551,8 @@ theorem image_bleisteinCoord_Ioo_of_tendsto {g : ℝ → ℝ} {U : Set ℝ} {α 
     bleisteinCoord g α '' Ioo 0 k = Ioo 0 κ := by
   have hsm := strictMonoOn_bleisteinCoord hα hanti hmono
   have hcont := (continuousOn_bleisteinCoord hg α).mono (Ioo_subset_Ico_self.trans hI)
-  have h0_lim : Tendsto (bleisteinCoord g α) (𝓝[>] 0) (𝓝 0) := by
-    have hc0 := (continuousOn_bleisteinCoord hg α 0 (hI (left_mem_Ico.mpr hk))).mono
-      (Ioo_subset_Ico_self.trans hI)
-    rwa [ContinuousWithinAt, nhdsWithin_Ioo_eq_nhdsGT hk, bleisteinCoord_zero] at hc0
+  have h0_lim := tendsto_bleisteinCoord_nhdsGT_zero α
+    ((hg.mono hI 0 (left_mem_Ico.mpr hk)).mono_of_mem_nhdsWithin (Ico_mem_nhdsGT hk))
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨t, ht, rfl⟩
     refine ⟨bleisteinCoord_pos hα (hI (left_mem_Ico.mpr hk)) hanti hmono
@@ -574,10 +588,8 @@ theorem image_bleisteinCoord_Ioo_of_tendsto_atTop {g : ℝ → ℝ} {U : Set ℝ
     tendsto_bleisteinCoord_atTop
       (Filter.mem_of_superset (Ioo_mem_nhdsLT hαk) fun _ h ↦ h.1) htop
   have hcont := (continuousOn_bleisteinCoord hg α).mono (Ioo_subset_Ico_self.trans hI)
-  have h0_lim : Tendsto (bleisteinCoord g α) (𝓝[>] 0) (𝓝 0) := by
-    have hc0 := (continuousOn_bleisteinCoord hg α 0 (hI (left_mem_Ico.mpr hk))).mono
-      (Ioo_subset_Ico_self.trans hI)
-    rwa [ContinuousWithinAt, nhdsWithin_Ioo_eq_nhdsGT hk, bleisteinCoord_zero] at hc0
+  have h0_lim := tendsto_bleisteinCoord_nhdsGT_zero α
+    ((hg.mono hI 0 (left_mem_Ico.mpr hk)).mono_of_mem_nhdsWithin (Ico_mem_nhdsGT hk))
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨t, ht, rfl⟩
     exact bleisteinCoord_pos hα (hI (left_mem_Ico.mpr hk)) hanti hmono
@@ -595,10 +607,8 @@ theorem image_bleisteinCoord_Ioi_of_tendsto {g : ℝ → ℝ} {U : Set ℝ} {α 
     bleisteinCoord g α '' Ioi 0 = Ioo 0 κ := by
   have hsm := strictMonoOn_bleisteinCoord hα hanti hmono
   have hcont := (continuousOn_bleisteinCoord hg α).mono (Ioi_subset_Ici_self.trans hI)
-  have h0_lim : Tendsto (bleisteinCoord g α) (𝓝[>] 0) (𝓝 0) := by
-    have hc0 := (continuousOn_bleisteinCoord hg α 0 (hI self_mem_Ici)).mono
-      (Ioi_subset_Ici_self.trans hI)
-    rwa [ContinuousWithinAt, bleisteinCoord_zero] at hc0
+  have h0_lim := tendsto_bleisteinCoord_nhdsGT_zero α
+    ((hg 0 (hI self_mem_Ici)).mono (Ioi_subset_Ici_self.trans hI))
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨t, ht : 0 < t, rfl⟩
     refine ⟨bleisteinCoord_pos hα (hI self_mem_Ici) hanti hmono (hI ht.le) ht, ?_⟩
@@ -642,43 +652,51 @@ theorem mapsTo_bleisteinInv (g : ℝ → ℝ) (s : Set ℝ) (α : ℝ) :
     MapsTo (bleisteinInv g s α) (bleisteinCoord g α '' s) s :=
   fun _ hw ↦ Function.invFunOn_mem hw
 
+/-- Evaluation of `bleisteinAmplitude` at `w = bleisteinCoord g α t` when `bleisteinCoord g α` is
+injective on `s` and `t ∈ s` (DLMF 2.3.30). -/
+theorem bleisteinAmplitude_bleisteinCoord {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {lam : ℝ} {g : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ} {α t : ℝ}
+    (hinj : InjOn (bleisteinCoord g α) s) (ht : t ∈ s) :
+    bleisteinAmplitude lam g q s α (bleisteinCoord g α t) =
+      ((t / bleisteinCoord g α t) ^ (lam - 1) / deriv (bleisteinCoord g α) t) • q t := by
+  rw [bleisteinAmplitude_def, leftInvOn_bleisteinInv hinj ht]
+
 /-- Strict differentiability of the inverse coordinate `bleisteinInv g s α` at `w(t)` for `t` in an
-open subset `s ⊆ U`, with derivative `(w'(t))⁻¹`. -/
-theorem hasStrictDerivAt_bleisteinInv {g : ℝ → ℝ} {U s : Set ℝ} {α t : ℝ}
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U)
-    (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) U) (hinj : InjOn (bleisteinCoord g α) s)
+open set `s`, with derivative `(w'(t))⁻¹`. -/
+theorem hasStrictDerivAt_bleisteinInv {g : ℝ → ℝ} {s : Set ℝ} {α t : ℝ}
+    (hs : IsOpen s) (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) s)
+    (hinj : InjOn (bleisteinCoord g α) s)
     (ht : t ∈ s) (hd : deriv (bleisteinCoord g α) t ≠ 0) :
     HasStrictDerivAt (bleisteinInv g s α) (deriv (bleisteinCoord g α) t)⁻¹
       (bleisteinCoord g α t) :=
-  ((hw.contDiffAt (hU.mem_nhds (hsU ht))).hasStrictDerivAt_deriv one_ne_zero).to_local_left_inverse
+  ((hw.contDiffAt (hs.mem_nhds ht)).hasStrictDerivAt_deriv one_ne_zero).to_local_left_inverse
     hd (Filter.Eventually.mono (hs.mem_nhds ht) fun _ hu ↦ leftInvOn_bleisteinInv hinj hu)
 
-/-- Openness of the image `bleisteinCoord g α '' s` for an open subset `s ⊆ U` on which
+/-- Openness of the image `bleisteinCoord g α '' s` for an open set `s` on which
 `deriv (bleisteinCoord g α)` never vanishes. -/
-theorem isOpen_image_bleisteinCoord {g : ℝ → ℝ} {U s : Set ℝ} {α : ℝ}
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U)
-    (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) U)
+theorem isOpen_image_bleisteinCoord {g : ℝ → ℝ} {s : Set ℝ} {α : ℝ}
+    (hs : IsOpen s) (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) s)
     (hd : ∀ t ∈ s, deriv (bleisteinCoord g α) t ≠ 0) :
     IsOpen (bleisteinCoord g α '' s) := by
   rw [isOpen_iff_mem_nhds]
   rintro _ ⟨t, ht, rfl⟩
-  have hsd := (hw.contDiffAt (hU.mem_nhds (hsU ht))).hasStrictDerivAt_deriv one_ne_zero
+  have hsd := (hw.contDiffAt (hs.mem_nhds ht)).hasStrictDerivAt_deriv one_ne_zero
   rw [← hsd.map_nhds_eq (hd t ht)]
   exact image_mem_map (hs.mem_nhds ht)
 
-/-- `C¹` regularity of `bleisteinInv g s α` on `bleisteinCoord g α '' s` for an open set `s ⊆ U`. -/
-theorem contDiffOn_bleisteinInv {g : ℝ → ℝ} {U s : Set ℝ} {α : ℝ}
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U)
-    (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) U) (hinj : InjOn (bleisteinCoord g α) s)
+/-- `C¹` regularity of `bleisteinInv g s α` on `bleisteinCoord g α '' s` for an open set `s`. -/
+theorem contDiffOn_bleisteinInv {g : ℝ → ℝ} {s : Set ℝ} {α : ℝ}
+    (hs : IsOpen s) (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) s)
+    (hinj : InjOn (bleisteinCoord g α) s)
     (hd : ∀ t ∈ s, deriv (bleisteinCoord g α) t ≠ 0) :
     ContDiffOn ℝ 1 (bleisteinInv g s α) (bleisteinCoord g α '' s) := by
-  have himg : IsOpen (bleisteinCoord g α '' s) := isOpen_image_bleisteinCoord hU hs hsU hw hd
-  have hw_deriv_cont : ContinuousOn (deriv (bleisteinCoord g α)) U :=
-    hw.continuousOn_deriv_of_isOpen hU le_rfl
+  have himg : IsOpen (bleisteinCoord g α '' s) := isOpen_image_bleisteinCoord hs hw hd
+  have hw_deriv_cont : ContinuousOn (deriv (bleisteinCoord g α)) s :=
+    hw.continuousOn_deriv_of_isOpen hs le_rfl
   rw [contDiffOn_one_iff_derivWithin himg.uniqueDiffOn]
   have hinv_diff : ∀ t ∈ s, HasDerivAt (bleisteinInv g s α)
       (deriv (bleisteinCoord g α) t)⁻¹ (bleisteinCoord g α t) := fun t ht ↦
-    (hasStrictDerivAt_bleisteinInv hU hs hsU hw hinj ht (hd t ht)).hasDerivAt
+    (hasStrictDerivAt_bleisteinInv hs hw hinj ht (hd t ht)).hasDerivAt
   have hinv_cont : ContinuousOn (bleisteinInv g s α) (bleisteinCoord g α '' s) := by
     rintro _ ⟨t, ht, rfl⟩
     exact (hinv_diff t ht).continuousAt.continuousWithinAt
@@ -688,7 +706,7 @@ theorem contDiffOn_bleisteinInv {g : ℝ → ℝ} {U s : Set ℝ} {α : ℝ}
   · refine ContinuousOn.congr (f := fun w ↦ (deriv (bleisteinCoord g α) (bleisteinInv g s α w))⁻¹)
       ?_ ?_
     · refine ContinuousOn.inv₀ ?_ ?_
-      · exact hw_deriv_cont.comp hinv_cont ((mapsTo_bleisteinInv g s α).mono_right hsU)
+      · exact hw_deriv_cont.comp hinv_cont (mapsTo_bleisteinInv g s α)
       · rintro _ ⟨t, ht, rfl⟩
         rw [leftInvOn_bleisteinInv hinj ht]
         exact hd t ht
@@ -697,20 +715,20 @@ theorem contDiffOn_bleisteinInv {g : ℝ → ℝ} {U s : Set ℝ} {α : ℝ}
       rw [(hinv_diff t ht).deriv, leftInvOn_bleisteinInv hinj ht]
 
 /-- Continuity of the transformed amplitude `bleisteinAmplitude lam g q s α` on
-`bleisteinCoord g α '' s` when `q` is continuous on `s ⊆ Ioi 0`. -/
+`bleisteinCoord g α '' s` when `q` is continuous on an open set `s ⊆ Ioi 0`. -/
 theorem continuousOn_bleisteinAmplitude {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {lam : ℝ} {g : ℝ → ℝ} {q : ℝ → E} {U s : Set ℝ} {α : ℝ}
-    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U) (hs0 : s ⊆ Ioi 0)
-    (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) U) (hinj : InjOn (bleisteinCoord g α) s)
+    {lam : ℝ} {g : ℝ → ℝ} {q : ℝ → E} {s : Set ℝ} {α : ℝ}
+    (hs : IsOpen s) (hs0 : s ⊆ Ioi 0)
+    (hw : ContDiffOn ℝ 1 (bleisteinCoord g α) s) (hinj : InjOn (bleisteinCoord g α) s)
     (hw_pos : ∀ t ∈ s, 0 < bleisteinCoord g α t)
     (hd : ∀ t ∈ s, deriv (bleisteinCoord g α) t ≠ 0) (hq : ContinuousOn q s) :
     ContinuousOn (bleisteinAmplitude lam g q s α) (bleisteinCoord g α '' s) := by
   have hinv_cont : ContinuousOn (bleisteinInv g s α) (bleisteinCoord g α '' s) :=
-    (contDiffOn_bleisteinInv hU hs hsU hw hinj hd).continuousOn
+    (contDiffOn_bleisteinInv hs hw hinj hd).continuousOn
   have hmaps : MapsTo (bleisteinInv g s α) (bleisteinCoord g α '' s) s :=
     mapsTo_bleisteinInv g s α
-  have hw_deriv_cont : ContinuousOn (deriv (bleisteinCoord g α)) U :=
-    hw.continuousOn_deriv_of_isOpen hU le_rfl
+  have hw_deriv_cont : ContinuousOn (deriv (bleisteinCoord g α)) s :=
+    hw.continuousOn_deriv_of_isOpen hs le_rfl
   have hrat : ContinuousOn (fun w ↦ (bleisteinInv g s α w / w) ^ (lam - 1))
       (bleisteinCoord g α '' s) := by
     refine ContinuousOn.rpow_const (hinv_cont.div continuousOn_id ?_) ?_
@@ -720,7 +738,7 @@ theorem continuousOn_bleisteinAmplitude {E : Type*} [NormedAddCommGroup E] [Norm
       exact Or.inl (div_pos (hs0 (hmaps ⟨t, ht, rfl⟩)) (hw_pos t ht)).ne'
   have hden : ContinuousOn (fun w ↦ deriv (bleisteinCoord g α) (bleisteinInv g s α w))
       (bleisteinCoord g α '' s) :=
-    hw_deriv_cont.comp hinv_cont (hmaps.mono_right hsU)
+    hw_deriv_cont.comp hinv_cont hmaps
   refine (hrat.div hden ?_).smul (hq.comp hinv_cont hmaps)
   rintro _ ⟨t, ht, rfl⟩
   rw [leftInvOn_bleisteinInv hinj ht]
@@ -740,7 +758,6 @@ private theorem abs_deriv_smul_bleistein_integrand {E : Type*}
           bleisteinCoord g α t ^ (lam - 1)) •
         bleisteinAmplitude lam g q s α (bleisteinCoord g α t)) =
       Real.exp (x * g 0) • ((Real.exp (-x * g t) * t ^ (lam - 1)) • q t) := by
-  have hleft : bleisteinInv g s α (bleisteinCoord g α t) = t := leftInvOn_bleisteinInv hinj ht
   have hrpow : bleisteinCoord g α t ^ (lam - 1) *
       (t / bleisteinCoord g α t) ^ (lam - 1) = t ^ (lam - 1) := by
     rw [← Real.mul_rpow hw_pos.le (div_nonneg ht0.le hw_pos.le), mul_div_cancel₀ _ hw_pos.ne']
@@ -750,7 +767,8 @@ private theorem abs_deriv_smul_bleistein_integrand {E : Type*}
     rw [half_sq_bleisteinCoord_sub_mul_eq_sub h0 hmin, ← Real.exp_add]
     congr 1
     ring
-  rw [bleisteinAmplitude, hleft, abs_of_pos hdpos, smul_smul, smul_smul, smul_smul, hexp]
+  rw [bleisteinAmplitude_bleisteinCoord hinj ht, abs_of_pos hdpos, smul_smul, smul_smul, smul_smul,
+    hexp]
   congr 1
   calc deriv (bleisteinCoord g α) t *
         (Real.exp (x * g 0) * Real.exp (-x * g t) * bleisteinCoord g α t ^ (lam - 1)) *

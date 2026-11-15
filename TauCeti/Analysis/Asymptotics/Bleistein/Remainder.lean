@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Uniform remainder bound and expansion in Bleistein's method
@@ -50,14 +51,21 @@ Banach space `E`, so real- and complex-valued integrals are covered simultaneous
 
 ## Main results
 
-* `TauCeti.integrableOn_bleisteinF`, `TauCeti.integrableOn_bleisteinG`: integrability on `(0, ∞)`
-  for `λ > 0` and every `y : ℝ`.
+* `TauCeti.integrableOn_bleisteinF_integrand`, `TauCeti.integrableOn_bleisteinG_integrand`:
+  integrability of the defining integrands on `(0, ∞)` for `λ > 0` and every `y : ℝ`.
 * `TauCeti.continuous_bleisteinF`, `TauCeti.continuous_bleisteinG`: continuity in `y`.
 * `TauCeti.bleisteinG_nonneg`, `TauCeti.bleisteinG_pos`, `TauCeti.abs_bleisteinF_le_bleisteinG`:
   positivity of `G_N` and domination `|F_s(y)| ≤ G_s(y)`.
-* `TauCeti.bleisteinG_zero`, `TauCeti.bleisteinG_mul_two`, `TauCeti.bleisteinF_zero_zero`,
-  `TauCeti.bleisteinG_zero_zero`, `TauCeti.bleisteinF_one_one`: special values and parity identities
-  (`G_{2m} = F_{2m}`, `F_0(0) = G_0(0) = 2 ^ (λ / 2 - 1) * Γ(λ / 2)`, and `F_1(y) = 1` for `λ = 1`).
+* `TauCeti.bleisteinG_zero`, `TauCeti.bleisteinG_two_mul_eq_bleisteinF`,
+  `TauCeti.bleisteinF_zero_zero`, `TauCeti.bleisteinG_zero_zero`, `TauCeti.bleisteinF_one_one`:
+  special values and parity identities (`G_{2m} = F_{2m}`,
+  `F_0(0) = G_0(0) = 2 ^ (λ / 2 - 1) * Γ(λ / 2)`, and `F_1(y) = 1` for `λ = 1`).
+* `TauCeti.integrableOn_exp_mul_sub_pow_mul_rpow`,
+  `TauCeti.integrableOn_exp_mul_abs_sub_pow_mul_rpow`,
+  `TauCeti.integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF`,
+  `TauCeti.integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG`,
+  `TauCeti.integral_exp_mul_rpow_smul_sum_eq_bleisteinF`: rescaling identities expressing canonical
+  monomial, absolute-power, and polynomial integrals in terms of `bleisteinF` and `bleisteinG`.
 * `TauCeti.norm_bleistein_remainder_le`: the uniform remainder estimate on `(0, ∞)` in any real
   Banach space.
 * `TauCeti.integrableOn_bleistein_of_taylor_bound`,
@@ -164,89 +172,84 @@ private theorem le_bleisteinDom {lam y R τ : ℝ} {s : ℕ}
           _ = (R ^ (s - k) * s.choose k) *
                 (τ ^ ((k : ℝ) + lam - 1) * Real.exp (-(1 / 4 : ℝ) * τ ^ 2)) := by rw [hrpow]
 
-/-- Strong measurability of the integrand of `bleisteinF` on `(0, ∞)`. -/
-private theorem aestronglyMeasurable_bleisteinF_integrand (lam : ℝ) (s : ℕ) (y : ℝ) :
+/-- Strong measurability on `(0, ∞)` of `τ ↦ exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (λ - 1)`
+for any continuous factor `h`. -/
+private theorem aestronglyMeasurable_bleistein_integrand (lam : ℝ) {h : ℝ → ℝ}
+    (hh : Continuous h) (y : ℝ) :
     AEStronglyMeasurable
-      (fun τ : ℝ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * (τ - y) ^ s * τ ^ (lam - 1))
+      (fun τ : ℝ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (lam - 1))
       (volume.restrict (Ioi 0)) := by
   refine ContinuousOn.aestronglyMeasurable ?_ measurableSet_Ioi
   refine ((Real.continuous_exp.comp (by fun_prop)).continuousOn.mul
-    ((continuous_id.sub continuous_const).pow s).continuousOn).mul ?_
+    (hh.comp (continuous_id.sub continuous_const)).continuousOn).mul ?_
   exact continuousOn_id.rpow_const fun τ hτ ↦ Or.inl (mem_Ioi.mp hτ).ne'
 
-/-- Strong measurability of the integrand of `bleisteinG` on `(0, ∞)`. -/
-private theorem aestronglyMeasurable_bleisteinG_integrand (lam : ℝ) (N : ℕ) (y : ℝ) :
-    AEStronglyMeasurable
-      (fun τ : ℝ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ N * τ ^ (lam - 1))
-      (volume.restrict (Ioi 0)) := by
-  refine ContinuousOn.aestronglyMeasurable ?_ measurableSet_Ioi
-  refine ((Real.continuous_exp.comp (by fun_prop)).continuousOn.mul
-    ((continuous_id.sub continuous_const).abs.pow N).continuousOn).mul ?_
-  exact continuousOn_id.rpow_const fun τ hτ ↦ Or.inl (mem_Ioi.mp hτ).ne'
-
-/-- Integrability of the integrand of `bleisteinF lam s y` on `(0, ∞)` for `λ > 0`. -/
-theorem integrableOn_bleisteinF {lam : ℝ} (hlam : 0 < lam) (s : ℕ) (y : ℝ) :
-    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * (τ - y) ^ s * τ ^ (lam - 1))
+/-- Integrability on `(0, ∞)` of `τ ↦ exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (λ - 1)` when `h`
+is continuous and satisfies `|h u| ≤ |u| ^ s`. -/
+private theorem integrableOn_bleistein_integrand_of_le {lam : ℝ} (hlam : 0 < lam) {s : ℕ}
+    {h : ℝ → ℝ} (hh_cont : Continuous h) (hh_le : ∀ u, |h u| ≤ |u| ^ s) (y : ℝ) :
+    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (lam - 1))
       (Ioi 0) := by
   refine Integrable.mono' (integrableOn_bleisteinDom hlam s |y|)
-    (aestronglyMeasurable_bleisteinF_integrand lam s y) ?_
+    (aestronglyMeasurable_bleistein_integrand lam hh_cont y) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : 0 < τ)
-  rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_pow,
+  rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _),
     abs_of_pos (Real.rpow_pos_of_pos hτ _)]
-  exact le_bleisteinDom (abs_nonneg y) le_rfl hτ
+  exact (mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left (hh_le (τ - y)) (Real.exp_pos _).le)
+    (Real.rpow_pos_of_pos hτ _).le).trans (le_bleisteinDom (abs_nonneg y) le_rfl hτ)
 
-/-- Integrability of the integrand of `bleisteinG lam N y` on `(0, ∞)` for `λ > 0`. -/
-theorem integrableOn_bleisteinG {lam : ℝ} (hlam : 0 < lam) (N : ℕ) (y : ℝ) :
-    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ N * τ ^ (lam - 1))
-      (Ioi 0) := by
-  refine Integrable.mono' (integrableOn_bleisteinDom hlam N |y|)
-    (aestronglyMeasurable_bleisteinG_integrand lam N y) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : 0 < τ)
-  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg (Real.exp_pos _).le
-    (pow_nonneg (abs_nonneg _) _)) (Real.rpow_pos_of_pos hτ _).le)]
-  exact le_bleisteinDom (abs_nonneg y) le_rfl hτ
-
-/-- Continuity of `bleisteinF lam s` on `ℝ` for `λ > 0`. -/
-theorem continuous_bleisteinF {lam : ℝ} (hlam : 0 < lam) (s : ℕ) :
-    Continuous (bleisteinF lam s) := by
+/-- Dominated continuity in `y` of `∫₀^∞ exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (λ - 1) dτ`
+when `h` is continuous and satisfies `|h u| ≤ |u| ^ s`. -/
+private theorem continuous_integral_bleistein_of_le {lam : ℝ} (hlam : 0 < lam) {s : ℕ}
+    {h : ℝ → ℝ} (hh_cont : Continuous h) (hh_le : ∀ u, |h u| ≤ |u| ^ s) :
+    Continuous (fun y ↦
+      ∫ τ in Ioi (0 : ℝ), Real.exp (-τ ^ 2 / 2 + y * τ) * h (τ - y) * τ ^ (lam - 1)) := by
   rw [continuous_iff_continuousAt]
   intro y₀
   refine continuousAt_of_dominated
     (bound := bleisteinDom lam s (|y₀| + 1))
-    (Eventually.of_forall fun y ↦ aestronglyMeasurable_bleisteinF_integrand lam s y) ?_
+    (Eventually.of_forall fun y ↦ aestronglyMeasurable_bleistein_integrand lam hh_cont y) ?_
     (integrableOn_bleisteinDom hlam s (|y₀| + 1)) ?_
   · filter_upwards [Metric.ball_mem_nhds y₀ zero_lt_one] with y hy
     have hyR : |y| ≤ |y₀| + 1 := by
       have hdist : |y - y₀| < 1 := by simpa [Real.dist_eq] using Metric.mem_ball.mp hy
       linarith [abs_sub_abs_le_abs_sub y y₀]
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : 0 < τ)
-    rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_pow,
+    rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _),
       abs_of_pos (Real.rpow_pos_of_pos hτ _)]
-    exact le_bleisteinDom (by positivity) hyR hτ
+    exact (mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_left (hh_le (τ - y)) (Real.exp_pos _).le)
+      (Real.rpow_pos_of_pos hτ _).le).trans (le_bleisteinDom (by positivity) hyR hτ)
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ _
-    exact (by fun_prop : Continuous fun y ↦
-      Real.exp (-τ ^ 2 / 2 + y * τ) * (τ - y) ^ s * τ ^ (lam - 1)).continuousAt
+    exact ((Real.continuous_exp.comp (by fun_prop)).mul
+      (hh_cont.comp (continuous_const.sub continuous_id)) |>.mul continuous_const).continuousAt
+
+/-- Integrability of the integrand of `bleisteinF lam s y` on `(0, ∞)` for `λ > 0`. -/
+theorem integrableOn_bleisteinF_integrand {lam : ℝ} (hlam : 0 < lam) (s : ℕ) (y : ℝ) :
+    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * (τ - y) ^ s * τ ^ (lam - 1))
+      (Ioi 0) :=
+  integrableOn_bleistein_integrand_of_le hlam (continuous_pow s) (fun u ↦ (abs_pow u s).le) y
+
+/-- Integrability of the integrand of `bleisteinG lam N y` on `(0, ∞)` for `λ > 0`. -/
+theorem integrableOn_bleisteinG_integrand {lam : ℝ} (hlam : 0 < lam) (N : ℕ) (y : ℝ) :
+    IntegrableOn (fun τ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ N * τ ^ (lam - 1))
+      (Ioi 0) :=
+  integrableOn_bleistein_integrand_of_le (h := fun u ↦ |u| ^ N) hlam (continuous_abs.pow N)
+    (fun u ↦ by rw [abs_pow, abs_abs]) y
+
+/-- Continuity of `bleisteinF lam s` on `ℝ` for `λ > 0`. -/
+theorem continuous_bleisteinF {lam : ℝ} (hlam : 0 < lam) (s : ℕ) :
+    Continuous (bleisteinF lam s) := by
+  rw [funext (bleisteinF_def lam s)]
+  exact continuous_integral_bleistein_of_le hlam (continuous_pow s) (fun u ↦ (abs_pow u s).le)
 
 /-- Continuity of `bleisteinG lam N` on `ℝ` for `λ > 0`. -/
 theorem continuous_bleisteinG {lam : ℝ} (hlam : 0 < lam) (N : ℕ) :
     Continuous (bleisteinG lam N) := by
-  rw [continuous_iff_continuousAt]
-  intro y₀
-  refine continuousAt_of_dominated
-    (bound := bleisteinDom lam N (|y₀| + 1))
-    (Eventually.of_forall fun y ↦ aestronglyMeasurable_bleisteinG_integrand lam N y) ?_
-    (integrableOn_bleisteinDom hlam N (|y₀| + 1)) ?_
-  · filter_upwards [Metric.ball_mem_nhds y₀ zero_lt_one] with y hy
-    have hyR : |y| ≤ |y₀| + 1 := by
-      have hdist : |y - y₀| < 1 := by simpa [Real.dist_eq] using Metric.mem_ball.mp hy
-      linarith [abs_sub_abs_le_abs_sub y y₀]
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : 0 < τ)
-    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (mul_nonneg (Real.exp_pos _).le
-      (pow_nonneg (abs_nonneg _) _)) (Real.rpow_pos_of_pos hτ _).le)]
-    exact le_bleisteinDom (by positivity) hyR hτ
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ _
-    exact (by fun_prop : Continuous fun y ↦
-      Real.exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ N * τ ^ (lam - 1)).continuousAt
+  rw [funext (bleisteinG_def lam N)]
+  exact continuous_integral_bleistein_of_le (h := fun u ↦ |u| ^ N) hlam (continuous_abs.pow N)
+    (fun u ↦ by rw [abs_pow, abs_abs])
 
 /-! ### Positivity, domination, and special values -/
 
@@ -259,7 +262,8 @@ theorem bleisteinG_nonneg (lam : ℝ) (N : ℕ) (y : ℝ) : 0 ≤ bleisteinG lam
 /-- Strict positivity of `bleisteinG lam N y` for `λ > 0` and every `y : ℝ`. -/
 theorem bleisteinG_pos {lam : ℝ} (hlam : 0 < lam) (N : ℕ) (y : ℝ) :
     0 < bleisteinG lam N y := by
-  rw [bleisteinG, setIntegral_pos_iff_support_of_nonneg_ae _ (integrableOn_bleisteinG hlam N y)]
+  rw [bleisteinG,
+    setIntegral_pos_iff_support_of_nonneg_ae _ (integrableOn_bleisteinG_integrand hlam N y)]
   · set c := max y 0 + 1
     have hsub : Ioi c ⊆ Function.support
         (fun τ : ℝ ↦ Real.exp (-τ ^ 2 / 2 + y * τ) * |τ - y| ^ N * τ ^ (lam - 1)) ∩ Ioi 0 := by
@@ -292,7 +296,7 @@ theorem bleisteinG_zero (lam y : ℝ) : bleisteinG lam 0 y = bleisteinF lam 0 y 
   simp [bleisteinG, bleisteinF]
 
 /-- At even orders `2 * m`, `bleisteinG` and `bleisteinF` coincide everywhere. -/
-theorem bleisteinG_mul_two (lam : ℝ) (m : ℕ) (y : ℝ) :
+theorem bleisteinG_two_mul_eq_bleisteinF (lam : ℝ) (m : ℕ) (y : ℝ) :
     bleisteinG lam (2 * m) y = bleisteinF lam (2 * m) y := by
   simp_rw [bleisteinG, bleisteinF, pow_mul, sq_abs]
 
@@ -308,9 +312,10 @@ theorem bleisteinF_zero_zero {lam : ℝ} (hlam : 0 < lam) :
   rw [bleisteinF, hcongr,
     integral_rpow_mul_exp_neg_mul_rpow two_pos (by linarith : -1 < lam - 1) one_half_pos]
   have h2 : (1 / 2 : ℝ) ^ (-(lam - 1 + 1) / 2) * (1 / 2) = 2 ^ (lam / 2 - 1) := by
-    rw [one_div, Real.inv_rpow zero_le_two, ← Real.rpow_neg zero_le_two,
-      (by ring : -(-(lam - 1 + 1) / 2) = lam / 2), ← Real.rpow_neg_one 2,
-      ← Real.rpow_add two_pos, sub_eq_add_neg]
+    have : (1 / 2 : ℝ) = (2 : ℝ) ^ (-1 : ℝ) := by norm_num
+    rw [this, ← Real.rpow_mul zero_le_two, ← Real.rpow_add two_pos]
+    congr 1
+    ring
   rw [h2, (by ring : (lam - 1 + 1) / 2 = lam / 2)]
 
 /-- Value of `G_0(0)` in terms of the Gamma function. -/
@@ -343,7 +348,7 @@ theorem bleisteinF_one_one (y : ℝ) : bleisteinF 1 1 y = 1 := by
     have : 0 ≤ (u / 2 - y) ^ 2 := sq_nonneg _
     linarith
   have hint := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
-    (by simpa only [pow_one] using integrableOn_bleisteinF zero_lt_one 1 y) hlim
+    (by simpa only [pow_one] using integrableOn_bleisteinF_integrand zero_lt_one 1 y) hlim
   simpa [bleisteinF, pow_one] using hint
 
 /-! ### Rescaled model integrals and uniform remainder bound -/
@@ -356,167 +361,180 @@ private theorem bleistein_rescaled_phase {a x w : ℝ} (hx : 0 ≤ x) :
       = -(Real.sqrt x ^ 2 * w ^ 2) / 2 + a * (Real.sqrt x * Real.sqrt x) * w := by ring
     _ = -x * (w ^ 2 / 2 - a * w) := by rw [Real.sq_sqrt hx, Real.mul_self_sqrt hx]; ring
 
-/-- Rescaled integrability on `(0, ∞)` corresponding to `bleisteinF`. -/
-private theorem integrableOn_rescaled_bleisteinF {lam x : ℝ}
-    (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (s : ℕ) :
-    IntegrableOn (fun w ↦ Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1))
+/-- Rescaled integrability on `(0, ∞)` for a factor `h` homogeneous of degree `n` on `(0, ∞)`. -/
+private theorem integrableOn_exp_mul_homog_mul_rpow {lam x : ℝ} {n : ℕ} {h : ℝ → ℝ}
+    (hx : 0 < x) (a : ℝ) (hh : ∀ c > 0, ∀ u, h (c * u) = c ^ n * h u)
+    (hint : IntegrableOn (fun τ ↦
+      Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) * h (τ - a * Real.sqrt x) * τ ^ (lam - 1))
+      (Ioi 0)) :
+    IntegrableOn (fun w ↦ Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1))
       (Ioi 0) := by
   have hsq : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx
   have hcomp := (integrableOn_Ioi_comp_mul_left_iff
     (fun τ ↦ Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) *
-      (τ - a * Real.sqrt x) ^ s * τ ^ (lam - 1)) 0 hsq).mpr
-    (by simpa using integrableOn_bleisteinF hlam s (a * Real.sqrt x))
-  have hc_ne : (Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1) ≠ 0 :=
-    mul_ne_zero (pow_ne_zero s hsq.ne') (Real.rpow_pos_of_pos hsq _).ne'
+      h (τ - a * Real.sqrt x) * τ ^ (lam - 1)) 0 hsq).mpr
+    (by simpa only [mul_zero] using hint)
+  have hc_ne : (Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1) ≠ 0 :=
+    mul_ne_zero (pow_ne_zero n hsq.ne') (Real.rpow_pos_of_pos hsq _).ne'
   refine (integrable_smul_iff hc_ne _).mp (hcomp.congr_fun ?_ measurableSet_Ioi)
   intro w (hw : 0 < w)
-  have hpow : (Real.sqrt x * w - a * Real.sqrt x) ^ s = (Real.sqrt x) ^ s * (w - a) ^ s := by
-    rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), mul_pow]
+  have hhom : h (Real.sqrt x * w - a * Real.sqrt x) = (Real.sqrt x) ^ n * h (w - a) := by
+    rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), hh _ hsq]
   dsimp only [Pi.smul_apply, smul_eq_mul]
-  rw [bleistein_rescaled_phase hx.le, hpow, Real.mul_rpow hsq.le hw.le]
+  rw [bleistein_rescaled_phase hx.le, hhom, Real.mul_rpow hsq.le hw.le]
   ring
 
-/-- Rescaled integral evaluation in terms of `bleisteinF`. -/
-private theorem integral_rescaled_bleisteinF {a x : ℝ} (lam : ℝ) (hx : 0 < x) (s : ℕ) :
-    (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1)) =
-      x ^ (-lam / 2) * (bleisteinF lam s (a * Real.sqrt x) * x ^ (-(s : ℝ) / 2)) := by
+/-- Rescaled integral identity on `(0, ∞)` for a factor `h` homogeneous of degree `n` on
+`(0, ∞)`. -/
+private theorem integral_exp_mul_homog_mul_rpow {a x : ℝ} (lam : ℝ) (hx : 0 < x) {n : ℕ}
+    {h : ℝ → ℝ} (hh : ∀ c > 0, ∀ u, h (c * u) = c ^ n * h u) :
+    (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1)) =
+      x ^ (-((n : ℝ) + lam) / 2) *
+        ∫ τ in Ioi (0 : ℝ),
+          Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) * h (τ - a * Real.sqrt x) *
+            τ ^ (lam - 1) := by
   have hsq : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx
   have hcomp := integral_comp_mul_left_Ioi
     (fun τ ↦ Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) *
-      (τ - a * Real.sqrt x) ^ s * τ ^ (lam - 1)) 0 hsq
-  rw [mul_zero, smul_eq_mul, ← bleisteinF_def] at hcomp
+      h (τ - a * Real.sqrt x) * τ ^ (lam - 1)) 0 hsq
+  rw [mul_zero, smul_eq_mul] at hcomp
   have hcongr : (∫ w in Ioi (0 : ℝ),
         Real.exp (-(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w)) *
-          (Real.sqrt x * w - a * Real.sqrt x) ^ s * (Real.sqrt x * w) ^ (lam - 1)) =
-      ((Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1)) *
-        ∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1) := by
+          h (Real.sqrt x * w - a * Real.sqrt x) * (Real.sqrt x * w) ^ (lam - 1)) =
+      ((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1)) *
+        ∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1) := by
     rw [← integral_const_mul]
     refine setIntegral_congr_fun measurableSet_Ioi fun w (hw : 0 < w) ↦ ?_
-    have hpow : (Real.sqrt x * w - a * Real.sqrt x) ^ s = (Real.sqrt x) ^ s * (w - a) ^ s := by
-      rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), mul_pow]
-    rw [bleistein_rescaled_phase hx.le, hpow, Real.mul_rpow hsq.le hw.le]
+    have hhom : h (Real.sqrt x * w - a * Real.sqrt x) = (Real.sqrt x) ^ n * h (w - a) := by
+      rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)), hh _ hsq]
+    rw [bleistein_rescaled_phase hx.le, hhom, Real.mul_rpow hsq.le hw.le]
     ring
   rw [hcongr] at hcomp
-  have hc_pos : 0 < (Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1) :=
-    mul_pos (pow_pos hsq s) (Real.rpow_pos_of_pos hsq _)
-  have hscale : ((Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹ =
-      x ^ (-lam / 2) * x ^ (-(s : ℝ) / 2) := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast _ s, ← Real.rpow_mul hx.le, ← Real.rpow_mul hx.le,
-      ← Real.rpow_add hx, ← Real.rpow_neg hx.le, ← Real.rpow_neg hx.le, ← Real.rpow_add hx,
-      ← Real.rpow_add hx]
+  have hc_pos : 0 < (Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1) :=
+    mul_pos (pow_pos hsq n) (Real.rpow_pos_of_pos hsq _)
+  have hsqrt (r : ℝ) : Real.sqrt x ^ r = x ^ (r / 2) := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul hx.le]
+    ring_nf
+  have hscale : ((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹ =
+      x ^ (-((n : ℝ) + lam) / 2) := by
+    rw [← Real.rpow_natCast, hsqrt, hsqrt, Real.sqrt_eq_rpow]
+    simp only [← Real.rpow_neg hx.le, ← Real.rpow_add hx]
     congr 1
     ring
-  calc (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1))
-      = ((Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1))⁻¹ *
-          (((Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1)) *
+  calc (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1))
+      = ((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1))⁻¹ *
+          (((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1)) *
             ∫ w in Ioi (0 : ℝ),
-              Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1)) := by
+              Real.exp (-x * (w ^ 2 / 2 - a * w)) * h (w - a) * w ^ (lam - 1)) := by
         rw [inv_mul_cancel_left₀ hc_pos.ne']
-    _ = (((Real.sqrt x) ^ s * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹) *
-          bleisteinF lam s (a * Real.sqrt x) := by
+    _ = (((Real.sqrt x) ^ n * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹) *
+          ∫ τ in Ioi (0 : ℝ),
+            Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) * h (τ - a * Real.sqrt x) *
+              τ ^ (lam - 1) := by
         rw [hcomp, mul_assoc]
-    _ = x ^ (-lam / 2) * (bleisteinF lam s (a * Real.sqrt x) * x ^ (-(s : ℝ) / 2)) := by
-        rw [hscale]; ring
-
-/-- Rescaled integrability on `(0, ∞)` corresponding to `bleisteinG`. -/
-private theorem integrableOn_rescaled_bleisteinG {lam x : ℝ}
-    (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (N : ℕ) :
-    IntegrableOn (fun w ↦ Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1))
-      (Ioi 0) := by
-  have hsq : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx
-  have hcomp := (integrableOn_Ioi_comp_mul_left_iff
-    (fun τ ↦ Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) *
-      |τ - a * Real.sqrt x| ^ N * τ ^ (lam - 1)) 0 hsq).mpr
-    (by simpa using integrableOn_bleisteinG hlam N (a * Real.sqrt x))
-  have hc_ne : (Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1) ≠ 0 :=
-    mul_ne_zero (pow_ne_zero N hsq.ne') (Real.rpow_pos_of_pos hsq _).ne'
-  refine (integrable_smul_iff hc_ne _).mp (hcomp.congr_fun ?_ measurableSet_Ioi)
-  intro w (hw : 0 < w)
-  have hpow : |Real.sqrt x * w - a * Real.sqrt x| ^ N = (Real.sqrt x) ^ N * |w - a| ^ N := by
-    rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)),
-      abs_mul, abs_of_pos hsq, mul_pow]
-  dsimp only [Pi.smul_apply, smul_eq_mul]
-  rw [bleistein_rescaled_phase hx.le, hpow, Real.mul_rpow hsq.le hw.le]
-  ring
-
-/-- Rescaled integral evaluation in terms of `bleisteinG`. -/
-private theorem integral_rescaled_bleisteinG {a x : ℝ} (lam : ℝ) (hx : 0 < x) (N : ℕ) :
-    (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) =
-      x ^ (-((N : ℝ) + lam) / 2) * bleisteinG lam N (a * Real.sqrt x) := by
-  have hsq : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx
-  have hcomp := integral_comp_mul_left_Ioi
-    (fun τ ↦ Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) *
-      |τ - a * Real.sqrt x| ^ N * τ ^ (lam - 1)) 0 hsq
-  rw [mul_zero, smul_eq_mul, ← bleisteinG_def] at hcomp
-  have hcongr : (∫ w in Ioi (0 : ℝ),
-        Real.exp (-(Real.sqrt x * w) ^ 2 / 2 + a * Real.sqrt x * (Real.sqrt x * w)) *
-          |Real.sqrt x * w - a * Real.sqrt x| ^ N * (Real.sqrt x * w) ^ (lam - 1)) =
-      ((Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1)) *
-        ∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1) := by
-    rw [← integral_const_mul]
-    refine setIntegral_congr_fun measurableSet_Ioi fun w (hw : 0 < w) ↦ ?_
-    have hpow : |Real.sqrt x * w - a * Real.sqrt x| ^ N = (Real.sqrt x) ^ N * |w - a| ^ N := by
-      rw [(by ring : Real.sqrt x * w - a * Real.sqrt x = Real.sqrt x * (w - a)),
-        abs_mul, abs_of_pos hsq, mul_pow]
-    rw [bleistein_rescaled_phase hx.le, hpow, Real.mul_rpow hsq.le hw.le]
-    ring
-  rw [hcongr] at hcomp
-  have hc_pos : 0 < (Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1) :=
-    mul_pos (pow_pos hsq N) (Real.rpow_pos_of_pos hsq _)
-  have hscale : ((Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹ =
-      x ^ (-((N : ℝ) + lam) / 2) := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast _ N, ← Real.rpow_mul hx.le, ← Real.rpow_mul hx.le,
-      ← Real.rpow_add hx, ← Real.rpow_neg hx.le, ← Real.rpow_neg hx.le, ← Real.rpow_add hx]
-    congr 1
-    ring
-  calc (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1))
-      = ((Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1))⁻¹ *
-          (((Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1)) *
-            ∫ w in Ioi (0 : ℝ),
-              Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) := by
-        rw [inv_mul_cancel_left₀ hc_pos.ne']
-    _ = (((Real.sqrt x) ^ N * (Real.sqrt x) ^ (lam - 1))⁻¹ * (Real.sqrt x)⁻¹) *
-          bleisteinG lam N (a * Real.sqrt x) := by
-        rw [hcomp, mul_assoc]
-    _ = x ^ (-((N : ℝ) + lam) / 2) * bleisteinG lam N (a * Real.sqrt x) := by
+    _ = x ^ (-((n : ℝ) + lam) / 2) *
+          ∫ τ in Ioi (0 : ℝ),
+            Real.exp (-τ ^ 2 / 2 + (a * Real.sqrt x) * τ) * h (τ - a * Real.sqrt x) *
+              τ ^ (lam - 1) := by
         rw [hscale]
 
-/-- Integrability of the truncated Taylor polynomial against Bleistein's canonical kernel. -/
-private theorem integrableOn_bleistein_poly {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {lam x : ℝ} (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (N : ℕ) (phi : ℕ → E) :
-    IntegrableOn (fun w ↦ (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
-      ∑ s ∈ Finset.range N, (w - a) ^ s • phi s) (Ioi 0) := by
-  refine IntegrableOn.congr_fun
-    (integrable_finsetSum (Finset.range N) fun s _ ↦
-      (integrableOn_rescaled_bleisteinF hlam hx a s).smul_const (phi s))
-    (fun w _ ↦ ?_) measurableSet_Ioi
+/-- Integrability on `(0, ∞)` of the rescaled canonical monomial integrand
+`w ↦ exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (λ - 1)` for `λ > 0` and `x > 0`. -/
+theorem integrableOn_exp_mul_sub_pow_mul_rpow {lam x : ℝ}
+    (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (s : ℕ) :
+    IntegrableOn (fun w ↦ Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1))
+      (Ioi 0) :=
+  integrableOn_exp_mul_homog_mul_rpow hx a (fun _ _ _ ↦ mul_pow _ _ s)
+    (integrableOn_bleisteinF_integrand hlam s (a * Real.sqrt x))
+
+/-- Change-of-scale identity expressing the canonical monomial integral on `(0, ∞)` in terms of
+`bleisteinF` for `x > 0` (behind DLMF 2.3.32–2.3.33). -/
+theorem integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF {a x : ℝ}
+    (lam : ℝ) (hx : 0 < x) (s : ℕ) :
+    (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1)) =
+      x ^ (-lam / 2) * (bleisteinF lam s (a * Real.sqrt x) * x ^ (-(s : ℝ) / 2)) := by
+  rw [integral_exp_mul_homog_mul_rpow (h := (· ^ s)) lam hx (fun _ _ _ ↦ mul_pow _ _ s),
+    ← bleisteinF_def, (by ring : -((s : ℝ) + lam) / 2 = -lam / 2 + -(s : ℝ) / 2),
+    Real.rpow_add hx]
+  ring
+
+/-- Integrability on `(0, ∞)` of the rescaled canonical comparison integrand
+`w ↦ exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (λ - 1)` for `λ > 0` and `x > 0`. -/
+theorem integrableOn_exp_mul_abs_sub_pow_mul_rpow {lam x : ℝ}
+    (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (N : ℕ) :
+    IntegrableOn (fun w ↦ Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1))
+      (Ioi 0) :=
+  integrableOn_exp_mul_homog_mul_rpow (h := fun u ↦ |u| ^ N) hx a
+    (fun c hc u ↦ by rw [abs_mul, abs_of_pos hc, mul_pow])
+    (integrableOn_bleisteinG_integrand hlam N (a * Real.sqrt x))
+
+/-- Change-of-scale identity expressing the canonical absolute-power comparison integral on `(0, ∞)`
+in terms of `bleisteinG` for `x > 0`. -/
+theorem integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG {a x : ℝ}
+    (lam : ℝ) (hx : 0 < x) (N : ℕ) :
+    (∫ w in Ioi (0 : ℝ), Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) =
+      x ^ (-((N : ℝ) + lam) / 2) * bleisteinG lam N (a * Real.sqrt x) := by
+  rw [integral_exp_mul_homog_mul_rpow (h := fun u ↦ |u| ^ N) lam hx
+    (fun c hc u ↦ by rw [abs_mul, abs_of_pos hc, mul_pow]), ← bleisteinG_def]
+
+/-- Pointwise distribution of Bleistein's canonical kernel across a truncated polynomial sum. -/
+private theorem bleistein_poly_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (lam x a w : ℝ) (N : ℕ) (phi : ℕ → E) :
+    (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
+        ∑ s ∈ Finset.range N, (w - a) ^ s • phi s =
+      ∑ s ∈ Finset.range N,
+        (Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1)) • phi s := by
   rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [smul_smul]
   congr 1
   ring
 
-/-- Evaluation of the integral of the truncated Taylor polynomial against Bleistein's kernel. -/
-private theorem integral_bleistein_poly {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {lam x : ℝ} (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (N : ℕ) (phi : ℕ → E) :
+/-- Integrability of the truncated Taylor polynomial against Bleistein's canonical kernel. -/
+private theorem integrableOn_bleistein_poly {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {lam x : ℝ} (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (N : ℕ) (phi : ℕ → E) :
+    IntegrableOn (fun w ↦ (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
+      ∑ s ∈ Finset.range N, (w - a) ^ s • phi s) (Ioi 0) :=
+  IntegrableOn.congr_fun
+    (integrable_finsetSum (Finset.range N) fun s _ ↦
+      (integrableOn_exp_mul_sub_pow_mul_rpow hlam hx a s).smul_const (phi s))
+    (fun w _ ↦ (bleistein_poly_smul_eq lam x a w N phi).symm) measurableSet_Ioi
+
+/-- Integral on `(0, ∞)` of a truncated Taylor polynomial around `w = a` against Bleistein's
+canonical kernel, expressed in terms of `bleisteinF` (the polynomial part of DLMF 2.3.32). -/
+theorem integral_exp_mul_rpow_smul_sum_eq_bleisteinF {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {lam x : ℝ} (hlam : 0 < lam) (hx : 0 < x) (a : ℝ) (N : ℕ) (phi : ℕ → E) :
     (∫ w in Ioi (0 : ℝ), (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
         ∑ s ∈ Finset.range N, (w - a) ^ s • phi s) =
       x ^ (-lam / 2) • ∑ s ∈ Finset.range N,
         (bleisteinF lam s (a * Real.sqrt x) * x ^ (-(s : ℝ) / 2)) • phi s := by
-  have hcongr : (∫ w in Ioi (0 : ℝ), (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
-        ∑ s ∈ Finset.range N, (w - a) ^ s • phi s) =
-      ∫ w in Ioi (0 : ℝ), ∑ s ∈ Finset.range N,
-        (Real.exp (-x * (w ^ 2 / 2 - a * w)) * (w - a) ^ s * w ^ (lam - 1)) • phi s := by
-    refine setIntegral_congr_fun measurableSet_Ioi fun w _ ↦ ?_
-    rw [Finset.smul_sum]
-    refine Finset.sum_congr rfl fun s _ ↦ ?_
-    rw [smul_smul]
-    congr 1
-    ring
-  rw [hcongr, integral_finsetSum (Finset.range N) fun s _ ↦
-    (integrableOn_rescaled_bleisteinF hlam hx a s).smul_const (phi s), Finset.smul_sum]
+  rw [setIntegral_congr_fun measurableSet_Ioi
+      (fun w _ ↦ bleistein_poly_smul_eq lam x a w N phi),
+    integral_finsetSum (Finset.range N) fun s _ ↦
+      (integrableOn_exp_mul_sub_pow_mul_rpow hlam hx a s).smul_const (phi s),
+    Finset.smul_sum]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [integral_smul_const, integral_rescaled_bleisteinF lam hx s, smul_smul]
+  rw [integral_smul_const, integral_exp_mul_sub_pow_mul_rpow_eq_bleisteinF lam hx s, smul_smul]
+
+/-- Almost-everywhere norm domination of Bleistein's weighted Taylor remainder on `(0, ∞)`. -/
+private theorem ae_norm_bleistein_remainder_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {lam a C x : ℝ} {N : ℕ} {f : ℝ → E} {phi : ℕ → E}
+    (hf : ∀ w > 0, ‖f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s‖ ≤ C * |w - a| ^ N) :
+    ∀ᵐ w ∂volume.restrict (Ioi 0),
+      ‖(Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
+          (f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s)‖ ≤
+        C * (Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) := by
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with w (hw : 0 < w)
+  have hpos : 0 ≤ Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1) :=
+    mul_nonneg (Real.exp_pos _).le (Real.rpow_pos_of_pos hw _).le
+  rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hpos]
+  calc (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) *
+        ‖f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s‖
+      ≤ (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) * (C * |w - a| ^ N) :=
+        mul_le_mul_of_nonneg_left (hf w hw) hpos
+    _ = C * (Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) := by ring
 
 /-- Integrability of Bleistein's canonical integral on `(0, ∞)` whenever `f` satisfies a polynomial
 remainder bound around `w = a`. -/
@@ -541,18 +559,9 @@ theorem integrableOn_bleistein_model_of_bound {E : Type*}
       ∑ s ∈ Finset.range N, (w - a) ^ s • phi s).aestronglyMeasurable
   have hrem_int : IntegrableOn
       (fun w ↦ (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
-        (f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s)) (Ioi 0) := by
-    refine Integrable.mono' ((integrableOn_rescaled_bleisteinG hlam hx a N).const_mul C)
-      (hkern_meas.smul (hfm.sub hpoly_meas)) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with w (hw : 0 < w)
-    have hpos : 0 ≤ Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1) :=
-      mul_nonneg (Real.exp_pos _).le (Real.rpow_pos_of_pos hw _).le
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hpos]
-    calc (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) *
-          ‖f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s‖
-        ≤ (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) * (C * |w - a| ^ N) :=
-          mul_le_mul_of_nonneg_left (hf w hw) hpos
-      _ = C * (Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) := by ring
+        (f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s)) (Ioi 0) :=
+    Integrable.mono' ((integrableOn_exp_mul_abs_sub_pow_mul_rpow hlam hx a N).const_mul C)
+      (hkern_meas.smul (hfm.sub hpoly_meas)) (ae_norm_bleistein_remainder_le hf)
   refine (hrem_int.add (integrableOn_bleistein_poly hlam hx a N phi)).congr_fun
     (fun w _ ↦ ?_) measurableSet_Ioi
   simp [smul_sub]
@@ -572,7 +581,8 @@ theorem norm_bleistein_remainder_le {E : Type*} [NormedAddCommGroup E] [NormedSp
       C * x ^ (-((N : ℝ) + lam) / 2) * bleisteinG lam N (a * Real.sqrt x) := by
   have hf_int := integrableOn_bleistein_model_of_bound hlam hx hfm hf
   have hpoly_int := integrableOn_bleistein_poly hlam hx a N phi
-  rw [← integral_bleistein_poly hlam hx a N phi, ← integral_sub hf_int hpoly_int]
+  rw [← integral_exp_mul_rpow_smul_sum_eq_bleisteinF hlam hx a N phi,
+    ← integral_sub hf_int hpoly_int]
   have hsub_congr : (∫ w in Ioi (0 : ℝ),
         (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) • f w -
           (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) •
@@ -582,21 +592,47 @@ theorem norm_bleistein_remainder_le {E : Type*} [NormedAddCommGroup E] [NormedSp
     setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ (smul_sub _ _ _).symm
   rw [hsub_congr]
   refine (norm_integral_le_integral_norm _).trans ?_
-  have hdom_int := (integrableOn_rescaled_bleisteinG hlam hx a N).const_mul C
+  have hdom_int := (integrableOn_exp_mul_abs_sub_pow_mul_rpow hlam hx a N).const_mul C
   refine (integral_mono_ae ((hf_int.sub hpoly_int).congr_fun
-      (fun _ _ ↦ (smul_sub _ _ _).symm) measurableSet_Ioi).norm hdom_int ?_).trans_eq ?_
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with w (hw : 0 < w)
-    have hpos : 0 ≤ Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1) :=
-      mul_nonneg (Real.exp_pos _).le (Real.rpow_pos_of_pos hw _).le
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hpos]
-    calc (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) *
-          ‖f w - ∑ s ∈ Finset.range N, (w - a) ^ s • phi s‖
-        ≤ (Real.exp (-x * (w ^ 2 / 2 - a * w)) * w ^ (lam - 1)) * (C * |w - a| ^ N) :=
-          mul_le_mul_of_nonneg_left (hf w hw) hpos
-      _ = C * (Real.exp (-x * (w ^ 2 / 2 - a * w)) * |w - a| ^ N * w ^ (lam - 1)) := by ring
-  · rw [integral_const_mul, integral_rescaled_bleisteinG lam hx N, mul_assoc]
+      (fun _ _ ↦ (smul_sub _ _ _).symm) measurableSet_Ioi).norm hdom_int
+      (ae_norm_bleistein_remainder_le hf)).trans_eq ?_
+  rw [integral_const_mul, integral_exp_mul_abs_sub_pow_mul_rpow_eq_bleisteinG lam hx N, mul_assoc]
 
 /-! ### Uniform expansion of Laplace-type integrals (DLMF 2.3.32) -/
+
+/-- Shared change-of-variables setup deriving injectivity, positivity, differentiability, positive
+derivative, phase lower bounds, and continuity of `bleisteinAmplitude` on `(0, ∞)`. -/
+private theorem bleistein_changeOfVariables_setup {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {lam : ℝ} {g : ℝ → ℝ} {q : ℝ → E} {U s : Set ℝ} {α : ℝ}
+    (hU : IsOpen U) (hs : IsOpen s) (hsU : s ⊆ U) (hs0 : s ⊆ Ioi 0)
+    (hα : α ∈ U) (h0 : 0 ∈ U) (hg : ContDiffOn ℝ 2 g U)
+    (hanti : StrictAntiOn g (U ∩ Iic α)) (hmono : StrictMonoOn g (U ∩ Ici α))
+    (hd1 : deriv g α = 0) (hd2 : 0 < deriv (deriv g) α)
+    (hreg : ∀ t ∈ s, t ≠ α → deriv g t ≠ 0)
+    (hq : ContinuousOn q s) (himg : bleisteinCoord g α '' s = Ioi 0) :
+    g α ≤ g 0 ∧ (∀ t ∈ s, g α ≤ g t) ∧ (∀ t ∈ s, 0 < bleisteinCoord g α t) ∧
+      InjOn (bleisteinCoord g α) s ∧
+      (∀ t ∈ s, HasDerivWithinAt (bleisteinCoord g α) (deriv (bleisteinCoord g α) t) s t) ∧
+      (∀ t ∈ s, 0 < deriv (bleisteinCoord g α) t) ∧
+      ContinuousOn (bleisteinAmplitude lam g q s α) (Ioi 0) := by
+  have hw_c1 := contDiffOn_bleisteinCoord hU hα hg hanti hmono hd1 hd2
+  have hinj : InjOn (bleisteinCoord g α) s :=
+    (strictMonoOn_bleisteinCoord hα hanti hmono).injOn.mono hsU
+  have hw_pos : ∀ t ∈ s, 0 < bleisteinCoord g α t := fun t ht ↦
+    bleisteinCoord_pos hα h0 hanti hmono (hsU ht) (hs0 ht)
+  have hdpos : ∀ t ∈ s, 0 < deriv (bleisteinCoord g α) t := fun t ht ↦
+    deriv_bleisteinCoord_pos hU hα hg hanti hmono hd1 hd2 (hsU ht) (hreg t ht)
+  have hw_diff : DifferentiableOn ℝ (bleisteinCoord g α) U :=
+    ((contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hw_c1).1
+  have hderiv : ∀ t ∈ s, HasDerivWithinAt (bleisteinCoord g α) (deriv (bleisteinCoord g α) t) s t :=
+    fun t ht ↦ (hw_diff.differentiableAt (hU.mem_nhds (hsU ht))).hasDerivAt.hasDerivWithinAt
+  have hf_cont : ContinuousOn (bleisteinAmplitude lam g q s α) (Ioi 0) :=
+    himg ▸ continuousOn_bleisteinAmplitude hs hs0 (hw_c1.mono hsU) hinj hw_pos
+      (fun t ht ↦ (hdpos t ht).ne') hq
+  have hmin : ∀ t ∈ U, g α ≤ g t :=
+    fun _ ht ↦ le_of_antitoneOn_monotoneOn hα hanti.antitoneOn hmono.monotoneOn ht
+  exact ⟨hmin 0 h0, fun t ht ↦ hmin t (hsU ht), hw_pos, hinj, hderiv, hdpos, hf_cont⟩
 
 /-- Convergence (Bochner integrability, hence absolute convergence) of the original integral
 `I(α, x) = ∫ t in s, (exp (-x * g t) * t ^ (λ - 1)) • q t` under the hypotheses of Bleistein's
@@ -616,25 +652,9 @@ theorem integrableOn_bleistein_of_taylor_bound {E : Type*}
         ∑ n ∈ Finset.range N, (w - bleisteinCenter g α) ^ n • phi n‖ ≤
       C * |w - bleisteinCenter g α| ^ N) :
     IntegrableOn (fun t ↦ (Real.exp (-x * g t) * t ^ (lam - 1)) • q t) s := by
-  have hw_c1 := contDiffOn_bleisteinCoord hU hα hg hanti hmono hd1 hd2
-  have hinj : InjOn (bleisteinCoord g α) s :=
-    (strictMonoOn_bleisteinCoord hα hanti hmono).injOn.mono hsU
-  have hw_pos : ∀ t ∈ s, 0 < bleisteinCoord g α t := fun t ht ↦
-    bleisteinCoord_pos hα h0 hanti hmono (hsU ht) (hs0 ht)
-  have hdpos : ∀ t ∈ s, 0 < deriv (bleisteinCoord g α) t := fun t ht ↦
-    deriv_bleisteinCoord_pos hU hα hg hanti hmono hd1 hd2 (hsU ht) (hreg t ht)
-  have hw_diff : DifferentiableOn ℝ (bleisteinCoord g α) U :=
-    ((contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hw_c1).1
-  have hderiv : ∀ t ∈ s, HasDerivWithinAt (bleisteinCoord g α) (deriv (bleisteinCoord g α) t) s t :=
-    fun t ht ↦ (hw_diff.differentiableAt (hU.mem_nhds (hsU ht))).hasDerivAt.hasDerivWithinAt
-  have hf_cont : ContinuousOn (bleisteinAmplitude lam g q s α) (Ioi 0) :=
-    himg ▸ continuousOn_bleisteinAmplitude hU hs hsU hs0 hw_c1 hinj hw_pos
-      (fun t ht ↦ (hdpos t ht).ne') hq
-  have hmin : ∀ t ∈ U, g α ≤ g t := fun t ht ↦
-    (le_total t α).elim (fun h ↦ hanti.antitoneOn ⟨ht, h⟩ ⟨hα, le_rfl⟩ h)
-      (fun h ↦ hmono.monotoneOn ⟨hα, le_rfl⟩ ⟨ht, h⟩ h)
-  rw [← integrableOn_bleistein_iff hs.measurableSet hs0 (hmin 0 h0) (fun t ht ↦ hmin t (hsU ht))
-    hw_pos hinj hderiv hdpos, himg]
+  obtain ⟨h0_min, hmin, hw_pos, hinj, hderiv, hdpos, hf_cont⟩ :=
+    bleistein_changeOfVariables_setup hU hs hsU hs0 hα h0 hg hanti hmono hd1 hd2 hreg hq himg
+  rw [← integrableOn_bleistein_iff hs.measurableSet hs0 h0_min hmin hw_pos hinj hderiv hdpos, himg]
   exact integrableOn_bleistein_model_of_bound hlam hx
     (hf_cont.aestronglyMeasurable measurableSet_Ioi) hf
 
@@ -658,25 +678,9 @@ theorem norm_exp_mul_integral_bleistein_sub_le {E : Type*}
           (bleisteinF lam n (bleisteinCenter g α * Real.sqrt x) * x ^ (-(n : ℝ) / 2)) • phi n‖ ≤
       C * x ^ (-((N : ℝ) + lam) / 2) *
         bleisteinG lam N (bleisteinCenter g α * Real.sqrt x) := by
-  have hw_c1 := contDiffOn_bleisteinCoord hU hα hg hanti hmono hd1 hd2
-  have hinj : InjOn (bleisteinCoord g α) s :=
-    (strictMonoOn_bleisteinCoord hα hanti hmono).injOn.mono hsU
-  have hw_pos : ∀ t ∈ s, 0 < bleisteinCoord g α t := fun t ht ↦
-    bleisteinCoord_pos hα h0 hanti hmono (hsU ht) (hs0 ht)
-  have hdpos : ∀ t ∈ s, 0 < deriv (bleisteinCoord g α) t := fun t ht ↦
-    deriv_bleisteinCoord_pos hU hα hg hanti hmono hd1 hd2 (hsU ht) (hreg t ht)
-  have hw_diff : DifferentiableOn ℝ (bleisteinCoord g α) U :=
-    ((contDiffOn_succ_iff_deriv_of_isOpen (n := 0) hU).mp hw_c1).1
-  have hderiv : ∀ t ∈ s, HasDerivWithinAt (bleisteinCoord g α) (deriv (bleisteinCoord g α) t) s t :=
-    fun t ht ↦ (hw_diff.differentiableAt (hU.mem_nhds (hsU ht))).hasDerivAt.hasDerivWithinAt
-  have hf_cont : ContinuousOn (bleisteinAmplitude lam g q s α) (Ioi 0) :=
-    himg ▸ continuousOn_bleisteinAmplitude hU hs hsU hs0 hw_c1 hinj hw_pos
-      (fun t ht ↦ (hdpos t ht).ne') hq
-  have hmin : ∀ t ∈ U, g α ≤ g t := fun t ht ↦
-    (le_total t α).elim (fun h ↦ hanti.antitoneOn ⟨ht, h⟩ ⟨hα, le_rfl⟩ h)
-      (fun h ↦ hmono.monotoneOn ⟨hα, le_rfl⟩ ⟨ht, h⟩ h)
-  rw [exp_mul_integral_bleistein_eq hs.measurableSet hs0 (hmin 0 h0) (fun t ht ↦ hmin t (hsU ht))
-    hw_pos hinj hderiv hdpos, himg]
+  obtain ⟨h0_min, hmin, hw_pos, hinj, hderiv, hdpos, hf_cont⟩ :=
+    bleistein_changeOfVariables_setup hU hs hsU hs0 hα h0 hg hanti hmono hd1 hd2 hreg hq himg
+  rw [exp_mul_integral_bleistein_eq hs.measurableSet hs0 h0_min hmin hw_pos hinj hderiv hdpos, himg]
   exact norm_bleistein_remainder_le hlam hx (hf_cont.aestronglyMeasurable measurableSet_Ioi) hf
 
 /-- Convergence (Bochner integrability) of the Bleistein integral on `(0, k)` when
