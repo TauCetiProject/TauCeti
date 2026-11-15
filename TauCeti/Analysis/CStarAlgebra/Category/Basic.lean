@@ -109,6 +109,22 @@ theorem norm_nonneg (f : X ⟶ Y) : 0 ≤ ‖f‖ :=
 @[simp] theorem norm_eq_zero {f : X ⟶ Y} : ‖f‖ = 0 ↔ f = 0 :=
   (normedSpaceCore X Y).norm_eq_zero_iff f
 
+/-- The zero arrow has norm zero. -/
+@[simp] theorem norm_zero : ‖(0 : X ⟶ Y)‖ = 0 :=
+  norm_eq_zero.2 rfl
+
+/-- Hom norms are absolutely homogeneous for complex scalars. -/
+theorem norm_smul (c : ℂ) (f : X ⟶ Y) : ‖c • f‖ = ‖c‖ * ‖f‖ :=
+  (normedSpaceCore X Y).norm_smul c f
+
+/-- Hom norms satisfy the triangle inequality. -/
+theorem norm_add_le (f g : X ⟶ Y) : ‖f + g‖ ≤ ‖f‖ + ‖g‖ :=
+  (normedSpaceCore X Y).norm_triangle f g
+
+/-- Negating an arrow preserves its norm. -/
+@[simp] theorem norm_neg (f : X ⟶ Y) : ‖-f‖ = ‖f‖ := by
+  simpa using norm_smul (-1 : ℂ) f
+
 /-- The dagger of a C*-category is isometric. -/
 @[simp] theorem norm_dagger (f : X ⟶ Y) : ‖dagger f‖ = ‖f‖ := by
   -- `‖f‖² ≤ ‖f ≫ dagger f‖ ≤ ‖f‖ ‖dagger f‖` gives `‖f‖ ≤ ‖dagger f‖`, for `f` and `dagger f`.
@@ -207,8 +223,9 @@ instance instCompleteSpace : CompleteSpace (End X) := by
   let := CStarCategory.normedAddCommGroup X X
   have : CompleteSpace (X ⟶ X) := CStarCategory.completeSpace X X
   let e : End X ≃ᵢ (X ⟶ X) :=
-    { toEquiv := End.homEquiv
-      isometry_toFun := AddMonoidHomClass.isometry_of_norm End.addEquiv fun _ => (rfl) }
+    { toEquiv := End.addEquiv.toEquiv
+      isometry_toFun := AddMonoidHomClass.isometry_of_norm End.addEquiv fun a => by
+        rw [End.addEquiv_apply, End.norm_def] }
   exact e.completeSpace
 
 /-- The C*-identity in `End X`, from the C*-inequality of the category. -/

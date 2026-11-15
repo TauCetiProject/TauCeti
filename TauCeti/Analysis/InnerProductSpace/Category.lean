@@ -332,9 +332,11 @@ private theorem completeSpace_ofCore (X Y : HilbertCat.{u, v} 𝕜) :
   have h : (NormedAddCommGroup.ofCore (normedSpaceCore X Y)).toPseudoMetricSpace =
       (inferInstance : NormedAddCommGroup (X ⟶ Y)).toPseudoMetricSpace := by
     ext f g
-    exact (norm_neg_add f g).trans (dist_eq_norm f g).symm
+    rw [@dist_eq_norm_neg_add _ (NormedAddCommGroup.ofCore
+      (normedSpaceCore X Y)).toSeminormedAddCommGroup.toSeminormedAddGroup, norm_neg_add,
+      dist_eq_norm]
   have hc : CompleteSpace (X ⟶ Y) := inferInstance
-  -- The two uniform structures differ only definitionally; `convert` closes the gap with `h`.
+  -- The goal and `hc` are completeness for two metric structures, which `h` identifies.
   convert hc using 2
 
 /-- For a morphism `f` of complex Hilbert spaces, the positive operator `f†f` is `g†g` for its
