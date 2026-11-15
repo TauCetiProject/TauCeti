@@ -6,19 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Cobordism.Basic
-public import TauCeti.Geometry.Manifold.Instances.Quotient
 
-import TauCeti.Geometry.Manifold.ContMDiff.Defs
-import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
-import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.Instances.Quotient
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.Orientation.Glue
 import TauCeti.Geometry.Manifold.Orientation.OpenSubset
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 
 /-!
@@ -162,23 +155,11 @@ private theorem isSmoothEmbedding_upper :
 
 private theorem mem_range_lower_iff {p : sphere (0 : E) 1 × ℝ} :
     p ∈ range (lower S₁) ↔ (p.1, 2 * p.2) ∈ range S₁.toFun := by
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨x, Prod.ext rfl (by simp only [lower]; ring)⟩
-  · rintro ⟨x, hx⟩
-    refine ⟨x, Prod.ext (by simp [lower, hx]) ?_⟩
-    simp only [lower, hx]
-    ring
+  simp [mem_range, Prod.ext_iff, lower, div_eq_iff, mul_comm]
 
 private theorem mem_range_upper_iff {p : sphere (0 : E) 1 × ℝ} :
     p ∈ range (upper S₂) ↔ (p.1, 2 * p.2 - 1) ∈ range S₂.toFun := by
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact ⟨y, Prod.ext rfl (by simp only [upper]; ring)⟩
-  · rintro ⟨y, hy⟩
-    refine ⟨y, Prod.ext (by simp [upper, hy]) ?_⟩
-    simp only [upper, hy]
-    ring
+  simp [mem_range, Prod.ext_iff, upper, div_eq_iff, eq_sub_iff_add_eq, mul_comm]
 
 /-- Above height `(1 - topWidth S₁) / 2`, the lower half is the cylinder over `K₁`. -/
 private theorem mem_range_lower_iff_of_le {p : sphere (0 : E) 1 × ℝ}
@@ -500,20 +481,15 @@ private theorem range_stackMap_eq_union :
   have h₁ := sub_lt_half S₁
   have h₂ := half_lt_add S₂
   ext p
-  rw [mem_range_stackMap_iff, mem_union]
+  rw [mem_union]
   constructor
-  · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨y, rfl⟩, hy⟩)
-    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
-      · exact .inl ⟨x, hPfix _ hle⟩
-      · obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ (h₁.trans hlt).le hx.le).1
-          (mem_range_self x)
-        exact .inr ⟨y, by rw [comp_apply, hy, hQfix _ hlt.le]⟩
-    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
-      · exact .inr ⟨y, hQfix _ hle⟩
-      · obtain ⟨x, hx⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hy.le (hlt.trans h₂).le).2
-          (mem_range_self y)
-        exact .inl ⟨x, by rw [comp_apply, hx, hPfix _ hlt.le]⟩
-  · rintro (⟨x, rfl⟩ | ⟨y, rfl⟩)
+  · intro hp
+    rcases le_total p.2 (1 / 2) with hle | hle
+    · obtain ⟨x, rfl⟩ := mem_range_lower_of_mem_range_stackMap S₁ S₂ hp hle
+      exact .inl ⟨x, hPfix _ hle⟩
+    · obtain ⟨y, rfl⟩ := mem_range_upper_of_mem_range_stackMap S₁ S₂ hp hle
+      exact .inr ⟨y, hQfix _ hle⟩
+  · rintro (⟨x, rfl⟩ | ⟨y, rfl⟩) <;> rw [mem_range_stackMap_iff]
     · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
       · rw [comp_apply, hPfix _ hle]
         exact .inl ⟨mem_range_self x, hle.trans_lt h₂⟩
@@ -527,9 +503,9 @@ private theorem range_stackMap_eq_union :
         rw [comp_apply, hQK _ hlt.le]
         exact .inr ⟨(mem_range_upper_iff_of_le S₂ h₂.le).2 hK, h₁⟩
 
-/-- The image of the composite is connected: it is the union of the lower half with its heights
-capped at `1 / 2` and the upper half with its heights raised to at least `1 / 2`, two connected
-sets meeting along the circle `K₁` at height `1 / 2`. -/
+/-- The image of the composite is preconnected: it is the union of the lower half with its
+heights capped at `1 / 2` and the upper half with its heights raised to at least `1 / 2`, two
+connected sets meeting along the circle `K₁` at height `1 / 2`. -/
 private theorem isPreconnected_range_stackMap : IsPreconnected (range (stackMap S₁ S₂)) := by
   let P : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ := fun p ↦ (p.1, min p.2 (1 / 2))
   let Q : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ := fun p ↦ (p.1, max p.2 (1 / 2))
@@ -710,7 +686,7 @@ private theorem mem_overlap_iff {q : lowerPiece S₁ S₂} :
     q ∈ overlap S₁ S₂ ↔ (1 - topWidth S₁) / 2 < (lower S₁ q).2 :=
   Iff.rfl
 
-/-- The overlap is connected: its image is the cylinder over `K₁` over an open interval of
+/-- The overlap is preconnected: its image is the cylinder over `K₁` over an open interval of
 heights. -/
 private instance : PreconnectedSpace (overlap S₁ S₂) := by
   let g : overlap S₁ S₂ → sphere (0 : E) 1 × ℝ :=
