@@ -55,7 +55,7 @@ universe u v
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-variable {G : InternalGrading R V}
+variable {G : InternalGrading R V ℤ}
 
 /-- A commutation rule with a fixed sign `s` between generators of homogeneous elements holds
 between all generators. -/

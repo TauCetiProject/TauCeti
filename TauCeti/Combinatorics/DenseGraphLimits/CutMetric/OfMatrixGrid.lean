@@ -226,8 +226,7 @@ private theorem cutDist_ofMatrix_le_of_eq_min {ρ σ τ : Measure κ} [IsProbabi
     ρ.sum_singleton_eq_one.trans τ.sum_singleton_eq_one.symm
   have hk₀ : ρ {k₀} ≤ τ {k₀} :=
     le_of_sum_eq_of_forall_ne_le (f := fun k => ρ {k}) (g := fun k => τ {k})
-      (Finset.mem_univ k₀) hsum
-      (by rw [ρ.sum_singleton_eq_one]; exact ENNReal.one_ne_top) fun k _ hk => hdom k hk
+      (Finset.mem_univ k₀) hsum (fun k _ _ => measure_ne_top ρ {k}) fun k _ hk => hdom k hk
   have hle : ∑ k, (ρ {k} - τ {k}) ≤ ∑ k, (ρ {k} - σ {k}) := by
     refine Finset.sum_le_sum fun k _ => ?_
     rcases eq_or_ne k k₀ with rfl | hk
@@ -338,8 +337,7 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} (hN : 0 < N)
     rcases eq_or_ne i k₀ with rfl | hi
     · rw [tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le (Finset.mem_univ i)
         (ν.sum_singleton_eq_one.trans ν'.sum_singleton_eq_one.symm)
-        (by rw [ν.sum_singleton_eq_one]; exact ENNReal.one_ne_top)
-        fun k _ hk => hdom k hk)]
+        (fun k _ _ => measure_ne_top ν {k}) fun k _ hk => hdom k hk)]
       simp
     · rw [tsub_le_iff_left, hweight i, ENNReal.div_add_div_same,
         ENNReal.le_div_iff_mul_le (.inl hN0) (.inl hNtop)]

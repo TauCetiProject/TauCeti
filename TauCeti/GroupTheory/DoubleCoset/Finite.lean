@@ -27,7 +27,7 @@ This is the instance that lets a sum be taken over `H \ G / K`; the Mackey decom
 (`TauCeti.RepresentationTheory.Induction.Mackey.Basic`) uses it, where the index of the subgroup
 being induced from is the only finiteness available.
 
-The double cosets partition `G`, so for finite `G` their sizes add up to the order of `G`
+The double cosets partition `G`, so their sizes add up to the order of `G`
 (`Subgroup.sum_card_quotToDoubleCoset`). The size of a single double coset `KsH` is given by the
 classical formula `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`
 (`TauCeti.card_doubleCoset_mul_card_inf_conj_smul`), which holds without finiteness hypotheses
@@ -140,14 +140,49 @@ namespace Subgroup
 
 variable {G : Type*} [Group G]
 
-/-- **The double cosets partition the group**: for finite `G`, the sizes of the double cosets
-`HgK` add up to the order of `G`. -/
-theorem sum_card_quotToDoubleCoset [Finite G] (H K : Subgroup G)
+/-- **The double cosets partition the group**: the sizes of the double cosets `HgK` add up to the
+order of `G`. If `H` or `K` is infinite, every double coset is infinite and `G` is infinite, so
+both sides are `0`; otherwise every double coset is finite. -/
+theorem sum_card_quotToDoubleCoset (H K : Subgroup G)
     [Fintype (DoubleCoset.Quotient (H : Set G) (K : Set G))] :
     ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H K q) = Nat.card G := by
-  rw [← Nat.card_congr (Equiv.sigmaFiberEquiv (DoubleCoset.mk H K)), Nat.card_sigma]
-  exact Fintype.sum_congr _ _ fun q =>
-    Nat.card_congr (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
+  -- each double coset is the image of `H × K` under `(h, k) ↦ h * q.out * k`
+  have hdc (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+      DoubleCoset.quotToDoubleCoset H K q = Set.image2 (· * q.out * ·) (H : Set G) K := by
+    rw [DoubleCoset.quotToDoubleCoset, DoubleCoset.doubleCoset_eq_image2]
+  by_cases hHK : Finite H ∧ Finite K
+  · -- every double coset is finite, so the sizes of the fibres of `DoubleCoset.mk H K` add up
+    obtain ⟨hH, hK⟩ := hHK
+    have (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+        Finite {a // DoubleCoset.mk H K a = q} := by
+      have : (DoubleCoset.quotToDoubleCoset H K q).Finite := by
+        rw [hdc]
+        exact (Set.toFinite (H : Set G)).image2 _ (Set.toFinite (K : Set G))
+      have := this.to_subtype
+      exact Finite.of_equiv _
+        (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
+    rw [← Nat.card_congr (Equiv.sigmaFiberEquiv (DoubleCoset.mk H K)), Nat.card_sigma]
+    exact Fintype.sum_congr _ _ fun q =>
+      Nat.card_congr (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
+  · -- some factor is infinite, hence so is `G` and every double coset
+    rw [not_and_or, not_finite_iff_infinite, not_finite_iff_infinite] at hHK
+    have hGi : Infinite G := by
+      rcases hHK with hH | hK
+      · exact Infinite.of_injective ((↑) : H → G) Subtype.val_injective
+      · exact Infinite.of_injective ((↑) : K → G) Subtype.val_injective
+    rw [Nat.card_eq_zero_of_infinite]
+    refine Finset.sum_eq_zero fun q _ ↦ ?_
+    have : (DoubleCoset.quotToDoubleCoset H K q).Infinite := by
+      rw [hdc]
+      rcases hHK with hH | hK
+      · -- right multiplication by `q.out * 1` is injective on the infinite factor `H`
+        exact (Set.infinite_coe_iff.1 hH).image2_left K.one_mem
+          fun _ _ _ _ h ↦ mul_right_cancel (mul_right_cancel h)
+      · -- left multiplication by `1 * q.out` is injective on the infinite factor `K`
+        exact (Set.infinite_coe_iff.1 hK).image2_right H.one_mem
+          fun _ _ _ _ h ↦ mul_left_cancel h
+    have := this.to_subtype
+    exact Nat.card_eq_zero_of_infinite
 
 /-- **The double cosets count the right cosets**: each double coset `HsK` of a finite group is a
 union of `|HsK| / |H|` right cosets of `H`, and these numbers add up, over `H \ G / K`, to the

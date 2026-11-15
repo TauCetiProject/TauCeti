@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.PlaneSeparation.Segment
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.AffineSpace.Independent
 
 /-!
 # Short-turn separation of Schwarz--Christoffel sides
@@ -78,14 +79,8 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_inter_subset_vertex_of_adjacen
     (by rw [hmid]; exact hj)
     (hfree i) (by rw [hmid]; exact hfree j)
     hleft hcorner.1 hcornerSin hright
-  rw [affineIndependent_iff_linearIndependent_vsub ℝ _ (1 : Fin 3),
-    ← linearIndependent_equiv (finSuccAboveEquiv (1 : Fin 3))] at haff
-  have hlin : LinearIndependent ℝ
-      ![schwarzChristoffelVertex a e z₀ i.castSucc - schwarzChristoffelVertex a e z₀ i.succ,
-        schwarzChristoffelVertex a e z₀ j.succ - schwarzChristoffelVertex a e z₀ i.succ] := by
-    convert! haff using 1
-    ext k
-    fin_cases k <;> simp [finSuccAboveEquiv_apply]
+  have hlin := affineIndependent_iff_linearIndependent_vsub_vsub.1 haff
+  simp only [vsub_eq_sub] at hlin
   intro z hz
   rw [mem_inter_iff, schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
     schwarzChristoffelPolygon_edgeSet_castSucc_castSucc] at hz

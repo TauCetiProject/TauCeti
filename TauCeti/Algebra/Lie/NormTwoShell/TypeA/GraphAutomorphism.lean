@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.NormTwoShell.TypeA.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.GraphAutomorphism.Coordinates
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import TauCeti.LinearAlgebra.FixedSubmodule
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # The reversal of the type-`A` signed shell Lie algebra is the matrix graph automorphism

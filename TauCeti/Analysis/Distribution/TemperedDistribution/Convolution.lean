@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.Support
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 
 /-!
@@ -48,6 +49,8 @@ are derived this way.
   `Lᵠ` function `𝓕⁻ σ ⋆ f`, with `‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the case `q = p`, `r = 1`,
   `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`.
+* `TemperedDistribution.ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq`: an `Lᵠ`
+  function representing `T_σ f` is almost everywhere the convolution `𝓕⁻ σ ⋆ f`.
 * `TemperedDistribution.ae_eq_fourierInv_convolution_of_isVanishingOn`: the reproducing formula
   `f = 𝓕⁻ σ ⋆ f` when `σ` equals one near the spectrum of `f`.
 
@@ -208,6 +211,21 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le (σ : 𝓢(E, ℂ))
   rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK] at hgf
   exact ⟨g, hg, hgf⟩
 
+/-- **A Fourier multiplier of an `Lᵖ` function that is an `Lᵠ` function is a convolution.** For a
+Schwartz symbol `σ` and `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, if the tempered distribution `T_σ f` is the
+`Lᵠ` function `g`, `1 ≤ q ≤ ∞`, then `g` agrees almost everywhere with the convolution
+`𝓕⁻ σ ⋆ f`. -/
+theorem ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq {σ : 𝓢(E, ℂ)}
+    {f : Lp F p (volume : Measure E)} {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {g : Lp F q (volume : Measure E)} (h : fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g) :
+    g =ᵐ[volume] 𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ] (f : E → F) := by
+  obtain ⟨g', hg', hg'c, -⟩ :=
+    exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p) le_rfl
+      (by rw [inv_one, add_comm])
+  refine (Lp.ae_eq_of_toTemperedDistribution_apply_eq g
+    ((Lp.memLp g').locallyIntegrable hp.out) fun φ ↦ ?_).trans hg'c
+  rw [← h, hg', Lp.toTemperedDistribution_apply]
+
 /-- **The reproducing formula for frequency-localized functions.** If the Fourier transform of
 `f ∈ Lᵖ`, `1 ≤ p ≤ ∞`, vanishes on `s`, and the Schwartz symbol `σ` equals one outside a closed
 subset of `s` (that is, `tsupport (σ - 1) ⊆ s`), then `f` agrees almost everywhere with its
@@ -215,14 +233,8 @@ convolution with the kernel `𝓕⁻ σ`. -/
 theorem ae_eq_fourierInv_convolution_of_isVanishingOn {f : Lp F p (volume : Measure E)}
     {s : Set E} (hf : Distribution.IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) s)
     {σ : 𝓢(E, ℂ)} (hσ : tsupport (⇑σ - 1) ⊆ s) :
-    f =ᵐ[volume] 𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ] (f : E → F) := by
-  obtain ⟨g, hg, hgc, -⟩ :=
-    exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p) le_rfl
-      (by rw [inv_one, add_comm])
-  rw [fourierMultiplierCLM_eq_self_of_isVanishingOn hf σ.hasTemperateGrowth hσ] at hg
-  have hfg : f = g := LinearMap.ker_eq_bot.mp (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F)
-    (μ := (volume : Measure E)) (p := p)) hg
-  subst hfg
-  exact hgc
+    f =ᵐ[volume] 𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ] (f : E → F) :=
+  ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq
+    (fourierMultiplierCLM_eq_self_of_isVanishingOn hf σ.hasTemperateGrowth hσ)
 
 end TemperedDistribution

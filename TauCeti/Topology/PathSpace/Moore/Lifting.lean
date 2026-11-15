@@ -174,6 +174,12 @@ theorem lift_eq_refl_of_length_eq_zero (e : E) (γ : MoorePath B) (h : γ.source
     (hγ : γ.length = 0) : Φ.lift e γ h = .refl e := by
   rw [MoorePath.eq_refl_of_length_eq_zero (γ := Φ.lift e γ h) (by rwa [length_lift]), source_lift]
 
+/-- The constant path of length zero at `p e` lifts to the constant path of length zero at `e`. -/
+@[simp]
+theorem lift_refl (e : E) (h : (MoorePath.refl (p e)).source = p e) :
+    Φ.lift e (.refl (p e)) h = .refl e :=
+  Φ.lift_eq_refl_of_length_eq_zero _ _ _ (MoorePath.length_refl _)
+
 @[simp]
 theorem apply_lift (e : E) (γ : MoorePath B) (h : γ.source = p e) (t : ℝ≥0) :
     p (Φ.lift e γ h t) = γ t := by
