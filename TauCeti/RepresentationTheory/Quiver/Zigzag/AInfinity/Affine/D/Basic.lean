@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.MatrixRepresentation
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 
 /-!
 # Quartic Hochschild classes and non-formality of the affine `Dₙ` zigzag algebras
@@ -19,19 +18,18 @@ path `1 - 2 - ⋯ - (n - 3)`. The quartic Hochschild cohomology `HH^{4, -2}` of 
 zigzag algebra is nonzero over every nontrivial commutative ring, as a case of the result for every
 graph containing an affine `Dₙ`
 (`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`). Over every
-nontrivial commutative ring the affine `Dₙ` zigzag algebra is moreover not intrinsically formal, by
-the two-branch-vertex criterion
-`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree` of
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`. The affine `D₄` graph, whose
-only branch node has four neighbours, is treated in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
+nontrivial commutative ring the affine `Dₙ` zigzag algebra is moreover not intrinsically formal for
+all `n ≥ 4`, as a case of
+`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D`. Explicit quartic
+deformations of the affine `D₄` zigzag algebra, whose only branch node has four neighbours, are
+constructed in `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
 ## Main results
 
 * `TauCeti.not_hochschildVanishesAt_four_affineD`: `HH^{4, -2}` of the affine `Dₙ` zigzag algebra
   is nonzero for `n ≥ 5`.
 * `TauCeti.not_isIntrinsicallyFormal_affineD`: the affine `Dₙ` zigzag algebra is not
-  intrinsically formal for `n ≥ 5`, over every nontrivial commutative ring.
+  intrinsically formal for `n ≥ 4`, over every nontrivial commutative ring.
 -/
 
 public section
@@ -51,44 +49,13 @@ theorem not_hochschildVanishesAt_four_affineD [Nontrivial k] {n : ℕ} (hn : 5 �
       (AffineDynkinType.valid_D.2 (by omega)))).HochschildVanishesAt ⟨4, by norm_num⟩ :=
   not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained (by omega) .rfl
 
-/-- **The affine `Dₙ` zigzag algebra is not intrinsically formal** for `n ≥ 5`, over every
+/-- **The affine `Dₙ` zigzag algebra is not intrinsically formal** for `n ≥ 4`, over every
 nontrivial commutative ring: some `A∞` algebra whose cohomology algebra is the path-graded zigzag
-algebra is not formal. The graph is connected, and its two branch nodes `1` and `n - 3` have the
-neighbours `0`, `2`, `n - 1` and `n - 4`, `n - 2`, `n`. For `n = 4` see
-`TauCeti.not_isIntrinsicallyFormal_affineD4`. -/
-theorem not_isIntrinsicallyFormal_affineD [Nontrivial k] {n : ℕ} (hn : 5 ≤ n) :
+algebra is not formal. This is the case `G = Dₙ` of
+`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D`. -/
+theorem not_isIntrinsicallyFormal_affineD [Nontrivial k] {n : ℕ} (hn : 4 ≤ n) :
     ¬(zigzagStrictAInfinityAlgebra k (AffineDynkinType.exists_adj_graph (t := .D n)
-      (AffineDynkinType.valid_D.2 (by omega)))).IsIntrinsicallyFormal := by
-  -- The node `i ≤ n` of the affine `Dₙ` graph.
-  have hlt {i : ℕ} (hi : i ≤ n) : i < (AffineDynkinType.D n).nodes := by
-    rw [AffineDynkinType.nodes_D]; omega
-  -- A node with three distinct neighbours has degree at least three.
-  have h3 {x a b c : ℕ} (hx : x ≤ n) (ha : a ≤ n) (hb : b ≤ n) (hc : c ≤ n) (hab : a ≠ b)
-      (hac : a ≠ c) (hbc : b ≠ c) (hxa : (AffineDynkinType.D n).graph.Adj ⟨x, hlt hx⟩ ⟨a, hlt ha⟩)
-      (hxb : (AffineDynkinType.D n).graph.Adj ⟨x, hlt hx⟩ ⟨b, hlt hb⟩)
-      (hxc : (AffineDynkinType.D n).graph.Adj ⟨x, hlt hx⟩ ⟨c, hlt hc⟩) :
-      3 ≤ (AffineDynkinType.D n).graph.degree ⟨x, hlt hx⟩ := by
-    rw [← SimpleGraph.card_neighborFinset_eq_degree]
-    exact Finset.two_lt_card_iff.2 ⟨_, _, _, (SimpleGraph.mem_neighborFinset ..).2 hxa,
-      (SimpleGraph.mem_neighborFinset ..).2 hxb, (SimpleGraph.mem_neighborFinset ..).2 hxc,
-      fun h ↦ hab (congrArg Fin.val h), fun h ↦ hac (congrArg Fin.val h),
-      fun h ↦ hbc (congrArg Fin.val h)⟩
-  have adj {i j : ℕ} (hi : i ≤ n) (hj : j ≤ n)
-      (h : (i + 1 = j ∧ j ≤ n - 2) ∨ (j + 1 = i ∧ i ≤ n - 2) ∨ (i = 1 ∧ j = n - 1) ∨
-        (j = 1 ∧ i = n - 1) ∨ (i = n - 3 ∧ j = n) ∨ (j = n - 3 ∧ i = n)) :
-      (AffineDynkinType.D n).graph.Adj ⟨i, hlt hi⟩ ⟨j, hlt hj⟩ :=
-    (AffineDynkinType.graph_D_adj (by omega)).2 h
-  -- The branch node `1` has the neighbours `0`, `2` and `n - 1`, and the branch node `n - 3`
-  -- has the neighbours `n - 4`, `n - 2` and `n`.
-  exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree
-    (v := ⟨1, hlt (by omega)⟩) (w := ⟨n - 3, hlt (by omega)⟩)
-    (fun h ↦ absurd (congrArg Fin.val h) (by simp only; omega))
-    ((AffineDynkinType.graph_connected (AffineDynkinType.valid_D.2 (by omega))).preconnected _ _)
-    (h3 (a := 0) (b := 2) (c := n - 1) (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by omega) (by omega) (adj (by omega) (by omega) (by omega))
-      (adj (by omega) (by omega) (by omega)) (adj (by omega) (by omega) (by omega)))
-    (h3 (a := n - 4) (b := n - 2) (c := n) (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by omega) (by omega) (adj (by omega) (by omega) (by omega))
-      (adj (by omega) (by omega) (by omega)) (adj (by omega) (by omega) (by omega)))
+      (AffineDynkinType.valid_D.2 hn))).IsIntrinsicallyFormal :=
+  not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D hn .rfl
 
 end TauCeti

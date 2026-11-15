@@ -33,7 +33,7 @@ and to reach higher even arities:
   the first obstruction of any formal minimal deformation into the ideal `2 k`. When `2` is not a
   unit in `k`—in particular in characteristic `2` or over `ℤ`—any deformation on which such a
   pairing takes a unit value is not formal
-  (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagWordPairing`,
+  (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigzagWordPairing`,
   `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two`).
 * **Unconditional quartic non-formality**: splitting on whether `(2 : k)` is a unit combines the
   `Invertible (2 : k)` obstruction theorem with the `2 k` parity restriction, so any quartic loop
@@ -55,8 +55,8 @@ see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four` and
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra` and
   `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat`: coboundary criteria for
   non-formality in arity four when `2` is invertible and in every arity `n + 2` over a `ℚ`-algebra.
-* `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagWordPairing` and
-  `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two`: even-arity
+* `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigzagWordPairing`
+  and `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_isUnit_two`: even-arity
   non-formality when `(2 : k)` is not a unit and a word pairing or anticyclic functional evaluates
   to a unit.
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing` and
@@ -146,7 +146,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_algebraRat [Algebra ℚ k] {n
 characteristic `2` or over `ℤ`) and an anticyclic word pairing satisfying the signless relations
 evaluates to a unit on the coefficients `c` of a loop deformation of even arity `2 m + 2` (`m ≥ 1`),
 then the loop deformation is not formal. -/
-theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagWordPairing
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two_of_isUnit_zigzagWordPairing
     [Fintype G.Dart] [DecidableEq V] (h2 : ¬IsUnit (2 : k)) {m : ℕ} (hm : 1 ≤ m)
     {a : (Fin (2 * m + 2) → G.Dart) → k}
     (hrot : ∀ (u : Fin (2 * m + 1) → G.Dart) (e : G.Dart), a (Fin.snoc u e) = -a (Fin.cons e u))
@@ -199,11 +199,9 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_zigzagBacktrackPairing
     ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
   by_cases h2 : IsUnit (2 : k)
   · let _ := h2.invertible
-    refine not_isFormal_zigzagLoopAInfinityAlgebra c hc ?_
-    rintro ⟨φ, hφ, hφc⟩
-    have h0 := zigzagBacktrackPairing_hochschildDifferential_eq_zero (hns := hns) ha hhead hbal hφ
-    rw [hφc] at h0
-    exact hu.ne_zero h0
+    exact not_isFormal_zigzagLoopAInfinityAlgebra c hc
+      (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
+        c hc (zigzagBacktrackPairing_obstruction (hns := hns) a c hc ▸ hu.ne_zero))
   · intro hF
     obtain ⟨y, hy⟩ := exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
       (isMinimal_zigzagLoopAInfinityAlgebra c hc)

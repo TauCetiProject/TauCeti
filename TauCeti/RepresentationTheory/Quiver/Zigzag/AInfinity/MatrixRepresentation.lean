@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Diagonal
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Higher Hochschild classes and non-formal deformations from matrix representations
@@ -55,8 +56,8 @@ of `Z` which obstruct its intrinsic formality.
 
 * `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero` and
   `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one`:
-  the loop operation of the image of a closed walk of a bipartite subgraph with nonzero (or unit
-  integer) trace is not a Hochschild coboundary.
+  the loop operation of the image of a closed walk of a bipartite subgraph with nonzero trace (or
+  integer trace one) is not a Hochschild coboundary.
 * `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_ne_zero` and
   `not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one`: over a `ℚ`-algebra, the corresponding
   loop deformation is not formal in any arity `n + 2 ≥ 3`.
@@ -209,17 +210,6 @@ private theorem exists_bipartite_sign_dartMatrix (f : H.Copy G) (hH : H.IsBipart
 
 end Blocks
 
-omit [Fintype W] [DecidableRel H.Adj] in
-private theorem trace_list_prod_mapMatrix_intCast [DecidableEq m] (β : W → W → Matrix m m ℤ)
-    {N : ℕ} (w : Fin N → H.Dart) :
-    trace (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)).prod =
-      ((trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod : ℤ) : k) := by
-  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
-      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix := by
-    simp [List.map_ofFn, Function.comp_def]
-  rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
-  rfl
-
 /-! ### Non-coboundaries and non-formal deformations from closed walks -/
 
 variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j} [DecidableEq m]
@@ -283,7 +273,10 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero f
       hH (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
       (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hn hw ?_
-  rw [trace_list_prod_mapMatrix_intCast, htr, Int.cast_one]
+  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
+      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
+    (List.map_ofFn ..).symm
+  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
   exact one_ne_zero
 
 /-- **Non-formal higher loop deformations from a matrix representation over a `ℚ`-algebra.** Over a
@@ -349,7 +342,10 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one_of_not_isUnit_tw
   refine not_isFormal_zigzagLoopAInfinityAlgebra_of_isUnit_trace_of_not_isUnit_two h2 f hH
     (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
     (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hr hw ?_
-  rw [trace_list_prod_mapMatrix_intCast, htr, Int.cast_one]
+  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
+      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
+    (List.map_ofFn ..).symm
+  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
   exact isUnit_one
 
 /-- **Quartic non-formality from a matrix representation, over any nontrivial commutative ring.** A
@@ -387,7 +383,10 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_four_of_trace_eq_one [Nontrivial
   refine not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace f hH
     (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
     (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hw ?_
-  rw [trace_list_prod_mapMatrix_intCast, htr, Int.cast_one]
+  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
+      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
+    (List.map_ofFn ..).symm
+  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
   exact isUnit_one
 
 /-- A detected loop gives a nonzero higher Hochschild class. -/

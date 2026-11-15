@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction.Invariance
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
+import Mathlib.Algebra.Group.Subgroup.Even
+import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Algebra.BigOperators.Finset.Involution
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.List.ProdOfFn
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Parity of trace pairings on formal deformations of zigzag algebras
@@ -27,9 +30,11 @@ coboundary `δψ` plus the quadratic sum
 `TauCeti.AInfinityAlgebra`).
 
 For the strict path-graded zigzag algebra `Z` (`TauCeti.zigzagStrictAInfinityAlgebra`), this file
-shows that **every** trace pairing from `HochschildClass` and `WordPairing` sends the quadratic sum
-in even arity `2 m + 2` (`m ≥ 1`) to a multiple of `2`: hence on any formal minimal deformation of
-`Z` with `m₃ = ⋯ = m_{2m+1} = 0`, the pairing of the first obstruction lies in the ideal `(2)`.
+shows that anticyclic word pairings satisfying the signless relations in even arity `2 m + 2`
+(`m ≥ 1`) and symmetric, head-preserving, balanced backtrack pairings in arity four send the
+quadratic sum to a multiple of `2`: hence on any formal minimal deformation of `Z` with
+`m₃ = ⋯ = m_{2m+1} = 0` (respectively `m₃ = 0`), such a pairing sends the first obstruction into
+the ideal `(2)`.
 In particular, whenever such a pairing evaluates to a unit (such as `1`) on a loop deformation, the
 deformation cannot be formal when `2` is not a unit — complementing the `ℚ`-algebra and
 `Invertible 2` criteria in `Invariance` and removing all characteristic restrictions in arity four.
@@ -98,62 +103,6 @@ local notation "𝔞" d:max => zigzagMk k G (ofArrow (arrow G (SimpleGraph.Dart.
 
 section TraceParity
 
-omit [Finite V] in
-/-- If an involution `τ` on a finite type sends every fixed point `x` to a multiple of `2` under `g`
-and satisfies `g x + g (τ x) ∈ 2 k` on every two-element orbit, then `∑ x, g x` is a multiple of
-`2`. Ordering `α` via `Fintype.equivFin` picks one representative of each two-element orbit without
-dividing by `2`. -/
-private theorem exists_sum_eq_two_mul_of_involutive {α : Type*} [Fintype α]
-    {τ : α → α} (hτ : Function.Involutive τ) (g : α → k)
-    (hfix : ∀ x, τ x = x → ∃ y : k, g x = 2 * y)
-    (horb : ∀ x, τ x ≠ x → ∃ y : k, g x + g (τ x) = 2 * y) :
-    ∃ y : k, ∑ x : α, g x = 2 * y := by
-  classical
-  let e := Fintype.equivFin α
-  have hsplit (x : α) : g x = (if τ x = x then g x else 0) +
-      ((if e x < e (τ x) then g x else 0) + (if e (τ x) < e x then g x else 0)) := by
-    rcases eq_or_ne (τ x) x with h | h
-    · simp [h]
-    · rcases lt_or_gt_of_ne (e.injective.ne h.symm) with hlt | hgt
-      · simp [h, hlt, asymm hlt]
-      · simp [h, hgt, asymm hgt]
-  have hrev : (∑ x : α, if e (τ x) < e x then g x else 0) =
-      ∑ x : α, if e x < e (τ x) then g (τ x) else 0 := by
-    rw [← Equiv.sum_comp hτ.toPerm (fun x ↦ if e (τ x) < e x then g x else 0)]
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
-    change (if e (τ (τ x)) < e (τ x) then g (τ x) else 0) = _
-    simp only [hτ x]
-  have h1 : ∀ x : α, ∃ y : k, (if τ x = x then g x else 0) = 2 * y := fun x ↦ by
-    by_cases h : τ x = x
-    · simpa [h] using hfix x h
-    · exact ⟨0, by simp [h]⟩
-  have h2 : ∀ x : α, ∃ y : k, (if e x < e (τ x) then g x + g (τ x) else 0) = 2 * y := fun x ↦ by
-    by_cases h : e x < e (τ x)
-    · simpa [h] using horb x fun hx ↦ (ne_of_lt h) (congrArg e hx.symm)
-    · exact ⟨0, by simp [h]⟩
-  choose y1 hy1 using h1
-  choose y2 hy2 using h2
-  refine ⟨∑ x, y1 x + ∑ x, y2 x, ?_⟩
-  calc ∑ x : α, g x
-      = (∑ x, if τ x = x then g x else 0) +
-          ((∑ x, if e x < e (τ x) then g x else 0) +
-            (∑ x, if e (τ x) < e x then g x else 0)) := by
-        simp_rw [Finset.sum_congr rfl fun x _ ↦ hsplit x, Finset.sum_add_distrib]
-    _ = (∑ x, if τ x = x then g x else 0) +
-          ∑ x, if e x < e (τ x) then g x + g (τ x) else 0 := by
-        rw [hrev, ← Finset.sum_add_distrib]
-        congr 1
-        exact Finset.sum_congr rfl fun x _ ↦ by split_ifs <;> simp
-    _ = 2 * (∑ x, y1 x + ∑ x, y2 x) := by
-        simp_rw [hy1, hy2, ← Finset.mul_sum, mul_add]
-
-omit [Finite V] in
-private theorem exists_one_add_neg_one_pow_eq_two_mul (r : ℕ) :
-    ∃ c : k, 1 + (-1 : k) ^ r = 2 * c := by
-  rcases neg_one_pow_eq_or k r with h | h
-  · exact ⟨1, by rw [h]; ring⟩
-  · exact ⟨0, by rw [h]; ring⟩
-
 /-- On elements `u, v` of path length one, the Frobenius trace of `u * v` is the sum over all darts
 `d` of the `d`-coordinate of `u` times the `d.symm`-coordinate of `v`: neither `u` nor `v` has a
 vertex-idempotent component, and arrows annihilate volume classes. -/
@@ -199,12 +148,13 @@ private theorem exists_zigzagTrace_mul_self_eq_two_mul
     ∃ y : k, zigzagTrace k G hns (u * u) = 2 * y := by
   classical
   have := Fintype.ofFinite V
-  rw [zigzagTrace_mul_eq_sum_dart hu hu]
-  refine exists_sum_eq_two_mul_of_involutive SimpleGraph.Dart.symm_involutive _
-    (fun d hd ↦ (d.symm_ne hd).elim) fun d _ ↦ ⟨(zigzagBasis k G hns).coord (.inr (.inl d)) u *
-      (zigzagBasis k G hns).coord (.inr (.inl d.symm)) u, ?_⟩
-  rw [SimpleGraph.Dart.symm_symm]
-  ring
+  rw [← even_iff_exists_two_mul, zigzagTrace_mul_eq_sum_dart hu hu, ← AddSubmonoid.mem_even]
+  refine Finset.sum_mem_of_involution Finset.univ SimpleGraph.Dart.symm
+    (fun _ _ ↦ Finset.mem_univ _) (fun d _ ↦ d.symm_symm) (fun d _ hd ↦ (d.symm_ne hd).elim)
+    fun d _ _ ↦ ?_
+  rw [AddSubmonoid.mem_even]
+  exact ⟨(zigzagBasis k G hns).coord (.inr (.inl d)) u *
+    (zigzagBasis k G hns).coord (.inr (.inl d.symm)) u, by rw [SimpleGraph.Dart.symm_symm]; ring⟩
 
 /-- A homogeneous cochain `ψ` of suspended degree zero maps any nonempty subword of degree-one
 elements into path length one. -/
@@ -243,13 +193,6 @@ end TraceParity
 section WordParity
 
 omit [Finite V] in
-private theorem shift_one_eq_snoc_tail {α : Type*} {n : ℕ} (w : Fin (n + 2) → α) :
-    (fun i : Fin (n + 2) ↦ w (i + 1)) = Fin.snoc (Fin.tail w) (w 0) :=
-  funext (Fin.lastCases (by rw [Fin.last_add_one, Fin.snoc_last]) fun j ↦ by
-    rw [Fin.coeSucc_eq_succ, Fin.snoc_castSucc]
-    rfl)
-
-omit [Finite V] in
 private theorem weight_shift_eq_neg_one_pow_mul {n : ℕ} {a : (Fin (n + 2) → G.Dart) → k}
     (hrot : ∀ (u : Fin (n + 1) → G.Dart) (e : G.Dart), a (Fin.snoc u e) = -a (Fin.cons e u))
     {r : ℕ} (hr : r < n + 2) (w : Fin (n + 2) → G.Dart) :
@@ -260,35 +203,16 @@ private theorem weight_shift_eq_neg_one_pow_mul {n : ℕ} {a : (Fin (n + 2) → 
     simp [h0]
   | succ r ih =>
     let w' : Fin (n + 2) → G.Dart := fun j ↦ w (j + ⟨r, by omega⟩)
-    have hstep : (fun i : Fin (n + 2) ↦ w (i + ⟨r + 1, hr⟩)) = fun i ↦ w' (i + 1) :=
-      funext fun i ↦ congrArg w <| by
-        have h1 : (⟨r + 1, hr⟩ : Fin (n + 2)) = 1 + ⟨r, by omega⟩ :=
-          Fin.ext (by
-            rw [Fin.val_add, Fin.val_one', Nat.mod_eq_of_lt (by omega : 1 < n + 2),
-              Nat.add_comm 1 r, Nat.mod_eq_of_lt hr])
-        rw [h1, add_assoc]
-    rw [hstep, shift_one_eq_snoc_tail w', hrot, Fin.cons_self_tail w', ih (by omega), pow_succ']
+    have hstep : (fun i : Fin (n + 2) ↦ w (i + ⟨r + 1, hr⟩)) = Fin.snoc (Fin.tail w') (w' 0) := by
+      rw [Fin.snoc_eq_cons_rotate, Fin.cons_self_tail]
+      refine funext fun i ↦ congrArg w ?_
+      have h1 : (⟨r + 1, hr⟩ : Fin (n + 2)) = 1 + ⟨r, by omega⟩ :=
+        Fin.ext (by
+          rw [Fin.val_add, Fin.val_one', Nat.mod_eq_of_lt (by omega : 1 < n + 2),
+            Nat.add_comm 1 r, Nat.mod_eq_of_lt hr])
+      rw [finRotate_apply, h1, add_assoc]
+    rw [hstep, hrot, Fin.cons_self_tail w', ih (by omega), pow_succ']
     ring
-
-omit [Finite V] in
-private theorem subword_shift_zero_eq {M : Type*} [AddCommMonoid M] [Module k M]
-    {N d : ℕ} (hdN : d < N) (x : Fin N → M) :
-    subword k (fun i : Fin N ↦ x (i + ⟨d, hdN⟩)) 0 (N - d) = subword k x d (N - d) :=
-  subword_congr k _ _ (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
-    rw [Fin.val_add]
-    dsimp only
-    rw [Nat.mod_eq_of_lt (by omega)]
-    omega
-
-omit [Finite V] in
-private theorem subword_shift_right_eq {M : Type*} [AddCommMonoid M] [Module k M]
-    {N d : ℕ} (hdN : d < N) (x : Fin N → M) :
-    subword k (fun i : Fin N ↦ x (i + ⟨d, hdN⟩)) (N - d) d = subword k x 0 d :=
-  subword_congr k _ _ (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
-    rw [Fin.val_add]
-    dsimp only
-    rw [show (N - d + j) + d = j + N by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega), Nat.zero_add]
 
 variable [Fintype G.Dart]
 
@@ -315,9 +239,9 @@ private theorem sum_word_cut_sub_eq_neg_one_pow_mul {m : ℕ}
   rw [hsub, Finset.mul_sum, ← Equiv.sum_comp σ]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   have hw := weight_shift_eq_neg_one_pow_mul hrot hdN w
-  have hs0 := subword_shift_zero_eq (k := k) (N := 2 * m + 2) hdN (fun t ↦ 𝔞 (w t))
-  have hs1 := subword_shift_right_eq (k := k) (N := 2 * m + 2) hdN (fun t ↦ 𝔞 (w t))
-  dsimp only [σ, Equiv.coe_fn_mk, rFin]
+  have hs0 := subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) rFin
+  have hs1 := subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) rFin
+  dsimp only [σ, Equiv.coe_fn_mk, rFin] at hs0 hs1 ⊢
   rw [hw, hs0, hs1, zigzagTrace_mul_comm]
   ring
 
@@ -334,41 +258,39 @@ private theorem exists_sum_word_cut_mid_eq_two_mul {m : ℕ}
       (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1)) *
         ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) (2 * m + 2 - (m + 1))))) = 2 * y := by
   have hsub : 2 * m + 2 - (m + 1) = m + 1 := by omega
-  rw [hsub]
-  let τ : (Fin (2 * m + 2) → G.Dart) → (Fin (2 * m + 2) → G.Dart) :=
-    fun w i ↦ w (i + ⟨m + 1, by omega⟩)
-  have hτ : Function.Involutive τ := fun w ↦ funext fun i ↦ congrArg w <| by
-    have h0 : (⟨m + 1, by omega⟩ : Fin (2 * m + 2)) + ⟨m + 1, by omega⟩ = 0 :=
+  rw [hsub, ← even_iff_exists_two_mul, ← AddSubmonoid.mem_even]
+  let rFin : Fin (2 * m + 2) := ⟨m + 1, by omega⟩
+  let τ : (Fin (2 * m + 2) → G.Dart) → (Fin (2 * m + 2) → G.Dart) := fun w i ↦ w (i + rFin)
+  have hτ (w : Fin (2 * m + 2) → G.Dart) : τ (τ w) = w := funext fun i ↦ congrArg w <| by
+    have h0 : rFin + rFin = 0 :=
       Fin.ext (by rw [Fin.val_add, show (m + 1) + (m + 1) = 2 * m + 2 by omega, Nat.mod_self]; rfl)
     rw [add_assoc, h0, add_zero]
   have hsw0 (w : Fin (2 * m + 2) → G.Dart) :
       subword k (fun t ↦ 𝔞 (τ w t)) 0 (m + 1) =
         subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1) := by
-    have h := subword_shift_zero_eq (k := k) (N := 2 * m + 2) (d := m + 1)
-      (by omega) (fun t ↦ 𝔞 (w t))
-    rwa [hsub] at h
+    simpa only [rFin, hsub] using subword_shift_zero_eq k (fun t ↦ 𝔞 (w t)) rFin
   have hsw1 (w : Fin (2 * m + 2) → G.Dart) :
       subword k (fun t ↦ 𝔞 (τ w t)) (m + 1) (m + 1) =
         subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1) := by
-    have h := subword_shift_right_eq (k := k) (N := 2 * m + 2) (d := m + 1)
-      (by omega) (fun t ↦ 𝔞 (w t))
-    rwa [hsub] at h
-  refine exists_sum_eq_two_mul_of_involutive hτ _ (fun w hw ↦ ?_) (fun w _ ↦ ?_)
+    simpa only [rFin, hsub] using subword_shift_right_eq k (fun t ↦ 𝔞 (w t)) rFin
+  refine Finset.sum_mem_of_involution Finset.univ τ (fun _ _ ↦ Finset.mem_univ _)
+    (fun w _ ↦ hτ w) (fun w _ hw ↦ ?_) (fun w _ _ ↦ ?_)
   · have heq := (hsw0 w).symm
     rw [hw] at heq
     obtain ⟨z, hz⟩ := exists_zigzagTrace_mul_self_eq_two_mul (hns := hns)
       (apply_subword_mem_zigzagIntegerGrade_one hψ (x := fun t ↦ 𝔞 (w t))
         (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _)
         (p := 0) (d := m + 1) (by omega) (by omega))
+    rw [AddSubmonoid.mem_even, even_iff_exists_two_mul]
     exact ⟨a w * z, by rw [heq, hz]; ring⟩
-  · obtain ⟨c, hc⟩ := exists_one_add_neg_one_pow_eq_two_mul (k := k) (m + 1)
-    refine ⟨c * (a w * zigzagTrace k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1)) *
-      ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1)))), ?_⟩
-    have haτ : a (τ w) = (-1 : k) ^ (m + 1) * a w :=
+  · have haτ : a (τ w) = (-1 : k) ^ (m + 1) * a w :=
       weight_shift_eq_neg_one_pow_mul hrot (by omega) w
+    rw [AddSubmonoid.mem_even]
+    convert (even_one_add_neg_one_pow (R := k) (m + 1)).mul_right
+      (a w * zigzagTrace k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1)) *
+        ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1)))) using 1
     rw [haτ, hsw0, hsw1, zigzagTrace_mul_comm k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) _))]
-    linear_combination (a w * zigzagTrace k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 (m + 1)) *
-      ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) (m + 1)))) * hc
+    ring
 
 /-- Summing over all cuts `d ∈ [2, 2 * m]` of words of length `2 * m + 2` produces an element of
 `2 k`. -/
@@ -384,26 +306,20 @@ private theorem exists_sum_Icc_word_cut_eq_two_mul {m : ℕ}
           ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d)))) = 2 * y := by
   let S (d : ℕ) : k := ∑ w : Fin (2 * m + 2) → G.Dart, a w * zigzagTrace k G hns
     (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 d) * ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d)))
-  rw [← Finset.sum_coe_sort (Finset.Icc 2 (2 * m)) S]
-  let τ : Finset.Icc 2 (2 * m) → Finset.Icc 2 (2 * m) := fun d ↦
-    ⟨2 * m + 2 - d.1, Finset.mem_Icc.2 (by have := Finset.mem_Icc.1 d.2; omega)⟩
-  have hτ : Function.Involutive τ := fun d ↦
-    Subtype.ext (by have := Finset.mem_Icc.1 d.2; dsimp [τ]; omega)
-  refine exists_sum_eq_two_mul_of_involutive hτ (fun d ↦ S d.1) (fun d hd ↦ ?_) (fun d _ ↦ ?_)
-  · have hmid : d.1 = m + 1 := by
-      have h1 : 2 * m + 2 - d.1 = d.1 := congrArg Subtype.val hd
-      have h2 := Finset.mem_Icc.1 d.2
-      omega
-    rw [hmid]
+  rw [← even_iff_exists_two_mul, ← AddSubmonoid.mem_even]
+  refine Finset.sum_mem_of_involution (Finset.Icc 2 (2 * m)) (f := S) (fun d ↦ 2 * m + 2 - d)
+    (fun d hd ↦ Finset.mem_Icc.2 (by have := Finset.mem_Icc.1 hd; omega))
+    (fun d hd ↦ by have := Finset.mem_Icc.1 hd; omega) (fun d hd hfix ↦ ?_) (fun d hd _ ↦ ?_)
+  · have hmid : d = m + 1 := by have := Finset.mem_Icc.1 hd; omega
+    rw [AddSubmonoid.mem_even, even_iff_exists_two_mul, hmid]
     exact exists_sum_word_cut_mid_eq_two_mul hrot hψ
-  · have hd := Finset.mem_Icc.1 d.2
-    obtain ⟨c, hc⟩ := exists_one_add_neg_one_pow_eq_two_mul (k := k) d.1
-    have hS : S (2 * m + 2 - d.1) = (-1 : k) ^ d.1 * S d.1 :=
+  · have hd' := Finset.mem_Icc.1 hd
+    have hS : S (2 * m + 2 - d) = (-1 : k) ^ d * S d :=
       sum_word_cut_sub_eq_neg_one_pow_mul hrot ψ (by omega)
-    refine ⟨c * S d.1, ?_⟩
-    dsimp only [τ]
+    rw [AddSubmonoid.mem_even]
+    convert (even_one_add_neg_one_pow (R := k) d).mul_right (S d) using 1
     rw [hS]
-    linear_combination S d.1 * hc
+    ring
 
 /-- **Even-arity word pairings map formal zigzag obstructions into `2 k`.** Let `𝒜` be a minimal
 `A∞` algebra with the grading and binary operation of the strict zigzag algebra `𝒵` and
@@ -505,31 +421,32 @@ private theorem exists_sum_dart_pair_cut_eq_two_mul
     ∃ y : k, (∑ d : G.Dart, ∑ e : G.Dart, a d e * zigzagTrace k G hns
       (ψ (subword k (fun t ↦ 𝔞 (W d e t)) 0 2) *
         ψ (subword k (fun t ↦ 𝔞 (W d e t)) 2 2))) = 2 * y := by
-  rw [← Fintype.sum_prod_type']
+  rw [← Fintype.sum_prod_type', ← even_iff_exists_two_mul, ← AddSubmonoid.mem_even]
   have hsw0 (d e : G.Dart) :
       subword k (fun t ↦ 𝔞 (W e d t)) 0 2 = subword k (fun t ↦ 𝔞 (W d e t)) 2 2 := by
     rw [hW]
-    exact subword_shift_zero_eq (k := k) (N := 4) (d := 2) (by decide) (fun t ↦ 𝔞 (W d e t))
+    exact subword_shift_zero_eq k (fun t ↦ 𝔞 (W d e t)) 2
   have hsw1 (d e : G.Dart) :
       subword k (fun t ↦ 𝔞 (W e d t)) 2 2 = subword k (fun t ↦ 𝔞 (W d e t)) 0 2 := by
     rw [hW]
-    exact subword_shift_right_eq (k := k) (N := 4) (d := 2) (by decide) (fun t ↦ 𝔞 (W d e t))
-  refine exists_sum_eq_two_mul_of_involutive (τ := Prod.swap) (fun p ↦ Prod.swap_swap p) _
-    (fun p hp ↦ ?_) (fun p _ ↦ ?_)
+    exact subword_shift_right_eq k (fun t ↦ 𝔞 (W d e t)) 2
+  refine Finset.sum_mem_of_involution Finset.univ Prod.swap (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ Prod.swap_swap p) (fun p _ hp ↦ ?_) (fun p _ _ ↦ ?_)
   · obtain ⟨d, e⟩ := p
     obtain rfl : d = e := (Prod.ext_iff.1 hp).2
     obtain ⟨z, hz⟩ := exists_zigzagTrace_mul_self_eq_two_mul (hns := hns)
       (apply_subword_mem_zigzagIntegerGrade_one hψ (x := fun t ↦ 𝔞 (W d d t))
         (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _)
         (p := 0) (d := 2) (by decide) (by decide))
+    rw [AddSubmonoid.mem_even, even_iff_exists_two_mul]
     exact ⟨a d d * z, by rw [← hsw0 d d, hz]; ring⟩
   · obtain ⟨d, e⟩ := p
+    rw [AddSubmonoid.mem_even]
     refine ⟨a d e * zigzagTrace k G hns
       (ψ (subword k (fun t ↦ 𝔞 (W d e t)) 0 2) * ψ (subword k (fun t ↦ 𝔞 (W d e t)) 2 2)), ?_⟩
     dsimp only [Prod.swap]
     rw [ha.apply d e, hsw0 d e, hsw1 d e,
       zigzagTrace_mul_comm k G hns (ψ (subword k (fun t ↦ 𝔞 (W d e t)) 2 2))]
-    ring
 
 omit [Finite V] in
 private theorem sum_mul_sub_sub_eq (a : Matrix G.Dart G.Dart k)

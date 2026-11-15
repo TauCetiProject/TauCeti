@@ -41,9 +41,9 @@ computes the quadratic term of an `A∞` morphism whose linear part is the ident
 * `TauCeti.ReducedTensorWords.lengthProj_two_coalgHom_of_tprod`: the length-two component of
   `coalgHom f` on a pure tensor word is the sum over all cuts into two nonempty blocks.
 * `TauCeti.ReducedTensorWords.lengthProj_two_coalgHom_letter_add_sub_coderiv_of_tprod`: when `φ`
-  vanishes on letters, the length-two component of `coalgHom (letter + φ) - coderiv φ` on a pure
-  word of length `n + 2` collapses the two blocks of every cut with both halves of length at least
-  two.
+  vanishes on letters and `n ≥ 1`, the length-two component of
+  `coalgHom (letter + φ) - coderiv φ` on a pure word `x` of length `n + 2` is the sum over
+  `2 ≤ d ≤ n` of the two-letter words `φ(x₀ ⋯ x_{d-1}) ⊗ φ(x_d ⋯ x_{n+1})`.
 
 ## References
 
@@ -348,8 +348,7 @@ theorem lengthProj_two_coalgHom_letter_add_sub_coderiv_of_tprod
     have hsub : n + 2 - 1 = n + 1 := by omega
     rw [hsub, subword_one R M x (by omega), LinearMap.add_apply, letter_ofLetter,
       hφ _ (ofLetter_mem_filtration R M _), add_zero, LinearMap.add_apply,
-      letter_subword_of_ne_one R M x 1 (by omega), zero_add]
-    rfl
+      letter_subword_of_ne_one R M x 1 (by omega), zero_add, Fin.zero_eta]
   have hdn : of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
       ![(letter R M + φ) (subword R x 0 (n + 1)),
         (letter R M + φ) (subword R x (n + 1) (n + 2 - (n + 1)))]) =
@@ -358,8 +357,7 @@ theorem lengthProj_two_coalgHom_letter_add_sub_coderiv_of_tprod
     have hsub : n + 2 - (n + 1) = 1 := by omega
     rw [hsub, subword_one R M x (by omega), LinearMap.add_apply,
       letter_subword_of_ne_one R M x 0 (by omega), zero_add, LinearMap.add_apply, letter_ofLetter,
-      hφ _ (ofLetter_mem_filtration R M _), add_zero]
-    rfl
+      hφ _ (ofLetter_mem_filtration R M _), add_zero, ← Fin.last]
   have hmid : ∀ d ∈ Finset.Icc 2 n, of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R
       ![(letter R M + φ) (subword R x 0 d), (letter R M + φ) (subword R x d (n + 2 - d))]) =
       of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R

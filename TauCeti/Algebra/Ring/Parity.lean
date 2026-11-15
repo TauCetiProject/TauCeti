@@ -11,10 +11,11 @@ public import Mathlib.Algebra.Ring.Parity
 # Parity of exponents of `-1`, of negated elements, and of nonzero elements
 
 This file records the identity `1 - (-x)^{2n+1} = 1 + x^{2n+1}` in a ring, which turns a product
-of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and two sign cancellations
-for powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
-dropped, and two equal powers of `-1` cancel. It also records that multiplying a sign `±1` by a
-power of `-1` gives a sign.
+of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and that `1 + (-1)^n` is
+always even (`TauCeti.even_one_add_neg_one_pow`). It also records two sign cancellations for powers
+of `-1` in a monoid with a distributive negation: an even summand of the exponent can be dropped,
+and two equal powers of `-1` cancel, and that multiplying a sign `±1` by a power of `-1` gives a
+sign.
 
 Finally, it records that a nonzero even element keeps `2` nonzero: `Even.two_ne_zero_of_ne_zero`.
 Combined with `Even.intCast`, a hypothesis `(n : R) ≠ 0` on an even integer `n` yields
@@ -29,6 +30,13 @@ namespace TauCeti
 theorem one_sub_neg_pow_odd {R : Type*} [Ring R] (x : R) (n : ℕ) :
     1 - (-x) ^ (2 * n + 1) = 1 + x ^ (2 * n + 1) := by
   rw [Odd.neg_pow (by simp), sub_neg_eq_add]
+
+/-- In any ring, `1 + (-1) ^ n` is even: it equals `1 + 1` for even `n` and `0` for odd `n`. -/
+theorem even_one_add_neg_one_pow {R : Type*} [Ring R] (n : ℕ) :
+    Even (1 + (-1 : R) ^ n) := by
+  rcases neg_one_pow_eq_or R n with h | h
+  · exact ⟨1, by rw [h]⟩
+  · exact ⟨0, by rw [h, add_neg_cancel, add_zero]⟩
 
 section NegOnePow
 

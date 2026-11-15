@@ -73,11 +73,26 @@ theorem exists_not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra [Nontrivial
   · exact ⟨⟨12, by norm_num⟩, by simp,
       not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra h⟩
 
-/-- **A non-Dynkin tree admits a non-formal single-walk loop deformation in arity `4`, `6`, `8` or
-`12`**, over every nontrivial `ℚ`-algebra. -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra [Nontrivial k] [Algebra ℚ k]
+/-- Common `Dₙ / E₆ / E₇ / E₈` case split for single-walk non-formality on non-Dynkin trees,
+parameterized by single-walk non-formality along copies of affine `E₆`, `E₇` and `E₈`. -/
+private theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_affineE [Nontrivial k]
     (hG : G.IsTree)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
+    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix))
+    (hE6 : ∀ f : AffineDynkinType.E6.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE6Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i)) 1)).IsFormal)
+    (hE7 : ∀ f : AffineDynkinType.E7.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE7Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i)) 1)).IsFormal)
+    (hE8 : ∀ f : AffineDynkinType.E8.graph.Copy G,
+      ¬(zigzagLoopAInfinityAlgebra hns
+        (Finsupp.single (fun t ↦ f.toHom.mapDart (affineE8Walk t)) (1 : k))
+        (fst_eq_snd_of_mem_support_single
+          (fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i)) 1)).IsFormal) :
     ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
       ∃ (w : Fin n → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
         ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single w (1 : k))
@@ -91,16 +106,27 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra [Nontrivial k] [Algebra �
     exact ⟨4, inferInstance, by simp, w, hw, hnf⟩
   · obtain ⟨f⟩ := h
     exact ⟨6, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE6Walk t),
-      fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i),
-      not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk f⟩
+      fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i), hE6 f⟩
   · obtain ⟨f⟩ := h
     exact ⟨8, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE7Walk t),
-      fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i),
-      not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk f⟩
+      fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i), hE7 f⟩
   · obtain ⟨f⟩ := h
     exact ⟨12, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE8Walk t),
-      fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i),
-      not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk f⟩
+      fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i), hE8 f⟩
+
+/-- **A non-Dynkin tree admits a non-formal single-walk loop deformation in arity `4`, `6`, `8` or
+`12`**, over every nontrivial `ℚ`-algebra. -/
+theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra [Nontrivial k] [Algebra ℚ k]
+    (hG : G.IsTree)
+    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
+    ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
+      ∃ (w : Fin n → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
+        ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single w (1 : k))
+          (fst_eq_snd_of_mem_support_single hw 1)).IsFormal :=
+  exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_affineE hG hD
+    not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk
+    not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk
+    not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk
 
 /-- **A non-Dynkin tree admits a non-formal single-walk loop deformation in arity `4`, `6`, `8` or
 `12`**, over every commutative ring in which `(2 : k)` is not a unit (in particular in
@@ -111,27 +137,12 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two (h2 : �
     ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
       ∃ (w : Fin n → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
         ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single w (1 : k))
-          (fst_eq_snd_of_mem_support_single hw 1)).IsFormal := by
-  classical
-  have := Fintype.ofFinite V
+          (fst_eq_snd_of_mem_support_single hw 1)).IsFormal :=
   have : Nontrivial k := ⟨⟨2, 1, fun h ↦ h2 (h ▸ isUnit_one)⟩⟩
-  rcases hG.isContained_affineDynkinType_of_not_exists_dynkinType_iso hD with
-    ⟨m, hm, ⟨f⟩⟩ | h | h | h
-  · obtain ⟨w, hw, hnf⟩ :=
-      exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_D (k := k) (hns := hns) hm f
-    exact ⟨4, inferInstance, by simp, w, hw, hnf⟩
-  · obtain ⟨f⟩ := h
-    exact ⟨6, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE6Walk t),
-      fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i),
-      not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk_of_not_isUnit_two h2 f⟩
-  · obtain ⟨f⟩ := h
-    exact ⟨8, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE7Walk t),
-      fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i),
-      not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk_of_not_isUnit_two h2 f⟩
-  · obtain ⟨f⟩ := h
-    exact ⟨12, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE8Walk t),
-      fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i),
-      not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk_of_not_isUnit_two h2 f⟩
+  exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_affineE hG hD
+    (not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk_of_not_isUnit_two h2)
+    (not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk_of_not_isUnit_two h2)
+    (not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk_of_not_isUnit_two h2)
 
 /-- **The zigzag algebra of a non-Dynkin tree is not intrinsically formal**, over every nontrivial
 `ℚ`-algebra: if a finite tree `G` with no isolated vertex is not isomorphic to the diagram of any

@@ -104,7 +104,7 @@ not.
 Kadeishvili's criterion
 `TauCeti.AInfinityAlgebra.isIntrinsicallyFormal_of_forall_hochschildVanishesAt` therefore does not
 apply to such zigzag algebras. That the corresponding loop deformation is not `A∞` isomorphic to
-the strict zigzag algebra, when `2` is invertible, is proved in
+the strict zigzag algebra over every nontrivial commutative ring is proved in
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`.
 
 ## Main definitions
@@ -942,12 +942,11 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
               ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩ := by
   classical
   have := Fintype.ofFinite V
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
-    (a := fourDartWeights δ) (fourDartWeights_isSymm δ)
-    (fun d e hde ↦ fourDartWeights_apply_eq_zero_of_snd_ne hv hde)
-    (fun e ↦ sub_eq_zero.mp (congrFun (balanceDefect_fourDartWeights hδ) e)) _ _ ?_
-  rw [sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)), fourDartWeights_apply hδ]
-  simp [fourWeights]
+  obtain ⟨a, ha, hhead, hbal, h1⟩ :=
+    exists_zigzagBacktrackPairing_obstruction_single_eq_one (k := k) (hns := hns) hδ hv
+  rw [zigzagBacktrackPairing_obstruction] at h1
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
+    _ _ (by rw [h1]; exact one_ne_zero)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
 distinct darts of `G` have a common head, that is when some vertex has four distinct neighbours,
@@ -1129,14 +1128,12 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
             𝒵 ⟨4, by norm_num⟩ := by
   classical
   have := Fintype.ofFinite V
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
-    (a := branchWeights d e d' e' f) branchWeights_isSymm
-    (fun x y hxy ↦ branchWeights_apply_eq_zero_of_snd_ne hed hf₀ hf hd' he' hxy)
-    (fun x ↦ sub_eq_zero.mp
-      (congrFun (balanceDefect_branchWeights hde hdf hef hf' hde' hdf' hef') x)) _ _ ?_
-  rw [sum_mul_single_rotate_zigzagBacktrackWalk _ hde,
-    branchWeights_apply_self hde hdf hef hf hfd hd' he']
-  exact one_ne_zero
+  obtain ⟨a, ha, hhead, hbal, h1⟩ :=
+    exists_zigzagBacktrackPairing_obstruction_single_eq_one_of_walk (k := k) (hns := hns)
+      hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef'
+  rw [zigzagBacktrackPairing_obstruction] at h1
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
+    _ _ (by rw [h1]; exact one_ne_zero)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when `G` has
 two vertices with three distinct neighbours each, joined by a non-backtracking walk which leaves
