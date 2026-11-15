@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import Mathlib.RingTheory.FiniteType
 
 /-!
@@ -52,7 +53,7 @@ as they agree on every `p_μ`.
   partitions of `n` span the symmetric polynomials of degree `n`.
 * `TauCeti.linearIndependent_psumPart`: in at least `n` variables they are linearly independent.
 * `TauCeti.not_linearIndependent_psumPart`: in fewer than `n` variables they are dependent, over
-  any nontrivial commutative ring, since the dimension in degree `n` is then the number of
+  any nontrivial commutative semiring, since the dimension in degree `n` is then the number of
   partitions of `n` with at most that many parts; `TauCeti.linearIndependent_psumPart_iff`
   combines the two.
 
@@ -174,7 +175,7 @@ theorem span_psumPart_eq_symmetricHomogeneousSubmodule (n : ℕ) :
   · exact zero_mem _
 
 /-- The power-sum product `p_μ`, as an element of the symmetric polynomials of degree `n`. -/
-private noncomputable def psumPartVec {n : ℕ} (μ : n.Partition) :
+private noncomputable def psumPartVec (R : Type*) [CommSemiring R] {n : ℕ} (μ : n.Partition) :
     symmetricHomogeneousSubmodule σ R n :=
   ⟨psumPart σ R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩
 
@@ -211,17 +212,15 @@ theorem linearIndependent_psumPart {n : ℕ} (hn : n ≤ Fintype.card σ) :
   rw [h]
   exact (psumPartBasis σ R hn).linearIndependent.map' _ (Submodule.ker_subtype _)
 
-omit [Algebra ℚ R] in
 /-- **In fewer than `n` letters the power-sum products are dependent**: over any nontrivial
-commutative ring, the products `p_μ` over the partitions `μ` of `n` outnumber the dimension of the
-symmetric polynomials of degree `n`, which is the number of partitions of `n` with at most
+commutative semiring, the products `p_μ` over the partitions `μ` of `n` outnumber the dimension of
+the symmetric polynomials of degree `n`, which is the number of partitions of `n` with at most
 `Fintype.card σ` parts (`TauCeti.finrank_symmetricHomogeneousSubmodule`). -/
-theorem not_linearIndependent_psumPart [Nontrivial R] {n : ℕ} (hn : Fintype.card σ < n) :
+theorem not_linearIndependent_psumPart (R : Type*) [CommSemiring R] [Nontrivial R] {n : ℕ}
+    (hn : Fintype.card σ < n) :
     ¬ LinearIndependent R (psumPart σ R : n.Partition → MvPolynomial σ R) := fun h => by
   have : Module.Finite R (symmetricHomogeneousSubmodule σ R n) := .of_basis (msymmBasis σ R n)
-  have h' : LinearIndependent R fun μ : n.Partition =>
-      (⟨psumPart σ R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩ :
-        symmetricHomogeneousSubmodule σ R n) :=
+  have h' : LinearIndependent R (psumPartVec σ R (n := n)) :=
     .of_comp (symmetricHomogeneousSubmodule σ R n).subtype h
   exact h'.fintype_card_le_finrank.not_gt (finrank_symmetricHomogeneousSubmodule_lt hn)
 
