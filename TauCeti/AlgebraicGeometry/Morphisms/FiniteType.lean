@@ -73,6 +73,9 @@ theorem _root_.AlgebraicGeometry.LocallyOfFiniteType.SpecMap_iff {R S : CommRing
 
 /-- The structure morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type if
 and only if `B` is of finite type over `k`. -/
+-- `high` priority: `Spec.algebraMap` is reducible, so `SpecMap_iff` would otherwise fire first
+-- and leave `(algebraMap k B).FiniteType` rather than `Algebra.FiniteType k B`.
+@[simp high]
 theorem _root_.AlgebraicGeometry.LocallyOfFiniteType.Spec_algebraMap_iff {k B : Type u}
     [CommRing k] [CommRing B] [Algebra k B] :
     LocallyOfFiniteType (Spec.algebraMap k B) ↔ Algebra.FiniteType k B :=
