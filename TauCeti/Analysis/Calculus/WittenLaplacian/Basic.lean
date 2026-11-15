@@ -63,6 +63,8 @@ second derivatives of `C²` maps.
 * `TauCeti.sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferential`: the
   Lagrange identity exhibiting `d_t^*` as the formal adjoint of `d_t`.
 * `TauCeti.euclideanWittenLaplacian_apply`: Witten's frame formula for the Witten Laplacian.
+* `TauCeti.sum_euclideanWittenLaplacian_apply_mul`: the frame formula paired pointwise with the
+  form itself.
 * `TauCeti.continuousAt_euclideanWittenLaplacian` and `TauCeti.continuous_euclideanWittenLaplacian`:
   the Witten Laplacian of a `C²` form is continuous.
 
@@ -399,6 +401,29 @@ theorem euclideanWittenLaplacian_apply {f : (ι → ℝ) → ℝ} {φ : (ι → 
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [W, H, map_smul, smul_smul]
+
+/-- Witten's frame formula paired pointwise with the form itself: for `f` and `φ` that are `C²`
+at `x`, `⟨Δ_t φ, φ⟩ = ∑ᵢ ⟨-∂ᵢ²φ, φ⟩ + t² |df|² |φ|² + t ⟨∑ᵢⱼ ∂ᵢ∂ⱼf ⁅εᵢ, ιⱼ⁆ φ, φ⟩` at `x`, where
+`⟨ψ, φ⟩ = ∑ s, ψ s * φ s`. -/
+theorem sum_euclideanWittenLaplacian_apply_mul {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (t : ℝ) :
+    ∑ s, euclideanWittenLaplacian f t φ x s * φ x s =
+      ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s +
+        t ^ 2 * ((∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2) +
+        t * ∑ s, (∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
+          ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
+            (φ x)) s * φ x s := by
+  rw [euclideanWittenLaplacian_apply hf hφ]
+  simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.neg_apply, add_mul,
+    Finset.sum_add_distrib, Finset.sum_mul, Finset.mul_sum]
+  congr 1
+  · congr 1
+    · exact Finset.sum_comm
+    · refine Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+      ring
+  · refine Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦
+      Finset.sum_congr rfl fun j _ ↦ ?_
+    ring
 
 /-- The Witten Laplacian is additive on forms that are `C²` at the point, for `f` that is `C²` at
 the point. -/
