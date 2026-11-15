@@ -96,13 +96,13 @@ variable [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
 
 /-- A potential differs locally by a constant from the eigenvalue count of *every* spectral window,
 not only from that of the window in its definition. -/
-theorem eventually_sub_eq (hF : IsSpectralFlowPotential A s F) (hA : ContinuousOn A s)
-    {t r : ℝ} (ht : t ∈ s) (hr : IsSpectralWindow (A t) r) :
+theorem eventually_sub_eq (hF : IsSpectralFlowPotential A s F) {t r : ℝ}
+    (hA : ContinuousWithinAt A s t) (ht : t ∈ s) (hr : IsSpectralWindow (A t) r) :
     ∀ᶠ u in 𝓝[s] t, F u - spectralRank (A u) (Ico 0 r) = F t - spectralRank (A t) (Ico 0 r) := by
   obtain ⟨r₀, hr₀, hev⟩ := hF t ht
   have hsa : ∀ᶠ u in 𝓝[s] t, IsSelfAdjoint (A u) :=
     eventually_mem_nhdsWithin.mono fun u hu ↦ hF.isSelfAdjoint hu
-  filter_upwards [hev, hr₀.eventually_spectralRank_sub_eq hr (hA t ht) hsa] with u hu hu'
+  filter_upwards [hev, hr₀.eventually_spectralRank_sub_eq hr hA hsa] with u hu hu'
   linarith
 
 /-- **Uniqueness of potentials.** On a preconnected set, two potentials of a continuous family
@@ -113,13 +113,14 @@ theorem sub_eq_sub (hF : IsSpectralFlowPotential A s F) (hG : IsSpectralFlowPote
   refine hs.induction₂ (fun x y ↦ F x - G x = F y - G y) (fun t ht ↦ ?_)
     (fun _ _ _ _ _ _ h h' ↦ h.trans h') (fun _ _ _ _ h ↦ h.symm) hx hy
   obtain ⟨r, hr, hev⟩ := hF t ht
-  filter_upwards [hev, hG.eventually_sub_eq hA ht hr] with u hu hu'
+  filter_upwards [hev, hG.eventually_sub_eq (hA t ht) ht hr] with u hu hu'
   linarith
 
-/-- Two potentials of a continuous family on adjacent closed intervals glue to a potential on
-their union, after shifting the second by a constant to match at the common endpoint. -/
+/-- Two potentials of a family on adjacent closed intervals glue to a potential on their union,
+after shifting the second by a constant to match at the common endpoint. Only continuity at the
+common endpoint is needed. -/
 theorem glue {a b c : ℝ} (hF : IsSpectralFlowPotential A (Icc a b) F)
-    (hG : IsSpectralFlowPotential A (Icc b c) G) (hA : ContinuousOn A (Icc b c))
+    (hG : IsSpectralFlowPotential A (Icc b c) G) (hA : ContinuousWithinAt A (Icc b c) b)
     (hab : a ≤ b) (hbc : b ≤ c) :
     IsSpectralFlowPotential A (Icc a c)
       (fun u ↦ if u ≤ b then F u else G u + (F b - G b)) := by
@@ -186,7 +187,7 @@ theorem exists_isSpectralFlowPotential [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
     · rcases le_total y z with hyz' | hzy
       · obtain ⟨F, hF⟩ := hxy hxy'
         obtain ⟨G, hG⟩ := hyz hyz'
-        exact ⟨_, hF.glue hG (hA.mono (Icc_subset_Icc hy.1 hz.2)) hxy' hyz'⟩
+        exact ⟨_, hF.glue hG (hA.mono (Icc_subset_Icc hy.1 hz.2) y ⟨le_rfl, hyz'⟩) hxy' hyz'⟩
       · obtain ⟨F, hF⟩ := hxy hxy'
         exact ⟨F, hF.mono (Icc_subset_Icc le_rfl hzy)⟩
     · obtain ⟨G, hG⟩ := hyz (hyx.trans hxz)
