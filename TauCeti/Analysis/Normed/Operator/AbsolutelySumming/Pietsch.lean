@@ -87,7 +87,7 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
     (hT : ∀ x : E,
       ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal)) :
     T.summingENorm p ≤ ENNReal.ofReal C := by
-  have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
+  have hq : 0 < p.toReal := (ENNReal.toReal_pos_iff_ne_top p).2 hp
   have hint := ν.integrable_norm_apply_rpow p
   rw [summingENorm_le_ofReal_iff hC]
   intro n x
@@ -129,7 +129,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
     {δ : ℝ} (hδ : 0 < δ) :
     ∃ f : dualBall 𝕜 E, ∑ x ∈ w.support,
       w x * (‖T x‖ ^ p.toReal - C ^ p.toReal * ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) < δ := by
-  have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
+  have hq : 0 < p.toReal := (ENNReal.toReal_pos_iff_ne_top p).2 hp
   by_contra! hge
   set s := w.support
   -- Rescale the points so that `p`-th powers of norms pick up the weights.
@@ -228,7 +228,7 @@ theorem exists_isProbabilityMeasure_of_summingENorm_le_ofReal [MeasurableSpace (
     ∃ ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1),
       IsProbabilityMeasure ν ∧ ν.Regular ∧ ∀ x : E,
         ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-  have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
+  have hq : 0 < p.toReal := (ENNReal.toReal_pos_iff_ne_top p).2 hp
   obtain ⟨L, hL1, hLpos, hLx⟩ := exists_separating_functional hp hC hT
   -- `-L` is a positive functional, and `(-L) h / (-L) 1 = L h / L 1`.
   obtain ⟨ν, hν, hreg, hνL⟩ := (-L.toLinearMap).exists_isProbabilityMeasure_integral_eq_div
