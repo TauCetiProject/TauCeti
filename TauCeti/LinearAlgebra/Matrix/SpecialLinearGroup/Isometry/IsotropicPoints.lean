@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Elementary
-import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
-import TauCeti.LinearAlgebra.Projectivization.Action
 
 /-!
 # The action of a special unitary group on its isotropic points
@@ -69,10 +67,9 @@ theorem isPretransitive_isotropicPoints (hσ : Function.Involutive σ)
     (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0) :
     MulAction.IsPretransitive (Q.specialIsometryGroup σ) (Q.isotropicPoints σ) := by
-  let := isPretransitive_elementaryUnitaryGroup hσ hQ hdet htr hadm
-  refine ⟨fun p q ↦ ?_⟩
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (Q.elementaryUnitaryGroup σ) p q
-  exact ⟨(g : Q.specialIsometryGroup σ), by simpa only [Subgroup.smul_def] using hg⟩
+  have := isPretransitive_elementaryUnitaryGroup hσ hQ hdet htr hadm
+  exact .of_smul_eq (fun g : Q.elementaryUnitaryGroup σ ↦ (g : Q.specialIsometryGroup σ))
+    (Subgroup.smul_def _ _).symm
 
 /-- **An isometry fixing every isotropic point is central.** Under the hypotheses of
 `Matrix.isPretransitive_isotropicPoints`, if some point is isotropic, then an element of the
