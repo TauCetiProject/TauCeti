@@ -49,6 +49,8 @@ instance instMulActionOp (b : B) : MulAction Hᵐᵒᵖ (AssociatedBundle G P H 
 
 variable [SMulCommClass G Hᵐᵒᵖ H]
 
+/-- Right multiplication by `h'` on `AssociatedBundle G P H` acts by right multiplication on the
+`H`-coordinate: `[p, h] • h' = [p, h * h']`. -/
 @[simp] theorem smul_mk {b : B} (p : P b) (h h' : H) :
     op h' • mk G p h = mk G p (h * h') := by
   rw [mk_def, mk_def, ← op_smul_eq_mul]
@@ -70,12 +72,15 @@ instance instPrincipalBundle : PrincipalBundle H (AssociatedBundle G P H) where
     exact (associatedBundleCore_coordChange (F := H) b b' b (vH * h')).trans <|
       hcomm.trans (congrArg (· * h') (associatedBundleCore_coordChange (F := H) b b' b vH).symm)
 
+/-- The principal `H`-division from `[p, h₁]` to `[q, h₂]` is `h₁⁻¹ * (division G p q • h₂)`. -/
 theorem division_mk {b : B} (p q : P b) (h₁ h₂ : H) :
     PrincipalBundle.division H (mk G p h₁) (mk G q h₂) =
       h₁⁻¹ * (PrincipalBundle.division G p q • h₂) :=
   PrincipalBundle.division_eq_iff.2 <| by
     rw [smul_mk, mul_inv_cancel_left, ← mk_smul, PrincipalBundle.smul_division]
 
+/-- On classes with the same `P`-representative, `PrincipalBundle.division H` simplifies to
+`h₁⁻¹ * h₂`. -/
 @[simp] theorem division_mk_same {b : B} (p : P b) (h₁ h₂ : H) :
     PrincipalBundle.division H (mk G p h₁) (mk G p h₂) = h₁⁻¹ * h₂ := by
   rw [division_mk, PrincipalBundle.division_self, one_smul]
@@ -152,23 +157,18 @@ noncomputable def assocHomeomorph :
 
 theorem assocHomeomorph_apply (z : TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)) :
     assocHomeomorph (G := G) (P := P) (H := H) (F := F) z = ⟨z.proj, assocEquiv z.proj z.2⟩ := (rfl)
-
 theorem assocHomeomorph_symm_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     (assocHomeomorph (G := G) (P := P) (H := H) (F := F)).symm z =
       ⟨z.proj, (assocEquiv z.proj).symm z.2⟩ := (rfl)
-
 @[simp] theorem assocHomeomorph_proj
     (z : TotalSpace F (AssociatedBundle H (AssociatedBundle G P H) F)) :
     (assocHomeomorph (G := G) (P := P) (H := H) (F := F) z).proj = z.proj := (rfl)
-
 @[simp] theorem assocHomeomorph_symm_proj (z : TotalSpace F (AssociatedBundle G P F)) :
     ((assocHomeomorph (G := G) (P := P) (H := H) (F := F)).symm z).proj = z.proj := (rfl)
-
 @[simp] theorem assocHomeomorph_mk {b : B} (p : P b) (h : H) (v : F) :
     assocHomeomorph (G := G) (P := P) (H := H) (F := F)
         ⟨b, mk H (P := AssociatedBundle G P H) (mk G p h) v⟩ = ⟨b, mk G p (h • v)⟩ :=
   congrArg (TotalSpace.mk b) (assocEquiv_mk p h v)
-
 @[simp] theorem assocHomeomorph_symm_mk {b : B} (p : P b) (v : F) :
     (assocHomeomorph (G := G) (P := P) (H := H) (F := F)).symm ⟨b, mk G p v⟩ =
       ⟨b, mk H (P := AssociatedBundle G P H) (mk G p (1 : H)) v⟩ :=
@@ -193,9 +193,11 @@ noncomputable def equivOfEquivariant (ρ : G →* H) (φ : ∀ b, P b → Q b)
   (Equiv.ofBijective (mk G p₀) (mk_bijective (G := G) (P := P) (F := F) p₀)).symm.trans
     (Equiv.ofBijective (mk H (φ b p₀)) (mk_bijective (G := H) (P := Q) (F := F) (φ b p₀)))
 
-@[simp] theorem equivOfEquivariant_mk (ρ : G →* H) (φ : ∀ b, P b → Q b)
-    (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
-    (hF : ∀ (g : G) (v : F), g • v = ρ g • v) {b : B} (p : P b) (v : F) :
+section
+variable (ρ : G →* H) (φ : ∀ b, P b → Q b)
+  (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
+  (hF : ∀ (g : G) (v : F), g • v = ρ g • v)
+@[simp] theorem equivOfEquivariant_mk {b : B} (p : P b) (v : F) :
     equivOfEquivariant ρ φ hφ hF b (mk G p v) = mk H (φ b p) v := by
   set p₀ : P b := (FiberBundle.homeomorphAt G P b).symm 1
   have hp : p = op (PrincipalBundle.division G p₀ p) • p₀ :=
@@ -203,20 +205,21 @@ noncomputable def equivOfEquivariant (ρ : G →* H) (φ : ∀ b, P b → Q b)
   dsimp only [equivOfEquivariant]
   rw [hp, mk_smul, Equiv.trans_apply, Equiv.ofBijective_symm_apply_apply, Equiv.ofBijective_apply,
     hF, ← mk_smul, ← hφ]
-
-@[simp] theorem equivOfEquivariant_symm_mk (ρ : G →* H) (φ : ∀ b, P b → Q b)
-    (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
-    (hF : ∀ (g : G) (v : F), g • v = ρ g • v) {b : B} (p : P b) (v : F) :
+@[simp] theorem equivOfEquivariant_symm_mk {b : B} (p : P b) (v : F) :
     (equivOfEquivariant ρ φ hφ hF b).symm (mk H (φ b p) v) = mk G p v :=
   (equivOfEquivariant ρ φ hφ hF b).symm_apply_eq.2 (equivOfEquivariant_mk ρ φ hφ hF p v).symm
+end
+
+section
+variable [ContinuousInv H] (ρ : G →* H) (φ : ∀ b, P b → Q b)
+  (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
+  (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.2))
+  (hF : ∀ (g : G) (v : F), g • v = ρ g • v)
 
 /-- **Associated bundles along a principal lift or reduction.** If `φ : ∀ b, P b → Q b` is a
 continuous `ρ`-equivariant map of principal bundles and `H` has continuous inversion, then
 `[p, v] ↦ [φ b p, v]` is a homeomorphism `P ×_G F ≃ₜ Q ×_H F` when `G` acts on `F` through `ρ`. -/
-noncomputable def homeomorphOfEquivariant [ContinuousInv H] (ρ : G →* H) (φ : ∀ b, P b → Q b)
-    (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
-    (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.2))
-    (hF : ∀ (g : G) (v : F), g • v = ρ g • v) :
+noncomputable def homeomorphOfEquivariant :
     TotalSpace F (AssociatedBundle G P F) ≃ₜ TotalSpace F (AssociatedBundle H Q F) where
   toFun z := ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.2⟩
   invFun z := ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.2⟩
@@ -231,20 +234,15 @@ noncomputable def homeomorphOfEquivariant [ContinuousInv H] (ρ : G →* H) (φ 
   continuous_invFun := by
     have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
     refine continuous_iff_continuousAt.2 fun z₀ ↦ ?_
-    set b₀ := z₀.proj
-    set eP := trivializationAt G P b₀; set eQ := trivializationAt H Q b₀
+    set b₀ := z₀.proj; set eP := trivializationAt G P b₀; set eQ := trivializationAt H Q b₀
     set eQF := trivializationAt F (AssociatedBundle H Q F) b₀
     have hbP₀ : b₀ ∈ eP.baseSet := mem_baseSet_trivializationAt G P b₀
     have hbQ₀ : b₀ ∈ eQ.baseSet := mem_baseSet_trivializationAt H Q b₀
-    have hσ_cont : ContinuousAt (fun b ↦ TotalSpace.mk' G b (eP.symm b 1)) b₀ :=
-      (ContinuousAt.comp (x := b₀)
-        (eP.toOpenPartialHomeomorph.continuousAt_symm ((eP.mem_target (x := (b₀, (1 : G)))).2 hbP₀))
-        (continuousAt_id.prodMk continuousAt_const)).congr_of_eventuallyEq
-        (mem_of_superset (eP.open_baseSet.mem_nhds hbP₀) fun _ hb ↦ eP.mk_symm hb 1)
     have hπ : ContinuousAt (π F (AssociatedBundle H Q F)) z₀ :=
       (FiberBundle.continuous_proj F _).continuousAt
     have hσz : ContinuousAt (fun z : TotalSpace F (AssociatedBundle H Q F) ↦
-        TotalSpace.mk' G z.proj (eP.symm z.proj 1)) z₀ := hσ_cont.comp hπ
+        TotalSpace.mk' G z.proj (eP.symm z.proj 1)) z₀ :=
+      (eP.continuousAt_totalSpaceMk_symm hbP₀ 1).comp hπ
     have hg_inv : ContinuousAt (fun z : TotalSpace F (AssociatedBundle H Q F) ↦
         ((eQ ⟨z.proj, φ z.proj (eP.symm z.proj 1)⟩).2)⁻¹) z₀ :=
       (ContinuousAt.comp (x := z₀) (eQ.continuousAt (eQ.mem_source.2 hbQ₀))
@@ -259,32 +257,22 @@ noncomputable def homeomorphOfEquivariant [ContinuousInv H] (ρ : G →* H) (φ 
     dsimp only [eQF, TotalSpace.proj] at hzQ ⊢
     rw [Pi.smul_apply', trivializationAt_mk_snd hzQ, inv_smul_smul, equivOfEquivariant_symm_mk]
 
-section
-
-variable [ContinuousInv H] (ρ : G →* H) (φ : ∀ b, P b → Q b)
-  (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
-  (hφc : Continuous fun x : TotalSpace G P ↦ TotalSpace.mk' H x.proj (φ x.proj x.2))
-  (hF : ∀ (g : G) (v : F), g • v = ρ g • v)
-
 theorem homeomorphOfEquivariant_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     homeomorphOfEquivariant ρ φ hφ hφc hF z =
       ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.2⟩ := (rfl)
-
 theorem homeomorphOfEquivariant_symm_apply (z : TotalSpace F (AssociatedBundle H Q F)) :
     (homeomorphOfEquivariant ρ φ hφ hφc hF).symm z =
       ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.2⟩ := (rfl)
-
 @[simp] theorem homeomorphOfEquivariant_proj (z : TotalSpace F (AssociatedBundle G P F)) :
     (homeomorphOfEquivariant ρ φ hφ hφc hF z).proj = z.proj := (rfl)
-
+@[simp] theorem homeomorphOfEquivariant_symm_proj (z : TotalSpace F (AssociatedBundle H Q F)) :
+    ((homeomorphOfEquivariant ρ φ hφ hφc hF).symm z).proj = z.proj := (rfl)
 @[simp] theorem homeomorphOfEquivariant_mk {b : B} (p : P b) (v : F) :
     homeomorphOfEquivariant ρ φ hφ hφc hF ⟨b, mk G p v⟩ = ⟨b, mk H (φ b p) v⟩ :=
   congrArg (TotalSpace.mk b) (equivOfEquivariant_mk ρ φ hφ hF p v)
-
 @[simp] theorem homeomorphOfEquivariant_symm_mk {b : B} (p : P b) (v : F) :
     (homeomorphOfEquivariant ρ φ hφ hφc hF).symm ⟨b, mk H (φ b p) v⟩ = ⟨b, mk G p v⟩ :=
   congrArg (TotalSpace.mk b) (equivOfEquivariant_symm_mk ρ φ hφ hF p v)
-
 end
 
 end EquivariantComparison

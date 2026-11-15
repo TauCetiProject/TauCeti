@@ -169,12 +169,8 @@ theorem coordChange_trivializationAt {b b' x : B} (hb : x ∈ (trivializationAt 
     (trivializationAt F (AssociatedBundle G P F) b).coordChange
         (trivializationAt F (AssociatedBundle G P F) b') x v =
       (trivializationAt G P b).coordChange (trivializationAt G P b') x 1 • v := by
-  rw [trivializationAt_eq_localTriv, trivializationAt_eq_localTriv, Trivialization.coordChange,
-    FiberBundleCore.localTriv_symm_apply, FiberBundleCore.localTriv_apply,
-    associatedBundleCore_indexAt, associatedBundleCore_coordChange,
-    associatedBundleCore_coordChange, smul_smul,
-    Trivialization.coordChange_one_mul_coordChange_one _ _ _ hb
-      (mem_baseSet_trivializationAt G P x) hb']
+  rw [trivializationAt_eq_localTriv, trivializationAt_eq_localTriv, associatedBundleCore_def]
+  exact fiberBundleCoreOfGroupCocycle_localTriv_coordChange _ _ _ _ _ _ _ _ b b' ⟨hb, hb'⟩ v
 
 variable (G) in
 /-- The class `[p, v]` in the associated bundle of a point `p` of the fibre of `P` over `b` and of
