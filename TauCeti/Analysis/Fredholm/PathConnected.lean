@@ -194,7 +194,7 @@ def ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt (e : E ≃L[ℂ] F)
     ZerothHomotopy {T : E →L[ℂ] F // T.IsFredholm} ≃ ℤ :=
   Equiv.ofBijective ZerothHomotopy.fredholmIndex
     ⟨ZerothHomotopy.fredholmIndex_injective, fun n ↦ by
-      obtain ⟨T, hT⟩ := e.surjective_index_fredholm hE n
+      obtain ⟨T, hT⟩ := e.exists_index_eq hE n
       exact ⟨.mk T, hT⟩⟩
 
 /-- Forward application of `ContinuousLinearEquiv.zerothHomotopyFredholmEquivInt` is the Fredholm

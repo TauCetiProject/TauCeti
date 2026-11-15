@@ -209,16 +209,10 @@ theorem exists_index_eq (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) 
   exact ⟨⟨T, hT⟩, hind⟩
 
 /-- Under a continuous linear equivalence from an infinite-dimensional Hilbert space `E` to `F`,
-the Fredholm index `{T : E →L[𝕜] F // T.IsFredholm} → ℤ` is surjective. -/
-theorem surjective_index_fredholm (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) :
-    Function.Surjective (fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ T.val.index) :=
-  e.exists_index_eq hE
-
-/-- Under a continuous linear equivalence from an infinite-dimensional Hilbert space `E` to `F`,
 the range of the Fredholm index is all of `ℤ`. -/
 theorem range_index_fredholm (e : E ≃L[𝕜] F) (hE : ¬ FiniteDimensional 𝕜 E) :
     Set.range (fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ T.val.index) = Set.univ :=
-  Set.range_eq_univ.2 (e.surjective_index_fredholm hE)
+  Set.range_eq_univ.2 (e.exists_index_eq hE)
 
 end ContinuousLinearEquiv
 
