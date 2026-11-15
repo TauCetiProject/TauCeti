@@ -91,10 +91,9 @@ private theorem measure_convexSection_le_of_subsingleton [Subsingleton E] {Ω : 
   · rw [(convexSection_eq_empty_iff hx hℓ).2
       (mul_nonpos_of_nonneg_of_nonpos K.coe_nonneg hh), measure_empty]
     exact zero_le
-  obtain ⟨y, hy⟩ := (convexSection_nonempty_iff hx hℓ).2 hh
-  have hΩ : Ω = univ := eq_univ_of_forall fun z => Subsingleton.elim x z ▸ hx
+  have hΩ : Ω = univ := Subsingleton.eq_univ_of_nonempty ⟨x, hx⟩
   have hS : convexSection Ω u x ℓ h = univ :=
-    eq_univ_of_forall fun z => Subsingleton.elim y z ▸ hy
+    Subsingleton.eq_univ_of_nonempty ((convexSection_nonempty_iff hx hℓ).2 hh)
   have hle : (lam : ℝ≥0∞) ≤ Lam := by
     refine (ENNReal.mul_le_mul_iff_left (isOpen_univ.measure_pos μ univ_nonempty).ne'
       (measure_ne_top μ univ)).1 ?_

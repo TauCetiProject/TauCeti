@@ -184,6 +184,28 @@ private lemma step_mul_pow_lt (n : ℕ) {C₁ lam Lam h : ℝ} (hC₁ : 0 ≤ C�
   rw [heq]
   exact mul_lt_of_lt_one_left (by positivity) hlt1
 
+omit [μ.IsAddHaarMeasure] in
+/-- The dimension-zero case of `exists_convexSection_subset_convexSection`: in a subsingleton space
+a section is centred at its only point `y`. -/
+private theorem exists_convexSection_subset_convexSection_of_subsingleton [Subsingleton E] :
+    ∃ C : ℝ≥0, ∀ (Ω : Set E) [DecidablePred (· ∈ Ω)] (u : E → ℝ) (x : E) (ℓ : E →ₗ[ℝ] ℝ)
+      (h : ℝ) (lam Lam : ℝ≥0), IsOpen Ω → ConvexOn ℝ Ω u → (∀ y ∈ Ω, u x + (ℓ y - ℓ x) ≤ u y) →
+      Bornology.IsBounded (convexSection Ω u x ℓ (2 * h)) →
+      closure (convexSection Ω u x ℓ (2 * h)) ⊆ Ω → 0 < lam →
+      (lam : ℝ≥0∞) • μ.restrict Ω ≤
+        mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤) →
+      mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤) ≤
+        (Lam : ℝ≥0∞) • μ.restrict Ω →
+      ∀ y ∈ convexSection Ω u x ℓ h, ∀ m : E →ₗ[ℝ] ℝ, (∀ z ∈ Ω, u y + (m z - m y) ≤ u z) →
+        convexSection Ω u x ℓ h ⊆ convexSection Ω u y m ((1 + C * Lam / lam) * h) := by
+  refine ⟨0, fun Ω _ u x ℓ h lam Lam _ _ hℓx _ _ _ _ _ y hy m _ z hz => ?_⟩
+  obtain rfl : z = y := Subsingleton.elim z y
+  have hh : 0 < h := pos_of_mem_convexSection (hℓx z (convexSection_subset hy)) hy
+  rw [mem_convexSection_iff]
+  refine ⟨convexSection_subset hz, ?_⟩
+  simp only [sub_self, map_zero, add_zero, NNReal.coe_zero, zero_mul, zero_div]
+  linarith
+
 /-- **The engulfing property of sections.** There is a constant `C`, depending only on `E` and
 `μ`, with the following property. Let `u` be convex on an open set `Ω`, with
 `λ μ ≤ MA_u ≤ Λ μ` on `Ω` for the Monge–Ampère measure of `u` extended by `⊤` off `Ω` and
@@ -204,14 +226,7 @@ theorem exists_convexSection_subset_convexSection :
         convexSection Ω u x ℓ h ⊆ convexSection Ω u y m ((1 + C * Lam / lam) * h) := by
   classical
   rcases subsingleton_or_nontrivial E with _ | _
-  · -- In a subsingleton space a section is centred at its only point `y`.
-    refine ⟨0, fun Ω _ u x ℓ h lam Lam _ _ hℓx _ _ _ _ _ y hy m _ z hz => ?_⟩
-    obtain rfl : z = y := Subsingleton.elim z y
-    have hh : 0 < h := pos_of_mem_convexSection (hℓx z (convexSection_subset hy)) hy
-    rw [mem_convexSection_iff]
-    refine ⟨convexSection_subset hz, ?_⟩
-    simp only [sub_self, map_zero, add_zero, NNReal.coe_zero, zero_mul, zero_div]
-    linarith
+  · exact exists_convexSection_subset_convexSection_of_subsingleton μ
   obtain ⟨C₁, hC₁⟩ := exists_add_smul_sub_mem_of_mongeAmpereMeasure_le μ (E := E)
   set n := finrank ℝ E
   refine ⟨2 ^ (n + 2) * C₁ + 1, fun Ω _ u x ℓ h lam Lam hΩ hu hℓx hSb hSΩ hlam hMA hMA' y hy m
