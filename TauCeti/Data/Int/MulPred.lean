@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Int.Units
-import Mathlib.Algebra.Ring.Int.Parity
+public import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -26,13 +27,17 @@ The unit-shifted form `0 ≤ s * (s - δ)` for `δ : ℤˣ` follows by rescaling
 The same product is always even, so every integer satisfies `c ^ 2 ≡ c` modulo `2`, and the
 halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the addition law
 `T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural numbers it is
-the binomial coefficient `n.choose 2`.
+the binomial coefficient `n.choose 2`. Likewise, the product
+`k * (k ^ 2 - 1) = (k - 1) * k * (k + 1)` of three consecutive integers is always divisible by
+`3`, and by `24` when `k` is odd.
 
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_units` : `0 ≤ s * (s - δ)` for a unit `δ`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
+* `Int.three_dvd_mul_sq_sub_one` : `3 ∣ k * (k ^ 2 - 1)`.
+* `Int.twentyFour_dvd_mul_sq_sub_one_of_odd` : `24 ∣ k * (k ^ 2 - 1)` when `k` is odd.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
 * `Int.one_sub_mul_one_sub_sub_one_ediv_two` : the reflection `n ↦ 1 - n` fixes `n * (n - 1) / 2`.
@@ -65,6 +70,28 @@ theorem zero_le_mul_sub_units (δ : ℤˣ) (s : ℤ) : 0 ≤ s * (s - (δ : ℤ)
 theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
+
+/-- Every integer satisfies `k (k² - 1) ≡ 0` modulo `3`, since `(k - 1) k (k + 1)` is a product
+of three consecutive integers. -/
+theorem three_dvd_mul_sq_sub_one (k : ℤ) : (3 : ℤ) ∣ k * (k ^ 2 - 1) := by
+  have hk : k = 3 * (k / 3) + k % 3 := by omega
+  rcases (by omega : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h
+  · refine ⟨(k / 3) * ((3 * (k / 3)) ^ 2 - 1), ?_⟩
+    conv_lhs => rw [hk, h]
+    ring
+  · refine ⟨(3 * (k / 3) + 1) * (3 * (k / 3) ^ 2 + 2 * (k / 3)), ?_⟩
+    conv_lhs => rw [hk, h]
+    ring
+  · refine ⟨(3 * (k / 3) + 2) * (3 * (k / 3) ^ 2 + 4 * (k / 3) + 1), ?_⟩
+    conv_lhs => rw [hk, h]
+    ring
+
+/-- For every odd integer `k`, `24 ∣ k (k² - 1)`, combining `3 ∣ k (k² - 1)` with `8 ∣ k² - 1`. -/
+theorem twentyFour_dvd_mul_sq_sub_one_of_odd {k : ℤ} (hk : Odd k) :
+    (24 : ℤ) ∣ k * (k ^ 2 - 1) := by
+  have hcop : IsCoprime (3 : ℤ) 8 := ⟨3, -1, by norm_num⟩
+  simpa using hcop.mul_dvd (three_dvd_mul_sq_sub_one k)
+    ((eight_dvd_sq_sub_one_of_odd hk).mul_left k)
 
 /-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
 theorem two_mul_mul_sub_one_ediv_two (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=

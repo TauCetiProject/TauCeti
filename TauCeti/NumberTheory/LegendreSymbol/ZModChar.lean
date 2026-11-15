@@ -25,6 +25,9 @@ zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd int
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
 * `ZMod.χ₈_intCast_eq_zero_iff`: `χ₈ a = 0` exactly when `a` is even.
 * `ZMod.χ₈_intCast_eq_negOnePow`: `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd `a`.
+* `ZMod.χ₄_intCast_eq_neg_negOnePow`: `χ₄ a = -(-1) ^ ((a + 1) / 2)` for odd `a`.
+* `ZMod.χ₈_intCast_add_two`, `ZMod.χ₈_intCast_sub_two`: shifting an integer by `±2` multiplies
+  `χ₈` by `∓χ₄`.
 -/
 
 public section
@@ -38,6 +41,11 @@ theorem χ₄_neg (x : ZMod 4) : χ₄ (-x) = -χ₄ x := by
 
 /-- The character `χ₈` is even. -/
 theorem χ₈_neg (x : ZMod 8) : χ₈ (-x) = χ₈ x := by
+  revert x
+  decide
+
+/-- Shifting by `2` negates `χ₄`. -/
+theorem χ₄_add_two (x : ZMod 4) : χ₄ (x + 2) = -χ₄ x := by
   revert x
   decide
 
@@ -94,5 +102,28 @@ theorem χ₈_intCast_eq_negOnePow {a : ℤ} (ha : Odd a) :
   · rw [hdiv (8 * m ^ 2 + 14 * m + 6) (by ring),
       Int.negOnePow_even _ ⟨4 * m ^ 2 + 7 * m + 3, by ring⟩]
     split_ifs <;> first | rfl | omega
+
+/-- For odd `a`, `χ₄ a = -(-1) ^ ((a + 1) / 2)`, extending `χ₄_eq_neg_one_pow` to all odd
+integers. -/
+theorem χ₄_intCast_eq_neg_negOnePow {a : ℤ} (ha : Odd a) :
+    (χ₄ a : ℤ) = -((a + 1) / 2).negOnePow := by
+  obtain ⟨k, rfl⟩ := ha
+  have hdiv : (2 * k + 1 + 1) / 2 = k + 1 := by omega
+  rw [hdiv, χ₄_int_eq_if_mod_four]
+  rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
+  · rw [Int.negOnePow_odd _ ⟨m, by omega⟩, Units.val_neg, Units.val_one]
+    split_ifs <;> omega
+  · rw [Int.negOnePow_even _ ⟨m + 1, by omega⟩, Units.val_one]
+    split_ifs <;> omega
+
+/-- Shifting an integer by `2` multiplies `χ₈` by `-χ₄` (both sides vanish when `a` is even). -/
+theorem χ₈_intCast_add_two (a : ℤ) : χ₈ ((a + 2 : ℤ) : ZMod 8) = -χ₄ a * χ₈ a := by
+  rw [χ₈_int_eq_if_mod_eight (a + 2), χ₈_int_eq_if_mod_eight a, χ₄_int_eq_if_mod_four a]
+  split_ifs <;> omega
+
+/-- Shifting an integer by `-2` multiplies `χ₈` by `χ₄` (both sides vanish when `a` is even). -/
+theorem χ₈_intCast_sub_two (a : ℤ) : χ₈ ((a - 2 : ℤ) : ZMod 8) = χ₄ a * χ₈ a := by
+  rw [χ₈_int_eq_if_mod_eight (a - 2), χ₈_int_eq_if_mod_eight a, χ₄_int_eq_if_mod_four a]
+  split_ifs <;> omega
 
 end ZMod
