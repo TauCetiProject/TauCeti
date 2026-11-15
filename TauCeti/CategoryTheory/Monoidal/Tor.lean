@@ -39,8 +39,13 @@ If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, 
 every `X ⊗ P`.
 
 For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
-`((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
-underived variable `Y`: it is an additive functor of `Y`, and `Tor'ₙ₊₁(X, 𝟙_ C)` vanishes
+`((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. When `X` has a projective presentation
+`0 ⟶ P₁ ⟶ P₀ ⟶ X ⟶ 0`, `Tor'₁(X, Y)` is the kernel of `S.f ▷ Y : P₁ ⊗ Y ⟶ P₀ ⊗ Y`
+(`CategoryTheory.ShortComplex.ShortExact.tor'OneIsoKernel`), naturally in `Y` and in maps of
+presentations, and `Tor'ₙ(X, Y)` vanishes for `n ≥ 2`
+(`CategoryTheory.ShortComplex.ShortExact.isZero_Tor'_add_two`). This computes the connecting term of
+the universal coefficient theorem for homology with coefficients in `Y`. We also record that `Tor'`
+is additive in its underived variable `Y` and that `Tor'ₙ₊₁(X, 𝟙_ C)` vanishes
 (`CategoryTheory.isZero_Tor'_succ_tensorUnit`), since `- ⊗ 𝟙_ C` is isomorphic to the identity
 functor and hence exact.
 
@@ -65,6 +70,8 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Abelian C] [Monoida
   [HasProjectiveResolutions C] {S S' : ShortComplex C}
 
 namespace ShortComplex.ShortExact
+
+section Tor
 
 variable (hS : S.ShortExact) [Projective S.X₁] [Projective S.X₂]
 
@@ -108,6 +115,54 @@ lemma Tor_obj_map_comp_torOneIsoKernel_hom (X : C) (φ : S ⟶ S') :
           (by simp only [← whiskerLeft_comp, φ.comm₁₂]) :=
   leftDerived_map_comp_leftDerivedOneIsoKernel_hom _ hS' φ
 
+end Tor
+
+section Tor'
+
+variable (hS : S.ShortExact) [Projective S.X₁] [Projective S.X₂]
+
+/-- For a projective presentation `0 ⟶ P₁ ⟶ P₀ ⟶ X ⟶ 0`, `Tor'₁(X, Y)` is the kernel of
+`S.f ▷ Y : P₁ ⊗ Y ⟶ P₀ ⊗ Y`. -/
+def tor'OneIsoKernel (Y : C) : ((Tor' C 1).obj S.X₃).obj Y ≅ kernel (S.f ▷ Y) :=
+  hS.leftDerivedOneIsoKernel ((tensoringRight C).obj Y)
+
+/-- The identification of `Tor'₁(X, Y)` with the kernel of `S.f ▷ Y` sends the homology class of a
+cycle of `- ⊗ Y` applied to the resolution to that cycle. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_tor'OneIsoKernel_hom_comp_ι (Y : C) :
+    ((((tensoringRight C).obj Y).mapHomologicalComplex _).obj S.resolutionComplex).homologyπ 1 ≫
+      (hS.projectiveResolution.isoLeftDerivedObj ((tensoringRight C).obj Y) 1).inv ≫
+        (hS.tor'OneIsoKernel Y).hom ≫ kernel.ι (S.f ▷ Y) =
+      ((((tensoringRight C).obj Y).mapHomologicalComplex _).obj S.resolutionComplex).iCycles 1 :=
+  hS.homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_comp_ι _
+
+include hS in
+/-- `Tor'ₙ(X, Y)` vanishes for `n ≥ 2` when `X` has a projective presentation of length one. -/
+lemma isZero_Tor'_add_two (Y : C) (n : ℕ) : IsZero (((Tor' C (n + 2)).obj S.X₃).obj Y) :=
+  hS.isZero_leftDerived_add_two _ n
+
+/-- The identification of `Tor'₁(X, Y)` with the kernel of `S.f ▷ Y` is natural in `Y`. -/
+@[reassoc]
+lemma Tor'_obj_map_comp_tor'OneIsoKernel_hom {Y Z : C} (g : Y ⟶ Z) :
+    ((Tor' C 1).obj S.X₃).map g ≫ (hS.tor'OneIsoKernel Z).hom =
+      (hS.tor'OneIsoKernel Y).hom ≫
+        kernel.map (S.f ▷ Y) (S.f ▷ Z) (S.X₁ ◁ g) (S.X₂ ◁ g) (whisker_exchange S.f g).symm :=
+  hS.leftDerived_app_comp_leftDerivedOneIsoKernel_hom _ ((tensoringRight C).map g)
+
+variable {hS} (hS' : S'.ShortExact) [Projective S'.X₁] [Projective S'.X₂]
+
+/-- The identification of `Tor'₁(X, Y)` with the kernel of `S.f ▷ Y` is natural in maps of
+projective presentations. -/
+@[reassoc]
+lemma Tor'_map_app_comp_tor'OneIsoKernel_hom (Y : C) (φ : S ⟶ S') :
+    ((Tor' C 1).map φ.τ₃).app Y ≫ (hS'.tor'OneIsoKernel Y).hom =
+      (hS.tor'OneIsoKernel Y).hom ≫
+        kernel.map (S.f ▷ Y) (S'.f ▷ Y) (φ.τ₁ ▷ Y) (φ.τ₂ ▷ Y)
+          (by simp only [← comp_whiskerRight, φ.comm₁₂]) :=
+  leftDerived_map_comp_leftDerivedOneIsoKernel_hom _ hS' φ
+
+end Tor'
+
 end ShortComplex.ShortExact
 
 /-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every
@@ -118,6 +173,21 @@ lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n 
     (ObjectProperty.isKilledBy C e).prop_leftDerived_obj ((tensoringLeft C).obj X)
       (fun Z _ ↦ (ObjectProperty.prop_isKilledBy_iff e _).2 (nsmul_id_tensor_eq_zero_of_left hX Z))
       Y n
+
+/-- `Tor` is additive in its second variable, the one that is derived. -/
+instance (X : C) (n : ℕ) : ((Tor C n).obj X).Additive where
+  map_add {Y₁ Y₂} f g := by
+    let P := projectiveResolution Y₁
+    let Q := projectiveResolution Y₂
+    let φ := ProjectiveResolution.lift f P Q
+    let ψ := ProjectiveResolution.lift g P Q
+    have hφ := ProjectiveResolution.lift_commutes f P Q
+    have hψ := ProjectiveResolution.lift_commutes g P Q
+    have hadd : (φ + ψ) ≫ Q.π = P.π ≫ (ChainComplex.single₀ C).map (f + g) := by
+      rw [Preadditive.add_comp, hφ, hψ, Functor.map_add, Preadditive.comp_add]
+    rw [Tor_obj, Functor.leftDerived_map_eq _ n (f + g) (φ + ψ) hadd,
+      Functor.leftDerived_map_eq _ n f φ hφ, Functor.leftDerived_map_eq _ n g ψ hψ,
+      Functor.map_add, Preadditive.add_comp, Preadditive.comp_add]
 
 /-- `Tor'` is additive in its second variable, the one that is not derived. -/
 instance (X : C) (n : ℕ) : ((Tor' C n).obj X).Additive where

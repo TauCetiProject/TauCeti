@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
-public import TauCeti.KnotTheory.Khovanov.BaseChange
+public import TauCeti.KnotTheory.Khovanov.BaseChange.Basic
 public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
 
 /-!
