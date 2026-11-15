@@ -46,9 +46,10 @@ admissible functions through their boundary traces:
   (`ComplexMethodSpace.norm_ofInter_le`), using the admissible functions `exp (δ (z - θ)²) x`
   with `δ → 0`;
 * `CompatibleCouple.exists_isStripFunction_sum_smul`: a finite combination `∑ ψᵢ(z) xᵢ` of
-  elements of the intersection is admissible when its coefficients are entire, bounded on the
-  strip and vanish at infinity along its boundary lines, as bounded entire coefficients do after
-  multiplication by the Gaussian factor `CompatibleCouple.stripGaussian`;
+  elements of the intersection is admissible when its coefficients are holomorphic on the strip
+  and continuous up to its boundary, bounded there and vanish at infinity along its boundary lines,
+  as bounded entire coefficients do after multiplication by the Gaussian factor
+  `CompatibleCouple.stripGaussian` with `δ > 0`;
 * `CompatibleCouple.IsBoundedAnalyticFamily T T₀ T₁`: operators `T z : X₀ + X₁ → Y₀ + Y₁`,
   holomorphic in operator norm on the open strip, strongly continuous and uniformly bounded on the
   closed strip, which on the boundary lines restrict to strongly continuous, uniformly bounded
@@ -542,11 +543,12 @@ end ComplexMethodSpace
 section Inter
 
 /-- A finite combination `∑ i ∈ s, ψ i z • x i` of elements `x i` of the intersection is an
-admissible function when its coefficients `ψ i` are entire, bounded on the closed strip and vanish
-at infinity along the two boundary lines. Its boundary traces are `∑ i ∈ s, ψ i (j + t I) • x i`,
-read in `X₀` for `j = 0` and in `X₁` for `j = 1`. -/
+admissible function when its coefficients `ψ i` are holomorphic on the open strip and continuous
+on its closure, bounded on the closed strip and vanish at infinity along the two boundary lines.
+Its boundary traces are `∑ i ∈ s, ψ i (j + t I) • x i`, read in `X₀` for `j = 0` and in `X₁` for
+`j = 1`. -/
 theorem exists_isStripFunction_sum_smul {ι : Type*} (s : Finset ι) (ψ : ι → ℂ → ℂ)
-    (x : ι → C.inter) (hψ : ∀ i ∈ s, Differentiable ℂ (ψ i))
+    (x : ι → C.inter) (hψ : ∀ i ∈ s, DiffContOnCl ℂ (ψ i) (verticalStrip 0 1))
     (hb : ∀ i ∈ s, ∃ M, ∀ z ∈ verticalClosedStrip 0 1, ‖ψ i z‖ ≤ M)
     (h₀ : ∀ i ∈ s, Tendsto (fun t : ℝ => ψ i (t * I)) (cocompact ℝ) (𝓝 0))
     (h₁ : ∀ i ∈ s, Tendsto (fun t : ℝ => ψ i (1 + t * I)) (cocompact ℝ) (𝓝 0)) :
@@ -554,16 +556,29 @@ theorem exists_isStripFunction_sum_smul {ι : Type*} (s : Finset ι) (ψ : ι �
       C.IsStripFunction (fun z => ∑ i ∈ s, ψ i z • C.fstToSum (C.interFst (x i))) g ∧
       (∀ t : ℝ, g.1 t = ∑ i ∈ s, ψ i (t * I) • C.interFst (x i)) ∧
       ∀ t : ℝ, g.2 t = ∑ i ∈ s, ψ i (1 + t * I) • C.interSnd (x i) := by
-  have hcont (i : ι) (hi : i ∈ s) : Continuous (ψ i) := (hψ i hi).continuous
+  -- The boundary lines lie in the closure of the open strip, where the coefficients are
+  -- continuous.
+  have hcl : closure (verticalStrip 0 1) = verticalClosedStrip 0 1 := by
+    rw [verticalStrip, closure_preimage_re, closure_Ioo zero_ne_one, verticalClosedStrip]
+  have hcont (i : ι) (hi : i ∈ s) (a : ℝ) (ha : a ∈ Icc (0 : ℝ) 1) :
+      Continuous fun t : ℝ => ψ i (a + t * I) :=
+    (hψ i hi).continuousOn.comp_continuous (by fun_prop) fun t => by
+      rw [hcl, mem_verticalClosedStrip_iff]
+      simpa using ha
+  have hcont₀ (i : ι) (hi : i ∈ s) : Continuous fun t : ℝ => ψ i (t * I) := by
+    simpa using hcont i hi 0 (by simp)
   refine ⟨(⟨⟨fun t => ∑ i ∈ s, ψ i (t * I) • C.interFst (x i),
-      continuous_finsetSum _ fun i hi => ((hcont i hi).comp (by fun_prop)).smul
-        continuous_const⟩, ?_⟩,
+      continuous_finsetSum _ fun i hi => (hcont₀ i hi).smul continuous_const⟩, ?_⟩,
     ⟨⟨fun t => ∑ i ∈ s, ψ i (1 + t * I) • C.interSnd (x i),
-      continuous_finsetSum _ fun i hi => ((hcont i hi).comp (by fun_prop)).smul
-        continuous_const⟩, ?_⟩), ⟨?_, ?_, ?_, ?_⟩, fun t => rfl, fun t => rfl⟩
+      continuous_finsetSum _ fun i hi => (hcont i hi 1 (by simp)).smul continuous_const⟩, ?_⟩),
+    ⟨?_, ?_, ?_, ?_⟩, fun t => rfl, fun t => rfl⟩
   · simpa using tendsto_finsetSum s fun i hi => (h₀ i hi).smul_const (C.interFst (x i))
   · simpa using tendsto_finsetSum s fun i hi => (h₁ i hi).smul_const (C.interSnd (x i))
-  · exact (Differentiable.fun_sum fun i hi => (hψ i hi).smul_const _).diffContOnCl
+  · have hterm (i : ι) (hi : i ∈ s) : DiffContOnCl ℂ
+        (fun z => ψ i z • C.fstToSum (C.interFst (x i))) (verticalStrip 0 1) :=
+      (hψ i hi).smul_const _
+    exact ⟨DifferentiableOn.fun_sum fun i hi => (hterm i hi).differentiableOn,
+      continuousOn_finsetSum _ fun i hi => (hterm i hi).continuousOn⟩
   · choose! M hM using hb
     refine isBounded_iff_forall_norm_le.2 ⟨∑ i ∈ s, M i * ‖C.fstToSum (C.interFst (x i))‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
@@ -577,8 +592,9 @@ theorem exists_isStripFunction_sum_smul {ι : Type*} (s : Finset ι) (ψ : ι �
     simp
 
 /-- The Gaussian factor `exp (δ (z - θ)²)`, equal to one at `θ` and, for `δ > 0`, decaying along
-vertical lines. Multiplying by it makes the boundary traces of an admissible function vanish at
-infinity, and it tends to one on the closed strip as `δ → 0`. -/
+vertical lines. Multiplying a function that is bounded on the closed strip by it, for `δ > 0`,
+makes its values on the two boundary lines vanish at infinity. As `δ → 0` it tends to one
+pointwise, and its modulus bound `exp (δ (|θ| + 1)²)` on the closed strip tends to one. -/
 def stripGaussian (δ θ : ℝ) (z : ℂ) : ℂ :=
   exp (δ * (z - θ) ^ 2)
 
@@ -599,7 +615,8 @@ theorem norm_stripGaussian (δ θ : ℝ) (z : ℂ) :
   congr 1
   simp [sq]
 
-/-- On the closed strip the Gaussian factor is at most `exp (δ (|θ| + 1)²)`. -/
+/-- For `δ ≥ 0`, on the closed strip the modulus of the Gaussian factor is at most
+`exp (δ (|θ| + 1)²)`. -/
 theorem norm_stripGaussian_le {δ : ℝ} (hδ : 0 ≤ δ) (θ : ℝ) {z : ℂ} (hz : z.re ∈ Icc 0 1) :
     ‖stripGaussian δ θ z‖ ≤ Real.exp (δ * (|θ| + 1) ^ 2) := by
   rw [norm_stripGaussian]

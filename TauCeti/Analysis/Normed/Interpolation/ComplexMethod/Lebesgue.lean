@@ -8,17 +8,18 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Complex.Hadamard
+import TauCeti.Analysis.Complex.VerticalStrip
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.SimpleFunc.AnalyticFamily
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 
 /-!
 # Complex interpolation of Lebesgue spaces
 
-Let `1 ≤ p₀, p₁ ≤ ∞`, `0 < θ < 1` and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`. Then the
-complex interpolation space of the Lebesgue couple `(L^{p₀}, L^{p₁})` is `Lᵖ`, with equal norms
+On a σ-finite measure space, let `1 ≤ p₀, p₁ ≤ ∞`, `0 < θ < 1` and
+`1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`. Then the complex interpolation space of the
+Lebesgue couple `(L^{p₀}, L^{p₁})` of complex-valued (scalar) functions is `Lᵖ`, with equal norms
 (Bergh–Löfström, Theorem 5.1.1):
 
 `[L^{p₀}, L^{p₁}]_θ = Lᵖ`.
@@ -26,10 +27,11 @@ complex interpolation space of the Lebesgue couple `(L^{p₀}, L^{p₁})` is `L�
 Both spaces sit inside `L¹ + L^∞`, and `TauCeti.CompatibleCouple.lpEquivComplexMethodSpace` is the
 linear isometric equivalence `Lᵖ ≃ [L^{p₀}, L^{p₁}]_θ` that is the identity there
 (`TauCeti.CompatibleCouple.sumSpaceEmbed_toSum_lpEquivComplexMethodSpace`). The scalars are
-complex, as the complex method requires.
+complex, as the complex method requires. The inclusion `Lᵖ ⊆ [L^{p₀}, L^{p₁}]_θ` holds without
+σ-finiteness.
 
 The two inclusions are proved separately, by Thorin's analytic families through simple functions
-(`TauCeti.RieszThorin.powSign`).
+(`TauCeti.AnalyticFamily.powSign`).
 
 * `Lᵖ ⊆ [L^{p₀}, L^{p₁}]_θ` with `‖f‖_θ ≤ ‖f‖_p`
   (`TauCeti.CompatibleCouple.exists_sumSpaceEmbed_toSum_eq_ofLp`). For a simple `f` with
@@ -56,11 +58,11 @@ The two inclusions are proved separately, by Thorin's analytic families through 
 
 public noncomputable section
 
-open MeasureTheory Complex Complex.HadamardThreeLines Filter Set Topology TauCeti.RieszThorin
+open MeasureTheory Complex Complex.HadamardThreeLines Filter Set Topology TauCeti.AnalyticFamily
 open scoped ENNReal ZeroAtInfty
-open SimpleFunc (fiberInd map_apply_eq_sum_mul_fiberInd memLp_fiberInd
-  eLpNorm_map_powSign_expo_le_one_of_re_eq_zero eLpNorm_map_powSign_expo_le_one_of_re_eq_one
-  map_powSign_one)
+open SimpleFunc (fiberIndicator map_apply_eq_sum_mul_fiberIndicator memLp_fiberIndicator
+  integral_mul_map_eq_sum eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero
+  eLpNorm_map_powSign_exponent_le_one_of_re_eq_one)
 
 namespace TauCeti.CompatibleCouple
 
@@ -74,14 +76,14 @@ open Classical in
 it lies in both spaces, and `0` otherwise. -/
 private def fiberInter (μ : Measure α) (p₀ p₁ : ℝ≥0∞) [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
     (u : SimpleFunc α ℂ) (c : ℂ) : (lebesgue ℂ ℂ μ p₀ p₁).inter :=
-  if h : MemLp (fiberInd u c) p₀ μ ∧ MemLp (fiberInd u c) p₁ μ then
+  if h : MemLp (fiberIndicator ℂ u c) p₀ μ ∧ MemLp (fiberIndicator ℂ u c) p₁ μ then
     ⟨(h.1.toLp _, h.2.toLp _),
       mem_lebesgue_inter_iff.2 (h.1.coeFn_toLp.trans h.2.coeFn_toLp.symm)⟩
   else 0
 
 private theorem coeFn_interFst_fiberInter {u : SimpleFunc α ℂ} {c : ℂ}
-    (h₀ : MemLp (fiberInd u c) p₀ μ) (h₁ : MemLp (fiberInd u c) p₁ μ) :
-    ⇑((lebesgue ℂ ℂ μ p₀ p₁).interFst (fiberInter μ p₀ p₁ u c)) =ᵐ[μ] fiberInd u c := by
+    (h₀ : MemLp (fiberIndicator ℂ u c) p₀ μ) (h₁ : MemLp (fiberIndicator ℂ u c) p₁ μ) :
+    ⇑((lebesgue ℂ ℂ μ p₀ p₁).interFst (fiberInter μ p₀ p₁ u c)) =ᵐ[μ] fiberIndicator ℂ u c := by
   unfold fiberInter
   split_ifs with h
   · rw [interFst_apply]
@@ -89,8 +91,8 @@ private theorem coeFn_interFst_fiberInter {u : SimpleFunc α ℂ} {c : ℂ}
   · exact absurd ⟨h₀, h₁⟩ h
 
 private theorem coeFn_interSnd_fiberInter {u : SimpleFunc α ℂ} {c : ℂ}
-    (h₀ : MemLp (fiberInd u c) p₀ μ) (h₁ : MemLp (fiberInd u c) p₁ μ) :
-    ⇑((lebesgue ℂ ℂ μ p₀ p₁).interSnd (fiberInter μ p₀ p₁ u c)) =ᵐ[μ] fiberInd u c := by
+    (h₀ : MemLp (fiberIndicator ℂ u c) p₀ μ) (h₁ : MemLp (fiberIndicator ℂ u c) p₁ μ) :
+    ⇑((lebesgue ℂ ℂ μ p₀ p₁).interSnd (fiberInter μ p₀ p₁ u c)) =ᵐ[μ] fiberIndicator ℂ u c := by
   unfold fiberInter
   split_ifs with h
   · rw [interSnd_apply]
@@ -99,9 +101,10 @@ private theorem coeFn_interSnd_fiberInter {u : SimpleFunc α ℂ} {c : ℂ}
 
 /-- A combination of `Lq` classes of the fibre indicators of `u` is the class of `u.map φ`. -/
 private theorem coeFn_sum_smul_eq_map {q : ℝ≥0∞} (u : SimpleFunc α ℂ)
-    (G : ℂ → Lp ℂ q μ) (hG : ∀ c ≠ 0, ⇑(G c) =ᵐ[μ] fiberInd u c) (φ : ℂ → ℂ) (hφ : φ 0 = 0) :
+    (G : ℂ → Lp ℂ q μ) (hG : ∀ c ≠ 0, ⇑(G c) =ᵐ[μ] fiberIndicator ℂ u c) (φ : ℂ → ℂ)
+    (hφ : φ 0 = 0) :
     ⇑(∑ c ∈ u.range, φ c • G c) =ᵐ[μ] u.map φ := by
-  have h : ∀ c ∈ u.range, ∀ᵐ x ∂μ, (φ c • G c) x = φ c * fiberInd u c x := by
+  have h : ∀ c ∈ u.range, ∀ᵐ x ∂μ, (φ c • G c) x = φ c * fiberIndicator ℂ u c x := by
     intro c _
     rcases eq_or_ne c 0 with rfl | hc
     · filter_upwards [Lp.coeFn_smul (φ 0) (G 0)] with x hx
@@ -110,14 +113,28 @@ private theorem coeFn_sum_smul_eq_map {q : ℝ≥0∞} (u : SimpleFunc α ℂ)
       rw [hx, Pi.smul_apply, smul_eq_mul, hx']
   filter_upwards [Lp.coeFn_finsetSum u.range (fun c => φ c • G c),
     (eventually_all_finset u.range).2 h] with x hsum hx
-  rw [hsum, Finset.sum_apply, map_apply_eq_sum_mul_fiberInd]
+  rw [hsum, Finset.sum_apply, map_apply_eq_sum_mul_fiberIndicator]
   exact Finset.sum_congr rfl hx
 
-/-- An `Lq` class whose function has `eLpNorm` at most one has norm at most one. -/
-private theorem norm_le_one_of_coeFn_ae_eq {q : ℝ≥0∞} {w : Lp ℂ q μ} {φ : α → ℂ}
-    (hw : ⇑w =ᵐ[μ] φ) (hφ : eLpNorm φ q μ ≤ 1) : ‖w‖ ≤ 1 := by
-  rw [Lp.norm_def, eLpNorm_congr_ae hw]
-  exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hφ)
+/-- A combination `∑ c, (a * powSign b c) • G c` of `Lq` classes of the fibre indicators of `u`
+has norm at most `M` when `‖a‖ ≤ M` and the member `u.map (powSign b)` of the analytic family
+lies in the unit ball of `Lq`. -/
+private theorem norm_sum_mul_powSign_smul_le {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : SimpleFunc α ℂ)
+    (G : ℂ → Lp ℂ q μ) (hG : ∀ c ≠ 0, ⇑(G c) =ᵐ[μ] fiberIndicator ℂ u c) {a b : ℂ} {M : ℝ}
+    (ha : ‖a‖ ≤ M) (hb : eLpNorm (u.map (powSign b)) q μ ≤ 1) :
+    ‖∑ c ∈ u.range, (a * powSign b c) • G c‖ ≤ M := by
+  have hle : ‖∑ c ∈ u.range, powSign b c • G c‖ ≤ 1 := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_sum_smul_eq_map u G hG _ (powSign_zero_right b))]
+    exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hb)
+  simp_rw [mul_smul, ← Finset.smul_sum]
+  rw [norm_smul, ← mul_one M]
+  exact mul_le_mul ha hle (norm_nonneg _) ((norm_nonneg a).trans ha)
+
+omit [Fact (1 ≤ p)] in
+private theorem injective_sumSpaceEmbed_toSum :
+    Function.Injective fun v : (lebesgue ℂ ℂ μ p₀ p₁).ComplexMethodSpace θ =>
+      (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum v) :=
+  (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed_injective.comp ComplexMethodSpace.toSum_injective
 
 /-! ### `Lᵖ ⊆ [L^{p₀}, L^{p₁}]_θ` -/
 
@@ -138,36 +155,37 @@ private theorem exists_isStripFunction_of_simpleFunc {f : SimpleFunc α ℂ} (hf
   set C := lebesgue ℂ ℂ μ p₀ p₁
   have hp₀ : p₀ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne'
   have hp₁ : p₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
-  set P := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ
+  set P := exponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ
   -- The analytic family through `f` lies in the unit balls of `L^{p₀}` and `L^{p₁}` on the two
   -- boundary lines; in particular the fibres of `f` lie in both spaces.
   have hb₀ (z : ℂ) (hz : z.re = 0) : eLpNorm (f.map (powSign (P z))) p₀ μ ≤ 1 :=
-    eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf hz
+    eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf hz
   have hb₁ (z : ℂ) (hz : z.re = 1) : eLpNorm (f.map (powSign (P z))) p₁ μ ≤ 1 :=
-    eLpNorm_map_powSign_expo_le_one_of_re_eq_one f hp₀ hp₁ hθ hp hf hz
+    eLpNorm_map_powSign_exponent_le_one_of_re_eq_one f hp₀ hp₁ hθ hp hf hz
   have hfib (c : ℂ) (hc : c ≠ 0) :
-      MemLp (fiberInd f c) p₀ μ ∧ MemLp (fiberInd f c) p₁ μ :=
-    ⟨memLp_fiberInd f hc (memLp_iff.2 ((hb₀ 0 (by simp)).trans_lt ENNReal.one_lt_top)),
-      memLp_fiberInd f hc (memLp_iff.2 ((hb₁ 1 (by simp)).trans_lt ENNReal.one_lt_top))⟩
+      MemLp (fiberIndicator ℂ f c) p₀ μ ∧ MemLp (fiberIndicator ℂ f c) p₁ μ :=
+    ⟨memLp_fiberIndicator f hc (memLp_iff.2 ((hb₀ 0 (by simp)).trans_lt ENNReal.one_lt_top)),
+      memLp_fiberIndicator f hc (memLp_iff.2 ((hb₁ 1 (by simp)).trans_lt ENNReal.one_lt_top))⟩
   set x := fiberInter μ p₀ p₁ f
   set ψ : ℂ → ℂ → ℂ := fun c z => stripGaussian δ θ z * powSign (P z) c
   -- The coefficients are entire, bounded on the strip and decay along its boundary lines.
-  have hψd (c : ℂ) : Differentiable ℂ (ψ c) :=
-    (differentiable_stripGaussian δ θ).mul (differentiable_powSign_expo _ _ _ c)
+  have hψd (c : ℂ) : DiffContOnCl ℂ (ψ c) (verticalStrip 0 1) :=
+    ((differentiable_stripGaussian δ θ).mul (differentiable_powSign_exponent _ _ _ c)).diffContOnCl
   set K : ℂ → ℝ := fun c =>
-    Real.exp ((1 + |slope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|) * |Real.log ‖c‖|)
+    Real.exp ((1 + |exponentSlope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|) * |Real.log ‖c‖|)
   have hψb (c : ℂ) (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) :
       ‖ψ c z‖ ≤ Real.exp (δ * (|θ| + 1) ^ 2) * K c := by
+    rw [TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff] at hz
     rw [norm_mul]
-    exact mul_le_mul (norm_stripGaussian_le hδ.le θ hz) (norm_powSign_expo_le hθ hz c)
-      (norm_nonneg _) (Real.exp_pos _).le
+    exact mul_le_mul (norm_stripGaussian_le hδ.le θ hz)
+      (norm_powSign_exponent_le (Ioo_subset_Icc_self hθ) hz c) (norm_nonneg _) (Real.exp_pos _).le
   have hψt (c : ℂ) (a : ℝ) (ha : a ∈ Icc (0 : ℝ) 1) :
       Tendsto (fun t : ℝ => ψ c (a + t * I)) (cocompact ℝ) (𝓝 0) := by
     refine squeeze_zero_norm (fun t => ?_)
       (by simpa using (tendsto_norm_stripGaussian hδ θ a).mul_const (K c))
     rw [norm_mul]
-    exact mul_le_mul_of_nonneg_left (norm_powSign_expo_le hθ (by simpa using ha) c)
-      (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_left
+      (norm_powSign_exponent_le (Ioo_subset_Icc_self hθ) (by simpa using ha) c) (norm_nonneg _)
   obtain ⟨g, hF, hg₀, hg₁⟩ := C.exists_isStripFunction_sum_smul f.range ψ x
     (fun c _ => hψd c) (fun c _ => ⟨_, hψb c⟩)
     (fun c _ => by simpa using hψt c 0 (by simp))
@@ -175,37 +193,27 @@ private theorem exists_isStripFunction_of_simpleFunc {f : SimpleFunc α ℂ} (hf
   refine ⟨_, g, hF, ?_, ?_⟩
   · -- At `θ` the Gaussian factor is `1` and the analytic family passes through `f`.
     have hψθ (c : ℂ) : ψ c θ = powSign 1 c := by
-      simp [ψ, P, expo_self]
+      simp [ψ, P]
     simp only [hψθ, map_sum, map_smul, sumSpaceEmbed_fstToSum, C, lebesgue_embed₀]
     rw [show ∑ c ∈ f.range, powSign 1 c • L1AddLinfty.ofLp (C.interFst (x c)) =
         L1AddLinfty.ofLp (∑ c ∈ f.range, powSign 1 c • C.interFst (x c)) by
       simp only [map_sum, map_smul], L1AddLinfty.ofLp_eq_ofLp_iff]
     refine (coeFn_sum_smul_eq_map f _ (fun c hc => coeFn_interFst_fiberInter (hfib c hc).1
       (hfib c hc).2) _ (powSign_zero_right 1)).trans ?_
-    rw [map_powSign_one]
+    rw [SimpleFunc.map_powSign_one]
     exact hfm.coeFn_toLp.symm
   · -- On each boundary line, the trace is the Gaussian factor times the analytic family.
     have hexp : 0 ≤ Real.exp (δ * (|θ| + 1) ^ 2) := (Real.exp_pos _).le
     refine norm_prod_le_iff.2 ⟨(ZeroAtInftyContinuousMap.norm_le hexp).2 fun t => ?_,
       (ZeroAtInftyContinuousMap.norm_le hexp).2 fun t => ?_⟩
-    · have hsum : g.1 t = stripGaussian δ θ (t * I) •
-          ∑ c ∈ f.range, powSign (P (t * I)) c • C.interFst (x c) := by
-        rw [hg₀, Finset.smul_sum]
-        simp only [smul_smul, ψ]
-      rw [hsum, norm_smul, ← mul_one (Real.exp _)]
-      exact mul_le_mul (norm_stripGaussian_le hδ.le θ (z := (t * I)) (by simp))
-        (norm_le_one_of_coeFn_ae_eq (coeFn_sum_smul_eq_map f _
-          (fun c hc => coeFn_interFst_fiberInter (hfib c hc).1 (hfib c hc).2) _
-          (powSign_zero_right _)) (hb₀ _ (by simp))) (norm_nonneg _) hexp
-    · have hsum : g.2 t = stripGaussian δ θ (1 + t * I) •
-          ∑ c ∈ f.range, powSign (P (1 + t * I)) c • C.interSnd (x c) := by
-        rw [hg₁, Finset.smul_sum]
-        simp only [smul_smul, ψ]
-      rw [hsum, norm_smul, ← mul_one (Real.exp _)]
-      exact mul_le_mul (norm_stripGaussian_le hδ.le θ (z := (1 + t * I)) (by simp))
-        (norm_le_one_of_coeFn_ae_eq (coeFn_sum_smul_eq_map f _
-          (fun c hc => coeFn_interSnd_fiberInter (hfib c hc).1 (hfib c hc).2) _
-          (powSign_zero_right _)) (hb₁ _ (by simp))) (norm_nonneg _) hexp
+    · rw [hg₀]
+      exact norm_sum_mul_powSign_smul_le f _
+        (fun c hc => coeFn_interFst_fiberInter (hfib c hc).1 (hfib c hc).2)
+        (norm_stripGaussian_le hδ.le θ (z := t * I) (by simp)) (hb₀ _ (by simp))
+    · rw [hg₁]
+      exact norm_sum_mul_powSign_smul_le f _
+        (fun c hc => coeFn_interSnd_fiberInter (hfib c hc).1 (hfib c hc).2)
+        (norm_stripGaussian_le hδ.le θ (z := 1 + t * I) (by simp)) (hb₁ _ (by simp))
 
 /-- A simple function in the unit ball of `Lᵖ` lies in the unit ball of `[L^{p₀}, L^{p₁}]_θ`. -/
 private theorem exists_norm_le_one_of_simpleFunc {f : SimpleFunc α ℂ} (hfm : MemLp f p μ)
@@ -246,13 +254,11 @@ private theorem exists_norm_le_of_simpleFunc {f : SimpleFunc α ℂ} (hfm : MemL
     simp
   -- Normalize `f` to the unit sphere of `Lᵖ`.
   have hfm' : MemLp ((((a⁻¹ : ℝ) : ℂ)) • f) p μ := hfm.const_smul _
+  have ha' : a = (eLpNorm f p μ).toReal := Lp.norm_toLp _ _
+  have hf0 : eLpNorm f p μ ≠ 0 := fun h => by simp [h] at ha
   have hf' : eLpNorm ((((a⁻¹ : ℝ) : ℂ)) • f) p μ ≤ 1 := by
-    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
-      Real.norm_of_nonneg (inv_nonneg.2 ha.le), ENNReal.ofReal_inv_of_pos ha]
-    have : eLpNorm f p μ = ENNReal.ofReal a := by
-      rw [show a = (eLpNorm f p μ).toReal from Lp.norm_toLp _ _,
-        ENNReal.ofReal_toReal hfm.eLpNorm_lt_top.ne]
-    rw [this, ENNReal.inv_mul_cancel (by simpa using ha) ENNReal.ofReal_ne_top]
+    rw [ha']
+    exact (f.eLpNorm_inv_toReal_smul_eq_one hf0 hfm.eLpNorm_lt_top.ne).le
   obtain ⟨v, hv, hvn⟩ := exists_norm_le_one_of_simpleFunc hθ hp hfm' hf'
   refine ⟨(a : ℂ) • v, ?_, ?_⟩
   · have hto : hfm'.toLp _ = (((a⁻¹ : ℝ) : ℂ)) • hfm.toLp f := MemLp.toLp_const_smul _ hfm
@@ -270,15 +276,14 @@ theorem exists_sumSpaceEmbed_toSum_eq_ofLp (hpt : p ≠ ∞) (f : Lp ℂ p μ) :
         L1AddLinfty.ofLp f ∧ ‖v‖ ≤ ‖f‖ := by
   set J : (lebesgue ℂ ℂ μ p₀ p₁).ComplexMethodSpace θ →L[ℂ] L1AddLinfty ℂ ℂ μ :=
     (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed.comp ComplexMethodSpace.toSum
-  have hJ : Function.Injective J := (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed_injective.comp
-    ComplexMethodSpace.toSum_injective
+  have hJ : Function.Injective J := injective_sumSpaceEmbed_toSum
   -- The inclusion holds on the dense subgroup of simple functions.
   have hsimple (u : Lp ℂ p μ) (hu : u ∈ Lp.simpleFunc ℂ p μ) : ∃ v, J v = L1AddLinfty.ofLp u ∧
       ‖v‖ ≤ ‖u‖ := by
     obtain ⟨v, hv, hvn⟩ := exists_norm_le_of_simpleFunc hθ hp
       (Lp.simpleFunc.memLp (⟨u, hu⟩ : Lp.simpleFunc ℂ p μ))
     have hto : (Lp.simpleFunc.memLp (⟨u, hu⟩ : Lp.simpleFunc ℂ p μ)).toLp _ = u :=
-      Lp.ext ((MemLp.coeFn_toLp _).trans (Lp.simpleFunc.toSimpleFunc_eq_toFun _))
+      congrArg Subtype.val (Lp.simpleFunc.toLp_toSimpleFunc ⟨u, hu⟩)
     rw [hto] at hv hvn
     exact ⟨v, hv, hvn⟩
   obtain ⟨u, hu, hlim⟩ := mem_closure_iff_seq_limit.1 (Lp.simpleFunc.dense (E := ℂ) hpt f)
@@ -347,64 +352,52 @@ open Classical in
 `L^{p₀} + L^{p₁}` when that indicator lies in `L^{p₀'} ∩ L^{p₁'}`, and `0` otherwise. -/
 private def fiberPairing (μ : Measure α) (p₀ p₁ : ℝ≥0∞) [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
     (k : SimpleFunc α ℂ) (d : ℂ) : (lebesgue ℂ ℂ μ p₀ p₁).SumSpace →L[ℂ] ℂ :=
-  if h : MemLp (fiberInd k d) p₀.conjExponent μ ∧ MemLp (fiberInd k d) p₁.conjExponent μ then
+  if h : MemLp (fiberIndicator ℂ k d) p₀.conjExponent μ ∧
+      MemLp (fiberIndicator ℂ k d) p₁.conjExponent μ then
     sumPairing _ h.1 h.2
   else 0
 
 private theorem fiberPairing_fstToSum {k : SimpleFunc α ℂ} {d : ℂ}
-    (h₀ : MemLp (fiberInd k d) p₀.conjExponent μ) (h₁ : MemLp (fiberInd k d) p₁.conjExponent μ)
+    (h₀ : MemLp (fiberIndicator ℂ k d) p₀.conjExponent μ)
+    (h₁ : MemLp (fiberIndicator ℂ k d) p₁.conjExponent μ)
     (u : Lp ℂ p₀ μ) :
     fiberPairing μ p₀ p₁ k d ((lebesgue ℂ ℂ μ p₀ p₁).fstToSum u) =
-      ∫ x, u x * fiberInd k d x ∂μ := by
+      ∫ x, u x * fiberIndicator ℂ k d x ∂μ := by
   unfold fiberPairing
   split_ifs with h
   · exact sumPairing_fstToSum _ _ u
   · exact absurd ⟨h₀, h₁⟩ h
 
 private theorem fiberPairing_sndToSum {k : SimpleFunc α ℂ} {d : ℂ}
-    (h₀ : MemLp (fiberInd k d) p₀.conjExponent μ) (h₁ : MemLp (fiberInd k d) p₁.conjExponent μ)
+    (h₀ : MemLp (fiberIndicator ℂ k d) p₀.conjExponent μ)
+    (h₁ : MemLp (fiberIndicator ℂ k d) p₁.conjExponent μ)
     (u : Lp ℂ p₁ μ) :
     fiberPairing μ p₀ p₁ k d ((lebesgue ℂ ℂ μ p₀ p₁).sndToSum u) =
-      ∫ x, u x * fiberInd k d x ∂μ := by
+      ∫ x, u x * fiberIndicator ℂ k d x ∂μ := by
   unfold fiberPairing
   split_ifs with h
   · exact sumPairing_sndToSum _ _ u
   · exact absurd ⟨h₀, h₁⟩ h
 
-/-- Integration against `k.map ψ` expands along the fibres of `k`. -/
-private theorem integral_mul_map_eq_sum {u : α → ℂ} (k : SimpleFunc α ℂ) (ψ : ℂ → ℂ)
-    (hψ : ψ 0 = 0) (hu : ∀ d ≠ 0, Integrable (fun x => u x * fiberInd k d x) μ) :
-    ∫ x, u x * k.map ψ x ∂μ = ∑ d ∈ k.range, ψ d * ∫ x, u x * fiberInd k d x ∂μ := by
-  have hint : ∀ d ∈ k.range, Integrable (fun x => ψ d * (u x * fiberInd k d x)) μ := by
-    intro d _
+/-- On a boundary line, the combination `∑ d, powSign w d * Λ d` of the fibre functionals `Λ d` of
+`k`, evaluated at `u ∈ L^q`, is the pairing of `u` with `k.map (powSign w)`; it has modulus at most
+`‖u‖` when `k.map (powSign w)` lies in the unit ball of `L^{q'}`. -/
+private theorem norm_sum_mul_le_of_eLpNorm_le_one {q : ℝ≥0∞} [Fact (1 ≤ q)] (k : SimpleFunc α ℂ)
+    (w : ℂ) (u : Lp ℂ q μ) (hk : ∀ d ≠ 0, MemLp (fiberIndicator ℂ k d) q.conjExponent μ)
+    (hkw : eLpNorm (k.map (powSign w)) q.conjExponent μ ≤ 1) (Λ : ℂ → ℂ)
+    (hΛ : ∀ d ≠ 0, Λ d = ∫ x, u x * fiberIndicator ℂ k d x ∂μ) :
+    ‖∑ d ∈ k.range, powSign w d * Λ d‖ ≤ ‖u‖ := by
+  have hd0 {d : ℂ} (hd : powSign w d ≠ 0) : d ≠ 0 := by
+    rintro rfl
+    exact hd (powSign_zero_right w)
+  have h : ∑ d ∈ k.range, powSign w d * Λ d = ∫ x, u x * k.map (powSign w) x ∂μ := by
+    rw [integral_mul_map_eq_sum k _ fun d _ hd => (Lp.memLp u).integrable_mul (hk d (hd0 hd))]
+    refine Finset.sum_congr rfl fun d _ => ?_
     rcases eq_or_ne d 0 with rfl | hd
-    · simp [hψ]
-    · exact (hu d hd).const_mul _
-  calc ∫ x, u x * k.map ψ x ∂μ = ∫ x, ∑ d ∈ k.range, ψ d * (u x * fiberInd k d x) ∂μ := by
-        refine integral_congr_ae (ae_of_all _ fun x => ?_)
-        simp only [map_apply_eq_sum_mul_fiberInd, Finset.mul_sum]
-        exact Finset.sum_congr rfl fun d _ => by ring
-    _ = ∑ d ∈ k.range, ∫ x, ψ d * (u x * fiberInd k d x) ∂μ := integral_finsetSum _ hint
-    _ = _ := Finset.sum_congr rfl fun d _ => integral_const_mul _ _
-
-/-- Pairing `u ∈ L^{q}` with the analytic family `k.map ψ` through its fibre functionals. -/
-private theorem sum_mul_fiberPairing_eq_integral {q : ℝ≥0∞} [Fact (1 ≤ q)] (k : SimpleFunc α ℂ)
-    (ψ : ℂ → ℂ) (hψ : ψ 0 = 0) (u : Lp ℂ q μ) (hk : ∀ d ≠ 0, MemLp (fiberInd k d) q.conjExponent μ)
-    (Λ : ℂ → ℂ) (hΛ : ∀ d ≠ 0, Λ d = ∫ x, u x * fiberInd k d x ∂μ) :
-    ∑ d ∈ k.range, ψ d * Λ d = ∫ x, u x * k.map ψ x ∂μ := by
-  rw [integral_mul_map_eq_sum k ψ hψ fun d hd => (Lp.memLp u).integrable_mul (hk d hd)]
-  refine Finset.sum_congr rfl fun d _ => ?_
-  rcases eq_or_ne d 0 with rfl | hd
-  · simp [hψ]
-  · rw [hΛ d hd]
-
-/-- Hölder's inequality against a function in the unit ball of the dual exponent. -/
-private theorem norm_integral_mul_le_norm {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : Lp ℂ q μ) {w : α → ℂ}
-    (hw : eLpNorm w q.conjExponent μ ≤ 1) : ‖∫ x, u x * w x ∂μ‖ ≤ ‖u‖ := by
-  have h := TauCeti.enorm_integral_mul_le (μ := μ) (p := q) (q := q.conjExponent) (u := ⇑u)
-    (v := w)
-  rw [Lp.norm_def, ← toReal_eNorm]
-  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top u) (h.trans (mul_le_of_le_one_right' hw))
+    · simp
+    · rw [hΛ d hd]
+  rw [h]
+  exact Lp.norm_integral_mul_le_of_eLpNorm_le_one u hkw
 
 end Pairing
 
@@ -429,17 +422,17 @@ private theorem norm_integral_mul_le_of_le_one
     (zero_lt_one.trans_le (ENNReal.HolderConjugate.one_le _ p₀)).ne'
   have hs₁ : p₁.conjExponent ≠ 0 :=
     (zero_lt_one.trans_le (ENNReal.HolderConjugate.one_le _ p₁)).ne'
-  set Q := expo (p₀.conjExponent⁻¹).toReal (p₁.conjExponent⁻¹).toReal θ
+  set Q := exponent (p₀.conjExponent⁻¹).toReal (p₁.conjExponent⁻¹).toReal θ
   -- The analytic family through `k` lies in the unit balls of the dual endpoint spaces on the two
   -- boundary lines; in particular the fibres of `k` lie in both dual spaces.
   have hk₀ (z : ℂ) (hz : z.re = 0) : eLpNorm (k.map (powSign (Q z))) p₀.conjExponent μ ≤ 1 :=
-    eLpNorm_map_powSign_expo_le_one_of_re_eq_zero k hs₀ hs₁ hθ hs hk hz
+    eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero k hs₀ hs₁ hθ hs hk hz
   have hk₁ (z : ℂ) (hz : z.re = 1) : eLpNorm (k.map (powSign (Q z))) p₁.conjExponent μ ≤ 1 :=
-    eLpNorm_map_powSign_expo_le_one_of_re_eq_one k hs₀ hs₁ hθ hs hk hz
-  have hfib₀ (d : ℂ) (hd : d ≠ 0) : MemLp (fiberInd k d) p₀.conjExponent μ :=
-    memLp_fiberInd k hd (memLp_iff.2 ((hk₀ 0 (by simp)).trans_lt ENNReal.one_lt_top))
-  have hfib₁ (d : ℂ) (hd : d ≠ 0) : MemLp (fiberInd k d) p₁.conjExponent μ :=
-    memLp_fiberInd k hd (memLp_iff.2 ((hk₁ 1 (by simp)).trans_lt ENNReal.one_lt_top))
+    eLpNorm_map_powSign_exponent_le_one_of_re_eq_one k hs₀ hs₁ hθ hs hk hz
+  have hfib₀ (d : ℂ) (hd : d ≠ 0) : MemLp (fiberIndicator ℂ k d) p₀.conjExponent μ :=
+    memLp_fiberIndicator k hd (memLp_iff.2 ((hk₀ 0 (by simp)).trans_lt ENNReal.one_lt_top))
+  have hfib₁ (d : ℂ) (hd : d ≠ 0) : MemLp (fiberIndicator ℂ k d) p₁.conjExponent μ :=
+    memLp_fiberIndicator k hd (memLp_iff.2 ((hk₁ 1 (by simp)).trans_lt ENNReal.one_lt_top))
   set Λ := fiberPairing μ p₀ p₁ k
   refine le_of_forall_gt_imp_ge_of_dense fun r hr => ?_
   -- Choose an admissible function `F` with `F θ = v` and traces of norm less than `r`.
@@ -447,75 +440,71 @@ private theorem norm_integral_mul_le_of_le_one
   set F := (lebesgue ℂ ℂ μ p₀ p₁).stripFunction g
   have hF : (lebesgue ℂ ℂ μ p₀ p₁).IsStripFunction F g :=
     (lebesgue ℂ ℂ μ p₀ p₁).isStripFunction_stripFunction g
-  have hgr' : ‖(g : C₀(ℝ, Lp ℂ p₀ μ) × C₀(ℝ, Lp ℂ p₁ μ))‖ < r := hgr
+  have hgr' : ‖(g : C₀(ℝ, Lp ℂ p₀ μ) × C₀(ℝ, Lp ℂ p₁ μ))‖ < r := by
+    rwa [Submodule.norm_coe]
   have hFθ : F θ = ComplexMethodSpace.toSum v := by
     rw [← hg, ComplexMethodSpace.toSum_mk, stripEval_apply]
   set Φ : ℂ → ℂ := fun z => ∑ d ∈ k.range, powSign (Q z) d • Λ d (F z)
   have hΦd : DiffContOnCl ℂ Φ (verticalStrip 0 1) := by
     have hterm (d : ℂ) : DiffContOnCl ℂ (fun z => powSign (Q z) d • Λ d (F z))
         (verticalStrip 0 1) :=
-      (differentiable_powSign_expo _ _ _ d).diffContOnCl.smul
+      (differentiable_powSign_exponent _ _ _ d).diffContOnCl.smul
         ((Λ d).differentiable.comp_diffContOnCl hF.diffContOnCl)
     exact ⟨DifferentiableOn.fun_sum fun d _ => (hterm d).differentiableOn,
       continuousOn_finsetSum _ fun d _ => (hterm d).continuousOn⟩
   have hΦb : BddAbove ((norm ∘ Φ) '' verticalClosedStrip 0 1) := by
-    refine ⟨∑ d ∈ k.range, Real.exp ((1 + |slope (p₀.conjExponent⁻¹).toReal
+    refine ⟨∑ d ∈ k.range, Real.exp ((1 + |exponentSlope (p₀.conjExponent⁻¹).toReal
       (p₁.conjExponent⁻¹).toReal θ|) * |Real.log ‖d‖|) * (‖Λ d‖ * ‖g‖), ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun d _ => ?_)
     rw [norm_smul]
-    exact mul_le_mul (norm_powSign_expo_le hθ hz d)
+    exact mul_le_mul
+      (norm_powSign_exponent_le (Ioo_subset_Icc_self hθ)
+        (TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.1 hz) d)
       (((Λ d).le_opNorm _).trans (mul_le_mul_of_nonneg_left (hF.norm_le hz) (norm_nonneg _)))
       (norm_nonneg _) (Real.exp_pos _).le
   -- On the boundary lines, `Φ` is the pairing of a trace with the analytic family through `k`.
   have hb₀ : ∀ z ∈ re ⁻¹' {(0 : ℝ)}, ‖Φ z‖ ≤ r := by
     intro z hz
-    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = t * I :=
-      ⟨z.im, by apply Complex.ext <;> simp [show z.re = 0 from hz]⟩
-    have hΦz : Φ (t * I) = ∫ x, (g : C₀(ℝ, Lp ℂ p₀ μ) × C₀(ℝ, Lp ℂ p₁ μ)).1 t x *
-        k.map (powSign (Q (t * I))) x ∂μ := by
-      simp only [Φ, smul_eq_mul, hF.apply_mul_I]
-      exact sum_mul_fiberPairing_eq_integral k _ (powSign_zero_right _) _ hfib₀ _
-        fun d hd => fiberPairing_fstToSum (hfib₀ d hd) (hfib₁ d hd) _
-    rw [hΦz]
-    exact (norm_integral_mul_le_norm _ (hk₀ _ hz)).trans
+    rw [mem_preimage, mem_singleton_iff] at hz
+    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = t * I := ⟨z.im, by apply Complex.ext <;> simp [hz]⟩
+    simp only [Φ, smul_eq_mul, hF.apply_mul_I]
+    exact (norm_sum_mul_le_of_eLpNorm_le_one k _ _ hfib₀ (hk₀ _ hz) _
+      fun d hd => fiberPairing_fstToSum (hfib₀ d hd) (hfib₁ d hd) _).trans
       (((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans (norm_fst_le _)).trans hgr'.le)
   have hb₁ : ∀ z ∈ re ⁻¹' {(1 : ℝ)}, ‖Φ z‖ ≤ r := by
     intro z hz
-    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = 1 + t * I :=
-      ⟨z.im, by apply Complex.ext <;> simp [show z.re = 1 from hz]⟩
-    have hΦz : Φ (1 + t * I) = ∫ x, (g : C₀(ℝ, Lp ℂ p₀ μ) × C₀(ℝ, Lp ℂ p₁ μ)).2 t x *
-        k.map (powSign (Q (1 + t * I))) x ∂μ := by
-      simp only [Φ, smul_eq_mul, hF.apply_one_add_mul_I]
-      exact sum_mul_fiberPairing_eq_integral k _ (powSign_zero_right _) _ hfib₁ _
-        fun d hd => fiberPairing_sndToSum (hfib₀ d hd) (hfib₁ d hd) _
-    rw [hΦz]
-    exact (norm_integral_mul_le_norm _ (hk₁ _ hz)).trans
+    rw [mem_preimage, mem_singleton_iff] at hz
+    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = 1 + t * I := ⟨z.im, by apply Complex.ext <;> simp [hz]⟩
+    simp only [Φ, smul_eq_mul, hF.apply_one_add_mul_I]
+    exact (norm_sum_mul_le_of_eLpNorm_le_one k _ _ hfib₁ (hk₁ _ hz) _
+      fun d hd => fiberPairing_sndToSum (hfib₀ d hd) (hfib₁ d hd) _).trans
       (((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans (norm_snd_le _)).trans hgr'.le)
   -- At `θ` the family passes through `k`, and `F θ = a + b`.
   have hΦθ : Φ θ = ∫ x, (a x + b x) * k x ∂μ := by
-    have hint (d : ℂ) (hd : d ≠ 0) : Integrable (fun x => (a x + b x) * fiberInd k d x) μ := by
+    have hint (d : ℂ) (hd : d ≠ 0) :
+        Integrable (fun x => (a x + b x) * fiberIndicator ℂ k d x) μ := by
       simp_rw [add_mul]
       exact ((Lp.memLp a).integrable_mul (hfib₀ d hd)).add
         ((Lp.memLp b).integrable_mul (hfib₁ d hd))
     have hterm (d : ℂ) : powSign 1 d * Λ d (F θ) =
-        powSign 1 d * ∫ x, (a x + b x) * fiberInd k d x ∂μ := by
+        powSign 1 d * ∫ x, (a x + b x) * fiberIndicator ℂ k d x ∂μ := by
       rcases eq_or_ne d 0 with rfl | hd
       · rw [powSign_zero_right, zero_mul, zero_mul]
-      · have ha : Integrable (fun x => a x * fiberInd k d x) μ :=
+      · have ha : Integrable (fun x => a x * fiberIndicator ℂ k d x) μ :=
           (Lp.memLp a).integrable_mul (hfib₀ d hd)
-        have hb : Integrable (fun x => b x * fiberInd k d x) μ :=
+        have hb : Integrable (fun x => b x * fiberIndicator ℂ k d x) μ :=
           (Lp.memLp b).integrable_mul (hfib₁ d hd)
         rw [hFθ, ← hab, map_add, fiberPairing_fstToSum (hfib₀ d hd) (hfib₁ d hd),
           fiberPairing_sndToSum (hfib₀ d hd) (hfib₁ d hd), ← integral_add ha hb]
         simp_rw [add_mul]
     calc Φ θ = ∑ d ∈ k.range, powSign 1 d * Λ d (F θ) := by
-          simp only [Φ, smul_eq_mul, Q, expo_self]
-      _ = ∑ d ∈ k.range, powSign 1 d * ∫ x, (a x + b x) * fiberInd k d x ∂μ :=
+          simp only [Φ, smul_eq_mul, Q, exponent_self]
+      _ = ∑ d ∈ k.range, powSign 1 d * ∫ x, (a x + b x) * fiberIndicator ℂ k d x ∂μ :=
           Finset.sum_congr rfl fun d _ => hterm d
       _ = ∫ x, (a x + b x) * k.map (powSign 1) x ∂μ :=
-          (integral_mul_map_eq_sum k _ (powSign_zero_right 1) hint).symm
-      _ = _ := by rw [map_powSign_one]
+          (integral_mul_map_eq_sum k _ fun d _ hd => hint d (by rintro rfl; simp at hd)).symm
+      _ = _ := by rw [SimpleFunc.map_powSign_one]
   have key := norm_le_interp_of_mem_verticalClosedStrip₀₁' Φ
     (z := (θ : ℂ)) (by simpa using hθ') hΦd hΦb hb₀ hb₁
   have hr0 : 0 < r := (norm_nonneg v).trans_lt hr
@@ -538,10 +527,8 @@ private theorem enorm_integral_mul_le (v : (lebesgue ℂ ℂ μ p₀ p₁).Compl
   -- Normalize `k`.
   set c := (eLpNorm k p.conjExponent μ).toReal
   have hc : 0 < c := ENNReal.toReal_pos hk0 hk
-  have hkc : eLpNorm (((c⁻¹ : ℝ) : ℂ) • k) p.conjExponent μ ≤ 1 := by
-    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
-      Real.norm_of_nonneg (inv_nonneg.2 hc.le), ENNReal.ofReal_inv_of_pos hc,
-      ENNReal.ofReal_toReal hk, ENNReal.inv_mul_cancel hk0 hk]
+  have hkc : eLpNorm (((c⁻¹ : ℝ) : ℂ) • k) p.conjExponent μ ≤ 1 :=
+    (k.eLpNorm_inv_toReal_smul_eq_one hk0 hk).le
   have key := norm_integral_mul_le_of_le_one hθ hp v a b hab hkc
   have hscale : ∫ x, (a x + b x) * (((c⁻¹ : ℝ) : ℂ) • k) x ∂μ =
       ((c⁻¹ : ℝ) : ℂ) * ∫ x, (a x + b x) * k x ∂μ := by
@@ -568,40 +555,11 @@ theorem exists_ofLp_eq_sumSpaceEmbed_toSum [SigmaFinite μ] (hpt : p ≠ ∞)
     (lebesgue ℂ ℂ μ p₀ p₁).exists_fstToSum_add_sndToSum_eq (ComplexMethodSpace.toSum v)
   set h : α → ℂ := fun x => a x + b x
   have hsm : StronglyMeasurable h := (Lp.stronglyMeasurable a).add (Lp.stronglyMeasurable b)
-  -- Each truncation of `h` to a spanning set where `‖h‖ ≤ N` is in `Lᵖ`, and duality against
-  -- simple functions bounds its norm by `‖v‖_θ`.
-  have htrunc (N : ℕ) :
-      eLpNorm ((spanningSets μ N ∩ {x | ‖h x‖ ≤ N}).indicator h) p μ ≤ ENNReal.ofReal ‖v‖ := by
-    set S := spanningSets μ N ∩ {x | ‖h x‖ ≤ N}
-    have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le hsm N
-    have hmem : MemLp (S.indicator h) p μ := by
-      refine (memLp_top_of_bound (hsm.indicator hS).aestronglyMeasurable N
-        (ae_of_all _ fun x => ?_)).mono_exponent_of_measure_support_ne_top
-        (fun x hx => indicator_of_notMem (fun h => hx (mem_of_mem_inter_left h)) _)
-        (measure_spanningSets_lt_top μ N).ne le_top
-      by_cases hx : x ∈ S
-      · simpa [indicator_of_mem hx] using hx.2
-      · simp [indicator_of_notMem hx]
-    refine hmem.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top (q' := p.conjExponent) hpt
-      fun k hk => ?_
-    have heq : ∫ x, S.indicator h x * k x ∂μ = ∫ x, (a x + b x) * k.restrict S x ∂μ := by
-      refine integral_congr_ae (ae_of_all _ fun x => ?_)
-      dsimp only
-      rw [SimpleFunc.restrict_apply _ hS]
-      by_cases hx : x ∈ S <;> simp [hx, h]
-    have hle : eLpNorm (k.restrict S) p.conjExponent μ ≤ eLpNorm k p.conjExponent μ := by
-      refine eLpNorm_mono (k.restrict S).aestronglyMeasurable fun x => ?_
-      rw [SimpleFunc.restrict_apply _ hS]
-      by_cases hx : x ∈ S <;> simp [hx]
-    rw [heq]
-    exact (enorm_integral_mul_le hθ hp v a b hab (hle.trans_lt hk.eLpNorm_lt_top).ne).trans
-      (by gcongr)
+  -- Duality against simple functions bounds `‖h‖_p` by `‖v‖_θ`.
   have hle : eLpNorm h p μ ≤ ENNReal.ofReal ‖v‖ :=
-    Lp.eLpNorm_le_of_ae_tendsto (Eventually.of_forall htrunc)
-      (fun N => (hsm.indicator
-        (measurableSet_spanningSets_inter_norm_le hsm N)).aestronglyMeasurable)
-      hsm.aestronglyMeasurable
-      (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h x)
+    hsm.aestronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top
+      (q' := p.conjExponent) hpt fun k hk =>
+        enorm_integral_mul_le hθ hp v a b hab hk.eLpNorm_lt_top.ne
   have hmem : MemLp h p μ := memLp_iff.2 (hle.trans_lt ENNReal.ofReal_lt_top)
   refine ⟨hmem.toLp h, ?_, ?_⟩
   · rw [← hab, map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
@@ -621,12 +579,6 @@ section Equiv
 
 variable [SigmaFinite μ] (hθ : θ ∈ Ioo (0 : ℝ) 1)
   (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hpt : p ≠ ∞)
-
-omit [Fact (1 ≤ p)] [SigmaFinite μ] in
-private theorem injective_sumSpaceEmbed_toSum :
-    Function.Injective fun v : (lebesgue ℂ ℂ μ p₀ p₁).ComplexMethodSpace θ =>
-      (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum v) :=
-  (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed_injective.comp ComplexMethodSpace.toSum_injective
 
 include hθ hp hpt
 
@@ -689,8 +641,9 @@ theorem ofLp_lpEquivComplexMethodSpace_symm (v : (lebesgue ℂ ℂ μ p₀ p₁)
   conv_rhs => rw [← (lpEquivComplexMethodSpace hθ hp hpt).apply_symm_apply v]
   rw [sumSpaceEmbed_toSum_lpEquivComplexMethodSpace]
 
-/-- An element of `L^{p₀} + L^{p₁}` lies in `[L^{p₀}, L^{p₁}]_θ` exactly when it is a function in
-`Lᵖ`. -/
+/-- Under the hypotheses of `TauCeti.CompatibleCouple.lpEquivComplexMethodSpace` (a σ-finite
+measure space, `0 < θ < 1` and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`), an element of
+`L^{p₀} + L^{p₁}` lies in `[L^{p₀}, L^{p₁}]_θ` exactly when it is a function in `Lᵖ`. -/
 theorem exists_toSum_eq_iff_exists_ofLp_eq {u : (lebesgue ℂ ℂ μ p₀ p₁).SumSpace} :
     (∃ v : (lebesgue ℂ ℂ μ p₀ p₁).ComplexMethodSpace θ, ComplexMethodSpace.toSum v = u) ↔
       ∃ f : Lp ℂ p μ, L1AddLinfty.ofLp f = (lebesgue ℂ ℂ μ p₀ p₁).sumSpaceEmbed u := by

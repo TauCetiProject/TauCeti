@@ -88,49 +88,54 @@ variable {α β γ ι : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace
 
 namespace RieszThorin
 
-open SimpleFunc (fiberInd map_eq_sum_smul_fiberInd map_apply_eq_sum_mul_fiberInd memLp_fiberInd
-  eLpNorm_map_powSign_expo_le_one_of_re_eq_zero eLpNorm_map_powSign_expo_le_one_of_re_eq_one
-  map_powSign_one)
+open AnalyticFamily
+open SimpleFunc (fiberIndicator map_eq_sum_smul_fiberIndicator memLp_fiberIndicator
+  eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero
+  eLpNorm_map_powSign_exponent_le_one_of_re_eq_one map_powSign_one)
 
 /-- The pairing of two analytic families through simple functions, expanded along their fibres. -/
 private theorem integral_map_powSign_eq_sum (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
     (f : SimpleFunc α ℂ) (g : SimpleFunc β ℂ) (w w' : ℂ)
     (hint : ∀ c ∈ f.range, c ≠ 0 → ∀ d ∈ g.range, d ≠ 0 →
-      Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν) :
+      Integrable (fun y => T (fiberIndicator ℂ f c) y * fiberIndicator ℂ g d y) ν) :
     ∫ y, T (f.map (powSign w)) y * g.map (powSign w') y ∂ν =
       ∑ c ∈ f.range, ∑ d ∈ g.range,
-        powSign w c * powSign w' d * ∫ y, T (fiberInd f c) y * fiberInd g d y ∂ν := by
+        powSign w c * powSign w' d *
+          ∫ y, T (fiberIndicator ℂ f c) y * fiberIndicator ℂ g d y ∂ν := by
   have hT : ⇑(T (f.map (powSign w))) =ᵐ[ν]
-      fun y => ∑ c ∈ f.range, powSign w c * T (fiberInd f c) y := by
-    rw [map_eq_sum_smul_fiberInd, map_sum]
+      fun y => ∑ c ∈ f.range, powSign w c * T (fiberIndicator ℂ f c) y := by
+    rw [map_eq_sum_smul_fiberIndicator, map_sum]
     simp_rw [map_smul]
     filter_upwards [(AEEqFun.coeFn_finsetSum _ _).trans
-      (eventuallyEq_sum fun c _ => AEEqFun.coeFn_smul (powSign w c) (T (fiberInd f c)))]
+      (eventuallyEq_sum fun c _ => AEEqFun.coeFn_smul (powSign w c) (T (fiberIndicator ℂ f c)))]
       with y hy
     rw [hy, Finset.sum_apply]
     simp_rw [Pi.smul_apply, smul_eq_mul]
-  -- Each term is integrable: it vanishes unless `c ≠ 0` and `d ≠ 0`.
-  have hterm : ∀ c ∈ f.range, ∀ d ∈ g.range, Integrable (fun y =>
-      powSign w c * powSign w' d * (T (fiberInd f c) y * fiberInd g d y)) ν := by
-    intro c hc d hd
+  -- Against a nonzero fibre of `g`, the image of the family through `f` expands along the fibres
+  -- of `f`; each term is integrable, as it vanishes unless `c ≠ 0`.
+  have hterm : ∀ d ∈ g.range, d ≠ 0 → ∀ c ∈ f.range, Integrable (fun y =>
+      powSign w c * (T (fiberIndicator ℂ f c) y * fiberIndicator ℂ g d y)) ν := by
+    intro d hd hd0 c hc
     rcases eq_or_ne c 0 with rfl | hc0
-    · simp [powSign_zero_right]
-    rcases eq_or_ne d 0 with rfl | hd0
-    · simp [powSign_zero_right]
+    · simp
     exact (hint c hc hc0 d hd hd0).const_mul _
-  calc ∫ y, T (f.map (powSign w)) y * g.map (powSign w') y ∂ν
-      = ∫ y, ∑ c ∈ f.range, ∑ d ∈ g.range,
-          powSign w c * powSign w' d * (T (fiberInd f c) y * fiberInd g d y) ∂ν := by
-        refine integral_congr_ae ?_
-        filter_upwards [hT] with y hy
-        rw [hy, map_apply_eq_sum_mul_fiberInd g, Finset.sum_mul_sum]
-        exact Finset.sum_congr rfl fun c _ => Finset.sum_congr rfl fun d _ => by ring
-    _ = ∑ c ∈ f.range, ∑ d ∈ g.range,
-          powSign w c * powSign w' d * ∫ y, T (fiberInd f c) y * fiberInd g d y ∂ν := by
-        rw [integral_finsetSum _ fun c hc => integrable_finsetSum _ fun d hd => hterm c hc d hd]
-        refine Finset.sum_congr rfl fun c hc => ?_
-        rw [integral_finsetSum _ fun d hd => hterm c hc d hd]
-        exact Finset.sum_congr rfl fun d _ => integral_const_mul _ _
+  have hfib (d : β → ℂ) : (fun y => T (f.map (powSign w)) y * d y) =ᵐ[ν]
+      fun y => ∑ c ∈ f.range, powSign w c * (T (fiberIndicator ℂ f c) y * d y) := by
+    filter_upwards [hT] with y hy
+    rw [hy, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun c _ => by ring
+  have hd0 {d : ℂ} (hd : powSign w' d ≠ 0) : d ≠ 0 := by
+    rintro rfl
+    exact hd (powSign_zero_right w')
+  rw [SimpleFunc.integral_mul_map_eq_sum g _ fun d hd hd' =>
+    (integrable_finsetSum _ (hterm d hd (hd0 hd'))).congr (hfib _).symm, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun d hd => ?_
+  rcases eq_or_ne d 0 with rfl | hd'
+  · simp
+  rw [integral_congr_ae (hfib _), integral_finsetSum _ (hterm d hd hd'), Finset.mul_sum]
+  refine Finset.sum_congr rfl fun c _ => ?_
+  rw [integral_const_mul]
+  ring
 
 /-- One boundary line of the strip: if `T` is bounded from `L^{s}` to `L^{t}` with norm `M`, and
 `u`, `v` have norm at most one in `L^{s}` and in the dual exponent `L^{t'}`, the pairing
@@ -150,7 +155,7 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
 
 /-- The pairing of the image of a fibre indicator of `f` with a fibre indicator of `g` is
 integrable, when `f` and `g` have norm at most one in the interpolation spaces. -/
-private theorem integrable_mul_fiberInd (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
+private theorem integrable_mul_fiberIndicator (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
     {p₀ p₁ p q₀ q₀' q₁' q' : ℝ≥0∞} [q₀.HolderConjugate q₀'] (hp₀ : p₀ ≠ 0) (hp₁ : p₁ ≠ 0)
     {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
     (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hq₀' : q₀' ≠ 0)
@@ -159,18 +164,20 @@ private theorem integrable_mul_fiberInd (T : SimpleFunc α ℂ →ₗ[ℂ] (β �
     (h₀ : ∀ f, eLpNorm (T f) q₀ ν ≤ M₀ * eLpNorm f p₀ μ) {f : SimpleFunc α ℂ}
     {g : SimpleFunc β ℂ} (hf : eLpNorm f p μ ≤ 1) (hg : eLpNorm g q' ν ≤ 1) :
     ∀ c ∈ f.range, c ≠ 0 → ∀ d ∈ g.range, d ≠ 0 →
-      Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν := by
+      Integrable (fun y => T (fiberIndicator ℂ f c) y * fiberIndicator ℂ g d y) ν := by
   intro c _ hc d _ hd
-  have hχ : MemLp (fiberInd f c) p₀ μ :=
-    memLp_fiberInd f (w := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ 0) hc <| memLp_iff.2 <|
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
-        ENNReal.one_lt_top
-  have hTχ : MemLp (T (fiberInd f c)) q₀ ν :=
+  have hχ : MemLp (fiberIndicator ℂ f c) p₀ μ :=
+    memLp_fiberIndicator f (w := exponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ 0) hc <|
+      memLp_iff.2 <|
+        (eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
+          ENNReal.one_lt_top
+  have hTχ : MemLp (T (fiberIndicator ℂ f c)) q₀ ν :=
     memLp_iff.2 ((h₀ _).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hχ.eLpNorm_lt_top))
-  have hχ' : MemLp (fiberInd g d) q₀' ν :=
-    memLp_fiberInd g (w := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ 0) hd <| memLp_iff.2 <|
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
-        ENNReal.one_lt_top
+  have hχ' : MemLp (fiberIndicator ℂ g d) q₀' ν :=
+    memLp_fiberIndicator g (w := exponent (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ 0) hd <|
+      memLp_iff.2 <|
+        (eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
+          ENNReal.one_lt_top
   exact hTχ.integrable_mul hχ'
 
 /-- **The three-lines estimate.** For simple `f`, `g` of norm at most one in `Lᵖ` and in the dual
@@ -187,48 +194,50 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
     ‖∫ y, T f y * g y ∂ν‖ ≤ (M₀ : ℝ) ^ (1 - θ) * (M₁ : ℝ) ^ θ := by
   have hq₀' : q₀' ≠ 0 := hq₀.symm.ne_zero
   have hq₁' : q₁' ≠ 0 := hq₁.symm.ne_zero
-  set P := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ with hP
-  set Q := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ with hQ
+  set P := exponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ with hP
+  set Q := exponent (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ with hQ
   -- The fibre indicators of `f` and `g` lie in the endpoint spaces, so the pairing of the two
   -- analytic families expands into a finite exponential sum `Φ`.
-  have hint := integrable_mul_fiberInd T hp₀ hp₁ hθ hp hq₀' hq₁' hq' h₀ hf hg
-  set I : ℂ → ℂ → ℂ := fun c d => ∫ y, T (fiberInd f c) y * fiberInd g d y ∂ν
+  have hint := integrable_mul_fiberIndicator T hp₀ hp₁ hθ hp hq₀' hq₁' hq' h₀ hf hg
+  set I : ℂ → ℂ → ℂ := fun c d => ∫ y, T (fiberIndicator ℂ f c) y * fiberIndicator ℂ g d y ∂ν
   set Φ : ℂ → ℂ := fun z =>
     ∑ c ∈ f.range, ∑ d ∈ g.range, powSign (P z) c * powSign (Q z) d * I c d
   have hΦ : ∀ z, Φ z = ∫ y, T (f.map (powSign (P z))) y * g.map (powSign (Q z)) y ∂ν :=
     fun z => (integral_map_powSign_eq_sum T f g _ _ hint).symm
   have hdiff : Differentiable ℂ Φ :=
     Differentiable.fun_sum fun c _ => Differentiable.fun_sum fun d _ =>
-      ((differentiable_powSign_expo _ _ _ c).mul (differentiable_powSign_expo _ _ _ d)).mul_const _
+      ((differentiable_powSign_exponent _ _ _ c).mul
+        (differentiable_powSign_exponent _ _ _ d)).mul_const _
   have hbdd : BddAbove ((norm ∘ Φ) '' Complex.HadamardThreeLines.verticalClosedStrip 0 1) := by
     refine ⟨∑ c ∈ f.range, ∑ d ∈ g.range,
-      Real.exp ((1 + |slope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|) * |Real.log ‖c‖|) *
-        Real.exp ((1 + |slope (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ|) * |Real.log ‖d‖|) * ‖I c d‖, ?_⟩
+      Real.exp ((1 + |exponentSlope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|) * |Real.log ‖c‖|) *
+        Real.exp ((1 + |exponentSlope (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ|) * |Real.log ‖d‖|) *
+          ‖I c d‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     have hz : z.re ∈ Set.Icc (0 : ℝ) 1 := hz
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun c _ => (norm_sum_le _ _).trans
       (Finset.sum_le_sum fun d _ => ?_))
     rw [norm_mul, norm_mul]
     gcongr
-    · exact norm_powSign_expo_le hθ hz c
-    · exact norm_powSign_expo_le hθ hz d
+    · exact norm_powSign_exponent_le (Set.Ioo_subset_Icc_self hθ) hz c
+    · exact norm_powSign_exponent_le (Set.Ioo_subset_Icc_self hθ) hz d
   -- On the two boundary lines, the endpoint bounds control `Φ`.
   have hb₀ : ∀ z ∈ re ⁻¹' {(0 : ℝ)}, ‖Φ z‖ ≤ (M₀ : ℝ) := by
     intro z hz
     rw [hΦ]
     exact norm_integral_mul_le_of_eLpNorm_le_one T h₀
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf hz)
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg hz)
+      (eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf hz)
+      (eLpNorm_map_powSign_exponent_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg hz)
   have hb₁ : ∀ z ∈ re ⁻¹' {(1 : ℝ)}, ‖Φ z‖ ≤ (M₁ : ℝ) := by
     intro z hz
     rw [hΦ]
     exact norm_integral_mul_le_of_eLpNorm_le_one T h₁
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_one f hp₀ hp₁ hθ hp hf hz)
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_one g hq₀' hq₁' hθ hq' hg hz)
+      (eLpNorm_map_powSign_exponent_le_one_of_re_eq_one f hp₀ hp₁ hθ hp hf hz)
+      (eLpNorm_map_powSign_exponent_le_one_of_re_eq_one g hq₀' hq₁' hθ hq' hg hz)
   have key := Complex.HadamardThreeLines.norm_le_interp_of_mem_verticalClosedStrip'
     (z := (θ : ℂ)) zero_lt_one (by simp [Complex.HadamardThreeLines.verticalClosedStrip,
       hθ.1.le, hθ.2.le]) hdiff.diffContOnCl hbdd hb₀ hb₁
-  rw [hΦ, hP, hQ, expo_self, expo_self, map_powSign_one, map_powSign_one] at key
+  rw [hΦ, hP, hQ, exponent_self, exponent_self, map_powSign_one, map_powSign_one] at key
   simpa using key
 
 /-- The bilinear form of the three-lines estimate, for simple functions of arbitrary finite
@@ -260,14 +269,10 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
   set b := (eLpNorm g q' ν).toReal
   have ha : 0 < a := ENNReal.toReal_pos hf0 hf
   have hb : 0 < b := ENNReal.toReal_pos hg0 hg
-  have hfa : eLpNorm (((a⁻¹ : ℝ) : ℂ) • f) p μ ≤ 1 := by
-    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
-      Real.norm_of_nonneg (inv_nonneg.2 ha.le), ENNReal.ofReal_inv_of_pos ha,
-      ENNReal.ofReal_toReal hf, ENNReal.inv_mul_cancel hf0 hf]
-  have hgb : eLpNorm (((b⁻¹ : ℝ) : ℂ) • g) q' ν ≤ 1 := by
-    rw [FunLike.coe_smul, eLpNorm_const_smul, ← ofReal_norm, norm_real,
-      Real.norm_of_nonneg (inv_nonneg.2 hb.le), ENNReal.ofReal_inv_of_pos hb,
-      ENNReal.ofReal_toReal hg, ENNReal.inv_mul_cancel hg0 hg]
+  have hfa : eLpNorm (((a⁻¹ : ℝ) : ℂ) • f) p μ ≤ 1 :=
+    (f.eLpNorm_inv_toReal_smul_eq_one hf0 hf).le
+  have hgb : eLpNorm (((b⁻¹ : ℝ) : ℂ) • g) q' ν ≤ 1 :=
+    (g.eLpNorm_inv_toReal_smul_eq_one hg0 hg).le
   have key := norm_integral_mul_le_of_le_one T hp₀ hp₁ hθ hpθ hq' h₀ h₁ hfa hgb
   have hscale : ∫ y, T (((a⁻¹ : ℝ) : ℂ) • f) y * ((((b⁻¹ : ℝ) : ℂ) • g) y) ∂ν =
       ((a⁻¹ * b⁻¹ : ℝ) : ℂ) * ∫ y, T f y * g y ∂ν := by

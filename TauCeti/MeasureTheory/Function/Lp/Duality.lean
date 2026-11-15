@@ -361,6 +361,60 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     hh'.aestronglyMeasurable
     (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
 
+/-- **Norming by simple functions without assuming `h ∈ L^q`.** On a σ-finite measure space, let
+`q < ∞` and `q'` be Hölder conjugate. If an almost everywhere strongly measurable `h` satisfies
+`‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function `g ∈ L^{q'}`, then `‖h‖_q ≤ C`.
+
+Unlike `MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top`, `h` is not assumed to lie in
+`L^q`: the bound is applied to the truncations of `h` to the spanning sets where `‖h‖ ≤ N`, which
+lie in `L^q`, and passes to the limit. -/
+theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top [SigmaFinite μ]
+    {q q' : ℝ≥0∞} [q.HolderConjugate q'] (hq : q ≠ ∞) {h : α → 𝕜}
+    (hh : AEStronglyMeasurable h μ) {C : ℝ≥0∞}
+    (hC : ∀ g : SimpleFunc α 𝕜, MemLp g q' μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g q' μ) :
+    eLpNorm h q μ ≤ C := by
+  set h' := hh.mk h
+  have hh' : StronglyMeasurable h' := hh.stronglyMeasurable_mk
+  rw [eLpNorm_congr_ae hh.ae_eq_mk]
+  refine Lp.eLpNorm_le_of_ae_tendsto (u := Filter.atTop)
+    (f := fun N => (spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}).indicator h')
+    (Filter.Eventually.of_forall fun N => ?_)
+    (fun N => (hh'.indicator (measurableSet_spanningSets_inter_norm_le hh' N)).aestronglyMeasurable)
+    hh'.aestronglyMeasurable
+    (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
+  -- Each truncation lies in `L^q`, and testing it against `g` is testing `h` against `1_S g`.
+  set S := spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}
+  have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le hh' N
+  have hmem : MemLp (S.indicator h') q μ := by
+    refine (memLp_top_of_bound (hh'.indicator hS).aestronglyMeasurable N
+      (ae_of_all _ fun x => ?_)).mono_exponent_of_measure_support_ne_top
+      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _)
+      (measure_spanningSets_lt_top μ N).ne le_top
+    by_cases hx : x ∈ S
+    · simpa [Set.indicator_of_mem hx] using hx.2
+    · simp [Set.indicator_of_notMem hx]
+  refine hmem.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top (q' := q') hq fun g hg => ?_
+  have hnorm (x : α) : ‖g.restrict S x‖ ≤ ‖g x‖ := by
+    rw [SimpleFunc.restrict_apply _ hS]
+    by_cases hx : x ∈ S <;> simp [hx]
+  have heq : ∫ x, S.indicator h' x * g x ∂μ = ∫ x, h x * g.restrict S x ∂μ := by
+    refine integral_congr_ae (hh.ae_eq_mk.mono fun x hx => ?_)
+    dsimp only
+    rw [SimpleFunc.restrict_apply _ hS, hx]
+    by_cases hx' : x ∈ S <;> simp [hx', h']
+  rw [heq]
+  exact (hC _ (hg.of_le (g.restrict S).aestronglyMeasurable (ae_of_all _ hnorm))).trans
+    (by gcongr; exact eLpNorm_mono (g.restrict S).aestronglyMeasurable hnorm)
+
+/-- **Hölder's inequality** against the unit ball of the dual exponent: if `u ∈ L^q` and
+`‖w‖_{q'} ≤ 1` for Hölder conjugate `q` and `q'`, then `‖∫ u w‖ ≤ ‖u‖`. -/
+theorem Lp.norm_integral_mul_le_of_eLpNorm_le_one {q q' : ℝ≥0∞} [q.HolderConjugate q']
+    (u : Lp 𝕜 q μ) {w : α → 𝕜} (hw : eLpNorm w q' μ ≤ 1) :
+    ‖∫ x, u x * w x ∂μ‖ ≤ ‖u‖ := by
+  rw [Lp.norm_def, ← toReal_eNorm]
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top u)
+    ((enorm_integral_mul_le (q := q')).trans (mul_le_of_le_one_right' hw))
+
 end MeasureTheory
 
 namespace MeasureTheory.Lp
