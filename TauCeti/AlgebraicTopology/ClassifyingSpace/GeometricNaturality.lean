@@ -165,6 +165,56 @@ theorem universalGSpaceCellularComplexIso_inv_naturality (φ : G →* H) :
     Category.assoc, ← CategoryTheory.Functor.map_comp, Iso.hom_inv_id,
     CategoryTheory.Functor.map_id, Category.comp_id]
 
+/-- In degree zero, `universalGSpaceCellularComplexMap` preserves the cellular augmentation
+expressed through ordered chains. -/
+@[reassoc]
+theorem universalGSpaceCellularComplexMap_f_zero_comp_augmentation (φ : G →* H) :
+    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+        (Rep.resFunctor φ).map
+          (((universalGSpaceCellularComplexIso k H).hom ≫
+            universalGSpaceAugmentation k H).f 0) =
+      ((universalGSpaceCellularComplexIso k G).hom ≫
+        universalGSpaceAugmentation k G).f 0 := by
+  have hnat :
+      (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
+          (Rep.resFunctor φ).map ((universalGSpaceCellularComplexIso k H).hom.f 0) =
+        (universalGSpaceCellularComplexIso k G).hom.f 0 ≫
+          (φ.universalGSpaceChainMap (k := k)).f 0 :=
+    HomologicalComplex.congr_hom
+      (φ.universalGSpaceCellularComplexIso_hom_naturality (k := k)) 0
+  let cMap : (universalGSpaceChainComplex k G).X 0 ⟶
+      Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) :=
+    (φ.universalGSpaceChainMap (k := k)).f 0
+  let toRep : (universalGSpaceChainComplex k G).X 0 ⟶
+      Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) :=
+    (φ.universalGSpaceCellMulActionHom 0).toRepRes
+  let augH : Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) ⟶
+      Rep.trivial k G k :=
+    (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0)
+  let pAugH : Rep.res φ (Rep.ofMulAction k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0)) ⟶
+      Rep.trivial k G k :=
+    (Rep.resFunctor φ).map
+      (permutationAugmentation k H ((indexedJoin fun _ : ℕ => H).RealizationCell 0))
+  let pAugG : (universalGSpaceChainComplex k G).X 0 ⟶ Rep.trivial k G k :=
+    permutationAugmentation k G ((indexedJoin fun _ : ℕ => G).RealizationCell 0)
+  let augG : (universalGSpaceChainComplex k G).X 0 ⟶ Rep.trivial k G k :=
+    (universalGSpaceAugmentation k G).f 0
+  have hcMap : cMap = toRep := φ.universalGSpaceChainMap_f 0
+  have haugH : augH = pAugH :=
+    congrArg ((Rep.resFunctor φ).map ·) (universalGSpaceAugmentation_f_zero k H)
+  have haug :
+      (φ.universalGSpaceChainMap (k := k)).f 0 ≫
+          (Rep.resFunctor φ).map ((universalGSpaceAugmentation k H).f 0) =
+        (universalGSpaceAugmentation k G).f 0 :=
+    calc cMap ≫ augH
+        = toRep ≫ pAugH := by rw [hcMap, haugH]
+      _ = pAugG :=
+          MulActionHom.toRepRes_comp_permutationAugmentation (φ.universalGSpaceCellMulActionHom 0)
+      _ = augG := (universalGSpaceAugmentation_f_zero k G).symm
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, CategoryTheory.Functor.map_comp,
+    ← Category.assoc, hnat, Category.assoc, haug]
+  rfl
+
 end MonoidHom
 
 namespace TauCeti
@@ -215,29 +265,8 @@ chain homotopy equivalence `universalGSpaceCellularStandardHomotopyEquiv` is **n
 isomorphism of chain complexes. -/
 theorem not_isIso_universalGSpaceCellularStandardHomotopyEquiv_hom [Nontrivial k] :
     ¬ IsIso (universalGSpaceCellularStandardHomotopyEquiv k G).hom := by
-  intro hIso
-  have hmap : IsIso (((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
-      (universalGSpaceChainComplexToStandardComplex k G)) := by
-    have hfac : (universalGSpaceCellularChainComplexIso k G).inv ≫
-        (universalGSpaceCellularStandardHomotopyEquiv k G).hom =
-        ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
-          (universalGSpaceChainComplexToStandardComplex k G) := by
-      rw [universalGSpaceCellularStandardHomotopyEquiv_hom, Iso.inv_hom_id_assoc]
-    rw [← hfac]
-    infer_instance
-  let e₀ := HomologicalComplex.Hom.isoApp
-    (asIso (((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
-      (universalGSpaceChainComplexToStandardComplex k G))) 0
-  have he₀ : e₀.hom = (forget₂ (Rep k G) (ModuleCat k)).map
-      ((universalGSpaceChainComplexToStandardComplex k G).f 0) := rfl
-  refine not_injective_universalGSpaceChainComplexToStandardComplex_f_zero k G fun x y hxy ↦ ?_
-  have hx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom e₀.hom_inv_id) x
-  have hy := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom e₀.hom_inv_id) y
-  rw [he₀] at hx hy
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Rep.forget₂_moduleCat_map,
-    ModuleCat.hom_ofHom, Representation.IntertwiningMap.toLinearMap_apply, ModuleCat.hom_id,
-    LinearMap.id_apply] at hx hy
-  exact hx.symm.trans ((congrArg e₀.inv.hom hxy).trans hy)
+  rw [universalGSpaceCellularStandardHomotopyEquiv_hom, isIso_comp_left_iff]
+  exact not_isIso_forget₂_mapHomologicalComplex_map_universalGSpaceChainComplexToStandardComplex k G
 
 end TauCeti
 
@@ -283,44 +312,6 @@ theorem universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality (φ : G �
     universalGSpaceCellularRepStandardHomotopyEquiv_hom, CategoryTheory.Functor.map_comp,
     φ.universalGSpaceCellularComplexIso_hom_naturality_assoc,
     φ.universalGSpaceChainComplexToStandardComplex_naturality, Category.assoc]
-
-/-- In degree zero, `universalGSpaceCellularComplexMap` preserves the cellular augmentation
-expressed through ordered chains. -/
-@[reassoc]
-theorem universalGSpaceCellularComplexMap_f_zero_comp_augmentation (φ : G →* H) :
-    (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-        (Rep.resFunctor φ).map
-          (((universalGSpaceCellularComplexIso k H).hom ≫
-            universalGSpaceAugmentation k H).f 0) =
-      ((universalGSpaceCellularComplexIso k G).hom ≫
-        universalGSpaceAugmentation k G).f 0 := by
-  have hH : ((universalGSpaceCellularComplexIso k H).hom ≫
-      universalGSpaceAugmentation k H).f 0 =
-      (universalGSpaceCellularRepStandardHomotopyEquiv k H).hom.f 0 ≫
-        (Rep.standardResolution k H).π.f 0 :=
-    HomologicalComplex.congr_hom
-      (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k H).symm 0
-  have hG : ((universalGSpaceCellularComplexIso k G).hom ≫
-      universalGSpaceAugmentation k G).f 0 =
-      (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom.f 0 ≫
-        (Rep.standardResolution k G).π.f 0 :=
-    HomologicalComplex.congr_hom
-      (universalGSpaceCellularRepStandardHomotopyEquiv_comp_π k G).symm 0
-  have hnat : (φ.universalGSpaceCellularComplexMap (k := k)).f 0 ≫
-      (Rep.resFunctor φ).map ((universalGSpaceCellularRepStandardHomotopyEquiv k H).hom.f 0) =
-      (universalGSpaceCellularRepStandardHomotopyEquiv k G).hom.f 0 ≫
-        (φ.standardComplexMap (k := k)).f 0 :=
-    HomologicalComplex.congr_hom
-      (φ.universalGSpaceCellularRepStandardHomotopyEquiv_hom_naturality (k := k)) 0
-  -- Assemble in term mode: `(Rep.standardResolution k _).complex` agrees with
-  -- `Rep.standardComplex k _` by unfolding rather than at implicit transparency.
-  exact (congrArg (_ ≫ (Rep.resFunctor φ).map ·) hH).trans <|
-    (congrArg (_ ≫ ·) ((Rep.resFunctor φ).map_comp _ _)).trans <|
-      (Category.assoc _ _ _).symm.trans <|
-        (congrArg (· ≫ _) hnat).trans <|
-          (Category.assoc _ _ _).trans <|
-            (congrArg (_ ≫ ·) φ.standardComplexMap_f_zero_comp_standardResolution_π).trans
-              hG.symm
 
 /-- **The equivariant homotopy inverses from the standard complex to geometric cellular chains
 commute with group homomorphisms up to equivariant chain homotopy.** For any group homomorphism

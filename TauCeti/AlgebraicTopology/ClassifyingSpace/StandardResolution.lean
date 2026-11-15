@@ -82,6 +82,14 @@ def universalGSpaceToStandardHom (n : ℕ) :
         simpa [Representation.ofMulAction_def] using
           universalGSpaceToStandard_smul k n g (MonoidAlgebra.coeffLinearEquiv k x) }
 
+/-- The underlying linear map of `universalGSpaceToStandardHom` reads permutation coefficients and
+applies `universalGSpaceToStandard`. -/
+@[simp]
+theorem universalGSpaceToStandardHom_hom_toLinearMap (n : ℕ) :
+    (universalGSpaceToStandardHom k G n).hom.toLinearMap =
+      universalGSpaceToStandard k n ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap :=
+  (rfl)
+
 /-- The comparison sends a simplex to the tuple of its labels. -/
 @[simp]
 theorem universalGSpaceToStandardHom_hom_single {n : ℕ}
@@ -208,37 +216,62 @@ def universalGSpaceChainComplexToStandardComplexHomotopy :
     (Rep.standardResolution k G) (universalGSpaceChainComplexToStandardComplex k G)
     (universalGSpaceChainComplexToStandardComplex_comp_standardResolution_π k G)
 
+/-- Forgetting the group action identifies `universalGSpaceChainComplexToStandardComplex` with
+the module-level comparison `universalGSpaceToStandardComplex`. -/
+theorem forget₂_mapHomologicalComplex_map_universalGSpaceChainComplexToStandardComplex :
+    ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
+        (universalGSpaceChainComplexToStandardComplex k G) =
+      (universalGSpaceChainComplexForget₂Iso k G).hom ≫
+        universalGSpaceToStandardComplex (G := G) k := by
+  ext n : 1
+  simp only [Functor.mapHomologicalComplex_map_f, universalGSpaceChainComplexToStandardComplex_f,
+    HomologicalComplex.comp_f, universalGSpaceChainComplexForget₂Iso_hom_f,
+    universalGSpaceToStandardComplex_f]
+  dsimp only [Functor.mapHomologicalComplex_obj_X, universalGSpaceChainComplex_X,
+    Rep.standardComplex.forget₂ToModuleCat]
+  rw [Functor.map_comp, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    ← Category.assoc]
+  refine congrArg (· ≫ (forget₂ (Rep k G) (ModuleCat k)).map (Rep.standardComplex.xIso k G n).inv)
+    ?_
+  rw [Rep.forget₂_moduleCat_map, universalGSpaceToStandardHom_hom_toLinearMap,
+    LinearEquiv.toModuleIso_hom, ← ModuleCat.ofHom_comp]
+
+/-- For any group `G` and nontrivial coefficient ring `k`, the module-level chain map obtained by
+forgetting the `G`-action on `universalGSpaceChainComplexToStandardComplex` is **not** an
+isomorphism of chain complexes. -/
+theorem not_isIso_forget₂_mapHomologicalComplex_map_universalGSpaceChainComplexToStandardComplex
+    [Nontrivial k] :
+    ¬ IsIso (((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
+      (universalGSpaceChainComplexToStandardComplex k G)) := fun h ↦
+  not_isIso_universalGSpaceToStandardComplex (G := G) k <|
+    (isIso_comp_left_iff (universalGSpaceChainComplexForget₂Iso k G).hom
+      (universalGSpaceToStandardComplex (G := G) k)).mp
+      (forget₂_mapHomologicalComplex_map_universalGSpaceChainComplexToStandardComplex k G ▸ h)
+
 /-- For a nontrivial coefficient ring `k`, the degree-zero component of
 `universalGSpaceChainComplexToStandardComplex` is not injective on underlying elements: distinct
 index copies `(0, g)` and `(1, g)` of a group element `g` have the same standard generator. -/
 theorem not_injective_universalGSpaceChainComplexToStandardComplex_f_zero [Nontrivial k] :
     ¬ Function.Injective ((universalGSpaceChainComplexToStandardComplex k G).f 0).hom := by
   intro hinj
+  have : Mono (universalGSpaceToStandardHom k G 0 ≫ (Rep.standardComplex.xIso k G 0).inv) :=
+    universalGSpaceChainComplexToStandardComplex_f k G 0 ▸ (Rep.mono_iff_injective _).2 hinj
+  have hhom : Function.Injective ⇑(universalGSpaceToStandardHom k G 0).hom.toLinearMap :=
+    (Rep.mono_iff_injective (universalGSpaceToStandardHom k G 0)).1
+      (mono_of_mono (universalGSpaceToStandardHom k G 0) (Rep.standardComplex.xIso k G 0).inv)
+  rw [universalGSpaceToStandardHom_hom_toLinearMap] at hhom
   refine not_injective_universalGSpaceToStandard_zero (G := G) k fun x y hxy ↦ ?_
   apply (MonoidAlgebra.coeffLinearEquiv k).symm.injective
-  refine hinj ?_
-  -- In this defining module, the degree-zero chain map evaluates `universalGSpaceToStandard k 0`
-  -- after `MonoidAlgebra.coeffLinearEquiv k`, and `Rep.standardComplex.xIso` is `Iso.refl`.
-  change (universalGSpaceToStandard k 0)
-      (MonoidAlgebra.coeffLinearEquiv k ((MonoidAlgebra.coeffLinearEquiv k).symm x)) =
-    (universalGSpaceToStandard k 0)
-      (MonoidAlgebra.coeffLinearEquiv k ((MonoidAlgebra.coeffLinearEquiv k).symm y))
-  simpa only [LinearEquiv.apply_symm_apply] using hxy
+  apply hhom
+  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply] using hxy
 
 /-- For any group `G` and nontrivial coefficient ring `k`, the join-to-standard chain map
 `universalGSpaceChainComplexToStandardComplex` is **not** an isomorphism of chain complexes in
 `Rep k G`. -/
 theorem not_isIso_universalGSpaceChainComplexToStandardComplex [Nontrivial k] :
-    ¬ IsIso (universalGSpaceChainComplexToStandardComplex k G) := by
-  intro hIso
-  let e := asIso (universalGSpaceChainComplexToStandardComplex k G)
-  have hcomp : e.hom.f 0 ≫ e.inv.f 0 = 𝟙 _ := by
-    rw [← HomologicalComplex.comp_f, e.hom_inv_id, HomologicalComplex.id_f]
-  refine not_injective_universalGSpaceChainComplexToStandardComplex_f_zero k G fun x y hxy ↦ ?_
-  have hx := congrArg (fun f ↦ f.hom x) hcomp
-  have hy := congrArg (fun f ↦ f.hom y) hcomp
-  dsimp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.hom_id,
-    Representation.IntertwiningMap.id_apply] at hx hy
-  exact hx.symm.trans ((congrArg (e.inv.f 0).hom hxy).trans hy)
+    ¬ IsIso (universalGSpaceChainComplexToStandardComplex k G) := fun _ ↦
+  not_isIso_forget₂_mapHomologicalComplex_map_universalGSpaceChainComplexToStandardComplex k G
+    (Functor.map_isIso _ _)
 
 end TauCeti

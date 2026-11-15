@@ -231,6 +231,24 @@ theorem cellularActionGroupMap_comp (ψ : H →* K) (φ : G →* H)
     congrArg ModuleCat.Hom.hom
       (cellularChainGroupMap_comp C D hf E hg (ModuleCat.of R R) n)
 
+/-- Morphisms of cellular chain representations commute with the equivariant cellular
+differential. -/
+@[reassoc]
+theorem cellularActionGroupMap_comp_cellularActionDifferential (φ : G →* H)
+    {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
+    (hequiv : ∀ g, ρ g ≫ f = f ≫ ρH (φ g)) (n : ℕ) :
+    cellularActionGroupMap C ρ hcell hone hmul R D ρH hcellH honeH hmulH φ hf hequiv (n + 1) ≫
+        (Rep.resFunctor φ).map (cellularActionDifferential D ρH hcellH honeH hmulH R n) =
+      cellularActionDifferential C ρ hcell hone hmul R n ≫
+        cellularActionGroupMap C ρ hcell hone hmul R D ρH hcellH honeH hmulH φ hf hequiv n := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  simpa only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
+    Rep.resMap_hom_toLinearMap, cellularActionGroupMap_hom_toLinearMap,
+    cellularActionDifferential_hom_toLinearMap, ModuleCat.hom_comp] using
+    congrArg ModuleCat.Hom.hom
+      (cellularChainGroupMap_comp_cellularDifferential C D hf (ModuleCat.of R R) n)
+
 /-- A cellular map intertwining two cellular monoid actions along `φ : G →* H` induces a chain map
 from the source equivariant cellular complex to the restricted target complex. -/
 def cellularActionComplexMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (hf : IsCellular C D f)
@@ -252,15 +270,11 @@ def cellularActionComplexMap (φ : G →* H) {f : TopCat.of C ⟶ TopCat.of D} (
       CategoryTheory.Functor.map_id, Category.id_comp]
     refine congrArg (eqToHom (cellularActionComplex_X C ρ hcell hone hmul R (j + 1)) ≫ ·) ?_
     simp only [← Category.assoc]
-    refine congrArg (· ≫ (Rep.resFunctor φ).map
-      (eqToHom (cellularActionComplex_X D ρH hcellH honeH hmulH R j).symm)) ?_
-    apply Rep.hom_ext
-    apply Representation.IntertwiningMap.ext
-    simpa only [Rep.hom_comp, Representation.IntertwiningMap.comp_toLinearMap,
-      Rep.resMap_hom_toLinearMap, cellularActionGroupMap_hom_toLinearMap,
-      cellularActionDifferential_hom_toLinearMap, ModuleCat.hom_comp] using
-      congrArg ModuleCat.Hom.hom
-        (cellularChainGroupMap_comp_cellularDifferential C D hf (ModuleCat.of R R) j)
+    exact congrArg
+      (· ≫ (Rep.resFunctor φ).map
+        (eqToHom (cellularActionComplex_X D ρH hcellH honeH hmulH R j).symm))
+      (cellularActionGroupMap_comp_cellularActionDifferential C ρ hcell hone hmul R D ρH hcellH
+        honeH hmulH φ hf hequiv j)
 
 /-- The degree-`n` component of `cellularActionComplexMap` is `cellularActionGroupMap`, transported
 across `cellularActionComplex_X`. -/

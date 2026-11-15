@@ -292,14 +292,11 @@ theorem standardComplexMap_f_zero_comp_standardResolution_π
     (φ.standardComplexMap (k := k)).f 0 ≫
         (Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0) =
       (Rep.standardResolution k G).π.f 0 := by
-  refine Rep.ofMulAction_hom_ext (X := Fin 1 → G) fun x => ?_
-  have h₁ : ((φ.standardComplexMap (k := k)).f 0).hom (MonoidAlgebra.single x 1) =
-      MonoidAlgebra.single (φ ∘ x) 1 :=
-    MulActionHom.toRepRes_hom_single (φ.standardComplexMulActionHom 0) x 1
-  have h₂ : ((Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0)).hom
-      (MonoidAlgebra.single (φ ∘ x) 1) = (1 : k) :=
-    TauCeti.Rep.standardResolution_π_f_zero_single (φ ∘ x) 1
-  exact (congrArg ((Rep.resFunctor φ).map ((Rep.standardResolution k H).π.f 0)).hom h₁).trans
-    (h₂.trans (TauCeti.Rep.standardResolution_π_f_zero_single x 1).symm)
+  have hπ (M : Type u) [Group M] :
+      (Rep.standardResolution k M).π.f 0 = Rep.standardComplex.ε k M :=
+    (TauCeti.Rep.standardComplex.εToSingle₀_f_zero (k := k) (G := M)).trans
+      (Category.id_comp (Rep.standardComplex.ε k M))
+  exact (congrArg ((φ.standardComplexMap (k := k)).f 0 ≫ (Rep.resFunctor φ).map ·) (hπ H)).trans
+    ((φ.standardComplexHom_comp_ε (k := k)).trans (hπ G).symm)
 
 end MonoidHom
