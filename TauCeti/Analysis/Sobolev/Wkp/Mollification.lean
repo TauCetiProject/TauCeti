@@ -346,22 +346,21 @@ theorem norm_iteratedGradientChain_smoothField_value_top_le (k : ℕ)
   rw [iteratedGradientChain_smoothField_value k u phi x hx]
   exact norm_smoothField_top_le phi _ x
 
-/-- On compact `K ⊆ Ω`, the classical order-`k+1` iterated gradient of
-`smoothField (phi i) (value (k + 1) u)` eventually agrees on `K` with
+/-- On any set `s` with a positive thickening contained in `Ω`, the classical order-`k+1`
+iterated gradient of `smoothField (phi i) (value (k + 1) u)` eventually agrees on `s` with
 `smoothField (phi i) (iteratedGradient k u)`, for `u ∈ W^{k+1,p}(Ω)`. -/
 theorem eventually_eqOn_iteratedGradientChain_smoothField_value
     (k : ℕ) (u : Wkp mu Omega p (k + 1))
     {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (𝓝 0))
-    {K : Set E} (hK : IsCompact K) (hKO : K ⊆ Omega) :
+    {s : Set E} {δ : ℝ} (hδ : 0 < δ) (hsO : Metric.thickening δ s ⊆ Omega) :
     ∀ᶠ i in l, EqOn (iteratedGradientChain (smoothField (phi i) (value (k + 1) u)) k)
-      (smoothField (phi i) (iteratedGradient k u)) K := by
-  obtain ⟨δ, hδ, hδO⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKO
+      (smoothField (phi i) (iteratedGradient k u)) s := by
   filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi x hx
   apply iteratedGradientChain_smoothField_value k u (phi i) x
   intro y hy
-  exact hδO (Metric.mem_cthickening_of_dist_le y x δ K hx
-    ((Metric.mem_closedBall.mp hy).trans hi.le))
+  exact hsO (Metric.mem_thickening_iff.mpr
+    ⟨x, hx, (Metric.mem_closedBall.mp hy).trans_lt hi⟩)
 
 omit [Fact (1 ≤ p)] in
 /-- **Mollification of a continuous representative.** If `f ∈ Lᵖ(Ω)` agrees almost everywhere on

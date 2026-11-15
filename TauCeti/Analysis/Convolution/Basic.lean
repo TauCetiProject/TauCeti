@@ -22,8 +22,8 @@ measurable additive group with a measure invariant under left translations and n
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
 sigma-finiteness of the measure is required. For two integrable fields and an
 essentially bounded function, convolution along compatible bilinear maps is associative at every
-point; this associativity
-statement additionally assumes s-finiteness.
+point; this associativity statement requires only right-translation invariance and
+s-finiteness.
 
 A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
@@ -154,8 +154,8 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
 section Assoc
 
 variable {𝕜 G E E' E'' F F' F'' : Type*} [RCLike 𝕜]
-  [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
-  {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+  {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
@@ -173,22 +173,27 @@ theorem convolution_assoc_of_integrable_of_ae_norm_le
     (hf : Integrable f μ) (hg : Integrable g μ) (hh : AEStronglyMeasurable h μ)
     (hM : ∀ᵐ x ∂μ, ‖h x‖ ≤ M) :
     (f ⋆[L, μ] g) ⋆[L₂, μ] h = f ⋆[L₃, μ] (g ⋆[L₄, μ] h) := by
+  have hex {a b : G → ℝ} {C : ℝ} (ha : Integrable a μ)
+      (hb : AEStronglyMeasurable b μ) (hC : ∀ᵐ y ∂μ, ‖b y‖ ≤ C) :
+      ConvolutionExists a b (ContinuousLinearMap.mul ℝ ℝ) μ := fun x ↦ by
+    have hsub := quasiMeasurePreserving_sub_left_of_right_invariant μ x
+    exact (ContinuousLinearMap.mul ℝ ℝ).integrable_of_bilin_of_bdd_right C ha
+      (hb.comp_quasiMeasurePreserving hsub) (hsub.ae hC)
   have hbdd : ∀ x, ‖((fun y ↦ ‖g y‖) ⋆[ContinuousLinearMap.mul ℝ ℝ, μ]
       (fun y ↦ ‖h y‖)) x‖ ≤ (∫ y, ‖g y‖ ∂μ) * M := by
     intro x
     rw [convolution_def, ← integral_mul_const]
     refine norm_integral_le_of_norm_le (hg.norm.mul_const M) ?_
-    filter_upwards [(μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM] with y hy
+    filter_upwards [(quasiMeasurePreserving_sub_left_of_right_invariant μ x).ae hM] with y hy
     simpa only [ContinuousLinearMap.mul_apply', norm_mul, norm_norm] using
       mul_le_mul_of_nonneg_left hy (norm_nonneg (g y))
   ext x
   exact convolution_assoc L L₂ L₃ L₄ hL
     hf.aestronglyMeasurable hg.aestronglyMeasurable hh
     (hf.ae_convolution_exists _ hg)
-    (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _ hg.norm hh.norm
+    (ae_of_all _ (hex hg.norm hh.norm
       (hM.mono fun _ hx ↦ by simpa only [norm_norm] using hx)))
-    (convolutionExists_of_integrable_of_ae_norm_le _ hf.norm
-      (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
+    (hex hf.norm (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
 
 end Assoc
 
