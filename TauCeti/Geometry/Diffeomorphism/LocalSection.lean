@@ -44,6 +44,8 @@ multiplication by `H`. The orbits themselves are open and closed
 * `TauCeti.exists_continuousOn_diffeomorph_apply_eq`: evaluation `Diff(M) → M` at a point has a
   continuous local section through the identity, by diffeomorphisms supported in a prescribed
   neighbourhood.
+* `TauCeti.exists_continuousOn_diffeomorph_apply_eq_of_mem_orbit`: evaluation at `x₀` has a
+  continuous local section around every point of the orbit of `x₀`.
 * `TauCeti.exists_trivialization_diffeomorph_apply`: evaluation at `x₀` is trivial, with fibre the
   stabilizer of `x₀` and equivariantly for its right action, over a neighbourhood of each point of
   the orbit of `x₀`, by the chart `g ↦ (g x₀, σ (g x₀)⁻¹ * g)` of a continuous local section `σ`.
@@ -89,9 +91,9 @@ theorem exists_continuousOn_diffeomorph_apply_eq (hm : 1 ≤ m) {V : Set M} (hV 
 
 /-! ### Local triviality of evaluation -/
 
-/-- A local section of evaluation at `x₀` over a neighbourhood of any point `y` of the orbit of
-`x₀`. -/
-private theorem exists_continuousOn_apply_eq_of_mem_orbit (hm : 1 ≤ m) {x₀ y : M}
+/-- Evaluation `g ↦ g x₀ : Diff(M) → M` has a section `σ`, `σ z x₀ = z`, continuous on an open
+neighbourhood of any point `y` of the orbit of `x₀`. -/
+theorem exists_continuousOn_diffeomorph_apply_eq_of_mem_orbit (hm : 1 ≤ m) {x₀ y : M}
     (hy : y ∈ orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :
     ∃ U, IsOpen U ∧ y ∈ U ∧ ∃ σ : M → M ≃ₘ^m⟮I, I⟯ M, ContinuousOn σ U ∧
       ∀ z ∈ U, σ z x₀ = z := by
@@ -119,7 +121,8 @@ theorem exists_trivialization_diffeomorph_apply (hm : 1 ≤ m) {x₀ y : M}
       (∀ p, e.toOpenPartialHomeomorph.symm p = σ p.1 * p.2) ∧
       ∀ g ∈ e.source, ∀ h : stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀,
         e (g * h) = ((e g).1, (e g).2 * h) := by
-  obtain ⟨U, hU, hyU, σ, hσ, hσU⟩ := exists_continuousOn_apply_eq_of_mem_orbit hm hy
+  obtain ⟨U, hU, hyU, σ, hσ, hσU⟩ :=
+    exists_continuousOn_diffeomorph_apply_eq_of_mem_orbit hm hy
   -- Evaluation `g ↦ g x₀` is the orbit map `g ↦ g • x₀` by definition (`Diffeomorph.smul_def`).
   let e := orbitMapTrivialization x₀ (Diffeomorph.continuous_eval_const x₀) U hU σ hσ hσU
   have he : e.baseSet = U := orbitMapTrivialization_baseSet
