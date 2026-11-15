@@ -80,8 +80,7 @@ theorem exists_mextDeriv_eq_of_simplyConnectedSpace [SimplyConnectedSpace M] {r 
   have hps (y : M) : PrimitiveSpace.proj φ (s y) = y := congrFun hs y
   -- Near each point `x`, the value of `s` differs by a constant from a local primitive of `φ`.
   refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
-    (by simpa using (zero_lt_one.trans_le hr).ne') (f := fun y ↦ PrimitiveSpace.value φ (s y))
-    fun x ↦ ?_
+    (f := fun y ↦ PrimitiveSpace.value φ (s y)) fun x ↦ ?_
   obtain ⟨g, hg, U, hxU, hgU, c, hc⟩ :=
     PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq hr hφ hclosed
       (s.continuous.continuousAt (x := x))
