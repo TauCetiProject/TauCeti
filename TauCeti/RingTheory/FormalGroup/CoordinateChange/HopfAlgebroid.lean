@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+import Mathlib.Algebra.MvPolynomial.Monad
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 /-!
