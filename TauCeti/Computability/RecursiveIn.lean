@@ -31,7 +31,8 @@ encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Na
 statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
 composition, pairing, primitive recursion, forming finite initial segments of a sequence, and
 total unbounded search (`ComputableIn.find`), derived from partial Boolean search
-(`RecursiveIn.rfind`). Empty and constant oracle sets reduce `ComputableIn` to `Computable`.
+(`RecursiveIn.rfind`). Empty and constant oracle sets reduce `RecursiveIn` and `ComputableIn` to
+`Partrec` and `Computable`.
 These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, `Computable.nat_rec`,
 and `Partrec.rfind` in `Mathlib.Computability.Partrec`, and `Computable.find` in
 `Mathlib.Computability.RE`, to `Nat.RecursiveIn`.
@@ -200,12 +201,12 @@ end RecursiveIn
 
 namespace ComputableIn
 
-/-- Total unbounded search: if `p` is computable in `O` and holds at some number for every
-parameter, then the least witness `Nat.find` is computable in `O`. -/
-theorem find {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α → ℕ → Bool}
-    (hp : ComputableIn₂ O p) (hex : ∀ a, ∃ n, p a n = true) :
+/-- Total unbounded search: if `P` is decidable and computable in `O` and holds at some number for
+every parameter, then the least witness `Nat.find` is computable in `O`. -/
+theorem find {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {P : α → ℕ → Prop} [DecidableRel P]
+    (hp : ComputableIn₂ O fun a n => decide (P a n)) (hex : ∀ a, ∃ n, P a n) :
     ComputableIn O (fun a => Nat.find (hex a)) := by
-  have hr : RecursiveIn O (fun a => Nat.rfind fun n => (p a n : Part Bool)) :=
+  have hr : RecursiveIn O (fun a => Nat.rfind fun n => (decide (P a n) : Part Bool)) :=
     RecursiveIn.rfind hp.recursiveIn₂
   unfold ComputableIn
   refine hr.of_eq_tot fun a => ?_
@@ -214,9 +215,31 @@ theorem find {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α → 
 
 end ComputableIn
 
-section EmptyAndConst
+namespace TauCeti
 
 variable {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+
+/-- Binary partial recursiveness in the empty oracle set is ordinary binary partial
+recursiveness. -/
+@[simp]
+theorem recursiveIn₂_empty_iff {f : α → β →. γ} : RecursiveIn₂ {} f ↔ Partrec₂ f :=
+  recursiveIn_empty_iff
+
+-- Specify `α := ℕ →. ℕ` so `Singleton.singleton` stays well-typed at `implicit` transparency and
+-- matches `{Z.oracle}` after `Set.oracle_empty` rewrites `(∅ : Set ℕ).oracle`.
+
+/-- Partial recursiveness in a constant partial function is ordinary partial recursiveness. -/
+@[simp]
+theorem recursiveIn_const_iff {s : Part ℕ} {f : α →. β} :
+    RecursiveIn (Singleton.singleton (α := ℕ →. ℕ) (fun _ => s)) f ↔ Partrec f :=
+  ⟨fun hf => hf.partrec_of_const, Partrec.recursiveIn⟩
+
+/-- Binary partial recursiveness in a constant partial function is ordinary binary partial
+recursiveness. -/
+@[simp]
+theorem recursiveIn₂_const_iff {s : Part ℕ} {f : α → β →. γ} :
+    RecursiveIn₂ (Singleton.singleton (α := ℕ →. ℕ) (fun _ => s)) f ↔ Partrec₂ f :=
+  recursiveIn_const_iff
 
 /-- Computability in the empty oracle set is ordinary computability. -/
 @[simp]
@@ -229,16 +252,18 @@ theorem computableIn₂_empty_iff {f : α → β → γ} : ComputableIn₂ {} f 
   recursiveIn_empty_iff
 
 /-- Computability in a constant partial function is ordinary computability. -/
+@[simp]
 theorem computableIn_const_iff {s : Part ℕ} {f : α → β} :
-    ComputableIn {fun _ => s} f ↔ Computable f :=
-  ⟨fun hf => hf.partrec_of_const, Computable.computableIn⟩
+    ComputableIn (Singleton.singleton (α := ℕ →. ℕ) (fun _ => s)) f ↔ Computable f :=
+  recursiveIn_const_iff
 
 /-- Binary computability in a constant partial function is ordinary binary computability. -/
+@[simp]
 theorem computableIn₂_const_iff {s : Part ℕ} {f : α → β → γ} :
-    ComputableIn₂ {fun _ => s} f ↔ Computable₂ f :=
-  computableIn_const_iff
+    ComputableIn₂ (Singleton.singleton (α := ℕ →. ℕ) (fun _ => s)) f ↔ Computable₂ f :=
+  recursiveIn_const_iff
 
-end EmptyAndConst
+end TauCeti
 
 namespace ComputableIn₂
 

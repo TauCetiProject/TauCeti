@@ -205,6 +205,35 @@ theorem IsDelta.of_le (hp : IsDelta Z n p) (hnm : n ≤ m) : IsDelta Z m p := by
   obtain ⟨hpS, hpP⟩ := isDelta_iff.1 hp
   exact isDelta_iff.2 ⟨hpS.of_le hnm, hpP.of_le hnm⟩
 
+private theorem isSigma_zero_exists_lt {r : α × ℕ → Prop} (hr : IsSigma Z 0 r)
+    {b : α → ℕ} (hb : ComputableIn {Z.oracle} b) :
+    IsSigma Z 0 (fun x => ∃ y < b x, r (x, y)) := by
+  obtain ⟨d, hd, hdeq⟩ := isSigma_zero_iff.1 hr
+  have hlist : ComputableIn {Z.oracle} (fun x => (List.range (b x)).map fun y => d (x, y)) :=
+    (ComputableIn₂.list_range_map (f := fun x y => d (x, y)) hd).comp
+      (ComputableIn.id.pair hb)
+  have hany : Primrec (fun l : List Bool => decide (∃ v ∈ l, v = true)) :=
+    (Primrec.eq.comp Primrec.id (Primrec.const true)).exists_mem_list.decide
+  exact isSigma_zero_iff.2 ⟨_, hany.computableIn.comp hlist, fun x => by simp [← hdeq]⟩
+
+private theorem forall_lt_exists_iff_exists_bound {m : ℕ} {P : ℕ → ℕ → Prop} :
+    (∀ y < m, ∃ w, P y w) ↔ ∃ B, ∀ y < m, ∃ w < B, P y w := by
+  constructor
+  · intro hm
+    induction m with
+    | zero => exact ⟨0, by simp⟩
+    | succ m ihm =>
+      obtain ⟨B, hB⟩ := ihm fun y hy => hm y (Nat.lt_succ_of_lt hy)
+      obtain ⟨wm, hwm⟩ := hm m m.lt_succ_self
+      refine ⟨max B (wm + 1), fun y hy => ?_⟩
+      rcases Nat.lt_succ_iff_lt_or_eq.1 hy with hlt | rfl
+      · obtain ⟨w, hwB, hw⟩ := hB y hlt
+        exact ⟨w, hwB.trans_le (le_max_left _ _), hw⟩
+      · exact ⟨wm, wm.lt_succ_self.trans_le (le_max_right _ _), hwm⟩
+  · rintro ⟨B, hB⟩ y hy
+    obtain ⟨w, -, hw⟩ := hB y hy
+    exact ⟨w, hw⟩
+
 -- Bounded existential and universal closure must be established together: universal bounded
 -- quantification at `n + 1` collects a uniform upper bound on the existential witnesses and
 -- pushes a bounded existential quantifier inside the preceding universal matrix.
@@ -215,42 +244,20 @@ private theorem sigma_exists_lt_and_forall_lt {r : α × ℕ → Prop} (hr : IsS
   classical
   induction n generalizing α with
   | zero =>
-    have hex0 {t : α × ℕ → Prop} (ht : IsSigma Z 0 t) :
-        IsSigma Z 0 (fun x => ∃ y < b x, t (x, y)) := by
-      obtain ⟨d, hd, hdeq⟩ := isSigma_zero_iff.1 ht
-      have hstep : ComputableIn₂ {Z.oracle} (fun (x : α) (p : ℕ × Bool) => p.2 || d (x, p.1)) :=
-        Primrec.or.computableIn.comp <|
-          (ComputableIn.snd.comp ComputableIn.snd).pair
-            (hd.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd)))
-      refine isSigma_zero_iff.2 ⟨fun x =>
-        Nat.rec (motive := fun _ => Bool) false (fun y acc => acc || d (x, y)) (b x),
-        ComputableIn.nat_rec hb (ComputableIn.const false) hstep, fun x => ?_⟩
-      simp only [← hdeq]
-      generalize b x = k
-      induction k with
-      | zero => simp
-      | succ k ihk =>
-        simp only [Bool.or_eq_true, ihk]
-        constructor
-        · rintro (⟨y, hy, hdy⟩ | hdk)
-          · exact ⟨y, Nat.lt_succ_of_lt hy, hdy⟩
-          · exact ⟨k, k.lt_succ_self, hdk⟩
-        · rintro ⟨y, hy, hdy⟩
-          rcases Nat.lt_succ_iff_lt_or_eq.1 hy with hlt | rfl
-          · exact Or.inl ⟨y, hlt, hdy⟩
-          · exact Or.inr hdy
     have hnot : IsSigma Z 0 (fun a => ¬r a) := isSigma_not_iff.2 (isPi_zero_iff.2 hr)
-    exact ⟨hex0 hr,
-      (isSigma_not_iff.2 (isPi_zero_iff.2 (hex0 hnot))).of_eq fun _ => by simp⟩
+    exact ⟨isSigma_zero_exists_lt hr hb,
+      (isSigma_not_iff.2 (isPi_zero_iff.2 (isSigma_zero_exists_lt hnot hb))).of_eq fun _ => by simp⟩
   | succ n ih =>
     constructor
-    · have hlt : IsSigma Z (n + 1) (fun a : α × ℕ => a.2 < b a.1) :=
+    · -- Contract `∃ y < b x, r (x, y)` into a single existential quantifier at level `n + 1`.
+      have hlt : IsSigma Z (n + 1) (fun a : α × ℕ => a.2 < b a.1) :=
         (isSigma_zero_iff.2 ⟨fun a : α × ℕ => decide (a.2 < b a.1),
           Primrec.nat_lt.decide.computableIn.comp
             (ComputableIn.snd.pair (hb.comp ComputableIn.fst)),
           fun _ => decide_eq_true_iff⟩).of_le (Nat.zero_le _)
       exact (hlt.and hr).exists_nat.of_eq fun _ => by simp
-    · obtain ⟨q, hq, hreq⟩ := isSigma_succ_iff.1 hr
+    · -- Rewrite `∀ y < b x, ∃ w, q ((x, y), w)` using a uniform witness bound `B`.
+      obtain ⟨q, hq, hreq⟩ := isSigma_succ_iff.1 hr
       have hq' : IsSigma Z n (fun p : ((α × ℕ) × ℕ) × ℕ => ¬q ((p.1.1.1, p.1.2), p.2)) :=
         (isSigma_not_iff.2 hq).preimage <|
           ((ComputableIn.fst.comp (ComputableIn.fst.comp ComputableIn.fst)).pair
@@ -262,22 +269,7 @@ private theorem sigma_exists_lt_and_forall_lt {r : α × ℕ → Prop} (hr : IsS
       refine isSigma_succ_iff.2
         ⟨fun a => ∀ y < b a.1, ∃ w < a.2, q ((a.1, y), w), h₂, fun x => ?_⟩
       simp only [hreq]
-      generalize b x = m
-      constructor
-      · intro hm
-        induction m with
-        | zero => exact ⟨0, by simp⟩
-        | succ m ihm =>
-          obtain ⟨B, hB⟩ := ihm fun y hy => hm y (Nat.lt_succ_of_lt hy)
-          obtain ⟨wm, hwm⟩ := hm m m.lt_succ_self
-          refine ⟨max B (wm + 1), fun y hy => ?_⟩
-          rcases Nat.lt_succ_iff_lt_or_eq.1 hy with hlt | rfl
-          · obtain ⟨w, hwB, hw⟩ := hB y hlt
-            exact ⟨w, hwB.trans_le (le_max_left _ _), hw⟩
-          · exact ⟨wm, wm.lt_succ_self.trans_le (le_max_right _ _), hwm⟩
-      · rintro ⟨B, hB⟩ y hy
-        obtain ⟨w, -, hw⟩ := hB y hy
-        exact ⟨w, hw⟩
+      exact forall_lt_exists_iff_exists_bound
 
 /-- Existential pointclasses are closed under bounded existential number quantifiers with
 oracle-computable bounds. -/
