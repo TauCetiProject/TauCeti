@@ -140,6 +140,28 @@ theorem mapOfEq_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x =
   subst hfe
   rfl
 
+/-- Two factorizations of the same composite induce the same map on fundamental groups. -/
+theorem mapOfEq_mapOfEq_eq_mapOfEq {A B D : Type*} [TopologicalSpace A]
+    [TopologicalSpace B] [TopologicalSpace D] {a : A} {b : B} {d : D} {f : C(A, B)}
+    {g : C(B, D)} {k : C(A, D)} (h : g.comp f = k) (hf : f a = b) (hg : g b = d) (hk : k a = d)
+    (p : FundamentalGroup A a) :
+    FundamentalGroup.mapOfEq g hg (FundamentalGroup.mapOfEq f hf p) =
+      FundamentalGroup.mapOfEq k hk p := by
+  rw [FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr h _ _ p
+
+/-- Two factorizations of the same map through different spaces induce the same map on
+fundamental groups. -/
+theorem mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq {A B C D : Type*} [TopologicalSpace A]
+    [TopologicalSpace B] [TopologicalSpace C] [TopologicalSpace D] {a : A} {b : B} {c : C}
+    {d : D} {f₁ : C(A, B)} {g₁ : C(B, D)} {f₂ : C(A, C)} {g₂ : C(C, D)}
+    (h : g₁.comp f₁ = g₂.comp f₂) (hf₁ : f₁ a = b) (hg₁ : g₁ b = d)
+    (hf₂ : f₂ a = c) (hg₂ : g₂ c = d) (p : FundamentalGroup A a) :
+    FundamentalGroup.mapOfEq g₁ hg₁ (FundamentalGroup.mapOfEq f₁ hf₁ p) =
+      FundamentalGroup.mapOfEq g₂ hg₂ (FundamentalGroup.mapOfEq f₂ hf₂ p) := by
+  rw [FundamentalGroup.mapOfEq_comp, FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr h _ _ p
+
 /-- **A loop is killed exactly when its image is nullhomotopic.** The induced map `mapOfEq f h`
 sends the class of a loop `q` to `1` if and only if the image of `q` under `f` is homotopic,
 relative to its endpoints, to the constant path. -/
