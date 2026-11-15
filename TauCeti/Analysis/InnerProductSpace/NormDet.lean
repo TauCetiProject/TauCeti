@@ -48,6 +48,9 @@ identity.
   `LinearMap.normDet_adjoint_eq_zero_iff` (and their `ContinuousLinearMap` counterparts): the
   Jacobian of the adjoint is positive (nonzero) exactly for surjective maps, and vanishes exactly
   for nonsurjective maps.
+* `ContinuousLinearMap.normDet_le_opNorm_pow`,
+  `ContinuousLinearMap.normDet_adjoint_le_opNorm_pow`: the Jacobian `f.normDet` is at most
+  `‖f‖ ^ dim U`, and the coarea Jacobian `f.adjoint.normDet` is at most `‖f‖ ^ dim F`.
 * `ContinuousLinearMap.normDet_adjoint_eq_norm`: the Jacobian of the adjoint of a linear functional
   is its norm.
 * `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
@@ -217,6 +220,45 @@ theorem normDet_adjoint_eq_zero_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddC
     [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
     f.adjoint.normDet = 0 ↔ ¬Function.Surjective f := by
   simpa using (normDet_adjoint_ne_zero_iff (f := f)).not
+
+/-- **Operator-norm bound for the Jacobian.** The `dim U`-dimensional Jacobian `normDet` of a
+continuous linear map `f : U →L[𝕜] V` is at most `‖f‖ ^ dim U`. Neither completeness nor finite
+dimensionality of `V` is required. -/
+theorem normDet_le_opNorm_pow {𝕜 U V : Type*} [RCLike 𝕜] [NormedAddCommGroup U]
+    [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] (f : U →L[𝕜] V) :
+    f.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 U := by
+  let A := (f : U →ₗ[𝕜] V).rangeRestrict
+  have hA : (f : U →ₗ[𝕜] V).normDet = A.normDet := (LinearMap.normDet_codRestrict _).symm
+  rw [hA, A.normDet_eq_prod_singularValues]
+  calc ∏ i ∈ Finset.range (Module.finrank 𝕜 U), A.singularValues i
+      ≤ ∏ _ ∈ Finset.range (Module.finrank 𝕜 U), ‖f‖ := by
+        gcongr with i hi
+        · exact fun i _ ↦ A.singularValues_nonneg i
+        obtain ⟨v, hv⟩ := (A.hasEigenvalue_adjoint_comp_self_sq_singularValues
+          (Finset.mem_range.1 hi)).exists_hasEigenvector
+        have hsq : A.singularValues i ^ 2 * ‖v‖ ^ 2 ≤ ‖f‖ ^ 2 * ‖v‖ ^ 2 := by
+          have hinner : RCLike.re (inner 𝕜 ((A.adjoint ∘ₗ A) v) v) = ‖f v‖ ^ 2 := by
+            rw [LinearMap.comp_apply, LinearMap.adjoint_inner_left, inner_self_eq_norm_sq]
+            rfl
+          have heig : RCLike.re (inner 𝕜 ((A.adjoint ∘ₗ A) v) v) =
+              A.singularValues i ^ 2 * ‖v‖ ^ 2 := by
+            simp [hv.apply_eq_smul, inner_smul_left, inner_self_eq_norm_sq_to_K]
+          calc A.singularValues i ^ 2 * ‖v‖ ^ 2 = ‖f v‖ ^ 2 := heig.symm.trans hinner
+            _ ≤ (‖f‖ * ‖v‖) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (f.le_opNorm v) 2
+            _ = ‖f‖ ^ 2 * ‖v‖ ^ 2 := mul_pow _ _ _
+        exact (sq_le_sq₀ (A.singularValues_nonneg i) (norm_nonneg f)).1
+          (le_of_mul_le_mul_right hsq (pow_pos (norm_pos_iff.2 hv.2) 2))
+    _ = ‖f‖ ^ Module.finrank 𝕜 U := by simp
+
+/-- The coarea Jacobian `f.adjoint.normDet` of a continuous linear map `f : E →L[𝕜] F` into a
+finite-dimensional inner product space is at most `‖f‖ ^ dim F`. The domain need only be
+complete, not finite-dimensional. -/
+theorem normDet_adjoint_le_opNorm_pow {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] (f : E →L[𝕜] F) :
+    f.adjoint.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 F :=
+  f.adjoint.normDet_le_opNorm_pow.trans_eq (by rw [LinearIsometryEquiv.norm_map])
 
 omit [FiniteDimensional ℝ V] in
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is

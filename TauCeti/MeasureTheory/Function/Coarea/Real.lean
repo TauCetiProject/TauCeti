@@ -38,11 +38,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- An integrable nonnegative weighted coarea Jacobian has finite iterated fiber integral. -/
 theorem lintegral_setLIntegral_fiber_ne_top_of_integrable_normDet_adjoint_fderiv_mul
     (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
-    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : Measurable g)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : AEMeasurable g (volume.restrict s))
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet * (g x : ℝ)) s) :
     ∫⁻ y, ∫⁻ x in s ∩ f ⁻¹' {y}, (g x : ℝ≥0∞) ∂μHE[finrank ℝ E - finrank ℝ F] ≠ ∞ := by
-  rw [← lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hs hd hsurj
-    hg.coe_nnreal_ennreal]
+  have hg' : AEMeasurable (fun x ↦ (g x : ℝ≥0∞)) (volume.restrict s) :=
+    measurable_coe_nnreal_ennreal.comp_aemeasurable hg
+  rw [← lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hs hd hsurj hg']
   simpa only [ENNReal.ofReal_mul (LinearMap.normDet_nonneg _), ENNReal.ofReal_coe_nnreal]
     using hint.lintegral_lt_top.ne
 
@@ -50,42 +51,48 @@ theorem lintegral_setLIntegral_fiber_ne_top_of_integrable_normDet_adjoint_fderiv
 almost every fiber, with respect to normalized Hausdorff measure. -/
 theorem ae_integrableOn_fiber_of_integrable_normDet_adjoint_fderiv_mul
     (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
-    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : Measurable g)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : AEMeasurable g (volume.restrict s))
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet * (g x : ℝ)) s) :
     ∀ᵐ y, IntegrableOn (fun x ↦ (g x : ℝ)) (s ∩ f ⁻¹' {y})
       μHE[finrank ℝ E - finrank ℝ F] := by
-  have hG := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs
-    (fun x hx ↦ (hd x hx).hasFDerivAt.hasFDerivWithinAt) hg.coe_nnreal_ennreal
+  have hdw (x : E) (hx : x ∈ s) : HasFDerivWithinAt f (fderiv ℝ f x) s x :=
+    (hd x hx).hasFDerivAt.hasFDerivWithinAt
+  have hg' : AEMeasurable (fun x ↦ (g x : ℝ≥0∞)) (volume.restrict s) :=
+    measurable_coe_nnreal_ennreal.comp_aemeasurable hg
+  have hG := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw hg'
   have hfinite :=
     lintegral_setLIntegral_fiber_ne_top_of_integrable_normDet_adjoint_fderiv_mul hs hd hsurj hg hint
-  filter_upwards [ae_lt_top' hG hfinite] with y hy
+  filter_upwards [ae_lt_top' hG hfinite,
+    ae_aemeasurable_restrict_preimage_of_hasFDerivWithinAt volume hdw hg'] with y hy hy_meas
   simpa only [IntegrableOn, ENNReal.coe_toReal] using
-    integrable_toReal_of_lintegral_ne_top hg.coe_nnreal_ennreal.aemeasurable hy.ne
+    integrable_toReal_of_lintegral_ne_top hy_meas hy.ne
 
 /-- The real fiber integrals are integrable on the target when the nonnegative weighted
 coarea Jacobian is integrable. -/
 theorem integrable_setIntegral_fiber_of_integrable_normDet_adjoint_fderiv_mul
     (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
-    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : Measurable g)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : AEMeasurable g (volume.restrict s))
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet * (g x : ℝ)) s) :
     Integrable (fun y ↦ ∫ x in s ∩ f ⁻¹' {y}, (g x : ℝ)
       ∂μHE[finrank ℝ E - finrank ℝ F]) volume := by
-  have hG := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs
-    (fun x hx ↦ (hd x hx).hasFDerivAt.hasFDerivWithinAt) hg.coe_nnreal_ennreal
+  have hdw (x : E) (hx : x ∈ s) : HasFDerivWithinAt f (fderiv ℝ f x) s x :=
+    (hd x hx).hasFDerivAt.hasFDerivWithinAt
+  have hg' : AEMeasurable (fun x ↦ (g x : ℝ≥0∞)) (volume.restrict s) :=
+    measurable_coe_nnreal_ennreal.comp_aemeasurable hg
+  have hG := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw hg'
   have hfinite :=
     lintegral_setLIntegral_fiber_ne_top_of_integrable_normDet_adjoint_fderiv_mul hs hd hsurj hg hint
   refine (integrable_toReal_of_lintegral_ne_top hG hfinite).congr ?_
-  exact Eventually.of_forall fun y ↦ by
-    simpa only [ENNReal.coe_toReal] using
-      (integral_toReal hg.coe_nnreal_ennreal.aemeasurable
-        (Eventually.of_forall fun _ ↦ ENNReal.coe_lt_top)).symm
+  filter_upwards [ae_aemeasurable_restrict_preimage_of_hasFDerivWithinAt volume hdw hg'] with y hy
+  simpa only [ENNReal.coe_toReal] using
+    (integral_toReal hy (Eventually.of_forall fun _ ↦ ENNReal.coe_lt_top)).symm
 
 /-- **Real weighted coarea on the regular part.** An integrable nonnegative weighted
 Jacobian integrates to the iterated real integral of the weight along fibers. The fiber
 integrals are integrable almost everywhere, and the outer integrand is integrable. -/
 theorem integral_normDet_adjoint_fderiv_mul_eq_integral_setIntegral_fiber
     (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
-    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : Measurable g)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) (hg : AEMeasurable g (volume.restrict s))
     (hint : IntegrableOn (fun x ↦ (fderiv ℝ f x).adjoint.normDet * (g x : ℝ)) s) :
     ∫ x in s, (fderiv ℝ f x).adjoint.normDet * (g x : ℝ) =
       ∫ y, ∫ x in s ∩ f ⁻¹' {y}, (g x : ℝ) ∂μHE[finrank ℝ E - finrank ℝ F] := by
@@ -101,8 +108,9 @@ theorem integral_normDet_adjoint_fderiv_mul_eq_integral_setIntegral_fiber
       houter.aestronglyMeasurable]
   simp_rw [ENNReal.ofReal_mul (LinearMap.normDet_nonneg _), ENNReal.ofReal_coe_nnreal]
   congr 1
-  rw [lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hs hd hsurj
-    hg.coe_nnreal_ennreal]
+  have hg' : AEMeasurable (fun x ↦ (g x : ℝ≥0∞)) (volume.restrict s) :=
+    measurable_coe_nnreal_ennreal.comp_aemeasurable hg
+  rw [lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber hs hd hsurj hg']
   exact lintegral_congr_ae (hfiber.mono fun y hy ↦ lintegral_coe_eq_integral g hy)
 
 end MeasureTheory

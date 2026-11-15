@@ -16,13 +16,13 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 # Weighted coarea on the regular part
 
 For a map differentiable with surjective derivative on a Lebesgue-measurable set, integrating
-an extended nonnegative measurable weight along its fibers gives the integral of that weight
-times the coarea Jacobian. The fibers carry normalized Euclidean Hausdorff measure.
+an extended nonnegative almost-everywhere measurable weight along its fibers gives the integral of
+that weight times the coarea Jacobian. The fibers carry normalized Euclidean Hausdorff measure.
 No Lipschitz hypothesis outside the set, or finiteness of either integral, is required.
 
 The unweighted input is the regular-part coarea identity in
-`TauCeti.MeasureTheory.Function.Coarea.Basic`. Measurable-function induction extends it to
-weights, using almost-everywhere measurability of fiber integrals from
+`TauCeti.MeasureTheory.Function.Coarea.Basic`. Measurable-function induction and ambient-to-fiber
+almost-everywhere descent extend it to almost-everywhere measurable weights, using
 `TauCeti.MeasureTheory.Function.Coarea.Measurability`. This file does not treat critical points.
 
 For a real-valued function `h` the coarea Jacobian is the gradient norm `‖Dh‖`. Taking the weight
@@ -54,11 +54,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] {f : E → F} {s : Set E}
 
-/-- **Weighted coarea on the regular part.** For a map differentiable with surjective
-derivative on a Lebesgue-measurable set, the integral of a nonnegative measurable weight times
-the norm determinant of the adjoint derivative equals its iterated integral along fibers.
-Both sides may be infinite. -/
-theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
+/-- Weighted coarea on the regular part for a Borel-measurable nonnegative weight. -/
+private theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_measurable
     (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
     (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) {g : E → ℝ≥0∞} (hg : Measurable g) :
     ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * g x =
@@ -94,8 +91,8 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
     have hprod : Measurable (fun x ↦ ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * g x) :=
       hJ.mul hg
     rw [lintegral_add_left hprod, ihg, ihh,
-      lintegral_add_left'
-        (aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw hg)]
+      lintegral_add_left' (aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw
+        hg.aemeasurable.restrict)]
   · intro g hg hmono ih
     simp_rw [ENNReal.mul_iSup]
     rw [lintegral_iSup]
@@ -106,11 +103,35 @@ theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
         lintegral_iSup hg hmono
       simp_rw [heq]
       exact (lintegral_iSup'
-        (fun n ↦ aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw (hg n))
+        (fun n ↦ aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt volume hs hdw
+          (hg n).aemeasurable.restrict)
         (Eventually.of_forall fun y i j hij ↦ lintegral_mono (hmono hij))).symm
     · exact fun n ↦ hJ.mul (hg n)
     · intro i j hij x
       exact mul_le_mul' le_rfl (hmono hij x)
+
+/-- **Weighted coarea on the regular part.** For a map differentiable with surjective
+derivative on a Lebesgue-measurable set, the integral of a nonnegative almost-everywhere measurable
+weight times the norm determinant of the adjoint derivative equals its iterated integral along
+fibers. Both sides may be infinite. -/
+theorem lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
+    (hs : NullMeasurableSet s volume) (hd : ∀ x ∈ s, DifferentiableAt ℝ f x)
+    (hsurj : ∀ x ∈ s, Surjective (fderiv ℝ f x)) {g : E → ℝ≥0∞}
+    (hg : AEMeasurable g (volume.restrict s)) :
+    ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * g x =
+      ∫⁻ y, ∫⁻ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F] := by
+  have hdw (x : E) (hx : x ∈ s) : HasFDerivWithinAt f (fderiv ℝ f x) s x :=
+    (hd x hx).hasFDerivAt.hasFDerivWithinAt
+  have hlhs : ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * g x =
+      ∫⁻ x in s, ENNReal.ofReal (fderiv ℝ f x).adjoint.normDet * hg.mk g x :=
+    lintegral_congr_ae (hg.ae_eq_mk.mono fun x hx ↦ congr_arg _ hx)
+  have hrhs : (∫⁻ y, ∫⁻ x in s ∩ f ⁻¹' {y}, g x ∂μHE[finrank ℝ E - finrank ℝ F]) =
+      ∫⁻ y, ∫⁻ x in s ∩ f ⁻¹' {y}, hg.mk g x ∂μHE[finrank ℝ E - finrank ℝ F] :=
+    lintegral_congr_ae ((ae_ae_eq_restrict_preimage_of_hasFDerivWithinAt volume hdw
+      hg.ae_eq_mk).mono fun _ hy ↦ lintegral_congr_ae hy)
+  rw [hlhs, hrhs]
+  exact lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber_of_measurable
+    hs hd hsurj hg.measurable_mk
 
 /-- **The coarea formula for the regular part of a preimage.** For every function `h` and
 measurable set `I`, the volume of the regular part `h⁻¹(I) ∩ {Dh ≠ 0}` is the integral over `I`
@@ -131,7 +152,8 @@ theorem volume_preimage_inter_setOf_fderiv_ne_zero {h : E → ℝ} {I : Set ℝ}
   let w : E → ℝ≥0∞ := (h ⁻¹' I ∩ R).indicator fun x ↦ ‖fderiv ℝ h x‖ₑ⁻¹
   have hw : Measurable w := (measurable_fderiv ℝ h).eNorm.inv.indicator hm
   have hcoarea := lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
-    hR.nullMeasurableSet (fun _ hx ↦ TauCeti.differentiableAt_of_fderiv_ne_zero hx) hsurj hw
+    hR.nullMeasurableSet (fun _ hx ↦ TauCeti.differentiableAt_of_fderiv_ne_zero hx) hsurj
+    hw.aemeasurable.restrict
   rw [finrank_self] at hcoarea
   -- On `R` the coarea Jacobian `‖Dh‖` cancels the weight.
   have hlhs : ∫⁻ x in R, ENNReal.ofReal (fderiv ℝ h x).adjoint.normDet * w x =
