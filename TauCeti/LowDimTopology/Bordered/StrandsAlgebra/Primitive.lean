@@ -481,8 +481,7 @@ theorem isPrimitiveIdempotent_matchedIdem_iff {s : Finset β} :
   -- The coefficient of `r I(s)` at `I(S)` is `r`.
   have hcoeff (r : R) :
       (basis R α).repr ((r • e : matchedSubalgebra R M) : StrandsAlgebra R α) (idOn S) = r := by
-    rw [NonUnitalSubalgebra.coe_smul, map_smul, Finsupp.smul_apply,
-      repr_matchedIdem_apply_idOn hS, smul_eq_mul, mul_one]
+    simp [e, hS]
   have hidem {r : R} (hr : IsIdempotentElem r) : IsIdempotentElem (r • e) := by
     rw [IsIdempotentElem, smul_mul_smul_comm, hr.eq, hprim.isIdempotentElem.eq]
   have horth {r r' : R} (h : r * r' = 0) : (r • e) * (r' • e) = 0 := by
