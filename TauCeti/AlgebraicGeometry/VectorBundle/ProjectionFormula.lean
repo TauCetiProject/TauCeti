@@ -26,7 +26,10 @@ right adjoints agree too.
 
 For the closed subscheme `ι : Z ⟶ X` cut out by an ideal sheaf, the case `N = 𝒪_Z` identifies
 `E ⊗ ι_* 𝒪_Z`, the restriction of `E` to `Z` seen on `X`, with the direct image of the pullback
-`ι^* E` (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.tensorPushforwardUnitIso`).
+`ι^* E` (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.tensorPushforwardUnitIso`). Composing
+with the symmetry of the tensor product also gives the right-hand form
+`(f_* N) ⊗ E ≅ f_* (N ⊗ f^* E)`
+(`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pushforwardTensorRightIso`).
 
 ## References
 
@@ -71,6 +74,24 @@ def pushforwardTensorLeftIso :
     (((Scheme.Modules.pullbackPushforwardAdjunction f).comp
       (tensorLeftAdjunction ((pullback f).obj E).obj
         (dual ((pullback f).obj E)).obj)).ofNatIsoLeft e.symm)
+
+/-- Right-hand form of the projection formula for a finite locally free sheaf `E` on `Y` and any
+morphism `f : X ⟶ Y`: `(f_* N) ⊗ E ≅ f_* (N ⊗ f^* E)`. -/
+def pushforwardTensorRightIso (N : X.Modules) :
+    (Scheme.Modules.pushforward f).obj N ⊗ E.obj ≅
+      (Scheme.Modules.pushforward f).obj (N ⊗ (Scheme.Modules.pullback f).obj E.obj) :=
+  β_ _ _ ≪≫ (pushforwardTensorLeftIso f E).app N ≪≫
+    (Scheme.Modules.pushforward f).mapIso
+      (β_ _ _ ≪≫ (tensorLeft N).mapIso (eqToIso (pullback_obj_obj f E)))
+
+/-- `pushforwardTensorRightIso` conjugates `pushforwardTensorLeftIso` by the braiding of the
+tensor product. -/
+theorem pushforwardTensorRightIso_def (N : X.Modules) :
+    pushforwardTensorRightIso f E N =
+      β_ _ _ ≪≫ (pushforwardTensorLeftIso f E).app N ≪≫
+        (Scheme.Modules.pushforward f).mapIso
+          (β_ _ _ ≪≫ (tensorLeft N).mapIso (eqToIso (pullback_obj_obj f E))) :=
+  (rfl)
 
 /-- The projection formula for the direct image of the structure sheaf:
 `E ⊗ f_* 𝒪_X ≅ f_* (f^* E)`. For a closed immersion `f` this identifies the restriction of `E` to

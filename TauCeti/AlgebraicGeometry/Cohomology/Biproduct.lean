@@ -34,7 +34,9 @@ infinite-dimensional and `I` is nonempty.
 
 ## Main declarations
 
-* `Scheme.Modules.cohomologyBiproductLinearEquiv`: `Hⁱ(X, ⨁ⱼ Mⱼ) ≃ₗ[R] ∀ j, Hⁱ(X, Mⱼ)`;
+* `Scheme.Modules.cohomologyBiproductLinearEquiv`: `Hⁱ(X, ⨁ⱼ Mⱼ) ≃ₗ[R] ∀ j, Hⁱ(X, Mⱼ)`, and
+  `Scheme.Modules.finite_cohomology_biproduct` recording that `Hⁱ(X, ⨁ⱼ Mⱼ)` is finitely
+  generated over `R` when each `Hⁱ(X, Mⱼ)` is;
 * `Scheme.Modules.cohomologyBiprodLinearEquiv`: `Hⁱ(X, M ⊞ N) ≃ₗ[R] Hⁱ(X, M) × Hⁱ(X, N)`, with
   `Scheme.Modules.finrank_cohomology_biprod` and `Scheme.Modules.eulerCharBelow_biprod` computing
   dimensions and truncated Euler characteristics when the cohomology is finite-dimensional;
@@ -113,6 +115,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv_sym
   simp only [cohomologyBiproductLinearEquiv, LinearEquiv.symm_ofLinearMap,
     LinearEquiv.coe_ofLinearMap, LinearMap.sum_apply, LinearMap.comp_apply,
     LinearMap.proj_apply]
+
+/-- The cohomology of a finite biproduct of `𝒪_X`-modules is finitely generated over `R` when the
+cohomology of each summand is. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.finite_cohomology_biproduct
+    {ι : Type*} [Finite ι] (G : ι → X.Modules) [HasBiproduct G] (i : ℕ)
+    [∀ j, Module.Finite R (Cohomology (G j) i)] :
+    Module.Finite R (Cohomology (⨁ G) i) := by
+  have := Fintype.ofFinite ι
+  exact Module.Finite.equiv (cohomologyBiproductLinearEquiv R G i).symm
 
 /-- **Dimension of the cohomology of a finite direct sum of copies of a sheaf.** Over a field
 `k`, `dim Hⁱ(X, ⨁_{I} M) = |I| · dim Hⁱ(X, M)` for every finite type `I`. No finiteness of

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.LocallyBijective
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # Sections of tensor products over affine opens
@@ -33,7 +34,10 @@ localizations. The proof follows that of
 * `AlgebraicGeometry.Scheme.Modules.bijective_tensorObj_unit_app`: the sheafification unit
   `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) → Γ(sheafification (M ⊗ N), U)` is bijective;
 * `AlgebraicGeometry.Scheme.Modules.bijective_μ_sectionsFunctor`: the tensor map
-  `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) → Γ(M ⊗ N, U)` of the sections functor is bijective.
+  `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) → Γ(M ⊗ N, U)` of the sections functor is bijective;
+* `AlgebraicGeometry.Scheme.Modules.finite_sections_tensorObj_of_isAffineOpen` and
+  `AlgebraicGeometry.Scheme.Modules.finite_sections_tensor_tensorPow_of_isAffineOpen`: tensor
+  products and twists by tensor powers preserve finite generation of sections over affine opens.
 
 ## References
 
@@ -155,5 +159,37 @@ theorem bijective_μ_sectionsFunctor (hU : IsAffineOpen U) :
   exact ((TauCeti.PresheafOfModulesOfCommRing.evaluation (op U)).mapIso
     ((SheafOfModules.forget _).mapIso
       (SheafOfModules.tensorUnderlyingIso (R := X.sheaf) M N).symm)).toLinearEquiv.bijective.comp hu
+
+/-- Over an affine open `U`, the tensor product of two quasi-coherent `𝒪_X`-modules with finitely
+generated `Γ(X, U)`-modules of sections again has finitely generated sections over `U`. -/
+theorem finite_sections_tensorObj_of_isAffineOpen (hU : IsAffineOpen U)
+    (hM : Module.Finite Γ(X, U) Γ(M, U)) (hN : Module.Finite Γ(X, U) Γ(N, U)) :
+    Module.Finite Γ(X, U) Γ(M ⊗ N, U) := by
+  let A : ModuleCat Γ(X, U) := (sectionsFunctor U).obj M
+  let B : ModuleCat Γ(X, U) := (sectionsFunctor U).obj N
+  have : Module.Finite Γ(X, U) A := hM
+  have : Module.Finite Γ(X, U) B := hN
+  have : Module.Finite Γ(X, U) ↑(A ⊗ B) :=
+    inferInstanceAs (Module.Finite Γ(X, U) (TensorProduct Γ(X, U) A B))
+  exact Module.Finite.of_surjective
+    (Functor.LaxMonoidal.μ (sectionsFunctor U) M N).hom
+    (bijective_μ_sectionsFunctor M N hU).surjective
+
+/-- Over an affine open `U`, tensor powers of a quasi-coherent `𝒪_X`-module with finitely generated
+sections over `U` again have finitely generated sections over `U`. -/
+theorem finite_sections_tensorPow_of_isAffineOpen (hU : IsAffineOpen U)
+    (hM : Module.Finite Γ(X, U) Γ(M, U)) (n : ℕ) :
+    Module.Finite Γ(X, U) Γ(TauCeti.tensorPow M n, U) := by
+  induction n with
+  | zero => exact inferInstanceAs (Module.Finite Γ(X, U) Γ(X, U))
+  | succ n ih => exact finite_sections_tensorObj_of_isAffineOpen M (TauCeti.tensorPow M n) hU hM ih
+
+/-- Over an affine open `U`, twisting a quasi-coherent module `M` by any tensor power of a
+quasi-coherent module `N` preserves finite generation of sections over `Γ(X, U)`. -/
+theorem finite_sections_tensor_tensorPow_of_isAffineOpen (hU : IsAffineOpen U)
+    (hM : Module.Finite Γ(X, U) Γ(M, U)) (hN : Module.Finite Γ(X, U) Γ(N, U)) (n : ℕ) :
+    Module.Finite Γ(X, U) Γ(M ⊗ TauCeti.tensorPow N n, U) :=
+  finite_sections_tensorObj_of_isAffineOpen M (TauCeti.tensorPow N n) hU hM
+    (finite_sections_tensorPow_of_isAffineOpen N hU hN n)
 
 end AlgebraicGeometry.Scheme.Modules

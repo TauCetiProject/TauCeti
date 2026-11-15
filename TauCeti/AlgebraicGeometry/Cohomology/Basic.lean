@@ -99,6 +99,18 @@ lemma cohomologyZeroEquiv_naturality {M N : X.Modules} (f : M ⟶ N) (x : Cohomo
   (CategoryTheory.Sheaf.H.equiv₀_naturality isTerminalTop
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f) x).symm
 
+/-- Isomorphic `𝒪_X`-modules have simultaneously trivial cohomology in degree `i`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_congr
+    {M N : X.Modules} (e : M ≅ N) (i : ℕ) :
+    Subsingleton (Cohomology M i) ↔ Subsingleton (Cohomology N i) :=
+  ((cohomologyFunctor X i).mapIso e).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr
+
+/-- Transfer vanishing of degree-`i` cohomology along an isomorphism of `𝒪_X`-modules. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_iso
+    {M N : X.Modules} (e : M ≅ N) (i : ℕ) [Subsingleton (Cohomology N i)] :
+    Subsingleton (Cohomology M i) :=
+  (_root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_congr e i).mpr ‹_›
+
 section Opens
 
 variable (M : X.Modules)

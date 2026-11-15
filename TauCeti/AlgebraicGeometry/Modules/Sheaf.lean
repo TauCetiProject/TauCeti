@@ -22,11 +22,13 @@ isomorphism criterion using sections over the members of a basis.
 
 ## Main declarations
 
+* `AlgebraicGeometry.Scheme.Modules.instHasFiniteBiproducts`: `X.Modules` has finite biproducts;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf`, the functor sending an `𝒪_X`-module to its
   underlying sheaf of abelian groups, with instances saying that it is additive and preserves
   finite limits and finite colimits;
-* `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso`, which lifts an isomorphism of
-  underlying sheaves of modules to an isomorphism in `X.Modules`;
+* `AlgebraicGeometry.Scheme.Modules.isoOfSheafIso` and
+  `AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso`, which convert isomorphisms back and forth
+  between `X.Modules` and `SheafOfModules X.ringCatSheaf`;
 * `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`, the `Γ(X, U)`-linear equivalence of
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
@@ -52,6 +54,11 @@ namespace AlgebraicGeometry
 universe u
 
 noncomputable section
+
+/-- The category of `𝒪_X`-modules has finite biproducts. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.instHasFiniteBiproducts (X : Scheme.{u}) :
+    HasFiniteBiproducts X.Modules :=
+  Abelian.hasFiniteBiproducts
 
 /-- Composition of scheme-module morphisms acts sectionwise by composition. -/
 @[simp]
@@ -87,6 +94,32 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val (X : Scheme.
     {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) :
     (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e).inv.val = e.inv.val :=
   by simp only [_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso]
+
+variable {X} in
+/-- Convert an isomorphism in `X.Modules` into an isomorphism in `SheafOfModules X.ringCatSheaf`.
+The type `X.Modules` is defined in Mathlib as `SheafOfModules.{u} X.ringCatSheaf` with the same
+underlying `Category` instance, so morphisms, identities, and composition agree, while API phrased
+over an arbitrary ringed site expects `@Iso (SheafOfModules X.ringCatSheaf) _ M N`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso {M N : X.Modules} (e : M ≅ N) :
+    @Iso (SheafOfModules X.ringCatSheaf) _ M N where
+  hom := e.hom
+  inv := e.inv
+  hom_inv_id := e.hom_inv_id
+  inv_hom_id := e.inv_hom_id
+
+variable {X} in
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso_hom {M N : X.Modules}
+    (e : M ≅ N) :
+    (_root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso e).hom = e.hom :=
+  (rfl)
+
+variable {X} in
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso_inv {M N : X.Modules}
+    (e : M ≅ N) :
+    (_root_.AlgebraicGeometry.Scheme.Modules.toSheafOfModulesIso e).inv = e.inv :=
+  (rfl)
 
 variable {X} in
 /-- An isomorphism of `𝒪_X`-modules induces a `Γ(X, U)`-linear equivalence between the modules

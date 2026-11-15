@@ -7,9 +7,11 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 
 /-!
@@ -46,6 +48,8 @@ constants, which is larger than `k` when `k` is not algebraically closed in the 
 * `AlgebraicGeometry.Proj.isClosedImmersion_map_gradedLift`: if degree-one elements `f m`,
   `m ∈ M`, generate every homogeneous element of positive degree of a graded `R`-algebra `A`, then
   `Proj A` is a closed subscheme of `Proj (Sym_R M)`.
+* `AlgebraicGeometry.Proj.mapSymmetricAlgebraOfSurjective`: a surjective `R`-linear map
+  `φ : P →ₗ[R] M` induces a closed immersion `Proj (Sym_R M) ⟶ Proj (Sym_R P)` over `Spec R`.
 
 ## References
 
@@ -117,5 +121,54 @@ theorem isClosedImmersion_map_gradedLift {R M : Type u} [CommRing R] [AddCommMon
         (hf i hi).trans (SymmetricAlgebra.adjoin_range_subset_range_gradedLift R 𝒜 f))) :=
   isClosedImmersion_map_of_grade_subset_range _ _ fun i hi ↦
     (hf i hi).trans (SymmetricAlgebra.adjoin_range_subset_range_gradedLift R 𝒜 f)
+
+section SymmetricAlgebra
+
+open TauCeti.SymmetricAlgebra
+
+variable {R M P : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid P] [Module R P]
+
+/-- A surjective `R`-linear map `φ : P →ₗ[R] M` induces a closed immersion of projective spectra
+`Proj (Sym_R M) ⟶ Proj (Sym_R P)` over `Spec R`. -/
+@[expose]
+noncomputable def mapSymmetricAlgebraOfSurjective (φ : P →ₗ[R] M) (hφ : Function.Surjective φ) :
+    Proj (homogeneousSubmodule R M) ⟶ Proj (homogeneousSubmodule R P) :=
+  map (SymmetricAlgebra.gradedMap R φ)
+    (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+      (SymmetricAlgebra.gradedMap_surjective R hφ))
+
+/-- `mapSymmetricAlgebraOfSurjective` is `Proj.map` of `SymmetricAlgebra.gradedMap`. -/
+theorem mapSymmetricAlgebraOfSurjective_def (φ : P →ₗ[R] M) (hφ : Function.Surjective φ) :
+    mapSymmetricAlgebraOfSurjective φ hφ =
+      map (SymmetricAlgebra.gradedMap R φ)
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+          (SymmetricAlgebra.gradedMap_surjective R hφ)) :=
+  (rfl)
+
+/-- The projective map associated to a surjective linear map is a closed immersion. -/
+instance isClosedImmersion_mapSymmetricAlgebraOfSurjective (φ : P →ₗ[R] M)
+    (hφ : Function.Surjective φ) :
+    IsClosedImmersion (mapSymmetricAlgebraOfSurjective φ hφ) :=
+  isClosedImmersion_map _ _ (SymmetricAlgebra.gradedMap_surjective R hφ)
+
+/-- The projective map associated to a surjective linear map commutes with `projToSpec`. -/
+@[reassoc (attr := simp)]
+theorem mapSymmetricAlgebraOfSurjective_projToSpec (φ : P →ₗ[R] M)
+    (hφ : Function.Surjective φ) :
+    mapSymmetricAlgebraOfSurjective φ hφ ≫ projToSpec R P = projToSpec R M := by
+  rw [mapSymmetricAlgebraOfSurjective_def, projToSpec_def, projToSpec_def, map_toSpecZero_assoc,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  congr 3
+  ext r
+  simp
+
+/-- The projective map associated to a surjective linear map is a morphism over `Spec R`. -/
+instance isOver_mapSymmetricAlgebraOfSurjective (φ : P →ₗ[R] M)
+    (hφ : Function.Surjective φ) :
+    (mapSymmetricAlgebraOfSurjective φ hφ).IsOver (Spec (.of R)) where
+  comp_over := mapSymmetricAlgebraOfSurjective_projToSpec φ hφ
+
+end SymmetricAlgebra
 
 end AlgebraicGeometry.Proj

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.Dual
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
+public import TauCeti.CategoryTheory.Monoidal.InvertibleObject
 
 /-!
 # Duals of line bundles
@@ -19,7 +20,9 @@ tensor product of a line bundle with its dual with the trivial line bundle.
 * `InvertibleSheaf.dual` is the dual line bundle;
 * `InvertibleSheaf.dualCongr` transports an isomorphism through duality;
 * `InvertibleSheaf.evaluationDualIsoSheaf` packages internal-Hom evaluation as an isomorphism;
-* `InvertibleSheaf.tensorDualIso` identifies `L ⊗ L.dual` with the trivial line bundle.
+* `InvertibleSheaf.tensorDualIso` identifies `L ⊗ L.dual` with the trivial line bundle;
+* `AlgebraicGeometry.Scheme.Modules.isEquivalence_tensorRight_of_isInvertible`: tensoring on the
+  right by an invertible `𝒪_X`-module is an equivalence of categories.
 
 These constructions supply inverses for the Picard group of a scheme.
 -/
@@ -162,6 +165,19 @@ lemma tensorDualIso_inv_val (L : InvertibleSheaf X) :
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
 end InvertibleSheaf
+
+/-- Tensoring on the right by an invertible `𝒪_X`-module is an equivalence of categories, with
+quasi-inverse given by tensoring on the right with the dual line bundle. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isEquivalence_tensorRight_of_isInvertible
+    {X : Scheme.{u}} (L : X.Modules)
+    [TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L] :
+    (tensorRight L).IsEquivalence :=
+  let L' : InvertibleSheaf X := ⟨L, inferInstance⟩
+  isEquivalence_tensorRight_of_iso
+    (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X
+      ((InvertibleSheaf.tensorProductObjIso L' (InvertibleSheaf.dual L')).symm ≪≫
+        InvertibleSheaf.tensorDualIsoSheaf L' ≪≫
+        InvertibleSheaf.trivialObjIsoUnit X))
 
 end
 

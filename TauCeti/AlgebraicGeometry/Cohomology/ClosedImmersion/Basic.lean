@@ -81,6 +81,14 @@ lemma cohomologyPushforwardIso_naturality {M N : X.Modules} (α : M ⟶ N) (n : 
       (cohomologyPushforwardIso f M n).hom ≫ (cohomologyFunctor X n).map α :=
   (cohomologyPushforwardNatIso f n).hom.naturality α
 
+/-- Cohomology of a direct image along a closed immersion vanishes in degree `n` if and only if
+the cohomology of the sheaf on the closed subscheme vanishes in degree `n`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.subsingleton_cohomology_pushforward_iff
+    (M : X.Modules) (n : ℕ) :
+    Subsingleton (Cohomology ((pushforward f).obj M) n) ↔ Subsingleton (Cohomology M n) :=
+  (cohomologyPushforwardIso f M n).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr
+
 end
 
 end TauCeti.AlgebraicGeometry

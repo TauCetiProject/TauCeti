@@ -139,6 +139,12 @@ theorem gradedMap_toRingHom (f : M →ₗ[R] N) :
     (gradedMap R f).toRingHom = (map R f).toRingHom :=
   RingHom.ext (gradedMap_apply R f)
 
+/-- A surjective linear map induces a surjective graded map of symmetric algebras. -/
+theorem gradedMap_surjective {f : M →ₗ[R] N} (hf : Function.Surjective f) :
+    Function.Surjective (gradedMap R f) := fun b ↦ by
+  obtain ⟨a, rfl⟩ := map_surjective R f hf b
+  exact ⟨a, gradedMap_apply R f a⟩
+
 /-- The identity linear map induces the identity graded map. -/
 @[simp]
 theorem gradedMap_id : gradedMap R (LinearMap.id (R := R) (M := M)) =

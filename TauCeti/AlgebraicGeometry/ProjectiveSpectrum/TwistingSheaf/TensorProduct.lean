@@ -32,6 +32,8 @@ sheafified tensor product follows the Cartier divisor construction in
   `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors.
 * `AlgebraicGeometry.Proj.lineBundleClass_twistingSheaf_eq_zpow`: `[𝒪(n)] = [𝒪(1)] ^ n` in the
   group of line-bundle classes.
+* `TauCeti.SymmetricAlgebra.twistingSheafTensorIso`: the monoidal isomorphism
+  `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` in `(Proj (Sym_R M)).Modules`.
 
 ## References
 
@@ -271,3 +273,46 @@ theorem lineBundleClass_twistingSheaf_eq_zpow (n : ℤ) :
   rwa [← ofAdd_zsmul, zsmul_one] at this
 
 end AlgebraicGeometry.Proj
+
+namespace TauCeti.SymmetricAlgebra
+
+open _root_.AlgebraicGeometry MonoidalCategory _root_.TauCeti.AlgebraicGeometry
+
+universe u
+
+variable {R M : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- On `Proj (Sym_R M)`, the monoidal tensor product of twisting sheaves `𝒪(m) ⊗ 𝒪(n)` in
+`(Proj (Sym_R M)).Modules` is isomorphic to `𝒪(m + n)`. -/
+def twistingSheafTensorIso (m n : ℤ) :
+    (Proj.twistingSheaf (homogeneousSubmodule R M) m : (Proj (homogeneousSubmodule R M)).Modules) ⊗
+        (Proj.twistingSheaf (homogeneousSubmodule R M) n :
+          (Proj (homogeneousSubmodule R M)).Modules) ≅
+      (Proj.twistingSheaf (homogeneousSubmodule R M) (m + n) :
+        (Proj (homogeneousSubmodule R M)).Modules) :=
+  let Lm : InvertibleSheaf (Proj (homogeneousSubmodule R M)) :=
+    ⟨Proj.twistingSheaf (homogeneousSubmodule R M) m, inferInstance⟩
+  let Ln : InvertibleSheaf (Proj (homogeneousSubmodule R M)) :=
+    ⟨Proj.twistingSheaf (homogeneousSubmodule R M) n, inferInstance⟩
+  Scheme.Modules.isoOfSheafIso (Proj (homogeneousSubmodule R M))
+    ((InvertibleSheaf.tensorProductObjIso Lm Ln).symm ≪≫
+      eqToIso (InvertibleSheaf.tensorProduct_obj Lm Ln) ≪≫
+      Proj.twistingSheaf.tensorProductIso (_root_.SymmetricAlgebra.ι R M)
+        (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) m n)
+
+/-- `twistingSheafTensorIso` transports `Proj.twistingSheaf.tensorProductIso` along the monoidal
+comparison `InvertibleSheaf.tensorProductObjIso`. -/
+theorem twistingSheafTensorIso_def (m n : ℤ) :
+    twistingSheafTensorIso (R := R) (M := M) m n =
+      let Lm : InvertibleSheaf (Proj (homogeneousSubmodule R M)) :=
+        ⟨Proj.twistingSheaf (homogeneousSubmodule R M) m, inferInstance⟩
+      let Ln : InvertibleSheaf (Proj (homogeneousSubmodule R M)) :=
+        ⟨Proj.twistingSheaf (homogeneousSubmodule R M) n, inferInstance⟩
+      Scheme.Modules.isoOfSheafIso (Proj (homogeneousSubmodule R M))
+        ((InvertibleSheaf.tensorProductObjIso Lm Ln).symm ≪≫
+          eqToIso (InvertibleSheaf.tensorProduct_obj Lm Ln) ≪≫
+          Proj.twistingSheaf.tensorProductIso (_root_.SymmetricAlgebra.ι R M)
+            (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) m n) :=
+  (rfl)
+
+end TauCeti.SymmetricAlgebra

@@ -37,6 +37,10 @@ locus of a section of an invertible sheaf.
   when `e` is a basis of `L` over `U`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_smul_tensorPowSection`: if `e` is a basis of `L`
   over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`.
+* `AlgebraicGeometry.Scheme.Modules.associator_hom_app_tmulRight`,
+  `AlgebraicGeometry.Scheme.Modules.leftUnitor_hom_app_tmulRight`, and
+  `AlgebraicGeometry.Scheme.Modules.tensorPowSuccIso_hom_app_tmulRight_tensorPowSection`: monoidal
+  coherence identities for `tmulRight` and `tensorPowSection`.
 -/
 
 public section
@@ -293,6 +297,50 @@ theorem bijective_tmulRight_tensorPowSection {U : X.Opens} (e : Γ(L, U))
       Function.Bijective fun r : Γ(X, W) ↦ r • L.presheaf.map i.op e) (n : ℕ) :
     Function.Bijective (tmulRight F (tensorPowSection e n)) :=
   bijective_tmulRight F _ (bijective_smul_tensorPowSection e he n)
+
+/-! ### Monoidal coherences on tensor products and tensor powers of sections -/
+
+/-- The associator `(F ⊗ G) ⊗ H ≅ F ⊗ (G ⊗ H)` sends `(a ⊗ b) ⊗ c` to `a ⊗ (b ⊗ c)`. -/
+theorem associator_hom_app_tmulRight (G H : X.Modules) {U : X.Opens}
+    (a : Γ(F, U)) (b : Γ(G, U)) (c : Γ(H, U)) :
+    (α_ F G H).hom.app U (tmulRight (F ⊗ G) c (tmulRight F b a)) =
+      tmulRight F (tmulRight G c b) a := by
+  let a' : (sectionsFunctor U).obj F := a
+  let b' : (sectionsFunctor U).obj G := b
+  let c' : (sectionsFunctor U).obj H := c
+  have h := congrArg (fun φ ↦ φ ((a' ⊗ₜ[Γ(X, U)] b') ⊗ₜ[Γ(X, U)] c'))
+    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F G H)
+  simp only [CategoryTheory.ConcreteCategory.comp_apply,
+    ModuleCat.MonoidalCategory.whiskerRight_apply,
+    ModuleCat.MonoidalCategory.associator_hom_apply, sectionsFunctor_map] at h
+  rw [tmulRight_apply, tmulRight_apply, tmulRight_apply (F := F) (L := G ⊗ H), tmulRight_apply]
+  exact h
+
+/-- The left unitor `𝒪_X ⊗ F ≅ F` sends `r ⊗ t` to `r • t`. -/
+theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (t : Γ(F, U)) :
+    (λ_ F).hom.app U (tmulRight (𝟙_ X.Modules) t r) = r • t := by
+  let t' : (sectionsFunctor U).obj F := t
+  have h := congrArg (fun φ ↦ φ (r ⊗ₜ t'))
+    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) F)
+  simp only [sectionsFunctor_ε, CategoryTheory.ConcreteCategory.comp_apply,
+    ModuleCat.MonoidalCategory.leftUnitor_hom_apply, sectionsFunctor_map] at h
+  exact (congrArg ((λ_ F).hom.app U) (tmulRight_apply (𝟙_ X.Modules) t r)).trans h.symm
+
+/-- Appending a factor on the right via `tensorPowSuccIso` carries `eⁿ ⊗ e` to `eⁿ⁺¹`. -/
+theorem tensorPowSuccIso_hom_app_tmulRight_tensorPowSection {U : X.Opens}
+    (e : Γ(L, U)) (n : ℕ) :
+    (tensorPowSuccIso L n).hom.app U (tmulRight (tensorPow L n) e (tensorPowSection e n)) =
+      tensorPowSection e (n + 1) := by
+  induction n with
+  | zero =>
+    rw [tensorPowSuccIso_zero_hom, Hom.comp_app, ConcreteCategory.comp_apply,
+      tensorPowSection_zero, leftUnitor_hom_app_tmulRight, one_smul,
+      rightUnitor_inv_app_eq_tmulRight, ← tensorPowSection_zero e]
+    exact (tensorPowSection_succ e 0).symm
+  | succ n ih =>
+    rw [tensorPowSuccIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
+      tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
+    exact (tensorPowSection_succ e (n + 1)).symm
 
 end
 

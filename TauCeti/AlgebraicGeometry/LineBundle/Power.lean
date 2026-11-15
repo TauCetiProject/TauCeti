@@ -14,8 +14,9 @@ For a line bundle `L` on a scheme `X` and `n : ℕ`, the tensor power `L^{⊗n}`
 defined recursively by `L^{⊗0} = 𝒪_X` and `L^{⊗(n+1)} = L^{⊗n} ⊗ L`.
 These powers retain invertibility as bundled line bundles and provide the objects used in
 global generation and ample twisting. They use `InvertibleSheaf.tensorProduct`, the operation
-defining multiplication in `LineBundleClass`, rather than the monoidal product of `X.Modules`.
-The comparisons below assert existence of isomorphisms; they do not specify coherent morphisms.
+defining multiplication in `LineBundleClass`, rather than the monoidal product of `X.Modules`;
+`InvertibleSheaf.tensorPowObjIso` explicitly identifies `(L.tensorPow n).obj` with the monoidal
+tensor power `TauCeti.tensorPow L.obj n` in `X.Modules`.
 
 Ported from `roed-math/TauCeti-w2-fresh`, branch
 `lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
@@ -25,6 +26,10 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPow L n`: the tensor power `L^{⊗n}`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow`: the class of `L^{⊗n}` is the `n`-th
   power of the class of `L` in the Picard group.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowObjIso`: canonical isomorphism between the
+  underlying sheaf of `L.tensorPow n` and `TauCeti.tensorPow L.obj n` in `X.Modules`.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_iso_tensorPow_of_mk_eq`: any line bundle of
+  class `(mk L)ⁿ` has underlying sheaf isomorphic to `TauCeti.tensorPow L.obj n`.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso`: tensor powers of
   isomorphic line bundles are isomorphic.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
@@ -40,7 +45,7 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory MonoidalCategory AlgebraicGeometry
 
 namespace TauCeti
 
@@ -68,6 +73,34 @@ lemma tensorPow_succ (L : InvertibleSheaf X) (n : ℕ) :
     L.tensorPow (n + 1) = tensorProduct (L.tensorPow n) L :=
   (rfl)
 
+/-- The underlying sheaf of `InvertibleSheaf.tensorPow L n` is isomorphic in `X.Modules` to the
+monoidal tensor power `TauCeti.tensorPow L.obj n`. -/
+noncomputable def tensorPowObjIso (L : InvertibleSheaf X) :
+    (n : ℕ) → ((L.tensorPow n).obj : X.Modules) ≅ TauCeti.tensorPow (L.obj : X.Modules) n
+  | 0 =>
+    eqToIso (congrArg (fun K : InvertibleSheaf X ↦ (K.obj : X.Modules)) L.tensorPow_zero) ≪≫
+      trivialObjIsoUnit X
+  | n + 1 =>
+    eqToIso (congrArg (fun K : InvertibleSheaf X ↦ (K.obj : X.Modules)) (L.tensorPow_succ n)) ≪≫
+      tensorProductObjIso (L.tensorPow n) L ≪≫
+      whiskerRightIso (tensorPowObjIso L n) (L.obj : X.Modules) ≪≫
+      TauCeti.tensorPowSuccIso (L.obj : X.Modules) n
+
+@[simp]
+lemma tensorPowObjIso_zero (L : InvertibleSheaf X) :
+    L.tensorPowObjIso 0 =
+      eqToIso (congrArg (fun K : InvertibleSheaf X ↦ (K.obj : X.Modules)) L.tensorPow_zero) ≪≫
+        trivialObjIsoUnit X :=
+  (rfl)
+
+lemma tensorPowObjIso_succ (L : InvertibleSheaf X) (n : ℕ) :
+    L.tensorPowObjIso (n + 1) =
+      eqToIso (congrArg (fun K : InvertibleSheaf X ↦ (K.obj : X.Modules)) (L.tensorPow_succ n)) ≪≫
+        tensorProductObjIso (L.tensorPow n) L ≪≫
+        whiskerRightIso (L.tensorPowObjIso n) (L.obj : X.Modules) ≪≫
+        TauCeti.tensorPowSuccIso (L.obj : X.Modules) n :=
+  (rfl)
+
 end InvertibleSheaf
 
 namespace LineBundleClass
@@ -82,6 +115,14 @@ lemma mk_tensorPow (L : InvertibleSheaf X) (n : ℕ) : mk (L.tensorPow n) = mk L
 end LineBundleClass
 
 namespace InvertibleSheaf
+
+/-- Any line bundle of class `(mk L)ⁿ` has underlying sheaf isomorphic in `X.Modules` to
+`TauCeti.tensorPow L.obj n`. -/
+theorem nonempty_iso_tensorPow_of_mk_eq {K L : InvertibleSheaf X} {n : ℕ}
+    (h : LineBundleClass.mk K = LineBundleClass.mk L ^ n) :
+    Nonempty ((K.obj : X.Modules) ≅ TauCeti.tensorPow (L.obj : X.Modules) n) := by
+  obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp (h.trans (LineBundleClass.mk_tensorPow L n).symm)
+  exact ⟨_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e ≪≫ L.tensorPowObjIso n⟩
 
 /-- The underlying sheaves of `L^{⊗n}` and `K^{⊗n}` are isomorphic whenever the underlying sheaves
 of `L` and `K` are. -/

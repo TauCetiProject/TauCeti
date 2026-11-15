@@ -105,17 +105,12 @@ def cohomologyHigherDirectImageGlobalSectionsLinearEquiv (R : Type u) [CommRing 
   let e := f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩
   (cohomologyOnTopBaseLinearEquiv M R n).symm.trans
     (show cohomologyOn M n (f ⁻¹ᵁ ⊤) ≃ₗ[R] Γ((f.higherDirectImage n).obj M, ⊤) from
-      { toFun := fun x ↦ e x
-        invFun := fun y ↦ e.symm y
-        left_inv := e.left_inv
-        right_inv := e.right_inv
-        map_add' := e.map_add
-        map_smul' := fun r x ↦ by
-          have hr : f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
-            rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
-              ← CommRingCat.comp_apply, ← comp_appTop, HomIsOver.comp_over]
-          rw [RingHom.id_apply, base_smul_cohomologyOn, ← hr,
-            f.higherDirectImageBasicOpenSectionsAddEquiv_top_smul, base_smul_globalSections] })
+      e.toLinearEquiv fun r x ↦ by
+        have hr : f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
+          rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
+            ← CommRingCat.comp_apply, ← comp_appTop, HomIsOver.comp_over]
+        rw [base_smul_cohomologyOn, ← hr,
+          f.higherDirectImageBasicOpenSectionsAddEquiv_top_smul, base_smul_globalSections])
 
 /-- Evaluation of `cohomologyHigherDirectImageGlobalSectionsLinearEquiv` via
 `higherDirectImageBasicOpenSectionsAddEquiv` on `D(1) = ⊤`. -/
@@ -158,22 +153,16 @@ quasi-separated scheme `X` over `Spec R` and a quasi-coherent `𝒪_X`-module `M
 def cohomologyHigherDirectImageSpecΓLinearEquiv :
     Cohomology M n ≃ₗ[R]
       (moduleSpecΓFunctor (R := .of R)).obj (((X ↘ Spec (.of R)).higherDirectImage n).obj M) :=
-  let e := (X ↘ Spec (.of R)).higherDirectImageBasicOpenSectionsAddEquiv M n
-    ⟨1, (Spec (.of R)).basicOpen_one⟩
-  (cohomologyOnTopBaseLinearEquiv M R n).symm.trans
-    (show cohomologyOn M n ((X ↘ Spec (.of R)) ⁻¹ᵁ ⊤) ≃ₗ[R]
-        (moduleSpecΓFunctor (R := .of R)).obj (((X ↘ Spec (.of R)).higherDirectImage n).obj M) from
-      { toFun := fun x ↦ e x
-        invFun := fun y ↦ e.symm y
-        left_inv := e.left_inv
-        right_inv := e.right_inv
-        map_add' := e.map_add
-        map_smul' := fun r x ↦ by
-          rw [RingHom.id_apply, base_smul_cohomologyOn, baseRingToGlobalSections_apply]
-          exact ((X ↘ Spec (.of R)).higherDirectImageBasicOpenSectionsAddEquiv_top_smul M n
-            ((Scheme.ΓSpecIso (.of R)).inv r) x).trans
-            (moduleSpecΓ_smul_aux (.of R)
-              (((X ↘ Spec (.of R)).higherDirectImage n).obj M) r (e x)).symm })
+  letI : (Spec (.of R)).Over (Spec (.of R)) := ⟨𝟙 _⟩
+  have : (X ↘ Spec (.of R)).IsOver (Spec (.of R)) := ⟨by exact Category.comp_id _⟩
+  let N := ((X ↘ Spec (.of R)).higherDirectImage n).obj M
+  let eΓ : Γ(N, ⊤) ≃+ (moduleSpecΓFunctor (R := .of R)).obj N := AddEquiv.refl _
+  ((X ↘ Spec (.of R)).cohomologyHigherDirectImageGlobalSectionsLinearEquiv M n R).trans
+    (eΓ.toLinearEquiv fun r y ↦ by
+      rw [base_smul_globalSections, baseRingToGlobalSections_apply]
+      have hid : ((Spec (.of R)) ↘ Spec (.of R)) = 𝟙 _ := rfl
+      rw [hid, Scheme.Hom.id_appTop, CommRingCat.id_apply]
+      exact (moduleSpecΓ_smul_aux (.of R) N r y).symm)
 
 /-- Evaluation of `cohomologyHigherDirectImageSpecΓLinearEquiv` via
 `higherDirectImageBasicOpenSectionsAddEquiv` on `D(1) = ⊤`. -/
@@ -197,10 +186,21 @@ def tildeCohomologyIsoHigherDirectImage :
     @asIso _ _ _ _ (((X ↘ Spec (.of R)).higherDirectImage n).obj M).fromTildeΓ
       (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent _)
 
+/-- The forward morphism of `tildeCohomologyIsoHigherDirectImage` applies `tilde.functor` to
+`cohomologyHigherDirectImageSpecΓLinearEquiv` and composes with `fromTildeΓ`. -/
+@[simp]
+theorem tildeCohomologyIsoHigherDirectImage_hom :
+    (tildeCohomologyIsoHigherDirectImage R M n).hom =
+      (tilde.functor (.of R)).map
+        (cohomologyHigherDirectImageSpecΓLinearEquiv R M n :
+          Cohomology M n ≃ₗ[CommRingCat.of R] _).toModuleIso.hom ≫
+        (((X ↘ Spec (.of R)).higherDirectImage n).obj M).fromTildeΓ :=
+  (rfl)
+
 /-- Over `Spec R`, the higher direct image `Rⁿ (X ↘ Spec R)_* M` of a quasi-coherent `𝒪_X`-module
 `M` is of finite type if and only if `Hⁿ(X, M)` is a finitely generated `R`-module. -/
 @[simp]
-theorem isFiniteType_higherDirectImage_spec_iff :
+theorem isFiniteType_higherDirectImage_Spec_iff :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFiniteType ↔
       Module.Finite R (Cohomology M n) := by
   let e := tildeCohomologyIsoHigherDirectImage R M n
@@ -215,7 +215,7 @@ theorem isFiniteType_higherDirectImage_spec_iff :
 /-- Over `Spec R`, the higher direct image `Rⁿ (X ↘ Spec R)_* M` of a quasi-coherent `𝒪_X`-module
 `M` is finitely presented if and only if `Hⁿ(X, M)` is a finitely presented `R`-module. -/
 @[simp]
-theorem isFinitePresentation_higherDirectImage_spec_iff :
+theorem isFinitePresentation_higherDirectImage_Spec_iff :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation ↔
       Module.FinitePresentation R (Cohomology M n) :=
   ((SheafOfModules.isFinitePresentation (Spec (.of R)).ringCatSheaf).prop_iff_of_iso
@@ -234,22 +234,9 @@ instance IsProjectiveOver.isFinitePresentation_higherDirectImage (R : Type u) [C
     (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
     (((X ↘ Spec (.of R)).higherDirectImage n).obj M).IsFinitePresentation :=
   have := IsProjectiveOver.finite_cohomology R M n
-  (isFinitePresentation_higherDirectImage_spec_iff R M n).mpr
+  (isFinitePresentation_higherDirectImage_Spec_iff R M n).mpr
     (Module.finitePresentation_of_finite R (Cohomology M n))
 
 end AlgebraicGeometry.Scheme
-
-namespace TauCeti.SymmetricAlgebra
-
-/-- Over a Noetherian ring `R`, for any finite `R`-module `P` and any quasi-coherent module `M` of
-finite type on `Proj (Sym_R P)`, every higher direct image `Rⁿ (projToSpec R P)_* M` is finitely
-presented. -/
-instance isFinitePresentation_higherDirectImage_projToSpec (R P : Type u) [CommRing R]
-    [IsNoetherianRing R] [AddCommMonoid P] [Module R P] [Module.Finite R P]
-    (M : (Proj (homogeneousSubmodule R P)).Modules) [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) :
-    (((projToSpec R P).higherDirectImage n).obj M).IsFinitePresentation :=
-  Scheme.IsProjectiveOver.isFinitePresentation_higherDirectImage R M n
-
-end TauCeti.SymmetricAlgebra
 
 end
