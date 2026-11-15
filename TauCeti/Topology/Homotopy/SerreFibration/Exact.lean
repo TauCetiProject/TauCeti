@@ -78,6 +78,14 @@ boundary map surjective with trivial kernel
 (`TauCeti.TopCat.surjective_fibrationBoundary_of_subsingleton`,
 `TauCeti.TopCat.fibrationBoundary_eq_const_iff_of_subsingleton`).
 
+## The boundary of a lifted family of loops
+
+If a based family of loops `φ : A → Ω B b` lifts to a family of paths `Φ (a, ·)` in `E` starting
+at `e`, then the boundary map sends the loop-space shift of `φ_* c` to the image of `c` under the
+end point map `a ↦ Φ (a, 1)` into the fibre, when the loop coordinate is used as the time of
+lifting (`TauCeti.TopCat.fibrationBoundary_congrEquiv_pathLoopSpaceMulEquiv_map`). This computes
+the boundary map of the looped fibration on explicit families.
+
 ## The sequence read in a model of the fibre
 
 In applications the fibre is identified with a known space `F` by a homeomorphism
@@ -715,6 +723,44 @@ theorem mem_range_homotopyGroupMap_of_homeomorph_iff (hp : serreFibrations p)
   exact mem_range_homotopyGroupMap_fiberι_iff hp
 
 end Model
+
+/-! ### The boundary of a lifted family of loops -/
+
+section LoopFamily
+
+variable {A : Type*} [TopologicalSpace A] {a₀ : A}
+
+/-- **The boundary of a lifted family of loops.** Let `φ : A → Ω B b` be a based family of loops
+whose loops lift, continuously in the parameter, to paths `Φ (a, ·)` of `E` starting at `e`, with
+the constant lift over the base point. Then the boundary map, applied to the loop-space shift of
+`φ_* c` with the loop coordinate as the time of lifting, is the image of `c` under the end point
+map `a ↦ Φ (a, 1)` into the fibre. -/
+theorem fibrationBoundary_congrEquiv_pathLoopSpaceMulEquiv_map (hp : serreFibrations p)
+    (φ : C(A, Ω B b)) (hφ : φ a₀ = Path.refl b) (Φ : C(A × I, E))
+    (hΦ : ∀ a t, p (Φ (a, t)) = φ a t) (hΦ₀ : ∀ a, Φ (a, 0) = e.1)
+    (hΦa₀ : ∀ t, Φ (a₀, t) = e.1) (ψ : C(A, p.fiber b)) (hψ : ∀ a, (ψ a).1 = Φ (a, 1))
+    (m : ℕ) (c : π_ (m + 1) A a₀) :
+    fibrationBoundary hp e (HomotopyGroup.congrEquiv (finSuccEquiv' (Fin.last (m + 1)))
+        (HomotopyGroup.pathLoopSpaceMulEquiv m (HomotopyGroup.map φ hφ c))) =
+      HomotopyGroup.map ψ (Subtype.ext ((hψ a₀).trans (hΦa₀ 1))) c := by
+  induction c using Quotient.inductionOn with
+  | h f =>
+  rw [HomotopyGroup.map_mk, HomotopyGroup.pathLoopSpaceMulEquiv_mk, HomotopyGroup.congrEquiv_mk,
+    HomotopyGroup.map_mk]
+  -- The lift of the shifted cube is `(s, t) ↦ Φ (f t, s)`, whose end loop is `ψ ∘ f`.
+  refine (fibrationBoundary_mk hp
+    (G := ⟨fun y : I × I^(Fin (m + 1)) ↦ Φ (f y.2, y.1), by fun_prop⟩) ⟨fun y ↦ ?_,
+      fun t ↦ hΦ₀ _, fun s t ht ↦ ?_⟩).trans
+    (congrArg _ (GenLoop.ext _ _ fun t ↦ Subtype.ext (by
+      rw [IsBoundaryLift.endLoop_apply_coe, GenLoop.map_apply, hψ]
+      rfl)))
+  · have hlast : Fin.natAdd (m + 1) (0 : Fin 1) = Fin.last (m + 1) := rfl
+    have hcast (i : Fin (m + 1)) : Fin.castAdd 1 i = i.castSucc := rfl
+    simp [hΦ, hlast, hcast, finSuccEquiv'_last_apply_castSucc]
+  · simp only [ContinuousMap.coe_mk]
+    rw [GenLoop.boundary f t ht, hΦa₀]
+
+end LoopFamily
 
 /-! ### Fibrations with a weakly contractible total space -/
 
