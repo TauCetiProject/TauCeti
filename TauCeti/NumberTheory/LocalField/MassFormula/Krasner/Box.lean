@@ -290,23 +290,17 @@ private theorem oreBoxExponents_zero {n j : ℕ} (hn : 0 < n) :
 
 private theorem one_le_oreBoxExponents {n j : ℕ} (i : Fin n) :
     1 ≤ oreBoxExponents K n j i := by
-  simp only [oreBoxExponents]
-  split_ifs
-  · exact le_rfl
-  · exact one_le_oreCoefficientDepth
+  by_cases h : (i : ℕ) = 0 <;> simp [oreBoxExponents, h, one_le_oreCoefficientDepth]
 
 private theorem sum_oreBoxExponents {n j : ℕ} (hn : 0 < n) :
     ∑ i : Fin n, oreBoxExponents K n j i =
       1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h := by
   simp only [oreBoxExponents]
   rw [Fin.sum_univ_eq_sum_range (fun h ↦ if h = 0 then 1 else oreCoefficientDepth K n j h),
-    ← Nat.Ico_zero_eq_range, ← Finset.sum_Ico_consecutive _ (Nat.zero_le 1) hn]
-  have h0 : Finset.Ico 0 1 = {0} := rfl
-  rw [h0, Finset.sum_singleton, ite_eq_left rfl]
-  refine congrArg (1 + ·) (Finset.sum_congr rfl fun h hh ↦ ?_)
-  rw [ite_eq_right_iff]
-  intro hh0
-  exact absurd hh0 (Nat.pos_of_ne_zero (by have := (Finset.mem_Ico.mp hh).1; omega)).ne'
+    ← Nat.Ico_zero_eq_range, ← Finset.sum_Ico_consecutive _ (Nat.zero_le 1) hn,
+    show Finset.Ico 0 1 = {0} from rfl, Finset.sum_singleton, ite_eq_left rfl]
+  refine congrArg (1 + ·) (Finset.sum_congr rfl fun h hh ↦ ite_eq_right ?_)
+  exact (Nat.pos_of_ne_zero (by have := (Finset.mem_Ico.mp hh).1; omega)).ne'
 
 /-- When `j % n = 0`, an admissible discriminant box is a single `eisensteinSlice`. -/
 private theorem eisensteinBox_eq_slice_of_mod_eq_zero {n j : ℕ}

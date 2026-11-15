@@ -114,13 +114,11 @@ theorem krasnerCount_of_isOreAdmissible {n j : ℕ} (h : IsOreAdmissible K n j) 
 
 /-- Outside Ore's admissible wild exponents, `krasnerCount` vanishes. -/
 theorem krasnerCount_of_not_isOreAdmissible {n j : ℕ} (h : ¬ IsOreAdmissible K n j) :
-    krasnerCount K n j = 0 := by
-  simp [krasnerCount, h]
+    krasnerCount K n j = 0 := by simp [krasnerCount, h]
 
 /-- In degree zero, `krasnerCount` vanishes for every `j`. -/
 @[simp]
-theorem krasnerCount_zero (j : ℕ) : krasnerCount K 0 j = 0 := by
-  simp [krasnerCount]
+theorem krasnerCount_zero (j : ℕ) : krasnerCount K 0 j = 0 := by simp [krasnerCount]
 
 /-- In degree one, `krasnerCount` is `1` at `j = 0` and `0` otherwise. -/
 @[simp]

@@ -99,13 +99,11 @@ theorem isOreAdmissible_def (n j : ℕ) :
   Iff.rfl
 
 /-- An Ore-admissible degree is positive. -/
-theorem IsOreAdmissible.pos {n j : ℕ} (h : IsOreAdmissible K n j) : 0 < n :=
-  h.1
+theorem IsOreAdmissible.pos {n j : ℕ} (h : IsOreAdmissible K n j) : 0 < n := h.1
 
 /-- Degree zero has no Ore-admissible wild exponents. -/
 @[simp]
-theorem not_isOreAdmissible_zero (j : ℕ) : ¬ IsOreAdmissible K 0 j :=
-  fun h ↦ Nat.lt_irrefl 0 h.pos
+theorem not_isOreAdmissible_zero (j : ℕ) : ¬ IsOreAdmissible K 0 j := fun h ↦ h.pos.false
 
 /-- Unfolding `IsOreAdmissible` in positive degree. -/
 theorem isOreAdmissible_iff_of_pos {n : ℕ} (hn : 0 < n) {j : ℕ} :
@@ -118,16 +116,14 @@ theorem isOreAdmissible_iff_of_pos {n : ℕ} (hn : 0 < n) {j : ℕ} :
 /-- In degree `1`, only wild exponent `0` is Ore-admissible. -/
 @[simp]
 theorem isOreAdmissible_one_iff {j : ℕ} : IsOreAdmissible K 1 j ↔ j = 0 := by
-  rw [isOreAdmissible_iff_of_pos zero_lt_one]
-  simp [Nat.mod_one]
+  simp [isOreAdmissible_iff_of_pos zero_lt_one, Nat.mod_one]
 
 /-- If `j` is Ore-admissible for `n` and `j % n = 0`, then `n` is nonzero in `K`. -/
 theorem IsOreAdmissible.natCast_ne_zero_of_mod_eq_zero {n j : ℕ} (h : IsOreAdmissible K n j)
     (hb : j % n = 0) : (n : K) ≠ 0 := by
   rcases h.2 with ⟨_, ha⟩ | ⟨hb', -⟩
   · intro hn0
-    have hn𝒪 : (n : 𝒪[K]) = 0 := Subtype.ext (by simpa using hn0)
-    rw [hn𝒪, addVal_zero] at ha
+    rw [show (n : 𝒪[K]) = 0 from Subtype.ext (by simpa using hn0), addVal_zero] at ha
     exact ENat.natCast_ne_top _ ha
   · exact absurd hb hb'.ne'
 
@@ -137,9 +133,8 @@ theorem IsOreAdmissible.natCast_mod_ne_zero {n j : ℕ} (h : IsOreAdmissible K n
   rcases h.2 with ⟨hb0, _⟩ | ⟨_, hle, _⟩
   · exact absurd hb0 hb
   · intro hb0
-    have hb𝒪 : ((j % n : ℕ) : 𝒪[K]) = 0 := Subtype.ext (by simpa using hb0)
-    rw [hb𝒪, addVal_zero, top_le_iff] at hle
-    exact ENat.natCast_ne_top _ hle
+    rw [show ((j % n : ℕ) : 𝒪[K]) = 0 from Subtype.ext (by simpa using hb0), addVal_zero] at hle
+    exact ENat.natCast_ne_top _ (top_le_iff.mp hle)
 
 /-- **Ore's double-inequality characterization**: `IsOreAdmissible K n j` is equivalent to `0 < n`
 together with `min (n • v_K(j % n)) (n • v_K(n)) ≤ j ≤ n • v_K(n)` in `ℕ∞`. Because `v_K(0) = ⊤`,
@@ -175,19 +170,15 @@ theorem isOreAdmissible_iff_min_le_and_le {n j : ℕ} :
         exact ⟨⟨fun h ↦ by nlinarith, fun h ↦ by nlinarith⟩, fun h ↦ by nlinarith⟩
     simp only [hbpos.ne', false_and, hbpos, true_and, false_or, hvn_iff.1]
     refine ⟨fun ⟨hbv, hnv⟩ ↦ ⟨min_le_of_left_le ?_, hnv⟩, fun ⟨hmin, hnv⟩ ↦ ⟨?_, hnv⟩⟩
-    · calc n • addVal 𝒪[K] (j % n : ℕ)
-          ≤ n • ((j / n : ℕ) : ℕ∞) := nsmul_le_nsmul_right hbv n
-        _ ≤ (j : ℕ∞) := by
-          rw [nsmul_eq_mul, ← ENat.natCast_mul, Nat.cast_le]
-          nlinarith
+    · refine (nsmul_le_nsmul_right hbv n).trans ?_
+      rw [nsmul_eq_mul, ← ENat.natCast_mul, Nat.cast_le]
+      nlinarith
     · have hble : n • addVal 𝒪[K] (j % n : ℕ) ≤ (j : ℕ∞) := by
         rcases min_cases (n • addVal 𝒪[K] (j % n : ℕ)) (n • addVal 𝒪[K] n) with ⟨h, _⟩ | ⟨h, _⟩
         · rwa [h] at hmin
         · exact absurd (h ▸ hmin) (hvn_iff.2 hnv).not_ge
       induction hvb : addVal 𝒪[K] (j % n : ℕ) with
-      | top =>
-        rw [hvb, hntop] at hble
-        exact absurd hble (not_le_of_gt (ENat.natCast_lt_top j))
+      | top => rw [hvb, hntop] at hble; exact absurd hble (not_le_of_gt (ENat.natCast_lt_top j))
       | coe u =>
         rw [hvb, nsmul_eq_mul, ← ENat.natCast_mul, Nat.cast_le] at hble
         exact_mod_cast (by nlinarith : u ≤ j / n)
@@ -197,10 +188,8 @@ exponent `j` is Ore-admissible if and only if `(j % n : K) ≠ 0`. -/
 theorem isOreAdmissible_iff_of_natCast_eq_zero {n j : ℕ} (hn : 0 < n) (hnK : (n : K) = 0) :
     IsOreAdmissible K n j ↔ ((j % n : ℕ) : K) ≠ 0 := by
   have hn𝒪 : (n : 𝒪[K]) = 0 := Subtype.ext (by simpa using hnK)
-  have hchar : ringChar K ≠ 0 := by
-    intro h0
-    have : CharP K 0 := h0 ▸ ringChar.of_eq rfl
-    have : CharZero K := CharP.charP_to_charZero K
+  have hchar : ringChar K ≠ 0 := fun h0 ↦ by
+    have : CharZero K := @CharP.charP_to_charZero K _ (h0 ▸ ringChar.of_eq rfl)
     exact hn.ne' (Nat.cast_eq_zero.mp hnK)
   have hp : (ringChar K).Prime := CharP.char_prime_of_ne_zero K hchar
   refine ⟨fun h hb0 ↦ ?_, fun hbK ↦ ?_⟩
@@ -236,8 +225,7 @@ theorem oreCoefficientDepth_def (n j h : ℕ) :
   (rfl)
 
 /-- Every Ore coefficient depth is at least `1`. -/
-theorem one_le_oreCoefficientDepth {n j h : ℕ} : 1 ≤ oreCoefficientDepth K n j h :=
-  le_max_left _ _
+theorem one_le_oreCoefficientDepth {n j h : ℕ} : 1 ≤ oreCoefficientDepth K n j h := le_max_left _ _
 
 /-- Every Ore coefficient depth is positive. -/
 theorem oreCoefficientDepth_pos {n j h : ℕ} : 0 < oreCoefficientDepth K n j h :=
@@ -250,13 +238,9 @@ theorem natCast_oreCoefficientDepth {n j h : ℕ} :
   set d : ℕ∞ := ((j / n + 1 + if h < j % n then 1 else 0 : ℕ) : ℕ∞) - addVal 𝒪[K] h
   have hd : d ≠ ⊤ := ne_top_of_le_ne_top (ENat.natCast_ne_top _) tsub_le_self
   rcases le_total 1 d.toNat with hle | hle
-  · have hle' : (1 : ℕ∞) ≤ d := by
-      rw [← ENat.natCast_toNat hd]
-      exact_mod_cast hle
+  · have hle' : (1 : ℕ∞) ≤ d := by rw [← ENat.natCast_toNat hd]; exact_mod_cast hle
     rw [oreCoefficientDepth, max_eq_right hle, max_eq_right hle', ENat.natCast_toNat hd]
-  · have hle' : d ≤ 1 := by
-      rw [← ENat.natCast_toNat hd]
-      exact_mod_cast hle
+  · have hle' : d ≤ 1 := by rw [← ENat.natCast_toNat hd]; exact_mod_cast hle
     rw [oreCoefficientDepth, max_eq_left hle, max_eq_left hle', Nat.cast_one]
 
 /-- When `(h : K) = 0`, the `h`-th monomial contributes nothing to the derivative and its
@@ -264,8 +248,7 @@ coefficient depth is `1`. -/
 @[simp]
 theorem oreCoefficientDepth_of_natCast_eq_zero {n j h : ℕ} (hh : (h : K) = 0) :
     oreCoefficientDepth K n j h = 1 := by
-  have hh𝒪 : (h : 𝒪[K]) = 0 := Subtype.ext (by simpa using hh)
-  simp [oreCoefficientDepth, hh𝒪]
+  simp [oreCoefficientDepth, show (h : 𝒪[K]) = 0 from Subtype.ext (by simpa using hh)]
 
 /-- At the remainder index `b = j % n` of an Ore-admissible pair `(n, j)` with `0 < b`, the
 coefficient depth is `j / n + 1 - v_K(b)` without truncation below `1`. -/
@@ -278,13 +261,9 @@ theorem natCast_oreCoefficientDepth_mod {n j : ℕ} (h : IsOreAdmissible K n j)
   rw [natCast_oreCoefficientDepth, ite_eq_right (lt_irrefl _), add_zero]
   refine max_eq_right ?_
   induction hvb : addVal 𝒪[K] (j % n : ℕ) with
-  | top =>
-    rw [hvb] at hbv
-    exact absurd hbv (not_le_of_gt (ENat.natCast_lt_top _))
+  | top => rw [hvb] at hbv; exact absurd hbv (not_le_of_gt (ENat.natCast_lt_top _))
   | coe v =>
-    have hv : v ≤ j / n := by
-      rw [hvb] at hbv
-      exact_mod_cast hbv
+    have hv : v ≤ j / n := by rw [hvb] at hbv; exact_mod_cast hbv
     rw [← ENat.natCast_sub, ← ENat.natCast_one, Nat.cast_le]
     omega
 
@@ -308,9 +287,7 @@ private theorem le_eisenstein_derivative_term_iff {n j h : ℕ} (hn : 0 < n) (hh
     induction hvh : addVal 𝒪[K] (h : 𝒪[K]) with
     | top => simp [hntop]
     | coe v =>
-      have : 1 ≤ u := by
-        rw [hvc] at hc1
-        exact_mod_cast hc1
+      have : 1 ≤ u := by rw [hvc] at hc1; exact_mod_cast hc1
       have hn1 : n - 1 + 1 = n := Nat.sub_add_cancel hn
       have hh1 : h - 1 + 1 = h := Nat.sub_add_cancel hh0
       rw [nsmul_eq_mul, ← ENat.natCast_add, ← ENat.natCast_mul, ← ENat.natCast_add,
@@ -351,9 +328,7 @@ private theorem eisenstein_derivative_term_eq_iff {n j h : ℕ} (hn : 0 < n) (hh
       exact ⟨fun h ↦ absurd h (ENat.top_ne_natCast _),
         fun ⟨_, h, _⟩ ↦ absurd h (not_le_of_gt (ENat.natCast_lt_top _))⟩
     | coe v =>
-      have hu1 : 1 ≤ u := by
-        rw [hvc] at hc1
-        exact_mod_cast hc1
+      have hu1 : 1 ≤ u := by rw [hvc] at hc1; exact_mod_cast hc1
       have hn1 : n - 1 + 1 = n := Nat.sub_add_cancel hn
       have hh1 : h - 1 + 1 = h := Nat.sub_add_cancel hh0
       rw [nsmul_eq_mul, ← ENat.natCast_add, ← ENat.natCast_mul, ← ENat.natCast_add,
@@ -362,14 +337,12 @@ private theorem eisenstein_derivative_term_eq_iff {n j h : ℕ} (hn : 0 < n) (hh
       · have huv1 : u + v - 1 + 1 = u + v := by omega
         have hj' : (u + v - 1) * n + h = (j / n) * n + j % n := by nlinarith
         have hrem : h = j % n := by
-          have := congrArg (· % n) hj'
-          simpa [Nat.mul_add_mod_self_right, Nat.mod_eq_of_lt hhn, Nat.mod_eq_of_lt hbmod]
-            using this
+          simpa [Nat.mul_add_mod_self_right, Nat.mod_eq_of_lt hhn, Nat.mod_eq_of_lt hbmod] using
+            congrArg (· % n) hj'
         have hquot : u + v - 1 = j / n := Nat.eq_of_mul_eq_mul_right hn (by omega)
         exact ⟨hrem, by omega, by omega⟩
-      · have huv : u + v = j / n + 1 := by omega
-        subst hh
-        rw [huv]
+      · subst hh
+        rw [show u + v = j / n + 1 by omega]
         nlinarith
 
 /-- Valuation of the leading derivative term `f_n * n` of an Eisenstein polynomial of degree `n`. -/
@@ -466,9 +439,7 @@ theorem iInf_eisenstein_derivative_eq_iff {n j : ℕ} {f : 𝒪[K][X]}
   refine le_antisymm ?_ (le_iInf fun i ↦ ?_)
   · rcases hadm.2 with ⟨hb0, ha⟩ | ⟨hbpos, hbv, _⟩
     · refine iInf_le_of_le ⟨n - 1, Nat.sub_lt hn zero_lt_one⟩ ?_
-      have hjdiv : (j / n) * n = j := by
-        have := Nat.div_add_mod' j n
-        omega
+      have hjdiv : (j / n) * n = j := by have := Nat.div_add_mod' j n; omega
       rw [hlast, ← ha, nsmul_eq_mul, ← ENat.natCast_mul, ← ENat.natCast_add]
       exact le_of_eq (congrArg Nat.cast (by linarith))
     · have hbmod : j % n < n := Nat.mod_lt j hn
@@ -546,15 +517,12 @@ private theorem exists_monicOfCoeff_eisenstein_of_isOreAdmissible {n j : ℕ}
       Function.update c₀ ⟨j % n, Nat.mod_lt j hn⟩ (ϖ ^ oreCoefficientDepth K n j (j % n))
     else c₀
   have hc0 : c i₀ = ϖ := by
-    dsimp only [c, c₀]
-    split_ifs with hb
+    dsimp only [c, c₀]; split_ifs with hb
     · rw [Function.update_of_ne (Fin.ne_of_val_ne hb.ne), Function.update_self]
     · rw [Function.update_self]
-  have hc₀_mem (i : Fin n) : c₀ i ∈ 𝓂[K] := by
-    by_cases hi : i = i₀ <;> simp [c₀, hi, hϖm]
+  have hc₀_mem (i : Fin n) : c₀ i ∈ 𝓂[K] := by by_cases hi : i = i₀ <;> simp [c₀, hi, hϖm]
   have hcmem (i : Fin n) : c i ∈ 𝓂[K] := by
-    dsimp only [c]
-    split_ifs
+    dsimp only [c]; split_ifs
     · by_cases hi : i = ⟨j % n, Nat.mod_lt j hn⟩ <;>
         simp [hi, hc₀_mem, Ideal.pow_mem_of_mem _ hϖm _ oreCoefficientDepth_pos]
     · exact hc₀_mem i
@@ -612,13 +580,10 @@ theorem isOreAdmissible_iff_natCastValuation {n : ℕ} (hnK : (n : K) ≠ 0) {j 
         ← ENat.natCast_one, ← ENat.natCast_add, Nat.cast_le] at hnv
       exact .inr ⟨hbK, hbpos, hbv, hnv⟩
   · rintro (⟨hb0, ha⟩ | ⟨hbK, hbpos, hbv, hnv⟩)
-    · refine ⟨hn, .inl ⟨hb0, ?_⟩⟩
-      rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K n hnK, ha]
+    · exact ⟨hn, .inl ⟨hb0, by rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K n hnK, ha]⟩⟩
     · refine ⟨hn, .inr ⟨hbpos, ?_, ?_⟩⟩
-      · rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K (j % n) hbK]
-        exact_mod_cast hbv
-      · rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K n hnK]
-        exact_mod_cast hnv
+      · rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K (j % n) hbK]; exact_mod_cast hbv
+      · rw [TauCeti.IsDiscreteValuationRing.addVal_natCast K n hnK]; exact_mod_cast hnv
 
 /-- **Ore's realizability theorem** for totally ramified separable extensions of a nonarchimedean
 local field, in either characteristic: some `E ∈ totallyRamifiedOfDegree K n` has wild exponent `j`
