@@ -611,6 +611,18 @@ theorem fderiv_positiveEndChart_apply (q : Puncture) (z v : ℝ × ℝ) :
     fderiv ℝ (positiveEndChart q) z v = q.endSign • fderiv ℝ (endChart q) (q.endSign • z) v := by
   simp [(hasFDerivAt_positiveEndChart q z).fderiv]
 
+/-- The end chart is the positive end chart after the reflection `z ↦ ±z`, so a map read in the end
+chart has, at `z`, the derivative of the map read in the positive end chart at `±z`, composed with
+the reflection. -/
+theorem fderiv_comp_endChart {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (q : Puncture)
+    (u : ℝ × ℝ → E) (z : ℝ × ℝ) :
+    fderiv ℝ (u ∘ endChart q) z =
+      q.endSign • fderiv ℝ (u ∘ positiveEndChart q) (q.endSign • z) := by
+  have h : u ∘ endChart q = fun z ↦ (u ∘ positiveEndChart q) (q.endSign • z) := by
+    funext z
+    simp [positiveEndChart_apply, smul_smul]
+  rw [h, fderiv_comp_smul]
+
 theorem contDiff_positiveEndChart (q : Puncture) (n : WithTop ℕ∞) :
     ContDiff ℝ n (positiveEndChart q) :=
   (contDiff_endChart q n).comp (contDiff_const_smul q.endSign)

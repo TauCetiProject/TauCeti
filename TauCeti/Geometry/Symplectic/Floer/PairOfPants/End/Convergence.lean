@@ -180,6 +180,50 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer
   rw [funext hloop]
   exact hux.comp _
 
+omit [FiniteDimensional ℝ V] in
+/-- A structure which is `J_q(t)` along the end `q` beyond `T₀` is `J_q(±t)` in the positive end
+chart. -/
+private theorem eq_comp_positiveEndChart {Jq : ℝ → V → AlmostComplexStructure V} {q : Puncture}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
+    J (positiveEndChart q z) = Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
+  obtain ⟨s, t⟩ := z
+  simp only [comp_apply, positiveEndChart_mk]
+  exact hJ s _ hz
+
+/-- **A cylindrical end of a Floer pair of pants is a Floer half-cylinder.** Let `K` be equal to
+`H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and solve the Floer
+equation `(du - X_K)^{0,1} = 0` there. Suppose that on the end `q` beyond `T₀` the almost complex
+structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`. Then at every point `ζ` of the
+positive end chart `φ'_q` with `s > max T₀ 0`, the map `u ∘ φ'_q` solves the Floer equation
+`∂_s v + J'_q(t, v) (∂_t v - X_{H'_q(t)}(v)) = 0` of a half-cylinder, for the end Hamiltonian
+`H'_q` and the structure `J'_q(t, x) = J_q(±t, x)` of the positive end. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t))
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal)
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    {q : Puncture} {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {ζ : ℝ × ℝ} (hζ : max T₀ 0 < ζ.1) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (Jq (q.endSign * ζ.2) ((u ∘ positiveEndChart q) ζ))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+        (u ∘ positiveEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] V) := by
+  have hmem : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hζ)
+  rw [← eq_comp_positiveEndChart hJ ((le_max_left _ _).trans hζ.le)]
+  exact isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd
+    ((le_max_left _ _).trans hζ.le)
+    ((hu _ hmem).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hmem))
+    (hfloer _ hmem)
+
 /-- **The energy identity with the limits of the ends.** Let `K` be `C¹` on `S` and equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q` whose suspended
 Hamiltonian vector fields are globally Lipschitz and whose `1`-periodic orbits in a compact set
@@ -254,18 +298,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {W : Set (ℝ × V)}
   {Jq : ℝ → V → AlmostComplexStructure V}
 
-omit [FiniteDimensional ℝ V] in
-/-- A structure which is `J_q(t)` along the end `q` beyond `T₀` is `J_q(±t)` in the positive end
-chart. -/
-private theorem eq_comp_positiveEndChart {q : Puncture}
-    (hJ : ∀ s t, T₀ ≤ s →
-      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
-    {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
-    J (positiveEndChart q z) = Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
-  obtain ⟨s, t⟩ := z
-  simp only [comp_apply, positiveEndChart_mk]
-  exact hJ s _ hz
-
 /-- **The ends of a finite-energy Floer pair of pants have bounded derivatives.** Let `K` be equal
 to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians `H_q`, and let `u`
 be `C³` on `S`, with image in a compact set `B`, solving the Floer equation
@@ -311,13 +343,8 @@ theorem exists_forall_norm_fderiv_comp_positiveEndChart_le
     (hu.comp (contDiff_positiveEndChart q 3).contDiffOn fun z hz ↦ hmem z hz.1)
     (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one])
     (fun s hs t ↦ huB _ (hmem (s, t) hs))
-    (fun z hz ↦ by
-      rw [← eq_comp_positiveEndChart hJ ((le_max_left _ _).trans hz.1.le)]
-      exact isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart hKH hH hHd
-        ((le_max_left _ _).trans hz.1.le)
-        (((hu.differentiableOn (by norm_num)) _ (hmem z hz.1)).differentiableAt
-          (isOpen_thricePuncturedSphereReal.mem_nhds (hmem z hz.1)))
-        (hfloer _ (hmem z hz.1)))
+    (fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical hKH hH
+      hHd (hu.differentiableOn (by norm_num)) hfloer hJ hz.1)
     (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
       (hu.differentiableOn (by norm_num)) q (le_max_right _ _) (le_max_left _ _))) hb
 
