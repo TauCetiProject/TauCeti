@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Oriented.Component
 public import TauCeti.KnotTheory.PDCode.Planar
 
 /-!
@@ -27,12 +28,15 @@ so the faces and planarity, and the crossing turn, and so the components. It exc
 local smoothings at `i` exactly as it flips the over-pair indicator, so every state smooths the
 diagram into the same circles, and the Kauffman bracket is unchanged. On an oriented code it keeps
 the orientation of every half-edge and the sign of every crossing, so the writhe-normalized bracket
-is unchanged too.
+is unchanged too, and every link component keeps its half-edge representatives and crossing-free
+label.
 
 ## Main definitions
 
 * `TauCeti.PDCode.rotateCrossing`: read one crossing of a PD-code from its next slot.
 * `TauCeti.OrientedPDCode.rotateCrossing`: the same for an oriented PD-code.
+* `TauCeti.OrientedPDCode.rotateCrossingComponentEquiv`: the labelled component bijection across a
+  crossing-slot rotation.
 
 ## Main results
 
@@ -303,6 +307,102 @@ parity of slots `0` and `1` and the over-pair indicator flip. -/
 @[simp] theorem normalizedKauffmanBracket_rotateCrossing {R : Type*} [CommRing R] (a : Rˣ) :
     (D.rotateCrossing i).normalizedKauffmanBracket a = D.normalizedKauffmanBracket a := by
   simp [normalizedKauffmanBracket_def]
+
+/-- Reading a crossing from its next slot preserves outgoing half-edges while keeping every
+half-edge label fixed. -/
+def rotateCrossingOutgoingEquiv :
+    {h : Fin (4 * n) // D.orientation h = true} ≃
+      {h : Fin (4 * n) // (D.rotateCrossing i).orientation h = true} :=
+  (Equiv.refl (Fin (4 * n))).subtypeEquiv fun _ ↦ by simp
+
+/-- Outgoing half-edge transport across a crossing-slot rotation fixes half-edge labels. -/
+@[simp] theorem rotateCrossingOutgoingEquiv_apply
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    (D.rotateCrossingOutgoingEquiv i h).val = h.val := by
+  simp [rotateCrossingOutgoingEquiv, Equiv.subtypeEquiv]
+
+/-- Inverse outgoing half-edge transport across a crossing-slot rotation fixes half-edge labels. -/
+@[simp] theorem rotateCrossingOutgoingEquiv_symm_apply
+    (h : {h : Fin (4 * n) // (D.rotateCrossing i).orientation h = true}) :
+    ((D.rotateCrossingOutgoingEquiv i).symm h).val = h.val := by
+  simp [rotateCrossingOutgoingEquiv, Equiv.subtypeEquiv]
+
+/-- Reading a crossing from its next slot conjugates outgoing component traversal along the
+identity on half-edge labels. -/
+@[simp] theorem componentPermOutgoing_rotateCrossing :
+    (D.rotateCrossing i).componentPermOutgoing =
+      (D.rotateCrossingOutgoingEquiv i).permCongr D.componentPermOutgoing := by
+  ext h
+  simp [rotateCrossingOutgoingEquiv, Equiv.subtypeEquiv]
+
+noncomputable section
+
+/-- Reading a crossing from its next slot preserves every component's outgoing half-edge
+representatives and every crossing-free circle label. -/
+def rotateCrossingComponentEquiv : D.Component ≃ (D.rotateCrossing i).Component :=
+  D.componentEquiv (D.rotateCrossing i) (D.rotateCrossingOutgoingEquiv i)
+    (D.componentPermOutgoing_rotateCrossing i) (finCongr (by simp))
+
+/-- Rotating a crossing slot preserves the component represented by each outgoing half-edge. -/
+@[simp] theorem rotateCrossingComponentEquiv_componentOfOutgoing
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    D.rotateCrossingComponentEquiv i (D.componentOfOutgoing h) =
+      (D.rotateCrossing i).componentOfOutgoing (D.rotateCrossingOutgoingEquiv i h) :=
+  D.componentEquiv_componentOfOutgoing _ _ _ _ h
+
+/-- Rotating a crossing slot preserves the component of every half-edge, incoming or outgoing. -/
+@[simp] theorem rotateCrossingComponentEquiv_inl_halfEdge (x : Fin (4 * n)) :
+    D.rotateCrossingComponentEquiv i (.inl (D.crossingComponentOfHalfEdge x)) =
+      .inl ((D.rotateCrossing i).crossingComponentOfHalfEdge x) := by
+  cases hx : D.orientation x with
+  | true =>
+    have hx' : (D.rotateCrossing i).orientation x = true := by simpa using hx
+    have hsub : D.rotateCrossingOutgoingEquiv i ⟨x, hx⟩ = ⟨x, hx'⟩ := Subtype.ext (by simp)
+    simpa only [crossingComponentOfHalfEdge_of_outgoing D x hx,
+      crossingComponentOfHalfEdge_of_outgoing (D.rotateCrossing i) x hx', ← componentOfOutgoing_def,
+      hsub] using D.rotateCrossingComponentEquiv_componentOfOutgoing i ⟨x, hx⟩
+  | false =>
+    have hx' : (D.rotateCrossing i).orientation x = false := by simpa using hx
+    have he : D.orientation (D.edgePair.val x) = true := by simp [hx]
+    have he' : (D.rotateCrossing i).orientation ((D.rotateCrossing i).edgePair.val x) = true := by
+      simp [hx]
+    have hsub : D.rotateCrossingOutgoingEquiv i ⟨D.edgePair.val x, he⟩ =
+        ⟨(D.rotateCrossing i).edgePair.val x, he'⟩ := Subtype.ext (by simp)
+    simpa only [crossingComponentOfHalfEdge_of_incoming D x hx,
+      crossingComponentOfHalfEdge_of_incoming (D.rotateCrossing i) x hx', ← componentOfOutgoing_def,
+      hsub] using D.rotateCrossingComponentEquiv_componentOfOutgoing i ⟨D.edgePair.val x, he⟩
+
+/-- Rotating a crossing slot fixes every crossing-free component label. -/
+@[simp] theorem rotateCrossingComponentEquiv_inr (j : Fin D.crossinglessComponentCount) :
+    D.rotateCrossingComponentEquiv i (.inr j) = .inr (Fin.cast (by simp) j) := by
+  rw [rotateCrossingComponentEquiv, componentEquiv_inr]
+  rfl
+
+/-- Inverse component transport across a crossing-slot rotation fixes outgoing representatives. -/
+@[simp] theorem rotateCrossingComponentEquiv_symm_componentOfOutgoing
+    (h : {h : Fin (4 * n) // (D.rotateCrossing i).orientation h = true}) :
+    (D.rotateCrossingComponentEquiv i).symm ((D.rotateCrossing i).componentOfOutgoing h) =
+      D.componentOfOutgoing ((D.rotateCrossingOutgoingEquiv i).symm h) := by
+  apply (D.rotateCrossingComponentEquiv i).injective
+  simp
+
+/-- Inverse component transport across a crossing-slot rotation preserves every half-edge's
+component. -/
+@[simp] theorem rotateCrossingComponentEquiv_symm_inl_halfEdge (x : Fin (4 * n)) :
+    (D.rotateCrossingComponentEquiv i).symm
+        (.inl ((D.rotateCrossing i).crossingComponentOfHalfEdge x)) =
+      .inl (D.crossingComponentOfHalfEdge x) := by
+  apply (D.rotateCrossingComponentEquiv i).injective
+  simp
+
+/-- Inverse component transport across a crossing-slot rotation fixes every crossing-free label. -/
+@[simp] theorem rotateCrossingComponentEquiv_symm_inr
+    (j : Fin (D.rotateCrossing i).crossinglessComponentCount) :
+    (D.rotateCrossingComponentEquiv i).symm (.inr j) = .inr (Fin.cast (by simp) j) := by
+  apply (D.rotateCrossingComponentEquiv i).injective
+  simp
+
+end
 
 end RotateCrossing
 
