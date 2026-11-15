@@ -33,8 +33,10 @@ it to summability, through Mathlib's
   coordinatewise hypothesis — each weighted variable `φ(Tᵢ) · bᵢ` is power-bounded as a set.
 * `TauCeti.Huber.IsWeightBounded`: the weighted monomials `φ(Tν) · bν` form a bounded set. This is
   the hypothesis the summability proof uses, and it is equivalent to the coordinatewise one for an
-  arbitrary `T` (`TauCeti.Huber.isWeightBounded_iff_isWeightedVarPowerBounded`). At the one-weight
-  family it is *equivalent* to each `bᵢ` being power-bounded, which is Wedhorn's condition —
+  arbitrary `T` (`TauCeti.Huber.isWeightBounded_iff_isWeightedVarPowerBounded`). For singleton
+  weights `Tᵢ = {uᵢ}` it is equivalent to each `φ(uᵢ) * bᵢ` being power-bounded
+  (`TauCeti.Huber.isWeightBounded_singleton_iff_forall_isPowerBounded`), and at the one-weight
+  family to each `bᵢ` being power-bounded —
   `TauCeti.Huber.isWeightBounded_one_weight_iff_forall_isPowerBounded`. In a linearly
   topologised ring it holds for every weight family and every tuple
   (`TauCeti.Huber.isWeightBounded_of_isLinearTopology`).
@@ -96,6 +98,11 @@ def weightedVar (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) (i : Fi
 @[simp]
 theorem weightedVar_def (φ : A →+* B) (T : Fin k → Set A) (b : Fin k → B) (i : Fin k) :
     weightedVar φ T b i = φ '' T i * {b i} := (rfl)
+
+/-- For singleton weights `Tᵢ = {uᵢ}`, the `i`-th weighted variable is `{φ(uᵢ) * bᵢ}`. -/
+theorem weightedVar_singleton (φ : A →+* B) (u : Fin k → A) (b : Fin k → B) (i : Fin k) :
+    weightedVar φ (fun j ↦ ({u j} : Set A)) b i = {φ (u i) * b i} := by
+  rw [weightedVar_def, Set.image_singleton, Set.singleton_mul_singleton]
 
 /-- The weighted monomials at `ν` are the pointwise product of the `νᵢ`-th powers of the weighted
 variables. Private: it is the bookkeeping behind the bridge below and says nothing on its own. -/
@@ -212,6 +219,27 @@ when every weighted variable is power-bounded as a set. -/
 theorem isWeightBounded_iff_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k → Set A}
     {b : Fin k → B} : IsWeightBounded φ T b ↔ IsWeightedVarPowerBounded φ T b :=
   ⟨IsWeightBounded.isWeightedVarPowerBounded, isWeightBounded_of_isWeightedVarPowerBounded⟩
+
+/-- For singleton weights `Tᵢ = {uᵢ}`, each weighted variable is power-bounded as a set exactly
+when `φ(uᵢ) * bᵢ` is power-bounded as an element. -/
+theorem isWeightedVarPowerBounded_singleton_iff (φ : A →+* B) (u : Fin k → A) (b : Fin k → B) :
+    IsWeightedVarPowerBounded φ (fun i ↦ ({u i} : Set A)) b ↔
+      ∀ i, IsPowerBounded (φ (u i) * b i) := by
+  rw [isWeightedVarPowerBounded_iff]
+  refine forall_congr' fun i ↦ ?_
+  have hpow : (⋃ n : ℕ, weightedVar φ (fun j ↦ ({u j} : Set A)) b i ^ n) =
+      Set.range fun n : ℕ ↦ (φ (u i) * b i) ^ n := by
+    ext x
+    simp [Set.singleton_pow]
+  rw [isPowerBounded_iff, ← hpow]
+
+/-- **For singleton weights `Tᵢ = {uᵢ}`, weight-boundedness is coordinatewise power-boundedness of
+the scaled arguments `φ(uᵢ) * bᵢ`.** Specialising to `u ≡ 1` recovers
+`TauCeti.Huber.isWeightBounded_one_weight_iff_forall_isPowerBounded`. -/
+theorem isWeightBounded_singleton_iff_forall_isPowerBounded (φ : A →+* B) (u : Fin k → A)
+    (b : Fin k → B) :
+    IsWeightBounded φ (fun i ↦ ({u i} : Set A)) b ↔ ∀ i, IsPowerBounded (φ (u i) * b i) := by
+  rw [isWeightBounded_iff_isWeightedVarPowerBounded, isWeightedVarPowerBounded_singleton_iff]
 
 end Semiring
 

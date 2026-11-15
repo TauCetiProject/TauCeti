@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.UniformRing
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 
 import Mathlib.Algebra.Regular.Pi
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.UnitWeight
 
 /-!
 # Completeness of the weighted restricted power series over a complete base
@@ -29,10 +30,10 @@ Hausdorffness is its part (2), and completeness is the step its part (3) is prov
 that then identifies `A⟨X⟩_T` with the completion of `A[X]_T`. Its part (1), density of the
 polynomials, is `TauCeti.Huber.dense_weightedPolynomials` in the parent module.
 
-The trivial weight family `Tᵢ = {1}` is bounded, since `Tν` is then the singleton `{1}`, so the
-ordinary restricted power-series ring `A⟨X⟩` gets each of the four facts by specialisation. It
-is that case the comparison below runs on, and the two `T0Space`/`CompleteSpace` statements are
-registered as instances there.
+Every singleton weight family `Tᵢ = {uᵢ}` is bounded, since `Tν` is then the singleton `{uᵛ}`,
+so any admissible singleton-weighted ring — in particular unit-weighted series and the ordinary
+restricted power-series ring `A⟨X⟩` at `Tᵢ = {1}` — gets each of the four facts by
+specialisation, with `T0Space` and `CompleteSpace` registered as instances.
 
 Hausdorffness is purely topological — it uses only continuity of the coefficient maps — so it
 is proved in a section over a nonarchimedean ring with no uniformity of its own, which is the
@@ -53,15 +54,15 @@ uniformly continuous, hence continuous by `UniformContinuous.continuous`. Nothin
 special to restricted series: every declaration in it specializes a generic statement about
 `UniformSpace.Completion.completeRingEquivSelf` proved in `TauCeti.Topology.Algebra.UniformRing`.
 
-Three steps are named as `private` lemmas rather than exported as API. That the subring's
+Two steps are named as `private` lemmas rather than exported as API. That the subring's
 uniformity is the one its subgroup basis induces is definitional, and is named so that the
 argument does not silently depend on the two being reducibly equal; it specializes Mathlib's
 `AddGroupFilterBasis.cauchy_iff`, with a single use here. The passage of a Cauchy filter to its
 coefficientwise limits — where `Tν · U` has to be closed, by
 `TauCeti.Huber.IsWeightFamily.isOpen_weightMul` and `AddSubgroup.isClosed_of_isOpen` — is used
-twice in the completeness proof. Boundedness of the trivial weight, read off
-`TauCeti.Huber.weightPow_one_weight` and `TauCeti.Huber.isBounded_singleton`, is what all four
-specialisations are discharged with.
+twice in the completeness proof. Boundedness of singleton weights, read off
+`TauCeti.Huber.weightPow_singleton` and `TauCeti.Huber.isBounded_singleton`, is what the
+singleton and trivial-weight specialisations are discharged with.
 
 ## Main results
 
@@ -73,12 +74,16 @@ specialisations are discharged with.
   bounded, `A⟨X⟩_T` over a Hausdorff base is Hausdorff.
 * `TauCeti.Huber.completeSpace_weightedRestrictedSubring` : Wedhorn 5.49(3) — with every weight
   bounded, `A⟨X⟩_T` over a complete base is complete.
-* `TauCeti.Huber.continuous_coeff_one_weight`,
+* `TauCeti.Huber.isBounded_weightPow_singleton`,
+  `TauCeti.Huber.continuous_coeff_singleton`,
+  `TauCeti.Huber.t0Space_weightedRestrictedSubring_singleton`,
+  `TauCeti.Huber.uniformContinuous_coeff_singleton` and
+  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_singleton` : boundedness of singleton
+  weights `Tᵢ = {uᵢ}`, and the resulting continuity, Hausdorffness and completeness statements,
+  with `TauCeti.Huber.continuous_coeff_one_weight`,
   `TauCeti.Huber.t0Space_weightedRestrictedSubring_one_weight`,
   `TauCeti.Huber.uniformContinuous_coeff_one_weight` and
-  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_one_weight` : those four at the
-  trivial weight family. The `T0Space` and `CompleteSpace` ones are the registered instances;
-  the two coefficient-map results are theorems. This is the case the comparison needs.
+  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_one_weight` at the trivial weight family.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` : the comparison — `A⟨X₁,…,Xₖ⟩` is
   the plain restricted-series ring, whenever that ring is complete and Hausdorff.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
@@ -115,6 +120,14 @@ open Filter
 Neither fact needs a uniformity on `A`: they hold over any nonarchimedean topological ring,
 which is how `A` is fixed throughout the rest of the Huber development. -/
 
+/-- Every singleton weight family `Tᵢ = {uᵢ}` is bounded at each multi-index, since `Tν` is
+then `{uᵛ}`. -/
+@[simp]
+theorem isBounded_weightPow_singleton {k : ℕ} {A : Type*} [CommSemiring A] [TopologicalSpace A]
+    [SeparatelyContinuousMul A] (u : Fin k → A) (ν : Fin k →₀ ℕ) :
+    IsBounded (weightPow (fun i ↦ ({u i} : Set A)) ν) := by
+  simpa only [weightPow_singleton] using isBounded_singleton _
+
 section Topology
 
 variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
@@ -148,25 +161,34 @@ theorem t0Space_weightedRestrictedSubring [T0Space A] {T : Fin k → Set A}
     (fun _ _ h ↦ Subtype.ext (MvPowerSeries.ext fun ν ↦ congrFun h ν))
     (continuous_pi fun ν ↦ hT.continuous_coeff (hb ν))
 
-/-- The trivial weight family is bounded at every multi-index, since `Tν` is then `{1}`. This
-is the whole of what the specialisations below need. -/
-private theorem isBounded_weightPow_one_weight (ν : Fin k →₀ ℕ) :
-    IsBounded (weightPow (fun _ : Fin k ↦ ({1} : Set A)) ν) := by
-  simpa only [weightPow_one_weight] using isBounded_singleton (1 : A)
+/-- For an admissible singleton weight family `Tᵢ = {uᵢ}`, the coefficient maps of `A⟨X⟩_T` are
+continuous. -/
+theorem continuous_coeff_singleton {u : Fin k → A}
+    (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) (ν : Fin k →₀ ℕ) :
+    Continuous fun f : weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT ↦
+      MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) :=
+  hT.continuous_coeff (isBounded_weightPow_singleton u ν)
+
+/-- **Singleton-weighted restricted series over a Hausdorff base are Hausdorff**
+(Wedhorn 5.49(2) for singleton weights). -/
+instance t0Space_weightedRestrictedSubring_singleton [T0Space A] {u : Fin k → A}
+    (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) :
+    T0Space (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT) :=
+  t0Space_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
 
 /-- At the trivial weight family the coefficient maps of `A⟨X⟩` are continuous: the
 neighbourhood subgroup `U⟨X⟩` maps into `U` coefficientwise. -/
 theorem continuous_coeff_one_weight (ν : Fin k →₀ ℕ) :
     Continuous fun f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) :=
-  isWeightFamily_one_weight.continuous_coeff (isBounded_weightPow_one_weight ν)
+  continuous_coeff_singleton isWeightFamily_one_weight ν
 
 /-- **Restricted series over a Hausdorff base are Hausdorff** (Wedhorn 5.49(2) at the trivial
 weight family), the case registered as an instance. -/
 instance t0Space_weightedRestrictedSubring_one_weight [T0Space A] :
     T0Space (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) :=
-  t0Space_weightedRestrictedSubring _ isBounded_weightPow_one_weight
+  t0Space_weightedRestrictedSubring_singleton isWeightFamily_one_weight
 
 /-- **A Cauchy filter on `A⟨X⟩_T` is uniformly Cauchy on each defining subgroup.** This is
 Mathlib's `AddGroupFilterBasis.cauchy_iff` at the basis `weightedNhd_subgroups_basis`
@@ -250,19 +272,34 @@ theorem completeSpace_weightedRestrictedSubring [CompleteSpace A] {T : Fin k →
   intro ν
   simpa [map_sub, hg] using hM f hf ν
 
+/-- For an admissible singleton weight family `Tᵢ = {uᵢ}`, the coefficient maps of `A⟨X⟩_T` are
+uniformly continuous. -/
+theorem uniformContinuous_coeff_singleton {u : Fin k → A}
+    (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) (ν : Fin k →₀ ℕ) :
+    UniformContinuous fun f : weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT ↦
+      MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) :=
+  hT.uniformContinuous_coeff (isBounded_weightPow_singleton u ν)
+
+/-- **The singleton-weighted restricted-series subring is complete** whenever the base uniform
+nonarchimedean commutative ring is complete. -/
+instance completeSpace_weightedRestrictedSubring_singleton [CompleteSpace A] {u : Fin k → A}
+    (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) :
+    CompleteSpace (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT) :=
+  completeSpace_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
+
 /-- At the trivial weight family the coefficient maps of `A⟨X⟩` are uniformly continuous:
 they are continuous additive group homomorphisms. -/
 theorem uniformContinuous_coeff_one_weight (ν : Fin k →₀ ℕ) :
     UniformContinuous fun f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) :=
-  isWeightFamily_one_weight.uniformContinuous_coeff (isBounded_weightPow_one_weight ν)
+  uniformContinuous_coeff_singleton isWeightFamily_one_weight ν
 
 /-- **The trivial-weight restricted-series subring is complete** whenever the base uniform
 nonarchimedean commutative ring is complete, the case registered as an instance. -/
 instance completeSpace_weightedRestrictedSubring_one_weight [CompleteSpace A] :
     CompleteSpace (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) :=
-  completeSpace_weightedRestrictedSubring _ isBounded_weightPow_one_weight
+  completeSpace_weightedRestrictedSubring_singleton isWeightFamily_one_weight
 
 end Uniform
 
