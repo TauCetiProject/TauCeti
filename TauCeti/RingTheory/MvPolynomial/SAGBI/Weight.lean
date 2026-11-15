@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Rees
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.Subalgebra.Degeneration
-import TauCeti.Data.Finsupp.Weight
 import Mathlib.Algebra.Polynomial.Eval.Subring
 
 /-!
@@ -210,53 +208,3 @@ theorem map_weightReesAlgebra_eq_range_weightReesAeval
   rw [hv', hc', aeval_range, hA]
 
 end Subalgebra
-
-namespace MonomialOrder
-
-open MvPolynomial TauCeti.MvPolynomial
-open scoped Polynomial
-
-variable {σ ι k : Type*} [Field k] {m : MonomialOrder σ} {c : ι → MvPolynomial σ k}
-
-/-- Every finite monic SAGBI family of a subalgebra `A` admits positive integral weights for which
-its Rees presentation has image the embedded weight Rees algebra of `A` and its weight-initial
-algebra is `m.initialAlgebra A`. No finite-variable assumption is needed. -/
-theorem IsSAGBIBasis.exists_pos_weight_range_weightReesAeval [Finite ι]
-    {A : Subalgebra k (MvPolynomial σ k)} (hc : ∀ i, m.Monic (c i))
-    (h : m.IsSAGBIBasis (Set.range c) A) :
-    ∃ w : σ → ℕ, (∀ s, 0 < w s) ∧
-      (∀ i, weightedHomogeneousComponent w (Finsupp.weight w (m.degree (c i))) (c i) =
-        monomial (m.degree (c i)) 1) ∧
-      A.weightInitialAlgebra w = m.initialAlgebra A ∧
-      (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) =
-        (weightReesAeval c (fun i ↦ Finsupp.weight w (m.degree (c i)))).range := by
-  classical
-  obtain rfl := h.adjoin_eq
-  set a := fun i ↦ m.degree (c i)
-  obtain ⟨B, hB, hspan⟩ := TauCeti.exists_finset_toricIdeal_eq_span a
-  let b : B → MvPolynomial ι k := fun j ↦ monomial j.1.1 1 - monomial j.1.2 1
-  have hJ : TauCeti.toricIdeal k a = Ideal.span (Set.range b) := by
-    rw [hspan k]
-    congr 1
-    exact Set.image_eq_range _ _
-  choose Q hQc hQ using fun j : B ↦ h.exists_aeval_eq_aeval_sub hc (hB j.1 j.2)
-  obtain ⟨w, hw, hcw, hgw, hQw⟩ := exists_pos_weight_forall_mem_weightFiltrationLT hc hQ
-  have hb (j : B) : (b j).IsWeightedHomogeneous (fun i ↦ Finsupp.weight w (a i))
-      (Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) j.1.1) :=
-    isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal (hJ ▸ Ideal.subset_span ⟨j, rfl⟩)
-  have hker : RingHom.ker (aeval (fun i ↦ monomial (a i) (1 : k))) =
-      Ideal.span (Set.range b) := by
-    rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ]
-  have hinit := weightInitialAlgebra_adjoin_eq hcw hgw hker hb hQw hQc
-  have hlead : Algebra.adjoin k (Set.range fun i ↦ monomial (a i) (1 : k)) =
-      m.initialAlgebra (Algebra.adjoin k (Set.range c)) := by
-    rw [← h.adjoin_leadingTerm, ← Set.range_comp]
-    congr 1
-    apply congrArg Set.range
-    funext i
-    simp [leadingTerm, (hc i).leadingCoeff_eq_one, a]
-  exact ⟨w, hw, hgw, hinit.trans hlead,
-    (Algebra.adjoin k (Set.range c)).map_weightReesAlgebra_eq_range_weightReesAeval w rfl
-      hcw hgw hker hb hQw hQc⟩
-
-end MonomialOrder

@@ -225,6 +225,7 @@ theorem ker_weightReesAeval_eq_weightReesIdeal (c : ι → MvPolynomial σ R) (d
   ext f
   rw [RingHom.mem_ker, weightReesAeval_eq_comp, AlgHom.comp_apply, Polynomial.coe_mapAlgHom,
     Ideal.mem_weightReesIdeal_iff]
-  simp [AddMonoidAlgebra.ext_iff, DFunLike.ext_iff, RingHom.mem_ker]
+  refine ⟨fun h n ↦ by simpa [RingHom.mem_ker] using congr_arg (·.coeff n) h,
+    fun h ↦ by ext n : 2; simpa [RingHom.mem_ker] using h n⟩
 
 end TauCeti.MvPolynomial

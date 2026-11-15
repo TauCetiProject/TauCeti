@@ -10,6 +10,7 @@ public import TauCeti.Data.Finsupp.MonomialOrder.Weight
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPolynomial.ToricIdeal.HilbertFunction
 
 /-!
 # The Rees presentation of a weight degeneration of a subalgebra
@@ -237,24 +238,6 @@ theorem X_mul_mem_span_weightHomogenization_iff
 
 variable {a : ι → σ →₀ ℕ} {u v : J → ι →₀ ℕ}
 
-/-- A binomial in the toric ideal of the exponents `a i` is weighted homogeneous for the pulled-back
-weights `i ↦ weight w (a i)`. -/
-theorem isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal {u v : ι →₀ ℕ}
-    (h : monomial u (1 : R) - monomial v 1 ∈ TauCeti.toricIdeal R a) :
-    (monomial u (1 : R) - monomial v 1).IsWeightedHomogeneous
-      (fun i ↦ Finsupp.weight w (a i))
-      (Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) u) := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · rw [Subsingleton.elim (monomial u (1 : R) - monomial v 1) 0]
-    exact isWeightedHomogeneous_zero R _ _
-  have huv : Finsupp.linearCombination ℕ a u = Finsupp.linearCombination ℕ a v :=
-    TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 h
-  have hw (x : ι →₀ ℕ) : Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) x =
-      Finsupp.weight w (Finsupp.linearCombination ℕ a x) :=
-    Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a x
-  exact (isWeightedHomogeneous_monomial _ _ _ rfl).sub
-    (isWeightedHomogeneous_monomial _ _ _ (by rw [hw, hw, huv]))
-
 /-- **The Rees presentation for monomial initial forms.** Let each `c i` have weight at most
 `weight w (a i)` with component `X^(a i)` of that weight, let binomials `Y^(u j) - Y^(v j)`
 generate the toric ideal of the exponents `a i`, and let `Q j` be polynomials of weight less than
@@ -276,8 +259,8 @@ theorem ker_weightReesAeval_eq_span_of_toricIdeal_eq_span
         (monomial (u j) 1 - monomial (v j) 1 - Q j)) :=
   ker_weightReesAeval_eq_span hc ha
     (by rw [← TauCeti.toricIdeal_eq_ker_aeval_monomial, hJ])
-    (fun j ↦ isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
-      (hJ ▸ Ideal.subset_span ⟨j, rfl⟩)) hQ hQc
+    (fun j ↦ TauCeti.isWeightedHomogeneous_monomial_sub_monomial_of_mem_toricIdeal
+      (deg := Finsupp.weight w) (hJ ▸ Ideal.subset_span ⟨j, rfl⟩)) hQ hQc
 
 end TauCeti.MvPolynomial
 

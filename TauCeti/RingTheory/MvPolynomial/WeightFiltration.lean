@@ -94,9 +94,12 @@ polynomial `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomi
   component of weight `d i` of `c i`, the component of weight `n` of the substitution is the
   substitution of the `g i` into the component of weight `n`.
 * `rescale_mem_weightFiltration`, `rescale_mem_weightFiltrationLT`,
-  `MvPolynomial.map_rescale_weightHomogenization`, `weightReesAeval_comp_mapAlgHom_rescale`:
+  `MvPolynomial.map_rescale_weightHomogenization`, `weightReesAeval_comp_mapAlgHom_rescale`,
+  `range_weightReesAeval_smul_eq`, `ker_weightReesAeval_smul_eq_map`:
   diagonal variable rescaling preserves the steps of the weight filtration, commutes coefficientwise
-  with `weightHomogenization`, and composes with `weightReesAeval` by scaling the generators.
+  with `weightHomogenization`, composes with `weightReesAeval` by scaling the generators, and for
+  unit scalings preserves the Rees image while transporting the Rees kernel by the inverse
+  rescaling.
 
 ## References
 
@@ -737,6 +740,31 @@ theorem weightReesAeval_comp_mapAlgHom_rescale {ι : Type*} (a : ι → R)
       weightReesAeval (fun i ↦ a i • c i) d := by
   refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;>
     simp [Algebra.smul_def, mul_assoc]
+
+/-- Scaling the generators of a polynomial family shrinks the image of the Rees presentation map. -/
+theorem range_weightReesAeval_smul_le {ι : Type*} (a : ι → R)
+    (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    (weightReesAeval (fun i ↦ a i • c i) d).range ≤ (weightReesAeval c d).range := by
+  rw [← weightReesAeval_comp_mapAlgHom_rescale]
+  exact AlgHom.range_comp_le_range _ _
+
+/-- Scaling the generators of a polynomial family by invertible scalars leaves the image of the
+Rees presentation map unchanged. -/
+theorem range_weightReesAeval_smul_eq {ι : Type*} {a b : ι → R}
+    (h : ∀ i, a i * b i = 1) (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    (weightReesAeval (fun i ↦ a i • c i) d).range = (weightReesAeval c d).range := by
+  refine le_antisymm (range_weightReesAeval_smul_le a c d) ?_
+  have hba : (fun i ↦ b i • a i • c i) = c :=
+    funext fun i ↦ by rw [smul_smul, mul_comm, h i, one_smul]
+  simpa only [hba] using range_weightReesAeval_smul_le b (fun i ↦ a i • c i) d
+
+/-- If `a i * b i = 1` for every `i`, the kernel of `weightReesAeval (fun i ↦ a i • c i) d` is the
+extension of `RingHom.ker (weightReesAeval c d)` along the inverse presentation rescaling `b`. -/
+theorem ker_weightReesAeval_smul_eq_map {ι : Type*} {a b : ι → R}
+    (h : ∀ i, a i * b i = 1) (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    RingHom.ker (weightReesAeval (fun i ↦ a i • c i) d) =
+      (RingHom.ker (weightReesAeval c d)).map (Polynomial.mapAlgHom (rescale b)) := by
+  rw [← weightReesAeval_comp_mapAlgHom_rescale, ← AlgHom.comap_ker, comap_mapAlgHom_rescale h]
 
 end Rescale
 
