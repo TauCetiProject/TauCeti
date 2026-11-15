@@ -23,9 +23,7 @@ Consequently each numbered root-subgroup morphism is a closed immersion. Its sch
 image is bundled below as a closed subgroup canonically isomorphic to `𝔾ₐ`.
 
 This supplies the closed-root-subgroup component of a pinning for the explicit full-weight
-type-`E₆` carrier in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. That carrier is consumed
-by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`. No reductivity, Borel, finiteness, or
-simplicity statement is made here.
+type-`E₆` carrier. No reductivity, Borel, finiteness, or simplicity statement is made here.
 
 ## Main declarations
 

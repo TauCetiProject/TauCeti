@@ -20,7 +20,12 @@ which equal one on a closed ball and are supported in shrinking larger balls, an
 which equal one on balls exhausting a normed space, as well as convergence after removing a
 shrinking neighbourhood of zero from an integrable function vanishing at zero, and the convergence
 of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` with values in
-a compact set which converge pointwise, or along continuous paths which converge uniformly.
+a compact set which converge pointwise, or along continuous paths which converge uniformly. An
+interval integral `∫ t in a..b, f x t` also depends continuously on `x ∈ s` as soon as `f` is
+jointly continuous on `s ×ˢ uIcc a b`, including at boundary points of `s` (such as the endpoints
+of a closed interval), where Mathlib's
+`intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'` would require continuity
+on the whole space.
 
 ## Main declarations
 
@@ -36,6 +41,8 @@ a compact set which converge pointwise, or along continuous paths which converge
 * `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
   `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` stay in a compact set and converge
   pointwise.
+* `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
+  function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
@@ -212,6 +219,27 @@ theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι
       (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
   exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
     measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
+
+/-- If `f` is continuous on `s ×ˢ uIcc a b`, then the interval integral `∫ t in a..b, f x t ∂μ`
+is continuous in `x` on `s`. Only the values of `f` on `s ×ˢ uIcc a b` matter, so this applies
+for instance on a closed rectangle `[a', b'] ×ˢ [a, b]`, up to its boundary. -/
+theorem continuousOn_parametric_intervalIntegral_of_continuousOn {X E : Type*}
+    [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ}
+    [IsLocallyFiniteMeasure μ] {f : X → ℝ → E} {s : Set X} {a b : ℝ}
+    (hf : ContinuousOn (uncurry f) (s ×ˢ uIcc a b)) :
+    ContinuousOn (fun x ↦ ∫ t in a..b, f x t ∂μ) s := by
+  intro x₀ hx₀
+  have hint : ∀ x ∈ s, IntervalIntegrable (f x) μ a b := fun x hx ↦
+    (hf.comp (Continuous.prodMk_right x).continuousOn fun _ ht ↦ ⟨hx, ht⟩).intervalIntegrable
+  have hU : TendstoUniformlyOn (fun x t ↦ f x t - f x₀ t) 0 (𝓝[s] x₀) (uIcc a b) := by
+    refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
+    obtain ⟨v, hv, hvf⟩ := isCompact_uIcc.mem_uniformity_of_prod hf hx₀
+      (Metric.dist_mem_uniformity hε)
+    filter_upwards [hv] with x hx t ht
+    simpa [dist_eq_norm, norm_sub_rev] using hvf x hx t ht
+  refine tendsto_sub_nhds_zero_iff.mp ((hU.tendsto_intervalIntegral_nhds_zero (μ := μ)).congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with x hx
+  exact intervalIntegral.integral_sub (hint x hx) (hint x₀ hx₀)
 
 /-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` tends to `0`,
 then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, by dominated

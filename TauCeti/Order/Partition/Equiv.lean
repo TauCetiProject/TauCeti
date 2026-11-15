@@ -53,7 +53,7 @@ noncomputable def partsComapEquiv (P : Finpartition (univ : Finset W)) (σ : V �
   (Equiv.finsetCongr σ.symm).subtypeEquiv (fun A ↦ by
     rw [parts_comap_copy_equiv]
     simp only [Equiv.finsetCongr_apply, mem_image, map_inj]
-    exact ⟨fun hA ↦ ⟨A, hA, rfl⟩, fun ⟨B, hB, hBA⟩ ↦ hBA ▸ hB⟩)
+    exact ⟨fun hA ↦ ⟨A, hA, rfl⟩, fun ⟨_, hB, hBA⟩ ↦ hBA ▸ hB⟩)
 
 @[simp]
 theorem partsComapEquiv_apply_coe (P : Finpartition (univ : Finset W)) (σ : V ≃ W)

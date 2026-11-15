@@ -14,11 +14,12 @@ import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 /-!
 # Finite generation of group-like elements
 
-If a finite-type Hopf algebra over a nontrivial commutative ring is spanned by linearly independent
+If a finite-type Hopf algebra over a commutative ring is spanned by linearly independent
 group-like elements, then its group of group-like elements is finitely generated. Indeed,
 evaluation identifies the group algebra on the group-like elements with the original Hopf algebra.
 Finite type transports across this equivalence, and a group algebra over a nontrivial commutative
-ring is of finite type exactly when its indexing group is finitely generated.
+ring is of finite type exactly when its indexing group is finitely generated. Over the trivial ring
+the Hopf algebra is trivial, so the group of group-like elements is trivial.
 
 The result does not require the Hopf algebra to be commutative. Over a domain, linear independence
 is automatic when the carrier is torsion-free.
@@ -44,16 +45,21 @@ universe u v
 namespace GroupLike
 
 /-- The linearly independent group-like elements spanning a finite-type Hopf algebra over a
-nontrivial commutative ring form a finitely generated group.
+commutative ring form a finitely generated group.
 
 The spanning hypothesis is expressed intrinsically through the subcoalgebra spanned by all
 group-like elements. -/
 theorem fg_of_finiteType_of_linearIndependent_of_groupLikeSetSpan_eq_top
-    (R : Type u) (H : Type v) [CommRing R] [Nontrivial R] [Semiring H] [HopfAlgebra R H]
+    (R : Type u) (H : Type v) [CommRing R] [Semiring H] [HopfAlgebra R H]
     (hfinite : Algebra.FiniteType R H)
     (hlinear : LinearIndependent R (_root_.GroupLike.val (R := R) (A := H)))
     (hspan : Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤) :
     Group.FG (_root_.GroupLike R H) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : Subsingleton H := Module.subsingleton R H
+    have : Subsingleton (_root_.GroupLike R H) :=
+      (_root_.GroupLike.val_injective (R := R) (A := H)).subsingleton
+    infer_instance
   have hlinearSpan :
       Submodule.span R
           (Set.range (_root_.GroupLike.val (R := R) (A := H))) = ⊤ :=

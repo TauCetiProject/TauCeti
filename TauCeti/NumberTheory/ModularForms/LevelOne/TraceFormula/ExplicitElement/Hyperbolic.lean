@@ -84,7 +84,7 @@ private theorem finsum_weight_traceDetFiber_of_neg (ht : t < 0) (hD : 0 < t ^ 2 
     have ht' : t + 2 < 0 := by
       by_contra! h
       have : t + 2 = 0 ∨ t + 2 = 1 := by omega
-      rcases this with h | h <;> nlinarith
+      rcases this with h | _ <;> nlinarith
     exact ih _ (by omega) ht' (by linear_combination hD) rfl
 
 /-! ### Fibres with an eigenvalue in `(0, 1]` -/
@@ -239,7 +239,7 @@ private theorem exists_finsum_weight_traceDetFiber_eq (ht : 0 < t) (hn : 0 < n)
     have ht' : 0 < t - 2 := by
       by_contra! h'
       have : t - 2 = -1 ∨ t - 2 = 0 := by omega
-      rcases this with h' | h' <;> nlinarith
+      rcases this with _ | h' <;> nlinarith
     have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hn'
     rw [show t - 2 + 2 = t by ring, show n - t + 1 + (t - 2) + 1 = n by ring] at hstep
     obtain ⟨t', n', hD', hn'', h', e⟩ :=

@@ -21,6 +21,8 @@ take.
 A finite family of finite sets has its index-element pairs enumerated by some `Fin m`
 (`Set.exists_enumeration_finite_family`), and a function on a finite type factors as an injective
 enumeration of its values after a surjection (`TauCeti.exists_embedding_fin_comp_eq`).
+A map from a finite type with the same range as an injective map is injective
+(`Function.Injective.of_range_eq`).
 -/
 
 public section
@@ -49,6 +51,14 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
   exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.2,
     fun i a ha ↦ ⟨e ⟨i, a, ha⟩, by simp,
       congrArg (fun x : (i : ι) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩⟩
+
+/-- A map from a finite type with the same range as an injective map is injective. -/
+theorem Function.Injective.of_range_eq {ι β : Type*} [Finite ι] {f g : ι → β}
+    (hf : Function.Injective f) (h : Set.range f = Set.range g) : Function.Injective g := by
+  have e : ι ≃ Set.range g :=
+    (Equiv.ofInjective f hf).trans (Equiv.subtypeEquivRight fun x => by rw [h])
+  exact Subtype.val_injective.comp
+    ((Finite.injective_iff_surjective_of_equiv e).2 Set.rangeFactorization_surjective)
 
 namespace TauCeti
 

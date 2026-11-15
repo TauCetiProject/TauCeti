@@ -84,6 +84,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   at a point of the coweight space where every simple root is nonnegative.
   `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
   simple roots are nonnegative.
+* `RootPairing.coroot'_sum_nsmul_root_nonpos` says a natural combination of the simple roots
+  other than `αₖ` pairs nonpositively with `αₖ^∨`.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -160,13 +162,17 @@ lemma mem_negRoots (i : ι) : i ∈ negRoots P b ↔ ¬ b.IsPos i := Iff.rfl
 theorem height_neg_of_mem_negRoots {i : ι} (hi : i ∈ negRoots P b) : b.height i < 0 :=
   lt_of_not_ge fun h => (mem_negRoots P b i).mp hi (b.isPos_iff'.mpr h)
 
-/-- The negative roots are the complement of the positive roots. -/
+/-- The complement of the positive roots is the set of negative roots. -/
+@[simp]
 lemma compl_posRoots : (posRoots P b)ᶜ = negRoots P b := by
   ext i
   simp only [Set.mem_compl_iff, mem_posRoots, mem_negRoots]
 
-/-- The negative roots are the complement of the positive roots. -/
-lemma negRoots_eq_compl : negRoots P b = (posRoots P b)ᶜ := compl_posRoots P b |>.symm
+/-- The complement of the negative roots is the set of positive roots. -/
+@[simp]
+lemma compl_negRoots : (negRoots P b)ᶜ = posRoots P b := by
+  ext i
+  simp only [Set.mem_compl_iff, mem_posRoots, mem_negRoots, not_not]
 
 section Map
 
@@ -184,7 +190,7 @@ theorem posRoots_map (e : P.Equiv P₂) : posRoots P₂ (b.map e) = e.indexEquiv
 /-- An equivalence of root pairings carries negative roots to negative roots. -/
 @[simp]
 theorem negRoots_map (e : P.Equiv P₂) : negRoots P₂ (b.map e) = e.indexEquiv '' negRoots P b := by
-  rw [negRoots_eq_compl, negRoots_eq_compl, posRoots_map, Equiv.image_compl]
+  rw [← compl_posRoots, ← compl_posRoots, posRoots_map, Equiv.image_compl]
 
 end Map
 
@@ -195,7 +201,7 @@ lemma disjoint_posRoots_negRoots : Disjoint (posRoots P b) (negRoots P b) := by
 
 /-- Every root is either positive or negative. -/
 lemma posRoots_union_negRoots : posRoots P b ∪ negRoots P b = Set.univ := by
-  rw [negRoots_eq_compl]
+  rw [← compl_posRoots]
   exact Set.union_compl_self _
 
 /-- Every root is either positive or negative. -/
@@ -220,10 +226,12 @@ noncomputable def posRootsFinset [Finite ι] : Finset ι := (posRoots_finite P b
 /-- The negative roots of a base, as a finset, so that they can be summed over. -/
 noncomputable def negRootsFinset [Finite ι] : Finset ι := (negRoots_finite P b).toFinset
 
+/-- Membership in the finset of positive roots. -/
 @[simp]
 lemma mem_posRootsFinset [Finite ι] (i : ι) : i ∈ posRootsFinset P b ↔ i ∈ posRoots P b :=
   (posRoots_finite P b).mem_toFinset
 
+/-- Membership in the finset of negative roots. -/
 @[simp]
 lemma mem_negRootsFinset [Finite ι] (i : ι) : i ∈ negRootsFinset P b ↔ i ∈ negRoots P b :=
   (negRoots_finite P b).mem_toFinset
@@ -252,7 +260,7 @@ lemma posRoots_nonempty [Nonempty ι] : (posRoots P b).Nonempty := by
   · exact ⟨i, hi⟩
   · exact ⟨-i, hi⟩
 
-/-- The negative of a positive root is negative. -/
+/-- The negative of a root is negative exactly when the root is positive. -/
 lemma reflectionPerm_self_mem_negRoots_iff_mem_posRoots (i : ι) :
     P.reflectionPerm i i ∈ negRoots P b ↔ i ∈ posRoots P b := by
   let := P.indexNeg
@@ -511,6 +519,21 @@ theorem toWeightBasis_repr_nonneg_of_mem_posRootCone [PartialOrder R] [IsOrdered
     Finsupp.finsetSum_apply, Finsupp.smul_apply]
   exact Finset.sum_nonneg fun j _ ↦ nsmul_nonneg (Finsupp.single_nonneg.mpr zero_le_one i) _
 
+omit [CharZero R] in
+/-- A natural combination of simple roots in which `αₖ` does not occur pairs nonpositively with
+the simple coroot `αₖ^∨`, since distinct simple roots have nonpositive Cartan integers. -/
+theorem _root_.RootPairing.coroot'_sum_nsmul_root_nonpos [LinearOrder R] [IsStrictOrderedRing R]
+    [Finite ι] [P.IsCrystallographic] {k : ι} (hk : k ∈ b.support) {c : ι → ℕ} (hck : c k = 0) :
+    P.coroot' k (∑ j ∈ b.support, c j • P.root j) ≤ 0 := by
+  rw [map_sum]
+  refine Finset.sum_nonpos fun j hj => ?_
+  rw [map_nsmul, RootPairing.root_coroot'_eq_pairing]
+  rcases eq_or_ne j k with rfl | hjk
+  · simp [hck]
+  · refine nsmul_nonpos ?_ _
+    rw [← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast, Int.cast_nonpos]
+    exact b.pairingIn_le_zero_of_ne hjk hj hk
+
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is
 nonnegative and sums to zero and, the simple roots being linearly independent, must vanish, so each
@@ -643,14 +666,11 @@ theorem image_reflectionPerm_self_negRoots :
   have hinv := reflectionPerm_self_involutive P
   calc
     (fun i ↦ P.reflectionPerm i i) '' negRoots P b =
-        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [negRoots_eq_compl]
+        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [← compl_posRoots]
     _ = ((fun i ↦ P.reflectionPerm i i) '' posRoots P b)ᶜ :=
       Set.image_compl_eq hinv.bijective
     _ = (negRoots P b)ᶜ := by rw [image_reflectionPerm_self_posRoots]
-    _ = posRoots P b := by
-      ext i
-      simp only [Set.mem_compl_iff, mem_negRoots, mem_posRoots]
-      tauto
+    _ = posRoots P b := compl_negRoots P b
 
 /-! ### The number of positive roots -/
 
@@ -665,7 +685,7 @@ theorem ncard_negRoots_eq_ncard_posRoots :
 /-- The numbers of positive and negative roots add up to the total number of roots. -/
 theorem ncard_posRoots_add_ncard_negRoots [Finite ι] :
     (posRoots P b).ncard + (negRoots P b).ncard = Nat.card ι := by
-  rw [negRoots_eq_compl]
+  rw [← compl_posRoots]
   exact Set.ncard_add_ncard_compl _
 
 /-- Twice the number of positive roots is the total number of roots. -/

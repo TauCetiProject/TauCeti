@@ -248,18 +248,16 @@ private def triangularSpline (a b c x : ℝ) : ℝ :=
 private theorem rising_eq_falling (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) :
     (c - a) ^ 2 / ((b - a) * (c - a)) = 1 - (b - c) ^ 2 / ((b - a) * (b - c)) := by
   have hba : b - a ≠ 0 := (sub_pos.2 hab).ne'
-  rcases hac.eq_or_lt with rfl | hac
-  · rcases hcb.eq_or_lt with rfl | hcb
+  rcases hac.eq_or_lt with rfl | _
+  · rcases hcb.eq_or_lt with rfl | _
     · exact absurd hab (lt_irrefl _)
     · simp only [sub_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div]
       field_simp
       ring
-  rcases hcb.eq_or_lt with rfl | hcb
+  rcases hcb.eq_or_lt with rfl | _
   · simp only [sub_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero,
       div_zero, sub_zero]
     field_simp
-  have hca : c - a ≠ 0 := (sub_pos.2 hac).ne'
-  have hbc : b - c ≠ 0 := (sub_pos.2 hcb).ne'
   field_simp
   ring
 
@@ -328,7 +326,7 @@ private theorem hasDerivWithinAt_triangularSpline (hac : a ≤ c) (hcb : c ≤ b
 /-- The integral of the triangular density over `(-∞, x]` is the cumulative quadratic spline. -/
 private theorem integral_Iic_triangularPDFReal (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b)
     (x : ℝ) : ∫ y in Iic x, triangularPDFReal a b c y = triangularSpline a b c x := by
-  set L := min a x with hL
+  set L := min a x
   have hint := integrable_triangularPDFReal a b c
   have hlow : ∫ y in Iic L, triangularPDFReal a b c y = 0 := by
     rw [setIntegral_congr_set Iio_ae_eq_Iic.symm]
@@ -510,7 +508,7 @@ private theorem cdf_triangularMeasure_eq_triangularSpline (hab : a < b) (hac : a
   have := isProbabilityMeasure_triangularMeasure hab hac hcb
   rw [cdf_eq_real, triangularMeasure_eq_withDensity, funext (triangularPDF_eq_ofReal a b c),
     measureReal_withDensity_ofReal (ae_of_all _ (triangularPDFReal_nonneg a b c))
-      measurableSet_Iic (integrable_triangularPDFReal a b c).integrableOn,
+      measurableSet_Iic (measurable_triangularPDFReal a b c).aemeasurable,
     integral_Iic_triangularPDFReal hab hac hcb]
 
 /-- The triangular cdf in closed form at every point: `0` up to the lower endpoint, the rising

@@ -297,7 +297,7 @@ theorem derivRicciTensor_eq_trace (x : M) (u w v : TangentSpace I x) :
       LinearMap.trace ℝ (TangentSpace I x)
         (((cov.derivCurvatureTensor cov x v).flip u).flip w) := by
   classical
-  obtain ⟨F, c, hF, -, hsum, htr⟩ := exists_frame_sum_derivCurvatureTensor (cov := cov) x
+  obtain ⟨F, c, -, -, hsum, htr⟩ := exists_frame_sum_derivCurvatureTensor (cov := cov) x
   obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
   obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   let D := ((cov.derivCurvatureTensor cov x v).flip (B x)).flip (C x)

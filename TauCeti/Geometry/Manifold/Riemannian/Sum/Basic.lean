@@ -65,7 +65,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
   contMDiff
     | .inl x => by
       have h := g₁.contMDiff x
-      rw [contMDiffAt_section] at h ⊢
+      rw [contMDiffAt_section_iff] at h ⊢
       -- Near `inl x`, the section is read through the retraction of `M ⊕ M'` onto `M` which
       -- collapses `M'` to `x`.
       have hr : ContMDiff I I n (Sum.elim id fun _ : M' ↦ x) :=
@@ -97,7 +97,7 @@ def sumTangentSpace (g₁ : ContMDiffRiemannianMetric I n E (fun x : M ↦ Tange
       rfl
     | .inr y => by
       have h := g₂.contMDiff y
-      rw [contMDiffAt_section] at h ⊢
+      rw [contMDiffAt_section_iff] at h ⊢
       have hr : ContMDiff I I n (Sum.elim (fun _ : M ↦ y) id) :=
         contMDiff_const.sumElim contMDiff_id
       refine (h.comp (Sum.inr y) (hr (Sum.inr y))).congr_of_eventuallyEq ?_

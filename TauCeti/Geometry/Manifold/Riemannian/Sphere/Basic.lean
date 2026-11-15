@@ -131,6 +131,13 @@ theorem coe_sphereTangentEquiv_apply (x : sphere (0 : E) 1)
   rw [LinearIsometry.equivRange_apply_coe]
   exact mvfderiv_apply_eq_mfderiv_apply _ x v
 
+/-- The image of a tangent vector to the sphere under the differential of the inclusion is the
+value of `TauCeti.sphereTangentEquiv` on it. -/
+theorem mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v = sphereTangentEquiv x v := by
+  rw [coe_sphereTangentEquiv_apply, mvfderiv_apply_eq_mfderiv_apply]
+
 /-- The image of a tangent vector under the differential of the sphere inclusion is orthogonal
 to the radius vector. -/
 theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)

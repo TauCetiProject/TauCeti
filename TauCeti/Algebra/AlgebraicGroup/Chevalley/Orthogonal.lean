@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Commutator
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Commutator.Basic
 import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!

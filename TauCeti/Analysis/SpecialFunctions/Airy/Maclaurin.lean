@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 public import TauCeti.Data.Nat.Factorial.Triplication
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Maclaurin series of the Airy functions

@@ -37,6 +37,8 @@ public section
 
 namespace AffineBasis
 
+section Ring
+
 variable {ι k V P V₂ P₂ : Type*} [Ring k] [AddCommGroup V] [Module k V] [AddTorsor V P]
   [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ P₂] (b : AffineBasis ι k P)
   (b₂ : AffineBasis ι k P₂)
@@ -45,13 +47,10 @@ variable {ι k V P V₂ P₂ : Type*} [Ring k] [AddCommGroup V] [Module k V] [Ad
 basis preserves barycentric coordinates. -/
 theorem coord_apply_of_forall_apply_eq {f : P →ᵃ[k] P₂} (hf : ∀ i, f (b i) = b₂ i) (i : ι)
     (x : P) : b₂.coord i (f x) = b.coord i x := by
-  have h : (b₂.coord i).comp f = b.coord i := by
-    refine AffineMap.ext_on b.tot ?_
-    rintro - ⟨j, rfl⟩
-    rcases eq_or_ne i j with rfl | hij
-    · simp [hf, coord_apply_eq]
-    · simp [hf, coord_apply_ne _ hij]
-  exact congr($h x)
+  classical
+  refine AffineMap.congr_fun (AffineMap.ext_on b.tot ?_ : (b₂.coord i).comp f = b.coord i) x
+  rintro - ⟨j, rfl⟩
+  simp [hf, coord_apply]
 
 /-- Two affine bases indexed by the same type are related by an affine equivalence sending each
 point of the first basis to the corresponding point of the second. -/
@@ -65,8 +64,7 @@ theorem exists_affineEquiv_apply_eq : ∃ T : P ≃ᵃ[k] P₂, ∀ i, T (b i) =
   rcases eq_or_ne i i₀ with rfl | hi
   · simp
   · have hL : L (b i -ᵥ b i₀) = b₂ i -ᵥ b₂ i₀ := by
-      rw [← b.basisOf_apply i₀ ⟨i, hi⟩, Module.Basis.equiv_apply, Equiv.refl_apply,
-        basisOf_apply]
+      simpa using (b.basisOf i₀).equiv_apply ⟨i, hi⟩ (b₂.basisOf i₀) (Equiv.refl _)
     simp [hL]
 
 /-- The barycentric coordinates relative to an affine basis `b` of a point of the segment between
@@ -77,9 +75,9 @@ theorem coord_lineMap [DecidableEq ι] (i j l : ι) (t : k) :
       AffineMap.lineMap (if i = j then (1 : k) else 0) (if i = l then 1 else 0) t := by
   rw [(b.coord i).apply_lineMap, b.coord_apply, b.coord_apply]
 
-end AffineBasis
+end Ring
 
-namespace AffineBasis
+section Field
 
 variable {ι k V P : Type*} [Fintype ι] [Field k] [CharZero k] [AddCommGroup V] [Module k V]
   [AddTorsor V P] (b : AffineBasis ι k P)
@@ -93,5 +91,7 @@ theorem coord_homothety_centroid (t : k) (z : P) (i : ι) :
   rw [AffineMap.homothety_eq_lineMap, AffineMap.apply_lineMap,
     b.coord_apply_centroid (Finset.mem_univ i), Finset.card_univ, AffineMap.lineMap_apply_ring']
   ring
+
+end Field
 
 end AffineBasis

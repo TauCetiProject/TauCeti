@@ -489,7 +489,7 @@ theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace 
     simpa using heq
   rw [← heq']
   apply sum_mem
-  intro t ht
+  intro t _
   apply Ideal.mul_mem_right
   obtain ⟨g, hg, hgt⟩ := Finset.mem_image.mp t.2
   have hgI : g ∈ P.idealOfDefinition := hG ▸ Ideal.subset_span hg

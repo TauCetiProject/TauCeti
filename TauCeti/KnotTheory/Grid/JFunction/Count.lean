@@ -46,8 +46,6 @@ the same counting API. That companion module records the resulting `JCenter` sin
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.2,
-"Gradings. The `J`-function, `M_O`, `M_X`, `A`; ... grading-change formulas across a rectangle."
 The `J`-function is the symmetrized northeast/southwest point-pair count of Ozsváth--Stipsicz--
 Szabó, *Grid Homology for Knots and Links*, Chapter 4.3.
 -/

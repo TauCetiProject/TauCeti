@@ -18,11 +18,11 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 # Points of the projective model and places of the function field
 
 Let `W` be an elliptic Weierstrass curve over a field `K` and let `E = projModel W` be its
-projective model, a smooth proper curve over `K`. This file shows that the function field of `E`
-is an algebraic function field of one variable over `K`, and identifies the codimension-one points
-of `E` with the places of the function field `K(W)` of the affine equation: a point goes to the
-place whose valuation ring is its local ring, transported along
-`WeierstrassCurve.projModelFunctionFieldEquiv`.
+projective model, a smooth proper curve over `K`. That the function field of `E` is an algebraic
+function field of one variable over `K` is imported from `Scheme/FunctionField.lean`. This file
+identifies the codimension-one points of `E` with the places of the function field `K(W)` of the
+affine equation: a point goes to the place whose valuation ring is its local ring, transported
+along `WeierstrassCurve.projModelFunctionFieldEquiv`.
 
 Under this identification the zero section `O = [0 : 1 : 0]` is the place at infinity. The
 coordinate `x` is regular at every point of the chart `D₊(Z)`, so no point of `D₊(Z)` gives the
@@ -30,8 +30,6 @@ place at infinity, where `x` has a pole; the complement of `D₊(Z)` is the sing
 
 ## Main declarations
 
-* `WeierstrassCurve.isFunctionField_functionField_projModel`: `K(E)` is a function field over
-  `K`;
 * `WeierstrassCurve.projModelCodimensionOnePointEquivPlace`: the codimension-one points of
   `projModel W` are the places of `K(W)`;
 * `WeierstrassCurve.mem_integers_projModelCodimensionOnePointEquivPlace_iff`: the valuation ring
@@ -75,12 +73,6 @@ theorem projModelFunctionFieldEquiv_algebraMap (c : K) :
     projModelFunctionFieldEquiv_baseRingToFunctionField, RingEquiv.refl_apply]
 
 variable [W.IsElliptic]
-
-/-- The function field of the projective model of an elliptic curve is an algebraic function
-field of one variable over the base field. -/
-theorem isFunctionField_functionField_projModel :
-    IsFunctionField K W.projModel.functionField :=
-  (isFunctionField_functionField_iff K).mpr (topologicalKrullDim_projModel W)
 
 /-- **The codimension-one points of the projective model are the places of `K(W)`.** A
 codimension-one point of `E = projModel W` goes to the place of `K(E)` whose valuation ring is its

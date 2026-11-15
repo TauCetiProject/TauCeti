@@ -89,8 +89,7 @@ theorem f4_not_root_eq_add_nsmul_of_length_eq_of_two_le (α β γ : Fin 48) (n :
       f4SimplyConnectedRootDatum.root β +
         (n : ℤ) • f4SimplyConnectedRootDatum.root α) : False :=
   f4SimplyConnectedRootDatum.not_root_eq_add_nsmul_of_length_eq_of_two_le f4Length
-    f4Length_mul_pairing_comm α β γ n (abs_pairing_f4SimplyConnectedRootDatum_le_two β α)
-    (f4Length_pos α) hαβ (by
+    f4Length_mul_pairing_comm α β γ n (f4Length_pos α) hαβ (by
       rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
         rcases f4Length_eq_one_or_eq_two γ with hγ | hγ <;>
         omega) hneg hn h
