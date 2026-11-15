@@ -49,8 +49,9 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 ## Main statements
 
 * `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
-  `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`:
-  Haar, regularity, and modular-character inheritance on open subgroups.
+  `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.isCompact_of_measure_ne_top`,
+  `OpenSubgroup.isCompact_iff_measure_ne_top`, `OpenSubgroup.modularCharacter_eq`:
+  Haar, regularity, compactness, and modular-character properties on open subgroups.
 * `MeasureTheory.setIntegral_leftCoset_eq_comap`,
   `MeasureTheory.integral_mul_left_comap_eq_of_inv_mul_mem`,
   `MeasureTheory.setIntegral_rightCoset_eq_modularCharacter_smul_comap`,
@@ -120,6 +121,36 @@ theorem innerRegular_comap_of_isSigmaCompact [BorelSpace G] (H : OpenSubgroup G)
     (hH : IsSigmaCompact (H : Set G)) : (μ.comap ((↑) : H → G)).InnerRegular := by
   have : SigmaFinite (μ.comap ((↑) : H → G)) := hH.sigmaFinite_comap (μ := μ)
   infer_instance
+
+/-- **An open subgroup of finite left-invariant open-positive measure is compact.** In a weakly
+locally compact topological group, any open subgroup whose measure under a left-invariant Borel
+measure positive on nonempty open sets is finite must be compact. -/
+@[to_additive /-- **An open additive subgroup of finite left-invariant open-positive measure is
+compact.** In a weakly locally compact topological additive group, any open additive subgroup whose
+measure under a left-invariant Borel measure positive on nonempty open sets is finite must be
+compact. -/]
+theorem isCompact_of_measure_ne_top [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G]
+    [BorelSpace G] (H : OpenSubgroup G) (μ : Measure G) [μ.IsOpenPosMeasure]
+    [μ.IsMulLeftInvariant] (hH : μ (H : Set G) ≠ ∞) : IsCompact (H : Set G) := by
+  have hcoe : MeasurableEmbedding ((↑) : H → G) :=
+    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+  have hν : (μ.comap ((↑) : H → G)) univ ≠ ∞ := by
+    rwa [hcoe.comap_apply, image_univ, Subtype.range_coe]
+  have : CompactSpace H := by
+    by_contra hnc
+    have := not_compactSpace_iff.mp hnc
+    exact hν (measure_univ_of_isMulLeftInvariant (μ.comap ((↑) : H → G)))
+  exact isCompact_iff_compactSpace.mpr inferInstance
+
+/-- Under a left-invariant Borel measure that is positive on nonempty open sets and finite on
+compacts, an open subgroup is compact if and only if it has finite measure. -/
+@[to_additive /-- Under a left-invariant Borel measure that is positive on nonempty open sets and
+finite on compacts, an open additive subgroup is compact if and only if it has finite measure. -/]
+theorem isCompact_iff_measure_ne_top [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G]
+    [BorelSpace G] (H : OpenSubgroup G) (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant] :
+    IsCompact (H : Set G) ↔ μ (H : Set G) ≠ ∞ :=
+  ⟨fun h ↦ h.measure_lt_top.ne, H.isCompact_of_measure_ne_top μ⟩
 
 end HaarAndRegularity
 
