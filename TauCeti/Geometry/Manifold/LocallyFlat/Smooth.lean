@@ -47,8 +47,9 @@ read off it.
 
 ## Main results
 
-* `TauCeti.exists_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement`: the slice chart at a
-  point, the shrinking argument itself and the engine of the file.
+* `TauCeti.exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement` and
+  `TauCeti.exists_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement`: the `C^n` slice chart
+  at a point, the shrinking argument itself and the engine of the file.
 * `TauCeti.IsSliceEmbedding.of_isImmersionOfComplement_of_isEmbedding`: a `C^n` immersion that is a
   topological embedding flattens its image onto `Set.range I ×ˢ {0}`, for a boundaryless ambient
   manifold and an arbitrary domain model with corners.
@@ -72,8 +73,8 @@ prescribed atlas, which is all `TauCeti.IsSliceChart` asks for. It is built from
 `Manifold.IsImmersionAtOfComplement.codChart`, which does lie in the maximal atlas, by
 postcomposing with the homeomorphism `G ≃ₜ E'` of a boundaryless model with corners and with the
 immersion's own linear equivalence `(E × F) ≃L[𝕜] E'`, and then restricting to an open set. Both
-postcompositions are homeomorphisms, so the result is again a chart of the maximal topological
-atlas.
+postcompositions are `C^n` diffeomorphisms, so both directions of the restricted slice chart remain
+`C^n` on their open domains.
 
 Boundarylessness of the ambient manifold is used only through `ModelWithCorners.toHomeomorph`.
 Without it, the ambient chart composed with the model is a `PartialEquiv` whose target is a piece
@@ -115,73 +116,85 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} {f : M → N}
 
-/-- **The slice chart of a smooth embedding.** If `f` is a topological embedding and a `C^n`
-immersion at `x` with complement `F`, then around `f x` there is a chart of the ambient manifold,
-valued in the split model space `E × F`, carrying `Set.range f` exactly onto the slice
+private theorem immersionSliceChart_apply [J.Boundaryless]
+    {x₀ : M} (h : IsImmersionAtOfComplement F I J n f x₀) (p : N) :
+    h.codChart.transHomeomorph (J.toHomeomorph.trans h.equiv.toHomeomorph.symm) p =
+      h.equiv.symm ((h.codChart.extend J) p) := by
+  simp [OpenPartialHomeomorph.transHomeomorph_apply]
+
+/-- **The `C^n` slice chart of a smooth embedding.** If `f` is a topological embedding and a `C^n`
+immersion at `x₀` with complement `F`, then around `f x₀` there is an ambient
+`OpenPartialHomeomorph N (E × F)`, valued in the split model space `E × F`, whose forward and
+inverse maps are `C^n` and which carries `Set.range f` exactly onto the slice
 `Set.range I ×ˢ {0}`.
 
-This is the content of the file; everything below is a specialisation of it. The immersion normal
-form provides a chart in which `f '' h.domChart.source` lies on the slice, and the two restrictions
-performed here cut that chart down until nothing else does: first to the part lying over the target
-of the domain chart, so that a point of the slice is the image of a point of `h.domChart.source`,
-and then to an open set meeting `Set.range f` only in `f '' h.domChart.source`, which exists
-because `f` is an embedding. -/
+The immersion normal form provides a chart in which `f '' h.domChart.source` lies on the slice, and
+the two restrictions performed here cut that chart down until nothing else does: first to the part
+lying over the target of the domain chart, so that a point of the slice is the image of a point of
+`h.domChart.source`, and then to an open set meeting `Set.range f` only in `f '' h.domChart.source`,
+which exists because `f` is an embedding. -/
+theorem exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement [J.Boundaryless]
+    (hf : IsEmbedding f) {x₀ : M} (h : IsImmersionAtOfComplement F I J n f x₀) :
+    ∃ Φ : OpenPartialHomeomorph N (E × F), f x₀ ∈ Φ.source ∧
+      IsSliceChart Φ (range I ×ˢ ({0} : Set F)) (range f) ∧
+      ContMDiffOn J 𝓘(𝕜, E × F) n Φ Φ.source ∧
+      ContMDiffOn 𝓘(𝕜, E × F) J n Φ.symm Φ.target := by
+  set Ψ : OpenPartialHomeomorph N (E × F) :=
+    h.codChart.transHomeomorph (J.toHomeomorph.trans h.equiv.toHomeomorph.symm)
+  have key {y} (hy : y ∈ h.domChart.source) : Ψ (f y) = ((h.domChart.extend I) y, 0) := by
+    have hy' : y ∈ (h.domChart.extend I).source := by rwa [h.domChart.extend_source]
+    have hw := h.writtenInCharts ((h.domChart.extend I).map_source hy')
+    simp only [Function.comp_apply, (h.domChart.extend I).left_inv hy'] at hw
+    rw [immersionSliceChart_apply h, hw, ContinuousLinearEquiv.symm_apply_apply]
+  obtain ⟨W, hW, hWf⟩ := hf.isInducing.isOpen_iff.1 h.domChart.open_source
+  have hmemW (y : M) : f y ∈ W ↔ y ∈ h.domChart.source := by rw [← hWf]; exact Iff.rfl
+  set O : Set N := (Ψ.source ∩ Ψ ⁻¹' ((I.symm ⁻¹' h.domChart.target) ×ˢ (univ : Set F))) ∩ W
+  have hOopen : IsOpen O :=
+    (Ψ.isOpen_inter_preimage ((h.domChart.open_target.preimage I.continuous_symm).prod
+      isOpen_univ)).inter hW
+  have hx₀ : x₀ ∈ h.domChart.source := h.mem_domChart_source
+  have hfx₀O : f x₀ ∈ O := ⟨⟨h.mem_codChart_source, by
+    rw [mem_preimage, key hx₀, mem_prod, mem_preimage, OpenPartialHomeomorph.extend_coe,
+      Function.comp_apply, I.left_inv]
+    exact ⟨h.domChart.map_source hx₀, mem_univ _⟩⟩, (hmemW x₀).2 hx₀⟩
+  let Φ := Ψ.restrOpen O hOopen
+  have hΨ : ContMDiffOn J 𝓘(𝕜, E × F) n Ψ Ψ.source :=
+    (h.equiv.symm.contDiff.contMDiff.comp_contMDiffOn
+      (h.codChart.contMDiffOn_extend h.codChart_mem_maximalAtlas)).congr fun p _ ↦
+        immersionSliceChart_apply h p
+  have hi := contMDiffOn_extend_symm h.codChart_mem_maximalAtlas
+  rw [← h.codChart.extend_target'] at hi
+  have hΨsymm : ContMDiffOn 𝓘(𝕜, E × F) J n Ψ.symm Ψ.target :=
+    (hi.comp h.equiv.contDiff.contMDiff.contMDiffOn fun q hq ↦ by
+      rw [h.codChart.extend_target]
+      exact ⟨hq, J.range_eq_univ ▸ mem_univ _⟩).congr fun q _ ↦ by
+        simp [Ψ, OpenPartialHomeomorph.transHomeomorph_symm_apply]
+  refine ⟨Φ, ⟨h.mem_codChart_source, hfx₀O⟩, isSliceChart_iff.2 fun p hp ↦ ?_,
+    hΨ.mono fun _ hp ↦ hp.1,
+    (hΨsymm.mono fun q hq ↦ Φ.right_inv hq ▸ Ψ.map_source (Φ.map_target hq).1).congr
+      fun _ _ ↦ by simp [Φ]⟩
+  rw [OpenPartialHomeomorph.restrOpen_source] at hp
+  simp only [Φ, OpenPartialHomeomorph.coe_restrOpen]
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun hps ↦ ?_⟩
+  · subst hy
+    rw [key ((hmemW y).1 hp.2.2), OpenPartialHomeomorph.extend_coe, Function.comp_apply]
+    exact ⟨mem_range_self _, rfl⟩
+  · have hmem : (Ψ p).1 ∈ (h.domChart.extend I).target := by
+      rw [h.domChart.extend_target]; exact ⟨hp.2.1.2.1, hps.1⟩
+    have hys : (h.domChart.extend I).symm (Ψ p).1 ∈ h.domChart.source := by
+      rw [← h.domChart.extend_source (I := I)]; exact (h.domChart.extend I).map_target hmem
+    refine ⟨_, Ψ.injOn (h.source_subset_preimage_source hys) hp.1 ?_⟩
+    rw [key hys, (h.domChart.extend I).right_inv hmem, ← (hps.2 : (Ψ p).2 = 0)]
+
+/-- **The slice chart of a smooth embedding.** Topological-slice specialization of
+`TauCeti.exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement`. -/
 theorem exists_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement [J.Boundaryless]
     (hf : IsEmbedding f) {x : M} (h : IsImmersionAtOfComplement F I J n f x) :
     ∃ Φ : OpenPartialHomeomorph N (E × F), f x ∈ Φ.source ∧
-      IsSliceChart Φ (range I ×ˢ ({0} : Set F)) (range f) := by
-  -- The ambient chart of the immersion, read in the splitting `E × F` of the ambient model space.
-  set Ψ : OpenPartialHomeomorph N (E × F) :=
-    h.codChart.transHomeomorph (J.toHomeomorph.trans h.equiv.toHomeomorph.symm) with hΨ
-  have hΨ_apply : ∀ p : N, Ψ p = h.equiv.symm ((h.codChart.extend J) p) := fun p => by
-    rw [hΨ, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-      Homeomorph.trans_apply, ContinuousLinearEquiv.coe_symm_toHomeomorph,
-      ModelWithCorners.toHomeomorph_apply, OpenPartialHomeomorph.extend_coe, Function.comp_apply]
-  have hextend : ∀ y : M, (h.domChart.extend I) y = I (h.domChart y) := fun y => by
-    rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply]
-  -- In this chart the immersion normal form says that `f` is the standard inclusion.
-  have key : ∀ y ∈ h.domChart.source, Ψ (f y) = ((h.domChart.extend I) y, 0) := by
-    intro y hy
-    have hy' : y ∈ (h.domChart.extend I).source := by rwa [h.domChart.extend_source]
-    have hwritten := h.writtenInCharts ((h.domChart.extend I).map_source hy')
-    simp only [Function.comp_apply, (h.domChart.extend I).left_inv hy'] at hwritten
-    rw [hΨ_apply, hwritten, ContinuousLinearEquiv.symm_apply_apply]
-  -- Because `f` is an embedding, an open set of `N` cuts `f '' h.domChart.source` out of the image.
-  obtain ⟨W, hW, hWf⟩ := hf.isInducing.isOpen_iff.1 h.domChart.open_source
-  have hmemW : ∀ y : M, f y ∈ W ↔ y ∈ h.domChart.source := fun y => by rw [← hWf]; exact Iff.rfl
-  -- The part of the ambient model space lying over the target of the domain chart.
-  have hU : IsOpen (I.symm ⁻¹' h.domChart.target) :=
-    h.domChart.open_target.preimage I.continuous_symm
-  set V : Set N :=
-    (Ψ.source ∩ Ψ ⁻¹' ((I.symm ⁻¹' h.domChart.target) ×ˢ (univ : Set F))) ∩ W
-  have hVopen : IsOpen V := (Ψ.isOpen_inter_preimage (hU.prod isOpen_univ)).inter hW
-  -- The point `f x` survives both restrictions.
-  have hx : x ∈ h.domChart.source := h.mem_domChart_source
-  have hfx : f x ∈ Ψ.source := h.mem_codChart_source
-  have hfxV : f x ∈ V := by
-    refine ⟨⟨hfx, ?_⟩, (hmemW x).2 hx⟩
-    rw [mem_preimage, key x hx]
-    exact ⟨by rw [mem_preimage, hextend, I.left_inv]; exact h.domChart.map_source hx, mem_univ _⟩
-  refine ⟨Ψ.restrOpen V hVopen, ⟨hfx, hfxV⟩, isSliceChart_iff.2 fun p hp => ?_⟩
-  rw [OpenPartialHomeomorph.restrOpen_source] at hp
-  simp only [OpenPartialHomeomorph.coe_restrOpen]
-  constructor
-  · -- A point of the image lying in `W` comes from the domain chart, hence lands on the slice.
-    rintro ⟨y, rfl⟩
-    have hy : y ∈ h.domChart.source := (hmemW y).1 hp.2.2
-    rw [key y hy, hextend]
-    exact ⟨mem_range_self _, rfl⟩
-  · -- Conversely a point of the slice lying over the domain chart's target is such an image.
-    intro hps
-    have hmem : (Ψ p).1 ∈ (h.domChart.extend I).target := by
-      rw [h.domChart.extend_target]
-      exact ⟨hp.2.1.2.1, hps.1⟩
-    have hys : (h.domChart.extend I).symm (Ψ p).1 ∈ h.domChart.source := by
-      rw [← h.domChart.extend_source (I := I)]
-      exact (h.domChart.extend I).map_target hmem
-    have hfy : Ψ (f ((h.domChart.extend I).symm (Ψ p).1)) = Ψ p := by
-      rw [key _ hys, (h.domChart.extend I).right_inv hmem, ← (hps.2 : (Ψ p).2 = 0)]
-    exact ⟨_, Ψ.injOn (h.source_subset_preimage_source hys) hp.1 hfy⟩
+      IsSliceChart Φ (range I ×ˢ ({0} : Set F)) (range f) :=
+  let ⟨Φ, hfx, hslice, _, _⟩ :=
+    exists_contMDiffOn_isSliceChart_of_isEmbedding_of_isImmersionAtOfComplement hf h
+  ⟨Φ, hfx, hslice⟩
 
 /-- A `C^n` immersion with complement `F` that is a topological embedding flattens its image onto
 the slice `Set.range I ×ˢ {0}` of the split ambient model space `E × F`.

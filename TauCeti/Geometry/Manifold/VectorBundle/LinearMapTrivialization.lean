@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Compatible trivializations from fibrewise linear equivalences on open sets
@@ -14,12 +14,13 @@ import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 Let `V → B` be a `C^n` vector bundle with finite-dimensional model fibre `F` over a complete
 nontrivially normed field `𝕜`, and let `U ⊆ B` be open. Given continuous linear maps
 `L : ∀ x, V x →L[𝕜] F` that are bijective over `U` and whose total-space evaluation
-`(x, v) ↦ L x v` is `C^n` on `π⁻¹(U)`, pulling back `Module.finBasis 𝕜 F` along `(L x)⁻¹` yields a
-`C^n` local frame of `V` on `U` via operator inversion in atlas charts. Passing this frame to
-`IsLocalFrameOn.trivialization` produces a compatible linear trivialization
-`Bundle.Trivialization.ofContinuousLinearMapOn` over `U` in
-`(contMDiffFiberwiseLinear B F IB n).maximalAtlas` (`ofContinuousLinearMapOn_mem_maximalAtlas`) with
-coordinate map `(x, v) ↦ (x, L x v)` (`ofContinuousLinearMapOn_apply`,
+`(x, v) ↦ L x v` is `C^n` on `π⁻¹(U)`, viewing `L` as a `C^n` Hom-bundle section into
+`Bundle.Trivial B F` (`TauCeti.contMDiffAt_hom_bundle_iff`) and inverting it via
+`ContMDiffAt.clm_bundle_inverse` shows that pulling back `Module.finBasis 𝕜 F` along `(L x)⁻¹`
+defines a `C^n` local frame of `V` on `U`. Passing this frame to `IsLocalFrameOn.trivialization`
+produces a compatible linear trivialization `Bundle.Trivialization.ofContinuousLinearMapOn` over `U`
+in `(contMDiffFiberwiseLinear B F IB n).maximalAtlas` (`ofContinuousLinearMapOn_mem_maximalAtlas`)
+with coordinate map `(x, v) ↦ (x, L x v)` (`ofContinuousLinearMapOn_apply`,
 `coordChangeL_ofContinuousLinearMapOn_apply`).
 
 ## References
@@ -63,74 +64,19 @@ private theorem invFrame_of_mem (L : ∀ x, V x →L[𝕜] F) (hbij : ∀ x ∈ 
 
 end Algebra
 
+section Construction
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
   {IB : ModelWithCorners 𝕜 EB HB} {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
   {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] {U : Set B}
-
-section ReadOperator
-
-variable (L : ∀ x, V x →L[𝕜] F) (hbij : ∀ x ∈ U, Function.Bijective (L x))
-
-private def readOperator (L : ∀ x, V x →L[𝕜] F) (e' : Trivialization F (π F V)) (x : B) :
-    F →L[𝕜] F :=
-  let b := finBasis 𝕜 F
-  ∑ j, ContinuousLinearMap.smulRightL 𝕜 F F
-    ((ContinuousLinearMap.proj j).comp (b.equivFunL : F →L[𝕜] Fin (finrank 𝕜 F) → 𝕜))
-    (L x (e'.symm x (b j)))
-
-private theorem readOperator_apply (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜] {x : B}
-    (hx' : x ∈ e'.baseSet) (w : F) : readOperator L e' x w = L x (e'.symm x w) := by
-  let b := finBasis 𝕜 F
-  have hsymm (u : F) : e'.symm x u = (e'.linearEquivAt 𝕜 x hx').symm u :=
-    (e'.linearEquivAt_symm_apply (R := 𝕜) x hx' u).symm
-  conv_rhs => rw [← b.sum_repr w, hsymm, map_sum]
-  rw [map_sum, readOperator, sum_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [map_smul, map_smul, ← hsymm]; simp [b]
-
-private def readEquiv (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜] {x : B}
-    (hx : x ∈ U) (hx' : x ∈ e'.baseSet) : F ≃L[𝕜] F :=
-  ((e'.linearEquivAt 𝕜 x hx').symm.trans (equivAt L hbij hx)).toContinuousLinearEquiv
-
-private theorem coe_readEquiv (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜] {x : B}
-    (hx : x ∈ U) (hx' : x ∈ e'.baseSet) :
-    (readEquiv L hbij e' hx hx' : F →L[𝕜] F) = readOperator L e' x := by
-  ext w; rw [readOperator_apply L e' hx']
-  simp [readEquiv, Trivialization.linearEquivAt_symm_apply]
-
-include hbij in
-private theorem isInvertible_readOperator (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜] {x : B}
-    (hx : x ∈ U) (hx' : x ∈ e'.baseSet) : (readOperator L e' x).IsInvertible :=
-  ⟨readEquiv L hbij e' hx hx', coe_readEquiv L hbij e' hx hx'⟩
-
-private theorem inverse_readOperator_finBasis (e' : Trivialization F (π F V)) [e'.IsLinear 𝕜]
-    {x : B} (hx : x ∈ U) (hx' : x ∈ e'.baseSet) (i : Fin (finrank 𝕜 F)) :
-    (readOperator L e' x).inverse (finBasis 𝕜 F i) = (e' ⟨x, invFrame L hbij i x⟩).2 := by
-  rw [← coe_readEquiv L hbij e' hx hx', ContinuousLinearMap.inverse_equiv,
-    invFrame_of_mem L hbij hx]
-  simp [readEquiv, Trivialization.linearEquivAt_apply]
-
-end ReadOperator
-
-section Construction
-
-variable [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω} [ContMDiffVectorBundle n F V IB]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω}
   (hU : IsOpen U) (L : ∀ x, V x →L[𝕜] F)
   (hL : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
     (fun p : TotalSpace F V ↦ L p.proj p.2) (π F V ⁻¹' U))
   (hbij : ∀ x ∈ U, Function.Bijective (L x))
-
-include hL in
-private theorem contMDiffOn_readOperator (e' : Trivialization F (π F V))
-    [MemTrivializationAtlas e'] :
-    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (readOperator L e') (U ∩ e'.baseSet) := by
-  refine contMDiffOn_finsetSum fun j _ ↦
-    (ContinuousLinearMap.smulRightL 𝕜 F F _).contMDiff.comp_contMDiffOn ?_
-  exact hL.comp ((TauCeti.Manifold.contMDiffOn_symm_baseSet (I := IB) (e := e')
-    (finBasis 𝕜 F j)).mono inter_subset_right) fun _ hx ↦ hx.1
 
 include hU hL in
 private theorem isLocalFrameOn_invFrame : IsLocalFrameOn IB F n (invFrame L hbij) U := by
@@ -139,18 +85,47 @@ private theorem isLocalFrameOn_invFrame : IsLocalFrameOn IB F n (invFrame L hbij
     funext fun i ↦ invFrame_of_mem L hbij hx i
   refine ⟨fun hx ↦ hbasis hx ▸ Basis.linearIndependent _,
     fun hx ↦ hbasis hx ▸ (Basis.span_eq _).ge, fun i x₀ hx₀ ↦ ?_⟩
-  let e' := trivializationAt F V x₀
-  have hx₀' : x₀ ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  have hWnhds : U ∩ e'.baseSet ∈ 𝓝 x₀ := (hU.inter e'.open_baseSet).mem_nhds ⟨hx₀, hx₀'⟩
   have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
-  have hinv := ((isInvertible_readOperator L hbij e' hx₀ hx₀').contDiffAt_map_inverse
-    (n := n)).contMDiffAt.comp x₀ ((contMDiffOn_readOperator L hL e').contMDiffAt hWnhds)
-  have hcoord : ContMDiffAt IB 𝓘(𝕜, F) n (fun x ↦ (e' ⟨x, invFrame L hbij i x⟩).2) x₀ := by
-    refine ((ContinuousLinearMap.apply 𝕜 F (finBasis 𝕜 F i)).contMDiff.contMDiffAt.comp x₀
-      hinv).congr_of_eventuallyEq ?_
-    filter_upwards [hWnhds] with x hx using
-      (inverse_readOperator_finBasis L hbij e' hx.1 hx.2 i).symm
-  exact ((e'.contMDiffAt_section_iff hx₀').2 hcoord).contMDiffWithinAt
+  have : ∀ x, IsTopologicalAddGroup (V x) := fun x ↦ by
+    let e := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x
+      (mem_baseSet_trivializationAt F V x)
+    exact {
+      continuous_add := e.toHomeomorph.isInducing.continuous_iff.2 <| by
+        simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph, map_add]; fun_prop
+      continuous_neg := e.toHomeomorph.isInducing.continuous_iff.2 <| by
+        simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph, map_neg]; fun_prop }
+  have : ∀ x, ContinuousSMul 𝕜 (V x) := fun x ↦ by
+    let e := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x
+      (mem_baseSet_trivializationAt F V x)
+    exact ⟨e.toHomeomorph.isInducing.continuous_iff.2 <| by
+      simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph, map_smul]; fun_prop⟩
+  let L' : ∀ x, V x →L[𝕜] Trivial B F x := L
+  have hLhom : ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (F →L[𝕜] F) (E := fun y ↦ V y →L[𝕜] Trivial B F y) x (L' x)) x₀ :=
+    (TauCeti.contMDiffAt_hom_bundle_iff (IB := IB) (n := n) (F₁ := F) (F₂ := F) L' x₀).2 fun v ↦
+      Bundle.contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_proj V, by
+        simpa using hL.contMDiffAt
+          ((hU.preimage (FiberBundle.continuous_proj F V)).mem_nhds (hx₀ : ⟨x₀, v⟩ ∈ π F V ⁻¹' U))⟩
+  have hinv₀ : (L' x₀).IsInvertible := by
+    let e₀ := (trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x₀
+      (mem_baseSet_trivializationAt F V x₀)
+    have : T2Space (V x₀) := e₀.toHomeomorph.isEmbedding.t2Space
+    have : FiniteDimensional 𝕜 (V x₀) := e₀.symm.toLinearEquiv.finiteDimensional
+    exact ⟨(equivAt L hbij hx₀).toContinuousLinearEquiv, rfl⟩
+  have hsec : ContMDiffAt IB (IB.prod 𝓘(𝕜, F)) n
+      (fun x ↦ TotalSpace.mk' F (E := V) x ((L' x).inverse (finBasis 𝕜 F i))) x₀ :=
+    (hLhom.clm_bundle_inverse hinv₀).clm_bundle_apply
+      (Bundle.contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_id, by simpa using contMDiffAt_const⟩)
+  refine (hsec.congr_of_eventuallyEq ?_).contMDiffWithinAt
+  filter_upwards [hU.mem_nhds hx₀] with x hx
+  congr 1
+  let ex := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x
+    (mem_baseSet_trivializationAt F V x)
+  have : T2Space (V x) := ex.toHomeomorph.isEmbedding.t2Space
+  have : FiniteDimensional 𝕜 (V x) := ex.symm.toLinearEquiv.finiteDimensional
+  have heq : L' x = ((equivAt L hbij hx).toContinuousLinearEquiv : V x →L[𝕜] F) := rfl
+  rw [invFrame_of_mem L hbij hx, heq, ContinuousLinearMap.inverse_equiv]
+  simp
 
 /-- The linear trivialization of a `C^n` vector bundle `V` over an open set `U` determined by a
 family `L : ∀ x, V x →L[𝕜] F` of continuous linear maps that are bijective over `U` and whose
@@ -165,7 +140,7 @@ theorem baseSet_ofContinuousLinearMapOn :
 
 /-- The trivialization `ofContinuousLinearMapOn` belongs to the maximal atlas of `C^n`
 trivializations of `V`. -/
-theorem ofContinuousLinearMapOn_mem_maximalAtlas :
+theorem ofContinuousLinearMapOn_mem_maximalAtlas [ContMDiffVectorBundle n F V IB] :
     (ofContinuousLinearMapOn hU L hL hbij).toOpenPartialHomeomorph ∈
       (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V) :=
   (isLocalFrameOn_invFrame hU L hL hbij).trivialization_mem_maximalAtlas hU (finBasis 𝕜 F)

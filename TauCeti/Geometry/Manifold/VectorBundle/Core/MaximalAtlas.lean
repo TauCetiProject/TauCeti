@@ -71,6 +71,13 @@ def ofMaximalAtlas : VectorBundleCore 𝕜 B F ι where
 theorem ofMaximalAtlas_localTriv_baseSet (i : ι) :
     ((ofMaximalAtlas e he idx hidx).localTriv i).baseSet = (e i).baseSet := by rfl
 
+/-- The `i`-th base set of `ofMaximalAtlas e he idx hidx` is `(e i).baseSet`. (Note that `simp`
+reduces `(ofMaximalAtlas ...).baseSet i` via `VectorBundleCore.baseSet_at` and
+`ofMaximalAtlas_localTriv_baseSet`.) -/
+theorem ofMaximalAtlas_baseSet (i : ι) :
+    (ofMaximalAtlas e he idx hidx).baseSet i = (e i).baseSet := by
+  rw [baseSet_at, ofMaximalAtlas_localTriv_baseSet]
+
 @[simp]
 theorem ofMaximalAtlas_indexAt (b : B) : (ofMaximalAtlas e he idx hidx).indexAt b = idx b := by rfl
 
@@ -147,7 +154,12 @@ private theorem contMDiff_ofMaximalAtlasTotalEquiv_symm :
 
 /-- **Cocycle-to-bundle `C^n` diffeomorphism.** The vector bundle glued from the transition cocycle
 `ofMaximalAtlas e he idx hidx` is `C^n`-diffeomorphic to `TotalSpace F E` via
-`ofMaximalAtlasFiberEquiv` on every fibre. -/
+`ofMaximalAtlasFiberEquiv` on every fibre.
+
+Unlike `TauCeti.bundleDiffeomorph` (which requires `[CompleteSpace 𝕜]` and
+`[FiniteDimensional 𝕜 F]` to invert operators in Banach charts), this diffeomorphism holds for
+arbitrary normed fibres `F` and nontrivially normed fields `𝕜` because each `e (idx b)` already
+belongs to the `C^n` maximal atlas. -/
 def ofMaximalAtlasDiffeomorph :
     (ofMaximalAtlas e he idx hidx).TotalSpace ≃ₘ^n⟮IB.prod 𝓘(𝕜, F), IB.prod 𝓘(𝕜, F)⟯
       TotalSpace F E where
@@ -159,13 +171,15 @@ def ofMaximalAtlasDiffeomorph :
 theorem ofMaximalAtlasDiffeomorph_apply (p : (ofMaximalAtlas e he idx hidx).TotalSpace) :
     ofMaximalAtlasDiffeomorph e he idx hidx p =
       ⟨p.proj, ofMaximalAtlasFiberEquiv e he idx hidx p.proj p.2⟩ := by
-  rw [ofMaximalAtlasDiffeomorph.eq_def]; rfl
+  rw [← Diffeomorph.coe_toEquiv, ofMaximalAtlasDiffeomorph.eq_def]
+  simp [ofMaximalAtlasTotalEquiv]
 
 @[simp]
 theorem ofMaximalAtlasDiffeomorph_symm_apply (q : TotalSpace F E) :
     (ofMaximalAtlasDiffeomorph e he idx hidx).symm q =
       ⟨q.proj, (ofMaximalAtlasFiberEquiv e he idx hidx q.proj).symm q.2⟩ := by
-  rw [ofMaximalAtlasDiffeomorph.eq_def]; rfl
+  rw [← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv, ofMaximalAtlasDiffeomorph.eq_def]
+  simp [ofMaximalAtlasTotalEquiv]
 
 /-- `ofMaximalAtlasDiffeomorph` intertwines every core chart `localTriv i` with the corresponding
 maximal-atlas trivialization `e i` over `(e i).baseSet`. -/

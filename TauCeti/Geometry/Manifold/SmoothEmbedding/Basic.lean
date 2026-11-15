@@ -48,6 +48,10 @@ the inputs of the tubular-neighbourhood and surgery constructions.
   `ContinuousLinearMap.isSmoothEmbedding_of_injective`: a continuous linear map with a continuous
   linear left inverse, for instance an injective one into a finite-dimensional space over a
   complete field, is a `C^n` embedding.
+* `Manifold.IsImmersion.tangentMap_injective_iff`,
+  `Manifold.IsSmoothEmbedding.tangentMap_injective`,
+  `TauCeti.SmoothEmbedding.tangentMap_injective`: injectivity of `tangentMap` for positive-order
+  immersions and smooth embeddings.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -74,6 +78,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   {n : ℕ∞ω}
 
+/-- For a `C^n` immersion (`n ≠ 0`), the induced map `tangentMap I J f` on tangent bundles is
+injective if and only if the base map `f` is injective. -/
+theorem Manifold.IsImmersion.tangentMap_injective_iff {f : M → N}
+    (hf : Manifold.IsImmersion I J n f) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J f) ↔ Function.Injective f := by
+  refine ⟨fun hinj x₁ x₂ hfx ↦ ?_, fun hinj ⟨x₁, v₁⟩ ⟨x₂, v₂⟩ hp ↦ ?_⟩
+  · have h0 : tangentMap I J f ⟨x₁, 0⟩ = tangentMap I J f ⟨x₂, 0⟩ := by
+      simp only [tangentMap, map_zero]; congr 1
+    exact congrArg Bundle.TotalSpace.proj (hinj h0)
+  · obtain rfl : x₁ = x₂ := hinj (congrArg Bundle.TotalSpace.proj hp)
+    simp only [tangentMap, Bundle.TotalSpace.mk_inj] at hp ⊢
+    exact hf.mfderiv_injective hn x₁ hp
+
 namespace Manifold.IsSmoothEmbedding
 
 /-- A map into a smoothly embedded manifold is smooth if and only if its composite with
@@ -83,6 +100,12 @@ theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
     ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
   rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
   exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+/-- A `C^n` smooth embedding (`n ≠ 0`) has injective `tangentMap`. -/
+theorem tangentMap_injective {f : M → N}
+    (hf : Manifold.IsSmoothEmbedding I J n f) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J f) :=
+  (hf.isImmersion.tangentMap_injective_iff hn).2 hf.isEmbedding.injective
 
 end Manifold.IsSmoothEmbedding
 
@@ -160,6 +183,11 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
+
+/-- A bundled `C^n` smooth embedding (`n ≠ 0`) has injective `tangentMap`. -/
+theorem tangentMap_injective (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J (f : M → N)) :=
+  f.isSmoothEmbedding.tangentMap_injective hn
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
 def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :

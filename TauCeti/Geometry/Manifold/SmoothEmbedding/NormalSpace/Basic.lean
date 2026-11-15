@@ -17,8 +17,11 @@ modulo the image of the differential of the embedding. This quotient is intrinsi
 metric or choice of complementary subspace. It is the fibrewise linear object from which a normal
 bundle, and eventually a tubular neighbourhood, must be constructed.
 
-The differential is injective for an immersion of positive smoothness. Consequently the normal
-space has the expected codimension in finite dimensions. The quotient map also characterizes
+The differential is injective for an immersion of positive smoothness and restricts to a continuous
+linear equivalence onto `TauCeti.SmoothEmbedding.tangentRange`
+(`TauCeti.SmoothEmbedding.tangentSpaceEquivTangentRange`). Consequently the normal space has the
+expected codimension in finite dimensions (`TauCeti.SmoothEmbedding.finrank_normalSpace`,
+`TauCeti.SmoothEmbedding.finrank_normalSpace_of_codim_one`). The quotient map also characterizes
 exactly which ambient tangent vectors represent zero normal vectors.
 
 The inclusion of an open subset is the extreme case: it is tangent to every ambient direction
@@ -57,6 +60,35 @@ theorem mem_tangentRange_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠
     (v : TangentSpace J (f x)) :
     v ∈ f.tangentRange x hn ↔ ∃ u : TangentSpace I x, mfderiv I J (f : M → N) x u = v :=
   Iff.rfl
+
+/-- At each point `x : M`, the differential `mfderiv I J f x` of a positive-regularity smooth
+embedding restricts to a continuous linear equivalence onto `f.tangentRange x hn`. Neither
+finite-dimensionality nor completeness of `𝕜` is required. -/
+noncomputable def tangentSpaceEquivTangentRange (f : SmoothEmbedding I J n M N) (x : M)
+    (hn : n ≠ 0) : TangentSpace I x ≃L[𝕜] f.tangentRange x hn :=
+  let heq := LinearEquiv.ofInjective (mfderiv I J (f : M → N) x).toLinearMap
+    (f.isImmersion.mfderiv_injective hn x)
+  ContinuousLinearEquiv.mk heq
+    ((mfderiv I J (f : M → N) x).continuous.subtype_mk _)
+    (by
+      obtain ⟨L, hL⟩ := isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x)
+      exact (L.continuous.comp continuous_subtype_val).congr fun ⟨_, u, rfl⟩ ↦
+        (hL u).trans (heq.symm_apply_apply u).symm)
+
+@[simp]
+theorem coe_tangentSpaceEquivTangentRange_apply (f : SmoothEmbedding I J n M N) (x : M)
+    (hn : n ≠ 0) (u : TangentSpace I x) :
+    (f.tangentSpaceEquivTangentRange x hn u : TangentSpace J (f x)) =
+      mfderiv I J (f : M → N) x u :=
+  LinearEquiv.ofInjective_apply (mfderiv I J (f : M → N) x).toLinearMap
+    (h := f.isImmersion.mfderiv_injective hn x) u
+
+@[simp]
+theorem tangentSpaceEquivTangentRange_symm_mfderiv (f : SmoothEmbedding I J n M N) (x : M)
+    (hn : n ≠ 0) (u : TangentSpace I x) :
+    (f.tangentSpaceEquivTangentRange x hn).symm
+      ⟨mfderiv I J (f : M → N) x u, ⟨u, rfl⟩⟩ = u :=
+  (f.tangentSpaceEquivTangentRange x hn).symm_apply_apply u
 
 /-- The normal space of a smooth embedding at `x`: ambient tangent vectors modulo vectors
 tangent to the embedded submanifold. -/
@@ -355,6 +387,29 @@ theorem finrank_normalSpace (f : SmoothEmbedding I J n M N) (x : M)
     Module.finrank 𝕜 (f.NormalSpace x hn) =
       Module.finrank 𝕜 (TangentSpace J (f x)) - Module.finrank 𝕜 (TangentSpace I x) := by
   have h := f.finrank_normalSpace_add_finrank x hn
+  omega
+
+/-- For a positive-regularity smooth embedding `f`, injectivity of `mfderiv I J f x` turns the
+codimension hypothesis `finrank P = finrank F - finrank E` into `finrank E + finrank P = finrank F`
+whenever `M` is inhabited by a point `x`. -/
+theorem finrank_add_eq_of_sub_eq {P : Type*} [AddCommGroup P] [Module 𝕜 P] [FiniteDimensional 𝕜 F]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 F - Module.finrank 𝕜 E) (x : M) :
+    Module.finrank 𝕜 E + Module.finrank 𝕜 P = Module.finrank 𝕜 F := by
+  have hle : Module.finrank 𝕜 E ≤ Module.finrank 𝕜 F :=
+    LinearMap.finrank_le_finrank_of_injective
+      (f.isImmersion.mfderiv_injective hn x :
+        Function.Injective ((mfderiv I J (f : M → N) x).toLinearMap))
+  omega
+
+/-- In codimension one (`finrank 𝕜 E + 1 = finrank 𝕜 F`), every normal fibre has `𝕜`-rank `1`. -/
+theorem finrank_normalSpace_of_codim_one [FiniteDimensional 𝕜 F]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    (hcodim : Module.finrank 𝕜 E + 1 = Module.finrank 𝕜 F) (x : M) :
+    Module.finrank 𝕜 (f.NormalSpace x hn) = 1 := by
+  have h := f.finrank_normalSpace x hn
+  have hF : Module.finrank 𝕜 (TangentSpace J (f x)) = Module.finrank 𝕜 F := rfl
+  have hE : Module.finrank 𝕜 (TangentSpace I x) = Module.finrank 𝕜 E := rfl
   omega
 
 /-- The inclusion of an open subset is tangent to every ambient direction: its tangent range is the
