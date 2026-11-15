@@ -44,11 +44,9 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 * `TauCeti.trace_map_eq_zero_of_mem_commutatorSubmodule`: the trace of a matrix representation
   vanishes on the commutator submodule.  A representation in which an element has nonzero trace
   therefore shows that its cyclic class is nonzero.
-* `TauCeti.cyclicQuotientRingHomMap` and `TauCeti.cyclicQuotientRingEquivCongr`: functoriality of
-  `cyclicQuotient ℤ` in ring homomorphisms and ring isomorphisms.
-* `TauCeti.cyclicQuotientEquivOfCommRing`: for a commutative ring `A`, `A / [A, A] ≃ₗ[k] A`.
-* `TauCeti.cyclicQuotientCentralSMul`: for an `A`-algebra `Λ` over a commutative ring `A`, left
-  multiplication by `algebraMap A Λ a` preserves `[Λ, Λ]` and descends to `cyclicQuotient ℤ Λ`.
+* `TauCeti.cyclicQuotientRingHomMap`: functoriality of `cyclicQuotient ℤ` in ring homomorphisms.
+* `TauCeti.cyclicQuotientEquivOfCommRing`: for a (possibly non-unital) commutative ring `B`,
+  `B / [B, B] ≃ₗ[k] B`.
 
 ## References
 
@@ -215,128 +213,42 @@ theorem cyclicQuotientRingHomMap_comp (ψ : S →+* T) (φ : R →+* S) :
   ext x
   rfl
 
-/-- The additive equivalence `R / [R, R] ≃ S / [S, S]` induced by a ring isomorphism. -/
-def cyclicQuotientRingEquivCongr (e : R ≃+* S) : cyclicQuotient ℤ R ≃ₗ[ℤ] cyclicQuotient ℤ S :=
-  LinearEquiv.ofLinearMap (cyclicQuotientRingHomMap e.toRingHom)
-    (cyclicQuotientRingHomMap e.symm.toRingHom)
-    (by rw [← cyclicQuotientRingHomMap_comp, e.toRingHom_comp_symm_toRingHom,
-          cyclicQuotientRingHomMap_id])
-    (by rw [← cyclicQuotientRingHomMap_comp, e.symm_toRingHom_comp_toRingHom,
-          cyclicQuotientRingHomMap_id])
-
-@[simp]
-theorem cyclicQuotientRingEquivCongr_mk (e : R ≃+* S) (x : R) :
-    cyclicQuotientRingEquivCongr e (Submodule.Quotient.mk x) = Submodule.Quotient.mk (e x) :=
-  (rfl)
-
-theorem cyclicQuotientRingEquivCongr_mkQ (e : R ≃+* S) (x : R) :
-    cyclicQuotientRingEquivCongr e ((commutatorSubmodule ℤ R).mkQ x) =
-      (commutatorSubmodule ℤ S).mkQ (e x) :=
-  (rfl)
-
-@[simp]
-theorem cyclicQuotientRingEquivCongr_symm (e : R ≃+* S) :
-    (cyclicQuotientRingEquivCongr e).symm = cyclicQuotientRingEquivCongr e.symm :=
-  (rfl)
-
 end RingHom
 
 section CommRing
 
-/-- In a commutative ring every additive commutator vanishes, so the commutator submodule is
-trivial. -/
+/-- In a (possibly non-unital) commutative ring every additive commutator vanishes, so the
+commutator submodule is trivial. -/
 @[simp]
-theorem commutatorSubmodule_eq_bot (k B : Type*) [Semiring k] [CommRing B] [Module k B] :
+theorem commutatorSubmodule_eq_bot (k B : Type*) [Semiring k] [NonUnitalCommRing B] [Module k B] :
     commutatorSubmodule k B = ⊥ := by
   rw [commutatorSubmodule, Submodule.span_eq_bot]
   rintro _ ⟨⟨x, y⟩, rfl⟩
   exact sub_eq_zero.2 (mul_comm x y)
 
-/-- For a commutative ring `B`, the cyclic quotient `B / [B, B]` is canonically isomorphic to
-`B`. -/
-def cyclicQuotientEquivOfCommRing (k B : Type*) [Ring k] [CommRing B] [Module k B] :
+/-- For a (possibly non-unital) commutative ring `B`, the cyclic quotient `B / [B, B]` is
+canonically isomorphic to `B`. -/
+def cyclicQuotientEquivOfCommRing (k B : Type*) [Ring k] [NonUnitalCommRing B] [Module k B] :
     cyclicQuotient k B ≃ₗ[k] B :=
   Submodule.quotEquivOfEqBot (commutatorSubmodule k B) (commutatorSubmodule_eq_bot k B)
 
 @[simp]
-theorem cyclicQuotientEquivOfCommRing_mk (k B : Type*) [Ring k] [CommRing B] [Module k B]
+theorem cyclicQuotientEquivOfCommRing_mk (k B : Type*) [Ring k] [NonUnitalCommRing B] [Module k B]
     (x : B) :
     cyclicQuotientEquivOfCommRing k B (Submodule.Quotient.mk x) = x :=
   (rfl)
 
-theorem cyclicQuotientEquivOfCommRing_mkQ (k B : Type*) [Ring k] [CommRing B] [Module k B]
+theorem cyclicQuotientEquivOfCommRing_mkQ (k B : Type*) [Ring k] [NonUnitalCommRing B] [Module k B]
     (x : B) :
     cyclicQuotientEquivOfCommRing k B ((commutatorSubmodule k B).mkQ x) = x :=
   (rfl)
 
 @[simp]
-theorem cyclicQuotientEquivOfCommRing_symm_apply (k B : Type*) [Ring k] [CommRing B] [Module k B]
-    (x : B) :
+theorem cyclicQuotientEquivOfCommRing_symm_apply (k B : Type*) [Ring k] [NonUnitalCommRing B]
+    [Module k B] (x : B) :
     (cyclicQuotientEquivOfCommRing k B).symm x = (commutatorSubmodule k B).mkQ x :=
   (rfl)
 
 end CommRing
-
-section CentralSMul
-
-variable (B Λ : Type*) [CommRing B] [Ring Λ] [Algebra B Λ]
-
-variable {B Λ} in
-/-- Left multiplication by a central scalar `algebraMap B Λ b` preserves `[Λ, Λ]`, since
-`b • (x * y - y * x) = (b • x) * y - y * (b • x)`. -/
-theorem algebraMap_mul_mem_commutatorSubmodule (b : B) {x : Λ}
-    (hx : x ∈ commutatorSubmodule ℤ Λ) :
-    algebraMap B Λ b * x ∈ commutatorSubmodule ℤ Λ := by
-  induction hx using Submodule.span_induction with
-  | mem z hz =>
-    obtain ⟨⟨u, v⟩, rfl⟩ := hz
-    have hcomm : algebraMap B Λ b * (u * v - v * u) =
-        (algebraMap B Λ b * u) * v - v * (algebraMap B Λ b * u) := by
-      rw [mul_sub, mul_assoc, ← mul_assoc v, ← Algebra.commutes b v, mul_assoc]
-    rw [hcomm]
-    exact mul_sub_mul_mem_commutatorSubmodule ℤ Λ _ _
-  | zero => simp
-  | add y z _ _ hy hz => rw [mul_add]; exact add_mem hy hz
-  | smul n y _ hy => rw [mul_smul_comm]; exact Submodule.smul_mem _ n hy
-
-/-- Central scalar multiplication `B →ₗ[ℤ] (Λ / [Λ, Λ]) →ₗ[ℤ] (Λ / [Λ, Λ])` induced by an algebra
-structure `Algebra B Λ` over a commutative ring `B`. Exposing this as a bilinear map rather than a
-`Module B` instance avoids a `Module ℤ` diamond at `B = ℤ`. -/
-def cyclicQuotientCentralSMul : B →ₗ[ℤ] cyclicQuotient ℤ Λ →ₗ[ℤ] cyclicQuotient ℤ Λ where
-  toFun b := Submodule.mapQ (commutatorSubmodule ℤ Λ) (commutatorSubmodule ℤ Λ)
-    (LinearMap.mulLeft ℤ (algebraMap B Λ b)) fun _ hx ↦ algebraMap_mul_mem_commutatorSubmodule b hx
-  map_add' b₁ b₂ := by
-    ext x
-    simp [LinearMap.comp_apply, add_mul]
-    rfl
-  map_smul' n b := by
-    ext x
-    simp only [RingHom.id_apply, LinearMap.comp_apply, LinearMap.smul_apply, map_zsmul]
-    exact congrArg Submodule.Quotient.mk (smul_mul_assoc n (algebraMap B Λ b) x)
-
-@[simp]
-theorem cyclicQuotientCentralSMul_mk (b : B) (x : Λ) :
-    cyclicQuotientCentralSMul B Λ b (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (algebraMap B Λ b * x) :=
-  (rfl)
-
-theorem cyclicQuotientCentralSMul_mkQ (b : B) (x : Λ) :
-    cyclicQuotientCentralSMul B Λ b ((commutatorSubmodule ℤ Λ).mkQ x) =
-      (commutatorSubmodule ℤ Λ).mkQ (algebraMap B Λ b * x) :=
-  (rfl)
-
-@[simp]
-theorem cyclicQuotientCentralSMul_one (c : cyclicQuotient ℤ Λ) :
-    cyclicQuotientCentralSMul B Λ 1 c = c := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  simp
-
-theorem cyclicQuotientCentralSMul_mul (a b : B) (c : cyclicQuotient ℤ Λ) :
-    cyclicQuotientCentralSMul B Λ (a * b) c =
-      cyclicQuotientCentralSMul B Λ a (cyclicQuotientCentralSMul B Λ b c) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  simp [mul_assoc]
-
-end CentralSMul
 
 end TauCeti

@@ -96,6 +96,16 @@ theorem basisCosets_apply (p : M →* N) (hp : Function.Injective p) (q : N ⧸ 
     basisCosets R p hp q = single q.out⁻¹ (1 : R) := by
   simp [basisCosets, Module.Basis.coe_ofRepr, cosetLinearEquiv, cosetAddEquiv_single]
 
+/-- In `basisCosets R p hp`, the identity coefficient of the `q`-th `R[M]`-coordinate of `x : R[N]`
+is `x.coeff q.out⁻¹`. -/
+@[simp]
+theorem coeff_one_basisCosets_repr (p : M →* N) (hp : Function.Injective p) (x : R[N])
+    (q : N ⧸ p.range) :
+    letI := (mapDomainRingHom R p).toModule
+    ((basisCosets R p hp).repr x q).coeff 1 = x.coeff q.out⁻¹ := by
+  simp [basisCosets, cosetLinearEquiv, cosetAddEquiv, Finsupp.curryAddEquiv, Finsupp.curryEquiv,
+    Subgroup.groupEquivQuotientProdSubgroup_symm_apply]
+
 end TauCeti.MonoidAlgebra
 
 namespace MonoidAlgebra
