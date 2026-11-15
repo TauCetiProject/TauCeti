@@ -591,6 +591,40 @@ theorem lintegral_rpow_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
         .of_forall fun y : E => by simpa only [ENNReal.ofReal_one, one_mul] using
           maximalFunction_le_eLpNormEssSup μ g y)
 
+/-- **The maximal inequality for `M_q f = (M (‖f‖ₑ ^ q)) ^ (1 / q)`.** For `0 < q < p < ∞`, the
+strong type `(p / q, p / q)` bound applied to `‖f‖ₑ ^ q` bounds `M_q` on `Lᵖ`:
+
+`‖M_q f‖_p ≤ C ^ (1 / p) ‖f‖_p`, where `C = TauCeti.maximalFunctionConst n (p / q)`.
+
+The hypothesis `q < p.toReal` excludes `p = ∞`. -/
+theorem eLpNorm_maximalFunction_rpow_rpow_inv_le [TopologicalSpace F] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {q : ℝ} {p : ℝ≥0∞}
+    (hq : 0 < q) (hqp : q < p.toReal) :
+    eLpNorm (fun x => maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹) p μ ≤
+      maximalFunctionConst (finrank ℝ E) (p.toReal / q) ^ (1 / p.toReal) * eLpNorm f p μ := by
+  have hp : 0 < p.toReal := hq.trans hqp
+  have hp₀ : p ≠ 0 := fun h => by simp [h] at hp
+  have hp_top : p ≠ ∞ := fun h => by simp [h] at hp
+  -- `f` itself need not be a.e. strongly measurable; if it is not, its `Lᵖ` seminorm is `∞`.
+  have hfle : (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ≤ eLpNorm f p μ := by
+    by_cases hfm : AEStronglyMeasurable f μ
+    · exact (eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hfm).ge
+    · simp [eLpNorm_of_not_aestronglyMeasurable hfm]
+  have hM := lintegral_rpow_maximalFunction_le μ (f := fun y => ‖f y‖ₑ ^ q) (hf.pow_const q)
+    ((one_lt_div hq).2 hqp)
+  simp only [eNorm_eq_self, ← ENNReal.rpow_mul, mul_div_cancel₀ p.toReal hq.ne'] at hM
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
+    ((measurable_maximalFunction μ _).pow_const _).aestronglyMeasurable]
+  simp only [eNorm_eq_self, ← ENNReal.rpow_mul, inv_mul_eq_div]
+  calc (∫⁻ x, maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ (p.toReal / q) ∂μ) ^ (1 / p.toReal)
+      ≤ (maximalFunctionConst (finrank ℝ E) (p.toReal / q) * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^
+          (1 / p.toReal) :=
+        ENNReal.rpow_le_rpow hM (by positivity)
+    _ = maximalFunctionConst (finrank ℝ E) (p.toReal / q) ^ (1 / p.toReal) *
+          (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
+    _ ≤ _ := by gcongr
+
 /-- **The Hardy–Littlewood maximal inequality**, the strong-type `(p, p)` bound for `1 < p < ∞`,
 in terms of representative-level `Lᵖ` seminorms.
 
@@ -603,56 +637,10 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
     {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     eLpNorm (maximalFunction μ f) p μ ≤
       maximalFunctionConst (finrank ℝ E) p.toReal ^ (1 / p.toReal) * eLpNorm f p μ := by
-  have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  -- `f` itself need not be a.e. strongly measurable; if it is not, its `Lᵖ` seminorm is `∞`.
-  have hfle : (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ≤ eLpNorm f p μ := by
-    by_cases hfm : AEStronglyMeasurable f μ
-    · exact (eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hfm).ge
-    · simp [eLpNorm_of_not_aestronglyMeasurable hfm]
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
-    (measurable_maximalFunction μ f).aestronglyMeasurable]
-  calc (∫⁻ x, ‖maximalFunction μ f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
-      ≤ (maximalFunctionConst (finrank ℝ E) p.toReal * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^
-          (1 / p.toReal) := by
-        refine ENNReal.rpow_le_rpow ?_ (by positivity)
-        simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ hf hpr
-    _ = maximalFunctionConst (finrank ℝ E) p.toReal ^ (1 / p.toReal) *
-          (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
-        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
-    _ ≤ _ := by gcongr
-
-/-- **The maximal inequality for `M_q f = (M (‖f‖ₑ ^ q)) ^ (1 / q)`.** For `0 < q < p < ∞`, the
-strong type `(p / q, p / q)` bound applied to `‖f‖ₑ ^ q` bounds `M_q` on `Lᵖ`:
-
-`‖M_q f‖_p ≤ C ^ (1 / p) ‖f‖_p`, where `C = TauCeti.maximalFunctionConst n (p / q)`. -/
-theorem eLpNorm_maximalFunction_rpow_rpow_inv_le [TopologicalSpace F] (μ : Measure E)
-    [μ.IsAddHaarMeasure] {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {q p : ℝ}
-    (hq : 0 < q) (hqp : q < p) :
-    eLpNorm (fun x => maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹) (ENNReal.ofReal p) μ ≤
-      maximalFunctionConst (finrank ℝ E) (p / q) ^ (1 / p) * eLpNorm f (ENNReal.ofReal p) μ := by
-  have hp : 0 < p := hq.trans hqp
-  have hp0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp).ne'
-  have hpR : (ENNReal.ofReal p).toReal = p := ENNReal.toReal_ofReal hp.le
-  -- `f` itself need not be a.e. strongly measurable; if it is not, its `Lᵖ` seminorm is `∞`.
-  have hfle : (∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ (1 / p) ≤ eLpNorm f (ENNReal.ofReal p) μ := by
-    by_cases hfm : AEStronglyMeasurable f μ
-    · rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 ENNReal.ofReal_ne_top hfm, hpR]
-    · simp [eLpNorm_of_not_aestronglyMeasurable hfm]
-  have hM := lintegral_rpow_maximalFunction_le μ (f := fun y => ‖f y‖ₑ ^ q) (hf.pow_const q)
-    ((one_lt_div hq).2 hqp)
-  simp only [eNorm_eq_self, ← ENNReal.rpow_mul, mul_div_cancel₀ p hq.ne'] at hM
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 ENNReal.ofReal_ne_top
-    ((measurable_maximalFunction μ _).pow_const _).aestronglyMeasurable, hpR]
-  simp only [eNorm_eq_self, ← ENNReal.rpow_mul, inv_mul_eq_div]
-  calc (∫⁻ x, maximalFunction μ (fun y => ‖f y‖ₑ ^ q) x ^ (p / q) ∂μ) ^ (1 / p)
-      ≤ (maximalFunctionConst (finrank ℝ E) (p / q) * ∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ (1 / p) :=
-        ENNReal.rpow_le_rpow hM (by positivity)
-    _ = maximalFunctionConst (finrank ℝ E) (p / q) ^ (1 / p) *
-          (∫⁻ x, ‖f x‖ₑ ^ p ∂μ) ^ (1 / p) :=
-        ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
-    _ ≤ _ := by gcongr
+  simpa only [ENNReal.rpow_one, inv_one, div_one, maximalFunction_enorm] using
+    eLpNorm_maximalFunction_rpow_rpow_inv_le μ hf one_pos hpr
 
 /- The integration step below follows the corresponding helper of
 https://github.com/TauCetiProject/TauCeti/pull/33788. -/
