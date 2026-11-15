@@ -76,11 +76,9 @@ def sphereRotationPlane (p : sphere (0 : E) 1) (v : sphere (0 : (ℝ ∙ (p : E)
     have hpv : ⟪(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
       Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2
     refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-    change ‖w.re • (p : E) + w.im • ((v : (ℝ ∙ (p : E))ᗮ) : E)‖ ^ 2 = ‖w‖ ^ 2
-    rw [norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left, real_inner_smul_right, hpv,
-      hp, hv, Complex.sq_norm, Complex.normSq_apply, Real.norm_eq_abs, Real.norm_eq_abs]
-    ring_nf
-    rw [sq_abs, sq_abs]
+    simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, hpv, hp, hv,
+      Complex.sq_norm, Complex.normSq_apply]
+    ring
 
 @[simp]
 theorem sphereRotationPlane_apply (p : sphere (0 : E) 1) (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1)
@@ -119,8 +117,9 @@ theorem continuous_sphereRotationIsometry (p : sphere (0 : E) 1) :
       ((sphereRotationIsometry p x).toContinuousLinearEquiv : E →L[ℝ] E) := by
   refine Continuous.planeRotation ?_ (Circle.homeomorphSphere.symm.continuous.comp continuous_snd)
   have h (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) : (sphereRotationPlane p v).toContinuousLinearMap =
-      Complex.reCLM.smulRight (p : E) + Complex.imCLM.smulRight ((v : (ℝ ∙ (p : E))ᗮ) : E) :=
-    (rfl)
+      Complex.reCLM.smulRight (p : E) + Complex.imCLM.smulRight ((v : (ℝ ∙ (p : E))ᗮ) : E) := by
+    ext
+    simp
   simp only [h]
   fun_prop
 
