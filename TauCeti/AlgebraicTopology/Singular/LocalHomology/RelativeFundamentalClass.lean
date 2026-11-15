@@ -40,8 +40,7 @@ set `ι⁻¹(Kₜ)`. Every interior point lies in `Kₜ` for `t` small enough, a
 compatible as `t` decreases.
 
 The same comparison holds for any coefficients
-(`TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`), and it shows that
-`Hₖ(X, ∂X)` vanishes for `k > n` (`TauCeti.IsCollar.isZero_localHomology_range`).
+(`TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`).
 
 The relative cycles representing this class are the fundamental chains of `X` relative to its
 boundary. Through the cubical–singular comparison,
@@ -65,7 +64,6 @@ the connecting morphism.
 * `TauCeti.HomologicalOrientation.fundamentalClassRel_neg`: reversing the orientation negates it.
 * `TauCeti.IsCollar.isIso_localHomologyRestriction_compl_collarPart`: the restriction
   `Hₖ(X, ∂X) ⟶ Hₖ(X, Cₜ)` is an isomorphism, for any coefficients.
-* `TauCeti.IsCollar.isZero_localHomology_range`: `Hₖ(X, ∂X) = 0` for `k > n`.
 
 ## References
 
@@ -127,6 +125,8 @@ theorem IsCollar.isIso_localHomologyRestriction_compl_collarPart {t : ℝ} (ht :
 
 end Collar
 
+namespace HomologicalOrientation
+
 variable [TopologicalSpace M]
 
 section CollarInterior
@@ -140,27 +140,7 @@ private lemma isCompact_preimage_compl_collarPart [CompactSpace X] {t : ℝ} (ht
   hι.isInducing.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
     (hc.compl_collarPart_subset_range hιf ht)
 
-/-- **The relative homology vanishes above the dimension of the interior.** Let `ι : M → X` be an
-open embedding of a Hausdorff space modelled on a real normed space of dimension `n` into a compact
-space, whose complement `∂X` is collared. Then `Hₖ(X, ∂X) = 0` for `k > n`, written as
-the local homology `Hₖ(X, X ∖ ι(M))`. By the collar comparison and excision along `ι`, it is the
-local homology of `M` along the compact set `ι⁻¹(Kₜ)`, which vanishes above the dimension. -/
-theorem IsCollar.isZero_localHomology_range [CompactSpace X] [T2Space M] {E : Type}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
-    {Λ : Type} [Ring Λ] (R : ModuleCat.{0} Λ) {n : ℕ} (hn : finrank ℝ E = n) {k : ℕ}
-    (hk : n < k) : IsZero (localHomology R (range ι) k) := by
-  have ht : (0 : ℝ) < 1 := one_pos
-  have := hc.isIso_localHomologyRestriction_compl_collarPart R hιf ht k
-  have := isIso_localHomologyMap R ⟨ι, hι.continuous⟩ hι rfl
-    (hc.isOpen_collarPart 1).isClosed_compl (hc.compl_collarPart_subset_range hιf ht) k
-  exact (isZero_localHomology_of_isCompact R hn
-    (isCompact_preimage_compl_collarPart hι hc hιf ht) hk).of_iso
-    (asIso (localHomologyRestriction R _ k) ≪≫
-      (asIso (localHomologyMap R ⟨ι, hι.continuous⟩ (subset_refl _) k)).symm)
-
 end CollarInterior
-
-namespace HomologicalOrientation
 
 variable [T2Space X] [CompactSpace X] [T2Space M] {E : Type} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
