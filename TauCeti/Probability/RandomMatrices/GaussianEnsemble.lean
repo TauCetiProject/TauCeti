@@ -26,6 +26,11 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 ## Main results
 
 * `TauCeti.Probability.isHermitian_gaussianEnsemble`: the matrix is Hermitian.
+* `TauCeti.Probability.gaussianEnsemble_add` and `TauCeti.Probability.gaussianEnsemble_smul`: the
+  matrix is real-linear in the array.
+* `TauCeti.Probability.continuous_gaussianEnsemble`: it depends continuously on the array.
+* `TauCeti.Probability.hasLaw_gaussianEnsemble`: with independent `N(0, v)` coordinates the
+  ensemble has the law of `√v` times the ensemble of standard Gaussian coordinates.
 * `TauCeti.Probability.gaussianEnsemble_one_zero_zero_hasLaw` and
   `TauCeti.Probability.gaussianEnsemble_two_zero_zero_hasLaw`: the laws of the `1 × 1` ensembles,
   `N(0, 2)` and `N(0, 1)`.
@@ -151,6 +156,76 @@ theorem gaussianEnsemble_apply_of_gt_of_ne_one (hβ : β ≠ 1) {i j : Fin n} (h
   simp [gaussianEnsemble_apply, hβ, h.not_gt, h.ne']
 
 end Entries
+
+section Linear
+
+variable {β n : ℕ}
+
+/-- The Gaussian ensemble is additive in the array. -/
+@[simp]
+theorem gaussianEnsemble_add (g h : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (g + h) = gaussianEnsemble β n g + gaussianEnsemble β n h := by
+  ext i j
+  simp only [gaussianEnsemble_apply, Pi.add_apply, Matrix.add_apply]
+  split_ifs <;> push_cast <;> ring
+
+/-- The Gaussian ensemble is homogeneous in the array for real scalars. -/
+@[simp]
+theorem gaussianEnsemble_smul (c : ℝ) (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (c • g) = c • gaussianEnsemble β n g := by
+  ext i j
+  simp only [gaussianEnsemble_apply, Pi.smul_apply, smul_eq_mul, Matrix.smul_apply,
+    Complex.real_smul]
+  split_ifs <;> push_cast <;> ring
+
+/-- The Gaussian ensemble of the zero array is zero. -/
+@[simp]
+theorem gaussianEnsemble_zero : gaussianEnsemble β n 0 = 0 := by
+  simpa using gaussianEnsemble_smul (β := β) 0 (0 : Fin n × Fin n → ℝ)
+
+/-- The Gaussian ensemble is subtractive in the array. -/
+@[simp]
+theorem gaussianEnsemble_sub (g h : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (g - h) = gaussianEnsemble β n g - gaussianEnsemble β n h := by
+  ext i j
+  simp only [gaussianEnsemble_apply, Pi.sub_apply, Matrix.sub_apply]
+  split_ifs <;> push_cast <;> ring
+
+/-- The Gaussian ensemble depends continuously on the array. -/
+@[fun_prop]
+theorem continuous_gaussianEnsemble : Continuous (gaussianEnsemble β n) := by
+  refine continuous_matrix fun i j ↦ ?_
+  simp only [gaussianEnsemble_apply]
+  split_ifs <;> fun_prop
+
+/-- The Gaussian ensemble is a measurable function of the array. -/
+@[fun_prop]
+theorem measurable_gaussianEnsemble : Measurable (gaussianEnsemble β n) :=
+  continuous_gaussianEnsemble.measurable
+
+end Linear
+
+/-- **The law of a Gaussian ensemble with independent `N(0, v)` coordinates.** If the coordinates
+`g (i, j)` are independent with law `N(0, v)`, the ensemble has the law of `√v` times the ensemble
+of independent standard Gaussian coordinates: `√v` times the GOE (`β = 1`) or GUE (`β = 2`). -/
+theorem hasLaw_gaussianEnsemble {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    (β : ℕ) {n : ℕ} {g : Fin n × Fin n → Ω → ℝ} {v : NNReal}
+    (hg : ∀ ij, HasLaw (g ij) (gaussianReal 0 v) P) (hindep : iIndepFun g P) :
+    HasLaw (fun ω ↦ gaussianEnsemble β n (fun ij ↦ g ij ω))
+      ((Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map
+        fun x ↦ Real.sqrt v • gaussianEnsemble β n x) P := by
+  have hv : gaussianReal 0 v = (gaussianReal 0 1).map (Real.sqrt v * ·) := by
+    rw [gaussianReal_map_const_mul, mul_zero, mul_one]
+    congr
+    exact NNReal.eq (Real.sq_sqrt v.2).symm
+  have hpi : Measure.pi (fun _ : Fin n × Fin n ↦ gaussianReal 0 v) =
+      (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (Real.sqrt v • ·) := by
+    rw [hv, ← Measure.pi_map_pi fun _ ↦ by fun_prop]
+    -- scalar multiplication on arrays is coordinatewise multiplication
+    rfl
+  have hlaw := (⟨by fun_prop, rfl⟩ : HasLaw (gaussianEnsemble β n) _ _).comp (hindep.hasLaw_pi hg)
+  rw [hpi, Measure.map_map (by fun_prop) (by fun_prop)] at hlaw
+  simpa [Function.comp_def, gaussianEnsemble_smul] using hlaw
 
 /-- A sampled Gaussian ensemble is the corresponding Wigner matrix with its entry functions. -/
 private theorem gaussianEnsemble_eq_wignerMatrix {Ω : Type*} (β n : ℕ)
