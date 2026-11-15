@@ -115,6 +115,11 @@ theorem _root_.Continuous.sphereMeridian {Y : Type*} [TopologicalSpace Y]
   simp only [Function.comp_def, coe_sphereMeridian]
   fun_prop
 
+/-- The meridians form a continuous family of paths from `p` to `-p`. -/
+@[fun_prop]
+theorem continuous_sphereMeridian : Continuous (sphereMeridian p) :=
+  Path.continuous_uncurry_iff.mp (continuous_fst.sphereMeridian p continuous_snd)
+
 /-- The loop `γ_w · γ_u⁻¹` at `p` for a pair `x = (u, w)` of unit vectors orthogonal to `p`: along
 the meridian in the direction `w` to `-p`, and back along the meridian in the direction `u`. -/
 def meridianLoop (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :

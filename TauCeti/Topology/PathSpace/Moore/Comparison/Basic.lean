@@ -336,6 +336,18 @@ theorem _root_.Path.continuous_toMoorePath :
     Continuous (Path.toMoorePath : Path x y → MoorePath X) :=
   MoorePath.continuous_ofUnitPath.comp continuous_induced_dom
 
+/-- The Moore path of a reversed path is the reversed Moore path. -/
+@[simp]
+theorem _root_.Path.toMoorePath_symm (p : Path x y) :
+    p.symm.toMoorePath = p.toMoorePath.symm := by
+  refine MoorePath.ext (by simp) fun t ↦ ?_
+  rw [MoorePath.symm_apply, Path.toMoorePath_apply, Path.toMoorePath_apply, Path.extend_symm_apply,
+    Path.length_toMoorePath]
+  rcases le_total t 1 with ht | ht
+  · rw [NNReal.coe_sub ht, NNReal.coe_one]
+  · rw [tsub_eq_zero_of_le ht, NNReal.coe_zero, Path.extend_zero,
+      Path.extend_of_le_zero _ (sub_nonpos.2 (by exact_mod_cast ht))]
+
 namespace MoorePath
 
 /-- A Moore path, as a path on the unit interval between its end points. -/
