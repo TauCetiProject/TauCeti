@@ -50,10 +50,14 @@ namespace TauCeti
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ}
+
+section Local
+
+variable [IsManifold I 2 M]
 
 /-- For a `C¹` metric, the gradient of a Morse function is differentiable, and each of its zeros
 is a nondegenerate critical point. -/
@@ -78,13 +82,15 @@ theorem IsMorse.det_vectorFieldChartDerivative_mgradient_ne_zero (hf : IsMorse I
   exact (det_vectorFieldChartDerivative_mgradient_ne_zero_iff hgrad h.contMDiffAt
     (Manifold.mgradient_eq_zero_iff.mp hx)).mpr h
 
+end Local
+
 /-- **The Poincaré–Hopf theorem for gradients of Morse functions.** On a compact boundaryless
 manifold with a `C¹` metric, the sum over the zeros of the gradient of a Morse function of their
 indices, the signs of the determinants of the chart derivatives, is the Euler characteristic
 `∑ᵢ (-1)ⁱ dim Hᵢ(M; k)` of singular homology with coefficients in any division ring `k`. The
 sum is finite because a Morse function has finitely many critical points. -/
-theorem IsMorse.finsum_sign_det_vectorFieldChartDerivative_mgradient [T2Space M] [CompactSpace M]
-    (hf : IsMorse I f) (k : Type u) [DivisionRing k] :
+theorem IsMorse.finsum_sign_det_vectorFieldChartDerivative_mgradient [IsManifold I ∞ M] [T2Space M]
+    [CompactSpace M] (hf : IsMorse I f) (k : Type u) [DivisionRing k] :
     ∑ᶠ x : {x // Manifold.mgradient I f x = 0},
         (SignType.sign (LinearMap.det (vectorFieldChartDerivative I (Manifold.mgradient I f) x)) :
           ℤ) =

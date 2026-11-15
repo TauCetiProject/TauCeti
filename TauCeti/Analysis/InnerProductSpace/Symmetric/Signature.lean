@@ -142,19 +142,12 @@ theorem sign_det_eq_neg_one_pow_sigNeg (hT : T.IsSymmetric) (hker : LinearMap.ke
     (hQ : ∀ x, Q x = ⟪T x, x⟫_ℝ) :
     SignType.sign (LinearMap.det T) = (-1) ^ sigNeg Q := by
   classical
-  -- An eigenvalue `0` would put its eigenvector in the kernel.
-  have hμ (i : Fin (Module.finrank ℝ E)) : hT.eigenvalues rfl i ≠ 0 := by
-    intro h0
-    have hv : hT.eigenvectorBasis rfl i ∈ LinearMap.ker T := by
-      simp [LinearMap.mem_ker, hT.apply_eigenvectorBasis, h0]
-    rw [hker, Submodule.mem_bot] at hv
-    exact (hT.eigenvectorBasis rfl).orthonormal.ne_zero i hv
   rw [hT.det_eq_prod_eigenvalues rfl, hT.sigNeg_eq_ncard_eigenvalues_neg rfl hQ,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
   simp only [RCLike.ofReal_real_eq_id, id_eq]
   rw [← signHom_apply, map_prod, Finset.card_filter, ← Finset.prod_pow_eq_pow_sum]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rcases (hμ i).lt_or_gt with h | h
+  rcases (hT.eigenvalues_ne_zero_of_ker_eq_bot rfl hker i).lt_or_gt with h | h
   · simp [h, sign_neg h]
   · simp [h.not_gt, sign_pos h]
 

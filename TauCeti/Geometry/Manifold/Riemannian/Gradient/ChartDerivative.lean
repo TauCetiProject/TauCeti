@@ -9,10 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Derivative
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Manifold.VectorField.Chart.Riemannian
 
 /-!
 # The chart derivative of a gradient at a critical point
@@ -22,29 +19,24 @@ let `x` be a critical point of `f` at which `f` is `C²` and its gradient is dif
 holds for a `C²` function and a `C¹` metric (`TauCeti.Manifold.contMDiffAt_mgradient`). The
 gradient `grad f` vanishes at `x`, so its chart derivative
 `D = TauCeti.vectorFieldChartDerivative I (grad f) x` is the derivative of a vector field at a
-zero, whose determinant sign is the local index of the zero in the Poincaré–Hopf theorem. This
-file identifies `D` with the critical Hessian raised by the metric at `x`:
+zero. When `D` is invertible, the zero is nondegenerate and the sign of the determinant of `D` is
+its local index in the Poincaré–Hopf theorem; at a degenerate zero the determinant vanishes and
+does not determine the index (for `f t = t ^ 4` on `ℝ`, `D = 0` at `0` while the index is `1`).
+This file identifies `D` with the critical Hessian raised by the metric at `x`:
 `g_x (w, D v) = Hess f x (v, w)` (`TauCeti.inner_vectorFieldChartDerivative_mgradient`).
 Consequently `D` is `g_x`-symmetric (`TauCeti.inner_vectorFieldChartDerivative_mgradient_comm`),
 it is invertible exactly at a nondegenerate critical point, and there the sign of its determinant
 is `(-1)` to the Morse index of `f` at `x`
-(`TauCeti.sign_det_vectorFieldChartDerivative_mgradient`). In particular the index of the zero
-of a gradient field does not depend on the metric.
+(`TauCeti.sign_det_vectorFieldChartDerivative_mgradient`). In particular, at a nondegenerate
+critical point the index of the zero of the gradient field does not depend on the metric.
 
-The identification rests on a product rule at a zero
-(`MDifferentiableAt.mvfderiv_inner_bundle_apply_of_eq_zero`): if a vector field `σ` is
-differentiable at `x` and vanishes there, and `τ` is continuous at `x`, then `y ↦ g_y (σ y, τ y)`
-is differentiable at `x` with derivative `v ↦ g_x (τ x, D v)`, where `D` is the chart derivative
-of `σ`. Since `σ x = 0`, the variation of the metric and of `τ` does not contribute, so only the
-continuity of the metric and of `τ` is needed. Applied to `σ = grad f` and a field `τ` with
-`τ x = w`, the function `g(grad f, τ) = df(τ)` has derivative `Hess f x (·, w)` at the critical
-point `x`.
+The identification rests on the product rule at a zero
+`MDifferentiableAt.mvfderiv_inner_bundle_apply_of_eq_zero`: applied to `σ = grad f` and a field
+`τ` with `τ x = w`, the function `g(grad f, τ) = df(τ)` has derivative `g_x (w, D ·)`, while by
+definition of the critical Hessian it has derivative `Hess f x (·, w)` at the critical point `x`.
 
 ## Main results
 
-* `MDifferentiableAt.inner_bundle_of_eq_zero`,
-  `MDifferentiableAt.mvfderiv_inner_bundle_apply_of_eq_zero`: the derivative of the metric
-  pairing of a vector field with another at a zero of the first.
 * `TauCeti.inner_vectorFieldChartDerivative_mgradient`: at a critical point, the chart derivative
   of the gradient is the critical Hessian raised by the metric.
 * `TauCeti.inner_vectorFieldChartDerivative_mgradient_comm`: it is symmetric for the metric.
@@ -74,101 +66,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-section ProductRule
-
-variable {σ τ : (x : M) → TangentSpace I x} {x : M}
-
-/-- In the chart at a zero `x` of `σ`, the metric pairing of `σ` with a field `τ` continuous at
-`x` has a derivative which evaluates to `g_x (τ x, D v)`, where `D` is the chart derivative of
-`σ`. In the chart, the pairing is `z ↦ c z (U z)` for the coordinate field `U` of `σ` and the
-continuous family `c z = g (τ, ·)` read through the inverse trivialization; at a zero of `U` only
-the continuity of `c` matters. -/
-private theorem exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero
-    (hσ : MDifferentiableAt I I.tangent (fun y ↦ (σ y : TangentBundle I M)) x) (hσ₀ : σ x = 0)
-    (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) :
-    ∃ L : E →L[ℝ] ℝ, HasFDerivAt ((fun y ↦ inner ℝ (σ y) (τ y)) ∘ (extChartAt I x).symm) L
-      (extChartAt I x x) ∧
-        ∀ v, L v = inner ℝ (τ x) (vectorFieldChartDerivative I σ x v : TangentSpace I x) := by
-  set φ := extChartAt I x
-  set e := trivializationAt E (TangentSpace I) x
-  let U : E → E := mpullback 𝓘(ℝ, E) I φ.symm σ
-  -- The coordinate field of `σ` is differentiable at the chart point, where it vanishes.
-  have hU : DifferentiableAt ℝ U (φ x) := by
-    have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-      (s := univ) hσ.mdifferentiableWithinAt
-    rw [I.range_eq_univ, mpullbackWithin_univ, preimage_univ, inter_univ] at h
-    exact h.differentiableAt univ_mem
-  have hU₀ : U (φ x) = 0 := by
-    simp only [U, φ, mpullback_extChartAt_symm_apply_eq_mfderiv σ (mem_extChartAt_source x), hσ₀,
-      map_zero]
-    -- The zero of the tangent space at the chart point is the zero of `E`.
-    rfl
-  -- The pairing with `τ`, read through the inverse trivialization, is continuous at the chart
-  -- point: against each fixed `u` it pairs `τ` with the field of constant coordinates `u`.
-  let c : E → E →L[ℝ] ℝ := fun z ↦ (innerSL ℝ (τ (φ.symm z))) ∘L e.symmL ℝ (φ.symm z)
-  have hc : ContinuousAt c (φ x) := by
-    rw [continuousAt_clm_apply]
-    intro u
-    let X := FiberBundle.extend E (e.symm x u)
-    have hX : ∀ p, X p = e.symm p u := fun p ↦ by
-      simp only [X, FiberBundle.extend, e]
-      rw [Trivialization.apply_mk_symm _ (FiberBundle.mem_baseSet_trivializationAt' x)]
-    have hXc : ContinuousAt (fun p ↦ (X p : TangentBundle I M)) x :=
-      (FiberBundle.contMDiffAt_extend (k := 0) I E (e.symm x u)).continuousAt
-    have h := (ContinuousAt.inner_bundle hτ hXc).comp_of_eq
-      (continuousAt_extChartAt_symm (I := I) x) (extChartAt_to_inv x)
-    refine h.congr ?_
-    filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-    rw [Function.comp_apply, hX, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-      Trivialization.symmL_apply _ (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz)]
-  refine ⟨c (φ x) ∘L fderiv ℝ U (φ x), ?_, fun v ↦ ?_⟩
-  · have h₁ := (HasFDerivWithinAt.clm_apply_of_eq_zero hc.continuousWithinAt
-      hU.hasFDerivAt.hasFDerivWithinAt hU₀).hasFDerivAt univ_mem
-    refine h₁.congr_of_eventuallyEq ?_
-    filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-    obtain ⟨y, hy, rfl⟩ : ∃ y ∈ φ.source, φ y = z := ⟨_, φ.map_target hz, φ.right_inv hz⟩
-    have hb : y ∈ e.baseSet := by
-      simpa only [e, TangentBundle.trivializationAt_baseSet, φ, extChartAt_source] using hy
-    -- In the chart, `σ` is recovered from its coordinate field by the inverse trivialization.
-    have hσy : e.symmL ℝ y (U (φ y)) = σ y := by
-      have h₁ : U (φ y) = e.continuousLinearMapAt ℝ y (σ y) :=
-        (mpullback_extChartAt_symm_apply_eq_mfderiv σ hy).trans (DFunLike.congr_fun
-          (TangentBundle.continuousLinearMapAt_trivializationAt (by simpa [φ] using hy))
-            (σ y)).symm
-      rw [h₁, Trivialization.symmL_continuousLinearMapAt _ hb]
-    simp only [Function.comp_apply, c]
-    rw [φ.left_inv hy, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hσy, real_inner_comm]
-  · have hxx : φ.symm (φ x) = x := extChartAt_to_inv x
-    simp only [ContinuousLinearMap.comp_apply, c, innerSL_apply_apply]
-    rw [hxx, Manifold.symmL_trivializationAt_self, vectorFieldChartDerivative_def]
-    -- The chart derivative is the derivative of the coordinate field `U` at the chart point.
-    rfl
-
-/-- **The metric pairing at a zero is differentiable.** If a vector field `σ` is differentiable at
-a zero `x` and `τ` is continuous at `x`, then for a continuous metric the pairing
-`y ↦ g_y (σ y, τ y)` is differentiable at `x`. -/
-theorem _root_.MDifferentiableAt.inner_bundle_of_eq_zero
-    (hσ : MDifferentiableAt I I.tangent (fun y ↦ (σ y : TangentBundle I M)) x) (hσ₀ : σ x = 0)
-    (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) x := by
-  obtain ⟨L, hL, -⟩ := exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero hσ hσ₀ hτ
-  exact mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mpr hL.differentiableAt
-
-/-- **The product rule at a zero.** If a vector field `σ` is differentiable at a zero `x` and `τ`
-is continuous at `x`, then for a continuous metric the derivative at `x` of the pairing
-`y ↦ g_y (σ y, τ y)` in the direction `v` is `g_x (τ x, D v)`, where `D` is the chart derivative
-of `σ` at `x`. Neither the metric nor `τ` needs to be differentiable. -/
-theorem _root_.MDifferentiableAt.mvfderiv_inner_bundle_apply_of_eq_zero
-    (hσ : MDifferentiableAt I I.tangent (fun y ↦ (σ y : TangentBundle I M)) x) (hσ₀ : σ x = 0)
-    (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) (v : TangentSpace I x) :
-    mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x v =
-      inner ℝ (τ x) (vectorFieldChartDerivative I σ x v : TangentSpace I x) := by
-  obtain ⟨L, hL, hLv⟩ := exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero hσ hσ₀ hτ
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, hL.fderiv]
-  exact hLv v
-
-end ProductRule
 
 section Gradient
 
