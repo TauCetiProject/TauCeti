@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 import TauCeti.Algebra.Group.Subgroup.OrderedProduct
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.SimplyLaced
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.NotG2
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.G2
 
@@ -22,8 +19,8 @@ This works on the admissible lattice over every commutative value ring. It is th
 part of positive-root coordinates, not their uniqueness or a point-generation theorem for the
 whole Chevalley group.
 
-The simply laced commutator formula and the native collection bounds outside G₂ put
-commutators in root groups of strictly greater height. In G₂ the existing positive-root table
+The native collection bounds outside G₂ put commutators in root groups of strictly greater
+height. In G₂ the existing positive-root table
 indices supply the grading instead. The formal inputs are
 `DynkinType.commutator_range_chevalleyRootSubgroup_le` and
 `DynkinType.commutator_range_chevalleyRootSubgroup_g2_le`.
@@ -49,63 +46,6 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 attribute [local instance high] Algebra.toModule
 
-private theorem commutator_range_root_le_iSup_height (hs : t.IsSimplyLaced)
-    (A : CommAlgCat.{v} ℤ) (i j : Fin t.numRoots)
-    (hi : i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (hj : j ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
-    ⁅(chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-        D.isNilpotent_representation_rootGenerator i A).range,
-      (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-        D.isNilpotent_representation_rootGenerator j A).range⁆ ≤
-      ⨆ k ∈ {k ∈ posRootsFinset (t.rationalRootSystem ht) (t.rationalBase ht) |
-        max ((t.rationalBase ht).height i) ((t.rationalBase ht).height j) <
-          (t.rationalBase ht).height k},
-        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator k A).range := by
-  classical
-  let X := fun γ => chevalleyRootSubgroup D.representation D.lattice
-    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ A
-  apply Subgroup.commutator_le.mpr
-  rintro _ ⟨u, rfl⟩ _ ⟨v, rfl⟩
-  by_cases hadd : (t.simplyConnectedRootDatum ht).root i +
-      (t.simplyConnectedRootDatum ht).root j ∈ Set.range (t.simplyConnectedRootDatum ht).root
-  · obtain ⟨k, hk⟩ := hadd
-    have hheight : (t.rationalBase ht).height k =
-        (t.rationalBase ht).height i + (t.rationalBase ht).height j := by
-      have h := congrArg (t.weightDegree ht) hk
-      simp only [map_add, weightDegree_root] at h
-      exact_mod_cast h
-    have hhi := one_le_height_of_mem_posRoots _ _ hi
-    have hhj := one_le_height_of_mem_posRoots _ _ hj
-    have hkpos : k ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-      rw [mem_posRoots, RootPairing.Base.isPos_iff]
-      omega
-    have hkS : k ∈ {k ∈ posRootsFinset (t.rationalRootSystem ht) (t.rationalBase ht) |
-        max ((t.rationalBase ht).height i) ((t.rationalBase ht).height j) <
-          (t.rationalBase ht).height k} := by
-      simp only [Finset.mem_filter, mem_posRootsFinset]
-      exact ⟨hkpos, by omega⟩
-    have heq := commutatorElement_chevalleyRootSubgroup_of_isSimplyLaced D.representation
-      D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-      hs hk A u.toAdd v.toAdd
-    simp only [ofAdd_toAdd] at heq
-    rw [heq]
-    exact le_iSup₂ (f := fun k _ => (X k).range) k hkS ⟨_, rfl⟩
-  · have hzero : (t.simplyConnectedRootDatum ht).root i +
-        (t.simplyConnectedRootDatum ht).root j ≠ 0 := by
-      intro hz
-      have h := congrArg (t.weightDegree ht) hz
-      have hdi := t.weightDegree_root_pos ht hi
-      have hdj := t.weightDegree_root_pos ht hj
-      simp only [map_add, map_zero] at h
-      linarith
-    have heq := (commute_chevalleyRootSubgroup D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-      hadd hzero A u.toAdd v.toAdd).commutator_eq
-    simp only [ofAdd_toAdd] at heq
-    rw [heq]
-    exact Subgroup.one_mem _
-
 private theorem exists_collection_degree (A : CommAlgCat.{v} ℤ) :
     ∃ degree : Fin t.numRoots → ℤ,
       ∀ i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
@@ -119,24 +59,8 @@ private theorem exists_collection_degree (A : CommAlgCat.{v} ℤ) :
               (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
                 D.isNilpotent_representation_rootGenerator k A).range := by
   classical
-  by_cases hs : t.IsSimplyLaced
-  · exact ⟨(t.rationalBase ht).height,
-      fun i hi j hj _ => D.commutator_range_root_le_iSup_height hs A i j hi hj⟩
-  have outsideG2 [(t.rationalRootSystem ht).IsNotG2] (i j : Fin t.numRoots)
-      (hi : i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-      (hj : j ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :=
-    commutator_range_chevalleyRootSubgroup_le D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator hi hj A
-  cases t with
-  | A n => exact (hs (isSimplyLaced_A n)).elim
-  | D n => exact (hs (isSimplyLaced_D n)).elim
-  | E6 => exact (hs (by trivial)).elim
-  | E7 => exact (hs (by trivial)).elim
-  | E8 => exact (hs (by trivial)).elim
-  | B n => exact ⟨_, fun i hi j hj _ => outsideG2 i j hi hj⟩
-  | C n => exact ⟨_, fun i hi j hj _ => outsideG2 i j hi hj⟩
-  | F4 => exact ⟨_, fun i hi j hj _ => outsideG2 i j hi hj⟩
-  | G2 =>
+  by_cases hG2 : t = G2
+  · subst t
     dsimp +instances only [numRoots] at *
     refine ⟨fun i => i.val, fun i hi j hj hij => ?_⟩
     let a : Fin 6 := ⟨i.val, (mem_posRoots_rational_g2_iff ht i).mp hi⟩
@@ -158,6 +82,10 @@ private theorem exists_collection_degree (A : CommAlgCat.{v} ℤ) :
     have hbk : b < k := lt_of_le_of_lt (le_max_right _ _) hk
     rw [max_lt_iff]
     exact ⟨by exact_mod_cast hak, by exact_mod_cast hbk⟩
+  · let := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) hG2
+    exact ⟨(t.rationalBase ht).height, fun _ hi _ hj _ =>
+      commutator_range_chevalleyRootSubgroup_le D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator hi hj A⟩
 
 /-- Every positive lattice operator has a root-product expression in any enumeration of all
 positive roots without repetition. This holds in every valid type over any commutative ring,
@@ -202,5 +130,29 @@ theorem mem_positiveSubgroup_iff_exists_prod
       _ = g := hprod
   · rintro ⟨u, hu⟩
     exact ⟨fun γ => X γ (u γ), fun γ => ⟨u γ, rfl⟩, hu⟩
+
+/-- A positive datum point has a root-product expression in any enumeration of all positive
+roots without repetition, over every commutative ring. -/
+theorem mem_positivePoints_iff_exists_prod
+    (l : List (Fin t.numRoots)) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (A : Type v) [CommRing A] (x : D.points A) :
+    x ∈ D.positivePoints A ↔ ∃ u : Fin t.numRoots → Multiplicative A,
+      (l.map fun γ => D.rootSubgroupPoints γ A (u γ)).prod = x := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, hyx⟩ := D.mem_positivePoints_iff.mp hx
+    obtain ⟨u, hu⟩ := (D.mem_positiveSubgroup_iff_exists_prod
+      l hl hcover (CommAlgCat.of ℤ A) y).mp hy
+    refine ⟨u, (D.points A).subtype_injective ?_⟩
+    have hmat := congrArg
+      (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) hu
+    simpa only [map_list_prod, List.map_map, Function.comp_def, Subgroup.subtype_apply,
+      D.coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe] using hmat.trans hyx
+  · rintro ⟨u, rfl⟩
+    apply Subgroup.list_prod_mem
+    intro z hz
+    obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hz
+    exact D.rootSubgroupPoints_mem_positivePoints A ((hcover γ).mp hγ) (u γ)
 
 end TauCeti.DynkinType.ChevalleyDatum
