@@ -81,24 +81,42 @@ section Domain
 
 variable {K : Type*} [CommRing K] [IsDomain K] {σ : K →+* K}
 
-/-- Over an integral domain with nonidentity involution and a trace-one element, a root element is
-central exactly when its first coordinate vanishes. -/
-@[simp]
-theorem mem_center_iff (hσ : Function.Involutive σ) (htr : ∃ t, t + σ t = 1)
+/-- Over an integral domain with nonidentity involution, a root element is central exactly
+when its first coordinate vanishes. -/
+theorem mem_center_iff (hσ : Function.Involutive σ)
     (hne : ∃ t, σ t ≠ t) (a : unitarySubgroup σ) :
     a ∈ Subgroup.center (unitarySubgroup σ) ↔ (a : HeisenbergGroup K).x = 0 := by
   constructor
   · intro ha
+    obtain ⟨t, ht⟩ := hne
+    have htrace : ∃ u : K, u + σ u ≠ 0 := by
+      by_cases h1 : (1 : K) + σ 1 = 0
+      · refine ⟨t, fun ht0 ↦ ht ?_⟩
+        have h1' : (1 : K) + 1 = 0 := by simpa using h1
+        linear_combination ht0 - t * h1'
+      · exact ⟨1, h1⟩
+    obtain ⟨u, hu⟩ := htrace
+    let s := u + σ u
+    have hs : σ s = s := by simp only [s, map_add, hσ u, add_comm]
     have hcross (x : K) : (a : HeisenbergGroup K).x * σ x =
         x * σ (a : HeisenbergGroup K).x := by
-      obtain ⟨b, hb⟩ := exists_coe_x_eq hσ htr x
+      have hz : u * (s * x * σ x) + σ (u * (s * x * σ x)) =
+          (s * x) * σ (s * x) := by
+        simp only [map_mul, hs, hσ x]
+        dsimp [s]
+        ring
+      let b := unitaryMk σ hσ (s * x) (u * (s * x * σ x)) hz
       have hcomm : ⁅a, b⁆ = 1 :=
         commutatorElement_eq_one_iff_mul_comm.mpr (Subgroup.mem_center_iff.mp ha b).symm
-      have hz := congrArg (fun c : unitarySubgroup σ ↦ (c : HeisenbergGroup K).z) hcomm
-      simpa only [coe_commutatorElement, hb, Subgroup.coe_one, one_z, sub_eq_zero] using hz
+      have hz' := congrArg (fun c : unitarySubgroup σ ↦ (c : HeisenbergGroup K).z) hcomm
+      have hzero : s * ((a : HeisenbergGroup K).x * σ x -
+          x * σ (a : HeisenbergGroup K).x) = 0 := by
+        simp only [coe_commutatorElement, b, coe_unitaryMk, map_mul, hs,
+          Subgroup.coe_one, one_z] at hz'
+        linear_combination hz'
+      exact sub_eq_zero.mp ((mul_eq_zero.mp hzero).resolve_left hu)
     have hx : (a : HeisenbergGroup K).x = σ (a : HeisenbergGroup K).x := by
       simpa using hcross 1
-    obtain ⟨t, ht⟩ := hne
     have hmul : (a : HeisenbergGroup K).x * (σ t - t) = 0 := by
       rw [mul_sub, hcross t, ← hx, mul_comm t, sub_self]
     exact (mul_eq_zero.mp hmul).resolve_right (sub_ne_zero.mpr ht)
@@ -109,13 +127,13 @@ theorem mem_center_iff (hσ : Function.Involutive σ) (htr : ∃ t, t + σ t = 1
     exact Subgroup.mem_center_iff.mp (zAxis_le_center
       (mem_zAxis_iff.mpr ⟨hx, by simp [hx]⟩)) b
 
-/-- Over an integral domain with nonidentity involution and a trace-one element, the centre is
+/-- Over an integral domain with nonidentity involution, the centre is
 the trace-zero central axis. -/
 theorem center_eq_zAxis_subgroupOf (hσ : Function.Involutive σ)
-    (htr : ∃ t, t + σ t = 1) (hne : ∃ t, σ t ≠ t) :
+    (hne : ∃ t, σ t ≠ t) :
     Subgroup.center (unitarySubgroup σ) = zAxis.subgroupOf (unitarySubgroup σ) := by
   ext a
-  simp only [mem_center_iff hσ htr hne, Subgroup.mem_subgroupOf, mem_zAxis_iff, y_eq a]
+  simp only [mem_center_iff hσ hne, Subgroup.mem_subgroupOf, mem_zAxis_iff, y_eq a]
   exact ⟨fun hx ↦ ⟨hx, by simp [hx]⟩, And.left⟩
 
 /-- The derived subgroup and centre of a unitary root group over an integral domain agree when the
@@ -123,32 +141,54 @@ involution is nonidentity and has a trace-one element. -/
 theorem commutator_eq_center (hσ : Function.Involutive σ) (htr : ∃ t, t + σ t = 1)
     (hne : ∃ t, σ t ≠ t) :
     commutator (unitarySubgroup σ) = Subgroup.center (unitarySubgroup σ) := by
-  rw [commutator_eq_zAxis_subgroupOf hσ htr, center_eq_zAxis_subgroupOf hσ htr hne]
+  rw [commutator_eq_zAxis_subgroupOf hσ htr, center_eq_zAxis_subgroupOf hσ hne]
 
 end Domain
 
 variable {K : Type*} [Field K]
 
+variable {p n : ℕ} [ExpChar K p]
+
+/-- Every first coordinate occurs in the quadratic finite-field unitary root group. -/
+theorem exists_coe_x_eq_iterateFrobenius (hK : Nat.card K = (p ^ n) ^ 2) (x : K) :
+    ∃ a : unitarySubgroup (iterateFrobenius K p n), (a : HeisenbergGroup K).x = x :=
+  exists_coe_x_eq (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
+    (FiniteField.exists_add_iterateFrobenius_eq_one hK) x
+
+/-- The quadratic finite-field unitary root group has derived subgroup equal to its central
+axis, in every characteristic. -/
+theorem commutator_eq_zAxis_subgroupOf_iterateFrobenius (hK : Nat.card K = (p ^ n) ^ 2) :
+    commutator (unitarySubgroup (iterateFrobenius K p n)) =
+      zAxis.subgroupOf (unitarySubgroup (iterateFrobenius K p n)) :=
+  commutator_eq_zAxis_subgroupOf
+    (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
+    (FiniteField.exists_add_iterateFrobenius_eq_one hK)
+
+/-- A quadratic finite-field unitary root element is central exactly when its first coordinate
+vanishes. -/
+theorem mem_center_iterateFrobenius_iff (hK : Nat.card K = (p ^ n) ^ 2)
+    (a : unitarySubgroup (iterateFrobenius K p n)) :
+    a ∈ Subgroup.center (unitarySubgroup (iterateFrobenius K p n)) ↔
+      (a : HeisenbergGroup K).x = 0 :=
+  mem_center_iff (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
+    (FiniteField.exists_iterateFrobenius_ne hK) a
+
+/-- The centre of the quadratic finite-field unitary root group is its trace-zero central
+axis. -/
+theorem center_eq_zAxis_subgroupOf_iterateFrobenius (hK : Nat.card K = (p ^ n) ^ 2) :
+    Subgroup.center (unitarySubgroup (iterateFrobenius K p n)) =
+      zAxis.subgroupOf (unitarySubgroup (iterateFrobenius K p n)) :=
+  center_eq_zAxis_subgroupOf
+    (FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK))
+    (FiniteField.exists_iterateFrobenius_ne hK)
+
 /-- For the quadratic finite-field involution, the derived subgroup of the unitary root group
 is its centre, in every characteristic. -/
-theorem commutator_eq_center_iterateFrobenius {p n : ℕ} [Fact p.Prime] [CharP K p]
-    (hK : Nat.card K = (p ^ n) ^ 2) :
+theorem commutator_eq_center_iterateFrobenius (hK : Nat.card K = (p ^ n) ^ 2) :
     commutator (unitarySubgroup (iterateFrobenius K p n)) =
       Subgroup.center (unitarySubgroup (iterateFrobenius K p n)) := by
-  have hσ : Function.Involutive (iterateFrobenius K p n) :=
-    FiniteField.iterateFrobenius_involutive (by simpa [pow_mul] using hK)
-  obtain ⟨t, ht⟩ := FiniteField.exists_pow_add_self_eq hK (one_pow (p ^ n))
-  have htr : ∃ t : K, t + iterateFrobenius K p n t = 1 :=
-    ⟨t, by simpa [iterateFrobenius_def, add_comm] using ht⟩
-  apply commutator_eq_center hσ htr
-  obtain ⟨c, hc, hcz⟩ := FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0
-  have hcz' : c ^ p ^ n = -c := eq_neg_iff_add_eq_zero.mpr (by simpa [add_comm] using hcz)
-  obtain ⟨s, hs⟩ := FiniteField.exists_add_neg_one_pow_mul_pow_eq hK 1 (by simpa using hcz')
-  refine ⟨s, ?_⟩
-  intro heq
-  apply hc
-  have heq' : s ^ p ^ n = s := by simpa [iterateFrobenius_def] using heq
-  simpa [heq'] using hs.symm
+  rw [commutator_eq_zAxis_subgroupOf_iterateFrobenius hK,
+    center_eq_zAxis_subgroupOf_iterateFrobenius hK]
 
 end TauCeti.HeisenbergGroup.unitarySubgroup
 

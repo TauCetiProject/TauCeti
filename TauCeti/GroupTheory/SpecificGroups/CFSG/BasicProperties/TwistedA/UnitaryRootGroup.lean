@@ -97,6 +97,22 @@ theorem mem_range_rankTwoUpperUnitaryRootHom_iff
         (hga.symm ▸ g.property)
     exact ⟨⟨a, ha'⟩, Subtype.ext hga⟩
 
+/-- The upper root subgroup of the finite special unitary model has derived subgroup equal
+to its centre, including over the field of order four. -/
+theorem commutator_range_rankTwoUpperUnitaryRootHom_eq_center :
+    commutator d.rankTwoUpperUnitaryRootHom.range =
+      Subgroup.center d.rankTwoUpperUnitaryRootHom.range := by
+  let e := MonoidHom.ofInjective d.rankTwoUpperUnitaryRootHom_injective
+  have h := HeisenbergGroup.unitarySubgroup.commutator_eq_center_iterateFrobenius
+    (K := GaloisField d.characteristic (d.fieldExponent * 2))
+    (p := d.characteristic) (n := d.fieldExponent)
+    (by
+      simpa [pow_mul] using GaloisField.card d.characteristic (d.fieldExponent * 2)
+        (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+  have hm := congrArg (Subgroup.map e.toMonoidHom) h
+  exact (map_commutator_of_surjective e.surjective).symm.trans
+    (hm.trans (Subgroup.map_center_eq e))
+
 end TauCeti.ValidLieTypeIndex
 
 namespace TauCeti.TypeALieIndex
@@ -164,18 +180,17 @@ theorem rankTwoUpperUnitaryRootHom_injective (q : PrimePower)
 
 /-- The upper root subgroup of the actual Steinberg fixed points of `²A₂(q)` has derived
 subgroup equal to its centre, including in characteristic two. -/
-theorem commutator_range_rankTwoUpperUnitaryRootHom (q : PrimePower)
+theorem commutator_range_rankTwoUpperUnitaryRootHom_eq_center (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     commutator (rankTwoUpperUnitaryRootHom q hv).range =
       Subgroup.center (rankTwoUpperUnitaryRootHom q hv).range := by
+  rw [rankTwoUpperUnitaryRootHom_def]
+  -- The descent carrier uses Fin (rank + 1), definitionally Fin 3 at this index.
+  erw [MonoidHom.range_comp]
   let d := (ofTwistedA 2 q hv).1
-  let e := MonoidHom.ofInjective (rankTwoUpperUnitaryRootHom_injective q hv)
-  have h := HeisenbergGroup.unitarySubgroup.commutator_eq_center_iterateFrobenius
-    (K := GaloisField d.characteristic (d.fieldExponent * 2))
-    (p := d.characteristic) (n := d.fieldExponent)
-    (by
-      simpa [pow_mul] using GaloisField.card d.characteristic (d.fieldExponent * 2)
-        (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero))
+  let e : d.rankTwoUpperUnitaryRootHom.range ≃* _ :=
+    (specialUnitaryEquivFixedPoints 2 q hv).subgroupMap d.rankTwoUpperUnitaryRootHom.range
+  have h := d.commutator_range_rankTwoUpperUnitaryRootHom_eq_center
   have hm := congrArg (Subgroup.map e.toMonoidHom) h
   exact (map_commutator_of_surjective e.surjective).symm.trans
     (hm.trans (Subgroup.map_center_eq e))

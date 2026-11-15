@@ -158,6 +158,25 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
     rw [one_mul, add_comm, hb]
   · exact ⟨1, one_ne_zero, by simp⟩
 
+/-- The quadratic finite-field involution admits an element of trace one, in every
+characteristic. -/
+theorem exists_add_iterateFrobenius_eq_one (hK : Nat.card K = (p ^ n) ^ 2) :
+    ∃ t : K, t + iterateFrobenius K p n t = 1 := by
+  obtain ⟨t, ht⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
+  exact ⟨t, by simpa [iterateFrobenius_def, add_comm] using ht⟩
+
+/-- The quadratic finite-field involution is not the identity. -/
+theorem exists_iterateFrobenius_ne (hK : Nat.card K = (p ^ n) ^ 2) :
+    ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  obtain ⟨c, hc, hcz⟩ := exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0
+  have hcz' : c ^ p ^ n = -c := eq_neg_iff_add_eq_zero.mpr (by simpa [add_comm] using hcz)
+  obtain ⟨s, hs⟩ := exists_add_neg_one_pow_mul_pow_eq hK 1 (by simpa using hcz')
+  refine ⟨s, ?_⟩
+  intro heq
+  apply hc
+  have heq' : s ^ p ^ n = s := by simpa [iterateFrobenius_def] using heq
+  simpa [heq'] using hs.symm
+
 /-- Over a field of order `q²`, the affine trace equation
 `z + z ^ q = x ^ q * x` has exactly `q³` solutions `(z, x)`. -/
 theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
