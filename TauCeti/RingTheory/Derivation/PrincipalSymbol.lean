@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Derivation.DifferentialOperator
 public import Mathlib.LinearAlgebra.Multilinear.Curry
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.RingTheory.Ideal.Cotangent
-import Mathlib.Algebra.Module.Projective
+public import Mathlib.Algebra.Module.Projective
 import Mathlib.Data.Nat.Choose.Cast
 
 /-!
@@ -39,10 +39,11 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.cotangentSymbol`: its descent to an `A ⧸ I`-multilinear map
   `(I / I²)ᵐ → (M / I M →ₗ[A ⧸ I] N / I N)`.
 * `TauCeti.pointCommutatorSymbol`, `TauCeti.pointPrincipalSymbol`: for an operator on `A`, a
-  `𝕜`-point `φ : A →ₐ[𝕜] 𝕜` whose kernel contains `J`, and `e : J / J² ≃ V`, the `𝕜`-multilinear
-  form on `V` sending `(e [a₁], …, e [aₘ])` to `φ([⋯[D, a₁], …, aₘ] 1)`, and the homogeneous
-  function `v ↦ (1 / m!) σ(v, …, v)`. For the smooth functions on a manifold and evaluation at a
-  point, these are the commutator and principal symbols at that point.
+  `𝕜`-point `φ : A →ₐ[𝕜] 𝕜` whose kernel contains `J`, and `e : J / J² ≃ V` with `V` projective
+  over the commutative ring `𝕜`, the `𝕜`-multilinear form on `V` sending `(e [a₁], …, e [aₘ])` to
+  `φ([⋯[D, a₁], …, aₘ] 1)`, and, when `𝕜` is a field, the homogeneous function
+  `v ↦ (1 / m!) σ(v, …, v)`. For the smooth functions on a manifold and evaluation at a point,
+  these are the commutator and principal symbols at that point.
 
 ## Main results
 
@@ -492,8 +493,8 @@ end Cotangent
 
 section Point
 
-variable {𝕜 A V : Type*} [Field 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCommGroup V] [Module 𝕜 V]
-  {J : Ideal A}
+variable {𝕜 A V : Type*} [CommRing 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCommGroup V] [Module 𝕜 V]
+  [Module.Projective 𝕜 V] {J : Ideal A}
 
 /-- The `𝕜`-linear map sending `a ∈ J` to the image of its cotangent class in `V`. -/
 private def cotangentLinearMap (e : J.Cotangent ≃ₗ[𝕜] V) : J →ₗ[𝕜] V :=
@@ -501,8 +502,7 @@ private def cotangentLinearMap (e : J.Cotangent ≃ₗ[𝕜] V) : J →ₗ[𝕜]
 
 private theorem exists_cotangentLinearMap_comp_eq_id (e : J.Cotangent ≃ₗ[𝕜] V) :
     ∃ s : V →ₗ[𝕜] J, cotangentLinearMap e ∘ₗ s = LinearMap.id :=
-  (cotangentLinearMap e).exists_rightInverse_of_surjective <| LinearMap.range_eq_top.2 <|
-    e.surjective.comp J.toCotangent_surjective
+  Module.projective_lifting_property _ _ <| e.surjective.comp J.toCotangent_surjective
 
 /-- A `𝕜`-linear choice of elements of `J` with prescribed images in `V`. -/
 private noncomputable def cotangentLift (e : J.Cotangent ≃ₗ[𝕜] V) : V →ₗ[𝕜] J :=
@@ -587,7 +587,14 @@ theorem pointCommutatorSymbol_eq_zero_of_mem_differentialOperators
   ext v
   simp [pointCommutatorSymbol_apply, (commutatorSymbol_eq_zero_iff D).2 hD]
 
-variable (φ)
+end Point
+
+/-! ### The principal symbol at a rational point -/
+
+section PointPrincipal
+
+variable {𝕜 A V : Type*} [Field 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCommGroup V] [Module 𝕜 V]
+  {J : Ideal A} (φ : A →ₐ[𝕜] 𝕜) (e : J.Cotangent ≃ₗ[𝕜] V)
 
 /-- The principal symbol of a differential operator `D` of order at most `m` on `A` at a
 `𝕜`-point `φ`, read through `e : J / J² ≃ V`: the homogeneous function `v ↦ (1 / m!) σ(v, …, v)`
@@ -660,7 +667,7 @@ theorem pointPrincipalSymbol_comp [CharZero 𝕜] {m k : ℕ}
   rw [key, Nat.cast_add_choose]
   field_simp [hfac]
 
-end Point
+end PointPrincipal
 
 /-! ### The second derivative on polynomials -/
 
