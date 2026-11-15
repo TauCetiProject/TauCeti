@@ -33,10 +33,10 @@ the transported decomposition to that canonical target.
 
 ## Implementation notes
 
-`SimpleGraph.EarDecomposition.toGraph` is reducible and exposed, so that the length of a
-transported decomposition unfolds to the original length even at reducible transparency.
-Statements can then use `Fin` indices over either length interchangeably, and `rw` and `simp` can
-use them.
+`SimpleGraph.EarDecomposition.toGraph` is exposed and instance-reducible, so that the length of a
+transported decomposition unfolds to the original length at instance transparency. Statements can
+then use `Fin` indices over either length interchangeably and `rw` can use them, while `simp`
+still treats `d.toGraph` as an atom instead of unfolding it to a structure literal.
 -/
 
 public section
@@ -76,6 +76,44 @@ theorem toSimpleGraph_inj {k l : Graph.EarKind} :
   toSimpleGraph_injective.eq_iff
 
 end Graph.EarKind
+
+namespace SimpleGraph.EarKind
+
+/-- Convert a simple-graph ear kind (`open` or `closed`) to the corresponding
+`Graph.EarKind`. -/
+def toGraph : SimpleGraph.EarKind → Graph.EarKind
+  | .open => .open
+  | .closed => .closed
+
+@[simp] theorem toGraph_open : toGraph .open = .open := (rfl)
+@[simp] theorem toGraph_closed : toGraph .closed = .closed := (rfl)
+
+@[simp]
+theorem toGraph_eq_open_iff {k : SimpleGraph.EarKind} : k.toGraph = .open ↔ k = .open := by
+  cases k <;> simp
+
+@[simp]
+theorem toGraph_eq_closed_iff {k : SimpleGraph.EarKind} : k.toGraph = .closed ↔ k = .closed := by
+  cases k <;> simp
+
+theorem toGraph_injective : Function.Injective toGraph := by
+  intro k l h
+  cases k <;> cases l <;> simp_all
+
+@[simp]
+theorem toGraph_inj {k l : SimpleGraph.EarKind} : k.toGraph = l.toGraph ↔ k = l :=
+  toGraph_injective.eq_iff
+
+@[simp]
+theorem toSimpleGraph_toGraph (k : SimpleGraph.EarKind) : k.toGraph.toSimpleGraph = k := by
+  cases k <;> rfl
+
+end SimpleGraph.EarKind
+
+@[simp]
+theorem Graph.EarKind.toGraph_toSimpleGraph (k : Graph.EarKind) :
+    k.toSimpleGraph.toGraph = k := by
+  cases k <;> rfl
 
 namespace Graph.Ear
 
@@ -302,6 +340,15 @@ theorem isOpen_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
   simpa only [length_toSimpleGraph] using
     (forall_congr' fun i : Fin d.length ↦ by simp)
 
+/-- Transporting a decomposition commutes with reindexing its target. -/
+@[simp]
+theorem toSimpleGraph_copy {K' : Graph V (Sym2 V)}
+    (d : (Graph.ofSimpleGraph G).EarDecomposition K) (h : K = K') :
+    (d.copy h).toSimpleGraph = d.toSimpleGraph.copy
+      (Graph.toSimpleGraphSubgraph_congr h d.final_le (d.copy h).final_le) := by
+  cases h
+  rw [SimpleGraph.EarDecomposition.copy_rfl, copy_rfl]
+
 end Graph.EarDecomposition
 
 namespace SimpleGraph
@@ -331,14 +378,16 @@ theorem toWalk_toGraph (e : G.Ear H) :
   | closed => rw [toGraph, Graph.Ear.toWalk_closed, toWalk_closed]
 
 @[simp]
-theorem kind_toGraph_eq_open_iff (e : G.Ear H) :
-    e.toGraph.kind = .open ↔ e.kind = .«open» := by
+theorem kind_toGraph (e : G.Ear H) : e.toGraph.kind = e.kind.toGraph := by
   cases e <;> simp [toGraph]
 
-@[simp]
+theorem kind_toGraph_eq_open_iff (e : G.Ear H) :
+    e.toGraph.kind = .open ↔ e.kind = .«open» := by
+  simp
+
 theorem kind_toGraph_eq_closed_iff (e : G.Ear H) :
     e.toGraph.kind = .closed ↔ e.kind = .closed := by
-  cases e <;> simp [toGraph]
+  simp
 
 /-- The graph traced by a transported ear is the graph of the subgraph traced by the ear. -/
 @[simp]
@@ -477,7 +526,7 @@ variable {V : Type u} {G : SimpleGraph V} {H : G.Subgraph}
 /-- An ear decomposition of a subgraph `H` of a simple graph `G`, as an ear decomposition of
 `H.toGraph` in `Graph.ofSimpleGraph G` with the graphs of the same stages and the transported
 ears. -/
-@[expose, reducible]
+@[expose, instance_reducible]
 def toGraph (d : G.EarDecomposition H) : (Graph.ofSimpleGraph G).EarDecomposition H.toGraph where
   length := d.length
   graphAfter i := (d.subgraphAfter i).toGraph
@@ -488,21 +537,21 @@ def toGraph (d : G.EarDecomposition H) : (Graph.ofSimpleGraph G).EarDecompositio
   graphAfter_last := by rw [d.subgraphAfter_last]
 
 @[simp]
-theorem length_toGraph (d : G.EarDecomposition H) : d.toGraph.length = d.length := rfl
+theorem length_toGraph (d : G.EarDecomposition H) : d.toGraph.length = d.length := (rfl)
 
 @[simp]
 theorem graphAfter_toGraph (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
-    d.toGraph.graphAfter i = (d.subgraphAfter i).toGraph := rfl
+    d.toGraph.graphAfter i = (d.subgraphAfter i).toGraph := (rfl)
 
 @[simp]
 theorem earAt_toGraph (d : G.EarDecomposition H) (i : Fin d.length) :
-    d.toGraph.earAt i = ⟨(d.subgraphAfter i.castSucc).toGraph, (d.earAt i).toGraph⟩ := rfl
+    d.toGraph.earAt i = ⟨(d.subgraphAfter i.castSucc).toGraph, (d.earAt i).toGraph⟩ := (rfl)
 
 @[simp]
-theorem start_toGraph (d : G.EarDecomposition H) : d.toGraph.start = d.start.toGraph := rfl
+theorem start_toGraph (d : G.EarDecomposition H) : d.toGraph.start = d.start.toGraph := (rfl)
 
 theorem initial_toGraph (d : G.EarDecomposition H) : d.toGraph.initial = d.initial.toGraph := by
-  rw [Graph.EarDecomposition.initial_eq_graphAfter, ← subgraphAfter_zero]
+  rw [Graph.EarDecomposition.initial_eq_graphAfter, graphAfter_toGraph, ← subgraphAfter_zero]
 
 theorem walkAt_toGraph (d : G.EarDecomposition H) (i : Fin d.length) :
     d.toGraph.walkAt i =
@@ -510,15 +559,18 @@ theorem walkAt_toGraph (d : G.EarDecomposition H) (i : Fin d.length) :
   rw [walkAt_def]
   exact (Graph.EarDecomposition.walkAt_eq _ _).trans (d.earAt i).toWalk_toGraph
 
+theorem kindAt_toGraph (d : G.EarDecomposition H) (i : Fin d.length) :
+    d.toGraph.kindAt i = (d.kindAt i).toGraph := by
+  rw [kindAt_def, ← Ear.kind_toGraph]
+  exact Graph.EarDecomposition.kindAt_eq d.toGraph i
+
 theorem kindAt_toGraph_eq_open_iff (d : G.EarDecomposition H) (i : Fin d.length) :
     d.toGraph.kindAt i = .open ↔ d.kindAt i = .«open» := by
-  rw [kindAt_def, ← (d.earAt i).kind_toGraph_eq_open_iff]
-  exact Iff.of_eq (congrArg (· = .open) (Graph.EarDecomposition.kindAt_eq d.toGraph i))
+  rw [kindAt_toGraph, EarKind.toGraph_eq_open_iff]
 
 theorem kindAt_toGraph_eq_closed_iff (d : G.EarDecomposition H) (i : Fin d.length) :
     d.toGraph.kindAt i = .closed ↔ d.kindAt i = .closed := by
-  rw [kindAt_def, ← (d.earAt i).kind_toGraph_eq_closed_iff]
-  exact Iff.of_eq (congrArg (· = .closed) (Graph.EarDecomposition.kindAt_eq d.toGraph i))
+  rw [kindAt_toGraph, EarKind.toGraph_eq_closed_iff]
 
 @[simp]
 theorem isOpen_toGraph (d : G.EarDecomposition H) : d.toGraph.IsOpen ↔ d.IsOpen := by
@@ -537,6 +589,7 @@ theorem isVertexStart_toGraph (d : G.EarDecomposition H) :
     exact ⟨⟨v, Set.mem_univ v⟩, by rw [hv, Subgraph.toGraph_singletonSubgraph]⟩
 
 /-- Transporting a decomposition commutes with reindexing its target. -/
+@[simp]
 theorem toGraph_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).toGraph = d.toGraph.copy (congrArg Subgraph.toGraph h) := by
   cases h
@@ -648,3 +701,30 @@ theorem earDecompositionEquivOfSimpleGraph_symm_apply {H : G.Subgraph}
       d.toSimpleGraph.copy (H.toSimpleGraphSubgraph_toGraph _) := (rfl)
 
 end SimpleGraph.Subgraph
+
+namespace SimpleGraph.EarDecomposition
+
+variable {V : Type u} {G : SimpleGraph V} {H : G.Subgraph}
+
+theorem toGraph_injective : Function.Injective (toGraph : G.EarDecomposition H → _) :=
+  H.earDecompositionEquivOfSimpleGraph.injective
+
+@[simp]
+theorem toGraph_inj {d₁ d₂ : G.EarDecomposition H} : d₁.toGraph = d₂.toGraph ↔ d₁ = d₂ :=
+  toGraph_injective.eq_iff
+
+end SimpleGraph.EarDecomposition
+
+namespace Graph.EarDecomposition
+
+variable {V : Type u} {G : SimpleGraph V} {K : Graph V (Sym2 V)}
+
+@[simp]
+theorem toSimpleGraph_inj {d₁ d₂ : (Graph.ofSimpleGraph G).EarDecomposition K} :
+    d₁.toSimpleGraph = d₂.toSimpleGraph ↔ d₁ = d₂ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have h' := congrArg SimpleGraph.EarDecomposition.toGraph h
+  rw [toGraph_toSimpleGraph, toGraph_toSimpleGraph] at h'
+  simpa using congrArg (·.copy (K.toGraph_toSimpleGraphSubgraph d₁.final_le)) h'
+
+end Graph.EarDecomposition

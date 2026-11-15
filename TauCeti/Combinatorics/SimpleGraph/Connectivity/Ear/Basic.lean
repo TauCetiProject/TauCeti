@@ -534,6 +534,10 @@ def copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') : G.EarDecomp
 @[simp] theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := rfl
 
 @[simp]
+theorem copy_copy {H' H'' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H')
+    (h' : H' = H'') : (d.copy h).copy h' = d.copy (h.trans h') := rfl
+
+@[simp]
 theorem length_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := rfl
 
