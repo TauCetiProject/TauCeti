@@ -20,10 +20,10 @@ Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGrou
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
 inversion with membership (`FreeGroup.mem_invRev_iff`), subwords, concatenation of lists of words
-(`FreeGroup.invRev_flatten`), and factorisations splitting no occurrence of a word
-(`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
-either join. The reduced word of a product `of a * of b` of two generators is
-`[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
+(`FreeGroup.invRev_flatten`), generator renaming (`FreeGroup.map_prodMap_invRev`), and
+factorisations splitting no occurrence of a word (`FreeGroup.invRev_isUnsplit`), and reducedness of
+words `w u w⁻¹` in which no letter cancels at either join. The reduced word of a product
+`of a * of b` of two generators is `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
 empty, a word that is not reduced admits a step of free reduction, and inserting a letter followed
 by its inverse does not change the element represented.
@@ -113,6 +113,12 @@ theorem invRev_flatten (M : List (List (α × Bool))) :
   induction M with
   | nil => rfl
   | cons v M ih => simp [invRev_append, ih]
+
+/-- Renaming the generators of a formal inverse is the formal inverse of the renamed word. -/
+@[simp]
+theorem map_prodMap_invRev {β : Type*} (f : α → β) (w : List (α × Bool)) :
+    (invRev w).map (Prod.map f id) = invRev (w.map (Prod.map f id)) := by
+  simp [invRev, List.map_reverse, List.map_map, Function.comp_def]
 
 /-- A word is a subword of another exactly when their formal inverses are. -/
 @[simp]

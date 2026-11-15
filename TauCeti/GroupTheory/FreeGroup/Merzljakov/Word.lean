@@ -417,13 +417,6 @@ theorem subsingleton_not_isUnsplit_merzljakovBlock_or_invRev_pair (hab : a ≠ b
   · exact (incompatible h₂ h₁).elim
   · exact eq_of_not_isUnsplit_merzljakovBlock_pair hab (mt (hinv m₁).2 h₁) (mt (hinv m₂).2 h₂)
 
-private theorem exists_list_length_le_one_of_subsingleton {S : Set ℕ} (hS : S.Subsingleton) :
-    ∃ l : List ℕ, l.length ≤ 1 ∧ ∀ m ∈ S, m ∈ l := by
-  by_cases h : S.Nonempty
-  · obtain ⟨m₀, hm₀⟩ := h
-    exact ⟨[m₀], le_rfl, fun m hm ↦ mem_singleton.2 (hS hm hm₀)⟩
-  · exact ⟨[], Nat.zero_le _, fun m hm ↦ (h ⟨m, hm⟩).elim⟩
-
 private theorem exists_list_not_isUnsplit (hab : a ≠ b) (L : List (List (α × Bool))) :
     ∃ l : List ℕ, l.length ≤ L.length - 1 ∧
       ∀ m, (¬ (merzljakovBlock a b m).IsUnsplit L ∨
@@ -433,8 +426,13 @@ private theorem exists_list_not_isUnsplit (hab : a ≠ b) (L : List (List (α ×
   | cons u L ih =>
     rcases L with _ | ⟨v, L⟩
     · exact ⟨[], le_rfl, by simp⟩
-    · obtain ⟨l₁, hl₁, h₁⟩ := exists_list_length_le_one_of_subsingleton
-        (subsingleton_not_isUnsplit_merzljakovBlock_or_invRev_pair hab u (v :: L).flatten)
+    · obtain ⟨l₁, hl₁, h₁⟩ : ∃ l₁ : List ℕ, l₁.length ≤ 1 ∧
+          ∀ m ∈ {m : ℕ | ¬ (merzljakovBlock a b m).IsUnsplit [u, (v :: L).flatten] ∨
+            ¬ (invRev (merzljakovBlock a b m)).IsUnsplit [u, (v :: L).flatten]}, m ∈ l₁ := by
+        rcases (subsingleton_not_isUnsplit_merzljakovBlock_or_invRev_pair hab u
+          (v :: L).flatten).eq_empty_or_singleton with h | ⟨m₀, h⟩
+        · exact ⟨[], by simp, fun m hm ↦ by rw [h] at hm; exact hm.elim⟩
+        · exact ⟨[m₀], by simp, fun m hm ↦ by rw [h] at hm; exact mem_singleton.2 hm⟩
       obtain ⟨l₂, hl₂, h₂⟩ := ih
       refine ⟨l₁ ++ l₂, by simp only [length_append, length_cons] at hl₁ hl₂ ⊢; omega,
         fun m hm ↦ mem_append.2 ?_⟩

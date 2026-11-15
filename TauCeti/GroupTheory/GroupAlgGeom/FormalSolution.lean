@@ -38,12 +38,14 @@ witnesses for the `y i`, and the value of `q i` depends only on `x₀, …, x_i`
 * for any finite system `S` over an arbitrary nonabelian free group `G` (of finite or infinite
   rank), if `∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` holds in `G`, then `S` has a formal
   solution (`exists_isFormalSolution_of_finite`);
-* when `G[x₀, …, x_{k-1}]` is equationally Noetherian over `G`—in particular whenever `G` is a
-  countable nonabelian free group—the same equivalence holds for *every* (possibly infinite) system
-  `S` (`exists_isFormalSolution_iff_forallExistsAlt`, Kharlampovich–Myasnikov §4.4, Theorem 4).
+* when `G` is equationally Noetherian over itself—in particular whenever `G` is a countable
+  nonabelian free group—the same equivalence holds for *every* (possibly infinite) system `S`
+  (`exists_isFormalSolution_iff_forallExistsAlt_of_isEquationallyNoetherian`,
+  `exists_isFormalSolution_iff_forallExistsAlt`, Kharlampovich–Myasnikov §4.4, Theorem 4).
 
 Consequently, any positive sentence of this form that holds in a nonabelian free group `G` transfers
 along every homomorphism `G →* H` (`forallExistsAlt_of_forallExistsAlt_id_of_finite`,
+`forallExistsAlt_of_forallExistsAlt_id_of_isEquationallyNoetherian`,
 `forallExistsAlt_of_forallExistsAlt_id`). Both rank `0` and rank `1` fail the converse
 (`not_isFormalSolution_var`, `not_isFormalSolution_commutator_inl`), so `¬IsMulCommutative G` is
 sharp.
@@ -64,10 +66,13 @@ sharp.
   `TauCeti.GroupAlgGeom.exists_isFormalSolution_iff_forallExistsAlt_of_finite`: Merzljakov's
   theorem for single equations and finite systems over any nonabelian free group.
 * `TauCeti.GroupAlgGeom.exists_isFormalSolution_of_isEquationallyNoetherian`,
+  `TauCeti.GroupAlgGeom.exists_isFormalSolution_iff_forallExistsAlt_of_isEquationallyNoetherian`,
   `TauCeti.GroupAlgGeom.exists_isFormalSolution`,
   `TauCeti.GroupAlgGeom.exists_isFormalSolution_iff_forallExistsAlt`: Merzljakov's theorem for
-  arbitrary systems over countable (or equationally Noetherian) nonabelian free groups.
+  arbitrary systems over nonabelian free groups that are equationally Noetherian over themselves
+  (in particular countable).
 * `TauCeti.GroupAlgGeom.forallExistsAlt_of_forallExistsAlt_id_of_finite`,
+  `TauCeti.GroupAlgGeom.forallExistsAlt_of_forallExistsAlt_id_of_isEquationallyNoetherian`,
   `TauCeti.GroupAlgGeom.forallExistsAlt_of_forallExistsAlt_id`: transfer of positive sentences from
   a nonabelian free group along any homomorphism.
 * `TauCeti.GroupAlgGeom.not_isFormalSolution_var`,
@@ -258,7 +263,8 @@ theorem exists_isFormalSolution_iff_forallExistsAlt_of_finite [IsFreeGroup G]
   ⟨fun ⟨_, hq⟩ => hq.forallExistsAlt (.id G), exists_isFormalSolution_of_finite hG hS⟩
 
 /-- Over any nonabelian free group `G`, a positive sentence for a finite system `S` that holds in
-`G` transfers along every homomorphism `ι : G →* H` (Kharlampovich–Myasnikov §4.4, Corollary 9). -/
+`G` transfers along every homomorphism `ι : G →* H`, by Merzljakov's theorem and specialisation
+(`IsFormalSolution.forallExistsAlt`). -/
 theorem forallExistsAlt_of_forallExistsAlt_id_of_finite [IsFreeGroup G]
     (hG : ¬IsMulCommutative G) {S : Set (GX G (Fin k ⊕ Fin k))} (hS : S.Finite) (ι : G →* H)
     (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
@@ -267,17 +273,53 @@ theorem forallExistsAlt_of_forallExistsAlt_id_of_finite [IsFreeGroup G]
   hq.forallExistsAlt ι
 
 /-- **Merzljakov's theorem** for arbitrary systems under equational Noetherianity: if `G` is a
-nonabelian free group and `G[x₀, …, x_{k-1}]` is equationally Noetherian over `G`, then any system
-`S` (finite or infinite) whose positive sentence holds in `G` admits a formal solution. -/
+nonabelian free group that is equationally Noetherian over itself, then any system `S` (finite or
+infinite) whose positive sentence holds in `G` admits a formal solution in `G[x₀, …, x_{k-1}]`. -/
 theorem exists_isFormalSolution_of_isEquationallyNoetherian [IsFreeGroup G]
-    (hG : ¬IsMulCommutative G) (hnoeth : IsEquationallyNoetherian (inl : G →* GX G (Fin k)))
+    (hG : ¬IsMulCommutative G) (hnoeth : IsEquationallyNoetherian (.id G))
     {S : Set (GX G (Fin k ⊕ Fin k))}
     (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
     ∃ q, IsFormalSolution S q := by
-  obtain ⟨S₀, hS₀, hfin, hV⟩ := hnoeth.exists_finite S
-  obtain ⟨q, hq⟩ := exists_isFormalSolution_of_finite hG hfin
-    (h.mono fun _ _ hx => V_antitone _ hS₀ hx)
-  exact ⟨q, hq.mem_varSubgroup, hV ▸ hq.sumElim_mem_V⟩
+  obtain ⟨S₀, _, hfin, hV⟩ := hnoeth.exists_finite S
+  obtain ⟨q, hq⟩ := exists_isFormalSolution_of_finite hG hfin (by simpa only [hV] using h)
+  refine ⟨q, hq.mem_varSubgroup, mem_V.2 fun s hs => ?_⟩
+  set w : GX G (Fin k) := eval inl (Sum.elim (fun i => inr (of i)) q) s
+  have hw_eval (x : Fin k → G) : eval (.id G) x w = 1 := by
+    have hx := mem_V.1 (hV ▸ hq.sumElim_eval_mem_V (.id G) x) s hs
+    have hwm : wordMap (.id G) (Sum.elim (fun i => inr (of i)) q) x =
+        Sum.elim x fun i => eval (.id G) x (q i) := funext fun j => by cases j <;> simp
+    simpa only [w, ← hwm, ← eval_comp_eval, MonoidHom.comp_apply] using hx
+  let w' : GX G (Fin k ⊕ Fin k) := Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) w
+  have hw'_fa : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) {w'} :=
+    forallExistsAlt_of_skolem (fun _ => 1) (fun _ _ _ _ => rfl) fun x =>
+      mem_V.2 fun t ht => by
+        rw [Set.mem_singleton_iff.1 ht]
+        simpa [w', Function.comp_def] using hw_eval x
+  obtain ⟨q', hq'⟩ := exists_isFormalSolution_singleton hG hw'_fa
+  simpa [w', Function.comp_def] using hq'.eval_eq_one rfl
+
+/-- **Merzljakov's theorem** for arbitrary systems under equational Noetherianity (equivalence):
+over a nonabelian free group `G` that is equationally Noetherian over itself, a system `S` has a
+formal solution if and only if the positive sentence
+`∀ x₀ ∃ y₀ … ∀ x_{k-1} ∃ y_{k-1} (S(x, y) = 1)` holds in `G`. -/
+theorem exists_isFormalSolution_iff_forallExistsAlt_of_isEquationallyNoetherian [IsFreeGroup G]
+    (hG : ¬IsMulCommutative G) (hnoeth : IsEquationallyNoetherian (.id G))
+    (S : Set (GX G (Fin k ⊕ Fin k))) :
+    (∃ q, IsFormalSolution S q) ↔
+      ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S :=
+  ⟨fun ⟨_, hq⟩ => hq.forallExistsAlt (.id G),
+    exists_isFormalSolution_of_isEquationallyNoetherian hG hnoeth⟩
+
+/-- Over a nonabelian free group `G` that is equationally Noetherian over itself, any positive
+sentence (for a possibly infinite system `S`) that holds in `G` transfers along every homomorphism
+`ι : G →* H`. -/
+theorem forallExistsAlt_of_forallExistsAlt_id_of_isEquationallyNoetherian [IsFreeGroup G]
+    (hG : ¬IsMulCommutative G) (hnoeth : IsEquationallyNoetherian (.id G))
+    {S : Set (GX G (Fin k ⊕ Fin k))} (ι : G →* H)
+    (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
+    ForallExistsAlt k fun x y : Fin k → H => Sum.elim x y ∈ V ι S :=
+  let ⟨_, hq⟩ := exists_isFormalSolution_of_isEquationallyNoetherian hG hnoeth h
+  hq.forallExistsAlt ι
 
 /-- **Merzljakov's theorem** for arbitrary systems over a countable nonabelian free group
 (Kharlampovich–Myasnikov §4.4, Theorem 4): if `G` is a countable nonabelian free group, then any
@@ -290,8 +332,7 @@ theorem exists_isFormalSolution [IsFreeGroup G] [Countable G] (hG : ¬IsMulCommu
   let b := IsFreeGroup.basis G
   have : Countable (IsFreeGroup.Generators G) := b.injective.countable
   exact exists_isFormalSolution_of_isEquationallyNoetherian hG
-    (isEquationallyNoetherian_of_freeGroupBasis inl
-      (.ofRepr (GX.mulEquivFreeGroupSum b (Fin k)))) h
+    (isEquationallyNoetherian_of_freeGroupBasis (.id G) b) h
 
 /-- **Merzljakov's theorem** for arbitrary systems over a countable nonabelian free group
 (equivalence, Kharlampovich–Myasnikov §4.4, Theorem 4): over a countable nonabelian free group `G`,
@@ -300,17 +341,22 @@ a system `S` has a formal solution if and only if the positive sentence
 theorem exists_isFormalSolution_iff_forallExistsAlt [IsFreeGroup G] [Countable G]
     (hG : ¬IsMulCommutative G) (S : Set (GX G (Fin k ⊕ Fin k))) :
     (∃ q, IsFormalSolution S q) ↔
-      ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S :=
-  ⟨fun ⟨_, hq⟩ => hq.forallExistsAlt (.id G), exists_isFormalSolution hG⟩
+      ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S := by
+  let b := IsFreeGroup.basis G
+  have : Countable (IsFreeGroup.Generators G) := b.injective.countable
+  exact exists_isFormalSolution_iff_forallExistsAlt_of_isEquationallyNoetherian hG
+    (isEquationallyNoetherian_of_freeGroupBasis (.id G) b) S
 
 /-- Over a countable nonabelian free group `G`, any positive sentence (for a possibly infinite
 system `S`) that holds in `G` transfers along every homomorphism `ι : G →* H`. -/
 theorem forallExistsAlt_of_forallExistsAlt_id [IsFreeGroup G] [Countable G]
     (hG : ¬IsMulCommutative G) {S : Set (GX G (Fin k ⊕ Fin k))} (ι : G →* H)
     (h : ForallExistsAlt k fun x y : Fin k → G => Sum.elim x y ∈ V (.id G) S) :
-    ForallExistsAlt k fun x y : Fin k → H => Sum.elim x y ∈ V ι S :=
-  let ⟨_, hq⟩ := exists_isFormalSolution hG h
-  hq.forallExistsAlt ι
+    ForallExistsAlt k fun x y : Fin k → H => Sum.elim x y ∈ V ι S := by
+  let b := IsFreeGroup.basis G
+  have : Countable (IsFreeGroup.Generators G) := b.injective.countable
+  exact forallExistsAlt_of_forallExistsAlt_id_of_isEquationallyNoetherian hG
+    (isEquationallyNoetherian_of_freeGroupBasis (.id G) b) ι h
 
 end Merzljakov
 
@@ -402,10 +448,7 @@ trivial (the free group of rank `0`), the sentence holds in `G`, so Merzljakov's
 rank `0`. -/
 theorem not_isFormalSolution_var (q : Fin 1 → GX G (Fin 1)) :
     ¬IsFormalSolution {inr (of (Sum.inl 0))} q := fun h => by
-  have h1 : Multiplicative.ofAdd (1 : ℤ) = 1 := by
-    simpa using congrArg (eval (1 : G →* Multiplicative ℤ) ![Multiplicative.ofAdd 1])
-      (h.eval_eq_one rfl)
-  exact one_ne_zero (Multiplicative.ofAdd.injective h1)
+  simpa using congrArg snd (h.eval_eq_one rfl)
 
 /-- In a trivial group (for instance `FreeGroup Empty`), `∀ x₀ ∃ y₀ (x₀ = 1)` holds even though it
 has no formal solution (`not_isFormalSolution_var`). -/
