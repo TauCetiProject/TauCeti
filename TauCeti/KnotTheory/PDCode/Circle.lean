@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Planar
 
 /-!
 # Adjoining a crossing-free circle to a PD-code
@@ -18,7 +19,9 @@ relative framing of the new component.
 The component and state-circle formulas make the operation usable in local move calculations.
 For a nonempty diagram, adjoining a circle multiplies the Kauffman bracket by the loop value
 `jonesDelta`; the nonemptiness hypothesis is necessary because the empty code is normalised to
-have bracket one rather than a negative power of the loop value.
+have bracket one rather than a negative power of the loop value. Crossing-free circles are not
+part of the underlying graph, so adjoining one leaves the graph, its faces and planarity
+unchanged (`TauCeti.PDCode.isPlanar_adjoinCircle_iff`).
 
 `ClaspInsertion` applies to clasps whose arcs meet crossings and does not treat a clasp through a
 crossing-free circle; this file supplies the separate operation of adjoining a disjoint
@@ -135,6 +138,35 @@ value. The empty code is excluded because its bracket is normalized to one. -/
   · simp
   · funext i
     simp [PDCode.mirror_overPair]
+
+/-- Adjoining a crossing-free circle preserves the crossing rotation. -/
+@[simp] theorem crossingRotation_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.crossingRotation = D.crossingRotation := by
+  simp [crossingRotation_def]
+
+/-- Adjoining a crossing-free circle preserves the face traversal. -/
+@[simp] theorem facePerm_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.facePerm = D.facePerm := by
+  simp [facePerm_def]
+
+/-- Adjoining a crossing-free circle adds no faces to the underlying graph. -/
+@[simp] theorem faceCount_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.faceCount = D.faceCount := by
+  simp [faceCount_def]
+
+/-- Adjoining a crossing-free circle leaves the underlying graph unchanged: crossing-free
+circles are not part of it. -/
+@[simp] theorem toPermutationTriple_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.toPermutationTriple = D.toPermutationTriple := by
+  apply PermutationTriple.ext_of_two
+  · simp
+  · simp
+
+/-- Adjoining a crossing-free circle preserves planarity: the underlying graph, which carries no
+crossing-free circles, is unchanged. -/
+@[simp] theorem isPlanar_adjoinCircle_iff (D : PDCode n) :
+    D.adjoinCircle.IsPlanar ↔ D.IsPlanar := by
+  rw [isPlanar_def, isPlanar_def, toPermutationTriple_adjoinCircle]
 
 end PDCode
 

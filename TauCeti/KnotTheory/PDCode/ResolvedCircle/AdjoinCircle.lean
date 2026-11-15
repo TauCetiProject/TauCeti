@@ -70,6 +70,13 @@ theorem adjoinCircleCrossingCircleEquiv_mk (s : Fin n → Bool) (x : Fin (4 * n)
     D.adjoinCircleCrossingCircleEquiv s ⟦x⟧ = ⟦x⟧ :=
   (rfl)
 
+/-- The inverse correspondence of circles meeting a crossing sends the circle through a
+half-edge to the circle through the same half-edge. -/
+@[simp]
+theorem adjoinCircleCrossingCircleEquiv_symm_mk (s : Fin n → Bool) (x : Fin (4 * n)) :
+    (D.adjoinCircleCrossingCircleEquiv s).symm ⟦x⟧ = ⟦x⟧ :=
+  (rfl)
+
 /-- The circles of `D.adjoinCircle` smoothed by `s` are the circles of `D` smoothed by `s`,
 together with the adjoined circle `()`. The crossing-free labels of `D` keep their labels, and
 the last label is the adjoined circle. -/
@@ -82,8 +89,17 @@ def adjoinCircleResolvedCircleEquiv (s : Fin n → Bool) :
 
 /-- A circle meeting a crossing corresponds to the circle through the same half-edge. -/
 @[simp]
-theorem adjoinCircleResolvedCircleEquiv_inl_mk (s : Fin n → Bool) (x : Fin (4 * n)) :
-    D.adjoinCircleResolvedCircleEquiv s (.inl ⟦x⟧) = .inl (.inl ⟦x⟧) :=
+theorem adjoinCircleResolvedCircleEquiv_inl (s : Fin n → Bool)
+    (C : D.adjoinCircle.CrossingCircle s) :
+    D.adjoinCircleResolvedCircleEquiv s (.inl C) =
+      .inl (.inl (D.adjoinCircleCrossingCircleEquiv s C)) :=
+  (rfl)
+
+/-- A circle of `D` meeting a crossing corresponds to the circle through the same half-edge. -/
+@[simp]
+theorem adjoinCircleResolvedCircleEquiv_symm_inl_inl (s : Fin n → Bool) (C : D.CrossingCircle s) :
+    (D.adjoinCircleResolvedCircleEquiv s).symm (.inl (.inl C)) =
+      .inl ((D.adjoinCircleCrossingCircleEquiv s).symm C) :=
   (rfl)
 
 /-- The crossing-free circles of `D` keep their labels in `D.adjoinCircle`. -/
@@ -103,6 +119,24 @@ theorem adjoinCircleResolvedCircleEquiv_symm_inr (s : Fin n → Bool) :
         (Fin.last D.crossinglessComponentCount)) := by
   rw [Equiv.symm_apply_eq]
   simp [adjoinCircleResolvedCircleEquiv]
+
+/-- The crossing-free labels of `D.adjoinCircle` other than the last are those of `D`. -/
+@[simp]
+theorem adjoinCircleResolvedCircleEquiv_inr_castSucc (s : Fin n → Bool)
+    (i : Fin D.crossinglessComponentCount) :
+    D.adjoinCircleResolvedCircleEquiv s
+        (.inr (Fin.cast (adjoinCircle_crossinglessComponentCount D).symm i.castSucc)) =
+      .inl (.inr i) := by
+  rw [← adjoinCircleResolvedCircleEquiv_symm_inl_inr, Equiv.apply_symm_apply]
+
+/-- The last crossing-free label of `D.adjoinCircle` is the adjoined circle. -/
+@[simp]
+theorem adjoinCircleResolvedCircleEquiv_inr_last (s : Fin n → Bool) :
+    D.adjoinCircleResolvedCircleEquiv s
+        (.inr (Fin.cast (adjoinCircle_crossinglessComponentCount D).symm
+          (Fin.last D.crossinglessComponentCount))) =
+      .inr () := by
+  rw [← adjoinCircleResolvedCircleEquiv_symm_inr, Equiv.apply_symm_apply]
 
 /-- The same number of circles passes through each crossing after adjoining a circle. -/
 @[simp]

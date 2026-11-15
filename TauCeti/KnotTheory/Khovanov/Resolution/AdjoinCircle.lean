@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import TauCeti.KnotTheory.Khovanov.DisjointUnion
 public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
-public import TauCeti.KnotTheory.PDCode.Reidemeister.Circle
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.AdjoinCircle
 
 /-!
@@ -26,11 +25,13 @@ the adjoined circle and the second the label `X`.
 In every smoothing the circles of `D.adjoinCircle` are those of `D` and the adjoined one
 (`TauCeti.PDCode.adjoinCircleResolvedCircleEquiv`), which meets no crossing. So every saddle of
 `D.adjoinCircle` is the saddle of `D` tensored with the identity on the adjoined circle
-(`TauCeti.PDCode.resolutionEdgeMap_adjoinCircle_tmulEquiv`). Hence inserting the adjoined circle
-with a fixed label (`TauCeti.PDCode.adjoinCircleInsert`, from `TauCeti.Khovanov.insertCircle`) and
-reading off the coefficient of a label on it (`TauCeti.PDCode.adjoinCircleDelete`, from
-`TauCeti.Khovanov.deleteCircle`) commute with all saddles, and are maps of cubes of resolutions,
-`TauCeti.PDCode.adjoinCircleCubeInsert` and `TauCeti.PDCode.adjoinCircleCubeDelete`.
+(`TauCeti.PDCode.reindex_adjoinCircleResolvedCircleEquiv_resolutionEdgeMap_tmulEquiv`). Hence
+inserting the adjoined circle with a fixed label (`TauCeti.PDCode.adjoinCircleInsert`, from
+`TauCeti.Khovanov.insertCircle`) and reading off the coefficient of a label on it
+(`TauCeti.PDCode.adjoinCircleDelete`, from `TauCeti.Khovanov.deleteCircle`) commute with all
+saddles. Both shift the quantum degree by `±1`, so `TauCeti.PDCode.resolutionCubeHom` makes them
+maps of cubes of resolutions, `TauCeti.PDCode.adjoinCircleCubeInsert` and
+`TauCeti.PDCode.adjoinCircleCubeDelete`.
 For the label `1`, insertion is the birth of a circle; for the label `X`, deletion is its death.
 These maps exhibit the cube of `D.adjoinCircle` as a biproduct of two shifted copies of the cube of
 `D`, and totalization turns this into the splitting of complexes.
@@ -54,10 +55,11 @@ All in the namespace `TauCeti.PDCode`:
 
 ## Main results
 
-* `resolutionEdgeMap_adjoinCircle_tmulEquiv`: the saddles of `D.adjoinCircle` are those of `D`,
-  tensored with the identity on the adjoined circle.
+* `reindex_adjoinCircleResolvedCircleEquiv_resolutionEdgeMap_tmulEquiv`: the saddles of
+  `D.adjoinCircle` are those of `D`, tensored with the identity on the adjoined circle.
 * `resolutionEdgeMap_adjoinCircleInsert`, `adjoinCircleDelete_resolutionEdgeMap`: inserting and
   deleting the adjoined circle commute with the saddles.
+* `isHomogeneous_adjoinCircleInsert`, `isHomogeneous_adjoinCircleDelete`: their quantum degrees.
 * `adjoinCircleCubeInsert_comp_adjoinCircleCubeDelete`,
   `adjoinCircleCubeInsert_comp_adjoinCircleCubeDelete_of_ne`,
   `adjoinCircleCubeDelete_comp_adjoinCircleCubeInsert_add`: the biproduct relations.
@@ -155,7 +157,7 @@ variable {s t : Fin n → Bool} {c : Fin n} (hst : ∀ j, j ≠ c → s j = t j)
 circles of `D.adjoinCircle` with those of `D` and the adjoined circle, a saddle of
 `D.adjoinCircle` acts as the saddle of `D` on the circles of `D` and as the identity on the
 adjoined circle. -/
-theorem resolutionEdgeMap_adjoinCircle_tmulEquiv
+theorem reindex_adjoinCircleResolvedCircleEquiv_resolutionEdgeMap_tmulEquiv
     (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2)
     (h' : #(D.adjoinCircle.circlesAt s c) = 2 ∨ #(D.adjoinCircle.circlesAt t c) = 2)
     (x : Khovanov.CircleTensor R (D.ResolvedCircle s)) (y : Khovanov.CircleTensor R Unit) :
@@ -198,7 +200,7 @@ theorem resolutionEdgeMap_adjoinCircleInsert
       D.adjoinCircleInsert R t b (D.resolutionEdgeMap hst hc h R x) := by
   rw [adjoinCircleInsert_apply, adjoinCircleInsert_apply, LinearEquiv.eq_symm_apply,
     Khovanov.insertCircle_apply, Khovanov.insertCircle_apply,
-    D.resolutionEdgeMap_adjoinCircle_tmulEquiv hst hc R h h']
+    D.reindex_adjoinCircleResolvedCircleEquiv_resolutionEdgeMap_tmulEquiv hst hc R h h']
 
 /-- Reading off the coefficient of a label on the adjoined circle commutes with the saddles. -/
 theorem adjoinCircleDelete_resolutionEdgeMap
@@ -213,8 +215,8 @@ theorem adjoinCircleDelete_resolutionEdgeMap
   induction w using TensorProduct.inductionOn with
   | tmul x y =>
     simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-    rw [D.resolutionEdgeMap_adjoinCircle_tmulEquiv hst hc R h h', Khovanov.deleteCircle_tmulEquiv,
-      Khovanov.deleteCircle_tmulEquiv, map_smul]
+    rw [D.reindex_adjoinCircleResolvedCircleEquiv_resolutionEdgeMap_tmulEquiv hst hc R h h',
+      Khovanov.deleteCircle_tmulEquiv, Khovanov.deleteCircle_tmulEquiv, map_smul]
   | add w w' hw hw' => simp only [map_add, hw, hw']
 
 end Saddle
@@ -225,82 +227,27 @@ section Cube
 
 variable (hD : D.IsPlanar) (R : Type u) [CommRing R] {j j' : ℤ}
 
-/-- Inserting the adjoined circle labelled `b` sends the vertex `S` of the degree-`j'` cube of `D`
-into the vertex `S` of the degree-`j` cube of `D.adjoinCircle`, where `j = j' + 1` for the label
-`1` and `j = j' - 1` for the label `X`. -/
-private theorem adjoinCircleInsert_resolutionCubeι_mem_range (b : Bool)
-    (hj : j = j' + bif b then -1 else 1) (S : Finset (Fin n))
-    (x : (D.resolutionCube hD R j').obj S) :
-    D.adjoinCircleInsert R (cubeState S) b ((D.resolutionCubeι hD R j' S).hom x) ∈
-      LinearMap.range
-        (D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S).hom := by
-  have hx : (D.resolutionCubeι hD R j' S).hom x ∈
-      (Khovanov.circleQuantumGrading R (D.ResolvedCircle (cubeState S))).piece (j' - #S) := by
-    rw [← range_resolutionCubeι]
-    exact LinearMap.mem_range_self _ x
-  rw [range_resolutionCubeι, adjoinCircleInsert_apply, reindex_symm]
-  convert (Khovanov.isHomogeneous_reindex (R := R) _).map_mem
-    ((Khovanov.isHomogeneous_insertCircle R b).map_mem hx) using 2
-  omega
+/-- Inserting the adjoined circle labelled `1` raises the quantum degree by one, and inserting it
+labelled `X` lowers it by one. -/
+theorem isHomogeneous_adjoinCircleInsert (s : Fin n → Bool) (b : Bool) :
+    TauCeti.LinearMap.IsHomogeneous (D.adjoinCircleInsert R s b)
+      (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
+      (Khovanov.circleQuantumGrading R (D.adjoinCircle.ResolvedCircle s)).piece
+      (bif b then -1 else 1) := by
+  rw [adjoinCircleInsert, reindex_symm]
+  simpa only [add_zero] using
+    (Khovanov.isHomogeneous_reindex (R := R) _).comp (Khovanov.isHomogeneous_insertCircle R b)
 
-/-- Reading off the coefficient of the label `b` on the adjoined circle sends the vertex `S` of
-the degree-`j` cube of `D.adjoinCircle` into the vertex `S` of the degree-`j'` cube of `D`. -/
-private theorem adjoinCircleDelete_resolutionCubeι_mem_range (b : Bool)
-    (hj : j = j' + bif b then -1 else 1) (S : Finset (Fin n))
-    (x : (D.adjoinCircle.resolutionCube (D.isPlanar_adjoinCircle_iff.2 hD) R j).obj S) :
-    D.adjoinCircleDelete R (cubeState S) b
-        ((D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S).hom x) ∈
-      LinearMap.range (D.resolutionCubeι hD R j' S).hom := by
-  have hx : (D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S).hom x ∈
-      (Khovanov.circleQuantumGrading R (D.adjoinCircle.ResolvedCircle (cubeState S))).piece
-        (j - #S) := by
-    rw [← range_resolutionCubeι]
-    exact LinearMap.mem_range_self _ x
-  rw [range_resolutionCubeι, adjoinCircleDelete_apply]
-  convert (Khovanov.isHomogeneous_deleteCircle R b).map_mem
-    ((Khovanov.isHomogeneous_reindex (R := R) _).map_mem hx) using 2
-  omega
-
-/-- The component on the vertex `S` of inserting the adjoined circle labelled `b`. -/
-private def adjoinCircleCubeInsertApp (b : Bool) (hj : j = j' + bif b then -1 else 1)
-    (S : Finset (Fin n)) :
-    (D.resolutionCube hD R j').obj S ⟶
-      (D.adjoinCircle.resolutionCube (D.isPlanar_adjoinCircle_iff.2 hD) R j).obj S :=
-  ModuleCat.ofHom <|
-    (LinearEquiv.ofInjective _ (D.adjoinCircle.resolutionCubeι_injective
-      (D.isPlanar_adjoinCircle_iff.2 hD) R j S)).symm.toLinearMap ∘ₗ
-      (D.adjoinCircleInsert R (cubeState S) b ∘ₗ (D.resolutionCubeι hD R j' S).hom).codRestrict _
-        (D.adjoinCircleInsert_resolutionCubeι_mem_range hD R b hj S)
-
-@[reassoc]
-private theorem adjoinCircleCubeInsertApp_comp_resolutionCubeι (b : Bool)
-    (hj : j = j' + bif b then -1 else 1) (S : Finset (Fin n)) :
-    D.adjoinCircleCubeInsertApp hD R b hj S ≫
-        D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S =
-      D.resolutionCubeι hD R j' S ≫ ModuleCat.ofHom (D.adjoinCircleInsert R (cubeState S) b) := by
-  ext x
-  simp [adjoinCircleCubeInsertApp]
-
-/-- The component on the vertex `S` of reading off the coefficient of the label `b` on the
-adjoined circle. -/
-private def adjoinCircleCubeDeleteApp (b : Bool) (hj : j = j' + bif b then -1 else 1)
-    (S : Finset (Fin n)) :
-    (D.adjoinCircle.resolutionCube (D.isPlanar_adjoinCircle_iff.2 hD) R j).obj S ⟶
-      (D.resolutionCube hD R j').obj S :=
-  ModuleCat.ofHom <|
-    (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j' S)).symm.toLinearMap ∘ₗ
-      (D.adjoinCircleDelete R (cubeState S) b ∘ₗ
-        (D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S).hom).codRestrict
-        _ (D.adjoinCircleDelete_resolutionCubeι_mem_range hD R b hj S)
-
-@[reassoc]
-private theorem adjoinCircleCubeDeleteApp_comp_resolutionCubeι (b : Bool)
-    (hj : j = j' + bif b then -1 else 1) (S : Finset (Fin n)) :
-    D.adjoinCircleCubeDeleteApp hD R b hj S ≫ D.resolutionCubeι hD R j' S =
-      D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S ≫
-        ModuleCat.ofHom (D.adjoinCircleDelete R (cubeState S) b) := by
-  ext x
-  simp [adjoinCircleCubeDeleteApp]
+/-- Reading off the coefficient of `1` on the adjoined circle lowers the quantum degree by one,
+and reading off the coefficient of `X` raises it by one. -/
+theorem isHomogeneous_adjoinCircleDelete (s : Fin n → Bool) (b : Bool) :
+    TauCeti.LinearMap.IsHomogeneous (D.adjoinCircleDelete R s b)
+      (Khovanov.circleQuantumGrading R (D.adjoinCircle.ResolvedCircle s)).piece
+      (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
+      (-bif b then -1 else 1) := by
+  rw [adjoinCircleDelete]
+  simpa only [zero_add] using
+    (Khovanov.isHomogeneous_deleteCircle R b).comp (Khovanov.isHomogeneous_reindex (R := R) _)
 
 /-- **Inserting the adjoined circle as a map of cubes.** On the vertex `S` it tensors with the
 label `b` on the adjoined circle: for `b = false` it is the birth of the circle labelled `1`,
@@ -310,18 +257,9 @@ cubes because the adjoined circle is untouched by every saddle. -/
 def adjoinCircleCubeInsert (b : Bool) (hj : j = j' + bif b then -1 else 1) :
     D.resolutionCube hD R j' ⟶
       D.adjoinCircle.resolutionCube (D.isPlanar_adjoinCircle_iff.2 hD) R j :=
-  NatTrans.ofCubeEdges (D.adjoinCircleCubeInsertApp hD R b hj) fun S T h ↦ by
-    obtain ⟨a, ha, rfl⟩ := h.exists_finset_insert
-    have hst := cubeState_eq_of_covBy h ha (mem_insert_self a S)
-    have hc := cubeState_ne_of_notMem_of_mem ha (mem_insert_self a S)
-    rw [← cancel_mono (D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j
-        (insert a S)), Category.assoc, Category.assoc,
-      adjoinCircleCubeInsertApp_comp_resolutionCubeι,
-      D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j' ha,
-      D.adjoinCircle.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι _ R j ha,
-      adjoinCircleCubeInsertApp_comp_resolutionCubeι_assoc]
-    ext x
-    exact (D.resolutionEdgeMap_adjoinCircleInsert hst hc R _ _ b _).symm
+  resolutionCubeHom hD R j' _ (fun s ↦ D.adjoinCircleInsert R s b)
+    (fun s ↦ D.isHomogeneous_adjoinCircleInsert R s b)
+    (fun _ _ _ hst hc h h' x ↦ D.resolutionEdgeMap_adjoinCircleInsert hst hc R h h' b x) hj
 
 /-- On the vertex `S`, inserting the adjoined circle tensors with the label `b` on it. -/
 @[reassoc]
@@ -329,9 +267,8 @@ theorem adjoinCircleCubeInsert_app_comp_resolutionCubeι (b : Bool)
     (hj : j = j' + bif b then -1 else 1) (S : Finset (Fin n)) :
     (D.adjoinCircleCubeInsert hD R b hj).app S ≫
         D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S =
-      D.resolutionCubeι hD R j' S ≫ ModuleCat.ofHom (D.adjoinCircleInsert R (cubeState S) b) := by
-  rw [adjoinCircleCubeInsert, NatTrans.ofCubeEdges_app]
-  exact D.adjoinCircleCubeInsertApp_comp_resolutionCubeι hD R b hj S
+      D.resolutionCubeι hD R j' S ≫ ModuleCat.ofHom (D.adjoinCircleInsert R (cubeState S) b) :=
+  resolutionCubeHom_app_comp_resolutionCubeι ..
 
 /-- **Deleting the adjoined circle as a map of cubes.** On the vertex `S` it reads off the
 coefficient of the label `b` on the adjoined circle: for `b = true` it is the death of the
@@ -340,17 +277,10 @@ circle, from the cube of `D.adjoinCircle` in quantum degree `j` to that of `D` i
 def adjoinCircleCubeDelete (b : Bool) (hj : j = j' + bif b then -1 else 1) :
     D.adjoinCircle.resolutionCube (D.isPlanar_adjoinCircle_iff.2 hD) R j ⟶
       D.resolutionCube hD R j' :=
-  NatTrans.ofCubeEdges (D.adjoinCircleCubeDeleteApp hD R b hj) fun S T h ↦ by
-    obtain ⟨a, ha, rfl⟩ := h.exists_finset_insert
-    have hst := cubeState_eq_of_covBy h ha (mem_insert_self a S)
-    have hc := cubeState_ne_of_notMem_of_mem ha (mem_insert_self a S)
-    rw [← cancel_mono (D.resolutionCubeι hD R j' (insert a S)), Category.assoc, Category.assoc,
-      adjoinCircleCubeDeleteApp_comp_resolutionCubeι,
-      D.adjoinCircle.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc _ R j ha,
-      D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j' ha,
-      adjoinCircleCubeDeleteApp_comp_resolutionCubeι_assoc]
-    ext x
-    exact D.adjoinCircleDelete_resolutionEdgeMap hst hc R _ _ b _
+  resolutionCubeHom _ R j hD (fun s ↦ D.adjoinCircleDelete R s b)
+    (fun s ↦ D.isHomogeneous_adjoinCircleDelete R s b)
+    (fun _ _ _ hst hc h h' x ↦ (D.adjoinCircleDelete_resolutionEdgeMap hst hc R h' h b x).symm)
+    (by rw [hj]; ring)
 
 /-- On the vertex `S`, deleting the adjoined circle reads off the coefficient of the label `b`
 on it. -/
@@ -359,9 +289,8 @@ theorem adjoinCircleCubeDelete_app_comp_resolutionCubeι (b : Bool)
     (hj : j = j' + bif b then -1 else 1) (S : Finset (Fin n)) :
     (D.adjoinCircleCubeDelete hD R b hj).app S ≫ D.resolutionCubeι hD R j' S =
       D.adjoinCircle.resolutionCubeι (D.isPlanar_adjoinCircle_iff.2 hD) R j S ≫
-        ModuleCat.ofHom (D.adjoinCircleDelete R (cubeState S) b) := by
-  rw [adjoinCircleCubeDelete, NatTrans.ofCubeEdges_app]
-  exact D.adjoinCircleCubeDeleteApp_comp_resolutionCubeι hD R b hj S
+        ModuleCat.ofHom (D.adjoinCircleDelete R (cubeState S) b) :=
+  resolutionCubeHom_app_comp_resolutionCubeι ..
 
 /-- Deleting the adjoined circle just inserted with the same label is the identity. -/
 @[reassoc (attr := simp)]
