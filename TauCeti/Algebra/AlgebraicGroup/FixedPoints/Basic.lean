@@ -5,46 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Equalizer
-public import TauCeti.Algebra.Bialgebra.TensorProduct
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.GroupTheory.FixedSubgroup
 
 /-!
 # Fixed-point closed subgroup schemes of affine group schemes
 
-Let `H` be a commutative Hopf algebra over a commutative ring `R`, representing an affine group
-scheme `G = Spec H`, and let `f : ι → (H ⟶ H)` be a family of Hopf-algebra endomorphisms,
-representing contravariantly a family of group-scheme endomorphisms of `G`.
-
-For each `i : ι`, `TauCeti.CommHopfAlgCat.equalizerHopfIdeal (f i) (𝟙 H)` cuts out the equalizer
-closed subgroup scheme where the `i`-th endomorphism agrees with the identity. Their supremum
-`fixedPointsHopfIdeal f` is again a Hopf ideal (`TauCeti.HopfIdeal.instSupSet`), so the quotient
-`fixedPoints f := H ⧸ fixedPointsHopfIdeal f` is a commutative Hopf algebra representing the
-scheme-theoretic intersection of those equalizers — the **fixed-point closed subgroup scheme**
-`G^f ⊆ G`.
-
-No group structure or finiteness on the index type `ι` is required for the closed subgroup scheme,
-its coequalizer universal property, or its functor of points: for every commutative `R`-algebra `A`,
-the `A`-points of `fixedPoints f` map bijectively onto the subgroup of `A`-points of `H` fixed by
-every `BialgHom.mapDomain (f i).hom`.
+For a commutative Hopf algebra `H` over `R` and endomorphisms `f : ι → (H ⟶ H)`, the Hopf ideal
+`fixedPointsHopfIdeal f := ⨆ i, equalizerHopfIdeal (f i) (𝟙 H)` defines the coordinate Hopf algebra
+`fixedPoints f := H ⧸ fixedPointsHopfIdeal f` of `(Spec H)^f`, whose `A`-points are
+`{ g | ∀ i, BialgHom.mapDomain (f i).hom g = g }`.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.fixedPointsHopfIdeal`: the Hopf ideal
-  `⨆ i, equalizerHopfIdeal (f i) (𝟙 H)` cutting out the fixed-point closed subgroup scheme.
-* `TauCeti.CommHopfAlgCat.fixedPoints` and `TauCeti.CommHopfAlgCat.mkFixedPoints`: the coordinate
-  Hopf algebra of fixed points and the surjective quotient morphism `H ⟶ fixedPoints f`.
-* `TauCeti.CommHopfAlgCat.liftFixedPoints`: the coequalizer universal property for morphisms `p`
-  satisfying `∀ i, f i ≫ p = p`.
-* `TauCeti.CommHopfAlgCat.fixedPointsIsoOfEqId`: when every `f i` is `𝟙 H`, `fixedPoints f ≅ H`.
-* `TauCeti.CommHopfAlgCat.range_mapDomain_mkFixedPoints` and
-  `TauCeti.CommHopfAlgCat.fixedPointsMulEquiv`: on `A`-points, `fixedPoints f` represents the
-  subgroup `{ g | ∀ i, BialgHom.mapDomain (f i).hom g = g }`.
-* `TauCeti.CommHopfAlgCat.swapEnd` and `TauCeti.CommHopfAlgCat.fixedPointsOfSwapIso`: the factor
-  swap on `H ⊗[R] H` has fixed-point subgroup scheme canonically isomorphic to the diagonal `H`.
-* `TauCeti.FiniteTypeCommHopfAlgCat.fixedPoints` and
-  `TauCeti.FiniteTypeCommHopfAlgCat.mkFixedPoints`: the finite-type counterparts.
+* `TauCeti.CommHopfAlgCat.fixedPointsHopfIdeal`, `fixedPoints`, `mkFixedPoints`, `liftFixedPoints`:
+  fixed-point Hopf ideal, coordinate Hopf algebra, quotient morphism, and coequalizer lift.
+* `TauCeti.CommHopfAlgCat.fixedPointsIsoOfEqId`, `fixedPointsIsoOfEqOne`: canonical isomorphisms
+  `fixedPoints f ≅ H` for identity families and trivial monoid actions.
+* `TauCeti.CommHopfAlgCat.range_mapDomain_mkFixedPoints`, `fixedPointsMulEquiv`: `A`-points of
+  `fixedPoints f` as the subgroup of `f`-fixed `A`-points of `H`.
+* `TauCeti.FiniteTypeCommHopfAlgCat.fixedPoints`, `mkFixedPoints`, `liftFixedPoints`,
+  `fixedPointsIsoOfEqId`, `fixedPointsIsoOfEqOne`, `fixedPointsMulEquiv`: finite-type counterparts.
 
 ## References
 
@@ -54,8 +36,7 @@ every `BialgHom.mapDomain (f i).hom`.
 
 public section
 
-open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
-open CategoryTheory TensorProduct WithConv
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom CategoryTheory WithConv
 
 namespace TauCeti
 
@@ -69,77 +50,60 @@ section Algebraic
 
 variable {H K : _root_.CommHopfAlgCat.{v} R} {ι : Type w}
 
-/-- The **fixed-point Hopf ideal** of a family of endomorphisms `f : ι → (H ⟶ H)`: the supremum of
-the equalizer Hopf ideals `equalizerHopfIdeal (f i) (𝟙 H)`.
-
-Contravariantly, its quotient is the coordinate Hopf algebra of the closed subgroup scheme of
-`Spec H` fixed by every endomorphism in the family. -/
+/-- The **fixed-point Hopf ideal** `⨆ i, equalizerHopfIdeal (f i) (𝟙 H)` of `f : ι → (H ⟶ H)`. -/
 noncomputable def fixedPointsHopfIdeal (f : ι → (H ⟶ H)) : HopfIdeal R H :=
   ⨆ i, equalizerHopfIdeal (f i) (𝟙 H)
 
 /-- Explicit `iSup` presentation of `fixedPointsHopfIdeal f`. -/
 theorem fixedPointsHopfIdeal_def (f : ι → (H ⟶ H)) :
-    fixedPointsHopfIdeal f = ⨆ i, equalizerHopfIdeal (f i) (𝟙 H) := by
-  rfl
+    fixedPointsHopfIdeal f = ⨆ i, equalizerHopfIdeal (f i) (𝟙 H) := by rfl
 
-/-- The underlying ideal of `fixedPointsHopfIdeal f` is the supremum of the ideals generated by the
-displacements `(f i).hom a - a`. -/
+/-- `(fixedPointsHopfIdeal f).toIdeal` is the supremum of the displacement ideals. -/
 @[simp]
 theorem fixedPointsHopfIdeal_toIdeal (f : ι → (H ⟶ H)) :
     (fixedPointsHopfIdeal f).toIdeal =
       ⨆ i, Ideal.span (Set.range fun a : H ↦ (f i).hom a - a) := by
-  rw [fixedPointsHopfIdeal_def, HopfIdeal.iSup_toIdeal]
-  congr 1
-  ext i : 1
-  rw [equalizerHopfIdeal_toIdeal, HopfIdeal.equalizerIdeal_eq_span]
-  rfl
+  rw [fixedPointsHopfIdeal_def, HopfIdeal.iSup_toIdeal]; congr 1; ext i : 1
+  rw [equalizerHopfIdeal_toIdeal, HopfIdeal.equalizerIdeal_eq_span]; rfl
 
 /-- Every displacement `(f i).hom a - a` lies in `fixedPointsHopfIdeal f`. -/
 theorem sub_mem_fixedPointsHopfIdeal (f : ι → (H ⟶ H)) (i : ι) (a : H) :
     (f i).hom a - a ∈ fixedPointsHopfIdeal f := by
-  rw [← HopfIdeal.mem_toIdeal, fixedPointsHopfIdeal_toIdeal]
-  exact Ideal.mem_iSup_of_mem i (Ideal.subset_span ⟨a, rfl⟩)
+  have hmem := sub_mem_equalizerHopfIdeal (f i) (𝟙 H) a
+  rw [_root_.CommHopfAlgCat.hom_id_bialgHom, BialgHom.id_apply] at hmem
+  exact (le_sSup (Set.mem_range_self (f := fun j ↦ equalizerHopfIdeal (f j) (𝟙 H)) i)) hmem
 
 /-- Universal property of `fixedPointsHopfIdeal` among Hopf ideals of `H`. -/
+@[simp]
 theorem fixedPointsHopfIdeal_le_iff {f : ι → (H ⟶ H)} {J : HopfIdeal R H} :
     fixedPointsHopfIdeal f ≤ J ↔ ∀ i a, (f i).hom a - a ∈ J := by
-  rw [← HopfIdeal.toIdeal_le_toIdeal, fixedPointsHopfIdeal_toIdeal, iSup_le_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [Ideal.span_le, Set.range_subset_iff]
-  rfl
+  simp [fixedPointsHopfIdeal_def, iSup, sSup_le_iff, equalizerHopfIdeal_le_iff]
 
-/-- A ring homomorphism out of `H` kills `fixedPointsHopfIdeal f` if and only if it equalizes every
-`f i` with the identity. -/
+/-- `φ : H →+* A` kills `fixedPointsHopfIdeal f` iff it equalizes every `f i` with `𝟙 H`. -/
 theorem fixedPointsHopfIdeal_le_ker_iff {A : Type*} [Ring A] (f : ι → (H ⟶ H)) (φ : H →+* A) :
     (fixedPointsHopfIdeal f).toIdeal ≤ RingHom.ker φ ↔ ∀ i a, φ ((f i).hom a) = φ a := by
   rw [fixedPointsHopfIdeal_def, HopfIdeal.iSup_toIdeal, iSup_le_iff]
   exact forall_congr' fun i ↦ equalizerHopfIdeal_le_ker_iff (f i) (𝟙 H) φ
 
-/-- A morphism `p : H ⟶ K` in `CommHopfAlgCat R` kills `fixedPointsHopfIdeal f` if and only if
-`f i ≫ p = p` for every `i`. -/
+/-- `p : H ⟶ K` kills `fixedPointsHopfIdeal f` iff `∀ i, f i ≫ p = p`. -/
 theorem fixedPointsHopfIdeal_toIdeal_le_ker_iff (f : ι → (H ⟶ H)) (p : H ⟶ K) :
     (fixedPointsHopfIdeal f).toIdeal ≤ RingHom.ker p.hom.toAlgHom.toRingHom ↔
       ∀ i, f i ≫ p = p := by
   rw [fixedPointsHopfIdeal_def, HopfIdeal.iSup_toIdeal, iSup_le_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [equalizerHopfIdeal_toIdeal_le_ker_iff, Category.id_comp]
+  exact forall_congr' fun i ↦ by rw [equalizerHopfIdeal_toIdeal_le_ker_iff, Category.id_comp]
 
-/-- `fixedPointsHopfIdeal f` vanishes if and only if every `f i` is the identity morphism. -/
+/-- `fixedPointsHopfIdeal f` vanishes iff every `f i` is `𝟙 H`. -/
 @[simp]
 theorem fixedPointsHopfIdeal_eq_bot_iff (f : ι → (H ⟶ H)) :
     fixedPointsHopfIdeal f = ⊥ ↔ ∀ i, f i = 𝟙 H := by
-  rw [← le_bot_iff, fixedPointsHopfIdeal_le_iff]
-  refine forall_congr' fun i ↦ ?_
-  simp_rw [HopfIdeal.mem_bot, sub_eq_zero]
-  exact ⟨fun h ↦ _root_.CommHopfAlgCat.hom_ext (BialgHom.ext h), fun h a ↦ by rw [h]; rfl⟩
+  rw [← le_bot_iff, fixedPointsHopfIdeal_def, iSup, sSup_le_iff]
+  simp [le_bot_iff, equalizerHopfIdeal_eq_bot_iff]
 
-/-- The coordinate commutative Hopf algebra `H ⧸ fixedPointsHopfIdeal f` of the fixed-point closed
-subgroup scheme `(Spec H)^f`. -/
+/-- The coordinate commutative Hopf algebra `H ⧸ fixedPointsHopfIdeal f` of `(Spec H)^f`. -/
 noncomputable abbrev fixedPoints (f : ι → (H ⟶ H)) : _root_.CommHopfAlgCat.{v} R :=
   quotient H (fixedPointsHopfIdeal f)
 
-/-- The quotient morphism `H ⟶ fixedPoints f` representing the closed-subgroup immersion
-`(Spec H)^f ↪ Spec H`. -/
+/-- The quotient morphism `H ⟶ fixedPoints f` representing `(Spec H)^f ↪ Spec H`. -/
 noncomputable abbrev mkFixedPoints (f : ι → (H ⟶ H)) : H ⟶ fixedPoints f :=
   mkQuotient H (fixedPointsHopfIdeal f)
 
@@ -149,39 +113,35 @@ theorem mkFixedPoints_surjective (f : ι → (H ⟶ H)) :
   mkQuotient_surjective H (fixedPointsHopfIdeal f)
 
 /-- Each endomorphism `f i` is coequalized with the identity by `mkFixedPoints f`. -/
+@[reassoc]
 theorem comp_mkFixedPoints (f : ι → (H ⟶ H)) (i : ι) :
     f i ≫ mkFixedPoints f = mkFixedPoints f :=
   ((fixedPointsHopfIdeal_toIdeal_le_ker_iff f (mkFixedPoints f)).1
     (mkQuotient_ker H (fixedPointsHopfIdeal f)).ge) i
 
-/-- **Coequalizer universal property** of `fixedPoints f`: any morphism `p : H ⟶ K` invariant under
-every `f i` factors through `fixedPoints f`. -/
+/-- **Coequalizer universal property** of `fixedPoints f`. -/
 noncomputable def liftFixedPoints {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p) :
     fixedPoints f ⟶ K :=
-  liftQuotient (fixedPointsHopfIdeal f) p
-    ((fixedPointsHopfIdeal_toIdeal_le_ker_iff f p).2 hp)
+  liftQuotient (fixedPointsHopfIdeal f) p ((fixedPointsHopfIdeal_toIdeal_le_ker_iff f p).2 hp)
 
 /-- `liftFixedPoints p hp` restricts along `mkFixedPoints f` to `p`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem mkFixedPoints_comp_liftFixedPoints {f : ι → (H ⟶ H)} (p : H ⟶ K)
-    (hp : ∀ i, f i ≫ p = p) :
-    mkFixedPoints f ≫ liftFixedPoints p hp = p :=
+    (hp : ∀ i, f i ≫ p = p) : mkFixedPoints f ≫ liftFixedPoints p hp = p :=
   mkQuotient_comp_liftQuotient _ _ _
 
 /-- `liftFixedPoints p hp` is the unique morphism out of `fixedPoints f` restricting to `p`. -/
 theorem liftFixedPoints_unique {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p)
-    (q : fixedPoints f ⟶ K) (hq : mkFixedPoints f ≫ q = p) :
-    q = liftFixedPoints p hp :=
+    (q : fixedPoints f ⟶ K) (hq : mkFixedPoints f ≫ q = p) : q = liftFixedPoints p hp :=
   liftQuotient_unique _ _ _ q hq
 
-/-- When every endomorphism in the family is the identity, the fixed-point Hopf algebra is
-canonically isomorphic to `H`. -/
+/-- When every `f i = 𝟙 H`, `fixedPoints f` is canonically isomorphic to `H`. -/
 noncomputable def fixedPointsIsoOfEqId {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 H) :
     fixedPoints f ≅ H :=
   eqToIso (congrArg (quotient H) ((fixedPointsHopfIdeal_eq_bot_iff f).2 hf)) ≪≫ quotientBotIso H
 
-/-- Composing `mkFixedPoints f` with `(fixedPointsIsoOfEqId hf).hom` is the identity on `H`. -/
-@[simp]
+/-- Composing `mkFixedPoints f` with `(fixedPointsIsoOfEqId hf).hom` is `𝟙 H`. -/
+@[reassoc (attr := simp)]
 theorem mkFixedPoints_comp_fixedPointsIsoOfEqId_hom {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 H) :
     mkFixedPoints f ≫ (fixedPointsIsoOfEqId hf).hom = 𝟙 H := by
   rw [fixedPointsIsoOfEqId, Iso.trans_hom, eqToIso.hom, ← Category.assoc,
@@ -195,182 +155,119 @@ theorem fixedPointsIsoOfEqId_inv {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 
   rw [← cancel_mono (fixedPointsIsoOfEqId hf).hom, Iso.inv_hom_id,
     mkFixedPoints_comp_fixedPointsIsoOfEqId_hom]
 
+/-- For the trivial action `ρ = 1`, `fixedPoints (fun θ ↦ (ρ θ).asIso.hom)` is isomorphic to `H`. -/
+noncomputable def fixedPointsIsoOfEqOne {Θ : Type w} [MulOneClass Θ] {ρ : Θ →* Aut H}
+    (hρ : ρ = 1) : fixedPoints (fun θ ↦ (ρ θ).asIso.hom) ≅ H :=
+  fixedPointsIsoOfEqId fun θ ↦ by simp [hρ]
+
+/-- Composing `mkFixedPoints` with `(fixedPointsIsoOfEqOne hρ).hom` is `𝟙 H`. -/
+@[reassoc (attr := simp)]
+theorem mkFixedPoints_comp_fixedPointsIsoOfEqOne_hom {Θ : Type w} [MulOneClass Θ]
+    {ρ : Θ →* Aut H} (hρ : ρ = 1) :
+    mkFixedPoints (fun θ ↦ (ρ θ).asIso.hom) ≫ (fixedPointsIsoOfEqOne hρ).hom = 𝟙 H := by
+  rw [fixedPointsIsoOfEqOne, mkFixedPoints_comp_fixedPointsIsoOfEqId_hom]
+
+/-- The inverse of `fixedPointsIsoOfEqOne hρ` is `mkFixedPoints`. -/
+@[simp]
+theorem fixedPointsIsoOfEqOne_inv {Θ : Type w} [MulOneClass Θ] {ρ : Θ →* Aut H} (hρ : ρ = 1) :
+    (fixedPointsIsoOfEqOne hρ).inv = mkFixedPoints (fun θ ↦ (ρ θ).asIso.hom) := by
+  rw [fixedPointsIsoOfEqOne, fixedPointsIsoOfEqId_inv]
+
 end Algebraic
 
 section Points
 
 variable {H : _root_.CommHopfAlgCat.{v} R} {ι : Type w}
 
-/-- On `A`-points, the subgroup cut out by `fixedPointsHopfIdeal f` is the locus fixed by every
-induced group endomorphism `BialgHom.mapDomain (f i).hom`. -/
+/-- On `A`-points, `fixedPointsHopfIdeal f` cuts out the locus fixed by every `(f i).hom`. -/
 theorem mem_quotientPointsSubgroup_fixedPointsHopfIdeal_iff (f : ι → (H ⟶ H))
     (A : CommAlgCat.{w'} R) (x : HopfAlgebra.points (R := R) (H := H) A) :
     x ∈ quotientPointsSubgroup H (fixedPointsHopfIdeal f) A ↔
       ∀ i, BialgHom.mapDomain (f i).hom x = x := by
-  rw [mem_quotientPointsSubgroup_iff]
-  have hle : ((fixedPointsHopfIdeal f).toIdeal ≤
-      RingHom.ker (x.ofConv : H →ₐ[R] A).toRingHom) ↔
-      ∀ h : H, h ∈ fixedPointsHopfIdeal f → x.ofConv h = 0 :=
-    ⟨fun h _ hy ↦ RingHom.mem_ker.1 (h (HopfIdeal.mem_toIdeal.2 hy)),
-      fun h _ hy ↦ RingHom.mem_ker.2 (h _ (HopfIdeal.mem_toIdeal.1 hy))⟩
-  rw [hle.symm.trans (fixedPointsHopfIdeal_le_ker_iff f (x.ofConv : H →ₐ[R] A).toRingHom)]
-  refine forall_congr' fun i ↦ ⟨fun h ↦ ?_, fun h a ↦ ?_⟩
-  · apply ofConv_injective
-    ext a
-    simpa only [BialgHom.mapDomain_apply_apply, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom] using h a
-  · simpa only [BialgHom.mapDomain_apply_apply, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom] using congrArg (fun m : WithConv (H →ₐ[R] A) ↦ m.ofConv a) h
+  rw [fixedPointsHopfIdeal_def, quotientPointsSubgroup_iSup, Subgroup.mem_iInf]
+  exact forall_congr' fun i ↦ by
+    rw [mem_quotientPointsSubgroup_equalizerHopfIdeal_iff, _root_.CommHopfAlgCat.hom_id_bialgHom,
+      BialgHom.mapDomain_id, MonoidHom.id_apply]
 
-/-- For every commutative `R`-algebra `A`, the image of the `A`-points of `fixedPoints f` in the
-`A`-points of `H` is the set of points fixed by every `f i`. -/
-theorem range_mapDomain_mkFixedPoints (f : ι → (H ⟶ H)) (A : Type w') [CommRing A] [Algebra R A] :
-    Set.range (BialgHom.mapDomain (A := A) (mkFixedPoints f).hom) =
-      {g | ∀ i, BialgHom.mapDomain (A := A) (f i).hom g = g} := by
-  ext g
-  have hmem : g ∈ Set.range (BialgHom.mapDomain (A := A) (mkFixedPoints f).hom) ↔
-      g ∈ quotientPointsSubgroup H (fixedPointsHopfIdeal f) (CommAlgCat.of R A) := by
-    rw [quotientPointsSubgroup, Subgroup.mem_carrier.symm]
-    exact Iff.rfl
-  exact hmem.trans (mem_quotientPointsSubgroup_fixedPointsHopfIdeal_iff f (CommAlgCat.of R A) g)
+section PointsAlgebra
 
-/-- As subgroups of the convolution group of `A`-points of `H`, the range of precomposition with
-`mkFixedPoints f` is the infimum of the fixed subgroups of the induced endomorphisms. -/
-theorem range_mapDomain_mkFixedPoints_subgroup (f : ι → (H ⟶ H)) (A : Type w')
-    [CommRing A] [Algebra R A] :
+variable (f : ι → (H ⟶ H)) (A : Type w') [CommRing A] [Algebra R A]
+
+/-- As subgroups of `H(A)`, the range of `mkFixedPoints f` is `⨅ i, fixedSubgroup ...`. -/
+theorem range_mapDomain_mkFixedPoints_subgroup :
     (BialgHom.mapDomain (A := A) (mkFixedPoints f).hom).range =
       ⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom) := by
-  ext g
-  simp only [MonoidHom.mem_range, Subgroup.mem_iInf, mem_fixedSubgroup]
-  exact Set.ext_iff.mp (range_mapDomain_mkFixedPoints f A) g
+  rw [← quotientPointsHom_hom (fixedPointsHopfIdeal f) (CommAlgCat.of R A),
+    ← quotientPointsSubgroup]
+  ext g; rw [mem_quotientPointsSubgroup_fixedPointsHopfIdeal_iff, Subgroup.mem_iInf]
+  simp only [mem_fixedSubgroup]
 
-/-- The convolution group of `A`-points of `fixedPoints f` is canonically isomorphic to the subgroup
-of `A`-points of `H` fixed by every `f i`. -/
-noncomputable def fixedPointsMulEquiv (f : ι → (H ⟶ H)) (A : Type w') [CommRing A] [Algebra R A] :
+/-- The image of the `A`-points of `fixedPoints f` in `H(A)` is the set of `f`-fixed points. -/
+theorem range_mapDomain_mkFixedPoints :
+    Set.range (BialgHom.mapDomain (A := A) (mkFixedPoints f).hom) =
+      {g | ∀ i, BialgHom.mapDomain (A := A) (f i).hom g = g} := by
+  rw [← MonoidHom.coe_range, range_mapDomain_mkFixedPoints_subgroup]
+  ext g; simp [mem_fixedSubgroup]
+
+/-- The group of `A`-points of `fixedPoints f` is isomorphic to the subgroup of `f`-fixed points. -/
+noncomputable def fixedPointsMulEquiv :
     WithConv ((fixedPoints f : Type v) →ₐ[R] A) ≃*
       ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom)) :=
-  (MonoidHom.ofInjective
-      (BialgHom.mapDomain_injective_of_surjective (A := A) (mkFixedPoints f).hom
-        (mkFixedPoints_surjective f))).trans
+  (MonoidHom.ofInjective (BialgHom.mapDomain_injective_of_surjective (A := A)
+    (mkFixedPoints f).hom (mkFixedPoints_surjective f))).trans
     (MulEquiv.subgroupCongr (range_mapDomain_mkFixedPoints_subgroup f A))
 
-/-- `fixedPointsMulEquiv` embeds `A`-points of `fixedPoints f` into `A`-points of `H` by
-precomposition with `mkFixedPoints f`. -/
+/-- `fixedPointsMulEquiv` embeds `A`-points by precomposition with `mkFixedPoints f`. -/
 @[simp]
-theorem coe_fixedPointsMulEquiv (f : ι → (H ⟶ H)) (A : Type w') [CommRing A] [Algebra R A]
-    (x : WithConv ((fixedPoints f : Type v) →ₐ[R] A)) :
+theorem coe_fixedPointsMulEquiv (x : WithConv ((fixedPoints f : Type v) →ₐ[R] A)) :
     (fixedPointsMulEquiv f A x : WithConv (H →ₐ[R] A)) =
       BialgHom.mapDomain (A := A) (mkFixedPoints f).hom x := by
   rw [fixedPointsMulEquiv, MulEquiv.coe_trans, Function.comp_apply, MulEquiv.subgroupCongr_apply,
     MonoidHom.ofInjective_apply]
 
+/-- Precomposing `(fixedPointsMulEquiv f A).symm g` with `mkFixedPoints f` recovers `g`. -/
+theorem mapDomain_mkFixedPoints_fixedPointsMulEquiv_symm
+    (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) :
+    BialgHom.mapDomain (A := A) (mkFixedPoints f).hom ((fixedPointsMulEquiv f A).symm g) = g := by
+  rw [← coe_fixedPointsMulEquiv, MulEquiv.apply_symm_apply]
+
+/-- `simp`-normal form of `mapDomain_mkFixedPoints_fixedPointsMulEquiv_symm` after `mapDomain`. -/
+@[simp]
+theorem fixedPointsMulEquiv_symm_ofConv_comp_mkₐ
+    (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) :
+    (((fixedPointsMulEquiv f A).symm g).ofConv).comp
+        (Ideal.Quotient.mkₐ R (fixedPointsHopfIdeal f).toIdeal) = g.1.ofConv := by
+  simpa using congrArg WithConv.ofConv (mapDomain_mkFixedPoints_fixedPointsMulEquiv_symm f A g)
+
+/-- Evaluating `(fixedPointsMulEquiv f A).symm g` on `Ideal.Quotient.mk _ a` gives `g.1 a`. -/
+@[simp]
+theorem fixedPointsMulEquiv_symm_ofConv_mk
+    (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) (a : H) :
+    (((fixedPointsMulEquiv f A).symm g).ofConv)
+        (Ideal.Quotient.mk (fixedPointsHopfIdeal f).toIdeal a) = g.1.ofConv a :=
+  AlgHom.congr_fun (fixedPointsMulEquiv_symm_ofConv_comp_mkₐ f A g) a
+
+/-- Evaluating `(fixedPointsMulEquiv f A).symm g` on `(mkFixedPoints f).hom a` gives `g.1 a`. -/
+theorem fixedPointsMulEquiv_symm_ofConv_mkFixedPoints
+    (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) (a : H) :
+    (((fixedPointsMulEquiv f A).symm g).ofConv) ((mkFixedPoints f).hom a) = g.1.ofConv a :=
+  fixedPointsMulEquiv_symm_ofConv_mk f A g a
+
+end PointsAlgebra
+
 end Points
-
-section Swap
-
-/-- The factor-swapping endomorphism `x ⊗ₜ y ↦ y ⊗ₜ x` of the tensor-square commutative Hopf
-algebra `H ⊗[R] H`, representing contravariantly the factor swap `(g₁, g₂) ↦ (g₂, g₁)` on the
-product group scheme `Spec H × Spec H`. -/
-noncomputable def swapEnd (H : _root_.CommHopfAlgCat.{v} R) :
-    _root_.CommHopfAlgCat.of R (H ⊗[R] H) ⟶ _root_.CommHopfAlgCat.of R (H ⊗[R] H) :=
-  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.TensorProduct.comm R H H).toBialgHom
-
-/-- Underlying bialgebra morphism of `swapEnd H`. -/
-@[simp]
-theorem swapEnd_hom (H : _root_.CommHopfAlgCat.{v} R) :
-    (swapEnd H).hom = (_root_.Bialgebra.TensorProduct.comm R H H).toBialgHom :=
-  _root_.CommHopfAlgCat.hom_ofHom _
-
-/-- Swapping the two tensor factors twice is the identity. -/
-@[simp]
-theorem swapEnd_comp_swapEnd (H : _root_.CommHopfAlgCat.{v} R) :
-    swapEnd H ≫ swapEnd H = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) :=
-  _root_.CommHopfAlgCat.hom_ext <| BialgHom.coe_toAlgHom_injective <|
-    Algebra.TensorProduct.ext' fun _ _ ↦ rfl
-
-/-- Multiplication `H ⊗[R] H →ₐc[R] H` is invariant under swapping the two tensor factors of a
-commutative Hopf algebra `H`, representing contravariantly the diagonal inclusion `G ↪ G × G`. -/
-theorem swapEnd_comp_mulBialgHom (H : _root_.CommHopfAlgCat.{v} R) :
-    swapEnd H ≫ _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) =
-      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) :=
-  _root_.CommHopfAlgCat.hom_ext <| BialgHom.coe_toAlgHom_injective <|
-    Algebra.TensorProduct.ext' fun x y ↦ mul_comm y x
-
-private theorem comp_mulBialgHom_of_eq_id_or_swapEnd (H : _root_.CommHopfAlgCat.{v} R) {ι : Type w}
-    {f : ι → (_root_.CommHopfAlgCat.of R (H ⊗[R] H) ⟶ _root_.CommHopfAlgCat.of R (H ⊗[R] H))}
-    (hf : ∀ i, f i = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) ∨ f i = swapEnd H) (i : ι) :
-    f i ≫ _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) =
-      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) := by
-  rcases hf i with hi | hi
-  · rw [hi, Category.id_comp]
-  · rw [hi, swapEnd_comp_mulBialgHom]
-
-/-- **Fixed points of the factor swap on `G × G` are the diagonal `G`.**
-
-For any commutative Hopf algebra `H` over any commutative ring `R` (with no invertibility or
-smoothness assumption), if `f` is a family of endomorphisms of `H ⊗[R] H` consisting of `𝟙` and
-`swapEnd H` and containing `swapEnd H`, then `fixedPoints f` is canonically isomorphic in
-`CommHopfAlgCat R` to `H` via multiplication `H ⊗[R] H ⟶ H`. -/
-noncomputable def fixedPointsOfSwapIso (H : _root_.CommHopfAlgCat.{v} R) {ι : Type w}
-    {f : ι → (_root_.CommHopfAlgCat.of R (H ⊗[R] H) ⟶ _root_.CommHopfAlgCat.of R (H ⊗[R] H))}
-    (hswap : ∃ i, f i = swapEnd H)
-    (hf : ∀ i, f i = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) ∨ f i = swapEnd H) :
-    fixedPoints f ≅ H where
-  hom := liftFixedPoints (_root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H))
-    (comp_mulBialgHom_of_eq_id_or_swapEnd H hf)
-  inv := _root_.CommHopfAlgCat.ofHom
-    (TauCeti.Bialgebra.TensorProduct.includeLeft (R := R) (H₁ := H) (H₂ := H)) ≫ mkFixedPoints f
-  hom_inv_id := by
-    apply mkQuotient_hom_ext
-    rw [← Category.assoc, mkFixedPoints_comp_liftFixedPoints, Category.comp_id]
-    obtain ⟨i₀, hi₀⟩ := hswap
-    have hmk_swap : swapEnd H ≫ mkFixedPoints f = mkFixedPoints f := by
-      rw [← hi₀]; exact comp_mkFixedPoints f i₀
-    refine _root_.CommHopfAlgCat.hom_ext (BialgHom.coe_toAlgHom_injective ?_)
-    refine Algebra.TensorProduct.ext' fun x y ↦ ?_
-    have hswap_y :
-        (Bialgebra.Quotient.mkBialgHom (R := R) (fixedPointsHopfIdeal f).toIdeal)
-            ((1 : H) ⊗ₜ[R] y) =
-          (Bialgebra.Quotient.mkBialgHom (R := R) (fixedPointsHopfIdeal f).toIdeal)
-            (y ⊗ₜ[R] (1 : H)) := by
-      have h := congrArg (fun m : _ ⟶ fixedPoints f ↦ m.hom (y ⊗ₜ[R] (1 : H))) hmk_swap
-      rwa [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply, swapEnd_hom, hom_mkQuotient] at h
-    have hmul_xy : (x ⊗ₜ[R] y : H ⊗[R] H) = (x ⊗ₜ[R] (1 : H)) * ((1 : H) ⊗ₜ[R] y) := by simp
-    have hmul_left : ((x * y) ⊗ₜ[R] (1 : H) : H ⊗[R] H) =
-        (x ⊗ₜ[R] (1 : H)) * (y ⊗ₜ[R] (1 : H)) := by simp
-    simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_apply,
-      BialgHom.coe_toAlgHom, _root_.CommHopfAlgCat.hom_ofHom, _root_.Bialgebra.coe_mulBialgHom,
-      LinearMap.mul'_apply, TauCeti.Bialgebra.TensorProduct.includeLeft_apply]
-    rw [hmul_left, map_mul, hmul_xy, map_mul, hswap_y]
-  inv_hom_id := by
-    rw [Category.assoc, mkFixedPoints_comp_liftFixedPoints]
-    exact _root_.CommHopfAlgCat.hom_ext (by ext x; simp)
-
-/-- Precomposing `(fixedPointsOfSwapIso H hswap hf).hom` with `mkFixedPoints f` recovers the
-diagonal coordinate map `mulBialgHom R H`. -/
-@[simp]
-theorem mkFixedPoints_comp_fixedPointsOfSwapIso_hom (H : _root_.CommHopfAlgCat.{v} R) {ι : Type w}
-    {f : ι → (_root_.CommHopfAlgCat.of R (H ⊗[R] H) ⟶ _root_.CommHopfAlgCat.of R (H ⊗[R] H))}
-    (hswap : ∃ i, f i = swapEnd H)
-    (hf : ∀ i, f i = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) ∨ f i = swapEnd H) :
-    mkFixedPoints f ≫ (fixedPointsOfSwapIso H hswap hf).hom =
-      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) :=
-  mkFixedPoints_comp_liftFixedPoints _ (comp_mulBialgHom_of_eq_id_or_swapEnd H hf)
-
-end Swap
 
 end CommHopfAlgCat
 
 namespace FiniteTypeCommHopfAlgCat
 
-variable {R : Type u} [CommRing R] {H : FiniteTypeCommHopfAlgCat.{u, v} R} {ι : Type w}
+variable {R : Type u} [CommRing R] {H K : FiniteTypeCommHopfAlgCat.{u, v} R} {ι : Type w}
 
-/-- The fixed-point Hopf ideal of a family of endomorphisms in `FiniteTypeCommHopfAlgCat R`. -/
+/-- The fixed-point Hopf ideal of `f : ι → (H ⟶ H)` in `FiniteTypeCommHopfAlgCat R`. -/
 noncomputable abbrev fixedPointsHopfIdeal (f : ι → (H ⟶ H)) : HopfIdeal R H :=
   CommHopfAlgCat.fixedPointsHopfIdeal fun i ↦ (f i).hom
 
-/-- The finite-type commutative Hopf algebra `H ⧸ fixedPointsHopfIdeal f` representing the
-fixed-point closed subgroup scheme `(Spec H)^f`. -/
+/-- The finite-type coordinate Hopf algebra `H ⧸ fixedPointsHopfIdeal f` of `(Spec H)^f`. -/
 noncomputable abbrev fixedPoints (f : ι → (H ⟶ H)) : FiniteTypeCommHopfAlgCat.{u, v} R :=
   quotient H (fixedPointsHopfIdeal f)
 
@@ -378,24 +275,89 @@ noncomputable abbrev fixedPoints (f : ι → (H ⟶ H)) : FiniteTypeCommHopfAlgC
 noncomputable abbrev mkFixedPoints (f : ι → (H ⟶ H)) : H ⟶ fixedPoints f :=
   mkQuotient H (fixedPointsHopfIdeal f)
 
-/-- The quotient morphism onto `fixedPoints f` is surjective on underlying coordinate rings. -/
+/-- `mkFixedPoints f` is surjective on underlying coordinate rings. -/
 theorem mkFixedPoints_surjective (f : ι → (H ⟶ H)) :
     Function.Surjective (toBialgHom (mkFixedPoints f)) :=
   CommHopfAlgCat.mkQuotient_surjective H.obj (fixedPointsHopfIdeal f)
 
-/-- When every endomorphism in the family is `𝟙 H`, `fixedPoints f ≅ H` in
-`FiniteTypeCommHopfAlgCat R`. -/
+/-- Each `f i` is coequalized with `𝟙 H` by `mkFixedPoints f`. -/
+@[reassoc]
+theorem comp_mkFixedPoints (f : ι → (H ⟶ H)) (i : ι) : f i ≫ mkFixedPoints f = mkFixedPoints f := by
+  apply ObjectProperty.hom_ext; exact CommHopfAlgCat.comp_mkFixedPoints (fun j ↦ (f j).hom) i
+
+/-- **Coequalizer universal property** of `fixedPoints f` in `FiniteTypeCommHopfAlgCat R`. -/
+noncomputable def liftFixedPoints {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p) :
+    fixedPoints f ⟶ K :=
+  liftQuotient (fixedPointsHopfIdeal f) p
+    ((CommHopfAlgCat.fixedPointsHopfIdeal_toIdeal_le_ker_iff (fun i ↦ (f i).hom) p.hom).2
+      fun i ↦ congrArg (·.hom) (hp i))
+
+/-- `liftFixedPoints p hp` restricts along `mkFixedPoints f` to `p`. -/
+@[reassoc (attr := simp)]
+theorem mkFixedPoints_comp_liftFixedPoints {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p) :
+    mkFixedPoints f ≫ liftFixedPoints p hp = p :=
+  mkQuotient_comp_liftQuotient _ _ _
+
+/-- `liftFixedPoints p hp` is the unique morphism out of `fixedPoints f` restricting to `p`. -/
+theorem liftFixedPoints_unique {f : ι → (H ⟶ H)} (p : H ⟶ K) (hp : ∀ i, f i ≫ p = p)
+    (q : fixedPoints f ⟶ K) (hq : mkFixedPoints f ≫ q = p) : q = liftFixedPoints p hp :=
+  liftQuotient_unique _ _ _ q hq
+
+/-- When every `f i = 𝟙 H`, `fixedPoints f ≅ H` in `FiniteTypeCommHopfAlgCat R`. -/
 noncomputable def fixedPointsIsoOfEqId {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 H) :
     fixedPoints f ≅ H :=
-  ObjectProperty.isoMk _
-    (CommHopfAlgCat.fixedPointsIsoOfEqId (f := fun i ↦ (f i).hom) fun i ↦ by rw [hf i]; rfl)
+  eqToIso (congrArg (quotient H) ((CommHopfAlgCat.fixedPointsHopfIdeal_eq_bot_iff
+    (fun i ↦ (f i).hom)).2 fun i ↦ congrArg (·.hom) (hf i))) ≪≫ quotientBotIso H
 
-/-- For every commutative `R`-algebra `A`, the image of `fixedPoints f` on `A`-points is the set of
-`A`-points of `H` fixed by every `f i`. -/
+/-- Composing `mkFixedPoints f` with `(fixedPointsIsoOfEqId hf).hom` is `𝟙 H`. -/
+@[reassoc (attr := simp)]
+theorem mkFixedPoints_comp_fixedPointsIsoOfEqId_hom {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 H) :
+    mkFixedPoints f ≫ (fixedPointsIsoOfEqId hf).hom = 𝟙 H := by
+  rw [fixedPointsIsoOfEqId, Iso.trans_hom, eqToIso.hom, ← Category.assoc, mkQuotient_comp_eqToHom
+    ((CommHopfAlgCat.fixedPointsHopfIdeal_eq_bot_iff _).2 fun i ↦ congrArg (·.hom) (hf i)).symm,
+    ← quotientBotIso_inv, Iso.inv_hom_id]
+
+/-- The inverse of `fixedPointsIsoOfEqId hf` is `mkFixedPoints f`. -/
+@[simp]
+theorem fixedPointsIsoOfEqId_inv {f : ι → (H ⟶ H)} (hf : ∀ i, f i = 𝟙 H) :
+    (fixedPointsIsoOfEqId hf).inv = mkFixedPoints f := by
+  rw [← cancel_mono (fixedPointsIsoOfEqId hf).hom, Iso.inv_hom_id,
+    mkFixedPoints_comp_fixedPointsIsoOfEqId_hom]
+
+section TrivialAction
+
+variable {Θ : Type w} [MulOneClass Θ] {ρ : Θ →* Aut H} (hρ : ρ = 1)
+
+/-- For the trivial action `ρ = 1`, `fixedPoints (fun θ ↦ (ρ θ).asIso.hom) ≅ H`. -/
+noncomputable def fixedPointsIsoOfEqOne : fixedPoints (fun θ ↦ (ρ θ).asIso.hom) ≅ H :=
+  fixedPointsIsoOfEqId fun θ ↦ by simp [hρ]
+
+/-- Composing `mkFixedPoints` with `(fixedPointsIsoOfEqOne hρ).hom` is `𝟙 H`. -/
+@[reassoc (attr := simp)]
+theorem mkFixedPoints_comp_fixedPointsIsoOfEqOne_hom :
+    mkFixedPoints (fun θ ↦ (ρ θ).asIso.hom) ≫ (fixedPointsIsoOfEqOne hρ).hom = 𝟙 H := by
+  rw [fixedPointsIsoOfEqOne, mkFixedPoints_comp_fixedPointsIsoOfEqId_hom]
+
+/-- The inverse of `fixedPointsIsoOfEqOne hρ` is `mkFixedPoints`. -/
+@[simp]
+theorem fixedPointsIsoOfEqOne_inv :
+    (fixedPointsIsoOfEqOne hρ).inv = mkFixedPoints (fun θ ↦ (ρ θ).asIso.hom) := by
+  rw [fixedPointsIsoOfEqOne, fixedPointsIsoOfEqId_inv]
+
+end TrivialAction
+
+/-- On `A`-points, `fixedPoints f` represents the `A`-points of `H` fixed by every `f i`. -/
 theorem range_mapDomain_mkFixedPoints (f : ι → (H ⟶ H)) (A : Type w') [CommRing A] [Algebra R A] :
     Set.range (BialgHom.mapDomain (A := A) (toBialgHom (mkFixedPoints f))) =
       {g | ∀ i, BialgHom.mapDomain (A := A) (toBialgHom (f i)) g = g} :=
   CommHopfAlgCat.range_mapDomain_mkFixedPoints (fun i ↦ (f i).hom) A
+
+/-- The group of `A`-points of `fixedPoints f` is isomorphic to the subgroup of `f`-fixed points. -/
+noncomputable abbrev fixedPointsMulEquiv (f : ι → (H ⟶ H)) (A : Type w')
+    [CommRing A] [Algebra R A] :
+    WithConv ((fixedPoints f : Type v) →ₐ[R] A) ≃*
+      ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (toBialgHom (f i)))) :=
+  CommHopfAlgCat.fixedPointsMulEquiv (fun i ↦ (f i).hom) A
 
 end FiniteTypeCommHopfAlgCat
 
