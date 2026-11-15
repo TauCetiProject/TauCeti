@@ -74,6 +74,9 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   `LinearMap.IsSymmetric.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace`: the
   quadratic form is coercive on the positive spectral subspace and anticoercive on the negative
   one, with the constant of `LinearMap.IsSymmetric.exists_pos_forall_le_abs_eigenvalues`.
+* `LinearMap.IsSymmetric.eigenvalues_eq_neg_eigenvalues_rev_of_finrank_eigenspace_eq`: if the
+  eigenspaces of `S` at `μ` and of `T` at `-μ` always have the same dimension, the ordered
+  eigenvalues of `S` are the negated eigenvalues of `T` in reverse order.
 * `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
   with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
@@ -241,6 +244,12 @@ theorem inner_sub_apply_of_apply_eq_smul_of_apply_eq_smul {T S : E →ₗ[𝕜] 
         rw [hx, hy, inner_smul_right, inner_smul_left, hlam, sub_mul]
 
 variable {n : ℕ} [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
+
+/-- On an eigenvector of the ordered eigenbasis, the diagonal pairing is its eigenvalue. -/
+theorem re_inner_apply_eigenvectorBasis (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (j : Fin n) :
+    RCLike.re ⟪T (hT.eigenvectorBasis hn j), hT.eigenvectorBasis hn j⟫_𝕜 = hT.eigenvalues hn j := by
+  simp [hT.apply_eigenvectorBasis, inner_smul_left]
 
 /-! ### Finite-dimensional eigenvector spans -/
 
@@ -487,6 +496,31 @@ theorem exists_pos_forall_le_abs_eigenvalues (hT : T.IsSymmetric)
 /-! ### Operators anticommuting with an invertible operator -/
 
 open Finset in
+/-- If at every real `μ` the eigenspace of a symmetric `S` has the same dimension as the eigenspace
+of a symmetric `T` at `-μ`, the decreasingly ordered eigenvalues of `S` are the negated eigenvalues
+of `T` in reverse order: the `i`-th largest eigenvalue of `S` is minus the `i`-th smallest
+eigenvalue of `T`. -/
+theorem eigenvalues_eq_neg_eigenvalues_rev_of_finrank_eigenspace_eq {S : E →ₗ[𝕜] E}
+    (hT : T.IsSymmetric) (hS : S.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
+    (h : ∀ μ : ℝ, Module.finrank 𝕜 (eigenspace S (μ : 𝕜)) =
+      Module.finrank 𝕜 (eigenspace T ((-μ : ℝ) : 𝕜)))
+    (i : Fin n) :
+    hS.eigenvalues hn i = -hT.eigenvalues hn i.rev := by
+  classical
+  -- Both tuples are decreasing, and every value occurs in them equally often.
+  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hS.eigenvalues hn := by
+    refine Antitone.eq_of_card_filter_eq
+      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
+      (hS.eigenvalues_antitone hn) fun μ ↦ ?_
+    have h₁ := hS.card_filter_eigenvalues_eq hn (μ : 𝕜)
+    have h₂ := hT.card_filter_eigenvalues_eq hn ((-μ : ℝ) : 𝕜)
+    simp only [RCLike.ofReal_inj] at h₁ h₂
+    rw [h₁, h μ, ← h₂]
+    refine card_equiv Fin.revPerm fun j ↦ ?_
+    simp only [mem_filter, mem_univ, true_and, Fin.revPerm_apply]
+    constructor <;> intro hj <;> linarith
+  exact (congrFun hgev i).symm
+
 /-- **Paired eigenvalues.** If an invertible operator `e` anticommutes with a symmetric operator
 `T`, the decreasingly ordered eigenvalues of `T` are antisymmetric: the `i`-th largest eigenvalue
 is minus the `i`-th smallest one. Equivalently, the eigenvalues of `T`, counted with
@@ -494,26 +528,8 @@ multiplicity, are symmetric about `0`. -/
 theorem eigenvalues_rev_of_anticommute (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n)
     (e : E ≃ₗ[𝕜] E) (h : T * e + e * T = 0) (i : Fin n) :
     hT.eigenvalues hn i.rev = -hT.eigenvalues hn i := by
-  classical
-  -- The real number `-μ` occurs as often as `μ` in the ordered eigenvalue family.
-  have hcount (μ : ℝ) :
-      #{j | hT.eigenvalues hn j = -μ} = #{j | hT.eigenvalues hn j = μ} := by
-    have hcard (ν : ℝ) :
-        #{j | hT.eigenvalues hn j = ν} = Module.finrank 𝕜 (eigenspace T (ν : 𝕜)) := by
-      rw [← hT.card_filter_eigenvalues_eq hn]
-      simp only [RCLike.ofReal_inj]
-    rw [hcard, hcard, RCLike.ofReal_neg, finrank_genEigenspace_neg_of_anticommute e h]
-  -- The family `j ↦ -λ_{rev j}` is again decreasing, and every value occurs in it as often as
-  -- in the ordered eigenvalue family, so it is that family itself.
-  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hT.eigenvalues hn := by
-    refine Antitone.eq_of_card_filter_eq
-      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
-      (hT.eigenvalues_antitone hn) fun μ ↦ ?_
-    rw [← hcount μ]
-    refine Finset.card_equiv Fin.revPerm fun j ↦ ?_
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.revPerm_apply]
-    constructor <;> intro hj <;> linarith
-  simpa using (congrFun hgev i.rev).symm
+  simpa using hT.eigenvalues_eq_neg_eigenvalues_rev_of_finrank_eigenspace_eq hT hn
+    (fun μ ↦ by rw [RCLike.ofReal_neg, finrank_genEigenspace_neg_of_anticommute e h]) i.rev
 
 /-- If an invertible operator anticommutes with a symmetric operator `T`, then `T` has as many
 positive as negative eigenvalues, counted with multiplicity: its positive and negative spectral
@@ -528,29 +544,13 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
 
-open Finset in
 /-- The decreasingly ordered eigenvalues of `-T` are the negatives of those of `T` in reverse
 order: the `i`-th largest eigenvalue of `-T` is minus the `i`-th smallest eigenvalue of `T`. -/
 theorem eigenvalues_neg (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (i : Fin n) :
-    hT.neg.eigenvalues hn i = -hT.eigenvalues hn i.rev := by
-  classical
-  -- Both tuples are decreasing, and `-T` has eigenspace `E_{-μ}(T)` at `μ`, so every value
-  -- occurs in them equally often.
-  have hgev : (fun j ↦ -hT.eigenvalues hn j.rev) = hT.neg.eigenvalues hn := by
-    refine Antitone.eq_of_card_filter_eq
-      (fun j k hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
-      (hT.neg.eigenvalues_antitone hn) fun μ ↦ ?_
-    have hspace : eigenspace (-T) (μ : 𝕜) = eigenspace T ((-μ : ℝ) : 𝕜) := by
-      ext x
-      simp
-    have h₁ := hT.neg.card_filter_eigenvalues_eq hn (μ : 𝕜)
-    have h₂ := hT.card_filter_eigenvalues_eq hn ((-μ : ℝ) : 𝕜)
-    simp only [RCLike.ofReal_inj] at h₁ h₂
-    rw [h₁, hspace, ← h₂]
-    refine card_equiv Fin.revPerm fun j ↦ ?_
-    simp only [mem_filter, mem_univ, true_and, Fin.revPerm_apply]
-    constructor <;> intro hj <;> linarith
-  exact (congrFun hgev i).symm
+    hT.neg.eigenvalues hn i = -hT.eigenvalues hn i.rev :=
+  hT.eigenvalues_eq_neg_eigenvalues_rev_of_finrank_eigenspace_eq hT.neg hn
+    (fun μ ↦ by
+      rw [show eigenspace (-T) (μ : 𝕜) = eigenspace T ((-μ : ℝ) : 𝕜) by ext; simp]) i
 
 end LinearMap.IsSymmetric
 

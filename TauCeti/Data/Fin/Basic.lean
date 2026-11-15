@@ -61,6 +61,9 @@ range, so the value is a `dite` rather than a plain application.
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
+* `Fin.sum_filter_val_lt_eq_sum_castLE`: a sum over the indices below `k` as a sum over `Fin k`.
+* `Fin.sum_sum_succAbove`: summing a tuple with one index omitted, over all omitted indices,
+  counts every entry `k` times.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
@@ -220,6 +223,30 @@ theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
       intro x hx
       simp [Finset.mem_range.mp hx]
     _ = _ := Finset.sum_range_const_sub_succ N k hk
+
+/-- A sum over the indices of `Fin n` below `k ≤ n` is the sum over `Fin k` along `Fin.castLE`. -/
+theorem sum_filter_val_lt_eq_sum_castLE {M : Type*} [AddCommMonoid M] {n k : ℕ} (hk : k ≤ n)
+    (f : Fin n → M) :
+    ∑ j ∈ Finset.univ.filter fun j : Fin n ↦ (j : ℕ) < k, f j = ∑ i : Fin k, f (castLE hk i) :=
+  (Finset.sum_bij (fun i _ ↦ castLE hk i) (by simp)
+    (fun _ _ _ _ h ↦ castLE_injective hk h)
+    (fun j hj ↦ ⟨⟨j, by simpa using hj⟩, by simp, rfl⟩) fun _ _ ↦ rfl).symm
+
+/-- Summing a tuple on `Fin (k + 1)` with one index left out, over all `k + 1` choices of the
+omitted index, counts every entry `k` times. -/
+theorem sum_sum_succAbove {M : Type*} [AddCommMonoid M] {k : ℕ} (f : Fin (k + 1) → M) :
+    ∑ j : Fin (k + 1), ∑ i : Fin k, f (j.succAbove i) = k • ∑ i, f i := by
+  classical
+  have h (j : Fin (k + 1)) :
+      ∑ i : Fin k, f (j.succAbove i) = ∑ l ∈ Finset.univ.filter (· ≠ j), f l := by
+    rw [Finset.filter_ne', ← Finset.sum_image fun _ _ _ _ h ↦ succAbove_right_injective h,
+      image_succAbove_univ, Finset.compl_eq_univ_sdiff, Finset.sdiff_singleton_eq_erase]
+  -- Exchanging the two sums, each entry `f l` is counted once for every index `j ≠ l`.
+  simp_rw [h, Finset.sum_filter]
+  rw [Finset.sum_comm, ← Finset.sum_nsmul]
+  refine Finset.sum_congr rfl fun l _ ↦ ?_
+  rw [← Finset.sum_filter, Finset.sum_const]
+  simp [Finset.filter_ne]
 
 /-- The Casimir-type sum of the shifted coordinates `b i + 1/2` is the sum for the unshifted
 coordinates `b i` plus a constant independent of `b`. -/

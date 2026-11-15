@@ -61,6 +61,8 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
+* `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
+  conjugated by a linear isometry equivalence.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -218,6 +220,12 @@ theorem eq_extendOrthogonalComplement_iff
   apply LinearMap.eq_of_apply_eq_of_eqOn_orthogonal (x := x)
   · simpa using hfx
   · simpa using hf
+
+/-- The matrix entries of an operator conjugated by a linear isometry equivalence `U` are the
+matrix entries of the operator at the pulled-back vectors. -/
+theorem inner_toLinearEquiv_conj_apply (U : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) (a b : F) :
+    ⟪U.toLinearEquiv.conj T a, b⟫_𝕜 = ⟪T (U.symm a), U.symm b⟫_𝕜 := by
+  simp [LinearEquiv.conj_apply_apply, U.inner_map_eq_flip]
 
 end LinearIsometryEquiv
 

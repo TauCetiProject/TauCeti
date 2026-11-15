@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Ky Fan sums of singular values
@@ -548,18 +549,6 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
           (sum_subset (Finset.range_subset_range.mpr hk) fun j _ hj ↦ by simp_all)
         simp [Finset.mem_range.mp hj]
 
-/-- A sum over the first `k` indices of `Fin n`, written as a sum over `Fin k`. -/
-private theorem sum_filter_lt_eq_sum_castLE {k : ℕ} (hk : k ≤ n) (f : Fin n → ℝ) :
-    ∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, f j = ∑ i : Fin k, f (Fin.castLE hk i) :=
-  (Finset.sum_bij (fun i _ ↦ Fin.castLE hk i) (by simp)
-    (fun _ _ _ _ h ↦ Fin.castLE_injective hk h)
-    (fun j hj ↦ ⟨⟨j, by simpa using hj⟩, by simp, rfl⟩) fun _ _ ↦ rfl).symm
-
-/-- On an eigenvector of the ordered eigenbasis, the diagonal pairing is its eigenvalue. -/
-theorem re_inner_apply_eigenvectorBasis (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (j : Fin n) :
-    RCLike.re ⟪T (hT.eigenvectorBasis hn j), hT.eigenvectorBasis hn j⟫ = hT.eigenvalues hn j := by
-  simp [hT.apply_eigenvectorBasis, inner_smul_left]
-
 /-- **Ky Fan's maximum principle**: for a symmetric `T` on an `n`-dimensional space and `k ≤ n`,
 the sum `λ₀ + ⋯ + λₖ₋₁` of the `k` largest eigenvalues of `T` is the largest value of
 `∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members, attained by the leading
@@ -569,7 +558,7 @@ theorem isGreatest_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank �
     IsGreatest {s | ∃ w : Fin k → E, Orthonormal 𝕜 w ∧ ∑ i, RCLike.re ⟪T (w i), w i⟫ = s}
       (∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, hT.eigenvalues hn j) := by
   refine ⟨⟨_, (hT.eigenvectorBasis hn).orthonormal.comp _ (Fin.castLE_injective hk), ?_⟩, ?_⟩
-  · rw [sum_filter_lt_eq_sum_castLE hk]
+  · rw [Fin.sum_filter_val_lt_eq_sum_castLE hk]
     exact sum_congr rfl fun i _ ↦ hT.re_inner_apply_eigenvectorBasis hn _
   · rintro _ ⟨w, hw, rfl⟩
     simpa using hT.sum_re_inner_apply_self_le_sum_eigenvalues hn hw
@@ -594,7 +583,7 @@ theorem isLeast_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank 𝕜 
   refine ⟨⟨fun i ↦ hT.eigenvectorBasis hn (Fin.castLE hk i).rev,
     (hT.eigenvectorBasis hn).orthonormal.comp _ (Fin.rev_injective.comp (Fin.castLE_injective hk)),
     ?_⟩, ?_⟩
-  · rw [sum_filter_lt_eq_sum_castLE hk]
+  · rw [Fin.sum_filter_val_lt_eq_sum_castLE hk]
     exact sum_congr rfl fun i _ ↦ hT.re_inner_apply_eigenvectorBasis hn _
   · rintro _ ⟨w, hw, rfl⟩
     simpa using hT.sum_eigenvalues_rev_le_sum_re_inner_apply_self hn hw
