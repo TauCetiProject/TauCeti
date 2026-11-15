@@ -10,6 +10,7 @@ public import Mathlib.Basic.Real.Sign
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.Topology.Circle.Degree
 
 /-!
@@ -18,7 +19,8 @@ public import TauCeti.Topology.Circle.Degree
 A unitary matrix `U ∈ U(n)` is a frame of the Lagrangian subspace `Λ = U ℝⁿ` of `ℂⁿ`, for the
 standard symplectic form `Im ⟪·, ·⟫`. Two frames of the same Lagrangian differ by a real orthogonal
 matrix, so the **Souriau map** `W = U Uᵀ` (`Matrix.UnitaryGroup.souriau`) depends only on `Λ`
-(`Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one`). It is a symmetric unitary matrix,
+(`Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one`,
+`Matrix.UnitaryGroup.souriau_eq_of_realImage_eq`). It is a symmetric unitary matrix,
 and `Λ ∩ ℝⁿ` is the real part of the eigenspace of `W` at the eigenvalue `1`.
 
 The **Maslov index** of a path `U : [0, 1] → U(n)` of frames (`Matrix.UnitaryGroup.maslovIndex`)
@@ -162,6 +164,23 @@ theorem souriau_mul_of_mul_transpose_eq_one (U O : unitaryGroup n α)
   refine Subtype.ext ?_
   simp only [coe_souriau, Submonoid.coe_mul, transpose_mul]
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc (O : Matrix n n α), hO, Matrix.one_mul]
+
+/-- **The Souriau map depends only on the Lagrangian.** Two unitary frames `U` and `V` of the same
+subspace `U ℝⁿ = V ℝⁿ` differ by a real orthogonal matrix, so they have the same Souriau map. -/
+theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
+    (h : (U : Matrix n n ℂ).realImage = (V : Matrix n n ℂ).realImage) : souriau U = souriau V := by
+  have hgram (W : unitaryGroup n ℂ) : ((W : Matrix n n ℂ)ᴴ * W).map Complex.re = 1 := by
+    rw [← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+      Matrix.map_one _ Complex.zero_re Complex.one_re]
+  obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
+    (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
+  have hOu := map_ofReal_mem_unitaryGroup hO
+  have hOT : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
+    have h := Unitary.mul_star_self_of_mem hOu
+    rwa [star_eq_conjTranspose, ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
+      conjTranspose_eq_transpose_of_trivial, transpose_map] at h
+  rw [show V = U * ⟨_, hOu⟩ from Subtype.ext hVO,
+    souriau_mul_of_mul_transpose_eq_one U _ hOT]
 
 /-- Moving a frame by `O` conjugates its Souriau map: `(O U) (O U)ᵀ = O (U Uᵀ) Oᵀ`. -/
 theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
