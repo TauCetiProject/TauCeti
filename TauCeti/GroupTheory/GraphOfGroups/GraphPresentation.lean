@@ -242,32 +242,21 @@ theorem IsAcyclic.subsingleton_graphPresentation {Γ : SerreGraph.{u, w}} (h : �
   have := h.subsingleton_pathGroup v
   exact (T.pathGroupEquivGraphPresentation v).symm.injective.subsingleton
 
-/-- The positive darts of a rose are its petals. -/
-private def rosePositiveDartEquiv (α : Type w) :
-    ↥({e : (rose α).E | e.2 = true} \ (∅ : Set (rose α).E)) ≃ α where
-  toFun e := e.1.1
-  invFun a := ⟨(a, true), rfl, Set.notMem_empty _⟩
-  left_inv := by
-    rintro ⟨⟨a, b⟩, hb, -⟩
-    obtain rfl : b = true := hb
-    rfl
-  right_inv _ := rfl
-
 /-- The fundamental group of a rose is free on its petals: the dart `(a, true)` of the petal
 `a` is the free generator `a` and the reverse dart `(a, false)` is its inverse. The spanning
 tree of a rose has no darts. -/
 noncomputable def roseGraphPresentationEquivFreeGroup (α : Type w) :
     (rose α).GraphPresentation ∅ ≃* FreeGroup α :=
-  (GraphPresentation.equivFreeGroup (rose_isOrientation α) (by simp)).trans
-    (FreeGroup.freeGroupCongr (rosePositiveDartEquiv α))
+  (GraphPresentation.equivTreePresentation ∅ (GraphOfGroups.trivial (rose α))).trans
+    (GraphOfGroups.π₁Tree.roseEquivFreeGroup _ ∅)
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_of_true {α : Type w} (a : α) :
     roseGraphPresentationEquivFreeGroup α
       (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true)) = FreeGroup.of a := by
-  have ha : ((a, true) : (rose α).E) ∈ {e : (rose α).E | e.2 = true} \ ∅ :=
-    ⟨rfl, Set.notMem_empty _⟩
-  simp [roseGraphPresentationEquivFreeGroup, GraphPresentation.equivFreeGroup_of _ _ ha,
-    rosePositiveDartEquiv]
+  simp only [roseGraphPresentationEquivFreeGroup, MulEquiv.trans_apply]
+  exact (congrArg (GraphOfGroups.π₁Tree.roseEquivFreeGroup _ ∅)
+    (GraphPresentation.equivTreePresentation_of (GraphOfGroups.trivial (rose α))
+      ((a, true) : (rose α).E))).trans (GraphOfGroups.π₁Tree.roseEquivFreeGroup_edge_true _ _ a)
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_of_false {α : Type w} (a : α) :
     roseGraphPresentationEquivFreeGroup α

@@ -240,7 +240,7 @@ theorem acceleration_comp_add_const (a t : 𝕜) :
         (curveVelocity I (fun r ↦ γ (r + a))) x =
       fun r ↦ sectionCoord (F := E) γ (curveVelocity I γ) x (r + a) := by
     ext r
-    simp only [sectionCoord_apply, curveVelocity_comp_add_const]
+    simp only [sectionCoord_apply, curveVelocity_comp_add_right]
   rw [acceleration_def, acceleration_def, alongCurve_apply, alongCurve_apply,
     alongCurveInChartWithin_apply, alongCurveInChartWithin_apply]
   simp only [derivWithin_univ, hcoord, deriv_comp_add_const, Function.comp_def]

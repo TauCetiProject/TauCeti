@@ -347,7 +347,7 @@ theorem _root_.Function.Periodic.geodesicCurvature_orientedUnitNormal
     Function.Periodic (geodesicCurvature γ (orientedUnitNormal o γ)) a := by
   intro t
   have hcurve : (fun r ↦ γ (r + a)) = γ := hper.funext
-  have hv := curveVelocity_comp_add_const (I := I) γ a t
+  have hv := curveVelocity_comp_add_right (I := I) γ t a
   have hacc := acceleration_comp_add_const (leviCivitaConnection I M) γ a t
   rw [hcurve] at hv hacc
   rw [TauCeti.Manifold.geodesicCurvature_orientedUnitNormal,
