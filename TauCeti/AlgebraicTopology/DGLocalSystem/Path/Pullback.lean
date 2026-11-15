@@ -24,7 +24,9 @@ Applying `FiberHomotopyEquiv.relativeCubicalChainHomotopyEquiv` to
 relative to its boundary, using radial paths from its centre.
 
 The comparison is of complexes of coefficient modules. The product side retains its
-loop coordinates and carries no loop-module structure here.
+loop coordinates and carries no loop-module structure here; over a cubical cell, its linearity
+over the loop chains is `TauCeti.MoorePathPullback.leftAct_cellChain`, in
+`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell`.
 
 ## References
 

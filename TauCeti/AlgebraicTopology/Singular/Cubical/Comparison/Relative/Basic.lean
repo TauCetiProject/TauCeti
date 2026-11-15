@@ -285,6 +285,24 @@ theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
 
+/-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
+def cubicalChainComplexIso {P P' : TopPair.{u}} (e : P ≅ P') :
+    P.cubicalChainComplex k ≅ P'.cubicalChainComplex k where
+  hom := cubicalChainComplexMap k e.hom
+  inv := cubicalChainComplexMap k e.inv
+  hom_inv_id := by rw [← cubicalChainComplexMap_comp, e.hom_inv_id, cubicalChainComplexMap_id]
+  inv_hom_id := by rw [← cubicalChainComplexMap_comp, e.inv_hom_id, cubicalChainComplexMap_id]
+
+@[simp]
+theorem cubicalChainComplexIso_hom {P P' : TopPair.{u}} (e : P ≅ P') :
+    (cubicalChainComplexIso k e).hom = cubicalChainComplexMap k e.hom :=
+  (rfl)
+
+@[simp]
+theorem cubicalChainComplexIso_inv {P P' : TopPair.{u}} (e : P ≅ P') :
+    (cubicalChainComplexIso k e).inv = cubicalChainComplexMap k e.inv :=
+  (rfl)
+
 /-! ### Singular cubes as relative chains -/
 
 /-- A singular cube of the ambient space of `P`, as a relative normalized cubical chain of `P`. -/

@@ -380,6 +380,35 @@ lemma cubeBoundaryPairHom_fst_hom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), 
     (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom = c.comp ⟨ULift.down, continuous_uliftDown⟩ :=
   (rfl)
 
+/-- The product `Y × (Iⁿ, ∂Iⁿ)` of a space with the cube pair, as the pair `(Iⁿ × Y, ∂Iⁿ × Y)` of
+the preimage of the boundary under the first projection: exchange the two factors. -/
+def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) :
+    (cubeBoundaryPair.{u} n).prodLeft Y ≅
+      TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin n)) × Y))
+        ((ContinuousMap.fst : C(ULift.{u} (I^(Fin n)) × Y, _)) ⁻¹'
+          (ULift.down ⁻¹' Cube.boundary (Fin n))) where
+  hom := TopPair.ofHom (TopCat.ofHom ⟨Prod.swap, continuous_swap⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.2.1, x.1), x.2.2⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (TopCat.ofHom ⟨Prod.swap, continuous_swap⟩)
+    (TopCat.ofHom ⟨fun x ↦ (x.1.2, ⟨x.1.1, x.2⟩), by fun_prop⟩)
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- The ambient map of `TauCeti.cubeBoundaryPairProdLeftIso` exchanges the factors. -/
+@[simp]
+lemma cubeBoundaryPairProdLeftIso_hom_fst (Y : TopCat.{u}) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso n Y).hom =
+      TopCat.ofHom ⟨Prod.swap, continuous_swap⟩ :=
+  (rfl)
+
+/-- The ambient map of the inverse of `TauCeti.cubeBoundaryPairProdLeftIso` exchanges the factors
+back. -/
+@[simp]
+lemma cubeBoundaryPairProdLeftIso_inv_fst (Y : TopCat.{u}) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso n Y).inv =
+      TopCat.ofHom ⟨Prod.swap, continuous_swap⟩ :=
+  (rfl)
+
 /-- The homeomorphism from the Euclidean disk `Dⁿ` onto the cube `Iⁿ`: the radial rescaling of the
 disk onto the closed unit ball of the sup norm on `Fin n → ℝ`, followed by the inverse of the affine
 homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto that ball. -/
