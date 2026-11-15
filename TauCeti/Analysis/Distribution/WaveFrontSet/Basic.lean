@@ -445,10 +445,10 @@ theorem waveFrontSet_delta {x₀ : E} (hx₀ : x₀ ∈ Ω) :
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- If `T` coincides on an open set `U` with a locally integrable function `f`, in the sense that
+/-- If `T` coincides on a set `U` with a locally integrable function `f`, in the sense that
 `T φ = ∫ φ • f` for every real test function `φ` supported in `U`, then for a cutoff `φ` supported
 in `U` the localized Fourier transform of `T` is the Fourier transform of `φ f`. -/
-theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U) {f : E → ℂ}
+theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} {f : E → ℂ}
     (hf : MeasureTheory.LocallyIntegrableOn f U)
     (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {φ : 𝓓(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) (η : E) : T.localFourier φ η = 𝓕 (fun y => φ y * f y) η := by
@@ -456,7 +456,7 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
       (TauCeti.contDiff_fourierAtom η) φ) ⊆ U := by
     rw [bilinLeftCLM_apply]
     exact (tsupport_mul_subset_left (f := φ)).trans hφ
-  rw [localFourier, complexPairing_eq_integral hU hf hT hψ, Real.fourier_eq]
+  rw [localFourier, complexPairing_eq_integral hf hT hψ, Real.fourier_eq]
   simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', Circle.smul_def, smul_eq_mul,
     TauCeti.fourierAtom_eq_fourierChar]
   exact MeasureTheory.integral_congr_ae (Eventually.of_forall fun y => by ring)
@@ -466,7 +466,7 @@ theorem localFourier_eq_fourier {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
 theorem localFourier_ofFun {f : E → ℂ} (hf : MeasureTheory.LocallyIntegrableOn f Ω)
     (φ : 𝓓(Ω, ℂ)) (η : E) :
     (ofFun Ω f MeasureTheory.volume ⊤).localFourier φ η = 𝓕 (fun x => φ x * f x) η :=
-  localFourier_eq_fourier Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset η
+  localFourier_eq_fourier hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset η
 
 /-- **Microlocal smoothness over the smooth part.** If `T` coincides on an open set `U` with a
 function `f` smooth on `U`, in the sense that `T φ = ∫ φ • f` for every real test function `φ`
@@ -487,7 +487,7 @@ theorem isMicrolocallySmoothAt_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Se
       filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hy (hφU h)] with z hz
       simp [hz]
   refine isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx]) (fun N => ?_) ξ
-  simpa only [localFourier_eq_fourier hU (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT
+  simpa only [localFourier_eq_fourier (hf.continuousOn.locallyIntegrableOn hU.measurableSet) hT
     hφU] using TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le hg
       φ.hasCompactSupport.mul_right N
 
