@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.LinearAlgebra.RootSystem.Flip
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 
 /-!
@@ -72,27 +73,6 @@ variable {ι R M N : Type*} [Finite ι] [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsCrystallographic] [P.IsReduced]
 
-omit [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
-/-- Every Weyl-group element acts on coweights as a Weyl-group element of the dual root pairing
-`P.flip` acts on weights. -/
-private theorem exists_weylGroup_flip_smul_eq_coweightEquiv (w : P.weylGroup) :
-    ∃ v : P.flip.weylGroup, ∀ x : N, v • x = (w : P.Aut).coweightEquiv x := by
-  obtain ⟨w, hw⟩ := w
-  suffices w.coweightEquiv ∈
-      MonoidHom.range ((Equiv.weightHom P.flip).domRestrict P.flip.weylGroup) by
-    obtain ⟨v, hv⟩ := this
-    exact ⟨v, fun x ↦ DFunLike.congr_fun hv x⟩
-  induction hw using weylGroup.induction with
-  | mem i =>
-    refine ⟨weylGroup.ofIdx P.flip i, LinearEquiv.ext fun x ↦ ?_⟩
-    simp [reflection_apply, coreflection_apply]
-  | one => exact ⟨1, by ext x; simp⟩
-  | mul g₁ g₂ _ _ ih₁ ih₂ =>
-    have hmul : (g₁ * g₂).coweightEquiv = g₂.coweightEquiv * g₁.coweightEquiv := by
-      ext x
-      simp
-    exact hmul ▸ mul_mem ih₂ ih₁
-
 /-- **A dominant integral coweight is the only dominant integral coweight in its Weyl orbit.** If
 every simple root of `b` takes a natural value at both `x` and `(w : P.Aut).coweightEquiv x` for
 `w ∈ P.weylGroup`, then `(w : P.Aut).coweightEquiv x = x`. -/
@@ -102,7 +82,10 @@ theorem Base.coweightEquiv_eq_self_of_forall_exists_nat_root'_apply (b : P.Base)
     (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = n) :
     (w : P.Aut).coweightEquiv x = x := by
   have := P.flip_isReduced
-  obtain ⟨v, hv⟩ := exists_weylGroup_flip_smul_eq_coweightEquiv w
+  let v : P.flip.weylGroup := ⟨Equiv.autFlip P w, Equiv.autFlip_mem_weylGroup w.2⟩
+  have hv (y : N) : v⁻¹ • y = (w : P.Aut).coweightEquiv y :=
+    inv_smul_eq_iff.mpr <| by
+      rw [Subgroup.smul_def, Equiv.autFlip_smul_coweight, LinearEquiv.symm_apply_apply]
   rw [← hv x]
   refine TauCeti.weylGroup_smul_eq_self_of_dominantIntegral (P := P.flip) (b := b.flip) ?_ ?_
   · intro i hi

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Dominant
 import Mathlib.Data.Set.Card
 import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
 import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
+import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.OrbitSeparation
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.LinearAlgebra.RootSystem.IntegralCoweight
 
@@ -37,7 +38,7 @@ invariant polynomial functions `S(L*)^L`.
 2. **Separation by invariant polynomial functions.** Over an algebraically closed field, Chevalley's
    restriction theorem implies that two elements of `H` take equal values at every invariant
    polynomial function `p ∈ S(L*)^L` if and only if they lie in the same Weyl orbit
-   (`LieSubalgebra.forall_mem_lieInvariants_lift_eval_coe_eq_iff`). Hence two dominant neutral
+   (`TauCeti.forall_mem_lieInvariants_lift_eval_coe_eq_iff`). Hence two dominant neutral
    elements that cannot be separated by `S(L*)^L` are equal.
 3. **Passage from the nilpositive element to the neutral element.** Suppose `(h₁, e₁, f₁)` and
    `(h₂, e₂, f₂)` are `sl₂` triples with `h₁, h₂ ∈ b.dominantNeutralElements`, and `φ : L ≃ₗ⁅K⁆ L`
@@ -127,7 +128,7 @@ theorem eq_of_mem_dominantNeutralElements_of_forall_mem_lieInvariants_lift_eval_
         _root_.SymmetricAlgebra.lift (Dual.eval K L (h₂ : L)) p) :
     h₁ = h₂ :=
   b.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq hh₁ hh₂
-    (H.forall_mem_lieInvariants_lift_eval_coe_eq_iff.mp heq)
+    (forall_mem_lieInvariants_lift_eval_coe_eq_iff.mp heq)
 
 /-- **Distinct dominant neutral elements lie in distinct `Int(L)`-orbits.** -/
 theorem injOn_orbit_intLieAlgebra_dominantNeutralElements [LieAlgebra ℚ L]
@@ -168,8 +169,7 @@ theorem eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq (b : (rootSystem 
       _root_.SymmetricAlgebra.lift (Dual.eval K L (φ (h₁ : L))) p =
         _root_.SymmetricAlgebra.lift (Dual.eval K L (h₁ : L)) p) :
     h₁ = h₂ := by
-  let _ : Module ℚ L := Module.compHom L (algebraMap ℚ K)
-  let _ : LieAlgebra ℚ L := { lie_smul := fun q x y ↦ lie_smul (algebraMap ℚ K q) x y }
+  let := ratLieAlgebra K L
   have hφh0 : φ (h₁ : L) ≠ 0 := fun hz ↦ t₁.h_ne_zero (φ.injective (hz.trans (map_zero φ).symm))
   have t₁' : IsSl2Triple (φ (h₁ : L)) e₂ (φ f₁) := hφe ▸ t₁.map φ.toLieHom hφh0
   obtain ⟨ψ, hψ, -, hψh, -⟩ := t₁'.exists_lieEquiv_apply_eq (K := K) t₂
