@@ -8,27 +8,30 @@ module
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+import Mathlib.Analysis.CStarAlgebra.Unitization
 import Mathlib.Tactic.NoncommRing
 
 /-!
-# Kaplansky's idempotent-to-projection formula and Dedekind finiteness of tracial C⋆-algebras
+# Star projections from idempotents and Dedekind finiteness of tracial C⋆-algebras
 
 In a unital C⋆-algebra `A`, `1 + star a * a` is invertible for every `a : A` because the real
-spectrum of `star a * a` is nonnegative. Kaplansky observed that for any idempotent `p`
-(`p * p = p`), setting `z = 1 + star (p - star p) * (p - star p)` gives
-`p * z = p * star p * p = z * p`, so `q = p * star p * z⁻¹` is a star projection sharing its right
-ideal with `p` (`q * p = p` and `p * q = q`).
+spectrum of `star a * a` is nonnegative. Kaplansky showed that every idempotent `p` (`p * p = p`) in
+a C⋆-algebra admits a star projection `q` sharing its right ideal (`q * p = p` and `p * q = q`): in
+the unital case, setting `z = 1 + star (p - star p) * (p - star p)` gives
+`p * z = p * star p * p = z * p` and `q = p * star p * z⁻¹`, and the non-unital case reduces to the
+unitization `Unitization ℂ A` via `(p : Unitization ℂ A) * q' = q'`.
 
-Consequently, if `A` carries an additive tracial map `τ : A →+ G` that vanishes on no nonzero star
-projection, then `A` is Dedekind-finite (`a * b = 1 → b * a = 1`): for `a * b = 1`, the idempotent
-`p = 1 - b * a` has trace `τ p = τ (a * b) - τ (b * a) = 0`, so its Kaplansky star projection `q`
-satisfies `τ q = τ (p * q) = τ (q * p) = τ p = 0`, forcing `q = 0`, `p = 0`, and `b * a = 1`.
+Consequently, if a unital C⋆-algebra `A` carries an additive tracial map `τ : A →+ G` that vanishes
+on no nonzero star projection, then `A` is Dedekind-finite (`a * b = 1 → b * a = 1`): for
+`a * b = 1`, the idempotent `p = 1 - b * a` has trace `τ p = τ (a * b) - τ (b * a) = 0`, so its
+associated star projection `q` satisfies `τ q = τ (p * q) = τ (q * p) = τ p = 0`, forcing `q = 0`,
+`p = 0`, and `b * a = 1`.
 
 ## Main results
 
 * `CStarAlgebra.isUnit_one_add_star_mul_self`: `1 + star a * a` is a unit in any unital C⋆-algebra.
-* `IsIdempotentElem.exists_isStarProjection_mul_eq`: Kaplansky's formula producing a star
-  projection `q` with `q * p = p` and `p * q = q` from an idempotent `p`.
+* `IsIdempotentElem.exists_isStarProjection_mul_eq`: every idempotent `p` in a (possibly
+  non-unital) C⋆-algebra admits a star projection `q` with `q * p = p` and `p * q = q`.
 * `CStarAlgebra.isDedekindFiniteMonoid_of_tracial`: a unital C⋆-algebra with a projection-faithful
   additive trace is Dedekind-finite.
 
@@ -40,10 +43,9 @@ satisfies `τ q = τ (p * q) = τ (q * p) = τ p = 0`, forcing `q = 0`, `p = 0`,
 
 public section
 
-variable {A : Type*} [CStarAlgebra A]
-
 /-- In a unital C⋆-algebra, `1 + star a * a` is invertible. -/
-theorem CStarAlgebra.isUnit_one_add_star_mul_self (a : A) : IsUnit (1 + star a * a) := by
+theorem CStarAlgebra.isUnit_one_add_star_mul_self {A : Type*} [CStarAlgebra A] (a : A) :
+    IsUnit (1 + star a * a) := by
   by_contra h
   have hneg : (-1 : A) - star a * a = -(1 + star a * a) := by abel
   have hmem : (-1 : ℝ) ∈ spectrum ℝ (star a * a) := by
@@ -51,9 +53,8 @@ theorem CStarAlgebra.isUnit_one_add_star_mul_self (a : A) : IsUnit (1 + star a *
     exact h
   linarith [spectrum_star_mul_self_nonneg (-1) hmem]
 
-/-- **Kaplansky's idempotent-to-projection formula.** Every idempotent `p` in a unital C⋆-algebra
-admits a star projection `q` with `q * p = p` and `p * q = q`. -/
-theorem IsIdempotentElem.exists_isStarProjection_mul_eq {p : A} (hp : IsIdempotentElem p) :
+private theorem exists_isStarProjection_mul_eq_unital {A : Type*} [CStarAlgebra A] {p : A}
+    (hp : IsIdempotentElem p) :
     ∃ q : A, IsStarProjection q ∧ q * p = p ∧ p * q = q := by
   let s : A := Star.star p
   obtain ⟨u, hu⟩ := CStarAlgebra.isUnit_one_add_star_mul_self (p - s)
@@ -100,9 +101,25 @@ theorem IsIdempotentElem.exists_isStarProjection_mul_eq {p : A} (hp : IsIdempote
       rw [star_mul, star_mul, hss', huinv_sa]
     rw [IsSelfAdjoint, hstar, hpsu]
 
+/-- **Kaplansky's theorem on idempotents in C⋆-algebras.** Every idempotent `p` in a C⋆-algebra
+admits a star projection `q` sharing its principal right ideal (`q * p = p` and `p * q = q`). -/
+theorem IsIdempotentElem.exists_isStarProjection_mul_eq {A : Type*} [NonUnitalCStarAlgebra A]
+    {p : A} (hp : IsIdempotentElem p) :
+    ∃ q : A, IsStarProjection q ∧ q * p = p ∧ p * q = q := by
+  obtain ⟨q', hq', hqp, hpq⟩ :=
+    exists_isStarProjection_mul_eq_unital (Unitization.IsIdempotentElem.inr ℂ hp)
+  have hq'coe : ((q'.snd : A) : Unitization ℂ A) = q' :=
+    Unitization.ext
+      (by rw [Unitization.fst_inr, ← hpq, Unitization.fst_mul, Unitization.fst_inr, zero_mul])
+      (Unitization.snd_inr ℂ q'.snd)
+  refine ⟨q'.snd, Unitization.isStarProjection_inr_iff.1 (hq'coe.symm ▸ hq'), ?_, ?_⟩
+  · exact Unitization.inr_injective (R := ℂ) (by rw [Unitization.inr_mul, hq'coe, hqp])
+  · exact Unitization.inr_injective (R := ℂ) (by rw [Unitization.inr_mul, hq'coe, hpq])
+
 /-- A unital C⋆-algebra admitting an additive tracial map that vanishes on no nonzero star
 projection is Dedekind-finite (`a * b = 1 → b * a = 1`). -/
-theorem CStarAlgebra.isDedekindFiniteMonoid_of_tracial {G : Type*} [AddZeroClass G] (τ : A →+ G)
+theorem CStarAlgebra.isDedekindFiniteMonoid_of_tracial {A G : Type*} [CStarAlgebra A]
+    [AddZeroClass G] (τ : A →+ G)
     (htr : ∀ x y : A, τ (x * y) = τ (y * x))
     (hfaith : ∀ q : A, IsStarProjection q → τ q = 0 → q = 0) :
     IsDedekindFiniteMonoid A where

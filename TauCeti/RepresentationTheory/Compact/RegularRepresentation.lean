@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.Haar
-public import TauCeti.RepresentationTheory.Continuous.RightRegular
+public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import Mathlib.MeasureTheory.Function.L2Space
@@ -14,17 +14,17 @@ public import Mathlib.MeasureTheory.Function.L2Space
 /-!
 # The left regular representation of a compact group on `L²(G)`
 
-A compact group `G` acts on `L²(G)` by right translation, `(ρ g f) x = f (x * g)`
-(`(haarProb G).rightRegular 𝕜 𝕜 2`, see `MeasureTheory.Measure.rightRegular`), and by left
-translation, `(λ g f) x = f (g⁻¹ * x)`; the inverse in the latter is what makes it a representation
-rather than an antirepresentation. Both translations preserve normalized Haar measure, so both
-actions are unitary, and both are *strongly* continuous: for each fixed `f` the orbit map is
-continuous. Continuity in the operator norm is neither proved nor needed here; the uses of `L²(G)`
-that do need it obtain it only after restricting to a finite-dimensional invariant subspace.
+A compact group `G` acts on `L²(G)` by left translation, `(λ g f) x = f (g⁻¹ * x)`; the inverse is
+what makes it a representation rather than an antirepresentation. Left translation preserves
+normalized Haar measure, so the action is unitary, and it is *strongly* continuous: for each fixed
+`f` the orbit map is continuous. Continuity in the operator norm is neither proved nor needed here;
+the uses of `L²(G)` that do need it obtain it only after restricting to a finite-dimensional
+invariant subspace.
 
-The two actions commute (`MeasureTheory.Measure.commute_leftRegular_rightRegular`), and
-`TauCeti.RepresentationTheory.Compact.BiregularRepresentation` bundles them into a single action of
-`G × G`.
+For the commuting right regular representation on `L²(G)`, see
+`TauCeti.RepresentationTheory.Continuous.RightRegular`;
+`TauCeti.RepresentationTheory.Compact.BiregularRepresentation` bundles the two into a single action
+of `G × G`.
 
 ## Main definitions
 

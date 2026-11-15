@@ -89,3 +89,11 @@ theorem exists_eq_sq_of_commute {x y : G} (h : Commute x y) :
     omega
 
 end IsFreeGroup
+
+namespace FreeGroup
+
+/-- A free group on at least two generators is nonabelian. -/
+theorem not_isMulCommutative {α : Type*} [Nontrivial α] : ¬ IsMulCommutative (FreeGroup α) :=
+  fun h => not_subsingleton α (isMulCommutative_iff_subsingleton.mp h)
+
+end FreeGroup

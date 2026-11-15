@@ -22,8 +22,8 @@ continuous (`MeasureTheory.Measure.continuous_rightRegular_apply`). When `μ` is
 left translation `μ.leftRegular 𝕜 E p g` commutes with every right translation
 `μ.rightRegular 𝕜 E p h` by associativity of multiplication in `G`.
 
-On the counting measure of a group with measurable singletons, `rightRegular` sends the singleton
-indicator at `h` to that at `h * g⁻¹`.
+On singleton indicators of finite measure (and on the point-mass Hilbert basis of counting-measure
+`L²`), `rightRegular` sends the indicator at `h` to that at `h * g⁻¹`.
 
 ## Main definitions
 
@@ -35,11 +35,14 @@ indicator at `h` to that at `h * g⁻¹`.
   `ρ g` is `Lp.compMeasurePreserving (· * g)`, represented by `x ↦ f (x * g)`.
 * `MeasureTheory.Measure.rightRegular_toLp`: on a compact group with a finite measure, `ρ g` acts
   on the `Lp` class of a continuous function by right translation.
-* `MeasureTheory.Measure.isUnitary_rightRegular`: the action on `L²(G, E)` is unitary.
+* `MeasureTheory.Measure.isUnitary_rightRegular` and `MeasureTheory.Measure.star_rightRegular`: the
+  action on `L²(G, E)` is unitary and `star (ρ g) = ρ g⁻¹`.
 * `MeasureTheory.Measure.continuous_rightRegular_apply`: the action is strongly continuous.
 * `MeasureTheory.Measure.commute_leftRegular_rightRegular`: left and right regular operators
   commute for any bi-invariant measure.
-* `MeasureTheory.Measure.rightRegular_count_indicatorConstLp_singleton`: action on point masses.
+* `MeasureTheory.Measure.rightRegular_indicatorConstLp_singleton` and
+  `MeasureTheory.Measure.rightRegular_countHilbertBasis`: action on singleton indicators and
+  point-mass basis vectors.
 -/
 
 public section
@@ -48,6 +51,8 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+section RightInvariant
 
 variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [NormedRing 𝕜]
   [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
@@ -108,6 +113,14 @@ theorem isUnitary_rightRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGrou
   rw [ContRepresentation.isUnitary_iff_norm_map]
   exact norm_rightRegular_apply μ 2
 
+/-- On a Hilbert space `E`, the operator `star` of right translation by `g` is right translation by
+`g⁻¹`. -/
+@[simp]
+theorem star_rightRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [CompleteSpace E] (g : G) :
+    star (μ.rightRegular 𝕜 E 2 g) = μ.rightRegular 𝕜 E 2 g⁻¹ :=
+  (isUnitary_rightRegular μ).star_eq_inv g
+
 /-- **The right regular representation is strongly continuous** for `p < ∞` and a locally finite
 measure that is inner regular with respect to compact sets on sets of finite measure: every orbit
 map `g ↦ ρ g f` is continuous. -/
@@ -131,30 +144,30 @@ theorem commute_leftRegular_rightRegular [μ.IsMulLeftInvariant] (g h : G) :
   rw [← Lp.compMeasurePreserving_comp_apply, ← Lp.compMeasurePreserving_comp_apply]
   simp only [hfun]
 
-section Count
-
-variable [MeasurableSingletonClass G]
-
-/-- Right translation by `g` on counting-measure `Lᵖ` sends the point mass at `h` to that at
+/-- Right translation by `g` on `Lᵖ(G, E)` sends the singleton indicator at `h` to that at
 `h * g⁻¹`. -/
 @[simp]
-theorem rightRegular_count_indicatorConstLp_singleton (g h : G) (c : E) :
-    (count : Measure G).rightRegular 𝕜 E p g
-      (indicatorConstLp p (measurableSet_singleton h) (by simp) c) =
-      indicatorConstLp p (measurableSet_singleton (h * g⁻¹)) (by simp) c := by
-  refine Lp.ext (ae_count_iff.2 fun x => ?_)
-  have h1 := ae_count_iff.1 (coeFn_rightRegular (𝕜 := 𝕜) count p g
-    (indicatorConstLp p (measurableSet_singleton h) (by simp) c)) x
-  have h2 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
-    (hs := measurableSet_singleton h) (hμs := by simp) (c := c)) (x * g)
-  have h3 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
-    (hs := measurableSet_singleton (h * g⁻¹)) (hμs := by simp) (c := c)) x
-  refine (h1.trans h2).trans (Eq.trans ?_ h3.symm)
-  by_cases hx : x = h * g⁻¹
-  · simp [hx]
-  · have hx' : x * g ≠ h := fun e => hx (eq_mul_inv_of_mul_eq e)
-    simp [hx, hx']
+theorem rightRegular_indicatorConstLp_singleton (g h : G)
+    (hs : MeasurableSet ({h} : Set G)) (hμ : μ {h} ≠ ∞) (c : E) :
+    μ.rightRegular 𝕜 E p g (indicatorConstLp p hs hμ c) =
+      indicatorConstLp (s := ({h * g⁻¹} : Set G)) p
+        (by simpa using hs.preimage (measurable_mul_const g))
+        (by simpa using
+          ((measurePreserving_mul_right μ g).measure_preimage hs.nullMeasurableSet).trans_ne hμ)
+        c := by
+  rw [rightRegular_apply, Lp.indicatorConstLp_compMeasurePreserving]
+  congr! 1
+  simp
 
-end Count
+end RightInvariant
+
+/-- Right translation by `g` on counting-measure `L²(G)` sends the `h`-th point-mass basis vector
+to the `(h * g⁻¹)`-th. -/
+@[simp]
+theorem rightRegular_countHilbertBasis {G 𝕜 : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul G] [MeasurableSingletonClass G] [RCLike 𝕜] (g h : G) :
+    (count : Measure G).rightRegular 𝕜 𝕜 2 g (L2.countHilbertBasis 𝕜 G h) =
+      L2.countHilbertBasis 𝕜 G (h * g⁻¹) := by
+  simp [L2.countHilbertBasis_apply]
 
 end MeasureTheory.Measure

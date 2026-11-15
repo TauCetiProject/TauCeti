@@ -23,7 +23,6 @@ conjugacy class, or ICC, property). Since free groups are torsion-free and commu
 
 * `IsFreeGroup.infinite_setOf_isConj`: in a nonabelian group satisfying `IsFreeGroup G`, every
   nonidentity element has an infinite conjugacy class.
-* `FreeGroup.not_isMulCommutative`: `FreeGroup α` is nonabelian when `α` is nontrivial.
 * `FreeGroup.infinite_setOf_isConj`: when `α` is nontrivial, every nonidentity element of
   `FreeGroup α` has an infinite conjugacy class.
 -/
@@ -41,10 +40,6 @@ theorem infinite_setOf_isConj {G : Type*} [Group G] [IsFreeGroup G]
 end IsFreeGroup
 
 namespace FreeGroup
-
-/-- A free group on at least two generators is nonabelian. -/
-theorem not_isMulCommutative {α : Type*} [Nontrivial α] : ¬ IsMulCommutative (FreeGroup α) :=
-  fun h => not_subsingleton α (isMulCommutative_iff_subsingleton.mp h)
 
 /-- Every nonidentity element of a free group on at least two generators has an infinite conjugacy
 class. -/

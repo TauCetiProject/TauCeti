@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.Convolution
-public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
 public import TauCeti.RepresentationTheory.Continuous.Representative
+public import TauCeti.RepresentationTheory.Continuous.RightRegular
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!

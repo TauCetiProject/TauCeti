@@ -34,9 +34,6 @@ theorem mem_commutant_adjoin_range_iff {G H : Type*} [Group G] [NormedAddCommGro
   rintro x (⟨g, rfl⟩ | hx)
   · exact hT g
   · obtain ⟨g, hg⟩ := Set.mem_star.1 hx
-    have hstar : x = π g⁻¹ := by
-      simpa [ContinuousLinearMap.star_eq_adjoint, hπ.adjoint_eq_inv] using
-        congr_arg star hg.symm
+    have hstar : x = π g⁻¹ := by simpa [hπ.star_eq_inv] using congr_arg star hg.symm
     exact hstar ▸ hT g⁻¹
-
 end ContRepresentation.IsUnitary

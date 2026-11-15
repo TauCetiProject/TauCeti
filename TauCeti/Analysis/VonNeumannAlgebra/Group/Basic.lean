@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import TauCeti.Analysis.VonNeumannAlgebra.Factor
+public import TauCeti.Analysis.VonNeumannAlgebra.Cyclic
+public import TauCeti.Analysis.VonNeumannAlgebra.Finite
+public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
+public import TauCeti.Analysis.VonNeumannAlgebra.NormalFunctional
 public import TauCeti.MeasureTheory.Function.Lp.CountBasis
 public import TauCeti.RepresentationTheory.Continuous.RightRegular
 import Mathlib.Analysis.InnerProductSpace.LinearMap
@@ -83,28 +86,36 @@ theorem rightGroupVonNeumannAlgebra_def :
 variable {Γ}
 
 /-- Every left translation operator lies in `groupVonNeumannAlgebra Γ`. -/
+@[simp]
 theorem leftRegular_mem_groupVonNeumannAlgebra (g : Γ) :
     (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g ∈ groupVonNeumannAlgebra Γ :=
   VonNeumannAlgebra.subset_adjoin _ ⟨g, rfl⟩
 
 /-- Every right translation operator lies in `rightGroupVonNeumannAlgebra Γ`. -/
+@[simp]
 theorem rightRegular_mem_rightGroupVonNeumannAlgebra (g : Γ) :
     (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g ∈ rightGroupVonNeumannAlgebra Γ :=
   VonNeumannAlgebra.subset_adjoin _ ⟨g, rfl⟩
 
+/-- `groupVonNeumannAlgebra Γ` is contained in `M` if and only if `M` contains every left regular
+unitary. -/
 @[simp]
-theorem star_leftRegular_count (g : Γ) :
-    star ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g) =
-      (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g⁻¹ := by
-  rw [ContinuousLinearMap.star_eq_adjoint]
-  exact (Measure.isUnitary_leftRegular Measure.count).adjoint_eq_inv g
+theorem groupVonNeumannAlgebra_le_iff
+    {M : VonNeumannAlgebra (Lp ℂ 2 (Measure.count : Measure Γ))} :
+    groupVonNeumannAlgebra Γ ≤ M ↔
+      ∀ g : Γ, (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g ∈ M := by
+  rw [groupVonNeumannAlgebra_def, adjoin_le_iff, Set.range_subset_iff]
+  rfl
 
+/-- `rightGroupVonNeumannAlgebra Γ` is contained in `M` if and only if `M` contains every right
+regular unitary. -/
 @[simp]
-theorem star_rightRegular_count (g : Γ) :
-    star ((Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g) =
-      (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g⁻¹ := by
-  rw [ContinuousLinearMap.star_eq_adjoint]
-  exact (Measure.isUnitary_rightRegular Measure.count).adjoint_eq_inv g
+theorem rightGroupVonNeumannAlgebra_le_iff
+    {M : VonNeumannAlgebra (Lp ℂ 2 (Measure.count : Measure Γ))} :
+    rightGroupVonNeumannAlgebra Γ ≤ M ↔
+      ∀ g : Γ, (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g ∈ M := by
+  rw [rightGroupVonNeumannAlgebra_def, adjoin_le_iff, Set.range_subset_iff]
+  rfl
 
 /-- An operator lies in `L(Γ)'` if and only if it commutes with every left regular unitary. -/
 theorem mem_commutant_groupVonNeumannAlgebra_iff_leftRegular
@@ -124,11 +135,10 @@ theorem mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular
 
 /-- `L(Γ)` is contained in `R(Γ)'`. -/
 theorem groupVonNeumannAlgebra_le_commutant_rightGroupVonNeumannAlgebra :
-    groupVonNeumannAlgebra Γ ≤ (rightGroupVonNeumannAlgebra Γ).commutant := by
-  rw [groupVonNeumannAlgebra_def, adjoin_le_iff]
-  rintro _ ⟨g, rfl⟩
-  exact mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular.2 fun h =>
-    (Measure.commute_leftRegular_rightRegular Measure.count 2 g h).eq.symm
+    groupVonNeumannAlgebra Γ ≤ (rightGroupVonNeumannAlgebra Γ).commutant :=
+  groupVonNeumannAlgebra_le_iff.2 fun g =>
+    mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular.2 fun h =>
+      (Measure.commute_leftRegular_rightRegular Measure.count 2 g h).eq.symm
 
 /-- `R(Γ)` is contained in `L(Γ)'`. -/
 theorem rightGroupVonNeumannAlgebra_le_commutant_groupVonNeumannAlgebra :
@@ -147,12 +157,18 @@ noncomputable def groupAlgebraToVonNeumannAlgebra :
       map_mul' g h := Subtype.ext (map_mul ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2) g h) }
 
 @[simp]
+theorem groupAlgebraToVonNeumannAlgebra_single (g : Γ) (c : ℂ) :
+    groupAlgebraToVonNeumannAlgebra Γ (MonoidAlgebra.single g c) =
+      c • ⟨(Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g,
+        leftRegular_mem_groupVonNeumannAlgebra g⟩ := by
+  simp [groupAlgebraToVonNeumannAlgebra]
+
 theorem coe_groupAlgebraToVonNeumannAlgebra_single (g : Γ) (c : ℂ) :
     ((groupAlgebraToVonNeumannAlgebra Γ (MonoidAlgebra.single g c) :
         (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
       Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) =
       c • (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g := by
-  simp [groupAlgebraToVonNeumannAlgebra]
+  simp
 
 end MeasurableMul
 
@@ -186,6 +202,12 @@ theorem groupVonNeumannCoeff_zero (g : Γ) :
     groupVonNeumannCoeff
       (0 : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) g = 0 := by
   simp [groupVonNeumannCoeff_def]
+
+@[simp]
+theorem groupVonNeumannCoeff_neg
+    (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) (g : Γ) :
+    groupVonNeumannCoeff (-x) g = -groupVonNeumannCoeff x g := by
+  simp [groupVonNeumannCoeff_def, inner_neg_right]
 
 @[simp]
 theorem groupVonNeumannCoeff_add
@@ -259,18 +281,6 @@ section MeasurableSingleton
 
 variable {Γ : Type*} [Group Γ] [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ]
 
-@[simp]
-theorem leftRegular_countHilbertBasis (g h : Γ) :
-    (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g (L2.countHilbertBasis ℂ Γ h) =
-      L2.countHilbertBasis ℂ Γ (g * h) := by
-  simp [L2.countHilbertBasis_apply]
-
-@[simp]
-theorem rightRegular_countHilbertBasis (g h : Γ) :
-    (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 g (L2.countHilbertBasis ℂ Γ h) =
-      L2.countHilbertBasis ℂ Γ (h * g⁻¹) := by
-  simp [L2.countHilbertBasis_apply]
-
 private theorem apply_countHilbertBasis_one_comm
     {T S : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)}
     (hT : T ∈ (rightGroupVonNeumannAlgebra Γ).commutant)
@@ -325,33 +335,24 @@ theorem commutant_rightGroupVonNeumannAlgebra :
     groupVonNeumannAlgebra_le_commutant_rightGroupVonNeumannAlgebra
   rw [← commutant_commutant (groupVonNeumannAlgebra Γ), mem_commutant_iff]
   intro S hS
-  have hbasis (k : Γ) :
-      (S * T) (L2.countHilbertBasis ℂ Γ k) = (T * S) (L2.countHilbertBasis ℂ Γ k) := by
-    let ρk := (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 k⁻¹
-    have hρk : ρk ∈ (groupVonNeumannAlgebra Γ).commutant :=
-      rightGroupVonNeumannAlgebra_le_commutant_groupVonNeumannAlgebra
-        (rightRegular_mem_rightGroupVonNeumannAlgebra k⁻¹)
-    have hcomm := apply_countHilbertBasis_one_comm hT
-      ((groupVonNeumannAlgebra Γ).commutant.mul_mem hS hρk)
-    have hTk : ρk (T (L2.countHilbertBasis ℂ Γ 1)) = T (L2.countHilbertBasis ℂ Γ k) := by
-      have hTρ := DFunLike.congr_fun
-        (mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular.1 hT k⁻¹)
-        (L2.countHilbertBasis ℂ Γ 1)
-      simpa [ρk, mul_apply_eq_comp] using hTρ
-    have hSk : (S * ρk) (L2.countHilbertBasis ℂ Γ 1) = S (L2.countHilbertBasis ℂ Γ k) := by
-      simp [ρk, mul_apply_eq_comp]
-    rw [hSk, mul_apply_eq_comp, hTk] at hcomm
-    exact hcomm.symm
-  have htop := congr_arg (SetLike.coe : Submodule ℂ _ → Set _)
-    (L2.countHilbertBasis ℂ Γ).dense_span
-  rw [Submodule.topologicalClosure_coe, Submodule.top_coe] at htop
-  have hsub : Submodule.span ℂ (Set.range (L2.countHilbertBasis ℂ Γ)) ≤
-      LinearMap.eqLocus (S * T).toLinearMap (T * S).toLinearMap :=
-    Submodule.span_le.2 (by rintro _ ⟨k, rfl⟩; exact hbasis k)
-  have hall := closure_minimal (t := {f | (S * T) f = (T * S) f}) hsub
-    (isClosed_eq (S * T).continuous (T * S).continuous)
-  rw [htop] at hall
-  exact ContinuousLinearMap.ext fun f => hall trivial
+  refine ContinuousLinearMap.ext_on
+    (Submodule.dense_iff_topologicalClosure_eq_top.mpr (L2.countHilbertBasis ℂ Γ).dense_span) ?_
+  rintro _ ⟨k, rfl⟩
+  let ρk := (Measure.count : Measure Γ).rightRegular ℂ ℂ 2 k⁻¹
+  have hρk : ρk ∈ (groupVonNeumannAlgebra Γ).commutant :=
+    rightGroupVonNeumannAlgebra_le_commutant_groupVonNeumannAlgebra
+      (rightRegular_mem_rightGroupVonNeumannAlgebra k⁻¹)
+  have hcomm := apply_countHilbertBasis_one_comm hT
+    ((groupVonNeumannAlgebra Γ).commutant.mul_mem hS hρk)
+  have hTk : ρk (T (L2.countHilbertBasis ℂ Γ 1)) = T (L2.countHilbertBasis ℂ Γ k) := by
+    have hTρ := DFunLike.congr_fun
+      (mem_commutant_rightGroupVonNeumannAlgebra_iff_rightRegular.1 hT k⁻¹)
+      (L2.countHilbertBasis ℂ Γ 1)
+    simpa [ρk, mul_apply_eq_comp] using hTρ
+  have hSk : (S * ρk) (L2.countHilbertBasis ℂ Γ 1) = S (L2.countHilbertBasis ℂ Γ k) := by
+    simp [ρk, mul_apply_eq_comp]
+  rw [hSk, mul_apply_eq_comp, hTk] at hcomm
+  exact hcomm.symm
 
 variable (Γ) in
 /-- **Mutual commutant theorem (left-to-right).** The commutant of `L(Γ)` is `R(Γ)`. -/
@@ -365,24 +366,15 @@ private theorem isCyclic_of_forall_countHilbertBasis
     {M : VonNeumannAlgebra (Lp ℂ 2 (Measure.count : Measure Γ))}
     (h : ∀ g : Γ, ∃ x ∈ M, x (L2.countHilbertBasis ℂ Γ 1) = L2.countHilbertBasis ℂ Γ g) :
     M.IsCyclic (L2.countHilbertBasis ℂ Γ 1) := by
-  rw [isCyclic_def, dense_iff_closure_eq]
-  have htop := congr_arg (SetLike.coe : Submodule ℂ _ → Set _)
-    (L2.countHilbertBasis ℂ Γ).dense_span
-  rw [Submodule.topologicalClosure_coe, Submodule.top_coe] at htop
-  refine Set.eq_univ_of_forall fun v => ?_
-  have hv : v ∈ closure (Submodule.span ℂ (Set.range (L2.countHilbertBasis ℂ Γ)) : Set _) := by
-    rw [htop]
-    trivial
-  refine closure_mono ?_ hv
+  rw [M.isCyclic_iff]
   have hsub : Submodule.span ℂ (Set.range (L2.countHilbertBasis ℂ Γ)) ≤
       M.toStarSubalgebra.toSubalgebra.toSubmodule.map
-        (ContinuousLinearMap.apply ℂ _ (L2.countHilbertBasis ℂ Γ 1)).toLinearMap := by
-    refine Submodule.span_le.2 ?_
-    rintro _ ⟨g, rfl⟩
-    exact h g
-  intro w hw
-  obtain ⟨x, hx, rfl⟩ := hsub hw
-  exact ⟨⟨x, hx⟩, rfl⟩
+        (ContinuousLinearMap.apply ℂ _ (L2.countHilbertBasis ℂ Γ 1)).toLinearMap :=
+    Submodule.span_le.2 (by rintro _ ⟨g, rfl⟩; exact h g)
+  exact (Submodule.dense_iff_topologicalClosure_eq_top.mpr
+    (L2.countHilbertBasis ℂ Γ).dense_span).mono fun w hw => by
+    obtain ⟨x, hx, rfl⟩ := hsub hw
+    exact ⟨x, hx, rfl⟩
 
 variable (Γ) in
 /-- The identity point mass `δ₁` is cyclic for `groupVonNeumannAlgebra Γ`. -/
@@ -425,7 +417,7 @@ theorem groupVonNeumannCoeff_leftRegular_self (g : Γ) :
 @[simp]
 theorem groupVonNeumannCoeff_leftRegular_of_ne {g h : Γ} (hgh : h ≠ g) :
     groupVonNeumannCoeff ((Measure.count : Measure Γ).leftRegular ℂ ℂ 2 g) h = 0 := by
-  simp only [groupVonNeumannCoeff_def, leftRegular_countHilbertBasis, mul_one]
+  simp only [groupVonNeumannCoeff_def, Measure.leftRegular_countHilbertBasis, mul_one]
   exact (L2.countHilbertBasis ℂ Γ).orthonormal.2 hgh
 
 /-- The `x`-th Fourier coefficient of a finite sum of left regular unitaries over `s` is the
@@ -468,6 +460,17 @@ theorem apply_countHilbertBasis_eq_rightRegular
     (L2.countHilbertBasis ℂ Γ 1)
   simpa [mul_apply_eq_comp] using hcomm.symm
 
+/-- Matrix entries of `x ∈ groupVonNeumannAlgebra Γ` in the point-mass basis depend only on the
+quotient `g * h⁻¹` of the basis indices. -/
+theorem inner_countHilbertBasis_apply_eq_groupVonNeumannCoeff
+    {x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)}
+    (hx : x ∈ groupVonNeumannAlgebra Γ) (g h : Γ) :
+    ⟪L2.countHilbertBasis ℂ Γ g, x (L2.countHilbertBasis ℂ Γ h)⟫_ℂ =
+      groupVonNeumannCoeff x (g * h⁻¹) := by
+  rw [apply_countHilbertBasis_eq_rightRegular hx h,
+    (Measure.isUnitary_rightRegular Measure.count).inner_map_right, inv_inv,
+    Measure.rightRegular_countHilbertBasis, groupVonNeumannCoeff_def]
+
 /-- For `x ∈ groupVonNeumannAlgebra Γ`, the `g`-th Fourier coefficient of `star x` is
 `conj (groupVonNeumannCoeff x g⁻¹)`. -/
 @[simp]
@@ -476,9 +479,8 @@ theorem groupVonNeumannCoeff_star
     (hx : x ∈ groupVonNeumannAlgebra Γ) (g : Γ) :
     groupVonNeumannCoeff (star x) g = conj (groupVonNeumannCoeff x g⁻¹) := by
   rw [groupVonNeumannCoeff_def, ContinuousLinearMap.star_eq_adjoint,
-    ContinuousLinearMap.adjoint_inner_right, apply_countHilbertBasis_eq_rightRegular hx g,
-    (Measure.isUnitary_rightRegular Measure.count).inner_map_left, inv_inv,
-    rightRegular_countHilbertBasis, one_mul, ← inner_conj_symm, groupVonNeumannCoeff_def]
+    ContinuousLinearMap.adjoint_inner_right, ← inner_conj_symm,
+    inner_countHilbertBasis_apply_eq_groupVonNeumannCoeff hx 1 g, one_mul]
 
 /-- **Convolution formula for Fourier coefficients.** For `x ∈ groupVonNeumannAlgebra Γ` and any
 bounded operator `y`, `c_g(x * y) = ∑' h, c_{g * h⁻¹}(x) * c_h(y)` unconditionally. -/
@@ -494,13 +496,10 @@ theorem hasSum_groupVonNeumannCoeff_mul
       ContinuousLinearMap.adjoint_inner_left]
   rw [hinner]
   refine (L2.hasSum_conj_mul_apply _ _).congr_fun fun h => ?_
-  rw [← groupVonNeumannCoeff_eq_apply y h]
-  congr 1
-  rw [← L2.inner_countHilbertBasis_left, apply_countHilbertBasis_eq_rightRegular (star_mem hx) g,
-    (Measure.isUnitary_rightRegular Measure.count).inner_map_right, inv_inv,
-    rightRegular_countHilbertBasis, ← groupVonNeumannCoeff_def, groupVonNeumannCoeff_star hx,
-    mul_inv_rev, inv_inv]
-  simp
+  rw [← groupVonNeumannCoeff_eq_apply y h, ← L2.inner_countHilbertBasis_left,
+    inner_countHilbertBasis_apply_eq_groupVonNeumannCoeff (star_mem hx) h g,
+    groupVonNeumannCoeff_star hx]
+  simp [mul_inv_rev]
 
 /-- `tsum` form of the Fourier convolution formula `hasSum_groupVonNeumannCoeff_mul`. -/
 theorem groupVonNeumannCoeff_mul
@@ -521,13 +520,69 @@ noncomputable def groupVonNeumannTrace :
   (groupVonNeumannAlgebra Γ).innerLinearMap (L2.countHilbertBasis ℂ Γ 1)
     (L2.countHilbertBasis ℂ Γ 1)
 
+theorem groupVonNeumannTrace_def :
+    groupVonNeumannTrace Γ =
+      (groupVonNeumannAlgebra Γ).innerLinearMap (L2.countHilbertBasis ℂ Γ 1)
+        (L2.countHilbertBasis ℂ Γ 1) :=
+  (rfl)
+
 /-- The canonical trace evaluates `x ∈ groupVonNeumannAlgebra Γ` at its identity Fourier
 coefficient. -/
 theorem groupVonNeumannTrace_apply (x : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
     groupVonNeumannTrace Γ x =
       groupVonNeumannCoeff
         (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) 1 := by
-  simp [groupVonNeumannTrace, groupVonNeumannCoeff_def]
+  simp [groupVonNeumannTrace_def, groupVonNeumannCoeff_def]
+
+/-- Evaluating `groupVonNeumannTrace Γ` on `star x * y` gives `⟪x δ₁, y δ₁⟫_ℂ`. -/
+theorem groupVonNeumannTrace_star_mul (x y : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
+    groupVonNeumannTrace Γ (star x * y) =
+      ⟪(x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
+          (L2.countHilbertBasis ℂ Γ 1),
+        (y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
+          (L2.countHilbertBasis ℂ Γ 1)⟫_ℂ := by
+  rw [groupVonNeumannTrace_def, innerLinearMap_star_mul]
+
+@[simp]
+theorem groupVonNeumannTrace_one : groupVonNeumannTrace Γ 1 = 1 := by
+  simp [groupVonNeumannTrace_apply]
+
+@[simp]
+theorem groupVonNeumannTrace_star (x : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
+    groupVonNeumannTrace Γ (star x) = conj (groupVonNeumannTrace Γ x) := by
+  rw [groupVonNeumannTrace_apply, groupVonNeumannTrace_apply, StarMemClass.coe_star,
+    groupVonNeumannCoeff_star x.2, inv_one]
+
+/-- The canonical trace is nonnegative on `star x * x`. -/
+theorem groupVonNeumannTrace_star_mul_self_nonneg
+    (x : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
+    0 ≤ groupVonNeumannTrace Γ (star x * x) := by
+  rw [groupVonNeumannTrace_star_mul, inner_self_eq_norm_sq_to_K]
+  simp
+
+/-- The canonical trace on `groupVonNeumannAlgebra Γ` is tracial (`τ (x * y) = τ (y * x)`). -/
+theorem groupVonNeumannTrace_mul_comm (x y : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
+    groupVonNeumannTrace Γ (x * y) = groupVonNeumannTrace Γ (y * x) := by
+  rw [groupVonNeumannTrace_apply, groupVonNeumannTrace_apply]
+  push_cast
+  have hxy := hasSum_groupVonNeumannCoeff_mul x.2
+    (y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) 1
+  have hyx := hasSum_groupVonNeumannCoeff_mul y.2
+    (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) 1
+  simp only [one_mul] at hxy hyx
+  have hyx' : HasSum
+      (fun h : Γ =>
+        groupVonNeumannCoeff
+          (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) h⁻¹ *
+          groupVonNeumannCoeff
+            (y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) h)
+      (groupVonNeumannCoeff
+        ((y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) *
+          (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)))
+        1) :=
+    ((Equiv.inv Γ).hasSum_iff.2 hyx).congr_fun fun h => by
+      simp [Equiv.inv, mul_comm]
+  exact hxy.unique hyx'
 
 /-- The canonical trace on `groupVonNeumannAlgebra Γ` is a normal functional. -/
 theorem isNormalFunctional_groupVonNeumannTrace :
@@ -536,33 +591,10 @@ theorem isNormalFunctional_groupVonNeumannTrace :
 
 /-- The canonical vector functional on `groupVonNeumannAlgebra Γ` is a tracial state. -/
 theorem isTracialState_groupVonNeumannTrace :
-    (groupVonNeumannAlgebra Γ).IsTracialState (groupVonNeumannTrace Γ) := by
-  rw [isTracialState_def]
-  refine ⟨by simp [groupVonNeumannTrace_apply], fun x => ?_, fun x y => ?_⟩
-  · rw [groupVonNeumannTrace_apply, Subalgebra.coe_mul, StarMemClass.coe_star,
-      groupVonNeumannCoeff_def, mul_apply_eq_comp, ContinuousLinearMap.star_eq_adjoint,
-      ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-    simp
-  · rw [groupVonNeumannTrace_apply, groupVonNeumannTrace_apply]
-    push_cast
-    have hxy := hasSum_groupVonNeumannCoeff_mul x.2
-      (y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) 1
-    have hyx := hasSum_groupVonNeumannCoeff_mul y.2
-      (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) 1
-    simp only [one_mul] at hxy hyx
-    have hyx' : HasSum
-        (fun h : Γ =>
-          groupVonNeumannCoeff
-            (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) h⁻¹ *
-            groupVonNeumannCoeff
-              (y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) h)
-        (groupVonNeumannCoeff
-          ((y : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) *
-            (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)))
-          1) :=
-      ((Equiv.inv Γ).hasSum_iff.2 hyx).congr_fun fun h => by
-        simp [Equiv.inv, mul_comm]
-    exact hxy.unique hyx'
+    (groupVonNeumannAlgebra Γ).IsTracialState (groupVonNeumannTrace Γ) where
+  map_one := groupVonNeumannTrace_one
+  star_mul_self_nonneg := groupVonNeumannTrace_star_mul_self_nonneg
+  mul_comm := groupVonNeumannTrace_mul_comm
 
 /-- **Faithfulness of the canonical trace.** For `x ∈ groupVonNeumannAlgebra Γ`,
 `τ (star x * x) = 0 ↔ x = 0`. -/
@@ -571,9 +603,7 @@ theorem groupVonNeumannTrace_star_mul_self_eq_zero_iff
     (x : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
     groupVonNeumannTrace Γ (star x * x) = 0 ↔ x = 0 := by
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
-  rw [groupVonNeumannTrace_apply, Subalgebra.coe_mul, StarMemClass.coe_star,
-    groupVonNeumannCoeff_def, mul_apply_eq_comp, ContinuousLinearMap.star_eq_adjoint,
-    ContinuousLinearMap.adjoint_inner_right, inner_self_eq_zero] at h
+  rw [groupVonNeumannTrace_star_mul, inner_self_eq_zero] at h
   exact Subtype.ext ((isSeparating_groupVonNeumannAlgebra_one Γ).eq_zero x.2 h)
 
 /-- The star subalgebra underlying `groupVonNeumannAlgebra Γ` is Dedekind-finite
@@ -582,7 +612,7 @@ instance instIsDedekindFiniteMonoidGroupVonNeumannAlgebra :
     IsDedekindFiniteMonoid (groupVonNeumannAlgebra Γ).toStarSubalgebra :=
   CStarAlgebra.isDedekindFiniteMonoid_of_tracial
     (groupVonNeumannTrace Γ).toAddMonoidHom
-    (((groupVonNeumannAlgebra Γ).isTracialState_def _).1 isTracialState_groupVonNeumannTrace).2.2
+    groupVonNeumannTrace_mul_comm
     fun q hq hτ => (groupVonNeumannTrace_star_mul_self_eq_zero_iff q).1
       (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq]; exact hτ)
 
@@ -608,6 +638,11 @@ theorem groupVonNeumannCoeff_groupAlgebraToVonNeumannAlgebra (f : MonoidAlgebra 
       simp
     · rw [groupVonNeumannCoeff_leftRegular_of_ne hgh, mul_zero, MonoidAlgebra.coeff_single,
         Finsupp.single_eq_of_ne hgh]
+
+@[simp]
+theorem groupVonNeumannTrace_groupAlgebraToVonNeumannAlgebra (f : MonoidAlgebra ℂ Γ) :
+    groupVonNeumannTrace Γ (groupAlgebraToVonNeumannAlgebra Γ f) = f.coeff 1 := by
+  rw [groupVonNeumannTrace_apply, groupVonNeumannCoeff_groupAlgebraToVonNeumannAlgebra]
 
 /-- The canonical homomorphism from `MonoidAlgebra ℂ Γ` into `groupVonNeumannAlgebra Γ` is
 injective. -/

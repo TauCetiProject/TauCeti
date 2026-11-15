@@ -314,25 +314,9 @@ infinite conjugacy class. -/
 theorem IsCommTransitive.infinite_setOf_isConj [IsMulTorsionFree G] (hG : IsCommTransitive G)
     (h : ¬ IsMulCommutative G) {g : G} (hg : g ≠ 1) :
     {x : G | IsConj g x}.Infinite := by
-  have hgZ : g ∉ Subgroup.center G := by
-    rw [hG.center_eq_bot h, Subgroup.mem_bot]
-    exact hg
-  rw [Subgroup.mem_center_iff] at hgZ
-  push Not at hgZ
-  obtain ⟨u, hug⟩ := hgZ
-  have hu : u ≠ 1 := by rintro rfl; simp at hug
-  refine Set.infinite_of_injective_forall_mem (f := fun n : ℤ => u ^ n * g * (u ^ n)⁻¹)
-    (fun m n hmn => ?_) (fun n => isConj_iff.2 ⟨u ^ n, rfl⟩)
-  by_contra hne
-  dsimp only at hmn
-  have huk : u ^ (m - n) ≠ 1 :=
-    (IsMulTorsionFree.zpow_eq_one_iff_right hu).not.2 (sub_ne_zero.2 hne)
-  have hcomm : Commute (u ^ (m - n)) g := by
-    rw [Commute, SemiconjBy]
-    calc u ^ (m - n) * g = (u ^ n)⁻¹ * ((u ^ m * g * (u ^ m)⁻¹) * u ^ m) := by group
-      _ = (u ^ n)⁻¹ * ((u ^ n * g * (u ^ n)⁻¹) * u ^ m) := by rw [hmn]
-      _ = g * u ^ (m - n) := by group
-  exact hug (hG u (u ^ (m - n)) g huk (Commute.self_zpow u _) hcomm).eq
+  have := hG.hasUniqueRoots
+  refine infinite_setOf_isConj_of_notMem_center ?_
+  rwa [hG.center_eq_bot h, Subgroup.mem_bot]
 
 /-- An injective homomorphism into a CSA group has CSA domain. -/
 theorem IsCSA.of_injective {H : Type*} [Group H] (hG : IsCSA G)

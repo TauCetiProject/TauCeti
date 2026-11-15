@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+public import TauCeti.Analysis.VonNeumannAlgebra.Factor
 public import TauCeti.Analysis.VonNeumannAlgebra.Group.Basic
 import TauCeti.GroupTheory.FreeGroup.Conjugacy.Infinite
 
@@ -63,11 +64,10 @@ theorem groupVonNeumannCoeff_leftRegular_conj
         (Measure.count : Measure Γ).leftRegular ℂ ℂ 2 k⁻¹) g =
       groupVonNeumannCoeff x (k⁻¹ * g * k) := by
   rw [groupVonNeumannCoeff_def, mul_apply_eq_comp, mul_apply_eq_comp,
-    leftRegular_countHilbertBasis, mul_one,
+    Measure.leftRegular_countHilbertBasis, mul_one,
     (Measure.isUnitary_leftRegular Measure.count).inner_map_right,
-    leftRegular_countHilbertBasis, apply_countHilbertBasis_eq_rightRegular hx k⁻¹, inv_inv,
-    (Measure.isUnitary_rightRegular Measure.count).inner_map_right,
-    rightRegular_countHilbertBasis, inv_inv, groupVonNeumannCoeff_def]
+    Measure.leftRegular_countHilbertBasis,
+    inner_countHilbertBasis_apply_eq_groupVonNeumannCoeff hx, inv_inv]
 
 /-- **Center characterization of `groupVonNeumannAlgebra Γ`.** An operator
 `x ∈ groupVonNeumannAlgebra Γ` lies in `(groupVonNeumannAlgebra Γ).commutant` if and only if its

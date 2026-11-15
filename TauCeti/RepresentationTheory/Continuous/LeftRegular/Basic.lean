@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CountBasis
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
@@ -36,12 +37,14 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
 
 * `MeasureTheory.Measure.leftRegular_apply` and `MeasureTheory.Measure.coeFn_leftRegular`:
   `λ g` is `Lp.compMeasurePreserving (g⁻¹ * ·)`, represented by `x ↦ f (g⁻¹ * x)`.
-* `MeasureTheory.Measure.isUnitary_leftRegular`: the action on `L²(G, E)` is unitary.
+* `MeasureTheory.Measure.isUnitary_leftRegular` and `MeasureTheory.Measure.star_leftRegular`: the
+  action on `L²(G, E)` is unitary and `star (λ g) = λ g⁻¹`.
 * `MeasureTheory.Measure.continuous_leftRegular_apply`: the action is strongly continuous.
 * `MeasureTheory.Measure.invariants_count_leftRegular`: for an infinite group, counting-measure
   `Lᵖ`, `1 ≤ p < ∞`, has no nonzero invariant vector.
-* `MeasureTheory.Measure.leftRegular_count_indicatorConstLp_singleton`: on counting-measure `Lᵖ`,
-  left translation by `g` sends the singleton indicator at `h` to that at `g * h`.
+* `MeasureTheory.Measure.leftRegular_indicatorConstLp_singleton` and
+  `MeasureTheory.Measure.leftRegular_countHilbertBasis`: left translation by `g` sends the
+  singleton indicator (and point-mass basis vector) at `h` to that at `g * h`.
 
 For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
 *Kazhdan's Property (T)*, Appendix G.5.
@@ -53,6 +56,8 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+section LeftInvariant
 
 variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [NormedRing 𝕜]
   [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
@@ -103,6 +108,14 @@ theorem isUnitary_leftRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup
   rw [ContRepresentation.isUnitary_iff_norm_map]
   exact norm_leftRegular_apply μ 2
 
+/-- On a Hilbert space `E`, the operator `star` of left translation by `g` is left translation by
+`g⁻¹`. -/
+@[simp]
+theorem star_leftRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [CompleteSpace E] (g : G) :
+    star (μ.leftRegular 𝕜 E 2 g) = μ.leftRegular 𝕜 E 2 g⁻¹ :=
+  (isUnitary_leftRegular μ).star_eq_inv g
+
 /-- **The left regular representation is strongly continuous** for `p < ∞` and a locally finite
 measure that is inner regular with respect to compact sets on sets of finite measure: every orbit
 map `g ↦ λ g f` is continuous. -/
@@ -114,6 +127,21 @@ theorem continuous_leftRegular_apply [TopologicalSpace G] [IsTopologicalGroup G]
       ⟨fun q : G × G => q.1⁻¹ * q.2, continuous_fst.inv.mul continuous_snd⟩).continuous
   simp only [leftRegular_apply]
   exact continuous_const.compMeasurePreservingLp hg _ hp
+
+/-- Left translation by `g` on `Lᵖ(G, E)` sends the singleton indicator at `h` to that at
+`g * h`. -/
+@[simp]
+theorem leftRegular_indicatorConstLp_singleton (g h : G)
+    (hs : MeasurableSet ({h} : Set G)) (hμ : μ {h} ≠ ∞) (c : E) :
+    μ.leftRegular 𝕜 E p g (indicatorConstLp p hs hμ c) =
+      indicatorConstLp (s := ({g * h} : Set G)) p
+        (by simpa using hs.preimage (measurable_const_mul g⁻¹))
+        (by simpa using
+          ((measurePreserving_mul_left μ g⁻¹).measure_preimage hs.nullMeasurableSet).trans_ne hμ)
+        c := by
+  rw [leftRegular_apply, Lp.indicatorConstLp_compMeasurePreserving]
+  congr! 1
+  simp
 
 section Invariants
 
@@ -138,30 +166,15 @@ theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ 
 
 end Invariants
 
-section Count
+end LeftInvariant
 
-variable [MeasurableSingletonClass G]
-
-/-- Left translation by `g` on counting-measure `Lᵖ` sends the point mass at `h` to that at
-`g * h`. -/
+/-- Left translation by `g` on counting-measure `L²(G)` sends the `h`-th point-mass basis vector to
+the `(g * h)`-th. -/
 @[simp]
-theorem leftRegular_count_indicatorConstLp_singleton (g h : G) (c : E) :
-    (count : Measure G).leftRegular 𝕜 E p g
-      (indicatorConstLp p (measurableSet_singleton h) (by simp) c) =
-      indicatorConstLp p (measurableSet_singleton (g * h)) (by simp) c := by
-  refine Lp.ext (ae_count_iff.2 fun x => ?_)
-  have h1 := ae_count_iff.1 (coeFn_leftRegular (𝕜 := 𝕜) count p g
-    (indicatorConstLp p (measurableSet_singleton h) (by simp) c)) x
-  have h2 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
-    (hs := measurableSet_singleton h) (hμs := by simp) (c := c)) (g⁻¹ * x)
-  have h3 := ae_count_iff.1 (indicatorConstLp_coeFn (p := p) (μ := (count : Measure G))
-    (hs := measurableSet_singleton (g * h)) (hμs := by simp) (c := c)) x
-  refine (h1.trans h2).trans (Eq.trans ?_ h3.symm)
-  by_cases hx : x = g * h
-  · simp [hx]
-  · have hx' : g⁻¹ * x ≠ h := fun e => hx (eq_mul_of_inv_mul_eq e)
-    simp [hx, hx']
-
-end Count
+theorem leftRegular_countHilbertBasis {G 𝕜 : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    [MeasurableSingletonClass G] [RCLike 𝕜] (g h : G) :
+    (count : Measure G).leftRegular 𝕜 𝕜 2 g (L2.countHilbertBasis 𝕜 G h) =
+      L2.countHilbertBasis 𝕜 G (g * h) := by
+  simp [L2.countHilbertBasis_apply]
 
 end MeasureTheory.Measure
