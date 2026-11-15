@@ -594,7 +594,6 @@ theorem toGraph_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
   · exact (SimpleGraph.Ear.heq_toGraph_copy _ _).trans (Ear.heq_toGraph_toSimpleGraph _)
 
 /-- A transported decomposition starts from a single vertex exactly when the original one does. -/
-@[simp]
 theorem exists_initial_toSimpleGraph_eq_singletonSubgraph_iff
     (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
     (∃ v, d.toSimpleGraph.initial = G.singletonSubgraph v) ↔ d.IsVertexStart := by
