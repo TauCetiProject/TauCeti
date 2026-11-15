@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import Mathlib.RingTheory.WittVector.Complete
 public import TauCeti.RingTheory.AdicCompletion.Perfection
-public import TauCeti.RingTheory.Perfectoid.Untilt
+public import TauCeti.RingTheory.Perfectoid.Untilt.Basic
 public import TauCeti.RingTheory.WittVector.Primitive.Quotient
 import Mathlib.Tactic.LinearCombination
 
