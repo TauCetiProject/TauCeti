@@ -39,6 +39,10 @@ without either being an algebra over the other.
   `b ≠ 0`, then `x` is integral over `ℚ`.
 * `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
   with integral coefficients.
+* `IsIntegral.pow_add_mul_mul`, `IsIntegral.pow_mul_add`, `IsIntegral.pow_mul_mul_pow`,
+  `IsIntegral.pow_mul_of_le`, `IsIntegral.pow_mul_sum`, `IsIntegral.pow_sum_mul_prod`: if
+  `δ ^ a * α` is integral, the powers of `δ` that clear the denominators of products, sums and
+  powers of such elements, and every larger power of an integral `δ`.
 -/
 
 public section
@@ -95,6 +99,57 @@ theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral
   exact ⟨N, isIntegral_trans _ this⟩
 
 end
+
+/-! ### Clearing denominators of sums, products and powers
+
+If `δ ^ a * α` is integral, then `δ ^ a` clears the denominator of `α`. The lemmas below give
+exponents that clear the denominators of sums, products and powers of such elements. -/
+
+section Denominators
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] {δ α β : A} {a b : ℕ}
+
+/-- If `δ ^ a` clears the denominator of `α` and `δ ^ b` that of `β`, then `δ ^ (a + b)` clears
+the denominator of `α * β`. -/
+theorem IsIntegral.pow_add_mul_mul (hα : IsIntegral R (δ ^ a * α))
+    (hβ : IsIntegral R (δ ^ b * β)) : IsIntegral R (δ ^ (a + b) * (α * β)) := by
+  rw [pow_add, mul_mul_mul_comm]
+  exact hα.mul hβ
+
+/-- If `δ ^ a` clears the denominators of `α` and of `β`, then it clears that of `α + β`. -/
+theorem IsIntegral.pow_mul_add (hα : IsIntegral R (δ ^ a * α)) (hβ : IsIntegral R (δ ^ a * β)) :
+    IsIntegral R (δ ^ a * (α + β)) := by
+  rw [mul_add]
+  exact hα.add hβ
+
+/-- If `δ ^ a` clears the denominator of `α`, then `δ ^ (a * k)` clears that of `α ^ k`. -/
+theorem IsIntegral.pow_mul_mul_pow (hα : IsIntegral R (δ ^ a * α)) (k : ℕ) :
+    IsIntegral R (δ ^ (a * k) * α ^ k) := by
+  rw [pow_mul, ← mul_pow]
+  exact hα.pow k
+
+/-- If `δ` is integral and `δ ^ a` clears the denominator of `α`, then so does every larger power
+of `δ`. -/
+theorem IsIntegral.pow_mul_of_le (hα : IsIntegral R (δ ^ a * α)) (hδ : IsIntegral R δ) {c : ℕ}
+    (hac : a ≤ c) : IsIntegral R (δ ^ c * α) := by
+  rw [← Nat.sub_add_cancel hac, pow_add, mul_assoc]
+  exact (hδ.pow _).mul hα
+
+/-- If `δ ^ a` clears the denominator of every `f i`, then it clears that of their sum. -/
+theorem IsIntegral.pow_mul_sum {ι : Type*} {s : Finset ι} {f : ι → A}
+    (hf : ∀ i ∈ s, IsIntegral R (δ ^ a * f i)) : IsIntegral R (δ ^ a * ∑ i ∈ s, f i) := by
+  rw [Finset.mul_sum]
+  exact IsIntegral.sum _ hf
+
+/-- If `δ ^ a i` clears the denominator of `f i` for every `i`, then `δ ^ ∑ i, a i` clears that of
+the product of the `f i`. -/
+theorem IsIntegral.pow_sum_mul_prod {ι : Type*} {s : Finset ι} {f : ι → A} {a : ι → ℕ}
+    (hf : ∀ i ∈ s, IsIntegral R (δ ^ a i * f i)) :
+    IsIntegral R (δ ^ (∑ i ∈ s, a i) * ∏ i ∈ s, f i) := by
+  rw [← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib]
+  exact IsIntegral.prod _ hf
+
+end Denominators
 
 namespace TauCeti
 

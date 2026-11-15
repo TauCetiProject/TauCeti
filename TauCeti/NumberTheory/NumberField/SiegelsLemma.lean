@@ -11,7 +11,7 @@ import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
-# Siegel's lemma over a number field with rational integer unknowns
+# Siegel's lemma over a number field
 
 Let `K` be a number field of degree `d` and let `a` be an `M × N` matrix over `𝓞 K` whose entries
 have house at most `A ≥ 1`. If `d * M < N`, the system `a x = 0` has a nonzero solution
@@ -22,7 +22,9 @@ coefficients, for instance in the proof of Roth's theorem.
 
 Mathlib's `NumberField.house.exists_ne_zero_int_vec_house_le` solves the same system with
 unknowns in `𝓞 K` and a constant depending on an integral basis; Mathlib's
-`Int.Matrix.exists_ne_zero_int_vec_norm_le` is the case of integer coefficients.
+`Int.Matrix.exists_ne_zero_int_vec_norm_le` is the case of integer coefficients. When there are at
+least twice as many unknowns as equations, the exponent in Mathlib's bound is at most `1`, which
+gives a solution in `𝓞 K` of house at most `C N A` for a constant `C` depending only on `K`.
 
 The proof is a pigeonhole argument in the coordinates of Mathlib's `mixedEmbedding.stdBasis`: an
 algebraic integer has `d` such real coordinates, and it vanishes as soon as all of them are at
@@ -44,6 +46,10 @@ most `2 / 3` in absolute value, because then every conjugate has modulus at most
   in `ℤ`.
 * `NumberField.sum_mul_intCast_eq_zero_of_mulVec_eq_zero`: such a solution satisfies each row
   equation `∑ⱼ aᵢⱼ xⱼ = 0` in `K`.
+* `NumberField.house.exists_const_ne_zero_int_vec_house_le`: Siegel's lemma over `K` with unknowns
+  in `𝓞 K`, for systems with at least twice as many unknowns as equations, with a solution of house
+  at most `C N A` for a constant `C` depending only on `K`. This is the form used to build
+  auxiliary functions whose coefficients are algebraic integers of `K`.
 
 ## References
 
@@ -58,6 +64,8 @@ public section
 open Finset Module NumberField.InfinitePlace
 
 open scoped Matrix
+
+universe u v
 
 namespace NumberField
 
@@ -224,5 +232,75 @@ omit [NumberField K] [Fintype α] in
 theorem sum_mul_intCast_eq_zero_of_mulVec_eq_zero {a : Matrix α β (𝓞 K)} {x : β → ℤ}
     (hax : a *ᵥ (fun j ↦ (x j : 𝓞 K)) = 0) (i : α) : ∑ j, (a i j : K) * x j = 0 := by
   simpa [Matrix.mulVec, dotProduct] using congrArg (algebraMap (𝓞 K) K) (congrFun hax i)
+
+/-- For `1 ≤ x` and `0 ≤ e ≤ 1`, `c (c x) ^ e ≤ M M x` with `M = max 1 |c|`, whatever the sign
+of `c`. -/
+private theorem mul_rpow_le_max_one_abs_mul_max_one_abs {c x e : ℝ} (hx : 1 ≤ x) (he0 : 0 ≤ e)
+    (he1 : e ≤ 1) : c * (c * x) ^ e ≤ max 1 |c| * max 1 |c| * x := by
+  have hM : 1 ≤ max 1 |c| := le_max_left _ _
+  have hcx : |c * x| ≤ max 1 |c| * x := by
+    rw [abs_mul, abs_of_nonneg (by linarith : (0 : ℝ) ≤ x)]
+    exact mul_le_mul_of_nonneg_right (le_max_right _ _) (by linarith)
+  calc c * (c * x) ^ e
+      ≤ |c| * |c * x| ^ e := by
+        refine (le_abs_self _).trans ?_
+        rw [abs_mul]
+        exact mul_le_mul_of_nonneg_left (Real.abs_rpow_le_abs_rpow _ _) (abs_nonneg _)
+    _ ≤ max 1 |c| * (max 1 |c| * x) ^ e :=
+        mul_le_mul (le_max_right _ _) (Real.rpow_le_rpow (abs_nonneg _) hcx he0)
+          (by positivity) (by positivity)
+    _ ≤ max 1 |c| * (max 1 |c| * x) :=
+        mul_le_mul_of_nonneg_left
+          (Real.rpow_le_self_of_one_le (one_le_mul_of_one_le_of_one_le hM hx) he1)
+          (by positivity)
+    _ = max 1 |c| * max 1 |c| * x := by ring
+
+/-- **Siegel's lemma over `K` with a constant depending only on `K`.** There is `C ≥ 1` such that
+every system `a ξ = 0` of linear equations over `𝓞 K` with `N ≥ 1` unknowns, at least twice as
+many unknowns as equations, and coefficients of house at most `A ≥ 1` has a nonzero solution
+`ξ` in `𝓞 K` whose entries have house at most `C N A`.
+
+This is Mathlib's `NumberField.house.exists_ne_zero_int_vec_house_le`, whose bound
+`c (c N A) ^ (M / (N - M))` for `M` equations has exponent at most `1` when `2 M ≤ N`; for the
+zero system any vector with entries `1` is a solution. -/
+theorem house.exists_const_ne_zero_int_vec_house_le (K : Type*) [Field K] [NumberField K] :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (α : Type u) (β : Type v) [Fintype α] [Fintype β] [Nonempty β]
+      (a : Matrix α β (𝓞 K)) (A : ℝ), 1 ≤ A → 2 * Fintype.card α ≤ Fintype.card β →
+      (∀ i j, house (a i j : K) ≤ A) →
+      ∃ ξ : β → 𝓞 K, ξ ≠ 0 ∧ a *ᵥ ξ = 0 ∧ ∀ l, house (ξ l : K) ≤ C * (Fintype.card β * A) := by
+  classical
+  -- The constant of Mathlib's Siegel lemma, which is not public, as a number `c`.
+  obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ (α : Type u) (β : Type v) [Fintype α] [Fintype β]
+      (a : Matrix α β (𝓞 K)), a ≠ 0 → 0 < Fintype.card α →
+      Fintype.card α < Fintype.card β → ∀ A : ℝ, (∀ i j, house (a i j : K) ≤ A) →
+      ∃ ξ : β → 𝓞 K, ξ ≠ 0 ∧ a *ᵥ ξ = 0 ∧ ∀ l, house (ξ l : K) ≤
+        c * (c * Fintype.card β * A) ^
+          ((Fintype.card α : ℝ) / (Fintype.card β - Fintype.card α)) :=
+    ⟨_, fun _ _ _ _ a ha hp hpq _ hA ↦ exists_ne_zero_int_vec_house_le K a ha hp hpq rfl hA rfl⟩
+  have hM : 1 ≤ max 1 |c| := le_max_left _ _
+  refine ⟨max 1 |c| * max 1 |c|, one_le_mul_of_one_le_of_one_le hM hM,
+    fun α β _ _ _ a A hA hcard ha ↦ ?_⟩
+  have hNA : 1 ≤ (Fintype.card β : ℝ) * A :=
+    one_le_mul_of_one_le_of_one_le (by exact_mod_cast Fintype.card_pos) hA
+  by_cases ha0 : a = 0
+  · refine ⟨fun _ ↦ 1, Function.ne_iff.mpr ⟨Classical.arbitrary β, one_ne_zero⟩,
+      by simp [ha0], fun _ ↦ ?_⟩
+    have h1 : house ((1 : 𝓞 K) : K) = 1 := by simpa using house_intCast (K := K) 1
+    rw [h1]
+    nlinarith [one_le_mul_of_one_le_of_one_le hM hM]
+  have hp : 0 < Fintype.card α := by
+    by_contra! h
+    have : IsEmpty α := Fintype.card_eq_zero_iff.mp (Nat.le_zero.mp h)
+    exact ha0 (Subsingleton.elim _ _)
+  obtain ⟨ξ, hξ0, hξ, hle⟩ := hc α β a ha0 hp (by omega) A ha
+  refine ⟨ξ, hξ0, hξ, fun l ↦ (hle l).trans ?_⟩
+  -- The exponent `M / (N - M)` lies in `[0, 1]` because `2 M ≤ N`.
+  have hcard' : 2 * (Fintype.card α : ℝ) ≤ Fintype.card β := by exact_mod_cast hcard
+  have hpos : 0 < (Fintype.card β : ℝ) - Fintype.card α := by
+    have : (0 : ℝ) < Fintype.card α := by exact_mod_cast hp
+    linarith
+  rw [mul_assoc c]
+  exact mul_rpow_le_max_one_abs_mul_max_one_abs hNA (div_nonneg (Nat.cast_nonneg _) hpos.le)
+    ((div_le_one hpos).mpr (by linarith))
 
 end NumberField
