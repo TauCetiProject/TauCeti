@@ -25,10 +25,12 @@ So over an integral domain in which `2 ≠ 0`, the matrix `g` fixes a nonzero ve
 a unit vector.
 
 A nonidentity rotation of `ℝ³` fixes exactly two unit vectors, the two endpoints `±v` of its axis
-on the unit sphere. The reason is that a rotation of `R³` fixing two vectors `u` and `w` also fixes
-their cross product, since rotations preserve the cross product; when `u ⨯₃ w` is not isotropic the
-three vectors form a basis, so the rotation is the identity. Over an ordered commutative ring, two
-vectors of equal squared length whose cross product vanishes are equal or opposite
+on the unit sphere. The reason is that a rotation `g` of `R³` fixing two vectors `u` and `w` also
+fixes their cross product, since rotations preserve the cross product, so `g` fixes the frame matrix
+`ofFrame u w` with columns `u`, `w` and `u ⨯₃ w`. The determinant of that frame is
+`(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w)`; when it is regular, so is the frame, and cancelling it from
+`g * ofFrame u w = ofFrame u w` forces `g = 1`. Over an ordered commutative ring, two vectors of
+equal squared length with `(u ⨯₃ w) ⬝ᵥ (u ⨯₃ w) = 0` are equal or opposite
 (`TauCeti.eq_or_eq_neg_of_cross_dotProduct_eq_zero`).
 
 These are the facts about single rotations that the pole-counting argument for finite rotation
@@ -45,9 +47,9 @@ groups rests on; see `TauCeti/LinearAlgebra/Matrix/SpecialOrthogonalGroup/Pole.l
 * `Matrix.eq_or_eq_neg_of_mem_specialOrthogonalGroup_of_mulVec_eq_self`: a nonidentity rotation of
   `R³`, over an ordered commutative ring `R`, fixing two vectors of equal squared length fixes
   them as two points of one axis: they are equal or opposite.
-* `Matrix.setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup`: the vectors fixed by a
-  nonidentity rotation of `R³` with the squared length of a fixed vector `v` are exactly `v` and
-  `-v`.
+* `Matrix.setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup`: over an ordered
+  commutative ring `R`, the vectors fixed by a nonidentity rotation of `R³` with the squared length
+  of a fixed vector `v` are exactly `v` and `-v`.
 * `Matrix.exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGroup`:
   **Euler's rotation theorem**, in odd dimension every rotation over `ℝ` fixes a unit vector.
 * `Matrix.exists_setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup`: the unit vectors
@@ -90,13 +92,11 @@ independent. -/
 theorem eq_one_of_mem_specialOrthogonalGroup_of_mulVec_eq_self_of_isRegular_cross_dotProduct
     {g : Matrix (Fin 3) (Fin 3) R} (hg : g ∈ specialOrthogonalGroup (Fin 3) R) {u w : Fin 3 → R}
     (hu : g *ᵥ u = u) (hw : g *ᵥ w = w) (huw : IsRegular ((u ⨯₃ w) ⬝ᵥ (u ⨯₃ w))) : g = 1 := by
-  have hframe : g * ofFrame u w = ofFrame u w := by
-    rw [← ofFrame_mulVec_mulVec hg, hu, hw]
-  -- Multiplying by the adjugate of the frame turns the frame into its determinant.
-  have hdet := congrArg (· * adjugate (ofFrame u w)) hframe
-  simp only [mul_assoc, mul_adjugate, det_ofFrame, Matrix.mul_smul, mul_one] at hdet
-  ext i j
-  exact huw.left (by simpa using congrFun₂ hdet i j)
+  -- The frame `ofFrame u w` has regular determinant, so it can be cancelled from `g F = 1 F`.
+  have hF : IsRegular (ofFrame u w) :=
+    isRegular_of_isLeftRegular_det ((det_ofFrame u w).symm ▸ huw.left)
+  exact hF.right (show g * ofFrame u w = 1 * ofFrame u w by
+    rw [← ofFrame_mulVec_mulVec hg, hu, hw, one_mul])
 
 /-- In odd dimension, **a rotation over an integral domain in which `2 ≠ 0` fixes a nonzero
 vector**. -/
@@ -123,7 +123,7 @@ theorem eq_or_eq_neg_of_mem_specialOrthogonalGroup_of_mulVec_eq_self
     hu hw (IsRegular.of_ne_zero h)
 
 /-- **The vectors fixed by a nonidentity rotation `g` of `R³` with the squared length of a fixed
-vector `v` are exactly `v` and `-v`.** -/
+vector `v` are exactly `v` and `-v`**, over an ordered commutative ring `R`. -/
 theorem setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup
     {g : Matrix (Fin 3) (Fin 3) R} (hg : g ∈ specialOrthogonalGroup (Fin 3) R) (hg1 : g ≠ 1)
     {v : Fin 3 → R} (hgv : g *ᵥ v = v) : {w | w ⬝ᵥ w = v ⬝ᵥ v ∧ g *ᵥ w = w} = {v, -v} := by
@@ -138,7 +138,7 @@ end Ordered
 end CommRing
 
 /-- **Euler's rotation theorem**: in odd dimension, and in particular in `ℝ³`, every rotation
-fixes a unit vector, a point of the unit sphere on its axis. -/
+over `ℝ` fixes a unit vector. -/
 theorem exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGroup {n : Type*}
     [Fintype n] [DecidableEq n] (hn : Odd (Fintype.card n)) {g : Matrix n n ℝ}
     (hg : g ∈ specialOrthogonalGroup n ℝ) : ∃ v, v ⬝ᵥ v = 1 ∧ g *ᵥ v = v := by
