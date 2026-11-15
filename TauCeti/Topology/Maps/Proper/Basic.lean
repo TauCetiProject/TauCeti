@@ -35,6 +35,12 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 * `IsProperMap.of_isEmbedding_of_range_eq`: the pullback of a proper map along an embedding of its
   codomain is proper. This is Mathlib's `IsProperMap.restrictPreimage`, stated for a square of
   embeddings rather than for subtypes.
+* `TauCeti.isProperMap_subtypeVal_iff`, `TauCeti.isProperMap_prodMk_left`,
+  `TauCeti.isProperMap_prodMk_right`: properness of subspace inclusions and of sections into a
+  product.
+* `TauCeti.isProperMap_iff_domRestrict_of_iUnion_eq_univ` and
+  `IsClosed.isProperMap_iff_domRestrict_of_union_eq_univ`: a map whose source is covered by
+  finitely many closed sets is proper if and only if its restriction to each piece is proper.
 * `Continuous.isClosedEmbedding_fst_prod`: a parameter-preserving map `(p, x) ↦ (p, G (p, x))`
   with injective slices, compact second factor and Hausdorff target is a closed embedding.
 -/
@@ -168,3 +174,68 @@ theorem Continuous.isClosedEmbedding_fst_prod {P : Type*} [TopologicalSpace P] [
     rw [himage]
     exact isClosedMap_fst_of_compactSpace _
       ((hC.preimage (by fun_prop)).inter (isClosed_eq (by fun_prop) (by fun_prop)))
+
+namespace TauCeti
+
+/-- The inclusion of a subset `s ⊆ X` is proper if and only if `s` is closed. -/
+@[simp]
+theorem isProperMap_subtypeVal_iff {s : Set X} : IsProperMap ((↑) : s → X) ↔ IsClosed s :=
+  ⟨fun h ↦ Subtype.range_coe (s := s) ▸ h.isClosed_range, IsClosed.isProperMap_subtypeVal⟩
+
+/-- In a `T₁` space `X`, the section `y ↦ (x, y)` into `X × Y` is proper. -/
+theorem isProperMap_prodMk_left [T1Space X] (x : X) : IsProperMap (fun y : Y ↦ (x, y)) :=
+  isProperMap_of_isClosedMap_of_inj (.prodMk_right x) (Prod.mk_right_injective x)
+    (isClosedMap_prodMk_left x)
+
+/-- In a `T₁` space `Y`, the section `x ↦ (x, y)` into `X × Y` is proper. -/
+theorem isProperMap_prodMk_right [T1Space Y] (y : Y) : IsProperMap (fun x : X ↦ (x, y)) :=
+  isProperMap_of_isClosedMap_of_inj (.prodMk_left y) (Prod.mk_left_injective y)
+    (isClosedMap_prodMk_right y)
+
+/-- **Properness on a finite closed cover of the source.** If finitely many closed sets `s i` cover
+`X`, then `f : X → Y` is proper if and only if its restriction `Set.domRestrict (s i) f` to each
+piece is proper. -/
+theorem isProperMap_iff_domRestrict_of_iUnion_eq_univ {ι : Type*} [Finite ι] {s : ι → Set X}
+    (hs : ∀ i, IsClosed (s i)) (hcov : ⋃ i, s i = Set.univ) :
+    IsProperMap f ↔ ∀ i, IsProperMap ((s i).domRestrict f) := by
+  refine ⟨fun hf i ↦ hf.restrict (hs i), fun hall ↦ ?_⟩
+  have hpre (D : Set Y) :
+      f ⁻¹' D = ⋃ i, ((↑) : s i → X) '' ((s i).domRestrict f ⁻¹' D) := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_iUnion, Set.mem_image, Subtype.exists,
+      Set.domRestrict_apply, exists_and_right, exists_eq_right]
+    exact ⟨fun hx ↦ let ⟨i, hi⟩ := Set.mem_iUnion.1 (hcov ▸ Set.mem_univ x); ⟨i, hi, hx⟩,
+      fun ⟨_, _, hx⟩ ↦ hx⟩
+  refine isProperMap_iff_isClosedMap_and_compact_fibers.2 ⟨?_, ?_, ?_⟩
+  · refine continuous_iff_isClosed.2 fun D hD ↦ ?_
+    rw [hpre]
+    exact isClosed_iUnion_of_finite fun i ↦
+      (hs i).isClosedEmbedding_subtypeVal.isClosedMap _ (hD.preimage (hall i).continuous)
+  · intro E hE
+    have himg : f '' E = ⋃ i, (s i).domRestrict f '' (((↑) : s i → X) ⁻¹' E) := by
+      ext y
+      simp only [Set.mem_image, Set.mem_iUnion, Subtype.exists, Set.mem_preimage,
+        Set.domRestrict_apply]
+      exact ⟨fun ⟨x, hx, hxy⟩ ↦
+        let ⟨i, hi⟩ := Set.mem_iUnion.1 (hcov ▸ Set.mem_univ x); ⟨i, x, hi, hx, hxy⟩,
+        fun ⟨_, x, _, hx, hxy⟩ ↦ ⟨x, hx, hxy⟩⟩
+    rw [himg]
+    exact isClosed_iUnion_of_finite fun i ↦
+      (hall i).isClosedMap _ (hE.preimage continuous_subtype_val)
+  · intro y
+    rw [hpre]
+    exact isCompact_iUnion fun i ↦
+      ((hall i).isCompact_preimage isCompact_singleton).image continuous_subtype_val
+
+/-- **Properness on a binary closed cover of the source.** If closed sets `s` and `t` cover `X`,
+then `f : X → Y` is proper if and only if its restrictions to `s` and to `t` are proper. -/
+theorem _root_.IsClosed.isProperMap_iff_domRestrict_of_union_eq_univ {s t : Set X} (hs : IsClosed s)
+    (ht : IsClosed t) (hst : s ∪ t = Set.univ) :
+    IsProperMap f ↔ IsProperMap (s.domRestrict f) ∧ IsProperMap (t.domRestrict f) := by
+  have hcov : (⋃ b : Bool, cond b s t) = Set.univ := by
+    ext x
+    simpa [Bool.exists_bool, or_comm] using Set.eq_univ_iff_forall.1 hst x
+  rw [isProperMap_iff_domRestrict_of_iUnion_eq_univ (fun b ↦ by cases b <;> assumption) hcov,
+    Bool.forall_bool, Bool.cond_true, Bool.cond_false, and_comm]
+
+end TauCeti
