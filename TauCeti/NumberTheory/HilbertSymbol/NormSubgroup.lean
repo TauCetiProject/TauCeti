@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Even
 public import Mathlib.Algebra.QuadraticAlgebra.AlgHom
 
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
@@ -31,8 +32,11 @@ The diagonal entry of the symbol, `TauCeti.hilbertSymbol_self`, needs no arithme
 all: the norm subgroup for the radicand `a` contains the norm `-a` of the square-root generator,
 so it contains `a` exactly when it contains `-1`.
 
-The subgroup contains every square and, when `a` is a unit, `-a`, the norm of the square-root
-generator. Thus its index may be computed in the square-class group, as in O'Meara,
+The subgroup contains every square (with equality at `0`, `TauCeti.quadraticNormSubgroup_zero`, and
+full group `Rˣ` when `a` is a unit square and `2` is a unit,
+`TauCeti.quadraticNormSubgroup_eq_top_of_isSquare`) and, when `a` is a unit, `-a`, the norm of the
+square-root generator. Over a field its index therefore coincides with the index of its image in
+`Kˣ ⧸ (Kˣ)²` (`TauCeti.index_map_squareClassHom_quadraticNormSubgroup`), as in O'Meara,
 *Introduction to Quadratic Forms*, §63A.
 
 The unit values of a binary diagonal form `⟨a, b⟩` are the coset `a N` of the norm subgroup `N`
@@ -157,6 +161,37 @@ theorem quadraticNormSubgroup_mul_sq (a : R) (c : Rˣ) :
   refine le_antisymm (key a c) ?_
   have h := key (a * (c : R) ^ 2) c⁻¹
   simpa [mul_assoc, ← mul_pow, ← Units.val_mul] using h
+
+/-- At radicand `0`, the unit norms from `R[√0]` are the squares of units of `R`. -/
+@[simp]
+theorem quadraticNormSubgroup_zero : quadraticNormSubgroup (0 : R) = Subgroup.square Rˣ := by
+  refine le_antisymm (fun b hb ↦ ?_) (square_le_quadraticNormSubgroup 0)
+  obtain ⟨z, hz⟩ := (mem_quadraticNormSubgroup_iff 0 b).mp hb
+  simp only [QuadraticAlgebra.norm_def, zero_mul, sub_zero, add_zero] at hz
+  have hu : IsUnit (z : QuadraticAlgebra R 0 0).re := isUnit_of_mul_isUnit_left (hz ▸ b.isUnit)
+  exact Subgroup.mem_square.mpr ⟨hu.unit, Units.ext (by simp [IsUnit.unit_spec, hz])⟩
+
+/-- When `2` is a unit in `R`, every unit of `R` is a norm from the split quadratic algebra
+`R[√1]`. -/
+theorem quadraticNormSubgroup_one (h2 : IsUnit (2 : R)) :
+    quadraticNormSubgroup (1 : R) = ⊤ := by
+  rw [eq_top_iff]
+  intro b _
+  let u₂ : Rˣ := h2.unit⁻¹
+  have hu₂ : (2 : R) * (u₂ : R) = 1 := h2.mul_val_inv
+  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq 1 b).mpr
+    ⟨⟨((b : R) + 1) * (u₂ : R), ((b : R) - 1) * (u₂ : R)⟩, ?_⟩
+  simp only [QuadraticAlgebra.norm_def, zero_mul, add_zero, one_mul]
+  linear_combination (b : R) * ((2 : R) * (u₂ : R) + 1) * hu₂
+
+/-- When `2` is a unit in `R`, every unit radicand `a` that is a square in `R` has full quadratic
+norm subgroup `Rˣ`. -/
+theorem quadraticNormSubgroup_eq_top_of_isSquare (h2 : IsUnit (2 : R)) {a : R}
+    (ha : IsUnit a) (hsq : IsSquare a) : quadraticNormSubgroup a = ⊤ := by
+  obtain ⟨r, rfl⟩ := hsq
+  have hr : IsUnit r := isUnit_of_mul_isUnit_left ha
+  have heq : r * r = (1 : R) * (hr.unit : R) ^ 2 := by simp [IsUnit.unit_spec, sq]
+  rw [heq, quadraticNormSubgroup_mul_sq, quadraticNormSubgroup_one h2]
 
 /-- **The values of a binary form are a coset of norms.** A unit `c` is represented by the binary
 diagonal form `⟨a, b⟩` exactly when `a * c` is a norm from the discriminant algebra
@@ -303,6 +338,44 @@ theorem exists_hilbertSymbol_eq_neg_one_of_index_eq_two (a : Kˣ)
       (quadraticNormSubgroup (a : K)) hdvd).mpr hindex (-1)
   rw [Subgroup.signIndicatorHom_apply, ← hilbertSymbol_eq_signIndicator] at hb
   exact ⟨b, hb⟩
+
+/-- Pulling `(quadraticNormSubgroup a).map squareClassHom` back along `squareClassHom` recovers
+`quadraticNormSubgroup a`, because `quadraticNormSubgroup a` contains all squares. -/
+@[simp]
+theorem comap_squareClassHom_map_quadraticNormSubgroup (a : K) :
+    ((quadraticNormSubgroup a).map squareClassHom).comap squareClassHom =
+      quadraticNormSubgroup a :=
+  (quadraticNormSubgroup a).comap_map_eq_self
+    ((ker_squareClassHom (K := K)).le.trans (square_le_quadraticNormSubgroup a))
+
+/-- The square class of `b : Kˣ` belongs to `(quadraticNormSubgroup a).map squareClassHom` if and
+only if `b` belongs to `quadraticNormSubgroup a`. -/
+@[simp 1100]
+theorem squareClassHom_mem_map_quadraticNormSubgroup_iff (a : K) (b : Kˣ) :
+    squareClassHom b ∈ (quadraticNormSubgroup a).map squareClassHom ↔
+      b ∈ quadraticNormSubgroup a := by
+  rw [← Subgroup.mem_comap, comap_squareClassHom_map_quadraticNormSubgroup]
+
+/-- Mapping `quadraticNormSubgroup a` to the multiplicative square-class group `Kˣ ⧸ (Kˣ)²`
+preserves its subgroup index. -/
+@[simp]
+theorem index_map_squareClassHom_quadraticNormSubgroup (a : K) :
+    ((quadraticNormSubgroup a).map squareClassHom).index = (quadraticNormSubgroup a).index :=
+  Subgroup.index_map_eq _ squareClassHom_surjective
+    ((ker_squareClassHom (K := K)).le.trans (square_le_quadraticNormSubgroup a))
+
+/-- At radicand `0`, the image of `quadraticNormSubgroup 0` in `Kˣ ⧸ (Kˣ)²` is trivial. -/
+theorem map_squareClassHom_quadraticNormSubgroup_zero :
+    (quadraticNormSubgroup (0 : K)).map squareClassHom = ⊥ := by
+  rw [quadraticNormSubgroup_zero, Subgroup.map_eq_bot_iff, ker_squareClassHom]
+
+/-- When `2 ≠ 0` in `K`, the image of `quadraticNormSubgroup a` in `Kˣ ⧸ (Kˣ)²` is `⊤` for every
+nonzero square `a` in `K`. -/
+theorem map_squareClassHom_quadraticNormSubgroup_of_isSquare (h2 : (2 : K) ≠ 0) {a : K}
+    (ha : a ≠ 0) (hsq : IsSquare a) :
+    (quadraticNormSubgroup a).map squareClassHom = ⊤ := by
+  rw [quadraticNormSubgroup_eq_top_of_isSquare h2.isUnit ha.isUnit hsq,
+    Subgroup.map_top_of_surjective _ squareClassHom_surjective]
 
 end Field
 
