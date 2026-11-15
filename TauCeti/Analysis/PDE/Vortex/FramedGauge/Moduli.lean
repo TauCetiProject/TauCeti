@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 import TauCeti.Analysis.Sobolev.BesselPotential.Basic
-import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -41,7 +39,7 @@ description of `H^k`
 (`TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv`).
 
 With Taubes's existence theorem (`TauCeti.Vortex.framedVortexDivisor_surjective`) this shows that
-every effective divisor of degree `m` is the divisor of a smooth vortex of `A_m^k`
+every effective divisor of degree `m` is the divisor of a `C²` vortex of `A_m^k`
 (`sobolevVortexDivisor_surjective`). For `k ≥ 4`, where `G_(k+1)` preserves the `C²` vortices of
 `A_m^k`, the divisor therefore identifies the Sobolev moduli of framed vortices with `Sym ℂ m`
 (`sobolevVortexModuliEquiv`), the Sobolev counterpart of `TauCeti.Vortex.framedVortexModuliEquiv`.
@@ -104,69 +102,6 @@ theorem mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField (hx : C
 
 /-! ### Exponential decay of all derivatives of `x - x_ref` -/
 
-/-- Outside the cutoff disc, `x - x_ref` is the rotation of the section part of
-`u⁻¹ · x - vacuum` by the winding phase `u`, which there equals the reference section `s`. In
-coordinates it is `P (g w) + J (s w * Q (g w))`, where `g w = (u⁻¹ · x) w - vacuum`, `P` keeps the
-connection coordinates, `Q` reads the section coordinates as a complex number and `J` writes a
-complex number into the section coordinates. -/
-private theorem sub_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) {w : ℂ}
-    (hw : f.rOut ≤ ‖w‖ ^ 2) {g : EuclideanSpace ℝ (Fin 4)}
-    (hg : gaugeTransform (windingPhase m)⁻¹ x w - vacuumField w = g) :
-    (x - referenceField f m) w =
-      !₂[g 0, g 1, (referenceSection f m w).re * g 2 - (referenceSection f m w).im * g 3,
-        (referenceSection f m w).im * g 2 + (referenceSection f m w).re * g 3] := by
-  have hsub : x - referenceField f m = gaugeLinearAction (windingPhase m)
-      (gaugeTransform (windingPhase m)⁻¹ x - gaugeTransform (windingPhase m)⁻¹ (referenceField f m))
-      := by
-    rw [gaugeTransform_sub_gaugeTransform, gaugeLinearAction_gaugeLinearAction_inv]
-  have hs : referenceSection f m w = windingPhase m w := by
-    rw [referenceSection_eq_phase f m hw, coe_windingPhase m (ne_zero_of_rOut_le_norm_sq f hw)]
-  rw [hsub, gaugeLinearAction_apply, Pi.sub_apply,
-    gaugeTransform_inv_windingPhase_referenceField f m hw, hg, hs]
-
-/-- Near infinity, the winding end trivialization of a vortex normalized at its end, minus the
-vacuum, agrees with a globally smooth field: outside a compact set it is
-`(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` for a smooth `ℓ` equal to `log |α|²` there
-(`TauCeti.Vortex.gaugeTransform_inv_apply_eq`). -/
-private theorem exists_contDiff_eventuallyEq_endTrivialization
-    (hp : ContDiff ℝ ∞ (fun z ↦ x z 2)) (hq : ContDiff ℝ ∞ (fun z ↦ x z 3))
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    ∃ g : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ g ∧ ∀ᶠ z in cocompact ℂ,
-      (fun w ↦ gaugeTransform (windingPhase m)⁻¹ x w - vacuumField w) =ᶠ[𝓝 z] g := by
-  have hs : ContDiff ℝ ∞ (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :=
-    contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
-  have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
-    hlim.eventually (lt_mem_nhds (by norm_num))
-  -- A smooth `ℓ` on the plane which is `log |α|²` near every point outside a compact set.
-  obtain ⟨ℓ, hℓ, hagree⟩ := exists_contDiff_eventually_eventuallyEq
-    (f := fun z ↦ Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)))
-    (hpos.mono fun z hz ↦ hs.contDiffAt.log (by linarith))
-  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.mp
-    (cobounded_eq_cocompact (α := ℂ) ▸ hagree.and (hphase.and hpos))
-  have hopen : IsOpen {w : ℂ | R < ‖w‖} := isOpen_lt continuous_const continuous_norm
-  have hDℓ : ContDiff ℝ ∞ (fderiv ℝ ℓ) := hℓ.fderiv_right (by norm_cast)
-  refine ⟨fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2, (Real.exp (ℓ w / 2) - 1) / 2, 0],
-    contDiff_euclidean.2 fun i ↦ ?_, ?_⟩
-  · fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue,
-      Matrix.cons_val]
-    · exact ((hDℓ.clm_apply contDiff_const).div_const 2).neg
-    · exact (hDℓ.clm_apply contDiff_const).div_const 2
-    · exact ((Real.contDiff_exp.comp (hℓ.div_const 2)).sub contDiff_const).div_const 2
-    · exact contDiff_const
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_gt_atTop R] with z hz
-  filter_upwards [hopen.mem_nhds hz] with w (hw : R < ‖w‖)
-  have hRw := hR hw.le
-  rw [gaugeTransform_inv_apply_eq (hp.differentiable (by simp) w)
-    (hq.differentiable (by simp) w) (fun h ↦ by linarith [hRw.2.2]) (by simp [hsol w])
-    (by simp [hsol w])
-    (eventually_of_mem (hopen.mem_nhds hw) fun v (hv : R < ‖v‖) ↦ (hR hv.le).2.1) hRw.1,
-    vacuumField_apply]
-  ext i
-  fin_cases i <;> simp
-  ring
-
 /-- **Exponential decay of all derivatives of `x - x_ref`.** Let `x` be a plane vortex with smooth
 section and `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
 outside a compact set. Then for every order `n` and every rate `c < 1 / 2`, the `n`-th derivative
@@ -180,17 +115,16 @@ theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
     {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨g, hg, hgx⟩ := exists_contDiff_eventuallyEq_endTrivialization hp hq hsol hlim hphase
-  -- Every derivative of `g` decays, since `g` is the end trivialization minus the vacuum.
-  have hgdec (i : ℕ) : iteratedFDeriv ℝ i g =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) :=
-    (isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase hc
-      i).congr' (hgx.mono fun _ hz ↦ (hz.iteratedFDeriv ℝ i).eq_of_nhds) EventuallyEq.rfl
+  -- A smooth decaying `g` agreeing with the end trivialization minus the vacuum near infinity.
+  obtain ⟨g, hg, hgdec, hgx⟩ :=
+    exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
   have hout : ∀ᶠ z in cocompact ℂ, ∀ᶠ w in 𝓝 z, f.rOut ≤ ‖w‖ ^ 2 := by
     filter_upwards [((tendsto_pow_atTop two_ne_zero).comp
       tendsto_norm_cocompact_atTop).eventually_gt_atTop f.rOut] with z hz
     filter_upwards [(isOpen_lt continuous_const (continuous_norm.pow 2)).mem_nhds hz] with w hw
     exact hw.le
-  -- The linear maps `P`, `Q`, `J` of `sub_referenceField_apply_eq`.
+  -- The linear maps `P` (connection coordinates), `Q` (section coordinates as a complex number)
+  -- and `J` (a complex number as section coordinates) of `sub_referenceField_apply_eq`.
   set P : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
     (EuclideanSpace.proj 0).smulRight (EuclideanSpace.single 0 1) +
       (EuclideanSpace.proj 1).smulRight (EuclideanSpace.single 1 1)
@@ -223,8 +157,8 @@ theorem isBigO_iteratedFDeriv_sub_referenceField (f : ContDiffBump (0 : ℝ))
     simpa only [one_mul, ContinuousLinearMap.mul_apply'] using
       (ContinuousLinearMap.mul ℝ ℂ).isBigO_iteratedFDeriv_of_bilinear
       hsR hQg (n := n) (by exact_mod_cast le_top) (fun i _ ↦ hsRb i)
-      fun i _ ↦ Q.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec i)
-  refine (((P.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec n)).add
+      fun i _ ↦ Q.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc i)
+  refine (((P.isBigO_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top) (hgdec c hc n)).add
     (J.isBigO_iteratedFDeriv_comp_left hprod (by exact_mod_cast le_top) hprodO)).congr' ?_
     EventuallyEq.rfl)
   filter_upwards [hfor] with z hz
