@@ -55,6 +55,7 @@ continuous extension `LinearMap.extendOfNorm`.
   `‖(∫ f dP) ξ‖ ^ 2 = ∫ ‖f x‖ ^ 2 d(P.diag ξ)(x)`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
+* `ProjValMeasure.norm_integral_diag_sub_le`: a Lipschitz bound on `ξ ↦ ∫ f d(P.diag ξ)`.
 
 ## References
 
@@ -341,6 +342,35 @@ theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFun
   rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
     integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
   simp [EventuallyEq]
+
+/-- Nearby vectors have nearby integrals against their diagonal measures: if `‖f x‖ ≤ M`
+everywhere, then `‖∫ f d(P.diag η) - ∫ f d(P.diag ξ)‖ ≤ M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖`. -/
+theorem norm_integral_diag_sub_le (P : ProjValMeasure X H) {f : BoundedBorelFunction X} {M : ℝ}
+    (hf : ∀ x, ‖f x‖ ≤ M) (η ξ : H) :
+    ‖∫ x, f x ∂(P.diag η) - ∫ x, f x ∂(P.diag ξ)‖ ≤ M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · have hzero (v : H) : v = 0 := by
+      have huniv : (Set.univ : Set X) = ∅ := Set.univ_eq_empty_iff.mpr hX
+      have hp : P.proj Set.univ .univ = P.proj ∅ .empty := by simp [huniv]
+      simpa using congrArg (fun T : H →L[ℂ] H => T v) hp
+    simp [hzero η, hzero ξ]
+  have hM : 0 ≤ M := (norm_nonneg (f x₀)).trans (hf x₀)
+  rw [P.integral_diag_eq_inner_integral, P.integral_diag_eq_inner_integral]
+  have hsplit : ⟪η, P.integral f η⟫_ℂ - ⟪ξ, P.integral f ξ⟫_ℂ =
+      ⟪η - ξ, P.integral f η⟫_ℂ + ⟪ξ, P.integral f (η - ξ)⟫_ℂ := by
+    rw [inner_sub_left, map_sub, inner_sub_right]
+    ring
+  rw [hsplit]
+  have h1 : ‖⟪η - ξ, P.integral f η⟫_ℂ‖ ≤ ‖η - ξ‖ * (M * ‖η‖) :=
+    (norm_inner_le_norm _ _).trans <| mul_le_mul_of_nonneg_left
+      ((P.integral f).le_of_opNorm_le (P.norm_integral_le hM hf) η) (norm_nonneg _)
+  have h2 : ‖⟪ξ, P.integral f (η - ξ)⟫_ℂ‖ ≤ ‖ξ‖ * (M * ‖η - ξ‖) :=
+    (norm_inner_le_norm _ _).trans <| mul_le_mul_of_nonneg_left
+      ((P.integral f).le_of_opNorm_le (P.norm_integral_le hM hf) (η - ξ)) (norm_nonneg _)
+  calc ‖⟪η - ξ, P.integral f η⟫_ℂ + ⟪ξ, P.integral f (η - ξ)⟫_ℂ‖
+    _ ≤ ‖⟪η - ξ, P.integral f η⟫_ℂ‖ + ‖⟪ξ, P.integral f (η - ξ)⟫_ℂ‖ := norm_add_le _ _
+    _ ≤ ‖η - ξ‖ * (M * ‖η‖) + ‖ξ‖ * (M * ‖η - ξ‖) := add_le_add h1 h2
+    _ = M * (‖η‖ + ‖ξ‖) * ‖η - ξ‖ := by ring
 
 end ProjValMeasure
 end TauCeti

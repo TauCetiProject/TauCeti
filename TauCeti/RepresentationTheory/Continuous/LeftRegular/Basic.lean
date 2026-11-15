@@ -38,8 +38,9 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
   `λ g` is `Lp.compMeasurePreserving (g⁻¹ * ·)`, represented by `x ↦ f (g⁻¹ * x)`.
 * `MeasureTheory.Measure.isUnitary_leftRegular`: the action on `L²(G, E)` is unitary.
 * `MeasureTheory.Measure.continuous_leftRegular_apply`: the action is strongly continuous.
-* `MeasureTheory.Measure.invariants_count_leftRegular`: for an infinite group, counting-measure
-  `Lᵖ`, `1 ≤ p < ∞`, has no nonzero invariant vector.
+* `MeasureTheory.Measure.invariants_restrict_count_leftRegular` and
+  `MeasureTheory.Measure.invariants_count_leftRegular`: for counting measure, `Lᵖ`, `1 ≤ p < ∞`,
+  has no nonzero vector fixed by an infinite subgroup, in particular by an infinite ambient group.
 
 For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
 *Kazhdan's Property (T)*, Appendix G.5.
@@ -115,24 +116,53 @@ theorem continuous_leftRegular_apply [TopologicalSpace G] [IsTopologicalGroup G]
 
 section Invariants
 
+/-- For counting measure, the restriction of the vector-valued regular representation on `Lᵖ`,
+`1 ≤ p < ∞`, to an infinite subgroup has only the zero invariant vector: any `Λ`-invariant vector
+is constant on each right coset `Λ x`, which has infinite counting measure. -/
+@[simp]
+theorem invariants_restrict_count_leftRegular (Λ : Subgroup G) [Infinite Λ] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp' : p ≠ ∞) :
+    (((count : Measure G).leftRegular 𝕜 E p).restrict Λ.subtype).invariants = ⊥ := by
+  have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  apply le_antisymm _ bot_le
+  intro f hf
+  let g := (Lp.aestronglyMeasurable f).mk f
+  have hfg (y : G) : f y = g y := ae_count_iff.mp (Lp.aestronglyMeasurable f).ae_eq_mk y
+  have hg_meas : Measurable fun y : G ↦ ‖g y‖ :=
+    (Lp.aestronglyMeasurable f).stronglyMeasurable_mk.norm.measurable
+  have hzero (x : G) : f x = 0 := by
+    let s : Set G := (· * x) '' (Λ : Set G)
+    have hs : s.Infinite :=
+      (Set.infinite_coe_iff.mp ‹Infinite Λ›).image (mul_left_injective x).injOn
+    have hconst (h : G) (hΛ : h ∈ Λ) : f (h * x) = f x := by
+      have hg := ae_count_iff.mp (coeFn_leftRegular (𝕜 := 𝕜) count p h f) (h * x)
+      have hfix : (count : Measure G).leftRegular 𝕜 E p h f = f := hf ⟨h, hΛ⟩
+      simpa [hfix] using hg
+    let t : Set G := {y : G | ‖g x‖ ≤ ‖g y‖}
+    have ht : MeasurableSet t := hg_meas measurableSet_Ici
+    have hst : s ⊆ t := by
+      rintro _ ⟨h, hΛ, rfl⟩
+      simp [t, ← hfg, hconst h hΛ]
+    have hle : ∀ᵐ y ∂count.restrict t, ‖f x‖ ≤ ‖f y‖ :=
+      ae_restrict_of_forall_mem ht fun y hy ↦ by simpa [t, ← hfg] using hy
+    have hc : MemLp (fun _ : G ↦ f x) p (count.restrict t) :=
+      ((Lp.memLp f).restrict t).of_le aestronglyMeasurable_const hle
+    simpa [memLp_const_iff hp hp', Measure.restrict_apply_univ,
+      count_apply_infinite (hs.mono hst)] using hc
+  exact Lp.ext <| Filter.EventuallyEq.trans (Filter.Eventually.of_forall hzero)
+    (Lp.coeFn_zero E p count).symm
+
 /-- For counting measure on an infinite group, the vector-valued regular representation on
 `Lᵖ`, `1 ≤ p < ∞`, has only the zero invariant vector. -/
 @[simp]
 theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp' : p ≠ ∞) :
     ((count : Measure G).leftRegular 𝕜 E p).invariants = ⊥ := by
-  have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
-  apply le_antisymm _ bot_le
-  intro f hf
-  have hconst (x : G) : f x = f 1 := by
-    have hg := ae_count_iff.mp (coeFn_leftRegular (𝕜 := 𝕜) count p x f) x
-    rw [hf x] at hg
-    simpa using hg
-  have hc : MemLp (fun _ : G ↦ f 1) p count :=
-    (memLp_congr_ae (.of_forall hconst)).mp (Lp.memLp f)
-  have hz : f 1 = 0 := by
-    simpa [memLp_const_iff hp hp', count_apply_infinite Set.infinite_univ] using hc
-  exact Lp.ext (.of_forall fun x ↦ by simp [hconst x, hz])
+  have : Infinite (⊤ : Subgroup G) :=
+    Infinite.of_surjective Subgroup.topEquiv.toEquiv Subgroup.topEquiv.surjective
+  ext f
+  simpa [Submodule.mem_bot] using SetLike.ext_iff.mp
+    (invariants_restrict_count_leftRegular (𝕜 := 𝕜) (E := E) (⊤ : Subgroup G) hp') f
 
 end Invariants
 

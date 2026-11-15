@@ -64,6 +64,9 @@ spectral proof of relative property (T) of `(ℤ² ⋊ SL₂(ℤ), ℤ²)`.
   spectral measure are those commuting with `π`.
 * `ContRepresentation.range_spectralPVM_proj_singleton_one`: `P({1})` projects onto the
   `π`-invariant vectors.
+* `ContRepresentation.norm_sq_apply_sub_eq_integral_diag_spectralPVM`,
+  `ContRepresentation.exists_diag_spectralPVM_compl_le_sum_norm_sub_sq`: spectral formula for
+  `‖π g ξ - ξ‖²` and quantitative concentration outside open neighborhoods of `1`.
 * `ContRepresentation.spectralPVM_restrict`: restriction along a homomorphism pushes the spectral
   measure forward along the dual homomorphism.
 * `ContRepresentation.apply_spectralPVM_proj_of_intertwines_restrict`,
@@ -393,6 +396,76 @@ theorem spectralPVM_proj_singleton_one_eq_zero_iff (hπ : π.IsUnitary) :
     (π.spectralPVM hπ).proj {1} (measurableSet_singleton 1) = 0 ↔ π.invariants = ⊥ := by
   rw [← range_spectralPVM_proj_singleton_one hπ, LinearMap.range_eq_bot,
     ← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj]
+
+/-- **Spectral identity for representation displacements.** For any `g : G` and vector `ξ : H`,
+`‖π (.ofAdd g) ξ - ξ‖ ^ 2 = ∫ χ, ‖(χ (.ofAdd g) : ℂ) - 1‖ ^ 2 ∂((π.spectralPVM hπ).diag ξ)`. -/
+theorem norm_sq_apply_sub_eq_integral_diag_spectralPVM (hπ : π.IsUnitary) (g : G) (ξ : H) :
+    ‖π (.ofAdd g) ξ - ξ‖ ^ 2 =
+      ∫ χ, ‖(χ (.ofAdd g) : ℂ) - 1‖ ^ 2 ∂((π.spectralPVM hπ).diag ξ) := by
+  have hsub : (π.spectralPVM hπ).integral
+      (BoundedBorelFunction.ofContinuousMap (evalBoundedContinuous g).toContinuousMap - 1) ξ =
+        π (.ofAdd g) ξ - ξ := by
+    rw [map_sub, map_one, integral_spectralPVM_evalBoundedContinuous, sub_apply,
+      one_apply_eq_self]
+  simpa [hsub] using (π.spectralPVM hπ).norm_sq_integral_apply
+    (BoundedBorelFunction.ofContinuousMap (evalBoundedContinuous g).toContinuousMap - 1) ξ
+
+/-- **Quantitative spectral concentration near the trivial character.** For any open neighborhood
+`U` of `1` in the Pontryagin dual of a discrete abelian group `G`, there are a finite set `S` of
+elements of `G` and a nonnegative constant `C` such that for every vector `ξ`, the spectral mass
+outside `U` satisfies
+`((π.spectralPVM hπ).diag ξ).real Uᶜ ≤ C * ∑ g ∈ S, ‖π (.ofAdd g) ξ - ξ‖ ^ 2`. -/
+theorem exists_diag_spectralPVM_compl_le_sum_norm_sub_sq (hπ : π.IsUnitary)
+    {U : Set (PontryaginDual (Multiplicative G))} (hU : IsOpen U) (h1 : 1 ∈ U) :
+    ∃ (S : Finset G) (C : ℝ), 0 ≤ C ∧ ∀ ξ : H,
+      ((π.spectralPVM hπ).diag ξ).real Uᶜ ≤ C * ∑ g ∈ S, ‖π (.ofAdd g) ξ - ξ‖ ^ 2 := by
+  rcases Set.eq_empty_or_nonempty Uᶜ with hUc | hne
+  · exact ⟨∅, 0, le_rfl, fun _ => by simp [hUc]⟩
+  have hK : IsCompact Uᶜ := hU.isClosed_compl.isCompact
+  obtain ⟨S, hS⟩ := hK.elim_finite_subcover
+    (fun g : G => {χ : PontryaginDual (Multiplicative G) | (χ (.ofAdd g) : ℂ) ≠ 1})
+    (fun g => isOpen_ne_fun (TauCeti.PontryaginDual.continuous_coe_eval_const _) continuous_const)
+    (fun χ hχ => by
+      obtain ⟨g, hg⟩ : ∃ g : Multiplicative G, χ g ≠ 1 := by
+        by_contra! h
+        have hχ1 : χ = 1 := PontryaginDual.ext h
+        exact hχ (hχ1 ▸ h1)
+      exact Set.mem_iUnion.2 ⟨g.toAdd, fun h => hg (Circle.ext h)⟩)
+  let φ : PontryaginDual (Multiplicative G) → ℝ :=
+    fun χ => ∑ g ∈ S, ‖(χ (.ofAdd g) : ℂ) - 1‖ ^ 2
+  have hφ_cont : Continuous φ := by
+    refine continuous_finsetSum S fun g _ => ?_
+    exact ((TauCeti.PontryaginDual.continuous_coe_eval_const _).sub continuous_const).norm.pow 2
+  obtain ⟨χ₀, hχ₀U, hmin⟩ := hK.exists_isMinOn hne hφ_cont.continuousOn
+  have hφ₀_pos : 0 < φ χ₀ := by
+    obtain ⟨g, hgS, hg⟩ := Set.mem_iUnion₂.mp (hS hχ₀U)
+    exact Finset.sum_pos' (fun _ _ => sq_nonneg _)
+      ⟨g, hgS, sq_pos_of_pos (norm_pos_iff.mpr (sub_ne_zero.mpr hg))⟩
+  refine ⟨S, (φ χ₀)⁻¹, inv_nonneg.mpr hφ₀_pos.le, fun ξ => ?_⟩
+  set μ := (π.spectralPVM hπ).diag ξ
+  have hint_g (g : G) : Integrable (fun χ => ‖(χ (.ofAdd g) : ℂ) - 1‖ ^ 2) μ := by
+    have hc : Continuous fun χ : PontryaginDual (Multiplicative G) =>
+        ‖(χ (.ofAdd g) : ℂ) - 1‖ ^ 2 :=
+      ((TauCeti.PontryaginDual.continuous_coe_eval_const _).sub continuous_const).norm.pow 2
+    refine .of_bound hc.aestronglyMeasurable 4 (.of_forall fun χ => ?_)
+    rw [Real.norm_of_nonneg (sq_nonneg _)]
+    have hle : ‖(χ (.ofAdd g) : ℂ) - 1‖ ≤ 2 :=
+      (norm_sub_le _ _).trans (by simp; norm_num)
+    nlinarith [norm_nonneg ((χ (.ofAdd g) : ℂ) - 1)]
+  have hsum : ∑ g ∈ S, ‖π (.ofAdd g) ξ - ξ‖ ^ 2 = ∫ χ, φ χ ∂μ := by
+    simp_rw [π.norm_sq_apply_sub_eq_integral_diag_spectralPVM hπ _ ξ]
+    exact (integral_finsetSum S fun g _ => hint_g g).symm
+  have hind : ∫ χ, (Uᶜ).indicator (fun _ : PontryaginDual (Multiplicative G) => φ χ₀) χ ∂μ ≤
+      ∫ χ, φ χ ∂μ := by
+    refine integral_mono ((integrable_const (φ χ₀)).indicator hU.isClosed_compl.measurableSet)
+      (integrable_finsetSum S fun g _ => hint_g g) fun χ => ?_
+    by_cases hχ : χ ∈ Uᶜ
+    · simpa [hχ] using hmin hχ
+    · simpa [hχ] using Finset.sum_nonneg fun _ _ => sq_nonneg _
+  rw [integral_indicator hU.isClosed_compl.measurableSet, MeasureTheory.integral_const,
+    Measure.real, Measure.restrict_apply_univ, ← Measure.real, smul_eq_mul, mul_comm,
+    ← hsum] at hind
+  exact (le_inv_mul_iff₀ hφ₀_pos).mpr hind
 
 end Measure
 

@@ -11,6 +11,7 @@ public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 import TauCeti.GroupTheory.Amenable.Affine
 import TauCeti.GroupTheory.Amenable.Abelian
 import TauCeti.GroupTheory.Amenable.Extension
+import TauCeti.GroupTheory.Amenable.Finite
 import TauCeti.Topology.Compactification.OnePoint.Stabilizer
 
 /-!
@@ -19,9 +20,12 @@ import TauCeti.Topology.Compactification.OnePoint.Stabilizer
 Point stabilizers for the action of `PGL(2, K)` on `OnePoint K` are amenable for
 every group topology: transitivity identifies each with the stabilizer of infinity,
 and `OnePoint.pglStabilizerInftyEquiv` identifies the latter with the affine group.
-The stabilizers in `GL(2, K)` are amenable too, since the kernel of the projection
-to `PGL(2, K)` is central. Thus every subgroup of `GL(2, K)` has amenable point
-stabilizers, including subgroups of `SL(2, ℤ)` acting on the real projective line.
+The stabilizers in `PSL(2, K)` and `GL(2, K)` are amenable too: `PSL(2, K)` embeds
+equivariantly into `PGL(2, K)`, and the kernel of the projection from `GL(2, K)` to
+`PGL(2, K)` is central. Thus every subgroup of `PSL(2, K)` or `GL(2, K)` has amenable point
+stabilizers, including subgroups of `SL(2, ℤ)` acting on the real projective line; more
+generally, every subgroup of `PSL(2, K)` having a finite orbit on `OnePoint K` is amenable,
+since the stabilizer of a point in that orbit has finite index.
 
 We first establish amenability with the discrete topology; the subgroup transfer
 then applies to every group topology on the represented group.
@@ -78,6 +82,42 @@ theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
     exact (stabilizer (GL (Fin 2) K) x).subtype_injective.comp φ.ker.subtype_injective
   have : TauCeti.Amenable φ.ker := TauCeti.Amenable.of_injective ψ hψ
   exact TauCeti.Amenable.of_ker_le_range φ.ker.subtype φ (by simp)
+
+/-- Every projective-special-linear point stabilizer is amenable for every group topology,
+since it embeds into the corresponding projective-general-linear point stabilizer. -/
+theorem amenable_psl_stabilizer [TopologicalSpace PSL(2, K)] [IsTopologicalGroup PSL(2, K)]
+    (x : OnePoint K) : TauCeti.Amenable (stabilizer PSL(2, K) x) := by
+  let : TopologicalSpace PGL(2, K) := ⊥
+  let : DiscreteTopology PGL(2, K) := ⟨rfl⟩
+  have := amenable_pgl_stabilizer x
+  let φ : stabilizer PSL(2, K) x →* stabilizer PGL(2, K) x :=
+    (ProjectiveSpecialLinearGroup.toPGL.subgroupComap _).comp
+      (MulEquiv.subgroupCongr (comap_toPGL_stabilizer x).symm).toMonoidHom
+  exact TauCeti.Amenable.of_injective φ <|
+    (MonoidHom.subgroupComap_injective _ _ ProjectiveSpecialLinearGroup.toPGL_injective).comp
+      (MulEquiv.injective _)
+
+/-- Every subgroup of `PSL(2, K)` having a finite orbit on `OnePoint K` is amenable for every
+group topology: the stabilizer of the base point embeds into `stabilizer PSL(2, K) x` and has
+finite index in the subgroup. -/
+theorem amenable_psl_of_finite_orbit {Γ : Subgroup PSL(2, K)} [TopologicalSpace Γ]
+    [IsTopologicalGroup Γ] {x : OnePoint K} (h : (orbit Γ x).Finite) :
+    TauCeti.Amenable Γ := by
+  let : TopologicalSpace PSL(2, K) := ⊥
+  let : DiscreteTopology PSL(2, K) := ⟨rfl⟩
+  have := amenable_psl_stabilizer x
+  let φ : stabilizer Γ x →* stabilizer PSL(2, K) x :=
+    (Γ.subtype.comp (stabilizer Γ x).subtype).codRestrict (stabilizer PSL(2, K) x)
+      fun g => g.property
+  have hφ : Function.Injective φ :=
+    (MonoidHom.injective_codRestrict _ _ _).2
+      (Γ.subtype_injective.comp (stabilizer Γ x).subtype_injective)
+  have : TauCeti.Amenable (stabilizer Γ x) := TauCeti.Amenable.of_injective φ hφ
+  have : Finite (Γ ⧸ stabilizer Γ x) :=
+    haveI : Finite (orbit Γ x) := h.to_subtype
+    Finite.of_equiv (orbit Γ x) (orbitEquivQuotientStabilizer Γ x)
+  have : (stabilizer Γ x).FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  exact TauCeti.Amenable.of_finiteIndex (stabilizer Γ x)
 
 end OnePoint
 

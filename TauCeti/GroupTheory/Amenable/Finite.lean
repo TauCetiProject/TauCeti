@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Expect
+public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.Amenable.Basic
 
 /-!
-# Finite averages; finite groups are amenable
+# Finite averages; finite groups and finite-index extensions are amenable
 
 For a finite nonempty subset `F` of a topological group `G`, averaging over `F`,
 
@@ -24,7 +25,9 @@ m f = 𝔼 x, f x = (∑ x, f x) / |G|,
 ```
 
 is the uniform mean. It is left invariant because `x ↦ g⁻¹ * x` permutes `G`, so every
-finite topological group is amenable, whatever its topology.
+finite topological group is amenable, whatever its topology. More generally, if `H ≤ G` is an
+amenable finite-index subgroup, averaging the pushforward of a left-invariant mean on `H` over the
+finite set of left cosets `G ⧸ H` gives a left-invariant mean on `G`.
 
 Conversely, the uniform mean is the only left-invariant mean on a finite group: the sum
 `∑ g, L_g f` of the left translates of `f` is the constant function `∑ x, f x`
@@ -46,6 +49,8 @@ mean is evaluation at that element.
 * `TauCeti.Mean.isLeftInvariant_uniform`: the uniform mean is left invariant.
 * `TauCeti.Mean.isLeftInvariant_iff_eq_uniform`: it is the unique left-invariant mean.
 * `TauCeti.Amenable.of_finite`: finite topological groups are amenable.
+* `TauCeti.Amenable.of_finiteIndex`: a topological group with an amenable finite-index subgroup is
+  amenable.
 
 ## References
 
@@ -156,5 +161,53 @@ end Mean
 /-- A finite topological group is amenable, for any group topology. -/
 instance (priority := 100) Amenable.of_finite [Finite G] : Amenable G :=
   ⟨⟨Mean.uniform G, Mean.isLeftInvariant_uniform⟩⟩
+
+/-- A topological group with an amenable finite-index subgroup is amenable, for any group topology:
+averaging the pushforward of a left-invariant mean on `H` over the finite set of left cosets
+`G ⧸ H` gives a left-invariant mean on `G`. -/
+theorem Amenable.of_finiteIndex (H : Subgroup G) [H.FiniteIndex] [Amenable H] : Amenable G := by
+  have : Finite (G ⧸ H) := Subgroup.finite_quotient_of_finiteIndex
+  have := Fintype.ofFinite (G ⧸ H)
+  obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := H)
+  let ι : H →ₜ* G := ⟨H.subtype, continuous_subtype_val⟩
+  let trMean (t : G) : Mean G := Mean.mk₀
+    { toFun f := m.map ι (UCB.leftTranslation t⁻¹ f)
+      map_add' _ _ := by simp only [map_add]
+      map_smul' _ _ := by simp only [map_smul, RingHom.id_apply] }
+    (fun f hf => map_nonneg (m.map ι) <| by
+      have h0 := UCB.leftTranslation_le_leftTranslation_iff (g := t⁻¹).mpr hf
+      rwa [map_zero] at h0)
+    (by rw [LinearMap.coe_mk, AddHom.coe_mk, UCB.leftTranslation_apply_one, Mean.map_one])
+  have htr (t : G) (f : UCB G) : trMean t f = m.map ι (UCB.leftTranslation t⁻¹ f) :=
+    Mean.mk₀_apply _ _ _ f
+  let cosetMean (q : G ⧸ H) : Mean G :=
+    Quotient.liftOn' q trMean fun a b hab => Mean.ext fun f => by
+      let h : H := ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.mp hab⟩
+      have hmul : UCB.leftTranslation b⁻¹ f =
+          UCB.leftTranslation (ι h⁻¹) (UCB.leftTranslation a⁻¹ f) := by
+        apply Subtype.ext <| BoundedContinuousFunction.ext fun x => ?_
+        have hι : (ι h⁻¹ : G) = (a⁻¹ * b)⁻¹ := rfl
+        rw [UCB.leftTranslation_apply, UCB.leftTranslation_apply, UCB.leftTranslation_apply,
+          inv_inv, inv_inv, hι, inv_inv]
+        congr 1
+        group
+      rw [htr, htr, hmul, hm.map_apply_leftTranslation]
+  let μ : Mean G := Mean.mk₀
+    { toFun f := 𝔼 q : G ⧸ H, cosetMean q f
+      map_add' f₁ f₂ := by simp [Finset.expect_add_distrib]
+      map_smul' c f := by simp [Finset.mul_expect] }
+    (fun f hf => Finset.expect_nonneg fun q _ => map_nonneg (cosetMean q) hf)
+    (by simp)
+  refine ⟨⟨μ, Mean.isLeftInvariant_iff.2 fun g f => ?_⟩⟩
+  simp only [μ, Mean.mk₀_apply, LinearMap.coe_mk, AddHom.coe_mk]
+  refine Fintype.expect_equiv (MulAction.toPerm g⁻¹) _ _ fun q =>
+    Quotient.inductionOn' q fun t => ?_
+  change trMean t (UCB.leftTranslation g f) = trMean (g⁻¹ * t) f
+  rw [htr, htr]
+  refine congrArg (m.map ι) <| Subtype.ext <| BoundedContinuousFunction.ext fun x => ?_
+  rw [UCB.leftTranslation_apply, UCB.leftTranslation_apply, UCB.leftTranslation_apply,
+    inv_inv, inv_inv]
+  congr 1
+  group
 
 end TauCeti
