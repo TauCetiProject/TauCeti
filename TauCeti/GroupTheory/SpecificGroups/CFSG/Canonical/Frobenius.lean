@@ -41,7 +41,7 @@ variable (d : ValidLieTypeIndex)
 
 /-- The `p ^ k`-power Frobenius on all canonical ambient points, where `p` is the indexed
 characteristic. At `k = d.fieldExponent` this is the indexed `q`-power Frobenius. -/
-def canonicalFrobenius (k : ℕ) : _root_.Monoid.End d.CanonicalAmbientGroup :=
+def canonicalFrobenius (k : ℕ) : d.CanonicalAmbientGroup →* d.CanonicalAmbientGroup :=
   (d.dynkinType.scChevalleyDatum d.dynkinType_valid).frobenius d.characteristic k d.Closure
 
 /-- Canonical Frobenius is the Frobenius of the full-weight Chevalley datum. -/
@@ -60,6 +60,19 @@ theorem coe_canonicalFrobenius (k : ℕ) (g : d.CanonicalAmbientGroup) :
   rw [canonicalFrobenius_def]
   exact (d.dynkinType.scChevalleyDatum d.dynkinType_valid).coe_frobenius
     d.characteristic k d.Closure g
+
+/-- Each matrix entry of canonical Frobenius is raised to its `p ^ k`-th power. -/
+theorem coe_canonicalFrobenius_apply (k : ℕ) (g : d.CanonicalAmbientGroup)
+    (i j : Fin (d.dynkinType.scWeightBasisCard d.dynkinType_valid)) :
+    ((d.canonicalFrobenius k g : Matrix.GeneralLinearGroup
+        (Fin (d.dynkinType.scWeightBasisCard d.dynkinType_valid)) d.Closure) :
+      Matrix _ _ d.Closure) i j =
+      ((g : Matrix.GeneralLinearGroup
+        (Fin (d.dynkinType.scWeightBasisCard d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) i j ^ d.characteristic ^ k := by
+  rw [canonicalFrobenius_def]
+  exact (d.dynkinType.scChevalleyDatum d.dynkinType_valid).coe_frobenius_apply
+    d.characteristic k d.Closure g i j
 
 /-- Canonical Frobenius raises every root parameter to its `p ^ k`-th power. -/
 @[simp]
@@ -96,23 +109,24 @@ theorem isCharacterMap_canonicalFrobenius (k : ℕ) :
 
 /-- The zeroth canonical Frobenius is the identity on the whole ambient group. -/
 @[simp]
-theorem canonicalFrobenius_zero : d.canonicalFrobenius 0 = 1 := by
+theorem canonicalFrobenius_zero : d.canonicalFrobenius 0 = MonoidHom.id _ := by
   rw [canonicalFrobenius_def]
   exact (d.dynkinType.scChevalleyDatum d.dynkinType_valid).frobenius_zero
     d.characteristic d.Closure
 
 /-- Adding Frobenius exponents composes the corresponding canonical point maps. -/
 theorem canonicalFrobenius_add (k m : ℕ) :
-    d.canonicalFrobenius (k + m) = d.canonicalFrobenius k * d.canonicalFrobenius m := by
+    d.canonicalFrobenius (k + m) =
+      (d.canonicalFrobenius k).comp (d.canonicalFrobenius m) := by
   simp only [canonicalFrobenius_def]
   exact (d.dynkinType.scChevalleyDatum d.dynkinType_valid).frobenius_add
     d.characteristic k d.Closure m
 
 /-- The `m`-th iterate of canonical `p ^ k`-Frobenius is canonical `p ^ (k * m)`-Frobenius.
 Powers here use composition of endomorphisms. -/
-@[simp]
 theorem canonicalFrobenius_pow (k m : ℕ) :
-    d.canonicalFrobenius k ^ m = d.canonicalFrobenius (k * m) := by
+    (show _root_.Monoid.End d.CanonicalAmbientGroup from d.canonicalFrobenius k) ^ m =
+      d.canonicalFrobenius (k * m) := by
   simp only [canonicalFrobenius_def]
   exact (d.dynkinType.scChevalleyDatum d.dynkinType_valid).frobenius_pow
     d.characteristic k d.Closure m
