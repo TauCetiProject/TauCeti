@@ -5,7 +5,8 @@ review, fix, and author PRs concurrently, with no central coordinator, registry,
 shard assignment. Anyone can run their own agent. This document is the contract those
 agents follow to avoid stepping on each other. You do not have to use any particular
 script; the reference worker lives in `TauCetiProject/TauCetiWorker`. You only have to honor
-the rules below.
+the rules below. PRs may live on GitHub or on
+[Forgejo](https://git.taucetiproject.org/TauCetiProject/TauCeti); this contract applies identically to both.
 
 ## The two tiers
 
