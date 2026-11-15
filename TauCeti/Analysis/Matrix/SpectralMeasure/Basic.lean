@@ -126,6 +126,23 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
 
+/-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
+Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when
+viewed as complex Hermitian matrices. -/
+@[simp]
+theorem spectralMeasure_map {𝕜' : Type*} [RCLike 𝕜'] (A : Matrix n n 𝕜)
+    (hA : A.IsHermitian) (f : 𝕜 →⋆ₐ[ℝ] 𝕜') :
+    (A.map f).spectralMeasure (hA.map f (map_star f)) = A.spectralMeasure hA := by
+  rw [spectralMeasure_def, spectralMeasure_def]
+  apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+  have h := congrArg (Multiset.map RCLike.re)
+    (hA.splits_charpoly.roots_map f.toRingHom)
+  have hchar : (A.map f).charpoly = A.charpoly.map f.toRingHom := charpoly_map A _
+  rw [← hchar, (hA.map f (map_star f)).roots_charpoly_eq_eigenvalues,
+    hA.roots_charpoly_eq_eigenvalues] at h
+  have hf (r : ℝ) : f (r : 𝕜) = (r : 𝕜') := f.commutes r
+  simpa [Multiset.map_map, Function.comp_def, hf] using h
+
 /-- The empirical spectral measure depends continuously on the Hermitian matrix for the weak
 topology on probability measures. -/
 @[fun_prop]

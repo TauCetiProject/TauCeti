@@ -241,9 +241,9 @@ variable {Ω F : Type*} [MeasurableSpace Ω] [SeminormedAddCommGroup F]
   [MeasurableSpace F] [OpensMeasurableSpace F] {P : Measure Ω} [IsFiniteMeasure P]
 
 /-- For pairwise independent identically distributed random variables, the proportion of the
-first `n` coordinates exceeding any threshold tending to infinity tends almost surely to zero.
-No moment assumption is needed. The full-measure event works simultaneously for all threshold
-sequences, so the thresholds may even be chosen after the sample point is fixed. -/
+first `n` coordinates whose norm exceeds any threshold tending to infinity tends almost surely
+to zero. No moment assumption is needed. The full-measure event works simultaneously for all
+threshold sequences, so the thresholds may even be chosen after the sample point is fixed. -/
 theorem ae_tendsto_card_filter_norm_gt_div (X : ℕ → Ω → F)
     (hindep : Pairwise fun i j ↦ IndepFun (X i) (X j) P)
     (hid : ∀ i, IdentDistrib (X i) (X 0) P P) :

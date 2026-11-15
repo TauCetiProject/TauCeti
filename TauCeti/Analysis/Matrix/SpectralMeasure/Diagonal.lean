@@ -17,9 +17,9 @@ proportion of its entries exceeding that threshold in absolute value tends to ze
 its operator norm nor its normalized Frobenius norm needs to tend to zero.
 
 The quantitative estimate splits the diagonal into a part of operator norm at most `ε` and a
-part whose rank is at most the number of entries larger than `ε`. Applying the operator-norm
-and rank bounds to their resolvent transforms yields weak-limit stability. This permits
-removing heavy-tailed diagonals in global spectral laws without a moment hypothesis.
+part whose rank is at most the number of entries larger than `ε` in absolute value. Applying
+the operator-norm and rank bounds to their resolvent transforms yields weak-limit stability. This
+permits removing heavy-tailed diagonals in global spectral laws without a moment hypothesis.
 
 ## References
 
@@ -34,20 +34,46 @@ open scoped Topology Matrix.Norms.L2Operator
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [Nonempty n] [RCLike 𝕜]
 
-/-- Splitting a real diagonal at `ε` bounds the change in the spectral transform by a small
-operator-norm error and a rank error counting the entries larger than `ε`. -/
+/-- For `0 ≤ ε` and nonreal `z`, adding a real diagonal `d` changes the empirical spectral
+transform at `z` by at most `ε / |z.im| ^ 2` plus the number of entries exceeding `ε` in
+absolute value divided by `Fintype.card n * |z.im|`. -/
 theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
-    (A : Matrix n n ℂ) (hA : A.IsHermitian) (d : n → ℝ)
+    (A : Matrix n n 𝕜) (hA : A.IsHermitian) (d : n → ℝ)
     {ε : ℝ} (hε : 0 ≤ ε) {z : ℂ} (hz : z.im ≠ 0) :
-    ‖resolventTransform ((A + diagonal (fun i ↦ (d i : ℂ))).spectralMeasure
+    ‖resolventTransform ((A + diagonal (fun i ↦ (d i : 𝕜))).spectralMeasure
           (hA.add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff])) : Measure ℝ) z -
         resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
       ε / |z.im| ^ 2 +
         ((Finset.univ.filter fun i ↦ ε < |d i|).card : ℝ) /
           ((Fintype.card n : ℝ) * |z.im|) := by
   classical
+  -- Transfer to complex matrices, retaining the real eigenvalue measure.
+  let f : 𝕜 →⋆ₐ[ℝ] ℂ := {
+    toFun := fun x ↦ (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I
+    map_zero' := by simp
+    map_one' := by simp
+    map_add' := by intros; simp only [map_add, Complex.ofReal_add]; ring
+    map_mul' := by
+      intro x y
+      simp only [RCLike.mul_re, RCLike.mul_im, Complex.ofReal_sub, Complex.ofReal_mul,
+        Complex.ofReal_add]
+      ring_nf
+      rw [Complex.I_sq]
+      ring
+    commutes' := by intro r; simp
+    map_star' := by intro x; simp [RCLike.star_def, mul_comm] }
+  let B := A.map f
+  have hB : B.IsHermitian := hA.map f (map_star f)
+  have hf (r : ℝ) : f (r : 𝕜) = (r : ℂ) := f.commutes r
+  have hmap : (A + diagonal (fun i ↦ (d i : 𝕜))).map f =
+      B + diagonal (fun i ↦ (d i : ℂ)) := by
+    ext i j
+    by_cases hij : i = j <;> simp [B, hij, map_add, hf]
+  rw [← spectralMeasure_map A hA f,
+    ← spectralMeasure_map (A + diagonal (fun i ↦ (d i : 𝕜))) _ f]
+  simp only [hmap]
   -- Separate the diagonal into small entries and the sparse remainder.
   let s : n → ℂ := fun i ↦ if |d i| ≤ ε then (d i : ℂ) else 0
   let t : n → ℂ := fun i ↦ if |d i| ≤ ε then 0 else (d i : ℂ)
@@ -61,7 +87,7 @@ theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
     intro i
     dsimp [t]
     split_ifs <;> simp [isSelfAdjoint_iff]
-  have hsplit : A + diagonal (fun i ↦ (d i : ℂ)) = (A + diagonal s) + diagonal t := by
+  have hsplit : B + diagonal (fun i ↦ (d i : ℂ)) = (B + diagonal s) + diagonal t := by
     rw [add_assoc, diagonal_add]
     congr 2
     ext i
@@ -85,16 +111,16 @@ theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
   -- The two resolvent estimates control these parts independently of the ambient matrix.
   simp only [hsplit]
   have hsmall := norm_resolventTransform_spectralMeasure_sub_le_matrix
-    (hA.add hs) hA hz
-  have hlarge := (hA.add hs |>.add ht).norm_resolventTransform_spectralMeasure_sub_le_rank
-    (hA.add hs) hz
+    (hB.add hs) hB hz
+  have hlarge := (hB.add hs |>.add ht).norm_resolventTransform_spectralMeasure_sub_le_rank
+    (hB.add hs) hz
   simp only [add_sub_cancel_left, norm_neg, sub_add_cancel_left] at hsmall hlarge
   calc
-    _ ≤ ‖resolventTransform (((A + diagonal s) + diagonal t).spectralMeasure
-            ((hA.add hs).add ht) : Measure ℝ) z -
-          resolventTransform ((A + diagonal s).spectralMeasure (hA.add hs) : Measure ℝ) z‖ +
-        ‖resolventTransform ((A + diagonal s).spectralMeasure (hA.add hs) : Measure ℝ) z -
-          resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ :=
+    _ ≤ ‖resolventTransform (((B + diagonal s) + diagonal t).spectralMeasure
+            ((hB.add hs).add ht) : Measure ℝ) z -
+          resolventTransform ((B + diagonal s).spectralMeasure (hB.add hs) : Measure ℝ) z‖ +
+        ‖resolventTransform ((B + diagonal s).spectralMeasure (hB.add hs) : Measure ℝ) z -
+          resolventTransform (B.spectralMeasure hB : Measure ℝ) z‖ :=
       norm_sub_le_norm_sub_add_norm_sub _ _ _
     _ ≤ (diagonal t).rank / ((Fintype.card n : ℝ) * |z.im|) +
         |z.im|⁻¹ * ‖diagonal s‖ * |z.im|⁻¹ := add_le_add hlarge hsmall
@@ -106,17 +132,17 @@ theorem norm_resolventTransform_spectralMeasure_add_diagonal_sub_le
 variable {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
   [∀ i, Nonempty (m i)] {l : Filter ι}
 
-/-- If the proportion of entries of a real diagonal larger than any fixed positive threshold
-tends to zero, adding that diagonal changes each nonreal spectral transform by a quantity
-tending to zero. -/
+/-- If the proportion of entries of a real diagonal exceeding any fixed positive threshold
+in absolute value tends to zero, adding that diagonal changes each nonreal spectral transform
+by a quantity tending to zero. -/
 theorem tendsto_resolventTransform_spectralMeasure_add_diagonal_sub
-    (A : (i : ι) → Matrix (m i) (m i) ℂ) (hA : ∀ i, (A i).IsHermitian)
+    (A : (i : ι) → Matrix (m i) (m i) 𝕜) (hA : ∀ i, (A i).IsHermitian)
     (d : (i : ι) → m i → ℝ)
     (hd : ∀ ε : ℝ, 0 < ε → Tendsto (fun i ↦
       ((Finset.univ.filter fun j ↦ ε < |d i j|).card : ℝ) / Fintype.card (m i)) l (𝓝 0))
     {z : ℂ} (hz : z.im ≠ 0) :
     Tendsto (fun i ↦
-      resolventTransform ((A i + diagonal (fun j ↦ (d i j : ℂ))).spectralMeasure
+      resolventTransform ((A i + diagonal (fun j ↦ (d i j : 𝕜))).spectralMeasure
           ((hA i).add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff])) : Measure ℝ) z -
         resolventTransform ((A i).spectralMeasure (hA i) : Measure ℝ) z) l (𝓝 0) := by
   classical
@@ -142,16 +168,16 @@ theorem tendsto_resolventTransform_spectralMeasure_add_diagonal_sub
     rw [heq] at h
     linarith
 
-/-- Real diagonal perturbations with a vanishing proportion of entries above each positive
-threshold preserve weak spectral limits, in both directions. The dimensions may vary, and
-the limiting probability measure may have atoms. -/
+/-- Real diagonal perturbations with a vanishing proportion of entries exceeding each positive
+threshold in absolute value preserve weak spectral limits, in both directions. The dimensions
+may vary, and the limiting probability measure may have atoms. -/
 theorem tendsto_spectralMeasure_add_diagonal_iff [l.IsCountablyGenerated]
-    (A : (i : ι) → Matrix (m i) (m i) ℂ) (hA : ∀ i, (A i).IsHermitian)
+    (A : (i : ι) → Matrix (m i) (m i) 𝕜) (hA : ∀ i, (A i).IsHermitian)
     (d : (i : ι) → m i → ℝ)
     (hd : ∀ ε : ℝ, 0 < ε → Tendsto (fun i ↦
       ((Finset.univ.filter fun j ↦ ε < |d i j|).card : ℝ) / Fintype.card (m i)) l (𝓝 0))
     (μ : ProbabilityMeasure ℝ) :
-    Tendsto (fun i ↦ (A i + diagonal (fun j ↦ (d i j : ℂ))).spectralMeasure
+    Tendsto (fun i ↦ (A i + diagonal (fun j ↦ (d i j : 𝕜))).spectralMeasure
         ((hA i).add (by simp [isHermitian_diagonal_iff, isSelfAdjoint_iff]))) l (𝓝 μ) ↔
       Tendsto (fun i ↦ (A i).spectralMeasure (hA i)) l (𝓝 μ) := by
   rw [ProbabilityMeasure.tendsto_iff_tendsto_resolventTransform,
