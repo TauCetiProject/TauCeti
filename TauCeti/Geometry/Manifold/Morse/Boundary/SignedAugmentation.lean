@@ -449,13 +449,13 @@ opposite signs. -/
 theorem signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero {m : criticalPoints 𝓘(ℝ, E) f}
     (huniq : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → manifoldMorseIndex 𝓘(ℝ, E) f y = 0 → y = m)
     (p : criticalPoints 𝓘(ℝ, E) f) : hX.signedMorseBoundaryCoeff 𝔬 p m = 0 := by
-  -- A global minimum of `f` is a critical point of index `0`, hence is `m`.
-  obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn ⟨(m : M), mem_univ _⟩
-    hf.contMDiff.continuous.continuousOn
-  have hx0 := manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff x).of_le (by simp))
-    (hx.isLocalMin Filter.univ_mem)
+  -- Some critical point has index `0`, and it must be `m`.
+  have : Nonempty M := ⟨m⟩
+  have h0 := criticalCount_zero_ne_zero (I := 𝓘(ℝ, E)) (hf.contMDiff.of_le (by simp))
+  rw [criticalCount_def] at h0
+  obtain ⟨x, hxc, hx0⟩ := nonempty_of_encard_ne_zero h0
   have hm : manifoldMorseIndex 𝓘(ℝ, E) f m = 0 := by
-    rwa [← huniq x (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) hx0]
+    rwa [← huniq x (mem_criticalPoints_iff_mfderiv_eq_zero.1 hxc) hx0]
   have hsum := h.finsum_augmentationSign_mul_signedMorseBoundaryCoeff hf 𝔬 p
   rw [finsum_eq_single _ m fun q hqm ↦ by
     rw [𝔬.augmentationSign_of_morseIndex_ne_zero fun hq ↦ hqm (Subtype.ext
