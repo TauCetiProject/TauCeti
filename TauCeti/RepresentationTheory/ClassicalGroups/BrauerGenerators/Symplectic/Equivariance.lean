@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Action
 -- Non-public: `Fintype.equivFin` transports finite coordinate index sets to `Fin n`, and
--- `SymplecticGroup.mem_iff'` unpacks `A ∈ symplecticGroup` as `Aᵀ * J * A = J`.
+-- `Matrix.reindex_sumCongr_J` transports `Matrix.J` along that equivalence.
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -119,45 +119,40 @@ namespace BrauerDiagram
 
 variable {k : ℕ} {R : Type u} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-private theorem reindex_kroneckerPower {ι₁ ι₂ : Type*} (e : ι₁ ≃ ι₂)
-    (A : Matrix (ι₁ ⊕ ι₁) (ι₁ ⊕ ι₁) R) :
-    Matrix.reindex
-        (Equiv.piCongrRight fun _ : Fin k => Equiv.sumCongr e e)
-        (Equiv.piCongrRight fun _ : Fin k => Equiv.sumCongr e e)
-        (A.kroneckerPower (Fin k)) =
-      (Matrix.reindex (Equiv.sumCongr e e) (Equiv.sumCongr e e) A).kroneckerPower (Fin k) := by
-  ext v u
-  simp [Matrix.kroneckerPower_apply]
-
-private theorem reindex_sumCongr_J {ι₁ ι₂ : Type*} [DecidableEq ι₁] [DecidableEq ι₂]
-    (e : ι₁ ≃ ι₂) :
-    Matrix.reindex (Equiv.sumCongr e e) (Equiv.sumCongr e e) (Matrix.J ι₁ R) = Matrix.J ι₂ R := by
-  ext (i | i) (j | j) <;> simp [Matrix.J, Matrix.one_apply, e.symm.injective.eq_iff]
+/-- Transport operator-level commutation with `brauerActionSymp` on `Fin n` to matrix-level
+commutation between `D.symplecticActionMatrix R ι` and `A.kroneckerPower (Fin k)` along an
+equivalence `e : Fin n ≃ ι`. -/
+private theorem commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSymp
+    {n : ℕ} (e : Fin n ≃ ι) (D : BrauerDiagram k) (A : Matrix (ι ⊕ ι) (ι ⊕ ι) R)
+    (hop : Commute (brauerActionSymp R n k (BrauerAlgebra.of D))
+      (PiTensorProduct.map fun _ : Fin k =>
+        (Matrix.reindex (Equiv.sumCongr e.symm e.symm)
+          (Equiv.sumCongr e.symm e.symm) A).mulVecLin)) :
+    Commute (D.symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
+  let eSum : Fin n ⊕ Fin n ≃ ι ⊕ ι := Equiv.sumCongr e e
+  let eFun : (Fin k → Fin n ⊕ Fin n) ≃ (Fin k → ι ⊕ ι) := Equiv.piCongrRight fun _ => eSum
+  let A₀ : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) R :=
+    Matrix.reindex (Equiv.sumCongr e.symm e.symm) (Equiv.sumCongr e.symm e.symm) A
+  let B := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
+  have hmat : Commute (D.symplecticActionMatrix R (Fin n)) (A₀.kroneckerPower (Fin k)) := by
+    simpa only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
+      toMatrix_brauerActionSymp_of, Matrix.toMatrix_piTensorProductMap_mulVecLin, B] using
+      hop.map (LinearMap.toMatrixAlgEquiv B)
+  have hA₀ : Matrix.reindex eSum eSum A₀ = A := by
+    simp [A₀, eSum, ← Equiv.sumCongr_symm]
+  simpa only [Matrix.coe_reindexAlgEquiv, eFun, eSum, reindex_symplecticActionMatrix R e,
+    Matrix.reindex_kroneckerPower, hA₀] using
+    hmat.map (Matrix.reindexAlgEquiv R R eFun)
 
 /-- **The matrix of a permutation diagram commutes with every Kronecker power**, since reindexing
 the factors of `∏ i, A (v i) (u i)` along `σ` leaves the product unchanged. -/
 theorem commute_symplecticActionMatrix_permToBrauer_kroneckerPower
     (σ : Equiv.Perm (Fin k)) (A : Matrix (ι ⊕ ι) (ι ⊕ ι) R) :
     Commute ((permToBrauer σ).symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
-  set n := Fintype.card ι
-  let e : Fin n ≃ ι := (Fintype.equivFin ι).symm
-  let eSum : Fin n ⊕ Fin n ≃ ι ⊕ ι := Equiv.sumCongr e e
-  let eFun : (Fin k → Fin n ⊕ Fin n) ≃ (Fin k → ι ⊕ ι) := Equiv.piCongrRight fun _ => eSum
-  let A₀ : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) R := Matrix.reindex eSum.symm eSum.symm A
-  let B := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
-  have hop : Commute (brauerActionSymp R n k (BrauerAlgebra.of (permToBrauer σ)))
-      (PiTensorProduct.map fun _ : Fin k => A₀.mulVecLin) := by
-    rw [brauerActionSymp_of_permToBrauer, symplecticPermTensorAction_def]
-    exact PiTensorProduct.commute_signReindexRepresentation_map σ A₀.mulVecLin
-  have hmat : Commute ((permToBrauer σ).symplecticActionMatrix R (Fin n))
-      (A₀.kroneckerPower (Fin k)) := by
-    simpa only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
-      toMatrix_brauerActionSymp_of, Matrix.toMatrix_piTensorProductMap_mulVecLin, B] using
-      hop.map (LinearMap.toMatrixAlgEquiv B)
-  have hA₀ : Matrix.reindex eSum eSum A₀ = A := by simp [A₀]
-  simpa only [Matrix.coe_reindexAlgEquiv, eFun, eSum, reindex_symplecticActionMatrix R e,
-    reindex_kroneckerPower e A₀, hA₀] using
-    hmat.map (Matrix.reindexAlgEquiv R R eFun)
+  refine commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSymp
+    (Fintype.equivFin ι).symm (permToBrauer σ) A ?_
+  rw [brauerActionSymp_of_permToBrauer, symplecticPermTensorAction_def]
+  exact PiTensorProduct.commute_signReindexRepresentation_map σ _
 
 /-- **The symplectic matrix of a Brauer diagram commutes with symplectic matrices.** For any matrix
 `A` with `Aᵀ * Matrix.J ι R * A = Matrix.J ι R`, `TauCeti.BrauerDiagram.symplecticActionMatrix`
@@ -165,25 +160,12 @@ commutes with the Kronecker power `A.kroneckerPower (Fin k)`. -/
 theorem commute_symplecticActionMatrix_kroneckerPower (D : BrauerDiagram k)
     {A : Matrix (ι ⊕ ι) (ι ⊕ ι) R} (hA : Aᵀ * Matrix.J ι R * A = Matrix.J ι R) :
     Commute (D.symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
-  set n := Fintype.card ι
-  let e : Fin n ≃ ι := (Fintype.equivFin ι).symm
-  let eSum : Fin n ⊕ Fin n ≃ ι ⊕ ι := Equiv.sumCongr e e
-  let eFun : (Fin k → Fin n ⊕ Fin n) ≃ (Fin k → ι ⊕ ι) := Equiv.piCongrRight fun _ => eSum
-  let A₀ : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) R := Matrix.reindex eSum.symm eSum.symm A
-  have hA₀_symp : A₀ᵀ * Matrix.J (Fin n) R * A₀ = Matrix.J (Fin n) R := by
-    have h := congrArg (Matrix.reindexAlgEquiv R R eSum.symm) hA
-    simpa only [map_mul, Matrix.coe_reindexAlgEquiv, ← Matrix.transpose_reindex, A₀, eSum,
-      Equiv.sumCongr_symm, reindex_sumCongr_J e.symm] using h
-  let B := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
-  have hmat : Commute (D.symplecticActionMatrix R (Fin n)) (A₀.kroneckerPower (Fin k)) := by
-    simpa only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
-      toMatrix_brauerActionSymp_of, Matrix.toMatrix_piTensorProductMap_mulVecLin, B] using
-      (commute_brauerActionSymp_piTensorProductMap R n k (BrauerAlgebra.of D) hA₀_symp).map
-        (LinearMap.toMatrixAlgEquiv B)
-  have hA₀ : Matrix.reindex eSum eSum A₀ = A := by simp [A₀]
-  simpa only [Matrix.coe_reindexAlgEquiv, eFun, eSum, reindex_symplecticActionMatrix R e,
-    reindex_kroneckerPower e A₀, hA₀] using
-    hmat.map (Matrix.reindexAlgEquiv R R eFun)
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  refine commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSymp e D A ?_
+  refine commute_brauerActionSymp_piTensorProductMap R (Fintype.card ι) k (BrauerAlgebra.of D) ?_
+  have h := congrArg (Matrix.reindexAlgEquiv R R (Equiv.sumCongr e.symm e.symm)) hA
+  simpa only [map_mul, Matrix.coe_reindexAlgEquiv, ← Matrix.transpose_reindex,
+    Matrix.reindex_sumCongr_J] using h
 
 end BrauerDiagram
 

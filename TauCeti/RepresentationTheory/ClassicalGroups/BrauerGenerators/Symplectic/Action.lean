@@ -8,9 +8,11 @@ module
 public import TauCeti.Algebra.BrauerAlgebra.Generation
 public import TauCeti.Combinatorics.Brauer.Congr
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Crossing
--- `Equiv.Perm.sign_sumComm` evaluates the reflection sign, and `SymplecticGroup` supplies
--- entrywise and multiplication identities for `Matrix.J` in the loop and reconnection steps.
+-- Non-public: `Equiv.Perm.sign_sumComm` evaluates the reflection sign, `Matrix.Congruence` expands
+-- `(P * J * Qᵀ) i j` entrywise, and `SymplecticGroup` supplies reindexing, entrywise, and
+-- multiplication identities for `Matrix.J` in the reindexing, loop, and reconnection steps.
 import TauCeti.GroupTheory.Perm.SumCongr
+import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -173,12 +175,9 @@ private theorem sympCongrWeight_mul_prodCongrLeft {R : Type*} [CommRing R] {ι :
       (sympCongrWeight φ ℓ : R) := by
   set ψ : Equiv.Perm (Fin k ⊕ Fin k) :=
     (Equiv.boolProdEquivSum (Fin k)).permCongr (Equiv.prodCongrLeft τ)
-  let castUnit : ℤˣ →* R := (Int.castRingHom R).toMonoidHom.comp (Units.coeHom ℤ)
-  have hcast (u : ℤˣ) : ((u : ℤ) : R) = castUnit u := rfl
   have hsign : ((Equiv.Perm.sign (φ * ψ) : ℤ) : R) =
       ((Equiv.Perm.sign φ : ℤ) : R) * ∏ i : Fin k, ((Equiv.Perm.sign (τ i) : ℤ) : R) := by
-    simp only [hcast, ψ, Equiv.Perm.sign.map_mul, Equiv.Perm.sign_permCongr,
-      Equiv.Perm.sign_prodCongrLeft, map_mul, map_prod]
+    simp [ψ, Equiv.Perm.sign_permCongr, Equiv.Perm.sign_prodCongrLeft]
   rw [sympCongrWeight, sympCongrWeight, hsign, mul_assoc, ← Finset.prod_mul_distrib]
   refine congrArg (((Equiv.Perm.sign φ : ℤ) : R) * ·) (Finset.prod_congr rfl fun i _ => ?_)
   rcases (by decide : ∀ e : Equiv.Perm Bool, e = 1 ∨ e = Equiv.swap false true) (τ i) with hτ | hτ
@@ -272,41 +271,38 @@ theorem symplecticActionMatrix_capCup_apply {a b : Fin k} (hab : a ≠ b) (v u :
   rw [symplecticActionMatrix_apply_of_congr (capCup_def a b).symm,
     Equiv.Perm.sign_swap Sum.inr_ne_inl]
   simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
-  let f (i : Fin k) : R :=
-    symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
-      (Sum.elim u v (φ (Sum.inl i))) (Sum.elim u v (φ (Sum.inr i)))
-  have hprod : ∏ i : Fin k, f i =
-      f a * (f b * ∏ i ∈ (Finset.univ.erase a).erase b, f i) := by
-    rw [← Finset.mul_prod_erase Finset.univ f (Finset.mem_univ a),
-      ← Finset.mul_prod_erase (Finset.univ.erase a) f
-        (Finset.mem_erase.mpr ⟨hab.symm, Finset.mem_univ b⟩)]
-  have hfa : f a = Matrix.J ι R (u a) (u b) := by
-    simp [f, φ, Equiv.swap_apply_of_ne_of_ne, hab]
-  have hfb : f b = Matrix.J ι R (v a) (v b) := by
-    simp [f, φ, Equiv.swap_apply_of_ne_of_ne, hab.symm]
-  have hf_ne {t : Fin k} (hta : t ≠ a) (htb : t ≠ b) :
-      f t = if v t = u t then 1 else 0 := by
-    have h1 : φ (Sum.inl t) = Sum.inl t :=
-      Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (Sum.inl_injective.ne htb)
-    have h2 : φ (Sum.inr t) = Sum.inr t :=
-      Equiv.swap_apply_of_ne_of_ne (Sum.inr_injective.ne hta) Sum.inr_ne_inl
-    simp [f, h1, h2, Matrix.one_apply, eq_comm]
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ a),
+    ← Finset.mul_prod_erase (Finset.univ.erase a) _
+      (Finset.mem_erase.mpr ⟨hab.symm, Finset.mem_univ b⟩)]
+  have hfa : symplecticArcMatrix R ι (φ (Sum.inl a)) (φ (Sum.inr a))
+      (Sum.elim u v (φ (Sum.inl a))) (Sum.elim u v (φ (Sum.inr a))) =
+      Matrix.J ι R (u a) (u b) := by
+    simp [φ, Equiv.swap_apply_of_ne_of_ne, hab]
+  have hfb : symplecticArcMatrix R ι (φ (Sum.inl b)) (φ (Sum.inr b))
+      (Sum.elim u v (φ (Sum.inl b))) (Sum.elim u v (φ (Sum.inr b))) =
+      Matrix.J ι R (v a) (v b) := by
+    simp [φ, Equiv.swap_apply_of_ne_of_ne, hab.symm]
   have hmem : (∀ t ∈ (Finset.univ.erase a).erase b, v t = u t) ↔
       ∀ t, t ≠ a → t ≠ b → v t = u t := by
     refine ⟨fun h t hta htb => h t ?_, fun h t ht => ?_⟩
     · simp [hta, htb]
     · rw [Finset.mem_erase, Finset.mem_erase] at ht
       exact h t ht.2.1 ht.1
-  have hrest : ∏ t ∈ (Finset.univ.erase a).erase b, f t =
+  have hrest : ∏ t ∈ (Finset.univ.erase a).erase b,
+        symplecticArcMatrix R ι (φ (Sum.inl t)) (φ (Sum.inr t))
+          (Sum.elim u v (φ (Sum.inl t))) (Sum.elim u v (φ (Sum.inr t))) =
       if ∀ t, t ≠ a → t ≠ b → v t = u t then 1 else 0 := by
     refine (Finset.prod_congr (g := fun t => if v t = u t then (1 : R) else 0) rfl
       fun t ht => ?_).trans ?_
     · rw [Finset.mem_erase, Finset.mem_erase] at ht
-      exact hf_ne ht.2.1 ht.1
+      have h1 : φ (Sum.inl t) = Sum.inl t :=
+        Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (Sum.inl_injective.ne ht.1)
+      have h2 : φ (Sum.inr t) = Sum.inr t :=
+        Equiv.swap_apply_of_ne_of_ne (Sum.inr_injective.ne ht.2.1) Sum.inr_ne_inl
+      simp [h1, h2, Matrix.one_apply, eq_comm]
     · rw [Finset.prod_boole]
       simp only [hmem]
-  rw [show (∏ i : Fin k, symplecticArcMatrix R ι _ _ _ _) = ∏ i : Fin k, f i from rfl,
-    hprod, hfa, hfb, hrest]
+  rw [hfa, hfb, hrest]
   split_ifs <;> ring
 
 /-- **Relabelling the boundary of a diagram** reindexes the input and output labellings and scales
@@ -319,8 +315,7 @@ theorem symplecticActionMatrix_relabel_apply (D : BrauerDiagram k) (σ τ : Equi
   obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
   have hrel : PerfectMatching.congr (Equiv.Perm.sumCongr σ τ * φ) (permToBrauer 1) =
       D.relabel σ τ := by
-    have htrans : φ.trans (Equiv.Perm.sumCongr σ τ) = Equiv.Perm.sumCongr σ τ * φ := rfl
-    rw [relabel_def, ← hφ, PerfectMatching.congr_trans, htrans]
+    rw [relabel_def, PerfectMatching.congr_mul, hφ]
   have harc (x y : Fin k ⊕ Fin k) :
       symplecticArcMatrix R ι (Sum.map σ τ x) (Sum.map σ τ y) = symplecticArcMatrix R ι x y := by
     cases x <;> cases y <;> rfl
@@ -383,8 +378,13 @@ theorem reindex_symplecticActionMatrix {ι₁ ι₂ : Type*} [DecidableEq ι₁]
   have harc (x y : Fin k ⊕ Fin k) (a b : ι₂ ⊕ ι₂) :
       symplecticArcMatrix R ι₁ x y (eSum.symm a) (eSum.symm b) =
         symplecticArcMatrix R ι₂ x y a b := by
-    rcases a with i | i <;> rcases b with j | j <;> cases x <;> cases y <;>
-      simp [eSum, Matrix.J, Matrix.one_apply, e.symm.injective.eq_iff]
+    cases x <;> cases y
+    · simpa only [symplecticArcMatrix_inl_inl, Matrix.reindex_apply, Matrix.submatrix_apply] using
+        congrFun (congrFun (Matrix.reindex_sumCongr_J R e) a) b
+    · simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
+    · simp [Matrix.one_apply, eSum.symm.injective.eq_iff]
+    · simpa only [symplecticArcMatrix_inr_inr, Matrix.reindex_apply, Matrix.submatrix_apply] using
+        congrFun (congrFun (Matrix.reindex_sumCongr_J R e) a) b
   have helim (v u : Fin k → ι₂ ⊕ ι₂) (z : Fin k ⊕ Fin k) :
       Sum.elim (eFun.symm u) (eFun.symm v) z = eSum.symm (Sum.elim u v z) := by
     cases z <;> rfl
@@ -403,9 +403,7 @@ theorem transpose_symplecticActionMatrix (D : BrauerDiagram k) :
   obtain ⟨φ, hφ⟩ := D.exists_congr_permToBrauer_one
   have hflip : PerfectMatching.congr (Equiv.sumComm (Fin k) (Fin k) * φ) (permToBrauer 1) =
       D.flip := by
-    have htrans : φ.trans (Equiv.sumComm (Fin k) (Fin k)) =
-        Equiv.sumComm (Fin k) (Fin k) * φ := rfl
-    rw [flip_def, ← hφ, PerfectMatching.congr_trans, htrans]
+    rw [flip_def, PerfectMatching.congr_mul, hφ]
   let sgn : Fin k ⊕ Fin k → R := Sum.elim (fun _ => -1) (fun _ => 1)
   have harc (x y : Fin k ⊕ Fin k) (a b : ι ⊕ ι) :
       symplecticArcMatrix R ι x.swap y.swap a b =
@@ -462,8 +460,8 @@ private theorem sympBoundaryFactor_mul_J_mul_transpose {R : Type u} [CommRing R]
 
 /-- Left-multiplying any matrix by `(capCup a b).symplecticActionMatrix` sums over the two middle
 labels `(x, y)` at `a` and `b`, fixing all other coordinates to agree with the output row `v`. -/
-theorem symplecticActionMatrix_capCup_mul_apply {a b : Fin k} (hab : a ≠ b)
-    (M : Matrix (Fin k → ι ⊕ ι) (Fin k → ι ⊕ ι) R) (v u : Fin k → ι ⊕ ι) :
+theorem symplecticActionMatrix_capCup_mul_apply {m : Type*} {a b : Fin k} (hab : a ≠ b)
+    (M : Matrix (Fin k → ι ⊕ ι) m R) (v : Fin k → ι ⊕ ι) (u : m) :
     ((capCup a b).symplecticActionMatrix R ι * M) v u =
       ∑ x : ι ⊕ ι, ∑ y : ι ⊕ ι,
         -(Matrix.J ι R x y * Matrix.J ι R (v a) (v b)) *
@@ -499,8 +497,8 @@ theorem symplecticActionMatrix_capCup_mul_apply {a b : Fin k} (hab : a ≠ b)
 
 /-- Right-multiplying any matrix by `(capCup a b).symplecticActionMatrix` sums over the two middle
 labels `(x, y)` at `a` and `b`, fixing all other coordinates to agree with the input column `u`. -/
-theorem mul_symplecticActionMatrix_capCup_apply {a b : Fin k} (hab : a ≠ b)
-    (M : Matrix (Fin k → ι ⊕ ι) (Fin k → ι ⊕ ι) R) (v u : Fin k → ι ⊕ ι) :
+theorem mul_symplecticActionMatrix_capCup_apply {m : Type*} {a b : Fin k} (hab : a ≠ b)
+    (M : Matrix m (Fin k → ι ⊕ ι) R) (v : m) (u : Fin k → ι ⊕ ι) :
     (M * (capCup a b).symplecticActionMatrix R ι) v u =
       ∑ x : ι ⊕ ι, ∑ y : ι ⊕ ι,
         M v (Function.update (Function.update u a x) b y) *
@@ -527,8 +525,8 @@ private theorem symplecticActionMatrix_permToBrauer_mul (σ : Equiv.Perm (Fin k)
     (σ.eq_comp_symm v m).trans eq_comm
   rw [Matrix.mul_apply, composeDiagram_permToBrauer_left, symplecticActionMatrix_relabel_apply]
   simp only [symplecticActionMatrix_permToBrauer_apply, hcond, ite_mul, zero_mul,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true, map_one, Units.val_one, Int.cast_one, one_mul]
-  rfl
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true, map_one, Units.val_one, Int.cast_one, one_mul,
+    Equiv.Perm.coe_one, Function.comp_id]
 
 /-- Off the top endpoints `Sum.inr a` and `Sum.inr b`, updating the top labelling at `a` and `b`
 leaves `Sum.elim u w` unchanged. -/
@@ -542,20 +540,13 @@ private theorem sumElim_update_update_inr_of_ne {ι : Type*}
     have hjb : j ≠ b := fun h => hzb (congrArg Sum.inr h)
     simp [hja, hjb]
 
-/-- Entrywise expansion of `(P * M * Qᵀ) i j` as a double sum. -/
-private theorem mul_mul_transpose_apply {R : Type*} [CommSemiring R] {m n : Type*} [Fintype n]
-    (P Q : Matrix m n R) (M : Matrix n n R) (i j : m) :
-    ∑ x : n, ∑ y : n, P i x * M x y * Q j y = (P * M * Qᵀ) i j := by
-  rw [Matrix.mul_apply, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun y _ => ?_
-  rw [Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
-
 /-- Loop-case evaluation of `(capCup a b).symplecticActionMatrix * D.symplecticActionMatrix` when
 `D` already cups `a` to `b`. -/
-private theorem symplecticActionMatrix_capCup_mul_of_val_eq {a b : Fin k} (hab : a ≠ b)
+private theorem symplecticActionMatrix_capCup_mul_of_val_eq {a b : Fin k}
     {D : BrauerDiagram k} (hcup : D.val (Sum.inr a) = Sum.inr b) (w u : Fin k → ι ⊕ ι) :
     ((capCup a b).symplecticActionMatrix R ι * D.symplecticActionMatrix R ι) w u =
       -(2 * Fintype.card ι : R) * D.symplecticActionMatrix R ι w u := by
+  have hab : a ≠ b := fun h => D.apply_ne (Sum.inr a) (hcup.trans (congrArg Sum.inr h.symm))
   rw [symplecticActionMatrix_capCup_mul_apply R ι hab]
   obtain ⟨φ, i₀, hφ, hinl₀, hinr₀⟩ := D.exists_congr_permToBrauer_one_of_val_eq hcup
   let f₀ (i : Fin k) : R :=
@@ -596,9 +587,8 @@ omit [Fintype ι] in
 /-- Expansion of `D.symplecticActionMatrix` at a doubly updated top labelling along a boundary
 transport isolating the two arcs ending at `Sum.inr a` and `Sum.inr b`. -/
 private theorem symplecticActionMatrix_update_update_of_congr_two {a b i₁ i₂ : Fin k}
-    (hab : a ≠ b) (hi₁₂ : i₁ ≠ i₂) {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
+    (hab : a ≠ b) {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
     (hφ : PerfectMatching.congr φ (permToBrauer 1) = D) {p q : Fin k ⊕ Fin k}
-    (hpa : p ≠ Sum.inr a) (hpb : p ≠ Sum.inr b) (hqa : q ≠ Sum.inr a) (hqb : q ≠ Sum.inr b)
     (hinl₁ : φ (Sum.inl i₁) = p) (hinr₁ : φ (Sum.inr i₁) = Sum.inr a)
     (hinl₂ : φ (Sum.inl i₂) = q) (hinr₂ : φ (Sum.inr i₂) = Sum.inr b)
     (w u : Fin k → ι ⊕ ι) (x y : ι ⊕ ι) :
@@ -609,6 +599,12 @@ private theorem symplecticActionMatrix_update_update_of_congr_two {a b i₁ i₂
             ∏ i ∈ (Finset.univ.erase i₁).erase i₂,
               symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
                 (Sum.elim u w (φ (Sum.inl i))) (Sum.elim u w (φ (Sum.inr i))))) := by
+  have hi₁₂ : i₁ ≠ i₂ := fun h =>
+    hab (Sum.inr_injective (hinr₁.symm.trans ((congrArg (fun i => φ (Sum.inr i)) h).trans hinr₂)))
+  have hpa : p ≠ Sum.inr a := hinl₁ ▸ hinr₁ ▸ φ.injective.ne Sum.inl_ne_inr
+  have hpb : p ≠ Sum.inr b := hinl₁ ▸ hinr₂ ▸ φ.injective.ne Sum.inl_ne_inr
+  have hqa : q ≠ Sum.inr a := hinl₂ ▸ hinr₁ ▸ φ.injective.ne Sum.inl_ne_inr
+  have hqb : q ≠ Sum.inr b := hinl₂ ▸ hinr₂ ▸ φ.injective.ne Sum.inl_ne_inr
   rw [symplecticActionMatrix_apply_of_congr hφ,
     ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i₁),
     ← Finset.mul_prod_erase (Finset.univ.erase i₁) _
@@ -635,8 +631,8 @@ omit [Fintype ι] in
 /-- Entry of `(D.reconnect (Sum.inr a) (Sum.inr b)).symplecticActionMatrix` in terms of a boundary
 transport of `D` isolating the two arcs ending at `Sum.inr a` and `Sum.inr b`. -/
 private theorem symplecticActionMatrix_reconnect_inr_of_congr_two {a b i₁ i₂ : Fin k}
-    (hab : a ≠ b) (hi₁₂ : i₁ ≠ i₂) {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
-    (hφ : PerfectMatching.congr φ (permToBrauer 1) = D) (hncup : D.val (Sum.inr a) ≠ Sum.inr b)
+    (hab : a ≠ b) {D : BrauerDiagram k} {φ : Equiv.Perm (Fin k ⊕ Fin k)}
+    (hφ : PerfectMatching.congr φ (permToBrauer 1) = D)
     (hinl₁ : φ (Sum.inl i₁) = D.val (Sum.inr a)) (hinr₁ : φ (Sum.inr i₁) = Sum.inr a)
     (hinl₂ : φ (Sum.inl i₂) = D.val (Sum.inr b)) (hinr₂ : φ (Sum.inr i₂) = Sum.inr b)
     (w u : Fin k → ι ⊕ ι) :
@@ -648,15 +644,17 @@ private theorem symplecticActionMatrix_reconnect_inr_of_congr_two {a b i₁ i₂
             ∏ i ∈ (Finset.univ.erase i₁).erase i₂,
               symplecticArcMatrix R ι (φ (Sum.inl i)) (φ (Sum.inr i))
                 (Sum.elim u w (φ (Sum.inl i))) (Sum.elim u w (φ (Sum.inr i)))))) := by
+  have hi₁₂ : i₁ ≠ i₂ := fun h =>
+    hab (Sum.inr_injective (hinr₁.symm.trans ((congrArg (fun i => φ (Sum.inr i)) h).trans hinr₂)))
   set p := D.val (Sum.inr a)
   set q := D.val (Sum.inr b)
+  have hncup : p ≠ Sum.inr b := hinl₁ ▸ hinr₂ ▸ φ.injective.ne Sum.inl_ne_inr
   have hpa : p ≠ Sum.inr a := D.apply_ne (Sum.inr a)
   have hqb : q ≠ Sum.inr b := D.apply_ne (Sum.inr b)
   have hqp : q ≠ p := fun h => hab (Sum.inr_injective (D.val.injective h).symm)
   let φ' : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.swap p (Sum.inr b) * φ
   have hφ' : PerfectMatching.congr φ' (permToBrauer 1) = D.reconnect (Sum.inr a) (Sum.inr b) := by
-    have htrans : φ.trans (Equiv.swap p (Sum.inr b)) = φ' := rfl
-    rw [PerfectMatching.reconnect_def, ← htrans, ← PerfectMatching.congr_trans, hφ]
+    rw [PerfectMatching.reconnect_def, PerfectMatching.congr_mul, hφ]
   have hsign : ((Equiv.Perm.sign φ' : ℤ) : R) = -((Equiv.Perm.sign φ : ℤ) : R) := by
     simp [φ', Equiv.Perm.sign_swap hncup]
   have hrest : ∏ i ∈ (Finset.univ.erase i₁).erase i₂,
@@ -704,14 +702,14 @@ private theorem symplecticActionMatrix_capCup_mul {a b : Fin k} (hab : a ≠ b)
   rcases eq_or_ne (D.val (Sum.inr a)) (Sum.inr b) with hcup | hncup
   · simp only [hcup, ↓reduceIte, pow_one, Matrix.smul_apply, smul_eq_mul]
     rw [← hcup, PerfectMatching.reconnect_partner]
-    exact symplecticActionMatrix_capCup_mul_of_val_eq R ι hab hcup w u
+    exact symplecticActionMatrix_capCup_mul_of_val_eq R ι hcup w u
   · simp only [hncup, ↓reduceIte, pow_zero, one_smul]
     set p := D.val (Sum.inr a)
     set q := D.val (Sum.inr b)
     have hqa : q ≠ Sum.inr a :=
       fun h => hncup ((congrArg D.val h).symm.trans (D.apply_apply (Sum.inr b)))
     have hqp : q ≠ p := fun h => hab (Sum.inr_injective (D.val.injective h).symm)
-    obtain ⟨φ, i₁, i₂, hi₁₂, hφ, hinl₁, hinr₁, hinl₂, hinr₂⟩ :=
+    obtain ⟨φ, i₁, i₂, -, hφ, hinl₁, hinr₁, hinl₂, hinr₂⟩ :=
       D.exists_congr_permToBrauer_one_of_val_eq_of_val_eq (D.apply_apply (Sum.inr a))
         (D.apply_apply (Sum.inr b)) hqp hqa
     have hcalc (f : (ι ⊕ ι) → (ι ⊕ ι) → R) (g₁ g₂ : (ι ⊕ ι) → R) (c s r : R) :
@@ -721,13 +719,12 @@ private theorem symplecticActionMatrix_capCup_mul {a b : Fin k} (hab : a ≠ b)
           -(s * (c * (g₁ x * f x y * g₂ y * r))) := by ring
       simp only [h1, Finset.sum_neg_distrib, ← Finset.mul_sum, ← Finset.sum_mul]
     rw [symplecticActionMatrix_capCup_mul_apply R ι hab,
-      symplecticActionMatrix_reconnect_inr_of_congr_two R ι hab hi₁₂ hφ hncup hinl₁ hinr₁ hinl₂
-        hinr₂]
-    simp only [symplecticActionMatrix_update_update_of_congr_two R ι hab hi₁₂ hφ
-      (D.apply_ne (Sum.inr a)) hncup hqa (D.apply_ne (Sum.inr b)) hinl₁ hinr₁ hinl₂ hinr₂]
+      symplecticActionMatrix_reconnect_inr_of_congr_two R ι hab hφ hinl₁ hinr₁ hinl₂ hinr₂]
+    simp only [symplecticActionMatrix_update_update_of_congr_two R ι hab hφ hinl₁ hinr₁ hinl₂ hinr₂]
     rw [hcalc (Matrix.J ι R) (sympBoundaryFactor R ι p (Sum.elim u w p))
       (sympBoundaryFactor R ι q (Sum.elim u w q)),
-      mul_mul_transpose_apply (sympBoundaryFactor R ι p) (sympBoundaryFactor R ι q) (Matrix.J ι R),
+      ← Matrix.mul_mul_transpose_apply (sympBoundaryFactor R ι p) (Matrix.J ι R)
+        (sympBoundaryFactor R ι q),
       sympBoundaryFactor_mul_J_mul_transpose]
 
 /-- **The symplectic loop rule for the matrices of Brauer diagrams.** Multiplying the matrices of

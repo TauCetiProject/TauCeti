@@ -387,6 +387,11 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
     rw [congr_val_apply, congr_val_apply, congr_val_apply, Equiv.symm_trans_apply,
       Equiv.trans_apply]
 
+/-- Transporting along a product of permutations applies the right factor and then the left. -/
+theorem congr_mul (σ τ : Equiv.Perm α) (D : PerfectMatching α) :
+    congr (σ * τ) D = congr σ (congr τ D) := by
+  rw [Equiv.Perm.mul_def, congr_trans]
+
 /-- Transporting back along `e` is transporting along `e.symm`, since transports compose. -/
 @[simp]
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=

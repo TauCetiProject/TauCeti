@@ -36,7 +36,7 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
 * `Equiv.Perm.existsUnique_sameCycle_sumCongr`: representatives of the cycles of the two summands
   together represent the cycles of the sum.
-* `Equiv.Perm.exists_sumCongr_mul_prodCongrLeft_of_commute_swap`: a permutation of `α ⊕ α`
+* `Equiv.Perm.exists_sumCongr_mul_prodCongrLeft_of_commute_sumSwap`: a permutation of `α ⊕ α`
   commuting with `Sum.swap` factors into `Equiv.Perm.sumCongr π π` and a fibrewise permutation
   along `Equiv.boolProdEquivSum α`.
 * `Equiv.Perm.sign_sumComm`: the sign of `Equiv.sumComm α α` is `(-1) ^ Fintype.card α`.
@@ -416,7 +416,7 @@ theorem finRotate_add_eq_swap_mul_finSumPerm [NeZero m] [NeZero n] :
 /-- **Centralizer of `Sum.swap` in `Equiv.Perm (α ⊕ α)`.** Every permutation of `α ⊕ α` commuting
 with `Sum.swap` permutes the `α`-fibres by some `π : Equiv.Perm α` and, within each fibre, acts on
 its two elements through `Equiv.boolProdEquivSum α`. -/
-theorem exists_sumCongr_mul_prodCongrLeft_of_commute_swap {ψ : Perm (α ⊕ α)}
+theorem exists_sumCongr_mul_prodCongrLeft_of_commute_sumSwap {ψ : Perm (α ⊕ α)}
     (hψ : ∀ x, ψ x.swap = (ψ x).swap) :
     ∃ (π : Perm α) (τ : α → Perm Bool),
       ψ = Perm.sumCongr π π *
@@ -445,6 +445,7 @@ theorem exists_sumCongr_mul_prodCongrLeft_of_commute_swap {ψ : Perm (α ⊕ α)
 
 /-- **The sign of `Equiv.sumComm α α`** is `(-1) ^ Fintype.card α`, since it is the product of the
 `|α|` disjoint transpositions exchanging `Sum.inl i` with `Sum.inr i`. -/
+@[simp]
 theorem sign_sumComm (α : Type*) [Fintype α] [DecidableEq α] :
     sign (Equiv.sumComm α α) = (-1 : ℤˣ) ^ Fintype.card α := by
   have heq : Equiv.sumComm α α =

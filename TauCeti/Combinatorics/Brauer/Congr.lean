@@ -84,23 +84,12 @@ theorem exists_congr_permToBrauer_one (D : BrauerDiagram k) :
     ∃ φ : Equiv.Perm (Fin k ⊕ Fin k), PerfectMatching.congr φ (permToBrauer 1) = D := by
   let e : Fin k ≃ {x // D.IsLowerEnd x} :=
     Fintype.equivOfCardEq ((Fintype.card_fin k).trans D.card_isLowerEnd.symm)
-  let f : Fin k ⊕ Fin k → Fin k ⊕ Fin k :=
-    Sum.elim (fun i => (e i).1) (fun i => D.val (e i).1)
-  have hf : Function.Injective f := by
-    rintro (i | i) (j | j) hij
-    · exact congrArg Sum.inl (e.injective (Subtype.ext hij))
-    · have hval : (e i).1 = D.val (e j).1 := hij
-      exact absurd (hval ▸ (e i).2) (D.not_isLowerEnd_val (e j).2)
-    · have hval : (e j).1 = D.val (e i).1 := hij.symm
-      exact absurd (hval ▸ (e j).2) (D.not_isLowerEnd_val (e i).2)
-    · exact congrArg Sum.inr (e.injective (Subtype.ext (D.val.injective hij)))
-  let φ : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.ofBijective f (Finite.injective_iff_bijective.mp hf)
+  let φ : Equiv.Perm (Fin k ⊕ Fin k) :=
+    (Equiv.sumCongr e (e.trans D.notLowerEndEquiv.symm)).trans (Equiv.sumCompl D.IsLowerEnd)
   refine ⟨φ, Subtype.ext (Equiv.ext fun y => ?_)⟩
   obtain ⟨x, rfl⟩ := φ.surjective y
   rw [PerfectMatching.congr_val_apply_apply, permToBrauer_one_val_apply]
-  rcases x with i | i
-  · rfl
-  · exact (D.apply_apply (e i).1).symm
+  rcases x with i | i <;> simp [φ, D.apply_apply]
 
 /-- **Two boundary permutations transport `permToBrauer 1` to the same diagram** only when they
 differ on the right by a simultaneous permutation of the strands followed by swaps of strand
@@ -116,9 +105,38 @@ theorem exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq
     simp only [PerfectMatching.congr_val_apply, permToBrauer_one_val_apply,
       Equiv.symm_apply_apply] at hx
     exact φ₁.injective (by simpa [Equiv.Perm.mul_apply, ← Equiv.Perm.inv_def] using hx.symm)
-  obtain ⟨π, τ, hψ⟩ := Equiv.Perm.exists_sumCongr_mul_prodCongrLeft_of_commute_swap hcomm
+  obtain ⟨π, τ, hψ⟩ := Equiv.Perm.exists_sumCongr_mul_prodCongrLeft_of_commute_sumSwap hcomm
   refine ⟨π, τ, ?_⟩
   rw [mul_assoc, ← hψ, mul_inv_cancel_left]
+
+/-- Given a boundary transport `φ₀` of `permToBrauer 1` to `D` and an oriented arc `D.val x = y`,
+re-orient the single strand `i₀` carrying `x` so that `Sum.inl i₀ ↦ x` and `Sum.inr i₀ ↦ y`,
+leaving all other strands `j ≠ i₀` unchanged. -/
+private theorem exists_congr_permToBrauer_one_orient_arc {D : BrauerDiagram k}
+    {φ₀ : Equiv.Perm (Fin k ⊕ Fin k)} (hφ₀ : PerfectMatching.congr φ₀ (permToBrauer 1) = D)
+    {x y : Fin k ⊕ Fin k} (h : D.val x = y) :
+    ∃ (φ : Equiv.Perm (Fin k ⊕ Fin k)) (i₀ : Fin k),
+      PerfectMatching.congr φ (permToBrauer 1) = D ∧
+        (φ₀ (Sum.inl i₀) = x ∨ φ₀ (Sum.inr i₀) = x) ∧
+        φ (Sum.inl i₀) = x ∧ φ (Sum.inr i₀) = y ∧
+        ∀ j ≠ i₀, φ (Sum.inl j) = φ₀ (Sum.inl j) ∧ φ (Sum.inr j) = φ₀ (Sum.inr j) := by
+  have hpartner (z : Fin k ⊕ Fin k) : φ₀ z.swap = D.val (φ₀ z) := by
+    rw [← hφ₀, PerfectMatching.congr_val_apply_apply, permToBrauer_one_val_apply]
+  rcases hsymm : φ₀.symm x with i₀ | i₀
+  · have hx : φ₀ (Sum.inl i₀) = x := by rw [← hsymm, Equiv.apply_symm_apply]
+    exact ⟨φ₀, i₀, hφ₀, Or.inl hx, hx, (hpartner (Sum.inl i₀)).trans (hx ▸ h),
+      fun _ _ => ⟨rfl, rfl⟩⟩
+  · have hx : φ₀ (Sum.inr i₀) = x := by rw [← hsymm, Equiv.apply_symm_apply]
+    let φ : Equiv.Perm (Fin k ⊕ Fin k) := φ₀ * Equiv.swap (Sum.inr i₀) (Sum.inl i₀)
+    have hφ : PerfectMatching.congr φ (permToBrauer 1) = D := by
+      rw [PerfectMatching.congr_mul, congr_swap_inr_inl_permToBrauer_one, hφ₀]
+    refine ⟨φ, i₀, hφ, Or.inr hx, ?_, ?_, fun j hj => ⟨?_, ?_⟩⟩
+    · simp [φ, Equiv.Perm.mul_apply, hx]
+    · simpa [φ, Equiv.Perm.mul_apply, hx, ← h] using hpartner (Sum.inr i₀)
+    · rw [Equiv.Perm.mul_apply,
+        Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (Sum.inl_injective.ne hj)]
+    · rw [Equiv.Perm.mul_apply,
+        Equiv.swap_apply_of_ne_of_ne (Sum.inr_injective.ne hj) Sum.inr_ne_inl]
 
 /-- **Transporting `permToBrauer 1` to `D` with one prescribed oriented arc.** Any arc `D.val x = y`
 can be placed on some strand `i₀` with `x` as the image of `Sum.inl i₀` and `y` as the image of
@@ -129,19 +147,8 @@ theorem exists_congr_permToBrauer_one_of_val_eq (D : BrauerDiagram k) {x y : Fin
       PerfectMatching.congr φ (permToBrauer 1) = D ∧
         φ (Sum.inl i₀) = x ∧ φ (Sum.inr i₀) = y := by
   obtain ⟨φ₀, hφ₀⟩ := D.exists_congr_permToBrauer_one
-  have hpartner (z : Fin k ⊕ Fin k) : φ₀ z.swap = D.val (φ₀ z) := by
-    rw [← hφ₀, PerfectMatching.congr_val_apply_apply, permToBrauer_one_val_apply]
-  rcases hsymm : φ₀.symm x with i₀ | i₀
-  · have hx : φ₀ (Sum.inl i₀) = x := by rw [← hsymm, Equiv.apply_symm_apply]
-    exact ⟨φ₀, i₀, hφ₀, hx, (hpartner (Sum.inl i₀)).trans (hx ▸ h)⟩
-  · have hx : φ₀ (Sum.inr i₀) = x := by rw [← hsymm, Equiv.apply_symm_apply]
-    let φ : Equiv.Perm (Fin k ⊕ Fin k) := φ₀ * Equiv.swap (Sum.inr i₀) (Sum.inl i₀)
-    have hφ : PerfectMatching.congr φ (permToBrauer 1) = D := by
-      have htrans : (Equiv.swap (Sum.inr i₀) (Sum.inl i₀)).trans φ₀ = φ := rfl
-      rw [← htrans, ← PerfectMatching.congr_trans, congr_swap_inr_inl_permToBrauer_one, hφ₀]
-    refine ⟨φ, i₀, hφ, ?_, ?_⟩
-    · simp [φ, Equiv.Perm.mul_apply, hx]
-    · simpa [φ, Equiv.Perm.mul_apply, hx, ← h] using hpartner (Sum.inr i₀)
+  obtain ⟨φ, i₀, hφ, -, hx, hy, -⟩ := exists_congr_permToBrauer_one_orient_arc hφ₀ h
+  exact ⟨φ, i₀, hφ, hx, hy⟩
 
 /-- **Transporting `permToBrauer 1` to `D` with two prescribed disjoint oriented arcs.** -/
 theorem exists_congr_permToBrauer_one_of_val_eq_of_val_eq (D : BrauerDiagram k)
@@ -152,24 +159,13 @@ theorem exists_congr_permToBrauer_one_of_val_eq_of_val_eq (D : BrauerDiagram k)
         φ (Sum.inl i₁) = x₁ ∧ φ (Sum.inr i₁) = y₁ ∧
           φ (Sum.inl i₂) = x₂ ∧ φ (Sum.inr i₂) = y₂ := by
   obtain ⟨φ₁, i₁, hφ₁, hx₁, hy₁⟩ := D.exists_congr_permToBrauer_one_of_val_eq h₁
-  have hpartner (z : Fin k ⊕ Fin k) : φ₁ z.swap = D.val (φ₁ z) := by
-    rw [← hφ₁, PerfectMatching.congr_val_apply_apply, permToBrauer_one_val_apply]
-  rcases hsymm : φ₁.symm x₂ with i₂ | i₂
-  · have hx₂ : φ₁ (Sum.inl i₂) = x₂ := by rw [← hsymm, Equiv.apply_symm_apply]
-    have hi : i₁ ≠ i₂ := fun hi => hne (hx₂.symm.trans (hi ▸ hx₁))
-    exact ⟨φ₁, i₁, i₂, hi, hφ₁, hx₁, hy₁, hx₂, (hpartner (Sum.inl i₂)).trans (hx₂ ▸ h₂)⟩
-  · have hx₂ : φ₁ (Sum.inr i₂) = x₂ := by rw [← hsymm, Equiv.apply_symm_apply]
-    have hi : i₁ ≠ i₂ := fun hi => hne' (hx₂.symm.trans (hi ▸ hy₁))
-    let φ : Equiv.Perm (Fin k ⊕ Fin k) := φ₁ * Equiv.swap (Sum.inr i₂) (Sum.inl i₂)
-    have hφ : PerfectMatching.congr φ (permToBrauer 1) = D := by
-      have htrans : (Equiv.swap (Sum.inr i₂) (Sum.inl i₂)).trans φ₁ = φ := rfl
-      rw [← htrans, ← PerfectMatching.congr_trans, congr_swap_inr_inl_permToBrauer_one, hφ₁]
-    refine ⟨φ, i₁, i₂, hi, hφ, ?_, ?_, ?_, ?_⟩
-    · rw [Equiv.Perm.mul_apply, Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr
-        (Sum.inl_injective.ne hi), hx₁]
-    · rw [Equiv.Perm.mul_apply, Equiv.swap_apply_of_ne_of_ne (Sum.inr_injective.ne hi)
-        Sum.inr_ne_inl, hy₁]
-    · simp [φ, Equiv.Perm.mul_apply, hx₂]
-    · simpa [φ, Equiv.Perm.mul_apply, hx₂, ← h₂] using hpartner (Sum.inr i₂)
+  obtain ⟨φ, i₂, hφ, hcase, hx₂, hy₂, hkeep⟩ := exists_congr_permToBrauer_one_orient_arc hφ₁ h₂
+  have hi : i₁ ≠ i₂ := by
+    rintro rfl
+    rcases hcase with h | h
+    · exact hne (h.symm.trans hx₁)
+    · exact hne' (h.symm.trans hy₁)
+  obtain ⟨hkeep_inl, hkeep_inr⟩ := hkeep i₁ hi
+  exact ⟨φ, i₁, i₂, hi, hφ, hkeep_inl.trans hx₁, hkeep_inr.trans hy₁, hx₂, hy₂⟩
 
 end TauCeti.BrauerDiagram
