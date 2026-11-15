@@ -422,13 +422,8 @@ theorem extDeriv_normalModelForm_apply {p : ℂ × ℂ} (hω₀ : Differentiable
     refine (extDeriv ω₀ p.1).toAlternatingMap.map_linearDependent v fun hv ↦ ?_
     simpa using hv.fintype_card_le_finrank
   have hbase : extDeriv
-      (fun q : ℂ × ℂ ↦ (ω₀ q.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ ℂ ℂ)) p = 0 := by
-    have h := (ContinuousLinearMap.fst ℝ ℂ ℂ).extDerivWithin_pullback (ω := ω₀) (t := Set.univ)
-      uniqueDiffWithinAt_univ hω₀.differentiableWithinAt (Set.mapsTo_univ _ _)
-    rw [extDerivWithin_univ, extDerivWithin_univ] at h
-    refine h.trans ?_
-    simp only [ContinuousLinearMap.coe_fst', h₃]
-    rfl
+      (fun q : ℂ × ℂ ↦ (ω₀ q.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ ℂ ℂ)) p = 0 :=
+    (ContinuousLinearMap.fst ℝ ℂ ℂ).extDeriv_pullback_eq_zero hω₀ h₃
   have hd : DifferentiableAt ℝ (fun q : ℂ × ℂ ↦
       K • (ω₀ q.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ ℂ ℂ)) p :=
     ((ContinuousAlternatingMap.compContinuousLinearMapCLM
