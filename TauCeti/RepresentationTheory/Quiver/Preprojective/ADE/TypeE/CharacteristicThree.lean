@@ -19,14 +19,19 @@ The branch-node word `y²x`, represented by the latest-vertex-first list
 `[3, 2, 3, 2, 3, 1, 3]`, survives modulo additive commutators in characteristic three.
 A linear functional supported on ten necklaces of length six detects it.
 The necklace weights annihilate the local preprojective relations and are invariant under
-rotation, so the functional descends to the cyclic quotient. The obstruction transfers to the
-preprojective algebra of every orientation of the Bourbaki-labelled `E₆` diagram.
+rotation, so the functional descends to the cyclic quotient. Lifting the detecting word along the
+induced-subgraph quotient `TauCeti.signlessPreprojectiveInducedSubgraphHom` extends the
+characteristic-three obstruction to every finite simple graph containing an induced `E₆`
+subdiagram, and in particular to `Eₙ` for all `n ≥ 6` (including `E₇` and `E₈`) and every
+orientation of these diagrams.
 
 The quotient-functional construction follows the kernel descent used for the `D₄` Frobenius
 functional in `TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective`.
 
 ## References
 
+* P. Etingof and C.-H. Eu, *Hochschild and cyclic homology of preprojective algebras of ADE
+  quivers*, https://arxiv.org/abs/math/0609006.
 * Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   Theorem 1.1 and Proposition 3.2, https://arxiv.org/abs/2301.06757.
 -/
@@ -36,6 +41,8 @@ public section
 namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
+
+section E6
 
 local notation "G" => diagramGraph (CartanMatrix.E 6)
 
@@ -425,5 +432,150 @@ theorem exists_mem_preprojectiveGrade_E6_six_notMem_commutatorSubmodule
     rintro C rfl
     exact exists_preprojective_E6_cyclicClass k
   exact @key _ DynkinType.cartanMatrix_E6 o instV instHom
+
+end E6
+
+/-! ### Induced `E₆` subdiagrams and higher `Eₙ` diagrams -/
+
+section InducedSubgraph
+
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
+
+private noncomputable def e6EmbeddingQuotient (k : Type*) [CommRing k] {V : Type*} [Finite V]
+    {G : SimpleGraph V} (f : diagramGraph (CartanMatrix.E 6) ↪g G) :
+    signlessPreprojectiveAlgebra k (DoubledQuiver G) →ₐ[k]
+      signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E 6))) :=
+  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).toAlgHom.comp
+    (signlessPreprojectiveInducedSubgraphHom k G (Set.range f))
+
+private theorem e6EmbeddingQuotient_arrow (k : Type*) [CommRing k] {V : Type*} [Finite V]
+    {G : SimpleGraph V} (f : diagramGraph (CartanMatrix.E 6) ↪g G) {i j : Fin 6}
+    (h : (diagramGraph (CartanMatrix.E 6)).Adj i j) :
+    e6EmbeddingQuotient k f
+        (signlessPreprojectiveMk k _ (ofArrow (arrow G (f.map_adj_iff.mpr h)))) =
+      signlessArrow k (diagramGraph (CartanMatrix.E 6)) i.val j.val := by
+  classical
+  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
+  have hj : f j ∈ Set.range f := ⟨j, rfl⟩
+  rw [signlessArrow_of_adj k h]
+  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
+  simp only [e6EmbeddingQuotient, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
+    signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
+  rfl
+
+/-- An induced `E₆` subdiagram detects a nonzero degree-six cyclic class in characteristic three,
+over every nontrivial commutative coefficient ring with `3 = 0`. -/
+theorem exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding
+    (k : Type*) [CommRing k] [Nontrivial k] {V : Type*} [Finite V] {G : SimpleGraph V}
+    (f : diagramGraph (CartanMatrix.E 6) ↪g G) (h3 : (3 : k) = 0) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver G),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 6 ∧
+        z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
+  have hdiv : ringChar k ∣ 3 := ringChar.dvd (by norm_cast)
+  have : CharP k 3 := ringChar.of_eq
+    ((Nat.Prime.dvd_iff_eq Nat.prime_three (CharP.char_ne_one k (ringChar k))).mp hdiv).symm
+  let a := fun {i j : Fin 6} (h : (diagramGraph (CartanMatrix.E 6)).Adj i j) =>
+    signlessPreprojectiveMk k _ (ofArrow (arrow G (f.map_adj_iff.mpr h)))
+  let h23 : (diagramGraph (CartanMatrix.E 6)).Adj 2 3 := by decide
+  let h32 : (diagramGraph (CartanMatrix.E 6)).Adj 3 2 := by decide
+  let h13 : (diagramGraph (CartanMatrix.E 6)).Adj 1 3 := by decide
+  let h31 : (diagramGraph (CartanMatrix.E 6)).Adj 3 1 := by decide
+  let z := a h23 * (a h32 * (a h23 * (a h32 * (a h13 * a h31))))
+  have ha {i j : Fin 6} (h : (diagramGraph (CartanMatrix.E 6)).Adj i j) :
+      a h ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 1 :=
+    signlessPreprojectiveMk_mem_grade k _ (ofArrow_mem_grade_one _)
+  refine ⟨z, mul_mem_signlessPreprojectiveGrade k _ (ha h23)
+    (mul_mem_signlessPreprojectiveGrade k _ (ha h32)
+      (mul_mem_signlessPreprojectiveGrade k _ (ha h23)
+        (mul_mem_signlessPreprojectiveGrade k _ (ha h32)
+          (mul_mem_signlessPreprojectiveGrade k _ (ha h13) (ha h31))))), fun h => ?_⟩
+  have hmap : e6EmbeddingQuotient k f z =
+      signlessWord k (diagramGraph (CartanMatrix.E 6)) [3, 2, 3, 2, 3, 1, 3] := by
+    simp only [z, a, map_mul, e6EmbeddingQuotient_arrow k f h23,
+      e6EmbeddingQuotient_arrow k f h32, e6EmbeddingQuotient_arrow k f h13,
+      e6EmbeddingQuotient_arrow k f h31, signlessWord_cons_cons, signlessWord_singleton,
+      signlessArrow_mul_vertexIdempotent, ↓reduceIte]
+  apply signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule k inferInstance
+  rw [← hmap]
+  exact map_mem_commutatorSubmodule (e6EmbeddingQuotient k f) h
+
+private def e6PrefixEmbedding {n : ℕ} (hn : 6 ≤ n) :
+    diagramGraph (CartanMatrix.E 6) ↪g diagramGraph (CartanMatrix.E n) where
+  toEmbedding :=
+    { toFun := fun i => ⟨i.val, lt_of_lt_of_le i.isLt hn⟩
+      inj' := fun _ _ h => Fin.ext (congrArg (Fin.val : Fin n → ℕ) h) }
+  map_rel_iff' := by
+    intro i j
+    rw [diagramGraph_E_adj, diagramGraph_E_adj]
+    rfl
+
+/-- In characteristic three, the signless preprojective algebra of the Bourbaki-labelled `Eₙ`
+graph, `n ≥ 6`, has a degree-six element outside the commutator submodule. -/
+theorem exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule
+    (k : Type*) [CommRing k] [Nontrivial k] {n : ℕ} (hn : 6 ≤ n) (h3 : (3 : k) = 0) :
+    ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n))),
+      z ∈ signlessPreprojectiveGrade k (DoubledQuiver (diagramGraph (CartanMatrix.E n))) 6 ∧
+        z ∉ commutatorSubmodule k
+          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph (CartanMatrix.E n)))) :=
+  exists_mem_signlessPreprojectiveGrade_six_notMem_commutatorSubmodule_of_e6_embedding
+    k (e6PrefixEmbedding hn) h3
+
+/-- In characteristic three, the additive preprojective algebra of every orientation of the
+Bourbaki-labelled `Eₙ` graph, `n ≥ 6`, has a nonzero degree-six cyclic class. -/
+theorem exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule
+    (k : Type*) [CommRing k] [Nontrivial k] {n : ℕ} (hn : 6 ≤ n) (h3 : (3 : k) = 0)
+    (o : Orientation (diagramGraph (CartanMatrix.E n))) :
+    ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o),
+      z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o) 6 ∧
+        z ∉ commutatorSubmodule k
+          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
+  obtain ⟨z, hz, hz0⟩ :=
+    exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn h3
+  let C := eColoring _ (diagramGraph_E_adj (n := n))
+  let E := C.signlessPreprojectiveAlgebraEquiv k o
+  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, fun h => ?_⟩
+  apply hz0
+  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+
+/-- Every orientation of `E₇` has a degree-six class outside the commutator submodule when
+`3 = 0`. -/
+theorem exists_mem_preprojectiveGrade_E7_six_notMem_commutatorSubmodule
+    (k : Type*) [CommRing k] [Nontrivial k] (h3 : (3 : k) = 0)
+    (o : Orientation (diagramGraph DynkinType.E7.cartanMatrix)) :
+    ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o),
+      z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o) 6 ∧
+        z ∉ commutatorSubmodule k
+          (preprojectiveAlgebra k
+            (OrientedQuiver (diagramGraph DynkinType.E7.cartanMatrix) o)) := by
+  have key : ∀ C : Matrix (Fin 7) (Fin 7) ℤ, C = CartanMatrix.E 7 →
+      ∀ o : Orientation (diagramGraph C),
+        ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph C) o),
+          z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph C) o) 6 ∧
+            z ∉ commutatorSubmodule k
+              (preprojectiveAlgebra k (OrientedQuiver (diagramGraph C) o)) := by
+    rintro C rfl
+    exact exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule k (by decide) h3
+  exact key _ DynkinType.cartanMatrix_E7 o
+
+/-- Every orientation of `E₈` (`TauCeti.zigzagE8Graph`) has a degree-six class outside the
+commutator submodule when `3 = 0`. -/
+theorem exists_mem_preprojectiveGrade_E8_six_notMem_commutatorSubmodule
+    (k : Type*) [CommRing k] [Nontrivial k] (h3 : (3 : k) = 0)
+    (o : Orientation zigzagE8Graph) :
+    ∃ z : preprojectiveAlgebra k (OrientedQuiver zigzagE8Graph o),
+      z ∈ preprojectiveGrade k (OrientedQuiver zigzagE8Graph o) 6 ∧
+        z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver zigzagE8Graph o)) := by
+  have key : ∀ G : SimpleGraph (Fin 8), G = diagramGraph (CartanMatrix.E 8) →
+      ∀ o : Orientation G,
+        ∃ z : preprojectiveAlgebra k (OrientedQuiver G o),
+          z ∈ preprojectiveGrade k (OrientedQuiver G o) 6 ∧
+            z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
+    rintro G rfl
+    exact exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule k (by decide) h3
+  exact key _ (by rw [zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]; rfl) o
+
+end InducedSubgraph
 
 end TauCeti

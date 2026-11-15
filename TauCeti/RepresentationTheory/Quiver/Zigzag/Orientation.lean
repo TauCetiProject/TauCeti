@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.Combinatorics.Quiver.Reorient
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
+public import TauCeti.Combinatorics.SimpleGraph.Backtracking
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
@@ -51,6 +52,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
 * `TauCeti.exists_forall_exists_nonempty_reorient_hom`: a neighbour choice without mutual choices
   gives a reorientation of any orientation with no sinks.
+* `TauCeti.exists_reorient_path_of_isTrail`: every trail of `G` lifts to a directed path of the
+  same length in some reorientation of `OrientedQuiver G o`.
 
 ## References
 
@@ -572,6 +575,43 @@ theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {f : V �
     have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
     refine ⟨reorientFlip _ (OrientedQuiver.arrow G o hadj.symm ho') ?_⟩
     simp only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_true]
+
+/-- **Every trail of a simple graph becomes a directed path in some reorientation**: for any
+orientation `o` of `G` and any trail `c : G.Walk u v`, some arrow-flipping choice `σ` on
+`OrientedQuiver G o` admits a directed path of the same length from `u` to `v`. -/
+theorem exists_reorient_path_of_isTrail (o : Orientation G) {u v : V} {c : G.Walk u v}
+    (hc : c.IsTrail) :
+    ∃ (σ : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → Bool)
+      (p : Path (reorientVertex σ (OrientedQuiver.vertex G o u))
+        (reorientVertex σ (OrientedQuiver.vertex G o v))),
+      p.length = c.length := by
+  classical
+  let φ := (OrientedQuiver.vertexEquiv G o).symm
+  let σ : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → Bool :=
+    fun i j a => decide ((⟨(φ j, φ i), a.1.symm⟩ : G.Dart) ∈ c.darts)
+  refine ⟨σ, ?_⟩
+  suffices ∀ {x y : V} (w : G.Walk x y), (∀ d ∈ w.darts, d ∈ c.darts) →
+      ∃ p : Path (reorientVertex σ (OrientedQuiver.vertex G o x))
+        (reorientVertex σ (OrientedQuiver.vertex G o y)), p.length = w.length from
+    this c fun _ hd => hd
+  intro x y w hw
+  induction w with
+  | nil => exact ⟨.nil, rfl⟩
+  | @cons x x' y h w' ih =>
+    have hd : (⟨(x, x'), h⟩ : G.Dart) ∈ c.darts := hw _ (by simp)
+    obtain ⟨p', hp'⟩ := ih fun d hd' => hw d (by simp [hd'])
+    have he : Nonempty (reorientVertex σ (OrientedQuiver.vertex G o x) ⟶
+        reorientVertex σ (OrientedQuiver.vertex G o x')) := by
+      by_cases ho : (⟨(x, x'), h⟩ : G.Dart) ∈ o
+      · refine ⟨reorientKeep σ (OrientedQuiver.arrow G o h ho) ?_⟩
+        have hnot : (⟨(x', x), h.symm⟩ : G.Dart) ∉ c.darts := hc.symm_notMem_darts hd
+        simpa only [σ, φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_eq_true_eq] using hnot
+      · have ho' : (⟨(x', x), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+        refine ⟨reorientFlip σ (OrientedQuiver.arrow G o h.symm ho') ?_⟩
+        simpa only [σ, φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_eq_true_eq] using hd
+    obtain ⟨e⟩ := he
+    refine ⟨e.toPath.comp p', ?_⟩
+    rw [Path.length_comp, Path.length_toPath, hp', SimpleGraph.Walk.length_cons, add_comm]
 
 end TauCeti
 

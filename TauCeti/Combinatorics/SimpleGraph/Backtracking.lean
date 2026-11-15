@@ -21,6 +21,8 @@ acyclic graph the walks without backtracking are exactly the paths.
 * `SimpleGraph.Walk.isChain_ne_edges_iff`: no two consecutive edges of a walk coincide exactly
   when no dart of the walk is followed by its reverse.
 * `SimpleGraph.Walk.IsTrail.isChain_ne_symm_darts`: a trail does not backtrack.
+* `SimpleGraph.Walk.IsTrail.darts_nodup` and `SimpleGraph.Walk.IsTrail.symm_notMem_darts`: a trail
+  repeats no dart and never traverses both a dart and its reverse.
 * `SimpleGraph.IsAcyclic.isPath_iff_isChain_darts`: in an acyclic graph a walk is a path exactly
   when it does not backtrack.
 -/
@@ -50,6 +52,16 @@ theorem isChain_ne_edges_iff {u v : V} (p : G.Walk u v) :
 theorem IsTrail.isChain_ne_symm_darts {u v : V} {p : G.Walk u v} (hp : p.IsTrail) :
     p.darts.IsChain fun d d' => d' ≠ d.symm :=
   p.isChain_ne_edges_iff.mp hp.edges_nodup.isChain
+
+/-- A trail traverses no dart more than once. -/
+theorem IsTrail.darts_nodup {u v : V} {p : G.Walk u v} (hp : p.IsTrail) : p.darts.Nodup :=
+  hp.edges_nodup.of_map Dart.edge
+
+/-- A trail never traverses both a dart and its reverse. -/
+theorem IsTrail.symm_notMem_darts {u v : V} {p : G.Walk u v} (hp : p.IsTrail) {d : G.Dart}
+    (hd : d ∈ p.darts) : d.symm ∉ p.darts := fun hds =>
+  d.symm_ne ((List.nodup_map_iff_inj_on hp.darts_nodup).mp hp.edges_nodup
+    d.symm hds d hd (Dart.edge_symm d))
 
 end Walk
 

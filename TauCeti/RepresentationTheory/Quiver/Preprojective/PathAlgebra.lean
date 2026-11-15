@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Cyclic.Trace
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Symmetrify
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Orientation
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GradedOrientation
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
 
 /-!
 # The path algebra inside the preprojective algebra
@@ -34,6 +36,14 @@ turning some of its arrows around. Consequently the preprojective algebra of a q
 underlying graph is not a forest is not a finite module; this includes every quiver of affine type
 `Ã_n`.
 
+The same retraction detects cyclic classes in `Π_k(Q)`. Over a nontrivial commutative ring, every
+closed path of `Q` survives modulo commutators in `kQ`
+(`TauCeti.PathAlgebra.ofPath_notMem_commutatorSubmodule`), so its image in `Π_k(Q)` has the same
+path degree and lies outside `TauCeti.commutatorSubmodule`. Transporting along
+`TauCeti.reorientPreprojectiveAlgebraEquiv` extends this to any closed path in any reorientation of
+`Q`, and hence gives a nonzero cyclic class of degree at least `3` for every orientation of a finite
+simple graph containing a cycle.
+
 ## Main definitions
 
 * `TauCeti.pathAlgebraToPreprojective`: the algebra homomorphism `kQ →ₐ[k] Π_k(Q)`.
@@ -50,6 +60,13 @@ underlying graph is not a forest is not a finite module; this includes every qui
 * `TauCeti.isAcyclic_reorient_of_module_finite_preprojectiveAlgebra`: **no reorientation of such a
   quiver has an oriented cycle**, and `TauCeti.not_module_finite_preprojectiveAlgebra_of_length_pos`
   is the same statement read from a cycle of a reorientation.
+* `TauCeti.pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule` and
+  `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient_path`: **every
+  closed path of `Q` or of a reorientation of `Q` gives a homogeneous element of `Π_k(Q)` outside
+  the commutator submodule.**
+* `TauCeti.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcyclic`: **for every
+  orientation of a non-acyclic finite simple graph, the cyclic quotient of `Π_k` is nonzero in some
+  degree `d ≥ 3`.**
 
 ## References
 
@@ -68,7 +85,7 @@ universe u v w
 
 section Retraction
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- The algebra homomorphism `kQ →ₐ[k] Π_k(Q)` sending a path of `Q` to the class of the same path
@@ -141,13 +158,28 @@ theorem preprojectiveToPathAlgebra_surjective :
     Function.Surjective (preprojectiveToPathAlgebra k Q) :=
   Function.RightInverse.surjective (preprojectiveToPathAlgebra_pathAlgebraToPreprojective k Q)
 
+/-- The inclusion `kQ →ₐ[k] Π_k(Q)` preserves path degree. -/
+theorem pathAlgebraToPreprojective_mem_preprojectiveGrade {d : ℕ} {x : pathAlgebra k Q}
+    (hx : x ∈ PathAlgebra.grade k Q d) :
+    pathAlgebraToPreprojective k Q x ∈ preprojectiveGrade k Q d := by
+  rw [pathAlgebraToPreprojective, AlgHom.comp_apply]
+  apply preprojectiveMk_mem_preprojectiveGrade
+  rw [← gradeBy_const_one] at hx ⊢
+  exact mapAlgHom_mem_gradeBy k Symmetrify.of symmetrify_of_obj_bijective
+    (fun {_ _} _ => (1 : ℕ)) hx
+
+/-- The image of a path of `Q` in `Π_k(Q)` is homogeneous of its path length. -/
+theorem pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade {a b : Q} (p : Path a b) :
+    pathAlgebraToPreprojective k Q (ofPath ⟨a, b, p⟩) ∈ preprojectiveGrade k Q p.length :=
+  pathAlgebraToPreprojective_mem_preprojectiveGrade k Q (ofPath_mem_grade_of_length rfl)
+
 end Retraction
 
 /-! ### Finite preprojective algebras come from forests -/
 
 section Finiteness
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **A quiver whose preprojective algebra is a finite module has no oriented cycle.** -/
@@ -175,5 +207,58 @@ theorem not_module_finite_preprojectiveAlgebra_of_length_pos (σ : ∀ ⦃i j : 
   (isAcyclic_reorient_of_module_finite_preprojectiveAlgebra k h σ).not_length_pos p hp
 
 end Finiteness
+
+/-! ### Cyclic classes from cycles in the underlying graph -/
+
+section CyclicQuotient
+
+variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v} Q] [Fintype Q]
+  [∀ i j : Q, Fintype (i ⟶ j)]
+
+/-- **Every closed path of `Q` survives modulo commutators in `Π_k(Q)`** over any nontrivial
+commutative ring. -/
+theorem pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule (a : Q) (p : Path a a) :
+    pathAlgebraToPreprojective k Q (ofPath ⟨a, a, p⟩) ∉
+      commutatorSubmodule k (preprojectiveAlgebra k Q) := by
+  intro h
+  apply ofPath_notMem_commutatorSubmodule (k := k) a p
+  simpa only [preprojectiveToPathAlgebra_pathAlgebraToPreprojective] using
+    map_mem_commutatorSubmodule (preprojectiveToPathAlgebra k Q) h
+
+/-- **Every closed path of a reorientation of `Q` produces a homogeneous element of `Π_k(Q)` outside
+the commutator submodule.** -/
+theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient_path
+    (σ : ∀ ⦃i j : Q⦄, (i ⟶ j) → Bool) {a : Reorient Q σ} (p : Path a a) :
+    ∃ z ∈ preprojectiveGrade k Q p.length,
+      z ∉ commutatorSubmodule k (preprojectiveAlgebra k Q) := by
+  let e := reorientPreprojectiveAlgebraEquiv k σ
+  let x := pathAlgebraToPreprojective k (Reorient Q σ) (ofPath ⟨a, a, p⟩)
+  refine ⟨e x, (reorientPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k σ).mpr
+    (pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade k (Reorient Q σ) p), fun h => ?_⟩
+  apply pathAlgebraToPreprojective_ofPath_notMem_commutatorSubmodule k (Q := Reorient Q σ) a p
+  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule e.symm h
+
+end CyclicQuotient
+
+section GraphCyclicQuotient
+
+open DoubledQuiver
+
+variable (k : Type w) {V : Type u} {G : SimpleGraph V} [CommRing k] [Nontrivial k] [Finite V]
+
+/-- **Every non-acyclic finite simple graph has a nonzero cyclic class of degree at least three**:
+for any orientation `o` of `G` and any nontrivial commutative coefficient ring `k`, the additive
+preprojective algebra `Π_k(OrientedQuiver G o)` contains a homogeneous element of path degree
+`d ≥ 3` outside the commutator submodule. -/
+theorem exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_not_isAcyclic
+    (hc : ¬ G.IsAcyclic) (o : Orientation G) :
+    ∃ d : ℕ, 3 ≤ d ∧ ∃ z ∈ preprojectiveGrade k (OrientedQuiver G o) d,
+      z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
+  obtain ⟨u, c, hc_cyc⟩ := SimpleGraph.not_isAcyclic_iff_exists_isCycle.mp hc
+  obtain ⟨σ, p, hp⟩ := exists_reorient_path_of_isTrail o hc_cyc.isTrail
+  exact ⟨p.length, hp ▸ hc_cyc.three_le_length,
+    exists_mem_preprojectiveGrade_notMem_commutatorSubmodule_of_reorient_path k σ p⟩
+
+end GraphCyclicQuotient
 
 end TauCeti
