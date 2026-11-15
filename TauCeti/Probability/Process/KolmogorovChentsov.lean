@@ -482,7 +482,7 @@ private lemma exists_holderWith_Iic_of_dyadic_adj {E : Type*} [MetricSpace E] [C
           add_le_add (dist_dyadicNNRat_origin_le hγ' hadj hk₁)
             (dist_dyadicNNRat_origin_le hγ' hadj hk₂)
         _ = (D : ℝ) := by simp [D]; ring
-  obtain ⟨g, hg_holder, hg_eq⟩ := hholder_s.extend_of_dense hγ hs_dense
+  obtain ⟨g, hg_holder, hg_eq⟩ := hholder_s.extend_of_dense hs_dense
   refine ⟨K + D * δ ^ (-(γ : ℝ)), g, hg_holder, fun n k hk ↦ ?_⟩
   exact (hg_eq ⟨dyadicNNRat n k, ⟨n, k, hk, rfl⟩, rfl⟩).symm.trans (hF_eq hk rfl)
 
