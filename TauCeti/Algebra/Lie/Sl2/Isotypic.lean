@@ -12,17 +12,17 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
 /-!
 # Isotypic multiplicities of `sl₂`-modules against their characters
 
-For `L = sl (Fin 2) K` over an algebraically closed field of characteristic zero, with the diagonal
-Cartan and the positive base selecting `e = E₀₁`, this file computes the isotypic decomposition of
-the module
+For `L = sl (Fin 2) K` over a field of characteristic zero, with the diagonal Cartan and the
+positive base selecting `e = E₀₁`, this file computes the isotypic decomposition of the module
 
 `M = (V(1) ⊗ V(1)) × V(0)`
 
 in two independent ways and checks that they agree.
 
 * **By Clebsch-Gordan.** `V(m) ⊗ V(n)` is the internal direct sum of copies of `V(m + n - 2k)`
-  for `k ≤ min m n` (`TauCeti.Sl2Std.isInternal_cgSummand`), and `V(p)` is `L(p)`, so by Schur's
-  lemma the multiplicity of `L(p)` in `V(m) ⊗ V(n)` counts the `k` with `m + n - 2k = p`
+  for `k ≤ min m n` (`TauCeti.Sl2Std.isInternal_cgSummand`), and `V(p)` is `L(p)`, so by
+  `TauCeti.Sl2Std.isotypicMultiplicity_irreducibleQuotient` the multiplicity of `L(p)` in
+  `V(m) ⊗ V(n)` counts the `k` with `m + n - 2k = p`
   (`TauCeti.Sl2Std.isotypicMultiplicity_tensor_irreducibleQuotient`). For `M` the multiplicities of
   `L(2)`, `L(1)`, `L(0)` are therefore `1`, `0`, `2`
   (`TauCeti.Sl2Std.isotypicMultiplicity_one_tensor_one_prod_zero`).
@@ -31,13 +31,16 @@ in two independent ways and checks that they agree.
   denominator `1 - e^{-2}` leaves the coefficients `1`, `0`, `2` at the weights `2`, `1`, `0`
   (`TauCeti.Sl2Std.coeff_formalCharacter_one_tensor_one_prod_zero_mul_weylDenominator`). These are
   the multiplicities again, as Weyl-alternating inversion
-  (`TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity`) predicts. Read on
+  (`TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity`, stated over an
+  algebraically closed field) predicts; here the coefficients are computed directly. Read on
   characters the decomposition is `ch M = ch V(2) + 2 ch V(0)`
   (`TauCeti.Sl2Std.formalCharacter_one_tensor_one_prod_zero_eq_add`).
 
 The isotypic components of `M` then have dimensions `3`, `0`, `2`, the multiplicity times
 `dim L(p) = p + 1` (`TauCeti.Sl2Std.finrank_isotypicComponent_one_tensor_one_prod_zero`), and these
 add up to `dim M = 5` (`TauCeti.Sl2Std.sum_finrank_isotypicComponent_one_tensor_one_prod_zero`).
+Only these dimension statements assume the field is algebraically closed, as
+`LieModule.finrank_isotypicComponent` does.
 
 ## References
 
@@ -62,8 +65,6 @@ variable {K : Type*} [Field K] [CharZero K]
 /-! ### Multiplicities by Clebsch-Gordan -/
 
 section Multiplicity
-
-variable [IsAlgClosed K]
 
 /-- **The Clebsch-Gordan multiplicities.** The multiplicity of `L(p)` in `V(m) ⊗ V(n)` is the
 number of `k ≤ min m n` with `m + n - 2k = p`. -/
