@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Analysis.Calculus.Bilinear
-public import TauCeti.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Module.NegativeSubspace
 
 /-!
 # Linearization of changes of indefinite quadratic coordinates
@@ -67,13 +67,8 @@ theorem norm_snd_lt_norm_fst_of_norm_sq_sub {u : E} (hu : u ≠ 0) :
 
 /-- In finite dimension, the negative block of an isometric negative column is invertible. -/
 theorem isInvertible_fst_of_norm_sq_sub [FiniteDimensional ℝ E] :
-    ((fst ℝ E F).comp L).IsInvertible := by
-  obtain ⟨G, hCG, hGC, -⟩ := LinearMap.exists_comp_eq_id_of_mul_norm_le
-    (C := ((fst ℝ E F).comp L).toLinearMap) (c := 1) one_pos
-    (fun u ↦ by simpa using L.norm_le_norm_fst_of_norm_sq_sub hL u)
-  let e : E ≃ₗ[ℝ] E :=
-    LinearEquiv.ofLinearMap ((fst ℝ E F).comp L).toLinearMap G hCG hGC
-  exact ⟨e.toContinuousLinearEquiv, by ext; simp [e]⟩
+    ((fst ℝ E F).comp L).IsInvertible :=
+  L.isInvertible_fst_comp_of_norm_snd_lt fun _ hu ↦ L.norm_snd_lt_norm_fst_of_norm_sq_sub hL hu
 
 /-- For any inverse of the negative block, its norm is at most one. -/
 theorem norm_symm_le_one_of_norm_sq_sub (e : E ≃L[ℝ] E)

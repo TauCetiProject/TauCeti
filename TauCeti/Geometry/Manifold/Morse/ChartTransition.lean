@@ -197,6 +197,15 @@ theorem exists_negative_disk_homotopy_polarFactor [CompleteSpace E] {W : Set M} 
     simp only [ContinuousMap.coe_mk, PartialDiffeomorph.symm_toPartialEquiv] at h ⊢
     linarith [(hH p).2]
 
+/-- The derivative of a transition between split Morse charts maps the negative cone `‖v‖ < ‖u‖`
+of the second chart into the negative cone of the first. -/
+theorem norm_snd_fderiv_transition_apply_lt {z : E × F} (hz : ‖z.2‖ < ‖z.1‖) :
+    ‖(fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0 z).2‖ <
+      ‖(fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0 z).1‖ := by
+  have hQ := ψ₀.norm_sq_sub_fderiv_transition ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ z
+  have hz2 : ‖z.2‖ ^ 2 < ‖z.1‖ ^ 2 := pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
+  exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by linarith)
+
 /-- The derivative of a transition between split Morse charts carries the negative space
 `E × 0` of the second chart strictly inside the negative cone `‖v‖ < ‖u‖` of the first. -/
 theorem norm_snd_fderiv_transition_lt {u : E} (hu : u ≠ 0) :
@@ -268,11 +277,8 @@ theorem det_polarFactor_fst_fderiv_transition_inl_eq_mul [FiniteDimensional ℝ 
   have hA : fderiv ℝ (fun w ↦ ψ₀ (ψ₂.symm w)) 0 = A₀₁.comp A₁₂ := by
     have h := ψ₀.fderiv_comp_symm_eq_comp ψ₁ ψ₂ (zero_lt_one.trans_le hn).ne' hx₀ hx₁ hx₂
     rwa [hψ₁, hψ₂] at h
-  -- `A₀₁` preserves `‖u‖² - ‖v‖²`, so it maps the negative cone into itself.
-  have hcone (z : E × F) (hz : ‖z.2‖ < ‖z.1‖) : ‖(A₀₁ z).2‖ < ‖(A₀₁ z).1‖ := by
-    have hQ := ψ₀.norm_sq_sub_fderiv_transition ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ z
-    have hz2 : ‖z.2‖ ^ 2 < ‖z.1‖ ^ 2 := pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
-    exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by linarith)
+  have hcone (z : E × F) (hz : ‖z.2‖ < ‖z.1‖) : ‖(A₀₁ z).2‖ < ‖(A₀₁ z).1‖ :=
+    ψ₀.norm_snd_fderiv_transition_apply_lt ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁ hz
   have hneg (u : E) (hu : u ≠ 0) :
       ‖(A₁₂.comp (ContinuousLinearMap.inl ℝ E F) u).2‖ <
         ‖(A₁₂.comp (ContinuousLinearMap.inl ℝ E F) u).1‖ := by
@@ -362,25 +368,14 @@ theorem exists_homotopy_polarFactor_transition_family
           ((fderiv ℝ (fun w ↦ ψ₀ p ((ψ₂ p).symm w)) 0).comp
             (ContinuousLinearMap.inl ℝ E F))).polarFactor) ∧
       ∀ q v, ‖G q v‖ = ‖v‖ := by
-  -- `A₀₁ p` maps the negative cone into itself, since it preserves `‖u‖² - ‖v‖²`.
-  have hcone (p : X) (z : E × F) (hz : ‖z.2‖ < ‖z.1‖) :
-      ‖(fderiv ℝ (fun w ↦ ψ₀ p ((ψ₁ p).symm w)) 0 z).2‖ <
-        ‖(fderiv ℝ (fun w ↦ ψ₀ p ((ψ₁ p).symm w)) 0 z).1‖ := by
-    have hQ := (ψ₀ p).norm_sq_sub_fderiv_transition (ψ₁ p) hn (hx₀ p) (hx₁ p) (hψ₀ p) (hψ₁ p)
-      (hf₀ p) (hf₁ p) z
-    have hz2 : ‖z.2‖ ^ 2 < ‖z.1‖ ^ 2 := pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
-    exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by linarith)
-  -- `A₁₂ p ∘ inl` is a negative frame.
-  have hframe (p : X) (u : E) (hu : u ≠ 0) :
-      ‖((fderiv ℝ (fun w ↦ ψ₁ p ((ψ₂ p).symm w)) 0).comp (ContinuousLinearMap.inl ℝ E F) u).2‖ <
-        ‖((fderiv ℝ (fun w ↦ ψ₁ p ((ψ₂ p).symm w)) 0).comp
-          (ContinuousLinearMap.inl ℝ E F) u).1‖ := by
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
-    exact (ψ₁ p).norm_snd_fderiv_transition_lt (ψ₂ p) hn (hx₁ p) (hx₂ p) (hψ₁ p) (hψ₂ p) (hf₁ p)
-      (hf₂ p) hu
+  -- `A₀₁ p` maps the negative cone into itself and `A₁₂ p ∘ inl` is a negative frame.
   obtain ⟨G, h0, h1, hG⟩ :=
     ContinuousLinearMap.exists_homotopy_polarFactor_fst_comp_comp_of_norm_snd_lt hc₀₁
-      (hc₁₂.clm_comp continuous_const) hcone hframe
+      (hc₁₂.clm_comp (continuous_const (y := ContinuousLinearMap.inl ℝ E F)))
+      (fun p _ hz ↦ (ψ₀ p).norm_snd_fderiv_transition_apply_lt (ψ₁ p) hn (hx₀ p) (hx₁ p) (hψ₀ p)
+        (hψ₁ p) (hf₀ p) (hf₁ p) hz)
+      (fun p _ hu ↦ (ψ₁ p).norm_snd_fderiv_transition_lt (ψ₂ p) hn (hx₁ p) (hx₂ p) (hψ₁ p)
+        (hψ₂ p) (hf₁ p) (hf₂ p) hu)
   refine ⟨G, h0, fun p ↦ ?_, hG⟩
   -- The derivative of `ψ₀ p ∘ (ψ₂ p)⁻¹` is `A₀₁ p ∘ A₁₂ p`, by the chain rule.
   have hA := (ψ₀ p).fderiv_comp_symm_eq_comp (ψ₁ p) (ψ₂ p) (zero_lt_one.trans_le hn).ne' (hx₀ p)

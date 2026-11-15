@@ -54,8 +54,8 @@ on `T`.
 * `ContinuousLinearMap.norm_sub_polarFactor_le`: `‖T - U‖ ≤ ‖|T| - 1‖` for an endomorphism `T`.
 * `ContinuousLinearMap.continuousOn_polarFactor`: on real Hilbert spaces, `U` depends
   continuously on `T` where `|T|` is invertible.
-* `ContinuousLinearMap.continuousOn_polarFactor_isUnit`: in particular, `U` depends continuously on
-  an invertible endomorphism `T`.
+* `ContinuousLinearMap.continuousOn_polarFactor_of_isInvertible`: in particular, `U` depends
+  continuously on an invertible operator `T`.
 
 ## References
 
@@ -121,6 +121,11 @@ theorem norm_polarFactor_apply_of_injective (hT : Function.Injective T) (x : E) 
   T.norm_polarFactor_apply <| by
     rw [LinearMap.ker_eq_bot.2 (by exact hT), Submodule.bot_orthogonal_eq_top]
     exact Submodule.mem_top
+
+/-- The polar factor of an invertible operator is an isometry. -/
+theorem norm_polarFactor_apply_of_isInvertible (hT : T.IsInvertible) (x : E) :
+    ‖T.polarFactor x‖ = ‖x‖ :=
+  T.norm_polarFactor_apply_of_injective hT.bijective.injective x
 
 /-- The polar factor is a partial isometry. -/
 @[simp]
@@ -308,12 +313,11 @@ theorem continuousOn_polarFactor :
         continuous_modulus.continuousAt).continuousWithinAt
   exact (continuousOn_id.clm_comp hinv).congr fun T hT ↦ polarFactor_eq_comp_inverse T hT
 
-/-- The polar factor of an endomorphism of a real Hilbert space depends continuously on the
+/-- The polar factor of an operator between real Hilbert spaces depends continuously on the
 operator, in operator norm, at the invertible operators. -/
-theorem continuousOn_polarFactor_isUnit :
-    ContinuousOn (polarFactor : (E →L[ℝ] E) → E →L[ℝ] E) {T | IsUnit T} :=
-  continuousOn_polarFactor.mono fun _ hT ↦
-    (isStrictlyPositive_modulus_of_isInvertible (isInvertible_iff_isUnit.2 hT)).isUnit
+theorem continuousOn_polarFactor_of_isInvertible :
+    ContinuousOn (polarFactor : (E →L[ℝ] F) → E →L[ℝ] F) {T | T.IsInvertible} :=
+  continuousOn_polarFactor.mono fun _ hT ↦ (isStrictlyPositive_modulus_of_isInvertible hT).isUnit
 
 end Continuity
 

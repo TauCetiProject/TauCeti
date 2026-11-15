@@ -128,6 +128,17 @@ theorem continuous_negativeContraction (L : E →L[ℝ] E × F) :
     Continuous L.negativeContraction :=
   continuous_const.add (continuous_id.smul continuous_const)
 
+/-- The straight-line contraction of a frame depends jointly continuously on the frame and the
+time. -/
+@[continuity, fun_prop]
+theorem _root_.Continuous.negativeContraction {X : Type*} [TopologicalSpace X]
+    {L : X → E →L[ℝ] E × F} {t : X → ℝ} (hL : Continuous L) (ht : Continuous t) :
+    Continuous fun x ↦ (L x).negativeContraction (t x) :=
+  have hfst := (compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hL
+  have hsnd := (compL ℝ E (E × F) F (snd ℝ E F)).continuous.comp hL
+  ((compL ℝ E E (E × F) (inl ℝ E F)).continuous.comp hfst).add
+    (ht.smul ((compL ℝ E F (E × F) (inr ℝ E F)).continuous.comp hsnd))
+
 /-- The straight-line contraction of a frame is the contraction of its graph coordinate: if
 the image of `L` is the graph of `A`, the image of `L.negativeContraction t` is the graph of
 `t • A`. -/
