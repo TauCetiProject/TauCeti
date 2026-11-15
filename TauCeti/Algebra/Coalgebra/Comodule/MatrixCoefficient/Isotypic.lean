@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
@@ -42,6 +43,8 @@ coefficient spaces label the isomorphism classes of simple comodules.
 * `matrixCoefficientSubmodule_eq_iff`: two simple comodules, projective over the ground ring,
   have the same coefficient space exactly when there is a nonzero morphism between them.
 * `sSupIndep_simpleCoefficientSubmodules`: independence of the distinct simple blocks.
+* `isInternal_of_sSup_simpleCoefficientSubmodules_eq_top`: a coalgebra over a field spanned by its
+  distinct simple coefficient spaces is their internal direct sum.
 * `span_singleton_one_mem_simpleCoefficientSubmodules`: over a bialgebra over a field, the line
   `k · 1` is a simple coefficient space.
 
@@ -255,6 +258,15 @@ theorem sSupIndep_simpleCoefficientSubmodules :
   exact ⟨⟨_, isotypicComponent_convolution_mem_isotypicComponents (C := C) (M := M)⟩,
     matrixCoefficientSubmodule_eq_isotypicComponent.symm⟩
 
+/-- A coalgebra over a field that is spanned by its distinct simple coefficient spaces is their
+internal direct sum. -/
+theorem isInternal_of_sSup_simpleCoefficientSubmodules_eq_top
+    (hspan : sSup (simpleCoefficientSubmodules k C) = ⊤) :
+    DirectSum.IsInternal (fun P : simpleCoefficientSubmodules k C ↦ (P.1 : Submodule k C)) := by
+  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+  · exact (sSupIndep_iff _).mp sSupIndep_simpleCoefficientSubmodules
+  · rwa [← sSup_eq_iSup']
+
 /-- Over any bialgebra `A` over a field `k`, the line `Submodule.span k {1}` belongs to
 `simpleCoefficientSubmodules k A` as the coefficient space of the trivial rank-one comodule. -/
 theorem span_singleton_one_mem_simpleCoefficientSubmodules
@@ -266,16 +278,10 @@ theorem span_singleton_one_mem_simpleCoefficientSubmodules
   have : IsSimpleOrder (Subcomodule k A k) :=
     ⟨fun S ↦ (eq_bot_or_eq_top S.toSubmodule).imp
       Subcomodule.toSubmodule_eq_bot.mp Subcomodule.toSubmodule_eq_top.mp⟩
+  have h1 : (1 : A) ≠ 0 := fun h ↦
+    one_ne_zero (α := k) (by simpa using congrArg (Coalgebra.counit (R := k)) h)
   let L : Submodule k A := Submodule.span k ({1} : Set A)
-  let e : k ≃ₗ[k] L :=
-    { toFun c := ⟨c • 1, Submodule.smul_mem _ c (Submodule.subset_span (Set.mem_singleton 1))⟩
-      invFun x := Coalgebra.counit (R := k) x.1
-      left_inv c := by simp
-      right_inv x := Subtype.ext <| by
-        obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp x.2
-        simp [← hc]
-      map_add' x y := Subtype.ext (add_smul x y 1)
-      map_smul' r x := Subtype.ext (mul_smul r x 1) }
+  let e : k ≃ₗ[k] L := LinearEquiv.toSpanNonzeroSingleton k A 1 h1
   let _ : Comodule k A L := Comodule.Transport e
   have : IsSimpleOrder (Subcomodule k A L) :=
     (Subcomodule.transportOrderIso e).symm.isSimpleOrder

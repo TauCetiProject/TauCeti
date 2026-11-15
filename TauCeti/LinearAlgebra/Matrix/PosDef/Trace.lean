@@ -37,7 +37,7 @@ theorem exists_pos_smul_trace_eq_inv_trace {K ι : Type*} [RCLike K] [Fintype ι
   obtain ⟨g, hg_pos, hg_eq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.trace_pos
   obtain ⟨gi, hgi_pos, hgi_eq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.inv.trace_pos
   set r : ℝ := Real.sqrt (gi / g)
-  set c : K := (r : K)
+  set c : K := (r : K) with hc_def
   have hr_pos : 0 < r := Real.sqrt_pos_of_pos (div_pos hgi_pos hg_pos)
   have hc_pos : 0 < c := RCLike.ofReal_pos.mpr hr_pos
   have hc_ne : c ≠ 0 := hc_pos.ne'
@@ -45,7 +45,7 @@ theorem exists_pos_smul_trace_eq_inv_trace {K ι : Type*} [RCLike K] [Fintype ι
     rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, inv_mul_cancel₀ hc_ne, one_smul,
       nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).mp hG.isUnit)])
   have hG_smul : (c • G).PosDef := by
-    rw [show c • G = r • G from (RCLike.real_smul_eq_coe_smul r G).symm]
+    rw [hc_def, ← RCLike.real_smul_eq_coe_smul]
     exact hG.smul hr_pos
   refine ⟨c, hc_pos, hG_smul, hFt_inv, ?_⟩
   have hsq_r : r * r * g = gi := (congrArg (· * g)
@@ -55,4 +55,5 @@ theorem exists_pos_smul_trace_eq_inv_trace {K ι : Type*} [RCLike K] [Fintype ι
     simpa [c] using congrArg (fun x : ℝ ↦ (x : K)) hsq_r
   rw [hFt_inv, Matrix.trace_smul, Matrix.trace_smul, smul_eq_mul, smul_eq_mul, ← hsq,
     ← mul_assoc, ← mul_assoc, inv_mul_cancel₀ hc_ne, one_mul]
+
 end Matrix.PosDef

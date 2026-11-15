@@ -5,32 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
+public import TauCeti.Algebra.Coalgebra.Comodule.Conjugate
 public import TauCeti.Algebra.Coalgebra.Comodule.Schur
 public import TauCeti.Algebra.Coalgebra.Comodule.Unitarization
 public import TauCeti.Algebra.HopfAlgebra.Integral.Haar
-public import TauCeti.LinearAlgebra.Basis.Semilinear
-import Mathlib.Algebra.Star.LinearMap
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.LinearAlgebra.Matrix.PosDef.Trace
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
-import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
-# Conjugate comodules and weighted Schur orthogonality
+# Weighted Schur orthogonality and cross-orthogonality
 
-Let `A` be a star bialgebra over a commutative star ring `R`, and let `M` be a right `A`-comodule
-with a finite basis `b` and coefficient matrix `u`. Because comultiplication and the counit of a
-star coalgebra commute with `star`, the entrywise conjugate matrix `u.map star` is again a
-multiplicative matrix (`TauCeti.Comodule.conjugateMatrixComodule`). Over a commutative ring `R` over
-which `A` is projective, coordinatewise conjugation (`Module.Basis.conjEquivFun`) induces an order
-isomorphism between the subcomodule lattices of `M` and `conjugateMatrixComodule b`, preserving
-simplicity, and identifies the coefficient submodule of `conjugateMatrixComodule b` with the
-`star`-image of that of `M`.
-
-For left or right invariant integrals `h : A →ₗ[R] R`, contractions of products of entries of `u`
-and `star v` assemble into intertwiners between `M` and `N`. Consequently, when there is no nonzero
-comodule morphism `N → M`, the matrix coefficients of `M` and `N` are cross-orthogonal under `h`.
+For left or right invariant integrals `h : A →ₗ[R] R` on a star bialgebra `A`, contractions of
+products of entries of coefficient matrices `u` and `star v` assemble into intertwiners between
+right `A`-comodules `M` and `N`. Consequently, when there is no nonzero comodule morphism `N → M`,
+the matrix coefficients of `M` and `N` are cross-orthogonal under `h`.
 
 Over a complex Hopf star algebra `A`, for a simple comodule `M` with basis `b` whose coefficient
 matrix `u` is unitary, any positive definite matrix `G` invariant under `u.map star` normalizes to a
@@ -40,7 +30,7 @@ orthogonality relations
 * `h (star (u i j) * u k l) = if j = l then Ft⁻¹ i k / Ft⁻¹.trace else 0`,
 * `h (u i j * star (u k l)) = if i = k then Ft j l / Ft.trace else 0`.
 
-When `h` is an `AlgebraicHaar` functional, the Haar Gram matrix of `conjugateMatrixComodule b`
+When `h` is an `AlgebraicHaar` functional, the Haar Gram matrix of `b.conjugateMatrixComodule`
 supplies `G`, giving `Module.Basis.schur_orthogonality` and
 `TauCeti.Comodule.IsUnitary.schur_orthogonality`. Separately, for any matrix `G` invariant under
 `u.map star` with `u` unitary, `Gᵀ` intertwines `u` with its double antipode `(u.map S).map S`
@@ -49,15 +39,13 @@ supplies `G`, giving `Module.Basis.schur_orthogonality` and
 
 ## Main declarations
 
-* `TauCeti.Comodule.conjugateMatrixComodule`: the right comodule on `ι → R` with coefficient matrix
-  `(coefficientMatrix b).map star`.
-* `TauCeti.Comodule.conjugateSubcomoduleOrderIso`: order isomorphism between `Subcomodule R A M` and
-  `Subcomodule R A (ι → R)` for `conjugateMatrixComodule b`.
 * `LinearMap.IsLeftInvariantIntegral.map_coefficientMatrix_mul_star_eq_zero` and
   `LinearMap.IsRightInvariantIntegral.map_star_coefficientMatrix_mul_eq_zero`: cross-orthogonality
   between comodules with no nonzero morphism between them.
 * `Module.Basis.map_antipode_map_antipode_mul_transpose_of_conjInvariant`: for unitary `u`, any
   `G` invariant under `u.map star` has `Gᵀ` intertwining `u` with `(u.map S).map S`.
+* `Module.Basis.conjInvariant_of_schur_orthogonality`: any matrix `Ft` with nonzero trace satisfying
+  the right-handed Schur orthogonality relation over a star bialgebra is `u.map star`-invariant.
 * `Module.Basis.existsUnique_posDef_schur_orthogonality_of_conjInvariant`: weighted Schur
   orthogonality from any positive definite conjugate-invariant matrix (without assuming positivity
   of `h` globally on `A`).
@@ -74,179 +62,8 @@ supplies `G`, giving `Module.Basis.schur_orthogonality` and
 
 public section
 
-open Module Matrix WithConv TauCeti TauCeti.Comodule
+open Module Matrix TauCeti TauCeti.Comodule
 open scoped TensorProduct ComplexOrder
-
-namespace TauCeti.Comodule
-
-section ConjugateMatrixComodule
-
-variable {R A M ι : Type*} [CommSemiring R] [StarRing R]
-  [Semiring A] [StarRing A] [Bialgebra R A] [StarModule R A] [StarCoalgebra R A]
-  [AddCommMonoid M] [Module R M] [Comodule R A M] [Fintype ι]
-
-private theorem map_star_coefficientMatrix_comul (b : Basis ι R M) :
-    ((coefficientMatrix (C := A) b).map star).map (Bialgebra.comulAlgHom R A) =
-      ((coefficientMatrix (C := A) b).map star).map
-          (Algebra.TensorProduct.includeLeft (R := R) (S := R)) *
-        ((coefficientMatrix (C := A) b).map star).map
-          (Algebra.TensorProduct.includeRight (R := R)) := by
-  rw [map_comul_iff]
-  intro i j
-  simp [Matrix.map_apply, star_sum]
-
-omit [Fintype ι] in
-private theorem map_star_coefficientMatrix_counit [Finite ι] (b : Basis ι R M) :
-    ∀ i j, Coalgebra.counit (R := R) (((coefficientMatrix (C := A) b).map star) i j) =
-      (Pi.basisFun R ι).repr ((Pi.basisFun R ι) j) i := by
-  classical
-  refine counit_basisFun_of_map_counit R _ ?_
-  rw [map_counit_iff]
-  intro i j
-  simp [Matrix.map_apply, apply_ite star]
-
-/-- The **conjugate matrix comodule** associated to a finite basis `b` of a right comodule `M` over
-a star bialgebra `A`: the right coaction on `ι → R` whose coefficient matrix in the standard basis
-`Pi.basisFun R ι` is `(coefficientMatrix b).map star`. -/
-@[instance_reducible]
-noncomputable def conjugateMatrixComodule (b : Basis ι R M) : Comodule R A (ι → R) :=
-  matrixComodule R ((coefficientMatrix (C := A) b).map star)
-    (map_star_coefficientMatrix_comul b) (map_star_coefficientMatrix_counit b)
-
-/-- The coaction of `conjugateMatrixComodule b` is `matrixCoact` of
-`(coefficientMatrix b).map star`. -/
-theorem conjugateMatrixComodule_coact (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    coact (R := R) (C := A) (M := ι → R) =
-      matrixCoact R ((coefficientMatrix (C := A) b).map star) :=
-  matrixComodule_coact R ((coefficientMatrix (C := A) b).map star)
-    (map_star_coefficientMatrix_comul b) (map_star_coefficientMatrix_counit b)
-
-/-- The coefficient matrix of `conjugateMatrixComodule b` in `Pi.basisFun R ι` is the entrywise star
-of `coefficientMatrix b`. -/
-theorem coefficientMatrix_conjugateMatrixComodule (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    coefficientMatrix (C := A) (Pi.basisFun R ι) = (coefficientMatrix (C := A) b).map star :=
-  coefficientMatrix_matrixComodule R ((coefficientMatrix (C := A) b).map star)
-    (map_star_coefficientMatrix_comul b) (map_star_coefficientMatrix_counit b)
-
-/-- Membership in the matrix-coefficient submodule of `conjugateMatrixComodule b` is equivalent to
-`star`-membership in the matrix-coefficient submodule of `M`. -/
-theorem mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff (b : Basis ι R M) {a : A} :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    a ∈ matrixCoefficientSubmodule (R := R) (C := A) (M := ι → R) ↔
-      star a ∈ matrixCoefficientSubmodule (R := R) (C := A) (M := M) := by
-  let _ : Comodule R A (ι → R) := conjugateMatrixComodule b
-  rw [mem_matrixCoefficientSubmodule_iff_exists_matrix (Pi.basisFun R ι),
-    mem_matrixCoefficientSubmodule_iff_exists_matrix b, coefficientMatrix_conjugateMatrixComodule]
-  refine ⟨fun ⟨X, hX⟩ ↦ ⟨X.map star, by simp [hX, star_sum, star_smul]⟩,
-    fun ⟨X, hX⟩ ↦ ⟨X.map star, by simpa [star_sum, star_smul] using congrArg star hX⟩⟩
-
-end ConjugateMatrixComodule
-
-section ConjugateSubcomodule
-
-variable {R A M ι : Type*} [CommRing R] [StarRing R]
-  [Ring A] [StarRing A] [Bialgebra R A] [Module.Projective R A] [StarModule R A] [StarCoalgebra R A]
-  [AddCommGroup M] [Module R M] [Comodule R A M] [Fintype ι]
-
-omit [Module.Projective R A] in
-private theorem coactComponent_conjEquivFun (b : Basis ι R M) (f : WithConv (A →ₗ[R] R)) (m : M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    coactComponent (R := R) (C := A) (M := ι → R) f.ofConv (b.conjEquivFun m) =
-      b.conjEquivFun (coactComponent (R := R) (C := A) (M := M) (star f).ofConv m) := by
-  let _ : Comodule R A (ι → R) := conjugateMatrixComodule b
-  conv_lhs => rw [← b.sum_repr m]
-  conv_rhs => rw [← b.sum_repr m]
-  simp only [map_sum, map_smulₛₗ, b.conjEquivFun_self]
-  refine Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_
-  rw [coactComponent_apply, coactComponent_apply, conjugateMatrixComodule_coact,
-    matrixCoact_apply_basisFun, coact_basis_eq_sum_coefficientMatrix b j, map_sum, map_sum, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.tensorComponent_tmul, LinearMap.tensorComponent_tmul, map_smulₛₗ,
-    b.conjEquivFun_self]
-  simp [LinearMap.intrinsicStar_apply, starRingEnd_apply]
-
-private theorem map_conjEquivFun_coact_mem (b : Basis ι R M) (S : Subcomodule R A M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    ∀ y ∈ S.toSubmodule.map b.conjEquivFun.toLinearMap, coact (R := R) (C := A) y ∈
-      LinearMap.range (TensorProduct.map
-        (S.toSubmodule.map b.conjEquivFun.toLinearMap).subtype LinearMap.id) := by
-  let _ : Comodule R A (ι → R) := conjugateMatrixComodule b
-  rintro _ ⟨m, hm, rfl⟩
-  rw [Submodule.tensor_mem_range_iff_forall_tensorComponent_mem]
-  intro f
-  rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply,
-    coactComponent_conjEquivFun b (toConv f)]
-  refine ⟨_, ?_, rfl⟩
-  rw [coactComponent_apply, LinearMap.tensorComponent_def]
-  exact S.rid_lTensor_coact_mem (star (toConv f)).ofConv hm
-
-private theorem map_conjEquivFun_symm_coact_mem (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    ∀ (T : Subcomodule R A (ι → R)) (m : M),
-      m ∈ T.toSubmodule.map b.conjEquivFun.symm.toLinearMap → coact (R := R) (C := A) m ∈
-        LinearMap.range (TensorProduct.map
-          (T.toSubmodule.map b.conjEquivFun.symm.toLinearMap).subtype LinearMap.id) := by
-  let _ : Comodule R A (ι → R) := conjugateMatrixComodule b
-  rintro T _ ⟨y, hy, rfl⟩
-  rw [Submodule.tensor_mem_range_iff_forall_tensorComponent_mem]
-  intro f
-  have hcomp : coactComponent (R := R) (C := A) (M := M) f (b.conjEquivFun.symm y) =
-      b.conjEquivFun.symm
-        (coactComponent (R := R) (C := A) (M := ι → R) (star (toConv f)).ofConv y) :=
-    b.conjEquivFun.injective <| by
-      rw [LinearEquiv.apply_symm_apply, ← b.conjEquivFun.apply_symm_apply y,
-        coactComponent_conjEquivFun b (star (toConv f)), star_star, LinearEquiv.apply_symm_apply]
-  rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply, hcomp]
-  refine ⟨_, ?_, rfl⟩
-  rw [coactComponent_apply, LinearMap.tensorComponent_def]
-  exact T.rid_lTensor_coact_mem (star (toConv f)).ofConv hy
-
-/-- Coordinatewise conjugation in a finite basis `b` induces an order isomorphism between the
-subcomodule lattice of `M` and that of `conjugateMatrixComodule b`. -/
-noncomputable def conjugateSubcomoduleOrderIso (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    Subcomodule R A M ≃o Subcomodule R A (ι → R) :=
-  letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-  { toFun S := Subcomodule.ofSubmodule (S.toSubmodule.map b.conjEquivFun.toLinearMap)
-      (map_conjEquivFun_coact_mem b S)
-    invFun T := Subcomodule.ofSubmodule (T.toSubmodule.map b.conjEquivFun.symm.toLinearMap)
-      (map_conjEquivFun_symm_coact_mem b T)
-    left_inv S := Subcomodule.ext fun _ ↦ by simp
-    right_inv T := Subcomodule.ext fun _ ↦ by simp
-    map_rel_iff' := by
-      refine ⟨fun h m hm ↦ ?_, fun h _ ⟨m, hm, heq⟩ ↦ ⟨m, h hm, heq⟩⟩
-      obtain ⟨m', hm', heq⟩ := h ⟨m, hm, rfl⟩
-      exact b.conjEquivFun.injective heq ▸ hm' }
-
-/-- Membership in `conjugateSubcomoduleOrderIso b S` reduces to `b.conjEquivFun.symm`. -/
-@[simp]
-theorem mem_conjugateSubcomoduleOrderIso_iff (b : Basis ι R M) (S : Subcomodule R A M) (y : ι → R) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    y ∈ conjugateSubcomoduleOrderIso b S ↔ b.conjEquivFun.symm y ∈ S :=
-  ⟨fun ⟨_, hm, h⟩ ↦ h ▸ by simpa using hm, fun hy ↦ ⟨_, hy, by simp⟩⟩
-
-/-- Membership in `(conjugateSubcomoduleOrderIso b).symm T` reduces to `b.conjEquivFun`. -/
-@[simp]
-theorem mem_conjugateSubcomoduleOrderIso_symm_iff (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    ∀ (T : Subcomodule R A (ι → R)) (m : M),
-      m ∈ (conjugateSubcomoduleOrderIso b).symm T ↔ b.conjEquivFun m ∈ T :=
-  letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-  fun _ _ ↦ ⟨fun ⟨_, hy, h⟩ ↦ h ▸ by simpa using hy, fun hm ↦ ⟨_, hm, by simp⟩⟩
-
-/-- If `M` is a simple comodule, then `conjugateMatrixComodule b` is also simple. -/
-theorem isSimpleOrder_conjugateMatrixComodule [IsSimpleOrder (Subcomodule R A M)]
-    (b : Basis ι R M) :
-    letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-    IsSimpleOrder (Subcomodule R A (ι → R)) :=
-  letI : Comodule R A (ι → R) := conjugateMatrixComodule b
-  (conjugateSubcomoduleOrderIso b).symm.isSimpleOrder
-
-end ConjugateSubcomodule
-
-end TauCeti.Comodule
 
 section IntertwinersAndCrossOrthogonality
 
@@ -362,8 +179,8 @@ theorem IsLeftInvariantIntegral.map_mul_star_eq_zero_of_mem_matrixCoefficientSub
     (hx : x ∈ matrixCoefficientSubmodule (R := R) (C := A) (M := M))
     (hy : y ∈ matrixCoefficientSubmodule (R := R) (C := A) (M := N)) : h (x * star y) = 0 := by
   cases nonempty_fintype ι
-  obtain ⟨X, rfl⟩ := (mem_matrixCoefficientSubmodule_iff_exists_matrix b).mp hx
-  obtain ⟨Y, rfl⟩ := (mem_matrixCoefficientSubmodule_iff_exists_matrix c).mp hy
+  obtain ⟨X, rfl⟩ := b.mem_matrixCoefficientSubmodule_iff_exists_matrix.mp hx
+  obtain ⟨Y, rfl⟩ := c.mem_matrixCoefficientSubmodule_iff_exists_matrix.mp hy
   simp only [star_sum, star_smul, Finset.sum_mul, Finset.mul_sum, smul_mul_assoc, mul_smul_comm,
     map_sum, map_smul, hh.map_coefficientMatrix_mul_star_eq_zero b c hv hHom, smul_zero,
     Finset.sum_const_zero]
@@ -379,8 +196,8 @@ theorem IsRightInvariantIntegral.map_star_mul_eq_zero_of_mem_matrixCoefficientSu
     (hx : x ∈ matrixCoefficientSubmodule (R := R) (C := A) (M := M))
     (hy : y ∈ matrixCoefficientSubmodule (R := R) (C := A) (M := N)) : h (star x * y) = 0 := by
   cases nonempty_fintype κ
-  obtain ⟨X, rfl⟩ := (mem_matrixCoefficientSubmodule_iff_exists_matrix b).mp hx
-  obtain ⟨Y, rfl⟩ := (mem_matrixCoefficientSubmodule_iff_exists_matrix c).mp hy
+  obtain ⟨X, rfl⟩ := b.mem_matrixCoefficientSubmodule_iff_exists_matrix.mp hx
+  obtain ⟨Y, rfl⟩ := c.mem_matrixCoefficientSubmodule_iff_exists_matrix.mp hy
   simp only [star_sum, star_smul, Finset.sum_mul, Finset.mul_sum, smul_mul_assoc, mul_smul_comm,
     map_sum, map_smul, hh.map_star_coefficientMatrix_mul_eq_zero b c hu hHom, smul_zero,
     Finset.sum_const_zero]
@@ -393,16 +210,14 @@ namespace Module.Basis
 
 section DoubleAntipode
 
-variable {R A M ι : Type*} [CommSemiring R]
-  [Semiring A] [StarRing A] [HopfAlgebra R A]
+variable {R A M ι : Type*} [CommSemiring R] [Semiring A] [StarRing A] [HopfAlgebra R A]
   [AddCommMonoid M] [Module R M] [Comodule R A M] [Fintype ι] [DecidableEq ι]
 
 /-- If the coefficient matrix `u` of `b` is unitary and `G` is invariant under `u.map star`, then
 `Gᵀ` intertwines `u` with its double antipode `(u.map S).map S`. -/
 theorem map_antipode_map_antipode_mul_transpose_of_conjInvariant
     (b : Basis ι R M) (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
-    {G : Matrix ι ι R}
-    (hG : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap R A) *
+    {G : Matrix ι ι R} (hG : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap R A) *
       (coefficientMatrix (C := A) b).map star = G.map (algebraMap R A)) :
     (((coefficientMatrix (C := A) b).map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R)) *
         Gᵀ.map (algebraMap R A) =
@@ -431,24 +246,45 @@ theorem map_antipode_map_antipode_mul_transpose_of_conjInvariant
 
 end DoubleAntipode
 
-private theorem trace_mul_eq_of_conjTranspose_mul_mul {A ι : Type*} [Ring A] [StarRing A]
-    [Algebra ℂ A] [Fintype ι] [DecidableEq ι] {h : A →ₗ[ℂ] ℂ} (h1 : h 1 = 1)
-    {V : Matrix ι ι A} {H K : Matrix ι ι ℂ}
-    (hinv : Vᴴ * H.map (algebraMap ℂ A) * V = H.map (algebraMap ℂ A))
-    (horth : ∀ p q r s, h (star (V p q) * V r s) = if p = r then K q s else 0)
-    (q s : ι) : H.trace * K q s = H q s := by
-  have hqs := congrArg h (congrFun (congrFun hinv q) s)
-  simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, Finset.sum_mul,
-    Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one,
-    map_sum, map_smul, smul_eq_mul, horth, h1] at hqs
-  simpa [Matrix.trace, Matrix.diag, Finset.sum_mul] using hqs
+section StarBialgebra
+
+variable {A M ι : Type*} [Ring A] [StarRing A] [Bialgebra ℂ A] [StarModule ℂ A] [StarCoalgebra ℂ A]
+  [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M] [Fintype ι] [DecidableEq ι]
+
+/-- If `Ft` satisfies the right-handed Schur orthogonality relation for a right invariant integral
+`h`, then `Ft` is invariant under `u.map star` (so when `u` is unitary over a Hopf star algebra,
+`Ftᵀ` intertwines `u` with its double antipode via
+`Module.Basis.map_antipode_map_antipode_mul_transpose_of_conjInvariant`). -/
+theorem conjInvariant_of_schur_orthogonality {h : A →ₗ[ℂ] ℂ} (hr : h.IsRightInvariantIntegral)
+    (b : Basis ι ℂ M) {Ft : Matrix ι ι ℂ} (hFt_tr : Ft.trace ≠ 0)
+    (horth : ∀ i j k l,
+      h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
+        if i = k then Ft j l / Ft.trace else 0) :
+    ((coefficientMatrix (C := A) b).map star)ᴴ * Ft.map (algebraMap ℂ A) *
+      (coefficientMatrix (C := A) b).map star = Ft.map (algebraMap ℂ A) := by
+  have : Nonempty ι := not_isEmpty_iff.mp fun _ ↦ hFt_tr (by simp [Matrix.trace])
+  let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
+  let G : Matrix ι ι ℂ := haarGramMatrix h (Pi.basisFun ℂ ι)
+  have hGinv : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap ℂ A) *
+      (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
+    simpa [G, b.coefficientMatrix_conjugateMatrixComodule] using
+      conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul hr (Pi.basisFun ℂ ι)
+  have hcard : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hmap : Ft.map (algebraMap ℂ A) =
+      (Ft.trace / (Fintype.card ι : ℂ)) • G.map (algebraMap ℂ A) := Matrix.ext fun j l ↦ by
+    have hGjl : G j l = (Fintype.card ι : ℂ) * (Ft j l / Ft.trace) := by
+      simp [G, haarGramMatrix_apply, b.coefficientMatrix_conjugateMatrixComodule, horth]
+    simp only [Matrix.map_apply, Matrix.smul_apply, Algebra.smul_def, ← map_mul, hGjl]
+    exact congrArg _ (by field_simp)
+  rw [hmap, Matrix.mul_smul, Matrix.smul_mul, hGinv]
+
+end StarBialgebra
 
 section WeightedSchurOrthogonality
 
-variable {A M ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A]
-  [StarModule ℂ A] [StarCoalgebra ℂ A]
-  [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M] [IsSimpleOrder (Subcomodule ℂ A M)]
-  [Fintype ι] [DecidableEq ι]
+variable {A M ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A] [StarModule ℂ A]
+  [StarCoalgebra ℂ A] [AddCommGroup M] [Module ℂ M] [Comodule ℂ A M]
+  [IsSimpleOrder (Subcomodule ℂ A M)] [Fintype ι] [DecidableEq ι]
 
 omit [StarRing A] [StarModule ℂ A] [StarCoalgebra ℂ A] in
 private theorem exists_apply_eq_ite_of_commute_coefficientMatrix (b : Basis ι ℂ M) (F : ι → ι → ℂ)
@@ -472,19 +308,18 @@ private theorem map_star_mul_inv_mul_conjTranspose_of_conjInvariant (b : Basis �
     rw [← Matrix.map_mul, mul_nonsing_inv _ hGdet, Matrix.map_one _ (map_zero f) (map_one f)]
   have hGinvG : G⁻¹.map f * G.map f = 1 := by
     rw [← Matrix.map_mul, nonsing_inv_mul _ hGdet, Matrix.map_one _ (map_zero f) (map_one f)]
-  let _ : Comodule ℂ A (ι → ℂ) := conjugateMatrixComodule b
+  let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
   have hv_right : v * v.map (HopfAlgebra.antipode ℂ) = 1 := by
-    simpa [v, coefficientMatrix_conjugateMatrixComodule] using
+    simpa [v, b.coefficientMatrix_conjugateMatrixComodule] using
       coefficientMatrix_mul_map_antipode (C := A) (Pi.basisFun ℂ ι)
-  have hleft : (G⁻¹.map f * vᴴ * G.map f) * v = 1 :=
-    calc (G⁻¹.map f * vᴴ * G.map f) * v
-        = G⁻¹.map f * (vᴴ * G.map f * v) := by simp only [Matrix.mul_assoc]
+  have hleft : (G⁻¹.map f * vᴴ * G.map f) * v = 1 := by
+    calc (G⁻¹.map f * vᴴ * G.map f) * v = G⁻¹.map f * (vᴴ * G.map f * v) := by
+          simp only [Matrix.mul_assoc]
       _ = 1 := by rw [hGinv, hGinvG]
-  have hright : v * (G⁻¹.map f * vᴴ * G.map f) = 1 := by
-    rwa [left_inv_eq_right_inv hleft hv_right]
-  calc v * G⁻¹.map f * vᴴ
-      = v * (G⁻¹.map f * vᴴ * G.map f) * G⁻¹.map f := by
-          simp only [Matrix.mul_assoc, hGG, Matrix.mul_one]
+  have hright : v * (G⁻¹.map f * vᴴ * G.map f) = 1 :=
+    (left_inv_eq_right_inv hleft hv_right).symm ▸ hv_right
+  calc v * G⁻¹.map f * vᴴ = v * (G⁻¹.map f * vᴴ * G.map f) * G⁻¹.map f := by
+        simp only [Matrix.mul_assoc, hGG, Matrix.mul_one]
     _ = G⁻¹.map f := by rw [hright, Matrix.one_mul]
 
 omit [StarModule ℂ A] [StarCoalgebra ℂ A] in
@@ -523,7 +358,8 @@ private theorem eq_of_posDef_schur_orthogonality {h : A →ₗ[ℂ] ℂ} (b : Ba
       mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hFt_pos.isUnit)] at hmul
     simpa using congrFun (congrFun hmul i₀) i₀
   have hα_pos : 0 < α := by
-    dsimp [α]; rw [div_eq_mul_inv]
+    dsimp [α]
+    rw [div_eq_mul_inv]
     exact mul_pos hFt'_pos.trace_pos (RCLike.inv_pos_of_pos hFt_pos.trace_pos)
   rcases mul_self_eq_one_iff.mp hα_sq with h1 | hm1
   · rw [hFt'_eq, h1, one_smul]
@@ -558,9 +394,10 @@ theorem existsUnique_posDef_schur_orthogonality_of_conjInvariant
     (hr.coefficientMatrix_mul_map_star_mul b b hu2 i k)
   -- Apply `h` entrywise to the `u.map star`-invariance identities for `G` and `G⁻¹`.
   have hCG (j l : ι) : G.trace * C j l = G j l :=
-    trace_mul_eq_of_conjTranspose_mul_mul h1 hGinv (fun p q r s ↦ by simpa using hC q s p r) j l
+    Matrix.trace_mul_eq_of_conjTranspose_mul_mul h1 hGinv
+      (fun p q r s ↦ by simpa using hC q s p r) j l
   have hDG (i k : ι) : G⁻¹.trace * D i k = G⁻¹ i k :=
-    trace_mul_eq_of_conjTranspose_mul_mul (V := (u.map star)ᴴ) h1
+    Matrix.trace_mul_eq_of_conjTranspose_mul_mul (V := (u.map star)ᴴ) h1
       (by simpa using b.map_star_mul_inv_mul_conjTranspose_of_conjInvariant hG hGinv)
       (fun p q r s ↦ by simpa using hD q s p r) i k
   -- Rescale `G` so that `(c • G).trace = (c • G)⁻¹.trace`; uniqueness follows from trace ratio.
@@ -570,19 +407,19 @@ theorem existsUnique_posDef_schur_orthogonality_of_conjInvariant
   have hFt_orth1 (i j k l : ι) :
       h (star (u i j) * u k l) = if j = l then Ft⁻¹ i k / Ft⁻¹.trace else 0 := by
     rw [hD i k j l]
-    split_ifs with hjl
+    split_ifs
     · simp [hFt_inv, eq_div_of_mul_eq hG.inv.trace_pos.ne' (mul_comm (D i k) G⁻¹.trace ▸ hDG i k),
         mul_div_mul_left _ _ (inv_ne_zero hc_ne)]
     · rfl
   have hFt_orth2 (i j k l : ι) :
       h (u i j * star (u k l)) = if i = k then Ft j l / Ft.trace else 0 := by
     rw [hC j l i k]
-    split_ifs with hik
+    split_ifs
     · simp [Ft, eq_div_of_mul_eq hG.trace_pos.ne' (mul_comm (C j l) G.trace ▸ hCG j l),
         mul_div_mul_left _ _ hc_ne]
     · rfl
-  refine ⟨Ft, ⟨hFt_pos, hFt_tr, hFt_orth1, hFt_orth2⟩, fun Ft' ⟨hp, htr, ho1, ho2⟩ ↦ ?_⟩
-  exact eq_of_posDef_schur_orthogonality b hFt_pos hFt_tr hFt_orth1 hFt_orth2 hp htr ho1 ho2
+  exact ⟨Ft, ⟨hFt_pos, hFt_tr, hFt_orth1, hFt_orth2⟩, fun Ft' ⟨hp, htr, ho1, ho2⟩ ↦
+    eq_of_posDef_schur_orthogonality b hFt_pos hFt_tr hFt_orth1 hFt_orth2 hp htr ho1 ho2⟩
 
 /-- Under the hypotheses of `existsUnique_posDef_schur_orthogonality_of_conjInvariant`, the
 functional `h` is nonnegative on `star x * x` for every `x` in the matrix-coefficient submodule of
@@ -598,7 +435,7 @@ theorem map_star_mul_self_nonneg_of_conjInvariant
     b.existsUnique_posDef_schur_orthogonality_of_conjInvariant hr h1 hu hG hGinv
   have : Nonempty ι := b.index_nonempty_of_isSimpleOrder A
   have htr_inv_nonneg : 0 ≤ (Ft⁻¹.trace)⁻¹ := (RCLike.inv_pos_of_pos hFt_pos.inv.trace_pos).le
-  obtain ⟨X, rfl⟩ := (mem_matrixCoefficientSubmodule_iff_exists_matrix b).mp hx
+  obtain ⟨X, rfl⟩ := b.mem_matrixCoefficientSubmodule_iff_exists_matrix.mp hx
   have hexp : h (star (∑ i, ∑ j, X i j • coefficientMatrix (C := A) b i j) *
       ∑ k, ∑ l, X k l • coefficientMatrix (C := A) b k l) =
       (Ft⁻¹.trace)⁻¹ * ∑ j, star (fun i ↦ X i j) ⬝ᵥ (Ft⁻¹ *ᵥ fun k ↦ X k j) := by
@@ -609,8 +446,7 @@ theorem map_star_mul_self_nonneg_of_conjInvariant
     simp only [dotProduct, mulVec, Pi.star_apply, Finset.mul_sum, div_eq_mul_inv]
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [hexp]
-  exact mul_nonneg htr_inv_nonneg
+  exact hexp ▸ mul_nonneg htr_inv_nonneg
     (Finset.sum_nonneg fun _ _ ↦ hFt_pos.inv.posSemidef.dotProduct_mulVec_nonneg _)
 
 /-- **Weighted Schur orthogonality** for a basis `b` of a simple comodule `M` whose coefficient
@@ -626,44 +462,17 @@ theorem schur_orthogonality (h : AlgebraicHaar A) (b : Basis ι ℂ M)
       (∀ i j k l,
         h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
           if i = k then Ft j l / Ft.trace else 0) := by
-  let _ : Comodule ℂ A (ι → ℂ) := conjugateMatrixComodule b
+  let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule
   let G : Matrix ι ι ℂ := haarGramMatrix h.toLinearMap (Pi.basisFun ℂ ι)
   have hG : G.PosDef :=
     posDef_haarGramMatrix (fun a ha ↦ h.map_star_mul_self_pos ha) (Pi.basisFun ℂ ι)
   have hGinv : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap ℂ A) *
       (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
-    simpa [G, coefficientMatrix_conjugateMatrixComodule] using
+    simpa [G, b.coefficientMatrix_conjugateMatrixComodule] using
       conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul h.isRightInvariantIntegral
         (Pi.basisFun ℂ ι)
   exact b.existsUnique_posDef_schur_orthogonality_of_conjInvariant h.isRightInvariantIntegral
     h.map_one hu hG hGinv
-
-/-- If `Ft` satisfies the right-handed Schur orthogonality relation for a right invariant integral
-`h`, then `Ft` is invariant under `u.map star` (so when `u` is unitary, `Ftᵀ` intertwines `u` with
-its double antipode via `Module.Basis.map_antipode_map_antipode_mul_transpose_of_conjInvariant`). -/
-theorem conjInvariant_of_schur_orthogonality {h : A →ₗ[ℂ] ℂ} (hr : h.IsRightInvariantIntegral)
-    (b : Basis ι ℂ M) {Ft : Matrix ι ι ℂ} (hFt_tr : Ft.trace ≠ 0)
-    (horth : ∀ i j k l,
-      h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
-        if i = k then Ft j l / Ft.trace else 0) :
-    ((coefficientMatrix (C := A) b).map star)ᴴ * Ft.map (algebraMap ℂ A) *
-      (coefficientMatrix (C := A) b).map star = Ft.map (algebraMap ℂ A) := by
-  have : Nonempty ι := b.index_nonempty_of_isSimpleOrder A
-  let _ : Comodule ℂ A (ι → ℂ) := conjugateMatrixComodule b
-  let G : Matrix ι ι ℂ := haarGramMatrix h (Pi.basisFun ℂ ι)
-  have hGinv : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap ℂ A) *
-      (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
-    simpa [G, coefficientMatrix_conjugateMatrixComodule] using
-      conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul hr (Pi.basisFun ℂ ι)
-  have hcard : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hmap : Ft.map (algebraMap ℂ A) =
-      (Ft.trace / (Fintype.card ι : ℂ)) • G.map (algebraMap ℂ A) := Matrix.ext fun j l ↦ by
-    have hGjl : G j l = (Fintype.card ι : ℂ) * (Ft j l / Ft.trace) := by
-      simp [G, haarGramMatrix_apply, horth]
-    simp only [Matrix.map_apply, Matrix.smul_apply, Algebra.smul_def, ← map_mul, hGjl]
-    congr 1
-    field_simp
-  rw [hmap, Matrix.mul_smul, Matrix.smul_mul, hGinv]
 
 end WeightedSchurOrthogonality
 
@@ -671,9 +480,8 @@ end Module.Basis
 
 namespace TauCeti.Comodule.IsUnitary
 
-variable {A H ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A]
-  [StarModule ℂ A] [StarCoalgebra ℂ A]
-  [NormedAddCommGroup H] [InnerProductSpace ℂ H] [FiniteDimensional ℂ H]
+variable {A H ι : Type*} [Ring A] [StarRing A] [HopfAlgebra ℂ A] [StarModule ℂ A]
+  [StarCoalgebra ℂ A] [NormedAddCommGroup H] [InnerProductSpace ℂ H] [FiniteDimensional ℂ H]
   [Comodule ℂ A H] [IsSimpleOrder (Subcomodule ℂ A H)] [Fintype ι] [DecidableEq ι]
 
 /-- **Weighted Schur orthogonality** for a finite-dimensional simple unitary comodule `H` in any

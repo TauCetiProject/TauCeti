@@ -116,7 +116,7 @@ private theorem linearMap_eq_of_sweedlerIntegral
         matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules hP1 ?_
       rw [coefficientMatrix_apply]
       exact matrixCoefficient_mem_submodule _ _
-    exact matrixCoefficientSubmodule_le_of_coefficientMatrix_mem b fun i j ↦
+    exact b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem fun i j ↦
       LinearMap.mem_eqLocus.mpr (hmat b hzero i j)
 
 /-- `sweedlerIntegral` is a left invariant integral. -/

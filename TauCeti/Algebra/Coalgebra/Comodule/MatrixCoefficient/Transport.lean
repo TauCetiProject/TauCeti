@@ -28,8 +28,8 @@ abstract finite free comodule and its coordinate presentation on `ι → R`.
 * `TauCeti.Comodule.matrixCoefficientSubmodule_transport` and
   `TauCeti.Comodule.matrixCoefficientSubalgebra_transport`: coefficient objects are
   invariant under transported coactions.
-* `TauCeti.Comodule.coefficientMatrix_map_transport` and
-  `TauCeti.Comodule.coefficientMatrix_basisFun_transport_equivFun`: coefficient matrices are
+* `LinearEquiv.coefficientMatrix_map_transport` and
+  `Module.Basis.coefficientMatrix_basisFun_transport_equivFun`: coefficient matrices are
   invariant under transporting along a linear equivalence and mapping the basis.
 
 ## References
@@ -84,7 +84,8 @@ theorem matrixCoefficientSubmodule_transport (e : M ≃ₗ[R] N₀) :
 /-- Transporting a comodule structure along a linear equivalence `e` preserves the coefficient
 matrix with respect to the mapped basis `b.map e`. -/
 @[simp]
-theorem coefficientMatrix_map_transport {ι : Type*} (e : M ≃ₗ[R] N₀) (b : Basis ι R M) :
+theorem _root_.LinearEquiv.coefficientMatrix_map_transport {ι : Type*} (e : M ≃ₗ[R] N₀)
+    (b : Basis ι R M) :
     letI : Comodule R C N₀ := Transport e
     coefficientMatrix (C := C) (b.map e) = coefficientMatrix (C := C) b := by
   let _ : Comodule R C N₀ := Transport e
@@ -98,7 +99,8 @@ theorem coefficientMatrix_map_transport {ι : Type*} (e : M ≃ₗ[R] N₀) (b :
 
 /-- Transporting a comodule along `b.equivFun` turns `b` into the standard basis `Pi.basisFun`
 with the exact same coefficient matrix. -/
-theorem coefficientMatrix_basisFun_transport_equivFun {ι : Type*} [Finite ι] (b : Basis ι R M) :
+theorem _root_.Module.Basis.coefficientMatrix_basisFun_transport_equivFun {ι : Type*} [Finite ι]
+    (b : Basis ι R M) :
     letI : Comodule R C (ι → R) := Transport b.equivFun
     coefficientMatrix (C := C) (Pi.basisFun R ι) = coefficientMatrix (C := C) b := by
   classical
@@ -107,7 +109,7 @@ theorem coefficientMatrix_basisFun_transport_equivFun {ι : Type*} [Finite ι] (
   have hmap : b.map b.equivFun = Pi.basisFun R ι := by
     ext j k
     simp [Pi.basisFun_apply, Pi.single_apply, eq_comm]
-  rw [← hmap, coefficientMatrix_map_transport]
+  rw [← hmap, b.equivFun.coefficientMatrix_map_transport]
 
 end Transport
 

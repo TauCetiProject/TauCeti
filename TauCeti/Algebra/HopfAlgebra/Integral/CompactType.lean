@@ -76,33 +76,32 @@ theorem _root_.Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet
     [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M] (b : Basis (Fin n) ℂ M)
     (hb : coefficientMatrix (C := A) b ∈ unitary (Matrix (Fin n) (Fin n) A)) (i j : Fin n) :
     coefficientMatrix (C := A) b i j ∈ unitaryCoefficientSet A :=
-  ⟨n, Transport b.equivFun, by rwa [coefficientMatrix_basisFun_transport_equivFun b],
-    i, j, by simp [coefficientMatrix_basisFun_transport_equivFun b]⟩
+  ⟨n, Transport b.equivFun, by rwa [b.coefficientMatrix_basisFun_transport_equivFun],
+    i, j, by simp [b.coefficientMatrix_basisFun_transport_equivFun]⟩
 
 section HopfStarAlgebra
 
-variable {A : Type u} [Ring A] [StarRing A] [HopfAlgebra ℂ A]
-  [StarModule ℂ A] [StarCoalgebra ℂ A]
+variable {A : Type u} [Ring A] [StarRing A] [HopfAlgebra ℂ A] [StarModule ℂ A] [StarCoalgebra ℂ A]
 
 omit [StarRing A] [StarModule ℂ A] [StarCoalgebra ℂ A] in
-private theorem finMatrix_mem_simpleCoefficientSubmodules {m : ℕ}
-    [Comodule ℂ A (Fin m → ℂ)] [IsSimpleOrder (Subcomodule ℂ A (Fin m → ℂ))] :
+private theorem finMatrix_mem_simpleCoefficientSubmodules {m : ℕ} [Comodule ℂ A (Fin m → ℂ)]
+    [IsSimpleOrder (Subcomodule ℂ A (Fin m → ℂ))] :
     matrixCoefficientSubmodule (R := ℂ) (C := A) (M := Fin m → ℂ) ∈
       simpleCoefficientSubmodules ℂ A := by
   let e : (Fin m → ℂ) ≃ₗ[ℂ] (ULift.{u} (Fin m) → ℂ) := LinearEquiv.funCongrLeft ℂ ℂ Equiv.ulift
   let _ : Comodule ℂ A (ULift.{u} (Fin m) → ℂ) := Transport e
   have : IsSimpleOrder (Subcomodule ℂ A (ULift.{u} (Fin m) → ℂ)) :=
     (Subcomodule.transportOrderIso e).symm.isSimpleOrder
-  rw [← matrixCoefficientSubmodule_transport e]
-  exact matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
+  exact matrixCoefficientSubmodule_transport (C := A) e ▸
+    matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules
 
-private theorem conjFinMatrix_mem_simpleCoefficientSubmodules {m : ℕ}
-    [Comodule ℂ A (Fin m → ℂ)] [IsSimpleOrder (Subcomodule ℂ A (Fin m → ℂ))] :
-    (letI : Comodule ℂ A (Fin m → ℂ) := conjugateMatrixComodule (A := A) (Pi.basisFun ℂ (Fin m));
+private theorem conjFinMatrix_mem_simpleCoefficientSubmodules {m : ℕ} [Comodule ℂ A (Fin m → ℂ)]
+    [IsSimpleOrder (Subcomodule ℂ A (Fin m → ℂ))] :
+    (letI : Comodule ℂ A (Fin m → ℂ) := (Pi.basisFun ℂ (Fin m)).conjugateMatrixComodule (A := A);
       matrixCoefficientSubmodule (R := ℂ) (C := A) (M := Fin m → ℂ)) ∈
         simpleCoefficientSubmodules ℂ A := by
-  have := isSimpleOrder_conjugateMatrixComodule (A := A) (Pi.basisFun ℂ (Fin m))
-  let _ : Comodule ℂ A (Fin m → ℂ) := conjugateMatrixComodule (A := A) (Pi.basisFun ℂ (Fin m))
+  have := (Pi.basisFun ℂ (Fin m)).isSimpleOrder_conjugateMatrixComodule (A := A)
+  let _ : Comodule ℂ A (Fin m → ℂ) := (Pi.basisFun ℂ (Fin m)).conjugateMatrixComodule (A := A)
   exact finMatrix_mem_simpleCoefficientSubmodules
 
 /-- If a simple unitary comodule `M` has conjugate coefficient space equal to the coefficient space
@@ -115,39 +114,35 @@ private theorem map_star_mul_self_nonneg_of_conj_unitary
     {h : A →ₗ[ℂ] ℂ} (hr : h.IsRightInvariantIntegral) (h1 : h 1 = 1)
     (b : Basis ι ℂ M) (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
     (c : Basis κ ℂ N) (hv : coefficientMatrix (C := A) c ∈ unitary (Matrix κ κ A))
-    (hconj : (letI := conjugateMatrixComodule (A := A) b;
+    (hconj : (letI := b.conjugateMatrixComodule (A := A);
       matrixCoefficientSubmodule (R := ℂ) (C := A) (M := ι → ℂ)) =
         matrixCoefficientSubmodule (R := ℂ) (C := A) (M := N))
     {x : A} (hx : x ∈ matrixCoefficientSubmodule (R := ℂ) (C := A) (M := M)) :
     0 ≤ h (star x * x) := by
-  let _ : Comodule ℂ A (ι → ℂ) := conjugateMatrixComodule (A := A) b
-  have : IsSimpleOrder (Subcomodule ℂ A (ι → ℂ)) := isSimpleOrder_conjugateMatrixComodule (A := A) b
-  obtain ⟨φ, hφ⟩ :=
-    (matrixCoefficientSubmodule_eq_iff (R := ℂ) (C := A) (M := ι → ℂ) (N := N)).mp hconj
+  let _ : Comodule ℂ A (ι → ℂ) := b.conjugateMatrixComodule (A := A)
+  have : IsSimpleOrder (Subcomodule ℂ A (ι → ℂ)) := b.isSimpleOrder_conjugateMatrixComodule (A := A)
+  obtain ⟨φ, hφ⟩ := (matrixCoefficientSubmodule_eq_iff (R := ℂ) (C := A)).mp hconj
   let T : Matrix κ ι ℂ := LinearMap.toMatrix (Pi.basisFun ℂ ι) c φ.toLinearMap
   have hTv (v : ι → ℂ) : T *ᵥ v = ⇑(c.repr (φ v)) := by
     simpa [T, funext (Pi.basisFun_repr ℂ ι v)] using
       φ.toLinearMap.toMatrix_mulVec_repr (Pi.basisFun ℂ ι) c v
-  have hT_inj : Function.Injective T.mulVec := fun v w hvw ↦
-    (φ.bijective_of_ne_zero hφ).1 <| c.repr.injective <|
-      DFunLike.coe_injective ((hTv v).symm.trans (hvw.trans (hTv w)))
+  have hT_inj : Function.Injective T.mulVec := fun v w hvw ↦ (φ.bijective_of_ne_zero hφ).1 <|
+    c.repr.injective <| DFunLike.coe_injective ((hTv v).symm.trans (hvw.trans (hTv w)))
   let G : Matrix ι ι ℂ := Tᴴ * T
   have hG : G.PosDef := Matrix.PosDef.conjTranspose_mul_self T hT_inj
   have hfv : coefficientMatrix (C := A) c * T.map (algebraMap ℂ A) =
       T.map (algebraMap ℂ A) * (coefficientMatrix (C := A) b).map star := by
-    simpa [T, coefficientMatrix_conjugateMatrixComodule] using
+    simpa [T, b.coefficientMatrix_conjugateMatrixComodule] using
       φ.coefficientMatrix_mul_toMatrix (Pi.basisFun ℂ ι) c
   have hGinv : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap ℂ A) *
       (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
+    set u := (coefficientMatrix (C := A) b).map star
     set f := algebraMap ℂ A
     have hv1 := (Matrix.mem_unitary_iff_conjTranspose.mp hv).1
     have hGf : G.map f = (T.map f)ᴴ * T.map f := by
       rw [Matrix.map_mul, Matrix.conjTranspose_map _ fun z ↦ algebraMap_star_comm z]
-    calc ((coefficientMatrix (C := A) b).map star)ᴴ * G.map f *
-          (coefficientMatrix (C := A) b).map star
-        = (T.map f * (coefficientMatrix (C := A) b).map star)ᴴ *
-            (T.map f * (coefficientMatrix (C := A) b).map star) := by
-            simp only [hGf, Matrix.conjTranspose_mul, Matrix.mul_assoc]
+    calc uᴴ * G.map f * u = (T.map f * u)ᴴ * (T.map f * u) := by
+          simp only [hGf, Matrix.conjTranspose_mul, Matrix.mul_assoc]
       _ = (T.map f)ᴴ * ((coefficientMatrix (C := A) c)ᴴ * coefficientMatrix (C := A) c) *
             T.map f := by simp only [← hfv, Matrix.conjTranspose_mul, Matrix.mul_assoc]
       _ = G.map f := by rw [hv1, Matrix.mul_one, hGf]
@@ -164,10 +159,9 @@ theorem AlgebraicHaar.span_unitaryCoefficientSet_eq_top (h : AlgebraicHaar A) :
   obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
   let _ := hM
   have : Module.Finite ℂ M := finite_of_isSimpleOrder (C := A)
-  obtain ⟨b, hb⟩ := exists_basis_coefficientMatrix_mem_unitary
-    h.isRightInvariantIntegral h.toLinearMap_ne_zero h.map_star_mul_self_nonneg
-    (Module.finBasis ℂ M)
-  exact matrixCoefficientSubmodule_le_of_coefficientMatrix_mem b fun i j ↦
+  obtain ⟨b, hb⟩ := exists_basis_coefficientMatrix_mem_unitary h.isRightInvariantIntegral
+    h.toLinearMap_ne_zero h.map_star_mul_self_nonneg (Module.finBasis ℂ M)
+  exact b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem fun i j ↦
     Submodule.subset_span (b.coefficientMatrix_mem_unitaryCoefficientSet hb i j)
 
 private def simpleUnitaryCoefficientSubmodules (A : Type u) [Ring A] [StarRing A] [Bialgebra ℂ A] :
@@ -186,21 +180,17 @@ private theorem isAtom_matrixCoefficientSubmodule_mem_simpleUnitary
   have hWUnit : IsUnitary ℂ A W := W.isUnitary hH
   let _ := convolutionModule (R := ℂ) (C := A) (M := H)
   let _ := convolutionModule (R := ℂ) (C := A) (M := W)
-  have : IsSimpleModule (WithConv (A →ₗ[ℂ] ℂ)) W :=
-    W.isSimpleModule_convolution_iff_isAtom.mpr hW
+  have : IsSimpleModule (WithConv (A →ₗ[ℂ] ℂ)) W := W.isSimpleModule_convolution_iff_isAtom.mpr hW
   have : IsSimpleOrder (Subcomodule ℂ A W) := isSimpleModule_convolution_iff.mp inferInstance
   let m := Module.finrank ℂ W
   let bW : OrthonormalBasis (Fin m) ℂ W := stdOrthonormalBasis ℂ W
-  let eW : W ≃ₗ[ℂ] (Fin m → ℂ) := bW.toBasis.equivFun
-  let _ : Comodule ℂ A (Fin m → ℂ) := Transport eW
+  let _ : Comodule ℂ A (Fin m → ℂ) := Transport bW.toBasis.equivFun
   have : IsSimpleOrder (Subcomodule ℂ A (Fin m → ℂ)) :=
-    (Subcomodule.transportOrderIso eW).symm.isSimpleOrder
-  have hcoeff_eq : matrixCoefficientSubmodule (R := ℂ) (C := A) (M := W) =
-      matrixCoefficientSubmodule (R := ℂ) (C := A) (M := Fin m → ℂ) :=
-    (matrixCoefficientSubmodule_transport eW).symm
-  refine ⟨hcoeff_eq ▸ finMatrix_mem_simpleCoefficientSubmodules,
-    m, inferInstance, inferInstance, ?_, hcoeff_eq⟩
-  rw [coefficientMatrix_basisFun_transport_equivFun bW.toBasis]
+    (Subcomodule.transportOrderIso bW.toBasis.equivFun).symm.isSimpleOrder
+  have hcoeff_eq := (matrixCoefficientSubmodule_transport (C := A) bW.toBasis.equivFun).symm
+  refine ⟨hcoeff_eq ▸ finMatrix_mem_simpleCoefficientSubmodules, m, inferInstance, inferInstance,
+    ?_, hcoeff_eq⟩
+  rw [bW.toBasis.coefficientMatrix_basisFun_transport_equivFun]
   exact hWUnit.coefficientMatrix_mem_unitary bW
 
 omit [StarCoalgebra ℂ A] in
@@ -215,12 +205,11 @@ private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
     EuclideanSpace.basisFun (Fin n) ℂ
   let fE : (Fin n → ℂ) ≃ₗ[ℂ] EuclideanSpace ℂ (Fin n) := bE.toBasis.equivFun.symm
   let _ : Comodule ℂ A (EuclideanSpace ℂ (Fin n)) := Transport fE
-  have hbE_map : (Pi.basisFun ℂ (Fin n)).map fE = bE.toBasis :=
-    DFunLike.ext _ _ fun k ↦ bE.toBasis.equivFun.injective <| funext fun l ↦ by
-      simp [fE, Pi.basisFun_apply, eq_comm]
+  have hbE_map : (Pi.basisFun ℂ (Fin n)).map fE = bE.toBasis := DFunLike.ext _ _ fun k ↦
+    bE.toBasis.equivFun.injective <| funext fun l ↦ by simp [fE, Pi.basisFun_apply, eq_comm]
   have hbE_mat : coefficientMatrix (C := A) bE.toBasis =
       coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n)) := by
-    rw [← hbE_map, coefficientMatrix_map_transport]
+    rw [← hbE_map, fE.coefficientMatrix_map_transport]
   have hUnit : IsUnitary ℂ A (EuclideanSpace ℂ (Fin n)) :=
     bE.isUnitary_comodule_iff.mpr (hbE_mat.symm ▸ hU)
   -- By complete reducibility of unitary comodules, `bE j` lies in the span of atomic subcomodules.
@@ -256,22 +245,19 @@ private theorem mem_simpleUnitaryCoefficientSubmodules_of_mem
     fun P hP ↦ ⟨hP.1, fun hPQ ↦ hQnot (Set.mem_singleton_iff.mp hPQ ▸ hP)⟩
   have htop : sSup (simpleCoefficientSubmodules ℂ A \ {Q}) = ⊤ :=
     top_unique (hSU_span ▸ sSup_le_sSup hsub)
-  have hdisj := sSupIndep_simpleCoefficientSubmodules hQ
-  rw [htop] at hdisj
+  have hdisj := htop ▸ sSupIndep_simpleCoefficientSubmodules hQ
   exact bot_notMem_simpleCoefficientSubmodules ((by simpa using hdisj.eq_bot : Q = ⊥) ▸ hQ)
 
 private theorem map_star_mul_self_nonneg_of_mem_simpleCoefficientSubmodules
     (hSU_span : sSup (simpleUnitaryCoefficientSubmodules A) = ⊤)
     {h : A →ₗ[ℂ] ℂ} (hr : h.IsRightInvariantIntegral) (h1 : h 1 = 1)
-    {P : Submodule ℂ A} (hP : P ∈ simpleCoefficientSubmodules ℂ A)
-    {x : A} (hx : x ∈ P) : 0 ≤ h (star x * x) := by
-  obtain ⟨_, m, ρ, hSimple, hUnit, rfl⟩ :=
-    mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hP
+    {P : Submodule ℂ A} (hP : P ∈ simpleCoefficientSubmodules ℂ A) {x : A} (hx : x ∈ P) :
+    0 ≤ h (star x * x) := by
+  obtain ⟨_, m, ρ, hSimple, hUnit, rfl⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hP
   let _ := ρ
   have := hSimple
-  obtain ⟨_, m', ρ', hSimple', hUnit', hEq'⟩ :=
-    mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span
-      (conjFinMatrix_mem_simpleCoefficientSubmodules (m := m))
+  obtain ⟨_, m', ρ', hSimple', hUnit', hEq'⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem
+    hSU_span (conjFinMatrix_mem_simpleCoefficientSubmodules (m := m))
   let _ := ρ'
   have := hSimple'
   exact map_star_mul_self_nonneg_of_conj_unitary hr h1
@@ -285,15 +271,13 @@ private theorem map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules_ne
     {x y : A} (hx : x ∈ P) (hy : y ∈ Q) : h (star x * y) = 0 := by
   obtain ⟨_, m, ρ, hSimpleP, hUnitP, rfl⟩ :=
     mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hP
-  obtain ⟨_, n, σ, hSimpleQ, _, rfl⟩ :=
-    mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hQ
+  obtain ⟨_, n, σ, hSimpleQ, _, rfl⟩ := mem_simpleUnitaryCoefficientSubmodules_of_mem hSU_span hQ
   let _ := ρ
   have := hSimpleP
   let _ := σ
   have := hSimpleQ
-  have hHom (g : Hom ℂ A (Fin n → ℂ) (Fin m → ℂ)) : g = 0 := by
-    by_contra hg
-    exact hPQ (matrixCoefficientSubmodule_eq_of_ne_zero hg).symm
+  have hHom (g : Hom ℂ A (Fin n → ℂ) (Fin m → ℂ)) : g = 0 :=
+    by_contra fun hg ↦ hPQ (matrixCoefficientSubmodule_eq_of_ne_zero hg).symm
   exact hr.map_star_mul_eq_zero_of_mem_matrixCoefficientSubmodule
     (Pi.basisFun ℂ (Fin m)) (Pi.basisFun ℂ (Fin n))
     (Matrix.mem_unitary_iff_conjTranspose.mp hUnitP).2 hHom hx hy

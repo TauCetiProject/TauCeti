@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Basic
+public import Mathlib.Algebra.Star.Module
+public import Mathlib.Algebra.Star.Pi
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.StdBasis
 
@@ -148,25 +149,19 @@ variable {ι R M : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid M] [Modul
 
 /-- The conjugate-linear equivalence `M ≃ₛₗ[starRingEnd R] (ι → R)` sending a vector to the
 entrywise conjugate of its coordinate tuple in the basis `b`, dual to `Module.Basis.equivFun`. -/
-def conjEquivFun [Finite ι] (b : Basis ι R M) : M ≃ₛₗ[starRingEnd R] (ι → R) where
-  toFun m i := star (b.repr m i)
-  invFun x := b.repr.symm (Finsupp.equivFunOnFinite.symm (star x))
-  left_inv m := by
-    rw [← b.repr.symm_apply_apply m]
-    exact congrArg b.repr.symm (Finsupp.ext fun _ ↦ by simp)
-  right_inv x := funext fun _ ↦ by simp
-  map_add' x y := funext fun _ ↦ by simp
-  map_smul' r x := funext fun _ ↦ by simp [starRingEnd_apply]
+def conjEquivFun [Finite ι] (b : Basis ι R M) : M ≃ₛₗ[starRingEnd R] (ι → R) :=
+  b.equivFun.trans (starLinearEquiv R)
 
 /-- Evaluating `b.conjEquivFun` at a vector returns its conjugated coordinate tuple. -/
 @[simp]
 theorem conjEquivFun_apply [Finite ι] (b : Basis ι R M) (m : M) (i : ι) :
-    b.conjEquivFun m i = star (b.repr m i) := (rfl)
+    b.conjEquivFun m i = star (b.repr m i) := by
+  rfl
 
 /-- Evaluating `b.conjEquivFun.symm` reconstructs a vector from conjugated coordinates. -/
 theorem conjEquivFun_symm_apply [Fintype ι] (b : Basis ι R M) (x : ι → R) :
     b.conjEquivFun.symm x = ∑ i, star (x i) • b i := by
-  simp [conjEquivFun, repr_symm_apply, Finsupp.linearCombination_apply, Finsupp.sum_fintype]
+  simp [conjEquivFun, equivFun_symm_apply]
 
 /-- `b.conjEquivFun` sends the `j`-th basis vector to the `j`-th standard basis vector. -/
 @[simp]

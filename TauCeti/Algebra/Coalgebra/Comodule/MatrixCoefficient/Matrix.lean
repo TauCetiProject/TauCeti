@@ -32,8 +32,8 @@ character of the represented group: the determinant character of the comodule.
   along the coalgebra morphism.
 * `TauCeti.Comodule.coact_basis_eq_sum_coefficientMatrix`: the coaction of a basis vector is the
   corresponding column of the coefficient matrix.
-* `TauCeti.Comodule.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem` and
-  `TauCeti.Comodule.mem_matrixCoefficientSubmodule_iff_exists_matrix`: span and linear-combination
+* `Module.Basis.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem` and
+  `Module.Basis.mem_matrixCoefficientSubmodule_iff_exists_matrix`: span and linear-combination
   characterizations of the matrix-coefficient submodule via entries of `coefficientMatrix`.
 * `TauCeti.Comodule.comul_coefficientMatrix_eq_sum` and
   `TauCeti.Comodule.counit_coefficientMatrix`: the coalgebra identities.
@@ -110,8 +110,8 @@ theorem counit_coefficientMatrix [DecidableEq ι] (b : Basis ι R M) (i j : ι) 
 
 /-- A submodule containing every entry of `coefficientMatrix b` contains the entire
 matrix-coefficient submodule. -/
-theorem matrixCoefficientSubmodule_le_of_coefficientMatrix_mem [Finite ι] (b : Basis ι R M)
-    {P : Submodule R C} (h : ∀ i j, coefficientMatrix (C := C) b i j ∈ P) :
+theorem _root_.Module.Basis.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem [Finite ι]
+    (b : Basis ι R M) {P : Submodule R C} (h : ∀ i j, coefficientMatrix (C := C) b i j ∈ P) :
     matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ P := by
   cases nonempty_fintype ι
   refine matrixCoefficientSubmodule_le fun φ m ↦ ?_
@@ -137,8 +137,8 @@ theorem coact_basis_eq_sum_coefficientMatrix (b : Basis ι R M) (j : ι) :
 
 /-- An element of `C` belongs to the matrix-coefficient submodule of a comodule with finite basis
 `b` precisely when it is an `R`-linear combination of entries of `coefficientMatrix b`. -/
-theorem mem_matrixCoefficientSubmodule_iff_exists_matrix (b : Basis ι R M) {x : C} :
-    x ∈ matrixCoefficientSubmodule (R := R) (C := C) (M := M) ↔
+theorem _root_.Module.Basis.mem_matrixCoefficientSubmodule_iff_exists_matrix (b : Basis ι R M)
+    {x : C} : x ∈ matrixCoefficientSubmodule (R := R) (C := C) (M := M) ↔
       ∃ X : Matrix ι ι R, x = ∑ i, ∑ j, X i j • coefficientMatrix (C := C) b i j := by
   classical
   let L : Matrix ι ι R →ₗ[R] C :=
@@ -148,7 +148,7 @@ theorem mem_matrixCoefficientSubmodule_iff_exists_matrix (b : Basis ι R M) {x :
         simp only [Matrix.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply, Finset.smul_sum] }
   constructor
   · intro hx
-    obtain ⟨X, rfl⟩ := matrixCoefficientSubmodule_le_of_coefficientMatrix_mem b
+    obtain ⟨X, rfl⟩ := b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem
       (P := LinearMap.range L)
       (fun i j ↦ ⟨Matrix.of fun p q ↦ if p = i ∧ q = j then 1 else 0, by simp [L, ite_and]⟩) hx
     exact ⟨X, rfl⟩
