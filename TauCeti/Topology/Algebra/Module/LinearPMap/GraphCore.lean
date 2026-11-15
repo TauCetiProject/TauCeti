@@ -6,6 +6,7 @@ Authors: Jon Crall
 module
 
 public import Mathlib.Topology.Algebra.Module.LinearPMap
+import Mathlib.Topology.Sequences
 
 /-!
 # Closed-graph limits for partial linear maps
@@ -15,7 +16,9 @@ Mathlib's `LinearPMap.HasCore` is the canonical abstraction for graph cores:
 recovers `A`. No second graph-core predicate is needed.
 
 A closed graph contains the limit of a domain-valued net whenever the vectors
-and their images both converge along a nontrivial filter. Dually, a closed set
+and their images both converge along a nontrivial filter. On first-countable spaces
+sequences suffice, and this sequential condition characterises closed partial maps,
+`LinearPMap.isClosed_iff_forall_tendsto`. Dually, a closed set
 containing the graph of the restriction of a partial map to a core contains its
 whole graph, `LinearPMap.HasCore.graph_subset_of_isClosed`. For a closed partial map
 this characterises cores: a submodule of its domain is a core exactly when the closure of
@@ -51,6 +54,21 @@ theorem IsClosed.mem_domain_of_tendsto
   have h := hA.mem_of_tendsto (hlim.prodMk_nhds hAlim)
     (.of_forall fun i => A.mem_graph ⟨u i, hu i⟩)
   exact ⟨mem_domain_of_mem_graph h, ((image_iff _).2 h).symm⟩
+
+/-- **The sequential closed-graph criterion.** On first-countable spaces, a partial map `A` is
+closed if and only if, whenever domain vectors `u n` converge to `x` and their images `A (u n)`
+converge to `y`, the limit `x` lies in the domain of `A` and `A x = y`. -/
+theorem isClosed_iff_forall_tendsto [FirstCountableTopology E] [FirstCountableTopology F]
+    {A : E →ₗ.[R] F} :
+    A.IsClosed ↔ ∀ (u : ℕ → A.domain) (x : E) (y : F),
+      Tendsto (fun n => (u n : E)) atTop (𝓝 x) → Tendsto (fun n => A (u n)) atTop (𝓝 y) →
+        ∃ h : x ∈ A.domain, A ⟨x, h⟩ = y := by
+  refine ⟨fun hA u x y hx hy => hA.mem_domain_of_tendsto (fun n => (u n).2) hx hy, fun h => ?_⟩
+  refine IsSeqClosed.isClosed fun z p hz hp => ?_
+  choose u hu₁ hu₂ using fun n => A.mem_graph_iff.mp (hz n)
+  obtain ⟨hp₁, hp₂⟩ := h u p.1 p.2 (by simpa only [hu₁] using hp.fst_nhds)
+    (by simpa only [hu₂] using hp.snd_nhds)
+  exact A.mem_graph_iff.mpr ⟨⟨p.1, hp₁⟩, rfl, hp₂⟩
 
 variable [ContinuousAdd E] [ContinuousAdd F]
 variable [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]
