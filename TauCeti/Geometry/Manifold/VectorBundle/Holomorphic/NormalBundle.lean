@@ -17,61 +17,23 @@ import TauCeti.LinearAlgebra.Complex.Module
 /-!
 # Normal line bundles of complex hypersurfaces and the real-hypersurface obstruction
 
-Let `i : Z → M` be an embedded complex submanifold of complex codimension one
-(`Module.finrank ℂ EZ + 1 = Module.finrank ℂ EM`) between complex manifolds modelled on
-finite-dimensional complex spaces `EZ` and `EM`.
-
-By the general subbundle and transverse-chart theory developed in
-`TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.TangentSubbundle` and
-`TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Transverse`:
-* `tangentMap 𝓘(ℂ, EZ) 𝓘(ℂ, EM) i` is injective (`SmoothEmbedding.tangentMap_injective`) and
-  restricts on each fibre to the complex-linear derivative `mfderiv 𝓘(ℂ, EZ) 𝓘(ℂ, EM) i z`;
-* its image `i.pullbackTangentRange` is a holomorphic (`C^∞`, and indeed `C^ω`) complex vector
-  subbundle of `i* TM` biholomorphic to `TZ`
-  (`SmoothEmbedding.tangentBundleDiffeomorphTangentRange`);
-* the quotient `z ↦ i.NormalSpace z` (`i* TM / TZ`) is a rank-one complex vector bundle
-  (`SmoothEmbedding.finrank_normalSpace_of_codim_one`), equipped with local trivializations built
-  from transverse holomorphic charts whose scalar transition cocycle reconstructs a bundle
-  biholomorphic to `i.NormalSpace` (`SmoothEmbedding.transverseNormalCoreDiffeomorph`).
-
-This file establishes the phenomena specific to complex geometry that distinguish holomorphic
-hypersurfaces from smooth submanifolds over `ℝ` or general fields:
-
-1. **Holomorphic automatic-regularity upgrades (`MDifferentiable.isImmersion_of_injective_mfderiv`,
-   `SmoothEmbedding.ofMDifferentiable`, `SmoothEmbedding.ofComplexNeZero`).** Because complex
-   differentiability implies complex analyticity in finite dimensions, any holomorphic
-   (`MDifferentiable`) topological embedding with injective complex differential is automatically a
-   `C^n` embedding for *every* `n : ℕ∞ω` (including `∞` and `ω`), and any `C^m₀` (`m₀ ≠ 0`) complex
-   hypersurface promotes to `C^ω`, making its tangent subbundle, normal line bundle, scalar
-   transition cocycle, and cocycle-comparison isomorphism complex-analytic as well as holomorphic.
-2. **Holomorphic local defining equations for closed complex hypersurfaces
-   (`SmoothEmbedding.isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero`).** An embedded
-   complex hypersurface `i : Z → M` has closed image in `M` if and only if around every ambient
-   point `y₀ : M` there is an open neighbourhood `S` and a holomorphic (`MDifferentiableOn`) scalar
-   function `g : M → ℂ` cutting out `Set.range i` on `S` with nonvanishing differential
-   `mvfderiv 𝓘(ℂ, EM) g y ≠ 0` along `S ∩ Set.range i`.
-3. **Failure for merely real-smooth hypersurfaces
-   (`SmoothEmbedding.not_forall_ofComplexManifold_mem_tangentRange`,
-   `SmoothEmbedding.isEmpty_almostComplexStructure_normalSpace`, `TauCeti.realAxisEmbedding`).**
-   For *every* real-smooth hypersurface `f : H → M` of real codimension one
-   (`Module.finrank ℝ EH + 1 = Module.finrank ℝ EM`) in a complex manifold `M`, at every point
-   `x : H`:
-   * the tangent image `f.tangentRange x hn` has odd real dimension `2 dim_ℂ EM - 1` and therefore
-     is never preserved by `SmoothAlmostComplexStructure.ofComplexManifold`;
-   * the normal fibre `f.NormalSpace x hn` has real dimension `1`, hence admits no almost complex
-     structure and no `ℝ`-compatible `ℂ`-module structure.
-   The closed real axis `TauCeti.realAxisEmbedding : ℝ → ℂ` (`x ↦ (x : ℂ)`) witnesses that these
-   obstructions occur already for a closed real-analytic hypersurface in `ℂ`.
-
-No formal source is vendored from Mathlib PRs; all constructions build directly on Tau Ceti's
-complex-analytic manifold, immersion, normal-bundle, and almost-complex dimension libraries.
+For an embedded complex submanifold `i : Z → M` of complex codimension one
+(`Module.finrank ℂ EZ + 1 = Module.finrank ℂ EM`), `TangentSubbundle` and `Transverse` make
+`tangentMap 𝓘(ℂ, EZ) 𝓘(ℂ, EM) i` complex-linear and injective, realize `i.pullbackTangentRange` as
+a holomorphic (`C^∞`, indeed `C^ω`) vector subbundle of `i* TM` biholomorphic to `TZ`, and identify
+the rank-one quotient `i* TM / TZ` (`i.NormalSpace`) with the scalar transition-cocycle model built
+from transverse complex charts. This file proves automatic `C^n` (`∞`, `ω`) upgrades for
+holomorphic embeddings (`MDifferentiable.isImmersion_of_injective_mfderiv`,
+`SmoothEmbedding.ofMDifferentiable`), characterizes closedness by holomorphic local defining
+equations (`isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero`), establishes `C^ω`
+regularity of the scalar cocycle (`contMDiffOn_omega_transverseNormalCore_coordChange_one`), and
+proves that no real-codimension-one smooth hypersurface (such as `TauCeti.realAxisEmbedding`) has
+`J`-invariant tangent spaces or a compatible `ℂ`-module structure on its normal fibres.
 
 ## References
 
-* Daniel Huybrechts, *Complex Geometry: An Introduction*, Springer, 2005, Proposition 2.1.11 and
-  Section 2.2.
-* Phillip Griffiths and Joseph Harris, *Principles of Algebraic Geometry*, Wiley, 1978, Chapter 0,
-  Section 1 and Chapter 1, Section 1.
+* Daniel Huybrechts, *Complex Geometry: An Introduction*, Springer, 2005, §§2.1–2.2.
+* Phillip Griffiths and Joseph Harris, *Principles of Algebraic Geometry*, Wiley, 1978, Ch. 0–1.
 -/
 
 public noncomputable section
@@ -80,8 +42,6 @@ open Set Function Bundle Topology Manifold
 open scoped Manifold ContDiff TauCeti.ComplexManifold
 
 namespace TauCeti
-
-/-! ### Holomorphic immersions and automatic `C^∞` / `C^ω` upgrades -/
 
 section HolomorphicUpgrade
 
@@ -102,8 +62,8 @@ theorem _root_.MDifferentiable.isImmersion_of_injective_mfderiv
   have : IsManifold I (max n 1) M := IsManifold.of_ne_zero (max n 1) one_ne_zero inferInstance
   have : IsManifold J (max n 1) N := IsManifold.of_ne_zero (max n 1) one_ne_zero inferInstance
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-  exact ((hf.contMDiff (n := max n 1)).isImmersion_of_injective_mfderiv (le_max_right n 1) hdf
-    ).of_le (le_max_left n 1)
+  exact ((hf.contMDiff (n := max n 1)).isImmersion_of_injective_mfderiv (le_max_right n 1)
+    hdf).of_le (le_max_left n 1)
 
 /-- A holomorphic topological embedding between `C¹` complex manifolds with injective complex
 differential everywhere is a `C^n` smooth embedding for every `n : ℕ∞ω` (`∞` and `ω` included). -/
@@ -172,8 +132,6 @@ end SmoothEmbedding
 
 end HolomorphicUpgrade
 
-/-! ### Closed complex hypersurfaces and holomorphic defining equations -/
-
 namespace SmoothEmbedding
 
 section ComplexHypersurface
@@ -199,15 +157,14 @@ theorem isClosed_range_iff_forall_exists_mdifferentiableOn_eq_zero
         MDifferentiableOn 𝓘(ℂ, EM) 𝓘(ℂ) g S ∧
         (∀ y ∈ S, y ∈ Set.range i ↔ g y = 0) ∧
         ∀ y ∈ S ∩ Set.range i, mvfderiv 𝓘(ℂ, EM) g y ≠ 0 := by
-  have hdim : Module.finrank ℂ ℂ = Module.finrank ℂ EM - Module.finrank ℂ EZ :=
-    finrank_self_eq_sub_of_codim_one hcodim
-  rw [i.isClosed_range_iff_forall_exists_transverse_zero (by simp) hdim]
-  refine forall_congr' fun y₀ ↦ exists_congr fun S ↦ and_congr_right fun hS ↦
-    and_congr_right fun _ ↦ exists_congr fun g ↦ ?_
   have : IsManifold 𝓘(ℂ, EM) 1 M := IsManifold.of_ne_zero 1 (by simp : (∞ : ℕ∞ω) ≠ 0) inferInstance
-  refine and_congr (TauCeti.contMDiffOn_iff_mdifferentiableOn (by simp : (∞ : ℕ∞ω) ≠ 0) hS)
-    (and_congr_right fun _ ↦ forall_congr' fun y ↦ forall_congr' fun _ ↦
-      TauCeti.isRegularPoint_iff_mvfderiv_ne_zero)
+  rw [i.isClosed_range_iff_forall_exists_transverse_zero (by simp)
+    (finrank_self_eq_sub_of_codim_one hcodim)]
+  exact forall_congr' fun _ ↦ exists_congr fun S ↦ and_congr_right fun hS ↦
+    and_congr_right fun _ ↦ exists_congr fun _ ↦ and_congr
+      (TauCeti.contMDiffOn_iff_mdifferentiableOn (by simp : (∞ : ℕ∞ω) ≠ 0) hS)
+      (and_congr_right fun _ ↦ forall_congr' fun _ ↦ forall_congr' fun _ ↦
+        TauCeti.isRegularPoint_iff_mvfderiv_ne_zero)
 
 /-- **Holomorphicity (`MDifferentiableOn`) and complex analyticity (`C^ω`) of the scalar transition
 cocycle of a complex hypersurface.** On every overlap of transverse complex charts of `i`, the
@@ -228,16 +185,12 @@ theorem contMDiffOn_omega_transverseNormalCore_coordChange_one
   have : IsManifold 𝓘(ℂ, EZ) 1 Z :=
     IsManifold.of_ne_zero 1 (by simp : (∞ : ℕ∞ω) ≠ 0) ‹IsManifold 𝓘(ℂ, EZ) ∞ Z›
   intro hdim
-  have hopen : IsOpen (i ⁻¹' i.transverseAmbSet (m := ∞) (by simp) hdim z₀ ∩
-      i ⁻¹' i.transverseAmbSet (m := ∞) (by simp) hdim z₁) :=
-    ((i.isOpen_transverseAmbSet (by simp) hdim z₀).preimage (map_continuous i)).inter
-      ((i.isOpen_transverseAmbSet (by simp) hdim z₁).preimage (map_continuous i))
   exact ((i.contMDiffOn_transverseNormalCore_coordChange_one (m := ∞) (by simp) (by simp) hdim
-    z₀ z₁).mdifferentiableOn (by simp)).contMDiffOn hopen
+    z₀ z₁).mdifferentiableOn (by simp)).contMDiffOn
+    (((i.isOpen_transverseAmbSet (by simp) hdim z₀).preimage (map_continuous i)).inter
+      ((i.isOpen_transverseAmbSet (by simp) hdim z₁).preimage (map_continuous i)))
 
 end ComplexHypersurface
-
-/-! ### Obstructions for merely real-smooth hypersurfaces in complex manifolds -/
 
 section RealHypersurfaceObstruction
 
@@ -260,19 +213,11 @@ theorem not_forall_ofComplexManifold_mem_tangentRange [IsManifold 𝓘(ℂ, EM) 
       SmoothAlmostComplexStructure.ofComplexManifold EM M (f x) v ∈ f.tangentRange x hn := by
   intro hinv
   let Jx := (SmoothAlmostComplexStructure.ofComplexManifold EM M).almostComplexStructureAt (f x)
-  have heven_sub : Even (Module.finrank ℝ (f.tangentRange x hn)) :=
-    Jx.even_finrank_of_forall_mem fun v hv ↦ by
-      rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-      exact hinv v hv
-  have heven_amb : Even (Module.finrank ℝ (TangentSpace 𝓘(ℝ, EM) (f x))) :=
-    Jx.even_finrank_real
-  have hsub : Module.finrank ℝ (f.tangentRange x hn) = Module.finrank ℝ EH :=
-    LinearMap.finrank_range_of_inj (f.isImmersion.mfderiv_injective hn x)
-  have hamb : Module.finrank ℝ (TangentSpace 𝓘(ℝ, EM) (f x)) = Module.finrank ℝ EM := rfl
-  rw [hsub] at heven_sub
-  rw [hamb] at heven_amb
-  obtain ⟨a, ha⟩ := heven_sub
-  obtain ⟨b, hb⟩ := heven_amb
+  obtain ⟨a, ha⟩ : Even (Module.finrank ℝ EH) :=
+    LinearMap.finrank_range_of_inj (f.isImmersion.mfderiv_injective hn x) ▸
+      Jx.even_finrank_of_forall_mem fun v hv ↦ by
+        rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]; exact hinv v hv
+  obtain ⟨b, hb⟩ : Even (Module.finrank ℝ EM) := Jx.even_finrank_real
   omega
 
 /-- **The normal space of a real-smooth hypersurface admits no almost complex structure.** For any
@@ -282,10 +227,9 @@ theorem not_forall_ofComplexManifold_mem_tangentRange [IsManifold 𝓘(ℂ, EM) 
 theorem isEmpty_almostComplexStructure_normalSpace [FiniteDimensional ℂ EM] {n : ℕ∞ω}
     (f : SmoothEmbedding 𝓘(ℝ, EH) 𝓘(ℝ, EM) n H M) (hn : n ≠ 0)
     (hcodim : Module.finrank ℝ EH + 1 = Module.finrank ℝ EM) (x : H) :
-    IsEmpty (AlmostComplexStructure (f.NormalSpace x hn)) := by
-  apply AlmostComplexStructure.isEmpty_of_odd_finrank
-  rw [f.finrank_normalSpace_of_codim_one hn hcodim x]
-  exact odd_one
+    IsEmpty (AlmostComplexStructure (f.NormalSpace x hn)) :=
+  AlmostComplexStructure.isEmpty_of_odd_finrank
+    (f.finrank_normalSpace_of_codim_one hn hcodim x ▸ odd_one)
 
 /-- **The normal space of a real-smooth hypersurface admits no compatible `ℂ`-module structure.**
 In particular, the quotient bundle `f* TM / TH` of a real-smooth hypersurface cannot be given any
@@ -306,8 +250,6 @@ end RealHypersurfaceObstruction
 
 end SmoothEmbedding
 
-/-! ### Concrete counterexample: the closed real axis `ℝ ↪ ℂ` -/
-
 /-- The inclusion `x ↦ (x : ℂ)` of the real axis into the complex plane as a `C^∞` closed real
 hypersurface embedding. -/
 def realAxisEmbedding : SmoothEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) ∞ ℝ ℂ :=
@@ -316,18 +258,15 @@ def realAxisEmbedding : SmoothEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) ∞ ℝ �
 
 @[simp]
 theorem realAxisEmbedding_apply (x : ℝ) : realAxisEmbedding x = (x : ℂ) := by
-  rw [realAxisEmbedding.eq_def, SmoothEmbedding.ofIsSmoothEmbedding_apply]
-  rfl
+  rw [realAxisEmbedding.eq_def, SmoothEmbedding.ofIsSmoothEmbedding_apply]; rfl
 
 /-- `realAxisEmbedding` has closed image `{z : ℂ | z.im = 0}` in `ℂ`. -/
 theorem isClosed_range_realAxisEmbedding : IsClosed (Set.range realAxisEmbedding) := by
-  have hrange : Set.range realAxisEmbedding = {z : ℂ | z.im = 0} := by
-    ext z
-    simp only [Set.mem_range, realAxisEmbedding_apply, Set.mem_ofPred_eq]
-    exact ⟨fun ⟨x, hx⟩ ↦ hx ▸ Complex.ofReal_im x,
-      fun hz ↦ ⟨z.re, Complex.ext rfl hz.symm⟩⟩
-  rw [hrange]
-  exact isClosed_eq Complex.continuous_im continuous_const
+  suffices Set.range realAxisEmbedding = {z : ℂ | z.im = 0} by
+    exact this ▸ isClosed_eq Complex.continuous_im continuous_const
+  ext z
+  simp only [Set.mem_range, realAxisEmbedding_apply, Set.mem_ofPred_eq]
+  exact ⟨fun ⟨x, hx⟩ ↦ hx ▸ Complex.ofReal_im x, fun hz ↦ ⟨z.re, Complex.ext rfl hz.symm⟩⟩
 
 /-- `realAxisEmbedding` has real codimension one in `ℂ`. -/
 theorem finrank_real_codim_realAxisEmbedding :
@@ -342,27 +281,22 @@ theorem one_mem_and_I_notMem_tangentRange_realAxisEmbedding (x : ℝ) :
         realAxisEmbedding.tangentRange x (by simp) ∧
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)).symm Complex.I ∉
         realAxisEmbedding.tangentRange x (by simp) := by
-  have hcoe : (realAxisEmbedding : ℝ → ℂ) = Complex.ofRealCLM := by
-    ext t; exact realAxisEmbedding_apply t
-  have hmf : ∀ v : TangentSpace 𝓘(ℝ, ℝ) x,
+  have hcoe : (realAxisEmbedding : ℝ → ℂ) = Complex.ofRealCLM := funext realAxisEmbedding_apply
+  have hmf (v : TangentSpace 𝓘(ℝ, ℝ) x) :
       NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)
         (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) realAxisEmbedding x v) =
       Complex.ofRealCLM (NormedSpace.fromTangentSpace (𝕜 := ℝ) x v) := by
-    intro v
-    rw [hcoe, mfderiv_eq_fderiv, Complex.ofRealCLM.fderiv]
-    rfl
-  constructor
-  · rw [SmoothEmbedding.mem_tangentRange_iff]
-    refine ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm (1 : ℝ), ?_⟩
-    apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)).injective
-    rw [hmf, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+    rw [hcoe, mfderiv_eq_fderiv, Complex.ofRealCLM.fderiv]; rfl
+  refine ⟨(realAxisEmbedding.mem_tangentRange_iff x _ _).2
+    ⟨(NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm (1 : ℝ),
+      (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)).injective ?_⟩,
+    fun hI ↦ ?_⟩
+  · rw [hmf, ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
     exact Complex.ofReal_one
-  · rw [SmoothEmbedding.mem_tangentRange_iff]
-    rintro ⟨v, hv⟩
+  · obtain ⟨v, hv⟩ := (realAxisEmbedding.mem_tangentRange_iff x _ _).1 hI
     have hv' := congrArg (NormedSpace.fromTangentSpace (𝕜 := ℝ) (realAxisEmbedding x)) hv
     rw [hmf, ContinuousLinearEquiv.apply_symm_apply] at hv'
-    have him := congrArg Complex.im hv'
-    simp at him
+    simpa using congrArg Complex.im hv'
 
 /-- The closed real-smooth hypersurface `realAxisEmbedding : ℝ → ℂ` neither has `J`-invariant
 tangent spaces nor admits any compatible `ℂ`-module structure on its normal fibres. -/

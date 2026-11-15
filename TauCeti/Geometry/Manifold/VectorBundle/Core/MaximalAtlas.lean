@@ -11,37 +11,20 @@ public import TauCeti.Geometry.Manifold.VectorBundle.MaximalAtlas
 /-!
 # Transition-cocycle cores from covering families in the maximal atlas
 
-Let `E → B` be a `C^n` vector bundle with model fibre `F` over a base manifold modelled on `IB`,
-and let `e : ι → Trivialization F (π F E)` be a family of linear trivializations in the maximal
-atlas `(contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E)` together with a point
-selector `idx : B → ι` satisfying `b ∈ (e (idx b)).baseSet` for every `b : B`.
-
-Their pairwise coordinate changes `(e i).coordChangeL 𝕜 (e j)` satisfy the cocycle identities on
-triple overlaps and are `C^n` on pairwise overlaps by
-`Bundle.Trivialization.contMDiffOn_coordChangeL_of_mem_maximalAtlas`, so they assemble into a
-`C^n` transition-cocycle core `VectorBundleCore.ofMaximalAtlas`. Reconstructing a vector bundle
-from this transition cocycle recovers `E` up to canonical `C^n` bundle diffeomorphism:
-
-* `VectorBundleCore.isContMDiff_ofMaximalAtlas`: the transition cocycle is `C^n`, making the
-  reconstructed bundle a `ContMDiffVectorBundle n`;
-* `VectorBundleCore.ofMaximalAtlasFiberEquiv`: the fibrewise continuous linear equivalence
-  `(ofMaximalAtlas ...).Fiber b ≃L[𝕜] E b` sending `v` to `(e (idx b)).symm b v`;
-* `VectorBundleCore.ofMaximalAtlasDiffeomorph`: the `C^n` diffeomorphism of total spaces covering
-  the identity on `B` and intertwining `(ofMaximalAtlas ...).localTriv i` with `e i` over
-  `(e i).baseSet` (`VectorBundleCore.apply_ofMaximalAtlasDiffeomorph`).
-
-Unlike `TauCeti.pointIndexedCore`, which uses the bundle's preferred `trivializationAt` and only
-produces a homeomorphism of total spaces, this construction accepts any covering family in the
-`C^n` maximal atlas (such as transverse defining-equation charts of a normal bundle) and upgrades
-the comparison to a `C^n` bundle diffeomorphism without finite-dimensionality or completeness
-assumptions.
+Given a `C^n` vector bundle `E → B` with model fibre `F` over `IB`, a family
+`e : ι → Trivialization F (π F E)` of linear trivializations in
+`(contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E)`, and a point selector
+`idx : B → ι` satisfying `b ∈ (e (idx b)).baseSet`, the pairwise coordinate changes
+`(e i).coordChangeL 𝕜 (e j)` assemble into a `C^n` transition-cocycle core
+`VectorBundleCore.ofMaximalAtlas`. Reconstructing a vector bundle from this cocycle recovers `E` up
+to a canonical `C^n` bundle diffeomorphism `VectorBundleCore.ofMaximalAtlasDiffeomorph` covering the
+identity on `B` via `VectorBundleCore.ofMaximalAtlasFiberEquiv` on every fibre and intertwining
+`(ofMaximalAtlas ...).localTriv i` with `e i` (`VectorBundleCore.apply_ofMaximalAtlasDiffeomorph`).
 
 ## References
 
-* Norman Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, Part I,
-  §§2–3 (equivalence of coordinate bundles and reconstruction from coordinate transformations).
-* Daniel Huybrechts, *Complex Geometry: An Introduction*, Springer, 2005, Section 2.2
-  (holomorphic vector bundles from transition cocycles).
+* Norman Steenrod, *The Topology of Fibre Bundles*, Princeton University Press, 1951, §§2–3.
+* Daniel Huybrechts, *Complex Geometry: An Introduction*, Springer, 2005, Section 2.2.
 -/
 
 public noncomputable section
@@ -56,12 +39,8 @@ variable {𝕜 B F EB HB ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB] [ChartedSpace HB B]
   {IB : ModelWithCorners 𝕜 EB HB} {n : ℕ∞ω}
   {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-  [∀ b, TopologicalSpace (E b)] [TopologicalSpace (TotalSpace F E)]
-  [FiberBundle F E]
-
-section Core
-
-variable (e : ι → Trivialization F (π F E)) [∀ i, (e i).IsLinear 𝕜]
+  [∀ b, TopologicalSpace (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+  (e : ι → Trivialization F (π F E)) [∀ i, (e i).IsLinear 𝕜]
   (he : ∀ i, (e i).toOpenPartialHomeomorph ∈
     (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E))
   (idx : B → ι) (hidx : ∀ b, b ∈ (e (idx b)).baseSet)
@@ -90,53 +69,40 @@ def ofMaximalAtlas : VectorBundleCore 𝕜 B F ι where
 
 @[simp]
 theorem ofMaximalAtlas_localTriv_baseSet (i : ι) :
-    ((ofMaximalAtlas e he idx hidx).localTriv i).baseSet = (e i).baseSet := by
-  rfl
+    ((ofMaximalAtlas e he idx hidx).localTriv i).baseSet = (e i).baseSet := by rfl
 
 @[simp]
-theorem ofMaximalAtlas_indexAt (b : B) :
-    (ofMaximalAtlas e he idx hidx).indexAt b = idx b := by
-  rfl
+theorem ofMaximalAtlas_indexAt (b : B) : (ofMaximalAtlas e he idx hidx).indexAt b = idx b := by rfl
 
 @[simp]
 theorem ofMaximalAtlas_coordChange (i j : ι) (b : B) :
     (ofMaximalAtlas e he idx hidx).coordChange i j b =
-      ((e i).coordChangeL 𝕜 (e j) b : F →L[𝕜] F) := by
-  rfl
+      ((e i).coordChangeL 𝕜 (e j) b : F →L[𝕜] F) := by rfl
 
 /-- The transition cocycle of `ofMaximalAtlas` is `C^n`. -/
-instance isContMDiff_ofMaximalAtlas :
-    (ofMaximalAtlas e he idx hidx).IsContMDiff IB n where
+instance isContMDiff_ofMaximalAtlas : (ofMaximalAtlas e he idx hidx).IsContMDiff IB n where
   contMDiffOn_coordChange i j :=
     Trivialization.contMDiffOn_coordChangeL_of_mem_maximalAtlas (he i) (he j)
 
 /-- The continuous linear equivalence identifying the reconstructed fibre of `ofMaximalAtlas` at
 `b` with `E b` via the inverse of the selected chart `e (idx b)`. -/
-def ofMaximalAtlasFiberEquiv (b : B) :
-    (ofMaximalAtlas e he idx hidx).Fiber b ≃L[𝕜] E b :=
+def ofMaximalAtlasFiberEquiv (b : B) : (ofMaximalAtlas e he idx hidx).Fiber b ≃L[𝕜] E b :=
   ((e (idx b)).continuousLinearEquivAt 𝕜 b (hidx b)).symm
 
 @[simp]
-theorem ofMaximalAtlasFiberEquiv_apply (b : B)
-    (v : (ofMaximalAtlas e he idx hidx).Fiber b) :
-    ofMaximalAtlasFiberEquiv e he idx hidx b v = (e (idx b)).symm b v := by
-  rfl
+theorem ofMaximalAtlasFiberEquiv_apply (b : B) (v : (ofMaximalAtlas e he idx hidx).Fiber b) :
+    ofMaximalAtlasFiberEquiv e he idx hidx b v = (e (idx b)).symm b v := by rfl
 
 @[simp]
 theorem ofMaximalAtlasFiberEquiv_symm_apply (b : B) (v : E b) :
-    (ofMaximalAtlasFiberEquiv e he idx hidx b).symm v = (e (idx b) ⟨b, v⟩).2 := by
-  rfl
+    (ofMaximalAtlasFiberEquiv e he idx hidx b).symm v = (e (idx b) ⟨b, v⟩).2 := by rfl
 
 private def ofMaximalAtlasTotalEquiv :
     (ofMaximalAtlas e he idx hidx).TotalSpace ≃ TotalSpace F E where
   toFun p := ⟨p.proj, ofMaximalAtlasFiberEquiv e he idx hidx p.proj p.2⟩
   invFun q := ⟨q.proj, (ofMaximalAtlasFiberEquiv e he idx hidx q.proj).symm q.2⟩
-  left_inv p := by
-    dsimp only
-    rw [ContinuousLinearEquiv.symm_apply_apply]
-  right_inv q := by
-    dsimp only
-    rw [ContinuousLinearEquiv.apply_symm_apply]
+  left_inv _ := by dsimp only; rw [ContinuousLinearEquiv.symm_apply_apply]
+  right_inv _ := by dsimp only; rw [ContinuousLinearEquiv.apply_symm_apply]
 
 private theorem apply_ofMaximalAtlasTotalEquiv (i : ι)
     (p : (ofMaximalAtlas e he idx hidx).TotalSpace) (hp : p.proj ∈ (e i).baseSet) :
@@ -150,43 +116,32 @@ variable [VectorBundle 𝕜 F E] [ContMDiffVectorBundle n F E IB]
 
 private theorem contMDiff_ofMaximalAtlasTotalEquiv :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
-      (ofMaximalAtlasTotalEquiv e he idx hidx) := by
+      (ofMaximalAtlasTotalEquiv e he idx hidx) := fun p ↦ by
   let Z := ofMaximalAtlas e he idx hidx
-  intro p
   have hp : ofMaximalAtlasTotalEquiv e he idx hidx p ∈ (e (idx p.proj)).source :=
     (e (idx p.proj)).mem_source.2 (hidx p.proj)
   rw [(e (idx p.proj)).contMDiffAt_iff_of_mem_maximalAtlas (he (idx p.proj)) hp]
-  refine ⟨contMDiffAt_proj Z.Fiber, ?_⟩
-  have hcoord : ContMDiffAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
-      (fun r : Z.TotalSpace ↦ (trivializationAt F Z.Fiber p.proj r).2) p :=
-    (Bundle.contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2
-  refine hcoord.congr_of_eventuallyEq ?_
+  refine ⟨contMDiffAt_proj Z.Fiber,
+    ((Bundle.contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2).congr_of_eventuallyEq ?_⟩
   have hmem : p ∈ (Z.localTriv (idx p.proj)).source :=
     (Z.mem_localTriv_source (idx p.proj) p).2 (hidx p.proj)
   filter_upwards [(Z.localTriv (idx p.proj)).open_source.mem_nhds hmem] with r hr
-  have hr' : r.proj ∈ (e (idx p.proj)).baseSet :=
-    (Z.mem_localTriv_source (idx p.proj) r).1 hr
   rw [Z.trivializationAt, ← Z.localTrivAt_def]
-  exact congrArg Prod.snd (apply_ofMaximalAtlasTotalEquiv e he idx hidx (idx p.proj) r hr')
+  exact congrArg Prod.snd (apply_ofMaximalAtlasTotalEquiv e he idx hidx (idx p.proj) r
+    ((Z.mem_localTriv_source (idx p.proj) r).1 hr))
 
 private theorem contMDiff_ofMaximalAtlasTotalEquiv_symm :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
-      (ofMaximalAtlasTotalEquiv e he idx hidx).symm := by
+      (ofMaximalAtlasTotalEquiv e he idx hidx).symm := fun q ↦ by
   let Z := ofMaximalAtlas e he idx hidx
-  intro q
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨contMDiffAt_proj E, ?_⟩
   have hq : q ∈ (e (idx q.proj)).source := (e (idx q.proj)).mem_source.2 (hidx q.proj)
-  have hcoord : ContMDiffAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
-      (fun s : TotalSpace F E ↦ (e (idx q.proj) s).2) q :=
-    (((e (idx q.proj)).contMDiffAt_iff_of_mem_maximalAtlas (he (idx q.proj)) hq).1
-      (contMDiffAt_id (x := q))).2
-  refine hcoord.congr_of_eventuallyEq ?_
+  refine Bundle.contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_proj E,
+    ((((e (idx q.proj)).contMDiffAt_iff_of_mem_maximalAtlas (he (idx q.proj)) hq).1
+      (contMDiffAt_id (x := q))).2).congr_of_eventuallyEq ?_⟩
   filter_upwards [(e (idx q.proj)).open_source.mem_nhds hq] with s hs
-  have hs' : s.proj ∈ (e (idx q.proj)).baseSet := (e (idx q.proj)).mem_source.1 hs
   rw [Z.trivializationAt, ← Z.localTrivAt_def]
   have h := apply_ofMaximalAtlasTotalEquiv e he idx hidx (idx q.proj)
-    ((ofMaximalAtlasTotalEquiv e he idx hidx).symm s) hs'
+    ((ofMaximalAtlasTotalEquiv e he idx hidx).symm s) ((e (idx q.proj)).mem_source.1 hs)
   rw [Equiv.apply_symm_apply] at h
   exact congrArg Prod.snd h.symm
 
@@ -204,15 +159,13 @@ def ofMaximalAtlasDiffeomorph :
 theorem ofMaximalAtlasDiffeomorph_apply (p : (ofMaximalAtlas e he idx hidx).TotalSpace) :
     ofMaximalAtlasDiffeomorph e he idx hidx p =
       ⟨p.proj, ofMaximalAtlasFiberEquiv e he idx hidx p.proj p.2⟩ := by
-  rw [ofMaximalAtlasDiffeomorph.eq_def]
-  rfl
+  rw [ofMaximalAtlasDiffeomorph.eq_def]; rfl
 
 @[simp]
 theorem ofMaximalAtlasDiffeomorph_symm_apply (q : TotalSpace F E) :
     (ofMaximalAtlasDiffeomorph e he idx hidx).symm q =
       ⟨q.proj, (ofMaximalAtlasFiberEquiv e he idx hidx q.proj).symm q.2⟩ := by
-  rw [ofMaximalAtlasDiffeomorph.eq_def]
-  rfl
+  rw [ofMaximalAtlasDiffeomorph.eq_def]; rfl
 
 /-- `ofMaximalAtlasDiffeomorph` intertwines every core chart `localTriv i` with the corresponding
 maximal-atlas trivialization `e i` over `(e i).baseSet`. -/
@@ -222,7 +175,5 @@ theorem apply_ofMaximalAtlasDiffeomorph (i : ι)
       (ofMaximalAtlas e he idx hidx).localTriv i p := by
   rw [ofMaximalAtlasDiffeomorph.eq_def]
   exact apply_ofMaximalAtlasTotalEquiv e he idx hidx i p hp
-
-end Core
 
 end VectorBundleCore
