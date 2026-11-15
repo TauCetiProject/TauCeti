@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Topology.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Derivative
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -21,7 +21,10 @@ field `σ` is differentiable at `x` and vanishes there, and `τ` is continuous a
 `y ↦ g_y (σ y, τ y)` is differentiable at `x` with derivative `v ↦ g_x (τ x, D v)`, where
 `D = TauCeti.vectorFieldChartDerivative I σ x` is the chart derivative of `σ`. Since `σ x = 0`,
 the variation of the metric and of `τ` does not contribute, so only the continuity of the metric
-and of `τ` is needed.
+and of `τ` is needed. Near `x`, the pairing is a continuous family of linear maps applied to the
+coordinate field of `σ`, so both results follow from the zero-value derivative rule
+`TauCeti.mvfderiv_eq_comp_of_eventuallyEq_clm_apply` and its differentiability companion
+`TauCeti.mdifferentiableAt_of_eventuallyEq_clm_apply`.
 
 ## Main results
 
@@ -45,17 +48,41 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 variable {σ τ : (x : M) → TangentSpace I x} {x : M}
 
-/-- In the chart at a zero `x` of `σ`, the metric pairing of `σ` with a field `τ` continuous at
-`x` has a derivative which evaluates to `g_x (τ x, D v)`, where `D` is the chart derivative of
-`σ`. In the chart, the pairing is `z ↦ c z (U z)` for the coordinate field `U` of `σ` and the
-continuous family `c z = g (τ, ·)` read through the inverse trivialization; at a zero of `U` only
-the continuity of `c` matters. -/
-private theorem exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero
+omit [I.Boundaryless] in
+/-- The pairing with a field `τ` continuous at `x`, read through the inverse trivialization at
+`x`, is continuous at `x`: against each fixed `u` it pairs `τ` with the field of constant
+coordinates `u`. -/
+private theorem continuousAt_innerSL_comp_symmL_trivializationAt
+    (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) :
+    ContinuousAt (fun y ↦ (innerSL ℝ (τ y)) ∘L
+      (trivializationAt E (TangentSpace I) x).symmL ℝ y) x := by
+  set e := trivializationAt E (TangentSpace I) x
+  rw [continuousAt_clm_apply]
+  intro u
+  let X := FiberBundle.extend E (e.symm x u)
+  have hX : ∀ p, X p = e.symm p u := fun p ↦ by
+    simp only [X, FiberBundle.extend, e]
+    rw [Trivialization.apply_mk_symm _ (FiberBundle.mem_baseSet_trivializationAt' x)]
+  have hXc : ContinuousAt (fun p ↦ (X p : TangentBundle I M)) x :=
+    (FiberBundle.contMDiffAt_extend (k := 0) I E (e.symm x u)).continuousAt
+  refine (ContinuousAt.inner_bundle hτ hXc).congr ?_
+  filter_upwards [e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)]
+    with y hy
+  rw [hX, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Trivialization.symmL_apply _ hy]
+
+/-- Near a zero `x` of `σ`, the metric pairing of `σ` with a field `τ` continuous at `x` is
+`y ↦ c y (u y)`, where `u` is the coordinate field of `σ` in the chart at `x`, read on `M`, and
+`c y = g (τ y, ·)` is read through the inverse trivialization. Here `u` is differentiable and
+vanishes at `x`, `c` is continuous at `x`, and `c x` applied to the derivative of `u` is
+`g_x (τ x, D ·)`, where `D` is the chart derivative of `σ`. -/
+private theorem exists_eventuallyEq_clm_apply_inner_of_eq_zero
     (hσ : MDifferentiableAt I I.tangent (fun y ↦ (σ y : TangentBundle I M)) x) (hσ₀ : σ x = 0)
     (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) :
-    ∃ L : E →L[ℝ] ℝ, HasFDerivAt ((fun y ↦ inner ℝ (σ y) (τ y)) ∘ (extChartAt I x).symm) L
-      (extChartAt I x x) ∧
-        ∀ v, L v = inner ℝ (τ x) (vectorFieldChartDerivative I σ x v : TangentSpace I x) := by
+    ∃ (c : M → E →L[ℝ] ℝ) (u : M → E),
+      (fun y ↦ c y (u y)) =ᶠ[𝓝 x] (fun y ↦ inner ℝ (σ y) (τ y)) ∧ ContinuousAt c x ∧
+        MDifferentiableAt I 𝓘(ℝ, E) u x ∧ u x = 0 ∧
+        ∀ v, c x (mvfderiv I u x v) =
+          inner ℝ (τ x) (vectorFieldChartDerivative I σ x v : TangentSpace I x) := by
   set φ := extChartAt I x
   set e := trivializationAt E (TangentSpace I) x
   let U : E → E := mpullback 𝓘(ℝ, E) I φ.symm σ
@@ -70,30 +97,11 @@ private theorem exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero
       map_zero]
     -- The zero of the tangent space at the chart point is the zero of `E`.
     rfl
-  -- The pairing with `τ`, read through the inverse trivialization, is continuous at the chart
-  -- point: against each fixed `u` it pairs `τ` with the field of constant coordinates `u`.
-  let c : E → E →L[ℝ] ℝ := fun z ↦ (innerSL ℝ (τ (φ.symm z))) ∘L e.symmL ℝ (φ.symm z)
-  have hc : ContinuousAt c (φ x) := by
-    rw [continuousAt_clm_apply]
-    intro u
-    let X := FiberBundle.extend E (e.symm x u)
-    have hX : ∀ p, X p = e.symm p u := fun p ↦ by
-      simp only [X, FiberBundle.extend, e]
-      rw [Trivialization.apply_mk_symm _ (FiberBundle.mem_baseSet_trivializationAt' x)]
-    have hXc : ContinuousAt (fun p ↦ (X p : TangentBundle I M)) x :=
-      (FiberBundle.contMDiffAt_extend (k := 0) I E (e.symm x u)).continuousAt
-    have h := (ContinuousAt.inner_bundle hτ hXc).comp_of_eq
-      (continuousAt_extChartAt_symm (I := I) x) (extChartAt_to_inv x)
-    refine h.congr ?_
-    filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-    rw [Function.comp_apply, hX, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-      Trivialization.symmL_apply _ (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz)]
-  refine ⟨c (φ x) ∘L fderiv ℝ U (φ x), ?_, fun v ↦ ?_⟩
-  · have h₁ := (HasFDerivWithinAt.clm_apply_of_eq_zero hc.continuousWithinAt
-      hU.hasFDerivAt.hasFDerivWithinAt hU₀).hasFDerivAt univ_mem
-    refine h₁.congr_of_eventuallyEq ?_
-    filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-    obtain ⟨y, hy, rfl⟩ : ∃ y ∈ φ.source, φ y = z := ⟨_, φ.map_target hz, φ.right_inv hz⟩
+  let c : M → E →L[ℝ] ℝ := fun y ↦ (innerSL ℝ (τ y)) ∘L e.symmL ℝ y
+  refine ⟨c, U ∘ φ, ?_, continuousAt_innerSL_comp_symmL_trivializationAt hτ,
+    hU.comp_mdifferentiableAt (mdifferentiableAt_extChartAt (mem_chart_source H x)), hU₀,
+    fun v ↦ ?_⟩
+  · filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
     have hb : y ∈ e.baseSet := by
       simpa only [e, TangentBundle.trivializationAt_baseSet, φ, extChartAt_source] using hy
     -- In the chart, `σ` is recovered from its coordinate field by the inverse trivialization.
@@ -103,11 +111,16 @@ private theorem exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero
           (TangentBundle.continuousLinearMapAt_trivializationAt (by simpa [φ] using hy))
             (σ y)).symm
       rw [h₁, Trivialization.symmL_continuousLinearMapAt _ hb]
-    simp only [Function.comp_apply, c]
-    rw [φ.left_inv hy, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hσy, real_inner_comm]
-  · have hxx : φ.symm (φ x) = x := extChartAt_to_inv x
+    rw [Function.comp_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, hσy,
+      real_inner_comm]
+  · -- The derivative of the coordinate field read on `M` is its derivative at the chart point.
+    have hD : mvfderiv I (U ∘ φ) x = fderiv ℝ U (φ x) := by
+      rw [mvfderiv_eq_fderiv_comp_extChartAt_symm]
+      refine Filter.EventuallyEq.fderiv_eq ?_
+      filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
+      rw [Function.comp_apply, Function.comp_apply, φ.right_inv hz]
     simp only [ContinuousLinearMap.comp_apply, c, innerSL_apply_apply]
-    rw [hxx, Manifold.symmL_trivializationAt_self, vectorFieldChartDerivative_def]
+    rw [hD, Manifold.symmL_trivializationAt_self, vectorFieldChartDerivative_def]
     -- The chart derivative is the derivative of the coordinate field `U` at the chart point.
     rfl
 
@@ -118,8 +131,8 @@ theorem _root_.MDifferentiableAt.inner_bundle_of_eq_zero
     (hσ : MDifferentiableAt I I.tangent (fun y ↦ (σ y : TangentBundle I M)) x) (hσ₀ : σ x = 0)
     (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) :
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) x := by
-  obtain ⟨L, hL, -⟩ := exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero hσ hσ₀ hτ
-  exact mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.mpr hL.differentiableAt
+  obtain ⟨c, u, hf, hc, hu, hu₀, -⟩ := exists_eventuallyEq_clm_apply_inner_of_eq_zero hσ hσ₀ hτ
+  exact mdifferentiableAt_of_eventuallyEq_clm_apply hf hc hu hu₀
 
 /-- **The product rule at a zero.** If a vector field `σ` is differentiable at a zero `x` and `τ`
 is continuous at `x`, then for a continuous metric the derivative at `x` of the pairing
@@ -130,8 +143,8 @@ theorem _root_.MDifferentiableAt.mvfderiv_inner_bundle_apply_of_eq_zero
     (hτ : ContinuousAt (fun y ↦ (τ y : TangentBundle I M)) x) (v : TangentSpace I x) :
     mvfderiv I (fun y ↦ inner ℝ (σ y) (τ y)) x v =
       inner ℝ (τ x) (vectorFieldChartDerivative I σ x v : TangentSpace I x) := by
-  obtain ⟨L, hL, hLv⟩ := exists_hasFDerivAt_inner_comp_extChartAt_symm_of_eq_zero hσ hσ₀ hτ
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, hL.fderiv]
-  exact hLv v
+  obtain ⟨c, u, hf, hc, hu, hu₀, hcu⟩ := exists_eventuallyEq_clm_apply_inner_of_eq_zero hσ hσ₀ hτ
+  rw [mvfderiv_eq_comp_of_eventuallyEq_clm_apply hf hc hu hu₀]
+  exact hcu v
 
 end TauCeti
