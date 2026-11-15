@@ -7,8 +7,9 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.DedekindZeta
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 import TauCeti.NumberTheory.DirichletCharacter.Primitive
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
 # Cyclotomic factorizations of the continued Dedekind zeta function
@@ -79,73 +80,6 @@ namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### Analytic and meromorphic helpers for the primitive-character product -/
-
-section Helpers
-
-variable {n : ℕ} [NeZero n]
-
-open scoped Classical in
-/-- The product of `χ.primitiveCharacter.LFunction` over nonprincipal `χ` modulo `n` is entire. -/
-private theorem differentiable_prod_LFunction_primitiveCharacter_ne_one :
-    Differentiable ℂ fun z ↦
-      ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction z :=
-  Differentiable.fun_finsetProd fun χ hχ ↦
-    DirichletCharacter.differentiable_LFunction
-      (mt χ.primitiveCharacter_eq_one_iff.mp (Finset.mem_filter.mp hχ).2)
-
-/-- Away from `s = 1`, the full product `∏ χ, χ.primitiveCharacter.LFunction` is analytic. -/
-private theorem analyticAt_prod_LFunction_primitiveCharacter {s : ℂ} (hs : s ≠ 1) :
-    AnalyticAt ℂ
-      (fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction z) s := by
-  classical
-  rw [funext (DirichletCharacter.prod_LFunction_primitiveCharacter_eq_riemannZeta_mul n)]
-  exact (analyticOn_riemannZeta s hs).mul
-    (differentiable_prod_LFunction_primitiveCharacter_ne_one.analyticAt s)
-
-/-- The full product `∏ χ, χ.primitiveCharacter.LFunction` is meromorphic on `ℂ`. -/
-private theorem meromorphic_prod_LFunction_primitiveCharacter :
-    Meromorphic fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction z := by
-  classical
-  rw [funext (DirichletCharacter.prod_LFunction_primitiveCharacter_eq_riemannZeta_mul n)]
-  exact fun z ↦ (meromorphic_riemannZeta z).mul
-    (differentiable_prod_LFunction_primitiveCharacter_ne_one.analyticAt z).meromorphicAt
-
-/-- The full product `∏ χ, χ.primitiveCharacter.LFunction` is holomorphic on `Re s > 1`. -/
-private theorem analyticOnNhd_prod_LFunction_primitiveCharacter :
-    AnalyticOnNhd ℂ
-      (fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction z)
-      {s | 1 < s.re} := fun _ hs ↦
-  analyticAt_prod_LFunction_primitiveCharacter fun h ↦ by simp [h] at hs
-
-/-- On `Re s > 1`, the primitive-character product agrees with `NumberField.dedekindZeta K`. -/
-private theorem eqOn_prod_LFunction_primitiveCharacter [IsCyclotomicExtension {n} ℚ K] :
-    Set.EqOn (fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction z)
-      (NumberField.dedekindZeta K) {s | 1 < s.re} := fun _ hs ↦
-  (NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs).symm
-
-/-- Every punctured neighborhood `𝓝[≠] s` in `ℂ` avoids `1`. -/
-private theorem compl_singleton_one_mem_nhdsWithin_ne (s : ℂ) :
-    ({1}ᶜ : Set ℂ) ∈ 𝓝[≠] s := by
-  rcases eq_or_ne s 1 with rfl | hs
-  · exact self_mem_nhdsWithin
-  · exact nhdsWithin_le_nhds (isOpen_compl_singleton.mem_nhds hs)
-
-/-- Any primitive character `ψ` of level `M ∣ n` lifting to `χ` modulo `n` has the same level,
-character values on `ℕ`, and continued `L`-function as `χ.primitiveCharacter`. -/
-private theorem isPrimitive_lift_eq_primitiveCharacter {M : ℕ} (hdvd : M ∣ n)
-    (ψ : DirichletCharacter ℂ M) (hprim : ψ.IsPrimitive)
-    (hind : DirichletCharacter.changeLevel hdvd ψ = χ) :
-    M = χ.conductor ∧ (∀ a : ℕ, ψ a = χ.primitiveCharacter a) ∧
-      (∀ [NeZero M], ψ.LFunction = χ.primitiveCharacter.LFunction) := by
-  obtain ⟨hM, hψ⟩ := (hprim.changeLevel_eq_changeLevel_iff χ.primitiveCharacter_isPrimitive
-    hdvd χ.conductor_dvd_level).mp (hind.trans χ.changeLevel_primitiveCharacter.symm)
-  subst hM
-  subst hψ
-  exact ⟨rfl, fun _ ↦ rfl, fun {_} ↦ rfl⟩
-
-end Helpers
-
 /-! ### Canonical primitive-character factorizations -/
 
 section Primitive
@@ -159,8 +93,11 @@ theorem dedekindZetaC_eventuallyEq_prod_LFunction_primitiveCharacter (s : ℂ) :
     dedekindZetaC K =ᶠ[𝓝[≠] s]
       fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction z := by
   rw [dedekindZetaC_def]
-  exact meromorphicContinuation_eventuallyEq meromorphic_prod_LFunction_primitiveCharacter
-    analyticOnNhd_prod_LFunction_primitiveCharacter eqOn_prod_LFunction_primitiveCharacter s
+  exact meromorphicContinuation_eventuallyEq
+    (DirichletCharacter.meromorphic_prod_LFunction_primitiveCharacter n)
+    (fun _ hs ↦ DirichletCharacter.analyticAt_prod_LFunction_primitiveCharacter n
+      fun h ↦ by simp [h] at hs)
+    (fun _ hs ↦ (NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs).symm) s
 
 /-- **Cyclotomic factorization of `dedekindZetaC` away from `s = 1`.** In an `n`-th cyclotomic
 field `K` over `ℚ` (`n ≠ 0`), `dedekindZetaC K s` equals the product of
@@ -169,9 +106,12 @@ theorem dedekindZetaC_eq_prod_LFunction_primitiveCharacter {s : ℂ} (hs : s ≠
     dedekindZetaC K s =
       ∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s := by
   rw [dedekindZetaC_def]
-  exact meromorphicContinuation_apply meromorphic_prod_LFunction_primitiveCharacter
-    analyticOnNhd_prod_LFunction_primitiveCharacter eqOn_prod_LFunction_primitiveCharacter
-    (analyticAt_prod_LFunction_primitiveCharacter hs)
+  exact meromorphicContinuation_apply
+    (DirichletCharacter.meromorphic_prod_LFunction_primitiveCharacter n)
+    (fun _ ht ↦ DirichletCharacter.analyticAt_prod_LFunction_primitiveCharacter n
+      fun h ↦ by simp [h] at ht)
+    (fun _ ht ↦ (NumberField.dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) ht).symm)
+    (DirichletCharacter.analyticAt_prod_LFunction_primitiveCharacter n hs)
 
 /-- On `Re s > 1`, the continued Dedekind zeta function of a cyclotomic field agrees with
 `NumberField.dedekindZeta K`. -/
@@ -213,7 +153,7 @@ theorem dedekindZetaC_eventuallyEq_prod_LFunction_of_isPrimitive
       fun z ↦ ∏ χ : DirichletCharacter ℂ n, (χ' χ).LFunction z := by
   refine (dedekindZetaC_eventuallyEq_prod_LFunction_primitiveCharacter (K := K) (n := n) s).trans
     (Eventually.of_forall fun z ↦ Finset.prod_congr rfl fun χ _ ↦ ?_)
-  exact ((isPrimitive_lift_eq_primitiveCharacter (hdvd χ) (χ' χ) (hprim χ) (hind χ)).2.2 ▸ rfl)
+  rw [(hprim χ).LFunction_eq_primitiveCharacter_of_changeLevel_eq (hdvd χ) (hind χ)]
 
 /-- **Cyclotomic factorization for an indexed family of primitive lifts.** Pointwise form of
 `dedekindZetaC_eventuallyEq_prod_LFunction_of_isPrimitive` away from `s = 1`. -/
@@ -225,7 +165,7 @@ theorem dedekindZetaC_eq_prod_LFunction_of_isPrimitive
     dedekindZetaC K s = ∏ χ : DirichletCharacter ℂ n, (χ' χ).LFunction s := by
   rw [dedekindZetaC_eq_prod_LFunction_primitiveCharacter (n := n) hs]
   refine Finset.prod_congr rfl fun χ _ ↦ ?_
-  rw [(isPrimitive_lift_eq_primitiveCharacter (hdvd χ) (χ' χ) (hprim χ) (hind χ)).2.2]
+  rw [(hprim χ).LFunction_eq_primitiveCharacter_of_changeLevel_eq (hdvd χ) (hind χ)]
 
 end Primitive
 
@@ -243,10 +183,8 @@ theorem dedekindZetaC_mul_prod_eq_prod_LFunction {s : ℂ} (hs : s ≠ 1) :
         (∏ χ : DirichletCharacter ℂ n,
           ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s))) =
       ∏ χ : DirichletCharacter ℂ n, χ.LFunction s := by
-  rw [dedekindZetaC_eq_prod_LFunction_primitiveCharacter (n := n) hs, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun χ _ ↦ ?_
-  rw [← DirichletCharacter.LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter
-    (.inr hs), χ.changeLevel_primitiveCharacter]
+  rw [dedekindZetaC_eq_prod_LFunction_primitiveCharacter (n := n) hs,
+    DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction n hs]
 
 /-- **Imprimitive level-`n` factorization of `dedekindZetaC`, as punctured germs.** Holds at every
 `s : ℂ`, including the pole `s = 1`. -/
@@ -254,26 +192,9 @@ theorem dedekindZetaC_mul_prod_eventuallyEq_prod_LFunction (s : ℂ) :
     (fun z ↦ dedekindZetaC K z *
         ∏ χ : DirichletCharacter ℂ n,
           ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-z))) =ᶠ[𝓝[≠] s]
-      fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.LFunction z := by
-  filter_upwards [compl_singleton_one_mem_nhdsWithin_ne s] with z hz
-  exact dedekindZetaC_mul_prod_eq_prod_LFunction (n := n) hz
-
-/-- For a primitive lift `χ' χ` of level `m χ ∣ n` and a prime `p`, the explicit conditional Euler
-factor `if p ∣ m χ then 1 else 1 - χ' χ p * p ^ (-s)` coincides with
-`1 - χ.primitiveCharacter p * p ^ (-s)`. -/
-private theorem ite_dvd_eq_one_sub_primitiveCharacter {m : ℕ} (hdvd : m ∣ n)
-    (ψ : DirichletCharacter ℂ m) (hprim : ψ.IsPrimitive)
-    (hind : DirichletCharacter.changeLevel hdvd ψ = χ) {p : ℕ} (hp : p.Prime) (s : ℂ) :
-    (if p ∣ m then (1 : ℂ) else 1 - ψ p * (p : ℂ) ^ (-s)) =
-      1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s) := by
-  obtain ⟨hm, hval, -⟩ := isPrimitive_lift_eq_primitiveCharacter hdvd ψ hprim hind
-  rw [hval p]
-  split_ifs with hpc
-  · rw [hm] at hpc
-    have hnu : ¬ IsUnit (p : ZMod χ.conductor) :=
-      fun hu ↦ (ZMod.isUnit_prime_iff_not_dvd hp).mp hu hpc
-    simp [χ.primitiveCharacter.map_nonunit hnu]
-  · rfl
+      fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.LFunction z :=
+  ((eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)).mono fun _ hz ↦
+    dedekindZetaC_mul_prod_eq_prod_LFunction (n := n) hz
 
 /-- **Imprimitive level-`n` factorization for an indexed family of primitive lifts.** Away from
 `s = 1`, multiplying `dedekindZetaC K s` by `∏ χ, ∏ p ∈ n.primeFactors, (if p ∣ m χ then 1 else
@@ -290,10 +211,14 @@ theorem dedekindZetaC_mul_prod_ite_eq_prod_LFunction_of_isPrimitive
   have hcorr : (∏ χ : DirichletCharacter ℂ n, ∏ p ∈ n.primeFactors,
         (if p ∣ m χ then (1 : ℂ) else 1 - χ' χ p * (p : ℂ) ^ (-s))) =
       ∏ χ : DirichletCharacter ℂ n,
-        ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) :=
-    Finset.prod_congr rfl fun χ _ ↦ Finset.prod_congr rfl fun p hp ↦
-      ite_dvd_eq_one_sub_primitiveCharacter (hdvd χ) (χ' χ) (hprim χ) (hind χ)
-        (Nat.prime_of_mem_primeFactors hp) s
+        ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
+    refine Finset.prod_congr rfl fun χ _ ↦ Finset.prod_congr rfl fun p hp ↦ ?_
+    split_ifs with hpc
+    · rw [(hprim χ).level_eq_conductor_of_changeLevel_eq (hdvd χ) (hind χ)] at hpc
+      simp [χ.primitiveCharacter_apply_prime_eq_zero (Nat.prime_of_mem_primeFactors hp) hpc]
+    · rw [show (χ' χ) p = χ.primitiveCharacter p by
+        simpa using
+          (hprim χ).apply_intCast_eq_primitiveCharacter_of_changeLevel_eq (hdvd χ) (hind χ) p]
   rw [hcorr]
   exact dedekindZetaC_mul_prod_eq_prod_LFunction (n := n) hs
 
@@ -306,9 +231,9 @@ theorem dedekindZetaC_mul_prod_ite_eventuallyEq_prod_LFunction_of_isPrimitive
     (fun z ↦ dedekindZetaC K z *
         ∏ χ : DirichletCharacter ℂ n, ∏ p ∈ n.primeFactors,
           (if p ∣ m χ then (1 : ℂ) else 1 - χ' χ p * (p : ℂ) ^ (-z))) =ᶠ[𝓝[≠] s]
-      fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.LFunction z := by
-  filter_upwards [compl_singleton_one_mem_nhdsWithin_ne s] with z hz
-  exact dedekindZetaC_mul_prod_ite_eq_prod_LFunction_of_isPrimitive m hdvd χ' hprim hind hz
+      fun z ↦ ∏ χ : DirichletCharacter ℂ n, χ.LFunction z :=
+  ((eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)).mono fun _ hz ↦
+    dedekindZetaC_mul_prod_ite_eq_prod_LFunction_of_isPrimitive m hdvd χ' hprim hind hz
 
 end Imprimitive
 
@@ -328,19 +253,18 @@ theorem dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_of_prime {p : ℕ} [hp :
   rw [dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_primitiveCharacter (n := p) hs]
   congr 1
   refine Finset.prod_congr rfl fun χ hχ ↦ ?_
-  have hprim := DirichletCharacter.isPrimitive_of_ne_one_of_prime hp.out (Finset.mem_filter.mp hχ).2
-  have hEq := isPrimitive_lift_eq_primitiveCharacter (dvd_refl p) χ hprim
-    (DirichletCharacter.changeLevel_self χ)
-  rw [← hEq.2.2]
+  rw [← (DirichletCharacter.isPrimitive_of_ne_one_of_prime hp.out
+    (Finset.mem_filter.mp hχ).2).LFunction_eq_primitiveCharacter_of_changeLevel_eq (dvd_refl p)
+    (DirichletCharacter.changeLevel_self χ)]
 
 open scoped Classical in
 /-- **Factorization of `dedekindZetaC` for a prime cyclotomic field, as punctured germs.** -/
 theorem dedekindZetaC_eventuallyEq_riemannZeta_mul_prod_LFunction_of_prime {p : ℕ}
-    [hp : Fact p.Prime] [IsCyclotomicExtension {p} ℚ K] (s : ℂ) :
+    [Fact p.Prime] [IsCyclotomicExtension {p} ℚ K] (s : ℂ) :
     dedekindZetaC K =ᶠ[𝓝[≠] s] fun z ↦
-      riemannZeta z * ∏ χ : DirichletCharacter ℂ p with χ ≠ 1, χ.LFunction z := by
-  filter_upwards [compl_singleton_one_mem_nhdsWithin_ne s] with z hz
-  exact dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_of_prime hz
+      riemannZeta z * ∏ χ : DirichletCharacter ℂ p with χ ≠ 1, χ.LFunction z :=
+  ((eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)).mono fun _ hz ↦
+    dedekindZetaC_eq_riemannZeta_mul_prod_LFunction_of_prime hz
 
 /-- **Level-`p ^ k` factorization of `dedekindZetaC` for a prime-power cyclotomic field.** For
 `k ≠ 0`, every nonprincipal character modulo `p ^ k` has conductor divisible by `p`, so only the
@@ -364,24 +288,21 @@ theorem dedekindZetaC_mul_one_sub_cpow_eq_prod_LFunction_of_prime_pow {p k : ℕ
   have h1 : (1 : DirichletCharacter ℂ (p ^ k)).primitiveCharacter p = 1 := by
     rw [DirichletCharacter.primitiveCharacter_one, MulChar.one_apply (isUnit_of_subsingleton _)]
   have hne : (∏ χ ∈ Finset.univ.erase (1 : DirichletCharacter ℂ (p ^ k)),
-      (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s))) = 1 := by
-    refine Finset.prod_eq_one fun χ hχ ↦ ?_
-    have hdiv : p ∣ χ.conductor :=
-      (DirichletCharacter.dvd_conductor_iff_ne_one_of_prime_pow hp.out χ).mpr
-        (Finset.ne_of_mem_erase hχ)
-    have hnu : ¬ IsUnit (p : ZMod χ.conductor) :=
-      fun hu ↦ (ZMod.isUnit_prime_iff_not_dvd hp.out).mp hu hdiv
-    simp [χ.primitiveCharacter.map_nonunit hnu]
+      (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s))) = 1 :=
+    Finset.prod_eq_one fun χ hχ ↦ by
+      simp [χ.primitiveCharacter_apply_prime_eq_zero hp.out
+        ((DirichletCharacter.dvd_conductor_iff_ne_one_of_prime_pow hp.out χ).mpr
+          (Finset.ne_of_mem_erase hχ))]
   rw [hne, mul_one, h1, one_mul]
 
 /-- **Level-`p ^ k` factorization of `dedekindZetaC` for a prime-power cyclotomic field, as
 germs.** -/
 theorem dedekindZetaC_mul_one_sub_cpow_eventuallyEq_prod_LFunction_of_prime_pow {p k : ℕ}
-    [hp : Fact p.Prime] (hk : k ≠ 0) [IsCyclotomicExtension {p ^ k} ℚ K] (s : ℂ) :
+    [Fact p.Prime] (hk : k ≠ 0) [IsCyclotomicExtension {p ^ k} ℚ K] (s : ℂ) :
     (fun z ↦ dedekindZetaC K z * (1 - (p : ℂ) ^ (-z))) =ᶠ[𝓝[≠] s]
-      fun z ↦ ∏ χ : DirichletCharacter ℂ (p ^ k), χ.LFunction z := by
-  filter_upwards [compl_singleton_one_mem_nhdsWithin_ne s] with z hz
-  exact dedekindZetaC_mul_one_sub_cpow_eq_prod_LFunction_of_prime_pow hk hz
+      fun z ↦ ∏ χ : DirichletCharacter ℂ (p ^ k), χ.LFunction z :=
+  ((eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)).mono fun _ hz ↦
+    dedekindZetaC_mul_one_sub_cpow_eq_prod_LFunction_of_prime_pow hk hz
 
 end PrimeAndPrimePow
 

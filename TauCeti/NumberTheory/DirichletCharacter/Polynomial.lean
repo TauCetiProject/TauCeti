@@ -10,16 +10,20 @@ public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.Convolution
 public import TauCeti.GroupTheory.FiniteAbelian.EulerFactor
 import Mathlib.RingTheory.PowerSeries.WellKnown
+import TauCeti.Algebra.GroupWithZero.Divisibility
+import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
 
 /-!
 # Products of linear Euler factors over Dirichlet characters
 
-Let `n = p ^ k * m` with `p` prime and `¬ p ∣ m`, so `m` is the prime-to-`p` part of `n`. A
-Dirichlet character `χ` modulo `n` factors through `m` if and only if `p` does not divide its
-conductor `χ.conductor`. Consequently:
+Let `n = p ^ k * m` with `p` prime and `¬ p ∣ m`, so `m` is the prime-to-`p` part of `n`. By
+`DirichletCharacter.factorsThrough_iff_not_dvd_conductor`, a Dirichlet character `χ` modulo `n`
+factors through `m` if and only if `p` does not divide its conductor `χ.conductor`. Consequently:
 
-* When `p ∣ χ.conductor`, `p` is a nonunit modulo `χ.conductor` and `χ.primitiveCharacter p = 0`.
+* When `p ∣ χ.conductor`, `χ.primitiveCharacter p = 0`
+  (`DirichletCharacter.primitiveCharacter_apply_prime_eq_zero`).
 * When `¬ p ∣ χ.conductor`, `χ` is the lift from level `m` of a unique character `ψ` modulo `m`,
   and `χ.primitiveCharacter p = ψ p`.
 
@@ -34,17 +38,8 @@ at ramified primes `p ∣ n` where `k ≥ 1`. Inverting both sides in `R⟦X⟧`
 Dirichlet convolution coefficients of `∏ χ, toArithmeticFunction (χ.primitiveCharacter ·)` at
 `p ^ r`, providing the character side of the Dedekind zeta factorization for cyclotomic fields.
 
-We also record the prime-power conductor dichotomy `p ∣ χ.conductor ↔ χ ≠ 1` for characters modulo
-`p ^ k`, and the consequence that every nontrivial character of prime level is primitive.
-
 ## Main results
 
-* `DirichletCharacter.factorsThrough_iff_not_dvd_conductor`: for `n = p ^ k * m` with `p` prime and
-  `¬ p ∣ m`, `χ.FactorsThrough m ↔ ¬ p ∣ χ.conductor`.
-* `DirichletCharacter.dvd_conductor_iff_ne_one_of_prime_pow`: for `χ` modulo `p ^ k`,
-  `p ∣ χ.conductor ↔ χ ≠ 1`.
-* `DirichletCharacter.isPrimitive_of_ne_one_of_prime`: every nontrivial character modulo a prime `p`
-  is primitive.
 * `DirichletCharacter.prod_primitiveCharacter_prime_eq`: if `f 0 = 1`, the product of
   `f (χ.primitiveCharacter p)` over `χ` modulo `n = p ^ k * m` equals the product of `f (ψ p)` over
   `ψ` modulo `m`.
@@ -69,54 +64,6 @@ open Polynomial
 
 namespace DirichletCharacter
 
-section CommMonoidWithZero
-
-variable {R : Type*} [CommMonoidWithZero R]
-
-/-- The conductor of a Dirichlet character of nonzero level is nonzero. -/
-instance instNeZeroConductor {n : ℕ} [NeZero n] (χ : DirichletCharacter R n) :
-    NeZero χ.conductor :=
-  ⟨χ.conductor_ne_zero⟩
-
-/-- **Factoring through the prime-to-`p` part of the level.** If `n = p ^ k * m` with `p` prime and
-`¬ p ∣ m`, a Dirichlet character `χ` modulo `n` factors through `m` if and only if `p` does not
-divide its conductor. -/
-theorem factorsThrough_iff_not_dvd_conductor {n p k m : ℕ} (hp : p.Prime) (hn : n = p ^ k * m)
-    (hm : ¬ p ∣ m) (χ : DirichletCharacter R n) :
-    χ.FactorsThrough m ↔ ¬ p ∣ χ.conductor := by
-  have hm0 : m ≠ 0 := fun h ↦ hm (h ▸ dvd_zero p)
-  have : NeZero n := ⟨hn ▸ mul_ne_zero (pow_ne_zero k hp.ne_zero) hm0⟩
-  have hmn : m ∣ n := ⟨p ^ k, by rw [hn, mul_comm]⟩
-  rw [← mem_conductorSet_iff, mem_conductorSet_iff_conductor_dvd χ hmn]
-  exact ⟨fun hdvd hpc ↦ hm (hpc.trans hdvd), fun hnpc ↦
-    ((hp.coprime_iff_not_dvd.mpr hnpc).pow_left k).symm.dvd_of_dvd_mul_left
-      (hn ▸ χ.conductor_dvd_level)⟩
-
-/-- **Prime-power conductor dichotomy.** For a prime `p` and a character `χ` modulo `p ^ k`, the
-prime `p` divides `χ.conductor` if and only if `χ` is nonprincipal. -/
-theorem dvd_conductor_iff_ne_one_of_prime_pow {p k : ℕ} (hp : p.Prime)
-    (χ : DirichletCharacter R (p ^ k)) :
-    p ∣ χ.conductor ↔ χ ≠ 1 := by
-  have : NeZero (p ^ k) := ⟨pow_ne_zero k hp.ne_zero⟩
-  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).mp χ.conductor_dvd_level
-  rw [Ne, eq_one_iff_conductor_eq_one, hj]
-  rcases eq_or_ne j 0 with rfl | hj0
-  · simp [hp.not_dvd_one]
-  · exact ⟨fun _ ↦ (one_lt_pow₀ hp.one_lt hj0).ne', fun _ ↦ dvd_pow_self p hj0⟩
-
-/-- Every nonprincipal Dirichlet character of prime level is primitive. -/
-theorem isPrimitive_of_ne_one_of_prime {p : ℕ} (hp : p.Prime) {χ : DirichletCharacter R p}
-    (hχ : χ ≠ 1) : χ.IsPrimitive := by
-  have : NeZero p := ⟨hp.ne_zero⟩
-  rw [isPrimitive_def]
-  rcases hp.eq_one_or_self_of_dvd _ χ.conductor_dvd_level with h1 | hp'
-  · exact absurd (eq_one_iff_conductor_eq_one.mpr h1) hχ
-  · exact hp'
-
-end CommMonoidWithZero
-
-section IsDomain
-
 variable {R : Type*} [CommRing R] [IsDomain R]
 
 /-- **Reduction of a primitive-character product at `p` to the prime-to-`p` level.** If
@@ -130,9 +77,8 @@ theorem prod_primitiveCharacter_prime_eq {M : Type*} [CommMonoid M] {n p k m : �
     ∏ χ : DirichletCharacter R n, f (χ.primitiveCharacter p) =
       ∏ ψ : DirichletCharacter R m, f (ψ p) := by
   classical
-  have hm0 : m ≠ 0 := fun h ↦ hm (h ▸ dvd_zero p)
-  have : NeZero m := ⟨hm0⟩
-  have : NeZero n := ⟨hn ▸ mul_ne_zero (pow_ne_zero k hp.ne_zero) hm0⟩
+  have := NeZero.of_not_dvd_right hm
+  have : NeZero n := ⟨hn ▸ mul_ne_zero (pow_ne_zero k hp.ne_zero) (NeZero.ne m)⟩
   have hmn : m ∣ n := ⟨p ^ k, by rw [hn, mul_comm]⟩
   -- Split off the characters that do not factor through `m`; at those, `p ∣ χ.conductor`.
   rw [← Finset.prod_filter_mul_prod_filter_not Finset.univ
@@ -143,9 +89,7 @@ theorem prod_primitiveCharacter_prime_eq {M : Type*} [CommMonoid M] {n p k m : �
     have hpc : p ∣ χ.conductor :=
       by_contra fun hnpc ↦ (Finset.mem_filter.mp hχ).2
         ((factorsThrough_iff_not_dvd_conductor hp hn hm χ).mpr hnpc)
-    have hnu : ¬ IsUnit (p : ZMod χ.conductor) := fun hu ↦
-      (ZMod.isUnit_prime_iff_not_dvd hp).mp hu hpc
-    rw [χ.primitiveCharacter.map_nonunit hnu, hf]
+    rw [χ.primitiveCharacter_apply_prime_eq_zero hp hpc, hf]
   rw [hram, mul_one,
     Finset.prod_subtype (Finset.univ.filter _) (p := (·.FactorsThrough m)) (fun _ ↦ by simp),
     ← (factorsThroughEquiv hmn).symm.prod_comp]
@@ -189,7 +133,7 @@ theorem prod_one_sub_C_primitiveCharacter_prime_mul_X {n p k m : ℕ} (hp : p.Pr
     [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod m)ˣ)] :
     ∏ χ : DirichletCharacter R n, (1 - C (χ.primitiveCharacter p) * X) =
       (1 - X ^ orderOf (p : ZMod m)) ^ (m.totient / orderOf (p : ZMod m)) := by
-  have : NeZero m := ⟨fun h ↦ hm (h ▸ dvd_zero p)⟩
+  have := NeZero.of_not_dvd_right hm
   rw [prod_primitiveCharacter_prime_eq hp hn hm (f := fun r : R ↦ (1 : R[X]) - C r * X) (by simp)]
   exact prod_one_sub_C_mul_X ((ZMod.isUnit_prime_iff_not_dvd hp).mpr hm)
 
@@ -215,13 +159,9 @@ private theorem prod_mk_primitiveCharacter_prime_pow_eq {n p k m : ℕ} (hp : p.
     (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) =
       (PowerSeries.subst (PowerSeries.X ^ orderOf (p : ZMod m) : PowerSeries R)
         (PowerSeries.mk 1 : PowerSeries R)) ^ (m.totient / orderOf (p : ZMod m)) := by
-  have : NeZero m := ⟨fun h ↦ hm (h ▸ dvd_zero p)⟩
   set f := orderOf (p : ZMod m)
   set g := m.totient / f
-  have hu : IsUnit (p : ZMod m) := (ZMod.isUnit_prime_iff_not_dvd hp).mpr hm
-  have hf0 : f ≠ 0 := by
-    rw [show f = orderOf (p : ZMod m) from rfl, ← hu.unit_spec, orderOf_units]
-    exact (isOfFinOrder_of_finite hu.unit).orderOf_pos.ne'
+  have hf0 : f ≠ 0 := (ZMod.orderOf_natCast_pos_of_not_dvd hp hm).ne'
   set U : PowerSeries R :=
     PowerSeries.subst (PowerSeries.X ^ f : PowerSeries R) (PowerSeries.mk 1 : PowerSeries R)
   set Z : PowerSeries R := (1 - PowerSeries.X ^ f) ^ g
@@ -264,11 +204,7 @@ theorem prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow {n p k m : 
           (PowerSeries.mk 1 : PowerSeries R)) ^
         (m.totient / orderOf (p : ZMod m))) (p ^ r) := by
   classical
-  have : NeZero m := ⟨fun h ↦ hm (h ▸ dvd_zero p)⟩
-  have hu : IsUnit (p : ZMod m) := (ZMod.isUnit_prime_iff_not_dvd hp).mpr hm
-  have hf0 : orderOf (p : ZMod m) ≠ 0 := by
-    rw [← hu.unit_spec, orderOf_units]
-    exact (isOfFinOrder_of_finite hu.unit).orderOf_pos.ne'
+  have hf0 : orderOf (p : ZMod m) ≠ 0 := (ZMod.orderOf_natCast_pos_of_not_dvd hp hm).ne'
   have hcongr (t : Finset (DirichletCharacter R n)) (j : ℕ) :
       (∏ χ ∈ t, toArithmeticFunction (χ.primitiveCharacter ·)) (p ^ j) =
         (∏ χ ∈ t, ArithmeticFunction.ofPowerSeries p
@@ -288,7 +224,5 @@ theorem prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow {n p k m : 
   rw [hcongr Finset.univ r, ← map_prod (ArithmeticFunction.ofPowerSeries p),
     prod_mk_primitiveCharacter_prime_pow_eq hp hn hm, ArithmeticFunction.ofPowerSeries_pow p hf0,
     ← map_pow]
-
-end IsDomain
 
 end DirichletCharacter

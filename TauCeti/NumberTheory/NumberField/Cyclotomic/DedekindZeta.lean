@@ -9,15 +9,19 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.Polynomial
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.Algebra.GroupWithZero.Divisibility
+import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 import TauCeti.NumberTheory.LSeries.Convolution
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # The Dedekind zeta function of a cyclotomic field
@@ -73,40 +77,6 @@ open Filter Ideal IsDedekindDomain NumberField
 open TauCeti.IdealArithmeticFunction
 open scoped NumberField Topology
 
-namespace DirichletCharacter
-
-/-- The primitive character associated to `χ` is principal if and only if `χ` is principal. -/
-@[simp]
-theorem primitiveCharacter_eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
-    (χ : DirichletCharacter R n) :
-    χ.primitiveCharacter = 1 ↔ χ = 1 :=
-  χ.primitiveCharacter_isPrimitive.eq_one_iff.trans χ.eq_one_iff_conductor_eq_one.symm
-
-private theorem LFunction_eq_riemannZeta_of_eq_one {m : ℕ} [NeZero m] (hm : m = 1)
-    (ψ : DirichletCharacter ℂ m) : ψ.LFunction = riemannZeta := by
-  subst hm
-  exact LFunction_modOne_eq
-
-/-- The continued `L`-function of the primitive character of the principal character modulo `n` is
-the Riemann zeta function. -/
-@[simp]
-theorem LFunction_primitiveCharacter_one (n : ℕ) [NeZero n] :
-    (1 : DirichletCharacter ℂ n).primitiveCharacter.LFunction = riemannZeta :=
-  LFunction_eq_riemannZeta_of_eq_one conductor_one _
-
-open scoped Classical in
-/-- Splitting off the principal character `χ = 1` separates `riemannZeta s` from the product of
-`χ.primitiveCharacter.LFunction s` over all `χ : DirichletCharacter ℂ n`. -/
-theorem prod_LFunction_primitiveCharacter_eq_riemannZeta_mul (n : ℕ) [NeZero n] (s : ℂ) :
-    (∏ χ : DirichletCharacter ℂ n, χ.primitiveCharacter.LFunction s) =
-      riemannZeta s *
-        ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction s := by
-  rw [Finset.filter_ne', ← Finset.mul_prod_erase Finset.univ
-    (fun χ : DirichletCharacter ℂ n ↦ χ.primitiveCharacter.LFunction s) (Finset.mem_univ 1),
-    LFunction_primitiveCharacter_one]
-
-end DirichletCharacter
-
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -130,16 +100,9 @@ theorem absNorm_eq_pow_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal
 the number of primes of `𝓞 K` above `p` is `m.totient / orderOf (p : ZMod m)`. -/
 theorem card_primesOverFinset_eq_totient_div_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) :
     (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).card = m.totient / orderOf (p : ZMod m) := by
-  have : NeZero m := ⟨fun h ↦ hm (h ▸ dvd_zero p)⟩
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
-  have hu : IsUnit (p : ZMod m) := (ZMod.isUnit_prime_iff_not_dvd hp.out).mpr hm
-  have hf0 : 0 < orderOf (p : ZMod m) := by
-    rw [← hu.unit_spec, orderOf_units]
-    exact (isOfFinOrder_of_finite hu.unit).orderOf_pos
-  rw [← Set.ncard_coe_finset, coe_primesOverFinset hp0,
+  rw [← Set.ncard_coe_finset, coe_primesOverFinset (span_singleton_natCast_ne_bot hp.out.ne_zero),
     ← ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (K := K) hn hm,
-    Nat.mul_div_cancel _ hf0]
+    Nat.mul_div_cancel _ (ZMod.orderOf_natCast_pos_of_not_dvd hp.out hm)]
 
 /-- **Local polynomial Euler-factor identity at a rational prime.** In an `n`-th cyclotomic field
 over `ℚ` (`n ≠ 0`), at any rational prime `p` and any `s : ℂ`, the product of `1 - N(P) ^ (-s)` over
@@ -149,14 +112,13 @@ theorem prod_primesOverFinset_one_sub_absNorm_cpow_neg [NeZero n] (s : ℂ) :
     ∏ P ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K), (1 - (absNorm P : ℂ) ^ (-s)) =
       ∏ χ : DirichletCharacter ℂ n, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
   obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.out.ne_one
-  have : NeZero m := ⟨fun h ↦ hm (h ▸ dvd_zero p)⟩
+  have := NeZero.of_not_dvd_right hm
   have : NeZero (Monoid.exponent (ZMod m)ˣ) := ⟨Monoid.exponent_ne_zero_of_finite⟩
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
   rw [DirichletCharacter.prod_one_sub_primitiveCharacter_prime_mul hp.out hn hm ((p : ℂ) ^ (-s)),
     ← card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm, ← Finset.prod_const]
   refine Finset.prod_congr rfl fun P hP ↦ ?_
-  obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp hP
+  obtain ⟨_, _⟩ :=
+    (mem_primesOverFinset_iff (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)).mp hP
   rw [absNorm_eq_pow_orderOf hn hm P, Nat.cast_pow,
     ← Complex.natCast_cpow_natCast_mul p (orderOf (p : ZMod m)) (-s),
     Complex.cpow_nat_mul (p : ℂ) (orderOf (p : ZMod m)) (-s)]
@@ -176,26 +138,17 @@ private theorem normCoeff_one_apply_prime_pow (hn : n = p ^ k * m) (hm : ¬ p �
       ((ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
           (PowerSeries.mk 1 : PowerSeries ℂ)) ^
         (m.totient / orderOf (p : ZMod m))) (p ^ r) := by
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
   let Pset := primesOverFinset (span {(p : ℤ)}) (𝓞 K)
+  let mkH (P : {P // P ∈ Pset}) : {Q : HeightOneSpectrum (𝓞 K) // Q.asIdeal = P.1} :=
+    haveI : P.1.IsPrime := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).1
+    haveI : P.1.LiesOver (span {(p : ℤ)}) := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).2
+    ⟨heightOneSpectrumOfLiesOver p P.1, heightOneSpectrumOfLiesOver_asIdeal p P.1⟩
   let toH : {P // P ∈ Pset} ↪ HeightOneSpectrum (𝓞 K) :=
-    { toFun := fun P ↦
-        @heightOneSpectrumOfLiesOver K _ _ p hp P.1
-          ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).1
-          ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).2
-      inj' := fun P₁ P₂ h ↦ Subtype.ext <| by
-        have h₁ := @heightOneSpectrumOfLiesOver_asIdeal K _ _ p hp P₁.1
-          ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P₁.2).1
-          ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P₁.2).2
-        have h₂ := @heightOneSpectrumOfLiesOver_asIdeal K _ _ p hp P₂.1
-          ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P₂.2).1
-          ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P₂.2).2
-        exact h₁.symm.trans ((congrArg HeightOneSpectrum.asIdeal h).trans h₂) }
-  have hasIdeal (P : {P // P ∈ Pset}) : (toH P).asIdeal = P.1 :=
-    @heightOneSpectrumOfLiesOver_asIdeal K _ _ p hp P.1
-      ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).1
-      ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).2
+    { toFun := fun P ↦ (mkH P).1
+      inj' := fun P₁ P₂ h ↦ Subtype.ext <|
+        (mkH P₁).2.symm.trans ((congrArg HeightOneSpectrum.asIdeal h).trans (mkH P₂).2) }
+  have hasIdeal (P : {P // P ∈ Pset}) : (toH P).asIdeal = P.1 := (mkH P).2
   have hmem : ∀ Q : HeightOneSpectrum (𝓞 K),
       Q.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → Q ∈ Pset.attach.map toH :=
     fun Q hQ ↦ Finset.mem_map.mpr ⟨⟨Q.asIdeal, (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ⟩,
@@ -235,7 +188,7 @@ theorem normCoeff_one_eq_prod_primitiveCharacter :
       χ.primitiveCharacter.isMultiplicative_toArithmeticFunction)).mpr fun p r hp ↦ ?_
   have := Fact.mk hp
   obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.ne_one
-  have : NeZero m := ⟨fun h ↦ hm (h ▸ dvd_zero p)⟩
+  have := NeZero.of_not_dvd_right hm
   have : NeZero (Monoid.exponent (ZMod m)ˣ) := ⟨Monoid.exponent_ne_zero_of_finite⟩
   rw [normCoeff_one_apply_prime_pow (K := K) hn hm r,
     DirichletCharacter.prod_toArithmeticFunction_primitiveCharacter_apply_prime_pow hp hn hm r]
@@ -278,11 +231,9 @@ theorem dedekindZeta_mul_prod_eq_prod_LFunction {s : ℂ} (hs : 1 < s.re) :
         (∏ χ : DirichletCharacter ℂ n,
           ∏ p ∈ n.primeFactors, (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s))) =
       ∏ χ : DirichletCharacter ℂ n, χ.LFunction s := by
-  have hs1 : s ≠ 1 := fun h ↦ by simp [h] at hs
-  rw [dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun χ _ ↦ ?_
-  rw [← DirichletCharacter.LFunction_changeLevel χ.conductor_dvd_level χ.primitiveCharacter
-    (.inr hs1), χ.changeLevel_primitiveCharacter]
+  rw [dedekindZeta_eq_prod_LFunction_primitiveCharacter (n := n) hs,
+    DirichletCharacter.prod_LFunction_primitiveCharacter_mul_prod_eq_prod_LFunction n
+      (fun h ↦ by simp [h] at hs)]
 
 open scoped Classical in
 /-- **Residue of `ζ_K` at `s = 1` for a cyclotomic field.** The residue `dedekindZeta_residue K` of
@@ -295,11 +246,8 @@ theorem dedekindZeta_residue_eq_prod_LFunction_one :
     riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
       ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).mono_left nhdsWithin_le_nhds)
       (eventually_nhdsWithin_of_forall fun s hs ↦ by simpa using (Set.mem_Ioi.mp hs).ne')
-  have hcont : Continuous (fun z : ℂ ↦
-      ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction z) :=
-    continuous_finsetProd _ fun χ hχ ↦
-      (DirichletCharacter.differentiable_LFunction
-        (mt χ.primitiveCharacter_eq_one_iff.mp (Finset.mem_filter.mp hχ).2)).continuous
+  have hcont := (DirichletCharacter.differentiable_prod_LFunction_primitiveCharacter_ne_one
+    n).continuous
   have hL : Tendsto
       (fun s : ℝ ↦ ∏ χ : DirichletCharacter ℂ n with χ ≠ 1, χ.primitiveCharacter.LFunction s)
       (𝓝[>] 1)

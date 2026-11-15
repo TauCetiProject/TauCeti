@@ -23,7 +23,6 @@ identity `1`, whose `L`-series is the constant `1`.
   every `s : ℂ`.
 * `ArithmeticFunction.LSeriesSummable_one`: `(1 : ArithmeticFunction ℂ)` has an absolutely
   convergent `L`-series at every `s : ℂ`.
-* `ArithmeticFunction.LSeries_one`: `LSeries ↗(1 : ArithmeticFunction ℂ) s = 1`.
 * `ArithmeticFunction.LSeriesHasSum_prod`: if each `f i` (`i ∈ t`) has `L`-series sum `a i` at
   `s`, their convolution product `∏ i ∈ t, f i` has `L`-series sum `∏ i ∈ t, a i`.
 * `ArithmeticFunction.LSeriesSummable_prod`: finite convolution products preserve `LSeriesSummable`.
@@ -48,11 +47,6 @@ protected theorem LSeriesHasSum_one (s : ℂ) : LSeriesHasSum ↗(1 : Arithmetic
 at every `s : ℂ`. -/
 protected theorem LSeriesSummable_one (s : ℂ) : LSeriesSummable ↗(1 : ArithmeticFunction ℂ) s :=
   (ArithmeticFunction.LSeriesHasSum_one s).LSeriesSummable
-
-/-- The `L`-series of the convolution identity `1 : ArithmeticFunction ℂ` is identically `1`. -/
-@[simp]
-protected theorem LSeries_one (s : ℂ) : LSeries ↗(1 : ArithmeticFunction ℂ) s = 1 :=
-  (ArithmeticFunction.LSeriesHasSum_one s).LSeries_eq
 
 /-- **Finite convolution product of `LSeriesHasSum`.** If each `f i` (`i ∈ t`) has `L`-series sum
 `a i` at `s`, then the Dirichlet convolution product `∏ i ∈ t, f i` has `L`-series sum
