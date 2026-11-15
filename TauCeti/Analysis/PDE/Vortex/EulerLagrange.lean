@@ -22,8 +22,8 @@ is a weak solution of the reduced vortex equation `Δu = (exp (2u) h - 1) / 8 + 
 
 for every compactly supported `C¹` function `φ`.
 
-The potential `(1 / 16) ∫ h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)` is finite
-(`TauCeti.Vortex.sobolevReducedFunctional_ne_top`). Hence `h exp (2u)` is integrable on every set
+The potential `h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)` is integrable
+(`TauCeti.Vortex.integrable_potential`). Hence `h exp (2u)` is integrable on every set
 of finite measure (`TauCeti.Vortex.integrableOn_mul_exp`): it differs from the integrable
 potential by `h (1 + 2u)`, and `h ≤ 1`. For a direction `v ∈ H¹(ℂ)` whose value is
 bounded and vanishes outside a set of finite measure, the expansion
@@ -68,7 +68,7 @@ variable {P : Polynomial ℂ}
 
 /-- **Local integrability of `h exp (2u)`.** For `u ∈ H¹(ℂ)`, `h exp (2u)`, with
 `h = ‖P‖² / (1 + ‖P‖²)`, is integrable on every set of finite measure, because Taubes's functional
-is finite at `u` (`TauCeti.Vortex.sobolevReducedFunctional_ne_top`). -/
+is finite at `u`: its potential is integrable (`TauCeti.Vortex.integrable_potential`). -/
 theorem integrableOn_mul_exp (u : W1p (volume : Measure ℂ) ⊤ 2) {K : Set ℂ}
     (hK : volume K ≠ ∞) :
     IntegrableOn (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -85,9 +85,7 @@ theorem integrableOn_mul_exp (u : W1p (volume : Measure ℂ) ⊤ 2) {K : Set ℂ
         rw [Real.norm_eq_abs, ← backgroundWeight_def (P.eval ·),
           abs_of_nonneg (backgroundWeight_nonneg _ z)]
         exact (backgroundWeight_lt_one _ z).le)
-  refine ((sobolevReducedFunctional_ne_top_iff.1
-    (sobolevReducedFunctional_ne_top P u)).integrableOn.add hlin).congr
-    (ae_of_all _ fun z ↦ ?_)
+  refine ((integrable_potential P u).integrableOn.add hlin).congr (ae_of_all _ fun z ↦ ?_)
   simp only [Pi.add_apply]
   ring
 
@@ -221,7 +219,7 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
     fun t htM ↦ ?_⟩
   have hua := W1p.memLp_value u
   have hva := W1p.memLp_value v
-  have hpot := sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top P u)
+  have hpot := integrable_potential P u
   have hc := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
   have hca : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z := hc.integrable_mul hua
@@ -238,7 +236,7 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
   have hgrad : W1p.gradient (u + t • v) = W1p.gradient u + t • W1p.gradient v := by
     rw [← W1p.gradientL_apply, map_add, map_smul, W1p.gradientL_apply, W1p.gradientL_apply]
   -- The potential, the linear term and the Dirichlet energy along the line.
-  obtain ⟨hint, hle⟩ := integral_mul_exp_sub_one_sub_add_le
+  obtain ⟨-, hle⟩ := integral_mul_exp_sub_one_sub_add_le
     ((continuous_backgroundWeight P.continuous).congr (backgroundWeight_def _))
     (fun z ↦ backgroundWeight_def (P.eval ·) z ▸
       ⟨backgroundWeight_nonneg _ z, (backgroundWeight_lt_one _ z).le⟩) hua.aestronglyMeasurable
@@ -263,8 +261,8 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
         t ^ 2 * ‖W1p.gradient v‖ ^ 2 := by
     rw [norm_add_sq_real, inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
     ring
-  rw [sobolevReducedFunctional_eq_coe hpot,
-    sobolevReducedFunctional_eq_coe ((integrable_congr hpot').2 hint), ← EReal.coe_add,
+  rw [sobolevReducedFunctional_eq_coe P u, sobolevReducedFunctional_eq_coe P (u + t • v),
+    ← EReal.coe_add,
     EReal.coe_le_coe_iff, integral_congr_ae hpot', hlin, hgrad, hnorm]
   nlinarith
 
@@ -304,9 +302,7 @@ theorem integral_inner_gradient_add_integral_mul_value_eq_zero (hm : 0 < P.natDe
       calc |t| * M ≤ 1 / (2 * (M + 1)) * (M + 1) := by gcongr; linarith only
         _ = 1 / 2 := by field_simp
     have hle := (hu (u + t • v)).trans (hLC t htM)
-    rw [sobolevReducedFunctional_eq_coe
-        (sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top P u)),
-      ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
+    rw [sobolevReducedFunctional_eq_coe P u, ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
     linarith
   -- Its derivative at `0`, the first variation `L`, therefore vanishes.
   have hquad (L C : ℝ) : HasDerivAt (fun t : ℝ ↦ t * L + t ^ 2 * C) L 0 := by

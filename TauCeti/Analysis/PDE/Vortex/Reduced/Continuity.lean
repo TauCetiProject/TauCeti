@@ -184,11 +184,9 @@ private theorem integrable_and_stability {Q : Polynomial ℂ} (hP : 0 < P.natDeg
     rwa [hwd] at h
   -- Integrability of the pieces of the expansion.
   have hA : Integrable fun z ↦ hQ' z * (Real.exp (2 * U z) - 1 - 2 * U z) := by
-    simpa only [hQ', backgroundWeight_def] using
-      sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top Q u)
+    simpa only [hQ', backgroundWeight_def] using integrable_potential Q u
   have hB : Integrable fun z ↦ hQ' z * (Real.exp (2 * W z) - 1 - 2 * W z) := by
-    simpa only [hQ', backgroundWeight_def] using
-      sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top Q w)
+    simpa only [hQ', backgroundWeight_def] using integrable_potential Q w
   have hC : Integrable fun z ↦ hQ' z * ((Real.exp (2 * W z) - 1) * D z) :=
     ((W1p.memLp_exp_two_mul_value_sub_one volume Complex.finrank_real_complex w).integrable_mul
       (W1p.memLp_value d)).bdd_mul
@@ -208,10 +206,8 @@ private theorem integrable_and_stability {Q : Polynomial ℂ} (hP : 0 < P.natDeg
     ((hA.sub hB).sub (hC.const_mul 2)).congr hexpand.symm
   refine ⟨hD, ?_⟩
   -- The functional at `u` and at `w`.
-  have hIu := sobolevReducedFunctional_eq_coe (P := Q) (u := u)
-    (sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top Q u))
-  have hIw := sobolevReducedFunctional_eq_coe (P := Q) (u := w)
-    (sobolevReducedFunctional_ne_top_iff.1 (sobolevReducedFunctional_ne_top Q w))
+  have hIu := sobolevReducedFunctional_eq_coe Q u
+  have hIw := sobolevReducedFunctional_eq_coe Q w
   rw [hIu, hIw, EReal.coe_le_coe_iff] at hu
   simp only [← backgroundWeight_def (Q.eval ·)] at hu
   -- `rw` produced the unfolded integrands; restate `hu` through the local abbreviations, which are
