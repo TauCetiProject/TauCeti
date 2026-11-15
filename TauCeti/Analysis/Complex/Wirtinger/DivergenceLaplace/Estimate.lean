@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
+public import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import TauCeti.Analysis.Complex.Pompeiu.DivergenceForm
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
 import TauCeti.Analysis.InnerProductSpace.Harmonic.WeakInteriorLp
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
@@ -68,24 +69,6 @@ namespace TauCeti
 
 variable {r q : ℝ≥0∞} {Ω : Opens ℂ}
 
-/-- The triangle inequality for the `W^{k,p}` norm over a finite sum. -/
-private theorem eLpNormWkp_finset_sum_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [CompleteSpace F] {p : ℝ≥0∞} {U : Set ℂ} {k : ℕ} {ι : Type*} (s : Finset ι)
-    (u : ι → ℂ → F) (hp : 1 ≤ p) :
-    eLpNormWkp p U k (∑ i ∈ s, u i) ≤ ∑ i ∈ s, eLpNormWkp p U k (u i) :=
-  Finset.le_sum_of_subadditive (fun u : ℂ → F ↦ eLpNormWkp p U k u) eLpNormWkp_zero_fun.le
-    (fun _ _ ↦ eLpNormWkp_add_le hp) s u
-
-/-- For `1 ≤ s`, the Hölder exponent `1 - 1 / s` comparing `L¹` with `Lˢ` is nonnegative. -/
-private theorem holder_exponent_nonneg {s : ℝ≥0∞} (hs : 1 ≤ s) :
-    0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / s.toReal := by
-  rcases eq_or_ne s ∞ with rfl | hs_top
-  · simp
-  · have h1 : 1 ≤ s.toReal := by
-      simpa using ENNReal.toReal_mono hs_top hs
-    rw [ENNReal.toReal_one, div_one, sub_nonneg]
-    exact div_le_one_of_le₀ h1 (by positivity)
-
 section Scalar
 
 /-- The scalar estimate on one disc: the `W^{1,r}` norm of `ξ` on `B(c, ρ)` is bounded in terms of
@@ -112,8 +95,10 @@ private theorem exists_eLpNormWkp_one_ball_le_real (hr : 1 < r) (hr_top : r ≠ 
   set E₂ : ℝ≥0∞ := volume K ^ (1 / (1 : ℝ≥0∞).toReal - 1 / r.toReal)
   set N : ℝ≥0∞ := E₁ + E₂ * (‖A‖ₑ * KB)
   set M : ℝ≥0∞ := volume (ball c ρ) ^ r.toReal⁻¹
-  have hE₁ : E₁ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (holder_exponent_nonneg hq) hμK
-  have hE₂ : E₂ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (holder_exponent_nonneg hr.le) hμK
+  have hE₁ : E₁ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hq) hμK
+  have hE₂ : E₂ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hr.le) hμK
   have hM : M ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) measure_ball_lt_top.ne
   obtain ⟨Ch, hCh⟩ :=
     WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm (F := ℝ)
@@ -203,9 +188,11 @@ private theorem exists_eLpNormWkp_one_ball_le_real (hr : 1 < r) (hr_top : r ≠ 
   have hv₀ := hbound v hvC.continuousOn fun x hx ↦ (hbd x (ball_subset_closedBall hx)).1
   have hv₁ := hbound (fderiv ℝ v) (hvC.continuousOn_fderiv_of_isOpen B.isOpen le_rfl)
     fun x hx ↦ (hbd x (ball_subset_closedBall hx)).2
+  have hρB' : Opens.interior (ball c ρ) ≤ B := by
+    rw [← SetLike.coe_subset_coe, Opens.coe_interior]
+    exact interior_subset.trans hρB
   have hvw : eLpNormWkp r (ball c ρ) 1 v ≤ M * (Ch * (N * X)) + M * (Ch * (N * X)) := by
-    refine (eLpNormWkp_succ_le (hvC.hasWeakFDerivOn_fderiv.mono
-      (show Opens.interior (ball c ρ) ≤ B from interior_subset.trans hρB))).trans ?_
+    refine (eLpNormWkp_succ_le (hvC.hasWeakFDerivOn_fderiv.mono hρB')).trans ?_
     rw [eLpNormWkp_zero]
     exact add_le_add hv₀ hv₁
   -- Assemble.
@@ -272,7 +259,7 @@ private theorem exists_eLpNormWkp_one_ball_le {V : Type*} [NormedAddCommGroup V]
   calc eLpNormWkp r (ball c ρ) 1 ξ
       ≤ ∑ i, eLpNormWkp r (ball c ρ) 1 (fun z ↦ S i (L i (ξ z))) := by
         conv_lhs => rw [hξsum]
-        exact eLpNormWkp_finset_sum_le _ _ hr.le
+        exact eLpNormWkp_sum_le hr.le
     _ ≤ ∑ i, ‖S i‖ₑ * (C * (‖L i‖ₑ * X)) := by
         gcongr with i
         exact (eLpNormWkp_clm_comp_le (S i)).trans (by gcongr; exact hcoord i)
@@ -364,7 +351,8 @@ theorem exists_eLpNormWkp_one_le_of_integral_laplacian_smul_eq {V : Type*}
   obtain ⟨D, hD, -⟩ := (memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top hξ hf hg
     hdiv).exists_weakFDeriv_of_isOpen
   refine (eLpNormWkp_succ_le (hD.mono ?_)).trans ?_
-  · exact interior_subset.trans (subset_closure.trans hUΩ)
+  · rw [← SetLike.coe_subset_coe, Opens.coe_interior]
+    exact interior_subset.trans (subset_closure.trans hUΩ)
   · rw [eLpNormWkp_zero]
     exact hC ξ f g hξ hf hg hdiv D hD
 
@@ -402,17 +390,9 @@ theorem not_exists_eLpNormWkp_one_le_of_integral_laplacian_smul_eq (hr : r ≠ 0
         (0 : ℂ → ℝ) z) := by
     simpa using integral_laplacian_eq_zero_of_hasCompactSupport (μ := volume)
       (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-  have h := hC (fun _ ↦ 1) 0 0 ((locallyIntegrable_const (1 : ℝ)).locallyIntegrableOn _)
-    (memLpLoc_iff.2 fun _ _ _ ↦ MemLp.zero) (memLpLoc_iff.2 fun _ _ _ ↦ MemLp.zero) hdiv
+  have h := hC (fun _ ↦ 1) 0 0 (locallyIntegrableOn_const 1) memLpLoc_zero memLpLoc_zero hdiv
   simp only [eLpNorm_zero, add_zero, mul_zero, nonpos_iff_eq_zero] at h
-  have h1 := eLpNorm_le_eLpNormWkp (p := r) (U := ball (0 : ℂ) 1) (k := 1)
-    (f := fun _ : ℂ ↦ (1 : ℝ))
-  rw [h, nonpos_iff_eq_zero, eLpNorm_const _ hr (by simp [Measure.restrict_eq_zero,
-    (measure_ball_pos volume (0 : ℂ) one_pos).ne'])] at h1
-  rw [Measure.restrict_apply_univ, mul_eq_zero, ENNReal.rpow_eq_zero_iff] at h1
-  rcases h1 with h1 | ⟨h1, -⟩ | ⟨h1, -⟩
-  · simp at h1
-  · exact (measure_ball_pos volume (0 : ℂ) one_pos).ne' h1
-  · exact measure_ball_lt_top.ne h1
+  exact one_ne_zero (Measure.eqOn_open_of_ae_eq (ae_eq_zero_of_eLpNormWkp_eq_zero hr h) isOpen_ball
+    continuousOn_const continuousOn_const (mem_ball_self one_pos))
 
 end TauCeti
