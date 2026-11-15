@@ -31,8 +31,8 @@ and the `_of_lt` forms specialise them to orders below the characteristic `p`.
 * `MvPolynomial.ker_ordinaryJetEval`, `MvPolynomial.ordinaryJetEval_injective_iff`,
   `MvPolynomial.rank_ordinaryJetEval`, `MvPolynomial.finrank_range_ordinaryJetEval`,
   `MvPolynomial.rank_toMatrix_ordinaryJetEval`: when every `(k i)!` is a unit, the ordinary and
-  Hasse jet maps have the same kernel, the same injectivity, the same rank and range `finrank`, and
-  matrices of the same rank.
+  Hasse jet maps have the same kernel, the same injectivity, the same rank (and `Module.finrank`
+  of their images), and matrices of the same rank.
 * `MvPolynomial.ordinaryJetEval_eq_comp`: under the same hypothesis, the ordinary jet map is the
   Hasse jet map followed by an invertible diagonal scaling.
 * `MvPolynomial.ker_ordinaryJetEval_of_lt`, `MvPolynomial.ordinaryJetEval_injective_iff_of_lt`,
@@ -94,8 +94,8 @@ theorem rank_ordinaryJetEval [CommSemiring R] (a : ι → σ → R) (hk : ∀ i,
   rw [ordinaryJetEval_eq_comp s v a hk, LinearMap.rank, LinearMap.range_comp,
     LinearEquiv.rank_map_eq]
 
-/-- When every `(k i)!` is a unit, the images of the ordinary jet map and of the Hasse jet map
-along the multi-indices `k i • eᵥ₍ᵢ₎` have the same `finrank`. -/
+/-- When every `(k i)!` is a unit, the images of the ordinary jet map and of the Hasse jet map along
+the multi-indices `k i • eᵥ₍ᵢ₎` have the same `Module.finrank`. -/
 theorem finrank_range_ordinaryJetEval [CommSemiring R] (a : ι → σ → R)
     (hk : ∀ i, IsUnit ((k i)! : R)) :
     Module.finrank R (LinearMap.range (ordinaryJetEval s a v k)) =
@@ -111,12 +111,8 @@ theorem rank_toMatrix_ordinaryJetEval [CommRing R] (a : ι → σ → R) [Fintyp
       (jetMatrix s a fun i ↦ single (v i) (k i)).rank := by
   classical
   have := Fintype.ofFinite ι
-  rw [toMatrix_ordinaryJetEval, ← rank_mul_eq_right_of_isUnit_det (diagonal fun i ↦ ((k i)! : R))
-    (jetMatrix s a fun i ↦ single (v i) (k i))
+  rw [toMatrix_ordinaryJetEval_eq_diagonal_mul, rank_mul_eq_right_of_isUnit_det _ _
     (by simpa [det_diagonal] using IsUnit.prod_univ_iff.2 hk)]
-  congr 1
-  ext i μ
-  simp [diagonal_mul]
 
 variable [CommRing R] (p : ℕ) [Fact p.Prime] [CharP R p]
 
@@ -141,7 +137,7 @@ theorem rank_ordinaryJetEval_of_lt (a : ι → σ → R) (hk : ∀ i, k i < p) :
   rank_ordinaryJetEval s v a fun i ↦ (IsUnit.natCast_factorial_iff_of_charP p).2 (hk i)
 
 /-- In characteristic `p`, for orders `k i < p` the images of the ordinary jet map and of the Hasse
-jet map along the multi-indices `k i • eᵥ₍ᵢ₎` have the same `finrank`. -/
+jet map along the multi-indices `k i • eᵥ₍ᵢ₎` have the same `Module.finrank`. -/
 theorem finrank_range_ordinaryJetEval_of_lt (a : ι → σ → R) (hk : ∀ i, k i < p) :
     Module.finrank R (LinearMap.range (ordinaryJetEval s a v k)) =
       Module.finrank R (LinearMap.range (jetEval s a fun i ↦ single (v i) (k i))) :=

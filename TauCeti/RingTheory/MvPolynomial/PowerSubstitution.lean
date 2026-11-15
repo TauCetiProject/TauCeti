@@ -5,17 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
-public import TauCeti.Algebra.Polynomial.Expand
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.ZMod.Basic
-import Mathlib.FieldTheory.Finite.GaloisField
+import TauCeti.Algebra.Polynomial.Expand
+import TauCeti.Algebra.Polynomial.HasseDeriv
 import TauCeti.Data.Finsupp.Weight
 
 /-!
-# The power substitution `F ↦ F(X, X ^ B)` and its derivatives
+# The power substitution `F ↦ F(X, X ^ B)` and jets on the Frobenius graph
 
 For `B : ℕ`, the *power substitution* `MvPolynomial.powerSubstitution B` sends a bivariate
 polynomial `F(Z, W)` (variable `0` is `Z`, variable `1` is `W`) to the univariate polynomial
@@ -24,49 +30,62 @@ for the weight `![1, B]`, which sends the exponent `μ` to `μ 0 + B * μ 1`. On
 `μ 0 < B` this map is injective (uniqueness of quotient and remainder on division by `B`), so the
 substitution is injective on polynomials of `Z`-degree below `B`.
 
-Over a commutative semiring `R` of characteristic `p` and for a prime power `q = p ^ e`:
-* When `0 < e`, `(q : R) = 0`, so `D(X ^ q) = 0` and ordinary derivatives of *every* order commute
-  with `powerSubstitution q`: `D ^ k (F(X, X ^ q)) = (∂_Z ^ k F)(X, X ^ q)`
-  (`MvPolynomial.iterate_derivative_powerSubstitution`). At `e = 0` (`q = 1`) this fails on
-  `F = W`.
-* For every `e ≥ 0` and every order `k < q`, Hasse derivatives commute with `powerSubstitution q`:
-  `D^[k] (F(X, X ^ q)) = (∂_Z^[k] F)(X, X ^ q)` (`MvPolynomial.hasseDeriv_powerSubstitution`),
-  proved coefficientwise from `Polynomial.hasseDeriv_expand_mul`. At `k = q` this fails on `F = W`,
-  since `D^[q] (X ^ q) = 1` whereas `∂_Z^[q] W = 0`
-  (`MvPolynomial.hasseDeriv_powerSubstitution_X_one_self`).
+When `B = p ^ e` is a power of the characteristic `p`, differentiating `F(X, X ^ (p ^ e))`
+suppresses variation in `W`:
+* For `0 < e`, `(p ^ e : R) = 0` annihilates `D(X ^ (p ^ e))`, so ordinary differentiation commutes
+  with `powerSubstitution (p ^ e)` at *every* order `k`
+  (`MvPolynomial.iterate_derivative_powerSubstitution`). At `e = 0` (`p ^ 0 = 1`) the substitution
+  is `W ↦ X` and this fails.
+* In exponential characteristic `p`, for *every* `e : ℕ` and every order `k < p ^ e`, Hasse
+  differentiation commutes with `powerSubstitution (p ^ e)`:
+  `D^[k] (F(X, X ^ (p ^ e))) = (∂_Z^[k] F)(X, X ^ (p ^ e))`
+  (`MvPolynomial.hasseDeriv_powerSubstitution`), proved monomial-by-monomial from
+  `Polynomial.hasseDeriv_expand_mul`. Unlike the ordinary derivative, this controls orders in the
+  range `p ≤ k < p ^ e` where `k !` vanishes in `R`; at `k = p ^ e` it fails on `F = W`.
+
+Combining injectivity below `Z`-degree `p ^ e`, the Hasse derivative identity for `k ≤ m < p ^ e`,
+and the univariate root-multiplicity bound
+`Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt` yields the Frobenius-graph nonvanishing
+test (`MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph`) and, when `0 < e` and `m < p` so
+that `k !` is a unit, its ordinary-derivative counterpart
+(`MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph`).
 
 ## Main results
 
 * `MvPolynomial.coeff_powerSubstitution`: for `F` of `Z`-degree below `B` and `μ 0 < B`, the
   coefficient of `X ^ (μ 0 + B * μ 1)` in `F(X, X ^ B)` is the coefficient of `Z ^ μ 0 W ^ μ 1`.
 * `MvPolynomial.powerSubstitution_injOn`, `MvPolynomial.powerSubstitution_eq_zero_iff`,
-  `MvPolynomial.powerSubstitution_ne_zero`: the substitution is injective (and reflects zero) on
+  `MvPolynomial.powerSubstitution_ne_zero`: the substitution is injective (hence reflects zero) on
   polynomials of `Z`-degree below `B`, for every `B` (at `B = 0` this set is empty).
 * `MvPolynomial.support_powerSubstitution_subset`,
   `MvPolynomial.natDegree_powerSubstitution_le`,
   `MvPolynomial.natDegree_powerSubstitution_lt_of_mem_restrictSupport`: the exponents of
   `F(X, X ^ B)` are among the weights `μ 0 + B * μ 1` of the exponents of `F`, bounding its degree
   from partial degrees or from a weighted support condition.
-* `MvPolynomial.powerSubstitution_map`, `MvPolynomial.eval_powerSubstitution`,
-  `MvPolynomial.aeval_powerSubstitution`: naturality under coefficient ring maps and evaluation in
-  `R` or any `R`-algebra.
-* `MvPolynomial.derivative_powerSubstitution`, `MvPolynomial.iterate_derivative_powerSubstitution`,
-  `MvPolynomial.eval_iterate_derivative_powerSubstitution`,
-  `MvPolynomial.aeval_iterate_derivative_powerSubstitution`: the chain rule for
-  `powerSubstitution B` and commutation of iterated ordinary derivatives with
-  `powerSubstitution (p ^ e)` when `0 < e`.
+* `MvPolynomial.powerSubstitution_map`: naturality under a ring map of the coefficients.
+* `MvPolynomial.aeval_powerSubstitution`, `MvPolynomial.eval_powerSubstitution`: `F(X, X ^ B)`
+  evaluated at `a` is `F(a, a ^ B)`.
+* `MvPolynomial.derivative_powerSubstitution_eq`, `MvPolynomial.derivative_powerSubstitution`,
+  `MvPolynomial.iterate_derivative_powerSubstitution`: the general chain rule for
+  `powerSubstitution B`, and in characteristic `p` with `0 < e`,
+  `D^k (F(X, X ^ (p ^ e))) = (∂_Z^k F)(X, X ^ (p ^ e))` for every `k`.
 * `MvPolynomial.hasseDeriv_powerSubstitution`, `MvPolynomial.eval_hasseDeriv_powerSubstitution`,
-  `MvPolynomial.aeval_hasseDeriv_powerSubstitution`: commutation of Hasse derivatives of order
-  `k < p ^ e` with `powerSubstitution (p ^ e)` in exponential characteristic `p`, including orders
-  `p ≤ k < p ^ e`.
-* `MvPolynomial.hasseDeriv_powerSubstitution_X_one_self`: sharpness witness `F = W` at order
-  `k = B`.
+  `MvPolynomial.hasseDeriv_powerSubstitution_X_one_self`,
+  `MvPolynomial.hasseDeriv_single_zero_X_one`: in exponential characteristic `p`, for every `e : ℕ`
+  and `k < p ^ e`, `D^[k] (F(X, X ^ (p ^ e))) = (∂_Z^[k] F)(X, X ^ (p ^ e))`, with sharpness
+  witness `F = W` at order `k = B`.
+* `MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph`,
+  `MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph`: over an integral domain of
+  exponential characteristic `p`, a nonzero bivariate polynomial `F` with `degreeOf 0 F < p ^ e`
+  and `(powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)` has a nonzero `Z`-jet of order
+  `≤ m` on the Frobenius graph `{(a, a ^ (p ^ e)) | a ∈ S}` (for `m < p ^ e` in Hasse form, and for
+  `0 < e` and `m < p` in ordinary form).
 
 ## References
 
 * H. Iwaniec and E. Kowalski, *Analytic Number Theory*, AMS Colloquium Publications 53 (2004),
-  §11.6, pp. 283–284, Lemma 11.17, which uses the substitution `h(X, X ^ q)` and Hasse derivatives
-  of order `k < q`.
+  §11.6, Lemmas 11.16–11.17, pp. 283–284, for the multiplicity bound and Hasse derivatives of
+  `h(X, X ^ q)` for `k < q`.
 * L. Pottmeyer, *Diophantine Approximation*, lecture notes (version of 17 January 2022), §3.3,
   proof of Theorem 3.3.7 and Exercise 3.5(a), the Kronecker substitution `xᵢ ↦ t ^ (d ^ (i - 1))`,
   injective on monomials of partial degrees below `d`.
@@ -130,13 +149,13 @@ theorem powerSubstitution_injOn (B : ℕ) :
   exact (injOn_aeval_X_pow (injOn_weight_vecCons_one B)).mono fun _ ↦
     mem_restrictSupport_of_degreeOf_lt
 
-/-- On polynomials of `Z`-degree below `B`, `F(X, X ^ B)` vanishes if and only if `F = 0`. -/
+/-- For `F` of `Z`-degree below `B`, `F(X, X ^ B) = 0` if and only if `F = 0`. -/
 theorem powerSubstitution_eq_zero_iff {B : ℕ} {F : MvPolynomial (Fin 2) R}
-    (hZ : F.degreeOf 0 < B) :
-    powerSubstitution B F = 0 ↔ F = 0 := by
-  have hB : 0 < B := (Nat.zero_le _).trans_lt hZ
-  have h0 : (0 : MvPolynomial (Fin 2) R).degreeOf 0 < B := by simp [hB]
-  exact ⟨fun h ↦ powerSubstitution_injOn B hZ h0 (by simpa using h), fun h ↦ by simp [h]⟩
+    (hF : F.degreeOf 0 < B) : powerSubstitution B F = 0 ↔ F = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  rcases B.eq_zero_or_pos with rfl | hB
+  · exact (Nat.not_lt_zero _ hF).elim
+  · exact powerSubstitution_injOn B hF (by simpa using hB) (by simpa using h)
 
 /-- A nonzero bivariate polynomial of `Z`-degree below `B` has nonzero image `F(X, X ^ B)`. -/
 theorem powerSubstitution_ne_zero {B : ℕ} {F : MvPolynomial (Fin 2) R} (hF : F ≠ 0)
@@ -196,29 +215,25 @@ theorem powerSubstitution_map (f : R →+* S) (B : ℕ) (F : MvPolynomial (Fin 2
   | monomial μ c => simp
   | add F G hF hG => simp [hF, hG, Polynomial.map_add]
 
+/-- Evaluating `F(X, X ^ B)` at `a` in an `R`-algebra `S` gives `F(a, a ^ B)`. -/
+@[simp]
+theorem aeval_powerSubstitution [Algebra R S] (B : ℕ) (a : S) (F : MvPolynomial (Fin 2) R) :
+    Polynomial.aeval a (powerSubstitution B F) = aeval ![a, a ^ B] F := by
+  induction F using MvPolynomial.induction_on with
+  | C c => simp [powerSubstitution]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p s hp => fin_cases s <;> simp [hp]
+
 /-- **Evaluation formula.** `F(X, X ^ B)` evaluated at `a` is `F(a, a ^ B)`. -/
 @[simp]
 theorem eval_powerSubstitution (B : ℕ) (a : R) (F : MvPolynomial (Fin 2) R) :
     (powerSubstitution B F).eval a = eval ![a, a ^ B] F := by
-  induction F using MvPolynomial.induction_on' with
-  | monomial μ c => simp [eval_monomial, Finsupp.prod_fintype, pow_add, pow_mul]
-  | add F G hF hG => simp [hF, hG]
-
-/-- **Algebra evaluation formula.** Evaluating `F(X, X ^ B)` at `a : A` in any `R`-algebra `A`
-gives `F(a, a ^ B)`. -/
-@[simp]
-theorem aeval_powerSubstitution {A : Type*} [CommSemiring A] [Algebra R A] (B : ℕ) (a : A)
-    (F : MvPolynomial (Fin 2) R) :
-    Polynomial.aeval a (powerSubstitution B F) = aeval ![a, a ^ B] F := by
-  induction F using MvPolynomial.induction_on with
-  | C c => simp [powerSubstitution]
-  | add F G hF hG => simp [hF, hG]
-  | mul_X F i hF =>
-    fin_cases i <;> simp [hF]
+  rw [← Polynomial.coe_aeval_eq_eval, ← aeval_eq_eval]
+  exact aeval_powerSubstitution B a F
 
 /-- **Chain rule for the power substitution.** For any `B : ℕ`,
 `D(F(X, X ^ B)) = (∂_Z F)(X, X ^ B) + (∂_W F)(X, X ^ B) · B X ^ (B - 1)`. -/
-theorem derivative_powerSubstitution (B : ℕ) (F : MvPolynomial (Fin 2) R) :
+theorem derivative_powerSubstitution_eq (B : ℕ) (F : MvPolynomial (Fin 2) R) :
     Polynomial.derivative (powerSubstitution B F) =
       powerSubstitution B (pderiv 0 F) +
         powerSubstitution B (pderiv 1 F) * (Polynomial.C (B : R) * Polynomial.X ^ (B - 1)) := by
@@ -240,24 +255,21 @@ theorem derivative_powerSubstitution (B : ℕ) (F : MvPolynomial (Fin 2) R) :
         powerSubstitution_X_one, Polynomial.derivative_mul, hF, Polynomial.derivative_X_pow]
       ring
 
-/-- Whenever `(B : R) = 0`, ordinary differentiation commutes with `powerSubstitution B`:
-`D(F(X, X ^ B)) = (∂_Z F)(X, X ^ B)`. -/
+/-- When `(B : R) = 0`, differentiating `F(X, X ^ B)` in `X` suppresses the `W`-term
+`B · X ^ (B - 1) = 0` and computes `(∂_Z F)(X, X ^ B)`. -/
 theorem derivative_powerSubstitution_of_natCast_eq_zero {B : ℕ} (hB : (B : R) = 0)
     (F : MvPolynomial (Fin 2) R) :
     Polynomial.derivative (powerSubstitution B F) = powerSubstitution B (pderiv 0 F) := by
-  simp [derivative_powerSubstitution, hB]
+  simp [derivative_powerSubstitution_eq, hB]
 
-/-- Whenever `(B : R) = 0`, iterated ordinary derivatives of every order commute with
-`powerSubstitution B`: `D ^ k (F(X, X ^ B)) = (∂_Z ^ k F)(X, X ^ B)`. -/
+/-- When `(B : R) = 0`, iterated ordinary differentiation in `X` commutes with
+`powerSubstitution B` at every order `k`. -/
 theorem iterate_derivative_powerSubstitution_of_natCast_eq_zero {B : ℕ} (hB : (B : R) = 0)
     (k : ℕ) (F : MvPolynomial (Fin 2) R) :
-    (Polynomial.derivative^[k]) (powerSubstitution B F) =
-      powerSubstitution B ((pderiv (0 : Fin 2))^[k] F) := by
-  induction k generalizing F with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply, Function.iterate_succ_apply,
-      derivative_powerSubstitution_of_natCast_eq_zero hB, ih]
+    Polynomial.derivative^[k] (powerSubstitution B F) =
+      powerSubstitution B ((pderiv 0)^[k] F) :=
+  ((Function.Semiconj.iterate_right
+    (fun G ↦ (derivative_powerSubstitution_of_natCast_eq_zero hB G).symm) k) F).symm
 
 /-- **Sharpness witness at order `B`.** The `B`-th univariate Hasse derivative of
 `powerSubstitution B W = X ^ B` is `1`, whereas for `0 < B` the `Z`-Hasse derivative `∂_Z^[B] W`
@@ -271,97 +283,132 @@ theorem hasseDeriv_single_zero_X_one {k : ℕ} (hk : 0 < k) :
     hasseDeriv (single (0 : Fin 2) k) (X 1 : MvPolynomial (Fin 2) R) = 0 := by
   simp [hasseDeriv_X, single_eq_single_iff, hk.ne']
 
-end CommSemiring
-
 section CharP
 
-variable {R : Type*} [CommSemiring R] {p : ℕ} [CharP R p]
+variable {p : ℕ} [CharP R p]
 
-/-- In characteristic `p` and for `q = p ^ e` with `0 < e`, the first ordinary derivative commutes
-with the Frobenius substitution `F ↦ F(X, X ^ q)`. -/
-theorem derivative_powerSubstitution_charP {e : ℕ} (he : 0 < e) (F : MvPolynomial (Fin 2) R) :
+/-- In characteristic `p` and for `0 < e`, differentiating `F(X, X ^ (p ^ e))` in `X` computes
+`(∂_Z F)(X, X ^ (p ^ e))`. -/
+theorem derivative_powerSubstitution {e : ℕ} (he : 0 < e) (F : MvPolynomial (Fin 2) R) :
     Polynomial.derivative (powerSubstitution (p ^ e) F) =
       powerSubstitution (p ^ e) (pderiv 0 F) :=
   derivative_powerSubstitution_of_natCast_eq_zero
     (by rw [Nat.cast_pow, CharP.cast_eq_zero, zero_pow he.ne']) F
 
-/-- **Ordinary derivatives through the Frobenius substitution.** In characteristic `p` and for
-`q = p ^ e` with `0 < e`, ordinary derivatives of every order commute with `F ↦ F(X, X ^ q)`:
-`D ^ k (F(X, X ^ q)) = (∂_Z ^ k F)(X, X ^ q)`. -/
+/-- In characteristic `p` and for `0 < e`, iterated ordinary differentiation commutes with the
+Frobenius substitution `powerSubstitution (p ^ e)` at every order `k`. -/
 theorem iterate_derivative_powerSubstitution {e : ℕ} (he : 0 < e) (k : ℕ)
     (F : MvPolynomial (Fin 2) R) :
-    (Polynomial.derivative^[k]) (powerSubstitution (p ^ e) F) =
-      powerSubstitution (p ^ e) ((pderiv (0 : Fin 2))^[k] F) :=
-  iterate_derivative_powerSubstitution_of_natCast_eq_zero
-    (by rw [Nat.cast_pow, CharP.cast_eq_zero, zero_pow he.ne']) k F
+    Polynomial.derivative^[k] (powerSubstitution (p ^ e) F) =
+      powerSubstitution (p ^ e) ((pderiv 0)^[k] F) :=
+  ((Function.Semiconj.iterate_right (fun G ↦ (derivative_powerSubstitution he G).symm) k) F).symm
 
-/-- **Evaluated ordinary derivatives through the Frobenius substitution.** For `0 < e` and every
-order `k`, evaluating `D ^ k (F(X, X ^ (p ^ e)))` at `a : R` gives `(∂_Z ^ k F)(a, a ^ (p ^ e))`.
--/
+/-- Evaluating `D^k (F(X, X ^ (p ^ e)))` at `a` in an `R`-algebra `S` (for `0 < e` in
+characteristic `p`) gives `(∂_Z^k F)(a, a ^ (p ^ e))`. -/
+theorem aeval_iterate_derivative_powerSubstitution [Algebra R S] {e : ℕ} (he : 0 < e) (k : ℕ)
+    (a : S) (F : MvPolynomial (Fin 2) R) :
+    Polynomial.aeval a (Polynomial.derivative^[k] (powerSubstitution (p ^ e) F)) =
+      aeval ![a, a ^ p ^ e] ((pderiv 0)^[k] F) := by
+  rw [iterate_derivative_powerSubstitution he, aeval_powerSubstitution]
+
+/-- Evaluating `D^k (F(X, X ^ (p ^ e)))` at `a` (for `0 < e` in characteristic `p`) gives
+`(∂_Z^k F)(a, a ^ (p ^ e))`. -/
 theorem eval_iterate_derivative_powerSubstitution {e : ℕ} (he : 0 < e) (k : ℕ) (a : R)
     (F : MvPolynomial (Fin 2) R) :
-    ((Polynomial.derivative^[k]) (powerSubstitution (p ^ e) F)).eval a =
-      eval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) := by
+    (Polynomial.derivative^[k] (powerSubstitution (p ^ e) F)).eval a =
+      eval ![a, a ^ p ^ e] ((pderiv 0)^[k] F) := by
   rw [iterate_derivative_powerSubstitution he, eval_powerSubstitution]
-
-/-- **Algebra-evaluated ordinary derivatives through the Frobenius substitution.** For `0 < e` and
-every order `k`, evaluating `D ^ k (F(X, X ^ (p ^ e)))` at `a : A` in any `R`-algebra `A` gives
-`(∂_Z ^ k F)(a, a ^ (p ^ e))`. -/
-theorem aeval_iterate_derivative_powerSubstitution {A : Type*} [CommSemiring A] [Algebra R A]
-    {e : ℕ} (he : 0 < e) (k : ℕ) (a : A) (F : MvPolynomial (Fin 2) R) :
-    Polynomial.aeval a ((Polynomial.derivative^[k]) (powerSubstitution (p ^ e) F)) =
-      aeval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) := by
-  rw [iterate_derivative_powerSubstitution he, aeval_powerSubstitution]
 
 end CharP
 
 section ExpChar
 
-variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p]
+variable {p : ℕ} [ExpChar R p]
 
-/-- **Hasse derivatives through the Frobenius substitution** (Iwaniec–Kowalski, Lemma 11.17).
-In exponential characteristic `p` and for `q = p ^ e`, Hasse derivatives of order `k < q` commute
-with `F ↦ F(X, X ^ q)`: `D^[k] (F(X, X ^ q)) = (∂_Z^[k] F)(X, X ^ q)`. -/
-theorem hasseDeriv_powerSubstitution {e : ℕ} (k : ℕ) (hk : k < p ^ e)
-    (F : MvPolynomial (Fin 2) R) :
+/-- **Hasse derivatives commute with the Frobenius substitution below `p ^ e`**
+(Iwaniec–Kowalski, Lemma 11.17). Over any commutative semiring of exponential characteristic `p`,
+for every `e : ℕ` and every `k < p ^ e`,
+`D^[k] (F(X, X ^ (p ^ e))) = (∂_Z^[k] F)(X, X ^ (p ^ e))`. At `e = 0` only `k = 0` is admitted and
+the identity is trivial; at `k = p ^ e` it fails on `F = W`. -/
+theorem hasseDeriv_powerSubstitution {e k : ℕ} (hk : k < p ^ e) (F : MvPolynomial (Fin 2) R) :
     Polynomial.hasseDeriv k (powerSubstitution (p ^ e) F) =
       powerSubstitution (p ^ e) (hasseDeriv (single 0 k) F) := by
   induction F using MvPolynomial.induction_on' with
   | add F G hF hG => simp [hF, hG]
   | monomial μ c =>
-    have hsplit : Polynomial.monomial (μ 0 + p ^ e * μ 1) c =
+    have hmon : powerSubstitution (p ^ e) (monomial μ c) =
         Polynomial.expand R (p ^ e) (Polynomial.monomial (μ 1) 1) *
           Polynomial.monomial (μ 0) c := by
-      rw [Polynomial.expand_monomial, Polynomial.monomial_mul_monomial, one_mul,
-        Nat.mul_comm (μ 1), Nat.add_comm]
-    rw [powerSubstitution_monomial, hsplit, Polynomial.hasseDeriv_expand_mul hk,
-      Polynomial.expand_monomial, Polynomial.hasseDeriv_monomial, Polynomial.monomial_mul_monomial,
-      one_mul, hasseDeriv_monomial, prod_single_index (by simp), powerSubstitution_monomial]
-    simp [Nat.mul_comm (μ 1), Nat.add_comm]
+      simp [Polynomial.monomial_mul_monomial, mul_comm]
+    rw [hmon, Polynomial.hasseDeriv_expand_mul hk]
+    simp [Polynomial.monomial_mul_monomial, prod_single_index, add_comm, mul_comm]
 
-/-- **Evaluated Hasse derivatives through the Frobenius substitution.** For `k < p ^ e`,
-evaluating `D^[k] (F(X, X ^ (p ^ e)))` at `a : R` gives `(∂_Z^[k] F)(a, a ^ (p ^ e))`. -/
-theorem eval_hasseDeriv_powerSubstitution {e : ℕ} (k : ℕ) (hk : k < p ^ e) (a : R)
+/-- Evaluating `D^[k] (F(X, X ^ (p ^ e)))` at `a` in an `R`-algebra `S` (for `k < p ^ e` in
+exponential characteristic `p`) gives `(∂_Z^[k] F)(a, a ^ (p ^ e))`. -/
+theorem aeval_hasseDeriv_powerSubstitution [Algebra R S] {e k : ℕ} (hk : k < p ^ e) (a : S)
+    (F : MvPolynomial (Fin 2) R) :
+    Polynomial.aeval a (Polynomial.hasseDeriv k (powerSubstitution (p ^ e) F)) =
+      aeval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) := by
+  rw [hasseDeriv_powerSubstitution hk, aeval_powerSubstitution]
+
+/-- Evaluating `D^[k] (F(X, X ^ (p ^ e)))` at `a` (for `k < p ^ e` in exponential characteristic
+`p`) gives `(∂_Z^[k] F)(a, a ^ (p ^ e))`. -/
+theorem eval_hasseDeriv_powerSubstitution {e k : ℕ} (hk : k < p ^ e) (a : R)
     (F : MvPolynomial (Fin 2) R) :
     (Polynomial.hasseDeriv k (powerSubstitution (p ^ e) F)).eval a =
       eval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) := by
-  rw [hasseDeriv_powerSubstitution k hk, eval_powerSubstitution]
-
-/-- **Algebra-evaluated Hasse derivatives through the Frobenius substitution.** For `k < p ^ e`,
-evaluating `D^[k] (F(X, X ^ (p ^ e)))` at `a : A` in any `R`-algebra `A` gives
-`(∂_Z^[k] F)(a, a ^ (p ^ e))`. -/
-theorem aeval_hasseDeriv_powerSubstitution {A : Type*} [CommSemiring A] [Algebra R A] {e : ℕ}
-    (k : ℕ) (hk : k < p ^ e) (a : A) (F : MvPolynomial (Fin 2) R) :
-    Polynomial.aeval a (Polynomial.hasseDeriv k (powerSubstitution (p ^ e) F)) =
-      aeval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) := by
-  rw [hasseDeriv_powerSubstitution k hk, aeval_powerSubstitution]
+  rw [hasseDeriv_powerSubstitution hk, eval_powerSubstitution]
 
 end ExpChar
 
-/-! ### Examples -/
+end CommSemiring
 
-/-! The bound `B` on the `Z`-degree cannot be dropped: `Z ^ 2` and `W` both map to `X ^ 2`. -/
+section FrobeniusTest
 
+variable {R : Type*} [CommRing R] [IsDomain R] {p : ℕ} [ExpChar R p]
+
+/-- **The Frobenius-graph nonvanishing test, Hasse form** (Iwaniec–Kowalski, Lemmas 11.16–11.17).
+Over an integral domain `R` of exponential characteristic `p`, for every `e : ℕ`, if a nonzero
+bivariate polynomial `F` has `Z`-degree below `p ^ e` and its Frobenius substitution
+`F(X, X ^ (p ^ e))` has degree strictly below `S.card * (m + 1)` with `m < p ^ e`, then `F` has a
+nonzero Hasse `Z`-jet of order at most `m` at some Frobenius-graph point `(a, a ^ (p ^ e))` with
+`a ∈ S`. -/
+theorem exists_nonzero_hasse_jet_on_frobenius_graph {e : ℕ} {F : MvPolynomial (Fin 2) R}
+    (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e) {S : Finset R} {m : ℕ} (hm : m < p ^ e)
+    (hdeg : (powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)) :
+    ∃ a ∈ S, ∃ k ≤ m, eval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) ≠ 0 := by
+  have hf : powerSubstitution (p ^ e) F ≠ 0 := (powerSubstitution_eq_zero_iff hZ).not.mpr hF
+  obtain ⟨a, ha, k, hk, hne⟩ :=
+    Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt hf hdeg
+  rw [eval_hasseDeriv_powerSubstitution (hk.trans_lt hm)] at hne
+  exact ⟨a, ha, k, hk, hne⟩
+
+/-- **The Frobenius-graph nonvanishing test, ordinary form.** Over an integral domain `R` of
+exponential characteristic `p`, for `0 < e` and `m < p`, if a nonzero bivariate polynomial `F` has
+`Z`-degree below `p ^ e` and `(powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)`, then `F`
+has a nonzero ordinary `Z`-jet `(∂_Z^k F)(a, a ^ (p ^ e))` of order `k ≤ m` at some `a ∈ S`. -/
+theorem exists_nonzero_ordinary_jet_on_frobenius_graph {e : ℕ} (he : 0 < e)
+    {F : MvPolynomial (Fin 2) R} (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
+    {S : Finset R} {m : ℕ} (hm : m < p)
+    (hdeg : (powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)) :
+    ∃ a ∈ S, ∃ k ≤ m, eval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) ≠ 0 := by
+  have hm' : m < p ^ e := hm.trans_le (Nat.le_self_pow he.ne' p)
+  obtain ⟨a, ha, k, hk, hne⟩ := exists_nonzero_hasse_jet_on_frobenius_graph hF hZ hm' hdeg
+  have hunit : IsUnit (k.factorial : R) := by
+    rcases ‹ExpChar R p› with _ | ⟨hp⟩
+    · obtain rfl : k = 0 := by omega
+      simp
+    · have : Fact p.Prime := ⟨hp⟩
+      exact (IsUnit.natCast_factorial_iff_of_charP p).mpr (hk.trans_lt hm)
+  exact ⟨a, ha, k, hk,
+    (eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero hunit 0 F _).not.mpr hne⟩
+
+end FrobeniusTest
+
+/-! ### Examples and sharpness -/
+
+/-- The bound `B` on the `Z`-degree cannot be dropped: `Z ^ 2` and `W` both map to `X ^ 2` (and over
+`ZMod 2`, `Z ^ 2 + W` is nonzero yet maps to `0` under `powerSubstitution 2`). -/
 example : powerSubstitution (R := ℤ) 2 (X 0 ^ 2) = powerSubstitution 2 (X 1) := by
   simp
 
@@ -369,152 +416,92 @@ example : (X 0 ^ 2 : MvPolynomial (Fin 2) ℤ) ≠ X 1 := by
   intro h
   simpa [degreeOf_X] using congrArg (degreeOf 0) h
 
-/-- Over `ZMod 2` (`p = 2`, `e = 1`), `D(powerSubstitution 2 (Z W)) = X ^ 2 =
-powerSubstitution 2 (∂_Z (Z W))`. -/
-example :
-    Polynomial.derivative (powerSubstitution (2 ^ 1) (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
-      Polynomial.X ^ 2 ∧
-    powerSubstitution (2 ^ 1) (pderiv 0 (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
-      Polynomial.X ^ 2 := by
-  refine ⟨?_, ?_⟩
-  · rw [derivative_powerSubstitution_charP (p := 2) (e := 1) (by decide)]
-    simp [Derivation.leibniz]
-  · simp [Derivation.leibniz]
+example : (X 0 ^ 2 + X 1 : MvPolynomial (Fin 2) (ZMod 2)) ≠ 0 ∧
+    powerSubstitution 2 (X 0 ^ 2 + X 1 : MvPolynomial (Fin 2) (ZMod 2)) = 0 := by
+  refine ⟨fun h ↦ ?_, by simp [CharTwo.add_self_eq_zero]⟩
+  simpa using congrArg (eval ![(0 : ZMod 2), 1]) h
 
-/-- Over `ZMod 2` (`p = 2`, `e = 1`), ordinary derivatives of `F = W` commute with
-`powerSubstitution 2` at every order `k`. -/
-example (k : ℕ) (hk : 0 < k) :
-    (Polynomial.derivative^[k])
-        (powerSubstitution (2 ^ 1) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 ∧
-      powerSubstitution (2 ^ 1) ((pderiv (0 : Fin 2))^[k]
-        (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk.ne'
-  rw [iterate_derivative_powerSubstitution (p := 2) (e := 1) (by decide) (m + 1)]
-  have h0 : ((pderiv (0 : Fin 2))^[m + 1] (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 := by
-    rw [Function.iterate_succ_apply, pderiv_X_of_ne (by decide)]
-    exact Function.iterate_fixed (map_zero _) m
-  simp [h0]
-
-/-- Over `ZMod 3` (`p = 3`, `e = 1`, `k = 2`), `D^[2] (powerSubstitution 3 (Z ^ 2 W)) = X ^ 3`. -/
-example :
-    Polynomial.hasseDeriv 2
-        (powerSubstitution (3 ^ 1) (X 0 ^ 2 * X 1 : MvPolynomial (Fin 2) (ZMod 3))) =
-      Polynomial.X ^ 3 := by
-  rw [hasseDeriv_powerSubstitution (p := 3) (e := 1) 2 (by decide)]
-  have hmon : (X 0 ^ 2 * X 1 : MvPolynomial (Fin 2) (ZMod 3)) =
-      monomial (single 0 2 + single 1 1) 1 := by
-    rw [X_pow_eq_monomial, X, monomial_mul_monomial, one_mul]
-  have hsub : (single 0 2 + single 1 1 - single 0 2 : Fin 2 →₀ ℕ) = single 1 1 := by
-    ext j; fin_cases j <;> simp
-  rw [hmon, hasseDeriv_monomial, prod_single_index (by simp), hsub]
-  simp [← Polynomial.monomial_one_one_eq_X, Polynomial.monomial_pow]
-
-/-- Sharpness of `k < p ^ e` in `hasseDeriv_powerSubstitution`: for `p = 2`, `e = 1`, `k = 2`,
-`F = W`, `D^[2] (X ^ 2) = 1` whereas `∂_Z^[2] W = 0`. -/
-example :
-    Polynomial.hasseDeriv 2
-        (powerSubstitution (2 ^ 1) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 1 ∧
-      powerSubstitution (2 ^ 1)
-        (hasseDeriv (single 0 2) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 := by
-  refine ⟨hasseDeriv_powerSubstitution_X_one_self 2, ?_⟩
-  rw [hasseDeriv_single_zero_X_one (by decide), map_zero]
-
-/-- Orders `p ≤ k < p ^ e` are covered by `hasseDeriv_powerSubstitution`: for `p = 2`, `e = 2`,
-`q = 4` over `ZMod 2`, `D^[3] (powerSubstitution 4 (Z ^ 3 W)) = X ^ 4`, `D^[2] (X ^ 4) = 0`, and
-at `k = q = 4`, `D^[4] (X ^ 4) = 1 ≠ 0 = powerSubstitution 4 (∂_Z^[4] W)`. -/
+/-- Over `ZMod 2` with `q = 2 ^ 2 = 4`, `hasseDeriv_powerSubstitution` holds at order `3`
+(`p ≤ 3 < q`), sending `Z ^ 3 * W` to `X ^ 4` on both sides. -/
 example :
     Polynomial.hasseDeriv 3
-        (powerSubstitution (2 ^ 2) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
-      Polynomial.X ^ 4 ∧
-    Polynomial.hasseDeriv 2
-        (powerSubstitution (2 ^ 2) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 ∧
-    Polynomial.hasseDeriv 4
-        (powerSubstitution (2 ^ 2) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 1 ∧
+      (powerSubstitution (2 ^ 2) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+      powerSubstitution (2 ^ 2) (hasseDeriv (single 0 3) (X 0 ^ 3 * X 1)) ∧
     powerSubstitution (2 ^ 2)
-        (hasseDeriv (single 0 4) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 := by
-  refine ⟨?_, ?_, hasseDeriv_powerSubstitution_X_one_self 4, ?_⟩
-  · rw [hasseDeriv_powerSubstitution (p := 2) (e := 2) 3 (by decide)]
-    have hmon : (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) (ZMod 2)) =
-        monomial (single 0 3 + single 1 1) 1 := by
-      rw [X_pow_eq_monomial, X, monomial_mul_monomial, one_mul]
-    have hsub : (single 0 3 + single 1 1 - single 0 3 : Fin 2 →₀ ℕ) = single 1 1 := by
-      ext j; fin_cases j <;> simp
-    rw [hmon, hasseDeriv_monomial, prod_single_index (by simp), hsub]
-    simp [← Polynomial.monomial_one_one_eq_X, Polynomial.monomial_pow]
-  · rw [hasseDeriv_powerSubstitution (p := 2) (e := 2) 2 (by decide),
-      hasseDeriv_single_zero_X_one (by decide), map_zero]
-  · rw [hasseDeriv_single_zero_X_one (by decide), map_zero]
+      (hasseDeriv (single 0 3) (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+      Polynomial.X ^ 4 := by
+  refine ⟨hasseDeriv_powerSubstitution (p := 2) (e := 2) (by decide) _, ?_⟩
+  have hmon : (X 0 ^ 3 * X 1 : MvPolynomial (Fin 2) (ZMod 2)) =
+      monomial (single 0 3 + single 1 1) 1 := by
+    rw [X_pow_eq_monomial, X, monomial_mul_monomial, one_mul]
+  have hsub : (single 0 3 + single 1 1 - single 0 3 : Fin 2 →₀ ℕ) = single 1 1 := by
+    ext j
+    fin_cases j <;> simp
+  rw [hmon, hasseDeriv_monomial, prod_single_index (by simp), hsub]
+  simp [Polynomial.monomial_one_right_eq_X_pow]
 
-/-- Sharpness of `0 < e` in `iterate_derivative_powerSubstitution`: at `e = 0` (`q = 1`), `F = W`
-maps to `X`, so `D (powerSubstitution 1 W) = 1`, whereas `∂_Z W = 0`. -/
+/-- The bound `k < p ^ e` in `hasseDeriv_powerSubstitution` is sharp: at `k = p ^ e = 2` over
+`ZMod 2` with `F = W`, `D^[2] (X ^ 2) = 1` whereas `∂_Z^[2] W = 0`. -/
+example :
+    Polynomial.hasseDeriv 2 (powerSubstitution (2 ^ 1) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 1 ∧
+    powerSubstitution (2 ^ 1) (hasseDeriv (single 0 2) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+      0 := by
+  have hne : (single 0 2 : Fin 2 →₀ ℕ) ≠ single 1 1 := fun h ↦ by simpa using congrArg (· 0) h
+  simp [← Polynomial.monomial_one_one_eq_X, Polynomial.monomial_pow, hne]
+
+/-- The hypothesis `0 < e` in `derivative_powerSubstitution` and
+`exists_nonzero_ordinary_jet_on_frobenius_graph` cannot be dropped: at `e = 0` (`p ^ 0 = 1`) over
+`ZMod 2` with `F = W`, `D (powerSubstitution 1 W) = 1` whereas both `W` and `∂_Z W = 0` vanish at
+`(0, 0)`. By contrast, `exists_nonzero_hasse_jet_on_frobenius_graph` holds at `e = 0` (`m = 0`) on
+`S = {0, 1}`. -/
 example :
     Polynomial.derivative (powerSubstitution (2 ^ 0) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 1 ∧
-      powerSubstitution (2 ^ 0) (pderiv 0 (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 := by
-  simp
+    (∀ k ≤ 1, eval ![0, (0 : ZMod 2) ^ 2 ^ 0]
+      ((pderiv (0 : Fin 2))^[k] (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0) ∧
+    (∃ a ∈ ({0, 1} : Finset (ZMod 2)), ∃ k ≤ 0,
+      eval ![a, a ^ 2 ^ 0]
+        (hasseDeriv (single 0 k) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) ≠ 0) := by
+  refine ⟨by simp, fun k hk ↦ ?_, ⟨1, by simp, 0, le_rfl, by simp⟩⟩
+  interval_cases k <;> simp
 
-/-- Over `GaloisField 2 2` (four elements, characteristic `2`), `hasseDeriv_powerSubstitution`
-holds with `q = 2` (`e = 1`) for `c · Z W`, giving `c X ^ 2` on both sides without any hypothesis
-relating `q` to the size of the coefficient field. -/
-example (c : GaloisField 2 2) :
-    Polynomial.hasseDeriv 1
-        (powerSubstitution (2 ^ 1) (C c * X 0 * X 1 : MvPolynomial (Fin 2) (GaloisField 2 2))) =
-      Polynomial.C c * Polynomial.X ^ 2 ∧
-    powerSubstitution (2 ^ 1)
-        (hasseDeriv (single 0 1) (C c * X 0 * X 1 : MvPolynomial (Fin 2) (GaloisField 2 2))) =
-      Polynomial.C c * Polynomial.X ^ 2 := by
-  have h1 : hasseDeriv (single 0 1) (C c * X 0 * X 1 : MvPolynomial (Fin 2) (GaloisField 2 2)) =
-      pderiv 0 (C c * X 0 * X 1) := by
-    simpa only [Nat.factorial_one, one_smul, Function.iterate_one] using
-      factorial_smul_hasseDeriv_single (0 : Fin 2) 1
-        (C c * X 0 * X 1 : MvPolynomial (Fin 2) (GaloisField 2 2))
-  have hrhs : powerSubstitution (2 ^ 1)
-      (hasseDeriv (single 0 1) (C c * X 0 * X 1 : MvPolynomial (Fin 2) (GaloisField 2 2))) =
-      Polynomial.C c * Polynomial.X ^ 2 := by
-    rw [h1]
-    simp [Derivation.leibniz]
-  refine ⟨?_, hrhs⟩
-  rw [hasseDeriv_powerSubstitution (p := 2) (e := 1) 1 (by decide), hrhs]
-
-/-- Evaluated form at `p = 3`, `e = 1`, `F = Z ^ 2`, `k = 1`, `a = 2`: both sides equal `1` in
-`ZMod 3`. -/
+/-- For `p ≤ m < p ^ e` (`p = 2, e = 2, q = 4, m = 2`) on `F = Z ^ 2` and `S = {0}` over `ZMod 2`,
+the Hasse nonvanishing test applies (`∂_Z^[2] (Z ^ 2)(0, 0) = 1 ≠ 0`), while every ordinary `Z`-jet
+of order `k ≤ 2` vanishes at `(0, 0)`. -/
 example :
-    (Polynomial.hasseDeriv 1
-        (powerSubstitution (3 ^ 1) (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 3)))).eval 2 = 1 ∧
-      eval ![2, (2 : ZMod 3) ^ 3 ^ 1]
-        (hasseDeriv (single 0 1) (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 3))) = 1 := by
-  have h1 : hasseDeriv (single 0 1) (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 3)) =
-      pderiv 0 (X 0 ^ 2) := by
-    simpa only [Nat.factorial_one, one_smul, Function.iterate_one] using
-      factorial_smul_hasseDeriv_single (0 : Fin 2) 1
-        (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 3))
-  have hrhs : eval ![2, (2 : ZMod 3) ^ 3 ^ 1]
-      (hasseDeriv (single 0 1) (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 3))) = 1 := by
-    rw [h1]
-    simp only [pderiv_pow, Nat.add_one_sub_one, pow_one, pderiv_X_self, map_mul, map_natCast,
-      map_one, eval_X, Matrix.cons_val_zero]
-    decide
-  exact ⟨(eval_hasseDeriv_powerSubstitution (p := 3) (e := 1) 1 (by decide) 2 _).trans hrhs, hrhs⟩
+    (∃ a ∈ ({0} : Finset (ZMod 2)), ∃ k ≤ 2,
+      eval ![a, a ^ 2 ^ 2]
+        (hasseDeriv (single 0 k) (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 2))) ≠ 0) ∧
+    (∀ k ≤ 2, eval ![(0 : ZMod 2), (0 : ZMod 2) ^ 2 ^ 2]
+      ((pderiv (0 : Fin 2))^[k] (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 2))) = 0) := by
+  have hF : (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 2)) ≠ 0 := fun h ↦ by
+    simpa using congrArg (eval ![(1 : ZMod 2), 0]) h
+  have hZ : (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 2)).degreeOf 0 < 2 ^ 2 := by
+    rw [degreeOf_lt_iff (by decide)]
+    intro μ hμ
+    rw [X_pow_eq_monomial, support_monomial] at hμ
+    split_ifs at hμ with h0 <;> simp_all
+  have hdeg : (powerSubstitution (2 ^ 2)
+      (X 0 ^ 2 : MvPolynomial (Fin 2) (ZMod 2))).natDegree <
+      ({0} : Finset (ZMod 2)).card * (2 + 1) := by
+    simp
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  refine ⟨exists_nonzero_hasse_jet_on_frobenius_graph (p := 2) (e := 2) hF hZ (by decide) hdeg,
+    fun k hk ↦ ?_⟩
+  rw [eval_iterate_pderiv_eq_factorial_mul]
+  interval_cases k
+  · simp
+  · simp [X_pow_eq_monomial, eval_monomial]
+  · simp [Nat.factorial, CharTwo.two_eq_zero]
 
-/-- Over `ZMod 3` at `e = 1` (`q = 3`), `F = Z W + Z` maps to `X ^ 4 + X`, whose first and second
-Hasse derivatives are `X ^ 3 + 1` and `0`, matching `∂_Z^[1] F = W + 1` and `∂_Z^[2] F = 0`. -/
-example :
-    let F : MvPolynomial (Fin 2) (ZMod 3) := X 0 * X 1 + X 0
-    powerSubstitution (3 ^ 1) F = Polynomial.X ^ 4 + Polynomial.X ∧
-      Polynomial.hasseDeriv 1 (powerSubstitution (3 ^ 1) F) = Polynomial.X ^ 3 + 1 ∧
-      Polynomial.hasseDeriv 2 (powerSubstitution (3 ^ 1) F) = 0 := by
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [map_add, map_mul, powerSubstitution_X_zero, powerSubstitution_X_one]
-    ring
-  · rw [hasseDeriv_powerSubstitution (p := 3) (e := 1) 1 (by decide)]
-    have h1 : hasseDeriv (single 0 1)
-        (X 0 * X 1 + X 0 : MvPolynomial (Fin 2) (ZMod 3)) =
-        pderiv 0 (X 0 * X 1 + X 0) := by
-      simpa only [Nat.factorial_one, one_smul, Function.iterate_one] using
-        factorial_smul_hasseDeriv_single (0 : Fin 2) 1
-          (X 0 * X 1 + X 0 : MvPolynomial (Fin 2) (ZMod 3))
-    rw [h1]
-    simp [Derivation.leibniz]
-  · rw [hasseDeriv_powerSubstitution (p := 3) (e := 1) 2 (by decide)]
-    simp [hasseDeriv_mul_X, single_eq_single_iff]
+/-- Both Frobenius-graph nonvanishing tests instantiate directly over any field `K` of prime
+characteristic `p` without manual `ExpChar` conversion. -/
+example {K : Type*} [Field K] {p : ℕ} [Fact p.Prime] [CharP K p] {e : ℕ} (he : 0 < e)
+    {F : MvPolynomial (Fin 2) K} (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
+    {S : Finset K} {m : ℕ} (hm : m < p)
+    (hdeg : (powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)) :
+    (∃ a ∈ S, ∃ k ≤ m, eval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) ≠ 0) ∧
+    (∃ a ∈ S, ∃ k ≤ m, eval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) ≠ 0) :=
+  ⟨exists_nonzero_hasse_jet_on_frobenius_graph hF hZ (hm.trans_le (Nat.le_self_pow he.ne' p)) hdeg,
+    exists_nonzero_ordinary_jet_on_frobenius_graph he hF hZ hm hdeg⟩
 
 end MvPolynomial

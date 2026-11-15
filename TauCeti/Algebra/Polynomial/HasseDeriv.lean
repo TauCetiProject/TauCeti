@@ -19,10 +19,11 @@ import Mathlib.Data.ZMod.Basic
 # Univariate Hasse jets: ordinary jets and nonvanishing on finite sets
 
 The `k`-th ordinary derivative is `k!` times the `k`-th Hasse derivative
-(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so whenever `k!` is a unit an ordinary jet
-vanishes exactly when the corresponding Hasse jet does. In a ring of prime characteristic `p` this
-holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and fails at `k = p`, where
-`D^p` kills every polynomial while `D^[p] X^p = 1`.
+(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so evaluating `D^k f` multiplies `D^[k] f (a)`
+by `k!` (`Polynomial.eval_iterate_derivative_eq_factorial_mul`) and whenever `k!` is a unit an
+ordinary jet vanishes exactly when the corresponding Hasse jet does. In a ring of prime
+characteristic `p` this holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and
+fails at `k = p`, where `D^p` kills every polynomial while `D^[p] X^p = 1`.
 
 Over an integral domain, the root multiplicity of a nonzero polynomial `P` at `a` is the order of
 its first nonvanishing Hasse derivative at `a`
@@ -39,6 +40,8 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
 
 ## Main results
 
+* `Polynomial.eval_iterate_derivative_eq_factorial_mul`: `(derivative^[k] f).eval a` is `k!` times
+  `(hasseDeriv k f).eval a`.
 * `Polynomial.iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero`,
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero`: if `k!` is a unit, the
   ordinary derivative (or jet at a point) of order `k` vanishes if and only if the Hasse one does;
@@ -46,9 +49,11 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt` specialise this
   to `k < p` in characteristic `p`.
 * `Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`,
-  `Polynomial.exists_eval_iterate_derivative_ne_zero_of_natDegree_lt`: over an integral domain, if
-  `P ≠ 0` and `P.natDegree < #S * (k + 1)`, some Hasse derivative (and, when `k!` is a unit or
-  `k < p` in characteristic `p`, some ordinary derivative) of `P` of order `≤ k` is nonzero on `S`.
+  `Polynomial.exists_eval_iterate_derivative_ne_zero_of_natDegree_lt`,
+  `Polynomial.exists_eval_iterate_derivative_ne_zero_of_natDegree_lt_of_lt`: over an integral
+  domain, if `P ≠ 0` and `P.natDegree < #S * (k + 1)`, some Hasse derivative (and, when `k!` is a
+  unit or `k < p` in characteristic `p`, some ordinary derivative) of `P` of order `≤ k` is nonzero
+  on `S`.
 * `Polynomial.exists_int_eval_hasseDeriv_ne_zero`: over a domain of characteristic zero, if `P ≠ 0`,
   `P.natDegree ≤ s`, and `0 < B`, some Hasse derivative of `P` of order `≤ s / B` is nonzero at an
   integer `z` with `z.natAbs ≤ B`.
@@ -73,6 +78,11 @@ open Nat
 
 variable {R : Type*} [Semiring R] {k : ℕ}
 
+/-- Evaluating `derivative^[k] f` at `a` gives `k!` times `(hasseDeriv k f).eval a`. -/
+theorem eval_iterate_derivative_eq_factorial_mul (k : ℕ) (f : R[X]) (a : R) :
+    (derivative^[k] f).eval a = (k ! : R) * (hasseDeriv k f).eval a := by
+  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul]
+
 /-- If `k!` is a unit, the `k`-th ordinary derivative of `f` vanishes exactly when the `k`-th
 Hasse derivative does. -/
 theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)) (f : R[X]) :
@@ -84,8 +94,7 @@ theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)
 `D^[k] f (a)` does. -/
 theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero (hk : IsUnit (k ! : R))
     (f : R[X]) (a : R) : (derivative^[k] f).eval a = 0 ↔ (hasseDeriv k f).eval a = 0 := by
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul,
-    hk.mul_right_eq_zero]
+  rw [eval_iterate_derivative_eq_factorial_mul, hk.mul_right_eq_zero]
 
 /-- In characteristic `p`, for `k < p` the `k`-th ordinary derivative of `f` vanishes exactly when
 the `k`-th Hasse derivative does. -/

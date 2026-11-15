@@ -55,13 +55,14 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
-* `MvPolynomial.factorial_smul_hasseDeriv_single`,
-  `MvPolynomial.eval_iterate_pderiv_eq_factorial_mul`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; so when
-  `k!` is a unit (for instance `k < p` in characteristic `p`), an ordinary partial derivative or
-  jet vanishes exactly when the corresponding Hasse one does
-  (`MvPolynomial.iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero`,
-  `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero`,
+* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; so evaluating
+  `(∂/∂Xᵢ)^k P` multiplies `(∂^(k eᵢ) P)(x)` by `k!`
+  (`MvPolynomial.eval_iterate_pderiv_eq_factorial_mul`,
+  `MvPolynomial.aeval_iterate_pderiv_eq_factorial_mul`), and when `k!` is a unit (for instance
+  `k < p` in characteristic `p`), an ordinary partial derivative or jet vanishes exactly when the
+  corresponding Hasse one does (`MvPolynomial.iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero`,
   `MvPolynomial.iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero_of_lt`,
+  `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero`,
   `MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt`).
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
@@ -268,10 +269,16 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
     rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
       Nat.factorial_succ, mul_comm]
 
-/-- Evaluating the `k`-th partial derivative in `Xᵢ` at `a` multiplies the Hasse derivative
-`∂^(k eᵢ)` at `a` by `k!`. -/
-theorem eval_iterate_pderiv_eq_factorial_mul (i : σ) (k : ℕ) (P : MvPolynomial σ R) (a : σ → R) :
-    eval a ((pderiv i)^[k] P) = (k.factorial : R) * eval a (hasseDeriv (single i k) P) := by
+/-- Evaluating `(∂/∂Xᵢ)^k P` at a tuple `x` in an `R`-algebra `S` gives `k!` times the evaluated
+Hasse derivative `∂^(k eᵢ) P`. -/
+theorem aeval_iterate_pderiv_eq_factorial_mul {S : Type*} [CommSemiring S] [Algebra R S]
+    (i : σ) (k : ℕ) (x : σ → S) (P : MvPolynomial σ R) :
+    aeval x ((pderiv i)^[k] P) = (k.factorial : S) * aeval x (hasseDeriv (single i k) P) := by
+  rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
+
+/-- Evaluating `(∂/∂Xᵢ)^k P` at `x` gives `k!` times `(∂^(k eᵢ) P)(x)`. -/
+theorem eval_iterate_pderiv_eq_factorial_mul (i : σ) (k : ℕ) (x : σ → R) (P : MvPolynomial σ R) :
+    eval x ((pderiv i)^[k] P) = (k.factorial : R) * eval x (hasseDeriv (single i k) P) := by
   rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
 
 /-- If `k!` is a unit, the `k`-th partial derivative in `Xᵢ` vanishes exactly when the Hasse

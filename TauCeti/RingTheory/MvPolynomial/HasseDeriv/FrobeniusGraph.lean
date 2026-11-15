@@ -5,52 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.HasseDeriv
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.OrdinaryJet
+public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.JetEvaluation
 public import TauCeti.RingTheory.MvPolynomial.PowerSubstitution
 
+import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.ZMod.Basic
 import Mathlib.FieldTheory.Finite.GaloisField
+import TauCeti.RingTheory.MvPolynomial.HasseDeriv.OrdinaryJet
 
 /-!
-# Nonvanishing of Hasse and ordinary jets on the Frobenius graph
+# Vanishing criteria and jet-map injectivity on the Frobenius graph
 
-Let `R` be an integral domain of exponential characteristic `p` and `q = p ^ e` (`e ≥ 0`). A
-nonzero bivariate polynomial `F(Z, W) : MvPolynomial (Fin 2) R` (variable `0` is `Z`, variable `1`
-is `W`) of `Z`-degree strictly below `q` maps under `MvPolynomial.powerSubstitution q` to a nonzero
-univariate polynomial `f(X) = F(X, X ^ q)` (`MvPolynomial.powerSubstitution_ne_zero`).
+This file builds partial-degree forms, contrapositive vanishing criteria, and injectivity of the
+jet-evaluation maps `MvPolynomial.jetEval` and `MvPolynomial.ordinaryJetEval` on top of the
+Frobenius-graph nonvanishing tests `MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph` and
+`MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph` from
+`TauCeti.RingTheory.MvPolynomial.PowerSubstitution`.
 
-For any finite set `S : Finset R` and any derivative order bound `m < q`:
-* Whenever `f.natDegree < #S * (m + 1)`, root-multiplicity counting on `f`
-  (`Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt`) furnishes `a ∈ S` and `k ≤ m` with
-  `(Polynomial.hasseDeriv k f).eval a ≠ 0`. Since `k ≤ m < q`, Hasse derivatives commute with
-  `powerSubstitution q` (`MvPolynomial.eval_hasseDeriv_powerSubstitution`), yielding a nonzero pure
-  `Z`-Hasse jet `(∂_Z^[k] F)(a, a ^ q) ≠ 0` on the Frobenius graph
-  (`MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph`). This holds for every `e ≥ 0`
-  (including `e = 0`, where `q = 1` forces `m = 0`) and for orders `p ≤ m < q`.
-* In prime characteristic `p`, when `0 < e` and `m < p`, we have `m < p ≤ q`, and `(k! : R)` is a
-  unit for every `k ≤ m < p`
-  (`MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt`), yielding
-  a nonzero ordinary `Z`-jet `(∂_Z ^ k F)(a, a ^ q) ≠ 0` on the Frobenius graph
-  (`MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph`). Both `0 < e` and `m < p` are
-  sharp for the ordinary form.
+Let `R` be an integral domain of exponential characteristic `p` and `q = p ^ e` (`e ≥ 0`). For a
+finite set `S : Finset R`, a derivative order bound `m < q`, and any exponent set
+`s : Set (Fin 2 →₀ ℕ)` whose elements satisfy `μ 0 < q` and `μ 0 + q * μ 1 < #S * (m + 1)`:
+* Every polynomial `F ∈ restrictSupport R s` has `Z`-degree below `q` and satisfies
+  `(powerSubstitution q F).natDegree < #S * (m + 1)`
+  (`MvPolynomial.natDegree_powerSubstitution_lt_of_mem_restrictSupport`), so the Hasse jet map
+  evaluating `∂_Z^[k]` (`0 ≤ k ≤ m`) along the Frobenius graph `{(a, a ^ q) | a ∈ S}` is injective
+  (`MvPolynomial.jetEval_frobeniusGraph_injective`).
+* When `0 < e` and `m < p`, every factorial `k!` (`k ≤ m`) is a unit in `R`, so the ordinary jet
+  map evaluating `∂_Z ^ k` (`0 ≤ k ≤ m`) along `{(a, a ^ q) | a ∈ S}` is likewise injective
+  (`MvPolynomial.ordinaryJetEval_frobeniusGraph_injective`).
 
 ## Main results
 
-* `MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph`,
-  `MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph_of_degreeOf`: nonvanishing of a pure
-  `Z`-Hasse jet of order `≤ m` at some `(a, a ^ (p ^ e))` with `a ∈ S`, when `F ≠ 0`,
-  `F.degreeOf 0 < p ^ e`, `m < p ^ e`, and `(powerSubstitution (p ^ e) F).natDegree < #S * (m + 1)`
-  (or `F.degreeOf 0 + p ^ e * F.degreeOf 1 < #S * (m + 1)`).
-* `MvPolynomial.eq_zero_of_forall_eval_hasseDeriv_frobenius_eq_zero`,
-  `MvPolynomial.jetEval_frobeniusGraph_injective`: contrapositive vanishing criterion and
-  injectivity of `MvPolynomial.jetEval` at the Frobenius-graph points `(a, a ^ (p ^ e))` (`a ∈ S`,
-  orders `0, …, m`) on any support set with `μ 0 < p ^ e` and `μ 0 + p ^ e * μ 1 < #S * (m + 1)`.
-* `MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph`,
-  `MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph_of_degreeOf`,
+* `MvPolynomial.exists_nonzero_hasse_jet_on_frobenius_graph_of_degreeOf`,
+  `MvPolynomial.eq_zero_of_forall_eval_hasseDeriv_frobenius_eq_zero`,
+  `MvPolynomial.jetEval_frobeniusGraph_injective`: partial-degree nonvanishing test, contrapositive
+  vanishing criterion, and injectivity of `MvPolynomial.jetEval` along the Frobenius graph
+  `{(a, a ^ (p ^ e)) | a ∈ S}` for Hasse `Z`-jets of order `≤ m < p ^ e`.
+* `MvPolynomial.exists_nonzero_ordinary_jet_on_frobenius_graph_of_degreeOf`,
   `MvPolynomial.eq_zero_of_forall_eval_iterate_pderiv_frobenius_eq_zero`,
-  `MvPolynomial.ordinaryJetEval_frobeniusGraph_injective`: the ordinary-derivative counterparts in
-  prime characteristic `p` when `0 < e` and `m < p`.
+  `MvPolynomial.ordinaryJetEval_frobeniusGraph_injective`: the ordinary-derivative counterparts
+  when `0 < e` and `m < p`.
 
 ## References
 
@@ -66,37 +60,21 @@ namespace MvPolynomial
 
 open Finsupp
 
-section Hasse
+section FrobeniusGraph
 
 variable {R : Type*} [CommRing R] [IsDomain R] {p : ℕ} [ExpChar R p]
 
-/-- **The Frobenius-graph nonvanishing test, Hasse form** (Iwaniec–Kowalski, Lemmas 11.16–11.17).
-Over an integral domain `R` of exponential characteristic `p`, let `q = p ^ e` (`e ≥ 0`). If
-`F : MvPolynomial (Fin 2) R` is nonzero of `Z`-degree below `q`, `m < q`, and
-`(powerSubstitution q F).natDegree < S.card * (m + 1)` for a finite set `S : Finset R`, then some
-pure `Z`-Hasse jet `∂_Z^[k] F` of order `k ≤ m` does not vanish at `(a, a ^ q)` for some `a ∈ S`.
--/
-theorem exists_nonzero_hasse_jet_on_frobenius_graph {e : ℕ}
-    (F : MvPolynomial (Fin 2) R) (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
-    (S : Finset R) (m : ℕ) (hm : m < p ^ e)
-    (hdeg : (powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)) :
-    ∃ a ∈ S, ∃ k ≤ m,
-      eval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) ≠ 0 := by
-  obtain ⟨a, ha, k, hk, hne⟩ :=
-    Polynomial.exists_eval_hasseDeriv_ne_zero_of_natDegree_lt
-      (powerSubstitution_ne_zero hF hZ) hdeg
-  refine ⟨a, ha, k, hk, ?_⟩
-  rwa [← eval_hasseDeriv_powerSubstitution k (hk.trans_lt hm)]
+/-! ### Hasse jets -/
 
 /-- Partial-degree form of `exists_nonzero_hasse_jet_on_frobenius_graph`, assuming
 `F.degreeOf 0 + p ^ e * F.degreeOf 1 < S.card * (m + 1)`. -/
 theorem exists_nonzero_hasse_jet_on_frobenius_graph_of_degreeOf {e : ℕ}
-    (F : MvPolynomial (Fin 2) R) (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
-    (S : Finset R) (m : ℕ) (hm : m < p ^ e)
+    {F : MvPolynomial (Fin 2) R} (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
+    {S : Finset R} {m : ℕ} (hm : m < p ^ e)
     (hdeg : F.degreeOf 0 + p ^ e * F.degreeOf 1 < S.card * (m + 1)) :
     ∃ a ∈ S, ∃ k ≤ m,
       eval ![a, a ^ p ^ e] (hasseDeriv (single 0 k) F) ≠ 0 :=
-  exists_nonzero_hasse_jet_on_frobenius_graph F hF hZ S m hm
+  exists_nonzero_hasse_jet_on_frobenius_graph hF hZ hm
     ((natDegree_powerSubstitution_le (p ^ e) F).trans_lt hdeg)
 
 /-- If `F` has `Z`-degree below `p ^ e`, `m < p ^ e`,
@@ -110,7 +88,7 @@ theorem eq_zero_of_forall_eval_hasseDeriv_frobenius_eq_zero {e : ℕ}
     F = 0 := by
   by_contra hF
   obtain ⟨a, ha, k, hk, hne⟩ :=
-    exists_nonzero_hasse_jet_on_frobenius_graph F hF hZ S m hm hdeg
+    exists_nonzero_hasse_jet_on_frobenius_graph hF hZ hm hdeg
   exact hne (hvan a ha k hk)
 
 /-- On any exponent set `s` whose elements satisfy `μ 0 < p ^ e` and
@@ -139,38 +117,17 @@ theorem jetEval_frobeniusGraph_injective {e : ℕ} {s : Set (Fin 2 →₀ ℕ)}
   exact absurd (eq_zero_of_forall_eval_hasseDeriv_frobenius_eq_zero hZ hm hdeg
     fun a ha k hk ↦ hf (⟨a, ha⟩, ⟨k, Nat.lt_succ_of_le hk⟩)) hF
 
-end Hasse
-
-section Ordinary
-
-variable {R : Type*} [CommRing R] [IsDomain R] {p : ℕ} [Fact p.Prime] [CharP R p]
-
-/-- **The Frobenius-graph nonvanishing test, ordinary form.** Over an integral domain `R` of prime
-characteristic `p`, let `q = p ^ e` with `0 < e`. If `F : MvPolynomial (Fin 2) R` is nonzero of
-`Z`-degree below `q`, `m < p`, and `(powerSubstitution q F).natDegree < S.card * (m + 1)` for a
-finite set `S : Finset R`, then some ordinary `Z`-derivative `∂_Z ^ k F` of order `k ≤ m` does not
-vanish at `(a, a ^ q)` for some `a ∈ S`. -/
-theorem exists_nonzero_ordinary_jet_on_frobenius_graph {e : ℕ} (he : 0 < e)
-    (F : MvPolynomial (Fin 2) R) (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
-    (S : Finset R) (m : ℕ) (hm : m < p)
-    (hdeg : (powerSubstitution (p ^ e) F).natDegree < S.card * (m + 1)) :
-    ∃ a ∈ S, ∃ k ≤ m,
-      eval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) ≠ 0 := by
-  have hmq : m < p ^ e := hm.trans_le (Nat.le_self_pow he.ne' p)
-  obtain ⟨a, ha, k, hk, hne⟩ :=
-    exists_nonzero_hasse_jet_on_frobenius_graph F hF hZ S m hmq hdeg
-  refine ⟨a, ha, k, hk, ?_⟩
-  rwa [ne_eq, eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt p (hk.trans_lt hm)]
+/-! ### Ordinary jets -/
 
 /-- Partial-degree form of `exists_nonzero_ordinary_jet_on_frobenius_graph`, assuming
 `F.degreeOf 0 + p ^ e * F.degreeOf 1 < S.card * (m + 1)`. -/
 theorem exists_nonzero_ordinary_jet_on_frobenius_graph_of_degreeOf {e : ℕ} (he : 0 < e)
-    (F : MvPolynomial (Fin 2) R) (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
-    (S : Finset R) (m : ℕ) (hm : m < p)
+    {F : MvPolynomial (Fin 2) R} (hF : F ≠ 0) (hZ : F.degreeOf 0 < p ^ e)
+    {S : Finset R} {m : ℕ} (hm : m < p)
     (hdeg : F.degreeOf 0 + p ^ e * F.degreeOf 1 < S.card * (m + 1)) :
     ∃ a ∈ S, ∃ k ≤ m,
       eval ![a, a ^ p ^ e] ((pderiv (0 : Fin 2))^[k] F) ≠ 0 :=
-  exists_nonzero_ordinary_jet_on_frobenius_graph he F hF hZ S m hm
+  exists_nonzero_ordinary_jet_on_frobenius_graph he hF hZ hm
     ((natDegree_powerSubstitution_le (p ^ e) F).trans_lt hdeg)
 
 /-- If `0 < e`, `F` has `Z`-degree below `p ^ e`, `m < p`,
@@ -184,12 +141,12 @@ theorem eq_zero_of_forall_eval_iterate_pderiv_frobenius_eq_zero {e : ℕ} (he : 
     F = 0 := by
   by_contra hF
   obtain ⟨a, ha, k, hk, hne⟩ :=
-    exists_nonzero_ordinary_jet_on_frobenius_graph he F hF hZ S m hm hdeg
+    exists_nonzero_ordinary_jet_on_frobenius_graph he hF hZ hm hdeg
   exact hne (hvan a ha k hk)
 
-/-- In prime characteristic `p`, for `0 < e` and `m < p`, on any exponent set `s` whose elements
-satisfy `μ 0 < p ^ e` and `μ 0 + p ^ e * μ 1 < S.card * (m + 1)`, the ordinary jet map evaluating
-`∂_Z ^ k` (`0 ≤ k ≤ m`) along `{(a, a ^ (p ^ e)) | a ∈ S}` is injective. -/
+/-- For `0 < e` and `m < p`, on any exponent set `s` whose elements satisfy `μ 0 < p ^ e` and
+`μ 0 + p ^ e * μ 1 < S.card * (m + 1)`, the ordinary jet map evaluating `∂_Z ^ k` (`0 ≤ k ≤ m`)
+along `{(a, a ^ (p ^ e)) | a ∈ S}` is injective. -/
 theorem ordinaryJetEval_frobeniusGraph_injective {e : ℕ} (he : 0 < e) {s : Set (Fin 2 →₀ ℕ)}
     {S : Finset R} {m : ℕ} (hm : m < p)
     (hsZ : ∀ μ ∈ s, μ 0 < p ^ e)
@@ -197,11 +154,16 @@ theorem ordinaryJetEval_frobeniusGraph_injective {e : ℕ} (he : 0 < e) {s : Set
     Function.Injective
       (ordinaryJetEval s (fun i : S × Fin (m + 1) ↦ ![(i.1 : R), (i.1 : R) ^ p ^ e])
         (fun _ ↦ 0) (fun i : S × Fin (m + 1) ↦ (i.2 : ℕ))) := by
-  rw [ordinaryJetEval_injective_iff_of_lt s (fun _ ↦ 0) p _
-    fun i ↦ (Nat.lt_succ_iff.1 i.2.isLt).trans_lt hm]
+  have hk : ∀ i : S × Fin (m + 1), IsUnit ((i.2 : ℕ).factorial : R) := fun i ↦ by
+    rcases ‹ExpChar R p› with _ | ⟨hp⟩
+    · have h0 : (i.2 : ℕ) = 0 := by omega
+      simp [h0]
+    · have : Fact p.Prime := ⟨hp⟩
+      exact (IsUnit.natCast_factorial_iff_of_charP p).2 ((Nat.lt_succ_iff.1 i.2.isLt).trans_lt hm)
+  rw [ordinaryJetEval_injective_iff s (fun _ ↦ 0) _ hk]
   exact jetEval_frobeniusGraph_injective (hm.trans_le (Nat.le_self_pow he.ne' p)) hsZ hsdeg
 
-end Ordinary
+end FrobeniusGraph
 
 /-! ### Examples and sharpness witnesses -/
 
@@ -294,29 +256,6 @@ example :
     · simp only [eval_add, eval_X, Matrix.cons_val_zero, Matrix.cons_val_one]
       decide
 
-/-- Sharpness of `F.degreeOf 0 < p ^ e`: over `ZMod 2` at `p = 2`, `e = 1`, `F = Z ^ 2 + W` is
-nonzero of `Z`-degree `2 = p ^ e`, and `powerSubstitution 2 F = X ^ 2 + X ^ 2 = 0`, so every jet
-along the Frobenius graph vanishes at every point. -/
-example :
-    let F : MvPolynomial (Fin 2) (ZMod 2) := X 0 ^ 2 + X 1
-    F ≠ 0 ∧ ¬ F.degreeOf 0 < 2 ^ 1 ∧ powerSubstitution (2 ^ 1) F = 0 := by
-  refine ⟨?_, ?_, ?_⟩
-  · intro h
-    have hval := congrArg (eval ![0, 1]) h
-    simp at hval
-  · intro hlt
-    have h2 : (single (0 : Fin 2) 2) 0 ≤
-        (X 0 ^ 2 + X 1 : MvPolynomial (Fin 2) (ZMod 2)).degreeOf 0 := by
-      refine monomial_le_degreeOf 0 (mem_support_iff.2 ?_)
-      simp [X_pow_eq_monomial]
-    rw [single_eq_same] at h2
-    omega
-  · simp only [pow_one, map_add, map_pow, powerSubstitution_X_zero, powerSubstitution_X_one]
-    have h2 : (2 : (ZMod 2)[X]) = 0 := CharP.cast_eq_zero _ 2
-    calc (Polynomial.X ^ 2 + Polynomial.X ^ 2 : (ZMod 2)[X])
-        = 2 * Polynomial.X ^ 2 := (two_mul _).symm
-      _ = 0 := by rw [h2, zero_mul]
-
 /-- Over `GaloisField 2 2` with `p = 2`, `e = 2` (`q = 4`), `F = Z + W`, and `S = univ` (`#S = 4`):
 every `a` satisfies `a ^ 4 = a`, so `F(a, a ^ 4) = 0` on all of `S` (matching the failure of
 `4 < 4 * 1` at `m = 0`), while at `m = 1 < 2` the degree bound `4 < 4 * 2` holds and the first jet
@@ -331,6 +270,7 @@ example :
     rw [← Nat.card_eq_fintype_card, GaloisField.card 2 2 (by decide)]
     rfl
   have h2 : (2 : GaloisField 2 2) = 0 := CharP.cast_eq_zero (GaloisField 2 2) 2
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   refine ⟨fun a _ ↦ ?_, fun a _ ↦ by simp, ?_⟩
   · have ha4 : a ^ 4 = a := by
       have h := FiniteField.pow_card a
@@ -338,64 +278,20 @@ example :
     have h22 : 2 ^ 2 = 4 := rfl
     simp only [eval_add, eval_X, Matrix.cons_val_zero, Matrix.cons_val_one]
     rw [h22, ha4, ← two_mul, h2, zero_mul]
-  · refine exists_nonzero_ordinary_jet_on_frobenius_graph (p := 2) (e := 2) (by decide)
-      (X 0 + X 1) ?_ ?_ Finset.univ 1 (by decide) ?_
+  · refine exists_nonzero_ordinary_jet_on_frobenius_graph_of_degreeOf (p := 2) (e := 2) (by decide)
+      (F := X 0 + X 1) ?_ ?_ (S := Finset.univ) (m := 1) (by decide) ?_
     · intro h
       have hval := congrArg (eval ![1, 0]) h
       simp at hval
     · refine (degreeOf_add_le 0 _ _).trans_lt (max_lt (by simp) ?_)
       simp [degreeOf_X]
-    · refine (natDegree_powerSubstitution_le 4 _).trans_lt ?_
-      have h0 : (X 0 + X 1 : MvPolynomial (Fin 2) (GaloisField 2 2)).degreeOf 0 ≤ 1 :=
+    · have h0 : (X 0 + X 1 : MvPolynomial (Fin 2) (GaloisField 2 2)).degreeOf 0 ≤ 1 :=
         (degreeOf_add_le 0 _ _).trans (max_le (by simp) (by simp [degreeOf_X]))
       have h1 : (X 0 + X 1 : MvPolynomial (Fin 2) (GaloisField 2 2)).degreeOf 1 ≤ 1 :=
         (degreeOf_add_le 1 _ _).trans (max_le (by simp [degreeOf_X]) (by simp))
       have hScard : (Finset.univ : Finset (GaloisField 2 2)).card = 4 := hcard
       rw [hScard]
       omega
-
-/-- Sharpness of `0 < e` in `exists_nonzero_ordinary_jet_on_frobenius_graph`: at `e = 0`, `p = 2`,
-`F = W` over `ZMod 2`, `S = {0}`, and `m = 1`, all other hypotheses hold (`F ≠ 0`,
-`F.degreeOf 0 = 0 < 1`, `1 < 2`, `natDegree X = 1 < 1 * 2`), yet both `W` and `∂_Z W = 0` vanish
-at `(0, 0)`. -/
-example :
-    let F : MvPolynomial (Fin 2) (ZMod 2) := X 1
-    let S : Finset (ZMod 2) := {0}
-    F ≠ 0 ∧ F.degreeOf 0 < 2 ^ 0 ∧ 1 < 2 ∧
-      (powerSubstitution (2 ^ 0) F).natDegree < S.card * (1 + 1) ∧
-      ∀ k ≤ 1, eval ![0, (0 : ZMod 2) ^ 2 ^ 0] ((pderiv (0 : Fin 2))^[k] F) = 0 := by
-  refine ⟨X_ne_zero 1, by simp [degreeOf_X], by decide, by simp, fun k hk ↦ ?_⟩
-  interval_cases k <;> simp
-
-/-- `exists_nonzero_hasse_jet_on_frobenius_graph` needs no `0 < e`: at `e = 0`, `p = 2`, `F = W`
-over `ZMod 2`, `S = {0, 1}`, and `m = 0`, it produces a point of `S` where `F(a, a ^ 1) ≠ 0`
-(namely `a = 1`). -/
-example :
-    ∃ a ∈ ({0, 1} : Finset (ZMod 2)), ∃ k ≤ 0,
-      eval ![a, a ^ 2 ^ 0]
-        (hasseDeriv (single 0 k) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) ≠ 0 :=
-  exists_nonzero_hasse_jet_on_frobenius_graph (p := 2) (e := 0) (X 1) (X_ne_zero 1)
-    (by simp [degreeOf_X]) {0, 1} 0 (by decide) (by simp)
-
-/-- Sharpness of `m < p` in `exists_nonzero_ordinary_jet_on_frobenius_graph` and necessity of the
-Hasse form for `p ≤ m < p ^ e`: at `p = 2`, `e = 2` (`q = 4`), `F = Z ^ 2` over `ZMod 2`,
-`S = {0}`, and `m = 2`, the Hasse form applies and `∂_Z^[2] (Z ^ 2) = 1 ≠ 0` at `(0, 0)`, whereas
-the ordinary `Z`-derivatives of orders `0, 1, 2` all vanish at `(0, 0)`. -/
-example :
-    let F : MvPolynomial (Fin 2) (ZMod 2) := X 0 ^ 2
-    (∃ a ∈ ({0} : Finset (ZMod 2)), ∃ k ≤ 2,
-      eval ![a, a ^ 2 ^ 2] (hasseDeriv (single 0 k) F) ≠ 0) ∧
-    eval ![0, (0 : ZMod 2) ^ 2 ^ 2] (hasseDeriv (single 0 2) F) = 1 ∧
-    ∀ k ≤ 2, eval ![0, (0 : ZMod 2) ^ 2 ^ 2] ((pderiv (0 : Fin 2))^[k] F) = 0 := by
-  refine ⟨?_, ?_, fun k hk ↦ ?_⟩
-  · exact exists_nonzero_hasse_jet_on_frobenius_graph (p := 2) (e := 2) (X 0 ^ 2)
-      (pow_ne_zero 2 (X_ne_zero 0)) (by simp) {0} 2 (by decide) (by simp)
-  · simp [X_pow_eq_monomial]
-  · interval_cases k
-    · simp
-    · simp
-    · have h2 : ((Nat.factorial 2 : ℕ) : ZMod 2) = 0 := by decide
-      rw [eval_iterate_pderiv_eq_factorial_mul, h2, zero_mul]
 
 end Examples
 

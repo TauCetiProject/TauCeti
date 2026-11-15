@@ -236,7 +236,7 @@ theorem schwarzChristoffelFiniteBoundary_eq_image_union_edges {n : ℕ}
     intro i hi
     obtain ⟨k, hk⟩ := hab i hi
     rw [← hk]
-    exact not_mem_Ioo_castSucc_succ b hb.monotone j k
+    exact notMem_Ioo_castSucc_succ b hb.monotone j k
   -- Each consecutive interval has exactly the geometric image identified above.
   have hdecomp : B '' D = (B '' Iic (b 0) ∪ B '' Ici (b (Fin.last n))) ∪
       ⋃ j : Fin n, schwarzChristoffelFiniteEdge a e z₀ (b j.castSucc) (b j.succ) := by
