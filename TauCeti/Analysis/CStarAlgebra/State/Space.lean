@@ -103,6 +103,21 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A
 
 variable [StarOrderedRing A]
 
+/-- A state `φ : stateSpace A` packaged as a positive linear map `A →ₚ[ℂ] ℂ`. -/
+noncomputable def statePositiveLinearMap (φ : stateSpace A) : A →ₚ[ℂ] ℂ :=
+  .mk₀ (toStrongDual (φ : WeakDual ℂ A) : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace φ.2
+
+/-- `statePositiveLinearMap φ` evaluates as the underlying functional `φ`. -/
+@[simp]
+theorem statePositiveLinearMap_apply (φ : stateSpace A) (a : A) :
+    statePositiveLinearMap φ a = (φ : WeakDual ℂ A) a :=
+  (rfl)
+
+/-- Every state of a C⋆-algebra preserves the involution: `φ (star a) = star (φ a)`. -/
+theorem map_star_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) :
+    φ (star a) = star (φ a) :=
+  map_star (statePositiveLinearMap ⟨φ, hφ⟩) a
+
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
 weak-* dual. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap :
@@ -110,11 +125,10 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
   refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
     h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
-  let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  let ω := statePositiveLinearMap ⟨φ, hφ⟩
   have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `φ` by definition
     ext
-    rfl
+    simp [ω]
   exact ⟨ω, hω ▸ norm_toStrongDual_of_mem_stateSpace hφ, by rw [hω, toWeakDual_toStrongDual]⟩
 
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
