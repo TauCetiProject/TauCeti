@@ -22,6 +22,8 @@ The ambient DG category need not have an ordinary `Category` instance, so Mathli
 
 * `TauCeti.DGFullSubcategory`: objects satisfying a predicate in a DG category.
 * `TauCeti.DGFullSubcategory.inclusion`: the enriched inclusion.
+* `TauCeti.DGFullSubcategory.inclusionOfLE`: the enriched inclusion between full DG subcategories
+  associated to an implication of predicates.
 
 ## References
 
@@ -114,6 +116,36 @@ theorem dgComp_eq {X Y Z : DGFullSubcategory P} {p q n : ℤ}
   rw [← dgCompMap_tmul, ← dgCompMap_tmul]
   congr 1
   simp only [dgCompMap_def]
+  rfl
+
+/-- An implication between predicates on objects of `C` induces a full enriched inclusion between
+the corresponding full DG subcategories, acting as the identity on each Hom complex. -/
+@[expose]
+def inclusionOfLE {Q : C → Prop} (h : ∀ X, P X → Q X) :
+    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
+      (DGFullSubcategory P) (DGFullSubcategory Q) where
+  obj X := ⟨X.obj, h X.obj X.property⟩
+  map _ _ := 𝟙 _
+
+/-- `inclusionOfLE` sends an object to the same underlying object with the weakened proof. -/
+@[simp]
+theorem inclusionOfLE_obj {Q : C → Prop} (h : ∀ X, P X → Q X) (X : DGFullSubcategory P) :
+    (inclusionOfLE R h).obj X = ⟨X.obj, h X.obj X.property⟩ := by
+  rfl
+
+/-- `inclusionOfLE` acts as the identity on each Hom complex. -/
+@[simp]
+theorem inclusionOfLE_map {Q : C → Prop} (h : ∀ X, P X → Q X) (X Y : DGFullSubcategory P) :
+    (inclusionOfLE R h).map X Y = eqToHom (by simp only [inclusionOfLE_obj]; rfl) := by
+  simp only [inclusionOfLE]
+  rfl
+
+/-- `inclusionOfLE` retains a homogeneous morphism up to the object map in its target type. -/
+@[simp]
+theorem inclusionOfLE_dgMap_heq {Q : C → Prop} (h : ∀ X, P X → Q X)
+    {X Y : DGFullSubcategory P} {n : ℤ} (f : DGHom R n X Y) :
+    (inclusionOfLE R h).dgMap n f ≍ f := by
+  rw [CategoryTheory.EnrichedFunctor.dgMap_apply, inclusionOfLE_map]
   rfl
 
 end

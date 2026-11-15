@@ -59,7 +59,8 @@ is the vanishing of the homology of the short complex `sc'` there
 (`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, so such a functor carries acyclic
+complexes to acyclic complexes (`CategoryTheory.Functor.acyclic_mapHomologicalComplex_obj`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -497,5 +498,13 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
     (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
       ((K.sc i).mapHomologyIso F).hom :=
   (rfl)
+
+omit i in
+/-- An additive functor preserving homology sends acyclic complexes to acyclic complexes. -/
+lemma acyclic_mapHomologicalComplex_obj {K : HomologicalComplex C c} (hK : K.Acyclic) :
+    ((F.mapHomologicalComplex c).obj K).Acyclic := fun j ↦ by
+  rw [HomologicalComplex.exactAt_iff_isZero_homology]
+  exact (F.map_isZero ((K.exactAt_iff_isZero_homology j).1 (hK j))).of_iso
+    ((F.mapHomologicalComplexCompHomologyFunctorIso c j).app K)
 
 end CategoryTheory.Functor

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DGNerve.HomotopyCategory
+public import TauCeti.AlgebraicTopology.DGNerve.Functor
 public import TauCeti.AlgebraicTopology.DGNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
+public import TauCeti.CategoryTheory.DG.QuasiEquivalence
 
 /-!
 # Equivalences in the differential graded nerve
@@ -15,7 +16,9 @@ public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 A closed degree-zero morphism gives an equivalence in the differential graded nerve exactly
 when its class in `H⁰` is invertible. This connects the simplicial notion of equivalence to
 computations with closed morphisms modulo boundaries, and in particular allows equivalences
-in dg models of derived categories to be detected by quasi-isomorphisms.
+in dg models of derived categories to be detected by quasi-isomorphisms. Moreover, the
+differential graded nerve of any quasi-equivalence of DG categories induces an equivalence on
+homotopy categories.
 
 The comparison uses the canonical equivalence `TauCeti.dgNerve.homotopyCategoryEquiv`, not an
 identification of the dg nerve itself with an ordinary nerve: higher mapping spaces are retained.
@@ -49,3 +52,25 @@ theorem isEquivalence_edgeMk_iff {X Y : C} (f : dgCycles R X Y) :
   simp
 
 end TauCeti.dgNerve
+
+/-- The differential graded nerve of a quasi-equivalence of DG categories induces an equivalence
+of homotopy categories. -/
+theorem
+    CategoryTheory.EnrichedFunctor.IsQuasiEquivalence.isEquivalence_mapHomotopyCategory_mapDGNerve
+    {R : Type v} [CommRing R] {C D : Type u} [TauCeti.DGCategory R C] [TauCeti.DGCategory R D]
+    {F : CategoryTheory.EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : F.IsQuasiEquivalence) :
+    (SSet.mapHomotopyCategory F.mapDGNerve).IsEquivalence := by
+  have : (TauCeti.dgNerve.fromHomotopyCategory R C).IsEquivalence := by
+    rw [← TauCeti.dgNerve.homotopyCategoryEquiv_inverse]
+    infer_instance
+  have : (TauCeti.dgNerve.fromHomotopyCategory R D).IsEquivalence := by
+    rw [← TauCeti.dgNerve.homotopyCategoryEquiv_inverse]
+    infer_instance
+  have := hF.isEquivalence_mapDGHomotopyCategory
+  have : (SSet.mapHomotopyCategory F.mapDGNerve ⋙
+      TauCeti.dgNerve.fromHomotopyCategory R D).IsEquivalence := by
+    rw [F.mapDGNerve_comp_fromHomotopyCategory]
+    infer_instance
+  exact CategoryTheory.Functor.isEquivalence_of_comp_right _
+    (TauCeti.dgNerve.fromHomotopyCategory R D)
