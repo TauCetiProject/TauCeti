@@ -42,8 +42,6 @@ total-degree `EulerCharSigns`.
 
 ## Main results
 
-* `CategoryTheory.ShortComplex.finrank_X₂_eq_finrank_homology_add`: rank–nullity decomposition of
-  the middle term of a short complex of modules.
 * `HomologicalComplex.finrank_X_eq_finrank_homology_add`: degreewise rank–nullity for a
   homological complex of any shape.
 * `HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology`: finite-sum
@@ -67,25 +65,6 @@ public section
 open CategoryTheory Limits Module
 
 universe u v
-
-namespace CategoryTheory.ShortComplex
-
-variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
-
-/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules with `X₂` finitely generated, over a ring
-satisfying `StrongRankCondition` and `HasRankNullity`, the rank of `X₂` is the rank of the homology
-plus the ranks of the incoming and outgoing images. -/
-theorem finrank_X₂_eq_finrank_homology_add (S : ShortComplex (ModuleCat.{v} R))
-    [Module.Finite R S.X₂] :
-    finrank R S.X₂ =
-      finrank R S.homology + finrank R (LinearMap.range S.f.hom) +
-        finrank R (LinearMap.range S.g.hom) := by
-  have h₁ := S.finrank_homology_add_finrank_range_f
-  have h₂ := (LinearMap.ker S.g.hom).finrank_quotient_add_finrank
-  rw [S.g.hom.quotKerEquivRange.finrank_eq] at h₂
-  lia
-
-end CategoryTheory.ShortComplex
 
 namespace HomologicalComplex
 
@@ -241,7 +220,6 @@ def eulerCharSignsUp'ProdInt {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) :
     rw [hsum, Int.negOnePow_succ, Int.negOnePow_add, Int.negOnePow_even (2 * k) ⟨k, by lia⟩,
       mul_one]
 
-@[simp]
 lemma eulerCharSignsUp'ProdInt_χ {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) (pq : ℤ × ℤ) :
     (letI := eulerCharSignsUp'ProdInt hu; (ComplexShape.up' u).χ pq) = (pq.1 + pq.2).negOnePow :=
   (rfl)
@@ -253,6 +231,7 @@ instance eulerCharSignsCohomologicalSpectralSequence (r : ℤ) :
     (ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)).EulerCharSigns :=
   eulerCharSignsUp'ProdInt ⟨0, by lia⟩
 
+@[simp]
 lemma eulerCharSignsCohomologicalSpectralSequence_χ (r : ℤ) (pq : ℤ × ℤ) :
     (ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow :=
   (rfl)

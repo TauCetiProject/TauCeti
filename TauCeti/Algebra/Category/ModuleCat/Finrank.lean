@@ -6,26 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
-# Finrank of zero objects, biproducts and short exact sequences in `ModuleCat`
+# Finrank of zero objects, coproducts, biproducts and short exact sequences in `ModuleCat`
 
 Vanishing and direct sums of objects of `ModuleCat R` are naturally expressed categorically, as
-`CategoryTheory.Limits.IsZero` and biproducts `M ⊞ N`, while the dimension counts that consume them
-speak of `Module.finrank`. This file supplies the translations between the two: the ring itself
-has finrank one (`ModuleCat.finrank_of_self`), a zero object has finrank zero, and finrank is
-additive on biproducts of finite free modules
-(`ModuleCat.finrank_biprod`, the analogue of `FGModuleCat.finrank_biprod`).
+`CategoryTheory.Limits.IsZero`, coproducts `∐ Z` (`ModuleCat.isZero_sigmaObj`), and biproducts
+`M ⊞ N`, while the dimension counts that consume them speak of `Module.finrank`. This file supplies
+the translations between the two: the ring itself has finrank one (`ModuleCat.finrank_of_self`), a
+zero object has finrank zero, and finrank is additive on biproducts and finite coproducts of finite
+free modules (`ModuleCat.finrank_biprod`, `ModuleCat.finrank_sigmaObj`).
 
-Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
-commutative domain, finrank is moreover additive on every short exact sequence whose middle term
-is finitely generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`). Unlike
-Mathlib's `ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers
-sequences of finitely generated abelian groups with torsion.
+For short exact sequences in `ModuleCat R`, finite generation of the outer terms passes to the
+middle term over any ring (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finite_X₂`), and over a
+ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
+commutative domain, finrank is additive on every short exact sequence whose middle term is finitely
+generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`). Unlike Mathlib's
+`ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers sequences of
+finitely generated abelian groups with torsion.
 
 The first translation is what bounds the `Module.finrank` support of a bounded complex of vector
 spaces by its bounding interval, which is in turn what makes Mathlib's `finsum`-based Euler
@@ -71,6 +74,11 @@ theorem finsum_neg_one_pow_finrank_eq_sum_range {M : ℕ → ModuleCat.{v} R} {N
 
 end Nontrivial
 
+/-- A coproduct of zero objects in `ModuleCat R` is a zero object. -/
+theorem isZero_sigmaObj {ι : Type*} (Z : ι → ModuleCat.{v} R) [HasCoproduct Z]
+    (h : ∀ i, IsZero (Z i)) : IsZero (∐ Z) :=
+  (IsZero.iff_id_eq_zero _).2 <| Sigma.hom_ext _ _ fun i ↦ (h i).eq_of_src _ _
+
 /-- The finrank of a biproduct of finite free modules is the sum of their finranks. -/
 @[simp]
 theorem finrank_biprod [StrongRankCondition R] (M N : ModuleCat.{v} R)
@@ -78,9 +86,30 @@ theorem finrank_biprod [StrongRankCondition R] (M N : ModuleCat.{v} R)
     Module.finrank R ↑(M ⊞ N) = Module.finrank R M + Module.finrank R N :=
   (biprodIsoProd M N).toLinearEquiv.finrank_eq.trans Module.finrank_prod
 
+/-- The finrank of a finite coproduct of finite free modules is the sum of their finranks. -/
+@[simp]
+theorem finrank_sigmaObj [StrongRankCondition R] {ι : Type*} [Fintype ι]
+    (Z : ι → ModuleCat.{v} R) [HasCoproduct Z] [∀ i, Module.Free R (Z i)]
+    [∀ i, Module.Finite R (Z i)] :
+    Module.finrank R ↥(∐ Z) = ∑ i, Module.finrank R (Z i) := by
+  let e := (Fintype.equivFin ι).symm
+  have : HasCoproduct (Z ∘ e) := ⟨_, coproductCoconeIsColimit.{u, 0, v} (Z ∘ e)⟩
+  let iso := (Sigma.reindex e Z).symm ≪≫ coprodIsoDirectSum.{u, 0, v} (Z ∘ e)
+  exact iso.toLinearEquiv.finrank_eq.trans
+    ((Module.finrank_directSum R fun k ↦ Z (e k)).trans
+      (e.sum_comp fun i ↦ Module.finrank R (Z i)))
+
 end ModuleCat
 
 namespace CategoryTheory.ShortComplex.ShortExact
+
+/-- Over any ring `R`, if `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` is a short exact sequence in `ModuleCat R` with
+`X₁` and `X₃` finitely generated, then `X₂` is finitely generated. -/
+theorem moduleCat_finite_X₂ {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
+    (hS : S.ShortExact) [Module.Finite R S.X₁] [Module.Finite R S.X₃] :
+    Module.Finite R S.X₂ :=
+  Module.Finite.of_exact (f := S.f.hom) (g := S.g.hom)
+    ((moduleCat_exact_iff_function_exact S).1 hS.exact) hS.moduleCat_surjective_g
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 
