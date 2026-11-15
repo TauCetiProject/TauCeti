@@ -19,6 +19,8 @@ is Hausdorff.
 The fibers of a locally injective map are discrete
 (`IsLocallyInjective.isDiscrete_preimage_singleton`), so a compact subset of one fiber is finite
 (`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
+A continuous section of a continuous locally injective map over an open set has open image
+(`IsLocallyInjective.isOpen_image_of_leftInvOn`).
 For a separated, locally injective map, such as a covering map or any locally injective map with
 Hausdorff total space, two sections over a preconnected set that are continuous on that set and
 agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
@@ -61,6 +63,27 @@ homeomorphism, is finite. -/
 theorem IsLocallyInjective.finite_preimage_singleton_inter (hp : IsLocallyInjective p)
     {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite :=
   hs.finite <| (hp.isDiscrete_preimage_singleton b).mono inter_subset_left
+
+/-- A continuous section of a continuous locally injective map `p` over an open set `V` has open
+image. -/
+theorem IsLocallyInjective.isOpen_image_of_leftInvOn [TopologicalSpace B]
+    (hinj : IsLocallyInjective p)
+    (hp : Continuous p) {V : Set B} (hV : IsOpen V) {s : B → E} (hs : ContinuousOn s V)
+    (hps : LeftInvOn p s V) : IsOpen (s '' V) := by
+  refine isOpen_iff_mem_nhds.2 ?_
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨U, hUo, hyU, hUinj⟩ := hinj (s y)
+  have hsp : ContinuousAt (s ∘ p) (s y) := by
+    refine ContinuousAt.comp ?_ hp.continuousAt
+    rw [hps hy]
+    exact hs.continuousAt (hV.mem_nhds hy)
+  have hU' : s ∘ p ⁻¹' U ∈ 𝓝 (s y) := hsp.preimage_mem_nhds (by
+    simpa only [Function.comp_apply, hps hy] using hUo.mem_nhds hyU)
+  have hV' : p ⁻¹' V ∈ 𝓝 (s y) := hp.continuousAt.preimage_mem_nhds (by
+    simpa only [hps hy] using hV.mem_nhds hy)
+  filter_upwards [hUo.mem_nhds hyU, hU', hV'] with e heU hseU heV
+  refine ⟨p e, heV, hUinj hseU heU ?_⟩
+  exact hps heV
 
 /-- Two sections of `p` over a preconnected set `S` that are continuous on `S` and agree at one
 point of `S` agree on `S`, when `p` is separated and locally injective. Every map with Hausdorff

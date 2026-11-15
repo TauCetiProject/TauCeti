@@ -346,7 +346,8 @@ theorem infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
 
 section Herbrand
 
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] {L S}
 
