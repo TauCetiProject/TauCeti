@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 import TauCeti.Algebra.Homology.Kronecker
+import TauCeti.Algebra.Homology.Single.Homology
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
 
@@ -639,18 +640,10 @@ private theorem singleObjHomologySelfIso_inv_comp_homologyMap_cubeBoundaryPairSi
         (ModuleCat.of k k)).inv ≫
         HomologicalComplex.homologyMap (cubeBoundaryPairSingleHom k m) (m + 1) =
       (cubicalHomologyCubeBoundaryPairEquiv k m).toModuleIso.hom := by
+  rw [cubeBoundaryPairSingleHom,
+    HomologicalComplex.singleObjHomologySelfIso_inv_comp_homologyMap_mkHomFromSingle _ _ _ rfl]
   ext
-  rw [← HomologicalComplex.singleObjCyclesSelfIso_inv_homologyπ, Category.assoc,
-    HomologicalComplex.homologyπ_naturality, LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom,
-    LinearEquiv.coe_coe, cubicalHomologyCubeBoundaryPairEquiv_apply, one_smul, ← Category.assoc,
-    ModuleCat.comp_apply]
-  congr 1
-  -- both cycles have the same underlying chain, the fundamental cycle
-  apply (ModuleCat.mono_iff_injective
-    (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).iCycles (m + 1))).1 inferInstance
-  rw [← ModuleCat.comp_apply, Category.assoc, HomologicalComplex.cyclesMap_i, ← Category.assoc,
-    HomologicalComplex.singleObjCyclesSelfIso_inv_iCycles, ModuleCat.comp_apply,
-    cubeBoundaryPairSingleHom_f_apply, one_smul]
+  simp [cubicalHomologyCubeBoundaryPairEquiv_apply]
 
 /-- **The relative chains of the cube pair are quasi-isomorphic to `k[m + 1]`**, through the chain
 map sending `1` to the fundamental cycle `[Iᵐ⁺¹]`. -/

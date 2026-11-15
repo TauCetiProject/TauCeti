@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cub
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.FiberHomotopy
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 public import TauCeti.Topology.PathSpace.Moore.Pullback
-import TauCeti.Algebra.Homology.Single.Projective
 
 /-!
 # The relative chains of the path fibration over a cell
@@ -35,9 +34,8 @@ cubical chains. Composed with the relative Eilenberg–Zilber quasi-isomorphism
 (`TauCeti.MoorePathPullback.quasiIso_cellChainMap`).
 
 If the relative chains of the pair receive a quasi-isomorphism `K ⟶ N(D, A)` from a complex of
-projective modules with projective homology, then `N(Ω_b X) ⊗ K` computes the relative homology of
-the path fibration over the cell
-(`TauCeti.MoorePathPullback.quasiIso_whiskerLeft_comp_cellChainMap`). For the cube pair
+projective modules, then `N(Ω_b X) ⊗ K` computes the relative homology of the path fibration over
+the cell (`TauCeti.MoorePathPullback.quasiIso_whiskerLeft_comp_cellChainMap`). For the cube pair
 `(Iᵐ⁺¹, ∂Iᵐ⁺¹)` and `K = k[m + 1]`, with `1` sent to the fundamental cycle `[Iᵐ⁺¹]`
 (`TauCeti.cubeBoundaryPairSingleHom`), this is the relative-cell quasi-isomorphism
 
@@ -67,8 +65,8 @@ assembles the cells of a CW complex, are not treated here.
 * `TauCeti.MoorePathPullback.quasiIso_cellChainMap`: the relative-cell comparison is a
   quasi-isomorphism.
 * `TauCeti.MoorePathPullback.quasiIso_whiskerLeft_comp_cellChainMap`: so is its composite with
-  `N(Ω_b X) ⊗ K ⟶ N(Ω_b X) ⊗ N(D, A)` for a quasi-isomorphism `K ⟶ N(D, A)` of projective
-  complexes with projective homology.
+  `N(Ω_b X) ⊗ K ⟶ N(Ω_b X) ⊗ N(D, A)` for a quasi-isomorphism `K ⟶ N(D, A)` from a complex of
+  projective modules.
 * `TauCeti.MoorePathPullback.quasiIso_whiskerLeft_cubeBoundaryPairSingleHom_comp_cellChainMap`:
   the relative-cell quasi-isomorphism
   `N(Ω_b X) ⊗ k[m + 1] ⟶ N(f*P_b X, f*P_b X|_{∂Iᵐ⁺¹})` of a cube.
@@ -189,11 +187,11 @@ instance quasiIso_cellChainMap : QuasiIso (cellChainMap P τ h₀ h₁ k) := by
   infer_instance
 
 /-- **Relative-cell comparison from a model of the cell.** If `ι : K ⟶ N(D, A)` is a
-quasi-isomorphism from a complex of projective modules with projective homology, for instance
-`k[n]` mapped to a fundamental cycle of the cell, then
+quasi-isomorphism from a complex of projective modules, for instance `k[n]` mapped to a
+fundamental cycle of the cell, then
 `N(Ω_b X) ⊗ K ⟶ N(Ω_b X) ⊗ N(D, A) ⟶ N(f*P_b X, f*P_b X|_A)` is a quasi-isomorphism. -/
 theorem quasiIso_whiskerLeft_comp_cellChainMap {K : ChainComplex (ModuleCat.{u} k) ℕ}
-    [∀ p, Module.Projective k (K.X p)] [∀ p, Module.Projective k (K.homology p)]
+    [∀ p, Module.Projective k (K.X p)]
     (ι : K ⟶ P.cubicalChainComplex k) [QuasiIso ι] :
     QuasiIso ((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b)) ◁ ι ≫
       cellChainMap P τ h₀ h₁ k) := by
