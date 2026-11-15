@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Algebra.Module.Submodule.Quotient
 import TauCeti.Algebra.Module.ZLattice.Summable
 
 /-!
@@ -176,20 +177,8 @@ theorem tsum_thetaCosetTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L) (γ : E)
     ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L),
       cexp (π * I * (‖γ + ((b : L) : E)‖ ^ 2 : ℝ) * τ) =
         thetaCoset M (γ + (Quotient.out y : L)) τ := by
-  -- The fiber is identified with the kernel `M.submoduleOf L`, and then with `M`.
-  let f := (M.submoduleOf L).mkQ.toAddMonoidHom
-  have hker (x : L) : x ∈ M.submoduleOf L ↔ x ∈ f.ker := by simp [f]
-  have hset : f ⁻¹' {f (Quotient.out y)} = Submodule.Quotient.mk ⁻¹' {y} := by ext; simp [f]
-  let e : M ≃ (Submodule.Quotient.mk ⁻¹' {y} : Set L) :=
-    ((Submodule.submoduleOfEquivOfLe hML).toEquiv.symm.trans (Equiv.subtypeEquivRight hker)).trans
-      ((f.fiberEquivKer (Quotient.out y)).symm.trans (Set.equivOfEq hset))
-  -- `e v = out y + v`, by `AddMonoidHom.fiberEquivKer_symm_apply` and the definition of the
-  -- inverse of `Submodule.submoduleOfEquivOfLe`.
-  have he (v : M) : ((e v : L) : E) = ((Quotient.out y : L) : E) + v := by
-    have hv : (((Submodule.submoduleOfEquivOfLe hML).symm v : L) : E) = v := rfl
-    simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
-  rw [thetaCoset_apply, ← e.tsum_eq]
-  exact tsum_congr fun v => by rw [he, add_assoc]
+  rw [thetaCoset_apply, ← (M.quotientFiberEquivOfLe hML y).tsum_eq]
+  exact tsum_congr fun v => by simp [add_assoc]
 
 /-- The sum of theta terms over the fiber of the quotient map `L → L / M` is the theta
 series of the translate of `M` by a representative of that class. -/

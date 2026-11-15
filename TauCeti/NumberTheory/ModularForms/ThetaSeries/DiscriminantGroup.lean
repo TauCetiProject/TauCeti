@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
 import Mathlib.Topology.Algebra.InfiniteSum.Real
-import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
+import TauCeti.Algebra.Module.Submodule.Quotient
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
@@ -170,10 +170,7 @@ private theorem summable_norm_thetaCoset_add_of_mem_dual [Finite (DiscriminantGr
     Summable fun v : L ↦ ‖cexp (π * I * (‖γ + δ + (v : E)‖ ^ 2 : ℝ) * τ)‖ := by
   set d := Nat.card (DiscriminantGroup L)
   have hd1 : (1 : ℝ) ≤ d := by exact_mod_cast Nat.card_pos
-  have hdL : d • δ ∈ L := by
-    have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
-      (x := Submodule.Quotient.mk (⟨δ, hδ⟩ : dual L))
-    rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
+  have hdL : d • δ ∈ L := card_nsmul_mem_of_mem_dual hδ
   have hdom : Summable fun v : L ↦ Real.exp (π * τ.im * d * ‖δ‖ ^ 2) *
       ‖cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ)‖ +
       ‖cexp (π * I * (‖γ + ((v + ⟨d • δ, hdL⟩ : L) : E)‖ ^ 2 : ℝ) * τ)‖ :=
@@ -222,29 +219,12 @@ private theorem summable_norm_thetaSeries_sup_dual_iff [Finite (DiscriminantGrou
   have hsz : Summable fun v : L ↦
       ‖cexp (π * I * (‖((Quotient.out q : M) : E) + (v : E)‖ ^ 2 : ℝ) * τ)‖ := by
     refine (Equiv.addLeft (⟨-u, neg_mem hu⟩ : L)).summable_iff.mp (hsx.congr fun v ↦ ?_)
-    have heq : 0 + x + (v : E) = ((Quotient.out q : M) : E) +
-        (((Equiv.addLeft (⟨-u, neg_mem hu⟩ : L)) v : L) : E) := by
-      change 0 + x + (v : E) = ((Quotient.out q : M) : E) + (-u + (v : E))
-      rw [← hux]
-      abel
-    change ‖cexp (π * I * (‖0 + x + (v : E)‖ ^ 2 : ℝ) * τ)‖ =
-      ‖cexp (π * I * (‖((Quotient.out q : M) : E) +
-        (((Equiv.addLeft (⟨-u, neg_mem hu⟩ : L)) v : L) : E)‖ ^ 2 : ℝ) * τ)‖
-    rw [heq]
-  let f := (L.submoduleOf M).mkQ.toAddMonoidHom
-  have hker (y : M) : y ∈ L.submoduleOf M ↔ y ∈ f.ker := by simp [f]
-  have hset : f ⁻¹' {f (Quotient.out q)} = Submodule.Quotient.mk ⁻¹' {q} := by ext; simp [f]
-  let e : L ≃ (Submodule.Quotient.mk ⁻¹' {q} : Set M) :=
-    ((Submodule.submoduleOfEquivOfLe (le_sup_left : L ≤ M)).toEquiv.symm.trans
-      (Equiv.subtypeEquivRight hker)).trans
-      ((f.fiberEquivKer (Quotient.out q)).symm.trans (Set.equivOfEq hset))
-  have he (v : L) : ((e v : M) : E) = ((Quotient.out q : M) : E) + v := by
-    have hv : (((Submodule.submoduleOfEquivOfLe (le_sup_left : L ≤ M)).symm v : M) : E) = v := rfl
-    simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
-  exact e.summable_iff.mp (hsz.congr fun v ↦ by
-    change ‖cexp (π * I * (‖((Quotient.out q : M) : E) + (v : E)‖ ^ 2 : ℝ) * τ)‖ =
-      ‖cexp (π * I * (‖((e v : M) : E)‖ ^ 2 : ℝ) * τ)‖
-    rw [he])
+    have hv : ((Quotient.out q : M) : E) + ((Equiv.addLeft (⟨-u, neg_mem hu⟩ : L) v : L) : E) =
+        0 + x + (v : E) := by
+      rw [Equiv.coe_addLeft, AddMemClass.coe_add, Subtype.coe_mk, ← hux, zero_add, add_comm u x,
+        add_assoc, add_neg_cancel_left]
+    simp only [Function.comp_def, hv]
+  exact (L.quotientFiberEquivOfLe le_sup_left q).summable_iff.mp (hsz.congr fun _ ↦ by simp)
 
 /-- **Coset decomposition over the discriminant group.** For any `ℤ`-submodule `L` with finite
 discriminant group `A_L = L^∨ ⧸ (L ∩ L^∨)`, the sum of the coset theta series over `A_L` is the
@@ -293,18 +273,6 @@ theorem IsIntegral.thetaSeries_dual_eq_sum (h : IsIntegral L) [Fintype (Discrimi
     (τ : ℍ) : thetaSeries (dual L) τ = ∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ := by
   rw [← thetaSeries_sup_dual_eq_sum, sup_eq_right.mpr (isIntegral_iff_le_dual.mp h)]
 
-/-- When `L` is discrete and `DiscriminantGroup L` is finite, `L` has finite index in `L ⊔ L^∨`, so
-`L ⊔ L^∨` is also discrete. -/
-private theorem discreteTopology_sup_dual [DiscreteTopology L] [Finite (DiscriminantGroup L)] :
-    DiscreteTopology (L ⊔ dual L : Submodule ℤ E) := by
-  have : Finite ((L ⊔ dual L : Submodule ℤ E) ⧸ L.submoduleOf (L ⊔ dual L)) :=
-    Finite.of_equiv _ (discriminantGroupEquivSupQuotient L).toEquiv
-  have : L.toAddSubgroup.IsFiniteRelIndex (L ⊔ dual L).toAddSubgroup :=
-    ⟨show Nat.card ((L ⊔ dual L : Submodule ℤ E) ⧸ L.submoduleOf (L ⊔ dual L)) ≠ 0 from
-      Nat.card_pos.ne'⟩
-  exact (AddSubgroup.discreteTopology_iff_of_isFiniteRelIndex
-    (Submodule.toAddSubgroup_mono (le_sup_left : L ≤ L ⊔ dual L))).mp inferInstance
-
 variable [FiniteDimensional ℝ E]
 
 /-- When a discrete subgroup `L` in a finite-dimensional space is not integral, `L^∨` is a strict
@@ -313,7 +281,7 @@ sublattice of `L ⊔ L^∨`, so on the imaginary axis
 theorem re_thetaSeries_dual_lt_re_sum_thetaCosetClass [DiscreteTopology L] (h : ¬ IsIntegral L)
     [Fintype (DiscriminantGroup L)] {τ : ℍ} (hτ : τ.re = 0) :
     (thetaSeries (dual L) τ).re < (∑ γ : DiscriminantGroup L, thetaCosetClass L γ τ).re := by
-  have := discreteTopology_sup_dual (L := L)
+  have := discreteTopology_sup_dual_of_finite_discriminantGroup (L := L)
   have hlt : dual L < L ⊔ dual L :=
     lt_of_le_of_ne le_sup_right fun heq ↦
       h (isIntegral_iff_le_dual.mpr (le_sup_left.trans heq.symm.le))

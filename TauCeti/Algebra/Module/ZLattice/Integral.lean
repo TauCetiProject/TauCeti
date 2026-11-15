@@ -329,14 +329,7 @@ theorem isUnimodular_span_one : IsUnimodular (span ℤ {1} : Submodule ℤ ℝ) 
 theorem isUnimodular_span_singleton_iff {c : ℝ} :
     IsUnimodular (span ℤ {c} : Submodule ℤ ℝ) ↔ |c| = 1 := by
   refine ⟨fun hu ↦ ?_, fun hc ↦ ?_⟩
-  · have hc0 : c ≠ 0 := by
-      rintro rfl
-      have h1 : (1 : ℝ) ∈ dual (span ℤ {(0 : ℝ)} : Submodule ℤ ℝ) :=
-        mem_dual.mpr fun y hy ↦
-          ⟨0, by rw [span_singleton_eq_bot.mpr rfl, mem_bot] at hy; simp [hy]⟩
-      have h0 := hu.dual_eq.le h1
-      rw [span_singleton_eq_bot.mpr rfl, mem_bot] at h0
-      exact one_ne_zero h0
+  · have hc0 : c ≠ 0 := by rintro rfl; simpa using hu.dual_eq
     have heq : (span ℤ {c} : Submodule ℤ ℝ) = span ℤ {c⁻¹} := by
       simpa [dual_span_singleton hc0] using isUnimodular_iff_eq_dual.mp hu
     obtain ⟨a, ha⟩ := mem_span_singleton.mp (heq ▸ mem_span_singleton_self c)

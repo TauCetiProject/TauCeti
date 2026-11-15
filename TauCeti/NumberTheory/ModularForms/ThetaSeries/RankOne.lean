@@ -95,17 +95,14 @@ theorem thetaSeries_dual_span_singleton (c : ℝ) (τ : ℍ) :
     thetaSeries (dual (span ℤ {c} : Submodule ℤ ℝ)) τ =
       jacobiTheta (((c ^ 2)⁻¹ : ℝ) * (τ : ℂ)) := by
   rcases eq_or_ne c 0 with rfl | hc
-  · have htop : dual (span ℤ {(0 : ℝ)} : Submodule ℤ ℝ) = ⊤ :=
-      eq_top_iff.mpr fun x _ ↦ mem_dual.mpr fun y hy ↦
-        ⟨0, by rw [span_singleton_eq_bot.mpr rfl, mem_bot] at hy; simp [hy]⟩
-    have hnd : ¬ DiscreteTopology (⊤ : Submodule ℤ ℝ) := fun hd ↦ by
+  · have hnd : ¬ DiscreteTopology (⊤ : Submodule ℤ ℝ) := fun hd ↦ by
       obtain ⟨ε, hε, hball⟩ :=
         Metric.isOpen_singleton_iff.mp (isOpen_discrete {(0 : (⊤ : Submodule ℤ ℝ))})
       have hmem : (⟨ε / 2, trivial⟩ : (⊤ : Submodule ℤ ℝ)) = 0 :=
         hball _ (by simpa [abs_of_pos hε] using half_lt_self hε)
       have hval : ε / 2 = 0 := congrArg Subtype.val hmem
       linarith
-    rw [htop, ← thetaCoset_zero,
+    rw [Submodule.span_zero_singleton, dual_bot, ← thetaCoset_zero,
       thetaCoset_eq_zero_of_forall_not_summable _ 0 fun y hy hs ↦
         hnd (discreteTopology_of_summable_exp_neg_mul_norm_add_sq _ 0 (by positivity) hs)]
     simp [jacobiTheta_eq_jacobiTheta₂, jacobiTheta₂_undef]

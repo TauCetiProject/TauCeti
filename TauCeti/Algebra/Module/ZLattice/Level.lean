@@ -85,10 +85,7 @@ by tauceti-ai-for-science in
   `level L ^ n`, `ZLattice.prime_dvd_level`: every prime dividing `|A_L|` divides the level, and
   `ZLattice.coprime_card_discriminantGroup_of_coprime_level`: every natural number coprime to
   `level L` is coprime to `|A_L|`.
-* `ZLattice.level_eq_one_iff`, `ZLattice.IsIntegral.level_eq_one_iff`,
-  `ZLattice.IsEven.level_eq_one_iff`: a lattice has level one iff its dual is even; in a
-  finite-dimensional space, an integral lattice has level one iff it is even and unimodular, and an
-  even lattice has level one iff it is unimodular.
+* `ZLattice.IsEven.level_eq_one_iff`: an even lattice has level one exactly when it is unimodular.
 * `ZLattice.level_comap`: the level is invariant under linear isometry equivalences.
 * `ZLattice.level_orthSum`: the level of an orthogonal direct sum `L ⊕ M` is
   `lcm (level L) (level M)`.
@@ -104,9 +101,6 @@ by tauceti-ai-for-science in
   `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_toRatAddCircle_ne`: coset shells and
   coset representation numbers vanish outside the residue class of `q_L(γ)`.
 * `ZLattice.level_sqrt_smul_span_orthonormalBasis`: the lattice `√m • ℤⁿ`, `n > 0`, has level `2 m`.
-* `ZLattice.level_span_inv_natCast`, `ZLattice.level_span_inv_two`: for `n ≠ 0`, `n⁻¹ ℤ ⊆ ℝ` has
-  level `1` if `n` is even and `2` if `n` is odd; in particular `½ ℤ` has level `1` without being
-  even or unimodular.
 
 ## References
 
@@ -173,12 +167,6 @@ theorem level_dvd_iff {N : ℕ} :
   rw [hmod, Int.cast_sub, Int.cast_mul, Int.cast_natCast]
   linear_combination ha - ((N / level L : ℕ) : ℝ) * hb
 
-/-- A lattice has level one if and only if its dual lattice is even. -/
-@[simp]
-theorem level_eq_one_iff : level L = 1 ↔ IsEven (dual L) := by
-  rw [← Nat.dvd_one, level_dvd_iff, Nat.cast_one, isEven_iff]
-  simp only [one_mul]
-
 /-- The level is invariant under linear isometry equivalences. -/
 @[simp]
 theorem level_comap (e : F ≃ₗᵢ[ℝ] E) :
@@ -211,11 +199,7 @@ theorem level_dvd_two_mul_card_discriminantGroup :
   refine level_dvd_iff.mpr fun x hx ↦ ?_
   -- The order `d` of the discriminant group kills the class of `x`, so `d • x ∈ L` and
   -- `d ‖x‖² = ⟪x, d • x⟫` is an integer.
-  have hd : Nat.card (DiscriminantGroup L) • x ∈ L := by
-    have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
-      (x := Submodule.Quotient.mk (⟨x, hx⟩ : dual L))
-    rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
-  obtain ⟨m, hm⟩ := mem_dual.mp hx _ hd
+  obtain ⟨m, hm⟩ := mem_dual.mp hx _ (card_nsmul_mem_of_mem_dual hx)
   refine ⟨m, ?_⟩
   rw [← Nat.cast_smul_eq_nsmul ℝ, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
   push_cast
@@ -315,41 +299,15 @@ theorem coprime_card_discriminantGroup_of_coprime_level {a : ℕ} (ha : a.Coprim
     a.Coprime (Nat.card (DiscriminantGroup L)) :=
   (ha.pow_right (finrank ℝ E)).coprime_dvd_right card_discriminantGroup_dvd_level_pow
 
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- In a finite-dimensional space, a lattice whose dual is even spans the space over `ℝ`: any
-nonzero vector orthogonal to `L` can be rescaled to a unit vector in `L^∨`, whose squared norm `1`
-is odd. -/
-private theorem span_eq_top_of_isEven_dual (hd : IsEven (dual L)) :
-    span ℝ (L : Set E) = ⊤ := by
-  by_contra hne
-  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (mt Submodule.orthogonal_eq_bot_iff.1 hne)
-  have hw : ‖v‖⁻¹ • v ∈ dual L := mem_dual.mpr fun y hy ↦ ⟨0, by
-    rw [real_inner_smul_left, real_inner_comm,
-      Submodule.inner_right_of_mem_orthogonal (subset_span hy) hv]
-    simp⟩
-  obtain ⟨m, hm⟩ := isEven_iff.mp hd _ hw
-  rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv0), one_pow] at hm
-  have hm' : (1 : ℤ) = 2 * m := by exact_mod_cast hm
-  omega
-
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- An integral lattice in a finite-dimensional space has level one if and only if it is even and
-unimodular. -/
-theorem IsIntegral.level_eq_one_iff (h : IsIntegral L) :
-    level L = 1 ↔ IsEven L ∧ IsUnimodular L := by
-  rw [ZLattice.level_eq_one_iff]
-  refine ⟨fun hd ↦ ?_, fun ⟨he, hu⟩ ↦ by rwa [hu.dual_eq]⟩
-  have := h.discreteTopology
-  have : IsZLattice ℝ L := ⟨span_eq_top_of_isEven_dual hd⟩
-  have hu : IsUnimodular L :=
-    h.isUnimodular_iff.mpr (by simpa using isIntegral_iff_le_dual.mp hd.isIntegral)
-  exact ⟨by rwa [hu.dual_eq] at hd, hu⟩
-
-omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- An even lattice in a finite-dimensional space has level one exactly when it is unimodular. -/
+/-- An even full lattice has level one exactly when it is unimodular. -/
 theorem IsEven.level_eq_one_iff (h : IsEven L) : level L = 1 ↔ IsUnimodular L := by
-  rw [h.isIntegral.level_eq_one_iff, and_iff_right h]
+  refine ⟨fun h1 ↦ h.isIntegral.isUnimodular_iff.mpr ?_, fun hu ↦ Nat.dvd_one.mp ?_⟩
+  · -- At level one the dual lattice is even, hence integral, so it lies in its own dual `L`.
+    have hdual : IsEven (dual L) := isEven_iff.mpr fun x hx ↦ by
+      simpa [h1] using exists_level_mul_norm_sq_eq hx
+    simpa using isIntegral_iff_le_dual.mp hdual.isIntegral
+  · refine level_dvd_iff.mpr fun x hx ↦ ?_
+    simpa using isEven_iff.mp h x (hu.dual_eq ▸ hx)
 
 /-! ### The rational model -/
 
@@ -663,10 +621,7 @@ theorem level_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] [Nonempt
     rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, mul_zero]
     by_contra hne
     have hpos : (0 : ℝ) < level (⊥ : Submodule ℤ E) := by exact_mod_cast Nat.pos_of_ne_zero hne
-    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) :=
-      mem_dual.2 fun y hy ↦ by
-        rw [Submodule.mem_bot] at hy
-        exact ⟨0, by simp [hy]⟩
+    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) := by simp
     obtain ⟨k, hk⟩ := exists_level_mul_norm_sq_eq hx
     rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_pow,
       Real.sq_sqrt hpos.le, b.orthonormal.1 i, one_pow, mul_one, mul_inv_cancel₀ hpos.ne'] at hk
@@ -703,47 +658,6 @@ group `(1 / √2) ℤ ⧸ √2 ℤ` has exponent `2`. -/
 theorem level_span_sqrt_two : level (span ℤ {√2} : Submodule ℤ ℝ) = 4 := by
   simpa [smul_span] using
     level_sqrt_smul_span_orthonormalBasis (OrthonormalBasis.singleton Unit ℝ) (m := 2)
-
-/-- For a nonzero natural number `n`, the rank-one lattice `n⁻¹ ℤ ⊆ ℝ` has dual `n ℤ`, so its
-level is `1` when `n` is even and `2` when `n` is odd. -/
-theorem level_span_inv_natCast {n : ℕ} (hn : n ≠ 0) :
-    level (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) = if Even n then 1 else 2 := by
-  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hdual : dual (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) = span ℤ {(n : ℝ)} := by
-    rw [dual_span_singleton (inv_ne_zero hn'), inv_inv]
-  split_ifs with he
-  · rw [level_eq_one_iff, hdual, isEven_span_singleton_iff]
-    obtain ⟨k, rfl⟩ := he
-    refine ⟨2 * (k : ℤ) ^ 2, ?_⟩
-    rw [Real.norm_eq_abs, sq_abs]
-    push_cast
-    ring
-  · refine Nat.dvd_antisymm ?_ ?_
-    · refine level_dvd_iff.mpr fun x hx ↦ ?_
-      rw [hdual, mem_span_singleton] at hx
-      obtain ⟨a, rfl⟩ := hx
-      refine ⟨a ^ 2 * (n : ℤ) ^ 2, ?_⟩
-      rw [zsmul_eq_mul, Real.norm_eq_abs, sq_abs]
-      push_cast
-      ring
-    · obtain ⟨m, hm⟩ := exists_level_mul_norm_sq_eq
-        (L := (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ)) (x := (n : ℝ))
-        (hdual ▸ mem_span_singleton_self _)
-      rw [Real.norm_eq_abs, sq_abs] at hm
-      have hdvd : 2 ∣ level (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) * n ^ 2 :=
-        Int.natCast_dvd_natCast.mp ⟨m, by
-          have : ((level (span ℤ {((n : ℝ)⁻¹)} : Submodule ℤ ℝ) * n ^ 2 : ℕ) : ℝ) =
-              ((2 * m : ℤ) : ℝ) := by
-            push_cast
-            exact hm
-          exact_mod_cast this⟩
-      exact (Nat.prime_two.dvd_mul.mp hdvd).resolve_right
-        fun hn2 ↦ he (even_iff_two_dvd.mpr (Nat.prime_two.dvd_of_dvd_pow hn2))
-
-/-- The lattice `½ ℤ ⊆ ℝ` has level `1` (its dual `2 ℤ` is even), although it is neither integral,
-even, nor unimodular (`not_isIntegral_span_inv_two`). -/
-theorem level_span_inv_two : level (span ℤ {(2⁻¹ : ℝ)} : Submodule ℤ ℝ) = 1 := by
-  simpa using level_span_inv_natCast two_ne_zero
 
 end ZLattice
 

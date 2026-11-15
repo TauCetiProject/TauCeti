@@ -132,8 +132,7 @@ theorem jacobiTheta_I_mul_eq_tsum (y : ℝ) :
 every nonzero integer contributes a positive exponential. -/
 theorem one_lt_jacobiTheta_I_mul {y : ℝ} (hy : 0 < y) : 1 < jacobiTheta (I * y) := by
   have hs := summable_exp_neg_pi_mul_sq_mul hy
-  rw [jacobiTheta_I_mul_eq_tsum, show (1 : ℂ) = ((1 : ℝ) : ℂ) by norm_num, real_lt_real,
-    hs.tsum_eq_add_tsum_ite 0]
+  rw [jacobiTheta_I_mul_eq_tsum, ← ofReal_one, real_lt_real, hs.tsum_eq_add_tsum_ite 0]
   simp only [Int.cast_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, mul_zero,
     zero_mul, Real.exp_zero, lt_add_iff_pos_right]
   exact (hasSum_ite_sub_hasSum hs.hasSum 0).summable.tsum_pos

@@ -98,6 +98,11 @@ theorem mem_dual {L : Submodule ℤ E} {x : E} : x ∈ dual L ↔ ∀ y ∈ L, �
   simp only [dual_def, BilinForm.mem_dualSubmodule, Submodule.mem_one, innerₗ_apply_apply,
     algebraMap_int_eq, eq_intCast, eq_comm]
 
+/-- The dual of the zero lattice is the whole space. -/
+@[simp]
+theorem dual_bot : dual (⊥ : Submodule ℤ E) = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ mem_dual.mpr fun _ hy ↦ ⟨0, by rw [mem_bot] at hy; simp [hy]⟩
+
 /-- Taking duals reverses inclusions. -/
 theorem dual_anti {L M : Submodule ℤ E} (h : L ≤ M) : dual M ≤ dual L :=
   fun _ hx y hy ↦ hx y (h hy)
