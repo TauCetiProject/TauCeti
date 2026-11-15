@@ -97,10 +97,9 @@ theorem tendsto_of_tendstoUniformly_iteratedFDeriv {ι : Type*} {l : Filter ι}
   rwa [hφ, hψ] at ht
 
 /-- **Continuity of families with continuous jets.** Let `φ y`, for `y` in a topological space
-`Y`, be smooth functions supported in a compact set `K`. If for every order `k ≤ n` the `k`-th
+`Y`, be `Cⁿ` functions supported in a compact set `K`. If for every order `k ≤ n` the `k`-th
 derivative `(y, x) ↦ D^k (φ y) x` is jointly continuous, then `y ↦ φ y` is continuous for the
-topology of `𝓓^{n}_{K}(E, F)`: by the tube lemma, each such derivative converges uniformly on
-`K`. -/
+topology of `𝓓^{n}_{K}(E, F)`. -/
 theorem _root_.ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv {Y : Type*}
     [TopologicalSpace Y] {K : Compacts E} {φ : Y → 𝓓^{n}_{K}(E, F)}
     (hφ : ∀ k : ℕ, (k : ℕ∞) ≤ n → Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (φ p.1) p.2) :
@@ -112,7 +111,8 @@ theorem _root_.ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv {Y
   swap
   · refine Eventually.of_forall fun y ↦ lt_of_le_of_lt ?_ hε
     exact (ContDiffMapSupportedIn.seminorm_le_iff ℝ le_rfl k (φ y - φ y₀)).2 fun h ↦ absurd h hk
-  -- Near each `(y₀, x)`, the `k`-th derivative at `y` is `ε / 2`-close to the one at `y₀`.
+  -- By the tube lemma, the `k`-th derivatives converge uniformly on `K`: near each `(y₀, x)`,
+  -- the `k`-th derivative at `y` is `ε / 2`-close to the one at `y₀`.
   have hclose : ∀ x ∈ (K : Set E), ∀ᶠ p : Y × E in 𝓝 (y₀, x),
       ‖iteratedFDeriv ℝ k (φ p.1) p.2 - iteratedFDeriv ℝ k (φ y₀) p.2‖ < ε / 2 := by
     intro x _
