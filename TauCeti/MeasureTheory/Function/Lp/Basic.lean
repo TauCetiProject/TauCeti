@@ -9,7 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Basic operations and `RCLike` coordinates on `Lp`
+# Basic operations, semilinear compositions, and `RCLike` coordinates on `Lp`
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
@@ -17,7 +17,9 @@ Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`
 class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
 witness on the sum, and registers `Unique (Lp E p (0 : Measure α))` on the zero measure.
 
-For `1 ≤ p`, lifting Mathlib's `ContinuousLinearMap.compLpL` to semilinear isometries gives
+Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
+the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree. For
+`1 ≤ p`, lifting `ContinuousLinearMap.compLpL` to semilinear isometries gives
 `LinearIsometry.compLpₗᵢ`. Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`,
 `RCLike.reCLM`, and `RCLike.imCLM` defines the scalar inclusion `MeasureTheory.Lp.ofRealLI` and the
 real and imaginary coordinate operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM`
@@ -25,10 +27,12 @@ between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
 
 ## Main declarations
 
-* `MeasureTheory.MemLp.toLp_finsetSum'`, `MeasureTheory.MemLp.toLp_finsetSum`: finite sums of
-  `MemLp.toLp` classes.
-* `MeasureTheory.Lp.instUniqueZero`: `Unique (Lp E p (0 : Measure α))`.
+* `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `MeasureTheory.MemLp.toLp_finsetSum`:
+  `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `LinearIsometry.compLpₗᵢ`: postcomposition of `Lp` classes by a semilinear isometry.
+* `MeasureTheory.Lp.instUniqueZero`: `Unique (Lp E p (0 : Measure α))`.
 * `MeasureTheory.Lp.ofRealLI`, `MeasureTheory.Lp.reCLM`, `MeasureTheory.Lp.imCLM`: scalar inclusion
   and real/imaginary parts on `Lp 𝕜 p μ` for an `RCLike` field `𝕜`.
 -/
@@ -57,6 +61,22 @@ theorem toLp_finsetSum (hsum : MemLp (fun x ↦ ∑ i ∈ s, f i x) p μ) (hf : 
   exact toLp_congr _ _ (.of_forall fun x ↦ (Finset.sum_apply x s f).symm)
 
 end MeasureTheory.MemLp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+
+/-- The bundled composition `L.compLpL p μ` applied to `f` is the composition `L.compLp f`. -/
+@[simp]
+theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
+    L.compLpL p μ f = L.compLp f :=
+  rfl
+
+end ContinuousLinearMap
 
 noncomputable section
 
@@ -226,3 +246,5 @@ theorem ofRealLI_reCLM_add_I_smul_imCLM (f : Lp 𝕜 p μ) :
 end RCLike
 
 end MeasureTheory.Lp
+
+end

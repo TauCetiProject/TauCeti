@@ -173,7 +173,6 @@ variable [FiniteDimensional ℝ E]
 bilinear map on `T_x M` whose value on the values at `x` of differentiable vector fields `X` and
 `Y` is `[JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]` at `x` (`nijenhuis_apply`). -/
 def nijenhuis (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x :=
-  have := FiniteDimensional.completeSpace ℝ E
   TensorialAt.mkHom₂ (J.nijenhuisAux · · x) x
     (fun Y _ ↦ J.nijenhuisAux_tensorial₁ Y) (fun X _ ↦ J.nijenhuisAux_tensorial₂ X)
 
@@ -234,7 +233,6 @@ theorem nijenhuis_self (v : TangentSpace I x) : J.nijenhuis x v v = 0 := by
 @[simp]
 theorem nijenhuis_apply_left (v w : TangentSpace I x) :
     J.nijenhuis x (J x v) w = -J x (J.nijenhuis x v w) := by
-  have := FiniteDimensional.completeSpace ℝ E
   have hJX := J.mdifferentiableAt_apply_field (mdifferentiableAt_extend I E v)
   conv_lhs => rw [← extend_apply_self E v, ← extend_apply_self E w]
   rw [J.nijenhuis_apply_eq_nijenhuisAux hJX (mdifferentiableAt_extend ..),
@@ -542,11 +540,8 @@ theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc :
   -- Tangent vectors of the model space are vectors of `V`, so that the constant fields below are
   -- maps `V → V`.
   have key (v w : V) : (SmoothAlmostComplexStructure.const Jc hJc).nijenhuis x v w = 0 := by
-    rw [show v = (fun _ : V ↦ v) x from rfl, show w = (fun _ : V ↦ w) x from rfl,
-      nijenhuis_apply _ (hconst v) (hconst w), hJ, hJ]
-    simp only [mlieBracket_const_model_space]
-    rw [map_zero]
-    simp
+    rw [nijenhuis_apply _ (hconst v) (hconst w), hJ, hJ]
+    simp only [mlieBracket_const_model_space, map_zero, sub_self]
   ext v w
   exact key v w
 
