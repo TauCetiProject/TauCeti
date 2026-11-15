@@ -50,9 +50,13 @@ theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ} (ha : a ∈ Icc (
 
 /-- The principal inverse power maps the sector of opening `βπ` into the open right
 half-plane. -/
-theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (hz : z ≠ 0)
+theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hz : z ≠ 0)
     (harg : z.arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
     0 < (z ^ ((β⁻¹ : ℝ) : ℂ)).re := by
+  -- a nonempty sector has positive opening
+  have hβ : 0 < β := by
+    by_contra hb
+    nlinarith [harg.1.trans harg.2, mul_nonneg Real.pi_pos.le (neg_nonneg.2 (not_lt.1 hb))]
   rw [cpow_ofReal_re, ← div_eq_mul_inv]
   refine mul_pos (by positivity) (Real.cos_pos_of_mem_Ioo ⟨?_, ?_⟩)
   · rw [lt_div_iff₀ hβ]

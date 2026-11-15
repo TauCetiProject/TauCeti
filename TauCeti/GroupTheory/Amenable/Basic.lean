@@ -42,10 +42,13 @@ invariant under isomorphisms of topological groups.
 * `TauCeti.Mean.IsLeftInvariant.map`, `TauCeti.AddMean.IsLeftInvariant.map`: pushforward along a
   continuous homomorphism with dense range preserves left invariance.
 * `TauCeti.Amenable.of_denseRange`, `TauCeti.AddAmenable.of_denseRange`: amenability passes to the
-  target of a continuous homomorphism with dense range.
+  target of a continuous homomorphism with dense range, in particular to images under surjective
+  continuous homomorphisms.
 * `TauCeti.Amenable.range_of_continuous`, `TauCeti.Amenable.quotientGroup`: continuous homomorphic
   ranges and quotients by normal subgroups of amenable topological groups are amenable; likewise
   for `AddAmenable`.
+* `TauCeti.Amenable.of_le`, `TauCeti.AddAmenable.of_le`: amenability passes from a finer to a
+  coarser group topology.
 * `ContinuousMulEquiv.amenable_iff`, `ContinuousAddEquiv.addAmenable_iff`: amenability is invariant
   under isomorphisms of topological groups.
 
@@ -58,8 +61,6 @@ invariant under isomorphisms of topological groups.
 public section
 
 noncomputable section
-
-open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
