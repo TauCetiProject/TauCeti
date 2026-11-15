@@ -166,30 +166,27 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
   linarith
 
 /-- For an open set `Ω ⊆ ℂ` and a compact subset `K ⊆ Ω`, `holomorphicHull Ω K` is compact and
-coincides with the union of `K` and all connected components of `Ω \ K` whose closures are compact
-subsets of `Ω`. -/
+coincides with `TauCeti.fillIn K Ω`, the union of `K` and all connected components of `Ω \ K`
+whose closures are compact subsets of `Ω`. -/
 theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     IsCompact (holomorphicHull Ω K) ∧
       holomorphicHull Ω K = K ∪ {z | z ∈ Ω \ K ∧
         IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
         closure (connectedComponentIn (Ω \ K) z) ⊆ Ω} := by
+  rw [← fillIn_def]
   refine ⟨isCompact_holomorphicHull hK hKΩ, Subset.antisymm (fun z hz => ?_)
-    (fill_subset_holomorphicHull (hΩ.sdiff hK.isClosed) hKΩ)⟩
-  set Ktilde : Set ℂ := K ∪ {w | w ∈ Ω \ K ∧
-    IsCompact (closure (connectedComponentIn (Ω \ K) w)) ∧
-    closure (connectedComponentIn (Ω \ K) w) ⊆ Ω}
+    (fillIn_subset_holomorphicHull (hΩ.sdiff hK.isClosed) hKΩ)⟩
+  set Ktilde : Set ℂ := fillIn K Ω
   by_contra hzKt
-  have hKt_cpt : IsCompact Ktilde :=
-    hK.isCompact_union_setOf_isCompact_closure_connectedComponentIn hΩ
+  have hKt_cpt : IsCompact Ktilde := hK.fillIn hΩ
   have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
     rw [Complex.rank_real_complex]
     exact Cardinal.one_lt_two
   have hRunge₁ : IsRungeCompactPair Ω (insert z Ktilde) :=
     isRungeCompactPair_iff.mpr ⟨hΩ, hKt_cpt.insert z,
-      insert_subset_iff.mpr ⟨holomorphicHull_subset hz, union_subset hKΩ fun _ hw => hw.1.1⟩,
-      (isFilledIn_union_setOf_isCompact_closure_connectedComponentIn K Ω).insert
-        hrank (hΩ.sdiff hKt_cpt.isClosed) z⟩
+      insert_subset_iff.mpr ⟨holomorphicHull_subset hz, fillIn_subset hKΩ⟩,
+      (isFilledIn_fillIn K Ω).insert hrank (hΩ.sdiff hKt_cpt.isClosed) z⟩
   obtain ⟨r, hr, hr_ball⟩ := Metric.isOpen_iff.mp hKt_cpt.isClosed.isOpen_compl z hzKt
   set r' : ℝ := r / 2
   have hr' : 0 < r' := half_pos hr
@@ -216,7 +213,7 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
       (insert_subset_iff.mpr ⟨Or.inr (mem_ball_self hr'), hKtU₁.trans subset_union_left⟩)
       hf_diff (by norm_num : (0 : ℝ) < 1 / 3)
   have hgK : ∀ w ∈ K, ‖g w‖ ≤ (1 / 3 : ℝ) := fun w hwK => by
-    have hwKt : w ∈ Ktilde := Or.inl hwK
+    have hwKt : w ∈ Ktilde := subset_fillIn hwK
     have hlt := hg_lt w (mem_insert_of_mem z hwKt)
     have hfw : f w = 0 := by simp [f, hKtU₁ hwKt]
     rw [hfw, zero_sub, norm_neg] at hlt
@@ -235,18 +232,7 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
 theorem holomorphicHull_eq_self_iff_isFilledIn {Ω K : Set ℂ}
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     holomorphicHull Ω K = K ↔ IsFilledIn K Ω := by
-  have heq := (holomorphicHull_eq_fill hΩ hK hKΩ).2
-  constructor
-  · intro h
-    refine isFilledIn_iff.mpr fun x hx ⟨hCc, hCΩ⟩ => ?_
-    have hx_hull : x ∈ holomorphicHull Ω K := by
-      rw [heq]
-      exact Or.inr ⟨hx, hCc, hCΩ⟩
-    rw [h] at hx_hull
-    exact hx.2 hx_hull
-  · intro hfill
-    rw [heq]
-    exact union_eq_left.mpr fun z ⟨hz, hCc, hCΩ⟩ => (isFilledIn_iff.mp hfill z hz ⟨hCc, hCΩ⟩).elim
+  rw [(holomorphicHull_eq_fill hΩ hK hKΩ).2, ← fillIn_def, fillIn_eq_self_iff_isFilledIn]
 
 /-- For an open set `Ω ⊆ ℂ` and a compact set `K ⊆ ℂ`, `IsRungeCompactPair Ω K` holds if and only
 if `holomorphicHull Ω K = K`. -/
@@ -296,6 +282,7 @@ theorem isRungeCompactPair_iff_forall_mem_sdiff_exists_differentiableOn_one_lt_n
     exact hfz.not_ge (norm_le_of_mem_holomorphicHull hz hf hKB)
 
 /-- Every stage of `TauCeti.rungeExhaustion Ω` equals its own holomorphic hull in `Ω`. -/
+@[simp]
 theorem holomorphicHull_rungeExhaustion {Ω : Set ℂ} (hΩ : IsOpen Ω) (n : ℕ) :
     holomorphicHull Ω (rungeExhaustion Ω n) = rungeExhaustion Ω n :=
   (isRungeCompactPair_iff_holomorphicHull_eq hΩ (isCompact_rungeExhaustion Ω n)).mp
@@ -305,14 +292,7 @@ theorem holomorphicHull_rungeExhaustion {Ω : Set ℂ} (hΩ : IsOpen Ω) (n : �
 topological filled hull `TauCeti.filledHull K`. -/
 theorem holomorphicHull_univ_eq_filledHull {K : Set ℂ} (hK : IsCompact K) :
     holomorphicHull Set.univ K = filledHull K := by
-  rw [(holomorphicHull_eq_fill isOpen_univ hK (subset_univ K)).2, ← compl_eq_univ_sdiff]
-  ext z
-  by_cases hzK : z ∈ K
-  · exact ⟨fun _ => subset_filledHull hzK, fun _ => Or.inl hzK⟩
-  · simp only [mem_union, hzK, false_or, mem_ofPred_eq, mem_compl_iff, not_false_eq_true, true_and,
-      subset_univ, and_true, mem_filledHull_iff]
-    exact ⟨fun hcpt => hcpt.isBounded.subset subset_closure,
-      fun hbdd => isCompact_of_isClosed_isBounded isClosed_closure hbdd.closure⟩
+  rw [(holomorphicHull_eq_fill isOpen_univ hK (subset_univ K)).2, ← fillIn_def, fillIn_univ]
 
 /-- For compact `K ⊆ ℂ`, the complement `Kᶜ` is connected if and only if the image of `K` in
 `Fin 1 → ℂ` is polynomially convex. -/

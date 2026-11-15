@@ -18,20 +18,17 @@ import TauCeti.Geometry.Manifold.Connected
 
 `TauCeti/Topology/FilledIn.lean` defines when a set `K` is filled in an ambient set `Ω`
 (`TauCeti.IsFilledIn K Ω`, meaning no connected component of `Ω \ K` has compact closure inside
-`Ω`) and establishes the topological properties of adjoining to `K` all relatively compact
-components of `Ω \ K` in `Ω`.
+`Ω`) and defines `TauCeti.fillIn K Ω`, the union of `K` with all relatively compact components of
+`Ω \ K` in `Ω`.
 
 In a real normed space, boundedness of filled hulls (`TauCeti.isBounded_filledHull`) and
 connectedness of punctured open sets in real dimension greater than one
 (`TauCeti.isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`) supply two further
 operations on domain-relative filled sets, independent of compact exhaustions:
 
-* In a proper real normed space, adjoining to a compact set `K` all connected components of `Ω \ K`
-  whose closures are compact subsets of an open set `Ω` produces a compact set
-  (`IsCompact.isCompact_union_setOf_isCompact_closure_connectedComponentIn`), combining
-  `IsClosed.isClosed_union_setOf_isCompact_closure_connectedComponentIn` with enclosure inside
-  `TauCeti.filledHull K`
-  (`TauCeti.union_setOf_isCompact_closure_connectedComponentIn_subset_filledHull`).
+* In a proper real normed space, filling a compact set `K` inside an open set `Ω` produces a
+  compact set (`IsCompact.fillIn`), combining `IsClosed.fillIn` with enclosure inside
+  `TauCeti.filledHull K` (`TauCeti.fillIn_subset_filledHull`).
 * When `1 < Module.rank ℝ E` and `Ω \ K` is open, inserting a single point `z` into a set `K` filled
   in `Ω` preserves `TauCeti.IsFilledIn` (`TauCeti.IsFilledIn.insert`), since puncturing a connected
   component of `Ω \ K` at `z` leaves it preconnected.
@@ -41,8 +38,7 @@ Both results enter the topological identification of `TauCeti.holomorphicHull Ω
 
 ## Main results
 
-* `IsCompact.isCompact_union_setOf_isCompact_closure_connectedComponentIn`: a compact set together
-  with all relatively compact components of `Ω \ K` in an open set `Ω` is compact.
+* `IsCompact.fillIn`: filling a compact set inside an open set produces a compact set.
 * `TauCeti.IsFilledIn.insert`: inserting a point preserves `TauCeti.IsFilledIn` in real dimension
   greater than one.
 
@@ -62,17 +58,13 @@ open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
 
-/-- In a proper real normed space, a compact set `K` together with all connected components of
-`Ω \ K` having compact closure inside an open set `Ω` is compact. -/
-theorem IsCompact.isCompact_union_setOf_isCompact_closure_connectedComponentIn
-    {K Ω : Set E} (hK : IsCompact K) (hΩ : IsOpen Ω) :
-    IsCompact (K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
-      closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}) :=
-  isCompact_of_isClosed_isBounded
-    (hK.isClosed.isClosed_union_setOf_isCompact_closure_connectedComponentIn hΩ)
+/-- In a proper real normed space, filling a compact set `K` inside an open set `Ω` produces a
+compact set. -/
+protected theorem IsCompact.fillIn {K Ω : Set E} (hK : IsCompact K) (hΩ : IsOpen Ω) :
+    IsCompact (TauCeti.fillIn K Ω) :=
+  isCompact_of_isClosed_isBounded (hK.isClosed.fillIn hΩ)
     ((isBounded_filledHull.mpr hK.isBounded).subset
-      (union_setOf_isCompact_closure_connectedComponentIn_subset_filledHull
-        (hΩ.sdiff hK.isClosed)))
+      (fillIn_subset_filledHull (hΩ.sdiff hK.isClosed)))
 
 end CompactFill
 

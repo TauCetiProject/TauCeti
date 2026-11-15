@@ -43,8 +43,8 @@ explicit filled compact exhaustion `TauCeti.rungeExhaustion Ω`
   `TauCeti.iInf_infDist_frontier_holomorphicHull_eq`: preservation of extended distance to `Ωᶜ`
   and real distance to `frontier Ω`.
 * `TauCeti.isCompact_holomorphicHull`: compactness of `holomorphicHull Ω K` for compact `K ⊆ Ω`.
-* `TauCeti.fill_subset_holomorphicHull` and `TauCeti.isFilledIn_holomorphicHull`: maximum-principle
-  inclusion of relatively compact components of `Ω \ K` in `Ω`, and filledness of
+* `TauCeti.fillIn_subset_holomorphicHull` and `TauCeti.isFilledIn_holomorphicHull`:
+  maximum-principle inclusion of `TauCeti.fillIn K Ω` in `holomorphicHull Ω K`, and filledness of
   `holomorphicHull Ω K` in an open `Ω`.
 * `TauCeti.holomorphicHull_subset_convexHull`: inclusion in `convexHull ℝ K` for compact `K`.
 * `TauCeti.holomorphicHull_univ_eq_preimage_polynomialHull` and
@@ -209,14 +209,13 @@ theorem isCompact_holomorphicHull {Ω K : Set ℂ} (hK : IsCompact K) (hKΩ : K 
       (eventually_nhdsWithin_of_forall fun z hz => norm_le_of_mem_holomorphicHull hz hf hB)
   exact (isCompact_closedBall 0 R).of_isClosed_subset hclosed hbound
 
-/-- **Maximum-principle inclusion.** When `Ω \ K` is open and `K ⊆ Ω`, `K` together with every
-connected component of `Ω \ K` whose closure is compact and contained in `Ω` lies inside
-`holomorphicHull Ω K` (for open `Ω` and compact `K`, equality is
+/-- **Maximum-principle inclusion.** When `Ω \ K` is open and `K ⊆ Ω`, `TauCeti.fillIn K Ω` lies
+inside `holomorphicHull Ω K` (for open `Ω` and compact `K`, equality is
 `TauCeti.holomorphicHull_eq_fill`). -/
-theorem fill_subset_holomorphicHull {Ω K : Set ℂ} (hΩK : IsOpen (Ω \ K)) (hKΩ : K ⊆ Ω) :
-    K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
-      closure (connectedComponentIn (Ω \ K) z) ⊆ Ω} ⊆ holomorphicHull Ω K := by
-  rintro z (hzK | ⟨hzΩK, hcpt, hsub⟩)
+theorem fillIn_subset_holomorphicHull {Ω K : Set ℂ} (hΩK : IsOpen (Ω \ K)) (hKΩ : K ⊆ Ω) :
+    fillIn K Ω ⊆ holomorphicHull Ω K := by
+  intro z hz
+  rcases mem_fillIn_iff.mp hz with hzK | ⟨hzΩK, hcpt, hsub⟩
   · exact subset_holomorphicHull hKΩ hzK
   refine ⟨hzΩK.1, fun f hf B hB => ?_⟩
   set C := connectedComponentIn (Ω \ K) z
@@ -240,8 +239,8 @@ theorem isFilledIn_holomorphicHull {Ω K : Set ℂ} (hΩ : IsOpen Ω) :
     filter_upwards [hΩ.mem_nhds hzΩ, hcont.eventually (lt_mem_nhds hBz)] with w hwΩ hwB
     exact ⟨hwΩ, fun hwH => hwB.not_ge (norm_le_of_mem_holomorphicHull hwH hf hBK)⟩
   refine isFilledIn_iff.mpr fun z hz ⟨hcpt, hsub⟩ => hz.2 ?_
-  have hz_mem := fill_subset_holomorphicHull hopen_sdiff holomorphicHull_subset
-    (Or.inr ⟨hz, hcpt, hsub⟩)
+  have hz_mem := fillIn_subset_holomorphicHull hopen_sdiff holomorphicHull_subset
+    (mem_fillIn_iff.mpr (Or.inr ⟨hz, hcpt, hsub⟩))
   rwa [holomorphicHull_idem] at hz_mem
 
 /-- For compact `K ⊆ ℂ`, the holomorphic hull in `Ω` lies inside `convexHull ℝ K`. -/
