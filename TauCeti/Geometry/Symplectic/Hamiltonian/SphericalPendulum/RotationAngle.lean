@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -58,6 +59,8 @@ integrand is `O(j)` uniformly.
 * `TauCeti.sphericalPendulumRotationAngle`: the rotation angle `Θ(h, j)`.
 * `TauCeti.sphericalPendulumRotationAngle_eq_setIntegral`: `Θ(h, j)` as an integral over the
   heights of the fibre `F⁻¹(h, j)`.
+* `TauCeti.sphericalPendulumRotationAngle_eq_integral`: `Θ(h, j)` as twice the integral between
+  turning heights `z₁ ≤ z₂` outside which the radicand is not positive.
 * `TauCeti.sphericalPendulumRotationAngle_neg_right`: `Θ(h, -j) = -Θ(h, j)`.
 * `TauCeti.tendsto_sphericalPendulumRotationAngle_nhdsGT_of_lt_one` and its three companions: the
   one-sided limits of `Θ(h, j)` as `j → 0`.
@@ -109,6 +112,18 @@ theorem sphericalPendulumRotationAngle_eq_setIntegral (h j : ℝ) :
     · linarith [hzS hzh]
     · nlinarith [sq_nonneg j]
   rw [Real.sqrt_eq_zero'.2 hP, mul_zero, div_zero]
+
+/-- **The rotation angle between turning heights.** If `-1 ≤ z₁ ≤ z₂ ≤ 1` and the radicand
+`2 (h - z) (1 - z²) - j²` is not positive at the heights in `(-1, 1)` outside `(z₁, z₂)`, then
+`Θ(h, j) = 2 ∫_{z₁}^{z₂} j dz / ((1 - z²) √(2 (h - z) (1 - z²) - j²))`. -/
+theorem sphericalPendulumRotationAngle_eq_integral {h j z₁ z₂ : ℝ} (hz₁ : -1 ≤ z₁) (h₁₂ : z₁ ≤ z₂)
+    (hz₂ : z₂ ≤ 1)
+    (hout : ∀ z ∈ Ioo (-1) 1, z ∉ Ioo z₁ z₂ → 2 * (h - z) * (1 - z ^ 2) - j ^ 2 ≤ 0) :
+    sphericalPendulumRotationAngle h j =
+      2 * ∫ z in z₁..z₂, j / ((1 - z ^ 2) * √(2 * (h - z) * (1 - z ^ 2) - j ^ 2)) := by
+  rw [sphericalPendulumRotationAngle_def,
+    TauCeti.intervalIntegral.integral_eq_integral_of_forall_notMem_eq_zero hz₁ h₁₂ hz₂
+      fun z hz hz' ↦ by rw [sqrt_eq_zero'.2 (hout z hz hz'), mul_zero, div_zero]]
 
 /-- The rotation angle is odd in the angular momentum. -/
 @[simp]

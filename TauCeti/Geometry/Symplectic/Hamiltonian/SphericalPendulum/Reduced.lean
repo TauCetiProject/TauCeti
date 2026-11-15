@@ -141,17 +141,6 @@ theorem hasDerivAt_sphericalPendulumReducedHamiltonian_left (j : ℝ) (x : ℝ �
   · field_simp
     ring
 
-/-- Away from the poles, the effective potential `V_j(z) = j² / (2 (1 - z²)) + z` has derivative
-`V_j'(z) = j² z / (1 - z²)² + 1`. -/
-theorem hasDerivAt_sphericalPendulumEffectivePotential (j : ℝ) {z : ℝ} (hz : z ^ 2 ≠ 1) :
-    HasDerivAt (sphericalPendulumEffectivePotential j) (j ^ 2 * z / (1 - z ^ 2) ^ 2 + 1) z := by
-  have hz' : 1 - z ^ 2 ≠ 0 := sub_ne_zero.2 hz.symm
-  rw [funext (sphericalPendulumEffectivePotential_def j)]
-  refine (((hasDerivAt_const z (j ^ 2)).fun_div (((hasDerivAt_pow 2 z).const_sub 1).const_mul 2)
-    (mul_ne_zero two_ne_zero hz')).fun_add (hasDerivAt_id' z)).congr_deriv ?_
-  field_simp
-  ring
-
 /-- The derivative of the reduced Hamiltonian away from the poles, as partial gradients:
 `∂_z H_j = 1 + j² z / (1 - z²)² - z p_z²` and `∂_{p_z} H_j = (1 - z²) p_z`. -/
 theorem hasFDerivAt_sphericalPendulumReducedHamiltonian (j : ℝ) {x : ℝ × ℝ} (hz : x.1 ^ 2 ≠ 1) :
@@ -219,17 +208,6 @@ theorem sphericalPendulumPeriod_eq_integral (hz₁ : -1 ≤ z₁) (h₁₂ : z�
   rw [sphericalPendulumPeriod_def,
     TauCeti.intervalIntegral.integral_eq_integral_of_forall_notMem_eq_zero hz₁ h₁₂ hz₂
       fun z hz hz' ↦ by rw [sqrt_eq_zero'.2 (hout z hz hz'), div_zero]]
-
-/-- **The rotation angle between turning heights.** Under the hypotheses of
-`TauCeti.sphericalPendulumPeriod_eq_integral`,
-`Θ(h, j) = 2 ∫_{z₁}^{z₂} j dz / ((1 - z²) √(2 (h - z) (1 - z²) - j²))`. -/
-theorem sphericalPendulumRotationAngle_eq_integral (hz₁ : -1 ≤ z₁) (h₁₂ : z₁ ≤ z₂) (hz₂ : z₂ ≤ 1)
-    (hout : ∀ z ∈ Ioo (-1) 1, z ∉ Ioo z₁ z₂ → 2 * (h - z) * (1 - z ^ 2) - j ^ 2 ≤ 0) :
-    sphericalPendulumRotationAngle h j =
-      2 * ∫ z in z₁..z₂, j / ((1 - z ^ 2) * √(2 * (h - z) * (1 - z ^ 2) - j ^ 2)) := by
-  rw [sphericalPendulumRotationAngle_def,
-    TauCeti.intervalIntegral.integral_eq_integral_of_forall_notMem_eq_zero hz₁ h₁₂ hz₂
-      fun z hz hz' ↦ by rw [sqrt_eq_zero'.2 (hout z hz hz'), mul_zero, div_zero]]
 
 /-! ### Convergence at simple turning points -/
 
