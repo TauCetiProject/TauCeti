@@ -40,11 +40,13 @@ contains `[0, 1] × [0, 1]`, as a convex combination of positive numbers is posi
 in this set the horizontal map is an increasing degree-one bijection of `ℝ`
 (`CircleDeg1Lift.stripInterpolation_fst_bijective`). Its inverse
 `CircleDeg1Lift.stripInterpolationInv b₀ b₁ t` also commutes with `T`
-(`CircleDeg1Lift.stripInterpolationInv_add_one_mk`), at time `1` restricts to inverses of `b₀`
-and `b₁` on the boundary lines (`CircleDeg1Lift.stripInterpolationInv_one_mk_zero`,
-`CircleDeg1Lift.stripInterpolationInv_one_mk_one`), and is `C^n` jointly in `t` and the point when
-`b₀` and `b₁` are `C^n` (`CircleDeg1Lift.contDiffOn_stripInterpolationInv`), by the inverse
-function theorem for smooth families of diffeomorphisms
+(`CircleDeg1Lift.stripInterpolationInv_add_one_mk`), at time `1` restricts to `invFun b₀` and
+`invFun b₁` on the boundary lines (`CircleDeg1Lift.stripInterpolationInv_one_mk_zero`,
+`CircleDeg1Lift.stripInterpolationInv_one_mk_one`), which undo `b₀` and `b₁` when these are
+injective (`CircleDeg1Lift.stripInterpolationInv_one_apply_mk_zero`,
+`CircleDeg1Lift.stripInterpolationInv_one_apply_mk_one`), and is `C^n` jointly in `t` and the
+point when `b₀` and `b₁` are `C^n` (`CircleDeg1Lift.contDiffOn_stripInterpolationInv`), by the
+inverse function theorem for smooth families of diffeomorphisms
 (`ContDiffOn.parametric_invFun_of_injective_fderiv`). Hence, for
 `0 ≤ t ≤ 1`, the maps `B_t` are bijections of the closed strip
 (`CircleDeg1Lift.bijOn_stripInterpolation`) with positive `x`-derivative, depending smoothly on
@@ -72,8 +74,11 @@ neighbourhood of the strip on which `(t, y)` lies in the domain, and `B_t` is a 
 * `CircleDeg1Lift.stripInterpolationInv_add_one_mk`: the inverse commutes with the deck
   translation.
 * `CircleDeg1Lift.stripInterpolationInv_one_mk_zero`,
-  `CircleDeg1Lift.stripInterpolationInv_one_mk_one`: at time `1` the inverse restricts to inverses
-  of `b₀` and `b₁` on the boundary lines.
+  `CircleDeg1Lift.stripInterpolationInv_one_mk_one`: at time `1` the inverse restricts to
+  `invFun b₀` and `invFun b₁` on the boundary lines.
+* `CircleDeg1Lift.stripInterpolationInv_one_apply_mk_zero`,
+  `CircleDeg1Lift.stripInterpolationInv_one_apply_mk_one`: for injective `b₀` and `b₁`, at time `1`
+  the inverse undoes `b₀` and `b₁` on the boundary lines.
 * `CircleDeg1Lift.contDiffOn_stripInterpolationInv`: `(t, p) ↦ B_t⁻¹ p` is `C^n`.
 * `CircleDeg1Lift.bijOn_stripInterpolation_of_mem`: `B_t` is a bijection of `ℝ × s` when `(t, y)`
   lies in the domain for every `y ∈ s`.
@@ -267,14 +272,16 @@ theorem stripInterpolationInv_zero (p : ℝ × ℝ) : b₀.stripInterpolationInv
   rw [stripInterpolationInv_apply, e]
   exact Prod.ext (leftInverse_invFun injective_id p.1) rfl
 
-/-- At time `1` the inverse of the boundary interpolation restricts to an inverse of `b₀` on the
-lower boundary line. -/
+/-- At time `1` the inverse of the boundary interpolation restricts to `invFun b₀` on the lower
+boundary line. This undoes `b₀` when `b₀` is injective
+(`CircleDeg1Lift.stripInterpolationInv_one_apply_mk_zero`). -/
 theorem stripInterpolationInv_one_mk_zero (x : ℝ) :
     b₀.stripInterpolationInv b₁ 1 (x, 0) = (invFun b₀ x, 0) := by
   simp [stripInterpolationInv_apply]
 
-/-- At time `1` the inverse of the boundary interpolation restricts to an inverse of `b₁` on the
-upper boundary line. -/
+/-- At time `1` the inverse of the boundary interpolation restricts to `invFun b₁` on the upper
+boundary line. This undoes `b₁` when `b₁` is injective
+(`CircleDeg1Lift.stripInterpolationInv_one_apply_mk_one`). -/
 theorem stripInterpolationInv_one_mk_one (x : ℝ) :
     b₀.stripInterpolationInv b₁ 1 (x, 1) = (invFun b₁ x, 1) := by
   simp [stripInterpolationInv_apply]
