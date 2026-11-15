@@ -66,8 +66,8 @@ decomposition of the whole object.
 * `TauCeti.isIso_of_isIso_comp`: an invertible composite `f ≫ g` through an object with only
   trivial idempotent endomorphisms has `f` invertible.
 * `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor bijective on the
-  endomorphisms of an indecomposable object carries it to an indecomposable
-  object; in particular a fully faithful one does.
+  endomorphisms of an indecomposable object carries it to an indecomposable object when
+  idempotents split in the source; in particular a fully faithful one does.
 * `CategoryTheory.Equivalence.indecomposable_functor_obj_iff`: indecomposability is invariant under
   equivalence of categories, with no idempotent completeness.
 
