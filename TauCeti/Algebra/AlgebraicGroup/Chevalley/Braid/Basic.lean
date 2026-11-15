@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice
 public import TauCeti.Algebra.Lie.Presentation.Serre
 import TauCeti.Algebra.Lie.Presentation.Serre.SingleBond
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
@@ -40,26 +40,6 @@ attribute [local instance high] Algebra.toModule
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-/-- An identity between words in the rational simple Weyl units descends to the
-integral admissible lattice, then holds in the datum's points over any commutative ring. -/
-theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq (l r : List (Fin t.rank))
-    (h :
-      let n := fun k => weylUnit
-        (D.isNilpotent_representation_rootGenerator (.inl k))
-        (D.isNilpotent_representation_rootGenerator (.inr k))
-      (l.map n).prod = (r.map n).prod)
-    (A : Type*) [CommRing A] :
-    (l.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod =
-      (r.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod := by
-  have hZ : D.weylWordLatticeEquiv l = D.weylWordLatticeEquiv r := by
-    ext v
-    rw [coe_weylWordLatticeEquiv_apply, coe_weylWordLatticeEquiv_apply]
-    exact congrArg (fun u : (Module.End ℚ D.carrier)ˣ => (u : Module.End ℚ D.carrier) v) h
-  -- Reuse the integral-word matrix comparison shared with the big-cell argument.
-  apply Subtype.ext
-  apply Units.ext
-  rw [← D.map_toMatrix_weylWordLatticeEquiv l A, ← D.map_toMatrix_weylWordLatticeEquiv r A, hZ]
 
 /-- A word identity valid for all nilpotent Serre systems on the datum's rational carrier,
 in the transposed Cartan convention, holds for its pinned simple Weyl representatives

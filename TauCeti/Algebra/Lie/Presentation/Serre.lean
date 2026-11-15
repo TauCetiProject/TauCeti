@@ -301,6 +301,20 @@ theorem IsSerreSystem.lie_H_E_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
   simpa only [Int.cast_smul_eq_zsmul] using hs.lie_H_E i j
 
 omit [DecidableEq B] in
+/-- Repeated adjoint raising shifts a Cartan weight by the raising generator's weight
+at each step. -/
+theorem IsSerreSystem.lie_H_ad_pow_E (hs : IsSerreSystem R CM H E F) (k i j : B) (n : ℕ) :
+    ⁅H k, (ad R L (E i) ^ n) (E j)⁆ =
+      ((n : ℤ) * CM k i + CM k j) • (ad R L (E i) ^ n) (E j) := by
+  induction n with
+  | zero => simpa using hs.lie_H_E k j
+  | succ n ih =>
+      simp only [pow_succ', mul_apply_eq_comp, ad_apply]
+      rw [leibniz_lie, hs.lie_H_E, ih]
+      simp only [zsmul_lie, lie_zsmul, Nat.cast_add, Nat.cast_one]
+      module
+
+omit [DecidableEq B] in
 /-- The lowering weight relation with the negative Cartan entry read in the base ring. -/
 theorem IsSerreSystem.lie_H_F_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
     ⁅H i, F j⁆ = -(CM i j : R) • F j := by

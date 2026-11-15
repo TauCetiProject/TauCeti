@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Action
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.LeadingMinors
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Torus
 
 /-!
 # Weyl words in the matrix big cell
@@ -43,40 +41,6 @@ attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- A pinned simple lattice representative transports a Cartan weight vector by the
-corresponding simple reflection. -/
-theorem simpleWeylLatticeEquiv_weight (i : Fin t.rank) {μ : Fin t.rank → ℤ}
-    {m : D.lattice}
-    (hm : IsCartanWeightVector (t.lieBasis ht).h D.representation μ (m : D.carrier)) :
-    IsCartanWeightVector (t.lieBasis ht).h D.representation
-      (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) • μ)
-      (D.simpleWeylLatticeEquiv i m : D.carrier) := by
-  rw [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
-    RootPairing.reflection_apply, t.coroot'_simpleIndex_apply ht, t.root_simpleIndex ht]
-  rw [D.simpleWeylLatticeEquiv_def]
-  exact IsCartanWeightVector.kostantWeylRestrict
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-    D.representation_mem_lattice (D.isNilpotent_representation_rootGenerator (.inl i))
-    (D.isNilpotent_representation_rootGenerator (.inr i))
-    (D.isSl2Triple_representation_rootGenerator i) (c := i) (α := fun j => t.cartanMatrix i j)
-    (fun j => by simpa only [LieAlgebra.Basis.rootGenerator_inl, Int.cast_smul_eq_zsmul] using
-      t.lie_lieBasis_h_e ht i j)
-    (fun j => by simpa only [LieAlgebra.Basis.rootGenerator_inr, Int.cast_smul_eq_zsmul,
-      neg_smul] using t.lie_lieBasis_h_f ht i j) hm
-
-/-- A lattice Weyl word transports a Cartan weight vector by the Weyl-group element it spells. -/
-theorem weylWordLatticeEquiv_weight (l : List (Fin t.rank)) {μ : Fin t.rank → ℤ}
-    {m : D.lattice}
-    (hm : IsCartanWeightVector (t.lieBasis ht).h D.representation μ (m : D.carrier)) :
-    IsCartanWeightVector (t.lieBasis ht).h D.representation
-      (t.geckWeylWordProd ht l • μ) (D.weylWordLatticeEquiv l m : D.carrier) := by
-  induction l generalizing μ m with
-  | nil => simpa only [weylWordLatticeEquiv_nil, one_apply_eq_self,
-      geckWeylWordProd_nil, one_smul] using hm
-  | cons i l ih =>
-      simpa only [weylWordLatticeEquiv_cons, mul_apply_eq_comp,
-        geckWeylWordProd_cons, mul_smul] using D.simpleWeylLatticeEquiv_weight i (ih hm)
-
 /-- A Weyl word has invertible leading weight-block minors exactly when the Weyl-group element
 it spells is the identity. The equivalence `r` orders the distinct weights, keeping repeated
 weights in a single block. The value ring may have arbitrary characteristic and nilpotents. -/
@@ -93,7 +57,7 @@ theorem isUnit_leading_weight_minors_weylWord_iff {β : Type*} [PartialOrder β]
       D.isCartanWeightVector_basis (D.weylWordLatticeEquiv l)
       (fun μ => t.geckWeylWordProd ht l • μ)
       (MulAction.injective _).injOn
-      (fun j => D.weylWordLatticeEquiv_weight l (D.isCartanWeightVector_basis j)) r]
+      (fun j => D.isCartanWeightVector_weylWordLatticeEquiv l (D.isCartanWeightVector_basis j)) r]
   exact ⟨D.eq_one_of_forall_smul_weight_eq _, fun h j => by rw [h, one_smul]⟩
 
 end TauCeti.DynkinType.ChevalleyDatum

@@ -48,14 +48,6 @@ section Lie
 variable {B L : Type*} [LieRing L] [LieAlgebra ℚ L]
   {CM : Matrix B B ℤ} {H E F : B → L}
 
-private theorem lie_H_triple_E (hs : IsSerreSystem ℚ CM H E F) (k i j : B) :
-    ⁅H k, ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆⁆ =
-      (3 * CM k i + CM k j) • ⁅E i, ⁅E i, ⁅E i, E j⁆⁆⁆ := by
-  rw [leibniz_lie (H k) (E i) ⁅E i, ⁅E i, E j⁆⁆,
-    leibniz_lie (H k) (E i) ⁅E i, E j⁆, leibniz_lie (H k) (E i) (E j)]
-  simp only [hs.lie_H_E, zsmul_lie, lie_zsmul, lie_add]
-  module
-
 -- The two long roots at the far end of the short-node string form a length-two
 -- string for the long node. Record its orientation, including the returning minus sign.
 private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
@@ -74,8 +66,10 @@ private theorem long_node_string (hs : IsSerreSystem ℚ CM H E F)
     rw [← lie_skew, hs.lie_E_F_of_ne i j hne, neg_zero]
   have hjc : ⁅H j, c⁆ = -c := by
     dsimp only [c]
-    rw [lie_smul, lie_H_triple_E hs, hji, hjj]
-    module
+    have hw := hs.lie_H_ad_pow_E j i j 3
+    norm_num only [pow_succ', pow_zero, one_apply_eq_self, mul_apply_eq_comp, ad_apply,
+      hji, hjj, neg_one_zsmul] at hw
+    rw [lie_smul, hw, smul_neg]
   have hfjc : ⁅F j, c⁆ = 0 := by
     dsimp only [c]
     rw [lie_smul, leibniz_lie (F j) (E i) ⁅E i, ⁅E i, E j⁆⁆, hfa, zero_lie, zero_add,
@@ -134,7 +128,10 @@ private theorem fivefold_fixes_long_raising (hs : IsSerreSystem ℚ CM H E F)
     rw [leibniz_lie, hfi0, zero_lie, zero_add, hfc, lie_smul, hbc2, smul_zero]
   have hhc : ⁅H i, c⁆ = (3 : ℚ) • c := by
     dsimp only [c]
-    rw [lie_smul, lie_H_triple_E hs, hii, hij]
+    have hw := hs.lie_H_ad_pow_E i i j 3
+    norm_num only [pow_succ', pow_zero, one_apply_eq_self, mul_apply_eq_comp, ad_apply,
+      hii, hij] at hw
+    rw [lie_smul, hw]
     module
   have hhd : ⁅H i, d⁆ = (0 : ℚ) • d := by
     dsimp only [d]
