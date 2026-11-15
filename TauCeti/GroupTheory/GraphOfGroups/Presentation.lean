@@ -58,8 +58,9 @@ the reversal and edge relations by elements `g_v ∈ H` attached to the vertices
   edges, `π₁(𝔸, T)` is the vertex group.
 * `TauCeti.GraphOfGroups.π₁Tree.equivFreeGroup`: with trivial vertex groups and `T` closed under
   reversal, `π₁(𝔸, T)` is the free group on the darts of `O \ T` for any orientation `O`. For
-  the rose, whose maximal tree is empty, this is the free group on the petals. A dart generator
-  corresponds to its signed coordinate (`equivFreeGroup_edge_eq_dartWord`).
+  the rose, whose maximal tree is empty, this is the free group on the petals
+  (`roseEquivFreeGroup`). A dart generator corresponds to its signed coordinate
+  (`equivFreeGroup_edge_eq_dartWord`).
 * `TauCeti.GraphOfGroups.π₁Tree.edge_eq_one_iff`: the generator of a dart is trivial in
   `π₁(𝔸, T)` exactly when the dart or its reverse lies in `T`; in particular no dart generator
   is trivial in `π₁(𝔸, ∅)` (`TauCeti.GraphOfGroups.π₁Tree.edge_empty_ne_one`).
@@ -580,3 +581,44 @@ end π₁Tree
 end GraphOfGroups
 
 end TauCeti
+
+namespace TauCeti.GraphOfGroups.π₁Tree
+
+variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
+  [∀ a, Subsingleton (𝔸.vertexGroup a)] (T : Set (SerreGraph.rose α).E) [IsEmpty T]
+
+/-- The positive darts of a rose outside an empty set of darts are its petals. -/
+private def rosePositiveDartEquiv : ↥({e : (SerreGraph.rose α).E | e.2 = true} \ T) ≃ α where
+  toFun e := e.1.1
+  invFun a := ⟨(a, true), rfl, fun h => IsEmpty.false (⟨_, h⟩ : T)⟩
+  left_inv := by
+    rintro ⟨⟨a, b⟩, hb, -⟩
+    obtain rfl : b = true := hb
+    rfl
+  right_inv _ := rfl
+
+/-- A graph of groups with trivial vertex groups over the rose with petals `α` has fundamental
+group, relative to its maximal tree, free on the petals: the positive dart `(a, true)` of the
+petal `a` corresponds to the generator `a`. The maximal tree of a rose has no darts, so this is
+stated for any empty set `T` of darts, such as `∅` or the darts of a spanning tree. For the rose
+with `n` petals this is the free group of rank `n`. -/
+noncomputable def roseEquivFreeGroup : π₁Tree 𝔸 T ≃* FreeGroup α :=
+  (equivFreeGroup 𝔸 (SerreGraph.rose_isOrientation α) fun e he =>
+    isEmptyElim (⟨e, he⟩ : T)).trans (FreeGroup.freeGroupCongr (rosePositiveDartEquiv T))
+
+@[simp] theorem roseEquivFreeGroup_edge_true (a : α) :
+    roseEquivFreeGroup 𝔸 T (edge T (a, true)) = FreeGroup.of a := by
+  have ha : ((a, true) : (SerreGraph.rose α).E) ∈ {e : (SerreGraph.rose α).E | e.2 = true} \ T :=
+    ⟨rfl, fun h => IsEmpty.false (⟨_, h⟩ : T)⟩
+  simp [roseEquivFreeGroup, equivFreeGroup_edge _ _ ha, rosePositiveDartEquiv]
+
+@[simp] theorem roseEquivFreeGroup_edge_false (a : α) :
+    roseEquivFreeGroup 𝔸 T (edge T (a, false)) = (FreeGroup.of a)⁻¹ := by
+  rw [← roseEquivFreeGroup_edge_true 𝔸 T, ← map_inv]
+  exact congrArg _ (edge_rev (𝔸 := 𝔸) (T := T) (a, true))
+
+@[simp] theorem roseEquivFreeGroup_symm_of (a : α) :
+    (roseEquivFreeGroup 𝔸 T).symm (FreeGroup.of a) = edge T (a, true) := by
+  rw [MulEquiv.symm_apply_eq, roseEquivFreeGroup_edge_true]
+
+end TauCeti.GraphOfGroups.π₁Tree
