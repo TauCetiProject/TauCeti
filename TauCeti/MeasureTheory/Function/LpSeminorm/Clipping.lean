@@ -77,18 +77,24 @@ open scoped Topology
 
 /-- Scalar products with the clipped multipliers converge to `b • f` in every finite-exponent
 `Lᵖ` space whenever `b • f` lies there. No topology on the domain or integrability of the
-multiplier alone is required. -/
+multiplier alone is required, nor is measurability of `f` separately. -/
 theorem tendsto_eLpNorm_max_min_smul_sub {X F : Type*} [MeasurableSpace X] {μ : Measure X}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {b : X → ℝ} {f : X → F} {p : ℝ≥0∞}
-    (hp : p ≠ ∞) (hb : AEStronglyMeasurable b μ) (hf : AEStronglyMeasurable f μ)
+    (hp : p ≠ ∞) (hb : AEStronglyMeasurable b μ)
     (hbf : MemLp (fun x ↦ b x • f x) p μ) :
     Tendsto (fun M : ℝ ↦ eLpNorm
       (fun x ↦ max (-M) (min M (b x)) • f x - b x • f x) p μ) atTop (𝓝 0) := by
   have hcont (M : ℝ) : Continuous (fun t : ℝ ↦ max (-M) (min M t)) := by fun_prop
   refine tendsto_eLpNorm_sub_of_ae_tendsto (C := 2) hp
-    (.of_forall fun M ↦ ((hcont M).comp_aestronglyMeasurable hb).smul hf) hbf
+    ((eventually_ge_atTop 0).mono fun M hM ↦ ?_) hbf
     ((eventually_ge_atTop 0).mono fun M hM ↦ .of_forall fun x ↦ ?_)
     (.of_forall fun x ↦ tendsto_const_nhds.congr' ?_)
+  · convert (((hcont M).comp_aestronglyMeasurable hb).div₀ hb).smul
+      hbf.aestronglyMeasurable using 1
+    funext x
+    by_cases hx : b x = 0
+    · simp [hx, min_eq_right hM, max_eq_right (neg_nonpos.mpr hM)]
+    · simp [smul_smul, div_mul_cancel₀ _ hx]
   · simp only [ENNReal.coe_ofNat]
     rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_ofNat,
       ← ENNReal.ofReal_mul (by positivity)]
