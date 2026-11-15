@@ -18,8 +18,8 @@ Evaluating Mathlib's Dickson polynomials of the second and first kinds at `P` wi
 recovers `lucasU P Q (n + 1)` and `lucasV P Q n`. Combining those identifications with the
 Dickson evaluation and power-series identities in `TauCeti.RingTheory.Polynomial.Dickson` yields
 the symmetric root-power (Binet) formulas, repeated-root values, weighted homogeneity, parity,
-Chebyshev specializations, elliptic-trace periodicities, and rational generating functions of
-`lucasU` and `lucasV`, together with their `LinearRecurrence` solutions and classical integer
+Chebyshev specializations, period-`6` periodicity at `(1, 1)`, and rational generating functions of
+`lucasU` and `lucasV`, together with their `LinearRecurrence` solutions and classical
 specializations (`Nat.fib`, `mersenne`, and `LucasLehmer.s`).
 
 ## Main results
@@ -35,9 +35,8 @@ specializations (`Nat.fib`, `mersenne`, and `LucasLehmer.s`).
 * `TauCeti.mk_lucasU_mul_one_sub_add_eq_X`, `TauCeti.mk_lucasV_mul_one_sub_add_eq`: rational
   generating functions of `lucasU` and `lucasV` in `R⟦X⟧`.
 * `TauCeti.isSolution_lucasU`, `TauCeti.isSolution_lucasV`: `lucasU P Q` and `lucasV P Q` solve
-  the order-two linear recurrence `⟨2, ![-Q, P]⟩` with characteristic polynomial
-  `X ^ 2 - C P * X + C Q`.
-* `TauCeti.lucasU_one_neg_one`, `TauCeti.lucasU_three_two_int_eq_mersenne`,
+  the order-two linear recurrence `⟨2, ![-Q, P]⟩`.
+* `TauCeti.lucasU_one_neg_one`, `TauCeti.lucasU_three_two_eq_mersenne`,
   `TauCeti.lucasV_four_one_two_pow`: specializations to `Nat.fib`, `mersenne`, and `LucasLehmer.s`.
 
 ## References
@@ -80,19 +79,19 @@ theorem lucasV_eq_dickson_eval (P Q : R) (n : ℕ) :
     simp [lucasV_add_two, dickson_add_two, ih₀, ih₁]
 
 /-- For `Q = 1`, `lucasU P 1 (n + 1)` evaluates the rescaled Chebyshev polynomial `Chebyshev.S`. -/
-theorem lucasU_succ_one_eq_chebyshev_S (P : R) (n : ℕ) :
+theorem lucasU_one_right_succ_eq_chebyshev_S_eval (P : R) (n : ℕ) :
     lucasU P 1 (n + 1) = (Chebyshev.S R n).eval P := by
   rw [lucasU_succ_eq_dickson_eval, dickson_two_one_eq_chebyshev_S]
 
 /-- For `Q = 1`, `lucasV P 1 n` evaluates the rescaled Chebyshev polynomial `Chebyshev.C`. -/
-theorem lucasV_one_eq_chebyshev_C (P : R) (n : ℕ) :
+theorem lucasV_one_right_eq_chebyshev_C_eval (P : R) (n : ℕ) :
     lucasV P 1 n = (Chebyshev.C R n).eval P := by
   rw [lucasV_eq_dickson_eval, dickson_one_one_eq_chebyshev_C]
 
 /-! ### Binet root-power identities, repeated roots, homogeneity, and parity -/
 
 /-- Complete homogeneous symmetric expansion of `lucasU (x + y) (x * y) (n + 1)`. -/
-theorem lucasU_succ_add_mul (x y : R) (n : ℕ) :
+theorem lucasU_add_mul_succ (x y : R) (n : ℕ) :
     lucasU (x + y) (x * y) (n + 1) = ∑ i ∈ range (n + 1), x ^ i * y ^ (n - i) := by
   rw [lucasU_succ_eq_dickson_eval, dickson_two_eval_add rfl]
 
@@ -193,15 +192,6 @@ theorem isSolution_lucasV (P Q : R) :
     Fin.val_zero, Fin.val_one, add_zero, lucasV_add_two]
   ring
 
-/-- The characteristic polynomial of the Lucas linear recurrence `⟨2, ![-Q, P]⟩` is
-`X ^ 2 - C P * X + C Q`. -/
-theorem charPoly_lucasRecurrence (P Q : R) :
-    (⟨2, ![-Q, P]⟩ : LinearRecurrence R).charPoly = X ^ 2 - C P * X + C Q := by
-  simp only [LinearRecurrence.charPoly, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, Fin.val_zero, Fin.val_one, ← C_mul_X_pow_eq_monomial, pow_zero,
-    pow_one, map_one, map_neg, one_mul, mul_one]
-  ring
-
 /-! ### Classical parameter specializations -/
 
 /-- At `(2, 1)` (repeated root `1`), `lucasU 2 1 n = n`. -/
@@ -224,6 +214,12 @@ theorem lucasU_three_two (n : ℕ) : lucasU (3 : R) 2 n = 2 ^ n - 1 := by
   norm_num at h
   exact h
 
+/-- At `(3, 2)` (roots `2` and `1`), `lucasU 3 2 n` equals the Mersenne number `mersenne n` cast
+into `R`. -/
+theorem lucasU_three_two_eq_mersenne (n : ℕ) : lucasU (3 : R) 2 n = mersenne n := by
+  rw [lucasU_three_two, mersenne, Nat.cast_sub (Nat.one_le_two_pow), Nat.cast_pow, Nat.cast_ofNat,
+    Nat.cast_one]
+
 /-- At `(3, 2)` (roots `2` and `1`), `lucasV 3 2 n = 2 ^ n + 1`. -/
 @[simp]
 theorem lucasV_three_two (n : ℕ) : lucasV (3 : R) 2 n = 2 ^ n + 1 := by
@@ -243,10 +239,16 @@ theorem lucasU_one_neg_one (n : ℕ) : lucasU (1 : R) (-1) n = Nat.fib n := by
 /-- At `(1, 1)` (primitive sixth roots of unity), `lucasU 1 1` changes sign under `n ↦ n + 3`. -/
 theorem lucasU_one_one_add_three (n : ℕ) : lucasU (1 : R) 1 (n + 3) = -lucasU (1 : R) 1 n := by
   cases n with
-  | zero => simp
+  | zero =>
+    rw [zero_add, lucasU_three, lucasU_zero]
+    ring
   | succ n =>
     rw [Nat.succ_add, lucasU_succ_eq_dickson_eval, lucasU_succ_eq_dickson_eval,
       dickson_eval_one_add_three]
+
+/-- At `(1, 1)` (primitive sixth roots of unity), `lucasV 1 1` changes sign under `n ↦ n + 3`. -/
+theorem lucasV_one_one_add_three (n : ℕ) : lucasV (1 : R) 1 (n + 3) = -lucasV (1 : R) 1 n := by
+  rw [lucasV_eq_dickson_eval, lucasV_eq_dickson_eval, dickson_eval_one_add_three]
 
 /-- At `(1, 1)`, `lucasU 1 1` has period `6`. -/
 @[simp]
@@ -258,11 +260,21 @@ theorem lucasU_one_one_six_mul_add (j r : ℕ) :
     have h6 : 6 * (j + 1) + r = 6 * j + r + 3 + 3 := by omega
     rw [h6, lucasU_one_one_add_three, lucasU_one_one_add_three, neg_neg, ih]
 
+/-- At `(1, 1)`, `lucasU 1 1` vanishes at multiples of `6`. -/
+@[simp]
+theorem lucasU_one_one_six_mul (j : ℕ) : lucasU (1 : R) 1 (6 * j) = 0 := by
+  simpa using lucasU_one_one_six_mul_add (R := R) j 0
+
 /-- At `(1, 1)`, `lucasV 1 1` has period `6`. -/
 @[simp]
 theorem lucasV_one_one_six_mul_add (j r : ℕ) :
     lucasV (1 : R) 1 (6 * j + r) = lucasV (1 : R) 1 r := by
   rw [lucasV_eq_dickson_eval, lucasV_eq_dickson_eval, dickson_eval_one_six_mul_add]
+
+/-- At `(1, 1)`, `lucasV 1 1` equals `2` at multiples of `6`. -/
+@[simp]
+theorem lucasV_one_one_six_mul (j : ℕ) : lucasV (1 : R) 1 (6 * j) = 2 := by
+  simpa using lucasV_one_one_six_mul_add (R := R) j 0
 
 end CommRing
 
@@ -277,11 +289,6 @@ theorem lucasU_add_mul_eq_div {K : Type*} [Field K] {x y : K} (hxy : x ≠ y) (n
 end Field
 
 section IntSpecializations
-
-/-- Over `ℤ`, `lucasU 3 2 n` is the Mersenne number `mersenne n = 2 ^ n - 1`. -/
-theorem lucasU_three_two_int_eq_mersenne (n : ℕ) : lucasU (3 : ℤ) 2 n = mersenne n := by
-  rw [lucasU_three_two, mersenne, Nat.cast_sub (Nat.one_le_two_pow), Nat.cast_pow, Nat.cast_ofNat,
-    Nat.cast_one]
 
 /-- Over `ℤ`, `lucasV 4 1 (2 ^ i)` is Mathlib's Lucas–Lehmer sequence `LucasLehmer.s i`. -/
 theorem lucasV_four_one_two_pow (i : ℕ) : lucasV (4 : ℤ) 1 (2 ^ i) = LucasLehmer.s i := by

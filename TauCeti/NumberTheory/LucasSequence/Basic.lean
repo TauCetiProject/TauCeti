@@ -29,16 +29,18 @@ characteristic `2`.
 ## Main results
 
 * `TauCeti.map_lucasU`, `TauCeti.map_lucasV`: compatibility with ring homomorphisms.
-* `TauCeti.eq_lucasU_of_rec`: every sequence satisfying `u (n + 2) = P * u (n + 1) - Q * u n` is
-  expressed in the basis `(lucasU P Q (n + 1), lucasU P Q n)`.
-* `TauCeti.lucasU_add_one`: the addition formula
+* `TauCeti.eq_mul_lucasU_succ_sub_of_linearRec₂`: for any sequence satisfying
+  `u (n + 2) = P * u (n + 1) - Q * u n`, expands positive-index terms as
+  `u (n + 1) = u 1 * lucasU P Q (n + 1) - Q * u 0 * lucasU P Q n`.
+* `TauCeti.lucasU_add_add_one`: the addition formula
   `U_{m + n + 1} = U_{m + 1} * U_{n + 1} - Q * U_m * U_n`.
 * `TauCeti.lucasU_succ_sq_sub_mul`: Cassini's identity `U_{n + 1} ^ 2 - U_{n + 2} * U_n = Q ^ n`.
 * `TauCeti.lucasV_sq_sub_mul_lucasU_sq`: the Lucas discriminant identity
   `V_n ^ 2 - (P ^ 2 - 4 * Q) * U_n ^ 2 = 4 * Q ^ n`.
-* `TauCeti.lucasU_two_mul`, `TauCeti.lucasU_two_mul_add_one`, `TauCeti.lucasV_two_mul`: the
-  index-doubling identities `U_{2 n} = U_n * V_n`, `U_{2 n + 1} = U_{n + 1} ^ 2 - Q * U_n ^ 2`,
-  and `V_{2 n} = V_n ^ 2 - 2 * Q ^ n`.
+* `TauCeti.lucasU_two_mul`, `TauCeti.lucasU_two_mul_add_one`, `TauCeti.lucasV_two_mul`,
+  `TauCeti.lucasV_two_mul_add_one`: the index-doubling identities `U_{2 n} = U_n * V_n`,
+  `U_{2 n + 1} = U_{n + 1} ^ 2 - Q * U_n ^ 2`, `V_{2 n} = V_n ^ 2 - 2 * Q ^ n`, and
+  `V_{2 n + 1} = V_{n + 1} * V_n - P * Q ^ n`.
 * `TauCeti.lucasU_mul`, `TauCeti.lucasV_mul`: the index-multiplication identities
   `U_{m * n}(P, Q) = U_m(P, Q) * U_n(V_m(P, Q), Q ^ m)` and
   `V_{m * n}(P, Q) = V_n(V_m(P, Q), Q ^ m)`.
@@ -71,7 +73,7 @@ theorem lucasU_zero (P Q : R) : lucasU P Q 0 = 0 := (rfl)
 @[simp, grind =]
 theorem lucasU_one (P Q : R) : lucasU P Q 1 = 1 := (rfl)
 
-@[simp, grind =]
+@[simp low, grind =]
 theorem lucasU_add_two (P Q : R) (n : ℕ) :
     lucasU P Q (n + 2) = P * lucasU P Q (n + 1) - Q * lucasU P Q n := (rfl)
 
@@ -104,7 +106,7 @@ theorem lucasV_zero (P Q : R) : lucasV P Q 0 = 2 := (rfl)
 @[simp, grind =]
 theorem lucasV_one (P Q : R) : lucasV P Q 1 = P := (rfl)
 
-@[simp, grind =]
+@[simp low, grind =]
 theorem lucasV_add_two (P Q : R) (n : ℕ) :
     lucasV P Q (n + 2) = P * lucasV P Q (n + 1) - Q * lucasV P Q n := (rfl)
 
@@ -126,6 +128,7 @@ theorem lucasV_of_two_le (P Q : R) {n : ℕ} (hn : 2 ≤ n) :
   exact lucasV_add_two P Q k
 
 /-- Ring homomorphisms commute with `lucasU`. -/
+@[simp, grind =]
 theorem map_lucasU {S F : Type*} [CommRing S] [FunLike F R S] [RingHomClass F R S] (f : F)
     (P Q : R) (n : ℕ) : f (lucasU P Q n) = lucasU (f P) (f Q) n := by
   induction n using Nat.twoStepInduction with
@@ -133,6 +136,7 @@ theorem map_lucasU {S F : Type*} [CommRing S] [FunLike F R S] [RingHomClass F R 
   | more n ih₀ ih₁ => simp [ih₀, ih₁]
 
 /-- Ring homomorphisms commute with `lucasV`. -/
+@[simp, grind =]
 theorem map_lucasV {S F : Type*} [CommRing S] [FunLike F R S] [RingHomClass F R S] (f : F)
     (P Q : R) (n : ℕ) : f (lucasV P Q n) = lucasV (f P) (f Q) n := by
   induction n using Nat.twoStepInduction with
@@ -141,12 +145,12 @@ theorem map_lucasV {S F : Type*} [CommRing S] [FunLike F R S] [RingHomClass F R 
   | more n ih₀ ih₁ => simp [ih₀, ih₁]
 
 /-- Casting an integer `lucasU` term to `R` casts its parameters. -/
-@[simp]
+@[simp, grind =]
 theorem intCast_lucasU (P Q : ℤ) (n : ℕ) : ((lucasU P Q n : ℤ) : R) = lucasU (P : R) (Q : R) n := by
   simpa only [eq_intCast] using map_lucasU (Int.castRingHom R) P Q n
 
 /-- Casting an integer `lucasV` term to `R` casts its parameters. -/
-@[simp]
+@[simp, grind =]
 theorem intCast_lucasV (P Q : ℤ) (n : ℕ) : ((lucasV P Q n : ℤ) : R) = lucasV (P : R) (Q : R) n := by
   simpa only [eq_intCast] using map_lucasV (Int.castRingHom R) P Q n
 
@@ -202,11 +206,11 @@ theorem lucasV_zero_left_two_mul_add_one (Q : R) (n : ℕ) : lucasV 0 Q (2 * n +
   | succ n ih =>
     rw [Nat.mul_succ, add_right_comm, lucasV_add_two, zero_mul, ih, mul_zero, sub_self]
 
-/-! ### Basis expansion and addition formulas -/
+/-! ### Recurrence expansion and addition formulas -/
 
-/-- Every sequence satisfying `u (n + 2) = P * u (n + 1) - Q * u n` is a linear combination of
-`lucasU P Q (n + 1)` and `lucasU P Q n` determined by `u 0` and `u 1`. -/
-theorem eq_lucasU_of_rec {P Q : R} {u : ℕ → R}
+/-- For any sequence satisfying `u (n + 2) = P * u (n + 1) - Q * u n`, expands positive-index terms
+as `u (n + 1) = u 1 * lucasU P Q (n + 1) - Q * u 0 * lucasU P Q n`. -/
+theorem eq_mul_lucasU_succ_sub_of_linearRec₂ {P Q : R} {u : ℕ → R}
     (hu : ∀ n, u (n + 2) = P * u (n + 1) - Q * u n) (n : ℕ) :
     u (n + 1) = u 1 * lucasU P Q (n + 1) - Q * u 0 * lucasU P Q n := by
   induction n using Nat.twoStepInduction with
@@ -220,19 +224,19 @@ theorem eq_lucasU_of_rec {P Q : R} {u : ℕ → R}
 
 /-- **Addition formula for `lucasU`**:
 `U_{m + n + 1} = U_{m + 1} * U_{n + 1} - Q * U_m * U_n`. -/
-theorem lucasU_add_one (P Q : R) (m n : ℕ) :
+theorem lucasU_add_add_one (P Q : R) (m n : ℕ) :
     lucasU P Q (m + n + 1) =
       lucasU P Q (m + 1) * lucasU P Q (n + 1) - Q * lucasU P Q m * lucasU P Q n := by
   simpa only [add_assoc, add_zero] using
-    eq_lucasU_of_rec (u := fun k ↦ lucasU P Q (m + k))
+    eq_mul_lucasU_succ_sub_of_linearRec₂ (u := fun k ↦ lucasU P Q (m + k))
       (fun k ↦ by simpa only [add_assoc] using lucasU_add_two P Q (m + k)) n
 
 /-- Mixed addition formula expanding `lucasV` at `m + n + 1` in terms of `lucasU`. -/
-theorem lucasV_add_one (P Q : R) (m n : ℕ) :
+theorem lucasV_add_add_one (P Q : R) (m n : ℕ) :
     lucasV P Q (m + n + 1) =
       lucasV P Q (m + 1) * lucasU P Q (n + 1) - Q * lucasV P Q m * lucasU P Q n := by
   simpa only [add_assoc, add_zero] using
-    eq_lucasU_of_rec (u := fun k ↦ lucasV P Q (m + k))
+    eq_mul_lucasU_succ_sub_of_linearRec₂ (u := fun k ↦ lucasV P Q (m + k))
       (fun k ↦ by simpa only [add_assoc] using lucasV_add_two P Q (m + k)) n
 
 /-! ### Cross-relations, Cassini's identity, and the discriminant identity -/
@@ -292,7 +296,7 @@ theorem two_mul_lucasU_add (P Q : R) (m n : ℕ) :
     simp only [add_zero, lucasV_zero, lucasU_zero, zero_mul, add_zero]
     ring
   | succ n =>
-    rw [← add_assoc, lucasU_add_one, lucasV_eq_two_mul_lucasU_succ_sub P Q m,
+    rw [← add_assoc, lucasU_add_add_one, lucasV_eq_two_mul_lucasU_succ_sub P Q m,
       lucasV_eq_two_mul_lucasU_succ_sub P Q (n + 1), lucasU_add_two P Q n]
     ring
 
@@ -306,7 +310,7 @@ theorem two_mul_lucasV_add (P Q : R) (m n : ℕ) :
     simp only [add_zero, lucasV_zero, lucasU_zero, mul_zero, add_zero]
     ring
   | succ n =>
-    rw [← add_assoc, lucasV_add_one, lucasV_eq_two_mul_lucasU_succ_sub P Q (m + 1),
+    rw [← add_assoc, lucasV_add_add_one, lucasV_eq_two_mul_lucasU_succ_sub P Q (m + 1),
       lucasV_eq_two_mul_lucasU_succ_sub P Q m, lucasV_eq_two_mul_lucasU_succ_sub P Q (n + 1),
       lucasU_add_two P Q m, lucasU_add_two P Q n]
     ring
@@ -318,13 +322,13 @@ theorem lucasU_two_mul (P Q : R) (n : ℕ) :
   | zero => simp
   | succ n =>
     have h2 : 2 * (n + 1) = n + (n + 1) + 1 := by ring
-    rw [h2, lucasU_add_one, lucasV_succ_eq_lucasU_add_two_sub]
+    rw [h2, lucasU_add_add_one, lucasV_succ_eq_lucasU_add_two_sub]
     ring
 
 /-- **Odd-index doubling identity for `lucasU`**: `U_{2 n + 1} = U_{n + 1} ^ 2 - Q * U_n ^ 2`. -/
 theorem lucasU_two_mul_add_one (P Q : R) (n : ℕ) :
     lucasU P Q (2 * n + 1) = lucasU P Q (n + 1) ^ 2 - Q * lucasU P Q n ^ 2 := by
-  rw [two_mul, lucasU_add_one]
+  rw [two_mul, lucasU_add_add_one]
   ring
 
 /-- Expresses `lucasU P Q (2 * n + 1)` in terms of `lucasV P Q n`, `lucasU P Q (n + 1)`, and
@@ -342,9 +346,16 @@ theorem lucasV_two_mul (P Q : R) (n : ℕ) :
     lucasU_two_mul, lucasV_eq_two_mul_lucasU_succ_sub P Q n]
   ring
 
+/-- **Odd-index doubling identity for `lucasV`**: `V_{2 n + 1} = V_{n + 1} * V_n - P * Q ^ n`. -/
+theorem lucasV_two_mul_add_one (P Q : R) (n : ℕ) :
+    lucasV P Q (2 * n + 1) = lucasV P Q (n + 1) * lucasV P Q n - P * Q ^ n := by
+  rw [two_mul, lucasV_add_add_one, lucasV_eq_two_mul_lucasU_succ_sub P Q (n + 1),
+    lucasV_eq_two_mul_lucasU_succ_sub P Q n, ← lucasU_succ_sq_sub_mul P Q n, lucasU_add_two]
+  ring
+
 /-! ### Multi-step recurrences and index multiplication -/
 
-/-- Shifting the index of `lucasU` by `2 * m` satisfies the recurrence with parameters
+/-- Stepping the index of `lucasU` by `m` satisfies the three-term recurrence with parameters
 `lucasV P Q m` and `Q ^ m`. -/
 theorem lucasU_add_two_mul (P Q : R) (k m : ℕ) :
     lucasU P Q (k + 2 * m) = lucasV P Q m * lucasU P Q (k + m) - Q ^ m * lucasU P Q k := by
@@ -363,7 +374,7 @@ theorem lucasU_add_two_mul (P Q : R) (k m : ℕ) :
       lucasU_add_two P Q (k + m)]
     ring
 
-/-- Shifting the index of `lucasV` by `2 * m` satisfies the recurrence with parameters
+/-- Stepping the index of `lucasV` by `m` satisfies the three-term recurrence with parameters
 `lucasV P Q m` and `Q ^ m`. -/
 theorem lucasV_add_two_mul (P Q : R) (k m : ℕ) :
     lucasV P Q (k + 2 * m) = lucasV P Q m * lucasV P Q (k + m) - Q ^ m * lucasV P Q k := by
