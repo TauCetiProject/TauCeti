@@ -435,6 +435,12 @@ theorem inv_mem_reflectionCoset {i : ι} {m : G} (hm : m ∈ D.reflectionCoset i
   rw [this]
   exact D.mul_mem_reflectionCoset hconj hinv
 
+/-- For `m ∈ M a`, conjugating `U a` by `m⁻¹` lands in `U (-a)`. -/
+theorem inv_mul_mul_mem_U_neg_of_mem_reflectionCoset {i : ι} {m u : G}
+    (hm : m ∈ D.reflectionCoset i) (hu : u ∈ D.U i) :
+    m⁻¹ * u * m ∈ D.U (P.reflectionPerm i i) := by
+  simpa using D.mul_mul_inv_mem_U_neg_of_mem_reflectionCoset (D.inv_mem_reflectionCoset hm) hu
+
 /-- Each element of a reflection coset normalizes `T`. -/
 theorem reflectionCoset_subset_normalizer (i : ι) :
     D.reflectionCoset i ⊆ Subgroup.normalizer (D.T : Set G) := by
