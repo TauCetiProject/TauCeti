@@ -632,6 +632,22 @@ theorem contDiff_uncurry_positiveEndHamiltonian {E : Type*} [NormedAddCommGroup 
     (hH : ContDiff ℝ n (uncurry (H q))) : ContDiff ℝ n (uncurry (positiveEndHamiltonian H q)) :=
   contDiff_const.mul (hH.comp ((contDiff_const.mul contDiff_fst).prodMk contDiff_snd))
 
+/-- For a `C^n` end Hamiltonian `H_q` on a manifold, its counterpart `H'_q(t, x) = ±H_q(±t, x)` in
+the positive end chart is `C^n`. -/
+theorem contMDiff_uncurry_positiveEndHamiltonian {E HM M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace HM] {I : ModelWithCorners ℝ E HM}
+    [TopologicalSpace M] [ChartedSpace HM M] {H : Puncture → ℝ → M → ℝ} {q : Puncture}
+    {n : WithTop ℕ∞} (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (H q))) :
+    ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry (positiveEndHamiltonian H q)) := by
+  have h : uncurry (positiveEndHamiltonian H q) =
+      (fun r : ℝ ↦ q.endSign • r) ∘ uncurry (H q) ∘
+        fun p : ℝ × M ↦ (q.endSign • p.1, p.2) := by
+    funext ⟨t, x⟩
+    simp [uncurry, positiveEndHamiltonian_apply]
+  rw [h]
+  exact (contDiff_const_smul q.endSign).contMDiff.comp
+    (hH.comp (((contDiff_const_smul q.endSign).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
+
 /-- A `1`-periodic loop read with the time `±t` of an end is `1`-periodic. -/
 theorem periodic_comp_endSign_mul {α : Type*} {q : Puncture} {x : ℝ → α} (hx : Periodic x 1) :
     Periodic (fun t ↦ x (q.endSign * t)) 1 := by

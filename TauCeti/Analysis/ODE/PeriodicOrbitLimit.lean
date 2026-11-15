@@ -66,11 +66,12 @@ at an end: for a solution of the Floer equation `∂_s u + J (∂_t u - X_{H_t}(
 cylindrical end, the defect is `J ∂_s u`, and its square integral is controlled by the energy.
 No regularity beyond `C¹`, and no bound on the derivative of `u`, is assumed for these statements.
 
-If the derivative of `u` is bounded by `C`, the loops depend `C`-Lipschitz continuously on `s` in
-the uniform distance and form a compact family by the Arzelà–Ascoli theorem. For every `ε > 0` and
-every late `s` some loop at a time in `[s, s + ε]` has squared defect integral below `ε`
-(`TauCeti.eventually_exists_mem_Icc_integral_norm_sq_sliceDefect_lt`), so every cluster point of
-the loops in the topology of uniform convergence is a `1`-periodic solution
+If the derivative of `u` is bounded by `C` — for which a bound on `(a, ∞) × [0, 1]` suffices when
+the loops are `1`-periodic (`TauCeti.norm_fderiv_le_of_periodic`) — the loops depend `C`-Lipschitz
+continuously on `s` in the uniform distance and form a compact family by the Arzelà–Ascoli theorem.
+For every `ε > 0` and every late `s` some loop at a time in `[s, s + ε]` has squared defect
+integral below `ε` (`TauCeti.eventually_exists_mem_Icc_integral_norm_sq_sliceDefect_lt`), so every
+cluster point of the loops in the topology of uniform convergence is a `1`-periodic solution
 (`TauCeti.periodic_and_hasDerivAt_of_mapClusterPt`). These cluster points form the ω-limit set of a
 continuous curve in a compact set, which is preconnected. If the `1`-periodic solutions in `K` are
 isolated from each other in the uniform distance, it is therefore a single solution `x`, and the
@@ -606,6 +607,20 @@ theorem periodic_and_hasDerivAt_of_mapClusterPt (hu : ContDiffOn ℝ 1 u (Ioi a 
   have hyx : UniformFun.toFun y = x := funext fun t ↦ tendsto_nhds_unique
     ((hσy.tendsto_at t).comp hψ.tendsto_atTop) (hux.tendsto_at t)
   exact hyx ▸ ⟨hxper, hx⟩
+
+/-- A derivative bound on the strip `(a, ∞) × [0, 1]` extends to the half-cylinder `(a, ∞) × ℝ`
+when the slices `t ↦ u(s, t)` are `1`-periodic. -/
+theorem norm_fderiv_le_of_periodic (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (hC : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ‖fderiv ℝ u z‖ ≤ C) {z : ℝ × ℝ}
+    (hz : z ∈ Ioi a ×ˢ (univ : Set ℝ)) : ‖fderiv ℝ u z‖ ≤ C := by
+  set n : ℤ := ⌊z.2⌋
+  have heq : (fun w : ℝ × ℝ ↦ u (w + (0, -(n : ℝ)))) =ᶠ[𝓝 z] u := by
+    filter_upwards [(isOpen_Ioi.prod isOpen_univ).mem_nhds hz] with ⟨s, t⟩ hw
+    simpa only [Prod.mk_add_mk, add_zero, ← sub_eq_add_neg, mul_one] using
+      (hper s hw.1).sub_int_mul_eq n
+  rw [← heq.fderiv_eq, fderiv_comp_add_right]
+  refine hC _ ⟨by simpa only [Prod.fst_add, add_zero] using hz.1, ?_, ?_⟩ <;>
+    simp only [Prod.snd_add] <;> linarith [Int.floor_le z.2, Int.lt_floor_add_one z.2]
 
 /-- **Convergence of the loops to an isolated periodic solution.** Let `X` be a continuous,
 `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with

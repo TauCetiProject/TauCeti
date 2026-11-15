@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Tietze
 import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
 
 /-!
@@ -106,21 +107,6 @@ theorem sliceDefect_comp_eq_mvfderiv_sub {u : ℝ × ℝ → M} {z : ℝ × ℝ}
     (mvfderiv_eq_fderiv_apply (e ∘ u) z stdComplexLineImag).symm.trans
       (mvfderiv_comp_apply z he hu _)
   rw [sliceDefect_def, ← stdComplexLineImag_eq, hd, comp_apply, hY, map_sub]
-
-/-- A derivative bound on the strip `(a, ∞) × [0, 1]` extends to `(a, ∞) × ℝ` when the slices
-`t ↦ v(s, t)` are `1`-periodic. -/
-private theorem norm_fderiv_le_of_periodic {v : ℝ × ℝ → F} {a C : ℝ}
-    (hper : ∀ s, a < s → Periodic (fun t ↦ v (s, t)) 1)
-    (hC : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ‖fderiv ℝ v z‖ ≤ C) {z : ℝ × ℝ}
-    (hz : z ∈ Ioi a ×ˢ (univ : Set ℝ)) : ‖fderiv ℝ v z‖ ≤ C := by
-  set n : ℤ := ⌊z.2⌋
-  have heq : (fun w : ℝ × ℝ ↦ v (w + (0, -(n : ℝ)))) =ᶠ[𝓝 z] v := by
-    filter_upwards [(isOpen_Ioi.prod isOpen_univ).mem_nhds hz] with ⟨s, t⟩ hw
-    simpa only [Prod.mk_add_mk, add_zero, ← sub_eq_add_neg, mul_one] using
-      (hper s hw.1).sub_int_mul_eq n
-  rw [← heq.fderiv_eq, fderiv_comp_add_right]
-  refine hC _ ⟨by simpa only [Prod.fst_add, add_zero] using hz.1, ?_, ?_⟩ <;>
-    simp only [Prod.snd_add] <;> linarith [Int.floor_le z.2, Int.lt_floor_add_one z.2]
 
 namespace SmoothTwoForm
 
@@ -449,14 +435,12 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
         (x 0)) :
     ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) ∧
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
-      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  refine hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
     (hH.of_le one_le_two) hHper he hK he_inj hde hu hper huK J hc hJc hfloer hE hC
-    fun x hx hxK ↦ ?_
-  have hiso := IsNondegenerateFixedPt.eventually_forall_mem_periodicSolutions_eq (s := 0)
-    (hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp) (hH.of_le (by norm_num)))
-    (fun t ↦ by rw [hHper t]) one_ne_zero hx (by simpa only [zero_add] using hnd x hx hxK)
-  exact hiso.mono fun y hy x' hx' _ hx'0 ↦ hy x' hx' hx'0
+    fun x hx hxK ↦
+      (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH hHper hx
+        (hnd x hx hxK)).mono fun _ hy x' hx' _ ↦ hy x' hx'
 
 /-- **Convergence of a finite-energy Floer half-cylinder in a closed manifold to a nondegenerate
 orbit.** Specialization of
