@@ -81,7 +81,7 @@ strictly less than the source radius. It is defined by a convergent sum and perm
 constant coefficient in the inner series. -/
 noncomputable def analyticSubst (g : OnOpenDisc.subring R S₀)
     (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀) :
-    OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀ where
+    OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R S₀ where
   toFun f := ∑' n, OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n
   map_one' := by
     apply restrict_injective substRadius
@@ -103,6 +103,10 @@ noncomputable def analyticSubst (g : OnOpenDisc.subring R S₀)
     rw [restrict_tsum_subst g hg (f + h), map_add,
       restrict_tsum_subst g hg f, restrict_tsum_subst g hg h, Subring.coe_add]
     exact (OnOpenDisc.mem_subring.mp f.2).evalAt_add (OnOpenDisc.mem_subring.mp h.2) (hg s)
+  commutes' a := by
+    apply restrict_injective substRadius
+    rw [restrict_tsum_subst g hg, OnOpenDisc.coe_algebraMap, Algebra.algebraMap_self,
+      RingHom.id_apply, evalAt_C, restrict_algebraMap]
 
 variable (g : OnOpenDisc.subring R S₀)
   (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
@@ -140,36 +144,16 @@ theorem norm_restrict_analyticSubst_le [NormOneClass R] (f : OnOpenDisc.subring 
 theorem analyticSubst_C (a : R) :
     analyticSubst g hg (OnOpenDisc.polynomialHom (Polynomial.C a)) =
       OnOpenDisc.polynomialHom (Polynomial.C a) := by
-  apply restrict_injective substRadius
-  rw [restrict_analyticSubst, OnOpenDisc.coe_polynomialHom, Polynomial.coe_C, evalAt_C,
-    restrict_polynomialHom_C]
+  rw [OnOpenDisc.polynomialHom_C, AlgHom.commutes, ← OnOpenDisc.polynomialHom_C]
 
-/-- Scalar constants are fixed by analytic substitution. -/
-@[simp]
-theorem analyticSubst_algebraMap (a : R) :
-    analyticSubst g hg (algebraMap R (OnOpenDisc.subring R R₀) a) =
-      algebraMap R (OnOpenDisc.subring R S₀) a := by
-  have ha (T₀ : ℝ) : algebraMap R (OnOpenDisc.subring R T₀) a =
-      OnOpenDisc.polynomialHom (Polynomial.C a) :=
-    Subtype.ext (by simp)
-  rw [ha R₀, ha S₀, analyticSubst_C]
-
-/-- Analytic substitution bundled as an `R`-algebra homomorphism. -/
-noncomputable def analyticSubstAlgHom :
-    OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R S₀ where
-  __ := analyticSubst g hg
-  commutes' := analyticSubst_algebraMap g hg
-
-/-- `analyticSubstAlgHom` acts as `analyticSubst`. -/
-@[simp]
-theorem coe_analyticSubstAlgHom (f : OnOpenDisc.subring R R₀) :
-    analyticSubstAlgHom g hg f = analyticSubst g hg f := (rfl)
-
-/-- Forgetting `R`-linearity of `analyticSubstAlgHom` recovers `analyticSubst`. -/
-@[simp]
-theorem coe_analyticSubstAlgHom_ringHom :
-    (analyticSubstAlgHom g hg : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀) =
-      analyticSubst g hg := (rfl)
+/-- Analytic substitution depends only on the inner series, not on the proof of its radius bound
+or how the series is written. -/
+theorem analyticSubst_congr {g₁ g₂ : OnOpenDisc.subring R S₀} (h : g₁ = g₂)
+    (hg₁ : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g₁‖ < R₀)
+    (hg₂ : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g₂‖ < R₀) :
+    analyticSubst g₁ hg₁ = analyticSubst g₂ hg₂ := by
+  subst h
+  rfl
 
 /-- The source variable is sent to the inner series. -/
 @[simp]
@@ -240,18 +224,19 @@ theorem analyticSubst_polynomialHom (p : Polynomial R) :
       Polynomial.eval₂RingHom (OnOpenDisc.polynomialHom.comp Polynomial.C) g p := by
   exact RingHom.congr_fun (Polynomial.ringHom_ext
     (fun a ↦ by simp) (by simp) :
-    (analyticSubst g hg).comp OnOpenDisc.polynomialHom =
+    (analyticSubst g hg).toRingHom.comp OnOpenDisc.polynomialHom =
       Polynomial.eval₂RingHom (OnOpenDisc.polynomialHom.comp Polynomial.C) g) p
 
-/-- A continuous ring homomorphism fixing coefficients and sending the variable to `g` is
-analytic substitution by `g`. -/
-theorem eq_analyticSubst (φ : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀)
+/-- A continuous `R`-algebra homomorphism sending the variable to `g` is analytic substitution
+by `g`. -/
+theorem eq_analyticSubst (φ : OnOpenDisc.subring R R₀ →ₐ[R] OnOpenDisc.subring R S₀)
     (hφ : Continuous φ)
-    (hC : ∀ a, φ (OnOpenDisc.polynomialHom (Polynomial.C a)) =
-      OnOpenDisc.polynomialHom (Polynomial.C a))
     (hX : φ (OnOpenDisc.polynomialHom Polynomial.X) = g) : φ = analyticSubst g hg := by
-  exact ringHom_ext hφ (continuous_analyticSubst g hg)
-    (fun a ↦ by simpa using hC a) (by simpa using hX)
+  refine AlgHom.toRingHom_injective (ringHom_ext hφ (continuous_analyticSubst g hg)
+    (fun a ↦ ?_) (by simpa using hX))
+  change φ (OnOpenDisc.polynomialHom (Polynomial.C a)) =
+    analyticSubst g hg (OnOpenDisc.polynomialHom (Polynomial.C a))
+  rw [OnOpenDisc.polynomialHom_C, φ.commutes, AlgHom.commutes]
 
 /-- A uniform strict bound for the source closed-disc norms also bounds every target
 closed-disc norm after substitution. -/
@@ -286,7 +271,7 @@ normed coefficient algebras. -/
 theorem evalAt_analyticSubst (hb : ‖b‖ < S₀) (f : OnOpenDisc.subring R R₀) :
     (analyticSubst g hg f : R⟦X⟧).evalAt b =
       (f : R⟦X⟧).evalAt ((g : R⟦X⟧).evalAt b) := by
-  have heq : (OnOpenDisc.evalAtHom R hb).comp (analyticSubst g hg) =
+  have heq : (OnOpenDisc.evalAtHom R hb).comp (analyticSubst g hg).toRingHom =
       OnOpenDisc.evalAtHom R (norm_evalAt_lt g hg hb) := by
     apply ringHom_ext
     · exact (continuous_evalAtHom hb).comp (continuous_analyticSubst g hg)
@@ -294,7 +279,8 @@ theorem evalAt_analyticSubst (hb : ‖b‖ < S₀) (f : OnOpenDisc.subring R R�
     · intro a
       simp [OnOpenDisc.evalAtHom_apply]
     · simp [OnOpenDisc.evalAtHom_apply]
-  simpa only [RingHom.comp_apply, OnOpenDisc.evalAtHom_apply] using RingHom.congr_fun heq f
+  simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    OnOpenDisc.evalAtHom_apply] using RingHom.congr_fun heq f
 
 end Evaluation
 
@@ -308,8 +294,6 @@ theorem analyticSubst_comp_analyticSubst [NormOneClass R] (h : OnOpenDisc.subrin
       analyticSubst (analyticSubst h hh g) (norm_restrict_analyticSubst_lt h hh g hg) := by
   apply eq_analyticSubst
   · exact (continuous_analyticSubst h hh).comp (continuous_analyticSubst g hg)
-  · intro a
-    simp
   · simp
 
 /-- Substituting the variable itself is the identity. -/
@@ -320,7 +304,7 @@ theorem analyticSubst_self [NormOneClass R] (f : OnOpenDisc.subring R S₀) :
   have heq := eq_analyticSubst
     (OnOpenDisc.polynomialHom Polynomial.X : OnOpenDisc.subring R S₀)
     (fun s ↦ by simpa only [norm_restrict_X] using s.2.2)
-    (RingHom.id _) continuous_id (fun _ ↦ rfl) rfl
-  exact (RingHom.congr_fun heq f).symm
+    (AlgHom.id R _) continuous_id rfl
+  exact (AlgHom.congr_fun heq f).symm
 
 end TauCeti.PowerSeries.OnOpenDisc

@@ -141,6 +141,7 @@ theorem hasseDeriv_mul (k : ℕ) (f g : OnOpenDisc.subring R R₀) :
   Subtype.ext (by simp [PowerSeries.hasseDeriv_mul])
 
 /-- Bounded coefficient maps commute with Hasse derivatives on open discs. -/
+@[simp]
 theorem mapHom_hasseDeriv {S : Type*} [NormedRing S] (φ : R →+* S) {C : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) (k : ℕ) (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (hasseDeriv k f) = hasseDeriv k (mapHom φ hφ f) :=
@@ -274,6 +275,7 @@ theorem derivative_eq_zero_iff [HasUniqueDiv R] {f : OnOpenDisc.subring R R₀} 
     fun h ↦ by rw [h]; exact Derivation.map_algebraMap derivative _⟩
 
 /-- Bounded coefficient maps commute with `derivative` on open discs. -/
+@[simp]
 theorem mapHom_derivative {S : Type*} [NormedCommRing S] (φ : R →+* S) {C : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (derivative f) = derivative (mapHom φ hφ f) :=
@@ -362,7 +364,7 @@ theorem derivative_analyticSubst [Fact (0 < S₀)] (g : OnOpenDisc.subring R S�
     (f : OnOpenDisc.subring R R₀) :
     derivative (analyticSubst g hg f) =
       analyticSubst g hg (derivative f) * derivative g := by
-  set Φ := analyticSubstAlgHom g hg
+  set Φ := analyticSubst g hg
   -- The series satisfying the chain rule form an `R`-subalgebra of `OnOpenDisc.subring R R₀`.
   let E : Subalgebra R (OnOpenDisc.subring R R₀) :=
     { carrier := {h | derivative (Φ h) = Φ (derivative h) * derivative g}
@@ -383,16 +385,13 @@ theorem derivative_analyticSubst [Fact (0 < S₀)] (g : OnOpenDisc.subring R S�
   have hpoly (p : Polynomial R) : OnOpenDisc.polynomialHom (R₀ := R₀) p ∈ E := by
     induction p using Polynomial.induction_on with
     | C a =>
-      have ha : OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C a) = algebraMap R _ a :=
-        Subtype.ext (by simp)
-      exact ha ▸ E.algebraMap_mem a
+      rw [OnOpenDisc.polynomialHom_C]
+      exact E.algebraMap_mem a
     | add p q hp hq =>
       simpa only [map_add] using E.add_mem hp hq
     | monomial n a _ =>
-      have hm : OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C a * Polynomial.X ^ (n + 1)) =
-          algebraMap R _ a * (OnOpenDisc.polynomialHom Polynomial.X) ^ (n + 1) :=
-        Subtype.ext (by simp)
-      exact hm ▸ E.mul_mem (E.algebraMap_mem a) (E.pow_mem hX (n + 1))
+      rw [map_mul, map_pow, OnOpenDisc.polynomialHom_C]
+      exact E.mul_mem (E.algebraMap_mem a) (E.pow_mem hX (n + 1))
   -- Both sides are continuous into the Hausdorff space `OnOpenDisc.subring R S₀` and agree on
   -- the dense image of polynomials.
   refine congrFun (Continuous.ext_on denseRange_polynomialHom

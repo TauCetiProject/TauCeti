@@ -33,8 +33,6 @@ Taylor translation, and analytic substitution.
 
 ## Main results
 
-* `PowerSeries.OnOpenDisc.map_evalAt_of_smul` and `PowerSeries.OnOpenDisc.evalAt_map`: point
-  evaluation on an open disc commutes with continuous ring and algebra homomorphisms.
 * `TauCeti.PowerSeries.OnOpenDisc.mapHom_injective_iff` and
   `TauCeti.PowerSeries.OnOpenDisc.mapHom_surjective`: injectivity characterization and surjectivity
   along strict surjections.
@@ -42,9 +40,9 @@ Taylor translation, and analytic substitution.
   `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_mapHom`, and
   `TauCeti.PowerSeries.OnOpenDisc.isUniformEmbedding_mapHom`: closed-disc Gauss bounds, uniform
   continuity, and uniform embeddings from norm-preserving maps.
-* `TauCeti.PowerSeries.OnOpenDisc.mapHom_taylorHom` and
-  `TauCeti.PowerSeries.OnOpenDisc.mapHom_analyticSubst`: compatibility with Taylor translation and
-  analytic substitution.
+* `TauCeti.PowerSeries.OnOpenDisc.evalAt_mapHom`, `TauCeti.PowerSeries.OnOpenDisc.mapHom_taylorHom`,
+  and `TauCeti.PowerSeries.OnOpenDisc.mapHom_analyticSubst`: compatibility with point evaluation,
+  Taylor translation, and analytic substitution.
 
 ## References
 
@@ -53,35 +51,6 @@ Taylor translation, and analytic substitution.
 -/
 
 public section
-
-namespace PowerSeries
-
-section EvalMap
-
-variable {R A S B : Type*} [NormedCommRing R] [SeminormedRing A] [Algebra R A]
-  [IsBoundedSMul R A] [CompleteSpace A] [CommSemiring S] [Semiring B] [Algebra S B]
-  [TopologicalSpace B] [T2Space B] {R₀ : ℝ} {f : R⟦X⟧}
-
-/-- Evaluation of series on an open disc commutes with continuous ring homomorphisms intertwining
-scalar multiplication along `φ : R →+* S`: `ψ (f(b)) = (map φ f)(ψ b)`. -/
-theorem OnOpenDisc.map_evalAt_of_smul (hf : f.OnOpenDisc R₀) (φ : R →+* S) (ψ : A →+* B)
-    (hψ : Continuous ψ) (hsmul : ∀ (r : R) (x : A), ψ (r • x) = φ r • ψ x) {b : A}
-    (hb : ‖b‖ < R₀) :
-    ψ (f.evalAt b) = (PowerSeries.map φ f).evalAt (ψ b) := by
-  rw [← ((hf.hasSum_evalAt hb).map ψ hψ).tsum_eq, evalAt_def]
-  simp [hsmul, map_pow]
-
-/-- Evaluation of series on an open disc commutes with continuous coefficient homomorphisms:
-`(map φ f)(φ a) = φ (f(a))`. -/
-theorem OnOpenDisc.evalAt_map [CompleteSpace R] {T : Type*} [CommSemiring T]
-    [TopologicalSpace T] [T2Space T] (hf : f.OnOpenDisc R₀) (φ : R →+* T) (hφ : Continuous φ)
-    {a : R} (ha : ‖a‖ < R₀) :
-    (PowerSeries.map φ f).evalAt (φ a) = φ (f.evalAt a) :=
-  (hf.map_evalAt_of_smul φ φ hφ (fun _ _ ↦ by simp) ha).symm
-
-end EvalMap
-
-end PowerSeries
 
 open Filter PowerSeries
 open scoped Topology
@@ -169,15 +138,18 @@ theorem exists_mapHom_eq_and_norm_coeff_le {C' : ℝ}
     ∃ f : OnOpenDisc.subring R R₀, mapHom φ hφ f = g ∧
       ∀ n, ‖coeff n (f : R⟦X⟧)‖ ≤ C' * ‖coeff n (g : S⟦X⟧)‖ := by
   choose lift hφ_lift hnorm_lift using hlift
-  let f : R⟦X⟧ := fun t ↦ lift (MvPowerSeries.coeff t (g : S⟦X⟧))
-  have hcoeff (n : ℕ) : coeff n f = lift (coeff n (g : S⟦X⟧)) := (rfl)
-  have hf : f.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦
-    _root_.MvPowerSeries.isRestricted_map _ lift hnorm_lift
+  let f : R⟦X⟧ := PowerSeries.mk fun n ↦ lift (coeff n (g : S⟦X⟧))
+  have hf : f.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦ by
+    have hg_r := (isRestricted_iff' r (g : S⟦X⟧)).mp
       (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.2) r hr hrR)
+    rw [isRestricted_iff']
+    refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_)
+      (by simpa only [mul_zero] using hg_r.const_mul C')
+    rw [coeff_mk, ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (hnorm_lift _) (pow_nonneg hr.le n)
   refine ⟨⟨f, OnOpenDisc.mem_subring.mpr hf⟩, Subtype.ext (PowerSeries.ext fun n ↦ ?_),
-    fun n ↦ by simpa only [hcoeff] using hnorm_lift _⟩
-  rw [coeff_mapHom, hcoeff]
-  exact hφ_lift _
+    fun n ↦ by simpa only [f, coeff_mk] using hnorm_lift _⟩
+  rw [coeff_mapHom, coeff_mk, hφ_lift]
 
 /-- **Strict surjections induce surjections on open-disc series.** If every `s ∈ S` lifts along
 `φ` to some `r ∈ R` with `‖r‖ ≤ C' * ‖s‖`, then `mapHom φ hφ` is surjective. -/
@@ -207,15 +179,6 @@ variable {R S : Type*} [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUl
   {R₀ : ℝ}
 
 attribute [local instance] radius_pos
-
-omit [IsUltrametricDist S] in
-/-- Restriction to a smaller closed disc commutes with `algebraMap` from any base algebra. -/
-@[simp]
-theorem restrict_algebraMap {A : Type*} [CommSemiring A] [Algebra A R]
-    (r : Set.Ioo (0 : ℝ) R₀) (a : A) :
-    restrict r (algebraMap A (OnOpenDisc.subring R R₀) a) =
-      algebraMap A (IsRestricted.subring (R := R) (r : ℝ)) a :=
-  Subtype.ext (by simp)
 
 variable (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖)
 
@@ -323,8 +286,8 @@ theorem mapHom_analyticSubst [Fact (0 < S₀)] (g : OnOpenDisc.subring R S₀)
     (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (analyticSubst g hg f) =
       analyticSubst (mapHom φ hφ g) hg' (mapHom φ hφ f) := by
-  have heq : (mapHom (R₀ := S₀) φ hφ).comp (analyticSubst g hg) =
-      (analyticSubst (mapHom φ hφ g) hg').comp (mapHom (R₀ := R₀) φ hφ) :=
+  have heq : (mapHom (R₀ := S₀) φ hφ).comp (analyticSubst g hg).toRingHom =
+      (analyticSubst (mapHom φ hφ g) hg').toRingHom.comp (mapHom (R₀ := R₀) φ hφ) :=
     ringHom_ext ((continuous_mapHom φ hφ).comp (continuous_analyticSubst g hg))
       ((continuous_analyticSubst (mapHom φ hφ g) hg').comp (continuous_mapHom φ hφ))
       (fun a ↦ by simp [mapHom_polynomialHom])

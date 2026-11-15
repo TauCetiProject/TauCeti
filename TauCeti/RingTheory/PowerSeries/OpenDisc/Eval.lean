@@ -37,7 +37,9 @@ value at `b` is bounded by a constant multiple of the Gauss norm at `r`
 * `PowerSeries.OnOpenDisc.evalAt_add`, `PowerSeries.OnOpenDisc.evalAt_smul`,
   `PowerSeries.OnOpenDisc.evalAt_sum` and `PowerSeries.OnOpenDisc.evalAt_mul`: evaluation
   preserves addition, scalar multiplication, finite sums and multiplication.
-* `PowerSeries.OnOpenDisc.map_evalAt`: naturality in continuous algebra homomorphisms.
+* `PowerSeries.OnOpenDisc.map_evalAt`, `PowerSeries.OnOpenDisc.map_evalAt_of_smul`, and
+  `PowerSeries.OnOpenDisc.evalAt_map`: naturality in continuous algebra, module-compatible ring,
+  and coefficient homomorphisms.
 * `PowerSeries.OnOpenDisc.evalAtHom_comp_inclusion`: entire series are evaluated as such.
 * `TauCeti.PowerSeries.OnOpenDisc.isRestrictedEvalAtHom_comp_restrict`: restricting to a closed
   disc containing `b` and evaluating there is evaluation on the open disc.
@@ -85,6 +87,24 @@ theorem OnOpenDisc.map_evalAt {B F : Type*} [Semiring B] [Algebra R B] [Topologi
     (hψ : Continuous ψ) (hb : ‖b‖ < R₀) : ψ (f.evalAt b) = f.evalAt (ψ b) := by
   rw [← ((hf.hasSum_evalAt hb).map ψ hψ).tsum_eq, evalAt_def]
   simp [map_smul, map_pow]
+
+/-- Evaluation of series on an open disc commutes with continuous ring homomorphisms intertwining
+scalar multiplication along `φ : R →+* S`: `ψ (f(b)) = (map φ f)(ψ b)`. -/
+theorem OnOpenDisc.map_evalAt_of_smul {S B : Type*} [CommSemiring S] [Semiring B] [Algebra S B]
+    [TopologicalSpace B] [T2Space B] (hf : f.OnOpenDisc R₀) (φ : R →+* S) (ψ : A →+* B)
+    (hψ : Continuous ψ) (hsmul : ∀ (r : R) (x : A), ψ (r • x) = φ r • ψ x)
+    (hb : ‖b‖ < R₀) :
+    ψ (f.evalAt b) = (PowerSeries.map φ f).evalAt (ψ b) := by
+  rw [← ((hf.hasSum_evalAt hb).map ψ hψ).tsum_eq, evalAt_def]
+  simp [hsmul, map_pow]
+
+/-- Evaluation of series on an open disc commutes with continuous coefficient homomorphisms:
+`(map φ f)(φ a) = φ (f(a))`. -/
+theorem OnOpenDisc.evalAt_map [CompleteSpace R] {T : Type*} [CommSemiring T]
+    [TopologicalSpace T] [T2Space T] (hf : f.OnOpenDisc R₀) (φ : R →+* T) (hφ : Continuous φ)
+    {a : R} (ha : ‖a‖ < R₀) :
+    (PowerSeries.map φ f).evalAt (φ a) = φ (f.evalAt a) :=
+  (hf.map_evalAt_of_smul φ φ hφ (fun _ _ ↦ by simp) ha).symm
 
 end Seminormed
 

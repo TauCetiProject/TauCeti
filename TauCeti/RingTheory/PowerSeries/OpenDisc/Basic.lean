@@ -57,6 +57,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
   its `R`-module and `S`-algebra structures.
 * `PowerSeries.OnOpenDisc.polynomialHom` and `PowerSeries.OnOpenDisc.polynomialAlgHom`: the
   inclusion of polynomials into series on the open disc.
+* `TauCeti.PowerSeries.OnOpenDisc.radiusHom` and `TauCeti.PowerSeries.OnOpenDisc.radiusAlgHom`:
+  restriction from an open disc of radius `R₀` to a smaller open disc of radius `R₁ ≤ R₀`.
 
 ## Main results
 
@@ -423,7 +425,7 @@ noncomputable def OnOpenDisc.polynomialAlgHom : Polynomial R →ₐ[R] OnOpenDis
 
 /-- Polynomial algebra inclusion agrees with `OnOpenDisc.polynomialHom`. -/
 @[simp]
-theorem OnOpenDisc.coe_polynomialAlgHom (p : Polynomial R) :
+theorem OnOpenDisc.polynomialAlgHom_apply (p : Polynomial R) :
     OnOpenDisc.polynomialAlgHom (R₀ := R₀) p = OnOpenDisc.polynomialHom p := (rfl)
 
 /-- Forgetting the `R`-linearity of `OnOpenDisc.polynomialAlgHom` gives
@@ -432,6 +434,12 @@ theorem OnOpenDisc.coe_polynomialAlgHom (p : Polynomial R) :
 theorem OnOpenDisc.coe_polynomialAlgHom_ringHom :
     (OnOpenDisc.polynomialAlgHom (R := R) (R₀ := R₀) :
       Polynomial R →+* OnOpenDisc.subring R R₀) = OnOpenDisc.polynomialHom := (rfl)
+
+/-- Polynomial inclusion sends constant polynomials to scalar constants. -/
+theorem OnOpenDisc.polynomialHom_C (a : R) :
+    OnOpenDisc.polynomialHom (R₀ := R₀) (Polynomial.C a) =
+      algebraMap R (OnOpenDisc.subring R R₀) a :=
+  Subtype.ext (Polynomial.coe_C a)
 
 /-- The derivative of a series on an open disc lies on that disc. -/
 theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R₀ := by
@@ -500,3 +508,65 @@ theorem onOpenDisc_log : (log K).OnOpenDisc 1 :=
 end NormedField
 
 end PowerSeries
+
+open PowerSeries
+
+namespace TauCeti.PowerSeries.OnOpenDisc
+
+variable {R : Type*} [NormedRing R] {R₀ R₁ R₂ : ℝ}
+
+/-- Restriction of series from an open disc of radius `R₀` to a smaller open disc of radius
+`R₁ ≤ R₀`. -/
+noncomputable def radiusHom (h : R₁ ≤ R₀) :
+    OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R R₁ :=
+  Subring.inclusion (OnOpenDisc.subring_antitone R h)
+
+/-- `radiusHom` leaves the underlying formal power series unchanged. -/
+@[simp]
+theorem coe_radiusHom (h : R₁ ≤ R₀) (f : OnOpenDisc.subring R R₀) :
+    (radiusHom h f : R⟦X⟧) = f :=
+  Subring.coe_inclusion _ f
+
+/-- Restricting an open disc to itself is the identity. -/
+@[simp]
+theorem radiusHom_self : radiusHom (R := R) (le_refl R₀) = RingHom.id _ :=
+  RingHom.ext fun _ ↦ rfl
+
+/-- Radius restrictions compose transitively. -/
+theorem radiusHom_comp_radiusHom (h₁ : R₁ ≤ R₀) (h₂ : R₂ ≤ R₁) :
+    (radiusHom (R := R) h₂).comp (radiusHom h₁) = radiusHom (h₂.trans h₁) :=
+  RingHom.ext fun _ ↦ rfl
+
+/-- Radius restriction commutes with the inclusion of polynomials. -/
+@[simp]
+theorem radiusHom_polynomialHom (h : R₁ ≤ R₀) (p : Polynomial R) :
+    radiusHom h (OnOpenDisc.polynomialHom p) = OnOpenDisc.polynomialHom p :=
+  Subtype.ext (by simp)
+
+/-- Radius restriction fixes scalar constants from any base algebra. -/
+@[simp]
+theorem radiusHom_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) (s : S) :
+    radiusHom h (algebraMap S (OnOpenDisc.subring R R₀) s) =
+      algebraMap S (OnOpenDisc.subring R R₁) s :=
+  Subtype.ext (by simp)
+
+/-- Restriction of series from an open disc of radius `R₀` to a smaller open disc of radius
+`R₁ ≤ R₀`, bundled as an `S`-algebra homomorphism. -/
+noncomputable def radiusAlgHom (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) :
+    OnOpenDisc.subring R R₀ →ₐ[S] OnOpenDisc.subring R R₁ where
+  __ := radiusHom h
+  commutes' := radiusHom_algebraMap h
+
+/-- `radiusAlgHom` agrees with `radiusHom` on each series. -/
+@[simp]
+theorem radiusAlgHom_apply (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀)
+    (f : OnOpenDisc.subring R R₀) :
+    radiusAlgHom S h f = radiusHom h f := (rfl)
+
+/-- Forgetting `S`-linearity of `radiusAlgHom` gives `radiusHom`. -/
+@[simp]
+theorem coe_radiusAlgHom_ringHom (S : Type*) [CommSemiring S] [Algebra S R] (h : R₁ ≤ R₀) :
+    (radiusAlgHom (R := R) S h : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R R₁) =
+      radiusHom h := (rfl)
+
+end TauCeti.PowerSeries.OnOpenDisc
