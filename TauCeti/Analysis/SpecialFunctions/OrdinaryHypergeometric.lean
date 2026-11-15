@@ -20,7 +20,7 @@ consequence that the radius is always at least `1`, so `₂F₁(a, b; c; ·)` is
 unit ball for all parameters.
 
 Over `ℝ` or `ℂ`, the series can be differentiated termwise inside its disc of convergence. This
-gives the Taylor coefficients `(a)ₙ (b)ₙ / (c)ₙ` of `₂F₁(a, b; c; ·)` at `0`, and shows that, when
+gives the iterated derivatives `(a)ₙ (b)ₙ / (c)ₙ` of `₂F₁(a, b; c; ·)` at `0`, and shows that, when
 `c` is not a nonpositive integer, `y = ₂F₁(a, b; c; ·)` solves **Gauss's hypergeometric equation**
 `x (1 - x) y'' + (c - (a + b + 1) x) y' - a b y = 0` (DLMF 15.10.1) on the open unit disc, and on
 the whole field when the series terminates. The equation is equivalent to the recurrence
@@ -32,7 +32,7 @@ the whole field when the series terminates. The equation is equivalent to the re
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
 * `TauCeti.ordinaryHypergeometricCoefficient_add_one`: the coefficient recurrence.
-* `TauCeti.iteratedDeriv_ordinaryHypergeometric_zero`: the Taylor coefficients at `0`; in
+* `TauCeti.iteratedDeriv_ordinaryHypergeometric_zero`: the iterated derivatives at `0`; in
   particular `TauCeti.deriv_ordinaryHypergeometric_zero` gives `(₂F₁ a b c)' 0 = a b / c`.
 * `TauCeti.ordinaryHypergeometric_gaussEquation`: Gauss's hypergeometric equation inside the disc
   of convergence, with the special cases
@@ -47,6 +47,24 @@ the whole field when the series terminates. The equation is equivalent to the re
 public section
 
 namespace TauCeti
+
+/-- The ordinary hypergeometric function is the sum of the scalar power series with the
+hypergeometric coefficients. -/
+theorem ordinaryHypergeometric_eq_ofScalarsSum {𝕂 𝔸 : Type*} [Field 𝕂] [Ring 𝔸] [Algebra 𝕂 𝔸]
+    [TopologicalSpace 𝔸] [IsTopologicalRing 𝔸] (a b c : 𝕂) :
+    (₂F₁ a b c : 𝔸 → 𝔸) =
+      FormalMultilinearSeries.ofScalarsSum (ordinaryHypergeometricCoefficient a b c) :=
+  rfl
+
+/-- **The hypergeometric coefficient recurrence.** The coefficients `cₙ = (a)ₙ (b)ₙ / ((c)ₙ n!)`
+of `₂F₁(a, b; c; ·)` satisfy `cₙ₊₁ = (a + n) (b + n) / ((n + 1) (c + n)) cₙ`. With the convention
+`x / 0 = 0` this holds for all parameters; when `c + n = 0` both sides vanish. -/
+theorem ordinaryHypergeometricCoefficient_add_one {K : Type*} [Field K] (a b c : K) (n : ℕ) :
+    ordinaryHypergeometricCoefficient a b c (n + 1) =
+      (a + n) * (b + n) / ((n + 1) * (c + n)) * ordinaryHypergeometricCoefficient a b c n := by
+  simp only [ordinaryHypergeometricCoefficient, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add,
+    Nat.cast_one, ascPochhammer_succ_eval, div_eq_mul_inv, mul_inv]
+  ring
 
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
 
@@ -80,28 +98,6 @@ theorem analyticOnNhd_ordinaryHypergeometric [CompleteSpace 𝔸] (a b c : 𝕂)
     (zero_lt_one.trans_le h1)).analyticAt_of_mem
       (Metric.eball_subset_eball h1 (by
         simpa only [Metric.mem_eball, edist_dist, ENNReal.ofReal_lt_one, Metric.mem_ball] using hx))
-
-/-- The ordinary hypergeometric function is the sum of the scalar power series with the
-hypergeometric coefficients. -/
-theorem ordinaryHypergeometric_eq_ofScalarsSum (a b c : 𝕂) :
-    (₂F₁ a b c : 𝔸 → 𝔸) =
-      FormalMultilinearSeries.ofScalarsSum (ordinaryHypergeometricCoefficient a b c) :=
-  rfl
-
-/-- **The hypergeometric coefficient recurrence.** The coefficients `cₙ = (a)ₙ (b)ₙ / ((c)ₙ n!)`
-of `₂F₁(a, b; c; ·)` satisfy `cₙ₊₁ = (a + n) (b + n) / ((n + 1) (c + n)) cₙ` whenever
-`c + n ≠ 0`. -/
-theorem ordinaryHypergeometricCoefficient_add_one {K : Type*} [Field K] [CharZero K]
-    (a b c : K) {n : ℕ} (hc : c + n ≠ 0) :
-    ordinaryHypergeometricCoefficient a b c (n + 1) =
-      (a + n) * (b + n) / ((n + 1) * (c + n)) * ordinaryHypergeometricCoefficient a b c n := by
-  simp only [ordinaryHypergeometricCoefficient, Nat.factorial_succ, Nat.cast_mul,
-    ascPochhammer_succ_eval, mul_inv]
-  by_cases h : (ascPochhammer K n).eval c = 0
-  · simp [h]
-  · field_simp
-    push_cast
-    ring
 
 section Scalar
 
@@ -164,7 +160,7 @@ theorem ordinaryHypergeometric_gaussEquation (a b c : 𝕂) (hc : ∀ k : ℕ, (
     funext n
     have hcn : c + n ≠ 0 := fun h ↦ hc n (eq_neg_of_add_eq_zero_right h)
     have hrec : (n + 1) * (c + n) * C (n + 1) = (a + n) * (b + n) * C n := by
-      rw [hC, ordinaryHypergeometricCoefficient_add_one a b c hcn]
+      rw [hC, ordinaryHypergeometricCoefficient_add_one a b c n]
       field_simp
     rw [Pi.zero_apply]
     linear_combination x ^ n * hrec

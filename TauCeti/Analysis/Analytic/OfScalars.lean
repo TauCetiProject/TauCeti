@@ -141,15 +141,15 @@ theorem iteratedDeriv_ofScalarsSum_zero {𝕜 : Type*} [NontriviallyNormedField 
     · simp [zero_pow (Nat.sub_ne_zero_of_lt hk)]
 
 /-- **Termwise differentiation of a scalar power series.** If `f` is the sum of the scalar power
-series `∑ c n * z ^ n` on the ball of radius `r` about `0`, then `deriv f` is the sum on the same
-ball of the termwise differentiated series `∑ (n + 1) * c (n + 1) * z ^ n`. -/
+series `∑ c n * (z - x) ^ n` on the ball of radius `r` about `x`, then `deriv f` is the sum on
+the same ball of the termwise differentiated series `∑ (n + 1) * c (n + 1) * (z - x) ^ n`. -/
 theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
-    [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
-    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) :
-    HasFPowerSeriesOnBall (deriv f) (ofScalars 𝕂 fun n ↦ (n + 1) * c (n + 1)) 0 r := by
+    [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {x : 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) x r) :
+    HasFPowerSeriesOnBall (deriv f) (ofScalars 𝕂 fun n ↦ (n + 1) * c (n + 1)) x r := by
   have h := (ContinuousLinearMap.apply 𝕂 𝕂 (1 : 𝕂)).comp_hasFPowerSeriesOnBall hf.fderiv
   convert h using 1
-  · ext x
+  · ext y
     exact fderiv_apply_one_eq_deriv.symm
   · -- both series are scalar, so it suffices to compare their coefficients
     ext n : 1
