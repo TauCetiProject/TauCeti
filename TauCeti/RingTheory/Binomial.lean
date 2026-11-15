@@ -517,6 +517,8 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
 * `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.ascPochhammer_eval_div_factorial_eq_multichoose`: `(a)_n / n! = Ring.multichoose a n`
+  over a characteristic-zero field.
 
 ## References
 
@@ -583,6 +585,16 @@ theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing
     ← Nat.factorial_succ]
   simp only [_root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
     Polynomial.ascPochhammer_smeval_eq_eval, ascPochhammer_succ_eval]
+
+open scoped Nat in
+/-- In a characteristic-zero field, dividing the ascending Pochhammer polynomial `(a)_n` by `n!`
+gives the generalized multichoose coefficient `Ring.multichoose a n`. -/
+theorem _root_.TauCeti.ascPochhammer_eval_div_factorial_eq_multichoose
+    {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂] (a : 𝕂) (n : ℕ) :
+    (ascPochhammer 𝕂 n).eval a / n ! = _root_.Ring.multichoose a n := by
+  have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
+  rw [nsmul_eq_mul, mul_comm, Polynomial.ascPochhammer_smeval_eq_eval] at h
+  exact (div_eq_iff (Nat.cast_ne_zero.mpr n.factorial_ne_zero)).mpr h.symm
 
 /-! ## Negating the argument -/
 

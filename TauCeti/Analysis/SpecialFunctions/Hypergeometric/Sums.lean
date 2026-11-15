@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Inverse-argument expansions in Gauss hypergeometric polynomials
@@ -31,9 +32,10 @@ is a nonpositive integer. Meanwhile, the exterior condition `max ‖z₀‖ ‖z
 and keeps `z⁻¹` off `[1, ∞)`.
 
 Building on the terminating-polynomial API in
-`TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric`, this file identifies the normalized
-Euler integral at `-n` with `regularizedGaussHGFun (-n) b c z`, proves that the DLMF 15.15.1 series
-converges absolutely and defines a holomorphic function throughout
+`TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric` and
+`Complex.eulerIntegral_neg_natCast` in
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral`, this file proves that the
+DLMF 15.15.1 series converges absolutely and defines a holomorphic function throughout
 `{z | max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖}` for all complex parameters `a`, `b`, `c`, and establishes the
 inverse-argument expansion for:
 * `Complex.eulerIntegral` across the full exterior domain `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖` when
@@ -45,8 +47,6 @@ inverse-argument expansion for:
 
 ## Main statements
 
-* `Complex.eulerIntegral_neg_natCast`: `eulerIntegral (-n) b c z = regularizedGaussHGFun (-n) b c z`
-  for `0 < b.re < c.re` and all `z : ℂ`.
 * `Complex.hasSum_eulerIntegral_inv`: DLMF 15.15.1 for `eulerIntegral` on
   `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖` when `0 < b.re < c.re`.
 * `Complex.summable_norm_regularizedGaussHGFun_neg_natCast_mul_inv_pow`,
@@ -72,68 +72,43 @@ open scoped ENNReal NNReal Nat Topology Interval ComplexConjugate
 
 namespace Complex
 
-/-! ### Euler integral of terminating Gauss polynomials and DLMF 15.15.1 on the Euler range -/
+/-! ### DLMF 15.15.1 on the Euler integral range -/
 
-/-- When the first upper parameter is `-n` and `0 < b.re < c.re`, the normalized Euler integral
-`eulerIntegral (-n) b c z` equals the terminating series `regularizedGaussHGFun (-n) b c z` at
-every complex `z`, including points on `[1, ∞)` where the non-polynomial kernel has a cut. -/
-theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :
-    eulerIntegral (-n) b c z = regularizedGaussHGFun (-n) b c z := by
-  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
-  have hbk (k : ℕ) : 0 < (b + k).re := by simp; linarith [k.cast_nonneg (α := ℝ)]
-  rw [eulerIntegral_def, regularizedGaussHGFun_neg_natCast]
-  have hae : EqOn
-      (fun t : ℝ => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
-        (1 - z * (t : ℂ)) ^ (-(-(n : ℂ))))
-      (fun t : ℝ => ∑ k ∈ Finset.range (n + 1),
-        (-1) ^ k * n.choose k * z ^ k *
-          ((t : ℂ) ^ (b + k - 1) * (1 - (t : ℂ)) ^ (c - b - 1))) (Ι 0 1) := by
-    intro t ht
-    rw [uIoc_of_le zero_le_one] at ht
-    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.1.ne'
-    have h1zt : (1 : ℂ) - z * (t : ℂ) = -z * (t : ℂ) + 1 := by ring
-    dsimp only
-    rw [neg_neg, cpow_natCast, h1zt, (Commute.all (-z * (t : ℂ)) 1).add_pow, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    have hpow : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ k = (t : ℂ) ^ (b + k - 1) := by
-      rw [← cpow_natCast, ← cpow_add _ _ ht0]
-      congr 1; ring
-    rw [one_pow, mul_one, mul_pow, neg_eq_neg_one_mul, mul_pow]
-    linear_combination (-1) ^ k * n.choose k * z ^ k * (1 - (t : ℂ)) ^ (c - b - 1) * hpow
-  rw [intervalIntegral.integral_congr_ae (ae_of_all _ hae),
-    intervalIntegral.integral_finsetSum fun k _ =>
-      (betaIntegral_convergent (hbk k) hcb).const_mul _, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [intervalIntegral.integral_const_mul, ← betaIntegral,
-    betaIntegral_eq_Gamma_mul_div (b + k) (c - b) (hbk k) hcb, add_right_comm b (k : ℂ) (c - b),
-    add_sub_cancel]
-  have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
-  have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
-  have hb_ne : ∀ m : ℕ, b ≠ -m := fun m hm => by simp [hm] at hb; linarith [m.cast_nonneg (α := ℝ)]
-  rw [← Gamma_add_nat_div_Gamma_eq (n := k) b hb_ne]
-  field
+/-- For `t ∈ [0, 1]`, the segment point `z₀ - t` has norm at most `max ‖z₀‖ ‖z₀ - 1‖`. -/
+private theorem norm_sub_ofReal_le_max (z₀ : ℂ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    ‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
+  have hmem : z₀ + t • ((z₀ - 1) - z₀) ∈ Metric.closedBall (0 : ℂ) (max ‖z₀‖ ‖z₀ - 1‖) :=
+    (convex_closedBall (0 : ℂ) (max ‖z₀‖ ‖z₀ - 1‖)).add_smul_sub_mem
+      (mem_closedBall_zero_iff.mpr (le_max_left _ _))
+      (mem_closedBall_zero_iff.mpr (le_max_right _ _)) ht
+  have heq : z₀ + t • ((z₀ - 1) - z₀) = z₀ - (t : ℂ) := by
+    simp only [real_smul]; ring
+  exact mem_closedBall_zero_iff.mp (heq ▸ hmem)
+
+/-- When `z` is strictly farther from `z₀` than `0` is, `1 - z₀ / z` lies in the open right
+half-plane. -/
+private theorem one_sub_div_re_pos {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) :
+    0 < (1 - z₀ / z).re := by
+  have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h
+  have hzz₀ : z - z₀ ≠ 0 := norm_pos_iff.mp hzz₀_pos
+  have hz : z ≠ 0 := by
+    rintro rfl
+    exact lt_irrefl ‖z₀‖ (by simpa only [zero_sub, norm_neg] using h)
+  have hinv : (1 - z₀ / z)⁻¹ = 1 + z₀ / (z - z₀) := by field
+  rw [← inv_re_pos, hinv]
+  exact TauCeti.re_pos_of_norm_sub_one_lt_one <| by
+    rwa [add_sub_cancel_left, norm_div, div_lt_one hzz₀_pos]
 
 /-- Pointwise norm bound on the factored Euler kernel ratio on `[0, 1]`. -/
 private theorem norm_eulerKernel_ratio_le {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
     (hz : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     ‖(1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ := by
-  let M : ℝ := max ‖z₀‖ ‖z₀ - 1‖
   have hzz₀_pos : 0 < ‖z - z₀‖ := ((norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)).trans hz
   have hzz₀' : z₀ - z ≠ 0 :=
     sub_ne_zero.mpr (sub_ne_zero.mp (norm_pos_iff.mp hzz₀_pos)).symm
   have hv_eq : (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹ = (z₀ - (t : ℂ)) / (z₀ - z) := by field
-  have hseg : z₀ - (t : ℂ) = (1 - t) • z₀ + t • (z₀ - 1) := by
-    simp only [real_smul]; push_cast; ring
-  have hnum : ‖z₀ - (t : ℂ)‖ ≤ M := by
-    calc ‖z₀ - (t : ℂ)‖ ≤ ‖(1 - t) • z₀‖ + ‖t • (z₀ - 1)‖ := hseg ▸ norm_add_le _ _
-      _ = (1 - t) * ‖z₀‖ + t * ‖z₀ - 1‖ := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr ht.2),
-          Real.norm_of_nonneg ht.1]
-      _ ≤ (1 - t) * M + t * M := by
-        gcongr; exacts [sub_nonneg.mpr ht.2, le_max_left _ _, ht.1, le_max_right _ _]
-      _ = M := by ring
   rw [hv_eq, norm_div, norm_sub_rev z₀ z]
-  exact div_le_div_of_nonneg_right hnum hzz₀_pos.le
+  exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max z₀ ht) hzz₀_pos.le
 
 /-- Pointwise binomial series expansion of the factored Euler kernel on `[0, 1]`. -/
 private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
@@ -153,13 +128,7 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
   have hvt_lt : ‖vt‖ < 1 :=
     (norm_eulerKernel_ratio_le hz₀ hz ht).trans_lt ((div_lt_one hzz₀_pos).mpr hz)
   let w₁ : ℂ := 1 - z₀ / z
-  have hw₁_re : 0 < w₁.re := by
-    have hinv : w₁⁻¹ = 1 + z₀ / (z - z₀) := by dsimp only [w₁]; field
-    have hre := TauCeti.re_pos_of_norm_sub_one_lt_one (q := w₁⁻¹) <| by
-      rw [hinv, add_sub_cancel_left, norm_div, div_lt_one hzz₀_pos]
-      exact (le_max_left _ _).trans_lt hz
-    have hw₁0 : w₁ ≠ 0 := by rintro h0; simp [h0] at hre
-    exact (div_pos_iff_of_pos_right (normSq_pos.mpr hw₁0)).mp (inv_re w₁ ▸ hre)
+  have hw₁_re : 0 < w₁.re := one_sub_div_re_pos ((le_max_left _ _).trans_lt hz)
   have hw₁a_ne : w₁ ^ a ≠ 0 := by
     rw [cpow_def_of_ne_zero (by rintro h0; simp [h0] at hw₁_re)]; exact exp_ne_zero _
   have hw₂_re : 0 < (1 - vt).re :=
@@ -262,18 +231,10 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_euler {b c z�
       intro t ht
       rw [norm_pow]
       gcongr
-      have heq : 1 - z₀⁻¹ * (t : ℂ) = ((1 - t) • z₀ + t • (z₀ - 1)) / z₀ := by
-        simp only [real_smul]; push_cast; field
+      have heq : 1 - z₀⁻¹ * (t : ℂ) = (z₀ - (t : ℂ)) / z₀ := by field
       rw [heq, norm_div]
-      refine div_le_div_of_nonneg_right ?_ hz0_pos.le
-      calc ‖(1 - t) • z₀ + t • (z₀ - 1)‖
-          ≤ ‖(1 - t) • z₀‖ + ‖t • (z₀ - 1)‖ := norm_add_le _ _
-        _ = (1 - t) * ‖z₀‖ + t * ‖z₀ - 1‖ := by
-          rw [norm_smul, norm_smul, Real.norm_of_nonneg (sub_nonneg.mpr ht.2),
-            Real.norm_of_nonneg ht.1.le]
-        _ ≤ (1 - t) * M + t * M := by
-          gcongr; exacts [sub_nonneg.mpr ht.2, le_max_left _ _, ht.1.le, le_max_right _ _]
-        _ = M := by ring
+      exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max z₀ (Ioc_subset_Icc_self ht))
+        hz0_pos.le
     calc ‖∫ t : ℝ in 0..1, W t * (1 - z₀⁻¹ * (t : ℂ)) ^ (-(-(s : ℂ)))‖
         ≤ ∫ t : ℝ in 0..1, ‖W t‖ * (M / ‖z₀‖) ^ s := by
           refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
@@ -297,10 +258,14 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_shift_c {b c 
       ‖regularizedGaussHGFun (-s) b c z₀⁻¹‖ * r ^ s := by
   intro r hr0 hr
   rw [← summable_nat_add_iff 1]
+  let w : ℝ := (r + R) / 2
   have hw : Summable fun s : ℕ =>
       (s : ℝ) * ‖regularizedGaussHGFun (-s) b (c + 1) z₀⁻¹‖ * r ^ s := by
-    simpa only [pow_one] using
-      TauCeti.summable_pow_mul_mul_pow 1 h ((abs_of_nonneg hr0).trans_lt hr)
+    simpa only [pow_one] using TauCeti.summable_pow_mul_powerSeries_of_norm_lt 1
+      (h w (by dsimp only [w]; linarith) (by dsimp only [w]; linarith)
+        |>.hasSum.tendsto_sum_nat.cauchySeq)
+      (by rw [Real.norm_of_nonneg hr0, Real.norm_of_nonneg (by dsimp only [w]; linarith)]
+          dsimp only [w]; linarith)
   have hs1 := ((h r hr0 hr).comp_injective (add_left_injective 1)).mul_left (‖c‖ + 1)
   have hs2 := hw.comp_injective (add_left_injective 1)
   have hs3 := hw.mul_left r
@@ -350,10 +315,14 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_shift_b {b z�
       ‖regularizedGaussHGFun (-s) b c z₀⁻¹‖ * r ^ s := by
   intro c r hr0 hr
   rw [← summable_nat_add_iff 1]
+  let w : ℝ := (r + R) / 2
   have hw : Summable fun s : ℕ =>
       (s : ℝ) * ‖regularizedGaussHGFun (-s) (b + 1) (c + 1) z₀⁻¹‖ * r ^ s := by
-    simpa only [pow_one] using
-      TauCeti.summable_pow_mul_mul_pow 1 (h (c + 1)) ((abs_of_nonneg hr0).trans_lt hr)
+    simpa only [pow_one] using TauCeti.summable_pow_mul_powerSeries_of_norm_lt 1
+      (h (c + 1) w (by dsimp only [w]; linarith) (by dsimp only [w]; linarith)
+        |>.hasSum.tendsto_sum_nat.cauchySeq)
+      (by rw [Real.norm_of_nonneg hr0, Real.norm_of_nonneg (by dsimp only [w]; linarith)]
+          dsimp only [w]; linarith)
   have hs1 := (h c r hr0 hr).comp_injective (add_left_injective 1)
   have hs2 := hw.mul_left (‖z₀⁻¹‖ * r)
   have hs3 := (h (c + 1) r hr0 hr).mul_left (‖z₀⁻¹‖ * r)
@@ -526,8 +495,7 @@ private theorem sum_regularizedGaussHGFunCoeff_mul_eq (a b c w : ℂ) (s : ℕ) 
   have hpoch_s : (ascPochhammer ℂ k).eval (-(s : ℂ)) * (s - k)! = (-1) ^ k * s ! := by
     rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial]
     have hdesc : s.descFactorial k * (s - k)! = s ! := by
-      rw [Nat.descFactorial_eq_div hks]
-      exact Nat.div_mul_cancel (Nat.factorial_dvd_factorial (Nat.sub_le s k))
+      rw [mul_comm, Nat.factorial_mul_descFactorial hks]
     calc (-1 : ℂ) ^ k * (s.descFactorial k : ℂ) * ((s - k)! : ℂ)
         = (-1 : ℂ) ^ k * ((s.descFactorial k * (s - k)! : ℕ) : ℂ) := by push_cast; ring
       _ = (-1 : ℂ) ^ k * s ! := by rw [hdesc]
@@ -598,7 +566,7 @@ private theorem summable_norm_doubleSeriesTerm (a b c : ℂ) {z₀ u : ℂ} (hz�
           ((hinner k).summable.mul_left _)
     _ = ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k))‖ *
           (‖z₀‖⁻¹ * ‖u‖) ^ k * ((1 - ‖u‖) ^ (-‖a‖ - (k : ℝ))) := by
-        rw [tsum_mul_left, (hinner k).tsum_eq]
+      rw [tsum_mul_left, (hinner k).tsum_eq]
     _ = (1 - ‖u‖) ^ (-‖a‖) *
           ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
             (k ! * Gamma (c + k)) * (ρ : ℂ) ^ k‖ := by
@@ -668,29 +636,16 @@ private theorem hasSum_regularizedGaussHGFun_inv_of_one_add_norm_lt (a b c : ℂ
         regularizedGaussHGFun (-s) b c z₀⁻¹ * ((1 - z / z₀)⁻¹) ^ s)
       ((1 - z₀ / z) ^ a * regularizedGaussHGFun a b c z⁻¹) := by
   let u : ℂ := (1 - z / z₀)⁻¹
-  let H' : ℕ × ℕ → ℂ := fun sk =>
-    if sk.2 ≤ sk.1 then doubleSeriesTerm a b c z₀ u (sk.2, sk.1 - sk.2) else 0
-  have hι_inj : Function.Injective (fun km : ℕ × ℕ => (km.1 + km.2, km.1)) := by
-    rintro ⟨k₁, m₁⟩ ⟨k₂, m₂⟩ h
-    simp only [Prod.mk.injEq] at h
-    exact Prod.ext h.2 (by omega)
-  have hH'_sum : HasSum H' ((1 - z₀ / z) ^ a * regularizedGaussHGFun a b c z⁻¹) := by
-    refine (hι_inj.hasSum_iff ?_).mp
-      (by simpa [Function.comp_def, H'] using hasSum_doubleSeriesTerm a b c hz₀ hz)
-    rintro ⟨s, k⟩ hsk
-    simp only [H', ite_eq_right_iff]
-    exact fun hks => False.elim (hsk ⟨(k, s - k), by simp [Nat.add_sub_of_le hks]⟩)
-  refine hH'_sum.prod_fiberwise fun s => ?_
-  have hfin : HasSum (fun k : ℕ => H' (s, k)) (∑ k ∈ Finset.range (s + 1), H' (s, k)) :=
-    hasSum_sum_of_ne_finset_zero fun k hk => by
-      have hlt : ¬ k ≤ s := by simpa [Finset.mem_range, Nat.lt_succ_iff] using hk
-      simp [H', hlt]
-  convert hfin using 1
-  rw [← sum_regularizedGaussHGFunCoeff_mul_eq, Finset.sum_mul]
+  have hanti := (Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
+    (hasSum_doubleSeriesTerm a b c hz₀ hz)).sigma fun _ => hasSum_fintype _
+  refine hanti.congr_fun fun s => ?_
+  simp only [Function.comp_def, Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd_apply]
+  rw [Finset.sum_coe_sort, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
+    ← sum_regularizedGaussHGFunCoeff_mul_eq, Finset.sum_mul]
   refine Finset.sum_congr rfl fun k hk => ?_
   have hks : k ≤ s := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
   have hpow : u ^ k * u ^ (s - k) = u ^ s := by rw [← pow_add, Nat.add_sub_of_le hks]
-  simp only [H', hks, ↓reduceIte, doubleSeriesTerm]
+  simp only [doubleSeriesTerm]
   linear_combination
     (ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
       (k ! * Gamma (c + k)) * (-z₀⁻¹) ^ k *
@@ -698,28 +653,17 @@ private theorem hasSum_regularizedGaussHGFun_inv_of_one_add_norm_lt (a b c : ℂ
 
 /-- Holomorphy of `(1 - z₀ / w) ^ a * regularizedGaussHGFun a b c w⁻¹` on
 `{w | 1 < ‖w‖ ∧ max ‖z₀‖ ‖z₀ - 1‖ < ‖w - z₀‖}`. -/
-private theorem analyticOnNhd_cpow_mul_regularizedGaussHGFun_inv (a b c : ℂ) {z₀ : ℂ}
-    (hz₀ : z₀ ≠ 0) :
+private theorem analyticOnNhd_cpow_mul_regularizedGaussHGFun_inv (a b c z₀ : ℂ) :
     AnalyticOnNhd ℂ (fun w : ℂ => (1 - z₀ / w) ^ a * regularizedGaussHGFun a b c w⁻¹)
       {w | 1 < ‖w‖ ∧ max ‖z₀‖ ‖z₀ - 1‖ < ‖w - z₀‖} := by
   intro w hw
   have hw_ne : w ≠ 0 := norm_pos_iff.mp (zero_lt_one.trans hw.1)
-  have hwz₀_pos : 0 < ‖w - z₀‖ := ((norm_pos_iff.mpr hz₀).trans_le (le_max_left _ _)).trans hw.2
-  have hwz₀ : w - z₀ ≠ 0 := norm_pos_iff.mp hwz₀_pos
-  have h1zw : 1 - z₀ / w ≠ 0 := fun h0 =>
-    hwz₀ (sub_eq_zero.mpr ((div_eq_one_iff_eq hw_ne).mp (sub_eq_zero.mp h0).symm).symm)
-  have h1zw_re : 0 < (1 - z₀ / w).re := by
-    have hinv : (1 - z₀ / w)⁻¹ = 1 + z₀ / (w - z₀) := by field
-    have hre := TauCeti.re_pos_of_norm_sub_one_lt_one (q := (1 - z₀ / w)⁻¹) <| by
-      rw [hinv, add_sub_cancel_left, norm_div, div_lt_one hwz₀_pos]
-      exact (le_max_left _ _).trans_lt hw.2
-    exact (div_pos_iff_of_pos_right (normSq_pos.mpr h1zw)).mp (inv_re _ ▸ hre)
   have hcpow : AnalyticAt ℂ (fun ζ : ℂ => (1 - z₀ / ζ) ^ a) w :=
     (analyticAt_const.sub (analyticAt_const.div analyticAt_id hw_ne)).cpow analyticAt_const
-      (Or.inl h1zw_re)
-  have hhg : AnalyticAt ℂ ((regularizedHGFun {a, b} {c}) ∘ Inv.inv) w :=
-    (analyticAt_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c}) rfl
-      (by rw [norm_inv]; exact inv_lt_one_of_one_lt₀ hw.1)).comp (analyticAt_id.inv hw_ne)
+      (Or.inl (one_sub_div_re_pos ((le_max_left _ _).trans_lt hw.2)))
+  have hhg : AnalyticAt ℂ (fun ζ : ℂ => regularizedGaussHGFun a b c ζ⁻¹) w :=
+    (analyticAt_regularizedGaussHGFun a b c
+      (by rw [norm_inv]; exact inv_lt_one_of_one_lt₀ hw.1)).fun_comp (analyticAt_id.inv hw_ne)
   exact hcpow.mul hhg
 
 /-- **Inverse-argument expansion of the regularized Gauss hypergeometric function**
@@ -770,7 +714,7 @@ theorem hasSum_regularizedGaussHGFun_inv (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z
   have heq_z : L z = G z :=
     (((analyticOnNhd_tsum_regularizedGaussHGFun_neg_natCast_mul_inv_pow a b c hz₀).mono
       (s := U) (fun _ hw => hw.2)).mono hSU).eqOn_of_preconnected_of_eventuallyEq
-      ((analyticOnNhd_cpow_mul_regularizedGaussHGFun_inv a b c hz₀).mono hSU)
+      ((analyticOnNhd_cpow_mul_regularizedGaussHGFun_inv a b c z₀).mono hSU)
       (isPreconnected_Ici.image _ (by fun_prop)) ⟨T, hT_pos, rfl⟩ hev ⟨0, le_rfl, by simp⟩
   have hsum :=
     (summable_norm_regularizedGaussHGFun_neg_natCast_mul_inv_pow a b c hz₀ hz).of_norm.hasSum

@@ -11,12 +11,12 @@ import Mathlib.Analysis.Normed.Ring.InfiniteSum
 /-!
 # Convergence and coefficient bounds for binomial and multichoose power series
 
-This file relates ascending Pochhammer quotients `(a)_n / n!` to generalized multichoose
-coefficients `Ring.multichoose a n`, bounds their norms over `ℝ` or `ℂ` by real multichoose
-majorants, and determines the exact unconditional summability domain of the power series with
-generalized multichoose coefficients and positive real parameter. The convergence results apply to
-both real and complex arguments and supply the analytic criterion used to determine the exact
-integrability domain of the negative-binomial probability-generating function.
+This file bounds the norms of ascending Pochhammer quotients `(a)_n / n!` over `ℝ` or `ℂ` by real
+multichoose majorants `Ring.multichoose A n` and determines the exact unconditional summability
+domain of the power series with generalized multichoose coefficients and positive real parameter.
+The convergence results apply to both real and complex arguments and supply the analytic criterion
+used to determine the exact integrability domain of the negative-binomial probability-generating
+function.
 
 It also treats the binomial series `binomialSeries 𝔸 a`, the power series of `(1 + y) ^ a`, with
 values in a normed algebra `𝔸` over `ℝ` or `ℂ` rather than a normed division ring. Its radius is
@@ -29,8 +29,6 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
 
 ## Main declarations
 
-* `TauCeti.ascPochhammer_eval_div_factorial_eq_multichoose` — `(a)_n / n! = Ring.multichoose a n`
-  over a characteristic-zero field.
 * `TauCeti.norm_ascPochhammer_eval_div_factorial_le_multichoose` — norm majorant
   `‖(a)_n / n!‖ ≤ Ring.multichoose A n` when `‖a‖ ≤ A`.
 * `TauCeti.hasSum_multichoose_mul_geometric_of_abs_lt_one` — the multichoose binomial
@@ -53,15 +51,6 @@ open Filter Set Topology
 open scoped ENNReal NNReal Nat
 
 namespace TauCeti
-
-/-- In a characteristic-zero field, dividing the ascending Pochhammer polynomial `(a)_n` by `n!`
-gives the generalized multichoose coefficient `Ring.multichoose a n`. -/
-theorem ascPochhammer_eval_div_factorial_eq_multichoose {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂]
-    (a : 𝕂) (n : ℕ) :
-    (ascPochhammer 𝕂 n).eval a / n ! = Ring.multichoose a n := by
-  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
-  rw [nsmul_eq_mul, mul_comm, Polynomial.ascPochhammer_smeval_eq_eval] at h
-  exact (div_eq_iff (Nat.cast_ne_zero.mpr n.factorial_ne_zero)).mpr h.symm
 
 /-- Over `ℝ` or `ℂ`, the norm of `(a)_n / n!` is bounded by `Ring.multichoose A n` for any real
 upper bound `‖a‖ ≤ A`. -/

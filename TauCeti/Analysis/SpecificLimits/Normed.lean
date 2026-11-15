@@ -16,8 +16,8 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test. Likewise, a real power series converging at every nonnegative radius below `R` remains
-summable on `(-R, R)` after multiplying its coefficients by `n ^ k`.
+test. Likewise, in a complete normed division ring, a power series converging at `w` remains
+summable at every `z` with `‖z‖ < ‖w‖` after multiplying its coefficients by `n ^ k`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -89,29 +89,28 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
 
-/-- If a real power series `∑ n, a n * r ^ n` converges at every nonnegative radius below `R`,
-then weighting its coefficients by `n ^ k` preserves summability throughout `(-R, R)`. -/
-theorem summable_pow_mul_mul_pow (k : ℕ) {a : ℕ → ℝ} {R : ℝ}
-    (ha : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun n : ℕ ↦ a n * r ^ n)
-    {r : ℝ} (hr : |r| < R) :
-    Summable fun n : ℕ ↦ (n : ℝ) ^ k * a n * r ^ n := by
-  let r' : ℝ := (|r| + R) / 2
-  have hr' : |r| < r' := by dsimp only [r']; linarith
-  have hr'R : r' < R := by dsimp only [r']; linarith
-  have hr'_pos : 0 < r' := (abs_nonneg r).trans_lt hr'
-  obtain ⟨C, hC⟩ := bddAbove_def.mp <|
-    (tendsto_pow_const_mul_const_pow_of_lt_one k (by positivity)
-      ((div_lt_one hr'_pos).mpr hr')).bddAbove_range
-  refine Summable.of_norm_bounded ((ha r' hr'_pos.le hr'R).abs.mul_left C) fun n ↦ ?_
-  have hnC : (n : ℝ) ^ k * (|r| / r') ^ n ≤ C := hC _ ⟨n, rfl⟩
-  have hsplit : |r| ^ n = (|r| / r') ^ n * r' ^ n := by
-    rw [← mul_pow, div_mul_cancel₀ _ hr'_pos.ne']
-  calc ‖(n : ℝ) ^ k * a n * r ^ n‖
-      = ((n : ℝ) ^ k * (|r| / r') ^ n) * |a n * r' ^ n| := by
-        rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_pow, Nat.abs_cast, abs_pow, hsplit,
-          abs_mul, abs_pow, abs_of_pos hr'_pos]
-        ring
-    _ ≤ C * |a n * r' ^ n| := mul_le_mul_of_nonneg_right hnC (abs_nonneg _)
+/-- If a power series converges at `w`, then multiplying its coefficients by `n ^ k` preserves
+summability at all `z` of smaller norm. -/
+theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
+    [CompleteSpace α] (k : ℕ) {f : ℕ → α} {w z : α}
+    (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :
+    Summable fun n : ℕ ↦ (n : α) ^ k * f n * z ^ n := by
+  have hw : 0 < ‖w‖ := (norm_nonneg z).trans_lt hz
+  obtain ⟨C, hC⟩ := exists_norm_le_of_cauchySeq h
+  have hgeom : Summable fun n : ℕ ↦ C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) :=
+    (summable_pow_mul_geometric_of_norm_lt_one k
+      (by rwa [Real.norm_of_nonneg (by positivity), div_lt_one hw])).mul_left C
+  refine Summable.of_norm_bounded hgeom fun n ↦ ?_
+  have hn : ‖((n : α) ^ k : α)‖ ≤ (n : ℝ) ^ k := by
+    rw [norm_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _) (by simpa using Nat.norm_cast_le (α := α) n) k
+  have hf : ‖f n‖ ≤ C / ‖w‖ ^ n := by
+    have h1 := hC n
+    rwa [norm_mul, norm_pow, ← le_div_iff₀ (pow_pos hw n)] at h1
+  calc ‖(n : α) ^ k * f n * z ^ n‖
+      = ‖(n : α) ^ k‖ * ‖f n‖ * ‖z‖ ^ n := by rw [norm_mul, norm_mul, norm_pow z]
+    _ ≤ (n : ℝ) ^ k * (C / ‖w‖ ^ n) * ‖z‖ ^ n := by gcongr
+    _ = C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) := by rw [div_pow]; ring
 
 variable {K : Type*} [NormedField K]
 
