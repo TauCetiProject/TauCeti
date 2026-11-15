@@ -49,48 +49,12 @@ private theorem weightTable_span : Submodule.span ℤ (Set.range weightTable.wei
   rw [weightTable_weight]
   exact span_range_d4TripledWeight_eq_top
 
-private theorem datum_mem_lattice
-    (u : _root_.UniversalEnvelopingAlgebra ℚ ((DynkinType.D 4).lieAlgebra (valid_D.mpr le_rfl)))
-    (hu : u ∈ UniversalEnvelopingAlgebra.kostantForm
-      ((DynkinType.D 4).lieBasis (valid_D.mpr le_rfl)).rootGenerator
-      ((DynkinType.D 4).lieBasis (valid_D.mpr le_rfl)).h)
-    (v : Fin 24 → ℚ) (hv : v ∈ lattice) :
-    weightTable.pinnedRep (t := .D 4) (valid_D.mpr le_rfl)
-      weightTable_pinnedCartanMatrix u v ∈ lattice := by
-  rw [lattice_def] at hv ⊢
-  exact weightTable.pinnedRep_mem_lattice (t := .D 4) (valid_D.mpr le_rfl)
-    weightTable_pinnedCartanMatrix u hu v hv
-
-private theorem datum_weight_basis (a : Fin 24) :
-    UniversalEnvelopingAlgebra.IsCartanWeightVector
-      ((DynkinType.D 4).lieBasis (valid_D.mpr le_rfl)).h
-      (weightTable.pinnedRep (t := .D 4) (valid_D.mpr le_rfl) weightTable_pinnedCartanMatrix)
-      (fun i => d4TripledWeight a (Fin.cast (rank_D 4) i)) (latticeBasis a : Fin 24 → ℚ) := by
-  rw [coe_latticeBasis]
-  simpa only [weightTable_weight, rank_D, Fin.cast_eq_self] using
-    weightTable.pinnedRep_weight (t := .D 4) (valid_D.mpr le_rfl) weightTable_pinnedCartanMatrix a
-
 /-- The tripled natural and half-spin module as a full-weight Chevalley datum of type D₄.
 Its character basis is the standard basis of fundamental weights. -/
--- Keep the existing lattice and numbering in the exposed dependent fields, rather than the
--- generic constructor's chosen finite enumeration. All representation proofs remain generic.
-@[expose] def chevalleyDatum : ChevalleyDatum (.D 4) (by decide) where
-  __ := weightTable.chevalleyDatum (t := .D 4) (by decide)
-    (by exact weightTable_pinnedCartanMatrix) (by exact weightTable_span)
-  carrier := Fin 24 → ℚ
-  instAddCommGroup := inferInstance
-  instModule := inferInstance
-  lattice := lattice.toAddSubgroup
-  representation_mem_lattice := by exact datum_mem_lattice
-  span_lattice_eq_top := by
-    rw [lattice_def]
-    exact Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
-  dim := 24
-  basis := latticeBasis
-  weight := fun a i => d4TripledWeight a (Fin.cast (rank_D 4) i)
-  isCartanWeightVector_basis := by exact datum_weight_basis
-  weightLatticeBasis := (Pi.basisFun ℤ (Fin 4)).map
-    (LinearEquiv.ofTop _ span_range_d4TripledWeight_eq_top).symm
+-- Expose the inherited carrier and dimension for dependent coordinate-space equations.
+@[expose] def chevalleyDatum : ChevalleyDatum (.D 4) (by decide) :=
+  weightTable.chevalleyDatum (t := .D 4) (by decide)
+    (by exact weightTable_pinnedCartanMatrix) (by exact weightTable_span) (Equiv.refl _)
 
 /-- The tripled datum uses the pinned rational weight-table action. -/
 @[simp] theorem chevalleyDatum_representation :
@@ -126,11 +90,21 @@ Its character basis is the standard basis of fundamental weights. -/
 @[simp] theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup := (rfl)
 
 /-- The tripled datum uses the existing coordinate basis. -/
-@[simp] theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := (rfl)
+@[simp] theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := by
+  apply Module.Basis.eq_of_apply_eq
+  intro i
+  apply Subtype.ext
+  exact (weightTable.coe_chevalleyDatum_basis (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _) i).trans
+      (coe_latticeBasis i).symm
 
 /-- The tripled datum retains the numbered tripled weights. -/
 @[simp] theorem chevalleyDatum_weight :
-    chevalleyDatum.weight = fun a i => d4TripledWeight a (Fin.cast (rank_D 4) i) := (rfl)
+    chevalleyDatum.weight = fun a i => d4TripledWeight a (Fin.cast (rank_D 4) i) := by
+  -- Normalize the inherited dimension before rewriting the table's numbered weights.
+  change weightTable.weight ∘ (Equiv.refl _).symm = _
+  rw [weightTable_weight]
+  rfl
 
 /-- The tripled datum has the full simply connected weight lattice. -/
 @[simp] theorem chevalleyDatum_weightLattice : chevalleyDatum.weightLattice = ⊤ := by
@@ -140,14 +114,8 @@ Its character basis is the standard basis of fundamental weights. -/
 /-- The character basis is the standard fundamental-weight basis. -/
 @[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin (DynkinType.D 4).rank) :
     (chevalleyDatum.weightLatticeBasis i : Fin (DynkinType.D 4).rank → ℤ) = Pi.single i 1 := by
-  -- Normalize the native rank before applying the basis map's evaluation equation.
-  dsimp only [chevalleyDatum]
-  have h := Module.Basis.map_apply (Pi.basisFun ℤ (Fin 4))
-    (LinearEquiv.ofTop _ span_range_d4TripledWeight_eq_top).symm (Fin.cast (rank_D 4) i)
-  refine (congrArg Subtype.val h).trans ?_
-  simp only [LinearEquiv.ofTop_symm_apply, Pi.basisFun_apply]
-  -- The remaining transport is only the reflexive equality of the native rank with four.
-  rfl
+  exact weightTable.coe_chevalleyDatum_weightLatticeBasis (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _) i
 
 /-- The torus coordinates of the tripled datum are its original fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :

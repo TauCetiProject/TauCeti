@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
 import TauCeti.Algebra.Lie.Weights.Faithful
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
 
@@ -71,12 +72,6 @@ theorem pinnedRep_ι (x : t.lieAlgebra ht) :
     T.pinnedRep ht hT (ι ℚ x) = T.pinnedAction ht hT x :=
   lift_ι_apply _ _ _
 
-private theorem toLinAlgEquiv'_eq_toLin' (M : Matrix α α ℚ) :
-    Matrix.toLinAlgEquiv' M = Matrix.toLin' M := by
-  apply LinearMap.ext
-  intro v
-  simp only [Matrix.toLinAlgEquiv'_apply, Matrix.toLin'_apply]
-
 /-- A pinned Cartan generator acts by the table's diagonal weight matrix. -/
 @[simp↓]
 theorem pinnedRep_h (i : Fin t.rank) :
@@ -85,7 +80,7 @@ theorem pinnedRep_h (i : Fin t.rank) :
   rw [pinnedRep_ι]
   simp only [pinnedAction, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     serreLiftEquiv_symm_lieBasis_h, TauCeti.serreLift_serreH, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply, toLinAlgEquiv'_eq_toLin']
+    AlgEquiv.toAlgHom_apply, Matrix.toLinAlgEquiv'_eq_toLin']
 
 /-- A pinned raising generator acts by the table's raising matrix. -/
 @[simp↓]
@@ -95,7 +90,7 @@ theorem pinnedRep_e (i : Fin t.rank) :
   rw [pinnedRep_ι]
   simp only [pinnedAction, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     serreLiftEquiv_symm_lieBasis_e, TauCeti.serreLift_serreE, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply, toLinAlgEquiv'_eq_toLin']
+    AlgEquiv.toAlgHom_apply, Matrix.toLinAlgEquiv'_eq_toLin']
 
 /-- A pinned lowering generator acts by the table's lowering matrix. -/
 @[simp↓]
@@ -105,7 +100,7 @@ theorem pinnedRep_f (i : Fin t.rank) :
   rw [pinnedRep_ι]
   simp only [pinnedAction, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     serreLiftEquiv_symm_lieBasis_f, TauCeti.serreLift_serreF, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply, toLinAlgEquiv'_eq_toLin']
+    AlgEquiv.toAlgHom_apply, Matrix.toLinAlgEquiv'_eq_toLin']
 
 private theorem pinnedRep_root (k : Fin t.rank ⊕ Fin t.rank) :
     T.pinnedRep ht hT (ι ℚ ((t.lieBasis ht).rootGenerator k)) =
@@ -156,7 +151,7 @@ private theorem pinnedRep_cartan_single (x : t.cartanSubalgebra ht) (a : α) :
     Finset.sum_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one, b]
 
 /-- Spanning weights detect every Cartan coordinate, so the pinned Cartan action is faithful. -/
-theorem pinnedAction_cartan_isFaithful (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤) :
+private theorem pinnedAction_cartan_isFaithful (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤) :
     let pinnedLieRingModule := LieRingModule.compLieHom (α → ℚ) (T.pinnedAction ht hT)
     let pinnedLieModule := LieModule.compLieHom (α → ℚ) (T.pinnedAction ht hT)
     LieModule.IsFaithful ℚ (t.cartanSubalgebra ht) (α → ℚ) := by
@@ -215,9 +210,10 @@ theorem pinnedRep_mem_lattice
 
 /-- The full-weight Chevalley datum of a numbered minuscule table with spanning weights.
 The lattice is the coordinate lattice, and the character basis is the fundamental-weight basis.
-Its weight basis is numbered using `Fintype.equivFin`. -/
+The equivalence `e` specifies the numbering of its weight basis. -/
 -- Expose the carrier and dimension so dependent coordinate-space and basis equations compute.
-@[expose] def chevalleyDatum (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤) :
+@[expose] def chevalleyDatum (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤)
+    {n : ℕ} (e : α ≃ Fin n) :
     ChevalleyDatum t ht where
   carrier := α → ℚ
   representation := T.pinnedRep ht hT
@@ -225,14 +221,51 @@ Its weight basis is numbered using `Fintype.equivFin`. -/
   lattice := (coordinateLattice α).toAddSubgroup
   representation_mem_lattice := by exact T.pinnedRep_mem_lattice ht hT
   span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
-  dim := Fintype.card α
-  basis := (coordinateLatticeBasis α).reindex (Fintype.equivFin α)
-  weight := T.weight ∘ (Fintype.equivFin α).symm
+  dim := n
+  basis := (coordinateLatticeBasis α).reindex e
+  weight := T.weight ∘ e.symm
   isCartanWeightVector_basis a := by
     rw [Module.Basis.reindex_apply, coe_coordinateLatticeBasis, Pi.basisFun_apply]
     exact T.pinnedRep_weight ht hT _
   weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map
     (LinearEquiv.ofTop _ (by simpa only [EquivLike.range_comp] using hspan)).symm
+
+variable (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤) {n : ℕ} (e : α ≃ Fin n)
+
+/-- The datum uses the pinned weight-table representation. -/
+@[simp] theorem chevalleyDatum_representation :
+    (T.chevalleyDatum ht hT hspan e).representation = T.pinnedRep ht hT := (rfl)
+
+/-- The datum uses the integral coordinate lattice. -/
+@[simp] theorem chevalleyDatum_lattice :
+    (T.chevalleyDatum ht hT hspan e).lattice = (coordinateLattice α).toAddSubgroup := (rfl)
+
+/-- A numbered lattice-basis vector is the corresponding coordinate vector. -/
+@[simp] theorem coe_chevalleyDatum_basis (a : Fin n) :
+    ((T.chevalleyDatum ht hT hspan e).basis a).val = Pi.single (e.symm a) 1 := by
+  have h := Module.Basis.reindex_apply (coordinateLatticeBasis α) e a
+  exact (congrArg Subtype.val h).trans (by
+    simpa only [Pi.basisFun_apply] using coe_coordinateLatticeBasis α (e.symm a))
+
+/-- The datum's weights are the table weights in the specified numbering. -/
+@[simp] theorem chevalleyDatum_weight :
+    (T.chevalleyDatum ht hT hspan e).weight = T.weight ∘ e.symm := (rfl)
+
+/-- Spanning table weights give the full simply connected weight lattice. -/
+@[simp] theorem chevalleyDatum_weightLattice :
+    (T.chevalleyDatum ht hT hspan e).weightLattice = ⊤ := by
+  -- Normalize the dependent dimension to `n` before simplifying the enumerated weight range.
+  change Submodule.span ℤ (Set.range (T.weight ∘ e.symm)) = ⊤
+  simpa only [EquivLike.range_comp] using hspan
+
+/-- The character basis consists of the standard fundamental weights. -/
+@[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
+    ((T.chevalleyDatum ht hT hspan e).weightLatticeBasis i : Fin t.rank → ℤ) =
+      Pi.single i 1 := by
+  have h := Module.Basis.map_apply (Pi.basisFun ℤ (Fin t.rank))
+    (LinearEquiv.ofTop _ (by simpa only [EquivLike.range_comp] using hspan)).symm i
+  exact (congrArg Subtype.val h).trans (by
+    simp only [LinearEquiv.ofTop_symm_apply, Pi.basisFun_apply])
 
 end
 

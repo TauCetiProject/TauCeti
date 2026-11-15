@@ -215,6 +215,15 @@ end LinearMap
 
 namespace Matrix
 
+/-- The algebra equivalence and the linear equivalence from matrices to coordinate
+endomorphisms agree on each matrix. -/
+theorem toLinAlgEquiv'_eq_toLin' {R n : Type*} [CommSemiring R] [Fintype n]
+    [DecidableEq n] (M : Matrix n n R) :
+    toLinAlgEquiv' M = toLin' M := by
+  apply LinearMap.ext
+  intro v
+  simp only [toLinAlgEquiv'_apply, toLin'_apply]
+
 /-- The rows of an identity matrix are linearly independent: they are the standard basis
 vectors `Pi.single i 1`. -/
 theorem linearIndependent_row_one {R m : Type*} [Semiring R] [DecidableEq m] :

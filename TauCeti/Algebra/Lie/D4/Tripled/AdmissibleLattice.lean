@@ -87,7 +87,8 @@ theorem isSl2Triple_rep_serreRootGenerator (i : Fin 4) :
 /-! ## The admissible coordinate lattice -/
 
 /-- The coordinate `ℤ`-lattice in the rational tripled module. -/
-noncomputable def lattice : Submodule ℤ (Fin 24 → ℚ) :=
+-- Expose the lattice so the inherited Chevalley-datum basis has this same dependent type.
+@[expose] noncomputable def lattice : Submodule ℤ (Fin 24 → ℚ) :=
   TauCeti.coordinateLattice (Fin 24)
 
 /-- The tripled lattice is the standard coordinate lattice. -/
