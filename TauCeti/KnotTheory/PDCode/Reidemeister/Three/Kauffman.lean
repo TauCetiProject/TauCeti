@@ -118,15 +118,9 @@ private theorem localFactor_eq (side : Bool) (q : Fin 3 → Bool) :
   have hq : q = ![q 0, q 1, q 2] := by ext i; fin_cases i <;> simp
   rw [hq]
   generalize q 0 = x, q 1 = y, q 2 = z
-  have hf (p : Fin 3 × Fin 4) : reidemeisterThreeSlots p =
-      ![![(1, 0), (0, 2), (1, 2), (0, 0)],
-        ![(2, 0), (0, 1), (2, 2), (0, 3)],
-        ![(2, 3), (1, 1), (2, 1), (1, 3)]] p.1 p.2 :=
+  have hf (p : Fin 3 × Fin 4) : reidemeisterThreeSlots p = _ :=
     reidemeisterThreeSlots_apply p.1 p.2
-  have hi (p : Fin 3 × Fin 4) : reidemeisterThreeSlots⁻¹ p =
-      ![![(0, 3), (1, 1), (0, 1), (1, 3)],
-        ![(0, 0), (2, 1), (0, 2), (2, 3)],
-        ![(1, 0), (2, 2), (1, 2), (2, 0)]] p.1 p.2 :=
+  have hi (p : Fin 3 × Fin 4) : reidemeisterThreeSlots⁻¹ p = _ :=
     reidemeisterThreeSlots_symm_apply p.1 p.2
   cases side <;> cases x <;> cases y <;> cases z <;>
     apply Equiv.ext <;> intro p <;>
@@ -284,12 +278,9 @@ private theorem rawLoopCount_eq (D : PDCode n) (u : Fin n → Bool) :
   rw [stateLoopCount_def, statePerm_def, smoothingChoice_smoothingChoice]
   rfl
 
-include c in
-private theorem rawLoopCount_pos (u : Fin n → Bool) : 1 ≤ rawLoopCount D u := by
+private theorem rawLoopCount_pos (hn : n ≠ 0) (u : Fin n → Bool) : 1 ≤ rawLoopCount D u := by
   rw [rawLoopCount_eq]
-  apply D.one_le_stateLoopCount
-  have hn := (c 0).isLt
-  omega
+  exact D.one_le_stateLoopCount hn _
 
 private theorem exteriorSlots_assemble (q q' : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) :
@@ -350,7 +341,7 @@ private theorem pairingTraversal_loops_lower
   rw [hq, (pairingRepresentative_spec k).1, (pairingRepresentative_spec k).2,
     pairingTraversal_assemble] at hc
   simp only [Bool.false_eq_true, ↓reduceIte] at hc
-  have hp := rawLoopCount_pos D c (assembleState c (pairingRepresentative k) r)
+  have hp := rawLoopCount_pos D (c 0).pos.ne' (assembleState c (pairingRepresentative k) r)
   simp only [rawLoopCount] at hp
   omega
 
