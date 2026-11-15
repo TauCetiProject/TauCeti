@@ -12,11 +12,11 @@ import Mathlib.Algebra.BigOperators.Intervals
 /-!
 # Norm divergence of partial sums of rapidly growing sequences
 
-If a sequence `u : ℕ → E` in a seminormed additive group grows faster than some geometric ratio
-`c > 2` from each index to the next (`c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually) and has norms that do
-not vanish eventually (`∃ᶠ m in atTop, 0 < ‖u m‖`), then each term `u m` eventually dominates the
-sum of all preceding terms up to a factor `< 1`, so the norms of the partial sums
-`∑ m ∈ Finset.Ico N n, u m` tend to `+∞` as `n → ∞` for every starting index `N`.
+If a sequence `u : ℕ → E` in a seminormed additive group grows by at least a factor of `c ≥ 2`
+from each index to the next (`c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually) and has norms that do not
+vanish eventually (`∃ᶠ m in atTop, 0 < ‖u m‖`), then from any sufficiently large index `M`
+onwards each term satisfies `∑ j ∈ Finset.Ico M m, ‖u j‖ + ‖u M‖ ≤ ‖u m‖`, so the norms of the
+partial sums `∑ m ∈ Finset.Ico N n, u m` tend to `+∞` as `n → ∞` for every starting index `N`.
 
 In particular, this applies whenever `u =o[atTop] fun m ↦ u (m + 1)` and `0 < ‖u m‖` frequently
 (for instance when `u m / u (m + 1) → 0` for a sequence of nonzero elements in a normed division
@@ -28,7 +28,7 @@ theorem.
 
 * `TauCeti.tendsto_norm_atTop_of_mul_norm_le`: if `1 < c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually,
   and `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`.
-* `TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le`: if `2 < c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖`
+* `TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le`: if `2 ≤ c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖`
   eventually, and `0 < ‖u m‖` frequently, then `‖∑ m ∈ Finset.Ico N n, u m‖ → ∞`.
 * `Asymptotics.IsLittleO.tendsto_norm_atTop_of_succ`: if `u =o[atTop] fun m ↦ u (m + 1)` and
   `0 < ‖u m‖` frequently, then `‖u n‖ → ∞`.
@@ -44,17 +44,39 @@ open Asymptotics Filter Finset
 
 namespace TauCeti
 
-/-- Along a sequence satisfying `c * ‖u m‖ ≤ ‖u (m + 1)‖` from `M` onwards,
-`(c - 1) * ∑ j ∈ Ico M m, ‖u j‖ ≤ ‖u m‖` for all `m ≥ M`. -/
-private theorem mul_sum_Ico_norm_le {E : Type*} [SeminormedAddCommGroup E]
-    {u : ℕ → E} {c : ℝ} {M : ℕ}
-    (hstep : ∀ m ≥ M, c * ‖u m‖ ≤ ‖u (m + 1)‖) {m : ℕ} (hm : M ≤ m) :
-    (c - 1) * ∑ j ∈ Ico M m, ‖u j‖ ≤ ‖u m‖ := by
+/-- Along a sequence satisfying `2 * ‖u m‖ ≤ ‖u (m + 1)‖` from `M` onwards,
+`∑ j ∈ Ico M m, ‖u j‖ + ‖u M‖ ≤ ‖u m‖` for all `m ≥ M`. -/
+private theorem sum_Ico_norm_add_le {E : Type*} [SeminormedAddCommGroup E]
+    {u : ℕ → E} {M : ℕ}
+    (hstep : ∀ m ≥ M, 2 * ‖u m‖ ≤ ‖u (m + 1)‖) {m : ℕ} (hm : M ≤ m) :
+    ∑ j ∈ Ico M m, ‖u j‖ + ‖u M‖ ≤ ‖u m‖ := by
   induction m, hm using Nat.le_induction with
   | base => simp
   | succ m hm ih =>
-    rw [sum_Ico_succ_top hm, mul_add]
+    rw [sum_Ico_succ_top hm]
     linarith [hstep m hm]
+
+/-- Along a sequence satisfying `2 * ‖u m‖ ≤ ‖u (m + 1)‖` from `M` onwards (`N ≤ M`),
+`‖u M‖ ≤ ‖∑ j ∈ Ico N (m + 1), u j‖ + ‖∑ j ∈ Ico N M, u j‖` for all `m ≥ M`. -/
+private theorem norm_le_norm_sum_Ico_succ_add {E : Type*} [SeminormedAddCommGroup E]
+    {u : ℕ → E} {N M : ℕ} (hNM : N ≤ M)
+    (hstep : ∀ m ≥ M, 2 * ‖u m‖ ≤ ‖u (m + 1)‖) {m : ℕ} (hm : M ≤ m) :
+    ‖u M‖ ≤ ‖∑ j ∈ Ico N (m + 1), u j‖ + ‖∑ j ∈ Ico N M, u j‖ := by
+  have hsplit : u m =
+      (∑ j ∈ Ico N (m + 1), u j) - (∑ j ∈ Ico N M, u j) - ∑ j ∈ Ico M m, u j := by
+    rw [sum_Ico_succ_top (hNM.trans hm), ← sum_Ico_consecutive u hNM hm]
+    abel
+  have htri : ‖u m‖ ≤
+      ‖∑ j ∈ Ico N (m + 1), u j‖ + ‖∑ j ∈ Ico N M, u j‖ + ∑ j ∈ Ico M m, ‖u j‖ :=
+    calc ‖u m‖ = ‖(∑ j ∈ Ico N (m + 1), u j) - (∑ j ∈ Ico N M, u j) - ∑ j ∈ Ico M m, u j‖ :=
+          congrArg norm hsplit
+      _ ≤ ‖(∑ j ∈ Ico N (m + 1), u j) - ∑ j ∈ Ico N M, u j‖ + ‖∑ j ∈ Ico M m, u j‖ :=
+          norm_sub_le _ _
+      _ ≤ ‖∑ j ∈ Ico N (m + 1), u j‖ + ‖∑ j ∈ Ico N M, u j‖ + ∑ j ∈ Ico M m, ‖u j‖ := by
+          gcongr
+          · exact norm_sub_le _ _
+          · exact norm_sum_le _ _
+  linarith [sum_Ico_norm_add_le hstep hm]
 
 /-- If `1 < c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then `‖u n‖ → +∞`
 as `n → ∞`. -/
@@ -69,52 +91,32 @@ theorem tendsto_norm_atTop_of_mul_norm_le {E : Type*} [Norm E]
     tendsto_atTop_of_geom_le (v := fun n ↦ ‖u (n + M)‖) (by simpa using hpos) hc
       fun n ↦ by simpa only [Nat.add_right_comm] using hM₀ (n + M) (by omega)
 
-/-- If `c > 2`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then the norms
+/-- If `2 ≤ c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖` eventually, and `0 < ‖u m‖` frequently, then the norms
 of the partial sums `∑ m ∈ Ico N n, u m` tend to `+∞` for every starting index `N`. -/
 theorem tendsto_norm_sum_Ico_atTop_of_mul_norm_le {E : Type*} [SeminormedAddCommGroup E]
-    {u : ℕ → E} {c : ℝ} (hc : 2 < c)
+    {u : ℕ → E} {c : ℝ} (hc : 2 ≤ c)
     (hstep : ∀ᶠ m in atTop, c * ‖u m‖ ≤ ‖u (m + 1)‖)
     (hne : ∃ᶠ m in atTop, 0 < ‖u m‖) (N : ℕ) :
     Tendsto (fun n ↦ ‖∑ m ∈ Ico N n, u m‖) atTop atTop := by
-  obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hstep
-  obtain ⟨M, -, hM⟩ := (hne.and_eventually (eventually_ge_atTop (max N M₀))).exists
-  have hNM : N ≤ M := (le_max_left N M₀).trans hM
-  have hM₀M : M₀ ≤ M := (le_max_right N M₀).trans hM
-  have hstepM : ∀ m ≥ M, c * ‖u m‖ ≤ ‖u (m + 1)‖ := fun m hm ↦ hM₀ m (hM₀M.trans hm)
+  have hstep2 : ∀ᶠ m in atTop, 2 * ‖u m‖ ≤ ‖u (m + 1)‖ :=
+    hstep.mono fun m hm ↦ (mul_le_mul_of_nonneg_right hc (norm_nonneg (u m))).trans hm
+  obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hstep2
   have hnorm_atTop : Tendsto (fun m ↦ ‖u m‖) atTop atTop :=
-    tendsto_norm_atTop_of_mul_norm_le (by linarith) hstep hne
-  -- Bound `(c - 1) * ‖∑ j ∈ Ico N n, u j‖` below by `(c - 2) * ‖u (n - 1)‖ - const`.
-  set B : ℝ := ‖∑ j ∈ Ico N M, u j‖
-  have hlower : ∀ᶠ n in atTop,
-      ((c - 2) * ‖u (n - 1)‖ - (c - 1) * B) / (c - 1) ≤ ‖∑ j ∈ Ico N n, u j‖ := by
-    filter_upwards [eventually_ge_atTop (M + 1)] with n hn
+    tendsto_norm_atTop_of_mul_norm_le one_lt_two hstep2 hne
+  rw [tendsto_atTop]
+  intro K
+  obtain ⟨M₁, hM₁⟩ := eventually_atTop.1 (hnorm_atTop.eventually_ge_atTop (2 * K))
+  set M₂ := max (max N M₀) M₁
+  by_cases! h : ∀ n ≥ M₂, K ≤ ‖∑ j ∈ Ico N n, u j‖
+  · exact eventually_atTop.2 ⟨M₂, h⟩
+  · obtain ⟨M, hM₂, hMK⟩ := h
+    have hNM : N ≤ M := ((le_max_left N M₀).trans (le_max_left _ M₁)).trans hM₂
+    have hM₀M : M₀ ≤ M := ((le_max_right N M₀).trans (le_max_left _ M₁)).trans hM₂
+    have hM₁M : M₁ ≤ M := (le_max_right _ M₁).trans hM₂
+    have hstepM : ∀ m ≥ M, 2 * ‖u m‖ ≤ ‖u (m + 1)‖ := fun m hm ↦ hM₀ m (hM₀M.trans hm)
+    refine eventually_atTop.2 ⟨M + 1, fun n hn ↦ ?_⟩
     obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (Nat.one_le_of_lt hn)
-    have hm : M ≤ m := by omega
-    have hsplit : ∑ j ∈ Ico N (m + 1), u j =
-        (∑ j ∈ Ico N M, u j) + (∑ j ∈ Ico M m, u j) + u m := by
-      rw [sum_Ico_succ_top (hNM.trans hm), ← sum_Ico_consecutive u hNM hm]
-    have htri : ‖u m‖ ≤ ‖∑ j ∈ Ico N (m + 1), u j‖ + B + ∑ j ∈ Ico M m, ‖u j‖ := by
-      have heq : u m = (∑ j ∈ Ico N (m + 1), u j) - (∑ j ∈ Ico N M, u j) - ∑ j ∈ Ico M m, u j := by
-        rw [hsplit]; abel
-      calc ‖u m‖ = ‖(∑ j ∈ Ico N (m + 1), u j) - (∑ j ∈ Ico N M, u j) - ∑ j ∈ Ico M m, u j‖ :=
-            congrArg norm heq
-        _ ≤ ‖(∑ j ∈ Ico N (m + 1), u j) - ∑ j ∈ Ico N M, u j‖ + ‖∑ j ∈ Ico M m, u j‖ :=
-            norm_sub_le _ _
-        _ ≤ ‖∑ j ∈ Ico N (m + 1), u j‖ + B + ∑ j ∈ Ico M m, ‖u j‖ := by
-            gcongr
-            · exact norm_sub_le _ _
-            · exact norm_sum_le _ _
-    have htail := mul_sum_Ico_norm_le hstepM hm
-    have hmul := mul_le_mul_of_nonneg_left htri (by linarith : (0 : ℝ) ≤ c - 1)
-    rw [Nat.add_sub_cancel, div_le_iff₀ (by linarith)]
-    calc (c - 2) * ‖u m‖ - (c - 1) * B
-        = (c - 1) * ‖u m‖ - ‖u m‖ - (c - 1) * B := by ring
-      _ ≤ (c - 1) * (‖∑ j ∈ Ico N (m + 1), u j‖ + B + ∑ j ∈ Ico M m, ‖u j‖) -
-            (c - 1) * ∑ j ∈ Ico M m, ‖u j‖ - (c - 1) * B := by linarith
-      _ = ‖∑ j ∈ Ico N (m + 1), u j‖ * (c - 1) := by ring
-  refine tendsto_atTop_mono' atTop hlower ?_
-  exact (((hnorm_atTop.comp (tendsto_sub_atTop_nat 1)).const_mul_atTop (by linarith)).atTop_add
-    tendsto_const_nhds).atTop_div_const (by linarith)
+    linarith [hM₁ M hM₁M, norm_le_norm_sum_Ico_succ_add hNM hstepM (by omega : M ≤ m)]
 
 end TauCeti
 

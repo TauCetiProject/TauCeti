@@ -35,9 +35,10 @@ convergent from index `1` onwards has numerator and denominator `(a + 1)_{n - 1}
 `1 = Γ(a + 1) γ*(a, 0)`.
 
 For `z ≠ 0` and `a ∉ {-1, -2, …}`, this file establishes the ingredients that Pincherle's theorem
-needs to deduce convergence of `(tricomiContFrac a z).convs` to `Γ(a + 1) e^z γ*(a, z)`: we
-construct an explicit solution `Complex.tricomiContFracSolution a z` of the three-term recurrence
-`f(n + 1) = b_n f(n) + a_n f(n - 1)` in terms of Kummer's regularized hypergeometric function,
+needs to deduce convergence of `(tricomiContFrac a z).convs` to `Γ(a + 1) e^z γ*(a, z)`: using the
+Kummer contiguous relations we construct an explicit solution `Complex.tricomiContFracSolution a z`
+of the three-term recurrence `f(n + 1) = b_n f(n) + a_n f(n - 1)` in terms of Kummer's regularized
+hypergeometric function,
 $$
   f(0) = 1, \qquad
   f(m) = (-1)^{\lceil m / 2 \rceil}\,\Gamma(a + 1)\,z^{m - 1}\,d_m\,
@@ -45,9 +46,9 @@ $$
 $$
 where `d_m = tricomiContFracScale a m` has `d₁ = 1`, `d_{2k} = (a + 1)_{k - 1} (k - 1)!` (`k ≥ 1`),
 and `d_{2k + 1} = (a + 1)_{k - 1} k!` (`k ≥ 1`), identify its initial ratio `-(f(1) / f(0))` with
-`Γ(a + 1) e^z γ*(a, z)`, and combine the Kummer contiguous relations with the large-parameter limit
-`Γ(2k + c) 𝐌(k, 2k + c, z) → e^{z / 2}` to show that consecutive reduction-of-order summands
-`(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` have ratio `O(1 / m) → 0`, so their partial sums diverge
+`Γ(a + 1) e^z γ*(a, z)`, and combine `Γ(s + 2) = (s + 1) s Γ(s)` with the large-parameter Kummer
+limit `Γ(2k + c) 𝐌(k, 2k + c, z) → e^{z / 2}` to show that consecutive reduction-of-order summands
+`(-1)^m (∏_{j=1}^m a_j) / (f(m) f(m + 1))` have ratio tending to `0`, so their partial sums diverge
 in norm for every starting index `N`.
 
 ## Main definitions
@@ -332,8 +333,8 @@ theorem tricomiContFrac_zero_right_convs_succ {a : ℂ} (ha : ∀ k : ℕ, a ≠
   rw [GenContFract.conv_eq_num_div_den, tricomiContFrac_zero_right_nums_succ,
     tricomiContFrac_zero_right_dens_succ, div_self (ascPochhammer_eval_add_one_ne_zero ha k)]
 
-/-- At `z = 0` and `a ∉ {-1, -2, …}`, the convergents of `tricomiContFrac a 0` are eventually
-constant at `1 = Γ(a + 1) e^0 γ*(a, 0)`, the normalized value at `z = 0`. -/
+/-- At `z = 0` and `a ∉ {-1, -2, …}`, `(tricomiContFrac a 0).convs` tends to
+`Γ(a + 1) e^0 γ*(a, 0)`. -/
 theorem tendsto_tricomiContFrac_zero_right_convs {a : ℂ} (ha : ∀ k : ℕ, a ≠ -(k + 1 : ℂ)) :
     Tendsto (tricomiContFrac a 0).convs atTop
       (𝓝 (Gamma (a + 1) * cexp 0 * tricomiIncompleteGamma a 0)) := by
@@ -873,8 +874,8 @@ private theorem neg_tricomiContFracSolution_div_odd {a z : ℂ}
   rw [hs2] at hG
   rw [hlhs, hd1, hd2, hG]
 
-/-- Common `O(1 / k)` limit shape for the even and odd reduction-of-order ratios: if
-`g k → L ≠ 0`, then `w * ((c₀ + k) / (b₀ + 2k)) * (1 / (b₀ + 1 + 2k)) * (g (k + 1) / g k) → 0`. -/
+/-- Common limit shape for the even and odd reduction-of-order ratios: if `g k → L ≠ 0`, then
+`w * ((c₀ + k) / (b₀ + 2k)) * (1 / (b₀ + 1 + 2k)) * (g (k + 1) / g k) → 0`. -/
 private theorem tendsto_mul_div_mul_inv_mul_div_nhds_zero (w c₀ b₀ : ℂ) {g : ℕ → ℂ} {L : ℂ}
     (hg : Tendsto g atTop (𝓝 L)) (hL : L ≠ 0) :
     Tendsto (fun k : ℕ ↦

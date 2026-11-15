@@ -34,7 +34,9 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.regularizedHGFunCoeff_singleton` — the coefficients `(a)ₙ / (n! Γ(b + n))` of Kummer's
   function `𝐌(a, b, z) = ∑ (a)ₙ zⁿ / (n! Γ(b + n))`.
-* `Complex.regularizedHGFun_singleton_zero_left` — `𝐌(0, b, z) = (Γ b)⁻¹`.
+* `Complex.regularizedHGFun_of_zero_mem_left`, `Complex.regularizedHGFun_singleton_zero_left` —
+  when `0 ∈ a`, `regularizedHGFun a b z = ((b.map Gamma).prod)⁻¹`; in particular
+  `𝐌(0, b, z) = (Γ b)⁻¹`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -121,20 +123,24 @@ theorem regularizedHGFunCoeff_singleton (a b : ℂ) (n : ℕ) :
     regularizedHGFunCoeff {a} {b} n = (ascPochhammer ℂ n).eval a / (n ! * Gamma (b + n)) := by
   simp [regularizedHGFunCoeff]
 
+/-- When `0` is among the upper parameters `a`, every power-series term of positive degree
+vanishes (since `(0)ₙ = 0` for `n ≥ 1`), so `regularizedHGFun a b z` equals the constant term
+`((b.map Gamma).prod)⁻¹` for all `b` and `z` without any cardinality hypothesis on `a` and `b`. -/
+theorem regularizedHGFun_of_zero_mem_left {a b : Multiset ℂ} (ha : (0 : ℂ) ∈ a) (z : ℂ) :
+    regularizedHGFun a b z = ((b.map Gamma).prod)⁻¹ := by
+  rw [regularizedHGFun, FormalMultilinearSeries.sum, tsum_eq_single 0]
+  · simp [regularizedHGFunSeries, regularizedHGFunCoeff]
+  · intro n hn
+    simp [regularizedHGFunSeries,
+      regularizedHGFunCoeff_eq_zero_left a b n 0 (by simpa using ha) (Nat.pos_of_ne_zero hn)]
+
 /-- At `a = 0`, Kummer's regularized function reduces to the constant `𝐌(0, b, z) = (Γ b)⁻¹`
 (directly from the series [DLMF 13.2.4](https://dlmf.nist.gov/13.2#E4), since `(0)ₙ = 0` for
 `n ≥ 1`), including at `b ∈ -ℕ` where both sides vanish. -/
 @[simp]
 theorem regularizedHGFun_singleton_zero_left (b z : ℂ) :
     regularizedHGFun {0} {b} z = (Gamma b)⁻¹ := by
-  have h : HasSum (fun n : ℕ ↦ regularizedHGFunCoeff {0} {b} (n + 1) * z ^ (n + 1))
-      (regularizedHGFun {0} {b} z - (Gamma b)⁻¹) := by
-    simpa [one_div] using
-      (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedHGFun (a := {0}) (b := {b}) (by simp) z)
-  have hzero : HasSum (fun n : ℕ ↦ regularizedHGFunCoeff {0} {b} (n + 1) * z ^ (n + 1)) 0 := by
-    convert hasSum_zero (α := ℂ) (β := ℕ) with n
-    simp
-  linear_combination h.unique hzero
+  simp [regularizedHGFun_of_zero_mem_left]
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/
