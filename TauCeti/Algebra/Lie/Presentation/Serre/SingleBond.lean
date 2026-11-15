@@ -38,6 +38,24 @@ namespace TauCeti.IsSerreSystem
 open LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance] HasUniqueDiv.of_module_rat
+
+section Degenerate
+
+variable {B R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [IsAddTorsionFree L]
+  {CM : Matrix B B ℤ} {H E F : B → L}
+
+/-- In a torsion-free Serre system, at a bond whose two Cartan entries are nonzero, a zero Cartan
+generator at the node `j` forces the raising and lowering generators at both nodes to vanish. -/
+theorem eq_zero_of_H_eq_zero_of_cartan_ne_zero (hs : IsSerreSystem R CM H E F) {i j : B}
+    (hij : CM i j ≠ 0) (hji : CM j i ≠ 0) (hj : H j = 0) :
+    E i = 0 ∧ F i = 0 ∧ E j = 0 ∧ F j = 0 := by
+  have hEi0 : E i = 0 := hs.E_eq_zero_of_H_eq_zero hj hji
+  have hi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
+  exact ⟨hEi0, hs.F_eq_zero_of_H_eq_zero hj hji, hs.E_eq_zero_of_H_eq_zero hi0 hij,
+    hs.F_eq_zero_of_H_eq_zero hi0 hij⟩
+
+end Degenerate
 
 variable {B A : Type*} [Ring A] [Algebra ℚ A]
   {CM : Matrix B B ℤ} {H E F : B → A}
@@ -73,6 +91,20 @@ theorem weylUnit_conj_F_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   exact ht.weylUnit_conj_of_lie_h_eq_self hE hF hw
     (hs.lie_E_F_of_ne i j hne) (hs.lie_F_lie_F_F_of_eq_neg_one hij)
 
+/-- At a node with `CM k k = 2`, the Weyl unit of the signed exchange `hs.neg_swap` acts by the
+same conjugation as the Weyl unit of `hs`. No nonvanishing of `H k` is needed: if `H k = 0` then
+`E k` and `F k` vanish. The statement uses the conjugation action so that it rewrites inside
+conjugation by a word in Weyl units. -/
+theorem toConjAct_weylUnit_neg_swap_smul (hs : IsSerreSystem ℚ CM H E F) {k : B}
+    (hkk : CM k k = 2) (hEk : IsNilpotent (E k)) (hFk : IsNilpotent (F k)) (y : A) :
+    ConjAct.toConjAct (weylUnit hFk.neg hEk.neg) • y =
+      ConjAct.toConjAct (weylUnit hEk hFk) • y := by
+  simp only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct]
+  by_cases hk : H k = 0
+  · simp [hs.E_eq_zero_of_H_eq_zero hk (by omega : CM k k ≠ 0),
+      hs.F_eq_zero_of_H_eq_zero hk (by omega : CM k k ≠ 0)]
+  exact weylUnit_neg_symm_conj (hs.isSl2Triple hkk hk) hEk hFk y
+
 /-- At a single bond the pinned Weyl units satisfy the length-three braid relation in the
 unit group of the associative rational algebra. Only the four root operators at the two
 nodes need be nilpotent; the Serre system need not be faithful or nonzero. -/
@@ -101,11 +133,8 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     hs.weylUnit_conj_F_of_cartan_eq_neg_one hjj hji hEj hFj
   -- A zero Cartan operator forces all four root operators to vanish at a single bond.
   by_cases hH : H j = 0
-  · have hEi0 : E i = 0 := by simpa [hH, hji] using hs.lie_H_E j i
-    have hFi0 : F i = 0 := by simpa [hH, hji] using (hs.lie_H_F j i).symm
-    have hHi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-    have hEj0 : E j = 0 := by simpa [hHi0, hij] using hs.lie_H_E i j
-    have hFj0 : F j = 0 := by simpa [hHi0, hij] using (hs.lie_H_F i j).symm
+  · obtain ⟨hEi0, hFi0, hEj0, hFj0⟩ :=
+      hs.eq_zero_of_H_eq_zero_of_cartan_ne_zero (i := i) (by omega) (by omega) hH
     apply Units.ext
     simp [hEi0, hFi0, hEj0, hFj0]
   have ht := hs.isSl2Triple hjj hH
@@ -125,17 +154,10 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     simpa only [neg_lie, lie_neg, neg_neg, hji, neg_one_zsmul] using
       hs.lie_lie_F_F_E_of_ne hne
   -- Exponentiate this operator comparison, retaining the units rather than only their action.
-  let d := (c b).comp (c a)
-  have hdE : d (E j) = E i := hE
-  have hdF : d (F j) = F i := hF
-  have hd : d (b : A) = (a : A) := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp d, hFj.neg.map_exp d,
-      map_neg, hdE, hdF]
-    exact (coe_weylUnit hEi hFi).symm
-  have hu : b * a * b * (b * a)⁻¹ = a := by
-    apply Units.ext
-    simpa only [d, RingHom.comp_apply, hc, Units.val_mul, Units.val_inv, mul_inv_rev,
-      mul_assoc] using hd
+  have hu : b * a * b * (b * a)⁻¹ = a :=
+    conj_weylUnit_eq_of_conj_eq hEj hFj hEi hFi
+      (by simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hE)
+      (by simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hF)
   calc
     _ = (b * a * b * (b * a)⁻¹) * b * a := by rw [hu]
     _ = b * a * b := by group

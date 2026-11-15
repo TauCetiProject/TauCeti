@@ -97,16 +97,6 @@ private theorem lie_F_lie_E_string_of_cartan_eq_neg_three (hs : IsSerreSystem �
   · convert tj.lie_f_pow_succ_toEnd_e hyh hyf 2 using 1 <;>
       norm_num [pow_succ', mul_apply_eq_comp]
 
-/-- At a triple bond, a zero Cartan operator at the node `j` forces all four root operators at
-the two nodes to vanish. -/
-private theorem eq_zero_of_tripleBond (hs : IsSerreSystem ℚ CM H E F)
-    {i j : B} (hij : CM i j = -1) (hji : CM j i = -3) (hj : H j = 0) :
-    E i = 0 ∧ F i = 0 ∧ E j = 0 ∧ F j = 0 := by
-  have hEi0 : E i = 0 := hs.E_eq_zero_of_H_eq_zero hj (by omega)
-  have hi0 : H i = 0 := by rw [← hs.lie_E_F_self i, hEi0, zero_lie]
-  exact ⟨hEi0, hs.F_eq_zero_of_H_eq_zero hj (by omega), hs.E_eq_zero_of_H_eq_zero hi0 (by omega),
-    hs.F_eq_zero_of_H_eq_zero hi0 (by omega)⟩
-
 /-- At a triple bond, conjugation by the five-letter word `a b a b a` in the Weyl units `a` at
 `i` and `b` at `j` fixes the raising generator at `j`. -/
 private theorem weylUnit_conj_five_E_of_tripleBond (hs : IsSerreSystem ℚ CM H E F)
@@ -117,7 +107,7 @@ private theorem weylUnit_conj_five_E_of_tripleBond (hs : IsSerreSystem ℚ CM H 
     (hEj : IsNilpotent (E j)) (hFj : IsNilpotent (F j)) :
     let a := weylUnit hEi hFi
     let b := weylUnit hEj hFj
-    ((a * b * a * b * a : Aˣ) : A) * E j * ↑(a * b * a * b * a)⁻¹ = E j := by
+    ConjAct.toConjAct (a * b * a * b * a) • E j = E j := by
   dsimp only
   let a := weylUnit hEi hFi
   let b := weylUnit hEj hFj
@@ -162,7 +152,7 @@ private theorem weylUnit_conj_five_E_of_tripleBond (hs : IsSerreSystem ℚ CM H 
   have hfix : c a (c b (c a (c b (c a (E j))))) = E j := by
     rw [h₁, map_smul, h₂, map_smul, h₃, smul_smul, map_smul, h₄]
     norm_num
-  simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hfix
+  simpa only [c, MulSemiringAction.toAlgEquiv_apply, ConjAct.toConjAct_mul, mul_smul] using hfix
 
 /-- At a triple bond the pinned Weyl units satisfy the length-six braid relation in the
 unit group of an associative rational algebra. Only the four root operators at the two
@@ -178,54 +168,36 @@ theorem weylUnit_braid_of_cartan_eq_neg_three (hs : IsSerreSystem ℚ CM H E F)
         weylUnit hEj hFj * weylUnit hEi hFi := by
   let a := weylUnit hEi hFi
   let b := weylUnit hEj hFj
-  let c (u : Aˣ) := MulSemiringAction.toAlgEquiv ℚ A (ConjAct.toConjAct u)
-  have hc (u : Aˣ) (x : A) : c u x = (u : A) * x * ↑u⁻¹ := by
-    simp only [c, MulSemiringAction.toAlgEquiv_apply, ConjAct.units_smul_def,
-      ConjAct.ofConjAct_toConjAct]
   -- Degenerate Serre systems are allowed: a zero Cartan operator kills this entire bond.
   by_cases hj : H j = 0
-  · obtain ⟨hEi0, hFi0, hEj0, hFj0⟩ := hs.eq_zero_of_tripleBond hij hji hj
+  · obtain ⟨hEi0, hFi0, hEj0, hFj0⟩ :=
+      hs.eq_zero_of_H_eq_zero_of_cartan_ne_zero (i := i) (by omega) (by omega) hj
     apply Units.ext
     simp [hEi0, hFi0, hEj0, hFj0]
   have hi : H i ≠ 0 := fun hi => hj (by
-    rw [← hs.lie_E_F_self j, (by simpa [hi, hij] using hs.lie_H_E i j : E j = 0), zero_lie])
-  -- Conjugation by the five-letter word, as a ring endomorphism.
-  let d := (c a).toRingHom.comp ((c b).toRingHom.comp ((c a).toRingHom.comp
-    ((c b).toRingHom.comp (c a).toRingHom)))
-  have hE : d (E j) = E j := by
-    simpa only [d, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_toRingEquiv, hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using
-      hs.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji hi hj hEi hFi hEj hFj
+    rw [← hs.lie_E_F_self j,
+      (hs.eq_zero_of_H_eq_zero_of_cartan_ne_zero (i := j) (by omega) (by omega) hi).1, zero_lie])
+  have hE := hs.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji hi hj hEi hFi hEj hFj
   -- Signed exchange preserves each Weyl conjugation, so the raising calculation also
   -- proves that the five-letter word fixes the lowering operator.
-  have hcneg {k : B} (hkk : CM k k = 2) (hk : H k ≠ 0)
-      (hEk : IsNilpotent (E k)) (hFk : IsNilpotent (F k)) :
-      c (weylUnit hFk.neg hEk.neg) = c (weylUnit hEk hFk) := by
-    ext x
-    rw [hc, hc, ← weylAut_apply_eq_weylUnit_conj (K := ℚ)
-      (hs.isSl2Triple hkk hk).neg_symm, ← weylAut_apply_eq_weylUnit_conj (K := ℚ)
-      (hs.isSl2Triple hkk hk)]
-    exact (hs.isSl2Triple hkk hk).weylAut_neg_symm _ _ _ _ x
-  have hF : d (F j) = F j := by
-    have h : c (weylUnit hFi.neg hEi.neg) (c (weylUnit hFj.neg hEj.neg)
-        (c (weylUnit hFi.neg hEi.neg) (c (weylUnit hFj.neg hEj.neg)
-          (c (weylUnit hFi.neg hEi.neg) (-F j))))) = -F j := by
-      simpa only [hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using
-        hs.neg_swap.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji
-          (neg_ne_zero.mpr hi) (neg_ne_zero.mpr hj) hFi.neg hEi.neg hFj.neg hEj.neg
-    rw [hcneg hii hi hEi hFi, hcneg hjj hj hEj hFj] at h
-    simpa only [d, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_toRingEquiv, map_neg, neg_inj] using h
+  have hF : ConjAct.toConjAct (a * b * a * b * a) • F j = F j := by
+    have h := hs.neg_swap.weylUnit_conj_five_E_of_tripleBond hii hjj hij hji
+      (neg_ne_zero.mpr hi) (neg_ne_zero.mpr hj) hFi.neg hEi.neg hFj.neg hEj.neg
+    dsimp only at h
+    simp only [ConjAct.toConjAct_mul, mul_smul] at h ⊢
+    rwa [hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi,
+      hs.toConjAct_weylUnit_neg_swap_smul hjj hEj hFj,
+      hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi,
+      hs.toConjAct_weylUnit_neg_swap_smul hjj hEj hFj,
+      hs.toConjAct_weylUnit_neg_swap_smul hii hEi hFi,
+      smul_neg, smul_neg, smul_neg, smul_neg, smul_neg, neg_inj] at h
   -- Exponentiating gives commutation with the Weyl unit itself, not merely equality
   -- of conjugation actions. This eliminates any possible central discrepancy.
-  have hd : d (b : A) = (b : A) := by
-    simp only [b, coe_weylUnit, map_mul, hEj.map_exp d, hFj.neg.map_exp d, map_neg, hE, hF]
-  have hu : (a * b * a * b * a) * b * (a * b * a * b * a)⁻¹ = b := by
-    apply Units.ext
-    simpa only [d, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_toRingEquiv, hc, Units.val_mul, Units.val_inv, mul_inv_rev, mul_assoc] using hd
   calc
-    _ = b * (a * b * a * b * a) := mul_inv_eq_iff_eq_mul.mp hu
+    _ = b * (a * b * a * b * a) :=
+      mul_inv_eq_iff_eq_mul.mp (conj_weylUnit_eq_of_conj_eq hEj hFj hEj hFj
+        (by simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct] using hE)
+        (by simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct] using hF))
     _ = _ := by simp only [a, b, mul_assoc]
 
 end TauCeti.IsSerreSystem
