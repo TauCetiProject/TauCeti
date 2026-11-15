@@ -320,11 +320,8 @@ theorem exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
     (hmaps : MapsTo γ (Ici 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p) := by
-  have hgradeq : ∇ f = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), LinearIsometryEquiv.symm_apply_apply]
   refine exists_tendsto_atTop hγ hK hmaps hdiff ?_ ?_
-  · rw [hgradeq]
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
     exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
   · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
       fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
@@ -391,9 +388,10 @@ theorem exists_tendsto_atBot_of_hasNondegenerateCriticalPointsOn
     (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  apply exists_tendsto_atBot hγ hK hmaps hdiff
-    ((toDual ℝ E).symm.continuous.comp_continuousOn hfderiv)
-  exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
-    fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
+  refine exists_tendsto_atBot hγ hK hmaps hdiff ?_ ?_
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
+    exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
+  · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
+      fun y hy ↦ ⟨hy.1, gradient_eq_zero_iff.mp hy.2⟩
 
 end IsIntegralCurveOn
