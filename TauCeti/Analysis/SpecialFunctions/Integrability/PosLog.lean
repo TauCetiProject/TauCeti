@@ -36,6 +36,8 @@ circles approach zero through nonzero values; this last result only needs circle
   are at most those of `log⁺ ‖f‖` plus `log⁺ ‖a‖ + log 2`.
 * `MeromorphicOn.circleAverage_posLog_inv_norm` — the circle average of `log⁺ ‖f‖⁻¹` is the
   difference of the circle averages of `log⁺ ‖f‖` and of `log ‖f‖`.
+* `CircleIntegrable.circleAverage_abs_log` — if `log g` is circle integrable, then the circle
+  average of `|log g|` is twice that of `log⁺ g` minus that of `log g`.
 * `MeromorphicOn.circleAverage_abs_log_norm` — the circle average of `|log ‖f‖|` is twice that of
   `log⁺ ‖f‖` minus that of `log ‖f‖`.
 * `AnalyticOnNhd.circleAverage_abs_log_norm_of_ne_zero` — for `f` holomorphic and zero-free on a
@@ -91,6 +93,20 @@ theorem _root_.CircleIntegrable.circleAverage_posLog_norm_sub_const_le
   simp only [Pi.add_apply]
   linarith
 
+/-- If `log g` is circle integrable, then the circle average of `|log g|` is twice the circle
+average of `log⁺ g` minus the circle average of `log g`. -/
+theorem _root_.CircleIntegrable.circleAverage_abs_log {g : ℂ → ℝ}
+    (hg : CircleIntegrable (fun z ↦ Real.log (g z)) c r) :
+    circleAverage (fun z ↦ |Real.log (g z)|) c r =
+      2 * circleAverage (fun z ↦ log⁺ (g z)) c r - circleAverage (fun z ↦ Real.log (g z)) c r := by
+  have hpos : (fun z ↦ log⁺ (g z)) =
+      fun z ↦ (2⁻¹ : ℝ) • (Real.log (g z) + |Real.log (g z)|) := by
+    funext z
+    rw [smul_eq_mul, half_mul_log_add_log_abs]
+  have habs : CircleIntegrable (fun z ↦ |Real.log (g z)|) c r := hg.abs
+  rw [hpos, circleAverage_fun_smul, circleAverage_fun_add hg habs, smul_eq_mul]
+  ring
+
 namespace MeromorphicOn
 
 /-- If `f` is meromorphic on a circle, then `log⁺ ‖f‖⁻¹` is circle integrable there. -/
@@ -109,13 +125,11 @@ theorem circleAverage_posLog_inv_norm (hf : MeromorphicOn f (sphere c |r|)) :
 
 /-- If `f` is meromorphic on a circle, then the circle average of `|log ‖f‖|` is twice the circle
 average of `log⁺ ‖f‖` minus the circle average of `log ‖f‖`. -/
-theorem circleAverage_abs_log_norm (hf : MeromorphicOn f (sphere c |r|)) :
+theorem circleAverage_abs_log_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} (hf : MeromorphicOn f (sphere c |r|)) :
     circleAverage (fun z ↦ |Real.log ‖f z‖|) c r =
-      2 * circleAverage (fun z ↦ log⁺ ‖f z‖) c r - circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
-  simp_rw [abs_log_eq_posLog_add_posLog_inv]
-  rw [circleAverage_fun_add hf.circleIntegrable_posLog_norm hf.circleIntegrable_posLog_inv_norm,
-    hf.circleAverage_posLog_inv_norm]
-  ring
+      2 * circleAverage (fun z ↦ log⁺ ‖f z‖) c r - circleAverage (fun z ↦ Real.log ‖f z‖) c r :=
+  hf.circleIntegrable_log_norm.circleAverage_abs_log
 
 /-- If `f` is meromorphic on a circle, then the lower Lebesgue integral of `log⁺ ‖f‖⁻¹` over one
 period `(0, 2π]` of the circle is `2π` times the difference of the circle averages of `log⁺ ‖f‖`
