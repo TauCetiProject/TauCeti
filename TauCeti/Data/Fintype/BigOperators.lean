@@ -27,6 +27,12 @@ substituted with `Function.update`. Telescoping arguments use this to test one p
 coordinates while the others stay fixed. The same splitting at three distinct coordinates tests
 one triple of coordinates.
 
+Prescribing the values of the maps in such a box on a finset `I` of coordinates leaves as many
+maps as the volume of the cells outside `I`
+(`Fintype.card_filter_piFinset_forall_eq_of_forall_mem`), so the volume of the box is that number
+times the volume of the cells on `I` (`Fintype.prod_card_eq_card_filter_piFinset_mul_prod`). The
+cases of one, two and three coordinates are stated separately.
+
 Splitting at a single coordinate `e` averages it out: if `G` does not see the value at `e`, the
 sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
 (`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
@@ -153,12 +159,34 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
+/-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
+finset `I` leaves as many maps as the volume of the cells outside `I`. -/
+theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} = ∏ m ∈ univ \ I, #(s m) := by
+  rw [show {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
+      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m by grind, card_piFinset,
+    ← prod_sdiff (subset_univ I), Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
+  exact Finset.prod_congr rfl fun m hm ↦ by simp [(mem_sdiff.1 hm).2]
+
+/-- The volume of a finite box is the number of maps in the box with prescribed values
+`a m ∈ s m` at the coordinates `m` of a finset `I`, times the volume of the cells on `I`. -/
+theorem prod_card_eq_card_filter_piFinset_mul_prod {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} * ∏ m ∈ I, #(s m) := by
+  rw [card_filter_piFinset_forall_eq_of_forall_mem s I ha, prod_sdiff (subset_univ I)]
+
 /-- The volume of a finite box is the number of maps in the box with a prescribed value `a ∈ s i`
 at the coordinate `i`, times the size of the cell at `i`. -/
 theorem prod_card_eq_card_filter_piFinset_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
     [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i : ι} (s : ∀ m, Finset (κ m)) {a : κ i}
     (ha : a ∈ s i) : ∏ m, #(s m) = #{h ∈ piFinset s | h i = a} * #(s i) := by
-  rw [card_filter_piFinset_eq_of_mem s i ha, prod_erase_mul _ _ (mem_univ i)]
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i}
+    (a := fun m hm ↦ (mem_singleton.1 hm).symm ▸ a) (by grind), prod_singleton]
+  congr 2
+  grind
 
 /-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`
 and `b ∈ s j` at two distinct coordinates `i` and `j`, times the volume of the cells at those
@@ -167,15 +195,11 @@ theorem prod_card_eq_card_filter_piFinset_mul_mul {ι : Type*} {κ : ι → Type
     [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j : ι} (hij : i ≠ j) (s : ∀ m, Finset (κ m))
     {a : κ i} {b : κ j} (ha : a ∈ s i) (hb : b ∈ s j) :
     ∏ m, #(s m) = #{h ∈ piFinset s | h i = a ∧ h j = b} * (#(s i) * #(s j)) := by
-  have hb' : b ∈ Function.update s i {a} j := by simpa [hij.symm] using hb
-  calc ∏ m, #(s m) = (∏ m, #(Function.update s i {a} m)) * #(s i) := by
-        rw [prod_card_eq_card_filter_piFinset_mul s ha, ← card_piFinset,
-          piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha]
-    _ = #{h ∈ piFinset s | h i = a ∧ h j = b} * (#(s i) * #(s j)) := by
-        rw [prod_card_eq_card_filter_piFinset_mul _ hb',
-          piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter,
-          Function.update_of_ne hij.symm]
-        ac_rfl
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i, j}
+    (a := Pi.cons {j} i a fun m hm ↦ (mem_singleton.1 hm).symm ▸ b)
+    (by grind [Pi.cons_same, Pi.cons_ne]), prod_pair hij]
+  congr 2
+  grind [Pi.cons_same, Pi.cons_ne]
 
 /-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`,
 `b ∈ s j` and `c ∈ s l` at three distinct coordinates `i`, `j` and `l`, times the volume of the
@@ -186,16 +210,12 @@ theorem prod_card_eq_card_filter_piFinset_mul_mul_mul {ι : Type*} {κ : ι → 
     (hb : b ∈ s j) (hc : c ∈ s l) :
     ∏ m, #(s m) =
       #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
-  have hb' : b ∈ Function.update s i {a} j := by simpa [hij.symm] using hb
-  have hc' : c ∈ Function.update s i {a} l := by simpa [hil.symm] using hc
-  calc ∏ m, #(s m) = (∏ m, #(Function.update s i {a} m)) * #(s i) := by
-        rw [prod_card_eq_card_filter_piFinset_mul s ha, ← card_piFinset,
-          piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha]
-    _ = #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
-        rw [prod_card_eq_card_filter_piFinset_mul_mul hjl _ hb' hc',
-          piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter,
-          Function.update_of_ne hij.symm, Function.update_of_ne hil.symm]
-        ac_rfl
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i, j, l}
+    (a := Pi.cons {j, l} i a <| Pi.cons {l} j b fun m hm ↦ (mem_singleton.1 hm).symm ▸ c)
+    (by grind [Pi.cons_same, Pi.cons_ne]), prod_insert (by simp [hij, hil]), prod_pair hjl,
+    mul_assoc]
+  congr 2
+  grind [Pi.cons_same, Pi.cons_ne]
 
 /-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
 its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
