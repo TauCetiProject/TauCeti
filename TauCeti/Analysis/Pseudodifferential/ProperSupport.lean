@@ -210,6 +210,12 @@ theorem smoothingRemainder_smul (a : Symbol n V W m) (χ : CoordinateSpace n →
   simp only [smoothingRemainder, smul_apply, map_smul]
   exact integral_smul c _
 
+/-- The removed operator of the zero input vanishes. -/
+@[simp]
+theorem smoothingRemainder_zero (a : Symbol n V W m) (χ : CoordinateSpace n → ℝ)
+    (x : CoordinateSpace n) : smoothingRemainder a χ 0 x = 0 := by
+  simp [smoothingRemainder]
+
 /-- **The removed operator is smoothing.** If `χ` is of class `C^k` and equal to `1` near `0`, the
 removed operator sends a compactly supported Schwartz function to a `C^k` function; to a smooth
 function when `χ` is smooth. -/
@@ -279,6 +285,12 @@ theorem properQuantizeValue_smul (a : Symbol n V W m) (χ : CoordinateSpace n �
     properQuantizeValue a χ (c • u) x = c • properQuantizeValue a χ u x := by
   simp [properQuantizeValue, smul_sub]
 
+/-- The localized quantization of the zero input vanishes. -/
+@[simp]
+theorem properQuantizeValue_zero (a : Symbol n V W m) (χ : CoordinateSpace n → ℝ)
+    (x : CoordinateSpace n) : properQuantizeValue a χ 0 x = 0 := by
+  simp [properQuantizeValue]
+
 /-- **Smoothness.** If `χ` is of class `C^k` and equal to `1` near `0`, the localized quantization
 of a compactly supported Schwartz function is of class `C^k`; smooth when `χ` is smooth. -/
 theorem contDiff_properQuantizeValue (a : Symbol n V W m) {k : ℕ∞} (hχ : ContDiff ℝ k χ)
@@ -336,15 +348,15 @@ theorem support_properQuantizeValue_subset [CompleteSpace V] [CompleteSpace W]
     support (properQuantizeValue a χ u) ⊆ tsupport u + tsupport χ := fun _ hx ↦
   by_contra fun h ↦ hx (properQuantizeValue_eq_zero a hχ0 hu h)
 
-/-- **Proper support, closed form.** If `χ` has compact support and equals `1` near `0`, the
-closed support of the localized quantization of a compactly supported Schwartz function `u` lies
-in the compact set `tsupport u + tsupport χ`. -/
+/-- **Proper support, closed form.** If `χ` equals `1` near `0`, the closed support of the
+localized quantization of a compactly supported Schwartz function `u` lies in the closed set
+`tsupport u + tsupport χ`. -/
 theorem tsupport_properQuantizeValue_subset [CompleteSpace V] [CompleteSpace W]
-    (a : Symbol n V W m) (hχc : HasCompactSupport χ) (hχ0 : χ =ᶠ[𝓝 0] 1)
-    {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport u) :
+    (a : Symbol n V W m) (hχ0 : χ =ᶠ[𝓝 0] 1) {u : 𝓢(CoordinateSpace n, V)}
+    (hu : HasCompactSupport u) :
     tsupport (properQuantizeValue a χ u) ⊆ tsupport u + tsupport χ :=
   closure_minimal (support_properQuantizeValue_subset a hχ0 hu)
-    (hu.isCompact.add hχc.isCompact).isClosed
+    ((isClosed_tsupport χ).add_left_of_isCompact hu.isCompact)
 
 /-- **Compact support is preserved.** If `χ` has compact support and equals `1` near `0`, the
 localized quantization of a compactly supported Schwartz function has compact support. -/
@@ -353,7 +365,7 @@ theorem hasCompactSupport_properQuantizeValue [CompleteSpace V] [CompleteSpace W
     {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport u) :
     HasCompactSupport (properQuantizeValue a χ u) :=
   (hu.isCompact.add hχc.isCompact).of_isClosed_subset (isClosed_tsupport _)
-    (tsupport_properQuantizeValue_subset a hχc hχ0 hu)
+    (tsupport_properQuantizeValue_subset a hχ0 hu)
 
 end Symbol
 
