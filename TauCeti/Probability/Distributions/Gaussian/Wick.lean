@@ -7,29 +7,35 @@ module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching.Weighted
 public import TauCeti.Probability.Distributions.Gaussian.MomentRecursion
+import Mathlib.Probability.Distributions.Gaussian.Fernique
 public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
 /-!
-# Wick–Isserlis formulas for Gaussian moments
+# Wick--Isserlis formula for Gaussian mixed moments
 
-The expectation of a finite product of centered Gaussian observables is the sum over
-perfect matchings of the positions of the products of their pairwise covariances. Positions
-may carry the same observable, and covariance matrices may be singular. The empty product
-has expectation one, and odd products vanish because there are no perfect matchings.
+The centered mixed moment of finitely many linear observables of a Gaussian measure is the
+sum, over perfect matchings of the positions, of the product of the covariances along the
+matching. The formula is indexed by positions, so observables and coordinates may repeat. It
+also covers empty products, odd degrees, and singular positive-semidefinite covariances.
 
-The formula is stated for jointly Gaussian real random variables on an arbitrary measurable
-space, then specialized to multivariate Gaussian coordinates and random vectors with those
-laws. It combines the Gaussian contraction recurrence with the partner decomposition of
-weighted perfect matchings; each unordered edge is counted once.
-These identities evaluate the Gaussian entry products arising in trace powers and mixed
-trace statistics.
+## Main results
+
+* `ProbabilityTheory.IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching` is the
+  abstract Wick--Isserlis formula for linear observables of a Gaussian measure.
+* `ProbabilityTheory.HasGaussianLaw.integral_prod_sub_eq_sum_perfectMatching` transfers
+  the formula to jointly Gaussian random variables on an arbitrary measurable space.
+* `TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
+  specializes the formula to coordinates of a multivariate Gaussian measure.
+* `ProbabilityTheory.HasLaw.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching`
+  transfers the coordinate formula to a random vector with that law.
+
+The proof combines the Gaussian contraction recurrence with the recurrence for weighted
+perfect matchings at a distinguished vertex.
 
 ## References
 
 * L. Isserlis, *On a formula for the product-moment coefficient of any order of a normal
-  frequency distribution in any number of variables*, Biometrika 12 (1918), 134–139.
-* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), §2.1 and §2.5.
+  frequency distribution in any number of variables*, Biometrika 12 (1918), 134--139.
 -/
 
 public section
@@ -37,58 +43,67 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Finset
-open TauCeti
 
-universe u
+namespace ProbabilityTheory.IsGaussian
 
-namespace TauCeti.Probability
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
-private theorem integral_prod_sub_dual_eq_sum_perfectMatching
-    {d : ℕ} (μ : Measure (Fin d → ℝ)) [IsGaussian μ]
-    {ι : Type u} [Fintype ι] [DecidableEq ι] (L : ι → StrongDual ℝ (Fin d → ℝ)) :
+/-- **Wick--Isserlis formula.** A centered mixed moment of finitely many linear observables of
+a Gaussian measure is the sum of covariance products over perfect matchings of the positions.
+The statement includes empty and odd position types. -/
+theorem integral_prod_sub_dual_eq_sum_perfectMatching (μ : Measure E) [IsGaussian μ]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (L : ι → StrongDual ℝ E) :
     (∫ x, ∏ i, (L i x - μ[L i]) ∂μ) =
-      ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
-        Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ], fun i j ↦ covariance_comm (L i) (L j)⟩ e := by
+      ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ],
+          fun i j ↦ covariance_comm (L i) (L j)⟩ e := by
   classical
-  have aux (n : ℕ) : ∀ (ι : Type u) [Fintype ι] [DecidableEq ι],
-      Fintype.card ι = n → ∀ L : ι → StrongDual ℝ (Fin d → ℝ),
-      (∫ x, ∏ i, (L i x - μ[L i]) ∂μ) =
-        ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
-          Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ], fun i j ↦ covariance_comm (L i) (L j)⟩ e := by
-    intro ι _ _ hn L
-    induction n using Nat.strong_induction_on generalizing ι with
-    | ind n ih =>
-      cases isEmpty_or_nonempty ι with
-      | inl h => simp
-      | inr h =>
-        obtain ⟨a⟩ := h
-        rw [PerfectMatching.sum_prod_edgeFinset_eq_sum_mul_sum _ a]
-        have hrec := IsGaussian.integral_sub_dual_mul_prod_sub_dual μ (univ.erase a) (L a) L
-        have hprod (x : Fin d → ℝ) : (∏ i, (L i x - μ[L i])) =
-            (L a x - μ[L a]) * ∏ i ∈ univ.erase a, (L i x - μ[L i]) :=
-          (mul_prod_erase _ _ (mem_univ a)).symm
-        simp_rw [hprod]
-        rw [hrec, sum_subtype (univ.erase a) (p := fun b ↦ b ≠ a) (by simp)]
-        refine Finset.sum_congr rfl fun b _ ↦ ?_
-        simp only [Sym2.lift_mk]
-        congr 1
-        let ρ := {x : ι // x ≠ a ∧ x ≠ b.val}
-        have hk : Fintype.card ρ < n := by
-          rw [← hn]
-          exact Fintype.card_subtype_lt (x := a) (by simp)
-        have hsmall := ih (Fintype.card ρ) hk ρ rfl (fun i ↦ L i.val)
-        have hindex (x : Fin d → ℝ) :
-            (∏ i ∈ (univ.erase a).erase b.val, (L i x - μ[L i])) =
-              ∏ i : ρ, (L i.val x - μ[L i.val]) := by
-          exact prod_subtype _ (by simp [and_comm]) _
-        simp_rw [hindex]
-        rw [hsmall]
-        refine Finset.sum_congr rfl fun D _ ↦ Finset.prod_congr rfl fun e _ ↦ ?_
-        induction e using Sym2.inductionOn
-        simp
-  exact aux (Fintype.card ι) ι rfl L
+  induction hn : Fintype.card ι using Nat.strong_induction_on generalizing ι with
+  | _ n ih =>
+    let w : Sym2 ι → ℝ :=
+      Sym2.lift ⟨fun i j ↦ cov[L i, L j; μ],
+        fun i j ↦ covariance_comm (L i) (L j)⟩
+    rcases isEmpty_or_nonempty ι with hι | ⟨⟨a⟩⟩
+    · simp
+    · calc
+        _ = ∫ x, (L a x - μ[L a]) * ∏ i ∈ univ.erase a, (L i x - μ[L i]) ∂μ := by
+          congr 2 with x
+          exact (Finset.mul_prod_erase _ _ (mem_univ a)).symm
+        _ = ∑ b ∈ univ.erase a, cov[L a, L b; μ] *
+            ∫ x, ∏ j ∈ (univ.erase a).erase b, (L j x - μ[L j]) ∂μ :=
+          integral_sub_dual_mul_prod_sub_dual μ (univ.erase a) (L a) L
+        _ = ∑ b : {b : ι // b ≠ a}, cov[L a, L b; μ] *
+            ∫ x, ∏ j : {x : ι // x ≠ a ∧ x ≠ b}, (L j x - μ[L j]) ∂μ := by
+          rw [Finset.sum_subtype (p := fun b : ι ↦ b ≠ a) (univ.erase a) (by simp)]
+          apply Finset.sum_congr rfl
+          intro b _
+          congr 1
+          apply integral_congr_ae
+          filter_upwards with x
+          exact Finset.prod_subtype ((univ.erase a).erase b) (by simp [and_comm]) _
+        _ = ∑ b : {b : ι // b ≠ a}, w s(a, b.val) *
+            ∑ D : TauCeti.PerfectMatching {x : ι // x ≠ a ∧ x ≠ b.val},
+              ∏ e ∈ D.edgeFinset, w (Sym2.map Subtype.val e) := by
+          apply Finset.sum_congr rfl
+          intro b _
+          have hcard : Fintype.card {x : ι // x ≠ a ∧ x ≠ b.val} < n := by
+            rw [← hn]
+            exact Fintype.card_subtype_lt
+              (p := fun x : ι ↦ x ≠ a ∧ x ≠ b.val) (x := a) (by simp)
+          have hih := ih _ hcard
+            (fun j : {x : ι // x ≠ a ∧ x ≠ b.val} ↦ L j) rfl
+          rw [hih]
+          congr 1
+          apply Finset.sum_congr rfl
+          intro D _
+          apply Finset.prod_congr rfl
+          intro e _
+          induction e using Sym2.inductionOn with
+          | _ i j => rfl
+        _ = _ := (TauCeti.PerfectMatching.sum_prod_edgeFinset_eq_sum_mul_sum w a).symm
 
-end TauCeti.Probability
+end ProbabilityTheory.IsGaussian
 
 namespace ProbabilityTheory.HasGaussianLaw
 
@@ -100,31 +115,26 @@ required; Gaussian marginal laws alone do not suffice. Arbitrary means and corre
 repeated coordinates, and degenerate laws are allowed. -/
 theorem integral_prod_sub_eq_sum_perfectMatching (hX : HasGaussianLaw X P) :
     (∫ ω, ∏ i, (X ω i - ∫ ω', X ω' i ∂P) ∂P) =
-      ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+      ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
         Sym2.lift ⟨fun i j ↦ cov[fun ω ↦ X ω i, fun ω ↦ X ω j; P],
           fun _ _ ↦ covariance_comm _ _⟩ e := by
-  let e := Fintype.equivFin ι
-  let Y : Ω → Fin (Fintype.card ι) → ℝ := fun ω j ↦ X ω (e.symm j)
-  have hY : HasGaussianLaw Y P :=
-    hX.map_fun (ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.proj (e.symm j))
-  let := hY.isGaussian_map
+  let := hX.isGaussian_map
   have hmean (i : ι) :
-      (P.map Y)[(ContinuousLinearMap.proj (e i) : (Fin (Fintype.card ι) → ℝ) →L[ℝ] ℝ)] =
-        ∫ ω, X ω i ∂P := by
-    rw [integral_map hY.aemeasurable
-      (ContinuousLinearMap.proj (e i)).continuous.aestronglyMeasurable]
-    simp [Y]
+      (P.map X)[(ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ)] = ∫ ω, X ω i ∂P := by
+    rw [integral_map hX.aemeasurable
+      (ContinuousLinearMap.proj i).continuous.aestronglyMeasurable]
+    rfl
   have hcov (i j : ι) :
-      cov[(ContinuousLinearMap.proj (e i) : (Fin (Fintype.card ι) → ℝ) →L[ℝ] ℝ),
-        (ContinuousLinearMap.proj (e j) : (Fin (Fintype.card ι) → ℝ) →L[ℝ] ℝ); P.map Y] =
+      cov[(ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ),
+        (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ); P.map X] =
         cov[fun ω ↦ X ω i, fun ω ↦ X ω j; P] := by
-    rw [covariance_map (by fun_prop) (by fun_prop) hY.aemeasurable]
-    simp [Y, Function.comp_def]
-  have h := TauCeti.Probability.integral_prod_sub_dual_eq_sum_perfectMatching (P.map Y)
-    (fun i ↦ ContinuousLinearMap.proj (e i))
+    rw [covariance_map (by fun_prop) (by fun_prop) hX.aemeasurable]
+    rfl
+  have h := IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching (P.map X)
+    (fun i ↦ ContinuousLinearMap.proj i)
   simp only [hmean, hcov] at h
-  rw [integral_map hY.aemeasurable (by fun_prop)] at h
-  simpa [Y] using h
+  rw [integral_map hX.aemeasurable (by fun_prop)] at h
+  simpa only [ContinuousLinearMap.proj_apply] using h
 
 end ProbabilityTheory.HasGaussianLaw
 
@@ -132,45 +142,45 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
-/-- The Wick pairing formula for coordinates of a multivariate Gaussian. The map `f`
-labels the positions and need not be injective. Positive-semidefinite singular covariance
-matrices and empty coordinate types are included. -/
+/-- The Wick--Isserlis formula for centered coordinates of a multivariate Gaussian measure.
+Positions may select repeated coordinates, and the covariance matrix may be singular. -/
 theorem integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
     (m : EuclideanSpace ℝ κ) {S : Matrix κ κ ℝ} (hS : S.PosSemidef) (f : ι → κ) :
     (∫ x, ∏ i, (x (f i) - m (f i)) ∂multivariateGaussian m S) =
       ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
-        Sym2.lift ⟨fun i j ↦ S (f i) (f j), fun i j ↦ by
-          simpa using congrFun (congrFun hS.isHermitian.eq (f j)) (f i)⟩ e := by
-  have hX := (IsGaussian.hasGaussianLaw_id (μ := multivariateGaussian m S)).map_fun
-    (ContinuousLinearMap.pi fun i : ι ↦ EuclideanSpace.proj (f i))
-  have h := hX.integral_prod_sub_eq_sum_perfectMatching
-  simp only [ContinuousLinearMap.pi_apply, EuclideanSpace.coe_proj, id_eq] at h
-  have hcov (i j : ι) : cov[EuclideanSpace.proj (f i), EuclideanSpace.proj (f j);
-      multivariateGaussian m S] = S (f i) (f j) :=
-    covariance_eval_multivariateGaussian hS _ _
-  simp only [EuclideanSpace.coe_proj] at hcov
-  simpa only [hcov, integral_eval_multivariateGaussian] using h
+        Sym2.lift ⟨fun i j ↦ S (f i) (f j),
+          fun i j ↦ by simpa using hS.isHermitian.apply (f j) (f i)⟩ e := by
+  have h := IsGaussian.integral_prod_sub_dual_eq_sum_perfectMatching
+    (multivariateGaussian m S) (fun i ↦ EuclideanSpace.proj (f i))
+  simp_rw [IsGaussian.integral_dual, integral_id_multivariateGaussian] at h
+  have hcov (i j : ι) :
+      cov[(fun x : EuclideanSpace ℝ κ ↦ x (f i)), (fun x ↦ x (f j));
+        multivariateGaussian m S] = S (f i) (f j) :=
+    covariance_eval_multivariateGaussian hS (f i) (f j)
+  simp only [EuclideanSpace.coe_proj, hcov] at h
+  exact h
 
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
 
-variable {Ω ι κ : Type*} [MeasurableSpace Ω] [Fintype ι] [DecidableEq ι]
-  [Fintype κ] [DecidableEq κ] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ κ}
+variable {ι κ Ω : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+  [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ κ}
   {m : EuclideanSpace ℝ κ} {S : Matrix κ κ ℝ}
 
-/-- The Wick pairing formula transported to a random vector with a multivariate Gaussian
-law. The indexing map allows each coordinate to occur any number of times. -/
+/-- The Wick--Isserlis formula for the centered coordinate products of a random vector with a
+multivariate Gaussian law. Positions may select repeated coordinates, and no nondegeneracy is
+required. -/
 theorem integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
     (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef) (f : ι → κ) :
     (∫ ω, ∏ i, (X ω (f i) - m (f i)) ∂P) =
-      ∑ D : PerfectMatching ι, ∏ e ∈ D.edgeFinset,
-        Sym2.lift ⟨fun i j ↦ S (f i) (f j), fun i j ↦ by
-          simpa using congrFun (congrFun hS.isHermitian.eq (f j)) (f i)⟩ e := by
+      ∑ D : TauCeti.PerfectMatching ι, ∏ e ∈ D.edgeFinset,
+        Sym2.lift ⟨fun i j ↦ S (f i) (f j),
+          fun i j ↦ by simpa using hS.isHermitian.apply (f j) (f i)⟩ e := by
   calc
     _ = ∫ x, ∏ i, (x (f i) - m (f i)) ∂multivariateGaussian m S :=
       hX.integral_comp (by fun_prop)
-    _ = _ :=
-      TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching m hS f
+    _ = _ := TauCeti.Probability.integral_prod_sub_multivariateGaussian_eq_sum_perfectMatching
+      m hS f
 
 end ProbabilityTheory.HasLaw
