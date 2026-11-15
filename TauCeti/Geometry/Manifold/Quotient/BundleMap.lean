@@ -187,12 +187,11 @@ theorem ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec {ψ : M
           (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.2)) := by
   intro f
   have hdown := (contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hφ := hφ) hm).2 hφ_smooth
-  have hpull := Bundle.Pullback.contMDiff_fiberwise
+  refine (Bundle.Pullback.contMDiff_fiberwise
     (fun q v ↦ MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q v)
-    hdown f (contMDiff_orbitRelQuotientMap hm hψ)
-  refine hpull.congr fun p ↦ congrArg (TotalSpace.mk' F₂ (E := ⇑f *ᵖ W) p.proj) ?_
-  exact congrArg (fun T : V (f p.proj) →L[𝕜] W (f p.proj) ↦ T p.2)
-    (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
+    hdown f (contMDiff_orbitRelQuotientMap hm hψ)).congr fun p ↦
+      congrArg (fun T : V (f p.proj) →L[𝕜] W (f p.proj) ↦ TotalSpace.mk' F₂ (E := ⇑f *ᵖ W) p.proj
+        (T p.2)) (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
 
 /-- If a `G`-invariant linear family `φ` satisfies the upstairs `C^m` bundle-diffeomorphism
 criterion over `M`, its equivariant pullback along a `C^m` map `ψ : M' →ₑ[σ] M` (`m ≤ n`) descends
@@ -214,40 +213,25 @@ theorem exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec {ψ : 
           (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
           (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.2) := by
   intro f
-  let _ : ∀ q', IsTopologicalAddGroup ((⇑f *ᵖ V) q') := fun q' ↦
-    ‹∀ q, IsTopologicalAddGroup (V q)› (f q')
-  let _ : ∀ q', ContinuousSMul 𝕜 ((⇑f *ᵖ V) q') := fun q' ↦
-    ‹∀ q, ContinuousSMul 𝕜 (V q)› (f q')
-  let _ : ∀ q', IsTopologicalAddGroup ((⇑f *ᵖ W) q') := fun q' ↦
-    ‹∀ q, IsTopologicalAddGroup (W q)› (f q')
-  let _ : ∀ q', ContinuousSMul 𝕜 ((⇑f *ᵖ W) q') := fun q' ↦
-    ‹∀ q, ContinuousSMul 𝕜 (W q)› (f q')
-  rw [exists_bundleDiffeomorph_iff (IB := I')
-    (fun q' ↦ MulAction.orbitRelQuotientRec
-      (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
-      (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-      (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q')]
+  let _ : ∀ q', IsTopologicalAddGroup ((⇑f *ᵖ V) q') :=
+    fun q' ↦ ‹∀ q, IsTopologicalAddGroup (V q)› (f q')
+  let _ : ∀ q', ContinuousSMul 𝕜 ((⇑f *ᵖ V) q') := fun q' ↦ ‹∀ q, ContinuousSMul 𝕜 (V q)› (f q')
+  let _ : ∀ q', IsTopologicalAddGroup ((⇑f *ᵖ W) q') :=
+    fun q' ↦ ‹∀ q, IsTopologicalAddGroup (W q)› (f q')
+  let _ : ∀ q', ContinuousSMul 𝕜 ((⇑f *ᵖ W) q') := fun q' ↦ ‹∀ q, ContinuousSMul 𝕜 (W q)› (f q')
+  rw [exists_bundleDiffeomorph_iff (IB := I') (fun q' ↦ MulAction.orbitRelQuotientRec
+    (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
+    (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
+    (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q')]
   refine ⟨ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec
     (hφ := hφ) hm hψ hφ_smooth, fun q' ↦ ?_⟩
   have hbij_q : ∀ q, Function.Bijective
       (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q) :=
     Quotient.mk_surjective.forall.2 fun x ↦ by
       simpa only [MulAction.orbitRelQuotientRec_mk] using hbij x
-  have hq' :
-      (fun v : V (f q') ↦ MulAction.orbitRelQuotientRec
-        (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
-        (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-        (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q' v) =
-      MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ (f q') :=
-    congrArg (fun T : V (f q') →L[𝕜] W (f q') ↦ (T : V (f q') → W (f q')))
-      (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ q')
-  change Function.Bijective
-    (fun v : V (f q') ↦ MulAction.orbitRelQuotientRec
-      (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
-      (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-      (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q' v)
-  rw [hq']
-  exact hbij_q (f q')
+  exact (congrArg (fun T : V (f q') →L[𝕜] W (f q') ↦ Function.Bijective (T : V (f q') → W (f q')))
+    (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ q')).mpr
+    (hbij_q (f q'))
 
 end EquivariantPullback
 

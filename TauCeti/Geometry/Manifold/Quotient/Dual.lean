@@ -199,21 +199,8 @@ theorem contMDiff_totalSpaceMap_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
           TotalSpace (F₁ →L[𝕜] F₂)
             (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
               C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V₁ q →L[𝕜] V₂ q)))) := by
-  have hcongr :
-      (fun p : TotalSpace (StrongDual 𝕜 F₂) (fun q ↦ StrongDual 𝕜 (V₂ q)) ↦
-        TotalSpace.mk' (StrongDual 𝕜 F₁) (E := fun q ↦ StrongDual 𝕜 (V₁ q)) p.proj
-          (MulAction.orbitRelQuotientRec
-            (V := fun q ↦ StrongDual 𝕜 (V₂ q) →L[𝕜] StrongDual 𝕜 (V₁ q))
-            (fun x ↦ ContinuousLinearMap.precomp 𝕜 (φ x))
-            (MulAction.apply_heq_of_heq (fun _ A ↦ ContinuousLinearMap.precomp 𝕜 A) hφ)
-            p.proj p.2)) =
-      fun p ↦ TotalSpace.mk' (StrongDual 𝕜 F₁) (E := fun q ↦ StrongDual 𝕜 (V₁ q)) p.proj
-        (ContinuousLinearMap.precomp 𝕜
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q) φ hφ p.proj) p.2) := by
-    ext p : 1
-    rw [dualMap_orbitRelQuotientRec]
-  rw [hcongr, contMDiff_totalSpaceMap_dualMap_iff,
-    contMDiff_totalSpaceMap_orbitRelQuotientRec_iff hm]
+  conv_lhs => enter [4, p]; rw [← dualMap_orbitRelQuotientRec hφ]
+  rw [contMDiff_totalSpaceMap_dualMap_iff, contMDiff_totalSpaceMap_orbitRelQuotientRec_iff hm]
 
 /-- In finite dimensions over a complete field, the descended dual linear family underlies a `C^m`
 diffeomorphism of dual total spaces (`m ≤ n`) if and only if the primal family `φ` is a `C^m`
@@ -235,21 +222,8 @@ theorem exists_bundleDiffeomorph_dualMap_orbitRelQuotientRec_iff
               (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
                 C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V₁ q →L[𝕜] V₂ q)))) ∧
         ∀ x, Function.Bijective (φ x) := by
-  have hcongr :
-      (fun p : TotalSpace (StrongDual 𝕜 F₂) (fun q ↦ StrongDual 𝕜 (V₂ q)) ↦
-        TotalSpace.mk' (StrongDual 𝕜 F₁) (E := fun q ↦ StrongDual 𝕜 (V₁ q)) p.proj
-          (MulAction.orbitRelQuotientRec
-            (V := fun q ↦ StrongDual 𝕜 (V₂ q) →L[𝕜] StrongDual 𝕜 (V₁ q))
-            (fun x ↦ ContinuousLinearMap.precomp 𝕜 (φ x))
-            (MulAction.apply_heq_of_heq (fun _ A ↦ ContinuousLinearMap.precomp 𝕜 A) hφ)
-            p.proj p.2)) =
-      fun p ↦ TotalSpace.mk' (StrongDual 𝕜 F₁) (E := fun q ↦ StrongDual 𝕜 (V₁ q)) p.proj
-        (ContinuousLinearMap.precomp 𝕜
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q) φ hφ p.proj) p.2) := by
-    ext p : 1
-    rw [dualMap_orbitRelQuotientRec]
-  rw [hcongr, exists_bundleDiffeomorph_dualMap_iff,
-    exists_bundleDiffeomorph_orbitRelQuotientRec_iff hm]
+  conv_lhs => enter [1, Φ, 2, p]; rw [← dualMap_orbitRelQuotientRec hφ]
+  rw [exists_bundleDiffeomorph_dualMap_iff, exists_bundleDiffeomorph_orbitRelQuotientRec_iff hm]
 
 end FiniteRank
 

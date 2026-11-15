@@ -122,10 +122,9 @@ theorem bundleTensorMap_orbitRelQuotientRec
       MulAction.orbitRelQuotientRec
         (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₁' q ⊗[𝕜] V₂' q)
         (bundleTensorMap φ₁ φ₂) (bundleTensorMap_smul_heq hφ₁ hφ₂) q := by
-  induction q using Quotient.inductionOn with
-  | h x =>
-    exact ContinuousLinearMap.ext <| LinearMap.congr_fun <|
-      _root_.TensorProduct.ext' fun v w ↦ by simp
+  induction q using Quotient.inductionOn with | h x =>
+  exact ContinuousLinearMap.ext <| LinearMap.congr_fun <|
+    _root_.TensorProduct.ext' fun _ _ ↦ by simp
 
 end Map
 
@@ -154,10 +153,8 @@ theorem bundleTensorLift_smul_heq
     bundleTensorLift Φ (g • x) ≍ bundleTensorLift Φ x := by
   let F : ∀ q, (V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q) → (V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₃ q) :=
     fun q B ↦ bundleTensorLift (B := Unit)
-      (E₁ := fun _ ↦ V₁ q) (E₂ := fun _ ↦ V₂ q) (E₃ := fun _ ↦ V₃ q)
-      (fun _ ↦ B) ()
-  have hF (y : M) : bundleTensorLift Φ y =
-      F (Quotient.mk (MulAction.orbitRel G M) y) (Φ y) :=
+      (E₁ := fun _ ↦ V₁ q) (E₂ := fun _ ↦ V₂ q) (E₃ := fun _ ↦ V₃ q) (fun _ ↦ B) ()
+  have hF (y : M) : bundleTensorLift Φ y = F (Quotient.mk (MulAction.orbitRel G M) y) (Φ y) :=
     (eq_bundleTensorLift_iff.2 fun v w ↦ by simp [F]).symm
   rw [hF (g • x), hF x]
   exact MulAction.apply_heq_of_heq F hΦ g x
@@ -168,14 +165,13 @@ theorem bundleTensorLift_orbitRelQuotientRec
     {Φ : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₃ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hΦ : ∀ (g : G) (x : M), Φ (g • x) ≍ Φ x)
-    (q : MulAction.orbitRel.Quotient G M) :
+    (hΦ : ∀ (g : G) (x : M), Φ (g • x) ≍ Φ x) (q : MulAction.orbitRel.Quotient G M) :
     bundleTensorLift
         (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q) Φ hΦ) q =
       MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₃ q)
         (bundleTensorLift Φ) (bundleTensorLift_smul_heq hΦ) q := by
-  induction q using Quotient.inductionOn with
-  | h x => exact (eq_bundleTensorLift_iff.2 fun v w ↦ by simp).symm
+  induction q using Quotient.inductionOn with | h x =>
+  exact (eq_bundleTensorLift_iff.2 fun _ _ ↦ by simp).symm
 
 end Lift
 
@@ -190,11 +186,9 @@ with the descent of `x ↦ bundleDualTensorHom ⟦x⟧ (τ x)`. -/
 theorem bundleDualTensorHom_orbitRelQuotientRec
     {τ : ∀ x : M, StrongDual 𝕜 (V₁ (Quotient.mk (MulAction.orbitRel G M) x)) ⊗[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hτ : ∀ (g : G) (x : M), τ (g • x) ≍ τ x)
-    (q : MulAction.orbitRel.Quotient G M) :
+    (hτ : ∀ (g : G) (x : M), τ (g • x) ≍ τ x) (q : MulAction.orbitRel.Quotient G M) :
     bundleDualTensorHom (E₁ := V₁) (E₂ := V₂) q
-        (MulAction.orbitRelQuotientRec
-          (V := fun q ↦ StrongDual 𝕜 (V₁ q) ⊗[𝕜] V₂ q) τ hτ q) =
+        (MulAction.orbitRelQuotientRec (V := fun q ↦ StrongDual 𝕜 (V₁ q) ⊗[𝕜] V₂ q) τ hτ q) =
       MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q)
         (fun x ↦ bundleDualTensorHom (E₁ := V₁) (E₂ := V₂)
           (Quotient.mk (MulAction.orbitRel G M) x) (τ x))
@@ -234,17 +228,14 @@ theorem ContMDiff.section_tmul_orbitRelQuotientRec
     {t₁ : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x)}
     {t₂ : ∀ x : M, V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
     (ht₁ : ∀ (g : G) (x : M), t₁ (g • x) ≍ t₁ x)
-    (ht₂ : ∀ (g : G) (x : M), t₂ (g • x) ≍ t₂ x)
-    (hm : m ≤ n)
+    (ht₂ : ∀ (g : G) (x : M), t₂ (g • x) ≍ t₂ x) (hm : m ≤ n)
     (ht₁_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁)) m
       (fun x ↦ TotalSpace.mk' F₁ (Quotient.mk (MulAction.orbitRel G M) x) (t₁ x)))
     (ht₂_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₂)) m
       (fun x ↦ TotalSpace.mk' F₂ (Quotient.mk (MulAction.orbitRel G M) x) (t₂ x))) :
     ContMDiff I (I.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ F₂)) m
-      (fun q ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 F₁ F₂)
-        (E := fun q ↦ V₁ q ⊗[𝕜] V₂ q) q
-        (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q)
-          (fun x ↦ t₁ x ⊗ₜ[𝕜] t₂ x)
+      (fun q ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 F₁ F₂) (E := fun q ↦ V₁ q ⊗[𝕜] V₂ q) q
+        (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q) (fun x ↦ t₁ x ⊗ₜ[𝕜] t₂ x)
           (MulAction.apply₂_heq_of_heq (fun _ v w ↦ v ⊗ₜ[𝕜] w) ht₁ ht₂) q)) :=
   (contMDiff_section_orbitRelQuotientRec_iff hm).2 (ht₁_smooth.tmul_section ht₂_smooth)
 
@@ -262,8 +253,7 @@ theorem contMDiff_totalSpaceMap_bundleTensorLift_orbitRelQuotientRec_iff
     {Φ : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₃ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hΦ : ∀ (g : G) (x : M), Φ (g • x) ≍ Φ x)
-    (hm : m ≤ n) :
+    (hΦ : ∀ (g : G) (x : M), Φ (g • x) ≍ Φ x) (hm : m ≤ n) :
     ContMDiff (I.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ F₂)) (I.prod 𝓘(𝕜, F₃)) m
         (fun p : TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun q ↦ V₁ q ⊗[𝕜] V₂ q) ↦
           TotalSpace.mk' F₃ p.proj
@@ -273,20 +263,10 @@ theorem contMDiff_totalSpaceMap_bundleTensorLift_orbitRelQuotientRec_iff
         (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] F₃)
           (E := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q)
           (Quotient.mk (MulAction.orbitRel G M) x) (Φ x)) := by
-  have hcongr :
-      (fun p : TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun q ↦ V₁ q ⊗[𝕜] V₂ q) ↦
-        TotalSpace.mk' F₃ p.proj
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₃ q)
-            (bundleTensorLift Φ) (bundleTensorLift_smul_heq hΦ) p.proj p.2)) =
-      fun p ↦ TotalSpace.mk' F₃ p.proj
-        (bundleTensorLift
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q) Φ hΦ)
-          p.proj p.2) := by
-    ext p : 1
-    rw [bundleTensorLift_orbitRelQuotientRec]
-  rw [hcongr, ← contMDiff_hom_bundle_iff (IB := I)
-    (bundleTensorLift
-      (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q) Φ hΦ)),
+  conv_lhs => enter [4, p]; rw [← bundleTensorLift_orbitRelQuotientRec hΦ]
+  rw [← contMDiff_hom_bundle_iff (IB := I)
+      (bundleTensorLift
+        (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q) Φ hΦ)),
     contMDiff_bundleTensorLift_iff, contMDiff_section_orbitRelQuotientRec_iff hm]
 
 section MapManifold
@@ -312,8 +292,7 @@ theorem ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
     {φ₂ : ∀ x : M, V₂ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂' (Quotient.mk (MulAction.orbitRel G M) x)}
     (hφ₁ : ∀ (g : G) (x : M), φ₁ (g • x) ≍ φ₁ x)
-    (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x)
-    (hm : m ≤ n)
+    (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x) (hm : m ≤ n)
     (hφ₁_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₁')) m
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁') (E := fun q ↦ V₁ q →L[𝕜] V₁' q)
         (Quotient.mk (MulAction.orbitRel G M) x) (φ₁ x)))
@@ -329,16 +308,12 @@ theorem ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
             (bundleTensorMap φ₁ φ₂) (bundleTensorMap_smul_heq hφ₁ hφ₂) p.proj p.2)) := by
   let _ : ∀ q, IsTopologicalAddGroup (V₁' q ⊗[𝕜] V₂' q) := fun _ ↦ inferInstance
   let _ : ∀ q, ContinuousSMul 𝕜 (V₁' q ⊗[𝕜] V₂' q) := fun _ ↦ inferInstance
-  have h₁ := (contMDiff_section_orbitRelQuotientRec_iff (ht := hφ₁) hm).2 hφ₁_smooth
-  have h₂ := (contMDiff_section_orbitRelQuotientRec_iff (ht := hφ₂) hm).2 hφ₂_smooth
-  have hmap := (contMDiff_hom_bundle_iff (IB := I)
-    (bundleTensorMap
-      (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₁' q) φ₁ hφ₁)
-      (MulAction.orbitRelQuotientRec (V := fun q ↦ V₂ q →L[𝕜] V₂' q) φ₂ hφ₂))).1
-    (contMDiff_bundleTensorMap h₁ h₂)
-  refine hmap.congr fun p ↦ congrArg
-    (TotalSpace.mk' (ProjectiveTensor 𝕜 F₁' F₂') (E := fun q ↦ V₁' q ⊗[𝕜] V₂' q) p.proj) ?_
-  rw [← bundleTensorMap_orbitRelQuotientRec]
+  refine ((contMDiff_hom_bundle_iff (IB := I) (bundleTensorMap
+    (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₁' q) φ₁ hφ₁)
+    (MulAction.orbitRelQuotientRec (V := fun q ↦ V₂ q →L[𝕜] V₂' q) φ₂ hφ₂))).1
+    (contMDiff_bundleTensorMap ((contMDiff_section_orbitRelQuotientRec_iff hm).2 hφ₁_smooth)
+      ((contMDiff_section_orbitRelQuotientRec_iff hm).2 hφ₂_smooth))).congr fun p ↦ ?_
+  rw [bundleTensorMap_orbitRelQuotientRec]
 
 /-- If two invariant `C^m` linear families `φ₁` and `φ₂` (`m ≤ n`) are fibrewise bijective
 upstairs, the descent of `bundleTensorMap φ₁ φ₂` underlies a `C^m` diffeomorphism of
@@ -349,8 +324,7 @@ theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
     {φ₂ : ∀ x : M, V₂ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂' (Quotient.mk (MulAction.orbitRel G M) x)}
     (hφ₁ : ∀ (g : G) (x : M), φ₁ (g • x) ≍ φ₁ x)
-    (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x)
-    (hm : m ≤ n)
+    (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x) (hm : m ≤ n)
     (hφ₁_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₁')) m
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁') (E := fun q ↦ V₁ q →L[𝕜] V₁' q)
         (Quotient.mk (MulAction.orbitRel G M) x) (φ₁ x)))
@@ -374,25 +348,14 @@ theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
   rw [exists_bundleDiffeomorph_iff]
   refine ⟨ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
     hφ₁ hφ₂ hm hφ₁_smooth hφ₂_smooth, fun q ↦ ?_⟩
-  induction q using Quotient.inductionOn with
-  | h x =>
-    rw [MulAction.orbitRelQuotientRec_mk]
-    let e₁ : V₁ (Quotient.mk (MulAction.orbitRel G M) x) ≃ₗ[𝕜]
-        V₁' (Quotient.mk (MulAction.orbitRel G M) x) :=
-      LinearEquiv.ofBijective (φ₁ x).toLinearMap (hbij₁ x)
-    let e₂ : V₂ (Quotient.mk (MulAction.orbitRel G M) x) ≃ₗ[𝕜]
-        V₂' (Quotient.mk (MulAction.orbitRel G M) x) :=
-      LinearEquiv.ofBijective (φ₂ x).toLinearMap (hbij₂ x)
-    have hmap : (bundleTensorMap φ₁ φ₂ x :
-        V₁ (Quotient.mk (MulAction.orbitRel G M) x) ⊗[𝕜]
-          V₂ (Quotient.mk (MulAction.orbitRel G M) x) →
-        V₁' (Quotient.mk (MulAction.orbitRel G M) x) ⊗[𝕜]
-          V₂' (Quotient.mk (MulAction.orbitRel G M) x)) =
-        _root_.TensorProduct.congr e₁ e₂ := by
-      ext t : 1
-      exact LinearMap.congr_fun
-        (_root_.TensorProduct.ext' fun v w ↦ by simp [e₁, e₂, bundleTensorMap_tmul]) t
-    simpa only [hmap] using (_root_.TensorProduct.congr e₁ e₂).bijective
+  induction q using Quotient.inductionOn with | h x =>
+  rw [MulAction.orbitRelQuotientRec_mk]
+  let e₁ := LinearEquiv.ofBijective (φ₁ x).toLinearMap (hbij₁ x)
+  let e₂ := LinearEquiv.ofBijective (φ₂ x).toLinearMap (hbij₂ x)
+  convert (_root_.TensorProduct.congr e₁ e₂).bijective
+  ext t : 1
+  exact LinearMap.congr_fun (_root_.TensorProduct.ext' fun v w ↦ by
+    simp [e₁, e₂, bundleTensorMap_tmul]) t
 
 end MapManifold
 
@@ -404,8 +367,7 @@ theorem contMDiff_section_bundleDualTensorHom_orbitRelQuotientRec_iff
     [∀ q, IsModuleTopology 𝕜 (StrongDual 𝕜 (V₁ q) ⊗[𝕜] V₂ q)]
     {τ : ∀ x : M, StrongDual 𝕜 (V₁ (Quotient.mk (MulAction.orbitRel G M) x)) ⊗[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hτ : ∀ (g : G) (x : M), τ (g • x) ≍ τ x)
-    (hm : m ≤ n) :
+    (hτ : ∀ (g : G) (x : M), τ (g • x) ≍ τ x) (hm : m ≤ n) :
     ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
         (fun q ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun q ↦ V₁ q →L[𝕜] V₂ q) q
           (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q)
@@ -418,25 +380,14 @@ theorem contMDiff_section_bundleDualTensorHom_orbitRelQuotientRec_iff
           (E := fun q ↦ StrongDual 𝕜 (V₁ q) ⊗[𝕜] V₂ q)
           (Quotient.mk (MulAction.orbitRel G M) x) (τ x)) := by
   let Φ := bundleDualTensorHomDiffeomorph I m F₁ V₁ F₂ V₂
-  have hcomp :
-      (fun q ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun q ↦ V₁ q →L[𝕜] V₂ q) q
-        (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q)
-          (fun x ↦ bundleDualTensorHom (E₁ := V₁) (E₂ := V₂)
-            (Quotient.mk (MulAction.orbitRel G M) x) (τ x))
-          (MulAction.apply_heq_of_heq
-            (fun q t ↦ bundleDualTensorHom (E₁ := V₁) (E₂ := V₂) q t) hτ) q)) =
-      Φ ∘ fun q ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 (StrongDual 𝕜 F₁) F₂)
-        (E := fun q ↦ StrongDual 𝕜 (V₁ q) ⊗[𝕜] V₂ q) q
-        (MulAction.orbitRelQuotientRec
-          (V := fun q ↦ StrongDual 𝕜 (V₁ q) ⊗[𝕜] V₂ q) τ hτ q) := by
-    ext q : 1
-    simp only [Function.comp_apply, Φ, bundleDualTensorHomDiffeomorph_apply]
-    refine congrArg (TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun q ↦ V₁ q →L[𝕜] V₂ q) q) ?_
-    rw [← bundleDualTensorHom_orbitRelQuotientRec (hτ := hτ) q]
-    simp only [← ContinuousLinearEquiv.coe_coe, bundleDualTensorHomEquiv_toContinuousLinearMap]
-  rw [hcomp, ← contMDiff_section_orbitRelQuotientRec_iff (ht := hτ) hm]
-  exact ⟨fun h ↦ (Φ.symm.contMDiff.comp h).congr fun q ↦ by simp,
-    fun h ↦ Φ.contMDiff.comp h⟩
+  rw [← contMDiff_section_orbitRelQuotientRec_iff (ht := hτ) hm]
+  simp only [← bundleDualTensorHom_orbitRelQuotientRec (hτ := hτ)]
+  exact ⟨fun h ↦ (Φ.symm.contMDiff.comp h).congr fun q ↦ by
+      simp only [Function.comp_apply, Φ, bundleDualTensorHomDiffeomorph_symm_apply]
+      rw [← bundleDualTensorHomEquiv_toContinuousLinearMap (F₁ := F₁) (F₂ := F₂),
+        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply],
+    fun h ↦ (Φ.contMDiff.comp h).congr fun q ↦ by
+      simp [Φ, ← ContinuousLinearEquiv.coe_coe, bundleDualTensorHomEquiv_toContinuousLinearMap]⟩
 
 end Manifold
 

@@ -150,10 +150,8 @@ end DetSmooth
 
 section AlternatingSmooth
 
-variable {ι : Type*} [Fintype ι]
-  {F₁ F₂ F₃ : Type*}
-  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
-  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+variable {ι : Type*} [Fintype ι] {F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
   [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
   {V₁ V₂ V₃ : MulAction.orbitRel.Quotient G M → Type*}
   [∀ q, AddCommGroup (V₁ q)] [∀ q, Module 𝕜 (V₁ q)] [∀ q, TopologicalSpace (V₁ q)]
@@ -173,8 +171,7 @@ theorem ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec
       V₃ (Quotient.mk (MulAction.orbitRel G M) x)}
     {A : ∀ x : M, V₁ (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V₂ (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x)
-    (hA : ∀ (g : G) (x : M), A (g • x) ≍ A x)
+    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x) (hA : ∀ (g : G) (x : M), A (g • x) ≍ A x)
     (hm : m ≤ n)
     (hα_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) m
       (fun x ↦ TotalSpace.mk' (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun q ↦ V₂ q [⋀^ι]→L[𝕜] V₃ q)
@@ -183,8 +180,7 @@ theorem ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun q ↦ V₁ q →L[𝕜] V₂ q)
         (Quotient.mk (MulAction.orbitRel G M) x) (A x)))
     (hfact : m = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
-      intro h
-      first | exact NeZero.ne _ | cases h) :
+      intro h; first | exact NeZero.ne _ | cases h) :
     ContMDiff I (I.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) m
       (fun q ↦ TotalSpace.mk' (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun q ↦ V₁ q [⋀^ι]→L[𝕜] V₃ q) q
         (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q [⋀^ι]→L[𝕜] V₃ q)
@@ -201,9 +197,8 @@ end Manifold
 section TopFormQuotient
 
 variable {G M 𝕜 ι F : Type*} [Group G] [MulAction G M] [TopologicalSpace M]
-  [NontriviallyNormedField 𝕜] [Fintype ι]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-  {V : MulAction.orbitRel.Quotient G M → Type*}
+  [NontriviallyNormedField 𝕜] [Fintype ι] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [FiniteDimensional 𝕜 F] {V : MulAction.orbitRel.Quotient G M → Type*}
   [∀ q, AddCommGroup (V q)] [∀ q, Module 𝕜 (V q)] [∀ q, TopologicalSpace (V q)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
 
@@ -215,8 +210,7 @@ theorem bundleTopForm_compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul
     {α : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x) [⋀^ι]→L[𝕜] 𝕜}
     {φ : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
       V (Quotient.mk (MulAction.orbitRel G M) x)}
-    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x)
-    (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x)
+    (hα : ∀ (g : G) (x : M), α (g • x) ≍ α x) (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x)
     (q : MulAction.orbitRel.Quotient G M) :
     ContinuousAlternatingMap.compContinuousLinearMap
         (MulAction.orbitRelQuotientRec (V := fun q ↦ V q [⋀^ι]→L[𝕜] 𝕜) α hα q)
