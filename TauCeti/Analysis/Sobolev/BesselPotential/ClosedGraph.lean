@@ -18,16 +18,17 @@ into `H^{s,p}(E, F)` is therefore bounded as soon as the tempered distributions 
 depend continuously on the argument.
 
 This is how mapping properties stated for tempered distributions become bounded operators. A
-differential operator `P` with smooth coefficients acts continuously on `𝓢'(E, F)`; if it maps
-`H^{s,p}` into `H^{r,p}`, then the induced linear map `H^{s,p} → H^{r,p}` is bounded, with no
-estimate to prove beyond the membership statement.
+differential operator `P` whose coefficients have temperate growth (smooth, with polynomially
+bounded derivatives) acts continuously on `𝓢'(E, F)`; if it maps `H^{s,p}` into `H^{r,p}`, then
+the induced linear map `H^{s,p} → H^{r,p}` is bounded, with no estimate to prove beyond the
+membership statement.
 
 ## Main results
 
 * `BesselPotentialSpace.continuous_toDistr`: the tempered distribution depends continuously on
   `u ∈ H^{s,p}(E, F)`.
-* `BesselPotentialSpace.continuous_of_continuous_toDistr`: a linear map `T` from a Banach space
-  into `H^{s,p}(E, F)` is continuous when `x ↦ (T x).toDistr` is.
+* `LinearMap.continuous_of_continuous_toDistr`: a linear map `T` from a Banach space into
+  `H^{s,p}(E, F)` is continuous when `x ↦ (T x).toDistr` is.
 -/
 
 public section
@@ -56,6 +57,14 @@ theorem continuous_toDistr :
     ((MeasureTheory.Lp.toTemperedDistributionCLM F _ p).continuous.comp
       (toLpₗᵢ E F s p).continuous)
 
+end BesselPotentialSpace
+
+namespace LinearMap
+
+open BesselPotentialSpace
+
+variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
 /-- **Closed graph criterion for maps into `H^{s,p}`.** A linear map `T` from a Banach space into
 the Bessel-potential space `H^{s,p}(E, F)` is continuous as soon as the tempered distributions
 `(T x).toDistr` depend continuously on `x`. -/
@@ -67,8 +76,8 @@ theorem continuous_of_continuous_toDistr {X : Type*} [NormedAddCommGroup X] [Nor
       {q | q.2.toDistr = (T q.1).toDistr} := by
     ext ⟨x, u⟩
     simp only [LinearMap.mem_graph_iff, SetLike.mem_coe, Set.mem_ofPred_eq]
-    exact ⟨fun h ↦ h ▸ rfl, fun h ↦ ext h⟩
+    exact ⟨fun h ↦ h ▸ rfl, fun h ↦ BesselPotentialSpace.ext h⟩
   rw [hgraph]
   exact isClosed_eq (continuous_toDistr.comp continuous_snd) (hT.comp continuous_fst)
 
-end BesselPotentialSpace
+end LinearMap

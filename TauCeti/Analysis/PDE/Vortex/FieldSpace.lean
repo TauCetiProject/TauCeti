@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Reference
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 public import TauCeti.Analysis.Distribution.Sobolev
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.NormPow
@@ -39,6 +40,10 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
   which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts.
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
+
+For `s ≥ 0`, the fields of `sobolevFields s` are exactly those with Sobolev coordinates
+`Y ∈ H^s(ℂ)⁴` whose `L²` functions are their coordinates
+(`mem_sobolevFields_iff_exists_coeFn_toLp_inclusion`).
 
 Changing the radial cutoff changes the reference by a smooth compactly supported field, so the
 affine space does not depend on the cutoff (`framedFieldSpace_eq`). The vacuum lies in `A_0^s`.
@@ -282,6 +287,21 @@ def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))
 theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
+
+open BesselPotentialSpace in
+/-- **Sobolev coordinates of fields.** For `s ≥ 0`, a real field lies in `H^s` exactly when it
+has complex Sobolev coordinates `Y ∈ H^s(ℂ)⁴` whose `L²` functions are its coordinates. -/
+theorem mem_sobolevFields_iff_exists_coeFn_toLp_inclusion {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ sobolevFields s ↔
+      ∃ Y : Fin 4 → H^{s}(ℂ), ∀ b, (inclusion hs (Y b)).toLp =ᵐ[volume] fun z ↦ (y z b : ℂ) := by
+  refine ⟨fun hy ↦ ?_, fun ⟨Y, hY⟩ ↦ mem_sobolevFields.2 fun b ↦
+    mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion hs (Y b)) (hY b)⟩
+  choose u hu hmem using fun b ↦ mem_realSobolevFunctions.1 (mem_sobolevFields.1 hy b)
+  refine ⟨fun b ↦ (hmem b).toBesselPotentialSpace, fun b ↦ ?_⟩
+  rw [toLp_inclusion_toBesselPotentialSpace hs (hmem b) rfl]
+  filter_upwards [ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (u b), hu b] with z h₁ h₂
+  simp [h₁, h₂]
 
 /-- Every field of `sobolevFields s` is square integrable, whatever the order `s`. -/
 theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}

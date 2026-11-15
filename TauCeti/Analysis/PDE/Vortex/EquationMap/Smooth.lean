@@ -8,11 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Vortex.EquationMap.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 public import TauCeti.Analysis.Sobolev.BesselPotential.ClosedGraph
+public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
@@ -47,7 +47,7 @@ coordinates it is the vortex equation itself
   operator with coefficients of bounded derivatives, which maps `H^(k+2)` into `H^(k+1)`
   (`TemperedDistribution.MemSobolev.lineDerivOp`,
   `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`). It is bounded by the
-  closed graph theorem (`BesselPotentialSpace.continuous_of_continuous_toDistr`).
+  closed graph theorem (`LinearMap.continuous_of_continuous_toDistr`).
 * The quadratic term is a bounded bilinear map `H^(k+2) × H^(k+2) → H^(k+2)` composed with the
   inclusion `H^(k+2) ⊆ H^(k+1)`, because `H^(k+2)(ℂ)` is an algebra
   (`BesselPotentialSpace.mulCLM`).
@@ -77,6 +77,12 @@ zeros of `sobolevEquation f m k` at those coordinates are exactly the `C¹` vort
   equation map is smooth, with derivative the linearized equation.
 * `TauCeti.Vortex.coeFn_toLp_inclusion_sobolevEquation`: on the Sobolev coordinates of a `C¹`
   field of `A_m^(k+2)`, the equation map is the vortex equation defect.
+* `TauCeti.Vortex.toDistr_sobolevReferenceLinearization`,
+  `TauCeti.Vortex.sobolevEquation_apply`, `TauCeti.Vortex.sobolevLinearizedEquation_apply`: the
+  operators on general complex Sobolev fields, as differential expressions on tempered
+  distributions, as the reference defect plus linear and quadratic terms, and by polarization.
+* `TauCeti.Vortex.coeFn_toLp_inclusion_sobolevEquation_zero`: at the origin the equation map is
+  the reference defect.
 * `TauCeti.Vortex.coeFn_toLp_inclusion_sobolevLinearizedEquation`: likewise its derivative is the
   linearized equation.
 * `TauCeti.Vortex.sobolevEquation_eq_zero_iff`: the zeros of the equation map are the vortices.
@@ -210,16 +216,34 @@ bounded operator `H^(k+2)(ℂ)⁴ → H^(k+1)(ℂ)³` on complex Sobolev fields.
 def sobolevReferenceLinearization (f : ContDiffBump (0 : ℝ)) (m k : ℕ) :
     (Fin 4 → H^{(k : ℝ) + 2}(ℂ)) →L[ℂ] Fin 3 → H^{(k : ℝ) + 1}(ℂ) :=
   ContinuousLinearMap.pi fun i ↦
-    ⟨referenceLinearizationAux f m k i, continuous_of_continuous_toDistr _ <| by
-      simp_rw [toDistr_referenceLinearizationAux]
-      exact (continuous_apply i).comp ((distribLinearization f m).continuous.comp
-        (continuous_pi fun b ↦ continuous_toDistr.comp (continuous_apply b)))⟩
+    ⟨referenceLinearizationAux f m k i,
+      (referenceLinearizationAux f m k i).continuous_of_continuous_toDistr <| by
+        simp_rw [toDistr_referenceLinearizationAux]
+        exact (continuous_apply i).comp ((distribLinearization f m).continuous.comp
+          (continuous_pi fun b ↦ continuous_toDistr.comp (continuous_apply b)))⟩
 
-private theorem toDistr_sobolevReferenceLinearization (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
-    (Y : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
+private theorem toDistr_sobolevReferenceLinearization_eq_distribLinearization
+    (f : ContDiffBump (0 : ℝ)) (m k : ℕ) (Y : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
     (sobolevReferenceLinearization f m k Y i).toDistr =
       distribLinearization f m (fun b ↦ (Y b).toDistr) i :=
   toDistr_referenceLinearizationAux f m k i Y
+
+/-- **The linearization at the reference field on tempered distributions.** Write `c_b` for
+multiplication by the coordinate `(x_m)_b` of the reference field. The components of
+`sobolevReferenceLinearization f m k Y` have the tempered distributions
+`∂_I Y₀ - ∂_1 Y₁ + c₂ Y₂ + c₃ Y₃`, `∂_1 Y₂ - ∂_I Y₃ - c₀ Y₃ - c₃ Y₀ - c₁ Y₂ - c₂ Y₁` and
+`∂_1 Y₃ + ∂_I Y₂ + c₀ Y₂ + c₂ Y₀ - c₁ Y₃ - c₃ Y₁`. -/
+theorem toDistr_sobolevReferenceLinearization (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
+    (Y : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
+    (sobolevReferenceLinearization f m k Y i).toDistr =
+      let c (b : Fin 4) := smulLeftCLM ℂ fun z ↦ (referenceField f m z b : ℂ)
+      ![∂_{I} (Y 0).toDistr - ∂_{(1 : ℂ)} (Y 1).toDistr + c 2 (Y 2).toDistr + c 3 (Y 3).toDistr,
+        ∂_{(1 : ℂ)} (Y 2).toDistr - ∂_{I} (Y 3).toDistr - c 0 (Y 3).toDistr - c 3 (Y 0).toDistr -
+          c 1 (Y 2).toDistr - c 2 (Y 1).toDistr,
+        ∂_{(1 : ℂ)} (Y 3).toDistr + ∂_{I} (Y 2).toDistr + c 0 (Y 2).toDistr + c 2 (Y 0).toDistr -
+          c 1 (Y 3).toDistr - c 3 (Y 1).toDistr] i := by
+  rw [toDistr_sobolevReferenceLinearization_eq_distribLinearization]
+  fin_cases i <;> rfl
 
 /-! ### The quadratic term and the equation map -/
 
@@ -245,6 +269,13 @@ private def quadraticForm (k : ℕ) (i : Fin 3) :
   ![(1 / 2 : ℂ) • (mulCoord k 2 2 + mulCoord k 3 3), -(mulCoord k 0 3 + mulCoord k 1 2),
     mulCoord k 0 2 - mulCoord k 1 3] i
 
+private theorem quadraticForm_apply (k : ℕ) (Y W : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
+    quadraticForm k i Y W =
+      let mul := mulCLM (finrank_lt_two_mul_add_two k)
+      ![(1 / 2 : ℂ) • (mul (Y 2) (W 2) + mul (Y 3) (W 3)), -(mul (Y 0) (W 3) + mul (Y 1) (W 2)),
+        mul (Y 0) (W 2) - mul (Y 1) (W 3)] i := by
+  fin_cases i <;> rfl
+
 /-- The reference defect `equation x_m`, a Schwartz function. -/
 private def referenceDefect (f : ContDiffBump (0 : ℝ)) (m : ℕ) (i : Fin 3) : 𝓢(ℂ, ℂ) :=
   HasCompactSupport.toSchwartzMap (f := fun z ↦ (equation (referenceField f m) z i : ℂ))
@@ -264,6 +295,27 @@ def sobolevEquation (f : ContDiffBump (0 : ℝ)) (m k : ℕ) (Y : Fin 4 → H^{(
     sobolevReferenceLinearization f m k Y i +
       inclusion (natCast_add_one_le_add_two k) (quadraticForm k i Y Y)
 
+private theorem sobolevEquation_apply_eq_quadraticForm (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
+    (Y : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
+    sobolevEquation f m k Y i =
+      sobolevEquation f m k 0 i + sobolevReferenceLinearization f m k Y i +
+        inclusion (natCast_add_one_le_add_two k) (quadraticForm k i Y Y) := by
+  simp [sobolevEquation]
+
+/-- **The vortex equation map in components.** `sobolevEquation f m k Y` is its value at `0`, the
+reference defect, plus the linearization at the reference field applied to `Y`, plus the quadratic
+term with components `(Y₂² + Y₃²) / 2`, `-(Y₀ Y₃ + Y₁ Y₂)` and `Y₀ Y₂ - Y₁ Y₃`, computed in the
+algebra `H^(k+2)(ℂ)` and included into `H^(k+1)(ℂ)`. -/
+theorem sobolevEquation_apply (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
+    (Y : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
+    sobolevEquation f m k Y i =
+      sobolevEquation f m k 0 i + sobolevReferenceLinearization f m k Y i +
+        inclusion (by linarith)
+          (let mul := mulCLM (finrank_real_complex_lt_two_mul (s := (k : ℝ) + 2) (by linarith))
+          ![(1 / 2 : ℂ) • (mul (Y 2) (Y 2) + mul (Y 3) (Y 3)), -(mul (Y 0) (Y 3) + mul (Y 1) (Y 2)),
+            mul (Y 0) (Y 2) - mul (Y 1) (Y 3)] i) := by
+  rw [sobolevEquation_apply_eq_quadraticForm, quadraticForm_apply]
+
 /-- **The linearized vortex equation on the Sobolev scale.** The derivative of
 `TauCeti.Vortex.sobolevEquation f m k` at `Y`: the linearization at the reference field plus the
 variation `W ↦ B Y W + B W Y` of the quadratic term. On real coordinates it is the linearized
@@ -276,18 +328,36 @@ def sobolevLinearizedEquation (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
       (quadraticForm k i Y + (quadraticForm k i).flip Y)
 
 /-- The linearized equation at `Y` applied to `W`. -/
-private theorem sobolevLinearizedEquation_apply (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
-    (Y W : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
+private theorem sobolevLinearizedEquation_apply_eq_quadraticForm (f : ContDiffBump (0 : ℝ))
+    (m k : ℕ) (Y W : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) (i : Fin 3) :
     sobolevLinearizedEquation f m k Y W i = sobolevReferenceLinearization f m k W i +
       inclusion (by linarith) (quadraticForm k i Y W + quadraticForm k i W Y) :=
   (rfl)
+
+/-- **The linearized equation by polarization.** The linearized equation at `Y` applied to `W` is
+the linearization at the reference field applied to `W`, plus the polarization
+`E (Y + W) - E Y - E W + E 0` of `E = sobolevEquation f m k`, which is the variation of the
+quadratic term. -/
+theorem sobolevLinearizedEquation_apply (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
+    (Y W : Fin 4 → H^{(k : ℝ) + 2}(ℂ)) :
+    sobolevLinearizedEquation f m k Y W = sobolevReferenceLinearization f m k W +
+      (sobolevEquation f m k (Y + W) - sobolevEquation f m k Y - sobolevEquation f m k W +
+        sobolevEquation f m k 0) := by
+  ext1 i
+  rw [Pi.add_apply, Pi.add_apply, Pi.sub_apply, Pi.sub_apply,
+    sobolevLinearizedEquation_apply_eq_quadraticForm,
+    sobolevEquation_apply_eq_quadraticForm (Y := Y + W),
+    sobolevEquation_apply_eq_quadraticForm (Y := Y),
+    sobolevEquation_apply_eq_quadraticForm (Y := W)]
+  simp only [map_add, add_apply, Pi.add_apply]
+  abel
 
 /-- At the reference field the linearized equation is the linearization at the reference field. -/
 @[simp]
 theorem sobolevLinearizedEquation_zero (f : ContDiffBump (0 : ℝ)) (m k : ℕ) :
     sobolevLinearizedEquation f m k 0 = sobolevReferenceLinearization f m k := by
   ext W i : 2
-  simp [sobolevLinearizedEquation_apply]
+  simp [sobolevLinearizedEquation_apply_eq_quadraticForm]
 
 /-- **The vortex equation map is differentiable**, with derivative the linearized equation. -/
 theorem hasFDerivAt_sobolevEquation (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
@@ -302,7 +372,7 @@ theorem hasFDerivAt_sobolevEquation (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
     (referenceDefect f m i)) Y).add (((ContinuousLinearMap.proj i).comp
       (sobolevReferenceLinearization f m k)).hasFDerivAt)).add hQ).congr_fderiv ?_
   ext W : 1
-  simp [sobolevLinearizedEquation_apply]
+  simp [sobolevLinearizedEquation_apply_eq_quadraticForm]
 
 /-- The derivative of the vortex equation map is the linearized equation. -/
 theorem fderiv_sobolevEquation (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
@@ -435,7 +505,7 @@ private theorem isRep_sobolevReferenceLinearization (f : ContDiffBump (0 : ℝ))
   have hd (b : Fin 4) (v : ℂ) := (hW b).lineDerivOp (by positivity : (0 : ℝ) ≤ (k : ℝ) + 1)
     (contDiff_euclidean.1 hwc b) (by convert mem_sobolevFields.1 hw b using 2; ring) v
   have hc (a b : Fin 4) := (hW b).smulLeft f m a
-  rw [toDistr_sobolevReferenceLinearization]
+  rw [toDistr_sobolevReferenceLinearization_eq_distribLinearization]
   rcases (by decide : ∀ j : Fin 3, j = 0 ∨ j = 1 ∨ j = 2) i with rfl | rfl | rfl
   · rw [distribLinearization_apply_zero]
     refine ((((hd 0 I).sub (hd 1 1)).add (hc 2 2)).add (hc 3 3)).congr (.of_forall fun z ↦ ?_)
@@ -450,20 +520,6 @@ private theorem isRep_sobolevReferenceLinearization (f : ContDiffBump (0 : ℝ))
       (hc 3 1)).congr (.of_forall fun z ↦ ?_)
     simp [referenceCoeff]
     ring
-
-/-- **Sobolev coordinates of fields.** For `s ≥ 0`, a real field lies in `H^s` exactly when it
-has complex Sobolev coordinates `Y ∈ H^s(ℂ)⁴` whose `L²` functions are its coordinates. -/
-theorem mem_sobolevFields_iff_exists_coeFn_toLp_inclusion {s : ℝ} (hs : 0 ≤ s)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
-    y ∈ sobolevFields s ↔
-      ∃ Y : Fin 4 → H^{s}(ℂ), ∀ b, (inclusion hs (Y b)).toLp =ᵐ[volume] fun z ↦ (y z b : ℂ) := by
-  refine ⟨fun hy ↦ ?_, fun ⟨Y, hY⟩ ↦ mem_sobolevFields.2 fun b ↦
-    mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion hs (Y b)) (hY b)⟩
-  choose u hu hmem using fun b ↦ mem_realSobolevFunctions.1 (mem_sobolevFields.1 hy b)
-  refine ⟨fun b ↦ (hmem b).toBesselPotentialSpace, fun b ↦ ?_⟩
-  rw [toLp_inclusion_toBesselPotentialSpace hs (hmem b) rfl]
-  filter_upwards [ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (u b), hu b] with z h₁ h₂
-  simp [h₁, h₂]
 
 /-- **The equation map on real fields is the vortex equation.** Let `x` be a `C¹` field and
 `Y ∈ H^(k+2)(ℂ)⁴` the Sobolev coordinates of `x - x_m`, so that `x ∈ A_m^(k+2)`. Then the
@@ -497,6 +553,17 @@ theorem coeFn_toLp_inclusion_sobolevEquation {f : ContDiffBump (0 : ℝ)} {m k :
   rw [hxy, h]
   fin_cases i <;> simp [bilinearTerm, y] <;> ring
 
+/-- **The reference defect.** At the origin `Y = 0`, which is the reference field `x_m` itself,
+the components of `sobolevEquation f m k 0` are those of the reference defect `equation x_m`. -/
+theorem coeFn_toLp_inclusion_sobolevEquation_zero (f : ContDiffBump (0 : ℝ)) (m k : ℕ)
+    (i : Fin 3) :
+    (inclusion (by positivity : (0 : ℝ) ≤ (k : ℝ) + 1) (sobolevEquation f m k 0 i)).toLp =ᵐ[volume]
+      fun z ↦ (equation (referenceField f m) z i : ℂ) := by
+  refine coeFn_toLp_inclusion_sobolevEquation ((contDiff_referenceField f m).of_le (by simp))
+    (fun b ↦ ?_) i
+  rw [Pi.zero_apply, map_zero, toLp_zero]
+  simpa [Pi.zero_def] using Lp.coeFn_zero (E := ℂ) (p := 2) (μ := (volume : Measure ℂ))
+
 /-- **The linearized equation map on real fields.** Let `Y` be the Sobolev coordinates of
 `x - x_m`, and let `W` be the Sobolev coordinates of a `C¹` variation `w`. Then the components of
 `sobolevLinearizedEquation f m k Y W` are those of the linearized equation
@@ -517,7 +584,7 @@ theorem coeFn_toLp_inclusion_sobolevLinearizedEquation {f : ContDiffBump (0 : �
   have hw : w ∈ sobolevFields ((k : ℝ) + 2) :=
     (mem_sobolevFields_iff_exists_coeFn_toLp_inclusion (by positivity)).2 ⟨W, hW⟩
   refine IsRep.coeFn_toLp_inclusion _ ?_
-  rw [sobolevLinearizedEquation_apply, toDistr_add, toDistr_inclusion, toDistr_add]
+  rw [sobolevLinearizedEquation_apply_eq_quadraticForm, toDistr_add, toDistr_inclusion, toDistr_add]
   refine ((isRep_sobolevReferenceLinearization f m k hw hwc hW' i).add
     ((isRep_quadraticForm k hY' hW' i).add (isRep_quadraticForm k hW' hY' i))).congr
       (.of_forall fun z ↦ ?_)
