@@ -14,11 +14,11 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 For a bounded forcing term `f : ℝ → E → F`, the Duhamel heat potential
 `w(t, x) = ∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds` is `C¹` in space at every positive time, with
 `‖D w(t, x)‖ ≤ C M √t` (`TauCeti.exists_norm_fderiv_heatDuhamelPotential_le`). This file shows
-that when `f` is moreover jointly continuous and `F` is complete, the spatial gradient
-`(t, x) ↦ D w(t, x)` is jointly continuous on `[0, ∞) × E`. No spatial Hölder continuity of `f`
-is needed. Together with the gradient bound this makes `D w` a bounded continuous field on every
-closed slab `E × [0, T]`, which is the gradient field required of a map in the order-two
-parabolic Hölder space.
+that when `f` is moreover jointly continuous, the spatial gradient `(t, x) ↦ D w(t, x)` is
+jointly continuous on `[0, ∞) × E`. No spatial Hölder continuity of `f` is needed, and no
+completeness of `F`: for incomplete `F` the potential vanishes. Together with the gradient bound
+this makes `D w` a bounded continuous field on every closed slab `E × [0, T]`, which is the
+gradient field required of a map in the order-two parabolic Hölder space.
 
 The time integrand `D(K_{t-s} ⋆ f(s, ·))(x)` is singular at `s = t`, with a singularity that moves
 with `t`. Two changes of variables remove both difficulties. By the parabolic scaling of the heat
@@ -94,9 +94,8 @@ private def gradientIntegrand (f : ℝ → E → F) (p : ℝ × E) (τ : ℝ) :
 
 /-- For `0 ≤ t ≤ T`, the gradient of the Duhamel potential is the integral over `[0, T]` of the
 cut-off integrand. -/
-private theorem iteratedFDeriv_one_heatDuhamelPotential_eq [CompleteSpace F]
-    (hf : Continuous (Function.uncurry f)) (hM : ∀ s y, ‖f s y‖ ≤ M) {T t : ℝ} (ht : 0 ≤ t)
-    (htT : t ≤ T) (x : E) :
+private theorem iteratedFDeriv_one_heatDuhamelPotential_eq (hf : Continuous (Function.uncurry f))
+    (hM : ∀ s y, ‖f s y‖ ≤ M) {T t : ℝ} (ht : 0 ≤ t) (htT : t ≤ T) (x : E) :
     iteratedFDeriv ℝ 1 (heatDuhamelPotential f t) x =
       ∫ τ in 0..T, gradientIntegrand f (t, x) τ := by
   have hrhs : ∫ τ in 0..T, gradientIntegrand f (t, x) τ =
@@ -174,8 +173,8 @@ private theorem continuous_integral_gradientIntegrand (hf : Continuous (Function
 /-- **Continuity of the gradient of the Duhamel potential.** If `f` is jointly continuous and
 bounded, then the spatial gradient `(t, x) ↦ D w(t, x)` of its Duhamel heat potential `w` is
 jointly continuous on `[0, ∞) × E`. -/
-theorem continuousOn_fderiv_heatDuhamelPotential [CompleteSpace F]
-    (hf : Continuous (Function.uncurry f)) (hM : ∀ s y, ‖f s y‖ ≤ M) :
+theorem continuousOn_fderiv_heatDuhamelPotential (hf : Continuous (Function.uncurry f))
+    (hM : ∀ s y, ‖f s y‖ ≤ M) :
     ContinuousOn (fun p : ℝ × E => fderiv ℝ (heatDuhamelPotential f p.1) p.2) (Ici 0 ×ˢ univ) := by
   have hcurry (g : E → F) (x : E) :
       fderiv ℝ g x = continuousMultilinearCurryFin1 ℝ E F (iteratedFDeriv ℝ 1 g x) := by
