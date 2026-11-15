@@ -31,12 +31,16 @@ induces a homomorphism of algebraic `K₁`, functorially.
   `u ↦ u ⊕ 1`, for `m ≤ n`.
 * `TauCeti.StableGeneralLinearGroup`: the direct limit `GL_∞(A)` of the groups `GL (Fin n) A`.
 * `TauCeti.StableGeneralLinearGroup.of`: the canonical homomorphism `GL (Fin n) A →* GL_∞(A)`.
+* `TauCeti.StableGeneralLinearGroup.ofUnits`: the `1 × 1` unit embedding `Aˣ →* GL_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.lift`: the universal property of `GL_∞(A)`, for families of
   homomorphisms compatible with stabilization.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup`: the stable elementary subgroup
   `E_∞(A)`.
 * `TauCeti.AlgebraicK1`: algebraic `K₁(A)`, the abelianization of `GL_∞(A)`.
 * `TauCeti.AlgebraicK1.mk`: the class in `K₁(A)` of an invertible matrix.
+* `TauCeti.AlgebraicK1.ofUnits`, `TauCeti.AlgebraicK1.ofUnitsAbelianization`: the canonical
+  homomorphisms `Aˣ →* K₁(A)` and `(Aˣ)ᵃᵇ →* K₁(A)` sending a unit to the class of its `1 × 1`
+  matrix.
 * `TauCeti.AlgebraicK1.lift`: the universal property of `K₁(A)`, for families of homomorphisms
   to a commutative group compatible with stabilization.
 * `TauCeti.AlgebraicK1.quotientElementarySubgroupEquiv`: `GL_∞(A) / E_∞(A) ≃* K₁(A)`.
@@ -52,6 +56,14 @@ induces a homomorphism of algebraic `K₁`, functorially.
   commutator subgroup of `GL_∞(A)`.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`: an invertible matrix has trivial class in `K₁(A)` exactly
   when some stabilization of it is elementary.
+* `RingHom.unitsMap_mapMatrix_scalar`: entrywise mapping along a semiring homomorphism preserves
+  invertible scalar matrices.
+* `TauCeti.scalar_two_neg_one_mem_elementarySubgroup`: `-I₂` lies in `E₂(A)` over any ring `A`.
+* `TauCeti.StableGeneralLinearGroup.ofUnits_injective`: the `1 × 1` unit embedding `Aˣ →* GL_∞(A)`
+  is injective over any ring `A`.
+* `TauCeti.AlgebraicK1.mk_conj`, `TauCeti.AlgebraicK1.mk_diagGL`,
+  `TauCeti.AlgebraicK1.mk_scalar`: conjugation invariance and the classes of diagonal and scalar
+  matrices in `K₁(A)`.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
   functoriality of algebraic `K₁`.
 
@@ -61,6 +73,8 @@ induces a homomorphism of algebraic `K₁`, functorially.
   §3, Lemma 3.1 (Whitehead) and the definition of `K₁` following it.
 * J. Rosenberg, *Algebraic K-Theory and Its Applications*, GTM 147 (1994), §2.1, Definition
   2.1.1 and Proposition 2.1.4.
+* C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, GSM 145 (2013),
+  Chapter III, §1.
 -/
 
 public section
@@ -70,6 +84,22 @@ noncomputable section
 open Matrix
 
 open scoped commutatorElement
+
+namespace RingHom
+
+/-- Mapping an invertible scalar matrix entrywise along a semiring homomorphism gives the scalar
+matrix of the mapped unit. This generalizes `Matrix.GeneralLinearGroup.map_scalar` from commutative
+rings to arbitrary semirings. -/
+theorem unitsMap_mapMatrix_scalar {A B n : Type*} [Semiring A] [Semiring B]
+    [DecidableEq n] [Fintype n] (f : A →+* B) (u : Aˣ) :
+    Units.map (f.mapMatrix (m := n)).toMonoidHom (Matrix.GeneralLinearGroup.scalar n u) =
+      Matrix.GeneralLinearGroup.scalar n (Units.map (f : A →* B) u) := by
+  ext i j
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · simp [hij]
+
+end RingHom
 
 namespace TauCeti
 
@@ -325,6 +355,12 @@ variable (A) in
 def mk (n : ℕ) : GL (Fin n) A →* AlgebraicK1 A :=
   Group.Abelianization.of.comp (StableGeneralLinearGroup.of A n)
 
+/-- Projecting the stable image of an invertible matrix to the abelianization gives its class in
+`K₁(A)`. -/
+theorem abelianizationOf_of (n : ℕ) (u : GL (Fin n) A) :
+    Group.Abelianization.of (StableGeneralLinearGroup.of A n u) = mk A n u :=
+  (rfl)
+
 /-- The class of an invertible matrix is unchanged by stabilization. -/
 @[simp]
 theorem mk_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) A) :
@@ -447,5 +483,208 @@ theorem map_map (f : A →+* B) (g : B →+* C) (x : AlgebraicK1 A) :
 end AlgebraicK1
 
 end Map
+
+/-! ## Units and diagonal matrices -/
+
+/-- Over a trivial ring, the stable general linear group is trivial; Mathlib's
+`Group.instUniqueAbelianization` then makes `AlgebraicK1 A` trivial as well. -/
+instance StableGeneralLinearGroup.instUniqueOfSubsingleton [Subsingleton A] :
+    Unique (StableGeneralLinearGroup A) where
+  default := 1
+  uniq x := by
+    obtain ⟨n, u, rfl⟩ := exists_of x
+    simpa only [map_one] using congrArg (of A n) (Subsingleton.elim u 1)
+
+/-- Stabilizing a `1 × 1` scalar matrix to size `n + 1` places that unit in the `(0, 0)` entry and
+`1` elsewhere along the diagonal. -/
+theorem stabilizeGL_one_scalar (n : ℕ) (u : Aˣ) :
+    stabilizeGL A (Nat.le_add_left 1 n) (Matrix.GeneralLinearGroup.scalar (Fin 1) u) =
+      diagGL (Pi.mulSingle (0 : Fin (n + 1)) u) := by
+  ext p q
+  rcases eq_or_ne p 0 with rfl | hp
+  · rcases eq_or_ne q 0 with rfl | hq
+    · simp [coe_stabilizeGL_apply]
+    · simp [coe_stabilizeGL_apply, hq, hq.symm]
+  · simp [coe_stabilizeGL_apply, Matrix.one_apply, hp]
+
+/-- Over any ring `A`, the `2 × 2` negative identity `-I₂ = scalar (Fin 2) (-1)` lies in the
+elementary subgroup `E₂(A)`, being the reindexed Whitehead block matrix `(-1) ⊕ (-1)⁻¹`. -/
+theorem scalar_two_neg_one_mem_elementarySubgroup :
+    Matrix.GeneralLinearGroup.scalar (Fin 2) (-1 : Aˣ) ∈ elementarySubgroup (Fin 2) A := by
+  let u := Matrix.GeneralLinearGroup.scalar (Fin 1) (-1 : Aˣ)
+  have hu : u⁻¹ = u :=
+    inv_eq_of_mul_eq_one_right (by rw [← map_mul, neg_mul_neg, one_mul, map_one])
+  have heq : Matrix.GeneralLinearGroup.scalar (Fin 2) (-1 : Aˣ) =
+      (finSumFinEquiv (m := 1) (n := 1)).reindexGL A (fromBlocksGL (u, u⁻¹)) := by
+    ext i j
+    obtain ⟨i' | i', rfl⟩ := (finSumFinEquiv (m := 1) (n := 1)).surjective i <;>
+      obtain ⟨j' | j', rfl⟩ := (finSumFinEquiv (m := 1) (n := 1)).surjective j <;>
+      simp [u, hu, Subsingleton.elim i' 0, Subsingleton.elim j' 0]
+  rw [heq, ← Equiv.map_reindexGL_elementarySubgroup (finSumFinEquiv (m := 1) (n := 1))]
+  exact ⟨_, fromBlocksGL_inv_mem_elementarySubgroup u, rfl⟩
+
+namespace StableGeneralLinearGroup
+
+variable (A) in
+/-- Embedding of the units `Aˣ` into `GL_∞(A)` as `1 × 1` invertible matrices. -/
+def ofUnits : Aˣ →* StableGeneralLinearGroup A :=
+  (of A 1).comp (Matrix.GeneralLinearGroup.scalar (Fin 1))
+
+/-- `ofUnits A` sends a unit to its `1 × 1` scalar matrix in `GL_∞(A)`. -/
+theorem ofUnits_def (u : Aˣ) :
+    ofUnits A u = of A 1 (Matrix.GeneralLinearGroup.scalar (Fin 1) u) :=
+  (rfl)
+
+/-- A `1 × 1` invertible scalar matrix represents the corresponding unit in `GL_∞(A)`. -/
+@[simp]
+theorem of_one_scalar (u : Aˣ) :
+    of A 1 (Matrix.GeneralLinearGroup.scalar (Fin 1) u) = ofUnits A u :=
+  (rfl)
+
+/-- Placing a unit in the `(0, 0)` diagonal entry of size `n + 1` represents `ofUnits A u` in
+`GL_∞(A)`. -/
+@[simp]
+theorem of_diagGL_mulSingle_zero (n : ℕ) (u : Aˣ) :
+    of A (n + 1) (diagGL (Pi.mulSingle (0 : Fin (n + 1)) u)) = ofUnits A u := by
+  rw [← stabilizeGL_one_scalar, of_stabilizeGL, of_one_scalar]
+
+/-- The `1 × 1` unit embedding `Aˣ →* GL_∞(A)` is injective over any ring `A`. -/
+theorem ofUnits_injective : Function.Injective (ofUnits A) := by
+  refine (of_injective 1).comp fun u₁ u₂ h ↦ Units.ext ?_
+  exact Matrix.scalar_inj.1 (congrArg Units.val h)
+
+end StableGeneralLinearGroup
+
+namespace AlgebraicK1
+
+variable (A) in
+/-- Canonical homomorphism `Aˣ →* K₁(A)` sending a unit to the class of its `1 × 1` matrix. -/
+def ofUnits : Aˣ →* AlgebraicK1 A :=
+  (mk A 1).comp (Matrix.GeneralLinearGroup.scalar (Fin 1))
+
+/-- `ofUnits A` sends a unit to the class of its `1 × 1` scalar matrix in `K₁(A)`. -/
+theorem ofUnits_def (u : Aˣ) :
+    ofUnits A u = mk A 1 (Matrix.GeneralLinearGroup.scalar (Fin 1) u) :=
+  (rfl)
+
+/-- The projection `GL_∞(A) →* K₁(A)` sends `StableGeneralLinearGroup.ofUnits A u` to
+`AlgebraicK1.ofUnits A u`. -/
+@[simp]
+theorem abelianizationOf_ofUnits (u : Aˣ) :
+    Group.Abelianization.of (StableGeneralLinearGroup.ofUnits A u) = ofUnits A u :=
+  (rfl)
+
+variable (A) in
+/-- Canonical homomorphism `(Aˣ)ᵃᵇ →* K₁(A)` induced by `TauCeti.AlgebraicK1.ofUnits`. -/
+def ofUnitsAbelianization : Group.Abelianization Aˣ →* AlgebraicK1 A :=
+  Group.Abelianization.lift (ofUnits A)
+
+/-- `ofUnitsAbelianization A` sends the abelianization class of a unit `u` to `ofUnits A u`. -/
+@[simp]
+theorem ofUnitsAbelianization_of (u : Aˣ) :
+    ofUnitsAbelianization A (Group.Abelianization.of u) = ofUnits A u :=
+  Group.Abelianization.lift_apply_of _ u
+
+/-- Conjugating an invertible matrix does not change its class in algebraic `K₁`. -/
+theorem mk_conj (n : ℕ) (g u : GL (Fin n) A) : mk A n (g * u * g⁻¹) = mk A n u := by
+  rw [map_mul, map_mul, map_inv, mul_right_comm, mul_inv_cancel, one_mul]
+
+/-- Relabelling rows and columns by the same permutation does not change the class in algebraic
+`K₁`. -/
+@[simp]
+theorem mk_reindexGL_perm (n : ℕ) (σ : Equiv.Perm (Fin n)) (u : GL (Fin n) A) :
+    mk A n (σ.reindexGL A u) = mk A n u := by
+  rw [← permutationGL_mul_mul_inv, mk_conj]
+
+/-- A diagonal matrix with `u` in position `i` and `1` elsewhere has class `ofUnits A u` in
+`K₁(A)`. -/
+theorem mk_diagGL_mulSingle {n : ℕ} (i : Fin n) (u : Aˣ) :
+    mk A n (diagGL (Pi.mulSingle i u)) = ofUnits A u := by
+  cases n with
+  | zero => exact i.elim0
+  | succ m =>
+    have hswap : diagGL (Pi.mulSingle i u) =
+        permutationGL (k := A) (Equiv.swap 0 i) * diagGL (Pi.mulSingle 0 u) *
+          (permutationGL (k := A) (Equiv.swap 0 i))⁻¹ := by
+      rw [permutationGL_mul_diagGL_mul_inv]
+      congr 1
+      ext j
+      rcases eq_or_ne j i with rfl | hji
+      · simp
+      · rcases eq_or_ne j 0 with rfl | hj0
+        · simp [Ne.symm hji]
+        · simp [Equiv.swap_apply_def, hji, hj0]
+    rw [hswap, mk_conj, ← stabilizeGL_one_scalar, mk_stabilizeGL, ofUnits_def]
+
+/-- The class in `K₁(A)` of an invertible diagonal matrix is the product of the unit classes of its
+diagonal entries, even when `A` is noncommutative. -/
+@[simp]
+theorem mk_diagGL {n : ℕ} (t : Fin n → Aˣ) :
+    mk A n (diagGL t) = ∏ i, ofUnits A (t i) := by
+  suffices ∀ s : Finset (Fin n),
+      mk A n (diagGL fun j ↦ if j ∈ s then t j else 1) = ∏ i ∈ s, ofUnits A (t i) by
+    simpa using this Finset.univ
+  intro s
+  induction s using Finset.cons_induction with
+  | empty =>
+    simp only [Finset.notMem_empty, ↓reduceIte, Finset.prod_empty]
+    exact map_one ((mk A n).comp diagGL)
+  | cons i s hi ih =>
+    have hmul : (fun j ↦ if j ∈ Finset.cons i s hi then t j else 1) =
+        Pi.mulSingle i (t i) * fun j ↦ if j ∈ s then t j else 1 := by
+      ext j
+      rcases eq_or_ne j i with rfl | hji
+      · simp [hi]
+      · simp [hji]
+    rw [hmul, map_mul, map_mul, mk_diagGL_mulSingle, ih, Finset.prod_cons]
+
+/-- The class in `K₁(A)` of an `n × n` invertible scalar matrix `u · Iₙ` is `(ofUnits A u) ^ n`. -/
+@[simp]
+theorem mk_scalar (n : ℕ) (u : Aˣ) :
+    mk A n (Matrix.GeneralLinearGroup.scalar (Fin n) u) = ofUnits A u ^ n := by
+  rw [← diagGL_const, mk_diagGL, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
+/-- A `1 × 1` invertible scalar matrix has class `ofUnits A u` in `K₁(A)`. -/
+theorem mk_one_scalar (u : Aˣ) :
+    mk A 1 (Matrix.GeneralLinearGroup.scalar (Fin 1) u) = ofUnits A u :=
+  (rfl)
+
+/-- Over any ring `A`, the class of `-1 ∈ Aˣ` in `K₁(A)` squares to `1`. -/
+@[simp]
+theorem ofUnits_neg_one_sq : ofUnits A (-1 : Aˣ) ^ 2 = 1 := by
+  rw [← map_pow, sq, neg_mul_neg, one_mul, map_one]
+
+section MapUnits
+
+variable {B : Type*} [Ring B]
+
+/-- `TauCeti.AlgebraicK1.ofUnits` is natural with respect to ring homomorphisms. -/
+@[simp]
+theorem map_ofUnits (f : A →+* B) (u : Aˣ) :
+    map f (ofUnits A u) = ofUnits B (Units.map (f : A →* B) u) := by
+  rw [ofUnits_def, ofUnits_def, map_mk, f.unitsMap_mapMatrix_scalar]
+
+/-- Composition form of `TauCeti.AlgebraicK1.map_ofUnits`. -/
+theorem map_comp_ofUnits (f : A →+* B) :
+    (map f).comp (ofUnits A) = (ofUnits B).comp (Units.map (f : A →* B)) :=
+  MonoidHom.ext (map_ofUnits f)
+
+/-- Composition form of naturality for `TauCeti.AlgebraicK1.ofUnitsAbelianization`. -/
+theorem map_comp_ofUnitsAbelianization (f : A →+* B) :
+    (map f).comp (ofUnitsAbelianization A) =
+      (ofUnitsAbelianization B).comp (Group.Abelianization.map (Units.map (f : A →* B))) := by
+  refine Group.Abelianization.hom_ext _ _ (MonoidHom.ext fun u ↦ ?_)
+  simp
+
+/-- `TauCeti.AlgebraicK1.ofUnitsAbelianization` is natural with respect to ring homomorphisms. -/
+@[simp]
+theorem map_ofUnitsAbelianization (f : A →+* B) (x : Group.Abelianization Aˣ) :
+    map f (ofUnitsAbelianization A x) =
+      ofUnitsAbelianization B (Group.Abelianization.map (Units.map (f : A →* B)) x) :=
+  DFunLike.congr_fun (map_comp_ofUnitsAbelianization f) x
+
+end MapUnits
+
+end AlgebraicK1
 
 end TauCeti
