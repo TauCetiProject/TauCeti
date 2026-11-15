@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
-public import TauCeti.RingTheory.Huber.QuotientMapping
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.RingTheory.Etale.Basic
 import TauCeti.RingTheory.Etale.Idempotent
@@ -24,10 +23,8 @@ transitivity of integrality on plus rings.
 Because the underlying ring map of a finite étale morphism `ψ : (A, A⁺) → (B, B⁺)` is formally
 étale and `ψ.exists_hom` upgrades every `A`-algebra lift out of `B` to a morphism of Huber pairs,
 finite étale morphisms of Huber pairs satisfy unique infinitesimal lifting along square-zero ideal
-quotients (`TauCeti.Huber.Pair.Hom.IsFiniteEtale.existsUnique_of_sqZero_quotient`) and more
-generally along quotient mappings with square-zero kernel
-(`eq_of_isQuotientMapping_sqZero_ker`, `exists_of_isQuotientMapping_sqZero_ker`). None of these
-result statements require completeness, separatedness, a Tate hypothesis, or sheafiness.
+quotients (`TauCeti.Huber.Pair.Hom.IsFiniteEtale.existsUnique_of_sqZero_quotient`). None of these
+results require completeness, separatedness, a Tate hypothesis, or sheafiness.
 
 ## References
 
@@ -165,52 +162,6 @@ theorem Hom.IsFiniteEtale.existsUnique_of_sqZero_quotient {ψ : Hom S T} (hψ : 
   obtain ⟨β, hβ₁, hβ₂⟩ := hψ.exists_of_sqZero_quotient hI α β₀ hcomm
   exact ⟨β, ⟨hβ₁, hβ₂⟩, fun β' ⟨hβ'₁, hβ'₂⟩ ↦
     hψ.eq_of_sqZero_quotient hI (hβ'₁.trans hβ₁.symm) (hβ'₂.trans hβ₂.symm)⟩
-
-/-- Uniqueness of Huber-pair lifts along any quotient mapping `q` whose kernel is square-zero. -/
-theorem Hom.IsFiniteEtale.eq_of_isQuotientMapping_sqZero_ker {ψ : Hom S T}
-    (hψ : ψ.IsFiniteEtale)
-    {D : Type*} [CommRing D] [TopologicalSpace D] [IsTopologicalRing D] [IsHuberRing D]
-    {V : Pair D} {q : Hom U V} (hq : q.IsQuotientMapping)
-    (hker : RingHom.ker q.toRingHom ^ 2 = ⊥) {σ₁ σ₂ : Hom T U}
-    (hψ_eq : σ₁.comp ψ = σ₂.comp ψ) (hq_eq : q.comp σ₁ = q.comp σ₂) :
-    σ₁ = σ₂ := by
-  refine hψ.eq_of_sqZero_quotient hker hψ_eq ?_
-  have hcomp : hq.quotientKerInverse.comp q = quotientHom U (RingHom.ker q.toRingHom) :=
-    calc
-      hq.quotientKerInverse.comp q =
-          hq.quotientKerInverse.comp ((q.quotientLift _ le_rfl).comp (quotientHom U _)) :=
-        congrArg hq.quotientKerInverse.comp (Hom.quotientLift_comp_quotientHom _ q le_rfl).symm
-      _ = quotientHom U (RingHom.ker q.toRingHom) := by
-        rw [← Hom.comp_assoc, hq.quotientKerInverse_comp_quotientLift, Hom.id_comp]
-  simpa only [← Hom.comp_assoc, hcomp] using congrArg hq.quotientKerInverse.comp hq_eq
-
-/-- Existence of Huber-pair lifts along any quotient mapping `q` whose kernel is square-zero. -/
-theorem Hom.IsFiniteEtale.exists_of_isQuotientMapping_sqZero_ker {ψ : Hom S T}
-    (hψ : ψ.IsFiniteEtale)
-    {D : Type*} [CommRing D] [TopologicalSpace D] [IsTopologicalRing D] [IsHuberRing D]
-    {V : Pair D} {q : Hom U V} (hq : q.IsQuotientMapping)
-    (hker : RingHom.ker q.toRingHom ^ 2 = ⊥) (α : Hom S U) (β₀ : Hom T V)
-    (hcomm : β₀.comp ψ = q.comp α) :
-    ∃ β : Hom T U, β.comp ψ = α ∧ q.comp β = β₀ := by
-  have hcomp : hq.quotientKerInverse.comp q = quotientHom U (RingHom.ker q.toRingHom) :=
-    calc
-      hq.quotientKerInverse.comp q =
-          hq.quotientKerInverse.comp ((q.quotientLift _ le_rfl).comp (quotientHom U _)) :=
-        congrArg hq.quotientKerInverse.comp (Hom.quotientLift_comp_quotientHom _ q le_rfl).symm
-      _ = quotientHom U (RingHom.ker q.toRingHom) := by
-        rw [← Hom.comp_assoc, hq.quotientKerInverse_comp_quotientLift, Hom.id_comp]
-  have hcomm' : (hq.quotientKerInverse.comp β₀).comp ψ =
-      (quotientHom U (RingHom.ker q.toRingHom)).comp α := by
-    rw [Hom.comp_assoc, hcomm, ← Hom.comp_assoc, hcomp]
-  obtain ⟨β, hβ₁, hβ₂⟩ :=
-    hψ.exists_of_sqZero_quotient hker α (hq.quotientKerInverse.comp β₀) hcomm'
-  refine ⟨β, hβ₁, ?_⟩
-  calc
-    q.comp β = (q.quotientLift _ le_rfl).comp ((quotientHom U _).comp β) := by
-      rw [← Hom.comp_assoc, Hom.quotientLift_comp_quotientHom]
-    _ = ((q.quotientLift _ le_rfl).comp hq.quotientKerInverse).comp β₀ := by
-      rw [hβ₂, Hom.comp_assoc]
-    _ = β₀ := by rw [hq.quotientLift_comp_quotientKerInverse, Hom.id_comp]
 
 end SqZeroLifting
 

@@ -77,9 +77,9 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
 * `IsOpenQuotientMap.isTopologicalRing`: the target of an open quotient ring homomorphism out of a
   topological ring is a topological ring.
 * `Ideal.closure_mul_le`, `Ideal.closure_pow_le`, `Ideal.closure_bot`, `Ideal.closure_pow_eq_bot`:
-  multiplication and positive powers of topological closures of ideals lie inside the closures of
-  products and powers, so in a `T₁` topological ring the closure of a nilpotent ideal has the same
-  nilpotency exponent.
+  products and powers of topological closures of ideals lie inside the closures of products and
+  powers, so in a `T₁` topological ring the closure of a nilpotent ideal has the same nilpotency
+  exponent.
 
 ## References
 
@@ -303,8 +303,6 @@ section ClosureMul
 
 open Topology
 
-section Ring
-
 variable {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
 
 /-- **The product of the closures of two ideals lies in the closure of their product.** -/
@@ -320,35 +318,20 @@ theorem Ideal.closure_mul_le (I J : Ideal R) : I.closure * J.closure ≤ (I * J)
 theorem Ideal.closure_bot [T1Space R] : (⊥ : Ideal R).closure = ⊥ :=
   Ideal.closure_eq_of_isClosed ⊥ (by rw [Submodule.bot_coe]; exact isClosed_singleton)
 
-end Ring
-
-section CommRing
-
-variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
-
-/-- **A positive power of the closure of an ideal lies in the closure of that power.** -/
-theorem Ideal.closure_pow_le (I : Ideal R) {n : ℕ} (hn : n ≠ 0) :
-    I.closure ^ n ≤ (I ^ n).closure := by
+/-- **Every power of the closure of an ideal lies in the closure of that power.** -/
+theorem Ideal.closure_pow_le (I : Ideal R) (n : ℕ) : I.closure ^ n ≤ (I ^ n).closure := by
   induction n with
-  | zero => exact absurd rfl hn
+  | zero =>
+    rw [Submodule.pow_zero, Submodule.pow_zero, ← SetLike.coe_subset_coe, Ideal.coe_closure]
+    exact subset_closure
   | succ m ih =>
-    rcases eq_or_ne m 0 with rfl | hm
-    · rw [zero_add, pow_one, pow_one]
-    · calc
-        I.closure ^ (m + 1) = I.closure ^ m * I.closure := pow_succ _ _
-        _ ≤ (I ^ m).closure * I.closure := Ideal.mul_mono_left (ih hm)
-        _ ≤ (I ^ m * I).closure := Ideal.closure_mul_le _ _
-        _ = (I ^ (m + 1)).closure := by rw [pow_succ]
+    rw [Submodule.pow_succ, Submodule.pow_succ]
+    exact (Ideal.mul_mono_left ih).trans (Ideal.closure_mul_le _ _)
 
 /-- **In a `T₁` topological ring, the closure of a nilpotent ideal has the same nilpotency
 exponent.** -/
 theorem Ideal.closure_pow_eq_bot [T1Space R] {I : Ideal R} {n : ℕ} (hI : I ^ n = ⊥) :
-    I.closure ^ n = ⊥ := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simpa only [pow_zero] using hI
-  · refine le_bot_iff.mp ((I.closure_pow_le hn).trans ?_)
-    rw [hI, Ideal.closure_bot]
-
-end CommRing
+    I.closure ^ n = ⊥ :=
+  le_bot_iff.mp ((I.closure_pow_le n).trans (by rw [hI, Ideal.closure_bot]))
 
 end ClosureMul
