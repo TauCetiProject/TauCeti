@@ -194,17 +194,22 @@ private theorem landau_bound_le_mul_sqrt {K r : ℝ} (hK : 0 ≤ Real.log K) (hr
   linarith
 
 private theorem landau_exponential_bound_le_mul_sqrt {K r : ℝ}
-    (hK : 1 ≤ K) (hr : 1 ≤ r) :
+    (hK : 0 ≤ Real.log K) (hr : 1 ≤ r) :
     48 / (4 * r) * Real.log (K * Real.exp ((4 * r) ^ (3 / 2 : ℝ))) ≤
       (12 * Real.log K + 96) * √r := by
+  by_cases hK0 : K = 0
+  · simp only [hK0, zero_mul, Real.log_zero, mul_zero, zero_add]
+    positivity
+  have hfour : √(4 : ℝ) = 2 :=
+    (Real.sqrt_eq_iff_eq_sq (by norm_num) (by norm_num)).mpr (by norm_num)
   have hlogM : Real.log (K * Real.exp ((4 * r) ^ (3 / 2 : ℝ))) =
       Real.log K + 8 * r * √r := by
-    rw [Real.log_mul (by positivity) (Real.exp_ne_zero _), Real.log_exp,
+    rw [Real.log_mul hK0 (Real.exp_ne_zero _), Real.log_exp,
       Real.rpow_three_div_two_eq_mul_sqrt, Real.sqrt_mul (by norm_num),
-      show √(4 : ℝ) = 2 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
+      hfour]
     ring
   rw [hlogM]
-  exact landau_bound_le_mul_sqrt (Real.log_nonneg hK) hr
+  exact landau_bound_le_mul_sqrt hK hr
 
 /-- Off the zeros and away from the origin, the logarithmic derivatives of an entire function of
 order at most one and of its genus-one divisor product differ by `O(√‖z‖)`. This is the
@@ -255,8 +260,34 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
   -- Combine the two estimates.
   refine (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans ((add_le_add hland htail).trans ?_)
   calc _ ≤ (12 * Real.log K + 96) * √‖z‖ + 2 * √‖z‖ * S :=
-        add_le_add_left (landau_exponential_bound_le_mul_sqrt hK hz1) _
+        add_le_add_left (landau_exponential_bound_le_mul_sqrt (Real.log_nonneg hK) hz1) _
     _ = _ := by ring
+
+/-- The Landau cofactor bound extends across zeros to any continuous function equal to the
+logarithmic-derivative difference off the zeros. -/
+private theorem OrderLE.isBigO_logDeriv_cofactor (h : OrderLE f 1) (hf : Differentiable ℂ f)
+    (hf0 : f 0 ≠ 0) {g : ℂ → ℂ} (hg : Continuous g)
+    (hgf : ∀ z, f z ≠ 0 → g z = logDeriv f z - logDeriv (divisorProductOne f) z) :
+    g =O[cobounded ℂ] (fun z : ℂ ↦ √‖z‖) := by
+  obtain ⟨C, R₀, hC⟩ := h.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le hf hf0
+  have hbound (z : ℂ) (hz : R₀ + 1 ≤ ‖z‖) : ‖g z‖ ≤ C * √‖z‖ := by
+    have hev : ∀ᶠ w in 𝓝[≠] z, ‖g w‖ ≤ C * √‖w‖ := by
+      have hfar : ∀ᶠ w in 𝓝[≠] z, R₀ < ‖w‖ :=
+        nhdsWithin_le_nhds ((continuous_norm.tendsto z).eventually
+          (eventually_gt_nhds (by linarith)))
+      filter_upwards [AnalyticOnNhd.eventually_ne_zero_nhdsNE_of_preconnected
+        (fun u _ ↦ hf.analyticAt u) isPreconnected_univ (Set.mem_univ 0) hf0 (Set.mem_univ z),
+        hfar] with w hw hwR
+      rw [hgf w hw]
+      exact hC w hwR.le hw
+    exact le_of_tendsto_of_tendsto
+      ((hg.tendsto z).mono_left nhdsWithin_le_nhds).norm
+      (((by fun_prop : Continuous fun w : ℂ ↦ C * √‖w‖).tendsto z).mono_left nhdsWithin_le_nhds)
+      hev
+  refine Asymptotics.IsBigO.of_bound C ?_
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (R₀ + 1)] with z hz
+  rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  exact hbound z hz
 
 /-- **Hadamard factorization at order at most one.** An entire function `f` of order at most one
 with `f 0 ≠ 0` is `exp (a + b z)` times the genus-one product over its zeros, with
@@ -280,28 +311,10 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
   -- Off the zeros, `L'` is the difference of the two logarithmic derivatives.
   have hlog {z : ℂ} (hfz : f z ≠ 0) : logDeriv f z = logDeriv P z + deriv L z := by
     rw [hfe, logDeriv_mul_cexp (hPz hfz) (hP z) (hL' z)]
-  obtain ⟨C, R₀, hC⟩ :=
-    h.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le hf hf0
-  -- The bound extends across the zeros by continuity.
-  have hbound (z : ℂ) (hz : R₀ + 1 ≤ ‖z‖) : ‖deriv L z‖ ≤ C * √‖z‖ := by
-    have hev : ∀ᶠ w in 𝓝[≠] z, ‖deriv L w‖ ≤ C * √‖w‖ := by
-      have hfar : ∀ᶠ w in 𝓝[≠] z, R₀ < ‖w‖ :=
-        nhdsWithin_le_nhds ((continuous_norm.tendsto z).eventually
-          (eventually_gt_nhds (by linarith)))
-      filter_upwards [AnalyticOnNhd.eventually_ne_zero_nhdsNE_of_preconnected
-        (fun u _ ↦ hf.analyticAt u) isPreconnected_univ (Set.mem_univ 0) hf0 (Set.mem_univ z),
-        hfar] with w hw hwR
-      rw [← sub_eq_of_eq_add' (hlog hw)]
-      exact hC w hwR.le hw
-    exact le_of_tendsto_of_tendsto
-      ((hdL.continuous.tendsto z).mono_left nhdsWithin_le_nhds).norm
-      (((by fun_prop : Continuous fun w : ℂ ↦ C * √‖w‖).tendsto z).mono_left nhdsWithin_le_nhds)
-      hev
-  have hbigO : deriv L =O[cobounded ℂ] (fun z : ℂ ↦ √‖z‖) := by
-    refine Asymptotics.IsBigO.of_bound C ?_
-    filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (R₀ + 1)] with z hz
-    rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-    exact hbound z hz
+  have hbigO : deriv L =O[cobounded ℂ] (fun z : ℂ ↦ √‖z‖) :=
+    h.isBigO_logDeriv_cofactor hf hf0 hdL.continuous fun z hz ↦ by
+      rw [hlog hz]
+      simp [hPdef]
   obtain ⟨p, hp, hpL⟩ := hdL.exists_eq_polynomial_eval_of_isLittleO_pow (n := 0)
     (hbigO.trans_isLittleO (isLittleO_sqrt_norm_id_cobounded.congr_right fun z ↦ (pow_one z).symm))
   have hconst (z : ℂ) : deriv L z = deriv L 0 := by
