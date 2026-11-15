@@ -31,21 +31,22 @@ on a connected open set `Ω` of the domain.
   a nonempty open subset of `Ω` agree on `Ω`
   (`TauCeti.SymplecticForm.eqOn_of_floerOperator_eq_zero`).
 
-Both reduce, in the complex coordinate `Complex.equivRealProdCLM`, to unique continuation for
-linear Cauchy–Riemann equations with a variable complex structure
-(`TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero`), a consequence of the Carleman
-similarity principle.
+Both reduce to unique continuation for linear Cauchy–Riemann equations with a variable complex
+structure in the coordinates `(s, t)` of the domain
+(`TauCeti.eqOn_zero_of_contDiffOn_prod_of_comp_eq_neg_id_of_eqOn_zero`). In the complex coordinate
+`Complex.equivRealProdCLM` this is `TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero`,
+a consequence of the Carleman similarity principle.
 
 In the transversality argument for moduli spaces of Floer solutions, localized Hamiltonian
 variations show that an element of the cokernel of the universal linearized operator vanishes on
 an open subset of a compact core
 (`TauCeti.SymplecticForm.eqOn_zero_of_forall_integral_apply_floerOperator_add_sub_eq_zero`). For an
 inner product on `V`, the formal `L²` adjoint of `D_u` is, up to sign, again of the form
-`∂ₛ + J' ∂ₜ + C'`, with `J'` the transpose of `J(z, u z)`, also a complex structure, so the unique
-continuation theorem of
-`TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure` extends that vanishing
-to the whole connected domain. Unique continuation for the nonlinear equation underlies the
-reduction of Floer solutions to their simple images.
+`∂ₛ + J' ∂ₜ + C'`, with `J'` the transpose of `J(z, u z)`, also a complex structure. Such cokernel
+elements are a priori only weak `L^q` solutions of the adjoint equation. Once elliptic regularity,
+which is not proved here, shows that they are `C¹` classical solutions, the unique continuation
+theorem above extends that vanishing to the whole connected domain. Unique continuation for the
+nonlinear equation underlies the reduction of Floer solutions to their simple images.
 
 ## References
 
@@ -57,18 +58,25 @@ reduction of Floer solutions to their simple images.
 
 public section
 
-namespace TauCeti.SymplecticForm
+open Complex ContinuousLinearMap MeasureTheory Set Filter Topology
 
-open Complex ContinuousLinearMap Set Filter Topology
+namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- Unique continuation for `∂ₛξ + J ∂ₜξ + C ξ = 0` in the coordinates `(s, t)` of the domain
-`ℝ × ℝ`, with `J` of class `C¹`, `J² = -1` and `C` continuous. -/
-private theorem eqOn_zero_of_contDiffOn_prod {Ω U : Set (ℝ × ℝ)} {ξ : ℝ × ℝ → V}
-    {J C : ℝ × ℝ → V →L[ℝ] V} (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
+/-- **Unique continuation in the coordinates `(s, t)`.** Let `ξ` be of class `C¹` on a connected
+open set `Ω ⊆ ℝ × ℝ`, with values in a finite-dimensional real normed space `V`, and solve
+`∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`, for a `C¹` field `J` of real-linear maps with `J² = -1` and a
+measurable, locally bounded field `C` of real-linear maps. If `ξ` vanishes on a nonempty open
+subset of `Ω`, it vanishes on `Ω`. This is
+`TauCeti.eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero` read in the complex coordinate
+`Complex.equivRealProdCLM`. -/
+theorem eqOn_zero_of_contDiffOn_prod_of_comp_eq_neg_id_of_eqOn_zero {Ω U : Set (ℝ × ℝ)}
+    {ξ : ℝ × ℝ → V} {J C : ℝ × ℝ → V →L[ℝ] V} (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω)
     (hξ : ContDiffOn ℝ 1 ξ Ω) (hJ : ContDiffOn ℝ 1 J Ω)
-    (hJsq : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hC : ContinuousOn C Ω)
+    (hJsq : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
       C z (ξ z) = 0)
     (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) : EqOn ξ 0 Ω := by
@@ -78,14 +86,14 @@ private theorem eqOn_zero_of_contDiffOn_prod {Ω U : Set (ℝ × ℝ)} {ξ : ℝ
   have hΩc' : IsPreconnected (e ⁻¹' Ω) := by
     rw [← e.image_symm_eq_preimage]
     exact hΩc.image _ e.symm.continuous.continuousOn
-  have hC' : ContinuousOn (C ∘ e) (e ⁻¹' Ω) := hC.comp e.continuous.continuousOn hmaps
+  have he' : MeasurePreserving e (volume.restrict (e ⁻¹' Ω)) (volume.restrict Ω) :=
+    volume_preserving_equiv_real_prod.restrict_preimage hΩ.measurableSet
   obtain ⟨z₀, hz₀⟩ := hUne
   have h := eqOn_zero_of_contDiffOn_of_comp_eq_neg_id_of_eqOn_zero (ξ := ξ ∘ e) (J := J ∘ e)
     (C := C ∘ e) hΩ' hΩc' (hξ.comp e.contDiff.contDiffOn hmaps)
     (hJ.comp e.contDiff.contDiffOn hmaps) (fun y hy ↦ hJsq (e y) hy)
-    (hC'.aestronglyMeasurable hΩ'.measurableSet)
-    (fun y hy ↦ ⟨‖(C ∘ e) y‖ + 1,
-      (hC'.continuousAt (hΩ'.mem_nhds hy)).norm.eventually (Iic_mem_nhds (lt_add_one _))⟩)
+    (hCm.comp_measurePreserving he')
+    (fun y hy ↦ (hCb (e y) hy).imp fun _ hM ↦ e.continuous.continuousAt.eventually hM)
     (fun y hy ↦ by
       simpa only [he, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
         Function.comp_apply] using heq (e y) hy)
@@ -93,6 +101,8 @@ private theorem eqOn_zero_of_contDiffOn_prod {Ω U : Set (ℝ × ℝ)} {ξ : ℝ
     (fun y hy ↦ h₀ hy)
   intro z hz
   simpa using h (x := e.symm z) (by simpa using hz)
+
+namespace SymplecticForm
 
 /-- **Unique continuation for the linearized Floer operator.** Let `u` and `ξ` be `C¹` on a
 connected open set `Ω` of the domain, and let the endomorphisms `J` be `C¹` and the Hamiltonians
@@ -110,9 +120,12 @@ theorem eqOn_zero_of_floerLinearization_eq_zero (ω : SymplecticForm V)
     (hD : ∀ z ∈ Ω, ω.floerLinearization J Ks Kt u ξ z = 0)
     (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) : EqOn ξ 0 Ω := by
   have hu' (z : ℝ × ℝ) (hz : z ∈ Ω) : ContDiffAt ℝ 1 u z := hu.contDiffAt (hΩ.mem_nhds hz)
-  refine eqOn_zero_of_contDiffOn_prod (J := fun z ↦ J z (u z))
+  have hC := ω.continuousOn_floerLinearizationCoeff hJ hKs hKt hu'
+  refine eqOn_zero_of_contDiffOn_prod_of_comp_eq_neg_id_of_eqOn_zero (J := fun z ↦ J z (u z))
     (C := ω.floerLinearizationCoeff J Ks Kt u) hΩ hΩc hξ (fun z hz ↦ ?_) hJsq
-    (ω.continuousOn_floerLinearizationCoeff hJ hKs hKt hu') (fun z hz ↦ ?_) hU hUne hUΩ h₀
+    (hC.aestronglyMeasurable hΩ.measurableSet) (fun z hz ↦ ⟨_, (hC.continuousAt
+      (hΩ.mem_nhds hz)).norm.eventually (Iic_mem_nhds (lt_add_one _))⟩) (fun z hz ↦ ?_) hU hUne
+    hUΩ h₀
   · exact ((hJ z hz).comp z (contDiffAt_id.prodMk (hu' z hz))).contDiffWithinAt
   · rw [← floerLinearization_eq_add]
     exact hD z hz
@@ -195,12 +208,16 @@ theorem eqOn_of_floerOperator_eq_zero (ω : SymplecticForm V)
     (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0)
     (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn u v U) : EqOn u v Ω := by
   obtain ⟨C, hC, heq⟩ := ω.exists_continuousOn_floerOperator_sub_floerOperator hΩ hJ hKs hKt hu hv
-  have hzero := eqOn_zero_of_contDiffOn_prod (ξ := fun w ↦ v w - u w)
-    (J := fun z ↦ J z (v z)) hΩ hΩc (hv.sub hu)
-    (hJ.comp_contDiffOn (contDiffOn_id.prodMk hv)) hJsq hC
+  have hzero := eqOn_zero_of_contDiffOn_prod_of_comp_eq_neg_id_of_eqOn_zero
+    (ξ := fun w ↦ v w - u w) (J := fun z ↦ J z (v z)) hΩ hΩc (hv.sub hu)
+    (hJ.comp_contDiffOn (contDiffOn_id.prodMk hv)) hJsq (hC.aestronglyMeasurable hΩ.measurableSet)
+    (fun z hz ↦ ⟨_, (hC.continuousAt (hΩ.mem_nhds hz)).norm.eventually
+      (Iic_mem_nhds (lt_add_one _))⟩)
     (fun z hz ↦ by rw [← heq z hz, hFv z hz, hFu z hz, sub_zero]) hU hUne hUΩ
     (fun z hz ↦ by simp [h₀ hz])
   intro z hz
   exact (sub_eq_zero.1 (hzero hz)).symm
 
-end TauCeti.SymplecticForm
+end SymplecticForm
+
+end TauCeti

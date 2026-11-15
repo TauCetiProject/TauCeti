@@ -53,6 +53,9 @@ for a variable `J` reduce to the case `J = i`.
 * `TauCeti.isWeakLinearCauchyRiemannOn_iff_frame`: the reduction for any frame, and
   `TauCeti.isWeakLinearCauchyRiemannOn_iff_standardFrame` for the standard frame.
 * `TauCeti.memLpLoc_frameCoeff_iff`: `C'` is locally `Lᵖ` exactly when `C` is.
+* `TauCeti.contDiffOn_and_eq_zero_frameCoeff`: the reduction for classical `C¹` solutions and a
+  `C¹` frame, and `TauCeti.aestronglyMeasurable_frameCoeff_and_bounded`: `C'` is then measurable
+  and locally bounded when `C` is.
 * `TauCeti.commute_symm_comp_standardFrame_transportedComplexStructure`: for `J = Ψ i Ψ⁻¹`, the
   standard frame is `Ψ` composed with a real-linear map commuting with `i`.
 
@@ -64,7 +67,7 @@ for a variable `J` reduce to the case `J = i`.
 
 public noncomputable section
 
-open Complex ContinuousLinearMap MeasureTheory Metric Set Filter TopologicalSpace
+open Complex ContinuousLinearMap MeasureTheory Metric Set Filter TopologicalSpace Topology
 open scoped NNReal ENNReal
 
 namespace TauCeti
@@ -324,6 +327,86 @@ theorem isWeakLinearCauchyRiemannOn_iff_standardFrame [FiniteDimensional ℂ V]
         (fun z => Ring.inverse (standardFrame J z₀ Φ₁ z) (ξ z)) :=
   isWeakLinearCauchyRiemannOn_iff_frame hp (continuousOn_standardFrame hJc) hD hDp hu
     fun z hz => comp_standardFrame (hJ z hz) h₀ hΦ₁
+
+/-! ### Classical solutions -/
+
+/-- The coefficient `C' = Φ⁻¹(∂ₛΦ + J ∂ₜΦ + C Φ)` of the reduced equation is measurable and
+locally bounded on an open set `B ⊆ U` where the frame `Φ` is `C¹` and invertible and `J` is
+continuous, when `C` is measurable and locally bounded on `U`. -/
+theorem aestronglyMeasurable_frameCoeff_and_bounded {U B : Set ℂ} (hB : IsOpen B)
+    {Φ : ℂ → V →L[ℝ] V} (hBU : B ⊆ U) (hΦ : ContDiffOn ℝ 1 Φ B) (hJ : ContinuousOn J B)
+    (hu : ∀ z ∈ B, IsUnit (Φ z)) (hCm : AEStronglyMeasurable C (volume.restrict U))
+    (hCb : ∀ z ∈ U, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) :
+    AEStronglyMeasurable (frameCoeff J C Φ (fderiv ℝ Φ)) (volume.restrict B) ∧
+      ∀ z ∈ B, ∃ M, ∀ᶠ w in 𝓝 z, ‖frameCoeff J C Φ (fderiv ℝ Φ) w‖ ≤ M := by
+  have hΨ : ContinuousOn (fun z => Ring.inverse (Φ z)) B := fun z hz => by
+    have h := NormedRing.inverse_continuousAt (hu z hz).unit
+    rw [IsUnit.unit_spec] at h
+    exact h.comp_continuousWithinAt (hΦ.continuousOn z hz)
+  have hD : ContinuousOn (fderiv ℝ Φ) B := hΦ.continuousOn_fderiv_of_isOpen hB le_rfl
+  -- the part `A = ∂ₛΦ + J ∂ₜΦ` of the coefficient that does not involve `C` is continuous
+  set A : ℂ → V →L[ℝ] V := fun z => fderiv ℝ Φ z 1 + J z ∘L fderiv ℝ Φ z I
+  have hA : ContinuousOn A B :=
+    (hD.clm_apply continuousOn_const).add (hJ.clm_comp (hD.clm_apply continuousOn_const))
+  have hfc (z : ℂ) : frameCoeff J C Φ (fderiv ℝ Φ) z =
+      Ring.inverse (Φ z) ∘L (A z + C z ∘L Φ z) := frameCoeff_def
+  have hBm : MeasurableSet B := hB.measurableSet
+  refine ⟨?_, fun z hz => ?_⟩
+  · have hC : AEStronglyMeasurable C (volume.restrict B) :=
+      hCm.mono_measure (Measure.restrict_mono hBU le_rfl)
+    have hCΦ : AEStronglyMeasurable (fun z => C z ∘L Φ z) (volume.restrict B) := by
+      simpa using (compL ℝ V V V).continuous₂.comp_aestronglyMeasurable₂ hC
+        (hΦ.continuousOn.aestronglyMeasurable hBm)
+    have h := (compL ℝ V V V).continuous₂.comp_aestronglyMeasurable₂
+      (hΨ.aestronglyMeasurable hBm) ((hA.aestronglyMeasurable hBm).add hCΦ)
+    rw [show frameCoeff J C Φ (fderiv ℝ Φ) = _ from funext hfc]
+    simpa only [compL_apply, Pi.add_apply] using h
+  · obtain ⟨M, hM⟩ := hCb z (hBU hz)
+    have hzB : B ∈ 𝓝 z := hB.mem_nhds hz
+    refine ⟨(‖Ring.inverse (Φ z)‖ + 1) * ((‖A z‖ + 1) + M * (‖Φ z‖ + 1)), ?_⟩
+    have hle {f : ℂ → V →L[ℝ] V} (hf : ContinuousAt f z) : ∀ᶠ w in 𝓝 z, ‖f w‖ ≤ ‖f z‖ + 1 :=
+      hf.norm.eventually (Iic_mem_nhds (lt_add_one _))
+    filter_upwards [hM, hle (hΨ.continuousAt hzB), hle (hA.continuousAt hzB),
+      hle (hΦ.continuousOn.continuousAt hzB)] with w hwC hwΨ hwA hwΦ
+    have hM0 : 0 ≤ M := (norm_nonneg _).trans hwC
+    rw [hfc]
+    refine (opNorm_comp_le _ _).trans (mul_le_mul hwΨ ?_ (norm_nonneg _) (by positivity))
+    refine (norm_add_le _ _).trans (add_le_add hwA ?_)
+    exact (opNorm_comp_le _ _).trans (mul_le_mul hwC hwΦ (norm_nonneg _) hM0)
+
+/-- **The classical frame reduction.** On an open set `B` where `Φ` is a `C¹` family of
+invertible real-linear maps with `J Φ = Φ i`, a `C¹` solution `ξ` of `∂ₛξ + J ∂ₜξ + C ξ = 0` gives
+the `C¹` map `η = Φ⁻¹ ξ`, which solves `∂ₛη + i ∂ₜη + C' η = 0` for
+`C' = Φ⁻¹(∂ₛΦ + J ∂ₜΦ + C Φ)`. -/
+theorem contDiffOn_and_eq_zero_frameCoeff {B : Set ℂ} (hB : IsOpen B)
+    {Φ : ℂ → V →L[ℝ] V} (hΦ : ContDiffOn ℝ 1 Φ B) (hu : ∀ z ∈ B, IsUnit (Φ z))
+    (hJΦ : ∀ z ∈ B, J z ∘L Φ z = Φ z ∘L (I • ContinuousLinearMap.id ℝ V))
+    (hξ : ContDiffOn ℝ 1 ξ B)
+    (heq : ∀ z ∈ B, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) :
+    ContDiffOn ℝ 1 (fun z => Ring.inverse (Φ z) (ξ z)) B ∧ ∀ z ∈ B,
+      fderiv ℝ (fun z => Ring.inverse (Φ z) (ξ z)) z 1 +
+        I • fderiv ℝ (fun z => Ring.inverse (Φ z) (ξ z)) z I +
+        frameCoeff J C Φ (fderiv ℝ Φ) z (Ring.inverse (Φ z) (ξ z)) = 0 := by
+  have hΨd : ContDiffOn ℝ 1 (fun z => Ring.inverse (Φ z)) B := fun z hz => by
+    have h := contDiffAt_ringInverse ℝ (n := 1) (hu z hz).unit
+    rw [IsUnit.unit_spec] at h
+    exact h.comp_contDiffWithinAt z (hΦ z hz)
+  set η : ℂ → V := fun z => Ring.inverse (Φ z) (ξ z)
+  have hηd : ContDiffOn ℝ 1 η B := hΨd.clm_apply hξ
+  refine ⟨hηd, fun z hz => ?_⟩
+  have hzB : B ∈ 𝓝 z := hB.mem_nhds hz
+  -- `ξ = Φ η` near `z`, so the product rule computes `dξ` from `dΦ` and `dη`
+  have hξη : ξ =ᶠ[𝓝 z] fun w => Φ w (η w) := eventuallyEq_of_mem hzB fun w hw => by
+    simpa [η] using (congr($(Ring.mul_inverse_cancel _ (hu w hw)) (ξ w))).symm
+  have h := heq z hz
+  rw [hξη.fderiv_eq, fderiv_clm_apply ((hΦ.contDiffAt hzB).differentiableAt one_ne_zero)
+    ((hηd.contDiffAt hzB).differentiableAt one_ne_zero), hξη.eq_of_nhds] at h
+  simp only [add_apply, comp_apply, flip_apply] at h
+  refine (ContinuousLinearMap.isUnit_iff_bijective.1 (hu z hz)).1 ?_
+  rw [← add_frame_eq (hu z hz) (hJΦ z hz), map_zero]
+  simp only [map_add, η] at h ⊢
+  convert h using 1
+  abel
 
 /-! ### Check: a transported structure -/
 
