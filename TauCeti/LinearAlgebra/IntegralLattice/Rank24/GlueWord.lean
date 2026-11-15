@@ -307,19 +307,25 @@ theorem glueDigitsVector_apply (l : List ℕ) (i : Fin n) :
     glueDigitsVector t l i = (t i).glueLabelVector (l.getD i 0) :=
   (rfl)
 
+/-- Evaluating `glueDigitsVector` on `List.ofFn d` reads the representative of `d i` at each
+component `i`. -/
+@[simp]
+theorem glueDigitsVector_ofFn (d : Fin n → ℕ) :
+    glueDigitsVector t (List.ofFn d) = fun i ↦ (t i).glueLabelVector (d i) := by
+  funext i
+  rw [glueDigitsVector_apply, List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+
 /-- The empty digit list evaluates to the zero vector. -/
 @[simp]
 theorem glueDigitsVector_nil : glueDigitsVector t [] = 0 := by
   funext i
   simp
 
-/-- The all-zero digit word of length `n` evaluates to the zero vector. -/
+/-- Any all-zero digit list evaluates to the zero vector. -/
 @[simp]
-theorem glueDigitsVector_replicate_zero : glueDigitsVector t (List.replicate n 0) = 0 := by
+theorem glueDigitsVector_replicate_zero (m : ℕ) : glueDigitsVector t (List.replicate m 0) = 0 := by
   funext i
-  rw [glueDigitsVector_apply, List.getD_eq_getElem _ _ (by simp), List.getElem_replicate,
-    DynkinType.glueLabelVector_zero]
-  rfl
+  simp [List.getD_eq_getElem?_getD]
 
 /-- **Evaluating `glueDigitsVector` on the encoded digits of `w` gives `glueWordVector t ht w`.** -/
 @[simp]
@@ -347,19 +353,15 @@ theorem glueDigitsVector_mem_dualCarrier (hv : ∀ i, (t i).Valid) {l : List ℕ
 
 /-- **The coordinate vector of a decoded digit word projects to `glueWordIsometry t ht hv w`.** -/
 theorem mk_glueDigitsVector (hv : ∀ i, (t i).Valid) {l : List ℕ}
-    {w : ∀ i, (t i).glueAlphabet (ht i)} (h : decodeGlueWord t ht l = some w) :
-    Submodule.Quotient.mk
-        ⟨glueDigitsVector t l, glueDigitsVector_mem_dualCarrier t ht hv
-          ((decodeGlueWord_isSome_iff t ht l).mp (by simp [h]))⟩ =
+    {w : ∀ i, (t i).glueAlphabet (ht i)} (h : decodeGlueWord t ht l = some w)
+    (hx : glueDigitsVector t l ∈
+      (IntegralLattice.pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier :=
+        glueDigitsVector_mem_dualCarrier t ht hv
+          ((decodeGlueWord_isSome_iff t ht l).mp (by simp [h]))) :
+    Submodule.Quotient.mk ⟨glueDigitsVector t l, hx⟩ =
       DynkinType.glueWordIsometry t ht hv w := by
-  have heq :
-      (⟨glueDigitsVector t l, glueDigitsVector_mem_dualCarrier t ht hv
-          ((decodeGlueWord_isSome_iff t ht l).mp (by simp [h]))⟩ :
-        (IntegralLattice.pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier) =
-      DynkinType.glueWordDualVector t ht hv w :=
-    Subtype.ext ((glueDigitsVector_of_decodeGlueWord_eq_some t ht h).trans
-      (DynkinType.coe_glueWordDualVector t ht hv w).symm)
-  exact (congrArg Submodule.Quotient.mk heq).trans (DynkinType.mk_glueWordDualVector t ht hv w)
+  have heq := glueDigitsVector_of_decodeGlueWord_eq_some t ht h
+  simpa only [heq] using DynkinType.mk_glueWordVector t ht hv w (heq ▸ hx)
 
 /-- **Every valid digit word's coordinate vector has squared norm `glueWordMinimum t l`.** -/
 theorem pi_rootLattice_form_glueDigitsVector_self (hv : ∀ i, (t i).Valid) {l : List ℕ}

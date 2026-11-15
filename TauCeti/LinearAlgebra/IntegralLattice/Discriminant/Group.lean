@@ -173,6 +173,24 @@ theorem discriminantGroupEquiv_mk (e : Isometry L M) (x : L.dualCarrier) :
       Submodule.Quotient.mk (e.dualCarrierEquiv x) := by
   simp [discriminantGroupEquiv]
 
+/-- An induced discriminant-group equivalence maps the class of `y` to the class of `x` whenever
+`e` sends the underlying ambient vector of `y` to that of `x`. -/
+theorem mk_eq_discriminantGroupEquiv_mk_of_coe_eq (e : Isometry L M)
+    {x : M.dualCarrier} {y : L.dualCarrier} (hxy : (x : W) = e y) :
+    (Submodule.Quotient.mk x : M.DiscriminantGroup) =
+      e.discriminantGroupEquiv (Submodule.Quotient.mk y) := by
+  rw [e.discriminantGroupEquiv_mk]
+  exact congrArg Submodule.Quotient.mk
+    (Subtype.ext (hxy.trans (e.coe_dualCarrierEquiv_apply y).symm))
+
+/-- Transporting a discriminant class along `Isometry.ofEq` identifies dual representatives with
+the same underlying ambient vector. -/
+theorem mk_eq_discriminantGroupEquiv_ofEq_mk {L M : IntegralLattice V} (h : L = M)
+    (x : M.dualCarrier) (y : L.dualCarrier) (hxy : (x : V) = (y : V)) :
+    (Submodule.Quotient.mk x : M.DiscriminantGroup) =
+      (Isometry.ofEq h).discriminantGroupEquiv (Submodule.Quotient.mk y) :=
+  (Isometry.ofEq h).mk_eq_discriminantGroupEquiv_mk_of_coe_eq (hxy.trans (ofEq_apply h y).symm)
+
 /-- The identity isometry induces the identity equivalence of discriminant groups. -/
 @[simp]
 theorem discriminantGroupEquiv_refl (L : IntegralLattice V) :

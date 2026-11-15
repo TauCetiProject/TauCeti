@@ -291,4 +291,42 @@ theorem rootLatticeIsometryCheckerboard_single (n : ℕ) (hn : 4 ≤ n)
   (congrArg _ ((D n).coe_simpleRootBasis ht i).symm).trans <|
     (Isometry.ofGramMatrixEq_apply_basis _ _ _ i).trans (coe_checkerboardSimpleRootBasis_apply hn i)
 
+/-- A vector `x` in simple-root coordinates maps to `y` under `rootLatticeIsometryCheckerboard`
+whenever each coordinate `x k` agrees with the `k`-th Bourbaki simple-root coordinate of `y`. -/
+theorem rootLatticeIsometryCheckerboard_eq_of_repr (n : ℕ) (hn : 4 ≤ n)
+    (ht : (D n).IsSimplyLaced) {x y : Fin n → ℚ}
+    (h : ∀ k : Fin n, x k = (typeDSimpleRootBasis ℚ n hn).repr y k) :
+    rootLatticeIsometryCheckerboard n hn ht x = y := by
+  let f : (Fin n → ℚ) →ₗ[ℚ] (Fin n → ℚ) :=
+    (rootLatticeIsometryCheckerboard n hn ht : (Fin (D n).rank → ℚ) ≃ₗ[ℚ] (Fin n → ℚ)).toLinearMap
+  have hx : x = ∑ k : Fin n, x k • Pi.single k (1 : ℚ) := by
+    funext j
+    simp [Finset.sum_apply, Pi.single_apply]
+  calc
+    f x = ∑ k : Fin n, x k • f (Pi.single k 1) := by
+      conv_lhs => rw [hx]
+      rw [map_sum]
+      exact Finset.sum_congr rfl fun k _ ↦ map_smul f _ _
+    _ = ∑ k : Fin n, (typeDSimpleRootBasis ℚ n hn).repr y k • typeDSimpleRootBasis ℚ n hn k := by
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      have hf : f (Pi.single k 1) = typeDSimpleRootBasis ℚ n hn k := by
+        refine (rootLatticeIsometryCheckerboard_single n hn ht k).trans ?_
+        rw [typeDSimpleRootBasis_apply]
+        exact funext (checkerboardSimpleRoot_apply hn k)
+      rw [h k, hf]
+    _ = y := (typeDSimpleRootBasis ℚ n hn).sum_repr y
+
+/-- The inverse of `rootLatticeIsometryCheckerboard` evaluates the `k`-th Bourbaki simple-root
+coordinate of a rational vector in `ℚⁿ`. -/
+theorem rootLatticeIsometryCheckerboard_symm_apply (n : ℕ) (hn : 4 ≤ n)
+    (ht : (D n).IsSimplyLaced) (y : Fin n → ℚ) (k : Fin n) :
+    (rootLatticeIsometryCheckerboard n hn ht).symm y k =
+      (typeDSimpleRootBasis ℚ n hn).repr y k := by
+  have heq : (rootLatticeIsometryCheckerboard n hn ht).symm y =
+      fun i : Fin n ↦ (typeDSimpleRootBasis ℚ n hn).repr y i :=
+    EquivLike.injective (rootLatticeIsometryCheckerboard n hn ht)
+      ((Isometry.apply_symm_apply _ y).trans
+        (rootLatticeIsometryCheckerboard_eq_of_repr n hn ht fun _ ↦ rfl).symm)
+  exact congrFun heq k
+
 end TauCeti.DynkinType
