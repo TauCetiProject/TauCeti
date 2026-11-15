@@ -53,7 +53,8 @@ private def pullbackCoreToTotalSpace (A : FiniteRankAtlas 𝕜 X) {Y : Type*} [T
   toFun p := ⟨(g p.proj).1, fun i ↦ p.2 (Fin.cast (g p.proj).2 i)⟩
   continuous_toFun := ((totalSpaceHomeomorph A).continuous.comp
     (continuous_sigmaMk.comp ((A.stratumCore n).continuous_pullbackLift g))).congr fun ⟨_, _⟩ ↦ by
-      dsimp only [Function.comp_apply]; rw [totalSpaceHomeomorph_apply]; rfl
+      dsimp only [Function.comp_apply]
+      rw [FiniteRankBundleCore.pullbackLift_mk, totalSpaceHomeomorph_apply]; rfl
 @[simp] private theorem pullbackCoreToTotalSpace_apply (A : FiniteRankAtlas 𝕜 X) {Y : Type*}
     [TopologicalSpace Y] (n : ℕ) (g : C(Y, {x : X // A.rank x = n}))
     (p : ((A.stratumCore n).pullback g).core.TotalSpace) :
@@ -109,9 +110,11 @@ def ofCoordinateHom (c : ∀ m n : ℕ, sourcePairCore A D m n ⟶ targetPairCor
     let srcMap : {q : (A.charts m).TotalSpace // D.rank q.proj.1 = n} →
         (sourcePairCore A D m n).core.TotalSpace := fun q ↦ ⟨⟨q.1.proj.1, q.1.proj.2, q.2⟩, q.1.2⟩
     have hsrc : Continuous srcMap :=
-      ((A.stratumCore m).continuous_mk_pullback_iff (rankPairFst A D m n)).2
+      ((A.stratumCore m).continuous_core_pullback_iff (rankPairFst A D m n)).2
         ⟨(continuous_subtype_val.comp ((A.charts m).continuous_proj.comp
-          continuous_subtype_val)).subtype_mk _, continuous_subtype_val⟩
+          continuous_subtype_val)).subtype_mk _,
+          continuous_subtype_val.congr fun ⟨⟨⟨x, hm⟩, v⟩, hn⟩ ↦
+            ((A.stratumCore m).pullbackLift_mk (rankPairFst A D m n) ⟨x, hm, hn⟩ v).symm⟩
     let tgtMap := pullbackCoreToTotalSpace D n (rankPairSnd A D m n)
     let totalMap : TotalSpace Unit A.Fiber → TotalSpace Unit D.Fiber := fun p ↦
       ⟨p.proj, ((c (A.rank p.proj) (D.rank p.proj)).fiberMap ⟨p.proj, rfl, rfl⟩).toLinearMap p.2⟩
@@ -157,8 +160,9 @@ private theorem continuous_pairwiseFiberSection (f : A ⟶ D) (m n : ℕ) :
   have hstratum := ((continuous_mk_iff_rankStrata D hbase _).1 hcomp n).comp
     (Continuous.subtype_mk continuous_id fun p : (sourcePairCore A D m n).core.TotalSpace ↦
       p.proj.2.2)
-  exact ((D.stratumCore n).continuous_mk_pullback_iff (rankPairSnd A D m n)).2
-    ⟨(sourcePairCore A D m n).core.continuous_proj, hstratum.congr fun ⟨⟨_, _, _⟩, _⟩ ↦ rfl⟩
+  exact ((D.stratumCore n).continuous_core_pullback_iff (rankPairSnd A D m n)).2
+    ⟨(sourcePairCore A D m n).core.continuous_proj, hstratum.congr fun ⟨⟨_, _, _⟩, _⟩ ↦
+      ((D.stratumCore n).pullbackLift_mk (rankPairSnd A D m n) _ _).symm⟩
 
 /-- Restrict a bundle-atlas morphism to a chart-operator morphism on the `(m, n)` pairwise
 stratum. -/
@@ -310,9 +314,12 @@ private def chartsOfCoreSelfPkg (C : FiniteRankBundleCore 𝕜 X) :
     exact ⟨{
       toFun q := ⟨q.proj.1, q.2⟩, invFun r := ⟨⟨r.proj, rfl⟩, r.2⟩
       left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl, right_inv := fun ⟨_, _⟩ ↦ rfl
-      continuous_toFun := C.continuous_pullbackLift (constStratumInclusion C C.rank)
-      continuous_invFun := (C.continuous_mk_pullback_iff (constStratumInclusion C C.rank)).2
-        ⟨C.core.continuous_proj.subtype_mk fun _ ↦ rfl, continuous_id⟩ },
+      continuous_toFun := (C.continuous_pullbackLift (constStratumInclusion C C.rank)).congr
+        fun ⟨_, _⟩ ↦ C.pullbackLift_mk (constStratumInclusion C C.rank) _ _
+      continuous_invFun := (C.continuous_core_pullback_iff (constStratumInclusion C C.rank)).2
+        ⟨C.core.continuous_proj.subtype_mk fun _ ↦ rfl,
+          continuous_id.congr fun ⟨x, v⟩ ↦
+            (C.pullbackLift_mk (constStratumInclusion C C.rank) ⟨x, rfl⟩ v).symm⟩ },
       fun _ ↦ rfl, fun _ ↦ rfl⟩
   aux ((ofCore C).charts C.rank) (charts_ofCore_self C)
 

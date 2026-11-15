@@ -44,6 +44,8 @@ maximal, or that any group is finite, perfect, or simple.
 * `TauCeti.TitsLieIndex.AmbientGroup`: the algebraic-closure-valued points of the short-root
   type-`F₄` carrier.
 * `TauCeti.TitsLieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a numbered node.
+* `TauCeti.TitsLieIndex.negativeSimpleRootSubgroup`: its negative simple-root subgroup at a
+  numbered node.
 * `TauCeti.TitsLieIndex.frobenius`: the prime-field Frobenius of the ambient group.
 
 ## Main results
@@ -100,6 +102,17 @@ theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
       F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure :=
   (rfl)
 
+/-- The negative simple-root subgroup at the Bourbaki-numbered node `i` of the `F₄` diagram. -/
+def negativeSimpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
+  F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure
+
+/-- The negative simple-root subgroup is the carrier's numbered lowering subgroup.
+This unfolding equation is not a simp lemma, so indexed action equations remain applicable. -/
+theorem negativeSimpleRootSubgroup_def (i : Fin d.1.rank) :
+    d.negativeSimpleRootSubgroup i =
+      F4ShortRoot.PrimeField.rootSubgroupPoints (.inr (finCongr d.rank_eq_four i)) d.1.Closure :=
+  (rfl)
+
 /-- **The carrier's numbered root characters are the simple roots of the `F₄` root datum.**
 Thus `simpleRootSubgroup i` uses the Bourbaki node represented by `i`, rather than a separately
 chosen numbering of the explicit carrier. -/
@@ -142,6 +155,15 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   rw [frobenius_def, simpleRootSubgroup_def,
+    F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
+
+/-- The Frobenius preserves each numbered negative simple-root subgroup and squares its
+parameter. -/
+@[simp]
+theorem frobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.frobenius (d.negativeSimpleRootSubgroup i u) =
+      d.negativeSimpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
+  rw [frobenius_def, negativeSimpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
 
 -- This is not a simp lemma because `simp` already rewrites fixed-subgroup membership to an
