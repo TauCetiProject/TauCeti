@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.RealInterpolation
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
+import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 
 /-!
 # Real interpolation of Bessel-potential Sobolev spaces
@@ -44,8 +45,8 @@ couple between two Besov couples at the extreme fine indices `1` and `∞`:
 
 ## Main declarations
 
-* `BesselPotentialSpace.continuous_toDistr` and `BesselPotentialSpace.toDistrCLM`: the continuous
-  linear embedding `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)`.
+* `BesselPotentialSpace.toDistrCLM`: the continuous linear embedding
+  `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)` (from `BesselPotentialSpace.continuous_toDistr`).
 * `TauCeti.CompatibleCouple.besselPotential`: the compatible couple
   `(H^{s₀,p}(E, F), H^{s₁,p}(E, F))` inside `𝓢'(E, F)`.
 * `TauCeti.CompatibleCouple.besovOneToBesselPotentialSum` and
@@ -81,19 +82,6 @@ section ToDistr
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The embedding `H^{s,p}(E, F) → 𝓢'(E, F)` is continuous: it factors as `J^{-s} ∘ ι ∘ toLp`,
-where `toLp : H^{s,p} ≃ₗᵢ[ℂ] Lᵖ`, `ι : Lᵖ →L[ℂ] 𝓢'`, and `J^{-s} : 𝓢' →L[ℂ] 𝓢'`. -/
-theorem continuous_toDistr : Continuous (toDistr : H^{s, p}(E, F) → 𝓢'(E, F)) := by
-  have h : (toDistr : H^{s, p}(E, F) → 𝓢'(E, F)) =
-      fun u ↦ TemperedDistribution.besselPotential E F (-s)
-        (Lp.toTemperedDistributionCLM F (volume : Measure E) p (toLpₗᵢ E F s p u)) := by
-    funext u
-    rw [toLpₗᵢ_apply, Lp.toTemperedDistributionCLM_apply, besselPotential_neg_toLp_eq]
-  rw [h]
-  exact (TemperedDistribution.besselPotential E F (-s)).continuous.comp <|
-    (Lp.toTemperedDistributionCLM F (volume : Measure E) p).continuous.comp
-      (toLpₗᵢ E F s p).toLinearIsometry.continuous
 
 variable (E F s p) in
 /-- Coercion from the Bessel-potential space `H^{s,p}(E, F)` to tempered distributions as a
