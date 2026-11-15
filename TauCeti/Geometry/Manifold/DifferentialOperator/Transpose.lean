@@ -45,7 +45,9 @@ The transpose does not depend on the choice of Haar measure, since any two are p
   directional derivative `∂_v` is `-∂_v`.
 * `LinearMap.IsFormalTranspose.self_of_mem_differentialOperators_zero`: an operator of order zero,
   multiplication by a smooth function, is its own transpose.
-* `LinearMap.IsFormalTranspose.comp`: transposition reverses composition.
+* `LinearMap.IsFormalTranspose.comp`,
+  `LinearMap.IsFormalTranspose.comp_of_mem_differentialOperators`: transposition reverses
+  composition.
 * `TauCeti.exists_isFormalTranspose`: every differential operator of order at most `m` has a
   formal transpose of order at most `m`.
 * `LinearMap.IsFormalTranspose.eq_of_mem_differentialOperators`: the transpose is unique among
@@ -56,8 +58,8 @@ The transpose does not depend on the choice of Haar measure, since any two are p
   `TauCeti.formalTranspose_lineDerivation` (`∂_vᵗ = -∂_v`).
 * `TauCeti.smoothPrincipalSymbol_formalTranspose`: the principal symbol of the transpose of an
   operator of order at most `m` is `(-1)^m` times its principal symbol.
-* `TauCeti.isFormalTranspose_lsmul_comp_lineDerivation`: the transpose of `a ∂_v` is
-  `g ↦ -a ∂_v g - (∂_v a) g`; for `a(x) = x` on `ℝ` the zeroth-order term is `-g`.
+* `TauCeti.isFormalTranspose_restrictScalars_toSpanSingleton_comp_lineDerivation`: the transpose
+  of `a ∂_v` is `g ↦ -a ∂_v g - (∂_v a) g`; for `a(x) = x` on `ℝ` the zeroth-order term is `-g`.
 
 ## References
 
@@ -178,30 +180,37 @@ variable {D D' D₁ D₂ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮�
 
 /-! ### Operators of order zero and directional derivatives -/
 
-omit [MeasurableSpace E] in
-/-- An operator of order zero on `C^∞(E)` is multiplication by its value on `1`. -/
-private theorem apply_eq_mul_of_mem_differentialOperators_zero
-    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
-      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ 0) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : D f = f * D 1 := by
-  simpa using mem_differentialOperators_zero_iff.1 hD f 1
-
 /-- An operator of order zero on `C^∞(E)`, that is multiplication by a smooth function, is its own
 formal transpose. -/
 theorem _root_.LinearMap.IsFormalTranspose.self_of_mem_differentialOperators_zero
     (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ 0) : D.IsFormalTranspose D μ := fun f g _ _ ↦ by
-  rw [apply_eq_mul_of_mem_differentialOperators_zero hD f,
-    apply_eq_mul_of_mem_differentialOperators_zero hD g]
-  simp only [ContMDiffMap.coe_mul, Pi.mul_apply]
+  rw [apply_eq_smul_apply_one_of_mem_differentialOperators_zero hD f,
+    apply_eq_smul_apply_one_of_mem_differentialOperators_zero hD g]
+  simp only [smul_eq_mul, ContMDiffMap.coe_mul, Pi.mul_apply]
   exact integral_congr_ae (ae_of_all _ fun x ↦ by ring)
 
 /-- Multiplication by a smooth function is its own formal transpose. -/
-theorem isFormalTranspose_lsmul (a : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    (Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a).IsFormalTranspose
-      (Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a) μ :=
-  .self_of_mem_differentialOperators_zero (lsmul_mem_differentialOperators_zero a)
+theorem isFormalTranspose_restrictScalars_toSpanSingleton (a : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
+    IsFormalTranspose
+      ((LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a).restrictScalars ℝ)
+      ((LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a).restrictScalars ℝ) μ :=
+  .self_of_mem_differentialOperators_zero
+    (LinearMap.restrictScalars_mem_differentialOperators_zero _)
 
 variable [FiniteDimensional ℝ E]
+
+/-- **Transposition reverses composition** of differential operators. -/
+theorem _root_.LinearMap.IsFormalTranspose.comp_of_mem_differentialOperators {k l : ℕ}
+    {P P' Q Q' : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯}
+    (hP : P.IsFormalTranspose P' μ) (hQ : Q.IsFormalTranspose Q' μ)
+    (hQd : Q ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k)
+    (hP'd : P' ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ l) :
+    (P ∘ₗ Q).IsFormalTranspose (Q' ∘ₗ P') μ :=
+  hP.comp hQ (fun _ hf ↦ hf.apply_of_mem_differentialOperators hQd)
+    (fun _ hg ↦ hg.apply_of_mem_differentialOperators hP'd)
 
 /-- If each of the pairwise commuting derivations `dᵢ` has formal transpose `-dᵢ`, then the
 formal transpose of the monomial `∂^α = ∏ᵢ dᵢ ^ αᵢ` is `(-1)^|α| ∂^α`. -/
@@ -242,11 +251,8 @@ theorem isFormalTranspose_multiIndexDeriv {ι : Type*} [Fintype ι]
         pow_one]
     -- `∂^α = ∂^β ∘ dᵢ`, whose transpose is `(-dᵢ) ∘ (-1)^|β| ∂^β`.
     rw [hαβ, multiIndexDeriv_add_single, Module.End.mul_eq_comp]
-    refine ((ih β hβ).comp (hdt i)
-      (fun f hf ↦ HasCompactSupport.apply_of_mem_differentialOperators hf
-        (d i).mem_differentialOperators_one)
-      (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg
-        (Submodule.smul_mem _ _ hmem))).congr_right ?_
+    refine ((ih β hβ).comp_of_mem_differentialOperators (hdt i)
+      (d i).mem_differentialOperators_one (Submodule.smul_mem _ _ hmem)).congr_right ?_
     rw [← Module.End.mul_eq_comp (multiIndexDeriv d hd β), hcomm]
     ext f x
     simp [pow_succ]
@@ -264,19 +270,18 @@ theorem _root_.LinearMap.IsFormalTranspose.smulCommutator {k l : ℕ}
     (hD' : D' ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ l) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
     (TauCeti.smulCommutator ℝ f D).IsFormalTranspose (-TauCeti.smulCommutator ℝ f D') μ := by
-  have hf : Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ f ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
-      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ 0 :=
-    lsmul_mem_differentialOperators_zero f
-  have h₁ := h.comp (isFormalTranspose_lsmul (μ := μ) f)
-    (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg hf)
-    (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg hD')
-  have h₂ := (isFormalTranspose_lsmul (μ := μ) f).comp h
-    (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg hD)
-    (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg hf)
+  have hf := LinearMap.restrictScalars_mem_differentialOperators_zero (R := ℝ)
+    (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ f)
+  have h₁ := h.comp_of_mem_differentialOperators
+    (isFormalTranspose_restrictScalars_toSpanSingleton (μ := μ) f) hf hD'
+  have h₂ := IsFormalTranspose.comp_of_mem_differentialOperators
+    (isFormalTranspose_restrictScalars_toSpanSingleton f) h hD hf
   have e (P : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-      TauCeti.smulCommutator ℝ f P = P ∘ₗ Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ f -
-        Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ f ∘ₗ P :=
-    LinearMap.ext fun g ↦ by simp
+      TauCeti.smulCommutator ℝ f P =
+        P ∘ₗ (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ f).restrictScalars ℝ -
+          (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+            f).restrictScalars ℝ ∘ₗ P :=
+    LinearMap.ext fun g ↦ by simp [mul_comm]
   rw [e, e, neg_sub]
   exact h₁.sub h₂
 
@@ -329,21 +334,21 @@ theorem isFormalTranspose_lineDerivation [μ.IsAddHaarMeasure] (v : E) :
 /-- The formal transpose of `a ∂_v` is `g ↦ -a ∂_v g - (∂_v a) g`. For `a(x) = x` on `ℝ` and
 `v = 1`, the zeroth-order term is `-1`: transposition does not merely negate the leading
 derivative. -/
-theorem isFormalTranspose_lsmul_comp_lineDerivation [μ.IsAddHaarMeasure]
+theorem isFormalTranspose_restrictScalars_toSpanSingleton_comp_lineDerivation [μ.IsAddHaarMeasure]
     (a : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (v : E) :
-    (Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a ∘ₗ
+    ((LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a).restrictScalars ℝ ∘ₗ
         (lineDerivation ℝ v : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯)).IsFormalTranspose
-      (-(Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a ∘ₗ
+      (-((LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ a).restrictScalars ℝ ∘ₗ
         (lineDerivation ℝ v : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯)) -
-        Algebra.lsmul ℝ ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (lineDerivation ℝ v a)) μ := by
-  refine ((isFormalTranspose_lsmul a).comp (isFormalTranspose_lineDerivation v)
-    (fun f hf ↦ HasCompactSupport.apply_of_mem_differentialOperators hf
-      (lineDerivation ℝ v).mem_differentialOperators_one)
-    (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg
-      (lsmul_mem_differentialOperators_zero a))).congr_right ?_
+        (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+          (lineDerivation ℝ v a)).restrictScalars ℝ) μ := by
+  refine ((isFormalTranspose_restrictScalars_toSpanSingleton a).comp_of_mem_differentialOperators
+    (isFormalTranspose_lineDerivation v) (lineDerivation ℝ v).mem_differentialOperators_one
+    (LinearMap.restrictScalars_mem_differentialOperators_zero _)).congr_right ?_
   ext g x
-  simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.sub_apply, Algebra.lsmul_coe,
-    smul_eq_mul, Derivation.coeFn_coe, Derivation.leibniz]
+  simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.sub_apply,
+    LinearMap.restrictScalars_apply, LinearMap.toSpanSingleton_apply, smul_eq_mul,
+    Derivation.coeFn_coe, Derivation.leibniz]
   simp only [ContMDiffMap.coe_neg, ContMDiffMap.coe_sub, ContMDiffMap.coe_add,
     ContMDiffMap.coe_mul, Pi.neg_apply, Pi.sub_apply, Pi.add_apply, Pi.mul_apply]
   ring
@@ -384,22 +389,23 @@ theorem exists_isFormalTranspose [μ.IsAddHaarMeasure] {m : ℕ}
       LinearMap.ext fun f ↦ by simp [M, LinearMap.sum_apply]
     rw [(b.eq_coordinateOperator_coordinateCoeff hD).trans hcoord]
     refine IsFormalTranspose.sum _ fun k _ ↦ IsFormalTranspose.sum _ fun α _ ↦ ?_
-    exact (IsFormalTranspose.self_of_mem_differentialOperators_zero (hM α)).comp
+    exact IsFormalTranspose.comp_of_mem_differentialOperators
+      (IsFormalTranspose.self_of_mem_differentialOperators_zero (hM α))
       (isFormalTranspose_multiIndexDeriv d hd (fun i ↦ isFormalTranspose_lineDerivation _) α)
-      (fun f hf ↦ HasCompactSupport.apply_of_mem_differentialOperators hf
-        (multiIndexDeriv_mem_differentialOperators d hd α))
-      (fun g hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg (hM α))
+      (multiIndexDeriv_mem_differentialOperators d hd α) (hM α)
 
-/-- **Uniqueness of the formal transpose.** For a Haar measure, two differential operators that
-are formal transposes of the same operator are equal. -/
-theorem _root_.LinearMap.IsFormalTranspose.eq_of_mem_differentialOperators [μ.IsAddHaarMeasure]
-    {k l : ℕ} (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.IsFormalTranspose D₂ μ)
+/-- **Uniqueness of the formal transpose.** For a measure that is finite on compact sets and
+positive on open sets, such as a Haar measure, two differential operators that are formal
+transposes of the same operator are equal. -/
+theorem _root_.LinearMap.IsFormalTranspose.eq_of_mem_differentialOperators
+    [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] {k l : ℕ}
+    (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.IsFormalTranspose D₂ μ)
     (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ k)
     (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ l) :
     D₁ = D₂ := by
-  refine eq_of_forall_hasCompactSupport_apply_eq hD₁ hD₂ fun g hg ↦ ?_
+  refine eq_of_mem_differentialOperators_of_forall_hasCompactSupport_apply_eq hD₁ hD₂ fun g hg ↦ ?_
   -- On a compactly supported `g`, `D₁ g - D₂ g` integrates to zero against every test function.
   set u := D₁ g - D₂ g
   have hu : Continuous u := u.contMDiff.continuous
@@ -524,7 +530,7 @@ theorem formalTranspose_formalTranspose {m : ℕ}
   exact LinearEquiv.symm_apply_apply _ D
 
 /-- An operator of order zero, multiplication by a smooth function, is its own formal transpose. -/
-theorem formalTranspose_of_mem_differentialOperators_zero {m : ℕ}
+theorem formalTranspose_eq_self_of_mem_differentialOperators_zero {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
       C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m)
     (hD : (D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∈
@@ -554,10 +560,8 @@ theorem formalTranspose_comp {m k : ℕ}
       (formalTranspose E k Q : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) ∘ₗ
         (formalTranspose E m P : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :=
   formalTranspose_eq_of_isFormalTranspose Measure.addHaar
-    ((isFormalTranspose_formalTranspose _ P).comp (isFormalTranspose_formalTranspose _ Q)
-      (fun _ hf ↦ HasCompactSupport.apply_of_mem_differentialOperators hf Q.2)
-      (fun _ hg ↦ HasCompactSupport.apply_of_mem_differentialOperators hg
-        (formalTranspose E m P).2))
+    ((isFormalTranspose_formalTranspose _ P).comp_of_mem_differentialOperators
+      (isFormalTranspose_formalTranspose _ Q) Q.2 (formalTranspose E m P).2)
     (comp_mem_differentialOperators (formalTranspose E k Q).2 (formalTranspose E m P).2)
 
 /-! ### The principal symbol of the transpose -/

@@ -236,10 +236,10 @@ theorem _root_.LinearMap.restrictScalars_mem_differentialOperators_zero (f : M �
     f.restrictScalars R ∈ differentialOperators R A M N 0 :=
   mem_differentialOperators_zero_iff.2 fun a x ↦ by simp
 
-/-- Multiplication by an element of `A` is a differential operator of order `0`. -/
-theorem lsmul_mem_differentialOperators_zero (a : A) :
-    Algebra.lsmul R R N a ∈ differentialOperators R A N N 0 :=
-  mem_differentialOperators_zero_iff.2 fun b x ↦ by simp [smul_comm a b]
+/-- An operator `A → N` of order `0` is multiplication by its value on `1`. -/
+theorem apply_eq_smul_apply_one_of_mem_differentialOperators_zero {D : A →ₗ[R] N}
+    (hD : D ∈ differentialOperators R A A N 0) (a : A) : D a = a • D 1 := by
+  simpa using mem_differentialOperators_zero_iff.1 hD a 1
 
 theorem differentialOperators_le_succ (m : ℕ) :
     differentialOperators R A M N m ≤ differentialOperators R A M N (m + 1) := by
